@@ -44,6 +44,7 @@
 #include "compile.h"
 #include "compile_interface.h"
 #include "parser.h"       /* parsing XQuery syntax */
+#include "scanner.h"
 #include "abssyn.h"
 #include "varscope.h"     /* variable scoping */
 #include "normalize.h"    /* parse tree normalization */
@@ -184,6 +185,8 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 
     /* elapsed time for compiler phase */
     long tm, tm_first;
+
+    lexical_init();
 
 #if HAVE_SIGNAL_H
     /* setup sementation fault signal handler */
@@ -525,9 +528,16 @@ subexelim:
 char*
 pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue)
 {
+        char *res = NULL;
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
         long tm = PFtimer_start ();
+
+
+#ifndef HAVE_GC
+        pf_alloc = pa_create();
+#endif
+        lexical_init();
 
         PFstate.invocation = invoke_monetdb;
         PFstate.summer_branch = true;
@@ -574,7 +584,12 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
-        return PFprintMILtemp (croot, &PFstate, tm, prologue, query, epilogue);
+        res = PFprintMILtemp (croot, &PFstate, tm, prologue, query, epilogue);
+#ifndef HAVE_GC
+    pa_destroy(pf_alloc);
+#endif
+        return res;
+
 }
 
 #if HAVE_SIGNAL_H

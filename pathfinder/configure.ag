@@ -42,7 +42,6 @@ AM_MONETDB_COMPILER()
 if test "x$have_c99" != xyes; then
 	AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
 fi
-have_gc=yes
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
@@ -269,15 +268,6 @@ AC_SUBST(LIBXML2_LDADD, $LIBXML2_LDADD)
 AC_SUBST(PF_LOADER_PROGRAMS, $PF_LOADER_PROGRAMS)
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
-
-dnl See if we have the Hans Boehm garbage collector available
-dnl Most of thw work has already been done in monet.m4 (AM_MONETDB_TOOLS),
-dnl so we just check whether GC has been found
-dnl if test "x$have_gc" = xno; then
-dnl     AC_MSG_ERROR([Unable to find the Hans Boehm garbage collector.
-dnl                   Please go get it from
-dnl                   http://www.hpl.hp.com/personal/Hans_Boehm/gc/])
-dnl fi
 
 dnl BerkeleyDB blindly assumes u_long to be defined
 AC_CHECK_TYPES(u_long)

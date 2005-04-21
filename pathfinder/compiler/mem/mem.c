@@ -43,24 +43,75 @@
 
 #include "oops.h"
 
-#ifdef HAVE_GC
-/** undefine this for production code (GC warning messages) */
-#define GC_DEBUG
+#define PA_MALLOC(n)	        pa_alloc(pf_alloc, n)
+#define PA_REALLOC(p, n)	pa_realloc(pf_alloc, p, n)
 
-/** we'll interface to Hans Boehm's C garbage collector */
-#if HAVE_GC_H
-#include <gc.h>
-#else
-#if HAVE_GC_GC_H
-#include <gc/gc.h>
-#else
-#error "Interface to garbage collector (gc.h) not available."
-#endif
-#endif
-#else
-#define GC_MALLOC(n)	malloc(n)
-#define GC_REALLOC(p, n)	realloc(p, n)
-#endif  /* HAVE_GC */
+#define SA_BLOCK (4*1024*1024)
+
+pf_allocator *pf_alloc = NULL;
+
+pf_allocator *pa_create()
+{
+	pf_allocator *pa = (pf_allocator*)malloc(sizeof(pf_allocator));
+	
+	pa->size = 64;
+	pa->nr = 1;
+	pa->blks = (char**)malloc(pa->size*sizeof(char*));
+	pa->blks[0] = (char*)malloc(SA_BLOCK);
+	pa->used = 0;
+	return pa;
+}
+
+char *
+pa_realloc(pf_allocator *pa, char *p, size_t n ) 
+{
+        char *r = pa_alloc( pa, n);
+        memcpy(r, p, n);
+        return r;
+}
+
+#define round16(sz) ((sz+15)&~15)
+char *pa_alloc( pf_allocator *pa, size_t sz )
+{
+	char *r;
+	sz = round16(sz);
+	if (sz > SA_BLOCK) {
+		char *r = malloc(sz);
+		if (pa->nr >= pa->size) {
+			pa->size *=2;
+			pa->blks = (char**)realloc(pa->blks,pa->size*sizeof(char*));
+		}
+		pa->blks[pa->nr-1] = pa->blks[pa->nr-2];
+		pa->blks[pa->nr-2] = r;
+		pa->nr ++;
+		return r;
+	}
+	if (sz > (SA_BLOCK-pa->used)) {
+		char *r = malloc(SA_BLOCK);
+		if (pa->nr >= pa->size) {
+			pa->size *=2;
+			pa->blks = (char**)realloc(pa->blks,pa->size*sizeof(char*));
+		}
+		pa->blks[pa->nr] = r;
+		pa->nr ++;
+		pa->used = sz;
+		return r;
+	}
+	r = pa->blks[pa->nr-1] + pa->used;
+	pa->used += sz;
+	return r;
+}
+
+void pa_destroy( pf_allocator *pa ) 
+{
+	unsigned int i ;
+
+	for (i = 0; i<pa->nr; i++) {
+		free(pa->blks[i]);
+	}
+	free(pa->blks);
+	free(pa);
+}
 
 /**
  * Worker for #PFmalloc ().
@@ -70,7 +121,7 @@ PFmalloc_ (size_t n, const char *file, const char *func, const int line)
 {
     void *mem;
     /* allocate garbage collected heap memory of requested size */
-    mem = GC_MALLOC (n);
+    mem = PA_MALLOC (n);
 
     if (mem == 0) {
         /* don't use PFoops () here as it tries to allocate even more memory */
@@ -90,7 +141,7 @@ PFrealloc_ (size_t n, void *mem,
 	    const char *file, const char *func, const int line) 
 {
     /* resize garbage collected heap memory to requested size */
-    mem = GC_REALLOC (mem, n);
+    mem = PA_REALLOC (mem, n);
 
     if (mem == 0) {
         /* don't use PFoops () here as it tries to allocate even more memory */

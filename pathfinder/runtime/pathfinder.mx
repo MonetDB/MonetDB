@@ -2336,12 +2336,7 @@ CMDxquery(char *mode, char* xquery) {
 	stream_write(GDKout, xquery, strlen(xquery), 1);
     }
     MT_set_lock(pathfinder_lock, "CMDxquery");
-#ifdef HAVE_GC
-    /* only if MonetDB is also compiled with gc (HAVE_GC) we allow server-side xquery */
     err = pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
-#else
-    err = "xquery disabled. Please configure & compile MonetDB with --with-gc=DIR\n";
-#endif
     if (err) {
       len = strlen(err);
       if (*mapi) {
@@ -2401,12 +2396,10 @@ CMDxquery(char *mode, char* xquery) {
     if (debug && ret != GDK_SUCCEED) {
         stream_printf(GDKout, "%s#execution failed############################################\n", mapi);
     }
-#ifdef HAVE_GC
     /* what comes out of PF is alloced differently */
-    if (prologue) GC_FREE(prologue);
-    if (query) GC_FREE(query);
-    if (epilogue) GC_FREE(epilogue);
-#endif
+    if (prologue) free(prologue);
+    if (query) free(query);
+    if (epilogue) free(epilogue);
     return ret;
 }
 

@@ -32,23 +32,9 @@
 #include "mil_opt.h"
 #include "mem.h"
 
-#ifdef HAVE_GC
-/** we'll interface to Hans Boehm's C garbage collector */
-#if HAVE_GC_H
-#include <gc.h>
-#else
-#if HAVE_GC_GC_H
-#include <gc/gc.h>
-#else
-#error "Interface to garbage collector (gc.h) not available."
-#endif
-#endif
-#else
-#define GC_MALLOC(n)	malloc(n)
-#define GC_MALLOC_UNCOLLECTABLE(n)	malloc(n)
-#define GC_REALLOC(p, n)	realloc(p, n)
-#define GC_FREE(p)	free(p)
-#endif
+#define PF_MALLOC(n)		malloc(n)
+#define PF_REALLOC(p, n)	realloc(p, n)
+#define PF_FREE(p)		free(p)
 
 #include <string.h>
 #include <stdlib.h>
@@ -73,7 +59,7 @@ static void opt_append(opt_t* o, char* stmt, int sec) {
 	int len = strlen(stmt);
 	if (o->off[sec] + len >= o->len[sec]) {
 		o->len[sec] += o->len[sec] + len+1;
-		o->buf[sec] = (char*) GC_REALLOC(o->buf[sec], o->len[sec]);
+		o->buf[sec] = (char*) PF_REALLOC(o->buf[sec], o->len[sec]);
 	}
 	memcpy(o->buf[sec] + o->off[sec], stmt, len+1);
 	o->off[sec] += len;
@@ -296,14 +282,14 @@ static void opt_end_else(opt_t *o) {
 /* opt_open(): set up our administration.
  */
 opt_t *opt_open(int optimize) {
-	opt_t *o = (opt_t*) GC_MALLOC_UNCOLLECTABLE(sizeof(opt_t));
+	opt_t *o = (opt_t*) PF_MALLOC(sizeof(opt_t));
 	memset(o, 0, sizeof(opt_t));
 	o->optimize = optimize;
 	opt_setname("if", &name_if);
 	opt_setname("else", &name_else);
-	o->buf[0] = (char*) GC_MALLOC_UNCOLLECTABLE(o->len[0] = 1024);
-	o->buf[1] = (char*) GC_MALLOC_UNCOLLECTABLE(o->len[1] = 2048*1024);
-	o->buf[2] = (char*) GC_MALLOC_UNCOLLECTABLE(o->len[2] = 1024);
+	o->buf[0] = (char*) PF_MALLOC(o->len[0] = 1024);
+	o->buf[1] = (char*) PF_MALLOC(o->len[1] = 2048*1024);
+	o->buf[2] = (char*) PF_MALLOC(o->len[2] = 1024);
  	return o;
 }
 
@@ -321,7 +307,7 @@ void opt_close(opt_t *o, char** prologue, char** query, char** epilogue) {
 	*prologue = o->buf[OPT_SEC_PROLOGUE];
 	*query = o->buf[OPT_SEC_QUERY];
 	*epilogue = o->buf[OPT_SEC_EPILOGUE];
-	GC_FREE(o);
+	PF_FREE(o);
 }
 
 /* opt_mil(): accept a chunk of unoptimized MIL.

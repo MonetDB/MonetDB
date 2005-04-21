@@ -75,4 +75,5 @@ EXTRA_DIST = \
 	types.h \
 	variable.h \
 	varscope.h \
-	xquery_fo.h
+	xquery_fo.h \
+	scanner.h

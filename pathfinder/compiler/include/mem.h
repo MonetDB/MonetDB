@@ -40,7 +40,7 @@
 #include <stddef.h>
 
 /**
- * A dynamic buffer that can grow as more space as needed
+ * A dynamic buffer that can grow as more space is needed
  * (see #PFneed).
  */
 typedef struct PFbuf_t PFbuf_t;
@@ -83,6 +83,19 @@ void *PFrealloc_ (size_t, void *, const char *, const char *, const int);
 char *PFstrndup (const char *str, size_t n);
 
 char *PFstrdup (const char *str);
+
+typedef struct pf_allocator {
+	size_t size;
+	size_t nr;
+	char **blks;
+	size_t used; 	/* memory used in last block */
+} pf_allocator;
+
+extern pf_allocator *pa_create();
+extern char *pa_alloc( pf_allocator *pa,  size_t sz );
+extern void pa_destroy( pf_allocator *pa );
+
+extern pf_allocator *pf_alloc;
 
 #endif
 

@@ -62,6 +62,8 @@
 /* PFoops */
 #include "oops.h"
 
+#include "scanner.h"
+
 /* override YYLTYPE definition in "parser.tab.h" */
 #define YYLTYPE PFloc_t
 
@@ -125,8 +127,16 @@ extern char *pfinput;
 static PFarray_t *lexical_stack = NULL;
 static unsigned int lexical_sp = 0;
 
-/** initialize the lexical state stack when scanner starts up */
+/** initialize the lexical state stack when scanner starts up 
 #define YY_USER_INIT lexical_sp = 0; lexical_stack = PFarray (sizeof (int))
+*/
+
+void
+lexical_init()
+{
+        lexical_sp = 0; 
+        lexical_stack = PFarray (sizeof (int));
+}
 
    
 static void

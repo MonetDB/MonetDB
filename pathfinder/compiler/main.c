@@ -521,6 +521,9 @@ main (int argc, char *argv[])
     /* fp of query file (if present) */
     FILE* pfin = stdin;
 
+#ifndef HAVE_GC
+    pf_alloc = pa_create();
+#endif
     /*
      * Determine basename(argv[0]) and dirname(argv[0]) on *copies*
      * of argv[0] as both functions may modify their arguments.
@@ -704,6 +707,10 @@ main (int argc, char *argv[])
 
     if ( pfin != stdin )
         fclose(pfin);
+
+#ifndef HAVE_GC
+    pa_destroy(pf_alloc);
+#endif
 
     MAIN_EXIT (EXIT_SUCCESS);
 

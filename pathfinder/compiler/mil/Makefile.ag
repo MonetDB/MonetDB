@@ -23,7 +23,7 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
-INCLUDES = ../include $(LIBGC_CFLAGS) $(PTHREAD_INCS) $(MONETDB_INCS)
+INCLUDES = ../include $(PTHREAD_INCS) $(MONETDB_INCS)
 
 # locally disable "-Werror"
 X_CFLAGS =
