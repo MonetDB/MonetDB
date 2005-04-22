@@ -61,7 +61,7 @@ sql_allocator *sa_create()
 	sa->size = 64;
 	sa->nr = 1;
 	sa->blks = NEW_ARRAY(char*,sa->size);
-	sa->blks[0] = NEW_ARRAY(char,1024*1024);
+	sa->blks[0] = NEW_ARRAY(char,SA_BLOCK);
 	sa->used = 0;
 	return sa;
 }
@@ -75,7 +75,7 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 		char *r = GDKmalloc(sz);
 		if (sa->nr >= sa->size) {
 			sa->size *=2;
-			RENEW_ARRAY(char*,sa->blks,sa->size);
+			sa->blks = RENEW_ARRAY(char*,sa->blks,sa->size);
 		}
 		sa->blks[sa->nr-1] = sa->blks[sa->nr-2];
 		sa->blks[sa->nr-2] = r;
@@ -86,7 +86,7 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 		char *r = GDKmalloc(SA_BLOCK);
 		if (sa->nr >= sa->size) {
 			sa->size *=2;
-			RENEW_ARRAY(char*,sa->blks,sa->size);
+			sa->blks = RENEW_ARRAY(char*,sa->blks,sa->size);
 		}
 		sa->blks[sa->nr] = r;
 		sa->nr ++;

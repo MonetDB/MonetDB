@@ -915,19 +915,22 @@ rel2bin(mvc *c, stmt *s)
 		os = stmt_semijoin(rel2bin(c, s->op1.stval), rel2bin(c, s->op2.stval));
 		/* try to push the semijoin through the (fetch) join */
 		if (os->op1.stval->type == st_join) {
-			j = s->op1.stval;
+			j = os->op1.stval;
 			/* equi join on same base table */
 			if (j->type == st_join && 
 		    		j->flag == cmp_equal &&
 		    		j->op1.stval->t == j->op2.stval->h ) {
 				stmt *l = stmt_dup(j->op1.stval);
 				stmt *r = stmt_dup(j->op2.stval);
-				l = rel2bin(c, stmt_semijoin(l, stmt_dup(s->op2.stval)));
+				l = rel2bin(c, s=stmt_semijoin(l, stmt_dup(os->op2.stval)));
+				stmt_destroy(s);
+				stmt_destroy(os);
 				os = stmt_join( l, r, cmp_equal);
 				os->optimized = 2; 
 				return os;
 			}
-		} else if (!mvc_debug_on(c, 4096) && os->nrcols) {
+		} 
+		if (!mvc_debug_on(c, 4096) && os->nrcols) {
 			ns = eliminate_semijoin(os);
 		} else {
 			ns = stmt_dup(os);
