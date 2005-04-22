@@ -51,39 +51,21 @@ sub CLONE {
 
 # The monetdb dsn structure is DBI:monetdb:host:port:dbname:language
 sub _parse_dsn {
-    my $class = shift;
-    my ($dsn, $args) = @_;
-    my($hash, $var, $val);
-    return if ! defined $dsn;
+    my ($class, $dsn) = @_;
 
-    while (length $dsn) {
-	if ($dsn =~ /([^:;]*)[:;](.*)/) {
-	    $val = $1;
-	    $dsn = $2;
-	} else {
-	    $val = $dsn;
-	    $dsn = '';
-	}
-	if ($val =~ /([^=]*)=(.*)/) {
-	    $var = $1;
-	    $val = $2;
-	    if ($var eq 'hostname' || $var eq 'host') {
-		$hash->{'host'} = $val;
-	    } elsif ($var eq 'db' || $var eq 'dbname') {
-		$hash->{'database'} = $val;
-	    } else {
-		$hash->{$var} = $val;
-	    }
-	} else {
-	    for $var (@$args) {
-		if (!defined($hash->{$var})) {
-		    $hash->{$var} = $val;
-		    last;
-		}
-	    }
-	}
+    my %dsn;
+    for ( split /;|:/, $dsn ||'') {
+        if ( my ( $k, $v ) = /(.*?)=(.*)/) {
+            $k = 'host'     if $k eq 'hostname';
+            $k = 'database' if $k eq 'dbname' || $k eq 'db';
+            $dsn{$k} = $v;
+            next;
+        }
+        for my $k ( qw(host port database language) ) {
+            $dsn{$k} = $_, last unless defined $dsn{$k};
+        }
     }
-    return $hash;
+    return %dsn;
 }
 
 
@@ -96,14 +78,13 @@ $DBD::monetdb::dr::imp_data_size = 0;
 sub connect {
     my ($drh, $dsn, $user, $password, $attr) = @_;
 
-    my $data_source_info = DBD::monetdb->_parse_dsn(
-        $dsn, ['host','port','database','language']);
+    my %dsn = DBD::monetdb->_parse_dsn($dsn);
 
-    my $lang  = $data_source_info->{language} || 'sql';
+    my $lang  = $dsn{language} || 'sql';
     die "!ERROR languages permitted are 'sql', 'mal', and 'mil'\n"
         unless ($lang eq 'mal' || $lang eq 'sql' || $lang eq 'mil');
-    my $host  = $data_source_info->{host} || 'localhost';
-    my $port  = $data_source_info->{port} || ( $lang eq 'sql' ? 45123 : 50000 );
+    my $host  = $dsn{host} || 'localhost';
+    my $port  = $dsn{port} || ( $lang eq 'sql' ? 45123 : 50000 );
     $user     ||= 'monetdb';
     $password ||= 'monetdb';
 
