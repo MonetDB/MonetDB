@@ -16,7 +16,7 @@
 # All Rights Reserved.
 
 INCLUDES = -I../common -I../gdk -I../monet \
-	   -I../modules/plain -I../modules/plain/stream $(PTHREAD_INCS)
+	   -I../modules/plain -I../modules/plain/stream
 
 SUBDIRS = clients examples
 

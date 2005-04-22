@@ -15,8 +15,7 @@
 # Portions created by CWI are Copyright (C) 1997-2005 CWI.
 # All Rights Reserved.
 
-INCLUDES = -I../../common -I../../gdk -I../../monet $(HWCOUNTERS_INCS) \
-	$(PTHREAD_INCS)
+INCLUDES = -I../../common -I../../gdk -I../../monet $(HWCOUNTERS_INCS) 
 MTSAFE
 
 CFLAGS = -O0
