@@ -242,13 +242,11 @@ Moreover, space is reserved for Delta management.
 BAT *
 BATnew(int ht, int tt, size_t cap)
 {
-	int i;
 	BAT *b;
 
 	ERRORcheck((ht < 0) || (ht > GDKatomcnt), "BATnew:ht error\n");
 	ERRORcheck((tt < 0) || (tt > GDKatomcnt), "BATnew:tt error\n");
 
-	i = ATOMsize(ht) + ATOMsize(tt);
 	cap = MAX(BATTINY, cap);
 
 	b = BATnewstorage(ht, tt, cap);
