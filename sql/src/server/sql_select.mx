@@ -3021,12 +3021,19 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 	if (sn->limit >= 0) {
 		int offset = (sn->offset >=0)?sn->offset:0;
 		if (order) {
-			order = stmt_limit(order, offset, sn->limit);
+			order = stmt_limit(order, offset, sn->limit, 1);
+			node *n;
+			list *l = create_stmt_list();
+
+			for (n = s->op1.lval->h; n; n = n->next)
+				list_append(l, stmt_semijoin(stmt_dup(n->data), stmt_dup(order)));
+			stmt_destroy(s);
+			s = stmt_list(l);
 		} else {
 			node *n;
 			list *l = create_stmt_list();
 			for (n = s->op1.lval->h; n; n = n->next)
-				list_append(l, stmt_limit(stmt_dup(n->data), offset, sn->limit));
+				list_append(l, stmt_limit(stmt_dup(n->data), offset, sn->limit, 0));
 			stmt_destroy(s);
 			s = stmt_list(l);
 		}

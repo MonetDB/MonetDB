@@ -226,7 +226,7 @@ extern stmt *stmt_mark(stmt *s, int id);
 extern stmt *stmt_reverse(stmt *s);
 extern stmt *stmt_mirror(stmt *s);
 
-extern stmt *stmt_limit(stmt *s, int offset, int limit);
+extern stmt *stmt_limit(stmt *s, int offset, int limit, int ordered);
 extern stmt *stmt_order(stmt *s, int direction);
 extern stmt *stmt_reorder(stmt *s, stmt *t, int direction);
 
@@ -878,7 +878,7 @@ stmt_mirror(stmt *s)
 }
 
 stmt *
-stmt_limit(stmt *s, int offset, int limit)
+stmt_limit(stmt *s, int offset, int limit, int direction)
 {
 	stmt *ns = stmt_create(st_limit);
 
@@ -889,6 +889,7 @@ stmt_limit(stmt *s, int offset, int limit)
 	ns->key = s->key;
 	ns->aggr = s->aggr;
 	ns->t = stmt_dup(s->t);
+	ns->flag = direction;
 	return ns;
 }
 

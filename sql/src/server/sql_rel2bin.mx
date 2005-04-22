@@ -47,6 +47,7 @@ tail_column(stmt *st)
 	case st_outerjoin:
 	case st_intersect:
 	case st_find:
+	case st_reorder:
 		return tail_column(st->op2.stval);
 
 	case st_reljoin:
@@ -60,6 +61,7 @@ tail_column(stmt *st)
 	case st_uselect:
 	case st_uselect2:
 	case st_semijoin:
+	case st_limit:
 
 	case st_diff:
 	case st_union:
@@ -73,6 +75,7 @@ tail_column(stmt *st)
 	case st_binop:
 	case st_Nop:
 	case st_aggr:
+	case st_order:
 
 	case st_alias:
 
@@ -131,6 +134,7 @@ head_column(stmt *st)
 	case st_uselect:
 	case st_uselect2:
 	case st_semijoin:
+	case st_limit:
 
 	case st_join:
 	case st_outerjoin:
@@ -149,6 +153,7 @@ head_column(stmt *st)
 	case st_binop:
 	case st_Nop:
 	case st_aggr:
+	case st_order:
 
 	case st_alias:
 
@@ -168,6 +173,7 @@ head_column(stmt *st)
 	case st_reverse:
 		return tail_column(st->op1.stval);
 
+	case st_reorder:
 	case st_derive:
 		return tail_column(st->op2.stval);
 
@@ -193,10 +199,6 @@ head_column(stmt *st)
 
 	case st_ubat:
 	case st_dbat:
-
-	case st_limit:
-	case st_order:
-	case st_reorder:
 
 	case st_ordered:
 	case st_output:
@@ -894,9 +896,10 @@ rel2bin(mvc *c, stmt *s)
 		    j->op1.stval->t == j->op2.stval->h ) {
 			stmt *l = stmt_dup(j->op1.stval);
 			stmt *r = stmt_dup(j->op2.stval);
-			l =stmt_limit(l, 
+			l = stmt_limit(l, 
 				      s->op2.stval->op1.aval->data.val.ival,
-				      s->op3.stval->op1.aval->data.val.ival);
+				      s->op3.stval->op1.aval->data.val.ival,
+				      s->flag);
 			s = stmt_join(l, r, cmp_equal); 
 			s->optimized = 2;
 			return s;
@@ -907,9 +910,24 @@ rel2bin(mvc *c, stmt *s)
 	case st_semijoin:{
 
 		stmt *os, *ns;
+		stmt *j = NULL;
 
 		os = stmt_semijoin(rel2bin(c, s->op1.stval), rel2bin(c, s->op2.stval));
-		if (!mvc_debug_on(c, 4096) && os->nrcols) {
+		/* try to push the semijoin through the (fetch) join */
+		if (os->op1.stval->type == st_join) {
+			j = s->op1.stval;
+			/* equi join on same base table */
+			if (j->type == st_join && 
+		    		j->flag == cmp_equal &&
+		    		j->op1.stval->t == j->op2.stval->h ) {
+				stmt *l = stmt_dup(j->op1.stval);
+				stmt *r = stmt_dup(j->op2.stval);
+				l = rel2bin(c, stmt_semijoin(l, stmt_dup(s->op2.stval)));
+				os = stmt_join( l, r, cmp_equal);
+				os->optimized = 2; 
+				return os;
+			}
+		} else if (!mvc_debug_on(c, 4096) && os->nrcols) {
 			ns = eliminate_semijoin(os);
 		} else {
 			ns = stmt_dup(os);
