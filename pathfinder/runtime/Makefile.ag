@@ -22,9 +22,8 @@
 #         Niels Nes <Niels.Nes@cwi.nl>
 #
 
-INCLUDES = $(MONETDB_INCS) $(LIBGC_CFLAGS) $(PTHREAD_INCS) \
-	   $(LIBXML2_CFLAGS) ../compiler/include
-PF_LIBS = $(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../compiler/include
+PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
 lib__pathfinder = {
 	DIR = libdir/MonetDB
@@ -50,9 +49,7 @@ lib__pathfinder = {
 		../compiler/libcompiler2 \
 		$(PF_LIBS) $(MONETDB_LIBS) \
 		-lbat -lmonet -lstream \
-		-l_streams -l_builtin -l_ascii_io -l_algebra \
-		$(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) \
-		$(SOCKET_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+		-l_streams -l_builtin -l_ascii_io -l_algebra 
 }
 
 lib__pf_support = {
@@ -60,10 +57,9 @@ lib__pf_support = {
 	SOURCES = \
 		pf_support.mx
 
-	LIBS = $(MONETDB_LIBS) -lbat -lmonet -lstream \
-		-l_streams -l_builtin -l_ascii_io -l_algebra \
-		$(LIBXML2_LDADD) $(LIBGC_LIBS) $(LIBXML2_LIBS) \
-		$(SOCKET_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+	LIBS = $(PF_LIBS) $(MONETDB_LIBS) \
+		-lbat -lmonet -lstream \
+		-l_streams -l_builtin -l_ascii_io -l_algebra 
 }
 
 scripts_mil = {
