@@ -1825,7 +1825,7 @@ BATsetaccess(BAT *b, int mode)
 				return NULL;
 			}
 			BATfree(b);
-			BBPuncacheit(bid, FALSE);
+			BBPuncacheit(bid);
 			b = BATload_intern(bid);
 		}
 	}

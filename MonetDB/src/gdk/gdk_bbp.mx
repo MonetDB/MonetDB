@@ -116,7 +116,7 @@ gdk_export int BBPdir(void);
 gdk_export void BBPclear(bat bid);
 gdk_export bat BBPinsert(BAT *b);
 gdk_export void BBPcacheit(BAT *b);
-gdk_export void BBPuncacheit(bat bid, int unloaddesc);
+gdk_export void BBPuncacheit(bat bid);
 gdk_export int BBPreclaim(BAT *b);
 gdk_export int BBPsave(BAT *b);
 gdk_export int BBPrename(bat bid, str nme);
@@ -175,6 +175,7 @@ bat BBP_mask = 0;		/* number of buckets = & mask */
 
 static void BBPspin(bat bid, str debug, int event);
 static int BBPfree(BAT *b, str calledFrom );
+static void BBPuncacheit_(bat bid, int unloaddesc);
 
 
 void
@@ -668,7 +669,7 @@ BBPexit(void)
 				else
 					BATfree(b);
 			}
-			BBPuncacheit(i, TRUE);
+			BBPuncacheit_(i, TRUE);
 			GDKfree(BBP_logical(i));
 			BBP_logical(i) = NULL;
 		}
@@ -996,8 +997,15 @@ BBPcacheit(BAT *b)
 @%BBPuncacheit@ changes the BBP status to swapped out.  Currently only 
 used in BBPfree (bat swapped out) and BBPclear (bat destroyed forever).
 @c
+
 void
-BBPuncacheit(bat i, int unloaddesc)
+BBPuncacheit(bat i)
+{
+	BBPuncacheit_(i, FALSE);
+}
+
+static void
+BBPuncacheit_(bat i, int unloaddesc)
 {
 	if (i < 0)
 		i = -i;
@@ -1034,7 +1042,7 @@ BBPclear(bat i)
 		BATDEBUG {
 			THRprintf(GDKerr, "clear %d (%s)\n", (int) i, BBP_logical(i));
 		}
-		BBPuncacheit(i, TRUE);
+		BBPuncacheit_(i, TRUE);
 		if (BBPnamecheck(BBP_logical(i)) == 0) {
 			BBP_delete(i);
 		}
@@ -1638,7 +1646,7 @@ BBPfree(BAT *b, str calledFrom )
 	} else {
 		VIEWdestroy(b);
 	}
-	BBPuncacheit(bid, destroy );
+	BBPuncacheit_(bid, destroy );
 	BBP_unload_off(bid, calledFrom);
 
 	if (destroy)
@@ -2178,7 +2186,7 @@ BBPsync(int commit)
 					/* BATs that became persistent and have heaps that should in the 
 					   future be STORE_PRIV (but are not yet), are unloaded */
 					BATfree(b);
-					BBPuncacheit(i, TRUE);
+					BBPuncacheit_(i, TRUE);
 				}
 			}
 		}
@@ -2605,7 +2613,7 @@ BBPreplace(BAT *b, BAT *bn)
 		} else {
 			/* SUCCEEDED: free b, remove bn hash */
 			BATfree(b);
-			BBPuncacheit(bid, TRUE);
+			BBPuncacheit_(bid, TRUE);
 			BBPcacheit(bn);
 			if (hugebn) {
 				/* although not persistent: has heaps on disk. must delete/releoad */
