@@ -23,6 +23,10 @@
 Java geared stream package that provides a block wise read and write
 behaviour.
 
+@mal
+atom blockstream:ptr;
+
+
 @h
 #ifndef BLOCKSTREAM_H
 #define BLOCKSTREAM_H
@@ -39,7 +43,7 @@ typedef struct _blockinputstream {
 
 /** Creates a new BlockInputStream. */
 extern char*
-BISnew(BlockInputStream* ret, int fd, int bufsize);
+BISnew(BlockInputStream** ret, int fd, int bufsize);
 /** Returns the number of bytes that can be read from this input stream
  * without blocking. */
 extern char*
@@ -61,12 +65,11 @@ typedef struct _blockoutputstream {
 	unsigned char* buf;	/* internal write buffer */
 	int size;			/* size of the buffer */
 	int pos;			/* current buffer position */
-	int len;			/* the current amount of bytes that is in the buffer */
 } BlockOutputStream;
 
 /** Creates a new BlockOutputStream. */
 extern char*
-BOSnew(BlockOutputStream* ret, int fd, int bufsize);
+BOSnew(BlockOutputStream** ret, int fd, int bufsize);
 /** Flushes this block output stream. */
 extern char*
 BOSflush(BlockOutputStream* o);
@@ -99,7 +102,7 @@ char* BOSwriteBytes(int fd, unsigned char* b, int len);
  * If the bufsize is zero or less than zero, the default BUFSIZ is used.
  */
 extern char*
-BISnew(BlockInputStream* ret, int fd, int bufsize) {
+BISnew(BlockInputStream** ret, int fd, int bufsize) {
 	BlockInputStream* this;
 	
 	if (ret == NULL)
@@ -111,8 +114,9 @@ BISnew(BlockInputStream* ret, int fd, int bufsize) {
 	memset(this, 0, sizeof(BlockInputStream));
 	this->size = bufsize <= 0 ? BUFSIZ : bufsize;
 	this->buf = malloc(sizeof(char) * this->size);
+	this->fd = fd;
 
-	*ret = *this;
+	*ret = this;
 	return(MAL_SUCCEED);
 }
 
@@ -234,8 +238,12 @@ BISdelete(BlockInputStream* this) {
 char* BISreadBytes(int fd, unsigned char* b, int len) {
 	int rdlen;
 	
-	if ((rdlen = recv(fd, b, len, 0)) != len)
-		throwIOf("blockstream.readBytes", "Insufficient number of bytes available", rdlen);
+	rdlen = recv(fd, b, len, 0);
+	if (rdlen == EOF) {
+		throwIO("blockstream.readBytes", "End of stream reached");
+	} else {
+		throwIOf("blockstream.readBytes", "Insufficient number of bytes available (%d)", rdlen);
+	}
 
 	return(MAL_SUCCEED);
 }
@@ -247,7 +255,7 @@ char* BISreadBytes(int fd, unsigned char* b, int len) {
  * If the bufsize is zero or less than zero, the default BUFSIZ is used.
  */
 extern char*
-BOSnew(BlockOutputStream* ret, int fd, int bufsize) {
+BOSnew(BlockOutputStream** ret, int fd, int bufsize) {
 	BlockOutputStream* this;
 	
 	if (ret == NULL)
@@ -259,12 +267,12 @@ BOSnew(BlockOutputStream* ret, int fd, int bufsize) {
 	memset(this, 0, sizeof(BlockOutputStream));
 	this->size = bufsize <= 0 ? BUFSIZ : bufsize;
 	this->buf = malloc(sizeof(char) * this->size);
+	this->fd = fd;
 
-	*ret = *this;
+	*ret = this;
 	return(MAL_SUCCEED);
 }
 
-const char BS_ZERO[4]	= {'0', '0', '0', '0'};
 /**
  * Flushes this buffered output stream. This forces any buffered output
  * bytes to be written out to the underlying output stream.  The flush
@@ -274,9 +282,10 @@ const char BS_ZERO[4]	= {'0', '0', '0', '0'};
 extern char*
 BOSflush(BlockOutputStream* this) {
 	char* tmp;
+	int zero = 0;
 
 	rethrow("blockstream.flush", tmp, BOSflushBuffer(this));
-	if (write(this->fd, BS_ZERO, 4) < 4)
+	if (write(this->fd, (unsigned char*)&zero, 4) < 4)
 		throwIO("blockstream.flush", "Error while writing to the stream");
 
 	return(MAL_SUCCEED);
@@ -297,6 +306,11 @@ extern char*
 BOSwrite(BlockOutputStream* this, unsigned char* b, int offset, int len) {
 	char* tmp;
 
+	if (len < 0)
+		throwIllArgf("blockstream.write", "len should be a positive value (%d)", len);
+	if (offset < 0)
+		throwIllArgf("blockstream.write", "offset should be a positive value (%d)", offset);
+
 	/* If the length of the given block is larger than our buffer, then
 	 * we send it directly over the stream after flushing whatever is in
 	 * our buffer now.  Otherwise we might need one flush, but we will
@@ -308,7 +322,7 @@ BOSwrite(BlockOutputStream* this, unsigned char* b, int offset, int len) {
 		/* Since the buffer is only flushed if a byte has to be stored
 		 * that does not fit in the buffer anymore, we copy data into
 		 * the buffer as long as it fits. */
-		if (len <= this->len - this->pos) {
+		if (len <= this->size - this->pos) {
 			memcpy(this->buf + this->pos, b + offset, len);
 			this->pos += len;
 		} else {
