@@ -38,8 +38,8 @@ and we have to de-reference them before entering the gdk library.
 This calls for knowledge on the underlying BAT types`s
 @{
 @= derefStr
-{int _tpe= ATOMstorage(@1->@2type);
- if( _tpe == TYPE_str || _tpe > TYPE_str )
+{int _tpe;
+ if( @1->@2type >= TYPE_str  && (_tpe= ATOMstorage(@1->@2type)) >= TYPE_str)
  { if(@3== 0 || *(str*)@3==0) @3= str_nil;
    else @3 = *(str *)@3; 
 }}
