@@ -125,7 +125,7 @@ mal_export str  stackException(str prev, str fcn, char *format, ...);
 #define throw(TPE, FCN, MSG) \
 	return(throwException(TPE, FCN, "%d %s", __LINE__, MSG));
 #define throwf(TPE, FCN, FMT, ARG) \
-	return(throwException(TPE, FCN, FMT, ARG));
+	return(throwException(TPE, FCN, "%d " FMT, __LINE__, ARG));
 #define throwf2(TPE, FCN, FMT, ARG1, ARG2) \
 	return(throwException(TPE, FCN, FMT, ARG1, ARG2));
 #define throwf3(TPE, FCN, FMT, ARG1, ARG2, ARG3) \
@@ -224,7 +224,7 @@ str stackException(str prev, str fcn, char* format, ...) {
 	/* don't do anything if the previous message was no Exception */
 	if (prev == MAL_SUCCEED) return(prev);
 
-	len = sprintf(message, "%s\nat %s:", prev, fcn);
+	len = sprintf(message, "%s\n    at %s:", prev, fcn);
 	va_start(ap, format);
 	vsnprintf(message + len, GDKMAXERRLEN - (len + 2), format, ap);
 	va_end(ap);
