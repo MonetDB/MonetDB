@@ -1918,10 +1918,15 @@ if test "x$have_pear" != xno; then
 	AC_MSG_CHECKING(for $PEAR's php_dir)
 	php_peardir="`$PEAR config-get php_dir | grep php_dir`"
 	if test -z "$php_peardir"; then
+		dnl  newer pear version simply give the plain php_dir,
+		dnl  i.e., without "php_dir=" ...
+		php_peardir="`$PEAR config-get php_dir | head -n1`"
+	fi
+	if test -z "$php_peardir"; then
 		have_pear=no
 		AC_MSG_RESULT(not found)
 	else
-		PHP_PEARDIR="`echo "$php_peardir" | sed -e "s+php_dir *= *$php_prefix/++g"`"
+		PHP_PEARDIR="`echo "$php_peardir" | sed -e "s+\(php_dir *= *\|\)$php_prefix/++g"`"
 		have_pear=yes
 		AC_MSG_RESULT(\$prefix/$PHP_PEARDIR)
 	fi
