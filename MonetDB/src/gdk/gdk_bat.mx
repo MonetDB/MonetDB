@@ -1897,11 +1897,11 @@ BATmode(BAT *b, int mode)
 		}
 		gdk_set_lock(GDKswapLock[bid & BBPLOCKMASK], "BATmode");
 		if (mode == PERSISTENT) {
-			if (!(BBPstatus(bid) & BBPDELETED))
+			if (!(BBP_status(bid) & BBPDELETED))
 				BBP_status_on(bid, BBPNEW, "BATmode");
 			BBP_status_off(bid, BBPDELETED, "BATmode");
 		} else if (b->batPersistence == PERSISTENT) {
-			if (!(BBPstatus(bid) & BBPNEW))
+			if (!(BBP_status(bid) & BBPNEW))
 				BBP_status_on(bid, BBPDELETED, "BATmode");
 			BBP_status_off(bid, BBPPERSISTENT, "BATmode");
 		}
