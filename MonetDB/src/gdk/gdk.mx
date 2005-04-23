@@ -2252,7 +2252,6 @@ gdk_export int GDKerrorCount(void);
 #include "gdk_bat.h"
 
 gdk_export MT_Lock GDKthreadLock;
-gdk_export MT_Lock GDKstatusLock[BBPLOCKMASK + 1];
 gdk_export MT_Lock GDKswapLock[BBPLOCKMASK + 1];
 gdk_export MT_Lock GDKhashLock[BBPLOCKMASK + 1];
 gdk_export MT_Lock GDKunloadLock;

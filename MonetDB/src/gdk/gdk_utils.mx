@@ -35,8 +35,6 @@ gdk_export void GDKprotect();
 
 gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);
-gdk_export int GDKstamp(void);
-gdk_export void GDKsetstamp(int newstamp);
 
 gdk_export int gdk_alloc_map;
 gdk_export BAT *GDKenv;
@@ -1361,7 +1359,6 @@ GDKprotect()
 
 		GDKthreadLock = MT_create_lock();
 		for (i = 0; i <= BBPLOCKMASK; i++) {
-			GDKstatusLock[i] = MT_create_lock();
 			GDKswapLock[i] = MT_create_lock();
 			GDKhashLock[i] = MT_create_lock();
 		}
@@ -1510,7 +1507,6 @@ int GDKembedded = 0;
 int GDKprotected = 0;
 
 MT_Lock GDKthreadLock = NULL;
-MT_Lock GDKstatusLock[BBPLOCKMASK + 1];
 MT_Lock GDKswapLock[BBPLOCKMASK + 1];
 MT_Lock GDKhashLock[BBPLOCKMASK + 1];
 MT_Lock GDKcacheLock, GDKtrimLock;
@@ -1905,19 +1901,6 @@ GDKms(void)
 	return (tb.time - GDKtime_startsec) * 1000 + tb.millitm;
 #endif
 #endif
-}
-
-static int stamp = 0;
-int
-GDKstamp(void)
-{
-	return ++stamp;
-}
-
-void
-GDKsetstamp(int newstamp)
-{
-	stamp = newstamp;
 }
 
 @}
