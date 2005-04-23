@@ -1022,7 +1022,7 @@ we can skip checking, as we can assume the reverse column will get checked.
  *
 	if (protect) {
 		PROPDEBUG if (BATgetaccess(b) != BAT_READ)
-		GDKwarning("monet_checkbat: setting BAT %s BAT_READ.\n",b->batId);
+		GDKwarning("monet_checkbat: setting BAT %s BAT_READ.\n", BATgetId(b));
 		BATsetaccess(b, BAT_READ);
 	}
 */
@@ -1030,6 +1030,6 @@ we can skip checking, as we can assume the reverse column will get checked.
 	BATDEBUG {
 		_t2 = GDKms() - _t1;
 		_t3 += _t2;
-		THRprintf(GDKerr, "check %s = %d (tot %d)\n", b->batId, _t2, _t3);
+		THRprintf(GDKerr, "check %s = %d (tot %d)\n", BATgetId(b), _t2, _t3);
 	}
 }

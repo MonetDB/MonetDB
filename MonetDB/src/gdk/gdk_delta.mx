@@ -48,7 +48,7 @@ This optimizes processing on such BATs (DDBENCH).
 	(P1)->batElmshift = BATelmshift((P1));				      \
 	DELTAprintf(							      \
 	 	"#DELTAinit %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", \
-		(P1)->batId,				      \
+		BATgetId(P1),				      \
 		(P1)->batBuns->free,			      \
 		PTRFMTCAST (P1)->batInserted,		      \
 		PTRFMTCAST (P1)->batDeleted,		      \
@@ -67,7 +67,7 @@ and convert them back into pointers upon reload.
 	(P1)->batFirst = (BUN) BUNindex((P1), (P1)->batFirst);		\
 	DELTAprintf(							\
 	 	"#DELTAsave %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", \
-		(P1)->batId,						\
+		BATgetId(P1),						\
 		(P1)->batBuns->free,					\
 		PTRFMTCAST (P1)->batInserted,				\
 		PTRFMTCAST (P1)->batDeleted,				\
@@ -78,7 +78,7 @@ and convert them back into pointers upon reload.
 #define DELTAload(P1)	do {						\
 	DELTAprintf(							\
 		"#DELTAload %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", \
-		(P1)->batId,						\
+		BATgetId(P1),						\
 		(P1)->batBuns->free,					\
 		PTRFMTCAST (P1)->batInserted,				\
 		PTRFMTCAST (P1)->batDeleted,				\
@@ -126,7 +126,7 @@ BAT *
 BATcommit(BAT *b)
 {
 	BATcheck(b, "BATcommit");
-	DELTAprintf("#BATcommit1 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", b->batId, b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batFirst, PTRFMTCAST b->batBuns->base);
+	DELTAprintf("#BATcommit1 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", BATgetId(b), b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batFirst, PTRFMTCAST b->batBuns->base);
 	ALIGNcommit(b);
 	if (b->batDeleted < b->batFirst && BBP_cache(b->batCacheid)) {
 		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
@@ -168,7 +168,7 @@ BATcommit(BAT *b)
 	} else {
 		b->batInserted = (BUN) (b->batBuns->free / BUNsize(b));
 	}
-	DELTAprintf("#BATcommit2 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", b->batId, b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batFirst, PTRFMTCAST b->batBuns->base);
+	DELTAprintf("#BATcommit2 %s free " SZFMT " ins " PTRFMT " del " PTRFMT " first " PTRFMT " base " PTRFMT "\n", BATgetId(b), b->batBuns->free, PTRFMTCAST b->batInserted, PTRFMTCAST b->batDeleted, PTRFMTCAST b->batFirst, PTRFMTCAST b->batBuns->base);
 	return b;
 }
 
@@ -204,7 +204,7 @@ BATundo(BAT *b)
 	BUN p, bunlast, bunfirst;
 
 	BATcheck(b, "BATundo");
-	DELTAprintf("#BATundo %s \n", b->batId);
+	DELTAprintf("#BATundo %s \n", BATgetId(b));
 	ALIGNundo(b);
 	if (b->batDirtyflushed) {
 		b->batDirtydesc = b->batDirtybuns = 1;

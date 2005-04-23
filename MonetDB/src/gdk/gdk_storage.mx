@@ -668,19 +668,19 @@ BATdelete(BAT *b)
 		IODEBUG THRprintf(GDKerr, "BATdelete %s\n", o);
 
 		if (GDKunlink(BATDIR, o, "desc")) {
-			GDKwarning("BATdelete(%s): descriptor\n", b->batId);
+			GDKwarning("BATdelete(%s): descriptor\n", BATgetId(b));
 		}
 	}
 	if (b->batCopiedtodisk || (b->batBuns->storage & STORE_MMAP)) {
 		if (HEAPdelete(b->batBuns, o, "buns") && b->batCopiedtodisk)
-			GDKwarning("BATdelete(%s): bun heap\n", b->batId);
+			GDKwarning("BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->batBuns->base) {
 		HEAPfree(b->batBuns);
 	}
 	if (b->hheap) {
 		if (b->batCopiedtodisk || (b->hheap->storage & STORE_MMAP)) {
 			if (HEAPdelete(b->hheap, o, "hheap") && b->batCopiedtodisk)
-				GDKwarning("BATdelete(%s): head heap\n", b->batId);
+				GDKwarning("BATdelete(%s): head heap\n", BATgetId(b));
 		} else {
 			HEAPfree(b->hheap);
 		}
@@ -688,7 +688,7 @@ BATdelete(BAT *b)
 	if (b->theap) {
 		if (b->batCopiedtodisk || (b->theap->storage & STORE_MMAP)) {
 			if (HEAPdelete(b->theap, o, "theap") && b->batCopiedtodisk)
-				GDKwarning("BATdelete(%s): tail heap\n", b->batId);
+				GDKwarning("BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
 			HEAPfree(b->theap);
 		}
@@ -942,7 +942,7 @@ batname(BAT *b)
 {
 	str sn = BBP_logical(b->batCacheid);
 	str sr = BBP_logical(-b->batCacheid);
-	str id = b->batId;
+	str id = BATgetId(b);
 
 	if (sn && strncmp(id, sn, IDLENGTH) == 0) {
 		return sn;

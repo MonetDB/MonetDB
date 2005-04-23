@@ -1243,7 +1243,7 @@ CMDinfo(BAT **retval, BAT *b)
 	}
 
 	BUNins(bn, "version", local_itoa(b->GDKversion));
-	BUNins(bn, "batId", b->batId);
+	BUNins(bn, "batId", BATgetId(b));
 	BUNins(bn, "batCacheid", local_itoa(b->batCacheid));
 	BUNins(bn, "batParentid", local_itoa(b->batParentid));
 	BUNins(bn, "batSharecnt", local_itoa(b->batSharecnt));

@@ -922,6 +922,8 @@ typedef struct {
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
 
+#define BATgetId(P)	(P)->batId
+#define BATsetId(P,S)	(P)->batId=S
 typedef struct {
 	/* static bat properties */
 	sht GDKversion;		/* FIRST! */
@@ -2630,7 +2632,7 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  */
 #define	VIEWchk(x,y,z)							\
 	if (((x)->batRestricted & (z)) || (x)->batSharecnt > 0) {	\
-		GDKerror("%s: access denied to %s, aborting.\n", y, x->batId); \
+		GDKerror("%s: access denied to %s, aborting.\n", y, BATgetId(x)); \
 		return 0;						\
 	}
 

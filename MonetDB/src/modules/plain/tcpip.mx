@@ -1564,7 +1564,7 @@ don't copy them to the buffer.
 int
 TCPexport_default(int *conn_id, BAT *b)
 {
-	return TCPexport(conn_id, b, TYPE_bat, b->batId);
+	return TCPexport(conn_id, b, TYPE_bat, BATgetId(b));
 }
 
 @+ import(int, str) : any

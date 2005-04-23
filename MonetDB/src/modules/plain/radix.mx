@@ -1860,15 +1860,15 @@ radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
 	    (limits->htype != TYPE_lng || limits->ttype != TYPE_lng)
 #endif
 	    ) {
-		GDKerror("radix_cluster: limits %s is not of right type.\n", limits->batId);
+		GDKerror("radix_cluster: limits %s is not of right type.\n", BATgetId(limits));
 		limits = NULL;
 	}
 	if (limits && (BATcount(limits) == 0 && limits->batRestricted == BAT_READ)) {
-		GDKerror("radix_cluster: limits %s is not empty and appendable.\n", limits->batId);
+		GDKerror("radix_cluster: limits %s is not empty and appendable.\n", BATgetId(limits));
 		limits = NULL;
 	}
 
-	ALGODEBUG THRprintf(GDKout, "radix_cluster(%s(%d,%d), %s,%g, %d", b->batId, (int) b->batCacheid, BATtordered(b), nme, *perc, *nbits);
+	ALGODEBUG THRprintf(GDKout, "radix_cluster(%s(%d,%d), %s,%g, %d", BATgetId(b), (int) b->batCacheid, BATtordered(b), nme, *perc, *nbits);
 
 	radix[0] = *nbits;
 	va_start(ap, nbits);
@@ -2007,7 +2007,7 @@ radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
 	if (limitid) {
 		BBPunfix(limitid);
 	}
-	ALGODEBUG THRprintf(GDKout, "%s(%d,%d) = %d;\n", bn->batId, (int) bn->batCacheid, BATtordered(bn), res);
+	ALGODEBUG THRprintf(GDKout, "%s(%d,%d) = %d;\n", BATgetId(bn), (int) bn->batCacheid, BATtordered(bn), res);
 
 	if (res < 0) {
 		BBPreclaim(bn);
@@ -2278,14 +2278,18 @@ hash_join(Hash *h, BAT *bn, BAT *l, BUN llo, BUN lhi, BAT *r, BUN rlo, BUN rhi, 
 int
 phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
 {
-	ALGODEBUG THRprintf(GDKout, "phash_join(%s(%d,%d),%s(%d,%d),%d,%d,%d) -> ", l->batId, (int) l->batCacheid, BATtordered(l), r->batId, (int) r->batCacheid, BAThordered(r), *radix, *hitrate, *cutoff);
+	ALGODEBUG THRprintf(GDKout, "phash_join(%s(%d,%d),%s(%d,%d),%d,%d,%d) -> ",
+		BATgetId(l), (int) l->batCacheid, BATtordered(l), 
+		BATgetId(r), (int) r->batCacheid, BAThordered(r), *radix, *hitrate, *cutoff);
 
 	if (*radix != (BATtordered(l) >> 1)) {
-		GDKerror("phash_join: tail of %s is radix clustered on %d bits.\n", l->batId, BATtordered(l) >> 1);
+		GDKerror("phash_join: tail of %s is radix clustered on %d bits.\n", 
+			BATgetId(l), BATtordered(l) >> 1);
 		return GDK_FAIL;
 	}
 	if (*radix != (BAThordered(r) >> 1)) {
-		GDKerror("phash_join: head of %s is radix clustered on %d bits.\n", r->batId, BAThordered(r) >> 1);
+		GDKerror("phash_join: head of %s is radix clustered on %d bits.\n", 
+			BATgetId(r), BAThordered(r) >> 1);
 		return GDK_FAIL;
 	}
 	{
@@ -2340,7 +2344,7 @@ phash_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
 		}
 	      xit:
 		GDKfree(h.hash);
-		ALGODEBUG THRprintf(GDKout, "%s(%d);\n", bn->batId, (int) bn->batCacheid);
+		ALGODEBUG THRprintf(GDKout, "%s(%d);\n", BATgetId(bn), (int) bn->batCacheid);
 
 		*res = bn;
 		return bn ? GDK_SUCCEED : GDK_FAIL;
@@ -2409,11 +2413,13 @@ radix_join(BAT **res, BAT *l, BAT *r, int *radix, int *hitrate)
 	BAT *bn;
 
 	if (*radix != (BATtordered(l) >> 1)) {
-		GDKerror("radix_join: tail of %s is radix clustered on %d bits.\n", l->batId, BATtordered(l) >> 1);
+		GDKerror("radix_join: tail of %s is radix clustered on %d bits.\n", 
+			BATgetId(l), BATtordered(l) >> 1);
 		return GDK_FAIL;
 	}
 	if (*radix != (BAThordered(r) >> 1)) {
-		GDKerror("radix_join: head of %s is radix clustered on %d bits.\n", r->batId, BAThordered(r) >> 1);
+		GDKerror("radix_join: head of %s is radix clustered on %d bits.\n", 
+			BATgetId(r), BAThordered(r) >> 1);
 		return GDK_FAIL;
 	}
 
@@ -2586,12 +2592,13 @@ radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 	cnk_t *cnk;
 
 	if ((cnts->talign & RADIX_COUNT_MASK) != (b->halign & RADIX_COUNT_MASK)) {
-		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", cnts->batId, b->batId);
+		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", 
+			BATgetId(cnts), BATgetId(b));
 		return GDK_FAIL;
 	}
 /* TODO: propagation of tdense even when not sorted
     if (!b->hdense) {
-	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", b->batId);
+	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", BATgetId(b));
 	return GDK_FAIL;
     }
 */
@@ -2834,17 +2841,19 @@ radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	cnk2_t *cnk;
 
 	if ((cnts->talign & RADIX_COUNT_MASK) != (b->talign & RADIX_COUNT_MASK)) {
-		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", cnts->batId, b->batId);
+		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", 
+			BATgetId(cnts),  BATgetId(b));
 		return GDK_FAIL;
 	}
 /* TODO: propagation of tdense even when not sorted
     if (!b->hdense) {
-	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", b->batId);
+	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", BATgetId(b));
 	return GDK_FAIL;
     }
 */
 	if (ALIGNsynced(b, a) == 0 || !(b->hkey || a->hkey) || b->ttype == TYPE_void) {
-		GDKerror("radix_decluster: %s and %s are not synced and unique\n", b->batId, a->batId);
+		GDKerror("radix_decluster: %s and %s are not synced and unique\n", 
+			BATgetId(b),  BATgetId(a));
 		return GDK_FAIL;
 	}
 	/* init cluster offset arrays (byte distances) */
@@ -2966,17 +2975,19 @@ radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	cnk2_t *cnk;
 
 	if ((cnts->talign & RADIX_COUNT_MASK) != (b->talign & RADIX_COUNT_MASK)) {
-		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", cnts->batId, b->batId);
+		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", 
+		BATgetId(cnts),  BATgetId(b));
 		return GDK_FAIL;
 	}
 /* TODO: propagation of tdense even when not sorted
     if (!b->hdense) {
-	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", b->batId);
+	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", BATgetId(b));
 	return GDK_FAIL;
     }
 */
 	if (ALIGNsynced(b, a) == 0 || !(b->hkey || a->hkey) || b->ttype == TYPE_void) {
-		GDKerror("radix_decluster: %s and %s are not synced and unique\n", b->batId, a->batId);
+		GDKerror("radix_decluster: %s and %s are not synced and unique\n", 
+			BATgetId(b),  BATgetId(a));
 		return GDK_FAIL;
 	}
 	/* init cluster offset arrays (byte distances) */
@@ -3097,17 +3108,19 @@ radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	cnk4_t *cnk;
 
 	if ((cnts->talign & RADIX_COUNT_MASK) != (b->talign & RADIX_COUNT_MASK)) {
-		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", cnts->batId, b->batId);
+		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", 
+			BATgetId(cnts), BATgetId(b));
 		return GDK_FAIL;
 	}
 /* TODO: propagation of tdense even when not sorted
     if (!b->hdense) {
-	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", b->batId);
+	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", BATgetId(b));
 	return GDK_FAIL;
     }
 */
 	if (ALIGNsynced(b, a) == 0 || !(b->hkey || a->hkey) || b->ttype == TYPE_void) {
-		GDKerror("radix_decluster: %s and %s are not synced and unique\n", b->batId, a->batId);
+		GDKerror("radix_decluster: %s and %s are not synced and unique\n", 
+			BATgetId(b),  BATgetId(a));
 		return GDK_FAIL;
 	}
 	/* init cluster offset arrays (byte distances) */

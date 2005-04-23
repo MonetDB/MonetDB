@@ -407,7 +407,7 @@ enum_load(int *retval, BAT *h)
 	MT_set_lock(enum_lock, "enum_load");
 	for (i = 0; i < MAX_ENUM; i++) {
 		if (enum_map[i] == 0) {
-			char *name = h->batId;
+			char *name = BATgetId(h);
 
 			if (BATcount(h) < 256) {
 				ATOMproperty(name, "storage", (GDKfcn) (ssize_t) TYPE_chr);
