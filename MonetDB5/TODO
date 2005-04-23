@@ -1,16 +1,9 @@
-- look at exception handling. Make the call trace more explicit in terms
- of location.
 - add intelligent help (partial matching signatures)
-- module throw section
-- exception utils bijwerken
-- further limit the MAL language framework to a priory known mod.fcn
-  instructions. Inheritance (and overloading) is moved to the optimizer layer.
-  Expected gains, faster parsing, much less mallocs.
+- module should make exceptions thrown explicit
 
 - DD: factor out the error handling to prepare for internationalization
 - DD: strong need for partitioned tables.
 - DD: mapping BATs to external sources
-- GDK uses too many BATcounts while they are stable 
 - we limit BAT* operation as much as possible to :void headed versions
 - a generic map() operation is added to the interpreter
 - all signatures should make in/out role of parameters explicit to
@@ -97,6 +90,15 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20050418 look at exception handling. Make the call trace more explicit in terms
+ of location.
+20050416 reduced the cost of parsing
+20050416 further limit the MAL language framework to a priory known mod.fcn
+  instructions. Inheritance (and overloading) is moved to the optimizer layer.
+  Expected gains, faster parsing, much less mallocs.
+20050414 exception utils bijwerken
+20050414 GDK uses too many BATcounts while they are stable , removed
+a few from the code base.
 20050302 re-enact calling the debugger from a script
 20050228 The garbage control is too complicated and consumes too much power.
   before/after calls are only focussed on the first destination argument.
