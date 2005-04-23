@@ -378,7 +378,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg)
 	pthread_attr_setstacksize(&attr, 4 * THREAD_STACK_SIZE);
 	ret = pthread_create(&newt, &attr, (void *(*)(void *)) f, arg);
 	if (ret == 0)
-		*t = (MT_Id) (((int) newt) + 1);	/* use pthread-id + 1 */
+		*t = (MT_Id) (((size_t) newt) + 1);	/* use pthread-id + 1 */
 #ifdef HAVE_PTHREAD_SIGMASK
 	MT_thread_sigmask(&orig_mask, NULL);
 #endif
