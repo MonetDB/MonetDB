@@ -196,7 +196,7 @@ stream_export buffer *stream_get_buffer(stream *s);
    All full blocks together with a single not full block form a major
    block. Major blocks can be used to synchronize the communication.
    Example server sends some reply, ie a major block consisting of
-   verious minor blocks. The header of the major block can contain
+   various minor blocks. The header of the major block can contain
    special info which the client can interpret.
 
    Each read attempt tries to return the number of bytes. Once a lower number
