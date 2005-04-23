@@ -140,6 +140,7 @@ BISavailable(BlockInputStream* this, int* ret) {
  */
 extern char*
 BISclose(BlockInputStream* this) {
+	shutdown(this->fd, SHUT_RDWR);
 	close(this->fd);
 	return(MAL_SUCCEED);
 }
@@ -148,11 +149,11 @@ BISclose(BlockInputStream* this) {
  * Reads bytes from this byte-input stream into the specified byte
  * array, starting at the given offset.  This function will read by
  * means of blocks as received by reading the leading integer.  Upon a
- * zero-block, this function will return 0 to indicate this explicit
- * flush.  Where possible, this function avoids copying data to its
- * internal buffer first, by copying directly from the stream into the
- * given block.  This function will block when there is no data
- * available on the stream.
+ * zero-block, this function will return 0 in the given ret value to
+ * indicate this explicit flush.  Where possible, this function avoids
+ * copying data to its internal buffer first, by copying directly from
+ * the stream into the given block.  This function will block when there
+ * is no data available on the stream.
  */
 extern char*
 BISread(BlockInputStream* this, int* ret, unsigned char* b, int offset, int len) {
@@ -207,6 +208,8 @@ BISread(BlockInputStream* this, int* ret, unsigned char* b, int offset, int len)
 			this->len = this->len > this->size ? this->size : this->len;
 			rethrow("blockstream.read", tmp, BISreadBytes(this->fd, this->buf, this->len));
 			memcpy(b + offset, this->buf, len - sublen);
+			this->pos = len - sublen;
+			this->blockpos += len - sublen;
 		}
 	}
 
@@ -238,10 +241,19 @@ BISdelete(BlockInputStream* this) {
 char* BISreadBytes(int fd, unsigned char* b, int len) {
 	int rdlen;
 	
-	rdlen = recv(fd, b, len, 0);
-	if (rdlen == EOF) {
+	if ((rdlen = recv(fd, b, len, 0)) == 0 && len != 0) {
 		throwIO("blockstream.readBytes", "End of stream reached");
-	} else {
+	} else if (rdlen < 0) {
+		if (errno == EBADF || errno == ENOTSOCK) {
+			throwIO("blockstream.readBytes", "Invalid socket file descriptor");
+		} else if (errno == ENOTCONN) {
+			throwIO("blockstream.readBytes", "Socket not connected");
+		} else if (errno == 104 /* no alias? */) {
+			throwIO("blockstream.readBytes", "Connection reset by peer");
+		} else {
+			throwIOf("blockstream.readBytes", "Error while reading from stream (%d)", errno);
+		}
+	} else if (rdlen < len) {
 		throwIOf("blockstream.readBytes", "Insufficient number of bytes available (%d)", rdlen);
 	}
 
@@ -336,6 +348,7 @@ BOSwrite(BlockOutputStream* this, unsigned char* b, int offset, int len) {
 			 * point, we can safely assume that copying it into the
 			 * (empty) buffer always succeeds. */
 			memcpy(this->buf + this->pos, b + offset, len);
+			this->pos += len;
 		}
 	}
 
@@ -348,6 +361,7 @@ BOSwrite(BlockOutputStream* this, unsigned char* b, int offset, int len) {
  */
 extern char*
 BOSclose(BlockOutputStream* this) {
+	shutdown(this->fd, SHUT_RDWR);
 	close(this->fd);
 	return(MAL_SUCCEED);
 }
