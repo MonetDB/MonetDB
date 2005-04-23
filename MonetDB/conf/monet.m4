@@ -236,6 +236,7 @@ dnl  Only GNU (gcc/g++) and Intel ([ie]cc/[ie]cpc on Linux) are done so far.
 X_CFLAGS=''
 X_CXXFLAGS=''
 NO_X_CFLAGS='_NO_X_CFLAGS_'
+NO_INLINE_CFLAGS=""
 case "$GCC-$CC-$host_os" in
 yes-*-*)
 	dnl  GNU (gcc/g++)
@@ -317,6 +318,22 @@ yes-*-*)
 		dnl  @NO_X_CFLAGS@ with NO_X_CFLAGS='X_CFLAGS'
 		dnl  generates "X_CFLAGS =" in the generated Makefile.
 		NO_X_CFLAGS='X_CFLAGS'
+		;;
+	4.0.0-darwin8.0.0)
+		dnl  In some cases, there is a (possibly) uninitialized
+		dnl  variable in bison.simple ... |-(
+		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
+		X_CXXFLAGS="$X_CXXFLAGS -Wno-uninitialized"
+		dnl  With gcc 4.0.0 on Darwin 8.0.0 (aka. MacOS 10.4, Tiger),
+		dnl  compiling decimal.mx fails both with 32 and 64 bits
+		dnl  complaining about 
+		dnl  "comparison is always true due to limited range of data type"
+		dnl  in MAX() and MIN() in macro TOTLEN() in functions 
+		dnl  decimal_length, decimal_convert, & decimal_put;
+		dnl  I have no idea, what the problem is --- hence,
+		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch of -Werror
+		dnl  for decimal.mx in src/modules/plain/Makefile.ag .
+		NO_INLINE_CFLAGS='-Wno-error'
 		;;
 	*-solaris*|*-darwin*|*-aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
@@ -502,6 +519,10 @@ yes-*-linux*-x86_64*-*)
 	CC="$CC -tp=k8-$bits"
 	CXX="$CXX -tp=k8-$bits"
 	;;
+yes-*-darwin*-powerpc*-*)
+	CC="$CC -m$bits"
+	CXX="$CXX -m$bits"
+	;;
 esac
 
 AC_ARG_ENABLE(oid32,
@@ -672,14 +693,14 @@ if test "$bits" = "64"; then
 	dnl  However, the standard "AC_PROG_LEX" & "AM_PROG_LEX" tests fail to correctly determine,
 	dnl  whether [f]lex defines yytext as pointer or array, in case there is no proper lib[f]l.
 	dnl  Hence, we first check, whether there is a suitable lib[f]l --- we check for function
-	dnl  main instead of yywrap, as otherwise configure would cache the result, and check again
+	dnl  yylex instead of yywrap, as otherwise configure would cache the result, and check again
 	dnl  in the 32-bit version hereafter. In case there is no suitable lib[f]l, we temporarly 
 	dnl  switch back to the 32-bit version for "AC_PROG_LEX" & "AM_PROG_LEX".
-	AC_CHECK_LIB(fl, main, 
+	AC_CHECK_LIB(fl, yylex, 
 		[ AC_DEFINE(HAVE_LIBFL, 1, [Define if you have the fl[ex] library]) 
 		  have_libfl=yes ] , 
 		[ have_libfl=no
-		  AC_CHECK_LIB(l, main, 
+		  AC_CHECK_LIB(l, yylex, 
 			[ AC_DEFINE(HAVE_LIBL, 1, [Define if you have the l[ex] library]) 
 		  	  have_libl=yes ] ,
 			[ have_libl=no
@@ -988,7 +1009,6 @@ if test "x$enable_assert" = xno; then
 fi
 
 dnl --enable-optimize
-NO_INLINE_CFLAGS=""
 AC_ARG_ENABLE(optimize,
 	AC_HELP_STRING([--enable-optimize],
 		[enable extra optimization [default=no]]),

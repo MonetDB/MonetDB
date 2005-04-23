@@ -20,6 +20,17 @@ INCLUDES = -I../../common -I../../gdk -I../../monet \
 	$(PCRE_CFLAGS) $(ICONV_CFLAGS)
 MTSAFE
 
+#  With gcc 4.0.0 on Darwin 8.0.0 (aka. MacOS 10.4, Tiger),
+#  compiling decimal.mx fails both with 32 and 64 bits
+#  complaining about 
+#  "comparison is always true due to limited range of data type"
+#  in MAX() and MIN() in macro TOTLEN() in functions 
+#  decimal_length, decimal_convert, & decimal_put;
+#  I have no idea, what the problem is --- hence,
+#  we "mis-use" the NO_INLINE_CFLAGS to switch of -Werror
+#  for decimal.mx (see also conf/monet.m4).
+NO_INLINE_FILES = decimal.mx
+
 lib__streams = {
 	DIR = pkglibdir
 	SOURCES = streams.mx

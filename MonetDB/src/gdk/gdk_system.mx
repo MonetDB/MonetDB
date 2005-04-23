@@ -385,9 +385,9 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg)
 	ret = pthread_create(&newt, &attr, (void *(*)(void *)) f, arg);
 	if (ret == 0)
 #ifdef PTW32
-		*t = (MT_Id) (((int) newt.p) + 1);	/* use pthread-id + 1 */
+		*t = (MT_Id) (((size_t) newt.p) + 1);	/* use pthread-id + 1 */
 #else
-		*t = (MT_Id) (((int) newt) + 1);	/* use pthread-id + 1 */
+		*t = (MT_Id) (((size_t) newt) + 1);	/* use pthread-id + 1 */
 #endif
 #ifdef HAVE_PTHREAD_SIGMASK
 	MT_thread_sigmask(&orig_mask, NULL);
