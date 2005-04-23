@@ -248,17 +248,25 @@ void chkFlow(MalBlkPtr mb)
 			        mb->errors++;
 			    } else
 			    if(ps->typechk == TYPE_RESOLVED)
-			    for(i=0;i<p->retc; i++)
-			    if( resolveType(getArgType(mb,ps,i), getArgType(mb,p,i)) == -1){
-			        GDKerror("%s type mismatch at type %d\n",
-			            (p->barrier==RETURNsymbol?"RETURN":"YIELD"),
+			    for(i=0;i<p->retc; i++){
+                    setVarUsed(mb,getArg(p,i),TRUE);
+                    if( resolveType(getArgType(mb,ps,i), getArgType(mb,p,i)) == -1){
+                        GDKerror("%s type mismatch at type %d\n",
+                            (p->barrier==RETURNsymbol?"RETURN":"YIELD"),
 			                                getArgType(mb,p,i));
-			        mb->errors++;
-			    }
+                        mb->errors++;
+                    }
+                }
 			    if(ps->typechk != TYPE_RESOLVED) fixed =0;
 			}
 			retseen = 1;
 			break;
+        case RAISEsymbol:
+            {   int i;
+			    for(i=0;i<p->retc; i++)
+                    setVarUsed(mb,getArg(p,i),TRUE);
+            }
+            break;
 		default:
 			if( isaSignature(p) && i ){
 			    str msg=instruction2str(mb,p,TRUE);

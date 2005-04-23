@@ -709,6 +709,9 @@ the bind(namespace,batname,mode) operation.[todo]
 			if( backup[i] ){
 				BBPdecref(backup[i],TRUE);
 			}
+ 			if(!isVarUsed(mb,getArg(pci,i)) ){
+				garbageElement(&stk->stk[getArg(pci,i)]);
+			}
 		} else 
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
 			int a= getArg(pci,i);
@@ -717,7 +720,9 @@ the bind(namespace,batname,mode) operation.[todo]
 					GDKfree(sbackup[i]);
 				backup[i]=0;
 			}
-			/* stk->stk[a].len= 0; should be wrong*/
+ 			if(!isVarUsed(mb,a) ){
+				garbageElement(&stk->stk[a]);
+			}
 		} 
 	}
 @-

@@ -1519,6 +1519,7 @@ InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid){
 		return p;
 	}
 	p= pushArgument(mb,p,varid);
+	setVarUsed(mb,varid,TRUE);
 	setVarInitialized(mb,varid);
 	p->retc++;
 	return p;

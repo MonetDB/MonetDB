@@ -114,7 +114,7 @@ end main;	# 29
 [ 10,	  "stat_id_min_lng",	  1,	  1		  ]
 [ 11,	  "stat_id_max_lng",	  1,	  1		  ]
 [ 12,	  "stat_id_histogram",	  1,	  1		  ]
-[ 13,	  "tasks",		  0,	  5		  ]
+[ 13,	  "tasks",		  0,	  2	  ]
 #-----------------#
 # h	tasks	  # name
 # int	int	  # type

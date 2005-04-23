@@ -59,9 +59,9 @@ lrefcount =1
 #-------------------------#
 [ 1,	  "bat B"	  ]
 refcount =1
-lrefcount =2
+lrefcount =1
 after mirror assignment refcount =1
-lrefcount =2
+lrefcount =1
 
 # 08:01:02 >  
 # 08:01:02 >  Done.

@@ -804,6 +804,7 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
     stream_printf(f," %s", (n->isatypevar?" type variable":""));
     GDKfree(nme); GDKfree(nmeOnStk);
 
+	if( !n->isused) stream_printf(f," unused");
     if(cnt && isaBatType(n->type) && v && v->val.ival){
         BAT *b,*bs;
         b= BATdescriptor(v->val.ival);

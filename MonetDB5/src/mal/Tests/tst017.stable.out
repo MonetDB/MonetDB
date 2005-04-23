@@ -30,7 +30,7 @@ function user.main():int;	# 0  (main:int)
     b := algebra.join(b,b);	# 6 ALGjoin (b:bat[:int,:int])<-(b:bat[:int,:int])(b:bat[:int,:int])
     io.print(b);	# 7 IOprint_val ($10:int)<-(b:bat[:int,:int])
 end main;	# 8  
-[ 3 ]
+[ 1 ]
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type

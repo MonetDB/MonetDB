@@ -1,11 +1,11 @@
 # a test checking BAT reference counting under various situations
 function steal(bb:bat[:any$1,:any$2]) :bat[:any$1,:any$2];
 	i:= bbp.getLRefCount(bb);
-	io.printf("enter function refcount =%d[3]\n",i);
+	io.printf("enter function refcount =%d[2]\n",i);
 
 	loc:= bb;
 	i:= bbp.getLRefCount(bb);
-	io.printf("local in function refcount =%d[4]\n",i);
+	io.printf("local in function refcount =%d[2]\n",i);
 
 	return bb;
 end steal; 
@@ -17,22 +17,22 @@ end steal;
 	bat.insert(b,1,"bat B");
 	io.print(b);
 	i:= bbp.getLRefCount(b);
-	io.printf("refcount =%d[2]\n",i);
+	io.printf("refcount =%d[1]\n",i);
 
 	#handle an alias
 	b2:= b;			
 	i:= bbp.getLRefCount(b);
-	io.printf("after assignment refcount =%d[3]\n",i);
+	io.printf("after assignment refcount =%d[1]\n",i);
 
 	#re-use a bat variable
 	b3:= b;			
 	i:= bbp.getLRefCount(b);
-	io.printf("after 2nd assignment refcount =%d[4]\n",i);
+	io.printf("after 2nd assignment refcount =%d[2]\n",i);
 
 	#re-use a bat variable
 	b3:= bbp.new(:int,:str);			
 	i:= bbp.getLRefCount(b);
-	io.printf("after 3rd assignment refcount =%d[3]\n",i);
+	io.printf("after 3rd assignment refcount =%d[1]\n",i);
 	i:= bbp.getLRefCount(b3);
 	io.printf("assignment refcount =%d[1]\n",i);
 
@@ -40,17 +40,17 @@ end steal;
 	b4:= algebra.select(b,"bat B","bat B");
 	io.print(b4);
 	i:= bbp.getLRefCount(b);
-	io.printf("after 4rd assignment refcount =%d[3]\n",i);
+	io.printf("after 4rd assignment refcount =%d[1]\n",i);
 
 	# remove by assignment
 	b2:= b3;
 	i:= bbp.getLRefCount(b);
-	io.printf("after 5rd assignment refcount =%d[2]\n",i);
+	io.printf("after 5rd assignment refcount =%d[1]\n",i);
 
 	io.printf("call function\n");
 	d:= user.steal(b);
 	i:= bbp.getLRefCount(b);
-	io.printf("return from function refcount =%d[3]\n",i);
+	io.printf("return from function refcount =%d[2]\n",i);
 
 	io.printf("check self replacement\n");
 	i:= bbp.getLRefCount(b);

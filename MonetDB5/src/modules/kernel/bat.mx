@@ -2255,7 +2255,10 @@ str BKCisCached(int *res, int *bid) {
 str BKCload(int *res, str *input) {
 	bat bid= BBPindex(*input);
 	*res = bid;
-        if( bid) return MAL_SUCCEED;
+	if( bid) {
+		BBPincref( bid, TRUE);
+		return MAL_SUCCEED;
+	}
 	return throwMessage("bat.unload", " file name missing");
 }
 
