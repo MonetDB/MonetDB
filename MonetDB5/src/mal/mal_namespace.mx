@@ -40,6 +40,7 @@ should be protected against concurrent access.
 mal_export void initNamespace();
 mal_export void finishNamespace();
 mal_export str putName(str nme,int len);
+mal_export str getName(str nme,int len);
 mal_export void dumpNamespaceStatistics(stream *f, int details);
 
 #endif /* _MAL_NAMESPACE_H */
@@ -107,6 +108,24 @@ void finishNamespace() {
 Before a name is being stored we should check for its occurrence first.
 The administration is initialized incrementally.
 @c
+str getName(str nme, int len)
+{
+    int l;
+	char buf[1024];
+
+	if( len >= 1022 || nme== NULL || *nme==0) return 0;
+	strncpy(buf,nme,len);
+	buf[len]=0;
+    
+    for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){
+        if(strcmp(buf,namespace.nme[l])==0) {
+            namespace.hit[l]++;
+			namespace.totalhit++;
+			return namespace.nme[l];
+        }
+    }
+	return 0;
+}
 str putName(str nme, int len)
 {
     int i,k=0,l,top;
@@ -114,7 +133,7 @@ str putName(str nme, int len)
 	str s;
 
 	if( len >= 1022) return 0;
-	strncpy(buf,nme,len);
+	strncpy(buf,nme,len); /* this is fast */
 	buf[len]=0;
     
     for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){

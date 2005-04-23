@@ -489,7 +489,7 @@ inspect the properties of BATs and their propagation.
         log0("value=\""); 
         if( isaBatType(w->type))
             stream_printf(eventstream,"%s",
-                BBPdescriptor(v->val.bval)->batId);
+                BATgetId(BBPdescriptor(v->val.bval)));
 		else
         if( isaBatType(w->type))
             stream_printf(eventstream,"Column name not yet known");
@@ -523,7 +523,7 @@ inspect the properties of BATs and their propagation.
      
         log( "count=\"%d\" ", BATcount(b));
         /*log( "version=\"%d\" ", b->GDKversion);*/
-        /*log( "batId=\"%d\" ", b->batId );*/
+        /*log( "batId=\"%d\" ", BATgetId(b) );*/
         /*log( "batCacheid=\"%d\" ", b->batCacheid);*/
         /*log( "batParentid=\"%d\" ", b->batParentid);*/
         /*log( "batSharecnt=\"%d\" ", b->batSharecnt);*/

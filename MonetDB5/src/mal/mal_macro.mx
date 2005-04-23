@@ -391,6 +391,7 @@ str MACROprocessor(MalBlkPtr mb, Symbol t){
 #ifdef DEBUG_MAL_MACRO
     printf("calling the MACRO processor\n");
 #endif
+	if( t== NULL) return msg;
 	msg= MACROvalidate(t->def);
 	if( msg )
 		return msg;
@@ -489,8 +490,9 @@ str ORCAMprocessor(MalBlkPtr mb, Symbol t){
     MalBlkPtr mc= t->def;
     int i;
     str msg= MAL_SUCCEED;
+	if( t == NULL || mc->stop < 3 ) return msg;
 #ifdef DEBUG_MAL_MACRO
-    printf("calling the ORCAM processor\n");
+    printf("calling the ORCAM processor for %s\n",t->name);
 #endif
     /* strip signature, return, and end statements */
     for(i=1; i<mb->stop- mc->stop+3; i++)

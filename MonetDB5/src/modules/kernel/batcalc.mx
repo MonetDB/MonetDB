@@ -1922,7 +1922,7 @@ printf("calling CMD000\n");
 	if( right== NULL){ *ret= 0; return GDK_FAIL; }
         if( *r <0){ /* BAT reverse */ right = BATmirror(right); }
 	
-printf("name %s %s\n",left->batId,right->batId);
+printf("name %s %s\n", BATgetId(left), BATgetId(right));
 	t0= GDKusec();
 	cmd000(left,right);
 	t1= GDKusec();

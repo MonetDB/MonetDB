@@ -52,6 +52,7 @@ Care should be taken not to generate many unique function names.
 
 typedef struct SCOPEDEF {
 	struct SCOPEDEF   *outer; /* outer level in the scope tree */
+	struct SCOPEDEF   *sibling; /* module with same start */
 	str	    name;			/* index in namespace */
 	int		inheritance; 	/* set when it plays a role in inheritance */
 	MALfcn  typeChecker;    /* function address for type checker */
@@ -103,6 +104,7 @@ point for the modules to be added later.
 	bzero((str)cur,sizeof(ModuleRecord));
 	cur->name = nme;
 	cur->outer = NULL;
+	cur->sibling = NULL;
 	cur->typeChecker = NULL;
 	cur->inheritance = TRUE;
 	cur->subscope = NULL; 
@@ -132,9 +134,10 @@ table to find the correct one. This simple scheme safes about
 
 void clrModuleJump(str nme, Module cur){
 		if( scopeJump[(int)(*nme)][(int)(*(nme+1))]== cur)
-			scopeJump[(int)(*nme)][(int)(*(nme+1))]= NULL;
+			scopeJump[(int)(*nme)][(int)(*(nme+1))]= cur->sibling;
 }
 void setModuleJump(str nme, Module cur){
+		cur->sibling= scopeJump[(int)(*nme)][(int)(*(nme+1))];
 		scopeJump[(int)(*nme)][(int)(*(nme+1))]= cur;
 }
 Module newModule(Module scope, str nme){
@@ -340,6 +343,7 @@ The 'user' module is an alias for the scope attached
 to the current user.
 @c
 Module findModule(Module scope, str name){
+	Module def=scope;
 	if( scope->name==NULL) return NULL;
 	if( name==NULL) return scope;
 	if( scopeJump[(int)(*name)][(int)(*(name+1))]) 
@@ -347,10 +351,10 @@ Module findModule(Module scope, str name){
 	while(scope != NULL){
 			if( name == scope->name )
 					return scope;
-			scope= scope->outer;
+			scope= scope->sibling;
 	}
 	/* default is always matched with current */
-	return scope;
+	return def;
 }
 @-
 The routine @%findMALSymbol@ starts at the MAL scope level and searches 

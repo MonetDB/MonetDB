@@ -73,7 +73,7 @@ Symbol newFunction(str nme,int kind){
 
 	s = newSymbol(nme,kind);
 	p = newInstruction(kind);
-	setFunctionId(p, putName(nme,strlen(nme)));
+	setFunctionId(p, nme);  /* name already in namespace */
 	setDestVar(p, newVariable(s->def,GDKstrdup(nme),TYPE_any));
 	pushInstruction(s->def,p);
 	return s;

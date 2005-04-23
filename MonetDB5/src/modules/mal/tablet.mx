@@ -1867,8 +1867,8 @@ static int setTabwidth(Column *c) {
 	char *title= c->bval->tident;
 
 	if( strcmp(c->bval->tident,"t")==0){
-		title= GDKmalloc(strlen(c->bval->batId)+7);
-		snprintf(title,20,"%s",c->bval->batId);	
+		title= GDKmalloc(strlen(BATgetId(c->bval))+7);
+		snprintf(title,20,"%s",BATgetId(c->bval));	
 	}
 	c->base =  BUNindex(c->bval,BUNfirst(c->bval));
 	c->type = GDKstrdup(ATOMname(c->bval->ttype));

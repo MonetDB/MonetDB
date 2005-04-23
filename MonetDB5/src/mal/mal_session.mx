@@ -98,7 +98,7 @@ void initClientPrg(Client cntxt, str nme){
         mb->typefixed=0;
         mb->flowfixed=0;
 	} else {
-		cntxt->curprg = newFunction(GDKstrdup(nme),FUNCTIONsymbol);
+		cntxt->curprg = newFunction(putName(nme,strlen(nme)),FUNCTIONsymbol);
 		mb = cntxt->curprg->def;
 		p = getSignature(cntxt->curprg);
 		setModuleScope(p, cntxt->nspace);

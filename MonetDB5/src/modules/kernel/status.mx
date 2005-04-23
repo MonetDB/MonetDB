@@ -47,9 +47,9 @@ comment "Global memory usage information";
 command ioStatistics():bat[:str,:int] 
 address SYSioStatistics
 comment "Global IO activity information";
-command memMap() :void 
-address SYSmemMap
-comment "Print a map of all memory that is in use";
+#command memMap() :void 
+#address SYSmemMap
+#comment "Print a map of all memory that is in use";
 @-
 
 For each 64KB block in the first 3GB of the virtual memory @emph{mem_printmap()} 
@@ -220,10 +220,12 @@ str SYSsetvm_maxsize(lng *num) {
 	GDK_vm_maxsize= *num;
 	return MAL_SUCCEED;
 }
+/*
 str memMap() {
         MT_alloc_print();
         return MAL_SUCCEED;
 }
+*/
 @
 @c
 static int clk = 0;
@@ -378,10 +380,12 @@ str SYSmem_usage(int *ret, lng *minsize) {
 	return MAL_SUCCEED;
 }
 
+/*
 str SYSmemMap() {
         MT_alloc_print();
         return MAL_SUCCEED;
 }
+*/
 
 
 str SYSvm_usage(int *ret, lng *minsize) {

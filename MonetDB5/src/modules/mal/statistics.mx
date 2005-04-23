@@ -390,7 +390,7 @@ STATforceUpdate(int *ret, str *nme)
 	}
 	h= BAThistogram(b);
 	if( h== 0) return MAL_SUCCEED;
-	snprintf(buf,PATHLENGTH,"H%s",b->batId);
+	snprintf(buf,PATHLENGTH,"H%s",BATgetId(b));
     BBPrename(h->batCacheid, buf);
 	BATmode(h, PERSISTENT);
 	BBPincref(h->batCacheid,TRUE);
@@ -398,7 +398,7 @@ STATforceUpdate(int *ret, str *nme)
 
 	p= BUNfnd(STAT_id_histogram,&idx);
 	if( p ) BUNdelete(STAT_id_histogram,p);
-	BUNins(STAT_id_histogram,&idx,h->batId);
+	BUNins(STAT_id_histogram,&idx,BATgetId(h));
 
 	p= BUNfnd(STAT_id_inuse,&idx);
 	if( p ) BUNdelete(STAT_id_inuse,p);
@@ -590,7 +590,7 @@ str STATdiscard2(int *ret, int *bid){
          return throwMessage("statistics.discard", "Cannot access descriptor");
     }
 
-	msg= STATdrop(b->batId);
+	msg= STATdrop(BATgetId(b));
 	BBPunfix(b->batCacheid);
 	return msg;
 }

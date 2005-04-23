@@ -585,7 +585,6 @@ simpleTypeId(Client cntxt)
 		return -1;
 	}
 	advance(cntxt, l);
-	/*skipSpace(cntxt);*/
 	return tpe;
 }
 
@@ -829,7 +828,6 @@ parseInclude(Client cntxt)
 	} else
         return parseError(cntxt,"<module path> expected\n");
 
-    /*skipSpace(cntxt);*/
 	if (currChar(cntxt) != ';') {
 		parseError(cntxt,"';' expected\n");
 		skipToEnd(cntxt);
@@ -838,8 +836,6 @@ parseInclude(Client cntxt)
 	skipToEnd(cntxt);
 
     malInclude(cntxt, modnme, modnme, 0);
-    /* re-establish starting point in jumptable */
-    setModuleJump(modnme, cntxt->nspace);
     return "";
 }
 @- Definition
@@ -877,7 +873,6 @@ the function definition in a particular module instead of the current one.
 		return (MalBlkPtr) parseError(cntxt,
 				"<identifier> | <operator> expected\n");
 
-    /* fnme = idCopy(cntxt,l);*/
 	fnme= putName( ((char *) CURRENT(cntxt)),l);
 	advance(cntxt,l);
 
@@ -893,10 +888,9 @@ the function definition in a particular module instead of the current one.
 		fnme= putName( ((char *) CURRENT(cntxt)),l);
 		advance(cntxt,l);
     } 
-    if (currChar(cntxt) != '(') {
-        /* GDKfree(fnme);*/
+    if (currChar(cntxt) != '(') 
         return (MalBlkPtr)parseError(cntxt, "function header '(' expected\n");
-    }
+ 
 	nextChar(cntxt); /* skip '(' */
     skipSpace(cntxt);
 
@@ -924,7 +918,6 @@ the function definition in a particular module instead of the current one.
         /* the last argument may be variable length */
         if( keyphrase(cntxt,"...",3) ){
             curInstr->varargs++;
-            skipSpace(cntxt);
             break;
         }
 		if ((ch = currChar(cntxt)) != ',') {
@@ -1026,7 +1019,6 @@ The common theme in definitions is to parse the argument list.
     if( isPolymorphic(type))
         curInstr->polymorphic = 1;
     setVarType(curBlk,varid,type);
-    skipSpace(cntxt);
 @-
 @}
 MAL variables are statically/dynamically typed.
@@ -1112,7 +1104,6 @@ optimizers to make decisions. (See the section on properties).
         if( !keyphrase1(cntxt,"}") )
             /* return (MalBlkPtr) */
             parseError(cntxt,"'}' expected\n");
-        skipSpace(cntxt);
     }
 @-
 Each procedure definition opens a structure in which the
@@ -1130,7 +1121,6 @@ help information.
 @= helpInfo
     skipSpace(cntxt);
     if( keyphrase(cntxt,"comment",7)){
-        skipSpace(cntxt);
         if( (l= stringLength(cntxt))){
             @1 = strCopy(cntxt,l);
         } else {
@@ -1181,7 +1171,6 @@ This scheme is intended for just-in-time compilation.
     if( keyphrase(cntxt,"address",7)){
         str nme;
         int i;
-        skipSpace(cntxt);
         i = idLength(cntxt);
         if( i==0){
             parseError(cntxt,"<identifier> expected\n");
