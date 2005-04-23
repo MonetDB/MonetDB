@@ -38,7 +38,7 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 		type -p monetdb-config > /dev/null 2>&1
 		ERROR=$?
 		if [ $ERROR -eq 0 ]; then
-			MONETDB_PREFIX=`monetdb-config --prefix`
+			MONETDB_PREFIX="`monetdb-config --prefix`"
 		else
 			echo "!ERROR: requires MONETDB_PREFIX to be set or monetdb-config in your PATH"
 			exit 1
@@ -47,8 +47,8 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 
 	#Some variables autogen needs to be able to expand
 	#to get the dependencies right.
-	export MONETDB_INCLUDEDIR=`$MONETDB_PREFIX/bin/monetdb-config --pkgincludedir`
-	export MONETDB_INCS=`$MONETDB_PREFIX/bin/monetdb-config --includes`
+	export MONETDB_INCLUDEDIR="`$MONETDB_PREFIX/bin/monetdb-config --pkgincludedir`"
+	export MONETDB_INCS="`$MONETDB_PREFIX/bin/monetdb-config --includes`"
 
 	AUTOGEN=$MONETDB_PREFIX/lib/autogen/autogen.py
 	CONFDIR="-I `$MONETDB_PREFIX/bin/monetdb-config --pkgdatadir`/conf"
