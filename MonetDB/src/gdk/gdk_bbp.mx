@@ -175,6 +175,7 @@ bat BBP_mask = 0;		/* number of buckets = & mask */
 
 static void BBPspin(bat bid, str debug, int event);
 static int BBPfree(BAT *b, str calledFrom );
+static int BBPdestroy(BAT *b);
 static void BBPuncacheit_(bat bid, int unloaddesc);
 
 
@@ -1292,10 +1293,14 @@ decref(bat i, int logical, int lock)
 		gdk_unset_lock(GDKswapLock[i & BBPLOCKMASK], "BBPdecref");
 
 	if (swap) {
-		BBP_unload_cnt(i, "BBPdecref");
+		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
 		b = BBPquickdesc(i, TRUE);
-		if (b)
+		if (destroy) {
+			BBPdestroy(b);	/* free memory of transient */
+		} else if (b) {
+			BBP_unload_cnt(i, "BBPdecref");
 			BBPfree(b, "BBPdecref" );	/* free memory (if loaded) and delete from disk (if transient but saved) */
+		}
 	}
 	return refs;
 }
@@ -1365,8 +1370,13 @@ BBPreclaim(BAT *b)
 
 	/* BBPfree potentially saves the BAT. Do this after releasing the short-term lock */
 	if (ret == 0) {
-		BBP_unload_cnt(i, "BBPreclaim");
-		ret = BBPfree(b, "BBPreclaim" );
+		int destroy = BBP_lrefs(i) == 0 && (BBP_status(i) & BBPDELETED) == 0;
+		if (destroy) {
+			ret = BBPdestroy(b);
+		} else {
+			BBP_unload_cnt(i, "BBPreclaim");
+			ret = BBPfree(b, "BBPreclaim" );
+		}
 	}
 	return ret;
 }
@@ -1567,13 +1577,14 @@ BBPsave(BAT *b)
 	bat bid = ABS(b->batCacheid);
 	int ret = 0;
 
+	if (BBP_lrefs(bid) == 0 || !BATdirty(b)) 
+		/* do nothing */
+		return 0;
+
 	if (lock)
 		gdk_set_lock(GDKswapLock[bid & BBPLOCKMASK], "BBPsave");
-	if (BBP_lrefs(bid) == 0 || !BATdirty(b)) {
-		/* do nothing */
-		if (lock)
-			gdk_unset_lock(GDKswapLock[bid & BBPLOCKMASK], "BBPsave");
-	} else if (BBP_status(bid) & BBPSAVING) {
+
+	if (BBP_status(bid) & BBPSAVING) {
 		/* wait until save in other thread completes */
 		BBPspin(bid, "BBPsave", BBPSAVING);
 		if (lock)
@@ -1619,12 +1630,56 @@ BBPsave(BAT *b)
 TODO merge BBPfree with BATfree? Its function is to prepare a BAT for being
 unloaded (or even destroyed, if the BAT is not persistent).
 @c
+
+static int
+BBPdestroy(BAT *b) 
+{
+	bat bid = ABS(b->batCacheid), parent = VIEWparent(b);
+
+	assert(BBPswappable(b));
+	if (!parent)
+		assert(b->batSharecnt == 0);
+
+	if (!parent) {
+		/* bats that get destroyed must unfix their atoms */
+		int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
+		int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
+		BUN p, q;
+		int xx;
+
+		if (hunfix) {
+			DELloop(b, p, q, xx) {
+				(*hunfix) (BUNhead(b, p));
+			}
+			BATloopFast(b, p, q, xx) {
+				(*hunfix) (BUNhead(b, p));
+			}
+		}
+		if (tunfix) {
+			DELloop(b, p, q, xx) {
+				(*tunfix) (BUNtail(b, p));
+			}
+			BATloopFast(b, p, q, xx) {
+				(*tunfix) (BUNtail(b, p));
+			}
+		}
+		BATdelete(b);	/* remove persistent info and free memory */
+	} else {
+		VIEWdestroy(b);
+	}
+	BBPuncacheit_(bid, TRUE );
+	BBPclear(bid);	/* if destroyed; de-register from BBP */
+
+	if (parent)	/* parent released when completely done with child */
+		BBPunshare(parent);
+	return 0;
+}
+
 static int
 BBPfree(BAT *b, str calledFrom )
 {
 	int ret;
 	bat bid = ABS(b->batCacheid), parent = VIEWparent(b);
-	int destroy = BBP_lrefs(bid) == 0 && (BBP_status(bid) & BBPDELETED) == 0;
 
 	assert(BBPswappable(b));
 	if (!parent)
@@ -1636,48 +1691,20 @@ BBPfree(BAT *b, str calledFrom )
 		return ret;	/* error while saving: no go */
 	}
 
-	if (!parent) {
-		if (destroy) {
-			/* bats that get destroyed must unfix their atoms */
-			int (*hunfix) (ptr) = BATatoms[b->htype].atomUnfix;
-			int (*tunfix) (ptr) = BATatoms[b->ttype].atomUnfix;
-			BUN p, q;
-			int xx;
-
-			if (hunfix) {
-				DELloop(b, p, q, xx) {
-					(*hunfix) (BUNhead(b, p));
-				}
-				BATloopFast(b, p, q, xx) {
-					(*hunfix) (BUNhead(b, p));
-				}
-			}
-			if (tunfix) {
-				DELloop(b, p, q, xx) {
-					(*tunfix) (BUNtail(b, p));
-				}
-				BATloopFast(b, p, q, xx) {
-					(*tunfix) (BUNtail(b, p));
-				}
-			}
-			BATdelete(b);	/* remove persistent info and free memory */
-		} else if (BBP_cache(bid)) {
-			BATfree(b);	/* free memory */
-		}
+	if (BBP_cache(bid)) {
+		BATfree(b);	/* free memory */
 	} else {
 		VIEWdestroy(b);
 	}
-	BBPuncacheit_(bid, destroy );
+	BBPuncacheit_(bid, FALSE );
 	BBP_unload_off(bid, calledFrom);
 
-	if (destroy)
-		BBPclear(bid);	/* if destroyed; de-register from BBP */
-	else if (b->batMapdirty) {
+	if (b->batMapdirty) {
 		DESCsetmodes(b,b);
 		b->batMapdirty = 0;
 	}
 
-	if (parent)		/* parent released when completely done with child */
+	if (parent)	/* parent released when completely done with child */
 		BBPunshare(parent);
 	return 0;
 }
