@@ -118,9 +118,15 @@ gdk_export void MT_sleep_ms(unsigned int ms);
 #define MT_VMUNITLOG 	16
 #define MT_VMUNITSIZE 	(1 << MT_VMUNITLOG)
 
+#ifdef DEBUG_ALLOC
 gdk_export int MT_alloc_register(void *p, size_t size, char mode);
 gdk_export int MT_alloc_print(void);
 gdk_export int MT_alloc_table(void);
+#else
+#define MT_alloc_register(p, size, mode) (void)p; (void)size; (void)mode
+#define MT_alloc_print()
+#define MT_alloc_table()
+#endif 
 
 /* make sure POSIX_MADV_* and posix_madvise() are defined somehow */
 #ifdef HAVE_SYS_MMAN_H
@@ -250,8 +256,6 @@ gdk_export int closedir(DIR *dir);
 #endif /* GDK_POSIX_H */
 @c
 #include "gdk.h"
-
-static void MT_alloc_init(void);
 
 #include <stdio.h>
 
@@ -641,8 +645,15 @@ MT_init_posix(int alloc_map)
 #endif
 #endif
 	MT_heapbase = (char *) sbrk(0);
+
+#ifdef DEBUG_ALLOC
+	static void MT_alloc_init(void);
+
 	if (alloc_map)
 		MT_alloc_init();
+#else
+	(void)alloc_map;
+#endif
 	MT_mmap_init();
 }
 
@@ -763,8 +774,14 @@ MT_init_posix(int alloc_map)
 /*
 	_set_sbh_threshold(MT_SMALLBLOCK);
 */
+#ifdef DEBUG_ALLOC
+	static void MT_alloc_init(void);
+
 	if (alloc_map)
 		MT_alloc_init();
+#else
+	(void)alloc_map;
+#endif
 }
 
 char *
@@ -1690,6 +1707,8 @@ second line with encoding .=free, *=inuse, X=unusable. On Unix systems,
 systems, this administration is dysfunctional. 
 @{
 @c
+#ifdef DEBUG_ALLOC
+
 #if SIZEOF_VOID_P == 4
 unsigned char MT_alloc_map[65536] = { 0 };
 #endif
@@ -1883,5 +1902,6 @@ MT_alloc_init(void)
 	}
 #endif
 }
+#endif /* DEBUG_ALLOC */
 
 @}

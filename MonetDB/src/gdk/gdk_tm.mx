@@ -94,7 +94,7 @@ TMcommit(void)
 	/* commit the delta status of each BAT; we cannot soft-abort after this anymore */
 	for (i = 1; i < BBPsize; i++) {
 		if (BBP_status(i) & BBPPERSISTENT) {
-			BAT *b = BBPcache(i);
+			BAT *b = BBP_cache(i);
 
 			if (b == NULL && (BBP_status(i) & BBPSWAPPED)) {
 				b = BBPquickdesc(i, TRUE);
