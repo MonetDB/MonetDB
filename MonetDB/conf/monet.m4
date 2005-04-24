@@ -500,7 +500,7 @@ yes-*-linux*-x86_64*-*)
 	CC="$CC -tp=k8-$bits"
 	CXX="$CXX -tp=k8-$bits"
 	;;
-yes-*-darwin*-powerpc*-*)
+yes-*-darwin8*-powerpc*-*)
 	CC="$CC -m$bits"
 	CXX="$CXX -m$bits"
 	;;
