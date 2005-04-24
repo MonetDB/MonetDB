@@ -1147,6 +1147,17 @@ starts with the exception identifer, followed by contextual details.
 		long l= n - cntxt->timer;
 		total += l;
 		stream_printf(cntxt->fdout,"#%6d usec",l);
+		if( cntxt->resource.ru_minflt > 0){
+			struct rusage ru;
+			getrusage(RUSAGE_SELF,&ru);
+			if( ru.ru_inblock - cntxt->resource.ru_inblock > 0)
+				stream_printf(cntxt->fdout," %3d R",
+					ru.ru_inblock - cntxt->resource.ru_inblock);
+			if( ru.ru_oublock - cntxt->resource.ru_oublock > 0)
+				stream_printf(cntxt->fdout," %3d W",
+					ru.ru_oublock - cntxt->resource.ru_oublock);
+			cntxt->resource= ru;
+		}
 		printTraceCall(cntxt,mb,stk,pci);
 	}
 

@@ -121,6 +121,7 @@ information should be dealt with separately.[TODO]
     short   itrace;     /* trace execution using interactive mdb */
     short   debugOptimizer,debugScheduler;
     long    timer;      /* trace time in usec */
+	struct rusage resource;	/* trace resource usage */
 @-
 @}
 @-
@@ -414,6 +415,8 @@ collect the buffer when in use.
     c->mode = AWAITING;
     c->itrace = 0;
     c->debugOptimizer = c->debugScheduler= 0;
+	c->timer = 0;
+	bzero( (char*) &c->resource, sizeof(c->resource));
     c->errbuf = 0;
 
     c->cwd= GDKstrdup(monet_cwd);

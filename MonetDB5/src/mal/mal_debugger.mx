@@ -586,6 +586,24 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			int i;
         	char *t;
 
+        	if( strncmp("io",b,2)==0){
+            	if( cntxt->timer==0)
+                	cntxt->timer = GDKusec();
+				stream_printf(out,"#turn on resource traceing\n");
+				getrusage(RUSAGE_SELF,&cntxt->resource);
+				stream_printf(out,"#maxrss %d ixrss=%d idrss=%d isrss=%d"
+					" minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n",
+					cntxt->resource.ru_maxrss,
+					cntxt->resource.ru_ixrss,
+					cntxt->resource.ru_idrss,
+					cntxt->resource.ru_isrss,
+					cntxt->resource.ru_minflt,
+					cntxt->resource.ru_majflt,
+					cntxt->resource.ru_nswap,
+					cntxt->resource.ru_inblock,
+					cntxt->resource.ru_oublock);
+				continue;
+			}
         	skipWord(cntxt,b);
         	t=b;
         	skipNonBlanc(cntxt,t);
@@ -712,8 +730,8 @@ signatures satisfying the pattern.
 			break;
 		}
     	case 'r': /* reset program counter */
-        	stream_printf(out,"%srestart with current stack\n","#mdb ");
-        	stk->cmd= 'r';
+			stream_printf(out,"%srestart with current stack\n","#mdb ");
+			stk->cmd= 'r';
         	break;
     	default:
         	stream_printf(out,"%s debugger command expected\n","#mdb ");
@@ -971,6 +989,7 @@ void mdbHelp(stream *f){
     stream_printf(f,"down       -- go down the stack\n");
     stream_printf(f,"up         -- go up the stack\n");
     stream_printf(f,"timer      -- produce micro-second response time\n");
+    stream_printf(f,"io         -- produce page activity trace \n");
     stream_printf(f,"help       -- this message\n");
 }
 @+ Optimizer debugging
