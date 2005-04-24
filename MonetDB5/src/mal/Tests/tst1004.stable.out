@@ -104,9 +104,8 @@ end main;	# 26
 [ 10,	  "stat_id_min_lng"	  ]
 [ 11,	  "stat_id_max_lng"	  ]
 [ 12,	  "stat_id_histogram"	  ]
-[ 13,	  "tmp_13"		  ]
-[ 14,	  "tmp_14"		  ]
-#
+[ 13,	  "tmp_15"		  ]
+[ 14,	  "tmp_16"		  ]
 
 # 07:58:53 >  
 # 07:58:53 >  Done.

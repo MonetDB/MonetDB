@@ -164,10 +164,9 @@ local in function refcount =3[2]
 [ 10,	  "stat_id_min_lng",	  1,	  1		  ]
 [ 11,	  "stat_id_max_lng",	  1,	  1		  ]
 [ 12,	  "stat_id_histogram",	  1,	  1		  ]
-[ 13,	  "tmp_13",		  0,	  3	  ]
-[ 14,	  "tmp_14",		  0,	  1	  ]
-[ 15,	  "tmp_15",		  0,	  1		  ]
-#
+[ 13,	  "tmp_15",		  0,	  3	  ]
+[ 14,	  "tmp_16",		  0,	  1	  ]
+[ 15,	  "tmp_17",		  0,	  1	  ]
 
 # 08:01:01 >  
 # 08:01:01 >  Done.

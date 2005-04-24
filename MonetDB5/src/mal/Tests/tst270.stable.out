@@ -89,8 +89,8 @@ end main;	# 30
 # h				tmp_5		  # name
 # str				str		  # type
 #-----------------------------------------#
-[ "version",		  "20744"	  ]
-[ "batId",			  "tmp_13"	  ]
+[ "version",		  "20749"	  ]
+[ "batId",		  "tmp_15"	  ]
 [ "batCacheid",			  "13"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
@@ -133,19 +133,9 @@ end main;	# 30
 [ "batBuns.size",	  "400"		  ]
 [ "batBuns.maxsize",	  "400"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
-[ "batBuns.filename",		  "13.buns"	  ]
+[ "batBuns.filename",	  "15.buns"	  ]
 [ "hheapdirty",			  "clean"	  ]
-[ "hheap.free",			  "0"		  ]
-[ "hheap.size",			  "0"		  ]
-[ "hheap.maxsize",		  "0"		  ]
-[ "hheap.storage",		  "absent"	  ]
-[ "hheap.filename",		  "no file"	  ]
 [ "theapdirty",			  "clean"	  ]
-[ "theap.free",			  "0"		  ]
-[ "theap.size",			  "0"		  ]
-[ "theap.maxsize",		  "0"		  ]
-[ "theap.storage",		  "absent"	  ]
-[ "theap.filename",		  "no file"	  ]
 #~EndVariableOutput~#
 # Start performance profiling
 #-----------------#
