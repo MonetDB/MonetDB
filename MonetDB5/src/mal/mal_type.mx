@@ -247,14 +247,14 @@ The ATOMindex routine is pretty slow, because it performs a
 linear search through the type table. This code should actually
 be integrated with the kernel.  
 @c
-#define qt(x) (nme[1]==x[1] && nme[2]==x[2] && x[3]==0 && len ==3)
+#define qt(x) (nme[1]==x[1] && nme[2]==x[2] )
 int getTypeIndex(str nme, int len, int deftype){
     int i;
     char buf[IDLENGTH+2];
+    if( len == 3)
     switch(*nme){
     case 'a': if(qt("any")) return TYPE_any; break;
     case 'b': if(qt("bat")) return TYPE_bat;
-              /*return newBatType(TYPE_any,TYPE_any);*/
               if(qt("bit")) return TYPE_bit; break;
     case 'c': if(qt("chr")) return TYPE_chr;
               if(qt("col")) return TYPE_col; break;
@@ -264,7 +264,7 @@ int getTypeIndex(str nme, int len, int deftype){
     case 'l': if(qt("lng")) return TYPE_lng; break;
     case 'o': if(qt("oid")) return TYPE_oid; break;
     case 'p': if(qt("ptr")) return TYPE_ptr; break;
-    case 's': if(qt("str")) return TYPE_str; break;
+    case 's': if(qt("str")) return TYPE_str; 
               if(qt("sht")) return TYPE_sht; break;
     }
     strncpy(buf,nme, i=MIN(IDLENGTH,len));
@@ -274,10 +274,11 @@ int getTypeIndex(str nme, int len, int deftype){
     if( i== -GDKatomcnt) i = deftype;
     return i;
 }
+INLINE
 int findGDKtype(int type){
     if( isaBatType(type)) return TYPE_bat;
-    if( type == TYPE_col) return TYPE_int;
     if( type == TYPE_any) return TYPE_int;
+    if( type == TYPE_col) return TYPE_int;
     return ATOMtype(type);
 }
 str newTmpName(char tag, int i){

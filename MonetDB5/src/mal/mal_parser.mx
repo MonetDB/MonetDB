@@ -138,8 +138,9 @@ skipComment(Client cntxt)
 INLINE void 
 skipSpace(Client cntxt)
 {
+	char *s= &currChar(cntxt);
 	for (;;) {
-		switch (currChar(cntxt)) {
+		switch (*s++) {
 		case ' ':
 		case '\t':
 		case '\n':
@@ -592,10 +593,9 @@ int
 parseTypeId(Client cntxt, int defaultType)
 {   
 	int i = TYPE_any, ht, tt, kh = 0, kt = 0;
+	char *s= CURRENT(cntxt);
 
-	if (currChar(cntxt) != ':')
-		return defaultType;	/* no type qualifier */
-	if (strncmp(CURRENT(cntxt), ":bat[", 5) == 0) {
+	if (s[1]=='b' && strncmp(s, ":bat[", 5) == 0) {
         /* parse :bat[:type,:type] */
         advance(cntxt,5);
 		if( currChar(cntxt) ==':')
@@ -627,7 +627,7 @@ parseTypeId(Client cntxt, int defaultType)
 		skipSpace(cntxt);
 		return i;
     }  
-	if (strncmp(CURRENT(cntxt), ":col[", 5) == 0) {
+	if (s[1]=='c' && strncmp(s, ":col[", 5) == 0) {
         /* parse :col[:type] */
         advance(cntxt,5);
 		if( currChar(cntxt) ==':')
@@ -644,12 +644,12 @@ parseTypeId(Client cntxt, int defaultType)
 		skipSpace(cntxt);
 		return i;
     }  
-    if( strncmp(CURRENT(cntxt),":bat",4)==0){
+    if( s[1]=='b' && strncmp(s,":bat",4)==0){
         /* parse default for :bat[:any,:any] */
         advance(cntxt,4);
         return newBatType(TYPE_any,TYPE_any);
     } 
-    if( strncmp(CURRENT(cntxt),":col",4)==0){
+    if( s[1]=='c' && strncmp(s,":col",4)==0){
         /* parse default for :col[:any] */
         advance(cntxt,4);
         return newColType(TYPE_any);
@@ -759,7 +759,9 @@ parseAtom(Client cntxt)
 	/* parse: ATOM id:type */
 	modnme = putName(nxt, l);
 	advance(cntxt,l);
-	tpe = parseTypeId(cntxt, TYPE_int);
+	if (currChar(cntxt) != ':')
+		tpe= TYPE_int;	/* no type qualifier */
+	else tpe = parseTypeId(cntxt, TYPE_int);
 	malAtomDefinition(modnme, tpe);
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	cntxt->nspace->isAtomModule = TRUE;
@@ -952,10 +954,9 @@ during the final phase reshuffle the return values to the beginning (?)
         int maxarg;
         int *newarg;
         /* parse multi-target result */
-        skipSpace(cntxt);
+        /* skipSpace(cntxt);*/
         ch= currChar(cntxt);
         while( ch !=')' && ch && !NL(ch)){
-            str arg;
             int varid=0;
             int type= TYPE_any;
             @:binding@
@@ -1004,15 +1005,20 @@ The common theme in definitions is to parse the argument list.
 @
 @= binding
     l = idLength(cntxt);
-    if( l>0)
-        arg = idCopy(cntxt,l);
-    else 
-		arg = 0;
-    type= typeElm(cntxt,-1);
-    if( arg == 0){
-    	varid = newTmpVariable(curBlk,TYPE_any);
+    if( l>0) {
+		varid = findVariableLength(curBlk, CURRENT(cntxt), l);
+		if( varid < 0){
+			varid = newVariable(curBlk,idCopy(cntxt,l),TYPE_any);
+			type= typeElm(cntxt,-1);
+		} else{
+			advance(cntxt,l);
+			type= typeElm(cntxt,-1);
+			if( type != getVarType(curBlk,varid))
+				parseError(cntxt,"incompatible variable type\n");
+		}
     } else {
-		varid = newVariable(curBlk,arg,type);
+		type= typeElm(cntxt,-1);
+    	varid = newTmpVariable(curBlk,type);
 	}
     @:propList(varid)@
     curInstr= pushArgument(curBlk,curInstr, varid);
@@ -1051,7 +1057,6 @@ optimizers to make decisions. (See the section on properties).
             if( curBlk->var[@1]->props== NULL)
                 curBlk->var[@1]->props= newPropertySet();
 			/* localize value , simplified version */
-			skipSpace(cntxt);
 			if(keyphrase1(cntxt,"=")) {
 				int i,lt;
 				if( (i= cstLength(cntxt,&lt))){
@@ -1139,7 +1144,6 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
     str fnme=0, modnme=0;
     char ch;
 
-    str arg;
     int varid=0;
     int type= TYPE_any;
 
@@ -1202,7 +1206,6 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
     str fnme=0, modnme=0;
     char ch;
 
-    str arg;
     int varid=0;
     int type= TYPE_any;
 
@@ -1527,7 +1530,7 @@ The parameter of parseArguments is the return value of the enclosing function.
             return @1;
         }
         if (currChar(cntxt) == ',') 
-			keyphrase1(cntxt,",");
+			advance(cntxt,1);
         else if (currChar(cntxt) != ')') {
             parseError(cntxt,"',' expected\n");
             cntxt->yycur--; /* keep it */

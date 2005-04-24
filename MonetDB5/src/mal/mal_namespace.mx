@@ -137,7 +137,7 @@ str putName(str nme, int len)
 	buf[len]=0;
     
     for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){
-        if(strcmp(buf,namespace.nme[l])==0) {
+        if( strcmp(buf,namespace.nme[l])==0) {
             namespace.hit[l]++;
 			namespace.totalhit++;
 			/* aggressive test for reorganization needs */
@@ -159,7 +159,7 @@ str putName(str nme, int len)
         expandNamespace(MAXIDENTIFIERS);
 	l= nme[0];
 	top= namespace.nme[l]== 0? l: namespace.nmetop;
-    namespace.nme[top]= GDKstrdup(buf);
+	namespace.nme[top]= GDKstrdup(buf);
     namespace.link[top]= namespace.link[l];
 	if( top == namespace.nmetop)
 		namespace.link[l]= top;
@@ -180,14 +180,14 @@ to the namespace.
 @c
 void dumpNamespaceStatistics(stream *f, int details)
 {
-    int i,l,cnt;
+    int i,l,cnt,hits,steps;
 
     stream_printf(f,"Namespace statistics\n");
     stream_printf(f,"nmetop = %d size= %d\n",
         namespace.nmetop, namespace.size);
     for(i=0;i<256; i++)
 	if(namespace.nme[i]){
-        cnt =0;
+        hits= steps= cnt =0;
         stream_printf(f,"list %d ",i);
         for(l= i; l && namespace.nme[l]; l= namespace.link[l]){
             cnt++;
@@ -195,9 +195,11 @@ void dumpNamespaceStatistics(stream *f, int details)
                 stream_printf(f,"(%s %d) ",
                 namespace.nme[l], namespace.hit[l]);
                 if( i+1 % 5 == 0) stream_printf(f,"\n");
+				hits+= namespace.hit[l];
+				steps += namespace.hit[l]*cnt;
             }
         }
-        if(cnt)  stream_printf(f," has %d elements",cnt);
+        if(cnt)  stream_printf(f," has %d elements, %d hits, %d steps",cnt,hits,steps/(hits+1));
 		stream_printf(f,"\n");
     }
 }

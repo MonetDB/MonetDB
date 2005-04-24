@@ -1071,8 +1071,8 @@ int newVariable(MalBlkPtr mb, str name, malType type){
         int n;
         
     @:makeVarSpace@
+/* is already chacked in all places where it matters
     n= findVariable(mb,name);
-    /* check for redefined names */
     if( n>=0){
         if( type != TYPE_any){
             if( getVarType(mb,n) != type  &&
@@ -1080,9 +1080,10 @@ int newVariable(MalBlkPtr mb, str name, malType type){
             GDKerror("'%s' type mismatch %d vs %d\n",
                 name, getVarType(mb,n),type);
         }
-        GDKfree(name);  /*possible not correct, check use!*/
+        GDKfree(name);  
         return n;
     }
+*/
     if( isTmpName(name)){
         int i= atol(name+1);
         /* test validity*/
@@ -1226,9 +1227,8 @@ void removeVariable(MalBlkPtr mb, int varid){
 void freeVariable(MalBlkPtr mb, int varid){
     VarPtr v;
 
-    if(varid<0) return;
     v= getVar(mb,varid);
-    if( v== NULL ) return;
+	if( v== 0 ) return;
     if( v->name) GDKfree(v->name); v->name = 0;
     if( v->literal) GDKfree(v->literal); v->literal= 0;
     if( v->isaconstant) VALclear(&v->value);

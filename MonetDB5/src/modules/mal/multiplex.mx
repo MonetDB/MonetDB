@@ -178,7 +178,7 @@ int multiplexType(Module scope, MalBlkPtr mb, InstrPtr pci,
 {
 	int i, k, t, tpe= TYPE_any, tt;
 	int first = TRUE, firstbat=FALSE;
-	str fcnname;
+	str fcnname,nme;
 	char *c,name[1024],mname[128];
 
 	(void) scope; /* still unused */
@@ -203,7 +203,10 @@ int multiplexType(Module scope, MalBlkPtr mb, InstrPtr pci,
 	operatorModifier(name,c+1);
 	setModuleId(p,putName(mname,strlen(mname)));
 	setFunctionId(p, putName(name,strlen(name)));
-	k = newVariable(m, newTmpName('M',0),TYPE_any);
+	nme = newTmpName('M',0);
+	k= findVariable(m, nme);
+	if( k< 0) 
+		k = newVariable(m, nme, TYPE_any);
 	p->argv[0]= k;
 #ifdef DEBUG_MULTIPLEX
 	if( multiplexDebug) 
@@ -260,7 +263,10 @@ A polymorphic type is not allowed anymore at this stage,
 	    } else {
 		tt= getArgType(mb,pci,i);
 	    }
-	    k= newVariable(m,newTmpName('M',i),tt);
+		nme = newTmpName('M',i);
+		k= findVariable(m, nme);
+		if( k< 0) 
+			k= newVariable(m,nme,tt);
 	    p= pushArgument(m,p,k);
 	}
 	pushInstruction(m,p);
@@ -494,7 +500,7 @@ code construction.
 	pushInstruction(m,q);
 @c
 str CMDmultiplexScript(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int i,k,l,mloop,refBat=0,resB,refType,cr,fcnid;
+	int i,k,l,mloop,refBat=0,resB,refType,cr,fcnid, varid;
 	int nilVar=0 /*, mvar*/;
 	str ret= MAL_SUCCEED;
 	int hvar,tvar, rIndex=0;
@@ -639,7 +645,9 @@ find the actual arguments at the proper place of the callee.
 	hvar= newVariable(m,GDKstrdup("h"),TYPE_any);
 	pushReturn(m,q,hvar);
 	sprintf(name,"B%d",rIndex);
-	tvar= newVariable(m,GDKstrdup(name),TYPE_any);
+	tvar = findVariable(m,name);
+	if( tvar < 0)
+		tvar= newVariable(m,GDKstrdup(name),TYPE_any);
 	pushReturn(m,q,tvar);
 	pushArgument(m,q,refBat);
 	pushInstruction(m,q);
@@ -649,10 +657,16 @@ find the actual arguments at the proper place of the callee.
 	if( isaBatType(l= getArgType(mb,pci,i)) && i!= rIndex){
 		q= newInstruction(ASSIGNsymbol);
 		sprintf(name,"B%d",i);
-		pushReturn(m,q,newVariable(m, GDKstrdup(name), getTailType(l)));
+		varid = findVariable(m,name);
+		if( varid< 0)
+			varid= newVariable(m, GDKstrdup(name), getTailType(l));
+		pushReturn(m,q,varid);
 		setModuleId(q, putName("algebra",7));
 		sprintf(name,"A%d",i);
-		pushArgument(m,q, newVariable(m,GDKstrdup(name),l));
+		varid = findVariable(m,name);
+		if( varid< 0)
+			varid = newVariable(m,GDKstrdup(name),l);
+		pushArgument(m,q, varid);
 /*
 		if( nilVar){
 			setFunctionId(q, putName("fetch",5));
