@@ -825,7 +825,11 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 		/* default case: no void column to propagate */
 		lht = l->htype;
 		rtt = r->ttype;
-		bn = BATnew(BAThtype(l), BATttype(r), estimate);
+
+		if (ATOMstorage(rtt) == TYPE_str /*&& GDK_ELIMDOUBLES(r->theap)*/) {
+			rtt = TYPE_var;	/* insert double-eliminated strings as ints */
+		}
+		bn = BATnew(BAThtype(l), ATOMtype(rtt), estimate);
 		if (bn == NULL)
 			goto ready;
 		ESTIDEBUG THRprintf(GDKout, "BATfetchjoin: estimated resultsize: " SZFMT "\n", lcount);
@@ -849,6 +853,18 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 
 			@:fetchjoin_switch_lht(default)@
 		}
+		/* handle string trick */
+		if (rtt == TYPE_var && ATOMstorage(r->ttype) == TYPE_str) {
+			BAT *bm = BATmirror(bn);
+
+			bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
+			if (HEAPcopy(bn->theap, r->theap) < 0) {
+				BBPreclaim(bn);
+				goto ready;
+			}
+			bn->ttype = bm->htype = r->ttype;
+			bn->tvarsized = bm->hvarsized = 1;
+		}
 		bn->hsorted = (BATtordered(l) & BAThordered(r) & 1) ? BAThordered(l) : 0;
 	} else if (!BATtvoid(l)) {
 		/* propagation of void columns in the result */
@@ -857,7 +873,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 		BAT *ret = NULL;
 		ALGODEBUG THRprintf(GDKout, "BATfetchjoin: BAThvoid(l) && !BATtvoid(l)\n");
 
-		if (ATOMstorage(tpe) == TYPE_str && GDK_ELIMDOUBLES(r->theap)) {
+		if (ATOMstorage(tpe) == TYPE_str /*&& GDK_ELIMDOUBLES(r->theap)*/) {
 			tpe = TYPE_var;	/* insert double-eliminated strings as ints */
 		}
 		bn = BATnew(TYPE_void, ATOMtype(tpe), estimate);

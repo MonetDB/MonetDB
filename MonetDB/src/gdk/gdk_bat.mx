@@ -130,18 +130,18 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 		str nme = BBP_physical(bn->batCacheid);
 
 		bn->batBuns->filename = (str) GDKmalloc(strlen(nme) + 12);
-		sprintf(bn->batBuns->filename, "%s.buns", nme);
+		GDKfilepath(bn->batBuns->filename, NULL, nme, "buns");
 
 		if (ATOMneedheap(ht)) {
 			bn->hheap = (Heap*)GDKzalloc(sizeof(Heap));
 			bn->hheap->filename = (str) GDKmalloc(strlen(nme) + 12);
-			sprintf(bn->hheap->filename, "%s.hheap", nme);
+			GDKfilepath(bn->hheap->filename, NULL, nme, "hheap");
 		}
 
 		if (ATOMneedheap(tt)) {
 			bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
 			bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
-			sprintf(bn->theap->filename, "%s.theap", nme);
+			GDKfilepath(bn->theap->filename, NULL, nme, "theap");
 		}
 	}
 	return bn;
@@ -1697,7 +1697,7 @@ HEAPsetpriv(Heap *hp, int committed, int *remap, int *reload)
 		long_str src, dst, nme;
 		int ret;
 
-		sprintf(nme, "%s.priv", hp->filename);
+		GDKfilepath(nme, NULL, hp->filename, "priv");
 		GDKfilepath(src, BATDIR, hp->filename, NULL);
 		GDKfilepath(dst, BATDIR, nme, NULL);
 

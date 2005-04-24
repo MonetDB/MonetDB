@@ -96,8 +96,8 @@ d.clear();
 d.insert(2,2);
 printf("#~BeginVariableOutput~#\n"); time().print(); var z:=d.subgraph(c); time().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[ 1013 ]
-[ 1013 ]
+[ 247 ]
+[ 247 ]
 #~EndVariableOutput~#
 z.print();
 #-----------------#
@@ -114,8 +114,8 @@ d.insert(2,2);
 d.insert(3,3);
 printf("#~BeginVariableOutput~#\n"); time().print(); z:=d.subgraph(c); time().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
-[ 1013 ]
-[ 1013 ]
+[ 247 ]
+[ 247 ]
 #~EndVariableOutput~#
 z.print();
 #-----------------#

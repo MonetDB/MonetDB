@@ -36,7 +36,7 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # h			a		aA		aA2		  # name
 # str			str		str		str		  # type
 #-------------------------------------------------------------------------#
-[ "batBuns.filename",	  "27.buns",	  "26.buns",	  "28.buns"	  ]
+[ "batBuns.filename",	  "33.buns",	  "32.buns",	  "34.buns"	  ]
 [ "batBuns.free",	  "12",		  "3",		  "4"		  ]
 [ "batBuns.maxsize",	  "200",	  "52",		  "200"		  ]
 [ "batBuns.size",	  "200",	  "50",		  "200"		  ]
@@ -48,7 +48,7 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batFirst",		  "0",		  "0",		  "0"		  ]
-[ "batId",		  "tmp_27",	  "tmp_26",	  "tmp_29"	  ]
+[ "batId",		  "tmp_33",	  "tmp_32",	  "tmp_35"	  ]
 [ "batInserted",	  "0",		  "0",		  "0"		  ]
 [ "batLRefcnt",			  "1",		  "1",		  "1"		  ]
 [ "batParentid",	  "0",		  "0",		  "28"		  ]
@@ -105,7 +105,7 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # h				a		aA		aA2		  # name
 # str				str		str		str		  # type
 #-------------------------------------------------------------------------#
-[ "batBuns.filename",	  "27.buns",	  "33.buns",	  "26.buns"	  ]
+[ "batBuns.filename",	  "33.buns",	  "41.buns",	  "32.buns"	  ]
 [ "batBuns.free",	  "12",		  "3",		  "4"		  ]
 [ "batBuns.maxsize",	  "200",	  "52",		  "200"		  ]
 [ "batBuns.size",	  "200",	  "50",		  "200"		  ]
@@ -117,7 +117,7 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batFirst",		  "0",		  "0",		  "0"		  ]
-[ "batId",		  "tmp_27",	  "tmp_33",	  "tmp_32"	  ]
+[ "batId",		  "tmp_33",	  "tmp_41",	  "tmp_40"	  ]
 [ "batInserted",	  "0",		  "0",		  "0"		  ]
 [ "batLRefcnt",			  "1",		  "1",		  "1"		  ]
 [ "batParentid",	  "0",		  "0",		  "26"		  ]
@@ -174,7 +174,7 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # h			a		aA		aA2		  # name
 # str			str		str		str		  # type
 #-------------------------------------------------------------------------#
-[ "batBuns.filename",	  "27.buns",	  "30.buns",	  "30.buns"	  ]
+[ "batBuns.filename",	  "33.buns",	  "36.buns",	  "36.buns"	  ]
 [ "batBuns.free",	  "12",		  "3",		  "1"		  ]
 [ "batBuns.maxsize",	  "200",	  "52",		  "1"		  ]
 [ "batBuns.size",	  "200",	  "50",		  "1"		  ]
@@ -186,7 +186,7 @@ stdout of test 'Arjen_02_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean"	  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batFirst",		  "0",		  "0",		  "0"		  ]
-[ "batId",		  "tmp_27",	  "tmp_30",	  "tmp_33"	  ]
+[ "batId",		  "tmp_33",	  "tmp_36",	  "tmp_41"	  ]
 [ "batInserted",	  "0",		  "0",		  "0"		  ]
 [ "batLRefcnt",			  "1",		  "1",		  "1"		  ]
 [ "batParentid",	  "0",		  "0",		  "30"		  ]

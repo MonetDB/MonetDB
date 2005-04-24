@@ -18,8 +18,8 @@ aaa.print();
 # BAT:	  tmp_28	  #
 # (void)  (BAT)		  #
 #-------------------------#
-[ nil,	  <tmp_27>	  ]
-[ nil,	  <tmp_28>	  ]
+[ nil,	  <tmp_33>	  ]
+[ nil,	  <tmp_34>	  ]
 aaa.seqbase(0@0);
 bb.seqbase(0@0);
 
@@ -28,15 +28,15 @@ bb.seqbase(0@0);
 # BAT:	  tmp_31	  #
 # (void)  (BAT)		  #
 #-------------------------#
-[ 0@0,	  <tmp_30>	  ]
-[ 1@0,	  <tmp_31>	  ]
+[ 0@0,	  <tmp_36>	  ]
+[ 1@0,	  <tmp_37>	  ]
 [PLUS](aaa,aaa.project(bb)).print();
 #-------------------------#
 # BAT:	  tmp_33	  #
 # (oid)	  (BAT)		  #
 #-------------------------#
-[ 0@0,	  <tmp_30>	  ]
-[ 1@0,	  <tmp_32>	  ]
+[ 0@0,	  <tmp_36>	  ]
+[ 1@0,	  <tmp_40>	  ]
 
 aaa := nil;
 

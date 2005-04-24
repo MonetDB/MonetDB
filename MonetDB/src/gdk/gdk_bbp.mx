@@ -167,7 +167,7 @@ field in the BBPrec records.
 @{
 @h
 #define BBPnamecheck(s) (((s)[0]=='t' && (s)[1]=='m' && (s)[2]=='p' &&\
-			  (s)[3]=='_')?atoi(s+4):0)
+			  (s)[3]=='_')?strtol(s+4,NULL,8):0)
 
 @c
 bat *BBP_hash = NULL;		/* BBP logical name hash buckets */
@@ -449,6 +449,23 @@ prepare_backup(void)
 	return ret;
 }
 
+static INLINE str
+BBPtmpname(str s, int len, bat i)
+{
+	s[--len] = 0;
+	while(i>0) {
+		s[--len] = '0' + (i & 7);
+		i >>= 3;
+	}
+	s[--len] = '_';
+	s[--len] = 'p';
+	s[--len] = 'm';
+	s[--len] = 't';
+	return s + len;
+}
+
+
+
 #define CONTINUE_IF_NO_SIZES_IN_BBP 1 /* provide backward compatibility */
 void
 BBPinit(void)
@@ -458,7 +475,7 @@ BBPinit(void)
 	char *c, buffer[3000];
 	int ret, i = 0, debug = GDKdebug;
 	oid BBPoid = 0;
-	char logical[1024], batname[1024];
+	char *s, logical[1024], batname[1024];
 	char path[1024];
 	int max_stamp = 0, min_stamp = 0x7fffffff;
 
@@ -601,14 +618,16 @@ BBPinit(void)
 		BBP_lrefs(i) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		c = strchr(batname, '~');
 		if (c && c == batname) {
-			sprintf(logical, "tmp_%d", i);
+			//sprintf(logical, "tmp_%d", i);
+			s = BBPtmpname(logical, 64, i);
 		} else {
 			if (c)
 				*c = 0;
 			strcpy(logical, batname);
+			s = logical;
 			j++;
 		}
-		BBP_logical(i) = GDKstrdup(logical);
+		BBP_logical(i) = GDKstrdup(s);
 		i = -i;
 		if (c && c[1]) {
 			BBP_logical(i) = GDKstrdup(c + 1);
@@ -902,6 +921,7 @@ bat
 BBPinsert(BAT *b)
 {
 	int lock = locked_by ? BBP_getpid() != locked_by : 1;
+	str s;
 	long_str dirname;
 	bat i;
 
@@ -937,9 +957,10 @@ BBPinsert(BAT *b)
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 
-	sprintf(dirname, "tmp_%d", (int) i); /* make a unique temporary name */
+	//sprintf(dirname, "tmp_%d", (int) i); /* make a unique temporary name */
+	s = BBPtmpname(dirname, 64, i);
 	BBP_logical(-i) = NULL;
-	BBP_logical(i) = GDKstrdup(dirname);
+	BBP_logical(i) = GDKstrdup(s);
 	BATsetId(b, BBP_logical(i));
 
 	BBPgetsubdir(dirname, i);
@@ -1908,7 +1929,8 @@ BBPtrim_select(size_t * memtarget, size_t * vmtarget, int dirty)
 			char buf[80], *bnme = BBP_logical(bbptrim[cur].bid);
 
 			if (bnme == NULL) {
-				sprintf(bnme = buf, "tmp_%d", bbptrim[cur].bid);
+				//sprintf(bnme = buf, "tmp_%d", bbptrim[cur].bid);
+				bnme = BBPtmpname(buf, 64, bbptrim[cur].bid);
 			}
 			MEMDEBUG THRprintf(GDKerr, "TRIMSELECT: delete %s from trimlist (has been %s)\n", bnme, b ? "touched since last scan" : "unloaded already");
 		}
@@ -2403,7 +2425,7 @@ BBPrecover(void)
 		strncpy(path, dent->d_name, j);
 		path[j] = 0;
 		if (GDKisdigit(*path)) {
-			i = atoi(path);
+			i = strtol(path, NULL, 8);
 		} else {
 			i = BBP_find(path, FALSE);
 			if (i < 0)
@@ -2493,7 +2515,7 @@ BBPdiskscan_r(str parent)
 
 	while ((dent = readdir(dirp)) != NULL) {
 		str p = strchr(dent->d_name, '.');
-		bat bid = atoi(dent->d_name);
+		bat bid = strtol(dent->d_name, NULL, 8);
 		int r, ok = (p && bid), delete = FALSE;
 		off_t filesize;
 		struct stat st;

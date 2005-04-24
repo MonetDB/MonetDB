@@ -22,7 +22,7 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 # str			str		  # type
 #-----------------------------------------#
 [ "version",		  "20749"	  ]
-[ "batId",		  "tmp_27"	  ]
+[ "batId",		  "tmp_33"	  ]
 [ "batCacheid",		  "27"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
@@ -67,7 +67,7 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 [ "batFirst",		  "0"		  ]
 [ "top",		  "0"		  ]
 [ "batStamp",		  "-162"	  ]
-[ "lastUsed",		  "3265"	  ]
+[ "lastUsed",		  "4888"	  ]
 [ "curStamp",		  "163"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
@@ -76,7 +76,7 @@ printf("#~BeginVariableOutput~#\n"); b.info().print(); printf("#~EndVariableOutp
 [ "batBuns.size",	  "400"		  ]
 [ "batBuns.maxsize",	  "400"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
-[ "batBuns.filename",	  "27.buns"	  ]
+[ "batBuns.filename",	  "33.buns"	  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "theapdirty",			  "clean"	  ]
 #~EndVariableOutput~#

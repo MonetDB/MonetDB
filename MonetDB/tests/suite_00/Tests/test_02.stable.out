@@ -27,7 +27,7 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 # str			str		  # type
 #-----------------------------------------#
 [ "version",		  "20749"	  ]
-[ "batId",		  "tmp_27"	  ]
+[ "batId",		  "tmp_33"	  ]
 [ "batCacheid",		  "27"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
@@ -72,7 +72,7 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 [ "batFirst",		  "0"		  ]
 [ "top",		  "8"		  ]
 [ "batStamp",		  "-162"	  ]
-[ "lastUsed",		  "3265"	  ]
+[ "lastUsed",		  "4995"	  ]
 [ "curStamp",		  "170"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "dirty"	  ]
@@ -81,13 +81,13 @@ printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutpu
 [ "batBuns.size",	  "400"		  ]
 [ "batBuns.maxsize",	  "400"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
-[ "batBuns.filename",	  "27.buns"	  ]
+[ "batBuns.filename",	  "33.buns"	  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap.free",			  "4180"	  ]
 [ "hheap.size",		  "4700"	  ]
 [ "hheap.maxsize",	  "4700"	  ]
 [ "hheap.storage",		  "malloced"	  ]
-[ "hheap.filename",	  "27.hheap"	  ]
+[ "hheap.filename",	  "33.hheap"	  ]
 [ "theapdirty",			  "clean"	  ]
 #~EndVariableOutput~#
 print(find(s,"cello"));

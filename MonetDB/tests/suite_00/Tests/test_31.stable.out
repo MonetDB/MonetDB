@@ -33,7 +33,7 @@ var z:= time();
 var clo:= closure(c);
 printf("#~BeginVariableOutput~#\nclosure in %d ms cnt %d\n#~EndVariableOutput~#\n",time()-z,count(clo));
 #~BeginVariableOutput~#
-closure in 4 ms cnt 400
+closure in 3 ms cnt 400
 #~EndVariableOutput~#
 ## testing traversal on directed acyclic graph
 ## produces the end-points only
@@ -450,7 +450,7 @@ d.insert(2,2);
 var z:= time();
 var e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms on %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 0 ms on 400
+subgraph in 1 ms on 400
 #~EndVariableOutput~#
 d.clear();
 d.insert(2,2);
@@ -458,7 +458,7 @@ d.insert(3,3);
 z:= time(); 
 e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 1 ms cnt 400
+subgraph in 0 ms cnt 400
 #~EndVariableOutput~#
 d.clear();
 d.insert(2,2);
@@ -468,7 +468,7 @@ d.insert(5,5);
 z:= time(); 
 e:=d.subgraph(c); printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 1 ms cnt 400
+subgraph in 0 ms cnt 400
 #~EndVariableOutput~#
 
 ## LARGE TEST
@@ -479,9 +479,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  190	  ]
+[ "user",	  50	  ]
 [ "elapuser",	  0	  ]
-[ "system",	  550	  ]
+[ "system",	  10	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 d.clear();
@@ -499,7 +499,7 @@ z:= time();
 e:=d.subgraph(clo); 
 printf("#~BeginVariableOutput~#\nsubgraph in %d ms cnt %d\n#~EndVariableOutput~#\n",time()-z,count(e));
 #~BeginVariableOutput~#
-subgraph in 1 ms cnt 400
+subgraph in 0 ms cnt 400
 #~EndVariableOutput~#
 d.clear();
 ##d.insert(2,2);
@@ -519,9 +519,9 @@ printf("#~BeginVariableOutput~#\n"); cpu().print(); printf("#~EndVariableOutput~
 # (str)		  (int)	  #
 #-------------------------#
 [ "elapsed",	  0	  ]
-[ "user",	  190	  ]
-[ "elapuser",	  0	  ]
-[ "system",	  550	  ]
+[ "user",	  60	  ]
+[ "elapuser",	  10	  ]
+[ "system",	  10	  ]
 [ "elapsystem",	  0	  ]
 #~EndVariableOutput~#
 quit();
