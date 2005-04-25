@@ -200,9 +200,6 @@ if [ "${os}" = "Linux" ] ; then
 			conf_opts="${conf_opts} --with-hwcounters=${softpath}"
 			conf_opts="${conf_opts} --with-pcl=${softpath}"
 			;;
-		PATHFINDER)
-			conf_opts="${conf_opts} --with-gc=${softpath}"
-			;;
 		esac
 	fi
 	if [ "${hw}${COMP}${BITS}" = "x86_64ntv64" ] ; then
@@ -249,15 +246,6 @@ if [ "${os}" = "Linux" ] ; then
 		# java in Konstanz
 		binpath="/net/lin_local/java/j2sdk1.4.2/bin:${binpath}"
 	fi
-	if [ "${what}" = "PATHFINDER"  -a  -d /net/lin_local/libgc-devel ] ; then
-		# libgc in Konstanz
-		conf_opts="${conf_opts} --with-gc=/net/lin_local/libgc-devel"
-	fi
-	gc="`ls -d /soft/${BITS}/gc-[0-9]*/ 2>/dev/null | tail -n1`"
-	if [ "${what}" = "PATHFINDER"  -a  "${gc}"  -a  -d "${gc}"  -a  "${hw}" = "x86_64" ] ; then
-		# libgc on spin & db2/sn-1
-		conf_opts="${conf_opts} --with-gc=${gc}"
-	fi
 	if [ -x /usr/local/bin/swig ]; then
 		conf_opts="${conf_opts} --with-swig=/usr/local/bin/swig"
 	fi
@@ -275,10 +263,6 @@ if [ "${os}" = "CYGWIN" ] ; then
 		# java on winxp01
 		binpath="/cygdrive/c/Sun/AppServer/jdk/bin:${binpath}"
 	fi
-	if [ "${what}" = "PATHFINDER"  -a  -d ${softpath} ] ; then
-		# libgc on winxp
-		conf_opts="${conf_opts} --with-gc=${softpath}"
-	fi
 fi
 
 if [ "${os}" = "Darwin" ] ; then
@@ -291,10 +275,6 @@ if [ "${os}" = "Darwin" ] ; then
 	done
 	binpath="${mypath}:${binpath}"
 	unset mypath
-	if [ "${what}" = "PATHFINDER"  -a  -d /Users/monet/soft/local ] ; then
-		# libgc in Amherst
-		conf_opts="${conf_opts} --with-gc=/Users/monet/soft/local/"
-	fi
 fi
 
 if [ "${os}" = "SunOS" ] ; then
@@ -383,9 +363,6 @@ if [ "${os}" != "Linux"  -a  "${os}" != "CYGWIN"  -a  "${os}" != "Darwin" ] ; th
 		ACOI)
 			conf_opts="${conf_opts} --with-getopt=${softpath}"
 			conf_opts="${conf_opts} --with-tcl=${softpath}"
-			;;
-		PATHFINDER)
-			conf_opts="${conf_opts} --with-gc=${softpath}"
 			;;
 		SQL)
 			conf_opts="${conf_opts} --with-odbc=${softpath}"
