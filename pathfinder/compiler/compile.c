@@ -78,19 +78,6 @@
 #include "coreopt.h"
 #include "hsk_parser.h"
 
-#ifdef HAVE_GC
-/* GC_max_retries, GC_gc_no */
-#if HAVE_GC_H
-#include <gc.h>
-#else
-#if HAVE_GC_GC_H
-#include <gc/gc.h>
-#else
-#error "Interface to garbage collector (gc.h) not available."
-#endif
-#endif
-#endif
-
 static char *phases[] = {
     [ 1]  = "right after input parsing",
     [ 2]  = "after parse/abstract syntax tree has been normalized",
@@ -191,14 +178,6 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 #if HAVE_SIGNAL_H
     /* setup sementation fault signal handler */
     signal (SIGSEGV, segfault_handler);
-#endif
-
-    /* setup for garbage collector 
-     */
-  
-#ifdef HAVE_GC
-    /* how often will retry GC before we report out of memory and give up? */
-    GC_max_retries = 2;
 #endif
 
     /* Parsing of Haskell XQuery to Algebra output */
@@ -436,12 +415,6 @@ subexelim:
         PFmilprint (pfout, mil_program);
 
  bailout:
-#ifdef HAVE_GC
-    /* Finally report on # of GCs run */
-    if (status->timing)
-        PFlog ("#garbage collections:\t %d", (int) GC_gc_no);
-#endif
-
     /* print abstract syntax tree if requested */
     if (status->print_parse_tree) {
         if (proot) {
@@ -534,9 +507,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         long tm = PFtimer_start ();
 
 
-#ifndef HAVE_GC
         pf_alloc = pa_create();
-#endif
         lexical_init();
 
         PFstate.invocation = invoke_monetdb;
@@ -585,9 +556,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
         res = PFprintMILtemp (croot, &PFstate, tm, prologue, query, epilogue);
-#ifndef HAVE_GC
-    pa_destroy(pf_alloc);
-#endif
+        pa_destroy(pf_alloc);
         return res;
 
 }

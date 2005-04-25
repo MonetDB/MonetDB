@@ -32,11 +32,6 @@ REQUIREMENTS
 
   Some libraries are used or even required by the Pathfinder compiler:
 
-   -- The Hans Boehm garbage collector.
-      This library (libgc) is always required. You can get the latest
-      version of it on Hans Boehm's website:
-      http://www.hpl.hp.com/personal/Hans_Boehm/gc/
-
    -- The libxml2 XML parsing library.
       This library is required for
        (a) the XML Schema import feature of the Pathfinder compiler, and
@@ -104,10 +99,6 @@ the location of required libraries on your system:
                          you don't want to use BerkeleyDB, give
                          `--without-berkeleydb' on the command line and
                          be aware of the above mentioned consequences.
-
-  --with-gc              Prefix of your garbage collector installation.
-                         Libraries expected in DIR/lib, includes in
-                         DIR/include. The Garbage Collector is mandatory.
 
 
 
