@@ -618,7 +618,6 @@ BBPinit(void)
 		BBP_lrefs(i) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		c = strchr(batname, '~');
 		if (c && c == batname) {
-			/*sprintf(logical, "tmp_%d", i);*/
 			s = BBPtmpname(logical, 64, i);
 		} else {
 			if (c)
@@ -957,7 +956,6 @@ BBPinsert(BAT *b)
 	BBP_refs(i) = 1;	/* new bats have 1 pin */
 	BBP_lrefs(i) = 0;	/* ie. no logical refs */
 
-	/*sprintf(dirname, "tmp_%d", (int) i);*/ /* make a unique temporary name */
 	s = BBPtmpname(dirname, 64, i);
 	BBP_logical(-i) = NULL;
 	BBP_logical(i) = GDKstrdup(s);
@@ -1929,7 +1927,6 @@ BBPtrim_select(size_t * memtarget, size_t * vmtarget, int dirty)
 			char buf[80], *bnme = BBP_logical(bbptrim[cur].bid);
 
 			if (bnme == NULL) {
-				/*sprintf(bnme = buf, "tmp_%d", bbptrim[cur].bid);*/
 				bnme = BBPtmpname(buf, 64, bbptrim[cur].bid);
 			}
 			MEMDEBUG THRprintf(GDKerr, "TRIMSELECT: delete %s from trimlist (has been %s)\n", bnme, b ? "touched since last scan" : "unloaded already");
