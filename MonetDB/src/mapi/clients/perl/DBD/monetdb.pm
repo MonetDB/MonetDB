@@ -49,9 +49,14 @@ sub CLONE {
 }
 
 
-# The monetdb dsn structure is DBI:monetdb:host:port:dbname:language
-sub _parse_dsn {
-    my ($class, $dsn) = @_;
+
+package DBD::monetdb::dr;
+
+$DBD::monetdb::dr::imp_data_size = 0;
+
+
+sub connect {
+    my ($drh, $dsn, $user, $password, $attr) = @_;
 
     my %dsn;
     for ( split /;|:/, $dsn ||'') {
@@ -65,21 +70,6 @@ sub _parse_dsn {
             $dsn{$k} = $_, last unless defined $dsn{$k};
         }
     }
-    return %dsn;
-}
-
-
-
-package DBD::monetdb::dr;
-
-$DBD::monetdb::dr::imp_data_size = 0;
-
-
-sub connect {
-    my ($drh, $dsn, $user, $password, $attr) = @_;
-
-    my %dsn = DBD::monetdb->_parse_dsn($dsn);
-
     my $lang  = $dsn{language} || 'sql';
     die "!ERROR languages permitted are 'sql', 'mal', and 'mil'\n"
         unless ($lang eq 'mal' || $lang eq 'sql' || $lang eq 'mil');
