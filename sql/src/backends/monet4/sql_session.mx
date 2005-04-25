@@ -430,7 +430,7 @@ sqlcleanup(mvc *c, int err)
 }
 
 static int
-output_prepare(stream *out, cq *q)
+output_prepare(stream *out, mvc *c, cq *q)
 {
 	int i;
 	node *n;
@@ -443,21 +443,27 @@ output_prepare(stream *out, cq *q)
 		return -1;
 	}
 
-	i = snprintf(buf, BUFSIZ, "%d\n%d\n", q->id, q->params ? list_length(q->params) : 0);
+	i = snprintf(buf, BUFSIZ, "%d\n%d\n", q->id, c->params ? list_length(c->params) : 0);
 	if (stream_write(out, buf, i, 1) != 1) {
 		return -1;
 	}
-	if (q->params)
-		for (n = q->params->h; n; n = n->next) {
-			sql_subtype *t = n->data;
+	if (c->params) {
+		for (n = c->params->h; n; n = n->next) {
+			var_ *v = n->data;
+			sql_subtype *t = tail_type(v->s);
 
 			if (t) {
 				i = snprintf(buf, BUFSIZ, "%s(%d,%d)\n", t->type->sqlname, t->digits, t->scale);
 				if (stream_write(out, buf, i, 1) != 1) {
 					return -1;
 				}
+				/* add to the query cache param list */
+				list_append(q->params, sql_dup_subtype(t));
+			} else {
+				return -1;
 			}
 		}
+	}
 	return 0;
 }
 
@@ -525,7 +531,7 @@ sqlexecute(backend *be, stream *out)
 					atom *arg = a->data;
 					sql_subtype *pt = p->data;
 
-					if (subtype_cmp(pt, arg->tpe) != 0) {
+					if (!atom_cast(arg, pt)) {
 						char buf[BUFSIZ];
 
 						snprintf(buf, BUFSIZ, "wrong argument for prepared statement (%s,%s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
@@ -604,7 +610,7 @@ sqlexecute(backend *be, stream *out)
 	scanner_query_processed(&(c->scanner));
 
 	if (q && c->mode == m_prepare) {
-		if ((err = output_prepare(out, q))) {
+		if ((err = output_prepare(out, c, q))) {
 			return sqlcleanup(c, err);
 		}
 	} else if (q && !q->code) {

@@ -323,7 +323,6 @@ int yydebug=1;
 	table_name
 	ref_on
 	object_name
-	prep
 	exec
 	exec_ref
 
@@ -528,8 +527,9 @@ SQLCODE SQLERROR UNDER WHENEVER
 sqlstmt:
    sql ';'		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = $1; YYACCEPT; }
- | prep			{ mvc *m = (mvc*)parm;
-			  m->sym = $$ = $1; YYACCEPT; }
+ | PREPARE sql ';' 	{ mvc *m = (mvc*)parm;
+		  	  m->mode = m_prepare;
+		  	  m->sym = $$ = $2; YYACCEPT; }
  | exec ';'		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = $1; YYACCEPT; }
  | /*empty*/		{ mvc *m = (mvc*)parm;
@@ -2939,13 +2939,6 @@ string:
 		{ $$ = $1; }
  |  STRING string
 		{ $$ = strconcat($1,$2); }
- ;
-
-prep:
-    PREPARE sqlstmt_list ';'
-		{ mvc *m = (mvc*)parm;
-		  m->mode = m_prepare;
-		  $$ = _symbol_create_list( SQL_PREP, $2); }
  ;
 
 exec:

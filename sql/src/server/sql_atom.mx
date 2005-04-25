@@ -44,6 +44,9 @@ extern atom *atom_general( sql_subtype *tpe, char *val, int destroy);
 /* duplicate atom */
 extern atom *atom_dup( atom *a);
 
+/* cast atom a to type tp (success == 1, fail == 0) */
+extern int atom_cast(atom *a, sql_subtype *tp);
+
 extern char *atom2string(atom *a);
 extern sql_subtype *atom_type(atom *a);
 
@@ -270,6 +273,46 @@ atom_dup(atom *a)
 		VALcopy(&r->data, &a->data);
 	}
 	return r;
+}
+
+/* cast atom a to type tp (success == 1, fail == 0) */
+int 
+atom_cast(atom *a, sql_subtype *tp) 
+{
+	sql_subtype *at = a->tpe;
+
+	if (subtype_cmp(at, tp) == 0) {
+		return 1;
+	}
+	/* need to do a cast, start simple is atom type a subtype of tp */
+	if (at->type->localtype == tp->type->localtype &&
+		(!tp->type->digits || at->type->digits <= tp->type->scale) &&
+		(!tp->type->scale || at->type->scale == tp->type->scale))
+		return 1;
+	if (at->type->fixed && at->type->localtype < tp->type->localtype) {
+		/* cast numerics */
+		switch( tp->type->localtype) {
+		case TYPE_int:
+			if (at->type->localtype == TYPE_sht) 
+				a->data.val.ival = a->data.val.shval;
+			else
+				return 0;
+			break;
+		case TYPE_lng:
+			if (at->type->localtype == TYPE_sht) 
+				a->data.val.lval = a->data.val.shval;
+			else if (at->type->localtype == TYPE_int) 
+				a->data.val.lval = a->data.val.ival;
+			else
+				return 0;
+			break;
+		default:
+			return 0;
+		}
+		sql_subtype_destroy(a->tpe);
+		a->tpe = sql_dup_subtype(tp);
+	}
+	return 0;
 }
 
 void

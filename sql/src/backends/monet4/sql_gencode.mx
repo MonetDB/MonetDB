@@ -60,7 +60,7 @@ write_head(backend *sql, int nr)
 	(void) nr;		/* Stefan: unused!? */
 
 	if (mvc_debug_on(sql->mvc, 2)) {
-		char *t0 = "var t0 := time();\n";
+		char *t0 = "var t0 := usec();\n";
 		int l = strlen(t0);
 
 		stream_write(sql->out, t0, 1, l);
@@ -73,7 +73,7 @@ write_tail(backend *sql, int nr)
 	if (mvc_debug_on(sql->mvc, 2)) {
 		char dbg[BUFSIZ];
 		int l = snprintf(dbg, BUFSIZ,
-				 "var t1 := time(); printf(\"%d %%d\\n\", t1 - t0);\n", nr);
+				 "var t1 := usec(); printf(\"%d %%d\\n\", t1 - t0);\n", nr);
 
 		assert(l < BUFSIZ);
 		stream_write(sql->out, dbg, 1, l);
@@ -104,7 +104,7 @@ write_command(backend *sql, char *buf)
 		while ((c = strchr(c, '\n')))
 			*c = '\t';
 		l += snprintf(v + l, ll - l, "printf(\"< %s >\\n\");\nfflush(stdout());\n", s);
-		l += snprintf(v + l, ll - l, "var t0 := time();\n");
+		l += snprintf(v + l, ll - l, "var t0 := usec();\n");
 		_DELETE(s);
 		stream_write(sql->out, v, 1, l);
 		_DELETE(v);
@@ -119,7 +119,7 @@ write_result(backend *sql, char *buf)
 		size_t buflen = BUFSIZ;
 		char *v = NEW_ARRAY(char, buflen), *a = buf, *b, *y, z;
 
-		l += snprintf(v + l, buflen - l, "var t1 := time();\n");
+		l += snprintf(v + l, buflen - l, "var t1 := usec();\n");
 		l += snprintf(v + l, buflen - l, "print(t1 - t0);\n");
 		while (a && (y = strstr(a, " := "))) {
 			z = *y;
@@ -1267,6 +1267,14 @@ backend_dumpproc(backend *be, int id, stmt *s)
 			atom *a = n->data;
 
 			i += snprintf(buf + i, BUFSIZ - i, "%s A%d%c", a->tpe->type->base.name, argc, (n->next) ? ',' : ' ');
+		}
+	} else if (be->mvc->params) {
+		int argc = 0;
+
+		for (n = be->mvc->params->h; n; n = n->next, argc++) {
+			var_ *v = n->data;
+
+			i += snprintf(buf + i, BUFSIZ - i, "%s A%d%c", tail_type(v->s)->type->base.name, argc, (n->next) ? ',' : ' ');
 		}
 	}
 	i += snprintf(buf + i, BUFSIZ - i, ") : void \n");

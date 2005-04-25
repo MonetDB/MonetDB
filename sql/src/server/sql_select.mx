@@ -1030,12 +1030,13 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		return s;
 	}
 	case SQL_PARAMETER:{
-		char *n = "param";
+		char n[BUFSIZ];
 		stmt *s;
 
 		if (sql->mode != m_prepare) {
 			return sql_error(sql, 02, "cannot have parameters (?) in normal queries, use PREPARE;");
 		}
+		snprintf(n, BUFSIZ, "A%d", (sql->params)?list_length(sql->params):0);
 		sql_add_param(sql, _strdup(n), s = stmt_var(_strdup(n), NULL));
 		return stmt_dup(s);
 	}
