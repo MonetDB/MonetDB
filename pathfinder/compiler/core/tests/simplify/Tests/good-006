@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s10 <<'EOT'
-1.3
-EOT
+NAME=$1
+
+pf -s10 < $NAME.xq
 echo $?

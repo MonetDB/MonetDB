@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s9 <<'EOT'
-processing-instruction foo { "bar" }
-EOT
+NAME=$1
+
+pf -s9 < $NAME.xq
 echo $?

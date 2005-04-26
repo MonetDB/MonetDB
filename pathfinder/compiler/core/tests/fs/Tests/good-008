@@ -1,9 +1,6 @@
 #!/bin/bash
 
-pf -s9 <<'EOT'
-declare function foo($a as xs:integer, $b as element(*)) as xs:string
-{ "foo" };
+NAME=$1
 
-foo(1, <foo/>)
-EOT
+pf -s9 < $NAME.xq
 echo $?

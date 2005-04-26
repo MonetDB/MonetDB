@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s10 <<'EOT'
-some $a in (1,2) satisfies 43
-EOT
+NAME=$1
+
+pf -s10 < $NAME.xq
 echo $?

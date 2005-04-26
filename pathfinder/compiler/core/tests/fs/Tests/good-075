@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s9 <<'EOT'
-let $a := 1, $b := $a return ($a, $b)
-EOT
+NAME=$1
+
+pf -s9 < $NAME.xq
 echo $?

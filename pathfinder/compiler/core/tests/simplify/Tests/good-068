@@ -1,9 +1,6 @@
 #!/bin/bash
 
-pf -s10 <<'EOT'
-declare variable $a := 42;
-declare variable $b := $a + 1;
+NAME=$1
 
-for $i in ($a, $b) return ($i, $a, $b)
-EOT
+pf -s10 < $NAME.xq
 echo $?

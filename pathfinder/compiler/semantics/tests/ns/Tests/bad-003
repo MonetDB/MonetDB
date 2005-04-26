@@ -1,13 +1,6 @@
 #!/bin/bash
 
-pf -s3 <<'EOT'
-<a>
-  <b xmlns:foo='http://www.foo.bar'>
-    { foo:bar }
-  </b>
-  <c>
-    { foo:bar }
-  </c>
-</a>
-EOT
+NAME=$1
+
+pf -s3 < $NAME.xq
 echo $?

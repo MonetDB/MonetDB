@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s2 <<'EOT'
-if (42) then () else ()
-EOT
+NAME=$1
+
+pf -s2 < $NAME.xq
 echo $?

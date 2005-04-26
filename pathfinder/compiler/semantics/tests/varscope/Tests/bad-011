@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s4 <<'EOT'
-some $a in (1,2) satisfies $b
-EOT
+NAME=$1
+
+pf -s4 < $NAME.xq
 echo $?

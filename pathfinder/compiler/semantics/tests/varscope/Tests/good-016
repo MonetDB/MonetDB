@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s4 <<'EOT'
-let $a as xs:integer := 42 return $a
-EOT
+NAME=$1
+
+pf -s4 < $NAME.xq
 echo $?

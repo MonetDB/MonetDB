@@ -1,8 +1,6 @@
 #!/bin/bash
 
-pf -s2 <<'EOT'
-declare variable $a := ();
+NAME=$1
 
-$a
-EOT
+pf -s2 < $NAME.xq
 echo $?

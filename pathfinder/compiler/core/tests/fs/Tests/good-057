@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s9 <<'EOT'
-doc("foo.xml")/foo/element(bar, xs:integer)/baz
-EOT
+NAME=$1
+
+pf -s9 < $NAME.xq
 echo $?

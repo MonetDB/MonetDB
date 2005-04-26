@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s2 <<'EOT'
-element foo { "bar" }
-EOT
+NAME=$1
+
+pf -s2 < $NAME.xq
 echo $?

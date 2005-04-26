@@ -1,8 +1,6 @@
 #!/bin/bash
 
-pf -s2 <<'EOT'
-<a>
-  foo
-</a>
-EOT
+NAME=$1
+
+pf -s2 < $NAME.xq
 echo $?

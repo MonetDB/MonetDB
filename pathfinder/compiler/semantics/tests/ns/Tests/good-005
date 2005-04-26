@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s3 <<'EOT'
-/parent::foo/descendant::bar/following::baz
-EOT
+NAME=$1
+
+pf -s3 < $NAME.xq
 echo $?

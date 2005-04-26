@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s2 <<'EOT'
-<a b="f&amp;oo" c="b&#x61;r" />
-EOT
+NAME=$1
+
+pf -s2 < $NAME.xq
 echo $?

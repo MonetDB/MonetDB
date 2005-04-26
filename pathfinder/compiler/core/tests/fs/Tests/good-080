@@ -1,8 +1,6 @@
 #!/bin/bash
 
-pf -s9 <<'EOT'
-<a xmlns:foo='http://www.foo.bar/'>
-  { let $foo:a := 42 return $foo:a }
-</a>
-EOT
+NAME=$1
+
+pf -s9 < $NAME.xq
 echo $?

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s10 <<'EOT'
-let $a as element(foo) := <foo/> return 17
-EOT
+NAME=$1
+
+pf -s10 < $NAME.xq
 echo $?

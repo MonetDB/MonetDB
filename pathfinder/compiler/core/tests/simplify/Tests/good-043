@@ -1,10 +1,6 @@
 #!/bin/bash
 
-pf -s10 <<'EOT'
-<a>
-  <!-- a comment -->
-  foobar
-  <?php foobar?>
-</a>
-EOT
+NAME=$1
+
+pf -s10 < $NAME.xq
 echo $?

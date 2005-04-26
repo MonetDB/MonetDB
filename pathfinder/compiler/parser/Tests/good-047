@@ -1,9 +1,6 @@
 #!/bin/bash
 
-pf -s1 <<'EOT'
-typeswitch (42)
-  case xs:integer return 1
-  case xs:string  return 2
-  default         return 42
-EOT
+NAME=$1
+
+pf -s1 < $NAME.xq
 echo $?

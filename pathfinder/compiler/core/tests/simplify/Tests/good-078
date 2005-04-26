@@ -1,8 +1,6 @@
 #!/bin/bash
 
-pf -s10 <<'EOT'
-declare namespace foo = 'http://www.foo.bar/';
+NAME=$1
 
-<foo:b/>
-EOT
+pf -s10 < $NAME.xq
 echo $?

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s1 <<'EOT'
-for $a in (1,2,3) order by "a", "b" return 42
-EOT
+NAME=$1
+
+pf -s1 < $NAME.xq
 echo $?

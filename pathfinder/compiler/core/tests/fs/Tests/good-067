@@ -1,9 +1,6 @@
 #!/bin/bash
 
-pf -s9 <<'EOT'
-declare variable $a := 42;
-declare variable $b := $a + 1;
+NAME=$1
 
-($a, $b)
-EOT
+pf -s9 < $NAME.xq
 echo $?

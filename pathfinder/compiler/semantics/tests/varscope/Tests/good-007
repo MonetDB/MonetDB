@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s4 <<'EOT'
-for $a in (1,2,3) where $a > 7 return $a + 1
-EOT
+NAME=$1
+
+pf -s4 < $NAME.xq
 echo $?

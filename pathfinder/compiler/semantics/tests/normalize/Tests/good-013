@@ -1,8 +1,6 @@
 #!/bin/bash
 
-pf -s2 <<'EOT'
-import schema namespace foo = "myschema" at "http://www.myschema.org/";
+NAME=$1
 
-17
-EOT
+pf -s2 < $NAME.xq
 echo $?

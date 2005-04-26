@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s2 <<'EOT'
-<a xmlns:foo='http://www.foo.bar/' foo:a='bar' />
-EOT
+NAME=$1
+
+pf -s2 < $NAME.xq
 echo $?

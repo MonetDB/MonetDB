@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s1 <<'EOT'
-for $a at $p in foo, $b at $v in bar return ($a, $p, $b, $v)
-EOT
+NAME=$1
+
+pf -s1 < $NAME.xq
 echo $?

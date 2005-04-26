@@ -1,8 +1,6 @@
 #!/bin/bash
 
-pf -s2 <<'EOT'
-import schema
-  default element namespace "myschema" at "http://www.myschema.org/";
-17
-EOT
+NAME=$1
+
+pf -s2 < $NAME.xq
 echo $?

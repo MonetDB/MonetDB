@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pf -s4 <<'EOT'
-for $a in (1,2) for $b in (10, 20) return ($a, $b, $a)
-EOT
+NAME=$1
+
+pf -s4 < $NAME.xq
 echo $?

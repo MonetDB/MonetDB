@@ -1,10 +1,6 @@
 #!/bin/bash
 
-pf -s3 <<'EOT'
-declare xmlspace preserve;
-declare xmlspace strip;
-declare namespace bar = "http://www.bar.foo";
+NAME=$1
 
-bar:foo
-EOT
+pf -s3 < $NAME.xq
 echo $?
