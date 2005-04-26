@@ -307,12 +307,17 @@ We have to do it: create a new BAT and put everything into it.
 		BUN p = BUNptr(b, l);
 		BUN q = BUNptr(b, h);
 
-		bn = BATnew(b->htype, b->htype ? b->ttype : ATOMtype(b->ttype), h - l);
+		bn = BATnew(b->htype, b->ttype, h - l);
 		if (bn == NULL) {
 			return bn;
 		}
-		for (xx = BUNsize(b); p < q; p += xx) {
-			bunfastins(bn, BUNhead(b, p), BUNtail(b, p));
+		if (b->htype != b->ttype || b->htype != TYPE_void) {
+			for (xx = BUNsize(b); p < q; p += xx) {
+				bunfastins(bn, BUNhead(b, p), BUNtail(b, p));
+			}
+		} else {
+			BATsetcount(bn, h-l);
+			bn->batBuns->free = (h-l);
 		}
 	}
 	bn->hsorted = BAThordered(b);

@@ -77,8 +77,8 @@ test = (
 ##                    r"^\+\-+\+$",
                 # Tokens depend on flex/bison
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
-                # remove wine error:
-		    r"^fixme:heap:RtlCompactHeap stub$",
+                # remove wine errors:
+		    r"^fixme:.*$",
                  ])+')',  re.MULTILINE),
         # differing error messages when loading non-existing modules in dynamic and static Mserver
         re.compile('(?:'+')|(?:'.join([
