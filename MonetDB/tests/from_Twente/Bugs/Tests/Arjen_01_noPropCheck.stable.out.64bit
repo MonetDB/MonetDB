@@ -93,7 +93,7 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 # h			indexA		valuesA		MMoper_2		MMuselect_3	MMoper_4		MMuselect_5	MMsemijoin_6	MMcastnil_7	MMjoin_8		MMreverse_9	MMjoin_10	  # name
 # str			str		str		str		str		str		str		str		str		str		str		str		  # type
 #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "batBuns.filename",	  "27.buns",	  "26.buns",	  "28.buns",	  "28.buns",	  "30.buns",	  "31.buns",	  "28.buns",	  "28.buns",	  "36.buns",	  "28.buns",	  "37.buns"	  ]
+[ "batBuns.filename",	  "33.buns",	  "32.buns",	  "34.buns",	  "34.buns",	  "36.buns",	  "37.buns",	  "34.buns",	  "34.buns",	  "44.buns",	  "34.buns",	  "45.buns"	  ]
 [ "batBuns.free",	  "32",		  "16",		  "4",		  "3",		  "4",		  "24",		  "2",		  "2",		  "16",		  "2",		  "8"		  ]
 [ "batBuns.maxsize",	  "400",	  "200",	  "52",		  "3",		  "52",		  "400",	  "2",		  "2",		  "400",	  "2",		  "200"		  ]
 [ "batBuns.size",	  "400",	  "200",	  "50",		  "3",		  "50",		  "400",	  "2",		  "2",		  "400",	  "2",		  "200"		  ]
@@ -105,7 +105,7 @@ stdout of test 'Arjen_01_noPropCheck` in directory 'tests/from_Twente/Bugs` itse
 [ "batDirtybuns",		  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean",	  "clean"	  ]
 [ "batDirtydesc",		  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "dirty",	  "clean",	  "dirty",	  "dirty",	  "dirty",	  "dirty"	  ]
 [ "batFirst",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
-[ "batId",		  "tmp_27",	  "tmp_26",	  "tmp_28",	  "tmp_29",	  "tmp_30",	  "tmp_32",	  "tmp_33",	  "tmp_34",	  "tmp_36",	  "tmp_34",	  "tmp_37"	  ]
+[ "batId",		  "tmp_33",	  "tmp_32",	  "tmp_34",	  "tmp_35",	  "tmp_36",	  "tmp_40",	  "tmp_41",	  "tmp_42",	  "tmp_44",	  "tmp_42",	  "tmp_45"	  ]
 [ "batInserted",	  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0",		  "0"		  ]
 [ "batLRefcnt",			  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "1",		  "2",		  "1",		  "2",		  "1"		  ]
 [ "batParentid",	  "0",		  "0",		  "0",		  "28",		  "0",		  "31",		  "-28",	  "28",		  "0",		  "28",		  "0"		  ]
