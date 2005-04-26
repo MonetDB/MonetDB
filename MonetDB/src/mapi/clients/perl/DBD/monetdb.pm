@@ -488,14 +488,6 @@ sub tables {
 }
 
 
-sub _ListDBs {
-    my ($dbh) = @_;
-    my @database_list;
-    push @database_list, MapiLib::mapi_get_dbname($dbh->{monetdb_connection});
-    return @database_list;
-}
-
-
 sub disconnect {
     my ($dbh) = @_;
     my $mapi = $dbh->{monetdb_connection};
@@ -815,18 +807,6 @@ All MetaData methods are supported. However, column_info() currently doesn't
 provide length (size, ...) related information.
 The foreign_key_info() method returns a SQL/CLI like result set,
 because it provides additional information about unique keys.
-
-=head2 Private MetaData Methods
-
-=over 4
-
-=item ListDBs
-
-    @dbs = $dbh->func('_ListDBs');
-
-Returns a list of all databases managed by the MonetDB SQL daemon.
-
-=back
 
 =head1 HANDLE ATTRIBUTES
 
