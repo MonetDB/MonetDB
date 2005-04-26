@@ -223,10 +223,11 @@ extern stmt *stmt_exception(stmt *cond, char *errstr, int errcode);
 
 extern stmt *stmt_const(stmt *s, stmt *val);
 extern stmt *stmt_mark(stmt *s, int id);
+extern stmt *stmt_mark_tail(stmt *s, int id);
 extern stmt *stmt_reverse(stmt *s);
 extern stmt *stmt_mirror(stmt *s);
 
-extern stmt *stmt_limit(stmt *s, int offset, int limit, int ordered);
+extern stmt *stmt_limit(stmt *s, int offset, int limit, int direction);
 extern stmt *stmt_order(stmt *s, int direction);
 extern stmt *stmt_reorder(stmt *s, stmt *t, int direction);
 
@@ -847,6 +848,21 @@ stmt_mark(stmt *s, int id)
 	ns->aggr = s->aggr;
 	ns->h = stmt_dup(s->t);
 	return stmt_reverse(ns);
+}
+
+stmt *
+stmt_mark_tail(stmt *s, int id)
+{
+	stmt *ns = stmt_create(st_mark);
+
+	ns->op1.stval = s;
+	ns->op2.stval = stmt_atom_oid(id);
+
+	ns->nrcols = s->nrcols;
+	ns->key = s->key;
+	ns->aggr = s->aggr;
+	ns->h = stmt_dup(s->h);
+	return ns;
 }
 
 stmt *
@@ -1571,6 +1587,7 @@ tail_type(stmt *st)
 	case st_select2:
 	case st_uselect:
 	case st_uselect2:
+	case st_limit:
 	case st_semijoin:
 	case st_unique:
 	case st_union:
@@ -1767,6 +1784,7 @@ column_name(stmt *st)
 	case st_select2:
 	case st_uselect:
 	case st_uselect2:
+	case st_limit:
 	case st_semijoin:
 	case st_diff:
 	case st_unique:

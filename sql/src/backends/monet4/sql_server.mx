@@ -795,6 +795,7 @@ module(mmath);
 module(mkey);
 module(bat_arith);
 module(pcre); # likeselect_pcre
+module(pqueue); # pqueue_topn
 module(mapi); # mapi_listen 
 
 # low memory usage for testing unloading

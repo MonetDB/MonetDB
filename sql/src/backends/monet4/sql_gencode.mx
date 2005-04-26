@@ -450,10 +450,18 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			int r1 = backend_dumpstmt_(s->op2.stval, nr, sql);
 			int r2 = backend_dumpstmt_(s->op3.stval, nr, sql);
-			buf = NEW_ARRAY(char, BUFSIZ + 1);
+			if (s->flag) { /* topN direction */
+				buf = NEW_ARRAY(char, BUFSIZ + 1);
 
-			len = snprintf(buf, BUFSIZ, "var s%d := s%d.slice(s%d, s%d + s%d - 1);\n", -s->nr, l, r1, r1, r2);
-			dump(sql, buf, len, -s->nr);
+				len = snprintf(buf, BUFSIZ, "var s%dT := s%d.pqueue_topn(s%d + s%d, %d);\n", -s->nr, l, r1, r2, s->flag-1);
+				len += snprintf(buf+len, BUFSIZ-len, "var s%d := s%dT.slice(s%d, s%d + s%d - 1);\n", -s->nr, -s->nr, r1, r1, r2);
+				dump(sql, buf, len, -s->nr);
+			} else {
+				buf = NEW_ARRAY(char, BUFSIZ + 1);
+
+				len = snprintf(buf, BUFSIZ, "var s%d := s%d.slice(s%d, s%d + s%d - 1);\n", -s->nr, l, r1, r1, r2);
+				dump(sql, buf, len, -s->nr);
+			}
 			_DELETE(buf);
 			backend_dump_nil(sql, s->op1.stval);
 			backend_dump_nil(sql, s->op2.stval);

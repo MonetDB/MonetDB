@@ -516,12 +516,13 @@ sqlexecute(backend *be, stream *out)
 		node *a, *p;
 		int id = c->sym->data.lval->h->data.ival;
 		q = qc_find(c->qc, id);
+		int argc = c->args?list_length(c->args):0;
+		int parc = q->params?list_length(q->params):0;
 
 		if (!q) {
 			error(out, "no prepared statement with the given query id\n");
 			err = -1;
-		} else if ((c->args != q->params && (!c->args || !q->params))
-			   || (c->args && q->params && list_length(q->params) != list_length(c->args))) {
+		} else if (argc != parc) {
 			error(out, "wrong number of arguments for prepared statement\n");
 			err = -1;
 			q = NULL;
@@ -534,7 +535,7 @@ sqlexecute(backend *be, stream *out)
 					if (!atom_cast(arg, pt)) {
 						char buf[BUFSIZ];
 
-						snprintf(buf, BUFSIZ, "wrong argument for prepared statement (%s,%s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
+						snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
 						error(out, buf);
 						err = -1;
 						q = NULL;

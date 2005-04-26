@@ -356,7 +356,6 @@ int yydebug=1;
 	object_privileges
 	privileges
 	schema_name
-	sqlstmt_list
 	assignment_commalist
 	opt_column_commalist
 	column_commalist_parens
@@ -540,12 +539,6 @@ sqlstmt:
 			  m->sym = $$ = NULL; YYACCEPT; }
  | LEX_ERROR		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = NULL; YYACCEPT; }
- ;
-
-sqlstmt_list:
-    sql			{ $$ = _dlist_append_symbol( _dlist_create(), $1); }
- |  sqlstmt_list ';' sql
-			{ $$ = _dlist_append_symbol( $1, $3 ); }
  ;
 
 	/* schema definition language */

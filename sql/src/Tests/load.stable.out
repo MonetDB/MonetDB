@@ -53,6 +53,7 @@ loading module 'sql_server'
 [ "mmath",	  1		  ]
 [ "monettime",	  2		  ]
 [ "pcre",	  1		  ]
+[ "pqueue",	  1	  ]
 [ "sql_server",	  1		  ]
 [ "str",	  1		  ]
 [ "streams",	  2		  ]

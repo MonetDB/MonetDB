@@ -879,6 +879,67 @@ rel2bin(mvc *c, stmt *s)
 	case st_limit: {
 		stmt *j = NULL;
 
+		/* try to push the limit through the (fetch) join */
+		j = s->op1.stval;
+		/* equi join on same base table */
+			/* topn can only reduce the right side of the join */
+		if (s->flag == 0 &&
+		    j->type == st_join && 
+		  ((j->flag == cmp_equal && 
+		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) || 
+		    j->flag == cmp_all)) {
+			stmt *l = stmt_dup(j->op1.stval);
+			stmt *r = stmt_dup(j->op2.stval);
+
+			if (s->flag) { 
+				r = stmt_limit(r, 
+				      s->op2.stval->op1.aval->data.val.ival,
+				      s->op3.stval->op1.aval->data.val.ival,
+				      s->flag);
+			} else { 
+				l = stmt_limit(l, 
+				      s->op2.stval->op1.aval->data.val.ival,
+				      s->op3.stval->op1.aval->data.val.ival,
+				      s->flag);
+			}
+			s = stmt_join(l, r, cmp_equal); 
+			l = rel2bin(c, s);
+			stmt_destroy(s);
+			return l;
+		}
+		/* try to push the limit through the order 
+		if (j->type == st_order) {
+			s = stmt_order(stmt_limit(stmt_dup(j->op1.stval),
+				s->op2.stval->op1.aval->data.val.ival,
+				s->op3.stval->op1.aval->data.val.ival,
+				j->flag+1), j->flag);
+			j = rel2bin(c, s);
+			stmt_destroy(s);
+			return j;
+		}
+		*/
+		/* try to push the limit through the reverse 
+		if (j->type == st_reverse) {
+			s = stmt_reverse(stmt_limit(stmt_dup(j->op1.stval),
+				s->op2.stval->op1.aval->data.val.ival,
+				s->op3.stval->op1.aval->data.val.ival,
+				j->flag));
+			j = rel2bin(c, s);
+			stmt_destroy(s);
+			return j;
+		}
+		*/
+		/* try to push the limit through the mark 
+		if (j->type == st_mark) {
+			s = stmt_mark_tail(stmt_limit(stmt_dup(j->op1.stval),
+				s->op2.stval->op1.aval->data.val.ival,
+				s->op3.stval->op1.aval->data.val.ival, j->flag),
+				j->op2.stval->op1.aval->data.val.ival);
+			j = rel2bin(c, s);
+			stmt_destroy(s);
+			return j;
+		}
+		*/
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
 			stmt *ns = rel2bin(c, os);
@@ -886,23 +947,6 @@ rel2bin(mvc *c, stmt *s)
 			assert(ns != s);
 			stmt_destroy(os);
 			s->op1.stval = ns;
-		}
-		s->optimized = 2;
-		/* try to push the limit through the (fetch) join */
-		j = s->op1.stval;
-		/* equi join on same base table */
-		if (j->type == st_join && 
-		    j->flag == cmp_equal &&
-		    j->op1.stval->t == j->op2.stval->h ) {
-			stmt *l = stmt_dup(j->op1.stval);
-			stmt *r = stmt_dup(j->op2.stval);
-			l = stmt_limit(l, 
-				      s->op2.stval->op1.aval->data.val.ival,
-				      s->op3.stval->op1.aval->data.val.ival,
-				      s->flag);
-			s = stmt_join(l, r, cmp_equal); 
-			s->optimized = 2;
-			return s;
 		}
 		s->optimized = 2;
 		return stmt_dup(s);
