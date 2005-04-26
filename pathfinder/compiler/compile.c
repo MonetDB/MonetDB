@@ -145,12 +145,16 @@ void segfault_handler (int sig);
  */
 static char* 
 pf_read(FILE *pfin) {
-    size_t off = 0, len = 65536;
-    char* buf = (char*) PFmalloc(len);
-    while(fread(buf+off, len-off, 1, pfin) == len-off) {
-	off = len; len *= 2;
-	buf = (char*) PFrealloc(len, buf);
+    size_t off = 0, len = 2048, n;
+    char* buf = (char*) malloc(len);
+    while((n = fread(buf+off, 1, len-off-1, pfin)) > 0) {
+	off += n;
+        if (off >= len - 1) {
+            len *= 2;
+            buf = (char*) realloc(buf, len);
+        }
     }
+    buf[off] = 0;
     return buf;
 }
    
@@ -189,13 +193,15 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 
     /* compiler chain below 
      */
-    tm_first = tm = PFtimer_start ();
   
     /* Invoke parser on stdin (or whatever stdin has been dup'ed to)
      */
-    PFparse (pf_read(pfin), &proot);
-
+    char *xquery = pf_read(pfin);
+    tm_first = tm = PFtimer_start ();
+    PFparse (xquery, &proot);
     tm = PFtimer_stop (tm);
+    free(xquery);
+
     if (status->timing)
         PFlog ("parsing:\t\t %s", PFtimer_str (tm));
 
