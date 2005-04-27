@@ -1040,10 +1040,15 @@ shred_pi (void *ctx, const xmlChar *tgt, const xmlChar *ins)
 
     /*
      * snprintf returns the number of characters that would actually
-     * have been printed if enough space were available. pis can thus
-     * be larger than the buffer in pi, so we might need to truncate it.
+     * have been printed if enough space were available (unless the
+     * snprintf implementation is not C99-compliant, in which case it
+     * returns -1). pis can thus be larger than the buffer in pi, so
+     * we might need to truncate it.
      */
-    pis = MIN(pis, PFSHRED_STRLEN_MAX * 2 + 1);
+    if (pis > 0)
+        pis = MIN(pis, PFSHRED_STRLEN_MAX * 2 + 1);
+    else
+        pis = PFSHRED_STRLEN_MAX * 2 + 1;
 
     /* does this p-i have a duplicate target/instruction pair? */
     dup = duplicate (tgtins_db, pi_buf, pis, &(node.prop));
@@ -1388,9 +1393,11 @@ main (int argc, char *argv[])
      * (we seek in the relation file)
      */
     if (prop_postorder) {
-        pretuples = snprintf (0, 0, POSTUPLE, (nat) 0, (nat) 0, 0, (nat) 0, 0);
+        char buf[1024];         /* 1024 is enough for this format */
+        pretuples = snprintf (buf, 1024, POSTUPLE, (nat) 0, (nat) 0, 0, (nat) 0, 0);
     } else {
-        pretuples = snprintf (0, 0, PRETUPLE, (nat) 0, 0, (nat) 0, 0);
+        char buf[1024];         /* 1024 is enough for this format */
+        pretuples = snprintf (buf, 1024, PRETUPLE, (nat) 0, 0, (nat) 0, 0);
     }
 
     /* start timer */

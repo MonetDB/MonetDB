@@ -182,7 +182,7 @@ PFcore_new_var (char *prefix)
      * confuse the user)
      */
     if ((PFstate.print_dot || PFstate.print_pretty) && 
-        (size_t) l >= VNAME_MAX)
+        ((size_t) l >= VNAME_MAX || l < 0))
         PFinfo (OOPS_NOTICE, "truncated variable name `%s' in core query",
                 vname);
 

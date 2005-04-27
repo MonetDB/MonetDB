@@ -87,10 +87,14 @@ static void milprintf(opt_t *o, const char *format, ...)
         va_start(ap, format);
         j = vsnprintf(milbuf, i, format, ap);
         va_end (ap);
-        if (j++ > i) {
-                milbuf = PFrealloc(j, milbuf);
+        while (j < 0 || j > i) {
+                if (j > 0)      /* C99 */
+                        i = j + 1;
+                else            /* old C */
+                        i *= 2;
+                milbuf = PFrealloc(i, milbuf);
                 va_start(ap, format);
-                vsnprintf(milbuf, j, format, ap);
+                j = vsnprintf(milbuf, i, format, ap);
                 va_end (ap);
         } 
         opt_mil(o, milbuf);
