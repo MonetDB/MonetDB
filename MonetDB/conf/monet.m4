@@ -268,7 +268,7 @@ yes-*-*)
 		CFLAGS="$CFLAGS -std=c99"
 		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		;;
-	3.*-*)
+	[[34]].*-*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
@@ -290,12 +290,13 @@ yes-*-*)
 	dnl  ... and some are beyond our control:
 	case "$gcc_ver" in
 		dnl  Some versions of flex and bison require these:
-	3.4.*)	dnl  (Don't exist for gcc < 3.0.)
+	3.4.*)	dnl  (Don't exist for gcc < 3.4.)
 		CFLAGS="$CFLAGS -fno-strict-aliasing"
 		X_CFLAGS="$X_CFLAGS -Wno-unused-function -Wno-unused-label"
 		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused-function -Wno-unused-label"
 		;;
-	3.*)	dnl  (Don't exist for gcc < 3.0.)
+	[[34]].*)
+		dnl  (Don't exist for gcc < 3.0.)
 		X_CFLAGS="$X_CFLAGS -Wno-unused-function -Wno-unused-label"
 		X_CXXFLAGS="$X_CXXFLAGS -Wno-unused-function -Wno-unused-label"
 		;;
@@ -319,22 +320,6 @@ yes-*-*)
 		dnl  generates "X_CFLAGS =" in the generated Makefile.
 		NO_X_CFLAGS='X_CFLAGS'
 		;;
-	4.0.0-darwin8.0.0)
-		dnl  In some cases, there is a (possibly) uninitialized
-		dnl  variable in bison.simple ... |-(
-		X_CFLAGS="$X_CFLAGS -Wno-uninitialized"
-		X_CXXFLAGS="$X_CXXFLAGS -Wno-uninitialized"
-		dnl  With gcc 4.0.0 on Darwin 8.0.0 (aka. MacOS 10.4, Tiger),
-		dnl  compiling decimal.mx fails both with 32 and 64 bits
-		dnl  complaining about 
-		dnl  "comparison is always true due to limited range of data type"
-		dnl  in MAX() and MIN() in macro TOTLEN() in functions 
-		dnl  decimal_length, decimal_convert, & decimal_put;
-		dnl  I have no idea, what the problem is --- hence,
-		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch of -Werror
-		dnl  for decimal.mx in src/modules/plain/Makefile.ag .
-		NO_INLINE_CFLAGS='-Wno-error'
-		;;
 	*-solaris*|*-darwin*|*-aix*)
 		dnl  In some cases, there is a (possibly) uninitialized
 		dnl  variable in bison.simple ... |-(
@@ -347,6 +332,24 @@ yes-*-*)
 		dnl  for arm-linux --- seem to require this to avoid
 		dnl  "warning: dereferencing type-punned pointer will break strict-aliasing rules"
 		X_CFLAGS="$X_CFLAGS -Wno-strict-aliasing"
+		;;
+	esac
+	case $gcc_ver in
+	4.0.0*)
+		dnl  With gcc 4.0.0,
+		dnl  compiling decimal.mx fails complaining about 
+		dnl  "comparison is always true due to limited range of data type"
+		dnl  in MAX() and MIN() in macro TOTLEN() in functions 
+		dnl  decimal_length, decimal_convert, & decimal_put;
+		dnl  I have no idea, what the problem is --- hence,
+		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch off -Werror
+		dnl  for decimal.mx in src/modules/plain/Makefile.ag .
+		dnl  Likewise (at least on Fedora Core 3), g++ 4.0.0 complains about
+		dnl  "language.h:32: warning: ‘class language’ has virtual functions but non-virtual destructor"
+		dnl  (not only for language.h/.mx!) when compiling src/mel; hence,
+		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch off -Werror
+		dnl  in src/mel/Makefile.ag .
+		NO_INLINE_CFLAGS='-Wno-error'
 		;;
 	esac
 	;;
@@ -1042,7 +1045,7 @@ if test "x$enable_optim" = xyes; then
     if test "x$GCC" = xyes; then
       dnl -fomit-frame-pointer crashes memprof
       case "$host-$gcc_ver" in
-      x86_64-*-*-3.[[2-9]]*|i*86-*-*-3.[[2-9]]*)
+      x86_64-*-*-3.[[2-9]]*|i*86-*-*-3.[[2-9]]*|x86_64-*-*-4.*|i*86-*-*-4.*)
                       CFLAGS="$CFLAGS -O6"
                       case "$host" in
                       i*86-*-cygwin) 
