@@ -62,6 +62,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <malloc.h>
 
 #include "array.h"
 
@@ -209,22 +210,26 @@ int
 PFarray_vprintf (PFarray_t *a, const char *fmt, va_list mat)
 {
     va_list tmp;
-    char  try;
+    size_t len = BUFSIZ;
+    char  *try = malloc(len);
     int   nchars;
 
     /* make sure this is an array holding charater(-sized) elements */
     assert (a && a->esize == sizeof (char));
 
-    /* try to ``print'' the material into a mini-array of length 1 (this
-     * will probably fail but we are told the size of what would have
-     * been printed if we had enough space available...)  
-     * @note this assumes the C99 semantics of vsnprintf ()
+    /* try to ``print'' the material into a mini-array.  this will
+     * probably fail but we are told the size of what would have been
+     * printed if we had enough space available if the implementation
+     * of vsnprint is C99-compliant.  in case it isn't, we loop with
+     * ever larger buffers until we do know the size.
      */
     va_copy(tmp, mat);
-    nchars = vsnprintf (&try, 1, fmt, tmp);
-
-    if (nchars < 0)
-        return nchars;
+    while ((nchars = vsnprintf (try, len, fmt, tmp)) < 0) {
+        len *= 2;
+        try = realloc(try, len);
+        va_copy(tmp, mat);
+    }
+    free(try);
 
 
     /* now that we know the actual size, print the formatted material
