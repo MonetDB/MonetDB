@@ -657,7 +657,7 @@ void killClient(Client c){
 
     	GDKwarning("killClient:about to kill process ...\n");
     	sleep(PROCESSTIMEOUT);
-    	pthread_kill((pthread_t)(pid-1),SIGKILL);
+    	MT_kill_thread(pid);
     	sleep(PROCESSTIMEOUT);
     	GDKwarning("killClient:process killed\n");
     }
