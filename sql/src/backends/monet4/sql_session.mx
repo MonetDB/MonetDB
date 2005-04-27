@@ -514,11 +514,11 @@ sqlexecute(backend *be, stream *out)
 
 	if (c->mode == m_execute) {
 		node *a, *p;
-		int id = c->sym->data.lval->h->data.ival;
-		q = qc_find(c->qc, id);
-		int argc = c->args?list_length(c->args):0;
-		int parc = q->params?list_length(q->params):0;
+		int argc, parc, id = c->sym->data.lval->h->data.ival;
 
+		q = qc_find(c->qc, id);
+		argc = c->args?list_length(c->args):0;
+		parc = q->params?list_length(q->params):0;
 		if (!q) {
 			error(out, "no prepared statement with the given query id\n");
 			err = -1;
