@@ -173,6 +173,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     PFma_op_t  *maroot = NULL;
     PFmil_t    *mroot  = NULL;
     PFarray_t  *mil_program = NULL;
+    char       *xquery = NULL;
 
     /* elapsed time for compiler phase */
     long tm, tm_first;
@@ -196,7 +197,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
   
     /* Invoke parser on stdin (or whatever stdin has been dup'ed to)
      */
-    char *xquery = pf_read(pfin);
+    xquery = pf_read(pfin);
     tm_first = tm = PFtimer_start ();
     PFparse (xquery, &proot);
     tm = PFtimer_stop (tm);
