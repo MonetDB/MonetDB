@@ -34,10 +34,10 @@ organized in the heap with respect to their values (tail column).
   .COMMAND pqueue_dequeue_@2(BAT[oid,@1] h) = pqueue_dequeue_@1@2;
   "Removes top element of the @2-pqueue and updates it"
 
-  .COMMAND pqueue_topn_@2(BAT[void,@1] t, int n) : BAT[oid,@1] = pqueue_topn_void@1@2;
+  .COMMAND pqueue_topn_@2(BAT[oid,@1] t, int n) : BAT[oid,@1] = pqueue_topn_@1@2;
   "Return the topn elements of the bat t using a @2-pqueue"
 
-  .COMMAND pqueue_topn_@2(BAT[oid,@1] t, int n) : BAT[oid,@1] = pqueue_topn_@1@2;
+  .COMMAND pqueue_topn_@2(BAT[void,@1] t, int n) : BAT[oid,@1] = pqueue_topn_void@1@2;
   "Return the topn elements of the bat t using a @2-pqueue"
 
 @= mel_pqueue
@@ -448,11 +448,11 @@ int pqueue_topn_any@1(BAT **H, BAT *t, int *N)
   pqueue_init(H,t,&n); 
 
   for(i=0; i<n; i++, p+=bs) {
-	pqueue_enqueue_any@1(*H, (oid*)BUNhloc(t,p), BUNtvar(t,p), tpe); 
+	pqueue_enqueue_any@1(*H, (oid*)BUNhloc(t,p), BUNtail(t,p), tpe); 
   }
   n = BATcount(t);
   for(; i<n; i++, p+=bs) {
-	pqueue_topreplace_any@1(*H, (oid*)BUNhloc(t,p), BUNtvar(t,p), tpe); 
+	pqueue_topreplace_any@1(*H, (oid*)BUNhloc(t,p), BUNtail(t,p), tpe); 
   }
   return GDK_SUCCEED;
 }
