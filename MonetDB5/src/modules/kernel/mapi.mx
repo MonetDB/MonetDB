@@ -135,7 +135,7 @@ address mapi_epilogue;
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
-#ifdef HAVE_WINSOCK_H
+#ifdef HAVE_WIN32
 # include <winsock.h>
 #endif
 #ifdef HAVE_SYS_UN_H
