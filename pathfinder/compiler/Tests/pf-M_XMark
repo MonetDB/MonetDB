@@ -3,7 +3,7 @@
 for i in `ls $RELSRCDIR/../../tests/XMark/Tests/*.xq | egrep -v "^$RELSRCDIR/../../tests/XMark/Tests/q1[89].xq$"` ; do
 	j=${i##*/}
 	ln -s $i $j
-	echo "pf -M $j \>/dev/null"
-	echo "pf -M $j \>/dev/null" >&2
-	      pf -M $j  >/dev/null
+	echo "pf -M $j >/dev/null"
+	echo "pf -M $j >/dev/null" >&2
+	      pf -M $j >/dev/null
 done
