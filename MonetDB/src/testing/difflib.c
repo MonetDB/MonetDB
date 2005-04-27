@@ -80,27 +80,50 @@ extern char *strdup(const char *);
 #endif
 #endif
 
-char *
+static char *
 HTMLsave(char *s)
 {
-	char *p, t[BUFLEN2];
+	static char t[BUFLEN2];
+	char *p = t;
 
-	while ((p = strchr(s, '<'))) {
-		*p = '\0';
-		sprintf(t, "%s&lt;%s", s, p + 1);
-		strcpy(s, t);
+	while (*s && p < t + BUFLEN2 - 7) {
+		switch (*s) {
+		case '<':
+			*p++ = '&';
+			*p++ = 'l';
+			*p++ = 't';
+			*p++ = ';';
+			break;
+		case '>':
+			*p++ = '&';
+			*p++ = 'g';
+			*p++ = 't';
+			*p++ = ';';
+			break;
+		case '&':
+			*p++ = '&';
+			*p++ = 'a';
+			*p++ = 'm';
+			*p++ = 'p';
+			*p++ = ';';
+			break;
+		case '"':
+			*p++ = '&';
+			*p++ = 'q';
+			*p++ = 'u';
+			*p++ = 'o';
+			*p++ = 't';
+			*p++ = ';';
+			break;
+		default:
+			*p++ = *s;
+			break;
+		}
+		s++;
 	}
-	while ((p = strchr(s, '>'))) {
-		*p = '\0';
-		sprintf(t, "%s&gt;%s", s, p + 1);
-		strcpy(s, t);
-	}
-	while ((p = strchr(s, '"'))) {
-		*p = '\0';
-		sprintf(t, "%s&quot;%s", s, p + 1);
-		strcpy(s, t);
-	}
-	return s;
+	*p++ = 0;
+
+	return t;
 }
 
 
