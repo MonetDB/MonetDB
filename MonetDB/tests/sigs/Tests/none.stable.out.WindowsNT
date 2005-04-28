@@ -76,6 +76,7 @@ view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 [ "oo7",	  nil	  ]
 [ "pcl",	  nil	  ]
 [ "pcre",	  nil	  ]
+[ "pqueue",	  nil	  ]
 [ "profiler",	  nil	  ]
 [ "qt",		  nil	  ]
 [ "radix",	  nil	  ]
@@ -159,6 +160,7 @@ others.mark(oid(nil)).print();
 [ "radix",	  nil	  ]
 [ "qt",		  nil	  ]
 [ "profiler",	  nil	  ]
+[ "pqueue",	  nil	  ]
 [ "pcre",	  nil	  ]
 [ "pcl",	  nil	  ]
 [ "oo7",	  nil	  ]
@@ -696,10 +698,46 @@ others@batloop(){
 
 	dropping streams
 
-#---------------------------------#
-# module		usage_count	  # name
+#-------------------------#
+# tmp_36		tmp_37	  # name
+# str		int	  # type
+#-------------------------#
+[ "algebra",	  1	  ]
+[ "arith",	  1	  ]
+[ "bat",	  1	  ]
+[ "builtin",	  1	  ]
+[ "main",	  1	  ]
+[ "str",	  1	  ]
+[ "sys",	  1	  ]
+[ "trans",	  1	  ]
+
+	loading pqueue
+
+#-------------------------#
+# tmp_33		tmp_41	  # name
 # str		int		  # type
-#---------------------------------#
+#-------------------------#
+[ "algebra",	  1	  ]
+[ "arith",	  1	  ]
+[ "bat",	  1	  ]
+[ "builtin",	  1	  ]
+[ "main",	  1	  ]
+[ "pqueue",	  1	  ]
+[ "str",	  1	  ]
+[ "sys",	  1	  ]
+[ "trans",	  1	  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "pqueue",	  nil	  ]
+
+	dropping pqueue
+
+#-------------------------#
+# tmp_33		tmp_43	  # name
+# str		int	  # type
+#-------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]

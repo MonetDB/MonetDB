@@ -46,6 +46,7 @@ All_mods@batloop() {
     radix: loading... done.
        qt: loading... done.
  profiler: loading... done.
+   pqueue: loading... done.
      pcre: loading... done.
       pcl: loading... done.
       oo7: loading... done.
@@ -116,6 +117,7 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "oo7"		  ]
 [ "pcl"		  ]
 [ "pcre"	  ]
+[ "pqueue"	  ]
 [ "profiler"	  ]
 [ "qt"		  ]
 [ "radix"	  ]
