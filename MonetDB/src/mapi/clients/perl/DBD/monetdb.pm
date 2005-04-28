@@ -841,13 +841,6 @@ Arjan Scherpenisse E<lt>acscherp@science.uva.nlE<gt> renamed this module to
 F<monetdbPP.pm> and derived the new MapiLib based version (F<monetdb.pm>).
 Current maintainer is Steffen Goeldner E<lt>sgoeldner@cpan.orgE<gt>.
 
-=head1 COPYRIGHT AND LICENCE
-
-Copyright (C) 2003-2004 CWI Netherlands. All rights reserved.
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself.
-
 =head1 SEE ALSO
 
 =head2 MonetDB
