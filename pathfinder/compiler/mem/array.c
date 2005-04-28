@@ -62,7 +62,7 @@
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #include "array.h"
 
