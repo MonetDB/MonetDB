@@ -47,6 +47,7 @@
 @:install_module(mmath)@
 @:install_module(monettime)@
 @:install_module(pcre)@
+@:install_module(pqueue)@
 @:install_module(profiler)@
 @:install_module(radix)@
 @:install_module(stats)@
