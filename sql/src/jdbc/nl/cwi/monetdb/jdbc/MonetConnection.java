@@ -83,9 +83,15 @@ public class MonetConnection extends Thread implements Connection {
 	private int curReplySize = -1;	// the server by default uses -1 (all)
 
 	/* only parse the date patterns once, use multiple times */
+	/** Format of a timestamp */
+	final static SimpleDateFormat mTimestamp =
+		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 	/** Format of a timestamp with RFC822 time zone */
 	final static SimpleDateFormat mTimestampZ =
 		new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSZ");
+	/** Format of a time */
+	final static SimpleDateFormat mTime =
+		new SimpleDateFormat("HH:mm:ss.SSS");
 	/** Format of a time with RFC822 time zone */
 	final static SimpleDateFormat mTimeZ =
 		new SimpleDateFormat("HH:mm:ss.SSSZ");
@@ -268,7 +274,18 @@ public class MonetConnection extends Thread implements Connection {
 		setDaemon(true);
 		start();
 
+		// enable auto commit
 		setAutoCommit(true);
+		// set our time zone on the server
+		Calendar cal = Calendar.getInstance();
+		int offset = (cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET)) / (60 * 1000);
+		String tz = offset < 0 ? "-" : "+";
+		tz += (offset / 60 < 10 ? "0" : "") + (offset / 60) + ":";
+		offset -= (offset / 60) * 60;
+		tz += (offset < 10 ? "0" : "") + offset;
+		sendIndependantCommand("SSET TIME ZONE INTERVAL '" + tz + "' HOUR;");
+
+		// we're absolutely not closed, since we're brand new
 		closed = false;
 	}
 
@@ -818,7 +835,6 @@ public class MonetConnection extends Thread implements Connection {
 	 * @throws SQLException if an IO exception or a database error occurs
 	 */
 	void sendIndependantCommand(String command) throws SQLException {
-		String error;
 		HeaderList hdrl =
 			addQuery(command, 0, 0, 0, 0);
 		

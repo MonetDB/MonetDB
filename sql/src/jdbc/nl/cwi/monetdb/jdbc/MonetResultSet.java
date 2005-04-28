@@ -1511,22 +1511,16 @@ public class MonetResultSet implements ResultSet {
 							monetDate.substring(16, 18);
 
 						synchronized (MonetConnection.mTimeZ) {
-							MonetConnection.mTimeZ.setTimeZone(TimeZone.getDefault());
+							MonetConnection.mTimeZ.setCalendar(Calendar.getInstance());
 							return(MonetConnection.mTimeZ.parse(monetDate.substring(0, 12) + tzRFC822));
 						}
 					} else if (monetDate.length() == 12) { // "HH:mm:ss.SSS".length()
 						// if there is no time zone information in the database
 						// we have to use the given calendar to construct it
 						synchronized (MonetConnection.mTimeZ) {
-							MonetConnection.mTimeZ.setTimeZone(TimeZone.getDefault());
-							int offset = cal.getTimeZone().getRawOffset() + cal.getTimeZone().getDSTSavings();
-							String tz = offset < 0 ? "-" : "+";
-							offset = offset / (1000 * 60);
-							tz += (offset / 60 < 10 ? "0" : "") + (offset / 60);
-							offset -= (offset / 60) * 60;
-							tz += (offset < 10 ? "0" : "") + offset;
+							MonetConnection.mTime.setCalendar(cal);
 
-							return(MonetConnection.mTimeZ.parse(monetDate + tz));
+							return(MonetConnection.mTime.parse(monetDate));
 						}
 					}
 				break;
@@ -1539,22 +1533,16 @@ public class MonetResultSet implements ResultSet {
 							monetDate.substring(27, 29);
 
 						synchronized (MonetConnection.mTimestampZ) {
-							MonetConnection.mTimestampZ.setTimeZone(TimeZone.getDefault());
+							MonetConnection.mTimestampZ.setCalendar(Calendar.getInstance());
 							return(MonetConnection.mTimestampZ.parse(monetDate.substring(0, 23) + tzRFC822));
 						}
 					} else if (monetDate.length() == 23) { // "yyyy-MM-dd HH:mm:ss.SSS".length()
 						// if there is no time zone information in the database
 						// we have to use the given calendar to construct it
 						synchronized (MonetConnection.mTimestampZ) {
-							MonetConnection.mTimestampZ.setTimeZone(TimeZone.getDefault());
-							int offset = cal.getTimeZone().getRawOffset() + cal.getTimeZone().getDSTSavings();
-							String tz = offset < 0 ? "-" : "+";
-							offset = offset / (1000 * 60);
-							tz += (offset / 60 < 10 ? "0" : "") + (offset / 60);
-							offset -= (offset / 60) * 60;
-							tz += (offset < 10 ? "0" : "") + offset;
+							MonetConnection.mTimestamp.setCalendar(cal);
 							
-							return(MonetConnection.mTimestampZ.parse(monetDate + tz));
+							return(MonetConnection.mTimestamp.parse(monetDate));
 						}
 					}
 				break;
