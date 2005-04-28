@@ -26,6 +26,7 @@
 SUBDIRS = conf burg compiler HAVE_LIBXML2?loader runtime
 
 EXTRA_DIST = rules.mk extra.mk RunMtest.in RunMtest.bat.in \
+		RunMapprove.in RunMapprove.bat.in \
 		MonetDB-PF.spec.in MonetDB-PF.spec rpm.mk.in
 EXTRA_DIST_DIR = NT
 
