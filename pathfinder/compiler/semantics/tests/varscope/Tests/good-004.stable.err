@@ -5,8 +5,6 @@ stderr of test 'good-004` in directory 'compiler/semantics/tests/varscope` itsel
 # 14:02:34 >  Mtimeout -timeout 60 ./good-004 good-004 
 # 14:02:34 >  
 
-./good-004: line 1: syntax error near unexpected token `('
-./good-004: line 1: `declare function foo($a as xs:integer, $b as element(foo,bar)) as xs:string'
 
 # 14:02:34 >  
 # 14:02:34 >  Done.
