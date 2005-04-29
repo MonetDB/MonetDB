@@ -263,6 +263,10 @@ typedef enum stream_errors {
 # include <netinet/tcp.h>
 # include <netdb.h>
 #endif
+#ifdef NATIVE_WIN32
+#include <winsock.h>
+#include <io.h>
+#endif
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -271,10 +275,6 @@ typedef enum stream_errors {
 #endif
 #ifdef HAVE_LIBBZ2
 #include <bzlib.h>
-#endif
-#ifdef NATIVE_WIN32
-#include <winsock.h>
-#include <io.h>
 #endif
 
 #ifndef SHUT_RD
