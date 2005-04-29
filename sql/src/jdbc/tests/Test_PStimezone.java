@@ -78,13 +78,13 @@ public class Test_PStimezone {
 			System.out.println(" passed :)");
 
 			while (rs.next()) {
-				System.out.println(rs.getString("ts") + "\t" + rs.getString("tsz"));
+//				System.out.println(rs.getString("ts") + "\t" + rs.getString("tsz"));
 				System.out.println(rs.getTimestamp("ts") + "\t" + rs.getTimestamp("tsz"));
 				c.setTimeZone(TimeZone.getTimeZone("PST"));
 				System.out.println(rs.getTimestamp("ts", c) + "\t" + rs.getTimestamp("tsz", c));
 				c.setTimeZone(TimeZone.getTimeZone("GMT+00:00"));
 				System.out.println(rs.getTimestamp("ts", c) + "\t" + rs.getTimestamp("tsz", c));
-				System.out.println(rs.getString("t") + "\t" + rs.getString("tz"));
+//				System.out.println(rs.getString("t") + "\t" + rs.getString("tz"));
 				System.out.println(rs.getTime("t") + "\t" + rs.getTime("tz"));
 				c.setTimeZone(TimeZone.getTimeZone("PST"));
 				System.out.println(rs.getTime("t", c) + "\t" + rs.getTime("tz", c));
