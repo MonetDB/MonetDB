@@ -101,7 +101,11 @@ GetFile(char *s, CmdCode m)
 	f->f_name = fname;
 
 	f->f_str = fname + strlen(fname);;
-	while (f->f_str > fname && f->f_str[-1] != DIR_SEP)
+	while (f->f_str > fname && f->f_str[-1] != DIR_SEP
+#ifdef WIN32
+		&& f->f_str[-1] != '/'
+#endif
+	       )
 		f->f_str--;
 
 	f->f_tmp = (char *) malloc(strlen(outputdir) + strlen(bname) + strlen(dir2ext(m)) + 17);
@@ -134,6 +138,14 @@ FileName(char *name)
 		p++;
 	else
 		p = name;
+#ifdef WIN32
+	/* on Windows also recognize / as separator */
+	name = p;
+	if ((p = strrchr(name, '/')) != NULL)
+		p++;
+	else
+		p = name;
+#endif
 	strcpy(bname, p);
 	return bname;
 }
@@ -149,14 +161,18 @@ BaseName(char *name)
 	return bname;
 }
 
-/* the name with '.' preappended */
+/* the name with '.' prepended */
 char *
 TempName(char *name)
 {
 	char *p, *r = p = bname + strlen(BaseName(name));
 
 	while (--r >= bname)
-		if (*r == DIR_SEP)
+		if (*r == DIR_SEP
+#ifdef WIN32
+		    || *r == '/'
+#endif
+		   )
 			break;
 	for (r++, p[1] = 0; p > r; p--)
 		p[0] = p[-1];
@@ -167,30 +183,21 @@ TempName(char *name)
 FILE *
 fmustopen(char *fname, char *mode)
 {
-	char *p = fname;
-	char *tmp = NULL;
+	char *p;
 	struct stat buf;
 
-	while ((p = strrchr(fname, DIR_SEP)) != NULL) {
-		if (tmp)
-			*tmp = DIR_SEP;
-		*p = '\0';
-		tmp = p;
-		if (stat(fname, &buf) == 0 && S_ISDIR(buf.st_mode)) {
-			*p++ = DIR_SEP;
-			while ((tmp = strchr(p, DIR_SEP)) != NULL) {
-				*tmp = '\0';
-				if (mkdir(fname, S_IRWXU) == -1)
-					Fatal("fmustopen:", "Can't create directory %s\n", fname);
-				*tmp++ = DIR_SEP;
-				p = tmp;
-			}
-			tmp = NULL;
-			break;
+	for (p = fname; *p; p++) {
+		if (*p == DIR_SEP
+#ifdef WIN32
+		    || *p == '/'
+#endif
+		   ) {
+			*p = '\0';
+			if (stat(fname, &buf) < 0 && mkdir(fname, S_IRWXU) < 0)
+				Fatal("fmustopen:", "Can't create directory %s\n", fname);
+			*p = DIR_SEP;
 		}
 	}
-	if (tmp)
-		*tmp = DIR_SEP;
 	return fopen(fname, mode);
 
 }
@@ -346,11 +353,16 @@ IoReadFile(char *name)
 	char *p;
 
 	if (!HasSuffix(name, ".mx"))
-		Fatal("IoReadFile", "Not a mx-file:%s", name);
+		Fatal("IoReadFile", "Not an mx-file:%s", name);
 	if ((ifile = fopen(name, "r")) == 0)
 		Fatal("IoReadFile", "Can't process %s", name);
 	p = (inputdir = StrDup(name)) + strlen(name);
-	while (--p >= inputdir && *p != DIR_SEP) ;
+	while (--p >= inputdir && *p != DIR_SEP
+#ifdef WIN32
+		&& *p != '/'
+#endif
+	       )
+		;
 	p[1] = 0;
 	mx_file = name;
 	mx_line = 1;
@@ -411,7 +423,8 @@ NextLine(void)
 			s += strlen(MX_INCLUDE);
 			while (isspace((int) (*s)))
 				s++;
-			for (t = s; *t && !isspace((int) (*t)); t++) ;
+			for (t = s; *t && !isspace((int) (*t)); t++)
+				;
 			*path = *t = 0;
 			if (*inputdir && *s != DIR_SEP) {	/* absolute path */
 				sprintf(path, "%s%c", inputdir, DIR_SEP);

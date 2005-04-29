@@ -34,7 +34,8 @@ GenCode(void)
 	for (d = defs; d < defs + ndef; d++) {
 		mx_file = d->d_file;
 		mx_line = d->d_line;
-	      again:switch (d->d_dir) {
+	  again:
+		switch (d->d_dir) {
 		case Bfile:
 		case Ofile:{
 			char *s;

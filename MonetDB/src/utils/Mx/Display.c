@@ -195,7 +195,11 @@ PrPrelude(char *file)
 	/* find out the full name in 'full', the basename in 's', end in 't' */
 	strcpy(full, file);
 	for (s = full; s[1]; s++) ;
-	while (s >= full && *s != DIR_SEP)
+	while (s >= full && *s != DIR_SEP
+#ifdef WIN32
+	       && *s != '/'
+#endif
+		)
 		s--;
 	for (t = ++s; *t; t++)
 		if (t[0] == '.' && t[1] == 'm' && t[2] == 'x' && !t[3])

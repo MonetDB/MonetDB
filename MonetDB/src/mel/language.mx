@@ -46,7 +46,7 @@ using namespace std;
 #else
 #include <iostream.h>
 #endif
-#ifdef __MINGW32_VERSION
+#ifdef __MINGW32__
 extern char *strdup(const char*);
 #endif
 

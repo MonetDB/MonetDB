@@ -102,11 +102,29 @@ ostream &Link::gen_module( ostream &o, const Module &d ){
 	return o; 
 }
 
-static char *basename( char *filename ){
-	char *p = strdup(strrchr( filename, DIR_SEP )+1);
-	char *q = strrchr( p, '.' );
-	if (q)
-		*q  = '\0';
+static char *
+basename(char *filename)
+{
+	char *p, *sep, *dot;
+
+	for (p = filename, sep = NULL, dot = NULL; *p; p++) {
+		if (*p == DIR_SEP
+#ifdef WIN32
+		    || *p == '/'
+#endif
+		   ) {
+			sep = p;
+			dot = NULL;
+		} else if (*p == '.')
+			dot = p;
+	}
+	if (sep)
+		filename = sep + 1;
+	if (dot)
+		*dot = '\0';
+	p = strdup(filename);
+	if (dot)
+		*dot = '.';
 	return p;
 }
 
@@ -116,9 +134,19 @@ static int matchlen( char *dir, char *file ){
 	int len;
 
 	for( ds = dir; *ds; ds++) {
-		if (*ds != DIR_SEP) continue;
+		if (*ds != DIR_SEP
+#ifdef WIN32
+		    && *ds != '/'
+#endif
+		   )
+			continue;
 		for( fs = file; *fs; fs++) {
-			if (*fs != DIR_SEP) continue;
+			if (*fs != DIR_SEP
+#ifdef WIN32
+			    && *fs != '/'
+#endif
+			   )
+				continue;
 
 			len = 0;
 			for(d = ds, f = fs; *d && *f && *d == *f; d++, f++) {

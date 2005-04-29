@@ -154,6 +154,14 @@ char *basename( char *fname ){
 		start++;
 	else
 		start = fname;
+#ifdef WIN32
+	fname = start;
+	start = strrchr(fname, '/');
+	if (start)
+		start++;
+	else
+		start = fname;
+#endif
 	char *end = strrchr(start, '.');
 	size_t l = end ? end - start : strlen(start);
 	char *b = new char[l+1];
