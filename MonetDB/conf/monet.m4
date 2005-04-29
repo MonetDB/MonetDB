@@ -258,8 +258,7 @@ yes-*-*)
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
 		CFLAGS="$CFLAGS -std=gnu99"
-		CXXFLAGS="$CXXFLAGS -ansi"
-		LDFLAGS="$LDFLAGS -no-undefined -LC:/MinGW/lib"
+		LDFLAGS="$LDFLAGS -no-undefined -L/usr/lib/w32api"
 		;;
 	*-irix*|*-darwin*)
 		CFLAGS="$CFLAGS -std=c99"
@@ -1918,7 +1917,11 @@ if test "x$have_php" != xno; then
 fi
 AC_SUBST(PHP_INCS)
 AC_SUBST(PHP_EXTENSIONDIR)
-XPHP_EXTENSIONDIR="`$translatepath "$PHP_EXTENSIONDIR"`"
+if [ "$PHP_EXTENSIONDIR" ]; then
+	XPHP_EXTENSIONDIR="`$translatepath "$PHP_EXTENSIONDIR"`"
+else
+	XPHP_EXTENSIONDIR=''
+fi
 AC_SUBST(XPHP_EXTENSIONDIR)
 AM_CONDITIONAL(HAVE_PHP, test x"$have_php" != xno)
 
@@ -1958,7 +1961,11 @@ if test "x$have_pear" != xno; then
 	fi
 fi
 AC_SUBST(PHP_PEARDIR)
-XPHP_PEARDIR="`$translatepath "$PHP_PEARDIR"`"
+if [ "$PHP_PEARDIR" ]; then
+	XPHP_PEARDIR="`$translatepath "$PHP_PEARDIR"`"
+else
+	XPHP_PEARDIR=''
+fi
 AC_SUBST(XPHP_PEARDIR)
 AM_CONDITIONAL(HAVE_PEAR, test x"$have_pear" != xno)
 
