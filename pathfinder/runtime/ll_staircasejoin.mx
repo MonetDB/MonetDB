@@ -61,10 +61,10 @@ const int PF_SOFTWARE_PREFETCH = 128;
 #define BBP_unfix_reclaim(b) \
 {\
     if (BBP_refs((b)->batCacheid) > 1) {\
-        /*printf("# %s, %s, %d, BBPunfix(%d=%s)\n",__FILE__, __func__, __LINE__,(b)->batCacheid,(b)->batId);*/\
+        /*printf("# %s, %s, %d, BBPunfix(%d=%s)\n",__FILE__, __func__, __LINE__,(b)->batCacheid,BATgetId(b));*/\
         BBPunfix((b)->batCacheid);\
     } else {\
-        /*printf("# %s, %s, %d, BBPreclaim(%d=%s)\n",__FILE__, __func__, __LINE__,(b)->batCacheid,(b)->batId);*/\
+        /*printf("# %s, %s, %d, BBPreclaim(%d=%s)\n",__FILE__, __func__, __LINE__,(b)->batCacheid,BATgetId(b));*/\
         BBPreclaim((b));\
     }\
 }
@@ -427,7 +427,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
             if (BATextend((b), _newcap) == NULL) {\
                 GDKerror("%s: BATextend of BAT '%s' (#%d) failed "\
                          "for " SZFMT " buns (" SZFMT " bytes).\n",\
-                         __func__, (b)->batId, (b)->batCacheid,\
+                         __func__, BATgetId(b), (b)->batCacheid,\
                          _newcap, _newcap * _bunsize);\
                 goto bunins_failed;\
             }\
@@ -436,7 +436,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                 GDKerror("%s: BATextend of BAT '%s' (#%d) failed: "\
                          "required " SZFMT " buns (" SZFMT " bytes), "\
                          "got only " SZFMT " buns (" SZFMT " bytes).\n",\
-                         __func__, (b)->batId, (b)->batCacheid,\
+                         __func__, BATgetId(b), (b)->batCacheid,\
                          _reqcap, _reqcap * _bunsize,\
                          _newcap, _newcap * _bunsize);\
                 goto bunins_failed;\
