@@ -1,0 +1,9 @@
+# the sensor event collector
+include sensors;
+
+sensors.dump();
+b:= bbp.new(:void,:int);
+sensors.deposit("toy","click",0,b);
+
+sensors.dump();
+sensors.activate("toy","192.255.0.1");
