@@ -109,6 +109,7 @@ $DBD::monetdb::db::imp_data_size = 0;
 
 sub ping {
     my ($dbh) = @_;
+
     my $mapi = $dbh->{monetdb_connection};
 
     MapiLib::mapi_ping($mapi) ? 0 : 1;
@@ -136,8 +137,8 @@ sub quote {
     my $suffix = $DBD::monetdb::TypeInfo::suffixes{$type} || '';
 
     if ( $dbh->{monetdb_language} ne 'sql') {
-      $prefix = q(") if $prefix eq q(');
-      $suffix = q(") if $suffix eq q(');
+        $prefix = q(") if $prefix eq q(');
+        $suffix = q(") if $suffix eq q(');
     }
     return $prefix . $value . $suffix;
 }
@@ -148,15 +149,16 @@ sub _count_param {
     my $num = 0;
 
     while (defined(my $c = shift @statement)) {
-	if ($c eq '"' || $c eq "'") {
-	    my $end = $c;
-	    while (defined(my $c = shift @statement)) {
-		last if $c eq $end;
-		@statement = splice @statement, 2 if $c eq '\\';
-	    }
-	} elsif ($c eq '?') {
-	    $num++;
-	}
+        if ($c eq '"' || $c eq "'") {
+            my $end = $c;
+            while (defined(my $c = shift @statement)) {
+                last if $c eq $end;
+                @statement = splice @statement, 2 if $c eq '\\';
+            }
+        }
+        elsif ($c eq '?') {
+            $num++;
+        }
     }
     return $num;
 }
@@ -185,6 +187,7 @@ sub prepare {
 
 sub commit {
     my($dbh) = @_;
+
     if ($dbh->FETCH('AutoCommit')) {
         warn 'Commit ineffective while AutoCommit is on' if $dbh->FETCH('Warn');
         return 0;
@@ -197,6 +200,7 @@ sub commit {
 
 sub rollback {
     my($dbh) = @_;
+
     if ($dbh->FETCH('AutoCommit')) {
         warn 'Rollback ineffective while AutoCommit is on' if $dbh->FETCH('Warn');
         return 0;
@@ -315,6 +319,7 @@ SQL
 
 sub table_info {
     my($dbh, $c, $s, $t, $tt) = @_;
+
     if ( defined $c && defined $s && defined $t ) {
         if    ( $c eq '%' && $s eq ''  && $t eq '') {
             return monetdb_catalog_info($dbh);
@@ -492,6 +497,7 @@ sub tables {
 
 sub disconnect {
     my ($dbh) = @_;
+
     my $mapi = $dbh->{monetdb_connection};
     MapiLib::mapi_disconnect($mapi);
     $dbh->STORE('Active', 0 );
@@ -501,6 +507,7 @@ sub disconnect {
 
 sub FETCH {
     my ($dbh, $key) = @_;
+
     return $dbh->{$key} if $key =~ /^monetdb_/;
     return $dbh->SUPER::FETCH($key);
 }
@@ -510,17 +517,17 @@ sub STORE {
     my ($dbh, $key, $value) = @_;
 
     if ($key eq 'AutoCommit') {
-	my $old = $dbh->{$key} || 0;
-	if ($value != $old) {
-	    my $mapi = $dbh->{monetdb_connection};
-	    MapiLib::mapi_setAutocommit($mapi, $value);
-	    $dbh->{$key} = $value;
-	}
-	return 1;
-
-    } elsif ($key =~ /^monetdb_/) {
-	$dbh->{$key} = $value;
-	return 1;
+        my $old = $dbh->{$key} || 0;
+        if ($value != $old) {
+            my $mapi = $dbh->{monetdb_connection};
+            MapiLib::mapi_setAutocommit($mapi, $value);
+            $dbh->{$key} = $value;
+        }
+        return 1;
+    }
+    elsif ($key =~ /^monetdb_/) {
+        $dbh->{$key} = $value;
+        return 1;
     }
     return $dbh->SUPER::STORE($key, $value);
 }
@@ -528,6 +535,7 @@ sub STORE {
 
 sub DESTROY {
     my ($dbh) = @_;
+
     $dbh->disconnect if $dbh->FETCH('Active');
     my $mapi = $dbh->{monetdb_connection};
     MapiLib::mapi_destroy($mapi) if $mapi;
@@ -542,6 +550,7 @@ $DBD::monetdb::st::imp_data_size = 0;
 
 sub bind_param {
     my ($sth, $index, $value, $attr) = @_;
+
     $sth->{monetdb_params}[$index-1] = $value;
     $sth->{monetdb_types}[$index-1] = ref $attr ? $attr->{TYPE} : $attr;
     return 1;
@@ -607,8 +616,9 @@ sub execute {
 
 sub fetch {
     my ($sth) = @_;
+
     return $sth->set_err(-900,'Statement handle not marked as Active')
-      unless $sth->FETCH('Active');
+        unless $sth->FETCH('Active');
     my $hdl = $sth->{monetdb_hdl};
     my $field_count = MapiLib::mapi_fetch_row($hdl);
     unless ( $field_count ) {
@@ -630,6 +640,7 @@ sub fetch {
 
 sub rows {
     my ($sth) = @_;
+
     return $sth->{monetdb_rows};
 }
 
@@ -637,6 +648,7 @@ sub rows {
 sub finish {
     my ($sth) = @_;
     my $hdl = $sth->{monetdb_hdl};
+
     if ( MapiLib::mapi_finish($hdl) ) {
         my $mapi = $sth->{Database}{monetdb_connection};
         my $err = MapiLib::mapi_error($mapi) || -1;
@@ -658,8 +670,8 @@ sub STORE {
     my ($sth, $key, $value) = @_;
 
     if ($key =~ /^monetdb_/) {
-	$sth->{$key} = $value;
-	return 1;
+        $sth->{$key} = $value;
+        return 1;
     }
     return $sth->SUPER::STORE($key, $value);
 }
@@ -667,6 +679,7 @@ sub STORE {
 
 sub DESTROY {
     my ($sth) = @_;
+
     $sth->STORE('Active', 0 );  # we don't need to call $sth->finish because
                                 # mapi_close_handle() calls finish_handle()
     MapiLib::mapi_close_handle($sth->{monetdb_hdl}) if $sth->{monetdb_hdl};
