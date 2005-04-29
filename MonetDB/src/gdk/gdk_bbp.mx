@@ -959,7 +959,6 @@ BBPinsert(BAT *b)
 	s = BBPtmpname(dirname, 64, i);
 	BBP_logical(-i) = NULL;
 	BBP_logical(i) = GDKstrdup(s);
-	BATsetId(b, BBP_logical(i));
 
 	BBPgetsubdir(dirname, i);
 	BBP_physical(i) = (str) GDKmalloc(strlen(dirname) + strLen(BATgetId(b)) - 4);
@@ -992,10 +991,6 @@ BBPcacheit(BAT *b)
 
 	/* fill in the mirror record */
 	bm->GDKversion = b->GDKversion;
-	BATsetId(b,BBP_logical(i));
-	BATsetId(bm,BBP_logical(-i));
-	if (! BATgetId(bm) )
-		BATsetId(bm, BATgetId(b));
 	bm->batCacheid = -i;
 	bm->batBuns = b->batBuns;
 	bm->dims.headtype = b->dims.tailtype;
@@ -1158,9 +1153,6 @@ BBPrename(bat bid, str nme)
 	}
 	GDKfree(BBP_logical(bid));
 	BBP_logical(bid) = GDKstrdup(nme);
-	if (bm->batId == b->batId)
-		BATsetId(bm, BBP_logical(bid));
-	BATsetId(b, BBP_logical(bid));
 	if (tmpid == 0) {
 		BBP_insert(bid);
 	}
@@ -2651,7 +2643,6 @@ BBPreplace(BAT *b, BAT *bn)
 
 		if (ok) {
 			/* make bn appear to BATsave (and others) as if it were b */
-			BATsetId(bn, BATgetId(b));
 			bn->batCacheid = bid;
 		}
 		if (ok && (persistentb || hugebn)) {
@@ -2669,7 +2660,6 @@ BBPreplace(BAT *b, BAT *bn)
 		}
 		if (!ok) {
 			/* FAILED: restore batId, cacheid and mode in bn */
-			BATsetId(bn, oldId);
 			bn->batCacheid = bnid;
 			BATmode(bn, oldmode);
 			b->batDirty = dirtyb;

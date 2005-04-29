@@ -790,7 +790,6 @@ use a @%BAT@ type that is supposed to look like this:
 @example
 typedef struct {
           /* static BAT properties */
-          str    batId;            /* bat name */
           bat    batCacheid;       /* bat id: index in BBPcache */
           int    batPersistence;   /* persistence mode */
           bit    batCopiedtodisk;  /* BAT is saved on disk? */
@@ -922,12 +921,9 @@ typedef struct {
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
 
-#define BATgetId(P)	(P)->batId
-#define BATsetId(P,S)	(P)->batId=S
 typedef struct {
 	/* static bat properties */
 	sht GDKversion;		/* FIRST! */
-	str batId;		/* BAT id: points to P->id */
 	bat batCacheid;		/* index into BBP */
 	Dimensions dims;	/* BAT dimensions */
 	Heap *batBuns;		/* pointer to U->buns */
@@ -1160,6 +1156,7 @@ gdk_export BAT *BATnewstorage(int ht, int tt, size_t cap);
 gdk_export BAT *BATcreatedesc(int ht, int tt, int heapnames);
 gdk_export int BATfree(BAT *b);
 gdk_export void BATdestroy(BAT *b);
+gdk_export str BATgetId(BAT *b);	
 gdk_export int BATelmshift(BAT *b);
 gdk_export void BATsetdims(BAT *b);
 gdk_export int BBPreclaim(BAT *b);

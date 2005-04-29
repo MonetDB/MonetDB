@@ -246,7 +246,6 @@ BATloaddesc(str nme)
 	}
 
 	/* probably need to allocate heaps here */
-	b->batId = NULL;
 	b->batCopiedtodisk = 1;
 	b->batElmshift = BATelmshift(b);
 	b->H->props = NULL;

@@ -60,7 +60,7 @@ int batcast_@1_@2(BAT **ret, BAT *b) {
 	REGISTER int bs = BUNsize(b);
 	BAT *bn;
 
-        ALGODEBUG THRprintf(GDKout, "batcast_@1_@2(b=%s);\n",b->batId);
+        ALGODEBUG THRprintf(GDKout, "batcast_@1_@2(b=%s);\n",BATgetId(b));
  	ERRORcheck((b->htype!=TYPE_void),
  	           "batcast_@1_@2: BAT b must be void-headed.\n");
 

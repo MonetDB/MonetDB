@@ -107,7 +107,6 @@ Fill in basic column info
 	bn->hkey = FALSE;
 	bn->tkey = FALSE;
 	bn->GDKversion = GDKLIBRARY;
-	bn->batId = NULL;
 
 	bn->batBuns = &bn->U->buns;
 	bn->hident = (char*)string_h;
@@ -145,6 +144,15 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 		}
 	}
 	return bn;
+}
+
+char *
+BATgetId(BAT *b) 
+{
+	char *r = BBP_logical(b->batCacheid);
+	if (!r)
+		return BBP_logical(abs(b->batCacheid));
+	return r;
 }
 
 int
