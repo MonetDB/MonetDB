@@ -489,6 +489,7 @@ str STATdepositStr(int *ret, str *nme)
 	Box box;
 	ValRecord val;
 	int idx;
+	str bnme;
 
 	b= BATdescriptor(idx= BBPindex(*nme));
 	if( b == NULL ) 
@@ -499,7 +500,8 @@ str STATdepositStr(int *ret, str *nme)
 	if( depositBox(box, *nme, &val) )
 		return throwException(MALEXCEPTION,"statistics.deposit",
 			"failed to deposit '%s' into box", *nme);
-	return STATenroll(ret,&b->batId);
+	bnme= BATgetId(b);
+	return STATenroll(ret,&bnme);
 }
 str STATdeposit(int *ret, int *bid)
 {
@@ -512,7 +514,8 @@ str STATdeposit(int *ret, int *bid)
     }
 
 	@:OpenBox(deposit)@
-	msg= STATenroll(ret,&b->batId);
+	msg= BATgetId(b);
+	msg= STATenroll(ret,&msg);
 	BBPunfix(b->batCacheid);
 	return msg;
 }
