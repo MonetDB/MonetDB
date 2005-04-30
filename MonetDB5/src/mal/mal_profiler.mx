@@ -523,7 +523,6 @@ inspect the properties of BATs and their propagation.
      
         log( "count=\"%d\" ", BATcount(b));
         /*log( "version=\"%d\" ", b->GDKversion);*/
-        /*log( "batId=\"%d\" ", BATgetId(b) );*/
         /*log( "batCacheid=\"%d\" ", b->batCacheid);*/
         /*log( "batParentid=\"%d\" ", b->batParentid);*/
         /*log( "batSharecnt=\"%d\" ", b->batSharecnt);*/

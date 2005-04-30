@@ -302,6 +302,12 @@ void chkFlow(MalBlkPtr mb)
 		GDKerror("%s missing\n", p->token== FUNCTIONsymbol?"return":"yield");
 		mb->errors++;
 	}
+    if( mb->stop == 3) /* interactive use */
+    {   int i;
+        p= getInstrPtr(mb,1);
+        for(i=0;i<p->retc; i++)
+            setVarUsed(mb,getArg(p,i),TRUE);
+    }
 	if( mb->errors == 0 )
 		mb->flowfixed = fixed; /* we might not have to come back here */
 }
