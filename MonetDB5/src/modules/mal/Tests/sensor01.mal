@@ -1,12 +1,15 @@
 # the sensor event collector
 include sensors;
 
-sensors.dump();
 sensors.deposit("toy","click",0,:int);
 sensors.deposit("toy","color",1,:int);
 
 sensors.dump();
+sensors.activate("toy",6060);
+sensors.dump();
 
-sensors.discard("toy");
+# it should no receive sensor input from port 6021
+
+sensors.release("toy");
 sensors.dump();
 
