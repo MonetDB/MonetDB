@@ -125,6 +125,7 @@ mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export void mdbHelp(stream *f);
 mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v,int index, int cnt,int first);
+mal_export void printBATelm(stream *f, int i, int cnt, int first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -544,7 +545,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			if( strcmp(b,"bbp") == 0 ){
 			int i;
 				for(i=1; i < BBPsize; i++)
-				if (BBP_cache(i) && BBP_logical(i)) {
+				if (BBP_logical(i) && BBP_cache(i)) {
 					stream_printf(out,"[%d] %s lref = %d ref= %d ", i,
 						BBP_logical(i), BBP_lrefs(i), BBP_refs(i));
 					stream_printf(out," dirty=%d \n", BATdirty(BBP_cache(i)) );
@@ -638,7 +639,11 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	/* search the symbol */
         	i = findVariable(mb,b);
         	if( i<0){
-            	stream_printf(out,"%s Symbol not found\n","#mdb ");
+				i= BBPindex(b);
+				if( i != 0)
+					printBATelm(out, i, size,first);
+				else 
+					stream_printf(out,"%s Symbol not found\n","#mdb ");
             	continue;
         	}
         	printStackElm(out, mb, getVar(mb,i),stk->stk+i,i,size,first);
@@ -784,6 +789,31 @@ void printStack(stream *f, MalBlkPtr mb, MalStkPtr s){
         for( ; i<mb->vtop ; i++)
 			printStackElm(f, mb, getVar(mb,i), 0,i,0,0);
 }
+void printBATelm(stream *f, int i, int cnt, int first){
+	BAT *b,*bs;
+	str tpe,nme;
+	b= BATdescriptor(i);
+	if( b){
+		nme= BATgetId(b);
+		tpe= getTypeName(newBatType(b->htype,b->ttype));
+		/* ignore ref count of this call */
+		stream_printf(f,"type=%s count=%d lrefs=%d refs=%d \n",
+			tpe,
+			BATcount(b),BBP_lrefs(ABS(b->batCacheid)),
+			BBP_refs(ABS(b->batCacheid))-1);
+        if(cnt < BATcount(b)) {
+            stream_printf(f,"Sample %d out of %d\n",cnt, BATcount(b));
+        }
+        /* cut out a portion of the BAT for display */
+        bs= BATslice(b,first,first+cnt);
+        if(bs== NULL)
+            stream_printf(f,"Failed to take chunk\n");
+        else BATmultiprintf(f,2,&bs,TRUE,0,TRUE);
+		BBPunfix(bs->batCacheid);
+		BBPunfix(b->batCacheid);
+		GDKfree(tpe);
+	}
+}
 
 void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int cnt,int first){
     str nme,nmeOnStk;
@@ -831,7 +861,7 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
             return;
         }
         stream_printf(f,"\n");
-        if(cnt < BATcount(b)) {
+        if(cnt <= BATcount(b)) {
             stream_printf(f,"Sample %d out of %d\n",cnt, BATcount(b));
         }
         /* cut out a portion of the BAT for display */
@@ -839,6 +869,7 @@ void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int c
         if(bs== NULL)
             stream_printf(f,"Failed to take chunk\n");
         else BATmultiprintf(f,2,&bs,TRUE,0,TRUE);
+		BBPunfix(bs->batCacheid);
         BBPunfix(b->batCacheid);
     } else
     if( isaBatType(n->type) && v){
