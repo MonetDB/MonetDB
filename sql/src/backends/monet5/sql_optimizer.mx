@@ -111,7 +111,6 @@ type checked and optimized.
 #include "sql_gencode.h"
 #include "mal_namespace.h"
 
-
 void
 addQueryToCache(Client c)
 {
@@ -203,6 +202,8 @@ Reduce the program before other optimizations take place
 	ARoptimizer(c->curprg->def, 0, 0);
 	CXoptimizer(c->curprg->def, 0, 0);
 	ORoptimizer(c->curprg->def, 0, 0);
+	s = findMALSymbol(getName("algebra",7),getName("joinPath",8));
+	if(s) ORCAMprocessor(c->curprg->def,s);
 	/* AMoptimizer(c->curprg->def, 0,0); */
 	/*SQLsetAccessMode(c); done in libraries now */
 
@@ -210,7 +211,7 @@ Reduce the program before other optimizations take place
 	if (mb->stop <= TOSMALL)
 		return;
 
-	s = findMALSymbol(putName("bat",3), putName("setWriteMode",12));
+	s = findMALSymbol(getName("bat",3), getName("setWriteMode",12));
 	if (s)
 		setWriteMode = getSignature(s)->fcn;
 
@@ -271,6 +272,7 @@ Empty BATs can be symbolically optimized. Disabled for a while.
 					ns[k++] = qc;
 					continue;
 				}
+				BBPunfix(b->batCacheid);
 @-
 Play around with setting a property. It should be extended
 with setting the historgram property for the tail.

@@ -28,6 +28,8 @@ from the Version 4 code base.
 module sql;
 
 command sql():void 
+address SQLsession;
+command start():void 
 address SQLsession
 comment "Switch to processing SQL statements";
 
@@ -413,7 +415,7 @@ Failure to find the state descriptor aborts the session.
 		backend *be = _client->state[PARSER];
 
 		(void)be;
-printf("Re-establish context for client not expected\n");
+		printf("#Re-establish context for client not expected\n");
 		_client->state[OPTIMIZE] == mvc_create(0,0,NULL,GDKout);
 		schema = mvc_login( _client->state[OPTIMIZE], 
 				GDKstrdup("monetdb"), GDKstrdup("monetdb") );
@@ -544,7 +546,8 @@ mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access)
 
 	b = mvc_bind(m, *sname, *tname, *cname, *access);
 	if (b) {
-		*bid = b->batCacheid;
+		BBPincref( *bid = b->batCacheid, TRUE);
+		BBPunfix( *bid);
 		return MAL_SUCCEED;
 	}
 	return throwException(MALEXCEPTION, "mvc_bind_wrap", "error");
@@ -556,17 +559,6 @@ Monet 5 extension
 The Mx macro below is used in many places throughout the code base to
 access the BAT descriptor.
 
-@= getBATdescriptor
-	if( BBPcheck(*@2,"@4")==0) 
-		return throwMessage("@4","cannot access bat '@2' in bbp");
-	if( *@2 < 0) {
-		/* reverse descriptor should be explicitly loaded */
-		@3=BATdescriptor(*@2); BBPunfix(*@2);
-	} else @3= (BAT*) BBPgetdesc(*@2);
-	if( @3 == NULL) { *@1 = 0;
-		return throwMessage("@4",
-				    "cannot access descriptor @2");
-	}
 @= chkIdentifier
 	/* generate exception if string is not an identifier */
 	if( isIdentifier(@1))
@@ -585,16 +577,19 @@ str
 mvc_bind_single_wrap(int *ret, int *bid, str *name)
 {
 	BAT *b, *bn;
-	int r, res;
+	int r;
 	ptr p;
 
-	@:getBATdescriptor(&res,bid,bn,sql.bind)@
+	if( (bn= BATdescriptor(*bid)) == NULL)
+		return throwMessage("sql.bind","Cannot access descriptor");
 
 	p = BUNfnd(bn, *name);
 	r = *(int *) BUNtail(bn, p);
-	@:getBATdescriptor(&res,&r,b,sql.bind)@
-	(void) res;
-	*ret = b->batCacheid;
+	if( (b= BATdescriptor(r)) == NULL)
+		return throwMessage("sql.bind","Cannot access descriptor");
+	BBPincref(*ret= b->batCacheid, TRUE);
+	BBPunfix( *ret = b->batCacheid);
+	BBPunfix( bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
