@@ -24,7 +24,7 @@ LIBS = {
 bin_sensorDump = {
 	SOURCES = sensorDump.mx
 	HEADERS = h 
-	LIBS = $(MONETDB_LIBS) $(SOCKET_LIBS) /ufs/mk/opensource/MonetDB/Linux/lib/libstream
+	LIBS = $(MONETDB_LIBS) $(SOCKET_LIBS) -lstream
 	}
 
 lib__pcre = {
