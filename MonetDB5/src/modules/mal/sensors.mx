@@ -28,7 +28,7 @@ bring MonetDB closer to the sensor field, which communicate
 through a network or WIFI devices that aren;t energy limited.
 A concrete instance would be a disk-based access point that receives 
 connections and handles the events directly.
-The recordings are received int tuple format, i.e. ascii strings, and
+The recordings are received int tuple format, i.e. ASCII strings, and
 stored in a MonetDB database as groups of BATs for
 subsequent filtering, cleaning, and querying.
 [Optionally a time stamp is added]
@@ -526,9 +526,9 @@ SENgetEvents(int *bid){
 @-
 The key part of the sensors module starts here.
 When a sensor is activated, we start an internet thread
-listening to the port identified for ascii values
+listening to the port identified for ASCII values
 They are decomposed and stored in the corresponding
-BATs. For this we can re-use the ascii IO stuff.
+BATs. For this we can re-use the ASCII IO stuff.
 @c
 typedef struct {
 	int socket;
@@ -588,7 +588,7 @@ which listens to the port until the sensor is released.
 If the stream breaks, it will save the data to disk and
 also once every 1000 events (to be refined)
 
-The current implementation taps into the ascii io reader,
+The current implementation taps into the ASCII io reader,
 which means we are expecting MonetDB tuple format descriptions.
 @c
 str
