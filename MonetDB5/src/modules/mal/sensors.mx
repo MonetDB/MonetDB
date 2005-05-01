@@ -611,6 +611,7 @@ SENstartSensor(str sname, bstream *bs){
 	if( strcmp(sname, BUNtail(SEN_id_sname,p))==0){
 		i = *(int*) p;
 		fmt[k].name = (char*)BUNtail(SEN_id_bat, BUNfnd(SEN_id_bat,&i));
+		fmt[k].bval = BATdescriptor(BBPindex((char*)BUNtail(SEN_id_bat, BUNfnd(SEN_id_bat,&i))));
 #ifdef DEBUG_SENSORS
 		stream_printf(GDKerr, "#added field %s\n", fmt[k].name );
 #endif
@@ -623,6 +624,11 @@ SENstartSensor(str sname, bstream *bs){
 		fmt[k].extra = NULL;
 		k++;
 	}
+/*
+	fmt[k].sep = GDKstrdup((char*)"\n");
+	fmt[k].seplen = (int) strlen( fmt[k].sep );
+	k++;
+*/
 	as.nr_attrs= k;
 	/* here we fork and prepare for reading */
 #ifdef DEBUG_SENSORS
