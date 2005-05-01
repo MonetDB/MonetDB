@@ -28,7 +28,7 @@ bring MonetDB closer to the sensor field, which communicate
 through a network or WIFI devices that aren;t energy limited.
 A concrete instance would be a disk-based access point that receives 
 connections and handles the events directly.
-The recordings are received int tuple format, i.e. ASCII strings, and
+The recordings are received int tuple load format, i.e. ASCII strings, and
 stored in a MonetDB database as groups of BATs for
 subsequent filtering, cleaning, and querying.
 [Optionally a time stamp is added]
@@ -532,8 +532,9 @@ BATs. For this we can re-use the ASCII IO stuff.
 @c
 typedef struct {
 	int socket;
-	str sname;
+	/*str sname; does not work */
 } *SensorInfo;
+static str sensorName;	/* insecure channel between threads! */
 
 extern str SENstartSensor(str sname, bstream *bs);
 extern str SENlisten(str sname, int port, str *Usockfile);
@@ -546,7 +547,7 @@ SENactivate(int *ret, str *sname, int *port)
 
 	(void) ret; 
 #ifdef DEBUG_SENSORS
-	stream_printf(GDKout,"Activate reception of a stream\n");
+	stream_printf(GDKout,"Activate reception of stream for %s\n",*sname);
 #endif
 	p= BUNfnd(BATmirror(SEN_id_sname), *sname);
 	if( p == 0)
@@ -559,7 +560,7 @@ SENactivate(int *ret, str *sname, int *port)
 			"sensor already active");
 
 	snprintf(portid,128,"%d",*port);
-	if( SENlisten(*sname, *port, NULL) == MAL_SUCCEED){
+	if( SENlisten(GDKstrdup(*sname), *port, NULL) == MAL_SUCCEED){
 		BATloop(SEN_id_sname,p,q)
 		if( strcmp(BUNtail(SEN_id_sname,p), *sname)== 0){
 			i= *(int*) p;
@@ -609,7 +610,10 @@ SENstartSensor(str sname, bstream *bs){
 	BATloop(SEN_id_sname,p,q)
 	if( strcmp(sname, BUNtail(SEN_id_sname,p))==0){
 		i = *(int*) p;
-		fmt[k].name = (char*)BUNtail(SEN_id_ename, BUNfnd(SEN_id_ename,&i));
+		fmt[k].name = (char*)BUNtail(SEN_id_bat, BUNfnd(SEN_id_bat,&i));
+#ifdef DEBUG_SENSORS
+		stream_printf(GDKerr, "#added field %s\n", fmt[k].name );
+#endif
 		fmt[k].sep = GDKstrdup((char*)",");
 		fmt[k].seplen = (int) strlen( fmt[k].sep );
 		fmt[k].adt = *(int*) BUNtail(SEN_id_tpe, BUNfnd(SEN_id_tpe,&i));
@@ -617,10 +621,9 @@ SENstartSensor(str sname, bstream *bs){
 		fmt[k].tostr = &TABLETadt_toStr;
 		fmt[k].frstr = &TABLETadt_frStr;
 		fmt[k].extra = NULL;
-#ifdef DEBUG_SENSORS
-		stream_printf(GDKerr, "#added field %s\n", fmt[k].name );
-#endif
+		k++;
 	}
+	as.nr_attrs= k;
 	/* here we fork and prepare for reading */
 #ifdef DEBUG_SENSORS
 		stream_printf(GDKerr, "#start loading sensor data\n");
@@ -682,7 +685,7 @@ SENlistenThread(SensorInfo sensor)
 {
 	char *msg=0;
 #ifdef DEBUG_SENSORS
-	stream_printf(GDKerr, "#sensor reading thread started %s\n", sensor->sname );
+	stream_printf(GDKerr, "#sensor reading thread started %s\n", sensorName );
 #endif
 	do {
 		int retval;
@@ -758,9 +761,8 @@ SENlistenThread(SensorInfo sensor)
 		stream_printf(GDKerr, "#SENlisten:sensor accepted %d\n", msgsock);
 #endif
 		bs = bstream_create(fdin,4*BLOCK);
-		bs->eof = 1;
 		/* now read the stream until it is closed */
-		msg= SENstartSensor(sensor->sname, bs);
+		msg= SENstartSensor(sensorName, bs);
 #ifdef DEBUG_SENSORS
 		stream_printf(GDKerr, "#SENlisten:sensor reading finished\n");
 #endif
@@ -775,7 +777,7 @@ SENlisten(str sname, int port, str *Usockfile)
 	struct sockaddr_in server;
 	int sock = -1;
 	SensorInfo     sensor = GDKmalloc(sizeof(SensorInfo));
-	sensor->sname= sname;
+	sensorName= sname;
 
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
