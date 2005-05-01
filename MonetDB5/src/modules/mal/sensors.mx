@@ -18,7 +18,7 @@
 @a M.L. Kersten
 @+ Sensors Event Collector
 The sensors module is a simple application module designed to
-collect events from a stream over an IP and to store them in a
+collect events from streams over an IP and to store them in a
 a fixed collection of BATs.
 
 The sensor module was inspired by the toy-story and e-health setting at Philips
@@ -28,18 +28,20 @@ bring MonetDB closer to the sensor field, which communicate
 through a network or WIFI devices that aren;t energy limited.
 A concrete instance would be a disk-based access point that receives 
 connections and handles the events directly.
-The recordings are received as CSV-type ascii strings and
+The recordings are received int tuple format, i.e. ascii strings, and
 stored in a MonetDB database as groups of BATs for
 subsequent filtering, cleaning, and querying.
 [Optionally a time stamp is added]
 
-The ultimate implementation is a web-application
+The ultimate implementation foreseen is a web-application
 setting as we know them from router maintenance software.
-The user has a simple form to start listening to events at
-a particular port and describes the fields received.
+The user has a simple form to administer listening to events at
+a particular port. The event record can be described and 
+the listening period controlled.
 
-A second form provides a simple filter over a sensor
-to inspect the data. A third, free-format SQL form can be used to
+A second form provides a simple filter over a sensor 'logs'
+that can be easily filtered for direct inspection. 
+A third, free-format SQL form can be used to
 related the sensor information.
 
 The implementation is centered around a small sensor catalogue,
@@ -81,8 +83,8 @@ address SENtakeWindow
 comment "Return a view over the eventstream using the last 
 		winsize elements received";
 
-pattern deposit(sname:str, ename:str, field:int, val:any):void
-address SENdeposit
+pattern define(sname:str, ename:str, field:int, val:any):void
+address SENdefine
 comment "Describes a sensor event, its position in the record
 		and its type, a negative field in combination with a :timestamp
 		leads to tagging reception of the event";
@@ -129,8 +131,7 @@ sensors.prelude();
 The implementation is based on the assumption that 
 the sensor produces information for a designated collection
 of BATs. A separate process is created for each sensor to receive
-and analyse the data. The sensor module should ensure that at any
-time there are not two BATs being shared between sensors.
+and analyse the data. 
 
 @include prelude.mx
 @h
@@ -378,7 +379,7 @@ to a named box.
 	return throwMessage("sensors.@1","box is not open");
 @-
 @c
-str SENdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
+str SENdefine(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	BAT *bn;
 	Box box;
@@ -598,7 +599,7 @@ SENstartSensor(str sname, bstream *bs){
 	Column *fmt;
 
 #ifdef DEBUG_SENSORS
-	stream_printf(GDKout,"Start sensor reception %s\n",sname);
+	stream_printf(GDKout,"#Start sensor reception %s\n",sname);
 #endif
 	fmt= as.format= (Column*) GDKmalloc(sizeof(Column) * MAXEVENTFIELDS+1);
 	as.offset= 0;
@@ -754,14 +755,14 @@ SENlistenThread(SensorInfo sensor)
 		fdin = block_stream(stream_rstream(fdin));
 
 #ifdef DEBUG_SENSORS
-		stream_printf(GDKerr, "SENlisten:sensor accepted %d\n", msgsock);
+		stream_printf(GDKerr, "#SENlisten:sensor accepted %d\n", msgsock);
 #endif
 		bs = bstream_create(fdin,4*BLOCK);
 		bs->eof = 1;
 		/* now read the stream until it is closed */
 		msg= SENstartSensor(sensor->sname, bs);
 #ifdef DEBUG_SENSORS
-		stream_printf(GDKerr, "SENlisten:sensor reading finished\n");
+		stream_printf(GDKerr, "#SENlisten:sensor reading finished\n");
 #endif
 		
 	} while (msg== MAL_SUCCEED);

@@ -2,8 +2,8 @@
 include sensors;
 
 sensors.dump();
-sensors.deposit("toy","click",0,:int);
-sensors.deposit("toy","color",1,:int);
+sensors.define("toy","click",0,:int);
+sensors.define("toy","color",1,:int);
 
 sensors.dump();
 
