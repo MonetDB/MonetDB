@@ -101,7 +101,7 @@ char *connect_to_server(char * hostname, int port)
 #endif
 		return "Setup connection failed";
 	}
-	toServer = socket_wastream(s, "sensorDump write");
+	toServer = block_stream(socket_wstream(s, "sensorDump write"));
 	if ((toServer) == NULL || stream_errnr(toServer)) {           \
 		return "stream closed";
 	}

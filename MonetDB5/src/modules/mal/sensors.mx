@@ -744,7 +744,7 @@ SENlistenThread(SensorInfo sensor)
 	printf("sensor request:accepted\n");
 	fflush(stdout);
 #endif
-		stream *fdin = socket_rastream(msgsock, "Mserver sensor read");
+		stream *fdin = socket_rstream(msgsock, "Mserver sensor read");
 		bstream *bs;
 
 		if (fdin == 0 || stream_errnr(fdin)) {
@@ -752,7 +752,7 @@ SENlistenThread(SensorInfo sensor)
 			continue;
 		}
 
-		fdin = block_stream(stream_rstream(fdin));
+		fdin = block_stream(fdin);
 
 #ifdef DEBUG_SENSORS
 		stream_printf(GDKerr, "#SENlisten:sensor accepted %d\n", msgsock);
