@@ -14,6 +14,9 @@ debugmask(m);
 
 {
  new(void,str,1000000).seqbase(0@0).access(BAT_WRITE).rename("aa").persists(true);
+ bat("aa").insert([str](d));
+ bat("aa").count().print();
+ bat("aa").slice(0,2).print();
  unload("aa");
 }
 
@@ -25,16 +28,14 @@ while(true) {
  var e := [str]([+](d,b));
  #e := [str]([/](d,10000));
  print(b :+= 500000); 
- bat("aa").insert(e);
+ bat("aa").replace(e);
+ bat("aa").count().print();
+ bat("aa").slice(0,2).print();
  bat("aa").mmap(1,1,1);
  i :+= 1;
  if (i = 4) { quit(); }
  unload("aa");
 }
 
-{
-bat("aa").persists(false);
-commit();
-}
-
+bat("aa").slice(0,2).print();
 quit();

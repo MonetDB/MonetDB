@@ -1,0 +1,2 @@
+bat("aa").slice(0,2).print();
+quit();

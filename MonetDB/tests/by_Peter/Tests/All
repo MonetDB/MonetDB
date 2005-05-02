@@ -6,6 +6,8 @@ tst_mmap
 tst_priv
 tst_uselect
 tst_writestr
+tst_updatestr
+tst_updatestr2
 GNATS-2476
 GNATS-2719
 GNATS-2736
