@@ -1,0 +1,402 @@
+# vim:ts=4:sw=4:tw=72:ft=c
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f inet
+@a Fabian Groffen
+@v 1.0
+@* The inet module
+The inet module contains a collection of functions that operate on IPv4
+addresses.  The most relevant functions are the `containment' functions
+that deal with subnets.  The functionality of this module is greatly
+inspired by the PostgreSQL inet atom.
+
+@mal
+atom inet:lng;
+
+command new(s:str):inet 
+address INETnew
+comment "Create an inet from a string literal";
+
+command fromstr() 
+address INETfromString
+comment "Convert a string to an inet";
+command tostr() 
+address INETtoString
+comment "Convert inet to string equivalent";
+
+command isnil(v:inet):bit 
+address INET_isnil
+comment "Nil test for inet value";
+
+command =(v:inet,w:inet):bit 
+address INET_comp_EQ
+comment "Equality of two inets";
+command !=(v:inet,w:inet):bit 
+address INET_comp_NEQ
+comment "Inequality of two inets";
+command <(v:inet,w:inet):bit 
+address INET_comp_LT
+comment "Whether v is less than w";
+command <=(v:inet,w:inet):bit 
+address INET_comp_LE
+comment "Whether v is less than or equal to w";
+command >(v:inet,w:inet):bit 
+address INET_comp_GT
+comment "Whether v is greater than w";
+command >=(v:inet,w:inet):bit 
+address INET_comp_GE
+comment "Whether v is equal to or greater than w";
+
+command <<(v:inet,w:inet):bit
+address INET_comp_CW
+comment "Whether v is contained within w";
+command >>(v:inet,w:inet):bit
+address INET_comp_CS
+comment "Whether v contains w";
+command <<=(v:inet,w:inet):bit
+address INET_comp_CWE
+comment "Whether v is contained within or is equal to w";
+command >>=(v:inet,w:inet):bit
+address INET_comp_CSE
+comment "Whether v contains or is equal to w";
+
+@* Implementation Code
+The first 4 bytes of the used lng are in use by the four quads of the
+IPv4 address.  In the four bytes left, additional information is stored.
+Currently the fifth byte holds the number of bits from the IPv4 address
+that should match (/8, /16, /24, /32).
+@c
+#include <gdk.h>
+#include "mal.h"
+#include "mal_exception.h"
+
+typedef struct _inet {
+	unsigned char q1;
+	unsigned char q2;
+	unsigned char q3;
+	unsigned char q4;
+	unsigned char subnet;
+	unsigned char filler1;
+	unsigned char filler2;
+	unsigned char isnil;
+} inet;
+#define in_isnil(i) (i->q1 == 0 && i->q2 == 0 && i->q3 == 0 && i->q4 == 0 && i->subnet == 0 && i->isnil != 0)
+
+/**
+ * Creates a new inet from the given string.
+ */
+str INETfromString(str* src, int* len, inet* retval) {
+	int i, last, type;
+	lng parse;
+	char* endptr;
+	char tmp[4];
+	char sep;
+	
+	last = 0;
+	type = 0;
+
+	/* use the DIY technique to guarantee maximum cross-platform
+	 * portability */
+	for (i = 0; i < *len; i++) {
+		if (type < 4 && ((*src)[i] == '.' || (*src)[i] == '/')) {
+			sep = (*src)[i];
+			(*src)[i] = '\0';
+			parse = strtol((*src) + last, &endptr, 10);
+			if (*endptr != '\0') {
+				throwMalf("inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
+			}
+			if (parse > 255 || parse < 0) {
+				throwMalf("inet.fromStr", "Illegal quad value: %d", parse);
+			}
+			if (type == 0) {
+				retval->q1 = (unsigned char)parse;
+			} else if (type == 1) {
+				retval->q2 = (unsigned char)parse;
+			} else if (type == 2) {
+				retval->q3 = (unsigned char)parse;
+			} else if (type == 3) {
+				retval->q4 = (unsigned char)parse;
+			}
+
+			last = i + 1;
+			type++;
+			
+			if (sep == '/') {
+				switch (type) {
+					case 1:
+						retval->q2 = (unsigned char)0;
+					case 2:
+						retval->q3 = (unsigned char)0;
+					case 3:
+						retval->q4 = (unsigned char)0;
+					break;
+				}
+				/* force evaluation of the subnet below when we break
+				 * out of this loop */
+				type = 4;
+				break;
+			}
+		}
+	}
+	/* we cannot trust the caller that the input string is properly null
+	 * terminated here */
+	tmp[0] = tmp[1] = tmp[2] = tmp[3] = '\0';
+	strncpy(tmp, (*src) + last, *len - last > 3 ? 3 : *len - last);
+	parse = strtol(tmp, &endptr, 10);
+	if (*endptr != '\0') {
+		throwMalf("inet.fromStr", "Error while parsing, unexpected string '%s'", endptr);
+	}
+	if (type == 3) {
+		if (parse > 255 || parse < 0) {
+			throwMalf("inet.fromStr", "Illegal quad value: %d", parse);
+		}
+		retval->q4 = (unsigned char)parse;
+		/* default to an exact match (all bits) */
+		retval->subnet = (unsigned char)32;
+	} else if (type == 4) {
+		if (parse != 0 &&
+			parse != 8 &&
+			parse != 16 &&
+			parse != 24 &&
+			parse != 32)
+		{
+			throwMalf("inet.fromStr", "Illegal subnet value: %d", parse);
+		}
+		retval->subnet = (unsigned char)parse;
+	}
+	
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns the string representation of the given inet value.
+ * Warning: returns the length, instead of an exception string!
+ */
+int INETtoString(str* retval, int* len, ptr handle) {
+	inet* value = (inet*)handle;
+
+	if (*len < 19) {
+		if (*retval != NULL) GDKfree(*retval);
+		*retval = GDKmalloc(sizeof(str) * (*len = 19));
+	}
+	if (value->subnet == 32) {
+		*len = snprintf(*retval, *len, "%d.%d.%d.%d", value->q1, value->q2, value->q3, value->q4);
+	} else {
+		*len = snprintf(*retval, *len, "%d.%d.%d.%d/%d", value->q1, value->q2, value->q3, value->q4, value->subnet);
+	}
+
+	return(*len);
+}
+
+/**
+ * Returns a inet, parsed from a string.  The fromStr function is used
+ * to parse the string.
+ */
+str INETnew(inet* retval, str* in) {
+	str tmp;
+	int len = strlen(*in);
+	
+	rethrow("inet.new", tmp, INETfromString(in, &len, retval));
+	return(MAL_SUCCEED);
+}
+
+
+/**
+ * Returns whether val represents a nil inet value
+ */
+str INET_isnil(bit* retval, inet* val) {
+	*retval = in_isnil(val);
+
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns whether val1 and val2 are equal.
+ */
+str INET_comp_EQ(bit* retval, inet* val1, inet* val2) {
+	if (in_isnil(val1) || in_isnil(val2)) {
+		*retval = bit_nil;
+	} else if (val1->q1 == val2->q1 &&
+		val1->q2 == val2->q2 &&
+		val1->q3 == val2->q3 &&
+		val1->q4 == val2->q4 &&
+		val1->subnet == val2->subnet)
+	{
+		*retval = 1;
+	} else {
+		*retval = 0;
+	}
+	
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns whether val1 and val2 are not equal.
+ */
+str INET_comp_NE(bit* retval, inet* val1, inet* val2) {
+	if (in_isnil(val1) || in_isnil(val2)) {
+		*retval = bit_nil;
+	} else if (val1->q1 == val2->q1 &&
+		val1->q2 == val2->q2 &&
+		val1->q3 == val2->q3 &&
+		val1->q4 == val2->q4 &&
+		val1->subnet == val2->subnet)
+	{
+		*retval = 0;
+	} else {
+		*retval = 1;
+	}
+	
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns whether val1 is smaller than val2.
+ */
+str INET_comp_LT(bit* retval, inet* val1, inet* val2) {
+	if (in_isnil(val1) || in_isnil(val2)) {
+		*retval = bit_nil;
+	} else if (val1->q1 < val2->q1) {
+		*retval = 1;
+	} else if (val1->q1 > val2->q1) {
+		*retval = 0;
+	} else if (val1->q2 < val2->q2) {
+		*retval = 1;
+	} else if (val1->q2 > val2->q2) {
+		*retval = 0;
+	} else if (val1->q3 < val2->q3) {
+		*retval = 1;
+	} else if (val1->q3 > val2->q3) {
+		*retval = 0;
+	} else if (val1->q4 < val2->q4) {
+		*retval = 1;
+	} else if (val1->q4 > val2->q4) {
+		*retval = 0;
+	} else if (val1->subnet < val2->subnet) {
+		*retval = 1;
+	} else {
+		*retval = 0;
+	}
+	
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns whether val1 is greater than val2.
+ */
+str INET_comp_GT(bit* retval, inet* val1, inet* val2) {
+	return(INET_comp_LT(retval, val2, val1));
+}
+
+/**
+ * Returns whether val1 is smaller than or equal to val2.
+ */
+str INET_comp_LE(bit* retval, inet* val1, inet* val2) {
+	bit ret;
+	INET_comp_LT(&ret, val1, val2);
+	if (ret == 0) INET_comp_EQ(&ret, val1, val2);
+
+	*retval = ret;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns whether val1 is smaller than or equal to val2.
+ */
+str INET_comp_GE(bit* retval, inet* val1, inet* val2) {
+	bit ret;
+	/* warning: we use LT here with swapped arguments to avoid one
+	 * method invocation, since inet_comp_GT does the same */
+	INET_comp_LT(&ret, val2, val1);
+	if (ret == 0) INET_comp_EQ(&ret, val1, val2);
+
+	*retval = ret;
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns whether val1 is contained within val2
+ */
+str INET_comp_CW(bit* retval, inet* val1, inet* val2) {
+	if (in_isnil(val1) || in_isnil(val2)) {
+		*retval = bit_nil;
+	} else if (val1->subnet <= val2->subnet) {
+		/* if the subnet is bigger (less specific) or equal it can never
+		 * be contained within */
+		*retval = 0;
+	} else {
+		*retval = 0;
+		switch (val2->subnet) {
+			case 24:
+				if (val1->q3 != val2->q3) break;
+			case 16:
+				if (val1->q2 != val2->q2) break;
+			case 8:
+				if (val1->q1 != val2->q1) break;
+			case 0:
+				*retval = 1;
+		}
+	}
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns whether val1 is contained within or equal to val2
+ */
+str INET_comp_CWE(bit* retval, inet* val1, inet* val2) {
+	if (in_isnil(val1) || in_isnil(val2)) {
+		*retval = bit_nil;
+	} else if (val1->subnet < val2->subnet) {
+		/* if the subnet is bigger (less specific) it can never
+		 * be contained within */
+		*retval = 0;
+	} else {
+		*retval = 0;
+		switch (val2->subnet) {
+			case 32:
+				if (val1->q4 != val2->q4) break;
+			case 24:
+				if (val1->q3 != val2->q3) break;
+			case 16:
+				if (val1->q2 != val2->q2) break;
+			case 8:
+				if (val1->q1 != val2->q1) break;
+			case 0:
+				*retval = 1;
+		}
+	}
+	return(MAL_SUCCEED);
+}
+
+/**
+ * Returns whether val1 is contains val2
+ */
+str INET_comp_CS(bit* retval, inet* val1, inet* val2) {
+	/* swap the input arguments and call the contained within function */
+	return(INET_comp_CW(retval, val2, val1));
+}
+
+/**
+ * Returns whether val1 contains or is equal to val2
+ */
+str INET_comp_CSE(bit* retval, inet* val1, inet* val2) {
+	/* swap the input arguments and call the contained within function */
+	return(INET_comp_CWE(retval, val2, val1));
+}
+
+@}
