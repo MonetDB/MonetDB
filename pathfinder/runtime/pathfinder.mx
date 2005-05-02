@@ -222,7 +222,7 @@ PROC get_types (bat[void,int] kind) : bat[void,int]
 #
 # Serialization should probably be done in a more sophisticated fashion.
 # For now we just implement it in MIL to have something for debugging.
-# If for the final version we decide on different paraemters, the
+# If for the final version we decide on different parameters, the
 # MIL generation code in the Pathfinder compiler should be adapted
 # accordingly. Have a look at the top-level rule in milgen.mt.sed, and
 # at the stuff related to PFmil_ser() in mil.c. The printing routines
@@ -1311,7 +1311,7 @@ PROC node_print(oid pre, oid frag, BAT[void,bat] ws, BAT[oid,str] S) : void
 		S.insert(oid(int(pre) + ws.fetch(PRE_SIZE).fetch(frag).fetch(pre)), tag);
 	}
     }
-    else { if (kind = PFTEXT)
+    else { if (kind = TEXT)
         { printf("%s", ws.fetch(PROP_TEXT).fetch(elem_frag).fetch(elem_prop)); }
     else { if (kind = COMMENT)
         { printf("<!--%s-->", ws.fetch(PROP_COM).fetch(elem_frag).fetch(elem_prop)); }
@@ -1409,7 +1409,7 @@ PROC xml_print(BAT[void,bat] ws,
         	lastpre := oid(int(pre) + ws.fetch(PRE_SIZE).fetch(frag).fetch(pre));
 
 		# cheat a little bit to get the same output like Galax
-    		if (ws.fetch(PRE_KIND).fetch(frag).fetch(pre) = PFTEXT) {
+    		if (ws.fetch(PRE_KIND).fetch(frag).fetch(pre) = TEXT) {
     			var elem_frag := ws.fetch(PRE_FRAG).fetch(frag).fake_fetch(pre);
 			var elem_prop := ws.fetch(PRE_PROP).fetch(frag).fetch(pre);
 			printf("text \{\"");
@@ -1465,7 +1465,7 @@ PROC xml_print(BAT[void,bat] ws) : void
 }
 ADDHELP("xml_print", "tsheyar", "Sep 2004",
 "DESCRIPITON:\n\
-Print all XML-fragmets in the working set.",
+Print all XML-fragments in the working set.",
 "pathfinder");
 @)
 
