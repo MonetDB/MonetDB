@@ -1117,14 +1117,12 @@ int
 BBPrename(bat bid, str nme)
 {
 	BAT *b = BBPdescriptor(bid);
-	BAT *bm;
 	long_str dirname;
 	bat tmpid = 0, i;
 
 	if (b == NULL)
 		return 0;
 
- 	bm = BATmirror(b);
 	/* If name stays same, do nothing */
 	if (BBP_logical(bid) && strcmp(BBP_logical(bid), nme) == 0)
 		return 0;
@@ -2621,13 +2619,11 @@ BBPreplace(BAT *b, BAT *bn)
 	} else if (BBP_lrefs(bnid)) {
 		GDKerror("BBPreplace: %s has MIL variable refcount %d and cannot disappear.", BBP_logical(bnid), BBP_lrefs(bnid) - (BBP_status(bnid) & BBPPERSISTENT) ? 1 : 0);
 	} else {
-		str oldId;
 		int dirtyb = b->batDirty, dirtybn = bn->batDirty;
 		int ok = TRUE, newmode = b->batPersistence, oldmode = bn->batPersistence;
 		int persistentb = (BBP_status(bid) & (BBPPERSISTENT | BBPDELETED));
 		int hugebn = bn->batBuns->storage | (bn->hheap?bn->hheap->storage:0) | (bn->theap?bn->theap->storage:0) | STORE_MMAP;
 
-		oldId = BATgetId(bn);
 		BATsetaccess(bn, b->batRestricted);
 		BATmmap(bn, 
 			b->batBuns->storage, 
