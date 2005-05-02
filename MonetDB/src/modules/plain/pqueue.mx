@@ -467,7 +467,7 @@ proc pqueue_peek( BAT[oid,any] h ) : any {
 	return h.fetch(0);
 }
 
-proc pqueue_topn( BAT[void,any] t, int n, int direction ) : BAT[oid,any] {
+proc pqueue_topn( BAT[oid,any] t, int n, int direction ) : BAT[oid,any] {
 	if (direction > 0) {
 		return pqueue_topn_max(t,n);
 	} else {

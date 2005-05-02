@@ -1894,7 +1894,7 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 	/* Go through the entire BBP, looking for soon obsolete types */
 	BBPlock("drop");	/* wait for all unloads to finish and block all trims and BAT load decisions */
 	for (i = 1; i < BBPsize; i++) {
-		if (BBP_logical(i)) {
+		if (BBPvalid(i)) {
 			BAT *b = (BBP_status(i) & BBPLOADING) ? BBPdescriptor(i) : BBP_cache(i);
 
 			if (b == NULL)
@@ -1908,9 +1908,9 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 					if (cnt == 0) {
 						break;
 					} else if (cnt > 0) {
-						GDKerror("unloadmod_check_use: drop(%s) failed: %s[%s,%s] has %d reference%s.\n", module, BBP_logical(i), ATOMname(b->htype), ATOMname(b->ttype), cnt, cnt > 1 ? "s" : "");
+						GDKerror("unloadmod_check_use: drop(%s) failed: %s[%s,%s] has %d reference%s.\n", module, BBPname(i), ATOMname(b->htype), ATOMname(b->ttype), cnt, cnt > 1 ? "s" : "");
 					} else {
-						GDKerror("unloadmod_check_use: drop(%s) failed: %s[%s,%s] could not be unloaded due to write errors.\n", module, BBP_logical(i), ATOMname(b->htype), ATOMname(b->ttype));
+						GDKerror("unloadmod_check_use: drop(%s) failed: %s[%s,%s] could not be unloaded due to write errors.\n", module, BBPname(i), ATOMname(b->htype), ATOMname(b->ttype));
 					}
 					BBPunlock("drop");
 					return -1;	/* will not be able to drop module */
@@ -3076,7 +3076,7 @@ TBL_Install_DropRefs(oid mid, bat *batrefs)
 	if (batrefs == NULL)
 		return;
 	while (*batrefs) {
-		dlFPRINTF(GDKerr, "  TBL_Install_DropRefs(" SZFMT ",%s)\n", (size_t) mid, BBP_logical(*batrefs));
+		dlFPRINTF(GDKerr, "  TBL_Install_DropRefs(" SZFMT ",%s)\n", (size_t) mid, BBPname(*batrefs));
 		if (BUNins(TBL_mod_drop, &mid, batrefs) == NULL)
 			assert(0);
 		batrefs++;

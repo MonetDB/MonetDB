@@ -130,7 +130,7 @@ kernel libraries, e.g. bat.mx
 
 	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
 
-	.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
+	#.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
 
 @- BAT properties
 @T
@@ -468,7 +468,6 @@ these 'sync' OIDs with their own propagation rules.
 @mil
     CONST STORE_MEM   := 0;	# load into GDKmalloced memory
     CONST STORE_MMAP  := 1;	# mmap() into virtual memory
-    CONST STORE_COMPR := 2;	# currently not implemented this way
 
     PROC mmap(bat[any::1,any::2] b, int memmode) : bat[any::1,any::2] {
 	return mmap(b, memmode, memmode, memmode );
@@ -785,8 +784,6 @@ void_inplace(BAT *b, oid id, ptr val)
 	BUNfndVOID(p, b, (ptr) &id);
 
 	assert(p >= b->batInserted);	/* we don't want delete/ins */
-	if (b->batRestricted)
-		GDKerror("void_inplace: access denied\n");
 	assert(!b->batRestricted);
 	if (!BUNinplace(b, p, (ptr) &id, val))
 		 res = GDK_FAIL;

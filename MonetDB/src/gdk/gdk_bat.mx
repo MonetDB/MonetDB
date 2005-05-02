@@ -146,15 +146,6 @@ fill in heap names, so HEAPallocs can resort to disk for very large writes.
 	return bn;
 }
 
-char *
-BATgetId(BAT *b) 
-{
-	char *r = BBP_logical(b->batCacheid);
-	if (!r)
-		return BBP_logical(abs(b->batCacheid));
-	return r;
-}
-
 int
 BATelmshift(BAT *b)
 {
@@ -1600,7 +1591,7 @@ BATcheckmodes(BAT *b, int persistent, int unloadable)
 
 @}
 
-@- Change the BAT access permissions (read, append,write)
+@- Change the BAT access permissions (read, append, write)
 BATsetaccess() may seem simple, but this has become very tricky when memory-mapped files 
 are involved.
 @-
@@ -1783,20 +1774,20 @@ BATsetaccess(BAT *b, int mode)
 		} else {
 			if (mode == BAT_WRITE) {
 				m1 = HEAPsetpriv(b->batBuns, committed, &remap, &reload);
-			} else if (b->batBuns->storage == BAT_WRITE) {
+			} else if (b->batBuns->storage != STORE_MEM) {
 				m1 = HEAPsetmmap(b->batBuns, &remap);
 			}
 			if (bak2 >= 0) {
 				if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->htype, b->hheap))) {
 					m2 = HEAPsetpriv(b->hheap, committed, &remap, &reload);
-				} else if (b->hheap->storage == BAT_WRITE) {
+				} else if (b->hheap->storage != STORE_MEM) {
 					m2 = HEAPsetmmap(b->hheap, &remap);
 				}
 			}
 			if (bak3 >= 0) {
 				if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->ttype, b->theap))) {
 					m3 = HEAPsetpriv(b->theap, committed, &remap, &reload);
-				} else if (b->theap->storage == BAT_WRITE) {
+				} else if (b->theap->storage != STORE_MEM) {
 					m3 = HEAPsetmmap(b->theap, &remap);
 				}
 			}
@@ -1869,7 +1860,7 @@ need to do anything with heap modes yet at this point.
 	if (ATOMisdescendant(@1, TYPE_ptr) || ATOMisdescendant(@1, TYPE_bat) ||	
 	    BATatoms[@1].atomUnfix || BATatoms[@1].atomFix) {
 		GDKerror("BATmode: %s type implies that %s[%s,%s] cannot be made persistent.\n",
-			 ATOMname(@1), BBP_logical(b->batCacheid),
+			 ATOMname(@1), BATgetId(b),
 			 ATOMname(b->htype), ATOMname(b->ttype));
 		return b;
 	}

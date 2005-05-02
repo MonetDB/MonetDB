@@ -100,7 +100,7 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 	hash_t _i;							\
 	BUN _v;								\
 	(x) = NULL;							\
-	if ((y)->hhash || BAThash((y), 0) || GDKfatal("HASHfnd_@1: hash build failed on %s.\n", BBP_logical((y)->batCacheid))) \
+	if ((y)->hhash || BAThash((y), 0) || GDKfatal("HASHfnd_@1: hash build failed on %s.\n", BATgetId((y)))) \
 		HASHloop_@1((y), (y)->hhash, _i, (z), _v) {		\
 			(x) = _v;					\
 			break;						\
@@ -110,7 +110,7 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 #define HASHfnd_str(x,y,z)	{					\
 	hash_t _i;							\
 	(x) = NULL;							\
-	if ((y)->hhash || BAThash((y), 0) || GDKfatal("HASHfnd_str: hash build failed on %s.\n", BBP_logical((y)->batCacheid))) \
+	if ((y)->hhash || BAThash((y), 0) || GDKfatal("HASHfnd_str: hash build failed on %s.\n", BATgetId((y)))) \
 		HASHloop_str((y), (y)->hhash, _i, (z)) {		\
 			(x) = BUNptr((y),_i);				\
 			break;						\
@@ -119,7 +119,7 @@ gdk_export hash_t HASHlist(Hash *h, size_t i);
 #define HASHfnd(x,y,z)	{						\
 	size_t _i;							\
 	x=NULL;								\
-	if ((y)->hhash || BAThash((y), 0) || GDKfatal("HASHfnd: hash build failed on %s.\n", BBP_logical((y)->batCacheid))) \
+	if ((y)->hhash || BAThash((y), 0) || GDKfatal("HASHfnd: hash build failed on %s.\n", BATgetId((y)))) \
 		HASHloop((y), (y)->hhash, _i, (z)) {			\
 			(x) = BUNptr((y),_i);				\
 			break;						\

@@ -383,9 +383,6 @@ int HEAPsave(Heap* h, str nme, str ext) {
 	if (p == NULL || store == STORE_PRIV) {
 		/* anonymous or private VM is saved as if it were malloced */
 		store = STORE_MEM; 
-	} else if (strstr(p, ".Z")) {
-		/* compressed storage is not administered properly */
-		store = STORE_COMPR; 
 	}
 	IODEBUG {
 		THRprintf(GDKerr, "HEAPsave(%s.%s,storage=%d,free=" SZFMT ",size=" SZFMT ")\n", 

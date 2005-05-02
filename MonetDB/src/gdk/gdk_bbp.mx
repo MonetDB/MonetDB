@@ -121,9 +121,6 @@ gdk_export int BBPreclaim(BAT *b);
 gdk_export int BBPsave(BAT *b);
 gdk_export int BBPrename(bat bid, str nme);
 
-gdk_export void BBP_insert(bat i);
-gdk_export void BBP_delete(bat i);
-
 /* query interface */
 gdk_export bat BBPindex(str nme);
 gdk_export BAT *BBPdescriptor(bat b);
@@ -193,7 +190,7 @@ BBPsetstamp(int newstamp)
 }
 
 
-void
+static void
 BBP_insert(bat i)
 {
 	bat idx = (bat) (strHash(BBP_logical(i)) & BBP_mask);
@@ -202,7 +199,7 @@ BBP_insert(bat i)
 	BBP_hash[idx] = i;
 }
 
-void
+static void
 BBP_delete(bat i)
 {
 	bat *h = BBP_hash;
@@ -361,7 +358,7 @@ BBPinithash(void)
 	BBP_mask--;
 
 	while (--i > 0) {
-		if (BBP_logical(i)) {
+		if (BBPvalid(i)) {
 			if (BBPnamecheck(BBP_logical(i)) == 0) {
 				BBP_insert(i);
 			}
@@ -640,7 +637,7 @@ BBPinit(void)
 	/* normalize saved LRU stamps */
 	if (min_stamp <= max_stamp) {
 		for (i = 1; i < BBPsize; i++)
-			if (BBP_logical(i))
+			if (BBPvalid(i))
 				BBP_lastused(i) -= min_stamp;
 		BBPsetstamp(max_stamp - min_stamp);
 	}
@@ -691,7 +688,7 @@ BBPexit(void)
 
 	/* free all memory (just for leak-checking in Purify) */
 	for (i = 0; i < BBPsize; i++) {
-		if (BBP_logical(i)) {
+		if (BBPvalid(i)) {
 			BAT *b = BBP_cache(i);
 
 			if (b) {
@@ -726,12 +723,12 @@ static int
 new_bbpentry(stream *s, bat i)
 {
 	int r = stream_printf(s, "[  %d, %d, %s",
-			      (int) i, BBP_status(i) & BBPSTATUS, BBP_logical(i));
+			      (int) i, BBP_status(i) & BBPSTATUS, BBPname(i));
 
 	if (r < 0)
 		return r;
-	if (BBP_logical(-i)) {
-		r = stream_printf(s, "~%s", BBP_logical(-i));
+	if (BBPvalid(-i)) {
+		r = stream_printf(s, "~%s", BBPname(-i));
 		if (r < 0)
 			return r;
 	}
@@ -1041,7 +1038,7 @@ BBPuncacheit_(bat i, int unloaddesc)
 
 		if (b) {
 			if (BBP_cache(i)) {
-				BATDEBUG THRprintf(GDKerr, "uncache %d (%s)\n", (int) i, BBP_logical(i));
+				BATDEBUG THRprintf(GDKerr, "uncache %d (%s)\n", (int) i, BBPname(i));
 
 				BBP_cache(i) = BBP_cache(-i) = NULL;
 				BBP_status_off(i, BBPLOADED, "BBPuncacheit");
@@ -1067,7 +1064,7 @@ BBPclear(bat i)
 		if (lock)
 			gdk_set_lock(GDKcacheLock, "BBPclear");
 		BATDEBUG {
-			THRprintf(GDKerr, "clear %d (%s)\n", (int) i, BBP_logical(i));
+			THRprintf(GDKerr, "clear %d (%s)\n", (int) i, BBPname(i));
 		}
 		BBPuncacheit_(i, TRUE);
 		if (BBPnamecheck(BBP_logical(i)) == 0) {
@@ -1417,7 +1414,7 @@ BBPdescriptor(bat i)
 			if (lock)
 				gdk_set_lock(GDKswapLock[j & BBPLOCKMASK], "BBPdescriptor");
 		}
-		if (BBP_logical(j)) {
+		if (BBPvalid(j)) {
 			b = BBP_cache(i);
 			if (b == NULL) {
 				load = TRUE;
@@ -1793,7 +1790,7 @@ BBPtrim_scan(int mem, int vm, bat bbppos, bat bbplim)
 
 	if (bbppos < BBPsize)
 		do {
-			if (BBP_logical(bbppos)) {
+			if (BBPvalid(bbppos)) {
 				BAT *b = BBP_cache(bbppos);
 
 				if (BBPtrimmable(b)) {
@@ -2156,7 +2153,7 @@ the entire bat, and duplicates disk consumption for its heap.
 static BAT *
 dirty_bat(bat i, int *unload)
 {
-	if (BBP_logical(i)) {
+	if (BBPvalid(i)) {
 		int unloadable = (BBP_refs(i) == 0);	/* are no other threads currently executing on this image?? */
 		int newbat = (BBP_status(i) & BBPNEW);
 		BAT *b;
@@ -2418,7 +2415,7 @@ BBPrecover(void)
 			if (i < 0)
 				i = -i;
 		}
-		if (i == 0 || i >= BBPsize || !BBP_logical(i)) {
+		if (i == 0 || i >= BBPsize || !BBPvalid(i)) {
 			force_move(BAKDIR, LEFTDIR, dent->d_name);
 		} else {
 			BBPgetsubdir(dstdir, i);
@@ -2462,7 +2459,7 @@ the number of bytes of space freed.
 static int
 persistent_bat(bat bid)
 {
-	if (bid >= 0 && bid < BBPsize && BBP_logical(bid)) {
+	if (bid >= 0 && bid < BBPsize && BBPvalid(bid)) {
 		BAT *b = BBP_cache(bid);
 
 		if (b == NULL || b->batCopiedtodisk) {
@@ -2607,17 +2604,17 @@ BBPreplace(BAT *b, BAT *bn)
 		bn = BATmirror(bn);
 	}
 	if (bid < 0) {
-		GDKerror("BBPreplace: %s may not be reversed.\n", BBP_logical(bid));
+		GDKerror("BBPreplace: %s may not be reversed.\n", BBPname(bid));
 	} else if (bnid < 0) {
-		GDKerror("BBPreplace: %s may not be reversed.\n", BBP_logical(bnid));
+		GDKerror("BBPreplace: %s may not be reversed.\n", BBPname(bnid));
 	} else if (ATOMtype(b->htype) != ATOMtype(bn->htype) || ATOMtype(b->ttype) != ATOMtype(bn->ttype)) {
-		GDKerror("BBPreplace: %s[%s,%s] is incompatible with %s[%s,%s]\n", BBP_logical(bid), ATOMname(b->htype), ATOMname(b->ttype), BBP_logical(bnid), ATOMname(bn->htype), ATOMname(bn->ttype));
+		GDKerror("BBPreplace: %s[%s,%s] is incompatible with %s[%s,%s]\n", BBPname(bid), ATOMname(b->htype), ATOMname(b->ttype), BBPname(bnid), ATOMname(bn->htype), ATOMname(bn->ttype));
 	} else if (BBP_status(bnid) & BBPPERSISTENT) {
-		GDKerror("BBPreplace: %s is persistent and cannot disappear.", BBP_logical(bnid));
+		GDKerror("BBPreplace: %s is persistent and cannot disappear.", BBPname(bnid));
 	} else if (BBP_status(bnid) & BBPDELETED) {
-		GDKerror("BBPreplace: %s was persistent at the last commit and cannot disappear yet.", BBP_logical(bnid));
+		GDKerror("BBPreplace: %s was persistent at the last commit and cannot disappear yet.", BBPname(bnid));
 	} else if (BBP_lrefs(bnid)) {
-		GDKerror("BBPreplace: %s has MIL variable refcount %d and cannot disappear.", BBP_logical(bnid), BBP_lrefs(bnid) - (BBP_status(bnid) & BBPPERSISTENT) ? 1 : 0);
+		GDKerror("BBPreplace: %s has MIL variable refcount %d and cannot disappear.", BBPname(bnid), BBP_lrefs(bnid) - (BBP_status(bnid) & BBPPERSISTENT) ? 1 : 0);
 	} else {
 		int dirtyb = b->batDirty, dirtybn = bn->batDirty;
 		int ok = TRUE, newmode = b->batPersistence, oldmode = bn->batPersistence;
@@ -2698,7 +2695,7 @@ BBPatom_drop(int atom)
 	int unknown = ATOMunknown_add(nme);
 
 	for (i = 0; i < BBPsize; i++) {
-		if (BBP_logical(i)) {
+		if (BBPvalid(i)) {
 			BATstore *b = BBP_desc(i);
 
 			if (!b) continue;
@@ -2722,7 +2719,7 @@ BBPatom_load(int atom)
  	unknown = ATOMunknown_find(nme);
 	ATOMunknown_del(unknown);
 	for (i = 0; i < BBPsize; i++) {
-		if (BBP_logical(i)) {
+		if (BBPvalid(i)) {
 			BATstore *b = BBP_desc(i);
 
 			if (!b) continue;

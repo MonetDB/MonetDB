@@ -273,9 +273,6 @@ at commit-time.
 		if (err)
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, mode=%d\n", nme, ext ? ext : "", mode);
 		IODEBUG THRprintf(GDKerr, "MT_msync(buf " PTRFMT ", size " SZFMT ", MMAP_SYNC) = %d\n", PTRFMTCAST buf, size, err);
-	} else if (mode == STORE_COMPR) {
-		GDKsyserror("compressed bats are no longer supported\n");
-		err = -1;
 	} else {
 		if ((fd = GDKfdlocate(nme, "wb", ext)) >= 0) {
 			/* write() on 64-bits Redhat for IA64 returns 32-bits signed result (= OS BUG)! */
@@ -355,6 +352,8 @@ GDKload(str nme, str ext, size_t size, size_t chunk, int mode)
 			fclose(fp);
 			fp = NULL;
 
+			if (mode == STORE_PRIV) 
+				mod |= MMAP_COPY;
 			GDKfilepath(path, BATDIR, nme, ext);
 			buf = (char *) GDKmmap(path, mod, (off_t) 0, chunk, (void *) 0);
 			if (buf == (char *) -1L) {
@@ -478,7 +477,7 @@ BATsave(BAT *bd)
 
 	BATcheck(b, "BATsave");
 	if (VIEWparent(b)) {
-		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BBP_logical(b->batCacheid), BBP_logical(VIEWparent(b)));
+		GDKerror("BATsave: %s is a view on %s; cannot be saved\n", BATgetId(b), BBPname(VIEWparent(b)));
 		return NULL;
 	}
 	if (!BATdirty(b)) {
@@ -937,21 +936,6 @@ an n-ary table. Such a table is the reconstruction of
 the relational model from Monet's BATs, and consists of
 all tail values of matching head-values in n-ary equijoin.
 @c
-static str
-batname(BAT *b)
-{
-	str sn = BBP_logical(b->batCacheid);
-	str sr = BBP_logical(-b->batCacheid);
-	str id = BATgetId(b);
-
-	if (sn && strncmp(id, sn, IDLENGTH) == 0) {
-		return sn;
-	}
-	if (sr && strncmp(id, sr, IDLENGTH) == 0) {
-		return sr;
-	}
-	return id;
-}
 
 int
 BATmultiprintf(stream *s,	/* output stream */
@@ -990,7 +974,7 @@ Init the column descriptors of the tail columns.
 		else
 			c[j + 1].format = printfcn(argv[j]);
 		if (!default_ident(argv[j]->tident))
-			c[j + 1].tabs = print_tabwidth(argv[j], batname(argv[j]), c + (j + 1));
+			c[j + 1].tabs = print_tabwidth(argv[j], BATgetId(argv[j]), c + (j + 1));
 		else
 			c[j + 1].tabs = print_tabwidth(argv[j], argv[j]->tident, c + (j + 1));
 		value_fcn[j + 1] = (ColFcn) print_format;

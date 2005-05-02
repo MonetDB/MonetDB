@@ -1899,7 +1899,7 @@ radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
 			ssize_t cur = *(ssize_t *) BUNhloc(limits, r);
 
 			if (cur <= prev) {
-				GDKerror("radix_cluster: non ascending bits %d,%d in limits bat %s!\n", prev, cur, BBP_logical(limitid));
+				GDKerror("radix_cluster: non ascending bits %d,%d in limits bat %s!\n", prev, cur, BBPname(limitid));
 				BBPunfix(limitid);
 				GDKfree(lim);
 				return GDK_FAIL;
@@ -1909,7 +1909,7 @@ radix_cluster(BAT **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
 			prev = cur;
 		}
 		if (n == 0 || tot != BATcount(b)) {
-			GDKerror("radix_cluster: total number size %d of all limits %s does not end up to size %d of %s!\n", tot, nme, BATcount(b), BBP_logical(b->batCacheid));
+			GDKerror("radix_cluster: total number size %d of all limits %s does not end up to size %d of %s!\n", tot, nme, BATcount(b), BATgetId(b));
 			BBPunfix(limitid);
 			GDKfree(lim);
 			return GDK_FAIL;
@@ -3295,7 +3295,7 @@ jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nb
 
 		if (idx < 0 || (size_t) idx >= yy) {
 			BBPreclaim(bn);
-			GDKerror("jivejoin0: illegal cluster id %d in %s.\n", idx, BBP_logical(radix_count->batCacheid));
+			GDKerror("jivejoin0: illegal cluster id %d in %s.\n", idx, BATgetId(radix_count));
 			return GDK_FAIL;
 		}
 		cluster[1 + idx] += *(int *) BUNtloc(radix_count, p);
@@ -3306,7 +3306,7 @@ jivejoin0(BAT **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nb
 	xx = cluster[yy] - cluster[0];
 	if (xx != BATcount(proj)) {
 		BBPreclaim(bn);
-		GDKerror("jivejoin0: total cluster entries %lu in %s does not match size %lu of %s.\n", xx, BBP_logical(radix_count->batCacheid), BATcount(proj), BBP_logical(proj->batCacheid));
+		GDKerror("jivejoin0: total cluster entries %lu in %s does not match size %lu of %s.\n", xx, BATgetId(radix_count), BATcount(proj), BATgetId(proj));
 		return GDK_FAIL;
 	}
 	yy = (yy - 1) << zz;	/* yy is mask, zz is shift */
@@ -3401,7 +3401,7 @@ jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift
 
 		if (idx < 0 || (size_t) idx >= yy) {
 			BBPreclaim(bn);
-			GDKerror("jivejoin1: illegal cluster id %d in %s.\n", idx, BBP_logical(radix_count->batCacheid));
+			GDKerror("jivejoin1: illegal cluster id %d in %s.\n", idx, BATgetId(radix_count));
 			return GDK_FAIL;
 		}
 		cluster[1 + idx] += *(int *) BUNtloc(radix_count, p);
@@ -3412,7 +3412,7 @@ jivejoin1(BAT **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift
 	xx = cluster[yy] - cluster[0];
 	if (xx != BATcount(proj)) {
 		BBPreclaim(bn);
-		GDKerror("jivejoin1: total cluster entries %d in %s does not match size %d of %s.\n", xx, BBP_logical(radix_count->batCacheid), BATcount(proj), BBP_logical(proj->batCacheid));
+		GDKerror("jivejoin1: total cluster entries %d in %s does not match size %d of %s.\n", xx, BATgetId(radix_count), BATcount(proj), BATgetId(proj));
 		return GDK_FAIL;
 	}
 	yy = (yy - 1) << zz;	/* yy is mask, zz is shift */
@@ -3761,7 +3761,7 @@ posjoin_clustered(BAT **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
 	BAT *bn;
 
 	if (BUNsize(v) != ATOMsize(v->ttype)) {
-		GDKerror("posjoin: %s does not have a void head column.\n", BBP_logical(v->batCacheid));
+		GDKerror("posjoin: %s does not have a void head column.\n", BATgetId(v));
 		return GDK_FAIL;
 	}
 	bn = *r = BATnew(TYPE_void, v->ttype, c_cnt);

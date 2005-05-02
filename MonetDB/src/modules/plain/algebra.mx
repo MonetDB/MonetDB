@@ -2029,7 +2029,7 @@ int
 CMDr@1_@2(oid* ret, BAT *b, ptr v)
 {
 	if ((BAThordered(b)&1) == 0) {
-		GDKerror("CMDr@1_@2: %s should be sorted on head\n", BBP_logical(b->batCacheid));
+		GDKerror("CMDr@1_@2: %s should be sorted on head\n", BATgetId(b));
 		return GDK_FAIL;
 	} else if (BATcount(b) > 0) {
 		BUN p = NULL;
@@ -2086,7 +2086,7 @@ CMDfind_@2(oid *ret, BAT *b, ptr v)
 	ssize_t idx = (ssize_t) oid_nil;
 
 	if ((BAThordered(b)&1) == 0) {
-		GDKerror("CMDfind_@2: %s should be sorted on head\n", BBP_logical(b->batCacheid));
+		GDKerror("CMDfind_@2: %s should be sorted on head\n", BATgetId(b));
 		return GDK_FAIL;
 	} else if (BATcount(b) > 0) {
 		BUN p = NULL;

@@ -295,7 +295,7 @@ VALconvert(int typ, ValPtr t)
 						bid = (bat) t->val.dval;
 					break;
 				}
-				if (bid == 0 || BBP_logical(bid) == NULL) {
+				if (bid == 0 || !BBPvalid(bid)) {
 					bid = 0;
 					p = ILLEGALVALUE;
 				} else {

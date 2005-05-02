@@ -1570,8 +1570,7 @@ expected usage pattern of the memory in a heap.
 #define STORE_MODEMASK	0xFF	/* mask for below bits */
 #define STORE_MEM	0	/* load into GDKmalloced memory */
 #define STORE_MMAP	1	/* mmap() into virtual memory */
-#define STORE_COMPR	2	/* compressed STORE_MEM: currently ignored */
-#define STORE_PRIV	3	/* BAT copy of copy-on-write mmap */
+#define STORE_PRIV	2	/* BAT copy of copy-on-write mmap */
 
 /* Flags to be ORed into above mode bits */
 #define STORE_VARSIZE	0x100	/* variable sized */
@@ -1790,6 +1789,8 @@ gdk_export BBPrec *BBP;
 #define BBPrefs(i)	 (BBPcheck((i),"BBPrefs")?BBP_refs(i):-1)
 #define BBPcache(i)	 (BBPcheck((i),"BBPcache")?BBP_cache(i):(BAT*) NULL)
 #define BBPname(i)	 (BBPcheck((i),"BBPname")?((i) > 0 || BBP_logical(i))?BBP_logical(i):BBP_logical(-(i)):"")
+#define BBPvalid(i)      (BBP_logical(i) != NULL)
+#define BATgetId(b)	 BBPname((b)->batCacheid)
 #define BBPfix(i)	 BBPincref(i, FALSE)
 #define BBPunfix(i)	 BBPdecref(i, FALSE)
 

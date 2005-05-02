@@ -2270,7 +2270,7 @@ If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
 			n->cur = BUNfirst(n->b);
 		} else if (!BAThkey(n->b) && n->sync == NULL) {
 			if (BATprepareHash(n->b)) {
-				GDKerror("BATmultijoin: could not hash '%s'\n", BBP_logical(n->b->batCacheid));
+				GDKerror("BATmultijoin: could not hash '%s'\n", BATgetId(n->b));
 				return 0;
 			}
 			n->hitsize = 20;
