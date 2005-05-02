@@ -1156,7 +1156,6 @@ gdk_export BAT *BATnewstorage(int ht, int tt, size_t cap);
 gdk_export BAT *BATcreatedesc(int ht, int tt, int heapnames);
 gdk_export int BATfree(BAT *b);
 gdk_export void BATdestroy(BAT *b);
-gdk_export str BATgetId(BAT *b);	
 gdk_export int BATelmshift(BAT *b);
 gdk_export void BATsetdims(BAT *b);
 gdk_export int BBPreclaim(BAT *b);
