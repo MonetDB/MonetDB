@@ -10,7 +10,7 @@ use DBD_TEST();
 use Test::More;
 
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 29;
+  plan tests => 30;
 } else {
   plan skip_all => 'Cannot test without DB info';
 }
@@ -21,6 +21,8 @@ $ENV{DBI_DSN} .= ';language=mil';
 
 my $dbh = DBI->connect or die "Connect failed: $DBI::errstr\n";
 pass('Database connection created');
+
+$dbh->{AutoCommit} = 0;
 
 for ( 7 .. 9 )
 {
@@ -57,4 +59,5 @@ ok( $dbh->do( $_ ), $_) for 'insert( b, 3,"T3");';
     is( $row->[1],"T$_","fetch T$_");
   }
 }
+ok( $dbh->rollback,'Rollback');
 ok( $dbh->disconnect,'Disconnect');
