@@ -31,6 +31,8 @@ ALL $CVSROOT/CVSROOT/warn %s
 
 ^MonetDB $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-checkins@lists.sourceforge.net
 ^pathfinder $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-pf-checkins@lists.sourceforge.net
+^pf-haskell $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-pf-haskell@lists.sourceforge.net
+^pf-tools $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-pf-tools@lists.sourceforge.net
 ^sql $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-sql-checkins@lists.sourceforge.net
 ^template $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-templ-chkins@lists.sourceforge.net
 ^xml $CVSROOT/CVSROOT/syncmail -q -u %{sVv} monetdb-xml-checkins@lists.sourceforge.net
