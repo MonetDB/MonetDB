@@ -504,7 +504,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> AS ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE
 %token MODULE TYPE PROCEDURE FUNCTION RETURNS EXTERNAL sqlNAME DECLARE
-%token EXPLAIN PROFILE PREPARE EXECUTE
+%token SQL_EXPLAIN SQL_PROFILE SQL_DEBUG SQL_TRACE PREPARE EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token PASSWORD GRANT REVOKE ROLE ADMIN HAVING INTO
@@ -529,11 +529,17 @@ sqlstmt:
  | PREPARE sql ';' 	{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_prepare;
 		  	  m->sym = $$ = $2; YYACCEPT; }
- | EXPLAIN sql ';' 	{ mvc *m = (mvc*)parm;
+ | SQL_EXPLAIN sql ';' 	{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_explain;
 		  	  m->sym = $$ = $2; YYACCEPT; }
- | PROFILE sql ';' 	{ mvc *m = (mvc*)parm;
+ | SQL_PROFILE sql ';' 	{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_profile;
+		  	  m->sym = $$ = $2; YYACCEPT; }
+ | SQL_DEBUG sql ';' 	{ mvc *m = (mvc*)parm;
+		  	  m->mode = m_debug;
+		  	  m->sym = $$ = $2; YYACCEPT; }
+ | SQL_TRACE sql ';' 	{ mvc *m = (mvc*)parm;
+		  	  m->mode = m_trace;
 		  	  m->sym = $$ = $2; YYACCEPT; }
  | exec ';'		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = $1; YYACCEPT; }

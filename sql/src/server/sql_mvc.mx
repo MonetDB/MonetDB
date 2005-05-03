@@ -44,7 +44,9 @@ typedef enum modes_t {
 	m_prepare = 1,
 	m_execute = 2,
 	m_explain = 3,
-	m_profile = 4
+	m_profile = 4,
+	m_debug = 5,
+	m_trace = 6
 } modes_t;
 
 typedef struct mvc {
