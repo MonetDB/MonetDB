@@ -1,0 +1,51 @@
+stdout of test 'inet03` in directory 'src/modules/atoms` itself:
+
+
+# 21:56:09 >  
+# 21:56:09 >  Mtimeout -timeout 60 Mserver "--config=/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monet5/program/lib/MonetDB5" --set "gdk_dbfarm=/ufs/fabian/scratch/monet5/program/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monet5/program/var/MonetDB5/log" --set mapi_port=49836 --set sql_port=50914 --set monet_prompt= --trace --dbname=mTests_src_modules_atoms  inet03.mal </dev/null
+# 21:56:09 >  
+
+
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# config:/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf
+# dbfarm:/ufs/fabian/scratch/monet5/program/var/MonetDB5/dbfarm
+# dbname:mTests_src_modules_atoms
+# Visit http://monetdb.cwi.nl/ for further information.
+## these tests are from the PostgreSQL documentation examples
+## function tests
+#include inet;
+#
+#i1 := inet.new("192.168.1.5/24");
+#io.print(i1);
+#
+#i2 := inet.broadcast(i1);
+#io.print(i2);
+#
+#i3 := inet.new("192.168.0.1/25");
+#io.print(i3);
+#
+#i4 := inet.broadcast(i3);
+#io.print(i4);
+#
+function user.main():int;	# 0  (main:int)
+    i1 := inet.new("192.168.1.5/24");	# 1 INETnew (i1:inet)<-($2:str)
+    io.print(i1);	# 2 IOprint_val ($3:int)<-(i1:inet)
+    i2 := inet.broadcast(i1);	# 3 INETbroadcast (i2:inet)<-(i1:inet)
+    io.print(i2);	# 4 IOprint_val ($5:int)<-(i2:inet)
+    i3 := inet.new("192.168.0.1/25");	# 5 INETnew (i3:inet)<-($7:str)
+    io.print(i3);	# 6 IOprint_val ($8:int)<-(i3:inet)
+    i4 := inet.broadcast(i3);	# 7 INETbroadcast (i4:inet)<-(i3:inet)
+    io.print(i4);	# 8 IOprint_val ($10:int)<-(i4:inet)
+end main;	# 9  
+[ 192.168.1.5/24 ]
+[ 192.168.1.255/24 ]
+[ 192.168.0.1/25 ]
+[ 192.168.0.127/25 ]
+
+# 21:56:09 >  
+# 21:56:09 >  Done.
+# 21:56:09 >  
+

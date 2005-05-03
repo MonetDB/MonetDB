@@ -1,0 +1,15 @@
+# these tests are from the PostgreSQL documentation examples
+# function tests
+include inet;
+
+i1 := inet.new("192.168.1.5/24");
+io.print(i1);
+
+i2 := inet.broadcast(i1);
+io.print(i2);
+
+i3 := inet.new("192.168.0.1/25");
+io.print(i3);
+
+i4 := inet.broadcast(i3);
+io.print(i4);
