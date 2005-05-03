@@ -12,13 +12,10 @@ stdout of test 'ID.1078462_import` in directory 'tests/BugsViaSourgeforce` itsel
 module("pathfinder");
 module("unix");
 
-var TSTTRGDIR := getenv("TSTTRGDIR");
+var TSTSRCDIR := getenv("TSTSRCDIR");
 
-import_doc(TSTTRGDIR + "/" + "ID.1078462_doc.xml", "ID.1078462_doc.xml");
-# ">>> Importing '/var/tmp/_4.4.0_PREFIX_PATHFINDER_GNU_32_d_--enable-debug_/mTests/tests/BugsViaSourgeforce/ID.1078462_doc.xml' with name 'ID.1078462_doc.xml'"
-[ "Document successfully imported" ]
-# "The properties of the file '/var/tmp/_4.4.0_PREFIX_PATHFINDER_GNU_32_d_--enable-debug_/mTests/tests/BugsViaSourgeforce/ID.1078462_doc.xml' are propably not compressed!"
-# "You can compress the loaded instance 'ID.1078462_doc.xml' with: 'compress_properties("ID.1078462_doc.xml");'"
+shred_doc(TSTSRCDIR + "/" + "ID.1078462_doc.xml", "ID.1078462_doc.xml");
+# Shredded XML doc("ID.1078462_doc.xml"), total time after commit=0.016s
 
 commit();
 quit();
