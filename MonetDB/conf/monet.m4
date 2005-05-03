@@ -621,7 +621,7 @@ if test "x$have_java" != xno; then
   AC_PATH_PROG(JAVA,java,,$JPATH)
   if test "x$JAVA" != "x"; then
     AC_MSG_CHECKING(for Java >= 1.4)
-    JAVA_VERSION=[`$JAVA -version 2>&1 | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]
+    JAVA_VERSION=[`$JAVA -version 2>&1 | grep '[0-9]\.[0-9]' | head -n1 | sed -e 's|^[^0-9]*||' -e 's|[^0-9]*$||'`]
     if test MONETDB_VERSION_TO_NUMBER(echo $JAVA_VERSION) -ge MONETDB_VERSION_TO_NUMBER(echo "1.4"); then
       have_java_1_4=yes
     else
