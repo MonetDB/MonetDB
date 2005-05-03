@@ -969,7 +969,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
 			buf = NEW_ARRAY(char, BUFSIZ + 1);
 
-			len += snprintf(buf, BUFSIZ, "var s%d := replace(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
+			len += snprintf(buf, BUFSIZ, "var s%d := inplace(s%d.access(BAT_WRITE),s%d);\n", -s->nr, l, r);
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
 			backend_dump_nil(sql, s->op1.stval);
