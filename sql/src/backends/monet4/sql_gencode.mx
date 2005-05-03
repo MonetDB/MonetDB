@@ -1083,65 +1083,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			buf[0] = 0;
-			if (mvc_debug_on(sql->mvc, 1)) {
-				if (lst->type == st_list) {
-					list *l = lst->op1.lval;
-
-					n = l->h;
-					while (n) {
-						stmt *r = n->data;
-
-						if (buflen - len < 32) {
-							buflen += BUFSIZ;
-							buf = RENEW_ARRAY(char, buf, buflen);
-						}
-						len += snprintf(buf + len, buflen - len, "print(s%d);\n", r->nr);
-						assert(len <= buflen);
-						n = n->next;
-					}
-				}
-			}
-			if (mvc_debug_on(sql->mvc, 32)) {
-				if (buflen - len < 128) {
-					buflen += BUFSIZ;
-					buf = RENEW_ARRAY(char, buf, buflen);
-				}
-				len += snprintf(buf + len, buflen - len, "stream_write(Output,\"0\\n\");stream_flush(Output);\n");
-				assert(len <= buflen);
-				if (lst->type == st_list) {
-					list *l = lst->op1.lval;
-
-					n = l->h;
-					len += snprintf(buf + len, buflen - len, "table(\n");
-					assert(len <= buflen);
-					if (n) {
-						stmt *r = n->data;
-
-						len += snprintf(buf + len, buflen - len, "s%d", r->nr);
-						assert(len <= buflen);
-						n = n->next;
-					}
-					while (n) {
-						stmt *r = n->data;
-
-						if (buflen - len < 32) {
-							buflen += BUFSIZ;
-							buf = RENEW_ARRAY(char, buf, buflen);
-						}
-						len += snprintf(buf + len, buflen - len, ", s%d", r->nr);
-						assert(len <= buflen);
-						n = n->next;
-					}
-					len += snprintf(buf + len, buflen - len, ");\n");
-					assert(len <= buflen);
-				}
-				_DELETE(buf);
-				break;
-			}
-			if (len) {
-				write_command(sql, buf);
-				write_part(sql, buf, len);
-			}
 			len = 0;
 			if (lst->type == st_ordered) {
 				order = lst->op1.stval;

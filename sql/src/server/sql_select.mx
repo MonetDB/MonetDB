@@ -3036,8 +3036,8 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 			list *l = create_stmt_list();
 
 			if (n) {
-				stmt *limit = NULL;
-				list_append(l, limit = stmt_limit(stmt_dup(n->data), offset, sn->limit, 0));
+				stmt *limit = stmt_limit(stmt_dup(n->data), offset, sn->limit, 0);
+				list_append(l, stmt_dup(limit));
 				for ( n = n->next; n; n = n->next)
 					list_append(l, stmt_semijoin(stmt_dup(n->data), stmt_dup(limit)));
 			}

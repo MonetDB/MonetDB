@@ -877,12 +877,11 @@ rel2bin(mvc *c, stmt *s)
 	}
 
 	case st_limit: {
-		stmt *j = NULL;
+		stmt *ns, *j = NULL, *os = s;
 
 		/* try to push the limit through the (fetch) join */
 		j = s->op1.stval;
 		/* equi join on same base table */
-			/* topn can only reduce the right side of the join */
 		if (s->flag == 0 &&
 		    j->type == st_join && 
 		  ((j->flag == cmp_equal && 
@@ -891,55 +890,53 @@ rel2bin(mvc *c, stmt *s)
 			stmt *l = stmt_dup(j->op1.stval);
 			stmt *r = stmt_dup(j->op2.stval);
 
-			if (s->flag) { 
-				r = stmt_limit(r, 
-				      s->op2.stval->op1.aval->data.val.ival,
-				      s->op3.stval->op1.aval->data.val.ival,
-				      s->flag);
-			} else { 
-				l = stmt_limit(l, 
-				      s->op2.stval->op1.aval->data.val.ival,
-				      s->op3.stval->op1.aval->data.val.ival,
-				      s->flag);
-			}
+			l = stmt_limit(l, 
+			      s->op2.stval->op1.aval->data.val.ival,
+			      s->op3.stval->op1.aval->data.val.ival,
+			      s->flag);
 			s = stmt_join(l, r, cmp_equal); 
-			l = rel2bin(c, s);
+			ns = rel2bin(c, s);
 			stmt_destroy(s);
-			return l;
+			os->rewritten = stmt_dup(ns);
+			os->optimized = ns->optimized = 2;
+			return ns;
 		}
-		/* try to push the limit through the order 
+		/* try to push the limit through the order */
 		if (j->type == st_order) {
 			s = stmt_order(stmt_limit(stmt_dup(j->op1.stval),
 				s->op2.stval->op1.aval->data.val.ival,
 				s->op3.stval->op1.aval->data.val.ival,
 				j->flag+1), j->flag);
-			j = rel2bin(c, s);
+			ns = rel2bin(c, s);
 			stmt_destroy(s);
-			return j;
+			os->rewritten = stmt_dup(ns);
+			os->optimized = ns->optimized = 2;
+			return ns;
 		}
-		*/
-		/* try to push the limit through the reverse 
+		/* try to push the limit through the reverse */
 		if (j->type == st_reverse) {
 			s = stmt_reverse(stmt_limit(stmt_dup(j->op1.stval),
 				s->op2.stval->op1.aval->data.val.ival,
 				s->op3.stval->op1.aval->data.val.ival,
 				j->flag));
-			j = rel2bin(c, s);
+			ns = rel2bin(c, s);
 			stmt_destroy(s);
-			return j;
+			os->rewritten = stmt_dup(ns);
+			os->optimized = ns->optimized = 2;
+			return ns;
 		}
-		*/
-		/* try to push the limit through the mark 
+		/* try to push the limit through the mark */
 		if (j->type == st_mark) {
 			s = stmt_mark_tail(stmt_limit(stmt_dup(j->op1.stval),
 				s->op2.stval->op1.aval->data.val.ival,
 				s->op3.stval->op1.aval->data.val.ival, j->flag),
 				j->op2.stval->op1.aval->data.val.ival);
-			j = rel2bin(c, s);
+			ns = rel2bin(c, s);
 			stmt_destroy(s);
-			return j;
+			os->rewritten = stmt_dup(ns);
+			os->optimized = ns->optimized = 2;
+			return ns;
 		}
-		*/
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
 			stmt *ns = rel2bin(c, os);
@@ -954,10 +951,10 @@ rel2bin(mvc *c, stmt *s)
 	case st_semijoin:{
 
 		stmt *os, *ns;
-		stmt *j = NULL;
 
 		os = stmt_semijoin(rel2bin(c, s->op1.stval), rel2bin(c, s->op2.stval));
 		/* try to push the semijoin through the (fetch) join */
+		stmt *j = NULL;
 		if (os->op1.stval->type == st_join) {
 			j = os->op1.stval;
 			/* equi join on same base table */
@@ -966,7 +963,8 @@ rel2bin(mvc *c, stmt *s)
 		    		j->op1.stval->t == j->op2.stval->h ) {
 				stmt *l = stmt_dup(j->op1.stval);
 				stmt *r = stmt_dup(j->op2.stval);
-				l = rel2bin(c, s=stmt_semijoin(l, stmt_dup(os->op2.stval)));
+				s = stmt_semijoin(l, stmt_dup(os->op2.stval));
+				l = rel2bin(c, s);
 				stmt_destroy(s);
 				stmt_destroy(os);
 				os = stmt_join( l, r, cmp_equal);
@@ -1153,6 +1151,7 @@ rel2bin(mvc *c, stmt *s)
 		if all outputs depend on the same mark, just use
 			   the mark as order and simply use the bases.
 		*/
+/*
 		if (!mvc_debug_on(c, 65536) && s->op1.stval->type != st_ordered)
 		{
 			stmt *lst = s->op1.stval;
@@ -1182,6 +1181,7 @@ rel2bin(mvc *c, stmt *s)
 				list_destroy(l);
 			}
 		}
+*/
 		s->optimized = 2;
 		return stmt_dup(s);
 	}

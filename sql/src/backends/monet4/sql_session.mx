@@ -470,7 +470,7 @@ output_prepare(stream *out, mvc *c, cq *q)
 enum ex_t {
 	ex_none,
 	ex_plan,
-	ex_performance
+	ex_profile
 };
 
 int
@@ -491,11 +491,11 @@ sqlexecute(backend *be, stream *out)
 	if (c->explain) {
 		if (strcmp(c->explain, "plan") == 0)
 			explain = ex_plan;
-		else if (strcmp(c->explain, "performance") == 0)
-			explain = ex_performance;
+		else if (strcmp(c->explain, "profile") == 0)
+			explain = ex_profile;
 	}
 
-	if (explain == ex_performance)
+	if (explain == ex_profile)
 		T0 = GDKusec();
 
 	if ((err = sqlparse(c)) ||
@@ -506,7 +506,12 @@ sqlexecute(backend *be, stream *out)
 		return sqlcleanup(c, err);
 	}
 
-	if (explain == ex_performance)
+	if (c->mode == m_explain)
+		explain = ex_plan;
+	if (c->mode == m_profile)
+		explain = ex_profile;
+
+	if (explain == ex_profile)
 		Tparse = GDKusec();
 
 	if (explain == ex_plan && c->sym->token == SQL_SET)
@@ -603,7 +608,7 @@ sqlexecute(backend *be, stream *out)
 			return sqlcleanup(c, err);
 	}
 
-	if (explain == ex_performance) {
+	if (explain == ex_profile) {
 		query = sql_escape(QUERY(c->scanner));
 		Tmil = GDKusec();
 	}
@@ -639,7 +644,7 @@ sqlexecute(backend *be, stream *out)
 		c->type = q->type;
 		err = backend_fastpath((Cntxt) (ptrdiff_t) q->stk, (YYSTREE) q->code, c->args);
 	}
-	if (explain == ex_performance)
+	if (explain == ex_profile)
 		Texec = GDKusec();
 
 	/*
@@ -652,7 +657,7 @@ sqlexecute(backend *be, stream *out)
 		c->qc = qc_create();
 	}
 
-	if (explain == ex_performance) {
+	if (explain == ex_profile) {
 		char *e = c->explain;
 		char buf[BUFSIZ];
 

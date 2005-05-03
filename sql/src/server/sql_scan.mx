@@ -281,6 +281,8 @@ scanner_init_keywords()
 	keywords_insert("EXTERNAL", EXTERNAL);
 	keywords_insert("NAME", sqlNAME);
 
+	keywords_insert("EXPLAIN", EXPLAIN);
+	keywords_insert("PROFILE", PROFILE);
 	keywords_insert("PREPARE", PREPARE);
 	keywords_insert("PREP", PREPARE);
 	keywords_insert("EXECUTE", EXECUTE);

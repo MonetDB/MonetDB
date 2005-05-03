@@ -1051,11 +1051,20 @@ assert(0);
 */
 	st = n->data;
 	if (st->nrcols == 1) {
-		list_append(pivots, stmt_mark(stmt_reverse(stmt_dup(st)), markid++));
+		if (st->type == st_idxbat) {
+			list_append(pivots, stmt_mirror(stmt_dup(st)));
+		} else {
+			list_append(pivots, stmt_mark(stmt_reverse(stmt_dup(st)), markid++));
+		}
 	}
 	if (st->nrcols == 2) {
-		list_append(pivots, stmt_mark(stmt_reverse(stmt_dup(st)), markid));
-		list_append(pivots, stmt_mark(stmt_dup(st), markid++));
+		if (st->type == st_idxbat) {
+			list_append(pivots, stmt_mirror(stmt_dup(st)));
+			list_append(pivots, stmt_dup(st));
+		} else {
+			list_append(pivots, stmt_mark(stmt_reverse(stmt_dup(st)), markid));
+			list_append(pivots, stmt_mark(stmt_dup(st), markid++));
+		}
 	}
 	n = list_remove_node(l, n);
 	len = list_length(l) + 1;
@@ -1070,7 +1079,20 @@ assert(0);
 				list *nps = NULL;
 				stmt *pv = p->data;
 
-				if (pv->t == st->h) {
+				if (st->type == st_idxbat) {
+					/* joining two join indices, no join
+					   needed 
+					 */
+					if (pv->t == st->h && pv->h == st->h) {
+						list_append(pivots, stmt_dup(st));
+						n = list_remove_node(l, n);
+						break;
+					} else if (pv->t == st->t && pv->h == st->t) {
+						list_append(pivots, stmt_reverse(stmt_dup(st)));
+						n = list_remove_node(l, n);
+						break;
+					}
+				} else if (pv->t == st->h) {
 					nps = mk_pivot(pivots, stmt_dup(st), stmt_dup(pv), markid++);
 					list_destroy(pivots);
 					pivots = nps;
