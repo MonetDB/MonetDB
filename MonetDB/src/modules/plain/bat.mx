@@ -130,7 +130,7 @@ kernel libraries, e.g. bat.mx
 
 	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
 
-	#.COMMAND replace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
+	.COMMAND inplace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
 
 @- BAT properties
 @T
