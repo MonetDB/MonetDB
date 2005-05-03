@@ -248,7 +248,7 @@ str INET_comp_EQ(bit* retval, inet* val1, inet* val2) {
 /**
  * Returns whether val1 and val2 are not equal.
  */
-str INET_comp_NE(bit* retval, inet* val1, inet* val2) {
+str INET_comp_NEQ(bit* retval, inet* val1, inet* val2) {
 	if (in_isnil(val1) || in_isnil(val2)) {
 		*retval = bit_nil;
 	} else if (val1->q1 == val2->q1 &&
