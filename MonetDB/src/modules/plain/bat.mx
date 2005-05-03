@@ -1488,6 +1488,8 @@ CMDsave(bit *res, str input)
 
 		if (mode == STORE_MMAP && (@2)->filename == NULL)
 			mode = STORE_MEM;
+		if (mode == STORE_PRIV)
+			mode = STORE_MMAP;
 		if (*@1 == int_nil || *@1 == mode) {
 			*@1 = -1;
 		}

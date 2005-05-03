@@ -1685,12 +1685,16 @@ HEAPsetpriv(Heap *hp, int committed, int *remap, int *reload)
 	/* STORE_PRIV would indicate an illegal heap state */
 	assert(hp->storage != STORE_PRIV);
 
-	*remap = TRUE;
 	p = strstr(hp->filename, ".priv");
-	if (p) {
+	if (p) { 
+		/* only committed bats need to be mmap private */
+		if (!committed)
+			return hp->storage = STORE_MMAP;
 		/* state(4), goto state (1) */
+		*remap = TRUE;
 		return hp->storage = STORE_PRIV;
 	}
+	*remap = TRUE;
 	if (!committed) {
 		/* state(3), goto state (2) */
 		long_str src, dst, nme;
