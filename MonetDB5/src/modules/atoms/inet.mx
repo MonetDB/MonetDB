@@ -479,4 +479,51 @@ str INETbroadcast(inet* retval, inet* val) {
 	return(MAL_SUCCEED);
 }
 
+@mal
+command host(:inet):str
+address INEThost
+comment "Extract IP address as text";
+@c
+/**
+ * Extract IP address as text.
+ */
+str INEThost(str* retval, inet* val) {
+	str ip = GDKmalloc(sizeof(char) * 16);
+
+	sprintf(ip, "%d.%d.%d.%d", val->q1, val->q2, val->q3, val->q4);
+
+	*retval = ip;
+	return(MAL_SUCCEED);
+}
+
+@mal
+command masklen(:inet):int
+address INETmasklen
+comment "Extract netmask length";
+@c
+/**
+ * Extract netmask length.
+ */
+str INETmasklen(int* retval, inet* val) {
+	*retval = val->mask;
+	return(MAL_SUCCEED);
+}
+
+@mal
+command setmasklen(:inet,:int):inet
+address INETsetmasklen
+comment "Set netmask length for inet value";
+@c
+/**
+ * Set netmask length for inet value.
+ */
+str INETsetmasklen(inet* retval, inet* val, int* mask) {
+	if (*mask < 0 || *mask > 32)
+		throwMalf("inet.setmask", "Illegal netmask length value: %d", *mask);
+
+	*retval = *val;
+	retval->mask = *mask;
+	
+	return(MAL_SUCCEED);
+}
 @}
