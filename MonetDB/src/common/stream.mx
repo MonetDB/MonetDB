@@ -396,6 +396,7 @@ stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	printf("read %s " SZFMT " " SZFMT "\n", s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
 	assert(s->access == ST_READ);
+	if (s->errnr) return s->errnr;
 	return (*s->read) (s, buf, elmsize, cnt);
 }
 
@@ -409,6 +410,7 @@ stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 	printf("write %s " SZFMT " " SZFMT "\n", s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
 	assert(s->access == ST_WRITE);
+	if (s->errnr) return s->errnr;
 	return (*s->write) (s, buf, elmsize, cnt);
 }
 
@@ -447,6 +449,7 @@ stream_flush(stream *s)
 	printf("flush %s\n", s->name ? s->name : "<unnamed>");
 #endif
 	assert(s->access == ST_WRITE);
+	if (s->errnr) return s->errnr;
 	if (s->flush)
 		return (*s->flush) (s);
 	return 0;
