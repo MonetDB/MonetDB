@@ -23,7 +23,7 @@
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.53)
-AC_INIT(loader/pf-shred.c)
+AC_INIT(compiler/main.c)
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -240,7 +240,6 @@ if test "x$have_libxml2" != xyes; then
     LIBXML2_CFLAGS=""
     LIBXML2_LIBS=""
     LIBXML2_LDADD=""
-    PF_LOADER_PROGRAMS=""
     AC_DEFINE(HAVE_LIBXML2, 0,
               [Do we have the libxml2 library available to support XML Schema?])
     AC_MSG_FAILURE([The libxml2 XML parsing library and/or include files were 
@@ -251,7 +250,6 @@ fi
 
 if test "x$have_libxml2" = xyes; then
     LIBXML2_LDADD="-lxml2"
-    PF_LOADER_PROGRAMS="pf-shred"
     AC_DEFINE(HAVE_LIBXML2, 1,
          [Do we have the libxml2 library available to support XML Schema?])
     AC_MSG_NOTICE([The following compiler options will be used to integrate
@@ -265,128 +263,8 @@ dnl Propagate the stuff to the Makefiles
 AC_SUBST(LIBXML2_CFLAGS, $LIBXML2_CFLAGS)
 AC_SUBST(LIBXML2_LIBS, $LIBXML2_LIBS)
 AC_SUBST(LIBXML2_LDADD, $LIBXML2_LDADD)
-AC_SUBST(PF_LOADER_PROGRAMS, $PF_LOADER_PROGRAMS)
 AM_CONDITIONAL(HAVE_LIBXML2, test x"$have_libxml2" != xno)
 
-
-dnl BerkeleyDB blindly assumes u_long to be defined
-AC_CHECK_TYPES(u_long)
-
-dnl The user may enter a location of the BerkeleyDB library on the
-dnl command line (with `--with-berkeleydb=DIR) or disable the
-dnl BerkeleyDB support.
-dnl
-dnl AC_ARG_WITH makes the --with-xxx available, then we do some checks and
-dnl see if we actually found BerkeleyDB.
-dnl
-dnl When searching for db.h we need to typedef u_long if the above test
-dnl has failed. Otherwise the compiler will report a syntax error.
-dnl
-dnl Checking for BerkeleyDB is a bit more tricky than other libraries.
-dnl The BerkeleyDB distribution knows the `--with-uniquename' option
-dnl for its ./configure file that will result in unique names for the
-dnl sybols in the compiled libraries. BerkeleyDB's API functions (e.g.
-dnl db_create) will then be renamed with a unique suffix (e.g. to
-dnl db_create_4001). Any C source file will not see any difference,
-dnl as the db.h header file will set the macro db_create to db_create_4001.
-dnl The search for the db_create symbol in the library, however, will
-dnl fail if that feature has been activated in BerkeleyDB (as is the
-dnl case in the Gentoo distribution).
-have_berkeleydb="auto"
-AC_ARG_WITH(berkeleydb,
-    [  --with-berkeleydb=DIR   BerkeleyDB library is installed in DIR],
-    [have_berkeleydb="$withval"], [have_berkeleydb="auto"])
-
-save_CPPFLAGS="$CPPFLAGS"
-save_LDFLAGS="$LDFLAGS"
-if test "x$have_berkeleydb" != xno; then
-
-    if test "x$have_berkeleydb" != xauto; then
-        LIBDB_CFLAGS="-I$have_berkeleydb/include"
-        LIBDB_LIBS="-L$have_berkeleydb/lib"
-    fi
-
-    CPPFLAGS="$CPPFLAGS $LIBDB_CFLAGS"
-    LDFLAGS="$LDFLAGS $LIBDB_LIBS -ldb"
-    AC_CHECK_HEADER([db.h],
-      [AC_MSG_CHECKING([for the BerkeleyDB library])
-       AC_TRY_LINK([
-#if !HAVE_U_LONG
-typedef unsigned long u_long;
-#endif /* !HAVE_U_LONG */
-#include <db.h>
-],
-[ (void) db_create ((DB **) 0, (DB_ENV *) 0, (u_int32_t) 0); ],
-                        [have_berkeleydb="yes"
-                         AC_MSG_RESULT(yes)],
-                        [have_berkeleydb="no"
-                         AC_MSG_RESULT(no)])],
-                    [], [
-#if !HAVE_U_LONG
-typedef unsigned long u_long;
-#endif
-                    ])
-
-if test "x$have_berkeleydb" = "xyes"; then
-
-dnl Some BerkeleyDB versions define the `open' function with 6, some with 7
-dnl parameters (one for transaction support). Let's see which one we have here.
-AC_MSG_CHECKING([for transaction support in BerkeleyDB])
-AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
-#if !HAVE_U_LONG
-typedef unsigned long u_long;
-#endif /* !HAVE_U_LONG */
-#include <db.h>
-]],
-[[ DB *dbp = 0; dbp->open (dbp, 0, "test", 0, DB_BTREE, DB_TRUNCATE, 0600); ]]
-),
-[AC_DEFINE(BERKELEYDB_HAS_TXN, 1,
-           [Does BerkeleyDB have transaction support?])
-AC_MSG_RESULT(yes)],[
-AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
-#if !HAVE_U_LONG
-typedef unsigned long u_long;
-#endif /* !HAVE_U_LONG */
-#include <db.h>
-]],
-[[ DB *dbp = 0; dbp->open (dbp, "test", 0, DB_BTREE, DB_TRUNCATE, 0600); ]]
-),
-[AC_DEFINE(BERKELEYDB_HAS_TXN, 0,
-           [Does BerkeleyDB have transaction support?])
-AC_MSG_RESULT(no)],
-[AC_MSG_WARN([Your BerkeleyDB installation is not usable for Pathfinder.
-Duplicate removal feature in pf-shred will be disabled.])
-have_berkeleydb='xno'])])
-
-fi   dnl BerkeleyDB library found?
-fi   dnl BerkeleyDB requested?
-
-LDFLAGS="$save_LDFLAGS"
-CPPFLAGS="$save_CPPFLAGS"
-
-if test "x$have_berkeleydb" != xyes; then
-    LIBDB_CFLAGS=""
-    LIBDB_LIBS=""
-    AC_DEFINE(HAVE_LIBDB, 0, [Do we have the BerkeleyDB library available?])
-    AC_MSG_WARN([The BerkeleyDB library was not found on your system or you
-                have requested not to use it. This will disable the duplicate
-                removal feature in the XML document loader.])
-    LIBDB_LDADD=""
-fi
-
-if test "x$have_berkeleydb" = xyes; then
-    AC_DEFINE(HAVE_LIBDB, 1, [Do we have the BerkeleyDB library available?])
-    AC_MSG_NOTICE([The following compiler options will be used to integrate
-           the BerkelyDB library:
-           To find the BerkeleyDB include files: $LIBDB_CFLAGS
-           To find the libdb library:            $LIBDB_LIBS])
-    LIBDB_LDADD="-ldb"
-fi
-
-dnl Propagate the stuff to the Makefiles
-AC_SUBST(LIBDB_CFLAGS, $LIBDB_CFLAGS)
-AC_SUBST(LIBDB_LIBS, $LIBDB_LIBS)
-AC_SUBST(LIBDB_LDADD, $LIBDB_LDADD)
 
 dnl The Burg code requires strdup(). We test here if strdup() is
 dnl available on the system. If not, we will define it ourselves

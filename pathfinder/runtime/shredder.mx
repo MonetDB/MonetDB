@@ -33,8 +33,8 @@
 /**********************************************************************
  * shredder.c : xml document shredder for pathfinder
  *
- * It is an adapted version of loader/pf_shred where I tried to generate
- * exactly the same BAT's.
+ * It is an adapted version of pf-tools/loader/pf_shred where I tried to
+ * generate exactly the same BAT's.
  * TODO:
  *      - stop the xmlparser more elegant in case of an error. xmlStopParser()
  *        generates a lot of extra confusing 'noise'

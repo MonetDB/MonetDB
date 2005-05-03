@@ -88,7 +88,6 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/pf
-%{prefix}/bin/pf-shred
 %{prefix}/lib/MonetDB/lib_*
 %{prefix}/lib/MonetDB/*.mil
 

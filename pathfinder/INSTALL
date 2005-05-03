@@ -35,20 +35,12 @@ REQUIREMENTS
    -- The libxml2 XML parsing library.
       This library is required for
        (a) the XML Schema import feature of the Pathfinder compiler, and
-       (b) for the pf-shred XML document loader.
+       (b) for the XML document loader (runtime/shredder.mx).
       If libxml2 is not available on your system, the Pathfinder compiler
       will be compiled without XML Schema support. The XML document loader
       will not be compiled at all in that case.
       You get libxml2 with any current Linux distribution or at
       http://www.xmlsoft.org
-
-   -- The BerkeleyDB database library.
-      The XML document loader pf-shred requires this library for the
-      duplicate removal feature. If the library (libdb) cannot be found
-      on your system, this feature will not be available. The XQuery
-      compiler does not use BerkelyDB.
-      BerkeleyDB is available in any current Linux distribution or at
-      http://www.sleepycat.com
 
 
 INSTALLATION
@@ -67,9 +59,7 @@ The most simple way to install the Pathfinder system on your machine is
  3. Type `make install' to install the package on your system.
 
 The Pathfinder compiler `pf' will be installed into /usr/local/bin on
-your system, as is the Pathfinder XML document loader `pf-shred'. Note
-that pf-shred will not be compiled if you don't have the libxml2 library
-available on your system.
+your system.
 
 
 Customized Installation
@@ -93,13 +83,6 @@ the location of required libraries on your system:
                          DIR/include/libxml2/libxml. If you don't want
                          to use libxml2, give `--without-libxml2' on the
                          command line (see the consequences above).
-
-  --with-berkeleydb=DIR  Prefix of your BerkeleyDB installation. Libraries
-                         expected in DIR/lib, includes in DIR/include. If
-                         you don't want to use BerkeleyDB, give
-                         `--without-berkeleydb' on the command line and
-                         be aware of the above mentioned consequences.
-
 
 
 Installation from Development Sources
