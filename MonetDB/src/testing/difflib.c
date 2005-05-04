@@ -107,14 +107,6 @@ HTMLsave(char *s)
 			*p++ = 'p';
 			*p++ = ';';
 			break;
-		case '"':
-			*p++ = '&';
-			*p++ = 'q';
-			*p++ = 'u';
-			*p++ = 'o';
-			*p++ = 't';
-			*p++ = ';';
-			break;
 		default:
 			*p++ = *s;
 			break;
@@ -667,10 +659,10 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 		ok = fgets(line, BUFLEN, lwc_diff_fp);
 		line[strlen(line) - 1] = '\0';
 	}
-	old_time = strchr(old, '\t') + 1;
-	*strchr(old, '\t') = '\0';
+	old_time = strchr(old, '\t');
+	*old_time++ = '\0';
 	new_time = strchr(new, '\t') + 1;
-	*strchr(new, '\t') = '\0';
+	*new_time++ = '\0';
 #ifdef NATIVE_WIN32
 	if (!strcmp(strrchr(old, '.'), ".cp"))
 		*strrchr(old, '.') = '\0';
