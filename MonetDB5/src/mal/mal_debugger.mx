@@ -791,10 +791,10 @@ void printStack(stream *f, MalBlkPtr mb, MalStkPtr s){
 }
 void printBATelm(stream *f, int i, int cnt, int first){
 	BAT *b,*bs;
-	str tpe,nme;
+	str tpe/*,nme*/;
 	b= BATdescriptor(i);
 	if( b){
-		nme= BATgetId(b);
+		/* nme= BATgetId(b); */
 		tpe= getTypeName(newBatType(b->htype,b->ttype));
 		/* ignore ref count of this call */
 		stream_printf(f,"type=%s count=%d lrefs=%d refs=%d \n",
