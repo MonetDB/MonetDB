@@ -37,7 +37,10 @@ AC_ARG_WITH(monet,
 	AC_HELP_STRING([--with-monet=DIR], [monet is installed in DIR]),
 	have_monet="$withval")
 if test "x$have_monet" != xno; then
-  MPATH="$withval/bin:$PATH"
+  case "$have_monet" in
+  yes|auto) MPATH="${MONETDB_PREFIX+$MONETDB_PREFIX/bin:}$PATH";;
+  *) MPATH="$withval/bin:$PATH";;
+  esac
   AC_PATH_PROG(MONETDB_CONFIG,monetdb-config,,$MPATH)
 
   if test "x$MONETDB_CONFIG" != x; then
