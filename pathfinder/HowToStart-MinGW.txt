@@ -1,0 +1,70 @@
+In order to compile Pathfinder on Windows, we currently need the MinGW
+(Minimalist GNU for Windows -- http://www.mingw.org/) suite, and
+before Pathfinder can be compiled, MonetDB needs to be compiled and
+installed using this suite.  To compile MonetDB using MinGW, please
+see the file HowToStart-MinGW.txt in the MonetDB folder.
+
+Pathfinder needs the libxml2 library.  This library needs to be
+compiled and installed before proceeding with Pathfinder.  See below
+for the details on how to do this.
+
+As with MonetDB, the Pathfinder compilation with MinGW depends on a
+Cygwin (http://www.cygwin.com/) installation.  Apart from all the
+usual Cygwin packages and the packages specifically required for
+building MonetDB, no additional packages are required.
+
+Building libxml2.
+
+The libxml2 library sources can be found at
+http://xmlsoft.org/downloads.html.  Choose one of the mirrors, and
+download libxml2-2.6.19.tar.gz.  Unpack this file (Cygwin command
+"tar xzf libxml2-2.6.19.tar.gz").  Then inside the newly created
+folder libxml2-2.6.19, execute the configure script and then build and
+install:
+cd libxml2-2.6.19
+./configure CC='gcc -g -mwin32 -mno-cygwin' \
+	    CXX='g++ -g -mwin32 -mno-cygwin' \
+	    LDFLAGS=-L/usr/lib/w32api \
+	    --host=i386-pc-mingw32 \
+	    --without-iconv \
+	    --without-python \
+	    --without-readline \
+	    --prefix="$HOME/MinGW"
+make
+make install
+
+If the Cygwin package mingw-zlib is not installed (or not wanted), you
+can add the option --without-zlib to the configure command.
+
+This will install the library and include files in $HOME/MinGW which
+we also use in the configuration of MonetDB and Pathfinder.
+
+Building Pathfinder.
+
+In order to compile and install Pathfinder, I use the following
+commands:
+
+export MONETDB_PREFIX="$HOME/MinGW" # location where MonetDB was installed
+./bootstrap
+mkdir MinGW
+cd MinGW
+../configure --host=i386-pc-mingw32 \
+	     --with-monet="$MONETDB_PREFIX" \
+	     --with-mel=.../mel.exe \
+	     --with-mx=.../Mx.exe \
+	     --with-gcc='gcc -mwin32 -mno-cygwin -g' \
+	     --with-gxx='g++ -mwin32 -mno-cygwin -g' \
+	     --with-translatepath='cygpath -w' \
+	     --with-libxml2="$HOME/MinGW" \
+	     --with-pthread=C:/Pthreads \
+	     --without-iconv \
+	     --without-pcre \
+	     --prefix="$HOME/MinGW"
+make
+make install
+
+The values for the --with-mel and --with-mx options should be the full
+(Cygwin) path to the respective binaries, which should be compiled for
+Cygwin (i.e. not using the MinGW tools).
+The --with-monet flag is not needed if MONETDB_PREFIX is set and
+monetdb-config can be found in $MONETDB_PREFIX/bin.
