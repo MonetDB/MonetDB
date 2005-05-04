@@ -1552,7 +1552,8 @@ if test "x$have_bz2" != xno; then
 	CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
 	save_LIBS="$LIBS"
 	LIBS="$LIBS $BZ_LIBS -lbz2"
-	AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <bzlib.h>], [(void)BZ2_bzopen("","");]),
+	AC_LINK_IFELSE(AC_LANG_PROGRAM([#include <stdio.h>
+#include <bzlib.h>], [(void)BZ2_bzopen("","");]),
 		BZ_LIBS="$BZ_LIBS -lbz2",
 		[ if test "x$have_bz2" != xauto; then AC_MSG_ERROR([bz2 library not found]); fi; have_bz2=no ])
 	LIBS="$save_LIBS"
