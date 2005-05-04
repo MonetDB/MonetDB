@@ -1028,7 +1028,7 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 			actual_str[len++] = ' ';
 			actual_str[len] = '\0';
 		}
-		strncpy(actual_str + len, s, strsize - len);
+		strcpy(actual_str + len, s); /* we know it fits */
 		len += l - 1;	/* compensate for +1 earlier on */
 		i0 = i;
 		k0 = k;
@@ -1213,11 +1213,11 @@ int CMDstring_join ( BAT** res, BAT *iter_str, BAT *separator  )
 			first_string = 0;
 		}
 		else {
-			strncpy(actual_str+len, sep, strsize-len);
+			strcpy(actual_str+len, sep); /* we know it fits */
 			len += sep_len;
 		}
 
-		strncpy(actual_str + len, s, strsize - len);
+		strcpy(actual_str + len, s); /* we know it fits */
 		len += l - sep_len - 1;	/* just strlen(s) */
 	}
 
