@@ -382,6 +382,18 @@ str INET_comp_CW(bit* retval, inet* val1, inet* val2) {
 		} else {
 			*retval = 0;
 		}
+
+		/* example: (hex notation)
+		 * inet1: 10.0.0.0/24
+		 * IP1:   10 00 00 00
+		 * mask1: ff ff ff 00
+		 * &1:    10 00 00 00
+		 * inet2: 10.0.0.254
+		 * IP2:   10 00 00 ef
+		 * mask1: ff ff ff 00
+		 * &2:    10 00 00 00
+		 * &1 and &2 are equal, so inet2 is within inet1
+		 */
 	}
 	return(MAL_SUCCEED);
 }
@@ -475,6 +487,14 @@ str INETbroadcast(inet* retval, inet* val) {
 		retval->q2 |= m[1];
 		retval->q3 |= m[2];
 		retval->q4 |= m[3];
+
+		/* example: (hex notation)
+		 * inet: 10.0.0.1/24
+		 * IP:   10 00 00 01
+		 * mask: 00 00 00 ff
+		 * &:    10 00 00 ff
+		 * results in 10.0.0.255
+		 */
 	}
 	return(MAL_SUCCEED);
 }
@@ -571,6 +591,12 @@ str INETnetmask(inet* retval, inet* val) {
 		retval->q3 = m[2];
 		retval->q4 = m[3];
 		retval->mask = 32;
+
+		/* example: (hex notation)
+		 * inet: 10.0.0.1/24
+		 * mask: ff ff ff 00
+		 * results in 255.255.255.0
+		 */
 	}
 	return(MAL_SUCCEED);
 }
@@ -592,6 +618,13 @@ str INEThostmask(inet* retval, inet* val) {
 		retval->q3 = ~retval->q3;
 		retval->q4 = ~retval->q4;
 	}
+
+	/* example: (hex notation)
+	 * netmask: 255.255.255.0
+	 * IP:      ff ff ff 00
+	 * ~:       00 00 00 ff
+	 * results in 0.0.0.255
+	 */
 
 	return(MAL_SUCCEED);
 }
@@ -631,6 +664,14 @@ str INETnetwork(inet* retval, inet* val) {
 		retval->q2 &= m[1];
 		retval->q3 &= m[2];
 		retval->q4 &= m[3];
+
+		/* example: (hex notation)
+		 * inet: 10.0.0.1/24
+		 * IP:   10 00 00 01
+		 * mask: ff ff ff 00
+		 * &:    10 00 00 00
+		 * results in 10.0.0.0/24
+		 */
 	}
 	return(MAL_SUCCEED);
 }
@@ -698,6 +739,14 @@ str INETabbrev(str* retval, inet* val) {
 		} else {
 			mask = val->mask;
 		}
+
+		/* example: (hex notation)
+		 * inet: 10.1.0.0/16
+		 * IP:   10 01 00 00
+		 * mask: 00 00 ff ff
+		 * &:    00 00 00 00
+		 * all zero, thus no bits on the right side of the mask
+		 */
 
 		ip = GDKmalloc(sizeof(char) * 19);
 
