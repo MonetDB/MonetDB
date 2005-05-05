@@ -2054,7 +2054,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             for f in d:
                 if test.match(f):
                     if CALL in ["pf", "pfXs"]:
-                        RunIt('( %s %s | %s --dbinit="module(pathfinder,pf_support,ascii_io);" )' % (exe['XQuery_Client'][1],f,cmd.replace(' --trace ',' ')), "", ClntOutFile, ClntErrFile)
+                        RunIt('( %s %s | %s --dbinit="module(pathfinder);" )' % (exe['XQuery_Client'][1],f,cmd.replace(' --trace ',' ')), "", ClntOutFile, ClntErrFile)
                     elif CALL == "mal":
                         RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
                     elif env['VERSION'] >= 49900:
