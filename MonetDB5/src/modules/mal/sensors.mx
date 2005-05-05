@@ -602,7 +602,8 @@ SENstartSensor(str sname, bstream *bs){
 #ifdef DEBUG_SENSORS
 	stream_printf(GDKout,"#Start sensor reception %s\n",sname);
 #endif
-	fmt= as.format= (Column*) GDKmalloc(sizeof(Column) * MAXEVENTFIELDS+1);
+	fmt= as.format= (Column*) GDKmalloc(sizeof(Column) * (MAXEVENTFIELDS+1));
+	bzero((char *) fmt,sizeof(Column) * (MAXEVENTFIELDS+1));
 	as.offset= 0;
 	as.nr_attrs= 0;
 	as.nr = (size_t) oid_nil;
@@ -617,18 +618,16 @@ SENstartSensor(str sname, bstream *bs){
 #endif
 		fmt[k].sep = GDKstrdup((char*)",");
 		fmt[k].seplen = (int) strlen( fmt[k].sep );
-		fmt[k].adt = *(int*) BUNtail(SEN_id_tpe, BUNfnd(SEN_id_tpe,&i));
+		fmt[k].adt = fmt[k].bval->ttype;
 		fmt[k].type = (char*)getTypeName(fmt[k].adt);
 		fmt[k].tostr = &TABLETadt_toStr;
 		fmt[k].frstr = &TABLETadt_frStr;
 		fmt[k].extra = NULL;
 		k++;
 	}
-/*
 	fmt[k].sep = GDKstrdup((char*)"\n");
 	fmt[k].seplen = (int) strlen( fmt[k].sep );
 	k++;
-*/
 	as.nr_attrs= k;
 	/* here we fork and prepare for reading */
 #ifdef DEBUG_SENSORS

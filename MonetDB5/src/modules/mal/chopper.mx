@@ -145,7 +145,7 @@ str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule){
 		*granule, first, MIN(cnt,(size_t) *granule)); */
 	VIEWbounds(view,(size_t) first, first + MIN(cnt,(size_t) *granule)-1);
 	BATseqbase(view,first-1);
-	BBPunfix(view->batCacheid);
+	/* BBPunfix(view->batCacheid);*/
 	*res = first ;
 	return MAL_SUCCEED;
 }

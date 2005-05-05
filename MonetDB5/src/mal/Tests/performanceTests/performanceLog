@@ -545,3 +545,33 @@ tst400e		 1.07/1.04/0.02	1M incr fcn
 
 tst901a		 1.10/0.97/0.10	[+] call	 
 tst901b		 4.63/4.44/0.16	[+] call	
+======================== 24 Apr 2005 ===================
+Setup on Orion just after after cpu savers and small bats
+The compilation mode for both V5 is CFLAGS=-O2 
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		orion(2x1.4Mh load 0)		 
+base		 0.09/0.06/0.02			
+tst400a		 0.18/0.16/0.02	1M loop	 	
+tst400a2	 0.33/0.30/0.02	1M loop inc	
+tst400bHuge	 0.56/0.48/0.08	100k count (io)
+tst400cHuge	 0.73/0.65/0.08	100k insert(io)	
+tst400d		 0.93/0.89/0.04	1M insert tuple 
+tst400e		 1.07/1.04/0.02	1M incr fcn     
+
+tst901a		 1.10/0.97/0.10	[+] call	 
+tst901b		 4.63/4.44/0.16	[+] call	
+======================== 5 May 2005 ===================
+Setup on Orion after BAT reductions
+The compilation mode for both V5 is CFLAGS=-O2 
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		orion(2x1.4Mh load 0)		 
+base		 0.08/0.055/0.02			
+tst400a		 0.17/0.15/0.02	1M loop	 	
+tst400a2	 0.30/0.28/0.02	1M loop inc	
+tst400bHuge	 0.57/0.49/0.08	100k count (io)
+tst400cHuge	 0.73/0.62/0.08	100k insert(io)	
+tst400d		 0.91/0.87/0.04	1M insert tuple 
+tst400e		 1.05/1.02/0.02	1M incr fcn     
+
+tst901a		 1.10/0.97/0.10	[+] call	 
+tst901b		 4.63/4.44/0.16	[+] call	

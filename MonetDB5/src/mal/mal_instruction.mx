@@ -384,7 +384,7 @@ typedef struct VARRECORD{
 	short	depth;	/* ... depth in nesting */
     short   isused; /* for stack copying scope */
     short   fixtype;/* the type has been fixed */
-    short   garbage;/* remove upon function return */
+    short   cleanup;/* remove upon function return */
     short   beginLifespan, endLifespan; /* for optimizers */
     str     literal;/* initial value string */
     PropertySet props; /* private list of (name,value) pairs */
@@ -424,7 +424,7 @@ and the total time spent while executing the instruction.
     MALfcn  beforeCall; /* do something with the target object */
     MALfcn  afterCall;  /* do something with the result object */
     struct MALBLK *blk; /* resolved MAL function address */
-    int garbage;    /* control is needed */
+    int quickcleanup;    /* quick garbage control is needed */
     int jump;       /* controlflow program counter */
 @-
 The MAL instruction representation. The strings should be garbage collected
@@ -468,6 +468,7 @@ for separate name space management.
 #define functionId(P)       (P)->fcnname
 #define setFunctionId(P,S)  (P)->fcnname= S
 #define functionName(P)     (P)->fcnname
+#define garbageControl(P)   (P)->quickcleanup
 
 #define getInstrPtr(M,I)    (M)->stmt[I]
 #define getSignature(S)     getInstrPtr((S)->def,0)
@@ -490,7 +491,7 @@ for separate name space management.
 #define getVarDepth(M,I)   ((M)->var[I]->depth)
 #define isFixed(M,I)        ((M)->var[I]->fixtype)
 #define setFixed(M,I)       ((M)->var[I]->fixtype= 1)
-#define garbageControl(M,I)     ((M)->var[I]->garbage)
+#define setVarCleanup(M,I)     ((M)->var[I]->cleanup)
 #define getVarConstant(M,I)     ((M)->var[I]->value)
 #define getVarType(M,I)     ((M)->var[I]->type)
 #define getVarGDKType(M,I)      ((M)->var[I]->gdktype)
@@ -831,7 +832,7 @@ with modifier
     p->clk = 0;
     p->ticks = 0;
     p->trace= 0;
-    p->garbage=0;
+    p->quickcleanup=0;
     p->jump=0;
     p->counter= 0;
 #endif
@@ -1109,7 +1110,7 @@ int newVariable(MalBlkPtr mb, str name, malType type){
     setVarType(mb,n,type);
     getVarLiteral(mb,n)= NULL;
     isConstant(mb,n) = FALSE;
-    garbageControl(mb,n) = FALSE;
+    setVarCleanup(mb,n) = FALSE;
     setVarUsed(mb,n,FALSE);
     isVarInitialized(mb,n) = FALSE;
     mb->vtop++;
@@ -1156,7 +1157,7 @@ int newTmpVariable(MalBlkPtr mb, malType type){
     setVarType(mb,n,type);
     getVarLiteral(mb,n)= NULL;
     isConstant(mb,n) = FALSE;
-    garbageControl(mb,n) = FALSE;
+    setVarCleanup(mb,n) = FALSE;
     setVarUsed(mb,n,FALSE);
     isVarInitialized(mb,n) = FALSE;
     mb->vtop++;
@@ -1191,7 +1192,7 @@ void    copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
 	w->name = v->name? GDKstrdup(v->name):0;
 	w->type = v->type;
 	w->gdktype = v->gdktype;
-	w->garbage = v->garbage;
+	w->cleanup = v->cleanup;
 	w->fixtype = v->fixtype;
 	w->literal= v->literal? GDKstrdup(v->literal):NULL;
 	w->isaconstant = v->isaconstant;
