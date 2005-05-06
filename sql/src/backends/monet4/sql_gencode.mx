@@ -967,10 +967,10 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_replace:{
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
-			buf = NEW_ARRAY(char, BUFSIZ + 1);
 			char *f = (s->op1.stval->type == st_bat ||
 				   s->op1.stval->type == st_idxbat)?
 				"inplace":"replace";
+			buf = NEW_ARRAY(char, BUFSIZ + 1);
 
 			len += snprintf(buf, BUFSIZ, "var s%d := %s(s%d.access(BAT_WRITE),s%d);\n", -s->nr, f, l, r);
 			dump(sql, buf, len, -s->nr);

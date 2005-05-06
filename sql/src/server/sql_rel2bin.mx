@@ -950,11 +950,11 @@ rel2bin(mvc *c, stmt *s)
 	}
 	case st_semijoin:{
 
+		stmt *j = NULL;
 		stmt *os, *ns;
 
 		os = stmt_semijoin(rel2bin(c, s->op1.stval), rel2bin(c, s->op2.stval));
 		/* try to push the semijoin through the (fetch) join */
-		stmt *j = NULL;
 		if (os->op1.stval->type == st_join) {
 			j = os->op1.stval;
 			/* equi join on same base table */
