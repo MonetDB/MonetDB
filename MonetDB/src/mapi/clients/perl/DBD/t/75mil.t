@@ -22,8 +22,6 @@ $ENV{DBI_DSN} .= ';language=mil';
 my $dbh = DBI->connect or die "Connect failed: $DBI::errstr\n";
 pass('Database connection created');
 
-$dbh->{AutoCommit} = 0;
-
 for ( 7 .. 9 )
 {
   my $sth = $dbh->prepare("print( $_ );");

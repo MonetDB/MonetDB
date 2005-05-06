@@ -513,10 +513,9 @@ sub STORE {
     my ($dbh, $key, $value) = @_;
 
     if ($key eq 'AutoCommit') {
-        my $old = $dbh->{$key} || 0;
-        if ($value != $old) {
-            my $mapi = $dbh->{monetdb_connection};
-            MapiLib::mapi_setAutocommit($mapi, $value);
+        if ($value != ($dbh->{$key} || 0) && $dbh->{monetdb_language} eq 'sql') {
+            $dbh->do("set auto_commit = $value")
+                or return $dbh->set_err($dbh->err, $dbh->errstr);
             $dbh->{$key} = $value;
         }
         return 1;
