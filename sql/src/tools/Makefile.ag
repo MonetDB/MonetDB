@@ -38,6 +38,7 @@ smallTOC_SHARED_MODS =	\
 	-l_mmath	\
 	-l_monettime	\
 	-l_pcre	\
+	-l_pqueue	\
 	-l_streams	\
 	-l_unix	\
 	-l_xtables	\
