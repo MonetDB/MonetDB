@@ -67,8 +67,10 @@ The options have the following meaning:
 #include "yytree.h"
 
 #endif /* _MONET_GLOBAL_H_ */
-@C
+@c
+#ifdef __cplusplus
 extern "C" {
+#endif
 #include "Mserver.h"
 
 #ifdef _CRTDBG_MAP_ALLOC
@@ -88,6 +90,7 @@ extern "C" {
 #include "monet_options.h"
 #include "initmodules.h"
 #include <locale.h>
+#ifdef __cplusplus
 }
 #ifdef HAVE_NEW
 #include <new>
@@ -129,6 +132,7 @@ throw()
 	GDKfree(ptr);
 }
 #endif
+#endif /* __cplusplus */
 
 
 @-
@@ -151,12 +155,12 @@ buffer of 20 bytes in the sunos2.5.5.X thread library, making the tunable
 malloc library totally unusable, since it requires you to do advice before any 
 use of malloc().  We hack around it, by using realloc(0,size) in 
 gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
-@C
+@c
 #ifdef HAVE_MALLOPT
 static int malloc_init = 1;
 #endif
-@C
-#ifdef NATIVE_WIN32
+@c
+#if defined(_MSC_VER) && defined(__cplusplus)
 #include <eh.h>
 void
 Mserver_abort()
@@ -166,9 +170,9 @@ Mserver_abort()
 	MT_global_exit(1);
 }
 #endif
-@C
+@c
 void
-usage(char *prog)
+usage(char *prog, int debug, opt *set, int setlen)
 {
 	fprintf(stderr, "Usage: %s [ options ] [ script+ ]                   \n", prog);
 	fprintf(stderr, "Options are:                                        \n");
@@ -179,6 +183,8 @@ usage(char *prog)
 	fprintf(stderr, " -d <debug_level>    | --debug=<debug_level>        \n");
 	fprintf(stderr, " -s <option>=<value> | --set <option>=<value>       \n");
 	fprintf(stderr, " -?                  | --help                       \n");
+	if (debug)
+		mo_print_options(set, setlen);
 	exit(-1);
 }
 
@@ -266,7 +272,7 @@ Monet_init(opt *set, int setlen)
 	return monet_init();
 }
 
-@C
+@c
 int
 main(int argc, char **av)
 {
@@ -274,6 +280,19 @@ main(int argc, char **av)
 	char *prog = *av;
 	opt *set = NULL;
 	int idx = 0, debug = 0, setlen = 0, status = 1;
+
+	static struct option long_options[] = {
+		{"config", 1, 0, 'c'},
+		{"dbname", 1, 0, 0},
+		{"dbfarm", 1, 0, 0},
+		{"dbinit", 1, 0, 0},
+		{"debug", 2, 0, 'd'},
+		{"help", 0, 0, '?'},
+		{"nostalgic", 0, 0, 0},
+		{"set", 1, 0, 's'},
+		{"trace", 0, 0, 0},
+		{0, 0, 0, 0}
+	};
 
 @-
 We give malloc advice here. Main goal: prevent fragmentation.
@@ -290,22 +309,22 @@ capabilities depend on the malloc implementation used at run time.
 	if (malloc_init) {
 /* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
 /* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
-		if (mallopt(M_MXFAST, 192)) {
-			fprintf(stderr, "monet: mallopt(M_MXFAST,192) fails.\n");
-		}
+	    if (mallopt(M_MXFAST, 192)) {
+		fprintf(stderr, "monet: mallopt(M_MXFAST,192) fails.\n");
+	    }
 #ifdef M_BLKSZ
-		if (mallopt(M_BLKSZ, 8*1024)) {
-			fprintf(stderr, "monet: mallopt(M_BLKSZ,8*1024) fails.\n");
-		}
+	    if (mallopt(M_BLKSZ, 8*1024)) {
+		fprintf(stderr, "monet: mallopt(M_BLKSZ,8*1024) fails.\n");
+	    }
 #endif
 	}
 	malloc_init=0;
 @
-@C
-#ifdef NATIVE_WIN32
+@c
+#if defined(_MSC_VER) && defined(__cplusplus)
 	set_terminate(Mserver_abort);
 #endif
-@C
+@c
 	if (setlocale(LC_CTYPE, "") == NULL) {
 		GDKfatal("cannot set locale\n");
 	}
@@ -313,25 +332,13 @@ capabilities depend on the malloc implementation used at run time.
 	@:mallopt@
 #endif
 
-	static struct option long_options[] = {
-		{"config", 1, 0, 'c'},
-		{"dbname", 1, 0, 0},
-		{"dbfarm", 1, 0, 0},
-		{"dbinit", 1, 0, 0},
-		{"debug", 2, 0, 'd'},
-		{"help", 0, 0, '?'},
-		{"set", 1, 0, 's'},
-		{"trace", 0, 0, 0},
-		{0, 0, 0, 0}
-	};
-
 	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
 		perror("pwd");
 		GDKfatal("Monet_init: could not determine current directory\n");
 	}
 
 	if (!(setlen = mo_builtin_settings(&set)))
-		usage(prog);
+		usage(prog, debug, set, setlen);
 
 	monet_script = (str *) GDKmalloc(sizeof(str) * (argc - optind + 5));
 	monet_script[idx] = NULL;
@@ -365,7 +372,11 @@ capabilities depend on the malloc implementation used at run time.
 				monet_listing = 1;
 				break;
 			}
-			usage(prog);
+			if (strcmp(long_options[option_index].name, "nostalgic") == 0) {
+				monet_nostalgic = 1;
+				break;
+			}
+			usage(prog, debug, set, setlen);
 			break;
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
@@ -389,18 +400,17 @@ capabilities depend on the malloc implementation used at run time.
 		}
 			break;
 		case '?':
-			usage(prog);
+			usage(prog, debug, set, setlen);
 		default:
 			fprintf(stderr, "!ERROR: getopt returned character code 0%o ??\n", c);
-			usage(prog);
+			usage(prog, debug, set, setlen);
 		}
 	}
 
 	if (!(setlen = mo_system_config(&set, setlen)))
-		usage(prog);
+		usage(prog,debug, set, setlen);
 
 	while (optind < argc) {
-		monet_listing = 1;
 		monet_script[idx] = absolute_path(av[optind]);
 		monet_script[idx + 1] = NULL;
 		optind++;
@@ -415,26 +425,27 @@ capabilities depend on the malloc implementation used at run time.
 	mo_free_options(set, setlen);
 
 	if (!c)
-		usage(prog);
+		usage(prog,debug, set, setlen);
 
 	monet_hello(NULL);
 	static_module_init();
 @-
 Execute scripts.
 	if (monet_script ) printf("#script:%s\n",monet_script);
-@C
+@c
 @- 
 thread management.
-@C
+@c
+	THRnew(MT_getpid(), "Interpreter");
 	scheduleClient(c);
 	monetInterpreter((void *) &status);
 @-
 At the end of a multi-threaded session we should wait
 for all processes to terminate properly.
-@C
+@c
 @-
 Peter: for the time being avoid difficult things like dropping everything 
-@C
+@c
 	monet_exit(0);
 	MT_global_exit(0);
 	return 0;
