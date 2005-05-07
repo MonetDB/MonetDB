@@ -133,6 +133,7 @@ gdk_export int BBPincref(bat b, int logical);
 gdk_export int BBPdecref(bat b, int logical);
 gdk_export void BBPshare(bat b);
 gdk_export void BBPunshare(bat b);
+gdk_export void BBPextend(dbl factor, int buildhash);
 
 gdk_export void BBPatom_drop(int atom);
 gdk_export void BBPatom_load(int atom);
@@ -382,7 +383,7 @@ BBPextend(dbl factor, int buildhash)
 	int newsize = (int) (BBPlimit * factor);
 	size_t maxsize = MAX(newsize * 2, BBPmaxsize) * sizeof(BBPrec);
 
-	gdk_set_lock(GDKtrimLock, "BBPcacheit");
+	gdk_set_lock(GDKtrimLock, "BBPextend");
 	BBP_notrim = BBP_getpid();
 	BBP = (BBPrec *) GDKvmrealloc(BBP, BBPlimit * sizeof(BBPrec), newsize * sizeof(BBPrec), BBPmaxsize * sizeof(BBPrec), &maxsize, 1);
 	if (BBP == NULL)
@@ -399,7 +400,7 @@ BBPextend(dbl factor, int buildhash)
 		BBPinithash();
 	}
 	BBP_notrim = 0;
-	gdk_unset_lock(GDKtrimLock, "BBPcacheit");
+	gdk_unset_lock(GDKtrimLock, "BBPextend");
 }
 
 static INLINE char *
@@ -460,7 +461,6 @@ BBPtmpname(str s, int len, bat i)
 	s[--len] = 't';
 	return s + len;
 }
-
 
 
 #define CONTINUE_IF_NO_SIZES_IN_BBP 1 /* provide backward compatibility */
@@ -1563,9 +1563,6 @@ backup_bat(BAT *b)
 		ret |= heap_move(b->theap, srcdir, BAKDIR, nme, "theap");
 		if (ret & 1)
 			return -1;
-	}
-	if (ret) {
-		b->batCopiedtodisk = 0;
 	}
 	return 0;
 }
