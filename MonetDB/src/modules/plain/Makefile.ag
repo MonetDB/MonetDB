@@ -82,7 +82,7 @@ LIBS = {
 		mkey.mx profiler.mx \
 		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
-		radix.mx stats.mx tcpip.mx unix.mx url.mx pqueue.mx
+		radix.mx stats.mx tcpip.mx unix.mx url.mx pqueue.mx upgrade.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = ../../common/libstream ../../gdk/libbat \
@@ -158,7 +158,7 @@ scripts_mil = {
                 aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx \
 		blob.mx decimal.mx enum.mx lock.mx mmath.mx \
 		monettime.mx radix.mx stats.mx tcpip.mx \
-		unix.mx url.mx counters.mx pcl.mx pcre.mx pqueue.mx
+		unix.mx url.mx counters.mx pcl.mx pcre.mx pqueue.mx upgrade.mx
 }
 
 EXTRA_DIST_DIR = Tests
