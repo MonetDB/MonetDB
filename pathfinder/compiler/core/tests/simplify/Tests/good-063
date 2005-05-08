@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s10 <<'EOT'
-doc("foo.xml")/item
-EOT
-echo $?

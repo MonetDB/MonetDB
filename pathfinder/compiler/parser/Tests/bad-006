@@ -1,7 +1,0 @@
-#!/bin/bash
-
-pf -s1 <<'EOT'
-(: main modules must contain a query :)
-declare function foo () { 42 };
-EOT
-echo $?

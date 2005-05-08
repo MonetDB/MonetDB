@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s2 <<'EOT'
-<a> {{ foo }} </a>
-EOT
-echo $?

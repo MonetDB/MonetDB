@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s10 <<'EOT'
-element foo { "bar" }
-EOT
-echo $?

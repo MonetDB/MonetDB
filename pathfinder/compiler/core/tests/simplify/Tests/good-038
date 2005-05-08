@@ -1,6 +1,0 @@
-#!/bin/bash
-
-pf -s10 <<'EOT'
-<a b="foo {{ bar }}" c="foo { "bar" }" />
-EOT
-echo $?

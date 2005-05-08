@@ -1,7 +1,0 @@
-#!/bin/bash
-
-pf -s1 <<'EOT'
-(: This must not be interpreted as /* :)
-(/) *
-EOT
-echo $?
