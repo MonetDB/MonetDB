@@ -365,7 +365,7 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 	BAT *b = NULL;
 	FILE *fp;
 
-	printf("converting bat %d %s %s %s\n", i, physical, name[0]?name[0]:"tmp", name[1]?name[1]:"tmp");
+	printf("converting bat %d(%s,%s)\n", i, name[0]?name[0]:"", name[1]?name[1]:"");
 
 	snprintf(path, PATHLENGTH, "%s%c%s.desc", dir, DS, physical);
 	fp = fopen(path, "r");
@@ -524,7 +524,6 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 
 	new_physical = np;
 	new_physical = BBPnew_physical(new_physical, BUFSIZ, i); 
-	printf("%d, %s %s\n", i, new_physical, physical);
 	if (copy_heap(new_physical, dir, physical, "buns") < 0) {
 		return GDK_FAIL;
 	}
@@ -536,11 +535,9 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 		copy_heap(new_physical, dir, physical, "theap") < 0) {
 		return GDK_FAIL;
 	}
-	if (i >= BBPsize) {
-		BBPsize = i + 1;
-		if (BBPsize >= BBPlimit)
-			BBPextend(BATMARGIN, FALSE);
-	}
+	/* should have enough space allready */ 
+	if (i >= BBPsize) 
+		return GDK_FAIL;
 	BBP_desc(i) = dst;
 	BBP_physical(i) = GDKstrdup(new_physical);
 	if (!name[0]) {
@@ -553,8 +550,10 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 		BBP_logical(-i) = GDKstrdup(name[1]);
 	BBPincref(i, TRUE);
 	BBP_status_on(i, BBPNEW|BBPSWAPPED, "bat_convert");
-	if (b->htype == TYPE_str || b->ttype == TYPE_str)
+	if (b->htype == TYPE_str || b->ttype == TYPE_str) {
+		DELTAsave(b);
 		return fix_heap(BATdescriptor(b->batCacheid));
+	}
 	return GDK_SUCCEED;
 }
 
@@ -580,15 +579,15 @@ bbp_convert( str batdir )
 	FILE *fp = NULL;
 	bat i;
 	char *c, buffer[3000];
-	oid BBPoid = 0, BBPsize = 0;
+	oid BBPoid = 0;
 
 	snprintf(bak, PATHLENGTH, "%s%cBACKUP%c", batdir, DS, DS, DS); 
 	BBPlock("bbp_convert");
-	/* TODO check that current bbp is empty */
+	if (BBPsize > 28) { /* 28 bats allready exist by default */
+		GDKerror("Can only convert to an empty dbfarm\n");
+		return GDK_FAIL;
+	}
 	GDKfilepath(path, bak, "BBP", "dir");
-
-	/* TODO remove this */
-	printf("%s\n", path);
 
 	fp = fopen(path, "r");
 	if (!fp) {
@@ -613,7 +612,11 @@ bbp_convert( str batdir )
 			BBPoid = OIDread(c);
 			if ((c = strstr(c, "BBPsize")) != NULL) {
 				sscanf(c, "BBPsize=%d", &i);
-				BBPsize = i;
+				if (i >= BBPsize) {
+					BBPsize = i + 1;
+					if (BBPsize >= BBPlimit)
+						BBPextend(BATMARGIN, FALSE);
+				}
 			}
 		}
 	}
