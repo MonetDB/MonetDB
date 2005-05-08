@@ -216,6 +216,118 @@ BBPtmpname(str s, int len, bat i)
 	return s;
 }
 
+
+int
+fix_heap( BAT *b )
+{
+	if (b) {
+		Heap buns, hh, th;
+		BAT *n = BATreset(b);
+		BAT *m = BATmirror(n);
+		BAT *v;
+		BATstore *bs = (BATstore *) n;
+		var_t cnt = BATcount(b);
+		int ht = (n->htype == TYPE_void && n->ttype == TYPE_void) ? TYPE_oid : n->htype;
+		str nme = BBP_physical(n->batCacheid);
+
+		/* alloc heaps */
+		memset(&buns, 0, sizeof(Heap));
+		buns.filename = (str) GDKmalloc(strlen(nme) + 12);
+		sprintf(buns.filename, "%s.buns", nme);
+		if (HEAPalloc(&buns, cnt + 1, BUNsize(n)) < 0) {
+			GDKfree(buns.filename);
+			buns.filename = NULL;
+			return GDK_FAIL;
+		}
+		memset(&hh, 0, sizeof(Heap));
+		if (n->hheap) {
+			hh.filename = (str) GDKmalloc(strlen(nme) + 12);
+			sprintf(hh.filename, "%s.hheap", nme);
+			if (ATOMheap(ht, &hh, cnt) < 0) {
+				HEAPfree(&buns);
+				GDKfree(hh.filename);
+				return GDK_FAIL;
+			}
+		}
+		memset(&th, 0, sizeof(Heap));
+		if (n->theap) {
+			th.filename = (str) GDKmalloc(strlen(nme) + 12);
+			sprintf(th.filename, "%s.theap", nme);
+			if (ATOMheap(n->ttype, &th, cnt) < 0) {
+				HEAPfree(&buns);
+				HEAPfree(&hh);
+				GDKfree(th.filename);
+				return GDK_FAIL;
+			}
+		}
+	
+		v = VIEWcreate(b);
+
+		/* cut the link to the heaps */
+		n->hheap = m->theap = NULL;
+		n->theap = m->hheap = NULL;
+
+		n->batParentid = 0;
+		n->batRestricted = BAT_WRITE;
+
+		/* copy the heap data into their normal position */
+		bs->U = *n->U;
+		bs->P = *n->P;
+		bs->H = *n->H;
+		bs->T = *n->T;
+
+		/* make sure everything points there */
+		m->U = n->U = &(bs->U);
+		m->P = n->P = &(bs->P);
+		m->T = n->H = &(bs->H);
+		m->H = n->T = &(bs->T);
+		n->batBuns = m->batBuns = &n->U->buns;
+
+		n->GDKversion = m->GDKversion = GDKLIBRARY;
+
+		/* copy the heaps */
+		*n->batBuns = buns;
+
+		/* unshare from parents heap */
+		if (hh.base) { 
+			n->hheap = (Heap*)GDKmalloc(sizeof(Heap));
+			*n->hheap = hh;
+		}
+		if (th.base) { 
+			n->theap = (Heap*)GDKmalloc(sizeof(Heap));
+			*n->theap = th;
+		}
+
+		/* modify dimensions to let disappear projected out columns */
+		m->ttype = n->htype = ht;
+
+		BATsetdims(n);
+		m->dims.tailtype = n->dims.headtype;
+		m->dims.headtype = n->dims.tailtype;
+		m->dims.tailloc = n->dims.headloc;
+		m->dims.headloc = n->dims.tailloc;
+		m->dims.tailvarsized = n->dims.headvarsized;
+		m->dims.headvarsized = n->dims.tailvarsized;
+		m->dims.bunshift = n->dims.bunshift;
+		m->dims.bunwidth = n->dims.bunwidth;
+		m->dims.hseq = n->dims.tseq;
+		m->dims.tseq = n->dims.hseq;
+		n->batSharecnt = 0;
+		n->batCopiedtodisk = 0;
+		n->batDirty = 1;
+
+		/* make the BAT empty and insert all again */
+		DELTAinit(n);
+
+		/* insert all of v in b, and quit */
+		BATins(b, v);
+		BBPreclaim(v);
+
+		/* TODO free old heaps */
+	}
+	return GDK_SUCCEED;
+}
+
 int 
 copy_heap(char *dst, char *dir, char *src, char *ext) 
 {
@@ -441,7 +553,8 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 		BBP_logical(-i) = GDKstrdup(name[1]);
 	BBPincref(i, TRUE);
 	BBP_status_on(i, BBPNEW|BBPSWAPPED, "bat_convert");
-	/* TODO TYPE_str, ie fix heap internal hash table */
+	if (b->htype == TYPE_str || b->ttype == TYPE_str)
+		return fix_heap(BATdescriptor(b->batCacheid));
 	return GDK_SUCCEED;
 }
 
