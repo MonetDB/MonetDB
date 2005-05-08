@@ -304,12 +304,16 @@ void chkFlow(MalBlkPtr mb)
 	}
 @-
 In interactive mode we should avoid early garbage collection of values.
-This can be controlled by the clean up control at the instruction level.
+This can be controlled by the clean up control at the instruction level
+and marking all non-temporary variables as being (potentially) used.
 @c
     if( mb->stop == 3) /* interactive use */
     {   int i;
         for(i=0;i<p->retc; i++)
             garbageControl(getInstrPtr(mb,i))= FALSE;
+        for(i=0; i<mb->vtop; i++)
+        if( !isTmpVar(mb,i))
+            setVarUsed(mb,i, TRUE);
     }
 	if( mb->errors == 0 )
 		mb->flowfixed = fixed; /* we might not have to come back here */
