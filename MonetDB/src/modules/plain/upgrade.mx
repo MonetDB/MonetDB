@@ -404,8 +404,8 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 	b->hheap = b->theap = NULL;
 	b->void_tid = b->void_cnt = b->void_seq1 = b->void_seq2 = 0;
 	
-	dst->B.dims.headtype = src.B.dims.headtype;
-	dst->B.dims.tailtype = src.B.dims.tailtype;
+	dst->B.dims.headtype = (chr) src.B.dims.headtype;
+	dst->B.dims.tailtype = (chr) src.B.dims.tailtype;
 	/* lookup atoms to get the proper atom_id */ 
 	if (!ATOMname(b->htype) || strcmp(ATOMname(b->htype), src.H.atom) != 0){
 		int ht = ATOMindex(src.H.atom);
@@ -429,7 +429,7 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 	dst->B.dims.tailkey = src.B.dims.tailkey;
 	dst->B.dims.headvarsized = src.B.dims.headvarsized;
 	dst->B.dims.tailvarsized = src.B.dims.tailvarsized;
-	dst->B.dims.bunshift = src.B.dims.bunshift;
+	dst->B.dims.bunshift = (chr) src.B.dims.bunshift;
 	dst->B.dims.bunwidth = src.B.dims.bunwidth;
 	dst->B.dims.hseq = src.B.dims.hseq;
 	dst->B.dims.tseq = src.B.dims.tseq;
@@ -439,8 +439,8 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 	dst->P.persistence = BBPEXISTING;
 	dst->P.dirtyflushed = 0;
 	dst->P.copiedtodisk = 1;
-	dst->P.set = src.P.set;
-	dst->P.restricted = src.P.restricted;
+	dst->P.set = (chr) src.P.set;
+	dst->P.restricted = (chr) src.P.restricted;
 	dst->P.dirty = 0;
 	dst->P.descdirty = 1;
 	dst->P.bunsdirty = 0;

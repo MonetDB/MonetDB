@@ -2230,7 +2230,7 @@ ATOMunknown_del.
 @h
 extern int ATOMunknown_add( str nme );
 extern int ATOMunknown_del( int a );
-extern int ATOMunknown_find( str nme );
+gdk_export int ATOMunknown_find( str nme );
 extern str ATOMunknown_name( int a );
 
 @c
