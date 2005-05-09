@@ -156,6 +156,7 @@ int main(int argc, char **argv){
 			getchar();
 		}
 		stream_write(toServer,buf,1, strlen(buf));
-		stream_flush(toServer);
+		/* stream_flush(toServer);*/
 	}
+	stream_flush(toServer);
 }

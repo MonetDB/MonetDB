@@ -625,10 +625,10 @@ SENstartSensor(str sname, bstream *bs){
 		fmt[k].extra = NULL;
 		k++;
 	}
-	fmt[k].sep = GDKstrdup((char*)"\n");
-	fmt[k].seplen = (int) strlen( fmt[k].sep );
-	k++;
-	as.nr_attrs= k;
+	GDKfree(fmt[k-1].sep);
+	fmt[k-1].sep = GDKstrdup((char*)"\n");
+	fmt[k-1].seplen = (int) strlen( fmt[k-1].sep );
+	as.nr_attrs= k; 
 	/* here we fork and prepare for reading */
 #ifdef DEBUG_SENSORS
 		stream_printf(GDKerr, "#start loading sensor data\n");
