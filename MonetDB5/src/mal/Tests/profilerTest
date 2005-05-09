@@ -1,8 +1,0 @@
-# what is the overhead of MAL in multiplex situations
-profiler.openStream("/tmp/MonetProfile.xml");
-profiler.start();
-b:= new(lng,lng);
-t0:= alarm.usec();
-i:= -1:lng;
-profiler.stop();
-profiler.closeStream();

@@ -1,9 +1,0 @@
-# testing repeatative reverse optimalisation
-r:= bbp.new(:int,:int);
-bat.insert(r,5:int,1:int);
-s:= bat.reverse(r);
-k:=23:int;
-t:= bat.reverse(s);
-io.print(t);
-optimizer.setDebug();
-optimizer.reversalRemoval();

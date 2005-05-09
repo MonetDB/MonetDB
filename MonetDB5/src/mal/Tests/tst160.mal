@@ -1,8 +1,0 @@
-#defining a ptr returning function
-
-function l():ptr;
-    return l:= 0:ptr;
-end l;
-
-z:= user.l();
-io.print(z);

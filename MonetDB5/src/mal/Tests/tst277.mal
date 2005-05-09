@@ -1,2 +1,0 @@
-b:= bbp.new(:void,:int);
-r:= bat.reverse(b);

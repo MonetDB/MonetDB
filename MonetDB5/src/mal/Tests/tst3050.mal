@@ -1,6 +1,0 @@
-#Parsing properties and keeping them around
-function dummy(a:int{unsafe=true,sorted=true},b:int{sequence=true}):int{dense=true};
-	return dummy;
-end dummy;
-
-t:= user.dummy(a{sorted=true},b{sequence=true});

@@ -1,6 +1,0 @@
-# testing the simple iterators on builtin types
-barrier (v1,i) := mal.newRange(0.0:flt);
-	io.print(i);
-	v:= "do something";
-	redo (v1,i) :=mal.nextElement(1.3:flt,2.5:flt);
-exit	(v1,i) ;

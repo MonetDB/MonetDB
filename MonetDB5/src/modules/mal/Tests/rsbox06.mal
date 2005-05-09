@@ -1,8 +1,0 @@
-# Test whether a call-trace appears upon an Exception that comes from
-# deep down of the source
-
-include rsbox;
-
-rs := rsbox.create(1, 't');
-
-resultset.writeNextPart(rs);
