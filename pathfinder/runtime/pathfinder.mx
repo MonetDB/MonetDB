@@ -398,19 +398,21 @@ const DOC_LOADED := 19;
 const FRAG       := 20;
 const WS_FRAG    := 21;
 const HEIGHT     := 22;
-const PRINT_WS_SZ:= 22;
-const QN_PREFIX_URI := 23;
-const QN_LOC_URI := 24;
-const KIND_PRE   := 25;
-const KIND_PRE_EL := 25;
-const KIND_PRE_TE := 26;
-const KIND_PRE_CO := 27;
-const KIND_PRE_PI := 28;
-const KIND_PRE_DO := 29;
-const PROP_PRE    := 30;
-const PROP_PRE_EL := 30;
-const PROP_PRE_PI := 31;
-const WS_SIZE     := 32; # must be last!
+const PRE_NID    := 23;
+const PRINT_WS_SZ:= 24;
+const NID_PRE    := 24;
+const QN_PREFIX_URI := 25;
+const QN_LOC_URI := 26;
+const KIND_NID   := 27;
+const KIND_NID_EL := 27;
+const KIND_NID_TE := 28;
+const KIND_NID_CO := 29;
+const KIND_NID_PI := 30;
+const KIND_NID_DO := 31;
+const PROP_NID    := 32;
+const PROP_NID_EL := 32;
+const PROP_NID_PI := 33;
+const WS_SIZE     := 34; # must be last!
 @= define_ws_constants
 #define PRE_SIZE     0
 #define PRE_LEVEL    1
@@ -435,19 +437,21 @@ const WS_SIZE     := 32; # must be last!
 #define FRAG        20
 #define WS_FRAG     21
 #define HEIGHT      22
-#define PRINT_WS_SZ 22
-#define QN_PREFIX_URI 23
-#define QN_LOC_URI  24
-#define KIND_PRE    25
-#define KIND_PRE_EL 25
-#define KIND_PRE_TE 26
-#define KIND_PRE_CO 27
-#define KIND_PRE_PI 28
-#define KIND_PRE_DO 29
-#define PROP_PRE    30
-#define PROP_PRE_EL 30
-#define PROP_PRE_PI 31
-#define WS_SIZE     32 /* must be last! */
+#define PRE_NID     23
+#define PRINT_WS_SZ 24
+#define NID_PRE     24
+#define QN_PREFIX_URI 25
+#define QN_LOC_URI  26
+#define KIND_NID    27
+#define KIND_NID_EL 27
+#define KIND_NID_TE 28
+#define KIND_NID_CO 29
+#define KIND_NID_PI 30
+#define KIND_NID_DO 31
+#define PROP_NID    32
+#define PROP_NID_EL 32
+#define PROP_NID_PI 33
+#define WS_SIZE     34 /* must be last! */
 @mil
 
 PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
@@ -486,19 +490,21 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
         ws.fetch(HEIGHT).insert(nil,bat("doc_height").find(oid(docid)));
 	ws.fetch(QN_PREFIX_URI).insert(nil,bat("qn_prefix_uri" + docid));
 	ws.fetch(QN_LOC_URI).insert(nil,bat("qn_loc_uri" + docid));
+	ws.fetch(PRE_NID).insert(nil,bat("pre_nid" + docid));
+	ws.fetch(NID_PRE).insert(nil,bat("nid_pre" + docid));
 	{
           var knd := ELEMENT;
           while ( knd <= DOCUMENT ) {
-            var kind_pre_name := "kind_pre" + docid + "_" + chr(48 + knd);
-            ws.fetch(KIND_PRE + int(knd)).insert(nil,bat(kind_pre_name));
+            var kind_nid_name := "kind_nid" + docid + "_" + chr(48 + knd);
+            ws.fetch(KIND_NID + int(knd)).insert(nil,bat(kind_nid_name));
             knd :+= chr(1);
           }
         }
 	{
-          var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + ELEMENT);
-          ws.fetch(PROP_PRE_EL).insert(nil,bat(prop_pre_name));
-          prop_pre_name := "prop_pre" + docid + "_" + chr(48 + PI);
-          ws.fetch(PROP_PRE_PI).insert(nil,bat(prop_pre_name));
+          var prop_nid_name := "prop_nid" + docid + "_" + chr(48 + ELEMENT);
+          ws.fetch(PROP_NID_EL).insert(nil,bat(prop_nid_name));
+          prop_nid_name := "prop_nid" + docid + "_" + chr(48 + PI);
+          ws.fetch(PROP_NID_PI).insert(nil,bat(prop_nid_name));
         }
     }
     else
@@ -546,13 +552,15 @@ PROC create_ws () : BAT[void,bat]
     ws.insert(nil, bat(void,int).seqbase(0@0));      # HEIGHT
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_PREFIX_URI
     ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_LOC_URI
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_EL
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_TE
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_CO
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_PI
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_DO
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_PRE_EL
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_PRE_PI
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_NID
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # NID_PRE
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_NID_EL
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_NID_TE
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_NID_CO
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_NID_PI
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_NID_DO
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_NID_EL
+    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_NID_PI
 
     ws := ws.access(BAT_READ);
 
@@ -580,16 +588,18 @@ PROC create_ws () : BAT[void,bat]
     ws.fetch(HEIGHT).insert(nil,0);
     ws.fetch(QN_PREFIX_URI).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_PREFIX_URI
     ws.fetch(QN_LOC_URI).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_LOC_URI
+    ws.fetch(PRE_NID).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # PRE_NID
+    ws.fetch(NID_PRE).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # NID_PRE
     {
       var knd := ELEMENT;
       while ( knd <= DOCUMENT ) {
-        ws.fetch(KIND_PRE + int(knd)).insert(nil,bat(void,oid).seqbase(nil));
+        ws.fetch(KIND_NID + int(knd)).insert(nil,bat(void,oid).seqbase(nil));
         knd :+= chr(1);
       }
     }
     {
-      ws.fetch(PROP_PRE_EL).insert(nil,bat(oid,oid));
-      ws.fetch(PROP_PRE_PI).insert(nil,bat(oid,oid));
+      ws.fetch(PROP_NID_EL).insert(nil,bat(oid,oid));
+      ws.fetch(PROP_NID_PI).insert(nil,bat(oid,oid));
     }
 
     return ws;
@@ -882,29 +892,31 @@ PROC import_doc(str flnm, str name) : void
     var docid := str(int(doc_oid));
     doc_oid := nil;
 
-    tmp.find("size").persists(true).bbpname("pre_size" + docid);
-    tmp.find("level").[chr]().copy().persists(true).bbpname("pre_level" + docid);
-    tmp.find("prop").persists(true).bbpname("pre_prop" + docid);
-    tmp.find("kind").[chr]().copy().persists(true).bbpname("pre_kind" + docid);
+    var pre_size  := tmp.find("size");
+    var pre_level := tmp.find("level").[chr]().copy();
+    var pre_prop  := tmp.find("prop");
+    var pre_kind  := tmp.find("kind").[chr]().copy();
+
+    var pre_nid := pre_size.mirror().copy();
+    var nid_pre := pre_size.mirror().copy();
+
     {
-     var pre_kind := bat("pre_kind" + docid);
      var knd := ELEMENT;
      while ( knd <= DOCUMENT ) {
-        var kind_pre_name := "kind_pre" + docid + "_" + chr(48 + knd);
-        pre_kind.ord_uselect(knd).reverse().chk_order().persists(true).bbpname(kind_pre_name);
+        var kind_nid_name := "kind_nid" + docid + "_" + chr(48 + knd);
+        pre_kind.ord_uselect(knd).reverse().leftfetchjoin(pre_nid).chk_order().persists(true).bbpname(kind_nid_name);
         knd :+= chr(1);
      }
-     var pre_prop := bat("pre_prop" + docid);
      var knd := ELEMENT;
-        var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
-        var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
-        var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
-        prop_pre_.chk_order().mmap(STORE_MMAP).persists(true).bbpname(prop_pre_name);
+        var prop_nid_name := "prop_nid" + docid + "_" + chr(48 + knd);
+        var kind_nid_bat := bat("kind_nid" + docid + "_" + chr(48 + knd)).reverse().mirror();
+        var prop_nid_ := kind_nid_bat.leftfetchjoin(nid_pre).leftfetchjoin(pre_prop).reverse().leftfetchjoin(pre_nid);
+        prop_nid_.chk_order().mmap(STORE_MMAP).persists(true).bbpname(prop_nid_name);
      var knd := PI;
-        var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
-        var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
-        var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
-        prop_pre_.chk_order().mmap(STORE_MMAP).persists(true).bbpname(prop_pre_name);
+        var prop_nid_name := "prop_nid" + docid + "_" + chr(48 + knd);
+        var kind_nid_bat := bat("kind_nid" + docid + "_" + chr(48 + knd)).reverse().mirror();
+        var prop_nid_ := kind_nid_bat.leftfetchjoin(nid_pre).leftfetchjoin(pre_prop).reverse().leftfetchjoin(pre_nid);
+        prop_nid_.chk_order().mmap(STORE_MMAP).persists(true).bbpname(prop_nid_name);
     }
 
     # load table prop|ns|loc
@@ -936,13 +948,86 @@ PROC import_doc(str flnm, str name) : void
 
     # load table att|own|qn|prop
     tmp := load(att, seps3, att_ty, flnm + ".@", -1);
-    tmp.find("own").persists(true).bbpname("attr_own" + docid);
+    tmp.find("own").leftfetchjoin(pre_nid).persists(true).bbpname("attr_own" + docid);
     tmp.find("qn").persists(true).bbpname("attr_qn" + docid);
     tmp.find("prop").persists(true).bbpname("attr_prop" + docid);
 
     # load table prop|val
     tmp := load(att_val, seps1, att_val_ty, flnm + ".@val", -1);
     tmp.find("val").persists(true).bbpname("prop_val" + docid);
+    tmp := nil;
+
+    # insert ~20% free space per 64k tuples
+    const PAGESIZE := 64 * 1024;
+    const PAGEFILL := 51 * 1024;
+    const PAGEFREE := PAGESIZE - PAGEFILL;
+    
+    var seq_0 := seqbase(pre_size);
+    var len_0 := count(pre_size);
+    var pages := int(ceil(dbl(len_0) / dbl(PAGEFILL)));
+    var len_1 := pages * PAGESIZE;
+
+    var pre := new(str,bat,5);
+    pre.insert("pre_size" , pre_size ); pre_size  := nil;
+    pre.insert("pre_level", pre_level); pre_level := nil;
+    pre.insert("pre_prop" , pre_prop ); pre_prop  := nil;
+    pre.insert("pre_kind" , pre_kind ); pre_kind  := nil;
+    pre.insert("pre_nid"  , pre_nid  );
+    pre.access(BAT_READ);
+    nid_pre := nil;
+    
+    pre@batloop() {
+        var nme := $h;
+        var org := $t;
+        var stretch;
+        if (PAGEFREE > 0) {
+            var tpe := ttype(org);
+            var empty;
+            if (nme = "pre_size" ) {
+                empty := slice(org, 0, PAGEFREE - 1).number();
+                empty := (count(empty)-1).[-](empty).[xor](not(0)).[xor](INT_MAX);
+            } else {
+                empty := slice(org, 0, PAGEFREE - 1).project(cast(nil,tpe));
+            }
+            stretch := new(void, tpe, len_1).seqbase(seq_0);
+            var fst := 0;
+            var seq := oid(nil);
+            while (fst < len_0) {
+                var lst := fst + PAGEFILL - 1;
+                seq := oid(int(seq_0) + count(stretch));
+                var full := slice(org, fst, lst);
+                if (nme = "pre_size") {
+                    var p0 := [int](slice(pre_nid, fst, lst));
+                    var p1 := [+](p0, full);
+                    var x0 := [/](p0, PAGEFILL); p0 := nil;
+                    var x1 := [/](p1, PAGEFILL); p1 := nil;
+                    var x  := [-](x1, x0); x0 := nil; x1 := nil;
+                    var y  := [*](PAGEFREE, x); x := nil;
+                    var z  := [+](full, y); y := nil;
+                    full := [ifthenelse]([<=](full, 0), full, z); z:= nil;
+                }
+                stretch.insert(full.seqbase(seq));
+                fst :+= PAGEFILL;
+                if (fst < len_0) {
+                   seq := oid(int(seq_0) + count(stretch));
+                   stretch.insert(empty.seqbase(seq));
+                }
+            }
+            stretch.access(BAT_READ);
+        } else {
+            stretch:= org;
+        }
+        stretch.persists(true).bbpname(nme + docid);
+        if (nme = "pre_size") {
+            pre_nid := nil;
+        }
+    }
+    pre := nil;
+
+    nid_pre := bat("pre_nid"+docid).select(oid(nil),oid(nil)).reverse().sort().reverse().mark(seq_0).reverse().copy();
+    nid_pre.persists(true).bbpname("nid_pre" + docid);
+    nid_pre := nil;
+    pre_nid := nil;
 
     # save all persistent BATs
     commit();
@@ -1048,25 +1133,17 @@ PROC shred_doc_base(str location, str name, bit doCommit, str opt) : BAT[void,ba
     if ( noCommit )
     	resBAT := new(void,bat); # create remember bat
 
-    xb := shredRES.fetch(PRE_SIZE).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("pre_size" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb); # remember this non-persitent bat
+    var pre_size  := shredRES.fetch(PRE_SIZE );
+    var pre_level := shredRES.fetch(PRE_LEVEL);
+    var pre_prop  := shredRES.fetch(PRE_PROP );
+    var pre_kind  := shredRES.fetch(PRE_KIND );
 
-    xb := shredRES.fetch(PRE_LEVEL).[chr]().copy().mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("pre_level"+docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(PRE_PROP).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("pre_prop" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(PRE_KIND).[chr]().copy().mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("pre_kind" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
+    var pre_nid := pre_size.mirror().copy();
+    var nid_pre := pre_size.mirror().copy();
 
     xb := shredRES.fetch(QN_URI).mmap(STORE_MMAP).persists(doCommit);
     xb.bbpname("qn_uri" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
+    if ( noCommit ) resBAT.insert(nil,xb); # remember this non-persitent bat
 
     xb := shredRES.fetch(QN_PREFIX).mmap(STORE_MMAP).persists(doCommit);
     xb.bbpname("qn_prefix" + docid);
@@ -1108,7 +1185,7 @@ PROC shred_doc_base(str location, str name, bit doCommit, str opt) : BAT[void,ba
     xb.bbpname("idref_pre" + docid);
     if ( noCommit ) resBAT.insert(nil,xb);
 
-    xb := shredRES.fetch(ATTR_OWN).mmap(STORE_MMAP).persists(doCommit);
+    xb := shredRES.fetch(ATTR_OWN).leftfetchjoin(pre_nid).mmap(STORE_MMAP).persists(doCommit);
     xb.bbpname("attr_own" + docid);
     if ( noCommit ) resBAT.insert(nil,xb);
 
@@ -1125,31 +1202,105 @@ PROC shred_doc_base(str location, str name, bit doCommit, str opt) : BAT[void,ba
     if ( noCommit ) resBAT.insert(nil,xb);
 
     {
-     var pre_kind := bat("pre_kind" + docid);
      var knd := ELEMENT;
      while ( knd <= DOCUMENT ) {
-        var kind_pre_name := "kind_pre" + docid + "_" + chr(48 + knd);
-        xb := pre_kind.ord_uselect(knd).reverse().chk_order().mmap(STORE_MMAP).persists(doCommit);
-	xb.bbpname(kind_pre_name);
+        var kind_nid_name := "kind_nid" + docid + "_" + chr(48 + knd);
+        xb := pre_kind.ord_uselect(knd).reverse().leftfetchjoin(pre_nid).chk_order().mmap(STORE_MMAP).persists(doCommit);
+	xb.bbpname(kind_nid_name);
 	if ( noCommit ) resBAT.insert(nil,xb);
         knd :+= chr(1);
      }
-     var pre_prop := bat("pre_prop" + docid);
      var knd := ELEMENT;
-        var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
-        var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
-        var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
-        xb := prop_pre_.chk_order().mmap(STORE_MMAP).persists(doCommit);
-	xb.bbpname(prop_pre_name);
+        var prop_nid_name := "prop_nid" + docid + "_" + chr(48 + knd);
+        var kind_nid_bat := bat("kind_nid" + docid + "_" + chr(48 + knd)).reverse().mirror();
+        var prop_nid_ := kind_nid_bat.leftfetchjoin(nid_pre).leftfetchjoin(pre_prop).reverse().leftfetchjoin(pre_nid);
+        xb := prop_nid_.chk_order().mmap(STORE_MMAP).persists(doCommit);
+	xb.bbpname(prop_nid_name);
 	if ( noCommit ) resBAT.insert(nil,xb);
      var knd := PI;
-        var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
-        var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
-        var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
-        xb := prop_pre_.chk_order().mmap(STORE_MMAP).persists(doCommit);
-	xb.bbpname(prop_pre_name);
+        var prop_nid_name := "prop_nid" + docid + "_" + chr(48 + knd);
+        var kind_nid_bat := bat("kind_nid" + docid + "_" + chr(48 + knd)).reverse().mirror();
+        var prop_nid_ := kind_nid_bat.leftfetchjoin(nid_pre).leftfetchjoin(pre_prop).reverse().leftfetchjoin(pre_nid);
+        xb := prop_nid_.chk_order().mmap(STORE_MMAP).persists(doCommit);
+	xb.bbpname(prop_nid_name);
 	if ( noCommit ) resBAT.insert(nil,xb);
     }
+
+    # insert ~20% free space per 64k tuples
+    const PAGESIZE := 64 * 1024;
+    const PAGEFILL := 51 * 1024;
+    const PAGEFREE := PAGESIZE - PAGEFILL;
+    
+    var seq_0 := seqbase(pre_size);
+    var len_0 := count(pre_size);
+    var pages := int(ceil(dbl(len_0) / dbl(PAGEFILL)));
+    var len_1 := pages * PAGESIZE;
+
+    var pre := new(str,bat,5);
+    pre.insert("pre_size" , pre_size ); pre_size  := nil;
+    pre.insert("pre_level", pre_level); pre_level := nil;
+    pre.insert("pre_prop" , pre_prop ); pre_prop  := nil;
+    pre.insert("pre_kind" , pre_kind ); pre_kind  := nil;
+    pre.insert("pre_nid"  , pre_nid  );
+    pre.access(BAT_READ);
+    nid_pre := nil;
+    
+    pre@batloop() {
+        var nme := $h;
+        var org := $t;
+        var stretch;
+        if (PAGEFREE > 0) {
+            var tpe := ttype(org);
+            var empty;
+            if (nme = "pre_size" ) {
+                empty := slice(org, 0, PAGEFREE - 1).number();
+                empty := (count(empty)-1).[-](empty).[xor](not(0)).[xor](INT_MAX);
+            } else {
+                empty := slice(org, 0, PAGEFREE - 1).project(cast(nil,tpe));
+            }
+            stretch := new(void, tpe, len_1).seqbase(seq_0);
+            var fst := 0;
+            var seq := oid(nil);
+            while (fst < len_0) {
+                var lst := fst + PAGEFILL - 1;
+                seq := oid(int(seq_0) + count(stretch));
+                var full := slice(org, fst, lst);
+                if (nme = "pre_size") {
+                    var p0 := [int](slice(pre_nid, fst, lst));
+                    var p1 := [+](p0, full);
+                    var x0 := [/](p0, PAGEFILL); p0 := nil;
+                    var x1 := [/](p1, PAGEFILL); p1 := nil;
+                    var x  := [-](x1, x0); x0 := nil; x1 := nil;
+                    var y  := [*](PAGEFREE, x); x := nil;
+                    var z  := [+](full, y); y := nil;
+                    full := [ifthenelse]([<=](full, 0), full, z); z:= nil;
+                }
+                stretch.insert(full.seqbase(seq));
+                fst :+= PAGEFILL;
+                if (fst < len_0) {
+                   seq := oid(int(seq_0) + count(stretch));
+                   stretch.insert(empty.seqbase(seq));
+                }
+            }
+            stretch.access(BAT_READ);
+        } else {
+            stretch:= org;
+        }
+        xb := stretch.mmap(STORE_MMAP).persists(doCommit);
+        xb.bbpname(nme+docid);
+        if ( noCommit ) resBAT.insert(nil,xb);
+        if (nme = "pre_size") {
+            pre_nid := nil;
+        }
+    }
+    pre := nil;
+
+    nid_pre := bat("pre_nid"+docid).select(oid(nil),oid(nil)).reverse().sort().reverse().mark(seq_0).reverse().copy();
+    xb := nid_pre.mmap(STORE_MMAP).persists(doCommit);
+    xb.bbpname("nid_pre" + docid);
+    if ( noCommit ) resBAT.insert(nil,xb);
+    nid_pre := nil;
+    pre_nid := nil;
 
     # save all persistent BATs and print timings
     us := usec() - us;
@@ -1209,17 +1360,19 @@ PROC delete_doc(str name) : void
     bat("idref_pre" + docid).persists(false);
     bat("qn_prefix_uri" + docid).persists(false);
     bat("qn_loc_uri" + docid).persists(false);
+    bat("pre_nid" + docid).persists(false);
+    bat("nid_pre" + docid).persists(false);
     {
       var knd := ELEMENT;
       while ( knd <= DOCUMENT ) {
-        var kind_pre_name := "kind_pre" + docid + "_" + chr(48 + knd);
-        bat(kind_pre_name).persists(false);
+        var kind_nid_name := "kind_nid" + docid + "_" + chr(48 + knd);
+        bat(kind_nid_name).persists(false);
         knd :+= chr(1);
       }
-      var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + ELEMENT);
-      bat(prop_pre_name).persists(false);
-      prop_pre_name := "prop_pre" + docid + "_" + chr(48 + PI);
-      bat(prop_pre_name).persists(false);
+      var prop_nid_name := "prop_nid" + docid + "_" + chr(48 + ELEMENT);
+      bat(prop_nid_name).persists(false);
+      prop_nid_name := "prop_nid" + docid + "_" + chr(48 + PI);
+      bat(prop_nid_name).persists(false);
     }
     commit(); # CRASH HERE in runtime/load_db
 }
@@ -1286,7 +1439,8 @@ PROC shred_and_query(str mode, str q, str docFile, str docName) : void {
 
 PROC attr_print(oid pre, oid frag, BAT[void,bat] ws) : void
 {
-    var attr_list := ws.fetch(ATTR_OWN).fetch(frag).uselect(pre);
+    var nid := ws.fetch(PRE_NID).fetch(frag).fetch(pre);
+    var attr_list := ws.fetch(ATTR_OWN).fetch(frag).uselect(nid);
     var name;
     attr_list@batloop ()
     {
@@ -1572,7 +1726,9 @@ Print loaded XML-document with the specified name.",
 	# "descendant" / "descendant_or_self"
 	# => result for a single item is a simple slice of cands
 	var fst := item.fetch(@2);
-	var lst := oid(int(fst) + pre_size.fetch(fst));
+	var sze := pre_size.fetch(fst);
+	if (isnil(sze) or ((sze>>31)!=0)) printf("= descs_per_item: size[%d] = %d\n", int(fst), sze);
+	var lst := oid(int(fst) + sze);
         fst := oid(int(fst) + skip_self);
 	var item_descs := cands.ord_select(fst,lst).reverse();
 @
@@ -1836,24 +1992,34 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		pre_frag := nil;
 		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
 		    qn_nsloc  := qn_nsloc.ord_uselect(loc+str('\1')+ns);
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
-		if (flt(count(pre_prop)) <= (1.1 * flt(count(result_part_item)))) {
-			var pre_nsloc;
+	 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
+		var nid_prop := ws.fetch(PROP_NID + int(ELEMENT)).fetch(theFrag).reverse();
+		if (flt(count(nid_prop)) <= (1.1 * flt(count(result_part_item)))) {
+			var nid_nsloc;
 			if (count(qn_nsloc) = 1) {
-				pre_nsloc := pre_prop.ord_uselect(qn_nsloc.reverse().fetch(0));
+				nid_nsloc := nid_prop.ord_uselect(qn_nsloc.reverse().fetch(0));
 			} else {
-				pre_nsloc := pre_prop.leftjoin(qn_nsloc);
+				nid_nsloc := nid_prop.leftjoin(qn_nsloc);
 			}
-			pre_prop := nil;
+			nid_prop := nil;
 			qn_nsloc := nil;
+			var pre_nsloc := nid_nsloc.reverse().leftfetchjoin(nid_pre).reverse();
+			nid_pre := nil;
+			nid_nsloc := nil;
 			tmp_res := result_part_item.leftjoin(pre_nsloc).mark(0@0).reverse();
 		} else {
+			var pre_prop := nid_prop.reverse().leftfetchjoin(nid_pre).reverse();
+			nid_pre := nil;
 			var res_prop := result_part_item.leftjoin(pre_prop);
 			pre_prop := nil;
 			tmp_res := res_prop.leftjoin(qn_nsloc).mark(0@0).reverse();
 		}
 	} else {
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
+	 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
+		var prop_nid := ws.fetch(PROP_NID + int(ELEMENT)).fetch(theFrag);
+		var pre_prop := prop_nid.leftfetchjoin(nid_pre).reverse();
+		    prop_nid := nil;
+		    nid_pre  := nil;
 		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
 		var res_prop := result_part_item.leftjoin(pre_prop);
 		    pre_prop := nil;
@@ -1892,24 +2058,34 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		pre_frag := nil;
 		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
 		    @1_@2 := @1_@2.ord_uselect(@2);
-		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
-		if (flt(count(pre_prop)) <= (1.1 * flt(count(result_part_item)))) {
-			var pre_@2;
+	 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
+		var nid_prop := ws.fetch(PROP_NID + int(@5)).fetch(theFrag).reverse();
+		if (flt(count(nid_prop)) <= (1.1 * flt(count(result_part_item)))) {
+			var nid_@2;
 			if (count(@1_@2) = 1) {
-				pre_@2 := pre_prop.ord_uselect(@1_@2.reverse().fetch(0));
+				nid_@2 := nid_prop.ord_uselect(@1_@2.reverse().fetch(0));
 			} else {
-				pre_@2 := pre_prop.leftjoin(@1_@2);
+				nid_@2 := nid_prop.leftjoin(@1_@2);
 			}
-			pre_prop := nil;
+			nid_prop := nil;
 			@1_@2 := nil;
+			var pre_@2 := nid_@2.reverse().leftfetchjoin(nid_pre).reverse();
+			nid_pre := nil;
+			nid_@2 := nil;
 			tmp_res := result_part_item.leftjoin(pre_@2).mark(0@0).reverse();
 		} else {
+			var pre_prop := nid_prop.reverse().leftfetchjoin(nid_pre).reverse();
+			nid_pre := nil;
 			var res_prop := result_part_item.leftjoin(pre_prop);
 			pre_prop := nil;
 			tmp_res := res_prop.leftjoin(@1_@2).mark(0@0).reverse();
 		}
 	} else {
-		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
+	 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
+		var prop_nid := ws.fetch(PROP_NID + int(@5)).fetch(theFrag);
+		var pre_prop := prop_nid.leftfetchjoin(nid_pre).reverse();
+		    prop_nid := nil;
+		    nid_pre  := nil;
 		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
 		var res_prop := result_part_item.leftjoin(pre_prop);
 		    pre_prop := nil;
@@ -1932,7 +2108,9 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @
 @= kind_post
  {
-	var pre_kind := ws.fetch(KIND_PRE + int(@1)).fetch(theFrag).reverse();
+ 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
+	var pre_kind := ws.fetch(KIND_NID + int(@1)).fetch(theFrag).leftfetchjoin(nid_pre).reverse();
+	nid_pre := nil;
 	tmp_res := result_part_item.leftjoin(pre_kind).mark(0@0).reverse();
 	pre_kind := nil;
 	@:mapping_code@
@@ -1963,13 +2141,17 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
  }
 @
 @= no_pre
-	cands := ws.fetch(PRE_SIZE).fetch(theFrag).mark(nil).reverse();
+	cands := ws.fetch(PRE_SIZE).fetch(theFrag).uselect(0,int(nil)).reverse();
 	cands := cands.chk_order();
 @
 @= kind_pre
-	cands := ws.fetch(KIND_PRE + int(@1)).fetch(theFrag);
-	cands := cands.chk_order();
+{
+ 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
+	cands := ws.fetch(KIND_NID + int(@1)).fetch(theFrag).leftfetchjoin(nid_pre);
+	nid_pre := nil;
+	cands := cands.reverse().access(BAT_WRITE).order().access(BAT_READ).reverse();
 	@:shrink_code@
+}
 @
 @= nsloc_pre
  {
@@ -1979,16 +2161,22 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		pre_frag := nil;
 		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
 		    qn_nsloc := qn_nsloc.ord_uselect(loc+str('\1')+ns);
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
+		var nid_prop := ws.fetch(PROP_NID + int(ELEMENT)).fetch(theFrag).reverse();
 		if (count(qn_nsloc) = 1) {
-			cands := pre_prop.ord_uselect(qn_nsloc.reverse().fetch(0)).reverse();
+			cands := nid_prop.ord_uselect(qn_nsloc.reverse().fetch(0)).reverse();
 		} else {
-			cands := pre_prop.leftjoin(qn_nsloc).reverse();
+			cands := nid_prop.leftjoin(qn_nsloc).reverse();
 		}
-		pre_prop := nil;
+		nid_prop := nil;
 		qn_nsloc := nil;
+	 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
+		cands := cands.leftfetchjoin(nid_pre);
 	} else {
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
+	 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
+		var prop_nid := ws.fetch(PROP_NID + int(ELEMENT)).fetch(theFrag);
+		var pre_prop := prop_nid.leftfetchjoin(nid_pre).reverse();
+		    prop_nid := nil;
+		    nid_pre  := nil;
 		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
 		var X_pre    := pre_prop.mark(0@0).reverse();
 		var X_prop   := pre_prop.reverse().mark(0@0).reverse();
@@ -2024,16 +2212,22 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		pre_frag := nil;
 		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
 		    @1_@2 := @1_@2.ord_uselect(@2);
-		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
+		var nid_prop := ws.fetch(PROP_NID + int(@5)).fetch(theFrag).reverse();
 		if (count(@1_@2) = 1) {
-			cands := pre_prop.ord_uselect(@1_@2.reverse().fetch(0)).reverse();
+			cands := nid_prop.ord_uselect(@1_@2.reverse().fetch(0)).reverse();
 		} else {
-			cands := pre_prop.leftjoin(@1_@2).reverse();
+			cands := nid_prop.leftjoin(@1_@2).reverse();
 		}
-		pre_prop := nil;
+		nid_prop := nil;
 		@1_@2 := nil;
+		var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
+		cands := cands.leftfetchjoin(nid_pre);
 	} else {
-		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
+	 	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
+		var prop_nid := ws.fetch(PROP_NID + int(@5)).fetch(theFrag).reverse().sort().reverse();
+		var pre_prop := prop_nid.leftfetchjoin(nid_pre).reverse();
+		    prop_nid := nil;
+		    nid_pre  := nil;
 		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
 		var X_pre    := pre_prop.mark(0@0).reverse();
 		var X_prop   := pre_prop.reverse().mark(0@0).reverse();

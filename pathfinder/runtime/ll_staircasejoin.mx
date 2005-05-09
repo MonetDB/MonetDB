@@ -209,10 +209,14 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         oid fst_ctx = *(oid*)BUNtail(ctx_bat, BUNfirst(ctx_bat));
         oid lst_ctx = 0;
         BUN dst = 0, p = 0;
-        int bs_res = 0;
+        int bs_res = 0, sze = 0, *size = 0;
+
+        @:bat2array(pre_size,size,int)@
         
         BUNfndVOID(p, pre_size, &fst_ctx);
-        res_size = BATcount(iter_bat) * (size_t)(*(int*)BUNtloc(pre_size, p) + (int)self);
+        sze = *(int*)BUNtloc(pre_size, p);
+        /*if (sze&(1<<31)) printf("= %s[a]: size["SZFMT"] = %d\n", name, fst_ctx, sze);*/
+        res_size = BATcount(iter_bat) * (size_t)((sze&GDK_int_max) + (int)self);
         res = BATnew(TYPE_oid, TYPE_oid, res_size);
         if (res == NULL) 
         { 
@@ -235,6 +239,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                     oid iter = *(oid*)BUNtail(iter_bat, BUNfirst(iter_bat));
 
                     for (cand = fst_cand ; cand < lst_cand ; cand++ ) {
+                        /*-if (size[cand]&(1<<31)) printf("= %s[b]: size["SZFMT"] = %d\n", name, cand, size[cand]);-*/
                         *(oid*)dst              = iter;
                         *(oid*)(dst+SIZEOF_OID) = cand;
                         dst += bs_res;
@@ -247,6 +252,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
 
                     for (cand = fst_cand ; cand < lst_cand ; cand++ ) {
                         for (iter = fst_iter ; iter < lst_iter ; iter++ ) {
+                            /*-if (size[cand]&(1<<31)) printf("= %s[c]: size["SZFMT"] = %d\n", name, cand, size[cand]);-*/
                             *(oid*)dst              = iter;
                             *(oid*)(dst+SIZEOF_OID) = cand;
                             dst += bs_res;
@@ -261,6 +267,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                     
                     for (cand = fst_cand ; cand < lst_cand ; cand++ ) {
                         for (iter = fst_iter ; iter < lst_iter; iter += bs_iter_bat ) {
+                            /*-if (size[cand]&(1<<31)) printf("= %s[d]: size["SZFMT"] = %d\n", name, cand, size[cand]);-*/
                             *(oid*)dst              = *(oid*)iter;
                             *(oid*)(dst+SIZEOF_OID) = cand;
                             dst += bs_res;
@@ -278,6 +285,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                     oid iter = *(oid*)BUNtail(iter_bat, BUNfirst(iter_bat));
 
                     for (cand = fst_cand ; cand < lst_cand && *(oid*)cand < lst_ctx; cand += bs_cand_bat ) {
+                        /*-if (size[*(oid*)cand]&(1<<31)) printf("= %s[e]: size["SZFMT"] = %d\n", name, *(oid*)cand, size[*(oid*)cand]);-*/
                         *(oid*)dst              = iter;
                         *(oid*)(dst+SIZEOF_OID) = *(oid*)cand;
                         dst += bs_res;
@@ -290,6 +298,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
 
                     for (cand = fst_cand ; cand < lst_cand && *(oid*)cand < lst_ctx; cand += bs_cand_bat ) {
                         for (iter = fst_iter ; iter < lst_iter ; iter++ ) {
+                            /*-if (size[*(oid*)cand]&(1<<31)) printf("= %s[f]: size["SZFMT"] = %d\n", name, *(oid*)cand, size[*(oid*)cand]);-*/
                             *(oid*)dst              = iter;
                             *(oid*)(dst+SIZEOF_OID) = *(oid*)cand;
                             dst += bs_res;
@@ -304,6 +313,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                     
                     for (cand = fst_cand ; cand < lst_cand && *(oid*)cand < lst_ctx; cand += bs_cand_bat ) {
                         for (iter = fst_iter ; iter < lst_iter; iter += bs_iter_bat ) {
+                            /*-if (size[*(oid*)cand]&(1<<31)) printf("= %s[g]: size["SZFMT"] = %d\n", name, *(oid*)cand, size[*(oid*)cand]);-*/
                             *(oid*)dst              = *(oid*)iter;
                             *(oid*)(dst+SIZEOF_OID) = *(oid*)cand;
                             dst += bs_res;
@@ -319,6 +329,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                 oid iter = *(oid*)BUNtail(iter_bat, BUNfirst(iter_bat));
 
                 for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
+                    /*-if (size[pre]&(1<<31)) printf("= %s[h]: size["SZFMT"] = %d\n", name, pre, size[pre]);-*/
                     *(oid*)dst              = iter;
                     *(oid*)(dst+SIZEOF_OID) = pre;
                     dst += bs_res;
@@ -331,6 +342,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
 
                 for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
                     for (iter = fst_iter ; iter < lst_iter ; iter++ ) {
+                        /*-if (size[pre]&(1<<31)) printf("= %s[i]: size["SZFMT"] = %d\n", name, pre, size[pre]);-*/
                         *(oid*)dst              = iter;
                         *(oid*)(dst+SIZEOF_OID) = pre;
                         dst += bs_res;
@@ -345,6 +357,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
                 
                 for (pre = fst_ctx ; pre < lst_ctx ; pre++ ) {
                     for (iter = fst_iter ; iter < lst_iter; iter += bs_iter_bat ) {
+                        /*-if (size[pre]&(1<<31)) printf("= %s[j]: size["SZFMT"] = %d\n", name, pre, size[pre]);-*/
                         *(oid*)dst              = *(oid*)iter;
                         *(oid*)(dst+SIZEOF_OID) = pre;
                         dst += bs_res;
@@ -497,6 +510,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
 @
 @= pushctx
     si_C new_stack_item;
+    /*-if (size[ctx]&(1<<31)) printf("= ll_child[0]: size["SZFMT"] = %d\n",ctx,size[ctx]);-*/
     new_stack_item.eocs = ctx + size[ctx];
     new_stack_item.next_child = ctx + 1;
     new_stack_item.first = iter_bun;
@@ -563,34 +577,46 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
         if (BATtdense(cand_bat)) {
             oid fst_pre = MAX(pre, cand_bat->tseqbase);
             oid lst_pre = MIN(@1 , cand_bat->tseqbase + BATcount(cand_bat) - 1);
-            for (; pre <= @1 && pre <  fst_pre; pre += size[pre] + 1) {};
-            for (;              pre <= lst_pre; pre += size[pre] + 1) {
+            for (; pre <= @1 && pre <  fst_pre; pre += (size[pre]&GDK_int_max) + 1) {
+                /*if (size[pre]&(1<<31)) printf("= ll_child[1]: size["SZFMT"] = %d\n",pre,size[pre]);*/
+            };
+            for (;              pre <= lst_pre; pre += (size[pre]&GDK_int_max) + 1) {
+                /*-if (size[pre]&(1<<31)) printf("= ll_child[2]: size["SZFMT"] = %d\n",pre,size[pre]);-*/
                 @:inner_loop_child_body@
             }
-            for (; pre <= @1; pre += size[pre] + 1) {};
+            for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
+                /*if (size[pre]&(1<<31)) printf("= ll_child[3]: size["SZFMT"] = %d\n",pre,size[pre]);*/
+            };
         } else {
             oid fst_ctx = pre, lst_ctx = @1;
             int bs_cand_bat = BUNsize(cand_bat);
             BUN fst_pre = BUNtloc(cand_bat, SORTfndfirst_oid(cand_bat, &fst_ctx));
             BUN lst_pre = BUNtloc(cand_bat, SORTfndlast_oid (cand_bat, &lst_ctx)) - bs_cand_bat;
-            for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += size[pre] + 1) {};
-            for (; pre <= @1 && pre <= *(oid*)lst_pre; pre += size[pre] + 1) {
+            for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += (size[pre]&GDK_int_max) + 1) {
+                /*if (size[pre]&(1<<31)) printf("= ll_child[4]: size["SZFMT"] = %d\n",pre,size[pre]);*/
+            };
+            for (; pre <= @1 && pre <= *(oid*)lst_pre; pre += (size[pre]&GDK_int_max) + 1) {
+                /*if (size[pre]&(1<<31)) printf("= ll_child[5]: size["SZFMT"] = %d\n",pre,size[pre]);*/
                 while (*(oid*)fst_pre < pre && fst_pre < lst_pre) {
                     fst_pre += bs_cand_bat;
                 }
 /*
-            for (; pre <= @1 && pre <= *(oid*)lst_pre && fst_pre <= lst_pre; pre += size[pre] + 1, fst_pre += bs_cand_bat) {
-                for (;            pre < *(oid*)fst_pre &&     pre < @1     ;     pre += size[pre] + 1) {};
-                for (; *(oid*)fst_pre <            pre && fst_pre < lst_pre; fst_pre += bs_cand_bat     ) {};
+            for (; pre <= @1 && pre <= *(oid*)lst_pre && fst_pre <= lst_pre;     pre += (size[pre]&GDK_int_max) + 1, fst_pre += bs_cand_bat) {
+                for (;            pre < *(oid*)fst_pre &&     pre < @1     ;     pre += (size[pre]&GDK_int_max) + 1) {};
+                for (; *(oid*)fst_pre <            pre && fst_pre < lst_pre; fst_pre += bs_cand_bat       ) {};
 */
                 if (*(oid*)fst_pre == pre) {
+                    /*-if (size[pre]&(1<<31)) printf("= ll_child[6]: size["SZFMT"] = %d\n",pre,size[pre]);-*/
                     @:inner_loop_child_body@
                 }
             }
-            for (; pre <= @1; pre += size[pre] + 1) {};
+            for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
+                /*if (size[pre]&(1<<31)) printf("= ll_child[7]: size["SZFMT"] = %d\n",pre,size[pre]);*/
+            };
         }
     } else {
-        for (; pre <= @1; pre += size[pre] + 1) {
+        for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
+            /*-if (size[pre]&(1<<31)) printf("= ll_child[8]: size["SZFMT"] = %d\n",pre,size[pre]);-*/
             @:inner_loop_child_body@
         }
     }
@@ -609,6 +635,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
         for (cur_bun = stack[stack_top-1].first;
              cur_bun <= stack[stack_top-1].last;
              cur_bun += iter_bunsize) {
+            /*-if (size[pre]&(1<<31)) printf("= ll_child[9]: size["SZFMT"] = %d\n", pre, size[pre]);-*/
             *(oid*)dst              = *(oid*)BUNtail(iter_bat,cur_bun);
             *(oid*)(dst+SIZEOF_OID) = pre;
             dst += bunsize;
@@ -733,6 +760,7 @@ BATprint(cand_bat);
     if (!onstack_get(iter_idx)) {
         si_D new_stack_item;
         new_stack_item.iter_idx = iter_idx;
+        /*-if (size[ctx]&(1<<31)) printf("= ll_descendant[1]: size["SZFMT"] = %d\n",ctx,size[ctx]);-*/
         new_stack_item.eocs = ctx + size[ctx];
         stack[stack_top++] = new_stack_item;
         onstack_set(iter_idx);
@@ -868,6 +896,7 @@ BATprint(cand_bat);
                             
                 for (cur_pre = fst_pre ; cur_pre <= lst_pre ; cur_pre++ ) {
                     for (j = 0 ; j < stack_top ; j++ ) {
+                        /*-if (size[cur_pre]&(1<<31)) printf("= ll_descendant[2]: size["SZFMT"] = %d\n", cur_pre, size[cur_pre]);-*/
                         *(oid*)dst              = iters_on_stack[j];
                         *(oid*)(dst+SIZEOF_OID) = cur_pre;
                         dst += bs_res;
@@ -881,6 +910,7 @@ BATprint(cand_bat);
                             
                 for (cur_pre = fst_pre ; cur_pre < lst_pre && *(oid*)cur_pre <= lst_ctx; cur_pre += bs_cnd ) {
                     for (j = 0 ; j < stack_top ; j++ ) {
+                        /*-if (size[*(oid*)cur_pre]&(1<<31)) printf("= ll_descendant[3]: size["SZFMT"] = %d\n", *(oid*)cur_pre, size[*(oid*)cur_pre]);-*/
                         *(oid*)dst              = iters_on_stack[j];
                         *(oid*)(dst+SIZEOF_OID) = *(oid*)cur_pre;
                         dst += bs_res;
@@ -890,6 +920,7 @@ BATprint(cand_bat);
         } else {
             for ( ; pre <= @1 ; pre++ ) {
                 for (j = 0 ; j < stack_top ; j++ ) {
+                    /*-if (size[pre]&(1<<31)) printf("= ll_descendant[4]: size["SZFMT"] = %d\n", pre, size[pre]);-*/
                     *(oid*)dst              = iters_on_stack[j];
                     *(oid*)(dst+SIZEOF_OID) = pre;
                     dst += bs_res;

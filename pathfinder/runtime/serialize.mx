@@ -286,10 +286,14 @@ static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int batID, int wsID) {
  * anyway.
  */
 static BAT* wsBAT(XqueryCtx* ctx, int batId) {
+        if ( batId >= WS_BATS ) {
+                fatal_err(ctx,"wsBAT: batId=%d >= WS_BATS=%d",batId,WS_BATS);
+                return NULL;
+        }
         if ( !ctx->curBAT[batId] ) { 
                 if ( !( ctx->curBAT[batId] = 
                         fetchWsContextBAT(ctx,ctx->ws,batId,ctx->curFRAG)) ) {
-                        fatal_err(ctx,"unable to load wsBAT[%d]",batId);
+                        fatal_err(ctx,"wsBAT: unable to load wsBAT[%d]",batId);
 			return NULL;
 		}
         }
@@ -908,10 +912,21 @@ static int process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
 
 static int process_node_attr(XqueryCtx* ctx, int nFRAG, oid pre, int emptyNode) {
         BAT *b;
-
-        if ( !(b  = BATuselect(wsBAT(ctx,ATTR_OWN),&pre,&pre)) )
-                return fatal_err(ctx,"process_node_attr: uselect fails\n");
+        oid nid = oid_nil;
         BUN p, q; 
+
+	b = wsBAT(ctx,PRE_NID);
+        BUNfndVOID(p, b, &pre);
+        if ( p ) {
+                nid = *(oid*)BUNtail(b,p);
+        } else {
+                fatal_err(ctx,"process_node_attr: "SZFMT" not within ["SZFMT","SZFMT"]", 
+                          (size_t)pre, (size_t)(*(oid*)BUNhead(b,BUNfirst(b))), 
+                          (size_t)(*(oid*)BUNhead(b,BUNlast(b)-BUNsize(b))));
+                return 0;
+        }
+        if ( !(b  = BATuselect(wsBAT(ctx,ATTR_OWN),&nid,&nid)) )
+                return fatal_err(ctx,"process_node_attr: uselect fails\n");
         BATloop(b, p, q) {
                 oid id = *(oid*)BUNhead(b, p);
 		if ( ! process_attr(ctx,nFRAG,id,0/*top*/) ) {
@@ -933,13 +948,21 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
 
         CHKVP(vp = idxTVinWS(ctx,PRE_KIND,pre));
         kind = *(chr*)vp;
+        /*if (kind == chr_nil) printf("\n= xquery_node_print: kind["SZFMT"] = nil\n", pre);*/
         CHKVP(vp = idxTVinWS(ctx,PRE_PROP,pre));
         prop = *(oid*)vp;
+        /*if (prop == oid_nil) printf("\n= xquery_node_print: prop["SZFMT"] = nil\n", pre);*/
         int vFRAG = ctx->curFRAG;
         if ( pre_frag ) {
                 CHKVP(vp = idxTV(ctx,"par_pre_frag",pre_frag,pre));
                 vFRAG = (int)*(oid*)vp;
 	}
+        /*
+        CHKVP(vp = idxTVinWS(ctx,PRE_SIZE,pre));
+        int sze = *(int*)vp;
+        if (sze&(1<<31) || kind == chr_nil) printf("\n= xquery_node_print[0]: size["SZFMT"] = %d\n", pre, sze);
+        */
+        if (kind == chr_nil) return -1;
         switch( kind ) {
                 case (char)0: {/* ELEMENT */
                         str uri, prefix, loc;
@@ -991,7 +1014,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
                         break;
                         }
                 default:
-                        return fatal_err(ctx,"Unknow kind IN xquery_node_print");
+                        return fatal_err(ctx,"Unknow kind %d IN xquery_node_print", (int)kind);
         }
 	return 1;
 
@@ -1023,7 +1046,12 @@ static int xquery_pre_range(XqueryCtx* ctx, BAT* b, oid from, oid to) {
                 BUNfndOID(p, b, (ptr)(&from));
         for(q = BUNlast(b); p<q; p = BUNnext(b, p)) {
                 oid pre = *(oid*)BUNhead(b, p);
+                /*
+                int *size = (int*)BUNtail(b, p);
+                size -= pre;
+                */
                 do {
+                        /*if (size[pre]&(1<<31)) printf("\n= xquery_pre_range: size["SZFMT"] = %d\n", pre, size[pre]);*/
                         if ( !xquery_node_print(ctx, pre, 0 /*pre_frag*/, 0 /*false*/))
 				return 0;
                         if ( !xquery_endtag_print(ctx,++pre) )
@@ -1042,6 +1070,12 @@ static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, 
         oid pre = from;
 
         do {
+                /*
+                ptr vp;
+                CHKVP(vp = idxTVinWS(ctx,PRE_SIZE,pre));
+                int sze = *(int*)vp;
+                if (sze&(1<<31)) printf("\n= MY_xquery_pre_range[0]: size["SZFMT"] = %d\n", pre, sze);
+                */
                 if ( !xquery_node_print(ctx, pre,pre_frag,top&&(from==to)) /*cheat*/ )
 			return 0;
                 if ( !xquery_endtag_print(ctx,++pre) )
@@ -1166,6 +1200,7 @@ static int seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag, int top) {
         /* incomplete, different for dmMode ?? */
 	CHKVP(vp = idxTVinWS(ctx,PRE_SIZE,preVal));
         int size = *(int*)vp;
+        if (size&(1<<31)) printf("\n= seqEmitNode: size["SZFMT"] = %d\n", preVal, size);
         return MY_xquery_pre_range(ctx,preVal,preVal+size, pre_frag, top);
 		
 }

@@ -140,6 +140,7 @@ PARAMETERS: search level
 
     /* definition for "array-like" access on level values of given nodes */
     level = ((chr*) BUNfirst(pre_level)) - pre_level->hseqbase;
+    /*-if (level[level_cur] == chr_nil) printf("= %s, lev_init_forward 0: %d\n", name, level_cur);-*/
 
     /* for the child step search level is the level of the context node + 1 */
     search_level = level[level_cur]@1;
@@ -153,6 +154,8 @@ PARAMETERS: search level
                           name, BATcount(pre_level), BATcount(ctx), *height);
 
     level_cur++;
+    while (level[level_cur] == chr_nil && (int)level_cur <= (int)level_last)
+        level_cur++;
     ctx_cur += ctx_bunsize;
 @-
 PARAMETERS: search level 
@@ -176,6 +179,7 @@ PARAMETERS: search level
 
     /* definition for "array-like" access on level values of given nodes */
     level = ((chr*) BUNfirst(pre_level)) - pre_level->hseqbase;
+    /*-if (level[level_cur] == chr_nil) printf("= %s, lev_init_reverse 0: %d\n", name, level_cur);-*/
 
     /* for the parent step search level is the level of the context node - 1 */
     search_level = level[level_cur]@1;
@@ -189,6 +193,8 @@ PARAMETERS: search level
                           name, BATcount(pre_level), BATcount(ctx), *height);
 
     level_cur--;
+    while (level[level_cur] == chr_nil && (int)level_cur >= (int)level_last)
+        level_cur--;
     ctx_cur -= ctx_bunsize;
 @-
 PARAMETERS: search level, stack condition, forward res/level cursor, forward ctx cursor, outer loop end 
@@ -229,9 +235,13 @@ outer_loop:
                 }   
                 ctx_cur @4 ctx_bunsize;
                 level_cur@3;
+                while (level[level_cur] == chr_nil && (int)level_cur @5 (int)level_last)
+                    level_cur@3;
                 goto outer_loop;
             }
             level_cur@3;
+            while (level[level_cur] == chr_nil && (int)level_cur @5 (int)level_last)
+                level_cur@3;
         }
 
         if (stack_top > 0)
@@ -239,8 +249,11 @@ outer_loop:
         else 
         {
             level_cur = ctx_next_pre;
+            /*-if (level[level_cur] == chr_nil) printf("= %s, lev_main 2: %d\n", name, level_cur);-*/
             search_level = level[level_cur]@1;
             level_cur@3;
+            while (level[level_cur] == chr_nil && (int)level_cur @5 (int)level_last)
+                level_cur@3;
             ctx_cur @4 ctx_bunsize;
         }
     }   
@@ -260,6 +273,8 @@ outer_loop:
             if (level[level_cur] == search_level)
                 *res_cur@3 = level_cur;
             level_cur@3;
+            while (level[level_cur] == chr_nil && (int)level_cur @5 (int)level_last)
+                level_cur@3;
         }  
         if (stack_top > 0)
             search_level = stack[--stack_top];
@@ -288,6 +303,7 @@ PARAMETERS: search level, stack condition, forward res/level cursor, forward ctx
     {
         ctx_cur -= ctx_bunsize;
         level_cur = *(oid*) BUNhead(ctx, ctx_cur);
+        /*-if (level[level_cur] == chr_nil) printf("= %s, lev_main_par 0: %d\n", name, level_cur);-*/
         search_level = level[level_cur] - 1;
     } 
            
@@ -309,9 +325,13 @@ outer_loop:
                 }   
                 ctx_cur -= ctx_bunsize;
                 level_cur--;
+                while (level[level_cur] == chr_nil && (int)level_cur >= (int)level_last)
+                    level_cur--;
                 goto outer_loop;
             }
             level_cur--;
+            while (level[level_cur] == chr_nil && (int)level_cur >= (int)level_last)
+                level_cur--;
         }
 
 	/* copy to result */
@@ -322,6 +342,7 @@ outer_loop:
         else 
         {
             level_cur = ctx_next_pre;
+            /*-if (level[level_cur] == chr_nil) printf("= %s, lev_main_par 3: %d\n", name, level_cur);-*/
             search_level = level[level_cur] - 1;
             
             /* filter out document nodes because they have no parents */
@@ -329,10 +350,13 @@ outer_loop:
             {
                 ctx_cur -= ctx_bunsize;
                 level_cur = *(oid*) BUNhead(ctx, ctx_cur);
+                /*-if (level[level_cur] == chr_nil) printf("= %s, lev_main_par 4: %d\n", name, level_cur);-*/
                 search_level = level[level_cur] - 1;
             } 
             
             level_cur--;
+            while (level[level_cur] == chr_nil && (int)level_cur >= (int)level_last)
+                level_cur--;
             ctx_cur -= ctx_bunsize;
         }
     }   
@@ -345,8 +369,11 @@ outer_loop:
     {
         /* check search-region of current context node 
          */
-        while ((int)level_cur >= (int)level_last && level[level_cur] > search_level)
+        while ((int)level_cur >= (int)level_last && level[level_cur] > search_level) {
             level_cur--;
+            while (level[level_cur] == chr_nil && (int)level_cur >= (int)level_last)
+                level_cur--;
+        }
 	
 	/* copy to result */
 	*res_cur-- = level_cur;

@@ -927,7 +927,7 @@ map2NODE_interface (opt_t *f)
 
             /* get the attributes of the subtree copy elements */
             "{ # create attribute subtree copies\n"
-            "var temp_attr := mvaljoin(res_item, res_frag, ws.fetch(ATTR_OWN));\n"
+            "var temp_attr := mvaljoin( mposjoin(res_item, res_frag, ws.fetch(PRE_NID)), res_frag, ws.fetch(ATTR_OWN));\n"
             "var oid_attr := temp_attr.reverse().mark(0@0).reverse();\n"
             "var oid_frag;\n"
             "if (is_fake_project(res_frag)) {\n"
@@ -1940,7 +1940,7 @@ loop_liftedSCJ (opt_t *f,
             "unq := nil_oid_oid;\n"
             */
             /* get the attribute ids from the pre values */
-            "var temp1 := mvaljoin (oid_item, oid_frag, ws.fetch(ATTR_OWN));\n"
+            "var temp1 := mvaljoin ( mposjoin(oid_item, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(ATTR_OWN));\n"
             "oid_item := nil_oid_oid;\n"
             "oid_frag := temp1.mark(0@0).reverse().leftfetchjoin(oid_frag);\n"
             "var oid_attr := temp1.reverse().mark(0@0).reverse();\n"
@@ -2030,7 +2030,7 @@ loop_liftedSCJ (opt_t *f,
         if (kind)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(%s))).mark(0@0).reverse();\n"
+                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(KIND_NID + int(%s))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -2040,7 +2040,7 @@ loop_liftedSCJ (opt_t *f,
         else if (ns && loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
+                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(KIND_NID + int(ELEMENT))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -2060,7 +2060,7 @@ loop_liftedSCJ (opt_t *f,
         else if (loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
+                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(KIND_NID + int(ELEMENT))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -2080,7 +2080,7 @@ loop_liftedSCJ (opt_t *f,
         else if (ns)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
+                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(KIND_NID + int(ELEMENT))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -2853,6 +2853,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 /* insert the new trees into the working set */
                 "ws.fetch(PRE_LEVEL).fetch(WS).insert(root_level);\n"
                 "ws.fetch(PRE_SIZE).fetch(WS).insert(root_size);\n"
+                "ws.fetch(PRE_NID).fetch(WS).insert(root_size.mirror());\n"
+                "ws.fetch(NID_PRE).fetch(WS).insert(root_size.mirror());\n"
                 "ws.fetch(PRE_KIND).fetch(WS).insert(root_kind);\n"
                 "ws.fetch(PRE_PROP).fetch(WS).insert(root_prop);\n"
                 "ws.fetch(PRE_FRAG).fetch(WS).insert(root_frag);\n"
@@ -2860,17 +2862,17 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "  var knd := ELEMENT;\n"
                 "  while ( knd <= DOCUMENT ) {\n"
                 "    var kind_root := root_kind.ord_uselect(knd).reverse().chk_order();\n"
-                "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS);\n"
-                "    kind_pre.insert(kind_root);\n"
+                "    var kind_nid := ws.fetch(KIND_NID + int(knd)).fetch(WS);\n"
+                "    kind_nid.insert(kind_root);\n"
                 "    if ( knd = ELEMENT ) {\n"
                 "      var prop_root := kind_root.reverse().mirror().leftfetchjoin(root_prop).reverse().chk_order();\n"
-                "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS);\n"
-                "      prop_pre.insert(prop_root);\n"
+                "      var prop_nid := ws.fetch(PROP_NID + int(knd)).fetch(WS);\n"
+                "      prop_nid.insert(prop_root);\n"
                 "    }\n"
                 "    if ( knd = PI ) {\n"
                 "      var prop_root := kind_root.reverse().mirror().leftfetchjoin(root_prop).reverse().chk_order();\n"
-                "      var prop_pre := ws.fetch(PROP_PRE + 1).fetch(WS);\n"
-                "      prop_pre.insert(prop_root);\n"
+                "      var prop_nid := ws.fetch(PROP_NID + 1).fetch(WS);\n"
+                "      prop_nid.insert(prop_root);\n"
                 "    }\n"
                 "    knd :+= chr(1);\n"
                 "  }\n"
@@ -2929,7 +2931,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var oid_preNew := content_preNew_preOld.mark(0@0).reverse();\n"
                 "content_preNew_preOld := nil_oid_oid;\n"
                 "var oid_frag := oid_preNew.leftfetchjoin(preNew_frag);\n"
-                "var temp_attr := mvaljoin(oid_preOld, oid_frag, ws.fetch(ATTR_OWN));\n"
+                "var temp_attr := mvaljoin( mposjoin(oid_preOld, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(ATTR_OWN));\n"
                 "oid_preOld := nil_oid_oid;\n"
                 "var oid_attr := temp_attr.reverse().mark(0@0).reverse();\n"
                 "oid_frag := temp_attr.reverse().leftfetchjoin(oid_frag);\n"
@@ -3072,6 +3074,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "}\n"
             /* insert the new trees into the working set */
             "ws.fetch(PRE_SIZE).fetch(WS).insert(_elem_size);\n"
+            "ws.fetch(PRE_NID).fetch(WS).insert(_elem_size.mirror());\n"
+            "ws.fetch(NID_PRE).fetch(WS).insert(_elem_size.mirror());\n"
             "ws.fetch(PRE_LEVEL).fetch(WS).insert(_elem_level);\n"
             "ws.fetch(PRE_KIND).fetch(WS).insert(_elem_kind);\n"
             "ws.fetch(PRE_PROP).fetch(WS).insert(_elem_prop);\n"
@@ -3080,17 +3084,17 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "  var knd := ELEMENT;\n"
             "  while ( knd <= DOCUMENT ) {\n"
             "    var kind__elem := _elem_kind.ord_uselect(knd).reverse().chk_order();\n"
-            "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS);\n"
-            "    kind_pre.insert(kind__elem);\n"
+            "    var kind_nid := ws.fetch(KIND_NID + int(knd)).fetch(WS);\n"
+            "    kind_nid.insert(kind__elem);\n"
             "    if ( knd = ELEMENT ) {\n"
             "      var prop__elem := kind__elem.reverse().mirror().leftfetchjoin(_elem_prop).reverse().chk_order();\n"
-            "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS);\n"
-            "      prop_pre.insert(prop__elem);\n"
+            "      var prop_nid := ws.fetch(PROP_NID + int(knd)).fetch(WS);\n"
+            "      prop_nid.insert(prop__elem);\n"
             "    }\n"
             "    if ( knd = PI ) {\n"
             "      var prop__elem := kind__elem.reverse().mirror().leftfetchjoin(_elem_prop).reverse().chk_order();\n"
-            "      var prop_pre := ws.fetch(PROP_PRE + 1).fetch(WS);\n"
-            "      prop_pre.insert(prop__elem);\n"
+            "      var prop_nid := ws.fetch(PROP_NID + 1).fetch(WS);\n"
+            "      prop_nid.insert(prop__elem);\n"
             "    }\n"
             "    knd :+= chr(1);\n"
             "  }\n"
@@ -3324,13 +3328,15 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "newPre_prop := newPre_prop.reverse().mark(seqb).reverse();\n"
                 "ws.fetch(PRE_PROP).fetch(WS).insert(newPre_prop);\n"
                 "ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));\n"
+                "ws.fetch(PRE_NID).fetch(WS).insert(newPre_prop.mirror());\n"
+                "ws.fetch(NID_PRE).fetch(WS).insert(newPre_prop.mirror());\n"
                 "ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));\n"
                 "ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(TEXT));\n"
                 "ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));\n"
                 "{\n"
-                "  var kind_pre_ := newPre_prop.mark(nil).reverse().chk_order();\n"
-                "  var kind_pre := ws.fetch(KIND_PRE + int(TEXT)).fetch(WS);\n"
-                "  kind_pre.insert(kind_pre_);\n"
+                "  var kind_nid_ := newPre_prop.mark(nil).reverse().chk_order();\n"
+                "  var kind_nid := ws.fetch(KIND_NID + int(TEXT)).fetch(WS);\n"
+                "  kind_nid.insert(kind_nid_);\n"
                 "}\n"
                 "newPre_prop := nil_oid_oid;\n"
                 "item := item%s.mark(seqb);\n"
