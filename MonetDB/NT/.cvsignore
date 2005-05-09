@@ -1,9 +1,5 @@
-*___Win32_*
-*.plg
-*.ncb
-*.opt
-Debug
-Release
+MonetDB.pc
+Run*.bat
 bin
 com
 conf
