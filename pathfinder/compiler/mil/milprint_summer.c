@@ -2048,25 +2048,14 @@ loop_liftedSCJ (opt_t *f,
             milprintf(f,
                     "var temp_str := mposjoin(mposjoin(oid_item, oid_frag, ws.fetch(PRE_PROP)), "
                                              "mposjoin(oid_item, oid_frag, ws.fetch(PRE_FRAG)), "
-                                             "ws.fetch(QN_LOC));\n"
-                    "temp1 := temp_str.ord_uselect(\"%s\").mark(0@0).reverse();\n"
+                                             "ws.fetch(QN_LOC_URI));\n"
+                    "temp1 := temp_str.ord_uselect(\"%s\"+str('\\1')+\"%s\").mark(0@0).reverse();\n"
                     "temp_str := nil_oid_str;\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil_oid_oid;\n",
-                    loc);
-            milprintf(f,
-                    "var temp_str := mposjoin(mposjoin(oid_item, oid_frag, ws.fetch(PRE_PROP)), "
-                                             "mposjoin(oid_item, oid_frag, ws.fetch(PRE_FRAG)), "
-                                             "ws.fetch(QN_URI));\n"
-                    "temp1 := temp_str.ord_uselect(\"%s\").mark(0@0).reverse();\n"
-                    "temp_str := nil_oid_str;\n"
-                    "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
-                    "oid_item := temp1.leftfetchjoin(oid_item);\n"
-                    "temp1 := nil_oid_oid;\n",
-                    ns);
+                    loc,ns);
         }
         else if (loc)
         {
@@ -2419,8 +2408,7 @@ castQName (opt_t *f, int rc)
     milprintf(f,
             /* string name is only translated into local name, because
                no URIs for the namespace are available */
-            "var prop_id := ws.fetch(QN_URI).fetch(WS).ord_uselect(\"\").mirror();\n"
-            "prop_id := prop_id.leftfetchjoin(ws.fetch(QN_PREFIX).fetch(WS)).ord_uselect(\"\");\n"
+            "var prop_id := ws.fetch(QN_PREFIX_URI).fetch(WS).ord_uselect(\"\"+str('\\1')+\"\").mirror();\n"
             "var prop_name := prop_id.mirror().leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n"
             "prop_id := nil_oid_oid;\n"
 
@@ -2432,14 +2420,18 @@ castQName (opt_t *f, int rc)
             "str_oid := nil_str_oid;\n"
             /* add the strings as local part of the qname into the working set */
             "ws.fetch(QN_LOC).fetch(WS).insert(oid_str);\n"
-            "oid_str := oid_str.project(\"\");\n"
-            "ws.fetch(QN_URI).fetch(WS).insert(oid_str);\n"
-            "ws.fetch(QN_PREFIX).fetch(WS).insert(oid_str);\n"
+            "var oid_str_ := oid_str.project(\"\");\n"
+            "ws.fetch(QN_URI).fetch(WS).insert(oid_str_);\n"
+            "ws.fetch(QN_PREFIX).fetch(WS).insert(oid_str_);\n"
+            "oid_str_ := oid_str_.[+](str('\\1')+\"\");\n"
+            "ws.fetch(QN_PREFIX_URI).fetch(WS).insert(oid_str_);\n"
+            "oid_str_ := oid_str.[+](oid_str_);\n"
+            "ws.fetch(QN_LOC_URI).fetch(WS).insert(oid_str_);\n"
+            "oid_str_ := nil_oid_str;\n"
             "oid_str := nil_oid_str;\n"
 
             /* get all the possible matching names from the updated working set */
-            "prop_id := ws.fetch(QN_URI).fetch(WS).ord_uselect(\"\").mirror();\n"
-            "prop_id := prop_id.leftfetchjoin(ws.fetch(QN_PREFIX).fetch(WS)).ord_uselect(\"\");\n"
+            "prop_id := ws.fetch(QN_PREFIX_URI).fetch(WS).ord_uselect(\"\"+str('\\1')+\"\").mirror();\n"
             "prop_name := prop_id.mirror().leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n"
             "prop_id := nil_oid_oid;\n"
 
@@ -2553,8 +2545,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                           they are from different fragments */
                 "if (_r_attr_iter.count() != 0) { # test uniqueness\n"
                 "var sorting := _r_attr_iter.reverse().sort().reverse();\n"
-                "sorting := sorting.CTrefine(mposjoin(_r_attr_qn,_r_attr_frag,ws.fetch(QN_LOC)));\n"
-                "sorting := sorting.CTrefine(mposjoin(_r_attr_qn,_r_attr_frag,ws.fetch(QN_URI)));\n"
+                "sorting := sorting.CTrefine(mposjoin(_r_attr_qn,_r_attr_frag,ws.fetch(QN_LOC_URI)));\n"
                 "var unq_attrs := sorting.tunique();\n"
                 "sorting := nil_oid_oid;\n"
                 /* test uniqueness */
@@ -2983,8 +2974,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var attr_qn_ := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_QN));\n"
                 "var attr_qn_frag := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_FRAG));\n"
                 "var sorting := attr_iter.reverse().sort().reverse();\n"
-                "sorting := sorting.CTrefine(mposjoin(attr_qn_,attr_qn_frag,ws.fetch(QN_LOC)));\n"
-                "sorting := sorting.CTrefine(mposjoin(attr_qn_,attr_qn_frag,ws.fetch(QN_URI)));\n"
+                "sorting := sorting.CTrefine(mposjoin(attr_qn_,attr_qn_frag,ws.fetch(QN_LOC_URI)));\n"
                 "var unq_attrs := sorting.tunique();\n"
                 "attr_qn_ := nil_oid_oid;\n"
                 "attr_qn_frag := nil_oid_oid;\n"
@@ -7848,17 +7838,14 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 
             milprintf(f,
                     "{ # tagname-translation\n"
-                    "var propID := ws.fetch(QN_URI).fetch(WS)"
-                        ".ord_uselect(\"%s\").mirror();\n"
-                    "propID := propID"
-                        ".leftfetchjoin(ws.fetch(QN_PREFIX).fetch(WS))"
-                                         ".ord_uselect(\"%s\").mirror();\n"
+                    "var propID := ws.fetch(QN_PREFIX_URI).fetch(WS)"
+                        ".ord_uselect(\"%s\"+str('\\1')+\"%s\").mirror();\n"
                     "var prop_str := propID"
                         ".leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));\n"
                     "propID := prop_str.ord_uselect(\"%s\");\n"
                     "prop_str := nil_oid_str;\n"
                     "var itemID;\n",
-                    uri, prefix, loc);
+                    prefix, uri, loc);
 
             milprintf(f,
                     "if (propID.count() = 0)\n"
@@ -7867,9 +7854,11 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                     "ws.fetch(QN_URI).fetch(WS).insert(itemID,\"%s\");\n"
                     "ws.fetch(QN_PREFIX).fetch(WS).insert(itemID,\"%s\");\n"
                     "ws.fetch(QN_LOC).fetch(WS).insert(itemID,\"%s\");\n"
+                    "ws.fetch(QN_PREFIX_URI).fetch(WS).insert(itemID,\"%s\"+str('\\1')+\"%s\");\n"
+                    "ws.fetch(QN_LOC_URI).fetch(WS).insert(itemID,\"%s\"+str('\\1')+\"%s\");\n"
                     "} else { "
                     "itemID := propID.reverse().fetch(0); }\n",
-                    uri, prefix, loc);
+                    uri, prefix, loc, prefix, uri, loc, uri);
 
             /* translateConst needs a bound variable itemID */
             translateConst (f, cur_level, "QNAME");
