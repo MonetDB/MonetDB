@@ -52,8 +52,8 @@ cd MinGW
 	     --with-monet="$MONETDB_PREFIX" \
 	     --with-mel=.../mel.exe \
 	     --with-mx=.../Mx.exe \
-	     --with-gcc='gcc -mwin32 -mno-cygwin -g' \
-	     --with-gxx='g++ -mwin32 -mno-cygwin -g' \
+	     --with-gcc='gcc -mwin32 -mno-cygwin' \
+	     --with-gxx='g++ -mwin32 -mno-cygwin' \
 	     --with-translatepath='cygpath -w' \
 	     --with-libxml2="$HOME/MinGW" \
 	     --with-pthread=C:/Pthreads \
@@ -68,3 +68,23 @@ The values for the --with-mel and --with-mx options should be the full
 Cygwin (i.e. not using the MinGW tools).
 The --with-monet flag is not needed if MONETDB_PREFIX is set and
 monetdb-config can be found in $MONETDB_PREFIX/bin.
+
+In order to use the resulting binaries and MonetDB module, you need to
+add a number of folders to the Windows PATH.  They are the same as the
+ones that are needed for MonetDB itself:
+
+rem as an abbreviation, set MONETDB_PREFIX to the Windows version of
+rem the folder where MonetDB was installed
+set MONETDB_PREFIX=...\MinGW
+set PATH=C:\Pthreads\lib;%PATH%
+set PATH=%MONETDB_PREFIX%\lib\MonetDB;%PATH%
+set PATH=%MONETDB_PREFIX%\lib\bin;%PATH%
+set PATH=%MONETDB_PREFIX%\lib;%PATH%
+set PATH=%MONETDB_PREFIX%\bin;%PATH%
+
+If bz2 and z are included in the compilation (i.e. the libraries were
+found in the configure step), the Cygwin bin directory also needs to
+be added.  Only the mgwbz2-1.dll and mgwz.dll are used from that
+folder.  We add the folder at the end of the Windows search path:
+
+set PATH=%PATH%;C:\cygwin\bin
