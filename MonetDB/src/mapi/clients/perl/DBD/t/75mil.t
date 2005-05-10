@@ -10,7 +10,11 @@ use DBD_TEST();
 use Test::More;
 
 if (defined $ENV{DBI_DSN}) {
-  plan tests => 30;
+  if ($ENV{DBI_DSN} =~ /dbi:monetdb:/) {
+    plan tests => 30;
+  } else {
+    plan skip_all => 'dbi:monetdb: specific tests';
+  }
 } else {
   plan skip_all => 'Cannot test without DB info';
 }
