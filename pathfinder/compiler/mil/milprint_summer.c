@@ -9797,7 +9797,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
              !c->sem.fun->builtin)
     {
         /* get variable occurrences of the input arguments */
-        counter = get_var_usage (f, D(c), PFarray (sizeof (int)), counter);
+        counter = get_var_usage (f, D(c), way, counter);
 
         if (!c->sem.fun->fid) /* create fid for UDF on demand */
         {
