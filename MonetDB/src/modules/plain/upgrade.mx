@@ -579,9 +579,8 @@ bbp_convert( str batdir )
 	FILE *fp = NULL;
 	bat i;
 	char *c, buffer[3000];
-	oid BBPoid = 0;
 
-	snprintf(bak, PATHLENGTH, "%s%cBACKUP%c", batdir, DS, DS, DS); 
+	snprintf(bak, PATHLENGTH, "%s%cBACKUP%c", batdir, DS, DS); 
 	BBPlock("bbp_convert");
 	if (BBPsize > 28) { /* 28 bats allready exist by default */
 		GDKerror("Can only convert to an empty dbfarm\n");
@@ -609,7 +608,6 @@ bbp_convert( str batdir )
 			return GDK_FAIL;
 		}
 		if (c != NULL) {
-			BBPoid = OIDread(c);
 			if ((c = strstr(c, "BBPsize")) != NULL) {
 				sscanf(c, "BBPsize=%d", &i);
 				if (i >= BBPsize) {
@@ -623,7 +621,7 @@ bbp_convert( str batdir )
 	/* scan the BBP.dir, and insert the BATs into the BBP */
 	while ((c = fgets(buffer, sizeof(buffer), fp)) != NULL) {
 		char *batname, *physical, *name[2];
-		int j = 0, res = GDK_SUCCEED;
+		int res = GDK_SUCCEED;
 
 		while (*c != '[')
 			c++;
@@ -635,7 +633,6 @@ bbp_convert( str batdir )
 				;
 			for (c++; GDKisspace(*c); c++)
 				;
-			j = atoi(c);
 			if (!GDKisdigit(*c))
 				c--;
 			else
