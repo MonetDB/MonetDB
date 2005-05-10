@@ -595,7 +595,7 @@ which means we are expecting MonetDB tuple format descriptions.
 str
 SENstartSensor(str sname, bstream *bs){
 	Tablet as;
-	int i,k=0;
+	int res,i,k=0;
 	BUN p,q;
 	Column *fmt;
 
@@ -633,9 +633,19 @@ SENstartSensor(str sname, bstream *bs){
 #ifdef DEBUG_SENSORS
 		stream_printf(GDKerr, "#start loading sensor data\n");
 #endif
-	TABLETload_file(&as, bs);
+	res =1;
+	while(res>0 && !stream_errnr(bs->s)){
+		bs->eof=0;
+		res=TABLETload_file(&as, bs);
+#ifdef DEBUG_SENSORS
+		stream_printf(GDKerr, "#load %d events\n",res);
+#endif
+	}
 	TABLETdestroy_format(&as);
 	return MAL_SUCCEED;
+#ifdef DEBUG_SENSORS
+	stream_printf(GDKerr, "#finished receiving data\n");
+#endif
 }
 @-
 The implementation is a patched version of mapi.mx
