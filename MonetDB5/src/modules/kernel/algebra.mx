@@ -1950,9 +1950,10 @@ str ALGhtsort(int *result, int *lid ) {
 		return throwMessage("algebra.htsort", "GDKerror");
 	bk= BATsort(BATkunique(b));
 	BATloop(bk,p,q){
-		bc= BATselect(BATreverse(b),p,p);
+		b = (((b)->batCacheid<0)?(b):BATmirror(b));
+		bc= BATselect(b,p,p);
 		bc= BATsort(bc);
-		BATreverse(bc);
+		bc = (((bc)->batCacheid<0)?(bc):BATmirror(bc));
 		BATins(bn,bc);
 	}
 	BBPunfix(b->batCacheid);
@@ -1976,7 +1977,8 @@ str ALGthsort(int *result, int *lid ) {
 	bn= BATnew( b->htype, b->ttype, cnt);
 	if( bn ==0)
 		return throwMessage("algebra.thsort", "GDKerror");
-	bk= BATsort(BATkunique(BATreverse(b)));
+	b = (((b)->batCacheid<0)?(b):BATmirror(b));
+	bk= BATsort(BATkunique(b));
 	BATloop(bk,p,q){
 		bc= BATselect(b,p,p);
 		bc= BATsort(bc);
