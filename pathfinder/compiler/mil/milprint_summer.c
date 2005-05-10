@@ -6281,11 +6281,11 @@ translateUDF (opt_t *f, int cur_level, int counter,
             counter, counter, counter, counter, counter);
     /* call the proc */
     milprintf(f,
-            "var proc_res := %s%i%x (loop%03u, outer%03u, inner%03u, "
-            "fun_vid%03u, fun_iter%03u, fun_pos%03u, fun_item%03u, fun_kind%03u);\n",
-            fun->qname.loc, fun->arity, fun,
+            "var proc_res := fn_%x_%i (loop%03u, outer%03u, inner%03u, "
+            "fun_vid%03u, fun_iter%03u, fun_pos%03u, fun_item%03u, fun_kind%03u); # fn:%s\n",
+            fun, fun->arity,
             cur_level, cur_level, cur_level,
-            counter, counter, counter, counter, counter);
+            counter, counter, counter, counter, counter, fun->qname.loc);
     milprintf(f,
             "iter := proc_res.fetch(0);\n"
             "pos := proc_res.fetch(1);\n"
@@ -7984,30 +7984,30 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
         case c_fun_decl:
   	    opt_output(f, OPT_SEC_PROLOGUE);
             milprintf(f,
-                    "PROC %s%i%x (bat[void,oid] loop000, "
+                    "PROC fn_%x_%i (bat[void,oid] loop000, "
                                "bat[void,oid] outer000, "
                                "bat[void,oid] inner000, "
                                "bat[void,oid] v_vid000, "
                                "bat[void,oid] v_iter000, "
                                "bat[void,oid] v_pos000, "
                                "bat[void,oid] v_item000, "
-                               "bat[void,int] v_kind000) : bat[void,bat] {\n"
+                               "bat[void,int] v_kind000) : bat[void,bat] { # fn:%s\n"
                     "v_vid000 := v_vid000.access(BAT_WRITE);\n"
                     "v_iter000 := v_iter000.access(BAT_WRITE);\n"
                     "v_pos000 := v_pos000.access(BAT_WRITE);\n"
                     "v_item000 := v_item000.access(BAT_WRITE);\n"
                     "v_kind000 := v_kind000.access(BAT_WRITE);\n",
-                    c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
+                    c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
                     "return bat(void,bat,4).insert(nil,iter).insert(nil,pos).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
-                    "} # end of PROC %s%i%x\n",
-                    c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
+                    "} # end of PROC fn_%x_%i (fn:%s)\n",
+                    c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
   	    opt_output(f, OPT_SEC_EPILOGUE);
             milprintf(f,
-                    "UNDEF %s%i%x;\n",
-                    c->sem.fun->qname.loc, c->sem.fun->arity, c->sem.fun);
+                    "UNDEF fn_%x_%i; # fn:%s\n",
+                    c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
   	    opt_output(f, OPT_SEC_QUERY);
             rc = NORMAL; /* dummy */
             break;
