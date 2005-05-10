@@ -423,7 +423,7 @@ BAT_hashselect(BAT *b, BAT *bn, ptr tl)
 	hash_t i;
 
 	BATcheck(b, "BAT_hashselect");
-	BATflipflop(b);
+	b= BATmirror(b);
 	if (BATprepareHash(b)) {
 	      bunins_failed:
 		BBPreclaim(bn);
@@ -850,11 +850,11 @@ An index is exploited when possible.
 		int offset;
 		BUN p,q;
 
-		BATflipflop(b);
+		b= BATmirror(b);
 		SORTloop(b, p, q, hl, hh, offset) {
 			*m++ = p;
 		}
-		BATflipflop(b);
+		b= BATmirror(b);
 	} else {
 		int lval = !@1_EQ(ATOMnilptr(t),hl,@2);
 		int hval = !@1_EQ(ATOMnilptr(t),hh,@2);
@@ -1328,12 +1328,12 @@ BATrevert(BAT *b)
 	char *buf;
 	BUN p, q;
 
-	BATcheck(b, "BATrevorder");
+	BATcheck(b, "BATrevert");
 	if ((b->htype == TYPE_void && b->hseqbase != oid_nil) || (b->ttype == TYPE_void && b->tseqbase != oid_nil)) {
 		GDKwarning("Cannot reverse order on void columns.\nPlease materialize them to oid, first.\n");
 		return b;
 	}
-	ALIGNdel(b, "BATrevorder");
+	ALIGNdel(b, "BATrevert");
 	xx = BUNsize(b);
 	buf = (char *) GDKmalloc(xx);
 	for (p = BUNlast(b) - xx, q = BUNfirst(b); p > q; p -= xx, q += xx) {

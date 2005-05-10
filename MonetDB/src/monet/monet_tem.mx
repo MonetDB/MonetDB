@@ -66,8 +66,9 @@ created immediately.
 		BBPclear(i);	/* just ignore old stuff */
 	}
 	TEMpool = BATnew(TYPE_int, TYPE_ptr, TEMSIZE);
-	BAThash(BATreverse(TEMpool), 0);
-	BATreset(TEMpool);
+	TEMpool = (((TEMpool)->batCacheid<0)?(TEMpool):BATmirror(TEMpool));
+	BAThash(TEMpool, 0);
+	TEMpool = BBP_cache(ABS((TEMpool)->batCacheid));
 	BAThash(TEMpool, 0);
 	BATroles(TEMpool, "tem", "pool");
 	BATfakeCommit(TEMpool);
@@ -91,8 +92,9 @@ when the event pool so requires.
 	}
 	TEMactive = BATnew(TYPE_int, TYPE_ptr, TEMSIZE);
 	BATroles(TEMpool, "tem", "active");
-	BAThash(BATreverse(TEMactive), 0);
-	BATreset(TEMactive);
+	TEMactive = (((TEMactive)->batCacheid<0)?(TEMactive):BATmirror(TEMactive));
+	BAThash(TEMactive, 0);
+	TEMactive = BBP_cache(ABS((TEMactive)->batCacheid));
 	BAThash(TEMactive, 0);
 	BATfakeCommit(TEMactive);
 @-
@@ -117,9 +119,11 @@ TEMadmInit()
 		BBPclear(i);	/* just ignore old stuff */
 	}
 	TEMevents = BATnew(TYPE_str, TYPE_int, 250);
-	BAThash(BATreverse(TEMevents), 0);
-	BATkey(BATreverse(TEMevents), TRUE);
-	BATreset(TEMevents);
+	TEMevents = (((TEMevents)->batCacheid<0)?(TEMevents):BATmirror(TEMevents));
+	BAThash(TEMevents, 0);
+	TEMevents = (((TEMevents)->batCacheid<0)?(TEMevents):BATmirror(TEMevents)));
+	BATkey(TEMevents, TRUE);
+	TEMevents = BBP_cache(ABS((TEMevents)->batCacheid));
 	BAThash(TEMevents, 0);
 	BATroles(TEMevents, "tem", "events");
 @-

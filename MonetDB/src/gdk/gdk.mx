@@ -28,8 +28,7 @@ Its development was originally rooted in the design of a pure
 active-object-oriented programming language, before development
 was shifted towards a re-usable database kernel engine.
 
-GDK is a C/C++ library that provides ACID
-properties on a DSM model
+GDK is a C library that provides ACID properties on a DSM model
 @tex
 [@cite{Copeland85}]
 @end tex
@@ -78,7 +77,7 @@ hash tables, for accelerating lookup searches on BATs.
 @item
  TM routines that provide basic transaction management primitives.
 @item
- TRG routines that provided active database support.
+ TRG routines that provided active database support. [DEPRECATED]
 @item
  ALIGN routines that implement BAT alignment management.
 @end itemize
@@ -102,37 +101,39 @@ The association can be defined over:
 A single character (8 bits @strong{integer}s).
 DEPRECATED for storing text (Unicode not supported).
 @item sht:
- Short integers (16-bit @strong{ integer}s).
+ Short integers (16-bit @strong{integer}s).
 @item int:
- This is the C @strong{ int} type (32-bit).
+ This is the C @strong{int} type (32-bit).
 @item oid:
- Unique @strong{ long int} values uses as object identifier. Highest bit cleared always.
+ Unique @strong{long int} values uses as object identifier. Highest bit cleared always.
 	    Thus, oids-s are 31-bit numbers on 32-bit systems, and 63-bit numbers on 64-bit systems.
 @item ptr:
 Memory pointer values. DEPRECATED.  Can only be stored in transient BATs.
 @item flt:
- The IEEE @strong{ float} type.
+ The IEEE @strong{float} type.
 @item dbl:
- The IEEE @strong{ double} type.
+ The IEEE @strong{double} type.
 @item lng:
- Longs: the C @strong{ long long} type (64-bit integers).
+ Longs: the C @strong{long long} type (64-bit integers).
 @item str:
  UTF-8 strings (Unicode). A zero-terminated byte sequence.
 @item bat:
- Bat descriptor. This allows for recursive tables.
-            CAN ONLY BE STORED IN TRANSIENT BATs (not to complicate transaction mgmt).
+ Bat descriptor. This allows for recursive adminstered tables, but
+severely complicates transaction management. Therefore, they
+CAN ONLY BE STORED IN TRANSIENT BATs.
+[on the list to become depreciated,
 @end table
 
-This model can be used as a back-end model underlying other -- higher
-level -- models, in order to achieve @strong{ better performance} and
-@strong{ data independence} in one go. The relational model and
+This model can be used as a back-end model underlying other -higher
+level- models, in order to achieve @strong{better performance} and
+@strong{data independence} in one go. The relational model and
 the object-oriented model can be mapped on BATs by vertically
 splitting every table (or class) for each attribute. Each such a
-column is then stored in a BAT with type @strong{ bat[oid,attribute]}, where
+column is then stored in a BAT with type @strong{bat[oid,attribute]}, where
 the unique object identifiers link tuples in the different BATs.
 Relationship attributes in the object-oriented model hence are
-mapped to @strong{ bat[oid,oid]} tables, being equivalent to the concept of
-@emph{ join indexes}
+mapped to @strong{bat[oid,oid]} tables, being equivalent to the concept of
+@emph{join indexes}
 @tex
 [@cite{Valduriez87}]
 @end tex
@@ -146,19 +147,18 @@ Types can be derived from other types. They represent something different
 than that from which they are derived, but their internal storage management
 is equal. This feature facilitates the work of extension programmers, by
 enabling reuse of implementation code, but is also used to keep the GDK code
-portable from 32-bits to 64-bits machines: the @strong{ oid} and @strong{ ptr} types
-are derived from @strong{ int} on 32-bits machines, but is derived from @strong{ lng}
+portable from 32-bits to 64-bits machines: the @strong{oid} and @strong{ptr} types
+are derived from @strong{int} on 32-bits machines, but is derived from @strong{lng}
 on 64 bits machines. This requires changes in only two lines of code each.
 
 To accelerate lookup and search in BATs, GDK supports one built-in
-search accelerator: hash tables. We chose an implementation efficient 
+search accelerator: hash tables. We choose an implementation efficient 
 for main-memory: bucket chained hash 
 @tex
 [@cite{LehCar86,Analyti92}]
 @end tex
-.
-@
-An ADT mechanism for extending the supported atomic type exists.
+. Alternatively, when the table is sorted, it will resort to merge-scan
+operations or binary lookups.
 @
 BATs are built on the concept of heaps, which are large pieces of main
 memory. They can also consist of virtual memory, in case the working
@@ -201,22 +201,16 @@ assures that only those attributes of a relation that are needed,
 will have to be accessed.
 
 @item -
-In a distributed system one should avoid passing large amounts
-of useless data around, which calls for semi-join based algorithms
-instead of the commonly used full joins.
-
-@item -
 The data management issues for a binary association is much
-easier to deal with than traditional @emph{ struct}-based approaches
+easier to deal with than traditional @emph{struct}-based approaches
 encountered in relational systems.
 
 @item -
 Object-oriented systems often maintain a double cache, one with the
 disk-based representation and a C pointer-based main-memory structure.
-This causes expensive conversions and replicated storage management.
-
-GDK does not do such 'pointer swizzling'. It used virtual-memory (@strong{
-mmap()}) and buffer management advice (@strong{ madvise()}) OS primitives to
+This causes expensive conversions and replicated storage management.\\
+GDK does not do such `pointer swizzling'. It used virtual-memory 
+(@strong{mmap()}) and buffer management advice (@strong{madvise()}) OS primitives to
 cache only once. Tables take the same form in memory as on disk,
 making the use of this technique transparent
 @tex
@@ -250,10 +244,8 @@ this swapping process.
 
 @item @strong{GDK Extensibility:}
 
-Atoms and Search Accelerators can be defined using an ADT interface.
-For using them, there are also unified interfaces. We will add an
-interface for user-defined storage modes (multi-level storage) here.
-
+Atoms can be defined using an ADT interface.
+with a unified interface. 
 There is also an interface to extend the GDK library with
 dynamically linked object code.
 
@@ -270,18 +262,18 @@ transactions. Work is needed here.
 
 @item @strong{BAT Alignment:}
 Due to the mapping of multi-ary datamodels onto the BAT model,
-we expect many correspondences among BATs, e.g.  @emph{ bat(oid,attr1),..
+we expect many correspondences among BATs, e.g.  @emph{bat(oid,attr1),..
 bat(oid,attrN)} vertical decompositions. Frequent activities will be
-to jump from one attribute to the other ('bunhopping'). If the head
+to jump from one attribute to the other (`bunhopping'). If the head
 columns are equal lists in two BATs, merge or even array lookups
 can be used instead of hash lookups. The alignment interface makes
 these relations explicitly manageable.
 
 In GDK, complex data models are mapped with DSM on binary tables.
-Usually, one decomposes @emph{ N}-ary relations into @emph{ N} BATs with
-an @strong{ oid} in the head column, and the attribute in the tail column.
-There may well be groups of tables that have the same sets of @strong{f
-oid}s, equally ordered. The alignment interface is intended to make
+Usually, one decomposes @emph{N}-ary relations into @emph{N} BATs with
+an @strong{oid} in the head column, and the attribute in the tail column.
+There may well be groups of tables that have the same sets of 
+@strong{oid}s, equally ordered. The alignment interface is intended to make
 this explicit.  Implementations can use this interface to detect this
 situation, and use cheaper algorithms (like merge-join, or even array
 lookup) instead.
@@ -313,7 +305,6 @@ linked with such a program.
 The MonetDB environment settings are collected in a configuration
 file. Amongst others it contains the location of the database
 directory.
-@
 First, the database
 directory is closed for other servers running at the same time.
 Second, performance enhancements may take effect, such as locking
@@ -692,33 +683,33 @@ typedef struct {
 @+ Binary Association Tables
 Having gone to the previous preliminary definitions, we will
 now introduce the structure of Binary Association Tables (BATs)
-in detail. They are the basic storage unit on which GDK is modeled.
-@T
+in detail. They are the basic storage unit on which GDK is modelled.
+
 The BAT holds an unlimited number of binary associations, called
-BUNs (@strong{ Binary UNits}).  The two attributes of a BUN are called
-@strong{ head} (left) and @strong{ tail} (right) in the remainder of this
+BUNs (@strong{Binary UNits}).  The two attributes of a BUN are called
+@strong{head} (left) and @strong{tail} (right) in the remainder of this
 document.
 
 @image{bat1}
 
 The above figure shows what a BAT looks like. It consists of two
 columns, called head and tail, such that we have always binary tuples
-(BUNs). The overlooking structure is the @strong{ BAT
-record}.  It points to a heap structure called the @strong{ BUN heap}.
+(BUNs). The overlooking structure is the @strong{BAT
+record}.  It points to a heap structure called the @strong{BUN heap}.
 This heap contains the atomic values inside the two columns. If they
 are fixed-sized atoms, these atoms reside directly in the BUN heap. If
 they are variable-sized atoms (such as string or polygon), however,
 the columns has an extra heap for storing those (such
-@strong{ variable-sized atom heaps} are then
-referred to as @strong{ Head Heap}s and @strong{ Tail Heap}s). The BUN heap then
+@strong{variable-sized atom heaps} are then
+referred to as @strong{Head Heap}s and @strong{Tail Heap}s). The BUN heap then
 contains integer byte-offsets (fixed-sized, of course) into a head-
 or tail-heap.
 @
 The BUN heap contains a contiguous range of BUNs. It starts after
-the @strong{ first} pointer, and finishes at the end in the @strong{ free}
-area of the BUN. All BUNs after the @strong{ inserted} pointer have been
+the @strong{first} pointer, and finishes at the end in the @strong{free}
+area of the BUN. All BUNs after the @strong{inserted} pointer have been
 added in the last transaction (and will be deleted on a transaction
-abort). All BUNs between the @strong{ deleted} pointer and the @strong{ first}
+abort). All BUNs between the @strong{deleted} pointer and the @strong{first}
 have been deleted in this transaction (and will be reinserted at a
 transaction abort).
 
@@ -811,7 +802,7 @@ typedef struct {
           /* Head properties */
           int    htype;            /* Head type number */
           str    hident;           /* name for head column */
-          bit    hkey;             /* head values shoul be unique? */
+          bit    hkey;             /* head values should be unique? */
           bit    hsorted;          /* are head values currently ordered? */
           bit    hvarsized;        /* for speed: head type is varsized? */
 	  oid	 halign;	   /* alignment OID for head. */
@@ -835,19 +826,19 @@ typedef struct {
  } BAT;
 @end example
 
-The internal structure of the @strong{ BAT} record is in fact much more complex,
+The internal structure of the @strong{BAT} record is in fact much more complex,
 but GDK programmers should refrain of making use of that.
 
 This reason for this complex structure is
 to allow for a BAT to exist in two incarnations at the time: the
-@emph{ normal view} and the @emph{ reversed view}. Each bat @emph{b} has a
- BATmirror(@emph{b}) which has the negative @strong{ cacheid} of b in the BBP.
+@emph{normal view} and the @emph{reversed view}. Each bat @emph{b} has a
+ BATmirror(@emph{b}) which has the negative @strong{cacheid} of b in the BBP.
 
 Since we don't want to pay cost to keep both views in line with each other
 under BAT updates, we work with shared pieces of memory between
 the two views. An update to one will thus automatically update the other.
-in the same line, we allow @strong{ synchronized BATs} (BATs with identical
-head columns, and marked as such in the @strong{ BAT Alignment} interface) now to
+in the same line, we allow @strong{synchronized BATs} (BATs with identical
+head columns, and marked as such in the @strong{BAT Alignment} interface) now to
 be clustered horizontally.
 
 @image{bat2}
@@ -1042,7 +1033,7 @@ they can either be stored on disk, loaded into memory, or memory mapped.
 
 @
 These routines should be used to alloc free or extend heaps;
-they insulate you from the different ways heaps can be accessed.
+they isolate you from the different ways heaps can be accessed.
 @{
 @h
 gdk_export int HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
@@ -1081,7 +1072,7 @@ HEAP_check       (Heap* h)
 The heap space starts with a private space that is left untouched by
 the normal chunk allocation.  You can use this private space e.g. to
 store the root of an rtree
-@%HEAP_malloc@ allocates a chunk of memory on the heap, and return an
+@%HEAP_malloc@ allocates a chunk of memory on the heap, and returns an
 index to it.  @%HEAP_free@ frees a previously allocated chunk
 @%HEAP_private@ returns an integer index to private space.
 @{
@@ -1137,7 +1128,6 @@ types, such as @%TYPE_int@....@%TYPE_ptr@, and the atomic types introduced
 by the user. The initial capacity to be accommodated within a BAT is
 indicated by @%cap@.
 Their extend is automatically incremented upon storage overflow.
-@
 Failure to create the BAT results in a NULL pointer.
 @
 The routine @%BATtmp@ creates an empty BAT storage area with the properties
@@ -1167,9 +1157,9 @@ gdk_export int BBPreclaim(BAT *b);
 @- BUN manipulation
 @multitable @columnfractions 0.08 0.7
 @item BAT*
-@tab BATins (BAT *b, *c)
+@tab BATins (BAT *b, ptr *c)
 @item BAT*
-@tab BATdel (BAT *b, *c)
+@tab BATdel (BAT *b, ptr *c)
 @item BAT*
 @tab BUNins (BAT *b, ptr left, ptr right)
 @item BAT*
@@ -1207,7 +1197,7 @@ first.
 @
 The update operations come in three flavors. Element-wise updates
 can use @%BUNins@, @%BUNreplace@, @%BUNdel@, and @%BUNdelHead@.
-The batch update are @%BATins@ and @%BATdel@.
+The batch update operations are @%BATins@ and @%BATdel@.
 @
 Only experts interested in speed may use @%BUNfastins@, since it skips most
 consistency checks, does not update search accelerators, and does
@@ -1235,7 +1225,7 @@ BAThtype(b) and  BATttype(b) find out the head and tail type of a BAT.
 @item
 BUNfirst(b) returns a BUN pointer to the first BUN as a BAT.
 @item
-BUNlast(b) returns the BUN pointer directly after the last BUn
+BUNlast(b) returns the BUN pointer directly after the last BUN
 in the BAT.
 @item
 BUNsize(b) gives the size in bytes of each BUN.
@@ -1357,15 +1347,15 @@ gdk_export BUN BUNfnd(BAT *b, ptr left);
 @item size_t
 @tab BATbuncount (BAT *b)
 @item str
-@tab BATrename (BAT *b; str nme)
+@tab BATrename (BAT *b, str nme)
 @item BAT *
-@tab BATkey (BAT *b; int onoff)
+@tab BATkey (BAT *b, int onoff)
 @item BAT *
-@tab BATset (BAT *b; int onoff)
+@tab BATset (BAT *b, int onoff)
 @item BAT *
-@tab BATmode (BAT *b; int mode)
+@tab BATmode (BAT *b, int mode)
 @item BAT *
-@tab BATsetaccess (BAT *b; int mode)
+@tab BATsetaccess (BAT *b, int mode)
 @item int
 @tab BATdirty (BAT *b)
 @item int
@@ -1386,7 +1376,7 @@ The BAT is given a new logical name using @%BATrename@.
 The integrity properties to be maintained for the BAT are controlled separately.
 A key property indicates that duplicates
 in the association dimension are not permitted. The BAT is turned into
-an set of associations using @%BATset@. Key and set properties
+a set of associations using @%BATset@. Key and set properties
 are orthogonal integrity constraints.
 The strongest reduction is obtained by making the BAT a set with key
 restrictions on both dimensions.
@@ -1396,7 +1386,8 @@ The system support four modes:
 PERSISTENT, TRANSIENT, and SESSION.
 The PERSISTENT BATs are automatically saved upon session boundary or
 transaction commit.
-Thereafter they are lost. TRANSIENT BATs are removed upon transaction boundary.
+TRANSIENT BATs are removed upon transaction boundary.
+SESSION BATs are removed at the end of a session.
 They are normally used to maintain temporary results.
 All BATs are initially TRANSIENT unless their mode is changed
 using the routine @%BATmode@.
@@ -1404,7 +1395,7 @@ using the routine @%BATmode@.
 The BAT properties may be changed at any time using @%BATkey@, @%BATset@,
 and @%BATmode@.
 
-Valid BAT access properties can be set with BATsetaccess and BATgetaccess:
+Valid BAT access properties can be set with @%BATsetaccess@ and @%BATgetaccess@:
 BAT_READ, BAT_APPEND, and BAT_WRITE.
 BATs can be designated to be read-only. In this case some
 memory optimizations may be made (slice and fragment bats can point
@@ -1471,8 +1462,6 @@ gdk_export int BATcheckmodes(BAT *b, int persistent, int unloadable);
 @tab BATreverse (BAT *b)
 @item BAT *
 @tab BATreset (BAT *b)
-@item BAT *
-@tab BATflipflop (BAT *b);
 @end multitable
 @
 The routine @%BATclear@ removes the binary associations, leading
@@ -1489,10 +1478,7 @@ It plays a crucial role in administration of query results.
 The routine @%BATmirror@ returns the mirror image BAT (where tail is head
 and head is tail) of that same BAT. This does not involve
 a state change in the BAT (as previously): both views on the BAT
-exist at the same time. To keep old code compatible
-there are now macro's for @%BATreverse@ (which assigns the mirrored BAT
-to its parameter), @%BATreset@ (which assigns the standard view),
-and @%BATflipflop@ (which assigns to the alternate view).
+exist at the same time. 
 @{
 @h
 gdk_export BAT *BATclear(BAT *b);
@@ -1501,13 +1487,6 @@ gdk_export BAT *BATrcopy(BAT *b);
 gdk_export BAT *BATmark(BAT *b, oid base);
 gdk_export BAT *BATnumber(BAT *b);
 gdk_export BAT *BATgroup(BAT *b, int start, int incr, int grpsize);
-@-
-Retain old-style source-level functionality where the BAT reversal
-induced a state change of the BAT parameter to it.
-@h
-#define BATreverse(b)	((b) = (((b)->batCacheid<0)?(b):BATmirror(b)))
-#define BATreset(b)	((b) = BBP_cache(ABS((b)->batCacheid)))
-#define BATflipflop(b)	((b) = BATmirror(b))
 @
 @}
 
@@ -1553,12 +1532,12 @@ from this mechanism, by pinning them. BATmmap\_pin/unpin do
 this for all heaps of a BAT.
 
 @- Heap Storage Modes
-The discriminative storage modes are memory-mapped, compressed, or in
+The discriminative storage modes are memory-mapped, compressed, or 
 loaded in memory.
-
-The @strong{ BATmmap()} changes the storage mode of each heaps associated to a BAT
-As can be seen in the bat record, each BAT has one BUN-heap (@emph{ bn}), and
-possibly two heaps (@emph{ hh} and @emph{ th}) for variable-sized atoms.
+The @strong{BATmmap()} changes the storage mode of each heap associated to 
+a BAT.
+As can be seen in the bat record, each BAT has one BUN-heap (@emph{bn}), and
+possibly two heaps (@emph{hh} and @emph{th}) for variable-sized atoms.
 @
 The @%BATmadvise@ call works in the same way. Using the @%madvise()@ system
 call it issues buffer management advise to the OS kernel, as for the
@@ -1612,12 +1591,10 @@ gdk_export int GDKmove(str dir1, str nme1, str ext1, str dir2, str nme2, str ext
 @item int
 @tab BATmultiprintf (stream *f, int argc, BAT *b[], int printoid, int order, int printorderby)
 @end multitable
-hline\end{tabular}
-@
+
 The functions to convert BATs into ASCII and the reverse use
 internally defined formats. They are primarily meant for ease of
 debugging and to a lesser extent for output processing.
-@
 Printing a BAT is done essentially by looping through its components,
 printing each association.
 If an index is available, it will be used.
@@ -1665,9 +1642,9 @@ check on the head values to see if their are ordered. The result
 is returned and stored in the @%hsorted@ field of the BAT.
 @%BATorder@ is similar to @%BATsort@, but sorts the BAT itself, rather
 than returning a copy (BEWARE: this operation destroys the
-delta information. TODO:fix). The @%BATrevorder@ puts all the live
+delta information. TODO:fix). The @%BATrevert@ puts all the live
 BUNs of a BAT in reverse order. It just reverses the sequence, so
-this does not mean that they are sorted in reverse order!
+this does not necessarily mean that they are sorted in reverse order!
 @{
 @h
 #define GDK_SORTED_REV	128	/* reversely sorted */
@@ -1884,59 +1861,59 @@ User defined atomic types can be added to a running system with
 the following interface:.
 
 @itemize
-@item @emph{ ATOMproperty()} registers a new atom definition, if there is no one
-registered
-yet under than name. It then installs the attribute of the named property.
+@item @emph{ATOMproperty()} registers a new atom definition, if there is no 
+atom registered yet under that name. 
+It then installs the attribute of the named property.
 Valid names are "size", "align", "null", "fromstr", "tostr", "cmp",
 "hash", "put", "get", "del", "length" and "heap".
 
-@item @emph{ ATOMdelete()} unregisters an atom definition.
+@item @emph{ATOMdelete()} unregisters an atom definition.
 
-@item @emph{ ATOMindex()} looks up the atom descriptor with a certain name.
+@item @emph{ATOMindex()} looks up the atom descriptor with a certain name.
 @end itemize
 @
 @- Atom Manipulation
 
 @itemize
-@item The @emph{ ATOMname()} operation retrieves the name of an atom using its id.
+@item The @emph{ATOMname()} operation retrieves the name of an atom using its id.
 
-@item The @emph{ ATOMsize()} operation returns the atoms fixed size.
+@item The @emph{ATOMsize()} operation returns the atoms fixed size.
 
-@item The @emph{ ATOMalign()} operation returns the atoms minimum alignment. If the
+@item The @emph{ATOMalign()} operation returns the atoms minimum alignment. If the
 alignment info was not specified explicitly during atom install, it
-GDK assumes the maximum value of {1,2,4,8} smaller than the atom size.
+assumes the maximum value of {1,2,4,8} smaller than the atom size.
 
-@item  The @emph{ ATOMnilptr()} operation returns a pointer to the nil-value of an
+@item  The @emph{ATOMnilptr()} operation returns a pointer to the nil-value of an
 atom. We usually take one dedicated value halfway down the negative
 extreme of the atom range (if such a concept fits), as the nil value.
 
-@item  The @emph{ ATOMnil()} operation returns a copy of the nil value,
+@item  The @emph{ATOMnil()} operation returns a copy of the nil value,
 allocated with GDKmalloc().
 
-@item The @emph{ ATOMheap()} operation creates a new var-sized atom heap in 'hp'
+@item The @emph{ATOMheap()} operation creates a new var-sized atom heap in 'hp'
 with capacity 'cap'.
 
-@item The @emph{ ATOMhash()} computes a hash index for a value. 'val' is a direct
+@item The @emph{ATOMhash()} computes a hash index for a value. `val' is a direct
 pointer to the atom value. Its return value should be an integer
 between 0 and 'mask'.
 
-@item The @emph{ ATOMcmp()} operation computes two atomic values. Its parameters
+@item The @emph{ATOMcmp()} operation computes two atomic values. Its parameters
 are pointers to atomic values.
 
-@item The @emph{ ATOMlen()} operation computes the byte length for a value.  'val'
+@item The @emph{ATOMlen()} operation computes the byte length for a value.  `val'
 is a direct pointer to the atom value. Its return value should be an
 integer between 0 and 'mask'.
 
-@item The @emph{ ATOMdel()} operation deletes a var-sized atom from its heap 'hp'.
-The integer byte-index of this value in the heap is pointed to by 'val\_src'.
+@item The @emph{ATOMdel()} operation deletes a var-sized atom from its heap `hp'.
+The integer byte-index of this value in the heap is pointed to by `val\_src'.
 
-@item The @emph{ ATOMput()} operation inserts an atom 'src\_val' in a BUN at
-'dst\_pos'. This involves copying the fixed sized part in the BUN. In
+@item The @emph{ATOMput()} operation inserts an atom `src_val' in a BUN at
+`dst_pos'. This involves copying the fixed sized part in the BUN. In
 case of a var-sized atom, this fixed sized part is an integer
 byte-index into a heap of var-sized atoms. The atom is then also
-copied into that heap 'hp'.
+copied into that heap `hp'.
 
-@item The @emph{ ATOMfix()} and @emph{ ATOMunfix()} operations do bookkeeping
+@item The @emph{ATOMfix()} and @emph{ATOMunfix()} operations do bookkeeping
 on the number of references that a GDK application maintains to the atom.
 In MonetDB, we use this to count the number of references by MIL variables
 directly, or through BATs that have columns of these atoms. The only operator
@@ -1944,26 +1921,26 @@ for which this is currently relevant is BAT. The operators return the
 POST reference count to the atom. BATs with fixable atoms may not be
 stored persistently.
 
-@item The @emph{ ATOMfromstr()} parses an atom value from string 's'. The memory
-allocation policy is the same as in @emph{ ATOMget()}. The return value is
+@item The @emph{ATOMfromstr()} parses an atom value from string `s'. The memory
+allocation policy is the same as in @emph{ATOMget()}. The return value is
 the number of parsed characters.
 
-@item The @emph{ ATOMprint()} prints an ASCII description of the atom value pointed
-to by 'val' on file descriptor 'fd'. The return value is the number of
+@item The @emph{ATOMprint()} prints an ASCII description of the atom value pointed
+to by `val' on file descriptor `fd'. The return value is the number of
 parsed characters.
 
-@item The @emph{ ATOMformat()} is similar to @emph{ ATOMprint()}. It prints an atom on a
-newly allocated string. It must later be freed with @strong{ GDKfree}.
+@item The @emph{ATOMformat()} is similar to @emph{ATOMprint()}. It prints an atom on a
+newly allocated string. It must later be freed with @strong{GDKfree}.
 The number of characters written is returned. This is minimally the
 size of the allocated buffer.
 
-@item The @emph{ ATOMdup()} makes a copy of the given atom. The storage
+@item The @emph{ATOMdup()} makes a copy of the given atom. The storage
 needed for this is allocated and should be removed by the user.
 @end itemize
 
 These wrapper functions correspond closely to the interface functions
 one has to provide for a user-defined atom. They basically (with
-exception of @emph{ ATOMput()}, @emph{ ATOMprint()} and @emph{ ATOMformat()})
+exception of @emph{ATOMput()}, @emph{ATOMprint()} and @emph{ATOMformat()})
 just have the atom id parameter prepended to them.
 @
 @{
@@ -2031,7 +2008,7 @@ gdk_export ptr ATOMdup(int id, ptr val);
 OIDseed (oid seed);
 @item oid
 @tab
-OIDnew (size\_t inc);
+OIDnew (size_t inc);
 @end multitable
 
 OIDs are special kinds of unsigned integers because the system
@@ -2042,7 +2019,7 @@ in the system internals and shouldn't affect semantics.
 @
 The @%OIDnew(N)@ claims a range of N contiguous unique,
 unused OIDs, and returns the starting value of this range.
-The highest OIDBITS designate site. [ not yet used]
+The highest OIDBITS designate site. [ DEPRECATED]
 @{
 @h
 gdk_export int OIDinit(void);
@@ -2496,7 +2473,6 @@ gdk_export str TMcntxt(void);
 
 The updates on a single BAT are kept separately from the stable
 partition until the user issues a @%BATcommit@ operation.
-
 The routine @%BATprecommit@ ensures that the information for recovery
 is safely stored away on a log. @%BATundo@ discards all updates made
 so-far.
@@ -2511,7 +2487,6 @@ all insertions and deletions take place immediately.
 The routine @%BATfakeCommit@ simply updates the delta information
 on BATs and clears the dirty bit. This avoids any
 copying to disk.
-
 The routine @%BATfakeRestart@ is like @%BATfakeCommit@, but
 marks all BUNs in the BAT as if they were newly inserted.
 @{
@@ -2711,17 +2686,16 @@ gdk_export int ALIGNsetH(BAT *b1, BAT *b2);
  (BAT *b,p,q,tl,th,s)
 @end multitable
 
-The @emph{ BATloop()} looks like a function call, but is actually a macro.
+The @emph{BATloop()} looks like a function call, but is actually a macro.
 The following example gives an indication of how they are to be used:
 @example
 void
 print\_a\_bat(BAT *b)
 {
-        BUN p, q;
-
-        BATloop(b, p, q)
-                printf("Element %3d has value %d\n",
-                       *(int*) BUNhead(b, p), *(int*) BUNtail(b, p));
+	BUN p, q;
+	BATloop(b, p, q)
+		printf("Element %3d has value %d\n",
+			   *(int*) BUNhead(b, p), *(int*) BUNtail(b, p));
 }
 @end example
 
@@ -2756,10 +2730,10 @@ Again, the b is a BAT, p and q are BUNs, where p is the iteration variable.
 	for (q = (b)->batFirst, p = (b)->batDeleted, x=BUNsize(b); p < q; p += x)
 
 @- hash-table supported loop over BUNs
-The first parameter 'b' is a BAT, the second ('h') should point to
-'b->hhash', and 'v' a pointer to an atomic value (corresponding to the
-head column of 'b'). The 'hb' is an integer index, pointing out the
-'hb'-th BUN. You should translate this index with @%BUNptr(b,hb)@ to
+The first parameter `b' is a BAT, the second (`h') should point to
+`b->hhash', and `v' a pointer to an atomic value (corresponding to the
+head column of `b'). The 'hb' is an integer index, pointing out the
+`hb'-th BUN. You should translate this index with @%BUNptr(b,hb)@ to
 obtain a BUN from the iteration variable.
 @h
 #define HASHloop(b, h, hb, v)						\
@@ -2790,7 +2764,7 @@ print_books(BAT *author\_books, str author)
 
         printf("%s\n==================\n", author);
         HASHloop(b, (b)->hhash, i, author)
-                printf("%s\n", ((str) BUNtail(b, BUNptr(b,i)));
+			printf("%s\n", ((str) BUNtail(b, BUNptr(b,i)));
 }
 @end example
 @
@@ -2945,10 +2919,10 @@ That is to say, if synced(b2,b2) => synced(@{X@}(b1),@{Y@}(b2))
 
 Another example is b.fetch(position-bat). If synced(b2,b2) and the same
 position-bat is fetched with, the results will again be synced.
-This can be mimicked by transforming the @emph{ alignment-id} of the input
+This can be mimicked by transforming the @emph{alignment-id} of the input
 BAT with a one-way function onto the result.
 
-We use @strong{ output->halign = NOID_AGGR(input->halign)} for the
+We use @strong{output->halign = NOID_AGGR(input->halign)} for the
 @strong{output = @{X@}(input)} case, and
 @strong{output->align = NOID_MULT(input1->align,input2->halign)} for
 the fetch.

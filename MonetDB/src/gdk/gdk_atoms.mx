@@ -412,7 +412,7 @@ The parameter @%id@ denotes the type name; an entry is created if the type
 is so far unknown. The @%property@ argument is a string identifying the
 type description property to be updated. Valid property
 names are @%size, tostr, fromstr, put, get, cmp, eq, del, hash, null@,
-@%new, and heap@.
+@%new@, and @%heap@.
 
 The size describes the amount of space to be reserved in the BUN.
 
@@ -430,7 +430,7 @@ value to a memory resident string equivalent. @%FromStr@ takes a
 string and applies a @%put@ to store it within a BAT. 
 They are used to prepare for readable output/input and to support coercion.
 
-The routines @%cmp@ and @%eq@ are comparisons routines used to build access 
+The routines @%cmp@ and @%eq@ are comparison routines used to build access 
 structures. The @%null@ returns a reference to a null value representation.
 @- 
 The incremental atom construction uses hardwired properties.
@@ -734,7 +734,7 @@ ATOMnil(int t)
 
 @}
 @- Derived types
-In all algorithms across GDK, you will switches on the types
+In all algorithms across GDK, you will find switches on the types
 ( chr, sht, int, flt, dbl, lng, str). They respectively represent 
 an octet, a 16-bit int, a 32-bit int, a 32-bit float, a 64-bit double,
 a 64-bit int, and a pointer-sized location of a char-buffer (ended by 
@@ -1527,7 +1527,7 @@ fltFromStr(char *src, int *len, flt **dst)
 @}
 
 @+ String Atom Implementation
-The Built-in type string is funneled partly through the atom extension
+The Built-in type string is partly handled in an atom extension
 library. The main reason is to limit the number of built-in types
 in the BAT library kernel. Moreover, an extra indirection for a string is less
 harmful than for manipulation of, e.g. an int.
@@ -1535,7 +1535,7 @@ harmful than for manipulation of, e.g. an int.
 The internal representation of strings is without escape sequences.
 When the string is printed we should add the escapes back into it.
 
-The current escape policy is that '"' and "'" can be prepended by a
+The current escape policy is that single- and double-quote can be prepended by a
 backslash. Furthermore, the backslash may be followed by three
 octal digits to denote a character.
 
@@ -1572,12 +1572,12 @@ storage overhead should be low.
 @-
 Notice that this mechanism enables to keep a certain linear storage property
 in the string heaps. This is important if we want to take a BATslice on a BAT
-by simply loading or mmap()ping slices of the BAT files on disk into memory.
+by simply loading or @strong{mmap()}ping slices of the BAT files on disk into memory.
 This is relevant in order to process a very large BAT iteratively by taking slices
 in order to reduce memory consumption. Notice that if there are few different string 
 values, the hash table has not overflowed, and the string heap size will be small 
 (i.e. < GDK_ELIMLIMIT), so in those cases it is not a problem to load the entire string heap.
-If the hash table *has* overflowed, we want to be able to only map a slice of the 
+If the hash table @strong{has} overflowed, we want to be able to only map a slice of the 
 string heap as well. Now, given that the first string in the BAT-slice is called F1 
 and its heap offset is O1 and the last string in the slice is F2 and its 
 offset is O2, then the slice we should take from the string heap is: 
@@ -1600,15 +1600,16 @@ strElimDoubles(Heap *h)
 @}
 @- String Comparison, NILs and UTF-8
 
-Using the char* type for strings is handy as this is the type of any constant strings 
-in a C/C++ program. Therefore, Monet uses this definition for 'str'. 
-However, different compilers and platforms use either signed or unsigned characters 
-for the 'char' type :-( ..
-
-It is required that string ordering in Monet is consistent over platforms though.
+Using the char* type for strings is handy as this is the type of any 
+constant strings 
+in a C/C++ program. Therefore, MonetDB uses this definition for @%str@. 
+However, different compilers and platforms use either signed or unsigned 
+characters for the @%char@ type.
+It is required that string ordering in MonetDB is consistent over 
+platforms though.
 
 As for the choice how strings should be ordered, our support for UTF-8 actually imposes that it
-should follow 'unsigned char' doctrine (like in the AIX native compiler). In this semantics, though
+should follow `unsigned char' doctrine (like in the AIX native compiler). In this semantics, though
 we have to take corrective action to ensure that str(nil) is the smallest value of the domain.
 @{
 @h

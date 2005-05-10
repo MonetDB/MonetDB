@@ -222,7 +222,7 @@ fix_heap( BAT *b )
 {
 	if (b) {
 		Heap buns, hh, th;
-		BAT *n = BATreset(b);
+		BAT *n = ((b) = BBP_cache(ABS((b)->batCacheid)));
 		BAT *m = BATmirror(n);
 		BAT *v;
 		BATstore *bs = (BATstore *) n;

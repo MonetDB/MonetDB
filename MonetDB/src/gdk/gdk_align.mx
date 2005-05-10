@@ -510,7 +510,7 @@ VIEWreset(BAT *b)
 
 	if (b && parent) {
 		Heap buns, hh, th;
-		BAT *n = BATreset(b);
+		BAT *n = ((b) = BBP_cache(ABS((b)->batCacheid)));
 		BAT *m = BATmirror(n);
 		BAT *v;
 		BATstore *bs = (BATstore *) n;
@@ -657,7 +657,7 @@ Destroy a view.
 void
 VIEWdestroy(BAT *v)
 {
-	BAT *b = BATreset(v);
+	BAT *b = ((v) = BBP_cache(ABS((v)->batCacheid)));
 	BAT *m = BATmirror(b);
 
 	if (b) {

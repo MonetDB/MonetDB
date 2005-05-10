@@ -222,8 +222,8 @@ BATins_sunique(BAT *bn, BAT *b)
 		return BATins_kunique(bn, b);
 	}
 	if ((BATtordered(b) & 1) && ATOMstorage(b->ttype) < TYPE_str) {
-		BATflipflop(bn);
-		BATflipflop(b);
+		bn= BATmirror(bn);
+		b= BATmirror(b);
 	}
 	@:elim_doubles(s)@
 	return bn;
@@ -530,9 +530,9 @@ BATins_@1@2(BAT *bn, BAT *l, BAT *r)
 		}
 		if (flip) {
 			merge = BATatoms[l->ttype].atomCmp;
-			BATflipflop(r);
-			BATflipflop(l);
-			BATflipflop(bn);
+			r= BATmirror(r);
+			l= BATmirror(l);
+			bn= BATmirror(bn);
 		}
 	}
 	merge = BATatoms[l->htype].atomCmp;

@@ -465,7 +465,7 @@ BATfree(BAT *b)
 	BATcheck(b, "BATfree");
 
 	/* deallocate all memory for a bat */
-	BATreset(b);
+	b = (((b)->batCacheid<0)?(b):BATmirror(b));
 	if (b->hident && !default_ident(b->hident)) {
 		GDKfree(b->hident);
 		b->hident = string_h;
@@ -600,15 +600,12 @@ BATrcopy(BAT *b)
 	return bn;
 }
 
-@}
 @+ BAT Unit Manipulation
 Binary units (tuples) are the elements stored in BATs. We
 discuss here BUN insert, replace and delete.
-
-The below are help macro's that actually move the BUNs
+Below are help macro's that actually move the BUNs
 around and adapt search accelerator structures.
  
-@{
 @h
 #define hashins(h,i,v,n) HASHins(h,i,v)
 #define hashdel(h,i,v,n) HASHdel(h,i,v,n)
@@ -1451,8 +1448,8 @@ on disk. The crash-consistent state of transient BATs is irrelevant as they disa
 after a crash. Even the crash-consistency of persistent BATs that did not make their first
 commit is not relevant as they also will disappear.
 
-Also, some heaps may be in use with STORE\_MMAP even if they are appendable, as we suppose our
-code is bug-free (:-) and we know we won't modify the already committed parts of the mapped
+Also, some heaps may be in use with STORE_MMAP even if they are appendable, as we suppose our
+code is bug-free and we know we won't modify the already committed parts of the mapped
 file pages. For string-heaps append-bats may mmap the heap if doubles are not  being eliminated
 anymore (i.e. when the contents of the builtin hash table at the start of the string heap
 are not crucial anymore).

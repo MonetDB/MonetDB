@@ -356,7 +356,7 @@ createBat(char *name, int ht, int tt)
 
 	if ((i = BBPindex(name)) != 0) {
 		b = BATdescriptor(i);
-		BATreset(b);
+		b = BBP_cache(ABS((b)->batCacheid));
 		BATclear(b);
 	} else
 		b = BATnew(ht, tt, 100000);
