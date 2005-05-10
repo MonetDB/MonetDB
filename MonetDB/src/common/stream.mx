@@ -214,6 +214,9 @@ of a stream. Reading can be done in large chunks and
 access can be done in smaller bits, by directly accessing the underlying
 buffer.
 
+Beware that a flush on a buffered stream emits an empty block to
+synchronize with the other side, telling it has reached the end
+of the sequence and can close its descriptors.
 @h
 typedef struct bstream {
 	stream *s;
