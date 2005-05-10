@@ -52,6 +52,7 @@ smallTOC_SHARED_MODS =	\
 	../modules/plain/lib_streams	\
 	../modules/plain/lib_tcpip	\
 	../modules/plain/lib_unix	\
+	../modules/plain/lib_upgrade	\
 	../modules/plain/lib_url	\
 	../modules/plain/lib_xtables	\
 	\

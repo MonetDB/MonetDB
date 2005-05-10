@@ -53,6 +53,7 @@
 @:install_module(stats)@
 @:install_module(tcpip)@
 @:install_module(unix)@
+@:install_module(upgrade)@
 @:install_module(url)@
 @:install_module(ascii_io)@
 
