@@ -41,6 +41,7 @@ MODULES.replace("sys",       "plain");
 MODULES.replace("tcpip",     "plain");
 MODULES.replace("trans",     "plain");
 MODULES.replace("unix",      "plain");
+MODULES.replace("upgrade",   "plain");
 MODULES.replace("url",       "plain");
 MODULES.replace("xtables",   "plain");
 MODULES.replace("array",     "contrib");

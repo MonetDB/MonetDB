@@ -51,6 +51,7 @@ table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 [ "streams"	  ]
 [ "tcpip"	  ]
 [ "unix"	  ]
+[ "upgrade"	  ]
 [ "url"		  ]
 [ "xtables"	  ]
 Plain_mods@batloop() {
@@ -1219,6 +1220,16 @@ Module: "unix"
 #---------------------------------------------------------------------------------------------------------#
 [ "getenv",	  "COMMAND:   ",  "getenv(str) : str",		  "Get the environment variable string."  ]
 [ "setenv",	  "COMMAND:   ",  "setenv(str, str) : bit",	  "Set the environment variable string."  ]
+
+Module: "upgrade"
+
+[ 1 ]
+[ 1 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# tmp_35		tmp_36		tmp_37			tmp_40															  # name
+# str		str		str			str															  # type
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "convert",	  "COMMAND:   ",  "convert(str) : void",  "convert the bats in the given bat directory (ie please supply the full directory, for example $dbfarm/dbname/bat)"	  ]
 
 Module: "url"
 

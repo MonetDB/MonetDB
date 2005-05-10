@@ -60,6 +60,7 @@ stdout of test '00_Mserver` in directory 'tests/Availability` itself:
 [ "txtsim",	  "contrib"	  ]
 [ "uchr",	  "contrib"	  ]
 [ "unix",	  "plain"	  ]
+[ "upgrade",	  "plain"	  ]
 [ "url",	  "plain"	  ]
 [ "vector",	  "contrib"	  ]
 [ "wisc",	  "contrib"	  ]
@@ -70,13 +71,13 @@ ls();
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "MODULES",	  "str",  "str",  52,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",	  "str",  "str",  53,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 
 dir();
 #-----------------------------------------------------------------------------------------------------------------#
 # name			| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #-----------------------------------------------------------------------------------------------------------------#
-[ "MODULES",		  "str",  "str",  52,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
+[ "MODULES",		  "str",  "str",  53,	  0,	  "clean",	  "load", "pers", 0,	  2		  ]
 [ "adm_atomtbl",	  "str",  "int",  13,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "adm_fcntbl",		  "str",  "oid",  674,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
 [ "monet_environment",	  "str",  "str",  31,	  0,	  "dirty",	  "load", "tran", 1,	  1		  ]
@@ -161,6 +162,7 @@ table(kdiff(view_modules().reverse().kunique(),monet_mod_nme.reverse()).sort().r
 [ "txtsim"		  ]
 [ "uchr"		  ]
 [ "unix"		  ]
+[ "upgrade"	  ]
 [ "url"			  ]
 [ "vector"		  ]
 [ "wisc"		  ]

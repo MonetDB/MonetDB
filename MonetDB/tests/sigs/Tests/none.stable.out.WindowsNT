@@ -90,6 +90,7 @@ view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 [ "txtsim",	  nil	  ]
 [ "uchr",	  nil	  ]
 [ "unix",	  nil	  ]
+[ "upgrade",	  nil	  ]
 [ "url",	  nil	  ]
 [ "vector",	  nil	  ]
 [ "wisc",	  nil	  ]
@@ -150,6 +151,7 @@ others.mark(oid(nil)).print();
 [ "wisc",	  nil	  ]
 [ "vector",	  nil	  ]
 [ "url",	  nil	  ]
+[ "upgrade",	  nil	  ]
 [ "unix",	  nil	  ]
 [ "uchr",	  nil	  ]
 [ "txtsim",	  nil	  ]
@@ -332,9 +334,46 @@ others@batloop(){
 
 	dropping url
 
-#---------------------------------#
-# module	| usage_count	  #
-#---------------------------------#
+#-------------------------#
+# tmp_41		tmp_32	  # name
+# str		int	  # type
+#-------------------------#
+[ "algebra",	  1	  ]
+[ "arith",	  1	  ]
+[ "bat",	  1	  ]
+[ "builtin",	  1	  ]
+[ "main",	  1	  ]
+[ "str",	  1	  ]
+[ "sys",	  1	  ]
+[ "trans",	  1	  ]
+
+	loading upgrade
+
+#-------------------------#
+# tmp_33		tmp_37	  # name
+# str		int	  # type
+#-------------------------#
+[ "algebra",	  1	  ]
+[ "arith",	  1	  ]
+[ "bat",	  1	  ]
+[ "builtin",	  1	  ]
+[ "main",	  1	  ]
+[ "str",	  1	  ]
+[ "sys",	  1	  ]
+[ "trans",	  1	  ]
+[ "upgrade",	  1	  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "upgrade",	  nil	  ]
+
+	dropping upgrade
+
+#-------------------------#
+# tmp_33		tmp_40	  # name
+# str		int	  # type
+#-------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]

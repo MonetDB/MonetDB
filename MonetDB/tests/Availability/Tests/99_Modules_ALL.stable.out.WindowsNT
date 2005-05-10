@@ -33,6 +33,7 @@ All_mods@batloop() {
      wisc: loading... done.
    vector: loading... done.
       url: loading... done.
+  upgrade: loading... done.
      unix: loading... done.
      uchr: loading... done.
    txtsim: loading... done.
@@ -131,6 +132,7 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "txtsim"	  ]
 [ "uchr"	  ]
 [ "unix"	  ]
+[ "upgrade"	  ]
 [ "url"		  ]
 [ "vector"	  ]
 [ "wisc"	  ]
