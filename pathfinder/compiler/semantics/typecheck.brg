@@ -666,17 +666,17 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* LocationStep:       self (SequenceType) */
         case 28:
-            TY(p) = PFty_star (TY(L(p)));
+            TY(p) = TY(L(p));
             break;
 
         /* LocationSteps:      locsteps (LocationStep, LocationSteps) */
         case 29:
-            TY(p) = *PFty_simplify (TY(L(p)));
+            TY(p) = *PFty_simplify (PFty_quantifier (TY(R(p))) (TY(L(p))));
             break;
 
         /* LocationSteps:      locsteps (LocationStep, Atom) */
         case 30:
-            TY(p) = *PFty_simplify (TY(L(p)));
+            TY(p) = *PFty_simplify (PFty_quantifier (TY(R(p))) (TY(L(p))));
             break;
 
         /* CoreExpr:           apply (FunctionArgs) */
