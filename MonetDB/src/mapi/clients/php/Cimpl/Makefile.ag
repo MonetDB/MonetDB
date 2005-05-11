@@ -17,12 +17,18 @@
 
 MTSAFE
 
-SUBDIRS = HAVE_PEAR?DB examples 
+SWIGFLAGS = -I../../C
+INCLUDES = ../../C ../../../../common @PHP_INCS@
 
-INCLUDES = ../../../../common ../../C @PHP_INCS@
+# we need this flag to allow for a name that does not start with "lib"
+monetdb_la_LDFLAGS = -module
+
+# with gcc we could use these
+#X_CFLAGS = -Wno-unused-parameter -Wno-unused-function
+# but we certainly have to override the default X_CFLAGS:
 X_CFLAGS = -DCOMPILE_DL_MONETDB=1 -D_GNU_SOURCE
 
-monetdb_la_LDFLAGS = -module
+SUBDIRS = HAVE_PEAR?DB examples 
 
 lib_monetdb = {
 	PREFIX =
