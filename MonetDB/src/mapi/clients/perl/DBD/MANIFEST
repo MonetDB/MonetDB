@@ -1,6 +1,7 @@
 MANIFEST
 MANIFEST.SKIP
 Makefile.PL
+README
 monetdb.pm
 monetdb/GetInfo.pm
 monetdb/TypeInfo.pm
