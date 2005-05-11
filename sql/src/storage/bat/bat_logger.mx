@@ -309,7 +309,7 @@ log_read_create(logger *logger, logformat *l, char *name)
 		if (hseq)
 			BATseqbase(b, 0);
 		if (tseq)
-			BATseqbase(BATreverse(b), 0);
+			BATseqbase(b=BATmirror(b), 0);
 
 		if (!b) {
 			GDKerror("logger could not create bat (%s,%s,%s,%d,%d)\n", name, ha, ta, ht, tt);
