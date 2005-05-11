@@ -1791,28 +1791,29 @@ static void
 translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type)
 {
     char *kind;
+    PFty_t exp_type;
     /* '()?' = 0; '()' = 1; '()*' = 2; '()+' = 3; */
     int qualifier = 1;
 
-    seq_type = PFty_defn (seq_type);
+    exp_type = PFty_defn (seq_type);
 
-    if (seq_type.type == ty_opt)
+    if (exp_type.type == ty_opt)
     {
         qualifier = 0;
-        seq_type = PFty_child (seq_type);
+        exp_type = PFty_child (exp_type);
     }
-    else if (seq_type.type == ty_star)
+    else if (exp_type.type == ty_star)
     {
         qualifier = 2;
-        seq_type = PFty_child (seq_type);
+        exp_type = PFty_child (exp_type);
     }
-    else if (seq_type.type == ty_plus)
+    else if (exp_type.type == ty_plus)
     {
         qualifier = 3;
-        seq_type = PFty_child (seq_type);
+        exp_type = PFty_child (exp_type);
     }
 
-    if (TY_EQ(seq_type, PFty_empty ()))
+    if (TY_EQ(exp_type, PFty_empty ()))
     {
         milprintf(f,
                 "{ # typeswitch\n"
@@ -1826,21 +1827,22 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
                 cur_level, cur_level);
         return;
     }
-    else if (TY_EQ (seq_type, PFty_integer ()))
+    else if (TY_EQ (exp_type, PFty_integer ()))
         kind = "INT";
-    else if (TY_EQ (seq_type, PFty_decimal ()))
+    else if (TY_EQ (exp_type, PFty_decimal ()))
         kind = "DEC";
-    else if (TY_EQ (seq_type, PFty_string ()))
+    else if (TY_EQ (exp_type, PFty_string ()))
         kind = "STR";
-    else if (TY_EQ (seq_type, PFty_double ()))
+    else if (TY_EQ (exp_type, PFty_double ()))
         kind = "DEC";
-    else if (TY_EQ (seq_type, PFty_boolean ()))
+    else if (TY_EQ (exp_type, PFty_boolean ()))
         kind = "BOOL";
-    else if (TY_EQ (seq_type, PFty_untypedAtomic ()))
+    else if (TY_EQ (exp_type, PFty_untypedAtomic ()))
         kind = "U_A";
     else
         PFoops (OOPS_TYPECHECK,
-                "couldn't solve typeswitch at compile time;"
+                "couldn't solve typeswitch at compile time "
+                "(runtime checks only support atomic types);"
                 " don't know if '%s' is subtype of '%s'",
                 PFty_str(input_type), PFty_str(seq_type));
 
