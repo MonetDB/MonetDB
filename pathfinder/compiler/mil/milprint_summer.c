@@ -1232,7 +1232,7 @@ translateSequence (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 static void
 translateVar (opt_t *f, int cur_level, PFvar_t *v)
 {
-    milprintf(f, "{ # translateVar (c)\n");
+    milprintf(f, "{ # translateVar (%s)\n", PFqname_str(v->qname));
     milprintf(f, "var vid := v_vid%03u.ord_uselect(%i@0);\n", 
             cur_level, v->vid);
     milprintf(f, "vid := vid.mark(0@0).reverse();\n");
@@ -1241,7 +1241,7 @@ translateVar (opt_t *f, int cur_level, PFvar_t *v)
     milprintf(f, "item := vid.leftfetchjoin(v_item%03u);\n", cur_level);
     milprintf(f, "kind := vid.leftfetchjoin(v_kind%03u);\n", cur_level);
     milprintf(f, "vid := nil_oid_oid;\n");
-    milprintf(f, "} # end of translateVar (c)\n");
+    milprintf(f, "} # end of translateVar (%s)\n", PFqname_str(v->qname));
 }
 
 /**
@@ -5249,7 +5249,7 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
             "var list2 := iter.[lng]();\n"
             "if (diff > 0)\n"
             "{\n"
-            "    var shift := int(log(dbl(diff))/log(2.0)) + 1;\n"
+            "    var shift := int(log(dbl(max))/log(2.0)) + 1;\n"
             "    list1 := list1.[<<](shift).[or](kind%03u.[-](min).[lng]());\n"
             "    list2 := list2.[<<](shift).[or](kind.[-](min).[lng]());\n"
             "}\n"
@@ -5258,7 +5258,7 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
             "diff := max - min;\n"
             "if (diff > 0)\n"
             "{\n"
-            "    var shift := int(log(dbl(diff))/log(2.0)) + 1;\n"
+            "    var shift := int(log(dbl(max))/log(2.0)) + 1;\n"
             "    list1 := list1.[<<](shift).[or](item%03u.[lng]().[-](min));\n"
             "    list2 := list2.[<<](shift).[or](item.[lng]().[-](min));\n"
             "}\n"
