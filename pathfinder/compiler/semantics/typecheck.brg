@@ -666,7 +666,7 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* LocationStep:       self (SequenceType) */
         case 28:
-            TY(p) = TY(L(p));
+            TY(p) = PFty_star (TY(L(p)));
             break;
 
         /* LocationSteps:      locsteps (LocationStep, LocationSteps) */
