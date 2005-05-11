@@ -294,10 +294,11 @@ public class MonetConnection extends Thread implements Connection {
 	 * returns a response string for the server.  If the challenge string
 	 * is null, a challengeless response is returned.
 	 *
-	 * @param chalstring the challenge string
+	 * @param chalstr the challenge string
 	 * @param username the username to use
 	 * @param password the password to use
 	 * @param language the language to use
+	 * @param blocked whether to use blocked protocol
 	 * @param database the database to connect to
 	 */
 	private String getChallengeResponse(
@@ -830,8 +831,6 @@ public class MonetConnection extends Thread implements Connection {
 	 * discarded.
 	 *
 	 * @param command the exact string to send to MonetDB
-	 * @return a string containing errors that occurred after the command was
-	 *         executed, or null if no errors occurred
 	 * @throws SQLException if an IO exception or a database error occurs
 	 */
 	void sendIndependantCommand(String command) throws SQLException {
@@ -1546,7 +1545,7 @@ public class MonetConnection extends Thread implements Connection {
 		 * @param chrLine a character array holding the input data
 		 * @param start where the relevant data starts
 		 * @param stop where the relevant data stops
-		 * @returns an array of Strings
+		 * @return an array of Strings
 		 */
 		final private String[] getValues(char[] chrLine, int start, int stop) {
 			int elem = 0, capacity = 25;
@@ -1593,7 +1592,7 @@ public class MonetConnection extends Thread implements Connection {
 		 * @param chrLine a character array holding the input data
 		 * @param start where the relevant data starts
 		 * @param stop where the relevant data stops
-		 * @returns the first String found
+		 * @return the first String found
 		 */
 		private final String getValue(char[] chrLine, int start, int stop) {
 			for (int i = start; i < stop; i++) {

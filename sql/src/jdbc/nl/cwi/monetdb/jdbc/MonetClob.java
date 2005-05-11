@@ -152,7 +152,7 @@ public class MonetClob implements Clob {
 	 *        this Clob object represents
 	 * @param offset the offset into str to start reading the
 	 *        characters to be written
-	 * @param the number of characters to be written
+	 * @param len the number of characters to be written
 	 * @return the number of characters written
 	 * @throws SQLException if there is an error accessing the
 	 *         CLOB value
