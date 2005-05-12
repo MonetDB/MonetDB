@@ -947,7 +947,8 @@ sqltypeinit()
 	sql_type **misc, **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
 	sql_type *INT, *LNG, *OID, *BIT, *DBL;
-	sql_type *SECINT, *MONINT, *DTE, *TME, *TMESTAMP;
+	sql_type *SECINT, *MONINT, *DTE; 
+	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 
 	lock = MT_create_lock();
 
@@ -996,7 +997,9 @@ sqltypeinit()
 	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 0, 0, 10, 64, 1, "lng");
 	DTE = *t++ = sql_create_type("DATE", 0, 0, 0, 0, 1, "date");
 	TME = *t++ = sql_create_type("TIME", 0, 0, 0, 0, 1, "daytime");
+	TMETZ = *t++ = sql_create_type("TIMETZ", 0, SCALE_FIX, 0, 0, 1, "daytime");
 	TMESTAMP = *t++ = sql_create_type("TIMESTAMP", 0, 0, 0, 0, 1, "timestamp");
+	TMESTAMPTZ = *t++ = sql_create_type("TIMESTAMPTZ", 0, SCALE_FIX, 0, 0, 1, "timestamp");
 
 	*t++ = sql_create_type("BLOB", 0, 0, 0, 0, 0, "sqlblob");
 	end = t;
@@ -1205,12 +1208,16 @@ sqltypeinit()
 	/* Convert timestamp -> time and timestamp -> date */
 	sql_create_func("convert", "daytime", TMESTAMP, NULL, TME, SCALE_NONE);
 	sql_create_func("convert", "date", TMESTAMP, NULL, DTE, SCALE_NONE);
+	sql_create_func("convert", "daytime", TMETZ, NULL, TME, SCALE_NONE);
+	sql_create_func("convert", "timestamp", TMESTAMPTZ, NULL, TMESTAMP, SCALE_NONE);
 
-	sql_create_func("current_date", "current_date", NULL, NULL, DTE, SCALE_NONE);
 	sql_create_func("curdate", "current_date", NULL, NULL, DTE, SCALE_NONE);
-	sql_create_func("current_time", "current_time", NULL, NULL, TME, SCALE_NONE);
-	sql_create_func("curtime", "current_time", NULL, NULL, TME, SCALE_NONE);
-	sql_create_func("current_timestamp", "current_timestamp", NULL, NULL, TMESTAMP, SCALE_NONE);
+	sql_create_func("current_date", "current_date", NULL, NULL, DTE, SCALE_NONE);
+	sql_create_func("curtime", "current_time", NULL, NULL, TMETZ, SCALE_NONE);
+	sql_create_func("current_time", "current_time", NULL, NULL, TMETZ, SCALE_NONE);
+	sql_create_func("current_timestamp", "current_timestamp", NULL, NULL, TMESTAMPTZ, SCALE_NONE);
+	sql_create_func("localtime", "current_time", NULL, NULL, TME, SCALE_NONE);
+	sql_create_func("localtimestamp", "current_timestamp", NULL, NULL, TMESTAMP, SCALE_NONE);
 
 	sql_create_func("sql_sub", "date_sub_sec_interval", DTE, SECINT, DTE, SCALE_FIX);
 	sql_create_func("sql_sub", "date_sub_month_interval", DTE, MONINT, DTE, SCALE_FIX);
