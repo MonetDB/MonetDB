@@ -9,9 +9,20 @@ stdout of test 'attr_err` in directory 'tests/XQuery` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-!ERROR: attributes are not unique in element construction of 'foo' within each iteration
 
-# 06:41:22 >  
-# 06:41:22 >  Done.
-# 06:41:22 >  
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 19:02:22 >  
+# 19:02:22 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=53711 attr_err.xq
+# 19:02:22 >  
+
+
+# 19:02:23 >  
+# 19:02:23 >  Done.
+# 19:02:23 >  
 

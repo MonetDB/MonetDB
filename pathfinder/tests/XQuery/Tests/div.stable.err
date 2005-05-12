@@ -59,7 +59,13 @@ stderr of test 'div` in directory 'tests/XQuery` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
-# 23:34:05 >  
-# 23:34:05 >  Done.
-# 23:34:05 >  
+# 19:02:02 >  
+# 19:02:02 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=54624 div.xq
+# 19:02:02 >  
+
+!ERROR: division by 0 is forbidden
+
+# 19:02:02 >  
+# 19:02:02 >  Done.
+# 19:02:02 >  
 

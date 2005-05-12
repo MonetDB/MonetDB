@@ -59,7 +59,13 @@ stderr of test 'cast2` in directory 'tests/XQuery` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
-# 23:33:17 >  
-# 23:33:17 >  Done.
-# 23:33:17 >  
+# 19:01:38 >  
+# 19:01:38 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=51436 cast2.xq
+# 19:01:38 >  
+
+!ERROR: couldn't cast all values to integer
+
+# 19:01:38 >  
+# 19:01:38 >  Done.
+# 19:01:38 >  
 

@@ -9,6 +9,18 @@ stdout of test 'step_following5` in directory 'tests/XQuery` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 18:02:55 >  
+# 18:02:55 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=59075 q01.xq
+# 18:02:55 >  
+
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
 <book year="1999">

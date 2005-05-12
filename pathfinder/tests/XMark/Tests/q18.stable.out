@@ -9,6 +9,18 @@ stdout of test 'q18` in directory 'tests/XMark` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 18:03:15 >  
+# 18:03:15 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=50964 q18.xq
+# 18:03:15 >  
+
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
 858.587484 330.798920 259.729270 1608.730395 1735.311502 957.181473 9.740399 30.345088 2808.562385 1337.233313 178.147923 269.095038 382.387773 1626.007482 1453.280686 598.615806 543.324720 430.164207 583.101687 414.187309 3219.884871 392.855396 530.278756 2019.479917 700.206841 531.270426 229.097700 10102.313856 679.514003 110.912728 132.376864 

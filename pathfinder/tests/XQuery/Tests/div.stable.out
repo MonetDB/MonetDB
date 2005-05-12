@@ -9,9 +9,20 @@ stdout of test 'div` in directory 'tests/XQuery` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-suse-linux/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-!ERROR: division by 0 is forbidden
 
-# 23:34:05 >  
-# 23:34:05 >  Done.
-# 23:34:05 >  
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 19:02:02 >  
+# 19:02:02 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=54624 div.xq
+# 19:02:02 >  
+
+
+# 19:02:02 >  
+# 19:02:02 >  Done.
+# 19:02:02 >  
 

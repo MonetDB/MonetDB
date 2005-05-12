@@ -59,7 +59,13 @@ stderr of test 'attr_err` in directory 'tests/XQuery` itself:
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
-# 23:34:43 >  
-# 23:34:43 >  Done.
-# 23:34:43 >  
+# 19:02:22 >  
+# 19:02:22 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=53711 attr_err.xq
+# 19:02:22 >  
+
+!ERROR: attributes are not unique in element construction of 'foo' within each iteration
+
+# 19:02:23 >  
+# 19:02:23 >  Done.
+# 19:02:23 >  
 
