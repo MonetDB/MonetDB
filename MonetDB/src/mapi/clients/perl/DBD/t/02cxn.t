@@ -19,10 +19,13 @@ pass('Connection tests');
 my $dbh = DBI->connect or die "Connect failed: $DBI::errstr\n";
 pass('Database connection created');
 
-my $Cxn = $dbh->{monetdb_connection};
+SKIP: {
+  skip('DBD::monetdb specific test', 1 ) if $dbh->{Driver}{Name} ne 'monetdb';
 
-ok( $Cxn,"Connection object: $Cxn");
+  my $Cxn = $dbh->{monetdb_connection};
 
+  ok( $Cxn,"Connection object: $Cxn");
+}
 ok( $dbh->ping,'Ping');
 
 ok( $dbh->{Active},'Active');
