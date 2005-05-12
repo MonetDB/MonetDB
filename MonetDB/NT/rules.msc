@@ -30,6 +30,10 @@ PTHREAD_LIBS = "$(PTHREAD)\lib\libpthreadGC.a"
 PTHREAD_INCS = "-I$(PTHREAD)\include"
 PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC.lib"
 !ENDIF
+PHP_SRCDIR = $(TOPDIR)\..\..\php-4.3.11
+PHP_INSTDIR = C:\php-4.3.11-Win32
+PHP_PEARDIR = share\pear
+PHP_EXTENSIONDIR = lib\php4
 
 # not need to edit beyond here..
 
@@ -84,6 +88,11 @@ CFLAGS = $(CFLAGS) -DNDEBUG
 CFLAGS = $(CFLAGS)
 !ENDIF
 !ENDIF
+
+PHP_INCS = -I$(PHP_SRCDIR) -I$(PHP_SRCDIR)\main -I$(PHP_SRCDIR)\TSRM -I$(PHP_SRCDIR)\Zend -DPHP_WIN32 -DZEND_DEBUG=0
+PHP_LIBS = $(PHP_INSTDIR)\php4ts.lib
+# there's nothing special about PEAR on Windows
+HAVE_PEAR = 1
 
 {$(SRCDIR)}.mx.h:
 	$(MX) $(MXFLAGS) -x h $<

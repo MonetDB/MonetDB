@@ -17,6 +17,7 @@
 
 import string
 import os
+import re
 
 # the text that is put at the top of every generated Makefile.msc
 MAKEFILE_HEAD = '''
@@ -110,8 +111,9 @@ def msc_list2string(l, pre, post):
     return res
 
 def create_dir(fd, v,n):
-    # Stupid Windows/nmake cannot cope with single-letter directory names;
-    # apparently, it treats it as a drive-letter, unless we explicitely call it ".\?".
+    # Stupid Windows/nmake cannot cope with single-letter directory
+    # names; apparently, it treats them as drive-letters, unless we
+    # explicitely call them ".\?".
     if len(v) == 1:
         vv = '.\\%s' % v
     else:
@@ -462,7 +464,7 @@ def msc_scripts(fd, var, scripts, msc):
         s,ext2 = rsplit_filename(script)
         if not ext2 in ext:
             continue
-        if (script, script, '', sd) in msc['INSTALL']:
+        if (script, script, '', sd, '') in msc['INSTALL']:
             continue
         if os.path.isfile(os.path.join(msc['cwd'], script+'.in')):
             inf = '$(SRCDIR)\\%s.in' % script
@@ -476,7 +478,7 @@ def msc_scripts(fd, var, scripts, msc):
             fd.write('%s: "$(SRCDIR)\\%s"\n' % (script, script))
             fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (script, script))
         if script != 'mprof.mil':
-            msc['INSTALL'].append((script, script, '', sd))
+            msc['INSTALL'].append((script, script, '', sd, ''))
             msc['SCRIPTS'].append(script)
 
 ##    msc_deps(fd, scripts['DEPS'], "\.o", msc)
@@ -506,7 +508,7 @@ def msc_headers(fd, var, headers, msc):
 ##                fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
 ##                fd.write('\tif not exist "%s" if exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header, header))
                 fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
-            msc['INSTALL'].append((header, header, '', sd))
+            msc['INSTALL'].append((header, header, '', sd, ''))
 
 ##    msc_find_ins(msc, headers)
 ##    msc_deps(fd, headers['DEPS'], "\.o", msc)
@@ -528,7 +530,7 @@ def msc_binary(fd, var, binmap, msc):
                 else:
                     fd.write('%s: "$(SRCDIR)\\%s"\n' % (i, i))
                     fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (i, i))
-                msc['INSTALL'].append((i, i, '', '$(bindir)'))
+                msc['INSTALL'].append((i, i, '', '$(bindir)', ''))
         else: # link
             src = binmap[0][4:]
             fd.write('%s: "%s"\n' % (name, src))
@@ -539,7 +541,7 @@ def msc_binary(fd, var, binmap, msc):
                 ext = ''
             else:
                 ext = '.exe'
-            msc['INSTALL'].append((name, src, ext, '$(bindir)'))
+            msc['INSTALL'].append((name, src, ext, '$(bindir)', ''))
             msc['SCRIPTS'].append(name)
         return
 
@@ -712,7 +714,7 @@ def msc_library(fd, var, libmap, msc):
     sep = ""
     pref = 'lib'
     dll = '.dll'
-    if (libmap.has_key("NAME")):
+    if libmap.has_key("NAME"):
         libname = libmap['NAME'][0]
     else:
         libname = name
@@ -722,7 +724,15 @@ def msc_library(fd, var, libmap, msc):
             pref = libmap['PREFIX'][0]
         else:
             pref = ''
-            dll = '.pyd'                # HACK!!!
+            # if underneath a directory called "python" (up to 3 levels),
+            # set DLL suffix to ".pyd"
+            h,t = os.path.split(msc['cwd'])
+            if t == 'python':
+                dll = '.pyd'
+            else:
+                h,t = os.path.split(h)
+                if t == 'python' or os.path.basename(h) == 'python':
+                    dll = '.pyd'
 
     if (libname[0] == "_"):
         sep = "_"
@@ -749,13 +759,15 @@ def msc_library(fd, var, libmap, msc):
 
     v = sep + libname
     if libmap.has_key('NOINST'):
-        msc['NLIBS'].append(v)
+        msc['NLIBS'].append(pref + v + dll)
     else:
-        msc['LIBS'].append(v)
+        msc['LIBS'].append(pref + v + dll)
         if ld != 'LIBDIR':
-            msc['INSTALL'].append((pref+v,pref+v,dll,ld))
+            msc['INSTALL'].append((pref + v, pref + v, dll, ld, pref))
         else:
-            msc['INSTALL'].append((pref+v,pref+v,dll,'$('+lib.replace('-','_')+'dir)'))
+            msc['INSTALL'].append((pref + v, pref + v,
+                                   dll, '$(%sdir)' % lib.replace('-', '_'),
+                                   pref))
 
     if libmap.has_key('MTSAFE'):
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
@@ -854,8 +866,9 @@ def msc_libs(fd, var, libsmap, msc):
         if ext not in automake_ext:
             msc['EXTRA_DIST'].append(libsrc)
         v = sep + libname
-        msc['LIBS'].append(v)
-        msc['INSTALL'].append(('lib'+v,'lib'+v,'.dll','$('+lib.replace('-','_')+'dir)'))
+        msc['LIBS'].append('lib' + v + '.dll')
+        msc['INSTALL'].append(('lib' + v, 'lib' + v, '.dll',
+                               '$(%sdir)' % lib.replace('-', '_'), ''))
 
         dlib = []
         if libsmap.has_key(libname + "_DLIBS"):
@@ -927,6 +940,8 @@ def msc_libs(fd, var, libsmap, msc):
 def msc_includes(fd, var, values, msc):
     incs = "-I$(SRCDIR)"
     for i in values:
+        # replace all occurrences of @XXX@ with $(XXX)
+        i = re.sub('@([A-Z_]+)@', r'$(\1)', i)
         if i[0] == "-":
             incs = incs + ' "%s"' % i.replace('/', '\\')
         elif i[0] == "$":
@@ -995,7 +1010,7 @@ def msc_jar(fd, var, jar, msc):
     fd.write("\n!ENDIF #HAVE_JAVA\n\n")
 
     msc['SCRIPTS'].append(name)
-    msc['INSTALL'].append((name, name, '', None))
+    msc['INSTALL'].append((name, name, '', None, ''))
 
 def msc_java(fd, var, java, msc):
 
@@ -1040,7 +1055,7 @@ def msc_java(fd, var, java, msc):
     fd.write("\n!ENDIF #HAVE_JAVA\n\n")
 
     msc['SCRIPTS'].append(name)
-    msc['INSTALL'].append((name, name, '', None))
+    msc['INSTALL'].append((name, name, '', None, ''))
 
 output_funcs = {'SUBDIRS': msc_subdirs,
                 'EXTRA_DIST': msc_extra_dist,
@@ -1157,11 +1172,11 @@ def output(tree, cwd, topdir):
     fd.write("all-msc:")
     if msc['LIBS']:
         for v in msc['LIBS']:
-            fd.write(' "lib%s.dll"' % v)
+            fd.write(' "%s"' % v)
 
     if msc['NLIBS']:
         for v in msc['NLIBS']:
-            fd.write(' "lib%s.lib"' % v)
+            fd.write(' "%s"' % v)
 
     if msc['BINS']:
         for v in msc['BINS']:
@@ -1175,41 +1190,33 @@ def output(tree, cwd, topdir):
 
     fd.write("check-msc: all-msc")
     if msc['INSTALL']:
-        for (dst, src, ext, dir) in msc['INSTALL']:
+        for (dst, src, ext, dir, pref) in msc['INSTALL']:
             fd.write(' "%s%s"' % (src, ext))
     fd.write("\n")
 
     fd.write("install-msc: install-exec install-data\n")
     l = []
-    for (x, y, u, v) in msc['INSTALL']:
-        l.append(x)
-                  #msc_list2string(msc['LIBS'], "install_dll_"," "), \
-
-##    fd.write("install-exec: %s %s %s\n" % (
+    for (dst, src, ext, dir, pref) in msc['INSTALL']:
+        l.append(dst)
 
     fd.write("install-exec: %s %s\n" % (
         msc_list2string(msc['BINS'], '"install_bin_','" '),
-        msc_list2string(l, '"install_','" ')
-        ))
-##    if msc['LIBS']:
-##        for v in msc['LIBS']:
-##            fd.write("install_dll_%s: lib%s.dll\n" % (v, v))
-##            fd.write('\t$(INSTALL) "lib%s.dll" "$(%sdir)"\n' % (v, msc['LIBDIR'].replace('-','_')))
+        msc_list2string(l, '"install_','" ')))
     if msc['BINS']:
         for v in msc['BINS']:
             fd.write('install_bin_%s: "%s.exe"\n' % (v, v))
             fd.write('\tif not exist "$(%sdir)" $(MKDIR) "$(%sdir)"\n' % (v.replace('-','_'), v.replace('-','_')))
             fd.write('\t$(INSTALL) "%s.exe" "$(%sdir)"\n' % (v,v.replace('-','_')))
     if msc['INSTALL']:
-        for (dst, src, ext, dir) in msc['INSTALL']:
+        for (dst, src, ext, dir, pref) in msc['INSTALL']:
             if not dir:
                 continue
             fd.write('install_%s: "%s%s" "%s"\n' % (dst, src, ext, dir))
             fd.write('\t$(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, ext, dir, dst, ext))
-            if ext == '.dll':
+            if pref:
                 fd.write('\t$(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, '.lib', dir, dst, '.lib'))
         td = {}
-        for (x, y, u, dir) in msc['INSTALL']:
+        for (x, y, u, dir, pref) in msc['INSTALL']:
             if not dir:
                 continue
             if not td.has_key(dir):

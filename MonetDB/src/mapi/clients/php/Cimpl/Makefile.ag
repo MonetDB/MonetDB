@@ -34,6 +34,6 @@ lib_monetdb = {
 	PREFIX =
 	NAME = monetdb
 	SOURCES = php_monetdb.h php_monetdb.c
-	LIBS = ../../C/libMapi $(MAPI_LIBS)
+	LIBS = ../../C/libMapi $(MAPI_LIBS) $(PHP_LIBS)
 	DIR = $(prefix)/$(PHP_EXTENSIONDIR)
 }
