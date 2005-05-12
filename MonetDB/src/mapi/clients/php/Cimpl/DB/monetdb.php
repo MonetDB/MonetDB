@@ -120,7 +120,7 @@ class DB_monetdb extends DB_common
 
     function connect($dsninfo, $persistent = false)
     {
-        if (!DB::assertExtension('monetdb'))
+        if (!PEAR::loadExtension('monetdb'))
             return $this->raiseError(DB_ERROR_EXTENSION_NOT_FOUND);
 
         $this->dsn = $dsninfo;
