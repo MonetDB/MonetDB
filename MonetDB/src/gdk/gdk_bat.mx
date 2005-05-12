@@ -465,7 +465,8 @@ BATfree(BAT *b)
 	BATcheck(b, "BATfree");
 
 	/* deallocate all memory for a bat */
-	b = (((b)->batCacheid<0)?(b):BATmirror(b));
+	if (b->batCacheid < 0)
+		b = BBP_cache(-(b->batCacheid));
 	if (b->hident && !default_ident(b->hident)) {
 		GDKfree(b->hident);
 		b->hident = string_h;
