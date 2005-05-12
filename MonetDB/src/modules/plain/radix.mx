@@ -2894,7 +2894,7 @@ radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	}
 
 	/* create destination bat and init some variables */
-	if (any == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
+	if (any == TYPE_str && GDK_ELIMDOUBLES(a->theap)) {
 		tpe = any = TYPE_var;
 	}
 
@@ -3028,7 +3028,7 @@ radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	}
 
 	/* create destination bat and init some variables */
-	if (any == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
+	if (any == TYPE_str && GDK_ELIMDOUBLES(a->theap)) {
 		tpe = any = TYPE_var;
 	}
 
@@ -3144,7 +3144,7 @@ radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 	}
 
 	/* create destination bat and init some variables */
-	if (any == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
+	if (any == TYPE_str && GDK_ELIMDOUBLES(a->theap)) {
 		tpe = any = TYPE_var;
 	}
 
