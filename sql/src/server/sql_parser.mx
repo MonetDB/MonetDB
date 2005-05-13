@@ -458,7 +458,8 @@ int yydebug=1;
 	SMALLINT MEDIUMINT BIGINT sqlINTEGER
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE
-	CURRENT_ROLE CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME
+	CURRENT_ROLE 
+	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
 	LEX_ERROR
 %token	USER CURRENT_USER sqlSESSION SESSION_USER LOCAL
 
@@ -2148,6 +2149,14 @@ datetime_funcs:
  |  CURRENT_TIMESTAMP opt_brackets
  			{ dlist *l = _dlist_create();
 			  _dlist_append_string(l, sa_strdup(SA, "current_timestamp"));
+	  		  $$ = _symbol_create_list( SQL_OP, l ); }
+ |  LOCALTIME opt_brackets
+ 			{ dlist *l = _dlist_create();
+			  _dlist_append_string(l, sa_strdup(SA, "localtime"));
+	  		  $$ = _symbol_create_list( SQL_OP, l ); }
+ |  LOCALTIMESTAMP opt_brackets
+ 			{ dlist *l = _dlist_create();
+			  _dlist_append_string(l, sa_strdup(SA, "localtimestamp"));
 	  		  $$ = _symbol_create_list( SQL_OP, l ); }
  ;
 

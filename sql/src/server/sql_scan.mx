@@ -230,6 +230,8 @@ scanner_init_keywords()
 	keywords_insert("CURRENT_TIME", CURRENT_TIME);
 	keywords_insert("CURRENT_TIMESTAMP", CURRENT_TIMESTAMP);
 	keywords_insert("NOW", CURRENT_TIMESTAMP);
+	keywords_insert("LOCALTIME", LOCALTIME);
+	keywords_insert("LOCALTIMESTAMP", LOCALTIMESTAMP);
 	keywords_insert("ZONE", ZONE);
 
 	keywords_insert("YEAR", YEAR);
