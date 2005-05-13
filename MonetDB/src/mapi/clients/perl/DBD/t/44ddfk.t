@@ -94,7 +94,9 @@ SQL
   ok( $dbh->do( $_ ), $_ ) for "DROP TABLE $tbl";
 }
 # -----------------------------------------------------------------------------
-{
+SKIP: {
+  skip('Invalid use of null pointer (SQL-HY009) when using DBD::ODBC', 1 )
+    if $dbh->{Driver}{Name} eq 'ODBC';
   my $sth = $dbh->foreign_key_info( undef, undef, undef, undef, undef, undef );
   ok( defined $sth,'Statement handle defined for foreign_key_info()');
   DBD_TEST::dump_results( $sth );
