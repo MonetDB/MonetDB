@@ -54,8 +54,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MONETDB_ASSOC	1<<0
-#define MONETDB_NUM		1<<1
+#define MONETDB_ASSOC	(1<<0)
+#define MONETDB_NUM		(1<<1)
 #define MONETDB_BOTH	(MONETDB_ASSOC|MONETDB_NUM)
 
 ZEND_DECLARE_MODULE_GLOBALS(monetdb)

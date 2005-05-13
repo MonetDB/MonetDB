@@ -94,27 +94,23 @@ PHP
 	the Windows installer) and the source package from
 	http://www.php.net/.  Unzip the binaries into e.g. C:\ (for
 	PHP-4, the zip file contains a top-level directory
-	php-4...-Win32 and so can be unzipped into C: ; for PHP-5, the
-	zip file does not contain such a top-level directory, so unzip
-	the file into C:\php-5 (or some such name)).  Make sure there
-	are no spaces in the path chosen.
+	php-4...-Win32 and so can be unzipped into C:).  If you want
+	to follow the PHP standard, rename the resulting dirctory to
+	C:\php4.  We will follow this convention.  In any case, make
+	sure there are no spaces in the path chosen.
 	Also extract the sources somewhere, e.g. in a directory
 	parallel to MonetDB.
-	If you don't use C:\php-4.3.11-Win32 for the binaries or you
-	don't extract the sources into php-4.3.11 in the same
-	directory where MonetDB is extracted, you will have to edit
-	MonetDB's NT\rules.msc to change the variables PHP_SRCDIR and
+	If you don't use C:\php4 for the binaries or you don't extract
+	the sources into php-4.3.11 in the same directory where
+	MonetDB is extracted, you will have to edit MonetDB's
+	NT\rules.msc to change the variables PHP_SRCDIR and
 	PHP_INSTDIR to reflect this.  Make sure there are no spaces in
 	these two path names.  Also note that the paths are only used
-	from inside the NT\src\mapi\clients\php directory, so if the
+	from inside the NT\src\mapi\clients\php directory, so if they
 	are relative, they have to be relative from there.
-	After extracting the sources you will need to copy or rename
-	two files:
-	copy main\config.w32.h to main\php_config.h
-	copy Zend\zend_config.w32.h to Zend\zend_config.h
 	When compiling MonetDB, add the flag HAVE_PHP=1 to the nmake
 	command line.
-	Note that only PHP version 4 has been tested.
+	Note that only PHP version 4.3.11 has been tested.
 
 Pear:
 	Pear is the PHP Extension and Application Repository.  At the

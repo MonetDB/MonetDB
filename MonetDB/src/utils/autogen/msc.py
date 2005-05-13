@@ -438,10 +438,11 @@ def msc_deps(fd, deps, objext, msc):
                 if target == "LIB":
                     d, dext = split_filename(deplist[0])
                     if dext in ("c", "glue.c", "yy.c", "tab.c"):
-                        fd.write('\t$(CC) $(CFLAGS) $(INCLUDES) $(GENDLL) -DLIB%s $(OUTPUTOBJ)"%s" -c "%s"\n' %
-                                 (name, t, src))
+                        # -DCOMPILE_DL_%s is for PHP extensions
+                        fd.write('\t$(CC) $(CFLAGS) $(GENDLL) -DLIB%s -DCOMPILE_DL_%s $(OUTPUTOBJ)"%s" -c "%s"\n' %
+                                 (name, name, t, src))
                     elif dext == "cc":
-                        fd.write('\t$(CXX) $(CXXFLAGS) $(INCLUDES) $(GENDLL) -DLIB%s $(OUTPUTOBJ)"%s" -c "%s"\n' %
+                        fd.write('\t$(CXX) $(CXXFLAGS) $(GENDLL) -DLIB%s $(OUTPUTOBJ)"%s" -c "%s"\n' %
                                  (name, t, src))
             if ext == 'res':
                 fd.write("\t$(RC) -fo%s %s\n" % (t, src))
@@ -464,7 +465,7 @@ def msc_scripts(fd, var, scripts, msc):
         s,ext2 = rsplit_filename(script)
         if not ext2 in ext:
             continue
-        if (script, script, '', sd, '') in msc['INSTALL']:
+        if (script, script, '', sd, 0) in msc['INSTALL']:
             continue
         if os.path.isfile(os.path.join(msc['cwd'], script+'.in')):
             inf = '$(SRCDIR)\\%s.in' % script
@@ -478,7 +479,7 @@ def msc_scripts(fd, var, scripts, msc):
             fd.write('%s: "$(SRCDIR)\\%s"\n' % (script, script))
             fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (script, script))
         if script != 'mprof.mil':
-            msc['INSTALL'].append((script, script, '', sd, ''))
+            msc['INSTALL'].append((script, script, '', sd, 0))
             msc['SCRIPTS'].append(script)
 
 ##    msc_deps(fd, scripts['DEPS'], "\.o", msc)
@@ -508,7 +509,7 @@ def msc_headers(fd, var, headers, msc):
 ##                fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
 ##                fd.write('\tif not exist "%s" if exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header, header))
                 fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
-            msc['INSTALL'].append((header, header, '', sd, ''))
+            msc['INSTALL'].append((header, header, '', sd, 0))
 
 ##    msc_find_ins(msc, headers)
 ##    msc_deps(fd, headers['DEPS'], "\.o", msc)
@@ -530,7 +531,7 @@ def msc_binary(fd, var, binmap, msc):
                 else:
                     fd.write('%s: "$(SRCDIR)\\%s"\n' % (i, i))
                     fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (i, i))
-                msc['INSTALL'].append((i, i, '', '$(bindir)', ''))
+                msc['INSTALL'].append((i, i, '', '$(bindir)', 0))
         else: # link
             src = binmap[0][4:]
             fd.write('%s: "%s"\n' % (name, src))
@@ -541,7 +542,7 @@ def msc_binary(fd, var, binmap, msc):
                 ext = ''
             else:
                 ext = '.exe'
-            msc['INSTALL'].append((name, src, ext, '$(bindir)', ''))
+            msc['INSTALL'].append((name, src, ext, '$(bindir)', 0))
             msc['SCRIPTS'].append(name)
         return
 
@@ -724,15 +725,23 @@ def msc_library(fd, var, libmap, msc):
             pref = libmap['PREFIX'][0]
         else:
             pref = ''
-            # if underneath a directory called "python" (up to 3 levels),
-            # set DLL suffix to ".pyd"
-            h,t = os.path.split(msc['cwd'])
-            if t == 'python':
-                dll = '.pyd'
-            else:
-                h,t = os.path.split(h)
-                if t == 'python' or os.path.basename(h) == 'python':
-                    dll = '.pyd'
+    instlib = 1
+    # if underneath a directory called "python" (up to 3 levels),
+    # set DLL suffix to ".pyd" and set instlib to 0
+    # if underneath a directory called "php" (also up to 3 levels),
+    # just set instlib to 0
+    h,t = os.path.split(msc['cwd'])
+    if t == 'python' or t == 'php':
+        if t == 'python':
+            dll = '.pyd'
+        instlib = 0
+    else:
+        h,t = os.path.split(h)
+        if t == 'python' or os.path.basename(h) == 'python':
+            dll = '.pyd'
+            instlib = 0
+        elif t == 'php' or os.path.basename(h) == 'php':
+            instlib = 0
 
     if (libname[0] == "_"):
         sep = "_"
@@ -763,11 +772,11 @@ def msc_library(fd, var, libmap, msc):
     else:
         msc['LIBS'].append(pref + v + dll)
         if ld != 'LIBDIR':
-            msc['INSTALL'].append((pref + v, pref + v, dll, ld, pref))
+            msc['INSTALL'].append((pref + v, pref + v, dll, ld, instlib))
         else:
             msc['INSTALL'].append((pref + v, pref + v,
                                    dll, '$(%sdir)' % lib.replace('-', '_'),
-                                   pref))
+                                   instlib))
 
     if libmap.has_key('MTSAFE'):
         fd.write("CFLAGS=$(CFLAGS) $(thread_safe_flag_spec)\n")
@@ -868,7 +877,7 @@ def msc_libs(fd, var, libsmap, msc):
         v = sep + libname
         msc['LIBS'].append('lib' + v + '.dll')
         msc['INSTALL'].append(('lib' + v, 'lib' + v, '.dll',
-                               '$(%sdir)' % lib.replace('-', '_'), ''))
+                               '$(%sdir)' % lib.replace('-', '_'), 0))
 
         dlib = []
         if libsmap.has_key(libname + "_DLIBS"):
@@ -1010,7 +1019,7 @@ def msc_jar(fd, var, jar, msc):
     fd.write("\n!ENDIF #HAVE_JAVA\n\n")
 
     msc['SCRIPTS'].append(name)
-    msc['INSTALL'].append((name, name, '', None, ''))
+    msc['INSTALL'].append((name, name, '', None, 0))
 
 def msc_java(fd, var, java, msc):
 
@@ -1055,7 +1064,7 @@ def msc_java(fd, var, java, msc):
     fd.write("\n!ENDIF #HAVE_JAVA\n\n")
 
     msc['SCRIPTS'].append(name)
-    msc['INSTALL'].append((name, name, '', None, ''))
+    msc['INSTALL'].append((name, name, '', None, 0))
 
 output_funcs = {'SUBDIRS': msc_subdirs,
                 'EXTRA_DIST': msc_extra_dist,
@@ -1190,13 +1199,13 @@ def output(tree, cwd, topdir):
 
     fd.write("check-msc: all-msc")
     if msc['INSTALL']:
-        for (dst, src, ext, dir, pref) in msc['INSTALL']:
+        for (dst, src, ext, dir, instlib) in msc['INSTALL']:
             fd.write(' "%s%s"' % (src, ext))
     fd.write("\n")
 
     fd.write("install-msc: install-exec install-data\n")
     l = []
-    for (dst, src, ext, dir, pref) in msc['INSTALL']:
+    for (dst, src, ext, dir, instlib) in msc['INSTALL']:
         l.append(dst)
 
     fd.write("install-exec: %s %s\n" % (
@@ -1208,15 +1217,15 @@ def output(tree, cwd, topdir):
             fd.write('\tif not exist "$(%sdir)" $(MKDIR) "$(%sdir)"\n' % (v.replace('-','_'), v.replace('-','_')))
             fd.write('\t$(INSTALL) "%s.exe" "$(%sdir)"\n' % (v,v.replace('-','_')))
     if msc['INSTALL']:
-        for (dst, src, ext, dir, pref) in msc['INSTALL']:
+        for (dst, src, ext, dir, instlib) in msc['INSTALL']:
             if not dir:
                 continue
             fd.write('install_%s: "%s%s" "%s"\n' % (dst, src, ext, dir))
             fd.write('\t$(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, ext, dir, dst, ext))
-            if pref:
+            if instlib:
                 fd.write('\t$(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, '.lib', dir, dst, '.lib'))
         td = {}
-        for (x, y, u, dir, pref) in msc['INSTALL']:
+        for (x, y, u, dir, instlib) in msc['INSTALL']:
             if not dir:
                 continue
             if not td.has_key(dir):

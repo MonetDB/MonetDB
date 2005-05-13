@@ -31,7 +31,7 @@ X_CFLAGS = -DCOMPILE_DL_MONETDB=1 -D_GNU_SOURCE
 SUBDIRS = HAVE_PEAR?DB examples 
 
 lib_monetdb = {
-	PREFIX =
+	PREFIX = php_
 	NAME = monetdb
 	SOURCES = php_monetdb.h php_monetdb.c
 	LIBS = ../../C/libMapi $(MAPI_LIBS) $(PHP_LIBS)
