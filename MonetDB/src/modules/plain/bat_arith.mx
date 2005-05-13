@@ -88,6 +88,9 @@ Only the standard types sht, int, lng, flt, dbl are supported.
 	@2:	+,   -,   *,   /,   %   basic arithmetic operator
 	@3:	add, sub, mul, div, mod basic arithmetic operator name
 	@4:		0 / 1		disable/enable division by zero check
+	@5:		0 / 1 / 2	disable/enable sorting propagation
+					1 propagate on bat,const
+					2 propagate also on const,bat
 */
 @= implementations
 int
@@ -245,7 +248,7 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 	ALGODEBUG THRprintf(GDKout, "valbat_@1_@3[@2,@4](v,b=%s);\n",BATgetId(b));
 	ERRORcheck((b->htype!=TYPE_void),
 		   "valbat_@1_@3: BAT b must be void-headed.\n");
-	/* todo for commutative operators call batval (ie. for * and /) */
+	/* todo for commutative operators call batval (ie. for *, + and - ) */
 
 	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
 	if (bn == NULL)
@@ -278,6 +281,9 @@ valbat_@1_@3(BAT **ret, @1 *v, BAT *b)
 	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	if (!bn->batDirty) bn->batDirty = TRUE;
 
+	if (@5 == 2) 
+		bn->tsorted = BATtordered(b);
+
 	*ret = bn;
 	return GDK_SUCCEED;
 }
@@ -309,6 +315,9 @@ int valbat_@1_@3_inplace(BAT **ret, @1 *v, BAT *b) {
 		}
 	}
 	if (!b->batDirty) b->batDirty = TRUE;
+
+	if (@5 == 2) 
+		b->tsorted = BATtordered(b);
 
 	BBPfix(b->batCacheid);
 	*ret = b;
@@ -357,6 +366,8 @@ batval_@1_@3(BAT **ret, BAT *b, @1 *v)
 	bn->batBuns->free = (BUN)bnp - bn->batBuns->base;
 	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	if (!bn->batDirty) bn->batDirty = TRUE;
+	if (@5) 
+		bn->tsorted = BATtordered(b);
 
 	*ret = bn;
 	return GDK_SUCCEED;
@@ -390,32 +401,34 @@ batval_@1_@3_inplace(BAT **ret, BAT *b, @1 *v)
 		}
 	}
 	if (!b->batDirty) b->batDirty = TRUE;
+	if (@5) 
+		b->tsorted = BATtordered(b);
 
 	BBPfix(b->batCacheid);
 	*ret = b;
 	return GDK_SUCCEED;
 }
 @c
-@:implementations(sht,+,add,0)@
-@:implementations(sht,-,sub,0)@
-@:implementations(sht,*,mul,0)@
-@:implementations(sht,/,div,1)@
-@:implementations(sht,%,mod,1)@
-@:implementations(int,+,add,0)@
-@:implementations(int,-,sub,0)@
-@:implementations(int,*,mul,0)@
-@:implementations(int,/,div,1)@
-@:implementations(int,%,mod,1)@
-@:implementations(lng,+,add,0)@
-@:implementations(lng,-,sub,0)@
-@:implementations(lng,*,mul,0)@
-@:implementations(lng,/,div,1)@
-@:implementations(lng,%,mod,1)@
-@:implementations(flt,+,add,0)@
-@:implementations(flt,-,sub,0)@
-@:implementations(flt,*,mul,0)@
-@:implementations(flt,/,div,1)@
-@:implementations(dbl,+,add,0)@
-@:implementations(dbl,-,sub,0)@
-@:implementations(dbl,*,mul,0)@
-@:implementations(dbl,/,div,1)@
+@:implementations(sht,+,add,0,2)@
+@:implementations(sht,-,sub,0,2)@
+@:implementations(sht,*,mul,0,2)@
+@:implementations(sht,/,div,1,1)@
+@:implementations(sht,%,mod,1,0)@
+@:implementations(int,+,add,0,2)@
+@:implementations(int,-,sub,0,2)@
+@:implementations(int,*,mul,0,2)@
+@:implementations(int,/,div,1,1)@
+@:implementations(int,%,mod,1,0)@
+@:implementations(lng,+,add,0,2)@
+@:implementations(lng,-,sub,0,2)@
+@:implementations(lng,*,mul,0,2)@
+@:implementations(lng,/,div,1,1)@
+@:implementations(lng,%,mod,1,0)@
+@:implementations(flt,+,add,0,2)@
+@:implementations(flt,-,sub,0,2)@
+@:implementations(flt,*,mul,0,2)@
+@:implementations(flt,/,div,1,1)@
+@:implementations(dbl,+,add,0,2)@
+@:implementations(dbl,-,sub,0,2)@
+@:implementations(dbl,*,mul,0,2)@
+@:implementations(dbl,/,div,1,1)@
