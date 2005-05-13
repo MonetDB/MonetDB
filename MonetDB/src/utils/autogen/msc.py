@@ -729,11 +729,13 @@ def msc_library(fd, var, libmap, msc):
     # if underneath a directory called "python" (up to 3 levels),
     # set DLL suffix to ".pyd" and set instlib to 0
     # if underneath a directory called "php" (also up to 3 levels),
-    # just set instlib to 0
+    # set instlib to 0 and pref to 'php_'
     h,t = os.path.split(msc['cwd'])
     if t == 'python' or t == 'php':
         if t == 'python':
             dll = '.pyd'
+        else:
+            pref = 'php_'
         instlib = 0
     else:
         h,t = os.path.split(h)
@@ -742,6 +744,7 @@ def msc_library(fd, var, libmap, msc):
             instlib = 0
         elif t == 'php' or os.path.basename(h) == 'php':
             instlib = 0
+            pref = 'php_'
 
     if (libname[0] == "_"):
         sep = "_"
