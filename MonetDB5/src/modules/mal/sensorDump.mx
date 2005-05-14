@@ -115,12 +115,19 @@ int main(int argc, char **argv){
 	char *host= "localhost"; int port=0;
 	char *fname= "";
 	int delay = -1;
+	int N=0, cols=0;
 	char buf[MAX];
 
 	for(i=1;i<argc; i++)
 	switch( argv[i][1]){
 	case 'h':
 		host= argv[++i];
+		break;
+	case 'C':
+		cols= strtol(argv[++i], 0,0);
+		break;
+	case 'N':
+		N= strtol(argv[++i], 0,0);
 		break;
 	case 'p':
 		port= strtol(argv[++i], 0,0);
@@ -135,27 +142,53 @@ int main(int argc, char **argv){
 		printf("Unknown option %s\n",argv[i]);
 		return -1;
 	}
-	printf("sensorDump -h %s -p %d -f %s -d %d\n", host,port, fname,delay);
+	if(N)
+	printf("sensorDump -h %s -p %d  -N %d -d %d\n", host,port, N,delay);
+	else
+	printf("sensorDump -h %s -p %d  -N -f %s -d %d\n", host,port, fname,delay);
 	if( (err= connect_to_server(host,port)) ){
 		printf("FATAL:%s\n",err);
 		return -1;
 	}
-	fd= fopen(fname,"r");
-	if( fd== NULL){
-		printf("Could not open file '%s'\n",fname);
-		return -1;
-	}
-
-	/* set up stream towards server */
 
 	/* deposit events */
-	while(fgets(buf,MAX,fd) != 0){
-		printf("%s",buf);
-		if( delay <0){
-			printf("send it?");
-			getchar();
+	if( N && cols>0){
+		/* generate an integer NxA event stream */
+	
+		while(N-->0){
+			int i,r;
+			r= rand();
+			stream_printf(toServer,"%d",r);
+			if( delay<0) printf("%d",r);
+
+			for(i=1;i<cols; i++){
+				r= rand();
+				stream_printf(toServer,",%d",r);
+				if( delay<0) printf(",%d",r);
+			}
+
+			stream_printf(toServer,"\n");
+			if( delay<0){
+				printf("\nsend it?");
+				getchar();
+			}
+			stream_flush(toServer);
 		}
-		stream_write(toServer,buf,1, strlen(buf));
-		stream_flush(toServer);
+	} else {
+		fd= fopen(fname,"r");
+		if( fd== NULL){
+			printf("Could not open file '%s'\n",fname);
+			return -1;
+		}
+
+		while(fgets(buf,MAX,fd) != 0){
+			if( delay <0){
+				printf("%s",buf);
+				printf("send it?");
+				getchar();
+			}
+			stream_write(toServer,buf,1, strlen(buf));
+			stream_flush(toServer);
+		}
 	}
 }
