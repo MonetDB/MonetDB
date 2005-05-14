@@ -636,6 +636,7 @@ SENstartSensor(str sname, bstream *bs){
 	res =1;
 	while(res>0 && !stream_errnr(bs->s)){
 		bs->eof=0;
+		as.nr = ~(size_t) 0;
 		res=TABLETload_file(&as, bs);
 #ifdef DEBUG_SENSORS
 		stream_printf(GDKerr, "#load %d events\n",res);
