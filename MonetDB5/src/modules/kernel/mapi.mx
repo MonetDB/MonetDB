@@ -245,7 +245,7 @@ MAPIlistenThread(int *Sock)
 				continue;
 			}
 			/* write challenge string, the challenge is currently empty (disabled) */
-			challenge = "::mserver_mil:4\n";
+			challenge = "::mserver_mal:4\n";
 			/* temporarily misuse name */
 			snprintf(name, BLOCK, "%2d%s", strlen(challenge), challenge);
 			stream_write(fdout, name, strlen(name), 1);
