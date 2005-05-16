@@ -16,7 +16,7 @@
 // All Rights Reserved.
 
 %module MapiLib
-%include "typemaps.i"
+%include "python/typemaps.i"
 %include "exception.i"
 
 %{

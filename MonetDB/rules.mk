@@ -130,6 +130,24 @@ HIDE=1
 # .xx file.  There may be a race condition here when using a parallel
 # make.  We try to alleviate the problem by sending the .xx.c output
 # to a dummy file in the second rule.
+%.ruby.c: %.ruby.i
+	$(SWIG) -ruby $(SWIGFLAGS) -outdir . -o $@ $<
+
+%.ruby: %.ruby.i
+	$(SWIG) -ruby $(SWIGFLAGS) -outdir . -o dymmy.c $<
+
+%.tcl.c: %.tcl.i
+	$(SWIG) -tcl $(SWIGFLAGS) -outdir . -o $@ $<
+
+%.tcl: %.tcl.i
+	$(SWIG) -tcl $(SWIGFLAGS) -outdir . -o dymmy.c $<
+
+%.php.c: %.php.i
+	$(SWIG) -php $(SWIGFLAGS) -outdir . -o $@ $<
+
+%.php: %.php.i
+	$(SWIG) -php $(SWIGFLAGS) -outdir . -o dymmy.c $<
+
 %.py.c: %.py.i
 	$(SWIG) -python $(SWIGFLAGS) -outdir . -o $@ $<
 

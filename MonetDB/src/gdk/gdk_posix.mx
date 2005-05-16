@@ -138,18 +138,22 @@ gdk_export int MT_alloc_table(void);
 #  ifndef MADV_RANDOM
 #   define MADV_RANDOM	0
 #  endif
-#  define POSIX_MADV_NORMAL     MADV_NORMAL
-#  define POSIX_MADV_RANDOM     MADV_RANDOM
-#  define POSIX_MADV_SEQUENTIAL MADV_SEQUENTIAL
-#  define POSIX_MADV_WILLNEED   MADV_WILLNEED
-#  define POSIX_MADV_DONTNEED   MADV_DONTNEED
+#  ifndef POSIX_MADV_NORMAL
+#   define POSIX_MADV_NORMAL     MADV_NORMAL
+#   define POSIX_MADV_RANDOM     MADV_RANDOM
+#   define POSIX_MADV_SEQUENTIAL MADV_SEQUENTIAL
+#   define POSIX_MADV_WILLNEED   MADV_WILLNEED
+#   define POSIX_MADV_DONTNEED   MADV_DONTNEED
+#  endif
 # else
 #  define posix_madvise(x,y,z)	0
-#  define POSIX_MADV_NORMAL     0
-#  define POSIX_MADV_RANDOM     0
-#  define POSIX_MADV_SEQUENTIAL 0
-#  define POSIX_MADV_WILLNEED   0
-#  define POSIX_MADV_DONTNEED   0
+#  ifndef POSIX_MADV_NORMAL
+#   define POSIX_MADV_NORMAL     0
+#   define POSIX_MADV_RANDOM     0
+#   define POSIX_MADV_SEQUENTIAL 0
+#   define POSIX_MADV_WILLNEED   0
+#   define POSIX_MADV_DONTNEED   0
+#  endif
 # endif
 #endif
 
