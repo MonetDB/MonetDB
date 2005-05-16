@@ -299,9 +299,15 @@ at commit-time.
 		err |= close(fd);
 	} else if (mode != STORE_MMAP) {
 		char buf[MAXPATHLEN];
+		struct stat st;
 
 		GDKfilepath(buf, BATDIR, nme, ext);
-		GDKerror("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+		if (stat(buf, &st) == 0 && unlink(buf)) {
+			/* do not tolerate corrupt heap images (BBPrecover on restart will kill them) */
+			GDKfatal("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+		} else {
+			GDKerror("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
+		}
 	}
 	return err;
 }
@@ -537,6 +543,7 @@ BATsave(BAT *bd)
 			DESCclean(b);
 			b->batCopiedtodisk = 1;
 			err = BATsavedesc(b, nme);
+			IODEBUG THRprintf(GDKerr, "BATsavedesc(%s,free=%d) = %d\n", nme, b->batBuns->free, err);
 		}
 
 	if (b->hheap) GDKfree(b->hheap);
@@ -544,6 +551,7 @@ BATsave(BAT *bd)
 
 	if (err == 0) {
 		bd->batCopiedtodisk = 1;
+		DESCclean(bd);
 		return bd;
 	}
 	return NULL;

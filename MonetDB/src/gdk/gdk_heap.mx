@@ -398,7 +398,7 @@ Delete any saved heap file. For memory mapped files, also try to remove any rema
 int
 HEAPdelete(Heap *h, str o, str ext)
 {
-	int ret;
+	char ext2[64];
 
 	if (h->size <= 0) {
 		return 0;
@@ -406,7 +406,7 @@ HEAPdelete(Heap *h, str o, str ext)
 	if (h->base) {
 		if (h->storage & STORE_MMAP) {
 			/* truncate file, so OS does not try to flush dirty data in mmap to file that is deleted anyway */
-			int fd = GDKfdlocate(h->filename, "rb+", NULL);
+			int ret, fd = GDKfdlocate(h->filename, "rb+", NULL);
 			IODEBUG THRprintf(GDKerr, "HEAPdelete(%s) GDKfdlocate(\"rb+\") = %d\n", h->filename, fd);
 
 			ret = ftruncate(fd, LL_CONSTANT(0));
@@ -417,20 +417,9 @@ HEAPdelete(Heap *h, str o, str ext)
 		}
 		HEAPfree(h);
 	}
-	ret = GDKunlink(BATDIR, o, ext);
-
-	if (h->storage & STORE_MMAP) {
-		long_str path;
-		struct stat st;
-
-		GDKfilepath(path, BATDIR, o, ext);
-		strcat(path, ".priv");
-		if (stat(path, &st) == 0) {
-			ret = unlink(path);
-			IODEBUG THRprintf(GDKerr, "HEAPdelete unlink(%s) = %d\n", path, ret);
-		}
-	}
-	return ret;
+	strcpy(ext2, ext);
+	strcat(ext2, ".priv");
+	return (GDKunlink(BATDIR, o, ext) == 0) | (GDKunlink(BATDIR, o, ext2) == 0)?0:-1;
 }
 
 @}

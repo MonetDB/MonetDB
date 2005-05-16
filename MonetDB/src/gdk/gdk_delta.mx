@@ -111,14 +111,6 @@ The hash structure is maintained for all elements to be deleted ?.
 @c
 #include "gdk.h"
 
-
-BAT *
-BATprecommit(BAT *b)
-{
-	GDKwarning("BATprecommit:nyi\n");
-	return b;
-}
-
 @- 
 batcommit really forgets the atoms guarded for an undo; we just need to free their heap space (only if necessary).
 @c
@@ -290,12 +282,49 @@ respectively.
 @{
 @c
 BAT *
+BATprev(BAT *b)
+{
+	BUN p;
+	BAT *bn;
+
+	BATcheck(b, "BATprev");
+	if (b->batRestricted == BAT_READ) {
+		bn = VIEWcreate(b);
+		if (bn) {
+			bn->batBuns->free = bn->batInserted - bn->batBuns->base;
+			bn->batInserted = bn->batFirst = bn->batDeleted;
+			BATsetcount(bn, (BUNlast(bn)-BUNfirst(bn))/BUNsize(bn) );
+		}
+		return bn;
+	}
+	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b));
+	if (bn == NULL) {
+		return bn;
+	}
+	for (p = b->batDeleted; p < b->batInserted; p = BUNnext(b, p)) {
+		if (BUNins(bn, BUNhead(b, p), BUNtail(b, p)) == NULL) {
+			BBPreclaim(bn);
+			return NULL;
+		}
+	}
+	return bn;
+}
+
+BAT *
 BATalpha(BAT *b)
 {
 	BUN p;
 	BAT *bn;
 
 	BATcheck(b, "BATalpha");
+	if (b->batRestricted == BAT_READ) {
+		bn = VIEWcreate(b);
+		if (bn) {
+			bn->batDeleted = bn->batFirst = bn->batInserted;
+			BATsetcount(bn, (BUNlast(bn)-BUNfirst(bn))/BUNsize(bn) );
+		}
+		return bn;
+	}
 	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b));
 	if (bn == NULL) {
 		return bn;
@@ -316,6 +345,15 @@ BATdelta(BAT *b)
 	BAT *bn;
 
 	BATcheck(b, "BATdelta");
+	if (b->batRestricted == BAT_READ) {
+		bn = VIEWcreate(b);
+		if (bn) {
+			bn->batBuns->free = bn->batFirst - bn->batBuns->base;
+			bn->batFirst = bn->batInserted = bn->batDeleted;
+			BATsetcount(bn, (BUNlast(bn)-BUNfirst(bn))/BUNsize(bn) );
+		}
+		return bn;
+	}
 	bn = BATnew(BAThtype(b), BATttype(b), BATcapacity(b));
 	if (bn == NULL) {
 		return bn;

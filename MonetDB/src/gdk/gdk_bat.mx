@@ -1864,7 +1864,7 @@ need to do anything with heap modes yet at this point.
 		GDKerror("BATmode: %s type implies that %s[%s,%s] cannot be made persistent.\n",
 			 ATOMname(@1), BATgetId(b),
 			 ATOMname(b->htype), ATOMname(b->ttype));
-		return b;
+		return NULL;
 	}
 @c
 BAT *

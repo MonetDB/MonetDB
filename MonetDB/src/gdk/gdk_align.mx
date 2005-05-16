@@ -327,6 +327,7 @@ BATmaterialize(BAT *b, size_t size)
 		int bunwidth = b->dims.bunwidth, hlc = b->hloc, tlc = b->tloc;
 		int newbw = 0;
 		BUN p = BUNfirst(b), q = BUNlast(b);
+		char *nme = BBP_physical(b->batCacheid);
 
 		ALGODEBUG THRprintf(GDKout, "BATmaterialize(%d," SZFMT ");\n", (int) b->batCacheid, size);
 
@@ -446,14 +447,18 @@ BATmaterialize(BAT *b, size_t size)
 		ret = b;
 	      bunins_failed:
 		/* cleanup the old heaps */
+		/* if X.priv exists and X not, move it to X (X must be the stable image) */
 		HEAPfree(&buns);
-		if (th) {
-			HEAPfree(th);
-			GDKfree(th);
-		}
+		GDKmove(BATDIR, nme, "buns.priv", BATDIR, nme, "buns"); 
 		if (hh) {
 			HEAPfree(hh);
+			GDKmove(BATDIR, nme, "hheap.priv", BATDIR, nme, "hheap"); 
 			GDKfree(hh);
+		}
+		if (th) {
+			HEAPfree(th);
+			GDKmove(BATDIR, nme, "theap.priv", BATDIR, nme, "theap"); 
+			GDKfree(th);
 		}
 	}
 	return ret;

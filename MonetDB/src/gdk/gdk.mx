@@ -2409,46 +2409,71 @@ BATmirror(REGISTER BAT *b)
 @multitable @columnfractions 0.08 0.7
 @item int
 @tab
- TMnew (str cntxt)
+ TMcommit ()
 @item int
 @tab
- TMcommit (str cntxt)
+ TMabort ()
 @item int
 @tab
- TMabort (str cntxt)
-@item int
-@tab
- TMresume (str cntxt)
+ TMsubcommit ()
 @end multitable
 
-The current implementation of the Goblin Database Kernel
-assumes a single transaction environment.
+MonetDB by default offers a global transaction environment.  
+The global transaction involves all activities on all persistent 
+BATs by all threads.  Each global transaction ends with either 
+@%TMabort@ or @%TMcommit@, and immediately starts a new transaction.
 
-A transaction starts by announcing it to the transaction manager
-with the routine @%TMnew@. The argument is a name for the transaction
-context, which should be unique among the active transactions.
-Thereafter, all  BATs created or modified are added to the context
-on an exclusive basis. Failure leads to an error message.
+@%TMcommit@ implements atomic commit to disk on the collection
+of all persistent BATs. For all persistent BATs, the global
+commit also flushes the delta status for these BATs 
+(see @%BATcommit@/@%BATabort@). This allows to perform
+@%TMabort@ quickly in memory (without re-reading all disk images 
+from disk).  The collection of which BATs is persistent is also part
+of the global transaction state. All BATs that where 
+persistent at the last commit, but were made transient 
+since then, are made persistent again by @%TMabort@. 
+In other words, BATs that are deleted, are only
+physically deleted at @%TMcommit@ time. Until that time,
+rollback (@%TMabort@) is possible. 
 
-The transaction ends with either @%TMabort@ or @%TMcommit@.
-For the moment, we assume that all BATs being modified are kept memory
-resident to simplify recovery.
+Use of @%TMabort is currently NOT RECOMMENDED due to two bugs:
 
-During a transaction a context switch occurs upon encountering
-another @%TMnew@ before commit or abort has been received.
-One can switch between transactions by issuing @%TMresume@.
+@begin itemize
+@item
+@%TMabort after a failed @%TMcommit@ does not
+bring us back to the previous committed state; but to the
+state at the failed @%TMcommit@.
+@item
+At runtime, @%TMabort@ does not undo BAT name changes,
+whereas a cold MonetDB restart does.
+@end itemize
 
-The rationale for this scheme is its simplicity in testing transaction
-management, i.e. simulation of a multi-user systems.
-Ideally, it should become possible to specify the transaction protocol in more
-detail by the user.
+In effect, the problems with @%TMabort@ reduce the functionality
+of the global transaction mechanism to consistent
+checkpointing at each @%TMcommit@. For many applications,
+consistent checkpointingis enough.
+
+Extension modules exist that provide fine grained locking (lock 
+module) and Write Ahead Logging (sqlserver).  Applications that 
+need more fine-grained transactions, should build this on top 
+of these extension primitives. 
+
+@%TMsubcommit@ is intended to quickly add or remove
+BATs from the persistent set. In both cases, rollback
+is not necessary, such that the commit protocol can be 
+accelerated. It comes down to writing a new BBP.dir.
+
+Its parameter is a BAT-of-BATs (in the tail); the persistence
+status of that BAT is committed. We assume here that the 
+calling thread has exclusive access to these bats.
+An error is reported if you try to partially commit 
+an already committed persistent BAT (it needs the 
+rollback mechanism).
 @{
 @h
-gdk_export int TMnew(str cntxt);
 gdk_export int TMcommit(void);
 gdk_export int TMabort(void);
-gdk_export int TMresume(str cntxt);
-gdk_export str TMcntxt(void);
+gdk_export int TMsubcommit(BAT* bl);
 
 @
 @}
@@ -2456,47 +2481,60 @@ gdk_export str TMcntxt(void);
 @- Delta Management
  @multitable @columnfractions 0.08 0.6
 @item BAT *
-@tab BATprecommit (BAT *b)
-@item BAT *
 @tab BATcommit (BAT *b)
 @item BAT *
 @tab BATfakeCommit (BAT *b)
 @item BAT *
-@tab BATfakeRestart (BAT *b)
-@item BAT *
 @tab BATundo (BAT *b)
+@item BAT *
+@tab BATprev (BAT *b)
 @item BAT *
 @tab BATalpha (BAT *b)
 @item BAT *
 @tab BATdelta (BAT *b)
 @end multitable
 
-The updates on a single BAT are kept separately from the stable
-partition until the user issues a @%BATcommit@ operation.
-The routine @%BATprecommit@ ensures that the information for recovery
-is safely stored away on a log. @%BATundo@ discards all updates made
-so-far.
+The BAT keeps track of updates with respect to a 'previous state'.
+Do not confuse 'previous state' with 'stable' or 'commited-on-disk', 
+because these concepts are not always the same. In particular,
+they diverge when BATcommit, BATfakecommit, and BATundo are
+called explictly, bypassing the normal global @%TMcommit@ protocol 
+(some applications need that flexibility).
 
-The delta(s) provides the handle to drive the trigger manager later
-on.  Since the delta lead to an ever growing BAT storage structure,
-one should occasionally trim it.
+@%BATcommit@ make the current BAT state the new 'stable state'.
+This happens inside the global @%TMcommit@ on all persistent BATs
+previous to writing all bats to persistent storage using a @:BBPsync@.
 
-At any time the user sees the most accurate state of the BAT, as if
-all insertions and deletions take place immediately.
+EXPERT USE ONLY: The routine @%BATfakeCommit@ updates the delta 
+information on BATs and clears the dirty bit. This avoids any 
+copying to disk.  Expert usage only, as it bypasses the global 
+commit protocol, and changes may be lost after quitting or crashing 
+MonetDB.
 
-The routine @%BATfakeCommit@ simply updates the delta information
-on BATs and clears the dirty bit. This avoids any
-copying to disk.
-The routine @%BATfakeRestart@ is like @%BATfakeCommit@, but
-marks all BUNs in the BAT as if they were newly inserted.
+@%BATabort@ undo-s all changes since the previous state. The global
+@:TMabort@ achieves a rollback to the previously committed state 
+by doing BATabort on all persistent bats.
+
+BUG: after a failed @%TMcommit@, @%TMabort@ does not do anything
+because @%TMcommit@ does the @%BATcommit@s *before* attempting to 
+sync to disk instead of *after& doing this. 
+
+The previous state can also be queried. @%BATprev@ is a view 
+on the current BAT as it was in the previous state.  @%BATalpha@ 
+shows only the BUNs inserted since the previous state, and
+@%BATdelta@ the deleted buns.
+
+CAVEAT: @%BATprev@, @%BATalpha@ and @%BATdelta@ only return views 
+if the underlying BATs are read-only (often not the case when BATs 
+are being updated).  Otherwise, copies must be made anyway.
 @{
 @h
-gdk_export BAT *BATprecommit(BAT *b);
 gdk_export BAT *BATcommit(BAT *b);
+gdk_export BAT *BATfakeCommit(BAT *b);
 gdk_export BAT *BATundo(BAT *b);
 gdk_export BAT *BATalpha(BAT *b);
 gdk_export BAT *BATdelta(BAT *b);
-gdk_export BAT *BATfakeCommit(BAT *b);
+gdk_export BAT *BATprev(BAT *b);
 
 @}
 @+ BAT Alignment and BAT views

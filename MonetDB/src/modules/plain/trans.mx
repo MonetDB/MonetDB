@@ -32,29 +32,66 @@ TODO: move simple 2-phase locking transaction code from ODMG to this module.
 
 @- global transaction management
 @m
-.COMMAND sync() = global_sync;
+.COMMAND sync() : bit = global_sync;
  "save all persistent BATs"
-.COMMAND commit() = global_commit;
- "global commit on all BATs"
-.COMMAND abort() = global_abort;
- "global abort on all BATs"
+.COMMAND commit() : bit = global_commit;
+ "global commit on all persistent BATs (to disk)"
+.COMMAND abort() : bit = global_abort;
+ "brings all BATs back to state at last global commit"
+.COMMAND subcommit(bat[any,bat]) : bit = global_subcommit;
+ "commit only aset of bats, that are 
 
-@- BAT specific transaction management
+logically commit changes in all bats in the tail of the bat-of-bats passed.
+  If persists is true, the bats are made persistent and commits are physically written to disk. "
+
+@- delta status
+For each BAT, we can cheaply get the differences (deltas) with respect to a 'previous
+state'. Usually, this previous state is the BAT state in the last global commit.
+
+Since only persistent BATs play a role in global commits, for transient BATs this
+'previous state' (usually) is the initial (empty) state of the BAT.
+
+The term 'usually' does not apply if the BAT state was manipulated explicitly
+with BAT-specific transaction management commands (listed below).
+@m
+.COMMAND prev(BAT[ANY::1,ANY::2]) : BAT[ANY::1,ANY::2] = trans_prev;
+	"the previous state of this BAT"
+.COMMAND alpha(BAT[ANY::1,ANY::2]) : BAT[ANY::1,ANY::2] = trans_alpha;
+	"give list of insertions since the previous state."
+.COMMAND delta(BAT[ANY::1,ANY::2]) : BAT[ANY::1,ANY::2] = trans_delta;
+	"give list of deletions since the previous state."
+
+@- BAT-specific transaction management
+
+We may play with the previous state of sets of bats using the below primitives:
+@itemize
+
+@item
+Commit declares the current state to be the new previous state. If the persists
+parameter is true (default = false), the current state of the BATs is added to
+the last commit point (it then becomes persistent on disk and this implies also 
+that the BATs are made persistent).
+
+@item
+Abort undos all changes made to the BATs since the previous state.
+
+@item
+Clean is a commit, but declares the BATs clean with respect to their persistent 
+state. Thus, any changes made since the last commit are *not* guaranteed to be on disk.  
+Quitting or crashing MonetDB will lose those changes. Expert use only!
+
+@end itemize
 @m
 .COMMAND commit(BAT[ANY,ANY], ...BAT[ANY,ANY]...) = trans_commit;
-	"commit changes in certain BATs."
+        "flush the delta status of a BAT (it is *not* written to disk)."
 .COMMAND abort(BAT[ANY,ANY], ...BAT[ANY,ANY]...) = trans_abort;
-	"abort changes in certain BATs."
+        "undo the delta changes in a BAT."
 .COMMAND clean(BAT[ANY,ANY], ...BAT[ANY,ANY]...) = trans_clean;
-	"declare a BAT clean without flushing to disk."
-@- delta status
-@m
-.COMMAND alpha(BAT[ANY::1,ANY::2]) : BAT[ANY::1,ANY::2] = trans_alpha;
-	"give list of insertions since last commit."
-.COMMAND delta(BAT[ANY::1,ANY::2]) : BAT[ANY::1,ANY::2] = trans_delta;
-	"give list of deletions since last commit."
+        "flush the delta status of a BAT.
+         (DANGER: it is marked clean, so these changes will not be committed to disk)."
 
 .END trans;
+@
 
 @{
 @* Implementation Code
@@ -62,23 +99,30 @@ TODO: move simple 2-phase locking transaction code from ODMG to this module.
 #include "trans.proto.h"
 
 int
-global_sync(void)
+global_sync(bit *ret)
 {
-	BBPsync(TRUE);
+	*ret = BBPsync(TRUE)?FALSE:TRUE;
 	return GDK_SUCCEED;
 }
 
 int
-global_commit(void)
+global_commit(bit *ret)
 {
-	TMcommit();
+	*ret = TMcommit()?FALSE:TRUE;
 	return GDK_SUCCEED;
 }
 
 int
-global_abort(void)
+global_abort(bit *ret)
 {
-	TMabort();
+	*ret = TMabort()?FALSE:TRUE;
+	return GDK_SUCCEED;
+}
+
+int 
+global_subcommit(bit* ret, BAT *bl)
+{
+	*ret = TMsubcommit(bl)?FALSE:TRUE;
 	return GDK_SUCCEED;
 }
 
@@ -93,6 +137,13 @@ int
 trans_delta(BAT **retval, BAT *b)
 {
 	*retval = BATdelta(b);
+	return retval ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+trans_prev(BAT **retval, BAT *b)
+{
+	*retval = BATprev(b);
 	return retval ? GDK_SUCCEED : GDK_FAIL;
 }
 

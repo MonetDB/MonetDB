@@ -37,32 +37,6 @@ Access to the transaction table is regulated by a semaphore.
 #include "gdk.h"
 #include "gdk_tm.h"
 
-char TMname[MAXTM][IDLENGTH] = { SYSTRANSACTION };
-
-int
-TMnew(str s)
-{
-	THRprintf(GDKout, "begin transaction %s\n", s);
-	strcpy(TMname[0], s);
-
-	return 0;
-}
-
-int
-TMresume(str s)
-{
-	strcpy(TMname[0], s);
-	return 0;
-}
-
-str
-TMcntxt(void)
-{
-	return TMname[0];
-}
-
-@
-@}
 @- 
 The physical (disk) commit protocol is handled mostly by BBPsync. Once a commit
 succeeded, there is the task of removing ex-persistent bats (those that still
@@ -201,4 +175,88 @@ TMabort(void)
 	return 0;
 }
 
+@- TMsubcommit
+
+Routine to quickly add new bats or remove old bats in a commited database state.
+Both cases have in common that rollback actions are not necessary. This
+allows for an implementation that comes down to just writing a new BBP.dir.
+
+We assume that the thread calling this has exclusive write access to the 
+bats it wants to commit (passed in the tail of bl).
+In particular, if another thread updates one of the bats passed here during
+the partial commit (or modifies its persistency status), inconsistent results
+may occur.
+
+Note that this primitive also assumes that the BATs being commited are independent
+of the other persistent BATs. That is, no incosistent state is created by commiting 
+the actual state of this subset of BAT and not committing the rest.
+@c
+int
+TMsubcommit(BAT* bl) {
+	int xx, cnt = 0, *changed = (int*) alloca(BATcount(bl)*sizeof(int));
+	BUN p, q;
+
+	/* first make our new bats persistent and saved on disk */
+	BATloopFast(bl, p, q, xx) {
+		int i = *(int*) BUNtloc(bl,p);
+		BAT *b = NULL;
+		if (i < 0) i = -i;
+		if (BBPfix(i) >= 0) {
+			b = BBPdescriptor(i);
+			if (b) {
+				BATcommit(b);
+				if (b->batPersistence == PERSISTENT) { 
+					/* not-yet-committed persistent bats */
+					if (BBP_status(i) & BBPNEW) {
+						changed[cnt++] = i;
+						if (BBPsave(b)) b = NULL;
+					} else if (BATdirty(b)) {
+						GDKerror("TMsubcommit: %s has already been committed\n", 
+							BBP_logical(i));
+						b = NULL;
+					}
+				} else {
+					/* no longer persistent bats */
+					if (BBP_status(i) & BBPEXISTING) changed[cnt++] = -i;
+				}
+			}
+			BBPunfix(i);
+		}
+		if (b == NULL) return -1;
+	}
+	/* if the not-yet-committed count is 0, we don't need to write a new BBP.dir */
+	if (cnt == 0) return 0;
+
+	/* block other commits and BBPtrims that might remove non-persistent bats */
+	gdk_set_lock(GDKtrimLock, "TMsubcommit");
+
+	/* all bats clean on disk, now change their statuses for BBPdir */
+	for(xx=0; xx<cnt; xx++) {
+		int i = changed[xx];
+		if (i > 0) {
+			BBP_status_on(i, BBPEXISTING, "TMsubcommit");
+			BBP_status_off(i, BBPNEW, "TMsubcommit");
+		} else {
+			BBP_status_off(-i, BBPEXISTING, "TMsubcommit");
+		}
+	}
+
+	/* write the new BPP.dir with those BATs that were in the previous commit */
+	if (BBPdir(BBPEXISTING) == 0) 
+		cnt = 0; /* everything ok */
+
+	for(xx=0; xx<cnt; xx++) {
+		/* FAILED: undo the status changes */
+		int i = changed[xx];
+		if (i > 0) {
+			BBP_status_off(i, BBPEXISTING, "TMsubcommit");
+			BBP_status_on(i, BBPNEW, "TMsubcommit");
+		} else {
+			BBP_status_on(i, BBPEXISTING, "TMsubcommit");
+		}
+	}
+	gdk_unset_lock(GDKtrimLock, "TMsubcommit");
+
+	return -cnt;
+}
 @}
