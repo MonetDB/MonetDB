@@ -297,17 +297,12 @@ at commit-time.
 		err |= fclose(fp);
 	} else if (fd >= 0) {
 		err |= close(fd);
-	} else if (mode != STORE_MMAP) {
-		char buf[MAXPATHLEN];
-		struct stat st;
-
-		GDKfilepath(buf, BATDIR, nme, ext);
-		if (stat(buf, &st) == 0 && unlink(buf)) {
+		if (err && GDKunlink(BATDIR, nme, ext)) {
 			/* do not tolerate corrupt heap images (BBPrecover on restart will kill them) */
 			GDKfatal("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
-		} else {
-			GDKerror("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 		}
+	} else if (mode != STORE_MMAP) {
+		GDKerror("GDKsave: could not open: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", mode);
 	}
 	return err;
 }

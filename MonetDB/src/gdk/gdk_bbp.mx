@@ -1701,7 +1701,11 @@ BBPfree(BAT *b, str calledFrom )
 	} else {
 		VIEWdestroy(b);
 	}
-	BBPuncacheit_(bid, b->batMapdirty);
+	BBPuncacheit_(bid, FALSE);
+	if (b->batMapdirty) {
+		DESCsetmodes(b, b);
+		b->batMapdirty = 0;
+	}
 	BBP_unload_off(bid, calledFrom);
 
 	if (parent)	/* parent released when completely done with child */
