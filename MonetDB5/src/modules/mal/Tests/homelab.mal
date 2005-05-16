@@ -1,0 +1,20 @@
+# The setup demonstration for a home lab environment
+# using the MonetDB Data Pod
+include sensors;
+
+sensors.define("toy","etime",0,:timestamp);
+sensors.define("toy","name",1,:int);
+sensors.define("toy","click",2,:int);
+sensors.define("toy","batterylife",3,:int);
+
+sensors.define("tv","etime",0,:timestamp);
+sensors.define("tv","status",1,:int);
+sensors.define("tv","channel",2,:int);
+
+sensors.define("thermostat","etime",0,:timestamp);
+sensors.define("thermostat","temparature",1,:int);
+sensors.define("thermostat","humidity",2,:int);
+
+sensors.define("chair","etime",0,:timestamp);
+sensors.define("chair","id",1,:int);
+sensors.define("chair","pressure",2,:flt);
