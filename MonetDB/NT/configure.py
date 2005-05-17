@@ -48,7 +48,9 @@ subs = [
     ('@DIRSEP@',                 '\\'),
     ('@prefix@',                 prefix),
     ('@MONETDB_BUILD@',          build),
+    ('@XMONETDB_BUILD@',         build),
     ('@MONETDB_SOURCE@',         source),
+    ('@XMONETDB_SOURCE@',        source),
     ('@NO_X_CFLAGS@',            ''),
     # conditionals for Mtest.py (see comment over there)
     ('@CROSS_COMPILING_FALSE@',  '#'),
