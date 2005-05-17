@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 673 ]
+[ 675 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 673 ]
+[ 675 ]
 
 var All:=0;
 
@@ -794,21 +794,24 @@ Module: "sys"
 
 Module: "trans"
 
-[ 8 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# function	| type		| signature										| help																																																																												  #
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-[ "abort",	  "COMMAND:   ",  "abort() : void",									  "global abort on all BATs"																																																																									  ]
-[ "abort",	  "COMMAND:   ",  "abort(BAT[any,any], ..BAT[any,any]..) : void",					  "abort changes in certain BATs."																																																																								  ]
-[ "alpha",	  "COMMAND:   ",  "alpha(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "give list of insertions since last commit."																																																																							  ]
-[ "clean",	  "COMMAND:   ",  "clean(BAT[any,any], ..BAT[any,any]..) : void",					  "declare a BAT clean without flushing to disk."																																																																						  ]
-[ "commit",	  "COMMAND:   ",  "commit() : void",									  "global commit on all BATs"																																																																									  ]
-[ "commit",	  "COMMAND:   ",  "commit(BAT[any,any], ..BAT[any,any]..) : void",					  "commit changes in certain BATs."																																																																								  ]
-[ "delta",	  "COMMAND:   ",  "delta(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "give list of deletions since last commit."																																																																							  ]
-[ "sync",	  "COMMAND:   ",  "sync() : void",									  "save all persistent BATs"																																																																									  ]
+[ 10 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# tmp_43		tmp_35		tmp_37											tmp_40																																																															  # name
+# str		str		str											str																																																															  # type
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "abort",	  "COMMAND:   ",  "abort() : bit",									  "brings all BATs back to state at last global commit"																																																									  ]
+[ "abort",	  "COMMAND:   ",  "abort(BAT[any,any], ..BAT[any,any]..) : void",					  "undo the delta changes in a BAT."																																																											  ]
+[ "alpha",	  "COMMAND:   ",  "alpha(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "give list of insertions since the previous state."																																																									  ]
+[ "clean",	  "COMMAND:   ",  "clean(BAT[any,any], ..BAT[any,any]..) : void",					  "flush the delta status of a BAT.\n         (DANGER: it is marked clean, so these changes will not be committed to disk)."																																																  ]
+[ "commit",	  "COMMAND:   ",  "commit() : bit",									  "global commit on all persistent BATs (to disk)"																																																									  ]
+[ "commit",	  "COMMAND:   ",  "commit(BAT[any,any], ..BAT[any,any]..) : void",					  "flush the delta status of a BAT (it is *not* written to disk)."																																																							  ]
+[ "delta",	  "COMMAND:   ",  "delta(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "give list of deletions since the previous state."																																																									  ]
+[ "prev",	  "COMMAND:   ",  "prev(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "the previous state of this BAT"																																																											  ]
+[ "subcommit",	  "COMMAND:   ",  "subcommit(BAT[any,BAT]) : bit",							  "commit only aset of bats, that are \n\nlogically commit changes in all bats in the tail of the bat-of-bats passed.\n  If persists is true, the bats are made persistent and commits are physically written to disk. "																																				  ]
+[ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 673 ]
+[ 675 ]
 
 quit();
 
