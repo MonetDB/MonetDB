@@ -1495,7 +1495,11 @@ static int
 heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 {
 	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on .priv heap modes */
-	if (hp->filename && hp->storage == STORE_PRIV) {
+	if (hp->storage == STORE_MMAP) {
+		return 0;	/* memory mapped heaps under append need not be backed up! */
+	} else if (file_exists(dstdir, nme, ext)) {
+		return 0;	/* dont overwrite heap with the committed state already in dstdir */
+	} else if (hp->filename && hp->storage == STORE_PRIV) {
 		long_str path;
 		struct stat st;
 
@@ -1520,10 +1524,6 @@ heap_move(Heap *hp, str srcdir, str dstdir, str nme, str ext)
 			}
 		}
 		/* if X.priv already has a saved X, that one is backed up as normal.. */
-	} else if (hp->storage == STORE_MMAP) {
-		return 0;	/* memory mapped heaps under append need not be backed up! */
-	} else if (file_exists(dstdir, nme, ext)) {
-		return 0;	/* dont overwrite heap with the committed state already in dstdir */
 	}
 	return file_move(srcdir, dstdir, nme, ext);
 }
