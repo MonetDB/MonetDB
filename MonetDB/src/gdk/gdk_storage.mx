@@ -976,10 +976,7 @@ Init the column descriptors of the tail columns.
 			c[j + 1].format = NULL;
 		else
 			c[j + 1].format = printfcn(argv[j]);
-		if (!default_ident(argv[j]->tident))
-			c[j + 1].tabs = print_tabwidth(argv[j], BATgetId(argv[j]), c + (j + 1));
-		else
-			c[j + 1].tabs = print_tabwidth(argv[j], argv[j]->tident, c + (j + 1));
+		c[j + 1].tabs = print_tabwidth(argv[j], argv[j]->tident, c + (j + 1));
 		value_fcn[j + 1] = (ColFcn) print_format;
 	}
 	total = 2 + (total * 8);
