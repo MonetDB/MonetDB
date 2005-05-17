@@ -198,12 +198,12 @@ sequence.
 To make problem detection easier, the MIL interpreter contains property checking code,
 that is set with via the  {\tt debugmask(int)} command:
 \begin{description}
-\item[2] {\tt debugmask(debugmask() and 2)} causes that all properties on
-newly created BATs to be checked. You must realize that finding out that a column is sorted
+\item[2] {\tt debugmask(debugmask() or 2)} makes that all properties on
+newly created BATs are checked. You must realize that finding out that a column is sorted
 ({\tt hsorted/tsorted}) costs a full scan, and finding out that it contains unique values
 ({\tt hkeyed/tkeyed}) costs a full scan plus the creation of a full hash index.
-\item[8] {\tt debugmask(debugmask() and 8)} causes that all properties on
-{\bf all} BATs handled by the MIL interpreter to be checked. This will catch all property errors.
+\item[8] {\tt debugmask(debugmask() or 8)} makes that all properties on
+{\bf all} BATs handled by the MIL interpreter are checked. This will catch all property errors.
 \end{description}
 
 By default, both bits in the {\tt debugmask} are off, which gives fastest performance.
