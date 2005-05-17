@@ -88,3 +88,14 @@ be added.  Only the mgwbz2-1.dll and mgwz.dll are used from that
 folder.  We add the folder at the end of the Windows search path:
 
 set PATH=%PATH%;C:\cygwin\bin
+
+Yoy can now test the Pathfinder installation using the following
+command:
+
+rem as an abbreviation, set PFSRC to the (Windows name of) the
+rem Pathfinder source folder, also note that per the above,
+rem %PFSRC%\MinGW is the (Windows name of) the folder in which
+rem Pathfinder was built.
+set PFSRC=...\pathfinder
+rem the following command should be on a single line
+Mtest.py --TSTSRCBASE="%PFSRC%" --TSTBLDDIR="%PFSRC%\MinGW" --TSTTRGBASE="%MONETDB_PREFIX%" -r
