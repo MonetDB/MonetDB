@@ -34,9 +34,12 @@ source=os.path.abspath(os.path.join(build,os.pardir))
 
 subs = [
     ('@exec_prefix@',            prefix),
+    ('@Xexec_prefix@',           prefix),
     ('@sysconfdir@',             r'${prefix}\etc'),
     ('@localstatedir@',          r'${prefix}\var'),
+    ('@Xlocalstatedir@',         r'${prefix}\var'),
     ('@libdir@',                 r'${prefix}\lib'),
+    ('@Xlibdir@',                r'${prefix}\lib'),
     ('@bindir@',                 r'${prefix}\bin'),
     ('@mandir@',                 r'${prefix}\man'),
     ('@includedir@',             r'${prefix}\include'),
@@ -47,11 +50,17 @@ subs = [
     ('@VERSION@',                r'4.7.3'),
     ('@DIRSEP@',                 '\\'),
     ('@prefix@',                 prefix),
+    ('@Xprefix@',                prefix),
     ('@MONETDB_BUILD@',          build),
     ('@XMONETDB_BUILD@',         build),
     ('@MONETDB_SOURCE@',         source),
     ('@XMONETDB_SOURCE@',        source),
     ('@NO_X_CFLAGS@',            ''),
+    # for these, also see rules.msc
+    ('@PHP_EXTENSIONDIR@',       r'lib\php4'),
+    ('@XPHP_EXTENSIONDIR@',      r'lib\php4'),
+    ('@PHP_PEARDIR@',            r'share\pear'),
+    ('@XPHP_PEARDIR@',           r'share\pear'),
     # conditionals for Mtest.py (see comment over there)
     ('@CROSS_COMPILING_FALSE@',  '#'),
     ('@DOCTOOLS_FALSE@',         '#'),

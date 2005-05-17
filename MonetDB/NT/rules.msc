@@ -32,6 +32,7 @@ PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC.lib"
 !ENDIF
 PHP_SRCDIR = $(TOPDIR)\..\..\php-4.3.11
 PHP_INSTDIR = C:\php4
+# for these, also see configure.py
 PHP_PEARDIR = share\pear
 PHP_EXTENSIONDIR = lib\php4
 
