@@ -223,6 +223,12 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	port = (port ? port : MAPIPORT);
 	maxusers = (maxusers ? maxusers : MAPIMAXUSERS);
 
+	if (!GDKembedded) {
+		char *m_clients = GDKgetenv("mapi_clients");
+		int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
+		monetAdjustThreads(nr);
+	}
+
 	if (port <= 0 && usockfile == NULL) {
 		GDKsyserror("MAPIlisten: no port or socket file specified\n");
 		return GDK_FAIL;
@@ -603,6 +609,12 @@ MAPIlistenSSL(Cntxt stk, YYSTREE lt, ValPtr res)
 		port = MAPISSLPORT;
 	if (!maxusers)
 		maxusers = MAPIMAXUSERS;
+
+	if (!GDKembedded) {
+		char *m_clients = GDKgetenv("mapi_clients");
+		int nr = (m_clients)?strtol(m_clients, NULL, 10):1;
+		monetAdjustThreads(nr);
+	}
 
 	ctx = SSL_CTX_new(SSLv23_method());
 	if (ctx == NULL) {

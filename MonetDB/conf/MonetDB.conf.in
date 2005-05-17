@@ -96,6 +96,8 @@ mapi_port=50000
 #mapi_noheaders=no
 # The MAPI debug level (should be disabled for normal use)
 mapi_debug=0
+# The number of concurrent clients can be set using mapi_clients (lower as 1 isn't very usefull)
+#mapi_clients=2
 
 # SQL Interface Section
 #======================

@@ -240,7 +240,7 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "config",		  "/ufs/niels/data/Linux-i686/etc/MonetDB.conf"					  ]
 [ "gdk_arch",		  "32biti686-redhat-linux-gnu"							  ]
 [ "gdk_version",	  "4.7.3"									  ]
-[ "monet_pid",		  "30346"									  ]
+[ "monet_pid",		  "31260"									  ]
 [ "prefix",		  "/ufs/niels/data/Linux-i686"							  ]
 [ "exec_prefix",	  "/ufs/niels/data/Linux-i686"							  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
@@ -255,16 +255,17 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 [ "monet_mod_path",	  "/ufs/niels/data/Linux-i686/lib/MonetDB:/ufs/niels/data/Linux-i686/lib/bin"	  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "43543"									  ]
+[ "mapi_port",		  "34730"									  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
-[ "sql_port",		  "55275"									  ]
+[ "mapi_clients",	  "2"										  ]
+[ "sql_port",		  "48221"									  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"																																												  ]
 [ "sql_logdir",		  "/ufs/niels/data/Linux-i686/var/MonetDB/log"					  ]
+[ "xquery_port",	  "52096"									  ]
 [ "gdk_embedded",	  "no"								  ]
-[ "xquery_port",	  "45789"																																																															  ]
 [ "xquery_output",	  "dm"																																																																  ]
 [ "xquery_cacheMB",	  "100"																																																																  ]
 [ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/mTests/tests/suite_08"	  ]
@@ -297,7 +298,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Sun Apr 24 09:46:53 2005"	  ]
+[ 0,	  "Wed May 18 00:06:46 2005"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree
