@@ -807,7 +807,7 @@ Module: "trans"
 [ "commit",	  "COMMAND:   ",  "commit(BAT[any,any], ..BAT[any,any]..) : void",					  "flush the delta status of a BAT (it is *not* written to disk)."																																																							  ]
 [ "delta",	  "COMMAND:   ",  "delta(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "give list of deletions since the previous state."																																																									  ]
 [ "prev",	  "COMMAND:   ",  "prev(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "the previous state of this BAT"																																																											  ]
-[ "subcommit",	  "COMMAND:   ",  "subcommit(BAT[any,BAT]) : bit",							  "commit only aset of bats, that are \n\nlogically commit changes in all bats in the tail of the bat-of-bats passed.\n  If persists is true, the bats are made persistent and commits are physically written to disk. "																																				  ]
+[ "subcommit",	  "COMMAND:   ",  "subcommit(BAT[any,BAT]) : bit",							  "commit only a set of BATs, passed in the tail of the bat-of-bats parameter.\n  These BATs should not need any rollback; either these should be new\n  persistent BATs that were not present in the last commit, or no-longer\n  persistent BATs that can be destroyed. Thus subcommit mostly serves to add\n  or remove persistent tables from a database (quickly)."																		  ]
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
