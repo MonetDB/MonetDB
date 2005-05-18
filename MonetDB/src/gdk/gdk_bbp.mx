@@ -491,7 +491,7 @@ void
 BBPinit(void)
 {
 	FILE *fp = GDKfilelocate("BBP", "rb", "dir");
-	int i = 0, recover = FALSE, max_stamp = 0, min_stamp = 0x7fffffff;
+	int i = 0, max_stamp = 0, min_stamp = 0x7fffffff;
 	char *s, logical[1024], batname[1024], path[1024];
 	char *c, buffer[3000];
 	struct stat st;
@@ -505,7 +505,6 @@ BBPinit(void)
 		if (fp) fclose(fp);
 		fp = recover_dir(fp != NULL)?
 			NULL:GDKfilelocate("BBP", "rb", "dir");
-		recover = TRUE;
 	} else if (fp == NULL) {
 		/* try to use a BBP.bak */
 		GDKfilepath(path, BAKDIR, "BBP", "bak");
