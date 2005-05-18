@@ -344,17 +344,29 @@ Get the new information for the server socket and start listening.
 #endif
 		} else
 			continue;
-		if (STREQ(cmd, "")) {
-			int i = 0;
-			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
-			char *mp, *challenge;
-			int blocked = 0;
-			stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
-			stream *fdout = socket_wastream(msgsock, "Mserver mapi write");
-			Client c;
+	{
+		stream *fdin = socket_rastream(msgsock, "Mserver mapi read");
+		stream *fdout = socket_wastream(msgsock, "Mserver mapi write");
+		char *mp = GDKgetenv("monet_prompt");
+		char *name = father->user;
+		Client c;
 
-			assert(name);
-			memset(name, 0, BLOCK);
+		/* in embedded mode we allow just one client */
+		if (GDKembedded && monet_forks > 0) {
+			stream_close(fdin);
+			stream_destroy(fdin);
+			continue;
+		}
+			
+		if (STREQ(cmd, "")) { 
+			char *user = (char *) alloca(BLOCK);
+			int blocked = 0;
+			char *challenge, *s;
+			int i = 0;
+
+			assert(user);
+			memset(name = user, 0, BLOCK);
+			*user = 0;
 			if (fdin == 0 || stream_errnr(fdin)) {
 				GDKsyserror("MAPIlisten:fdin problems\n");
 				continue;
@@ -364,6 +376,7 @@ Get the new information for the server socket and start listening.
 			/* temporarily misuse name */
 			snprintf(name, BLOCK, "%2d%s", strlen(challenge), challenge);
 			stream_write(fdout, name, strlen(name), 1);
+
 			/* get user name */
 			stream_read(fdin, user, 1, 1);
 			for (i = 0; !stream_errnr(fdin) && i < BLOCK && *user != '\n'; i++) {
@@ -376,13 +389,6 @@ Get the new information for the server socket and start listening.
 				stream_destroy(fdin);
 				continue;
 			}
-			/* in embedded mode we allow just one client */
-			if (GDKembedded && monet_forks > 0) {
-				stream_close(fdin);
-				stream_destroy(fdin);
-				continue;
-			}
-			*user = 0;
 			s = strrchr(name, ':');
 			blocked = s && strncmp(s, ":blocked", 8) == 0;
 			if (blocked) {
@@ -403,46 +409,55 @@ Get the new information for the server socket and start listening.
 				GDKsyserror("MAPIlisten:fdout problems\n");
 				continue;
 			}
-			mp = GDKgetenv("monet_prompt");
-			c = initClient(name, mp, FALSE);
-			if (c == 0) {
-				stream_printf(fdout, "MAPIlisten:Failed to init client for user %s\n", name);
-				GDKfree(name);
-
-				/* Make sure that the write- (from-) stream is closed first,
-				 * as the related read- (in-) stream closes the shared
-				 * socket; see also src/common/stream.mx:socket_close .
-				 */
-				stream_close(fdout);
-				stream_destroy(fdout);
-				stream_close(fdin);
-				stream_destroy(fdin);
-				continue;
-			}
-			GDKfree(name);
-			c->login = time(0);
-			c->listing = 0;
-			c->fdin = fdin;
-			c->fdout = fdout;
-			c->mode = BLOCKMODE;
-			monet_hello(fdout);
-			CNTXTcopy(stk, c);
-			TBL_initclient(c, father);
-			(void) monetFork();
-			scheduleClient(c);
-			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
-		} else {
-			ValRecord res;
-			char buf[BUFSIZ];
-			stream *sin, *sout;
-
-			sin = socket_rastream(msgsock, "mapi-r");
-			sout = socket_wastream(msgsock, "mapi-w");
-			snprintf(buf, BUFSIZ, "%s(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));\n", cmd, PTRFMTCAST sin, PTRFMTCAST sout);
-			res.vtype = TYPE_void;
-			interpret_str(stk, buf, &res);
 		}
-	} while (monet_running);
+		c = initClient(name, mp, FALSE);
+		if (c == 0) {
+			stream_printf(fdout, "MAPIlisten:Failed to init client for user %s\n", name);
+			GDKfree(name);
+
+			/* Make sure that the write- (from-) stream is closed first,
+			 * as the related read- (in-) stream closes the shared
+			 * socket; see also src/common/stream.mx:socket_close .
+			 */
+			stream_close(fdout);
+			stream_destroy(fdout);
+			stream_close(fdin);
+			stream_destroy(fdin);
+			continue;
+		}
+		c->login = time(0);
+		c->listing = 0;
+		c->fdin = fdin;
+		c->fdout = fdout;
+		c->mode = BLOCKMODE;
+		CNTXTcopy(stk, c);
+		TBL_initclient(c, father);
+
+		if (STREQ(cmd, "")) { 
+			monet_hello(fdout);
+			(void) monetFork();
+		} else {
+			int stream_tpe = ATOMindex("Stream");
+			ValRecord fds[2];
+			monet_sig_t sig;
+			YYSTREE t1, t2;
+
+			fds[0].vtype = fds[1].vtype = stream_tpe;
+               		fds[0].val.pval = fdin;
+               		fds[1].val.pval = fdin;
+
+	                Myyexpand(Myyexpand(
+				c->mil_accept = Myynode(TOK_BUILTIN, TYPE_int), 
+					t1 = Myynode(TOK_CONSTANT, stream_tpe)),
+					t2 = Myynode(TOK_CONSTANT, stream_tpe));
+               		t1->yyval.val.pval = fdin;
+               		t2->yyval.val.pval = fdout;
+			TBL_normal_resolve(cmd, 2, fds, &sig, father-monet_clients);
+              		c->mil_accept->yyval.val.pval = sig.fast_fcn;
+		}
+		scheduleClient(c);
+		PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
+	}} while (monet_running);
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
 		unlink(usockfile);
