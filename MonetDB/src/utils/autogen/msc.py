@@ -771,7 +771,7 @@ def msc_library(fd, var, libmap, msc):
 
     v = sep + libname
     if libmap.has_key('NOINST'):
-        msc['NLIBS'].append(pref + v + dll)
+        msc['NLIBS'].append(pref + v + '.lib')
     else:
         msc['LIBS'].append(pref + v + dll)
         if ld != 'LIBDIR':
@@ -880,7 +880,7 @@ def msc_libs(fd, var, libsmap, msc):
         v = sep + libname
         msc['LIBS'].append('lib' + v + '.dll')
         msc['INSTALL'].append(('lib' + v, 'lib' + v, '.dll',
-                               '$(%sdir)' % lib.replace('-', '_'), 0))
+                               '$(%sdir)' % lib.replace('-', '_'), 1))
 
         dlib = []
         if libsmap.has_key(libname + "_DLIBS"):
@@ -1202,13 +1202,13 @@ def output(tree, cwd, topdir):
 
     fd.write("check-msc: all-msc")
     if msc['INSTALL']:
-        for (dst, src, ext, dir, instlib) in msc['INSTALL']:
+        for dst, src, ext, dir, instlib in msc['INSTALL']:
             fd.write(' "%s%s"' % (src, ext))
     fd.write("\n")
 
     fd.write("install-msc: install-exec install-data\n")
     l = []
-    for (dst, src, ext, dir, instlib) in msc['INSTALL']:
+    for dst, src, ext, dir, instlib in msc['INSTALL']:
         l.append(dst)
 
     fd.write("install-exec: %s %s\n" % (
@@ -1220,7 +1220,7 @@ def output(tree, cwd, topdir):
             fd.write('\tif not exist "$(%sdir)" $(MKDIR) "$(%sdir)"\n' % (v.replace('-','_'), v.replace('-','_')))
             fd.write('\t$(INSTALL) "%s.exe" "$(%sdir)"\n' % (v,v.replace('-','_')))
     if msc['INSTALL']:
-        for (dst, src, ext, dir, instlib) in msc['INSTALL']:
+        for dst, src, ext, dir, instlib in msc['INSTALL']:
             if not dir:
                 continue
             fd.write('install_%s: "%s%s" "%s"\n' % (dst, src, ext, dir))
@@ -1228,7 +1228,7 @@ def output(tree, cwd, topdir):
             if instlib:
                 fd.write('\t$(INSTALL) "%s%s" "%s\\%s%s"\n' % (src, '.lib', dir, dst, '.lib'))
         td = {}
-        for (x, y, u, dir, instlib) in msc['INSTALL']:
+        for dst, src, ext, dir, instlib in msc['INSTALL']:
             if not dir:
                 continue
             if not td.has_key(dir):
