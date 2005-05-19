@@ -2672,7 +2672,7 @@ radix_decluster(BAT **res, BAT *b, BAT *cnts, int *multiplier)
 		@:radix_decluster(lng,simple,tloc)@
 
 	default:
-		@:radix_decluster(int,atom,tail)@
+		@:radix_decluster(var_t,atom,tail)@
 	}
 	*res = bn;
       bunins_failed:
@@ -2931,7 +2931,7 @@ radix_decluster2(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 		@:radix_decluster2(lng,simple,tloc)@
 
 	default:
-		@:radix_decluster2(int,atom,tail)@
+		@:radix_decluster2(var_t,atom,tail)@
 	}
 	*res = bn;
       bunins_failed:
@@ -3064,7 +3064,7 @@ radix_decluster3(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 		@:radix_decluster3(lng,simple,tloc)@
 
 	default:
-		@:radix_decluster3(int,atom,tail)@
+		@:radix_decluster3(var_t,atom,tail)@
 	}
 	*res = bn;
       bunins_failed:
@@ -3180,7 +3180,7 @@ radix_decluster4(BAT **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
 		@:radix_decluster4(lng,simple,tloc)@
 
 	default:
-		@:radix_decluster4(int,atom,tail)@
+		@:radix_decluster4(var_t,atom,tail)@
 	}
 	*res = bn;
       bunins_failed:
