@@ -217,7 +217,8 @@ TMsubcommit(BAT* bl) {
 					}
 				} else {
 					/* no longer persistent bats */
-					if (BBP_status(i) & BBPEXISTING) changed[cnt++] = -i;
+					if (BBP_status(i) & (BBPDELETED|BBPEXISTING)) 
+						changed[cnt++] = -i;
 				}
 			}
 			BBPunfix(i);
@@ -238,11 +239,12 @@ TMsubcommit(BAT* bl) {
 			BBP_status_off(i, BBPNEW, "TMsubcommit");
 		} else {
 			BBP_status_off(-i, BBPEXISTING, "TMsubcommit");
+			BBP_status_off(-i, BBPDELETED, "TMsubcommit");
 		}
 	}
 
 	/* write the new BPP.dir with those BATs that were in the previous commit */
-	if (BBPdir(BBPEXISTING) == 0) 
+	if (BBPdir(TRUE) == 0) 
 		cnt = 0; /* everything ok */
 
 	for(xx=0; xx<cnt; xx++) {
@@ -252,7 +254,8 @@ TMsubcommit(BAT* bl) {
 			BBP_status_off(i, BBPEXISTING, "TMsubcommit");
 			BBP_status_on(i, BBPNEW, "TMsubcommit");
 		} else {
-			BBP_status_on(i, BBPEXISTING, "TMsubcommit");
+			BBP_status_on(-i, BBPEXISTING, "TMsubcommit");
+			BBP_status_on(-i, BBPDELETED, "TMsubcommit");
 		}
 	}
 	gdk_unset_lock(GDKtrimLock, "TMsubcommit");

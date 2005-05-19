@@ -110,7 +110,7 @@ gdk_export int BBPsize;		/* current occupied size of BBP array */
 /* global calls */
 gdk_export void BBPinit(void);
 gdk_export void BBPexit(void);
-gdk_export int BBPdir(int mask);
+gdk_export int BBPdir(int previous);
 
 /* update interface */
 gdk_export void BBPclear(bat bid);
@@ -511,7 +511,7 @@ BBPinit(void)
 		if (stat(path, &st)) {
 			/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir): create a new one */
 			GDKwarning("BBPdir: initializing BBP.\n");
-			if (BBPdir(BBPPERSISTENT) == 0)
+			if (BBPdir(FALSE) == 0)
 				fp = GDKfilelocate("BBP", "rb", "dir");
 		} else if (GDKmove(BATDIR, "BBP", "bak", BATDIR, "BBP", "dir") == 0) {
 			GDKwarning("BBPinit: reverting to dir saved in BBP.bak.\n");
@@ -737,13 +737,13 @@ new_bbpentry(stream *s, bat i)
 }
 
 int
-BBPdir(int mask)
+BBPdir(int previous)
 {
 	FILE *fp = NULL;
 	stream *s = NULL;
 	bat i=0;
 
-	if (mask == BBPEXISTING && prepare_backup()) 
+	if (previous && prepare_backup()) 
 		return -1; /* TMsubcommit must assure a BAKDIR/BBP.dir */ 
 
 	if (GDKdebug & 17)
@@ -762,7 +762,7 @@ BBPdir(int mask)
 	    stream_printf(s, " BBPsize=%d\n", (int) BBPsize) >= 0)
 	{
 		for (i = 1; i < BBPsize; i++) {
-			if (BBP_status(i) & mask) {
+			if (BBP_status(i) & (previous?BBPEXISTING:BBPPERSISTENT)) {
 				if (new_bbpentry(s, i) < 0) break;
 				IODEBUG new_bbpentry(GDKerr, i);
 			}
@@ -780,7 +780,7 @@ BBPdir(int mask)
 		GDKsyserror("BBPdir failed:\n");
 		return -1;
 	}
-	if (mask == BBPEXISTING) {
+	if (previous) {
 		/* TMsubcommit: deleting BAKDIR/BBP.dir is the atomic commit */
 		if (GDKunlink(BAKDIR, "BBP", "dir")) return -1; 
 		backuped_dir = 0;
@@ -2249,7 +2249,7 @@ BBPsync(int commit)
 
 	if (ret == 0) {
 		if (bbpdirty) {
-			ret = BBPdir(BBPPERSISTENT);
+			ret = BBPdir(FALSE);
 		} else if (backuped_dir && GDKmove(BAKDIR, "BBP", "dir", BATDIR, "BBP", "dir")) {
 			ret = -1; /* tried a cheap way to get BBP.dir; but it failed */
 		} else {
