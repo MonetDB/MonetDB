@@ -403,7 +403,7 @@ init (opt_t *f)
 {
     milprintf(f, 
             /* a new working set is created */
-            "var ws := create_ws();\n"
+            "ws := create_ws();\n"
             /* the first loop is initialized */
             "var loop000 := bat(void,oid,1).seqbase(0@0).insert(0@0, 1@0).access(BAT_READ);\n"
              /* variable environment vars */
@@ -6336,7 +6336,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "doc_str := doc_str.reverse().kdiff(ws.fetch(DOC_LOADED).reverse())"
                         ".mark(0@0).reverse();\n"
                 "doc_str@batloop () {\n"
-                "ws := add_doc(ws, $t);\n"
+                "    add_doc(ws, $t);\n"
                 "}\n"
                 "doc_str := nil_oid_str;\n"
                 "doc_str := item%s;\n"
@@ -9878,7 +9878,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
 
     /* define working set and all other MIL context (global vars for the query) */
     opt_output(f, OPT_SEC_QUERY);
-    milprintf(f, "\n\n# MAIN MIL QUERY\n{");
+    milprintf(f, "\n\n# MAIN MIL QUERY\n\n{\n var ws := int(nil); CATCH({");
     init (f);
 
     /* get_var_usage appends information to the core nodes and creates a 
@@ -9950,11 +9950,11 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
         tm = PFtimer_stop(tm);
         milprintf(f, 
             "\ntime_print := time() - time_print;\n"
-            "printf(\"\\nTrans % 7d.%03d msec\\nFetch %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
-            "       time_shred, time_shred, time_exec, time_print);\n\n", tm/1000, tm%1000);
+            "printf(\"\\nTrans % 7d.%03d msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
+            "       time_shred, time_exec - time_shred, time_print);\n\n", tm/1000, tm%1000);
     }
 
-    milprintf(f, "}\n\n# MIL EPILOGUE\n");
+    milprintf(f, "}); destroy_ws(ws);\n}\n\n# MIL EPILOGUE\n");
 
     opt_output(f, OPT_SEC_EPILOGUE);
 

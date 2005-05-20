@@ -1314,17 +1314,19 @@ shred_comment (void *xmlCtx, const xmlChar *c)
     }
 }
 
-void 
-PFXMLerror (void *xmlCtx, const char *msg, ...)
+static void 
+print_error (void *ctx, const char *msg, ...)
 {
+    char buf[PFSHRED_BUFLEN];
+    int len;
     va_list msgs;
-    char errmsg[PFSHRED_BUFLEN];
+    (void) ctx;
 
     va_start (msgs, msg);
-    vsnprintf (errmsg, PFSHRED_BUFLEN, msg, msgs);
+    len = vsnprintf(buf, PFSHRED_BUFLEN-1, msg,  msgs);
     va_end (msgs);
 
-    xmlParserError (xmlCtx, errmsg);
+    stream_printf (GDKerr, buf, len, 1);
 }
 
 /** 
@@ -1445,7 +1447,7 @@ xmlSAXHandler shredder = {
   , .characters            = shred_characters
   , .processingInstruction = shred_pi
   , .comment               = shred_comment
-  , .error                 = PFXMLerror
+  , .error                 = 0
   , .cdataBlock            = shred_cdata
   , .internalSubset        = 0
   , .isStandalone          = 0
@@ -1500,6 +1502,9 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location)
     shredCtx->sp = 0; /* initialize stackpointer */
     shredCtx->err= 0;
 
+    /* reset libxml2 error handling */
+    xmlSetGenericErrorFunc (NULL, print_error);
+
     /* parse XML input (receive SAX events) */
     if ( !isURL(location) ) {
         if ( !(xmlCtx = xmlCreateFileParserCtxt (location)) ) {
@@ -1520,6 +1525,7 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location)
     xmlCtx->sax        = &shredder;
     xmlCtx->_private = shredCtx; /* set the SHREDCTX() value */
     xmlSwitchEncoding (xmlCtx, XML_CHAR_ENCODING_UTF8);
+
 
     /*
      * Attempt to make parser read an external Subset if defined. This does not
@@ -1555,61 +1561,6 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location)
         return -1;
     }
     return 1;
-}
-
-/**
- * Utility function to really quit the Monet server. Usefull to prevent 
- * hangup on a ReadHat8 bug.
- */
-int CMDpfquit() {
-        stream_printf(GDKerr,"# Exit through pfquit()!\n"); 
-        _exit(0);
-        return GDK_SUCCEED;
-}
-
-/**
- * Utility function to convert a file to a string or read an EOF terminated 
- * command from a prompted stdin
- */
-
-#define CHUNKSIZE     4096
-
-int CMDpffile2string(str* res, str  prompt, str fileName) {
-        FILE* f;
-
-        (void)prompt;
-        if ( *fileName ) {
-                if ( !(f = fopen(fileName,"r")) ) {
-                    stream_printf(GDKerr,"CMDpffile2string: Unable to open inputfile \"%s\"\n",fileName);
-
-                    return GDK_FAIL;
-                }
-        } else
-                f = stdin;
-         if ( *prompt ) {
-           stream_printf(GDKout,prompt);
-           stream_flush(GDKout);
-        }
-        int  buffmax, i = 0;
-        int ch;
-        char *buff  = (char*)malloc( (buffmax=CHUNKSIZE) );
-        while( (ch = fgetc(f)) != EOF) {
-                buff[i++] = ch;
-                if ( *prompt && (ch == '\n') ) {
-                     stream_printf(GDKout,prompt);
-                     stream_flush(GDKout);
-                }
-                if ( i == buffmax ) {
-                     buff  = realloc(buff, (buffmax+=CHUNKSIZE) );
-                }
-        }
-        buff[i] = 0;
-
-        *res = buff;
-
-        if ( fileName )
-                fclose(f);
-        return GDK_SUCCEED;
 }
 
 @c

@@ -36,6 +36,8 @@
 @a Jan Flokstra
 @a Jens Teubner
 @a Stefan Manegold
+@a Peter Boncz 
+
 @t Runtime Support for the Pathfinder XQuery Compiler
 
 @m
@@ -43,7 +45,11 @@
 
 .USE xtables;
 .USE streams;
+.USE monettime;
+.USE lock;
 
+@- Path steps (staircase join) 
+@m
 @:prec_foll(following)@
 @:prec_foll(preceding)@
 
@@ -122,8 +128,8 @@ returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.
 DESCRIPTION
 axis step evaluation on the @2 axis from the given context."
 
+@- utility commands
 @m
-
 .COMMAND ebv(BAT[oid, bit] b) : BAT[oid, bit] = CMDebv;
 "PARAMETERS
 BAT[oid, bit], sorted on head values.
@@ -135,25 +141,26 @@ the result for this group will be `true' as well. In any other case\n
 (a single `false' BUN, or multiple BUNs for this group), a `false'\n
 tuple will be in the result for this group."
 
-@m
+.COMMAND pflock() : lock = CMDpflock;
+ "provide a pointer to the runtime lock"
 
-#############################################
-# The NEW XQUERY and XML print functions
-#
-# - print_doc(str mode, BAT[void,bat] ws, str name)
-# - print_result(str mode, BAT[void,bat] ws, BAT[void,oid] item,
-#			BAT[void,int] kind, .... the value BATs)
-#
-.COMMAND pfquit() : void = CMDpfquit;
- "C implementation to really quit Monet instead of hangin on"
-.COMMAND pffile2string(str prompt, str filename) : str = CMDpffile2string;
- "C implementation to convert file (or stdin) to a string"
-.COMMAND shred2bats(str location, str opt) : BAT[oid, bat] = CMDshred2bats;
- "C implementation of the document shredder"
+.COMMAND lastmod_time(str filename) : timestamp = CMDlastmod_time;
+ "return the last modification time of a file"
+
+@- xquery execution commands (xquery.mx)
+@m
 .COMMAND xquery(str, str) : void = CMDxquery;
  "xquery execution. usage: xquery(\"xml\", str)"
 .BUILTIN xquery_server(Stream in, Stream out) : void = CMDxquery_server;
  "read xquery from stream, and print on a stream."
+
+@- XML shredder (shredder.mx)
+@m
+.COMMAND shred2bats(str location, str opt) : BAT[oid, bat] = CMDshred2bats;
+ "C implementation of the document shredder"
+
+@- XML print functions (serialize.mx)
+@m
 .COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
  "C interface to Workset print routine"
 .COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,int],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
@@ -206,93 +213,6 @@ PROC get_types (bat[void,int] kind) : bat[void,int]
 {
         return kind.[and](63); # 63 = 2^6 - 1
 }
-
-#PROC set_kind (bat[void,oid] frag, bat[void,int] type_) : bat[void,int]
-#{
-#        return frag.[int]().[<<](6).[or](type_);
-#}
-
-#PROC set_kind (int frag, bat[void,int] type_) : bat[void,int]
-#{
-#        return type_.[or](frag<<6);
-#}
-
-#
-# Serialization function, mainly for debugging purposes.
-#
-# Serialization should probably be done in a more sophisticated fashion.
-# For now we just implement it in MIL to have something for debugging.
-# If for the final version we decide on different parameters, the
-# MIL generation code in the Pathfinder compiler should be adapted
-# accordingly. Have a look at the top-level rule in milgen.mt.sed, and
-# at the stuff related to PFmil_ser() in mil.c. The printing routines
-# in milprint.c need to be adapted as well.
-#
-# Parameters:
-#   pos            This BAT defines the order of the output
-#   item_int       Integer values that contribute to result
-#   item_str       String values that contribute to result
-#   item_dec       Decimal values that contribute to result
-#   item_dbl       Double values that contribute to result
-#   item_bit       Boolean values that contribute to result
-#   item_node      Nodes that contribute to result
-#
-PROC serialize (BAT[void,oid] pos,
-                BAT[oid,int] item_int,
-                BAT[oid,str] item_str,
-                BAT[oid,dbl] item_dec,
-                BAT[oid,dbl] item_dbl,
-                BAT[oid,bit] item_bit,
-                BAT[oid,oid] item_node) : void
-{
-    var positions;
-    var values := new (void, BAT, 6);
-
-    values.insert (nil, item_int);
-    values.insert (nil, item_str);
-    values.insert (nil, item_dec);
-    values.insert (nil, item_dbl);
-    values.insert (nil, item_bit);
-    values.insert (nil, item_node);
-    
-    values := values.access(BAT_READ);
-
-    # Sort by pos column
-    positions := pos.reverse().sort().reverse();
-
-    positions@batloop () {
-        var curr_oid := $h;
-
-        values@batloop () {
-            $t.reverse().select (curr_oid).reverse()@batloop () {
-                print ($t);
-            }
-        }
-    }
-}
-
-ADDHELP("serialize", "teubner", "September 2004",
-"PARAMETERS:\n\
- pos            This BAT defines the order of the output\n\
- item_int       Integer values that contribute to result\n\
- item_str       String values that contribute to result\n\
- item_dec       Decimal values that contribute to result\n\
- item_dbl       Double values that contribute to result\n\
- item_bit       Boolean values that contribute to result\n\
- item_node      Nodes that contribute to result\n\
-\n\
-DESCRIPTION:\n\
-Serialize algebra expression. \n\
-All BATs are expected to be head-aligned, where values may be missing\n\
-in the item_* BATs. (In fact, the MIL code generated by the Pathfinder\n\
-compiler will produce BATs where for each key in pos there will a\n\
-BUN in exactly one of the item_* BATs.)\n\
-Given the sort order in pos, all values in the item_* are printed\n\
-(using the MIL print() primitive) in that order.\n\
-NOTE: This implementation is mainly meant for debugging, it is far from\n\
-efficient. Feel free to implement it the right way ;-).",
-"pathfinder");
-
 
 #############################################
 # Document management functions
@@ -347,6 +267,9 @@ efficient. Feel free to implement it the right way ;-).",
 # - HEIGTH     : BAT[void,int] enumeration of the fragments / maximal
 #                depth of the fragment (starts with 0@0 - WS)
 
+# get a handle to the global lock
+var pf_lock := pflock();
+
 # DEFINITION of constants concerning the data model
 const PRE_BASE := 0@0;
 const ELEMENT := chr(0);
@@ -374,136 +297,517 @@ const ATTR := 34;
 
 const WS := 0@0;
 
-# don't switch the values without also changing the order in create_ws
-const PRE_SIZE   :=  0;
-const PRE_LEVEL  :=  1;
-const PRE_PROP   :=  2;
-const PRE_KIND   :=  3;
-const PRE_FRAG   :=  4;
-const QN_URI	 :=  5;
-const QN_PREFIX  :=  6;
-const QN_LOC     :=  7;
-const PROP_TEXT  :=  8;
-const PROP_COM   :=  9;
-const PROP_INS   := 10;
-const PROP_TGT   := 11;
-const ID_PRE     := 12;
-const IDREF_PRE  := 13;
-const ATTR_OWN   := 14;
-const ATTR_QN    := 15;
-const ATTR_PROP  := 16;
-const ATTR_FRAG  := 17;
-const PROP_VAL   := 18;
-const DOC_LOADED := 19;
-const FRAG       := 20;
-const WS_FRAG    := 21;
-const HEIGHT     := 22;
-const PRINT_WS_SZ:= 22;
-const QN_PREFIX_URI := 23;
-const QN_LOC_URI := 24;
-const KIND_PRE   := 25;
-const KIND_PRE_EL := 25;
-const KIND_PRE_TE := 26;
-const KIND_PRE_CO := 27;
-const KIND_PRE_PI := 28;
-const KIND_PRE_DO := 29;
-const PROP_PRE    := 30;
-const PROP_PRE_EL := 30;
-const PROP_PRE_PI := 31;
-const WS_SIZE     := 32; # must be last!
-@= define_ws_constants
-#define PRE_SIZE     0
-#define PRE_LEVEL    1
-#define PRE_PROP     2
-#define PRE_KIND     3
-#define PRE_FRAG     4
-#define QN_URI       5
-#define QN_PREFIX    6
-#define QN_LOC       7
-#define PROP_TEXT    8
-#define PROP_COM     9
-#define PROP_INS    10
-#define PROP_TGT    11
-#define ID_PRE	    12
-#define IDREF_PRE   13
-#define ATTR_OWN    14
-#define ATTR_QN     15
-#define ATTR_PROP   16
-#define ATTR_FRAG   17
-#define PROP_VAL    18
-#define DOC_LOADED  19
-#define FRAG        20
-#define WS_FRAG     21
-#define HEIGHT      22
-#define PRINT_WS_SZ 22
-#define QN_PREFIX_URI 23
-#define QN_LOC_URI  24
-#define KIND_PRE    25
-#define KIND_PRE_EL 25
-#define KIND_PRE_TE 26
-#define KIND_PRE_CO 27
-#define KIND_PRE_PI 28
-#define KIND_PRE_DO 29
-#define PROP_PRE    30
-#define PROP_PRE_EL 30
-#define PROP_PRE_PI 31
-#define WS_SIZE     32 /* must be last! */
+@- ws definition
+
+This macro is used for the MIL const defs, the C const defs,
+but also in the MIL procs for creating, filling and destroying
+a working set.
+
+We define a table with the column name, its number,
+the type of data (typically again a bat), and if
+so the head and tail type of that bat.
+
+actually the fielf 'tpe' is taken to be bat *always*, 
+EXCEPT when (child-t != void)
+
+('tpe' = void means it is a view; without persistent name)
+
+        name       number  tpe  col[H,T]    col-seqbase 
+        ========   ======  ===  ==========  ===========
+@= ws
+@:@1_ws(PRE_SIZE,       0, bat, void,  int, PRE_BASE)@
+@:@1_ws(PRE_LEVEL,      1, bat, void,  chr, PRE_BASE)@
+@:@1_ws(PRE_PROP,       2, bat, void,  oid, PRE_BASE)@
+@:@1_ws(PRE_KIND,       3, bat, void,  chr, PRE_BASE)@
+@:@1_ws(PRE_FRAG,       4, void,void,  oid, PRE_BASE)@
+@:@1_ws(QN_URI,         5, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_PREFIX,      6, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_LOC,         7, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_TEXT,      8, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_COM,       9, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_INS,      10, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_TGT,      11, bat, void,  str, PRE_BASE)@
+@:@1_ws(ID_PRE,        12, bat,  str,  oid, nil)@
+@:@1_ws(IDREF_PRE,     13, bat,  str,  oid, nil)@
+@:@1_ws(ATTR_OWN,      14, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_QN,       15, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_PROP,     16, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_FRAG,     17, void,void,  oid, PRE_BASE)@
+@:@1_ws(PROP_VAL,      18, bat, void,  str, PRE_BASE)@
+@:@1_ws(DOC_LOADED,    19, str, void, void, nil)@
+@:@1_ws(FRAG,          20, oid, void, void, nil)@
+@:@1_ws(WS_FRAG,       21, oid, void, void, nil)@
+@:@1_ws(HEIGHT,        22, int, void, void, nil)@
+@:@1_ws(QN_PREFIX_URI, 23, bat, void,  str, nil)@
+@:@1_ws(QN_LOC_URI,    24, bat, void,  str, nil)@
+@:@1_ws(KIND_PRE_0,    25, bat, void,  oid, nil)@
+@:@1_ws(KIND_PRE_1,    26, bat, void,  oid, nil)@
+@:@1_ws(KIND_PRE_2,    27, bat, void,  oid, nil)@
+@:@1_ws(KIND_PRE_3,    28, bat, void,  oid, nil)@
+@:@1_ws(KIND_PRE_4,    29, bat, void,  oid, nil)@
+@:@1_ws(PROP_PRE_0,    30, bat,  oid,  oid, nil)@
+@:@1_ws(PROP_PRE_3,    31, bat,  oid,  oid, nil)@
+
+@= c_decl_ws
+#define @1 @2
+@h
+@:ws(c_decl)@
+#define WS_SIZE 32  /* should be last */
+
+@= mil_decl_ws
+const @1 := @2;
 @mil
+@:ws(mil_decl)@
+const WS_SIZE  := 32; # WS_SIZE should be last
+const KIND_PRE := KIND_PRE_0;
+const PROP_PRE := PROP_PRE_0;
 
-PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
+var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
+var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
+var uri_duration; # pattern bat[str,lng] that determines how many seconds URIs are cached (longest string prefix match counts)
+
+PROC doc_check(str name) : bit
 {
-    if (not(bat("doc_name").reverse().exist(name))) { 
-	ERROR("Document %s does not exist\n",name); 
-	}
-
-    var docid := str(int(bat("doc_name").reverse().find(name)));
-    
-    var frag := ws.fetch(DOC_LOADED).uselect(name);
-    if (frag.count() = 0)
-    {
-        ws.fetch(DOC_LOADED).insert(nil,name);
-	frag := oid(ws.fetch(DOC_LOADED).count());
-	ws.fetch(PRE_SIZE).insert(nil,bat("pre_size" + docid));
-	ws.fetch(PRE_LEVEL).insert(nil,bat("pre_level" + docid));
-	ws.fetch(PRE_PROP).insert(nil,bat("pre_prop" + docid));
-	ws.fetch(PRE_KIND).insert(nil,bat("pre_kind" + docid));
-	ws.fetch(PRE_FRAG).insert(nil,fake_project(frag));
-	ws.fetch(QN_URI).insert(nil,bat("qn_uri" + docid));
-	ws.fetch(QN_PREFIX).insert(nil,bat("qn_prefix" + docid));
-	ws.fetch(QN_LOC).insert(nil,bat("qn_loc" + docid));
-	ws.fetch(PROP_TEXT).insert(nil,bat("prop_text" + docid));
-	ws.fetch(PROP_COM).insert(nil,bat("prop_com" + docid));
-	ws.fetch(PROP_INS).insert(nil,bat("prop_ins" + docid));
-	ws.fetch(PROP_TGT).insert(nil,bat("prop_tgt" + docid));
-	ws.fetch(ID_PRE).insert(nil,bat("id_pre" + docid));
-	ws.fetch(IDREF_PRE).insert(nil,bat("idref_pre" + docid));
-	ws.fetch(ATTR_OWN).insert(nil,bat("attr_own" + docid));
-	ws.fetch(ATTR_QN).insert(nil,bat("attr_qn" + docid));
-	ws.fetch(ATTR_PROP).insert(nil,bat("attr_prop" + docid));
-	ws.fetch(ATTR_FRAG).insert(nil,fake_project(frag));
-	ws.fetch(PROP_VAL).insert(nil,bat("prop_val" + docid));
-        ws.fetch(FRAG).replace(0@0,frag);
-        ws.fetch(HEIGHT).insert(nil,bat("doc_height").find(oid(docid)));
-	ws.fetch(QN_PREFIX_URI).insert(nil,bat("qn_prefix_uri" + docid));
-	ws.fetch(QN_LOC_URI).insert(nil,bat("qn_loc_uri" + docid));
-	{
-          var knd := ELEMENT;
-          while ( knd <= DOCUMENT ) {
-            var kind_pre_name := "kind_pre" + docid + "_" + chr(48 + knd);
-            ws.fetch(KIND_PRE + int(knd)).insert(nil,bat(kind_pre_name));
-            knd :+= chr(1);
-          }
+    # check if anythimg is initialized at all
+    if (type(doc_query) != bat) {
+        if (not(isnil(CATCH(bat("doc_name").count())))) {
+            # create doc_name table in case it does not exist
+            new(oid,str).persists(true).bbpname("doc_name");
+            new(oid,str).persists(true).bbpname("doc_location");
+            new(oid,timestamp).persists(true).bbpname("doc_timestamp");
+            new(oid,int).persists(true).bbpname("doc_height");
+            new(oid,lng).persists(true).bbpname("doc_size");
         }
-	{
-          var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + ELEMENT);
-          ws.fetch(PROP_PRE_EL).insert(nil,bat(prop_pre_name));
-          prop_pre_name := "prop_pre" + docid + "_" + chr(48 + PI);
-          ws.fetch(PROP_PRE_PI).insert(nil,bat(prop_pre_name));
+        if (isnil(CATCH(bat("doc_query").count()))) {
+            doc_query := bat("doc_query"); 
+            doc_sema := bat("doc_sema"); 
+            uri_duration := bat("uri_duration"); 
+        } else {
+            (doc_query := new(oid,int)).bbpname("doc_query"); 
+            (doc_sema := new(oid,sema)).bbpname("doc_sema"); 
+            (uri_duration := new(str,lng)).bbpname("uri_duration"); 
         }
     }
-    else
-       { ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); }
+    return bat("doc_name").reverse().exist(name);
+}
 
+
+PROC create_ws () : BAT[void,bat]
+{
+    var ws := bat(void,bat,WS_SIZE).seqbase(PRE_BASE);
+
+    # use our ws macro to instatiate a working set with the proper types
+@= create_ws
+    if (@5 != void) { # a bat of bats (persistent or view)
+        var b := bat(@4,@5);
+        if (not(isnil(@6))) b.seqbase(@6); 
+        ws.insert(nil, bat(void,bat).seqbase(PRE_BASE).insert(nil, b));
+    } else {
+        ws.insert(nil, bat(void,@3).seqbase(PRE_BASE)); # a constant bat
+    }
+@mil
+    @:ws(create)@
+
+    # fill the constant bats with initial values
+    ws.fetch(DOC_LOADED).seqbase(1@0);
+    ws.fetch(FRAG).seqbase(0@0).insert(0@0,nil);
+    ws.fetch(HEIGHT).seqbase(0@0).insert(nil,0);
+    return ws.access(BAT_READ);
+}
+ADDHELP("create_ws", "tsheyar", "July 2004",
+"DESCRIPTION:\n\
+creates a new working set and gives back the reference",
+"pathfinder");
+
+
+PROC destroy_ws_locked(BAT[void,bat] ws) : bit {
+    if (type(doc_query) = bat)
+    doc_query.select(int(ws))@batloop() {
+        var doc_oid := $h;
+        doc_query.delete(doc_oid, int(ws));
+        if (not(doc_query.exist(doc_oid))) {
+            if (doc_sema.exist(doc_oid)) {
+                sema_up(doc_sema.find(doc_oid));
+            }
+        }
+    }
+    # determine whether a cache flush is desired (only count cached bats; those with a timestamp)
+    var cursize := sum(bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).mirror().join(bat("doc_size")));
+    var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
+
+    if (cursize > maxsize)
+	delete_all_docs_locked(true);
+}
+
+PROC destroy_ws(BAT[void,bat] ws) : void {
+    var err, flush_cache := false;
+
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(flush_cache := destroy_ws_locked(ws));
+    lock_unset(pf_lock);
+
+    if (not(isnil(err))) ERROR(err);
+
+}
+ADDHELP("destroy_ws", "boncz", "May 2005",
+"DESCRIPTION:\n\
+destroys the working set, removing all doument pins. Also chech cache occupancy and flush if full.\n",
+"pathfinder");
+
+
+
+PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts, int ws, int height) : void 
+{
+    # get a new persistent doc id
+    var doc_oid := 0@0;
+    if (bat("doc_name").count() > 0) 
+        doc_oid := oid(int(bat("doc_name").reverse().max()) + 1); 
+
+    # rename all new bats with the doc id as suffix
+    [rename](docBAT, [+](mirror(docBAT), str(int(doc_oid))));
+    var totsize := sum([batsize](docBAT));
+
+    # add to meta table
+    bat("doc_name").insert(doc_oid, name);
+    bat("doc_location").insert(doc_oid, location);
+    bat("doc_timestamp").insert(doc_oid, ts);
+    bat("doc_height").insert(doc_oid, height);
+    bat("doc_size").insert(doc_oid, totsize);
+
+    [persists](docBAT, true);
+   
+    # add the meta table to the commit set 
+    #docBAT.insert(str(nil),bat("doc_name"));
+    #docBAT.insert(str(nil),bat("doc_location"));
+    #docBAT.insert(str(nil),bat("doc_timestamp"));
+    #docBAT.insert(str(nil),bat("doc_height"));
+    #docBAT.insert(str(nil),bat("doc_size"));
+    #if (not(subcommit(docBAT))) 
+    if (not(commit())) ERROR("shred_doc(%s) : commit failed\n");
+
+    if (not(isnil(ws))) {
+        pin_doc(doc_oid, ws);
+    }
+}
+
+# HACK: overwrite 'height'
+PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts, int ws) : BAT[void,bat]
+{
+    var err, exists := false;
+
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(exists := doc_check(name));
+    lock_unset(pf_lock);
+ 
+    if (not(isnil(err))) ERROR(err);
+    else if (exists) ERROR("shred_doc(%s): already exists in database!\n", name);
+
+    # shred it unlocked
+    var docBAT := new(str,bat); # contains all new bats
+    var us := usec();
+    var shredRES := shred2bats(location,opt);
+
+    # use the ws macro to get the the basic working set (excluding views, constants and indices)
+@= shred_doc_ws
+    if (and(=(@3, bat), <(@1, DOC_LOADED)))
+        docBAT.insert(toLower("@1"), shredRES.fetch(@1));
+@mil
+    @:ws(shred_doc)@
+
+    # these are simple concatenations (to accelerate combPRINT_WS_SZined lookup)
+    docBAT.insert("qn_prefix_uri", docBAT.find("qn_prefix").[+](str('\1')).[+](docBAT.find("qn_uri")));
+    docBAT.insert("qn_loc_uri",    docBAT.find("qn_loc").[+](str('\1')).[+](docBAT.find("qn_uri")));
+
+    # create our indices
+    var knd := ELEMENT;
+    while ( knd <= DOCUMENT ) {
+       docBAT.insert("kind_pre" + "_" + chr(48 + knd),
+                     docBAT.find("pre_kind").ord_uselect(knd).reverse().chk_order());
+       knd :+= chr(1);
+    }
+
+    var knd_pre_bat := docBAT.find("kind_pre" + "_" + chr(48 + ELEMENT)).reverse().mirror();
+    docBAT.insert("prop_pre" + "_" + chr(48 + ELEMENT),
+                  knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order());
+
+    knd_pre_bat := docBAT.find("kind_pre" + "_" + chr(48 + PI)).reverse().mirror();
+    docBAT.insert("prop_pre" + "_" + chr(48 + PI),
+                  knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order());
+
+    height := shredRES.fetch(PRE_LEVEL).max().int() + 1;
+
+    if (doCommit) {
+        [mmap](docBAT, STORE_MMAP);
+	[save](docBAT);
+
+        # add doc to the database locked
+        lock_set(pf_lock);
+        err := CATCH(shred_doc_locked(docBAT, location, name, ts, ws, height));
+        lock_unset(pf_lock);
+
+        if (not(isnil(err))) ERROR(err);
+    }
+    return docBAT;
+}
+
+PROC shred_doc_base(str location, str name, bit doCommit, str opt) : BAT[void,bat]
+{
+    var height, us := usec();
+    var docBAT := shred_doc_impl(location, name, doCommit, opt, timestamp(nil), int(nil));
+    # save all persistent BATs and print timings
+    us := usec() - us;
+    var ms := us/1000;
+    if ( doCommit ) {
+        printf("# Shredded XML doc(\"%s\"), total time after commit=%d.%03ds\n", name, ms/1000,ms%1000);
+    } else {
+        printf("# Shredded XML doc(\"%s\") uncommitted, total time =%d.%03ds\n", name, ms/1000,ms%1000);
+    }
+    return docBAT;
+}
+
+PROC shred_doc(str location, str name) : void
+{
+    shred_doc_base(location, name, true, "");
+}
+ADDHELP("shred_doc", "flokstra", "Dec 2004",
+"PARAMETERS:\n\
+str file name (\"/anypath/foo.xml\" containing the xml document to be shredded)\n\
+str document name in database\n\
+DESCRIPITON:\n\
+Shred xml document to the internal Pathfinder format, (analog to import_doc()).",
+"pathfinder");
+
+PROC delete_doc_locked(oid doc_oid) : bit {
+    var docBAT := new(void,str);
+
+    if (doc_sema.exist(doc_oid)) {
+	# somebody else is deleting the same doc!
+        while(doc_sema.exist(doc_oid)) {
+            lock_unset(pf_lock);
+            sleep(1);
+            lock_set(pf_lock);
+        }
+        return; # now he is done
+    }
+    # we will delete it
+    while (doc_query.exist(doc_oid)) {
+        var sem := sema_create(0);
+        doc_sema.insert(doc_oid, sem);
+
+        lock_unset(pf_lock);
+        sema_down(sem); # wait for the users to go away 
+        lock_set(pf_lock);
+    
+        sema_destroy(sem);
+        doc_sema.delete(doc_oid, sem);
+    }
+
+    # use the ws macro to get the names of all non-(view or constant) bats
+@= getlower_ws
+    if (@3 = bat)
+        docBAT.insert(nil, toLower("@1"));
+@mil
+    @:ws(getlower)@
+  
+    # docBAT becomes [name,bat]
+    docBAT := [bat]([+](docBAT, str(int(doc_oid))).reverse().mirror());
+
+    # rename the bats so even in case of failure they don't bother us directly anymore
+    [rename](docBAT, [+]([+]("rm_", mirror(docBAT)), +("_" , str(lng(current_timestamp()))))).access(BAT_WRITE);
+
+    # remove them from the repository
+    [persists](docBAT, false);
+
+    bat("doc_name").delete(doc_oid);
+    bat("doc_location").delete(doc_oid);
+    bat("doc_timestamp").delete(doc_oid);
+    bat("doc_height").delete(doc_oid);
+    bat("doc_size").delete(doc_oid);
+
+    # also commit the meta bats
+    #docBAT.insert(str(nil), bat("doc_name"));
+    #docBAT.insert(str(nil), bat("doc_location"));
+    #docBAT.insert(str(nil), bat("doc_timestamp"));
+    #docBAT.insert(str(nil), bat("doc_height"));
+    #docBAT.insert(str(nil), bat("doc_size"));
+    #return subcommit(docBAT);
+    return commit();
+}
+
+PROC delete_doc(str name) : void
+{
+    var err;
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(delete_doc_locked(bat("doc_name").reverse().find(name)));
+    lock_unset(pf_lock);
+
+    if (not(isnil(err))) ERROR(err);
+}
+ADDHELP("delete_doc", "tsheyar", "July 2004",
+"PARAMETERS:\n\
+str document name\n\
+DESCRIPITON:\n\
+delete the persistent BATS that store the document.",
+"pathfinder");
+
+PROC delete_all_docs_locked(bit cachedOnly) : void
+{
+    doc_check("dummy");
+    bat("doc_timestamp").copy()@batloop() {
+        if (or(cachedOnly, not(isnil($t))))
+            delete_doc_locked($h);
+    }
+}
+
+PROC delete_all_docs(bit cachedOnly) : void
+{
+    var err, b := bat(timestamp,str);
+    
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(delete_all_docs_locked(cachedOnly));
+    lock_unset(pf_lock);
+
+    if (not(isnil(err))) ERROR(err);
+
+}
+ADDHELP("delete_all_docs", "tsheyar", "July 2004",
+"DESCRIPITON:\n\
+deletes all persistent document BATs that store xml documents.",
+"pathfinder");
+
+
+PROC pin_doc(oid doc_oid, int ws) : void 
+{
+    # pin the document on this working set (must hold lock!)
+    doc_query.insert(doc_oid, int(ws));
+}
+
+# HACK: this proc overwrites variables 'lifetime' and 'ts'
+PROC add_doc_locked(str name, timestamp ts, int ws) : oid
+{
+    var doc_oid := nil;
+    var filename := name;
+    var lim := timestamp(nil);
+
+    # check if the document already existed
+    if (doc_check(name)) {
+        doc_oid := bat("doc_name").reverse().find(name);
+        filename := bat("doc_location").find(doc_oid);
+    } else if (bat("doc_location").reverse().exist(name)) {
+        # existed as cached location (URI): must check timestamp
+        var doc_oid := bat("doc_location").reverse().find(name);
+    }
+
+    # do some first analysis on the URI
+    if (not(isnil(doc_oid))) { 
+        filename := bat("doc_location").find(doc_oid);
+	lim := bat("doc_timestamp").find(doc_oid);
+    }
+
+    if (startsWith(filename, "file://") or startsWith(filename, "FILE://")) {
+        filename := string(filename, 7);
+    } else {
+	idx := search(filename, '/');
+    }
+    if (and(>=(idx,0), =(chrAt(filename,idx+1), '/'))) {
+	# add uri-dependent lifetime
+        var b := [startsWith](filename, mirror(uri_duration)).uselect(true);
+        if (b.count() > 0) {
+            var matchlen := [length](mirror(b));
+            lifetime := *(1000LL, uri_duration.find(matchlen.reverse().find(matchlen.max())));
+        } else {
+            lifetime := lng(nil); # doc will *not* be cached 
+        }
+    } else {
+        # a file: get lastmodification time
+        var tts;
+        var err := CATCH(tts := lastmod_time(filename));
+	if (isnil(err)) {
+            ts := tts; # timestamp was read succesfully
+	} else if (not(isnil(lim))) {
+            ts := add(lim, 1LL); # file-error on cached file: force remove
+	}
+    }
+
+    if (isnil(doc_oid)) {
+        return nil; # document not in database
+    } else if (and(not(isnil(lim)), >(ts,lim))) { # if so, check if it still valid
+        # remove outdated document from the cache
+        delete_doc_locked(doc_oid); 
+        return nil;
+    }
+    pin_doc(doc_oid, ws); # make sure nobody can delete it
+    return doc_oid;
+}
+
+# if docid != "", it holds the str(id) of the persistent doc
+# if not, the temporary document is in tmp_doc (by name without id)
+PROC add_doc_bat(BAT[str,bat] tmp_doc, str name, str docid) : bat[any,any]
+{
+    if (docid != "") return bat(name + docid);
+    return tmp_doc.find(name);
+}
+
+# HACK: this proc overwrites variable 'time_shred' 
+PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
+{
+    var ts := current_timestamp();
+    var lifetime := 0LL;
+    var idx := -1;
+    var doc_oid;
+    var err, height;
+    var t := time();
+
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(doc_oid := add_doc_locked(name, ts, int(ws)));
+    lock_unset(pf_lock);
+
+    if (not(isnil(err))) ERROR(err);
+
+    var docBAT, docid := "", doCommit := true;
+
+    if (isnil(doc_oid)) {
+        ts := add(ts, lifetime);
+        if (isnil(ts)) doCommit := false;
+        docBAT := shred_doc_impl(name, name, doCommit, "", ts, int(ws));
+        # overwrites 'height'
+        time_shred :+=  time() - t;
+    } else {
+        docBAT := new(str,bat);
+    }
+    if (doCommit) { 
+        docid := str(int(bat("doc_name").reverse().find(name)));
+        height := bat("doc_height").find(oid(int(docid)));
+    }
+
+    # add it to the working set
+    var frag := ws.fetch(DOC_LOADED).uselect(name);
+    if (frag.count() = 0) {
+        ws.fetch(DOC_LOADED).insert(nil,name);
+	frag := oid(ws.fetch(DOC_LOADED).count());
+
+        # use the ws macro to instantiate all non-(view or constant) bats
+@= add_doc_bat_ws
+        if (@3 = bat)
+            ws.fetch(@1).insert(nil,docBAT.add_doc_bat(toLower("@1"), docid));
+@mil
+	@:ws(add_doc_bat)@
+
+        # create views
+        ws.fetch(PRE_FRAG).insert(nil,fake_project(frag));
+        ws.fetch(ATTR_FRAG).insert(nil,fake_project(frag));
+
+        # adapt constants
+        ws.fetch(FRAG).replace(0@0,frag);
+        ws.fetch(HEIGHT).insert(nil,height);
+    } else { 
+        ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); 
+    }
     return ws;
 }
 ADDHELP("add_doc", "tsheyar", "July 2004",
@@ -516,1003 +820,8 @@ updated working set. (At position FRAG stands the actual\n\
 fragment to which the new root is linked.)",
 "pathfinder");
 
-PROC create_ws () : BAT[void,bat]
-{
-    var ws := bat (void,bat,WS_SIZE).seqbase(PRE_BASE);
-    # don't switch the order without also changing the constants
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_SIZE
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_LEVEL
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_PROP
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_KIND
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PRE_FRAG
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_URI
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_PREFIX
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_LOC
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_TEXT
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_COM
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_INS
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_TGT
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ID_PRE
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # IDREF_PRE
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ATTR_OWN
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ATTR_QN
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ATTR_PROP
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # ATTR_FRAG
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_VAL
-    # offset starts with 1@0 because temporary variables have no name
-    ws.insert(nil, bat(void,str).seqbase(1@0));      # DOC_LOADED
-    ws.insert(nil, bat(void,oid).seqbase(0@0));      # FRAG
-    ws.insert(nil, bat(void,oid).seqbase(0@0));      # WS_FRAG
-    ws.insert(nil, bat(void,int).seqbase(0@0));      # HEIGHT
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_PREFIX_URI
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # QN_LOC_URI
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_EL
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_TE
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_CO
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_PI
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # KIND_PRE_DO
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_PRE_EL
-    ws.insert(nil, bat(void,bat).seqbase(PRE_BASE)); # PROP_PRE_PI
-
-    ws := ws.access(BAT_READ);
-
-    # add the working set
-    ws.fetch(PRE_SIZE).insert(nil, bat(void,int).seqbase(PRE_BASE)); # PRE_SIZE
-    ws.fetch(PRE_LEVEL).insert(nil, bat(void,chr).seqbase(PRE_BASE)); # PRE_LEVEL
-    ws.fetch(PRE_PROP).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # PRE_PROP
-    ws.fetch(PRE_KIND).insert(nil, bat(void,chr).seqbase(PRE_BASE)); # PRE_KIND
-    ws.fetch(PRE_FRAG).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # PRE_FRAG
-    ws.fetch(QN_URI).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_URI
-    ws.fetch(QN_PREFIX).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_PREFIX
-    ws.fetch(QN_LOC).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_LOC
-    ws.fetch(PROP_TEXT).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_TEXT
-    ws.fetch(PROP_COM).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_COM
-    ws.fetch(PROP_INS).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_INS
-    ws.fetch(PROP_TGT).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_TGT
-    ws.fetch(ID_PRE).insert(nil, bat(str,oid));                      # ID_PRE
-    ws.fetch(IDREF_PRE).insert(nil, bat(str,oid));                   # IDREF_PRE
-    ws.fetch(ATTR_OWN).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # ATTR_OWN
-    ws.fetch(ATTR_QN).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # ATTR_QN
-    ws.fetch(ATTR_PROP).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # ATTR_PROP
-    ws.fetch(ATTR_FRAG).insert(nil, bat(void,oid).seqbase(PRE_BASE)); # ATTR_FRAG
-    ws.fetch(PROP_VAL).insert(nil, bat(void,str).seqbase(PRE_BASE)); # PROP_VAL
-    ws.fetch(FRAG).insert(0@0,nil);
-    ws.fetch(HEIGHT).insert(nil,0);
-    ws.fetch(QN_PREFIX_URI).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_PREFIX_URI
-    ws.fetch(QN_LOC_URI).insert(nil, bat(void,str).seqbase(PRE_BASE)); # QN_LOC_URI
-    {
-      var knd := ELEMENT;
-      while ( knd <= DOCUMENT ) {
-        ws.fetch(KIND_PRE + int(knd)).insert(nil,bat(void,oid).seqbase(nil));
-        knd :+= chr(1);
-      }
-    }
-    {
-      ws.fetch(PROP_PRE_EL).insert(nil,bat(oid,oid));
-      ws.fetch(PROP_PRE_PI).insert(nil,bat(oid,oid));
-    }
-
-    return ws;
-}
-ADDHELP("create_ws", "tsheyar", "July 2004",
-"DESCRIPITON:\n\
-creates a new working set and gives back the reference",
-"pathfinder");
-
-# called by compress_properties
-PROC compress_val(str batname) : bat[void,oid]
-{
-    var bat1 := bat(batname);
-    bat1.access(BAT_WRITE); # to avoid bat view for 'bat1'
-    var gro := CTgroup(bat1);
-    var unq := gro.CTextend().mark(0@0).reverse();
-
-    { var tmp := unq.join(bat1); bat1.delete().insert(tmp).access(BAT_READ); }
-
-    return gro.CTmap().join(unq.reverse());
-}
-
-# called by compress_properties
-PROC compress_val(str batname1, str batname2) : bat[void,oid]
-{
-    var bat1 := bat(batname1);
-    var bat2 := bat(batname2);
-    bat1.access(BAT_WRITE); # to avoid bat view for 'bat1'
-    bat2.access(BAT_WRITE); # to avoid bat view for 'bat2'
-    var gro := CTgroup(bat1).CTmap().CTgroup(bat2);
-    var unq := gro.CTextend().mark(0@0).reverse(); # void,new-oid 
-
-    { var tmp := unq.join(bat1); bat1.delete().insert(tmp).access(BAT_READ); }
-    { var tmp := unq.join(bat2); bat2.delete().insert(tmp).access(BAT_READ); }
- 
-    return gro.CTmap().leftjoin(unq.reverse());
-}
-
-PROC compress_properties(str name) : void
-{
-    if (not(bat("doc_name").reverse().exist(name)))
-	{ ERROR("Document %s does not exist\n",name); }
-    var docid := str(int(bat("doc_name").reverse().find(name)));
-
-    printf("# \">>> Compress properties of loaded document '%s'\"\n",name);
-    
-    # eliminate property duplicates in each BAT prop_*
-    # (in case of tag-names and PIs every unique combination of
-    #  ns:loc, (resp. tgt:ins) gets a property ID)
-    
-    var pre_kind := bat("pre_kind" + docid);
-    var pre_prop := bat("pre_prop" + docid);
-
-    var pre_oldProp := pre_kind.ord_uselect(DOCUMENT).mirror().leftfetchjoin(pre_prop); 
-    var _pre := pre_oldProp.mark(0@0).reverse();
-    var _newProp := pre_oldProp.reverse().mark(0@0).reverse();
-
-    pre_oldProp := pre_kind.ord_uselect(ELEMENT).mirror().leftfetchjoin(pre_prop);
-    var oldProp_newProp := compress_val(("qn_uri" + docid), ("qn_loc" + docid));
-    var oldProp_newProp := compress_val(("qn_uri" + docid), ("qn_loc" + docid));
-    {
-        var qn_prefix := bat("qn_prefix" + docid);
-        qn_prefix.access(BAT_WRITE).delete().insert(bat("qn_uri" + docid)).access(BAT_READ);
-    }
-    # combine the intermediate results
-    var pre_newProp_part := pre_oldProp.leftjoin(oldProp_newProp);
-    var _pre_part := pre_newProp_part.mark(0@0).reverse();
-    var _newProp_part := pre_newProp_part.reverse().mark(0@0).reverse();
-    var tmp := merged_union (_pre, _pre_part, _newProp, _newProp_part);
-    pre_oldProp := nil;
-    pre_newProp_part := nil;
-    _pre_part := nil;
-    _newProp_part := nil;
-    _pre := tmp.fetch(0);
-    _newProp := tmp.fetch(1);
-    tmp := nil;
-    # use the already compressed QNames to get the new attr qn references
-    var attr_oldQn := bat("attr_qn" + docid);
-    var attr_newQn := attr_oldQn.leftfetchjoin(oldProp_newProp);
-    # FIXME: leftfetchjoin has to be order preserving to allow such a mark
-    attr_newQn := attr_newQn.reverse().mark(0@0).reverse();
-    # change the persistent attr_qn bat
-    attr_oldQn.access(BAT_WRITE).delete().insert(attr_newQn).access(BAT_READ);
-
-    pre_oldProp := pre_kind.ord_uselect(TEXT).mirror().leftfetchjoin(pre_prop); 
-    oldProp_newProp := compress_val(("prop_text" + docid));
-    # combine the intermediate results
-    pre_newProp_part := pre_oldProp.leftjoin(oldProp_newProp);
-    _pre_part := pre_newProp_part.mark(0@0).reverse();
-    _newProp_part := pre_newProp_part.reverse().mark(0@0).reverse();
-    tmp := merged_union (_pre, _pre_part, _newProp, _newProp_part);
-    pre_oldProp := nil;
-    pre_newProp_part := nil;
-    _pre_part := nil;
-    _newProp_part := nil;
-    _pre := tmp.fetch(0);
-    _newProp := tmp.fetch(1);
-    tmp := nil;
-
-    pre_oldProp := pre_kind.ord_uselect(COMMENT).mirror().leftfetchjoin(pre_prop); 
-    oldProp_newProp := compress_val(("prop_com" + docid));
-    # combine the intermediate results
-    pre_newProp_part := pre_oldProp.leftjoin(oldProp_newProp);
-    _pre_part := pre_newProp_part.mark(0@0).reverse();
-    _newProp_part := pre_newProp_part.reverse().mark(0@0).reverse();
-    tmp := merged_union (_pre, _pre_part, _newProp, _newProp_part);
-    pre_oldProp := nil;
-    oldProp_newProp := nil;
-    pre_newProp_part := nil;
-    _pre_part := nil;
-    _newProp_part := nil;
-    _pre := tmp.fetch(0);
-    _newProp := tmp.fetch(1);
-    tmp := nil;
-
-    pre_oldProp := pre_kind.ord_uselect(PI).mirror().leftfetchjoin(pre_prop); 
-    oldProp_newProp := compress_val(("prop_ins" + docid), ("prop_tgt" + docid));
-    # combine the intermediate results
-    pre_newProp_part := pre_oldProp.leftjoin(oldProp_newProp);
-    _pre_part := pre_newProp_part.mark(0@0).reverse();
-    _newProp_part := pre_newProp_part.reverse().mark(0@0).reverse();
-    tmp := merged_union (_pre, _pre_part, _newProp, _newProp_part);
-    pre_oldProp := nil;
-    pre_newProp_part := nil;
-    _pre_part := nil;
-    _newProp_part := nil;
-    _pre := tmp.fetch(0);
-    _newProp := tmp.fetch(1);
-    tmp := nil;
-
-    # change the persistent pre_prop bat
-    pre_prop.access(BAT_WRITE).delete().insert(_pre.reverse().leftjoin(_newProp)).access(BAT_READ);
-    _pre := nil;
-    _newProp := nil;
-
-    var attr_prop := bat("attr_prop" + docid);
-    oldProp_newProp := compress_val(("prop_val" + docid));
-    var attr_newProp := attr_prop.leftfetchjoin(oldProp_newProp);
-    oldProp_newProp := nil;
-    # FIXME: leftfetchjoin has to be order preserving to allow such a mark
-    attr_newProp := attr_newProp.reverse().mark(0@0).reverse();
-    # change the persistent attr_prop bat
-    attr_prop.access(BAT_WRITE).delete().insert(attr_newProp).access(BAT_READ);
-    attr_prop := nil;
-
-    commit();
-    print("Compression completed");
-}
-ADDHELP("compress_properties", "tsheyar", "Juli 2004",
-"PARAMETERS:\n\
-str document name\n\
-DESCRIPITON:\n\
-compression of property duplicates",
-"pathfinder");
-
-PROC import_doc(str flnm, str name) : void
-{
-    # Initialize the Documenty Handler (if neccesary)
-    docHandlerInit();
-
-    var doc_oid;
-
-    # check if the document already existed
-    if (bat("doc_name").reverse().exist(name)) { 
-    	ERROR("import_doc: Document %s already exists\n",name);
-    } else {
-        # get a new oid for the document
-        doc_oid := docHandlerNewDoc(name,flnm,0,true);
-    }
-
-    module("ascii_io");
-
-    printf("# \">>> Importing '%s' with name '%s'\"\n",flnm,name);
-
-    # column/line separators (4 columns)
-    var seps4 := new (void, str, 4);
-    seps4.insert (nil, ",");
-    seps4.insert (nil, ",");
-    seps4.insert (nil, ",");
-    seps4.insert (nil, "\n");
-    seps4 := seps4.access(BAT_READ);
-
-    # column/line separators (3 columns)
-    var seps3 := new (void, str, 3);
-    seps3.insert (nil, ",");
-    seps3.insert (nil, ",");
-    seps3.insert (nil, "\n");
-    seps3 := seps3.access(BAT_READ);
-
-    # column/line separators (2 columns)
-    var seps2 := new (void, str, 2);
-    seps2.insert (nil, ",");
-    seps2.insert (nil, "\n");
-    seps2 := seps2.access(BAT_READ);
-
-    # column/line separators (1 column)
-    var seps1 := new (void, str, 1);
-    seps1.insert (nil, "\n");
-    seps1 := seps1.access(BAT_READ);
-
-    # table pre|size|level|prop|kind 
-    var pre := new (void, str, 4);
-    pre.insert (nil, "size");
-    pre.insert (nil, "level");
-    pre.insert (nil, "prop");
-    pre.insert (nil, "kind");
-    pre := pre.access(BAT_READ);
-
-    # column types
-    var pre_ty := new (void, str, 4);
-    pre_ty.insert (nil, "int");
-    pre_ty.insert (nil, "sht");
-    pre_ty.insert (nil, "oid");
-    pre_ty.insert (nil, "sht");
-    pre_ty := pre_ty.access(BAT_READ);
-
-    # table prop|ns|loc
-    var tag := new (void, str, 2);
-    tag.insert (nil, "ns");
-    tag.insert (nil, "loc");
-    tag := tag.access(BAT_READ);
-
-    # column types
-    var tag_ty := new (void, str, 2);
-    tag_ty.insert (nil, "str");
-    tag_ty.insert (nil, "str");
-    tag_ty := tag_ty.access(BAT_READ);
-
-    # table prop|text
-    var text := new (void, str, 1);
-    text.insert (nil, "text");
-    text := text.access(BAT_READ);
-
-    # column types
-    var text_ty := new (void, str, 1);
-    text_ty.insert (nil, "str");
-    text_ty := text_ty.access(BAT_READ);
-
-    # table prop|com
-    var com := new (void, str, 1);
-    com.insert (nil, "com");
-    com := com.access(BAT_READ);
-
-    # column types
-    var com_ty := new (void, str, 1);
-    com_ty.insert (nil, "str");
-    com_ty := com_ty.access(BAT_READ);
-
-    # table prop|tgt|ins
-    var pi := new (void, str, 2);
-    pi.insert (nil, "tgt");
-    pi.insert (nil, "ins");
-    pi := pi.access(BAT_READ);
-
-    # column types
-    var pi_ty := new (void, str, 2);
-    pi_ty.insert (nil, "str");
-    pi_ty.insert (nil, "str");
-    pi_ty := pi_ty.access(BAT_READ);
-
-    # table att|own|qn|prop
-    var att := new (void, str, 3);
-    att.insert (nil, "own");
-    att.insert (nil, "qn");
-    att.insert (nil, "prop");
-    att := att.access(BAT_READ);
-
-    # column types
-    var att_ty := new (void, str, 3);
-    att_ty.insert (nil, "oid");
-    att_ty.insert (nil, "oid");
-    att_ty.insert (nil, "oid");
-    att_ty := att_ty.access(BAT_READ);
-
-    # table prop|val
-    var att_val := new (void, str, 1);
-    att_val.insert (nil, "val");
-    att_val := att_val.access(BAT_READ);
-
-    # column types
-    var att_val_ty := new (void, str, 1);
-    att_val_ty.insert (nil, "str");
-    att_val_ty := att_val_ty.access(BAT_READ);
-
-    # load table pre|size|level|prop|kind 
-    var tmp := load(pre, seps4, pre_ty, flnm + ".pre", -1);
-    
-    bat("doc_name").insert(doc_oid, name);
-    bat("doc_height").insert(doc_oid, tmp.find("level").max() + 1);
-    var docid := str(int(doc_oid));
-    doc_oid := nil;
-
-    tmp.find("size").persists(true).bbpname("pre_size" + docid);
-    tmp.find("level").[chr]().copy().persists(true).bbpname("pre_level" + docid);
-    tmp.find("prop").persists(true).bbpname("pre_prop" + docid);
-    tmp.find("kind").[chr]().copy().persists(true).bbpname("pre_kind" + docid);
-    {
-     var pre_kind := bat("pre_kind" + docid);
-     var knd := ELEMENT;
-     while ( knd <= DOCUMENT ) {
-        var kind_pre_name := "kind_pre" + docid + "_" + chr(48 + knd);
-        pre_kind.ord_uselect(knd).reverse().chk_order().persists(true).bbpname(kind_pre_name);
-        knd :+= chr(1);
-     }
-     var pre_prop := bat("pre_prop" + docid);
-     var knd := ELEMENT;
-        var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
-        var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
-        var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
-        prop_pre_.chk_order().mmap(STORE_MMAP).persists(true).bbpname(prop_pre_name);
-     var knd := PI;
-        var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
-        var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
-        var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
-        prop_pre_.chk_order().mmap(STORE_MMAP).persists(true).bbpname(prop_pre_name);
-    }
-
-    # load table prop|ns|loc
-    tmp := load(tag, seps2, tag_ty, flnm + ".qn", -1);
-    # INCOMPLETE, fill the qn_uri in the loader
-    tmp.find("ns").copy().persists(true).bbpname("qn_uri" + docid);
-    tmp.find("ns").persists(true).bbpname("qn_prefix" + docid);
-    tmp.find("loc").persists(true).bbpname("qn_loc" + docid);
-
-    bat("qn_prefix" + docid).[+](str('\1')).[+](bat("qn_uri" + docid)).persists(true).bbpname("qn_prefix_uri" + docid);
-    bat("qn_loc"    + docid).[+](str('\1')).[+](bat("qn_uri" + docid)).persists(true).bbpname("qn_loc_uri" + docid);
-
-    # load table prop|text
-    tmp := load(text, seps1, text_ty, flnm + ".text", -1);
-    tmp.find("text").persists(true).bbpname("prop_text" + docid);
-
-    # load table prop|com
-    tmp := load(com, seps1, com_ty, flnm + ".com", -1);
-    tmp.find("com").persists(true).bbpname("prop_com" + docid);
-
-    # load table prop|tgt|ins
-    tmp := load(pi, seps2, pi_ty, flnm + ".pi", -1);
-    tmp.find("ins").persists(true).bbpname("prop_ins" + docid);
-    tmp.find("tgt").persists(true).bbpname("prop_tgt" + docid);
-
-    # INCOMPLETE, create dummy ID_PRE AND IDREF_PRE bats
-    var id_bat    := new(str,oid).persists(true).bbpname("id_pre" + docid);
-    var idref_bat := new(str,oid).persists(true).bbpname("idref_pre" + docid);
-
-    # load table att|own|qn|prop
-    tmp := load(att, seps3, att_ty, flnm + ".@", -1);
-    tmp.find("own").persists(true).bbpname("attr_own" + docid);
-    tmp.find("qn").persists(true).bbpname("attr_qn" + docid);
-    tmp.find("prop").persists(true).bbpname("attr_prop" + docid);
-
-    # load table prop|val
-    tmp := load(att_val, seps1, att_val_ty, flnm + ".@val", -1);
-    tmp.find("val").persists(true).bbpname("prop_val" + docid);
-
-    # save all persistent BATs
-    commit();
-    print("Document successfully imported");
-
-    if (((bat("pre_kind" + docid).select(ELEMENT).count() +
-          bat("attr_own" + docid).count()) = 
-         bat("qn_uri" + docid).count())
-        and
-	(bat("pre_kind" + docid).select(TEXT).count() =
-        bat("prop_text" + docid).count()))
-    {
-        printf("# \"The properties of the file '%s' are propably not compressed!\"\n", flnm);
-	printf("# \"You can compress the loaded instance '%s' with: 'compress_properties(\"%s\");'\"\n", name, name);
-    }
-}
-ADDHELP("import_doc", "rode", "Nov 2003",
-"PARAMETERS:\n\
-str file name (\"/anypath/foo.xml\" if loader output is located in \"/anypath/foo.xml.*\")\n\
-str document name in database\n\
-DESCRIPITON:\n\
-Import files generated by the loader as persistent document.",
-"pathfinder");
-
-# initialize the document handler code
-PROC docHandlerInit() : void
-{
-    # create doc_name table in case it does not exist
-    if (not(view_bbp_name().reverse().exist("doc_name")))
-    {    
-        new(oid,str).persists(true).bbpname("doc_name");
-        new(oid,str).persists(true).bbpname("doc_location");
-        new(oid,int).persists(true).bbpname("doc_timestamp");
-        new(oid,int).persists(true).bbpname("doc_height");
-    }
-}
-
-# initialize the document handler code
-PROC docHandlerNewDoc(str name, str location, int tstamp, bit persist) : oid
-{
-    if (bat("doc_name").count() = 0) { doc_oid := 0@0; }
-    else { doc_oid := oid(int(bat("doc_name").reverse().max()) + 1); }
-    #
-    bat("doc_name").insert(doc_oid, name);
-    bat("doc_location").insert(doc_oid, location);
-    bat("doc_timestamp").insert(doc_oid,tstamp);
-    # incomplete, do something with the temporary flag
-    #
-    return doc_oid;
-}
-
-# The main shred function used to shred generic fn:doc(name) documents. The 
-# function first checks if there is a name or location with this name and if
-# so it returns the oid of the document. Otherwise it shreds the document and
-# returns the new ID.
-# INCOMPLETE: in the future timestamps will be used to check if the document
-#             has changed. And if so the document will be reshredded.
-PROC docHandlerLazyShred(str name) : oid
-{
-    # Initialize the Documenty Handler (if neccesary)
-    docHandlerInit();
-
-    if ( bat("doc_name").reverse().exist(name)) {
-    	return bat("doc_name").reverse().find(name);
-    } else if ( bat("doc_location").reverse().exist(name)) {
-    	return bat("doc_location").reverse().find(name);
-    } else {
-    	shred_doc(name,name);
-	return bat("doc_name").reverse().find(name);
-    }
-}
-
-PROC shred_doc_base(str location, str name, bit doCommit, str opt) : BAT[void,bat]
-{
-    # When in commit mode (doCommit == true) the method returns nothing. Other-
-    # wise the method returns a BAT 'resBAT' containing all all BATS which have
-    # to be kept 'alive' with a refCount > 1.
-    var resBAT := nil;
-    var noCommit := not(doCommit);
-
-    # Initialize the Documenty Handler (if neccesary)
-    docHandlerInit();
-
-    var doc_oid;
-
-    # check if the document already existed
-    if (bat("doc_name").reverse().exist(name)) { 
-    	# error, in future this may be correct, just return oid for existing doc
-    	ERROR("xmlshred: Document %s already exists\n",name);
-    } else {
-        # get a new oid for the document
-        doc_oid := docHandlerNewDoc(name,location,0,doCommit);
-    }
-    
-    var us := usec();
-    var shredRES := shred2bats(location,opt);
-
-    bat("doc_height").insert(doc_oid, shredRES.fetch(PRE_LEVEL).max() + 1);
-    var docid := str(int(doc_oid));
-    doc_oid := nil;
-
-    var xb; # temporary bat for all bats to be 'remembered'
-    if ( noCommit )
-    	resBAT := new(void,bat); # create remember bat
-
-    xb := shredRES.fetch(PRE_SIZE).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("pre_size" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb); # remember this non-persitent bat
-
-    xb := shredRES.fetch(PRE_LEVEL).[chr]().copy().mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("pre_level"+docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(PRE_PROP).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("pre_prop" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(PRE_KIND).[chr]().copy().mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("pre_kind" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(QN_URI).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("qn_uri" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(QN_PREFIX).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("qn_prefix" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(QN_LOC).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("qn_loc" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := bat("qn_prefix" + docid).[+](str('\1')).[+](bat("qn_uri" + docid)).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("qn_prefix_uri" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := bat("qn_loc" + docid).[+](str('\1')).[+](bat("qn_uri" + docid)).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("qn_loc_uri" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(PROP_TEXT).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("prop_text" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(PROP_COM).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("prop_com" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(PROP_INS).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("prop_ins" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(PROP_TGT).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("prop_tgt" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(ID_PRE).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("id_pre" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(IDREF_PRE).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("idref_pre" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(ATTR_OWN).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("attr_own" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(ATTR_QN).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("attr_qn" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(ATTR_PROP).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("attr_prop" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    xb := shredRES.fetch(PROP_VAL).mmap(STORE_MMAP).persists(doCommit);
-    xb.bbpname("prop_val" + docid);
-    if ( noCommit ) resBAT.insert(nil,xb);
-
-    {
-     var pre_kind := bat("pre_kind" + docid);
-     var knd := ELEMENT;
-     while ( knd <= DOCUMENT ) {
-        var kind_pre_name := "kind_pre" + docid + "_" + chr(48 + knd);
-        xb := pre_kind.ord_uselect(knd).reverse().chk_order().mmap(STORE_MMAP).persists(doCommit);
-	xb.bbpname(kind_pre_name);
-	if ( noCommit ) resBAT.insert(nil,xb);
-        knd :+= chr(1);
-     }
-     var pre_prop := bat("pre_prop" + docid);
-     var knd := ELEMENT;
-        var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
-        var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
-        var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
-        xb := prop_pre_.chk_order().mmap(STORE_MMAP).persists(doCommit);
-	xb.bbpname(prop_pre_name);
-	if ( noCommit ) resBAT.insert(nil,xb);
-     var knd := PI;
-        var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + knd);
-        var kind_pre_bat := bat("kind_pre" + docid + "_" + chr(48 + knd)).reverse().mirror();
-        var prop_pre_ := kind_pre_bat.leftfetchjoin(pre_prop).reverse();
-        xb := prop_pre_.chk_order().mmap(STORE_MMAP).persists(doCommit);
-	xb.bbpname(prop_pre_name);
-	if ( noCommit ) resBAT.insert(nil,xb);
-    }
-
-    # save all persistent BATs and print timings
-    us := usec() - us;
-    var ms := us/1000;
-    if ( doCommit ) {
-    	commit();
-        printf("# Shredded XML doc(\"%s\"), total time after commit=%d.%03ds\n", name, ms/1000,ms%1000);
-    } else {
-        printf("# Shredded XML doc(\"%s\") uncommitted, total time =%d.%03ds\n", name, ms/1000,ms%1000);
-    }
-    return resBAT;
-}
-
-PROC shred_doc(str location, str name) : void
-{
-	return shred_doc_base(location,name,true,"");
-}
-
-ADDHELP("shred_doc", "flokstra", "Dec 2004",
-"PARAMETERS:\n\
-str file name (\"/anypath/foo.xml\" containing the xml document to be shredded)\n\
-str document name in database\n\
-DESCRIPITON:\n\
-Shred xml document to the internal Pathfinder format, (analog to import_doc()).",
-"pathfinder");
-
-PROC delete_doc(str name) : void
-{
-    # Initialize the Documenty Handler (if neccesary)
-    docHandlerInit();
-
-    if (not(bat("doc_name").reverse().exist(name)))
-	{ ERROR("Document %s does not exist\n",name); }
-    var doc_oid := bat("doc_name").reverse().find(name);
-    
-    bat("doc_name").delete(doc_oid);
-    bat("doc_height").delete(doc_oid);
-    
-    var docid := str(int(doc_oid));
-    bat("pre_size" + docid).persists(false);
-    bat("pre_level" + docid).persists(false);
-    bat("pre_prop" + docid).persists(false);
-    bat("pre_kind" + docid).persists(false);
-    bat("qn_uri" + docid).persists(false);
-    bat("qn_prefix" + docid).persists(false);
-    bat("qn_loc" + docid).persists(false);
-    bat("prop_text" + docid).persists(false);
-    bat("prop_com" + docid).persists(false);
-    bat("prop_tgt" + docid).persists(false);
-    bat("prop_ins" + docid).persists(false);
-    bat("attr_own" + docid).persists(false);
-    bat("attr_qn" + docid).persists(false);
-    bat("attr_prop" + docid).persists(false);
-    bat("prop_val" + docid).persists(false);
-
-    bat("id_pre" + docid).persists(false);
-    bat("idref_pre" + docid).persists(false);
-    bat("qn_prefix_uri" + docid).persists(false);
-    bat("qn_loc_uri" + docid).persists(false);
-    {
-      var knd := ELEMENT;
-      while ( knd <= DOCUMENT ) {
-        var kind_pre_name := "kind_pre" + docid + "_" + chr(48 + knd);
-        bat(kind_pre_name).persists(false);
-        knd :+= chr(1);
-      }
-      var prop_pre_name := "prop_pre" + docid + "_" + chr(48 + ELEMENT);
-      bat(prop_pre_name).persists(false);
-      prop_pre_name := "prop_pre" + docid + "_" + chr(48 + PI);
-      bat(prop_pre_name).persists(false);
-    }
-    commit(); # CRASH HERE in runtime/load_db
-}
-ADDHELP("delete_doc", "tsheyar", "July 2004",
-"PARAMETERS:\n\
-str document name\n\
-DESCRIPITON:\n\
-delete the persistent BATS that store the document.",
-"pathfinder");
-
-PROC delete_all_docs() : void
-{
-    if (not(view_bbp_name().reverse().exist("doc_name")))
-	{ print("no documents to delete"); }
-    else {
-        bat("doc_name")@batloop () {
-            delete_doc($t);
-        }
-#       bat("doc_name").persists(false);
-#       bat("doc_height").persists(false);
-#       commit();
-    }
-}
-ADDHELP("delete_all_docs", "tsheyar", "July 2004",
-"DESCRIPITON:\n\
-deletes all persistent document BATs that store xml documents.",
-"pathfinder");
-
-
-#############################################
-# XML print functions / XML Serialization
-#
-# - xml_print(BAT[void,bat] ws, str docname)
-# - xml_print(BAT[void,bat] ws, BAT[void,oid] item, BAT[void,int] kind,
-#             BAT[void,int] int_values, BAT[void,dbl] dbl_values,
-#     	      BAT[void,dbl] dec_values, BAT[void,str] str_values )
-#
-# The xml_print function serializes the information stored in the
-# collection of BATs. Thus, it restores fragments of the textual
-# representation of the XML-document.
-# xml_print() can be either called with a working set and a document
-# name of a loaded document or prints the result or related to a specific
-# context set. In the latter case, for each node within the context
-# set, the node itself and its descendant fragment is printed (even if
-# this means to repeatedly print the same information, when context 
-# nodes relate to each other on the descendant axis).
-#
 
 PROC saxquery(str q) : void { xquery("sax",q); }
-
-PROC xmlquery(str q) : void { xquery("xml",q); }
-
-PROC shred_and_query(str mode, str q, str docFile, str docName) : void { 
-     # this function assumes an ideal world where everything goes OK. I have
-     # to implement better error handling but need input from a monet expert
-     # for this.
-     # 
-     var linkBAT := shred_doc_base(docFile,docName,false,"");
-     xquery(mode,q);
-     delete_doc(docName); # INCOMPLETE
-     linkBAT := nil; # destroy links
-     # incomplete, should remove doc from doc_base here here
-}
-
-PROC attr_print(oid pre, oid frag, BAT[void,bat] ws) : void
-{
-    var attr_list := ws.fetch(ATTR_OWN).fetch(frag).uselect(pre);
-    var name;
-    attr_list@batloop ()
-    {
-	var attr_frag := ws.fetch(ATTR_FRAG).fetch(frag).fake_fetch($h);
-	var attr_prop := ws.fetch(ATTR_PROP).fetch(frag).fetch($h);
-	var attr_qn := ws.fetch(ATTR_QN).fetch(frag).fetch($h);
-	var attr_ns := ws.fetch(QN_PREFIX).fetch(attr_frag).fetch(attr_qn);
-	var attr_loc := ws.fetch(QN_LOC).fetch(attr_frag).fetch(attr_qn);
-	var attr_val := ws.fetch(PROP_VAL).fetch(attr_frag).fetch(attr_prop);
-	# recompose name
-	name := attr_ns;
-	if (name != "") { name :+= ":"; }
-	name :+= attr_loc;
-	# TODO: distinguish quot and apos enclosed attributes
-        printf(" %s=\"%s\"", name, attr_val);
-    }
-}
-
-PROC node_print(oid pre, oid frag, BAT[void,bat] ws, BAT[oid,str] S) : void
-{
-    var kind := ws.fetch(PRE_KIND).fetch(frag).fetch(pre);
-    var elem_frag := ws.fetch(PRE_FRAG).fetch(frag).fake_fetch(pre);
-    var elem_prop := ws.fetch(PRE_PROP).fetch(frag).fetch(pre);
-    
-	
-    if (kind = ELEMENT)
-    {    
-	# recompose tag name
-	var tag := ws.fetch(QN_PREFIX).fetch(elem_frag).fetch(elem_prop);
-	if (tag != "") { tag :+= ":"; }
-	tag :+=  ws.fetch(QN_LOC).fetch(elem_frag).fetch(elem_prop);
-	
-	var size := ws.fetch(PRE_SIZE).fetch(frag).fetch(pre);
-
-	if (size = 0) {
-		printf("<%s",tag);
-		attr_print(pre, frag, ws);
-		printf("/>");
-	}
-        else {
-        	printf("<%s",tag);
-		attr_print(pre, frag, ws);
-		printf(">");
-		# push node on S
-		S.insert(oid(int(pre) + ws.fetch(PRE_SIZE).fetch(frag).fetch(pre)), tag);
-	}
-    }
-    else { if (kind = TEXT)
-        { printf("%s", ws.fetch(PROP_TEXT).fetch(elem_frag).fetch(elem_prop)); }
-    else { if (kind = COMMENT)
-        { printf("<!--%s-->", ws.fetch(PROP_COM).fetch(elem_frag).fetch(elem_prop)); }
-    else { if (kind = PI)
-        { printf("<?%s %s?>", ws.fetch(PROP_INS).fetch(elem_frag).fetch(elem_prop),
-			      ws.fetch(PROP_TGT).fetch(elem_frag).fetch(elem_prop)); }
-    else { if (kind = DOCUMENT)
-	{ S.insert(oid(int(pre) + ws.fetch(PRE_SIZE).fetch(frag).fetch(pre)), ""); }
-	 }}}}
-}
-
-PROC endtag_print(oid pre, BAT[oid,str] S) : void
-{
-    # pseudocode of this procedure:
-    # while (pre > S.top()) print(name(S.pop()));
-    var i := S.count() - 1;
-    var popped := S.reverse().select(oid(nil), pre, true, false).reverse();
-    var poplimit := i - popped.count();
-    var tag;
-    
-    while (i > poplimit)
-    {
-        # the 'tag != ""'-check is needed, to suppress output
-        # if a document node is popped from the stack
-        tag := S.fetch(i);
-	if (tag != "") { printf("</%s>", tag); }
-	i :-= 1;
-    }
-    
-    S.delete(popped);
-}
-
-PROC xml_print(BAT[void,bat] ws, 
-	       BAT[void,oid] item,
-	       BAT[void,int] kind,
-	       BAT[void,int] int_values,
-	       BAT[void,dbl] dbl_values,
-	       BAT[void,dbl] dec_values,
-	       BAT[void,str] str_values) : void
-{
-    if (item.count() = 0) { printf("()\n"); return; }
-    
-    # line feed
-    printf("\n");
-
-    var frags := kind.get_fragment();
-    var types := kind.get_types();
-
-    # node stack (storing pre+size and the name of a node)
-    var S := new(oid,str);
-    
-    # cursor moving over the pre values
-    var pre;
-    var lastpre;
-    var format_last := item.reverse().max();
-
-    if (is_fake_project(kind)) {
-        @:item_batloop(0)@
-    } else {
-        @:item_batloop($h)@
-    }
-@= item_batloop
-    # for all nodes in the context set do ...
-    item@batloop () {
-        var type_ := types.fetch(@1);
-	var frag := frags.fetch(@1);
-	if (type_ = INT) {
-		printf("%i\n", int_values.fetch($t));
-	}
-	else if (type_ = DBL) {
-		printf("%d\n", dbl_values.fetch($t));
-	}
-	else if (type_ = DEC) {
-		printf("%d\n", dec_values.fetch($t));
-	}
-	else if (or (type_ = STR, type_ = U_A)) {
-		printf("\"%s\"\n", str_values.fetch($t));
-	}
-	else if (type_ = ATTR)
-	{
-		var attr_frag := ws.fetch(ATTR_FRAG).fetch(frag).fake_fetch($t);
-		var attr_prop := ws.fetch(ATTR_PROP).fetch(frag).fetch($t);
-		var attr_qn := ws.fetch(ATTR_QN).fetch(frag).fetch($h);
-		var attr_ns := ws.fetch(QN_PREFIX).fetch(attr_frag).fetch(attr_qn);
-		var attr_loc := ws.fetch(QN_LOC).fetch(attr_frag).fetch(attr_qn);
-		var attr_val := ws.fetch(PROP_VAL).fetch(attr_frag).fetch(attr_prop);
-		if (attr_ns = "")
-			printf("%s='%s'\n", attr_loc, attr_val);
-		else 
-			printf("%s:%s=\"%s\"\n", attr_ns, attr_loc, attr_val);
-	}
-	else if (type_ = ELEM)
-	{
-		pre := $t;
-        	lastpre := oid(int(pre) + ws.fetch(PRE_SIZE).fetch(frag).fetch(pre));
-
-		# cheat a little bit to get the same output like Galax
-    		if (ws.fetch(PRE_KIND).fetch(frag).fetch(pre) = TEXT) {
-    			var elem_frag := ws.fetch(PRE_FRAG).fetch(frag).fake_fetch(pre);
-			var elem_prop := ws.fetch(PRE_PROP).fetch(frag).fetch(pre);
-			printf("text \{\"");
-			printf("%s", ws.fetch(PROP_TEXT).fetch(elem_frag).fetch(elem_prop));
-			printf("\"\}");
-		}
-		else {
-			# missing "do...while"-loops in mil ... 
-			node_print(pre, frag, ws, S);
-			pre := oid(int(pre) + 1);
-	        	endtag_print(pre, S);
-	
-	        	while ((S.count() > 0) and (pre <= lastpre))
-			{
-			    node_print(pre, frag, ws, S);
-			    pre := oid(int(pre) + 1);
-        		    endtag_print(pre, S);
-		        }
-		}
-	}
-	else 
-		printf("ERROR: not supported type '%i'.\n", type_);
-
-	if ($h != format_last) printf(",");
-	# line feed
-	printf("\n");
-    }
-@mil
-}
-ADDHELP("xml_print", "tsheyar", "Sep 2004",
-"PARAMETERS:\n\
-BAT[void,bat] working_set,\n\
-BAT[void,oid] item,\n\
-BAT[void,int] kind,\n\
-BAT[void,int] int_values,\n\
-BAT[void,dbl] dbl_values,\n\
-BAT[void,dbl] dec_values,\n\
-BAT[void,str] str_values\n\
-DESCRIPITON:\n\
-Print XML-fragment enclosed by each context node.",
-"pathfinder");
-
-@(
-PROC xml_print(BAT[void,bat] ws) : void
-{
-    xml_print(ws, 
-	      ws.fetch(PRE_SIZE).fetch(0).mirror(),
-              fake_project(0@0).set_kind(ELEM),
-	      bat(void,int),
-              bat(void,dbl),
-              bat(void,dbl),
-              bat(void,str));
-}
-ADDHELP("xml_print", "tsheyar", "Sep 2004",
-"DESCRIPITON:\n\
-Print all XML-fragments in the working set.",
-"pathfinder");
-@)
-
-PROC xml_print(BAT[void,bat] ws, str name) : void
-{
-    if (not(ws.fetch(DOC_LOADED).reverse().exist(name)))
-	{ ERROR("Document %s does not exist in working set\n",name); }
-    var docid := int(ws.fetch(DOC_LOADED).reverse().find(name));
-    xml_print(ws, 
-	      ws.fetch(PRE_SIZE).fetch(docid).slice(0,0).mirror(),
-              fake_project(oid(docid)).set_kind(ELEM),
-	      bat(void,int),
-              bat(void,dbl),
-              bat(void,dbl),
-              bat(void,str));
-}
-ADDHELP("xml_print", "tsheyar", "Sep 2004",
-"PARAMETERS:\n\
-BAT[void,bat] working_set,\n\
-str document_name\n\
-DESCRIPITON:\n\
-Print loaded XML-document with the specified name.",
-"pathfinder");
-
 
 @mil
 #############################################
@@ -2194,7 +1503,6 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #include <monet_interpreter.h>
 #include <streams.h>
 
-@:define_ws_constants@
 
 #endif
 
@@ -2317,15 +1625,23 @@ CMDebv (BAT **result, BAT *b)
     return (*result = BATebv (b)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-MT_Lock pathfinder_lock;
+MT_Lock pf_runtime_lock;
+MT_Lock pf_compiler_lock;
 
 bat* pathfinder_prelude() {
-    pathfinder_lock = MT_create_lock();
+    pf_runtime_lock = MT_create_lock();
+    pf_compiler_lock = MT_create_lock();
     return NULL;
 }
 
 void pathfinder_epilogue() {
-    MT_destroy_lock(pathfinder_lock);
+    MT_destroy_lock(pf_runtime_lock);
+    MT_destroy_lock(pf_compiler_lock);
+}
+
+int CMDpflock(ptr *ret) {
+    *ret = (ptr) pf_runtime_lock;
+    return GDK_SUCCEED;
 }
 
 /*
@@ -2341,7 +1657,7 @@ CMDxquery(char *mode, char* xquery) {
         stream_printf(GDKout, "%s#xquery######################################################\n", mapi);
 	stream_write(GDKout, xquery, strlen(xquery), 1);
     }
-    MT_set_lock(pathfinder_lock, "CMDxquery");
+    MT_set_lock(pf_compiler_lock, "CMDxquery");
     err = pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
     if (err) {
       len = strlen(err);
@@ -2362,7 +1678,7 @@ CMDxquery(char *mode, char* xquery) {
 	len = p - err;
       }
     }
-    MT_unset_lock(pathfinder_lock, "CMDxquery");
+    MT_unset_lock(pf_compiler_lock, "CMDxquery");
 
     if (debug) {
         stream_printf(GDKout, "%s#mil#########################################################\n", mapi);
@@ -2536,8 +1852,27 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 	/* end of session */
 	stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
 	stream_flush(out);
-	close_stream(out);
-	close_stream(in);
-	monetSetChannel(XQthread, bkin, bkout);
+	closeClient(client, 0); 	
 	return ret;
+}
+
+#include <monettime.h>
+
+int
+CMDlastmod_time(timestamp *ret, str filename) {
+	struct stat st;
+	int year = 1970, one = 1, zero = 0;
+	lng msecs;
+	timestamp ts;
+        daytime dt;
+	date d;
+
+	if (stat(filename, &st)) {
+		return GDK_FAIL;
+	}
+	msecs = 1000*st.st_mtime;
+        return date_create(&d, &year, &one, &one) &&
+               daytime_create(&dt, &zero, &zero, &zero, &zero) &&
+               timestamp_create_default(&ts, &d, &dt) &&
+               timestamp_add(ret, &ts, &msecs);
 }
