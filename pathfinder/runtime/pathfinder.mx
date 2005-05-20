@@ -752,6 +752,8 @@ PROC add_doc_bat(BAT[str,bat] tmp_doc, str name, str docid) : bat[any,any]
     return tmp_doc.find(name);
 }
 
+var time_shred := 0; # dummy declarartion to avoid errors when timing is not activated in the script
+
 # HACK: this proc overwrites variable 'time_shred' 
 PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
 {

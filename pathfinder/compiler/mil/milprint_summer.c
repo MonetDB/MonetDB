@@ -9878,7 +9878,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
 
     /* define working set and all other MIL context (global vars for the query) */
     opt_output(f, OPT_SEC_QUERY);
-    milprintf(f, "\n\n# MAIN MIL QUERY\n\n{\n var ws := int(nil); CATCH({");
+    milprintf(f, "\n\n# MAIN MIL QUERY\n\n{\n var err, ws := int(nil);\n err := CATCH({");
     init (f);
 
     /* get_var_usage appends information to the core nodes and creates a 
@@ -9944,7 +9944,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
      case PF_GEN_NONE:
       break;
      default:
-      milprintf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* excpected!\n");
+      milprintf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* expected!\n");
     }
     if (status->timing) {
         tm = PFtimer_stop(tm);
@@ -9954,7 +9954,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "       time_shred, time_exec - time_shred, time_print);\n\n", tm/1000, tm%1000);
     }
 
-    milprintf(f, "}); destroy_ws(ws);\n}\n\n# MIL EPILOGUE\n");
+    milprintf(f, "}); destroy_ws(ws); if (not(isnil(err))) ERROR(err);\n}\n\n# MIL EPILOGUE\n");
 
     opt_output(f, OPT_SEC_EPILOGUE);
 
