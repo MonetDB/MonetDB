@@ -43,186 +43,41 @@
 @m
 .MODULE pathfinder;
 
-.USE xtables;
+.USE pf_support;
 .USE streams;
-.USE monettime;
-.USE lock;
 
-@- Path steps (staircase join) 
-@m
-@:prec_foll(following)@
-@:prec_foll(preceding)@
-
-@= prec_foll
-.COMMAND @1_void (BAT[void,int] pre_size,
-               BAT[oid,any] ctx,
-               BAT[void,oid] doc_pre,
-	       int height,
-               int upperbound) : BAT[oid,void] = PF@1_void;
-"PARAMETERS
-  pre_size: the complete size BAT (preorder rank, size)
-  ctx: context node sequence (preorder rank, *)
-  doc_pre: table of document fragments (doc id, preorder start value)
-  height: document height
-  upperbound: upperbound for size of result context node sequence
-DESCRIPTION
-axis step evaluation on the @1 axis from the given context."
-@m
-@:scj_cmd(descorself,descendant-or-self)@
-@:scj_cmd(desc,descendant)@
-@:scj_cmd(ancorself,ancestor-or-self)@
-@:scj_cmd(anc,ancestor)@
-
-@= scj_cmd
-.COMMAND scj_@1(BAT[void,int] pre_size,
-                BAT[oid,any] ctx,
-                int height,
-                int upperbound): BAT[oid,void] = PFscj_@1_void;
-"PARAMETERS
-  pre_size: the complete size BAT (preorder rank, size)
-  ctx: context node sequence (preorder rank, *)
-  height: document height
-  upperbound: upperbound for size of result context node sequence
-DESCRIPTION
-axis step evaluation on the @2 axis from the given context."
-@m
-@:ll_cmd(descendant)@
-@:ll_cmd(descendant_or_self)@
-@:ll_cmd(child)@
-
-@= ll_cmd
-.COMMAND ll_@1(BAT[void,oid] iter,
-                   BAT[void,oid] ctx,
-                   BAT[void,int] pre_size,
-                   BAT[oid,oid] cands,
-                   int height,
-                   bit one_iter, bit one_ctx,
-                   oid min_iter, oid max_iter): BAT[oid,oid] = PFll_@1;
-"PARAMETERS:
-BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
-BAT[void,oid] ctx (context set; sorted on tail)
-BAT[void,int] pre_size (from the working set)
-BAT[oid,oid]  cands (sorted list of result candidate OIDs in the tail)
-int           height (height of the document)
-bit           one_iter (only one iter?)
-bit           one_ctx  (only one ctx node, i.e., the same for all iters?)
-oid           min_iter,max_iter (smallest and largest iter id)
-DESCRIPITON:
-returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
-@m
-@:lev_cmd(child,child)@
-@:lev_cmd(parent,parent)@
-@:lev_cmd(fs,following-sibling)@
-@:lev_cmd(ps,preceding-sibling)@
-
-@= lev_cmd
-.COMMAND lev_@1(BAT[void,chr] pre_level,
-                BAT[oid,any] ctx,
-		int height,
-                int upperbound) : BAT[oid,void] = PFlev_@1;
-"PARAMETERS
-  pre_level: the complete level BAT (preorder rank, level)
-  ctx: context node sequence (preorder rank, *)
-  height: document height
-  upperbound: upperbound for size of result context node sequence
-DESCRIPTION
-axis step evaluation on the @2 axis from the given context."
-
-@- utility commands
-@m
-.COMMAND ebv(BAT[oid, bit] b) : BAT[oid, bit] = CMDebv;
-"PARAMETERS
-BAT[oid, bit], sorted on head values.
-DESCRIPTION:
-This is a helper function to implement the XQuery ``effective boolean\n
-value.'' Grouped by the head values, it will look at the tail values.\n
-If for a head value there is exactly one BUN whose tail equals `true',\n
-the result for this group will be `true' as well. In any other case\n
-(a single `false' BUN, or multiple BUNs for this group), a `false'\n
-tuple will be in the result for this group."
-
-.COMMAND pflock() : lock = CMDpflock;
- "provide a pointer to the runtime lock"
-
-.COMMAND lastmod_time(str filename) : timestamp = CMDlastmod_time;
- "return the last modification time of a file"
-
-@- xquery execution commands (xquery.mx)
-@m
-.COMMAND xquery(str, str) : void = CMDxquery;
- "xquery execution. usage: xquery(\"xml\", str)"
 .BUILTIN xquery_server(Stream in, Stream out) : void = CMDxquery_server;
  "read xquery from stream, and print on a stream."
 
-@- XML shredder (shredder.mx)
-@m
-.COMMAND shred2bats(str location, str opt) : BAT[oid, bat] = CMDshred2bats;
- "C implementation of the document shredder"
-
-@- XML print functions (serialize.mx)
-@m
-.COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
- "C interface to Workset print routine"
-.COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,int],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
- "C interface to Workset result print routine"
+.COMMAND xquery(str, str) : void = CMDxquery;
+ "xquery execution. usage: xquery(\"xml\", str)"
 
 .PRELUDE = pathfinder_prelude;
 .EPILOGUE = pathfinder_epilogue;
 
 .END pathfinder;
-
 @mil
-# load modules used in pathfinder.mx
-module(alarm);
-module(aggrX3);
-module(malalgebra);
-module(pf_support);
-module(mmath);
 module(mapi);
 
+PROC pfstart(bit open) : void {
+    mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server").fork();
+}
 PROC pfstart() : void {
-        mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server").fork();
+    pfstart(false);
 }
-
-PROC get_type (bat[void,int] kind, int type_) : bat[oid,void]
-{
-        return kind.[and](63).ord_uselect(type_); # 63 = 2^6 - 1
-}
-
-PROC get_type_node (bat[void,int] kind) : bat[oid,void]
-{
-        return kind.ord_uselect(NODE, int(nil));
-}
-
-PROC get_type_atomic (bat[void,int] kind) : bat[oid,void]
-{
-        return kind.ord_uselect(int(nil), ATOMIC);
-}
-
-PROC get_fragment (bat[void,int] kind) : bat[void,oid]
-{
-        return kind.[>>](6).[oid]();
-}
-
-PROC set_kind (bat[void,oid] frag, int type_) : bat[void,int]
-{
-        return frag.[int]().[<<](6).[or](type_);
-}
-
-PROC get_types (bat[void,int] kind) : bat[void,int]
-{
-        return kind.[and](63); # 63 = 2^6 - 1
-}
+ADDHELP("pfstart", "boncz", "April 2005",
+"PARAMETERS:\n\
+bit whether the listener should listen to outside requests (default false: only local connections).\n\
+DESCRIPITON:\n\
+start the xquery server.",
+"pathfinder");
 
 #############################################
-# Document management functions
+# User-level document management functions:
 #
-# - import_doc
+# - shred_doc
 # - delete_doc
 # - delete_all_docs
-# - compress_properties
-# - create_ws
-# - add_doc
 #
 # Each imported XML-document is stored as a collection of persistent BATs 
 # whose name starts with the name of the BAT and ends with the document ID. 
@@ -250,8 +105,11 @@ PROC get_types (bat[void,int] kind) : bat[void,int]
 # - prop_val  : BAT[oid,str]  value ID / value of attribute nodes
 #
 # Global information on persistent stored documents:
-# - doc_name    : BAT[oid,str]  document ID / document name
-# - doc_height  : BAT[oid,int]  document ID / height of document
+# - doc_name      : BAT[oid,str]        document ID / document name
+# - doc_height    : BAT[oid,int]        document ID / height of document
+# - doc_size      : BAT[oid,lng]        document ID / size in bytes
+# - doc_timestamp : BAT[oid,timestamp]  document ID / end-of-cache-time (nil if none)
+# - uri_lifetime  : BAT[str,lng]        URI prefix  / time-to-live (seconds), nil if not to be cached 
 # 
 # Information on documents/fragments in the working set:
 # - PRE_FRAG   : BAT[void,BAT[void,oid]] list of bats with fragments
@@ -307,8 +165,8 @@ We define a table with the column name, its number,
 the type of data (typically again a bat), and if
 so the head and tail type of that bat.
 
-actually the fielf 'tpe' is taken to be bat *always*, 
-EXCEPT when (child-t != void)
+actually the field 'tpe' is taken to be bat *always*, 
+EXCEPT when (child-T == void)
 
 ('tpe' = void means it is a view; without persistent name)
 
@@ -338,8 +196,8 @@ EXCEPT when (child-t != void)
 @:@1_ws(FRAG,          20, oid, void, void, nil)@
 @:@1_ws(WS_FRAG,       21, oid, void, void, nil)@
 @:@1_ws(HEIGHT,        22, int, void, void, nil)@
-@:@1_ws(QN_PREFIX_URI, 23, bat, void,  str, nil)@
-@:@1_ws(QN_LOC_URI,    24, bat, void,  str, nil)@
+@:@1_ws(QN_PREFIX_URI, 23, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_LOC_URI,    24, bat, void,  str, PRE_BASE)@
 @:@1_ws(KIND_PRE_0,    25, bat, void,  oid, nil)@
 @:@1_ws(KIND_PRE_1,    26, bat, void,  oid, nil)@
 @:@1_ws(KIND_PRE_2,    27, bat, void,  oid, nil)@
@@ -364,9 +222,8 @@ const PROP_PRE := PROP_PRE_0;
 
 var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
 var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
-var uri_duration; # pattern bat[str,lng] that determines how many seconds URIs are cached (longest string prefix match counts)
 
-PROC doc_check(str name) : bit
+PROC doc_init() : void
 {
     # check if anythimg is initialized at all
     if (type(doc_query) != bat) {
@@ -377,20 +234,23 @@ PROC doc_check(str name) : bit
             new(oid,timestamp).persists(true).bbpname("doc_timestamp");
             new(oid,int).persists(true).bbpname("doc_height");
             new(oid,lng).persists(true).bbpname("doc_size");
+            new(str,lng).persists(true).bbpname("uri_lifetime");
         }
         if (isnil(CATCH(bat("doc_query").count()))) {
             doc_query := bat("doc_query"); 
             doc_sema := bat("doc_sema"); 
-            uri_duration := bat("uri_duration"); 
         } else {
             (doc_query := new(oid,int)).bbpname("doc_query"); 
             (doc_sema := new(oid,sema)).bbpname("doc_sema"); 
-            (uri_duration := new(str,lng)).bbpname("uri_duration"); 
         }
     }
-    return bat("doc_name").reverse().exist(name);
 }
 
+PROC doc_check(str name) : bit
+{
+    doc_init();
+    return bat("doc_name").reverse().exist(name);
+}
 
 PROC create_ws () : BAT[void,bat]
 {
@@ -414,11 +274,6 @@ PROC create_ws () : BAT[void,bat]
     ws.fetch(HEIGHT).seqbase(0@0).insert(nil,0);
     return ws.access(BAT_READ);
 }
-ADDHELP("create_ws", "tsheyar", "July 2004",
-"DESCRIPTION:\n\
-creates a new working set and gives back the reference",
-"pathfinder");
-
 
 PROC destroy_ws_locked(BAT[void,bat] ws) : void {
     doc_query.select(int(ws))@batloop() {
@@ -451,12 +306,6 @@ PROC destroy_ws(BAT[void,bat] ws) : void {
 
     if (not(isnil(err))) { ERROR(err); }
 }
-ADDHELP("destroy_ws", "boncz", "May 2005",
-"DESCRIPTION:\n\
-destroys the working set, removing all doument pins. Also chech cache occupancy and flush if full.\n",
-"pathfinder");
-
-
 
 PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts, int ws, int height) : void 
 {
@@ -574,9 +423,9 @@ PROC shred_doc(str location, str name) : void
 }
 ADDHELP("shred_doc", "flokstra", "Dec 2004",
 "PARAMETERS:\n\
-str file name (\"/anypath/foo.xml\" containing the xml document to be shredded)\n\
-str document name in database\n\
-DESCRIPITON:\n\
+- str URI containing the xml document to be shredded)\n\
+- str document name ('alias') in database\n\
+DESCRIPTION:\n\
 Shred xml document to the internal Pathfinder format, (analog to import_doc()).",
 "pathfinder");
 
@@ -656,7 +505,7 @@ delete the persistent BATS that store the document.",
 
 PROC delete_all_docs_locked(bit cachedOnly) : void
 {
-    doc_check("dummy");
+    doc_init();
     bat("doc_timestamp").copy()@batloop() {
         if (or(cachedOnly, not(isnil($t))))
             delete_doc_locked($h);
@@ -697,7 +546,6 @@ PROC add_doc_locked(str name, timestamp ts, int ws) : oid
     # check if the document already existed
     if (doc_check(name)) {
         doc_oid := bat("doc_name").reverse().find(name);
-        filename := bat("doc_location").find(doc_oid);
     } else if (bat("doc_location").reverse().exist(name)) {
         # existed as cached location (URI): must check timestamp
         var doc_oid := bat("doc_location").reverse().find(name);
@@ -712,14 +560,15 @@ PROC add_doc_locked(str name, timestamp ts, int ws) : oid
     if (startsWith(filename, "file://") or startsWith(filename, "FILE://")) {
         filename := string(filename, 7);
     } else {
-	idx := search(filename, '/');
+	idx := search(filename, "://");
     }
-    if (and(>=(idx,0), =(chrAt(filename,idx+1), '/'))) {
+    if (idx >= 0) {
 	# add uri-dependent lifetime
-        var b := [startsWith](filename, mirror(uri_duration)).uselect(true);
+        var uri_lifetime := bat("uri_lifetime");
+        var b := [startsWith](filename, mirror(uri_lifetime)).uselect(true);
         if (b.count() > 0) {
             var matchlen := [length](mirror(b));
-            lifetime := *(1000LL, uri_duration.find(matchlen.reverse().find(matchlen.max())));
+            lifetime := *(1000LL, uri_lifetime.find(matchlen.reverse().find(matchlen.max())));
         } else {
             lifetime := lng(nil); # doc will *not* be cached 
         }
@@ -813,690 +662,83 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
     }
     return ws;
 }
-ADDHELP("add_doc", "tsheyar", "July 2004",
-"PARAMETERS:\n\
-bat(void,bat) - actual working set,\n\
-str - the name of the document, which is added\n\
-DESCRIPITON:\n\
-adds the document to the working set and gives back the\n\
-updated working set. (At position FRAG stands the actual\n\
-fragment to which the new root is linked.)",
-"pathfinder");
 
 
-PROC saxquery(str q) : void { xquery("sax",q); }
-
+@- xml document cache
+When fn:doc() is used with a previously unseen URI, it is shredded on the fly and placed into 
+the xml document cache (see text below). A number of procs are provided to monitor
+and control the behavior of the cache.
 @mil
-#############################################
-# MIL WRAPPER for AXIS STEPS 
-#
-# In order to simplify the invocation of the axis steps functions, this
-# interface provides...
-# 
+const xmlcache_help := 
+"The XML document cache keeps indexed copies of documents that where recently\n\
+used in the fn:doc(URI) xquery function.\n\
+\n\
+The size of the cache is controlled using the 'xquery_cacheMB' setting in\n\
+the 'MonetDB.conf' file.\n\
+\n\
+For file URIs, the cache looks at the last-modification-time of the file on disk\n\
+to guarantee that the cached document is still up-to-date for answering queries from.\n\
+\n\
+For other URIs, *lifetime rules* determine how long documents can stay in the cache.\n\
+Each lifetime rule consists of a URI prefix and the registered seconds of lifetime.\n\
+\n\
+The rule with longest prefix that matches an URI counts. Specifying a lifetime\n\
+of 'int(nil)' seconds means that the URI will *not* be cached at all.\n\
+This is also the default if no prefix matches an URI.\n\
+\n\
+The name of a cached document is the same as its location (URI). For explicitly\n\
+shredded documents (with 'shred_doc(location,name)'), the name is an 'alias' and\n\
+may differ from the URI. Explicitly shredded documents fall outside the XML document\n\
+cache; documents are only removed at explicit user request (with 'delete_doc(name)').";
 
-@(
-@:step(descendant,descendant,scj_desc,,@:sizes_code@,,)@
-@:step(descendant_or_self,descendant-or-self,scj_descorself,,@:sizes_code@,,)@
-@)
-
-@:wrap(descendant)@
-@:wrap(descendant_or_self)@
-
-@:step(ancestor,ancestor,scj_anc,,@:sizes_code@,,)@
-@:step(ancestor_or_self,ancestor-or-self,scj_ancorself,,@:sizes_code@,,)@
-
-@(
-@:step(child,child,lev_child,@:level_intro@,@:level_code@,,)@
-@)
-
-@:wrap(child)@
-
-@:step(parent,parent,lev_parent,@:level_intro@,@:level_code@,,)@
-@:step(following_sibling,following-sibling,lev_fs,@:level_intro@,@:level_code@,,)@
-@:step(preceding_sibling,preceding-sibling,lev_ps,@:level_intro@,@:level_code@,,)@
-
-@:step(following,following,following_void,,@:sizes_code@,@:foll_prec_code@,@:doc_pre@)@
-@:step(preceding,preceding,preceding_void,,@:sizes_code@,@:foll_prec_code@,@:doc_pre@)@
-
-@= chk_order
-	if ( and(order,1) = @2 ) {
-		@3 := @3.chk_order(); # just in case...
-		if ( not(ordered(reverse(@3))) ) {
-			ERROR("@1: tail of @3 must be sorted!");
-		}
-	}
-@
-@= one_iter_many_items
-	# 1 iter, n items
-	one_iter := TRUE;
-	@:chk_order(@1@2,0,item)@
-	# =>  we don't need to sort the input
-	order := and(order,1);
-@
-@= many_iters_one_item
-	# n iters, 1 item 
-	one_item := TRUE;
-	@:chk_order(@1@2,1,iter)@
-	# =>  we don't need to sort the input
-	order := and(order,1);
-@
-@= descs_per_item
-	# "descendant" / "descendant_or_self"
-	# => result for a single item is a simple slice of cands
-	var fst := item.fetch(@2);
-	var lst := oid(int(fst) + pre_size.fetch(fst));
-        fst := oid(int(fst) + skip_self);
-	var item_descs := cands.ord_select(fst,lst).reverse();
-@
-@= wrap
-PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int order, BAT[oid,oid] cands) : BAT[oid,oid] 
-{
-	var result := nil;
-	var one_iter := FALSE;
-	var one_item := FALSE;
-	var min_iter := oid(nil);
-	var max_iter := oid(nil);
-	var skip_self := 1;
-	if ( "@1" = "descendant_or_self" ) {
-		skip_self := 0;
-	}
-
-	# check consistency
-	if ( isnil(seqbase(iter)) or isnil(seqbase(item)) ) {
-		ERROR("@1(0): heads of iter & item/ctx must not be NIL!");
-	}
-	if ( (count(iter) != count(item)) or (seqbase(iter) != seqbase(item)) ) {
-		ERROR("@1(1): heads of iter & item/ctx must be aligned!");
-	}
-	if ( ((tail(cands) = "void") or (ttype(cands) = 0)) and isnil(seqbase(reverse(cands))) ) {
-		ERROR("@1(2): tail of cands must not be NIL!");
-	}
-	@:chk_order(@1(3),0,iter)@
-	@:chk_order(@1(4),1,item)@
-	cands := cands.chk_order(); # just in case...
-	if ( not(ordered(reverse(cands))) ) {
-		ERROR("@1(5): tail of cands must be sorted!");
-	}
-
-	var pre_size := ws.fetch(PRE_SIZE).fetch(frag);
-	var height   := ws.fetch(HEIGHT).fetch(frag);
-
-	# trivial cases	
-	if ( (count(item) = 0) or (count(cands) = 0) or (count(pre_size) = 0) ) {
-		result := bat(oid,oid,0).access(BAT_READ);
-		result := result.chk_order();
-		return result;
-	}
-	
-	# special cases
-	if ( count(item) = 1 ) {
-		# 1 iter, 1 item
-		one_iter := TRUE;
-		one_item := TRUE;
-		if ( "@1" != "child" ) {
-			# "descendant" / "descendant_or_self"
-			# =>  result is a simple slice of cands
-			@:descs_per_item(@1,0)@
-			result := item_descs.project(iter.fetch(0)).reverse();
-			result := result.chk_order();
-			return result;
-		}
-		# =>  we don't need to sort neither input nor output
-		order := 3;
-		iter := iter.chk_order(); # just in case...
-		item := item.chk_order(); # just in case...
-	} else {
-	# first: try cheap min==max checks on ordered columns
-	if ( ordered(reverse(iter)) and (min(iter) = max(iter)) ) {
-		@:one_iter_many_items(@1,(6))@
-	} else {
-	if ( ordered(reverse(item)) and (min(item) = max(item)) ) {
-		@:many_iters_one_item(@1,(7))@
-	} else {
-	# then: invest in one scan to check order to save two scans for min/max
-	iter := iter.chk_order(); # just in case...
-	if ( ordered(reverse(iter)) and (min(iter) = max(iter)) ) {
-		@:one_iter_many_items(@1,(8))@
-	} else {
-	item := item.chk_order(); # just in case...
-	if ( ordered(reverse(item)) and (min(item) = max(item)) ) {
-		@:many_iters_one_item(@1,(9))@
-	}}}}}
-
-	min_iter := min(iter);
-	max_iter := max(iter);
-
-	# pre-sort input
-	if ( and(order,1) = 0 ) {
-		var ord := item.reverse().sort().reverse();
-		    ord := ord.CTrefine(iter).mark(0@0).reverse();
-		iter := ord.leftfetchjoin(iter);
-		item := ord.leftfetchjoin(item);
-		iter := iter.chk_order();
-		item := item.chk_order();
-	}
-
-	# the actual location step
-	if ( isnil(result) ) {
-		result := ll_@1 (iter, item, pre_size, cands,
-		                   height, one_iter, one_item, 
-		                   min_iter, max_iter);
-	}
-	
-	# post-sort output
-	if ( (and(order,2) = 2) and not(ordered(reverse(result))) ) {
-		iter := result.mark(0@0).reverse();
-		item := result.reverse().mark(0@0).reverse();
-		var ord := item.reverse().sort().reverse();
-		    ord := ord.CTrefine(iter).mark(nil);
-		result := result.fetch(ord);
-		result := result.chk_order();
-	}
-	
-	# post-sort output
-	if ( (and(order,2) = 0) and not(ordered(result)) ) {
-		iter := result.mark(0@0).reverse();
-		item := result.reverse().mark(0@0).reverse();
-		var ord := iter.reverse().sort().reverse();
-		    ord := ord.CTrefine(item).mark(nil);
-		result := result.fetch(ord);
-		result := result.chk_order();
-	}
-	
-	return result;
+PROC xmlcache_add_rule(str uri, any lifetime) : void {
+    xmlcache_add_rule(uri, lng(lifetime)); 
 }
-ADDHELP("@1", "tsheyar", "Sep 2004",
-"PARAMETERS:\n\
-BAT[void,oid] iter (grouping relation)\n\
-BAT[void,oid] item (context set)\n\
-oid frag (the current fragment of the ws)\n\
-BAT[void,bat] ws (working set)\n\
-int order (input & output order properties:\n\
-           bit 0: input is sorted on iter(0) or item(1)\n\
-           bit 1: output must be sorted on iter(0) or item(1))\n\
-BAT[oid,oid] cands (sorted list of result candidate OIDs in the tail)\n\
-DESCRIPITON:\n\
-returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group.",
-"pathfinder");
-@
-@
-# use size concept
-@= sizes_code
-pre_sizes
-@
-# use level concept
-@= level_intro
-    var pre_levels := ws.fetch(PRE_LEVEL).fetch(frag);
-@
-@= level_code
-pre_levels
-@
-# code for following and preceding steps
-@= foll_prec_code
-    # dirty code to make possible, that old scj still works
-    var doc_pre;
-    if (frag = 0@0)
-        { doc_pre := ws.fetch(WS_FRAG); }
-    else
-        { doc_pre := bat(void,oid,1).seqbase(0@0).insert(nil,1@0).access(BAT_READ); }
-@
-@= doc_pre
-doc_pre,
-@
-
-@= step
-PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int order) : BAT[oid,oid]
-{
-    # "order" is not (yet?) used, here.
-
-    var pre_sizes := ws.fetch(PRE_SIZE).fetch(frag);
-    @4
-    var heights := ws.fetch(HEIGHT).fetch(frag);
-
-    var unq := {count}(iter.reverse(), iter.tunique());
-
-    var result := bat(oid,oid);
-    var offset := 0;
-    var ctx_slice;
-
-    @6
-
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
-	ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
-        result.insert(@3
-                              (@5,
-                               ctx_slice,
-			       @7
-                               heights,
-                               pre_sizes.count())
-	              .project($h).reverse());
-        offset := offset + $t;
-    }
-    return result.access(BAT_READ);
-#    return @2(Tpre_size, ctx, Theight, Tpre_size.count());
+PROC xmlcache_add_rule(str uri, lng lifetime) : void {
+    lock_set(pf_lock);
+    var err := CATCH({ doc_init(); bat("uri_lifetime").delete(uri); bat("uri_lifetime").insert(uri, lifetime); });
+    lock_unset(pf_lock);
+    if (not(isnil(err))) ERROR(err);
 }
-ADDHELP("@1", "tsheyar", "Sep 2004",
-"PARAMETERS:\n\
-BAT[void,any] iter (grouping relation)\n\
-BAT[void,any] ctx (context set)\n\
-oid frag (the current fragment of the ws)\n\
-BAT[void,bat] ws (working set)\n\
-DESCRIPITON:\n\
-returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.",
-"pathfinder");
-@
+ADDHELP("xmlcache_add_rule", "boncz", "May 2005",
+"DESCRIPTION:\nadd a new URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
 
-@mil
-@:loop_lifted_scj_step1(ancestor)@
-@:loop_lifted_scj_step1(ancestor_or_self)@
-
-@:loop_lifted_scj_wrap1(child)@
-@:loop_lifted_scj_wrap1(descendant)@
-@:loop_lifted_scj_wrap1(descendant_or_self)@
-
-@:loop_lifted_scj_step1(following)@
-@:loop_lifted_scj_step1(following_sibling)@
-@:loop_lifted_scj_step1(parent)@
-@:loop_lifted_scj_step1(preceding)@
-@:loop_lifted_scj_step1(preceding_sibling)@
-@
-#==================================================================
-# expansions of the loop lifted scj
-# kind argument
-@= kind_args
-, chr kind
-@
-@= kind_params
-, kind
-@
-# tagname argument
-@= ns_args
-, str ns
-@
-@= ns_params
-, ns
-@
-@= loc_args
-, str loc
-@
-@= loc_params
-, loc
-@
-@= tgt_args
-, str tgt
-@
-@= tgt_params
-, tgt
-@
-@= nsloc_args
-, str ns, str loc
-@
-@= nsloc_params
-, ns, loc
-@
-@= params2
-, cands
-@
-
-# code for tagname testing
-@= nsloc_post
- {
-	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_fake_project(pre_frag)) {
-		var frag := pre_frag.fetch(0);
-		pre_frag := nil;
-		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
-		    qn_nsloc  := qn_nsloc.ord_uselect(loc+str('\1')+ns);
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
-		if (flt(count(pre_prop)) <= (1.1 * flt(count(result_part_item)))) {
-			var pre_nsloc;
-			if (count(qn_nsloc) = 1) {
-				pre_nsloc := pre_prop.ord_uselect(qn_nsloc.reverse().fetch(0));
-			} else {
-				pre_nsloc := pre_prop.leftjoin(qn_nsloc);
-			}
-			pre_prop := nil;
-			qn_nsloc := nil;
-			tmp_res := result_part_item.leftjoin(pre_nsloc).mark(0@0).reverse();
-		} else {
-			var res_prop := result_part_item.leftjoin(pre_prop);
-			pre_prop := nil;
-			tmp_res := res_prop.leftjoin(qn_nsloc).mark(0@0).reverse();
-		}
-	} else {
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
-		var res_prop := result_part_item.leftjoin(pre_prop);
-		    pre_prop := nil;
-		var res_frag := result_part_item.leftjoin(pre_frag);
-		    pre_frag := nil;
-		var X_res    := res_prop.mark(0@0).reverse();
-		var X_prop   := res_prop.reverse().mark(0@0).reverse();
-		    res_prop := nil;
-		var X_frag   := res_frag.reverse().mark(0@0).reverse();
-		    res_frag := nil;
-		var X_nsloc  := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC_URI));
-		    X_prop   := nil;
-		    X_frag   := nil;
-		var _X       := X_nsloc.ord_uselect(loc+str('\1')+ns).reverse();
-		    X_nsloc  := nil;
-		tmp_res := _X.leftfetchjoin(X_res).reverse().mark(0@0).reverse();
-	}
-	@:mapping_code@
- }
-@
-@= loc_post
-	@:ns_loc_post(qn,loc,QN,LOC,ELEMENT)@
-@
-@= ns_post
-	@:ns_loc_post(qn,ns,QN,URI,ELEMENT)@
-@
-@= target_post
-        @:ns_loc_post(prop,tgt,PROP,TGT,1)@
-@( FIXME: '1' is used instead of PI because we skip the other kinds @)
-@
-@= ns_loc_post
- {
-	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_fake_project(pre_frag)) {
-		var frag := pre_frag.fetch(0);
-		pre_frag := nil;
-		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
-		    @1_@2 := @1_@2.ord_uselect(@2);
-		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
-		if (flt(count(pre_prop)) <= (1.1 * flt(count(result_part_item)))) {
-			var pre_@2;
-			if (count(@1_@2) = 1) {
-				pre_@2 := pre_prop.ord_uselect(@1_@2.reverse().fetch(0));
-			} else {
-				pre_@2 := pre_prop.leftjoin(@1_@2);
-			}
-			pre_prop := nil;
-			@1_@2 := nil;
-			tmp_res := result_part_item.leftjoin(pre_@2).mark(0@0).reverse();
-		} else {
-			var res_prop := result_part_item.leftjoin(pre_prop);
-			pre_prop := nil;
-			tmp_res := res_prop.leftjoin(@1_@2).mark(0@0).reverse();
-		}
-	} else {
-		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
-		var res_prop := result_part_item.leftjoin(pre_prop);
-		    pre_prop := nil;
-		var res_frag := result_part_item.leftjoin(pre_frag);
-		    pre_frag := nil;
-		var X_res    := res_prop.mark(0@0).reverse();
-		var X_prop   := res_prop.reverse().mark(0@0).reverse();
-		    res_prop := nil;
-		var X_frag   := res_frag.reverse().mark(0@0).reverse();
-		    res_frag := nil;
-		var X_@2     := mposjoin(X_prop, X_frag, ws.fetch(@3_@4));
-		    X_prop   := nil;
-		    X_frag   := nil;
-		var _X       := X_@2.ord_uselect(@2).reverse();
-		    X_@2     := nil;
-		tmp_res := _X.leftfetchjoin(X_res).reverse().mark(0@0).reverse();
-	}
-	@:mapping_code@
- }
-@
-@= kind_post
- {
-	var pre_kind := ws.fetch(KIND_PRE + int(@1)).fetch(theFrag).reverse();
-	tmp_res := result_part_item.leftjoin(pre_kind).mark(0@0).reverse();
-	pre_kind := nil;
-	@:mapping_code@
- }
-@
-@= mapping_code
-	result_part_iter := tmp_res.leftfetchjoin(result_part_iter);
-	result_part_item := tmp_res.leftfetchjoin(result_part_item);
-	tmp_res := nil;
-@
-@= shrink_code
- {
-	if ( (count(cands) > 0) and (count(result_part_item) > 0) ) {
-		var min_cand := min(cands);
-		var min_item := min(result_part_item);
-		if ( min_cand < min_item ) {
-			cands := cands.ord_select(min_item,oid(nil));
-		}
-	}
-	if ( (count(cands) > 0) and (count(result_part_item) > 0) ) {
-		var max_cand := max(cands);
-		var max_item := max(result_part_item);
-		if ( max_cand < max_item ) {
-			tmp_res := result_part_item.ord_uselect(oid(nil),max_cand).mark(0@0).reverse();
-			@:mapping_code@
-		}
-	}
- }
-@
-@= no_pre
-	cands := ws.fetch(PRE_SIZE).fetch(theFrag).mark(nil).reverse();
-	cands := cands.chk_order();
-@
-@= kind_pre
-	cands := ws.fetch(KIND_PRE + int(@1)).fetch(theFrag);
-	cands := cands.chk_order();
-	@:shrink_code@
-@
-@= nsloc_pre
- {
-	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_fake_project(pre_frag)) {
-		var frag := pre_frag.fetch(0);
-		pre_frag := nil;
-		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
-		    qn_nsloc := qn_nsloc.ord_uselect(loc+str('\1')+ns);
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
-		if (count(qn_nsloc) = 1) {
-			cands := pre_prop.ord_uselect(qn_nsloc.reverse().fetch(0)).reverse();
-		} else {
-			cands := pre_prop.leftjoin(qn_nsloc).reverse();
-		}
-		pre_prop := nil;
-		qn_nsloc := nil;
-	} else {
-		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
-		var X_pre    := pre_prop.mark(0@0).reverse();
-		var X_prop   := pre_prop.reverse().mark(0@0).reverse();
-		    pre_prop := nil;
-		var X_frag   := pre_frag.reverse().mark(0@0).reverse();
-		    pre_frag := nil;
-		var X_nsloc  := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC_URI));
-		    X_prop   := nil;
-		    X_frag   := nil;
-		var _X       := X_nsloc.ord_uselect(loc+str('\1')+ns).reverse();
-		    X_nsloc  := nil;
-		cands := _X.leftfetchjoin(X_pre);
-	}
-	cands := cands.chk_order();
-	@:shrink_code@
- }
-@
-@= loc_pre
-	@:ns_loc_pre(qn,loc,QN,LOC,ELEMENT)@
-@
-@= ns_pre
-	@:ns_loc_pre(qn,ns,QN,URI,ELEMENT)@
-@
-@= target_pre
-	@:ns_loc_pre(prop,tgt,PROP,TGT,1)@ 
-@( FIXME: '1' is used instead of PI because we skip the other kinds @)
-@
-@= ns_loc_pre
- {
-	var pre_frag := ws.fetch(PRE_FRAG).fetch(theFrag);
-	if (is_fake_project(pre_frag)) {
-		var frag := pre_frag.fetch(0);
-		pre_frag := nil;
-		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
-		    @1_@2 := @1_@2.ord_uselect(@2);
-		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
-		if (count(@1_@2) = 1) {
-			cands := pre_prop.ord_uselect(@1_@2.reverse().fetch(0)).reverse();
-		} else {
-			cands := pre_prop.leftjoin(@1_@2).reverse();
-		}
-		pre_prop := nil;
-		@1_@2 := nil;
-	} else {
-		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
-		var X_pre    := pre_prop.mark(0@0).reverse();
-		var X_prop   := pre_prop.reverse().mark(0@0).reverse();
-		    pre_prop := nil;
-		var X_frag   := pre_frag.reverse().mark(0@0).reverse();
-		    pre_frag := nil;
-		var X_@2     := mposjoin(X_prop, X_frag, ws.fetch(@3_@4));
-		    X_prop   := nil;
-		    X_frag   := nil;
-		var _X       := X_@2.ord_uselect(@2).reverse();
-		    X_@2     := nil;
-		cands := _X.leftfetchjoin(X_pre);
-	}
-	cands := cands.chk_order();
-	@:shrink_code@
- }
-@
-
-# expanding the scj for the different tests
-@= loop_lifted_scj_wrap1
-@:loop_lifted_scj_wrap_pre(@1)@
-@
-@= loop_lifted_scj_wrap_pre
-@:loop_lifted_scj_step2(@1,,,,,                                             @:params2@,@:no_pre@        )@
-@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@,, @:params2@,@:kind_pre(kind)@)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,,   @:params2@,@:ns_pre@        )@
-@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,,  @:params2@,@:loc_pre@       )@
-@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,,  @:params2@,@:target_pre@    )@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,,@:params2@,@:nsloc_pre@     )@
-@
-@= loop_lifted_scj_wrap_post
-@:loop_lifted_scj_step2(@1,,,,,                                                               @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@, @:kind_post(kind)@,@:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@,        @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@,       @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@,    @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params2@,@:no_pre@)@
-@
-@= loop_lifted_scj_step1
-@:loop_lifted_scj_step2(@1,,,,,,                                                               )@
-@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@, @:kind_post(kind)@,,)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@        ,,)@
-@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@       ,,)@
-@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@    ,,)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@     ,,)@
-@
-#==================================================================
-# actual definition of the scj proc
-@= loop_lifted_scj_per_frag
-	result_part_iter := result_part_iter.chk_order();
-	result_part_item := result_part_item.chk_order();
-        result_part_frag := nil;
-
-	# pre-test
-	@4
-
-        var result := @1 (result_part_iter, result_part_item, theFrag, ws, order @3);
-	result_part_iter := result.mark(0@0).reverse();
-	result_part_item := result.reverse().mark(0@0).reverse();
-        result_part_frag := fake_project(theFrag);
-	cands := nil;
-
-	# post-test
-	@2
-@
-@= loop_lifted_scj_step2
-proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws @3) : bat[void,bat]
-{
-     return loop_lifted_@1_step@2 (iter, item, frag, ws, 0 @4);
+PROC xmlcache_del_rule(str uri) : void {
+    lock_set(pf_lock);
+    var err := CATCH({doc_init(); bat("uri_lifetime").delete(uri);});
+    lock_unset(pf_lock);
+    if (not(isnil(err))) ERROR(err);
 }
-proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws, int order @3) : bat[void,bat]
-{
-    # handle empty results correctly
-    if (iter.count() = 0) {
-	var empty := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
-	return bat(void,bat,3).seqbase(0@0)
-			    .insert(nil,empty)
-			    .insert(nil,empty)
-			    .insert(nil,empty)
-			    .access(BAT_READ);
-    }
+ADDHELP("xmlcache_del_rule", "boncz", "May 2005",
+"DESCRIPTION:\ndeletes an existing URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
 
-    var result;
-    var result_iter;
-    var result_item;
-    var result_frag;
-    var tmp_res;
-    var cands;
-
-    var uniqueFrag := frag.tunique().sort();
-    var theFrag := uniqueFrag.reverse().fetch(0);
-    if (uniqueFrag.count() = 1) {
-        var result_part_frag := nil;
-        var result_part_iter := iter;
-        var result_part_item := item;
-
-        @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
-
-        result_iter := result_part_iter;
-        result_item := result_part_item;
-        result_frag := result_part_frag;
-        result_part_iter := nil;
-        result_part_item := nil;
-        result_part_frag := nil;
-    } else {
-        var result_part_frag := frag.ord_uselect(theFrag).mark(0@0).reverse();
-        var result_part_iter := result_part_frag.leftfetchjoin(iter);
-        var result_part_item := result_part_frag.leftfetchjoin(item);
-
-        @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
-
-        result_iter := result_part_iter;
-        result_item := result_part_item;
-        result_frag := result_part_frag;
-        result_part_iter := nil;
-        result_part_item := nil;
-        result_part_frag := nil;
-
-        var res_mu;
-	uniqueFrag.slice(1,uniqueFrag.count() - 1)@batloop () {
-	    theFrag := $h;
-            result_part_frag := frag.ord_uselect(theFrag).mark(0@0).reverse();
-            result_part_iter := result_part_frag.leftfetchjoin(iter);
-            result_part_item := result_part_frag.leftfetchjoin(item);
-
-            @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
-
-            res_mu := merged_union(result_iter, result_part_iter,
-				   result_item, result_part_item,
-				   result_frag, result_part_frag);
-            result_part_iter := nil;
-            result_part_item := nil;
-            result_part_frag := nil;
-            result_iter := res_mu.fetch(0);
-            result_item := res_mu.fetch(1);
-            result_frag := res_mu.fetch(2);
-            res_mu := nil;
-        }
-    }
-    
-    result_iter.access(BAT_READ);
-    result_item.access(BAT_READ);
-    result_frag.access(BAT_READ);
-    var result_scj := bat(void,bat,3).seqbase(0@0);
-    result_scj.insert(nil,result_iter);
-    result_scj.insert(nil,result_item);
-    result_scj.insert(nil,result_frag);
-
-    return result_scj.access(BAT_READ);
+PROC xmlcache_print_rules() : void {
+    lock_set(pf_lock);
+    var err := CATCH({ doc_init(); table(bat("uri_lifetime").mark(0@0).reverse().col_name("URI-prefix"), bat("uri_lifetime").reverse().mark(0@0).reverse().col_name("liftime-secs")); });
+    lock_unset(pf_lock);
+    if (not(isnil(err))) ERROR(err);
 }
-@
+ADDHELP("xmlcache_print_rules", "boncz", "May 2005",
+"DESCRIPTION:\nshows all URI lifetime rules.\n\n" + xmlcache_help,  "pathfinder");
+
+PROC xmlcache_print() : void {
+    lock_set(pf_lock);
+    var err := CATCH({ doc_init(); table(bat("doc_name").col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size"), bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
+    lock_unset(pf_lock);
+    if (not(isnil(err))) ERROR(err);
+}
+ADDHELP("xmlcache_print", "boncz", "May 2005",
+"DESCRIPTION:\nshows the actual content of the XML document cache.\n\n" + xmlcache_help,  "pathfinder");
+
+PROC xmldb_print() : void {
+    lock_set(pf_lock);
+    var err := CATCH({ doc_init(); table(mirror(bat("doc_timestamp").uselect(timestamp(nil))).join(bat("doc_name")).col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size")); });
+    lock_unset(pf_lock);
+    if (not(isnil(err))) ERROR(err);
+}
+ADDHELP("xmldb_print", "boncz", "May 2005",
+"DESCRIPTION:\nshows the actual content of the persistent XML document database (not the XML document cache).\n\nThis consists of all documents explicitly shredded with shred_doc(URI, alias).",  "pathfinder");
+
 
 @h
 #ifndef PATHFINDER_H
@@ -1506,146 +748,14 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #include <monet_interpreter.h>
 #include <streams.h>
 
-
 #endif
 
 @c
 #include "pathfinder.h"
-#include "compile_interface.h"
 
-/*
- * Worker for the ebv() function.
- */
-BAT *
-BATebv (BAT *b)
-{
-    BAT *ret = NULL;    /* return value */
-    BUN p = 0, q = 0;   /* BUN variables for iteration */
-    int bunsz;          /* BUN size used for iteration (BATloopFast) */
-    oid old;            /* Last head value we had seen */
-    bit val;            /* Boolean result value that belongs to `old' */
-    size_t cnt = 0;     /* "guess" of result cardinality */
-    bit trivial;        /* indicator for "trivial" result properties */
-
-    /* Just in case BATebv might be called from elsewhere than CMDebv:
-     * check, that b in not NULL.
-     */
-    BATcheck(b, "BATebv");
-    /* Input must be sorted by head value, tail must be boolean */
-    ERRORcheck (!(BAThordered(b)&1), "BATebv: head of BAT must be sorted.\n");
-    /* Needed only, if you want to disallow TYPE_void, 
-     * which also matches the oid requirement of the signature;
-     * or if BATebv could be called from somewhere/one else than CMDebv.
-     */
-    ERRORcheck (!(b->htype == TYPE_oid),
-                "BATebv: head of BAT must have oid type.\n");
-@(
-    /* Not needed, if BATebv is only called from CMDebv,
-     * since the signature only allows bit-tailed BATs.
-     */
-    ERRORcheck (!(b->ttype == TYPE_bit),
-                "BATebv: tail of BAT must have bit type.\n");
-@)
-
-    /* Try to "guess" the result cardinality:
-     * on the one hand, we don't want too allocate (far) too much memory;
-     * on the other hand, we want to avoid BATextends (i.e., (large) memcpy's),
-     * that occur if we initially allow too little space ... 
-     * Obviously, BATcount(b) is the upper limit;
-     * lower limit is just a "wild guess"...
-     */
-    if (BAThkey (b))
-        cnt = BATcount (b);
-    else
-        cnt = MIN (200, BATcount (b));
-
-    /* Create return BAT */
-    ret = BATnew (b->htype, TYPE_bit, cnt);
-    if (!ret)
-        return ret;
-
-    /*
-     * Iterate over the input BAT.
-     * Whenever we see a head value the first time, we record its tail
-     * value in val. If we see the same head value a second (third,...)
-     * time, we re-set val to false. When we reach the next head
-     * value, (old, val) will be the correct BUN for the last group.
-     */
-
-    /* Initialize, ... */
-    bunsz = BUNsize (b);
-    p = BUNfirst (b);
-    old = *(oid *) BUNhloc (b, p);
-    val = *(bit *) BUNtloc (b, p);
-    /* ... skip first, ... */
-    p += bunsz;
-    /* ... and process the rest. */
-    for(q = BUNlast(b); p < q; p += bunsz) {
-    	oid *head = (oid *) BUNhloc (b, p);
-        if (*head == old)
-            val = FALSE;
-        else {
-            bunfastins (ret, &old, &val);
-            old = *head;
-            val = *(bit *) BUNtloc (b, p);
-        }
-    }
-    /* Don't forget to produce the last BUN. */
-    bunfastins (ret, &old, &val);
-    
-    /* Set result properties ... */
-    cnt = BATcount (ret);
-    trivial = (cnt < 2) ? TRUE : FALSE;
-    /* ... head ... */
-    BATkey (ret, TRUE);
-    ret->hsorted = GDK_SORTED;
-    ret->hdense = trivial;
-    if (trivial == TRUE) {
-        if (cnt == 0)
-            BATseqbase (ret, (oid)0); /* does not really matter */
-        else /* (cnt == 1) */
-            BATseqbase (ret, old);
-    }
-    /* ... tail */
-    BATkey (BATmirror(ret), trivial);
-    ret->tsorted = trivial;
-    ret->tdense = FALSE;
-
-    return ret;
-
-/* required by bunfastins macro */
-bunins_failed:
-    BBPreclaim(ret);
-    return NULL;
-}
-
-/*
- * Implementation of ebv(). Basically just calls BATebv().
- */
-int
-CMDebv (BAT **result, BAT *b)
-{
-    return (*result = BATebv (b)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-MT_Lock pf_runtime_lock;
 MT_Lock pf_compiler_lock;
 
-bat* pathfinder_prelude() {
-    pf_runtime_lock = MT_create_lock();
-    pf_compiler_lock = MT_create_lock();
-    return NULL;
-}
-
-void pathfinder_epilogue() {
-    MT_destroy_lock(pf_runtime_lock);
-    MT_destroy_lock(pf_compiler_lock);
-}
-
-int CMDpflock(ptr *ret) {
-    *ret = (ptr) pf_runtime_lock;
-    return GDK_SUCCEED;
-}
+#include "compile_interface.h"
 
 /*
  * translate xquery to MIL and execute
@@ -1858,24 +968,12 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 	closeClient(client, 0); 	
 	return ret;
 }
-
-#include <monettime.h>
-
-int
-CMDlastmod_time(timestamp *ret, str filename) {
-	struct stat st;
-	int year = 1970, one = 1, zero = 0;
-	lng msecs;
-	timestamp ts;
-        daytime dt;
-	date d;
-
-	if (stat(filename, &st)) {
-		return GDK_FAIL;
-	}
-	msecs = 1000*st.st_mtime;
-        return date_create(&d, &year, &one, &one) &&
-               daytime_create(&dt, &zero, &zero, &zero, &zero) &&
-               timestamp_create_default(&ts, &d, &dt) &&
-               timestamp_add(ret, &ts, &msecs);
+bat* pathfinder_prelude() {
+    pf_compiler_lock = MT_create_lock();
+    return NULL;
 }
+
+void pathfinder_epilogue() {
+    MT_destroy_lock(pf_compiler_lock);
+}
+ 

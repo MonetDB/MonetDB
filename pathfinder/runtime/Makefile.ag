@@ -25,10 +25,10 @@
 INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../compiler/include
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 
-lib__pathfinder = {
+lib__pf_support = {
 	DIR = libdir/MonetDB
 	SOURCES = \
-		pathfinder.mx \
+		pf_support.mx \
 		staircasejoin.mx \
 		ll_staircasejoin.mx \
 		prec_foll.mx \
@@ -52,10 +52,10 @@ lib__pathfinder = {
 		-l_streams -l_builtin -l_ascii_io -l_algebra 
 }
 
-lib__pf_support = {
+lib__pathfinder = {
 	DIR = libdir/MonetDB
 	SOURCES = \
-		pf_support.mx
+		pathfinder.mx
 
 	LIBS = $(PF_LIBS) $(MONETDB_LIBS) \
 		-lbat -lmonet -lstream \
