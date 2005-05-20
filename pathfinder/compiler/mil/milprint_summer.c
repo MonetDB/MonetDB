@@ -7900,8 +7900,8 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             counter++;
             milprintf(f,
                     "{ # order_by\n"
-                    "var refined%03u := loop%03u.reverse().project(nil);\n",
-                    counter, cur_level);
+                    "var refined%03u := inner%03u.reverse().leftfetchjoin(outer%03u);\n",
+                    counter, cur_level, cur_level);
             /* evaluate orderspecs */
             translate2MIL (f, code, cur_level, counter, L(c));
 
