@@ -86,6 +86,16 @@
 @echo "pf -M q17.xq >/dev/null" >&2
 @pf -M q17.xq > nul
 
+@copy /y "%RELSRCDIR%\..\..\tests\XMark\Tests\q18.xq" q18.xq > nul
+@echo "pf -M q18.xq >/dev/null"
+@echo "pf -M q18.xq >/dev/null" >&2
+@pf -M q18.xq > nul
+
+@copy /y "%RELSRCDIR%\..\..\tests\XMark\Tests\q19.xq" q19.xq > nul
+@echo "pf -M q19.xq >/dev/null"
+@echo "pf -M q19.xq >/dev/null" >&2
+@pf -M q19.xq > nul
+
 @copy /y "%RELSRCDIR%\..\..\tests\XMark\Tests\q19_unordered.xq" q19_unordered.xq > nul
 @echo "pf -M q19_unordered.xq >/dev/null"
 @echo "pf -M q19_unordered.xq >/dev/null" >&2

@@ -22,7 +22,9 @@ stdout of test 'pf-M_XMark` in directory 'compiler` itself:
 "pf -M q15.xq >/dev/null"
 "pf -M q16.xq >/dev/null"
 "pf -M q17.xq >/dev/null"
+"pf -M q18.xq >/dev/null"
 "pf -M q19_unordered.xq >/dev/null"
+"pf -M q19.xq >/dev/null"
 "pf -M q20.xq >/dev/null"
 "pf -M upd.xq >/dev/null"
 

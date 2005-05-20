@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for i in `ls $RELSRCDIR/../../tests/XMark/Tests/*.xq | egrep -v "^$RELSRCDIR/../../tests/XMark/Tests/q1[89].xq$"` ; do
+for i in `ls $RELSRCDIR/../../tests/XMark/Tests/*.xq` ; do
 	j=${i##*/}
 	ln -s $i $j
 	echo "\"pf -M $j >/dev/null\""
