@@ -1296,8 +1296,7 @@ ssl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	size_t res = 0, size = elmsize * cnt;
 
 	if (s->errnr)
-		;
-	return -1;
+		return -1;
 
 	assert(s->stream_data.p);
 	ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
