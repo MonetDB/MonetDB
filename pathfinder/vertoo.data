@@ -1,0 +1,2 @@
+monetdb = major:4; minor:7; release:3;
+pathfinder = major:0; minor:7; release:3; rc:x; build:1;
