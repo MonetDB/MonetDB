@@ -341,7 +341,10 @@ unsigned short val_table[10000];	/* 4-digit shorts with numbers from 0000 to 999
 #define NUMLEN(x)	((((x)-1) >> 3) + 1)
 
 /* total size in bytes of allocated structure */
-#define TOTLEN(x) (sizeof(decimal)+((NUMLEN(MAX(MIN(PRECISION_MAX,(x)),1))-1)<<2))
+/* in certain cases it is not necessary to check the upper bound, so
+   provide a macro */
+#define TOTLEN_NOMAXCHECK(x) (sizeof(decimal)+((NUMLEN(MAX((x),1))-1)<<2))
+#define TOTLEN(x) TOTLEN_NOMAXCHECK(MIN(PRECISION_MAX,(x)))
 
 #define DECIMAL_AVGSIZE 12
 
@@ -952,13 +955,13 @@ decimal_null(void)
 int
 decimal_length(decimal *d)
 {
-	return TOTLEN(PREC(d));
+	return TOTLEN_NOMAXCHECK(PREC(d));
 }
 
 void
 decimal_convert(decimal *d, int dummy)
 {
-	int *src = (int *) d, *dst = (int *) (((char *) d) + TOTLEN(PREC(d)));
+	int *src = (int *) d, *dst = (int *) (((char *) d) + TOTLEN_NOMAXCHECK(PREC(d)));
 	short *s = (short *) d;
 
 	(void) dummy;
@@ -985,7 +988,7 @@ var_t
 decimal_put(Heap *h, var_t *bun, decimal *val)
 {
 	decimal *dst;
-	int len = TOTLEN(PREC(val));
+	int len = TOTLEN_NOMAXCHECK(PREC(val));
 	unsigned int *src = val->num;
 	unsigned int *end = (unsigned int *) (((char *) src) + len - sizeof(int));
 
