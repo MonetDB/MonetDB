@@ -11,7 +11,7 @@ module("xtables");
 #	 major test script on xtable functionality
 
 proc xtable_print(..any..) : void {
-	printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
+	printf("\n# %s (ct: %d elts, %d groups, %lld bytes)\n",
 	       $2, $3.count(), $1.count(), $3.batsize());
 	table($1.col_name("count"), $(4..));
 }
@@ -39,7 +39,7 @@ proc xtable_realloc(bat[any::1,any::2] b, int cap) : bat[any::1,any::2] {
 }
 
 proc xtable_test(str title, bat x, bat y, bat z) : void {
-	printf("# xtable_test: %s grouping (%d tuples, %d bytes)\n\n",
+	printf("# xtable_test: %s grouping (%d tuples, %lld bytes)\n\n",
 	       title, x.count(), x.batsize() + y.batsize() + z.batsize());
 	x.col_name("x"); y.col_name("y"); z.col_name("z");
 	var yy := [+](y,dbl(1.0)).col_name("yy");

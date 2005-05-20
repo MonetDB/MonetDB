@@ -160,7 +160,7 @@ module(xtables);
  
 proc xtable_print(..any..) : void {
         var histo := $1.histogram();
-        printf("\n# %s (ct: %d elts, %d groups, %d bytes)\n",
+        printf("\n# %s (ct: %d elts, %d groups, %lld bytes)\n",
                 $2, $1.map().count(), histo.count(), $1.map().batsize());
         table(histo.col_name("count"), $(3..));
 }
@@ -177,7 +177,7 @@ proc xtable_realloc(bat b,int cap) : bat {
 }
  
 proc xtable_test(str title, bat x, bat y, bat z) : void {
-    printf("# xtable_test: %s grouping (%d tuples, %d bytes)\n\n",
+    printf("# xtable_test: %s grouping (%d tuples, %lld bytes)\n\n",
                 title, x.count(), x.batsize() + y.batsize() + z.batsize());
     x.col_name("x"); y.col_name("y"); z.col_name("z");
  
