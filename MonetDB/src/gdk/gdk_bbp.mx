@@ -837,7 +837,7 @@ BBPgetdesc(bat i)
 
 	if (i < 0)
 		i = -i;
-	if (i) {
+	if (i != bat_nil && i < BBPsize && i) {
 		str nme = BBP_physical(i);
 
 		b = BBP_cache(i);
