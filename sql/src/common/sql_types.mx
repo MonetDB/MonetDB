@@ -461,7 +461,7 @@ sql_find_func(sql_module *m, char *sqlfname, int nrargs)
 		if ((fres = func_cmp(f, name, nrargs )) != NULL) 
 			return fres;
 	}
-	while(m) {
+	if (m) {
 		node *n;
 
 		if (m->funcs.set) for (n=m->funcs.set->h; n; n = n->next) {

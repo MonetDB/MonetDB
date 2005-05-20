@@ -44,7 +44,7 @@ extern BAT *bind_uidx(sql_trans *tr, sql_idx * i, int access);
 #include "sql_backend.h"
 
 /* version 02.00.00 of catalog */
-#define CATALOG_VERSION 20000
+#define CATALOG_VERSION 20001
 
 static struct logger *logger = NULL;
 static MT_Lock bs_lock = NULL;
@@ -833,30 +833,93 @@ load_type(sql_trans *tr, sql_module * m, BAT *types, BUN j)
 	return t;
 }
 
+static sql_arg *
+load_arg(sql_trans *tr, sql_func * f, BAT *args, BUN j)
+{
+	char *tpe;
+	sql_arg *a = NEW(sql_arg);
+	ptr lid = BUNhead(args, j);
+	int sz, d;
+	BAT *arg_name = sys_bat(tr->bm, "args_name");
+	BAT *arg_type = sys_bat(tr->bm, "args_type");
+	BAT *arg_type_digits = sys_bat(tr->bm, "args_type_digits");
+	BAT *arg_type_scale = sys_bat(tr->bm, "args_type_scale");
+
+	(void)f;
+	a->name = _strdup((char *) bun_find(arg_name, lid));
+	tpe = (char *) bun_find(arg_type, lid);
+	sz = *(int *) bun_find(arg_type_digits, lid);
+	d = *(int *) bun_find(arg_type_scale, lid);
+	a->type = sql_bind_subtype(tpe, sz, d);
+	if (!a->type)
+		a->type = sql_create_subtype(sql_trans_bind_type(tr, tpe), sz, d);
+
+	bat_destroy(arg_name);
+	bat_destroy(arg_type);
+	bat_destroy(arg_type_digits);
+	bat_destroy(arg_type_scale);
+	return a;
+}
+
 static sql_func *
 load_func(sql_trans *tr, sql_module * m, BAT *funcs, BUN j)
 {
 	sql_func *t = NEW(sql_func);
 	ptr lid = BUNhead(funcs, j);
+	BAT *args, *rargs;
+	BUN p, q;
 	BAT *func_id = sys_bat(tr->bm, "functions_id");
 	BAT *func_name = sys_bat(tr->bm, "functions_name");
 	BAT *func_func = sys_bat(tr->bm, "functions_func");
 	BAT *func_sql = sys_bat(tr->bm, "functions_sql");
 	BAT *func_aggr = sys_bat(tr->bm, "functions_aggr");
+	BAT *arg_func_id = sys_bat(tr->bm, "args_func_id");
+	BAT *arg_number = sys_bat(tr->bm, "args_number");
 
 	base_init(&t->base, *(sqlid *) bun_find(func_id, lid), TR_OLD, bun_find(func_name, lid));
 	t->imp = _strdup((char *) bun_find(func_func, lid));
 	t->sql = *(bit *) bun_find(func_sql, lid);
 	t->aggr = *(bit *) bun_find(func_aggr, lid);
-	/* TODO agr list */
 	t->res = NULL;
 	t->m = m;
+	int first = 1;
+
+	args = BATselect(arg_func_id, (ptr) &t->base.id, (ptr) &t->base.id);
+
+	rargs = BATsemijoin(arg_number, args);
+	bat_destroy(args);
+	args = BATmirror(rargs);
+	rargs = BATsort(args);
+	bat_destroy(args);
+	args = BATmirror(rargs);
+
+	if (bs_debug)
+		fprintf(stderr, "\tload table %s\n", t->base.name);
+
+	t->ops = list_create((fdestroy)&arg_destroy);
+	BATloop(args, p, q) {
+		sql_arg *a = load_arg(tr, t, args, p);
+		if (first) {
+			first = 0;
+			if (strcmp(a->name, "result") == 0) {
+				t -> res = sql_dup_subtype(a->type);
+				arg_destroy(a);
+			} else {
+				list_append(t->ops, a);
+			}
+		} else {
+			list_append(t->ops, a);
+		}
+	}
+	bat_destroy(args);
 
 	bat_destroy(func_id);
 	bat_destroy(func_name);
 	bat_destroy(func_func);
 	bat_destroy(func_sql);
 	bat_destroy(func_aggr);
+	bat_destroy(arg_func_id);
+	bat_destroy(arg_number);
 	return t;
 }
 
@@ -916,11 +979,12 @@ load_module(sql_trans *tr, BAT *modules, BUN j)
 	char *internal;
 	sql_module *s = NEW(sql_module);
 	ptr lid = BUNhead(modules, j);
-	BAT *types;
+	BAT *types, *funcs;
 	BUN p, q;
 	BAT *module_names = sys_bat(tr->bm, "modules_name");
 	BAT *module_internal = sys_bat(tr->bm, "modules_internal");
 	BAT *type_module = sys_bat(tr->bm, "types_module_id");
+	BAT *func_module = sys_bat(tr->bm, "functions_module_id");
 
 	base_init(&s->base, *(sqlid *) bun_find(modules, lid), TR_OLD, bun_find(module_names, lid));
 	cs_init(&s->types, (fdestroy) &type_destroy);
@@ -935,13 +999,21 @@ load_module(sql_trans *tr, BAT *modules, BUN j)
 
 	if (bs_debug)
 		fprintf(stderr, "load module %s %d\n", s->base.name, s->base.id);
+	tr->module = s;
 	types = BATselect(type_module, (ptr) &s->base.id, (ptr) &s->base.id);
 
 	BATloop(types, p, q)
 	    cs_add(&s->types, load_type(tr, s, types, p), TR_OLD);
 	bat_destroy(types);
 
+	funcs = BATselect(func_module, (ptr) &s->base.id, (ptr) &s->base.id);
+
+	BATloop(funcs, p, q)
+	    cs_add(&s->funcs, load_func(tr, s, funcs, p), TR_OLD);
+	bat_destroy(funcs);
+
 	bat_destroy(module_names);
+	bat_destroy(module_internal);
 	return s;
 }
 
@@ -1789,17 +1861,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "type_digits", "int", 9);
 		bootstrap_create_column(tr, t, "type_scale", "int", 9);
 		bootstrap_create_column(tr, t, "number", "int", 9);
-/*
-		t = bootstrap_create_table(tr, s, "sequences", 0);
-		bootstrap_create_column(tr, t, "id", "int", 9);
-		bootstrap_create_column(tr, t, "name", "varchar", 1024);
-		bootstrap_create_column(tr, t, "schema_id", "int", 9);
-		bootstrap_create_column(tr, t, "last_value", "bigint", 19);
-		bootstrap_create_column(tr, t, "start", "bigint", 19);
-		bootstrap_create_column(tr, t, "stop", "bigint", 19);
-		bootstrap_create_column(tr, t, "step", "bigint", 19);
-		bootstrap_create_column(tr, t, "called", "boolean", 0);
-*/
+
 		if (sql_trans_commit(tr) != SQL_OK)
 			fprintf(stderr, "Cannot commit initial transaction\n");
 		sql_trans_destroy(tr);
@@ -2138,6 +2200,7 @@ type_dup(sql_trans *tr, int flag, sql_type *ot, sql_module * m)
 	t->digits = ot->digits;
 	t->scale = ot->scale;
 	t->radix = ot->radix;
+	t->localtype = ot->localtype;
 	t->m = m;
 	return t;
 }

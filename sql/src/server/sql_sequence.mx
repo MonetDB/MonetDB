@@ -43,11 +43,13 @@ sql_create_sequences(mvc *m, sql_schema *s)
 
 	t = mvc_create_table(m, s, "sequences", 1, 1, 0, -1);
 	mvc_create_column_(m, t, "name", "varchar", 0);
-	mvc_create_column_(m, t, "curvalue", "int", 18);
-	mvc_create_column_(m, t, "increment", "int", 4);
-	mvc_create_column_(m, t, "minvalue", "int", 18);
-	mvc_create_column_(m, t, "maxvalue", "int", 18);
+	mvc_create_column_(m, t, "schema", "varchar", 256);
+	mvc_create_column_(m, t, "curvalue", "bigint", 19);
+	mvc_create_column_(m, t, "increment", "bigint", 19);
+	mvc_create_column_(m, t, "minvalue", "bigint", 19);
+	mvc_create_column_(m, t, "maxvalue", "bigint", 19);
 	mvc_create_column_(m, t, "cycle", "boolean", 0);
+
 	return 0;
 }
 
@@ -82,8 +84,8 @@ sql_create_seq(mvc *sql, sql_schema *ss, dlist *qname, sql_subtype *tpe, int sta
 	}
 	snprintf(buf, BUFSIZ,
 		 "insert into sys.sequences values "
-		 "('%s', %d, %d, %d, %d, %s);",
-		 name, start, inc, min, max, cycle ? "true" : "false");
+		 "('%s', %s, %d, %d, %d, %d, %s);",
+		 name, ss->base.name, start, inc, min, max, cycle ? "true" : "false");
 	return stmt_sql(_strdup(buf));
 }
 
