@@ -2132,6 +2132,10 @@ THRprintf(stream *s, const char *format, ...)
 	}
 	m = p-bf;
 	va_start(ap, format);
+	/* this could actually fail (return -1) for reasons other than
+	   not enough buffer space; the code does not deal with this fact
+	   (one reason for failure could be non-UTF-8 strings being
+	   printed in a UTF-8 locale) */
 	n = vsnprintf(p, bfsz-m, format, ap);
 	va_end(ap);
 @c
