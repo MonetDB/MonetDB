@@ -1,0 +1,3 @@
+module("pathfinder");
+xquery("xml","text { <node/> }");
+quit();
