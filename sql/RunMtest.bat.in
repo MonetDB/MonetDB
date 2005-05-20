@@ -17,6 +17,8 @@ set PATH=%builddir%\src\common;%builddir%\src\storage\bat;%builddir%\src\tools;@
 set PATH=%builddir%\src\server;%builddir%\src\odbc\driver;%builddir%\src\odbc\setup;%PATH%
 set PATH=%MOD_PATH%;%PATH%
 
+set PYTHONPATH=@MONETDB_PREFIX@\share\MonetDB\python
+
 REM execute Mtest.py in the source directory
 pushd %srcdir%
 
