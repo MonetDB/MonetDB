@@ -541,8 +541,6 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
                 PFstate.genType = PF_GEN_XML;
         } else if ( strcmp(mode,"xml-mapi") == 0 ) {
                 PFstate.genType = PF_GEN_XML_MAPI;
-        } else if ( strcmp(mode,"org") == 0 ) {
-                PFstate.genType = PF_GEN_ORG;
         } else if ( strcmp(mode,"none") ) {
                 fprintf(stderr,"pf_compile_interface: unknown output mode \"%s\", using \"xml\".\n",mode);
                 PFstate.genType = PF_GEN_XML;
