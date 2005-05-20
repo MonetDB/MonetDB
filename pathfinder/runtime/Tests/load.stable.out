@@ -37,15 +37,22 @@ loading module 'pf_support'
 # module		usage_count	  # name
 # str		int		  # type
 #---------------------------------#
+[ "aggrX3",	  1		  ]
+[ "alarm",	  2		  ]
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
 [ "bat",	  1		  ]
 [ "builtin",	  1		  ]
+[ "lock",	  1		  ]
 [ "main",	  1		  ]
+[ "malalgebra",	  1		  ]
+[ "mmath",	  1		  ]
+[ "monettime",	  1		  ]
 [ "pf_support",	  1		  ]
 [ "str",	  1		  ]
 [ "sys",	  1		  ]
 [ "trans",	  1		  ]
+[ "xtables",	  1		  ]
 dropping module 'pf_support'
 #---------------------------------#
 # module		usage_count	  # name
