@@ -420,8 +420,7 @@ creates a new working set and gives back the reference",
 "pathfinder");
 
 
-PROC destroy_ws_locked(BAT[void,bat] ws) : bit {
-    if (type(doc_query) = bat)
+PROC destroy_ws_locked(BAT[void,bat] ws) : void {
     doc_query.select(int(ws))@batloop() {
         var doc_oid := $h;
         doc_query.delete(doc_oid, int(ws));
@@ -431,24 +430,26 @@ PROC destroy_ws_locked(BAT[void,bat] ws) : bit {
             }
         }
     }
-    # determine whether a cache flush is desired (only count cached bats; those with a timestamp)
+    # determine whether a cache flush is desired (only count cached bats, those with a timestamp)
     var cursize := sum(bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).mirror().join(bat("doc_size")));
     var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
 
-    if (cursize > maxsize)
-	delete_all_docs_locked(true);
+    if (cursize > maxsize) {
+        delete_all_docs_locked(true);
+    }
 }
 
 PROC destroy_ws(BAT[void,bat] ws) : void {
-    var err, flush_cache := false;
+    var err;
+
+    if (type(doc_query) != bat) { return; }
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(flush_cache := destroy_ws_locked(ws));
+    err := CATCH(destroy_ws_locked(ws));
     lock_unset(pf_lock);
 
-    if (not(isnil(err))) ERROR(err);
-
+    if (not(isnil(err))) { ERROR(err); }
 }
 ADDHELP("destroy_ws", "boncz", "May 2005",
 "DESCRIPTION:\n\
