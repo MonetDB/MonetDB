@@ -36,6 +36,8 @@ Over..
 [ NULL,	"sys",	"idxs",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"keycolumns",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"types",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
+[ NULL,	"sys",	"functions",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
+[ NULL,	"sys",	"args",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"ttables",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"tcolumns",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"history",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
@@ -58,11 +60,13 @@ Over..
 # 1,	3,	10,	12,	0,	1,	1,	1,	2,	6 # length
 # 23,	,	,	,	,	,	,	,	,	 # tuplecount
 # 2,	,	,	,	,	,	,	,	,	 # id
+[ NULL,	"sys",	"args",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"auths",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"db_users",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"env",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"ff",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"foo",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
+[ NULL,	"sys",	"functions",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"history",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"idxs",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"keycolumns",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]

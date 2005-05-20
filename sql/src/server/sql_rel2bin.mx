@@ -340,7 +340,7 @@ stmt_min(stmt *x, stmt *y)
 	t = tail_type(x);
 	assert(t);
 /*	assert(t == tail_type(y));	*/
-	f = sql_bind_func_result("sql_min", t, t, t);
+	f = sql_bind_func_result(NULL, "sql_min", t, t, t);
 	assert(f);
 	return stmt_binop(x, y, f);
 }
@@ -356,7 +356,7 @@ stmt_max(stmt *x, stmt *y)
 	t = tail_type(x);
 	assert(t);
 /*	assert(t == tail_type(y));	*/
-	f = sql_bind_func_result("sql_max", t, t, t);
+	f = sql_bind_func_result(NULL, "sql_max", t, t, t);
 	assert(f);
 	return stmt_binop(x, y, f);
 }
@@ -376,7 +376,7 @@ stmt_uselect_select(stmt *s)
 
 
 list *
-shrink_select_ranges(list *oldsels)
+shrink_select_ranges(mvc *sql, list *oldsels)
 {
 	/* find minimal ranges for selects per column on one table */
 	sql_subfunc *min = NULL;
@@ -409,7 +409,7 @@ shrink_select_ranges(list *oldsels)
 		if (list_length(colsels) == 1) {
 			/* only one select on this column; simply keep it. */
 			list_append(newsels, stmt_dup(colsels->h->data));
-		} else if (!(min = sql_bind_func_result("sql_min", tt, tt, tt)) || !(max = sql_bind_func_result("sql_max", tt, tt, tt))) {
+		} else if (!(min = sql_bind_func_result(sql->trans->module, "sql_min", tt, tt, tt)) || !(max = sql_bind_func_result(sql->trans->module, "sql_max", tt, tt, tt))) {
 			/* no "min" and/or "max" available on this data type, hence, we cannot apply the following "tricks" */
 			list_merge(newsels, colsels, (fdup) &stmt_dup);
 		} else {
@@ -733,7 +733,7 @@ eliminate_reverse(stmt *s)
 }
 
 static stmt *
-stmt_hash( list *l ) 
+stmt_hash( mvc *sql, list *l ) 
 {
 	node *m;
 	int bits = 0;
@@ -743,10 +743,10 @@ stmt_hash( list *l )
 	it = sql_bind_localtype("int");
 	for (m = l->h; m; m = m->next, bits += 8) {
 		stmt *s = stmt_dup(m->data);
-		sql_subfunc *hf = sql_bind_func_result("hash", tail_type(s), it, it);
+		sql_subfunc *hf = sql_bind_func_result(sql->trans->module, "hash", tail_type(s), it, it);
 
 		if (h) {
-			sql_subfunc *xor = sql_bind_func_result("xor", it, it, it);
+			sql_subfunc *xor = sql_bind_func_result(sql->trans->module, "xor", it, it, it);
 
 			h = stmt_binop(h, stmt_binop(s, stmt_atom_int(bits), hf), xor);
 		} else {
@@ -757,7 +757,7 @@ stmt_hash( list *l )
 }
 
 static stmt *
-stmt_reljoin_( list *l1, list *l2 )
+stmt_reljoin_( mvc *sql, list *l1, list *l2 )
 {
 	node *n1, *n2;
 	stmt *l, *r, *res;
@@ -767,8 +767,8 @@ stmt_reljoin_( list *l1, list *l2 )
 		r = stmt_dup(l2->h->data);
 		return stmt_join(l, stmt_reverse(r), cmp_equal);
 	}
-	l = stmt_hash(l1);
-	r = stmt_hash(l2);
+	l = stmt_hash(sql, l1);
+	r = stmt_hash(sql, l2);
 	res = stmt_join(l, stmt_reverse(r), cmp_equal);
 	l = stmt_mark(stmt_reverse(res), 4);
 	r = stmt_mark(stmt_dup(res), 4);
@@ -779,7 +779,7 @@ stmt_reljoin_( list *l1, list *l2 )
 		stmt *re = stmt_join(r, rd, cmp_equal);
 		/* intentional both tail_type's of le (as re sometimes is a
 		   find for bulk loading */
-		sql_subfunc *f=sql_bind_func("=", tail_type(le), tail_type(le));
+		sql_subfunc *f=sql_bind_func(sql->trans->module, "=", tail_type(le), tail_type(le));
 
 		stmt * cmp;
 
@@ -841,7 +841,7 @@ rel2bin(mvc *c, stmt *s)
 			list_append(l2, rel2bin(c, n2->data));
 		}
 		/*res = stmt_reljoin2(l1, l2); */
-		res = stmt_reljoin_(l1, l2);
+		res = stmt_reljoin_(c, l1, l2);
 		list_destroy(l1);
 		list_destroy(l2);
 		s->optimized = res->optimized = 2;
@@ -864,7 +864,7 @@ rel2bin(mvc *c, stmt *s)
 			res = stmt_dup(l->h->data);
 		} else {
 			if (!mvc_debug_on(c, 4096)) {
-				l = shrink_select_ranges(l);
+				l = shrink_select_ranges(c, l);
 			}
 			res = (stmt *) list_reduce(l, (freduce) &stmt_semijoin, (fdup) &stmt_dup);
 		}

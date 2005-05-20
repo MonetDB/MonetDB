@@ -506,11 +506,11 @@ revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant
 
 
 static stmt *
-create_module(mvc *sql, dlist *qname)
+create_module(mvc *sql, dlist *qname, char *opt_internal_name)
 {
 	char *mname = qname_table(qname);
 
-	sql->trans->module = mvc_create_module(sql, mname);
+	sql->trans->module = mvc_create_module(sql, mname, opt_internal_name);
 	return stmt_none();
 }
 
@@ -564,7 +564,12 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 
 		sql_create_sqlfunc(fname, subquery, l, sql_dup_subtype(res));
 	} else {
-		sql_create_func_(fname, impl, l, sql_dup_subtype(res));
+		sql_arg *r = NEW(sql_arg);
+
+		r->name = _strdup("result");
+		r->type = sql_dup_subtype(res);
+		list_prepend(l, r);
+		mvc_create_func(sql, sql->trans->module, fname, l, FALSE, FALSE, impl);
 	}
 	return stmt_none();
 }
@@ -1568,7 +1573,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_module(sql, l);
+		ret = create_module(sql, l->h->data.lval, l->h->next->data.sval);
 		sql->type = Q_SCHEMA;
 	}
 		break;

@@ -51,8 +51,8 @@ typedef enum {
 
 extern stmt *check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe);
 extern stmt *fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always);
-extern stmt *sum_scales(sql_subfunc *f, stmt *ls, stmt *rs);
-extern stmt *scale_algebra(sql_subfunc *f, stmt *ls, stmt *rs);
+extern stmt *sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
+extern stmt *scale_algebra(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs);
 extern stmt *sqlparse_intern(mvc *m, char *query);
 extern stmt *scope_sqlparse(mvc *m, scope *scp, char *query);
 
@@ -387,7 +387,7 @@ scale2value(int scale)
 }
 
 stmt *
-sum_scales(sql_subfunc *f, stmt *ls, stmt *rs)
+sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs)
 {
 	if (strcmp(f->func->imp, "*") == 0 && f->func->res->type->scale == SCALE_FIX) {
 		sql_subtype fres = *f->res;
@@ -417,7 +417,7 @@ sum_scales(sql_subfunc *f, stmt *ls, stmt *rs)
 				sql_subfunc *c = NULL;
 
 				f->res = t;
-				c = sql_bind_func_result("convert", f->res, NULL, t);
+				c = sql_bind_func_result(sql->trans->module, "convert", f->res, NULL, t);
 				if (c)
 					ls = stmt_unop(ls, c);
 				t = fr;
@@ -429,7 +429,7 @@ sum_scales(sql_subfunc *f, stmt *ls, stmt *rs)
 }
 
 stmt *
-scale_algebra(sql_subfunc *f, stmt *ls, stmt *rs)
+scale_algebra(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs)
 {
 	sql_subtype *lt = tail_type(ls);
 	sql_subtype *rt = tail_type(rs);
@@ -462,13 +462,13 @@ scale_algebra(sql_subfunc *f, stmt *ls, stmt *rs)
 		f->res->scale = scale;
 
 		if (strcmp(f->func->imp, "/") == 0) {
-			c = sql_bind_func("scale_up", lt, it);
+			c = sql_bind_func(sql->trans->module, "scale_up", lt, it);
 			if (!c) {
-				c = sql_bind_func_result("convert", lt, NULL, it);
+				c = sql_bind_func_result(sql->trans->module, "convert", lt, NULL, it);
 				if (c) {
 					ls = stmt_unop(ls, c);
 					lt = tail_type(ls);
-					c = sql_bind_func("scale_up", lt, it);
+					c = sql_bind_func(sql->trans->module, "scale_up", lt, it);
 				}
 			}
 		}
@@ -500,9 +500,9 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 			if (scale_diff < 0) {
 				if (!both)
 					return s;
-				c = sql_bind_func("scale_down", st, it);
+				c = sql_bind_func(sql->trans->module, "scale_down", st, it);
 			} else {
-				c = sql_bind_func("scale_up", st, it);
+				c = sql_bind_func(sql->trans->module, "scale_up", st, it);
 			}
 			if (c) {
 				lng val = scale2value(scale_diff);
@@ -515,7 +515,7 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 	} else if (always && st->scale) {	/* scale down */
 		int scale_diff = -(int) st->scale;
 		sql_subtype *it = sql_bind_localtype(st->type->base.name);
-		sql_subfunc *c = sql_bind_func("scale_down", st, it);
+		sql_subfunc *c = sql_bind_func(sql->trans->module, "scale_down", st, it);
 
 		if (c) {
 			lng val = scale2value(scale_diff);
@@ -571,7 +571,7 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 }
 
 static stmt *
-sql_truncate(sql_subtype *ct, stmt *s)
+sql_truncate(mvc *sql, sql_subtype *ct, stmt *s)
 {
 	sql_subtype *st = tail_type(s);
 	sql_subtype *it = sql_bind_localtype("int");
@@ -582,7 +582,7 @@ sql_truncate(sql_subtype *ct, stmt *s)
 		stmt_destroy(s);
 		return NULL;
 	}
-	c = sql_bind_func("truncate", st, it);
+	c = sql_bind_func(sql->trans->module, "truncate", st, it);
 	if (!c)			/* no truncate function, ie no need to truncate */
 		return s;
 	return stmt_binop(s, stmt_atom_int(ct->digits), c);
@@ -603,7 +603,7 @@ dyncheck_types(mvc *sql, sql_subtype *ct, stmt *s)
 		sql_subtype *it = sql_bind_localtype("lng");
 		sql_subfunc *c;
 
-		c = sql_bind_func_result("convert", st, it, ct);
+		c = sql_bind_func_result(sql->trans->module, "convert", st, it, ct);
 		if (c)
 			return fix_scale(
 				sql,
@@ -649,7 +649,7 @@ dyncheck_types(mvc *sql, sql_subtype *ct, stmt *s)
 			sql_subtype *it = sql_bind_localtype("lng");
 			sql_subfunc *c;
 
-			c = sql_bind_func_result("convert", st, it, ct);
+			c = sql_bind_func_result(sql->trans->module, "convert", st, it, ct);
 			if (c)
 				return fix_scale(
 					sql,
@@ -704,7 +704,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 	}
 
 	if (!t) {		/* try to convert if needed */
-		sql_subfunc *c = sql_bind_func_result("convert", st, NULL, ct);
+		sql_subfunc *c = sql_bind_func_result(sql->trans->module, "convert", st, NULL, ct);
 
 		if (c)
 			s = stmt_unop(s, c);
@@ -715,7 +715,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 		 */
 		if (!c && ct->scale == 0 && st->scale == 0) {
 			sql_subtype *it = sql_bind_localtype("int");
-			sql_subfunc *c = sql_bind_func_result("convert", st, it, ct);
+			sql_subfunc *c = sql_bind_func_result(sql->trans->module, "convert", st, it, ct);
 
 			if (c)
 				s = stmt_binop(s, stmt_atom_int(ct->digits), c);
@@ -732,7 +732,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 			list_append(ops, st);
 			list_append(ops, it);
 			list_append(ops, it);
-			c = sql_bind_func_result_("convert", ops, ct);
+			c = sql_bind_func_result_(sql->trans->module, "convert", ops, ct);
 			list_destroy(ops);
 			if (c) {
 				ops = create_stmt_list();
@@ -789,7 +789,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 					return fix_scale(sql, ct, s, 1, (st->type->scale == SCALE_FIX));
 			}
 			if (tpe == type_cast) {
-				s = sql_truncate(ct, s);
+				s = sql_truncate(sql, ct, s);
 				if (s)
 					return fix_scale(sql, ct, s, 1, (st->type->scale == SCALE_FIX));
 			}

@@ -56,20 +56,20 @@ stderr of test 'create_insert_select_aggr-bug-00001` in directory 'src/test/bugs
 # 21:23:44 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=51365  < create_insert_select_aggr-bug-00001.sql
 # 21:23:44 >  
 
-MAPI  = monetdb@stem:59426
+MAPI  = monetdb@stem:40517
 QUERY = select * from r;
 ERROR = !unknown table r
-MAPI  = monetdb@stem:59426
+MAPI  = monetdb@stem:40517
 QUERY = select * from r;
 ERROR = !unknown table r
-MAPI  = monetdb@stem:59426
+MAPI  = monetdb@stem:40517
 QUERY = commit work;
 ERROR = !transaction commit failed
         !ERROR: COMMIT: transaction is aborted, will ROLLBACK instead
-MAPI  = monetdb@stem:59426
+MAPI  = monetdb@stem:40517
 QUERY = select * from r;
 ERROR = !unknown table r
-MAPI  = monetdb@stem:59426
+MAPI  = monetdb@stem:40517
 QUERY = -- next query shouldn't work
 ERROR = !single value in column expression
 

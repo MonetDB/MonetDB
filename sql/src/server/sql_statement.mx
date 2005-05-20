@@ -1793,13 +1793,13 @@ column_name(stmt *st)
 		return column_name(st->op1.stval);
 
 	case st_op:
-		return _strdup(st->op4.funcval->func->name);
+		return _strdup(st->op4.funcval->func->base.name);
 	case st_unop:
 	case st_binop:
 	case st_Nop:
 	{
 		char *cn = column_name(st->op1.stval);
-		char *r = func_name(st->op4.funcval->func->name, cn);
+		char *r = func_name(st->op4.funcval->func->base.name, cn);
 
 		_DELETE(cn);
 		return r;
@@ -1807,7 +1807,7 @@ column_name(stmt *st)
 	case st_aggr:
 	{
 		char *cn = column_name(st->op1.stval);
-		char *r = func_name(st->op4.aggrval->aggr->name, cn);
+		char *r = func_name(st->op4.aggrval->aggr->base.name, cn);
 
 		_DELETE(cn);
 		return r;
@@ -2060,9 +2060,9 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			if (s->op3.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
 					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-			fprintf(fp,"func_%s[label=\"func '%s'\",shape=ellipse];\n", s->op4.funcval->func->name, s->op4.funcval->func->name);
+			fprintf(fp,"func_%s[label=\"func '%s'\",shape=ellipse];\n", s->op4.funcval->func->base.name, s->op4.funcval->func->base.name);
 			fprintf(fp, "func_%s -> id%d [headlabel=\"4\"];\n",
-				s->op4.funcval->func->name, -(s->optimized));
+				s->op4.funcval->func->base.name, -(s->optimized));
 			break;
 
 		case st_atom:

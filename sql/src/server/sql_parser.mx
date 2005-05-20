@@ -351,6 +351,8 @@ int yydebug=1;
 	varchar
 	clob
 	blob
+	opt_external_name
+	external_name
 
 %type <l>
 	object_privileges
@@ -578,6 +580,16 @@ set:
     SET ident '=' scalar_exp
 		{ dlist *l = _dlist_create();
 		_dlist_append_string(l, $2 );
+		_dlist_append_symbol(l, $4 );
+		$$ = _symbol_create_list( SQL_SET, l); }
+  |	SET SQL_EXPLAIN '=' scalar_exp
+		{ dlist *l = _dlist_create();
+		_dlist_append_string(l, sa_strdup(SA, "explain"));
+		_dlist_append_symbol(l, $4 );
+		$$ = _symbol_create_list( SQL_SET, l); }
+  |	SET SQL_DEBUG '=' scalar_exp
+		{ dlist *l = _dlist_create();
+		_dlist_append_string(l, sa_strdup(SA, "debug"));
 		_dlist_append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	SET sqlSESSION AUTHORIZATION ident
@@ -1211,28 +1223,35 @@ column_commalist_parens:
  ;
 
 module_def:
-    CREATE MODULE qname { $$ = _symbol_create_list( SQL_CREATE_MODULE, $3 ); }
+    CREATE MODULE qname opt_external_name
+			{ dlist *l = _dlist_create();
+				_dlist_append_list(l, $3);
+				_dlist_append_string(l, $4);
+			  $$ = _symbol_create_list( SQL_CREATE_MODULE, l ); }
  ;
 
-/*
-module_end:
-    END ident
-*/
-
 type_def:
-    CREATE TYPE qname
-    EXTERNAL sqlNAME ident
-			{ dlist *f = _dlist_create();
-				_dlist_append_list(f, $3);
-				_dlist_append_string(f, $6);
-			  $$ = _symbol_create_list( SQL_CREATE_TYPE, f ); }
+    CREATE TYPE qname external_name
+			{ dlist *l = _dlist_create();
+				_dlist_append_list(l, $3);
+				_dlist_append_string(l, $4);
+			  $$ = _symbol_create_list( SQL_CREATE_TYPE, l ); }
+ ;
+
+opt_external_name:
+	/* empty */		{ $$ = NULL; }
+ |	external_name 		
+ ;
+
+external_name:
+    EXTERNAL sqlNAME ident 	{ $$ = $3; }
  ;
 
 func_def:
     CREATE FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS data_type
-    EXTERNAL sqlNAME ident
+    EXTERNAL sqlNAME string
 			{ dlist *f = _dlist_create();
 				_dlist_append_list(f, $3);
 				_dlist_append_list(f, $5);

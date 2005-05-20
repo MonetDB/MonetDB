@@ -56,6 +56,28 @@ extern void base_init(sql_base * b, sqlid id, int flag, char *name);
 extern void base_set_name(sql_base * b, char *name);
 extern void base_destroy(sql_base * b);
 
+typedef struct changeset {
+	fdestroy destroy;
+	struct list *set;
+	struct list *dset;
+	node *nelm;
+} changeset;
+
+extern void cs_init(changeset * cs, fdestroy destroy);
+extern void cs_destroy(changeset * cs);
+extern void cs_add(changeset * cs, void *elm, int flag);
+extern void cs_del(changeset * cs, node *elm, int flag);
+extern int cs_size(changeset * cs);
+extern node *cs_find_name(changeset * cs, char *name);
+extern node *cs_first_node(changeset * cs);
+
+typedef struct sql_module {
+	sql_base base;
+	changeset types;
+	changeset funcs;
+	char *internal; 	/* optional internal module name */
+} sql_module;
+
 typedef struct sql_type {
 	sql_base base;
 
@@ -66,6 +88,7 @@ typedef struct sql_type {
 	unsigned char radix;
 	unsigned int bits;
 	unsigned char fixed;
+	sql_module *m;
 } sql_type;
 
 typedef struct sql_alias {
@@ -83,13 +106,13 @@ typedef struct sql_subtype {
 } sql_subtype;
 
 typedef struct sql_aggr {
-	sql_ref ref;
+	sql_base base;
 
-	char *name;
 	char *imp;
 	sql_subtype *tpe;
 	sql_subtype *res;
 	int nr;
+	sql_module *m;
 } sql_aggr;
 
 typedef struct sql_subaggr {
@@ -114,9 +137,8 @@ typedef struct sql_arg {
 } sql_arg;
 
 typedef struct sql_func {
-	sql_ref ref;
+	sql_base base;
 
-	char *name;
 	char *imp;
 	list *ops;		/* param list */
 	sql_subtype *res;
@@ -133,6 +155,8 @@ typedef struct sql_func {
 	 */
 	int nr;
 	int sql;		/* simple sql or native implementation */
+	int aggr;
+	sql_module *m;
 } sql_func;
 
 typedef struct sql_subfunc {
@@ -241,21 +265,6 @@ typedef struct sql_column {
 
 } sql_column;
 
-typedef struct changeset {
-	fdestroy destroy;
-	struct list *set;
-	struct list *dset;
-	node *nelm;
-} changeset;
-
-extern void cs_init(changeset * cs, fdestroy destroy);
-extern void cs_destroy(changeset * cs);
-extern void cs_add(changeset * cs, void *elm, int flag);
-extern void cs_del(changeset * cs, node *elm, int flag);
-extern int cs_size(changeset * cs);
-extern node *cs_find_name(changeset * cs, char *name);
-extern node *cs_first_node(changeset * cs);
-
 typedef struct sql_table {
 	sql_base base;
 	bit table;		/* table or view */
@@ -286,11 +295,6 @@ typedef struct sql_schema {
 	list *keys;		/* the names for keys and idxs are global, but */
 	list *idxs;		/* these objects are only useful within a table */
 } sql_schema;
-
-typedef struct sql_module {
-	sql_base base;
-	changeset types;
-} sql_module;
 
 typedef struct res_col {
 	char *tn;
@@ -342,20 +346,31 @@ extern void key_destroy(sql_key *k);
 extern void idx_destroy(sql_idx * i);
 
 extern node *list_find_name(list *l, char *name);
+
 extern node *find_key_node(sql_table *t, char *kname);
 extern sql_key *find_key(sql_table *t, char *kname);
+
 extern node *find_idx_node(sql_table *t, char *kname);
 extern sql_idx *find_idx(sql_table *t, char *kname);
+
 extern node *find_column_node(sql_table *t, char *cname);
 extern sql_column *find_column(sql_table *t, char *cname);
+
 extern node *find_table_node(sql_schema *s, char *tname);
 extern sql_table *find_table(sql_schema *s, char *tname);
+
 extern node *find_schema_node(sql_trans *t, char *sname);
 extern sql_schema *find_schema(sql_trans *t, char *sname);
+
 extern node *find_module_node(sql_trans *t, char *mname);
 extern sql_module *find_module(sql_trans *t, char *mname);
+
 extern node *find_type_node(sql_module * s, char *tname);
 extern sql_type *find_type(sql_module * s, char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, char *name);
+
+extern node *find_func_node(sql_module * s, char *tname);
+extern sql_func *find_func(sql_module * s, char *tname);
+extern sql_func *sql_trans_bind_func(sql_trans *tr, char *name);
 
 #endif /* SQL_CATALOG_H */

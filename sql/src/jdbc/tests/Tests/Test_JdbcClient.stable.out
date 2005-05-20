@@ -147,8 +147,8 @@ CREATE TABLE "foreign" (
 	"subject"   int	NOT NULL,
 	"predicate" int	NOT NULL,
 	"object"    int	NOT NULL,
-	CONSTRAINT "foreign_subject_predicate_object_fkey" FOREIGN KEY ("subject", "object", "predicate") REFERENCES "sys"."allnewtriples" ("subject", "object", "predicate"),
-	CONSTRAINT "foreign_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."allnewtriples" ("id")
+	CONSTRAINT "foreign_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."allnewtriples" ("id"),
+	CONSTRAINT "foreign_subject_predicate_object_fkey" FOREIGN KEY ("subject", "predicate", "object") REFERENCES "sys"."allnewtriples" ("predicate", "object", "subject")
 );
 
 INSERT INTO "foreign" VALUES (1, 1, 1, 1);

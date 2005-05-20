@@ -900,7 +900,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				a = tail_type(s);
 				v = tail_type(s->op1.stval);
-				if (a->type->localtype == v->type->localtype && strcmp(s->op4.funcval->func->name, "convert") == 0) {
+				if (a->type->localtype == v->type->localtype && strcmp(s->op4.funcval->func->base.name, "convert") == 0) {
 					q = newAssignment(mb);
 					s->nr = getDestVar(q);
 					q = pushArgument(mb, q, l);

@@ -697,15 +697,6 @@ find_fk_index(list * eqjoins, int tail, list **fkjoins)
 		return NULL;
 }
 
-static stmt *
-stmt_binop_and(stmt *e1, stmt *e2)
-{
-	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *and = sql_bind_func_result("and", bt, bt, bt);
-
-	return stmt_binop(e1, e2, and);
-}
-
 /*
  * The push_selects_down function converts a conjunction set into a
  * reduced conjuntion tree where the selects are grouped together and

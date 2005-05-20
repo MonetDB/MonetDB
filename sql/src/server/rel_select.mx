@@ -1054,8 +1054,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (symmetric) {
 			sql_exp *tmp = NULL;
-			sql_subfunc *min = sql_bind_func("min", exp_subtype(re1), exp_subtype(re2));
-			sql_subfunc *max = sql_bind_func("max", exp_subtype(re1), exp_subtype(re2));
+			sql_subfunc *min = sql_bind_func(sql->trans->module, "min", exp_subtype(re1), exp_subtype(re2));
+			sql_subfunc *max = sql_bind_func(sql->trans->module, "max", exp_subtype(re1), exp_subtype(re2));
 
 			if (!min || !max) {
 				return sql_error(sql, 02, "min or max operator on types %s %s missing", exp_subtype(re1)->type->sqlname, exp_subtype(re2)->type->sqlname);
@@ -1108,7 +1108,7 @@ rel_op(mvc *sql, sql_rel *rel, symbol *se )
 
 	(void) rel;
 
-	f = sql_bind_func(l->data.sval, NULL, NULL);
+	f = sql_bind_func(sql->trans->module, l->data.sval, NULL, NULL);
 	if (f) {
 		return exp_op(NULL, f);
 	} else {
@@ -1129,11 +1129,11 @@ rel_unop(mvc *sql, sql_rel *rel, symbol *se, int fs)
 	if (!e)
 		return NULL;
 	t = exp_subtype(e);
-	f = sql_bind_func(fname, t, NULL);
+	f = sql_bind_func(sql->trans->module, fname, t, NULL);
 	/* try to find the function without a type, and convert
 	 * the value to the type needed by this function!
 	 */
-	if (!f && (f = sql_find_func(fname, 1)) != NULL) {
+	if (!f && (f = sql_find_func(sql->trans->module, fname, 1)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
 		e = rel_check_type(sql, a->type, e, type_equal);
@@ -1181,7 +1181,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 	t1 = exp_subtype(l);
 	t2 = exp_subtype(r);
 
-	f = sql_bind_func(fname, t1, t2);
+	f = sql_bind_func(sql->trans->module, fname, t1, t2);
 	if (f) {
 		if (f->func->res->scale == SCALE_FIX) {
 			l = exp_fix_scale(sql, t2, l, 0, 0);
@@ -1197,7 +1197,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 	} else {
 		int digits = t1->digits + t2->digits;
 
-		if ((f = sql_bind_member(fname, t1, 2)) != NULL) {
+		if ((f = sql_bind_member(sql->trans->module, fname, t1, 2)) != NULL) {
 			/* try finding function based on first argument */
 			node *m = f->func->ops->h;
 			sql_arg *a = m->next->data;
@@ -1209,7 +1209,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 			/* try operators */
 			t1 = exp_subtype(l);
 			t2 = exp_subtype(r);
-			f = sql_bind_func(fname, t1, t2);
+			f = sql_bind_func(sql->trans->module, fname, t1, t2);
 			if (f) {
 				if (f->func->res->scale == SCALE_FIX) {
 					l = exp_fix_scale(sql, t2, l, 0, 0);
@@ -1271,11 +1271,11 @@ rel_nop(mvc *sql, sql_rel *rel, symbol *se, int fs)
 		list_append(exps, e);
 		list_append(tl, exp_subtype(e));
 	}
-	f = sql_bind_func_(l->data.sval, tl);
+	f = sql_bind_func_(sql->trans->module, l->data.sval, tl);
 	list_destroy(tl);
 	if (f) {
 		return exp_op(exps, f);
-	} else if ((f = sql_bind_member(l->data.sval, exp_subtype(exps->h->data), list_length(exps))) != NULL) {
+	} else if ((f = sql_bind_member(sql->trans->module, l->data.sval, exp_subtype(exps->h->data), list_length(exps))) != NULL) {
 		node *n, *m;
 		list *nexps = new_exp_list();
 
@@ -1320,7 +1320,7 @@ rel_aggr(mvc *sql, sql_rel *rel, symbol *se, int f)
 		if (strcmp(aggrstr, "count") != 0) {
 			return sql_error(sql, 02, "unable to perform %s(*) aggregate", l->h->data.sval);
 		}
-		a = sql_bind_aggr(aggrstr, NULL);
+		a = sql_bind_aggr(sql->trans->module, aggrstr, NULL);
 		return exp_aggr(NULL, a);
 	} else {
 		/* use cnt as nils shouldn't to be counted */
@@ -1334,7 +1334,7 @@ rel_aggr(mvc *sql, sql_rel *rel, symbol *se, int f)
 		e = exp_unique(e);
 	if (!e)
 		return NULL;
-	a = sql_bind_aggr(aggrstr, exp_subtype(e));
+	a = sql_bind_aggr(sql->trans->module, aggrstr, exp_subtype(e));
 	if (a) {
 		/* type may have changed, ie. need to fix_scale */
 		sql_subtype *t = exp_subtype(e);

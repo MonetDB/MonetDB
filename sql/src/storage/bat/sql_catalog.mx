@@ -168,6 +168,45 @@ sql_trans_bind_type(sql_trans *tr, char *name)
 
 			t = find_type(m, name);
 		}
+	if (!t && tr->module)
+		t = find_type(tr->module, name);
+	if (!t)
+		return NULL;
+	/*
+	   t->base.rtime = tr->rtime;
+	 */
+
+	return t;
+}
+
+node *
+find_func_node(sql_module * s, char *tname)
+{
+	return cs_find_name(&s->funcs, tname);
+}
+
+sql_func *
+find_func(sql_module * s, char *tname)
+{
+	node *n = find_func_node(s, tname);
+
+	if (n)
+		return n->data;
+	return NULL;
+}
+
+sql_func *
+sql_trans_bind_func(sql_trans *tr, char *name)
+{
+	node *n;
+	sql_func *t = NULL;
+
+	if (tr->modules.set)
+		for (n = tr->modules.set->h; n && !t; n = n->next) {
+			sql_module *m = n->data;
+
+			t = find_func(m, name);
+		}
 	if (!t)
 		return NULL;
 	/*

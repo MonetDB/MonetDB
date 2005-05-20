@@ -33,10 +33,12 @@ extern sql_trans *sql_trans_destroy(sql_trans *tr);
 extern int sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
 
-extern sql_module *sql_trans_create_module(sql_trans *tr, char *name);
+extern sql_module *sql_trans_create_module(sql_trans *tr, char *name, char *opt_iname);
 extern void sql_trans_drop_module(sql_trans *tr, char *name);
 
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_module * m, char *sqlname, int digits, int scale, int radix, char *impl);
+
+extern sql_func *sql_trans_create_func(sql_trans *tr, sql_module * m, char *func, list *args, bit sql, bit aggr, char *impl);
 
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, char *name, int auth_id);
 extern void sql_trans_drop_schema(sql_trans *tr, char *sname);

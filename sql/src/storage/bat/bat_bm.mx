@@ -319,18 +319,21 @@ bm_save(bm *bm, FILE *fp)
 			 pbid = *(oid *) BUNtail(bm->bat_pbid, z);
 
 		if (version > oversion) {
-			BAT *o = bat_descriptor(bid, "bm_save");
-			BAT *b = bat_copy(o, "bm_save");
-
 #ifdef RENAME
 			char name_version[BUFSIZ];
+#endif
+			BAT *b, *o = bat_descriptor(bid, "bm_save");
 
+			if (!o) 
+				return -1;
+			if ((b = bat_copy(o, "bm_save")) == NULL)
+				return -1;
+
+#ifdef RENAME
 			snprintf(name_version, BUFSIZ, "%s_%d", name, version);
 			if (bm->debug & 1)
 				printf("bm_save %s %ld\n", name_version, BATcount(b));
-
-			if (strlen(name_version) < (IDLENGTH - 1))
-				BATrename(b, name_version);
+			BATrename(b, name_version);
 #endif
 			BATmode(b, PERSISTENT);
 			BATkey(b, o->hkey);

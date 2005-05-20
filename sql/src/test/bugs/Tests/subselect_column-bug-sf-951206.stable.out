@@ -28,7 +28,7 @@ Over..
 # 11 # length
 # 1 # tuplecount
 # 1 # id
-[ 23	]
+[ 25	]
 # 3 # querytype
 # t # table_name
 # x # name
@@ -44,6 +44,8 @@ Over..
 [ "idxs"	]
 [ "keycolumns"	]
 [ "types"	]
+[ "functions"	]
+[ "args"	]
 [ "ttables"	]
 [ "tcolumns"	]
 [ "history"	]

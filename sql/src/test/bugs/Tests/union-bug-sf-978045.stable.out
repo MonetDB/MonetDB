@@ -36,6 +36,8 @@ Over..
 [ "idxs"	]
 [ "keycolumns"	]
 [ "types"	]
+[ "functions"	]
+[ "args"	]
 [ "ttables"	]
 [ "tcolumns"	]
 [ "tables"	]
