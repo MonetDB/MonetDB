@@ -1730,7 +1730,9 @@ Variables with frozen type may lead to type errors
 	VALcopy(value, res);
 	if (i >= 0) {
 		ATOMfix(res->vtype, VALptr(res));
-	}
+	} else {
+		res->vtype = TYPE_void;
+        }
 @-
 Cleanup the old value.
 @c
