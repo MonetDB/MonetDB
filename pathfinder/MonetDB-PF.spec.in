@@ -1,4 +1,4 @@
-%define name MonetDB-PF
+%define name MonetDB-XQuery
 %define release 1
 %define version @VERSION@
 %define prefix /usr
@@ -6,7 +6,7 @@
 Name: %{name}
 Version: %{version}
 Release: %{release}
-Summary: MonetDB Pathfinder - Monet Database Management System
+Summary: MonetDB XQuery - Monet Database Management System
 Group: System
 Source: pathfinder-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
@@ -38,7 +38,7 @@ automatic index management, extensibility of data types and search
 accellerators, SQL- and XQuery- frontends.
 
 %package devel
-Summary: MonetDB Pathfinder development package 
+Summary: MonetDB XQuery development package 
 Group: System 
 
 %description devel
@@ -48,7 +48,7 @@ Requires: MonetDB-devel
 
 %if %{builddoc}
 %package docu
-Summary: MonetDB Pathfinder documentation package 
+Summary: MonetDB XQuery documentation package 
 Group: System 
 
 %description docu
