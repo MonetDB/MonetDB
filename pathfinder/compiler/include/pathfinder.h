@@ -71,7 +71,6 @@ typedef enum PFphases_t PFphases_t;
 /** global state of the compiler  */
 typedef struct PFstate_t PFstate_t;
 
-#define PF_GEN_ORG      0
 #define PF_GEN_XML      1
 #define PF_GEN_XML_MAPI 2 
 #define PF_GEN_DM       3

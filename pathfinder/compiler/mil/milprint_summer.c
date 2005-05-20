@@ -9917,15 +9917,6 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "time_exec := time_print - time_exec;\n\n");
 
     switch( status->genType ) {
-     case PF_GEN_ORG: {
-      milprintf(f, "xml_print(ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      /* print result in iter|pos|item representation */
-      /*
-       * print_output (f);
-       * milprintf(f, "print(\"mil-program without crash finished :)\");\n");
-       */
-      }
-      break;
      case PF_GEN_XML:
       milprintf(f, "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
