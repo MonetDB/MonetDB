@@ -15,14 +15,8 @@ module(unix);
 
 var path:=getenv("TSTSRCDIR");
 
-import_doc(path+"/xml-docs/foo.xml","foo.xml");
-# ">>> Importing '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/foo.xml' with name 'foo.xml'"
-[ "Document successfully imported" ]
-# "The properties of the file '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/foo.xml' are propably not compressed!"
-# "You can compress the loaded instance 'foo.xml' with: 'compress_properties("foo.xml");'"
-import_doc(path+"/xml-docs/book.xml","http://bstore1.example.com/bib.xml");
-# ">>> Importing '/ufs/rittinge/work/pathfinder/runtime/Tests/xml-docs/book.xml' with name 'http://bstore1.example.com/bib.xml'"
-[ "Document successfully imported" ]
+shred_doc(path+"/xml-docs/foo.xml","foo.xml");
+shred_doc(path+"/xml-docs/book.xml","http://bstore1.example.com/bib.xml");
 
 quit();
 

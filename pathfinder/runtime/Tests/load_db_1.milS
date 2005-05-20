@@ -4,6 +4,6 @@ module(unix);
 
 var path:=getenv("TSTSRCDIR");
 
-import_doc(path+"/xml-docs/foo.xml","foo.xml");
-import_doc(path+"/xml-docs/book.xml","http://bstore1.example.com/bib.xml");
+shred_doc(path+"/xml-docs/foo.xml","foo.xml");
+shred_doc(path+"/xml-docs/book.xml","http://bstore1.example.com/bib.xml");
 
