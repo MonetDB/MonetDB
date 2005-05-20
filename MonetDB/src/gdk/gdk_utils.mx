@@ -1383,7 +1383,7 @@ GDKvmtrim(void *limit)
 		sleep(wait ? 5 : 1);
 		MEMDEBUG {
 			fp = GDKerr;
-			THRprintf(fp, "GDKvmtrim(%lld)\n", (long long) *(size_t *) limit);
+			THRprintf(fp, "GDKvmtrim(" LLFMT ")\n", (long long) *(size_t *) limit);
 		}
 		wait = !MT_mmap_trim(*(size_t *) limit, fp);
 	} while (!GDKstopped);
