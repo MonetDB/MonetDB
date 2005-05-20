@@ -438,21 +438,26 @@ Get the new information for the server socket and start listening.
 				(void) monetFork();
 			} else {
 				int stream_tpe = ATOMindex("Stream");
-				ValRecord fds[2];
+				ValRecord fds[3];
 				monet_sig_t sig;
 				YYSTREE t1, t2;
 				
-				fds[0].vtype = fds[1].vtype = stream_tpe;
-				fds[0].val.pval = fdin;
+				fds[1].vtype = fds[2].vtype = stream_tpe;
 				fds[1].val.pval = fdin;
+				fds[2].val.pval = fdout;
 
 				Myyexpand(Myyexpand(
-						  c->mil_accept = Myynode(TOK_BUILTIN, TYPE_int), 
-						  t1 = Myynode(TOK_CONSTANT, stream_tpe)),
+					  c->mil_accept = Myynode(TOK_BUILTIN, TYPE_int), 
+					  t1 = Myynode(TOK_CONSTANT, stream_tpe)),
 					  t2 = Myynode(TOK_CONSTANT, stream_tpe));
+				/* why twice ? */
 				t1->yyval.val.pval = fdin;
 				t2->yyval.val.pval = fdout;
-				TBL_normal_resolve(cmd, 2, fds, &sig, father-monet_clients);
+				sig.token = TBL_normal_resolve(cmd, 3, fds, &sig, father-monet_clients);
+				if (sig.token < 0 || sig.token != TOK_BUILTIN) {
+					GDKerror("Client builtin function %s(stream,stream) unknown\n", cmd);
+					break;
+				}
 				c->mil_accept->yyval.val.pval = sig.fast_fcn;
 			}
 			scheduleClient(c);
