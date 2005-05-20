@@ -266,6 +266,7 @@ An alternative scheme is to collect these statements in an SQL boot file.
 int
 mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 {
+	Client father = NULL;
 	int *Debug = NULL, **D = &Debug;
 
 	if (lt->cnt != 1) {
@@ -273,6 +274,17 @@ mvc_init_wrap(Cntxt stk, YYSTREE lt, ValPtr res)
 	}
 	builtin_operand(stk, lt, 0, (ptr *) D, TYPE_int, res);
 	backend_init(&monet4_freestack, &monet4_freecode, &monet4_parse);
+
+	CNTXTclient(stk, &father);
+	if (father && father->father >= 0) {
+		/* if the father itself is a temporary client, let
+		 * the new child depend on the grandfather.
+		 * so: father always points to a real client session!
+		 */
+		father = monet_clients + father->father;
+	}
+	if (father)
+		stk = father->stk;
 	if (mvc_init(*Debug, (backend_stack) stk) < 0) {
 		return GDK_FAIL;
 	}
@@ -802,9 +814,9 @@ module(mapi); # mapi_listen
 #mem_maxsize(0LL);
 #vm_maxsize(0LL);
 
-proc SQLclient( Stream s_in, Stream s_out ) : void {
-	fork(sqlclient(s_in, s_out));
-}
+#proc SQLclient( Stream s_in, Stream s_out ) : void {
+#	sqlclient(s_in, s_out);
+#}
 
 proc sql_diff (bat[any::1,any::2] b1, bat[any::1,any::3] b2) : bat[any::1,any::2] {
 	if (count(b2) > 0)
@@ -820,10 +832,10 @@ proc sql_server_start() : void {
 	if (isnil(err)){
 		fork(sqllogmanager());
 
-		mapi_listen(int(monet_environment.find("sql_port")), 5, "SQLclient").fork();
+		mapi_listen(int(monet_environment.find("sql_port")), 5, "sqlclient").fork();
 		# start a default mapi client for debugging, this should go once
 		# MonetDB SQL gets stable.
-		mapi_listen(int(monet_environment.find("mapi_port")), 5, "").fork();
+		# fork(mapi_listen(int(monet_environment.find("mapi_port")), 5, ""));
 	} else {
 		printf(err);
 		drop(sql_server);
