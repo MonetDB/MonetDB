@@ -279,10 +279,10 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 "Returns whether a BAT is ordered on head or not."
 
 
-.COMMAND batsize(str batname) : int = CMDbatsize_str;
+.COMMAND batsize(str batname) : lng = CMDbatsize_str;
 "A version of BATsize that does not require loading the BAT."
 
-.COMMAND batsize(BAT[any,any] b) : int = CMDbatsize;
+.COMMAND batsize(BAT[any,any] b) : lng = CMDbatsize;
 "A version of BATsize that does not require loading the BAT."
 
 @- BUN Access
@@ -1315,7 +1315,7 @@ CMDinfo(BAT **retval, BAT *b)
 #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
 int
-CMDbatsize(int *tot, BAT *b)
+CMDbatsize(lng *tot, BAT *b)
 {
 	size_t blksize = MT_pagesize();
 	size_t size = ROUND_UP(sizeof(BATstore), blksize);
@@ -1338,7 +1338,7 @@ CMDbatsize(int *tot, BAT *b)
 }
 
 int
-CMDbatsize_str(int *tot, str batname)
+CMDbatsize_str(lng *tot, str batname)
 {
 	bat bid = BBPindex(batname);
 	BAT *b = bid ? (BAT *) BBPgetdesc(bid) : NULL;
