@@ -1,9 +1,0 @@
-#!/bin/sh
-
-NAME="$1"
-PRELUDE="$2 $3"
-
-Mlog   "echo 'debugmask(2);' > d2.mil"
-        echo 'debugmask(2);' > d2.mil
-Mlog   "$MSERVER --dbname=$TSTDB d2.mil Arjen_01.mal"
-eval    $MSERVER --dbname=$TSTDB d2.mil Arjen_01.mal
