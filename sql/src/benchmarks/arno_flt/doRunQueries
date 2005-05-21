@@ -1,4 +1,0 @@
-#!/bin/sh
-
-MapiClient -lsql -u monetdb -P monetdb --port=$SQLPORT < queries.sql
-
