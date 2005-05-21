@@ -1,6 +1,0 @@
-
-headers_odbc = {
-	DIR = pkgincludedir
-	HEADERS = h
-	SOURCES = sql.h sqlext.h sqltypes.h sqlucode.h odbcinst.h
-}
