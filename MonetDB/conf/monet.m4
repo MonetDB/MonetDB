@@ -29,7 +29,7 @@ MONETDB_LIBS=""
 MONETDB_MOD_PATH=""
 MONETDB_PREFIX="."
 if test "x$1" = "x"; then
-  MONETDB_REQUIRED_VERSION="4.4.1"
+  MONETDB_REQUIRED_VERSION="4.8.0_rc"
 else
   MONETDB_REQUIRED_VERSION="$1"
 fi
@@ -1007,9 +1007,9 @@ fi
 dnl --enable-assert
 AC_ARG_ENABLE(assert,
 	AC_HELP_STRING([--enable-assert],
-		[enable assertions in the code [default=yes]]),
+		[enable assertions in the code [default=no]]),
 	enable_assert=$enableval,
-	enable_assert=yes)
+	enable_assert=no)
 if test "x$enable_assert" = xno; then
   AC_DEFINE(NDEBUG, 1, [Define if you do not want assertions])
 fi
@@ -1451,7 +1451,7 @@ fi
 AC_SUBST(SOCKET_LIBS)
 
 dnl check for NetCDF io library (default /usr and /usr/local)
-have_netcdf=auto
+have_netcdf=no
 NETCDF_CFLAGS=""
 NETCDF_LIBS=""
 AC_ARG_WITH(netcdf,
