@@ -1484,7 +1484,7 @@ bs_init_func(struct bm *bm)
 					BUNins(arg_name, &nil, a->name);
 				} else {
 					arg_nme[4] = '0' + nr;
-					BUNins(arg_name, &nil, arg_name);
+					BUNins(arg_name, &nil, arg_nme);
 				}
 				BUNins(arg_type, &nil, a->type->type->sqlname);
 				BUNins(arg_type_digits, &nil, &a->type->scale);
