@@ -770,7 +770,7 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 			return BATmirror(BATfetchjoin(BATmirror(r), BATmirror(l), estimate));
 		}
 	} else {
-		ERRORcheck(!BAThdense(r), "BATleftfetchjoin: head column of right input must be dense");
+		ERRORcheck(!BAThdense(r), "BATfetchjoin: head column of right input must be dense");
 	}
 	if ( (lcount == 0) || (rcount == 0) ){
 		/* below range checking do not support empty bats. so treat them separately (easy) */
