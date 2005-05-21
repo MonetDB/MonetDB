@@ -875,6 +875,7 @@ load_func(sql_trans *tr, sql_module * m, BAT *funcs, BUN j)
 	BAT *func_aggr = sys_bat(tr->bm, "functions_aggr");
 	BAT *arg_func_id = sys_bat(tr->bm, "args_func_id");
 	BAT *arg_number = sys_bat(tr->bm, "args_number");
+	int first = 1;
 
 	base_init(&t->base, *(sqlid *) bun_find(func_id, lid), TR_OLD, bun_find(func_name, lid));
 	t->imp = _strdup((char *) bun_find(func_func, lid));
@@ -882,7 +883,6 @@ load_func(sql_trans *tr, sql_module * m, BAT *funcs, BUN j)
 	t->aggr = *(bit *) bun_find(func_aggr, lid);
 	t->res = NULL;
 	t->m = m;
-	int first = 1;
 
 	args = BATselect(arg_func_id, (ptr) &t->base.id, (ptr) &t->base.id);
 
