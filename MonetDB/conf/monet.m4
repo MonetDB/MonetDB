@@ -338,15 +338,7 @@ yes-*-*)
 	esac
 	case $gcc_ver in
 	4.0.0*)
-		dnl  With gcc 4.0.0,
-		dnl  compiling decimal.mx fails complaining about 
-		dnl  "comparison is always true due to limited range of data type"
-		dnl  in MAX() and MIN() in macro TOTLEN() in functions 
-		dnl  decimal_length, decimal_convert, & decimal_put;
-		dnl  I have no idea, what the problem is --- hence,
-		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch off -Werror
-		dnl  for decimal.mx in src/modules/plain/Makefile.ag .
-		dnl  Likewise (at least on Fedora Core 3), g++ 4.0.0 complains about
+		dnl  (At least on Fedora Core 3,) g++ 4.0.0 complains about
 		dnl  "language.h:32: warning: ‘class language’ has virtual functions but non-virtual destructor"
 		dnl  (not only for language.h/.mx!) when compiling src/mel; hence,
 		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch off -Werror
