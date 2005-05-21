@@ -878,7 +878,6 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 {
 	stream **In, **Out;
 	stream *in = NULL, *out = NULL;
-	stream *bkin, *bkout;
 	Thread XQthread = THRget(THRgettid());
 	Client client;
 	size_t curlen = 0, maxlen = BUFSIZ;
@@ -894,8 +893,6 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 	in = *In;
 	@:builtin_operand(1,TYPE_Stream,Out)@
 	out = *Out;
-	bkin = client->fdin;
-	bkout = client->fdout;
 	monetSetChannel(XQthread, in, out);
 
 	/* send challenge */
