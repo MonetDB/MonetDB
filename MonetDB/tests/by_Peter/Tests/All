@@ -8,6 +8,7 @@ tst_uselect
 tst_writestr
 tst_updatestr
 tst_updatestr2
+tst_append_readonly
 GNATS-2476
 GNATS-2719
 GNATS-2736
