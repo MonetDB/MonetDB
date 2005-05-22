@@ -283,7 +283,7 @@ public class MonetConnection extends Thread implements Connection {
 		tz += (offset / 60 < 10 ? "0" : "") + (offset / 60) + ":";
 		offset -= (offset / 60) * 60;
 		tz += (offset < 10 ? "0" : "") + offset;
-		sendIndependantCommand("SSET TIME ZONE INTERVAL '" + tz + "' HOUR;");
+		sendIndependantCommand("SSET TIME ZONE INTERVAL '" + tz + "' HOUR TO MINUTE;");
 
 		// we're absolutely not closed, since we're brand new
 		closed = false;
