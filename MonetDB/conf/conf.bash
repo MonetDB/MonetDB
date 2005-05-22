@@ -215,13 +215,6 @@ if [ "${os}" = "Linux" ] ; then
 		# Portland Group compiler on spin
 		cc='pgcc'
 		cxx='pgCC'
-		export PGI=/soft/64/pgi-5.2
-		if [ "${BITS}" = "64" ] ; then
-			binpath="${PGI}/linux86-64/5.2/bin:${binpath}"
-		  else
-		  	binpath="${PGI}/linux86/5.2/bin:${binpath}"
-		fi
-		export LM_LICENSE_FILE=${PGI}/license.dat
 	fi
 	if [ "${hw}" = "ia64" ] ; then
 		if [ "${host%.ins.cwi.nl}" = "titan" ] ; then
