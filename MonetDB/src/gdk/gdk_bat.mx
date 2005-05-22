@@ -1591,7 +1591,8 @@ BATcheckmodes(BAT *b, int persistent, int unloadable)
 
 @- Change the BAT access permissions (read, append, write)
 BATsetaccess() may seem simple, but this has become very tricky when memory-mapped files 
-are involved.
+are involved. In case of bats which are still transient changes are simple
+(just the batRestricted field).
 @-
 In case of a change from writable->readonly (PRIV->MMAP), nothing needs to be done immediately.
 The mapped BAT is saved in the old mode (in X, not X.priv), and made un-modifiable.
@@ -1677,7 +1678,7 @@ HEAPsetpriv(Heap *hp, int committed, int *remap, int *reload)
 {
 	str p;
 
-	if (hp->base == NULL || hp->storage == STORE_MEM || hp->filename == NULL) {
+	if (hp->base == NULL || hp->storage == STORE_MEM || hp->filename == NULL || !committed) {
 		return hp->storage;
 	}
 	/* STORE_PRIV would indicate an illegal heap state */
@@ -1685,33 +1686,11 @@ HEAPsetpriv(Heap *hp, int committed, int *remap, int *reload)
 
 	p = strstr(hp->filename, ".priv");
 	if (p) { 
-		/* only committed bats need to be mmap private */
-		if (!committed)
-			return hp->storage = STORE_MMAP;
 		/* state(4), goto state (1) */
 		*remap = TRUE;
 		return hp->storage = STORE_PRIV;
 	}
 	*remap = TRUE;
-	if (!committed) {
-		/* state(3), goto state (2) */
-		long_str src, dst, nme;
-		int ret;
-
-		GDKfilepath(nme, NULL, hp->filename, "priv");
-		GDKfilepath(src, BATDIR, hp->filename, NULL);
-		GDKfilepath(dst, BATDIR, nme, NULL);
-
-		/* rename X->X.priv is crucial. If X becomes persistent later, we must be able to save to X */
-		ret = rename(src, dst);
-		IODEBUG THRprintf(GDKerr, "BATsetaccess(HEAPsetpriv): rename(%s,%s) = %d\n", src, dst, ret);
-
-		if (ret >= 0) {
-			GDKfree(hp->filename);
-			hp->filename = GDKstrdup(nme);
-			return STORE_MMAP;
-		}
-	}
 	/* state(3), goto state (1) */
 	*reload = TRUE;
 	return STORE_PRIV;
@@ -1719,9 +1698,9 @@ HEAPsetpriv(Heap *hp, int committed, int *remap, int *reload)
 
 /* transition heap from writable (or appendable) to readonly */
 static int
-HEAPsetmmap(Heap *hp, int *remap)
+HEAPsetmmap(Heap *hp, int committed, int *remap)
 {
-	if (hp->base == NULL || hp->storage == STORE_MEM || hp->filename == NULL) {
+	if (hp->base == NULL || hp->storage == STORE_MEM || hp->filename == NULL || !committed ) {
 		return hp->storage;
 	}
 	*remap = TRUE;
@@ -1777,20 +1756,20 @@ BATsetaccess(BAT *b, int mode)
 			if (mode == BAT_WRITE) {
 				m1 = HEAPsetpriv(b->batBuns, committed, &remap, &reload);
 			} else if (b->batBuns->storage != STORE_MEM) {
-				m1 = HEAPsetmmap(b->batBuns, &remap);
+				m1 = HEAPsetmmap(b->batBuns, committed, &remap);
 			}
 			if (bak2 >= 0) {
 				if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->htype, b->hheap))) {
 					m2 = HEAPsetpriv(b->hheap, committed, &remap, &reload);
 				} else if (b->hheap->storage != STORE_MEM) {
-					m2 = HEAPsetmmap(b->hheap, &remap);
+					m2 = HEAPsetmmap(b->hheap, committed, &remap);
 				}
 			}
 			if (bak3 >= 0) {
 				if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->ttype, b->theap))) {
 					m3 = HEAPsetpriv(b->theap, committed, &remap, &reload);
 				} else if (b->theap->storage != STORE_MEM) {
-					m3 = HEAPsetmmap(b->theap, &remap);
+					m3 = HEAPsetmmap(b->theap, committed, &remap);
 				}
 			}
 		}

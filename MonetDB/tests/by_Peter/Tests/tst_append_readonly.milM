@@ -24,6 +24,8 @@ while(i < 4) {
  var e := [str]([+](d,b));
  #e := [str]([/](d,10000));
  print(b :+= 20000); 
+ # second insert will trigger a BATmaterialize 'aa' which changes the storage
+ # from STORE_MMAP to STORE_MEM (which is a bug) 
  bat("aa").access(BAT_APPEND).insert(e).access(BAT_READ);
  i :+= 1;
 }
