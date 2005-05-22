@@ -141,8 +141,8 @@ public interface Collection extends Configurable {
 	}
 
 	/**
-	 * Returns the number of resources currently stored in this collection or 0
-	 * if the collection is empty.
+	 * Returns the number of resources currently stored in this
+	 * collection or 0 if the collection is empty.
 	 *
 	 * @return the number of resource in the collection.
 	 * @throws XMLDBException with expected error codes.<br />
