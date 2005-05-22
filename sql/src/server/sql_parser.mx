@@ -2347,8 +2347,18 @@ timestamp_precision:
 
 datetime_type:
     sqlDATE			{ $$ = sql_bind_subtype("date", 0, 0); }
- |  TIME time_precision tz 	{ $$ = sql_bind_subtype("time", $2, $3); }
- |  TIMESTAMP timestamp_precision tz { $$ = sql_bind_subtype("timestamp", $2, $3); }
+ |  TIME time_precision tz 	
+			{ if ($3)
+				$$ = sql_bind_subtype("timetz", $2, 0); 
+			  else
+				$$ = sql_bind_subtype("time", $2, 0); 
+			}
+ |  TIMESTAMP timestamp_precision tz 
+			{ if ($3)
+				$$ = sql_bind_subtype("timestamptz", $2, 0); 
+			  else
+				$$ = sql_bind_subtype("timestamp", $2, 0); 
+			}
  ;
 
 non_second_datetime_field:
@@ -2497,7 +2507,7 @@ literal:
 		  	$$ = _newAtomNode(a);
 		} }
  |  TIME tz string
-		{ sql_subtype *t = sql_bind_subtype("time", 0, $2 );
+		{ sql_subtype *t = sql_bind_subtype(($2)?"timetz":"time", 0, 0);
 		  atom *a = atom_general(t, $3, 0);
 		  if (!a) {
 			char buf[BUFSIZ];
@@ -2510,7 +2520,8 @@ literal:
 		  	$$ = _newAtomNode(a);
 		} }
  |  TIMESTAMP tz string
-		{ sql_subtype *t = sql_bind_subtype("timestamp", 0, $2 );
+		{ sql_subtype *t = 
+			sql_bind_subtype(($2)?"timestamptz":"timestamp", 0, 0 );
 		  atom *a = atom_general(t, $3, 0);
 		  if (!a) {
 			char buf[BUFSIZ];

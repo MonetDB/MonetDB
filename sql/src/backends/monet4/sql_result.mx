@@ -532,8 +532,8 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 			strcmp(c->type->type->sqlname, "timestamp") == 0 ||
 			strcmp(c->type->type->sqlname, "timestamptz") == 0) {
 			count = 10 + 1 + 8;
-			if (c->type->scale)	/* time zone */
-				count += 6;	/* +03:30 */
+			if (c->type->type->scale)	/* time zone */
+				count += 6;		/* +03:30 */
 			if (c->type->digits)	/* fractional seconds precision */
 				count += 1 + c->type->digits;
 			ok = (stream_printf(s, SZFMT, count) >= 0);
@@ -713,11 +713,11 @@ mvc_export_table(mvc *m, stream *s, int res_id, unsigned int offset, unsigned in
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) c->type->scale;
-		} else if (c->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
+		} else if (c->type->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
 			fmt[i].tostr = &sql_timestamp_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = m;
-		} else if (c->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "timetz") == 0) {
+		} else if (c->type->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "timetz") == 0) {
 			fmt[i].tostr = &sql_time_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = m;
