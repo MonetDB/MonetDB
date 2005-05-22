@@ -1,5 +1,5 @@
 RELEASE NOTES
-MonetDB JDBC driver version 1.2 (Blunt)
+MonetDB JDBC driver version 1.2 (Blunt-)
 Fabian Groffen <Fabian.Groffen@cwi.nl>
 
 Release date: 2005-05-22
