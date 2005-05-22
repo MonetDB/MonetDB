@@ -202,12 +202,12 @@ HEAPextend(Heap *h, size_t size)
 		}
 		/* too big: convert it to a disk-based temporary heap */
 		if (h->filename && size >= GDK_vm_minsize) {
-			char *of = h->filename;
+			char privext[PATHLENGTH], *of = h->filename;
 			FILE *fp;
 
 			h->filename = NULL;
-			strcat(ext, ".priv");
-			fp = GDKfilelocate(nme, "wb", ext);
+			sprintf(privext, "%s.priv", ext);
+			fp = GDKfilelocate(nme, "wb", privext);
 			if (fp != NULL) {
 				fclose(fp);
 				/* a non-persistent heap: we create a .priv but *not* MMAP_PRIV !!! */
