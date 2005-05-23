@@ -403,8 +403,18 @@ reduce (PFcnode_t * p, int goalnt)
                 else
                     *p = *let (letbind (LLL(p), LR(p)),
                                let (letbind (LLR(p), num (1)), R(p)));
-                relabel (p, kids);
+
+                /* type-check what we just created */
+                PFty_check (p);
+
                 rewritten = true;
+
+                /*
+                 * Re-label entire subtree. Type-checking may have
+                 * modified all the state labels in the subtree, so
+                 * we have to restore them.
+                 */
+                PFcoreopt_label (p);
                 break;
             }
                 
