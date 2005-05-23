@@ -60,15 +60,19 @@
 module(mapi);
 
 PROC pfstart(bit open) : void {
-    mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server").fork();
-}
-PROC pfstart() : void {
-    pfstart(false);
+    mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server", open).fork();
 }
 ADDHELP("pfstart", "boncz", "April 2005",
 "PARAMETERS:\n\
 bit whether the listener should listen to outside requests (default false: only local connections).\n\
-DESCRIPITON:\n\
+DESCRIPTION:\n\
+start the xquery server.",
+"pathfinder");
+PROC pfstart() : void {
+    pfstart(false);
+}
+ADDHELP("pfstart", "boncz", "April 2005",
+"DESCRIPTION:\n\
 start the xquery server.",
 "pathfinder");
 
@@ -499,7 +503,7 @@ PROC delete_doc(str name) : void
 ADDHELP("delete_doc", "tsheyar", "July 2004",
 "PARAMETERS:\n\
 str document name\n\
-DESCRIPITON:\n\
+DESCRIPTION:\n\
 delete the persistent BATS that store the document.",
 "pathfinder");
 
@@ -525,7 +529,7 @@ PROC delete_all_docs(bit cachedOnly) : void
 
 }
 ADDHELP("delete_all_docs", "tsheyar", "July 2004",
-"DESCRIPITON:\n\
+"DESCRIPTION:\n\
 deletes all persistent document BATs that store xml documents.",
 "pathfinder");
 
@@ -807,7 +811,8 @@ CMDxquery(char *mode, char* xquery) {
             stream_printf(GDKout, "%s#err#########################################################\n", mapi);
         }
     	stream_write(GDKout, err, len, 1);
-    } else if (prologue && query && epilogue) {
+    }
+    if (prologue && query && epilogue) {
         if (debug) {
             stream_printf(GDKout, "%s#exec prologue...############################################\n", mapi);
 	}
@@ -965,12 +970,16 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 	closeClient(client, 0); 	
 	return ret;
 }
-bat* pathfinder_prelude() {
+
+bat *
+pathfinder_prelude()
+{
     pf_compiler_lock = MT_create_lock();
     return NULL;
 }
 
-void pathfinder_epilogue() {
+void
+pathfinder_epilogue()
+{
     MT_destroy_lock(pf_compiler_lock);
 }
- 

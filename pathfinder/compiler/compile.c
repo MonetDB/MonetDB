@@ -513,6 +513,9 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
 	PFcnode_t  *croot  = NULL;
         long tm = PFtimer_start ();
 
+        *prologue = NULL;
+        *query = NULL;
+        *epilogue = NULL;
 
         pf_alloc = pa_create();
         lexical_init();
@@ -563,7 +566,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
     	croot = PFcoreopt (croot);
         res = PFprintMILtemp (croot, &PFstate, tm, prologue, query, epilogue);
         pa_destroy(pf_alloc);
-        return res;
+        return res ? res : *PFerrbuf ? PFerrbuf : NULL;
 
 }
 

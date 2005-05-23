@@ -1326,6 +1326,7 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	BUN cur[MAXPARAMS], lst[MAXPARAMS], dst[MAXPARAMS>>1], DST;
 	int bs[MAXPARAMS], bns[MAXPARAMS>>1], BS;
 	int nbats = 2, npairs = 1, i, j, k, any;
+	bit concat = FALSE;
 	chr *w = NULL;
 	size_t sze = 0, h = 0;
 	va_list ap;
@@ -1455,10 +1456,17 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	 */
 	/* merge-union the first two BATs; regard and preserve tail-order */
 	h = 0;
-	while ((cur[0] < lst[0]) && (cur[1] < lst[1])) {
-		@:merged_union_0(@1,@2,0,@4_LE(BUN@2(b[0],cur[0]),BUN@3(b[1],cur[1]),@1))@
-		if (cur[0] < lst[0]) {
-			@:merged_union_0(@1,@3,1,@4_GT(BUN@2(b[0],cur[0]),BUN@3(b[1],cur[1]),@1))@
+	concat = (BATcount(b[0])==0 || BATcount(b[1])==0);
+	if (!concat) {
+		concat = ( BATtordered(b[0])&BATtordered(b[1])&1 && \
+		           @4_LE(BUN@2(b[0],lst[0]-BUNsize(b[0])),BUN@3(b[1],cur[1]),@1) );
+	}
+	if (!concat) {
+		while ((cur[0] < lst[0]) && (cur[1] < lst[1])) {
+			@:merged_union_0(@1,@2,0,@4_LE(BUN@2(b[0],cur[0]),BUN@3(b[1],cur[1]),@1))@
+			if (cur[0] < lst[0]) {
+				@:merged_union_0(@1,@3,1,@4_GT(BUN@2(b[0],cur[0]),BUN@3(b[1],cur[1]),@1))@
+			}
 		}
 	}
 	/* get remaining BUNs */
@@ -1566,6 +1574,7 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	/* set BAT properties */
 
 	for (k=0; k<npairs; k++) {
+		BAT *b0 = b[2*k], *b1 = b[(2*k)+1];
 		BATseqbase(bn[k], (oid)0);
 		bn[k]->batBuns->free = dst[k] - bn[k]->batBuns->base;
 		BATsetcount(bn[k], bn[k]->batBuns->free/BUNsize(bn[k]));
@@ -1573,7 +1582,21 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 		BATkey(bn[k],TRUE);
 		BATkey(BATmirror(bn[k]),FALSE);
 		bn[k]->hsorted = GDK_SORTED;
-		bn[k]->tsorted = ((k==0)?GDK_SORTED:FALSE);
+		if (k==0 || (BATcount(b0)==0 && BATcount(b1)==0)) {
+			bn[k]->tsorted = GDK_SORTED;
+		} else
+		  if (BATcount(b0)==0) {
+			bn[k]->tsorted = (BATtordered(b1)&1 ? GDK_SORTED : FALSE);
+		} else
+		  if (BATcount(b1)==0) {
+			bn[k]->tsorted = (BATtordered(b0)&1 ? GDK_SORTED : FALSE);
+		} else {
+			bn[k]->tsorted = ( ( concat && \
+			                     BATtordered(b0)&BATtordered(b1)&1 && \
+			                     atom_LE(BUNtail(b0,BUNlast(b0)-BUNsize(b0)),BUNtail(b1,BUNfirst(b1)),b0->ttype) ) \
+			                  ? GDK_SORTED \
+			                  : FALSE );
+		}
 		bn[k]->hdense = TRUE;
 		bn[k]->tdense = FALSE;
 	}
