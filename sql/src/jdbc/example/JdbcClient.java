@@ -892,14 +892,29 @@ public class JdbcClient {
 		int colwidth = rsmd.getColumnDisplaySize(cols.findColumn("COLUMN_NAME"));
 		int typewidth = rsmd.getColumnDisplaySize(cols.findColumn("TYPE_NAME"));
 		for (i = 0; cols.next(); i++) {
-			int type = cols.getInt("DATA_TYPE");
 			if (i > 0) out.println(",");
+			// print column name
 			s = dq(cols.getString("COLUMN_NAME"));
 			out.print("\t" + s + repeat(' ', (colwidth - s.length()) + 3));
+
 			s = cols.getString("TYPE_NAME");
-			out.print(s + repeat(' ', typewidth - s.length()));
+			int type = cols.getInt("DATA_TYPE");
 			int size = cols.getInt("COLUMN_SIZE");
 			int digits = cols.getInt("DECIMAL_DIGITS");
+			// small hack to get desired behaviour: set digits when we
+			// have a time or timestamp with time zone and at the same
+			// time masking the internal types
+			if (s.equals("timetz")) {
+				digits = 1;
+				s = "time";
+			} else if (s.equals("timestamptz")) {
+				digits = 1;
+				s = "timestamp";
+			}
+			// print column type
+			out.print(s + repeat(' ', typewidth - s.length()));
+
+			// do some type specifics 
 		 	if (type == Types.FLOAT ||
 				type == Types.VARCHAR ||
 				type == Types.LONGVARCHAR ||
