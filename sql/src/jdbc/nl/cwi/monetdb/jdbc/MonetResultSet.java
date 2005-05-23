@@ -1503,7 +1503,10 @@ public class MonetResultSet implements ResultSet {
 						return(MonetConnection.mDate.parse(monetDate));
 					}
 				case Types.TIME:
-					if (monetDate.length() == 18) { // "HH:mm:ss.SSS+00:00".length()
+					// we know it's time or timetz, so observing the
+					// length is enough to find out whether we have a
+					// time with or without time zone
+					if (types[col - 1].length() == 6) { // "timetz".length()
 						// RFC822:         Sign TwoDigitHours Minutes
 						// MonetDB/SQL99:  Sign TwoDigitHours : Minutes
 						String tzRFC822 =
@@ -1514,7 +1517,7 @@ public class MonetResultSet implements ResultSet {
 							MonetConnection.mTimeZ.setCalendar(Calendar.getInstance());
 							return(MonetConnection.mTimeZ.parse(monetDate.substring(0, 12) + tzRFC822));
 						}
-					} else if (monetDate.length() == 12) { // "HH:mm:ss.SSS".length()
+					} else {
 						// if there is no time zone information in the database
 						// we have to use the given calendar to construct it
 						synchronized (MonetConnection.mTimeZ) {
@@ -1523,9 +1526,13 @@ public class MonetResultSet implements ResultSet {
 							return(MonetConnection.mTime.parse(monetDate));
 						}
 					}
-				break;
+				//break; (not needed because of the else/return)
 				case Types.TIMESTAMP:
-					if (monetDate.length() == 29) { // "yyyy-MM-dd HH:mm:ss.SSS+00:00".length()
+					// we know it's timestamp or timestamptz, so
+					// observing the length is enough to find out
+					// whether we have a timestamp with or without time
+					// zone
+					if (types[col - 1].length() == 11) { // "timestamptz".length()
 						// RFC822:         Sign TwoDigitHours Minutes
 						// MonetDB/SQL99:  Sign TwoDigitHours : Minutes
 						String tzRFC822 =
@@ -1536,7 +1543,7 @@ public class MonetResultSet implements ResultSet {
 							MonetConnection.mTimestampZ.setCalendar(Calendar.getInstance());
 							return(MonetConnection.mTimestampZ.parse(monetDate.substring(0, 23) + tzRFC822));
 						}
-					} else if (monetDate.length() == 23) { // "yyyy-MM-dd HH:mm:ss.SSS".length()
+					} else {
 						// if there is no time zone information in the database
 						// we have to use the given calendar to construct it
 						synchronized (MonetConnection.mTimestampZ) {
@@ -1545,7 +1552,7 @@ public class MonetResultSet implements ResultSet {
 							return(MonetConnection.mTimestamp.parse(monetDate));
 						}
 					}
-				break;
+				//break; (not needed because of the else/return)
 			}
 		} catch(java.text.ParseException e) {
 			// keep default value
