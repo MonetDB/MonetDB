@@ -1066,7 +1066,6 @@ sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	stream **In, **Out;
 	stream *in, *out;
 	bstream *rs;
-	stream *bkin, *bkout;
 
 	Thread sqlthread = THRget(THRgettid());
 	Client client;
@@ -1081,10 +1080,6 @@ sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
 	@:builtin_operand(1,TYPE_Stream,Out)@
 	out = *Out;
 
-	/* Time to adjust the thread IO channels */
-	bkin = client->fdin;
-	bkout = client->fdout;
-	monetSetChannel(sqlthread, in, out);
 @-
 Start analysis using the mapi-client protocol.
 Use default setting for trace.
@@ -1186,9 +1181,7 @@ These lines should be eaten away into the prompt is encountered.
 	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
 	 */
 	bstream_destroy(rs);
-	close_stream(out);
-	close_stream(in);
-	monetSetChannel(sqlthread, bkin, bkout);
+	closeClient(client, 0); 	
 	return ret;
 }
 
