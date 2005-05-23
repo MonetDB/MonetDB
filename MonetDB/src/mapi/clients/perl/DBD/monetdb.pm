@@ -657,7 +657,13 @@ sub finish {
 sub FETCH {
     my ($sth, $key) = @_;
 
-    return $sth->{$key} if $key =~ /^monetdb_/;
+    if ( $key =~ /^monetdb_/) {
+        return $sth->{$key};
+    }
+    elsif ( $key eq 'ParamValues') {
+        my $p = $sth->{monetdb_params};
+        return { map { $_ => $p->[$_-1] } 1 .. $sth->FETCH('NUM_OF_PARAMS') };
+    }
     return $sth->SUPER::FETCH($key);
 }
 
