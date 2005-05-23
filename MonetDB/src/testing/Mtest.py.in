@@ -1024,7 +1024,7 @@ def ApproveOutput (env, TST) :
 
                 f = open(patch+".1", "w")
                 for l in fileinput.input(patch+".0"):
-                    if len(l) < 2  or  ( l[:2] not in ['+!','+=']  and  l[:10] != '+ERROR = !'  and  l[:9] != '+ERROR: !' ) :        # or  filter.match(ln):
+                    if len(l) < 2  or  ( l[:2] not in ['+!','+=']  and  l[:10] != '+ERROR = !'  and  l[:8] != '+ERROR: ' ) :        # or  filter.match(ln):
                         f.write(l)
                     else:
                         if FORCE:
@@ -2333,12 +2333,14 @@ os.environ['CYGPATH_WP'] = '@CYGPATH_WP@'
 
 if os.environ.has_key('HOST'):
     HOST = os.environ['HOST']
-elif os.name != "nt":
-    HOST = os.uname()[1]
-elif os.environ.has_key('COMPUTERNAME'):
-    HOST = os.environ['COMPUTERNAME']
 else:
-    HOST = "WIN2000"
+    HOST = 'localhost'
+##elif os.name != "nt":
+##    HOST = os.uname()[1]
+##elif os.environ.has_key('COMPUTERNAME'):
+##    HOST = os.environ['COMPUTERNAME']
+##else:
+##    HOST = "WIN2000"
 HOST = HOST.split('.', 1)[0]
 os.environ['HOST'] = HOST
 

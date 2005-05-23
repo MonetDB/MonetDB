@@ -26,8 +26,8 @@ This module contains a simple interface for network connections.
 .MODULE mapi;
 	.USE streams;
 
-	.BUILTIN mapi_listen2(int port, str sockfile, int maxusers, str cmd) = MAPIlisten; 
-		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked. <sockfile> is the name of a Unix socket."
+	.BUILTIN mapi_listen2(int port, str sockfile, int maxusers, str cmd, bit open) = MAPIlisten; 
+		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n <sockfile> is the name of a Unix socket.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."
 
 	.BUILTIN mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) = MAPIlistenSSL;
 		"Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."
@@ -44,19 +44,40 @@ This module contains a simple interface for network connections.
 	VAR mapi_params := bat(int,str);
 	mapi_params.rename("mapi_params");
 
-	PROC mapi_listen(int port, int maxusers, str cmd) : void {
-		mapi_listen2(port, str(nil), maxusers, cmd);
+	PROC mapi_listen(int port, int maxusers, str cmd, bit open) : void {
+		mapi_listen2(port, str(nil), maxusers, cmd, open);
 	}
-	ADDHELP("mapi_listen", "sjoerd", "Oct 5 2005",
+	ADDHELP("mapi_listen", "sjoerd", "May 23 2005",
+		"Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
+		mod());
+
+	PROC mapi_listen(int port, int maxusers, str cmd) : void {
+		mapi_listen(port, maxusers, cmd, false);
+	}
+	ADDHELP("mapi_listen", "sjoerd", "Oct 5 2004",
 		"Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.",
 		mod());
 
-	PROC listen(int port, str sockfile, int maxusers, str cmd) : void {
+	PROC listen(int port, str sockfile, int maxusers, str cmd, bit open) : void {
 		mapi_params.insert(port,cmd);
-		mapi_listen2(port,sockfile,maxusers,cmd);
+		mapi_listen2(port,sockfile,maxusers,cmd,open);
+	}
+	ADDHELP("listen", "sjoerd", "May 23 2005",
+		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
+		mod());
+
+	PROC listen(int port, str sockfile, int maxusers, str cmd) : void {
+		listen(port,sockfile,maxusers,cmd,false);
 	}
 	ADDHELP("listen", "sjoerd", "Oct  5 2004",
 		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.",
+		mod());
+
+	PROC listen(int port, int maxusers, str cmd, bit open) : void {
+		listen(port,str(nil),maxusers,cmd,open);
+	}
+	ADDHELP("listen", "sjoerd", "May 23 2005",
+		"Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
 		mod());
 
 	PROC listen(int port, int maxusers, str cmd) : void {
@@ -66,14 +87,39 @@ This module contains a simple interface for network connections.
 		"Start the Mapi listener on <port> for <maxusers>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\nIf no <cmd> is specified a new client thread is forked.",
 		mod());
 
-	PROC listen(int port, int maxusers) : void { listen(port,str(nil),maxusers,""); }
+	PROC listen(int port, int maxusers, bit open) : void {
+		listen(port,str(nil),maxusers,"",open);
+	}
+	ADDHELP("listen", "sjoerd", "May  23 2005",
+		"Start the Mapi listener on <port> for <maxusers>.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
+		mod());
+
+	PROC listen(int port, int maxusers) : void {
+		listen(port,str(nil),maxusers,"");
+	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port> for <maxusers>.",
 		mod());
 
-	PROC listen(int port, str cmd) : void { listen(port,str(nil),5,cmd); }
+	PROC listen(int port, str cmd, bit open) : void {
+		listen(port,str(nil),5,cmd,open);
+	}
+	ADDHELP("listen", "sjoerd", "May 23 2005",
+		"Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
+		mod());
+
+	PROC listen(int port, str cmd) : void {
+		listen(port,str(nil),5,cmd);
+	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on <port>.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
+		mod());
+
+	PROC listen(int port, bit open) : void {
+		listen(port,str(nil),5,"",open);
+	}
+	ADDHELP("listen", "sjoerd", "May 23 2005",
+		"Start the Mapi listener on <port>.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
 		mod());
 
 	PROC listen(int port) : void { listen(port,str(nil),5,""); }
@@ -81,12 +127,28 @@ This module contains a simple interface for network connections.
 		"Start the Mapi listener on <port>.",
 		mod());
 
+	PROC listen(str cmd, bit open) : void {
+		listen(50000,str(nil),5,cmd,open);
+	}
+	ADDHELP("listen", "sjoerd", "May 23 2005",
+		"Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
+		mod());
+
 	PROC listen(str cmd) : void { listen(50000,str(nil),5,cmd); }
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on 50000.\nFor a new client connection MIL procedure <cmd>(int sock) is called.",
 		mod());
 
-	PROC listen() : void { listen(50000,str(nil),5,""); }
+	PROC listen(bit open) : void {
+		listen(50000,str(nil),5,"",open);
+	}
+	ADDHELP("listen", "sjoerd", "May 23 2005",
+		"Start the Mapi listener on 50000.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
+		mod());
+
+	PROC listen() : void {
+		listen(50000,str(nil),5,"");
+	}
 	ADDHELP("listen", "windhouw", "June  22 2001",
 		"Start the Mapi listener on 50000.",
 		mod());
@@ -196,10 +258,11 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	int maxusers, *Maxusers;
 	char *cmd;
 	Client father;
+	int accept_any, *Accept_any;
 
 	CNTXTclient(stk, &father);
-	if (lt->cnt != 4) {
-		return handle_argerror(res, lt->cnt, 4);
+	if (lt->cnt != 5) {
+		return handle_argerror(res, lt->cnt, 5);
 	}
 	@:builtin_operand(0,TYPE_int,Port)@
 	port = *Port;
@@ -218,6 +281,8 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	maxusers = *Maxusers;
 	@:builtin_operand(3,TYPE_str,cmd)@
 	cmd = GDKstrdup(cmd);
+	@:builtin_operand(4,TYPE_bit,Accept_any);
+	accept_any = *Accept_any;
 	res->vtype = TYPE_void;
 
 	port = (port ? port : MAPIPORT);
@@ -246,7 +311,10 @@ Bind the socket to the server port.
 The port id should be obtained from the Homes file.
 @c
 		server.sin_family = AF_INET;
-		server.sin_addr.s_addr = INADDR_ANY;
+		if (accept_any)
+			server.sin_addr.s_addr = htonl(INADDR_ANY);
+		else
+			server.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 		server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 		for (i = 0; i < 8; i++)
 			server.sin_zero[i] = 0;
@@ -254,14 +322,14 @@ The port id should be obtained from the Homes file.
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
 		length = (SOCKLEN) sizeof(server);
-		if (bind(sock, (SOCKPTR) & server, length) < 0) {
+		if (bind(sock, (SOCKPTR) &server, length) < 0) {
 			GDKsyserror("MAPIlisten:binding to stream socket (%d) failed\n", port);
 			return GDK_FAIL;
 		}
 @-
 Get the new information for the server socket and start listening.
 @c
-		if (getsockname(sock, (SOCKPTR) & server, &length) < 0) {
+		if (getsockname(sock, (SOCKPTR) &server, &length) < 0) {
 			GDKsyserror("MAPIlisten:getting socket name\n");
 			return GDK_FAIL;
 		}
