@@ -753,7 +753,7 @@ struct MapiStruct {
 
 	int trace;		/* Trace Mapi interaction */
 	int blocked;		/* blocked mode */
-	char* noexplain;		/* on error, don't explain, only print result */
+	char* noexplain;	/* on error, don't explain, only print result */
 	MapiMsg error;		/* Error occurred */
 	char *errorstr;		/* pointer to constant string */
 	const char *action;	/* pointer to constant string */
@@ -897,7 +897,7 @@ mapi_export MapiMsg mapi_ping(Mapi mid);
 
 mapi_export MapiMsg mapi_error(Mapi mid);
 mapi_export char *mapi_error_str(Mapi mid);
-mapi_export void mapi_noexplain(Mapi mid, char* errorprefix);
+mapi_export void mapi_noexplain(Mapi mid, char *errorprefix);
 mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
 mapi_export MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd);
@@ -1116,13 +1116,16 @@ static void
 clean_print(char *msg, const char *prefix, FILE *fd)
 {
 	int len = strlen(prefix);
+
 	while(msg && *msg) {
 		/* cut by line */
 		char *p = strchr(msg, '\n');
-		if (p) *p = 0;
+		if (p)
+			*p = 0;
 
 		/* skip over prefix */
-		if (strncmp(msg,prefix,len) == 0) msg += len;
+		if (strncmp(msg,prefix,len) == 0)
+			msg += len;
 
 		/* output line */
 		fputs(msg, fd); 
@@ -1157,9 +1160,11 @@ indented_print(const char *msg, const char *prefix, FILE *fd)
 	}
 }
 
-void mapi_noexplain(Mapi mid, char* prefix) {
+void
+mapi_noexplain(Mapi mid, char *errorprefix)
+{
 	assert(mid);
-	mid->noexplain = prefix;
+	mid->noexplain = errorprefix;
 }
 
 MapiMsg
