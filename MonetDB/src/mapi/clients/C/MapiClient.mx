@@ -699,7 +699,7 @@ dump_tables(Mapi mid)
 	return rc;
 }
 
-#define CHECK_RESULT(mid, hdl, buf)					\
+#define CHECK_RESULT(mid, hdl, buf, break_or_continue)			\
 		switch (mapi_error(mid)) {				\
 		case MOK:						\
 			/* everything A OK */				\
@@ -712,7 +712,7 @@ dump_tables(Mapi mid)
 				hdl = NULL;				\
 			} else						\
 				mapi_explain(mid, stderr);		\
-			continue;					\
+			break_or_continue;				\
 		case MTIMEOUT:						\
 			/* lost contact with the server */		\
 			if (hdl) {					\
@@ -734,7 +734,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 	size_t length;
 	MapiHdl hdl = NULL;
 	MapiMsg rc;
-	int bufsize = 0, offset = command?strlen(command):0;
+	int bufsize = 0;
 
 	if (file == NULL)
 		fp = stdin;
@@ -744,7 +744,6 @@ doFile(Mapi mid, const char *file, int skipequals)
 	}
 
 	bufsize = BUFSIZ * 64;
-	if (bufsize <= offset) bufsize = offset+1;
 	buf = malloc(bufsize);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
@@ -753,15 +752,16 @@ doFile(Mapi mid, const char *file, int skipequals)
 		return 1;
 	}
 
-	/* pre-append command to first file */
-	if (offset) {
-		memcpy(buf, command, offset); 
-		buf[offset++] = '\n';
-	}
-
 	timerStart();
+	if (command) {
+		/* special code for XQuery: prepend command to query */
+		hdl = mapi_query_prep(mid);
+		CHECK_RESULT(mid, hdl, buf, break);
+		mapi_query_part(hdl, command, strlen(command));
+		CHECK_RESULT(mid, hdl, buf, break);
+	}
 	do {
-		if ((length = offset + fread(buf+offset, 1, bufsize-offset, fp)) == 0) {
+		if ((length = fread(buf, 1, bufsize, fp)) == 0) {
 			/* end of file */
 			if (file != NULL) {
 				fclose(fp);
@@ -775,16 +775,15 @@ doFile(Mapi mid, const char *file, int skipequals)
 			}
 			/* hdl != NULL, we should finish the current query */
 		}
-		offset = 0;
 
 		if (hdl == NULL) {
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, buf);
+			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 		if (length > 0) {
 			assert(hdl != NULL);
 			mapi_query_part(hdl, buf, length);
-			CHECK_RESULT(mid, hdl, buf);
+			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 
 		assert(hdl != NULL);
@@ -799,7 +798,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 		    (length > 0 || mapi_query_done(hdl) == MMORE))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf);
+		CHECK_RESULT(mid, hdl, buf, continue);
 
 		do {
 			char *reply;
@@ -815,7 +814,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
 
-		CHECK_RESULT(mid, hdl, buf);
+		CHECK_RESULT(mid, hdl, buf, continue);
 
 		mapi_close_handle(hdl);
 		hdl = NULL;
@@ -1006,12 +1005,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 		if (hdl == NULL) {
 			timerStart();
 			hdl = mapi_query_prep(mid);
-			CHECK_RESULT(mid, hdl, buf);
+			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 		if (length > 0) {
 			assert(hdl != NULL);
 			mapi_query_part(hdl, line, length);
-			CHECK_RESULT(mid, hdl, buf);
+			CHECK_RESULT(mid, hdl, buf, continue);
 		}
 		if ((line == NULL || (length > 0 && line[length - 1] == '\n')) && linemode) {
 			assert(hdl != NULL);
@@ -1025,7 +1024,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			if (mapi_query_done(hdl) == MMORE && (line != NULL || mapi_query_done(hdl) == MMORE))
 				continue;	/* get more data */
 
-			CHECK_RESULT(mid, hdl, buf);
+			CHECK_RESULT(mid, hdl, buf, continue);
 
 			do {
 				char *reply;
@@ -1043,7 +1042,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 				continue;	/* get more data */
 
-			CHECK_RESULT(mid, hdl, buf);
+			CHECK_RESULT(mid, hdl, buf, continue);
 
 			timerEnd();
 			mapi_close_handle(hdl);
@@ -1348,13 +1347,15 @@ main(int argc, char **argv)
 		exit(2);
 	}
 	if (strcmp(language, "xquery") == 0) {
-		/* xquery options are passed via the command string (becomes first line of query) */
-		char *c = command?command:XQuerydefaultMode;
-		char *t = strstr(c,"timing-")?"":mark?"timing-":"";
-		char *d = strstr(c,"debug-")?"":trace?"debug-":"";
-		char *m = strstr(c,"-mapi")?"":"-mapi";
-		command = (char*) malloc(strlen(c)+20); 
-		sprintf(command, "%s%s%s%s", t,d,c,m);
+		/* xquery options are passed via the command string
+		   (becomes first line of query) */
+		char *c = command ? command : XQuerydefaultMode;
+		char *t = strstr(c, "timing-") ? "" : mark ? "timing-" : "";
+		char *d = strstr(c, "debug-") ? "" : trace ? "debug-" : "";
+		char *m = strstr(c, "-mapi") ? "" : "-mapi";
+
+		command = (char*) malloc(strlen(c) + 20);
+		sprintf(command, "%s%s%s%s\n", t, d, c, m);
 		mapi_noexplain(mid, "!");
 	}
 	if (mapi_error(mid)) {
@@ -1377,19 +1378,28 @@ main(int argc, char **argv)
 
 	c = 0;
 
-	/* we're interactive iff explicit or if no files and no -s option */
-	interactive = interactive || (optind == argc && command == NULL);
+	/* we're interactive if explicit or if no files and no -s option
+	   we're also interactive if no files and the language is
+	   XQuery (although in the latter case we're not really
+	   interactive, we only allow reading from stdin if it's a
+	   file, but that test comes later) */
+	interactive = interactive ||
+		(optind == argc &&
+		 (command == NULL || strcmp(language, "xquery") == 0));
 
-	/* doFile prefixes first query with command line arguments now */
+	/* for XQuery, doFile prefixes the query with command, so
+	   don't do it here */
+	if (command && strcmp(language, "xquery") != 0) {
+		/* execute from command-line */
+		c = doRequest(mid, command);
+		command = NULL;
+	}
 	if (optind < argc) {
 		/* execute from file(s) */
 		while (optind < argc) {
 			c |= doFile(mid, argv[optind], strcmp(language, "xquery") == 0);
 			optind++;
 		}
-	} else if (command && !(interactive && strcmp(language, "xquery") != 0)) {
-		/* execute from command-line (interactive xquery does command in doFile) */
-		c = doRequest(mid, command);
 	}
 	if (interactive) {
 		/* execute from stdin */
