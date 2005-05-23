@@ -807,7 +807,8 @@ CMDxquery(char *mode, char* xquery) {
             stream_printf(GDKout, "%s#err#########################################################\n", mapi);
         }
     	stream_write(GDKout, err, len, 1);
-    } else if (prologue && query && epilogue) {
+    }
+    if (prologue && query && epilogue) {
         if (debug) {
             stream_printf(GDKout, "%s#exec prologue...############################################\n", mapi);
 	}
