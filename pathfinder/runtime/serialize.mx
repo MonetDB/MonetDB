@@ -764,7 +764,18 @@ static int handle_characters(XqueryCtx* ctx, str ch, str top) {
         } else { /* xmlMode */
                 if ( ctx->dmMode && top )
                         stream_printf(GDKout,"%s {\"",top);
-                stream_printf(GDKout,"%s",ch);
+                if (ctx->mapiMode) {
+			/* we need to prepend "=" to each line, so
+			   make sure that we print one after each
+			   newline */
+			str nl;
+			while ((nl = strchr(ch, '\n')) != NULL) {
+				nl++;
+				stream_printf(GDKout, "%.*s=", (nl - ch), ch);
+				ch = nl;
+			}
+		}
+		stream_printf(GDKout,"%s",ch);
                 if ( ctx->dmMode && top )
                         stream_printf(GDKout,"\"}");
         }
