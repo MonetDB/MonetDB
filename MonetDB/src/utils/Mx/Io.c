@@ -193,7 +193,12 @@ fmustopen(char *fname, char *mode)
 #endif
 		   ) {
 			*p = '\0';
-			if (stat(fname, &buf) < 0 && mkdir(fname, S_IRWXU) < 0)
+			if (p > fname /* avoid trying "" */ &&
+#ifdef WIN32
+			    /* avoid trying things like "C:" */
+			    (p != fname + 2 || fname[1] != ':') &&
+#endif
+			    stat(fname, &buf) < 0 && mkdir(fname, S_IRWXU) < 0)
 				Fatal("fmustopen:", "Can't create directory %s\n", fname);
 			*p = DIR_SEP;
 		}
