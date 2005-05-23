@@ -1755,20 +1755,20 @@ BATsetaccess(BAT *b, int mode)
 		} else {
 			if (mode == BAT_WRITE) {
 				m1 = HEAPsetpriv(b->batBuns, committed, &remap, &reload);
-			} else if (b->batBuns->storage != STORE_MEM) {
+			} else if (bak == BAT_WRITE) {
 				m1 = HEAPsetmmap(b->batBuns, committed, &remap);
 			}
 			if (bak2 >= 0) {
 				if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->htype, b->hheap))) {
 					m2 = HEAPsetpriv(b->hheap, committed, &remap, &reload);
-				} else if (b->hheap->storage != STORE_MEM) {
+				} else if (bak == BAT_WRITE || (bak == BAT_APPEND && ATOMappendpriv(b->htype, b->hheap))) {
 					m2 = HEAPsetmmap(b->hheap, committed, &remap);
 				}
 			}
 			if (bak3 >= 0) {
 				if (mode == BAT_WRITE || (mode == BAT_APPEND && ATOMappendpriv(b->ttype, b->theap))) {
 					m3 = HEAPsetpriv(b->theap, committed, &remap, &reload);
-				} else if (b->theap->storage != STORE_MEM) {
+				} else if (bak == BAT_WRITE || (bak == BAT_APPEND && ATOMappendpriv(b->ttype, b->theap))) {
 					m3 = HEAPsetmmap(b->theap, committed, &remap);
 				}
 			}
