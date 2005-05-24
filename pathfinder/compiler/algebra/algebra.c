@@ -699,6 +699,8 @@ PFalg_scjoin (PFalg_op_t *doc, PFalg_op_t *n, PFalg_op_t *dummy)
                     "illegal attribute `%s' in staircase join",
                     n->schema.items[i].name);
     }
+#else
+    (void)i; /* pacify compiler */
 #endif
 
     /* allocate memory for the result schema */
