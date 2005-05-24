@@ -394,19 +394,22 @@ reduce (PFcnode_t * p, int goalnt)
              * a corresponding `let'.
              */
             if (PFty_subtype (TY(LR(p)), PFty_xs_anyItem ())) {
-                /* FIXME
-                PFinfo (OOPS_NOTICE,
-                        "var: %s", PFqname_str (LLL(p)->sem.var->qname));
-                 */
-                if (LLR(p)->kind == c_nil)
-                    *p = *let (letbind (LLL(p), LR(p)), R(p));
-                else
-                    *p = *let (letbind (LLL(p), LR(p)),
-                               let (letbind (LLR(p), num (1)), R(p)));
 
-                /* type-check what we just created */
-                PFty_check (p);
+                PFcnode_t *c = R(p);
 
+                if (LLR(p)->kind != c_nil) {
+                    c = let (letbind (LLR(p), num (1)), c);
+
+                    /* fix types */
+                    TY(c) = TY(R(p));
+                    TY(LR(c)) = PFty_xs_integer ();
+                }
+
+                *p = *let (letbind (LLL(p), LR(p)), c);
+
+                TY(p) = TY(c);
+
+                relabel (p, kids);
                 rewritten = true;
 
                 /*

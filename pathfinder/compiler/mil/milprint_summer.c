@@ -360,7 +360,7 @@ bool_container ()
 
 /**
  * kind_container returns a the container
- * accoriding to the kind value
+ * according to the kind value
  *
  * @param i the kind of the values
  * @result the string mapping the references to
@@ -503,7 +503,8 @@ init (opt_t *f)
 /**
  * Worker function for saveResult, which can
  * cope with item bat, holding `real' values
- * (saveResult_ should be used in pairs with deleteResult_)
+ * (saveResult_ should be used in pairs with deleteResult_
+ * since the first one opens a scope and the latter one closes it)
  *
  * @param f the Stream the MIL code is printed to
  * @param counter the actual offset of saved variables
@@ -532,7 +533,8 @@ saveResult_ (opt_t *f, int counter, int rcode)
 /**
  * saveResult binds a intermediate result to a set of
  * variables, which are not used
- * (saveResult should be used in pairs with deleteResult)
+ * (saveResult should be used in pairs with deleteResult
+ * since the first one opens a scope and the latter one closes it)
  *
  * @param f the Stream the MIL code is printed to
  * @param counter the actual offset of saved variables
@@ -546,7 +548,8 @@ saveResult (opt_t *f, int counter)
 /**
  * saveResult_node binds a intermediate result to a new
  * set of variables using the node interface
- * (saveResult should be used in pairs with deleteResult)
+ * (saveResult should be used in pairs with deleteResult
+ * since the first one opens a scope and the latter one closes it)
  *
  * @param f the Stream the MIL code is printed to
  * @param counter the actual offset of saved variables
@@ -595,7 +598,8 @@ saveResult_node (opt_t *f, int counter)
 /**
  * Worker function for deleteResult, which can
  * cope with item bat, holding `real' values
- * (deleteResult_ should be used in pairs with saveResult_)
+ * (deleteResult_ should be used in pairs with saveResult_
+ * since the first one opens a scope and the latter one closes it)
  *
  * @param f the Stream the MIL code is printed to
  * @param counter the actual offset of saved variables
@@ -617,7 +621,8 @@ deleteResult_ (opt_t *f, int counter, int rcode)
 /**
  * deleteResult deletes a saved intermediate result and
  * gives free the offset to be reused (return value)
- * (deleteResult should be used in pairs with saveResult)
+ * (deleteResult should be used in pairs with saveResult
+ * since the first one opens a scope and the latter one closes it)
  *
  * @param f the Stream the MIL code is printed to
  * @param counter the actual offset of saved variables
@@ -631,7 +636,8 @@ deleteResult (opt_t *f, int counter)
 /**
  * deleteResult_node frees the variables bound
  * to an intermediate result
- * (deleteResult should be used in pairs with saveResult)
+ * (deleteResult should be used in pairs with saveResult
+ * since the first one opens a scope and the latter one closes it)
  *
  * @param f the Stream the MIL code is printed to
  * @param counter the actual offset of saved variables
@@ -813,6 +819,9 @@ translateElemContent (opt_t *f, int code, int cur_level, int counter, PFcnode_t 
 /**
  * map2NODE_interface maps nodes from the iter|pos|item|kind
  * interface to the NODE interface
+ * (r_attr: iter|qn|prop|frag,
+ *  elem:   iter|size|level|kind|prop|frag,
+ *  attr:   iter|qn|prop|frag|own)
  *
  * @param f the Stream the MIL code is printed to
  */
@@ -1132,7 +1141,8 @@ translateSeq_node (opt_t *f, int i)
             "_attr_frag := merged_result.fetch(3);\n"
             "_attr_own  := merged_result.fetch(4);\n"
             "_attr_own := _attr_own.leftjoin(preNew_preOld.reverse());\n"
-            /* FIXME: throw the next line out */
+            /* we need to help MonetDB, since we know that the order
+               preserving join (above) creates and deletes no rows */
             "_attr_own := _attr_own.reverse().mark(0@0).reverse();\n"
             "merged_result := nil_oid_bat;\n"
             "preNew_preOld := nil_oid_oid;\n"
@@ -2543,8 +2553,6 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "iter_item := nil_oid_oid;\n"
                 /* insert root attribute entries to the other attributes */
                 /* use iter, qn and frag to find unique combinations */
-                /* FIXME: we don't find attributes with the same name, if
-                          they are from different fragments */
                 "if (_r_attr_iter.count() != 0) { # test uniqueness\n"
                 "var sorting := _r_attr_iter.reverse().sort().reverse();\n"
                 "sorting := sorting.CTrefine(mposjoin(_r_attr_qn,_r_attr_frag,ws.fetch(QN_LOC_URI)));\n"
@@ -3405,10 +3413,20 @@ evaluateCastBlock (opt_t *f, type_co ori, char *cast, char *target_type)
                 "var part_%s := part_item;\n",
                 ori.mil_type);
 
-    milprintf(f,
-            "part_item := nil_oid_oid;\n"
-            "var part_val := part_%s.%s;\n",
-            ori.mil_type, cast);
+    /* treat special case, where boolean has to be casted to string */
+    if (ori.kind == BOOL && !strcmp("str", target_type))
+        milprintf(f,
+                "part_item := nil_oid_oid;\n"
+                "var mapping := bat(oid,str).insert(0@0,\"false\")"
+                                           ".insert(1@0,\"true\");\n"
+                "var part_val := part_%s.leftfetchjoin(mapping);\n"
+                "mapping := nil_oid_str;\n",
+                ori.mil_type);
+    else
+        milprintf(f,
+                "part_item := nil_oid_oid;\n"
+                "var part_val := part_%s.%s;\n",
+                ori.mil_type, cast);
     milprintf(f,
             "var res_mu := merged_union(_oid, oid_oid, _val, part_val);\n"
             "oid_oid := nil_oid_oid;\n"
@@ -4132,8 +4150,8 @@ evaluateComp (opt_t *f, int rc1, int rc2,
               int counter, char *operator, type_co t_co)
 {
     milprintf(f, "{ # '%s' comparison\n", operator);
-    /* FIXME: assume that both intermediate results are aligned 
-              otherwise this doesn't work */
+    /* we assume that both intermediate results are aligned 
+       otherwise this doesn't work */
     if (t_co.kind != BOOL)
     {
         if (rc2)
@@ -4794,6 +4812,9 @@ fn_data (opt_t *f)
  * step is to create text-nodes out of it and combine the other
  * nodes and the attributes with them.
  *
+ * @param f the Stream the MIL code is printed to
+ * @param counter the actual offset of saved variables
+ * @param input_type the type of the input expression
  */
 static void
 is2ns (opt_t *f, int counter, PFty_t input_type)
@@ -4864,9 +4885,6 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             /* get all the atomic values and cast them to string */
             "var atomic := kind.get_type_atomic();\n"
             "atomic := atomic.mark(0@0).reverse();\n"
-            /* FIXME: iter_atomic is not used anymore 
-               - does it need to be used?  */
-            "var iter_atomic := atomic.leftfetchjoin(iter);\n"
             "iter := atomic.mirror();\n"
             "pos := atomic.leftfetchjoin(pos);\n"
             "item := atomic.leftfetchjoin(item);\n"
@@ -4936,6 +4954,15 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
     deleteResult (f, counter);
 }
 
+/**
+ * is2ns_node is the translation of the item-sequence-to-node-sequence
+ * function using the node interface. In comparison to is2ns it only
+ * has to replace the root text-nodes by new merged root text-nodes and
+ * update the pre values in the elem and attr relations.
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param counter the actual offset of saved variables
+ */
 static void
 is2ns_node (opt_t *f, int counter)
 {
@@ -4951,6 +4978,7 @@ is2ns_node (opt_t *f, int counter)
             "_elem_kind := _elem_kind%03u;\n"
             "_elem_prop := _elem_prop%03u;\n"
             "_elem_frag := _elem_frag%03u;\n"
+            /* select text root nodes */
             "var rootnodes := _elem_level.ord_uselect(chr(0)).mirror();\n"
             "rootnodes := rootnodes.leftfetchjoin(_elem_kind);\n"
             "var textnodes := rootnodes.ord_uselect(TEXT).mark(0@0).reverse();\n"
@@ -5028,6 +5056,7 @@ is2ns_node (opt_t *f, int counter)
             "_elem_prop := res_mu_is2ns.fetch(5);\n"
             "_elem_frag := res_mu_is2ns.fetch(6);\n"
             "var preNew_preOld := res_mu_is2ns.fetch(7);\n"
+            /* update pre numbers */
             "_attr_own := _attr_own%03u.leftjoin(preNew_preOld.reverse());\n"
             "res_mu_is2ns := nil_oid_bat;\n"
             "preNew_preOld := nil_oid_oid;\n"
@@ -5161,6 +5190,15 @@ translateAggregates (opt_t *f, int code, int rc,
     return (code)?rcode:NORMAL;
 }
 
+/**
+ * fn_abs translates the builtin functions fn:abs, fn:ceiling, fn:floor,
+ * and fn:round
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param code the number indicating, which result interface is preferred
+ * @param rc the integer indicating which kind the input has used
+ * @param op the operation, which has to be performed
+ */
 static void
 fn_abs (opt_t *f, int code, int rc, char *op)
 {
@@ -5379,6 +5417,17 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
     deleteResult_ (f, counter, STR);
 }
 
+/**
+ * prep_str_funs evaluates two function arguments, which have the return
+ * type string?. They are prepared by retrieving the values (if not already
+ * present) and filling the gaps (empty sequence) with empty strings.
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param cur_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param c the function argument list
+ * @return the updated counter value
+ */
 static int
 prep_str_funs (opt_t *f, int cur_level, int counter, PFcnode_t *c)
 {
@@ -5398,10 +5447,20 @@ prep_str_funs (opt_t *f, int cur_level, int counter, PFcnode_t *c)
     return counter;
 }
 
+/**
+ * return_str_funs prepares the result for a function,
+ * which returns a result of the type string. It uses the
+ * given interface (code) and relies on a variable 'res'.
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param code the number indicating, which result interface is preferred
+ * @param cur_level the level of the for-scope
+ * @param fn_name the name of the function, which generates this code
+ */
 static void
-return_str_funs (opt_t *f, int code, int cur_level, 
-                 char *item_ext, char *fn_name)
+return_str_funs (opt_t *f, int code, int cur_level, char *fn_name)
 {
+    char *item_ext = kind_str(STR);
     if (code)
         milprintf(f, "item%s := res;\n", item_ext);
     else 
@@ -5420,6 +5479,16 @@ return_str_funs (opt_t *f, int code, int cur_level,
             fn_name);
 }
 
+/**
+ * fn_starts_with translates the builtin functions fn:starts-with 
+ * and fn:ends-with
+ *
+ * @param f the Stream the MIL code is printed to
+ * @param op the operation, which has to be performed
+ * @param cur_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param c the Core node containing the rest of the subtree
+ */
 static void
 fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
 {
@@ -5445,13 +5514,21 @@ fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
     deleteResult_ (f, counter, STR);
 }
 
+/**
+ * fn_substring translates the builtin function fn:substring 
+ * @param f the Stream the MIL code is printed to
+ * @param code the number indicating, which result interface is preferred
+ * @param cur_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param fun the function information
+ * @param c the head of the function argument list
+ */
 static void
 fn_substring (opt_t *f, int code, int cur_level, int counter, 
               PFfun_t *fun, PFcnode_t *c)
 {
     char *item_ext, *dbl_ext;
     int str_counter, rc;
-    bool three_args = (fun->arity == 3)?true:false;
 
     item_ext = kind_str(STR);
     dbl_ext = kind_str(DBL);
@@ -5470,17 +5547,23 @@ fn_substring (opt_t *f, int code, int cur_level, int counter,
     counter++;
     saveResult_ (f, counter, DBL);
 
-    if (three_args)
+    /* tests wether there exists a substring lenght information */
+    if (fun->arity == 3)
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, RRL(c));
         if (!rc)
             milprintf(f, "item%s := item.leftfetchjoin(dbl_values);\n", dbl_ext);
         milprintf(f,
                 "{ # fn:substring\n"
+                /* calculates the offset of the start characters */
                 "var start := item%s%03u.[round_up]().[int]().[-](1);\n"
+                /* calculates the offset of the end characters */
                 "var end := start.[+](item%s.[round_up]().[int]());\n"
+                /* start from an positive character */
                 "start := start.[max](0);\n"
+                /* replaces the end offset by the length of the substring */
                 "end := end.[-](start);\n"
+                /* calculates the substring */
                 "var res := [string](item%s%03u, start, end);\n"
                 "start := nil_oid_dbl;\n"
                 "end := nil_oid_dbl;\n",
@@ -5518,6 +5601,17 @@ fn_substring (opt_t *f, int code, int cur_level, int counter,
     deleteResult_ (f, str_counter, STR);
 }
 
+/**
+ * fn_name translates the builtin functions fn:name, fn:local-name, 
+ * and fn:namespace-uri
+ * @param f the Stream the MIL code is printed to
+ * @param code the number indicating, which result interface is preferred
+ * @param cur_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param c the head of the function argument list
+ * @param name the name of the built-in function
+ * @result the kind indicating, which result interface is chosen
+ */
 static int
 fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *name)
 {
@@ -5525,6 +5619,7 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
     translate2MIL (f, NORMAL, cur_level, counter, L(c));
     milprintf(f,
             "{ # fn:%s\n"
+            /* looks up the element nodes */
             "var map := kind.get_type(ELEM).mark(0@0).reverse();\n"
             "var elem := map.leftfetchjoin(item);\n"
             "var elem_frag := map.leftfetchjoin(kind.get_fragment());\n"
@@ -5537,14 +5632,18 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
             "elem_frag := map.leftfetchjoin(elem_frag);\n"
             "elem_oid  := map.leftfetchjoin(elem_oid);\n"
             "map := nil_oid_oid;\n"
+            /* gets the qname keys */
             "elem := mposjoin(elem, elem_frag, ws.fetch(PRE_PROP));\n"
 
+            /* looks up the attribute nodes */
             "map := kind.get_type(ATTR).mark(0@0).reverse();\n"
             "var attr := map.leftfetchjoin(item);\n"
             "var attr_frag := map.leftfetchjoin(kind.get_fragment());\n"
             "var attr_oid := map;\n"
             "map := nil_oid_oid;\n"
+            /* gets the qname keys */
             "attr := mposjoin(attr, attr_frag, ws.fetch(ATTR_QN));\n"
+            /* merges the qname keys of attributes and element nodes */
             "var res_mu := merged_union(elem_oid, attr_oid, "
                                        "elem, attr, "
                                        "elem_frag, attr_frag);\n"
@@ -5568,6 +5667,7 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
                 "var res := mposjoin(qname, qname_frag, ws.fetch(QN_URI));\n");
     else if (!strcmp(name,"name"))
         milprintf(f,
+                /* creates the string representation of the qnames */
                 "var prefixes := mposjoin(qname, qname_frag, ws.fetch(QN_PREFIX));\n"
                 "var prefix_bool := prefixes.[=](\"\");\n"
                 "var true_oid := prefix_bool.ord_uselect(true).mark(0@0).reverse();\n"
@@ -6103,13 +6203,13 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         if (strcmp(lx,"nil")) {
             milprintf(f,
                 "# leftfetchjoin that cannot be pushed below the theta-join (yet?)\n"
-                "fst_iter := fst_iter.leftjoin(reverse(lx));\n");
+                "fst_iter := fst_iter.leftjoin(reverse(%s));\n",lx);
         }
         /* pushdown stuff */
         if (strcmp(rx,"nil")) {
             milprintf(f,
                 "# leftfetchjoin that cannot be pushed below the theta-join (yet?)\n"
-                "snd_iter := snd_iter.leftjoin(rx);\n");
+                "snd_iter := snd_iter.leftjoin(%s);\n",rx);
         }
     }
     else
@@ -6811,7 +6911,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 item_ext,
                 item_ext, counter);
 
-        return_str_funs (f, code, cur_level, item_ext, "fn:substring-before");
+        return_str_funs (f, code, cur_level, "fn:substring-before");
         deleteResult_ (f, counter, STR);
         return (code)?STR:NORMAL;
     }
@@ -6830,7 +6930,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 item_ext,
                 item_ext, counter);
                 
-        return_str_funs (f, code, cur_level, item_ext, "fn:substring-after");
+        return_str_funs (f, code, cur_level, "fn:substring-after");
         deleteResult_ (f, counter, STR);
         return (code)?STR:NORMAL;
     }
@@ -6847,7 +6947,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         add_empty_strings (f, STR, cur_level);
         milprintf(f, "var res := item%s;\n", item_ext);
 
-        return_str_funs (f, code, cur_level, item_ext, "fn:normalize-space");
+        return_str_funs (f, code, cur_level, "fn:normalize-space");
         return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"lower-case")))
@@ -6863,7 +6963,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         add_empty_strings (f, STR, cur_level);
         milprintf(f, "var res := item%s;\n", item_ext);
 
-        return_str_funs (f, code, cur_level, item_ext, "fn:lower-case");
+        return_str_funs (f, code, cur_level, "fn:lower-case");
         return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"upper-case")))
@@ -6879,7 +6979,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         add_empty_strings (f, STR, cur_level);
         milprintf(f, "var res := item%s;\n", item_ext);
 
-        return_str_funs (f, code, cur_level, item_ext, "fn:upper-case");
+        return_str_funs (f, code, cur_level, "fn:upper-case");
         return (code)?STR:NORMAL;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"string-length")))
@@ -7622,7 +7722,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 milprintf(f,
                         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
                         "pos := iter.project(1@0);\n"
-                        "item%s := iter.project(dbl(%g));\n"
+                        "item%s := iter.project(dbl(%gLL));\n"
                         "kind := iter.project(DEC);\n",
                         cur_level, kind_str(rc), 
                         c->sem.dec);
@@ -7633,8 +7733,8 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 milprintf(f,
                         "{\n"
                         "dec_values := dec_values.seqbase(nil)"
-                                                ".insert(nil,dbl(%g)).seqbase(0@0);\n"
-                        "var itemID := dec_values.ord_uselect(dbl(%g));\n"
+                                                ".insert(nil,dbl(%gLL)).seqbase(0@0);\n"
+                        "var itemID := dec_values.ord_uselect(dbl(%gLL));\n"
                         "itemID := itemID.reverse().fetch(0);\n",
                         c->sem.dec, c->sem.dec);
                 /* translateConst needs a bound variable itemID */
@@ -7651,7 +7751,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 milprintf(f,
                         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
                         "pos := iter.project(1@0);\n"
-                        "item%s := iter.project(dbl(%g));\n"
+                        "item%s := iter.project(dbl(%gLL));\n"
                         "kind := iter.project(DBL);\n",
                         cur_level, kind_str(rc), 
                         c->sem.dbl);
@@ -7662,8 +7762,8 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 milprintf(f,
                         "{\n"
                         "dbl_values := dbl_values.seqbase(nil)"
-                                                ".insert(nil,dbl(%g)).seqbase(0@0);\n"
-                        "var itemID := dbl_values.ord_uselect(dbl(%g));\n"
+                                                ".insert(nil,dbl(%gLL)).seqbase(0@0);\n"
+                        "var itemID := dbl_values.ord_uselect(dbl(%gLL));\n"
                         "itemID := itemID.reverse().fetch(0);\n",
                         c->sem.dbl, c->sem.dbl);
                 /* translateConst needs a bound variable itemID */
@@ -8425,6 +8525,12 @@ simplifyCoreTree (PFcnode_t *c)
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"data")) && 
                      PFty_subtype(DL(c)->type, PFty_star (PFty_atomic ())))
+            {
+                /* don't use function - omit apply and arg node */
+                *c = *(DL(c));
+            }
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"string")) && 
+                     PFty_subtype(DL(c)->type, PFty_string ()))
             {
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));

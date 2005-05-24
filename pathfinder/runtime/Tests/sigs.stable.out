@@ -70,6 +70,7 @@ module 'pathfinder'
 #-------------------------------------------------#
 [ "delete_all_docs(bit) : void"			  ]
 [ "delete_doc(str) : void"			  ]
+[ "pfstart() : void"				  ]
 [ "pfstart(bit) : void"				  ]
 [ "shred_doc(str, str) : void"														  ]
 [ "xmlcache_add_rule(str, any) : void"		  ]

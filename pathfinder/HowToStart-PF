@@ -282,7 +282,7 @@ There are two alternatives:
 
 Note, the first parameter of "shred_doc" must be an absolute URI.
 The (optional) second parameter is a logical name ("alias") that can 
-be used to refer the document using XQuery's built-in "fc:doc()" 
+be used to refer to the document using XQuery's built-in "fc:doc()" 
 function.
 
 Once "shred_doc" has successfully finished, the document is persistently
@@ -292,7 +292,7 @@ and restarting the Mserver.
 The Document Cache
 ------------------
 
-Mserver allows te use of any URI in the fn:doc() xquery function,
+Mserver allows the use of any URI in the fn:doc() xquery function,
 such that you can query XML documents in local files, on FTP sites, 
 on web sites, etc..
 
@@ -333,15 +333,18 @@ Use the xquery language setting of MapiClient (-lxquery or short -lx):
 
 MapiClient -lx [files]
 
-This executes a *single* xquery found in the file (or multiple files, which are concatenated),
-or on standard input (if no file is passed), and prints the serialized result. 
+This executes a *single* xquery found in the file (or multiple files, 
+which are concatenated), or on standard input (if no file is passed), 
+and prints the serialized result. 
 
-In case of standard input, interactive mode is not allowed. You must pipe in a script:
+In case of standard input, interactive mode is not allowed. You must pipe 
+in a script:
 
 MapiClient -lx < file.xq
 
-You may request timing information with the MapiClient --time (-T) option, in which case extra 
-lines are appended to the output, that split out execution time:
+You may request timing information with the MapiClient --time (-T) option, 
+in which case extra lines are appended to the output, that split out 
+execution time:
 
 [Trans] XQuery-to-MIL translation time 
 [Fetch] XML document load time (for XML files on the web)
@@ -350,13 +353,15 @@ lines are appended to the output, that split out execution time:
 [Print] serialization time
 [Timer] total time 
 
-The Shred time is zero, if the document was already cached on the server (or if your
-query does not involve any documents). The total time may be larger than the sum of the 
-other times; the difference then is communication time between MapiClient and the Mserver.
+The Shred time is zero, if the document was already cached on the server (or 
+if your query does not involve any documents). The total time may be larger 
+than the sum of the other times; the difference then is communication time 
+between MapiClient and the Mserver.
 
-The default mode ("dm") for xquery output results are pretty-printed sequences. 
-You may enforce all output to be valid XML, with the MapiClient option "-s xml". 
-Your output will then be enclosed by <XQueryResult> root tags. 
+The default mode ("dm") for xquery output results are pretty-printed 
+sequences. You may enforce all output to be valid XML, with the MapiClient 
+option "-s xml". Your output will then be enclosed by <XQueryResult> root 
+tags. 
 
 The output mode (dm or xml) may be set with the xquery_output setting in the
 MonetDB.conf file.
