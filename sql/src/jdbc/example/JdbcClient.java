@@ -68,6 +68,9 @@ public class JdbcClient {
 		value = (ArrayList)(value.clone());
 		arg.put("b", value);
 		arg.put("-database", value);
+		value = (ArrayList)(value.clone());
+		arg.put("l", value);
+		arg.put("-language", value);
 
 		// arguments which can have zero to lots of arguments
 		value = new ArrayList();
@@ -112,6 +115,7 @@ public class JdbcClient {
 		((ArrayList)(arg.get("-help"))).add(null);
 		((ArrayList)(arg.get("e"))).add(null);
 		((ArrayList)(arg.get("b"))).add("demo");
+		((ArrayList)(arg.get("l"))).add("sql");
 
 		// we cannot put password in the arg map, since it would be accessable
 		// from the command line by then.
@@ -143,6 +147,8 @@ public class JdbcClient {
 					((ArrayList)(arg.get("Xdebug"))).set(1, prop.getProperty("debug"));
 				if (prop.containsKey("database"))
 					((ArrayList)(arg.get("b"))).set(1, prop.getProperty("database"));
+				if (prop.containsKey("language"))
+					((ArrayList)(arg.get("l"))).set(1, prop.getProperty("language"));
 
 				pass = prop.getProperty("password", pass);
 			} catch (IOException e) {
@@ -239,9 +245,10 @@ public class JdbcClient {
 		if (((ArrayList)(arg.get("-help"))).get(1) != null) {
 			System.out.print(
 "Usage java -jar MonetDB_JDBC.jar [-h host[:port]] [-p port] [-f file] [-u user]\n" +
-"                                 [-b [database]] [-d [table]] [-e] [-X<opt>]\n" +
-"or using long option equivalents --host --port --file --user --dump\n" +
-"--echo --database.\n" +
+"                                 [-l language] [-b [database]] [-d [table]]\n" +
+"                                 [-e] [-X<opt>]\n" +
+"or using long option equivalents --host --port --file --user --language\n" +
+"--dump --echo --database.\n" +
 "Arguments may be written directly after the option like -p45123.\n" +
 "\n" +
 "If no host and port are given, localhost and 45123 are assumed.  An .monetdb\n" +
@@ -261,8 +268,9 @@ public class JdbcClient {
 "-f --file  A file name to use either for reading or writing.  The file will\n" +
 "           be used for writing when dump mode is used (-d --dump).\n" +
 "           In read mode, the file can also be an URL pointing to a plain\n" +
-"           text file that is optionally gzip compressed.\n " +
+"           text file that is optionally gzip compressed.\n" +
 "-u --user  The username to use when connecting to the database.\n" +
+"-l --language  Use the given language, for example 'xquery'.\n" +
 "-d --dump  Dumps the given table(s), or the complete database if none given.\n" +
 "--help     This screen.\n" +
 "-e --echo  Also outputs the contents of the input file, if any.\n" +
@@ -324,6 +332,8 @@ public class JdbcClient {
 		if ("line".equals(tmp)) attr += "blockmode=false&";
 		tmp = (String)(((ArrayList)(arg.get("Xblksize"))).get(1));
 		if (tmp != null) attr += "blockmode_blocksize=" + tmp + "&";
+		String lang = (String)(((ArrayList)(arg.get("l"))).get(1));
+		if (!"sql".equals(lang)) attr += "language=" + lang + "&";
 
 		ArrayList ltmp = (ArrayList)(arg.get("Xdebug"));
 		if (ltmp.get(1) != null) {
@@ -355,12 +365,19 @@ public class JdbcClient {
 			System.err.println("Database connect failed: " + e.getMessage());
 			System.exit(-1);
 		}
-		dbmd = con.getMetaData();
+		try {
+			dbmd = con.getMetaData();
+		} catch (SQLException e) {
+			// we ignore this because it's probably because we don't use
+			// SQL language
+			dbmd = null;
+		}
 		stmt = con.createStatement();
 
-		// see if we will have to perform a database dump
+		// see if we will have to perform a database dump (only in SQL
+		// mode)
 		ltmp = (ArrayList)(arg.get("d"));
-		if (ltmp.get(1) != null) {
+		if ("sql".equals(lang) && ltmp.get(1) != null) {
 			ResultSet tbl;
 
 			// use the given file for writing
@@ -507,10 +524,12 @@ public class JdbcClient {
 			} else {
 				// print welcome message
 				out.println("Welcome to the MonetDB interactive JDBC terminal!");
-				out.println("Database: " + dbmd.getDatabaseProductName() + " " +
-					dbmd.getDatabaseProductVersion());
-				out.println("Driver: " + dbmd.getDriverName() + " " +
-					dbmd.getDriverVersion());
+				if (dbmd != null) {
+					out.println("Database: " + dbmd.getDatabaseProductName() + " " +
+						dbmd.getDatabaseProductVersion());
+					out.println("Driver: " + dbmd.getDriverName() + " " +
+						dbmd.getDriverVersion());
+				}
 				out.println("Type \\q to quit, \\h for a list of available commands");
 				out.println("auto commit mode: on");
 
@@ -559,9 +578,7 @@ public class JdbcClient {
 		// an SQL stack keeps track of ( " and '
 		SQLStack stack = new SQLStack();
 		// a query part is a line of an SQL query
-		QueryPart qp;
-		// warnings generated during querying
-		SQLWarning warn;
+		QueryPart qp = null;
 
 		String query = "", curLine;
 		boolean wasComplete = true, doProcess;
@@ -571,7 +588,8 @@ public class JdbcClient {
 		}
 
 		// the main (interactive) process loop
-		for (int i = 1; (curLine = in.readLine()) != null; i++) {
+		int i = 0;
+		for (i = 1; (curLine = in.readLine()) != null; i++) {
 			if (doEcho) {
 				out.println(curLine);
 				out.flush();
@@ -666,121 +684,18 @@ public class JdbcClient {
 				if (doProcess) {
 					query += qp.getQuery() + (qp.hasOpenQuote() ? "\\n" : " ");
 					if (qp.isComplete()) {
+						query = query.substring(0, query.length() - 2);
+						// execute query
 						try {
-							// execute the query, let the driver decide what type it is
-							int aff = -1;
-							boolean	nextRslt = stmt.execute(query);
-							if (!nextRslt) aff = stmt.getUpdateCount();
-							do {
-								if (nextRslt) {
-									// we have a ResultSet, print it
-									ResultSet rs = stmt.getResultSet();
-									ResultSetMetaData md = rs.getMetaData();
-									// find the widths of the columns
-									int[] width = new int[md.getColumnCount()];
-									for (int j = 0; j < md.getColumnCount(); j++) {
-										width[j] = Math.max((md.getColumnDisplaySize(j + 1) < 6 ? 6 : md.getColumnDisplaySize(j + 1)), md.getColumnLabel(j + 1).length());
-									}
-
-									out.print("+");
-									for (int j = 0; j < width.length; j++)
-										out.print("-" + repeat('-', width[j]) + "-+");
-									out.println();
-
-									out.print("|");
-									for (int j = 0; j < width.length; j++) {
-										out.print(" " + md.getColumnLabel(j + 1) + repeat(' ', width[j] - md.getColumnLabel(j + 1).length()) +  " |");
-									}
-									out.println();
-
-									out.print("+");
-									for (int j = 0; j < width.length; j++)
-										out.print("=" + repeat('=', width[j]) + "=+");
-									out.println();
-
-									int count = 0;
-									for (; rs.next(); count++) {
-										out.print("|");
-										for (int j = 0; j < width.length; j++) {
-											Object rdata = rs.getObject(j + 1);
-											String data;
-											if (rdata == null) {
-												data = "<NULL>";
-											} else {
-												data = rdata.toString();
-											}
-											if (md.isSigned(j + 1)) {
-												// we have a numeric type here
-												out.print(" " + repeat(' ', Math.max(width[j] - data.length(), 0)) + data +  " |");
-											} else {
-												// something else
-												out.print(" " + data + repeat(' ', Math.max(width[j] - data.length(), 0)) +  " |");
-											}
-										}
-										out.println();
-									}
-
-									out.print("+");
-									for (int j = 0; j < width.length; j++)
-										out.print("-" + repeat('-', width[j]) + "-+");
-									out.println();
-
-									out.println(count + " row" + (count != 1 ? "s" : ""));
-
-									// if there were warnings for this result,
-									// show them!
-									warn = rs.getWarnings();
-									if (warn != null) {
-										// force stdout to be written so the
-										// warning appears below it
-										out.flush();
-										do {
-											System.err.println("ResultSet warning: " +
-												warn.getMessage());
-											warn = warn.getNextWarning();
-										} while (warn != null);
-										rs.clearWarnings();
-									}
-									rs.close();
-								} else if (aff != -1) {
-									if (aff == Statement.SUCCESS_NO_INFO) {
-										out.println("Operation successful");
-									} else {
-										// we have an update count
-										out.println(aff + " affected row" + (aff != 1 ? "s" : ""));
-									}
-								}
-
-								out.println();
-								out.flush();
-							} while ((nextRslt = stmt.getMoreResults()) ||
-									 (aff = stmt.getUpdateCount()) != -1);
-
-							// if there were warnings for this statement,
-							// and/or connection show them!
-							warn = stmt.getWarnings();
-							while (warn != null) {
-								System.err.println("Statement warning: " +
-									warn.getMessage());
-								warn = warn.getNextWarning();
-							}
-							stmt.clearWarnings();
-							warn = con.getWarnings();
-							while (warn != null) {
-								System.err.println("Connection warning: " +
-									warn.getMessage());
-								warn = warn.getNextWarning();
-							}
-							con.clearWarnings();
+							executeQuery(query, stmt, out);
 						} catch (SQLException e) {
 							if (hasFile) {
 								System.err.println("Error on line " + i + ": " + e.getMessage());
 							} else {
 								System.err.println("Error: " + e.getMessage());
 							}
-						} finally {
-							query = "";
 						}
+						query = "";
 					}
 					wasComplete = qp.isComplete();
 				}
@@ -788,6 +703,142 @@ public class JdbcClient {
 			if (!hasFile) out.print(getPrompt(user, stack, wasComplete));
 			out.flush();
 		}
+		if (qp != null) {
+			try {
+				if (query != "") executeQuery(query, stmt, out);
+			} catch (SQLException e) {
+				if (hasFile) {
+					System.err.println("Error on line " + i + ": " + e.getMessage());
+				} else {
+					System.err.println("Error: " + e.getMessage());
+				}
+			}
+		}
+	}
+
+	/**
+	 * Executes the given query and prints the result tabularised to the
+	 * given PrintWriter stream.  The result of this method is the
+	 * default output of a query: tabular data.
+	 *
+	 * @param query the query to execute
+	 * @param stmt the Statement to execute the query on
+	 * @param out the PrintWriter to write to
+	 * @throws SQLException if a database related error occurs
+	 */
+	private static void executeQuery(String query,
+			Statement stmt,
+			PrintWriter out)
+		throws SQLException
+	{
+		// warnings generated during querying
+		SQLWarning warn;
+
+		// execute the query, let the driver decide what type it is
+		int aff = -1;
+		boolean	nextRslt = stmt.execute(query);
+		if (!nextRslt) aff = stmt.getUpdateCount();
+		do {
+			if (nextRslt) {
+				// we have a ResultSet, print it
+				ResultSet rs = stmt.getResultSet();
+				ResultSetMetaData md = rs.getMetaData();
+				// find the widths of the columns
+				int[] width = new int[md.getColumnCount()];
+				for (int j = 0; j < md.getColumnCount(); j++) {
+					width[j] = Math.max((md.getColumnDisplaySize(j + 1) < 6 ? 6 : md.getColumnDisplaySize(j + 1)), md.getColumnLabel(j + 1).length());
+				}
+
+				out.print("+");
+				for (int j = 0; j < width.length; j++)
+					out.print("-" + repeat('-', width[j]) + "-+");
+				out.println();
+
+				out.print("|");
+				for (int j = 0; j < width.length; j++) {
+					out.print(" " + md.getColumnLabel(j + 1) + repeat(' ', width[j] - md.getColumnLabel(j + 1).length()) +  " |");
+				}
+				out.println();
+
+				out.print("+");
+				for (int j = 0; j < width.length; j++)
+					out.print("=" + repeat('=', width[j]) + "=+");
+				out.println();
+
+				int count = 0;
+				for (; rs.next(); count++) {
+					out.print("|");
+					for (int j = 0; j < width.length; j++) {
+						Object rdata = rs.getObject(j + 1);
+						String data;
+						if (rdata == null) {
+							data = "<NULL>";
+						} else {
+							data = rdata.toString();
+						}
+						if (md.isSigned(j + 1)) {
+							// we have a numeric type here
+							out.print(" " + repeat(' ', Math.max(width[j] - data.length(), 0)) + data +  " |");
+						} else {
+							// something else
+							out.print(" " + data + repeat(' ', Math.max(width[j] - data.length(), 0)) +  " |");
+						}
+					}
+					out.println();
+				}
+
+				out.print("+");
+				for (int j = 0; j < width.length; j++)
+					out.print("-" + repeat('-', width[j]) + "-+");
+				out.println();
+
+				out.println(count + " row" + (count != 1 ? "s" : ""));
+
+				// if there were warnings for this result,
+				// show them!
+				warn = rs.getWarnings();
+				if (warn != null) {
+					// force stdout to be written so the
+					// warning appears below it
+					out.flush();
+					do {
+						System.err.println("ResultSet warning: " +
+							warn.getMessage());
+						warn = warn.getNextWarning();
+					} while (warn != null);
+					rs.clearWarnings();
+				}
+				rs.close();
+			} else if (aff != -1) {
+				if (aff == Statement.SUCCESS_NO_INFO) {
+					out.println("Operation successful");
+				} else {
+					// we have an update count
+					out.println(aff + " affected row" + (aff != 1 ? "s" : ""));
+				}
+			}
+
+			out.println();
+			out.flush();
+		} while ((nextRslt = stmt.getMoreResults()) ||
+				 (aff = stmt.getUpdateCount()) != -1);
+
+		// if there were warnings for this statement,
+		// and/or connection show them!
+		warn = stmt.getWarnings();
+		while (warn != null) {
+			System.err.println("Statement warning: " +
+				warn.getMessage());
+			warn = warn.getNextWarning();
+		}
+		stmt.clearWarnings();
+		warn = con.getWarnings();
+		while (warn != null) {
+			System.err.println("Connection warning: " +
+				warn.getMessage());
+			warn = warn.getNextWarning();
+		}
+		con.clearWarnings();
 	}
 
 	/**

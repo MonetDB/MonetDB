@@ -317,7 +317,7 @@ public class MonetStatement implements Statement {
 		// always add ; since that doesn't hurt in any case and completes
 		// queries that haven't got one
 		lastHeaderList = connection.addQuery(
-			"s" + sql + ";",
+			sql,
 			fetchSize,
 			maxRows,
 			resultSetType,
