@@ -6103,13 +6103,13 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         if (strcmp(lx,"nil")) {
             milprintf(f,
                 "# leftfetchjoin that cannot be pushed below the theta-join (yet?)\n"
-                "fst_iter := fst_iter.leftjoin(reverse(lx));\n");
+                "fst_iter := fst_iter.leftjoin(reverse(%s));\n",lx);
         }
         /* pushdown stuff */
         if (strcmp(rx,"nil")) {
             milprintf(f,
                 "# leftfetchjoin that cannot be pushed below the theta-join (yet?)\n"
-                "snd_iter := snd_iter.leftjoin(rx);\n");
+                "snd_iter := snd_iter.leftjoin(%s);\n",rx);
         }
     }
     else
