@@ -1,24 +1,3 @@
-=head1 COPYRIGHT AND LICENCE
-
-The contents of this file are subject to the MonetDB Public
-License Version 1.0 (the "License"); you may not use this file
-except in compliance with the License. You may obtain a copy of
-the License at
-http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
-
-Software distributed under the License is distributed on an "AS
-IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-implied. See the License for the specific language governing
-rights and limitations under the License.
-
-The Original Code is the Monet Database System.
-
-The Initial Developer of the Original Code is CWI.
-Portions created by CWI are Copyright (C) 1997-2005 CWI.
-All Rights Reserved.
-
-=cut
-
 package DBD::monetdb;
 
 use strict;
@@ -689,7 +668,6 @@ sub DESTROY {
 
 
 1;
-__END__
 
 =head1 NAME
 
@@ -705,48 +683,13 @@ DBD::monetdb - MonetDB Driver for DBI
   $sth->execute;
   $sth->dump_results;
 
-=head1 EXAMPLE
-
-  #!/usr/bin/perl
-
-  use strict;
-  use DBI;
-
-  # Connect to the database.
-  my $dbh = DBI->connect('dbi:monetdb:host=localhost',
-    'joe', "joe's password", { RaiseError => 1 } );
-
-  # Drop table 'foo'. This may fail, if 'foo' doesn't exist.
-  # Thus we put an eval around it.
-  eval { $dbh->do('DROP TABLE foo') };
-  print "Dropping foo failed: $@\n" if $@;
-
-  # Create a new table 'foo'. This must not fail, thus we don't
-  # catch errors.
-  $dbh->do('CREATE TABLE foo (id INTEGER, name VARCHAR(20))');
-
-  # INSERT some data into 'foo'. We are using $dbh->quote() for
-  # quoting the name.
-  $dbh->do('INSERT INTO foo VALUES (1, ' . $dbh->quote('Tim') . ')');
-
-  # Same thing, but using placeholders
-  $dbh->do('INSERT INTO foo VALUES (?, ?)', undef, 2, 'Jochen');
-
-  # Now retrieve data from the table.
-  my $sth = $dbh->prepare('SELECT id, name FROM foo');
-  $sth->execute;
-  while ( my $row = $sth->fetch ) {
-    print "Found a row: id = $row->[0], name = $row->[1]\n";
-  }
-
-  # Disconnect from the database.
-  $dbh->disconnect;
-
 =head1 DESCRIPTION
 
 DBD::monetdb is a Pure Perl client interface for the MonetDB Database Server.
 However, it requires the SWIG generated MapiLib - a wrapper module for
 libMapi.
+
+=head2 Outline Usage
 
 From perl you activate the interface with the statement
 
@@ -790,7 +733,46 @@ you can retreive a row of data:
 If your table has columns ID and NAME, then $row will be array ref with
 index 0 and 1.
 
-=head2 Class Methods
+=head2 Example
+
+  #!/usr/bin/perl
+
+  use strict;
+  use DBI;
+
+  # Connect to the database.
+  my $dbh = DBI->connect('dbi:monetdb:host=localhost',
+    'joe', "joe's password", { RaiseError => 1 } );
+
+  # Drop table 'foo'. This may fail, if 'foo' doesn't exist.
+  # Thus we put an eval around it.
+  eval { $dbh->do('DROP TABLE foo') };
+  print "Dropping foo failed: $@\n" if $@;
+
+  # Create a new table 'foo'. This must not fail, thus we don't
+  # catch errors.
+  $dbh->do('CREATE TABLE foo (id INTEGER, name VARCHAR(20))');
+
+  # INSERT some data into 'foo'. We are using $dbh->quote() for
+  # quoting the name.
+  $dbh->do('INSERT INTO foo VALUES (1, ' . $dbh->quote('Tim') . ')');
+
+  # Same thing, but using placeholders
+  $dbh->do('INSERT INTO foo VALUES (?, ?)', undef, 2, 'Jochen');
+
+  # Now retrieve data from the table.
+  my $sth = $dbh->prepare('SELECT id, name FROM foo');
+  $sth->execute;
+  while ( my $row = $sth->fetch ) {
+    print "Found a row: id = $row->[0], name = $row->[1]\n";
+  }
+
+  # Disconnect from the database.
+  $dbh->disconnect;
+
+=head1 METHODS
+
+=head2 Driver Handle Methods
 
 =over
 
@@ -818,14 +800,26 @@ The port where MonetDB daemon listens to. Default for SQL is 45123.
 
 =back
 
-=head2 MetaData Methods
+=head2 Database Handle Methods
+
+The following methods are currently not supported:
+
+  last_insert_id
+  bind_param_inout
 
 All MetaData methods are supported. However, column_info() currently doesn't
 provide length (size, ...) related information.
 The foreign_key_info() method returns a SQL/CLI like result set,
 because it provides additional information about unique keys.
 
-=head1 HANDLE ATTRIBUTES
+=head2 Statement Handle Methods
+
+The following methods are currently not supported:
+
+  more_results
+  blob_read
+
+=head1 ATTRIBUTES
 
 The following attributes are currently not supported:
 
@@ -855,6 +849,25 @@ based version of the driver (F<monet.pm>).
 Arjan Scherpenisse E<lt>acscherp@science.uva.nlE<gt> renamed this module to
 F<monetdbPP.pm> and derived the new MapiLib based version (F<monetdb.pm>).
 Current maintainer is Steffen Goeldner E<lt>sgoeldner@cpan.orgE<gt>.
+
+=head1 COPYRIGHT AND LICENCE
+
+The contents of this file are subject to the MonetDB Public
+License Version 1.0 (the "License"); you may not use this file
+except in compliance with the License. You may obtain a copy of
+the License at
+http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+
+Software distributed under the License is distributed on an "AS
+IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+implied. See the License for the specific language governing
+rights and limitations under the License.
+
+The Original Code is the Monet Database System.
+
+The Initial Developer of the Original Code is CWI.
+Portions created by CWI are Copyright (C) 1997-2005 CWI.
+All Rights Reserved.
 
 =head1 SEE ALSO
 
