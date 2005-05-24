@@ -1024,7 +1024,9 @@ def ApproveOutput (env, TST) :
 
                 f = open(patch+".1", "w")
                 for l in fileinput.input(patch+".0"):
-                    if len(l) < 2  or  ( l[:2] not in ['+!','+=']  and  l[:10] != '+ERROR = !'  and  l[:8] != '+ERROR: ' ) :        # or  filter.match(ln):
+                    if len(l) < 2  or  \
+                       ( l[:2] not in ['+!','+=']  and  l[:10] != '+ERROR = !'  and  \
+                         l[:8] != '+ERROR: '  and  l[:10] != '+WARNING: ' ) :        # or  filter.match(ln):
                         f.write(l)
                     else:
                         if FORCE:
@@ -1745,7 +1747,7 @@ def CheckPort(host,port) :
 
 def randomPort(l,h) :
     repeat = 9
-    host = ''
+    host = 'localhost'
     port = 0
     rpt = 0
     while rpt < repeat:
@@ -1764,7 +1766,7 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
 #               wait = 61
     wait = 61
     repeat = 5
-    host = ''
+    host = 'localhost'
     port = int(env[SERVER+'PORT'])
     rpt = 0
     while rpt < repeat:
@@ -1789,7 +1791,7 @@ def CheckSocket(env,SERVER,SrvrErr,LogLine) :
 ### CheckSocket(env,SERVER,SrvrErr,LogLine) #
 
 def CheckSocket2(env,SERVER,SrvrErr) :
-    host = ''
+    host = 'localhost'
     port = int(env[SERVER+'PORT'])
     busy, Serrno, Serrstr = CheckPort(host,port)
     if busy:
@@ -1818,7 +1820,7 @@ def CheckSocket2(env,SERVER,SrvrErr) :
 ### CheckSocket2(env,SERVER,SrvrErr) #
 
 def CheckSocket3(env,SERVER,ErrFileName) :
-    host = ''
+    host = 'localhost'
     port = int(env[SERVER+'PORT'])
     busy, Serrno, Serrstr = CheckPort(host,port)
     if busy:
@@ -2331,10 +2333,11 @@ else:
 os.environ['CYGPATH_W'] = '@CYGPATH_W@'
 os.environ['CYGPATH_WP'] = '@CYGPATH_WP@'
 
-if os.environ.has_key('HOST'):
-    HOST = os.environ['HOST']
-else:
-    HOST = 'localhost'
+HOST = 'localhost'
+#if os.environ.has_key('HOST'):
+#    HOST = os.environ['HOST']
+#else:
+#    HOST = ''
 ##elif os.name != "nt":
 ##    HOST = os.uname()[1]
 ##elif os.environ.has_key('COMPUTERNAME'):
@@ -2825,10 +2828,10 @@ def main(argv) :
                                                            (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec('python')       , 'python'
-        exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
-        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
-        exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['XQUERYPORT'])
-        exe['X100_Client']   = CheckExec(env['X100CLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['X100CLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host="%s" --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -u monetdb -P monetdb --host="%s" --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
+        exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb --host="%s" --port=%s' % (env['XQUERYCLIENT'], HOST, env['XQUERYPORT'])
+        exe['X100_Client']   = CheckExec(env['X100CLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host="%s" --port=%s' % (env['X100CLIENT'], opts.config, HOST, env['MAPIPORT'])
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe
@@ -2978,7 +2981,7 @@ def main(argv) :
             if MissingMods:
                 ErrXit('Stopping Pathfinder testing as modules "%s" are missing!' % str(MissingMods))
 
-        host = ''
+        host = 'localhost'
         for S in 'MAPI', 'SQL', 'XQUERY':
             port = int(env[S+'PORT'])
             busy, Serrno, Serrstr = CheckPort(host,port)
