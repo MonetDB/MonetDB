@@ -901,68 +901,63 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 	monetSetChannel(XQthread, in, out);
 
 	/* send challenge */
-        snprintf(buf, 100, "%2d%s", strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
-        if (stream_write(out, buf, strlen(buf), 1) < 0) 
-		return connect_error(in, out);
+	snprintf(buf, 100, "%2d%s", strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
+	if (stream_write(out, buf, strlen(buf), 1) < 0) 
+	return connect_error(in, out);
 
-        /* get user name (ignored later), and mapiclient mode */
-        memset(buf, 0, BUFSIZ);
-        user = buf;
-        if (stream_read(in, user, 1, 1) < 0)
-                return connect_error(in, out);
-        for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
-                user++;
-                if (stream_read(in, user, 1, 1) < 0)
-                        return connect_error(in, out);
-        }
-        *user = 0;
+	/* get user name (ignored later), and mapiclient mode */
+	memset(buf, 0, BUFSIZ);
+	user = buf;
+	if (stream_read(in, user, 1, 1) < 0)
+		return connect_error(in, out);
+	for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
+		user++;
+		if (stream_read(in, user, 1, 1) < 0)
+			return connect_error(in, out);
+	}
+	*user = 0;
 
 	/* check for blocked mode */
 	if (strncmp(buf + i - 8, ":blocked", 8) == 0) {
-                in = block_stream(stream_rstream(in));
-                out = block_stream(stream_wstream(out));
+		in = block_stream(stream_rstream(in));
+		out = block_stream(stream_wstream(out));
 		monetSetChannel(XQthread, in, out);
 	}
 
 	/* use the MAPI protocol to read as much xquery buffer as possible */
-	if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
-		return connect_error(in, out);
-	if (stream_flush(out))
-		return connect_error(in, out);
-
-	for (;buf;) {
-		ssize_t n = stream_read(in, buf + curlen, 1, maxlen - curlen);
-		if (n < 0)
+	while (1) {
+		if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
 			return connect_error(in, out);
-		if (n == 0) {
-			if (stream_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) < 0)
-				return connect_error(in, out);
-			if (stream_flush(out))
-				return connect_error(in, out);
-			n = stream_read(in, buf + curlen, 1, maxlen - curlen);
+		if (stream_flush(out))
+			return connect_error(in, out);
+
+		curlen = 0;
+		for (;buf;) {
+			ssize_t n = stream_read(in, buf + curlen, 1, maxlen - curlen);
 			if (n < 0)
 				return connect_error(in, out);
-			if (n == 0)
+			if (n == 0) {
 				break;
+			}
+			curlen += n;
+			if (curlen == maxlen) {
+				maxlen += 1024;
+				buf = GDKrealloc(buf, maxlen + 1);
+			}
 		}
-		curlen += n;
-		if (curlen == maxlen) {
-			maxlen += 1024;
-			buf = GDKrealloc(buf, maxlen + 1);
+
+		/* execute query */
+		if (buf) {
+			buf[curlen] = 0;	/* terminate (we know there is space) */
+
+			/* first line of the query is the mode */ 
+			for(xquery=buf; *xquery; xquery++)
+				if (*xquery == '\n') { *xquery++ = 0; break; }
+
+			ret = CMDxquery(buf, xquery); /* execute, see above */
 		}
 	}
-
-	/* execute query */
-	if (buf) {
-		buf[curlen] = 0;	/* terminate (we know there is space) */
-
-		/* first line of the query is the mode */ 
-		for(xquery=buf; *xquery; xquery++)
-			if (*xquery == '\n') { *xquery++ = 0; break; }
-
-		ret = CMDxquery(buf, xquery); /* execute, see above */
-		GDKfree(buf);
-	}
+	GDKfree(buf);
 
 	/* end of session */
 	stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);

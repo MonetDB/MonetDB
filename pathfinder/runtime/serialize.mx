@@ -199,6 +199,7 @@ typedef struct {
                                  * data-model mode, eg. look like GALAX */
         int     saxMode;        /* true if printing a Sax-O-Phone stream */
         int     mapiMode;       /* for DM or XML mode that should go on a MapiClient stream */
+        int     printMode;
         char*   dmSeparator;    /* seperation char in DM mode */
         BAT*    ws;             /* working set BAT */
         int     curFRAG;        /* current fragment used by working set */
@@ -321,6 +322,7 @@ static int createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
 
         ctx->dmMode = ctx->mapiMode = 0;
         ctx->saxMode = 1;
+        ctx->printMode = 0;
 	xmlNsInit( &ctx->nsTop );
 
         if ( strcmp(mode,"dm")==0 ) {
@@ -331,6 +333,11 @@ static int createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
             ctx->dmMode = ctx->mapiMode = 1;
         } else if ( strcmp(mode,"xml")==0 ) {
             ctx->saxMode = 0;
+        } else if (strcmp(mode, "xml-seq-mapi") == 0) {
+            ctx->saxMode = 0;
+            ctx->dmMode = 1;
+            ctx->mapiMode = 0;
+            ctx->printMode = 1;
         } else if ( strcmp(mode,"xml-mapi")==0 ) {
             ctx->saxMode = 0;
             ctx->mapiMode = 1;
@@ -1126,11 +1133,73 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
 
 #define XQRESTAG        "XQueryResult"
 
+/*
+ * BAT format definitions. These must be equal to the definitions
+ * in pathfinder.mx
+ */
+
+#define XTRACT_KIND(X)  (X & 63)
+#define XTRACT_FRAG(X)  (X >> 6)
+
+#define QNAME 2
+#define BOOL  3
+#define INT   4
+#define DEC   5
+#define DBL   6
+#define STR   7
+#define U_A   8
+#define NODE  32
+#define ELEM  33
+#define ATTR  34
+
 /**
  * Handle the start() of an XQUERY/Pathfinder result sequence
  */
-static int  seqHeadStart(XqueryCtx* ctx) {
-	if ( ! ctx->dmMode ) { /* dmMode has no header */
+static int id_sequence_counter = 0;
+static int  seqHeadStart(
+    XqueryCtx* ctx,
+    BAT* item,
+    BAT* kind,
+    BAT* strVAL)
+{
+    if (ctx->printMode ) {
+        /* calculate the length of the output */
+        int len = 9;
+        BUN p, q; 
+        BATloop(item, p, q) {
+            ptr vp;
+            oid pre, valoid;
+            pre = *(oid*)BUNhead(item, p);
+            valoid = *(oid*)BUNtail(item, p);
+            CHKVP( vp = idxTV(ctx,"kind",kind,pre) );
+            int cmbn_frag_kind = *(int*)vp;
+
+            switch( XTRACT_KIND(cmbn_frag_kind) ) {
+                case STR:
+                case U_A: {
+                    CHKVP(vp = idxTV(ctx,"strVAL",strVAL,valoid));
+                    str sv = (str)vp;
+                    int lastnl = 0, i, slen = strlen(sv);
+                    for (i = 0; i < slen; i++) {
+                        if (sv[i] == '\n') {
+                            if (len < (i - lastnl)) len = i - lastnl;
+                            lastnl = i;
+                        }
+                    }
+                    if (len < (i - lastnl)) len = i - lastnl;
+                } break;
+            }
+		}
+        /* write SQL-ish header */
+        stream_printf(GDKout,"#-\n");
+        stream_printf(GDKout,"# 3\t# querytype\n");
+        stream_printf(GDKout,"# xquery_result,\txquery_result\t# table_name\n");
+        stream_printf(GDKout,"# n,\txml\t# name\n");
+        stream_printf(GDKout,"# int,\tvarchar\t# type\n");
+        stream_printf(GDKout,"# 6,\t%d\t# length\n", len);
+        stream_printf(GDKout,"# %d,\t\t# tuplecount\n", BATcount(item));
+        stream_printf(GDKout,"# %d,\t\t# id\n", id_sequence_counter++); 
+	 } else if ( ! ctx->dmMode ) { /* dmMode has no header */
              if (ctx->mapiMode) {
                 stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
              } else if ( !ctx->saxMode ) {
@@ -1157,6 +1226,8 @@ static int  seqHeadEnd(XqueryCtx* ctx) {
 static int  seqEnd(XqueryCtx* ctx) {
         if ( ctx->saxMode ) {
                 handle_endElement(ctx,NULL,XQRESTAG,0/* not empty*/);
+        } else if (ctx->printMode) {
+            /* do nothing! */
         } else if ( ctx->dmMode ) {
                 stream_printf(GDKout, "\n"); 
         } else if (ctx->mapiMode) {
@@ -1269,25 +1340,6 @@ static int  seqEmitStr(XqueryCtx* ctx, str sv) {
  * defined above to handle the output generation.
  */
 
-/*
- * BAT format definitions. These must be equal to the definitions
- * in pathfinder.mx
- */
-
-#define XTRACT_KIND(X)  (X & 63)
-#define XTRACT_FRAG(X)  (X >> 6)
-
-#define QNAME 2
-#define BOOL  3
-#define INT   4
-#define DEC   5
-#define DBL   6
-#define STR   7
-#define U_A   8
-#define NODE  32
-#define ELEM  33
-#define ATTR  34
-
 int xquery_print_result_main(
                 str  mode,
                 BAT* ws,
@@ -1304,7 +1356,7 @@ int xquery_print_result_main(
         if ( !createWsContext(ctx,ws,-1,mode) )
 		return GDK_FAIL;
         /* */
-        if ( !seqHeadStart(ctx) )
+        if ( !seqHeadStart(ctx, item, kind, strVAL) )
 		return GDK_FAIL;
 	if ( ! ctx->dmMode ) {
 	    /* If the mode is not the DM mode do a scan of all attributes here
@@ -1336,7 +1388,9 @@ int xquery_print_result_main(
                 oid valoid = *(oid*)BUNtail(item, p);
 		CHKVP( vp = idxTV(ctx,"kind",kind,pre) );
                 int cmbn_frag_kind = *(int*)vp;
-                if ( cnt++ && ctx->dmMode  ) {
+                if (ctx->printMode) {
+                    stream_printf(GDKout, "[ %d,\t", cnt);
+                } else if ( cnt++ && ctx->dmMode  ) {
                         /* should print a separator here */
                         stream_printf(GDKout,"%s",ctx->dmSeparator);
                 }
@@ -1410,6 +1464,9 @@ int xquery_print_result_main(
                         fatal_err(ctx,"UNKNOW_TYPE(\'%c\'ch(%d))\n",cmbn_frag_kind,cmbn_frag_kind);
 			return GDK_FAIL;
                 }
+            if (ctx->printMode) {
+                stream_printf(GDKout,"\t]\n");
+            }
         }
         /* */
         if ( !seqEnd(ctx) )
