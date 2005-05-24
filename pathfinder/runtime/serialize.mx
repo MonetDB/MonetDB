@@ -1190,7 +1190,7 @@ static int  seqEmitBool(XqueryCtx* ctx, int bv) {
         if ( ctx->saxMode ) {
                 return handle_characters(ctx,bool_str,0);
         } else if ( ctx->dmMode ) {
-                stream_printf(GDKout,"%s() ",bool_str);
+                stream_printf(GDKout,"%s ",bool_str);
         } else {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"%s ",bool_str);
