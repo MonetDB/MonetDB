@@ -36,7 +36,19 @@ lib__pf_support = {
 		shredder.mx \
 		serialize.mx
 
-	LIBS = ../compiler/libcompiler1 \
+	LIBS = \
+		$(PF_LIBS) $(MONETDB_LIBS) \
+		-lbat -lmonet -lstream \
+		-l_streams -l_builtin -l_ascii_io -l_algebra 
+}
+
+lib__pathfinder = {
+	DIR = libdir/MonetDB
+	SOURCES = \
+		pathfinder.mx
+
+	LIBS = \
+		../compiler/libcompiler1 \
 		../compiler/schema/libschema \
 		../compiler/debug/libdebug \
 		../compiler/mem/libmem \
@@ -48,16 +60,6 @@ lib__pf_support = {
                 ../compiler/algebra/hskparser/libhskparser \
 		../compiler/libcompiler2 \
 		$(PF_LIBS) $(MONETDB_LIBS) \
-		-lbat -lmonet -lstream \
-		-l_streams -l_builtin -l_ascii_io -l_algebra 
-}
-
-lib__pathfinder = {
-	DIR = libdir/MonetDB
-	SOURCES = \
-		pathfinder.mx
-
-	LIBS = $(PF_LIBS) $(MONETDB_LIBS) \
 		-lbat -lmonet -lstream \
 		-l_streams -l_builtin -l_ascii_io -l_algebra 
 }
