@@ -63,9 +63,9 @@ extern int sql_create_privileges(mvc *m, sql_schema *s);
 int
 sql_create_role_id(mvc *m, unsigned int id, str auth, int grantor)
 {
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *auths = find_table(sys, "auths");
-	sql_column *auth_name = find_column(auths, "name");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *auths = find_sql_table(sys, "auths");
+	sql_column *auth_name = find_sql_column(auths, "name");
 
 	if (column_find_row(m->trans, auth_name, auth, NULL) >= 0)
 		return FALSE;
@@ -78,9 +78,9 @@ int
 sql_create_role(mvc *m, str auth, int grantor)
 {
 	oid id;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *auths = find_table(sys, "auths");
-	sql_column *auth_name = find_column(auths, "name");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *auths = find_sql_table(sys, "auths");
+	sql_column *auth_name = find_sql_column(auths, "name");
 
 	if (column_find_row(m->trans, auth_name, auth, NULL) >= 0)
 		return FALSE;
@@ -95,9 +95,9 @@ int
 sql_drop_role(mvc *m, str auth)
 {
 	ssize_t rid;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *auths = find_table(sys, "auths");
-	sql_column *auth_name = find_column(auths, "name");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *auths = find_sql_table(sys, "auths");
+	sql_column *auth_name = find_sql_column(auths, "name");
 
 	rid = column_find_row(m->trans, auth_name, auth, NULL);
 	if (rid >= 0)
@@ -109,11 +109,11 @@ int
 sql_grant_role(mvc *m, str grantee, str auth /*, grantor?, admin? */ )
 {
 	ssize_t rid;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *auths = find_table(sys, "auths");
-	sql_table *roles = find_table(sys, "user_role");
-	sql_column *auths_name = find_column(auths, "name");
-	sql_column *auths_id = find_column(auths, "name");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *auths = find_sql_table(sys, "auths");
+	sql_table *roles = find_sql_table(sys, "user_role");
+	sql_column *auths_name = find_sql_column(auths, "name");
+	sql_column *auths_id = find_sql_column(auths, "name");
 
 	void *auth_id, *grantee_id;
 
@@ -136,13 +136,13 @@ sql_revoke_role(mvc *m, str grantee, str auth)
 /* grantee no longer belongs the role (auth) */
 {
 	ssize_t rid;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *auths = find_table(sys, "auths");
-	sql_table *roles = find_table(sys, "user_role");
-	sql_column *auths_name = find_column(auths, "name");
-	sql_column *auths_id = find_column(auths, "name");
-	sql_column *role_id = find_column(roles, "role_id");
-	sql_column *login_id = find_column(roles, "login_id");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *auths = find_sql_table(sys, "auths");
+	sql_table *roles = find_sql_table(sys, "user_role");
+	sql_column *auths_name = find_sql_column(auths, "name");
+	sql_column *auths_id = find_sql_column(auths, "name");
+	sql_column *role_id = find_sql_column(roles, "role_id");
+	sql_column *login_id = find_sql_column(roles, "login_id");
 
 	void *auth_id, *grantee_id;
 
@@ -166,14 +166,14 @@ sql_find_auth(mvc *m, str auth)
 {
 	int res = -1;
 	ssize_t rid;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *auths = find_table(sys, "auths");
-	sql_column *auths_name = find_column(auths, "name");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *auths = find_sql_table(sys, "auths");
+	sql_column *auths_name = find_sql_column(auths, "name");
 
 	rid = column_find_row(m->trans, auths_name, auth, NULL);
 
 	if (rid >= 0) {
-		sql_column *auths_id = find_column(auths, "id");
+		sql_column *auths_id = find_sql_column(auths, "id");
 		int *p = (int *) column_find_value(m->trans, auths_id, rid);
 
 		if (p)
@@ -187,14 +187,14 @@ sql_find_schema(mvc *m, str schema)
 {
 	int schema_id = -1;
 	ssize_t rid;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *schemas = find_table(sys, "schemas");
-	sql_column *schemas_name = find_column(schemas, "name");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *schemas = find_sql_table(sys, "schemas");
+	sql_column *schemas_name = find_sql_column(schemas, "name");
 
 	rid = column_find_row(m->trans, schemas_name, schema, NULL);
 
 	if (rid >= 0) {
-		sql_column *schemas_id = find_column(schemas, "id");
+		sql_column *schemas_id = find_sql_column(schemas, "id");
 		int *p = (int *) column_find_value(m->trans, schemas_id, rid);
 
 		if (p)
@@ -206,8 +206,8 @@ sql_find_schema(mvc *m, str schema)
 int
 sql_create_user_id(mvc *m, oid id, str user, str passwd, str fullname, str schema_name, int grantor)
 {
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *users = find_table(sys, "db_users");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *users = find_sql_table(sys, "db_users");
 	int schema_id = -1;
 
 	if (!(sql_create_role_id(m, id, user, grantor)))
@@ -223,8 +223,8 @@ sql_create_user_id(mvc *m, oid id, str user, str passwd, str fullname, str schem
 int
 sql_create_user(mvc *m, str user, str passwd, str fullname, str schema_name, int grantor)
 {
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *users = find_table(sys, "db_users");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *users = find_sql_table(sys, "db_users");
 	int schema_id = -1;
 
 	if (!(sql_create_role(m, user, grantor)))
@@ -241,21 +241,21 @@ int
 sql_alter_user(mvc *m, str user, str passwd, oid schema_id)
 {
 	ssize_t rid;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *users = find_table(sys, "db_users");
-	sql_column *users_name = find_column(users, "name");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *users = find_sql_table(sys, "db_users");
+	sql_column *users_name = find_sql_column(users, "name");
 
 	rid = column_find_row(m->trans, users_name, user, NULL);
 	if (rid < 0)
 		return FALSE;
 
 	if (passwd) {
-		sql_column *users_passwd = find_column(users, "passwd");
+		sql_column *users_passwd = find_sql_column(users, "passwd");
 
 		column_update_value(m->trans, users_passwd, rid, passwd);
 	}
 	if (schema_id) {
-		sql_column *users_schema = find_column(users, "default_schema");
+		sql_column *users_schema = find_sql_column(users, "default_schema");
 
 		column_update_value(m->trans, users_schema, rid, &schema_id);
 	}
@@ -266,9 +266,9 @@ int
 sql_drop_user(mvc *m, str user)
 {
 	ssize_t rid;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *users = find_table(sys, "db_users");
-	sql_column *users_name = find_column(users, "name");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *users = find_sql_table(sys, "db_users");
+	sql_column *users_name = find_sql_column(users, "name");
 
 	rid = column_find_row(m->trans, users_name, user, NULL);
 	if (rid < 0)
@@ -283,11 +283,11 @@ int
 sql_privilege(mvc *m, int auth_id, int obj_id, int priv, int sub)
 {
 	ssize_t rid;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *privs = find_table(sys, "privileges");
-	sql_column *priv_obj = find_column(privs, "obj_id");
-	sql_column *priv_auth = find_column(privs, "auth_id");
-	sql_column *priv_priv = find_column(privs, "privileges");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *privs = find_sql_table(sys, "privileges");
+	sql_column *priv_obj = find_sql_column(privs, "obj_id");
+	sql_column *priv_auth = find_sql_column(privs, "auth_id");
+	sql_column *priv_priv = find_sql_column(privs, "privileges");
 	int res = 0;
 
 	(void) sub;
@@ -324,12 +324,12 @@ int
 sql_grantable_(mvc *m, int grantorid, int obj_id, int privs, int sub)
 {
 	ssize_t rid;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *prvs = find_table(sys, "privileges");
-	sql_column *priv_obj = find_column(prvs, "obj_id");
-	sql_column *priv_auth = find_column(prvs, "auth_id");
-	sql_column *priv_priv = find_column(prvs, "privileges");
-	sql_column *priv_allowed = find_column(prvs, "grantable");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *prvs = find_sql_table(sys, "privileges");
+	sql_column *priv_obj = find_sql_column(prvs, "obj_id");
+	sql_column *priv_auth = find_sql_column(prvs, "auth_id");
+	sql_column *priv_priv = find_sql_column(prvs, "privileges");
+	sql_column *priv_allowed = find_sql_column(prvs, "grantable");
 	int priv;
 
 	(void) sub;
@@ -363,9 +363,9 @@ static int
 mvc_set_user(mvc *m, char *user)
 {
 	ssize_t rid;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *users = find_table(sys, "db_users");
-	sql_column *users_name = find_column(users, "name");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *users = find_sql_table(sys, "db_users");
+	sql_column *users_name = find_sql_column(users, "name");
 	int res = 0;
 
 	if (m->debug)
@@ -373,12 +373,12 @@ mvc_set_user(mvc *m, char *user)
 
 	rid = column_find_row(m->trans, users_name, user, NULL);
 	if (rid >= 0) {
-		sql_table *auths = find_table(sys, "auths");
-		sql_column *auths_name = find_column(auths, "name");
+		sql_table *auths = find_sql_table(sys, "auths");
+		sql_column *auths_name = find_sql_column(auths, "name");
 
 		rid = column_find_row(m->trans, auths_name, user, NULL);
 		if (rid >= 0) {
-			sql_column *auths_id = find_column(auths, "id");
+			sql_column *auths_id = find_sql_column(auths, "id");
 			int id = *(int *) column_find_value(m->trans, auths_id, rid);
 			m->user_id = m->role_id = id;
 
@@ -394,9 +394,9 @@ int
 mvc_set_role(mvc *m, char *role)
 {
 	ssize_t rid;
-	sql_schema *sys = find_schema(m->trans, "sys");
-	sql_table *auths = find_table(sys, "auths");
-	sql_column *auths_name = find_column(auths, "name");
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *auths = find_sql_table(sys, "auths");
+	sql_column *auths_name = find_sql_column(auths, "name");
 	int res = 0;
 
 	if (m->debug)
@@ -404,7 +404,7 @@ mvc_set_role(mvc *m, char *role)
 
 	rid = column_find_row(m->trans, auths_name, role, NULL);
 	if (rid >= 0) {
-		sql_column *auths_id = find_column(auths, "id");
+		sql_column *auths_id = find_sql_column(auths, "id");
 		int id = *(int *) column_find_value(m->trans, auths_id, rid);
 
 		/* todo check if user is part of this role */
@@ -420,7 +420,7 @@ int
 mvc_set_schema(mvc *m, char *schema)
 {
 	int ret = 0;
-	sql_schema *s = find_schema(m->trans, schema);
+	sql_schema *s = find_sql_schema(m->trans, schema);
 
 	if (s) {
 		if (m->schema)
@@ -450,21 +450,21 @@ mvc_login(mvc *m, char *user, char *passwd)
 
 	mvc_trans(m);
 
-	sys = find_schema(m->trans, "sys");
-	users = find_table(sys, "db_users");
-	users_name = find_column(users, "name");
+	sys = find_sql_schema(m->trans, "sys");
+	users = find_sql_table(sys, "db_users");
+	users_name = find_sql_column(users, "name");
 
 	if ((rid = column_find_row(m->trans, users_name, user, NULL)) >= 0) {
-		sql_column *users_passwd = find_column(users, "passwd");
+		sql_column *users_passwd = find_sql_column(users, "passwd");
 		char *pwd = column_find_value(m->trans, users_passwd, rid);
 
 		if (pwd && strcmp(passwd, pwd) == 0) {
-			sql_column *users_schema = find_column(users, "default_schema");
+			sql_column *users_schema = find_sql_column(users, "default_schema");
 			unsigned int schema_id = *(unsigned int *)
 			    column_find_value(m->trans, users_schema, rid);
-			sql_table *schemas = find_table(sys, "schemas");
-			sql_column *schemas_name = find_column(schemas, "name");
-			sql_column *schemas_id = find_column(schemas, "id");
+			sql_table *schemas = find_sql_table(sys, "schemas");
+			sql_column *schemas_name = find_sql_column(schemas, "name");
+			sql_column *schemas_id = find_sql_column(schemas, "id");
 
 			if ((rid = column_find_row(m->trans, schemas_id, &schema_id, NULL)) >= 0)
 				schema = column_find_value(m->trans, schemas_name, rid);
@@ -533,40 +533,40 @@ sql_create_privileges(mvc *m, sql_schema *s)
 
 	pub = ROLE_PUBLIC;
 	p = PRIV_SELECT;
-	privs = find_table(s, "privileges");
+	privs = find_sql_table(s, "privileges");
 
-	t = find_table(s, "modules");
+	t = find_sql_table(s, "modules");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "schemas");
+	t = find_sql_table(s, "schemas");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "tables");
+	t = find_sql_table(s, "tables");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "ptables");
+	t = find_sql_table(s, "ptables");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "columns");
+	t = find_sql_table(s, "columns");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "pcolumns");
+	t = find_sql_table(s, "pcolumns");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "keys");
+	t = find_sql_table(s, "keys");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "idxs");
+	t = find_sql_table(s, "idxs");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "keycolumns");
+	t = find_sql_table(s, "keycolumns");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "types");
+	t = find_sql_table(s, "types");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
 
-	t = find_table(s, "env");
+	t = find_sql_table(s, "env");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
 
 	/* owned by the users anyway 
-	t = find_table(s, "sessions");
+	t = find_sql_table(s, "sessions");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "history");
+	t = find_sql_table(s, "history");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "ttables");
+	t = find_sql_table(s, "ttables");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_table(s, "tcolumns");
+	t = find_sql_table(s, "tcolumns");
 	table_insert(m->trans, privs, &t->base.id, &pub, &p, &zero, &zero);
 	*/
 

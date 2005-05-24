@@ -347,30 +347,30 @@ extern void idx_destroy(sql_idx * i);
 
 extern node *list_find_name(list *l, char *name);
 
-extern node *find_key_node(sql_table *t, char *kname);
-extern sql_key *find_key(sql_table *t, char *kname);
+extern node *find_sql_key_node(sql_table *t, char *kname);
+extern sql_key *find_sql_key(sql_table *t, char *kname);
 
-extern node *find_idx_node(sql_table *t, char *kname);
-extern sql_idx *find_idx(sql_table *t, char *kname);
+extern node *find_sql_idx_node(sql_table *t, char *kname);
+extern sql_idx *find_sql_idx(sql_table *t, char *kname);
 
-extern node *find_column_node(sql_table *t, char *cname);
-extern sql_column *find_column(sql_table *t, char *cname);
+extern node *find_sql_column_node(sql_table *t, char *cname);
+extern sql_column *find_sql_column(sql_table *t, char *cname);
 
-extern node *find_table_node(sql_schema *s, char *tname);
-extern sql_table *find_table(sql_schema *s, char *tname);
+extern node *find_sql_table_node(sql_schema *s, char *tname);
+extern sql_table *find_sql_table(sql_schema *s, char *tname);
 
-extern node *find_schema_node(sql_trans *t, char *sname);
-extern sql_schema *find_schema(sql_trans *t, char *sname);
+extern node *find_sql_schema_node(sql_trans *t, char *sname);
+extern sql_schema *find_sql_schema(sql_trans *t, char *sname);
 
-extern node *find_module_node(sql_trans *t, char *mname);
-extern sql_module *find_module(sql_trans *t, char *mname);
+extern node *find_sql_module_node(sql_trans *t, char *mname);
+extern sql_module *find_sql_module(sql_trans *t, char *mname);
 
-extern node *find_type_node(sql_module * s, char *tname);
-extern sql_type *find_type(sql_module * s, char *tname);
+extern node *find_sql_type_node(sql_module * s, char *tname);
+extern sql_type *find_sql_type(sql_module * s, char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, char *name);
 
-extern node *find_func_node(sql_module * s, char *tname);
-extern sql_func *find_func(sql_module * s, char *tname);
+extern node *find_sql_func_node(sql_module * s, char *tname);
+extern sql_func *find_sql_func(sql_module * s, char *tname);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, char *name);
 
 #endif /* SQL_CATALOG_H */

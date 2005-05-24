@@ -113,8 +113,10 @@ char *sa_strndup( sql_allocator *sa, const char *s, int l)
 { 
 	char *r = sa_alloc(sa, l+1); 
 
-	memcpy(r, s, l); 
-	r[l] = 0; 
+	if (r) {
+		memcpy(r, s, l); 
+		r[l] = 0; 
+	}
 	return r; 
 }
 

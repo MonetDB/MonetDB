@@ -401,7 +401,7 @@ load_keycolumn(sql_trans *tr, BAT *columns, BUN j, sql_key *k)
 	ptr lid = BUNhead(columns, j);
 	char *name = bun_find(kc_col, lid);
 	int trunc = *(int *) bun_find(kc_trunc, lid);
-	sql_column *c = find_column(k->t, name);
+	sql_column *c = find_sql_column(k->t, name);
 
 	assert(c);
 
@@ -525,7 +525,7 @@ load_idxcolumn(sql_trans *tr, BAT *columns, BUN j, sql_idx * i)
 	ptr lid = BUNhead(columns, j);
 	char *name = bun_find(kc_col, lid);
 	int trunc = *(int *) bun_find(kc_trunc, lid);
-	sql_column *c = find_column(i->t, name);
+	sql_column *c = find_sql_column(i->t, name);
 
 	assert(c);
 
@@ -1775,7 +1775,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 
 	gtrans = load_trans(bm, stk);
 
-	if (!find_schema(gtrans, "sys")) {
+	if (!find_sql_schema(gtrans, "sys")) {
 		sql_schema *s;
 		sql_table *t;
 
@@ -1931,7 +1931,7 @@ static sql_kc *
 kc_dup(sql_trans *tr, int flag, sql_kc *kc, sql_table *t)
 {
 	sql_kc *nkc = NEW(sql_kc);
-	sql_column *c = find_column(t, kc->c->base.name);
+	sql_column *c = find_sql_column(t, kc->c->base.name);
 
 	(void) tr;		/* unused! */
 	(void) flag;
@@ -2873,7 +2873,7 @@ validate_tables(sql_schema *s, sql_schema *os)
 	if (cs_size(&s->tables))
 		for (n = s->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
-			sql_table *ot = find_table(os, t->base.name);
+			sql_table *ot = find_sql_table(os, t->base.name);
 
 			if (ot && ot->table && t->table) {
 				for (o = t->columns.set->h, p = ot->columns.set->h; o && p; o = o->next, p = p->next) {
@@ -2930,7 +2930,7 @@ sql_trans_validate(sql_trans *tr)
 	if (cs_size(&tr->schemas))
 		for (n = tr->schemas.set->h; n; n = n->next) {
 			sql_schema *s = n->data;
-			sql_schema *os = find_schema(tr->parent, s->base.name);
+			sql_schema *os = find_sql_schema(tr->parent, s->base.name);
 
 			if (os || (s->base.wtime == 0 && s->base.rtime == 0)) {
 				if (!validate_tables(s, os))
@@ -2966,8 +2966,8 @@ sql_trans_commit(sql_trans *tr)
 static void
 sys_drop_kc(sql_trans *tr, sql_key *k, sql_kc *kc)
 {
-	sql_table *syskc = find_table(find_schema(tr, "sys"), "keycolumns");
-	oid rid = column_find_row(tr, find_column(syskc, "id"), &k->base.id, NULL);
+	sql_table *syskc = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns");
+	oid rid = column_find_row(tr, find_sql_column(syskc, "id"), &k->base.id, NULL);
 
 	(void) kc;		/* Stefan: unused!? */
 
@@ -2980,8 +2980,8 @@ static void
 sys_drop_key(sql_trans *tr, sql_key *k)
 {
 	node *n;
-	sql_table *syskey = find_table(find_schema(tr, "sys"), "keys");
-	oid rid = column_find_row(tr, find_column(syskey, "id"), &k->base.id, NULL);
+	sql_table *syskey = find_sql_table(find_sql_schema(tr, "sys"), "keys");
+	oid rid = column_find_row(tr, find_sql_column(syskey, "id"), &k->base.id, NULL);
 
 	table_delete(tr, syskey, rid);
 
@@ -3003,8 +3003,8 @@ sys_drop_key(sql_trans *tr, sql_key *k)
 static void
 sys_drop_ic(sql_trans *tr, sql_idx * i, sql_kc *kc)
 {
-	sql_table *syskc = find_table(find_schema(tr, "sys"), "keycolumns");
-	oid rid = column_find_row(tr, find_column(syskc, "id"), &i->base.id, NULL);
+	sql_table *syskc = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns");
+	oid rid = column_find_row(tr, find_sql_column(syskc, "id"), &i->base.id, NULL);
 
 	(void) kc;		/* Stefan: unused!? */
 
@@ -3017,8 +3017,8 @@ static void
 sys_drop_idx(sql_trans *tr, sql_idx * i)
 {
 	node *n;
-	sql_table *sysidx = find_table(find_schema(tr, "sys"), "idxs");
-	oid rid = column_find_row(tr, find_column(sysidx, "id"), &i->base.id, NULL);
+	sql_table *sysidx = find_sql_table(find_sql_schema(tr, "sys"), "idxs");
+	oid rid = column_find_row(tr, find_sql_column(sysidx, "id"), &i->base.id, NULL);
 
 	table_delete(tr, sysidx, rid);
 
@@ -3035,8 +3035,8 @@ sys_drop_idx(sql_trans *tr, sql_idx * i)
 static void
 sys_drop_column(sql_trans *tr, sql_column *col)
 {
-	sql_table *syscolumn = find_table(find_schema(tr, "sys"), "pcolumns");
-	oid rid = column_find_row(tr, find_column(syscolumn, "id"),
+	sql_table *syscolumn = find_sql_table(find_sql_schema(tr, "sys"), "pcolumns");
+	oid rid = column_find_row(tr, find_sql_column(syscolumn, "id"),
 				  &col->base.id, NULL);
 
 	table_delete(tr, syscolumn, rid);
@@ -3085,10 +3085,10 @@ sys_drop_columns(sql_trans *tr, sql_table *t)
 static void
 sys_drop_table(sql_trans *tr, sql_table *t)
 {
-	sql_schema *syss = find_schema(tr, "sys");
-	sql_table *systable = find_table(syss,
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *systable = find_sql_table(syss,
 					 t->persists ? "ptables" : "ttables");
-	oid rid = column_find_row(tr, find_column(systable, "id"), &t->base.id, NULL);
+	oid rid = column_find_row(tr, find_sql_column(systable, "id"), &t->base.id, NULL);
 
 	table_delete(tr, systable, rid);
 	sys_drop_keys(tr, t);
@@ -3117,7 +3117,7 @@ sql_module *
 sql_trans_create_module(sql_trans *tr, char *name, char *opt_mod)
 {
 	sql_module *m = NEW(sql_module);
-	sql_table *sysmodule = find_table(find_schema(tr, "sys"), "modules");
+	sql_table *sysmodule = find_sql_table(find_sql_schema(tr, "sys"), "modules");
 
 	base_init(&m->base, OIDnew(1), TR_NEW, name);
 	cs_init(&m->types, (fdestroy) &type_destroy);
@@ -3139,11 +3139,11 @@ sql_trans_create_module(sql_trans *tr, char *name, char *opt_mod)
 void
 sql_trans_drop_module(sql_trans *tr, char *name)
 {
-	node *n = find_module_node(tr, name);
+	node *n = find_sql_module_node(tr, name);
 	sql_module *m = n->data;
 
-	sql_table *sysmodule = find_table(find_schema(tr, "sys"), "modules");
-	oid rid = column_find_row(tr, find_column(sysmodule, "id"), &m->base.id, NULL);
+	sql_table *sysmodule = find_sql_table(find_sql_schema(tr, "sys"), "modules");
+	oid rid = column_find_row(tr, find_sql_column(sysmodule, "id"), &m->base.id, NULL);
 
 	table_delete(tr, sysmodule, rid);
 	m->base.wtime = sysmodule->base.wtime = sysmodule->s->base.wtime = tr->wtime = tr->stime;
@@ -3154,7 +3154,7 @@ sql_type *
 sql_trans_create_type(sql_trans *tr, sql_module * m, char *sqlname, int digits, int scale, int radix, char *impl)
 {
 	sql_type *t = NEW(sql_type);
-	sql_table *systype = find_table(find_schema(tr, "sys"), "types");
+	sql_table *systype = find_sql_table(find_sql_schema(tr, "sys"), "types");
 
 	base_init(&t->base, OIDnew(1), TR_NEW, impl);
 	t->sqlname = _strdup(sqlname);
@@ -3177,8 +3177,8 @@ sql_func *
 sql_trans_create_func(sql_trans *tr, sql_module * m, char *func, list *args, bit sql, bit aggr, char *impl)
 {
 	sql_func *t = NEW(sql_func);
-	sql_table *sysfunc = find_table(find_schema(tr, "sys"), "functions");
-	sql_table *sysarg = find_table(find_schema(tr, "sys"), "args");
+	sql_table *sysfunc = find_sql_table(find_sql_schema(tr, "sys"), "functions");
+	sql_table *sysarg = find_sql_table(find_sql_schema(tr, "sys"), "args");
 	node *n;
 	int number = 0;
 
@@ -3214,7 +3214,7 @@ sql_schema *
 sql_trans_create_schema(sql_trans *tr, char *name, int auth_id)
 {
 	sql_schema *s = NEW(sql_schema);
-	sql_table *sysschema = find_table(find_schema(tr, "sys"), "schemas");
+	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
 
 	base_init(&s->base, OIDnew(1), TR_NEW, name);
 	s->auth_id = auth_id;
@@ -3235,10 +3235,10 @@ sql_trans_create_schema(sql_trans *tr, char *name, int auth_id)
 void
 sql_trans_drop_schema(sql_trans *tr, char *sname)
 {
-	node *n = find_schema_node(tr, sname);
+	node *n = find_sql_schema_node(tr, sname);
 	sql_schema *s = n->data;
-	sql_table *sysschema = find_table(find_schema(tr, "sys"), "schemas");
-	oid rid = column_find_row(tr, find_column(sysschema, "id"), &s->base.id, NULL);
+	sql_table *sysschema = find_sql_table(find_sql_schema(tr, "sys"), "schemas");
+	oid rid = column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
 
 	table_delete(tr, sysschema, rid);
 	sys_drop_tables(tr, s);
@@ -3253,8 +3253,8 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, char *name, bit system, bit
 	BAT *b;
 	char bname[BUFSIZ];
 	sql_table *t = create_table_intern(name, 1, system, persists, clear);
-	sql_schema *syss = find_schema(tr, "sys");
-	sql_table *systable = find_table(syss, persists ? "ptables" : "ttables");
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *systable = find_sql_table(syss, persists ? "ptables" : "ttables");
 
 	t->dbid = 0;
 	t->query = NULL;
@@ -3288,8 +3288,8 @@ sql_table *
 sql_trans_create_view(sql_trans *tr, sql_schema *s, char *name, char *sql, bit system, bit persists)
 {
 	sql_table *t = create_table_intern(name, 0, system, persists, 0);
-	sql_schema *syss = find_schema(tr, "sys");
-	sql_table *systable = find_table(syss, persists ? "ptables" : "ttables");
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *systable = find_sql_table(syss, persists ? "ptables" : "ttables");
 
 	t->query = NULL;
 	if (sql)
@@ -3310,8 +3310,8 @@ create_column_bat(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe, BAT
 {
 	char bname[BUFSIZ];
 	sql_column *col = NEW(sql_column);
-	sql_schema *syss = find_schema(tr, "sys");
-	sql_table *syscolumn = find_table(syss, t->persists ? "pcolumns" : "tcolumns");
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *syscolumn = find_sql_table(syss, t->persists ? "pcolumns" : "tcolumns");
 
 	base_init(&col->base, OIDnew(1), TR_NEW, name);
 	col->type = tpe;
@@ -3384,7 +3384,7 @@ sql_view_on_bats(sql_trans *tr, sql_table *t, char **names, int nr)
 void
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, char *name, int cascade)
 {
-	node *n = find_table_node(s, name);
+	node *n = find_sql_table_node(s, name);
 	sql_table *t = n->data;
 
 	(void) cascade;		/* Stefan: unused!? */
@@ -3561,7 +3561,7 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 void
 sql_trans_drop_column(sql_trans *tr, sql_table *t, char *name)
 {
-	node *n = find_column_node(t, name);
+	node *n = find_sql_column_node(t, name);
 	sql_column *col = n->data;
 
 	if (t->table)
@@ -3576,12 +3576,12 @@ sql_column *
 sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 {
 	if (col->null != isnull) {
-		sql_table *syscolumn = find_table(find_schema(tr, "sys"),
+		sql_table *syscolumn = find_sql_table(find_sql_schema(tr, "sys"),
 						  col->t->persists ? "pcolumns" : "tcolumns");
-		oid rid = column_find_row(tr, find_column(syscolumn, "id"),
+		oid rid = column_find_row(tr, find_sql_column(syscolumn, "id"),
 					  &col->base.id, NULL);
 
-		column_update_value(tr, find_column(syscolumn, "null"), rid, &isnull);
+		column_update_value(tr, find_sql_column(syscolumn, "null"), rid, &isnull);
 		col->null = isnull;
 		col->base.wtime = col->t->base.wtime = col->t->s->base.wtime = tr->wtime = tr->stime;
 	}
@@ -3597,12 +3597,12 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 
 	if (!col->def || !val || strcmp(col->def, val) != 0) {
 		void *p = val ? val : ATOMnilptr(TYPE_str);
-		sql_table *syscolumn = find_table(find_schema(tr, "sys"),
+		sql_table *syscolumn = find_sql_table(find_sql_schema(tr, "sys"),
 						  col->t->persists ? "pcolumns" : "tcolumns");
-		oid rid = column_find_row(tr, find_column(syscolumn, "id"),
+		oid rid = column_find_row(tr, find_sql_column(syscolumn, "id"),
 					  &col->base.id, NULL);
 
-		column_update_value(tr, find_column(syscolumn, "default"), rid, p);
+		column_update_value(tr, find_sql_column(syscolumn, "default"), rid, p);
 		if (col->def)
 			_DELETE(col->def);
 		col->def = NULL;
@@ -3619,7 +3619,7 @@ sql_trans_create_key(sql_trans *tr, sql_table *t, char *name, key_type kt, sql_k
 /* can only have keys between persistent tables */
 	int neg = -1;
 	sql_key *nk;
-	sql_table *syskey = find_table(find_schema(tr, "sys"), "keys");
+	sql_table *syskey = find_sql_table(find_sql_schema(tr, "sys"), "keys");
 
 	if (!t->persists || t->clear)
 		return NULL;
@@ -3667,7 +3667,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c /*, extra options s
 {
 	sql_kc *kc = NEW(sql_kc);
 	int nr = list_length(k->columns);
-	sql_table *syskc = find_table(find_schema(tr, "sys"), "keycolumns");
+	sql_table *syskc = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns");
 
 	assert(c);
 	kc->c = c;
@@ -3705,7 +3705,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, char *name, idx_type it)
 {
 	/* can only have idxs between persistent tables */
 	sql_idx *ni = NEW(sql_idx);
-	sql_table *sysidx = find_table(find_schema(tr, "sys"), "idxs");
+	sql_table *sysidx = find_sql_table(find_sql_schema(tr, "sys"), "idxs");
 
 	if (!t->persists || t->clear)
 		return NULL;
@@ -3751,7 +3751,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c /*, extra options 
 {
 	sql_kc *ic = NEW(sql_kc);
 	int nr = list_length(i->columns);
-	sql_table *sysic = find_table(find_schema(tr, "sys"), "keycolumns");
+	sql_table *sysic = find_sql_table(find_sql_schema(tr, "sys"), "keycolumns");
 
 	assert(c);
 	ic->c = c;
