@@ -696,7 +696,7 @@ SORTfnd_@2(BAT *m, ptr v)
 BUN
 SORTfnd@2(BAT *b, ptr v)
 {
-	if (b && b->@1sorted) {
+	if (b && b->@1sorted&1) {
 		switch(ATOMstorage(b->@1type)) {
 #ifndef NOEXPAND_CHR
 		case TYPE_chr:
