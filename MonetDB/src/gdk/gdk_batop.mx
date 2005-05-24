@@ -2026,7 +2026,7 @@ by bulk copying the heap as well
 		BAT *bm;
 
 		bn->hheap = (Heap*)GDKzalloc(sizeof(Heap));
-		if (bn->hheap && b->hheap->filename) {
+		if (bn->hheap && b->theap->filename) {
 			char *nme = BBP_physical(bn->batCacheid);
 			
 			bn->hheap->filename = (str) GDKmalloc(strlen(nme) + 12);
