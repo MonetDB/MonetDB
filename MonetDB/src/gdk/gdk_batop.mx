@@ -2027,7 +2027,7 @@ by bulk copying the heap as well
 
 		bn->hheap = (Heap*)GDKzalloc(sizeof(Heap));
 		if (bn->hheap && b->hheap->filename) {
-			char *nme = BBP_physical(bn);
+			char *nme = BBP_physical(bn->batCacheid);
 			
 			bn->hheap->filename = (str) GDKmalloc(strlen(nme) + 12);
 			GDKfilepath(bn->hheap->filename, NULL, nme, "hheap");
