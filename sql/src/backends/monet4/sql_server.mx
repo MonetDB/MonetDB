@@ -532,11 +532,14 @@ int @1_round_wrap( @1 *res, @1 *v, @1 *r )
 	@1 val = *v;
 	@1 add = *r;
 
-	add >>=1;
-	if (val < 0) 
-		add = -add;
-	val += add; 
-	val /= *r;
+	/* not nil */
+	if (ATOMcmp(TYPE_@1, v, ATOMnilptr(TYPE_@1)) != 0) {
+		add >>=1;
+		if (val < 0) 
+			add = -add;
+		val += add; 
+		val /= *r;
+	}
 	*res = val;
 	return GDK_SUCCEED;
 }
@@ -589,15 +592,11 @@ int trunc2@1( @1 *res, str val, int *d, int *sc )
 int @1_round_wrap( @1 *res, @1 *v, @1 *r )
 {
 	@1 val = *v;
-/* assume float does correct rounding 
-	@1 add = *r;
 
-	add /= 2;
-	if (val < 0) 
-		add = -add;
-	val += add;
-*/
-	val /= *r;
+	/* not nil */
+	if (ATOMcmp(TYPE_@1, v, ATOMnilptr(TYPE_@1)) != 0) {
+		val /= *r;
+	}
 	*res = val;
 	return GDK_SUCCEED;
 }

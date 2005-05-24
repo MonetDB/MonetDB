@@ -117,11 +117,13 @@ symbol_create(sql_allocator *sa, int token, char *data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
-	symbol_init(s, token);
-	s->data.sval = data;
-	s->type = type_string;
-	if (symbol_debug)
-		fprintf(stderr, "%ld = symbol_create_string(%s,%s)\n", (long) s, token2string(s->token), s->data.sval);
+	if (s) {
+		symbol_init(s, token);
+		s->data.sval = data;
+		s->type = type_string;
+		if (symbol_debug)
+			fprintf(stderr, "%ld = symbol_create_string(%s,%s)\n", (long) s, token2string(s->token), s->data.sval);
+	}
 	return s;
 }
 
@@ -130,11 +132,13 @@ symbol_create_list(sql_allocator *sa, int token, dlist *data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
-	symbol_init(s, token);
-	s->data.lval = data;
-	s->type = type_list;
-	if (symbol_debug)
-		fprintf(stderr, "%ld = symbol_create_list(%s,%ld)\n", (long) s, token2string(s->token), (long) s->data.lval);
+	if (s) {
+		symbol_init(s, token);
+		s->data.lval = data;
+		s->type = type_list;
+		if (symbol_debug)
+			fprintf(stderr, "%ld = symbol_create_list(%s,%ld)\n", (long) s, token2string(s->token), (long) s->data.lval);
+	}
 	return s;
 }
 
@@ -143,11 +147,13 @@ symbol_create_int(sql_allocator *sa, int token, int data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
-	symbol_init(s, token);
-	s->data.ival = data;
-	s->type = type_int;
-	if (symbol_debug)
-		fprintf(stderr, "%ld = symbol_create_int(%s,%d)\n", (long) s, token2string(s->token), data);
+	if (s) {
+		symbol_init(s, token);
+		s->data.ival = data;
+		s->type = type_int;
+		if (symbol_debug)
+			fprintf(stderr, "%ld = symbol_create_int(%s,%d)\n", (long) s, token2string(s->token), data);
+	}
 	return s;
 }
 
@@ -156,10 +162,12 @@ symbol_create_symbol(sql_allocator *sa, int token, symbol *data)
 {
 	symbol *s = SA_NEW(sa, symbol);
 
-	symbol_init(s, token);
-	s->data.sym = data;
-	if (symbol_debug)
-		fprintf(stderr, "%ld = symbol_create_symbol(%s,%s)\n", (long) s, token2string(s->token), token2string(data->token));
+	if (s) {
+		symbol_init(s, token);
+		s->data.sym = data;
+		if (symbol_debug)
+			fprintf(stderr, "%ld = symbol_create_symbol(%s,%s)\n", (long) s, token2string(s->token), token2string(data->token));
+	}
 	return s;
 }
 
@@ -168,9 +176,11 @@ dnode_create(sql_allocator *sa )
 {
 	dnode *n = SA_NEW(sa, dnode);
 
-	n->next = NULL;
-	n->data.sval = NULL;
-	n->type = type_symbol;
+	if (n) {
+		n->next = NULL;
+		n->data.sval = NULL;
+		n->type = type_symbol;
+	}
 	return n;
 }
 
@@ -179,8 +189,10 @@ dnode_create_string(sql_allocator *sa, char *data)
 {
 	dnode *n = dnode_create(sa);
 
-	n->data.sval = data;
-	n->type = type_string;
+	if (n) {
+		n->data.sval = data;
+		n->type = type_string;
+	}
 	return n;
 }
 static dnode *
@@ -188,8 +200,10 @@ dnode_create_list(sql_allocator *sa, dlist *data)
 {
 	dnode *n = dnode_create(sa);
 
-	n->data.lval = data;
-	n->type = type_list;
+	if (n) {
+		n->data.lval = data;
+		n->type = type_list;
+	}
 	return n;
 }
 static dnode *
@@ -197,8 +211,10 @@ dnode_create_int(sql_allocator *sa, int data)
 {
 	dnode *n = dnode_create(sa);
 
-	n->data.ival = data;
-	n->type = type_int;
+	if (n) {
+		n->data.ival = data;
+		n->type = type_int;
+	}
 	return n;
 }
 static dnode *
@@ -206,8 +222,10 @@ dnode_create_symbol(sql_allocator *sa, symbol *data)
 {
 	dnode *n = dnode_create(sa);
 
-	n->data.sym = data;
-	n->type = type_symbol;
+	if (n) {
+		n->data.sym = data;
+		n->type = type_symbol;
+	}
 	return n;
 }
 
@@ -216,8 +234,10 @@ dnode_create_type(sql_allocator *sa, sql_subtype *data)
 {
 	dnode *n = dnode_create(sa);
 
-	n->data.typeval = data;
-	n->type = type_type;
+	if (n) {
+		n->data.typeval = data;
+		n->type = type_type;
+	}
 	return n;
 }
 
@@ -226,8 +246,10 @@ dlist_create(sql_allocator *sa)
 {
 	dlist *l = SA_NEW(sa, dlist);
 
-	l->h = l->t = NULL;
-	l->cnt = 0;
+	if (l) {
+		l->h = l->t = NULL;
+		l->cnt = 0;
+	}
 	return l;
 }
 
@@ -254,7 +276,9 @@ dlist *
 dlist_append_string(sql_allocator *sa, dlist *l, char *data)
 {
 	dnode *n = dnode_create_string(sa, data);
-
+	
+	if (!n)
+		return NULL;
 	return dlist_append_default(l, n);
 }
 
@@ -263,6 +287,8 @@ dlist_append_list(sql_allocator *sa, dlist *l, dlist *data)
 {
 	dnode *n = dnode_create_list(sa, data);
 
+	if (!n)
+		return NULL;
 	return dlist_append_default(l, n);
 }
 
@@ -271,6 +297,8 @@ dlist_append_int(sql_allocator *sa, dlist *l, int data)
 {
 	dnode *n = dnode_create_int(sa, data);
 
+	if (!n)
+		return NULL;
 	return dlist_append_default(l, n);
 }
 
@@ -279,6 +307,8 @@ dlist_append_symbol(sql_allocator *sa, dlist *l, symbol *data)
 {
 	dnode *n = dnode_create_symbol(sa, data);
 
+	if (!n)
+		return NULL;
 	return dlist_append_default(l, n);
 }
 
@@ -287,6 +317,8 @@ dlist_append_type(sql_allocator *sa, dlist *l, sql_subtype *data)
 {
 	dnode *n = dnode_create_type(sa, data);
 
+	if (!n)
+		return NULL;
 	return dlist_append_default(l, n);
 }
 
@@ -296,18 +328,20 @@ newSelectNode(sql_allocator *sa, int distinct, struct dlist *selection, struct d
 	SelectNode *sn = SA_NEW(sa, SelectNode);
 	symbol *s = (symbol *) sn;
 
-	symbol_init(s, SQL_SELECT);
-	sn->distinct = distinct;
-	sn->limit = limit;
-	sn->offset = offset;
-	sn->selection = selection;
-	sn->into = into;
-	sn->from = from;
-	sn->where = where;
-	sn->groupby = groupby;
-	sn->having = having;
-	sn->orderby = orderby;
-	sn->name = name;
+	if (s) {
+		symbol_init(s, SQL_SELECT);
+		sn->distinct = distinct;
+		sn->limit = limit;
+		sn->offset = offset;
+		sn->selection = selection;
+		sn->into = into;
+		sn->from = from;
+		sn->where = where;
+		sn->groupby = groupby;
+		sn->having = having;
+		sn->orderby = orderby;
+		sn->name = name;
+	}
 	return s;
 }
 
@@ -317,8 +351,10 @@ newAtomNode(sql_allocator *sa, atom *data)
 	AtomNode *an = SA_NEW(sa, AtomNode);
 	symbol *s = (symbol *) an;
 
-	symbol_init(s, SQL_ATOM);
-	an->a = data;
+	if (s) {
+		symbol_init(s, SQL_ATOM);
+		an->a = data;
+	}
 	return s;
 }
 
