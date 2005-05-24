@@ -428,13 +428,12 @@ Get the new information for the server socket and start listening.
 
 			if (STREQ(cmd, "")) { 
 				char userbuf[BLOCK];
-				char *user = userbuf;
+				char *user;
 				int blocked = 0;
 				char *challenge, *s;
 				int i = 0;
 
-				memset(name = user, 0, BLOCK);
-				*user = 0;
+				name = user = userbuf;
 				if (fdin == 0 || stream_errnr(fdin)) {
 					GDKsyserror("MAPIlisten:fdin problems\n");
 					continue;
@@ -451,6 +450,7 @@ Get the new information for the server socket and start listening.
 					user++;
 					stream_read(fdin, user, 1, 1);
 				}
+				*user = 0;
 				if (stream_errnr(fdin)) {
 					GDKsyserror("MAPIlisten: fdin problems\n");
 					stream_close(fdin);
