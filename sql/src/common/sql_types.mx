@@ -1220,6 +1220,11 @@ sqltypeinit()
 	sql_create_func("convert", "date", TMESTAMP, NULL, DTE, SCALE_NONE);
 	sql_create_func("convert", "daytime", TMETZ, NULL, TME, SCALE_NONE);
 	sql_create_func("convert", "timestamp", TMESTAMPTZ, NULL, TMESTAMP, SCALE_NONE);
+	/* convert epoch to time/timestamp */
+	sql_create_func("convert", TMESTAMP->base.name, INT, NULL, TMESTAMP, SCALE_FIX); 
+	sql_create_func("convert", TMESTAMPTZ->base.name, INT, NULL, TMESTAMPTZ, SCALE_FIX); 
+	sql_create_func("convert", TME->base.name, INT, NULL, TME, SCALE_FIX); 
+	sql_create_func("convert", TMETZ->base.name, INT, NULL, TMETZ, SCALE_FIX); 
 
 	sql_create_func("curdate", "current_date", NULL, NULL, DTE, SCALE_NONE);
 	sql_create_func("current_date", "current_date", NULL, NULL, DTE, SCALE_NONE);
