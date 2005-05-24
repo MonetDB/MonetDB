@@ -859,6 +859,12 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 			BAT *bm = BATmirror(bn);
 
 			bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
+			if (bn->theap && r->theap->filename) {
+				char *nme = BBP_physical(bn->batCacheid);
+				
+				bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
+				GDKfilepath(bn->theap->filename, NULL, nme, "theap");
+			}
 			if (HEAPcopy(bn->theap, r->theap) < 0) {
 				BBPreclaim(bn);
 				goto ready;
@@ -913,6 +919,12 @@ batfetchjoin(BAT *l, BAT *r, size_t estimate, bit swap)
 			BAT *bm = BATmirror(bn);
 
 			bn->theap = (Heap*)GDKzalloc(sizeof(Heap));
+			if (bn->theap && r->theap->filename) {
+				char *nme = BBP_physical(bn->batCacheid);
+				
+				bn->theap->filename = (str) GDKmalloc(strlen(nme) + 12);
+				GDKfilepath(bn->theap->filename, NULL, nme, "theap");
+			}
 			if (HEAPcopy(bn->theap, r->theap) < 0) {
 				BBPreclaim(bn);
 				goto ready;

@@ -2026,6 +2026,12 @@ by bulk copying the heap as well
 		BAT *bm;
 
 		bn->hheap = (Heap*)GDKzalloc(sizeof(Heap));
+		if (bn->hheap && b->theap->filename) {
+			char *nme = BBP_physical(bn->batCacheid);
+			
+			bn->hheap->filename = (str) GDKmalloc(strlen(nme) + 12);
+			GDKfilepath(bn->hheap->filename, NULL, nme, "hheap");
+		}
 		if (HEAPcopy(bn->hheap, b->theap) < 0) {
 		      bunins_failed:
 			BBPreclaim(bn);

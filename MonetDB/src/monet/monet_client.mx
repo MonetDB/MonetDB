@@ -160,6 +160,9 @@ initClient(str nme, str prompt, int thread)
 	c->top = c->input;
 	*c->top = 0;
 	c->mode = BLOCKMODE;
+	c->mil_accept = NULL;
+	c->cline = NULL;
+	c->cptr = NULL;
 	return c;
 }
 
@@ -359,6 +362,8 @@ freeClient(Client c)
 
 	c->input = c->output = NULL;
 	c->user = c->prompt = NULL;
+	c->cline = c->cptr = NULL;
+	c->mil_accept = NULL;
 	c->children = 0;
 	c->mode = FINISHED;
 }
@@ -398,7 +403,7 @@ closeClient(Client c, int thread)
 
 	/* free resources */
 	if (c == monet_clients) {
-		/* adm: do not free immediate */
+		/* adm: do not free immediately */
 		int i, m = monetAdjustThreads(0);
 
 		for (i = 0; i < m; i++) {
