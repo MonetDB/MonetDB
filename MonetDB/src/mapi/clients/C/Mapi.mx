@@ -2001,10 +2001,14 @@ mapi_start_talking(Mapi mid)
 	MapiHdl hdl;
 
 	/* consume server challenge */
-	stream_read(mid->from, buf, 1, 2);
+	len = stream_read(mid->from, buf, 1, 2);
+	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
+	buf[2] = 0;
 	len = atoi(buf);
-	assert(len <= BLOCK);
+	assert(len < BLOCK);
 	stream_read(mid->from, buf, 1, len);
+	check_stream(mid, mid->from, "Connection terminated", "mapi_start_talking", (mid->blk.eos = 1, mid->error));
+	buf[len] = 0;
 	/* buf at this point looks like ":challenge:servertype:protover" */
 	{
 		char* chal;
