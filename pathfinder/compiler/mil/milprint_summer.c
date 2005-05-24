@@ -7722,7 +7722,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 milprintf(f,
                         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
                         "pos := iter.project(1@0);\n"
-                        "item%s := iter.project(dbl(%g));\n"
+                        "item%s := iter.project(%gLL);\n"
                         "kind := iter.project(DEC);\n",
                         cur_level, kind_str(rc), 
                         c->sem.dec);
@@ -7733,8 +7733,8 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 milprintf(f,
                         "{\n"
                         "dec_values := dec_values.seqbase(nil)"
-                                                ".insert(nil,dbl(%g)).seqbase(0@0);\n"
-                        "var itemID := dec_values.ord_uselect(dbl(%g));\n"
+                                                ".insert(nil,%gLL).seqbase(0@0);\n"
+                        "var itemID := dec_values.ord_uselect(%gLL);\n"
                         "itemID := itemID.reverse().fetch(0);\n",
                         c->sem.dec, c->sem.dec);
                 /* translateConst needs a bound variable itemID */
@@ -7751,7 +7751,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 milprintf(f,
                         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
                         "pos := iter.project(1@0);\n"
-                        "item%s := iter.project(dbl(%g));\n"
+                        "item%s := iter.project(%gLL);\n"
                         "kind := iter.project(DBL);\n",
                         cur_level, kind_str(rc), 
                         c->sem.dbl);
@@ -7762,8 +7762,8 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 milprintf(f,
                         "{\n"
                         "dbl_values := dbl_values.seqbase(nil)"
-                                                ".insert(nil,dbl(%g)).seqbase(0@0);\n"
-                        "var itemID := dbl_values.ord_uselect(dbl(%g));\n"
+                                                ".insert(nil,%gLL).seqbase(0@0);\n"
+                        "var itemID := dbl_values.ord_uselect(%gLL);\n"
                         "itemID := itemID.reverse().fetch(0);\n",
                         c->sem.dbl, c->sem.dbl);
                 /* translateConst needs a bound variable itemID */
