@@ -77,6 +77,7 @@ typedef struct PFstate_t PFstate_t;
 #define PF_GEN_DM_MAPI  4
 #define PF_GEN_SAX      5
 #define PF_GEN_NONE     6 
+#define PF_GEN_XML_SEQ_MAPI 7 
 
 /**
  * Has the Pathfinder compiler been invoked on the command line,

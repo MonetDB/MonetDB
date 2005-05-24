@@ -9923,6 +9923,9 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
      case PF_GEN_XML_MAPI:
       milprintf(f, "print_result(\"xml-mapi\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
+     case PF_GEN_XML_SEQ_MAPI:
+      milprintf(f, "print_result(\"xml-seq-mapi\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
+      break; 
      case PF_GEN_DM:
       milprintf(f, "print_result(\"dm\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
       break;
