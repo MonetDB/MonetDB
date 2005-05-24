@@ -966,8 +966,11 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
                         int size = *(int*)vp;
                         if (!pushTag(ctx,pre+size,prefix,loc,(size==0)))
 				return 0;
-			/*  check for change of prefix/uri */
-			if ( ! checkNsChange(ctx,uri,prefix,top) )
+			/* check for change of prefix/uri. 'top' is not
+			 * propagated here because an attribute inside an
+			 * element can never be top-level.
+			 */
+			if ( ! checkNsChange(ctx,uri,prefix,0) )
 				return 0;
                         if ( !process_node_attr(ctx,ctx->curFRAG,pre,(size==0)))
 				return 0;
