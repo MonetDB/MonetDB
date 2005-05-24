@@ -179,6 +179,8 @@ test = (
                     r'^\[ (?:\-|)0 \]$',
                 # pathfinder/tests/XQuery/fn_aps:
                     r'^0.900000 0.500000 0.400000 (?:\-|)0.000000 0.400000 0.500000 0.900000 1 *$',
+                # pathfinder/tests/XPathMark/Tests/Q1[023]:
+                    r'^(?:</item>|)<item (?:id="item9"|featured="yes") (?:id="item9"|featured="yes")>$',
 ##                # src/mapi/monet_BATs (on Linux2.4.26.ntv_32-d):
 ##                    r'^\[ "monet_mod_use",\t* *(?:44|66)\t* *\]$',
 ##                # Intel compiler seems to do some (re-)compilation for src/mapi/examples/C/
