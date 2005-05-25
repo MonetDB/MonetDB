@@ -1176,47 +1176,18 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
 static int id_sequence_counter = 0;
 static int  seqHeadStart(
     XqueryCtx* ctx,
-    BAT* item,
-    BAT* kind,
-    BAT* strVAL)
+    BAT* item)
 {
     if (ctx->printMode ) {
-        /* calculate the length of the output */
-        int len = 9;
-        BUN p, q; 
-        BATloop(item, p, q) {
-            ptr vp;
-            oid pre, valoid;
-            pre = *(oid*)BUNhead(item, p);
-            valoid = *(oid*)BUNtail(item, p);
-            CHKVP( vp = idxTV(ctx,"kind",kind,pre) );
-            int cmbn_frag_kind = *(int*)vp;
-
-            switch( XTRACT_KIND(cmbn_frag_kind) ) {
-                case STR:
-                case U_A: {
-                    CHKVP(vp = idxTV(ctx,"strVAL",strVAL,valoid));
-                    str sv = (str)vp;
-                    int lastnl = 0, i, slen = strlen(sv);
-                    for (i = 0; i < slen; i++) {
-                        if (sv[i] == '\n') {
-                            if (len < (i - lastnl)) len = i - lastnl;
-                            lastnl = i;
-                        }
-                    }
-                    if (len < (i - lastnl)) len = i - lastnl;
-                } break;
-            }
-		}
         /* write SQL-ish header */
         stream_printf(GDKout,"#-\n");
         stream_printf(GDKout,"# 3\t# querytype\n");
         stream_printf(GDKout,"# xquery_result,\txquery_result\t# table_name\n");
-        stream_printf(GDKout,"# n,\txml\t# name\n");
-        stream_printf(GDKout,"# int,\tvarchar\t# type\n");
-        stream_printf(GDKout,"# 6,\t%d\t# length\n", len);
-        stream_printf(GDKout,"# %d,\t\t# tuplecount\n", BATcount(item));
-        stream_printf(GDKout,"# %d,\t\t# id\n", id_sequence_counter++); 
+        stream_printf(GDKout,"# xml\t# name\n");
+        stream_printf(GDKout,"# varchar\t# type\n");
+        stream_printf(GDKout,"# %d\t# length\n", 60);
+        stream_printf(GDKout,"# %d\t# tuplecount\n", BATcount(item));
+        stream_printf(GDKout,"# %d\t# id\n", id_sequence_counter++); 
 	 } else if ( ! ctx->dmMode ) { /* dmMode has no header */
              if (ctx->mapiMode) {
                 stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
@@ -1379,7 +1350,7 @@ int xquery_print_result_main(
         if ( !createWsContext(ctx,ws,-1,mode) )
 		return GDK_FAIL;
         /* */
-        if ( !seqHeadStart(ctx, item, kind, strVAL) )
+        if ( !seqHeadStart(ctx, item) )
 		return GDK_FAIL;
 	if ( ! ctx->dmMode ) {
 	    /* If the mode is not the DM mode do a scan of all attributes here
@@ -1412,7 +1383,7 @@ int xquery_print_result_main(
 		CHKVP( vp = idxTV(ctx,"kind",kind,pre) );
                 int cmbn_frag_kind = *(int*)vp;
                 if (ctx->printMode) {
-                    stream_printf(GDKout, "[ %d,\t\"", cnt);
+                    stream_printf(GDKout, "[ \"");
                 } else if ( cnt++ && ctx->dmMode  ) {
                         /* should print a separator here */
                         stream_printf(GDKout,"%s",ctx->dmSeparator);
