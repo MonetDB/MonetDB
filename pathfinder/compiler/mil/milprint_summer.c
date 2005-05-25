@@ -1420,7 +1420,7 @@ expand (opt_t *f, int cur_level)
     /* if we don't have a stable sort, we should be sure, that the
        mapping relation is refined on the tail */
     milprintf(f,
-            "# refine needed to make "
+            "# FIXME: refine needed to make "
             "'outer%03u.leftjoin(iter_expOid)' a stable join\n"
             "var temp_sort := oidMap_expOid.mark(0@0)"
                                           ".reverse()"
@@ -2583,10 +2583,10 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "_attr_own  := attr_own.reverse().mark(0@0).reverse();\n"
                 "} else {\n"
                 "var seqb := oid(_attr_iter.count() + int(_attr_iter.seqbase()));\n"
-                "_r_attr_iter := _r_attr_iter.seqbase(seqb);\n"
-                "_r_attr_qn   := _r_attr_qn  .seqbase(seqb);\n"
-                "_r_attr_prop := _r_attr_prop.seqbase(seqb);\n"
-                "_r_attr_frag := _r_attr_frag.seqbase(seqb);\n"
+                "_r_attr_iter := _r_attr_iter.reverse().mark(seqb).reverse();\n"
+                "_r_attr_qn   := _r_attr_qn  .reverse().mark(seqb).reverse();\n"
+                "_r_attr_prop := _r_attr_prop.reverse().mark(seqb).reverse();\n"
+                "_r_attr_frag := _r_attr_frag.reverse().mark(seqb).reverse();\n"
                 "attr_own := attr_own.reverse().mark(seqb).reverse();\n"
                 "seqb := nil_oid;\n"
                 "_attr_iter := _attr_iter.access(BAT_WRITE).insert(_r_attr_iter);\n"
@@ -2945,7 +2945,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "oid_frag := temp_attr.reverse().leftfetchjoin(oid_frag);\n"
                 "oid_frag := oid_frag.reverse().mark(0@0).reverse();\n"
                 "oid_preNew := temp_attr.reverse().leftfetchjoin(oid_preNew);\n"
-                "oid_preNew := oid_preNew.reverse().mark(0@0).reverse();\n"
+                "# oid_preNew := oid_preNew.reverse().mark(0@0).reverse();\n"
                 "temp_attr := nil_oid_oid;\n"
     
                 "var seqb := oid(ws.fetch(ATTR_QN).fetch(WS).count());\n"
@@ -2958,7 +2958,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "oid_attr := nil_oid_oid;\n"
                 "attr_qn := attr_qn.seqbase(seqb);\n"
                 "attr_oid := attr_oid.seqbase(seqb);\n"
-                "oid_preNew := oid_preNew.seqbase(seqb);\n"
+                "oid_preNew := oid_preNew.reverse().mark(seqb).reverse();\n"
                 "oid_frag := oid_frag.seqbase(seqb);\n"
                 "seqb := nil_oid;\n"
     
@@ -3028,7 +3028,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 i);
                 /* use the old FRAG values as reference */
         milprintf(f,
-                "attr_frag := attr_frag.seqbase(seqb);\n"
+                "attr_frag := attr_frag.reverse().mark(seqb).reverse();\n"
                 "seqb := nil_oid;\n"
       
                 "ws.fetch(ATTR_QN).fetch(WS).insert(attr_qn);\n"
@@ -3073,11 +3073,11 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
  /* attr */ "var preOld_preNew := _elem_size.mark(seqb);\n"
  /* attr */ "_attr_own := _attr_own.leftfetchjoin(preOld_preNew);\n"
  /* attr */ "preOld_preNew := nil_oid_oid;\n"
-            "_elem_size  := _elem_size.seqbase(seqb);\n"
-            "_elem_level := _elem_level.seqbase(seqb);\n"
-            "_elem_kind  := _elem_kind.seqbase(seqb);\n"
-            "_elem_prop  := _elem_prop.seqbase(seqb);\n"
-            "_elem_frag  := _elem_frag.seqbase(seqb);\n"
+            "_elem_size  := _elem_size.reverse().mark(seqb).reverse();\n"
+            "_elem_level := _elem_level.reverse().mark(seqb).reverse();\n"
+            "_elem_kind  := _elem_kind.reverse().mark(seqb).reverse();\n"
+            "_elem_prop  := _elem_prop.reverse().mark(seqb).reverse();\n"
+            "_elem_frag  := _elem_frag.reverse().mark(seqb).reverse();\n"
             "seqb := nil_oid;\n"
             "}\n"
             /* insert the new trees into the working set */
@@ -3143,10 +3143,10 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
 
             "{ # add attribute subtree copies to WS\n"
             "var seqb := oid(ws.fetch(ATTR_QN).fetch(WS).count());\n"
-            "_attr_qn   := _attr_qn  .seqbase(seqb);\n"
-            "_attr_prop := _attr_prop.seqbase(seqb);\n"
-            "_attr_own  := _attr_own .reverse().mark(seqb).reverse();\n" /* FIXME */
-            "_attr_frag := _attr_frag.seqbase(seqb);\n"
+            "_attr_qn   := _attr_qn  .reverse().mark(seqb).reverse();\n"
+            "_attr_prop := _attr_prop.reverse().mark(seqb).reverse();\n"
+            "_attr_own  := _attr_own .reverse().mark(seqb).reverse();\n"
+            "_attr_frag := _attr_frag.reverse().mark(seqb).reverse();\n"
             "seqb := nil_oid;\n"
 
             /* insert into working set WS the attribute subtree copies 
@@ -5287,7 +5287,10 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
             "var list2 := iter.[lng]();\n"
             "if (diff > 0)\n"
             "{\n"
-            "    var shift := int(log(dbl(max))/log(2.0)) + 1;\n"
+            /* since max and min are oids - the lowest number can be 1.
+               But log(1) returns 0 - The solution is adding 0.1, which 
+               is small enough to avoid shifting a bit too much */
+            "    var shift := int(log(dbl(max) + 0.1LL)/log(2.0)) + 1;\n"
             "    list1 := list1.[<<](shift).[or](kind%03u.[-](min).[lng]());\n"
             "    list2 := list2.[<<](shift).[or](kind.[-](min).[lng]());\n"
             "}\n"
@@ -5296,7 +5299,10 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
             "diff := max - min;\n"
             "if (diff > 0)\n"
             "{\n"
-            "    var shift := int(log(dbl(max))/log(2.0)) + 1;\n"
+            /* since max and min are oids - the lowest number can be 1.
+               But log(1) returns 0 - The solution is adding 0.1, which 
+               is small enough to avoid shifting a bit too much */
+            "    var shift := int(log(dbl(max) + 0.1LL)/log(2.0)) + 1;\n"
             "    list1 := list1.[<<](shift).[or](item%03u.[lng]().[-](min));\n"
             "    list2 := list2.[<<](shift).[or](item.[lng]().[-](min));\n"
             "}\n"

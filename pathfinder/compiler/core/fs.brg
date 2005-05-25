@@ -2489,24 +2489,16 @@ reduce (PFpnode_t * p, int goalnt)
                                     default_ (
                                       APPLY (fn_error, str ("err:XP0018")))
                                     ))))))),
-                      default_ (APPLY (fn_error, str ("err:XP0019"))))));
+                      default_ (
+                        APPLY (fn_error,
+                               str ("err:XP0019: Argument to location step "
+                                    "must be a node sequence."))))));
 
             /* restore context items */
             fs_dot = dot;
             fs_position = position;
             fs_last = last;
 
-            /*
-            C(p) = let (
-                    letbind (var (v), C(R(p))),
-                    let (
-                        letbind (var (fs_last), APPLY (count, var (v))),
-                        for_ (
-                            forbind (forvars (var (fs_dot), var (fs_position)),
-                                     var (v)),
-                            C(L(p)))));
-
-            */
         } break;
 
         /* LocationPath:           locpath (LocationStep, StepExpr) */
@@ -2516,16 +2508,29 @@ reduce (PFpnode_t * p, int goalnt)
              * complicated stuff in the above rule.
              *
              * let $v1 := StepExpr return
-             *   let $v2 := $v1/LocationStep return
-             *     fs:distinct-doc-order ($v2)
+             *   typeswitch ($v1)
+             *     case node* return
+             *                  let $v2 := $v1/LocationStep return
+             *                    fs:distinct-doc-order ($v2)
+             *     default error (err:XP0019)
              */
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
             PFfun_t *ddo = function (PFqname (PFns_pf, "distinct-doc-order"));
+            PFfun_t *fn_error = function (PFqname (PFns_fn, "error"));
 
             C(p) = let (letbind (var (v1), C(R(p))),
-                        let (letbind (var (v2), locsteps (C(L(p)), var (v1))),
-                             APPLY (ddo, var (v2))));
+                        typeswitch (
+                          var (v1),
+                          cases (
+                            case_ (seqtype (PFty_star (PFty_xs_anyNode ())),
+                              let (letbind (var (v2), locsteps (C(L(p)),
+                                                                var (v1))),
+                                   APPLY (ddo, var (v2)))),
+                            default_ (
+                              APPLY (fn_error,
+                                     str ("err:XP0019: Argument to location "
+                                          "step must be a node sequence."))))));
         } break;
 
         /* StepExpr:               LocationStep */

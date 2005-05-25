@@ -282,7 +282,7 @@ There are two alternatives:
 
 Note, the first parameter of "shred_doc" must be an absolute URI.
 The (optional) second parameter is a logical name ("alias") that can 
-be used to refer to the document using XQuery's built-in "fc:doc()" 
+be used to refer to the document using XQuery's built-in "fn:doc()" 
 function.
 
 Once "shred_doc" has successfully finished, the document is persistently

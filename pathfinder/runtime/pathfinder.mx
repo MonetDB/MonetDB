@@ -951,8 +951,11 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 			buf[curlen] = 0;	/* terminate (we know there is space) */
 
 			/* first line of the query is the mode */ 
-			for(xquery=buf; *xquery; xquery++)
-				if (*xquery == '\n') { *xquery++ = 0; break; }
+			for (xquery = buf; *xquery; xquery++)
+				if (*xquery == '\n') {
+					*xquery++ = 0;
+					break;
+				}
 
 			ret = CMDxquery(buf, xquery); /* execute, see above */
 		}
