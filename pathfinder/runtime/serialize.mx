@@ -778,7 +778,15 @@ static int handle_characters(XqueryCtx* ctx, str ch, str top) {
         } else { /* xmlMode */
                 if ( ctx->dmMode && top )
                         stream_printf(GDKout,"%s {\"",top);
-                if (ctx->mapiMode) {
+                if (ctx->printMode) {
+			/* we need to escape newlines */
+			str nl;
+			while ((nl = strchr(ch, '\n')) != NULL) {
+				stream_printf(GDKout, "%.*s\\n", (nl - ch), ch);
+				nl++;
+				ch = nl;
+			} 
+		} else if (ctx->mapiMode) {
 			/* we need to prepend "=" to each line, so
 			   make sure that we print one after each
 			   newline */
@@ -786,14 +794,6 @@ static int handle_characters(XqueryCtx* ctx, str ch, str top) {
 			while ((nl = strchr(ch, '\n')) != NULL) {
 				nl++;
 				stream_printf(GDKout, "%.*s=", (nl - ch), ch);
-				ch = nl;
-			}
-		} else if (ctx->printMode) {
-			/* we need to escape newlines */
-			str nl;
-			while ((nl = strchr(ch, '\n')) != NULL) {
-				stream_printf(GDKout, "%.*s\\n", (nl - ch), ch);
-				nl++;
 				ch = nl;
 			}
 		} 
