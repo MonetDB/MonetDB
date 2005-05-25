@@ -1300,6 +1300,7 @@ ostream &install_prelude::gen_prelude( ostream &o, const Prelude &d ){
 }
 
 ostream &deinstall::gen_atom( ostream &o, const Atom &d ){
+	o << "   BBPatom_drop(TYPE_" << d.Name() << ");\n";
    	o << "   ATOMdelete(TYPE_" << d.Name() << ");\n";
    	return o;
 }
