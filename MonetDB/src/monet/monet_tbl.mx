@@ -641,7 +641,7 @@ TBL_M_lock(Client c)
 	BATfakeAbort(TBL_mod_drop);
 	BATfakeAbort(TBL_mod_proc);
 	BATfakeAbort(TBL_mod_var);
-	if (c != NULL) 
+	if (c && c->atomtbl) 
 		BATfakeAbort(c->atomtbl);
 	dlPRINT("  <--TBL_M_lock\n");
 	return 1;
@@ -2741,6 +2741,7 @@ TBL_initclient(Client client, Client father)
 	BUN p, q;
 	int i, xx;
 
+	client->fcntbl = client->atomtbl = NULL;
 	TBL_M_lock(client);
 	if (monet_clients != client) {
 		client->fcntbl = TBL_fathercopy(client, father, "fcntbl");
@@ -2866,7 +2867,7 @@ TBL_exitclient(Client client)
 	/* Clean up all client parser BATs */
 	BBPunfix(client->fcntbl->batCacheid);
 	BBPunfix(client->atomtbl->batCacheid);
-	client->fcntbl = client->atomtbl = 0;
+	client->fcntbl = client->atomtbl = NULL;
 	TBL_M_unlock(NULL);
 }
 

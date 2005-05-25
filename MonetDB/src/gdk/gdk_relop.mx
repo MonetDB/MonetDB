@@ -1735,7 +1735,7 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 	}
 
 	/* iterate l; positional fetch in r */
-	if (!BAThordered(l))
+	if (!BAThordered(l))	/* StM: (!(BAThordered(l)&1)) ? */
 		BATmmap_pin(r);
 	BATloopFast(l, l_cur, l_end, xx) {
 		yy = offset + *(oid *) BUNhloc(l, l_cur);
@@ -1749,12 +1749,12 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 			bunfastins(bn, BUNhead(r, r_cur), BUNtail(l, l_cur));
 		}
 	}
-	if (!BAThordered(l))
+	if (!BAThordered(l))	/* StM: (!(BAThordered(l)&1)) ? */
 		BATmmap_unpin(r);
 
 	/* property propagation */
-	bn->hsorted = BAThordered(l) & BAThordered(r) & 1;
-	bn->tsorted = bn->hsorted & BATtordered(cpy) & 1;
+	bn->hsorted = (BAThordered(l) & BAThordered(r) & 1 ? GDK_SORTED : FALSE);
+	bn->tsorted = (bn->hsorted & BATtordered(cpy) & 1  ? GDK_SORTED : FALSE);
 
 
 	if (denselookup && BATcount(bn) == BATcount(l)) {
@@ -1773,7 +1773,7 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 
 	return bn;
       bunins_failed:
-	if (!BAThordered(l))
+	if (!BAThordered(l))	/* StM: (!(BAThordered(l)&1)) ? */
 		BATmmap_unpin(r);
 	BBPreclaim(bn);
 	return NULL;

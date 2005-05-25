@@ -133,7 +133,7 @@ BATins(BAT *b, BAT *n)
 			size_t idx = BUNindex(b, BUNlast(b));
 
 			xx = ATOMcmp(b->htype, BUNhead(n, BUNfirst(n)), BUNhead(b, last));
-			if ((BAThordered(n) & 1) == 0 || ((BAThordered(b) & 1) && xx < 0)) {
+			if ((BAThordered(b) & 1) && ((BAThordered(n) & 1) == 0 || xx < 0)) {
 				b->hsorted = FALSE;
 				b->H->nosorted = idx;
 				if (b->hdense & 1) {
@@ -141,7 +141,11 @@ BATins(BAT *b, BAT *n)
 					b->H->nodense = idx;
 				}
 			}
-			if ((BAThordered(b) & 1) == 0 || n->hkey == 0 || xx == 0) {
+			if ((BAThordered(b) == (bit)GDK_SORTED_REV) && ((BAThordered(n) != (bit)GDK_SORTED_REV) || xx > 0)) {
+				b->hsorted = FALSE;
+				b->H->nosorted_rev = idx;
+			}
+			if ((BAThordered(b) & 1) == 0 || n->hkey == 0 || xx == 0) {	/* StM: GDK_SORTED_REV ? */
 				if (b->hkey)
 					BATkey(b, FALSE);
 			}
@@ -151,7 +155,7 @@ BATins(BAT *b, BAT *n)
 			}
 
 			xx = ATOMcmp(b->ttype, BUNtail(n, BUNfirst(n)), BUNtail(b, last));
-			if ((BATtordered(n) & 1) == 0 || ((BATtordered(b) & 1) && xx < 0)) {
+			if ((BATtordered(b) & 1) && ((BATtordered(n) & 1) == 0 || xx < 0)) {
 				b->tsorted = FALSE;
 				b->T->nosorted = idx;
 				if (b->tdense & 1) {
@@ -159,7 +163,11 @@ BATins(BAT *b, BAT *n)
 					b->T->nodense = idx;
 				}
 			}
-			if ((BATtordered(b) & 1) == 0 || n->tkey == 0 || xx == 0) {
+			if ((BATtordered(b) == (bit)GDK_SORTED_REV) && ((BATtordered(n) != (bit)GDK_SORTED_REV) || xx > 0)) {
+				b->tsorted = FALSE;
+				b->T->nosorted_rev = idx;
+			}
+			if ((BATtordered(b) & 1) == 0 || n->tkey == 0 || xx == 0) {	/* StM: GDK_SORTED_REV ? */
 				if (b->tkey)
 					BATkey(BATmirror(b), FALSE);
 			}
