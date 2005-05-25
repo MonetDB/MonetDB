@@ -251,8 +251,8 @@ BATnew(int ht, int tt, size_t cap)
 	b = BATnewstorage(ht, tt, cap);
 	if (b == NULL)
 		return NULL;
-	b->hsorted = (bit) ATOMlinear(ht);
-	b->tsorted = (bit) ATOMlinear(tt);
+	b->hsorted = ((bit) ATOMlinear(ht) ? GDK_SORTED : FALSE);
+	b->tsorted = ((bit) ATOMlinear(tt) ? GDK_SORTED : FALSE);
 
 	return b;
 }
@@ -736,13 +736,22 @@ BUNins(BAT *b, ptr h, ptr t)
 					/* as nil < any, we only need to 
 					 * check on second BUNins if the 
 					 * first was nil */
-					if (i == 2 && cmp > 0) {
+					if (i == 2 && cmp > 0) {	/* StM: i==1 ? */
 						int ht = b->htype;
 						cmp = atom_CMP(prv, ATOMnilptr(ht), ht);
 						if (cmp == 0) {
 							b->H->nosorted = 1;
 							b->hsorted = FALSE;
 						}
+					}
+				}
+				else if (b->hsorted == (bit)GDK_SORTED_REV) {
+					ptr prv = BUNhead(b, p - bunsize);
+
+					cmp = atom_CMP(h, prv, b->htype);
+					if (cmp > 0) {
+						b->H->nosorted_rev = i;
+						b->hsorted = FALSE;
 					}
 				}
 				if (b->hkey == TRUE && cmp <= 0) {
@@ -768,13 +777,22 @@ BUNins(BAT *b, ptr h, ptr t)
 					/* as nil < any, we only need to 
 					 * check on second BUNins if the 
 					 * first was nil */
-					if (i == 2 && cmp > 0) {
+					if (i == 2 && cmp > 0) {	/* StM: i==1 ? */
 						int tt = b->ttype;
 						cmp = atom_CMP(prv, ATOMnilptr(tt), tt);
 						if (cmp == 0) {
 							b->T->nosorted = 1;
 							b->tsorted = FALSE;
 						}
+					}
+				}
+				else if (b->tsorted == (bit)GDK_SORTED_REV) {
+					ptr prv = BUNtail(b, p - bunsize);
+
+					cmp = atom_CMP(t, prv, b->ttype);
+					if (cmp > 0) {
+						b->T->nosorted_rev = i;
+						b->tsorted = FALSE;
 					}
 				}
 				if (b->tkey == TRUE && cmp <= 0) {
@@ -869,9 +887,17 @@ Deleting a (committed) bun the first and deleted swap position.
 				b->hsorted = FALSE;
 				b->H->nosorted = idx1;
 			}
+			else if (b->hsorted == (bit)GDK_SORTED_REV) {
+				b->hsorted = FALSE;
+				b->H->nosorted_rev = idx1;
+			}
 			if (b->tsorted & 1) {
 				b->tsorted = FALSE;
 				b->T->nosorted = idx1;
+			}
+			else if (b->tsorted == (bit)GDK_SORTED_REV) {
+				b->tsorted = FALSE;
+				b->T->nosorted_rev = idx1;
 			}
 		}
 		b->batFirst += bs;
@@ -911,6 +937,10 @@ last inserted bun (if present) is copied over it.
 					b->H->nodense = idx1;
 				}
 			}
+			else if (b->hsorted == (bit)GDK_SORTED_REV) {
+				b->hsorted = FALSE;
+				b->H->nosorted_rev = idx1;
+			}
 			if (b->tsorted & 1) {
 				b->tsorted = FALSE;
 				b->H->nosorted = idx1;
@@ -918,6 +948,10 @@ last inserted bun (if present) is copied over it.
 					b->tdense = FALSE;
 					b->T->nodense = idx1;
 				}
+			}
+			else if (b->tsorted == (bit)GDK_SORTED_REV) {
+				b->tsorted = FALSE;
+				b->H->nosorted_rev = idx1;
 			}
 		}
 		b->batBuns->free -= bs;
@@ -1008,7 +1042,7 @@ explicitly.
 	@:tacc_update(del,t@1,p,pit)@
 	ATOMreplace(b->ttype, b->theap, BUNtloc(b,p), t);
 	@:tacc_update(ins,t@1,p,pit)@
-	if (BATtordered(b)&1) {
+	if (BATtordered(b)&1 || BATtordered(b)==(bit)GDK_SORTED_REV) {
 		int bs = BUNsize(b), tt = b->ttype;
 		BUN prv = p - bs;
 		BUN nxt = p + bs;
@@ -1018,15 +1052,23 @@ explicitly.
 		if (nxt > last)
 			nxt = NULL;
 
-		if ((prv && ATOMcmp(tt, t, BUNt@1(b,prv)) < 0) ||
-		    (nxt && ATOMcmp(tt, t, BUNt@1(b,nxt)) > 0)) {
-			b->tsorted = FALSE;
-			b->T->nosorted = pit;
-		} else if (b->ttype != TYPE_void && b->tdense &&
-			   ((prv && 1 + *(oid*) BUNtloc(b,prv) != *(oid*) t) ||
-			    (nxt && *(oid*) BUNtloc(b,nxt) != 1 + *(oid*) t))) {
-			b->tdense = FALSE;
-			b->T->nodense = pit;
+		if (BATtordered(b)&1) {
+			if ((prv && ATOMcmp(tt, t, BUNt@1(b,prv)) < 0) ||
+			    (nxt && ATOMcmp(tt, t, BUNt@1(b,nxt)) > 0)) {
+				b->tsorted = FALSE;
+				b->T->nosorted = pit;
+			} else if (b->ttype != TYPE_void && b->tdense &&
+				   ((prv && 1 + *(oid*) BUNtloc(b,prv) != *(oid*) t) ||
+				    (nxt && *(oid*) BUNtloc(b,nxt) != 1 + *(oid*) t))) {
+				b->tdense = FALSE;
+				b->T->nodense = pit;
+			}
+		} else {
+			if ((prv && ATOMcmp(tt, t, BUNt@1(b,prv)) > 0) ||
+			    (nxt && ATOMcmp(tt, t, BUNt@1(b,nxt)) < 0)) {
+				b->tsorted = FALSE;
+				b->T->nosorted_rev = pit;
+			}
 		}
 	}
 @c
@@ -2050,10 +2092,10 @@ first propagate already known properties. that will save some effort.
 	if (mode & BATPROPS_CHECK) {
 		dense_bak = BAThdense(b);
 		seq_bak = b->hseqbase;
-		sorted_bak = BAThordered(b) & 1;
+		sorted_bak = BAThordered(b) & 1;	/* StM: GDK_SORTED_REV ? */
 		key_bak = b->hkey;
 		BATkey(b, FALSE);
-		b->hsorted &= (bit) ~1;	/* FALSE */
+		b->hsorted &= (bit) ~1;	/* FALSE */	/* StM: GDK_SORTED_REV ? */
 		b->hdense = FALSE;
 	} else if (b->hdense) {
 		disprove_dense = FALSE;
@@ -2070,15 +2112,15 @@ check whether whatever we want need to prove was already disproven
 			b->H->nokey[0] = b->H->nokey[1] = 0;
 		}
 	}
-	if (disprove_sorted) {
+	if (disprove_sorted) {	/* StM: GDK_SORTED_REV ? */
 		if ((BAThordered(b) & 1) || ATOMlinear(tpe) == 0 ||
 		    (b->H->nosorted > yy && b->H->nosorted < xx && ATOMcmp(tpe, BUNhead(b, BUNptr(b, b->H->nosorted - 1)), BUNhead(b, BUNptr(b, b->H->nosorted))) > 0)) {
 			disprove_sorted = FALSE;
 		} else {
-			b->H->nosorted = 0;
+			b->H->nosorted = 0;	/* StM: nosorted_rev ? */
 		}
 	}
-	if (disprove_dense) {
+	if (disprove_dense) {	/* StM: GDK_SORTED_REV ? */
 		if (((b->hsorted & 1) == FALSE && disprove_sorted == FALSE) ||
 		    (b->H->nodense > yy && b->H->nodense < xx && *(oid *) BUNhloc(b, BUNptr(b, b->H->nodense - 1)) + 1 != *(oid *) BUNhloc(b, BUNptr(b, b->H->nodense)))) {
 			disprove_dense = FALSE;
@@ -2152,14 +2194,14 @@ Merge scan check to see if head values are sorted (&key)
 	}
 
 @= merge_disprove
-	if (disprove_sorted) {
+	if (disprove_sorted) {	/* StM: GDK_SORTED_REV ? */
 		while (p < q) {
 			ptr v = BUNh@3(b,p);
 			int ret = @1_CMP(v,last,@2);
 
 			if (ret < 0) {
 				disprove_sorted = FALSE;
-				b->H->nosorted = BUNindex(b,p);
+				b->H->nosorted = BUNindex(b,p);	/* StM: nosorted_rev ? */
 				b->batDirtydesc = 1; 
 				break;
 			} else if (ret == 0 && disprove_key) {
@@ -2269,7 +2311,7 @@ failed to disprove on exhaustive check => succeeded to prove
 	if (disprove_key || disprove_dense) {
 		BATkey(b, key_bak | isKey);	/* respect BOUND2BTRUE */
 	}
-	if (disprove_sorted || disprove_dense) {
+	if (disprove_sorted || disprove_dense) {	/* StM: GDK_SORTED_REV ? */
 		b->batDirtydesc = TRUE;
 		b->hsorted = GDK_SORTED;
 	}
@@ -2293,7 +2335,7 @@ failed to disprove on exhaustive check => succeeded to prove
 				GDKwarning("BATpropcheck: BAT %s had incorrect seqbase!\n", BATgetId(b));
 		}
 		XPROPDEBUG {
-			if (!(sorted_bak & 1) && (BAThordered(b) & 1))
+			if (!(sorted_bak & 1) && (BAThordered(b) & 1))	/* StM: GDK_SORTED_REV ? */
 				GDKwarning("BATpropcheck: BAT %s was not marked sorted!\n", BATgetId(b));
 			if (!key_bak && b->hkey)
 				GDKwarning("BATpropcheck: BAT %s was not marked keyed!\n", BATgetId(b));

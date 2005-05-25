@@ -1992,8 +1992,8 @@ CMDr@1_summary(BAT **ret, BAT* b, int *quantiles)
 
 	if (bn == NULL)
 		return GDK_FAIL;
-	bn->hsorted = 1 @3 0;
-	bn->tsorted = 1;
+	bn->hsorted = (1 @3 0 ? GDK_SORTED : FALSE);
+	bn->tsorted = GDK_SORTED;
 
 	if (cnt > 0) {
 		ssize_t yy = 0, bunwidth = 0 @5 BUNsize(b);
@@ -2017,7 +2017,7 @@ CMDr@1_summary(BAT **ret, BAT* b, int *quantiles)
 	if ((BAThordered(bn)&1) == 0)
 		bn = BATrevert(bn);
 	if (bn) {
-		bn->hsorted = 1;
+		bn->hsorted = GDK_SORTED;
 		return GDK_SUCCEED;
 	}
 bunins_failed:

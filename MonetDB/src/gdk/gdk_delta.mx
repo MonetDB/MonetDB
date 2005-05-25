@@ -248,9 +248,9 @@ BATundo(BAT *b)
 		size_t i = BUNindex(b, bunfirst);
 
 		/* elements are 'inserted' => zap properties */
-		if (b->hsorted & 1)
+		if (b->hsorted & 1 || b->hsorted == (bit)GDK_SORTED_REV)
 			b->hsorted = FALSE;
-		if (b->tsorted & 1)
+		if (b->tsorted & 1 || b->tsorted == (bit)GDK_SORTED_REV)
 			b->tsorted = FALSE;
 		if (b->hkey)
 			BATkey(b, FALSE);

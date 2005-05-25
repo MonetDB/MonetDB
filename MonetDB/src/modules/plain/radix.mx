@@ -1125,8 +1125,8 @@ BATuniform(BAT **bn, oid *base, int *size, int *domain)
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
-		b->tsorted = TRUE;
-		b->hsorted = TRUE;
+		b->tsorted = GDK_SORTED;
+		b->hsorted = GDK_SORTED;
 		b->hdense = TRUE;
 		BATseqbase(b, *base);
 		BATkey(b, TRUE);
@@ -1191,8 +1191,8 @@ BATnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
 	if (b == NULL)
 		return GDK_FAIL;
 	if (n == 0) {
-		b->tsorted = TRUE;
-		b->hsorted = TRUE;
+		b->tsorted = GDK_SORTED;
+		b->hsorted = GDK_SORTED;
 		b->hdense = TRUE;
 		BATseqbase(b, *base);
 		BATkey(b, TRUE);
@@ -1401,6 +1401,7 @@ BATinteger(BAT **ret, BAT *b, int *width)
 		bn->tsorted = b->tsorted;
 		BATkey(BATmirror(bn), b->tkey);
 		bn->T->nosorted = b->T->nosorted;
+		bn->T->nosorted_rev = b->T->nosorted_rev;
 		bn->T->nokey[0] = b->T->nokey[0];
 		bn->T->nokey[1] = b->T->nokey[1];
 	}
@@ -2126,7 +2127,7 @@ radix_count2(BAT **res, BAT *b, int *shift, int *radix)
 		cnt[idx + idx + 1]++;
 	}
 	BATkey(bn, TRUE);
-	bn->hsorted = 1;
+	bn->hsorted = GDK_SORTED;
 	bn->tsorted = 0;
 	return GDK_SUCCEED;
 }
@@ -3572,7 +3573,7 @@ jivejoin2(BAT **res, BAT *proj, BAT *attr)
 	bn->batBuns->free = BUNsize(bn) * BATcount(proj);
 	BATsetcount(bn, BATcount(proj));
 	BATseqbase(bn, 0);
-	bn->tsorted = BAThordered(proj) & BATtordered(proj) & BATtordered(attr) & 1;
+	bn->tsorted = ( BAThordered(proj) & BATtordered(proj) & BATtordered(attr) & 1 ? GDK_SORTED : FALSE);
 	if (proj->tkey && attr->tkey)
 		BATkey(BATmirror(bn), TRUE);
 	return GDK_SUCCEED;
