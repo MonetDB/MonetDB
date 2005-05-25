@@ -1921,10 +1921,8 @@ unloadmod_check_use(oid mid, str module, int ntpes, int *tpes )
 		}
 	}
 	/* OK: drop can go through. */
-	for (i = 0; i < ntpes; i++) {
+	for (i = 0; i < ntpes; i++) 
 		BATatoms[tpes[i]].deleting = 1;	/* block BAT loads of these atoms */
-		BBPatom_drop(tpes[i]);
-	}
 	/* start unload for all prologue bats such that they cannot receive new refcounts */
 	BATloop(TBL_mod_drop, p, q) {
 		if (*(oid *) BUNhloc(TBL_mod_drop, p) == mid) {

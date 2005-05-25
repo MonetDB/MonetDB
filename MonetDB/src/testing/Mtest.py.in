@@ -2828,10 +2828,10 @@ def main(argv) :
                                                            (opts.config, env['GDK_DEBUG'], env['setMONETDB_MOD_PATH'], env['setGDK_DBFARM'], env['setSQL_LOGDIR'], env['MAPIPORT'], env['SQLPORT'], env['XQUERYPORT'])
         exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec('python')       , 'python'
-        exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host="%s" --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
-        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -u monetdb -P monetdb --host="%s" --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
-        exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb --host="%s" --port=%s' % (env['XQUERYCLIENT'], HOST, env['XQUERYPORT'])
-        exe['X100_Client']   = CheckExec(env['X100CLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host="%s" --port=%s' % (env['X100CLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['Mapi_Client']   = CheckExec(env['MAPICLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['MAPICLIENT'], opts.config, HOST, env['MAPIPORT'])
+        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -u monetdb -P monetdb --host=%s --port=%s %s' % (env['SQLCLIENT'], HOST, env['SQLPORT'], env['SQL_TRACE'])
+        exe['XQuery_Client'] = CheckExec(env['XQUERYCLIENT'].split(None, 1)[0]), '%s -u monetdb -P monetdb --host=%s --port=%s' % (env['XQUERYCLIENT'], HOST, env['XQUERYPORT'])
+        exe['X100_Client']   = CheckExec(env['X100CLIENT'].split(None, 1)[0])  , '%s -u monetdb -P monetdb "--config=%s" --host=%s --port=%s' % (env['X100CLIENT'], opts.config, HOST, env['MAPIPORT'])
         if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
             exe['Mtimeout'] = '', ''
         env['exe'] = exe

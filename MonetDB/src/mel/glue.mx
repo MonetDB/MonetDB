@@ -215,18 +215,24 @@ class install_prelude: public glue {
 
 // generates delete functions  
 @+ deinstall
-The deinstalls the everything including modules from its use list. 
+The deinstall class deinstalls everything including modules from its use list. 
 A module only gets deinstalled when its reference count hits zero.
 So if the module is used more than once it will not be deinstalled, only
 its reference count will be decreased.
+Deinstall is split in deinstall and run_epilogue, as the epilogue needs to
+be run before deinstalling all atoms.
 
 @C
+class run_epilogue: public glue {
+    public:
+	ostream &gen_epilogue( ostream &o, const Epilogue &m );
+};
+
 class deinstall: public glue {
     public:
 	ostream &gen_atom( ostream &o, const Atom &m );
-
-	ostream &gen_epilogue( ostream &o, const Epilogue &m );
 };
+
 
 @+ type check functions
 The typecheck class generates the type check functions. These functions
@@ -420,13 +426,19 @@ ostream &glue::gen_module( ostream &o, const Module &d ){
 
 	o << "   return mid;\n}\n\n";
 
-	l = new deinstall(); 
 	o << "int _" << d.Name() << "_Module_Delete( str user ){\n";
 	o << "   (void)user;\n";
+	/* run epiloque */
+	l = new run_epilogue(); 
 	print_list( o, d.Defs(), l );
+	delete(l);
+
+	/* deinstall atoms */
+	l = new deinstall(); 
+	print_list( o, d.Defs(), l );
+	delete(l);
 	o << "   return 1;\n";
 	o << "}\n\n";
-	delete(l);
 	return o; 
 }
 
@@ -1288,11 +1300,12 @@ ostream &install_prelude::gen_prelude( ostream &o, const Prelude &d ){
 }
 
 ostream &deinstall::gen_atom( ostream &o, const Atom &d ){
+	o << "   BBPatom_drop(TYPE_" << d.Name() << ");\n";
    	o << "   ATOMdelete(TYPE_" << d.Name() << ");\n";
    	return o;
 }
 
-ostream &deinstall::gen_epilogue( ostream &o, const Epilogue &d ){
+ostream &run_epilogue::gen_epilogue( ostream &o, const Epilogue &d ){
 	 o << "   " <<   d.Name() << "();\n";
 	 return o; 
 }

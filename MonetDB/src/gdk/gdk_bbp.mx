@@ -2677,6 +2677,7 @@ BBPatom_drop(int atom)
 	str nme = ATOMname(atom);
 	int unknown = ATOMunknown_add(nme);
 
+	BBPlock("BBPatom_drop");
 	for (i = 0; i < BBPsize; i++) {
 		if (BBPvalid(i)) {
 			BATstore *b = BBP_desc(i);
@@ -2689,6 +2690,7 @@ BBPatom_drop(int atom)
 				b->B.ttype = unknown; 
 		}
 	}
+	BBPunlock("BBPatom_drop");
 }
 
 void 
@@ -2697,7 +2699,7 @@ BBPatom_load(int atom)
 	str nme;
 	int i, unknown;
 
-	BBPlock("atom_load");
+	BBPlock("BBPatom_load");
  	nme = ATOMname(atom);
  	unknown = ATOMunknown_find(nme);
 	ATOMunknown_del(unknown);
@@ -2713,7 +2715,7 @@ BBPatom_load(int atom)
 				b->B.ttype = atom; 
 		}
 	}
-	BBPunlock("atom_load");
+	BBPunlock("BBPatom_load");
 }
 @}
 
