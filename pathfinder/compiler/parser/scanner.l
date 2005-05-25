@@ -756,6 +756,7 @@ _                                ({S}|{ExprComment})+
 {CharRef}                          { pflval.chr = entity_ref (yytext, NULL);
                                      yield (CharRef);
                                    }
+.                                  { yield (invalid_character); }
 }
 
 <APOS_ATTRIBUTE_CONTENT>{
@@ -776,6 +777,7 @@ _                                ({S}|{ExprComment})+
 {CharRef}                          { pflval.chr = entity_ref (yytext, NULL);
                                      yield (CharRef);
                                    }
+.                                  { yield (invalid_character); }
 }
 
 <ELEMENT_CONTENT>{
@@ -805,6 +807,7 @@ _                                ({S}|{ExprComment})+
 {ElementContentChar}               { pflval.chr = *yytext;
                                      yield (ElementContentChar);
                                    }
+.                                  { yield (invalid_character); }
 }
 
 <XML_COMMENT>{
@@ -812,6 +815,7 @@ _                                ({S}|{ExprComment})+
 {PFChar}                           { pflval.chr = *yytext;
                                      yield (PFChar);
                                    }
+.                                  { yield (invalid_character); }
 }
 
 <PROCESSING_INSTRUCTION>{
@@ -821,6 +825,7 @@ _                                ({S}|{ExprComment})+
 {PITarget}                         { pflval.str = PFstrndup (yytext, yyleng);
                                      yield (PITarget);
                                    }
+.                                  { yield (invalid_character); }
 }
 
 <PROCESSING_INSTRUCTION_CONTENT>{
@@ -828,6 +833,7 @@ _                                ({S}|{ExprComment})+
 {PFChar}                           { pflval.chr = *yytext;
                                      yield (PFChar);
                                    }
+.                                  { yield (invalid_character); }
 }
 
 <CDATA_SECTION>{
@@ -835,6 +841,7 @@ _                                ({S}|{ExprComment})+
 {PFChar}                           { pflval.chr = *yytext;
                                      yield (PFChar);
                                    }
+.                                  { yield (invalid_character); }
 }
 
 <END_TAG>{
