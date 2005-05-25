@@ -1566,6 +1566,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 						bunfastins_nocheck(bn, r, BUNhead(b, p), BUNtvar(b, p), yy);
 						r += yy;
 					}
+					reduce = 1; /* first character might be identical for several strings */
 				} else if (tpe != TYPE_str) {
 					/* str => any: use fromstr ADT routine */
 					int (*fromstr) (str, int *, ptr *) = BATatoms[tpe].atomFromStr;
@@ -1576,6 +1577,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 						bunfastins_nocheck(bn, r, BUNhead(b, p), v, yy);
 						r += yy;
 					}
+					reduce = 1; /* strings might only differ by (ignored) whitespace */
 				} else if (b->ttype == TYPE_chr) {
 					/* chr => str: do this efficiently */
 					char s[4];
@@ -1588,6 +1590,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 						bunfastins_nocheck(bn, r, BUNhead(b, p), s, yy);
 						r += yy;
 					}
+					/*reduce = 0;*/ /* this should be fine */
 				} else {
 					/* any => str: use tostr ADT routine */
 					int (*tostr) (str *, int *, ptr) = BATatoms[b->ttype].atomToStr;
@@ -1604,8 +1607,10 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 						} else {
 							bunfastins_nocheck(bn, r, BUNhead(b, p), str_nil, yy);
 							r += yy;
+							reduce = 1; /* NILs destroy keyness */
 						}
 					}
+					/*reduce = 0;*/ /* be optimistic... */
 				}
 			} else {
 				ptr s;
