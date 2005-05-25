@@ -557,7 +557,7 @@ salgebra_CHname(char *ch_basename, int batId)
 	int l = strlen(ch_basename);
 	char *id = local_itoa(ABS(batId));
 	int l2 = strLen(id);
-	char *n = (char *) GDKmalloc(l + l2);
+	char *n = (char *) GDKmalloc(l + l2 + 1);
 
 	memcpy(n, ch_basename, l);
 	*(char *) (n + l++) = '_';
