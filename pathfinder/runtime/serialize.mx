@@ -667,7 +667,14 @@ static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str va
                 } else {
                         stream_printf(GDKout,"attribute %s { %s }",loc,value);
                 }
-        } else { /* xmlMode */
+        } else if (ctx->printMode) {
+                if ( prefix && strlen(prefix)>0 ) {
+                        stream_printf(GDKout," %s:%s=\\\"%s\\\"",prefix,loc,value);
+                } else {
+                        stream_printf(GDKout," %s=\\\"%s\\\"",loc,value);
+                }
+	
+	} else { /* xmlMode */
                 if ( prefix && strlen(prefix)>0 ) {
                         stream_printf(GDKout," %s:%s=\"%s\"",prefix,loc,value);
                 } else {
@@ -781,7 +788,15 @@ static int handle_characters(XqueryCtx* ctx, str ch, str top) {
 				stream_printf(GDKout, "%.*s=", (nl - ch), ch);
 				ch = nl;
 			}
-		}
+		} else if (ctx->printMode) {
+			/* we need to escape newlines */
+			str nl;
+			while ((nl = strchr(ch, '\n')) != NULL) {
+				stream_printf(GDKout, "%.*s\\n", (nl - ch), ch);
+				nl++;
+				ch = nl;
+			}
+		} 
 		stream_printf(GDKout,"%s",ch);
                 if ( ctx->dmMode && top )
                         stream_printf(GDKout,"\"}");
@@ -1316,6 +1331,11 @@ static int  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
 static int  seqEmitStr(XqueryCtx* ctx, str sv) {
         if ( ctx->saxMode ) {
                 return handle_characters(ctx,sv,"text");
+        } else if ( ctx->printMode ) {
+                ctx->nAttrOnLine++;
+                stream_printf(GDKout,"\\\"");
+                emit_escaped( sv, 1+ctx->mapiMode );
+                stream_printf(GDKout,"\\\"");
         } else if ( ctx->dmMode ) {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"\"");
@@ -1392,7 +1412,7 @@ int xquery_print_result_main(
 		CHKVP( vp = idxTV(ctx,"kind",kind,pre) );
                 int cmbn_frag_kind = *(int*)vp;
                 if (ctx->printMode) {
-                    stream_printf(GDKout, "[ %d,\t", cnt);
+                    stream_printf(GDKout, "[ %d,\t\"", cnt);
                 } else if ( cnt++ && ctx->dmMode  ) {
                         /* should print a separator here */
                         stream_printf(GDKout,"%s",ctx->dmSeparator);
@@ -1468,7 +1488,7 @@ int xquery_print_result_main(
 			return GDK_FAIL;
                 }
             if (ctx->printMode) {
-                stream_printf(GDKout,"\t]\n");
+                stream_printf(GDKout,"\t\" ]\n");
             }
         }
         /* */
