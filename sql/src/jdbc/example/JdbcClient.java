@@ -609,7 +609,7 @@ public class JdbcClient {
 						out.println("\\h      this help screen");
 						out.println("\\d      list available tables and views");
 						out.println("\\d<obj> describes the given table or view");
-					} else if (qp.getQuery().startsWith("\\d")) {
+					} else if (dbmd != null && qp.getQuery().startsWith("\\d")) {
 						String object = qp.getQuery().substring(2).trim().toLowerCase();
 						if (object.endsWith(";")) object = object.substring(0, object.length() - 1);
 						if (!object.equals("")) {
@@ -684,6 +684,7 @@ public class JdbcClient {
 				if (doProcess) {
 					query += qp.getQuery() + (qp.hasOpenQuote() ? "\\n" : " ");
 					if (qp.isComplete()) {
+						// strip off trailing ';'
 						query = query.substring(0, query.length() - 2);
 						// execute query
 						try {
