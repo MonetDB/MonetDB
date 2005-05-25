@@ -185,6 +185,7 @@ intersect
 intersect2
 except
 except2
+except3
 fn_avg
 fn_min
 fn_max

@@ -5287,7 +5287,10 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
             "var list2 := iter.[lng]();\n"
             "if (diff > 0)\n"
             "{\n"
-            "    var shift := int(log(dbl(max))/log(2.0)) + 1;\n"
+            /* since max and min are oids - the lowest number can be 1.
+               But log(1) returns 0 - The solution is adding 0.1, which 
+               is small enough to avoid shifting a bit too much */
+            "    var shift := int(log(dbl(max) + 0.1LL)/log(2.0)) + 1;\n"
             "    list1 := list1.[<<](shift).[or](kind%03u.[-](min).[lng]());\n"
             "    list2 := list2.[<<](shift).[or](kind.[-](min).[lng]());\n"
             "}\n"
@@ -5296,7 +5299,10 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
             "diff := max - min;\n"
             "if (diff > 0)\n"
             "{\n"
-            "    var shift := int(log(dbl(max))/log(2.0)) + 1;\n"
+            /* since max and min are oids - the lowest number can be 1.
+               But log(1) returns 0 - The solution is adding 0.1, which 
+               is small enough to avoid shifting a bit too much */
+            "    var shift := int(log(dbl(max) + 0.1LL)/log(2.0)) + 1;\n"
             "    list1 := list1.[<<](shift).[or](item%03u.[lng]().[-](min));\n"
             "    list2 := list2.[<<](shift).[or](item.[lng]().[-](min));\n"
             "}\n"
