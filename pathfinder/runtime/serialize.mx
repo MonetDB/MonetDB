@@ -1488,7 +1488,7 @@ int xquery_print_result_main(
 			return GDK_FAIL;
                 }
             if (ctx->printMode) {
-                stream_printf(GDKout,"\t\" ]\n");
+                stream_printf(GDKout,"\"\t]\n");
             }
         }
         /* */
