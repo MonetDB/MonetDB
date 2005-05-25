@@ -1944,17 +1944,33 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 			}
 
 			cmp = stmt_join(stmt_reverse(oref), sqa, cmp_equal);
-			/* need to fix the oref head */
-			h = stmt_dup(cmp->h->h);
-			stmt_destroy(cmp->h);
-			cmp->h = h;
+			if (f == sql_search) {
+				/* need to fix the cmp head */
+				h = stmt_dup(cmp->h->t);
+				stmt_destroy(cmp->h);
+				cmp->h = h;
 
-			if (subset) {	/* filter subset */
-				ls = stmt_join(find_pivot(subset, ls->h), ls, cmp_equal);
-			} else if (ls->nrcols) {
-				ls = stmt_join(scope_find_pivot(scp, ls->h), ls, cmp_equal);
+				cmp = stmt_join(find_pivot(subset, cmp->h), cmp, cmp_equal);
+			} else {
+				/* need to fix the oref head */
+				h = stmt_dup(cmp->h->h);
+				stmt_destroy(cmp->h);
+				cmp->h = h;
+
+				if (subset) {	/* filter subset */
+					stmt *p = find_pivot(subset, ls->h);
+
+					ls = stmt_join(p, ls, cmp_equal);
+				} else if (ls->nrcols) {
+					stmt *p = scope_find_pivot(scp, ls->h);
+
+					ls = stmt_join(p, ls, cmp_equal);
+				}
 			}
 			cmp = sql_compare(sql, ls, cmp, compare_op, f);
+			/* incase of sub queries no need too filter */
+			if (f == sql_search)
+				return cmp;
 			stmt_destroy(rs);
 			if (!cmp)
 				return NULL;

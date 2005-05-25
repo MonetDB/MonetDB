@@ -560,6 +560,9 @@ mvc_destroy(mvc *m)
 	if (m->role)
 		_DELETE(m->role);
 
+	if (m->sa)
+		sa_destroy(m->sa);
+	m->sa = NULL;
 	if (m->qc)
 		qc_destroy(m->qc);
 	m->qc = NULL;
