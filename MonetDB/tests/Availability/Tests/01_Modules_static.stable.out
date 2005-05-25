@@ -593,7 +593,7 @@ Module: "bat"
 [ "capacity",	  "COMMAND:   ",  "capacity(int) : lng",								  "Returns the current allocation size (in max number of elements) of a BAT."																																																				  ]
 [ "col_name",	  "COMMAND:   ",  "col_name(BAT[any,any], str) : BAT[any,any]",							  "Give a logical name to tail column of a BAT.\n Returns the BAT itself."																												  ]
 [ "cold",	  "COMMAND:   ",  "cold(str) : void",										  "Makes a BAT very cold for the BBP. The chance of being choses for swapout is\n big, afterwards.  Returns the BAT itself."																						  ]
-[ "convert",	  "COMMAND:   ",  "convert(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Convert the contents of a BAT from little-endian to big-endian and vice versa.\n THIS COMMAND SHOULD NOT BE USED FROM MIL! DANGEROUS! DEBUGGING PUPOSES ONLY!"																																									  ]
+[ "convert",	  "COMMAND:   ",  "convert(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Convert the contents of a BAT from little-endian to big-endian and vice versa.\n THIS COMMAND SHOULD NOT BE USED FROM MIL! DANGEROUS! DEBUGGING PURPOSES ONLY!"																																									  ]
 [ "count",	  "COMMAND:   ",  "count(BAT[void,void], lng) : lng",							  "Returns the current size (in number of elements) of a BAT."																																																																					  ]
 [ "count",	  "COMMAND:   ",  "count(int) : lng",									  "Returns the current size (in number of elements) of a BAT."																																																						  ]
 [ "delete",	  "COMMAND:   ",  "delete(BAT[any::1,any::2]) : BAT[any::1,any::2]",						  "Delete all BUNs in a BAT.\n Returns the modified BAT."																														  ]

@@ -55,7 +55,7 @@ can be found in this module.
 
 .COMMAND convert(BAT[any::1,any::2] ) : BAT[any::1,any::2] = CMDconvert;
 "Convert the contents of a BAT from little-endian to big-endian and vice versa.
- THIS COMMAND SHOULD NOT BE USED FROM MIL! DANGEROUS! DEBUGGING PUPOSES ONLY!"
+ THIS COMMAND SHOULD NOT BE USED FROM MIL! DANGEROUS! DEBUGGING PURPOSES ONLY!"
 
 .COMMAND order(BAT[any::1,any::2] b) : BAT[any::1,any::2] = CMDorder;
 "Sorts the BAT itself, in place, on ascending head values. Returns b."
