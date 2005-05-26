@@ -337,12 +337,12 @@ copy_heap(char *dst, char *dir, char *src, char *ext)
 	char *buf;
 
 	snprintf(srcpath, PATHLENGTH, "%s%c%s.%s", dir, DS, src, ext);
-	if ((srcfp = fopen(srcpath, "r")) == NULL) {
+	if ((srcfp = fopen(srcpath, "rb")) == NULL) {
 		GDKerror("couldn't open %s\n", srcpath);
 		return -1;
 	}
 	snprintf(dstpath, PATHLENGTH, "bat%c%s.%s", DS, dst, ext);
-	if ((dstfp = fopen(dstpath, "w")) == NULL) {
+	if ((dstfp = fopen(dstpath, "wb")) == NULL) {
 		GDKerror("couldn't open %s\n", dstpath);
 		return -1;
 	}
@@ -368,11 +368,11 @@ bat_convert(bat i, char *dir, char *physical, char **name )
 	printf("converting bat %d(%s,%s)\n", i, name[0]?name[0]:"", name[1]?name[1]:"");
 
 	snprintf(path, PATHLENGTH, "%s%c%s.desc", dir, DS, physical);
-	fp = fopen(path, "r");
+	fp = fopen(path, "rb");
 	if (!fp) {
 		snprintf(path, PATHLENGTH, "%s%cBACKUP%c%s.desc", 
 			dir, DS, DS, physical);
-		fp = fopen(path, "r");
+		fp = fopen(path, "rb");
 	}
 	if (!fp){
 		GDKerror("couldn't open descriptor %s\n", physical);
