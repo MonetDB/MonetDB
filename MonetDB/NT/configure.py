@@ -56,6 +56,7 @@ subs = [
     ('@PACKAGE@',                r'MonetDB'),
     ('@VERSION@',                r'4.9.0'),
     ('@DIRSEP@',                 '\\'),
+    ('@PATHSEP@',                ';'),
     ('@prefix@',                 prefix),
     ('@Xprefix@',                prefix),
     ('@MONETDB_BUILD@',          build),
