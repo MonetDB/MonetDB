@@ -221,6 +221,9 @@ Monet_init(opt *set, int setlen)
 	strcpy(dbfarm, dbfarmval);
 	mo_substitute(set, setlen, dbfarm);
 
+	if ((p = mo_find_option(set, setlen, "gdk_debug")))
+		GDKdebug = strtol(p, NULL, 10);
+
 	/* determine Monet's kernel settings. */
 	if (!GDKinit(dbname, dbfarm, strcasecmp(alloc_map, "yes") == 0)) {
 		GDKfree(n);
@@ -253,8 +256,6 @@ Monet_init(opt *set, int setlen)
 	}
 	GDKfree(n);
 
-	if ((p = GDKgetenv("gdk_debug")))
-		GDKdebug = strtol(p, NULL, 10);
 
 	if ((p = GDKgetenv("gdk_mem_bigsize")))
 		GDK_mem_bigsize = strtol(p, NULL, 10);
