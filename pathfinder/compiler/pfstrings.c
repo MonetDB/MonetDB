@@ -42,8 +42,9 @@
 #include "mem.h"
 
 /**
- * Escape all newlines and quotes in string @a in by a backslash.
- * Use this to print strings for AT&T dot or MIL output.
+ * Escape all backslahes, newlines and quotes in string @a in
+ * by a backslash. Use this to print strings for AT&T dot or MIL
+ * output.
  *
  * @param in The string to convert.
  * @return The input string with all newlines escaped to '\n' and
@@ -67,6 +68,10 @@ PFesc_string (char *in)
     {
         switch (in[pos_in])
         {
+            case '\\':  out[pos_out]   = '\\';
+                        out[pos_out+1] = '\\';
+                        pos_out += 2;
+                        break;
             case '\n':  out[pos_out]   = '\\';
                         out[pos_out+1] = 'n';
                         pos_out += 2;
