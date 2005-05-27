@@ -75,6 +75,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_0FB608C18E2A4894B7B0A013FC9EB905"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_10E88048A3FF439A861846291A827C99"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -345,12 +351,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_72479DFAEF44406680DD489F2BFD5B9D"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_736F83E947D345E38CBB40028A27FE9F"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -513,6 +513,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_ABC597FBD3314384862330D23D7EEE6E"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_AC29CD7FEBB140C3B47B5BE945C9EC98"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -621,18 +627,6 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_C51B7FE688944F438F2B652EE0CE72BE"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_C6581F14BD7A40A18BB2300DBFAAA937"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_C6DCAFE6F0B24DBC948530AF20E7F4C2"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -664,12 +658,6 @@
         "Entry"
         {
         "MsmKey" = "8:_CEA4C0AEC3814536B3DBE883B94839F7"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_CF919ACA47C840F692BB37E3C07F6CC9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -1057,6 +1045,26 @@
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\lib_iterator.dll"
             "TargetName" = "8:lib_iterator.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_0FB608C18E2A4894B7B0A013FC9EB905"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\lib_upgrade.dll"
+            "TargetName" = "8:lib_upgrade.dll"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -1973,26 +1981,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_72479DFAEF44406680DD489F2BFD5B9D"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_tpcd.dll"
-            "TargetName" = "8:lib_tpcd.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_736F83E947D345E38CBB40028A27FE9F"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\bitvector.mil"
@@ -2533,6 +2521,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_ABC597FBD3314384862330D23D7EEE6E"
+            {
+            "SourcePath" = "8:..\\lib\\MonetDB\\upgrade.mil"
+            "TargetName" = "8:upgrade.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_AC29CD7FEBB140C3B47B5BE945C9EC98"
             {
             "SourcePath" = "8:..\\..\\banner.bmp"
@@ -2893,46 +2901,6 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C51B7FE688944F438F2B652EE0CE72BE"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\lib_cluster.dll"
-            "TargetName" = "8:lib_cluster.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_C6581F14BD7A40A18BB2300DBFAAA937"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\cluster.mil"
-            "TargetName" = "8:cluster.mil"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_C6DCAFE6F0B24DBC948530AF20E7F4C2"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\lib_enum.dll"
@@ -3017,26 +2985,6 @@
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\lib_aggrX3.dll"
             "TargetName" = "8:lib_aggrX3.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{A582A373-4685-4296-BEFE-614B80A702C3}:_CF919ACA47C840F692BB37E3C07F6CC9"
-            {
-            "SourcePath" = "8:..\\lib\\MonetDB\\tpcd.mil"
-            "TargetName" = "8:tpcd.mil"
             "Tag" = "8:"
             "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
             "Condition" = "8:"
@@ -3566,7 +3514,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB"
         "ProductCode" = "8:{169E1FC0-12F6-46BC-9C26-E78AB1B456E0}"
-        "PackageCode" = "8:{49DE0221-F127-4D56-A8E6-A516D2D7C8D8}"
+        "PackageCode" = "8:{975A84C4-844F-483F-B1EF-698D4249C28F}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
