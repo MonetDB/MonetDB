@@ -549,7 +549,8 @@ static int emit_escaped(char* src, int mode, int onlyEntity) {
                 } else {
                    char *emit_val = isspecial_val[mode+(int)isspecial_ch];
 
-		   if ( onlyEntity && (*emit_val!='&') )
+		   /* if ( onlyEntity && (*emit_val!='&') ) */
+		   if ( onlyEntity && ((src[end]!='<') && (src[end]!='>') && (src[end]!='&')) )
                        start--; /* char should normally be printed */ 
 		   else
                        stream_write(GDKout,emit_val,strlen(emit_val),1);
@@ -656,7 +657,6 @@ static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str va
         } else if (ctx->dmMode && top) { /* dmMode */
                 if ( prefix && strlen(prefix)>0 ) {
 			if ( strcmp(prefix,"xmlns")==0 )
-                            /* stream_printf(GDKout,"declare namespace %s = \"%s\";\n",loc,value); */
                             stream_printf(GDKout,"attribute %s:%s { %s }%s",prefix,loc,value,ctx->dmSeparator);
 			else
                             stream_printf(GDKout,"attribute %s:%s { %s }",prefix,loc,value);
@@ -665,10 +665,14 @@ static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str va
                 }
         } else { /* xmlMode */
                 if ( prefix && strlen(prefix)>0 ) {
-                        stream_printf(GDKout," %s:%s=\"%s\"",prefix,loc,value);
+                        stream_printf(GDKout," %s:%s=",prefix,loc);
                 } else {
-                        stream_printf(GDKout," %s=\"%s\"",loc,value);
+                        stream_printf(GDKout," %s=",loc);
                 }
+                /* stream_printf(GDKout,"\"%s\"",value); */
+                stream_printf(GDKout,"\"");
+                emit_escaped(value, 1+ctx->mapiMode, 0/*ALL*/);
+                stream_printf(GDKout,"\"");
         }
 	return 1;
 }
