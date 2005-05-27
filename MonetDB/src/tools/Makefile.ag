@@ -106,3 +106,4 @@ scripts_bat = {
 	SOURCES = monetdb-config.bat.in 
 }
 
+EXTRA_DIST_DIR = Tests

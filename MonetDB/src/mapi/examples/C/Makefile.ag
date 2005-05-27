@@ -27,3 +27,5 @@ BINS = {
 	LIBS = $(MAPI_LIBS) ../../clients/C/libMapi ../../../common/libstream
 	HEADERS = h
 }
+
+EXTRA_DIST_DIR = Tests

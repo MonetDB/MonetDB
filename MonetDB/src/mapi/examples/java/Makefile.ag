@@ -23,3 +23,5 @@ java_sample = {
 	DIR = pkgdatadir/Tests
 	SOURCES = sample.java
 }
+
+EXTRA_DIST_DIR = Tests
