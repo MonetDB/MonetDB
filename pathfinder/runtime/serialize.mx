@@ -536,7 +536,7 @@ static void init_isspecial() {
  * This function is responsible for the presentation of special characters
  * and XML entity characters in the result.
  */
-static int emit_escaped(char* src, int mode) {
+static int emit_escaped(char* src, int mode, int onlyEntity) {
         /* Emit a string with all special character escaped. Inspired by
          * function strToStr() in gdk_atoms.mx
          */
@@ -546,7 +546,6 @@ static int emit_escaped(char* src, int mode) {
         if (isspecial_tab[0] == 0) /* module not initialized yet */
                 init_isspecial();
         for(end=0; src[end]; end++) {
-            /* if ( (isspecial_ch = isspecial_tab[mode + (int)src[end]]) ) { */
             if ( (isspecial_ch = isspecial_tab[(int)src[end]]) ) {
                 stream_write(GDKout,&src[start],end-start,1); /*flush */
                 start = end+1;
@@ -556,7 +555,11 @@ static int emit_escaped(char* src, int mode) {
                    stream_flush(GDKout);
                 } else {
                    char *emit_val = isspecial_val[mode+(int)isspecial_ch];
-                   stream_write(GDKout,emit_val,strlen(emit_val),1);
+
+		   if ( onlyEntity && (*emit_val!='&') )
+                       start--; /* char should normally be printed */ 
+		   else
+                       stream_write(GDKout,emit_val,strlen(emit_val),1);
                 }
             }
         }
@@ -571,7 +574,7 @@ static int emit(char* eventName, char* val, int escaped) {
         if ( val ) {
                 if ( escaped ) {
                         stream_printf(GDKout,"[\"%s\",\t\"",eventName);
-                        if ( !emit_escaped(val, escaped-1) )
+                        if ( !emit_escaped(val, escaped-1, 0 /*ALL*/) )
 				return 0;
                         stream_printf(GDKout,"\"]\n");
                 } else {
@@ -766,6 +769,8 @@ static int handle_reference(XqueryCtx* ctx, str name) {
  * Output generation handler. Handles equivalent of * SAX characters() event.
  */
 static int handle_characters(XqueryCtx* ctx, str ch, str top) {
+	/* INCOMPLETE, we need to escape stuff here 
+	 */
         if (ctx->saxMode ) {
                 if ( SAXOPHONE ) {
                         if (!emit("characters",NULL,0))
@@ -773,31 +778,42 @@ static int handle_characters(XqueryCtx* ctx, str ch, str top) {
                         if (!emit(" pcdata",ch,1))
 				return 0;
                 } else {
-                        stream_printf(GDKout,"%s\n",ch);
+                        stream_printf(GDKout,"%s",ch); /* ESCAPE !!! */
+                        stream_printf(GDKout,"\n");
                 }
         } else { /* xmlMode */
                 if ( ctx->dmMode && top )
                         stream_printf(GDKout,"%s {\"",top);
                 if (ctx->printMode) {
 			/* we need to escape newlines */
-			str nl;
-			while ((nl = strchr(ch, '\n')) != NULL) {
-				stream_printf(GDKout, "%.*s\\n", (nl - ch), ch);
-				nl++;
-				ch = nl;
-			} 
+			emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/ );
+			/*
+			 * str nl;
+			 * while ((nl = strchr(ch, '\n')) != NULL) {
+			 * 	stream_printf(GDKout, "%.*s\\n", (nl - ch), ch);
+			 * 	nl++;
+			 * 	ch = nl;
+			 * } 
+			 */
 		} else if (ctx->mapiMode) {
 			/* we need to prepend "=" to each line, so
 			   make sure that we print one after each
 			   newline */
-			str nl;
-			while ((nl = strchr(ch, '\n')) != NULL) {
-				nl++;
-				stream_printf(GDKout, "%.*s=", (nl - ch), ch);
-				ch = nl;
-			}
-		} 
-		stream_printf(GDKout,"%s",ch);
+			emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/ );
+			/* 
+			 * str nl;
+			 * while ((nl = strchr(ch, '\n')) != NULL) {
+			 * 	nl++;
+			 * 	stream_printf(GDKout, "%.*s=", (nl - ch), ch);
+			 * 	ch = nl;
+			 * }
+			 */
+		} else {
+			/* 
+		 	 * stream_printf(GDKout,"%s",ch); 
+		 	 */
+			emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/);
+		}
                 if ( ctx->dmMode && top )
                         stream_printf(GDKout,"\"}");
         }
@@ -1305,17 +1321,17 @@ static int  seqEmitStr(XqueryCtx* ctx, str sv) {
         } else if ( ctx->printMode ) {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"\\\"");
-                emit_escaped( sv, 1+ctx->mapiMode );
+                emit_escaped( sv, 1+ctx->mapiMode, 0 /*ALL*/);
                 stream_printf(GDKout,"\\\"");
         } else if ( ctx->dmMode ) {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"\"");
-                emit_escaped( sv, 1+ctx->mapiMode );
+                emit_escaped( sv, 1+ctx->mapiMode, 0 /*ALL*/);
                 stream_printf(GDKout,"\"");
         } else {
                 ctx->nAttrOnLine++;
                 stream_printf(GDKout,"\"");
-                emit_escaped( sv, 1+ctx->mapiMode);
+                emit_escaped( sv, 1+ctx->mapiMode, 0 /*ALL*/);
                 stream_printf(GDKout,"\" ");
         }
 	return 1;
