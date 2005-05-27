@@ -86,3 +86,14 @@ be added.  Only the mgwbz2-1.dll and mgwz.dll are used from that
 folder.  We add the folder at the end of the Windows search path:
 
 set PATH=%PATH%;C:\cygwin\bin
+
+You can now test the MonetDB installation using the following command:
+
+rem as an abbreviation, set MNSRC to the (Windows name of) the
+rem MonetDB source folder, also note that per the above,
+rem %MNSRC%\MinGW is (the Windows name of) the folder in which
+rem MonetDB was built.
+set MNSRC=...\MonetDB
+rem the following command should be on a single line
+cd "%MNSRC"
+Mtest.py --TSTSRCBASE="%MNSRC%" --TSTBLDBASE="%MNSRC%\MinGW" --TSTTRGBASE="%MONETDB_PREFIX%" -r

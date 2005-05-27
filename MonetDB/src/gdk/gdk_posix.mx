@@ -1,15 +1,14 @@
-@' The contents of this file are subject to the MonetDB Public
-@' License Version 1.0 (the "License"); you may not use this file
-@' except in compliance with the License. You may obtain a copy of
-@' the License at
-@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 @'
-@' Software distributed under the License is distributed on an "AS
-@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-@' implied. See the License for the specific language governing
-@' rights and limitations under the License.
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
 @'
-@' The Original Code is the Monet Database System.
+@' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
@@ -277,7 +276,7 @@ gdk_export int closedir(DIR *dir);
 
 /* DDALERT: AIX4.X 64bits needs HAVE_SETENV==0 due to a AIX bug, but it probably isn't detected so by configure */
 
-#ifdef HAVE_SETENV
+#ifndef HAVE_SETENV
 int
 setenv(const char *name, const char *value, int overwrite)
 {
@@ -708,6 +707,8 @@ MT_msync(void *p, size_t len, int mode)
 #ifdef MMAP_DEBUG
 	stream_printf(GDKerr, "msync(" LLFMT "," LLFMT ",%s) = %d\n", (long long) p, (long long) len, (mode & MMAP_SYNC) ? "MS_SYNC" : ((mode & MMAP_ASYNC) ? "MS_ASYNC" : "MS_INVALIDATE"), ret);
 #endif
+	if (ret < 0)
+		return errno;
 	return ret;
 }
 
