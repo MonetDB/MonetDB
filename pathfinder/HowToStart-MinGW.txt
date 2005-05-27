@@ -94,8 +94,9 @@ command:
 
 rem as an abbreviation, set PFSRC to the (Windows name of) the
 rem Pathfinder source folder, also note that per the above,
-rem %PFSRC%\MinGW is the (Windows name of) the folder in which
+rem %PFSRC%\MinGW is (the Windows name of) the folder in which
 rem Pathfinder was built.
 set PFSRC=...\pathfinder
 rem the following command should be on a single line
-Mtest.py --TSTSRCBASE="%PFSRC%" --TSTBLDDIR="%PFSRC%\MinGW" --TSTTRGBASE="%MONETDB_PREFIX%" -r
+cd "%PFSRC"
+Mtest.py --TSTSRCBASE="%PFSRC%" --TSTBLDBASE="%PFSRC%\MinGW" --TSTTRGBASE="%MONETDB_PREFIX%" -r

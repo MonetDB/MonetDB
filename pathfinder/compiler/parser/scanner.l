@@ -289,9 +289,9 @@ WhiteSpaceChar                   [\x20\x09\x0d\x0a]
 PFChar                           [\x09\x0a\x0d\x20-\xff]
 
 /* ElementContentChar */
-QuotAttrContentChar              [\x09\x0a\x0d\x20-\x21\x23-\x25\x27-\x3b\x3d\x3f-\x7a\x7c\x7e-\xff]
-AposAttrContentChar              [\x09\x0a\x0d\x20-\x25\x28-\x3b\x3d\x3f-\x7a\x7c\x7e-\xff]
-ElementContentChar               [\x09\x0a\x0d\x20-\x25\x27-\x3b\x3d\x3f-\x7a\x7c\x7e-\xff]
+QuotAttrContentChar              [\x09\x0a\x0d\x20-\x21\x23-\x25\x27-\x3b\x3d\x3e\x3f-\x7a\x7c\x7e-\xff]
+AposAttrContentChar              [\x09\x0a\x0d\x20-\x25\x28-\x3b\x3d\x3e\x3f-\x7a\x7c\x7e-\xff]
+ElementContentChar               [\x09\x0a\x0d\x20-\x25\x27-\x3b\x3d\x3e\x3f-\x7a\x7c\x7e-\xff]
 
 /* XQuery WD [132] */
 IntegerLiteral                   {Digits}
@@ -892,7 +892,7 @@ entity_ref (const char *s, char **endptr)
                 *endptr = (char *) s + 5;
             return '"';
         }
-        else if (!strncmp (s + 1, "apos", 5)) {
+        else if (!strncmp (s + 1, "apos", 4)) {
             if (endptr)
                 *endptr = (char *) s + 5;
             return '\'';
