@@ -550,7 +550,7 @@ static int emit_escaped(char* src, int mode, int onlyEntity) {
                    char *emit_val = isspecial_val[mode+(int)isspecial_ch];
 
 		   /* if ( onlyEntity && (*emit_val!='&') ) */
-		   if ( onlyEntity && ((src[end]!='<') && (src[end]!='>') && (src[end]!='&')) )
+		   if ( onlyEntity && ((src[end]!='<') && (src[end]!='>') && (src[end]!='&')) && (src[end] != '\n') )
                        start--; /* char should normally be printed */ 
 		   else
                        stream_write(GDKout,emit_val,strlen(emit_val),1);
