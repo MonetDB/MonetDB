@@ -63,7 +63,7 @@ stderr of test 'cast2` in directory 'tests/XQuery` itself:
 # 19:01:38 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=51436 cast2.xq
 # 19:01:38 >  
 
-ERROR: couldn't cast all values to integer
+ERROR: err:FORG0001: could not cast value to integer.
 
 # 19:01:38 >  
 # 19:01:38 >  Done.

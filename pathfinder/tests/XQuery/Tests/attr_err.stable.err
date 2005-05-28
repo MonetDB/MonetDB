@@ -63,7 +63,7 @@ stderr of test 'attr_err` in directory 'tests/XQuery` itself:
 # 19:02:22 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=53711 attr_err.xq
 # 19:02:22 >  
 
-ERROR: attributes are not unique in element construction of 'foo' within each iteration
+ERROR: err:XQDY0025: attribute names are not unique in constructed element 'foo'.
 
 # 19:02:23 >  
 # 19:02:23 >  Done.
