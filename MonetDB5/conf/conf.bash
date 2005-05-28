@@ -1,15 +1,14 @@
-# The contents of this file are subject to the MonetDB Public
-# License Version 1.0 (the "License"); you may not use this file
-# except in compliance with the License. You may obtain a copy of
-# the License at
-# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 #
-# Software distributed under the License is distributed on an "AS
-# IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-# implied. See the License for the specific language governing
-# rights and limitations under the License.
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
 #
-# The Original Code is the Monet Database System.
+# The Original Code is the MonetDB Database System.
 #
 # The Initial Developer of the Original Code is CWI.
 # Portions created by CWI are Copyright (C) 1997-2005 CWI.
@@ -108,6 +107,7 @@ conf_opts=""
 os="`uname | sed 's|_NT-.*$||'`"
 hw="`uname -m`"
 host="`hostname`"
+domain="`domainname`"
 
 # check for not or incorrectly set variables (${what}_BUILD, ${what}_PREFIX, COMP, BITS, LINK)
 
@@ -211,6 +211,11 @@ if [ "${os}" = "Linux" ] ; then
 			libpath="$d/lib:${libpath}"
 		fi
 	fi
+	if [ "${hw}${COMP}${BITS}${host%-*}${domain}" = "x86_64ntv64singlebeo-cluster" ] ; then
+		# the combination of icc 8.1 & libtool 1.5.14 fail to find/use
+		# the proper libbz2 in /usr/lib64/ on our Athlon64 running SuSE 9.3
+		conf_opts="${conf_opts} --with-bz2=no"
+	fi
 	if [ "${COMP}" = "PGI" ] ; then
 		# Portland Group compiler on spin
 		cc='pgcc'
@@ -234,7 +239,6 @@ if [ "${os}" = "Linux" ] ; then
 	if [ -x /usr/bin/java-config ]; then
 	        binpath="`/usr/bin/java-config -O`/bin:${binpath}"
 	fi
-	domain="`domainname`"
 	if [ -x /net/lin_local/java/j2sdk1.4.2/bin/javac  -a  -x /net/lin_local/java/j2sdk1.4.2/bin/jar ] ; then
 		# java in Konstanz
 		binpath="/net/lin_local/java/j2sdk1.4.2/bin:${binpath}"
