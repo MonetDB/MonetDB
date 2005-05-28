@@ -557,14 +557,14 @@ PROC fake_leftfetchjoin (bat[oid,oid] l, bat[oid,any::3] r) : bat[oid,any::3]
 	one_iter := TRUE;
 	@:chk_order(@1@2,0,item)@
 	# =>  we don't need to sort the input
-	order := and(order,1);
+	order := or(order,1);
 @
 @= many_iters_one_item
 	# n iters, 1 item 
 	one_item := TRUE;
 	@:chk_order(@1@2,1,iter)@
 	# =>  we don't need to sort the input
-	order := and(order,2);
+	order := or(order,1);
 @
 @= descs_per_item
 	# "descendant" / "descendant_or_self"
