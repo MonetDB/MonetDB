@@ -488,7 +488,16 @@ PROC delete_doc_locked(oid doc_oid) : bit {
 
 PROC delete_doc(str name) : void
 {
-    var err;
+    var err, exists := false;
+
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(exists := doc_check(name));
+    lock_unset(pf_lock);
+ 
+    if (not(isnil(err))) ERROR(err);
+    else if (not(exists)) ERROR("delete_doc(%s): document not found in database!\n", name);
+
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
     err := CATCH(delete_doc_locked(bat("doc_name").reverse().find(name)));
