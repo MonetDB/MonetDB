@@ -24,7 +24,7 @@ try:
 except NameError:
     False, True = 0, 1
 
-import os, sys, getopt, stat
+import os, sys, getopt, stat, re
 
 usage = '''\
 %(prog)s [-ar] [-l licensefile] [file...]
@@ -59,6 +59,8 @@ license = [
     'Portions created by CWI are Copyright (C) 1997-2005 CWI.',
     'All Rights Reserved.',
     ]
+
+re_copyright = re.compile('Copyright Notice:\n(.*-------*\n)?')
 
 def main():
     func = addlicense
@@ -110,8 +112,10 @@ suffixrules = {
     # suffix:(pre,     post,  start,  end)
     '.ag':   ('',      '',    '# ',   ''),
     '.bash': ('',      '',    '# ',   ''),
+    '.brg':  ('/*',    ' */', ' * ',  ''),
     '.c':    ('/*',    ' */', ' * ',  ''),
     '.cc':   ('',      '',    '// ',  ''),
+    '.cf':   ('',      '',    '# ',   ''),
     '.cpp':  ('',      '',    '// ',  ''),
     '.el':   ('',      '',    '; ',   ''),
     '.h':    ('/*',    ' */', ' * ',  ''),
@@ -130,6 +134,7 @@ suffixrules = {
     '.py':   ('',      '',    '# ',   ''),
     '.sh':   ('',      '',    '# ',   ''),
     '.tcl':  ('',      '',    '# ',   ''),
+    '.xml':  ('<!--',  '-->', '',     ''),
     }
 
 def addlicense(file, pre = None, post = None, start = None, end = None):
@@ -170,40 +175,53 @@ def addlicense(file, pre = None, post = None, start = None, end = None):
     except IOError:
         print >> sys.stderr, 'Cannot create temp file %s.new' % file
         return
-    line = f.readline()
-    addblank = False
-    if line[:2] == '#!':
-        # if file starts with #! command interpreter, keep the line there
-        g.write(line)
-        # add a blank line
-        addblank = True
+    data = f.read()
+    res = re_copyright.search(data)
+    if res is not None:
+        pos = res.end(0)
+        g.write(data[:pos])
+        g.write(start.rstrip() + '\n')
+    else:
+        f.seek(0)
         line = f.readline()
-    if line.find('-*-') >= 0:
-        # if file starts with an Emacs mode specification, keep the line there
-        g.write(line)
-        # add a blank line
-        addblank = True
-        line = f.readline()
-    if addblank:
-        g.write('\n')
-    if pre:
-        g.write(pre + '\n')
+        addblank = False
+        if line[:2] == '#!':
+            # if file starts with #! command interpreter, keep the line there
+            g.write(line)
+            # add a blank line
+            addblank = True
+            line = f.readline()
+        if line.find('-*-') >= 0:
+            # if file starts with an Emacs mode specification, keep
+            # the line there
+            g.write(line)
+            # add a blank line
+            addblank = True
+            line = f.readline()
+        if addblank:
+            g.write('\n')
+        if pre:
+            g.write(pre + '\n')
     for l in license:
         if l[:1] == '\t' or (not l and (not end or end[:1] == '\t')):
             # if text after start begins with tab, remove spaces from start
             g.write(start.rstrip() + l + end + '\n')
         else:
             g.write(start + l + end + '\n')
-    if post:
-        g.write(post + '\n')
-    # add empty line after license
-    if line:
-        g.write('\n')
-    # but only one, so skip empty line from file, if any
-    if line and line != '\n':
-        g.write(line)
-    # copy rest of file
-    g.write(f.read())
+    if res is not None:
+        # copy rest of file
+        g.write(data[pos:])
+    else:
+        if post:
+            g.write(post + '\n')
+        # add empty line after license
+        if line:
+            g.write('\n')
+        # but only one, so skip empty line from file, if any
+        if line and line != '\n':
+            g.write(line)
+        # copy rest of file
+        g.write(f.read())
     f.close()
     g.close()
     try:
@@ -268,65 +286,115 @@ def dellicense(file, pre = None, post = None, start = None, end = None):
     except IOError:
         print >> sys.stderr, 'Cannot create temp file %s.new' % file
         return
-    line = f.readline()
-    if line[:2] == '#!':
-        g.write(line)
+    data = f.read()
+    res = re_copyright.search(data)
+    if res is not None:
+        pos = res.end(0)
+        g.write(data[:pos])
+        nl = data.find('\n', pos) + 1
+        nstart = normalize(start)
+        while normalize(data[pos:nl]) == nstart:
+            pos = nl
+            nl = data.find('\n', pos) + 1
+        line = data[pos:nl]
+        for l in license:
+            nline = normalize(line)
+            if nline.find(normalize(l)) >= 0:
+                pos = nl
+                nl = data.find('\n', pos) + 1
+                line = data[pos:nl]
+                nline = normalize(line)
+            else:
+                # doesn't match
+                print >> sys.stderr, 'line doesn\'t match in file %s' % file
+                print >> sys.stderr, 'file:    "%s"' % line
+                print >> sys.stderr, 'license: "%s"' % l
+                f.close()
+                g.close()
+                try:
+                    os.unlink(file + '.new')
+                except OSError:
+                    pass
+                return
+        pos2 = pos
+        nl2 = nl
+        if normalize(line) == normalize(start):
+            pos2 = nl2
+            nl2 = data.find('\n', pos2) + 1
+            line = data[pos2:nl2]
+            nline = normalize(line)
+        if nline.find('Contributors') >= 0:
+            nstart = normalize(start)
+            nstartlen = len(nstart)
+            while normalize(line)[:nstartlen] == nstart and \
+                  len(normalize(line)) > 1:
+                pos2 = nl2
+                nl2 = data.find('\n', pos2) + 1
+                line = data[pos2:nl2]
+                nline = normalize(line)
+            pos = pos2
+        g.write(data[pos:])
+    else:
+        f.seek(0)
         line = f.readline()
-        if line and line == '\n':
+        if line[:2] == '#!':
+            g.write(line)
             line = f.readline()
-    if line.find('-*-') >= 0:
-        g.write(line)
-        line = f.readline()
-        if line and line == '\n':
+            if line and line == '\n':
+                line = f.readline()
+        if line.find('-*-') >= 0:
+            g.write(line)
             line = f.readline()
-    nline = normalize(line)
-    if pre:
-        if nline == pre:
-            line = f.readline()
-            nline = normalize(line)
-        else:
-            # doesn't match
-            print >> sys.stderr, 'PRE doesn\'t match in file %s' % file
-            f.close()
-            g.close()
-            try:
-                os.unlink(file + '.new')
-            except OSError:
-                pass
-            return
-    for l in license:
-        if nline.find(normalize(l)) >= 0:
-            line = f.readline()
-            nline = normalize(line)
-        else:
-            # doesn't match
-            print >> sys.stderr, 'line doesn\'t match in file %s' % file
-            print >> sys.stderr, 'file:    "%s"' % line
-            print >> sys.stderr, 'license: "%s"' % l
-            f.close()
-            g.close()
-            try:
-                os.unlink(file + '.new')
-            except OSError:
-                pass
-            return
-    if post:
-        if nline == post:
-            line = f.readline()
-            nline = normalize(line)
-        else:
-            # doesn't match
-            print >> sys.stderr, 'POST doesn\'t match in file %s' % file
-            f.close()
-            g.close()
-            try:
-                os.unlink(file + '.new')
-            except OSError:
-                pass
-            return
-    if line and line != '\n':
-        g.write(line)
-    g.write(f.read())
+            if line and line == '\n':
+                line = f.readline()
+        nline = normalize(line)
+        if pre:
+            if nline == pre:
+                line = f.readline()
+                nline = normalize(line)
+            else:
+                # doesn't match
+                print >> sys.stderr, 'PRE doesn\'t match in file %s' % file
+                f.close()
+                g.close()
+                try:
+                    os.unlink(file + '.new')
+                except OSError:
+                    pass
+                return
+        for l in license:
+            if nline.find(normalize(l)) >= 0:
+                line = f.readline()
+                nline = normalize(line)
+            else:
+                # doesn't match
+                print >> sys.stderr, 'line doesn\'t match in file %s' % file
+                print >> sys.stderr, 'file:    "%s"' % line
+                print >> sys.stderr, 'license: "%s"' % l
+                f.close()
+                g.close()
+                try:
+                    os.unlink(file + '.new')
+                except OSError:
+                    pass
+                return
+        if post:
+            if nline == post:
+                line = f.readline()
+                nline = normalize(line)
+            else:
+                # doesn't match
+                print >> sys.stderr, 'POST doesn\'t match in file %s' % file
+                f.close()
+                g.close()
+                try:
+                    os.unlink(file + '.new')
+                except OSError:
+                    pass
+                return
+        if line and line != '\n':
+            g.write(line)
+        g.write(f.read())
     f.close()
     g.close()
     try:
