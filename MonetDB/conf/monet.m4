@@ -1494,12 +1494,14 @@ AC_ARG_WITH(z,
 	AC_HELP_STRING([--with-z=DIR],
 		[z library is installed in DIR]),
 	have_z="$withval")
+AC_MSG_CHECKING(for libz)
 case "$have_z" in
 yes|no|auto)
 	;;
 *)
 	Z_CFLAGS="-I$withval/include"
 	Z_LIBS="-L$withval/lib"
+        AC_MSG_CHECKING(in $withval) 
 	;;
 esac
 if test "x$have_z" != xno; then
@@ -1519,6 +1521,7 @@ else
 	Z_CFLAGS=""
 	Z_LIBS=""
 fi
+AC_MSG_RESULT($have_z)
 AC_SUBST(Z_CFLAGS)
 AC_SUBST(Z_LIBS)
 
@@ -1530,12 +1533,14 @@ AC_ARG_WITH(bz2,
 	AC_HELP_STRING([--with-bz2=DIR],
 		[bz2 library is installed in DIR]),
 	have_bz2="$withval")
+AC_MSG_CHECKING(for libbz2) 
 case "$have_bz2" in
 yes|no|auto)
 	;;
 *)
 	BZ_CFLAGS="-I$withval/include"
 	BZ_LIBS="-L$withval/lib"
+        AC_MSG_CHECKING(in $withval) 
 	;;
 esac
 if test "x$have_bz2" != xno; then
@@ -1556,6 +1561,7 @@ else
 	BZ_CFLAGS=""
 	BZ_LIBS=""
 fi
+AC_MSG_RESULT($have_bz2)
 AC_SUBST(BZ_CFLAGS)
 AC_SUBST(BZ_LIBS)
 

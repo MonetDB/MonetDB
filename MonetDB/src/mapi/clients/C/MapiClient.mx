@@ -1417,6 +1417,8 @@ main(int argc, char **argv)
 			}
 #ifdef HAVE_LIBREADLINE
 			init_readline(mid, language, save_history);
+#else
+			(void)save_history; /* pacify compiler */
 #endif
 			/* reading from terminal, prepare prompt */
 			sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language);
