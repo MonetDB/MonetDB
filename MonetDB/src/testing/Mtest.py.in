@@ -1081,7 +1081,7 @@ def isexecutable(TST) :
     return [ 0, "" ]
 ### isexecutable(TST) #
 
-def GetBitsAndModsAndStatic(env) :
+def GetBitsAndOIDsAndModsAndStatic(env) :
     rtrn = 0
     TSTPREF = env['TSTPREF']
     cmd = '%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF)
@@ -1111,13 +1111,14 @@ def GetBitsAndModsAndStatic(env) :
     try:
         pIn.close()
     except IOError, (IOerrNo, IOerrStr):
-        Warn("Closing input pipe in GetBitsAndModsAndStatic failed with #%d: '%s'." % (IOerrNo, IOerrStr))
+        Warn("Closing input pipe in GetBitsAndOIDsAndModsAndStatic failed with #%d: '%s'." % (IOerrNo, IOerrStr))
     qOut, qErr = ReadMultiple([pOut, pErr])
     env['TST_BITS'] = ""
+    env['TST_OIDS'] = ""
     env['TST_MODS'] = []
     env['TST_STATIC'] = ""
     if qOut:
-        tbs = re.compile("^# Compiled for .*/([63][42]bit); (.*) linked", re.MULTILINE)
+        tbs = re.compile("^# Compiled for .*/([63][42]bit) with ([63][42])bit OIDs; (.*) linked", re.MULTILINE)
         tm = re.compile("^Modules: (.*)$", re.MULTILINE)
         #ts = re.compile("^!ERROR: DL_open: library not found \(STATIC\).$", re.MULTILINE)
         for l in qOut.split('\n'):
@@ -1125,7 +1126,9 @@ def GetBitsAndModsAndStatic(env) :
             if bs:
                 env['TST_BITS'] = bs.group(1)
                 os.environ['TST_BITS'] = env['TST_BITS']
-                if bs.group(2) == "statically":
+                env['TST_OIDS'] = "oid" + bs.group(2)
+                os.environ['TST_OIDS'] = env['TST_OIDS']
+                if bs.group(3) == "statically":
                     env['TST_STATIC'] = "STATIC"
                     os.environ['TST_STATIC'] = env['TST_STATIC']
             m = tm.match(l)
@@ -1137,13 +1140,15 @@ def GetBitsAndModsAndStatic(env) :
             #       os.environ['TST_STATIC'] = env['TST_STATIC']
         if not env['TST_BITS']:
             ErrMsg("Checking for Bits failed!")
+        if not env['TST_OIDS']:
+            ErrMsg("Checking for OIDs failed!")
         if not env['TST_MODS']:
             if env['VERSION'] >= 49900:
                 Warn("Monet5: Check, whether required modules do exist, is not possible, yet!")
                 env['TST_MODS'].append("")
             else:
                 ErrMsg("Checking for Modules failed!")
-        if not env['TST_BITS'] or not env['TST_MODS']:
+        if not env['TST_BITS'] or not env['TST_OIDS'] or not env['TST_MODS']:
             STDERR.write(cmd + "\n\n")
             STDERR.write(qOut)
             STDERR.write("\n")
@@ -1153,7 +1158,7 @@ def GetBitsAndModsAndStatic(env) :
             rtrn = 1
     else:
         rtrn = 1
-        ErrMsg("No output from Mserver when checking for Bits & Modules!?")
+        ErrMsg("No output from Mserver when checking for Bits, OIDs & Modules!?")
         if qErr:
             STDERR.write(cmd + "\n\n")
             STDERR.write(qErr)
@@ -1161,7 +1166,7 @@ def GetBitsAndModsAndStatic(env) :
             STDERR.flush()
     os.environ['TST_MODS'] = str(env['TST_MODS'])
     return rtrn
-### GetBitsAndModsAndStatic(env) #
+### GetBitsAndOIDsAndModsAndStatic(env) #
 
 def CheckMods(env, TST, SERVER, CALL) :
     missing = []
@@ -1264,6 +1269,7 @@ def StopAt(ATJOB,ME) :
 
 def StableOutErr(env,par,TST,OS,RELEASE) :
     BITS = env['TST_BITS']
+    OIDS = env['TST_OIDS']
     STATIC = env['TST_STATIC']
     if STATIC:
         STATIC = "(\.STATIC)?"
@@ -2299,6 +2305,7 @@ def ReadMapproveRc(f) :
     v['OS'] = OS
     v['RELEASE'] = RELEASE
     v['BITS'] = ''
+    v['OIDS'] = ''
     v['STATIC'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z]+) = "(.*)".*$')
@@ -2558,7 +2565,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = os.path.join(GetMonetConfig('--prefix'),dftTSTPREF,'.Mapprove.rc')
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'STATIC':
+        for i in 'BITS', 'OIDS', 'STATIC':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -2567,7 +2574,7 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.<OS>[<RELEASE>]][.(32|64)bit][.STATIC]',\n"
+             "(<sys> = '[.<OS>[<RELEASE>]][.(32|64)bit][.oid(32|64)][.STATIC]',\n"
              "(default: longest match for <sys> = '[.%s[%s]]%s%s')"
               % (v['OS'], v['RELEASE'], v['BITS'], v['STATIC'])),
             (None, 'f', 'force', None,
@@ -2732,9 +2739,9 @@ def main(argv) :
         os.environ['OSVER'] = OSVER
         os.environ['RELEASE'] = RELEASE
         w = {}
-        for i in 'OS', 'RELEASE', 'BITS', 'STATIC':
+        for i in 'OS', 'RELEASE', 'BITS', 'OIDS', 'STATIC':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'STATIC':
+        for i in 'BITS', 'OIDS', 'STATIC':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
@@ -2958,11 +2965,12 @@ def main(argv) :
             QUIT = 'quit();\n'
         if Check('%s%s --dbname=%s' % (env['exe']['Mtimeout'][1], env['exe']['Mserver'][1], TSTPREF), QUIT):
             sys.exit(1)
-        if GetBitsAndModsAndStatic(env):
+        if GetBitsAndOIDsAndModsAndStatic(env):
             sys.exit(1)
         STDERR.flush()
         if not quiet:
             print "Bits: ", env['TST_BITS']
+            print "OIDs: ", env['TST_OIDS']
             print "Modules: ", env['TST_MODS']
         STDOUT.flush()
 
@@ -2996,7 +3004,7 @@ def main(argv) :
         env['RELEASE'] = os.environ['RELEASE']
         n = os.path.join(env['TSTTRGBASE'],TSTPREF,'.Mapprove.rc')
         f = open(n, 'w')
-        for v in 'OS', 'RELEASE', 'TST_BITS', 'TST_STATIC':
+        for v in 'OS', 'RELEASE', 'TST_BITS', 'TST_OIDS', 'TST_STATIC':
             w = v.replace('TST_','')
             f.write('%s = "%s"\n' % (w, env[v]))
         f.close()
