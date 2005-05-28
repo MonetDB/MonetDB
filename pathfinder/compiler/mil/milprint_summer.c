@@ -3,26 +3,22 @@
  * Copyright Notice:
  * -----------------
  *
- *  The contents of this file are subject to the MonetDB Public
- *  License Version 1.0 (the "License"); you may not use this file
- *  except in compliance with the License. You may obtain a copy of
- *  the License at http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+ * The contents of this file are subject to the Pathfinder Public License
+ * Version 1.1 (the "License"); you may not use this file except in
+ * compliance with the License.  You may obtain a copy of the License at
+ * http://monetdb.cwi.nl/Legal/PathfinderLicense-1.1.html
  *
- *  Software distributed under the License is distributed on an "AS
- *  IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- *  implied. See the License for the specific language governing
- *  rights and limitations under the License.
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied.  See
+ * the License for the specific language governing rights and limitations
+ * under the License.
  *
- *  The Original Code is the ``Pathfinder'' system. The Initial
- *  Developer of the Original Code is the Database & Information
- *  Systems Group at the University of Konstanz, Germany. Portions
- *  created by U Konstanz are Copyright (C) 2000-2004 University
- *  of Konstanz. All Rights Reserved.
+ * The Original Code is the Pathfinder system.
  *
- *  Contributors:
- *          Torsten Grust <torsten.grust@uni-konstanz.de>
- *          Maurice van Keulen <M.van.Keulen@bigfoot.com>
- *          Jens Teubner <jens.teubner@uni-konstanz.de>
+ * The Initial Developer of the Original Code is the Database &
+ * Information Systems Group at the University of Konstanz, Germany.
+ * Portions created by the University of Konstanz are Copyright (C)
+ * 2000-2005 University of Konstanz.  All Rights Reserved.
  *
  * $Id$
  */
@@ -100,6 +96,41 @@ static void milprintf(opt_t *o, const char *format, ...)
         opt_mil(o, milbuf);
 }
 
+/**
+ * mps_error calls PFoops with more text, since something is wrong
+ * in the translation, if this message appears.
+ */
+static void mps_error(const char *format, ...)
+{
+    int j, i = strlen(format) + 80;
+    char *msg = PFmalloc(i);
+    va_list ap;
+
+    /* take in a block of MIL statements */
+    va_start(ap, format);
+    j = vsnprintf(msg, i, format, ap);
+    va_end (ap);
+    while (j < 0 || j > i) {
+            if (j > 0)      /* C99 */
+                    i = j + 1;
+            else            /* old C */
+                    i *= 2;
+            msg = PFrealloc(i, msg);
+            va_start(ap, format);
+            j = vsnprintf(msg, i, format, ap);
+            va_end (ap);
+    } 
+    PFoops (OOPS_FATAL,
+            "The Pathfinder compiler experienced \n"
+            "an internal problem in the MIL code generation.\n"
+            "You may want to report this problem to the Pathfinder \n"
+            "development team (pathfinder@inf.uni-konstanz.de).\n\n"
+            "When reporting problems, please attach your XQuery input,\n"
+            "as well as the following information:\n"
+            "%s\n\n"
+            "We apologize for the inconvenience...\n", msg);
+}
+
 static int
 translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c);
 static int
@@ -172,14 +203,13 @@ val_join (int i)
     else if (i == U_A)
         return ".leftfetchjoin(str_values)";
     else if (i == NODE)
-        PFoops(OOPS_FATAL,
-               "val_join: NODE is no valid reference");
+        mps_error ("val_join: NODE is no valid reference.");
     else if (i == VALUES)
-        PFoops(OOPS_FATAL,
-               "val_join: VALUES is no valid reference");
+        mps_error ("val_join: VALUES is no valid reference.");
     else
-        PFoops(OOPS_FATAL,
-               "val_join: no valid reference");
+        mps_error ("val_join: no valid reference.");
+
+    return ""; /* to pacifiy compilers */
 }
 
 /**
@@ -207,14 +237,13 @@ kind_str (int i)
     else if (i == U_A)
         return "_str_";
     else if (i == NODE)
-        PFoops(OOPS_FATAL,
-               "kind_str: NODE is no valid reference");
+        mps_error ("kind_str: NODE is no valid reference.");
     else if (i == VALUES)
-        PFoops(OOPS_FATAL,
-               "kind_str: VALUES is no valid reference");
+        mps_error ("kind_str: VALUES is no valid reference.");
     else
-        PFoops(OOPS_FATAL,
-               "kind_str: no valid reference (%i)", i);
+        mps_error ("kind_str: no valid reference (%i).", i);
+
+    return ""; /* to pacifiy compilers */
 }
 
 /**
@@ -243,8 +272,10 @@ get_kind (PFty_t t)
     else if (PFty_subtype (t, PFty_star (PFty_node ())))
         return NORMAL;
     else
-        PFoops(OOPS_FATAL,
-               "get_kind: can't recognize type");
+        mps_error ("get_kind: can't recognize type '%s'.",
+                   PFty_str(t));
+
+    return 0; /* to pacifiy compilers */
 }
 
 /**
@@ -382,14 +413,13 @@ kind_container (int i)
     else if (i == BOOL)
         return bool_container();
     else if (i == NODE)
-        PFoops(OOPS_FATAL,
-               "kind_container: NODE is no valid reference");
+        mps_error ("kind_container: NODE is no valid reference.");
     else if (i == VALUES)
-        PFoops(OOPS_FATAL,
-               "kind_container: VALUES is no valid reference");
+        mps_error ("kind_container: VALUES is no valid reference.");
     else
-        PFoops(OOPS_FATAL,
-               "kind_container: no valid reference (%i)", i);
+        mps_error ("kind_container: no valid reference (%i).", i);
+
+    return int_container(); /* to pacifiy compilers */
 }
 
 
@@ -1192,7 +1222,8 @@ translateSequence (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
     }
     /* locstep codes shouldn't occur in sequence construction */
     else if (code == ITEM_ORDER)
-        PFoops (OOPS_FATAL, "wrong interface was chosen");
+        mps_error ("item|iter interface was chosen at the wrong place "
+                   "(sequence construction).");
     /* returns the kind as values */
     else if (code == VALUES && (kind = combinable(TY(L(c)),TY(R(c)))))
     {
@@ -1210,9 +1241,9 @@ translateSequence (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                       item_ext, val_join(kind));
 
         if (rc1 && rc2 && rc1 != rc2) 
-            PFoops (OOPS_FATAL, 
-                    "we get a type mismatch (%i != %i) "
-                    "in sequence construction", rc1, rc2); 
+            mps_error ("we get a type mismatch (%i != %i) "
+                       "in sequence construction (using the value interface).",
+                       rc1, rc2); 
 
         translateSeq_ (f, counter, kind);
         deleteResult_ (f, counter, kind);
@@ -1758,9 +1789,9 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter,
                       item_ext, val_join(rcode));
 
         if (rc1 && rc2 && rc1 != rc2) 
-            PFoops (OOPS_FATAL, 
-                    "we get a type mismatch (%i != %i) "
-                    "in sequence construction", rc1, rc2); 
+            mps_error ("we get a type mismatch (%i != %i) "
+                       "in the sequence construction (using the value interface).",
+                       rc1, rc2); 
 
         translateSeq_ (f, counter, rcode);
         deleteResult_ (f, counter, rcode);
@@ -1921,9 +1952,10 @@ loop_liftedSCJ (opt_t *f,
 
     if (!strcmp (axis, "attribute"))
     {
-        if (rev_in || rev_out) PFoops(OOPS_FATAL, 
-                                      "thinking error in loop_liftedSCJ:"
-                                      " in %i, out %i", rev_in, rev_out);
+        if (rev_in || rev_out) 
+            mps_error ("can't support item|iter order in attribute step "
+                       "of loop-lifted staircase join (loop_liftedSCJ"
+                       " in %i, out %i).", rev_in, rev_out);
 
         milprintf(f,
             "{ # attribute axis\n"
@@ -2007,9 +2039,10 @@ loop_liftedSCJ (opt_t *f,
     }
     else if (!strcmp (axis, "self"))
     {
-        if (rev_in || rev_out) PFoops(OOPS_FATAL, 
-                                      "thinking error in loop_liftedSCJ:"
-                                      " in %i, out %i", rev_in, rev_out);
+        if (rev_in || rev_out) 
+            mps_error ("can't support item|iter order in self step "
+                       "of loop-lifted staircase join (loop_liftedSCJ"
+                       " in %i, out %i).", rev_in, rev_out);
 
         milprintf(f,
             "{ # self axis\n"
@@ -2254,7 +2287,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
     /* FIXME: here we have to include new seqtypes */
     if (L(c)->kind != c_seqtype)
     {
-        PFoops (OOPS_FATAL, "expects seqtype in path step");
+        mps_error ("Path step expects sequence type as kind test.");
         in_ty = PFty_none (); /* keep compilers happy */
     }
     else
@@ -2404,8 +2437,8 @@ castQName (opt_t *f, int rc)
             "{\n"
             "var strings := kind.ord_uselect(STR);\n"
             "if (counted_items != (strings.count() + counted_qn)) "
-            "{ ERROR (\"only strings and qnames can be"
-            " casted to qnames\"); }\n"
+            "{ ERROR (\"err:XPTY0004: name expression expects only string, "
+            "untypedAtomic, or qname value.\"); }\n"
             "counted_items := nil_int;\n"
 
             "var oid_oid := strings.mark(0@0).reverse();\n"
@@ -2492,8 +2525,8 @@ static void
 loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
 {
     if (rc != NORMAL && rc != NODE)
-        PFoops (OOPS_FATAL, "loop_liftedElemConstr: "
-                "unexpected input in element construction.");
+        mps_error ("unexpected interface chosen in element construction.");
+
     if (rc)
     {
         milprintf(f,
@@ -2562,13 +2595,13 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "if (unq_attrs.count() != _r_attr_iter.count())\n"
                 "{\n"
                 "   if (item%03u.count() > 0) {\n"
-                "      ERROR (\"attributes are not unique in element"
-                " construction of '%%s' within each iteration\",\n"
+                "      ERROR (\"err:XQDY0025: attribute names are not unique "
+                "in constructed element '%%s'.\",\n"
                 "             item%03u.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS)).fetch(0));\n"
                 "   }\n"
                 "   else {\n"
-                "     ERROR (\"attributes are not unique in element"
-                " construction within each iteration\");\n"
+                "      ERROR (\"err:XQDY0025: attribute names are not unique "
+                "in constructed element.\");\n"
                 "   }\n"
                 "}\n"
                 "unq_attrs := nil_oid_oid;\n"
@@ -2999,13 +3032,13 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "if (unq_attrs.count() != attr_iter.count())\n"
                 "{\n"
                 "   if (item%03u.count() > 0) {\n"
-                "      ERROR (\"attributes are not unique in element"
-                " construction of '%%s' within each iter\",\n"
+                "      ERROR (\"err:XQDY0025: attribute names are not unique "
+                "in constructed element '%%s'.\",\n"
                 "             item%03u.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS)).fetch(0));\n"
                 "   }\n"
                 "   else {\n"
-                "     ERROR (\"attributes are not unique in element"
-                " construction within each iter\");\n"
+                "      ERROR (\"err:XQDY0025: attribute names are not unique "
+                "in constructed element.\");\n"
                 "   }\n"
                 "}\n"
                 "unq_attrs := nil_oid_oid;\n",
@@ -3053,8 +3086,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                );
 
         if (rcode)
-            PFoops(OOPS_FATAL, 
-                   "element construction not completely fixed.");
+            mps_error ("expected iter|pos|item|kind interface in element "
+                       "construction (got %i).", rcode);
         else
             return;
     }
@@ -3185,8 +3218,8 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
             /* test qname and add "" for each empty item */
             "{ # loop_liftedAttrConstr (int i)\n"
             "if (iter%03u.count() != loop%03u.count())\n"
-            "{    ERROR (\"empty tagname is not allowed in "
-                        "attribute construction\"); }\n"
+            "{ ERROR (\"err:XPTY0004: name expression expects only string, "
+            "untypedAtomic, or qname value (got empty sequence).\"); }\n"
             "if (iter.count() != loop%03u.count())\n"
             "{\n"
             "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
@@ -3382,7 +3415,8 @@ testCastComplete (opt_t *f, int cur_level, PFty_t type_)
 {
     milprintf(f,
             "if (iter.count() != loop%03u.count())\n"
-            "{    ERROR (\"'%s' doesn't allow empty sequences to be casted\"); }\n",
+            "{    ERROR (\"err:XPTY0004: cast to '%s' does not allow "
+            "empty sequences to be casted.\"); }\n",
             cur_level, PFty_str (type_));
 }
 
@@ -3474,7 +3508,7 @@ evaluateCast (opt_t *f,
 
     milprintf(f,
             "if (cast_val.ord_uselect(%s(nil)).count() != 0)\n"
-            "{    ERROR (\"couldn't cast all values from %s to %s\"); }\n",
+            "{    ERROR (\"err:FORG0001: could not cast value from %s to %s.\"); }\n",
             target.mil_type, ori.name, target.name);
 
     if (target.kind == BOOL)
@@ -3533,8 +3567,9 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, bool_container(), int_container(), "[int]()");
     else /* handles the choice type */
     {
-        if (rc) PFoops (OOPS_FATAL, 
-                        "Thinking error in cast (multiple types expected)");
+        if (rc) 
+            mps_error ("forgot to cope with type '%s' in integer cast.",
+                       kind_container(rc).name);
 
         milprintf(f,
                 "var _oid := kind.ord_uselect(INT);\n"
@@ -3551,7 +3586,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
 
         milprintf(f,
                 "if (_val.ord_uselect(int(nil)).count() != 0)\n"
-                "{    ERROR (\"couldn't cast all values to integer\"); }\n");
+                "{    ERROR (\"err:FORG0001: could not cast value to integer.\"); }\n");
  
         if (rcode)
             milprintf(f, "item%s := _val;\n", item_ext);
@@ -3606,8 +3641,9 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, bool_container(), dec_container(), "[dbl]()");
     else /* handles the choice type */ 
     {
-        if (rc) PFoops (OOPS_FATAL, 
-                        "Thinking error in cast (multiple types expected)");
+        if (rc) 
+            mps_error ("forgot to cope with type '%s' in decimal cast.",
+                       kind_container(rc).name);
 
         milprintf(f,
                 "var _oid := kind.ord_uselect(DEC);\n"
@@ -3624,7 +3660,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
  
         milprintf(f,
                 "if (_val.ord_uselect(dbl(nil)).count() != 0)\n"
-                "{    ERROR (\"couldn't cast all values to decimal\"); }\n");
+                "{    ERROR (\"err:FORG0001: could not cast value to decimal.\"); }\n");
  
         if (rcode)
             milprintf(f, "item%s := _val;\n", item_ext);
@@ -3679,8 +3715,9 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, bool_container(), dbl_container(), "[dbl]()");
     else /* handles the choice type */ 
     {
-        if (rc) PFoops (OOPS_FATAL, 
-                        "Thinking error in cast (multiple types expected)");
+        if (rc) 
+            mps_error ("forgot to cope with type '%s' in double cast.",
+                       kind_container(rc).name);
 
         milprintf(f,
                 "var _oid := kind.ord_uselect(DBL);\n"
@@ -3697,7 +3734,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
  
         milprintf(f,
                 "if (_val.ord_uselect(dbl(nil)).count() != 0)\n"
-                "{    ERROR (\"couldn't cast all values to double\"); }\n");
+                "{    ERROR (\"err:FORG0001: could not cast value to double.\"); }\n");
  
         if (rcode)
             milprintf(f, "item%s := _val;\n", item_ext);
@@ -3758,8 +3795,9 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, bool_container(), cast_container, "[str]()");
     else /* handles the choice type */ 
     {
-        if (rc) PFoops (OOPS_FATAL, 
-                        "Thinking error in cast (multiple types expected)");
+        if (rc) 
+            mps_error ("forgot to cope with type '%s' in string cast.",
+                       kind_container(rc).name);
 
         milprintf(f,
                 "var _oid := kind.ord_uselect(STR);\n"
@@ -3776,7 +3814,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
  
         milprintf(f,
                 "if (_val.ord_uselect(str(nil)).count() != 0)\n"
-                "{    ERROR (\"couldn't cast all values to string\"); }\n");
+                "{    ERROR (\"err:FORG0001: could not cast value to string.\"); }\n");
  
         if (rcode)
             milprintf(f, "item%s := _val;\n", item_ext);
@@ -3816,8 +3854,9 @@ translateCast2BOOL (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_boolean ()));
     else /* handles the choice type */ 
     {
-        if (rc) PFoops (OOPS_FATAL, 
-                        "Thinking error in cast (multiple types expected)");
+        if (rc) 
+            mps_error ("forgot to cope with type '%s' in boolean cast.",
+                       kind_container(rc).name);
 
         milprintf(f,
                 "var _oid := kind.ord_uselect(BOOL);\n"
@@ -3834,7 +3873,7 @@ translateCast2BOOL (opt_t *f, int rcode, int rc, PFty_t input_type)
  
         milprintf(f,
                 "if (_val.ord_uselect(bit(nil)).count() != 0)\n"
-                "{    ERROR (\"couldn't cast all values to boolean\"); }\n");
+                "{    ERROR (\"err:FORG0001: could not cast value to boolean.\"); }\n");
  
         milprintf(f,
                 "item := _val.[oid]();\n"
@@ -3967,7 +4006,7 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
     if (div)
         milprintf(f, 
                 "if (val_snd.ord_uselect(%s).count() > 0)\n"
-                "{   ERROR (\"division by 0 is forbidden\"); }\n",
+                "{   ERROR (\"err:FOAR0001: division by 0 is forbidden.\"); }\n",
                 div);
     milprintf(f, "val_fst := val_fst.[%s](val_snd);\n", operator);
 
@@ -4031,7 +4070,7 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
     if (div)
         milprintf(f, 
                 "if (val_snd.ord_uselect(%s).count() > 0)\n"
-                "{   ERROR (\"division by 0 is forbidden\") };\n",
+                "{   ERROR (\"err:FOAR0001: division by 0 is forbidden.\") };\n",
                 div);
     /* item%03u is the older (first) argument and has to be the first operand
        for the evaluation */
@@ -4121,8 +4160,8 @@ translateOperation (opt_t *f, int code, int cur_level, int counter,
     else
     {
 	rcode = NORMAL;
-        PFlog("thinking error: result type '%s' is not supported",
-              PFty_str(expected));
+        mps_error ("result type '%s' is not supported in operation '%s'.",
+                   PFty_str(expected), operator);
     }
 
     /* clear the intermediate result of the second subtree */
@@ -4316,8 +4355,8 @@ translateComparison (opt_t *f, int cur_level, int counter,
         evaluateCompOpt (f, rc1, rc2, counter, comp, str_container());
     }
     else
-        PFlog("thinking error: first argument is of type %s",
-              PFty_str(expected));
+        mps_error ("type '%s' is not supported in comparison '%s'.",
+                   PFty_str(expected), comp);
 
     /* clear the intermediate result of the second subtree */
     deleteResult_ (f, counter, rc1);
@@ -4439,7 +4478,9 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
     }
     else if (PFty_subtype (input_type, PFty_star(PFty_atomic ())))
     {
-        if (rc) PFoops (OOPS_FATAL, "thinking error in fn:boolean");
+        if (rc) 
+            mps_error ("forgot to cope with type '%s' in fn:boolean.",
+                       kind_container(rc).name);
 
         /* FIXME: rewrite stuff two use only one column instead of oid|oid */
         milprintf(f,
@@ -5689,9 +5730,8 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
                 "var res := prefixes.[+](mposjoin(qname, qname_frag, ws.fetch(QN_LOC)));\n"
                 "prefixes := nil_oid_str;\n");
     else
-        PFoops (OOPS_FATAL,
-                "milprint fn_name: doesn't know now what to do with '%s'",
-                name);
+        mps_error ("no case for '%s' in function fn_name.",
+                   name);
 
     milprintf(f,
             "qname := nil_oid_oid;\n"
@@ -5771,7 +5811,7 @@ eval_join_helper (opt_t *f, int code, int number,
                 "join_item%i := join_item_str.[%s]();\n"
                 "}\n"
                 "if (join_item%i.ord_uselect(%s(nil)).count() != 0)\n"
-                "{    ERROR (\"couldn't cast all values to %s\"); }\n",
+                "{    ERROR (\"err:FORG0001: could not cast value to %s.\"); }\n",
                 number, container.mil_type,
                 number, container.mil_type,
                 container.name);
@@ -5877,7 +5917,8 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
          comp = (switched_args)?"GT":"LT";
     else
     {
-         PFoops (OOPS_FATAL, "not supported comparison in join");
+         mps_error ("not supported comparison in thetajoin evaluation.");
+         comp = ""; /* to pacifiy compilers */ 
     }
 
     args = R(args);
@@ -6129,7 +6170,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     else if (PFty_subtype (PFty_boolean (), input_type))
     {
         if (cast_fst || cast_snd)
-            PFoops (OOPS_FATAL, "cast to boolean in join not supported until now");
+            mps_error ("cast to boolean is not supported in thetajoin evaluation.");
 
         milprintf(f,
                 "var join_item1 := item%03u;\n"
@@ -6138,7 +6179,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     }
     else
     {
-        PFoops (OOPS_FATAL, "not supported type for comparison in join");
+        mps_error ("unsupported type in join evaluation.");
     }
 
     /* adds the iter column to the join input to avoid mapping after join 
@@ -6171,11 +6212,11 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 
     if (lev_fst && lev_snd)
     {
-        PFoops (OOPS_FATAL, "no solution for join with dependence");
+        mps_error ("join evaluation: no solution for join with dependence yet.");
     }
     else if (lev_snd)
     {
-        PFoops (OOPS_FATAL, "no solution for mapping in join so far");
+        mps_error ("join evaluation: no solution for mapping in join yet.");
     }
     else if (!lev_fst && cur_level)
     {
@@ -6465,7 +6506,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # translate pf:distinct-doc-order (node*) as node*\n"
                 /* FIXME: are attribute nodes automatically filtered? */
                 "if (kind.count() != kind.get_type(ELEM).count()) "
-                "{ ERROR (\"function pf:distinct-doc-order expects only nodes\"); }\n"
+                "{ ERROR (\"cannot handle attributes in function pf:distinct-doc-order.\"); }\n"
                 /* delete duplicates */
                 "var sorting := iter.reverse().sort().reverse();\n"
                 "sorting := sorting.CTrefine(kind);\n"
@@ -6517,14 +6558,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"root")))
     {
         if (args->kind == c_nil)
-            PFoops (OOPS_WARNING, "fn:root should never be called without context.");
+            mps_error ("missing context in function fn:root.");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
                 "{ # fn:root ()\n"
-                "if (iter.tunique().count() != iter.count()) "
-                "{ ERROR (\"function fn:root expects "
-                "zero or one value per iteration\"); }\n"
-
                 "var frag := kind.get_fragment();\n"
                 /* get pre values for attributes */
                 "var attr := kind.get_type(ATTR).mark(0@0).reverse();\n"
@@ -6587,8 +6624,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, code, cur_level, counter, L(args));
         milprintf(f,
                 "if (iter.tunique().count() != loop%03u.count()) "
-                "{ ERROR (\"function fn:exactly-one expects "
-                "exactly one value per iteration\"); }\n",
+                "{ ERROR (\"err:FORG0005: function fn:exactly-one expects "
+                "exactly one value.\"); }\n",
                 cur_level);
         return rc;
     }
@@ -6597,17 +6634,17 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, code, cur_level, counter, L(args));
         milprintf(f,
                 "if (iter.tunique().count() != iter.count()) "
-                "{ ERROR (\"function fn:zero-or-one expects "
-                "zero or one value per iteration\"); }\n");
+                "{ ERROR (\"err:FORG0003: function fn:zero-or-one expects "
+                "at most one value.\"); }\n");
         return rc;
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"position")))
     {
-        PFoops (OOPS_WARNING, "fn:position should never be called.");
+        mps_error ("forgot to replace fn:position.");
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"last")))
     {
-        PFoops (OOPS_WARNING, "fn:last should never be called.");
+        mps_error ("forgot to replace fn:last.");
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_pf,"typed-value")))
     {
@@ -7055,7 +7092,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         /* nil as NaN value doesn't work out, because nil disappears in joins */
         milprintf(f,
                 "if (cast_val.ord_uselect(dbl(nil)).count() != 0)\n"
-                "{    ERROR (\"don't support NaN value\"); }\n");
+                "{    ERROR (\"We do not support the value NaN.\"); }\n");
 
         if (!code)
             addValues (f, dbl_container(), "cast_val", "item");
@@ -7602,7 +7639,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else 
     {
-        PFlog("function %s is not supported and therefore ignored",
+        PFoops(OOPS_FATAL,"function %s is not supported.",
               PFqname_str (fnQname));
         milprintf(f,
                 "# empty intermediate result "
@@ -8045,7 +8082,8 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 
             milprintf(f,
                     "if (iter.tunique().count() != iter.count()) {"
-                    "ERROR (\"more than one value per iteration in order by expression\"); }\n"
+                    "ERROR (\"err:XPTY0004: order by expression expects "
+                    "at most one value.\"); }\n"
                     "{ # orderspec\n"
                     "var order := iter.reverse().leftfetchjoin(item%s);\n"
                     "if (iter.count() != loop%03u.count()) {",
@@ -8124,15 +8162,25 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             rc = NORMAL; /* dummy */
             break;
         case c_letbind:
-            PFlog("letbind occured");
+            mps_error ("Core node 'letbind' occured.");
+            rc = NORMAL; /* dummy */
+            break;
         case c_forbind:
-            PFlog("forbind occured");
+            mps_error ("Core node 'forbind' occured.");
+            rc = NORMAL; /* dummy */
+            break;
         case c_forvars:
-            PFlog("forvars occured");
+            mps_error ("Core node 'forvars' occured.");
+            rc = NORMAL; /* dummy */
+            break;
         case c_then_else:
-            PFlog("then_else occured");
+            mps_error ("Core node 'then_else' occured.");
+            rc = NORMAL; /* dummy */
+            break;
         case c_seqtype:
-            PFlog("seqtype occured");
+            mps_error ("Core node 'seqtype' occured.");
+            rc = NORMAL; /* dummy */
+            break;
         default: 
             PFoops (OOPS_WARNING, "not supported feature is translated");
             break;
@@ -9036,7 +9084,8 @@ static int test_join_pattern(PFcnode_t *for_node,
     if (cur_level)
     {
         vi = var_lookup (LLL(for_node)->sem.var, active_vlist);
-        if (!vi) PFoops (OOPS_FATAL, "thinking error"); 
+        if (!vi) mps_error ("could not lookup variable '%s' in join pattern testing.",
+                            PFqname_str((LLL(for_node)->sem.var)->qname)); 
 
         for (i = 0; i < PFarray_last (vi->reflist); i++)
         {
@@ -9138,7 +9187,9 @@ static int test_join_pattern(PFcnode_t *for_node,
             snd_inner_cast = DL(apply_node);
             switched_args = true;
         }
-        else PFoops (OOPS_FATAL, "test_join_pattern: idea does not work");
+        else mps_error ("can't find variable occurrence "
+                        "of variable '%s' in join pattern testing.",
+                        PFqname_str((LLL(fst_inner)->sem.var)->qname));
         
         if (snd_inner)
         {
@@ -9153,7 +9204,9 @@ static int test_join_pattern(PFcnode_t *for_node,
                )
             {
             }
-            else PFoops (OOPS_FATAL, "test_join_pattern: idea does not work");
+            else mps_error ("can't find variable occurrence "
+                            "of variable '%s' in join pattern testing.",
+                            PFqname_str((LLL(snd_inner)->sem.var)->qname));
         }
         else
         {
@@ -9350,7 +9403,8 @@ static int test_join_pattern(PFcnode_t *for_node,
 
     /* add references of the for-loop variable */
     vi = var_lookup (LLL(for_node)->sem.var, active_vlist);
-    if (!vi) PFoops (OOPS_FATAL, "thinking error");
+    if (!vi) mps_error ("could not lookup variable '%s' in join pattern testing.",
+                        PFqname_str((LLL(for_node)->sem.var)->qname)); 
     for (i = 0; i < PFarray_last (vi->reflist); i++)
     {
         j = (*(var_info **) PFarray_at (vi->reflist, i))->act_lev;
@@ -9483,7 +9537,8 @@ static void recognize_join(PFcnode_t *c,
                 }
                 else
                 {
-                    PFoops (OOPS_FATAL, "thinking error");
+                    mps_error ("could not lookup variable '%s' in join recognition.",
+                               PFqname_str((c->sem.var)->qname)); 
                 }
             }
 
@@ -9663,8 +9718,7 @@ walk_through_UDF (opt_t *f,
         }
         else if (!c->sem.var->vid)
         {
-            PFoops (OOPS_FATAL,
-                    "fatal thinking error in variable id assignment");
+            mps_error ("missing variable identifier in variable id assignment.");
         }
 
         /* inserts fid|vid combinations into var_usage bat */
@@ -9757,8 +9811,8 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         }
         else if (!c->sem.var->vid)
         {
-            PFoops (OOPS_FATAL,
-                    "fatal thinking error in variable id assignment");
+            mps_error ("missing variable identifier occurred "
+                       "during variable usage checking.");
         }
 
        /* inserts fid|vid combinations into var_usage bat */
@@ -9845,7 +9899,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
         /* we don't translate the general join pattern so far */
         if (snd_nested) 
         {
-            PFlog ("get_var_usage: something has to be changed here.");
+            mps_error ("get_var_usage: no solution for join with dependence yet.");
         }
         if (fst_nested) /* otherwise we have a special translation
                            and don't need mapping (selection) */
