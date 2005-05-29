@@ -135,14 +135,12 @@ SQLexit(Client c)
 	stream_printf(GDKout, "#SQLexit\n");
 #endif
 	(void) c;		/* not used */
-/*
 	if( SQLinitialized == FALSE){
 		return throwMessage("SQLexit",
 			"Catalogue not available\n");
 	}
 	mvc_exit();
 	SQLinitialized= FALSE;
-*/
 	return MAL_SUCCEED;
 }
 
@@ -292,6 +290,114 @@ SQLinitEnvironment(int *ret)
 	(void) ret;
 	return SQLinitAdmin(getClient());
 }
+@-
+The SQLcompile operation can be used by separate
+front-ends to benefit from the SQL functionality.
+It expects a string and returns the name of the
+corresponding MAL block as it is known in the
+SQL_cache, where it can be picked up.
+@c
+/* #define _SQL_COMPILE */
+str
+SQLcompile(str *ret, str *expr)
+{
+	int err = 0;
+	mvc *m;
+	backend *sql;
+	bstream *rs;
+	buffer *b;
+	char *n;
+	str msg= MAL_SUCCEED;
+	Client c= getClient();
+	int len = strlen(*expr);
+
+	(void) ret;
+	SQLinit(c);
+#ifdef _SQL_COMPILE
+	stream_printf(c->fdout, "#SQLstatement:%s\n", *expr);
+#endif
+
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	n = GDKmalloc(len + 1 + 1);
+	strncpy(n, *expr, len);
+	n[len] = '\n';
+	n[len+1] = 0;
+	len++;
+
+	buffer_init(b, n, len);
+	rs = bstream_create(buffer_rastream(b, "sqlstatement"), b->len);
+	m = mvc_create(0, 0, rs, GDKout);
+	mvc_trans(m);		/* start transaction */
+	m->user_id = m->role_id = USER_MONETDB;
+	m->user = _strdup("monetdb");
+	m->trans->schema = mvc_bind_schema(m, "sys");
+	m->scanner.mode = LINE_1; 
+	bstream_next(m->scanner.rs);
+	sql = backend_create(0 /* debug */, m, c);
+
+@-
+System has been prepared to parse it and generate code
+@c
+	if ((err = sqlparse(m)) ){
+		err = mvc_status(m);
+		sqlcleanup(m, err);
+		*m->errstr = 0;
+		msg = throwMessage("SQLparser", "Parser errors\n");
+		goto endofcompile;
+	}
+@-
+We have dealt with the first parsing step and advanced the input reader
+to the next statement (if any).
+Now is the time to also perform the semantic analysis, 
+optimize and produce code.
+We don;t search the cache for a previous incarnation.
+@c
+	{	stmt *s = sql_symbol2stmt(m);
+		char buffer[128];
+		Symbol prg;
+		MalBlkPtr blk;
+
+		if (!s && (err = mvc_status(m))) {
+			stream_printf(c->fdout, "#%s\n", m->errstr);
+			*m->errstr = 0;
+			sqlcleanup(m, err);
+			msg = throwMessage("SQLparser", "Semantic errors\n");
+			goto endofcompile;
+		}
+		assert(s);
+		/* generate MAL procedure code */
+		snprintf(buffer,128,"sql_%d",m->qc->id);
+		*ret= GDKstrdup(buffer);
+		prg= newFunction(putName(buffer,strlen(buffer)), FUNCTIONsymbol);
+		blk= prg->def;
+		backend_dumpstmt(sql, blk, s);
+		pushEndInstruction(blk);
+#ifdef _SQL_COMPILE
+		printFunction(c->fdout, blk, c->listing);
+#endif
+		insertSymbol(c->nspace, prg);
+	}
+#ifdef _SQL_COMPILE
+	stream_printf(c->fdout, "#parse result %d\n", err);
+#endif
+@-
+We are done; a MAL procedure recides in the cache.
+@c
+endofcompile:
+	backend_destroy(sql);
+	GDKfree(n);
+	GDKfree(b);
+
+	mvc_commit(m, 0, NULL);
+	res_tables_destroy(m->results);
+	mvc_destroy(m);
+
+	SQLexit(c);
+	return msg;
+}
+@-
+Implementation of the execution of a single SQL statement is postponed.
+@c
 str
 SQLstatement(int *ret, str *cmd)
 {
