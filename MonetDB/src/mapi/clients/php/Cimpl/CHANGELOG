@@ -1,6 +1,0 @@
-2004-06-21 (arjan):
-	- PEAR wrapper; examples in separate dir
-2004-06-01 (arjan):
-	- Bug fixes; it is already quite usable.
-2004-03-26 (marcin):
-	- Initial version after complete rewrite of Mandfred's code.
