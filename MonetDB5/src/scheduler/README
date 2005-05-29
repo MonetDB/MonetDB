@@ -1,4 +1,0 @@
-The scheduler section contains all the tools to prepare
-a MAL program for execution against one of the eninges.
-It relies on the MAL engine and module layers.
-No code there may requires a call back to this level.
