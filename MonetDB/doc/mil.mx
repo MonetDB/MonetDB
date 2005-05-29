@@ -1113,8 +1113,6 @@ As of version 4.1 MIL has 7 standard modules, that are always loaded.
 	Drill-down benchmark for data mining.
 \item[@[<a href="../../Core/Modules/oo7/index.html">oo7</a>@]
 	OO7 benchmark generation and specific operations.
-\item[@[<a href="../../Core/Modules/tpcd/index.html">tpcd</a>@]
-	Efficient aggregation operations included.
 \item[@[<a href="../../Core/Modules/wisc/index.html">wisc</a>@]
 	Wisconsin benchmark code.
 \end{description}
