@@ -162,7 +162,7 @@ runMx(os.path.join(srcdir, 'src', 'modules', 'calibrator'), 'calib',
 for f in ['aggrX3', 'aggr', 'alarm', 'algebra', 'arith', 'ascii_io', 'bat',
           'blob', 'counters', 'decimal', 'enum', 'builtin',
           'lock', 'mmath', 'monettime', 'pcl', 'radix', 'streams', 'str', 'sys',
-          'tcpip', 'trans', 'unix', 'url', 'xtables']:
+          'tcpip', 'trans', 'unix', 'upgrade', 'url', 'xtables']:
     runMx(os.path.join(srcdir, 'src', 'modules', 'plain'), f,
           os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'Modules'))
 

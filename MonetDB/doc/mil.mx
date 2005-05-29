@@ -1056,6 +1056,16 @@ As of version 4.1 MIL has 7 standard modules, that are always loaded.
 	Locks and semaphores.
 \end{description}
 
+@+ Database Migration
+@T
+\begin{description}
+\item[@[<a href="../../Core/Modules/upgarde/index.html">upgarde</a>@]
+	Since MonetDB 4.8, the database format has changed. This module
+	provides functionallity to migrate older database to the new format.
+	Note: This must <i>only</i> be used with MIL-generated databases, 
+	<i>not</i> with databases that were generated via SQL or XQuery!
+\end{description}
+
 @+ OS APIs
 @T
 \begin{description}
