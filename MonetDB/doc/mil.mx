@@ -1059,7 +1059,7 @@ As of version 4.1 MIL has 7 standard modules, that are always loaded.
 @+ Database Migration
 @T
 \begin{description}
-\item[@[<a href="../../Core/Modules/upgarde/index.html">upgarde</a>@]
+\item[@[<a href="../../Core/Modules/upgrade/index.html">upgrade</a>@]
 	Since MonetDB 4.8, the database format has changed. This module
 	provides functionallity to migrate older database to the new format.
 	Note: This must <i>only</i> be used with MIL-generated databases, 
