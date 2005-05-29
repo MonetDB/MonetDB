@@ -23,7 +23,7 @@ This module contains some efficient aggregate functions that compute their
 result in one scan, rather than in the iterative manner of the generic
 MIL aggr_ implementations.
 
-The implementation code is derived from the already existing tpcd module and some
+The implementation code was derived from the former tpcd module and some
 test scripts were added.
 @m
 .MODULE aggr;

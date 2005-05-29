@@ -59,7 +59,6 @@ MODULES.replace("mprof",     "contrib");
 MODULES.replace("oo7",       "contrib");
 MODULES.replace("uchr",      "contrib");
 MODULES.replace("qt",        "contrib");
-MODULES.replace("tpcd",      "contrib");
 MODULES.replace("txtsim",    "contrib");
 MODULES.replace("vector",    "contrib");
 MODULES.replace("wisc",      "contrib");

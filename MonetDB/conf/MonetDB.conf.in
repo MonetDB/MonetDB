@@ -96,12 +96,13 @@ mapi_port=50000
 #mapi_noheaders=no
 # The MAPI debug level (should be disabled for normal use)
 mapi_debug=0
-# The number of concurrent clients can be set using mapi_clients (lower as 1 isn't very usefull)
+# The number of concurrent clients can be set using mapi_clients
+# (smaller than 1 is not very useful)
 #mapi_clients=2
 
 # SQL Interface Section
 #======================
-# default port to address an Mserver for a SQL session
+# default port to address an Mserver for an SQL session
 sql_port=45123
 # The SQL debug level (should be disabled for normal use)
 sql_debug=0
@@ -111,7 +112,7 @@ sql_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@log
 # XQuery Interface Section
 #=========================
 
-# default port to address an Mserver for a xquery session
+# default port to address an Mserver for an XQuery session
 xquery_port=45789
 
 #output mode "dm" = pretty printed, 
