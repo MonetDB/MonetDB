@@ -568,6 +568,174 @@ event_t K8_event[K8_NUMEVENTS + 1] = {
 	{37, 37, (str) &chr_nil, (str) &chr_nil, 0x76, 0}
 };
 
+/* P4 */
+#define P4_NUMEVENTS 46
+event_t P4_event[P4_NUMEVENTS + 1] = {
+	{ 00, 00, (str) &chr_nil, "TC_deliver_mode", 0, 0 },
+	{ 01, 01, (str) &chr_nil, "BPU_fetch_request", 0, 0 },
+	{ 02, 02, (str) &chr_nil, "ITLB_reference", 0, 0 }, 
+	{ 03, 03, (str) &chr_nil, "memory_cancel", 0, 0 }, 
+	{ 04, 04, (str) &chr_nil, "memory_complete", 0, 0 }, 
+	{ 05, 05, (str) &chr_nil, "load_port_replay", 0, 0 }, 
+	{ 06, 06, (str) &chr_nil, "store_port_replay", 0, 0 }, 
+	{ 07, 07, (str) &chr_nil, "MOB_load_replay", 0, 0 }, 
+	{ 08, 08, (str) &chr_nil, "page_walk_type", 0, 0 }, 
+	{ 09, 09, (str) &chr_nil, "BSQ_cache_reference", 0, 0 }, 
+	{ 10, 10, (str) &chr_nil, "IOQ_allocation", 0, 0 }, 
+	{ 11, 11, (str) &chr_nil, "IOQ_active_entries", 0, 0 }, 
+	{ 12, 12, (str) &chr_nil, "FSB_data_activity", 0, 0 }, 
+	{ 13, 13, (str) &chr_nil, "BSQ_allocation", 0, 0 }, 
+	{ 14, 14, (str) &chr_nil, "bsq_active_entries", 0, 0 }, 
+	{ 15, 15, (str) &chr_nil, "SSE_input_assist", 0, 0 }, 
+	{ 16, 16, (str) &chr_nil, "packed_SP_uop", 0, 0 }, 
+	{ 17, 17, (str) &chr_nil, "packed_DP_uop", 0, 0 }, 
+	{ 18, 18, (str) &chr_nil, "scalar_SP_uop", 0, 0 }, 
+	{ 19, 19, (str) &chr_nil, "scalar_DP_uop", 0, 0 }, 
+	{ 20, 20, (str) &chr_nil, "64bit_MMX_uop", 0, 0 }, 
+	{ 21, 21, (str) &chr_nil, "128bit_MMX_uop", 0, 0 }, 
+	{ 22, 22, (str) &chr_nil, "x87_FP_uop", 0, 0 }, 
+	{ 23, 23, (str) &chr_nil, "x87_SIMD_moves_uop", 0, 0 }, 
+	{ 24, 24, (str) &chr_nil, "TC_misc", 0, 0 }, 
+	{ 25, 25, (str) &chr_nil, "global_power_events", 0, 0 }, 
+	{ 26, 26, (str) &chr_nil, "tc_ms_xfer", 0, 0 }, 
+	{ 27, 27, (str) &chr_nil, "uop_queue_writes", 0, 0 }, 
+	{ 28, 28, (str) &chr_nil, "retired_mispred_branch_type", 0, 0 }, 
+	{ 29, 29, (str) &chr_nil, "retired_branch_type", 0, 0 }, 
+	{ 30, 30, (str) &chr_nil, "resource_stall", 0, 0 }, 
+	{ 31, 31, (str) &chr_nil, "WC_Buffer", 0, 0 }, 
+	{ 32, 32, (str) &chr_nil, "b2b_cycles", 0, 0 }, 
+	{ 33, 33, (str) &chr_nil, "bnr", 0, 0 }, 
+	{ 34, 34, (str) &chr_nil, "snoop", 0, 0 }, 
+	{ 35, 35, (str) &chr_nil, "response", 0, 0 }, 
+	{ 36, 36, (str) &chr_nil, "front_end_event", 0, 0 }, 
+	{ 37, 37, (str) &chr_nil, "execution_event", 0, 0 }, 
+	{ 38, 38, (str) &chr_nil, "replay_event", 0, 0 }, 
+	{ 39, 39, (str) &chr_nil, "instr_retired", 0, 0 }, 
+	{ 40, 40, (str) &chr_nil, "uops_retired", 0, 0 }, 
+	{ 41, 41, (str) &chr_nil, "uop_type", 0, 0 }, 
+	{ 42, 42, (str) &chr_nil, "branch_retired", 0, 0 }, 
+	{ 43, 43, (str) &chr_nil, "mispred_branch_retired", 0, 0 }, 
+	{ 44, 44, (str) &chr_nil, "x87_assist", 0, 0 }, 
+	{ 45, 45, (str) &chr_nil, "machine_clear", 0, 0 }
+};
+
+static int perfctr_event_set_count( const struct perfctr_event_set * s )
+{
+	int cnt = 0;
+
+	if (s->include)
+		cnt = perfctr_event_set_count(s->include);
+	cnt += s->nevents;
+	return cnt;
+}
+
+static const struct perfctr_event * perfctr_event_set_find( const struct perfctr_event_set * s, int cnt, int nr )
+{
+	cnt -= s->nevents;
+	if (s->include && cnt >= nr)
+		return perfctr_event_set_find(s->include, cnt, nr);
+	return s->events+nr;
+}
+
+enum escr_set {
+    ALF_ESCR_0_1 = 0,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x01 */
+    BPU_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x00 */
+    BSU_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x07 */
+    BSU_ESCR_0,		/* CCCR 0/1 via ESCR select 0x07 */
+    BSU_ESCR_1,		/* CCCR 2/3 via ESCR select 0x07 */
+    CRU_ESCR_0_1,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x04 */
+    CRU_ESCR_2_3,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x05 */
+    DAC_ESCR_0_1,	/* CCCR 8/9/10/11 via ESCR select 0x05 */
+    FIRM_ESCR_0_1,	/* CCCR 8/9/10/11 via ESCR select 0x01 */
+    FSB_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x06 */
+    FSB_ESCR_0,		/* CCCR 0/1 via ESCR select 0x06 */
+    FSB_ESCR_1,		/* CCCR 2/3 via ESCR select 0x06 */
+    ITLB_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x03 */
+    MOB_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x02 */
+    MS_ESCR_0_1,	/* CCCR 4/5/6/7 via ESCR select 0x00 */
+    PMH_ESCR_0_1,	/* CCCR 0/1/2/3 via ESCR select 0x04 */
+    RAT_ESCR_0_1,	/* CCCR 12/13/14/15/16/17 via ESCR select 0x02 */
+    SAAT_ESCR_0_1,	/* CCCR 8/9/10/11 via ESCR select 0x02 */
+    TBPU_ESCR_0_1,	/* CCCR 4/5/6/7 via ESCR select 0x02 */
+    TC_ESCR_0_1,	/* CCCR 4/5/6/7 via ESCR select 0x01 */
+};
+
+int _2ESCR(int cset, int ctr /* 0/1 */) {
+	(void)ctr;
+	switch(cset) {
+		case ALF_ESCR_0_1: return 0x01;
+		case BPU_ESCR_0_1: return 0x00;
+		case BSU_ESCR_0_1: return 0x07;
+		case BSU_ESCR_0: return 0x07;
+		case BSU_ESCR_1: return 0x07;
+    		case CRU_ESCR_0_1: return 0x04;
+    		case CRU_ESCR_2_3: return 0x05;
+    		case DAC_ESCR_0_1: return 0x05;
+    		case FIRM_ESCR_0_1: return 0x01;
+    		case FSB_ESCR_0_1: return 0x06; 
+    		case FSB_ESCR_0: return 0x06;
+    		case FSB_ESCR_1: return 0x06;
+    		case ITLB_ESCR_0_1: return 0x03;
+    		case MOB_ESCR_0_1: return 0x02;
+    		case MS_ESCR_0_1: return 0x00;
+    		case PMH_ESCR_0_1: return 0x04;
+    		case RAT_ESCR_0_1: return 0x02; 
+    		case SAAT_ESCR_0_1: return 0x02;
+    		case TBPU_ESCR_0_1: return 0x02;
+    		case TC_ESCR_0_1: return 0x01;
+	}
+	return 0;
+}
+
+int _2PMC(int cset, int ctr /* 0/1 */) {
+	switch(cset) {
+		case ALF_ESCR_0_1: return 12 + ctr;
+		case BPU_ESCR_0_1: 
+		case BSU_ESCR_0_1: return 2 + ctr;
+		case BSU_ESCR_0: return 0 + ctr;
+		case BSU_ESCR_1: return 2 + ctr;
+    		case CRU_ESCR_0_1: return 14 + ctr;
+    		case CRU_ESCR_2_3: return 16 + ctr;
+    		case DAC_ESCR_0_1: return 8 + ctr;
+    		case FIRM_ESCR_0_1: return 10 + ctr;
+    		case FSB_ESCR_0_1: return 0 + ctr; 
+    		case FSB_ESCR_0: return 0 + ctr;
+    		case FSB_ESCR_1: return 2 + ctr;
+    		case ITLB_ESCR_0_1: return 0 + ctr;
+    		case MOB_ESCR_0_1: return 2 + ctr;
+    		case MS_ESCR_0_1: return 4 + ctr;
+    		case PMH_ESCR_0_1: return 0 + ctr;
+    		case RAT_ESCR_0_1: return 12 + ctr; 
+    		case SAAT_ESCR_0_1: return 8 + ctr;
+    		case TBPU_ESCR_0_1: return 6 + ctr;
+    		case TC_ESCR_0_1: return 4 + ctr;
+	}
+	return 0;
+}
+
+unsigned int do_event_number(unsigned int n, int ctr,
+			   struct perfctr_cpu_control *cpu_control)
+{
+    const struct perfctr_event_set *s = perfctr_cpu_event_set(PERFCTR_X86_INTEL_P4M3);
+    int cnt = perfctr_event_set_count(s);
+    const struct perfctr_event *e = perfctr_event_set_find(s, cnt, n);
+ 
+    if( !s || n >= cnt) {
+	fprintf(stderr, "perfex: too many event specifiers\n");
+	exit(1);
+    }
+    /* for now just 0 or 1 */
+    cpu_control->evntsel[ctr] = 3 << 16 | 1 << 12 
+			      | _2ESCR(e->counters_set, ctr)<<13; 
+    cpu_control->p4.escr[ctr] = 1 << 2 /* count the app not the kernel */ 
+			      | e->unit_mask->default_value << 9
+			      | e->evntsel << 25;
+    cpu_control->pmc_map[ctr] = 1 << 31 | _2PMC(e->counters_set, ctr);
+    cpu_control->nractrs ++;
+    return n;
+}
+
+
 
 #elif ( defined(HW_Linux) && defined(HW_ia64) )
 
@@ -2260,6 +2428,12 @@ init_counters(void)
 				NumEvents = NoEvent = K8_NUMEVENTS;
 				event = K8_event;
 				break;
+    			case PERFCTR_X86_INTEL_P4:
+    			case PERFCTR_X86_INTEL_P4M2:
+    			case PERFCTR_X86_INTEL_P4M3:
+				NumEvents = NoEvent = P4_NUMEVENTS;
+				event = P4_event;
+				break;
 			}
 		}
 		if (vperfctr_stop(Self) != 0) {
@@ -2423,7 +2597,14 @@ start_count(counter *retval, int *event0, int *event1)
 			control.cpu_control.evntsel[0] = P6_K7_cesr0.word;
 			control.cpu_control.evntsel[1] = P6_K7_cesr1.word;
 			break;
+    		case PERFCTR_X86_INTEL_P4:
+    		case PERFCTR_X86_INTEL_P4M2:
+    		case PERFCTR_X86_INTEL_P4M3:
+			do_event_number( event[e0].code, 0, &control.cpu_control);
+			do_event_number( event[e1].code, 1, &control.cpu_control);
+			break;
 		}
+
 		if ((rtrn = vperfctr_control(Self, &control)) != 0) {
 			GDKerror("start_count: vperfctr_control failed with return value %d, errno %d.\n", rtrn, errno);
 			perror("! start_count/vperfctr_control");
