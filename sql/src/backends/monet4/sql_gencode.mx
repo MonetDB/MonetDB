@@ -807,7 +807,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 				a = tail_type(s);
 				v = tail_type(s->op1.stval);
-				if (a->type->localtype == v->type->localtype && strcmp(s->op4.funcval->func->base.name, "convert") == 0) {
+				if (v && a->type->localtype == v->type->localtype && strcmp(s->op4.funcval->func->base.name, "convert") == 0) {
 					buflen = BUFSIZ;
 					buf = NEW_ARRAY(char, buflen + 1);
 
@@ -916,7 +916,12 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			size_t buflen = strlen(s->op4.aggrval->aggr->imp) + 64;
 			buf = NEW_ARRAY(char, buflen + 1);
 
-			if (s->op3.gval) {
+			if (s->flag) {
+				int l2 = backend_dumpstmt_(s->op2.stval, nr, sql);
+
+				len += snprintf(buf + len, buflen - len, "var s%d := %s(s%d, s%d);\n", -s->nr, s->op4.aggrval->aggr->imp, l, l2);
+				assert(len <= buflen);
+			} else if (s->op3.gval) {
 				int g = backend_dumpstmt_(s->op2.stval, nr, sql);
 				int e = backend_dumpstmt_(s->op3.stval, nr, sql);
 
@@ -929,7 +934,9 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			dump(sql, buf, len, -s->nr);
 			_DELETE(buf);
 			backend_dump_nil(sql, s->op1.stval);
-			if (s->op3.gval) {
+			if (s->flag) {
+				backend_dump_nil(sql, s->op2.stval);
+			} else if (s->op3.gval) {
 				backend_dump_nil(sql, s->op2.stval);
 				backend_dump_nil(sql, s->op3.stval);
 			}
