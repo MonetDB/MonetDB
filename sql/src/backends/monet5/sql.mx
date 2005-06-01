@@ -52,9 +52,11 @@ command init()
 address SQLinitEnvironment
 comment "Initialize the environment for MAL";
 
-command compile(cmd:str):str 
+command compile(cmd:str,flag:int):str 
 address SQLcompile
-comment "Compile a single sql statement and return a MAL proc";
+comment "Compile a single sql statement and return a MAL proc.
+If flag >0 then the result is kept in the catalogue. Otherwise
+the catalog is reset before returning.";
 
 command eval(cmd:str):void 
 address SQLstatement

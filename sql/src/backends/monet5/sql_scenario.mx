@@ -299,7 +299,7 @@ SQL_cache, where it can be picked up.
 @c
 /* #define _SQL_COMPILE */
 str
-SQLcompile(str *ret, str *expr)
+SQLcompile(str *ret, str *expr, int *flag)
 {
 	int err = 0;
 	mvc *m;
@@ -314,7 +314,7 @@ SQLcompile(str *ret, str *expr)
 	(void) ret;
 	SQLinit(c);
 #ifdef _SQL_COMPILE
-	stream_printf(c->fdout, "#SQLstatement:%s\n", *expr);
+	stream_printf(c->fdout, "#SQLstatement:flag=%d:%s\n", *flag, *expr);
 #endif
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
@@ -388,7 +388,9 @@ endofcompile:
 	GDKfree(n);
 	GDKfree(b);
 
-	mvc_commit(m, 0, NULL);
+	if( flag)
+		mvc_commit(m, 0, NULL); /* keep the changes */
+	else mvc_rollback(m, 0, NULL);
 	res_tables_destroy(m->results);
 	mvc_destroy(m);
 
@@ -582,7 +584,7 @@ SQLparser(Client c)
 
 	oldstate = *c->curprg->def;
 #ifdef _SQL_PARSER_DEBUG
-	stream_printf(GDKout, "#SQL compilation %s\n", c->nxt);
+	stream_printf(GDKout, "#SQL compilation \n");
 #endif
 	SQLsetDebugger(c, TRUE);
 	be = ((backend *) c->state[PARSER]);
@@ -755,14 +757,30 @@ SQLengine(Client c)
 	MalStkPtr oldglb = c->glb;
 	backend *be = ((backend *) c->state[PARSER]);
 	mvc *m = be->mvc;
-	lng T0;
+	lng T0 = GDKusec();
 
 	if (c->curprg->def->errors)
 		return throwMessage("SQLengine", "Program contains errors\n");
 #ifdef SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
-	T0 = GDKusec();
+
+	if( m->mode == m_explain){
+		printFunction(c->fdout, c->curprg->def, c->listing);
+@-
+If you want to see the detailed code, we have to pick it up from
+the cache as well. This calls for finding the call to the
+cached routine, which may be hidden . For now we take a shortcut.
+@c
+		if( be->q) {
+			InstrPtr p;
+			p = getInstrPtr(c->curprg->def,1);
+			if( p->blk)
+				printFunction(c->fdout, p->blk, c->listing);
+
+		}
+		c->curprg->def->errors = -1; /* don;t execute */
+	} 
 	c->glb = 0;
 	msg = MALengine(c);
 @-
