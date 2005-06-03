@@ -619,6 +619,7 @@ event_t P4_event[P4_NUMEVENTS + 1] = {
 	{ 45, 45, (str) &chr_nil, "machine_clear", 0, 0 }
 };
 
+#if defined(HAVE_LIBPERFCTR)
 static int perfctr_event_set_count( const struct perfctr_event_set * s )
 {
 	int cnt = 0;
@@ -734,7 +735,7 @@ unsigned int do_event_number(unsigned int n, int ctr,
     cpu_control->nractrs ++;
     return n;
 }
-
+#endif
 
 
 #elif ( defined(HW_Linux) && defined(HW_ia64) )
