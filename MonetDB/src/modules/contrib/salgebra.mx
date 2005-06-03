@@ -560,7 +560,7 @@ salgebra_CHname(char *ch_basename, int batId)
 
 	memcpy(n, ch_basename, l);
 	*(char *) (n + l++) = '_';
-	memcpy(&n[l], id, l2);
+	memcpy(n+l, id, l2);
 	GDKfree(id);
 
 	return n;
