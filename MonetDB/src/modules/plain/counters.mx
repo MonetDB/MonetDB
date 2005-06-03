@@ -571,16 +571,16 @@ event_t K8_event[K8_NUMEVENTS + 1] = {
 /* P4 */
 #define P4_NUMEVENTS 46
 event_t P4_event[P4_NUMEVENTS + 1] = {
-	{ 00, 00, (str) &chr_nil, "TC_deliver_mode", 0, 0 },
-	{ 01, 01, (str) &chr_nil, "BPU_fetch_request", 0, 0 },
-	{ 02, 02, (str) &chr_nil, "ITLB_reference", 0, 0 }, 
-	{ 03, 03, (str) &chr_nil, "memory_cancel", 0, 0 }, 
-	{ 04, 04, (str) &chr_nil, "memory_complete", 0, 0 }, 
-	{ 05, 05, (str) &chr_nil, "load_port_replay", 0, 0 }, 
-	{ 06, 06, (str) &chr_nil, "store_port_replay", 0, 0 }, 
-	{ 07, 07, (str) &chr_nil, "MOB_load_replay", 0, 0 }, 
-	{ 08, 08, (str) &chr_nil, "page_walk_type", 0, 0 }, 
-	{ 09, 09, (str) &chr_nil, "BSQ_cache_reference", 0, 0 }, 
+	{  0,  0, (str) &chr_nil, "TC_deliver_mode", 0, 0 },
+	{  1,  1, (str) &chr_nil, "BPU_fetch_request", 0, 0 },
+	{  2,  2, (str) &chr_nil, "ITLB_reference", 0, 0 }, 
+	{  3,  3, (str) &chr_nil, "memory_cancel", 0, 0 }, 
+	{  4,  4, (str) &chr_nil, "memory_complete", 0, 0 }, 
+	{  5,  5, (str) &chr_nil, "load_port_replay", 0, 0 }, 
+	{  6,  6, (str) &chr_nil, "store_port_replay", 0, 0 }, 
+	{  7,  7, (str) &chr_nil, "MOB_load_replay", 0, 0 }, 
+	{  8,  8, (str) &chr_nil, "page_walk_type", 0, 0 }, 
+	{  9,  9, (str) &chr_nil, "BSQ_cache_reference", 0, 0 }, 
 	{ 10, 10, (str) &chr_nil, "IOQ_allocation", 0, 0 }, 
 	{ 11, 11, (str) &chr_nil, "IOQ_active_entries", 0, 0 }, 
 	{ 12, 12, (str) &chr_nil, "FSB_data_activity", 0, 0 }, 
@@ -717,7 +717,7 @@ unsigned int do_event_number(unsigned int n, int ctr,
 			   struct perfctr_cpu_control *cpu_control)
 {
     const struct perfctr_event_set *s = perfctr_cpu_event_set(PERFCTR_X86_INTEL_P4M3);
-    int cnt = perfctr_event_set_count(s);
+    unsigned int cnt = perfctr_event_set_count(s);
     const struct perfctr_event *e = perfctr_event_set_find(s, cnt, n);
  
     if( !s || n >= cnt) {
