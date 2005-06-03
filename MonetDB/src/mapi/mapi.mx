@@ -215,12 +215,6 @@ This module contains a simple interface for network connections.
 #define SOCKLEN int
 #endif
 
-#ifdef NATIVE_WIN32
-#define s_close(s)	closesocket(s)
-#else
-#define s_close(s)	close(s)
-#endif
-
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
 #include <openssl/err.h>
