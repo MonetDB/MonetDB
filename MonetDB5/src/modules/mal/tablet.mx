@@ -1151,10 +1151,13 @@ int TABLETload_file( Tablet *as, bstream *b ){
 	if (tablet_debug)
 		stream_printf( GDKerr, "TABLETload_file\n");
 
-	while(!eof && res == 0 && (as->nr == ~(size_t)0 || i < as->nr)){
+	while(eof<2 && res == 0 && (as->nr == ~(size_t)0 || i < as->nr)){
 		char *s, *end;
-		if (bstream_read(b, b->size - (b->len - b->pos)) == 0)
-			eof = 1;
+		if (bstream_read(b, b->size - (b->len - b->pos)) == 0 ||
+			stream_errnr(b->s) ){
+			eof ++;
+			b->eof=0;
+		} else eof= 0;
 		end = b->buf + b->len;
 		s = b->buf + b->pos;
 		*end = '\0';
@@ -1164,7 +1167,7 @@ int TABLETload_file( Tablet *as, bstream *b ){
 			if (e){
 				*e = '\0';
 				if ((e-s) <= 1){ /* empty line indicates eof */
-					eof = 1;
+					eof = 2;
 					break;
 				}
 				if (insert_line(as, s ) < 0){
@@ -1186,7 +1189,7 @@ int TABLETload_file( Tablet *as, bstream *b ){
 					     * ie. need to enlarge 
 					     */
 					if (bstream_read(b, b->size*16) == 0)
-						eof = 1;
+						eof = 2;
 					end = b->buf + b->len;
 					s = b->buf + b->pos;
 					*end = '\0';

@@ -14,17 +14,12 @@ LIBS = {
 		inspect.mx crackers.mx \
 		thread.mx clients.mx tablet.mx \
 		transaction.mx factory.mx mdb.mx  \
-		statistics.mx rsbox.mx partitions.mx \
-		sensors.mx
+		statistics.mx rsbox.mx partitions.mx 
+		#datacell.mx 
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
 	LIBS = $(MONETDB_LIBS) -lbat -lstream
-}
-bin_sensorDump = {
-	SOURCES = sensorDump.mx
-	HEADERS = h 
-	LIBS = $(MONETDB_LIBS) -lstream  
 }
 
 lib__pcre = {
@@ -53,7 +48,8 @@ scripts_mal = {
 		inspect.mx crackers.mx io.mal \
 		chopper.mx thread.mx clients.mx tablet.mx \
 		transaction.mx factory.mx mdb.mx pcre.mx \
-		statistics.mx rsbox.mx partitions.mx sensors.mx
+		statistics.mx rsbox.mx partitions.mx 
+	#datacell.mx 
 }
 
 #EXTRA_DIST_DIR = Tests
