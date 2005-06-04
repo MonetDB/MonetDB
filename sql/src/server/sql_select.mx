@@ -8,22 +8,6 @@
 @' License for the specific language governing rights and limitations
 @' under the License.
 @'
-@' The Original Code is the MonetDB Database System.
-@'
-@' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
-@' All Rights Reserved.
-
-@' The contents of this file are subject to the MonetDB Public License
-@' Version 1.1 (the "License"); you may not use this file except in
-@' compliance with the License. You may obtain a copy of the License at
-@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-@'
-@' Software distributed under the License is distributed on an "AS IS"
-@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-@' License for the specific language governing rights and limitations
-@' under the License.
-@'
 @' The Original Code is the Monet Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
@@ -2280,14 +2264,13 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			if (sc->token == SQL_IN) {
 				/* predicate case ? */
 				if (ls->nrcols == 0) {
-					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subtype *tp = tail_type(ls);
-					sql_subfunc *exist;
+					sql_subaggr *exist;
 
-					/* [exist](temp,ls) */
-					exist = sql_bind_func_result(sql->trans->module, "exist", tp, tp, bt);
+					/* exist(temp,ls) */
+					exist = sql_bind_aggr(sql->trans->module, "exist", tp);
 					temp = stmt_reverse(temp);
-					return stmt_binop(temp, ls, exist);
+					return stmt_aggr2(temp, ls, exist);
 				} else if (f == sql_sel) {
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subtype *tp = tail_type(ls);
@@ -2302,16 +2285,15 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			} else {	/* SQL_NOT_IN */
 				/* predicate case ? */
 				if (ls->nrcols == 0) {
-					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subtype *tp = tail_type(ls);
-					sql_subfunc *nexist;
+					sql_subaggr *nexist;
 
 					/* [not_exist](temp,ls) */
 					/* not_exit needed to handle
 					   null correctly */
-					nexist = sql_bind_func_result(sql->trans->module, "not_exist", tp, tp, bt);
+					nexist = sql_bind_aggr(sql->trans->module, "not_exist", tp);
 					temp = stmt_reverse(temp);
-					return stmt_binop(temp, ls, nexist);
+					return stmt_aggr2(temp, ls, nexist);
 				} else if (f == sql_sel) {
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subtype *tp = tail_type(ls);
@@ -2361,8 +2343,31 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 							return sql_compare(sql, ls, rs, "<>", f);
 						}
 					}
-				} else {	/* FIXME: SELECT name [not] in (select 'a') FROM tables gaat nog fout */
-					/* Ook: select 'env' in (select ...) */
+				} else 	if (ls->nrcols == 0) {
+					sql_subtype *tp = tail_type(ls);
+					sql_subaggr *exist;
+
+					if (sc->token == SQL_IN) {
+						/* exist(rs,ls) */
+						exist = sql_bind_aggr(sql->trans->module, "exist", tp);
+					} else {
+						/* [not_exist](temp,ls) */
+						/* not_exit needed to handle null correctly */
+						exist = sql_bind_aggr(sql->trans->module, "not_exist", tp);
+					}
+					rs = stmt_reverse(rs);
+					return stmt_aggr2(rs, ls, exist);
+						
+				} else if (rs->nrcols == 0) { 
+				/* SELECT name [not] in (select 'a') FROM tables */
+				/* single value */
+					if (sc->token == SQL_IN) {
+						return sql_compare(sql, ls, rs, "=", f);
+					} else {
+						return sql_compare(sql, ls, rs, "<>", f);
+					}
+					/* set of values */
+				} else {
 					sql_subtype *bt = sql_bind_localtype("bit");
 					sql_subtype *tp = tail_type(ls);
 					sql_subfunc *isnul;
@@ -2370,10 +2375,10 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 					isnul = sql_bind_func_result(sql->trans->module, "isnull", tp, NULL, bt);
 					if (sc->token == SQL_IN) {
 						sql_subfunc *not = sql_bind_func_result(sql->trans->module, "not", bt, NULL, bt);
-
 						return stmt_unop(stmt_unop(stmt_outerjoin(ls, stmt_reverse(rs), cmp_equal), isnul), not);
-					} else
+					} else {
 						return stmt_unop(stmt_outerjoin(ls, stmt_reverse(rs), cmp_equal), isnul);
+					}
 				}
 			} else {
 				/* TODO fix this broken impl ! */
@@ -3004,7 +3009,21 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 				sql_select_cleanup(sql, s, subset, grp);
 				return sql_error(sql, 02, "subquery result missing");
 			}
-			list_append(rl, foundsubset);
+			if (tv->columns->h) {
+				node *n = tv->columns->h;
+				stmt *s;
+				cvar *cs = n->data;
+				stmt *cbat = stmt_dup(cs->s);
+
+				/* selected only a single row ?? */
+				if (subset->nrcols == 0) {
+					s = cbat;
+				} else {
+					s = stmt_join(stmt_dup(foundsubset), cbat, cmp_equal);
+				}
+				list_append(rl, s);
+			}
+			stmt_destroy(foundsubset);
 		}
 	}
 	/* the inner query should output a table where the first column

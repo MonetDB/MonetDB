@@ -1039,8 +1039,8 @@ sqltypeinit()
 		sql_create_func(">=", ">=", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func("<", "<", ts[i], ts[i], BIT, SCALE_FIX);
 		sql_create_func("<=", "<=", ts[i], ts[i], BIT, SCALE_FIX);
-		sql_create_func("exist", "exist", ts[i], ts[i], BIT, SCALE_FIX);
-		sql_create_func("not_exist", "not_exist", ts[i], ts[i], BIT, SCALE_FIX);
+		sql_create_aggr("exist", "exist", ts[i], BIT);
+		sql_create_aggr("not_exist", "not_exist", ts[i], BIT);
 	}
 
 	for (i = 0; ts[i]; i++) {

@@ -251,6 +251,7 @@ extern stmt *stmt_unop(stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(stmt *ops, sql_subfunc *op);
 extern stmt *stmt_aggr(stmt *op1, group *grp, sql_subaggr *op);
+extern stmt *stmt_aggr2(stmt *op1, stmt *op2, sql_subaggr *op);
 extern stmt *stmt_unique(stmt *s, group *grp);
 
 extern stmt *stmt_alias(stmt *op1, char *tname, char *name);
@@ -1553,6 +1554,24 @@ stmt_aggr(stmt *op1, group *grp, sql_subaggr *op)
 	s->key = 1;
 	s->aggr = 1;
 	s->op4.aggrval = op;
+	s->flag = 0;
+	return s;
+}
+
+stmt *
+stmt_aggr2(stmt *op1, stmt *op2, sql_subaggr *op)
+{
+	stmt *s = stmt_create(st_aggr);
+
+	s->op1.stval = op1;
+	s->op2.stval = op2;
+	s->nrcols = 1;
+	s->nrcols = 0;
+	s->h = stmt_dup(op1->h);
+	s->key = 1;
+	s->aggr = 1;
+	s->op4.aggrval = op;
+	s->flag = 1;
 	return s;
 }
 
