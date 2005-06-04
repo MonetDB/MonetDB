@@ -1137,6 +1137,12 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	return 0;
 }
 
+#ifdef NATIVE_WIN32
+#define s_close(s)	closesocket(s)
+#else
+#define s_close(s)	close(s)
+#endif
+
 static void
 socket_close(stream *s)
 {
@@ -1156,7 +1162,7 @@ socket_close(stream *s)
 #ifdef HAVE_SHUTDOWN
 			shutdown(fd, SHUT_RDWR);
 #endif
-			close(fd);
+			s_close(fd);
 		}
 	}
 	s->stream_data.i = -1;

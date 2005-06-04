@@ -993,6 +993,8 @@ CXXEXT = \\\"cc\\\"
 
     if len(am['BUILT_SOURCES']) > 0:
         fd.write("BUILT_SOURCES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
+	# the BUILT_SOURCES should be cleanup by make (mostly)clean
+	fd.write("MOSTLYCLEANFILES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
 
     fd.write("EXTRA_DIST = Makefile.ag Makefile.msc%s\n" % \
           am_list2string(am['EXTRA_DIST'], " ", ""))
