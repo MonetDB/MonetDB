@@ -1495,7 +1495,7 @@ int RStoString(str* retval, int* len, ptr handle) {
 	if (*retval == NULL) {
 		*retval = GDKmalloc(sizeof(str) * (*len = 13 + 10));
 	}
-	return(*len = snprintf(*retval, *len, "ResultSet '%d'", rs->id));
+	return(*len = snprintf(*retval, *len, "ResultSet '" SZFMT "'", rs->id));
 }
 
 @}

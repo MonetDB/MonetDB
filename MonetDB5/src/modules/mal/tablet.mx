@@ -1691,7 +1691,7 @@ void TABshowHeader(Tablet *t){
 				}
 				if(strcmp(p,"base")==0){ 
 					char buf[BUFSIZ];
-					sprintf(buf,"%d",c->bval->hseqbase);
+					sprintf(buf,SZFMT,c->bval->hseqbase);
 					prop= GDKstrdup(buf);
 				}
 				if(strcmp(p,"sorted")==0){

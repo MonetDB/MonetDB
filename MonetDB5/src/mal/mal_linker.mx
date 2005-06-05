@@ -236,7 +236,7 @@ Use the search path provided in the configuration file
             (handle==NULL?errbuf:"failed"):"succeeded");
 #endif
         if(handle == NULL) {
-			snprintf(errbuf,1024,"%d: loader error %s",modulename,dlerror());
+			snprintf(errbuf,1024,"%s: loader error %s",modulename,dlerror());
             GDKfree(fullname);
             return (str) throwException("loaderException",
                 "loadModuleLibrary",errbuf);
