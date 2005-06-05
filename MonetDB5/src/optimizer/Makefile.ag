@@ -9,7 +9,8 @@ lib_optimizer = {
 	SEP = _
 	SOURCES = mal_optimizer.mx optimizer.mx  mal_factorize.mx \
 		mal_garbageCollector.mx mal_strengthReduction.mx \
-		mal_commonExpressions.mx mal_partitionedQuery.mx
+		mal_commonExpressions.mx mal_partitionedQuery.mx \
+		mal_emptyset.mx mal_peephole.mx
 
 	HEADERS = h 
 	SCRIPTS = mal

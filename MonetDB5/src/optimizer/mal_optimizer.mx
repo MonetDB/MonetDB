@@ -642,7 +642,7 @@ void setLifespan(MalBlkPtr mb){
 
     for(k=0;k<mb->vtop;k++){
         VarPtr v= getVar(mb, k);
-        v->beginLifespan = v->endLifespan=0;
+        v->updLifespan = v->beginLifespan = v->endLifespan=0;
     }
     for(pc=0;pc<mb->stop; pc++){
         p= getInstrPtr(mb,pc);
@@ -650,6 +650,8 @@ void setLifespan(MalBlkPtr mb){
             VarPtr v= getVar(mb, p->argv[k]);
             if( v->beginLifespan==0)
 				v->beginLifespan= pc;
+			if( k< p->retc)
+				v->updLifespan++;
 			if( pc > v->endLifespan ) {
 				/* end only if the beginLifspan falls in the same blk*/
 				/* otherwise it is the corresponding exit. */
@@ -1043,7 +1045,7 @@ an empty list.
 
 Dead code can be detected running backwards from RETURN statements
 and marking all variables used as arguments as relevant. In parallel,
-we built a list of instruction that should appear in the final result.
+we built a list of instructions that should appear in the final result.
 The new code block is than built in one scan.
 
 A source of side effect is the affected control flow in barrier blocks.
@@ -1052,7 +1054,7 @@ remaining code, we may wish to get rid of empty iterator blocks as well.
 [This refinement left for the future]
 
 We should also be aware of instructions that produce side effects
-to the environment, e.g. printing. Such (possibly recursive)
+to the environment, e.g. printing and BAT updates. Such (possibly recursive)
 functions should be marked with a property (sideeffects)
 (For now we recognize a few important ones)
 
@@ -1063,9 +1065,12 @@ previouse ones.
 int hasSideEffects(InstrPtr p){
     if( blockStart(p) || blockExit(p) || blockCntrl(p)) return TRUE;
     if(functionId(p) && strncmp("print",functionName(p),5)==0) return TRUE;
-    if(functionId(p) && strncmp("fprint",functionName(p),6)==0) return TRUE;
     if(functionId(p) && idcmp("deposit",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("insert",functionName(p))==0) return TRUE;
+    if(functionId(p) && idcmp("new",functionName(p))==0) return TRUE;
+    if(functionId(p) && idcmp("append",functionName(p))==0) return TRUE;
+    if(functionId(p) && idcmp("delete",functionName(p))==0) return TRUE;
+    if(functionId(p) && idcmp("destroy",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("prelude",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("decimal_prelude",functionName(p))==0) return TRUE;
     return FALSE;

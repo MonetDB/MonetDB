@@ -1,0 +1,112 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f mal_peephole
+@a M. Kersten
+@* Peephole optimization
+Recursive descend query compilers easily miss opportunities
+for better code generation, because limite context is retained
+or lookahead available. The peephole optimizer is
+built around such recurring patterns and compensates
+for the compilers 'mistakes'.
+@{
+@h
+#ifndef _MAL_PEEPHOLE_
+#define _MAL_PEEPHOLE_
+#include "mal_optimizer.h"
+
+#define DEBUG_MAL_PEEPHOLE     /* show partial result */
+
+mal_export str PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#endif
+@c
+#include "mal_peephole.h"
+#include "mal_namespace.h"
+#include "mal_interpreter.h"    /* for showErrors() */
+
+@- 
+The SQL frontend heavily relies on a pivot table, which
+is a generated oid sequence. Unfortunately, this
+is not seen and the pattern '$i := calc.oid(0@@0); $j:= algebra.markT($k,$i);'
+occurs often. This can be replaced with '$j:= algebra.markT($k)';
+
+Another example of a 2-way instruction sequence produced is then
+'$j:= algebra.markT($k); $l:= bat.reverse($j);',
+which can be replaced by '$l:= algebra.markH($k);'.
+
+In all cases we should ensure that the intermediates dropped are not
+used for other purposes as well.
+@c
+str
+PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	InstrPtr p,q, *old;
+	int i,limit,doit;
+	long clk= GDKusec();
+	Module scope= getClient()->nspace;
+
+#ifdef DEBUG_MAL_PEEPHOLE
+	stream_printf(GDKout,"Peephole optimizer started\n");
+#endif
+	(void) stk; (void) pci;
+	do{
+		doit=0;
+		setLifespan(mb);
+		limit= mb->stop;
+		old = mb->stmt;
+		newMalBlkStmt(mb,mb->stop);
+		for(i=0;i<limit; i++){
+			p= old[i]; q= old[i+1];
+			if( 
+				getVar(mb,getArg(p,0))->endLifespan== i+1 &&
+				functionId(p) && strcmp(functionName(p),"oid")== 0 &&
+				moduleId(p) && strcmp(moduleName(p),"calc")== 0 &&
+				isConstant(mb,getArg(p,1)) &&
+				strcmp(getVarLiteral(mb,getArg(p,1)),"0@0")== 0
+			   ){
+					if( ((functionId(q) && strcmp(functionName(q),"markT")==0) ||
+					    (functionId(q) && strcmp(functionName(q),"markH")==0)) &&
+						moduleId(q) && strcmp(moduleName(q),"algebra")==0)
+					{
+						freeInstruction(p);
+						q->argc--;
+						typeChecker(scope,mb,q,TRUE);
+						pushInstruction(mb,q);
+						i++; doit++;
+						continue;
+					}
+			} else
+			if( 
+				getVar(mb,getArg(p,0))->endLifespan== i+1 &&
+				functionId(p) && strcmp(functionName(p),"markT")== 0 &&
+				moduleId(p) && strcmp(moduleName(p),"algebra")== 0 &&
+				functionId(q) && strcmp(functionName(q),"reverse")== 0 &&
+				moduleId(q) && strcmp(moduleName(q),"bat")== 0 
+			){ 
+				getArg(p,0)= getArg(q,0);
+				setFunctionId(p,putName("markH",5));
+				pushInstruction(mb,p);
+				typeChecker(scope,mb,p,TRUE);
+				freeInstruction(q);
+				i++;
+			} else
+				pushInstruction(mb,p);
+		}
+		GDKfree(old);
+	} while(doit);
+	optimizerCheck(mb,"mal.peephole",1,GDKusec()-clk);
+	return MAL_SUCCEED;
+}
