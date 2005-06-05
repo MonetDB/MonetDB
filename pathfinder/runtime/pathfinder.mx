@@ -72,6 +72,20 @@ ADDHELP("pfstart", "boncz", "April 2005",
 start the xquery server.",
 "pathfinder");
 
+PROC xquery_server_start(bit global) : void {
+	fork(mapi_listen(
+		int(monet_environment.find("xquery_port")),
+		5,
+		"xquery_server",
+		global
+		)
+	);
+}
+
+PROC xquery_server_start() : void {
+	xquery_server_start(false);
+}
+
 #############################################
 # User-level document management functions:
 #
