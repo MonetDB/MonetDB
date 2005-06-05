@@ -887,12 +887,16 @@ void removeInstruction(MalBlkPtr mb, InstrPtr p){
     
     for(i=0; i<mb->stop-1; i++)
 	if( mb->stmt[i] == p) break;
+
+	if( i== mb->stop) return;
+
     for(; i<mb->stop-1; i++)
         mb->stmt[i]= mb->stmt[i+1];
     mb->stop--;
     mb->stmt[i]=0;
     freeInstruction(p); 
 }
+
 void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt){
     int i;
     InstrPtr p;
@@ -907,6 +911,7 @@ void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt){
     mb->stop -= cnt;
     for(; i<mb->stop; i++) mb->stmt[i]=0;
 }
+
 void moveInstruction(MalBlkPtr mb, int pc, int target){
     InstrPtr p;
     int i;
