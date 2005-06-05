@@ -838,7 +838,7 @@ proc sql_diff (bat[any::1,any::2] b1, bat[any::1,any::3] b2) : bat[any::1,any::2
 	return b1;
 }
 
-proc sql_server_start() : void {
+proc sql_server_start(bit global) : void {
 	var err := CATCH( mvc_init(int(monet_environment.find("sql_debug"))) );
 
 	tzone_local(TIMEZONE("GMT"));
@@ -846,7 +846,13 @@ proc sql_server_start() : void {
 	if (isnil(err)){
 		fork(sqllogmanager());
 
-		mapi_listen(int(monet_environment.find("sql_port")), 5, "sqlclient").fork();
+		fork(mapi_listen(
+			int(monet_environment.find("sql_port")),
+			5,
+			"sqlclient",
+			global
+			)
+		);
 		# start a default mapi client for debugging, this should go once
 		# MonetDB SQL gets stable.
 		# fork(mapi_listen(int(monet_environment.find("mapi_port")), 5, ""));
@@ -854,6 +860,10 @@ proc sql_server_start() : void {
 		printf(err);
 		drop(sql_server);
 	}
+}
+
+proc sql_server_start() : void {
+	sql_server_start(false);
 }
 
 if (mod() = "main") {
