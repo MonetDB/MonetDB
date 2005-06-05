@@ -1,7 +1,7 @@
 # testing void bats
 
 b:= bbp.new(:void,:str);
-bat.insert(b,"hello");
+bat.insert(b,nil,"hello");
 bat.insert(b,nil,"world");
 io.print(b);
 
@@ -10,3 +10,7 @@ c:= bat.reverse(b);
 io.print(c);
 d:= algebra.markT(c);
 io.print(d);
+
+#perform header marking
+f:= algebra.markH(b);
+io.print(f);
