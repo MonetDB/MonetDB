@@ -54,7 +54,7 @@ SQLBrowseConnect_(ODBCDbc *dbc, SQLCHAR *szConnStrIn, SQLSMALLINT cbConnStrIn, S
 	fixODBCstring(szConnStrIn, cbConnStrIn, addDbcError, dbc);
 
 #ifdef ODBCDEBUG
-	ODBCLOG(" \"%.*s\"\n", szConnStrIn, cbConnStrIn);
+	ODBCLOG(" \"%.*s\"\n", cbConnStrIn, szConnStrIn);
 #endif
 
 	/* check connection state, should not be connected */
