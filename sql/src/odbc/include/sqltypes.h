@@ -191,7 +191,7 @@ extern "C" {
  * 
  */
 
-#if (SIZEOF_LONG == 8)
+#if (SIZEOF_LONG == 8) || (SIZEOF_INT == 4)
 #ifndef DO_YOU_KNOW_WHAT_YOUR_ARE_DOING
 	typedef int SQLINTEGER;
 	typedef unsigned int SQLUINTEGER;
