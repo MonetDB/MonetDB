@@ -984,8 +984,17 @@ proc mapi_server(int port, int nr) : void {
 	quit();
 }
 
+proc mapi_start(bit global) : void {
+	fork(listen(
+		get_mapi_port(),
+		5,
+		global
+		)
+	);
+}
+
 proc mapi_start() : void {
-	fork(mapi_server(get_mapi_port(),5));
+	mapi_start(false);
 }
 
 if (mod() = "main"){
