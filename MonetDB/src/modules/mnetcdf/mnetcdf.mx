@@ -305,7 +305,7 @@ Then retrieve variable specific information.
 		sprintf(&buf[strlen(buf)], ",%d", shape[i]);
 	}
 	BUNins(*out, "shape", buf);
-	sprintf(buf, "%ld", size);
+	sprintf(buf, SZFMT, size);
 	BUNins(*out, "size", buf);
 
 	sprintf(buf, "%d", var_atts);
