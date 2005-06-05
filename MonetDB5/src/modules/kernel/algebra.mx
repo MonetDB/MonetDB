@@ -452,6 +452,9 @@ address ALGmarkHead_default
 comment "Produces a new BAT with fresh unique OIDs 
 	in the head starting at 0@0.";
 
+command markH( b:bat[:void,:any] ) :bat[:void,:oid] 
+address ALGmarkHead_default;
+
 command markH( b:bat[:any$1,:any], base:oid ) :bat[:void,:any$1] 
 address ALGmarkHead
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
@@ -2037,20 +2040,33 @@ str ALGtmark_default(int *result, int *bid) {
 	oid o= oid_nil;
 	return ALGtmark(result,bid,&o);
 }
+
 str ALGmarkHead(int *result, int *bid, oid *base) {
 	BAT *b,  *bn= NULL;
+	ptr p,q;
+	oid o = oid_nil,on=0;
+
     if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("algebra.hmark", "Cannot access descriptor");
+        return throwMessage("algebra.markH", "Cannot access descriptor");
     }
-	if( CMDmark(&bn,b,base)== GDK_SUCCEED){
-		BBPunfix(b->batCacheid);
-		bn = BATsetaccess(bn,1);
-		BBPincref(*result = -bn->batCacheid, TRUE);
-		BBPunfix(*result);
-		return MAL_SUCCEED;
+	if( b->htype== TYPE_void){
+		bn= BATnew(TYPE_void, TYPE_oid, BATcount(b));
+		BATloop(b,p,q){
+			BUNins(bn,&o,&on);
+			on++;
+		}
+	} else {
+		bn= BATnew(TYPE_void, b->htype, BATcount(b));
+		BATseqbase(bn, *base);
+		BATloop(b,p,q){
+			BUNins(bn,&o,BUNhead(b,p));
+		}
 	}
+
+	BBPincref(*result = bn->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
-	return throwMessage("algebra.mark", "marking group failed");
+	BBPunfix(bn->batCacheid);
+	return MAL_SUCCEED;
 }
 str ALGmarkHead_default(int *result, int *bid) {
 	oid o=0;
