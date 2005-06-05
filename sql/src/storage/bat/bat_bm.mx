@@ -359,7 +359,7 @@ bm_save(bm *bm, FILE *fp)
 		}
 		BUNins(pbat, &id, &pbid);
 
-		fprintf(fp, "%s,%d,%d\n", name, version, pbid);
+		fprintf(fp, "%s,%d," SZFMT "\n", name, version, pbid);
 		if (!(BBP_status(pbid)&BBPPERSISTENT)) 
 			return -1;
 	}
@@ -441,7 +441,7 @@ bm_load(bm *bm, FILE *fp)
 			BUNins(pbid, &vid, &bid);
 
 			if (bm->debug & 1)
-				printf("bm_load %s %d %d\n", name, version, bid);
+				printf("bm_load %s %d " SZFMT "\n", name, version, bid);
 		}
 	}
 	if (!bm->bat_oversion)

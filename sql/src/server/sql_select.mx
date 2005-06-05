@@ -259,7 +259,7 @@ tmp_table_name()
 {
 	oid id = OIDnew(1);
 	static char buf[BUFSIZ];
-	snprintf(buf, BUFSIZ, "c%ld", id);
+	snprintf(buf, BUFSIZ, "c" SZFMT "", id);
 
 	return buf;
 }

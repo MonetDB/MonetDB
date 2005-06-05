@@ -1111,7 +1111,7 @@ Use default setting for trace.
 	challenge = "::mserver_sql:4\n";
 	/* temporarily misuse user variable */
 	user = GDKmalloc(sizeof(char) * 100);
-	snprintf(user, 100, "%2d%s", strlen(challenge), challenge);
+	snprintf(user, 100, "%2u%s", (unsigned int)strlen(challenge), challenge);
 	stream_write(out, user, strlen(user), 1);
 	GDKfree(user);
 	/* get user name */

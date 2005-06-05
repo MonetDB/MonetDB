@@ -125,8 +125,8 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 	 	break;
 	case e_column: 
 		if (e->l)
-			printf("%s.", e->l);
-		printf("%s", e->r);
+			printf("%s.", (char*)e->l);
+		printf("%s", (char*)e->r);
 	 	break;
 	case e_cmp: 
 		exp_print(sql, e->l, depth+1, 0, 0);
