@@ -213,9 +213,10 @@ str loadModuleLibrary(str modulename){
 #ifdef DEBUG_MAL_LINKER
         stream_printf(GDKout,"already load:%s:%s\n",modulename,handle==NULL?
             (handle==NULL?errbuf:"failed"):"succeeded");
-#endif
             return (str) throwException("loaderException",
                 "Module loaded twice",modulename);
+#endif
+			return MAL_SUCCEED;
 		}
 @-
 Use the search path provided in the configuration file

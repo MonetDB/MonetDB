@@ -281,6 +281,9 @@ void chkFlow(MalBlkPtr mb)
 			        p= getInstrPtr(mb,0);
 			    msg = instruction2str(mb,p,TRUE);
 			    GDKerror("SYNTAX ERROR: instructions after END %s\n",msg);
+#ifdef DEBUG_MAL_FCN
+                printFunction(GDKout, mb, LIST_MAL_ALL);
+#endif
 			    GDKfree(msg);
 			    mb->errors++;
 			}

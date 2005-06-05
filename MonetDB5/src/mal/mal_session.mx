@@ -399,7 +399,7 @@ str MALengine(Client c){
 	if( prg== NULL) 
 		return throwMessage("MALengine","main function missing\n");
 
-	if (prg->def->errors){
+	if (prg->def->errors > 0){
 		showErrors();
 		@:restoreState@
 		return throwMessage("MALengine","Program contains errors\n");
@@ -419,7 +419,9 @@ str MALengine(Client c){
 
 	if (c->glb) 
 			c->glb->pcup = 0;
-	msg= (str) runMAL(c,prg->def,1,0,c->glb,0);
+	if (prg->def->errors == 0)
+        msg= (str) runMAL(c,prg->def,1,0,c->glb,0);
+    else msg= MAL_SUCCEED;
 	if (msg){
 		GDKerror(msg);
 		if( !c->listing) 

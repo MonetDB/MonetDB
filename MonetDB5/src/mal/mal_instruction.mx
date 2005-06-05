@@ -385,7 +385,7 @@ typedef struct VARRECORD{
     short   isused; /* for stack copying scope */
     short   fixtype;/* the type has been fixed */
     short   cleanup;/* remove upon function return */
-    short   beginLifespan, endLifespan; /* for optimizers */
+    short   beginLifespan, endLifespan, updLifespan; /* for optimizers */
     str     literal;/* initial value string */
     PropertySet props; /* private list of (name,value) pairs */
     ValRecord value;
