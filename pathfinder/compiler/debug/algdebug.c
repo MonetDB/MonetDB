@@ -503,7 +503,7 @@ PFalg_dot (FILE *f, PFalg_op_t *root)
         alg_dot (dot, root, "node1");
         /* put content of array into file */
         PFarray_printf (dot, "}\n");
-        fprintf (f, "%s", dot->base);
+        fprintf (f, "%s", (char*)dot->base);
     }
 }
 

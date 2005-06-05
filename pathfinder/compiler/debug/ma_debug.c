@@ -170,7 +170,7 @@ ma_dot (PFarray_t *dot, PFma_op_t *n, char *node)
             break;
 
         case ma_lit_dbl:
-            PFarray_printf (dot, "%s (%d)", ma_id[n->kind],
+            PFarray_printf (dot, "%s (%g)", ma_id[n->kind],
                                             n->sem.lit_val.val.d);
             break;
 
@@ -275,7 +275,7 @@ PFma_dot (FILE *f, PFma_op_t *root)
         ma_dot (dot, root, "node1");
         /* put content of array into file */
         PFarray_printf (dot, "}\n");
-        fprintf (f, "%s", dot->base);
+        fprintf (f, "%s", (char*)dot->base);
     }
 }
 

@@ -21,7 +21,7 @@
 # ! MonetDB, template, sql, pathfinder,  xml, pruning, playpen, times100, misq, gis, acoi, monet5 !
 #
 
-# helps bootstrapping Monet, when checked out from CVS
+# helps bootstrapping MonetDB, when checked out from CVS
 # requires GNU autoconf, automake and libtool
 # this is not meant to go into the distributions
 
