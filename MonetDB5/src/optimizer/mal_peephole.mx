@@ -107,6 +107,9 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		}
 		GDKfree(old);
 	} while(doit);
+#ifdef DEBUG_MAL_PEEPHOLE
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
 	optimizerCheck(mb,"mal.peephole",1,GDKusec()-clk);
 	return MAL_SUCCEED;
 }
