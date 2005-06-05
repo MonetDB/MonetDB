@@ -434,7 +434,7 @@ Get the new information for the server socket and start listening.
 				/* write challenge string, the challenge is currently empty (disabled) */
 				challenge = "::mserver_mil:4\n";
 				/* temporarily misuse name */
-				snprintf(name, BLOCK, "%2d%s", strlen(challenge), challenge);
+				snprintf(name, BLOCK, "%2u%s", (unsigned int)strlen(challenge), challenge);
 				stream_write(fdout, name, strlen(name), 1);
 				
 				/* get user name */

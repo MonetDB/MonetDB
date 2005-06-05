@@ -142,7 +142,7 @@ timerEnd(void)
 {
 	t1 = gettime();
 	if (mark) {
-		fprintf(toConsole, "%s % 7d.%03d msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
+		fprintf(toConsole, "%s % 7ld.%03ld msec %s\n", mark, (t1 - t0) / 1000, (t1 - t0) % 1000, mark2 ? mark2 : "");
 		fflush(toConsole);
 	}
 }

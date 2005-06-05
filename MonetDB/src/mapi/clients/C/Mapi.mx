@@ -3293,7 +3293,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	}
 
 	if (mid->trace) {
-		printf("mapi_query_part:" SZFMT ":%.*s\n", size, size, query);
+		printf("mapi_query_part:" SZFMT ":%.*s\n", size, (unsigned int)size, query);
 	}
 	hdl->needmore = 0;
 	stream_write(mid->to, (char *) query, 1, size);
