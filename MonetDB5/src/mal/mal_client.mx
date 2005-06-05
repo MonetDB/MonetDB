@@ -78,6 +78,11 @@ are located in mal\_startup.
 
 #define TIMEOUT     (5*60)  /* seconds */
 #define PROCESSTIMEOUT  2   /* seconds */
+
+#ifdef HAVE_SYS_RESOURCE_H
+# include <sys/resource.h>
+#endif
+
 @-
 The prompt structure is designed to simplify recognition
 of the language framework for interaction. For direct console
@@ -121,7 +126,9 @@ information should be dealt with separately.[TODO]
     short   itrace;     /* trace execution using interactive mdb */
     short   debugOptimizer,debugScheduler;
     long    timer;      /* trace time in usec */
+#ifdef HAVE_SYS_RESOURCE_H
 	struct rusage resource;	/* trace resource usage */
+#endif
 @-
 @}
 @-

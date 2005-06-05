@@ -75,11 +75,11 @@ in the interpreter to collect the information.
 
 #ifdef HAVE_SYS_RESOURCE_H
 #include <sys/resource.h>
+typedef struct rusage Rusage;
 #endif
 
 typedef struct tms Tms;
 typedef struct mallinfo Mallinfo;
-typedef struct rusage Rusage;
 
 mal_export str activateCounter(str name);
 mal_export str deactivateCounter(str name);
@@ -276,11 +276,13 @@ void onlineProfilerHeader(){
 
 void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
     static struct mallinfo prevMalloc;
+#ifdef HAVE_SYS_RESOURCE_H
     static struct rusage   prevUsage;
+	struct rusage   infoUsage;
+#endif
     static int eventcounter;
     struct tms newTms;
 	struct mallinfo infoMalloc;
-	struct rusage   infoUsage;
     str stmt,c;
 
     (void) cntxt; (void) stk; /* still unused */
@@ -298,7 +300,9 @@ void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     } 
     times(&newTms);
     infoMalloc = MT_mallinfo();
+#ifdef HAVE_SYS_RESOURCE_H
     getrusage(RUSAGE_SELF,&infoUsage);
+#endif
 
     /* make basic profile event tuple  */
     log0("[ ");
@@ -333,7 +337,9 @@ void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     }
 
     if( profileCounter[PROFmemory].status ){
+#ifdef HAVE_SYS_RESOURCE_H
         log("%d,\t",infoUsage.ru_maxrss);
+#endif
         log("%d,\t", infoMalloc.arena-prevMalloc.arena);
         log("%d,\t", infoMalloc.ordblks-prevMalloc.ordblks);
         log("%d,\t", infoMalloc.smblks-prevMalloc.smblks);
@@ -343,6 +349,7 @@ void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         log("%d,\t", infoMalloc.uordblks-prevMalloc.uordblks);
         prevMalloc = infoMalloc;
     }
+#ifdef HAVE_SYS_RESOURCE_H
     if( profileCounter[PROFio].status ){
         log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
         log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
@@ -353,6 +360,7 @@ void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
         prevUsage = infoUsage;
     }
+#endif
     log("%d ]\n",eventcounter);
     eventcounter++;
     flushLog();
@@ -404,7 +412,9 @@ void offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #ifdef MALprofiler
     struct tms newTms;
 	struct mallinfo infoMalloc;
+#ifdef HAVE_SYS_RESOURCE_H
 	struct rusage   infoUsage;
+#endif
 	static struct mallinfo prevMalloc;
 	static struct rusage   prevUsage;
     str stmt,c;
@@ -423,7 +433,9 @@ void offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
     } 
     times(&newTms);
     infoMalloc = MT_mallinfo();
+#ifdef HAVE_SYS_RESOURCE_H
     getrusage(RUSAGE_SELF,&infoUsage);
+#endif
 
     /* make XML record */
     log0("<event>\n");
@@ -582,7 +594,9 @@ inspect the properties of BATs and their propagation.
 
     if( profileCounter[3].status ){
     log0("\t<memory ");
+#ifdef HAVE_SYS_RESOURCE_H
     log("maxrss=\"%d\" ",infoUsage.ru_maxrss);
+#endif
     log("arena=\"%d\" ", infoMalloc.arena-prevMalloc.arena);
     log("ordblks=\"%d\" ", infoMalloc.ordblks-prevMalloc.ordblks);
     log("smblks=\"%d\" ", infoMalloc.smblks-prevMalloc.smblks);
@@ -596,6 +610,7 @@ inspect the properties of BATs and their propagation.
 
     if( profileCounter[PROFio].status ){
     log0("\t<io ");
+#ifdef HAVE_SYS_RESOURCE_H
     log("minflt=\"%d\" ", infoUsage.ru_minflt- prevUsage.ru_minflt);
     log("majflt=\"%d\" ", infoUsage.ru_majflt- prevUsage.ru_majflt);
     log("nswap=\"%d\" ", infoUsage.ru_nswap- prevUsage.ru_nswap);
@@ -604,6 +619,7 @@ inspect the properties of BATs and their propagation.
     log("nvcsw=\"%d\" ", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
     log("nivcsw=\"%d\" ", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
     prevUsage = infoUsage;
+#endif
     log0("/>\n");
     }
 
@@ -886,7 +902,9 @@ void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	static int eventcounter;
 	struct tms newTms;
 	/* struct mallinfo infoMalloc;*/
+#ifdef HAVE_SYS_RESOURCE_H
 	struct rusage   infoUsage;
+#endif
 	str stmt,c;
 	int evnt;
 
@@ -904,7 +922,9 @@ void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     } 
 	times(&newTms);
 	/* infoMalloc = MT_mallinfo();*/
+#ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF,&infoUsage);
+#endif
 	mal_set_lock(profileLock,"profileLock");
 	evnt= (int) BATcount(TRACE_id_ticks);
 
@@ -944,7 +964,9 @@ void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     }
 
     if( profileCounter[PROFmemory].status ){
+#ifdef HAVE_SYS_RESOURCE_H
         log("%d,\t",infoUsage.ru_maxrss);
+#endif
         log("%d,\t", infoMalloc.arena-prevMalloc.arena);
         log("%d,\t", infoMalloc.ordblks-prevMalloc.ordblks);
         log("%d,\t", infoMalloc.smblks-prevMalloc.smblks);
@@ -955,6 +977,7 @@ void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         prevMalloc = infoMalloc;
     }
     if( profileCounter[PROFio].status ){
+#ifdef HAVE_SYS_RESOURCE_H
         log("%d,\t", infoUsage.ru_minflt- prevUsage.ru_minflt);
         log("%d,\t", infoUsage.ru_majflt- prevUsage.ru_majflt);
         log("%d,\t", infoUsage.ru_nswap- prevUsage.ru_nswap);
@@ -963,6 +986,7 @@ void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         log("%d,\t", infoUsage.ru_nvcsw- prevUsage.ru_nvcsw);
         log("%d,\t", infoUsage.ru_nivcsw- prevUsage.ru_nivcsw);
         prevUsage = infoUsage;
+#endif
     }
 */
     eventcounter++;
