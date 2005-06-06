@@ -150,7 +150,7 @@ popState (void)
         
 #ifdef DEBUG_LEXSTATE
     fprintf (stderr, "popState: going to state %i\n",
-                     *((int *) PFarray_at (lexical_stack, lexical_sp)));
+                     *((int *) PFarray_at (lexical_stack, lexical_sp - 1)));
 #endif
 
     lexical_sp--;
@@ -363,7 +363,7 @@ _                                ({S}|{ExprComment})+
 "$"                                { gotoState (VARNAME); yield (dollar); }
 ")"                                { gotoState (OPERATOR); yield (rparen); }
 ")"{_}?"as"                        { gotoState (ITEMTYPE); yield (rparen_as); }
-"{"                                { pushState (OPERATOR); yield (lbrace); }
+"{"                                { yield (lbrace); }
 "}"                                { popState (); yield (rbrace); }
 ","                                { yield (comma); }
 
