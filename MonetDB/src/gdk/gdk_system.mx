@@ -404,9 +404,8 @@ MT_global_exit(int s)
 void
 MT_exit_thread(int s)
 {
-	int st = 0;
+	int st = s;
 
-	(void) s;
 	pthread_exit(&st);
 }
 

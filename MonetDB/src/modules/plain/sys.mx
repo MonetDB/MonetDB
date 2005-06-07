@@ -336,9 +336,9 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 
 
         table(1, b.reverse().sort().reverse().col_name("name"),
-                ht.semijoin(b.join(nme.reverse())),
-                tt.semijoin(b.join(nme.reverse())),
-                cnt.semijoin(b.mirror()),
+                ht.semijoin(b.join(nme.reverse())).col_name("htype"),
+                tt.semijoin(b.join(nme.reverse())).col_name("ttype"),
+                cnt.semijoin(b.mirror()).col_name("count"),
                 heat, dirty,status,kind,refcnt,lrefcnt);
     }
 
