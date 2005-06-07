@@ -145,8 +145,6 @@ AC_DEFUN([AM_MONETDB_COMPILER],
 dnl Some special requirements for MacOS X/Darwin
 case "$host" in
 powerpc-apple-darwin*)
-	CPPFLAGS="$CPPFLAGS -I/sw/include"
-	LDFLAGS="$LDFLAGS -L/sw/lib"
 	if test "$host" = "powerpc-apple-darwin6.8"; then
 		dnl  Jaguar still requires this...
 		CFLAGS="$CFLAGS -Ddlsym=dlsym_prepend_underscore"
