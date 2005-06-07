@@ -130,7 +130,7 @@ typedef __int64 gdk_int64;
 #define SZFMT "%zu"
 #define SSZFMT "%zd"
 #elif defined(__MINGW32__)
-#define SZFMT "%zu"
+#define SZFMT "%u"
 #define SSZFMT "%ld"
 #elif defined(__APPLE_CC__)
 #define SZFMT "%zu"
