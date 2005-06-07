@@ -541,6 +541,16 @@ typedef __int64 gdk_int64;
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi) && !defined(__APPLE_CC__)
 #define SZFMT "%zu"
 #define SSZFMT "%zd"
+#elif !defined(NATIVE_WIN32) && !defined(__APPLE_CC__)
+#define SZFMT "%zu"
+#define SSZFMT "%ld"
+#elif defined(__APPLE_CC__)
+#define SZFMT "%zu"
+	#if SIZEOF_SIZE_T == SIZEOF_INT
+	#define SSZFMT "%d"
+	#else
+	#define SSZFMT "%ld"
+	#endif
 #elif SIZEOF_SIZE_T == SIZEOF_INT
 #define SZFMT "%u"
 #define SSZFMT "%d"
