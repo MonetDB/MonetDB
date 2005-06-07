@@ -20,10 +20,11 @@ import java.sql.*;
  */
 public class MonetDBDatabase implements Database extends MonetDBConfigurable {
 	/**
+	 * DEPRECATED.
 	 * Returns the name associated with the Database instance.
 	 *
 	 * @return the name of the object.
-	 * @throws XMLDBException because this methid is deprecated and
+	 * @throws XMLDBException because this method is deprecated and
 	 * should not be used any more
 	 */
 	String getName() throws XMLDBException {

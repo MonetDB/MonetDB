@@ -19,7 +19,23 @@ import org.xmldb.api.base;
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  */
-public interface Collection extends Configurable {
+public class MonetDBCollection implements Collection {
+	private Service[] knownServices;
+	private final MonetDBDatabase monet;
+	private boolean closed;
+
+	/**
+	 * Constructs a new MonetDB Collection and initialises its
+	 * knownService array.
+	 */
+	MonetDBCollection(MonetDBDatabase db) {
+		monet = db;
+		// initially fill the knownServices array
+		knownServices = { new MonetDBXQueryService(this) };
+		
+		closed = false;
+	}
+	
 	/**
 	 * Returns the name associated with the Collection instance.
 	 *
@@ -29,14 +45,15 @@ public interface Collection extends Configurable {
 	 *  occur.<br />
 	 */
 	String getName() throws XMLDBException {
-		throw new XMLDBException(ErrorCodes.NOT_IMPLEMENTED, "Not implemented");
+		return("MonetDBCollection");
 	}
 
 	/**
 	 * Provides a list of all services known to the collection.  If no
 	 * services are known an empty list is returned.
 	 * <p />
-	 * In MonetDB/XQuery's case we return an empty list.
+	 * In MonetDB/XQuery's case we return a list with an XQueryService
+	 * implementation.
 	 *
 	 * @return An array of registered Service implementations.
 	 * @throws XMLDBException with expected error codes.<br />
@@ -46,8 +63,10 @@ public interface Collection extends Configurable {
 	 *  on the Collection<br />
 	 */
 	Service[] getServices() throws XMLDBException {
-		// I don't know about any services we support
-		return(new Service[0]);
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+
+		// We should return a list with all supported Services.
+		return(knownServices.clone());
 	}
 
 	/**
@@ -65,8 +84,18 @@ public interface Collection extends Configurable {
 	 *  on the Collection<br />
 	 */
 	Service getService(String name, String version) throws XMLDBException {
-		// I don't know about the service, so I return null in any case
-		// (there is no compiler complaining about unused variables here)
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		
+		// Do it nice, use reflection here and iterate over all known
+		// Services.  Get their name and version using getName() and
+		// getVersion and do the comparison.
+		for (int i = 0; i < knownServices.length; i++) {
+			if (knownServices[i].getName().equals(name) &&
+					knownServices[i].getVersion().equals(version))
+				return(knownServices[i]);
+		}
+
+		// finally, if not found, return null
 		return(null);
 	}
 
@@ -82,9 +111,10 @@ public interface Collection extends Configurable {
 	 *  on the Collection<br />
 	 */
 	Collection getParentCollection() throws XMLDBException {
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		
 		// I do it quick 'n' dirty for now.  There exists no recursion,
-		// so there is never a parent, and I don't care about whether
-		// we're closed or not.
+		// so there is never a parent.
 		return(null);
 	}
 
@@ -146,97 +176,114 @@ public interface Collection extends Configurable {
 	 *
 	 * @return the number of resource in the collection.
 	 * @throws XMLDBException with expected error codes.<br />
-	 *  <code>ErrorCodes.VENDOR_ERROR</code> for any vendor
-	 *  specific errors that occur.<br />
-	 *  <code>ErrorCodes.COLLECTION_CLOSED</code> if the <code>close</code> 
-	 *  method has been called on the <code>Collection</code><br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.<br />
+	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
+	 *  on the Collection<br />
 	 */
-	int getResourceCount() throws XMLDBException;
+	int getResourceCount() throws XMLDBException {
+		// We cannot know upfront how many tuples there are to come
+		// using JDBC.  I don't know...
+		return(0);
+	}
 
 	/**
-	 * Returns a list of the ids for all resources stored in the collection.
+	 * Returns a list of the ids for all resources stored in the
+	 * collection.
 	 *
-	 * @return a string array containing the names for all 
-	 *  <code>Resource</code>s in the collection.
+	 * @return a string array containing the names for all Resources in
+	 * the collection.
 	 * @throws XMLDBException with expected error codes.<br />
-	 *  <code>ErrorCodes.VENDOR_ERROR</code> for any vendor
-	 *  specific errors that occur.<br />
-	 *  <code>ErrorCodes.COLLECTION_CLOSED</code> if the <code>close</code> 
-	 *  method has been called on the <code>Collection</code><br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.<br />
+	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
+	 *  on the Collection<br />
 	 */
-	String[] listResources() throws XMLDBException;
+	String[] listResources() throws XMLDBException {
+		// somehow resources have IDs...  I'm affraid we have to take
+		// the hash of the tuples here or something.
+		return(new String[0]);
+	}
 
 	/**
-	 * Creates a new empty <code>Resource</code> with the provided id. 
-	 * The type of <code>Resource</code>
-	 * returned is determined by the <code>type</code> parameter. The XML:DB API currently 
-	 * defines "XMLResource" and "BinaryResource" as valid resource types.
-	 * The <code>id</code> provided must be unique within the scope of the 
-	 * collection. If 
-	 * <code>id</code> is null or its value is empty then an id is generated by   
-	 * calling <code>createId()</code>. The
-	 * <code>Resource</code> created is not stored to the database until 
-	 * <code>storeResource()</code> is called.
+	 * Creates a new empty Resource with the provided id.  The type of
+	 * Resource returned is determined by the type parameter.  The
+	 * XML:DB API currently defines "XMLResource" and "BinaryResource"
+	 * as valid resource types.  The id provided must be unique within
+	 * the scope of the collection.  If id is null or its value is empty
+	 * then an id is generated by calling createId().  The Resource
+	 * created is not stored to the database until storeResource() is
+	 * called.
 	 *
-	 * @param id the unique id to associate with the created <code>Resource</code>.
-	 * @param type the <code>Resource</code> type to create.
-	 * @return an empty <code>Resource</code> instance.    
+	 * @param id the unique id to associate with the created Resource.
+	 * @param type the Resource type to create.
+	 * @return an empty Resource instance.    
 	 * @throws XMLDBException with expected error codes.<br />
-	 *  <code>ErrorCodes.VENDOR_ERROR</code> for any vendor
-	 *  specific errors that occur.<br />
-	 *  <code>ErrorCodes.UNKNOWN_RESOURCE_TYPE</code> if the <code>type</code>
-	 *   parameter is not a known <code>Resource</code> type.
-	 *  <code>ErrorCodes.COLLECTION_CLOSED</code> if the <code>close</code> 
-	 *  method has been called on the <code>Collection</code><br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.<br />
+	 *  ErrorCodes.UNKNOWN_RESOURCE_TYPE if the type parameter is not a
+	 *  known Resource type.
+	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
+	 *  on the Collection<br />
 	 */
-	Resource createResource(String id, String type) throws XMLDBException;
+	Resource createResource(String id, String type) throws XMLDBException {
+		// we don't have updateable resultsets (yet)
+		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Operation not supported, sorry.");
+	}
 
 	/**
-	 * Removes the <code>Resource</code> from the database.
+	 * Removes the Resource from the database.
 	 *
 	 * @param res the resource to remove.
 	 * @throws XMLDBException with expected error codes.<br />
-	 *  <code>ErrorCodes.VENDOR_ERROR</code> for any vendor
-	 *  specific errors that occur.<br />
-	 *  <code>ErrorCodes.INVALID_RESOURCE</code> if the <code>Resource</code> is
-	 *   not valid.<br />
-	 *  <code>ErrorCodes.NO_SUCH_RESOURCE</code> if the <code>Resource</code> is
-	 *   not known to this <code>Collection</code>.
-	 *  <code>ErrorCodes.COLLECTION_CLOSED</code> if the <code>close</code> 
-	 *  method has been called on the <code>Collection</code><br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.<br />
+	 *  ErrorCodes.INVALID_RESOURCE if the Resource is not valid.<br />
+	 *  ErrorCodes.NO_SUCH_RESOURCE if the Resource is not known to this
+	 *  Collection.
+	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
+	 *  on the Collection<br />
 	 */
-	void removeResource(Resource res) throws XMLDBException;
+	void removeResource(Resource res) throws XMLDBException {
+		// we don't have updateable resultsets (yet)
+		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Operation not supported, sorry.");
+	}
 
 	/**
-	 * Stores the provided resource into the database. If the resource does not
-	 * already exist it will be created. If it does already exist it will be
-	 * updated.
+	 * Stores the provided resource into the database. If the resource
+	 * does not already exist it will be created. If it does already
+	 * exist it will be updated.
 	 *
 	 * @param res the resource to store in the database.
 	 * @throws XMLDBException with expected error codes.<br />
-	 *  <code>ErrorCodes.VENDOR_ERROR</code> for any vendor
-	 *  specific errors that occur.<br />
-	 *  <code>ErrorCodes.INVALID_RESOURCE</code> if the <code>Resource</code> is
-	 *   not valid.
-	 *  <code>ErrorCodes.COLLECTION_CLOSED</code> if the <code>close</code> 
-	 *  method has been called on the <code>Collection</code><br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.<br />
+	 *  ErrorCodes.INVALID_RESOURCE if the Resource is not valid.
+	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
+	 *  on the Collection<br />
 	 */
-	void storeResource(Resource res) throws XMLDBException;
+	void storeResource(Resource res) throws XMLDBException {
+		// we don't have updateable resultsets (yet)
+		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Operation not supported, sorry.");
+	}
 
 	/**
-	 * Retrieves a <code>Resource</code> from the database. If the 
-	 * <code>Resource</code> could not be
-	 * located a null value will be returned.
+	 * Retrieves a Resource from the database. If the Resource could not
+	 * be located a null value will be returned.
 	 *
 	 * @param id the unique id for the requested resource.
-	 * @return The retrieved <code>Resource</code> instance.
+	 * @return The retrieved Resource instance.
 	 * @throws XMLDBException with expected error codes.<br />
-	 *  <code>ErrorCodes.VENDOR_ERROR</code> for any vendor
-	 *  specific errors that occur.<br />    
-	 *  <code>ErrorCodes.COLLECTION_CLOSED</code> if the <code>close</code> 
-	 *  method has been called on the <code>Collection</code><br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.<br />    
+	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
+	 *  on the Collection<br />
 	 */
-	Resource getResource(String id) throws XMLDBException;
+	Resource getResource(String id) throws XMLDBException {
+		// do something like return the row requested
+		// currently: do nothing
+		return(null);
+	}
 
 	/**
 	 * Creates a new unique ID within the context of the <code>Collection</code>
@@ -262,7 +309,9 @@ public interface Collection extends Configurable {
 	 *  <code>ErrorCodes.VENDOR_ERROR</code> for any vendor
 	 *  specific errors that occur.<br />
 	 */
-	boolean isOpen() throws XMLDBException;
+	boolean isOpen() throws XMLDBException {
+		return(!closed);
+	}
 
 	/**
 	 * Releases all resources consumed by the <code>Collection</code>. 
@@ -275,6 +324,9 @@ public interface Collection extends Configurable {
 	 *  <code>ErrorCodes.VENDOR_ERROR</code> for any vendor
 	 *  specific errors that occur.<br />
 	 */
-	void close() throws XMLDBException;
+	void close() throws XMLDBException {
+		// perhaps a stmt.close();
+		closed = true;
+	}
 }
 
