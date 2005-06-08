@@ -47,6 +47,7 @@
 #endif
 
 #define HAVE_GLOBALMEMORYSTATUS 1
+#define ALLREADY_HAVE_WINDOWS_TYPE
 
 #endif
 
