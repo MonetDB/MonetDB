@@ -260,7 +260,8 @@ yes-*-*)
 		dnl  On MinGW we need the -Wno-format flag since gcc
 		dnl  doesn't know about the %I64d format string for
 		dnl  long long
-		CFLAGS="$CFLAGS -std=gnu99 -Wno-format"
+		CFLAGS="$CFLAGS -std=gnu99"
+		X_CFLAGS="$X_CFLAGS -Wno-format"
 		LDFLAGS="$LDFLAGS -no-undefined -L/usr/lib/w32api"
 		;;
 	*-irix*|*-darwin*)
