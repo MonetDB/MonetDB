@@ -513,6 +513,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_A9AABFECB1A0454E8D6CE006BBC79166"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_A9E836BF19E24100A82C52E6EAADA3AA"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -676,6 +682,12 @@
         "Entry"
         {
         "MsmKey" = "8:_E130DFE19B4B4395972FD04FF4B645C7"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_E3D47E0B978A4950A079BF88132E6CC4"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -2521,6 +2533,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_A9AABFECB1A0454E8D6CE006BBC79166"
+            {
+            "SourcePath" = "8:..\\..\\..\\sql\\NT\\lib\\MonetDB\\lib_sql_server.dll"
+            "TargetName" = "8:lib_sql_server.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_A9E836BF19E24100A82C52E6EAADA3AA"
             {
             "SourcePath" = "8:..\\lib\\libMapi.dll"
@@ -3061,6 +3093,26 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
+            "{A582A373-4685-4296-BEFE-614B80A702C3}:_E3D47E0B978A4950A079BF88132E6CC4"
+            {
+            "SourcePath" = "8:..\\..\\..\\sql\\NT\\lib\\MonetDB\\sql_server.mil"
+            "TargetName" = "8:sql_server.mil"
+            "Tag" = "8:"
+            "Folder" = "8:_B593DAA0787744D6A44D17884E0C3951"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{A582A373-4685-4296-BEFE-614B80A702C3}:_E5D214BF01544FBAB395F491DBB04335"
             {
             "SourcePath" = "8:..\\lib\\MonetDB\\salgebra.mil"
@@ -3514,7 +3566,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:MonetDB"
         "ProductCode" = "8:{169E1FC0-12F6-46BC-9C26-E78AB1B456E0}"
-        "PackageCode" = "8:{975A84C4-844F-483F-B1EF-698D4249C28F}"
+        "PackageCode" = "8:{7186FA2E-C651-40D8-9573-D66C9BCC05F5}"
         "UpgradeCode" = "8:{730C595B-DBA6-48D7-94B8-A98780AC92B6}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
