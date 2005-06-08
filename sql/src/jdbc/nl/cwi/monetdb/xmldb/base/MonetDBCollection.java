@@ -1,6 +1,6 @@
 package nl.cwi.monetdb.xmldb.base;
 
-import org.xmldb.api.base;
+import org.xmldb.api.base.*;
 
 
 /**
@@ -86,9 +86,8 @@ public class MonetDBCollection implements Collection {
 	Service getService(String name, String version) throws XMLDBException {
 		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
-		// Do it nice, use reflection here and iterate over all known
-		// Services.  Get their name and version using getName() and
-		// getVersion and do the comparison.
+		// Iterate over all known Services.  Get their name and version
+		// using getName() and getVersion and do the comparison.
 		for (int i = 0; i < knownServices.length; i++) {
 			if (knownServices[i].getName().equals(name) &&
 					knownServices[i].getVersion().equals(version))
