@@ -569,54 +569,61 @@ event_t K8_event[K8_NUMEVENTS + 1] = {
 };
 
 /* P4 */
-#define P4_NUMEVENTS 46
+#define P4_NUMEVENTS 49
 event_t P4_event[P4_NUMEVENTS + 1] = {
-	{  0,  0, (str) &chr_nil, "TC_deliver_mode", 0, 0 },
-	{  1,  1, (str) &chr_nil, "BPU_fetch_request", 0, 0 },
-	{  2,  2, (str) &chr_nil, "ITLB_reference", 0, 0 }, 
-	{  3,  3, (str) &chr_nil, "memory_cancel", 0, 0 }, 
-	{  4,  4, (str) &chr_nil, "memory_complete", 0, 0 }, 
-	{  5,  5, (str) &chr_nil, "load_port_replay", 0, 0 }, 
-	{  6,  6, (str) &chr_nil, "store_port_replay", 0, 0 }, 
-	{  7,  7, (str) &chr_nil, "MOB_load_replay", 0, 0 }, 
-	{  8,  8, (str) &chr_nil, "page_walk_type", 0, 0 }, 
-	{  9,  9, (str) &chr_nil, "BSQ_cache_reference", 0, 0 }, 
-	{ 10, 10, (str) &chr_nil, "IOQ_allocation", 0, 0 }, 
-	{ 11, 11, (str) &chr_nil, "IOQ_active_entries", 0, 0 }, 
-	{ 12, 12, (str) &chr_nil, "FSB_data_activity", 0, 0 }, 
-	{ 13, 13, (str) &chr_nil, "BSQ_allocation", 0, 0 }, 
-	{ 14, 14, (str) &chr_nil, "bsq_active_entries", 0, 0 }, 
-	{ 15, 15, (str) &chr_nil, "SSE_input_assist", 0, 0 }, 
-	{ 16, 16, (str) &chr_nil, "packed_SP_uop", 0, 0 }, 
-	{ 17, 17, (str) &chr_nil, "packed_DP_uop", 0, 0 }, 
-	{ 18, 18, (str) &chr_nil, "scalar_SP_uop", 0, 0 }, 
-	{ 19, 19, (str) &chr_nil, "scalar_DP_uop", 0, 0 }, 
-	{ 20, 20, (str) &chr_nil, "64bit_MMX_uop", 0, 0 }, 
-	{ 21, 21, (str) &chr_nil, "128bit_MMX_uop", 0, 0 }, 
-	{ 22, 22, (str) &chr_nil, "x87_FP_uop", 0, 0 }, 
-	{ 23, 23, (str) &chr_nil, "x87_SIMD_moves_uop", 0, 0 }, 
-	{ 24, 24, (str) &chr_nil, "TC_misc", 0, 0 }, 
-	{ 25, 25, (str) &chr_nil, "global_power_events", 0, 0 }, 
-	{ 26, 26, (str) &chr_nil, "tc_ms_xfer", 0, 0 }, 
-	{ 27, 27, (str) &chr_nil, "uop_queue_writes", 0, 0 }, 
-	{ 28, 28, (str) &chr_nil, "retired_mispred_branch_type", 0, 0 }, 
-	{ 29, 29, (str) &chr_nil, "retired_branch_type", 0, 0 }, 
-	{ 30, 30, (str) &chr_nil, "resource_stall", 0, 0 }, 
-	{ 31, 31, (str) &chr_nil, "WC_Buffer", 0, 0 }, 
-	{ 32, 32, (str) &chr_nil, "b2b_cycles", 0, 0 }, 
-	{ 33, 33, (str) &chr_nil, "bnr", 0, 0 }, 
-	{ 34, 34, (str) &chr_nil, "snoop", 0, 0 }, 
-	{ 35, 35, (str) &chr_nil, "response", 0, 0 }, 
-	{ 36, 36, (str) &chr_nil, "front_end_event", 0, 0 }, 
-	{ 37, 37, (str) &chr_nil, "execution_event", 0, 0 }, 
-	{ 38, 38, (str) &chr_nil, "replay_event", 0, 0 }, 
-	{ 39, 39, (str) &chr_nil, "instr_retired", 0, 0 }, 
-	{ 40, 40, (str) &chr_nil, "uops_retired", 0, 0 }, 
-	{ 41, 41, (str) &chr_nil, "uop_type", 0, 0 }, 
-	{ 42, 42, (str) &chr_nil, "branch_retired", 0, 0 }, 
-	{ 43, 43, (str) &chr_nil, "mispred_branch_retired", 0, 0 }, 
-	{ 44, 44, (str) &chr_nil, "x87_assist", 0, 0 }, 
-	{ 45, 45, (str) &chr_nil, "machine_clear", 0, 0 }
+	/* default pefctr configurations */
+	{ 0, 0, (str) &chr_nil, "P4_TC_DELIVER_MODE", 0, 0 },
+	{ 1, 1, (str) &chr_nil, "P4_BPU_FETCH_REQUEST", 1, 0 },
+	{ 2, 2, (str) &chr_nil, "P4_ITLB_REFERENCE", 2, 0 },
+	{ 3, 3, (str) &chr_nil, "P4_MEMORY_CANCEL", 3, 0 },
+	{ 4, 4, (str) &chr_nil, "P4_MEMORY_COMPLETE", 4, 0 },
+	{ 5, 5, (str) &chr_nil, "P4_LOAD_PORT_REPLAY", 5, 0 },
+	{ 6, 6, (str) &chr_nil, "P4_STORE_PORT_REPLAY", 6, 0 },
+	{ 7, 7, (str) &chr_nil, "P4_MOB_LOAD_REPLAY", 7, 0 },
+	{ 8, 8, (str) &chr_nil, "P4_PAGE_WALK_TYPE", 8, 0 },
+	{ 9, 9, (str) &chr_nil, "P4_BSQ_CACHE_REFERENCE", 9, 0 },
+	{ 10, 10, (str) &chr_nil, "P4_IOQ_ALLOCATION", 10, 0 },
+	{ 11, 11, (str) &chr_nil, "P4_IOQ_ACTIVE_ENTRIES", 11, 0 },
+	{ 12, 12, (str) &chr_nil, "P4_FSB_DATA_ACTIVITY", 12, 0 },
+	{ 13, 13, (str) &chr_nil, "P4_BSQ_ALLOCATION", 13, 0 },
+	{ 14, 14, (str) &chr_nil, "P4_BSQ_ACTIVE_ENTRIES", 14, 0 },
+	{ 15, 15, (str) &chr_nil, "P4_SSE_INPUT_ASSIST", 15, 0 },
+	{ 16, 16, (str) &chr_nil, "P4_PACKED_SP_UOP", 16, 0 },
+	{ 17, 17, (str) &chr_nil, "P4_PACKED_DP_UOP", 17, 0 },
+	{ 18, 18, (str) &chr_nil, "P4_SCALAR_SP_UOP", 18, 0 },
+	{ 19, 19, (str) &chr_nil, "P4_SCALAR_DP_UOP", 19, 0 },
+	{ 20, 20, (str) &chr_nil, "P4_64BIT_MMX_UOP", 20, 0 },
+	{ 21, 21, (str) &chr_nil, "P4_128BIT_MMX_UOP", 21, 0 },
+	{ 22, 22, (str) &chr_nil, "P4_X87_FP_UOP", 22, 0 },
+	{ 23, 23, (str) &chr_nil, "P4_X87_SIMD_MOVES_UOP", 23, 0 },
+	{ 24, 24, (str) &chr_nil, "P4_TC_MISC", 24, 0 },
+	{ 25, 25, (str) &chr_nil, "P4_GLOBAL_POWER_EVENTS", 25, 0 },
+	{ 26, 26, (str) &chr_nil, "P4_TC_MS_XFER", 26, 0 },
+	{ 27, 27, (str) &chr_nil, "P4_UOP_QUEUE_WRITES", 27, 0 },
+	{ 28, 28, (str) &chr_nil, "P4_RETIRED_MISPRED_BRANCH_TYPE", 28, 0 },
+	{ 29, 29, (str) &chr_nil, "P4_RETIRED_BRANCH_TYPE", 29, 0 },
+	{ 30, 30, (str) &chr_nil, "P4_RESOURCE_STALL", 30, 0 },
+	{ 31, 31, (str) &chr_nil, "P4_WC_BUFFER", 31, 0 },
+	{ 32, 32, (str) &chr_nil, "P4_B2B_CYCLES", 32, 0 },
+	{ 33, 33, (str) &chr_nil, "P4_BNR", 33, 0 },
+	{ 34, 34, (str) &chr_nil, "P4_SNOOP", 34, 0 },
+	{ 35, 35, (str) &chr_nil, "P4_RESPONSE", 35, 0 },
+	{ 36, 36, (str) &chr_nil, "P4_FRONT_END_EVENT", 36, 0 },
+	{ 37, 37, (str) &chr_nil, "P4_EXECUTION_EVENT", 37, 0 },
+	{ 38, 38, (str) &chr_nil, "P4_REPLAY_EVENT", 38, 0 },
+	{ 39, 39, (str) &chr_nil, "P4_INSTR_RETIRED", 39, 0 },
+	{ 40, 40, (str) &chr_nil, "P4_UOPS_RETIRED", 40, 0 },
+	{ 41, 41, (str) &chr_nil, "P4_UOP_TYPE", 41, 0 },
+	{ 42, 42, (str) &chr_nil, "P4_BRANCH_RETIRED", 42, 0 },
+	{ 43, 43, (str) &chr_nil, "P4_MISPRED_BRANCH_RETIRED", 43, 0 },
+	{ 44, 44, (str) &chr_nil, "P4_X87_ASSIST", 44, 0 },
+	{ 45, 45, (str) &chr_nil, "P4_MACHINE_CLEAR", 45, 0 },
+	{ 46, 46, (str) &chr_nil, "P4M3_INSTR_COMPLETED", 46, 0 },
+	/* customized events (inspired by pcl library code ;)
+	 * (NOTE: the P4_ names are not official, but made up by me, sandor) */
+	{ 47, 47, "Load/Store Instructions", "P4_LOAD_STORE", 12, 0x100 },
+	{ 48, 48, "L2 Cache Miss", "P4_L2_CACHE_MISS", 8, 0x1 },
+	{ 49, 49, (str) &chr_nil, (str) &chr_nil, 49, 0}
 };
 
 #if defined(HAVE_LIBPERFCTR)
@@ -714,29 +721,43 @@ int _2PMC(int cset, int ctr /* 0/1 */) {
 	return 0;
 }
 
-unsigned int do_event_number(unsigned int n, int ctr,
-			   struct perfctr_cpu_control *cpu_control)
+unsigned int
+do_event_number
+	(unsigned int n, int ctr, struct perfctr_cpu_control *cpu_control)
 {
-    const struct perfctr_event_set *s = perfctr_cpu_event_set(PERFCTR_X86_INTEL_P4M3);
-    unsigned int cnt = perfctr_event_set_count(s);
-    const struct perfctr_event *e = perfctr_event_set_find(s, cnt, n);
+	/* argument n indexes our local p4 table,
+	 * translate to perfctr code and mask */
+	unsigned int code = event[n].code ;
+	unsigned int mask = event[n].mask ;
+    const struct perfctr_event_set *s =
+		perfctr_cpu_event_set(PERFCTR_X86_INTEL_P4M3);
+    int cnt = perfctr_event_set_count(s);
+    const struct perfctr_event *e = perfctr_event_set_find(s, cnt, code);
  
-    if( !s || n >= cnt) {
-	fprintf(stderr, "perfex: too many event specifiers\n");
-	exit(1);
-    }
+	if( !s || code >= cnt) {
+		fprintf(stderr, "perfex: too many event specifiers\n");
+		exit(1);
+	}
+
     /* for now just 0 or 1 */
     cpu_control->evntsel[ctr] = 3 << 16 | 1 << 12 
 			      | _2ESCR(e->counters_set, ctr)<<13; 
-    cpu_control->p4.escr[ctr] = 1 << 2 /* count the app not the kernel */ 
-			      | e->unit_mask->default_value << 9
-			      | e->evntsel << 25;
+	if (mask) {
+		cpu_control->p4.escr[ctr] = 1 << 2 /* count the app not the kernel */ 
+			| mask << 9
+			| e->evntsel << 25;
+	} else {
+		cpu_control->p4.escr[ctr] = 1 << 2 /* count the app not the kernel */ 
+			| e->unit_mask->default_value << 9
+			| e->evntsel << 25;
+	}
     cpu_control->pmc_map[ctr] = 1 << 31 | _2PMC(e->counters_set, ctr);
     cpu_control->nractrs ++;
+	cpu_control->tsc_on = 1;
+
     return n;
 }
 #endif
-
 
 #elif ( defined(HW_Linux) && defined(HW_ia64) )
 
@@ -2601,8 +2622,11 @@ start_count(counter *retval, int *event0, int *event1)
     		case PERFCTR_X86_INTEL_P4:
     		case PERFCTR_X86_INTEL_P4M2:
     		case PERFCTR_X86_INTEL_P4M3:
-			do_event_number( event[e0].code, 0, &control.cpu_control);
-			do_event_number( event[e1].code, 1, &control.cpu_control);
+			control.cpu_control.nractrs = 0;
+			if (e0 != NoEvent)
+				do_event_number( event[e0].code, 0, &control.cpu_control);
+			if (e1 != NoEvent)
+				do_event_number( event[e1].code, 1, &control.cpu_control);
 			break;
 		}
 
