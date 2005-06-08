@@ -8,8 +8,11 @@ This document assumes that you have installed MonetDB on a Unix system
 (e.g., Linux, IRIX, Solaris, AIX, MacOs X/Darwin, or CYGWIN), and that
 you are planning to compile and install the Pathfinder front end on 
 the same system.
-For the time being, Pathfinder is not available for native Windows systems
-(NT, 2000, XP). A respective port will be available soon.
+
+Pathfinder is also available for native Windows systems (NT, 2000, XP). 
+Since the (standard) C++ features used by pathfinder are not yet 
+supported by the MSVC compiler, we currently use the gcc (MinGW) compiler.
+Detailed instructions can be found in HowtoStart-MinGW.txt
 
 
 Prerequisites:
