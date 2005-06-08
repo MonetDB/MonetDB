@@ -42,7 +42,7 @@ public class MonetDBCollection implements Collection {
 	 * @return the name of the object.
 	 * @throws XMLDBException with expected error codes.<br />
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
-	 *  occur.<br />
+	 *  occur.
 	 */
 	String getName() throws XMLDBException {
 		return("MonetDBCollection");
@@ -60,7 +60,7 @@ public class MonetDBCollection implements Collection {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.<br />
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	Service[] getServices() throws XMLDBException {
 		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
@@ -81,7 +81,7 @@ public class MonetDBCollection implements Collection {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.<br />
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	Service getService(String name, String version) throws XMLDBException {
 		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
@@ -108,7 +108,7 @@ public class MonetDBCollection implements Collection {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.<br />
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	Collection getParentCollection() throws XMLDBException {
 		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
@@ -127,9 +127,11 @@ public class MonetDBCollection implements Collection {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.<br />
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	int getChildCollectionCount() throws XMLDBException {
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		
 		// again quick 'n' dirty (see above)
 		return(0);
 	}
@@ -145,9 +147,11 @@ public class MonetDBCollection implements Collection {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.<br />
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	String[] listChildCollections() throws XMLDBException {
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		
 		// quick 'n' dirty! (see above)
 		return(new String[0]);
 	}
@@ -162,9 +166,11 @@ public class MonetDBCollection implements Collection {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.<br />
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	Collection getChildCollection(String name) throws XMLDBException {
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		
 		// we don't have children, so we always return null regardless
 		// the input
 		return(null);
@@ -179,9 +185,11 @@ public class MonetDBCollection implements Collection {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.<br />
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	int getResourceCount() throws XMLDBException {
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		
 		// We cannot know upfront how many tuples there are to come
 		// using JDBC.  I don't know...
 		return(0);
@@ -197,9 +205,11 @@ public class MonetDBCollection implements Collection {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.<br />
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	String[] listResources() throws XMLDBException {
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		
 		// somehow resources have IDs...  I'm affraid we have to take
 		// the hash of the tuples here or something.
 		return(new String[0]);
@@ -224,9 +234,11 @@ public class MonetDBCollection implements Collection {
 	 *  ErrorCodes.UNKNOWN_RESOURCE_TYPE if the type parameter is not a
 	 *  known Resource type.
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	Resource createResource(String id, String type) throws XMLDBException {
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		
 		// we don't have updateable resultsets (yet)
 		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Operation not supported, sorry.");
 	}
@@ -242,9 +254,11 @@ public class MonetDBCollection implements Collection {
 	 *  ErrorCodes.NO_SUCH_RESOURCE if the Resource is not known to this
 	 *  Collection.
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	void removeResource(Resource res) throws XMLDBException {
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		
 		// we don't have updateable resultsets (yet)
 		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Operation not supported, sorry.");
 	}
@@ -260,9 +274,11 @@ public class MonetDBCollection implements Collection {
 	 *  occur.<br />
 	 *  ErrorCodes.INVALID_RESOURCE if the Resource is not valid.
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	void storeResource(Resource res) throws XMLDBException {
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		
 		// we don't have updateable resultsets (yet)
 		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Operation not supported, sorry.");
 	}
@@ -277,7 +293,7 @@ public class MonetDBCollection implements Collection {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.<br />    
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
-	 *  on the Collection<br />
+	 *  on the Collection
 	 */
 	Resource getResource(String id) throws XMLDBException {
 		// do something like return the row requested
@@ -286,43 +302,46 @@ public class MonetDBCollection implements Collection {
 	}
 
 	/**
-	 * Creates a new unique ID within the context of the <code>Collection</code>
+	 * Creates a new unique ID within the context of the Collection.
 	 *
 	 * @return the created id as a string.
 	 * @throws XMLDBException with expected error codes.<br />
-	 *  <code>ErrorCodes.VENDOR_ERROR</code> for any vendor
-	 *  specific errors that occur.<br />
-	 *  <code>ErrorCodes.COLLECTION_CLOSED</code> if the <code>close</code> 
-	 *  method has been called on the <code>Collection</code><br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.<br />
+	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
+	 *  on the Collection
 	 */
-	String createId() throws XMLDBException;
+	String createId() throws XMLDBException {
+		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		
+		// we don't have updateable resultsets (yet)
+		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Operation not supported, sorry.");
+	}
 
 	/**
-	 * Returns true if the  <code>Collection</code> is open false otherwise.
-	 * Calling the <code>close</code> method on 
-	 * <code>Collection</code> will result in <code>isOpen</code>
-	 * returning false. It is not safe to use <code>Collection</code> instances
-	 * that have been closed.
+	 * Returns true if the Collection is open false otherwise.  Calling
+	 * the close method on Collection will result in isOpen returning
+	 * false. It is not safe to use Collection instances that have been
+	 * closed.
 	 *
-	 * @return true if the <code>Collection</code> is open, false otherwise.
+	 * @return true if the Collection is open, false otherwise.
 	 * @throws XMLDBException with expected error codes.<br />
-	 *  <code>ErrorCodes.VENDOR_ERROR</code> for any vendor
-	 *  specific errors that occur.<br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.
 	 */
 	boolean isOpen() throws XMLDBException {
 		return(!closed);
 	}
 
 	/**
-	 * Releases all resources consumed by the <code>Collection</code>. 
-	 * The <code>close</code> method must
-	 * always be called when use of a <code>Collection</code> is complete. It is
-	 * not safe to use a  <code>Collection</code> after the <code>close</code>
+	 * Releases all resources consumed by the Collection.  The close
+	 * method must always be called when use of a Collection is
+	 * complete. It is not safe to use a  Collection after the close
 	 * method has been called.
 	 *
 	 * @throws XMLDBException with expected error codes.<br />
-	 *  <code>ErrorCodes.VENDOR_ERROR</code> for any vendor
-	 *  specific errors that occur.<br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.
 	 */
 	void close() throws XMLDBException {
 		// perhaps a stmt.close();
