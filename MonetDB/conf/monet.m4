@@ -257,7 +257,10 @@ yes-*-*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
-		CFLAGS="$CFLAGS -std=gnu99"
+		dnl  On MinGW we need the -Wno-format flag since gcc
+		dnl  doesn't know about the %I64d format string for
+		dnl  long long
+		CFLAGS="$CFLAGS -std=gnu99 -Wno-format"
 		LDFLAGS="$LDFLAGS -no-undefined -L/usr/lib/w32api"
 		;;
 	*-irix*|*-darwin*)
