@@ -98,5 +98,134 @@ public class MonetDBXMLResource implements XMLResource {
 	}
 
 	//== end interface Resource
+	
+	//== Interface org.xmldb.api.modules.XMLResource
+	
+	/**
+	 * Returns the unique id for the parent document to this Resource
+	 * or null if the Resource does not have a parent document.
+	 * getDocumentId() is typically used with Resource instances
+	 * retrieved using a query.  It enables accessing the parent
+	 * document of the Resource even if the Resource is a child node of
+	 * the document.  If the Resource was not obtained through a query
+	 * then getId() and getDocumentId() will return the same id.
+	 *
+	 * @return the id for the parent document of this Resource or null
+	 *         if there is no parent document for this Resource.
+	 * @throws XMLDBException with expected error codes.<br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.
+	 */
+	public String getDocumentId() throws XMLDBException {
+		// hmmm... oops... I dunno
+		return(null);
+	}
+
+	/**
+	 * Returns the content of the Resource as a DOM Node.
+	 *
+	 * @return The XML content as a DOM Node
+	 * @throws XMLDBException with expected error codes.<br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.
+	 */
+	public org.w3c.dom.Node getContentAsDOM() throws XMLDBException {
+		// do the terrible DOM thing...
+		// maar nu even niet! (TODO!)
+		return(null);
+	}
+
+	/**
+	 * Sets the content of the Resource using a DOM Node as the source.
+	 *
+	 * @param content The new content value
+	 * @throws XMLDBException with expected error codes.<br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.<br />
+	 *  ErrorCodes.INVALID_RESOURCE if the content value provided is
+	 *  null.<br />
+	 *  ErrorCodes.WRONG_CONTENT_TYPE if the content provided in not a
+	 *  valid DOM Node.
+	 */
+	public void setContentAsDOM(org.w3c.dom.Node content) throws XMLDBException {
+		if (content == null) throw
+			new XMLDBException(ErrorCodes.INVALID_RESOURCE, "(null)");
+
+		// we can't do anything yet
+		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "not implemented");
+	}
+
+	/**
+	 * Allows you to use a ContentHandler to parse the XML data from the
+	 * database for use in an application.
+	 *
+	 * @param handler the SAX ContentHandler to use to handle the
+	 *                Resource content.
+	 * @throws XMLDBException with expected error codes.<br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.<br />
+	 *  ErrorCodes.INVALID_RESOURCE if the ContentHandler value provided
+	 *  is null.
+	 */
+	public void getContentAsSAX(org.xml.sax.ContentHandler handler)
+		throws XMLDBException
+	{
+		if (handler == null) throw
+			new XMLDBException(ErrorCodes.INVALID_RESOURCE, "(null)");
+
+		// we can't do anything yet
+		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "not implemented");
+	}
+
+	/**
+	 * Sets the content of the Resource using a SAX ContentHandler.
+	 *
+	 * @return a SAX ContentHandler that can be used to add content into
+	 *         the Resource.
+	 * @throws XMLDBException with expected error codes.<br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.
+	 */
+	public org.xml.sax.ContentHandler setContentAsSAX() throws XMLDBException {
+		// I have NO idea
+		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "not implemented");
+	}
+
+	/**
+	 * Sets a SAX feature that will be used when this XMLResource  is
+	 * used to produce SAX events (through the getContentAsSAX()
+	 * method).
+	 *
+	 * @param feature Feature name. Standard SAX feature names are
+	 *                documented at http://sax.sourceforge.net/.
+	 * @param value Set or unset feature
+	 * @throws org.xml.sax.SAXNotRecognizedException
+	 * @throws org.xml.sax.SAXNotSupportedException
+	 */
+	public void setSAXFeature(String feature, boolean value)
+		throws org.xml.sax.SAXNotRecognizedException,
+				org.xml.sax.SAXNotSupportedException
+	{
+		// do nothing
+	}
+
+	/**
+	 * Returns current setting of a SAX feature that will be used when
+	 * this XMLResource is used to produce SAX events (through the
+	 * getContentAsSAX() method)
+	 *
+	 * @param feature Feature name. Standard SAX feature names are
+	 *                documented at http://sax.sourceforge.net/.
+	 * @return whether the feature is set
+	 * @throws org.xml.sax.SAXNotRecognizedException
+	 * @throws org.xml.sax.SAXNotSupportedException
+	 */
+	public boolean getSAXFeature(String feature)
+		throws org.xml.sax.SAXNotRecognizedException,
+				org.xml.sax.SAXNotSupportedException
+	{
+		// eh?
+		return(false);
+	}
 }
 
