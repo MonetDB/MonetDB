@@ -141,8 +141,8 @@ void monet_hello(opt *set, int setlen) {
 		printf("# Monet Database Server V%s\n", GDKgetenv("gdk_version"));
 		printf("# Copyright (c) 1993-2005, CWI. ");
 		printf("All rights reserved.\n");
-		printf("# Compiled for %s/" SZFMT "bit; %s linked.\n", 
-		HOST, (size_t) (sizeof(ptr)*8), linkinfo );
+		printf("# Compiled for %s/" SZFMT "bit with " SZFMT "bit OIDs; %s linked.\n", 
+		HOST, (size_t) (sizeof(ptr)*8), (size_t) (sizeof(oid)*8), linkinfo );
 		printf("# config:%s\n", GDKgetenv("config"));
 		printf("# dbfarm:%s\n", GDKgetenv("gdk_dbfarm"));
 		printf("# dbname:%s\n", GDKgetenv("gdk_dbname"));
