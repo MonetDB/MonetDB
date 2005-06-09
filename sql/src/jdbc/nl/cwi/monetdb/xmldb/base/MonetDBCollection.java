@@ -19,7 +19,7 @@ import org.xmldb.api.base.*;
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  */
-public class MonetDBCollection implements Collection {
+public class MonetDBCollection extends MonetDBConfigurable implements Collection {
 	private Service[] knownServices;
 	private final MonetDBDatabase monet;
 	private boolean closed;

@@ -1,16 +1,18 @@
 package nl.cwi.monetdb.xmldb.base;
 
 import org.xmldb.api.base.*;
+import java.util.*;
 
 /**
- * This interface provides the ability to configure properties about an
- * object.  However, with the current MonetDB/XQuery implementation this
- * is not supported, and as such this implementation functions as an
- * interface satisfaction object ;)
+ * This class provides the ability to configure properties about an
+ * object.  The properties are simply stored in a HashMap, as such get
+ * and set inherit the behaviour of the java.util.Map interface.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  */
-public class MonetDBConfigurable {
+public class MonetDBConfigurable implements Configurable {
+	private Map properties = new HashMap();
+	
 	/**
 	 * Returns the value of the property identified by name.
 	 *
@@ -18,10 +20,10 @@ public class MonetDBConfigurable {
 	 * @return the property value or null if no property exists.
 	 * @throws XMLDBException with expected error codes.<br />
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
-	 *  occur.<br />
+	 *  occur.
 	 */
 	String getProperty(String name) throws XMLDBException {
-		throw new XMLDBException(ErrorCodes.NOT_IMPLEMENTED, "Not implemented");
+		return(properties.get(name));
 	}
 
 	/**
@@ -34,7 +36,7 @@ public class MonetDBConfigurable {
 	 *  occur.<br />
 	 */
 	void setProperty(String name, String value) throws XMLDBException {
-		throw new XMLDBException(ErrorCodes.NOT_IMPLEMENTED, "Not implemented");
+		properties.put(name, value);
 	}
 }
 

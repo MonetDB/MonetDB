@@ -18,7 +18,7 @@ import java.sql.*;
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  */
-public class MonetDBDatabase implements Database extends MonetDBConfigurable {
+public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	/**
 	 * DEPRECATED.
 	 * Returns the name associated with the Database instance.
