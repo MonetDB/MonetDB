@@ -1233,17 +1233,19 @@ if test "x$have_pthread" != xno; then
 
 	save_LIBS="$LIBS"
 	LIBS="$LIBS $PTHREAD_LIBS"
-	AC_CHECK_LIB(pthreadGC1, sem_init,
-		pthread=pthreadGC1 PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC1",
-		AC_CHECK_LIB(pthreadGC, sem_init,
-			pthread=pthreadGC PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC",
-			AC_CHECK_LIB(pthread, sem_init, 
-				pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread", 
-				dnl sun
-				AC_CHECK_LIB(pthread, sem_post,
-					pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
-					[ if test "x$have_pthread" != xauto; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
-					"-lposix4"))))
+	AC_CHECK_LIB(pthreadGC2, sem_init,
+		pthread=pthreadGC2 PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC2",
+		AC_CHECK_LIB(pthreadGC1, sem_init,
+			pthread=pthreadGC1 PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC1",
+			AC_CHECK_LIB(pthreadGC, sem_init,
+				pthread=pthreadGC PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC",
+				AC_CHECK_LIB(pthread, sem_init, 
+					pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread", 
+					dnl sun
+					AC_CHECK_LIB(pthread, sem_post,
+						pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
+						[ if test "x$have_pthread" != xauto; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
+						"-lposix4")))))
 	AC_CHECK_LIB($pthread, pthread_sigmask,
 		AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1,
 			[Define if you have the pthread_sigmask function]))
