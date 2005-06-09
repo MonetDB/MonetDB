@@ -271,6 +271,15 @@ yes-*-*)
 		CFLAGS="$CFLAGS -std=c99"
 		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		;;
+	[[34]].*-linux-gnulibc1)
+		dnl this is for FreeBSD with linux compat libraries
+		AC_DEFINE(_POSIX_C_SOURCE, 200112, [Compiler flag])
+		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
+		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+		AC_DEFINE(__BSD_VISIBLE, 1, [Compiler flag])
+		CFLAGS="$CFLAGS -std=c99"
+		CXXFLAGS="$CXXFLAGS -ansi"
+		;;
 	[[34]].*-*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
