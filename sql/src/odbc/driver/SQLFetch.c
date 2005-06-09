@@ -46,16 +46,16 @@
 
 #if SIZEOF_INT==8
 # define ULL_CONSTANT(val)	(val)
-# define ULLFMT			"u"
+# define O_ULLFMT			"u"
 #elif SIZEOF_LONG==8
 # define ULL_CONSTANT(val)	(val##UL)
-# define ULLFMT			"lu"
+# define O_ULLFMT			"lu"
 #elif defined(HAVE_LONG_LONG)
 # define ULL_CONSTANT(val)	(val##ULL)
-# define ULLFMT			"llu"
+# define O_ULLFMT			"llu"
 #elif defined(HAVE___INT64)
 # define ULL_CONSTANT(val)	(val##ui64)
-# define ULLFMT			"I64u"
+# define O_ULLFMT			"I64u"
 #endif
 
 #define MAXBIGNUM10	ULL_CONSTANT(1844674407370955161)	/* (2**64-1)/10 */
@@ -655,7 +655,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 
 			for (n = 0, f = 1; n < nval.scale; n++)
 				f *= 10;
-			sz = snprintf(data, buflen, "%s%" ULLFMT, nval.sign ? "" : "-", nval.val / f);
+			sz = snprintf(data, buflen, "%s%" O_ULLFMT, nval.sign ? "" : "-", nval.val / f);
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -673,7 +673,7 @@ ODBCFetch(ODBCStmt *stmt, SQLUSMALLINT col, SQLSMALLINT type, SQLPOINTER ptr, SQ
 				if (lenp)
 					*lenp += nval.scale + 1;
 				if (buflen > 2)
-					sz = snprintf(data, buflen, ".%0*" ULLFMT, nval.scale, nval.val % f);
+					sz = snprintf(data, buflen, ".%0*" O_ULLFMT, nval.scale, nval.val % f);
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */

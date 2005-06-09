@@ -42,7 +42,11 @@
 #define _H_ODBCGLOBAL
 
 #include "monetdb_config.h"
+
 #ifdef NATIVE_WIN32
+#ifdef __MINGW32__
+#include <windows.h>
+#endif
 /* indicate to sqltypes.h that windows.h has already been included and
    that it doesn't have to define Windows constants */
 #define ALREADY_HAVE_WINDOWS_TYPE
