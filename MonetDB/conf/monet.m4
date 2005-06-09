@@ -145,8 +145,6 @@ AC_DEFUN([AM_MONETDB_COMPILER],
 dnl Some special requirements for MacOS X/Darwin
 case "$host" in
 powerpc-apple-darwin*)
-	CPPFLAGS="$CPPFLAGS -I/sw/include"
-	LDFLAGS="$LDFLAGS -L/sw/lib"
 	if test "$host" = "powerpc-apple-darwin6.8"; then
 		dnl  Jaguar still requires this...
 		CFLAGS="$CFLAGS -Ddlsym=dlsym_prepend_underscore"
@@ -259,7 +257,11 @@ yes-*-*)
 		AC_DEFINE(_POSIX_C_SOURCE, 200112L, [Compiler flag])
 		AC_DEFINE(_POSIX_SOURCE, 1, [Compiler flag])
 		AC_DEFINE(_XOPEN_SOURCE, 600, [Compiler flag])
+		dnl  On MinGW we need the -Wno-format flag since gcc
+		dnl  doesn't know about the %I64d format string for
+		dnl  long long
 		CFLAGS="$CFLAGS -std=gnu99"
+		X_CFLAGS="$X_CFLAGS -Wno-format"
 		LDFLAGS="$LDFLAGS -no-undefined -L/usr/lib/w32api"
 		;;
 	*-irix*|*-darwin*)
@@ -1231,17 +1233,19 @@ if test "x$have_pthread" != xno; then
 
 	save_LIBS="$LIBS"
 	LIBS="$LIBS $PTHREAD_LIBS"
-	AC_CHECK_LIB(pthreadGC1, sem_init,
-		pthread=pthreadGC1 PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC1",
-		AC_CHECK_LIB(pthreadGC, sem_init,
-			pthread=pthreadGC PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC",
-			AC_CHECK_LIB(pthread, sem_init, 
-				pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread", 
-				dnl sun
-				AC_CHECK_LIB(pthread, sem_post,
-					pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
-					[ if test "x$have_pthread" != xauto; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
-					"-lposix4"))))
+	AC_CHECK_LIB(pthreadGC2, sem_init,
+		pthread=pthreadGC2 PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC2",
+		AC_CHECK_LIB(pthreadGC1, sem_init,
+			pthread=pthreadGC1 PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC1",
+			AC_CHECK_LIB(pthreadGC, sem_init,
+				pthread=pthreadGC PTHREAD_LIBS="$PTHREAD_LIBS -lpthreadGC",
+				AC_CHECK_LIB(pthread, sem_init, 
+					pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread", 
+					dnl sun
+					AC_CHECK_LIB(pthread, sem_post,
+						pthread=pthread PTHREAD_LIBS="$PTHREAD_LIBS -lpthread -lposix4",
+						[ if test "x$have_pthread" != xauto; then AC_MSG_ERROR([pthread library not found]); fi; have_pthread=no ],
+						"-lposix4")))))
 	AC_CHECK_LIB($pthread, pthread_sigmask,
 		AC_DEFINE(HAVE_PTHREAD_SIGMASK, 1,
 			[Define if you have the pthread_sigmask function]))
@@ -1953,7 +1957,7 @@ if test "x$have_pear" != xno; then
 		have_pear=no
 		AC_MSG_RESULT(not found)
 	else
-		PHP_PEARDIR="`echo "$php_peardir" | sed -e "s+\(php_dir *= *\|\)$php_prefix/++g"`"
+		PHP_PEARDIR="`echo "$php_peardir" | sed -e "s+^php_dir *= *++" -e "s^$php_prefix/++"`"
 		have_pear=yes
 		AC_MSG_RESULT(\$prefix/$PHP_PEARDIR)
 	fi
