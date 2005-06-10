@@ -135,11 +135,11 @@ In this architecture, MonetDB is the {\bf back-end}, which is accessed by multip
 Mining tool).  The intermediate language with which these components talk to each 
 other is called the @[<a href="../../FrontEnds/mil/index.html">MonetDB Interpreter Language</a>@ (MIL).
 
-Currently, the only freely available front-end is the @[<a href="http://monetdb.cwi.nl/TechDocs/FrontEnds/SQL/index.html">SQL front end</a>@.
-Work on a distribution of the @[<acronym title="eXtensible Markup Language">XML</acronym>@ front-end (so successfully benchmarked in 
-@[<a href="http://monetdb.cwi.nl/xml/">XMark</a>@) is progressing. For the @[<acronym title="Object Database Management Group">ODMG</acronym>@ 
-front-end, there are no release plans, as it is owned by 
-@[<a href="http://www.datadistilleries.com">Data Distilleries</a>@.
+Currently, there are two front-ends freely available: the @[<a
+href="http://monetdb.cwi.nl/TechDocs/FrontEnds/SQL/index.html">SQL front end</a>@ and the @[<a
+href="http://monetdb.cwi.nl/XQuery/index.html">XQuery front end</a>@. For the @[<acronym title="Object Database
+Management Group">ODMG</acronym>@  front-end, there are no release plans, as it is owned by  @[<a
+href="http://www.datadistilleries.com">Data Distilleries</a>@.
 \\
 
 \item {\em Binary Relational Data Storage:}\\
