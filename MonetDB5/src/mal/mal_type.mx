@@ -266,6 +266,7 @@ int getTypeIndex(str nme, int len, int deftype){
     case 'p': if(qt("ptr")) return TYPE_ptr; break;
     case 's': if(qt("str")) return TYPE_str; 
               if(qt("sht")) return TYPE_sht; break;
+    case 'v': if(qt("voi") && nme[3]=='d') return TYPE_void; 
     }
     strncpy(buf,nme, i=MIN(IDLENGTH,len));
     buf[i]=0;

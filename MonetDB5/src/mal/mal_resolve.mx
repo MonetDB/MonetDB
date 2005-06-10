@@ -65,10 +65,10 @@ the runtime stack rather than the function definition itself.
 
 A few conclusions can be drawn. 1) Every statement should carry a
 flag to indicate whether it has been type-resolved. 
-1a) you can always postpone type checking,
 2) polymorphic functions can be cloned to built a cache of instantiated 
 functions.
-3) we have to call the type-checker potentially at every instruction
+3) you can always postpone type checking, but then
+we have to call the type-checker potentially at every instruction
 and its result is call specific, this means we have to propagate
 the type through the runtime stack rather than the symbol table,
 4) once the type of a variable is fixed, we should stick to it.
@@ -79,18 +79,6 @@ The type resolution status is marked in each instruction.
 TYPE_RESOLVED implies that the type of the instruction is fully
 resolved, it is marked TYPE_DYNAMIC otherwise.
 
-Alternatie solutions.
-A) split the function such that type analysis only occurs at the
-   function call level.
-Disadvantage, it does not work for the example above.
-Moreover, you need to carry too much contextual information.
-
-Omission of the module name leads to a search process.
-The current policy is to start at the client module level and inspect
-the outer scopes when the symbol is not found. This may lead
-to ambigous behavior though. If a module M imports K for its function K.f()
-then it clashes with L.f() when the initialization script calls for
-import K,L,M. This can be recognized by inspecting the code produced
 @{
 @h
 #ifndef _MAL_RESOLVE_H
@@ -119,11 +107,11 @@ extern str traceFcnName;
 
 #endif /*  _MAL_RESOLVE_H*/
 @+ Function call resolution
-Search the first definition of the operator in the visible scopes
+Search the first definition of the operator in the current module
 and check the parameter types.
 For a polymorphic MAL function we make a fully instantiated clone.
-This effectively overloads the MAL procedure.
 It will be prepended to the symbol list as it is more restrictive.
+This effectively overloads the MAL procedure.
 
 Debugging of this module can be dynamically controlled in the debugger
 by setting the routine of interest.
@@ -142,11 +130,7 @@ void polyInit(){
     int i;
     for(i=0;i<MAXTYPEVAR;i++) polyVector[i]= TYPE_any;
 }
-@-
-A function may be characterised by its module, i.e. the location to
-start the search. Ommision of the module name implies searching from
-the client layer upward. (cost estimate 4ms/1000calls)
-@c
+
 malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
     Module m;
     Symbol s;
@@ -154,7 +138,7 @@ malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
     int i,k, polymorphic, unmatched = 0, s1;
     int foundbutwrong=0;
     int polytype[MAXTYPEVAR];
-    int returntype[MAXMALARG];
+    int *returntype;
 
 @-
 Check first for a module specific type checker. It takes
@@ -168,12 +152,9 @@ upon failure, which shortcuts the execution.
     }
 @-
 Within a module find the subscope to locate the element in its list
-of symbols.
+of symbols. A skiplist is used to speed up the search for the
+definition of the function.
 @c
-    if( p->maxarg >= MAXMALARG){
-        GDKerror("Function called with too many arguments");
-        return -3;
-    }
     m= scope;
     s= m->subscope[(int)(getSubScope(functionName(p)))];
     while(s != NULL){   /* single scope element check */
@@ -201,16 +182,6 @@ from Bi (or type(Bi)==type(Xi)).
           ( sig->argc== p->argc ||
           ( sig->argc<p->argc && sig->varargs))
       ) ) {
-#ifdef DEBUG_MAL_RESOLVE
-    if(tracefcn) {
-    stream_printf(GDKout,"-->resolving\n");
-    printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-    stream_printf(GDKout,"-->didn't match candidate\n");
-    printInstruction(GDKout,s->def,getSignature(s),LIST_MAL_ALL);
-    stream_printf(GDKout,"sig argc %d retc %d p.argc %d p.retc %d\n",
-        sig->argc, sig->retc, p->argc, p->retc);
-    }
-#endif
          s=s->peer; continue;
     }
     polymorphic = 0;
@@ -240,7 +211,7 @@ Note, each function returns at least one value.
         if(polyVector[0]==0) polyInit();
         memcpy(polytype,polyVector, sizeof(polyVector));
         polymorphic++;
-        for(k=i=p->retc;i<p->argc;i++){
+        for(k=i=p->retc; i<p->argc; i++){
             int actual = getArgType(mb,p,i);
             int formal = getArgType(s->def,sig,k);
 @-
@@ -258,10 +229,12 @@ In all other cases the type should apply to all remaining arguments.
             }
             formal= getPolyType(formal,polytype);
 @-
-Any reference to the polytype table is removed. Possibly
-turning a contrainted type into 'any', which matches all types.
+Collect the polymorphic types and resolve them.
+If it fails, we know this isn;t the function we are
+after.
 @c
-            if(formal!=actual &&  resolveType( formal,actual) == -1 ){
+            if( formal != actual &&  
+                resolveType( formal,actual) == -1 ){
                 unmatched= i;
                 break;
             }
@@ -269,10 +242,14 @@ turning a contrainted type into 'any', which matches all types.
             if(sig->varargs && k == sig->argc) k--;
         }
     } else {
+@-
+We have to check the argument types to determine a
+possible match 
+@c
         for(i=p->retc;i<p->argc;i++){
             int actual = getArgType(mb,p,i);
             int formal = getArgType(s->def,sig,i);
-            if(formal!=actual &&  resolveType( formal,actual) == -1 ){
+            if(formal!=actual ){
                 unmatched= i;
                 break;
             }
@@ -283,37 +260,41 @@ It is possible that you may have to coerce the value to another type.
 We assume that coercions are explicit at the MAL
 level. (e.g. var2:= var0:int). This avoids repeated type analysis
 just before you execute a function.
-At a later stage we may automatically insert such coercion requests.
+An optimizer may at a later stage automatically insert such coercion requests.
 @c
 #ifdef DEBUG_MAL_RESOLVE
     if(tracefcn) {
          stream_printf(GDKout,"finished %s.%s unmatched=%d polymorphic=%d %d\n",
-            moduleName(sig), functionName(sig),
-            unmatched, polymorphic,p==sig);
+            moduleName(sig), functionName(sig), unmatched, polymorphic,p==sig);
         if( polymorphic){
             int l;
             for(l=0;l<2*p->argc;l++) 
             if( polytype[l] != TYPE_any)
             stream_printf(GDKout,"poly %d %s\n",l,getTypeName(polytype[l]));
         }
-        if( unmatched)
-        stream_printf(GDKout,"mismatch test %s poly %s\n",
+		stream_printf(GDKout,"-->resolving\n");
+		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+		stream_printf(GDKout,"++> test against signature\n");
+		printInstruction(GDKout,s->def,getSignature(s),LIST_MAL_ALL);
+        stream_printf(GDKout,"\nmismatch test %s poly %s\n",
             getTypeName(getArgType(mb,p,unmatched)),
             getTypeName(getArgType(s->def,sig,unmatched)));
     }
 #endif
     if( unmatched) { s= s->peer; continue; }
 @-
-The argument section has been handled, before we finalize the process,
-we should assure that also the target variables have the proper types
-or can inherit them from the signature. The type vector should be
+At this stage we know all arguments are type compatible with the
+signature. 
+We should assure that also the target variables have the proper types
+or can inherit them from the signature. The result type vector should be
 build separately first, because we may encounter an error later on.
 
 If any of the arguments refer to a constraint type, any$x, then
 the resulting type can not be determined.
 @c
     s1 = 0;
-    for(k=i=0; i < p->argc; i++){
+	returntype= (int*) alloca(p->maxarg * sizeof(int));
+    for(k=i=0; i < p->retc; i++){
         int actual = getArgType(mb,p,i);
         int formal = getArgType(s->def,sig,k);
 
@@ -326,6 +307,7 @@ the resulting type can not be determined.
                 }
             }
         } else k++;
+        updateTypeMap(formal, actual, polytype);
         s1= getPolyType(formal, polytype);
 
         returntype[i]= resolveType(actual,s1);
@@ -333,6 +315,23 @@ the resulting type can not be determined.
             returntype[i]= actual; /* TYPE_any;*/
 			if( !isPolyType(actual)) {
 				typeMismatch(mb, p, actual, s1,silent);
+#ifdef DEBUG_MAL_RESOLVE
+         stream_printf(GDKout,"%s.%s unmatched=%d polymorphic=%d %d\n",
+            moduleName(sig), functionName(sig), unmatched, polymorphic,p==sig);
+        if( polymorphic){
+            int l;
+            for(l=0;l<2*p->argc;l++) 
+            stream_printf(GDKout,"poly %d %s\n",l,getTypeName(polytype[l]));
+        }
+		stream_printf(GDKout,"-->resolving\n");
+		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+		stream_printf(GDKout,"++> test against %s signature\n",
+			(sig->polymorphic?"polymorphic":""));
+		printInstruction(GDKout,s->def,getSignature(s),LIST_MAL_ALL);
+        stream_printf(GDKout,"\nmismatch test %s poly %s\n",
+            getTypeName(getArgType(mb,p,unmatched)),
+            getTypeName(getArgType(s->def,sig,unmatched)));
+#endif
 				s1= -1;
 				break;
 			}
@@ -348,25 +347,21 @@ Beware that signatures should be left untouched, which
 means that we may not overwrite any formal argument.
 Using the knowledge dat the arguments occupy the header
 of the symbol stack, it is easy to filter such errors.
+Also mark all variables that are subject to garbage control.
+Beware, this is not yet effectuated in the interpreter.
 @c
     p->typechk= TYPE_RESOLVED;
-    for(i=0;i<p->argc;i++) {
+    for(i=0;i<p->retc;i++) {
         if( !isFixed(mb,getArg(p,i)) && returntype[i]>=0) {
             setVarType(mb, getArg(p,i),returntype[i]);
             setFixed(mb, getArg(p,i));
+			if( isaBatType(returntype[i]) || isaColType(returntype[i]) ||
+				( !isPolyType(returntype[i])  && returntype[i]< TYPE_any &&
+					ATOMstorage(returntype[i])== TYPE_str) ){
+				setVarCleanup(mb,getArg(p,i)) = TRUE;
+				garbageControl(p)= TRUE;
+				}
         } 
-    }
-@-
-Mark all variables that are subject to garbage control.
-Beware, this is not yet effectuated in the interpreter.
-@c
-    for(i=0;i<p->retc;i++) 
-    if( isaBatType(returntype[i]) || isaColType(returntype[i]) ||
-        ( !isPolyType(returntype[i])  && 
-			returntype[i]>=0 && returntype[i]< TYPE_any &&
-           ATOMstorage(returntype[i])== TYPE_str) ){
-        setVarCleanup(mb,getArg(p,i)) = TRUE;
-		garbageControl(p)= TRUE;
     }
 @-
 It may happen that an argument was still untyped and as a result of
@@ -668,6 +663,7 @@ The language should also recognize (a,b):=(1,2);
 This is achieved by propagation of the rhs types to the lhs
 variables.
 @c
+    assert( functionId(p) ==0);
     if( p->retc > 1 && p->argc>p->retc && p->argc!= 2 * p->retc){
         GDKerror("Multiple assignment mismatch\n");
         mb->errors++;
@@ -894,34 +890,21 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
     int h,t;
 
     if( isaBatType(formal)){
-        if(!isaBatType(actual)){
-            if( getTailType(actual) == TYPE_any) t= TYPE_any;
-            else return -1;
-        } else  t= getHeadType(actual);
-
+        if(!isaBatType(actual)) return -1;
         if( (h=getHeadIndex(formal)) ){
+            t= getHeadType(actual);
             if( polytype[h] == TYPE_any) polytype[h]= t;
-            if( polytype[h] != t && t!= TYPE_any) return -1;
+            if( polytype[h] != t ) return -1;
         }
-    }
-	if( isaColType(formal)){
-        if(!isaColType(actual)){
-            if( getTailType(actual) == TYPE_any) t= TYPE_any;
-            else return -1;
-        } else  t= getTailType(actual);
-        if( (h=getTailIndex(formal)) ){
-            if( polytype[h] == TYPE_any) polytype[h]= t;
-            if( polytype[h] != t && t!= TYPE_any) return -1;
-        }
-		return 0;
-	}
-    if( (h=getTailIndex(formal)) ){
+    } else
+	if( isaColType(formal))
+        if(!isaColType(actual)) return -1;
+    if( (h=getTailIndex(formal))  ){
         t= getTailType(actual);
-        if( t== TYPE_bat)
-            t= newBatType(TYPE_any,TYPE_any);
         if( polytype[h] == TYPE_any ) polytype[h]=  t;
-        if( polytype[h] != t && t!= TYPE_any) return -1;
+        if( polytype[h] != t) return -1;
     }
     return 0;
 }
 @}
+/* vim:set shiftwidth=4 expandtab: */
