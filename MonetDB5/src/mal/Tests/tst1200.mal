@@ -500,7 +500,7 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 #
 	rh_a := bat.setColumn(timestamp_bat,"timestamp");
 #io.print(timestamp_bat.bat.setColumn("timestamp"),
-	timezones:= bbp.bind("timezones");
+	timezones:bat[:str,:tzone]:= bbp.bind("timezones");
 	io.print("print(timezones)");
 	io.print(timezones);
 	sh_a:tzone := algebra.find(timezones,"Wake Island");

@@ -62,7 +62,10 @@ stdout of test 'tst2040` in directory 'src/mal` itself:
 #	pWait:= false;
 #	printf("await dead of producer/consumer\n");
 #
-!ERROR: MALresolve:user.main[40]:type mismatch lng := int
+!ERROR: 'calc.==' undefined in user.main[14]
+!ERROR: 'io.printf' undefined in user.main[29]
+!ERROR: 'calc.==' undefined in user.main[30]
+!ERROR: 'calc.-' undefined in user.main[33]
 !ERROR: 'i' may not be used before being set in main[14]
 !ERROR: 'i' may not be used before being set in main[29]
 !ERROR: 'i' may not be used before being set in main[30]
@@ -84,9 +87,9 @@ exit pWait;	# 10  (pWait:bit)
     io.printf("produce an element\n");	# 11 IOprint_str ($12:int)<-($13:str)
     pWait := true;	# 12  (pWait:bit)<-($2:bit)
     cWait := false;	# 13  (cWait:bit)<-($14:bit)
-barrier b := calc.==(i,0);	# 14 CALCcompEQlngint (b:bit)<-(i:lng)($17:int) jump 16
+barrier b := calc.==(i,0);	# 14  unknown (b:any)<-(i:int)($17:int) jump 16
     leave producer;	# 15  (producer:any) jump 20
-exit b;	# 16  (b:bit)
+exit b;	# 16  (b:any)
     redo pBody;	# 17  (pBody:bit) jump 6
 exit pBody;	# 18  (pBody:bit)
     io.printf("Finished producer\n");	# 19 IOprint_str ($18:int)<-($19:str)
@@ -99,18 +102,18 @@ barrier cWait;	# 24  (cWait:bit) jump 28
     alarm.sleep(1);	# 26 ALARMsleep ($26:void)<-($11:int)
     redo cWait;	# 27  (cWait:bit) jump 25
 exit cWait;	# 28  (cWait:bit)
-    io.printf("consume element %d\n",i);	# 29 IOprint_formatted_lng ($27:int)<-($28:str)(i:lng)
-barrier b := calc.==(i,0);	# 30 CALCcompEQlngint (b:bit)<-(i:lng)($17:int) jump 32
+    io.printf("consume element %d\n",i);	# 29  unknown ($27:any)<-($28:str)(i:int)
+barrier b := calc.==(i,0);	# 30  unknown (b:any)<-(i:int)($17:int) jump 32
     leave consumer;	# 31  (consumer:any) jump 39
-exit b;	# 32  (b:bit)
-    i := calc.-(i,1);	# 33 CALCbinarySUBlngint (i:lng)<-(i:lng)($11:int)
+exit b;	# 32  (b:any)
+    i := calc.-(i,1);	# 33  unknown (i:int)<-(i:int)($11:int)
     cWait := true;	# 34  (cWait:bit)<-($2:bit)
     pWait := false;	# 35  (pWait:bit)<-($14:bit)
     redo cBody;	# 36  (cBody:bit) jump 24
 exit cBody;	# 37  (cBody:bit)
     io.printf("Finished consumer\n");	# 38 IOprint_str ($29:int)<-($30:str)
 exit consumer;	# 39  (consumer:any)
-    i := 2;	# 40  unknown (i:lng)<-($31:int)
+    i := 2;	# 40  (i:int)<-($31:int)
     pWait := false;	# 41  (pWait:bit)<-($14:bit)
     io.printf("await dead of producer/consumer\n");	# 42 IOprint_str ($32:int)<-($33:str)
 end main;	# 43  

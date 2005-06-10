@@ -14,6 +14,7 @@ function a():any;
 end a;
 
 a:= bbp.new(:void,:int);
+a:= user.f();
 (a,h):= user.two();
 (a,a):= user.two();
 

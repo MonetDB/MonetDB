@@ -61,10 +61,11 @@ stdout of test 'tst007` in directory 'src/mal` itself:
 #
 #
 #
+!ERROR: 'algebra.fetch' undefined in user.main[2]
 !ERROR: 'chopper.hasMoreElements' undefined in user.main[5]
 !ERROR: 'chopper.head' undefined in user.main[6]
 !ERROR: 'chopper.nextElement' undefined in user.main[7]
-!ERROR: barrier 'FS' should be of type bit or number in main[24]
+!ERROR: 'batcalc.not' undefined in user.main[24]
 !ERROR: 'batoperatie' may not be used before being set in main[1]
 !ERROR: 'b' may not be used before being set in main[2]
 !ERROR: 'b' may not be used before being set in main[5]
@@ -75,12 +76,12 @@ stdout of test 'tst007` in directory 'src/mal` itself:
 !ERROR: 'booleanexpr' may not be used before being set in main[22]
 function user.main():int;	# 0  (main:int)
 barrier H := batoperatie;	# 1  (H:any)<-(batoperatie:any) jump 4
-    Tail := algebra.fetch(b,H);	# 2 ALGfetchbat (Tail:bat[:any,:any])<-(b:bat[:any,:any])(H:any)
+    Tail := algebra.fetch(b,H);	# 2  unknown (Tail:any)<-(b:any)(H:any)
     redo H;	# 3  (H:any) jump 2
 exit H;	# 4  (H:any)
-barrier L := chopper.hasMoreElements(b);	# 5  unknown (L:any)<-(b:bat[:any,:any]) jump 9
-    H := chopper.head(b);	# 6  unknown (H:any)<-(b:bat[:any,:any])
-    v := chopper.nextElement(b);	# 7  unknown (v:any)<-(b:bat[:any,:any])
+barrier L := chopper.hasMoreElements(b);	# 5  unknown (L:any)<-(b:any) jump 9
+    H := chopper.head(b);	# 6  unknown (H:any)<-(b:any)
+    v := chopper.nextElement(b);	# 7  unknown (v:any)<-(b:any)
     redo L;	# 8  (L:any) jump 6
 exit L;	# 9  (L:any)
     entry := true;	# 10  (entry:bit)<-($8:bit)
@@ -97,8 +98,8 @@ barrier FT := booleanexpr;	# 20  (FT:any)<-(booleanexpr:any) jump 21
 exit FT;	# 21  (FT:any)
 barrier FTE := booleanexpr;	# 22  (FTE:any)<-(booleanexpr:any) jump 23
 exit FTE;	# 23  (FTE:any)
-barrier FS := batcalc.not(FTE);	# 24 CMDbitbatNOT (FS:bat[:any,:bit])<-(FTE:any) jump 25
-exit FS;	# 25  (FS:bat[:any,:bit])
+barrier FS := batcalc.not(FTE);	# 24  unknown (FS:any)<-(FTE:any) jump 25
+exit FS;	# 25  (FS:any)
 end main;	# 26  
 
 # 07:58:34 >  

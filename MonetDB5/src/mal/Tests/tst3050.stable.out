@@ -22,10 +22,11 @@ end dummy;	# 2
 #
 #t:= dummy(a{sorted},b{sequence});
 #
+!ERROR: 'user.dummy' undefined in user.main[1]
 !ERROR: 'a' may not be used before being set in main[1]
 !ERROR: 'b' may not be used before being set in main[1]
 function user.main():int;	# 0  (main:int)
-    t := user.dummy(a{sorted=true},b{sequence=true});	# 1  (t:int)<-(a:int)(b:int)
+    t := user.dummy(a{sorted=true},b{sequence=true});	# 1  unknown (t:any)<-(a:any)(b:any)
 end main;	# 2  
 
 # 08:01:17 >  
