@@ -299,14 +299,15 @@ the resulting type can not be determined.
         int formal = getArgType(s->def,sig,k);
 
         if( k+1 == sig->argc){
-            if(sig->varargs ){
+        if(sig->varargs ){
                 if( sig->token == PATTERNsymbol &&
-                    formal== TYPE_any){
+                formal== TYPE_any){
                     returntype[i]= TYPE_any;
                     continue;
                 }
             }
         } else k++;
+
         updateTypeMap(formal, actual, polytype);
         s1= getPolyType(formal, polytype);
 
@@ -316,8 +317,9 @@ the resulting type can not be determined.
 			if( !isPolyType(actual)) {
 				typeMismatch(mb, p, actual, s1,silent);
 #ifdef DEBUG_MAL_RESOLVE
-         stream_printf(GDKout,"%s.%s unmatched=%d polymorphic=%d %d\n",
-            moduleName(sig), functionName(sig), unmatched, polymorphic,p==sig);
+         stream_printf(GDKout,"%s.%s unmatched=%d polymorphic=%d %d type %s\n",
+            moduleName(sig), functionName(sig), unmatched, polymorphic,p==sig,
+            getTypeName(s1));
         if( polymorphic){
             int l;
             for(l=0;l<2*p->argc;l++) 
@@ -511,18 +513,18 @@ int resolveType(int dsttype, int srctype){
 The BAT void column type is exchangeable with an oid column type
 @c
         h3= -1;
-        if( h1 == TYPE_any) h3= h2;
-        /* if( h2 == TYPE_any) h3= h1;*/
+        if( h1 == h2) h3= h1; else
+        if( h1 == TYPE_any) h3= h2; else
+        if( h2 == TYPE_any) h3= h1; else
         if( h1== TYPE_void && h2 == TYPE_oid) h3= TYPE_oid; else
-        if( h2== TYPE_void && h1 == TYPE_oid) h3= TYPE_oid; else
-        if( h1 == h2) h3= h1;
+        if( h2== TYPE_void && h1 == TYPE_oid) h3= TYPE_oid; 
         if( h3 == -1) goto noResolution;
         t3= -1;
-        if( t1 == TYPE_any) t3= t2;
-        /*if( t2 == TYPE_any) t3= t1;*/
+        if( t1 == t2) t3= t1; else
+        if( t1 == TYPE_any) t3= t2; else
+        if( t2 == TYPE_any) t3= t1; else
         if( t1== TYPE_void && t1 == TYPE_oid) t3= TYPE_oid; else
-        if( t1== TYPE_void && t1 == TYPE_oid) t3= TYPE_oid; else
-        if( t1 == t2) t3= t1;
+        if( t1== TYPE_void && t1 == TYPE_oid) t3= TYPE_oid; 
         if(t3 == -1) goto noResolution;
 #ifdef DEBUG_MAL_RESOLVE
         if( tracefcn){
