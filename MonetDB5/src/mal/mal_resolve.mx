@@ -515,16 +515,13 @@ The BAT void column type is exchangeable with an oid column type
         h3= -1;
         if( h1 == h2) h3= h1; else
         if( h1 == TYPE_any) h3= h2; else
-        if( h2 == TYPE_any) h3= h1; else
-        if( h1== TYPE_void && h2 == TYPE_oid) h3= TYPE_oid; else
-        if( h2== TYPE_void && h1 == TYPE_oid) h3= TYPE_oid; 
+        if( h2 == TYPE_any) h3= h1; 
         if( h3 == -1) goto noResolution;
         t3= -1;
         if( t1 == t2) t3= t1; else
         if( t1 == TYPE_any) t3= t2; else
-        if( t2 == TYPE_any) t3= t1; else
-        if( t1== TYPE_void && t1 == TYPE_oid) t3= TYPE_oid; else
-        if( t1== TYPE_void && t1 == TYPE_oid) t3= TYPE_oid; 
+        if( t2 == TYPE_any) t3= t1; 
+        if( h3== TYPE_void && t3 == TYPE_void) t3= TYPE_oid;
         if(t3 == -1) goto noResolution;
 #ifdef DEBUG_MAL_RESOLVE
         if( tracefcn){
