@@ -32,7 +32,7 @@ function user.main():int;	# 0  (main:int)
     io.print(c);	# 6 IOprint_val ($11:int)<-(c:bat[:str,:void])
     d := algebra.markT(c);	# 7 ALGtmark_default (d:bat[:str,:void])<-(c:bat[:str,:void])
     io.print(d);	# 8 IOprint_val ($13:int)<-(d:bat[:str,:void])
-    f := algebra.markH(b);	# 9 ALGmarkHead_default (f:bat[:void,:oid])<-(b:bat[:void,:str])
+    f := algebra.markH(b);	# 9 ALGmarkHead_default1 (f:bat[:void,:oid])<-(b:bat[:void,:str])
     io.print(f);	# 10 IOprint_val ($15:int)<-(f:bat[:void,:oid])
 end main;	# 11  
 #-------------------------#
