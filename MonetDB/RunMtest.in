@@ -64,5 +64,9 @@ type -a python
 python -V
 
 # execute the script
-# if no arguments, do a recursive test (Mtest.py -r), else pass on the arguments
-exec python "${builddir}/src/testing/Mtest.py" --monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/MonetDB.conf" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" --TSTTRGBASE="${builddir}" "${@--r}"
+# if no arguments, do a recursive test (Mtest.py -r), else pass on the
+# arguments.
+# if the environment variable MTEST_AT is set (value does not matter),
+# pass the --at flag to Mtest.py so that it uses the at command as a
+# watchdog.
+exec python "${builddir}/src/testing/Mtest.py" --monet_mod_path="${MOD_PATH}" --config="${builddir}/conf/MonetDB.conf" --dbfarm="${builddir}/dbfarm" --sql_logdir="${builddir}/log" --TSTTRGBASE="${builddir}" ${MTEST_AT+--at} "${@--r}"

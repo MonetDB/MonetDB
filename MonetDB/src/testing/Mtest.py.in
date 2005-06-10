@@ -1533,7 +1533,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         ME = ""
         ATJOB1 = ""
         MkillUsers = ""
-        if TIMEOUT and os.name != "nt" and sys.platform != 'cygwin' and not env.get('NO_AT'):
+        if TIMEOUT and os.name != "nt" and sys.platform != 'cygwin' and env.get('USE_AT'):
             for f in TST+".KILLED.out", TST+".KILLED.err":
                 if os.path.isfile(f):
                     os.remove(f)
@@ -2547,7 +2547,7 @@ def main(argv) :
              'default: %s' % dft['XQUERYCLIENT']),
             ('X100CLIENT', None, 'X100CLIENT', '<x100-client program>',
              'default: %s' % dft['X100CLIENT']),
-            ('no-at', None, 'no_at', None, 'Do not use at command'),
+            ('at', None, 'use_at', None, 'Use at command as watchdog'),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -2612,9 +2612,9 @@ def main(argv) :
         a = opts.get('sql_logdir')
         if a is not None:
             env['SQL_LOGDIR'] = a
-        a = opts.get('no_at')
+        a = opts.get('use_at')
         if a is not None:
-            env['NO_AT'] = a
+            env['USE_AT'] = a
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
