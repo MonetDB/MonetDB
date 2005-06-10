@@ -94,9 +94,13 @@ stdout of test 'no.100` in directory 'tests/BugReports` itself:
 ##Identifer 'seqbase' mapped to 'bat.setSequenceBase'
 #
 !ERROR: 'batcalc.oid' undefined in user.main[52]
+!ERROR: 'bat.reverse' undefined in user.main[53]
 !ERROR: 'bat.setSequenceBase' undefined in user.main[56]
 !ERROR: 'batcalc.oid' undefined in user.main[59]
+!ERROR: 'bat.reverse' undefined in user.main[60]
 !ERROR: 'batcalc.oid' undefined in user.main[64]
+!ERROR: 'bat.reverse' undefined in user.main[65]
+!ERROR: 'algebra.copy' undefined in user.main[66]
 function user.main():int;	# 0  (main:int)
     mil.line("# >Number:         100\n");	# 1 MILline ($31:void)<-($32:str)
     mil.line("# >Category:       MIL\n");	# 2 MILline ($33:void)<-($34:str)
@@ -149,22 +153,22 @@ function user.main():int;	# 0  (main:int)
     ia_a := io.print(ha_a);	# 49 IOprint_val (ia_a:int)<-(ha_a:bat[:void,:int])
     mil.line("[oid](a.mark(nil)).reverse().print();");	# 50 MILline ($121:void)<-($122:str)
     ja_a := algebra.markT(a);	# 51 ALGtmark_default (ja_a:bat[:int,:void])<-(a:bat[:int,:str])
-    ka_a := batcalc.oid(ja_a);	# 52  unknown (ka_a:bat[:any,:any])<-(ja_a:bat[:int,:void])
-    la_a := bat.reverse(ka_a);	# 53 BKCreverse (la_a:bat[:any,:any])<-(ka_a:bat[:any,:any])
-    ma_a := io.print(la_a);	# 54 IOprint_val (ma_a:int)<-(la_a:bat[:any,:any])
+    ka_a := batcalc.oid(ja_a);	# 52  unknown (ka_a:any)<-(ja_a:bat[:int,:void])
+    la_a := bat.reverse(ka_a);	# 53  unknown (la_a:any)<-(ka_a:any)
+    ma_a := io.print(la_a);	# 54 IOprint_val (ma_a:int)<-(la_a:any)
     mil.line("a.seqbase(100@0);");	# 55 MILline ($127:void)<-($128:str)
     na_a := bat.setSequenceBase(a,100@0);	# 56  unknown (na_a:any)<-(a:bat[:int,:str])($130:oid)
     mil.line("[oid](a.mark(nil)).reverse().print();");	# 57 MILline ($131:void)<-($122:str)
     oa_a := algebra.markT(a);	# 58 ALGtmark_default (oa_a:bat[:int,:void])<-(a:bat[:int,:str])
-    pa_a := batcalc.oid(oa_a);	# 59  unknown (pa_a:bat[:any,:any])<-(oa_a:bat[:int,:void])
-    qa_a := bat.reverse(pa_a);	# 60 BKCreverse (qa_a:bat[:any,:any])<-(pa_a:bat[:any,:any])
-    ra_a := io.print(qa_a);	# 61 IOprint_val (ra_a:int)<-(qa_a:bat[:any,:any])
+    pa_a := batcalc.oid(oa_a);	# 59  unknown (pa_a:any)<-(oa_a:bat[:int,:void])
+    qa_a := bat.reverse(pa_a);	# 60  unknown (qa_a:any)<-(pa_a:any)
+    ra_a := io.print(qa_a);	# 61 IOprint_val (ra_a:int)<-(qa_a:any)
     mil.line("[oid](a.mark(nil)).reverse().copy().print();");	# 62 MILline ($136:void)<-($137:str)
     sa_a := algebra.markT(a);	# 63 ALGtmark_default (sa_a:bat[:int,:void])<-(a:bat[:int,:str])
-    ta_a := batcalc.oid(sa_a);	# 64  unknown (ta_a:bat[:any,:any])<-(sa_a:bat[:int,:void])
-    ua_a := bat.reverse(ta_a);	# 65 BKCreverse (ua_a:bat[:any,:any])<-(ta_a:bat[:any,:any])
-    va_a := algebra.copy(ua_a);	# 66 ALGcopy (va_a:bat[:any,:any])<-(ua_a:bat[:any,:any])
-    wa_a := io.print(va_a);	# 67 IOprint_val (wa_a:int)<-(va_a:bat[:any,:any])
+    ta_a := batcalc.oid(sa_a);	# 64  unknown (ta_a:any)<-(sa_a:bat[:int,:void])
+    ua_a := bat.reverse(ta_a);	# 65  unknown (ua_a:any)<-(ta_a:any)
+    va_a := algebra.copy(ua_a);	# 66  unknown (va_a:any)<-(ua_a:any)
+    wa_a := io.print(va_a);	# 67 IOprint_val (wa_a:int)<-(va_a:any)
     mil.line("quit();");	# 68 MILline ($143:void)<-($144:str)
     xa_a := clients.quit();	# 69 CLTquit (xa_a:void)
 end main;	# 70  
