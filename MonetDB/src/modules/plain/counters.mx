@@ -727,8 +727,8 @@ do_event_number
 {
 	/* argument n indexes our local p4 table,
 	 * translate to perfctr code and mask */
-	unsigned int code = event[n].code ;
-	unsigned int mask = event[n].mask ;
+	int code = event[n].code ;
+	int mask = event[n].mask ;
     const struct perfctr_event_set *s =
 		perfctr_cpu_event_set(PERFCTR_X86_INTEL_P4M3);
     int cnt = perfctr_event_set_count(s);
