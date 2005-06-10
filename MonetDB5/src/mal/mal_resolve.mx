@@ -582,8 +582,8 @@ void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent){
 		i= strlen(buf);
 		snprintf(buf+i,1024-i,"%s\n",n2);
 		showException(mb, getPC(mb,p),"MALresolve",buf);
-		GDKfree(n1); GDKfree(n2);
 	}
+	GDKfree(n1); GDKfree(n2);
     mb->errors++;
     p->typechk= TYPE_UNKNOWN;
 }
@@ -608,6 +608,7 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
 		p->token==FCNcall || p->token == FACcall)){
 			p->token= ASSIGNsymbol;
 			p->fcn = NULL;
+			p->blk = NULL;
 	}
 
     if( isaSignature(p) ) {
