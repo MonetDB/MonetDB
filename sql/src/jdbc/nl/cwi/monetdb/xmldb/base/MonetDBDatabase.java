@@ -19,6 +19,16 @@ import java.sql.*;
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  */
 public class MonetDBDatabase extends MonetDBConfigurable implements Database {
+	/** the port we usually can reach MonetDB/XQuery on */
+	private static final String XQUERY_PORT = "45789";
+
+	// register this class with the DatabaseManager
+	static {
+		// note we call the default constructor here, which is added by
+		// the compiler for us...
+		org.xmldb.api.DatabaseManager.registerDatabase(new MonetDBConfigurable());
+	}
+	
 	/**
 	 * DEPRECATED.
 	 * Returns the name associated with the Database instance.
@@ -30,10 +40,23 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	String getName() throws XMLDBException {
 		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "This method is deprecated, use getNames() instead");
 	}
+
+	/**
+	 * Returns an array of names associated with the Database instance.
+	 *
+	 * @return the array of name of the object.
+	 * @throws XMLDBException with expected error codes.<br />
+	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
+	 *  occur.
+	 */
+	public String[] getNames() throws XMLDBException {
+		// I have no idea what the intention of this method is
+		return({"MonetDB/XQuery"});
+	}
    
 	/**
 	 * Retrieves a Collection instance based on the URI provided in the
-	 * uri parameter. The format of the URI is defined in the
+	 * uri parameter.  The format of the URI is defined in the
 	 * documentation for DatabaseManager.getCollection().
 	 * <p />
 	 * Authentication is handled via username and password however it is
@@ -43,7 +66,7 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	 * <p />
 	 * Accepted URIs follow the same rules as for JDBC, apart from that
 	 * they start with xmldb instead of jdbc.  An example url:
-	 * <tt>xmldb:monetdb://localhost</tt>.
+	 * <tt>xmldb:monetdb://localhost:port/database</tt>.
 	 *
 	 * @param uri the URI to use to locate the collection.
 	 * @param password The password to use for authentication to the
@@ -67,13 +90,36 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 		if (!acceptsURI(uri))
 			throw new XMLDBException(ErrorCodes.INVALID_URI, "uri " + uri + " not valid");
 		
-		class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-		// We do a pretty simple hack here: we just cut off the xmldb
-		// part and put jdbc for it instead.  Then it's up to the JDBC
-		// driver to determine whether it can do something with it.
+		// Parse the uri to find out whether whe port was already set or
+		// not.  If so, don't overwrite it, otherwise add the default
+		// port, because it differs from the SQL port which JDBC uses by
+		// default.
+		java.net.URI url;
 		try {
+			url = new java.net.URI(uri.substring("xmldb:".length()));
+		} catch (URISyntaxException e) {
+			throw new XMLDBException(ErrorCodes.INVALID_URI, "uri " + uri + " not valid");
+		}
+
+		if (url.getPort() == -1
+				&& url.getQuery() != null
+				&& url.getQuery().indexOf("port=") != -1)
+		{
+			// add the default XQuery port
+			uri = "monetdb://" + url.getHost() + ":" + XQUERY_PORT + 
+				url.getRawPath() + url.getRawQuery();
+		} else {
+			url = uri.substring("xmldb:".length());
+		}
+		
+		// make sure the driver is loaded and make a connection
+		class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
+		try {
+			// uri should be a valid JDBC url right now with only the
+			// "jdbc:" prefix missing.  Let it up to the driver to
+			// decide whether it likes it or not.
 			con = DriverManager.getConnection(
-					"jdbc" + uri.substring(4),
+					"jdbc:" + uri,
 					username,
 					password
 			);
@@ -85,8 +131,8 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 			throw new XMLDBException(ErrorCodes.VENDOR_ERROR, e.getMessage());
 		}
 		
-		// TODO: create a Collection here and return it
-		return(null);
+		// create a Collection and return it
+		return(new MonetDBCollection(con));
 	}
 
 	/**
