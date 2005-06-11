@@ -3,6 +3,8 @@ package nl.cwi.monetdb.xmldb.modules;
 import org.xmldb.api.base.*;
 import org.xmldb.api.modules.*;
 import java.sql.*;
+import nl.cwi.monetdb.jdbc.*;
+import nl.cwi.monetdb.xmldb.base.*;
 
 
 /**
@@ -18,7 +20,7 @@ public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryS
 	 * Constructs a new MonetDB Collection and initialises its
 	 * knownService array.
 	 */
-	MonetDBXQuery(MonetStatement stmt) {
+	MonetDBXQueryService(MonetStatement stmt) {
 		this.stmt = stmt;
 	}
 
@@ -34,7 +36,7 @@ public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryS
 	 */
 	public String getName() throws XMLDBException {
 		// SERVICE_NAME is defined in the XQueryInterface
-		return(SERVICE_NAME);
+		return(XQueryService.SERVICE_NAME);
 	}
 
 	/**
@@ -62,9 +64,7 @@ public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryS
 		if (!(col instanceof MonetDBCollection)) throw
 			new XMLDBException(ErrorCodes.VENDOR_ERROR, "Can only operate on MonetDBCollection objects");
 
-		// just put it in the properties for now, no idea how it should
-		// be used
-		setProperty("collection", col);
+		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Not implemented");
 	}
 
 	//== end interface org.xmldb.api.base.Service
@@ -146,7 +146,7 @@ public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryS
 	 * @throws XMLDBException if something goes wrong
 	 */
 	public ResourceSet query(String query) throws XMLDBException {
-		return(new MonetDBResourceSet(stmt.executeQuery(query)));
+		return(new MonetDBResourceSet((MonetResultSet)(stmt.executeQuery(query))));
 	}
 
 	/**

@@ -20,7 +20,7 @@ import java.sql.*;
  */
 public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	/** the port we usually can reach MonetDB/XQuery on */
-	private static final String XQUERY_PORT = "45789";
+	private static final String XQUERY_PORT = "@JDBC_DEF_PORT_XQUERY@";
 
 	// register this class with the DatabaseManager
 	static {

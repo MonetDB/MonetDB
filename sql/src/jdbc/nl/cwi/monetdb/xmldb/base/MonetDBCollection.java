@@ -33,7 +33,8 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	MonetDBCollection(MonetConnection con) {
 		jdbccon = con;
 		// initially fill the serviceInstances array
-		serviceInstances = { new MonetDBXQueryService() };
+		serviceInstances = new Service[1];
+		serviceInstances[0] = new MonetDBXQueryService();
 	}
 	
 	/**

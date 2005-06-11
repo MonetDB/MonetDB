@@ -27,7 +27,7 @@ public class MonetDBResourceSet implements ResourceSet {
 	 * @param rs a MonetResultSet containing the XML data
 	 * @throws XMLDBException if a database error occurs
 	 */
-	MonetDBResourceSet(MonetResultSet rs) throws XMLDBException {
+	public MonetDBResourceSet(MonetResultSet rs) throws XMLDBException {
 		resources = new ArrayList();
 
 		// read out results and fill the resources list
