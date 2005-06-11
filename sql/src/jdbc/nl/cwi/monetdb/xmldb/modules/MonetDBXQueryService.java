@@ -2,6 +2,7 @@ package nl.cwi.monetdb.xmldb.modules;
 
 import org.xmldb.api.base.*;
 import org.xmldb.api.modules.*;
+import java.sql.*;
 
 
 /**
@@ -11,15 +12,15 @@ import org.xmldb.api.modules.*;
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  */
 public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryService {
+	private final Statement stmt;
 
 	/**
 	 * Constructs a new MonetDB Collection and initialises its
 	 * knownService array.
 	 */
-	MonetDBXQuery(MonetDBCollection col) {
-		// do something?
+	MonetDBXQuery(MonetStatement stmt) {
+		this.stmt = stmt;
 	}
-
 
 	//== Interface org.xmldb.api.base.Service
 	
@@ -61,7 +62,9 @@ public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryS
 		if (!(col instanceof MonetDBCollection)) throw
 			new XMLDBException(ErrorCodes.VENDOR_ERROR, "Can only operate on MonetDBCollection objects");
 
-		??? mycol = col; ???
+		// just put it in the properties for now, no idea how it should
+		// be used
+		setProperty("collection", col);
 	}
 
 	//== end interface org.xmldb.api.base.Service
@@ -133,30 +136,34 @@ public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryS
 	}
 
 	/**
-	 * Executes the given query string and returns the result as a
-	 * ResourceSet.
+	 * Run an XQuery query against the Collection.  The XQuery will be
+	 * applied to all XML resources stored in the Collection.  The
+	 * result is a ResourceSet containing the results of the query.  Any
+	 * namespaces used in the query string will be evaluated using the
+	 * mappings setup using setNamespace.
 	 *
 	 * @param query the XQuery query string
 	 * @throws XMLDBException if something goes wrong
 	 */
 	public ResourceSet query(String query) throws XMLDBException {
-		// this should do something like:
 		return(new MonetDBResourceSet(stmt.executeQuery(query)));
 	}
 
 	/**
-	 * Executes the given query agains the given resource.  This is the
-	 * best documentation I can come up with, but I currently have no
-	 * frikkin' idea what or how.
-	 *
+	 * Run an XQuery query against an XML resource stored in the
+	 * Collection associated with this service.  The result is a
+	 * ResourceSet containing the results of the query.  Any namespaces
+	 * used in the query string will be evaluated using the mappings
+	 * setup using setNamespace.
 	 *
 	 * @param id the ID of the resource to query against
 	 * @param query the XQuery query to execute
 	 * @throws XMLDBException if something goes wrong
 	 */
 	public ResourceSet queryResource(String id, String query) throws XMLDBException {
+		// TODO: find out whether we can query sub-resources...
 		// do something
-		throw new XMLDBException(ErrorCodes.NOT_IMPLEMENTED, "Tell me what this should do!");
+		throw new XMLDBException(ErrorCodes.NOT_IMPLEMENTED, "Not implemented (yet)");
 	}
 
 	/**
@@ -169,6 +176,7 @@ public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryS
 	 * @throws XMLDBException if something goes wrong
 	 */
 	public CompiledExpression compile(String query) throws XMLDBException {
+		// this is stuff for 'prepared statements'...
 		// do something
 		throw new XMLDBException(ErrorCodes.NOT_IMPLEMENTED);
 	}

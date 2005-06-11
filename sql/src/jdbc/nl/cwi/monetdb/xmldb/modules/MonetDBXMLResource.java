@@ -3,19 +3,52 @@ package nl.cwi.monetdb.xmldb.modules;
 import org.xmldb.api.base.*;
 import org.xmldb.api.modules.*;
 
+// XML parsing stuff
+import javax.xml.parsers.*;
 import org.w3c.dom.*;
 import org.xml.sax.*;
+import org.xml.sax.helpers.*;
+
+// needed for streams for XML parsers
+import java.io.*;
 
 /**
  * Provides access to XML resources stored in the database.  An
  * XMLResource can be accessed either as text XML or via the DOM or SAX
  * APIs.<br />
  * <br />
- * The default behavior for getContent and setContent is to work with
- * XML data as text so these methods work on String content.
+ * The default behaviour for getContent and setContent is to work with
+ * XML data as text so these methods work on String content.<br />
+ * <br />
+ * A MonetDBXMLResource is immutable and based on a String of XML data.
+ * Any attempt to change the content of this Resource will result in an
+ * XMLDBException with error code ErrorCodes.VENDOR_ERROR and message
+ * "This Resource is immutable".  In contrast with the ResourceSet,
+ * updates to the contents of this object are not allowed to stress the
+ * fact that the results are read-only.
+ * 
+ * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  */
 public class MonetDBXMLResource implements XMLResource {
+	private final String xml;
+	private final Collection parent;
 
+	/** SAX parser to be used.  Needs to be known upfront because
+	 * features can be set for it. */
+	private XMLReader saxparser = XMLReaderFactory.createXMLReader();
+
+	/**
+	 * Constructor for a String based XMLResource.  Internally the XML
+	 * is kept as string, supplied as argument to this constructor.
+	 *
+	 * @param xml the XML contents of this Resource as String
+	 */
+	MonetDBXMLResource(String xml, MonetDBCollection parent) {
+		// assign the blank finals
+		this.xml = xml;
+		this.parent = parent;
+	}
+	
 	//== interface org.xmldb.api.base.Resource
 
 	/**
@@ -30,7 +63,7 @@ public class MonetDBXMLResource implements XMLResource {
 	 */
 	public Collection getParentCollection() throws XMLDBException {
 		// should return MonetDBCollection thingher
-		return(myParent);
+		return(parent);
 	}
 
 	/**
@@ -44,12 +77,8 @@ public class MonetDBXMLResource implements XMLResource {
 	 *  occur.
 	 */
 	public String getId() throws XMLDBException {
-		// we're anonymous if we haven't got a Collection parent
-		if (myParent != null) {
-			return(toString());
-		} else {
-			return(null);
-		}
+		// our results are always obtained as result of a query
+		return(null);
 	}
 
 	/**
@@ -80,7 +109,7 @@ public class MonetDBXMLResource implements XMLResource {
 	 */
 	public Object getContent() throws XMLDBException {
 		// we return as String
-		return(content);
+		return(xml);
 	}
 
 	/**
@@ -93,8 +122,7 @@ public class MonetDBXMLResource implements XMLResource {
 	 *  occur.
 	 */
 	public void setContent(Object value) throws XMLDBException {
-		// can we do this without penalty?
-		content = value.toString();
+		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "This Resource is immutable");
 	}
 
 	//== end interface Resource
@@ -117,7 +145,7 @@ public class MonetDBXMLResource implements XMLResource {
 	 *  occur.
 	 */
 	public String getDocumentId() throws XMLDBException {
-		// hmmm... oops... I dunno
+		// hmmm... oops... I dunno...  it should return an id, but...
 		return(null);
 	}
 
@@ -129,10 +157,21 @@ public class MonetDBXMLResource implements XMLResource {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.
 	 */
-	public org.w3c.dom.Node getContentAsDOM() throws XMLDBException {
-		// do the terrible DOM thing...
-		// maar nu even niet! (TODO!)
-		return(null);
+	public Node getContentAsDOM() throws XMLDBException {
+		DocumentBuilder builder =
+			DocumentBuilderFactory.newInstance().newDocumentBuilder();
+		// there are only parsers for streams :(
+		// this means we need a Thread here to push the String data into
+		// a PipedOutputStream...
+		PipedOutputStream out = new PipedOutputStream();
+		PipedInputStream in = new PipedInputStream(out);
+		// the PipeThread can only write the contents of the xml
+		// variable to the output stream, so we only give it the stream
+		// to write to
+		PipeThread piper = new PipeThread(out);
+		Document doc = builder.parse(in);
+
+		return(doc);
 	}
 
 	/**
@@ -152,7 +191,7 @@ public class MonetDBXMLResource implements XMLResource {
 			new XMLDBException(ErrorCodes.INVALID_RESOURCE, "(null)");
 
 		// we can't do anything yet
-		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "not implemented");
+		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "This Resource is immutable");
 	}
 
 	/**
@@ -173,8 +212,22 @@ public class MonetDBXMLResource implements XMLResource {
 		if (handler == null) throw
 			new XMLDBException(ErrorCodes.INVALID_RESOURCE, "(null)");
 
-		// we can't do anything yet
-		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "not implemented");
+		try {
+			saxparser.setContentHandler(handler);
+			// there are only parsers for streams :(
+			// this means we need a Thread here to push the String data into
+			// a PipedOutputStream...
+			PipedOutputStream out = new PipedOutputStream();
+			PipedInputStream in = new PipedInputStream(out);
+			// the PipeThread can only write the contents of the xml
+			// variable to the output stream, so we only give it the stream
+			// to write to
+			PipeThread piper = new PipeThread(out);
+			saxparser.parse(new InputSource(in));
+		} catch (SAXException e) {
+			// deliberately include exception name
+			throw new XMLDBException(ErrorCodes.VENDOR_ERROR, e.toString());
+		}
 	}
 
 	/**
@@ -187,8 +240,7 @@ public class MonetDBXMLResource implements XMLResource {
 	 *  occur.
 	 */
 	public org.xml.sax.ContentHandler setContentAsSAX() throws XMLDBException {
-		// I have NO idea
-		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "not implemented");
+		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "This Resource is immutable");
 	}
 
 	/**
@@ -206,7 +258,8 @@ public class MonetDBXMLResource implements XMLResource {
 		throws org.xml.sax.SAXNotRecognizedException,
 				org.xml.sax.SAXNotSupportedException
 	{
-		// do nothing
+		// a simple pass through the SAX parser
+		saxparser.setFeature(feature, value);
 	}
 
 	/**
@@ -224,8 +277,33 @@ public class MonetDBXMLResource implements XMLResource {
 		throws org.xml.sax.SAXNotRecognizedException,
 				org.xml.sax.SAXNotSupportedException
 	{
-		// eh?
-		return(false);
+		return(saxparser.getFeature(feature));
+	}
+
+	//== end interface XMLResource
+	
+	/**
+	 * A PipeThread will write the current contents of the xml variable
+	 * to the given PipedOutputStream.  The thread will immediately be
+	 * started and after it has written all data, disconnect and die.
+	 */
+	private class PipeThread extends Thread {
+		private OuputStream out;
+		
+		public PipeThread(PipedOutputStream out) {
+			this.out = out;
+			this.start();
+		}
+
+		public void run() {
+			try {
+				out.write(xml.getBytes());
+				out.flush();
+				out.close();
+			} catch (IOException e) {
+				// just die
+			}
+		}
 	}
 }
 
