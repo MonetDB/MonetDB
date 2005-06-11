@@ -1,11 +1,12 @@
 package nl.cwi.monetdb.xmldb.base;
 
 import org.xmldb.api.base.*;
+import java.sql.*;
 
 
 /**
  * A Collection represents a collection of Resources stored within an
- * XML database. An XML database MAY expose collections as a
+ * XML database.  An XML database MAY expose collections as a
  * hierarchical set of parent and child collections.
  * <p />
  * MonetDB/XQuery at the moment exposes no collection at all.
@@ -20,20 +21,19 @@ import org.xmldb.api.base.*;
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  */
 public class MonetDBCollection extends MonetDBConfigurable implements Collection {
-	private Service[] knownServices;
-	private final MonetDBDatabase monet;
-	private boolean closed;
+	private Service[] serviceInstances;
+	private final Connection jdbccon;
 
 	/**
 	 * Constructs a new MonetDB Collection and initialises its
-	 * knownService array.
+	 * knownServices array.
+	 *
+	 * @param con a JDBC connection to a MonetDB database
 	 */
-	MonetDBCollection(MonetDBDatabase db) {
-		monet = db;
-		// initially fill the knownServices array
-		knownServices = { new MonetDBXQueryService(this) };
-		
-		closed = false;
+	MonetDBCollection(MonetConnection con) {
+		jdbccon = con;
+		// initially fill the serviceInstances array
+		serviceInstances = { new MonetDBXQueryService() };
 	}
 	
 	/**
@@ -63,10 +63,11 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	Service[] getServices() throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 
 		// We should return a list with all supported Services.
-		return(knownServices.clone());
+		return((Service[])(serviceInstances.clone()));
 	}
 
 	/**
@@ -84,14 +85,28 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	Service getService(String name, String version) throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
 		// Iterate over all known Services.  Get their name and version
 		// using getName() and getVersion and do the comparison.
-		for (int i = 0; i < knownServices.length; i++) {
-			if (knownServices[i].getName().equals(name) &&
-					knownServices[i].getVersion().equals(version))
-				return(knownServices[i]);
+		for (int i = 0; i < serviceInstances.length; i++) {
+			if (serviceInstances[i].getName().equals(name) &&
+					serviceInstances[i].getVersion().equals(version))
+			{
+				// use reflection to call the right constructor
+				try {
+					Class[] param = { MonetStatement.class };
+					Object[] args = { (MonetStatement)(jdbccon.getStatement()) };
+					return((Service)
+						serviceInstances[i].getClass().getConstructor(param).newInstance(args));
+				} catch (NoSuchMethodException e) {
+					throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Internal error: no suitable constructor for the requested service found!");
+				} catch (SecurityException e) {
+					// intentionally include the Exception name
+					throw new XMLDBException(ErrorCodes.VENDOR_ERROR, e.toString());
+				}
+			}
 		}
 
 		// finally, if not found, return null
@@ -110,7 +125,8 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	Collection getParentCollection() throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
 		// I do it quick 'n' dirty for now.  There exists no recursion,
 		// so there is never a parent.
@@ -129,7 +145,8 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	int getChildCollectionCount() throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
 		// again quick 'n' dirty (see above)
 		return(0);
@@ -149,7 +166,8 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	String[] listChildCollections() throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
 		// quick 'n' dirty! (see above)
 		return(new String[0]);
@@ -168,7 +186,8 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	Collection getChildCollection(String name) throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
 		// we don't have children, so we always return null regardless
 		// the input
@@ -187,7 +206,8 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	int getResourceCount() throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
 		// We cannot know upfront how many tuples there are to come
 		// using JDBC.  I don't know...
@@ -207,8 +227,9 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	String[] listResources() throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
-		
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+
 		// somehow resources have IDs...  I'm affraid we have to take
 		// the hash of the tuples here or something.
 		return(new String[0]);
@@ -236,7 +257,8 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	Resource createResource(String id, String type) throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
 		// we don't have updateable resultsets (yet)
 		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Operation not supported, sorry.");
@@ -256,7 +278,8 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	void removeResource(Resource res) throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
 		// we don't have updateable resultsets (yet)
 		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Operation not supported, sorry.");
@@ -276,7 +299,8 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	void storeResource(Resource res) throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
 		// we don't have updateable resultsets (yet)
 		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Operation not supported, sorry.");
@@ -311,7 +335,8 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  on the Collection
 	 */
 	String createId() throws XMLDBException {
-		if (closed) throw new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
+		if (!isOpen()) throw
+			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
 		// we don't have updateable resultsets (yet)
 		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Operation not supported, sorry.");
@@ -329,7 +354,12 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  occur.
 	 */
 	boolean isOpen() throws XMLDBException {
-		return(!closed);
+		try {
+			return(!jdbccon.isClosed());
+		} catch (SQLException e) {
+			// intentionally include the SQLException class name
+			throw new XMLDBException(ErrorCodes.VENDOR_ERROR, e.toString());
+		}
 	}
 
 	/**
@@ -343,8 +373,12 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  occur.
 	 */
 	void close() throws XMLDBException {
-		// perhaps a stmt.close();
-		closed = true;
+		try {
+			jdbccon.close();
+		} catch (SQLException e) {
+			// intentionally include the SQLException class name
+			throw new XMLDBException(ErrorCodes.VENDOR_ERROR, e.toString());
+		}
 	}
 }
 
