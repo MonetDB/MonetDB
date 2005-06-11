@@ -49,7 +49,6 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 	char *empty;
 	int i,j,limit,doAR=0;
 	InstrPtr p;
-	Module scope= getClient()->nspace;
 
 #ifdef DEBUG_MAL_EMPTYSET
 	stream_printf(GDKout,"START emptyset optimizer %d\n",cnt);
@@ -83,7 +82,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 					setModuleId(p,NULL);
 					setFunctionId(p,NULL);
 					p->argc=2;
-					typeChecker(scope,mb,p,TRUE);
+					p->token= ASSIGNsymbol;
 					doAR++;
 					break;
 				} else
@@ -95,7 +94,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 						setModuleId(p,NULL);
 						setFunctionId(p,NULL);
 						p->argc=2;
-						typeChecker(scope,mb,p,TRUE);
+						p->token= ASSIGNsymbol;
 						doAR++;
 						break;
 					}
@@ -105,8 +104,8 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 					setModuleId(p,NULL);
 					setFunctionId(p,NULL);
 					p->argc=1;
+					p->token= ASSIGNsymbol;
 					pushBit(mb, p,"false");
-					typeChecker(scope,mb,p,TRUE);
 					doAR++;
 					break;
 				} else 
@@ -136,7 +135,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 					setModuleId(p,NULL);
 					setFunctionId(p,NULL);
 					p->argc=2;
-					typeChecker(scope,mb,p,TRUE);
+					p->token= ASSIGNsymbol;
 					doAR++;
 					break;
 				} else 
@@ -153,8 +152,8 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 					setModuleId(p,NULL);
 					setFunctionId(p,NULL);
 					p->argc=2;
+					p->token= ASSIGNsymbol;
 					if( j==2) p->argv[1]= p->argv[2];
-					typeChecker(scope,mb,p,TRUE);
 					doAR++;
 					break;
 				} 

@@ -50,6 +50,9 @@ which can be replaced by '$l:= algebra.markH($k);'.
 
 In all cases we should ensure that the intermediates dropped are not
 used for other purposes as well.
+
+The type of a variable may have to be reset when you change
+the program structure.
 @c
 str
 PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
@@ -81,10 +84,14 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 					    (functionId(q) && strcmp(functionName(q),"markH")==0)) &&
 						moduleId(q) && strcmp(moduleName(q),"algebra")==0)
 					{
+printf("PEEPHOLE 0\n");
+printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+printInstruction(GDKout,mb,q,LIST_MAL_ALL);
 						freeInstruction(p);
 						q->argc--;
 						typeChecker(scope,mb,q,TRUE);
 						pushInstruction(mb,q);
+printInstruction(GDKout,mb,q,LIST_MAL_ALL);
 						i++; doit++;
 						continue;
 					}
@@ -94,13 +101,19 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				functionId(p) && strcmp(functionName(p),"markT")== 0 &&
 				moduleId(p) && strcmp(moduleName(p),"algebra")== 0 &&
 				functionId(q) && strcmp(functionName(q),"reverse")== 0 &&
-				moduleId(q) && strcmp(moduleName(q),"bat")== 0 
+				moduleId(q) && strcmp(moduleName(q),"bat")== 0  
 			){ 
-				getArg(p,0)= getArg(q,0);
-				setFunctionId(p,putName("markH",5));
-				pushInstruction(mb,p);
-				typeChecker(scope,mb,p,TRUE);
-				freeInstruction(q);
+printf("PEEPHOLE 1\n");
+printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+
+				getArg(q,1)= getArg(p,1);
+				setModuleId(q,putName("algebra",7));
+				setFunctionId(q,putName("markH",5));
+				pushInstruction(mb,q);
+				typeChecker(scope,mb,q,TRUE);
+printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+				freeInstruction(p);
 				i++;
 			} else
 				pushInstruction(mb,p);
