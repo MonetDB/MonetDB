@@ -360,7 +360,7 @@ command join( left:bat[:any$1,:oid], right:bat[:void,:any$3])
 		:bat[:any$1,:any$3] 
 address ALGjoin;
 command join( left:bat[:void,:any$1], right:bat[:any$1,:void])
-		:bat[:oid,:oid] 
+		:bat[:void,:oid] 
 address ALGjoin;
 
 command join( left:bat[:any$1,:any$2], right:bat[:any$2,:any$3],
@@ -442,7 +442,7 @@ command markT( b:bat[:any$1,:any$2], base:oid ) :bat[:any$1,:void]
 address ALGtmark
 comment "Produces a BAT with fresh unique dense sequense of OIDs in 
         the tail that starts at base (i.e. [base,..base+b.count()-1] ).";
-command markT( b:bat[:void,:any$2], base:oid ) :bat[:void,:oid] 
+command markT( b:bat[:void,:any$2], base:oid ) :bat[:oid,:void] 
 address ALGtmark;
 
 
