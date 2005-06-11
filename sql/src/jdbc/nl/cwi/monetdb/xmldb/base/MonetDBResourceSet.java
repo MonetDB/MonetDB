@@ -36,7 +36,7 @@ public class MonetDBResourceSet implements ResourceSet {
 				// we just *know* that there is just one column, and
 				// that it should be what we're looking for: the result
 				// of the query
-				resources.add(new MonetDBXMLResource(rs.getString(1)));
+				resources.add(new MonetDBXMLResource(rs.getString(1), this));
 			}
 			// we won't need the ResultSet any more, since we got all
 			// its data
@@ -194,7 +194,7 @@ public class MonetDBResourceSet implements ResourceSet {
 		while (it.hasMoreResources()) {
 			xml += "<resource>" + it.nextResource().getContent().toString() + "</resource>";
 		}
-		return(new MonetDBXMLResource(xml));
+		return(new MonetDBXMLResource(xml, this));
 	}
 
 	/**
