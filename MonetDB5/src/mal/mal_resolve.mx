@@ -503,11 +503,12 @@ int resolveType(int dsttype, int srctype){
         h2= getHeadType(srctype);
         t2= getTailType(srctype);
 
-        /* BAT reference type , ignore for the time being*/
+        /* BAT reference type , ignore for the time being
         if( h1== TYPE_bat) h1= newBatType(TYPE_any,TYPE_any);
         if( t1== TYPE_bat) t1= newBatType(TYPE_any,TYPE_any);
         if( h2== TYPE_bat) h2= newBatType(TYPE_any,TYPE_any);
         if( t2== TYPE_bat) t2= newBatType(TYPE_any,TYPE_any);
+        */
 
 @-
 The BAT void column type is exchangeable with an oid column type
