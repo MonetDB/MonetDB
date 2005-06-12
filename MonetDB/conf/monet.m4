@@ -1966,7 +1966,7 @@ if test "x$have_pear" != xno; then
 		have_pear=no
 		AC_MSG_RESULT(not found)
 	else
-		PHP_PEARDIR="`echo "$php_peardir" | sed -e "s+^php_dir *= *++" -e "s^$php_prefix/++"`"
+		PHP_PEARDIR="`echo "$php_peardir" | sed -e "s+^php_dir *= *++" -e "s+^$php_prefix/++"`"
 		have_pear=yes
 		AC_MSG_RESULT(\$prefix/$PHP_PEARDIR)
 	fi

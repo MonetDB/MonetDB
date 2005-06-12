@@ -1855,8 +1855,9 @@ static int
 unloadmod_bat(BAT *b, oid mid)
 {
 	int xx, yy = 0;
+	int refs = BBP_refs(b->batCacheid);
 
-	if (BBP_refs(b->batCacheid) > 0) {
+	if (refs > 0) {
 		BUN p, q;
 
 		BATloopFast(TBL_mod_drop, p, q, xx) {
@@ -1864,7 +1865,7 @@ unloadmod_bat(BAT *b, oid mid)
 				yy++;
 			}
 		}
-		return MAX(0, BBP_refs(b->batCacheid) - yy);
+		return MAX(0, refs - yy);
 	}
 	return BBPreclaim(b);
 }

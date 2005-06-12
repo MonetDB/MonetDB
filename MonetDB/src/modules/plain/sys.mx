@@ -334,11 +334,13 @@ Some explanation of what mem\_usage() and vm\_usage() display:
         var refcnt :=  view_bbp_refcnt(); refcnt.col_name("refcnt");
         var lrefcnt :=  view_bbp_lrefcnt(); lrefcnt.col_name("lrefcnt");
 
+	var rev := reverse(semijoin(reverse(b),select(reverse(nme),int(nil),-1))).mirror();
+	var rst := b.kdiff(rev).mirror();
 
         table(1, b.reverse().sort().reverse().col_name("name"),
-                ht.semijoin(b.join(nme.reverse())),
-                tt.semijoin(b.join(nme.reverse())),
-                cnt.semijoin(b.mirror()),
+		rst.join(ht).kunion(rev.join(tt)).col_name("htype"),
+		rst.join(tt).kunion(rev.join(ht)).col_name("ttype"),
+                cnt.semijoin(b.mirror()).col_name("count"),
                 heat, dirty,status,kind,refcnt,lrefcnt);
     }
 
@@ -349,10 +351,13 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	dir(nme.replace(rev));
     }
     PROC dir(str substr) : void {
-        var nme := view_bbp_name().like(substr).access(BAT_WRITE);
-	    nme.col_name("name");
+        var nme := view_bbp_name();
         var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
-        dir(nme.replace(rev));
+	nme.access(BAT_WRITE);
+	nme.col_name("name");
+	# now we have the correct bbp including reverses, lets replace these 
+	nme.replace(rev);
+	dir(nme.like(substr));
     }
     ADDHELP("dir", "boncz", "Feb  6 1996",
 	"list all bats, including system bats. Optionally filter on name with a certain substring", "sys");
@@ -387,6 +392,7 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	var rev := [*](nme.reverse().select(int(nil),-1),-1).reverse();
 	prs.access(BAT_WRITE);
 	prs.col_name("name");
+	# now we have the correct bbp including reverses, lets replace these 
 	prs.replace(rev);
 	dir(prs.like(substr));
     }
@@ -568,7 +574,7 @@ view_bbp_@1(BAT** retval)	/* put pointer to BAT[int,str] record here. */
 	BBPlock("view_bbp_@1");
         for (i = 1; i < BBPsize; i++) {
 		if (i != b->batCacheid) {
-			BAT *bn = (BAT*) BBPgetdesc(ABS(i));
+			BAT *bn = (BAT*) BBPgetdesc(i);
 			if (bn ) {
 				str tpe = ATOMname(bn->@1);
 				BUNins(b, &i, tpe);
@@ -580,8 +586,8 @@ view_bbp_@1(BAT** retval)	/* put pointer to BAT[int,str] record here. */
         return GDK_SUCCEED;
 }
 @c
-@:bbp_types(htype,ttype)@
-@:bbp_types(ttype,htype)@
+@:bbp_types(htype)@
+@:bbp_types(ttype)@
 
 int
 view_bbp_count(BAT **retval	/* put pointer to BAT[int,str] record here. */

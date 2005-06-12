@@ -97,7 +97,7 @@ bin_Mserver = {
 scripts_sh = {
 	EXT = ""
 	DIR = bindir
-	SOURCES = monetdb-config.mx.in 
+	SOURCES = monetdb-config.mx.in
 }
 
 scripts_bat = {
