@@ -83,8 +83,8 @@ InstrPtr
 newFcnCall( MalBlkPtr mb, char *mod, char *fcn )
 {
 	InstrPtr q= newAssignment(mb);
-	setModuleId(q,mod);
-	functionName(q) = fcn;
+	setModuleId(q,putName(mod,strlen(mod)) );
+	setFunctionId(q,putName(fcn,strlen(fcn)));
 	return q;
 }
 
