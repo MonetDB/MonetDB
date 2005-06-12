@@ -22,8 +22,8 @@ public class MonetDBConfigurable implements Configurable {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.
 	 */
-	String getProperty(String name) throws XMLDBException {
-		return(properties.get(name));
+	public String getProperty(String name) throws XMLDBException {
+		return((String)(properties.get(name)));
 	}
 
 	/**
@@ -35,7 +35,7 @@ public class MonetDBConfigurable implements Configurable {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.<br />
 	 */
-	void setProperty(String name, String value) throws XMLDBException {
+	public void setProperty(String name, String value) throws XMLDBException {
 		properties.put(name, value);
 	}
 }

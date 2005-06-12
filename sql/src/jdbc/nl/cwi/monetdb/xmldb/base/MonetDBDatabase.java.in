@@ -2,6 +2,8 @@ package nl.cwi.monetdb.xmldb.base;
 
 import org.xmldb.api.base.*;
 import java.sql.*;
+import java.net.*; // for URI
+import nl.cwi.monetdb.jdbc.*;
 
 /**
  * The Database class is an encapsulation of the database driver
@@ -26,7 +28,11 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	static {
 		// note we call the default constructor here, which is added by
 		// the compiler for us...
-		org.xmldb.api.DatabaseManager.registerDatabase(new MonetDBConfigurable());
+		try {
+			org.xmldb.api.DatabaseManager.registerDatabase(new MonetDBDatabase());
+		} catch (XMLDBException e) {
+			// too bad!
+		}
 	}
 	
 	/**
@@ -37,7 +43,7 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	 * @throws XMLDBException because this method is deprecated and
 	 * should not be used any more
 	 */
-	String getName() throws XMLDBException {
+	public String getName() throws XMLDBException {
 		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "This method is deprecated, use getNames() instead");
 	}
 
@@ -51,7 +57,8 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	 */
 	public String[] getNames() throws XMLDBException {
 		// I have no idea what the intention of this method is
-		return({"MonetDB/XQuery"});
+		String[] ret = {"MonetDB/XQuery"};
+		return(ret);
 	}
    
 	/**
@@ -82,7 +89,7 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	 *  ErrorCodes.PERMISSION_DENIED if the username and password were
 	 *  not accepted by the database.
 	 */
-	Collection getCollection(String uri, String username, String password) 
+	public Collection getCollection(String uri, String username, String password) 
 		throws XMLDBException
 	{
 		Connection con;
@@ -94,7 +101,7 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 		// not.  If so, don't overwrite it, otherwise add the default
 		// port, because it differs from the SQL port which JDBC uses by
 		// default.
-		java.net.URI url;
+		URI url;
 		try {
 			url = new java.net.URI(uri.substring("xmldb:".length()));
 		} catch (URISyntaxException e) {
@@ -109,12 +116,12 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 			uri = "monetdb://" + url.getHost() + ":" + XQUERY_PORT + 
 				url.getRawPath() + url.getRawQuery();
 		} else {
-			url = uri.substring("xmldb:".length());
+			uri = uri.substring("xmldb:".length());
 		}
 		
-		// make sure the driver is loaded and make a connection
-		class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 		try {
+			// make sure the driver is loaded and make a connection
+			Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
 			// uri should be a valid JDBC url right now with only the
 			// "jdbc:" prefix missing.  Let it up to the driver to
 			// decide whether it likes it or not.
@@ -129,10 +136,12 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 			// use 'vendor error' with the SQL error message which is
 			// usually descriptive enough to tell what's the problem
 			throw new XMLDBException(ErrorCodes.VENDOR_ERROR, e.getMessage());
+		} catch (ClassNotFoundException e) {
+			throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Unable to load MonetDB JDBC driver: " + e.getMessage());
 		}
 		
 		// create a Collection and return it
-		return(new MonetDBCollection(con));
+		return(new MonetDBCollection((MonetConnection)con));
 	}
 
 	/**
@@ -150,7 +159,7 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	 *  occur.<br />
 	 *  ErrorCodes.INVALID_URI if the URI is not in a valid format.<br />
 	 */
-	boolean acceptsURI(String uri) throws XMLDBException {
+	public boolean acceptsURI(String uri) throws XMLDBException {
 		if (uri == null)
 			throw new XMLDBException(ErrorCodes.INVALID_URI, "URI is null");
 
@@ -164,7 +173,7 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	 *
 	 * @return the XML:DB API conformance level for this implementation.
 	 */
-	String getConformanceLevel() {
+	public String getConformanceLevel() {
 		// I have no clue what to put here, cannot find information on
 		// it quickly too...
 		return("We try to support the basics...");

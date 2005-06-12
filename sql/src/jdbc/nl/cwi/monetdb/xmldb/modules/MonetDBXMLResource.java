@@ -2,6 +2,7 @@ package nl.cwi.monetdb.xmldb.modules;
 
 import org.xmldb.api.base.*;
 import org.xmldb.api.modules.*;
+import nl.cwi.monetdb.xmldb.base.*;
 
 // XML parsing stuff
 import javax.xml.parsers.*;
@@ -35,7 +36,7 @@ public class MonetDBXMLResource implements XMLResource {
 
 	/** SAX parser to be used.  Needs to be known upfront because
 	 * features can be set for it. */
-	private XMLReader saxparser = XMLReaderFactory.createXMLReader();
+	private final XMLReader saxparser;
 
 	/**
 	 * Constructor for a String based XMLResource.  Internally the XML
@@ -43,10 +44,18 @@ public class MonetDBXMLResource implements XMLResource {
 	 *
 	 * @param xml the XML contents of this Resource as String
 	 */
-	MonetDBXMLResource(String xml, MonetDBCollection parent) {
+	public MonetDBXMLResource(String xml, MonetDBCollection parent)
+		throws XMLDBException
+	{
 		// assign the blank finals
 		this.xml = xml;
 		this.parent = parent;
+		try {
+			this.saxparser = XMLReaderFactory.createXMLReader();
+		} catch (SAXException e) {
+			// include Exception name
+			throw new XMLDBException(ErrorCodes.VENDOR_ERROR, e.toString());
+		}
 	}
 	
 	//== interface org.xmldb.api.base.Resource
@@ -158,18 +167,25 @@ public class MonetDBXMLResource implements XMLResource {
 	 *  occur.
 	 */
 	public Node getContentAsDOM() throws XMLDBException {
-		DocumentBuilder builder =
-			DocumentBuilderFactory.newInstance().newDocumentBuilder();
-		// there are only parsers for streams :(
-		// this means we need a Thread here to push the String data into
-		// a PipedOutputStream...
-		PipedOutputStream out = new PipedOutputStream();
-		PipedInputStream in = new PipedInputStream(out);
-		// the PipeThread can only write the contents of the xml
-		// variable to the output stream, so we only give it the stream
-		// to write to
-		PipeThread piper = new PipeThread(out);
-		Document doc = builder.parse(in);
+		Document doc = null;
+		try {
+			DocumentBuilder builder =
+				DocumentBuilderFactory.newInstance().newDocumentBuilder();
+			// there are only parsers for streams :(
+			// this means we need a Thread here to push the String data
+			// into a PipedOutputStream...
+			PipedOutputStream out = new PipedOutputStream();
+			PipedInputStream in = new PipedInputStream(out);
+			// the PipeThread can only write the contents of the xml
+			// variable to the output stream, so we only give it the
+			// stream to write to
+			PipeThread piper = new PipeThread(out);
+			doc = builder.parse(in);
+		} catch (Exception e) {
+			// this includes: ParserConfigurationException,
+			// SAXException, IOException
+			throw new XMLDBException(ErrorCodes.VENDOR_ERROR, e.toString());
+		}
 
 		return(doc);
 	}
@@ -224,8 +240,9 @@ public class MonetDBXMLResource implements XMLResource {
 			// to write to
 			PipeThread piper = new PipeThread(out);
 			saxparser.parse(new InputSource(in));
-		} catch (SAXException e) {
-			// deliberately include exception name
+		} catch (Exception e) {
+			// deliberately include exception name (SAXException or
+			// IOException)
 			throw new XMLDBException(ErrorCodes.VENDOR_ERROR, e.toString());
 		}
 	}
@@ -288,7 +305,7 @@ public class MonetDBXMLResource implements XMLResource {
 	 * started and after it has written all data, disconnect and die.
 	 */
 	private class PipeThread extends Thread {
-		private OuputStream out;
+		private OutputStream out;
 		
 		public PipeThread(PipedOutputStream out) {
 			this.out = out;

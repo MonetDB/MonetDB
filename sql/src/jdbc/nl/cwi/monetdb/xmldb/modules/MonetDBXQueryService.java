@@ -15,13 +15,28 @@ import nl.cwi.monetdb.xmldb.base.*;
  */
 public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryService {
 	private final Statement stmt;
+	private final MonetDBCollection collectionParent;
 
 	/**
-	 * Constructs a new MonetDB Collection and initialises its
-	 * knownService array.
+	 * Constructs a new MonetDB XQuery Service and associates it to a
+	 * MonetDB JDBC Statement.
+	 *
+	 * @param stmt a MonetDB JDBC Statement to execute queries over
+	 * @param parent the MonetDB Collection parent of this object
 	 */
-	MonetDBXQueryService(MonetStatement stmt) {
+	public MonetDBXQueryService(MonetStatement stmt, MonetDBCollection parent) {
 		this.stmt = stmt;
+		this.collectionParent = parent;
+	}
+
+	/**
+	 * Constucts a new MonetDB XQuery Service suitable for
+	 * identification purposes.  An MonetDBXQueryService constructed
+	 * through this constructor cannot execute any queries.
+	 */
+	public MonetDBXQueryService() {
+		this.stmt = null;
+		this.collectionParent = null;
 	}
 
 	//== Interface org.xmldb.api.base.Service
@@ -35,8 +50,8 @@ public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryS
 	 *  occur.
 	 */
 	public String getName() throws XMLDBException {
-		// SERVICE_NAME is defined in the XQueryInterface
-		return(XQueryService.SERVICE_NAME);
+		// SERVICE_NAME was defined in the XQueryService interface
+		return("XQueryService");
 	}
 
 	/**
@@ -146,7 +161,16 @@ public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryS
 	 * @throws XMLDBException if something goes wrong
 	 */
 	public ResourceSet query(String query) throws XMLDBException {
-		return(new MonetDBResourceSet((MonetResultSet)(stmt.executeQuery(query))));
+		if (stmt == null) throw
+			new XMLDBException(ErrorCodes.VENDOR_ERROR, "This is a non-executable Service");
+
+		try {
+			return(new MonetDBResourceSet((MonetResultSet)(stmt.executeQuery(query)),
+					collectionParent));
+		} catch (SQLException e) {
+			// include exception name
+			throw new XMLDBException(ErrorCodes.VENDOR_ERROR, e.toString());
+		}
 	}
 
 	/**
@@ -189,12 +213,9 @@ public class MonetDBXQueryService extends MonetDBConfigurable implements XQueryS
 	 * @param expression a previously compiled expression to execute
 	 * @throws XMLDBException is something goes wrong
 	 */
-	public ResourceSet execute(MonetDBCompiledExpression expression)
+	public ResourceSet execute(CompiledExpression expression)
 		throws XMLDBException
 	{
-		// TODO: this will cause compilation errors, as we don't have
-		// this class yet.  Need to make a wrapper.
-		
 		// do something
 		throw new XMLDBException(ErrorCodes.NOT_IMPLEMENTED);
 	}

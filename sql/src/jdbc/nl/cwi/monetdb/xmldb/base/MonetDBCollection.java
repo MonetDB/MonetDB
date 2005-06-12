@@ -2,6 +2,8 @@ package nl.cwi.monetdb.xmldb.base;
 
 import org.xmldb.api.base.*;
 import java.sql.*;
+import nl.cwi.monetdb.jdbc.*;
+import nl.cwi.monetdb.xmldb.modules.*;
 
 
 /**
@@ -45,7 +47,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.
 	 */
-	String getName() throws XMLDBException {
+	public String getName() throws XMLDBException {
 		return("MonetDBCollection");
 	}
 
@@ -63,7 +65,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	Service[] getServices() throws XMLDBException {
+	public Service[] getServices() throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 
@@ -85,7 +87,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	Service getService(String name, String version) throws XMLDBException {
+	public Service getService(String name, String version) throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
@@ -97,14 +99,19 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 			{
 				// use reflection to call the right constructor
 				try {
-					Class[] param = { MonetStatement.class };
-					Object[] args = { (MonetStatement)(jdbccon.getStatement()) };
+					Class[] param = { MonetStatement.class, MonetDBCollection.class };
+					Object[] args = new Object[2];
+					args[0] = (MonetStatement)(jdbccon.createStatement());
+					args[1] = this;
 					return((Service)
 						serviceInstances[i].getClass().getConstructor(param).newInstance(args));
 				} catch (NoSuchMethodException e) {
 					throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "Internal error: no suitable constructor for the requested service found!");
-				} catch (SecurityException e) {
-					// intentionally include the Exception name
+				} catch (Exception e) {
+					// intentionally include the Exception name, this
+					// includes: InstantiationException,
+					// IllegalAccessException,
+					// InvocationTargetException, SQLException
 					throw new XMLDBException(ErrorCodes.VENDOR_ERROR, e.toString());
 				}
 			}
@@ -125,7 +132,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	Collection getParentCollection() throws XMLDBException {
+	public Collection getParentCollection() throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
@@ -145,7 +152,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	int getChildCollectionCount() throws XMLDBException {
+	public int getChildCollectionCount() throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
@@ -166,7 +173,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	String[] listChildCollections() throws XMLDBException {
+	public String[] listChildCollections() throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
@@ -186,7 +193,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	Collection getChildCollection(String name) throws XMLDBException {
+	public Collection getChildCollection(String name) throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
@@ -206,7 +213,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	int getResourceCount() throws XMLDBException {
+	public int getResourceCount() throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
@@ -227,7 +234,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	String[] listResources() throws XMLDBException {
+	public String[] listResources() throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 
@@ -257,7 +264,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	Resource createResource(String id, String type) throws XMLDBException {
+	public Resource createResource(String id, String type) throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
@@ -278,7 +285,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	void removeResource(Resource res) throws XMLDBException {
+	public void removeResource(Resource res) throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
@@ -299,7 +306,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	void storeResource(Resource res) throws XMLDBException {
+	public void storeResource(Resource res) throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
@@ -319,7 +326,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	Resource getResource(String id) throws XMLDBException {
+	public Resource getResource(String id) throws XMLDBException {
 		// do something like return the row requested
 		// currently: do nothing
 		return(null);
@@ -335,7 +342,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.COLLECTION_CLOSED if the close method has been called
 	 *  on the Collection
 	 */
-	String createId() throws XMLDBException {
+	public String createId() throws XMLDBException {
 		if (!isOpen()) throw
 			new XMLDBException(ErrorCodes.COLLECTION_CLOSED);
 		
@@ -354,7 +361,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.
 	 */
-	boolean isOpen() throws XMLDBException {
+	public boolean isOpen() throws XMLDBException {
 		try {
 			return(!jdbccon.isClosed());
 		} catch (SQLException e) {
@@ -373,7 +380,7 @@ public class MonetDBCollection extends MonetDBConfigurable implements Collection
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.
 	 */
-	void close() throws XMLDBException {
+	public void close() throws XMLDBException {
 		try {
 			jdbccon.close();
 		} catch (SQLException e) {

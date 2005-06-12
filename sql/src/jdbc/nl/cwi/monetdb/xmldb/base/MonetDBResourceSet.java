@@ -2,6 +2,10 @@ package nl.cwi.monetdb.xmldb.base;
 
 import org.xmldb.api.base.*;
 import java.sql.*;
+import java.util.*;
+import nl.cwi.monetdb.jdbc.*;
+import nl.cwi.monetdb.xmldb.base.*;
+import nl.cwi.monetdb.xmldb.modules.*;
 
 /**
  * ResourceSet is a container for a set of resources.  Generally a
@@ -18,6 +22,7 @@ import java.sql.*;
  */
 public class MonetDBResourceSet implements ResourceSet {
 	private final List resources;
+	private final MonetDBCollection collectionParent;
 	
 	/**
 	 * Constructor which takes a ResultSet.  The ResultSet provides the
@@ -27,8 +32,11 @@ public class MonetDBResourceSet implements ResourceSet {
 	 * @param rs a MonetResultSet containing the XML data
 	 * @throws XMLDBException if a database error occurs
 	 */
-	public MonetDBResourceSet(MonetResultSet rs) throws XMLDBException {
+	public MonetDBResourceSet(MonetResultSet rs, MonetDBCollection parent)
+		throws XMLDBException
+	{
 		resources = new ArrayList();
+		collectionParent = parent;
 
 		// read out results and fill the resources list
 		try {
@@ -36,7 +44,7 @@ public class MonetDBResourceSet implements ResourceSet {
 				// we just *know* that there is just one column, and
 				// that it should be what we're looking for: the result
 				// of the query
-				resources.add(new MonetDBXMLResource(rs.getString(1), this));
+				resources.add(new MonetDBXMLResource(rs.getString(1), collectionParent));
 			}
 			// we won't need the ResultSet any more, since we got all
 			// its data
@@ -65,11 +73,11 @@ public class MonetDBResourceSet implements ResourceSet {
 	 *  ErrorCodes.NO_SUCH_RESOURCE if the index is out of range for the
 	 *  set.
 	 */
-	public Resource getResource(int index) throws XMLDBException {
+	public Resource getResource(long index) throws XMLDBException {
 		// walk through the list
 		if (index < 1 || index > resources.size()) throw
 			new XMLDBException(ErrorCodes.NO_SUCH_RESOURCE, "Resource index out of bounds: " + index);
-		return((Resource)(resources.get(index - 1)));
+		return((Resource)(resources.get((int)index - 1)));
 	}
 
 	/**
@@ -119,9 +127,11 @@ public class MonetDBResourceSet implements ResourceSet {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific erros that
 	 *  occur.
 	 */
-	public void removeResource(int index) throws XMLDBException {
+	public void removeResource(long index) throws XMLDBException {
+		// actually, we should trow an out of bounds if the long is
+		// bigger than an int can hold
 		synchronized(resources) {
-			resources.remove(index - 1);
+			resources.remove((int)index - 1);
 		}
 	}
 
@@ -169,7 +179,7 @@ public class MonetDBResourceSet implements ResourceSet {
 					if (index >= resources.size()) throw
 						new XMLDBException(ErrorCodes.NO_SUCH_RESOURCE, "no such resource with index: " + index);
 
-					return(resource.get(index - 1));
+					return((Resource)(resources.get(index - 1)));
 				}
 			}
 		});
@@ -194,7 +204,7 @@ public class MonetDBResourceSet implements ResourceSet {
 		while (it.hasMoreResources()) {
 			xml += "<resource>" + it.nextResource().getContent().toString() + "</resource>";
 		}
-		return(new MonetDBXMLResource(xml, this));
+		return(new MonetDBXMLResource(xml, collectionParent));
 	}
 
 	/**
@@ -213,8 +223,8 @@ public class MonetDBResourceSet implements ResourceSet {
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific erros that
 	 *  occur.
 	 */
-	public int getSize() throws XMLDBException {
-		return(resources.size());
+	public long getSize() throws XMLDBException {
+		return((long)(resources.size()));
 	}
 
 	/**

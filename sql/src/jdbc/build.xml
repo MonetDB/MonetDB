@@ -19,17 +19,19 @@
 
 
   Build file to allow ant (http://jakarta.apache.org/ant/) to be used
-  to build the MonetDB JDBC Driver.
+  to build the MonetDB JDBC and XML:DB Drivers.
 
 -->
 
-<project name="MonetDB_JDBC" default="all" basedir=".">
+<project name="MonetDB_Java_Drivers" default="all" basedir=".">
 
   <!-- set global properties for this build -->
   <property name="srcdir"   value="." />
+  <property name="libdir"   value="lib" />
   <property name="jardir"   value="jars" />
   <property name="builddir" value="build" />
-  <property name="package"  value="nl/cwi/monetdb/jdbc" />
+  <property name="jdbc-package"  value="nl/cwi/monetdb/jdbc" />
+  <property name="xmldb-package" value="nl/cwi/monetdb/xmldb" />
 
   <property file="build.local.properties"/>
   <property file="build.properties"/>
@@ -37,23 +39,28 @@
 
   <!-- default target -->
   <target name="all">
-    <antcall target="jar" />
+    <antcall target="jars" />
   </target>
 
 
-  <!-- create a jar file -->
-  <target name="jar" depends="compile">
-    <!-- the driver + JdbcClient -->
+  <!-- create a jar files -->
+  <target name="jars" depends="compile_jdbc,compile_xmldb">
+    <!-- the JDBC driver + JdbcClient -->
     <jar jarfile="${jardir}/MonetDB_JDBC.jar" manifest="${srcdir}/manifest">
       <fileset dir="${builddir}">
         <include name="*.class" />
-        <include name="${package}/**/*.class" />
+        <include name="${jdbc-package}/**/*.class" />
       </fileset>
 	</jar>
 	<!-- we do not jar the examples, for that's useless -->
+    <jar jarfile="${jardir}/MonetDB_XMLDB.jar">
+      <fileset dir="${builddir}">
+        <include name="${xmldb-package}/**/*.class" />
+      </fileset>
+	</jar>
   </target>
 
-  <target name="compile" depends="prepare,driver">
+  <target name="compile_jdbc" depends="prepare,driver">
     <echo message="Debug is ${debug}, optimize is ${optimize}" />
 	<echo message="Compiling JDBC driver" />
     <javac
@@ -63,7 +70,7 @@
 		debug="${debug}"
 		optimize="${optimize}"
 	>
-       <include name="${package}/**/*.java" />
+       <include name="${jdbc-package}/**/*.java" />
     </javac>
 	<echo message="Compiling JdbcClient" />
     <javac
@@ -88,10 +95,24 @@
     </javac>
   </target>
 
+  <target name="compile_xmldb" depends="prepare,driver">
+    <echo message="Debug is ${debug}, optimize is ${optimize}" />
+	<echo message="Compiling XML:DB driver" />
+    <javac
+		classpath="${srcdir}:${libdir}/xmldb.jar"
+		srcdir="${srcdir}"
+		destdir="${builddir}"
+		debug="${debug}"
+		optimize="${optimize}"
+	>
+       <include name="${xmldb-package}/**/*.java" />
+    </javac>
+  </target>
+
   <!-- create a distribution jar file -->
   <target name="dist" depends="clean,prepare,driver">
     <echo message="Building distribution jar (debug=off, optimize=on)" />
-	<echo message="Compiling JDBC driver" />
+	<echo message="Compiling JDBC and XML:DB drivers" />
     <javac
 		classpath="${srcdir}"
 		srcdir="${srcdir}"
@@ -99,7 +120,8 @@
 		debug="false"
 		optimize="true"
 	>
-       <include name="${package}/**/*.java" />
+       <include name="${jdbc-package}/**/*.java" />
+       <include name="${xmldb-package}/**/*.java" />
     </javac>
 	<echo message="Compiling JdbcClient" />
     <javac
@@ -126,15 +148,22 @@
     <jar jarfile="${jardir}/MonetDB_JDBC.jar" manifest="${srcdir}/manifest">
       <fileset dir="${builddir}">
         <include name="*.class" />
-        <include name="${package}/**/*.class" />
+        <include name="${jdbc-package}/**/*.class" />
+      </fileset>
+	</jar>
+	<!-- we do not jar the examples, for that's useless -->
+    <jar jarfile="${jardir}/MonetDB_XMLDB.jar">
+      <fileset dir="${builddir}">
+        <include name="${xmldb-package}/**/*.class" />
       </fileset>
 	</jar>
   </target>
 
   <target name="check_driver">
-    <uptodate targetfile="${package}/MonetDriver.java" property="driver.uptodate">
+    <uptodate targetfile="${jdbc-package}/MonetDriver.java" property="driver.uptodate">
       <srcfiles dir=".">
-      <include name="${package}/MonetDriver.java.in"/>
+      <include name="${jdbc-package}/MonetDriver.java.in"/>
+	  <include name="${xmldb-package}/base/MonetDBDatabase.java.in"/>
       <include name="build.properties"/>
       <include name="build.local.properties" />
       </srcfiles>
@@ -142,29 +171,37 @@
   </target>
 
   <!--
-    This generates MonetDriver.java from MonetDriver.java.in
-    It's required for importing the driver version properties
+	This generates MonetDriver.java and MonetDBDatabase.java from their
+	".java.in" equivalents.  It's required for importing the driver
+	version properties.
   -->
   <target name="driver" depends="prepare,check_driver" unless="driver.uptodate">
     <!-- Some defaults -->
     <filter token="JDBC_MAJOR" value="${JDBC_MAJOR}" />
     <filter token="JDBC_MINOR" value="${JDBC_MINOR}" />
     <filter token="JDBC_DEF_PORT" value="${JDBC_DEF_PORT}" />
+    <filter token="JDBC_DEF_PORT_XQUERY" value="${JDBC_DEF_PORT_XQUERY}" />
     <filter token="JDBC_VER_SUFFIX" value="${JDBC_VER_SUFFIX}" />
     <filter token="JDBC_DEF_BLOCKMODE" value="${JDBC_DEF_BLOCKMODE}" />
 
      <fail unless="JDBC_MAJOR" message="'JDBC_MAJOR' undefined. Please follow the directions in build.properties."/>
      <fail unless="JDBC_MINOR" message="'JDBC_MINOR' undefined. Please follow the directions in build.properties."/>
      <fail unless="JDBC_DEF_PORT" message="'JDBC_DEF_PORT' undefined. Please follow the directions in build.properties."/>
+     <fail unless="JDBC_DEF_PORT_XQUERY" message="'JDBC_DEF_PORT_XQUERY' undefined. Please follow the directions in build.properties."/>
      <fail unless="JDBC_VER_SUFFIX" message="'JDBC_VER_SUFFIX' undefined. Please follow the directions in build.properties."/>
      <fail unless="JDBC_DEF_BLOCKMODE" message="'JDBC_DEF_BLOCKMODE' undefined. Please follow the directions in build.properties."/>
 
     <!-- Put a check for the current version here -->
 
     <!-- now copy and filter the file -->
-    <copy file="${package}/MonetDriver.java.in"
+    <copy file="${jdbc-package}/MonetDriver.java.in"
           overwrite="true"
-          tofile="${package}/MonetDriver.java"
+          tofile="${jdbc-package}/MonetDriver.java"
+          filtering="yes" />
+
+	<copy file="${xmldb-package}/base/MonetDBDatabase.java.in"
+          overwrite="true"
+		  tofile="${xmldb-package}/base/MonetDBDatabase.java"
           filtering="yes" />
 
     <echo message="Configured build for the ${JDBC_MAJOR}.${JDBC_MINOR} (${JDBC_VER_SUFFIX}) edition driver" />
@@ -204,7 +241,8 @@
   <target name="clean">
     <delete quiet="true" dir="${builddir}" />
     <delete quiet="true" dir="${jardir}" />
-    <delete quiet="true" file="${package}/MonetDriver.java" />
+    <delete quiet="true" file="${jdbc-package}/MonetDriver.java" />
+	<delete quiet="true" file="${xmldb-package}/base/MonetDBDatabase.java" />
   </target>
 
 
@@ -213,7 +251,7 @@
     <mkdir dir="${builddir}/doc"/>
 	<!-- Ant 1.6 supports breakiterator="yes", 1.5 not, so do it with additionalparam -->
     <javadoc
-   		packagenames="nl.cwi.monetdb.jdbc"
+   		packagenames="nl.cwi.monetdb.jdbc,nl.cwi.monetdb.xmldb"
 		sourcepath="${srcdir}"
 		destdir="${builddir}/doc"
 		access="private"
