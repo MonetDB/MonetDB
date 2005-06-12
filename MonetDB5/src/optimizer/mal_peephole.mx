@@ -84,9 +84,11 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 					    (functionId(q) && strcmp(functionName(q),"markH")==0)) &&
 						moduleId(q) && strcmp(moduleName(q),"algebra")==0)
 					{
-printf("PEEPHOLE 0\n");
-printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+#ifdef DEBUG_MAL_PEEPHOLE
+				printf("PEEPHOLE 0\n");
+				printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+				printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+#endif
 						freeInstruction(p);
 						q->argc--;
 						typeChecker(scope,mb,q,TRUE);
@@ -103,16 +105,16 @@ printInstruction(GDKout,mb,q,LIST_MAL_ALL);
 				functionId(q) && strcmp(functionName(q),"reverse")== 0 &&
 				moduleId(q) && strcmp(moduleName(q),"bat")== 0  
 			){ 
-printf("PEEPHOLE 1\n");
-printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+#ifdef DEBUG_MAL_PEEPHOLE
+				printf("PEEPHOLE 1\n");
+				printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+				printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+#endif
 
 				getArg(q,1)= getArg(p,1);
 				setModuleId(q,putName("algebra",7));
 				setFunctionId(q,putName("markH",5));
 				pushInstruction(mb,q);
-				typeChecker(scope,mb,q,TRUE);
-printInstruction(GDKout,mb,q,LIST_MAL_ALL);
 				freeInstruction(p);
 				i++;
 			} else

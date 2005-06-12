@@ -1,0 +1,255 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+@' 
+
+@f mal_multiplex
+@a M. Kersten
+@* Multiplex compilation
+This module contains the implementation of the 
+MonetDB version 4 multiplex operators scheme.
+Multiplex operators provide the possibility to execute any
+command "CMD" (or operators or FUNCTIONs) with signature:
+@verbatim
+CMD(T1,..,Tn) : Tr
+@end verbatim
+on a series of BATs with corresponding head values 
+by putting the command between square brackets, giving the
+following corresponding signature:.
+@verbatim
+[CMD](bat[:any$1,:T1],...,bat[any$1,Tn]) :bat[any$1,Tr]
+@end verbatim
+and
+@verbatim
+CMD(T1,...,Tn) : Tr
+@end verbatim
+The semantics of the multiplex is to perform the
+natural join on all bat-valued parameters, and to execute the 
+CMD for each combination of matching tuples. All results are 
+collected in a result BAT. 
+All but one argument may be replaced by a scalar value.
+
+In Monet version 4, most multiplex operators encountered in 
+practice dealt with arithmetic and coercions on BAT tails.
+This common case has factored out in MonetDB 5
+in the implementation of the batcalc module.
+The implementation provided here is meant to retain much of
+the multiplex functionality in Version 4.
+
+@-
+[WARNING] the semantics does not align precisely with M4.
+For, in search for efficient
+operators we assume aligned BATs and the script version does
+not respect duplicates in the head of the bats.
+[/WARNING]
+@{
+@h
+#ifndef _OPT_MULTIPLEX_H_
+#define _OPT_MULTIPLEX_H_
+#include "mal.h"
+#include "mal_builder.h"
+
+#endif /* _OPT_MULTIPLEX_H_ */
+
+@+ Code generation
+The MAL block is replaced by a new one, with the multiplex
+code in place.
+The subsequent call to the typechecker ensures we end up with
+a valid program.
+@c
+#include "mal_multiplex.h"
+#include "mal_interpreter.h"
+#include "mal_optimizer.h"
+
+extern str OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+str
+OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	InstrPtr *old,p;
+	int i,limit;
+	long clk= GDKusec();
+
+	(void) stk; (void) pci;
+	old= mb->stmt;
+	limit= mb->stop;
+	newMalBlkStmt(mb,mb->stop);
+	for(i=0;i<limit; i++){
+		p= old[i];
+		if( moduleId(p)== putName("optimizer",9) &&
+		 	functionId(p)== putName("multiplex",9)){
+			OPTexpandMultiplex(mb,stk,p);
+			freeInstruction (p);
+		} else 
+			pushInstruction(mb,p);
+	}
+	GDKfree(old);
+    optimizerCheck(mb,"optimizer.multiplex",1,GDKusec()-clk);
+	return MAL_SUCCEED;
+}
+@}
+@+ Code generation
+The multiplex calls are translated into a batloop variant.
+This is considered the generic solution, to be used when the modules
+do not provide a fast implementation of the multiplex equivalent.
+The call optimizer.multiplex(CMD,A1,...An) introduces the following code:
+
+@verbatim
+	resB:= new(A1);
+barrier (mloop,h,t):= newIterator(Ai);
+	$1:= bat.find(A1,h);
+	$2:= A2;	# in case of constant?
+	...
+	cr:= mod.CMD($1,...,$n);
+	insert(resB,h,cr);
+	redo (mloop,h,t):= hasMoreElements(Ai);
+end mloop;
+@end verbatim
+
+
+@{
+The algorithm consists of two phases: phase one deals with
+collecting the relevant information, phase two is the actual
+code construction.
+@= malInstr
+	q= newInstruction(EXITsymbol);
+	pushReturn(mb,q,@2);
+	pushInstruction(mb,q);
+@c
+str 
+OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	int i,k,mloop,resB,iter,cr;
+	int hvar,tvar;
+	str newFcn= (str) getVarLiteral(mb,getArg(pci,1));
+	str mod= newFcn,fcn;
+	int alias[MAXARG];
+	InstrPtr q;
+
+	(void) stk;
+	if( (fcn= strchr(newFcn,'.')) ){
+		mod= newFcn;
+		*fcn = 0;
+		fcn++;
+	} else {
+		mod="unknownModule";
+		fcn= newFcn;
+	}
+	/* search the iterator bat */
+	iter=getArg(pci,2);
+	for(i=2;i<pci->argc;i++) 
+	if( isaBatType(getArgType(mb,pci,i))){
+		iter= getArg(pci,i);
+		break;
+	}
+
+#ifdef DEBUG_OPT_MULTIPLEX
+	printf("calling the optimize multiplex script routine\n");
+	printf("multiplex against operator %s \n", s);
+#endif
+@-
+Beware, the operator constant (arg=1) is passed along as well,
+because in the end we issue a recursive function call that should
+find the actual arguments at the proper place of the callee.
+@c
+	/* resB := new(refBat) */
+	q= newFcnCall(mb,"bbp","new");
+	resB = getArg(q,0);
+	pushArgument(mb,q, newTypeVariable(mb,getHeadType(getArgType(mb,pci,0))));
+	pushArgument(mb,q, newTypeVariable(mb,getTailType(getArgType(mb,pci,0))));
+	setVarUsed(mb,resB,TRUE);
+	setVarInitialized(mb,resB);
+	
+	/* barrier (mloop,h,r):= newIterator(refBat); */
+	q= newFcnCall(mb,"chopper","newIterator");
+	q->barrier= BARRIERsymbol;
+	getArg(q,0)= mloop= newTmpVariable(mb,TYPE_lng);
+	setVarUsed(mb,mloop,TRUE);
+	setVarInitialized(mb,mloop);
+	hvar= newTmpVariable(mb,TYPE_any);
+	setVarUsed(mb,hvar,TRUE);
+	setVarInitialized(mb,hvar);
+	pushReturn(mb,q,hvar);
+	tvar= newTmpVariable(mb,TYPE_any);
+	pushReturn(mb,q,tvar);
+	setVarUsed(mb,tvar,TRUE);
+	setVarInitialized(mb,tvar);
+	pushArgument(mb,q,iter);
+
+	/* $1:= bat.find(Ai,h) or constant */
+	alias[2]= tvar;
+	for(i=3;i<pci->argc;i++)
+	if( isaBatType(getArgType(mb,pci,i))){
+		q= newFcnCall(mb,"algebra","find");
+		alias[i]= newTmpVariable(mb, getTailType(getArgType(mb,pci,i)));
+		setVarUsed(mb,alias[i],TRUE);
+		setVarInitialized(mb,alias[i]);
+		getArg(q,0)= alias[i];
+		pushArgument(mb,q,iter);
+		pushArgument(mb,q,hvar);
+	} 
+
+	/* cr:= mod.CMD($1,...,$n); */
+	q= newFcnCall(mb,mod,fcn);
+	cr= getArg(q,0)= newTmpVariable(mb, getTailType(getArgType(mb,pci,0)) );
+	setVarUsed(mb,cr,TRUE);
+	setVarInitialized(mb,cr);
+
+	for(i=2;i<pci->argc;i++) 
+	if( isaBatType(getArgType(mb,pci,i))){
+		pushArgument(mb,q,alias[i]);
+	} else {
+		q= pushArgument(mb,q,getArg(pci,i));
+	}
+
+	/* insert(resB,h,cr); */
+	q= newFcnCall(mb,"bat","insert");
+	setVarUsed(mb,resB,TRUE);
+	setVarInitialized(mb,resB);
+	pushArgument(mb,q,resB);
+	pushArgument(mb,q,hvar);
+	pushArgument(mb,q,cr);
+
+
+/* catch   MALexception and ignore them */
+	q= newInstruction(CATCHsymbol);
+	k= newVariable(mb, GDKstrdup("MALexception"),TYPE_str);
+	pushReturn(mb,q,k);
+	setVarUsed(mb,k,TRUE);
+	setVarInitialized(mb,k);
+	pushInstruction(mb,q);
+	@:malInstr(EXIT,k)@	
+
+/* redo (mloop,h,r):= hasMoreElements(refBat); */
+	q= newFcnCall(mb,"chopper","hasMoreElements");
+	q->barrier= REDOsymbol;
+	getArg(q,0)= mloop;
+	pushReturn(mb,q,hvar); 
+	pushReturn(mb,q,tvar);
+	pushArgument(mb,q,iter);
+
+	q= newAssignment(mb);
+	q->barrier= EXITsymbol;
+	getArg(q,0)= mloop;
+	pushReturn(mb,q,hvar);
+	pushReturn(mb,q,tvar);
+
+	q= newAssignment(mb);
+	getArg(q,0)= getArg(pci,0);
+	setVarUsed(mb,getArg(q,0),TRUE);
+	setVarInitialized(mb,getArg(q,0));
+	pushArgument(mb,q,resB);
+	return MAL_SUCCEED;
+}
+@}

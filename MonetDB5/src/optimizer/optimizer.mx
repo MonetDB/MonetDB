@@ -145,6 +145,10 @@ pattern RXalignedBATs(:bat[:any,:any]...)
 address RXalignedBATs
 comment "Consider the BATs aligned";
 
+
+pattern multiplex(CMD:str, a:any...):any 
+address OPTmultiplex
+comment "Compiler for multiplexed instructions.";
 @-
 The remainder of this file contains dynamic optimization
 routines, i.e. those not covered by the current backend.
@@ -173,11 +177,13 @@ optimizer.prelude();
 #include "mal_commonExpressions.h"
 #include "mal_garbageCollector.h"
 #include "mal_factorize.h"
+#include "mal_multiplex.h"
 #include "mal_partitionedQuery.h"
 #include "mal_strengthReduction.h"
 #include "mal_scenario.h"
 #include "mal_namespace.h"
 
+extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @
 Upon loading the module it should inspect the scenario table
 for any unresolved references to the MALoptimizer and set the 
@@ -368,5 +374,4 @@ str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		BBPunfix(joins[i]->batCacheid);
     return NULL;
 }
-
 @}
