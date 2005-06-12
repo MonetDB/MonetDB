@@ -60,8 +60,8 @@ stdout of test 'part02` in directory 'src/optimizer` itself:
 #end qry;
 function user.qry(a:bat[:void,:any],b:bat[:void,:any]):void;	# 0  (qry:void)<-(a:bat[:void,:any])(b:bat[:void,:any])
     io.print("experiment 3");	# 1 IOprint_val ($3:int)<-($4:str)
-    j := algebra.join(a,b);	# 2 ALGjoin (j:bat[:void,:any])<-(a:bat[:void,:any])(b:bat[:void,:any])
-    io.print(j);	# 3 IOprint_val ($6:int)<-(j:bat[:void,:any])
+    j := algebra.join(a,b);	# 2 ALGjoin (j:bat[:oid,:oid])<-(a:bat[:void,:any])(b:bat[:void,:any])
+    io.print(j);	# 3 IOprint_val ($6:int)<-(j:bat[:oid,:oid])
 end qry;	# 4  
 #
 #optimizer.partitionedQuery("Admin","qry");
