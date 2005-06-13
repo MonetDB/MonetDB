@@ -441,6 +441,7 @@ init (opt_t *f)
             "var vu_vid;\n"
             "var inner000 := loop000;\n"
             "var outer000 := loop000;\n"
+            "var order_000 := loop000;\n"
             "var v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
             "var v_iter000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
             "var v_pos000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
@@ -1381,6 +1382,7 @@ project (opt_t *f, int cur_level)
        and adjust iter, pos from for loop binding */
     milprintf(f, "# project ()\n");
     milprintf(f, "var outer%03u := iter;\n", cur_level);
+    milprintf(f, "var order_%03u := iter;\n", cur_level);
     milprintf(f, "iter := iter.mark(1@0);\n");
     milprintf(f, "var inner%03u := iter;\n", cur_level);
     milprintf(f, "pos := iter.project(1@0);\n");
@@ -1573,6 +1575,7 @@ cleanUpLevel (opt_t *f, int cur_level)
     milprintf(f, "# cleanUpLevel ()\n");
     milprintf(f, "inner%03u := nil_oid_oid;\n", cur_level);
     milprintf(f, "outer%03u := nil_oid_oid;\n", cur_level);
+    milprintf(f, "order_%03u := nil_oid_oid;\n", cur_level);
     milprintf(f, "loop%03u := nil_oid_oid;\n", cur_level);
 
     milprintf(f, "v_vid%03u := nil_oid_oid;\n", cur_level);
@@ -1652,6 +1655,7 @@ translateIfThen (opt_t *f, int code, int cur_level, int counter,
     milprintf(f, "var loop%03u := loop%03u;\n", cur_level, cur_level-1);
     milprintf(f, "var inner%03u := inner%03u;\n", cur_level, cur_level-1);
     milprintf(f, "var outer%03u := outer%03u;\n", cur_level, cur_level-1);
+    milprintf(f, "var order_%03u := order_%03u;\n", cur_level, cur_level-1);
     milprintf(f, "var v_vid%03u := v_vid%03u;\n", cur_level, cur_level-1);
     milprintf(f, "var v_iter%03u := v_iter%03u;\n", cur_level, cur_level-1);
     milprintf(f, "var v_pos%03u := v_pos%03u;\n", cur_level, cur_level-1);
@@ -1671,6 +1675,9 @@ translateIfThen (opt_t *f, int code, int cur_level, int counter,
     milprintf(f, "iter := selected.mirror().join(iter%03u);\n", bool_res);
     milprintf(f, "iter := iter.reverse().mark(0@0).reverse();\n");
     milprintf(f, "outer%03u := iter;\n", cur_level);
+    milprintf(f, "order_%03u := outer%03u.leftfetchjoin(inner%03u.reverse())"
+                                        ".leftfetchjoin(order_%03u);\n",
+              cur_level, cur_level, cur_level-1,cur_level-1);
     milprintf(f, "iter := iter.mark(1@0);\n");
     milprintf(f, "inner%03u := iter;\n", cur_level);
     milprintf(f, "loop%03u := inner%03u;\n", cur_level, cur_level);
@@ -5964,6 +5971,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     /* create new backup scope */
     milprintf(f,
             "var jouter%03u ;\n"
+            "var jorder_%03u ;\n"
             "var jinner%03u ;\n"
             "var jloop%03u  ;\n"
             "var jv_vid%03u ;\n"
@@ -5971,7 +5979,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
             "var jv_pos%03u ;\n"
             "var jv_item%03u;\n"
             "var jv_kind%03u;\n",
-            fst_res, fst_res, fst_res, fst_res,
+            fst_res, fst_res, fst_res, fst_res, fst_res,
             fst_res, fst_res, fst_res, fst_res);
 
 
@@ -5990,6 +5998,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 fst_res);
         milprintf(f,
                 "jouter%03u  := outer%03u ;\n"
+                "jorder_%03u  := order_%03u ;\n"
                 "jinner%03u  := inner%03u ;\n"
                 "jloop%03u   := loop%03u  ;\n"
                 "jv_vid%03u  := v_vid%03u ;\n"
@@ -5997,6 +6006,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 "jv_pos%03u  := v_pos%03u ;\n"
                 "jv_item%03u := v_item%03u;\n"
                 "jv_kind%03u := v_kind%03u;\n",
+                fst_res, cur_level,
                 fst_res, cur_level, fst_res, cur_level,
                 fst_res, cur_level, fst_res, cur_level,
                 fst_res, cur_level, fst_res, cur_level,
@@ -6007,6 +6017,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     {
         milprintf(f,
                 "jouter%03u  := outer%03u ;\n"
+                "jorder_%03u  := order_%03u ;\n"
                 "jinner%03u  := inner%03u ;\n"
                 "jloop%03u   := loop%03u  ;\n"
                 "jv_vid%03u  := v_vid%03u ;\n"
@@ -6014,12 +6025,14 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 "jv_pos%03u  := v_pos%03u ;\n"
                 "jv_item%03u := v_item%03u;\n"
                 "jv_kind%03u := v_kind%03u;\n",
+                fst_res, cur_level,
                 fst_res, cur_level, fst_res, cur_level,
                 fst_res, cur_level, fst_res, cur_level,
                 fst_res, cur_level, fst_res, cur_level,
                 fst_res, cur_level, fst_res, cur_level);
         milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
+                "order_%03u  := order_%03u .copy().access(BAT_WRITE);\n"
                 "inner%03u  := inner%03u .copy().access(BAT_WRITE);\n"
                 "loop%03u   := loop%03u  .copy().access(BAT_WRITE);\n"
                 "v_vid%03u  := v_vid%03u .copy().access(BAT_WRITE);\n"
@@ -6027,6 +6040,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 "v_pos%03u  := v_pos%03u .copy().access(BAT_WRITE);\n"
                 "v_item%03u := v_item%03u.copy().access(BAT_WRITE);\n"
                 "v_kind%03u := v_kind%03u.copy().access(BAT_WRITE);\n",
+                cur_level, 0,
                 cur_level, 0, cur_level, 0,
                 cur_level, 0, cur_level, 0,
                 cur_level, 0, cur_level, 0,
@@ -6048,6 +6062,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     {
         milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
+                "order_%03u  := order_%03u .copy().access(BAT_WRITE);\n"
                 "inner%03u  := inner%03u .copy().access(BAT_WRITE);\n"
                 "loop%03u   := loop%03u  .copy().access(BAT_WRITE);\n"
                 "v_vid%03u  := v_vid%03u .copy().access(BAT_WRITE);\n"
@@ -6055,6 +6070,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 "v_pos%03u  := v_pos%03u .copy().access(BAT_WRITE);\n"
                 "v_item%03u := v_item%03u.copy().access(BAT_WRITE);\n"
                 "v_kind%03u := v_kind%03u.copy().access(BAT_WRITE);\n",
+                cur_level, 0,
                 cur_level, 0, cur_level, 0,
                 cur_level, 0, cur_level, 0,
                 cur_level, 0, cur_level, 0,
@@ -6065,6 +6081,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         /* this part of the code never occurs (at least until now) */
         milprintf(f,
                 "outer%03u  := outer%03u .copy().access(BAT_WRITE);\n"
+                "order_%03u  := order_%03u .copy().access(BAT_WRITE);\n"
                 "inner%03u  := inner%03u .copy().access(BAT_WRITE);\n"
                 "loop%03u   := loop%03u  .copy().access(BAT_WRITE);\n"
                 "v_vid%03u  := v_vid%03u .copy().access(BAT_WRITE);\n"
@@ -6072,6 +6089,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 "v_pos%03u  := v_pos%03u .copy().access(BAT_WRITE);\n"
                 "v_item%03u := v_item%03u.copy().access(BAT_WRITE);\n"
                 "v_kind%03u := v_kind%03u.copy().access(BAT_WRITE);\n",
+                cur_level, cur_level-1,
                 cur_level, cur_level-1, cur_level, cur_level-1,
                 cur_level, cur_level-1, cur_level, cur_level-1,
                 cur_level, cur_level-1, cur_level, cur_level-1,
@@ -6131,6 +6149,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     /* overwrites values from second join parameter (not needed anymore) */
     milprintf(f,
             "outer%03u  := jouter%03u ;\n"
+            "order_%03u  := jorder_%03u ;\n"
             "inner%03u  := jinner%03u ;\n"
             "loop%03u   := jloop%03u  ;\n"
             "v_vid%03u  := jv_vid%03u ;\n"
@@ -6138,6 +6157,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
             "v_pos%03u  := jv_pos%03u ;\n"
             "v_item%03u := jv_item%03u;\n"
             "v_kind%03u := jv_kind%03u;\n",
+            cur_level, fst_res,
             cur_level, fst_res, cur_level, fst_res, 
             cur_level, fst_res, cur_level, fst_res, 
             cur_level, fst_res, cur_level, fst_res, 
@@ -6430,10 +6450,10 @@ translateUDF (opt_t *f, int cur_level, int counter,
             counter, counter, counter, counter, counter);
     /* call the proc */
     milprintf(f,
-            "var proc_res := fn_%x_%i (loop%03u, outer%03u, inner%03u, "
+            "var proc_res := fn_%x_%i (loop%03u, outer%03u, order_%03u, inner%03u, "
             "fun_vid%03u, fun_iter%03u, fun_pos%03u, fun_item%03u, fun_kind%03u); # fn:%s\n",
             fun, fun->arity,
-            cur_level, cur_level, cur_level,
+            cur_level, cur_level, cur_level, cur_level,
             counter, counter, counter, counter, counter, fun->qname.loc);
     milprintf(f,
             "iter := proc_res.fetch(0);\n"
@@ -8043,7 +8063,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             counter++;
             milprintf(f,
                     "{ # order_by\n"
-                    "var refined%03u := inner%03u.reverse().leftfetchjoin(outer%03u);\n",
+                    "var refined%03u := inner%03u.reverse().leftfetchjoin(order_%03u);\n",
                     counter, cur_level, cur_level);
             /* evaluate orderspecs */
             translate2MIL (f, code, cur_level, counter, L(c));
@@ -8132,6 +8152,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             milprintf(f,
                     "PROC fn_%x_%i (bat[void,oid] loop000, "
                                "bat[void,oid] outer000, "
+                               "bat[void,oid] order_000, "
                                "bat[void,oid] inner000, "
                                "bat[void,oid] v_vid000, "
                                "bat[void,oid] v_iter000, "
