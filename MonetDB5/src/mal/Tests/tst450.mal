@@ -6,5 +6,5 @@ m1:= algebra.kunique(mr);   m1r:= bat.reverse(m1); io.print(m1r);
 stmt:= inspect.getDefinition("algebra","select");
 sig:= inspect.getSignature("algebra","select");
 
-n:= inspect.help("algebra","insert"); io.print(n);
+n:= manual.help("algebra","insert"); io.print(n);
 d:= inspect.getDefinition("inspect","dir"); io.print(d);

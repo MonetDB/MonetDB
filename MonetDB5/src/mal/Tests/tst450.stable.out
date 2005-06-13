@@ -32,7 +32,7 @@ function user.main():int;	# 0  (main:int)
     io.print(m1r);	# 7 IOprint_val ($7:int)<-(m1r:bat[:void,:str])
     stmt := inspect.getDefinition("algebra","select");	# 8 INSPECTgetDefinition (stmt:bat[:int,:str])<-($9:str)($10:str)
     sig := inspect.getSignature("algebra","select");	# 9 INSPECTgetSignature (sig:bat[:str,:str])<-($9:str)($10:str)
-    n := inspect.help("algebra","insert");	# 10 INSPECThelp2 (n:bat[:int,:str])<-($9:str)($13:str)
+    n := manual.help("algebra","insert");	# 10 MANUALhelp2 (n:bat[:int,:str])<-($9:str)($13:str)
     io.print(n);	# 11 IOprint_val ($14:int)<-(n:bat[:int,:str])
     d := inspect.getDefinition("inspect","dir");	# 12 INSPECTgetDefinition (d:bat[:int,:str])<-($16:str)($17:str)
     io.print(d);	# 13 IOprint_val ($18:int)<-(d:bat[:int,:str])
@@ -69,38 +69,39 @@ end main;	# 14
 [ 25,	  "mapentry"	  ]
 [ 26,	  "idxentry"	  ]
 #-------------------------#
-# t	tmp_6			  # name
-# oid	str			  # type
+# t	h		  # name
+# oid	str		  # type
 #-------------------------#
 [ 0@0,	  "user"	  ]
 [ 2@0,	  "partitions"	  ]
 [ 30@0,	  "transaction"	  ]
 [ 38@0,	  "chopper"	  ]
 [ 44@0,	  "optimizer"	  ]
-[ 77@0,	  "costmodel"	  ]
-[ 78@0,	  "statistics"	  ]
-[ 104@0,  "profiler"	  ]
-[ 125@0,  "mal"		  ]
-[ 141@0,  "inspect"	  ]
-[ 158@0,  "box"		  ]
-[ 169@0,  "bbp"		  ]
-[ 214@0,  "const"	  ]
-[ 227@0,  "multiplex"	  ]
-[ 228@0,  "factory"	  ]
-[ 236@0,  "io"		  ]
-[ 260@0,  "tablet"	  ]
-[ 290@0,  "clients"	  ]
-[ 300@0,  "mapi"	  ]
-[ 313@0,  "array"	  ]
-[ 320@0,  "aggrX3"	  ]
-[ 408@0,  "group"	  ]
-[ 439@0,  "status"	  ]
-[ 452@0,  "batstr"	  ]
-[ 481@0,  "batcalc"	  ]
-[ 873@0,  "calc"	  ]
-[ 1373@0, "algebra"	  ]
-[ 1483@0, "pcre"	  ]
-[ 1497@0, "bat"		  ]
+[ 78@0,	  "costmodel"	  ]
+[ 79@0,	  "statistics"	  ]
+[ 105@0,  "profiler"	  ]
+[ 126@0,  "mal"		  ]
+[ 142@0,  "inspect"	  ]
+[ 153@0,  "manual"	  ]
+[ 159@0,  "box"		  ]
+[ 170@0,  "bbp"		  ]
+[ 215@0,  "const"	  ]
+[ 228@0,  "multiplex"	  ]
+[ 229@0,  "factory"	  ]
+[ 237@0,  "io"		  ]
+[ 261@0,  "tablet"	  ]
+[ 291@0,  "clients"	  ]
+[ 301@0,  "mapi"	  ]
+[ 314@0,  "array"	  ]
+[ 321@0,  "aggrX3"	  ]
+[ 409@0,  "group"	  ]
+[ 440@0,  "status"	  ]
+[ 453@0,  "batstr"	  ]
+[ 482@0,  "batcalc"	  ]
+[ 874@0,  "calc"	  ]
+[ 1374@0, "algebra"	  ]
+[ 1484@0, "pcre"	  ]
+[ 1498@0, "bat"		  ]
 [ 1584@0, "date"	  ]
 [ 1593@0, "daytime"	  ]
 [ 1602@0, "timestamp"	  ]
@@ -129,7 +130,6 @@ end main;	# 14
 # view	fcn	  # name
 # int	str	  # type
 #-----------------#
-#
 
 # 11:28:54 >  
 # 11:28:54 >  Done.

@@ -6,5 +6,6 @@
 	bat.insert(t,nil,"sleep well");
 	io.print(t);
 
-	b:= multiplex.script("str.startsWith",t,"");
+	b:bat[:void,:bit]:= optimizer.multiplex("str.startsWith",t,"");
+	bat.setSequenceBase(b,0@0);
 	io.print(b);
