@@ -801,7 +801,7 @@ unless auto_commit has been set.
 		qs = sql_escape(be->qry);
 		snprintf(buf, BUFSIZ, "set explain = 'none';"
 			 "insert into sys.history "
-			 "values(now,'%s',%lld,0,%lld,%lld,USER);\n"
+			 "values(now,'%s'," LLFMT ",0," LLFMT "," LLFMT" ,USER);\n"
 			 "set explain = 'performance';",
 			 qs, be->Tparse, be->Texec, tot);
 		_DELETE(qs);
