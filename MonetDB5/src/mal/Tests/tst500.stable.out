@@ -40,8 +40,9 @@ end simple;	# 10
 #r:= simple(0,2,"hello");
 #
 function user.main():int;	# 0  (main:int)
-    r := user.simple(0,2,"hello");	# 1  (r:flt)<-($2:int)($3:int)($4:str)
-end main;	# 2  
+# recursive MAL calls  	# 1  ($2:str)
+    r := user.simple(0,2,"hello");	# 2  (r:flt)<-($4:int)($5:int)($6:str)
+end main;	# 3  
 i=0 lim=2 str=hello
 i=1 lim=2 str=hello
 

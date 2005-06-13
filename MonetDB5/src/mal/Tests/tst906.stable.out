@@ -40,28 +40,30 @@ stdout of test 'tst906` in directory 'src/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
-barrier (v,i):= mal.newRange(0:lng);	# 2 RNGnewRange_lng (v:bit)(i:lng)<-($6:lng) jump 5
-    bat.insert(b,i,i);	# 3 BKCinsert_bun ($7:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 4 RNGnextElement_lng (v:bit)(i:lng)<-($8:lng)($9:lng) jump 3
-exit (v,i);	# 5  (v:bit)(i:lng)
-    c := algebra.copy(b);	# 6 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
-    io.print(c);	# 7 IOprint_val ($11:int)<-(c:bat[:lng,:lng])
-    x := batcalc.+(b,c);	# 8 CMDbatADD (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])
-    io.print(x);	# 9 IOprint_val ($13:int)<-(x:bat[:lng,:lng])
-    x := batcalc.+(b,1:lng);	# 10 CMDbatADDcst (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])($8:lng)
-    io.print(x);	# 11 IOprint_val ($14:int)<-(x:bat[:lng,:lng])
-    x := batcalc./(b,1:lng);	# 12 CMDbatDIVcst (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])($8:lng)
-    io.print(x);	# 13 IOprint_val ($15:int)<-(x:bat[:lng,:lng])
-    x := batcalc.*(b,c);	# 14 CMDbatMUL (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])
-    io.print(x);	# 15 IOprint_val ($16:int)<-(x:bat[:lng,:lng])
-    y := batcalc.==(b,b);	# 16 CMDcmpEQ (y:bat[:lng,:bit])<-(b:bat[:lng,:lng])(b:bat[:lng,:lng])
-    io.print(y);	# 17 IOprint_val ($18:int)<-(y:bat[:lng,:bit])
-    y := batcalc.==(b,x);	# 18 CMDcmpEQ (y:bat[:lng,:bit])<-(b:bat[:lng,:lng])(x:bat[:lng,:lng])
-    io.print(y);	# 19 IOprint_val ($19:int)<-(y:bat[:lng,:bit])
-    z := batcalc.not(y);	# 20 CMDbitbatNOT (z:bat[:lng,:bit])<-(y:bat[:lng,:bit])
-    io.print(z);	# 21 IOprint_val ($21:int)<-(z:bat[:lng,:bit])
-end main;	# 22  
+# the multiplex code blocks. 	# 1  ($2:str)
+# check detection of the underlying fast implementations 	# 2  ($4:str)
+    b := bbp.new(:lng,:lng);	# 3 CMDBATnew (b:bat[:lng,:lng])<-($6:lng)($7:lng)
+barrier (v,i):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (v:bit)(i:lng)<-($10:lng) jump 7
+    bat.insert(b,i,i);	# 5 BKCinsert_bun ($11:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
+    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 6 RNGnextElement_lng (v:bit)(i:lng)<-($12:lng)($13:lng) jump 5
+exit (v,i);	# 7  (v:bit)(i:lng)
+    c := algebra.copy(b);	# 8 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
+    io.print(c);	# 9 IOprint_val ($15:int)<-(c:bat[:lng,:lng])
+    x := batcalc.+(b,c);	# 10 CMDbatADD (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])
+    io.print(x);	# 11 IOprint_val ($17:int)<-(x:bat[:lng,:lng])
+    x := batcalc.+(b,1:lng);	# 12 CMDbatADDcst (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])($12:lng)
+    io.print(x);	# 13 IOprint_val ($18:int)<-(x:bat[:lng,:lng])
+    x := batcalc./(b,1:lng);	# 14 CMDbatDIVcst (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])($12:lng)
+    io.print(x);	# 15 IOprint_val ($19:int)<-(x:bat[:lng,:lng])
+    x := batcalc.*(b,c);	# 16 CMDbatMUL (x:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])
+    io.print(x);	# 17 IOprint_val ($20:int)<-(x:bat[:lng,:lng])
+    y := batcalc.==(b,b);	# 18 CMDcmpEQ (y:bat[:lng,:bit])<-(b:bat[:lng,:lng])(b:bat[:lng,:lng])
+    io.print(y);	# 19 IOprint_val ($22:int)<-(y:bat[:lng,:bit])
+    y := batcalc.==(b,x);	# 20 CMDcmpEQ (y:bat[:lng,:bit])<-(b:bat[:lng,:lng])(x:bat[:lng,:lng])
+    io.print(y);	# 21 IOprint_val ($23:int)<-(y:bat[:lng,:bit])
+    z := batcalc.not(y);	# 22 CMDbitbatNOT (z:bat[:lng,:bit])<-(y:bat[:lng,:bit])
+    io.print(z);	# 23 IOprint_val ($25:int)<-(z:bat[:lng,:bit])
+end main;	# 24  
 #-----------------#
 # h	tmp_5	  # name
 # lng	lng	  # type

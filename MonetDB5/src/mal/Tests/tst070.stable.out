@@ -17,13 +17,14 @@ stdout of test 'tst070` in directory 'src/mal` itself:
 #(x,y):= point(z:int);
 #(initial:str,surname:str):= getName();
 #
-!ERROR: 'user.point' undefined in user.main[1]
-!ERROR: 'user.getName' undefined in user.main[2]
-!ERROR: 'z' may not be used before being set in main[1]
+!ERROR: 'user.point' undefined in user.main[2]
+!ERROR: 'user.getName' undefined in user.main[3]
+!ERROR: 'z' may not be used before being set in main[2]
 function user.main():int;	# 0  (main:int)
-    (x,y):= user.point(z);	# 1  unknown (x:any)(y:any)<-(z:int)
-    (initial,surname):= user.getName();	# 2  unknown (initial:str)(surname:str)
-end main;	# 3  
+# parsing operations with multi-assignments 	# 1  ($2:str)
+    (x,y):= user.point(z);	# 2  unknown (x:any)(y:any)<-(z:int)
+    (initial,surname):= user.getName();	# 3  unknown (initial:str)(surname:str)
+end main;	# 4  
 
 # 07:58:49 >  
 # 07:58:49 >  Done.

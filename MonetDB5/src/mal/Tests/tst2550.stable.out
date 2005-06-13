@@ -35,6 +35,9 @@ exit L;	# 7  (L:bit)
     return (noes,val):= (false,seed);	# 8  (noes:bit)(val:int)<-($9:bit)(seed:int)
 end random;	# 9  
 #
+function user.main():int;	# 0  (main:int)
+# Factory functions seem to provide a better control structure 	# 1  ($2:str)
+end main;	# 2  
 
 # 08:01:09 >  
 # 08:01:09 >  Done.

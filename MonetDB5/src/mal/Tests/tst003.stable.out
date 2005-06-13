@@ -17,12 +17,15 @@ stdout of test 'tst003` in directory 'src/mal` itself:
 #a:=b;	#b not yet defined
 #b:=c;	#c undefined
 #
-!ERROR: 'b' may not be used before being set in main[1]
-!ERROR: 'c' may not be used before being set in main[2]
+!ERROR: 'b' may not be used before being set in main[2]
+!ERROR: 'c' may not be used before being set in main[4]
 function user.main():int;	# 0  (main:int)
-    a := b;	# 1  (a:any)<-(b:any)
-    b := c;	# 2  (b:any)<-(c:any)
-end main;	# 3  
+# test illegal variable use 	# 1  ($2:str)
+    a := b;	# 2  (a:any)<-(b:any)
+#b not yet defined 	# 3  ($6:str)
+    b := c;	# 4  (b:any)<-(c:any)
+#c undefined 	# 5  ($9:str)
+end main;	# 6  
 
 # 07:58:33 >  
 # 07:58:33 >  Done.

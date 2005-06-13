@@ -26,8 +26,9 @@ end help;	# 4
 #transaction.help();
 #
 function user.main():int;	# 0  (main:int)
-    transaction.help();	# 1  ($1:void)
-end main;	# 2  
+#test addition of a function to a known module 	# 1  ($2:str)
+    transaction.help();	# 2  ($3:void)
+end main;	# 3  
 [ "added function to specific module" ]
 #-------------------------------------------------------------------------#
 # view	fcn								  # name

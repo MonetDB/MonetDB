@@ -26,21 +26,23 @@ stdout of test 'tst035` in directory 'src/mal` itself:
 #i:= getLRefCount(b); print(i);
 #
 function user.main():int;	# 0  (main:int)
-    z := "hello world";	# 1  (z:str)<-($2:str)
-    io.print(z);	# 2 IOprint_val ($3:int)<-(z:str)
-    z := z;	# 3  (z:str)<-(z:str)
-    io.print(z);	# 4 IOprint_val ($4:int)<-(z:str)
-    io.print("done");	# 5 IOprint_val ($5:int)<-($6:str)
-    b := bbp.new(:int,:int);	# 6 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
-    i := bbp.getLRefCount(b);	# 7 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:int])
-    io.print(i);	# 8 IOprint_val ($11:int)<-(i:int)
-    b := b;	# 9  (b:bat[:int,:int])<-(b:bat[:int,:int])
-    i := bbp.getLRefCount(b);	# 10 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:int])
-    io.print(i);	# 11 IOprint_val ($12:int)<-(i:int)
-    b := b;	# 12  (b:bat[:int,:int])<-(b:bat[:int,:int])
-    i := bbp.getLRefCount(b);	# 13 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:int])
-    io.print(i);	# 14 IOprint_val ($13:int)<-(i:int)
-end main;	# 15  
+#The MAL interpreter should initiate garbage collection correctly 	# 1  ($2:str)
+# early version was too early 	# 2  ($4:str)
+    z := "hello world";	# 3  (z:str)<-($6:str)
+    io.print(z);	# 4 IOprint_val ($7:int)<-(z:str)
+    z := z;	# 5  (z:str)<-(z:str)
+    io.print(z);	# 6 IOprint_val ($8:int)<-(z:str)
+    io.print("done");	# 7 IOprint_val ($9:int)<-($10:str)
+    b := bbp.new(:int,:int);	# 8 CMDBATnew (b:bat[:int,:int])<-($12:int)($13:int)
+    i := bbp.getLRefCount(b);	# 9 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:int])
+    io.print(i);	# 10 IOprint_val ($15:int)<-(i:int)
+    b := b;	# 11  (b:bat[:int,:int])<-(b:bat[:int,:int])
+    i := bbp.getLRefCount(b);	# 12 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:int])
+    io.print(i);	# 13 IOprint_val ($16:int)<-(i:int)
+    b := b;	# 14  (b:bat[:int,:int])<-(b:bat[:int,:int])
+    i := bbp.getLRefCount(b);	# 15 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:int])
+    io.print(i);	# 16 IOprint_val ($17:int)<-(i:int)
+end main;	# 17  
 [ "hello world" ]
 [ "hello world" ]
 [ "done" ]

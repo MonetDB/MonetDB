@@ -24,9 +24,10 @@ end swap;	# 2
 #print(x);
 #
 function user.main():int;	# 0  (main:int)
-    x := user.swap("world hello");	# 1  (x:str)<-($2:str)
-    io.print(x);	# 2 IOprint_val ($3:int)<-(x:str)
-end main;	# 3  
+# parsing operations with multi-assignments 	# 1  ($2:str)
+    x := user.swap("world hello");	# 2  (x:str)<-($4:str)
+    io.print(x);	# 3 IOprint_val ($5:int)<-(x:str)
+end main;	# 4  
 [ "world hello" ]
 
 # 07:58:50 >  

@@ -33,6 +33,10 @@ function user.sample(nme:str,val:any):bit;	# 0  (sample:bit)<-(nme:str)(val:any)
     return sample := true;	# 7  (sample:bit)<-($11:bit)
 end sample;	# 8  
 #
+function user.main():int;	# 0  (main:int)
+# complex analysis 	# 1  ($2:str)
+#find a BAT 	# 2  ($4:str)
+end main;	# 3  
 
 # 07:58:43 >  
 # 07:58:43 >  Done.

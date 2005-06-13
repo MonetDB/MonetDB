@@ -22,12 +22,13 @@ end dummy;	# 2
 #
 #t:= dummy(a{sorted},b{sequence});
 #
-!ERROR: 'user.dummy' undefined in user.main[1]
-!ERROR: 'a' may not be used before being set in main[1]
-!ERROR: 'b' may not be used before being set in main[1]
+!ERROR: 'user.dummy' undefined in user.main[2]
+!ERROR: 'a' may not be used before being set in main[2]
+!ERROR: 'b' may not be used before being set in main[2]
 function user.main():int;	# 0  (main:int)
-    t := user.dummy(a{sorted=true},b{sequence=true});	# 1  unknown (t:any)<-(a:any)(b:any)
-end main;	# 2  
+#Parsing properties and keeping them around 	# 1  ($2:str)
+    t := user.dummy(a{sorted=true},b{sequence=true});	# 2  unknown (t:any)<-(a:any)(b:any)
+end main;	# 3  
 
 # 08:01:17 >  
 # 08:01:17 >  Done.

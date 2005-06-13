@@ -23,18 +23,19 @@ stdout of test 'tst303` in directory 'src/mal` itself:
 #	print("should not be done");
 #
 function user.main():int;	# 0  (main:int)
-    raise IllegalAccess := "an exception";	# 1  (IllegalAccess:str)<-($2:str)
-    io.print("should not come here\n");	# 2 IOprint_val ($3:int)<-($4:str)
-catch IllegalAccess;	# 3  (IllegalAccess:str) jump 7
-    io.printf("catched %s\n",IllegalAccess);	# 4 IOprint_formatted_str ($5:int)<-($6:str)(IllegalAccess:str)
-    raise IllegalAccess := "a second exception raised\n";	# 5  (IllegalAccess:str)<-($7:str)
-    io.print("should not come here either\n");	# 6 IOprint_val ($8:int)<-($9:str)
-exit IllegalAccess;	# 7  (IllegalAccess:str)
-    io.print("should not be done");	# 8 IOprint_val ($10:int)<-($11:str)
-end main;	# 9  
+# recursively raise an exception passed upward 	# 1  ($2:str)
+    raise IllegalAccess := "an exception";	# 2  (IllegalAccess:str)<-($4:str)
+    io.print("should not come here\n");	# 3 IOprint_val ($5:int)<-($6:str)
+catch IllegalAccess;	# 4  (IllegalAccess:str) jump 8
+    io.printf("catched %s\n",IllegalAccess);	# 5 IOprint_formatted_str ($7:int)<-($8:str)(IllegalAccess:str)
+    raise IllegalAccess := "a second exception raised\n";	# 6  (IllegalAccess:str)<-($9:str)
+    io.print("should not come here either\n");	# 7 IOprint_val ($10:int)<-($11:str)
+exit IllegalAccess;	# 8  (IllegalAccess:str)
+    io.print("should not be done");	# 9 IOprint_val ($12:int)<-($13:str)
+end main;	# 10  
 catched an exception
-!ERROR: IllegalAccess:user.main[5]:a second exception raised\n
-!ERROR: IllegalAccess:user.main[9]:Exception not catched
+!ERROR: IllegalAccess:user.main[6]:a second exception raised\n
+!ERROR: IllegalAccess:user.main[10]:Exception not catched
 #
 
 # 08:01:15 >  

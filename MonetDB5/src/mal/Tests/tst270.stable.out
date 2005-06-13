@@ -54,36 +54,43 @@ stdout of test 'tst270` in directory 'src/mal` itself:
 #profiler.closeStream();
 #
 function user.main():int;	# 0  (main:int)
-    profiler.activate("ticks");	# 1 CMDactivateProfiler ($1:void)<-($2:str)
-    profiler.activate("pc");	# 2 CMDactivateProfiler ($3:void)<-($4:str)
-    profiler.activate("statement");	# 3 CMDactivateProfiler ($5:void)<-($6:str)
-    profiler.setFilter("*","insert");	# 4 CMDsetFilterProfiler ($7:void)<-($8:str)($9:str)
-    profiler.openStream("/tmp/MonetEvents");	# 5 CMDsetProfilerStream ($10:void)<-($11:str)
-    o := calc.oid(20000000);	# 6 CALCint2oid (o:oid)<-($13:int)
-    calc.setoid(o);	# 7 CALCsetoidInc ($14:oid)<-(o:oid)
-    b := bbp.new(:int,:int);	# 8 CMDBATnew (b:bat[:int,:int])<-($16:int)($17:int)
-    io.printf("#~BeginVariableOutput~#\n");	# 9 IOprint_str ($18:int)<-($19:str)
-    binfo := bat.info(b);	# 10 BKCinfo (binfo:bat[:str,:str])<-(b:bat[:int,:int])
-    io.print(binfo);	# 11 IOprint_val ($21:int)<-(binfo:bat[:str,:str])
-    io.printf("#~EndVariableOutput~#\n");	# 12 IOprint_str ($22:int)<-($23:str)
-    profiler.start();	# 13 CMDstartProfiler ($24:void)
-    err := bat.insert(b,1,15);	# 14 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($26:int)($27:int)
-    err := bat.insert(b,2,4);	# 15 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($28:int)($29:int)
-    n0 := calc.int(nil);	# 16 CALCnil2int (n0:int)<-($31:void)
-    err := bat.insert(b,3,n0);	# 17 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($32:int)(n0:int)
-    err := bat.insert(b,4,16);	# 18 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($29:int)($33:int)
-    err := bat.insert(b,5,25);	# 19 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($34:int)($35:int)
-    err := bat.insert(b,6,36);	# 20 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($36:int)($37:int)
-    err := bat.insert(b,7,49);	# 21 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($38:int)($39:int)
-    err := bat.insert(b,8,64);	# 22 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($40:int)($41:int)
-    err := bat.insert(b,9,n0);	# 23 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($42:int)(n0:int)
-    err := bat.insert(b,n0,n0);	# 24 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)(n0:int)
-    err := bat.insert(b,n0,81);	# 25 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)($43:int)
-    io.print(b);	# 26 IOprint_val ($44:int)<-(b:bat[:int,:int])
-    io.print(b,b,b);	# 27 IOtable ($45:int)<-(b:bat[:int,:int])(b:bat[:int,:int])(b:bat[:int,:int])
-    profiler.stop();	# 28 CMDstopProfiler ($46:void)
-    profiler.closeStream();	# 29 closeProfilerStream ($47:void)
-end main;	# 30  
+#Same as tst200, but includes testing of the profiler 	# 1  ($2:str)
+#profiler.setAll(); 	# 2  ($4:str)
+    profiler.activate("ticks");	# 3 CMDactivateProfiler ($5:void)<-($6:str)
+    profiler.activate("pc");	# 4 CMDactivateProfiler ($7:void)<-($8:str)
+    profiler.activate("statement");	# 5 CMDactivateProfiler ($9:void)<-($10:str)
+#profiler.setFilter("*","*"); 	# 6  ($12:str)
+    profiler.setFilter("*","insert");	# 7 CMDsetFilterProfiler ($13:void)<-($14:str)($15:str)
+#profiler.setFilter("*","print"); 	# 8  ($17:str)
+    profiler.openStream("/tmp/MonetEvents");	# 9 CMDsetProfilerStream ($18:void)<-($19:str)
+    o := calc.oid(20000000);	# 10 CALCint2oid (o:oid)<-($21:int)
+    calc.setoid(o);	# 11 CALCsetoidInc ($22:oid)<-(o:oid)
+#test basic functionality of the BAT library. 	# 12  ($24:str)
+#focussed on integers 	# 13  ($26:str)
+#it includes insertions,deletions,selections, and joins. 	# 14  ($28:str)
+    b := bbp.new(:int,:int);	# 15 CMDBATnew (b:bat[:int,:int])<-($30:int)($31:int)
+    io.printf("#~BeginVariableOutput~#\n");	# 16 IOprint_str ($32:int)<-($33:str)
+    binfo := bat.info(b);	# 17 BKCinfo (binfo:bat[:str,:str])<-(b:bat[:int,:int])
+    io.print(binfo);	# 18 IOprint_val ($35:int)<-(binfo:bat[:str,:str])
+    io.printf("#~EndVariableOutput~#\n");	# 19 IOprint_str ($36:int)<-($37:str)
+    profiler.start();	# 20 CMDstartProfiler ($38:void)
+    err := bat.insert(b,1,15);	# 21 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($40:int)($41:int)
+    err := bat.insert(b,2,4);	# 22 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($42:int)($43:int)
+    n0 := calc.int(nil);	# 23 CALCnil2int (n0:int)<-($45:void)
+    err := bat.insert(b,3,n0);	# 24 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($46:int)(n0:int)
+    err := bat.insert(b,4,16);	# 25 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($43:int)($47:int)
+    err := bat.insert(b,5,25);	# 26 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($48:int)($49:int)
+    err := bat.insert(b,6,36);	# 27 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($50:int)($51:int)
+    err := bat.insert(b,7,49);	# 28 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($52:int)($53:int)
+    err := bat.insert(b,8,64);	# 29 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($54:int)($55:int)
+    err := bat.insert(b,9,n0);	# 30 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($56:int)(n0:int)
+    err := bat.insert(b,n0,n0);	# 31 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)(n0:int)
+    err := bat.insert(b,n0,81);	# 32 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)($57:int)
+    io.print(b);	# 33 IOprint_val ($58:int)<-(b:bat[:int,:int])
+    io.print(b,b,b);	# 34 IOtable ($59:int)<-(b:bat[:int,:int])(b:bat[:int,:int])(b:bat[:int,:int])
+    profiler.stop();	# 35 CMDstopProfiler ($60:void)
+    profiler.closeStream();	# 36 closeProfilerStream ($61:void)
+end main;	# 37  
 #~BeginVariableOutput~#
 #-------------------------------------------------#
 # h				tmp_5		  # name
@@ -104,7 +111,7 @@ end main;	# 30
 [ "batSet",			  "0"		  ]
 [ "void_tid",			  "0"		  ]
 [ "void_cnt",			  "0"		  ]
-[ "hsorted",			  "1"		  ]
+[ "hsorted",		  "65"		  ]
 [ "hident",			  "h"		  ]
 [ "hdense",			  "0"		  ]
 [ "hseqbase",			  "0@0"		  ]
@@ -115,7 +122,7 @@ end main;	# 30
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "0@0"		  ]
-[ "tsorted",			  "1"		  ]
+[ "tsorted",		  "65"		  ]
 [ "tkey",			  "0"		  ]
 [ "tloc",			  "4"		  ]
 [ "tvarsized",			  "0"		  ]

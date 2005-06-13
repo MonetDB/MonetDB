@@ -22,11 +22,13 @@ command user.f(a:any$1,b:bat[:any$2,:any$1],c:any$2):any address dummy;	# 0  dyn
 #b:= new(:str,:int);
 #a:= f(1,b,"hello");
 #
-!ERROR: 'user.f' undefined in user.main[2]
+!ERROR: 'user.f' undefined in user.main[4]
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:str,:int);	# 1 CMDBATnew (b:bat[:str,:int])<-($2:str)($3:int)
-    a := user.f(1,b,"hello");	# 2  unknown (a:any)<-($5:int)(b:bat[:str,:int])($6:str)
-end main;	# 3  
+# check propagation of type variables over bats 	# 1  ($2:str)
+# can be checked after bat module has been added 	# 2  ($4:str)
+    b := bbp.new(:str,:int);	# 3 CMDBATnew (b:bat[:str,:int])<-($6:str)($7:int)
+    a := user.f(1,b,"hello");	# 4  unknown (a:any)<-($9:int)(b:bat[:str,:int])($10:str)
+end main;	# 5  
 
 # 07:58:56 >  
 # 07:58:56 >  Done.

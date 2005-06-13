@@ -23,21 +23,22 @@ stdout of test 'tst055` in directory 'src/mal` itself:
 #j:int := nil:int;	print(j);
 #
 function user.main():int;	# 0  (main:int)
-    s := "nil:str";	# 1  (s:str)<-($2:str)
-    io.print(s);	# 2 IOprint_val ($3:int)<-(s:str)
-    i := nil:sht;	# 3  (i:sht)<-($5:sht)
-    io.print(i);	# 4 IOprint_val ($6:int)<-(i:sht)
-    b := nil:bit;	# 5  (b:bit)<-($8:bit)
-    io.print(b);	# 6 IOprint_val ($9:int)<-(b:bit)
-    f := nil:flt;	# 7  (f:flt)<-($11:flt)
-    io.print(f);	# 8 IOprint_val ($12:int)<-(f:flt)
-    d := nil:dbl;	# 9  (d:dbl)<-($14:dbl)
-    io.print(d);	# 10 IOprint_val ($15:int)<-(d:dbl)
-    l := nil:lng;	# 11  (l:lng)<-($17:lng)
-    io.print(l);	# 12 IOprint_val ($18:int)<-(l:lng)
-    j := nil:int;	# 13  (j:int)<-($20:int)
-    io.print(j);	# 14 IOprint_val ($21:int)<-(j:int)
-end main;	# 15  
+# Nil values 	# 1  ($2:str)
+    s := "nil:str";	# 2  (s:str)<-($4:str)
+    io.print(s);	# 3 IOprint_val ($5:int)<-(s:str)
+    i := nil:sht;	# 4  (i:sht)<-($7:sht)
+    io.print(i);	# 5 IOprint_val ($8:int)<-(i:sht)
+    b := nil:bit;	# 6  (b:bit)<-($10:bit)
+    io.print(b);	# 7 IOprint_val ($11:int)<-(b:bit)
+    f := nil:flt;	# 8  (f:flt)<-($13:flt)
+    io.print(f);	# 9 IOprint_val ($14:int)<-(f:flt)
+    d := nil:dbl;	# 10  (d:dbl)<-($16:dbl)
+    io.print(d);	# 11 IOprint_val ($17:int)<-(d:dbl)
+    l := nil:lng;	# 12  (l:lng)<-($19:lng)
+    io.print(l);	# 13 IOprint_val ($20:int)<-(l:lng)
+    j := nil:int;	# 14  (j:int)<-($22:int)
+    io.print(j);	# 15 IOprint_val ($23:int)<-(j:int)
+end main;	# 16  
 [ nil ]
 [ nil ]
 [ nil ]

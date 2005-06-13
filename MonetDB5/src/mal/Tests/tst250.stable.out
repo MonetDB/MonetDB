@@ -36,26 +36,28 @@ stdout of test 'tst250` in directory 'src/mal` itself:
 #exit v;
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    err := bat.insert(b,1,15);	# 2 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($6:int)
-    err := bat.insert(b,2,4);	# 3 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($8:int)
-    n0 := calc.int(nil);	# 4 CALCnil2int (n0:int)<-($10:void)
-    err := bat.insert(b,3,n0);	# 5 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($11:int)(n0:int)
-    err := bat.insert(b,4,16);	# 6 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($8:int)($12:int)
-    err := bat.insert(b,5,25);	# 7 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($13:int)($14:int)
-    err := bat.insert(b,6,36);	# 8 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($15:int)($16:int)
-    err := bat.insert(b,7,49);	# 9 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($17:int)($18:int)
-    err := bat.insert(b,8,64);	# 10 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($19:int)($20:int)
-    err := bat.insert(b,9,n0);	# 11 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($21:int)(n0:int)
-    err := bat.insert(b,n0,n0);	# 12 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)(n0:int)
-    err := bat.insert(b,n0,81);	# 13 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)($22:int)
-    io.print(b);	# 14 IOprint_val ($23:int)<-(b:bat[:int,:int])
-barrier (v,h,t):= chopper.newIterator(b);	# 15 CHPbunIterator (v:lng)(h:int)(t:int)<-(b:bat[:int,:int]) jump 19
-    io.printf("%d,",h);	# 16 IOprint_formatted_int ($27:int)<-($28:str)(h:int)
-    io.printf("%d\n",t);	# 17 IOprint_formatted_int ($29:int)<-($30:str)(t:int)
-    redo (v,h,t):= chopper.hasMoreElements(b);	# 18 CHPbunHasMoreElements (v:lng)(h:int)(t:int)<-(b:bat[:int,:int]) jump 16
-exit v;	# 19  (v:lng)
-end main;	# 20  
+# The series tst2?? is a patched version of suite_00 	# 1  ($2:str)
+# The first and foremost BAT operations 	# 2  ($4:str)
+    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($6:int)($7:int)
+    err := bat.insert(b,1,15);	# 4 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($9:int)($10:int)
+    err := bat.insert(b,2,4);	# 5 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($11:int)($12:int)
+    n0 := calc.int(nil);	# 6 CALCnil2int (n0:int)<-($14:void)
+    err := bat.insert(b,3,n0);	# 7 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($15:int)(n0:int)
+    err := bat.insert(b,4,16);	# 8 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($12:int)($16:int)
+    err := bat.insert(b,5,25);	# 9 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($17:int)($18:int)
+    err := bat.insert(b,6,36);	# 10 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($19:int)($20:int)
+    err := bat.insert(b,7,49);	# 11 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($21:int)($22:int)
+    err := bat.insert(b,8,64);	# 12 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($23:int)($24:int)
+    err := bat.insert(b,9,n0);	# 13 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($25:int)(n0:int)
+    err := bat.insert(b,n0,n0);	# 14 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)(n0:int)
+    err := bat.insert(b,n0,81);	# 15 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)($26:int)
+    io.print(b);	# 16 IOprint_val ($27:int)<-(b:bat[:int,:int])
+barrier (v,h,t):= chopper.newIterator(b);	# 17 CHPbunIterator (v:lng)(h:int)(t:int)<-(b:bat[:int,:int]) jump 21
+    io.printf("%d,",h);	# 18 IOprint_formatted_int ($31:int)<-($32:str)(h:int)
+    io.printf("%d\n",t);	# 19 IOprint_formatted_int ($33:int)<-($34:str)(t:int)
+    redo (v,h,t):= chopper.hasMoreElements(b);	# 20 CHPbunHasMoreElements (v:lng)(h:int)(t:int)<-(b:bat[:int,:int]) jump 18
+exit v;	# 21  (v:lng)
+end main;	# 22  
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type

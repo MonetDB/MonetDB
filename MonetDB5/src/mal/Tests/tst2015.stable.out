@@ -24,14 +24,16 @@ stdout of test 'tst2015` in directory 'src/mal` itself:
 #exit xx;
 #
 function user.main():int;	# 0  (main:int)
-barrier xx;	# 1  (xx:any) jump 7
-thread b1;	# 2  (b1:any) jump 6
-    io.printf("#Entered thread\n");	# 3 IOprint_str ($3:int)<-($4:str)
-    leave b1;	# 4  (b1:any) jump 6
-    redo xx;	# 5  (xx:any) jump 2
-exit b1;	# 6  (b1:any)
-exit xx;	# 7  (xx:any)
-end main;	# 8  
+# parallel syntax checks 	# 1  ($2:str)
+barrier xx;	# 2  (xx:any) jump 9
+thread b1;	# 3  (b1:any) jump 8
+    io.printf("#Entered thread\n");	# 4 IOprint_str ($5:int)<-($6:str)
+    leave b1;	# 5  (b1:any) jump 8
+    redo xx;	# 6  (xx:any) jump 3
+# not allowed 	# 7  ($8:str)
+exit b1;	# 8  (b1:any)
+exit xx;	# 9  (xx:any)
+end main;	# 10  
 #Entered thread
 
 # 07:59:37 >  

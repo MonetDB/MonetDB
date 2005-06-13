@@ -20,12 +20,13 @@ stdout of test 'tst550` in directory 'src/mal` itself:
 #lock.destroy(l);
 #
 function user.main():int;	# 0  (main:int)
-    l := lock.create();	# 1 LCKcreate (l:lock)
-    lock.set(l);	# 2 LCKset ($2:void)<-(l:lock)
-    i := lock.try(l);	# 3 LCKtry (i:int)<-(l:lock)
-    lock.unset(l);	# 4 LCKunset ($4:void)<-(l:lock)
-    lock.destroy(l);	# 5 LCKdestroy ($5:void)<-(l:lock)
-end main;	# 6  
+# use of the lock module 	# 1  ($2:str)
+    l := lock.create();	# 2 LCKcreate (l:lock)
+    lock.set(l);	# 3 LCKset ($4:void)<-(l:lock)
+    i := lock.try(l);	# 4 LCKtry (i:int)<-(l:lock)
+    lock.unset(l);	# 5 LCKunset ($6:void)<-(l:lock)
+    lock.destroy(l);	# 6 LCKdestroy ($7:void)<-(l:lock)
+end main;	# 7  
 
 # 08:01:22 >  
 # 08:01:22 >  Done.

@@ -25,11 +25,12 @@ end f;	# 2
 #d:= f(true,false);
 #
 function user.main():int;	# 0  (main:int)
-    a := user.f(1,"hello");	# 1  (a:bat[:str,:int])<-($2:int)($3:str)
-    b := user.f(1,"world");	# 2  (b:bat[:str,:int])<-($2:int)($5:str)
-    c := user.f(1.0,-3);	# 3  (c:bat[:int,:flt])<-($7:flt)($8:int)
-    d := user.f(true,false);	# 4  (d:bat[:bit,:bit])<-($10:bit)($11:bit)
-end main;	# 5  
+# check propagation of type variables over bats 	# 1  ($2:str)
+    a := user.f(1,"hello");	# 2  (a:bat[:str,:int])<-($4:int)($5:str)
+    b := user.f(1,"world");	# 3  (b:bat[:str,:int])<-($4:int)($7:str)
+    c := user.f(1.0,-3);	# 4  (c:bat[:int,:flt])<-($9:flt)($10:int)
+    d := user.f(true,false);	# 5  (d:bat[:bit,:bit])<-($12:bit)($13:bit)
+end main;	# 6  
 
 # 07:58:55 >  
 # 07:58:55 >  Done.

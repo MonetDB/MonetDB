@@ -32,9 +32,11 @@ end tst2;	# 2
 #tst2(b);
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-($2:int)($3:str)
-    user.tst2(b);	# 2  ($4:void)<-(b:bat[:int,:str])
-end main;	# 3  
+#test the capability to deal with unspecified bats. 	# 1  ($2:str)
+    b := bbp.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-($4:int)($5:str)
+#The call to tst2 fails at runtime 	# 3  ($7:str)
+    user.tst2(b);	# 4  ($8:void)<-(b:bat[:int,:str])
+end main;	# 5  
 
 # 07:58:43 >  
 # 07:58:43 >  Done.

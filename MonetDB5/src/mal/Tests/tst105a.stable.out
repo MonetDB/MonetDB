@@ -22,8 +22,9 @@ command bat.new(h:any$1,t:any$2):bat[:any$1,:any$2] address GDKbatnew;	# 0  dyna
 #b:= bbp.new(:str,:int);
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:str,:int);	# 1 CMDBATnew (b:bat[:str,:int])<-($2:str)($3:int)
-end main;	# 2  
+# check classification of functions in the proper module 	# 1  ($2:str)
+    b := bbp.new(:str,:int);	# 2 CMDBATnew (b:bat[:str,:int])<-($4:str)($5:int)
+end main;	# 3  
 
 # 07:58:57 >  
 # 07:58:57 >  Done.

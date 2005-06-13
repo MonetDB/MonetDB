@@ -21,14 +21,17 @@ stdout of test 'tst611` in directory 'src/mal` itself:
 ##the next one should fail
 #setWriteMode(RKB);
 #
-!ERROR: 'bat.setWriteMode' undefined in user.main[4]
-!ERROR: 'RKB' may not be used before being set in main[4]
+!ERROR: 'bat.setWriteMode' undefined in user.main[7]
+!ERROR: 'RKB' may not be used before being set in main[7]
 function user.main():int;	# 0  (main:int)
-    RKA := bbp.new(:int,:int,1048576);	# 1 CMDBATnewint (RKA:bat[:int,:int])<-($2:int)($3:int)($4:int)
-    bat.insert(RKA,1:int,360:int);	# 2 BKCinsert_bun ($5:bat[:int,:int])<-(RKA:bat[:int,:int])($6:int)($7:int)
-    io.print(RKA);	# 3 IOprint_val ($8:int)<-(RKA:bat[:int,:int])
-    bat.setWriteMode(RKB);	# 4  unknown ($9:any)<-(RKB:any)
-end main;	# 5  
+# initialization of BATs on the stack 	# 1  ($2:str)
+# caused a problem when executed in interactve mode 	# 2  ($4:str)
+    RKA := bbp.new(:int,:int,1048576);	# 3 CMDBATnewint (RKA:bat[:int,:int])<-($6:int)($7:int)($8:int)
+    bat.insert(RKA,1:int,360:int);	# 4 BKCinsert_bun ($9:bat[:int,:int])<-(RKA:bat[:int,:int])($10:int)($11:int)
+    io.print(RKA);	# 5 IOprint_val ($12:int)<-(RKA:bat[:int,:int])
+#the next one should fail 	# 6  ($14:str)
+    bat.setWriteMode(RKB);	# 7  unknown ($15:any)<-(RKB:any)
+end main;	# 8  
 
 # 08:01:26 >  
 # 08:01:26 >  Done.

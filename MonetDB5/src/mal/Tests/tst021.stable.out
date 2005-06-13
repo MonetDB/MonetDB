@@ -20,11 +20,12 @@ stdout of test 'tst021` in directory 'src/mal` itself:
 #print(d2);
 #
 function user.main():int;	# 0  (main:int)
-    d1 := mtime.date("1998-12-01");	# 1 MTIMEdate_fromstr (d1:date)<-($2:str)
-    io.print(d1);	# 2 IOprint_val ($3:int)<-(d1:date)
-    d2 := 1998-12-01;	# 3  (d2:date)<-($5:date)
-    io.print(d2);	# 4 IOprint_val ($6:int)<-(d2:date)
-end main;	# 5  
+# ADT management  	# 1  ($2:str)
+    d1 := mtime.date("1998-12-01");	# 2 MTIMEdate_fromstr (d1:date)<-($4:str)
+    io.print(d1);	# 3 IOprint_val ($5:int)<-(d1:date)
+    d2 := 1998-12-01;	# 4  (d2:date)<-($7:date)
+    io.print(d2);	# 5 IOprint_val ($8:int)<-(d2:date)
+end main;	# 6  
 [ 1998-12-01 ]
 [ 1998-12-01 ]
 #

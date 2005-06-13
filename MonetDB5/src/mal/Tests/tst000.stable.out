@@ -16,6 +16,9 @@ stdout of test 'tst000` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 ##empty test file, used to check startup problems
 #
+function user.main():int;	# 0  (main:int)
+#empty test file, used to check startup problems 	# 1  ($2:str)
+end main;	# 2  
 
 # 07:58:31 >  
 # 07:58:31 >  Done.

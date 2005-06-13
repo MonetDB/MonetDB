@@ -33,11 +33,14 @@ end test;	# 3
 !ERROR:     k := calc.+(1,"wrong");	# 1  unknown (k:any)<-($4:int)($5:str)
 !ERROR:     io.print(k);	# 2 IOprint_val ($6:int)<-(k:any)
 !ERROR: end test;	# 3  
-!ERROR: 'user.test' undefined in user.main[2]
+!ERROR: 'user.test' undefined in user.main[5]
 function user.main():int;	# 0  (main:int)
-    c := bbp.new(:int,:str);	# 1 CMDBATnew (c:bat[:int,:str])<-($2:int)($3:str)
-    user.test(c,"hello");	# 2  unknown ($4:void)<-(c:bat[:int,:str])($5:str)
-end main;	# 3  
+# Polymorphic function tests 	# 1  ($2:str)
+# Catching a pervasive error a.s.a.p. 	# 2  ($4:str)
+# The function may not be cloned and a secondary error is generated 	# 3  ($6:str)
+    c := bbp.new(:int,:str);	# 4 CMDBATnew (c:bat[:int,:str])<-($8:int)($9:str)
+    user.test(c,"hello");	# 5  unknown ($10:void)<-(c:bat[:int,:str])($11:str)
+end main;	# 6  
 
 # 08:01:30 >  
 # 08:01:30 >  Done.

@@ -38,12 +38,14 @@ end clkticks;	# 7
 #printf("#Wait for child to exit\n");
 #
 function user.main():int;	# 0  (main:int)
-thread hdl := 0;	# 1  (hdl:int)<-($2:int) jump 3
-    user.clkticks(2);	# 2  ($3:void)<-($4:int)
-exit hdl;	# 3  (hdl:int)
-    io.printf("#Main thread\n");	# 4 IOprint_str ($5:int)<-($6:str)
-    io.printf("#Wait for child to exit\n");	# 5 IOprint_str ($7:int)<-($8:str)
-end main;	# 6  
+#The 2000 serie  is focussed on parallelism 	# 1  ($2:str)
+thread hdl := 0;	# 2  (hdl:int)<-($4:int) jump 5
+# synchronize through a boolean 	# 3  ($6:str)
+    user.clkticks(2);	# 4  ($7:void)<-($8:int)
+exit hdl;	# 5  (hdl:int)
+    io.printf("#Main thread\n");	# 6 IOprint_str ($9:int)<-($10:str)
+    io.printf("#Wait for child to exit\n");	# 7 IOprint_str ($11:int)<-($12:str)
+end main;	# 8  
 #Main thread
 #Wait for child to exit
 #clock tick 2

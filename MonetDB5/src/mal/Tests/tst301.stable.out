@@ -20,12 +20,13 @@ stdout of test 'tst301` in directory 'src/mal` itself:
 #exit IllegalAccess;
 #
 function user.main():int;	# 0  (main:int)
-    raise IllegalAccess := 1234;	# 1  (IllegalAccess:int)<-($2:int)
-    io.print("should not come here\n");	# 2 IOprint_val ($3:int)<-($4:str)
-catch IllegalAccess;	# 3  (IllegalAccess:int) jump 5
-    io.printf("catched %d\n",IllegalAccess);	# 4 IOprint_formatted_int ($5:int)<-($6:str)(IllegalAccess:int)
-exit IllegalAccess;	# 5  (IllegalAccess:int)
-end main;	# 6  
+#propagate INT exception 	# 1  ($2:str)
+    raise IllegalAccess := 1234;	# 2  (IllegalAccess:int)<-($4:int)
+    io.print("should not come here\n");	# 3 IOprint_val ($5:int)<-($6:str)
+catch IllegalAccess;	# 4  (IllegalAccess:int) jump 6
+    io.printf("catched %d\n",IllegalAccess);	# 5 IOprint_formatted_int ($7:int)<-($8:str)(IllegalAccess:int)
+exit IllegalAccess;	# 6  (IllegalAccess:int)
+end main;	# 7  
 catched 1234
 
 # 08:01:14 >  

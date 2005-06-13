@@ -22,13 +22,14 @@ stdout of test 'tst307` in directory 'src/mal` itself:
 #exit MALexception;
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    z := algebra.find(b,0);	# 2 ALGfind (z:int)<-(b:bat[:int,:int])($5:int)
-    io.print("should not come here anymore");	# 3 IOprint_val ($6:int)<-($7:str)
-catch MALexception;	# 4  (MALexception:any) jump 6
-    io.print("catched the exception");	# 5 IOprint_val ($9:int)<-($10:str)
-exit MALexception;	# 6  (MALexception:any)
-end main;	# 7  
+#testing exceptions raised in the kernel 	# 1  ($2:str)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($5:int)
+    z := algebra.find(b,0);	# 3 ALGfind (z:int)<-(b:bat[:int,:int])($7:int)
+    io.print("should not come here anymore");	# 4 IOprint_val ($8:int)<-($9:str)
+catch MALexception;	# 5  (MALexception:any) jump 7
+    io.print("catched the exception");	# 6 IOprint_val ($11:int)<-($12:str)
+exit MALexception;	# 7  (MALexception:any)
+end main;	# 8  
 [ "catched the exception" ]
 
 # 08:01:18 >  

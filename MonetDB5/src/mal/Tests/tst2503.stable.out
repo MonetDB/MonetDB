@@ -47,19 +47,20 @@ end random;	# 8
 #print(r2);
 #
 function user.main():int;	# 0  (main:int)
-    r1 := user.random(1);	# 1  (r1:int)<-($2:int)
-    io.print(r1);	# 2 IOprint_val ($3:int)<-(r1:int)
-    r2 := user.random(34);	# 3  (r2:int)<-($5:int)
-    io.print(r2);	# 4 IOprint_val ($6:int)<-(r2:int)
-    r2 := user.random(2);	# 5  (r2:int)<-($7:int)
-    io.print(r2);	# 6 IOprint_val ($8:int)<-(r2:int)
-    r2 := user.random(2);	# 7  (r2:int)<-($7:int)
-    io.print(r2);	# 8 IOprint_val ($9:int)<-(r2:int)
-    r2 := user.random(2);	# 9  (r2:int)<-($7:int)
-    io.print(r2);	# 10 IOprint_val ($10:int)<-(r2:int)
-    r2 := user.random(2);	# 11  (r2:int)<-($7:int)
-    io.print(r2);	# 12 IOprint_val ($11:int)<-(r2:int)
-end main;	# 13  
+# The prototypical factory construct 	# 1  ($2:str)
+    r1 := user.random(1);	# 2  (r1:int)<-($4:int)
+    io.print(r1);	# 3 IOprint_val ($5:int)<-(r1:int)
+    r2 := user.random(34);	# 4  (r2:int)<-($7:int)
+    io.print(r2);	# 5 IOprint_val ($8:int)<-(r2:int)
+    r2 := user.random(2);	# 6  (r2:int)<-($9:int)
+    io.print(r2);	# 7 IOprint_val ($10:int)<-(r2:int)
+    r2 := user.random(2);	# 8  (r2:int)<-($9:int)
+    io.print(r2);	# 9 IOprint_val ($11:int)<-(r2:int)
+    r2 := user.random(2);	# 10  (r2:int)<-($9:int)
+    io.print(r2);	# 11 IOprint_val ($12:int)<-(r2:int)
+    r2 := user.random(2);	# 12  (r2:int)<-($9:int)
+    io.print(r2);	# 13 IOprint_val ($13:int)<-(r2:int)
+end main;	# 14  
 [ 125 ]
 [ 15625 ]
 [ 19872 ]

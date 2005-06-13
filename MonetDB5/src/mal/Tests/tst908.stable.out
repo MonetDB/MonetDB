@@ -37,13 +37,14 @@ end perftst;	# 5
 #exit (v,i);
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
-barrier (v,i):= mal.newRange(0:lng);	# 2 RNGnewRange_lng (v:bit)(i:lng)<-($6:lng) jump 5
-    bat.insert(b,i,i);	# 3 BKCinsert_bun ($7:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 4 RNGnextElement_lng (v:bit)(i:lng)<-($8:lng)($9:lng) jump 3
-exit (v,i);	# 5  (v:bit)(i:lng)
-    user.perftst(b,1:lng);	# 6  ($10:void)<-(b:bat[:lng,:lng])($8:lng)
-end main;	# 7  
+# the multiplex code blocks. 	# 1  ($2:str)
+    b := bbp.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-($4:lng)($5:lng)
+barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-($8:lng) jump 6
+    bat.insert(b,i,i);	# 4 BKCinsert_bun ($9:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
+    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-($10:lng)($11:lng) jump 4
+exit (v,i);	# 6  (v:bit)(i:lng)
+    user.perftst(b,1:lng);	# 7  ($12:void)<-(b:bat[:lng,:lng])($10:lng)
+end main;	# 8  
 [ "perftst" ]
 [ 1 ]
 #-----------------#

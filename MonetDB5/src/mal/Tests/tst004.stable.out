@@ -23,15 +23,16 @@ stdout of test 'tst004` in directory 'src/mal` itself:
 #	print(m);
 #
 function user.main():int;	# 0  (main:int)
-barrier l := 1;	# 1  (l:int)<-($2:int) jump 3
-    io.print(l);	# 2 IOprint_val ($3:int)<-(l:int)
-exit l := 2;	# 3  (l:int)<-($4:int)
-    io.print(l);	# 4 IOprint_val ($5:int)<-(l:int)
-barrier m := 3;	# 5  (m:int)<-($7:int) jump 7
-    leave m;	# 6  (m:int) jump 7
-exit m := 4;	# 7  (m:int)<-($8:int)
-    io.print(m);	# 8 IOprint_val ($9:int)<-(m:int)
-end main;	# 9  
+# minimal barrier 	# 1  ($2:str)
+barrier l := 1;	# 2  (l:int)<-($4:int) jump 4
+    io.print(l);	# 3 IOprint_val ($5:int)<-(l:int)
+exit l := 2;	# 4  (l:int)<-($6:int)
+    io.print(l);	# 5 IOprint_val ($7:int)<-(l:int)
+barrier m := 3;	# 6  (m:int)<-($9:int) jump 8
+    leave m;	# 7  (m:int) jump 8
+exit m := 4;	# 8  (m:int)<-($10:int)
+    io.print(m);	# 9 IOprint_val ($11:int)<-(m:int)
+end main;	# 10  
 [ 1 ]
 [ 2 ]
 [ 4 ]

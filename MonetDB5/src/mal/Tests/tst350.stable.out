@@ -99,13 +99,15 @@ end dir;	# 6
 #
 #
 function user.main():int;	# 0  (main:int)
-    io.print("start test");	# 1 IOprint_val ($1:int)<-($2:str)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($5:int)
-    bat.setName(b,"simplemind");	# 3 BKCsetName ($6:bat[:int,:int])<-(b:bat[:int,:int])($7:str)
-    z := bbp.getNames();	# 4 CMDbbpNames (z:bat[:int,:str])
-    user.dir(z);	# 5  ($9:void)<-(z:bat[:int,:str])
-    user.dir("simple");	# 6  ($10:void)<-($11:str)
-end main;	# 7  
+#inspection of the runtime setting 	# 1  ($2:str)
+#it uses the dynamic type analysis scheme 	# 2  ($4:str)
+    io.print("start test");	# 3 IOprint_val ($5:int)<-($6:str)
+    b := bbp.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
+    bat.setName(b,"simplemind");	# 5 BKCsetName ($10:bat[:int,:int])<-(b:bat[:int,:int])($11:str)
+    z := bbp.getNames();	# 6 CMDbbpNames (z:bat[:int,:str])
+    user.dir(z);	# 7  ($13:void)<-(z:bat[:int,:str])
+    user.dir("simple");	# 8  ($14:void)<-($15:str)
+end main;	# 9  
 [ "start test" ]
 #---------------------------------------------------------------------------------------------------------------------------------#
 # bbp	tmp_8			htype	ttype		count	heat	dirty		status		kind		refcnt	  # name

@@ -30,21 +30,22 @@ stdout of test 'tst1150` in directory 'src/mal` itself:
 #	print(i);
 #
 function user.main():int;	# 0  (main:int)
-    fp := stream.openWrite("tst1150garbage");	# 1 stream_open_wastreamwrap (fp:stream)<-($2:str)
-    stream.writeStr(fp,"Dit is een test\n");	# 2 stream_write_stringwrap ($3:void)<-(fp:stream)($4:str)
-    stream.flush(fp);	# 3 stream_flush_streamwrap ($5:void)<-(fp:stream)
-    stream.close(fp);	# 4 stream_close_streamwrap ($6:void)<-(fp:stream)
-    fp := stream.openRead("tst1150garbage");	# 5 stream_open_rastreamwrap (fp:stream)<-($2:str)
-    s := stream.readStr(fp);	# 6 stream_read_stringwrap (s:str)<-(fp:stream)
-    io.print(s);	# 7 IOprint_val ($8:int)<-(s:str)
-    stream.close(fp);	# 8 stream_close_streamwrap ($9:void)<-(fp:stream)
-    fp := stream.openWrite("tst1150garbage");	# 9 stream_open_wastreamwrap (fp:stream)<-($2:str)
-    stream.writeInt(fp,1234);	# 10 stream_writeIntwrap ($10:void)<-(fp:stream)($11:int)
-    stream.close(fp);	# 11 stream_close_streamwrap ($12:void)<-(fp:stream)
-    fp := stream.openRead("tst1150garbage");	# 12 stream_open_rastreamwrap (fp:stream)<-($2:str)
-    i := stream.readInt(fp);	# 13 stream_readIntwrap (i:int)<-(fp:stream)
-    io.print(i);	# 14 IOprint_val ($14:int)<-(i:int)
-end main;	# 15  
+# simple stream test 	# 1  ($2:str)
+    fp := stream.openWrite("tst1150garbage");	# 2 stream_open_wastreamwrap (fp:stream)<-($4:str)
+    stream.writeStr(fp,"Dit is een test\n");	# 3 stream_write_stringwrap ($5:void)<-(fp:stream)($6:str)
+    stream.flush(fp);	# 4 stream_flush_streamwrap ($7:void)<-(fp:stream)
+    stream.close(fp);	# 5 stream_close_streamwrap ($8:void)<-(fp:stream)
+    fp := stream.openRead("tst1150garbage");	# 6 stream_open_rastreamwrap (fp:stream)<-($4:str)
+    s := stream.readStr(fp);	# 7 stream_read_stringwrap (s:str)<-(fp:stream)
+    io.print(s);	# 8 IOprint_val ($10:int)<-(s:str)
+    stream.close(fp);	# 9 stream_close_streamwrap ($11:void)<-(fp:stream)
+    fp := stream.openWrite("tst1150garbage");	# 10 stream_open_wastreamwrap (fp:stream)<-($4:str)
+    stream.writeInt(fp,1234);	# 11 stream_writeIntwrap ($12:void)<-(fp:stream)($13:int)
+    stream.close(fp);	# 12 stream_close_streamwrap ($14:void)<-(fp:stream)
+    fp := stream.openRead("tst1150garbage");	# 13 stream_open_rastreamwrap (fp:stream)<-($4:str)
+    i := stream.readInt(fp);	# 14 stream_readIntwrap (i:int)<-(fp:stream)
+    io.print(i);	# 15 IOprint_val ($16:int)<-(i:int)
+end main;	# 16  
 [ "Dit is een test\\n" ]
 [ 1234 ]
 

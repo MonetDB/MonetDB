@@ -34,20 +34,23 @@ MALexception:malInclude:could not open file: tst120a
 #d:= bottom.first("hello world");
 #e:= top.first(2:sht);
 #
-!ERROR: 'bottom.second' undefined in user.main[1]
-!ERROR: 'top.first' undefined in user.main[2]
-!ERROR: 'top.first' undefined in user.main[3]
-!ERROR: 'bottom.first' undefined in user.main[4]
+!ERROR: 'bottom.second' undefined in user.main[4]
 !ERROR: 'top.first' undefined in user.main[5]
+!ERROR: 'top.first' undefined in user.main[6]
+!ERROR: 'bottom.first' undefined in user.main[7]
+!ERROR: 'top.first' undefined in user.main[8]
 function user.main():int;	# 0  (main:int)
-    a := bottom.second("hh");	# 1  unknown (a:any)<-($2:str)
-    b := top.first(1);	# 2  unknown (b:any)<-($4:int)
-    c := top.first(1:sht);	# 3  unknown (c:any)<-($6:sht)
-    d := bottom.first("hello world");	# 4  unknown (d:any)<-($8:str)
-    e := top.first(2:sht);	# 5  unknown (e:any)<-($10:sht)
-end main;	# 6  
+#define 2 modules and check location of routines 	# 1  ($2:str)
+# lookup DBHOME/mal/tst120a.mal 	# 2  ($4:str)
+# does not do anything 	# 3  ($6:str)
+    a := bottom.second("hh");	# 4  unknown (a:any)<-($8:str)
+    b := top.first(1);	# 5  unknown (b:any)<-($10:int)
+    c := top.first(1:sht);	# 6  unknown (c:any)<-($12:sht)
+    d := bottom.first("hello world");	# 7  unknown (d:any)<-($14:str)
+    e := top.first(2:sht);	# 8  unknown (e:any)<-($16:sht)
+end main;	# 9  
 
-# 14:28:55 >  
-# 14:28:55 >  Done.
-# 14:28:55 >  
+# 17:25:37 >  
+# 17:25:37 >  Done.
+# 17:25:37 >  
 

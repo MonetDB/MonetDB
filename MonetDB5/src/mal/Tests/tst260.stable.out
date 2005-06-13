@@ -33,23 +33,24 @@ stdout of test 'tst260` in directory 'src/mal` itself:
 #print(b);
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    err := bat.insert(b,1,15);	# 2 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($6:int)
-    err := bat.insert(b,2,4);	# 3 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($8:int)
-    n0 := calc.int(nil);	# 4 CALCnil2int (n0:int)<-($10:void)
-    err := bat.insert(b,3,n0);	# 5 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($11:int)(n0:int)
-    err := bat.insert(b,4,16);	# 6 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($8:int)($12:int)
-    err := bat.insert(b,5,25);	# 7 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($13:int)($14:int)
-    err := bat.insert(b,6,36);	# 8 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($15:int)($16:int)
-    err := bat.insert(b,7,49);	# 9 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($17:int)($18:int)
-    err := bat.insert(b,8,64);	# 10 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($19:int)($20:int)
-    err := bat.insert(b,9,n0);	# 11 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($21:int)(n0:int)
-    err := bat.insert(b,n0,n0);	# 12 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)(n0:int)
-    err := bat.insert(b,n0,81);	# 13 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)($22:int)
-    io.print(b);	# 14 IOprint_val ($23:int)<-(b:bat[:int,:int])
-    algebra.topN(b,9L);	# 15 ALGtopN ($24:bat[:int,:int])<-(b:bat[:int,:int])($25:lng)
-    io.print(b);	# 16 IOprint_val ($26:int)<-(b:bat[:int,:int])
-end main;	# 17  
+# TopN queryies 	# 1  ($2:str)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($5:int)
+    err := bat.insert(b,1,15);	# 3 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($8:int)
+    err := bat.insert(b,2,4);	# 4 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($9:int)($10:int)
+    n0 := calc.int(nil);	# 5 CALCnil2int (n0:int)<-($12:void)
+    err := bat.insert(b,3,n0);	# 6 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($13:int)(n0:int)
+    err := bat.insert(b,4,16);	# 7 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($10:int)($14:int)
+    err := bat.insert(b,5,25);	# 8 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($15:int)($16:int)
+    err := bat.insert(b,6,36);	# 9 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($17:int)($18:int)
+    err := bat.insert(b,7,49);	# 10 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($19:int)($20:int)
+    err := bat.insert(b,8,64);	# 11 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($21:int)($22:int)
+    err := bat.insert(b,9,n0);	# 12 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])($23:int)(n0:int)
+    err := bat.insert(b,n0,n0);	# 13 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)(n0:int)
+    err := bat.insert(b,n0,81);	# 14 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)($24:int)
+    io.print(b);	# 15 IOprint_val ($25:int)<-(b:bat[:int,:int])
+    algebra.topN(b,9L);	# 16 ALGtopN ($26:bat[:int,:int])<-(b:bat[:int,:int])($27:lng)
+    io.print(b);	# 17 IOprint_val ($28:int)<-(b:bat[:int,:int])
+end main;	# 18  
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type

@@ -28,9 +28,11 @@ end simple;	# 3
 #r:= simple(k);
 #
 function user.main():int;	# 0  (main:int)
-    k := 0;	# 1  (k:int)<-($2:int)
-    r := user.simple(k);	# 2  (r:int)<-(k:int)
-end main;	# 3  
+# simple test of a function call  	# 1  ($2:str)
+# performance variation, how expensive are 10K calls? 	# 2  ($4:str)
+    k := 0;	# 3  (k:int)<-($6:int)
+    r := user.simple(k);	# 4  (r:int)<-(k:int)
+end main;	# 5  
 
 # 08:01:22 >  
 # 08:01:22 >  Done.

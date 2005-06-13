@@ -43,32 +43,35 @@ stdout of test 'tst1004` in directory 'src/mal` itself:
 #bbp.close();
 #
 function user.main():int;	# 0  (main:int)
-    io.print("Start test");	# 1 IOprint_val ($1:int)<-($2:str)
-    bbp.open();	# 2 CMDbbpopen ($3:void)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($5:int)($6:int)
-    bat.insert(b,1,2);	# 4 BKCinsert_bun ($7:bat[:int,:int])<-(b:bat[:int,:int])($8:int)($9:int)
-    bbp.deposit("myfirstbat",b);	# 5 CMDbbpdeposit ($10:void)<-($11:str)(b:bat[:int,:int])
-    c := bbp.take("myfirstbat");	# 6 CMDbbptake (c:bat[:any,:any])<-($11:str)
-catch MALexception;	# 7  (MALexception:any) jump 9
-    io.print(MALexception);	# 8 IOprint_val ($14:int)<-(MALexception:any)
-exit MALexception;	# 9  (MALexception:any)
-    io.print("FIRST ROUND");	# 10 IOprint_val ($15:int)<-($16:str)
-    io.print(c);	# 11 IOprint_val ($17:int)<-(c:bat[:any,:any])
-    bbp.close();	# 12 CMDbbpclose ($18:void)
-    bbp.open();	# 13 CMDbbpopen ($19:void)
-    io.print("SECOND ROUND");	# 14 IOprint_val ($20:int)<-($21:str)
-    y := bbp.getObjects();	# 15 CMDbbpGetObjects (y:bat[:int,:str])
-    io.print(y);	# 16 IOprint_val ($23:int)<-(y:bat[:int,:str])
-    v := bbp.take("myfirstbat");	# 17 CMDbbptake (v:bat[:any,:any])<-($11:str)
-catch MALexception;	# 18  (MALexception:any) jump 20
-    io.print(MALexception);	# 19 IOprint_val ($25:int)<-(MALexception:any)
-exit MALexception;	# 20  (MALexception:any)
-    io.print("got myfirstbat?");	# 21 IOprint_val ($26:int)<-($27:str)
-    io.print(v);	# 22 IOprint_val ($28:int)<-(v:bat[:any,:any])
-    x := bbp.getNames();	# 23 CMDbbpNames (x:bat[:int,:str])
-    io.print(x);	# 24 IOprint_val ($30:int)<-(x:bat[:int,:str])
-    bbp.close();	# 25 CMDbbpclose ($31:void)
-end main;	# 26  
+# the first of a series of BBP test cases 	# 1  ($2:str)
+    io.print("Start test");	# 2 IOprint_val ($3:int)<-($4:str)
+    bbp.open();	# 3 CMDbbpopen ($5:void)
+    b := bbp.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-($7:int)($8:int)
+    bat.insert(b,1,2);	# 5 BKCinsert_bun ($9:bat[:int,:int])<-(b:bat[:int,:int])($10:int)($11:int)
+    bbp.deposit("myfirstbat",b);	# 6 CMDbbpdeposit ($12:void)<-($13:str)(b:bat[:int,:int])
+    c := bbp.take("myfirstbat");	# 7 CMDbbptake (c:bat[:any,:any])<-($13:str)
+catch MALexception;	# 8  (MALexception:any) jump 10
+    io.print(MALexception);	# 9 IOprint_val ($16:int)<-(MALexception:any)
+exit MALexception;	# 10  (MALexception:any)
+    io.print("FIRST ROUND");	# 11 IOprint_val ($17:int)<-($18:str)
+    io.print(c);	# 12 IOprint_val ($19:int)<-(c:bat[:any,:any])
+    bbp.close();	# 13 CMDbbpclose ($20:void)
+# at the end of the session, the BBP should have discarded 	# 14  ($22:str)
+# the temporary bats of the user 	# 15  ($24:str)
+    bbp.open();	# 16 CMDbbpopen ($25:void)
+    io.print("SECOND ROUND");	# 17 IOprint_val ($26:int)<-($27:str)
+    y := bbp.getObjects();	# 18 CMDbbpGetObjects (y:bat[:int,:str])
+    io.print(y);	# 19 IOprint_val ($29:int)<-(y:bat[:int,:str])
+    v := bbp.take("myfirstbat");	# 20 CMDbbptake (v:bat[:any,:any])<-($13:str)
+catch MALexception;	# 21  (MALexception:any) jump 23
+    io.print(MALexception);	# 22 IOprint_val ($31:int)<-(MALexception:any)
+exit MALexception;	# 23  (MALexception:any)
+    io.print("got myfirstbat?");	# 24 IOprint_val ($32:int)<-($33:str)
+    io.print(v);	# 25 IOprint_val ($34:int)<-(v:bat[:any,:any])
+    x := bbp.getNames();	# 26 CMDbbpNames (x:bat[:int,:str])
+    io.print(x);	# 27 IOprint_val ($36:int)<-(x:bat[:int,:str])
+    bbp.close();	# 28 CMDbbpclose ($37:void)
+end main;	# 29  
 [ "Start test" ]
 [ "FIRST ROUND" ]
 #-----------------#

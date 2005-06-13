@@ -21,13 +21,14 @@ stdout of test 'tst014` in directory 'src/mal` itself:
 #exit 	b;
 #
 function user.main():int;	# 0  (main:int)
-    i := 1;	# 1  (i:int)<-($2:int)
-barrier b := calc.==(i,1);	# 2 CALCcompEQintint (b:bit)<-(i:int)($2:int) jump 6
-    i := calc.+(i,1);	# 3 CALCbinaryADDintint (i:int)<-(i:int)($2:int)
-    io.print(i);	# 4 IOprint_val ($4:int)<-(i:int)
-    redo b := calc.<(i,3);	# 5 CALCcompLTintint (b:bit)<-(i:int)($5:int) jump 3
-exit b;	# 6  (b:bit)
-end main;	# 7  
+# conditionally redo a block 	# 1  ($2:str)
+    i := 1;	# 2  (i:int)<-($4:int)
+barrier b := calc.==(i,1);	# 3 CALCcompEQintint (b:bit)<-(i:int)($4:int) jump 7
+    i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)($4:int)
+    io.print(i);	# 5 IOprint_val ($6:int)<-(i:int)
+    redo b := calc.<(i,3);	# 6 CALCcompLTintint (b:bit)<-(i:int)($7:int) jump 4
+exit b;	# 7  (b:bit)
+end main;	# 8  
 [ 2 ]
 [ 3 ]
 

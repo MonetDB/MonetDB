@@ -23,13 +23,16 @@ stdout of test 'tst602` in directory 'src/mal` itself:
 #mil.close();	# save the content on persistent store
 #
 function user.main():int;	# 0  (main:int)
-    mil.open();	# 1 MILopen ($31:void)
-barrier (v,nme):= mil.iterator();	# 2 MILnewIterator (v:lng)(nme:str) jump 5
-    io.print(nme);	# 3 IOprint_val ($34:int)<-(nme:str)
-    redo (v,nme):= mil.iterator();	# 4 MILnewIterator (v:lng)(nme:str) jump 3
-exit v;	# 5  (v:lng)
-    mil.close();	# 6 MILclose ($35:void)
-end main;	# 7  
+# Testing the box interfaces 	# 1  ($2:str)
+# open de MIL support box and display its content 	# 2  ($4:str)
+    mil.open();	# 3 MILopen ($5:void)
+barrier (v,nme):= mil.iterator();	# 4 MILnewIterator (v:lng)(nme:str) jump 7
+    io.print(nme);	# 5 IOprint_val ($8:int)<-(nme:str)
+    redo (v,nme):= mil.iterator();	# 6 MILnewIterator (v:lng)(nme:str) jump 5
+exit v;	# 7  (v:lng)
+    mil.close();	# 8 MILclose ($9:void)
+# save the content on persistent store 	# 9  ($11:str)
+end main;	# 10  
 [ "EQ" ]
 [ "LT" ]
 [ "LE" ]

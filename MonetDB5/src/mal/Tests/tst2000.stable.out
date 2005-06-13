@@ -36,10 +36,14 @@ end clkticks;	# 7
 #clkticks(2);
 #
 function user.main():int;	# 0  (main:int)
-    mdb.setTimer(true);	# 1 MDBsetTimer ($1:void)<-($2:bit)
-    mdb.setTrace("user","clkticks",true);	# 2 MDBsetTrace2 ($3:void)<-($4:str)($5:str)($2:bit)
-    user.clkticks(2);	# 3  ($6:void)<-($7:int)
-end main;	# 4  
+#The 2000 serie  is focussed on parallelism 	# 1  ($2:str)
+#we start with a non-parallel version 	# 2  ($4:str)
+# trace all instructions executed with timing information 	# 3  ($6:str)
+    mdb.setTimer(true);	# 4 MDBsetTimer ($7:void)<-($8:bit)
+    mdb.setTrace("user","clkticks",true);	# 5 MDBsetTrace2 ($9:void)<-($10:str)($11:str)($8:bit)
+    user.clkticks(2);	# 6  ($12:void)<-($13:int)
+end main;	# 7  
+#     6 usec!    mdb.setTimer($8=true)
 #Monet Debugger on
 #Monet Debugger on
 #mdb !    Admin.clkticks(2)

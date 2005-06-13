@@ -23,11 +23,13 @@ stdout of test 'tst900` in directory 'src/mal` itself:
 !ERROR: a:= b [+] b;
 !            	^operator expected
 function user.main():int;	# 0  unknown (main:int)
-    b := bbp.new(:lng,:lng);	# 1  unknown (b:any)<-($2:lng)($3:lng)
-    x := multiplex.+(b,b);	# 2  unknown (x:any)<-(b:any)(b:any)
-    d;	# 3  unknown (d:any)
-    a := b;	# 4  unknown (a:any)<-(b:any)
-end main;	# 5  unknown 
+# the multiplex code blocks. Testing syntax errors 	# 1  unknown ($2:str)
+    b := bbp.new(:lng,:lng);	# 2  unknown (b:any)<-($4:lng)($5:lng)
+    x := multiplex.+(b,b);	# 3  unknown (x:any)<-(b:any)(b:any)
+    d;	# 4  unknown (d:any)
+# parser bug 	# 5  unknown ($9:str)
+    a := b;	# 6  unknown (a:any)<-(b:any)
+end main;	# 7  unknown 
 
 # 08:01:32 >  
 # 08:01:32 >  Done.

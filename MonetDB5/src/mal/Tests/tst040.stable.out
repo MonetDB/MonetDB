@@ -22,11 +22,13 @@ stdout of test 'tst040` in directory 'src/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-    str := "hello";	# 1  (str:str)<-($2:str)
-    int := 1:sht;	# 2  (int:sht)<-($4:sht)
-    flt := "wrong";	# 3  (flt:str)<-($6:str)
-    i := true;	# 4  (i:bit)<-($8:bit)
-end main;	# 5  
+# Variables names may be identical to type names, but 	# 1  ($2:str)
+# then they also have to bear the same value  	# 2  ($4:str)
+    str := "hello";	# 3  (str:str)<-($6:str)
+    int := 1:sht;	# 4  (int:sht)<-($8:sht)
+    flt := "wrong";	# 5  (flt:str)<-($10:str)
+    i := true;	# 6  (i:bit)<-($12:bit)
+end main;	# 7  
 
 # 07:58:44 >  
 # 07:58:44 >  Done.

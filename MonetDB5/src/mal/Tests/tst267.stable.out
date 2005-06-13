@@ -29,21 +29,22 @@ stdout of test 'tst267` in directory 'src/mal` itself:
 #print(g);
 #
 function user.main():int;	# 0  (main:int)
-    a := bbp.new(:void,:int);	# 1 CMDBATnew (a:bat[:void,:int])<-($2:void)($3:int)
-    bat.setSequenceBase(a,0:oid);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(a:bat[:void,:int])($5:oid)
-    b := bbp.new(:void,:int);	# 3 CMDBATnew (b:bat[:void,:int])<-($7:void)($8:int)
-    bat.setSequenceBase(b,0:oid);	# 4 BKCsetSequenceBase ($9:bat[:void,:int])<-(b:bat[:void,:int])($5:oid)
-    bat.insert(a,1);	# 5 BKCinsert_void_bun ($10:bat[:int,:any])<-(a:bat[:void,:int])($11:int)
-    bat.insert(a,2);	# 6 BKCinsert_void_bun ($12:bat[:int,:any])<-(a:bat[:void,:int])($13:int)
-    bat.insert(b,5);	# 7 BKCinsert_void_bun ($14:bat[:int,:any])<-(b:bat[:void,:int])($15:int)
-    bat.insert(b,6);	# 8 BKCinsert_void_bun ($16:bat[:int,:any])<-(b:bat[:void,:int])($17:int)
-    bat.insert(b,7);	# 9 BKCinsert_void_bun ($18:bat[:int,:any])<-(b:bat[:void,:int])($19:int)
-    bat.insert(b,8);	# 10 BKCinsert_void_bun ($20:bat[:int,:any])<-(b:bat[:void,:int])($21:int)
-    io.print(a);	# 11 IOprint_val ($22:int)<-(a:bat[:void,:int])
-    io.print(b);	# 12 IOprint_val ($23:int)<-(b:bat[:void,:int])
-    g := array.product(a,b);	# 13 ARRAYproduct (g:bat[:int,:int])<-(a:bat[:void,:int])(b:bat[:void,:int])
-    io.print(g);	# 14 IOprint_val ($25:int)<-(g:bat[:int,:int])
-end main;	# 15  
+# Grouped sums 	# 1  ($2:str)
+    a := bbp.new(:void,:int);	# 2 CMDBATnew (a:bat[:void,:int])<-($4:void)($5:int)
+    bat.setSequenceBase(a,0:oid);	# 3 BKCsetSequenceBase ($6:bat[:void,:int])<-(a:bat[:void,:int])($7:oid)
+    b := bbp.new(:void,:int);	# 4 CMDBATnew (b:bat[:void,:int])<-($9:void)($10:int)
+    bat.setSequenceBase(b,0:oid);	# 5 BKCsetSequenceBase ($11:bat[:void,:int])<-(b:bat[:void,:int])($7:oid)
+    bat.insert(a,1);	# 6 BKCinsert_void_bun ($12:bat[:int,:any])<-(a:bat[:void,:int])($13:int)
+    bat.insert(a,2);	# 7 BKCinsert_void_bun ($14:bat[:int,:any])<-(a:bat[:void,:int])($15:int)
+    bat.insert(b,5);	# 8 BKCinsert_void_bun ($16:bat[:int,:any])<-(b:bat[:void,:int])($17:int)
+    bat.insert(b,6);	# 9 BKCinsert_void_bun ($18:bat[:int,:any])<-(b:bat[:void,:int])($19:int)
+    bat.insert(b,7);	# 10 BKCinsert_void_bun ($20:bat[:int,:any])<-(b:bat[:void,:int])($21:int)
+    bat.insert(b,8);	# 11 BKCinsert_void_bun ($22:bat[:int,:any])<-(b:bat[:void,:int])($23:int)
+    io.print(a);	# 12 IOprint_val ($24:int)<-(a:bat[:void,:int])
+    io.print(b);	# 13 IOprint_val ($25:int)<-(b:bat[:void,:int])
+    g := array.product(a,b);	# 14 ARRAYproduct (g:bat[:int,:int])<-(a:bat[:void,:int])(b:bat[:void,:int])
+    io.print(g);	# 15 IOprint_val ($27:int)<-(g:bat[:int,:int])
+end main;	# 16  
 #-----------------#
 # h	tmp_13	  # name
 # void	int	  # type

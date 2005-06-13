@@ -20,11 +20,12 @@ command user.+(L:any$1,R:any$1):any$1 address addIntInt;	# 0  dynamic (+:any$1)<
 #a:=1+"hello";
 #b:=3.5+1;
 #
-!ERROR: 'calc.+' undefined in user.main[1]
+!ERROR: 'calc.+' undefined in user.main[2]
 function user.main():int;	# 0  (main:int)
-    a := calc.+(1,"hello");	# 1  unknown (a:any)<-($2:int)($3:str)
-    b := calc.+(3.5,1);	# 2 CALCbinaryADDfltint (b:flt)<-($5:flt)($2:int)
-end main;	# 3  
+# the calls are wrong, they violate the type constraint 	# 1  ($2:str)
+    a := calc.+(1,"hello");	# 2  unknown (a:any)<-($4:int)($5:str)
+    b := calc.+(3.5,1);	# 3 CALCbinaryADDfltint (b:flt)<-($7:flt)($4:int)
+end main;	# 4  
 
 # 07:58:55 >  
 # 07:58:55 >  Done.

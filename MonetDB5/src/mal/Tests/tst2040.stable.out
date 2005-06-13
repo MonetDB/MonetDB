@@ -62,61 +62,66 @@ stdout of test 'tst2040` in directory 'src/mal` itself:
 #	pWait:= false;
 #	printf("await dead of producer/consumer\n");
 #
-!ERROR: 'calc.==' undefined in user.main[14]
-!ERROR: 'io.printf' undefined in user.main[29]
-!ERROR: 'calc.==' undefined in user.main[30]
-!ERROR: 'calc.-' undefined in user.main[33]
-!ERROR: 'i' may not be used before being set in main[14]
-!ERROR: 'i' may not be used before being set in main[29]
-!ERROR: 'i' may not be used before being set in main[30]
-!ERROR: 'b' used outside declaration scope in main[30]
-!ERROR: 'b' used outside declaration scope in main[32]
-!ERROR: 'i' may not be used before being set in main[33]
-!ERROR: 'i' used outside declaration scope in main[40]
+!ERROR: 'calc.==' undefined in user.main[19]
+!ERROR: 'io.printf' undefined in user.main[34]
+!ERROR: 'calc.==' undefined in user.main[35]
+!ERROR: 'calc.-' undefined in user.main[38]
+!ERROR: 'i' may not be used before being set in main[19]
+!ERROR: 'i' may not be used before being set in main[34]
+!ERROR: 'i' may not be used before being set in main[35]
+!ERROR: 'b' used outside declaration scope in main[35]
+!ERROR: 'b' used outside declaration scope in main[37]
+!ERROR: 'i' may not be used before being set in main[38]
+!ERROR: 'i' used outside declaration scope in main[45]
 function user.main():int;	# 0  (main:int)
-    cWait := true;	# 1  (cWait:bit)<-($2:bit)
-    pWait := true;	# 2  (pWait:bit)<-($2:bit)
-thread producer;	# 3  (producer:any) jump 20
-    io.printf("Created producer thread\n");	# 4 IOprint_str ($5:int)<-($6:str)
-barrier pBody := true;	# 5  (pBody:bit)<-($2:bit) jump 18
-barrier pWait;	# 6  (pWait:bit) jump 10
-    io.printf("producer: sleep\n");	# 7 IOprint_str ($8:int)<-($9:str)
-    alarm.sleep(1);	# 8 ALARMsleep ($10:void)<-($11:int)
-    redo pWait;	# 9  (pWait:bit) jump 7
-exit pWait;	# 10  (pWait:bit)
-    io.printf("produce an element\n");	# 11 IOprint_str ($12:int)<-($13:str)
-    pWait := true;	# 12  (pWait:bit)<-($2:bit)
-    cWait := false;	# 13  (cWait:bit)<-($14:bit)
-barrier b := calc.==(i,0);	# 14  unknown (b:any)<-(i:int)($17:int) jump 16
-    leave producer;	# 15  (producer:any) jump 20
-exit b;	# 16  (b:any)
-    redo pBody;	# 17  (pBody:bit) jump 6
-exit pBody;	# 18  (pBody:bit)
-    io.printf("Finished producer\n");	# 19 IOprint_str ($18:int)<-($19:str)
-exit producer;	# 20  (producer:any)
-thread consumer;	# 21  (consumer:any) jump 39
-    io.printf("Created consumer thread\n");	# 22 IOprint_str ($21:int)<-($22:str)
-barrier cBody := true;	# 23  (cBody:bit)<-($2:bit) jump 37
-barrier cWait;	# 24  (cWait:bit) jump 28
-    io.printf("consumer: sleep\n");	# 25 IOprint_str ($24:int)<-($25:str)
-    alarm.sleep(1);	# 26 ALARMsleep ($26:void)<-($11:int)
-    redo cWait;	# 27  (cWait:bit) jump 25
-exit cWait;	# 28  (cWait:bit)
-    io.printf("consume element %d\n",i);	# 29  unknown ($27:any)<-($28:str)(i:int)
-barrier b := calc.==(i,0);	# 30  unknown (b:any)<-(i:int)($17:int) jump 32
-    leave consumer;	# 31  (consumer:any) jump 39
-exit b;	# 32  (b:any)
-    i := calc.-(i,1);	# 33  unknown (i:int)<-(i:int)($11:int)
-    cWait := true;	# 34  (cWait:bit)<-($2:bit)
-    pWait := false;	# 35  (pWait:bit)<-($14:bit)
-    redo cBody;	# 36  (cBody:bit) jump 24
-exit cBody;	# 37  (cBody:bit)
-    io.printf("Finished consumer\n");	# 38 IOprint_str ($29:int)<-($30:str)
-exit consumer;	# 39  (consumer:any)
-    i := 2;	# 40  (i:int)<-($31:int)
-    pWait := false;	# 41  (pWait:bit)<-($14:bit)
-    io.printf("await dead of producer/consumer\n");	# 42 IOprint_str ($32:int)<-($33:str)
-end main;	# 43  
+#The 2000 serie  is focussed on parallelism 	# 1  ($2:str)
+# Example of a simple producer/consumer pair 	# 2  ($4:str)
+    cWait := true;	# 3  (cWait:bit)<-($6:bit)
+#consumer put to sleep 	# 4  ($8:str)
+    pWait := true;	# 5  (pWait:bit)<-($6:bit)
+#consumer put to sleep 	# 6  ($8:str)
+thread producer;	# 7  (producer:any) jump 25
+    io.printf("Created producer thread\n");	# 8 IOprint_str ($12:int)<-($13:str)
+barrier pBody := true;	# 9  (pBody:bit)<-($6:bit) jump 23
+barrier pWait;	# 10  (pWait:bit) jump 15
+# bussy loop to await for consumer  	# 11  ($16:str)
+    io.printf("producer: sleep\n");	# 12 IOprint_str ($17:int)<-($18:str)
+    alarm.sleep(1);	# 13 ALARMsleep ($19:void)<-($20:int)
+    redo pWait;	# 14  (pWait:bit) jump 11
+exit pWait;	# 15  (pWait:bit)
+    io.printf("produce an element\n");	# 16 IOprint_str ($21:int)<-($22:str)
+    pWait := true;	# 17  (pWait:bit)<-($6:bit)
+    cWait := false;	# 18  (cWait:bit)<-($23:bit)
+barrier b := calc.==(i,0);	# 19  unknown (b:any)<-(i:int)($26:int) jump 21
+    leave producer;	# 20  (producer:any) jump 25
+exit b;	# 21  (b:any)
+    redo pBody;	# 22  (pBody:bit) jump 10
+exit pBody;	# 23  (pBody:bit)
+    io.printf("Finished producer\n");	# 24 IOprint_str ($27:int)<-($28:str)
+exit producer;	# 25  (producer:any)
+thread consumer;	# 26  (consumer:any) jump 44
+    io.printf("Created consumer thread\n");	# 27 IOprint_str ($30:int)<-($31:str)
+barrier cBody := true;	# 28  (cBody:bit)<-($6:bit) jump 42
+barrier cWait;	# 29  (cWait:bit) jump 33
+    io.printf("consumer: sleep\n");	# 30 IOprint_str ($33:int)<-($34:str)
+    alarm.sleep(1);	# 31 ALARMsleep ($35:void)<-($20:int)
+    redo cWait;	# 32  (cWait:bit) jump 30
+exit cWait;	# 33  (cWait:bit)
+    io.printf("consume element %d\n",i);	# 34  unknown ($36:any)<-($37:str)(i:int)
+barrier b := calc.==(i,0);	# 35  unknown (b:any)<-(i:int)($26:int) jump 37
+    leave consumer;	# 36  (consumer:any) jump 44
+exit b;	# 37  (b:any)
+    i := calc.-(i,1);	# 38  unknown (i:int)<-(i:int)($20:int)
+    cWait := true;	# 39  (cWait:bit)<-($6:bit)
+    pWait := false;	# 40  (pWait:bit)<-($23:bit)
+    redo cBody;	# 41  (cBody:bit) jump 29
+exit cBody;	# 42  (cBody:bit)
+    io.printf("Finished consumer\n");	# 43 IOprint_str ($38:int)<-($39:str)
+exit consumer;	# 44  (consumer:any)
+    i := 2;	# 45  (i:int)<-($40:int)
+    pWait := false;	# 46  (pWait:bit)<-($23:bit)
+    io.printf("await dead of producer/consumer\n");	# 47 IOprint_str ($41:int)<-($42:str)
+end main;	# 48  
 
 # 08:01:00 >  
 # 08:01:00 >  Done.

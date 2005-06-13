@@ -29,18 +29,20 @@ stdout of test 'tst047` in directory 'src/mal` itself:
 #print(l1);
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    bat.insert(b,1,1);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($5:int)
-    bat.insert(b,2,4);	# 3 BKCinsert_bun ($6:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($8:int)
-    bat.insert(b,3,9);	# 4 BKCinsert_bun ($9:bat[:int,:int])<-(b:bat[:int,:int])($10:int)($11:int)
-    io.print(b);	# 5 IOprint_val ($12:int)<-(b:bat[:int,:int])
-    br := bat.reverse(b);	# 6 BKCreverse (br:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(br);	# 7 IOprint_val ($14:int)<-(br:bat[:int,:int])
-    l0 := algebra.copy(b);	# 8 ALGcopy (l0:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(l0);	# 9 IOprint_val ($16:int)<-(l0:bat[:int,:int])
-    l1 := algebra.copy(br);	# 10 ALGcopy (l1:bat[:int,:int])<-(br:bat[:int,:int])
-    io.print(l1);	# 11 IOprint_val ($18:int)<-(l1:bat[:int,:int])
-end main;	# 12  
+#testing copying and counting reversals 	# 1  ($2:str)
+#to test reversal handling 	# 2  ($4:str)
+    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($6:int)($7:int)
+    bat.insert(b,1,1);	# 4 BKCinsert_bun ($8:bat[:int,:int])<-(b:bat[:int,:int])($9:int)($9:int)
+    bat.insert(b,2,4);	# 5 BKCinsert_bun ($10:bat[:int,:int])<-(b:bat[:int,:int])($11:int)($12:int)
+    bat.insert(b,3,9);	# 6 BKCinsert_bun ($13:bat[:int,:int])<-(b:bat[:int,:int])($14:int)($15:int)
+    io.print(b);	# 7 IOprint_val ($16:int)<-(b:bat[:int,:int])
+    br := bat.reverse(b);	# 8 BKCreverse (br:bat[:int,:int])<-(b:bat[:int,:int])
+    io.print(br);	# 9 IOprint_val ($18:int)<-(br:bat[:int,:int])
+    l0 := algebra.copy(b);	# 10 ALGcopy (l0:bat[:int,:int])<-(b:bat[:int,:int])
+    io.print(l0);	# 11 IOprint_val ($20:int)<-(l0:bat[:int,:int])
+    l1 := algebra.copy(br);	# 12 ALGcopy (l1:bat[:int,:int])<-(br:bat[:int,:int])
+    io.print(l1);	# 13 IOprint_val ($22:int)<-(l1:bat[:int,:int])
+end main;	# 14  
 #-----------------#
 # h	tmp_4	  # name
 # int	int	  # type
