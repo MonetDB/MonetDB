@@ -135,16 +135,18 @@ OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str newFcn= (str) getVarLiteral(mb,getArg(pci,1));
 	str mod= newFcn,fcn;
 	int alias[MAXARG];
+	char buf[128];
 	InstrPtr q;
 
 	(void) stk;
-	if( (fcn= strchr(newFcn,'.')) ){
-		mod= newFcn;
+	strcpy(buf,newFcn);
+	if( newFcn && (fcn= strchr(buf,'.')) ){
+		mod= buf;
 		*fcn = 0;
 		fcn++;
 	} else {
 		mod="unknownModule";
-		fcn= newFcn;
+		fcn= buf;
 	}
 	/* search the iterator bat */
 	iter=getArg(pci,2);
@@ -192,17 +194,17 @@ find the actual arguments at the proper place of the callee.
 	for(i=3;i<pci->argc;i++)
 	if( isaBatType(getArgType(mb,pci,i))){
 		q= newFcnCall(mb,"algebra","find");
-		alias[i]= newTmpVariable(mb, getTailType(getArgType(mb,pci,i)));
+		alias[i]= newTmpVariable(mb,  getTailType(getArgType(mb,pci,i)));
 		setVarUsed(mb,alias[i],TRUE);
 		setVarInitialized(mb,alias[i]);
 		getArg(q,0)= alias[i];
-		pushArgument(mb,q,iter);
+		pushArgument(mb,q,getArg(pci,i));
 		pushArgument(mb,q,hvar);
 	} 
 
 	/* cr:= mod.CMD($1,...,$n); */
 	q= newFcnCall(mb,mod,fcn);
-	cr= getArg(q,0)= newTmpVariable(mb, getTailType(getArgType(mb,pci,0)) );
+	cr= getArg(q,0)= newTmpVariable(mb, TYPE_any);
 	setVarUsed(mb,cr,TRUE);
 	setVarInitialized(mb,cr);
 
@@ -221,8 +223,7 @@ find the actual arguments at the proper place of the callee.
 	pushArgument(mb,q,hvar);
 	pushArgument(mb,q,cr);
 
-
-/* catch   MALexception and ignore them */
+/* catch   MALexception and ignore them  and replace value with nil*/
 	q= newInstruction(CATCHsymbol);
 	k= newVariable(mb, GDKstrdup("MALexception"),TYPE_str);
 	pushReturn(mb,q,k);
@@ -230,6 +231,7 @@ find the actual arguments at the proper place of the callee.
 	setVarInitialized(mb,k);
 	pushInstruction(mb,q);
 	@:malInstr(EXIT,k)@	
+
 
 /* redo (mloop,h,r):= hasMoreElements(refBat); */
 	q= newFcnCall(mb,"chopper","hasMoreElements");
