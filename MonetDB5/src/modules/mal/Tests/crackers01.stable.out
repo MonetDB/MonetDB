@@ -54,42 +54,43 @@ stdout of test 'crackers01` in directory 'src/modules/mal` itself:
 #exit MALexception;
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    bat.insert(b,10,100);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($6:int)
-    bat.insert(b,1,2);	# 3 BKCinsert_bun ($7:bat[:int,:int])<-(b:bat[:int,:int])($8:int)($9:int)
-    bat.insert(b,6,36);	# 4 BKCinsert_bun ($10:bat[:int,:int])<-(b:bat[:int,:int])($11:int)($12:int)
-    bat.insert(b,5,25);	# 5 BKCinsert_bun ($13:bat[:int,:int])<-(b:bat[:int,:int])($14:int)($15:int)
-    bat.insert(b,2,4);	# 6 BKCinsert_bun ($16:bat[:int,:int])<-(b:bat[:int,:int])($9:int)($17:int)
-    bat.insert(b,3,9);	# 7 BKCinsert_bun ($18:bat[:int,:int])<-(b:bat[:int,:int])($19:int)($20:int)
-    bat.insert(b,7,49);	# 8 BKCinsert_bun ($21:bat[:int,:int])<-(b:bat[:int,:int])($22:int)($23:int)
-    bat.insert(b,8,64);	# 9 BKCinsert_bun ($24:bat[:int,:int])<-(b:bat[:int,:int])($25:int)($26:int)
-    bat.insert(b,4,16);	# 10 BKCinsert_bun ($27:bat[:int,:int])<-(b:bat[:int,:int])($17:int)($28:int)
-    bat.insert(b,9,81);	# 11 BKCinsert_bun ($29:bat[:int,:int])<-(b:bat[:int,:int])($20:int)($30:int)
-    io.print(b);	# 12 IOprint_val ($31:int)<-(b:bat[:int,:int])
-    crackers.new(b);	# 13 CRKnew ($32:void)<-(b:bat[:int,:int])
-    y := crackers.crack(b,9,25);	# 14 CRKcrackRange (y:int)<-(b:bat[:int,:int])($20:int)($15:int)
-    io.print(y);	# 15 IOprint_val ($34:int)<-(y:int)
-    crackers.info(b);	# 16 CRKinfo ($35:void)<-(b:bat[:int,:int])
-    io.print(b);	# 17 IOprint_val ($36:int)<-(b:bat[:int,:int])
-    crackers.new(b);	# 18 CRKnew ($37:void)<-(b:bat[:int,:int])
-    y := crackers.crack(b,80,195);	# 19 CRKcrackRange (y:int)<-(b:bat[:int,:int])($38:int)($39:int)
-    io.print(y);	# 20 IOprint_val ($40:int)<-(y:int)
-    crackers.info(b);	# 21 CRKinfo ($41:void)<-(b:bat[:int,:int])
-    io.print(b);	# 22 IOprint_val ($42:int)<-(b:bat[:int,:int])
-    crackers.new(b);	# 23 CRKnew ($43:void)<-(b:bat[:int,:int])
-    y := crackers.crack(b,2,2);	# 24 CRKcrackRange (y:int)<-(b:bat[:int,:int])($44:int)($44:int)
-    io.print(y);	# 25 IOprint_val ($45:int)<-(y:int)
-    crackers.info(b);	# 26 CRKinfo ($46:void)<-(b:bat[:int,:int])
-    io.print(b);	# 27 IOprint_val ($47:int)<-(b:bat[:int,:int])
-    crackers.new(b);	# 28 CRKnew ($48:void)<-(b:bat[:int,:int])
-    y := crackers.crack(b,40,2);	# 29 CRKcrackRange (y:int)<-(b:bat[:int,:int])($49:int)($44:int)
-    io.print(y);	# 30 IOprint_val ($50:int)<-(y:int)
-    crackers.info(b);	# 31 CRKinfo ($51:void)<-(b:bat[:int,:int])
-    io.print(b);	# 32 IOprint_val ($52:int)<-(b:bat[:int,:int])
-catch MALexception;	# 33  (MALexception:any) jump 35
-    io.print(MALexception);	# 34 IOprint_val ($54:int)<-(MALexception:any)
-exit MALexception;	# 35  (MALexception:any)
-end main;	# 36  
+# Testing the cracker implementation 	# 1  ($2:str)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($5:int)
+    bat.insert(b,10,100);	# 3 BKCinsert_bun ($6:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($8:int)
+    bat.insert(b,1,2);	# 4 BKCinsert_bun ($9:bat[:int,:int])<-(b:bat[:int,:int])($10:int)($11:int)
+    bat.insert(b,6,36);	# 5 BKCinsert_bun ($12:bat[:int,:int])<-(b:bat[:int,:int])($13:int)($14:int)
+    bat.insert(b,5,25);	# 6 BKCinsert_bun ($15:bat[:int,:int])<-(b:bat[:int,:int])($16:int)($17:int)
+    bat.insert(b,2,4);	# 7 BKCinsert_bun ($18:bat[:int,:int])<-(b:bat[:int,:int])($11:int)($19:int)
+    bat.insert(b,3,9);	# 8 BKCinsert_bun ($20:bat[:int,:int])<-(b:bat[:int,:int])($21:int)($22:int)
+    bat.insert(b,7,49);	# 9 BKCinsert_bun ($23:bat[:int,:int])<-(b:bat[:int,:int])($24:int)($25:int)
+    bat.insert(b,8,64);	# 10 BKCinsert_bun ($26:bat[:int,:int])<-(b:bat[:int,:int])($27:int)($28:int)
+    bat.insert(b,4,16);	# 11 BKCinsert_bun ($29:bat[:int,:int])<-(b:bat[:int,:int])($19:int)($30:int)
+    bat.insert(b,9,81);	# 12 BKCinsert_bun ($31:bat[:int,:int])<-(b:bat[:int,:int])($22:int)($32:int)
+    io.print(b);	# 13 IOprint_val ($33:int)<-(b:bat[:int,:int])
+    crackers.new(b);	# 14 CRKnew ($34:void)<-(b:bat[:int,:int])
+    y := crackers.crack(b,9,25);	# 15 CRKcrackRange (y:int)<-(b:bat[:int,:int])($22:int)($17:int)
+    io.print(y);	# 16 IOprint_val ($36:int)<-(y:int)
+    crackers.info(b);	# 17 CRKinfo ($37:void)<-(b:bat[:int,:int])
+    io.print(b);	# 18 IOprint_val ($38:int)<-(b:bat[:int,:int])
+    crackers.new(b);	# 19 CRKnew ($39:void)<-(b:bat[:int,:int])
+    y := crackers.crack(b,80,195);	# 20 CRKcrackRange (y:int)<-(b:bat[:int,:int])($40:int)($41:int)
+    io.print(y);	# 21 IOprint_val ($42:int)<-(y:int)
+    crackers.info(b);	# 22 CRKinfo ($43:void)<-(b:bat[:int,:int])
+    io.print(b);	# 23 IOprint_val ($44:int)<-(b:bat[:int,:int])
+    crackers.new(b);	# 24 CRKnew ($45:void)<-(b:bat[:int,:int])
+    y := crackers.crack(b,2,2);	# 25 CRKcrackRange (y:int)<-(b:bat[:int,:int])($46:int)($46:int)
+    io.print(y);	# 26 IOprint_val ($47:int)<-(y:int)
+    crackers.info(b);	# 27 CRKinfo ($48:void)<-(b:bat[:int,:int])
+    io.print(b);	# 28 IOprint_val ($49:int)<-(b:bat[:int,:int])
+    crackers.new(b);	# 29 CRKnew ($50:void)<-(b:bat[:int,:int])
+    y := crackers.crack(b,40,2);	# 30 CRKcrackRange (y:int)<-(b:bat[:int,:int])($51:int)($46:int)
+    io.print(y);	# 31 IOprint_val ($52:int)<-(y:int)
+    crackers.info(b);	# 32 CRKinfo ($53:void)<-(b:bat[:int,:int])
+    io.print(b);	# 33 IOprint_val ($54:int)<-(b:bat[:int,:int])
+catch MALexception;	# 34  (MALexception:any) jump 36
+    io.print(MALexception);	# 35 IOprint_val ($56:int)<-(MALexception:any)
+exit MALexception;	# 36  (MALexception:any)
+end main;	# 37  
 #-----------------#
 # h	tmp_13	  # name
 # int	int	  # type
@@ -162,7 +163,7 @@ end main;	# 36
 [ 8,	  64	  ]
 [ 10,	  100	  ]
 [ 9,	  81	  ]
-[ "MALexception:user.main[29]:crackers.crack:illegal range\n" ]
+[ "MALexception:user.main[30]:crackers.crack:illegal range\n" ]
 
 # 14:51:05 >  
 # 14:51:05 >  Done.

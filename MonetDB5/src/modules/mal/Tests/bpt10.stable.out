@@ -39,24 +39,27 @@ stdout of test 'bpt10` in directory 'src/modules/mal` itself:
 #partitions.close();
 #
 function user.main():int;	# 0  (main:int)
-    a1 := bbp.new(:void,:int);	# 1 CMDBATnew (a1:bat[:void,:int])<-($2:void)($3:int)
-    bat.setSequenceBase(a1,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(a1:bat[:void,:int])($5:oid)
-    a2 := bbp.new(:void,:int);	# 3 CMDBATnew (a2:bat[:void,:int])<-($7:void)($8:int)
-    bat.setSequenceBase(a2,10@0);	# 4 BKCsetSequenceBase ($9:bat[:void,:int])<-(a2:bat[:void,:int])($10:oid)
-    a3 := bbp.new(:void,:int);	# 5 CMDBATnew (a3:bat[:void,:int])<-($12:void)($13:int)
-    bat.setSequenceBase(a3,20@0);	# 6 BKCsetSequenceBase ($14:bat[:void,:int])<-(a3:bat[:void,:int])($15:oid)
-barrier (go,i):= mal.newRange(0);	# 7 RNGnewRange_int (go:bit)(i:int)<-($18:int) jump 12
-    bat.insert(a1,nil,i);	# 8 BKCinsert_bun ($19:bat[:void,:int])<-(a1:bat[:void,:int])($20:void)(i:int)
-    bat.insert(a2,nil,i);	# 9 BKCinsert_bun ($21:bat[:void,:int])<-(a2:bat[:void,:int])($20:void)(i:int)
-    bat.insert(a3,nil,i);	# 10 BKCinsert_bun ($22:bat[:void,:int])<-(a3:bat[:void,:int])($20:void)(i:int)
-    redo (go,i):= mal.nextElement(1,10);	# 11 RNGnextElement_int (go:bit)(i:int)<-($23:int)($24:int) jump 8
-exit (go,i);	# 12  (go:bit)(i:int)
-    partitions.deposit(a1);	# 13 BPTdeposit ($25:void)<-(a1:bat[:void,:int])
-    partitions.deposit(a1,a2);	# 14 BPTdeposit2 ($26:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
-    partitions.deposit(a1,a3);	# 15 BPTdeposit2 ($27:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
-    partitions.dump();	# 16 BPTdump ($28:void)
-    partitions.close();	# 17 BPTclose ($29:void)
-end main;	# 18  
+#testing the BAT partition table 	# 1  ($2:str)
+# nothing is saved because the bats are not persistent 	# 2  ($4:str)
+    a1 := bbp.new(:void,:int);	# 3 CMDBATnew (a1:bat[:void,:int])<-($6:void)($7:int)
+    bat.setSequenceBase(a1,0@0);	# 4 BKCsetSequenceBase ($8:bat[:void,:int])<-(a1:bat[:void,:int])($9:oid)
+    a2 := bbp.new(:void,:int);	# 5 CMDBATnew (a2:bat[:void,:int])<-($11:void)($12:int)
+    bat.setSequenceBase(a2,10@0);	# 6 BKCsetSequenceBase ($13:bat[:void,:int])<-(a2:bat[:void,:int])($14:oid)
+    a3 := bbp.new(:void,:int);	# 7 CMDBATnew (a3:bat[:void,:int])<-($16:void)($17:int)
+    bat.setSequenceBase(a3,20@0);	# 8 BKCsetSequenceBase ($18:bat[:void,:int])<-(a3:bat[:void,:int])($19:oid)
+barrier (go,i):= mal.newRange(0);	# 9 RNGnewRange_int (go:bit)(i:int)<-($22:int) jump 14
+    bat.insert(a1,nil,i);	# 10 BKCinsert_bun ($23:bat[:void,:int])<-(a1:bat[:void,:int])($24:void)(i:int)
+    bat.insert(a2,nil,i);	# 11 BKCinsert_bun ($25:bat[:void,:int])<-(a2:bat[:void,:int])($24:void)(i:int)
+    bat.insert(a3,nil,i);	# 12 BKCinsert_bun ($26:bat[:void,:int])<-(a3:bat[:void,:int])($24:void)(i:int)
+    redo (go,i):= mal.nextElement(1,10);	# 13 RNGnextElement_int (go:bit)(i:int)<-($27:int)($28:int) jump 10
+exit (go,i);	# 14  (go:bit)(i:int)
+# now really add it 	# 15  ($30:str)
+    partitions.deposit(a1);	# 16 BPTdeposit ($31:void)<-(a1:bat[:void,:int])
+    partitions.deposit(a1,a2);	# 17 BPTdeposit2 ($32:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
+    partitions.deposit(a1,a3);	# 18 BPTdeposit2 ($33:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
+    partitions.dump();	# 19 BPTdump ($34:void)
+    partitions.close();	# 20 BPTclose ($35:void)
+end main;	# 21  
 ptop=3 plimit=1024
 [0] bid=13 pid=13 f=0, l=10 prv=-1 nxt=1 cap=-1
 [1] bid=13 pid=14 f=10, l=20 prv=0 nxt=2 cap=-1

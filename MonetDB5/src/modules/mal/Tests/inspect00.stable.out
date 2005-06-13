@@ -41,15 +41,17 @@ end tst;	# 10
 #tst();
 #
 function user.main():int;	# 0  (main:int)
-    user.tst();	# 1  ($1:void)
-end main;	# 2  
+# test analysis of stack frames 	# 1  ($2:str)
+# next one is illegal 	# 2  ($4:str)
+    user.tst();	# 3  ($5:void)
+end main;	# 4  
 stack depth 2
 #---------------------------------------------------------#
 # stk	trace						  # name
 # int	str						  # type
 #---------------------------------------------------------#
 [ 0,	  "t := mdb.getStackTrace(); at #3 in tst"	  ]
-[ 1,	  "$1 := user.tst(); at #1 in main"		  ]
+[ 1,	  "$5 := user.tst(); at #3 in main"		  ]
 #-----------------------------------------#
 # stk	frame				  # name
 # str	str				  # type
@@ -73,6 +75,10 @@ stack depth 2
 #-----------------#
 [ "tst",  "0@0"	  ]
 [ "i",	  "0@0"	  ]
+[ "$2",	  "nil"	  ]
+[ "$3",	  "0@0"	  ]
+[ "t",	  "nil"	  ]
+[ "$5",	  "0@0"	  ]
 !ERROR: MALexception:inspect.stkFrame:illegal depth.
 
 # 22:47:39 >  

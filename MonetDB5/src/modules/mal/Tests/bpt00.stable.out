@@ -54,36 +54,39 @@ stdout of test 'bpt00` in directory 'src/modules/mal` itself:
 
 
 function user.main():int;	# 0  (main:int)
-    a1 := bbp.new(:void,:int);	# 1 CMDBATnew (a1:bat[:void,:int])<-($2:void)($3:int)
-    bat.setSequenceBase(a1,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(a1:bat[:void,:int])($5:oid)
-    a2 := bbp.new(:void,:int);	# 3 CMDBATnew (a2:bat[:void,:int])<-($7:void)($8:int)
-    bat.setSequenceBase(a2,10@0);	# 4 BKCsetSequenceBase ($9:bat[:void,:int])<-(a2:bat[:void,:int])($10:oid)
-    a3 := bbp.new(:void,:int);	# 5 CMDBATnew (a3:bat[:void,:int])<-($12:void)($13:int)
-    bat.setSequenceBase(a3,20@0);	# 6 BKCsetSequenceBase ($14:bat[:void,:int])<-(a3:bat[:void,:int])($15:oid)
-barrier (go,i):= mal.newRange(0);	# 7 RNGnewRange_int (go:bit)(i:int)<-($18:int) jump 12
-    bat.insert(a1,nil,i);	# 8 BKCinsert_bun ($19:bat[:void,:int])<-(a1:bat[:void,:int])($20:void)(i:int)
-    bat.insert(a2,nil,i);	# 9 BKCinsert_bun ($21:bat[:void,:int])<-(a2:bat[:void,:int])($20:void)(i:int)
-    bat.insert(a3,nil,i);	# 10 BKCinsert_bun ($22:bat[:void,:int])<-(a3:bat[:void,:int])($20:void)(i:int)
-    redo (go,i):= mal.nextElement(1,10);	# 11 RNGnextElement_int (go:bit)(i:int)<-($23:int)($24:int) jump 8
-exit (go,i);	# 12  (go:bit)(i:int)
-    io.print(a1);	# 13 IOprint_val ($25:int)<-(a1:bat[:void,:int])
-    io.print(a2);	# 14 IOprint_val ($26:int)<-(a2:bat[:void,:int])
-    io.print(a3);	# 15 IOprint_val ($27:int)<-(a3:bat[:void,:int])
-barrier idx := partitions.newIterator();	# 16 BPTnewIteratorBase (idx:int) jump 19
-    io.print(idx);	# 17 IOprint_val ($29:int)<-(idx:int)
-    redo idx := partitions.hasMoreElements();	# 18 BPThasMoreElementsBase (idx:int) jump 17
-exit idx;	# 19  (idx:int)
-    partitions.deposit(a1);	# 20 BPTdeposit ($30:void)<-(a1:bat[:void,:int])
-    partitions.deposit(a1,a2);	# 21 BPTdeposit2 ($31:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
-    partitions.deposit(a1,a3);	# 22 BPTdeposit2 ($32:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
-    partitions.dump();	# 23 BPTdump ($33:void)
-barrier idx := partitions.newIterator();	# 24 BPTnewIteratorBase (idx:int) jump 29
-    io.print(idx);	# 25 IOprint_val ($34:int)<-(idx:int)
-    b := partitions.take(idx);	# 26 BPTtake (b:bat[:void,:any])<-(idx:int)
-    io.print(b);	# 27 IOprint_val ($36:int)<-(b:bat[:void,:any])
-    redo idx := partitions.hasMoreElements();	# 28 BPThasMoreElementsBase (idx:int) jump 25
-exit idx;	# 29  (idx:int)
-end main;	# 30  
+#testing the BAT partition table 	# 1  ($2:str)
+    a1 := bbp.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-($4:void)($5:int)
+    bat.setSequenceBase(a1,0@0);	# 3 BKCsetSequenceBase ($6:bat[:void,:int])<-(a1:bat[:void,:int])($7:oid)
+    a2 := bbp.new(:void,:int);	# 4 CMDBATnew (a2:bat[:void,:int])<-($9:void)($10:int)
+    bat.setSequenceBase(a2,10@0);	# 5 BKCsetSequenceBase ($11:bat[:void,:int])<-(a2:bat[:void,:int])($12:oid)
+    a3 := bbp.new(:void,:int);	# 6 CMDBATnew (a3:bat[:void,:int])<-($14:void)($15:int)
+    bat.setSequenceBase(a3,20@0);	# 7 BKCsetSequenceBase ($16:bat[:void,:int])<-(a3:bat[:void,:int])($17:oid)
+barrier (go,i):= mal.newRange(0);	# 8 RNGnewRange_int (go:bit)(i:int)<-($20:int) jump 13
+    bat.insert(a1,nil,i);	# 9 BKCinsert_bun ($21:bat[:void,:int])<-(a1:bat[:void,:int])($22:void)(i:int)
+    bat.insert(a2,nil,i);	# 10 BKCinsert_bun ($23:bat[:void,:int])<-(a2:bat[:void,:int])($22:void)(i:int)
+    bat.insert(a3,nil,i);	# 11 BKCinsert_bun ($24:bat[:void,:int])<-(a3:bat[:void,:int])($22:void)(i:int)
+    redo (go,i):= mal.nextElement(1,10);	# 12 RNGnextElement_int (go:bit)(i:int)<-($25:int)($26:int) jump 9
+exit (go,i);	# 13  (go:bit)(i:int)
+    io.print(a1);	# 14 IOprint_val ($27:int)<-(a1:bat[:void,:int])
+    io.print(a2);	# 15 IOprint_val ($28:int)<-(a2:bat[:void,:int])
+    io.print(a3);	# 16 IOprint_val ($29:int)<-(a3:bat[:void,:int])
+# add the stuff to the BPT and dump it 	# 17  ($31:str)
+barrier idx := partitions.newIterator();	# 18 BPTnewIteratorBase (idx:int) jump 21
+    io.print(idx);	# 19 IOprint_val ($33:int)<-(idx:int)
+    redo idx := partitions.hasMoreElements();	# 20 BPThasMoreElementsBase (idx:int) jump 19
+exit idx;	# 21  (idx:int)
+# now really add it 	# 22  ($35:str)
+    partitions.deposit(a1);	# 23 BPTdeposit ($36:void)<-(a1:bat[:void,:int])
+    partitions.deposit(a1,a2);	# 24 BPTdeposit2 ($37:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
+    partitions.deposit(a1,a3);	# 25 BPTdeposit2 ($38:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
+    partitions.dump();	# 26 BPTdump ($39:void)
+barrier idx := partitions.newIterator();	# 27 BPTnewIteratorBase (idx:int) jump 32
+    io.print(idx);	# 28 IOprint_val ($40:int)<-(idx:int)
+    b := partitions.take(idx);	# 29 BPTtake (b:bat[:void,:any])<-(idx:int)
+    io.print(b);	# 30 IOprint_val ($42:int)<-(b:bat[:void,:any])
+    redo idx := partitions.hasMoreElements();	# 31 BPThasMoreElementsBase (idx:int) jump 28
+exit idx;	# 32  (idx:int)
+end main;	# 33  
 #-----------------#
 # h	tmp_13	  # name
 # void	int	  # type

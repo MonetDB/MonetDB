@@ -38,27 +38,28 @@ stdout of test 'crackers05` in directory 'src/modules/mal` itself:
 #crackers.drop(b);
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    bat.insert(b,10,100);	# 2 BKCinsert_bun ($4:bat[:int,:int])<-(b:bat[:int,:int])($5:int)($6:int)
-    bat.insert(b,1,2);	# 3 BKCinsert_bun ($7:bat[:int,:int])<-(b:bat[:int,:int])($8:int)($9:int)
-    bat.insert(b,6,36);	# 4 BKCinsert_bun ($10:bat[:int,:int])<-(b:bat[:int,:int])($11:int)($12:int)
-    bat.insert(b,5,25);	# 5 BKCinsert_bun ($13:bat[:int,:int])<-(b:bat[:int,:int])($14:int)($15:int)
-    bat.insert(b,2,4);	# 6 BKCinsert_bun ($16:bat[:int,:int])<-(b:bat[:int,:int])($9:int)($17:int)
-    bat.insert(b,3,9);	# 7 BKCinsert_bun ($18:bat[:int,:int])<-(b:bat[:int,:int])($19:int)($20:int)
-    bat.insert(b,7,49);	# 8 BKCinsert_bun ($21:bat[:int,:int])<-(b:bat[:int,:int])($22:int)($23:int)
-    bat.insert(b,8,64);	# 9 BKCinsert_bun ($24:bat[:int,:int])<-(b:bat[:int,:int])($25:int)($26:int)
-    bat.insert(b,4,16);	# 10 BKCinsert_bun ($27:bat[:int,:int])<-(b:bat[:int,:int])($17:int)($28:int)
-    bat.insert(b,9,81);	# 11 BKCinsert_bun ($29:bat[:int,:int])<-(b:bat[:int,:int])($20:int)($30:int)
-    crackers.new(b);	# 12 CRKnew ($31:void)<-(b:bat[:int,:int])
-    crackers.crack(b,9,25);	# 13 CRKcrackRange ($32:int)<-(b:bat[:int,:int])($20:int)($15:int)
-    crackers.crack(b,80,195);	# 14 CRKcrackRange ($33:int)<-(b:bat[:int,:int])($34:int)($35:int)
-    crackers.crack(b,2,2);	# 15 CRKcrackRange ($36:int)<-(b:bat[:int,:int])($9:int)($9:int)
-barrier (i,view):= crackers.newIterator(b);	# 16 CRKnewIterator (i:lng)(view:bat[:int,:int])<-(b:bat[:int,:int]) jump 19
-    io.print(view);	# 17 IOprint_val ($39:int)<-(view:bat[:int,:int])
-    redo (i,view):= crackers.hasMoreElements(b);	# 18 CRKhasMoreElements (i:lng)(view:bat[:int,:int])<-(b:bat[:int,:int]) jump 17
-exit i;	# 19  (i:lng)
-    crackers.drop(b);	# 20 CRKdropPiece ($41:void)<-(b:bat[:int,:int])
-end main;	# 21  
+# Testing the cracker implementation 	# 1  ($2:str)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($5:int)
+    bat.insert(b,10,100);	# 3 BKCinsert_bun ($6:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($8:int)
+    bat.insert(b,1,2);	# 4 BKCinsert_bun ($9:bat[:int,:int])<-(b:bat[:int,:int])($10:int)($11:int)
+    bat.insert(b,6,36);	# 5 BKCinsert_bun ($12:bat[:int,:int])<-(b:bat[:int,:int])($13:int)($14:int)
+    bat.insert(b,5,25);	# 6 BKCinsert_bun ($15:bat[:int,:int])<-(b:bat[:int,:int])($16:int)($17:int)
+    bat.insert(b,2,4);	# 7 BKCinsert_bun ($18:bat[:int,:int])<-(b:bat[:int,:int])($11:int)($19:int)
+    bat.insert(b,3,9);	# 8 BKCinsert_bun ($20:bat[:int,:int])<-(b:bat[:int,:int])($21:int)($22:int)
+    bat.insert(b,7,49);	# 9 BKCinsert_bun ($23:bat[:int,:int])<-(b:bat[:int,:int])($24:int)($25:int)
+    bat.insert(b,8,64);	# 10 BKCinsert_bun ($26:bat[:int,:int])<-(b:bat[:int,:int])($27:int)($28:int)
+    bat.insert(b,4,16);	# 11 BKCinsert_bun ($29:bat[:int,:int])<-(b:bat[:int,:int])($19:int)($30:int)
+    bat.insert(b,9,81);	# 12 BKCinsert_bun ($31:bat[:int,:int])<-(b:bat[:int,:int])($22:int)($32:int)
+    crackers.new(b);	# 13 CRKnew ($33:void)<-(b:bat[:int,:int])
+    crackers.crack(b,9,25);	# 14 CRKcrackRange ($34:int)<-(b:bat[:int,:int])($22:int)($17:int)
+    crackers.crack(b,80,195);	# 15 CRKcrackRange ($35:int)<-(b:bat[:int,:int])($36:int)($37:int)
+    crackers.crack(b,2,2);	# 16 CRKcrackRange ($38:int)<-(b:bat[:int,:int])($11:int)($11:int)
+barrier (i,view):= crackers.newIterator(b);	# 17 CRKnewIterator (i:lng)(view:bat[:int,:int])<-(b:bat[:int,:int]) jump 20
+    io.print(view);	# 18 IOprint_val ($41:int)<-(view:bat[:int,:int])
+    redo (i,view):= crackers.hasMoreElements(b);	# 19 CRKhasMoreElements (i:lng)(view:bat[:int,:int])<-(b:bat[:int,:int]) jump 18
+exit i;	# 20  (i:lng)
+    crackers.drop(b);	# 21 CRKdropPiece ($43:void)<-(b:bat[:int,:int])
+end main;	# 22  
 #-----------------#
 # h	tmp_5	  # name
 # int	int	  # type

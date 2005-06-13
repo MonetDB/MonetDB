@@ -59,43 +59,46 @@ stdout of test 'bpt06` in directory 'src/modules/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-    a1 := bbp.new(:void,:int);	# 1 CMDBATnew (a1:bat[:void,:int])<-($2:void)($3:int)
-    bat.setSequenceBase(a1,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(a1:bat[:void,:int])($5:oid)
-    a2 := bbp.new(:void,:int);	# 3 CMDBATnew (a2:bat[:void,:int])<-($7:void)($8:int)
-    bat.setSequenceBase(a2,10@0);	# 4 BKCsetSequenceBase ($9:bat[:void,:int])<-(a2:bat[:void,:int])($10:oid)
-    a3 := bbp.new(:void,:int);	# 5 CMDBATnew (a3:bat[:void,:int])<-($12:void)($13:int)
-    bat.setSequenceBase(a3,20@0);	# 6 BKCsetSequenceBase ($14:bat[:void,:int])<-(a3:bat[:void,:int])($15:oid)
-barrier (go,i):= mal.newRange(0);	# 7 RNGnewRange_int (go:bit)(i:int)<-($18:int) jump 12
-    bat.insert(a1,nil,i);	# 8 BKCinsert_bun ($19:bat[:void,:int])<-(a1:bat[:void,:int])($20:void)(i:int)
-    bat.insert(a2,nil,i);	# 9 BKCinsert_bun ($21:bat[:void,:int])<-(a2:bat[:void,:int])($20:void)(i:int)
-    bat.insert(a3,nil,i);	# 10 BKCinsert_bun ($22:bat[:void,:int])<-(a3:bat[:void,:int])($20:void)(i:int)
-    redo (go,i):= mal.nextElement(1,10);	# 11 RNGnextElement_int (go:bit)(i:int)<-($23:int)($24:int) jump 8
-exit (go,i);	# 12  (go:bit)(i:int)
-    partitions.deposit(a1);	# 13 BPTdeposit ($25:void)<-(a1:bat[:void,:int])
-    partitions.deposit(a1,a2);	# 14 BPTdeposit2 ($26:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
-    partitions.deposit(a1,a3);	# 15 BPTdeposit2 ($27:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
-    partitions.dump();	# 16 BPTdump ($28:void)
-    io.print("delete 24");	# 17 IOprint_val ($29:int)<-($30:str)
-    partitions.delete(a1,24@0);	# 18 BPTdelete_oid ($31:bat[:void,:int])<-(a1:bat[:void,:int])($32:oid)
-    io.print("delete 14");	# 19 IOprint_val ($33:int)<-($34:str)
-    partitions.delete(a1,14@0);	# 20 BPTdelete_oid ($35:bat[:void,:int])<-(a1:bat[:void,:int])($36:oid)
-    io.print("delete 4");	# 21 IOprint_val ($37:int)<-($38:str)
-    partitions.delete(a1,4@0);	# 22 BPTdelete_oid ($39:bat[:void,:int])<-(a1:bat[:void,:int])($40:oid)
-    io.print("check result");	# 23 IOprint_val ($41:int)<-($42:str)
-barrier (idx,b):= partitions.newIterator(a1);	# 24 BPTnewIterator (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 28
-    io.print(idx);	# 25 IOprint_val ($45:int)<-(idx:int)
-    io.print(b);	# 26 IOprint_val ($46:int)<-(b:bat[:void,:int])
-    redo (idx,b):= partitions.hasMoreElements(a1);	# 27 BPThasMoreElements (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 25
-exit idx;	# 28  (idx:int)
-    io.print("remove a complete bat");	# 29 IOprint_val ($47:int)<-($48:str)
-    partitions.delete(a1,a2);	# 30 BPTdeleteBAT ($49:bat[:void,:int])<-(a1:bat[:void,:int])(a2:bat[:void,:int])
-    io.print("check result");	# 31 IOprint_val ($50:int)<-($42:str)
-barrier (idx,b):= partitions.newIterator(a1);	# 32 BPTnewIterator (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 36
-    io.print(idx);	# 33 IOprint_val ($51:int)<-(idx:int)
-    io.print(b);	# 34 IOprint_val ($52:int)<-(b:bat[:void,:int])
-    redo (idx,b):= partitions.hasMoreElements(a1);	# 35 BPThasMoreElements (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 33
-exit idx;	# 36  (idx:int)
-end main;	# 37  
+#testing deletions from a BAT partition table 	# 1  ($2:str)
+    a1 := bbp.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-($4:void)($5:int)
+    bat.setSequenceBase(a1,0@0);	# 3 BKCsetSequenceBase ($6:bat[:void,:int])<-(a1:bat[:void,:int])($7:oid)
+    a2 := bbp.new(:void,:int);	# 4 CMDBATnew (a2:bat[:void,:int])<-($9:void)($10:int)
+    bat.setSequenceBase(a2,10@0);	# 5 BKCsetSequenceBase ($11:bat[:void,:int])<-(a2:bat[:void,:int])($12:oid)
+    a3 := bbp.new(:void,:int);	# 6 CMDBATnew (a3:bat[:void,:int])<-($14:void)($15:int)
+    bat.setSequenceBase(a3,20@0);	# 7 BKCsetSequenceBase ($16:bat[:void,:int])<-(a3:bat[:void,:int])($17:oid)
+barrier (go,i):= mal.newRange(0);	# 8 RNGnewRange_int (go:bit)(i:int)<-($20:int) jump 13
+    bat.insert(a1,nil,i);	# 9 BKCinsert_bun ($21:bat[:void,:int])<-(a1:bat[:void,:int])($22:void)(i:int)
+    bat.insert(a2,nil,i);	# 10 BKCinsert_bun ($23:bat[:void,:int])<-(a2:bat[:void,:int])($22:void)(i:int)
+    bat.insert(a3,nil,i);	# 11 BKCinsert_bun ($24:bat[:void,:int])<-(a3:bat[:void,:int])($22:void)(i:int)
+    redo (go,i):= mal.nextElement(1,10);	# 12 RNGnextElement_int (go:bit)(i:int)<-($25:int)($26:int) jump 9
+exit (go,i);	# 13  (go:bit)(i:int)
+# add it 	# 14  ($28:str)
+    partitions.deposit(a1);	# 15 BPTdeposit ($29:void)<-(a1:bat[:void,:int])
+    partitions.deposit(a1,a2);	# 16 BPTdeposit2 ($30:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
+    partitions.deposit(a1,a3);	# 17 BPTdeposit2 ($31:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
+    partitions.dump();	# 18 BPTdump ($32:void)
+# delete individuals 	# 19  ($34:str)
+    io.print("delete 24");	# 20 IOprint_val ($35:int)<-($36:str)
+    partitions.delete(a1,24@0);	# 21 BPTdelete_oid ($37:bat[:void,:int])<-(a1:bat[:void,:int])($38:oid)
+    io.print("delete 14");	# 22 IOprint_val ($39:int)<-($40:str)
+    partitions.delete(a1,14@0);	# 23 BPTdelete_oid ($41:bat[:void,:int])<-(a1:bat[:void,:int])($42:oid)
+    io.print("delete 4");	# 24 IOprint_val ($43:int)<-($44:str)
+    partitions.delete(a1,4@0);	# 25 BPTdelete_oid ($45:bat[:void,:int])<-(a1:bat[:void,:int])($46:oid)
+    io.print("check result");	# 26 IOprint_val ($47:int)<-($48:str)
+barrier (idx,b):= partitions.newIterator(a1);	# 27 BPTnewIterator (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 31
+    io.print(idx);	# 28 IOprint_val ($51:int)<-(idx:int)
+    io.print(b);	# 29 IOprint_val ($52:int)<-(b:bat[:void,:int])
+    redo (idx,b):= partitions.hasMoreElements(a1);	# 30 BPThasMoreElements (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 28
+exit idx;	# 31  (idx:int)
+    io.print("remove a complete bat");	# 32 IOprint_val ($53:int)<-($54:str)
+    partitions.delete(a1,a2);	# 33 BPTdeleteBAT ($55:bat[:void,:int])<-(a1:bat[:void,:int])(a2:bat[:void,:int])
+    io.print("check result");	# 34 IOprint_val ($56:int)<-($48:str)
+barrier (idx,b):= partitions.newIterator(a1);	# 35 BPTnewIterator (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 39
+    io.print(idx);	# 36 IOprint_val ($57:int)<-(idx:int)
+    io.print(b);	# 37 IOprint_val ($58:int)<-(b:bat[:void,:int])
+    redo (idx,b):= partitions.hasMoreElements(a1);	# 38 BPThasMoreElements (idx:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 36
+exit idx;	# 39  (idx:int)
+end main;	# 40  
 ptop=3 plimit=1024
 [0] bid=13 pid=13 f=0, l=10 prv=-1 nxt=1 cap=-1
 [1] bid=13 pid=14 f=10, l=20 prv=0 nxt=2 cap=-1

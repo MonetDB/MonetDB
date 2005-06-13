@@ -35,12 +35,13 @@ end dummy;	# 5
 #inspect.showFunction("Admin","dummy");
 #
 function user.main():int;	# 0  (main:int)
-    user.dummy(1);	# 1  ($1:void)<-($2:int)
-    io.printf("get function properties\n");	# 2 IOprint_str ($3:int)<-($4:str)
-    l := inspect.getSignature("user","dummy");	# 3 INSPECTgetSignature (l:bat[:str,:str])<-($6:str)($7:str)
-    io.print(l);	# 4 IOprint_val ($8:int)<-(l:bat[:str,:str])
-    mdb.showFunction("user","dummy");	# 5 MDBshowFunction3 ($9:void)<-($6:str)($7:str)
-end main;	# 6  
+#self inspection of the code base 	# 1  ($2:str)
+    user.dummy(1);	# 2  ($3:void)<-($4:int)
+    io.printf("get function properties\n");	# 3 IOprint_str ($5:int)<-($6:str)
+    l := inspect.getSignature("user","dummy");	# 4 INSPECTgetSignature (l:bat[:str,:str])<-($8:str)($9:str)
+    io.print(l);	# 5 IOprint_val ($10:int)<-(l:bat[:str,:str])
+    mdb.showFunction("user","dummy");	# 6 MDBshowFunction3 ($11:void)<-($8:str)($9:str)
+end main;	# 7  
 [ 1 ]
 #-------------------------------------------------#
 # fcn	stmt					  # name
