@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@f mil
+@f mil_utils
 @a Martin Kersten
 @v 0.1
 @* MIL support box
@@ -25,63 +25,59 @@ In particular, this calls for name resolution into
 either a global variable, or access to a BAT.
 The box contains all constants defined in the original
 MIL modules.
-@mal
-module mil
-comment "The mil module provides a box abstraction
-	to store for global MIL constants.
-	Between sessions the value of the constants 
-	is saved on disk in the form of a simple 
-	MAL program, which is scanned and made 
-	available by opening the box. A future 
-	implementation should provide transaction 
-	support over the box, which would permit 
-	multiple clients to exchange (scalar) 
-	information easily.";
 
-pattern open():void
+The mil module provides a box abstraction
+to store for global MIL constants.
+Between sessions the value of the constants 
+is saved on disk in the form of a simple 
+MAL program, which is scanned and made 
+available by opening the box. A future 
+implementation should provide transaction 
+support over the box, which would permit 
+multiple clients to exchange (scalar) 
+information easily.
+@mal
+
+pattern mil.open():void
 address MILopen
 comment "Locate and open the MIL constant box";
-pattern close():void
+pattern mil.close():void
 address MILclose
 comment "Close the MIL constant box ";
-pattern destroy():void
+pattern mil.destroy():void
 address MILdestroy
 comment "Destroy the MIL box";
-pattern take(name:str):any 
+pattern mil.take(name:str):any 
 address MILtake
 comment "Locate and take the typed value";
-pattern deposit(name:str,val:any) :void 		
+pattern mil.deposit(name:str,val:any) :void 		
 address MILdeposit
 comment "Enter a new value into the box";
 
-pattern releaseAll():void 
+pattern mil.releaseAll():void 
 address MILreleaseAll
 comment "Release all constants";
-pattern release(name:str) :void 		
+pattern mil.release(name:str) :void 		
 address MILrelease
 comment "Release a new constant value";
-pattern toString(name:str):str 
+pattern mil.toString(name:str):str 
 address MILtoString
 comment "Get the string representation 
 	of an element in the box";
-pattern discard(name:str) :void 		
+pattern mil.discard(name:str) :void 		
 address MILdiscard
 comment "Release the const from the box";
-pattern iterator() (:lng,:str)
+pattern mil.iterator() (:lng,:str)
 address MILnewIterator
 comment "Locate next element in the box";
-pattern hasMoreElements()(:lng,:str)
+pattern mil.hasMoreElements()(:lng,:str)
 address MILhasMoreElements
 comment "Locate next element in the box";
 
-pattern prelude():void 
+pattern mil.prelude():void 
 address MILprelude
 comment "Initialize the const box";
 
-pattern line(msg:str):void
-address MILline
-comment "Produce comment for tracking
-	the MIL code produced";
 
 @-
 To simplify backward compatibility we introduce here a series
@@ -92,15 +88,15 @@ will be cases not accounted for.
 If MIL is intended, the compiler writer/user should explicitly
 use the mil module denotation.
 @mal
-command sort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
+command mil.sort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
 
 @mal
-command insert(b:bat[:any$1,:any$2], h:any$1, t:any$2) :bat[:any$1,:any$2]
+command mil.insert(b:bat[:any$1,:any$2], h:any$1, t:any$2) :bat[:any$1,:any$2]
 address MILinsert_bun
 comment "Insert one BUN[h,t] in a BAT.";
-command insert(b:bat[:void,:any$2], h:oid, t:any$2) :bat[:oid,:any$2]
+command mil.insert(b:bat[:void,:any$2], h:oid, t:any$2) :bat[:oid,:any$2]
 address MILinsert_bun;
 @-
 Compatibility code wrappers
@@ -118,10 +114,6 @@ str MILinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	*r = *bid;
 	return BKCinsert_bun(r,bid,h,t);
 }
-@mil
-include "mil_algebra_procs";
-include "mil_system_procs";
-
 @-
 Version 4 contains a series of predefined constants.
 They are stored in a BOX for retrieval.
@@ -164,36 +156,36 @@ M_2_SQRTPI :=1.12837916709551257390LL;
 M_SQRT2 :=1.41421356237309504880LL;
 M_SQRT1_2 :=0.70710678118654752440LL;
 
-mil.deposit("EQ",EQ);
-mil.deposit("LT",LT);
-mil.deposit("LE",LE);
-mil.deposit("GT",GT);
-mil.deposit("GE",GE);
-mil.deposit("STORE_MEM",STORE_MEM);
-mil.deposit("STORE_MMAP",STORE_MMAP);
-mil.deposit("STORE_COMPR",STORE_COMPR);
-mil.deposit("BUF_NORMAL",BUF_NORMAL);
-mil.deposit("BUF_RANDOM",BUF_RANDOM);
-mil.deposit("BUF_SEQUENTIAL",BUF_SEQUENTIAL);
-mil.deposit("BUF_WILLNEED",BUF_WILLNEED);
-mil.deposit("BUF_DONTNEED",BUF_DONTNEED);
-mil.deposit("EBUSY",EBUSY);
-mil.deposit("BAT_READ",BAT_READ);
-mil.deposit("BAT_APPEND",BAT_APPEND);
-mil.deposit("BAT_WRITE",BAT_WRITE);
-mil.deposit("M_E",M_E);
-mil.deposit("M_LOG2E",M_LOG2E);
-mil.deposit("M_LOG10E",M_LOG10E);
-mil.deposit("M_LN2",M_LN2);
-mil.deposit("M_LN10",M_LN10);
-mil.deposit("M_PI",M_PI);
-mil.deposit("M_PI_2",M_PI_2);
-mil.deposit("M_PI_4",M_PI_4);
-mil.deposit("M_1_PI",M_1_PI);
-mil.deposit("M_2_PI",M_2_PI);
-mil.deposit("M_2_SQRTPI",M_2_SQRTPI);
-mil.deposit("M_SQRT2",M_SQRT2);
-mil.deposit("M_SQRT1_2",M_SQRT1_2);
+mil_utils.deposit("EQ",EQ);
+mil_utils.deposit("LT",LT);
+mil_utils.deposit("LE",LE);
+mil_utils.deposit("GT",GT);
+mil_utils.deposit("GE",GE);
+mil_utils.deposit("STORE_MEM",STORE_MEM);
+mil_utils.deposit("STORE_MMAP",STORE_MMAP);
+mil_utils.deposit("STORE_COMPR",STORE_COMPR);
+mil_utils.deposit("BUF_NORMAL",BUF_NORMAL);
+mil_utils.deposit("BUF_RANDOM",BUF_RANDOM);
+mil_utils.deposit("BUF_SEQUENTIAL",BUF_SEQUENTIAL);
+mil_utils.deposit("BUF_WILLNEED",BUF_WILLNEED);
+mil_utils.deposit("BUF_DONTNEED",BUF_DONTNEED);
+mil_utils.deposit("EBUSY",EBUSY);
+mil_utils.deposit("BAT_READ",BAT_READ);
+mil_utils.deposit("BAT_APPEND",BAT_APPEND);
+mil_utils.deposit("BAT_WRITE",BAT_WRITE);
+mil_utils.deposit("M_E",M_E);
+mil_utils.deposit("M_LOG2E",M_LOG2E);
+mil_utils.deposit("M_LOG10E",M_LOG10E);
+mil_utils.deposit("M_LN2",M_LN2);
+mil_utils.deposit("M_LN10",M_LN10);
+mil_utils.deposit("M_PI",M_PI);
+mil_utils.deposit("M_PI_2",M_PI_2);
+mil_utils.deposit("M_PI_4",M_PI_4);
+mil_utils.deposit("M_1_PI",M_1_PI);
+mil_utils.deposit("M_2_PI",M_2_PI);
+mil_utils.deposit("M_2_SQRTPI",M_2_SQRTPI);
+mil_utils.deposit("M_SQRT2",M_SQRT2);
+mil_utils.deposit("M_SQRT1_2",M_SQRT1_2);
 @-
 @{
 @+ Implementation
@@ -212,10 +204,10 @@ The content of this box my only be changed by the Administrator.
 	insertToBox(box,@1,msg);
 	GDKfree(msg);
 @c
-#include "mil.h"
+#include "mil_utils.h"
+#include "mal_utils.h"
 #include "streams.h"
 
-#include "mal_utils.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
