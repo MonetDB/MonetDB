@@ -353,14 +353,14 @@ comment "Returns all BUNs, consisting of a head-value from 'left' and
         and 'right' with equal tail- resp. head-value (i.e. the join
 	columns are projected out).";
 
+command join( left:bat[:void,:any$1], right:bat[:any$1,:void])
+		:bat[:void,:oid] 
+address ALGjoin;
 command join( left:bat[:any$1,:void], right:bat[:oid,:any$3])
 		:bat[:any$1,:any$3] 
 address ALGjoin;
 command join( left:bat[:any$1,:oid], right:bat[:void,:any$3])
 		:bat[:any$1,:any$3] 
-address ALGjoin;
-command join( left:bat[:void,:any$1], right:bat[:any$1,:void])
-		:bat[:void,:oid] 
 address ALGjoin;
 
 command join( left:bat[:any$1,:any$2], right:bat[:any$2,:any$3],
@@ -450,7 +450,7 @@ command markT( b:bat[:any$1,:any$2] ) :bat[:any$1,:void]
 address ALGtmark_default
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
-command markT( b:bat[:void,:any$1] ) :bat[:void,:oid] 
+command markT( b:bat[:void,:any$1] ) :bat[:oid,:void] 
 address ALGtmark_default
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 

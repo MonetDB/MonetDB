@@ -258,8 +258,6 @@ command isSortedReverse(b:bat[:any,:any]) :bit
 address BKCisSortedReverse
 comment "Returns whether a BAT is ordered on head or not.";
 
-command getBatSize(b:bat[:any,:any]) :str 
-address BKCbatsize_str;
 command getBatSize(b:bat[:any,:any]) :int 
 address BKCbatsize
 comment "A version of BATsize that does not require loading the BAT.";

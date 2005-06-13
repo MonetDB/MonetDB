@@ -119,12 +119,13 @@ address CMDbbpGetObjects
 @+ BAT declarations
 A pattern block may be required to make the proper translation to
 the BAT library. In particular when the type information is needed
-to steer the process.
+to steer the process. This means the code can not belong to the
+kernel module, because MAL context knowledge is forbidden there.
+
 @mal
 pattern new(ht:any$1, tt:any$2, b:bat[:any,:any]) :bat[:any$1,:any$2] 	
 address CMDBATclone
-comment "Creates a new empty transient BAT
-	by cloning another";
+comment "Creates a new empty transient BAT by cloning another";
 pattern new(ht:any$1, tt:any$2) :bat[:any$1,:any$2] 	
 address CMDBATnew
 comment "Creates a new empty transient BAT,
@@ -582,6 +583,7 @@ str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	int *res;
 	BAT *b;
 	str msg;
+	oid o;
 	(void) m;
 
 	bid= *(int *) getArgReference(s,p,1);
@@ -601,9 +603,15 @@ str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 		cap= *(int *) getArgReference(s,p,2);
 	else cap = BATcount(b);
 	BBPunfix(b->batCacheid);
+	o= b->hseqbase;
 
 	res= (int *) getArgReference(s,p,0);
 	msg= (str) BKCnewBATint(res,&ht,&tt,&cap);
+	if(msg== MAL_SUCCEED && ht == TYPE_void){
+		b= BATdescriptor(*res);
+		BATseqbase(b,o);
+		BBPunfix(b->batCacheid);
+	}
 
 	return msg;
 }

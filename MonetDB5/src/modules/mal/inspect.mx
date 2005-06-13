@@ -89,15 +89,14 @@ This information is retained in the symbol table for subsequent use.
 It can be extracted into a BAT for inspection, such as providing
 an online help facility.
 @mal
+module manual;
 command help(k:str):bat[:str,:str] 
-address INSPECThelp
-comment "Search the commentary strings for 
-	one matching the keyword";
-command help(mod:str,fcn:str)
-	:bat[:int,:str] 
-address INSPECThelp2
-comment "Collect the comments for a given 
-	function pattern";
+address MANUALhelp
+comment "Search the commentary strings for one matching the keyword";
+
+command help(mod:str,fcn:str) :bat[:int,:str] 
+address MANUALhelp2
+comment "Collect the comments for a given function pattern";
 @- Manual construction
 The manual operations ease offline inspection of all function definitions.
 It purposely generates an XML organized file, because we expect external
@@ -105,19 +104,18 @@ tools to massage it further for presentation. The envisioned
 tagging structure becomes
 @-
 @mal
-command manual(file:str,mod:str)
-address INSPECTmanual2
+command create(file:str,mod:str)
+address MANUALcreate2
 comment "Generate a synopsis of a module";
-command manual(file:str,mod:str,recursive:int)
-address INSPECTmanual
+command create(file:str,mod:str,recursive:int)
+address MANUALcreate
 comment "Generate a recursive module synopsis";
-command manual(mod:str)
-address INSPECTmanual1
+command create(mod:str)
+address MANUALcreate1
 comment "Generate a synopsis of a module";
-command manual()
-address INSPECTmanual0
-comment "Produces a XML-formatted manual 
-	over all modules loaded.";
+command create()
+address MANUALcreate0
+comment "Produces a XML-formatted manual over all modules loaded.";
 @-
 @{
 @+ Implementation
@@ -465,36 +463,36 @@ str INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         return MAL_SUCCEED;
 }
 
-str INSPECTmanual(int *ret, str *fname, str *mod,int *recursive){
+str MANUALcreate(int *ret, str *fname, str *mod,int *recursive){
 	stream *fs;
 	(void) ret; /* fool compiler */
 	fs= open_wastream(*fname);
-	if( fs== NULL) return throwMessage("mal.manual","Could not open file\n");
+	if( fs== NULL) return throwMessage("manual.create","Could not open file\n");
 	dumpManualHeader(fs);
 	dumpManual(fs, findModule(getClient()->nspace,*mod),*recursive);
 	dumpManualFooter(fs);
 	return MAL_SUCCEED;
 }
-str INSPECTmanual2(int *ret, str *fname, str *mod,int *recursive){
+str MANUALcreate2(int *ret, str *fname, str *mod,int *recursive){
 	int r= 0;
 	(void) recursive; /* fool compiler */
-	return INSPECTmanual(ret,fname,mod,&r);
+	return MANUALcreate(ret,fname,mod,&r);
 }
-str INSPECTmanual1(int *ret, str *mod){
+str MANUALcreate1(int *ret, str *mod){
 	(void) ret; /* fool compiler */
 	dumpManualHeader(GDKout);
 	dumpManual(GDKout, findModule(getClient()->nspace,*mod),0);
 	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
-str INSPECTmanual0(int *ret){
+str MANUALcreate0(int *ret){
 	(void) ret; /* fool compiler */
 	dumpManualHeader(GDKout);
 	dumpManual(GDKout, getClient()->nspace,1);
 	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
-str INSPECThelp(int *ret, str *mod) 
+str MANUALhelp(int *ret, str *mod) 
 {	Client cntxt= getClient();
 	Module m;
 	Symbol s;
@@ -502,8 +500,8 @@ str INSPECThelp(int *ret, str *mod)
 	int i;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
         if (b == 0) 
-		return throwMessage("reference.help", "failed to create BAT");
-        return throwMessage("reference.help", "Search by keyword not yet available");
+		return throwMessage("manual.help", "failed to create BAT");
+        return throwMessage("manual.help", "Search by keyword not yet available");
 
 	m= findModule(cntxt->nspace,*mod);
 	if(m)
@@ -520,13 +518,13 @@ str INSPECThelp(int *ret, str *mod)
 	@:Pseudo(help,Comment)@
 	return MAL_SUCCEED;
 }
-str INSPECThelp2(int *ret, str *mod, str *fcn) 
+str MANUALhelp2(int *ret, str *mod, str *fcn) 
 {	Symbol s;
 	str msg;
 
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
         if (b == 0) 
-		return throwMessage("reference.helpComment", "failed to create BAT");
+		return throwMessage("manual.helpComment", "failed to create BAT");
 
 	s= findMALSymbol(*mod,*fcn);
 	while(s!= NULL){
