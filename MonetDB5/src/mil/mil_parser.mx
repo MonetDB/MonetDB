@@ -132,7 +132,8 @@ mal_export int parseMILprg(Client cntxt, MalBlkPtr curPrg);
 #include "mil_parser.h"
 #include "mil.h"
 
-mal_export str mapid(str n);
+mal_export str mapfcn(str n);
+mal_export str mapmod(str n);
 mal_export int ismapped(str n);
 
 #define BE(X) ((MILbackend)(X->state[PARSER]))
@@ -410,26 +411,19 @@ int parseMILfunctioncall(Client cntxt, MalBlkPtr currBlk, str nme){
 			setModuleId(currInstr,putName("optimizer",9));
 			setFunctionId(currInstr,putName("multiplex",9));
 		} else{
-			setModuleId(currInstr,putName("group",5));
-			setFunctionId(currInstr,putName("tactics",7));
+			setModuleId(currInstr,putName("optimizer",9));
+			setFunctionId(currInstr,putName("group",5));
 		}
 		pushStr(currBlk, currInstr, nme+1);
 		GDKfree(nme);
 	} else {
-@-
-Some operators require backward compatibility signatures.
-@c
-		if(strcmp(nme,"insert")==0)
-			setModuleId(currInstr,putName("mil",3));
-@-
-Others should be mapped to their new name
-@c
-		if( ismapped(nme)){
-			str n= nme;
-			nme= mapid(nme);
-			GDKfree(n);
-		}
-		setFunctionId(currInstr,putName(nme,strlen(nme)));
+		str m, f;
+		m= mapmod(nme);
+		f= mapfcn(nme);
+		setModuleId(currInstr,putName(m,strlen(m)));
+		setFunctionId(currInstr,putName(f,strlen(f)));
+		GDKfree(m);
+		GDKfree(f);
 	}
 
 	varid= getDestVar(currInstr) = newTmpVariable(currBlk,TYPE_any);
@@ -1084,16 +1078,13 @@ void parseMILinput(Client cntxt, MalBlkPtr currBlk){
 	char *c = CURRENT(cntxt);
 
 	if( NL(*c)) return;
-	currInstr = newInstruction(ASSIGNsymbol);
-	setModuleId(currInstr,putName("io",2));
-	setFunctionId(currInstr,putName("print",5));
+	currInstr = newInstruction(REMsymbol);
 	while (*c && !NL(*c)) { c++; len++;}
 	c= GDKmalloc(len+2);
-	c[0]='#';
-	strncpy(c+1, CURRENT(cntxt),len);
+	c[0]=0;
+	strncpy(c, CURRENT(cntxt),len);
 	c[len+1]= 0;
-	len= newConstant(currBlk, TYPE_str, c, FALSE);
-	pushArgument(currBlk,currInstr,len);
+	getArg(currInstr,0)= newConstant(currBlk, TYPE_str, c, FALSE);
 	pushInstruction(currBlk,currInstr);
 }
 int parseMILprg(Client cntxt, MalBlkPtr currBlk){

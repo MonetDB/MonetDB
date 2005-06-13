@@ -14,21 +14,7 @@ lib_mil = {
 	LIBS = $(MONETDB_LIBS)
 }
 
-#bin_M2m = {
-#	HEADERS = h
-#	SOURCES = mil_compiler.mx M2m.mx
-#	LIBS = $(MONETDB_LIBS) -l_mil -lbat -lstream ../mal/libmal \
-#                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-#		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
-#}
-#
-##doc_M2m = {
-#	DIR = pkgdatadir/docs/mil
-#	SOURCES = M2m.mx  mil_compiler.mx mil_conformance.mx \
-#		mil_commands.mx mil.mx
-#}
-
 scripts_mal = {
 	DIR = pkglibdir
-	SOURCES = mil.mx
+	SOURCES = mil.mx mil_commands.mx
 }

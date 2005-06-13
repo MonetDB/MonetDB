@@ -20,13 +20,26 @@
 @a M Kersten 
 @v 0
 @* MIL Scenario implementation
-The MIL scenario uses the MIL parser to built a program ready for execution.
+The MonetDB Interpreter Language (MIL) has been replaced by a more
+rigid, but much faster intermediate language. To support some backward
+compatibility a MIL scenario framework has been designed, which gives
+MIL diehards the means to migrate their old code. Simple instructions,
+i.e. without runtime dependent type resolution, can be executed as well.
+
+An old program <prg> can be precompiled to MIL using the 
+command line
+Mserver --dbinit="include mil;mil.compile();" <prg>
+[CHECK]
 @mal
 module mil;
 
 command start():void 
 address CMDMILsession
 comment "Switch to processing MIL statements";
+
+command compile():void 
+address CMDMILcompileOnly
+comment "Compile a MIL program, don;t execute";
 
 command compile(fname:str):void 
 address CMDMILcompile
@@ -41,6 +54,7 @@ address MILline
 comment "Produce comment for tracking the MIL code produced";
 
 include mil_utils;
+#include mil_commands; needs some work
 @h
 #ifndef _MIL_SCENARIO_H
 #define _MIL_SCENARIO_H
@@ -347,6 +361,12 @@ CMDMILcompile(int *ret, str *fname){
 str
 CMDMILcompile2(int *ret, str *fname, str *ofile){
 	(void) ret; (void) fname; (void) ofile;
+	return throwMessage("mil.compile","nyi");
+}
+
+str
+CMDMILcompileOnly(int *ret){
+	(void) ret; 
 	return throwMessage("mil.compile","nyi");
 }
 
