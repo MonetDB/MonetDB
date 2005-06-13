@@ -1690,7 +1690,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
         case ';': case '\t': case ' ': 
             nextChar(cntxt);
 			continue;
-        case '#': /* skipComment(cntxt);*/
+        case '#': 
 		{ /* keep the full line comments */
 			char start[256], *e=start, c; 
 			MalBlkPtr curBlk= curPrg->def;
@@ -1702,13 +1702,14 @@ int parseMAL(Client cntxt, Symbol curPrg){
 				if( e < start+256-1) *e++= c;
 				nextChar(cntxt);
 				if (c == '\n' || c == '\r') {
-					e--;
-					prevChar(cntxt);
+					*e = 0;
+					if( e > start) e--;
+					/* prevChar(cntxt);*/
 					break;
 				}
 			}
 			if( e> start) *e=0;
-			if( curBlk->stop > 0){
+			if( e>start && curBlk->stop > 0){
 				curInstr= newInstruction(REMsymbol);
 				pushInstruction(curBlk,curInstr);
 				getArg(curInstr,0)= newConstant(curBlk,TYPE_str,
