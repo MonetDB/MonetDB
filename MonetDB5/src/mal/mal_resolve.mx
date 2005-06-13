@@ -614,11 +614,10 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
             p->typechk = MIN(p->typechk,typeKind(mb,p,0));
         return;
     }
-    if( functionId(p)){
+    if( functionId(p) && moduleId(p)){
 #ifdef DEBUG_MAL_RESOLVE
         tracefcn= idcmp(functionName(p),traceFcnName)==0;
 #endif
-		assert(moduleId(p) != NULL);
         m= findModule(scope,moduleId(p));
 		if( m->subscope[(int)(getSubScope(functionName(p)))])
 			s1= findFunctionType(m,mb,p,silent);
@@ -663,7 +662,7 @@ The language should also recognize (a,b):=(1,2);
 This is achieved by propagation of the rhs types to the lhs
 variables.
 @c
-    assert( functionId(p) ==0);
+    if( functionId(p) ) return;
     if( p->retc > 1 && p->argc>p->retc && p->argc!= 2 * p->retc){
         GDKerror("Multiple assignment mismatch\n");
         mb->errors++;

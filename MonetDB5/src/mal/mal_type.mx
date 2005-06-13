@@ -94,6 +94,8 @@ derived from the parser to avoid a loop in the define-structure.
 #define THRDcall    53
 #define PATcall     54  /* pattern call */
 
+#define REMsymbol     99  /* commentary to be retained */
+
 
 mal_export str  getTypeName(malType tpe);
 mal_export malType coercion(malType t1, malType t2);

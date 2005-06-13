@@ -484,6 +484,7 @@ elements in the value stack.
                 	break;
                 }
     case NOOPsymbol:
+	case REMsymbol:
     case COMMANDsymbol:
     case FUNCTIONsymbol:
     case FACTORYsymbol:

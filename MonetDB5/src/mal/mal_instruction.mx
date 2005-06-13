@@ -1926,7 +1926,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
         }
         sprintf(t,"%s ",operatorName(p->barrier));
         advance(t);
-    } else if( !functionStart(p) && !functionExit(p))
+    } else if( !functionStart(p) && !functionExit(p) && p->token != REMsymbol)
         @:tabulate@
     switch( p->token){
         case NOOPsymbol:
@@ -1979,6 +1979,9 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
         case FACTORYsymbol:
         case PATTERNsymbol:
             return fcnDefinition(mb,p,s,flg); 
+        case REMsymbol:
+            sprintf(t,"#%s ",getVarLiteral(mb,getArg(p,0))); 
+			break;
         default:
             sprintf(t," ?%d? ",p->token); 
     }
@@ -2054,7 +2057,8 @@ Dump the type and value information.
     advance(t);
     if(functionId(p) || p->argc>p->retc+1 ) sprintf(t,")");
     advance(t);
-    sprintf(t,";");
+	if( p->token != REMsymbol)
+		sprintf(t,";");
     if( flg & (LIST_MAL_TYPE | LIST_MAL_BIND)){
         advance(t);
         t= hiddenInstructionArgs(mb,p,t);

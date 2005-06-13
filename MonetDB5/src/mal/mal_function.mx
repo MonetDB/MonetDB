@@ -268,6 +268,9 @@ void chkFlow(MalBlkPtr mb)
             }
             break;
 		default:
+            if( p->token == REMsymbol){
+                /* do nothing */
+            } else
 			if( isaSignature(p) && i ){
 			    str msg=instruction2str(mb,p,TRUE);
 			    GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
@@ -622,8 +625,6 @@ printFunction(GDKout, new->def, LIST_MAL_ALL);
 #endif
 	return new;
 }
-@-
-@}
 @-
 For commands we do not have to clone the routine. We merely have to
 assure that the type-constraints are obeyed. The resulting type
