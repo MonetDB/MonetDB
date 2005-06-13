@@ -44,7 +44,8 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	 * should not be used any more
 	 */
 	public String getName() throws XMLDBException {
-		throw new XMLDBException(ErrorCodes.VENDOR_ERROR, "This method is deprecated, use getNames() instead");
+		// this method seems to be in use, although deprecated
+		return("MonetDB/XQuery");
 	}
 
 	/**
