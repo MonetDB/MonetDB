@@ -11,7 +11,7 @@
 randomseed := 40;
 mem_maxsize(1000000000LL);
 vm_maxsize( 2000000000LL);
-  PROC init_modgmm():void := { 
+  PROC init_modgmm():void { 
     VAR curthreads := threadcnt(0);
     IF (curthreads < (Nthreads + 1)) 
 	threadcnt( (Nthreads - curthreads) + 1 );
@@ -21,23 +21,23 @@ vm_maxsize( 2000000000LL);
   init_modgmm();
 
   VAR GMMdebuglog := fopen("/ufs/arjen/tmp/GMM.log", "a");
-  PROC debug( str msg, ..any.. ):void := {
+  PROC debug( str msg, ..any.. ):void {
     fprintf( GMMdebuglog, "GMM: " + msg + " @ %s\n", $(2..), trim( ctime() ) );
     fflush( GMMdebuglog );
   }
   debug("Starting gmm.mil session %s", sessionId);
 
-  PROC _x(BAT[any,any::1] x):BAT[void,any::1] := {RETURN x.reverse.mark(nil).reverse;}
-  PROC nx(BAT[any,any::1] x):BAT[void,any::1] := {RETURN x.reverse.mark(oid(0)).reverse;}
-  PROC x_(BAT[any::1,any] x):BAT[any::1,void] := {RETURN x.mark(nil);}
-  PROC xn(BAT[any::1,any] x):BAT[any::1,void] := {RETURN x.mark(oid(0));}
-  PROC Nseq(int N):BAT[void,int] := {
+  PROC _x(BAT[any,any::1] x):BAT[void,any::1] {RETURN x.reverse().mark(nil).reverse();}
+  PROC nx(BAT[any,any::1] x):BAT[void,any::1] {RETURN x.reverse().mark(oid(0)).reverse();}
+  PROC x_(BAT[any::1,any] x):BAT[any::1,void] {RETURN x.mark(nil);}
+  PROC xn(BAT[any::1,any] x):BAT[any::1,void] {RETURN x.mark(oid(0));}
+  PROC Nseq(int N):BAT[void,int] {
     VAR i := 0; VAR seq := new(void,int);
     seq.setSequenceBase(oid(0));
     WHILE (i<N) { seq.insert(nil,i); i:+=1; }
     RETURN seq;
   }
-  PROC randseq(int N):BAT[void,int] := {
+  PROC randseq(int N):BAT[void,int] {
     VAR i := 0; VAR seq := new(void,int);
     seq.setSequenceBase(oid(0));
     WHILE (i<N) { seq.insert(nil,rand()); i:+=1; }
@@ -45,30 +45,29 @@ vm_maxsize( 2000000000LL);
   }
 
   # casting bats of bats should have worked with [dbl] but doesn't -- BUG!
-  PROC conv2sht(BAT[any::1,any] b):BAT[any::1,sht] := {RETURN [sht](b);}
-  PROC conv2flt(BAT[any::1,any] b):BAT[any::1,flt] := {RETURN [flt](b);}
-  PROC conv2dbl(BAT[any::1,any] b):BAT[any::1,dbl] := {RETURN [dbl](b);}
+  PROC conv2sht(BAT[any::1,any] b):BAT[any::1,sht] {RETURN [sht](b);}
+  PROC conv2flt(BAT[any::1,any] b):BAT[any::1,flt] {RETURN [flt](b);}
+  PROC conv2dbl(BAT[any::1,any] b):BAT[any::1,dbl] {RETURN [dbl](b);}
 
-  PROC sqrt(flt x):dbl := {RETURN sqrt(dbl(x));}
-  PROC [sqrt](BAT[any::1,flt] x):BAT[any::1,dbl] := {RETURN [sqrt]([dbl](x));}
-  PROC log(flt x):dbl := {RETURN log(dbl(x));}
-  PROC [log](BAT[any::1,flt] x):BAT[any::1,dbl] := {RETURN [log]([dbl](x));}
+  PROC sqrt(flt x):dbl {RETURN sqrt(dbl(x));}
+  PROC [sqrt](BAT[any::1,flt] x):BAT[any::1,dbl] {RETURN [sqrt]([dbl](x));}
+  PROC log(flt x):dbl {RETURN log(dbl(x));}
+  PROC [log](BAT[any::1,flt] x):BAT[any::1,dbl] {RETURN [log]([dbl](x));}
 
 
 #line 77 "../../../src/gmm/gmm.mx"
   # circumvent parsing problems with [[op]](bat[bat],bat[bat])
-  PROC nestedop(str op, bat[any::1,any] x, bat[any::1,any] y):BAT[any::1,any] := {
+  PROC nestedop(str op, bat[any::1,any] x, bat[any::1,any] y):BAT[any::1,any] {
     RETURN [* op](x, y); 
   }
-  PROC nestedop(str op, bat[any::1,any] x, bat[any::1,any] y, any z):BAT[any::1,any] := 
-  {
+  PROC nestedop(str op, bat[any::1,any] x, bat[any::1,any] y, any z):BAT[any::1,any] {
     RETURN [* op](x, y, z); 
   }
-  PROC nestedop(str op, bat[any::1,any::2] x):BAT[any::1,any::2] := {
+  PROC nestedop(str op, bat[any::1,any::2] x):BAT[any::1,any::2] {
     RETURN [* op](x); 
   }
 
-  PROC square(bat[any::1,any::2] x):BAT[any::1,any::2] := {RETURN [*](x, x );}
+  PROC square(bat[any::1,any::2] x):BAT[any::1,any::2] {RETURN [*](x, x );}
 
   #  post@batloop{
   #    VAR p := $t;
@@ -94,16 +93,16 @@ vm_maxsize( 2000000000LL);
 
 #line 466 "../../../src/gmm/gmm.mx"
   module(enum);
-  PROC init_clustertype(): int := {
+  PROC init_clustertype(): int {
     VAR tc;
-    IF( view_bbp_name().reverse.exist("TCluster" ) ) {
+    IF( view_bbp_name().reverse().exist("TCluster" ) ) {
       tc := enum_load( "TCluster" );
     } ELSE {
       tc := enum_create( "TCluster", cseq );
     }
     RETURN tc;
   }
-  PROC destroy_clustertype():void := {
+  PROC destroy_clustertype():void {
     enum_drop( TCluster );
     bat("TCluster").setTransient();
   }
@@ -112,13 +111,13 @@ vm_maxsize( 2000000000LL);
 
 
 #line 499 "../../../src/gmm/gmm.mx"
-  PROC coeffName(int i): str := { RETURN "Icoeff_" + str(i); }
-  PROC newCollection( str cname, int Nimg ): BAT[str,bat] := {
+  PROC coeffName(int i): str { RETURN "Icoeff_" + str(i); }
+  PROC newCollection( str cname, int Nimg ): BAT[str,bat] {
     VAR res := new(str,bat).rename(cname);
     VAR I := new( void, str, Nimg );
     I.setSequenceBase(oid(0)).rename( cname + "_I" );
     VAR Ib := new( oid, void, Nimg );
-    VAR Ibr:= Ib.reverse;
+    VAR Ibr:= Ib.reverse();
     Ibr.setSequenceBase(oid(0));
     Ib.rename( cname + "_Ib" );
     VAR Ix := new( void, int, Nimg );
@@ -145,17 +144,16 @@ vm_maxsize( 2000000000LL);
     res.access( BAT_READ );
     RETURN res;
   }
-  PROC newCollection( str cname ): BAT[str,bat] :=
-  {
+  PROC newCollection( str cname ): BAT[str,bat] {
     RETURN newCollection(cname, 1);
   }
 
 
 #line 546 "../../../src/gmm/gmm.mx"
-PROC paramName(str p,int i): str := { 
+PROC paramName(str p,int i): str { 
   RETURN p + "_" + str(i); 
 }
-PROC renameGMM( bat[str,bat] model, str mname ):void := {
+PROC renameGMM( bat[str,bat] model, str mname ):void {
   model.rename(mname);
   model@batloop(){
     $t.rename(mname + "_" + $h);
@@ -167,14 +165,14 @@ PROC renameGMM( bat[str,bat] model, str mname ):void := {
     $t.rename(mname + "_Covar_" + str($h));
   }
 }
-PROC newGMM( int Nimg ): BAT[str,bat] := {
+PROC newGMM( int Nimg ): BAT[str,bat] {
   VAR model := new(str,bat);
   VAR mImgIdx := new(oid,void,Nimg * C);
-  mImgIdx.reverse.setSequenceBase(oid(0));
+  mImgIdx.reverse().setSequenceBase(oid(0));
   mImgIdx.access( BAT_APPEND );
   model.insert("mImgIdx", mImgIdx);
   VAR mCIdx := new(TCluster,void,Nimg * C);
-  mCIdx.reverse.setSequenceBase(oid(0));
+  mCIdx.reverse().setSequenceBase(oid(0));
   mCIdx.access( BAT_APPEND );
   model.insert("mCIdx", mCIdx);
   VAR prior := new(void,flt,Nimg * C);
@@ -208,21 +206,21 @@ PROC newGMM( int Nimg ): BAT[str,bat] := {
   model.access( BAT_READ );
   RETURN model;
 }
-PROC newGMM( str mname, int Nimg ): BAT[str,bat] := {
+PROC newGMM( str mname, int Nimg ): BAT[str,bat] {
   VAR gmm := newGMM(Nimg);
   renameGMM(gmm, mname);
   RETURN gmm;
 }
-PROC newGMM( str mname ): BAT[str,bat] := {
+PROC newGMM( str mname ): BAT[str,bat] {
   RETURN newGMM( mname, 1 );
 }
 
 
 #line 669 "../../../src/gmm/gmm.mx"
-  PROC newImage( BAT[str,str] dict, str theUrl ): oid := {
+  PROC newImage( BAT[str,str] dict, str theUrl ): oid {
     VAR theImgId;
     bat(dict.find("I")).insert( nil, theUrl );
-    theImgId := I.reverse.fetch( I.max );
+    theImgId := I.reverse().fetch( I.max );
     RETURN theImgId;
   }
 
@@ -249,7 +247,7 @@ PROC newGMM( str mname ): BAT[str,bat] := {
 
 #line 1494 "../../../src/gmm/gmm.mx"
     # PROC EM(int Niter, bat[str,bat] EM_coll, bat[str,bat] EM_model):bat[str,bat]
-  PROC EM_globalmodel(int Niter): bat[str,bat] := {
+  PROC EM_globalmodel(int Niter): bat[str,bat] {
     
 #line 1279 "../../../src/gmm/gmm.mx"
   VAR gmm      := EM_model;
@@ -288,7 +286,7 @@ PROC newGMM( str mname ): BAT[str,bat] := {
   VAR mImgIdx  := gmm.find("mImgIdx");
   VAR mCIdx    := gmm.find("mCIdx");
   VAR xcIdx    := join(Ib.reverse, mImgIdx);
-  VAR xIdx     := xn(xcIdx).reverse;
+  VAR xIdx     := xn(xcIdx).reverse();
   VAR cIdx     := nx(xcIdx);
 
 
@@ -502,7 +500,7 @@ VAR dists;
 
   VAR priors   := join( cIdx, [dbl](gmm.find("Prior")) );
   act          := [*]( act, priors );
-  VAR s        := {sum}( xIdx.reverse.join(act) );
+  VAR s        {sum}( xIdx.reverse().join(act) );
 #  s            := [ [>](s,const MIN_S)? s : const MIN_S ];
 #  s            := [ [!=](s,const dbl(0))? s : const 1.0LL ];
   s            := [ [>](s,const MIN_S)? s : const 1.0LL ];
@@ -516,7 +514,7 @@ VAR dists;
   
 #line 1353 "../../../src/gmm/gmm.mx"
   loglikelihood := [*]([log](s), const -1);
-  loglikelihood := {sum}(join(Ib,loglikelihood));
+  loglikelihood {sum}(join(Ib,loglikelihood));
                   s      := nil;
   IF (not(isnil(loglikelihood.max)))
     debug("Iter %d, maxLL %lf", iter, loglikelihood.max);
@@ -538,11 +536,11 @@ VAR dists;
   VAR fff;
   {
     VAR convNewId := oid(gmmfinal.find("mImgIdx").count);
-    VAR convIdx   := join(converged.mirror, mImgIdx);
+    VAR convIdx   := join(converged.mirror(), mImgIdx);
     
 #line 611 "../../../src/gmm/gmm.mx"
 {
-  VAR fIdx := convIdx.reverse.mark(convNewId).reverse;
+  VAR fIdx := convIdx.reverse().mark(convNewId).reverse();
 
   VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
   VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
@@ -580,7 +578,7 @@ VAR dists;
     VAR nconvIdx  := diff(mImgIdx,convIdx);
     
 #line 634 "../../../src/gmm/gmm.mx"
-VAR fIdx           := nconvIdx.reverse.mark(oid(0)).reverse;
+VAR fIdx           := nconvIdx.reverse().mark(oid(0)).reverse();
 {
   VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
   VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
@@ -645,7 +643,7 @@ VAR fIdx           := nconvIdx.reverse.mark(oid(0)).reverse;
                   oldc    := nil;
 
   xIdx        := join(xIdx, iIdx.reverse);
-  VAR newxIdx := xn(xIdx).reverse;
+  VAR newxIdx := xn(xIdx).reverse();
   xIdx        := nx(xIdx);
   post        := join(newxIdx, post);
   cIdx        := join(newxIdx, cIdx);
@@ -682,15 +680,15 @@ VAR fIdx           := nconvIdx.reverse.mark(oid(0)).reverse;
 
       
 #line 1432 "../../../src/gmm/gmm.mx"
-   VAR newpr     := {sum}( cIdx.reverse.join(post) );
+   VAR newpr     {sum}( cIdx.reverse().join(post) );
                   newpr := [flt]( newpr );
    VAR newpriors := [/]( newpr,
-                         mImgIdx.reverse.join( Ib.reverse.histogram ) );
+                         mImgIdx.reverse().join( Ib.reverse().histogram ) );
 debug("NP: #post %d, #newpr %d, #newpriors %d, #Ndata %d",
-  cIdx.reverse.join(post).count,
+  cIdx.reverse().join(post).count,
   newpr.count,
   newpriors.count,
-  Ib.reverse.histogram.count
+  Ib.reverse().histogram.count
 );
 
    
@@ -750,7 +748,7 @@ VAR gxhc;
   {
     VAR newc_lock := lock_create();
     gxhc@ [Nthreads]batloop(){
-      VAR _newc_result := {sum}($t
+      VAR _newc_result {sum}($t
 	   );
       lock_set(newc_lock);
       newc.insert($h,_newc_result);
@@ -828,7 +826,7 @@ VAR ghdiffs;
   {
     VAR diffs_lock := lock_create();
     ghdiffs@ [Nthreads]batloop(){
-      VAR _diffs_result := {sum}($t
+      VAR _diffs_result {sum}($t
 	   );
       lock_set(diffs_lock);
       diffs.insert($h,_diffs_result);
@@ -975,7 +973,7 @@ VAR minvars;
       
 #line 611 "../../../src/gmm/gmm.mx"
 {
-  VAR fIdx := remainingIdx.reverse.mark(lastId).reverse;
+  VAR fIdx := remainingIdx.reverse().mark(lastId).reverse();
 
   VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
   VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
@@ -1005,7 +1003,7 @@ VAR minvars;
   }
 
     # PROC EM(bat[str,bat] EM_coll, bat[str,bat] EM_model):bat[str,bat]
-  PROC EM_globalmodel():bat[str,bat] := {
+  PROC EM_globalmodel():bat[str,bat] {
     RETURN EM_globalmodel(Niter);
   }
 
@@ -1016,13 +1014,13 @@ VAR minvars;
   CONST mu_1 := 5.0LL; CONST sigma_1 := 2.0LL;
   CONST mu_2 := 7.0LL; CONST sigma_2 := 3.0LL;
 
-  PROC mix2g(): dbl := {
+  PROC mix2g(): dbl {
     IF ( (rand and 15) > 10 ) 
       RETURN ran_gaussian(mu_1,sigma_1);
     ELSE RETURN ran_gaussian(mu_2,sigma_2);
   }
 
-  PROC gen2mix(int Nel):BAT[void,dbl] := {
+  PROC gen2mix(int Nel):BAT[void,dbl] {
     VAR res := new(void,dbl);
     res.setSequenceBase(oid(0));
     VAR i := 0;
@@ -1035,7 +1033,7 @@ VAR minvars;
 
 
 #line 1591 "../../../src/gmm/gmm.mx"
-  PROC [cumsum](BAT[any::1,any] xs): BAT[any::1,lng] := {
+  PROC [cumsum](BAT[any::1,any] xs): BAT[any::1,lng] {
     VAR res := new(xs.getType,lng,xs.count);
     VAR s := lng(0);
     xs@batloop(){
@@ -1047,10 +1045,10 @@ VAR minvars;
 
   
 #line 1605 "../../../src/gmm/gmm.mx"
-  PROC randseq(int Nsamples, bat[int,flt] prior): bat[void,any::1] := {
+  PROC randseq(int Nsamples, bat[int,flt] prior): bat[void,any::1] {
     VAR res := new(oid, prior.getType,Nsamples);
     VAR samp := [lng](randseq(Nsamples));
-    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
+    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse();
     VAR ib := lng(0);
     cint@batloop(){
       VAR ie := $h;
@@ -1069,10 +1067,10 @@ VAR minvars;
 
   
 #line 1605 "../../../src/gmm/gmm.mx"
-  PROC randseq(int Nsamples, bat[TCluster,flt] prior): bat[void,any::1] := {
+  PROC randseq(int Nsamples, bat[TCluster,flt] prior): bat[void,any::1] {
     VAR res := new(oid, prior.getType,Nsamples);
     VAR samp := [lng](randseq(Nsamples));
-    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
+    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse();
     VAR ib := lng(0);
     cint@batloop(){
       VAR ie := $h;
@@ -1091,10 +1089,10 @@ VAR minvars;
 
   
 #line 1605 "../../../src/gmm/gmm.mx"
-  PROC randseq(int Nsamples, bat[void,flt] prior): bat[void,any::1] := {
+  PROC randseq(int Nsamples, bat[void,flt] prior): bat[void,any::1] {
     VAR res := new(oid, prior.getType,Nsamples);
     VAR samp := [lng](randseq(Nsamples));
-    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse;
+    VAR cint := [cumsum]( [int]([*](prior, const RAND_MAX)) ).reverse();
     VAR ib := lng(0);
     cint@batloop(){
       VAR ie := $h;
@@ -1114,7 +1112,7 @@ VAR minvars;
 
 
 #line 1623 "../../../src/gmm/gmm.mx"
-  PROC gmmsamp_diag( int Nsamples, bat[str,bat] gmm ): bat[str,bat] := {
+  PROC gmmsamp_diag( int Nsamples, bat[str,bat] gmm ): bat[str,bat] {
     VAR res := new(str,bat,2);
     VAR samples := new(int,bat,N);
     VAR XX;
@@ -1146,9 +1144,9 @@ VAR minvars;
 #line 1631 "../../../src/gmm/gmm.mx"
 
 
-    VAR clusters := randseq(Nsamples, cseq.reverse.join(gmm.find("Prior")));
+    VAR clusters := randseq(Nsamples, cseq.reverse().join(gmm.find("Prior")));
     clusters@batloop(){
-      VAR c := cseq.reverse.find($t);
+      VAR c := cseq.reverse().find($t);
       [insert]( samples, const $h,
 	[ran_gaussian]( [find](mean,c), [find](sigma,c) ) );
     }
@@ -1158,12 +1156,12 @@ VAR minvars;
     res.insert( "Clusters", clusters );
     RETURN res;
   }
-  PROC gmmsamp_diag( int Nsamples, oid theImg, bat[str,bat] gmm ): bat[str,bat] := {
-    VAR selIdx := gmm.find("mImgIdx").reverse.uselect(theImg).mirror;
+  PROC gmmsamp_diag( int Nsamples, oid theImg, bat[str,bat] gmm ): bat[str,bat] {
+    VAR selIdx := gmm.find("mImgIdx").reverse().uselect(theImg).mirror();
     VAR subgmm := new(str,bat);
     
 #line 634 "../../../src/gmm/gmm.mx"
-VAR fIdx           := selIdx.reverse.mark(oid(0)).reverse;
+VAR fIdx           := selIdx.reverse().mark(oid(0)).reverse();
 {
   VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
   VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
@@ -1183,7 +1181,7 @@ VAR fIdx           := selIdx.reverse.mark(oid(0)).reverse;
     RETURN gmmsamp_diag( Nsamples, subgmm );
   }
 
-  PROC randprob(int N):bat[void,dbl] := {
+  PROC randprob(int N):bat[void,dbl] {
     VAR t := randseq(N);
     t := [/]( t, const dbl([lng](t).sum) );
     RETURN t;
@@ -1191,7 +1189,7 @@ VAR fIdx           := selIdx.reverse.mark(oid(0)).reverse;
 
 
 #line 1705 "../../../src/gmm/gmm.mx"
-PROC initGMM( bat[str,bat] coll ):bat[str,bat] := {
+PROC initGMM( bat[str,bat] coll ):bat[str,bat] {
   debug("Estimating initial model");
   VAR gmm := new(str,bat);
 
@@ -1199,24 +1197,24 @@ PROC initGMM( bat[str,bat] coll ):bat[str,bat] := {
   VAR Ib      := coll.find("Ib");
   VAR coeffs  := coll.find("Coeffs");
 
-  VAR icIdx   := I.project(1).join(cseq.reverse.project(1).reverse);
+  VAR icIdx   := I.project(1).join(cseq.reverse().project(1).reverse);
   VAR mImgIdx := xn(icIdx);
-  VAR mCIdx   := nx(icIdx).reverse;
+  VAR mCIdx   := nx(icIdx).reverse();
 
   gmm.insert( "mImgIdx", mImgIdx );
   gmm.insert( "mCIdx",   mCIdx );
 
 
 #line 1722 "../../../src/gmm/gmm.mx"
-  gmm.insert( "Prior", mImgIdx.reverse.project(1.0 / C ) );
+  gmm.insert( "Prior", mImgIdx.reverse().project(1.0 / C ) );
 
 
 #line 1727 "../../../src/gmm/gmm.mx"
-  VAR aSample := new(oid,void,I.count * C).reverse;
+  VAR aSample := new(oid,void,I.count * C).reverse();
    VAR aSampleR:= aSample.revers;
   aSampleR.setSequenceBase(oid(0));
   I.mark(oid(0))@batloop(){
-    aSample.insert( Ib.reverse.select($h).sample(C).mark(oid(C * int($t))) );
+    aSample.insert( Ib.reverse().select($h).sample(C).mark(oid(C * int($t))) );
   }
   gmm.insert( "Mean",
       [reverse]( 
@@ -1261,7 +1259,7 @@ VAR imgcoeffs;
   {
     VAR Area_lock := lock_create();
     imgcoeffs@ [Nthreads]batloop(){
-      VAR _Area_result := {sum}($t
+      VAR _Area_result {sum}($t
 	   );
       lock_set(Area_lock);
       Area.insert($h,_Area_result);
@@ -1274,7 +1272,7 @@ VAR imgcoeffs;
 #line 1742 "../../../src/gmm/gmm.mx"
 
             imgcoeffs := nil;
-  VAR Ndata := Ib.reverse.histogram;
+  VAR Ndata := Ib.reverse().histogram;
   
 #line 107 "../../../src/gmm/gmm.mx"
   VAR means := new(Area.getType,bat,Area.count);
@@ -1367,7 +1365,7 @@ VAR imgdiffs;
   {
     VAR tmp_lock := lock_create();
     imgdiffs@ [Nthreads]batloop(){
-      VAR _tmp_result := {sum}($t
+      VAR _tmp_result {sum}($t
 	   );
       lock_set(tmp_lock);
       tmp.insert($h,_tmp_result);
@@ -1493,7 +1491,7 @@ VAR init_variances;
 
 
 #line 1781 "../../../src/gmm/gmm.mx"
-PROC test_EM(int Nimg, int M): bat[str,bat] := {
+PROC test_EM(int Nimg, int M): bat[str,bat] {
   VAR testmodels := new(str,bat);
 
   debug("Creating collection with M=%d",M);
@@ -1577,15 +1575,15 @@ PROC test_EM(int Nimg, int M): bat[str,bat] := {
   cseq@batloop(){
     # NOTE: was RAND_MAX + 1.0LL
     [insert]( src_gmm.find("Mean"), const nil,
-      [/]( randseq(N), const (RAND_MAX + 1.0) / 255).reverse.number.reverse );
+      [/]( randseq(N), const (RAND_MAX + 1.0) / 255).reverse().number.reverse );
     [insert]( src_gmm.find("Covar"), const nil,
-      [/]( randseq(N), const (RAND_MAX + 1.0) / 128).reverse.number.reverse );
+      [/]( randseq(N), const (RAND_MAX + 1.0) / 128).reverse().number.reverse );
   }
   src_gmm.find("mImgIdx").insert(_x(cseq).project(const oid(0)).reverse);
   src_gmm.find("mCIdx").insert(_x(cseq).reverse);
     # bug with first insert in table
-  src_gmm.find("mImgIdx").reverse.setSequenceBase(oid(0)).reverse;
-  src_gmm.find("mCIdx").reverse.setSequenceBase(oid(0)).reverse;
+  src_gmm.find("mImgIdx").reverse().setSequenceBase(oid(0)).reverse();
+  src_gmm.find("mCIdx").reverse().setSequenceBase(oid(0)).reverse();
   
 #line 655 "../../../src/gmm/gmm.mx"
   access( src_gmm.find("init_variances"), BAT_READ );
@@ -1619,8 +1617,8 @@ PROC test_EM(int Nimg, int M): bat[str,bat] := {
 
 #line 1798 "../../../src/gmm/gmm.mx"
 
-  src_gmm.find("mImgIdx").reverse.setSequenceBase(oid(0)); # bug??
-  src_gmm.find("mCIdx").reverse.setSequenceBase(oid(0));
+  src_gmm.find("mImgIdx").reverse().setSequenceBase(oid(0)); # bug??
+  src_gmm.find("mCIdx").reverse().setSequenceBase(oid(0));
 
   # Insert additional images
   VAR imgNr := 1;
@@ -1658,15 +1656,15 @@ PROC test_EM(int Nimg, int M): bat[str,bat] := {
   cseq@batloop(){
     # NOTE: was RAND_MAX + 1.0LL
     [insert]( src_gmm.find("Mean"), const nil,
-      [/]( randseq(N), const (RAND_MAX + 1.0) / 255).reverse.number.reverse );
+      [/]( randseq(N), const (RAND_MAX + 1.0) / 255).reverse().number.reverse );
     [insert]( src_gmm.find("Covar"), const nil,
-      [/]( randseq(N), const (RAND_MAX + 1.0) / 128).reverse.number.reverse );
+      [/]( randseq(N), const (RAND_MAX + 1.0) / 128).reverse().number.reverse );
   }
   src_gmm.find("mImgIdx").insert(_x(cseq).project(const oid(imgNr)).reverse);
   src_gmm.find("mCIdx").insert(_x(cseq).reverse);
     # bug with first insert in table
-  src_gmm.find("mImgIdx").reverse.setSequenceBase(oid(0)).reverse;
-  src_gmm.find("mCIdx").reverse.setSequenceBase(oid(0)).reverse;
+  src_gmm.find("mImgIdx").reverse().setSequenceBase(oid(0)).reverse();
+  src_gmm.find("mCIdx").reverse().setSequenceBase(oid(0)).reverse();
   
 #line 655 "../../../src/gmm/gmm.mx"
   access( src_gmm.find("init_variances"), BAT_READ );
@@ -1731,7 +1729,7 @@ PROC test_EM(int Nimg, int M): bat[str,bat] := {
 
 
 #line 1838 "../../../src/gmm/gmm.mx"
-  PROC classify( bat[int,bat] coeffs, bat[str,bat] gmm ): bat[void,TCluster] := {
+  PROC classify( bat[int,bat] coeffs, bat[str,bat] gmm ): bat[void,TCluster] {
     
 #line 1331 "../../../src/gmm/gmm.mx"
   
@@ -1936,7 +1934,7 @@ VAR dists;
 
   VAR priors   := join( cIdx, [dbl](gmm.find("Prior")) );
   act          := [*]( act, priors );
-  VAR s        := {sum}( xIdx.reverse.join(act) );
+  VAR s        {sum}( xIdx.reverse().join(act) );
 #  s            := [ [>](s,const MIN_S)? s : const MIN_S ];
 #  s            := [ [!=](s,const dbl(0))? s : const 1.0LL ];
   s            := [ [>](s,const MIN_S)? s : const 1.0LL ];
@@ -1948,7 +1946,7 @@ VAR dists;
 #line 1839 "../../../src/gmm/gmm.mx"
 
     VAR pmax := post.fetch(0);
-    VAR res  := pmax.project(const encode(TCluster, post.mirror.fetch(0)));
+    VAR res  := pmax.project(const encode(TCluster, post.mirror().fetch(0)));
     post@batloop(){
       VAR pcomp := [<=]($t,pmax);
       res :=  [ pcomp ?  res : const encode(TCluster, $h) ];
@@ -1959,7 +1957,7 @@ VAR dists;
 
 
 #line 1853 "../../../src/gmm/gmm.mx"
-  PROC vectostr( BAT[any,dbl] x ): str := {
+  PROC vectostr( BAT[any,dbl] x ): str {
     VAR s := "< ";
     s :+= sprintf( "%4.0lf", x.fetch(0) );
     x.slice(1, x.count - 1)@batloop(){
@@ -1968,7 +1966,7 @@ VAR dists;
     s :+= " >";
     RETURN s;
   }
-  PROC vectostr( BAT[any,flt] x ): str := {
+  PROC vectostr( BAT[any,flt] x ): str {
     VAR s := "< ";
     s :+= sprintf( "%4.0f", x.fetch(0) );
     x.slice(1, x.count - 1)@batloop(){
@@ -1980,16 +1978,16 @@ VAR dists;
 
   CONST infosep :=
     "------------------------------------------------------------";
-  PROC gmminfo( BAT[str,bat] gmm ): BAT[void,str] := {
+  PROC gmminfo( BAT[str,bat] gmm ): BAT[void,str] {
     VAR s := new(void,str).setSequenceBase(oid(0));
-    VAR imgidx := gmm.find("mImgIdx").reverse;
+    VAR imgidx := gmm.find("mImgIdx").reverse();
     VAR oldimgid := imgidx.fetch(0);
     VAR imgid := oldimgid;
     gmm.find("mImgIdx").kunique.sort@batloop(){
       VAR imgid := $h;
       s.insert( nil, sprintf("-- Img %3d --", imgid) + infosep );
 
-      imgidx.select($h).mirror.join(gmm.find("mCIdx").reverse).reverse.sort@batloop(){
+      imgidx.select($h).mirror().join(gmm.find("mCIdx").reverse).reverse().sort@batloop(){
 	s.insert( nil, sprintf( "prior[%d]: %.3lf\t", $h, dbl(find(gmm.find("Prior"), $t)) ) +
 		       "mean:  " + vectostr([find](gmm.find("Mean" ),$t)) );
 	s.insert( nil, "            \tcovar: " +vectostr([find](gmm.find("Covar"),$t)) );
@@ -1999,11 +1997,11 @@ VAR dists;
     RETURN s;
   }
 
-  PROC printmodel( BAT[str,bat] gmm ): void := {
+  PROC printmodel( BAT[str,bat] gmm ): void {
     VAR g := gmminfo(gmm);
     [printf]( g.project("%s\n"), g );
   }
-  PROC printmodels( BAT[str,bat] gmma, BAT[str,bat] gmmb ): void := {
+  PROC printmodels( BAT[str,bat] gmma, BAT[str,bat] gmmb ): void {
     VAR ga := gmminfo(gmma);
     VAR gb := gmminfo(gmmb);
     [printf]( const "%s\t|\t%s\n", ga, gb );
@@ -2014,15 +2012,15 @@ VAR dists;
 
 
 #line 1909 "../../../src/gmm/gmm.mx"
-  PROC sampleQueries(int Nqimg, BAT[str,bat] testmodels):bat[str,bat] := {
+  PROC sampleQueries(int Nqimg, BAT[str,bat] testmodels):bat[str,bat] {
     VAR qgmm := new(str,bat);
     {
       VAR gmm   := testmodels.find("src");
       VAR qimgs := testmodels.find("coll").find("I").sample(Nqimg);
-      VAR qimgidx := join(qimgs.mirror, gmm.find("mImgIdx"));
+      VAR qimgidx := join(qimgs.mirror(), gmm.find("mImgIdx"));
       
 #line 634 "../../../src/gmm/gmm.mx"
-VAR fIdx           := qimgidx.reverse.mark(oid(0)).reverse;
+VAR fIdx           := qimgidx.reverse().mark(oid(0)).reverse();
 {
   VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
   VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
@@ -2061,17 +2059,17 @@ VAR fIdx           := qimgidx.reverse.mark(oid(0)).reverse;
   # VAR gmm_q := sampleQueries(4,testmodels);
   # VAR gmm_i := testmodels.find("final");
 
-  PROC RSL( bat[str,bat] gmm_q, bat[str,bat] gmm_i ):void := {
+  PROC RSL( bat[str,bat] gmm_q, bat[str,bat] gmm_i ):void {
     VAR cqciIdx     := join(gmm_q.find("mCIdx").reverse, gmm_i.find("mCIdx"));
     VAR ciIdx	    := nx(cqciIdx);
-    VAR cqIdx	    := xn(cqciIdx).reverse;
+    VAR cqIdx	    := xn(cqciIdx).reverse();
 
     VAR gqiIdx      := join(gmm_q.find("mImgIdx").reverse, 
 			 join(gmm_q.find("mImgIdx"), cqIdx.reverse));
     VAR giIdx       := nx(gqiIdx);
 
     VAR qiIdx       := join(gqiIdx, ciIdx);
-    VAR qIdx        := xn(qiIdx).reverse;
+    VAR qIdx        := xn(qiIdx).reverse();
     VAR iIdx        := nx(qiIdx);
 
 
@@ -2297,7 +2295,7 @@ VAR Dmaha;
     VAR tmp         := [+](Dmaha,traces);
     tmp             := [+](iIdx.join(logdet_i), tmp);
     VAR compiL	    := [-](iIdx.join(logpriors_i), tmp);
-    VAR maxcompiL   := {max}(giIdx.reverse.join(compiL));
+    VAR maxcompiL   {max}(giIdx.reverse().join(compiL));
 
     VAR compqL	    := [*](join(cqIdx,gmm_q.find("Prior")), maxcompiL);
 
@@ -2308,7 +2306,7 @@ VAR Dmaha;
     VAR gimgidx_q   := CTgroup(imgidx_q);
     VAR gimgidx_i   := CTgroup(gimgidx_q, imgidx_i);
    
-    VAR RSL         := {sum}(join( gimgidx_i.reverse, compqL));
+    VAR RSL         {sum}(join( gimgidx_i.reverse, compqL));
 
 debug("Results ranked");
 #      VAR printres  := new(void,str);
@@ -2317,13 +2315,13 @@ debug("Results ranked");
 #      printres.insert([sprintf]( const "%3d,%3d,%8.lf\n", imgidx_q,imgidx_i, RSL));
 #      printres@batloop(){printf("%s",$t);}
 
-#    VAR minRSL      := {min}(join(gimgidx_q.reverse, RSL));
+#    VAR minRSL      {min}(join(gimgidx_q.reverse, RSL));
 }
 
 
 
 #line 2009 "../../../src/gmm/gmm.mx"
-  PROC L2dist( BAT[any::1,dbl] x, BAT[any::1,dbl] y ): dbl := {
+  PROC L2dist( BAT[any::1,dbl] x, BAT[any::1,dbl] y ): dbl {
     VAR dist := [-](x, y);
     dist := [*](dist, dist);
     dist := dist.sum / dist.count;
@@ -2331,7 +2329,7 @@ debug("Results ranked");
   }
 
   # this is really a fitness-join
-  PROC mapnearest( BAT[int,bat] ma, BAT[int,bat] mb ): BAT[int,int] := {
+  PROC mapnearest( BAT[int,bat] ma, BAT[int,bat] mb ): BAT[int,int] {
     VAR cdist := new(TCluster,bat,C);
     cseq@batloop(){
       VAR csrcoid := $h;
@@ -2344,12 +2342,12 @@ debug("Results ranked");
 	  L2dist( [find](ma,csrcoid), 
 		[find](mb,cnewoid) ) ); 
       }
-      cdist.insert( csrc, cdist_c.reverse.order );
+      cdist.insert( csrc, cdist_c.reverse().order );
     }
     RETURN [fetch](cdist, const 0);
   }
 
-  PROC testclassify( BAT[str,bat] src_gmm, BAT[str,bat] gmmnew ): void := {
+  PROC testclassify( BAT[str,bat] src_gmm, BAT[str,bat] gmmnew ): void {
     VAR c := classify( sampleImg.find("Samples"), gmmnew );
     VAR Nerr := diff(c, sampleImg.find("Clusters")).count;
 
@@ -2364,20 +2362,20 @@ debug("Results ranked");
 
 
 #line 2052 "../../../src/gmm/gmm.mx"
-  PROC dmahalanobis( BAT[void,dbl] x, dbl mu, dbl variance ): BAT[void,dbl] := {
+  PROC dmahalanobis( BAT[void,dbl] x, dbl mu, dbl variance ): BAT[void,dbl] {
     VAR dist := [-](x, const mu);
     dist := [*](dist, dist);
     dist := [/]( dist, const variance );
     RETURN dist;
   }
 
-  PROC mvgpdf( BAT[void,dbl] d, dbl det, int Ndim ): BAT[void,dbl] := {
+  PROC mvgpdf( BAT[void,dbl] d, dbl det, int Ndim ): BAT[void,dbl] {
     VAR norm := 1/(pow((2*M_PI), dbl(Ndim)/2) * sqrt(det) );
     VAR p := [exp]( [*]( d, -0.5LL ) );
     RETURN [*]( p, const norm );
   }
 
-  PROC test():void := {
+  PROC test():void {
     debug( "Testing..." );
 
 
@@ -2454,7 +2452,7 @@ debug("Results ranked");
 
   CONST fragsize := 64;
   VAR Nimg := imgFrameNr.count;
-  VAR collidx := s_tdict.reverse;
+  VAR collidx := s_tdict.reverse();
 
   
 #line 2224 "../../../src/gmm/gmm.mx"
@@ -2475,15 +2473,15 @@ debug("Results ranked");
 
 #line 2229 "../../../src/gmm/gmm.mx"
 
-  IF (view_bbp_name.reverse.exist("gmm_trained"+"_Prior"))   tmBatIds.insert("Prior",   "gmm_trained"+"_Prior");
-  IF (view_bbp_name.reverse.exist("gmm_trained"+"_mCIdx"))   tmBatIds.insert("mCIdx",   "gmm_trained"+"_mCIdx");
-  IF (view_bbp_name.reverse.exist("gmm_trained"+"_mImgIdx")) tmBatIds.insert("mImgIdx", "gmm_trained"+"_mImgIdx");
-  IF (view_bbp_name.reverse.exist("gmm_trained"+"_init_variances")) 
+  IF (view_bbp_name.reverse().exist("gmm_trained"+"_Prior"))   tmBatIds.insert("Prior",   "gmm_trained"+"_Prior");
+  IF (view_bbp_name.reverse().exist("gmm_trained"+"_mCIdx"))   tmBatIds.insert("mCIdx",   "gmm_trained"+"_mCIdx");
+  IF (view_bbp_name.reverse().exist("gmm_trained"+"_mImgIdx")) tmBatIds.insert("mImgIdx", "gmm_trained"+"_mImgIdx");
+  IF (view_bbp_name.reverse().exist("gmm_trained"+"_init_variances")) 
     tmBatIds.insert("init_variances", "gmm_trained"+"_init_variances");
   nseq@batloop(){
-    IF (view_bbp_name.reverse.exist("gmm_trained" + "_Mean_"  + str($t)))
+    IF (view_bbp_name.reverse().exist("gmm_trained" + "_Mean_"  + str($t)))
       tmBatIds_Mean.insert( $t, "gmm_trained" + "_Mean_"  + str($t));
-    IF (view_bbp_name.reverse.exist("gmm_trained" + "_Covar_" + str($t)))
+    IF (view_bbp_name.reverse().exist("gmm_trained" + "_Covar_" + str($t)))
       tmBatIds_Covar.insert($t, "gmm_trained" + "_Covar_" + str($t));
   }
 
@@ -2554,7 +2552,7 @@ debug("Results ranked");
   VAR ii    := 55; # 0;
   WHILE ( (ii*fragsize) < Nimg ) {
     VAR frag_i := bat(collidx.find("keyframes_file")).slice(ii*fragsize,((ii+1)*fragsize) - 1);
-    VAR frag_iIdx := frag_i.mark(oid(0)).reverse.join(bat(collidx.find("imgBlock"))).reverse.mark(oid(0)).reverse;
+    VAR frag_iIdx := frag_i.mark(oid(0)).reverse().join(bat(collidx.find("imgBlock"))).reverse().mark(oid(0)).reverse();
 
     EM_coll := new(str,bat);
     EM_coll.insert("I",  frag_i);
@@ -2586,7 +2584,7 @@ debug("Results ranked");
     
 #line 611 "../../../src/gmm/gmm.mx"
 {
-  VAR fIdx := midx.reverse.mark(lastId).reverse;
+  VAR fIdx := midx.reverse().mark(lastId).reverse();
 
   VAR convImgIdx     := join( fIdx, gmm.find("mImgIdx").reverse );
   VAR convCIdx       := join( fIdx, gmm.find("mCIdx").reverse );
@@ -2653,16 +2651,16 @@ debug("Results ranked");
 
 
 #line 2346 "../../../src/gmm/gmm.mx"
-PROC modelIdx(int N): BAT[str,void] := {
-  VAR modelidx := new(str,void).reverse.setSequenceBase(oid(0)).reverse;
-  VAR seq := Nseq(N).reverse;
+PROC modelIdx(int N): BAT[str,void] {
+  VAR modelidx := new(str,void).reverse().setSequenceBase(oid(0)).reverse();
+  VAR seq := Nseq(N).reverse();
   modelidx.insert( "Prior", nil );
-  VAR mu := _x([+](seq.project("Mu_"), seq.mirror));
-  VAR covar := _x([+](seq.project("Sigma_"), seq.mirror));
+  VAR mu := _x([+](seq.project("Mu_"), seq.mirror()));
+  VAR covar := _x([+](seq.project("Sigma_"), seq.mirror()));
   modelidx.insert( mu.reverse );
   modelidx.insert( covar.reverse );
-  mu := mu.reverse.number.reverse.join(modelidx);
-  covar := covar.reverse.number.reverse.join(modelidx);
+  mu := mu.reverse().number.reverse().join(modelidx);
+  covar := covar.reverse().number.reverse().join(modelidx);
   RETURN modelidx;
 }
 

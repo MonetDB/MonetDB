@@ -3,14 +3,17 @@
 @+ MIL version 4 conformance
 @T
 
-The MIL-2-MAL compiler converts of identifiers.
+The MIL-2-MAL compiler converts identifiers to their M5 equivalent.
 Since there may be conflicts with user defined identifiers,
 we produce a warning listing at the end of each program with
-the identifier mappings performed.
+the identifier mappings used.
 
 We also have to avoid module identifiers to be used
 as variables. It could produce problems when
 compiling, e.g. bbp.setRole(ll)
+
+An extensive set of identifiers is mapped to
+their module as well.
 
 Note that not all identifiers can be mapped automatically.
 In particuler the following list indicates those requireing
@@ -32,10 +35,7 @@ struct{
 	str v5name;
 	int used;
 } idmap[]={
-{"synced",		"isSynced",0},
-{"col_name",		"bat.setColumn",0},
-{"name",		"bat.setRole",0},
-{"rename",		"bat.setName",0}, 
+{"rename",		"bbp.setName",0}, 
 {"cold",		"bbp.setCold",0},
 {"hot",			"bbp.setHot",0},
 {"view_bbp_name",	"bbp.getNames()",0},
@@ -49,33 +49,88 @@ struct{
 {"view_bbp_dirty",	"bbp.getDirty",0},
 {"view_bbp_status",	"bbp.getStatus",0},
 {"view_bbp_kind",	"bbp.getKind",0},
+
+{"print",		"io.print",0},
+
+{"seqbase",		"bat.setSequenceBase",0},
+{"capacity",	"bat.getCapacity",0},
+{"batsize",		"bat.getBatSize",0},
+{"synced",		"bat.isSynced",0},
+{"col_name",		"bat.setColumn",0},
+{"name",		"bat.setRole",0},
 {"key",			"bat.setKey",0},
 {"set",			"bat.setSet",0},
 {"ordered",		"bat.isSorted",0},
-{"seqbase",		"bat.setSequenceBase",0},
-{"capacity",		"bat.getCapacity",0},
+
 {"memory",		"status.memStatistics",0},
-{"batsize",		"bat.bbpBatSize",0},
-{"mark",		"markT",0},
-{"sort",		"sortH",0},
-{"bbpname",		"getName",0},
-{"htype",		"getHeadType",0},
-{"ttype",		"getTailType",0},
-{"enum_load",		"enum.load",0},
-{"enum_table",		"enum.table",0},
-{"enum_sethisto",	"enum.setHistogram",0},
-{"enum_ishisto",	"enum.isHistogram",0},
-{"enum_print",		"enum.printEnum",0},
-{"enum_drop",		"enum.destroy",0},
-{"isenum",		"enum.isEnum",0},
-{"CTgroup",		"group",0},
-{"CTrefine",		"refine",0},
-{"CTderive",		"group",0},
-{"CTregroup",		"regroup",0},
+
+{"mark",		"algebra.markT",0},
+{"sort",		"algebra.sortH",0},
+{"bandjoin",    "bat.bandjoin",0},
+{"card ",   "bat.card ",0},
+{"cartesianproduct",    "bat.cartesianproduct",0},
+{"copy",    "bat.copy",0},
+{"count",   "bat.count",0},
+{"count ",  "bat.count ",0},
+{"count_no_nil ",   "bat.count_no_nil ",0},
+{"diff",    "bat.diff",0},
+{"exist",   "bat.exist",0},
+{"fetch",   "bat.fetch",0},
+{"fetchjoin ",  "bat.fetchjoin ",0},
+{"find",    "bat.find",0},
+{"fragment ",   "bat.fragment ",0},
+{"hashjoin ",   "bat.hashjoin ",0},
+{"hashsplit",   "bat.hashsplit",0},
+{"histogram ",  "bat.histogram ",0},
+{"indexjoin ",  "bat.indexjoin ",0},
+{"intersect ",  "bat.intersect ",0},
+{"join",    "bat.join",0},
+{"kdiff ",  "bat.kdiff ",0},
+{"kintersect",  "bat.kintersect",0},
+{"kunion ", "bat.kunion ",0},
+{"kunique ",    "bat.kunique ",0},
+{"like",    "bat.like",0},
+{"max", "bat.max",0},
+{"mergejoin ",  "bat.mergejoin ",0},
+{"min", "bat.min",0},
+{"number",  "bat.number",0},
+{"outerjoin",   "bat.outerjoin",0},
+{"position",    "bat.position",0},
+{"prod",    "bat.prod",0},
+{"rangesplit ", "bat.rangesplit ",0},
+{"sample ", "bat.sample ",0},
+{"sdiff",   "bat.sdiff",0},
+{"select",  "bat.select",0},
+{"semijoin",    "bat.semijoin",0},
+{"sintersect ", "bat.sintersect ",0},
+{"slice",   "bat.slice",0},
+{"sum ",    "bat.sum ",0},
+{"sunion ", "bat.sunion ",0},
+{"sunique ",    "bat.sunique ",0},
+{"thetajoin",   "bat.thetajoin",0},
+{"topN",    "bat.topN",0},
+{"tunique ",    "bat.tunique ",0},
+{"uhashsplit ", "bat.uhashsplit ",0},
+{"union ",  "bat.union ",0},
+{"unique ", "bat.unique ",0},
+{"urangesplit", "bat.urangesplit",0},
+{"uselect", "bat.uselect",0},
+
+
+{"bbpname",		"bat.getName",0},
+{"htype",		"bat.getHeadType",0},
+{"ttype",		"bat.getTailType",0},
+
+{"CTgroup",		"group.group",0},
+{"CTrefine",	"group.refine",0},
+{"CTderive",	"group.group",0},
+{"CTregroup",	"group.regroup",0},
+
 {"time",		"alarm.time",0},
 {"epoch",		"alarm.epoch()",0},
 {"ctime",		"alarm.ctime()",0},
-{"debugmask",		"setDebug",0},
+{"debugmask",	"setDebug",0},
+
 {0,0,0}
 };
 

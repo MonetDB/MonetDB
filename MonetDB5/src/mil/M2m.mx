@@ -24,6 +24,7 @@ void mil_code_prelude();
 #define MAXSCRIPT 64
 extern void showmappings();
 extern int yyparse();
+extern void mil_push(str s);
 str	mil_script[MAXSCRIPT];
 char	mil_cwd[PATHLENGTH];
 int	trace_code= 0;
@@ -204,7 +205,7 @@ The files are processed as one big program
 		buf[i] = 0;
 	}
 	prelude();
-	mil_push(buf);	/*no need to copy here */
+	mil_push(buf);	
 	yyparse();
 	showmappings();
 	mo_free_options(set,setlen);
@@ -214,7 +215,7 @@ The files are processed as one big program
 
 void prelude(){
         printf("# Monet Mil to Mal compiler\n");
-        printf("# Copyright (c) 2001-2004, CWI. ");
+        printf("# Copyright (c) 2001-2005, CWI. ");
         printf("All rights reserved.\n");
 	printf("\n#Predefined code segment\n");
 	advice();

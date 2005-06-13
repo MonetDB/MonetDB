@@ -130,7 +130,7 @@ mal_export int parseMILprg(Client cntxt, MalBlkPtr curPrg);
 #include "mal_builder.h"
 #include "mal_parser.h"
 #include "mil_parser.h"
-#include "mil_scenario.h"
+#include "mil.h"
 
 mal_export str mapid(str n);
 mal_export int ismapped(str n);
@@ -406,10 +406,13 @@ int parseMILfunctioncall(Client cntxt, MalBlkPtr currBlk, str nme){
 	/* detect multiplex and group operators */
 	if( *nme =='[' || *nme == '{') {
 		nme[strlen(nme)-1]=0;
-		if( *nme== '[')
-			setModuleId(currInstr,GDKstrdup("multiplex"));
-		else setModuleId(currInstr,GDKstrdup("group"));
-		setFunctionId(currInstr,GDKstrdup("tactics"));
+		if( *nme== '['){
+			setModuleId(currInstr,putName("optimizer",9));
+			setFunctionId(currInstr,putName("multiplex",9));
+		} else{
+			setModuleId(currInstr,putName("group",5));
+			setFunctionId(currInstr,putName("tactics",7));
+		}
 		pushStr(currBlk, currInstr, nme+1);
 		GDKfree(nme);
 	} else {
@@ -417,7 +420,7 @@ int parseMILfunctioncall(Client cntxt, MalBlkPtr currBlk, str nme){
 Some operators require backward compatibility signatures.
 @c
 		if(strcmp(nme,"insert")==0)
-			setModuleId(currInstr,GDKstrdup("mil"));
+			setModuleId(currInstr,putName("mil",3));
 @-
 Others should be mapped to their new name
 @c
@@ -426,7 +429,7 @@ Others should be mapped to their new name
 			nme= mapid(nme);
 			GDKfree(n);
 		}
-		setFunctionId(currInstr,nme);
+		setFunctionId(currInstr,putName(nme,strlen(nme)));
 	}
 
 	varid= getDestVar(currInstr) = newTmpVariable(currBlk,TYPE_any);
@@ -563,7 +566,7 @@ with lower priority
 	for(i= @1; i>0; i--){
 		if(@2 && priority[i] >= priority[i-1]) break;
 		currInstr= newInstruction(ASSIGNsymbol);
-		setFunctionId(currInstr, ostk[i-1]);
+		setFunctionId(currInstr, putName(ostk[i-1],strlen(ostk[i-1])));
 		pushArgument(currBlk,currInstr,stk[i-1]);
 		pushArgument(currBlk,currInstr,stk[i]);
 		stk[i-1]= lhs= newTmpVariable(currBlk,TYPE_any);
@@ -674,7 +677,7 @@ int parseMILbatstmt(Client cntxt,MalBlkPtr currBlk ){
 	else if(len > 0 ){
 		nme= cstCopy(cntxt,len);
 		currInstr = newInstruction(ASSIGNsymbol);
-		setFunctionId(currInstr,"new");
+		setFunctionId(currInstr,putName("new",3));
 		setDestVar(currInstr, varid);
 		setVarInitialized(currBlk,getDestVar(currInstr));
 		pushArgument(currBlk, currInstr,
@@ -733,7 +736,7 @@ void parseMILifstmt(Client cntxt, MalBlkPtr currBlk){
 		currInstr= newInstruction(ASSIGNsymbol);
 		setDestVar(currInstr, cvar);
 		setVarInitialized(currBlk,getDestVar(currInstr));
-		setFunctionId(currInstr,GDKstrdup("not"));
+		setFunctionId(currInstr,putName("not",3));
 		pushArgument(currBlk, currInstr, lhs);
 		currInstr->barrier = BARRIERsymbol;
 		pushInstruction(currBlk,currInstr);
@@ -765,8 +768,8 @@ void parseMILbatloop(Client cntxt, MalBlkPtr currBlk, int lhs){
 	tvar = newTmpVariable(currBlk, TYPE_any);
 
 	currInstr= newInstruction(ASSIGNsymbol);
-	setModuleId(currInstr,GDKstrdup("chopper"));
-	setFunctionId(currInstr,GDKstrdup("newIterator"));
+	setModuleId(currInstr,putName("chopper",7));
+	setFunctionId(currInstr,putName("newIterator",11));
 	setDestVar(currInstr, cvar);
 	setVarInitialized(currBlk,cvar);
 	pushArgument(currBlk,currInstr, hvar);
@@ -789,8 +792,8 @@ void parseMILbatloop(Client cntxt, MalBlkPtr currBlk, int lhs){
 	parseMILstmt(cntxt,currBlk);
 
 	currInstr= newInstruction(ASSIGNsymbol);
-	setModuleId(currInstr,GDKstrdup("chopper"));
-	setFunctionId(currInstr,GDKstrdup("hasMoreElements"));
+	setModuleId(currInstr,putName("chopper",7));
+	setFunctionId(currInstr,putName("hasMoreElements",15));
 	setDestVar(currInstr, cvar);
 	pushArgument(currBlk,currInstr, hvar);
 	pushArgument(currBlk,currInstr, tvar);
@@ -842,7 +845,7 @@ void parseMILwhilestmt(Client cntxt, MalBlkPtr currBlk){
 
 	currInstr= newInstruction(ASSIGNsymbol);
 	setDestVar(currInstr, cvar);
-	setFunctionId(currInstr,GDKstrdup("not"));
+	setFunctionId(currInstr,putName("not",3));
 	pushArgument(currBlk, currInstr, lhs);
 	currInstr->barrier = LEAVEsymbol;
 	pushInstruction(currBlk,currInstr);
@@ -1082,8 +1085,8 @@ void parseMILinput(Client cntxt, MalBlkPtr currBlk){
 
 	if( NL(*c)) return;
 	currInstr = newInstruction(ASSIGNsymbol);
-	setModuleId(currInstr,GDKstrdup("io"));
-	setFunctionId(currInstr,GDKstrdup("print"));
+	setModuleId(currInstr,putName("io",2));
+	setFunctionId(currInstr,putName("print",5));
 	while (*c && !NL(*c)) { c++; len++;}
 	c= GDKmalloc(len+2);
 	c[0]='#';

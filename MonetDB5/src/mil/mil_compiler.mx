@@ -127,7 +127,6 @@ extern str mil_lastline();
 extern long mil_position();
 extern int mil_skipcomment();
 extern int str_escaped();
-extern void mil_push(str s);	/* used in src/mil/M2m.c */
 extern int mil_getch();
 extern int yylex();
 extern char *newName();
@@ -159,6 +158,7 @@ extern str getLastBlock();
 extern char *bindFcn(str nme);
 extern char *bindId(str nme);
 extern char *mapi_quote(const char *msg, int size);
+extern void mil_push(str s);
 
 extern int trace_code;
 #define rem	if(comment){ if(trace_code)printf("\tmil.line(\"%s\");\n",mapi_quote(comment,strlen(comment))); else printf("#%s\n",comment); comment=0;}
@@ -354,6 +354,7 @@ void mil_push(str s) {
 	sp->up = mil_stack;
 	mil_stack = sp;
 }
+
 
 int mil_pop() {
 	strstack *sp = mil_stack;
@@ -616,20 +617,11 @@ str multiplexOp[]={"+","++","-","--","/","*","%",">","<","<=",">=","==","!=","an
 
 char *bindFcn(str nme){
 	char buffer[1024];
-/*	int i;	*/
 
 	switch(*nme){
 	case '[':
 		nme[strlen(nme)-1]=0;
-/*
-		for(i=0; multiplexOp[i];i++)
-		if( strcmp(nme+1, multiplexOp[i])==0){
-			sprintf(buffer,"%s(",nme+1);
-			return GDKstrdup(buffer);
-		}
-		sprintf(buffer,"multiplex.script(\"%s\",", nme+1);
-*/
-		sprintf(buffer,"multiplex.tactics(\"%s\",", mapid(nme+1));
+		sprintf(buffer,"optimizer.multiplex(\"%s\",", mapid(nme+1));
 		break;
 	case '{':
 		nme[strlen(nme)-1]=0;

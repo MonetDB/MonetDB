@@ -2,11 +2,22 @@ INCLUDES = $(MONETDB_INCS) ../mal
 
 #YFLAGS = -v -p mil -d
 
+lib_mil = {
+	DIR = pkglibdir
+	SEP = _
+	NAME = mil
+	SOURCES = mil_parser.mx mil.mx mil_conformance.mx  \
+	mil_commands.mx 
+
+	HEADERS = h
+	SCRIPTS = mal mil ""
+	LIBS = $(MONETDB_LIBS)
+}
+
 #bin_M2m = {
-#	LIB = pkglibdir
-#	SOURCES = M2m.mx  mil.mx mil_compiler.mx mil_conformance.mx \
-#		mil_commands.mx mil_scenario.mx 
-#	LIBS = $(MONETDB_LIBS) -lbat -lstream ../mal/libmal \
+#	HEADERS = h
+#	SOURCES = mil_compiler.mx M2m.mx
+#	LIBS = $(MONETDB_LIBS) -l_mil -lbat -lstream ../mal/libmal \
 #                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
 #		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 #}
@@ -14,21 +25,10 @@ INCLUDES = $(MONETDB_INCS) ../mal
 ##doc_M2m = {
 #	DIR = pkgdatadir/docs/mil
 #	SOURCES = M2m.mx  mil_compiler.mx mil_conformance.mx \
-#		mil_commands.mx mil_scenario.mx
+#		mil_commands.mx mil.mx
 #}
-lib_mil_scenario = {
-	DIR = pkglibdir
-	SEP = _
-	NAME = mil_scenario
-	SOURCES = mil_parser.mx mil_scenario.mx mil_conformance.mx  \
-	mil_commands.mx
-
-	HEADERS = h
-	SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS)
-}
 
 scripts_mal = {
 	DIR = pkglibdir
-	SOURCES = mil_scenario.mx
+	SOURCES = mil.mx
 }
