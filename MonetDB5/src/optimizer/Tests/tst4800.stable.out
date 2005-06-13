@@ -74,8 +74,10 @@ end f3;	# 27
 #	showFunction(Admin,f3);
 #
 function user.main():int;	# 0  (main:int)
-    mdb.showFunction("user","f3");	# 1 MDBshowFunction3 ($4:void)<-($2:str)($3:str)
-end main;	# 2  
+# testing the optimization of the pocket calculator 	# 1  ($2:str)
+#       io.table(bat_0,bat_1,top); 	# 2  ($4:str)
+    mdb.showFunction("user","f3");	# 3 MDBshowFunction3 ($8:void)<-($6:str)($7:str)
+end main;	# 4  
 function user.f3():void;
     t1 := bbp.bind("A_bat");
     t3 := array.grid(4096,64,1,0);

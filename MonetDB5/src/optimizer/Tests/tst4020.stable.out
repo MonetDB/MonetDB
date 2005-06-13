@@ -48,6 +48,10 @@ function user.qry():void;	# 0  (qry:void)
     optimizer.selectPushdown("user","qry");	# 13 QOTSPoptimizerCALL ($16:str)<-($17:str)($18:str)
 end qry;	# 14  
 #
+function user.main():int;	# 0  (main:int)
+# testing the heuristic rules 	# 1  ($2:str)
+# relations r(H,T) and s(H,T) 	# 2  ($4:str)
+end main;	# 3  
 
 # 08:01:46 >  
 # 08:01:46 >  Done.

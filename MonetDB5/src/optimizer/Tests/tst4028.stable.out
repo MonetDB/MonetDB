@@ -61,6 +61,13 @@ function user.qry():void;	# 0  (qry:void)
     optimizer.selectPushdown();	# 18 QOTSPoptimizer ($29:str)
 end qry;	# 19  
 #
+function user.main():int;	# 0  (main:int)
+# testing the heuristic rules 	# 1  ($2:str)
+# relations r(H,T) and s(H,T) 	# 2  ($4:str)
+# reversal analysis 	# 3  ($6:str)
+# r.T=s.H and r.T<6 (SQL output) 	# 4  ($8:str)
+# optimized sequence 	# 5  ($10:str)
+end main;	# 6  
 
 # 08:01:47 >  
 # 08:01:47 >  Done.

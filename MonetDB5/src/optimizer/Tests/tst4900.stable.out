@@ -443,8 +443,16 @@ barrier always := true;	# 113  (always:bit)<-($153:bit) jump 122
 exit always;	# 122  (always:bit)
 end f1;	# 123  
 function user.main():int;	# 0  (main:int)
-    mdb.showFunction("user","f1");	# 1 MDBshowFunction3 ($6:void)<-($2:str)($3:str)
-end main;	# 2  
+#t4 := batcalc.*(8,t3); doing a reconstruction saves a lot 	# 1  ($2:str)
+#t20 := batcalc.*(8,t19); 	# 2  ($4:str)
+#t42:bat[:void,:dbl] := bbp.bind("Query_14x1320"); 	# 3  ($6:str)
+#t45 := batcalc.*(14,t44); 	# 4  ($8:str)
+#t53 := batcalc.*(8,t52); 	# 5  ($10:str)
+#t61 := batcalc.pow(t59,t9); 	# 6  ($12:str)
+#t87 := array.grid(100,1320,8,0); will save 30% by reuse 	# 7  ($14:str)
+    mdb.showFunction("user","f1");	# 8 MDBshowFunction3 ($20:void)<-($16:str)($17:str)
+##f1(); 	# 9  ($22:str)
+end main;	# 10  
 factory user.f1(s:str):void;
     t1 := bbp.bind("TREC2003_test_priors_8x32318");
     t2 := array.grid(132000,8,1,0);

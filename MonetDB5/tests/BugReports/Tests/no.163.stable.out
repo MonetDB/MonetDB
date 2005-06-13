@@ -86,234 +86,234 @@ end tst;	# 16
 #	ia_a := quit();
 #
 function user.main():int;	# 0  (main:int)
-    mil.line("# >Number:         163\n");	# 1 MILline ($31:void)<-($32:str)
-    mil.line("# >Category:       MIL\n");	# 2 MILline ($33:void)<-($34:str)
-    mil.line("# >Synopsis:       multi[lex bug\n");	# 3 MILline ($35:void)<-($36:str)
-    mil.line("# >Confidential:   no\n");	# 4 MILline ($37:void)<-($38:str)
-    mil.line("# >Severity:       serious\n");	# 5 MILline ($39:void)<-($40:str)
-    mil.line("# >Priority:       medium\n");	# 6 MILline ($41:void)<-($42:str)
-    mil.line("# >Responsible:    boncz (Peter Boncz)\n");	# 7 MILline ($43:void)<-($44:str)
-    mil.line("# >State:          open\n");	# 8 MILline ($45:void)<-($46:str)
-    mil.line("# >Class:          sw-bug\n");	# 9 MILline ($47:void)<-($48:str)
-    mil.line("# >Submitter-Id:   unknown\n");	# 10 MILline ($49:void)<-($50:str)
-    mil.line("# >Arrival-Date:   Mon Jul 20 09:56:02 1998\n");	# 11 MILline ($51:void)<-($52:str)
-    mil.line("# >Originator:     manegold@cwi.nl\n");	# 12 MILline ($53:void)<-($54:str)
-    mil.line("# >Organization:\n");	# 13 MILline ($55:void)<-($56:str)
-    mil.line("# >Release:        980101\n");	# 14 MILline ($57:void)<-($58:str)
-    mil.line("# >Environment:\n");	# 15 MILline ($59:void)<-($60:str)
-    mil.line("# any\n");	# 16 MILline ($61:void)<-($62:str)
-    mil.line("# >Description:\n");	# 17 MILline ($63:void)<-($64:str)
-    mil.line("# Tim Ruhl (DDi) reported this bug:\n");	# 18 MILline ($65:void)<-($66:str)
-    mil.line("# \n");	# 19 MILline ($67:void)<-($68:str)
-    mil.line("# The following script fails with \"GDKmalloc called with size 0\".\n");	# 20 MILline ($69:void)<-($70:str)
-    mil.line("# (cf. output below)\n");	# 21 MILline ($71:void)<-($72:str)
-    mil.line("# \n");	# 22 MILline ($73:void)<-($68:str)
-    mil.line("# -8<-----\n");	# 23 MILline ($74:void)<-($75:str)
-    mil.line("# \n");	# 24 MILline ($76:void)<-($68:str)
-    mil.line("# proc tst(BAT[any, int] b) : bat\n");	# 25 MILline ($77:void)<-($78:str)
-    mil.line("# {  \n");	# 26 MILline ($79:void)<-($80:str)
-    mil.line("#   var i;\n");	# 27 MILline ($81:void)<-($82:str)
-    mil.line("# \n");	# 28 MILline ($83:void)<-($68:str)
-    mil.line("#   i := 0;\n");	# 29 MILline ($84:void)<-($85:str)
-    mil.line("#   while (i < 2) {\n");	# 30 MILline ($86:void)<-($87:str)
-    mil.line("#     b := [+](b, 1);\n");	# 31 MILline ($88:void)<-($89:str)
-    mil.line("#     i := i + 1;\n");	# 32 MILline ($90:void)<-($91:str)
-    mil.line("#   }\n");	# 33 MILline ($92:void)<-($93:str)
-    mil.line("# \n");	# 34 MILline ($94:void)<-($68:str)
-    mil.line("#   return b;\n");	# 35 MILline ($95:void)<-($96:str)
-    mil.line("# }\n");	# 36 MILline ($97:void)<-($98:str)
-    mil.line("# \n");	# 37 MILline ($99:void)<-($68:str)
-    mil.line("# b1 := bbp.new(int, int);\n");	# 38 MILline ($100:void)<-($101:str)
-    mil.line("# b1.insert(0, 0);\n");	# 39 MILline ($102:void)<-($103:str)
-    mil.line("# b1.insert(0, 1);\n");	# 40 MILline ($104:void)<-($105:str)
-    mil.line("# \n");	# 41 MILline ($106:void)<-($107:str)
-    mil.line("# bn := tst(b1);\n");	# 42 MILline ($108:void)<-($109:str)
-    mil.line("# bn.print;\n");	# 43 MILline ($110:void)<-($111:str)
-    mil.line("# \n");	# 44 MILline ($112:void)<-($107:str)
-    mil.line("# quit;\n");	# 45 MILline ($113:void)<-($114:str)
-    mil.line("# \n");	# 46 MILline ($115:void)<-($107:str)
-    mil.line("# -8<-----\n");	# 47 MILline ($116:void)<-($117:str)
-    mil.line("# \n");	# 48 MILline ($118:void)<-($107:str)
-    mil.line("# # Monet Database Server V4.0 (IRIX5.3/32bit) of Fri Jul 17 21:30:49 MET DST 1998\n");	# 49 MILline ($119:void)<-($120:str)
-    mil.line("# # Copyright (c) 1993-1998, CWI & SION. All rights reserved.\n");	# 50 MILline ($121:void)<-($122:str)
-    mil.line("# #script:../tim.mil\n");	# 51 MILline ($123:void)<-($124:str)
-    mil.line("# \n");	# 52 MILline ($125:void)<-($107:str)
-    mil.line("# loaded;\n");	# 53 MILline ($126:void)<-($127:str)
-    mil.line("# #---------------------------------#\n");	# 54 MILline ($128:void)<-($129:str)
-    mil.line("# # module        | usage_count     #\n");	# 55 MILline ($130:void)<-($131:str)
-    mil.line("# #---------------------------------#\n");	# 56 MILline ($132:void)<-($129:str)
-    mil.line("# [ \"kernel\",       1               ]\n");	# 57 MILline ($133:void)<-($134:str)
-    mil.line("# [ \"arith\",        1               ]\n");	# 58 MILline ($135:void)<-($136:str)
-    mil.line("# [ \"bat\",          1               ]\n");	# 59 MILline ($137:void)<-($138:str)
-    mil.line("# [ \"algebra\",      1               ]\n");	# 60 MILline ($139:void)<-($140:str)
-    mil.line("# [ \"sys\",          1               ]\n");	# 61 MILline ($141:void)<-($142:str)
-    mil.line("# [ \"trans\",        1               ]\n");	# 62 MILline ($143:void)<-($144:str)
-    mil.line("# \n");	# 63 MILline ($145:void)<-($146:str)
-    mil.line("# Try: modules;                - for other modules.\n");	# 64 MILline ($147:void)<-($148:str)
-    mil.line("#      ls;                     - for persistent bat listing.\n");	# 65 MILline ($149:void)<-($150:str)
-    mil.line("#      sigs(\"<module>\")        - for available commands per module.\n");	# 66 MILline ($151:void)<-($152:str)
-    mil.line("#      help(\"<command>\")       - for help one-liner for a command.\n");	# 67 MILline ($153:void)<-($154:str)
-    mil.line("# \n");	# 68 MILline ($155:void)<-($146:str)
-    mil.line("# #You are system administrator (adm)!\n");	# 69 MILline ($156:void)<-($157:str)
-    mil.line("#  \n");	# 70 MILline ($158:void)<-($159:str)
-    mil.line("# proc tst(BAT[any, int] b) : bat\n");	# 71 MILline ($160:void)<-($161:str)
-    mil.line("# {\n");	# 72 MILline ($162:void)<-($163:str)
-    mil.line("#   var i;\n");	# 73 MILline ($164:void)<-($165:str)
-    mil.line("# \n");	# 74 MILline ($166:void)<-($146:str)
-    mil.line("#   i := 0;\n");	# 75 MILline ($167:void)<-($168:str)
-    mil.line("#   while (i < 2) {\n");	# 76 MILline ($169:void)<-($170:str)
-    mil.line("#     b := [+](b, 1);\n");	# 77 MILline ($171:void)<-($172:str)
-    mil.line("#     i := i + 1;\n");	# 78 MILline ($173:void)<-($174:str)
-    mil.line("#   }\n");	# 79 MILline ($175:void)<-($176:str)
-    mil.line("# \n");	# 80 MILline ($177:void)<-($146:str)
-    mil.line("#   return b;\n");	# 81 MILline ($178:void)<-($179:str)
-    mil.line("# }\n");	# 82 MILline ($180:void)<-($181:str)
-    mil.line("# \n");	# 83 MILline ($182:void)<-($183:str)
-    mil.line("# b1 := bbp.new(int, int);\n");	# 84 MILline ($184:void)<-($185:str)
-    mil.line("# b1.insert(0, 0);\n");	# 85 MILline ($186:void)<-($187:str)
-    mil.line("# b1.insert(0, 1);\n");	# 86 MILline ($188:void)<-($189:str)
-    mil.line("# \n");	# 87 MILline ($190:void)<-($183:str)
-    mil.line("# bn := tst(b1);\n");	# 88 MILline ($191:void)<-($192:str)
-    mil.line("# GDKmalloc called with size 0\n");	# 89 MILline ($193:void)<-($194:str)
-    mil.line("# \n");	# 90 MILline ($195:void)<-($183:str)
-    mil.line("# -8<-----\n");	# 91 MILline ($196:void)<-($197:str)
-    mil.line("# \n");	# 92 MILline ($198:void)<-($183:str)
-    mil.line("# As Tim sais, it has probably to do with rewriting the\n");	# 93 MILline ($199:void)<-($200:str)
-    mil.line("# MIL parse tree after the first iteration of the while loop.\n");	# 94 MILline ($201:void)<-($202:str)
-    mil.line("# \n");	# 95 MILline ($203:void)<-($183:str)
-    mil.line("# ========\n");	# 96 MILline ($204:void)<-($205:str)
-    mil.line("# \n");	# 97 MILline ($206:void)<-($183:str)
-    mil.line("# As I just noticed, similar (the same\?) bugs have already been\n");	# 98 MILline ($207:void)<-($208:str)
-    mil.line("# reported in bug reports #117 & #156.\n");	# 99 MILline ($209:void)<-($210:str)
-    mil.line("# \n");	# 100 MILline ($211:void)<-($183:str)
-    mil.line("#\t\tStefan\n");	# 101 MILline ($212:void)<-($213:str)
-    mil.line("");	# 102 MILline ($214:void)<-($215:str)
-    aa_a := calc.oid(20000000);	# 103 CALCint2oid (aa_a:oid)<-($217:int)
-    ba_a := calc.setoid(aa_a);	# 104 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("");	# 105 MILline ($219:void)<-($215:str)
-    mil.line("");	# 106 MILline ($220:void)<-($215:str)
-    b1 := bbp.new(nil:int,nil:int);	# 107 CMDBATnew (b1:bat[:int,:int])<-($222:int)($222:int)
-    mil.line("var b1 := bbp.new(int, int);");	# 108 MILline ($223:void)<-($224:str)
-    fa_a := bat.insert(b1,0,0);	# 109 BKCinsert_bun (fa_a:bat[:int,:int])<-(b1:bat[:int,:int])($226:int)($226:int)
-    mil.line("b1.insert(0, 0);");	# 110 MILline ($227:void)<-($228:str)
-    ga_a := bat.insert(b1,0,1);	# 111 BKCinsert_bun (ga_a:bat[:int,:int])<-(b1:bat[:int,:int])($226:int)($230:int)
-    mil.line("");	# 112 MILline ($231:void)<-($215:str)
-    bn := user.tst(b1);	# 113  (bn:bat[:any,:any])<-(b1:bat[:int,:int])
-    mil.line("var bn := tst(b1);  ");	# 114 MILline ($233:void)<-($234:str)
-    ha_a := io.print(bn);	# 115 IOprint_val (ha_a:int)<-(bn:bat[:any,:any])
-    mil.line("");	# 116 MILline ($236:void)<-($215:str)
-    ia_a := clients.quit();	# 117 CLTquit (ia_a:void)
-end main;	# 118  
-## >Number:         163
-## >Category:       MIL
-## >Synopsis:       multi[lex bug
-## >Confidential:   no
-## >Severity:       serious
-## >Priority:       medium
-## >Responsible:    boncz (Peter Boncz)
-## >State:          open
-## >Class:          sw-bug
-## >Submitter-Id:   unknown
-## >Arrival-Date:   Mon Jul 20 09:56:02 1998
-## >Originator:     manegold@cwi.nl
-## >Organization:
-## >Release:        980101
-## >Environment:
-## any
-## >Description:
-## Tim Ruhl (DDi) reported this bug:
-## 
-## The following script fails with "GDKmalloc called with size 0".
-## (cf. output below)
-## 
-## -8<-----
-## 
-## proc tst(BAT[any, int] b) : bat
-## {  
-##   var i;
-## 
-##   i := 0;
-##   while (i < 2) {
-##     b := [+](b, 1);
-##     i := i + 1;
-##   }
-## 
-##   return b;
-## }
-## 
-## b1 := new(int, int);
-## b1.insert(0, 0);
-## b1.insert(0, 1);
-## 
-## bn := tst(b1);
-## bn.print;
-## 
-## quit;
-## 
-## -8<-----
-## 
-## # Monet Database Server V4.0 (IRIX5.3/32bit) of Fri Jul 17 21:30:49 MET DST 1998
-## # Copyright (c) 1993-1998, CWI & SION. All rights reserved.
-## #script:../tim.mil
-## 
-## loaded;
-## #---------------------------------#
-## # module        | usage_count     #
-## #---------------------------------#
-## [ "kernel",       1               ]
-## [ "arith",        1               ]
-## [ "bat",          1               ]
-## [ "algebra",      1               ]
-## [ "sys",          1               ]
-## [ "trans",        1               ]
-## 
-## Try: modules;                - for other modules.
-##      ls;                     - for persistent bat listing.
-##      sigs("<module>")        - for available commands per module.
-##      help("<command>")       - for help one-liner for a command.
-## 
-## #You are system administrator (adm)!
-##  
-## proc tst(BAT[any, int] b) : bat
-## {
-##   var i;
-## 
-##   i := 0;
-##   while (i < 2) {
-##     b := [+](b, 1);
-##     i := i + 1;
-##   }
-## 
-##   return b;
-## }
-## 
-## b1 := new(int, int);
-## b1.insert(0, 0);
-## b1.insert(0, 1);
-## 
-## bn := tst(b1);
-## GDKmalloc called with size 0
-## 
-## -8<-----
-## 
-## As Tim sais, it has probably to do with rewriting the
-## MIL parse tree after the first iteration of the while loop.
-## 
-## ========
-## 
-## As I just noticed, similar (the same?) bugs have already been
-## reported in bug reports #117 & #156.
-## 
-##		Stefan
-#
-# 
-# quit;
-# 
-# -8<-----
-# 
-# # Monet Database Server V4.0 (IRIX5.3/32bit) of Fri Jul 17 21:30:49 MET DST 1998
-# # Copyright (c) 1993-1998, CWI & SION. All rights reserved.
-# #script:../tim.mil
+# Monet Mil to Mal compiler 	# 1  ($2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  ($4:str)
+#Predefined code segment 	# 3  ($6:str)
+#The compiler can not guarantee an accurate compilation, 	# 4  ($8:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 5  ($10:str)
+#A few guidelines to maximize usefullness. 	# 6  ($12:str)
+#- make the type of variables explicit, in particular 'nil' 	# 7  ($14:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  ($16:str)
+#use the "mil_schema" for additional support routines 	# 9  ($18:str)
+    mil.line("# >Number:         163\n");	# 10 MILline ($19:void)<-($20:str)
+    mil.line("# >Category:       MIL\n");	# 11 MILline ($21:void)<-($22:str)
+    mil.line("# >Synopsis:       multi[lex bug\n");	# 12 MILline ($23:void)<-($24:str)
+    mil.line("# >Confidential:   no\n");	# 13 MILline ($25:void)<-($26:str)
+    mil.line("# >Severity:       serious\n");	# 14 MILline ($27:void)<-($28:str)
+    mil.line("# >Priority:       medium\n");	# 15 MILline ($29:void)<-($30:str)
+    mil.line("# >Responsible:    boncz (Peter Boncz)\n");	# 16 MILline ($31:void)<-($32:str)
+    mil.line("# >State:          open\n");	# 17 MILline ($33:void)<-($34:str)
+    mil.line("# >Class:          sw-bug\n");	# 18 MILline ($35:void)<-($36:str)
+    mil.line("# >Submitter-Id:   unknown\n");	# 19 MILline ($37:void)<-($38:str)
+    mil.line("# >Arrival-Date:   Mon Jul 20 09:56:02 1998\n");	# 20 MILline ($39:void)<-($40:str)
+    mil.line("# >Originator:     manegold@cwi.nl\n");	# 21 MILline ($41:void)<-($42:str)
+    mil.line("# >Organization:\n");	# 22 MILline ($43:void)<-($44:str)
+    mil.line("# >Release:        980101\n");	# 23 MILline ($45:void)<-($46:str)
+    mil.line("# >Environment:\n");	# 24 MILline ($47:void)<-($48:str)
+    mil.line("# any\n");	# 25 MILline ($49:void)<-($50:str)
+    mil.line("# >Description:\n");	# 26 MILline ($51:void)<-($52:str)
+    mil.line("# Tim Ruhl (DDi) reported this bug:\n");	# 27 MILline ($53:void)<-($54:str)
+    mil.line("# \n");	# 28 MILline ($55:void)<-($56:str)
+    mil.line("# The following script fails with \"GDKmalloc called with size 0\".\n");	# 29 MILline ($57:void)<-($58:str)
+    mil.line("# (cf. output below)\n");	# 30 MILline ($59:void)<-($60:str)
+    mil.line("# \n");	# 31 MILline ($61:void)<-($56:str)
+    mil.line("# -8<-----\n");	# 32 MILline ($62:void)<-($63:str)
+    mil.line("# \n");	# 33 MILline ($64:void)<-($56:str)
+    mil.line("# proc tst(BAT[any, int] b) : bat\n");	# 34 MILline ($65:void)<-($66:str)
+    mil.line("# {  \n");	# 35 MILline ($67:void)<-($68:str)
+    mil.line("#   var i;\n");	# 36 MILline ($69:void)<-($70:str)
+    mil.line("# \n");	# 37 MILline ($71:void)<-($56:str)
+    mil.line("#   i := 0;\n");	# 38 MILline ($72:void)<-($73:str)
+    mil.line("#   while (i < 2) {\n");	# 39 MILline ($74:void)<-($75:str)
+    mil.line("#     b := [+](b, 1);\n");	# 40 MILline ($76:void)<-($77:str)
+    mil.line("#     i := i + 1;\n");	# 41 MILline ($78:void)<-($79:str)
+    mil.line("#   }\n");	# 42 MILline ($80:void)<-($81:str)
+    mil.line("# \n");	# 43 MILline ($82:void)<-($56:str)
+    mil.line("#   return b;\n");	# 44 MILline ($83:void)<-($84:str)
+    mil.line("# }\n");	# 45 MILline ($85:void)<-($86:str)
+    mil.line("# \n");	# 46 MILline ($87:void)<-($56:str)
+    mil.line("# b1 := bbp.new(int, int);\n");	# 47 MILline ($88:void)<-($89:str)
+    mil.line("# b1.insert(0, 0);\n");	# 48 MILline ($90:void)<-($91:str)
+    mil.line("# b1.insert(0, 1);\n");	# 49 MILline ($92:void)<-($93:str)
+    mil.line("# \n");	# 50 MILline ($94:void)<-($95:str)
+    mil.line("# bn := tst(b1);\n");	# 51 MILline ($96:void)<-($97:str)
+    mil.line("# bn.print;\n");	# 52 MILline ($98:void)<-($99:str)
+    mil.line("# \n");	# 53 MILline ($100:void)<-($95:str)
+    mil.line("# quit;\n");	# 54 MILline ($101:void)<-($102:str)
+    mil.line("# \n");	# 55 MILline ($103:void)<-($95:str)
+    mil.line("# -8<-----\n");	# 56 MILline ($104:void)<-($105:str)
+    mil.line("# \n");	# 57 MILline ($106:void)<-($95:str)
+    mil.line("# # Monet Database Server V4.0 (IRIX5.3/32bit) of Fri Jul 17 21:30:49 MET DST 1998\n");	# 58 MILline ($107:void)<-($108:str)
+    mil.line("# # Copyright (c) 1993-1998, CWI & SION. All rights reserved.\n");	# 59 MILline ($109:void)<-($110:str)
+    mil.line("# #script:../tim.mil\n");	# 60 MILline ($111:void)<-($112:str)
+    mil.line("# \n");	# 61 MILline ($113:void)<-($95:str)
+    mil.line("# loaded;\n");	# 62 MILline ($114:void)<-($115:str)
+    mil.line("# #---------------------------------#\n");	# 63 MILline ($116:void)<-($117:str)
+    mil.line("# # module        | usage_count     #\n");	# 64 MILline ($118:void)<-($119:str)
+    mil.line("# #---------------------------------#\n");	# 65 MILline ($120:void)<-($117:str)
+    mil.line("# [ \"kernel\",       1               ]\n");	# 66 MILline ($121:void)<-($122:str)
+    mil.line("# [ \"arith\",        1               ]\n");	# 67 MILline ($123:void)<-($124:str)
+    mil.line("# [ \"bat\",          1               ]\n");	# 68 MILline ($125:void)<-($126:str)
+    mil.line("# [ \"algebra\",      1               ]\n");	# 69 MILline ($127:void)<-($128:str)
+    mil.line("# [ \"sys\",          1               ]\n");	# 70 MILline ($129:void)<-($130:str)
+    mil.line("# [ \"trans\",        1               ]\n");	# 71 MILline ($131:void)<-($132:str)
+    mil.line("# \n");	# 72 MILline ($133:void)<-($134:str)
+    mil.line("# Try: modules;                - for other modules.\n");	# 73 MILline ($135:void)<-($136:str)
+    mil.line("#      ls;                     - for persistent bat listing.\n");	# 74 MILline ($137:void)<-($138:str)
+    mil.line("#      sigs(\"<module>\")        - for available commands per module.\n");	# 75 MILline ($139:void)<-($140:str)
+    mil.line("#      help(\"<command>\")       - for help one-liner for a command.\n");	# 76 MILline ($141:void)<-($142:str)
+    mil.line("# \n");	# 77 MILline ($143:void)<-($134:str)
+    mil.line("# #You are system administrator (adm)!\n");	# 78 MILline ($144:void)<-($145:str)
+    mil.line("#  \n");	# 79 MILline ($146:void)<-($147:str)
+    mil.line("# proc tst(BAT[any, int] b) : bat\n");	# 80 MILline ($148:void)<-($149:str)
+    mil.line("# {\n");	# 81 MILline ($150:void)<-($151:str)
+    mil.line("#   var i;\n");	# 82 MILline ($152:void)<-($153:str)
+    mil.line("# \n");	# 83 MILline ($154:void)<-($134:str)
+    mil.line("#   i := 0;\n");	# 84 MILline ($155:void)<-($156:str)
+    mil.line("#   while (i < 2) {\n");	# 85 MILline ($157:void)<-($158:str)
+    mil.line("#     b := [+](b, 1);\n");	# 86 MILline ($159:void)<-($160:str)
+    mil.line("#     i := i + 1;\n");	# 87 MILline ($161:void)<-($162:str)
+    mil.line("#   }\n");	# 88 MILline ($163:void)<-($164:str)
+    mil.line("# \n");	# 89 MILline ($165:void)<-($134:str)
+    mil.line("#   return b;\n");	# 90 MILline ($166:void)<-($167:str)
+    mil.line("# }\n");	# 91 MILline ($168:void)<-($169:str)
+    mil.line("# \n");	# 92 MILline ($170:void)<-($171:str)
+    mil.line("# b1 := bbp.new(int, int);\n");	# 93 MILline ($172:void)<-($173:str)
+    mil.line("# b1.insert(0, 0);\n");	# 94 MILline ($174:void)<-($175:str)
+    mil.line("# b1.insert(0, 1);\n");	# 95 MILline ($176:void)<-($177:str)
+    mil.line("# \n");	# 96 MILline ($178:void)<-($171:str)
+    mil.line("# bn := tst(b1);\n");	# 97 MILline ($179:void)<-($180:str)
+    mil.line("# GDKmalloc called with size 0\n");	# 98 MILline ($181:void)<-($182:str)
+    mil.line("# \n");	# 99 MILline ($183:void)<-($171:str)
+    mil.line("# -8<-----\n");	# 100 MILline ($184:void)<-($185:str)
+    mil.line("# \n");	# 101 MILline ($186:void)<-($171:str)
+    mil.line("# As Tim sais, it has probably to do with rewriting the\n");	# 102 MILline ($187:void)<-($188:str)
+    mil.line("# MIL parse tree after the first iteration of the while loop.\n");	# 103 MILline ($189:void)<-($190:str)
+    mil.line("# \n");	# 104 MILline ($191:void)<-($171:str)
+    mil.line("# ========\n");	# 105 MILline ($192:void)<-($193:str)
+    mil.line("# \n");	# 106 MILline ($194:void)<-($171:str)
+    mil.line("# As I just noticed, similar (the same\?) bugs have already been\n");	# 107 MILline ($195:void)<-($196:str)
+    mil.line("# reported in bug reports #117 & #156.\n");	# 108 MILline ($197:void)<-($198:str)
+    mil.line("# \n");	# 109 MILline ($199:void)<-($171:str)
+    mil.line("#\t\tStefan\n");	# 110 MILline ($200:void)<-($201:str)
+    mil.line("");	# 111 MILline ($202:void)<-($203:str)
+    aa_a := calc.oid(20000000);	# 112 CALCint2oid (aa_a:oid)<-($205:int)
+    ba_a := calc.setoid(aa_a);	# 113 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("");	# 114 MILline ($207:void)<-($203:str)
+    mil.line("");	# 115 MILline ($208:void)<-($203:str)
+    b1 := bbp.new(nil:int,nil:int);	# 116 CMDBATnew (b1:bat[:int,:int])<-($210:int)($210:int)
+    mil.line("var b1 := bbp.new(int, int);");	# 117 MILline ($211:void)<-($212:str)
+    fa_a := bat.insert(b1,0,0);	# 118 BKCinsert_bun (fa_a:bat[:int,:int])<-(b1:bat[:int,:int])($214:int)($214:int)
+    mil.line("b1.insert(0, 0);");	# 119 MILline ($215:void)<-($216:str)
+    ga_a := bat.insert(b1,0,1);	# 120 BKCinsert_bun (ga_a:bat[:int,:int])<-(b1:bat[:int,:int])($214:int)($218:int)
+    mil.line("");	# 121 MILline ($219:void)<-($203:str)
+    bn := user.tst(b1);	# 122  (bn:bat[:any,:any])<-(b1:bat[:int,:int])
+    mil.line("var bn := tst(b1);  ");	# 123 MILline ($221:void)<-($222:str)
+    ha_a := io.print(bn);	# 124 IOprint_val (ha_a:int)<-(bn:bat[:any,:any])
+    mil.line("");	# 125 MILline ($224:void)<-($203:str)
+    ia_a := clients.quit();	# 126 CLTquit (ia_a:void)
+end main;	# 127  
+## >Number:         163\n
+## >Category:       MIL\n
+## >Synopsis:       multi[lex bug\n
+## >Confidential:   no\n
+## >Severity:       serious\n
+## >Priority:       medium\n
+## >Responsible:    boncz (Peter Boncz)\n
+## >State:          open\n
+## >Class:          sw-bug\n
+## >Submitter-Id:   unknown\n
+## >Arrival-Date:   Mon Jul 20 09:56:02 1998\n
+## >Originator:     manegold@cwi.nl\n
+## >Organization:\n
+## >Release:        980101\n
+## >Environment:\n
+## any\n
+## >Description:\n
+## Tim Ruhl (DDi) reported this bug:\n
+## \n
+## The following script fails with \"GDKmalloc called with size 0\".\n
+## (cf. output below)\n
+## \n
+## -8<-----\n
+## \n
+## proc tst(BAT[any, int] b) : bat\n
+## {  \n
+##   var i;\n
+## \n
+##   i := 0;\n
+##   while (i < 2) {\n
+##     b := [+](b, 1);\n
+##     i := i + 1;\n
+##   }\n
+## \n
+##   return b;\n
+## }\n
+## \n
+## b1 := bbp.new(int, int);\n
+## b1.insert(0, 0);\n
+## b1.insert(0, 1);\n
+## \n
+## bn := tst(b1);\n
+## bn.print;\n
+## \n
+## quit;\n
+## \n
+## -8<-----\n
+## \n
+## # Monet Database Server V4.0 (IRIX5.3/32bit) of Fri Jul 17 21:30:49 MET DST 1998\n
+## # Copyright (c) 1993-1998, CWI & SION. All rights reserved.\n
+## #script:../tim.mil\n
+## \n
+## loaded;\n
+## #---------------------------------#\n
+## # module        | usage_count     #\n
+## #---------------------------------#\n
+## [ \"kernel\",       1               ]\n
+## [ \"arith\",        1               ]\n
+## [ \"bat\",          1               ]\n
+## [ \"algebra\",      1               ]\n
+## [ \"sys\",          1               ]\n
+## [ \"trans\",        1               ]\n
+## \n
+## Try: modules;                - for other modules.\n
+##      ls;                     - for persistent bat listing.\n
+##      sigs(\"<module>\")        - for available commands per module.\n
+##      help(\"<command>\")       - for help one-liner for a command.\n
+## \n
+## #You are system administrator (adm)!\n
+##  \n
+## proc tst(BAT[any, int] b) : bat\n
+## {\n
+##   var i;\n
+## \n
+##   i := 0;\n
+##   while (i < 2) {\n
+##     b := [+](b, 1);\n
+##     i := i + 1;\n
+##   }\n
+## \n
+##   return b;\n
+## }\n
+## \n
+## b1 := bbp.new(int, int);\n
+## b1.insert(0, 0);\n
+## b1.insert(0, 1);\n
+## \n
+## bn := tst(b1);\n
+## GDKmalloc called with size 0\n
+## \n
+## -8<-----\n
+## \n
+## As Tim sais, it has probably to do with rewriting the\n
+## MIL parse tree after the first iteration of the while loop.\n
+## \n
+## ========\n
+## \n
+## As I just noticed, similar (the same\?) bugs have already been\n
+## reported in bug reports #117 & #156.\n
+## \n
+##\t\tStefan\n
 # 
 # loaded;
 # #---------------------------------#

@@ -60,6 +60,14 @@ function user.qry():void;	# 0  (qry:void)
     optimizer.selectPushdown();	# 17 QOTSPoptimizer ($27:str)
 end qry;	# 18  
 #
+function user.main():int;	# 0  (main:int)
+# testing the heuristic rules 	# 1  ($2:str)
+# relations r(H,T) and s(H,T) 	# 2  ($4:str)
+# traditional push select through join 	# 3  ($6:str)
+# r.T=s.H and s.T<6 	# 4  ($8:str)
+# alternative instruction 	# 5  ($10:str)
+# s.H=r.H and s.T<2 	# 6  ($12:str)
+end main;	# 7  
 
 # 08:01:46 >  
 # 08:01:46 >  Done.

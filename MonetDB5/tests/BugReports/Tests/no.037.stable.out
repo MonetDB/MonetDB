@@ -25,58 +25,68 @@ stdout of test 'no.037` in directory 'tests/BugReports` itself:
 # "mem" is not properly handled (like  "cpu")
 # 
 function user.main():int;	# 0  (main:int)
-    mil.line("# >Number:         37\n");	# 1 MILline ($31:void)<-($32:str)
-    mil.line("# >Category:       Mserver\n");	# 2 MILline ($33:void)<-($34:str)
-    mil.line("# >Synopsis:       built-in bats\n");	# 3 MILline ($35:void)<-($36:str)
-    mil.line("# >Confidential:   no\n");	# 4 MILline ($37:void)<-($38:str)
-    mil.line("# >Severity:       serious\n");	# 5 MILline ($39:void)<-($40:str)
-    mil.line("# >Priority:       high\n");	# 6 MILline ($41:void)<-($42:str)
-    mil.line("# >Responsible:    mk\n");	# 7 MILline ($43:void)<-($44:str)
-    mil.line("# >State:          feedback\n");	# 8 MILline ($45:void)<-($46:str)
-    mil.line("# >Class:          sw-bug\n");	# 9 MILline ($47:void)<-($48:str)
-    mil.line("# >Submitter-Id:   unknown\n");	# 10 MILline ($49:void)<-($50:str)
-    mil.line("# >Arrival-Date:   Tue Oct  7 17:45:11 1997\n");	# 11 MILline ($51:void)<-($52:str)
-    mil.line("# >Originator:     mk\n");	# 12 MILline ($53:void)<-($54:str)
-    mil.line("# >Organization:\n");	# 13 MILline ($55:void)<-($56:str)
-    mil.line("# >Release:        970101\n");	# 14 MILline ($57:void)<-($58:str)
-    mil.line("# >Environment:\n");	# 15 MILline ($59:void)<-($60:str)
-    mil.line("# \n");	# 16 MILline ($61:void)<-($62:str)
-    mil.line("# >Description:\n");	# 17 MILline ($63:void)<-($64:str)
-    mil.line("# \"mem\" is not properly handled (like  \"cpu\")\n");	# 18 MILline ($65:void)<-($66:str)
-    mil.line("# \n");	# 19 MILline ($67:void)<-($62:str)
-    mil.line("# >ls;\n");	# 20 MILline ($68:void)<-($69:str)
-    mil.line("# #---------------------------------------------------------#\n");	# 21 MILline ($70:void)<-($71:str)
-    mil.line("# # name          | heat  | status| group | role            #\n");	# 22 MILline ($72:void)<-($73:str)
-    mil.line("# #---------------------------------------------------------#\n");	# 23 MILline ($74:void)<-($71:str)
-    mil.line("# [ \"car_age\",      0,      \"disk\", \"h\",    \"t\"             ]\n");	# 24 MILline ($75:void)<-($76:str)
-    mil.line("# [ \"car_gender\",   0,      \"disk\", \"h\",    \"t\"             ]\n");	# 25 MILline ($77:void)<-($78:str)
-    mil.line("# [ \"car_price\",    0,      \"disk\", \"h\",    \"t\"             ]\n");	# 26 MILline ($79:void)<-($80:str)
-    mil.line("# [ \"car_category\", 0,      \"disk\", \"h\",    \"t\"             ]\n");	# 27 MILline ($81:void)<-($82:str)
-    mil.line("# [ \"car_city\",     0,      \"disk\", \"h\",    \"t\"             ]\n");	# 28 MILline ($83:void)<-($84:str)
-    mil.line("# [ \"car_damage\",   0,      \"disk\", \"h\",    \"t\"             ]\n");	# 29 MILline ($85:void)<-($86:str)
-    mil.line("# [ \"a_b\",          0,      \"disk\", \"h\",    \"t\"             ]\n");	# 30 MILline ($87:void)<-($88:str)
-    mil.line("# [ \"telephone\",    0,      \"disk\", \"h\",    \"t\"             ]\n");	# 31 MILline ($89:void)<-($90:str)
-    mil.line("# [ \"p_name\",       0,      \"disk\", \"h\",    \"t\"             ]\n");	# 32 MILline ($91:void)<-($92:str)
-    mil.line("# [ \"p_gender\",     0,      \"disk\", \"h\",    \"t\"             ]\n");	# 33 MILline ($93:void)<-($94:str)
-    mil.line("# [ \"p_age\",        0,      \"disk\", \"h\",    \"t\"             ]\n");	# 34 MILline ($95:void)<-($96:str)
-    mil.line("# [ \"p_city\",       0,      \"disk\", \"h\",    \"t\"             ]\n");	# 35 MILline ($97:void)<-($98:str)
-    mil.line("# [ \"p_kind\",       0,      \"disk\", \"h\",    \"t\"             ]\n");	# 36 MILline ($99:void)<-($100:str)
-    mil.line("# [ \"mem\",          0,      \"disk\", \"h\",    \"t\"             ]\n");	# 37 MILline ($101:void)<-($102:str)
-    mil.line("# [ \"io\",           0,      \"disk\", \"h\",    \"t\"             ]\n");	# 38 MILline ($103:void)<-($104:str)
-    mil.line("# [ \"cpu\",          0,      \"disk\", \"h\",    \"t\"             ]\n");	# 39 MILline ($105:void)<-($106:str)
-    mil.line("# >mem.print;\n");	# 40 MILline ($107:void)<-($108:str)
-    mil.line("# !ERROR: atom 'monet_Mallinfo' unknown, in BAT 'mem'.!ERROR: BATprintf: BAT expected\n");	# 41 MILline ($109:void)<-($110:str)
-    mil.line("ls();");	# 42 MILline ($111:void)<-($112:str)
-    aa_a := mil_sys_procs.ls();	# 43  (aa_a:void)
-    mil.line("mem.print();");	# 44 MILline ($114:void)<-($115:str)
-    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); bat.printf(\"#~EndVariableOutput~#\\n\");");	# 45 MILline ($116:void)<-($117:str)
-    ca_a := io.printf("#~BeginVariableOutput~#\n");	# 46 IOprint_str (ca_a:int)<-($119:str)
-    da_a := status.memStatistics();	# 47 SYSmemStatistics (da_a:bat[:str,:int])
-    ea_a := io.print(da_a);	# 48 IOprint_val (ea_a:int)<-(da_a:bat[:str,:int])
-    fa_a := io.printf("#~EndVariableOutput~#\n");	# 49 IOprint_str (fa_a:int)<-($123:str)
-    mil.line("quit();");	# 50 MILline ($124:void)<-($125:str)
-    ga_a := clients.quit();	# 51 CLTquit (ga_a:void)
-end main;	# 52  
+# Monet Mil to Mal compiler 	# 1  ($2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  ($4:str)
+#Predefined code segment 	# 3  ($6:str)
+#The compiler can not guarantee an accurate compilation, 	# 4  ($8:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 5  ($10:str)
+#A few guidelines to maximize usefullness. 	# 6  ($12:str)
+#- make the type of variables explicit, in particular 'nil' 	# 7  ($14:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  ($16:str)
+#use the "mil_schema" for additional support routines 	# 9  ($18:str)
+    mil.line("# >Number:         37\n");	# 10 MILline ($19:void)<-($20:str)
+    mil.line("# >Category:       Mserver\n");	# 11 MILline ($21:void)<-($22:str)
+    mil.line("# >Synopsis:       built-in bats\n");	# 12 MILline ($23:void)<-($24:str)
+    mil.line("# >Confidential:   no\n");	# 13 MILline ($25:void)<-($26:str)
+    mil.line("# >Severity:       serious\n");	# 14 MILline ($27:void)<-($28:str)
+    mil.line("# >Priority:       high\n");	# 15 MILline ($29:void)<-($30:str)
+    mil.line("# >Responsible:    mk\n");	# 16 MILline ($31:void)<-($32:str)
+    mil.line("# >State:          feedback\n");	# 17 MILline ($33:void)<-($34:str)
+    mil.line("# >Class:          sw-bug\n");	# 18 MILline ($35:void)<-($36:str)
+    mil.line("# >Submitter-Id:   unknown\n");	# 19 MILline ($37:void)<-($38:str)
+    mil.line("# >Arrival-Date:   Tue Oct  7 17:45:11 1997\n");	# 20 MILline ($39:void)<-($40:str)
+    mil.line("# >Originator:     mk\n");	# 21 MILline ($41:void)<-($42:str)
+    mil.line("# >Organization:\n");	# 22 MILline ($43:void)<-($44:str)
+    mil.line("# >Release:        970101\n");	# 23 MILline ($45:void)<-($46:str)
+    mil.line("# >Environment:\n");	# 24 MILline ($47:void)<-($48:str)
+    mil.line("# \n");	# 25 MILline ($49:void)<-($50:str)
+    mil.line("# >Description:\n");	# 26 MILline ($51:void)<-($52:str)
+    mil.line("# \"mem\" is not properly handled (like  \"cpu\")\n");	# 27 MILline ($53:void)<-($54:str)
+    mil.line("# \n");	# 28 MILline ($55:void)<-($50:str)
+    mil.line("# >ls;\n");	# 29 MILline ($56:void)<-($57:str)
+    mil.line("# #---------------------------------------------------------#\n");	# 30 MILline ($58:void)<-($59:str)
+    mil.line("# # name          | heat  | status| group | role            #\n");	# 31 MILline ($60:void)<-($61:str)
+    mil.line("# #---------------------------------------------------------#\n");	# 32 MILline ($62:void)<-($59:str)
+    mil.line("# [ \"car_age\",      0,      \"disk\", \"h\",    \"t\"             ]\n");	# 33 MILline ($63:void)<-($64:str)
+    mil.line("# [ \"car_gender\",   0,      \"disk\", \"h\",    \"t\"             ]\n");	# 34 MILline ($65:void)<-($66:str)
+    mil.line("# [ \"car_price\",    0,      \"disk\", \"h\",    \"t\"             ]\n");	# 35 MILline ($67:void)<-($68:str)
+    mil.line("# [ \"car_category\", 0,      \"disk\", \"h\",    \"t\"             ]\n");	# 36 MILline ($69:void)<-($70:str)
+    mil.line("# [ \"car_city\",     0,      \"disk\", \"h\",    \"t\"             ]\n");	# 37 MILline ($71:void)<-($72:str)
+    mil.line("# [ \"car_damage\",   0,      \"disk\", \"h\",    \"t\"             ]\n");	# 38 MILline ($73:void)<-($74:str)
+    mil.line("# [ \"a_b\",          0,      \"disk\", \"h\",    \"t\"             ]\n");	# 39 MILline ($75:void)<-($76:str)
+    mil.line("# [ \"telephone\",    0,      \"disk\", \"h\",    \"t\"             ]\n");	# 40 MILline ($77:void)<-($78:str)
+    mil.line("# [ \"p_name\",       0,      \"disk\", \"h\",    \"t\"             ]\n");	# 41 MILline ($79:void)<-($80:str)
+    mil.line("# [ \"p_gender\",     0,      \"disk\", \"h\",    \"t\"             ]\n");	# 42 MILline ($81:void)<-($82:str)
+    mil.line("# [ \"p_age\",        0,      \"disk\", \"h\",    \"t\"             ]\n");	# 43 MILline ($83:void)<-($84:str)
+    mil.line("# [ \"p_city\",       0,      \"disk\", \"h\",    \"t\"             ]\n");	# 44 MILline ($85:void)<-($86:str)
+    mil.line("# [ \"p_kind\",       0,      \"disk\", \"h\",    \"t\"             ]\n");	# 45 MILline ($87:void)<-($88:str)
+    mil.line("# [ \"mem\",          0,      \"disk\", \"h\",    \"t\"             ]\n");	# 46 MILline ($89:void)<-($90:str)
+    mil.line("# [ \"io\",           0,      \"disk\", \"h\",    \"t\"             ]\n");	# 47 MILline ($91:void)<-($92:str)
+    mil.line("# [ \"cpu\",          0,      \"disk\", \"h\",    \"t\"             ]\n");	# 48 MILline ($93:void)<-($94:str)
+    mil.line("# >mem.print;\n");	# 49 MILline ($95:void)<-($96:str)
+    mil.line("# !ERROR: atom 'monet_Mallinfo' unknown, in BAT 'mem'.!ERROR: BATprintf: BAT expected\n");	# 50 MILline ($97:void)<-($98:str)
+    mil.line("ls();");	# 51 MILline ($99:void)<-($100:str)
+    aa_a := mil_sys_procs.ls();	# 52  (aa_a:void)
+    mil.line("mem.print();");	# 53 MILline ($102:void)<-($103:str)
+    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); memory().print(); bat.printf(\"#~EndVariableOutput~#\\n\");");	# 54 MILline ($104:void)<-($105:str)
+    ca_a := io.printf("#~BeginVariableOutput~#\n");	# 55 IOprint_str (ca_a:int)<-($107:str)
+    da_a := status.memStatistics();	# 56 SYSmemStatistics (da_a:bat[:str,:int])
+    ea_a := io.print(da_a);	# 57 IOprint_val (ea_a:int)<-(da_a:bat[:str,:int])
+    fa_a := io.printf("#~EndVariableOutput~#\n");	# 58 IOprint_str (fa_a:int)<-($111:str)
+    mil.line("quit();");	# 59 MILline ($112:void)<-($113:str)
+    ga_a := clients.quit();	# 60 CLTquit (ga_a:void)
+#Identifer 'memory' mapped to 'status.memStatistics' 	# 61  ($116:str)
+end main;	# 62  
 ## >Number:         37\n
 ## >Category:       Mserver\n
 ## >Synopsis:       built-in bats\n
@@ -131,15 +141,15 @@ end main;	# 52
 # str		int		  # type
 #---------------------------------#
 [ "memincr",	  0		  ]
-[ "arena",	  2297856	  ]
-[ "ordblks",	  23		  ]
-[ "smblks",	  92		  ]
+[ "arena",	  2314240	  ]
+[ "ordblks",	  36		  ]
+[ "smblks",	  105		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
-[ "fsmblks",	  2368		  ]
-[ "uordblks",	  2080528	  ]
-[ "fordblks",	  217328	  ]
+[ "fsmblks",	  2936		  ]
+[ "uordblks",	  2132408	  ]
+[ "fordblks",	  181832	  ]
 #~EndVariableOutput~#
 #quit();
 

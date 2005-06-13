@@ -228,10 +228,16 @@ end tst903;	# 101
 #
 #Mcc("Admin","tst903");
 #
-!ERROR: 'Mcc.compile' undefined in user.main[1]
+!ERROR: 'Mcc.compile' undefined in user.main[7]
 function user.main():int;	# 0  (main:int)
-    Mcc.compile("user","tst903");	# 1  unknown ($1:any)<-($2:str)($3:str)
-end main;	# 2  
+# The first MAL compiler test 	# 1  ($2:str)
+# the result is retained in MCCtst903.c 	# 2  ($4:str)
+# which can be compiled and linked with the system. 	# 3  ($6:str)
+#setReadMode(b); 	# 4  ($8:str)
+#io.printf("max %d",mx); 	# 5  ($10:str)
+#io.printf(" min %d\n",mi); 	# 6  ($12:str)
+    Mcc.compile("user","tst903");	# 7  unknown ($13:any)<-($14:str)($15:str)
+end main;	# 8  
 
 # 11:08:36 >  
 # 11:08:36 >  Done.

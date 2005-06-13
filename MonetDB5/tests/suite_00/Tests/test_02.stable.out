@@ -75,59 +75,68 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 #	ab_a := quit();
 #
 function user.main():int;	# 0  (main:int)
-    mil.line("setoid(oid(20000000));");	# 1 MILline ($31:void)<-($32:str)
-    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($34:int)
-    ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("var s:= bbp.new(str,int);");	# 4 MILline ($36:void)<-($37:str)
-    s := bbp.new("nil:str",nil:int);	# 5 CMDBATnew (s:bat[:str,:int])<-($39:str)($40:int)
-    mil.line("insert(s,\"hello\",1);");	# 6 MILline ($41:void)<-($42:str)
-    ca_a := bat.insert(s,"hello",1);	# 7 BKCinsert_bun (ca_a:bat[:str,:int])<-(s:bat[:str,:int])($44:str)($45:int)
-    mil.line("print(find(s,\"hello\"));");	# 8 MILline ($46:void)<-($47:str)
-    da_a := algebra.find(s,"hello");	# 9 ALGfind (da_a:int)<-(s:bat[:str,:int])($44:str)
-    ea_a := io.print(da_a);	# 10 IOprint_val (ea_a:int)<-(da_a:int)
-    mil.line("insert(s,\"bello\",2);");	# 11 MILline ($50:void)<-($51:str)
-    fa_a := bat.insert(s,"bello",2);	# 12 BKCinsert_bun (fa_a:bat[:str,:int])<-(s:bat[:str,:int])($53:str)($54:int)
-    mil.line("insert(s,\"cello\",3);");	# 13 MILline ($55:void)<-($56:str)
-    ga_a := bat.insert(s,"cello",3);	# 14 BKCinsert_bun (ga_a:bat[:str,:int])<-(s:bat[:str,:int])($58:str)($59:int)
-    mil.line("insert(s,\"dello\",4);");	# 15 MILline ($60:void)<-($61:str)
-    ha_a := bat.insert(s,"dello",4);	# 16 BKCinsert_bun (ha_a:bat[:str,:int])<-(s:bat[:str,:int])($63:str)($64:int)
-    mil.line("insert(s,\"eello\",5);");	# 17 MILline ($65:void)<-($66:str)
-    ia_a := bat.insert(s,"eello",5);	# 18 BKCinsert_bun (ia_a:bat[:str,:int])<-(s:bat[:str,:int])($68:str)($69:int)
-    mil.line("insert(s,\"fello\",6);");	# 19 MILline ($70:void)<-($71:str)
-    ja_a := bat.insert(s,"fello",6);	# 20 BKCinsert_bun (ja_a:bat[:str,:int])<-(s:bat[:str,:int])($73:str)($74:int)
-    mil.line("insert(s,\"gello\",7);");	# 21 MILline ($75:void)<-($76:str)
-    ka_a := bat.insert(s,"gello",7);	# 22 BKCinsert_bun (ka_a:bat[:str,:int])<-(s:bat[:str,:int])($78:str)($79:int)
-    mil.line("insert(s,\"hello\",8);");	# 23 MILline ($80:void)<-($81:str)
-    la_a := bat.insert(s,"hello",8);	# 24 BKCinsert_bun (la_a:bat[:str,:int])<-(s:bat[:str,:int])($83:str)($84:int)
-    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); info(s).print(); printf(\"#~EndVariableOutput~#\\n\");");	# 25 MILline ($85:void)<-($86:str)
-    ma_a := io.printf("#~BeginVariableOutput~#\n");	# 26 IOprint_str (ma_a:int)<-($88:str)
-    na_a := bat.info(s);	# 27 BKCinfo (na_a:bat[:str,:str])<-(s:bat[:str,:int])
-    oa_a := io.print(na_a);	# 28 IOprint_val (oa_a:int)<-(na_a:bat[:str,:str])
-    pa_a := io.printf("#~EndVariableOutput~#\n");	# 29 IOprint_str (pa_a:int)<-($92:str)
-    mil.line("print(find(s,\"cello\"));");	# 30 MILline ($93:void)<-($94:str)
-    qa_a := algebra.find(s,"cello");	# 31 ALGfind (qa_a:int)<-(s:bat[:str,:int])($96:str)
-    ra_a := io.print(qa_a);	# 32 IOprint_val (ra_a:int)<-(qa_a:int)
-    mil.line("delete(s,\"cello\",3);");	# 33 MILline ($98:void)<-($99:str)
-    sa_a := bat.delete(s,"cello",3);	# 34 BKCdelete_bun (sa_a:bat[:str,:int])<-(s:bat[:str,:int])($96:str)($101:int)
-    mil.line("print(s);");	# 35 MILline ($102:void)<-($103:str)
-    ta_a := io.print(s);	# 36 IOprint_val (ta_a:int)<-(s:bat[:str,:int])
-    mil.line("var sn:= algebra.select(s,1,5);");	# 37 MILline ($105:void)<-($106:str)
-    sn := algebra.select(s,1,5);	# 38 ALGselect (sn:bat[:str,:int])<-(s:bat[:str,:int])($108:int)($109:int)
-    mil.line("print(sn);");	# 39 MILline ($110:void)<-($111:str)
-    ua_a := io.print(sn);	# 40 IOprint_val (ua_a:int)<-(sn:bat[:str,:int])
-    mil.line("var s2:= semijoin(s.reverse(),sn.reverse());");	# 41 MILline ($113:void)<-($114:str)
-    va_a := bat.reverse(s);	# 42 BKCreverse (va_a:bat[:int,:str])<-(s:bat[:str,:int])
-    wa_a := bat.reverse(sn);	# 43 BKCreverse (wa_a:bat[:int,:str])<-(sn:bat[:str,:int])
-    s2 := algebra.semijoin(va_a,wa_a);	# 44 ALGsemijoin (s2:bat[:int,:str])<-(va_a:bat[:int,:str])(wa_a:bat[:int,:str])
-    mil.line("print(s2);");	# 45 MILline ($118:void)<-($119:str)
-    xa_a := io.print(s2);	# 46 IOprint_val (xa_a:int)<-(s2:bat[:int,:str])
-    mil.line("var x:= algebra.join(s,s2);");	# 47 MILline ($121:void)<-($122:str)
-    x := algebra.join(s,s2);	# 48 ALGjoin (x:bat[:str,:str])<-(s:bat[:str,:int])(s2:bat[:int,:str])
-    mil.line("print(x);");	# 49 MILline ($124:void)<-($125:str)
-    ya_a := io.print(x);	# 50 IOprint_val (ya_a:int)<-(x:bat[:str,:str])
-    mil.line("quit();");	# 51 MILline ($127:void)<-($128:str)
-    ab_a := clients.quit();	# 52 CLTquit (ab_a:void)
-end main;	# 53  
+# Monet Mil to Mal compiler 	# 1  ($2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  ($4:str)
+#Predefined code segment 	# 3  ($6:str)
+#The compiler can not guarantee an accurate compilation, 	# 4  ($8:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 5  ($10:str)
+#A few guidelines to maximize usefullness. 	# 6  ($12:str)
+#- make the type of variables explicit, in particular 'nil' 	# 7  ($14:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  ($16:str)
+#use the "mil_schema" for additional support routines 	# 9  ($18:str)
+    mil.line("setoid(oid(20000000));");	# 10 MILline ($19:void)<-($20:str)
+    aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-($22:int)
+    ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("var s:= bbp.new(str,int);");	# 13 MILline ($24:void)<-($25:str)
+    s := bbp.new("nil:str",nil:int);	# 14 CMDBATnew (s:bat[:str,:int])<-($27:str)($28:int)
+    mil.line("insert(s,\"hello\",1);");	# 15 MILline ($29:void)<-($30:str)
+    ca_a := bat.insert(s,"hello",1);	# 16 BKCinsert_bun (ca_a:bat[:str,:int])<-(s:bat[:str,:int])($32:str)($33:int)
+    mil.line("print(find(s,\"hello\"));");	# 17 MILline ($34:void)<-($35:str)
+    da_a := algebra.find(s,"hello");	# 18 ALGfind (da_a:int)<-(s:bat[:str,:int])($32:str)
+    ea_a := io.print(da_a);	# 19 IOprint_val (ea_a:int)<-(da_a:int)
+    mil.line("insert(s,\"bello\",2);");	# 20 MILline ($38:void)<-($39:str)
+    fa_a := bat.insert(s,"bello",2);	# 21 BKCinsert_bun (fa_a:bat[:str,:int])<-(s:bat[:str,:int])($41:str)($42:int)
+    mil.line("insert(s,\"cello\",3);");	# 22 MILline ($43:void)<-($44:str)
+    ga_a := bat.insert(s,"cello",3);	# 23 BKCinsert_bun (ga_a:bat[:str,:int])<-(s:bat[:str,:int])($46:str)($47:int)
+    mil.line("insert(s,\"dello\",4);");	# 24 MILline ($48:void)<-($49:str)
+    ha_a := bat.insert(s,"dello",4);	# 25 BKCinsert_bun (ha_a:bat[:str,:int])<-(s:bat[:str,:int])($51:str)($52:int)
+    mil.line("insert(s,\"eello\",5);");	# 26 MILline ($53:void)<-($54:str)
+    ia_a := bat.insert(s,"eello",5);	# 27 BKCinsert_bun (ia_a:bat[:str,:int])<-(s:bat[:str,:int])($56:str)($57:int)
+    mil.line("insert(s,\"fello\",6);");	# 28 MILline ($58:void)<-($59:str)
+    ja_a := bat.insert(s,"fello",6);	# 29 BKCinsert_bun (ja_a:bat[:str,:int])<-(s:bat[:str,:int])($61:str)($62:int)
+    mil.line("insert(s,\"gello\",7);");	# 30 MILline ($63:void)<-($64:str)
+    ka_a := bat.insert(s,"gello",7);	# 31 BKCinsert_bun (ka_a:bat[:str,:int])<-(s:bat[:str,:int])($66:str)($67:int)
+    mil.line("insert(s,\"hello\",8);");	# 32 MILline ($68:void)<-($69:str)
+    la_a := bat.insert(s,"hello",8);	# 33 BKCinsert_bun (la_a:bat[:str,:int])<-(s:bat[:str,:int])($71:str)($72:int)
+    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); info(s).print(); printf(\"#~EndVariableOutput~#\\n\");");	# 34 MILline ($73:void)<-($74:str)
+    ma_a := io.printf("#~BeginVariableOutput~#\n");	# 35 IOprint_str (ma_a:int)<-($76:str)
+    na_a := bat.info(s);	# 36 BKCinfo (na_a:bat[:str,:str])<-(s:bat[:str,:int])
+    oa_a := io.print(na_a);	# 37 IOprint_val (oa_a:int)<-(na_a:bat[:str,:str])
+    pa_a := io.printf("#~EndVariableOutput~#\n");	# 38 IOprint_str (pa_a:int)<-($80:str)
+    mil.line("print(find(s,\"cello\"));");	# 39 MILline ($81:void)<-($82:str)
+    qa_a := algebra.find(s,"cello");	# 40 ALGfind (qa_a:int)<-(s:bat[:str,:int])($84:str)
+    ra_a := io.print(qa_a);	# 41 IOprint_val (ra_a:int)<-(qa_a:int)
+    mil.line("delete(s,\"cello\",3);");	# 42 MILline ($86:void)<-($87:str)
+    sa_a := bat.delete(s,"cello",3);	# 43 BKCdelete_bun (sa_a:bat[:str,:int])<-(s:bat[:str,:int])($84:str)($89:int)
+    mil.line("print(s);");	# 44 MILline ($90:void)<-($91:str)
+    ta_a := io.print(s);	# 45 IOprint_val (ta_a:int)<-(s:bat[:str,:int])
+    mil.line("var sn:= algebra.select(s,1,5);");	# 46 MILline ($93:void)<-($94:str)
+    sn := algebra.select(s,1,5);	# 47 ALGselect (sn:bat[:str,:int])<-(s:bat[:str,:int])($96:int)($97:int)
+    mil.line("print(sn);");	# 48 MILline ($98:void)<-($99:str)
+    ua_a := io.print(sn);	# 49 IOprint_val (ua_a:int)<-(sn:bat[:str,:int])
+    mil.line("var s2:= semijoin(s.reverse(),sn.reverse());");	# 50 MILline ($101:void)<-($102:str)
+    va_a := bat.reverse(s);	# 51 BKCreverse (va_a:bat[:int,:str])<-(s:bat[:str,:int])
+    wa_a := bat.reverse(sn);	# 52 BKCreverse (wa_a:bat[:int,:str])<-(sn:bat[:str,:int])
+    s2 := algebra.semijoin(va_a,wa_a);	# 53 ALGsemijoin (s2:bat[:int,:str])<-(va_a:bat[:int,:str])(wa_a:bat[:int,:str])
+    mil.line("print(s2);");	# 54 MILline ($106:void)<-($107:str)
+    xa_a := io.print(s2);	# 55 IOprint_val (xa_a:int)<-(s2:bat[:int,:str])
+    mil.line("var x:= algebra.join(s,s2);");	# 56 MILline ($109:void)<-($110:str)
+    x := algebra.join(s,s2);	# 57 ALGjoin (x:bat[:str,:str])<-(s:bat[:str,:int])(s2:bat[:int,:str])
+    mil.line("print(x);");	# 58 MILline ($112:void)<-($113:str)
+    ya_a := io.print(x);	# 59 IOprint_val (ya_a:int)<-(x:bat[:str,:str])
+    mil.line("quit();");	# 60 MILline ($115:void)<-($116:str)
+    ab_a := clients.quit();	# 61 CLTquit (ab_a:void)
+end main;	# 62  
 #setoid(oid(20000000));
 #var s:= new(str,int);
 #insert(s,"hello",1);
@@ -147,7 +156,7 @@ end main;	# 53
 # str			str		  # type
 #-----------------------------------------#
 [ "version",		  "20749"	  ]
-[ "batId",			  "tmp_13"	  ]
+[ "batId",		  "tmp_15"	  ]
 [ "batCacheid",			  "13"		  ]
 [ "batParentid",		  "0"		  ]
 [ "batSharecnt",		  "0"		  ]
@@ -156,7 +165,7 @@ end main;	# 53
 [ "batPersistence",		  "transient"	  ]
 [ "batRestricted",		  "updatable"	  ]
 [ "batRefcnt",			  "1"		  ]
-[ "batLRefcnt",			  "9"		  ]
+[ "batLRefcnt",		  "1"		  ]
 [ "batDirty",			  "dirty"	  ]
 [ "batSet",			  "0"		  ]
 [ "void_tid",			  "0"		  ]
@@ -172,7 +181,7 @@ end main;	# 53
 [ "tident",			  "t"		  ]
 [ "tdense",			  "0"		  ]
 [ "tseqbase",			  "0@0"		  ]
-[ "tsorted",			  "1"		  ]
+[ "tsorted",		  "65"		  ]
 [ "tkey",			  "1"		  ]
 [ "tloc",			  "4"		  ]
 [ "tvarsized",			  "0"		  ]
@@ -190,13 +199,13 @@ end main;	# 53
 [ "batBuns.size",	  "400"		  ]
 [ "batBuns.maxsize",	  "400"		  ]
 [ "batBuns.storage",		  "malloced"	  ]
-[ "batBuns.filename",		  "13.buns"	  ]
+[ "batBuns.filename",	  "15.buns"	  ]
 [ "hheapdirty",			  "clean"	  ]
 [ "hheap->free",	  "4180"	  ]
 [ "hheap->size",	  "4700"	  ]
 [ "hheap->maxsize",	  "4700"	  ]
 [ "hheap->storage",	  "malloced"	  ]
-[ "hheap->filename",	  "13.hheap"	  ]
+[ "hheap->filename",	  "15.hheap"	  ]
 [ "theapdirty",			  "clean"	  ]
 #~EndVariableOutput~#
 #print(find(s,"cello"));

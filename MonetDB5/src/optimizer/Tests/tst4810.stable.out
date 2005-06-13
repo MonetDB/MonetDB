@@ -863,14 +863,23 @@ function user.f6():void;	# 0  (f6:void)
 end f6;	# 4  
 function user.main():int;	# 0  (main:int)
     _time := alarm.usec();	# 1 ALARMusec (_time:lng)
-    mdb.showFunction("user","f3");	# 2 MDBshowFunction3 ($14:void)<-($3:str)($10:str)
-    _time2 := alarm.usec();	# 3 ALARMusec (_time2:lng)
-    diff := calc.-(_time2,_time);	# 4 CALCbinarySUBlnglng (diff:lng)<-(_time2:lng)(_time:lng)
-    secs := calc./(diff,1000000);	# 5 CALCbinarycheckDIVlngint (secs:lng)<-(diff:lng)($27:int)
-    decs := calc.%(diff,1000000);	# 6 CALCbinaryMODlngint (decs:int)<-(diff:lng)($27:int)
-    io.printf("#TIME %d.",secs);	# 7 IOprint_formatted_lng ($29:int)<-($30:str)(secs:lng)
-    io.printf("%06d sec\n",decs);	# 8 IOprint_formatted_int ($31:int)<-($32:str)(decs:int)
-end main;	# 9  
+#f1(); 	# 2  ($7:str)
+#f2(); 	# 3  ($12:str)
+#redo (go,i1) := mal.nextElement(1:int,500:int); 	# 4  ($14:str)
+    mdb.showFunction("user","f3");	# 5 MDBshowFunction3 ($20:void)<-($3:str)($16:str)
+#f3(); 	# 6  ($22:str)
+#	f4(); 	# 7  ($27:str)
+#f5(); 	# 8  ($32:str)
+#	f6(); 	# 9  ($38:str)
+#f1();f2();f3(); 	# 10  ($40:str)
+    _time2 := alarm.usec();	# 11 ALARMusec (_time2:lng)
+    diff := calc.-(_time2,_time);	# 12 CALCbinarySUBlnglng (diff:lng)<-(_time2:lng)(_time:lng)
+    secs := calc./(diff,1000000);	# 13 CALCbinarycheckDIVlngint (secs:lng)<-(diff:lng)($44:int)
+    decs := calc.%(diff,1000000);	# 14 CALCbinaryMODlngint (decs:int)<-(diff:lng)($44:int)
+    io.printf("#TIME %d.",secs);	# 15 IOprint_formatted_lng ($46:int)<-($47:str)(secs:lng)
+    io.printf("%06d sec\n",decs);	# 16 IOprint_formatted_int ($48:int)<-($49:str)(decs:int)
+#quit(); 	# 17  ($51:str)
+end main;	# 18  
 function user.f3():void;
     i1 := 0;
     t2 := bbp.bind("B_bat");

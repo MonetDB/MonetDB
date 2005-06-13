@@ -1052,8 +1052,9 @@ function user.qry1():void;	# 0  (qry1:void)
     sql.output(V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);	# 110 SQLoutput ($159:void)<-(V49:any)(V39:any)(V48:any)(V56:any)(V63:any)(V85:any)(V109:any)(V117:any)(V124:any)(V131:any)(V132:any)
 end qry1;	# 111  
 function user.main():int;	# 0  (main:int)
-    mdb.showFunction("user","qry1");	# 1 MDBshowFunction3 ($6:void)<-($3:str)($4:str)
-end main;	# 2  
+# TPCH Q1 non-optimized 	# 1  ($2:str)
+    mdb.showFunction("user","qry1");	# 2 MDBshowFunction3 ($8:void)<-($5:str)($6:str)
+end main;	# 3  
 function user.qry1():void;
     V3 := sql.bind("sys","lineitem","l_shipdate",0);
     V8 := sql.bind_dbat("sys","lineitem",0);

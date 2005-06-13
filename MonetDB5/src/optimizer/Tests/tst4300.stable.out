@@ -43,23 +43,30 @@ stdout of test 'tst4300` in directory 'src/optimizer` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:lng,:lng);	# 1 CMDBATnew (b:bat[:lng,:lng])<-($2:lng)($3:lng)
-barrier (k,v):= mal.newRange(0:lng);	# 2 RNGnewRange_lng (k:bit)(v:lng)<-($6:lng) jump 5
-    bat.insert(b,v,v);	# 3 BKCinsert_bun ($7:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
-    redo (k,v):= mal.nextElement(1:lng,100:lng);	# 4 RNGnextElement_lng (k:bit)(v:lng)<-($8:lng)($9:lng) jump 3
-exit (k,v);	# 5  (k:bit)(v:lng)
-    i := algebra.count(b);	# 6 ALGcount_bat (i:lng)<-(b:bat[:lng,:lng])
-    io.print(i);	# 7 IOprint_val ($11:int)<-(i:lng)
-    c := algebra.select(b,0:lng,9:lng);	# 8 ALGselect (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])($6:lng)($13:lng)
-    i := algebra.count(c);	# 9 ALGcount_bat (i:lng)<-(c:bat[:lng,:lng])
-    io.print(i);	# 10 IOprint_val ($14:int)<-(i:lng)
-    d := algebra.select(b,0:lng,49:lng);	# 11 ALGselect (d:bat[:lng,:lng])<-(b:bat[:lng,:lng])($6:lng)($16:lng)
-    i := algebra.count(d);	# 12 ALGcount_bat (i:lng)<-(d:bat[:lng,:lng])
-    io.print(i);	# 13 IOprint_val ($17:int)<-(i:lng)
-    zz := algebra.joinPath(b,c,d);	# 14 QOTjoinPath (zz:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])(d:bat[:lng,:lng])
-    i := algebra.count(zz);	# 15 ALGcount_bat (i:lng)<-(zz:bat[:lng,:lng])
-    io.print(i);	# 16 IOprint_val ($19:int)<-(i:lng)
-end main;	# 17  
+#some join operations 	# 1  ($2:str)
+#mdb.start(); 	# 2  ($4:str)
+    b := bbp.new(:lng,:lng);	# 3 CMDBATnew (b:bat[:lng,:lng])<-($6:lng)($7:lng)
+barrier (k,v):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (k:bit)(v:lng)<-($10:lng) jump 7
+    bat.insert(b,v,v);	# 5 BKCinsert_bun ($11:bat[:lng,:lng])<-(b:bat[:lng,:lng])(v:lng)(v:lng)
+    redo (k,v):= mal.nextElement(1:lng,100:lng);	# 6 RNGnextElement_lng (k:bit)(v:lng)<-($12:lng)($13:lng) jump 5
+exit (k,v);	# 7  (k:bit)(v:lng)
+    i := algebra.count(b);	# 8 ALGcount_bat (i:lng)<-(b:bat[:lng,:lng])
+    io.print(i);	# 9 IOprint_val ($15:int)<-(i:lng)
+    c := algebra.select(b,0:lng,9:lng);	# 10 ALGselect (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])($10:lng)($17:lng)
+    i := algebra.count(c);	# 11 ALGcount_bat (i:lng)<-(c:bat[:lng,:lng])
+    io.print(i);	# 12 IOprint_val ($18:int)<-(i:lng)
+    d := algebra.select(b,0:lng,49:lng);	# 13 ALGselect (d:bat[:lng,:lng])<-(b:bat[:lng,:lng])($10:lng)($20:lng)
+    i := algebra.count(d);	# 14 ALGcount_bat (i:lng)<-(d:bat[:lng,:lng])
+    io.print(i);	# 15 IOprint_val ($21:int)<-(i:lng)
+    zz := algebra.joinPath(b,c,d);	# 16 QOTjoinPath (zz:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])(d:bat[:lng,:lng])
+    i := algebra.count(zz);	# 17 ALGcount_bat (i:lng)<-(zz:bat[:lng,:lng])
+    io.print(i);	# 18 IOprint_val ($23:int)<-(i:lng)
+#to be detected by join inversion 	# 19  ($25:str)
+#z:= joinPath(b,c); 	# 20  ($27:str)
+#zz:= joinPath(zz,d); 	# 21  ($29:str)
+#i:= algebra.count(z); 	# 22  ($31:str)
+#io.print(i); 	# 23  ($33:str)
+end main;	# 24  
 [ 100 ]
 [ 10 ]
 [ 50 ]

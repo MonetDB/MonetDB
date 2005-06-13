@@ -30,8 +30,17 @@ stdout of test 'ID.905495s` in directory 'tests/BugsViaSourgeforce` itself:
 #	aa_a := print("hello");
 #
 function user.main():int;	# 0  (main:int)
-    aa_a := io.print("hello");	# 1 IOprint_val (aa_a:int)<-($2:str)
-end main;	# 2  
+# Monet Mil to Mal compiler 	# 1  ($2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  ($4:str)
+# Predefined code segment 	# 3  ($6:str)
+#The compiler can not guarantee an accurate compilation, 	# 4  ($8:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 5  ($10:str)
+#A few guidelines to maximize usefullness. 	# 6  ($12:str)
+#- make the type of variables explicit, in particular 'nil' 	# 7  ($14:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  ($16:str)
+#print("hello"); 	# 9  ($18:str)
+    aa_a := io.print("hello");	# 10 IOprint_val (aa_a:int)<-($20:str)
+end main;	# 11  
 [ "hello" ]
 
 # Monet Database Server V4.3.16-rc03

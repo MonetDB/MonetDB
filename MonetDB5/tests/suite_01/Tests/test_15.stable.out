@@ -66,46 +66,55 @@ stdout of test 'test_15` in directory 'tests/suite_01` itself:
 #	gb_a := quit();
 #
 function user.main():int;	# 0  (main:int)
-    mil.line("setoid(oid(20000000));");	# 1 MILline ($31:void)<-($32:str)
-    aa_a := calc.oid(20000000);	# 2 CALCint2oid (aa_a:oid)<-($34:int)
-    ba_a := calc.setoid(aa_a);	# 3 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("commit(); printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");	# 4 MILline ($36:void)<-($37:str)
-    ca_a := transaction.commit();	# 5 TRNglobal_commit (ca_a:void)
-    da_a := io.printf("#~BeginVariableOutput~#\n");	# 6 IOprint_str (da_a:int)<-($40:str)
-    ea_a := status.ioStatistics();	# 7 SYSioStatistics (ea_a:bat[:str,:int])
-    fa_a := io.print(ea_a);	# 8 IOprint_val (fa_a:int)<-(ea_a:bat[:str,:int])
-    ga_a := io.printf("#~EndVariableOutput~#\n");	# 9 IOprint_str (ga_a:int)<-($44:str)
-    mil.line("commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");	# 10 MILline ($45:void)<-($46:str)
-    ha_a := transaction.commit();	# 11 TRNglobal_commit (ha_a:void)
-    ia_a := transaction.commit();	# 12 TRNglobal_commit (ia_a:void)
-    ja_a := transaction.commit();	# 13 TRNglobal_commit (ja_a:void)
-    ka_a := transaction.commit();	# 14 TRNglobal_commit (ka_a:void)
-    la_a := transaction.commit();	# 15 TRNglobal_commit (la_a:void)
-    ma_a := transaction.commit();	# 16 TRNglobal_commit (ma_a:void)
-    na_a := transaction.commit();	# 17 TRNglobal_commit (na_a:void)
-    oa_a := transaction.commit();	# 18 TRNglobal_commit (oa_a:void)
-    mil.line("transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");	# 19 MILline ($55:void)<-($56:str)
-    pa_a := transaction.commit();	# 20 TRNglobal_commit (pa_a:void)
-    qa_a := transaction.commit();	# 21 TRNglobal_commit (qa_a:void)
-    ra_a := transaction.commit();	# 22 TRNglobal_commit (ra_a:void)
-    sa_a := transaction.commit();	# 23 TRNglobal_commit (sa_a:void)
-    ta_a := transaction.commit();	# 24 TRNglobal_commit (ta_a:void)
-    ua_a := transaction.commit();	# 25 TRNglobal_commit (ua_a:void)
-    va_a := transaction.commit();	# 26 TRNglobal_commit (va_a:void)
-    wa_a := transaction.commit();	# 27 TRNglobal_commit (wa_a:void)
-    mil.line("transaction.commit(); commit(); commit(); commit(); ");	# 28 MILline ($65:void)<-($66:str)
-    xa_a := transaction.commit();	# 29 TRNglobal_commit (xa_a:void)
-    ya_a := transaction.commit();	# 30 TRNglobal_commit (ya_a:void)
-    ab_a := transaction.commit();	# 31 TRNglobal_commit (ab_a:void)
-    bb_a := transaction.commit();	# 32 TRNglobal_commit (bb_a:void)
-    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");	# 33 MILline ($71:void)<-($72:str)
-    cb_a := io.printf("#~BeginVariableOutput~#\n");	# 34 IOprint_str (cb_a:int)<-($74:str)
-    db_a := status.ioStatistics();	# 35 SYSioStatistics (db_a:bat[:str,:int])
-    eb_a := io.print(db_a);	# 36 IOprint_val (eb_a:int)<-(db_a:bat[:str,:int])
-    fb_a := io.printf("#~EndVariableOutput~#\n");	# 37 IOprint_str (fb_a:int)<-($78:str)
-    mil.line("quit();");	# 38 MILline ($79:void)<-($80:str)
-    gb_a := clients.quit();	# 39 CLTquit (gb_a:void)
-end main;	# 40  
+# Monet Mil to Mal compiler 	# 1  ($2:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 2  ($4:str)
+#Predefined code segment 	# 3  ($6:str)
+#The compiler can not guarantee an accurate compilation, 	# 4  ($8:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 5  ($10:str)
+#A few guidelines to maximize usefullness. 	# 6  ($12:str)
+#- make the type of variables explicit, in particular 'nil' 	# 7  ($14:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 8  ($16:str)
+#use the "mil_schema" for additional support routines 	# 9  ($18:str)
+    mil.line("setoid(oid(20000000));");	# 10 MILline ($19:void)<-($20:str)
+    aa_a := calc.oid(20000000);	# 11 CALCint2oid (aa_a:oid)<-($22:int)
+    ba_a := calc.setoid(aa_a);	# 12 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
+    mil.line("commit(); printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");	# 13 MILline ($24:void)<-($25:str)
+    ca_a := transaction.commit();	# 14 TRNglobal_commit (ca_a:void)
+    da_a := io.printf("#~BeginVariableOutput~#\n");	# 15 IOprint_str (da_a:int)<-($28:str)
+    ea_a := status.ioStatistics();	# 16 SYSioStatistics (ea_a:bat[:str,:int])
+    fa_a := io.print(ea_a);	# 17 IOprint_val (fa_a:int)<-(ea_a:bat[:str,:int])
+    ga_a := io.printf("#~EndVariableOutput~#\n");	# 18 IOprint_str (ga_a:int)<-($32:str)
+    mil.line("commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");	# 19 MILline ($33:void)<-($34:str)
+    ha_a := transaction.commit();	# 20 TRNglobal_commit (ha_a:void)
+    ia_a := transaction.commit();	# 21 TRNglobal_commit (ia_a:void)
+    ja_a := transaction.commit();	# 22 TRNglobal_commit (ja_a:void)
+    ka_a := transaction.commit();	# 23 TRNglobal_commit (ka_a:void)
+    la_a := transaction.commit();	# 24 TRNglobal_commit (la_a:void)
+    ma_a := transaction.commit();	# 25 TRNglobal_commit (ma_a:void)
+    na_a := transaction.commit();	# 26 TRNglobal_commit (na_a:void)
+    oa_a := transaction.commit();	# 27 TRNglobal_commit (oa_a:void)
+    mil.line("transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();");	# 28 MILline ($43:void)<-($44:str)
+    pa_a := transaction.commit();	# 29 TRNglobal_commit (pa_a:void)
+    qa_a := transaction.commit();	# 30 TRNglobal_commit (qa_a:void)
+    ra_a := transaction.commit();	# 31 TRNglobal_commit (ra_a:void)
+    sa_a := transaction.commit();	# 32 TRNglobal_commit (sa_a:void)
+    ta_a := transaction.commit();	# 33 TRNglobal_commit (ta_a:void)
+    ua_a := transaction.commit();	# 34 TRNglobal_commit (ua_a:void)
+    va_a := transaction.commit();	# 35 TRNglobal_commit (va_a:void)
+    wa_a := transaction.commit();	# 36 TRNglobal_commit (wa_a:void)
+    mil.line("transaction.commit(); commit(); commit(); commit(); ");	# 37 MILline ($53:void)<-($54:str)
+    xa_a := transaction.commit();	# 38 TRNglobal_commit (xa_a:void)
+    ya_a := transaction.commit();	# 39 TRNglobal_commit (ya_a:void)
+    ab_a := transaction.commit();	# 40 TRNglobal_commit (ab_a:void)
+    bb_a := transaction.commit();	# 41 TRNglobal_commit (bb_a:void)
+    mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");	# 42 MILline ($59:void)<-($60:str)
+    cb_a := io.printf("#~BeginVariableOutput~#\n");	# 43 IOprint_str (cb_a:int)<-($62:str)
+    db_a := status.ioStatistics();	# 44 SYSioStatistics (db_a:bat[:str,:int])
+    eb_a := io.print(db_a);	# 45 IOprint_val (eb_a:int)<-(db_a:bat[:str,:int])
+    fb_a := io.printf("#~EndVariableOutput~#\n");	# 46 IOprint_str (fb_a:int)<-($66:str)
+    mil.line("quit();");	# 47 MILline ($67:void)<-($68:str)
+    gb_a := clients.quit();	# 48 CLTquit (gb_a:void)
+end main;	# 49  
 #setoid(oid(20000000));
 #commit(); printf("#~BeginVariableOutput~#\n"); ioStatistics().print(); printf("#~EndVariableOutput~#\n");
 #~BeginVariableOutput~#
@@ -114,13 +123,13 @@ end main;	# 40
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1167	  ]
+[ "minflt",	  1186	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  2	  ]
-[ "ninvcsw",	  21	  ]
+[ "ninvcsw",	  3	  ]
 #~EndVariableOutput~#
 #commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
 #commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
@@ -132,13 +141,13 @@ end main;	# 40
 # (str)		  (int)	  #
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1171	  ]
+[ "minflt",	  1189	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
 [ "nvcsw",	  2	  ]
-[ "ninvcsw",	  22	  ]
+[ "ninvcsw",	  3	  ]
 #~EndVariableOutput~#
 
 # 19:56:10 >  

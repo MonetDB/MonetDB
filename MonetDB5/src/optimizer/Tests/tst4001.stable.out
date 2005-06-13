@@ -44,16 +44,18 @@ end qry;	# 7
 #showFunction(Admin,qry);
 #
 function user.main():int;	# 0  (main:int)
-    t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
-    t1 := alarm.usec();	# 2 ALARMusec (t1:lng)
-    t2 := calc.-(t1,t0);	# 3 CALCbinarySUBlnglng (t2:lng)<-(t1:lng)(t0:lng)
-    io.print("execute");	# 4 IOprint_val ($8:int)<-($9:str)
-    z := user.qry(0.0:dbl);	# 5  (z:dbl)<-($11:dbl)
-    io.print(z);	# 6 IOprint_val ($12:int)<-(z:dbl)
-    io.print("done");	# 7 IOprint_val ($13:int)<-($14:str)
-    mdb.showFunction("user","qry");	# 8 MDBshowFunction3 ($15:void)<-($3:str)($4:str)
-    mdb.showFunction("user","main");	# 9 MDBshowFunction3 ($16:void)<-($3:str)($17:str)
-end main;	# 10  
+#tesing the optimizers 	# 1  ($2:str)
+#setDebug(); 	# 2  ($4:str)
+    t0 := alarm.usec();	# 3 ALARMusec (t0:lng)
+    t1 := alarm.usec();	# 4 ALARMusec (t1:lng)
+    t2 := calc.-(t1,t0);	# 5 CALCbinarySUBlnglng (t2:lng)<-(t1:lng)(t0:lng)
+    io.print("execute");	# 6 IOprint_val ($12:int)<-($13:str)
+    z := user.qry(0.0:dbl);	# 7  (z:dbl)<-($15:dbl)
+    io.print(z);	# 8 IOprint_val ($16:int)<-(z:dbl)
+    io.print("done");	# 9 IOprint_val ($17:int)<-($18:str)
+    mdb.showFunction("user","qry");	# 10 MDBshowFunction3 ($19:void)<-($7:str)($8:str)
+    mdb.showFunction("user","main");	# 11 MDBshowFunction3 ($20:void)<-($7:str)($21:str)
+end main;	# 12  
 [ "execute" ]
 [ 0.8414709848078965 ]
 [ "done" ]
