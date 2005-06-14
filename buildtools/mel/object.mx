@@ -38,7 +38,7 @@ class Object:public Symbol {
 #endif // _OBJECT_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "object.h"
 #include "language.h"
 #include <string.h>

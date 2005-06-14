@@ -46,7 +46,7 @@ class Link:public language {
 #endif //_LINK_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "link.h"
 #include "ListIterator.h"
 #include <string.h>

@@ -38,7 +38,7 @@ class debug:public language {
 #endif //_DEBUG_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "debug.h"
 #include "ListIterator.h"
 #include "mel.h"

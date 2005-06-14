@@ -43,7 +43,7 @@ class BatArg:public Arg {
 #endif // _BATARG_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "bat_arg.h"
 #include "language.h"
 #include <string.h>

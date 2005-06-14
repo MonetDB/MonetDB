@@ -50,7 +50,7 @@ class Atom:public Symbol {
 #endif
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "atom.h"
 #include "language.h"
 

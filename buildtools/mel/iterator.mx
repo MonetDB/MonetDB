@@ -34,7 +34,7 @@ class Iterator:public Command {
 #endif
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "iterator.h"
 #include "ListIterator.h"
 #include "language.h"

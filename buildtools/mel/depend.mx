@@ -36,7 +36,7 @@ class depend:public language {
 #endif //_DEPEND_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "depend.h"
 #include "ListIterator.h"
 

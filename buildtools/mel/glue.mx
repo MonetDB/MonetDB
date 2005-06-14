@@ -52,7 +52,7 @@ class glue:public language {
 #endif //_GLUE_H_
 
 @C 
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "glue.h"
 #include "ListIterator.h"
 #include "mel.h"

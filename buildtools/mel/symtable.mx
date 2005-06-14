@@ -46,7 +46,7 @@ class Symtable {
 #endif //_SYMTABLE_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "symtable.h"
 #include <string.h>
 

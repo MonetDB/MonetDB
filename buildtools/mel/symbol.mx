@@ -56,7 +56,7 @@ class Symbol {
 #endif // _SYMBOL_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "symbol.h"
 #include "mel.h"
 #include "language.h"

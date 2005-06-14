@@ -51,7 +51,7 @@ class html:public language {
 #endif //_HTML_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "html.h"
 #include "ListIterator.h"
 

@@ -39,7 +39,7 @@ class VarArg:public Arg {
 #endif // _VARARG_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "var_arg.h"
 #include "iterator.h"
 #include "language.h"

@@ -61,7 +61,7 @@ class Command:public Symbol {
 #endif
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "command.h"
 #include "ListIterator.h"
 #include "language.h"

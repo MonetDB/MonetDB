@@ -37,7 +37,7 @@ class mil:public language {
 #endif //_MMIL_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "mil.h"
 #include "ListIterator.h"
 #include "mel.h"

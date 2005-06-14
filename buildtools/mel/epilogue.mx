@@ -32,7 +32,7 @@ class Epilogue:public Symbol {
 #endif // _EPILOGUE_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "epilogue.h"
 #include "language.h"
 #include <string.h>

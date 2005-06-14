@@ -40,7 +40,7 @@ class AtomArg:public Arg {
 #endif // _ATOMARG_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "atom_arg.h"
 #include "language.h"
 #include <string.h>

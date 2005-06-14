@@ -41,7 +41,7 @@ class Builtin:public Symbol {
 #endif
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "builtin.h"
 #include "language.h"
 #include <string.h>

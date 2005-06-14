@@ -32,7 +32,7 @@ class Prelude:public Symbol {
 #endif // _PRELUDE_H_
 
 @C
-#include <monetdb_config.h>
+#include <mel_config.h>
 #include "prelude.h"
 #include "language.h"
 #include <string.h>
