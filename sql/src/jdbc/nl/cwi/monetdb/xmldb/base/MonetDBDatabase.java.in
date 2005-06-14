@@ -45,7 +45,7 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	 */
 	public String getName() throws XMLDBException {
 		// this method seems to be in use, although deprecated
-		return("MonetDB/XQuery");
+		return("monetdb");
 	}
 
 	/**
@@ -58,7 +58,7 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	 */
 	public String[] getNames() throws XMLDBException {
 		// I have no idea what the intention of this method is
-		String[] ret = {"MonetDB/XQuery"};
+		String[] ret = {"monetdb", "MonetDB/XQuery"};
 		return(ret);
 	}
    
@@ -73,8 +73,9 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	 * password if those provided are not null. 
 	 * <p />
 	 * Accepted URIs follow the same rules as for JDBC, apart from that
-	 * they start with xmldb instead of jdbc.  An example url:
-	 * <tt>xmldb:monetdb://localhost:port/database</tt>.
+	 * they do not start with "jdbc".  Unfortunately the DatabaseManager
+	 * strips off the xmldb part itself, so an example url would be:
+	 * <tt>monetdb://localhost:port/database</tt>.
 	 *
 	 * @param uri the URI to use to locate the collection.
 	 * @param password The password to use for authentication to the
@@ -104,21 +105,24 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 		// default.
 		URI url;
 		try {
-			url = new java.net.URI(uri.substring("xmldb:".length()));
+			url = new java.net.URI(uri);
 		} catch (URISyntaxException e) {
 			throw new XMLDBException(ErrorCodes.INVALID_URI, "uri " + uri + " not valid");
 		}
 
 		if (url.getPort() == -1
-				&& url.getQuery() != null
-				&& url.getQuery().indexOf("port=") != -1)
+				&& !(url.getQuery() != null
+				&& url.getQuery().indexOf("port=") != -1))
 		{
 			// add the default XQuery port
 			uri = "monetdb://" + url.getHost() + ":" + XQUERY_PORT + 
-				url.getRawPath() + url.getRawQuery();
-		} else {
-			uri = uri.substring("xmldb:".length());
+				url.getRawPath() + "?" +
+				(url.getRawQuery() == null ? "" : url.getRawQuery());
 		}
+
+		// tell the driver we're going to do XQuery here
+		if (uri.indexOf("?") == -1) uri += "?";
+		uri += "&language=xquery";
 		
 		try {
 			// make sure the driver is loaded and make a connection
@@ -151,7 +155,7 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 	 * instance knows how to handle the URI and false otherwise.
 	 * <p />
 	 * This is a very lazy check, for it only checks whether the uri
-	 * starts with <tt>xmldb:monetdb://</tt>.
+	 * starts with <tt>monetdb://</tt>.
 	 *
 	 * @param uri the URI to check for.
 	 * @return true if the URI can be handled, false otherwise.
@@ -164,7 +168,7 @@ public class MonetDBDatabase extends MonetDBConfigurable implements Database {
 		if (uri == null)
 			throw new XMLDBException(ErrorCodes.INVALID_URI, "URI is null");
 
-		return(uri.startsWith("xmldb:monetdb://"));
+		return(uri.startsWith("monetdb://"));
 	}
 
 	/**
