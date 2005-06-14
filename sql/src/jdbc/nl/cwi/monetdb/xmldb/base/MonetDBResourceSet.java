@@ -179,7 +179,7 @@ public class MonetDBResourceSet implements ResourceSet {
 					if (index >= resources.size()) throw
 						new XMLDBException(ErrorCodes.NO_SUCH_RESOURCE, "no such resource with index: " + index);
 
-					return((Resource)(resources.get(index - 1)));
+					return((Resource)(resources.get(index++)));
 				}
 			}
 		});
