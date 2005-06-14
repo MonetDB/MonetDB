@@ -15,7 +15,7 @@ AC_PATH_PROG(BASH, bash, /usr/bin/bash, $PATH)
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([limits.h stddef.h stdlib.h string.h unistd.h utime.h])
+AC_CHECK_HEADERS([getopt.h limits.h stddef.h stdlib.h string.h unistd.h utime.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STAT

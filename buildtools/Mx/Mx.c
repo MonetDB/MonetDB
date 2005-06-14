@@ -27,7 +27,7 @@
 #include	"MxFcnDef.h"
 #include	"disclaimer.h"
 
-#include <getopt.h>
+#include "mx_getopt.h"
 
 unsigned int db_flag = 0x00;
 int archived;			/* set for archived portions */
