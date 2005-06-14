@@ -52,10 +52,10 @@ command getKind():bat[:void,:str]
 address INSPECTgetkind
 comment "Obtain the instruction kind";
 command getModule():bat[:void,:str]
-address INSPECTgetmodule
+address INSPECTgetModule
 comment "Obtain the function name";
 command getFunction():bat[:void,:str]
-address INSPECTgetfunction
+address INSPECTgetFunction
 comment "Obtain the function name";
 command getSignature():bat[:void,:str]
 address INSPECTgetsignature
@@ -186,9 +186,9 @@ str INSPECTcommandNames(int *ret){ return INSPECTsymbolFind(ret,COMMANDsymbol); 
 Collect symbol table information in a series of BATs for analysis
 and display. Note, the elements are aligned using a counter,
 which makes it susceptable for intermediate updates
-@= getAttribute
+@c
 
-str INSPECTget@1(int *ret)
+str INSPECTgetFunction(int *ret)
 {	Client c;
 	Module s;
 	Symbol t;
@@ -197,7 +197,7 @@ str INSPECTget@1(int *ret)
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 
 	if (b == 0) 
-		return throwMessage("inspect.get@1", "failed to create BAT");
+		return throwMessage("inspect.getfunctionName", "failed to create BAT");
 	BATseqbase(b,k);
 	c= getClient();
 	s= c->nspace;
@@ -206,18 +206,42 @@ str INSPECTget@1(int *ret)
             if( s->subscope[i]){
                 for(t= s->subscope[i];t;t=t->peer){
                     InstrPtr sig= getSignature(t);
-                    BUNins(b,&k,@2(sig));
+                    BUNins(b,&k,functionName(sig));
                     k++;
                 }
             }
             s= s->outer;
 	}
-	@:Pseudo(view,symbol,@1)@
+	@:Pseudo(view,symbol,function)@
 	return MAL_SUCCEED;
 }
-@c
-@:getAttribute(function,functionName)@
-@:getAttribute(module,moduleName)@
+str INSPECTgetModule(int *ret)
+{	Client c;
+	Module s;
+	Symbol t;
+	int i;
+	oid k= 0;
+	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
+
+	if (b == 0) 
+		return throwMessage("inspect.getmodule", "failed to create BAT");
+	BATseqbase(b,k);
+	c= getClient();
+	s= c->nspace;
+	while(s){
+        for(i=0;s && i<MAXSCOPE;i++)
+            if( s->subscope[i]){
+                for(t= s->subscope[i];t;t=t->peer){
+                    InstrPtr sig= getSignature(t);
+                    BUNins(b,&k,moduleName(sig));
+                    k++;
+                }
+            }
+            s= s->outer;
+	}
+	@:Pseudo(view,symbol,module)@
+	return MAL_SUCCEED;
+}
 
 str INSPECTgetkind(int *ret)
 {	Client c;

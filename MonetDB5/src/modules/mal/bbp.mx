@@ -220,6 +220,17 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "mal_client.h"
 #include "mal.h"
 #include "mal_interpreter.h"
+@-
+Access to a box calls for resolving the first parameter
+to a named box. The bbp box is automatically opened.
+@c
+#define OpenBox(X) \
+	box= findBox("bbp");\
+	if(box == 0 )\
+		box= openBox("bbp");\
+	if( box ==0) \
+		return throwMessage("bbp." X,"box is not open");
+
 extern str BKCnewBATint(int *res, int *ht, int *tt, int *cap);
 extern str BKCdestroyImmediate(bit *r,int *bid, bit *immediate);
 
@@ -245,21 +256,12 @@ str CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	(void) mb; (void)stk; (void) pci; /* fool compiler */
-	@:OpenBox(destroy)@
+	OpenBox("destroy");
 	if( getClient() != mal_clients)
 	return throwMessage( "bbp.destroy","not allowed to destroy 'bbp' box");
 	destroyBox("bbp");
 	return MAL_SUCCEED;
 }
-@-
-Access to a box calls for resolving the first parameter
-to a named box. The bbp box is automatically opened.
-@= OpenBox
-	box= findBox("bbp");
-	if(box == 0 )
-		box= openBox("bbp");
-	if( box ==0) 
-		return throwMessage("bbp.@1","box is not open");
 @-
 Beware that once you deposit a BAT into a box, it should
 increment the reference count to assure it is not
@@ -272,7 +274,7 @@ str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int flg;
 	(void) mb; /* fool compiler */
 
-	@:OpenBox(deposit)@
+	OpenBox("deposit");
 	name = (str) getArgValue(stk,pci,1);
 	if( isIdentifier(name))
 			return throwMessage( "bbp.deposit","identifier expected");
@@ -291,7 +293,7 @@ str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 
 	(void) mb; /* fool compiler */
-	@:OpenBox(bind)@
+	OpenBox("bind");
 	name = (str) getArgValue(stk,pci,1);
 	loc = (str) getArgValue(stk,pci,2);
 	if( isIdentifier(name))
@@ -366,7 +368,7 @@ str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr v;
 
 	(void) mb; /* fool compiler */
-	@:OpenBox(take)@
+	OpenBox("take");
 	name = (str) getArgValue(stk,pci,1);
 	if( isIdentifier(name))
 			return throwMessage( "bbp.take","identifier expected");
@@ -393,7 +395,7 @@ str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 
 	(void) mb; /* fool compiler */
-	@:OpenBox(release)@
+	OpenBox("release");
 	name = (str) getArgValue(stk,pci,1);
 	releaseBox(box,name);
 	/* merge the updates of this BAT with the master copy */
@@ -409,7 +411,7 @@ str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *bid;
 	Box box;
 
-	@:OpenBox(release)@
+	OpenBox("release");
 	bid = (int *) getArgValue(stk,pci,1);
 	BBPdecref(*bid,TRUE);
 	releaseBAT(mb,stk,*bid);
@@ -428,7 +430,7 @@ CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 
 	(void) mb;
-	@:OpenBox(release)@
+	OpenBox("release");
 	bid = (int *) getArgValue(stk,pci,1);
     if( (b= BATdescriptor(*bid)) == NULL ){ 
          return throwMessage("bbp.garbage", "Cannot access descriptor");
@@ -487,7 +489,7 @@ str CMDbbpReleasA(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 
 	(void) mb; (void)stk;(void)pci; /* fool compiler */
-	@:OpenBox(releaseAll)@
+	OpenBox("releaseAll");
 	releaseAllBox(box);
 	/* merge the updates with the master copies */
 	/* printf("bbp.releaseAll not yet fully implemented\n"); */
@@ -499,7 +501,7 @@ str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 
 	(void) mb; /* fool compiler */
-	@:OpenBox(discard)@
+	OpenBox("discard");
 	name = (str) getArgValue(stk,pci,1);
 	if( discardBox(box,name) )
 		return throwException(MALEXCEPTION,"bbp.discard",
@@ -514,7 +516,7 @@ str CMbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str nme;
 
 	(void) mb; /* fool compiler */
-	@:OpenBox(toString)@
+	OpenBox("toString");
 	nme = (str) getArgValue(stk,pci,1);
 	i= findVariable(box->sym,nme);
 	if( i <0)
@@ -534,7 +536,7 @@ str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr v;
 
 	(void) mb; /* fool compiler */
-	@:OpenBox(iterator)@
+	OpenBox("iterator");
 	cursor= (lng*) getArgValue(stk,pci,0);
 	v= &stk->stk[getArg(pci,1)];
 	if( nextBoxElement(box, cursor, v))
@@ -696,7 +698,7 @@ str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int	*ret;
 
 	(void) mb; /* fool compiler */
-	@:OpenBox(getObjects)@
+	OpenBox("getObjects");
 	b= BATnew(TYPE_int,TYPE_str,BBPsize);
 	if (b == 0) 
 		return throwMessage("bbp.getObjects","GDKerror");

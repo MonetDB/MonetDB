@@ -427,12 +427,13 @@ STATdump(int *ret)
 }
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
-@= authorize
-	/* if( !isAuthorized("Admin"))
-		return throwMessage("const.@1","unauthorized access to 'const' box");*/
 @c
 #include "mal_client.h"
 #include "mal_interpreter.h"
+
+#define authorize(X)\
+	/* if( !isAuthorized("Admin"))\
+		return throwMessage("const." X ,"unauthorized access to 'const' box");*/
 
 int isAuthorized(str nme){
 	Client c;
@@ -442,6 +443,12 @@ int isAuthorized(str nme){
 }
 @- Operator implementation
 @c
+#define OpenBox(X) \
+	authorize(X); \
+	box= findBox("statistics"); \
+	if( box ==0) \
+	return throwMessage("statistics."X,"box is not open");
+
 str
 STATprelude(int *ret){
 	Box box;
@@ -455,33 +462,27 @@ STATprelude(int *ret){
 
 str STATopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;(void)stk;(void)pci; /* fool compiler*/
-	@:authorize(open)@
+	authorize("open");
 	if(openBox("statistics") != 0) return MAL_SUCCEED;
 	return throwMessage("statistics.open","failed to open statistics box");
 }
 
 str STATclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	(void)mb;(void)stk;(void)pci; /* fool compiler*/
-	@:authorize(close)@
+	authorize("close");
 	if( closeBox("statistics" ,TRUE) ==0) return MAL_SUCCEED;
 	return throwMessage("statistics.close","failed to close box");
 }
 str STATdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	(void)mb;(void)stk;(void)pci; /* fool compiler*/
-	@:OpenBox(destroy)@
+	OpenBox("destroy");
 	destroyBox("statistics");
 	return MAL_SUCCEED;
 }
 @-
 Access to a box calls for resolving the first parameter
 to a named box.
-@= OpenBox
-	@:authorize(@1)@
-	box= findBox("statistics");
-	if( box ==0) 
-	return throwMessage("statistics.@1","box is not open");
-@-
 @c
 str STATdepositStr(int *ret, str *nme)
 {
@@ -494,7 +495,7 @@ str STATdepositStr(int *ret, str *nme)
 	b= BATdescriptor(idx= BBPindex(*nme));
 	if( b == NULL ) 
 		return throwMessage("statistics.deposit","BAT unknown");
-	@:OpenBox(deposit)@
+	OpenBox("deposit");
 	val.val.bval= idx;
 	val.vtype= TYPE_bat;
 	if( depositBox(box, *nme, &val) )
@@ -513,7 +514,7 @@ str STATdeposit(int *ret, int *bid)
          return throwMessage("statistics.deposit", "Cannot access descriptor");
     }
 
-	@:OpenBox(deposit)@
+	OpenBox("deposit");
 	msg= BATgetId(b);
 	msg= STATenroll(ret,&msg);
 	BBPunfix(b->batCacheid);
@@ -525,7 +526,7 @@ str STATtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	ValPtr v;
 
-	@:OpenBox(take)@
+	OpenBox("take");
 	name = (str) getArgName(mb,pci,1);
 	v = &stk->stk[getArg(pci,0)];
 	if(takeBox(box,name,v,(int) getArgType(mb,pci,0))) 
@@ -538,7 +539,7 @@ str STATrelease(int *ret, int *bid){
 	BAT *b;
 	Box box;
 	(void) ret;
-	@:OpenBox(release)@
+	OpenBox("release");
     if( (b= BATdescriptor(*bid)) == NULL ){
          return throwMessage("statistics.release", "Cannot access descriptor");
     }
@@ -550,7 +551,7 @@ str STATreleaseStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 	(void)stk; /* fool compiler*/
 
-	@:OpenBox(release)@
+	OpenBox("release");
 	name = (str) getArgName(mb,pci,1);
 	if( releaseBox(box,name))
 		return throwException(MALEXCEPTION,"statistics.release",
@@ -568,7 +569,7 @@ str STATreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 
 	(void)mb; (void)stk; (void) pci; /* fool compiler */
-	@:OpenBox(release)@
+	OpenBox("release");
 	releaseAllBox(box);
 	return MAL_SUCCEED;
 }
@@ -578,7 +579,7 @@ str STATdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	Box box;
 
 	(void)mb; /* fool compiler */
-	@:OpenBox(discard)@
+	OpenBox("discard");
 	name = (str) getArgValue(stk,pci,1);
 	return STATdrop(name);
 }
@@ -588,7 +589,7 @@ str STATdiscard2(int *ret, int *bid){
 	str msg;
 
 	(void) ret;
-	@:OpenBox(discard)@
+	OpenBox("discard");
     if( (b= BATdescriptor(*bid)) == NULL ){
          return throwMessage("statistics.discard", "Cannot access descriptor");
     }
@@ -604,7 +605,7 @@ str STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str nme,s=0;
 
 	(void)mb; /* fool compiler */
-	@:OpenBox(toString)@
+	OpenBox("toString");
 	nme = (str) getArgValue(stk,pci,1);
 	i= findVariable(box->sym,nme);
 	if( i <0) return throwException(MALEXCEPTION,"statistics.toString",
@@ -624,7 +625,7 @@ str STATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr v;
 
 	(void)mb; /* fool compiler */
-	@:OpenBox(iterator)@
+	OpenBox("iterator");
 	cursor= (lng*) getArgValue(stk,pci,0);
 	v= &stk->stk[getArg(pci,1)];
 	nextBoxElement(box, cursor, v);
@@ -636,7 +637,7 @@ str STAThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	ValPtr v;
 
 	(void)mb; /* fool compiler */
-	@:OpenBox(iterator)@
+	OpenBox("iterator");
 	cursor= (lng*) getArgValue(stk,pci,0);
 	v= &stk->stk[getArg(pci,1)];
 	nextBoxElement(box, cursor, v);
