@@ -94,6 +94,7 @@ mal_export void setCachedProfiling();
 mal_export void setOnlineProfiling();
 mal_export void setOfflineProfiling();
 
+mal_export int profilerAvailable();
 mal_export str startProfiling();
 mal_export str stopProfiling();
 
@@ -145,6 +146,9 @@ static stream *eventstream   = 0;
 static int onlineProfiling = TRUE;
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
+int profilerAvailable(){ return 1;}
+#else
+int profilerAvailable(){ return 0;}
 #endif
 
 static void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

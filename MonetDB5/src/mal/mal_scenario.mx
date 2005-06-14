@@ -192,7 +192,7 @@ struct SCENARIO scenarioRec[MAXSCEN]={
 	0,      0, 0,	/* no MILscheduler */
     	"MILengine",    0, 0,  0
 },
-{	"mil_compile", 
+{	"milCompiler", 
 	"MILinit",0,
 	"MILexit",0,
 	"MILinitClient",0,

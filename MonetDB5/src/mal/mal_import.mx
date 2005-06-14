@@ -166,11 +166,9 @@ resolving addresses.
 @c
 	} else if (libname ){
 		s = (str) loadModuleLibrary(libname);
-		if(s) stream_printf(c->fdout,"%s\n",s);
-		else {
-			initClientPrg(c, "main"); /* create new context */
-			runScenario(c);
-		}
+		if(s) stream_printf(c->fdout,"#WARNING: %s\n",s);
+		initClientPrg(c, "main"); /* create new context */
+		runScenario(c);
     } else {
 		str msg=MAL_SUCCEED;
 		initClientPrg(c, "main"); /* create new context */
