@@ -1,0 +1,12 @@
+.deps
+Makefile
+Mx
+aclocal.m4
+autom4te.cache
+config.status
+configure
+epstogif
+mx_config.h
+mx_config.h.in
+prefixMxFile
+stamp-h1
