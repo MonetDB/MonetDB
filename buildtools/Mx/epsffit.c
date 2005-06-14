@@ -32,7 +32,7 @@
  * outputs PostScript.
  */
 
-#include <monetdb_config.h>
+#include <mx_config.h>
 #include "Mx.h"
 #include <stdio.h>
 #include <stdlib.h>

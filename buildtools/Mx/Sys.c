@@ -16,7 +16,7 @@
  * All Rights Reserved.
  */
 
-#include	<monetdb_config.h>
+#include	<mx_config.h>
 #include	<stdio.h>
 #include	<ctype.h>
 #include 	<stdlib.h>

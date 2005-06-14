@@ -16,180 +16,168 @@
  * All Rights Reserved.
  */
 
-#ifdef UNIX
-#define		NOARGS		(void)
-#define		ARGS(args)	args
-#else
-#define		NOARGS		(void)
-#define		ARGS(args)	args
-#endif
-
 /* System
 
-extern	char *	malloc ARGS((unsigned int));
-extern	int	free ARGS((char*));
-extern	long	time ARGS((int));
-extern	char *	ctime ARGS((long));
-extern	char *	strcpy ARGS((char*, char*));
-extern	int	strlen ARGS((char*));
-extern	int	strcmp ARGS((char*, char*));
-extern	char *	strchr ARGS((char*, char));
-extern	char *	strrchr ARGS((char*, char));
-extern	int	printf ARGS((char*, ...));
-extern	char*	sprintf ARGS((char*, char*, ...)); 
-extern	int	sscanf ARGS((char*, char*, ...)); 
-extern	int	fgetc ARGS((FILE*));
-extern	FILE *	fopen ARGS((char*, char*));
-extern	FILE *	freopen ARGS((char*, char*, FILE*));
-#ifndef UNIX
-extern	int	feof ARGS((FILE*));
-#endif
-extern	int	fclose ARGS((FILE*));
-extern	int	exit ARGS((int));
+extern	char *	malloc(unsigned int);
+extern	int	free(char*);
+extern	long	time(int);
+extern	char *	ctime(long);
+extern	char *	strcpy(char*, char*);
+extern	int	strlen(char*);
+extern	int	strcmp(char*, char*);
+extern	char *	strchr(char*, char);
+extern	char *	strrchr(char*, char);
+extern	int	printf(char*, ...);
+extern	char*	sprintf(char*, char*, ...); 
+extern	int	sscanf(char*, char*, ...); 
+extern	int	fgetc(FILE*);
+extern	FILE *	fopen(char*, char*);
+extern	FILE *	freopen(char*, char*, FILE*);
+extern	int	feof(FILE*);
+extern	int	fclose(FILE*);
+extern	int	exit(int);
 */
 
 /* Code.c
  */
-extern void GenCode NOARGS;
-extern void CodeBlk ARGS((char *));
-extern void CodeCall ARGS((char *));
-extern void CodeSub ARGS((char *));
-extern char *CodeSubBlk ARGS((char *, char **));
-extern void CodeLine NOARGS;
-extern void UnRef ARGS((char *));
-extern Tok *solveCond ARGS((Tok *));
+extern void GenCode(void);
+extern void CodeBlk(char *);
+extern void CodeCall(char *);
+extern void CodeSub(char *);
+extern char *CodeSubBlk(char *, char **);
+extern void CodeLine(void);
+extern void UnRef(char *);
+extern Tok *solveCond(Tok *);
 
 /* Def.c
  */
-extern void InitDef NOARGS;
-extern void MakeDefs ARGS((char *));
-extern CmdCode DefDir NOARGS;
-extern char *DefCmd NOARGS;
-extern char *DefBlk NOARGS;
-extern void DefNl NOARGS;
-extern Def *NwDef ARGS((CmdCode, int, int, int));
-extern Def *GetDef ARGS((char *));
-extern void DbDef ARGS((Def *));
-extern char *dir2str ARGS((CmdCode));
-extern char *dir2ext ARGS((CmdCode));
-extern CmdCode lookup ARGS((char *));
-extern int allTrue NOARGS;
-extern char *substr ARGS((char *, char *));
+extern void InitDef(void);
+extern void MakeDefs(char *);
+extern CmdCode DefDir(void);
+extern char *DefCmd(void);
+extern char *DefBlk(void);
+extern void DefNl(void);
+extern Def *NwDef(CmdCode, int, int, int);
+extern Def *GetDef(char *);
+extern void DbDef(Def *);
+extern char *dir2str(CmdCode);
+extern char *dir2ext(CmdCode);
+extern CmdCode lookup(char *);
+extern int allTrue(void);
+extern char *substr(char *, char *);
 
 
 /* Display.c
  */
-extern void PrFontStr ARGS((char *, char));
-extern void PrModeStr ARGS((char *, char));
-extern void PrCmd ARGS((char *));
-extern void PrText ARGS((char *));
-extern void PrCode ARGS((char *));
-extern void PrRule ARGS((char *));
+extern void PrFontStr(char *, char);
+extern void PrModeStr(char *, char);
+extern void PrCmd(char *);
+extern void PrText(char *);
+extern void PrCode(char *);
+extern void PrRule(char *);
 
-extern void PrPrelude ARGS((char *));
-extern void PrPostlude NOARGS;
+extern void PrPrelude(char *);
+extern void PrPostlude(void);
 
 /* Form.c
  */
-extern void GenForm NOARGS;
-extern void FormBlk ARGS((Def *));
-extern void FormSub ARGS((char *));
-extern void FormTitle NOARGS;
-extern void FormHeader NOARGS;
-extern void FormMod ARGS((char *, int));
-extern void FormSec ARGS((char *, int, int));
-extern void FormPar ARGS((char *));
-extern void FormIf ARGS((Def *));
+extern void GenForm(void);
+extern void FormBlk(Def *);
+extern void FormSub(char *);
+extern void FormTitle(void);
+extern void FormHeader(void);
+extern void FormMod(char *, int);
+extern void FormSec(char *, int, int);
+extern void FormPar(char *);
+extern void FormIf(Def *);
 
 /* Index.c
  */
-extern void InitIndex NOARGS;
-extern void IndexTable ARGS((int, char *));
-extern void IndexEntry ARGS((int, char *, int, int));
-extern void SortIndex NOARGS;
-extern void PrCont NOARGS;
-extern void PrIndex NOARGS;
-extern void PrItable ARGS((int));
+extern void InitIndex(void);
+extern void IndexTable(int, char *);
+extern void IndexEntry(int, char *, int, int);
+extern void SortIndex(void);
+extern void PrCont(void);
+extern void PrIndex(void);
+extern void PrItable(int);
 
 /* Io.c
  */
-extern char *FileName ARGS((char *));
-extern void UpdateFiles NOARGS;
-extern void OutputDir ARGS((char *));
-extern File *GetFile ARGS((char *, CmdCode));
-extern int HasSuffix ARGS((char *, char *));
-extern char *BaseName ARGS((char *));
-extern char *TempName ARGS((char *));
-extern void IoWriteFile ARGS((char *, CmdCode));
-extern void IoReadFile ARGS((char *));
-extern int EofFile NOARGS;
-extern void CloseFile NOARGS;
-extern char NextChr NOARGS;
-extern char *NextLine NOARGS;
-extern void PrevChr ARGS((char));
-extern void PrevLine NOARGS;
+extern char *FileName(char *);
+extern void UpdateFiles(void);
+extern void OutputDir(char *);
+extern File *GetFile(char *, CmdCode);
+extern int HasSuffix(char *, char *);
+extern char *BaseName(char *);
+extern char *TempName(char *);
+extern void IoWriteFile(char *, CmdCode);
+extern void IoReadFile(char *);
+extern int EofFile(void);
+extern void CloseFile(void);
+extern char NextChr(void);
+extern char *NextLine(void);
+extern void PrevChr(char);
+extern void PrevLine(void);
 
 /* Mx.c
  */
-#ifndef UNIX
-extern int Main ARGS((int, char **));
-#endif
-extern int ModeDir ARGS((char));
-extern char *ExtMode ARGS((int));
-extern int extract ARGS((CmdCode));
+extern int main(int, char **);
+extern int ModeDir(char);
+extern char *ExtMode(int);
+extern int extract(CmdCode);
 
 
 /* Print.c
  */
-extern void PrCodeline NOARGS;
+extern void PrCodeline(void);
 
-extern void PrEnv ARGS((int));
-extern void PrRef ARGS((int, int));
-extern void PrNum ARGS((int));
-extern void PrStr ARGS((char *));
-extern void PrTxt ARGS((char *));
-extern void PrChr ARGS((char));
-extern void MathOn NOARGS;
-extern void MathOff NOARGS;
-extern void HideOn NOARGS;
-extern void HideOff NOARGS;
-extern int Hide NOARGS;
-extern void HideText NOARGS;
+extern void PrEnv(int);
+extern void PrRef(int, int);
+extern void PrNum(int);
+extern void PrStr(char *);
+extern void PrTxt(char *);
+extern void PrChr(char);
+extern void MathOn(void);
+extern void MathOff(void);
+extern void HideOn(void);
+extern void HideOff(void);
+extern int Hide(void);
+extern void HideText(void);
 
 
 /* Sys.c
  */
-extern void ofile_putc ARGS((char));
-extern void ofile_puts ARGS((char *));
+extern void ofile_putc(char);
+extern void ofile_puts(char *);
 
-extern char *Malloc ARGS((size_t));
-extern void Free ARGS((char *));
-extern char *StrDup ARGS((const char *));
-extern char *Strndup ARGS((const char *, size_t));
+extern char *Malloc(size_t);
+extern void Free(char *);
+extern char *StrDup(const char *);
+extern char *Strndup(const char *, size_t);
 
-extern void ofile_printf ARGS((char *, ...));
-extern void Fatal ARGS((char *, char *, ...));
-extern void Error ARGS((char *, ...));
-extern void Message ARGS((char *, ...));
+extern void ofile_printf(char *, ...);
+extern void Fatal(char *, char *, ...);
+extern void Error(char *, ...);
+extern void Message(char *, ...);
 
 /* Tok.c
  */
-extern Tok *FstTok ARGS((char *));
-extern Tok *NxtTok ARGS((Tok *));
-extern Tok *SkipTok ARGS((Tok *, char));
-extern void DbTok ARGS((Tok *));
-extern char **MkArgv ARGS((char *));
-extern char **RmArgv ARGS((char **));
-extern void DbArgv ARGS((char **));
+extern Tok *FstTok(char *);
+extern Tok *NxtTok(Tok *);
+extern Tok *SkipTok(Tok *, char);
+extern void DbTok(Tok *);
+extern char **MkArgv(char *);
+extern char **RmArgv(char **);
+extern void DbArgv(char **);
 
 
 /* Mx.c
  */
 
-extern void addextension ARGS((char *));
+extern void addextension(char *);
 
 /* TeX2Html 
  */
 
-extern void bib_print NOARGS;
-extern void latex2html ARGS((char *, int, int));
+extern void bib_print(void);
+extern void latex2html(char *, int, int);

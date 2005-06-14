@@ -16,7 +16,7 @@
  * All Rights Reserved.
  */
 
-#include <monetdb_config.h>
+#include <mx_config.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -25,15 +25,7 @@
 
 #define END_OF_HEADER_MARKER  "@'EOHMARKER (DO NOT EDIT THIS LINE)"
 
-#ifdef HAVE_GETOPT_H
-# include <getopt.h>
-#else
-#ifndef HAVE_GETOPT
-# include "getopt.c"
-#else
-# include "mygetopt.h"
-#endif
-#endif
+#include <getopt.h>
 
 char *inputfile, *outputfile, *prefixfile;
 

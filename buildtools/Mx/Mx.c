@@ -16,7 +16,7 @@
  * All Rights Reserved.
  */
 
-#include        <monetdb_config.h>
+#include        <mx_config.h>
 #include	<stdio.h>
 #include	<ctype.h>
 #ifdef HAVE_UNISTD_H
@@ -27,24 +27,7 @@
 #include	"MxFcnDef.h"
 #include	"disclaimer.h"
 
-#ifdef HAVE_GETOPT_H
-# include <getopt.h>
-#else
-#ifndef HAVE_GETOPT
-# include "getopt.c"
-#else
-# include "mygetopt.h"
-#endif
-#endif
-
-#ifndef UNIX
-extern int _trace;
-#endif
-
-
-#ifndef MX_CXX_SUFFIX
-#define MX_CXX_SUFFIX "cc"
-#endif
+#include <getopt.h>
 
 unsigned int db_flag = 0x00;
 int archived;			/* set for archived portions */
@@ -66,10 +49,6 @@ int codeline = 0;
 int noline = 0;
 int notouch = 0;
 char *texDocStyle = 0;
-
-#ifdef UNIX
-#define	Main	main
-#endif
 
 static void
 usage(void)
@@ -95,15 +74,11 @@ usage(void)
 }
 
 int
-Main(argc, argv)
+main(argc, argv)
 int argc;
 char **argv;
 {
 	int i, k;
-
-#ifndef UNIX
-	_trace = 1;
-#endif
 
 	if (argc == 1) {
 		usage();
