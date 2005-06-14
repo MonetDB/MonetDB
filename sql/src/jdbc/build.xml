@@ -52,7 +52,6 @@
         <include name="${jdbc-package}/**/*.class" />
       </fileset>
 	</jar>
-	<!-- we do not jar the examples, for that's useless -->
     <jar jarfile="${jardir}/MonetDB_XMLDB.jar">
       <fileset dir="${builddir}">
         <include name="${xmldb-package}/**/*.class" />
@@ -82,6 +81,7 @@
 	>
        <include name="JdbcClient.java" />
     </javac>
+	<!--
 	<echo message="Compiling examples" />
     <javac
 		classpath="${builddir}"
@@ -92,7 +92,8 @@
 	>
        <include name="*.java" />
 	   <exclude name="JdbcClient.java" />
-    </javac>
+   </javac>
+   -->
   </target>
 
   <target name="compile_xmldb" depends="prepare,driver">
@@ -133,17 +134,6 @@
 	>
        <include name="JdbcClient.java" />
     </javac>
-	<echo message="Compiling examples" />
-    <javac
-		classpath="${builddir}"
-		srcdir="${srcdir}/example"
-		destdir="${builddir}/example"
-		debug="false"
-		optimize="true"
-	>
-       <include name="*.java" />
-	   <exclude name="JdbcClient.java" />
-    </javac>
 
     <jar jarfile="${jardir}/MonetDB_JDBC.jar" manifest="${srcdir}/manifest">
       <fileset dir="${builddir}">
@@ -151,7 +141,6 @@
         <include name="${jdbc-package}/**/*.class" />
       </fileset>
 	</jar>
-	<!-- we do not jar the examples, for that's useless -->
     <jar jarfile="${jardir}/MonetDB_XMLDB.jar">
       <fileset dir="${builddir}">
         <include name="${xmldb-package}/**/*.class" />
