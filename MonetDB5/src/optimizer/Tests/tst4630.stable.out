@@ -177,14 +177,12 @@ end qry1;	# 74
 #
 !ERROR: optimize("user","qry1");
 !       ^module name expected
-function user.main():int;	# 0  unknown (main:int)
-#TPCH query 1 	# 1  unknown ($2:str)
-# the basis for further optimizer tests 	# 2  unknown ($4:str)
-#optimizer information derived by the SQL compiler 	# 3  unknown ($6:str)
-#optimizer.RXalignedBAT(V6,V22,V29,V53,V60,V75,V105); 	# 4  unknown ($8:str)
-    ;	# 5  unknown ($9:any)
-    mdb.showFunction("user","qry1");	# 6  unknown ($10:any)<-($11:str)($12:str)
-end main;	# 7  unknown 
+function user.main():int;	# 0  (main:int)
+#optimizer information derived by the SQL compiler 	# 1  unknown ($2:str)
+#optimizer.RXalignedBAT(V6,V22,V29,V53,V60,V75,V105); 	# 2  unknown ($4:str)
+    ;	# 3  unknown ($5:any)
+    mdb.showFunction("user","qry1");	# 4  unknown ($6:any)<-($7:str)($8:str)
+end main;	# 5  unknown 
 
 # 15:16:27 >  
 # 15:16:27 >  Done.
