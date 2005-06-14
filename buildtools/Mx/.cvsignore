@@ -1,11 +1,13 @@
-.deps
-Makefile
-Mx
 aclocal.m4
 autom4te.cache
 config.status
 configure
+.deps
+epsffit
 epstogif
+idxmx
+Makefile
+Mx
 mx_config.h
 mx_config.h.in
 prefixMxFile
