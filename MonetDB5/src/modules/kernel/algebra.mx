@@ -340,7 +340,7 @@ The core of every relational engine.
 The join collection provided by the GDK kernel.
 Note that joins over void columns are handled as if they are oids.
 @mal
-command cartesianproduct(left:bat[:any$1,:any$2], right:bat[:any$3,:any$4])
+command cross(left:bat[:any$1,:any$2], right:bat[:any$3,:any$4])
 	:bat[:any$1,:any$4]
 address ALGcross
 comment "Returns the cross product";
@@ -432,7 +432,6 @@ comment "This is a join() for which the predicate is that two BUNs match
 For relational processing, some operators are necessary to produce newly
 initiated OID columns, for representing n-ary (intermediary) relations.
 
-@- Marking tables
 @mal
 #command markT( b:bat[:any$1,:any], base:void ) :bat[:any$1,:void] 
 #address ALGtmark
@@ -468,12 +467,18 @@ address ALGmarkHead
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
         the head that starts at base (i.e. [base,..base+b.count()-1] ).";
 
-@- number tail column
-@mal
 command number( b:bat[:any$1,:any] ) :bat[:any$1,:int]  
 address ALGnumber
 comment "Produces a new BAT with identical head column, and consecutively 
         increasing integers (start at 0) in the tail column.";
+
+command merge(b:bat[:oid,:oid]):bat[:lng,:oid]
+address ALGmerge
+comment "Merge head and tail into a single value";
+
+command split(b:bat[:lng,:oid]):bat[:oid,:oid]
+address ALGsplit
+comment "Split head into two values";
 
 @+ BAT fragmentation commands
 Various operations for splitting BATs into useful fragments.
@@ -1885,6 +1890,8 @@ str ALG@1(int *result, int* bid, int *param) {
 @c
 @:ALGunary(histogram)@
 @:ALGunary(number)@
+@:ALGunary(merge)@
+@:ALGunary(split)@
 @:ALGunary(copy)@
 @:ALGunary(kunique)@
 @:ALGunary(sunique)@
