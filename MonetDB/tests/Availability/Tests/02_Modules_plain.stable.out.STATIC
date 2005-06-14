@@ -627,6 +627,7 @@ Module: "mapi"
 [ "mapi_listen_ssl",	  "BUILTIN:   ",  "mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) ", "Start the Mapi listener on <port> for <maxusers> using SSL.\n<keyfile> and <certfile> give the path names for files with the server key and certificates in PEM format.\nFor a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked."	  ]
 [ "mapi_server",	  "PROC:      ",  "mapi_server(int, int) : void",						  "not available"																																						  ]
 [ "mapi_start",		  "PROC:      ",  "mapi_start() : void",							  "not available"																																						  ]
+[ "mapi_start",		  "PROC:      ",  "mapi_start(bit) : void",							  "not available"																																						  ]
 [ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",						  "Read a string from <S> until a '1' character."																																		  ]
 [ "stream_line",	  "PROC:      ",  "stream_line(Stream) : str",							  "Read a string from <S> until a newline."																																			  ]
 [ "stream_strip",	  "PROC:      ",  "stream_strip(Stream, str) : str",						  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."																												  ]
