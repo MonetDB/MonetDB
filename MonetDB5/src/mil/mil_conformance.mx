@@ -55,7 +55,7 @@ struct{
 
 {"print",		"io", "print",	0},
 
-{"access",		"unknown", "setWriteMode",	0},
+{"access",		"mil", "access",	0},
 {"append",		"bat", "append",	0},
 {"batsize",		"bat", "getBatSize",	0},
 {"capacity",	"bat", "getCapacity",	0},
@@ -165,7 +165,7 @@ str mapmod(str n){
 		idmap[i].used++;
 		return GDKstrdup(idmap[i].v5mod);
 	}
-	return GDKstrdup("unkown");
+	return GDKstrdup("user");
 }
 int ismapped(str n){
 	int i;

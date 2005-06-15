@@ -45,10 +45,7 @@ command compile(fname:str):void
 address CMDMILcompile
 comment "Compile a MIL file, don;t execute";
 
-command compile(fname:str, ofile:str):void 
-address CMDMILcompile2
-comment "Compile a MIL file and save on output file";
-
+# mil.line is obsolete, produced by previous compiler
 command line(msg:str):void
 address MILline
 comment "Produce comment for tracking the MIL code produced";
@@ -210,7 +207,8 @@ parser.
 	if( c->listing)
 			printFunction(c->fdout,c->curprg->def, c->listing);
 	stream_flush(c->fdout);
-	resetInstructions(c->curprg->def, oldstate.stop);
+	/*initClientPrg(c,"main");*/
+	/*resetInstructions(c->curprg->def, oldstate.stop);*/
 	/* resetVariables(c->curprg->def, @1, oldstate.vtop);*/
 @c
 
@@ -236,9 +234,11 @@ str MILparserAll(Client c, int flag) {
 	oldstate= *c->curprg->def;
 
 	prepareMalBlk(c->curprg->def, CURRENT(c));
-	if( parseMILprg(c, c->curprg->def) || c->curprg->def->errors  ){
-		@:restoreState(0)@
-		return throwMessage("MILparser","Parser errors\n");
+	if( parseMILprg(c, c->curprg->def) || 
+		c->curprg->def->errors  ||
+		c->errbuf[0]){
+			@:restoreState(0)@
+			return throwMessage("MILparser","Parser errors\n");
 	} 
 	
 @-
@@ -350,24 +350,25 @@ str
 CMDMILcompile(int *ret, str *fname){
 	str msg= MAL_SUCCEED;
 	Client c= getClient();
-	(void) ret; (void) fname;
-	setScenario(c,"mil_compile");
-	callString(c,*fname,LIST_MAL_ALL);
-	printFunction(GDKout,c->curprg->def,LIST_MAL_ALL);
+	char buf[1024];
+
+	(void) ret; 
+	snprintf(buf,1024,"%s/%s",c->cwd, *fname);
+	setScenario(c,"milCompiler");
+	malInclude(c,buf,NULL,LIST_MAL_INSTR);
 	resetScenario(c);
 	return msg;
 }
 
 str
-CMDMILcompile2(int *ret, str *fname, str *ofile){
-	(void) ret; (void) fname; (void) ofile;
-	return throwMessage("mil.compile","nyi");
-}
-
-str
 CMDMILcompileOnly(int *ret){
+	Client c;
 	(void) ret; 
-	return throwMessage("mil.compile","nyi");
+	c= getClient();
+	c->listing= LIST_MAL_INSTR;
+	stream_printf(GDKout,"#Continue as MIL session\n");
+	setScenario(c,"milCompiler");
+	return MAL_SUCCEED;
 }
 
 str MILline(int *ret, str *msg){
