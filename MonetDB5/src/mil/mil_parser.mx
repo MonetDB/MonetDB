@@ -625,7 +625,10 @@ void parseMILstmt(Client cntxt, MalBlkPtr currBlk){
 		parseMILblock(cntxt,currBlk);
 	} else {
 		parseMILexpr(cntxt,currBlk);
-		parseMILstmtend(cntxt,currBlk);
+		skipSpace(cntxt);
+		if( currChar(cntxt) == ';' )
+			nextChar(cntxt);
+		/* parseMILstmtend(cntxt,currBlk);*/
 	}
 }
 void parseMILblock(Client cntxt, MalBlkPtr currBlk){
@@ -779,8 +782,13 @@ void parseMILbatloop(Client cntxt, MalBlkPtr currBlk, int lhs){
 	setFunctionId(currInstr,putName("newIterator",11));
 	setDestVar(currInstr, cvar);
 	setVarInitialized(currBlk,cvar);
+	setVarUsed(currBlk,cvar,TRUE);
 	pushArgument(currBlk,currInstr, hvar);
+	setVarInitialized(currBlk,hvar);
+	setVarUsed(currBlk,hvar,TRUE);
 	pushArgument(currBlk,currInstr, tvar);
+	setVarInitialized(currBlk,tvar);
+	setVarUsed(currBlk,tvar,TRUE);
 	currInstr->retc= currInstr->argc;
 	currInstr->barrier = BARRIERsymbol;
 	pushArgument(currBlk,currInstr, lhs);
@@ -1193,21 +1201,6 @@ int parseMILprg(Client cntxt, MalBlkPtr currBlk){
 			nextChar(cntxt);
 		case 0: 
 			return cntxt->curprg->def->errors;
-		case '/':
-			if( keyphrase2(cntxt,"/}")){
-				return cntxt->curprg->def->errors;
-			}
-			goto MILstmt;
-		case '{':
-			parseMILblock(cntxt,currBlk);
-			return cntxt->curprg->def->errors;
-		case 'b': case 'B':
-			if( keyword(cntxt,"break",5) )
-				parseMILbreakstmt(cntxt,currBlk);
-			if( keyword(cntxt,"bat",3) )
-				parseMILbatstmt(cntxt,currBlk);
-			else goto MILstmt;
-			break;
 		case 'p': case 'P':
 			if( keyword(cntxt,"proc",4) )
 				parseMILprocdef(cntxt,currBlk);
