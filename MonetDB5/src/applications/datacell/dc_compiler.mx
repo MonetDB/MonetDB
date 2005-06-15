@@ -1,0 +1,400 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+@f dc_compiler
+@a M.L. Kersten
+@+ The pump queries
+The transformations within the DataCell are described by
+ordinary SQL batches that empty containers and produce
+result.
+
+This requires a link with the SQL compiler to delegate
+compilation of the expressions into a MAL function.
+
+@- Implementation
+@mal
+command datacell.compiler(expr:str):str
+address DCsqlCompiler
+comment "Compile the expression into a MAL program";
+
+command datacell.reduce(expr:str):void
+address DCsqlReduce
+comment "Optimize the MAL program for execution with the datacell library.";
+
+command datacell.pump(name:str, lang:str, query:str)
+address DCpumpDefinition
+comment "Define a data pump query.";
+@-
+@{
+@h
+#ifndef _DATACELL_COMPILER
+#define _DATACELL_COMPILER
+
+#define DEBUG_DATACELL 
+
+#include "mal.h"
+#include "datacell.h"
+
+#endif /* _DATACELL_COMPILER */
+@-
+@c
+#include "dc_compiler.h"
+#include "mal_client.h"
+#include "mal_namespace.h"
+#include "mal_interpreter.h"
+#include "mal_exception.h"
+#include "mal_builder.h"
+#include "../optimizer/mal_optimizer.h"
+#include "../optimizer/mal_emptyset.h"
+#include "../optimizer/mal_peephole.h"
+#include "../modules/mal/tablet.h"
+
+#define _DC_COMPILE_DEBUG
+
+mal_export str SQLcompile(str *ret, str *expr, int *flag);
+mal_export str DCsqlReduce(int *ret, str *nme);
+mal_export str DCsqlReshuffle(MalBlkPtr mb);
+mal_export void DCflowDependencies(DCpump p);
+@-
+The DataCell containers are all mapped to relational tables
+in SQL terms. This is the basis for compiling the queries.
+The implementation currently generates the schema from scratch
+to study its overhead later on from re-use
+
+To simplify the current implementation, all table
+definitions are immediately sent to the SQL compiler.
+We keep track on their number and avoid sending them twice.
+This only works in a growing system.
+@c
+static int containers=0;
+str
+DCcompileQuery(str *ret, str* expr){
+	DCpump p;
+	char *buf;
+	int i=0,k=0,len=0;
+	str msg=MAL_SUCCEED, tpe;
+	int flag= 0; /* do not keep the catalog changes */
+
+	len = pumpindex * 1024;
+	if( pumpindex == 0) {
+		msg= SQLcompile(ret,expr,&flag);
+		if( msg== MAL_SUCCEED)
+			msg= DCsqlReduce(&flag,ret);
+		return msg;
+	}
+	buf= (char *) alloca(len);
+
+	for(p= pumps; p<pumps+pumpindex; p++)
+	if( p->name) {
+		i=0; buf[i]=0;
+		sprintf(buf,"create table %s (",p->name);
+		i += strlen(buf);
+		for(k=0; k<p->cap && p->columns[k]; k++){
+			tpe= getTypeName(p->types[k]);
+			if( k )
+				sprintf(buf+i,", %s %s",p->columns[k],tpe);
+			else sprintf(buf+i,"%s %s",p->columns[k],tpe);
+			i += strlen(buf+i);
+			GDKfree(tpe);
+		}
+		sprintf(buf+i,");\n"); i+= strlen(buf+i);
+		i += strlen(buf+i);
+		if( k > 0) {
+			msg= SQLcompile(ret,&buf,&flag);
+			if( msg) stream_printf(GDKout,"%s",msg);
+			/* ignore possible errors raised by duplicate definition */
+			getClient()->errbuf[0]=0;
+		}
+#ifdef _DC_COMPILE_DEBUG
+		stream_printf(GDKout,"SQL:\n%s\n",buf);
+		stream_printf(GDKout,"returns:%s\n",msg);
+#endif
+		containers++;
+	}
+	i=0; buf[i]=0;
+	flag= 0;
+
+#ifdef _DC_COMPILE_DEBUG
+	stream_printf(GDKout,"SQL:\n%s\n",buf);
+#endif
+	
+	if( i+strlen(*expr) <len){
+		sprintf(buf+i,"%srollback;",*expr);
+	} else sprintf(buf+i,"too long;");
+#ifdef _DC_COMPILE_DEBUG
+	stream_printf(GDKout,"datacell.compile:%s\n",*expr);
+	stream_printf(GDKout,"SQL:\n%s\n",buf);
+#endif
+	msg= SQLcompile(ret,&buf,&flag);
+	if( msg== MAL_SUCCEED)
+		msg= DCsqlReduce(&flag,ret); 
+	return msg;
+}
+str
+DCsqlCompiler(str *ret, str* expr){
+	return DCcompileQuery(ret,expr);
+}
+
+str 
+DCpumpDefinition(int *ret, str *name, str *lang, str *qry ){
+	DCpump p;
+	str prg,msg= MAL_SUCCEED;
+	Symbol s;
+	(void) ret;
+
+	if( DClocatePump(*name) )
+		return throwMessage("datacell.pump","pump re-defined");
+	p= DCnewPump();
+	p->kind= NUCLEUS;
+	p->name= GDKstrdup(*name);
+	p->lang= GDKstrdup(*lang);
+	p->query= GDKstrdup(*qry);
+	if( strcmp("sql",*lang)==0){
+		msg= DCcompileQuery(&prg,qry);
+		p->mal[0]= GDKstrdup(prg);
+		s= findMALSymbol(putName("user",4), putName(prg,strlen(prg)) );
+		if( s== 0 )
+			return throwMessage("datacell.pump","symbol not found");
+		p->malblk[0]= s->def;
+		DCflowDependencies(p);
+	} else return throwMessage("datacell.pump","Non-supported language");
+	return msg;
+}
+@-
+The output of the SQL compiler is first cleaned up, such that
+it becomes easier to manipulate.
+This cleanup involves removal of all sql.column and sql.output
+statements, while the sql.bind instruction should be replaced
+with the datacell bind operation towards.
+@= tstName
+	( getName(@2,strlen(@2)) == moduleId(@1) &&
+	  getName(@3,strlen(@3)) == functionId(@1) )
+@-
+The code should comply with the optimizer policies, such
+as performing double checks before the function returns
+the new code block.
+@c
+str
+DCsqlReduce(int *ret, str *nme){
+	Symbol s;
+	MalBlkPtr mb;
+    long clk= GDKusec();
+	int i,j,k,actions = 0;
+	InstrPtr p,q;
+	int *emptyset,z=0;
+
+	(void) ret;
+	s= findMALSymbol(putName("user",4), putName(*nme,strlen(*nme)) );
+	if( s== 0 )
+		return throwMessage("datacell.sqlcleanup","symbol not found");
+	mb= s->def;
+	chkProgram(getClient()->nspace, mb);
+	/* PHoptimizer(mb,0,0);*/
+#ifdef _DC_COMPILE_DEBUG
+	stream_printf(GDKout,"start reduction %s:\n", (mb->errors?"errors":""));
+	printFunction(GDKout,s->def,LIST_MAL_ALL);
+#endif
+@-
+The reduction is performed inplace, dropping instructions
+that are not considered relevant for the DataCell.
+Moreover, we contain the empty variables that should be removed.
+@c
+	emptyset= (int *) alloca(mb->stop * sizeof(int*));
+	for(j=i=1;i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if( @:tstName(p,"sql","output")@ ||
+			@:tstName(p,"sql","column")@ ) {
+			/* skip it */
+			freeInstruction(p);
+			continue;
+		} 
+		if( @:tstName(p,"bat","setWriteMode")@ ){
+			for(k=j-1; k>=0; k--){
+				q= getInstrPtr(mb,k);
+				if( getArg(p,1) == getArg(q,0) &&
+					@:tstName(q,"datacell","bind")@ ){
+						/* no duplicate mode setting */;
+						freeInstruction(p);
+						break;
+				}
+			}
+			continue;
+		} 
+		if( @:tstName(p,"sql","bind_dbat")@ ){
+			if( isReceptor( getVarLiteral(mb,getArg(p,2))) ){
+				emptyset[z++]= getArg(p,0);
+				freeInstruction(p);
+				continue;
+			} else
+			if( isEmitter( getVarLiteral(mb,getArg(p,2))) ){
+				emptyset[z++]= getArg(p,0);
+				freeInstruction(p);
+				continue;
+			}
+@-
+The dbat can only be dropped for connection points.[todo]
+@c
+		}
+		if( @:tstName(p,"sql","bind")@ ){
+			/* tst name to determine its kind */
+			/* printf("lookup %s %s\n", getVarLiteral(mb,getArg(p,2)),
+				getVarLiteral(mb,getArg(p,3)) ); */
+			if( isReceptor( getVarLiteral(mb,getArg(p,2))) ){
+				for(k= p->argc; k>1; k--)
+					getArg(p,k)= getArg(p,k-1);
+				p->retc++; p->argc++;
+				p->argv[k]= newTmpVariable(mb, getVarType(mb,getArg(p,0)));
+				setFunctionId(p,putName("bindReceptor",12));
+			}
+			if( isEmitter( getVarLiteral(mb,getArg(p,2))) ){
+				for(k= p->argc; k>1; k--)
+					getArg(p,k)= getArg(p,k-1);
+				p->argv[k]= newTmpVariable(mb, getVarType(mb,getArg(p,0)));
+				p->retc++; p->argc++;
+				setFunctionId(p,putName("bindEmitter",11));
+			}
+			delArgument(p,5);
+			delArgument(p,2);
+			setModuleId(p,putName("datacell",8));
+			typeChecker(getClient()->nspace,mb,p,TRUE);
+		}
+		getInstrPtr(mb,j)= p;
+		j++;
+	}
+	mb->stop= j;
+#ifdef _DC_COMPILE_DEBUG
+	stream_printf(GDKout,"finished reduction :%d errors:\n", mb->errors);
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
+@-
+We now have to propagate the knowledge about empty sets
+@c
+	ESevaluate(mb,z,emptyset);
+	DCsqlReshuffle(mb);
+	optimizerCheck(mb,"datacell.reduce",actions,GDKusec()-clk);
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+	return MAL_SUCCEED;
+}
+@-
+The final step in the preparation of the pump plan is to
+separate the reading/writing of the connection point tables
+and to guarantee there is no interference from concurrency.
+This relies on functions in the datacell to make a private
+copy available for the routine and to securely write
+the result into an emitter table.
+@c
+str
+DCsqlReshuffle(MalBlkPtr mb){
+	int i,j,limit;
+	InstrPtr p, *old;
+	str *points, unit;
+	int u=0;
+
+#ifdef _DC_COMPILE_DEBUG
+	stream_printf(GDKout,"start reshuffle :\n");
+#endif
+	old= mb->stmt;
+	limit= mb->stop;
+	points = (str*) alloca(mb->stop*sizeof(str));
+	newMalBlkStmt(mb,mb->stop+4);
+
+	pushInstruction(mb, old[0]);
+@-
+First step is to collect the all receptor/emitter bindings.
+@c
+	for(i=1; i< limit-1; i++)
+	if( strncmp(functionId(old[i]),"bind",4)==0  && 
+		strcmp(moduleId(old[i]),"datacell")==0 ){
+		unit= getVarLiteral(mb,getArg(old[i],2));
+		for(j=0;j<u;j++)
+		if( strcmp(points[j],unit)== 0) break;
+		if( j== u){
+			p= newFcnCall(mb, getName("datacell",8),getName("isolate",7));
+			pushStr(mb,p, unit);
+			setVarType(mb,getArg(p,0), TYPE_void);
+			points[u++]= unit;
+		} 
+		pushInstruction(mb,old[i]);
+	} else 
+		pushInstruction(mb,old[i]);
+@- 
+The receptor can be released, because we have consumed all
+relevant information.
+@c
+	for(j=u-1;j>=0;j--){
+		p= newFcnCall(mb, getName("datacell",8),getName("release",7));
+		pushStr(mb,p, points[j]);
+		setVarType(mb,getArg(p,0), TYPE_void);
+	}
+	pushInstruction(mb,old[i]);	/* end instruction */
+	GDKfree(old);
+	return MAL_SUCCEED;
+}
+@-
+After the compilation to the DataCell has been completed,
+it is possible to automatically derive the inflow and outflow
+relationships for the pump. This information is stored in the
+pump descriptor directly.
+@c
+void DCflowDependencies(DCpump p){
+	int in,out,i,j,k;
+	str nme;
+	InstrPtr q;
+	Symbol s;
+	MalBlkPtr mb;
+
+#ifdef _DC_COMPILE_DEBUG
+	stream_printf(GDKout,"derive flow dependencies \n");
+#endif
+	for( i=0; i<p->cap && p->mal[i]; i++){
+		s= findMALSymbol(putName("user",4), 
+			putName(p->mal[i],strlen(p->mal[i])) );
+		if( s== 0 ) 
+			continue;
+		mb= s->def;
+		for(j=0;j<p->cap && p->source[j]; j++)
+			GDKfree(p->source[j]);
+		in= 0;
+		for(j=0;j<p->cap && p->sink[j]; j++)
+			GDKfree(p->source[j]);
+		out=0;
+		for(j=1;j<mb->stop; j++){
+			q= getInstrPtr(mb,j);
+			if(moduleId(q) && strcmp("datacell", moduleId(q))==0 ){ 
+				if(functionId(q) && strcmp("bindReceptor",functionId(q))==0 ){
+					nme = getVarLiteral(mb,getArg(q,2));
+					for( k=0; k<in; k++)
+					if( strcmp(p->source[k],nme)==0) goto skip;
+					p->source[in++]= GDKstrdup(nme);
+#ifdef _DC_COMPILE_DEBUG
+					stream_printf(GDKout,"add source :%s\n",nme);
+#endif
+				}
+				if(functionId(q) && strcmp("bindEmitter",functionId(q))==0 ){
+					nme = getVarLiteral(mb,getArg(q,2));
+					for( k=0; k<out; k++)
+					if( strcmp(p->sink[k],nme)==0) goto skip;
+					p->sink[out++]= GDKstrdup(nme);
+#ifdef _DC_COMPILE_DEBUG
+					stream_printf(GDKout,"add sink :%s\n",nme);
+#endif
+				}
+				skip:;
+			}
+		}
+	}
+}
+@}

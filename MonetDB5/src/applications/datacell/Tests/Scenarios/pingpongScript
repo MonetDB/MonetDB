@@ -1,0 +1,2 @@
+# sent 25 single level events to the port
+streamSource -p 6000 -C 1 -N 25 -d 0

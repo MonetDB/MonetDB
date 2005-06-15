@@ -1,0 +1,41 @@
+#The simpliest throughput experiment consists
+# of a single receptor, a identify transformation,
+# and a single emitter.
+
+include datacell;
+
+datacell.open();
+
+datacell.receptor("ping","localhost", 6000);
+datacell.define("ping","value",:int);
+
+datacell.emitter("pong","localhost", 6001);
+datacell.define("pong","value",:int);
+
+datacell.dump();
+
+
+datacell.pump("ball","sql","insert into pong select * from ping;");
+#g:= datacell.compiler("insert into pong select * from ping;");
+#io.print(g);
+#mdb.showFunction("user",g);
+s:= datacell.getSource("ball");
+io.print(s);
+s:= datacell.getSink("ball");
+io.print(s);
+
+#manually fill the receptor public buffer
+datacell.startReceptor("ping");
+(pub:bat[:void,:timestamp], priv:bat[:void,:timestamp]) := datacell.bindReceptor("ping","click");
+bat.insert(pub,nil,0:timestamp);
+(public:bat[:void,:int], private:bat[:void,:int]) := datacell.bindReceptor("ping","value");
+bat.insert(public,nil,3);
+io.print(public);
+
+#perform a single schedule run
+datacell.startScheduler(1000);
+
+(publ,priv) := datacell.bindEmitter("pong","value");
+io.print(publ);
+
+#datacell.close();
