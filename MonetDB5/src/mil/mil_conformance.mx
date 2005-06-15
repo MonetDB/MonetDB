@@ -165,7 +165,7 @@ str mapmod(str n){
 		idmap[i].used++;
 		return GDKstrdup(idmap[i].v5mod);
 	}
-	return GDKstrdup("user");
+	return GDKstrdup("milCache");
 }
 int ismapped(str n){
 	int i;

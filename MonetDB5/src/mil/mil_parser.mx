@@ -1212,7 +1212,7 @@ int parseMILprg(Client cntxt, MalBlkPtr currBlk){
 			else goto MILstmt;
 			break;
 		default: MILstmt:
-			parseMILstmtAll(cntxt,currBlk);
+			parseMILstmt(cntxt,currBlk);
 			if( cntxt->curprg->def->errors >= MAXERRORS )
 				return cntxt->curprg->def->errors;
 		}

@@ -356,7 +356,9 @@ CMDMILcompile(int *ret, str *fname){
 	snprintf(buf,1024,"%s/%s",c->cwd, *fname);
 	setScenario(c,"milCompiler");
 	malInclude(c,buf,NULL,LIST_MAL_INSTR);
+	showErrors();
 	resetScenario(c);
+	initClientPrg(c,"main");
 	return msg;
 }
 
