@@ -11,3 +11,11 @@ mel_config.h.in
 stamp-h1
 *.h
 *.cc
+*.cxx
+lex.yy.c
+y.tab.c
+mel.exp
+mel.ilk
+mel.lib
+mel.pdb
+vc70.pdb
