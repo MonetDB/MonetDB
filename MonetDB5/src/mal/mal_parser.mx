@@ -82,6 +82,7 @@ mal_export int stringLength(Client cntxt);
 mal_export str charCst(Client cntxt);
 mal_export int operatorLength(Client cntxt);
 mal_export str operatorCopy(Client cntxt, int length);
+mal_export int keyword(Client cntxt, str kw, int length);
 mal_export int keyphrase(Client cntxt, str kw, int length);
 mal_export int keyphrase1(Client cntxt, str kw);
 mal_export int keyphrase2(Client cntxt, str kw);
@@ -247,7 +248,8 @@ keyword(Client cntxt, str kw, int length)
 
 	if (currChar(cntxt) == *kw &&
 	    strncmp(CURRENT(cntxt), kw, length) == 0 &&
-	    !idCharacter[(int) (CURRENT(cntxt)[length])]) {
+	    !idCharacter[(int) (CURRENT(cntxt)[length])] &&
+	    !isdigit((int) (CURRENT(cntxt)[length])) ) {
 		advance(cntxt, length);
 		return 1;
 	}
@@ -255,7 +257,8 @@ keyword(Client cntxt, str kw, int length)
 	for (i = 0; i < length; i++)
 		if (tolower(CURRENT(cntxt)[i]) != kw[i])
 			return 0;
-	if (!idCharacter[(int) (CURRENT(cntxt)[length])]) {
+	if (!idCharacter[(int) (CURRENT(cntxt)[length])] &&
+	    !isdigit((int) (CURRENT(cntxt)[length])) ) {
         advance(cntxt,length);
         return 1;
     }
@@ -1710,10 +1713,16 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			}
 			if( e> start) *e=0;
 			if( e>start && curBlk->stop > 0){
+@-
+Keep the comment lines as un-used constants.
+This implies that a deadcode optimizer will remove
+the information.
+@c
 				curInstr= newInstruction(REMsymbol);
 				pushInstruction(curBlk,curInstr);
-				getArg(curInstr,0)= newConstant(curBlk,TYPE_str,
-										GDKstrdup(start),FALSE);
+				getArg(curInstr,0)= newConstant(curBlk,
+					TYPE_str,GDKstrdup(start),FALSE);
+				setVarUsed(curBlk,getArg(curInstr,0),FALSE);
 			}
 		}
               continue;
