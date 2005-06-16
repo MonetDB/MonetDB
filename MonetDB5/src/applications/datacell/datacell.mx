@@ -819,7 +819,7 @@ DCgetDynamicProperties(int *bid, str *name){
 	DCpump p;
 	BAT *bn, *b;
 	char buf[128];
-	size_t cnt;
+	int cnt;
 
 	p= DClocatePump(*name);
 	if( p == NULL)
