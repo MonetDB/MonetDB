@@ -233,6 +233,11 @@ str MILparserAll(Client c, int flag) {
 	c->curprg->def->errors = 0;
 	oldstate= *c->curprg->def;
 
+@-
+Prescan the input to make processing easier
+@c
+	nextChar(c);
+	c->yycur--;
 	prepareMalBlk(c->curprg->def, CURRENT(c));
 	if( parseMILprg(c, c->curprg->def) || 
 		c->curprg->def->errors  ||
@@ -355,6 +360,11 @@ CMDMILcompile(int *ret, str *fname){
 	(void) ret; 
 	snprintf(buf,1024,"%s/%s",c->cwd, *fname);
 	setScenario(c,"milCompiler");
+@-
+Prescan the input to make processing easier
+@c
+	nextChar(c);
+	c->yycur--;
 	malInclude(c,buf,NULL,LIST_MAL_INSTR);
 	showErrors();
 	resetScenario(c);

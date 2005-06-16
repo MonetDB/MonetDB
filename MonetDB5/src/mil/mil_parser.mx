@@ -104,6 +104,7 @@ It uses the features offered by the MAL parser.
 typedef struct IDS{
         str nme;
         int varid;      /* MAL equivalent */
+		int global;		/* constant */
         struct IDS *peer;
 } *Ids;
 
@@ -186,6 +187,11 @@ MILbackend newMILbackend(){
 	be= GDKmalloc(sizeof(*be));
 	bzero(be, sizeof(*be));
 	return be;
+}
+void resetMILbackend(Client cntxt){
+	MILbackend be;
+	be= BE(cntxt);
+	bzero(be, sizeof(*be));
 }
 void enterMILscope(Client cntxt){
     MILbackend be;
@@ -274,12 +280,14 @@ void leaveScope(MILbackend be) {
 		be->lastscope --;
 }
 
-void newId(MILbackend be, str nme, int varid){
+void newId(Client cntxt, str nme, int varid){
+	MILbackend be= BE(cntxt);
 	Ids m;
 	m = (Ids) GDKmalloc(sizeof(*m));
 	m->peer = be->variables;
 	m->nme = nme;
 	m->varid = varid;
+	m->global= BE(cntxt)->constantdeclaration > 1;
 	be->variables= m;
 	be->scopes[be->lastscope]++;
 }
@@ -336,18 +344,13 @@ str parseMILoperator(Client cntxt){
 	return NULL;
 }
 int parseMILvariable(Client cntxt,MalBlkPtr currBlk, str nme){
-	/* InstrPtr 	currInstr;*/
+	InstrPtr 	currInstr;
 	int varid=0, i, fnd=0;
 
 	if( (i=fndId(BE(cntxt),nme)) ){
 		varid = findVariable(currBlk,nme);
 		if( varid < 0) varid= i;
 	}
-	if( varid > 0 && varid < currBlk->vtop)  {
-		setVarUsed(currBlk,varid,TRUE);
-		return varid;
-	}
-
 	for( i=0; typeNames[i]; i++)
 	if( strcmp(typeNames[i],nme)==0){ 
 		char buf[64];
@@ -355,24 +358,23 @@ int parseMILvariable(Client cntxt,MalBlkPtr currBlk, str nme){
 		varid 	= newConstant(currBlk, 
 				getTypeIndex(nme,strlen(nme),TYPE_any),
 				GDKstrdup(buf), TRUE);
-		newId(BE(cntxt),nme,varid);
-		if( BE(cntxt)->constantdeclaration)
+		newId(cntxt,nme,varid);
+		if( BE(cntxt)->constantdeclaration){
 			isConstant(currBlk,varid)=1;
+		}
 		fnd++; 
 		break;
 	}
-	/* should check for pre-defined stuff as well
-	if(fnd==0 && BE(cntxt)->constantdeclaration == 0){
+	if(fnd==0 && varid == 0)  {
+		/* should check for pre-defined stuff as well */
 		currInstr= newStmt(cntxt->curprg->def,"mil","take");
 		pushStr(cntxt->curprg->def,currInstr,nme);
 		varid= getArg(currInstr,0);
 		setVarUsed(currBlk,varid,TRUE);
+		newId(cntxt,nme,varid);
+		return varid;
 	}
-	*/
-	if( fnd == 0){
-		parseWarning(cntxt,"variable not defined\n");
-		varid= newVariable(currBlk,GDKstrdup(nme),TYPE_any);
-	}
+
 	return varid;
 }
 int parseMILassignment(Client cntxt, MalBlkPtr currBlk, str nme){
@@ -384,7 +386,7 @@ int parseMILassignment(Client cntxt, MalBlkPtr currBlk, str nme){
 		if( !BE(cntxt)->constantdeclaration)
 			parseWarning(cntxt,"Variable not declared\n");
 		varid 	= newVariable(currBlk,nme,TYPE_any);
-		newId(BE(cntxt),nme,varid);
+		newId(cntxt,nme,varid);
 		if( BE(cntxt)->constantdeclaration)
 			isConstant(currBlk,varid)=1;
 	}
@@ -503,7 +505,7 @@ int parseMILpathexpr(Client cntxt, MalBlkPtr currBlk, int varid){
 	if( currChar(cntxt) == '.')
 		return parseMILpathexpr(cntxt,currBlk,newvar);
 
-	return getArg(currInstr,0);
+	return newvar;
 }
 int parseMILfactor(Client cntxt, MalBlkPtr currBlk){
 	int varid=0,len,tpe;
@@ -564,7 +566,7 @@ int parseMILfactor(Client cntxt, MalBlkPtr currBlk){
 	} 
 	skipSpace(cntxt);
 	if( currChar(cntxt) == '.'){
-		parseMILpathexpr(cntxt,currBlk,varid);
+		 varid= parseMILpathexpr(cntxt,currBlk,varid);
 	} 
 	return varid;
 }
@@ -575,9 +577,13 @@ with lower priority
 @= exprCode
 	/* all operators have equal priority */
 	for(i= @1; i>0; i--){
+		str f,m;
 		if(@2 && priority[i] >= priority[i-1]) break;
 		currInstr= newInstruction(ASSIGNsymbol);
-		setFunctionId(currInstr, putName(ostk[i-1],strlen(ostk[i-1])));
+		f= mapfcn(ostk[i-1]);
+		m= mapmod(ostk[i-1]);
+		setModuleId(currInstr, putName(m,strlen(m)));
+		setFunctionId(currInstr, putName(f,strlen(f)));
 		pushArgument(currBlk,currInstr,stk[i-1]);
 		pushArgument(currBlk,currInstr,stk[i]);
 		stk[i-1]= lhs= newTmpVariable(currBlk,TYPE_any);
@@ -748,7 +754,7 @@ void parseMILifstmt(Client cntxt, MalBlkPtr currBlk){
 		setVarUsed(currBlk,cvar,TRUE);
 		currInstr= newInstruction(ASSIGNsymbol);
 		setDestVar(currInstr, cvar);
-		setVarInitialized(currBlk,getDestVar(currInstr));
+		setVarInitialized(currBlk,cvar);
 		setFunctionId(currInstr,putName("not",3));
 		pushArgument(currBlk, currInstr, lhs);
 		currInstr->barrier = BARRIERsymbol;
@@ -758,7 +764,6 @@ void parseMILifstmt(Client cntxt, MalBlkPtr currBlk){
 
 		currInstr= newInstruction(EXITsymbol);
 		setDestVar(currInstr, cvar);
-		setVarInitialized(currBlk,getDestVar(currInstr));
 		currInstr->barrier = EXITsymbol;
 		pushInstruction(currBlk,currInstr);
 	}
@@ -798,14 +803,14 @@ void parseMILbatloop(Client cntxt, MalBlkPtr currBlk, int lhs){
 	pushInstruction(currBlk,currInstr);
 
 	enterBlock(BE(cntxt),cvar);
-	newId(BE(cntxt), GDKstrdup("$H"),hvar);
-	newId(BE(cntxt), GDKstrdup("$HEAD"),hvar);
-	newId(BE(cntxt), GDKstrdup("$h"),hvar);
-	newId(BE(cntxt), GDKstrdup("$head"),hvar);
-	newId(BE(cntxt), GDKstrdup("$T"),tvar);
-	newId(BE(cntxt), GDKstrdup("$TAIL"),tvar);
-	newId(BE(cntxt), GDKstrdup("$t"),tvar);
-	newId(BE(cntxt), GDKstrdup("$tail"),tvar);
+	newId(cntxt, GDKstrdup("$H"),hvar);
+	newId(cntxt, GDKstrdup("$HEAD"),hvar);
+	newId(cntxt, GDKstrdup("$h"),hvar);
+	newId(cntxt, GDKstrdup("$head"),hvar);
+	newId(cntxt, GDKstrdup("$T"),tvar);
+	newId(cntxt, GDKstrdup("$TAIL"),tvar);
+	newId(cntxt, GDKstrdup("$t"),tvar);
+	newId(cntxt, GDKstrdup("$tail"),tvar);
 
 	parseMILstmt(cntxt,currBlk);
 
@@ -894,7 +899,7 @@ void parseMILvarstmt(Client cntxt, MalBlkPtr currBlk){
 	while( len > 0){
 		nme= idCopy(cntxt,len);
 		varid = newVariable(currBlk,nme,TYPE_any);
-		newId(BE(cntxt),nme,varid);
+		newId(cntxt,nme,varid);
 		if( BE(cntxt)->constantdeclaration)
 			isConstant(currBlk,varid)=1;
 		skipSpace(cntxt);
@@ -928,9 +933,12 @@ void parseMILreturnstmt(Client cntxt, MalBlkPtr currBlk){
 	
 	skipSpace(cntxt);
 	lhs= parseMILexpr(cntxt,currBlk);
-	currInstr = currBlk->stmt[currBlk->stop-1];
-	currInstr->barrier = RETURNsymbol;
+	currInstr = newInstruction(ASSIGNsymbol);
+	setDestVar(currInstr, getArg(getInstrPtr(currBlk,0),0));
 	setVarInitialized(currBlk,getDestVar(currInstr));
+	pushArgument(currBlk,currInstr, lhs);
+	currInstr->barrier = RETURNsymbol;
+	pushInstruction(currBlk,currInstr);
 }
 int parseMILtype(Client cntxt,str tnme){
 	int len, tpe,ht,tt;
@@ -984,7 +992,7 @@ void parseMILparameter(Client cntxt, MalBlkPtr currBlk, InstrPtr currInstr){
 	}
 	varid= newVariable(currBlk, nme,tpe);
 	pushArgument(currBlk, currInstr,varid);
-	newId(BE(cntxt),GDKstrdup(nme),varid);
+	newId(cntxt,GDKstrdup(nme),varid);
 	skipSpace(cntxt);
 	if( vararg){
 		if( !keyphrase(cntxt,"...",3)) 
@@ -999,6 +1007,7 @@ void parseMILprocdef(Client cntxt, MalBlkPtr currBlk){
 	Symbol curPrg;
 	InstrPtr currInstr;
 
+	resetMILbackend(cntxt);
 	skipSpace(cntxt);
 	nme= parseMILoperator(cntxt);
 	if( nme == 0){
@@ -1094,8 +1103,6 @@ void parseMILinput(Client cntxt, MalBlkPtr currBlk){
 	int len=0;
 	char *c = CURRENT(cntxt);
 
-	if( *c == 0) return;
-	if( NL(*c)) return;
 	currInstr = newInstruction(REMsymbol);
 	while (*c && !NL(*c)) { c++; len++;}
 	c= GDKmalloc(len+1);
@@ -1107,23 +1114,16 @@ void parseMILinput(Client cntxt, MalBlkPtr currBlk){
 int parseMILstmtAll(Client cntxt, MalBlkPtr currBlk){
 	char c;
 
-	if( *CURRENT(cntxt))
-		parseMILinput(cntxt,currBlk);
 	while( (c= *CURRENT(cntxt)) ){
 		switch(c) {
 		case '#':
 			while( currChar(cntxt) && currChar(cntxt)!='\n')
 				nextChar(cntxt);
-			if( currChar(cntxt) ) nextChar(cntxt);
+		case '\n': case '\r': case '\f':
+			nextChar(cntxt);
 			if( *CURRENT(cntxt))
 				parseMILinput(cntxt,currBlk);
 			continue;
-		case '\n': case '\r': case '\f':
-			nextChar(cntxt);
-			parseMILinput(cntxt,currBlk);
-			continue;
-		case ';': 
-			BE(cntxt)->constantdeclaration = 0;
 		case '\t': case ' ':
 			nextChar(cntxt);
 			break;
@@ -1189,13 +1189,11 @@ int parseMILprg(Client cntxt, MalBlkPtr currBlk){
 		case '#':
 			while( currChar(cntxt) && currChar(cntxt)!='\n')
 				nextChar(cntxt);
-			if( currChar(cntxt) ) nextChar(cntxt);
-			if( *CURRENT(cntxt))
-				parseMILinput(cntxt,currBlk);
 			continue;
 		case '\n': case '\r': case '\f':
 			nextChar(cntxt);
-			parseMILinput(cntxt,currBlk);
+			if( *CURRENT(cntxt))
+				parseMILinput(cntxt,currBlk);
 			continue;
 		case ';': 
 			BE(cntxt)->constantdeclaration = 0;
@@ -1208,9 +1206,11 @@ int parseMILprg(Client cntxt, MalBlkPtr currBlk){
 			nextChar(cntxt);
 			break;
 		case 'c': case 'C':
-			if( keyword(cntxt,"const",5) )
-				BE(cntxt)->constantdeclaration = 1;
-			goto MILstmt;
+			if( keyword(cntxt,"const",5) ) {
+				BE(cntxt)->constantdeclaration = 2; /* external constant */
+				parseMILstmt(cntxt,currBlk);
+				BE(cntxt)->constantdeclaration = 0;
+			} else goto MILstmt;
 			break;
 		case 'p': case 'P':
 			if( keyword(cntxt,"proc",4) )
