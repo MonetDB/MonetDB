@@ -742,7 +742,7 @@ add_empty_strings (opt_t *f, int rc, int cur_level)
             "{ # add empty strings\n"
             "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
             "difference := difference.mark(0@0).reverse();\n"
-            "var res_mu := merged_union(iter, difference, item%s, "
+            "var res_mu := merged_union(iter.chk_order(), difference.chk_order(), item%s, "
                                        "fake_project(%s));\n"
             "difference := nil_oid_oid;\n"
             "item%s := res_mu.fetch(1);\n"
