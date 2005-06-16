@@ -350,9 +350,11 @@ int parseMILvariable(Client cntxt,MalBlkPtr currBlk, str nme){
 
 	for( i=0; typeNames[i]; i++)
 	if( strcmp(typeNames[i],nme)==0){ 
+		char buf[64];
+		snprintf(buf,64,":%s",nme);
 		varid 	= newConstant(currBlk, 
 				getTypeIndex(nme,strlen(nme),TYPE_any),
-				GDKstrdup("nil"), TRUE);
+				GDKstrdup(buf), TRUE);
 		newId(BE(cntxt),nme,varid);
 		if( BE(cntxt)->constantdeclaration)
 			isConstant(currBlk,varid)=1;
@@ -379,7 +381,8 @@ int parseMILassignment(Client cntxt, MalBlkPtr currBlk, str nme){
 
 	varid = fndId(BE(cntxt),nme);
 	if( varid == 0 || varid > currBlk->vtop){
-		parseWarning(cntxt,"Variable not declared\n");
+		if( !BE(cntxt)->constantdeclaration)
+			parseWarning(cntxt,"Variable not declared\n");
 		varid 	= newVariable(currBlk,nme,TYPE_any);
 		newId(BE(cntxt),nme,varid);
 		if( BE(cntxt)->constantdeclaration)
@@ -1095,10 +1098,9 @@ void parseMILinput(Client cntxt, MalBlkPtr currBlk){
 	if( NL(*c)) return;
 	currInstr = newInstruction(REMsymbol);
 	while (*c && !NL(*c)) { c++; len++;}
-	c= GDKmalloc(len+2);
-	c[0]=0;
+	c= GDKmalloc(len+1);
 	strncpy(c, CURRENT(cntxt),len);
-	c[len+1]= 0;
+	c[len]= 0;
 	getArg(currInstr,0)= newConstant(currBlk, TYPE_str, c, FALSE);
 	pushInstruction(currBlk,currInstr);
 }
@@ -1145,7 +1147,7 @@ int parseMILstmtAll(Client cntxt, MalBlkPtr currBlk){
 			else goto MILstmt2;
 			break;
 		case 'c': case 'C':
-			if( keyword(cntxt,"constant",8) )
+			if( keyword(cntxt,"const",5) )
 				BE(cntxt)->constantdeclaration = 1;
 			goto MILstmt2;
 			break;
@@ -1199,8 +1201,17 @@ int parseMILprg(Client cntxt, MalBlkPtr currBlk){
 			BE(cntxt)->constantdeclaration = 0;
 		case '\t': case ' ':
 			nextChar(cntxt);
+			break;
 		case 0: 
 			return cntxt->curprg->def->errors;
+		case '}': case ')': /* loose closing bracket */
+			nextChar(cntxt);
+			break;
+		case 'c': case 'C':
+			if( keyword(cntxt,"const",5) )
+				BE(cntxt)->constantdeclaration = 1;
+			goto MILstmt;
+			break;
 		case 'p': case 'P':
 			if( keyword(cntxt,"proc",4) )
 				parseMILprocdef(cntxt,currBlk);

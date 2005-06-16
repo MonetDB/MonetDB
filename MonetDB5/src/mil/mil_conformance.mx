@@ -36,6 +36,7 @@ struct{
 	str v5fcn;
 	int used;
 } idmap[]={
+{"bat",				"bbp", "new",	0},
 {"rename",			"bbp", "setName",	0}, 
 {"cold",			"bbp", "setCold",	0},
 {"hot",				"bbp", "setHot",	0},
@@ -52,6 +53,12 @@ struct{
 {"view_bbp_dirty",	"bbp", "getDirty",	0},
 {"view_bbp_status",	"bbp", "getStatus",	0},
 {"view_bbp_kind",	"bbp", "getKind",	0},
+
+{"oid",				"calc", "calc",	0},
+{"int",				"calc", "int",	0},
+{"lng",				"calc", "lng",	0},
+{"flt",				"calc", "flt",	0},
+{"dbl",				"calc", "dbl",	0},
 
 {"print",		"io", "print",	0},
 
