@@ -213,7 +213,6 @@ parser.
 @c
 
 str MILparserAll(Client c, int flag) {
-	MalBlkRecord oldstate;
 	lng T0 = 0;
 	str msg = MAL_SUCCEED;
 	MILbackend be= c->state[PARSER];
@@ -231,7 +230,6 @@ str MILparserAll(Client c, int flag) {
 	}
 	T0 = GDKusec();
 	c->curprg->def->errors = 0;
-	oldstate= *c->curprg->def;
 
 @-
 Prescan the input to make processing easier
@@ -299,9 +297,7 @@ str MILengine(Client c) {
 	str msg = MAL_SUCCEED;
 	MalStkPtr oldglb = c->glb;
 	MILbackend be = (MILbackend ) c->state[PARSER];
-	MalBlkRecord oldstate;
 
-	oldstate.stop = 0;
 	if(c->curprg->def== 0 )
 		return throwMessage("MILengine","Program contains errors\n");
 #ifdef MIL_SCENARIO_DEBUG

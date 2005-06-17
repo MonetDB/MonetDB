@@ -773,6 +773,14 @@ void parseMILbatloop(Client cntxt, MalBlkPtr currBlk, int lhs){
 	InstrPtr currInstr;
 
 	skipSpace(cntxt);
+    if( currChar(cntxt)== '['){
+        nextChar(cntxt);
+		skipSpace(cntxt);
+        parseMILexpr(cntxt,currBlk);
+        if(currChar(cntxt) == ']')
+                nextChar(cntxt);
+        else parseError(cntxt,"']' expected\n");
+    }
 	if( !keyphrase(cntxt,"batloop",7) )
 		parseError(cntxt,"'batloop' expected\n");
 	skipSpace(cntxt);
@@ -911,9 +919,10 @@ void parseMILvarstmt(Client cntxt, MalBlkPtr currBlk){
 			setVarInitialized(currBlk,getDestVar(currInstr));
 			pushArgument(currBlk,currInstr, lhs);
 			pushInstruction(currBlk,currInstr);
-			skipSpace(cntxt);
 		} 
+		skipSpace(cntxt);
 		if( currChar(cntxt) != ',') break;
+		nextChar(cntxt);
 		skipSpace(cntxt);
 		len= idLength(cntxt);
 	}
@@ -1215,6 +1224,11 @@ int parseMILprg(Client cntxt, MalBlkPtr currBlk){
 		case 'p': case 'P':
 			if( keyword(cntxt,"proc",4) )
 				parseMILprocdef(cntxt,currBlk);
+			else goto MILstmt;
+			break;
+		case 'v': case 'V':
+			if( keyword(cntxt,"var",3) )
+				parseMILvarstmt(cntxt,currBlk);
 			else goto MILstmt;
 			break;
 		case 'u': case 'U':
