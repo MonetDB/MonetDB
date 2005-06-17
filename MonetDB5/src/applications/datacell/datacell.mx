@@ -492,6 +492,7 @@ DCshowContainer(int *ret, str *cname, int *first, int *last)
 
 	(void) ret; (void) first; (void) last;
 	p= DClocatePump(*cname);
+	(void)p;
 	return MAL_SUCCEED;
 }
 @- Module initializaton

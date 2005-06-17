@@ -45,7 +45,7 @@ a number of milliseconds.
 
 #include <stream.h>     /* for stream */
 
-#define MAX 1024
+#define MAXBUFFER 1024
 
 FILE *fd;
 
@@ -116,7 +116,7 @@ int main(int argc, char **argv){
 	char *err;
 	char *host= "localhost"; int port=0;
 	int delay = -1;
-	/* char buf[MAX];*/
+	/* char buf[MAXBUFFER];*/
 
 	for(i=1;i<argc; i++)
 	switch( argv[i][1]){
@@ -140,7 +140,7 @@ int main(int argc, char **argv){
 	}
 
 	/* collect events 
-		while(fgets(buf,MAX,fd) != 0){
+		while(fgets(buf,MAXBUFFER,fd) != 0){
 			if( delay <0){
 				printf("%s",buf);
 				printf("send it?");
