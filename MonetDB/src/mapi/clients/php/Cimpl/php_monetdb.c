@@ -175,12 +175,20 @@ _free_monetdb_handle(zend_rsrc_list_entry * rsrc TSRMLS_DC)
 /* {{{ PHP_INI
  */
 PHP_INI_BEGIN()
+#if PHP_API_VERSION <= 20020918
     STD_PHP_INI_ENTRY("monetdb.default_port", "50000", PHP_INI_ALL, OnUpdateInt, default_port, zend_monetdb_globals, monetdb_globals)
+#else
+    STD_PHP_INI_ENTRY("monetdb.default_port", "50000", PHP_INI_ALL, OnUpdateLong, default_port, zend_monetdb_globals, monetdb_globals)
+#endif
     STD_PHP_INI_ENTRY("monetdb.default_language", "mil", PHP_INI_ALL, OnUpdateString, default_language, zend_monetdb_globals, monetdb_globals)
     STD_PHP_INI_ENTRY("monetdb.default_hostname", "localhost", PHP_INI_ALL, OnUpdateString, default_hostname, zend_monetdb_globals, monetdb_globals)
     STD_PHP_INI_ENTRY("monetdb.default_username", "monetdb", PHP_INI_ALL, OnUpdateString, default_username, zend_monetdb_globals, monetdb_globals)
     STD_PHP_INI_ENTRY("monetdb.default_password", "monetdb", PHP_INI_ALL, OnUpdateString, default_password, zend_monetdb_globals, monetdb_globals)
+#if PHP_API_VERSION <= 20020918
     STD_PHP_INI_ENTRY("monetdb.query_timeout", "0", PHP_INI_ALL, OnUpdateInt, query_timeout, zend_monetdb_globals, monetdb_globals)
+#else
+    STD_PHP_INI_ENTRY("monetdb.query_timeout", "0", PHP_INI_ALL, OnUpdateLong, query_timeout, zend_monetdb_globals, monetdb_globals)
+#endif
     PHP_INI_END()
 /* }}} */
 /* {{{ php_monetdb_init_globals
