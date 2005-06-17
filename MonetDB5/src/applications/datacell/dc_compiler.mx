@@ -26,11 +26,11 @@ compilation of the expressions into a MAL function.
 
 @- Implementation
 @mal
-command datacell.compiler(expr:str):str
+command datacell.compiler(name:str,expr:str):str
 address DCsqlCompiler
 comment "Compile the expression into a MAL program";
 
-command datacell.reduce(expr:str):void
+command datacell.reduce(expr:str,newname:str):void
 address DCsqlReduce
 comment "Optimize the MAL program for execution with the datacell library.";
 
@@ -65,8 +65,8 @@ comment "Define a data pump query.";
 #define _DC_COMPILE_DEBUG
 
 mal_export str SQLcompile(str *ret, str *expr, int *flag);
-mal_export str DCsqlReduce(int *ret, str *nme);
-mal_export str DCsqlReshuffle(MalBlkPtr mb);
+mal_export str DCsqlReduce(int *ret, str *nme, str *newname);
+mal_export str DCsqlReshuffle(MalBlkPtr mb, str newname);
 mal_export void DCflowDependencies(DCpump p);
 @-
 The DataCell containers are all mapped to relational tables
@@ -81,7 +81,7 @@ This only works in a growing system.
 @c
 static int containers=0;
 str
-DCcompileQuery(str *ret, str* expr){
+DCcompileQuery(str *ret, str* expr, str *name){
 	DCpump p;
 	char *buf;
 	int i=0,k=0,len=0;
@@ -92,7 +92,7 @@ DCcompileQuery(str *ret, str* expr){
 	if( pumpindex == 0) {
 		msg= SQLcompile(ret,expr,&flag);
 		if( msg== MAL_SUCCEED)
-			msg= DCsqlReduce(&flag,ret);
+			msg= DCsqlReduce(&flag,ret,name);
 		return msg;
 	}
 	buf= (char *) alloca(len);
@@ -140,12 +140,12 @@ DCcompileQuery(str *ret, str* expr){
 #endif
 	msg= SQLcompile(ret,&buf,&flag);
 	if( msg== MAL_SUCCEED)
-		msg= DCsqlReduce(&flag,ret); 
+		msg= DCsqlReduce(&flag,ret,name); 
 	return msg;
 }
 str
-DCsqlCompiler(str *ret, str* expr){
-	return DCcompileQuery(ret,expr);
+DCsqlCompiler(str *ret,str *name, str* expr){
+	return DCcompileQuery(ret,expr,name);
 }
 
 str 
@@ -163,9 +163,10 @@ DCpumpDefinition(int *ret, str *name, str *lang, str *qry ){
 	p->lang= GDKstrdup(*lang);
 	p->query= GDKstrdup(*qry);
 	if( strcmp("sql",*lang)==0){
-		msg= DCcompileQuery(&prg,qry);
-		p->mal[0]= GDKstrdup(prg);
-		s= findMALSymbol(putName("user",4), putName(prg,strlen(prg)) );
+		msg= DCcompileQuery(&prg,qry,name);
+		renameFunction(prg,"pumps",*name);
+		p->mal[0]= GDKstrdup(*name);
+		s= findMALSymbol(putName("pumps",5), putName(*name,strlen(*name)) );
 		if( s== 0 )
 			return throwMessage("datacell.pump","symbol not found");
 		p->malblk[0]= s->def;
@@ -188,7 +189,7 @@ as performing double checks before the function returns
 the new code block.
 @c
 str
-DCsqlReduce(int *ret, str *nme){
+DCsqlReduce(int *ret, str *nme, str *newname){
 	Symbol s;
 	MalBlkPtr mb;
     long clk= GDKusec();
@@ -202,7 +203,7 @@ DCsqlReduce(int *ret, str *nme){
 		return throwMessage("datacell.sqlcleanup","symbol not found");
 	mb= s->def;
 	chkProgram(getClient()->nspace, mb);
-	/* PHoptimizer(mb,0,0);*/
+	PHoptimizer(mb,0,0);
 #ifdef _DC_COMPILE_DEBUG
 	stream_printf(GDKout,"start reduction %s:\n", (mb->errors?"errors":""));
 	printFunction(GDKout,s->def,LIST_MAL_ALL);
@@ -283,7 +284,7 @@ The dbat can only be dropped for connection points.[todo]
 We now have to propagate the knowledge about empty sets
 @c
 	ESevaluate(mb,z,emptyset);
-	DCsqlReshuffle(mb);
+	DCsqlReshuffle(mb,*newname);
 	optimizerCheck(mb,"datacell.reduce",actions,GDKusec()-clk);
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 	return MAL_SUCCEED;
@@ -297,7 +298,7 @@ copy available for the routine and to securely write
 the result into an emitter table.
 @c
 str
-DCsqlReshuffle(MalBlkPtr mb){
+DCsqlReshuffle(MalBlkPtr mb, str newname){
 	int i,j,limit;
 	InstrPtr p, *old;
 	str *points, unit;
@@ -323,6 +324,7 @@ First step is to collect the all receptor/emitter bindings.
 		if( strcmp(points[j],unit)== 0) break;
 		if( j== u){
 			p= newFcnCall(mb, getName("datacell",8),getName("isolate",7));
+			pushStr(mb,p,newname);
 			pushStr(mb,p, unit);
 			setVarType(mb,getArg(p,0), TYPE_void);
 			points[u++]= unit;

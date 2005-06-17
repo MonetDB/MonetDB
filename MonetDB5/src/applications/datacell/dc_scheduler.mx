@@ -23,10 +23,9 @@ and quantitative information.
 
 The first step is to simply activate each pump query and stop.
 @mal
-command isolate(sname:str):void
+command isolate(uname:str,target:str):void
 address DCisolate
-comment "Make a copy of the connection table available
-for private use.";
+comment "Pump get the public store of the target for private use.";
 
 command release(sname:str):void
 address DCrelease
@@ -67,6 +66,8 @@ comment "Give an overview of the actions taken";
 #include "mal_exception.h"
 
 extern str DCnaiveScheduler();
+
+#define MAXBUF 1024
 
 str
 DCschedulerLog(int *ret, str* expr){
@@ -110,20 +111,50 @@ DCnaiveScheduler(int cycles, int delay){
 }
 
 @-
-The pump operations should access the content of the pump tables
-in a private way.
+The pump operations should access the content of the tables
+in a private way. If you isolate the new set of events,
+the old tables are being re-used to receive the new events.
+Their are simply cleared. Note that this means that the largest
+space used in the past is claimed.
 @c
 
 str
-DCisolate(int *ret, str *sname){
-	DCpump p;
+DCisolate(int *ret, str *uname, str *target){
+	DCpump p,u;
+	int i,bid,cnt=0;
+	BAT *b;
+	char log[MAXBUF];
 
-    (void) ret; (void) *sname;
-	p= DClocatePump(*sname);
+    (void) ret; 
+	u= DClocatePump(*uname);
+	if( u == 0)
+		return throwMessage("datacell.isolate","Usedby not found\n");
+	p= DClocatePump(*target);
 	if( p == 0)
-		return throwMessage("datacell.isolate","Pump not found\n");
+		return throwMessage("datacell.isolate","Target pump not found\n");
 #ifdef DEBUG_DC_SCHEDULER
-		stream_printf(GDKerr,"#isolate %s\n",*sname);
+		stream_printf(GDKerr,"#%s isolates %s\n",*uname,*target);
+#endif
+	mal_set_lock(p->lock,"datacellIsolate");
+	if( p->usedby)
+		return throwMessage("datacell.isolate","Pump still in use\n");
+	p->usedby= p - pumps;
+	for(i=0; i< p->cols; i++){
+		bid= p->private[i];
+		p->private[i]= p->public[i];
+		b= BATdescriptor(bid);
+		if( b== NULL)
+			return throwMessage("datacell.isolate","Pump BAT disappeared\n");
+		if(i== 0) cnt= BATcount(b);
+		BATclear(b);
+		BBPunfix(b->batCacheid);
+		p->public[i]= bid;
+	}
+	mal_unset_lock(p->lock,"datacellIsolate");
+	snprintf(log,MAXBUF,"isolate user=%s target=%s events=%d", 
+			*uname, *target,cnt);
+#ifdef DEBUG_DC_SCHEDULER
+		stream_printf(GDKerr,"#%s\n",log);
 #endif
     return MAL_SUCCEED;
 }

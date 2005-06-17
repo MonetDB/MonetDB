@@ -58,6 +58,7 @@ backend server with sufficient capabilities for post-processing.
 @mal
 include sql;
 
+module pumps; # will contain the pump queries
 module datacell;
 
 pattern open():void
@@ -236,16 +237,18 @@ and analyse the data.
 #include "../modules/mal/tablet.h"
 #include "mal_exception.h"
 
-typedef enum {RECEPTOR, NUCLEUS, EMITTER} RNE;
+typedef enum {RECEPTOR, NUCLEUS, EMITTER} DATACELLKIND;
 
 typedef struct DC_PUMP{
-	RNE kind;
+	DATACELLKIND kind;
 	str name;		/* pump name */
 	int cols;		/* actual number of colums */
 	int cap;		/* n-ary capacity */
 	str host;		/* for receport and emitters */
 	int port;
 
+	MT_Lock	lock;	/* to use it privately */
+	int usedby; 	/* points to the pump claiming the public part */
 	str *columns;	/* column names */
 	int *types;		/* their internal type */
 	int *private;	/* bat ids for the connection point */
@@ -344,6 +347,8 @@ DCpump DCnewPump(){
 	c->query = NULL;
 	c->documentation= NULL;
 	c->picture= NULL;
+	c->usedby= 0;
+	c->lock= MT_create_lock();
 	pumpindex++;
 	return c;
 }
