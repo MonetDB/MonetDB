@@ -251,8 +251,8 @@ typedef struct DC_PUMP{
 	int usedby; 	/* points to the pump claiming the public part */
 	str *columns;	/* column names */
 	int *types;		/* their internal type */
-	int *private;	/* bat ids for the connection point */
-	int *public;	/* work bats to process */
+	BAT **private;	/* bat ids for the connection point */
+	BAT **public;	/* work bats to process */
 	str *source;	/* source connections for the pump */
 	str *sink;		/* target connections for the pump */
 
@@ -283,7 +283,7 @@ mal_export DCpump DCnewPump();
 mal_export ptr isReceptor(str name);
 mal_export ptr isEmitter(str name);
 mal_export DCpump DClocatePump(str nme);
-mal_export int DCcontainer(int tpe, int cap);
+mal_export BAT *DCcontainer(int tpe, int cap);
 
 mal_export DCpump pumps;
 mal_export int pumpindex, pumplimit;
@@ -332,10 +332,10 @@ DCpump DCnewPump(){
 	memset((char*) c->columns, 0, c->cap *sizeof(str));
 	c->types= (int*) GDKmalloc(c->cap *sizeof(int));
 	memset((char*) c->types, 0, c->cap *sizeof(int));
-	c->private= (int*) GDKmalloc(c->cap * sizeof(int));
-	memset((char*) c->private, 0, c->cap *sizeof(int));
-	c->public= (int*) GDKmalloc(c->cap * sizeof(int));
-	memset((char*) c->public, 0, c->cap *sizeof(int));
+	c->private= (BAT**) GDKmalloc(c->cap * sizeof(BAT*));
+	memset((char*) c->private, 0, c->cap *sizeof(BAT*));
+	c->public= (BAT**) GDKmalloc(c->cap * sizeof(BAT *));
+	memset((char*) c->public, 0, c->cap *sizeof(BAT*));
 	c->source= (str *) GDKmalloc(c->cap * sizeof(str));
 	memset((char*) c->source, 0, c->cap *sizeof(str));
 	c->sink= (str *) GDKmalloc(c->cap * sizeof(str));
@@ -471,10 +471,13 @@ DCdropPump(str sname)
 #endif
 	GDKfree(p->name);	/* mark as free */
 	/* release the BATs */
-	for(i=0; i< p->cap; i++)
-	if( p->columns[i]){
-		BBPdecref(p->private[i],TRUE);
-		BBPdecref(p->public[i],TRUE);
+	for(i=0; i< p->cols; i++) {
+		BBPdecref(p->private[i]->batCacheid,TRUE);
+		BBPunfix(p->private[i]->batCacheid);
+		p->private[i]=0;
+		BBPdecref(p->public[i]->batCacheid,TRUE);
+		BBPunfix(p->public[i]->batCacheid);
+		p->public[i]=0;
 	}
 	DCsaveCatalogue(&i, &backup);
 	return MAL_SUCCEED;
@@ -533,7 +536,6 @@ str DCclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-#define release(X)  BBPunfix(X->batCacheid); X= NULL;
 
 str DCdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	DCpump p;
@@ -558,7 +560,7 @@ int isColumnDefined(str name, str cname){
 	return FALSE;
 }
 
-int DCcontainer(int tpe, int cap){
+BAT *DCcontainer(int tpe, int cap){
 	BAT *bn;
     char buf[128], *tname;
 
@@ -569,14 +571,12 @@ int DCcontainer(int tpe, int cap){
     snprintf(buf,128, DCtemplate, "void", tname);
 	GDKfree(tname);
 
-	BBPincref(bn->batCacheid,TRUE);
 	BATseqbase(bn,0);
 	BATkey(bn, TRUE);
     BBPrename(bn->batCacheid, buf);
 	BATmode(bn, PERSISTENT);
 	BATcommit(bn);
-	BBPunfix(bn->batCacheid);
-	return bn->batCacheid;
+	return bn;
 }
 
 str DCdefine(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
@@ -596,25 +596,23 @@ str DCdefine(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 		return throwMessage("datacell.define","reserved identifier");
 
 	/* check for duplicates */
-	for(i=0; i<p->cap && p->columns[i]; i++)
+	for(i=0; i<p->cols; i++)
 	if( strcmp(p->columns[i],cname)==0)
 		return throwMessage("datacell.define","Column already defined");
 
-	for(i=0;i < p->cap && p->columns[i] ; i++) ;
-
-	if( i == 0){
+	if( p->cols ==0 ){
 		p->columns[0]= GDKstrdup("click");
 		p->types[0]=  getTypeIndex("timestamp",9,TYPE_int);
 		p->private[0]= DCcontainer(p->types[0],256);
 		p->public[0]=  DCcontainer(p->types[0],256);
-		i++;
+		p->cols++;
 	}
 
-	if( i< p->cap){
-		p->columns[i]= GDKstrdup(cname);
-		p->types[i]=  tpe;
-		p->private[i]= DCcontainer(tpe,256);
-		p->public[i]=  DCcontainer(tpe,256);
+	if( p->cols< p->cap){
+		p->columns[p->cols]= GDKstrdup(cname);
+		p->types[p->cols]=  tpe;
+		p->private[p->cols]= DCcontainer(tpe,256);
+		p->public[p->cols++]=  DCcontainer(tpe,256);
 	} else
 		return throwMessage("datacell.define","out of column space");
 	return MAL_SUCCEED;
@@ -716,13 +714,10 @@ str DCdrop(int *ret, str *name){
 }
 str
 DCgetKind(int *bid, int kind){
-	BAT *bn ;
-	int i = DCcontainer(TYPE_str,pumplimit);
+	BAT *bn= DCcontainer(TYPE_str,pumplimit);
 	DCpump p;
 	oid o= oid_nil;
 
-	bn= BATdescriptor(i);
-	BATseqbase(bn,0);
 	for(p=pumps; p<pumps+pumplimit; p++)
 	if( p->name && p->kind== kind){
 		BUNins(bn,&o,p->name);
@@ -746,13 +741,10 @@ DCgetEmitters(int *bid){
 
 str
 DCgetPumps(int *bid){
-	BAT *bn ;
-	int i = DCcontainer(TYPE_str,pumplimit);
+	BAT *bn = DCcontainer(TYPE_str,pumplimit);
 	DCpump p;
 	oid o= oid_nil;
 
-	bn= BATdescriptor(i);
-	BATseqbase(bn,0);
 	for(p=pumps; p<pumps+pumpindex; p++)
 	if( p->name && p->query && p->kind== NUCLEUS){
 		BUNins(bn,&o,p->query);
@@ -771,9 +763,7 @@ DCgetSource(int *bid, str *name){
 	p= DClocatePump(*name);
 	if( p== NULL)
 		return throwMessage("datacell.getSource","Cannot find pump");
-	i = DCcontainer(TYPE_str,pumplimit);
-	bn= BATdescriptor(i);
-	BATseqbase(bn,0);
+	bn = DCcontainer(TYPE_str,pumplimit);
 	for(i=0; i< p->cap && p->source[i]; i++)
 		BUNins(bn,&o,p->source[i]);
 	BBPincref(*bid= bn->batCacheid,TRUE);
@@ -790,9 +780,7 @@ DCgetSink(int *bid, str *name){
 	p= DClocatePump(*name);
 	if( p== NULL)
 		return throwMessage("datacell.getSource","Cannot find pump");
-	i = DCcontainer(TYPE_str,pumplimit);
-	bn= BATdescriptor(i);
-	BATseqbase(bn,0);
+	bn = DCcontainer(TYPE_str,pumplimit);
 	for(i=0; i< p->cap && p->sink[i]; i++)
 		BUNins(bn,&o,p->sink[i]);
 	BBPincref(*bid= bn->batCacheid,TRUE);
@@ -812,7 +800,7 @@ DCgetProperties(int *bid, str *name){
 	bn= BATnew(TYPE_str,TYPE_str,256);
 	if( bn == NULL)
          return throwMessage("datacell.getProperties", "Cannot create container");
-	for(i=0; i< p->cap && p->columns[i]; i++){
+	for(i=0; i< p->cols ; i++){
 		tname= getTypeName(p->types[i]);
 		BUNins(bn,p->columns[i],tname);
 		GDKfree(tname);
@@ -898,13 +886,10 @@ DCgetTimeout(int *ret, str *nme){
 }
 str
 DCgetPorts(int *ret, int kind){
-	BAT *bn ;
-	int i = DCcontainer(TYPE_int,pumplimit);
+	BAT *bn = DCcontainer(TYPE_int,pumplimit);
 	DCpump p;
 	oid o= oid_nil;
 
-	bn= BATdescriptor(i);
-	BATseqbase(bn,0);
 	for(p=pumps; p<pumps+pumplimit; p++)
 	if( p->name && p->kind== kind){
 		BUNins(bn,&o,&p->port);
@@ -1002,13 +987,10 @@ DCputPicture(int *ret,str  *name, str *txt){
 
 str
 DCgetHosts(int *ret, int kind){
-	BAT *bn ;
-	int i = DCcontainer(TYPE_str,pumplimit);
+	BAT *bn = DCcontainer(TYPE_str,pumplimit);
 	DCpump p;
 	oid o= oid_nil;
 
-	bn= BATdescriptor(i);
-	BATseqbase(bn,0);
 	for(p=pumps; p<pumps+pumplimit; p++)
 	if( p->name && p->kind== kind){
 		BUNins(bn,&o,p->host);
@@ -1028,13 +1010,10 @@ DCgetReceptorHost(int *ret){
 
 str 
 DCgetStatus(int *ret){
-	BAT *bn ;
-	int i = DCcontainer(TYPE_int,pumplimit);
+	BAT *bn = DCcontainer(TYPE_int,pumplimit);
 	DCpump p;
 	oid o= oid_nil;
 
-	bn= BATdescriptor(i);
-	BATseqbase(bn,0);
 	for(p=pumps; p<pumps+pumplimit; p++)
 	if( p->name ){
 		BUNins(bn,&o,&p->status);
@@ -1069,10 +1048,10 @@ DCbindEmitter(int *public, int *private, str *name, str *cname){
 #ifdef DEBUG_DCRECEPTOR
     stream_printf(GDKout,"#bindReceptor %s.%s\n",*name,*cname);
 #endif
-    for(i=0; i < p->cap && p->columns[i]; i++)
+    for(i=0; i < p->cols ; i++)
     if( strcmp(p->columns[i],*cname) == 0 ){
-        BBPincref( *public= p->public[i], TRUE);
-        BBPincref( *private= p->private[i], TRUE);
+        BBPincref( *public= p->public[i]->batCacheid, TRUE);
+        BBPincref( *private= p->private[i]->batCacheid, TRUE);
     }
     return MAL_SUCCEED;
 

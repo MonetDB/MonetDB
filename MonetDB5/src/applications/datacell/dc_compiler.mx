@@ -102,7 +102,7 @@ DCcompileQuery(str *ret, str* expr, str *name){
 		i=0; buf[i]=0;
 		sprintf(buf,"create table %s (",p->name);
 		i += strlen(buf);
-		for(k=0; k<p->cap && p->columns[k]; k++){
+		for(k=0; k<p->cols ; k++){
 			tpe= getTypeName(p->types[k]);
 			if( k )
 				sprintf(buf+i,", %s %s",p->columns[k],tpe);

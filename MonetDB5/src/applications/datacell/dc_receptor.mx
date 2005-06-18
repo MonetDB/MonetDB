@@ -145,13 +145,10 @@ extern str DClistenThread(SensorInfo sensor);
 
 str
 DCgetReceptorStatus(int *ret){
-	BAT *bn ;
-	int i = DCcontainer(TYPE_int,pumplimit);
+	BAT *bn= DCcontainer(TYPE_int,pumplimit);
 	DCpump p;
 	oid o= oid_nil;
 
-	bn= BATdescriptor(i);
-	BATseqbase(bn,0);
 	for(p=pumps; p<pumps+pumplimit; p++)
 	if( p->name && p->kind== RECEPTOR ){
 		BUNins(bn,&o,&p->status);
@@ -213,10 +210,11 @@ DCbindReceptor(int *retpublic, int *retprivate, str *name, str *cname){
 #ifdef DEBUG_DCRECEPTOR
 	stream_printf(GDKout,"#bindReceptor %s.%s\n",*name,*cname);
 #endif
-	for(i=0; i < p->cap && p->columns[i]; i++)
+	for(i=0; i < p->cols ; i++)
 	if( strcmp(p->columns[i],*cname) == 0 ){
-		BBPincref( *retpublic= p->public[i], TRUE);
-		BBPincref( *retprivate= p->private[i], TRUE);
+		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
+		BBPincref( *retprivate= p->private[i]->batCacheid, TRUE);
+		break;
 	}
     return MAL_SUCCEED;
 }
@@ -356,9 +354,9 @@ DCstartChannel(DCpump p, bstream *bs){
 	/* construct the read structure */
 	/* the first column should be dealt with separately */
 	/* it should contain the timestamps */
-	for(i=1; i< p->cap && p->columns[i]; i++){
+	for(i=1; i< p->cols ; i++){
 		fmt[k].name = p->columns[i];
-		fmt[k].bval = BATdescriptor(p->private[i]);
+		fmt[k].bval = p->private[i];
 #ifdef DEBUG_DCRECEPTOR
 		stream_printf(GDKerr, "#added field %s\n", fmt[k].name );
 #endif

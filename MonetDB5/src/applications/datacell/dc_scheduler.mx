@@ -27,7 +27,7 @@ command isolate(uname:str,target:str):void
 address DCisolate
 comment "Pump get the public store of the target for private use.";
 
-command release(sname:str):void
+command release(target:str):void
 address DCrelease
 comment "Release control over the connection point.";
 
@@ -121,7 +121,7 @@ space used in the past is claimed.
 str
 DCisolate(int *ret, str *uname, str *target){
 	DCpump p,u;
-	int i,bid,cnt=0;
+	int i,cnt=0;
 	BAT *b;
 	char log[MAXBUF];
 
@@ -134,21 +134,25 @@ DCisolate(int *ret, str *uname, str *target){
 		return throwMessage("datacell.isolate","Target pump not found\n");
 #ifdef DEBUG_DC_SCHEDULER
 		stream_printf(GDKerr,"#%s isolates %s\n",*uname,*target);
+		stream_printf(GDKerr,"#counts %d %d\n",
+			BATcount(p->public[0]),BATcount(p->private[0]));
 #endif
 	mal_set_lock(p->lock,"datacellIsolate");
 	if( p->usedby)
 		return throwMessage("datacell.isolate","Pump still in use\n");
 	p->usedby= p - pumps;
+	if( p->kind == EMITTER) {
+		 /* they take care of it */
+		cnt= BATcount(p->public[0]);
+	} else
 	for(i=0; i< p->cols; i++){
-		bid= p->private[i];
+		b= p->private[i];
 		p->private[i]= p->public[i];
-		b= BATdescriptor(bid);
+		p->public[i]= b;
 		if( b== NULL)
 			return throwMessage("datacell.isolate","Pump BAT disappeared\n");
-		if(i== 0) cnt= BATcount(b);
-		BATclear(b);
-		BBPunfix(b->batCacheid);
-		p->public[i]= bid;
+		cnt= BATcount(p->public[i]);
+		BATclear(p->private[i]);
 	}
 	mal_unset_lock(p->lock,"datacellIsolate");
 	snprintf(log,MAXBUF,"isolate user=%s target=%s events=%d", 
@@ -159,16 +163,17 @@ DCisolate(int *ret, str *uname, str *target){
     return MAL_SUCCEED;
 }
 str
-DCrelease(int *ret, str *sname){
+DCrelease(int *ret, str *target){
 	DCpump p;
 
-    (void) ret; (void) *sname;
-	p= DClocatePump(*sname);
+    (void) ret; 
+	p= DClocatePump(*target);
 	if( p == 0)
 		return throwMessage("datacell.release","Pump not found\n");
 #ifdef DEBUG_DC_SCHEDULER
-		stream_printf(GDKerr,"#release %s\n",*sname);
+		stream_printf(GDKerr,"#release %s\n",*target);
 #endif
+	p->usedby = 0;
     return MAL_SUCCEED;
 }
 
