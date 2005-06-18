@@ -577,6 +577,8 @@ str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 
 	if( ht == TYPE_any || tt == TYPE_any)
 		return throwMessage("bbp.new","Explicit type required\n");
+	if( isaBatType(ht)) ht= TYPE_bat;
+	if( isaBatType(tt)) tt= TYPE_bat;
 	return (str) BKCnewBATint(res,&ht,&tt,&cap);
 }
 str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p){
