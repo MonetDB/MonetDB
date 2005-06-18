@@ -344,6 +344,7 @@ Coercion functions are typical used in multiplex calls.
 	@:mal_coercion(chr,lng)@
 
 	@:mal_coercion(ptr,lng)@
+
 @}
 @+ Boolean operations { or, xor, and, not }
 @mal
@@ -433,6 +434,14 @@ command setoid(v:lng)
 address lngSetoidImpl;
 command setoid(v:oid)
 address oidSetoidImpl;
+
+command getBATidentifier(b:bat[:any$1,:any$2]):bat
+address CALCbat2batid
+comment "Coerce bat to BAT identifier";
+command getBAT(b:bat):bat[:any$1,:any$2]
+address CALCbatid2bat
+comment "Coerce bat to BAT identifier";
+
 @}
 @-
 We should also deal with superflous operations, such as int(v:int).
@@ -1275,6 +1284,25 @@ str oidFromoidImpl(oid *ret, oid *val){
 str oidFromvoidImpl(oid *ret, void *val){
 	(void) val; /* fool compiler */
 	memcpy(ret, ATOMnilptr(TYPE_oid), ATOMsize(TYPE_oid));
+	return MAL_SUCCEED;
+}
+str CALCbat2batid(int *ret, int *bid){
+	BAT *b;
+	b= BATdescriptor(*bid);	
+	if( b==0)
+		throwMessage("calc.:bat","Bat does not exist");
+	*ret= b->batCacheid;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+str CALCbatid2bat(int *bid, int *ret){
+	BAT *b;
+	b= BATdescriptor(*ret);	
+	if( b==0)
+		throwMessage("calc.:bat","Bat does not exist");
+	*bid= b->batCacheid;
+	BBPincref(*bid,TRUE);
+	BBPunfix(*bid);
 	return MAL_SUCCEED;
 }
 @:convertImpl(sht)@
