@@ -550,6 +550,7 @@ mal_export int      fndConstant(MalBlkPtr mb, str val, int len);
 
 mal_export void     pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
+mal_export InstrPtr setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid);
 mal_export InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr     pushArgumentId(MalBlkPtr mb, InstrPtr p, str name);
 mal_export void     setVarInitialized(MalBlkPtr mb, int varid);
@@ -1514,6 +1515,14 @@ InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
     setVarUsed(mb,varid,TRUE);
     return p;
 } 
+InstrPtr setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid){
+	int i;
+	p= pushArgument(mb,p,varid); /* make space */
+	for(i= p->argc--; i>idx; i--)
+		getArg(p,i)= getArg(p,i-1);
+	getArg(p,i)= varid;
+	return p;
+}
 void setVarInitialized(MalBlkPtr mb, int varid){
     isVarInitialized(mb,varid) = TRUE;
 }

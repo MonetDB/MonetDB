@@ -187,6 +187,7 @@ from Bi (or type(Bi)==type(Xi)).
     polymorphic = 0;
     unmatched = 0;
 
+#define DEBUG_MAL_RESOLVE
 #ifdef DEBUG_MAL_RESOLVE
     if(tracefcn) {
     stream_printf(GDKout,"-->resolving\n");

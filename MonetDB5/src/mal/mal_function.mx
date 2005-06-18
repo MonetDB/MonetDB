@@ -40,8 +40,9 @@ be geared towards fast execution and to ease symbolic debugging.
 /* #define DEBUG_CLONE */
 
 mal_export Symbol   newFunction(str nme,int kind);
-mal_export void	 clearFcn(MalBlkPtr m);
-mal_export int getPC(MalBlkPtr mb, InstrPtr p);
+mal_export void     renameFunction(str old,str modnme, str new);
+mal_export void	    clearFcn(MalBlkPtr m);
+mal_export int      getPC(MalBlkPtr mb, InstrPtr p);
 
 mal_export InstrPtr newCall(Module scope, str fcnname, int kind);
 mal_export Symbol cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p);
@@ -104,6 +105,43 @@ Symbol  getFunctionSymbol(Module scope, InstrPtr p){
 
 	GDKerror("getFunctionSymbol:internal error\n");
 	return 0;
+} 
+@-
+Remame all incarnations of a function.
+@c
+void renameFunction(str old, str modnme, str name){
+    Module root,scope;
+    Symbol s,prev;
+    InstrPtr p;
+    root= scope= getClient()->nspace;
+    while( scope != NULL){
+        s= scope->subscope[(int)(*old)];
+        prev= NULL;
+        while(s != NULL){
+            if( idcmp(s->name,old) == 0) break;
+            prev= s;
+            s= s->skip;
+        }
+        if( s) {
+            if( prev == 0){
+                scope->subscope[(int)(*old)]= s->skip;
+            } else {
+                prev->peer= s->skip;
+            }
+            while(s){
+                prev= s->peer; 
+                s->peer= NULL;
+                s->name= putName(name,strlen(name));
+                p= getInstrPtr(s->def,0);
+                setModuleId(p,putName(modnme,strlen(modnme)));
+                setFunctionId(p,s->name);
+                insertSymbol(root,s);
+                s= prev;
+            }
+            return;
+        }
+        scope=scope->outer;
+    }
 }
 @+ Flow of control
 The nesting of (BARRIER, CATCH) and EXIT statements with their associated

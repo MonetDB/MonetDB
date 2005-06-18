@@ -59,7 +59,7 @@ this buffer contains the complete MIL structure to be parsed.
 
 #include "mal_import.h"
 
-#define MAXERRORS 100
+#define MAXERRORS 250
 
 #define CURRENT(c) (c->fdin->buf + c->fdin->pos + c->yycur)
 #define currChar(X) (*CURRENT(X))
@@ -82,7 +82,6 @@ mal_export int stringLength(Client cntxt);
 mal_export str charCst(Client cntxt);
 mal_export int operatorLength(Client cntxt);
 mal_export str operatorCopy(Client cntxt, int length);
-mal_export int keyword(Client cntxt, str kw, int length);
 mal_export int keyphrase(Client cntxt, str kw, int length);
 mal_export int keyphrase1(Client cntxt, str kw);
 mal_export int keyphrase2(Client cntxt, str kw);
@@ -102,6 +101,7 @@ request and each time we encounter EOL.
 #include "mal_instruction.h"    /* for pushEndInstruction(), findVariableLength() */
 #include "mal_namespace.h"
 
+extern int MALkeyword(Client cntxt, str kw, int length);
 
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')
@@ -242,7 +242,7 @@ str idCopy(Client cntxt, int length){
 }
 
 int 
-keyword(Client cntxt, str kw, int length)
+MALkeyword(Client cntxt, str kw, int length)
 {
     int i;
 
@@ -823,7 +823,7 @@ parseInclude(Client cntxt)
     int x;
 	char *nxt;
 
-    if (!keyword(cntxt,"include",7)) 
+    if (!MALkeyword(cntxt,"include",7)) 
 		return 0;
 	nxt= CURRENT(cntxt);
 
@@ -1255,7 +1255,7 @@ int parseEnd(Client cntxt)
     Symbol curPrg = 0;
     int l,showit=0;
 
-    if( keyword(cntxt,"end",3) ){
+    if( MALkeyword(cntxt,"end",3) ){
         curPrg = cntxt->curprg;
         curBlk = curPrg->def;   
         l = idLength(cntxt);
@@ -1727,27 +1727,27 @@ the information.
 		}
               continue;
         case 'A': case 'a':
-              if( keyword(cntxt,"atom",4) &&
+              if( MALkeyword(cntxt,"atom",4) &&
                   parseAtom(cntxt)!=0) break;
               goto allLeft;
         case 'b': case 'B':
-              if( keyword(cntxt,"barrier",7)) {
+              if( MALkeyword(cntxt,"barrier",7)) {
                 cntxt->blkmode++;
                 cntrl = BARRIERsymbol; 
               }
               goto allLeft;
         case 'C': case 'c': 
-              if( keyword(cntxt,"command",7) ) {
+              if( MALkeyword(cntxt,"command",7) ) {
                 parseCommandPattern(cntxt, COMMANDsymbol);
                 continue;
               }
-              if( keyword(cntxt,"catch",5)){
+              if( MALkeyword(cntxt,"catch",5)){
                 cntrl= CATCHsymbol;
                 goto allLeft;
               }
               goto allLeft;
         case 'E': case 'e': 
-              if( keyword(cntxt,"exit",4)){
+              if( MALkeyword(cntxt,"exit",4)){
                 if(cntxt->blkmode>0) cntxt->blkmode--;
                 cntrl= EXITsymbol;
               } else if( parseEnd(cntxt)) {
@@ -1755,18 +1755,18 @@ the information.
 			  }
               goto allLeft;
         case 'F': case 'f': 
-              if( keyword(cntxt,"function",8) ){
+              if( MALkeyword(cntxt,"function",8) ){
                 cntxt->blkmode++;
                 if( parseFunction(cntxt, FUNCTIONsymbol)) 
 					break;
-              } else if( keyword(cntxt,"factory",7) ){
+              } else if( MALkeyword(cntxt,"factory",7) ){
                 cntxt->blkmode++;
                 parseFunction(cntxt, FACTORYsymbol);
                 break;
               }
               goto allLeft;
         case 'H': case 'h':
-              if( keyword(cntxt,"handler",5)) { 
+              if( MALkeyword(cntxt,"handler",5)) { 
 				skipToEnd(cntxt); 
                 cntxt->blkmode++;
                 break; 
@@ -1774,42 +1774,42 @@ the information.
         case 'i': if( parseInclude(cntxt)) continue;
             goto allLeft;
         case 'L': case 'l': 
-              if( keyword(cntxt,"leave",5))
+              if( MALkeyword(cntxt,"leave",5))
                 cntrl= LEAVEsymbol;
               goto allLeft;
         case 'M': case 'm': 
-              if( keyword(cntxt,"map",3)) {
+              if( MALkeyword(cntxt,"map",3)) {
                 cntrl = MAPsymbol; 
               } else
-              if( keyword(cntxt,"module",6) &&
+              if( MALkeyword(cntxt,"module",6) &&
                 parseModule(cntxt)!= 0) break;
               goto allLeft;
         case 'P': case 'p': 
-              if( keyword(cntxt,"pattern",7) ) {
+              if( MALkeyword(cntxt,"pattern",7) ) {
                 parseCommandPattern(cntxt, PATTERNsymbol);
                 continue;
               }
               goto allLeft;
         case 'R': case 'r': 
-              if( keyword(cntxt,"redo",4)){
+              if( MALkeyword(cntxt,"redo",4)){
                 cntrl= REDOsymbol;
                 goto allLeft;
               }
-              if( keyword(cntxt,"raise",5)){
+              if( MALkeyword(cntxt,"raise",5)){
                 cntrl= RAISEsymbol;
                 goto allLeft;
               }
-              if( keyword(cntxt,"return",6)){
+              if( MALkeyword(cntxt,"return",6)){
                 cntrl= RETURNsymbol;
               }
               goto allLeft;
         case 'T': case 't':
-              if( keyword(cntxt,"thread",6)){
+              if( MALkeyword(cntxt,"thread",6)){
                 cntrl= THREADsymbol;
               }
               goto allLeft;
         case 'Y': case 'y':
-            if( keyword(cntxt,"yield",5)){
+            if( MALkeyword(cntxt,"yield",5)){
                 cntrl= YIELDsymbol;
                 goto allLeft;
             }
