@@ -648,9 +648,8 @@ parseTypeId(Client cntxt, int defaultType)
 		return i;
     }  
     if( s[1]=='b' && strncmp(s,":bat",4)==0){
-        /* parse default for :bat[:any,:any] */
         advance(cntxt,4);
-        return newBatType(TYPE_any,TYPE_any);
+        return TYPE_bat;
     } 
     if( s[1]=='c' && strncmp(s,":col",4)==0){
         /* parse default for :col[:any] */
@@ -1634,14 +1633,10 @@ startFCNcall:
 			}
 			nextChar(cntxt); /* skip '(' */
         } else {
-            /* we expect a module if( CURRENT(cntxt)[l] != '(')*/
-            {
                 parseError(cntxt,"module name expected\n");
                 pushInstruction(curBlk,curInstr);
                 return;
-            } 
         }
-/*getarguments:*//* not used */
         skipSpace(cntxt);
         @:parseArguments()@ /* parseAssign() -> void */
         if( currChar(cntxt)!=';'){

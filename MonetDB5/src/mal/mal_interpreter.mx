@@ -83,7 +83,7 @@ mal_export ptr getArgReference(MalStkPtr stk,
 @c
 #include "mal_interpreter.h"
 #include "mal_debugger.h"   /* for mdbStep() */
-#include "mal_type.h"       /* for getGDKtype() */
+#include "mal_type.h"       
 
 ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
     int j=0;
@@ -235,8 +235,7 @@ of the return statement.
         pp = getInstrPtr(mb, 0);
         /* set return type */
         lhs = &stk->stk[0];
-        /* lhs->vtype =getGDKtype(getVarType(mb,0)); */
-        lhs->vtype =getGDKtype(mb,0);
+        lhs->vtype =getVarGDKType(mb,0);
         if(lhs->vtype <0)
             GDKerror("unexpected type error\n");
         /* stream_printf(GDKout,"recursive MAL "
@@ -279,7 +278,7 @@ pattern operators to deal with it.
         int tpe= getVarType(mb,i);
         lhs = &stk->stk[i];
         if( tpe != TYPE_any)
-            lhs->vtype = getGDKtype(mb,i);
+            lhs->vtype = getVarGDKType(mb,i);
         if(env == 0 && mbcaller==0)
             lhs->val.ival =0; 
     }

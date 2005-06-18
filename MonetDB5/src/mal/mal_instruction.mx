@@ -480,7 +480,6 @@ for separate name space management.
 #define getVar(M,I)     (M)->var[I]
 #define getVarLiteral(M,I)  (M)->var[I]->literal
 #define getVarTmp(M,I)      (M)->var[I]->tmpindex
-#define getGDKtype(M,I)     (M)->var[I]->gdktype
 #define isConstant(M,I) ((M)->var[I]->isaconstant)
 #define isTypeVar(M,I)  ((M)->var[I]->isatypevar)
 #define isTmpVar(M,I)   ((M)->var[I]->tmpindex)
@@ -1518,7 +1517,7 @@ InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
 InstrPtr setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid){
 	int i;
 	p= pushArgument(mb,p,varid); /* make space */
-	for(i= p->argc--; i>idx; i--)
+	for(i= p->argc-1; i>idx; i--)
 		getArg(p,i)= getArg(p,i-1);
 	getArg(p,i)= varid;
 	return p;
@@ -2056,14 +2055,14 @@ Dump the type and value information.
             GDKfree(d1); GDKfree(d2);
             advance(t);
         } else
-                if(isTypeVar(mb,getArg(p,i)) ){
-                        char *tnme= getTypeName(getArgType(mb,p,i));
-                        sprintf(t,":%s%s",tnme,(pstring==NULL?"":pstring));
-                        GDKfree(tnme);
-                        advance(t);
-                }
+		if(isTypeVar(mb,getArg(p,i)) ){
+				char *tnme= getTypeName(getArgType(mb,p,i));
+				sprintf(t,":%s%s",tnme,(pstring==NULL?"":pstring));
+				GDKfree(tnme);
+				advance(t);
+		}
 
-        if(i+1<high) sprintf(t,",");
+		if(i+1<high) sprintf(t,",");
         if(pstring){ GDKfree(pstring); pstring=0;}
     }
     advance(t);
