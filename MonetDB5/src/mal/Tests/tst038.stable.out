@@ -16,9 +16,10 @@ stdout of test 'tst038` in directory 'src/mal` itself:
 #function tst(b:bat);
 #	insert(b,"hello",1);
 #end tst;
-function user.tst(b:bat[:any,:any]):void;	# 0  (tst:void)<-(b:bat[:any,:any])
-    bat.insert(b,"hello",1);	# 1 BKCinsert_bun ($2:bat[:str,:int])<-(b:bat[:any,:any])($3:str)($4:int)
+function user.tst(b:BAT):void;	# 0  (tst:void)<-(b:BAT)
+    bat.insert(b,"hello",1);	# 1  unknown ($2:any)<-(b:BAT)($3:str)($4:int)
 end tst;	# 2  
+!ERROR: 'bat.insert' undefined in user.tst[1]
 #function tst2(b:bat[:any,:any]);
 #	insert(b,"hello",1);
 #end tst2;
