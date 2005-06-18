@@ -83,7 +83,7 @@ and analyse the data.
 #ifndef _DCRECEPTOR_DEF
 #define _DCRECEPTOR_DEF
 
-#define DEBUG_DCRECEPTOR 
+/* #define DEBUG_DCRECEPTOR */
 
 #include "datacell.h"
 

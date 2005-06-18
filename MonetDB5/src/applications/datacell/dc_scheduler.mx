@@ -49,7 +49,7 @@ comment "Give an overview of the actions taken";
 #ifndef _DC_SCHEDULER_DEF
 #define _DC_SCHEDULER_DEF
 
-#define DEBUG_DC_SCHEDULER 
+/* #define DEBUG_DC_SCHEDULER */
 
 #include "mal.h"
 #include "mal_client.h"
@@ -121,9 +121,8 @@ space used in the past is claimed.
 str
 DCisolate(int *ret, str *uname, str *target){
 	DCpump p,u;
-	int i,cnt=0;
+	int i,cnt=0,del=0;
 	BAT *b;
-	char log[MAXBUF];
 
     (void) ret; 
 	u= DClocatePump(*uname);
@@ -144,19 +143,17 @@ DCisolate(int *ret, str *uname, str *target){
 	if( p->kind == EMITTER) {
 		 /* they take care of it */
 		cnt= BATcount(p->public[0]);
-	} else
-	for(i=0; i< p->cols; i++){
-		b= p->private[i];
-		p->private[i]= p->public[i];
-		p->public[i]= b;
-		if( b== NULL)
-			return throwMessage("datacell.isolate","Pump BAT disappeared\n");
-		cnt= BATcount(p->public[i]);
-		BATclear(p->private[i]);
+	} else {
+		cnt= BATcount(p->private[0]);
+		del= BATcount(p->public[0]);
+		for(i=0; i< p->cols; i++){
+			b= p->private[i];
+			p->private[i]= p->public[i];
+			p->public[i]= b;
+			if(del) BATclear(p->private[i]);
+		}
 	}
 	mal_unset_lock(p->lock,"datacellIsolate");
-	snprintf(log,MAXBUF,"isolate user=%s target=%s events=%d", 
-			*uname, *target,cnt);
 #ifdef DEBUG_DC_SCHEDULER
 		stream_printf(GDKerr,"#%s\n",log);
 #endif

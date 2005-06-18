@@ -102,9 +102,9 @@ command take(name:str,cname:str):bat[:void,:any]
 address DCtake
 comment "Return the BAT with collected sensor input";
 
-command append(nme:str, dst:bat[:any$1,:any$2],src:bat[:any$1,:any$2])
+command keep(nme:str, dst:bat[:any$1,:any$2],src:bat[:any$1,:any$2])
 		:bat[:any$1,:any$2]
-address DCappend
+address DCkeep
 comment "Overload append to synchronize with emitter semantics";
 @-
 The inspection routines below are heaviliy influenced
@@ -231,7 +231,7 @@ and analyse the data.
 #ifndef _DATACELL_DEF
 #define _DATACELL_DEF
 
-#define DEBUG_DATACELL 
+/* #define DEBUG_DATACELL */
 
 #define MAXEVENTFIELDS 256
 
@@ -1067,13 +1067,12 @@ It is released explicitedly.
 @c
 extern str BKCbat_append_void_bat_wrap(int *ret, int *dst, int *src);
 str
-DCappend(int *ret, str *name, int *dst, int *src){
+DCkeep(int *ret, str *name, int *dst, int *src){
 	DCpump p;
 	
 	p= DClocatePump(*name);
 	if( p == 0 || p->kind!= EMITTER)
 		return throwMessage("datacell.append","Pump lost");
-printf("append %s %d %d\n",*name,*dst,*src);
 	mal_set_lock(p->lock,"datacell.append");
 	p->usedby= p-pumps;
 	return (str) BKCbat_append_void_bat_wrap(ret,dst,src);

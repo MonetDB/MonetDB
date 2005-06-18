@@ -254,17 +254,15 @@ The dbat can only be dropped for connection points.[todo]
 			/* printf("lookup %s %s\n", getVarLiteral(mb,getArg(p,2)),
 				getVarLiteral(mb,getArg(p,3)) ); */
 			if( isReceptor( getVarLiteral(mb,getArg(p,2))) ){
-				for(k= p->argc; k>1; k--)
-					getArg(p,k)= getArg(p,k-1);
-				p->retc++; p->argc++;
-				p->argv[k]= newTmpVariable(mb, getVarType(mb,getArg(p,0)));
+				setArgument(mb, p, 1,
+					newTmpVariable(mb, getVarType(mb,getArg(p,0))) );
+				p->retc++; 
 				setFunctionId(p,putName("bindReceptor",12));
 			}
 			if( isEmitter( getVarLiteral(mb,getArg(p,2))) ){
-				for(k= p->argc; k>1; k--)
-					getArg(p,k)= getArg(p,k-1);
-				p->argv[k]= newTmpVariable(mb, getVarType(mb,getArg(p,0)));
-				p->retc++; p->argc++;
+				setArgument(mb, p, 1,
+					newTmpVariable(mb, getVarType(mb,getArg(p,0))));
+				p->retc++; 
 				setFunctionId(p,putName("bindEmitter",11));
 			}
 			delArgument(p,5);
@@ -284,6 +282,7 @@ The dbat can only be dropped for connection points.[todo]
 We now have to propagate the knowledge about empty sets
 @c
 	ESevaluate(mb,z,emptyset);
+	PHoptimizer(mb,0,0);
 	DCsqlReshuffle(mb,*newname);
 	optimizerCheck(mb,"datacell.reduce",actions,GDKusec()-clk);
 	printFunction(GDKout,mb,LIST_MAL_ALL);
@@ -300,15 +299,10 @@ the result into an emitter table.
 str isEmitterDestination(MalBlkPtr mb, int varid){
 	InstrPtr p;
 	int i;
-#ifdef _DC_COMPILE_DEBUG
-	stream_printf(GDKout,"isEmitterDestination :%d\n",varid);
-#endif
 	for(i=0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		if( getArg(p,0) == varid &&
 			strcmp(functionId(p),"bindEmitter")==0){
-			stream_printf(GDKout,"isEmitterDestination :%s\n",
-				getVarLiteral(mb,getArg(p,2))); 
 			return getVarLiteral(mb,getArg(p,2));
 		}
 	}
@@ -316,7 +310,7 @@ str isEmitterDestination(MalBlkPtr mb, int varid){
 }
 str
 DCsqlReshuffle(MalBlkPtr mb, str newname){
-	int i,j,k,limit;
+	int i,j,limit;
 	InstrPtr p, *old;
 	str *points, unit;
 	int u=0;
@@ -334,8 +328,8 @@ DCsqlReshuffle(MalBlkPtr mb, str newname){
 First step is to collect the all receptor/emitter bindings.
 @c
 	for(i=1; i< limit-1; i++)
-	if( strncmp(functionId(old[i]),"bind",4)==0  && 
-		strcmp(moduleId(old[i]),"datacell")==0 ){
+	if( strncmp(functionId(old[i]),"bind",4)==0  &&
+               strcmp(moduleId(old[i]),"datacell")==0 ){
 		unit= getVarLiteral(mb,getArg(old[i],2));
 		for(j=0;j<u;j++)
 		if( strcmp(points[j],unit)== 0) break;
@@ -348,15 +342,12 @@ First step is to collect the all receptor/emitter bindings.
 		} 
 		pushInstruction(mb,old[i]);
 	} else 
-	if( strncmp(functionId(old[i]),"append",6)==0  && 
-		strcmp(moduleId(old[i]),"bat")==0 &&
+	if( match(old[i],"bat","append") &&
 		(unit= isEmitterDestination(mb, getArg(old[i],1)) ) ){
+		setFunctionId(old[i],putName("keep",4));
 		setModuleId(old[i],putName("datacell",8));
-		pushStr(mb,old[i],unit);
-		k= getArg(old[i],old[i]->argc-1);
-		for(j=old[i]->argc-1; j>1; j--)
-			getArg(old[i],j)= getArg(old[i],j-1);
-		getArg(old[i],j)=k;
+		old[i]= setArgument(mb,old[i],1, 
+				newConstant(mb,TYPE_str,GDKstrdup(unit),TRUE));
 		pushInstruction(mb,old[i]);
 	} else
 		pushInstruction(mb,old[i]);
@@ -403,28 +394,28 @@ void DCflowDependencies(DCpump p){
 		out=0;
 		for(j=1;j<mb->stop; j++){
 			q= getInstrPtr(mb,j);
-			if(moduleId(q) && strcmp("datacell", moduleId(q))==0 ){ 
-				if(functionId(q) && strcmp("bindReceptor",functionId(q))==0 ){
-					nme = getVarLiteral(mb,getArg(q,2));
-					for( k=0; k<in; k++)
-					if( strcmp(p->source[k],nme)==0) goto skip;
+			if( match(q,"datacell","bindReceptor") ){
+				nme = getVarLiteral(mb,getArg(q,2));
+				for( k=0; k<in; k++)
+				if( strcmp(p->source[k],nme)) 
 					p->source[in++]= GDKstrdup(nme);
+				else goto skipit;
 #ifdef _DC_COMPILE_DEBUG
-					stream_printf(GDKout,"add source :%s\n",nme);
+				stream_printf(GDKout,"add source :%s\n",nme);
 #endif
-				}
-				if(functionId(q) && strcmp("bindEmitter",functionId(q))==0 ){
-					nme = getVarLiteral(mb,getArg(q,2));
-					for( k=0; k<out; k++)
-					if( strcmp(p->sink[k],nme)==0) goto skip;
+			} else
+			if( match(q,"datacell","bindEmitter") ){
+				nme = getVarLiteral(mb,getArg(q,2));
+				for( k=0; k<out; k++)
+				if( strcmp(p->sink[k],nme)) 
 					p->sink[out++]= GDKstrdup(nme);
+				else goto skipit;
 #ifdef _DC_COMPILE_DEBUG
-					stream_printf(GDKout,"add sink :%s\n",nme);
+				stream_printf(GDKout,"add sink :%s\n",nme);
 #endif
-				}
-				skip:;
 			}
 		}
+		skipit:;
 	}
 }
 @}
