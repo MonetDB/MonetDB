@@ -138,7 +138,7 @@ DCisolate(int *ret, str *uname, str *target){
 			BATcount(p->public[0]),BATcount(p->private[0]));
 #endif
 	mal_set_lock(p->lock,"datacellIsolate");
-	if( p->usedby)
+	if( p->usedby && p->usedby != p-pumps)
 		return throwMessage("datacell.isolate","Pump still in use\n");
 	p->usedby= p - pumps;
 	if( p->kind == EMITTER) {
@@ -168,12 +168,14 @@ DCrelease(int *ret, str *target){
 
     (void) ret; 
 	p= DClocatePump(*target);
-	if( p == 0)
+	if( p == 0 )
 		return throwMessage("datacell.release","Pump not found\n");
 #ifdef DEBUG_DC_SCHEDULER
 		stream_printf(GDKerr,"#release %s\n",*target);
 #endif
 	p->usedby = 0;
+	if( p->kind== EMITTER && p->lock)
+		mal_unset_lock(p->lock,"datacell.release");
     return MAL_SUCCEED;
 }
 

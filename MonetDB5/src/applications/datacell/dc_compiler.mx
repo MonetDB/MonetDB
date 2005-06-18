@@ -297,9 +297,26 @@ This relies on functions in the datacell to make a private
 copy available for the routine and to securely write
 the result into an emitter table.
 @c
+str isEmitterDestination(MalBlkPtr mb, int varid){
+	InstrPtr p;
+	int i;
+#ifdef _DC_COMPILE_DEBUG
+	stream_printf(GDKout,"isEmitterDestination :%d\n",varid);
+#endif
+	for(i=0; i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if( getArg(p,0) == varid &&
+			strcmp(functionId(p),"bindEmitter")==0){
+			stream_printf(GDKout,"isEmitterDestination :%s\n",
+				getVarLiteral(mb,getArg(p,2))); 
+			return getVarLiteral(mb,getArg(p,2));
+		}
+	}
+	return 0;
+}
 str
 DCsqlReshuffle(MalBlkPtr mb, str newname){
-	int i,j,limit;
+	int i,j,k,limit;
 	InstrPtr p, *old;
 	str *points, unit;
 	int u=0;
@@ -331,6 +348,17 @@ First step is to collect the all receptor/emitter bindings.
 		} 
 		pushInstruction(mb,old[i]);
 	} else 
+	if( strncmp(functionId(old[i]),"append",6)==0  && 
+		strcmp(moduleId(old[i]),"bat")==0 &&
+		(unit= isEmitterDestination(mb, getArg(old[i],1)) ) ){
+		setModuleId(old[i],putName("datacell",8));
+		pushStr(mb,old[i],unit);
+		k= getArg(old[i],old[i]->argc-1);
+		for(j=old[i]->argc-1; j>1; j--)
+			getArg(old[i],j)= getArg(old[i],j-1);
+		getArg(old[i],j)=k;
+		pushInstruction(mb,old[i]);
+	} else
 		pushInstruction(mb,old[i]);
 @- 
 The receptor can be released, because we have consumed all

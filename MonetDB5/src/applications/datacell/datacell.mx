@@ -102,6 +102,10 @@ command take(name:str,cname:str):bat[:void,:any]
 address DCtake
 comment "Return the BAT with collected sensor input";
 
+command append(nme:str, dst:bat[:any$1,:any$2],src:bat[:any$1,:any$2])
+		:bat[:any$1,:any$2]
+address DCappend
+comment "Overload append to synchronize with emitter semantics";
 @-
 The inspection routines below are heaviliy influenced
 by the requirements of the DataCell web applications.
@@ -1052,8 +1056,26 @@ DCbindEmitter(int *public, int *private, str *name, str *cname){
     if( strcmp(p->columns[i],*cname) == 0 ){
         BBPincref( *public= p->public[i]->batCacheid, TRUE);
         BBPincref( *private= p->private[i]->batCacheid, TRUE);
+		break;
     }
     return MAL_SUCCEED;
 
+}
+@-
+Before you start updating the emitter public part it should be locked.
+It is released explicitedly.
+@c
+extern str BKCbat_append_void_bat_wrap(int *ret, int *dst, int *src);
+str
+DCappend(int *ret, str *name, int *dst, int *src){
+	DCpump p;
+	
+	p= DClocatePump(*name);
+	if( p == 0 || p->kind!= EMITTER)
+		return throwMessage("datacell.append","Pump lost");
+printf("append %s %d %d\n",*name,*dst,*src);
+	mal_set_lock(p->lock,"datacell.append");
+	p->usedby= p-pumps;
+	return (str) BKCbat_append_void_bat_wrap(ret,dst,src);
 }
 @}
