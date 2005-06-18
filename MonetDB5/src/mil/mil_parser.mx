@@ -132,6 +132,8 @@ mal_export int parseMILprg(Client cntxt, MalBlkPtr curPrg);
 #include "mal_parser.h"
 #include "mil_parser.h"
 #include "mil.h"
+extern int MALkeyword(Client cntxt, str kw, int length);
+
 
 mal_export str mapfcn(str n);
 mal_export str mapmod(str n);
@@ -1149,34 +1151,34 @@ int parseMILstmtAll(Client cntxt, MalBlkPtr currBlk){
 		case '}':
 			return cntxt->curprg->def->errors;
 		case 'b': case 'B':
-			if( keyword(cntxt,"break",5) )
+			if( MALkeyword(cntxt,"break",5) )
 				parseMILbreakstmt(cntxt,currBlk);
-			if( keyword(cntxt,"bat",3) )
+			if( MALkeyword(cntxt,"bat",3) )
 				parseMILbatstmt(cntxt,currBlk);
 			else goto MILstmt2;
 			break;
 		case 'c': case 'C':
-			if( keyword(cntxt,"const",5) )
+			if( MALkeyword(cntxt,"const",5) )
 				BE(cntxt)->constantdeclaration = 1;
 			goto MILstmt2;
 			break;
 		case 'i': case 'I':
-			if( keyword(cntxt,"if",2) )
+			if( MALkeyword(cntxt,"if",2) )
 				parseMILifstmt(cntxt,currBlk);
 			else goto MILstmt2;
 			break;
 		case 'r': case 'R':
-			if( keyword(cntxt,"return",6) )
+			if( MALkeyword(cntxt,"return",6) )
 				parseMILreturnstmt(cntxt,currBlk);
 			else goto MILstmt2;
 			break;
 		case 'v': case 'V':
-			if( keyword(cntxt,"var",3) )
+			if( MALkeyword(cntxt,"var",3) )
 				parseMILvarstmt(cntxt,currBlk);
 			else goto MILstmt2;
 			break;
 		case 'w': case 'W':
-			if( keyword(cntxt,"while",5) )
+			if( MALkeyword(cntxt,"while",5) )
 				parseMILwhilestmt(cntxt,currBlk);
 			else goto MILstmt2;
 			break;
@@ -1215,24 +1217,24 @@ int parseMILprg(Client cntxt, MalBlkPtr currBlk){
 			nextChar(cntxt);
 			break;
 		case 'c': case 'C':
-			if( keyword(cntxt,"const",5) ) {
+			if( MALkeyword(cntxt,"const",5) ) {
 				BE(cntxt)->constantdeclaration = 2; /* external constant */
 				parseMILstmt(cntxt,currBlk);
 				BE(cntxt)->constantdeclaration = 0;
 			} else goto MILstmt;
 			break;
 		case 'p': case 'P':
-			if( keyword(cntxt,"proc",4) )
+			if( MALkeyword(cntxt,"proc",4) )
 				parseMILprocdef(cntxt,currBlk);
 			else goto MILstmt;
 			break;
 		case 'v': case 'V':
-			if( keyword(cntxt,"var",3) )
+			if( MALkeyword(cntxt,"var",3) )
 				parseMILvarstmt(cntxt,currBlk);
 			else goto MILstmt;
 			break;
 		case 'u': case 'U':
-			if( keyword(cntxt,"undef",5) )
+			if( MALkeyword(cntxt,"undef",5) )
 				parseMILundefstmt(cntxt,currBlk);
 			else goto MILstmt;
 			break;

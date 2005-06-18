@@ -826,8 +826,7 @@ VAR ghdiffs;
   {
     VAR diffs_lock := lock_create();
     ghdiffs@ [Nthreads]batloop(){
-      VAR _diffs_result {sum}($t
-	   );
+      VAR _diffs_result {sum}($t);
       lock_set(diffs_lock);
       diffs.insert($h,_diffs_result);
       lock_unset(diffs_lock);
