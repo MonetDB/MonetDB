@@ -189,6 +189,14 @@ command %(left:int, right:chr) :chr
 address CALCbinaryMODintchr;
 command %(left:int, right:sht) :sht 
 address CALCbinaryMODintsht;
+
+command +(l:str,r:str):str
+address CALCstrConcat
+comment "Concatenate two strings";
+command +(l:str,r:int):str
+address CALCstrConcatInt
+comment "Concatenate two strings";
+
 @= mal_calc_ops
         command +(left:@1, right:@2) :@3 
         address CALCbinaryADD@1@2; 
@@ -749,6 +757,22 @@ the string representations.
 @:c_shift_ops(sht)@
 @:c_shift_ops(int)@
 
+str CALCstrConcat(str *ret, str *l, str *r) {
+	str s;
+	s= GDKmalloc(strlen(*l)+strlen(*r)+1);
+	strcpy(s,*l);
+	strcat(s,*r);
+	*ret= s;
+	return MAL_SUCCEED;
+}
+str CALCstrConcatInt(str *ret, str *l, int *r) {
+	str s;
+	int len= strlen(*l)+32;
+	s= GDKmalloc(len);
+	snprintf(s,len,"%s%d",*l,*r);
+	*ret= s;
+	return MAL_SUCCEED;
+}
 str CALCbinaryRSHlngint(lng *ret, lng *val, int *shift) {
     if (*val == lng_nil || *shift == int_nil) {
 	*ret = lng_nil;

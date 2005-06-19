@@ -140,10 +140,15 @@ pattern new(ht:void, tt:any$2, size:int) :bat[:void,:any$2]
 address CMDBATnew;
 pattern new(ht:void, tt:any$2, size:lng) :bat[:void,:any$2] 	
 address CMDBATnew;
+
 pattern new(b:bat[:any$1,:any$2] ) :bat[:any$1,:any$2] 	
 address CMDBATnewDerived;
 pattern new(b:bat[:any$1,:any$2], size:lng) :bat[:any$1,:any$2] 	
 address CMDBATnewDerived;
+
+command new(nme:str):bat[:any$1,:any$2]
+address CMDBATderivedByName
+comment "Localize a bat by name and produce a variant";
 @+ Algebraic operators
 Those that rely on knowledge of the runtime environment
 @mal
@@ -618,6 +623,16 @@ str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	}
 
 	return msg;
+}
+str CMDBATderivedByName(int *ret, str *nme){
+	BAT *bn;
+	int bid;
+	bid= BBPindex(*nme);
+	if( bid<=0 || (bn= BATdescriptor(bid))==0 )
+		return throwMessage("bbp.new","Referenced BAT not found");
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(bid);
+	return MAL_SUCCEED;
 }
 str CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p){
 	int ht, tt;

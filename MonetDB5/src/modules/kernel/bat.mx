@@ -271,7 +271,7 @@ address BKCinsert_bat
 comment "Insert all BUNs of the second BAT into the first. This case 
         should be removed, because it is a hack for SQL";
 
-command insert(b:bat[:any$1,:any$2], src:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+command insert(b:bat[:any$1,:any$2], src:bat[:any$1,:any$2]):bat[:any$1,:any$2] 
 address BKCinsert_bat
 comment "Insert all BUNs of the second BAT into the first.";
 
@@ -282,6 +282,12 @@ command insert(b:bat[:void,:any$2], h:oid, t:any$2) :bat[:any$1,:any$2]
 address BKCinsert_bun;
 
 command insert(b:bat[:void,:any$1], v:any$1):bat[:any$1,:any$2] 
+address BKCinsert_void_bun
+comment "Insert a value in a 'void' bat";
+
+command insert(b:bat[:any$1,:bat], v:any$1, z:bat[:any,:any]):bat[:any$1,:bat] 
+address BKCinsert_bun;
+command insert(b:bat[:void,:bat], z:bat[:any,:any]):bat[:void,:bat] 
 address BKCinsert_void_bun
 comment "Insert a value in a 'void' bat";
 
