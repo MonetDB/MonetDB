@@ -83,7 +83,7 @@ and analyse the data.
 #ifndef _DCRECEPTOR_DEF
 #define _DCRECEPTOR_DEF
 
-/* #define DEBUG_DCRECEPTOR */
+#define DEBUG_DCRECEPTOR
 
 #include "datacell.h"
 
@@ -335,7 +335,27 @@ also once every 1000 events (to be refined)
 
 The current implementation taps into the ASCII io reader,
 which means we are expecting MonetDB tuple format descriptions.
+Furthermore, we overload the first and last table field operation
+to acquire and release the lock held on the receptor.
+This way, a pump query can step in and collect the events
+received.
 @c
+ptr *startRecognition(void *extra, int type, char *s){
+	DCpump p= (DCpump) extra;
+#ifdef DEBUG_DCRECEPTOR
+	stream_printf(GDKout,"#acquire lock %s\n",p->name);
+#endif
+	return TABLETadt_frStr(extra,type,s);
+}
+ptr *endRecognition(void *extra, int type, char *s){
+	DCpump p= (DCpump) extra;
+#ifdef DEBUG_DCRECEPTOR
+	stream_printf(GDKout,"#release lock %s\n",p->name);
+#endif
+	/* insert a time stamp */
+	return TABLETadt_frStr(extra,type,s);
+}
+
 str
 DCstartChannel(DCpump p, bstream *bs){
 	Tablet as;
@@ -343,7 +363,8 @@ DCstartChannel(DCpump p, bstream *bs){
 	Column *fmt;
 
 #ifdef DEBUG_DCRECEPTOR
-	stream_printf(GDKout,"#Start sensor reception %s\n",p->name);
+	stream_printf(GDKout,"#Start sensor reception %s %d columns\n",	
+			p->name,p->cols);
 #endif
 	fmt= as.format= (Column*) GDKmalloc(sizeof(Column) * (MAXEVENTFIELDS+1));
 	bzero((char *) fmt,sizeof(Column) * (MAXEVENTFIELDS+1));
@@ -373,6 +394,10 @@ DCstartChannel(DCpump p, bstream *bs){
 	fmt[k-1].sep = GDKstrdup((char*)"\n");
 	fmt[k-1].seplen = (int) strlen( fmt[k-1].sep );
 	as.nr_attrs= k; 
+	fmt[0].frstr= &startRecognition;
+	fmt[0].extra= (void*) p;
+	fmt[k-1].frstr= &endRecognition;
+	fmt[k-1].extra= (void*) p;
 	/* here we fork and prepare for reading */
 #ifdef DEBUG_DCRECEPTOR
 		stream_printf(GDKerr, "#start loading sensor data\n");
@@ -392,7 +417,12 @@ is interrupted with each stream_flush from the sensorSource.
 #ifdef DEBUG_DCRECEPTOR
 		stream_printf(GDKerr, "#load %d events\n",res);
 #endif
+		p->arrived += res;
+		p->received += res;
+		p->batches++;
 	}
+	for(i=0; i<p->cols; p++)
+	fmt[i].bval = NULL;
 	TABLETdestroy_format(&as);
 	return MAL_SUCCEED;
 #ifdef DEBUG_DCRECEPTOR

@@ -274,13 +274,10 @@ typedef struct DC_PUMP{
 
 	/* scheduling properties here */
 	int status;		/* scheduling status */
-	int log;		/* BAT id with strings of actions taken */
-
-	/* statistics gathered */
-	int eventscount;	/* number of events read at connection*/
-	int sumtimes;		/* sum arrival/processing times  microseconds*/
-	int sumtimes2;	/* sum arrival/processing times ^ 2  microseconds*/
-
+	int arrived;	/* events received since previous isolate() */
+	int received; 	/* total received events since start */
+	int batches;	/* number of batch reads */
+	int cumarrival;	/* cumulative interarrival delay in microseconds/read */
 } *DCpump, DCpumpRecord;
 
 mal_export DCpump DCnewPump();
