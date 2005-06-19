@@ -37,6 +37,8 @@ struct{
 	int used;
 } idmap[]={
 {"bat",				"bbp", "new",	0},
+{"bbpname",			"bbp", "getName",	0}, 
+{"new",				"bbp", "new",	0},
 {"rename",			"bbp", "setName",	0}, 
 {"cold",			"bbp", "setCold",	0},
 {"hot",				"bbp", "setHot",	0},
@@ -67,12 +69,19 @@ struct{
 {"*",				"calc", "*",	0},
 {"/",				"calc", "/",	0},
 {"=",				"calc", "==",	0},
+{"<",				"calc", "<",	0},
+{"<=",				"calc", "<=",	0},
+{">",				"calc", ">",	0},
+{">=",				"calc", ">=",	0},
+{"!=",				"calc", "!=",	0},
 {"mod",				"calc", "mod",	0},
 {"and",				"calc", "and",	0},
 {"or",				"calc", "or",	0},
 {"not",				"calc", "not",	0},
 
 {"print",		"io", "print",	0},
+{"printf",		"io", "printf",	0},
+{"load",			"ascio", "load",	0},
 
 {"access",		"mil", "access",	0},
 {"append",		"bat", "append",	0},
@@ -87,6 +96,7 @@ struct{
 {"mirror",		"bat", "mirror",	0},
 {"name",		"bat", "setRole",	0},
 {"ordered",		"bat", "isSorted",	0},
+{"persists",	"bat", "setPersistent",	0},
 {"replace",		"bat", "replace",	0},
 {"reverse",		"bat", "reverse",	0},
 {"set",			"bat", "setSet",	0},
