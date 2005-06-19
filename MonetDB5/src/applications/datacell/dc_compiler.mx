@@ -80,6 +80,24 @@ We keep track on their number and avoid sending them twice.
 This only works in a growing system.
 @c
 static int containers=0;
+
+str MAL2SQLtype(int tpe){
+	switch(tpe){
+	case TYPE_str:
+		return GDKstrdup("varchar");
+	case TYPE_chr:
+		return GDKstrdup("char");
+	case TYPE_lng:
+		return GDKstrdup("long");
+	case TYPE_bit:
+		return GDKstrdup("boolean");
+	case TYPE_dbl:
+		return GDKstrdup("double");
+	case TYPE_flt:
+		return GDKstrdup("float");
+	}
+	return getTypeName(tpe);
+}
 str
 DCcompileQuery(str *ret, str* expr, str *name){
 	DCpump p;
@@ -103,7 +121,7 @@ DCcompileQuery(str *ret, str* expr, str *name){
 		sprintf(buf,"create table %s (",p->name);
 		i += strlen(buf);
 		for(k=0; k<p->cols ; k++){
-			tpe= getTypeName(p->types[k]);
+			tpe= MAL2SQLtype(p->types[k]);
 			if( k )
 				sprintf(buf+i,", %s %s",p->columns[k],tpe);
 			else sprintf(buf+i,"%s %s",p->columns[k],tpe);

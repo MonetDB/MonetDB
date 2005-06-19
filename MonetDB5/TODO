@@ -1,3 +1,7 @@
+Pathfinder support
+- it heavily relies on BAT admininistration, which is currently
+  not well covered by the type system.  (tst800)
+
 - add intelligent help (partial matching signatures)
 - module should make exceptions thrown explicit
 
@@ -6,6 +10,7 @@
 - DD: mapping BATs to external sources
 - we limit BAT* operation as much as possible to :void headed versions
 - a generic map() operation is added to the interpreter
+  questionable, should be done by front-ends and optimizers
 - all signatures should make in/out role of parameters explicit to
 facilitate flow analysis
 - BBP should become a fully serialized module, encapsulation with a single lock
@@ -18,6 +23,8 @@ facilitate flow analysis
 MIL 5
 property management checked extended met hasnil? nonil?
 enum is replaced by encode/decode and rest by user
+- reduce the symbol table during chkFlow as well to save
+on stack initialization and garbage collection cost
 
 MIL 4 'loss' in M5
 - M2mal is only meant to enable transition between systems.
@@ -27,13 +34,7 @@ MIL 4 'loss' in M5
 - [ht]operation convention or operation[ht]_[ht]
 
 MAL language issues
-- the multiplex semantics in M5 is different from M4.
-The role of it should be reconsidered, because it is 
-an efficient implementation of a macro at language level.
-
-- assignment of the form b:=multiplex.tactics("op",b,..) not safe
-  actually reference counting BATs is not stable. 
-  rethink the before/after structure for garabage collection
+- rethink the before/after structure for garabage collection
   and handle it explicitly in the interpreter.
 - look into the nested (referenced) bat issues
 - check all routines for proper match return type and actual
@@ -43,7 +44,6 @@ action.
 - Test proper declaration of variables to avoid uninitalized variabless
 
 - consider statistics/type catalog at MAL layer only.
-- derive multiplex implementations variants automatically?
 - insert(b,2) should work on bat(void,int)
 
 - a hard bug appears in the following case
@@ -90,6 +90,15 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20050619 The role of multiplex is reconsidered, because it is 
+an efficient implementation of a macro at language level.
+It has new become an optimizer. Where appropriate the 
+fast bat* operations should be used.
+20050616 preparing a new mil parser as a scenario
+20050613 keep also the comments in the MAL program
+20050608 handle tst081, type resolution
+20050608 solve the wrong behavior of include files (datacell)
+20050605 realized the first version of the empty set optimizer
 20050418 look at exception handling. Make the call trace more explicit in terms
  of location.
 20050416 reduced the cost of parsing

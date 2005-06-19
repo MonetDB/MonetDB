@@ -183,7 +183,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V78 := bat.reverse(V74);	# 54  unknown (V78:any)<-(V74:any)
     V79 := algebra.kdiff(V72,V78);	# 55  unknown (V79:any)<-(V72:any)(V78:any)
     V80 := algebra.join(V18,V79);	# 56  unknown (V80:any)<-(V18:any)(V79:any)
-    V81 := multiplex.script("calc.-",V71,V80);	# 57  unknown (V81:any)<-($77:str)(V71:lng)(V80:any)
+    V81 := optimizer.multiplex("calc.-",V71,V80);	# 57 OPTmultiplex (V81:any)<-($77:str)(V71:lng)(V80:any)
     V83 := batcalc.*(V67,V81);	# 58  unknown (V83:any)<-(V67:any)(V81:any)
     V85 := aggrX3.sum(V83,V32,V34);	# 59  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
     V86 := sql.bind_dbat("sys","lineitem",0);	# 60 mvc_bind_dbat_wrap (V86:any)<-($70:str)($71:str)($72:int)
@@ -196,7 +196,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V93 := bat.reverse(V92);	# 67  unknown (V93:any)<-(V92:any)
     V94 := algebra.kdiff(V72,V93);	# 68  unknown (V94:any)<-(V72:any)(V93:any)
     V95 := algebra.join(V18,V94);	# 69  unknown (V95:any)<-(V18:any)(V94:any)
-    V96 := multiplex.script("calc.-",V91,V95);	# 70  unknown (V96:any)<-($77:str)(V91:lng)(V95:any)
+    V96 := optimizer.multiplex("calc.-",V91,V95);	# 70 OPTmultiplex (V96:any)<-($77:str)(V91:lng)(V95:any)
     V97 := batcalc.*(V89,V96);	# 71  unknown (V97:any)<-(V89:any)(V96:any)
     V98 := calc.lng(1);	# 72 CALCint2lng (V98:lng)<-($64:int)
     V99 := calc.*(V98,100);	# 73 CALCbinaryMULlngint (V99:lng)<-(V98:lng)($66:int)
@@ -205,7 +205,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V103 := bat.reverse(V102);	# 76  unknown (V103:any)<-(V102:any)
     V104 := algebra.kdiff(V100,V103);	# 77  unknown (V104:any)<-(V100:any)(V103:any)
     V105 := algebra.join(V18,V104);	# 78  unknown (V105:any)<-(V18:any)(V104:any)
-    V106 := multiplex.script("calc.+",V99,V105);	# 79  unknown (V106:any)<-($101:str)(V99:lng)(V105:any)
+    V106 := optimizer.multiplex("calc.+",V99,V105);	# 79 OPTmultiplex (V106:any)<-($101:str)(V99:lng)(V105:any)
     V108 := batcalc.*(V97,V106);	# 80  unknown (V108:any)<-(V97:any)(V106:any)
     V109 := aggrX3.sum(V108,V32,V34);	# 81  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
     V110 := sql.bind_dbat("sys","lineitem",0);	# 82 mvc_bind_dbat_wrap (V110:any)<-($105:str)($106:str)($107:int)
@@ -218,13 +218,13 @@ function user.qry1():void;	# 0  (qry1:void)
     V120 := algebra.kdiff(V57,V119);	# 89  unknown (V120:any)<-(V57:any)(V119:any)
     V121 := algebra.join(V18,V120);	# 90  unknown (V121:any)<-(V18:any)(V120:any)
     V122 := aggrX3.avg(V121,V32,V34);	# 91  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
-    V124 := multiplex.script("calc.round",V122,100);	# 92  unknown (V124:any)<-($118:str)(V122:any)($119:int)
+    V124 := optimizer.multiplex("calc.round",V122,100);	# 92 OPTmultiplex (V124:any)<-($118:str)(V122:any)($119:int)
     V126 := sql.bind_dbat("sys","lineitem",0);	# 93 mvc_bind_dbat_wrap (V126:any)<-($105:str)($106:str)($107:int)
     V127 := bat.reverse(V126);	# 94  unknown (V127:any)<-(V126:any)
     V128 := algebra.kdiff(V72,V127);	# 95  unknown (V128:any)<-(V72:any)(V127:any)
     V129 := algebra.join(V18,V128);	# 96  unknown (V129:any)<-(V18:any)(V128:any)
     V130 := aggrX3.avg(V129,V32,V34);	# 97  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
-    V131 := multiplex.script("calc.round",V130,100);	# 98  unknown (V131:any)<-($118:str)(V130:any)($119:int)
+    V131 := optimizer.multiplex("calc.round",V130,100);	# 98 OPTmultiplex (V131:any)<-($118:str)(V130:any)($119:int)
     V132 := aggrX3.count(V32,V32,V34);	# 99  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
     sql.column(V39,"l_returnflag","varchar",1,0);	# 100 SQLcolumnsingle ($127:void)<-(V39:any)($128:str)($129:str)($130:int)($107:int)
     sql.column(V48,"l_linestatus","varchar",1,0);	# 101 SQLcolumnsingle ($131:void)<-(V48:any)($132:str)($129:str)($130:int)($107:int)
@@ -277,7 +277,6 @@ end qry1;	# 111
 !ERROR: 'bat.reverse' undefined in user.qry1[54]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[55]
 !ERROR: 'algebra.join' undefined in user.qry1[56]
-!ERROR: multiplexType:script[57]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[58]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[59]
 !ERROR: 'bat.reverse' undefined in user.qry1[61]
@@ -286,12 +285,10 @@ end qry1;	# 111
 !ERROR: 'bat.reverse' undefined in user.qry1[67]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[68]
 !ERROR: 'algebra.join' undefined in user.qry1[69]
-!ERROR: multiplexType:script[70]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[71]
 !ERROR: 'bat.reverse' undefined in user.qry1[76]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[77]
 !ERROR: 'algebra.join' undefined in user.qry1[78]
-!ERROR: multiplexType:script[79]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[80]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[81]
 !ERROR: 'bat.reverse' undefined in user.qry1[83]
@@ -302,12 +299,10 @@ end qry1;	# 111
 !ERROR: 'algebra.kdiff' undefined in user.qry1[89]
 !ERROR: 'algebra.join' undefined in user.qry1[90]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[91]
-!ERROR: multiplexType:script[92]: at least one BAT argument required
 !ERROR: 'bat.reverse' undefined in user.qry1[94]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[95]
 !ERROR: 'algebra.join' undefined in user.qry1[96]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[97]
-!ERROR: multiplexType:script[98]: at least one BAT argument required
 !ERROR: 'aggrX3.count' undefined in user.qry1[99]
 #
 #optimizer.setDebug();
@@ -354,7 +349,6 @@ end qry1;	# 111
 !ERROR: 'bat.reverse' undefined in user.qry1[54]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[55]
 !ERROR: 'algebra.join' undefined in user.qry1[56]
-!ERROR: multiplexType:script[57]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[58]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[59]
 !ERROR: 'bat.reverse' undefined in user.qry1[61]
@@ -363,12 +357,10 @@ end qry1;	# 111
 !ERROR: 'bat.reverse' undefined in user.qry1[67]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[68]
 !ERROR: 'algebra.join' undefined in user.qry1[69]
-!ERROR: multiplexType:script[70]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[71]
 !ERROR: 'bat.reverse' undefined in user.qry1[76]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[77]
 !ERROR: 'algebra.join' undefined in user.qry1[78]
-!ERROR: multiplexType:script[79]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[80]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[81]
 !ERROR: 'bat.reverse' undefined in user.qry1[83]
@@ -379,12 +371,10 @@ end qry1;	# 111
 !ERROR: 'algebra.kdiff' undefined in user.qry1[89]
 !ERROR: 'algebra.join' undefined in user.qry1[90]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[91]
-!ERROR: multiplexType:script[92]: at least one BAT argument required
 !ERROR: 'bat.reverse' undefined in user.qry1[94]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[95]
 !ERROR: 'algebra.join' undefined in user.qry1[96]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[97]
-!ERROR: multiplexType:script[98]: at least one BAT argument required
 !ERROR: 'aggrX3.count' undefined in user.qry1[99]
 Optimizer aliasRemoval failed
 function user.qry1():void;	# 0  (qry1:void)
@@ -444,7 +434,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V78 := bat.reverse(V74);	# 54  unknown (V78:any)<-(V74:any)
     V79 := algebra.kdiff(V72,V78);	# 55  unknown (V79:any)<-(V72:any)(V78:any)
     V80 := algebra.join(V18,V79);	# 56  unknown (V80:any)<-(V18:any)(V79:any)
-    V81 := multiplex.script("calc.-",V71,V80);	# 57  unknown (V81:any)<-($77:str)(V71:lng)(V80:any)
+    V81 := optimizer.multiplex("calc.-",V71,V80);	# 57 OPTmultiplex (V81:any)<-($77:str)(V71:lng)(V80:any)
     V83 := batcalc.*(V67,V81);	# 58  unknown (V83:any)<-(V67:any)(V81:any)
     V85 := aggrX3.sum(V83,V32,V34);	# 59  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
     V86 := sql.bind_dbat("sys","lineitem",0);	# 60 mvc_bind_dbat_wrap (V86:any)<-($70:str)($71:str)($72:int)
@@ -457,7 +447,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V93 := bat.reverse(V92);	# 67  unknown (V93:any)<-(V92:any)
     V94 := algebra.kdiff(V72,V93);	# 68  unknown (V94:any)<-(V72:any)(V93:any)
     V95 := algebra.join(V18,V94);	# 69  unknown (V95:any)<-(V18:any)(V94:any)
-    V96 := multiplex.script("calc.-",V91,V95);	# 70  unknown (V96:any)<-($77:str)(V91:lng)(V95:any)
+    V96 := optimizer.multiplex("calc.-",V91,V95);	# 70 OPTmultiplex (V96:any)<-($77:str)(V91:lng)(V95:any)
     V97 := batcalc.*(V89,V96);	# 71  unknown (V97:any)<-(V89:any)(V96:any)
     V98 := calc.lng(1);	# 72 CALCint2lng (V98:lng)<-($64:int)
     V99 := calc.*(V98,100);	# 73 CALCbinaryMULlngint (V99:lng)<-(V98:lng)($66:int)
@@ -466,7 +456,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V103 := bat.reverse(V102);	# 76  unknown (V103:any)<-(V102:any)
     V104 := algebra.kdiff(V100,V103);	# 77  unknown (V104:any)<-(V100:any)(V103:any)
     V105 := algebra.join(V18,V104);	# 78  unknown (V105:any)<-(V18:any)(V104:any)
-    V106 := multiplex.script("calc.+",V99,V105);	# 79  unknown (V106:any)<-($101:str)(V99:lng)(V105:any)
+    V106 := optimizer.multiplex("calc.+",V99,V105);	# 79 OPTmultiplex (V106:any)<-($101:str)(V99:lng)(V105:any)
     V108 := batcalc.*(V97,V106);	# 80  unknown (V108:any)<-(V97:any)(V106:any)
     V109 := aggrX3.sum(V108,V32,V34);	# 81  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
     V110 := sql.bind_dbat("sys","lineitem",0);	# 82 mvc_bind_dbat_wrap (V110:any)<-($105:str)($106:str)($107:int)
@@ -479,13 +469,13 @@ function user.qry1():void;	# 0  (qry1:void)
     V120 := algebra.kdiff(V57,V119);	# 89  unknown (V120:any)<-(V57:any)(V119:any)
     V121 := algebra.join(V18,V120);	# 90  unknown (V121:any)<-(V18:any)(V120:any)
     V122 := aggrX3.avg(V121,V32,V34);	# 91  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
-    V124 := multiplex.script("calc.round",V122,100);	# 92  unknown (V124:any)<-($118:str)(V122:any)($119:int)
+    V124 := optimizer.multiplex("calc.round",V122,100);	# 92 OPTmultiplex (V124:any)<-($118:str)(V122:any)($119:int)
     V126 := sql.bind_dbat("sys","lineitem",0);	# 93 mvc_bind_dbat_wrap (V126:any)<-($105:str)($106:str)($107:int)
     V127 := bat.reverse(V126);	# 94  unknown (V127:any)<-(V126:any)
     V128 := algebra.kdiff(V72,V127);	# 95  unknown (V128:any)<-(V72:any)(V127:any)
     V129 := algebra.join(V18,V128);	# 96  unknown (V129:any)<-(V18:any)(V128:any)
     V130 := aggrX3.avg(V129,V32,V34);	# 97  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
-    V131 := multiplex.script("calc.round",V130,100);	# 98  unknown (V131:any)<-($118:str)(V130:any)($119:int)
+    V131 := optimizer.multiplex("calc.round",V130,100);	# 98 OPTmultiplex (V131:any)<-($118:str)(V130:any)($119:int)
     V132 := aggrX3.count(V32,V32,V34);	# 99  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
     sql.column(V39,"l_returnflag","varchar",1,0);	# 100 SQLcolumnsingle ($127:void)<-(V39:any)($128:str)($129:str)($130:int)($107:int)
     sql.column(V48,"l_linestatus","varchar",1,0);	# 101 SQLcolumnsingle ($131:void)<-(V48:any)($132:str)($129:str)($130:int)($107:int)
@@ -538,7 +528,6 @@ end qry1;	# 111
 !ERROR: 'bat.reverse' undefined in user.qry1[54]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[55]
 !ERROR: 'algebra.join' undefined in user.qry1[56]
-!ERROR: multiplexType:script[57]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[58]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[59]
 !ERROR: 'bat.reverse' undefined in user.qry1[61]
@@ -547,12 +536,10 @@ end qry1;	# 111
 !ERROR: 'bat.reverse' undefined in user.qry1[67]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[68]
 !ERROR: 'algebra.join' undefined in user.qry1[69]
-!ERROR: multiplexType:script[70]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[71]
 !ERROR: 'bat.reverse' undefined in user.qry1[76]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[77]
 !ERROR: 'algebra.join' undefined in user.qry1[78]
-!ERROR: multiplexType:script[79]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[80]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[81]
 !ERROR: 'bat.reverse' undefined in user.qry1[83]
@@ -563,12 +550,10 @@ end qry1;	# 111
 !ERROR: 'algebra.kdiff' undefined in user.qry1[89]
 !ERROR: 'algebra.join' undefined in user.qry1[90]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[91]
-!ERROR: multiplexType:script[92]: at least one BAT argument required
 !ERROR: 'bat.reverse' undefined in user.qry1[94]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[95]
 !ERROR: 'algebra.join' undefined in user.qry1[96]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[97]
-!ERROR: multiplexType:script[98]: at least one BAT argument required
 !ERROR: 'aggrX3.count' undefined in user.qry1[99]
 Optimizer aliasRemoval optimizer failed
 function user.qry1():void;	# 0  (qry1:void)
@@ -628,7 +613,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V78 := bat.reverse(V74);	# 54  unknown (V78:any)<-(V74:any)
     V79 := algebra.kdiff(V72,V78);	# 55  unknown (V79:any)<-(V72:any)(V78:any)
     V80 := algebra.join(V18,V79);	# 56  unknown (V80:any)<-(V18:any)(V79:any)
-    V81 := multiplex.script("calc.-",V71,V80);	# 57  unknown (V81:any)<-($77:str)(V71:lng)(V80:any)
+    V81 := optimizer.multiplex("calc.-",V71,V80);	# 57 OPTmultiplex (V81:any)<-($77:str)(V71:lng)(V80:any)
     V83 := batcalc.*(V67,V81);	# 58  unknown (V83:any)<-(V67:any)(V81:any)
     V85 := aggrX3.sum(V83,V32,V34);	# 59  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
     V86 := sql.bind_dbat("sys","lineitem",0);	# 60 mvc_bind_dbat_wrap (V86:any)<-($70:str)($71:str)($72:int)
@@ -641,7 +626,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V93 := bat.reverse(V92);	# 67  unknown (V93:any)<-(V92:any)
     V94 := algebra.kdiff(V72,V93);	# 68  unknown (V94:any)<-(V72:any)(V93:any)
     V95 := algebra.join(V18,V94);	# 69  unknown (V95:any)<-(V18:any)(V94:any)
-    V96 := multiplex.script("calc.-",V91,V95);	# 70  unknown (V96:any)<-($77:str)(V91:lng)(V95:any)
+    V96 := optimizer.multiplex("calc.-",V91,V95);	# 70 OPTmultiplex (V96:any)<-($77:str)(V91:lng)(V95:any)
     V97 := batcalc.*(V89,V96);	# 71  unknown (V97:any)<-(V89:any)(V96:any)
     V98 := calc.lng(1);	# 72 CALCint2lng (V98:lng)<-($64:int)
     V99 := calc.*(V98,100);	# 73 CALCbinaryMULlngint (V99:lng)<-(V98:lng)($66:int)
@@ -650,7 +635,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V103 := bat.reverse(V102);	# 76  unknown (V103:any)<-(V102:any)
     V104 := algebra.kdiff(V100,V103);	# 77  unknown (V104:any)<-(V100:any)(V103:any)
     V105 := algebra.join(V18,V104);	# 78  unknown (V105:any)<-(V18:any)(V104:any)
-    V106 := multiplex.script("calc.+",V99,V105);	# 79  unknown (V106:any)<-($101:str)(V99:lng)(V105:any)
+    V106 := optimizer.multiplex("calc.+",V99,V105);	# 79 OPTmultiplex (V106:any)<-($101:str)(V99:lng)(V105:any)
     V108 := batcalc.*(V97,V106);	# 80  unknown (V108:any)<-(V97:any)(V106:any)
     V109 := aggrX3.sum(V108,V32,V34);	# 81  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
     V110 := sql.bind_dbat("sys","lineitem",0);	# 82 mvc_bind_dbat_wrap (V110:any)<-($105:str)($106:str)($107:int)
@@ -663,13 +648,13 @@ function user.qry1():void;	# 0  (qry1:void)
     V120 := algebra.kdiff(V57,V119);	# 89  unknown (V120:any)<-(V57:any)(V119:any)
     V121 := algebra.join(V18,V120);	# 90  unknown (V121:any)<-(V18:any)(V120:any)
     V122 := aggrX3.avg(V121,V32,V34);	# 91  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
-    V124 := multiplex.script("calc.round",V122,100);	# 92  unknown (V124:any)<-($118:str)(V122:any)($119:int)
+    V124 := optimizer.multiplex("calc.round",V122,100);	# 92 OPTmultiplex (V124:any)<-($118:str)(V122:any)($119:int)
     V126 := sql.bind_dbat("sys","lineitem",0);	# 93 mvc_bind_dbat_wrap (V126:any)<-($105:str)($106:str)($107:int)
     V127 := bat.reverse(V126);	# 94  unknown (V127:any)<-(V126:any)
     V128 := algebra.kdiff(V72,V127);	# 95  unknown (V128:any)<-(V72:any)(V127:any)
     V129 := algebra.join(V18,V128);	# 96  unknown (V129:any)<-(V18:any)(V128:any)
     V130 := aggrX3.avg(V129,V32,V34);	# 97  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
-    V131 := multiplex.script("calc.round",V130,100);	# 98  unknown (V131:any)<-($118:str)(V130:any)($119:int)
+    V131 := optimizer.multiplex("calc.round",V130,100);	# 98 OPTmultiplex (V131:any)<-($118:str)(V130:any)($119:int)
     V132 := aggrX3.count(V32,V32,V34);	# 99  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
     sql.column(V39,"l_returnflag","varchar",1,0);	# 100 SQLcolumnsingle ($127:void)<-(V39:any)($128:str)($129:str)($130:int)($107:int)
     sql.column(V48,"l_linestatus","varchar",1,0);	# 101 SQLcolumnsingle ($131:void)<-(V48:any)($132:str)($129:str)($130:int)($107:int)
@@ -722,7 +707,6 @@ end qry1;	# 111
 !ERROR: 'bat.reverse' undefined in user.qry1[54]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[55]
 !ERROR: 'algebra.join' undefined in user.qry1[56]
-!ERROR: multiplexType:script[57]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[58]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[59]
 !ERROR: 'bat.reverse' undefined in user.qry1[61]
@@ -731,12 +715,10 @@ end qry1;	# 111
 !ERROR: 'bat.reverse' undefined in user.qry1[67]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[68]
 !ERROR: 'algebra.join' undefined in user.qry1[69]
-!ERROR: multiplexType:script[70]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[71]
 !ERROR: 'bat.reverse' undefined in user.qry1[76]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[77]
 !ERROR: 'algebra.join' undefined in user.qry1[78]
-!ERROR: multiplexType:script[79]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[80]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[81]
 !ERROR: 'bat.reverse' undefined in user.qry1[83]
@@ -747,12 +729,10 @@ end qry1;	# 111
 !ERROR: 'algebra.kdiff' undefined in user.qry1[89]
 !ERROR: 'algebra.join' undefined in user.qry1[90]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[91]
-!ERROR: multiplexType:script[92]: at least one BAT argument required
 !ERROR: 'bat.reverse' undefined in user.qry1[94]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[95]
 !ERROR: 'algebra.join' undefined in user.qry1[96]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[97]
-!ERROR: multiplexType:script[98]: at least one BAT argument required
 !ERROR: 'aggrX3.count' undefined in user.qry1[99]
 Optimizer garbageCollector failed
 function user.qry1():void;	# 0  (qry1:void)
@@ -812,7 +792,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V78 := bat.reverse(V74);	# 54  unknown (V78:any)<-(V74:any)
     V79 := algebra.kdiff(V72,V78);	# 55  unknown (V79:any)<-(V72:any)(V78:any)
     V80 := algebra.join(V18,V79);	# 56  unknown (V80:any)<-(V18:any)(V79:any)
-    V81 := multiplex.script("calc.-",V71,V80);	# 57  unknown (V81:any)<-($77:str)(V71:lng)(V80:any)
+    V81 := optimizer.multiplex("calc.-",V71,V80);	# 57 OPTmultiplex (V81:any)<-($77:str)(V71:lng)(V80:any)
     V83 := batcalc.*(V67,V81);	# 58  unknown (V83:any)<-(V67:any)(V81:any)
     V85 := aggrX3.sum(V83,V32,V34);	# 59  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
     V86 := sql.bind_dbat("sys","lineitem",0);	# 60 mvc_bind_dbat_wrap (V86:any)<-($70:str)($71:str)($72:int)
@@ -825,7 +805,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V93 := bat.reverse(V92);	# 67  unknown (V93:any)<-(V92:any)
     V94 := algebra.kdiff(V72,V93);	# 68  unknown (V94:any)<-(V72:any)(V93:any)
     V95 := algebra.join(V18,V94);	# 69  unknown (V95:any)<-(V18:any)(V94:any)
-    V96 := multiplex.script("calc.-",V91,V95);	# 70  unknown (V96:any)<-($77:str)(V91:lng)(V95:any)
+    V96 := optimizer.multiplex("calc.-",V91,V95);	# 70 OPTmultiplex (V96:any)<-($77:str)(V91:lng)(V95:any)
     V97 := batcalc.*(V89,V96);	# 71  unknown (V97:any)<-(V89:any)(V96:any)
     V98 := calc.lng(1);	# 72 CALCint2lng (V98:lng)<-($64:int)
     V99 := calc.*(V98,100);	# 73 CALCbinaryMULlngint (V99:lng)<-(V98:lng)($66:int)
@@ -834,7 +814,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V103 := bat.reverse(V102);	# 76  unknown (V103:any)<-(V102:any)
     V104 := algebra.kdiff(V100,V103);	# 77  unknown (V104:any)<-(V100:any)(V103:any)
     V105 := algebra.join(V18,V104);	# 78  unknown (V105:any)<-(V18:any)(V104:any)
-    V106 := multiplex.script("calc.+",V99,V105);	# 79  unknown (V106:any)<-($101:str)(V99:lng)(V105:any)
+    V106 := optimizer.multiplex("calc.+",V99,V105);	# 79 OPTmultiplex (V106:any)<-($101:str)(V99:lng)(V105:any)
     V108 := batcalc.*(V97,V106);	# 80  unknown (V108:any)<-(V97:any)(V106:any)
     V109 := aggrX3.sum(V108,V32,V34);	# 81  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
     V110 := sql.bind_dbat("sys","lineitem",0);	# 82 mvc_bind_dbat_wrap (V110:any)<-($105:str)($106:str)($107:int)
@@ -847,13 +827,13 @@ function user.qry1():void;	# 0  (qry1:void)
     V120 := algebra.kdiff(V57,V119);	# 89  unknown (V120:any)<-(V57:any)(V119:any)
     V121 := algebra.join(V18,V120);	# 90  unknown (V121:any)<-(V18:any)(V120:any)
     V122 := aggrX3.avg(V121,V32,V34);	# 91  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
-    V124 := multiplex.script("calc.round",V122,100);	# 92  unknown (V124:any)<-($118:str)(V122:any)($119:int)
+    V124 := optimizer.multiplex("calc.round",V122,100);	# 92 OPTmultiplex (V124:any)<-($118:str)(V122:any)($119:int)
     V126 := sql.bind_dbat("sys","lineitem",0);	# 93 mvc_bind_dbat_wrap (V126:any)<-($105:str)($106:str)($107:int)
     V127 := bat.reverse(V126);	# 94  unknown (V127:any)<-(V126:any)
     V128 := algebra.kdiff(V72,V127);	# 95  unknown (V128:any)<-(V72:any)(V127:any)
     V129 := algebra.join(V18,V128);	# 96  unknown (V129:any)<-(V18:any)(V128:any)
     V130 := aggrX3.avg(V129,V32,V34);	# 97  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
-    V131 := multiplex.script("calc.round",V130,100);	# 98  unknown (V131:any)<-($118:str)(V130:any)($119:int)
+    V131 := optimizer.multiplex("calc.round",V130,100);	# 98 OPTmultiplex (V131:any)<-($118:str)(V130:any)($119:int)
     V132 := aggrX3.count(V32,V32,V34);	# 99  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
     sql.column(V39,"l_returnflag","varchar",1,0);	# 100 SQLcolumnsingle ($127:void)<-(V39:any)($128:str)($129:str)($130:int)($107:int)
     sql.column(V48,"l_linestatus","varchar",1,0);	# 101 SQLcolumnsingle ($131:void)<-(V48:any)($132:str)($129:str)($130:int)($107:int)
@@ -906,7 +886,6 @@ end qry1;	# 111
 !ERROR: 'bat.reverse' undefined in user.qry1[54]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[55]
 !ERROR: 'algebra.join' undefined in user.qry1[56]
-!ERROR: multiplexType:script[57]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[58]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[59]
 !ERROR: 'bat.reverse' undefined in user.qry1[61]
@@ -915,12 +894,10 @@ end qry1;	# 111
 !ERROR: 'bat.reverse' undefined in user.qry1[67]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[68]
 !ERROR: 'algebra.join' undefined in user.qry1[69]
-!ERROR: multiplexType:script[70]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[71]
 !ERROR: 'bat.reverse' undefined in user.qry1[76]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[77]
 !ERROR: 'algebra.join' undefined in user.qry1[78]
-!ERROR: multiplexType:script[79]: at least one BAT argument required
 !ERROR: 'batcalc.*' undefined in user.qry1[80]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[81]
 !ERROR: 'bat.reverse' undefined in user.qry1[83]
@@ -931,12 +908,10 @@ end qry1;	# 111
 !ERROR: 'algebra.kdiff' undefined in user.qry1[89]
 !ERROR: 'algebra.join' undefined in user.qry1[90]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[91]
-!ERROR: multiplexType:script[92]: at least one BAT argument required
 !ERROR: 'bat.reverse' undefined in user.qry1[94]
 !ERROR: 'algebra.kdiff' undefined in user.qry1[95]
 !ERROR: 'algebra.join' undefined in user.qry1[96]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[97]
-!ERROR: multiplexType:script[98]: at least one BAT argument required
 !ERROR: 'aggrX3.count' undefined in user.qry1[99]
 Optimizer garbageCollector optimizer failed
 function user.qry1():void;	# 0  (qry1:void)
@@ -996,7 +971,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V78 := bat.reverse(V74);	# 54  unknown (V78:any)<-(V74:any)
     V79 := algebra.kdiff(V72,V78);	# 55  unknown (V79:any)<-(V72:any)(V78:any)
     V80 := algebra.join(V18,V79);	# 56  unknown (V80:any)<-(V18:any)(V79:any)
-    V81 := multiplex.script("calc.-",V71,V80);	# 57  unknown (V81:any)<-($77:str)(V71:lng)(V80:any)
+    V81 := optimizer.multiplex("calc.-",V71,V80);	# 57 OPTmultiplex (V81:any)<-($77:str)(V71:lng)(V80:any)
     V83 := batcalc.*(V67,V81);	# 58  unknown (V83:any)<-(V67:any)(V81:any)
     V85 := aggrX3.sum(V83,V32,V34);	# 59  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
     V86 := sql.bind_dbat("sys","lineitem",0);	# 60 mvc_bind_dbat_wrap (V86:any)<-($70:str)($71:str)($72:int)
@@ -1009,7 +984,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V93 := bat.reverse(V92);	# 67  unknown (V93:any)<-(V92:any)
     V94 := algebra.kdiff(V72,V93);	# 68  unknown (V94:any)<-(V72:any)(V93:any)
     V95 := algebra.join(V18,V94);	# 69  unknown (V95:any)<-(V18:any)(V94:any)
-    V96 := multiplex.script("calc.-",V91,V95);	# 70  unknown (V96:any)<-($77:str)(V91:lng)(V95:any)
+    V96 := optimizer.multiplex("calc.-",V91,V95);	# 70 OPTmultiplex (V96:any)<-($77:str)(V91:lng)(V95:any)
     V97 := batcalc.*(V89,V96);	# 71  unknown (V97:any)<-(V89:any)(V96:any)
     V98 := calc.lng(1);	# 72 CALCint2lng (V98:lng)<-($64:int)
     V99 := calc.*(V98,100);	# 73 CALCbinaryMULlngint (V99:lng)<-(V98:lng)($66:int)
@@ -1018,7 +993,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V103 := bat.reverse(V102);	# 76  unknown (V103:any)<-(V102:any)
     V104 := algebra.kdiff(V100,V103);	# 77  unknown (V104:any)<-(V100:any)(V103:any)
     V105 := algebra.join(V18,V104);	# 78  unknown (V105:any)<-(V18:any)(V104:any)
-    V106 := multiplex.script("calc.+",V99,V105);	# 79  unknown (V106:any)<-($101:str)(V99:lng)(V105:any)
+    V106 := optimizer.multiplex("calc.+",V99,V105);	# 79 OPTmultiplex (V106:any)<-($101:str)(V99:lng)(V105:any)
     V108 := batcalc.*(V97,V106);	# 80  unknown (V108:any)<-(V97:any)(V106:any)
     V109 := aggrX3.sum(V108,V32,V34);	# 81  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
     V110 := sql.bind_dbat("sys","lineitem",0);	# 82 mvc_bind_dbat_wrap (V110:any)<-($105:str)($106:str)($107:int)
@@ -1031,13 +1006,13 @@ function user.qry1():void;	# 0  (qry1:void)
     V120 := algebra.kdiff(V57,V119);	# 89  unknown (V120:any)<-(V57:any)(V119:any)
     V121 := algebra.join(V18,V120);	# 90  unknown (V121:any)<-(V18:any)(V120:any)
     V122 := aggrX3.avg(V121,V32,V34);	# 91  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
-    V124 := multiplex.script("calc.round",V122,100);	# 92  unknown (V124:any)<-($118:str)(V122:any)($119:int)
+    V124 := optimizer.multiplex("calc.round",V122,100);	# 92 OPTmultiplex (V124:any)<-($118:str)(V122:any)($119:int)
     V126 := sql.bind_dbat("sys","lineitem",0);	# 93 mvc_bind_dbat_wrap (V126:any)<-($105:str)($106:str)($107:int)
     V127 := bat.reverse(V126);	# 94  unknown (V127:any)<-(V126:any)
     V128 := algebra.kdiff(V72,V127);	# 95  unknown (V128:any)<-(V72:any)(V127:any)
     V129 := algebra.join(V18,V128);	# 96  unknown (V129:any)<-(V18:any)(V128:any)
     V130 := aggrX3.avg(V129,V32,V34);	# 97  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
-    V131 := multiplex.script("calc.round",V130,100);	# 98  unknown (V131:any)<-($118:str)(V130:any)($119:int)
+    V131 := optimizer.multiplex("calc.round",V130,100);	# 98 OPTmultiplex (V131:any)<-($118:str)(V130:any)($119:int)
     V132 := aggrX3.count(V32,V32,V34);	# 99  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
     sql.column(V39,"l_returnflag","varchar",1,0);	# 100 SQLcolumnsingle ($127:void)<-(V39:any)($128:str)($129:str)($130:int)($107:int)
     sql.column(V48,"l_linestatus","varchar",1,0);	# 101 SQLcolumnsingle ($131:void)<-(V48:any)($132:str)($129:str)($130:int)($107:int)
@@ -1111,7 +1086,7 @@ function user.qry1():void;
     V78 := bat.reverse(V74);
     V79 := algebra.kdiff(V72,V78);
     V80 := algebra.join(V18,V79);
-    V81 := multiplex.script("calc.-",V71,V80);
+    V81 := optimizer.multiplex("calc.-",V71,V80);
     V83 := batcalc.*(V67,V81);
     V85 := aggrX3.sum(V83,V32,V34);
     V86 := sql.bind_dbat("sys","lineitem",0);
@@ -1124,7 +1099,7 @@ function user.qry1():void;
     V93 := bat.reverse(V92);
     V94 := algebra.kdiff(V72,V93);
     V95 := algebra.join(V18,V94);
-    V96 := multiplex.script("calc.-",V91,V95);
+    V96 := optimizer.multiplex("calc.-",V91,V95);
     V97 := batcalc.*(V89,V96);
     V98 := calc.lng(1);
     V99 := calc.*(V98,100);
@@ -1133,7 +1108,7 @@ function user.qry1():void;
     V103 := bat.reverse(V102);
     V104 := algebra.kdiff(V100,V103);
     V105 := algebra.join(V18,V104);
-    V106 := multiplex.script("calc.+",V99,V105);
+    V106 := optimizer.multiplex("calc.+",V99,V105);
     V108 := batcalc.*(V97,V106);
     V109 := aggrX3.sum(V108,V32,V34);
     V110 := sql.bind_dbat("sys","lineitem",0);
@@ -1146,13 +1121,13 @@ function user.qry1():void;
     V120 := algebra.kdiff(V57,V119);
     V121 := algebra.join(V18,V120);
     V122 := aggrX3.avg(V121,V32,V34);
-    V124 := multiplex.script("calc.round",V122,100);
+    V124 := optimizer.multiplex("calc.round",V122,100);
     V126 := sql.bind_dbat("sys","lineitem",0);
     V127 := bat.reverse(V126);
     V128 := algebra.kdiff(V72,V127);
     V129 := algebra.join(V18,V128);
     V130 := aggrX3.avg(V129,V32,V34);
-    V131 := multiplex.script("calc.round",V130,100);
+    V131 := optimizer.multiplex("calc.round",V130,100);
     V132 := aggrX3.count(V32,V32,V34);
     sql.column(V39,"l_returnflag","varchar",1,0);
     sql.column(V48,"l_linestatus","varchar",1,0);

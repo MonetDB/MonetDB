@@ -36,8 +36,7 @@ datacell.define("tv_out","channel",:int);
 datacell.putPicture("tv_out","http://www.consumer.philips.com/catalog/28/28PW8719_12_webImage198.jpg");
 datacell.putDocumentation("tv","http://www.consumer.philips.com");
 
-datacell.pump("sitting","sql", "select avg(pressure) from chair;");
-datacell.pump("viewing","sql", "insert into tv_out select 2;");
-datacell.dependency("viewing","sitting");
+#datacell.pump("sitting","sql", "select avg(pressure) from chair;");
+#datacell.pump("viewing","sql", "insert into tv_out select 2;");
 
 mapi.listen();

@@ -204,21 +204,9 @@ function user.main():int;	# 0  (main:int)
     ib_a := bat.insert(c,5,30);	# 82 BKCinsert_bun (ib_a:bat[:int,:int])<-(c:bat[:int,:int])($195:int)($196:int)
     mil.line("c.print();");	# 83 MILline ($197:void)<-($198:str)
     jb_a := io.print(c);	# 84 IOprint_val (jb_a:int)<-(c:bat[:int,:int])
-    mil.line("var d:= [<](b,c);");	# 85 MILline ($200:void)<-($201:str)
-    d := multiplex.script("calc.<",b,c);	# 86  (d:bat[:int,:bit])<-($203:str)(b:bat[:int,:int])(c:bat[:int,:int])
-    mil.line("d.print();");	# 87 MILline ($204:void)<-($205:str)
-    kb_a := io.print(d);	# 88 IOprint_val (kb_a:int)<-(d:bat[:int,:bit])
-    mil.line("d:= [<](c,b);");	# 89 MILline ($207:void)<-($208:str)
-    d := multiplex.script("calc.<",c,b);	# 90  (d:bat[:int,:bit])<-($203:str)(c:bat[:int,:int])(b:bat[:int,:int])
-    mil.line("d.print();");	# 91 MILline ($209:void)<-($205:str)
-    lb_a := io.print(d);	# 92 IOprint_val (lb_a:int)<-(d:bat[:int,:bit])
-    mil.line("d:= [>](c,b);");	# 93 MILline ($211:void)<-($212:str)
-    d := multiplex.script("calc.>",c,b);	# 94  (d:bat[:int,:bit])<-($213:str)(c:bat[:int,:int])(b:bat[:int,:int])
-    mil.line("d.print();");	# 95 MILline ($214:void)<-($205:str)
-    mb_a := io.print(d);	# 96 IOprint_val (mb_a:int)<-(d:bat[:int,:bit])
-    mil.line("quit();");	# 97 MILline ($216:void)<-($217:str)
-    nb_a := clients.quit();	# 98 CLTquit (nb_a:void)
-end main;	# 99  
+    mil.line("quit();");	# 85 MILline ($200:void)<-($201:str)
+    nb_a := clients.quit();	# 86 CLTquit (nb_a:void)
+end main;	# 87  
 #setoid(oid(20000000));
 ##This collection of examples is geared at the support
 ##of the data mining tool
@@ -284,39 +272,6 @@ end main;	# 99
 [ 3,	  nil	  ]
 [ 4,	  0	  ]
 [ 5,	  30	  ]
-#var d:= [<](b,c);
-#d.print();
-#-----------------#
-# h	tmp_18	  # name
-# int	bit	  # type
-#-----------------#
-[ 1,	  false	  ]
-[ 2,	  false	  ]
-[ 3,	  nil	  ]
-[ 4,	  false	  ]
-[ 5,	  true	  ]
-#d:= [<](c,b);
-#d.print();
-#-----------------#
-# h	tmp_19	  # name
-# int	bit	  # type
-#-----------------#
-[ 1,	  false	  ]
-[ 2,	  false	  ]
-[ 3,	  nil	  ]
-[ 4,	  true	  ]
-[ 5,	  false	  ]
-#d:= [>](c,b);
-#d.print();
-#-----------------#
-# h	tmp_20	  # name
-# int	bit	  # type
-#-----------------#
-[ 1,	  false	  ]
-[ 2,	  false	  ]
-[ 3,	  nil	  ]
-[ 4,	  false	  ]
-[ 5,	  true	  ]
 #quit();
 
 # 15:37:28 >  
