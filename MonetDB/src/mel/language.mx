@@ -53,9 +53,13 @@ class language {
       public:
 	virtual const char *get_name() const {
 		return "name";
-	} virtual int handle_args(int, char **) {
+	} 
+	virtual ~ language () { }
+
+	virtual int handle_args(int, char **) {
 		return 1;
-	} virtual int generate_code(ostream &, Symbol *) {
+	} 
+	virtual int generate_code(ostream &, Symbol *) {
 		return 0;
 	}
 	virtual int generate_table(ostream &, Symtable *) {
