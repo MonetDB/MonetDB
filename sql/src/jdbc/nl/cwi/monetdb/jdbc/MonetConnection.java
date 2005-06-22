@@ -300,8 +300,8 @@ public class MonetConnection extends Thread implements Connection {
 			// set our time zone on the server
 			Calendar cal = Calendar.getInstance();
 			int offset = (cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET)) / (60 * 1000);
-			String tz = offset < 0 ? "" : "+";
-			tz += (offset / 60 < 10 ? "0" : "") + (offset / 60) + ":";
+			String tz = offset < 0 ? "-" : "+";
+			tz += (Math.abs(offset) / 60 < 10 ? "0" : "") + (Math.abs(offset) / 60) + ":";
 			offset -= (offset / 60) * 60;
 			tz += (offset < 10 ? "0" : "") + offset;
 			sendIndependantCommand("SET TIME ZONE INTERVAL '" + tz + "' HOUR TO MINUTE");
