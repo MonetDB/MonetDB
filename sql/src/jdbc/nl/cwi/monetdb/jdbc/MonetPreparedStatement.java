@@ -583,7 +583,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setDate(int parameterIndex, java.sql.Date x) throws SQLException {
-		setValue(parameterIndex, "'" + x.toString() + "'");
+		setValue(parameterIndex, "date '" + x.toString() + "'");
 	}
 
 	/**
@@ -605,7 +605,7 @@ public class MonetPreparedStatement
 	{
 		synchronized (MonetConnection.mDate) {
 			MonetConnection.mDate.setTimeZone(cal.getTimeZone());
-			setValue(parameterIndex, "'" + MonetConnection.mDate.format(x) + "'");
+			setValue(parameterIndex, "date '" + MonetConnection.mDate.format(x) + "'");
 		}
 	}
 
@@ -667,7 +667,8 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setNull(int parameterIndex, int sqlType) throws SQLException {
-		// should be: "CAST(NULL AS " + asMonetType(sqlType) + ")"
+		// we discard the given type here, the backend converts the
+		// value NULL to whatever it needs for the column
 		setValue(parameterIndex, "NULL");
 	}
 
@@ -1163,7 +1164,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setTime(int parameterIndex, Time x) throws SQLException {
-		setValue(parameterIndex, "'" + x.toString() + "'");
+		setValue(parameterIndex, "time '" + x.toString() + "'");
 	}
 
 	/**
@@ -1187,7 +1188,7 @@ public class MonetPreparedStatement
 			MonetConnection.mTimeZ.setTimeZone(cal.getTimeZone());
 
 			String RFC822 = MonetConnection.mTimeZ.format(x);
-			setValue(parameterIndex, "'" +
+			setValue(parameterIndex, "time '" +
 				RFC822.substring(0, 15) + ":" + RFC822.substring(15) + "'");
 		}
 	}
@@ -1204,7 +1205,7 @@ public class MonetPreparedStatement
 	public void setTimestamp(int parameterIndex, Timestamp x)
 		throws SQLException
 	{
-		setValue(parameterIndex, "'" + x.toString() + "'");
+		setValue(parameterIndex, "timestamp '" + x.toString() + "'");
 	}
 
     /**
@@ -1229,7 +1230,7 @@ public class MonetPreparedStatement
 		synchronized (MonetConnection.mTimestampZ) {
 			MonetConnection.mTimestampZ.setTimeZone(cal.getTimeZone());
 			String RFC822 = MonetConnection.mTimestampZ.format(x);
-			setValue(parameterIndex, "'" +
+			setValue(parameterIndex, "timestamp '" +
 				RFC822.substring(0, 26) + ":" + RFC822.substring(26) + "'");
 		}
 	}
@@ -1311,8 +1312,6 @@ public class MonetPreparedStatement
 			if (values[i] == null) throw
 				new SQLException("Cannot execute, parameter " +  (i + 1) + " is missing.");
 
-			ret.append(monetdbType[i]);
-			ret.append(' ');
 			ret.append(values[i]);
 		}
 		ret.append(")");
