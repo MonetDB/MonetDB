@@ -447,29 +447,39 @@ sqlcleanup(mvc *c, int err)
 static int
 output_prepare(stream *out, mvc *c, cq *q)
 {
-	int i;
 	node *n;
-	char buf[BUFSIZ];
 
 	if (!out)
 		return 0;
 	/* indicate to client that a new SQL command starts here */
-	if (stream_write(out, "#-\n", 3, 1) != 1) {
+	if (stream_printf(out,
+		"#-\n"
+		"# " SZFMT " # querytype\n"
+		"# prepare,	prepare,	prepare # table_name\n"
+		"# type,	digits,	scale # name\n"
+		"# varchar, 	int,	int # type\n"
+		"# 0,	0,	0 # length\n"
+		"# %d # tuplecount\n"
+		"# %d # id\n",
+		Q_PREPARE,
+		c->params ? list_length(c->params) : 0,
+		q->id
+	) < 0) {
 		return -1;
 	}
 
-	i = snprintf(buf, BUFSIZ, "%d\n%d\n", q->id, c->params ? list_length(c->params) : 0);
-	if (stream_write(out, buf, i, 1) != 1) {
-		return -1;
-	}
 	if (c->params) {
 		for (n = c->params->h; n; n = n->next) {
 			var_ *v = n->data;
 			sql_subtype *t = tail_type(v->s);
 
 			if (t) {
-				i = snprintf(buf, BUFSIZ, "%s(%d,%d)\n", t->type->sqlname, t->digits, t->scale);
-				if (stream_write(out, buf, i, 1) != 1) {
+				if (stream_printf(out,
+					"[ \"%s\",	%d,	%d	]\n",
+					t->type->sqlname,
+					t->digits,
+					t->scale
+				) < 0) {
 					return -1;
 				}
 				/* add to the query cache param list */
@@ -691,7 +701,7 @@ sqlexecute(backend *be, stream *out)
 	if (!err && explain != ex_plan) {
 		if (mvc_status(c) < 0) {
 			error(out, "Error in result");
-		} else if (c->cache && c->type != Q_RESULT && c->type != Q_UPDATE) {
+		} else if (c->cache && c->type != Q_RESULT && c->type != Q_UPDATE && !(q && c->mode == m_prepare)) {
 			err = mvc_export_default(c, out);
 		}
 	}
