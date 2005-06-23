@@ -702,61 +702,37 @@ public class MonetPreparedStatement
 	}
 
 	/**
-	 * Sets the value of the designated parameter using the given object. The
-	 * second parameter must be of type Object; therefore, the java.lang
-	 * equivalent objects should be used for built-in types.
+	 * Sets the value of the designated parameter using the given
+	 * object.  The second parameter must be of type Object; therefore,
+	 * the java.lang equivalent objects should be used for built-in
+	 * types.
 	 * <br /><br />
-	 * The JDBC specification specifies a standard mapping from Java Object
-	 * types to SQL types. The given argument will be converted to the
-	 * corresponding SQL type before being sent to the database.
+	 * The JDBC specification specifies a standard mapping from Java
+	 * Object types to SQL types. The given argument will be converted
+	 * to the corresponding SQL type before being sent to the database.
 	 * <br /><br />
-	 * Note that this method may be used to pass datatabase-specific abstract
-	 * data types, by using a driver-specific Java type. If the object is of a
-	 * class implementing the interface SQLData, the JDBC driver should call
-	 * the method SQLData.writeSQL to write it to the SQL data stream. If, on
-	 * the other hand, the object is of a class implementing Ref, Blob, Clob,
-	 * Struct, or Array, the driver should pass it to the database as a value
-	 * of the corresponding SQL type.
+	 * Note that this method may be used to pass datatabase-specific
+	 * abstract data types, by using a driver-specific Java type. If the
+	 * object is of a class implementing the interface SQLData, the JDBC
+	 * driver should call the method SQLData.writeSQL to write it to the
+	 * SQL data stream. If, on the other hand, the object is of a class
+	 * implementing Ref, Blob, Clob, Struct, or Array, the driver should
+	 * pass it to the database as a value of the corresponding SQL type.
 	 * <br /><br />
-	 * This method throws an exception if there is an ambiguity, for example,
-	 * if the object is of a class implementing more than one of the interfaces
-	 * named above.
+	 * This method throws an exception if there is an ambiguity, for
+	 * example, if the object is of a class implementing more than one
+	 * of the interfaces named above.
 	 *
-	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param index the first parameter is 1, the second is 2, ...
 	 * @param x the object containing the input parameter value
 	 * @throws SQLException if a database access error occurs or the type of
 	 *                      the given object is ambiguous
 	 */
-	public void setObject(int parameterIndex, Object x) throws SQLException {
-		/**
-		 * NOTE:
-		 * This function should convert (see table B-5) the given object to the
-		 * underlying datatype of the query requirements.
-		 * This conversion is impossible since we don't know anything about the
-		 * query at this point.  Future real prepare queries should solve this.
-		 */
-		if (x instanceof SQLData) {
-			// do something with:
-			// ((SQLData)x).writeSQL( [java.sql.SQLOutput] );
-			// needs an SQLOutput stream... bit too far away from reality
-			throw new SQLException("Operation currently not supported!");
-		} else if (x instanceof Blob) {
-			setBlob(parameterIndex, (Blob)x);
-		} else if (x instanceof java.sql.Date) {
-			setDate(parameterIndex, (java.sql.Date)x);
-		} else if (x instanceof Timestamp) {
-			setTimestamp(parameterIndex, (Timestamp)x);
-		} else if (x instanceof Time) {
-			setTime(parameterIndex, (Time)x);
-		} else if (x instanceof Number) {
-			// catches:
-			// BigDecimal, BigInteger, Byte, Double, Float, Integer, Long, Short
-			// just write them as is
-			setValue(parameterIndex, x.toString());
-		} else {
-			// write the rest as 'varchar'
-			setString(parameterIndex, x.toString());
-		}
+	public void setObject(int index, Object x) throws SQLException {
+		if (index < 1 || index > size)
+			throw new SQLException("No such parameter with index: " + index);
+
+		setObject(index, x, javaType[index - 1]);
 	}
 
 	/**
