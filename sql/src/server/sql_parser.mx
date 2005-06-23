@@ -403,7 +403,6 @@ int yydebug=1;
 	end_field
 	single_datetime_field
 	interval_qualifier
-	scalar_exp_list
 	scalar_exp_list2
 	when_value_list
 	when_search_list
@@ -3013,19 +3012,12 @@ exec_ref:
   	  _dlist_append_int(l, $1);
   	  _dlist_append_list(l, NULL);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
-|   intval '(' scalar_exp_list ')'
+|   intval '(' atom_commalist ')'
 	{ dlist *l = _dlist_create();
   	  _dlist_append_int(l, $1);
   	  _dlist_append_list(l, $3);
 	  $$ = _symbol_create_list( SQL_NOP, l ); }
  ;
-
-scalar_exp_list:
-    scalar_exp 		{ $$ = _dlist_append_symbol( _dlist_create(), $1); }
- |  scalar_exp_list ',' scalar_exp
-			{ $$ = _dlist_append_symbol( $1, $3); }
- ;
-
 
 
 %%

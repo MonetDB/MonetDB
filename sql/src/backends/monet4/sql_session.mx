@@ -550,6 +550,7 @@ sqlexecute(backend *be, stream *out)
 		if (!q) {
 			error(out, "no prepared statement with the given id\n");
 			err = -1;
+			c->status = err;
 			return sqlcleanup(c, err);
 		}
 		argc = c->args?list_length(c->args):0;
@@ -557,7 +558,8 @@ sqlexecute(backend *be, stream *out)
 		if (argc != parc) {
 			error(out, "wrong number of arguments for prepared statement\n");
 			err = -1;
-			q = NULL;
+			c->status = err;
+			return sqlcleanup(c, err);
 		} else {
 			if (c->args)
 				for (a = c->args->h, p = q->params->h; a && p; a = a->next, p = p->next) {
@@ -570,7 +572,8 @@ sqlexecute(backend *be, stream *out)
 						snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
 						error(out, buf);
 						err = -1;
-						q = NULL;
+						c->status = err;
+						return sqlcleanup(c, err);
 					}
 				}
 		}

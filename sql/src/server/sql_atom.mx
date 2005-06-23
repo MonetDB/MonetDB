@@ -329,6 +329,12 @@ atom_cast(atom *a, sql_subtype *tp)
 		a->data.vtype = tp->type->localtype;
 		return 1;
 	}
+	if (a->isnull) {
+		sql_subtype_destroy(a->tpe);
+		a->tpe = sql_dup_subtype(tp);
+		a->data.vtype = tp->type->localtype;
+		return 1;
+	}
 	return 0;
 }
 
