@@ -81,8 +81,17 @@ insert_value(mvc *sql, scope *scp, sql_column *c, symbol *s)
 	} else {
 		stmt *n = NULL;
 		stmt *a = sql_value_exp(sql, scp, s, NULL, NULL, sql_sel);
-
-		if (!a || !(n = check_types(sql, c->type, a, type_dyncheck))) {
+	
+		if (!a)
+			return(NULL);
+			
+		if (!tail_type(a)) {
+			if (set_type_param(c->type, a) == -1) {
+				stmt_destroy(a);
+				return(NULL);
+			}
+			n = a;
+		} else if (!(n = check_types(sql, c->type, a, type_dyncheck))) {
 			return NULL;
 		}
 		return n;
