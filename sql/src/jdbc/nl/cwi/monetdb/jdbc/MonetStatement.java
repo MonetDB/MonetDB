@@ -53,7 +53,7 @@ public class MonetStatement implements Statement {
 	/** The last HeaderList object this Statement produced */
 	private MonetConnection.HeaderList lastHeaderList;
 	/** The last Header that this object uses */
-	private MonetConnection.Header header;
+	MonetConnection.Header header;
 	/** The warnings this Statement object generated */
 	private SQLWarning warnings;
 	/** Whether this Statement object is closed or not */
@@ -83,6 +83,7 @@ public class MonetStatement implements Statement {
 	final static int Q_TRANS = 7;
 	final static int Q_DEBUG = 8;
 	final static int Q_DEBUGP = 9;
+	final static int Q_PREPARE = 10;
 
 
 	/**
@@ -484,24 +485,32 @@ public class MonetStatement implements Statement {
 		// we default to keep current result, which requires no action
 		header = lastHeaderList.getNextHeader();
 
-		if (header != null && header.getQueryType() == Q_TABLE) return(true);
-
-		// no resultset, or update header
-		return(false);
+		if (header != null &&
+				(header.getQueryType() == Q_TABLE ||
+				 header.getQueryType() == Q_PREPARE))
+		{
+			return(true);
+		} else {
+			// no resultset, or update header
+			return(false);
+		}
 	}
 
 	public int getQueryTimeout() throws SQLException { throw new SQLException("Method not supported, sorry!"); }
 
 	/**
-	 * Retrieves the current result as a ResultSet object. This method should
-	 * be called only once per result.
+	 * Retrieves the current result as a ResultSet object.  This method
+	 * should be called only once per result.
 	 *
 	 * @return the current result as a ResultSet object or null if the result
 	 *         is an update count or there are no more results
 	 * @throws SQLException if a database access error occurs
 	 */
 	public ResultSet getResultSet() throws SQLException{
-		if (header == null || header.getQueryType() != Q_TABLE) return(null);
+		if (header == null || !
+				(header.getQueryType() == Q_TABLE ||
+				 header.getQueryType() == Q_PREPARE))
+			return(null);
 
 		try {
 			return(new MonetResultSet(

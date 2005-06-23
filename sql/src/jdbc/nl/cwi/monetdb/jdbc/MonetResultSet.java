@@ -1263,7 +1263,7 @@ public class MonetResultSet implements ResultSet {
 	 * @param type a value from java.sql.Types
 	 * @return a Class object from which an instance would be returned
 	 */
-	private Class getClassForType(int type) {
+	static Class getClassForType(int type) {
 		/**
 		 * This switch returns the types as objects according to table B-3 from
 		 * Sun's JDBC specification 3.0
