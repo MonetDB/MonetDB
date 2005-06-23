@@ -207,11 +207,11 @@ public class MonetResultSet implements ResultSet {
 		StringBuffer uesc = new StringBuffer();
 		for (; i < len; i++) {
 			switch(chrLine[i]) {
-				case '\\':
-					escaped = !escaped;
-				break;
 				default:
 					escaped = false;
+				break;
+				case '\\':
+					escaped = !escaped;
 				break;
 				case '"':
 					/**
