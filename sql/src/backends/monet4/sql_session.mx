@@ -523,6 +523,11 @@ sqlexecute(backend *be, stream *out)
 	if (explain == ex_profile)
 		T0 = GDKusec();
 
+	/* sqlparse needs sql allocator to be available.  It can be NULL at
+	 * this point if this is a recursive call. */
+	if (!c->sa)
+		c->sa = sa_create();
+
 	if ((err = sqlparse(c)) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(c) && c->type != Q_TRANS) || !c->sym) {
