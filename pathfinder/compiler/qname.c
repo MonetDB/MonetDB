@@ -33,6 +33,7 @@
 #include "pathfinder.h"
 
 #include <string.h>
+#include <stdio.h>
 
 #include "qname.h"
 
@@ -60,17 +61,17 @@ PFqname_eq (PFqname_t qn1, PFqname_t qn2)
     /* ns prefixes equal and both QNames are wildcards? 
      * => consider QNames equal
      */
-    if (PFQNAME_WILDCARD (qn1) && PFQNAME_WILDCARD (qn2))
+    if (PFQNAME_LOC_WILDCARD (qn1) && PFQNAME_LOC_WILDCARD (qn2))
         return 0;
 
     /* ns prefixes equal and qn2 is wildcard => qn1 is greater 
      */
-    if (PFQNAME_WILDCARD (qn2))
+    if (PFQNAME_LOC_WILDCARD (qn2))
         return 1;
 
     /* ns prefixes equal and qn1 is wildcard => qn2 is greater 
      */
-    if (PFQNAME_WILDCARD (qn1))
+    if (PFQNAME_LOC_WILDCARD (qn1))
         return -1;
 
     /* ns prefixes equal, no wildcards => compare local parts
@@ -88,16 +89,33 @@ PFqname_eq (PFqname_t qn1, PFqname_t qn2)
 char *
 PFqname_str (PFqname_t qn)
 {
+    char *ns;
     char *s;
 #ifdef DEBUG_NSURI
     return PFqname_uri_str (qn);
 #endif
 
-    s = (char *) PFmalloc ((qn.ns.ns ? strlen (qn.ns.ns) + 1 : 0) 
-                           + strlen (qn.loc) + 1);
+    /* if we have a prefix, print it */
+    if (qn.ns.ns)
 
-    return strcat (qn.ns.ns ? strcat (strcpy (s, qn.ns.ns), ":") : s,
-                   qn.loc);
+        sprintf (ns = (char *) PFmalloc (strlen (qn.ns.ns) + 2),
+                 "%s:", qn.ns.ns);
+
+    /* if there's no prefix, but an URI (e.g. default ens), print the URI */
+    else if (qn.ns.uri)
+
+        sprintf (ns = (char *) PFmalloc (strlen (qn.ns.uri) + 4),
+                 "\"%s\":", qn.ns.uri);
+
+    /* otherwise no prefix to print */
+    else
+        ns = "";
+    
+    s = (char *) PFmalloc (strlen (ns) + (qn.loc ? strlen (qn.loc) : 1) + 1);
+
+    sprintf (s, "%s%s", ns, qn.loc ? qn.loc : "*");
+
+    return s;
 }
 
 /**
@@ -190,6 +208,14 @@ PFstr_qname (char *n)
         qn.ns.uri  = 0;
         qn.loc     = nsloc; 
     }
+
+    /*
+     * We rather represent wildcard local names (`*') by a
+     * NULL pointer instead of the textual "*". (This is also
+     * consistent with types.c
+     */
+    if (!strcmp (qn.loc, "*"))
+        qn.loc = NULL;
 
     return qn;
 }
