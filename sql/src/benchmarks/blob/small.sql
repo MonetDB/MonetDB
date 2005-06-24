@@ -1,5 +1,0 @@
-CREATE TABLE aap (id BLOB);
-COMMIT;
-
-DROP TABLE aap;
-CREATE TABLE aap (id BLOB);
