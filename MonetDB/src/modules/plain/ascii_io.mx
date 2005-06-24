@@ -1113,8 +1113,16 @@ int
 ASCIIoutput_file(ascii *as, BAT *order, stream *s)
 {
 	oid base = oid_nil;
+	unsigned int maxnr = BATcount(order);
 
-	as->nr = BATcount(order);
+	/* only set nr if it is zero or lower (bogus) to the maximum value
+	 * possible (BATcount), if already set within BATcount range,
+	 * preserve value such that for instance SQL's reply_size still
+	 * works
+	 */
+	if (as->nr <= 0 || as->nr > maxnr)
+		as->nr = maxnr;
+
 	if ((base = check_BATs(as)) != oid_nil) {
 		if (BAThdense(order) && order->hseqbase == base)
 			return output_file_dense(as, s);
