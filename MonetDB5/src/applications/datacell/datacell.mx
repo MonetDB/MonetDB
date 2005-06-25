@@ -132,15 +132,19 @@ comment "Retrieve the names of all dependent transformations";
 
 command getProperties(cname:str):bat[:str,:str]
 address DCgetProperties
-comment "Retrieve the static properties of a container";
+comment "Retrieve the static properties of a pump";
 
 command getDynamicProperties(cname:str):bat[:str,:str]
 address DCgetDynamicProperties
 comment "Retrieve the dynamic properties of a container";
 
-command getPumps():bat[:void,:str]
+command getPumps():bat[:str,:str]
 address DCgetPumps
-comment "Retrieve the names of all transformations";
+comment "Retrieve the names of all pumps";
+
+command getQueries():bat[:str,:str]
+address DCgetQueries
+comment "Retrieve the pump queries";
 
 command getReceptorHost():bat[:void,:str]
 address DCgetReceptorHost
@@ -214,7 +218,7 @@ command dump()
 address DCdumpCatalogue
 comment "Display the datacell cataloque";
 
-command showContainer(cname:str, first:int, last:int)
+command showContainer(cname:str, first:int, last:int):void
 address DCshowContainer
 comment "Show a page of the (reverse ordered) container";
 
@@ -240,6 +244,7 @@ and analyse the data.
 #include "mal_interpreter.h"
 #include "../modules/mal/tablet.h"
 #include "mal_exception.h"
+#include "mtime.h"
 
 typedef enum {RECEPTOR, NUCLEUS, EMITTER} DATACELLKIND;
 
@@ -274,10 +279,11 @@ typedef struct DC_PUMP{
 
 	/* scheduling properties here */
 	int status;		/* scheduling status */
-	int arrived;	/* events received since previous isolate() */
+	int pending;	/* events received for processing */
 	int received; 	/* total received events since start */
+	timestamp start;/* first event time stamp */
+	int ticks;		/* ticks spent in receiving data */
 	int batches;	/* number of batch reads */
-	int cumarrival;	/* cumulative interarrival delay in microseconds/read */
 } *DCpump, DCpumpRecord;
 
 mal_export DCpump DCnewPump();
@@ -297,6 +303,7 @@ Furthermore, the BATs can be made accessible from the SQL frontend.
 @c
 #include "datacell.h"
 
+char *cellKind[]= {"receptor","nucleus","emitter"};
 @-
 The pump containers are actually simple relational tables.
 The first implementation was focussed on storing everything
@@ -349,6 +356,7 @@ DCpump DCnewPump(){
 	c->documentation= NULL;
 	c->picture= NULL;
 	c->usedby= 0;
+	c->status= -1; /* no thread yet */
 	c->lock= MT_create_lock();
 	pumpindex++;
 	return c;
@@ -501,7 +509,10 @@ DCshowContainer(int *ret, str *cname, int *first, int *last)
 
 	(void) ret; (void) first; (void) last;
 	p= DClocatePump(*cname);
-	(void)p;
+	if( p == 0)
+		return throwMessage("datacell.showContainer","Pump not found");
+	BATmultiprintf(GDKout,p->cols+1,p->private,1,0,1);
+	BATmultiprintf(GDKout,p->cols+1,p->public,1,0,1);
 	return MAL_SUCCEED;
 }
 @- Module initializaton
@@ -742,14 +753,24 @@ DCgetEmitters(int *bid){
 
 str
 DCgetPumps(int *bid){
-	BAT *bn = DCcontainer(TYPE_str,pumplimit);
+	BAT *bn = BATnew(TYPE_str,TYPE_str,pumplimit);
 	DCpump p;
-	oid o= oid_nil;
 
 	for(p=pumps; p<pumps+pumpindex; p++)
-	if( p->name && p->query && p->kind== NUCLEUS){
-		BUNins(bn,&o,p->query);
-	}
+	if( p->name )
+		BUNins(bn,cellKind[p->kind], p->name);
+	BBPincref(*bid= bn->batCacheid,TRUE);
+	BBPunfix(*bid);
+	return MAL_SUCCEED;
+}
+str
+DCgetQueries(int *bid){
+	BAT *bn = BATnew(TYPE_str,TYPE_str,pumplimit);
+	DCpump p;
+
+	for(p=pumps; p<pumps+pumpindex; p++)
+	if( p->name )
+		BUNins(bn,p->name,p->query?p->query:"");
 	BBPincref(*bid= bn->batCacheid,TRUE);
 	BBPunfix(*bid);
 	return MAL_SUCCEED;
@@ -812,9 +833,10 @@ DCgetProperties(int *bid, str *name){
 str
 DCgetDynamicProperties(int *bid, str *name){
 	DCpump p;
-	BAT *bn, *b;
+	BAT *bn;
 	char buf[128];
-	int cnt;
+	/* lng v;*/
+	timestamp ts;
 
 	p= DClocatePump(*name);
 	if( p == NULL)
@@ -823,18 +845,49 @@ DCgetDynamicProperties(int *bid, str *name){
 	if( bn == NULL)
          return throwMessage("datacell.getDynamicProperties", 
 			"Cannot create container");
-	snprintf(buf,128,DCtemplate,*name,"click");
-	b= BBPdescriptor(BBPindex(buf));
-	cnt= BATcount(b);
 
-	if( cnt==0) {
-		snprintf(buf,128,"%d",cnt);
-		BUNins(bn,"count","0");
-	} else {
-		/* fetch bounds */
-		snprintf(buf,128,"%d",cnt);
-		BUNins(bn,"count",buf);
+	BUNins(bn,"host",p->host);
+	snprintf(buf,128,"%d",p->port);
+	BUNins(bn,"port",buf);
+
+	snprintf(buf,128,"%d",p->status);
+	BUNins(bn,"status",buf);
+	if( p->pending){
+		snprintf(buf,128,"%d",p->pending);
+		BUNins(bn,"pending",buf);
 	}
+	/* locate first and list timestamp in private */
+	if( BATcount(p->private[0]) > 0){
+		str msg1= GDKmalloc(128);
+		str msg2= GDKmalloc(128);
+		int len=128;
+
+		ts= *(timestamp*) BUNtail(p->private[0],BUNfirst(p->private[0]));
+		timestamp_tostr(&msg1,&len,&ts);
+		ts= *(timestamp*) BUNtail(p->private[0],
+						BUNptr(p->private[0],BATcount(p->private[0])-1));
+		timestamp_tostr(&msg2,&len,&ts);
+		if( strncmp(msg1,msg2,10)==0){
+			BUNins(bn,"first",msg1+10);
+			BUNins(bn,"last",msg2+10);
+		} else {
+			BUNins(bn,"first",msg1);
+			BUNins(bn,"last",msg2);
+		}
+		GDKfree(msg1);
+		GDKfree(msg2);
+	}
+	if( p->status >=0){
+		snprintf(buf,128,"%d",p->received);
+		BUNins(bn,"received",buf);
+		snprintf(buf,128,"%d",p->batches);
+		BUNins(bn,"batches",buf);
+		if( p->ticks> 0){
+			snprintf(buf,128,"%4.2f/ms",(p->received+0.0)/(p->ticks/1000));
+			BUNins(bn,"rate",buf);
+		}
+	}
+
 	BBPincref(*bid= bn->batCacheid,TRUE);
 	return MAL_SUCCEED;
 }
@@ -1015,7 +1068,7 @@ DCgetStatus(int *ret){
 	DCpump p;
 	oid o= oid_nil;
 
-	for(p=pumps; p<pumps+pumplimit; p++)
+	for(p=pumps; p<pumps+pumpindex; p++)
 	if( p->name ){
 		BUNins(bn,&o,&p->status);
 	}

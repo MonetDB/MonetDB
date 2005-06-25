@@ -31,6 +31,14 @@ command release(target:str):void
 address DCrelease
 comment "Release control over the connection point.";
 
+command datacell.startPump(nme:str)
+address DCstartPump
+comment "Activate a specific receptor";
+
+command datacell.stopPump(nme:str)
+address DCstopPump
+comment "Activate a specific receptor";
+
 command datacell.startScheduler(delay:int)
 address DCstartScheduler
 comment "Give an overview of the actions taken";
@@ -64,6 +72,7 @@ comment "Give an overview of the actions taken";
 #include "../modules/mal/tablet.h"
 #include "mal_interpreter.h"
 #include "mal_exception.h"
+#include "dc_receptor.h"
 
 extern str DCnaiveScheduler();
 
@@ -88,20 +97,20 @@ DCstopScheduler(int *ret, str* expr){
 @c
 str
 DCnaiveScheduler(int cycles, int delay){
-	DCpump p;
+	int i;
 	Client c= getClient();
 	str msg;
 #ifdef DEBUG_DC_SCHEDULER
 	stream_printf(GDKerr,"#Start scheduling pumps with delay %d\n",delay);
 #endif
 	while( cycles-- > 0){
-		for(p=pumps; p<pumps+pumpindex; p++)
-		if( p->name  && p->mal[0] && p->kind== NUCLEUS){
+		for(i=0; i< pumpindex; i++)
+		if( pumps[i].name  && pumps[i].mal[0] && pumps[i].kind== NUCLEUS){
 #ifdef DEBUG_DC_SCHEDULER
 		stream_printf(GDKerr,"#Run %s\n",p->name);
-		printFunction(GDKout,p->malblk[0],0);
+		printFunction(GDKout,pumps[i].malblk[0],0);
 #endif
-			msg= runMAL(c,p->malblk[0],1,0,0,0);
+			msg= runMAL(c,pumps[i].malblk[0],1,0,0,0);
 			if( msg)
 				stream_printf(GDKout,"%s",msg);
 		}
@@ -174,3 +183,49 @@ DCrelease(int *ret, str *target){
     return MAL_SUCCEED;
 }
 
+str
+DCstartPump(int *ret, str *name)
+{	DCpump p;
+	str msg= MAL_SUCCEED;
+
+	(void) ret; 
+	p= DClocatePump(*name);
+	if( p == 0)
+		return throwMessage("datacell.startReceptor","unknown host");
+	if( p->host == 0 )
+		return throwMessage("datacell.startReceptor","unknown host");
+	if( p->port < 0 )
+		return throwMessage("datacell.startReceptor","unknown port");
+#ifdef DEBUG_DCRECEPTOR
+	stream_printf(GDKout,"#Activate reception %s at port %d of %s\n",
+		p->name,p->port,p->host);
+#endif
+
+	if( p->status == -1){
+		if( p->kind == RECEPTOR)
+			msg= DClistenReceptor(p, NULL);
+		else msg= throwMessage("datacell.startPump","NYI");
+	}
+	p->status=1;
+	return msg;
+}
+str
+DCstopPump(int *ret, str *name)
+{	DCpump p;
+
+	(void) ret; 
+	p= DClocatePump(*name);
+	if( p == 0)
+		return throwMessage("datacell.startReceptor","unknown host");
+	if( p->host == 0 )
+		return throwMessage("datacell.startReceptor","unknown host");
+	if( p->port < 0 )
+		return throwMessage("datacell.startReceptor","unknown port");
+#ifdef DEBUG_DCRECEPTOR
+	stream_printf(GDKout,"#Deactivate reception %s at port %d of %s\n",
+		p->name,p->port,p->host);
+#endif
+
+	p->status=0;
+	return throwMessage("datacell.stopPump","nyi");
+}

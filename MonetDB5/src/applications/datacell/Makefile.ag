@@ -16,13 +16,13 @@ LIBS = {
 	SCRIPTS = mal mil ""
 	LIBS = $(MONETDB_LIBS) -lbat -lstream
 }
-bin_streamSource = {
-	SOURCES = streamSource.mx
+bin_dcsource = {
+	SOURCES = dcsource.mx
 	HEADERS = h 
 	LIBS = $(MONETDB_LIBS) -lstream  
 }
-bin_streamSink = {
-	SOURCES = streamSink.mx
+bin_dcsink = {
+	SOURCES = dcsink.mx
 	HEADERS = h 
 	LIBS = $(MONETDB_LIBS) -lstream  
 }

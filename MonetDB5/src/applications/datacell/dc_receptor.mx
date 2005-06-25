@@ -55,13 +55,6 @@ expires. This is piggybacked on the transfer of tuples
 to the secondary table and when we run into resource
 problems.
 @mal
-command datacell.startReceptor(nme:str)
-address DCstartReceptor
-comment "Activate a specific receptor";
-
-command datacell.stopReceptor(nme:str)
-address DCstopReceptor
-comment "Activate a specific receptor";
 
 command datacell.getReceptorStatus(nme:str)
 address DCgetReceptorStatus
@@ -86,6 +79,16 @@ and analyse the data.
 #define DEBUG_DCRECEPTOR
 
 #include "datacell.h"
+
+
+typedef struct {
+    int socket;
+    /*str sname; does not work */
+} *SensorInfo;
+
+mal_export str DCstartChannel(DCpump p, bstream *bs);
+mal_export str DClistenReceptor(DCpump p, str *Usockfile);
+mal_export str DClistenThread(SensorInfo sensor);
 
 #endif /* _DCRECEPTOR_DEF */
 @c
@@ -128,19 +131,11 @@ and analyse the data.
 #include <openssl/err.h>
 #endif
 
+#include "mtime.h"
 
 static int usock = -1;
 
-typedef struct {
-    int socket;
-    /*str sname; does not work */
-} *SensorInfo;
-
 static DCpump channel; /* insecure channel between threads! */
-
-extern str DCstartChannel(DCpump p, bstream *bs);
-extern str DClistenReceptor(DCpump p, str *Usockfile);
-extern str DClistenThread(SensorInfo sensor);
 
 
 str
@@ -158,44 +153,6 @@ DCgetReceptorStatus(int *ret){
 	return MAL_SUCCEED;
 }
 
-str
-DCstartReceptor(int *ret, str *name )
-{	DCpump p;
-	str msg= MAL_SUCCEED;
-
-	(void) ret; 
-	p= DClocatePump(*name);
-	if( p == 0)
-		return throwMessage("datacell.startReceptor","unknown host");
-	if( p->host == 0 )
-		return throwMessage("datacell.startReceptor","unknown host");
-	if( p->port < 0 )
-		return throwMessage("datacell.startReceptor","unknown port");
-#ifdef DEBUG_DCRECEPTOR
-	stream_printf(GDKout,"#Activate reception %s at port %d of %s\n",
-		p->name,p->port,p->host);
-#endif
-
-	msg=DClistenReceptor(p, NULL);
-	return msg;
-}
-
-str
-DCstopReceptor(int *ret, str *name )
-{	DCpump p;
-	str msg= MAL_SUCCEED;
-
-	(void) ret; 
-	p= DClocatePump(*name);
-	if( p == 0)
-		return throwMessage("datacell.startReceptor","unknown host");
-#ifdef DEBUG_DCRECEPTOR
-	stream_printf(GDKout,"#Stop reception %s port %d of %s\n",
-		p->name,p->port,p->host);
-#endif
-	/* soft termination of the channel */
-	return msg;
-}
 
 str
 DCbindReceptor(int *retpublic, int *retprivate, str *name, str *cname){
@@ -311,6 +268,7 @@ Get the new information for the server socket and start listening.
 #endif
 	sensor->socket = sock;
 
+	p->status= 1;
 	if( MT_create_thread((MT_Id *)pidp,
 		(void (*)(void *))DClistenThread, sensor) <0){
 			return throwMessage("datacell.listen", "starting thread failed");
@@ -340,19 +298,27 @@ to acquire and release the lock held on the receptor.
 This way, a pump query can step in and collect the events
 received.
 @c
-ptr *startRecognition(void *extra, int type, char *s){
+ptr *singleRecognition(void *extra, int type, char *s){
 	DCpump p= (DCpump) extra;
-#ifdef DEBUG_DCRECEPTOR
-	stream_printf(GDKout,"#acquire lock %s\n",p->name);
-#endif
+	ptr i;
+	oid o= oid_nil;
+	timestamp ts;
+	i =  TABLETadt_frStr(extra,type,s);
+	/* insert a time stamp */
+	MTIMEcurrent_timestamp(&ts);
+	BUNins(p->private[0],&o,&ts);
+	return i;
+}
+ptr *startRecognition(void *extra, int type, char *s){
 	return TABLETadt_frStr(extra,type,s);
 }
 ptr *endRecognition(void *extra, int type, char *s){
 	DCpump p= (DCpump) extra;
-#ifdef DEBUG_DCRECEPTOR
-	stream_printf(GDKout,"#release lock %s\n",p->name);
-#endif
+	timestamp ts;
+	oid o= oid_nil;
 	/* insert a time stamp */
+	MTIMEcurrent_timestamp(&ts);
+	BUNins(p->private[0],&o,&ts);
 	return TABLETadt_frStr(extra,type,s);
 }
 
@@ -398,6 +364,7 @@ DCstartChannel(DCpump p, bstream *bs){
 	fmt[0].extra= (void*) p;
 	fmt[k-1].frstr= &endRecognition;
 	fmt[k-1].extra= (void*) p;
+	if( k-1 == 0) fmt[0].frstr = &singleRecognition;
 	/* here we fork and prepare for reading */
 #ifdef DEBUG_DCRECEPTOR
 		stream_printf(GDKerr, "#start loading sensor data\n");
@@ -410,20 +377,24 @@ This scheme works under the assumption that the TABLEload_file
 is interrupted with each stream_flush from the sensorSource.
 @c
 	res =1;
-	while(res>0 && !stream_errnr(bs->s)){
+	while(p->status && res>0 && !stream_errnr(bs->s)){
+		int start=GDKusec();
 		bs->eof=0;
 		as.nr = ~(size_t) 0;
 		res=TABLETload_file(&as, bs);
 #ifdef DEBUG_DCRECEPTOR
 		stream_printf(GDKerr, "#load %d events\n",res);
 #endif
-		p->arrived += res;
+		p->ticks += GDKusec()-start;
+		p->pending += res;
 		p->received += res;
-		p->batches++;
+		if( res )
+			p->batches++;
 	}
-	for(i=0; i<p->cols; p++)
-	fmt[i].bval = NULL;
-	TABLETdestroy_format(&as);
+	for(i=0; i<k; i++) {
+        GDKfree( fmt[i].sep );
+	}
+    GDKfree(fmt);
 	return MAL_SUCCEED;
 #ifdef DEBUG_DCRECEPTOR
 	stream_printf(GDKerr, "#finished receiving data\n");

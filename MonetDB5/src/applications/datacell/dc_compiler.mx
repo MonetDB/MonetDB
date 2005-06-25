@@ -30,10 +30,6 @@ command datacell.compiler(name:str,expr:str):str
 address DCsqlCompiler
 comment "Compile the expression into a MAL program";
 
-command datacell.reduce(expr:str,newname:str):void
-address DCsqlReduce
-comment "Optimize the MAL program for execution with the datacell library.";
-
 command datacell.pump(name:str, lang:str, query:str)
 address DCpumpDefinition
 comment "Define a data pump query.";
@@ -65,7 +61,7 @@ comment "Define a data pump query.";
 #define _DC_COMPILE_DEBUG
 
 mal_export str SQLcompile(str *ret, str *expr, int *flag);
-mal_export str DCsqlReduce(int *ret, str *nme, str *newname);
+mal_export str DCmakePlans(int *ret, str *nme, str *newname);
 mal_export str DCsqlReshuffle(MalBlkPtr mb, str newname);
 mal_export void DCflowDependencies(DCpump p);
 @-
@@ -107,12 +103,6 @@ DCcompileQuery(str *ret, str* expr, str *name){
 	int flag= 0; /* do not keep the catalog changes */
 
 	len = pumpindex * 1024;
-	if( pumpindex == 0) {
-		msg= SQLcompile(ret,expr,&flag);
-		if( msg== MAL_SUCCEED)
-			msg= DCsqlReduce(&flag,ret,name);
-		return msg;
-	}
 	buf= (char *) alloca(len);
 
 	for(p= pumps; p<pumps+pumpindex; p++)
@@ -157,8 +147,9 @@ DCcompileQuery(str *ret, str* expr, str *name){
 	stream_printf(GDKout,"SQL:\n%s\n",buf);
 #endif
 	msg= SQLcompile(ret,&buf,&flag);
-	if( msg== MAL_SUCCEED)
-		msg= DCsqlReduce(&flag,ret,name); 
+	if( msg== MAL_SUCCEED){
+		msg= DCmakePlans(&flag,ret,name); 
+	}
 	return msg;
 }
 str
@@ -182,7 +173,7 @@ DCpumpDefinition(int *ret, str *name, str *lang, str *qry ){
 	p->query= GDKstrdup(*qry);
 	if( strcmp("sql",*lang)==0){
 		msg= DCcompileQuery(&prg,qry,name);
-		renameFunction(prg,"pumps",*name);
+		/* renameFunction(prg,"pumps",*name);*/
 		p->mal[0]= GDKstrdup(*name);
 		s= findMALSymbol(putName("pumps",5), putName(*name,strlen(*name)) );
 		if( s== 0 )
@@ -207,30 +198,12 @@ as performing double checks before the function returns
 the new code block.
 @c
 str
-DCsqlReduce(int *ret, str *nme, str *newname){
-	Symbol s;
-	MalBlkPtr mb;
+DCplan(MalBlkPtr mb, str newname){
     long clk= GDKusec();
 	int i,j,k,actions = 0;
 	InstrPtr p,q;
 	int *emptyset,z=0;
 
-	(void) ret;
-	s= findMALSymbol(putName("user",4), putName(*nme,strlen(*nme)) );
-	if( s== 0 )
-		return throwMessage("datacell.sqlcleanup","symbol not found");
-	mb= s->def;
-	chkProgram(getClient()->nspace, mb);
-	PHoptimizer(mb,0,0);
-#ifdef _DC_COMPILE_DEBUG
-	stream_printf(GDKout,"start reduction %s:\n", (mb->errors?"errors":""));
-	printFunction(GDKout,s->def,LIST_MAL_ALL);
-#endif
-@-
-The reduction is performed inplace, dropping instructions
-that are not considered relevant for the DataCell.
-Moreover, we contain the empty variables that should be removed.
-@c
 	emptyset= (int *) alloca(mb->stop * sizeof(int*));
 	for(j=i=1;i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
@@ -301,9 +274,80 @@ We now have to propagate the knowledge about empty sets
 @c
 	ESevaluate(mb,z,emptyset);
 	PHoptimizer(mb,0,0);
-	DCsqlReshuffle(mb,*newname);
+	DCsqlReshuffle(mb,newname);
 	optimizerCheck(mb,"datacell.reduce",actions,GDKusec()-clk);
 	printFunction(GDKout,mb,LIST_MAL_ALL);
+	return MAL_SUCCEED;
+}
+str
+DCmakePlans(int *ret, str *nme, str *newname){
+	Symbol s;
+	MalBlkPtr mb;
+	DCpump pump;
+	InstrPtr p;
+	char buf[128];
+	int i;
+
+	(void) ret;
+	s= findMALSymbol(putName("user",4), putName(*nme,strlen(*nme)) );
+	if( s== 0 )
+		return throwMessage("datacell.makePlans","symbol not found");
+	pump= DClocatePump(*newname);
+	if( pump== 0 )
+		return throwMessage("datacell.makePlans","pump not found");
+	mb= s->def;
+	PHoptimizer(mb,0,0);
+@-
+We are using three different plans based on the cardinality of the
+first receptor argument.
+@c
+	i= getArg(getInstrPtr(mb,0),0);
+
+	pump->mal[0]= GDKstrdup(*newname);
+	s= newSymbol( putName( *newname,strlen(*newname)), FUNCTIONsymbol);
+	GDKfree(s->def);
+	s->def= pump->malblk[0]= copyMalBlk(mb);
+	p= getInstrPtr(s->def,0);
+	setModuleId(p,putName("pumps", 5));
+	setFunctionId(p,putName(*newname, strlen(*newname)));
+	s->def->var[i]->name = GDKstrdup(*newname);
+	insertSymbol(getClient()->nspace,s);
+
+	snprintf(buf,128,"%s0",*newname);
+	pump->mal[1]= GDKstrdup(buf);
+	s= newSymbol( putName( buf,strlen(buf)), FUNCTIONsymbol);
+	GDKfree(s->def);
+	s->def= pump->malblk[1]= copyMalBlk(mb);
+	p= getInstrPtr(s->def,0);
+	setModuleId(p,putName("pumps", 5));
+	setFunctionId(p,putName(buf, strlen(buf)));
+	s->def->var[i]->name = GDKstrdup(buf);
+	insertSymbol(getClient()->nspace,s);
+
+	snprintf(buf,128,"%s1",*newname);
+	pump->mal[2]= GDKstrdup(buf);
+	s= newSymbol( putName( buf,strlen(buf)), FUNCTIONsymbol);
+	GDKfree(s->def);
+	s->def= pump->malblk[2]= copyMalBlk(mb);
+	p= getInstrPtr(s->def,0);
+	setModuleId(p,putName("pumps", 5));
+	setFunctionId(p,putName(buf, strlen(buf)));
+	s->def->var[i]->name = GDKstrdup(buf);
+
+	insertSymbol(getClient()->nspace,s);
+
+#ifdef _DC_COMPILE_DEBUG
+	stream_printf(GDKout,"start reduction %s:\n", (mb->errors?"errors":""));
+	printFunction(GDKout,s->def,LIST_MAL_ALL);
+#endif
+@-
+The reduction is performed inplace, dropping instructions
+that are not considered relevant for the DataCell.
+Moreover, we contain the empty variables that should be removed.
+@c
+	DCplan(pump->malblk[0], *newname);
+	DCplan(pump->malblk[1], *newname);
+	DCplan(pump->malblk[2], *newname);
 	return MAL_SUCCEED;
 }
 @-

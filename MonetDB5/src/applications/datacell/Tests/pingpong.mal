@@ -14,9 +14,7 @@ datacell.define("pong","value",:int);
 
 datacell.dump();
 
-
 datacell.pump("ball","sql","insert into pong select * from ping;");
-
 #g:= datacell.compiler("insert into pong select * from ping;");
 #io.print(g);
 #mdb.showFunction("user",g);
@@ -28,7 +26,7 @@ io.print(s);
 
 #manually fill the receptor private buffer with a single element
 # it should be transported to the emitter
-datacell.startReceptor("ping");
+datacell.startPump("ping");
 (pub:bat[:void,:timestamp], priv:bat[:void,:timestamp]) := datacell.bindReceptor("ping","click");
 bat.insert(priv,nil,1:timestamp);
 (public:bat[:void,:int], private:bat[:void,:int]) := datacell.bindReceptor("ping","value");
