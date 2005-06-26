@@ -83,9 +83,6 @@ abstract class MCLMessage {
 	 * the stream failed
 	 */
 	public void writeToStream(MCLOutputStream out) throws MCLException {
-		if (protover == null || server == null || seed == null)
-			return("Invalid Message");
-
 		out.writeSentence(getSomSentence());
 		for (int i = 0; i < sentences.length; i++) {
 			if (sentences[i] == null) throw
