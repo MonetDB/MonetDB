@@ -13,6 +13,11 @@ import java.util.*; // needed?
  * @author Fabian Groffen <Fabian.Groffen>
  */
 abstract class MCLMessage {
+	protected final static Sentence promptSentence = new Sentence('.', "");
+	protected final static Sentence morePromptSentence = new Sentence(',', "");
+
+	protected Sentence[] sentences;
+	
 	/**
 	 * Returns a String representation of the current contents of this
 	 * Message object.  The String representation is equal to what would
@@ -23,7 +28,19 @@ abstract class MCLMessage {
 	 *
 	 * @return a String representation of this object
 	 */
-	public String toString();
+	public String toString() throws MCLException {
+		String ret = getName() + ":\n";
+		ret += getSomSentence().toString();
+		for (int i = 0; i < sentences.length; i++) {
+			if (sentences[i] == null)
+				return("Invalid Message");
+
+			ret += sentences[i].toString() + "\n";
+		}
+		ret += promptSentence.toString();
+		
+		return(ret);
+	}
 
 	/**
 	 * Returns the name of this Message.  In practice the string
@@ -33,7 +50,10 @@ abstract class MCLMessage {
 	 * @return a String representing the name of the type of this
 	 *         Message
 	 */
-	public String getName();
+	public String getName() {
+		String name = this.getClass().getName();
+		return(name.substring(name.lastIndexOf(".")));
+	}
 
 	/**
 	 * Returns the type of this Message as one of the constants of the
@@ -43,19 +63,41 @@ abstract class MCLMessage {
 	 */
 	public int getType();
 
+	/**
+	 * Returns a sentence that represents the start of message.  The
+	 * returned sentence is the right sentence that identifies the
+	 * implementing class' Message.
+	 *
+	 * @return the start of message sentence
+	 */
+	public Sentence getSomSentence();
 
-	// candidates ServerOriginated
+
 	/**
 	 * Writes the current contents of this Message object to the given
-	 * OutputStream.  Writing is done per sentence, where each sentence
-	 * is prefixed with a network order integer indicating the length of
-	 * the sentence.
+	 * OutputStream.  Writing is done per sentence, after which a flush
+	 * is performed.
 	 *
 	 * @param out the OutputStream to write to
 	 * @throws MCLException if this Message is not valid, or writing to
 	 * the stream failed
 	 */
-	public void writeToStream(MCLOutputStream out) throws MCLException;
+	public void writeToStream(MCLOutputStream out) throws MCLException {
+		if (protover == null || server == null || seed == null)
+			return("Invalid Message");
+
+		out.writeSentence(getSomSentence());
+		for (int i = 0; i < sentences.length; i++) {
+			if (sentences[i] == null) throw
+				new MCLException("Invalid Message");
+
+			out.writeSentence(sentences[i]);
+		}
+		out.writeSentence(promptSentence);
+
+		out.flush();
+	}
+
 
 	/**
 	 * Adds the given String to this Message if it matches the Message
@@ -63,14 +105,13 @@ abstract class MCLMessage {
 	 * necessary to validate it against the Message type.  If a sentence
 	 * is not valid, an MCLException is thrown.
 	 * 
-	 * @param in a sentence as String without the leading length integer
+	 * @param in an MCLSentence object
 	 * @throws MCLException if the given sentence is not considered to
 	 * be valid
 	 */
 	public void addSentence(String in) throws MCLException;
 
 
-	// not in interface: implementation code function
 	/**
 	 * Reads from the stream until the Message on that stream is fully
 	 * read or an error occurs.  All sentences read are passed on to the
@@ -80,5 +121,7 @@ abstract class MCLMessage {
 	 * @throws MCLException if the data read from the stream is invalid
 	 * or reading from the stream failed
 	 */
-	public static void readFromStream(MCLInputStream in) throws MCLException;
+	public static void readFromStream(MCLInputStream in) throws MCLException {
+		// implementation should go here :-o
+	}
 }

@@ -27,13 +27,55 @@ public class MCLSentence {
 	
 	/**
 	 * Constucts a new sentence with the given type and data elements.
+	 * The sentence type needs to be one of the supported (and known)
+	 * sentence types.
 	 *
-	 * @param type a byte representing the type of this sentence
+	 * @param type an int representing the type of this sentence
 	 * @param data a byte array containing the sentence value
+	 * @throws MCLException if the type is invalid, or the data is empty
 	 */
-	public MCLSentence(int type, byte[] data) {
+	public MCLSentence(int type, byte[] data) throws MCLException {
+		if (data == null) throw
+			new MCLException("data may not be null");
+		if (type != PROMPT &&
+				type != MOREPROMPT &&
+				type != STARTOFMESSAGE &&
+				type != MCLMETADATA &&
+				type != SWITCHROLES &&
+				type != METADATA &&
+				type != DATA &&
+				type != QUERY &&
+				type != INFO)
+		{
+			throw new MCLException("Unknown sentence type: " + (char)type + " (" + type + ")");
+		}
+		
 		this.type = type;
 		this.data = data;
+	}
+
+	/**
+	 * Constructs a new sentence with the given type and string data
+	 * value.
+	 *
+	 * @param type an int representing the type of this sentence
+	 * @param data a String containing the sentence value
+	 * @throws MCLException if the type is invalid, or the data is empty
+	 */
+	public MCLSentence(int type, String data) throws MCLException {
+		this(type, data.getBytes("UTF-8"));
+	}
+
+	/**
+	 * Convenience constuctor which constructs a new sentence from the
+	 * given string, assuming the first character of the string is the
+	 * sentence type.
+	 *
+	 * @param sentence a String representing a full sentence
+	 * @throws MCLException if the type is invalid, or the data is empty
+	 */
+	public MCLSentence(String sentence) throws MCLException {
+		this(sentence.charAt(0), sentence.substring(1));
 	}
 
 	/**
@@ -62,6 +104,16 @@ public class MCLSentence {
 	 * @return the value of this sentence as String
 	 */
 	public String getString() {
-		return(new String(data));
+		return(new String(data, "UTF-8"));
+	}
+
+	/**
+	 * Returns a String representing this complete sentence.  The string
+	 * is constructed by appending the value to the type.
+	 *
+	 * @return a String describing this MCLSentence
+	 */
+	public String toString() {
+		return("" + (char)type + getString());
 	}
 }
