@@ -48,8 +48,16 @@ struct PFqname_t {
   char   *loc;     /**< local part */
 };
 
-/* is QName a wildcard (ns:*)? */
-#define PFQNAME_WILDCARD(qn) ((qn).loc == 0)
+/* is namespace the wildcard namespace? */
+#define PFQNAME_NS_WILDCARD(qn) \
+    ((qn).ns.ns == PFns_wild.ns && (qn).ns.uri == PFns_wild.uri)
+
+/* is local name a wildcard (ns:*)? */
+#define PFQNAME_LOC_WILDCARD(qn) ((qn).loc == 0)
+
+/* is QName the wildcard *:* ? */
+#define PFQNAME_WILDCARD(qn) \
+    (PFQNAME_NS_WILDCARD (qn) && PFQNAME_LOC_WILDCARD (qn))
 
 /* Compare two QNames */
 int 

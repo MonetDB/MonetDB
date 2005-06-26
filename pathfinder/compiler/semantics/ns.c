@@ -520,13 +520,44 @@ ns_resolve (PFpnode_t *n)
 
     case p_atom_ty:
     case p_named_ty:
-    case p_req_name:
         if (NS_QUAL (n->sem.qname))
             if (! ns_lookup (&(n->sem.qname.ns)))
                 PFoops_loc (OOPS_BADNS, n->loc,
                             "unknown namespace in qualified name %s",
                             PFqname_str (n->sem.qname));
+        break;
 
+    case p_req_name:
+        /*
+         * This is the QName specification in an XPath location step. 
+         * 
+         * The spec says: ``An unprefixed QName, when used as a name
+         * test on an axis whose principal node kind is element, has
+         * the namespace URI of the default element/type namespace in
+         * the expression context; otherwise, it has no namespace URI.''
+         *
+         * BUG: We cannot check for the principale node kind here. (In
+         *      other words: We don't know if this happens to be the
+         *      attribute axis.)
+         *
+         * Furthermore: ``A node test * is true for any node of the
+         * principal node kind of the step axis.''
+         */
+        if (! NS_QUAL (n->sem.qname)) {
+
+            if (PFQNAME_LOC_WILDCARD (n->sem.qname))
+                n->sem.qname.ns = PFns_wild;
+            else if (ens.uri) {
+                n->sem.qname.ns = ens;
+            }
+
+        } 
+        else {
+            if (! ns_lookup (&(n->sem.qname.ns)))
+                PFoops_loc (OOPS_BADNS, n->loc,
+                            "unknown namespace in qualified name %s",
+                            PFqname_str (n->sem.qname));
+        }
         break;
 
         /* handle query body */
