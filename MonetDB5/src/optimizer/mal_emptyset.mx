@@ -51,7 +51,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 	InstrPtr p;
 
 #ifdef DEBUG_MAL_EMPTYSET
-	stream_printf(GDKout,"START emptyset optimizer %d\n",cnt);
+	stream_printf(GDKout,"START emptyset optimizer %d:",cnt);
 	for(i=0;i<cnt; i++) stream_printf(GDKout,",%d ",vars[i]);
 	stream_printf(GDKout,"\n");
 #endif
@@ -77,15 +77,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 		for( j=p->retc; j< p->argc; j++)
 		if( empty[getArg(p,j)]  ){
 			/* decode operations */
-			if( getName("algebra",7)== moduleId(p)){
-				if( getName("kdiff",5)== functionId(p) && j== p->argc-1){
-					setModuleId(p,NULL);
-					setFunctionId(p,NULL);
-					p->argc=2;
-					p->token= ASSIGNsymbol;
-					doAR++;
-					break;
-				} else
+			if( getName("bat",3) == moduleId(p)){
 				if( getName("insert",6)== functionId(p) ||
 					getName("delete",6)== functionId(p) ||
 					getName("append",6)== functionId(p) ){
@@ -99,6 +91,23 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 						break;
 					}
 				} else 
+				if( getName("reverse",7)== functionId(p) &&
+					getVar(mb,getArg(p,0))->updLifespan == 1 ){
+					empty[getArg(p,0)]= 1;
+					break;
+				} 
+			} else
+			if( getName("algebra",7)== moduleId(p)){
+				if( getName("markH",5)== functionId(p) ||
+					getName("markT",5)== functionId(p) ){
+					setModuleId(p,NULL);
+					setFunctionId(p,NULL);
+					p->argc=2;
+					p->token= ASSIGNsymbol;
+					doAR++;
+					empty[getArg(p,0)] = 1;
+					break;
+				} else
 				if( getName("exist",4)== functionId(p) ){
 					/* always false */
 					setModuleId(p,NULL);
@@ -136,6 +145,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 					setFunctionId(p,NULL);
 					p->argc=2;
 					p->token= ASSIGNsymbol;
+					if( j == 1) empty[getArg(p,0)] = 1;
 					doAR++;
 					break;
 				} else 
@@ -154,19 +164,29 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 					p->argc=2;
 					p->token= ASSIGNsymbol;
 					if( j==2) p->argv[1]= p->argv[2];
+					if( empty[p->argv[1]]) empty[p->argv[0]]=1;
 					doAR++;
 					break;
-				} 
+				} else 
+				if( getName("count",5)== functionId(p) ){
+					/* count propagation */
+					setModuleId(p,NULL);
+					setFunctionId(p,NULL);
+					p->argc=1;
+					p->token= ASSIGNsymbol;
+					pushArgument(mb,p, newConstant(mb,TYPE_lng,GDKstrdup("0"),FALSE));
+					doAR++;
+					break;
+				}
 				/* CONTINUE WITH THETA JOIN */
-			} else
-			if( getName("bat",7)== moduleId(p)){
-				if( getName("reverse",7)== functionId(p) &&
-					getVar(mb,getArg(p,0))->updLifespan == 1 )
-					empty[getArg(p,0)]= 1;
-			}
+			} 
 		}
 	}
 	if( doAR) {
+#ifdef DEBUG_MAL_EMPTYSET
+		printf("MID STAGE doAR=%d\n",doAR);
+		printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
 		ARoptimizer(mb,0,0);
 		DCoptimizer(mb,0,0);
 	}
