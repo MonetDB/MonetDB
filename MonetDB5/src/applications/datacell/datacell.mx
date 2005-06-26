@@ -209,6 +209,9 @@ command bindEmitter(sname:str,pname:str)
 			(public:bat[:any$1,:any$2], private:bat[:any$1,:any$2])
 address DCbindEmitter
 comment "Provide access to a private version of a column.";
+command bindEmitter(sname:str,pname:str):bat[:any$1,:any$2]
+address DCbindEmitterPublic
+comment "Provide access to a private version of a column.";
 
 command bind(sname:str,pname:str):any
 address DCbind
@@ -1109,7 +1112,26 @@ DCbindEmitter(int *public, int *private, str *name, str *cname){
 		break;
     }
     return MAL_SUCCEED;
+}
+str
+DCbindEmitterPublic(int *public, str *name, str *cname){
+	DCpump p;
+    int i;
 
+    p= DClocatePump(*name);
+    if( p == 0)
+        return throwMessage("datacell.bindEmitter","unknown receptor");
+    if( p->kind != EMITTER)
+        return throwMessage("datacell.bindEmitter","unknown receptor");
+#ifdef DEBUG_DCRECEPTOR
+    stream_printf(GDKout,"#bindReceptor %s.%s\n",*name,*cname);
+#endif
+    for(i=0; i < p->cols ; i++)
+    if( strcmp(p->columns[i],*cname) == 0 ){
+        BBPincref( *public= p->public[i]->batCacheid, TRUE);
+		break;
+    }
+    return MAL_SUCCEED;
 }
 @-
 Before you start updating the emitter public part it should be locked.

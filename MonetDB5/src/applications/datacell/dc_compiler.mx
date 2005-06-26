@@ -242,22 +242,16 @@ The dbat can only be dropped for connection points.[todo]
 		}
 		if( @:tstName(p,"sql","bind")@ ){
 			/* tst name to determine its kind */
-			/* printf("lookup %s %s\n", getVarLiteral(mb,getArg(p,2)),
-				getVarLiteral(mb,getArg(p,3)) ); */
 			if( isReceptor( getVarLiteral(mb,getArg(p,2))) ){
-				setArgument(mb, p, 1,
-					newTmpVariable(mb, getVarType(mb,getArg(p,0))) );
-				p->retc++; 
+				delArgument(p,4);
+				delArgument(p,1);
 				setFunctionId(p,putName("bindReceptor",12));
 			}
 			if( isEmitter( getVarLiteral(mb,getArg(p,2))) ){
-				setArgument(mb, p, 1,
-					newTmpVariable(mb, getVarType(mb,getArg(p,0))));
-				p->retc++; 
+				delArgument(p,4);
+				delArgument(p,1);
 				setFunctionId(p,putName("bindEmitter",11));
 			}
-			delArgument(p,5);
-			delArgument(p,2);
 			setModuleId(p,putName("datacell",8));
 			typeChecker(getClient()->nspace,mb,p,TRUE);
 		}
@@ -286,7 +280,7 @@ DCmakePlans(int *ret, str *nme, str *newname){
 	DCpump pump;
 	InstrPtr p;
 	char buf[128];
-	int i;
+	int i,idx,es[1];
 
 	(void) ret;
 	s= findMALSymbol(putName("user",4), putName(*nme,strlen(*nme)) );
@@ -341,9 +335,25 @@ first receptor argument.
 	printFunction(GDKout,s->def,LIST_MAL_ALL);
 #endif
 @-
+The raw MAL programs are first refined to deal also
+with the empty set and singleton set.
+@c
+	idx= 0;
+	for(i=0;i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if( @:tstName(p,"sql","bind")@  &&
+			 isReceptor( getVarLiteral(mb, getArg(p,2))) ){
+				es[0]= getArg(p,0); idx++;
+				break;
+			}
+	}
+printf("OPTIMIZE TO ARGUMENT %d\n",es[0]);
+	ESevaluate(pump->malblk[1],idx,es);
+@-
 The reduction is performed inplace, dropping instructions
 that are not considered relevant for the DataCell.
 Moreover, we contain the empty variables that should be removed.
+
 @c
 	DCplan(pump->malblk[0], *newname);
 	DCplan(pump->malblk[1], *newname);
@@ -365,7 +375,7 @@ str isEmitterDestination(MalBlkPtr mb, int varid){
 		p= getInstrPtr(mb,i);
 		if( getArg(p,0) == varid &&
 			strcmp(functionId(p),"bindEmitter")==0){
-			return getVarLiteral(mb,getArg(p,2));
+			return getVarLiteral(mb,getArg(p,1));
 		}
 	}
 	return 0;
@@ -392,7 +402,7 @@ First step is to collect the all receptor/emitter bindings.
 	for(i=1; i< limit-1; i++)
 	if( strncmp(functionId(old[i]),"bind",4)==0  &&
                strcmp(moduleId(old[i]),"datacell")==0 ){
-		unit= getVarLiteral(mb,getArg(old[i],2));
+		unit= getVarLiteral(mb,getArg(old[i],1));
 		for(j=0;j<u;j++)
 		if( strcmp(points[j],unit)== 0) break;
 		if( j== u){
@@ -456,7 +466,7 @@ void DCflowDependencies(DCpump p){
 		out=0;
 		for(j=1;j<mb->stop; j++){
 			q= getInstrPtr(mb,j);
-			if( match(q,"datacell","bindReceptor") ){
+			if( match(q,"datacell","bindReceptorPublic") ){
 				nme = getVarLiteral(mb,getArg(q,2));
 				for( k=0; k<in; k++)
 				if( strcmp(p->source[k],nme)) 

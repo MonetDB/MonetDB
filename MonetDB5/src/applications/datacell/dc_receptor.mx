@@ -63,7 +63,11 @@ comment "Display the actual state of a receptor.";
 command data.bindReceptor(sname:str,pname:str) 
 		(public:bat[:void,:any$1],private:bat[:void,:any$1])
 address DCbindReceptor
-comment "Provide access to a private version of a column.";
+comment "Provide access to a column.";
+
+command data.bindReceptor(sname:str,pname:str) :bat[:void,:any$1]
+address DCbindReceptorPublic
+comment "Provide access to a public version of a column.";
 
 @{
 @- Implementation
@@ -171,6 +175,26 @@ DCbindReceptor(int *retpublic, int *retprivate, str *name, str *cname){
 	if( strcmp(p->columns[i],*cname) == 0 ){
 		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
 		BBPincref( *retprivate= p->private[i]->batCacheid, TRUE);
+		break;
+	}
+    return MAL_SUCCEED;
+}
+str
+DCbindReceptorPublic(int *retpublic, str *name, str *cname){
+	DCpump p;
+	int i;
+
+	p= DClocatePump(*name);
+	if( p == 0)
+		return throwMessage("datacell.bindReceptor","unknown receptor");
+	if( p->kind!= RECEPTOR)
+		return throwMessage("datacell.bindReceptor","unknown receptor");
+#ifdef DEBUG_DCRECEPTOR
+	stream_printf(GDKout,"#bindReceptor %s.%s\n",*name,*cname);
+#endif
+	for(i=0; i < p->cols ; i++)
+	if( strcmp(p->columns[i],*cname) == 0 ){
+		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
 		break;
 	}
     return MAL_SUCCEED;
