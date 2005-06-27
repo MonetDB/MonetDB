@@ -48,12 +48,12 @@ public class MCLInputStream {
 				new MCLException("Illegal start of sentence");
 
 			// put the four bytes in the ByteBuffer
-			inputBuffer.rewind();
-			inputBuffer.put(data);
+			bbuf.rewind();
+			bbuf.put(data);
 
 			// get the int-value and store it in the state
-			inputBuffer.rewind();
-			size = inputBuffer.getInt();
+			bbuf.rewind();
+			size = bbuf.getInt();
 
 			if (size < 0) throw
 				new MCLException("Illegal sentence length: " + size);

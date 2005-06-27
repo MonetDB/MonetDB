@@ -1,6 +1,7 @@
 package nl.cwi.monetdb.mcl.messages;
 
-import java.util.*; // needed?
+import nl.cwi.monetdb.mcl.*;
+import nl.cwi.monetdb.mcl.io.*;
 
 /**
  * A Message object represents one of the messages present in the MCL
@@ -13,10 +14,19 @@ import java.util.*; // needed?
  * @author Fabian Groffen <Fabian.Groffen>
  */
 abstract class MCLMessage {
-	protected final static Sentence promptSentence = new Sentence('.', "");
-	protected final static Sentence morePromptSentence = new Sentence(',', "");
+	protected final static MCLSentence promptSentence;
+	protected final static MCLSentence morePromptSentence;
 
-	protected Sentence[] sentences;
+	static {
+		try {
+			promptSentence = new MCLSentence('.', "");
+			morePromptSentence = new MCLSentence(',', "");
+		} catch (MCLException e) {
+			throw new AssertionError("Unable to create core sentences");
+		}
+	}
+
+	protected MCLSentence[] sentences;
 	
 	/**
 	 * Returns a String representation of the current contents of this
@@ -28,7 +38,7 @@ abstract class MCLMessage {
 	 *
 	 * @return a String representation of this object
 	 */
-	public String toString() throws MCLException {
+	public String toString() {
 		String ret = getName() + ":\n";
 		ret += getSomSentence().toString();
 		for (int i = 0; i < sentences.length; i++) {
@@ -61,7 +71,7 @@ abstract class MCLMessage {
 	 * 
 	 * @return an integer value that represents the type of this Message
 	 */
-	public int getType();
+	abstract public int getType();
 
 	/**
 	 * Returns a sentence that represents the start of message.  The
@@ -70,7 +80,7 @@ abstract class MCLMessage {
 	 *
 	 * @return the start of message sentence
 	 */
-	public Sentence getSomSentence();
+	abstract public MCLSentence getSomSentence();
 
 
 	/**
@@ -106,7 +116,7 @@ abstract class MCLMessage {
 	 * @throws MCLException if the given sentence is not considered to
 	 * be valid
 	 */
-	public void addSentence(String in) throws MCLException;
+	abstract public void addSentence(MCLSentence sentence) throws MCLException;
 
 
 	/**

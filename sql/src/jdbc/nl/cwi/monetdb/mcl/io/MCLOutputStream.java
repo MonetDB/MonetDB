@@ -39,20 +39,32 @@ public class MCLOutputStream {
 	public void writeSentence(MCLSentence sentence) throws MCLException {
 		try {
 			byte[] data = new byte[4];
+			byte[] value = sentence.getData();
 			bbuf.rewind();
-			bbuf.putInt(length + 1); // include linetype specifier
+			bbuf.putInt(value.length + 1); // include linetype specifier
 
 			bbuf.rewind();
 			bbuf.get(data);
 
 			// write the length of the sentence to come
-			out.write(blklen);
+			out.write(data);
 			// write the linetype identifier
 			out.write(sentence.getType());
 			// write the actual data block
-			out.write(sentence.getData());
+			out.write(value);
 		} catch (IOException e) {
 			throw new MCLException("IO operation failed: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Issues a flush to the underlying output stream.
+	 */
+	public void flush() {
+		try {
+			out.flush();
+		} catch (IOException e) {
+			// ignore
 		}
 	}
 

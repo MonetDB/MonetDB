@@ -32,6 +32,7 @@
   <property name="builddir" value="build" />
   <property name="jdbc-package"  value="nl/cwi/monetdb/jdbc" />
   <property name="xmldb-package" value="nl/cwi/monetdb/xmldb" />
+  <property name="mcl-package"   value="nl/cwi/monetdb/mcl" />
 
   <property file="build.local.properties"/>
   <property file="build.properties"/>
@@ -107,6 +108,20 @@
 		optimize="${optimize}"
 	>
        <include name="${xmldb-package}/**/*.java" />
+    </javac>
+  </target>
+
+  <target name="compile_mcl" depends="prepare">
+    <echo message="Debug is ${debug}, optimize is ${optimize}" />
+	<echo message="Compiling MCL" />
+    <javac
+		classpath="${srcdir}:${libdir}/mcl.jar"
+		srcdir="${srcdir}"
+		destdir="${builddir}"
+		debug="${debug}"
+		optimize="${optimize}"
+	>
+       <include name="${mcl-package}/**/*.java" />
     </javac>
   </target>
 

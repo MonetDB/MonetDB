@@ -1,28 +1,31 @@
 package nl.cwi.monetdb.mcl.messages;
 
+import java.io.*;
+import nl.cwi.monetdb.mcl.*;
+
 public class MCLSentence {
 	private final int type;
 	private final byte[] data;
 	
 	/** Indicates the end of a message (sequence). */
-	public final int PROMPT          = '.';
+	public final static int PROMPT          = '.';
 	/** Indicates the end of a message (sequence), expecting more query
 	 * input. */
-	public final int MOREPROMPT      = ',';
+	public final static int MOREPROMPT      = ',';
 	/** Indicates the start of a new message. */
-	public final int STARTOFMESSAGE  = '&';
+	public final static int STARTOFMESSAGE  = '&';
 	/** Metadata for the MCL layer. */
-	public final int MCLMETADATA     = '$';
+	public final static int MCLMETADATA     = '$';
 	/** Indicates client/server roles are switched. */
-	public final int SWITCHROLES     = '^';
+	public final static int SWITCHROLES     = '^';
 	/** Metadata. */
-	public final int METADATA        = '%';
+	public final static int METADATA        = '%';
 	/** Response data. */
-	public final int DATA            = '[';
+	public final static int DATA            = '[';
 	/** Query data. */
-	public final int QUERY           = ']';
+	public final static int QUERY           = ']';
 	/** Additional info, comments or messages. */
-	public final int INFO            = '#';
+	public final static int INFO            = '#';
 
 	
 	/**
@@ -37,18 +40,9 @@ public class MCLSentence {
 	public MCLSentence(int type, byte[] data) throws MCLException {
 		if (data == null) throw
 			new MCLException("data may not be null");
-		if (type != PROMPT &&
-				type != MOREPROMPT &&
-				type != STARTOFMESSAGE &&
-				type != MCLMETADATA &&
-				type != SWITCHROLES &&
-				type != METADATA &&
-				type != DATA &&
-				type != QUERY &&
-				type != INFO)
-		{
-			throw new MCLException("Unknown sentence type: " + (char)type + " (" + type + ")");
-		}
+
+		if (!isValidType(type)) throw
+			new MCLException("Unknown sentence type: " + (char)type + " (" + type + ")");
 		
 		this.type = type;
 		this.data = data;
@@ -63,7 +57,19 @@ public class MCLSentence {
 	 * @throws MCLException if the type is invalid, or the data is empty
 	 */
 	public MCLSentence(int type, String data) throws MCLException {
-		this(type, data.getBytes("UTF-8"));
+		if (data == null) throw
+			new MCLException("data may not be null");
+
+		if (!isValidType(type)) throw
+			new MCLException("Unknown sentence type: " + (char)type + " (" + type + ")");
+		
+		this.type = type;
+		try {
+			this.data = data.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// this should not happen actually
+			throw new AssertionError("UTF-8 encoding not supported!");
+		}
 	}
 
 	/**
@@ -104,7 +110,12 @@ public class MCLSentence {
 	 * @return the value of this sentence as String
 	 */
 	public String getString() {
-		return(new String(data, "UTF-8"));
+		try {
+			return(new String(data, "UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			// this should not happen
+			throw new AssertionError("UTF-8 encoding not supported!");
+		}
 	}
 
 	/**
@@ -115,5 +126,31 @@ public class MCLSentence {
 	 */
 	public String toString() {
 		return("" + (char)type + getString());
+	}
+
+
+	/**
+	 * Utility function which checks whether a given type is valid.
+	 * Returns true if the given type is valid and supported.
+	 *
+	 * @param type the type to check
+	 * @return true if the type is valid, false otherwise
+	 */
+	private static boolean isValidType(int type) {
+		if (
+				type != PROMPT &&
+				type != MOREPROMPT &&
+				type != STARTOFMESSAGE &&
+				type != MCLMETADATA &&
+				type != SWITCHROLES &&
+				type != METADATA &&
+				type != DATA &&
+				type != QUERY &&
+				type != INFO
+		) {
+			return(false);
+		} else {
+			return(true);
+		}
 	}
 }
