@@ -61,31 +61,54 @@ class Atomops:public Ops {
 #include <string.h>
 
 
-Atomops::Atomops( int t, char *n, int op ) : Ops(t,n,op) { }
+Atomops::Atomops(int t, char *n, int op) : Ops(t,n,op)
+{
+}
 
-const char *Atomops::string( int op ){
-   	switch( op ){
-	case OP_TOSTR :	 return "tostr";
-	case OP_FROMSTR :return "fromstr";
-	case OP_READ :	 return "read";
-	case OP_WRITE :  return "write";
-	case OP_COMP :	 return "cmp";
-	case OP_NEQUAL : return "cmp";
-	case OP_HASH :	 return "hash";
-	case OP_NULL :	 return "null";
-	case OP_LEN :	 return "length";
-	case OP_CONVERT :return "convert";
-	case OP_PUT :	 return "put";
-	case OP_FIX :	 return "fix";
-	case OP_UNFIX :	 return "unfix";
-	case OP_DEL : 	 return "del";
-	case OP_CHECK :  return "check";
-	case OP_HEAP :	 return "heap";
-	case OP_HCONVERT:return "heap_convert";
+const char *
+Atomops::string(int op)
+{
+	switch (op) {
+	case OP_TOSTR:
+		return "tostr";
+	case OP_FROMSTR:
+		return "fromstr";
+	case OP_READ:
+		return "read";
+	case OP_WRITE:
+		return "write";
+	case OP_COMP:
+		return "cmp";
+	case OP_NEQUAL:
+		return "cmp";
+	case OP_HASH:
+		return "hash";
+	case OP_NULL:
+		return "null";
+	case OP_LEN:
+		return "length";
+	case OP_CONVERT:
+		return "convert";
+	case OP_PUT:
+		return "put";
+	case OP_FIX:
+		return "fix";
+	case OP_UNFIX:
+		return "unfix";
+	case OP_DEL:
+		return "del";
+	case OP_CHECK:
+		return "check";
+	case OP_HEAP:
+		return "heap";
+	case OP_HCONVERT:
+		return "heap_convert";
 	}
 	return "";
 }
 
-ostream &Atomops::print( language *l, ostream &o ) const {
-	return l->gen_atomops( o, *this );
+ostream &
+Atomops::print(language *l, ostream &o) const
+{
+	return l->gen_atomops(o, *this);
 }

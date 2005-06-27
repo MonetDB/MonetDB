@@ -30,7 +30,8 @@ class List {
 		_size = size;
 		_next = 0;
 		_l = new void *[size];
-	} ~List() {
+	}
+	~List() {
 		delete[]_l;
 	}
 
@@ -52,7 +53,8 @@ class List {
 
 	int count() const {
 		return _next;
-	} ListIterator *iterator() {
+	}
+	ListIterator *iterator() {
 		return new ListIterator(_l, _next);
 	}
 

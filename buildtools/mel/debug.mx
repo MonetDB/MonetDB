@@ -27,12 +27,13 @@ class debug:public language {
       public:
 	const char *get_name() const {
 		return "debug";
-	} int generate_code(ostream & o, Symbol *rootptr);
+	}
+	int generate_code(ostream & o, Symbol *rootptr);
 
-	 ostream & gen_module(ostream & o, const Module & m);
-	 ostream & gen_dependency(ostream & o, const Dependency & m);
-	 ostream & gen_atom(ostream & o, const Atom & m);
-	 ostream & gen_atomops(ostream & o, const Atomops & m);
+	ostream & gen_module(ostream & o, const Module & m);
+	ostream & gen_dependency(ostream & o, const Dependency & m);
+	ostream & gen_atom(ostream & o, const Atom & m);
+	ostream & gen_atomops(ostream & o, const Atomops & m);
 };
 
 #endif //_DEBUG_H_
@@ -43,13 +44,17 @@ class debug:public language {
 #include "ListIterator.h"
 #include "mel.h"
 
-int debug::generate_code( ostream &o, Symbol *rootptr ){
-	rootptr->print( this, o );
+int
+debug::generate_code(ostream &o, Symbol *rootptr)
+{
+	rootptr->print(this, o);
 	return 0;
 }
 
 
-ostream &debug::gen_module( ostream &o, const Module &d ){ 
+ostream &
+debug::gen_module(ostream &o, const Module &d)
+{ 
 
 	o << "/*\n";
 	o << " * This module is generated using the Mdebug utility\n";
@@ -59,49 +64,59 @@ ostream &debug::gen_module( ostream &o, const Module &d ){
 //		ListIterator *iter = d.Deps()->iterator();
 //		Symbol *s = NULL;
 //		while(iter->next((void**)&s)){
-//			s->print( this, o );
+//			s->print(this, o);
 //		}
 //	}
 	if (d.Defs()){
 		ListIterator *iter = d.Defs()->iterator();
 		Symbol *s = NULL;
 		while(iter->next((void**)&s)){
-			s->print( this, o );
+			s->print(this, o);
 		}
 	}
 	return o; 
 }
 
-ostream &debug::gen_dependency( ostream &o, const Dependency &d ){
+ostream &
+debug::gen_dependency(ostream &o, const Dependency &d)
+{
 	 o << d.Name() << "\n";
 	 return o; 
 }
 
-ostream &debug::gen_atom( ostream &o, const Atom &d ){
+ostream &
+debug::gen_atom(ostream &o, const Atom &d)
+{
 	o << "/*\n";
 	o << " * These are the prototypes for Atom " << d.Name() << "\n";
 	o << " * Size   = " << d.size() << "\n";
 	o << " * Align  = " << d.align() << "\n";
 	o << " * Parent = " << d.parent() << "\n";
-	o << " */\n"; 
+	o << " */\n";
 
-	if (d.cmds()){
-	   	Ops **cmds = d.cmds();
-	   	for( int i = OP_FIX; i <= OP_NEQUAL; i++ ){  
+	if (d.cmds()) {
+		Ops **cmds = d.cmds();
+
+		for (int i = OP_FIX; i <= OP_NEQUAL; i++) {
 			Ops *s = cmds[i];
+
 			if (s)
-				s->print( this, o );
+				s->print(this, o);
 		}
 	}
-	return o; 
+	return o;
 }
 
-ostream &debug::gen_atomops( ostream &o, const Atomops &d ){
+ostream &
+debug::gen_atomops(ostream &o, const Atomops &d)
+{
 	o << d.Name() << "\n";
 	return o; 
 }
 
-ostream &operator<<(ostream &o, const Symbol &s){
+ostream &
+operator<<(ostream &o, const Symbol &s)
+{
         o << token2str(s.Token()) << " " << s.Name() << "\n";
 	return o;
 }

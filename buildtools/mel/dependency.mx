@@ -46,23 +46,32 @@ class Dependency:public Symbol {
 #include <string.h>
 
 
-Dependency::Dependency( int t, char *n, char *fn ) : Symbol(t,n) {
+Dependency::Dependency(int t, char *n, char *fn) : Symbol(t,n)
+{
 	_fn = strdup(fn);
 	_mod = NULL;
 }
 
-char *Dependency::filename() const {
+char *
+Dependency::filename() const
+{
 	return _fn;
 }
 
-void Dependency::setModule ( Symbol *m ){
+void
+Dependency::setModule (Symbol *m)
+{
 	_mod = m;
 }
 
-Symbol * Dependency::Module ( ) const{
+Symbol *
+Dependency::Module () const
+{
 	return _mod;
 }
 
-ostream &Dependency::print( language *l, ostream &o ) const {
-	return l->gen_dependency( o, *this );
+ostream &
+Dependency::print(language *l, ostream &o) const
+{
+	return l->gen_dependency(o, *this);
 }

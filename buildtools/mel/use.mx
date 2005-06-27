@@ -27,10 +27,11 @@ class use:public language {
       public:
 	const char *get_name() const {
 		return "use";
-	} int generate_code(ostream & o, Symbol *root);
+	}
+	int generate_code(ostream & o, Symbol *root);
 
-	 ostream & gen_module(ostream & o, const Module & m);
-	 ostream & gen_dependency(ostream & o, const Dependency & m);
+	ostream &gen_module(ostream &o, const Module &m);
+	ostream &gen_dependency(ostream &o, const Dependency &m);
 };
 
 #endif //_USE_H_
@@ -40,19 +41,25 @@ class use:public language {
 #include "use.h"
 #include "ListIterator.h"
 
-int use::generate_code( ostream &o, Symbol *root ){
-	root->print( this, o );
+int
+use::generate_code(ostream &o, Symbol *root)
+{
+	root->print(this, o);
 	return 0;
 }
 
 
-ostream &use::gen_module( ostream &o, const Module &d ){ 
-	gen_list( o, d.Deps() );
+ostream &
+use::gen_module(ostream &o, const Module &d)
+{ 
+	gen_list(o, d.Deps());
 	return o; 
 }
 
-ostream &use::gen_dependency( ostream &o, const Dependency &d ){
-	 d.Module()->print( this, o );
+ostream &
+use::gen_dependency(ostream &o, const Dependency &d)
+{
+	 d.Module()->print(this, o);
 	 o << d.Name() << " ";
 	 //o << d.filename() << " ";
 	 return o; 

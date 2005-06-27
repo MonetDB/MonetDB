@@ -47,35 +47,44 @@ class Builtin:public Symbol {
 #include <string.h>
 
 Builtin::Builtin( int t, char *n, char *fcn, char *hlp, char* sig ) 
-	: Symbol(t,n) {
-	if (fcn) 
-	   _fcn = strdup(fcn);
+	: Symbol(t,n)
+{
+	if (fcn)
+		_fcn = strdup(fcn);
 	else
-	   _fcn = NULL;
-	if (hlp) 
-	   _hlp = strdup(hlp);
+		_fcn = NULL;
+	if (hlp)
+		_hlp = strdup(hlp);
 	else
-	   _hlp = NULL;
-	if (sig) 
-	   _sig = strdup(sig);
+		_hlp = NULL;
+	if (sig)
+		_sig = strdup(sig);
 	else
-	   _sig = NULL;
-	
+		_sig = NULL;
+
 }
 
-char *Builtin::fcn() const {
+char *
+Builtin::fcn() const
+{
 	return _fcn;
 }
 
-char *Builtin::hlp() const {
+char *
+Builtin::hlp() const
+{
 	return _hlp;
 }
 
-char *Builtin::sig() const {
+char *
+Builtin::sig() const
+{
 	return _sig;
 }
 
 
-ostream &Builtin::print( language *l, ostream &o ) const {
+ostream &
+Builtin::print( language *l, ostream &o ) const
+{
 	return l->gen_builtin( o, *this );
 }

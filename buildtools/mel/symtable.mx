@@ -50,43 +50,53 @@ class Symtable {
 #include "symtable.h"
 #include <string.h>
 
-Symtable::Symtable( size_t size ){
+Symtable::Symtable(size_t size)
+{
 	_next = 0;
 	_size = size;
 	_table = new const Symbol*[size];
 }	
 
-Symtable::~Symtable(){
+Symtable::~Symtable()
+{
 	delete [] _table;
 }
 
-void Symtable::insert( const Symbol &s ){
+void
+Symtable::insert(const Symbol &s)
+{
 	_table[_next++] = &s;
 }
 
-const Symbol *Symtable::find( int token, const char *name ) const {
-	for (int i = 0; i < _next; i++){
+const Symbol *
+Symtable::find(int token, const char *name) const
+{
+	for (int i = 0; i < _next; i++) {
 		const Symbol *sym = _table[i];
 		if (sym->Token() == token &&
-		   strcmp(sym->Name(), name ) == 0 ){
+		   strcmp(sym->Name(), name) == 0) {
 			return sym;
 		}
 	} 
 	return NULL;
 }
 
-const Symbol *Symtable::find( const char *name ) const {
-	for (int i = 0; i < _next; i++){
+const Symbol *
+Symtable::find(const char *name) const
+{
+	for (int i = 0; i < _next; i++) {
 		const Symbol *sym = _table[i];
-		if (strcmp(sym->Name(), name ) == 0 ){
+		if (strcmp(sym->Name(), name) == 0) {
 			return sym;
 		}
 	} 
 	return NULL;
 }
 
-void Symtable::traverse( language *l, ostream &s ){
-	for (int i = 0; i < _next; i++){
+void
+Symtable::traverse(language *l, ostream &s)
+{
+	for (int i = 0; i < _next; i++) {
 		const Symbol *sym = _table[i];
 		sym->print(l,s);
 	}

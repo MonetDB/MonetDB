@@ -27,7 +27,8 @@ class depend:public language {
       public:
 	const char *get_name() const {
 		return "depend";
-	} int generate_code(ostream & o, Symbol *root);
+	}
+	int generate_code(ostream & o, Symbol *root);
 
 	 ostream & gen_module(ostream & o, const Module & m);
 	 ostream & gen_dependency(ostream & o, const Dependency & m);
@@ -40,25 +41,31 @@ class depend:public language {
 #include "depend.h"
 #include "ListIterator.h"
 
-int depend::generate_code( ostream &o, Symbol *root ){
-	root->print( this, o );
+int
+depend::generate_code(ostream &o, Symbol *root)
+{
+	root->print(this, o);
 	return 0;
 }
 
 
-ostream &depend::gen_module( ostream &o, const Module &d ){ 
+ostream &
+depend::gen_module(ostream &o, const Module &d)
+{ 
 	if (d.Deps()){
 		ListIterator *iter = d.Deps()->iterator();
 		Symbol *s = NULL;
 		while(iter->next((void**)&s)){
 			o << d.filename() << ": ";
-			s->print( this, o );
+			s->print(this, o);
 		}
 	}
 	return o; 
 }
 
-ostream &depend::gen_dependency( ostream &o, const Dependency &d ){
+ostream &
+depend::gen_dependency(ostream &o, const Dependency &d)
+{
 	 o << d.filename() << "\n";
 	 return o; 
 }

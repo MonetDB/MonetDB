@@ -46,26 +46,33 @@ class Module:public Symbol {
 #include <string.h>
 
 
-Module::Module( int t, char *n, char *fn,
-		List *deps,
-		List *defs ) : Symbol(t,n) {
+Module::Module(int t, char *n, char *fn, List *deps, List *defs) : Symbol(t,n)
+{
 	_fn = strdup(fn);
 	_deps = deps;
 	_defs = defs;
 }
 
-List *Module::Deps() const {
+List *
+Module::Deps() const
+{
 	return _deps;
 }
 
-List *Module::Defs() const {
+List *
+Module::Defs() const
+{
 	return _defs;
 }
 
-char *Module::filename() const {
+char *
+Module::filename() const
+ {
 	return _fn;
 }
 
-ostream &Module::print( language *l, ostream &o ) const {
-	return l->gen_module( o, *this );
+ostream &
+Module::print(language *l, ostream &o) const
+{
+	return l->gen_module(o, *this);
 }

@@ -23,7 +23,7 @@
 
 #include "symbol.h"
 
-class Prelude:public Symbol {
+class Prelude : public Symbol {
       public:
 	Prelude(int t, char *n);
 
@@ -38,8 +38,12 @@ class Prelude:public Symbol {
 #include <string.h>
 
 
-Prelude::Prelude( int t, char *n ) : Symbol(t,n) { }
+Prelude::Prelude(int t, char *n) : Symbol(t,n)
+{
+}
 
-ostream &Prelude::print( language *l, ostream &o ) const {
-	return l->gen_prelude( o, *this );
+ostream &
+Prelude::print(language *l, ostream &o) const
+{
+	return l->gen_prelude(o, *this);
 }

@@ -37,7 +37,7 @@ AC_CHECK_PROG(MV,mv,mv -f)
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h string.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([malloc.h stdlib.h string.h sys/time.h unistd.h])
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
 AC_CHECK_HEADER(iostream,

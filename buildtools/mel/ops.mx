@@ -42,10 +42,13 @@ class Ops:public Symbol {
 #include <string.h>
 
 
-Ops::Ops( int t, char *n, int op ) : Symbol(t,n) {
+Ops::Ops(int t, char *n, int op) : Symbol(t, n)
+{
 	_op = op;
 }
 
-int Ops::operation() const {
+int
+Ops::operation() const
+{
 	return _op;
 }

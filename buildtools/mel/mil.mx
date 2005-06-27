@@ -26,9 +26,11 @@
 class mil:public language {
       public:
 	mil() {
-	} const char *get_name() const {
+	}
+	const char *get_name() const {
 		return "mil";
-	} int generate_code(ostream & o, Symbol *root);
+	}
+	int generate_code(ostream & o, Symbol *root);
 
 	ostream & gen_module(ostream & o, const Module & m);
 	ostream & gen_dependency(ostream & o, const Dependency & m);
@@ -45,19 +47,25 @@ class mil:public language {
 #include <string.h>
 #include <ctype.h>
 
-int mil::generate_code( ostream &o, Symbol *root ){
-	root->print( this, o );
+int
+mil::generate_code(ostream &o, Symbol *root)
+{
+	root->print(this, o);
 	return 0;
 }
 
-ostream &mil::gen_dependency( ostream &o, const Dependency &d ){ 
+ostream &
+mil::gen_dependency(ostream &o, const Dependency &d)
+{ 
 	o << "module(" << d.Module()->Name() << ");\n";
 	return o;
 }
 
-ostream &mil::gen_module( ostream &o, const Module &d ){ 
+ostream &
+mil::gen_module(ostream &o, const Module &d)
+{ 
 	o << "# This module is generated using the mel -mil utility\n";
-	gen_list( o, d.Deps(), "" );
+	gen_list(o, d.Deps(), "");
 	o << "module(_" << d.Name() << ");\n";
-	return o; 
+	return o;
 }

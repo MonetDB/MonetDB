@@ -44,14 +44,19 @@ class Object:public Symbol {
 #include <string.h>
 
 
-Object::Object( int t, char *n, const Symbol *arg ) : Symbol(t,n) {
+Object::Object(int t, char *n, const Symbol *arg) : Symbol(t,n)
+{
 	_arg = arg;
 }
 
-const Symbol *Object::arg() const {
+const Symbol *
+Object::arg() const
+{
 	return _arg;
 }
 
-ostream &Object::print( language *l, ostream &o ) const {
-	return l->gen_object( o, *this );
+ostream &
+Object::print(language *l, ostream &o) const
+{
+	return l->gen_object(o, *this);
 }

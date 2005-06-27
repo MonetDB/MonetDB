@@ -41,15 +41,19 @@ class Iterator:public Command {
 #include <string.h>
 #include <stdio.h>
 
-Iterator::Iterator( int t, char *n, char *fcn, 
-		List *args, char *hlp ) 
-        : Command(t, n, fcn, NORMAL, NULL, args, hlp) {
+Iterator::Iterator(int t, char *n, char *fcn, List *args, char *hlp) 
+        : Command(t, n, fcn, NORMAL, NULL, args, hlp)
+{
 }
 
-const char* Iterator::Token() const {
+const char *
+Iterator::Token() const
+{
         return "TOK_ITERATOR";
 }
 
-ostream &Iterator::print( language *l, ostream &o ) const {
-	return l->gen_command( o, *this );
+ostream &
+Iterator::print(language *l, ostream &o) const
+{
+	return l->gen_command(o, *this);
 }

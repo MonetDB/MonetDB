@@ -48,16 +48,21 @@ class Operator:public Command {
 #include "language.h"
 #include <string.h>
 
-List *oplist(Symbol *op1, Symbol *op2){
+List *
+oplist(Symbol *op1, Symbol *op2)
+{
 	List *l = new List(3);
-	if (op1) l->insert(op1);
-	if (op2) l->insert(op2);
+	if (op1)
+		l->insert(op1);
+	if (op2)
+		l->insert(op2);
 	return l;
 }
 
-Operator::Operator( int t, char *n, char *fcn,
-		Symbol *result, Symbol *op1, Symbol *op2, char *hlp ) 
-	: Command(t, n, fcn, NORMAL, result, oplist(op1, op2), hlp) {
+Operator::Operator(int t, char *n, char *fcn,
+		Symbol *result, Symbol *op1, Symbol *op2, char *hlp) 
+	: Command(t, n, fcn, NORMAL, result, oplist(op1, op2), hlp)
+{
 	if (op1 == NULL) {
 		_op1 = op2;
 		_op2 = NULL;
@@ -69,29 +74,41 @@ Operator::Operator( int t, char *n, char *fcn,
 	level = t;
 }
 
-void Operator::set_op_names(){
-   if (!_op1->Name() && _op2)
-      	_op1->Name("op1");
-   else if (!_op1->Name())
-      	_op1->Name("op");
-   if (_op2 && !_op2->Name())
-      _op2->Name( "op2" );
+void
+Operator::set_op_names()
+{
+	if (!_op1->Name() && _op2)
+		_op1->Name("op1");
+	else if (!_op1->Name())
+		_op1->Name("op");
+	if (_op2 && !_op2->Name())
+		_op2->Name("op2");
 }
 
-Symbol *Operator::op1() const {
+Symbol *
+Operator::op1() const
+{
 	return _op1;
 }
 
-Symbol *Operator::op2() const {
+Symbol *
+Operator::op2() const
+{
 	return _op2;
 }
 
-const char* Operator::Token() const {
-	if (level == MEL_OPERATOR0) return "TOK_OPERATOR0";
-	if (level == MEL_OPERATOR1) return "TOK_OPERATOR1";
+const char *
+Operator::Token() const
+{
+	if (level == MEL_OPERATOR0)
+		return "TOK_OPERATOR0";
+	if (level == MEL_OPERATOR1)
+		return "TOK_OPERATOR1";
         return "TOK_OPERATOR";
 }
 
-ostream &Operator::print( language *l, ostream &o ) const {
-	return l->gen_operator( o, *this );
+ostream &
+Operator::print(language *l, ostream &o) const
+{
+	return l->gen_operator(o, *this);
 }

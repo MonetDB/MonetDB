@@ -38,8 +38,12 @@ class Epilogue:public Symbol {
 #include <string.h>
 
 
-Epilogue::Epilogue( int t, char *n ) : Symbol(t,n) { }
+Epilogue::Epilogue(int t, char *n) : Symbol(t,n)
+{
+}
 
-ostream &Epilogue::print( language *l, ostream &o ) const {
-	return l->gen_epilogue( o, *this );
+ostream &
+Epilogue::print(language *l, ostream &o) const
+{
+	return l->gen_epilogue(o, *this);
 }

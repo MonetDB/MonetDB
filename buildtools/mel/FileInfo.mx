@@ -60,8 +60,8 @@ class FileInfo {
 #include <stdio.h>
 #include <string.h>
 
-FileInfo::FileInfo( FILE *f, int lineno, char *filename, char *basename,
-   	FileInfo *parent ){
+FileInfo::FileInfo(FILE *f, int lineno, char *filename, char *basename, FileInfo *parent)
+{
 	_f = f;
 	_lineno = lineno;
 	_filename = strdup(filename);
@@ -69,74 +69,100 @@ FileInfo::FileInfo( FILE *f, int lineno, char *filename, char *basename,
 	_parent = parent;
 }
 
-FileInfo::~FileInfo(){
-   	delete( _filename );
-   	delete( _basename );
+FileInfo::~FileInfo()
+{
+	delete(_filename);
+	delete(_basename);
 }
 
-int FileInfo::LineNo(){
+int
+FileInfo::LineNo()
+{
 	return _lineno;
 }
 
-void FileInfo::LineNo(int lineno){
+void
+FileInfo::LineNo(int lineno)
+{
 	_lineno = lineno;
 }
 
-FILE *FileInfo::FilePtr(){
+FILE *
+FileInfo::FilePtr()
+{
 	return _f;
 }
 
-char *FileInfo::FileName(){
+char *
+FileInfo::FileName()
+{
 	return _filename;
 }
 
-void FileInfo::FileName( char *fname ){
-   	delete(_filename);
-	_filename = strdup( fname );
+void
+FileInfo::FileName(char *fname)
+{
+	delete(_filename);
+	_filename = strdup(fname);
 }
 
-char *FileInfo::BaseName(){
+char *
+FileInfo::BaseName()
+{
 	return _basename;
 }
 
-FileInfo *FileInfo::Parent(){
+FileInfo *
+FileInfo::Parent()
+{
 	return _parent;
 }
 
-void *FileInfo::Buffer(){
+void *
+FileInfo::Buffer()
+{
 	return _buf;
 }
 
-void FileInfo::Buffer( void *buf ){
+void
+FileInfo::Buffer(void *buf)
+{
 	_buf = buf;
 }
 
-static char *new_filename( const char *dir, const char *name, const char *ext ){
+static char *
+new_filename(const char *dir, const char *name, const char *ext)
+{
 	size_t len_dir = strlen(dir);
 	size_t len_name = strlen(name);
-	size_t len_ext  = strlen(ext);
-	char *fn = new char [len_dir + 1 + len_name + len_ext + 1]; 
-	strcpy( fn, dir );
-	fn[len_dir] = DIR_SEP;
-	strcpy( fn+len_dir+1, name );
-	strcpy( fn+len_dir+1+len_name, ext );
-	return fn;
-} 
+	size_t len_ext = strlen(ext);
+	char *fn = new char[len_dir + 1 + len_name + len_ext + 1];
 
-char *FileInfo::find_module( char *name, List *dir_list ){
-	char *fn = new_filename( ".", name, ".m" );
-	FILE *fp = fopen(fn, "r" );
-	if (fp){
+	strcpy(fn, dir);
+	fn[len_dir] = DIR_SEP;
+	strcpy(fn + len_dir + 1, name);
+	strcpy(fn + len_dir + 1 + len_name, ext);
+	return fn;
+}
+
+char *
+FileInfo::find_module(char *name, List *dir_list)
+{
+	char *fn = new_filename(".", name, ".m");
+	FILE *fp = fopen(fn, "r");
+
+	if (fp) {
 		fclose(fp);
 		return fn;
 	} else {
 		delete fn;
 		char *dir = NULL;
 		ListIterator *iter = dir_list->iterator();
-		while (iter->next((void**)&dir)){
-			fn = new_filename( dir, name, ".m" );
-			fp = fopen(fn, "r" );
-			if (fp){
+
+		while (iter->next((void **)&dir)) {
+			fn = new_filename(dir, name, ".m");
+			fp = fopen(fn, "r");
+			if (fp) {
 				fclose(fp);
 				return fn;
 			} else {
@@ -146,9 +172,12 @@ char *FileInfo::find_module( char *name, List *dir_list ){
 	}
 	return NULL;
 }
- 
-char *basename( char *fname ){
+
+char *
+basename(char *fname)
+{
 	char *start = strrchr(fname, DIR_SEP);
+
 	if (start)
 		start++;
 	else
@@ -163,24 +192,30 @@ char *basename( char *fname ){
 #endif
 	char *end = strrchr(start, '.');
 	size_t l = end ? end - start : strlen(start);
-	char *b = new char[l+1];
+	char *b = new char[l + 1];
+
 	strncpy(b, start, l);
 	b[l] = 0;
 	return b;
 }
 
-FileInfo *FileInfo::open( char *fname, char *bname, FileInfo *parent ){
-	FILE *fp    = fopen( fname, "r" );
-	if (fp){
-   		if (!bname){
-		   	bname = basename( fname );
+FileInfo *
+FileInfo::open(char *fname, char *bname, FileInfo *parent)
+{
+	FILE *fp = fopen(fname, "r");
+
+	if (fp) {
+		if (!bname) {
+			bname = basename(fname);
 		}
-		return new FileInfo(fp,1,fname,bname,parent );
+		return new FileInfo (fp, 1, fname, bname, parent);
 	} else {
 		return NULL;
 	}
 }
 
-void FileInfo::close(){
+void
+FileInfo::close()
+{
 	fclose(_f);
 }

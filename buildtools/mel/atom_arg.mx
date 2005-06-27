@@ -46,20 +46,26 @@ class AtomArg:public Arg {
 #include <string.h>
 
 
-AtomArg::AtomArg( int t, const char *n, const Atom *arg, char* v ) : Arg(t,n,v) 
+AtomArg::AtomArg(int t, const char *n, const Atom *arg, char* v) : Arg(t,n,v)
 {
 	_arg = arg;
 }
 
-const Atom *AtomArg::arg() const {
+const Atom *
+AtomArg::arg() const
+{
 	return _arg;
 }
 
-const char *AtomArg::toString( ) const {
-/* return this->Name(); */
+const char *
+AtomArg::toString() const
+{
+	// return this->Name();
 	return _arg->toString();
 }
  
-ostream &AtomArg::print( language *l, ostream &o ) const {
-	return l->gen_atom_arg( o, *this );
+ostream &
+AtomArg::print(language *l, ostream &o) const
+{
+	return l->gen_atom_arg(o, *this);
 }

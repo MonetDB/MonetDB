@@ -39,8 +39,8 @@ using namespace std;
 class language;
 class Symbol {
       public:
-	Symbol (int token, const char *name);
-	 virtual ~ Symbol ();
+	Symbol(int token, const char *name);
+	virtual ~Symbol();
 
 	int operator==(const Symbol &) const;
 	int Token() const;
@@ -62,7 +62,7 @@ class Symbol {
 #include "language.h"
 #include <string.h>
 
-Symbol::Symbol( int token, const char *name )
+Symbol::Symbol(int token, const char *name)
 {
 	_token = token;
 	if (name) 
@@ -77,7 +77,9 @@ Symbol::~Symbol()
 		delete(_name);
 }
 
-int Symbol::operator==( const Symbol &s ) const {
+int
+Symbol::operator==(const Symbol &s) const
+{
 	if (_token != s._token){
 		return 0;
 	} 
@@ -87,19 +89,27 @@ int Symbol::operator==( const Symbol &s ) const {
 	return 1;
 }
 
-int Symbol::Token() const {
+int
+Symbol::Token() const
+{
 	return _token;
 }
 
-const char *Symbol::Name() const {
+const char *
+Symbol::Name() const
+{
 	return _name;
 }
 
-const char *Symbol::toString() const {
+const char *
+Symbol::toString() const
+{
 	return _name;
 }
 
-void Symbol::Name( const char *name ) {
+void
+Symbol::Name(const char *name)
+{
    	if (_name)
    		delete(_name);
 	_name = NULL;
@@ -107,7 +117,8 @@ void Symbol::Name( const char *name ) {
 		_name = strdup(name);
 }
 
-ostream &Symbol::print( language *l, ostream & o ) const {
-	return l->gen_symbol( o, *this );
+ostream &
+Symbol::print(language *l, ostream & o) const
+{
+	return l->gen_symbol(o, *this);
 }
-

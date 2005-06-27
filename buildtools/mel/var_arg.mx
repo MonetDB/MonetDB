@@ -46,19 +46,26 @@ class VarArg:public Arg {
 #include <string.h>
 
 
-VarArg::VarArg( int t, char *n, const Symbol *arg) : Arg(t,n) {
+VarArg::VarArg(int t, char *n, const Symbol *arg) : Arg(t,n)
+{
 	_arg = arg;
 }
 
-const Symbol *VarArg::arg() const {
+const Symbol *
+VarArg::arg() const
+{
 	return _arg;
 }
 
-ostream &VarArg::print( language *l, ostream &o ) const {
-	return l->gen_var_arg( o, *this );
+ostream &
+VarArg::print(language *l, ostream &o) const
+{
+	return l->gen_var_arg(o, *this);
 }
 
-const char *VarArg::toString( ) const {
+const char *
+VarArg::toString() const
+{
 	char *buf = new char[80];
 	const char *arg = _arg?_arg->toString():"any";
 

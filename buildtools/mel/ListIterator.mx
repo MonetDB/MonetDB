@@ -27,7 +27,8 @@ class ListIterator {
 		_base = base;
 		_nr = nr;
 		_cur = 0;
-	} int next(void **obj) {
+	}
+	int next(void **obj) {
 		if (_cur < _nr) {
 			*obj = _base[_cur++];
 			return 1;

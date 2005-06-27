@@ -238,10 +238,10 @@ using namespace std;
 #include "glue.h"
 #include "mil.h"
 
-int   parse_error = 0;        /* number of parse errors. */
-int   sem_error = 0;          /* number of semantic errors. */
-char  *progname = 0;
-char  *outfile = 0;
+int parse_error = 0;		/* number of parse errors. */
+int sem_error = 0;		/* number of semantic errors. */
+char *progname = 0;
+char *outfile = 0;
 Symtable *table = NULL;
 Symbol *root = NULL;
 FileInfo *fileinfo = NULL;
@@ -250,57 +250,96 @@ List *dirs = NULL;
 language *l = NULL;
 
 #if defined(__MINGW32_VERSION) || HAVE_DECL_STRDUP==0
-char *strdup(const char *s)
+char *
+strdup(const char *s)
 {
 	return strcpy((char *) malloc(strlen(s) + 1), s);
 }
 #endif
 
-const char *token2str( int token ){
-        switch (token){
-        case MEL_MODULE     : return "module";
-        case MEL_ITERATOR   : return "iterator";
-        case MEL_USE        : return "use";
-        case MEL_PRELUDE    : return "prelude";
-        case MEL_EPILOGUE   : return "epilogue";
-        case MEL_END        : return "end";
-        case MEL_IDENTIFIER : return "identifier";
-        case MEL_STRING     : return "string";
-        case MEL_BUILTIN    : return "builtin";
-        case MEL_OBJECT     : return "object";
-        case MEL_COMMAND    : return "command";
-        case MEL_OPERATOR0  : return "operator0";
-        case MEL_OPERATOR   : return "operator";
-        case MEL_OPERATOR1  : return "operator1";
-	case MEL_ATOM	    : return "atom";
-	case MEL_ATOMOP	    : return "atom TODO";
-	case MEL_ANY	    : return "any";
-	case MEL_BAT	    : return "BAT";
-	case MEL_TYPE	    : return "builtin type";
-	case MEL_VARARGS    : return "...";
-	case MEL_SEP        : return "::";
-	case MEL_NUMBER     : return "number";
-        }
-        return "default";
-}
-
-const char* type2str(int t){
-	switch(t) {
-	  case TYPE_BIT: return "bit";
-	  case TYPE_CHR: return "chr";
-	  case TYPE_SHT: return "sht";
-	  case TYPE_INT: return "int";
-	  case TYPE_PTR: return "ptr";
-	  case TYPE_OID: return "oid";
-	  case TYPE_FLT: return "flt";
-	  case TYPE_DBL: return "dbl";
-	  case TYPE_LNG: return "lng";
-	  case TYPE_STR: return "str";
+const char *
+token2str(int token)
+{
+	switch (token) {
+	case MEL_MODULE:
+		return "module";
+	case MEL_ITERATOR:
+		return "iterator";
+	case MEL_USE:
+		return "use";
+	case MEL_PRELUDE:
+		return "prelude";
+	case MEL_EPILOGUE:
+		return "epilogue";
+	case MEL_END:
+		return "end";
+	case MEL_IDENTIFIER:
+		return "identifier";
+	case MEL_STRING:
+		return "string";
+	case MEL_BUILTIN:
+		return "builtin";
+	case MEL_OBJECT:
+		return "object";
+	case MEL_COMMAND:
+		return "command";
+	case MEL_OPERATOR0:
+		return "operator0";
+	case MEL_OPERATOR:
+		return "operator";
+	case MEL_OPERATOR1:
+		return "operator1";
+	case MEL_ATOM:
+		return "atom";
+	case MEL_ATOMOP:
+		return "atom TODO";
+	case MEL_ANY:
+		return "any";
+	case MEL_BAT:
+		return "BAT";
+	case MEL_TYPE:
+		return "builtin type";
+	case MEL_VARARGS:
+		return "...";
+	case MEL_SEP:
+		return "::";
+	case MEL_NUMBER:
+		return "number";
 	}
-        return "void";
+	return "default";
 }
 
-void usage( char *prg ){
+const char *
+type2str(int t)
+{
+	switch (t) {
+	case TYPE_BIT:
+		return "bit";
+	case TYPE_CHR:
+		return "chr";
+	case TYPE_SHT:
+		return "sht";
+	case TYPE_INT:
+		return "int";
+	case TYPE_PTR:
+		return "ptr";
+	case TYPE_OID:
+		return "oid";
+	case TYPE_FLT:
+		return "flt";
+	case TYPE_DBL:
+		return "dbl";
+	case TYPE_LNG:
+		return "lng";
+	case TYPE_STR:
+		return "str";
+	}
+	return "void";
+}
+
+void
+usage(char *prg)
+{
 	cerr << "usage: " << prg << " [options] [type] [type_options] file\n";
 	cerr << "options\n";
 	cerr << "\t -Iinclude_dir\n";
@@ -315,131 +354,141 @@ void usage( char *prg ){
 	cerr << "\t -mil      /* generation of mil module load code */\n";
 }
 
-int handle_args( int argc, char *argv[] ){
-   	int i = 1;
-	if (argc < 2){
-		usage( argv[0] );
+int
+handle_args(int argc, char *argv[])
+{
+	int i = 1;
+
+	if (argc < 2) {
+		usage(argv[0]);
 		return 0;
 	}
 	progname = argv[0];
-	while ( i < argc-1 ){
-	   	if (argv[i][0] != '-'){
+	while (i < argc - 1) {
+		if (argv[i][0] != '-') {
 			cerr << "Unknown option " << argv[i] << "\n";
-			usage( argv[0] );
+			usage(argv[0]);
 			return 0;
 		}
-		switch(argv[i][1]){
+		switch (argv[i][1]) {
 		case 'I':
-			  if (argv[i][2] == '\0'){
-			     i++;
-			     dirs->insert(strdup(argv[i]));
-			  } else {
-			     dirs->insert(strdup(argv[i]+2));
-			  }
-			  break;
+			if (argv[i][2] == '\0') {
+				i++;
+				dirs->insert(strdup(argv[i]));
+			} else {
+				dirs->insert(strdup(argv[i] + 2));
+			}
+			break;
 		case 'D':
-			  /* ignore -D option */
-			  if (argv[i][2] == '\0')
-				  i++;
-			  break;
+			/* ignore -D option */
+			if (argv[i][2] == '\0')
+				i++;
+			break;
 		case 'd':
-			  l = new depend();
-			  break;
+			l = new depend ();
+
+			break;
 		case 'u':
-			  l = new use();
-			  break;
+			l = new use();
+			break;
 		case 'o':
-			  if (argv[i][2] == '\0'){
-			     i++;
-			     dirs->insert(strdup(argv[i]));
-			     outfile = strdup(argv[i]);
-			  } else {
-			     outfile = strdup(argv[i]+2);
-			  }
-			  break;
+			if (argv[i][2] == '\0') {
+				i++;
+				dirs->insert(strdup(argv[i]));
+				outfile = strdup(argv[i]);
+			} else {
+				outfile = strdup(argv[i] + 2);
+			}
+			break;
 		case 'm':
-			  l = new mil();
-			  break;
+			l = new mil();
+			break;
 		case 'p':
-			  l = new proto();
-			  break;
+			l = new proto ();
+
+			break;
 		case 'g':
-			  l = new glue();
-			  break;
+			l = new glue ();
+
+			break;
 		case 'h':
-			  l = new html();
-			  break;
+			l = new html();
+			break;
 		case 'L':
-			  l = new Link();
-			  break;
+			l = new Link();
+			break;
 		default:
 			cerr << "Unknown option " << argv[i] << "\n";
-			usage( argv[0] );
+			usage(argv[0]);
 			return 0;
 		}
 		i++;
-		if (l){
-			return l->handle_args( argc-1-i, argv+i );
+		if (l) {
+			return l->handle_args(argc - 1 - i, argv + i);
 		}
 	}
 	return 1;
 }
 
-int main(int argc, char *argv[] ){
+int
+main(int argc, char *argv[])
+{
 	/* argument parsing will be done in two parts
-         * First general arguments
+	 * First general arguments
 	 * second lang specific
- 	 */
-	dirs = new List(50);
-	if (!handle_args( argc, argv )){
-	   	exit(EXIT_FAILURE);
+	 */
+	dirs = new List (50);
+
+	if (!handle_args(argc, argv)) {
+		exit(EXIT_FAILURE);
 	}
-	char *filename = argv[argc-1];
-	fileinfo = FileInfo::open( filename );
-	if (fileinfo){
+	char *filename = argv[argc - 1];
+	fileinfo = FileInfo::open(filename);
+
+	if (fileinfo) {
 		yyin = fileinfo->FilePtr();
-		table = new Symtable(500);
-		table->insert( *new Symbol( MEL_USE, fileinfo->BaseName()) );
-		(void)yyparse();
-		if (parse_error || sem_error){
-			if (parse_error){
+		table = new Symtable (500);
+		table->insert(*new Symbol (MEL_USE, fileinfo->BaseName()));
+
+		(void) yyparse();
+		if (parse_error || sem_error) {
+			if (parse_error) {
 				cerr << "Found " << parse_error;
 				cerr << " syntax errors.\n";
 			}
-			if (sem_error){
+			if (sem_error) {
 				cerr << "Found " << sem_error;
 				cerr << " semantic errors.\n";
 			}
-	   		exit(EXIT_FAILURE);
+			exit(EXIT_FAILURE);
 		}
-		if (!l){
-		   	l = new proto();
+		if (!l) {
+			l = new proto ();
 		}
-		if ( outfile ) {
-		   	ofstream &o = *new ofstream(outfile);
-			if (!o){
+		if (outfile) {
+			ofstream & o = *new ofstream(outfile);
+			if (!o) {
 				cerr << "Error: output file exists.\n";
-	   			exit(EXIT_FAILURE);
+				exit(EXIT_FAILURE);
 			}
-			l->generate_table( o, table );
-			l->generate_code( o, root);
+			l->generate_table(o, table);
+			l->generate_code(o, root);
 			o.close();
 			delete(&o);
 		} else {
-			l->generate_table( cout, table );
-			l->generate_code( cout, root);
+			l->generate_table(cout, table);
+			l->generate_code(cout, root);
 		}
 		delete(l);
 		delete(table);
 		delete(root);
 	} else {
-	   cerr << "File not found " << filename << "\n";
-	   exit(EXIT_FAILURE);
+		cerr << "File not found " << filename << "\n";
+		exit(EXIT_FAILURE);
 	}
 	delete(fileinfo);
 	return 0;
 }
-
 @L 
 %{
 #include <mel_config.h>
@@ -465,7 +514,8 @@ int yylineno;
                         result = (c==EOF) ? YY_NULL: (buf[0] = (char)c,1);}
  */
 #else
-extern int	yyerrok;
+extern int yyerrok;
+
 #undef YYLMAX
 #define YYLMAX	100000
 #endif
@@ -479,68 +529,89 @@ isatty(int fd)
 }
 #endif
 
-void check_lineno(char *line)
+void
+check_lineno(char *line)
 {
-   int l;
-   if (sscanf(line, "%d", &l) == 1) {
-	char *p = strchr(line+1, '"');
-	if (p) {
-     	   char *filename = (char*) strdup(++p);
-	   yylineno = l;
-     	   p = strchr(filename, '"');
-	   if (p) *p = 0;
-	   if (filename)
-		fileinfo->FileName( filename );
+	int l;
+
+	if (sscanf(line, "%d", &l) == 1) {
+		char *p = strchr(line + 1, '"');
+
+		if (p) {
+			char *filename = (char *) strdup(++p);
+
+			yylineno = l;
+			p = strchr(filename, '"');
+			if (p)
+				*p = 0;
+			if (filename)
+				fileinfo->FileName(filename);
+		}
 	}
-   }
 }
 
 /*
-int yywrap(){
+int
+yywrap()
+{
 	return(1);
 }
 */
 
 #ifdef FLEX_SCANNER
-void *get_cur_buffer( ){
-	return (void*)YY_CURRENT_BUFFER;
+void *
+get_cur_buffer()
+{
+	return (void *) YY_CURRENT_BUFFER;
 }
 
-void new_buffer( FILE *f ){
-	yy_switch_to_buffer( yy_create_buffer( f, YY_BUF_SIZE ));
+void
+new_buffer(FILE *f)
+{
+	yy_switch_to_buffer(yy_create_buffer(f, YY_BUF_SIZE));
 }
 
-void close_and_change( void *buf, FILE * ){
-	yy_delete_buffer( YY_CURRENT_BUFFER );
-	yy_switch_to_buffer( (yy_buffer_state*)buf );
+void
+close_and_change(void *buf, FILE *)
+{
+	yy_delete_buffer(YY_CURRENT_BUFFER);
+	yy_switch_to_buffer((yy_buffer_state *) buf);
 }
 #else
 
 struct yy_buffer {
 /*   	unsigned char yysbuf[YYLMAX];
 	unsigned char *yysptr; */
-   	char yysbuf[YYLMAX];
+	char yysbuf[YYLMAX];
 	char *yysptr;
 };
 
-void *get_cur_buffer( ){
-   	yy_buffer *b = new yy_buffer;
-	memcpy( b->yysbuf, yysbuf, YYLMAX);
+void *
+get_cur_buffer()
+{
+	yy_buffer *b = new yy_buffer;
+
+	memcpy(b->yysbuf, yysbuf, YYLMAX);
 	b->yysptr = yysptr;
-	return (void*)b;
+	return (void *) b;
 }
 
-void new_buffer( FILE *f ){
-   	yysptr = yysbuf;
-   	yyin = f;
+void
+new_buffer(FILE *f)
+{
+	yysptr = yysbuf;
+	yyin = f;
 }
 
-void close_and_change( void *buf, FILE *f ){
-   	yy_buffer *b = (yy_buffer*)buf;
-   	fclose(yyin);
-	memcpy( yysbuf, b->yysbuf, YYLMAX);
+void
+close_and_change(void *buf, FILE *f)
+{
+	yy_buffer *b = (yy_buffer *) buf;
+
+	fclose(yyin);
+	memcpy(yysbuf, b->yysbuf, YYLMAX);
 	yysptr = b->yysptr;
-   	yyin = f;
+	yyin = f;
 }
 
 #endif
@@ -549,7 +620,7 @@ int script_nr = 0;
 int script_len = 0;
 char *script = NULL;
 
-extern void script_start( );
+extern void script_start();
 %}
 %p 3400
 %a 2300
@@ -638,7 +709,7 @@ YY_SPACES    	[\t\n ]*
 			  }						}
 {YY_LETTER}({YY_LETTER}|{YY_DIGIT})* {
 			yytext[yyleng] = 0; yylval.s = strdup(yytext);
-			if (table->find( MEL_USE, yylval.s ))
+			if (table->find(MEL_USE, yylval.s))
 				return MEL_USED;
 			return MEL_IDENTIFIER; 	     			}
 {YY_DIGIT}+	{	yytext[yyleng] = 0; yylval.i = (int) atoi(yytext);
@@ -652,19 +723,25 @@ YY_SPACES    	[\t\n ]*
 %%
 int str = 0, esc = 0, chr = 0;
 
-void script_start(){
+void
+script_start()
+{
 	script_nr = 0;
 	script_len = BUFSIZ;
 	script = new char[script_len];
 	str = esc = chr = 0;
+
 	script[0] = '\0';
 }
 
-int char_concat(char c) {
-   	if (script_nr+10 > script_len){
+int
+char_concat(char c)
+{
+	if (script_nr + 10 > script_len) {
 		script_len *= 2;
-		char *new_script = new char [script_len];
-		strncpy( new_script, script, script_nr );
+		char *new_script = new char[script_len];
+
+		strncpy(new_script, script, script_nr);
 		delete(script);
 		script = new_script;
 	}
@@ -674,7 +751,7 @@ int char_concat(char c) {
 		script[script_nr++] = '\\';
 		script[script_nr++] = '\\';
 		if (esc == 0 && str == 0 && chr == 0) {
-			esc=1;
+			esc = 1;
 		}
 	} else {
 		if (c == '\t') {
@@ -682,28 +759,38 @@ int char_concat(char c) {
 			script[script_nr++] = 't';
 		} else if (c == '\'') {
 			script[script_nr++] = '\'';
-	      		if (esc == 0 && str == 0) chr = chr?0:4;
+			if (esc == 0 && str == 0)
+				chr = chr ? 0 : 4;
 		} else if (c == '"') {
 			script[script_nr++] = '\\';
 			script[script_nr++] = '"';
-			if (esc == 0 && chr == 0) str = str?0:1;
+			if (esc == 0 && chr == 0)
+				str = str ? 0 : 1;
 		} else {
-	      		script[script_nr++] = c;
+			script[script_nr++] = c;
 		}
 		esc = 0;
 	}
-	if (chr) chr--;
+	if (chr)
+		chr --;
+
 	return 1;
 }
-const char* get_signature(char* fcn){
+
+const char *
+get_signature(char *fcn)
+{
 	int c, echo = 1;
+
 	script_start();
-	while(*fcn) {
+	while (*fcn) {
 		char_concat(*fcn++);
 	}
-	while((c = yyinput()) && c != '=') {
-		if (c == '\n') echo = 1;
-		if (echo) echo = char_concat(c);
+	while ((c = yyinput()) && c != '=') {
+		if (c == '\n')
+			echo = 1;
+		if (echo)
+			echo = char_concat(c);
 	}
 	script[script_nr] = 0;
 	return script;
@@ -748,7 +835,7 @@ using namespace std;
 #include "prelude.h"
 #include "epilogue.h"
 
-extern char* script;
+extern char *script;
 %}
 
 %token MEL_MODULE MEL_PRELUDE MEL_EPILOGUE MEL_END MEL_COMMAND 
@@ -765,14 +852,14 @@ module:
 	yyin = fileinfo->FilePtr(); }
 	module_begin dependencies definitions module_end
       { FileInfo *f = fileinfo->Parent();
-	if (f == NULL){
-	    root = new Module( MEL_MODULE, $2.s,
-	    	fileinfo->FileName(), $3.l, $4.l );
+	if (f == NULL) {
+	    root = new Module(MEL_MODULE, $2.s,
+	    	fileinfo->FileName(), $3.l, $4.l);
 	} else {
       	 	yylineno = f->LineNo();
-		$$.sym = new Module( MEL_MODULE, $2.s,
-	    		fileinfo->FileName(), $3.l, $4.l );
-		close_and_change( f->Buffer(), f->FilePtr() );
+		$$.sym = new Module(MEL_MODULE, $2.s,
+	    		fileinfo->FileName(), $3.l, $4.l);
+		close_and_change(f->Buffer(), f->FilePtr());
 		delete(fileinfo);
 		fileinfo = f;
 	} }
@@ -783,10 +870,10 @@ module_begin:
       { $$.s = $2.s; }
     |	MEL_MODULE ident
       { $$.s = $2.s;
-        yyerror( "missing \';\'" ); }
+        yyerror("missing \';\'"); }
     |	MEL_MODULE ';'
       { $$.s = fileinfo->BaseName();
-        yyerror( "missing \'module name\'" ); }
+        yyerror("missing \'module name\'"); }
     ;
 
 module_end:
@@ -794,7 +881,7 @@ module_end:
       { $$.s = $2.s; }
     |	MEL_END ';'
       { $$.s = fileinfo->BaseName();
-        yyerror( "missing \'module name\'" ); }
+        yyerror("missing \'module name\'"); }
     ;
 
 dependencies:
@@ -806,8 +893,8 @@ dependencies:
 ne_dependencies:
 	ne_dependencies dependency
       { $$.l = $1.l;
-	if ($2.l){
-		$$.l->insert( $2.l );
+	if ($2.l) {
+		$$.l->insert($2.l);
 		delete($2.l);
 	} }
    |	dependency
@@ -823,30 +910,30 @@ modulelist:
 	modulelist ',' modulename
        { $$.l = $1.l;
          if ($3.sym)
-	 	$$.l->insert( $3.sym ); }
+	 	$$.l->insert($3.sym); }
     |   modulename
        { $$.l = new List(50);
          if ($1.sym)
-	 	$$.l->insert( $1.sym ); }
+	 	$$.l->insert($1.sym); }
     ;
 
 modulename:
 	module_ident
-      { fileinfo->Buffer( get_cur_buffer() );
-	fileinfo->LineNo( yylineno );
-	char *filename = FileInfo::find_module( $1.s, dirs );
-	if (filename){
-		fileinfo = FileInfo::open( filename, $1.s, fileinfo );
-		new_buffer( fileinfo->FilePtr() );
-		$1.sym = new Dependency( MEL_USE, $1.s, fileinfo->FileName());
-	  	table->insert( *$1.sym );
+      { fileinfo->Buffer(get_cur_buffer());
+	fileinfo->LineNo(yylineno);
+	char *filename = FileInfo::find_module($1.s, dirs);
+	if (filename) {
+		fileinfo = FileInfo::open(filename, $1.s, fileinfo);
+		new_buffer(fileinfo->FilePtr());
+		$1.sym = new Dependency(MEL_USE, $1.s, fileinfo->FileName());
+	  	table->insert(*$1.sym);
 	} else {
-		yyerror( "Module not found" );
+		yyerror("Module not found");
 		$1.sym = NULL;
 	} }
 	module
 	{ $$.sym = $1.sym;
-	  ((Dependency*)$$.sym)->setModule( $3.sym ); }
+	  ((Dependency*)$$.sym)->setModule($3.sym); }
     | 	MEL_USED
     	{ $$.sym = NULL; }
     ;
@@ -861,11 +948,11 @@ ne_definitions:
      	ne_definitions definition
       { $$.l = $1.l;
 	if ($2.sym)
-		$$.l->insert( $2.sym ); }
+		$$.l->insert($2.sym); }
    |    definition
       { $$.l = new List(500);
 	if ($1.sym)
-		$$.l->insert( $1.sym ); }
+		$$.l->insert($1.sym); }
     ;
 
 definition:
@@ -876,36 +963,36 @@ definition:
    |	operator
    |	object
    |    MEL_PRELUDE '=' ident ';'
-      { $$.sym = new Prelude( MEL_PRELUDE, $3.s ); 	}
+      { $$.sym = new Prelude(MEL_PRELUDE, $3.s); 	}
    |	MEL_EPILOGUE '=' ident ';'
-      { $$.sym = new Epilogue( MEL_EPILOGUE, $3.s ); 	}
+      { $$.sym = new Epilogue(MEL_EPILOGUE, $3.s); 	}
     ;
 
 iterator:
      	MEL_ITERATOR ident
 	'(' args ')'
      	'=' ident ';' MEL_STRING
-      { $$.sym = new Iterator( MEL_ITERATOR, $2.s, $7.s, $4.l, $9.s ); }
+      { $$.sym = new Iterator(MEL_ITERATOR, $2.s, $7.s, $4.l, $9.s); }
     ;
 
 builtin:
      	MEL_BUILTIN commandname { get_signature($2.s); } ident ';' MEL_STRING
-      { $$.sym = new Builtin( MEL_BUILTIN, $2.s, $4.s, $6.s, script ); }
+      { $$.sym = new Builtin(MEL_BUILTIN, $2.s, $4.s, $6.s, script); }
     ;
 
 command:
      	MEL_COMMAND commandname '(' args ')' returntype
 	'=' ident ';' MEL_STRING
       { $$.sym = new Command(
-      		MEL_COMMAND, $2.s, $8.s, NORMAL, $6.sym, $4.l, $10.s ); }
+      		MEL_COMMAND, $2.s, $8.s, NORMAL, $6.sym, $4.l, $10.s); }
    |	MEL_COMMAND '{' commandname '}' '(' args ')' returntype
 	'=' ident ';' MEL_STRING
       { $$.sym = new Command(
-      		MEL_COMMAND, $3.s, $10.s, AGGREGATE, $8.sym, $6.l, $12.s ); }
+      		MEL_COMMAND, $3.s, $10.s, AGGREGATE, $8.sym, $6.l, $12.s); }
    |	MEL_COMMAND '[' commandname ']' '(' args ')' returntype
 	'=' ident ';' MEL_STRING
       { $$.sym = new Command(
-      		MEL_COMMAND, $3.s, $10.s, MULTIPLEX, $8.sym, $6.l, $12.s ); }
+      		MEL_COMMAND, $3.s, $10.s, MULTIPLEX, $8.sym, $6.l, $12.s); }
     ;
 
 commandname:
@@ -918,19 +1005,19 @@ operator:
      	MEL_OPERATOR0 operand MEL_STRING operand returntype
 	'=' ident ';' MEL_STRING
       { $$.sym = new Operator(
-      		MEL_OPERATOR0, $4.s, $8.s, $6.sym, $3.sym, $5.sym, $10.s ); }
+      		MEL_OPERATOR0, $4.s, $8.s, $6.sym, $3.sym, $5.sym, $10.s); }
     |
       { anynr_clear(); }
      	MEL_OPERATOR operand MEL_STRING operand returntype
 	'=' ident ';' MEL_STRING
       { $$.sym = new Operator(
-      		MEL_OPERATOR, $4.s, $8.s, $6.sym, $3.sym, $5.sym, $10.s ); }
+      		MEL_OPERATOR, $4.s, $8.s, $6.sym, $3.sym, $5.sym, $10.s); }
     |
       { anynr_clear(); }
      	MEL_OPERATOR1 operand MEL_STRING operand returntype
 	'=' ident ';' MEL_STRING
       { $$.sym = new Operator(
-      		MEL_OPERATOR1, $4.s, $8.s, $6.sym, $3.sym, $5.sym, $10.s ); }
+      		MEL_OPERATOR1, $4.s, $8.s, $6.sym, $3.sym, $5.sym, $10.s); }
     ;
 
 operand:
@@ -942,13 +1029,13 @@ operand:
 
 object:
      	MEL_OBJECT ident ';'
-      { $$.sym = new Object( MEL_OBJECT, $2.s ); }
+      { $$.sym = new Object(MEL_OBJECT, $2.s); }
    |    MEL_OBJECT ident '=' ident ';'
-      { const Symbol *s = table->find( MEL_ATOM, $4.s );
-        if (s){
-       	 	$$.sym = new Object( MEL_OBJECT, $2.s, s );
+      { const Symbol *s = table->find(MEL_ATOM, $4.s);
+        if (s) {
+       	 	$$.sym = new Object(MEL_OBJECT, $2.s, s);
 	} else {
-	   	yyerror( "object not found" );
+	   	yyerror("object not found");
 		$$.sym = NULL;
 	} }
     ;
@@ -965,25 +1052,25 @@ ne_args:
 	ne_args ',' lastarg
        { $$.l = $1.l;
 	 if ($3.sym)
-	 	$$.l->insert( $3.sym ); }
+	 	$$.l->insert($3.sym); }
     |	arg
        { $$.l = new List(20);
 	 if ($1.sym)
-	 	$$.l->insert( $1.sym ); }
+	 	$$.l->insert($1.sym); }
     ;
 
 lastarg:
 	arg
    |	MEL_VARARGS atom MEL_VARARGS
-      { $$.sym = new VarArg( MEL_VARARGS, NULL, $2.sym ); }
+      { $$.sym = new VarArg(MEL_VARARGS, NULL, $2.sym); }
    |    MEL_VARARGS
-      { $$.sym = new VarArg( MEL_VARARGS, NULL ); }
+      { $$.sym = new VarArg(MEL_VARARGS, NULL); }
     ;
 
 arg:
      	atom varname
       { if ($1.sym)
-	 	$1.sym->Name( $2.s );
+	 	$1.sym->Name($2.s);
 	$$.sym = $1.sym; 		}
     ;
 
@@ -1003,35 +1090,35 @@ returntype:
 
 atomdef:
    	MEL_ATOM ident '=' parentatom ';' atomops MEL_END ';'
-      { $$.sym = new Atom( MEL_ATOM, $2.s, -1, 0, (Atom*)$4.sym, $6.a );
-      	if (!table->find( MEL_ATOM, $2.s ))
-		table->insert( *$$.sym );
+      { $$.sym = new Atom(MEL_ATOM, $2.s, -1, 0, (Atom*)$4.sym, $6.a);
+      	if (!table->find(MEL_ATOM, $2.s))
+		table->insert(*$$.sym);
 	else {
-	   	yyerror( "Atom redefined" );
+	   	yyerror("Atom redefined");
 		semerror();
 	} }
    |	MEL_ATOM ident '=' type ';' atomops MEL_END ';'
-      { $$.sym = new Atom( MEL_ATOM, $2.s, -1, 0, (Arg*)$4.sym, $6.a );
-      	if (!table->find( MEL_ATOM, $2.s ))
-		table->insert( *$$.sym );
+      { $$.sym = new Atom(MEL_ATOM, $2.s, -1, 0, (Arg*)$4.sym, $6.a);
+      	if (!table->find(MEL_ATOM, $2.s))
+		table->insert(*$$.sym);
 	else {
-	   	yyerror( "Atom redefined" );
+	   	yyerror("Atom redefined");
 		semerror();
 	} }
    | 	MEL_ATOM ident fixedmeasures ';' atomops MEL_END ';'
-      { $$.sym = new Atom( MEL_ATOM, $2.s, $3.r.i1, $3.r.i2, (Atom*)NULL, $5.a);
-      	if (!table->find( MEL_ATOM, $2.s ))
-		table->insert( *$$.sym );
+      { $$.sym = new Atom(MEL_ATOM, $2.s, $3.r.i1, $3.r.i2, (Atom*)NULL, $5.a);
+      	if (!table->find(MEL_ATOM, $2.s))
+		table->insert(*$$.sym);
 	else {
-	   	yyerror( "Atom redefined" );
+	   	yyerror("Atom redefined");
 		semerror();
 	} }
    | 	MEL_FIXEDATOM ident ';' atomops MEL_END ';'
-      { $$.sym = new Atom( MEL_ATOM, $2.s, 0, 0, (Atom*)NULL, $4.a );
-      	if (!table->find( MEL_ATOM, $2.s ))
-		table->insert( *$$.sym );
+      { $$.sym = new Atom(MEL_ATOM, $2.s, 0, 0, (Atom*)NULL, $4.a);
+      	if (!table->find(MEL_ATOM, $2.s))
+		table->insert(*$$.sym);
 	else {
-	   	yyerror( "Atom redefined" );
+	   	yyerror("Atom redefined");
 		semerror();
 	} }
    | 	error
@@ -1078,7 +1165,7 @@ ne_atomops:
 	 		$$.a[OP_COMP] = $2.op;
 	}
     |   atomop
-       { $$.a = new Ops*[20]; for( int i =0; i<20;i++) $$.a[i] = NULL;
+       { $$.a = new Ops*[20]; for(int i =0; i<20;i++) $$.a[i] = NULL;
          if ($1.op)
 	 	$$.a[$1.op->operation()] = $1.op;
 	    	if ($1.op->operation() == OP_NEQUAL)
@@ -1087,46 +1174,46 @@ ne_atomops:
 
 atomop:
    	MEL_ATOMOP '=' ident ';'
-      { $$.op = new Atomops( MEL_ATOMOP, $3.s, $1.i ); }
+      { $$.op = new Atomops(MEL_ATOMOP, $3.s, $1.i); }
     ;
 
 
 parentatom:
    	ident
-      { const Symbol *s = table->find( MEL_ATOM, $1.s );
+      { const Symbol *s = table->find(MEL_ATOM, $1.s);
         if (s) {
         	$$.sym = (Symbol*)s;
 	} else {
-		yyerror( "Atom not found" );
+		yyerror("Atom not found");
 		$$.sym = NULL;
 	} }
     ;
 
 trueatom:
    	ident
-      { const Symbol *s = table->find( MEL_ATOM, $1.s );
+      { const Symbol *s = table->find(MEL_ATOM, $1.s);
         if (s)
-        	$$.sym = new AtomArg( MEL_ATOM, "", (Atom*)s , NULL);
+        	$$.sym = new AtomArg(MEL_ATOM, "", (Atom*)s , NULL);
 	else {
-		yyerror( "Atom not found" );
+		yyerror("Atom not found");
 		$$.sym = NULL;
 	} }
     ;
 
 type:
        MEL_TYPE
-      { $$.sym = new TypeArg( MEL_TYPE, NULL, $1.i , NULL);   	}
+      { $$.sym = new TypeArg(MEL_TYPE, NULL, $1.i , NULL);   	}
    |   MEL_BAT
-      { $$.sym = new BatArg( MEL_BAT, NULL, NULL, NULL ); 	}
+      { $$.sym = new BatArg(MEL_BAT, NULL, NULL, NULL); 	}
     ;
 
 atom:
      	MEL_ANY	anyspec
-      { $$.sym = new AnyArg( MEL_ANY, NULL, $2.i ); }
+      { $$.sym = new AnyArg(MEL_ANY, NULL, $2.i); }
    |    type
    |    trueatom
    |	MEL_BAT '[' atom ','  atom ']'
-      { $$.sym = new BatArg( MEL_BAT, NULL, (Arg*) $3.sym, (Arg*) $5.sym ); }
+      { $$.sym = new BatArg(MEL_BAT, NULL, (Arg*) $3.sym, (Arg*) $5.sym); }
    |    MEL_VOID
       { $$.sym = NULL; }
     ;
@@ -1134,8 +1221,8 @@ atom:
 anyspec:
 	MEL_SEP MEL_NUMBER
       { $$.i = $2.i;
-        if ($2.i >= ANY_MAX || $2.i < 0){
-	   yyerror( "Wrong any number, should be in range [0..31]" );
+        if ($2.i >= ANY_MAX || $2.i < 0) {
+	   yyerror("Wrong any number, should be in range [0..31]");
 	   $$.i = -1;
 	} }
    |	/* empty */
@@ -1164,13 +1251,14 @@ module_ident:
     ;
 %%
 
-void mel_yyerror(const char *err)
+void
+mel_yyerror(const char *err)
 {
 	if (progname) {
 		cerr << progname << ": ";
 	}
 	if (fileinfo->FileName()) {
-		cerr << "\"" <<  fileinfo->FileName() << "\", ";
+		cerr << "\"" << fileinfo->FileName() << "\", ";
 	}
 	if (yylineno > 0) {
 		cerr << "line " << (yylineno) << ", ";
@@ -1180,27 +1268,28 @@ void mel_yyerror(const char *err)
 		int i;
 
 		for (i = 0; i < 20; i++) {
-      		if (! yytext[i] || yytext[i] == '\n') {
-      			break;
+			if (!yytext[i] || yytext[i] == '\n') {
+				break;
 			}
 		}
-	      if (i) {
-	      	cerr << " at \"" << i << "\" of " << yytext;
+		if (i) {
+			cerr << " at \"" << i << "\" of " << yytext;
 		}
 	} else {
-          	cerr << " at end-of-file";
+		cerr << " at end-of-file";
 	}
 	cerr << ".\n";
 	parse_error++;
 }
 
-void semerror()
+void
+semerror()
 {
 	if (progname) {
 		cerr << progname << ": ";
 	}
 	if (fileinfo->FileName()) {
-		cerr << "\"" <<  fileinfo->FileName() << "\", ";
+		cerr << "\"" << fileinfo->FileName() << "\", ";
 	}
 	if (yylineno > 0) {
 		cerr << "line " << (yylineno) << ", ";

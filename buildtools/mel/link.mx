@@ -27,24 +27,25 @@
 
 class Link:public language {
       private:
-	List * monet_mod_path;
+	List *monet_mod_path;
       public:
 	Link() {
 		libsfx = strdup("");
-	} const char *get_name() const {
+	}
+	const char *get_name() const {
 		return "Link";
-	} virtual int handle_args(int, char **);
-	int generate_code(ostream & o, Symbol *root);
+	}
+	virtual int handle_args(int, char **);
+	int generate_code(ostream &o, Symbol *root);
 
-	ostream & gen_module(ostream & o, const Module & m);
-	ostream & gen_dependency(ostream & o, const Dependency & m);
+	ostream &gen_module(ostream &o, const Module &m);
+	ostream &gen_dependency(ostream &o, const Dependency &m);
 
       public:
 	char *libsfx;
 };
 
 #endif //_LINK_H_
-
 @C
 #include <mel_config.h>
 #include "link.h"
@@ -52,22 +53,25 @@ class Link:public language {
 #include <string.h>
 #include <stdlib.h>
 
-int Link::handle_args( int argc, char **argv ){
+int
+Link::handle_args(int argc, char **argv)
+{
 	int i = 0;
-	while ( i < argc ){
-	   	if (argv[i][0] != '-'){
+
+	while (i < argc) {
+		if (argv[i][0] != '-') {
 			cerr << "Unknown option " << argv[i] << "\n";
 			return 0;
 		}
-		switch(argv[i][1]){
+		switch (argv[i][1]) {
 		case 's':
-			  if (argv[i][2] == '\0'){
-			     i++;
-			     libsfx = strdup(argv[i]); 
-			  } else {
-			     libsfx = strdup(argv[i]+2); 
-			  }
-			  break;
+			if (argv[i][2] == '\0') {
+				i++;
+				libsfx = strdup(argv[i]);
+			} else {
+				libsfx = strdup(argv[i] + 2);
+			}
+			break;
 		default:
 			cerr << "Unknown option " << argv[i] << "\n";
 			return 0;
@@ -77,28 +81,33 @@ int Link::handle_args( int argc, char **argv ){
 	return 1;
 }
 
-int Link::generate_code( ostream &o, Symbol *root ){
-	root->print( this, o );
+int
+Link::generate_code(ostream &o, Symbol *root)
+{
+	root->print(this, o);
 	return 0;
 }
 
 
-ostream &Link::gen_module( ostream &o, const Module &d ){ 
-	char *p, *q ,*mod_path = getenv("MONETDB_MOD_PATH");
-	monet_mod_path = new List(10);
-	if (mod_path){
+ostream &
+Link::gen_module(ostream &o, const Module &d)
+{
+	char *p, *q, *mod_path = getenv("MONETDB_MOD_PATH");
+	monet_mod_path = new List (10);
+
+	if (mod_path) {
 		mod_path = strdup(mod_path);
-		q = mod_path; 
-		while( (p=strchr( q, ':' )) != NULL ){
+		q = mod_path;
+		while ((p = strchr(q, ':')) != NULL) {
 			*p = '\0';
 			monet_mod_path->insert(strdup(q));
-			q = p + 1; 
+			q = p + 1;
 		}
 		monet_mod_path->insert(strdup(q));
 		delete(mod_path);
 	}
-	gen_list( o, d.Deps() );
-	return o; 
+	gen_list(o, d.Deps());
+	return o;
 }
 
 static char *
@@ -111,7 +120,7 @@ basename(char *filename)
 #ifdef WIN32
 		    || *p == '/'
 #endif
-		   ) {
+		    ) {
 			sep = p;
 			dot = NULL;
 		} else if (*p == '.')
@@ -127,49 +136,57 @@ basename(char *filename)
 	return p;
 }
 
-static int matchlen( char *dir, char *file ){
+static int
+matchlen(char *dir, char *file)
+{
 	char *ds, *fs, *d, *f;
 	int maxlen = 0;
 	int len;
 
-	for( ds = dir; *ds; ds++) {
+	for (ds = dir; *ds; ds++) {
 		if (*ds != DIR_SEP
 #ifdef WIN32
 		    && *ds != '/'
 #endif
-		   )
+		    )
 			continue;
-		for( fs = file; *fs; fs++) {
+		for (fs = file; *fs; fs++) {
 			if (*fs != DIR_SEP
 #ifdef WIN32
 			    && *fs != '/'
 #endif
-			   )
+			    )
 				continue;
 
 			len = 0;
-			for(d = ds, f = fs; *d && *f && *d == *f; d++, f++) {
+			for (d = ds, f = fs; *d && *f && *d == *f; d++, f++) {
 				len++;
 			}
-	    
-			if (len > maxlen) maxlen = len;
+
+			if (len > maxlen)
+				maxlen = len;
 		}
 	}
 
 	return maxlen;
 }
 
-ostream &Link::gen_dependency( ostream &o, const Dependency &d ){
- 	d.Module()->print( this, o );
+ostream &
+Link::gen_dependency(ostream &o, const Dependency &d)
+{
+	d.Module ()->print(this, o);
 	char *bn = basename(d.filename());
-	if (monet_mod_path){
+
+	if (monet_mod_path) {
 		char *ldir = NULL;
-		int  ldirlen = 0;
+		int ldirlen = 0;
 		ListIterator *li = monet_mod_path->iterator();
 		char *dir;
-		while(li->next((void**)&dir)){
+
+		while (li->next((void **) &dir)) {
 			int mlen = matchlen(dir, d.filename());
-			if (mlen >= ldirlen){
+
+			if (mlen >= ldirlen) {
 				ldirlen = mlen;
 				if (ldir)
 					delete(ldir);
@@ -178,8 +195,8 @@ ostream &Link::gen_dependency( ostream &o, const Dependency &d ){
 		}
 		o << ldir << "/lib_" << bn << "." << libsfx << " ";
 	} else {
-	  o << "lib_" << bn << "." << libsfx << " ";
+		o << "lib_" << bn << "." << libsfx << " ";
 	}
 	delete(bn);
-	return o; 
+	return o;
 }

@@ -73,47 +73,56 @@ static int id_rand(void);
 
 Command::Command( int t, char *n, char *fcn, int type, Symbol *result, 
 		List *args, char *hlp ) 
-	: Symbol(t,n) {
-	if (fcn) 
-	   _fcn = strdup(fcn);
-	else 
-	   _fcn = NULL;
+	: Symbol(t,n)
+{
+	if (fcn)
+		_fcn = strdup(fcn);
+	else
+		_fcn = NULL;
 	_type = type;
 	_result = result;
 	_args = args;
-	set_arg_names( "arg" );
-	if (hlp) 
-	   _hlp = strdup(hlp);
-	else 
-	   _hlp = NULL;
+	set_arg_names("arg");
+	if (hlp)
+		_hlp = strdup(hlp);
+	else
+		_hlp = NULL;
 	_id = id_rand();
 }
 
+
 void set_anyarg_name(Symbol *s, int i);
 
-void Command::set_arg_names( const char *base ){
+void
+Command::set_arg_names(const char *base)
+{
 	if (!_args)
-	   	return;
-   	int arg_nr = 0;
-	char *name = new char [strlen(base) + 4];
+		return;
+	int arg_nr = 0;
+	char *name = new char[strlen(base) + 4];
 	ListIterator *iter = _args->iterator();
 	Symbol *s = NULL;
-	while(iter->next((void**)&s)){
-		if (!s->Name()){
-			sprintf( name,"%s%d", base, arg_nr);
-			s->Name( name );
+
+	while (iter->next((void **)&s)) {
+		if (!s->Name()) {
+			sprintf(name, "%s%d", base, arg_nr);
+			s->Name(name);
 		}
 		set_anyarg_name(s, ++arg_nr);
 	}
 	delete(name);
 }
 
-int Command::varargs() const {
+int
+Command::varargs() const
+{
 	int varargs = 0;
-	if (args()){
+
+	if (args()) {
 		ListIterator *iter = args()->iterator();
 		Symbol *s = NULL;
-		while(iter->next((void**)&s)){
+
+		while (iter->next((void **)&s)) {
 			if (s->Token() == MEL_VARARGS)
 				varargs = 1;
 		}
@@ -121,34 +130,51 @@ int Command::varargs() const {
 	return varargs;
 }
 
-int Command::Id() const { 
+int
+Command::Id() const
+{ 
 	return _id; 
 }
 
-char *Command::fcn() const { 
+char *
+Command::fcn() const
+{ 
 	return _fcn; 
 }
 
-Symbol *Command::result() const {
+Symbol *
+Command::result() const
+ {
 	return _result;
 }
 
-List *Command::args() const {
+List *
+Command::args() const
+{
 	return _args;
 }
 
-char *Command::hlp() const {
+char *
+Command::hlp() const
+{
 	return _hlp;
 }
 
-int Command::type() const {
+int
+Command::type() const
+{
 	return _type;
 }
 
-const char* Command::Token() const {
+const char *
+Command::Token() const
+{
 	return "TOK_COMMAND";
 }
-ostream &Command::print( language *l, ostream &o ) const {
+
+ostream &
+Command::print( language *l, ostream &o ) const
+{
 	return l->gen_command( o, *this );
 }
 
@@ -159,21 +185,28 @@ Saves a whole lot of problems later on (glue.mx).
 #include "any_arg.h"
 #include "bat_arg.h"
 
-void set_batarg_name(Symbol *s, int i, char c){
+void
+set_batarg_name(Symbol *s, int i, char c)
+{
 	if (s && s->Token() == MEL_ANY) {
-	   AnyArg *a = (AnyArg*) s;
-	   sprintf(a->typestr, "BBPdescriptor(argv[%d].val.bval)->%ctype",i,c);
+		AnyArg *a = (AnyArg *) s;
+
+		sprintf(a->typestr, "BBPdescriptor(argv[%d].val.bval)->%ctype", i, c);
 	}
 }
 
-void set_anyarg_name(Symbol *s, int i){
+void
+set_anyarg_name(Symbol *s, int i)
+{
 	if (s && s->Token() == MEL_ANY) {
-		AnyArg *a = (AnyArg*) s;
+		AnyArg *a = (AnyArg *) s;
+
 		sprintf(a->typestr, "argv[%d].vtype", i);
 	} else if (s->Token() == MEL_BAT) {
-		BatArg *b = (BatArg*) s;
-		set_batarg_name((Symbol*) b->atom1(), i, 'h');
-		set_batarg_name((Symbol*) b->atom2(), i, 't');
+		BatArg *b = (BatArg *) s;
+
+		set_batarg_name((Symbol *) b->atom1(), i, 'h');
+		set_batarg_name((Symbol *) b->atom2(), i, 't');
 	}
 }
 
@@ -200,21 +233,24 @@ random numbers with history (to avoid doubles)
 static int id_hist[MAX_ID_HIST];
 static int id_size = 0;
 
-static int id_rand(void){
+static int
+id_rand(void)
+{
 	static int seeded = 0;
 	int i, r;
+
 	if (!seeded) {
 		srand(time(NULL));
 		seeded = 1;
 	}
 
-  try_again:
+      try_again:
 	r = rand();
-	for(i = 0; i < id_size; i++) 
+	for (i = 0; i < id_size; i++)
 		if (id_hist[i] == r) {
 			// found duplicate random number: just try again
 			goto try_again;
-		} 
+		}
 	id_hist[id_size++] = r;
 	assert(id_size <= MAX_ID_HIST);
 	return r;

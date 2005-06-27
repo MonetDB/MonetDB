@@ -54,9 +54,9 @@ class Atom:public Symbol {
 #include "atom.h"
 #include "language.h"
 
-Atom::Atom( int t, char *n, int size, int align, Atom *parent, 
-		Ops **cmds ) 
-	: Symbol(t,n) {
+Atom::Atom(int t, char *n, int size, int align, Atom *parent, Ops **cmds) 
+	: Symbol(t,n)
+{
 	_size = size;
 	_align = align;
 	_parent = parent;
@@ -64,9 +64,9 @@ Atom::Atom( int t, char *n, int size, int align, Atom *parent,
 	_cmds = cmds;
 }
 
-Atom::Atom( int t, char *n, int size, int align, Arg *type, 
-		Ops **cmds ) 
-	: Symbol(t,n) {
+Atom::Atom(int t, char *n, int size, int align, Arg *type, Ops **cmds) 
+	: Symbol(t,n)
+{
 	_size = size;
 	_align = align;
 	_parent = NULL;
@@ -74,7 +74,9 @@ Atom::Atom( int t, char *n, int size, int align, Arg *type,
 	_cmds = cmds;
 }
 
-int Atom::isFixed() const {
+int
+Atom::isFixed() const
+{
 	if (_parent)
 		return _parent->isFixed();
 	if (_type)
@@ -82,44 +84,60 @@ int Atom::isFixed() const {
 	return _size>=0;
 }
 
-int Atom::size() const {
+int
+Atom::size() const
+{
 	if (_parent)
 		return _parent->size();
 	return _size;
 }
 
-int Atom::align() const {
+int
+Atom::align() const
+{
 	if (_parent)
 		return _parent->align();
 	return _align;
 }
 
-Atom *Atom::parent() const {
+Atom *
+Atom::parent() const
+{
 	return _parent;
 }
 
-Atom *Atom::top_parent() const {
+Atom *
+Atom::top_parent() const
+{
 	Atom *a = parent();
 	while(a && a->parent())
 		a = a->parent();
 	return a;
 }
 
-Arg *Atom::type() const {
+Arg *
+Atom::type() const
+{
 	return _type;
 }
 
-Arg *Atom::top_type() const {
+Arg *
+Atom::top_type() const
+{
    	Atom *a = top_parent();
 	if (a)
 	   	return a->type();
 	return _type;
 }
 
-Ops **Atom::cmds() const {
+Ops **
+Atom::cmds() const
+{
 	return _cmds;
 }
 
-ostream &Atom::print( language *l, ostream &o ) const {
-	return l->gen_atom( o, *this );
+ostream &
+Atom::print(language *l, ostream &o) const
+{
+	return l->gen_atom(o, *this);
 }
