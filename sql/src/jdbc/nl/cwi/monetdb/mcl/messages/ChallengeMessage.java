@@ -25,6 +25,11 @@ public class ChallengeMessage extends MCLMessage {
 		}
 	}
 
+	// these represent the interval values of this Message
+	private int protover;
+	private String server;
+	private String seed;
+	
 	/**
 	 * Constructs an empty ChallengeMessage.  The sentences need to be
 	 * added using the addSentence() method.  This constructor is
@@ -48,8 +53,10 @@ public class ChallengeMessage extends MCLMessage {
 			new MCLException("Server identification string may not be null");
 		
 		sentences = new MCLSentence[3];
-		sentences[0] = new MCLSentence('$', "protover\t" + protover);
-		sentences[1] = new MCLSentence('$', "server\t" + server);
+		this.protover = protover;
+		this.server = server;
+		sentences[0] = new MCLSentence('$', "protover", "" + protover);
+		sentences[1] = new MCLSentence('$', "server", server);
 		generateSeed();
 	}
 
@@ -83,8 +90,35 @@ public class ChallengeMessage extends MCLMessage {
 	 * be valid
 	 */
 	public void addSentence(MCLSentence in) throws MCLException {
-		// do something with recognising the right header types, need
-		// more utility functions from MCLSentence class first
+		// see if it is a supported header
+		if (in.getType() != '$') throw
+			new MCLException("Sentence type not allowed for this message: " + (char)in.getType());
+		String prop = in.getField(1);
+		if (prop == null) throw
+			new MCLException("Illegal sentence (no property): " + in.getString());
+		String value = in.getField(2);
+		if (value == null) throw
+			new MCLException("Illegal sentence (no value): " + in.getString());
+
+
+		if (prop.equals("protover")) {
+			try {
+				protover = Integer.parseInt(value);
+				sentences[0] = in;
+			} catch (NumberFormatException e) {
+				throw new MCLException("Illegal value for header 'protover': " + value);
+			}
+		} else if (prop.equals("server")) {
+			if (value.equals("mserver") || value.equals("dbpool")) {
+				server = value;
+				sentences[1] = in;
+			} else {
+				throw new MCLException("Illegal value for header 'server': " + value);
+			}
+		} else if (prop.equals("seed")) {
+			if (value.length() < 7 || value.length() > 19) throw
+				new MCLException("Illegal value for header 'seed': " + value);
+		}
 	}
 
 
@@ -102,7 +136,7 @@ public class ChallengeMessage extends MCLMessage {
 		 * - pick a random character [a-z][A-Z][0-9]
 		 */
 		Random rand = new Random();
-		String seed = "";
+		seed = "";
 		int length = 9 + rand.nextInt(17 - 9 + 1);
 		for (int i = 0; i < length; i++) {
 			switch(rand.nextInt(3)) {
@@ -117,6 +151,37 @@ public class ChallengeMessage extends MCLMessage {
 				break;
 			}
 		}
-		sentences[2] = new MCLSentence('$', "seed\t" + seed);
+		sentences[2] = new MCLSentence('$', "seed", seed);
+	}
+
+	// the following are message specific getters that retrieve the
+	// values inside the message
+
+	/**
+	 * Retrieves the protocol version contained in this Message object.
+	 *
+	 * @return the protocol version
+	 */
+	public int getProtover() {
+		return(protover);
+	}
+
+	/**
+	 * Retrieves the server identification string contained in this
+	 * Message object.
+	 *
+	 * @return the server string
+	 */
+	public String getServer() {
+		return(server);
+	}
+
+	/**
+	 * Retrieves the seed contained in this Message object.
+	 *
+	 * @return the seed
+	 */
+	public String getSeed() {
+		return(seed);
 	}
 }

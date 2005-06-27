@@ -6,7 +6,7 @@ import nl.cwi.monetdb.mcl.*;
 public class MCLSentence {
 	private final int type;
 	private final byte[] data;
-	
+
 	/** Indicates the end of a message (sequence). */
 	public final static int PROMPT          = '.';
 	/** Indicates the end of a message (sequence), expecting more query
@@ -27,7 +27,7 @@ public class MCLSentence {
 	/** Additional info, comments or messages. */
 	public final static int INFO            = '#';
 
-	
+
 	/**
 	 * Constucts a new sentence with the given type and data elements.
 	 * The sentence type needs to be one of the supported (and known)
@@ -43,7 +43,7 @@ public class MCLSentence {
 
 		if (!isValidType(type)) throw
 			new MCLException("Unknown sentence type: " + (char)type + " (" + type + ")");
-		
+
 		this.type = type;
 		this.data = data;
 	}
@@ -62,10 +62,64 @@ public class MCLSentence {
 
 		if (!isValidType(type)) throw
 			new MCLException("Unknown sentence type: " + (char)type + " (" + type + ")");
-		
+
 		this.type = type;
 		try {
 			this.data = data.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// this should not happen actually
+			throw new AssertionError("UTF-8 encoding not supported!");
+		}
+	}
+
+	/**
+	 * Convenience constructor which takes a type, a property and a
+	 * value and constructs a Sentence of type with property and value.
+	 *
+	 * @param type an int representing the type of this sentence
+	 * @param property a property name
+	 * @param value the property value
+	 */
+	public MCLSentence(int type, String property, String value) throws MCLException {
+		if (property == null || value == null) throw
+			new MCLException("property or value may not be null");
+
+		if (!isValidType(type)) throw
+			new MCLException("Unknown sentence type: " + (char)type + " (" + type + ")");
+
+		this.type = type;
+		try {
+			this.data = (property + "\t" + value).getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// this should not happen actually
+			throw new AssertionError("UTF-8 encoding not supported!");
+		}
+	}
+
+	/**
+	 * Convenience constructor which takes a type, a property and a list
+	 * of values and constructs a Sentence of type with property and
+	 * values.
+	 *
+	 * @param type an int representing the type of this sentence
+	 * @param property a property name
+	 * @param value the property values
+	 */
+	public MCLSentence(int type, String property, String[] values) throws MCLException {
+		if (property == null || values == null) throw
+			new MCLException("property or values may not be null");
+		if (values.length == 0) throw
+			new MCLException("values should contain at least one value");
+
+		if (!isValidType(type)) throw
+			new MCLException("Unknown sentence type: " + (char)type + " (" + type + ")");
+
+		this.type = type;
+		try {
+			String tmp = property;
+			for (int i = 0; i < values.length; i++)
+				tmp += "\t" + values[i];
+			this.data = tmp.getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			// this should not happen actually
 			throw new AssertionError("UTF-8 encoding not supported!");
@@ -116,6 +170,22 @@ public class MCLSentence {
 			// this should not happen
 			throw new AssertionError("UTF-8 encoding not supported!");
 		}
+	}
+
+	/**
+	 * Extracts the xth field from the sentence where fields are
+	 * separated by tab characters.  This method only works correctly
+	 * when dealing with sentences which have no values containing tab
+	 * characters.  No interpretation of the sentence is performed.
+	 *
+	 * @param field the field to extract starting from 1
+	 * @return the extracted field or null if no such field exists
+	 */
+	public String getField(int field) {
+		if (field < 1) return(null);
+		String[] fields = getString().split("\t");
+		if (field > fields.length) return(null);
+		return(fields[field - 1]);
 	}
 
 	/**
