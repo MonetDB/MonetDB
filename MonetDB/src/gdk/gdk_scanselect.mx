@@ -390,7 +390,7 @@ seqscan_@1_@2_@3_@6_@7_nocheck_noinc(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ct
 	BATloopFast(b, p, q, xx) {
 		ptr v = BUN@3(b, p);
 		@4 {
-			@7@2_bunfastins_nocheck_noinc(bn, _p, @8, @5);
+			@7@2_bunfastins_nocheck_noinc(bn, _p, (void *) (@8), @5);
 			_p += _bunsize;
 		}
 		@9
@@ -408,7 +408,7 @@ seqscan_@1_@2_@3_@6_@7(BAT* b, BAT* bn, ptr tl, ptr th, oid oid_ctr, var_t str_i
 	BATloopFast(b, p, q, xx) {
 		ptr v = BUN@3(b, p);;
 		@4 {
-			@7@2_bunfastins(bn, @8, @5);
+			@7@2_bunfastins(bn, (void *) (@8), @5);
 		}
 		@9
 	}
