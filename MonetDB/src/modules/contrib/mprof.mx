@@ -747,6 +747,8 @@ Ma_fromstr(char *src, int *len, Mallinfo **M_ptr)
 	m.usmblks = usmblks;
 	m.fsmblks = fsmblks;
 	m.uordblks = uordblks;
+	m.fordblks = 0;
+	m.keepcost = 0;
 	if (*M_ptr) {
 		if (*len < (int) sizeof(Mallinfo)) {
 			GDKfree(*M_ptr);
