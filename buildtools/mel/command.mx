@@ -71,9 +71,7 @@ class Command:public Symbol {
 
 static int id_rand(void);
 
-Command::Command( int t, char *n, char *fcn, int type, Symbol *result, 
-		List *args, char *hlp ) 
-	: Symbol(t,n)
+Command::Command(int t, char *n, char *fcn, int type, Symbol *result, List *args, char *hlp) : Symbol(t, n)
 {
 	if (fcn)
 		_fcn = strdup(fcn);
@@ -91,7 +89,7 @@ Command::Command( int t, char *n, char *fcn, int type, Symbol *result,
 }
 
 
-void set_anyarg_name(Symbol *s, int i);
+static void set_anyarg_name(Symbol *s, int i);
 
 void
 Command::set_arg_names(const char *base)
@@ -103,7 +101,7 @@ Command::set_arg_names(const char *base)
 	ListIterator *iter = _args->iterator();
 	Symbol *s = NULL;
 
-	while (iter->next((void **)&s)) {
+	while (iter->next((void **) &s)) {
 		if (!s->Name()) {
 			sprintf(name, "%s%d", base, arg_nr);
 			s->Name(name);
@@ -122,7 +120,7 @@ Command::varargs() const
 		ListIterator *iter = args()->iterator();
 		Symbol *s = NULL;
 
-		while (iter->next((void **)&s)) {
+		while (iter->next((void **) &s)) {
 			if (s->Token() == MEL_VARARGS)
 				varargs = 1;
 		}
@@ -173,9 +171,9 @@ Command::Token() const
 }
 
 ostream &
-Command::print( language *l, ostream &o ) const
+Command::print(language *l, ostream &o) const
 {
-	return l->gen_command( o, *this );
+	return l->gen_command(o, *this);
 }
 
 @- any arguments
@@ -185,7 +183,7 @@ Saves a whole lot of problems later on (glue.mx).
 #include "any_arg.h"
 #include "bat_arg.h"
 
-void
+static void
 set_batarg_name(Symbol *s, int i, char c)
 {
 	if (s && s->Token() == MEL_ANY) {
@@ -195,7 +193,7 @@ set_batarg_name(Symbol *s, int i, char c)
 	}
 }
 
-void
+static void
 set_anyarg_name(Symbol *s, int i)
 {
 	if (s && s->Token() == MEL_ANY) {

@@ -66,9 +66,9 @@ Symbol::Symbol(int token, const char *name)
 {
 	_token = token;
 	if (name) 
-	   _name = strdup(name);
+		_name = strdup(name);
 	else 
-	   _name = NULL;
+		_name = NULL;
 }
 
 Symbol::~Symbol()
