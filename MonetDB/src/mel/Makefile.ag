@@ -22,6 +22,11 @@ YFLAGS = -d
 # (not only for language.h/.mx!); hence,
 # we "mis-use" the NO_INLINE_CFLAGS to switch off -Werror
 # (see also conf/monet.m4).
+# (At least on Fedora Core 4,) when mel is compiled with 
+# g++ 4.0.0 ("Red Hat 4.0.0-8") and optimization enabled (-O2),
+# mel segfaults (at least on src/modules/plain/streams.mx); hence,
+# we "mis-use" the NO_INLINE_CFLAGS to switch off optimization (-O0)
+# (see also conf/monet.m4).
 X_CXXFLAGS = $(NO_INLINE_CFLAGS)
 
 bin_mel = {

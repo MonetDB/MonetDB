@@ -332,6 +332,12 @@ yes-*-*)
 		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch off -Werror
 		dnl  in src/mel/Makefile.ag .
 		NO_INLINE_CFLAGS='-Wno-error'
+		dnl  (At least on Fedora Core 4,) when mel is compiled with 
+		dnl  g++ 4.0.0 ("Red Hat 4.0.0-8") and optimization enabled (-O2),
+		dnl  mel segfaults (at least on src/modules/plain/streams.mx); hence,
+		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch off optimization (-O0)
+		dnl  in src/mel/Makefile.ag .
+		NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -O0"
 		;;
 	esac
 	;;
