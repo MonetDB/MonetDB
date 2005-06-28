@@ -10,6 +10,11 @@ AC_CONFIG_HEADER([mel_config.h])
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
+if test $GCC = yes && test "`$CXX -dumpversion`" = 4.0.0; then
+	dnl remove -O flags from CXXFLAGS when using g++ version 4
+	dnl otherwise we may get segfaults, at least on x86_64 Linux
+	CXXFLAGS=`echo "$CXXFLAGS" | sed 's/-O[[0-9]]*//'`
+fi
 AC_ARG_WITH(mx,
 	AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
 	have_mx="$withval",
@@ -37,6 +42,7 @@ AC_CHECK_PROG(MV,mv,mv -f)
 
 # Checks for header files.
 AC_HEADER_STDC
+AC_HEADER_TIME
 AC_CHECK_HEADERS([malloc.h stdlib.h string.h sys/time.h unistd.h])
 AC_LANG_SAVE
 AC_LANG_CPLUSPLUS
