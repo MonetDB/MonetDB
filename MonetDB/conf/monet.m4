@@ -142,16 +142,6 @@ AM_CONDITIONAL(HAVE_MONET5,test x$have_monet5 = xyes)
 AC_DEFUN([AM_MONETDB_COMPILER],
 [
 
-dnl Some special requirements for MacOS X/Darwin
-case "$host" in
-powerpc-apple-darwin*)
-	if test "$host" = "powerpc-apple-darwin6.8"; then
-		dnl  Jaguar still requires this...
-		CFLAGS="$CFLAGS -Ddlsym=dlsym_prepend_underscore"
-	fi
-	;;
-esac
-
 dnl check for compiler
 icc_ver=""
 gcc_ver=""
