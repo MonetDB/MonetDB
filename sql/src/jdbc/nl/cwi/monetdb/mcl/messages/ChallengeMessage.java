@@ -13,13 +13,13 @@ import nl.cwi.monetdb.mcl.*;
  */
 public class ChallengeMessage extends MCLMessage {
 	/** The character that identifies this message */
-	public final char identifier = 'C';
+	public static final char identifier = 'C';
 
 	private final static MCLSentence startOfMessageSentence;
 	
 	static {
 		try {
-			startOfMessageSentence = new MCLSentence('&', "C");
+			startOfMessageSentence = new MCLSentence('&', "" + identifier);
 		} catch (MCLException e) {
 			throw new AssertionError("Unable to create core sentence");
 		}
@@ -118,6 +118,11 @@ public class ChallengeMessage extends MCLMessage {
 		} else if (prop.equals("seed")) {
 			if (value.length() < 7 || value.length() > 19) throw
 				new MCLException("Illegal value for header 'seed': " + value);
+
+			seed = value;
+			sentences[2] = in;
+		} else {
+			throw new MCLException("Illegal property '" + prop + "' for this Message");
 		}
 	}
 
