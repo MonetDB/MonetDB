@@ -1135,12 +1135,15 @@ public class MonetPreparedStatement
 	 * driver converts this to an SQL TIME value when it sends it to the
 	 * database.
 	 *
-	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param index the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setTime(int parameterIndex, Time x) throws SQLException {
-		setValue(parameterIndex, "time '" + x.toString() + "'");
+	public void setTime(int index, Time x) throws SQLException {
+		if (index < 1 || index > size)
+			throw new SQLException("No such parameter with index: " + index);
+
+		setValue(index, monetdbType[index - 1] + " '" + x.toString() + "'");
 	}
 
 	/**
@@ -1152,19 +1155,22 @@ public class MonetPreparedStatement
 	 * specified, the driver uses the default timezone, which is that of the
 	 * virtual machine running the application.
 	 *
-	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param index the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
 	 * @param cal the Calendar object the driver will use to construct the time
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setTime(int parameterIndex, Time x, Calendar cal)
+	public void setTime(int index, Time x, Calendar cal)
 		throws SQLException
 	{
+		if (index < 1 || index > size)
+			throw new SQLException("No such parameter with index: " + index);
+
 		synchronized (MonetConnection.mTimeZ) {
 			MonetConnection.mTimeZ.setTimeZone(cal.getTimeZone());
 
 			String RFC822 = MonetConnection.mTimeZ.format(x);
-			setValue(parameterIndex, "time '" +
+			setValue(index, monetdbType[index - 1] + " '" +
 				RFC822.substring(0, 15) + ":" + RFC822.substring(15) + "'");
 		}
 	}
@@ -1174,14 +1180,17 @@ public class MonetPreparedStatement
 	 * driver converts this to an SQL TIMESTAMP value when it sends it to the
 	 * database.
 	 *
-	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param index the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setTimestamp(int parameterIndex, Timestamp x)
+	public void setTimestamp(int index, Timestamp x)
 		throws SQLException
 	{
-		setValue(parameterIndex, "timestamp '" + x.toString() + "'");
+		if (index < 1 || index > size)
+			throw new SQLException("No such parameter with index: " + index);
+
+		setValue(index, monetdbType[index - 1] + " '" + x.toString() + "'");
 	}
 
     /**
@@ -1193,20 +1202,23 @@ public class MonetPreparedStatement
 	 * is specified, the driver uses the default timezone, which is that of the
 	 * virtual machine running the application.
 	 *
-	 * @param parameterIndex the first parameter is 1, the second is 2, ...
+	 * @param index the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
 	 * @param cal the Calendar object the driver will use to construct the
 	 *            timestamp
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
+	public void setTimestamp(int index, Timestamp x, Calendar cal)
 		throws SQLException
 	{
+		if (index < 1 || index > size)
+			throw new SQLException("No such parameter with index: " + index);
+
 		if (cal == null) cal = Calendar.getInstance();
 		synchronized (MonetConnection.mTimestampZ) {
 			MonetConnection.mTimestampZ.setTimeZone(cal.getTimeZone());
 			String RFC822 = MonetConnection.mTimestampZ.format(x);
-			setValue(parameterIndex, "timestamp '" +
+			setValue(index, monetdbType[index - 1] + " '" +
 				RFC822.substring(0, 26) + ":" + RFC822.substring(26) + "'");
 		}
 	}
