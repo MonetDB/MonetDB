@@ -1068,12 +1068,14 @@ def ApproveOutput (env, TST) :
 def isexecutable(TST) :
     if   os.name == "nt":
         for ext in ".exe", ".com", ".bat", ".cmd":
-            if os.path.isfile(TST+ext):
+            if os.path.isfile(TST+ext) or os.path.isfile(TST+ext+".src"):
                 return [ 1, ext ]
     elif os.name == "posix":
         #TODO:
         # check with "file", and set executable
         if os.path.isfile(TST)  and  os.access(TST,os.X_OK):
+            return [ 1, "" ]
+        if os.path.isfile(TST+".src")  and  os.access(TST+".src",os.X_OK):
             return [ 1, "" ]
     #TODO:
     #else:
