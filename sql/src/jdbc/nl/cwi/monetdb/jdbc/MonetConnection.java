@@ -104,6 +104,8 @@ public class MonetConnection extends Thread implements Connection {
 	final static int LANG_SQL = 0;
 	/** the XQuery language */
 	final static int LANG_XQUERY = 1;
+	/** the MIL language (officially *NOT* supported) */
+	final static int LANG_MIL = 2;
 	/** an unknown language */
 	final static int LANG_UNKNOWN = -1;
 
@@ -174,11 +176,11 @@ public class MonetConnection extends Thread implements Connection {
 				monet = new MonetSocket(hostname, port);
 			}
 
-			/**
-			 * There is no need for a lock on the monet object here.  Since we just
-			 * created the object, and the reference to this object has not yet been
-			 * returned to the caller, noone can (in a legal way) know about the
-			 * object.
+			/*
+			 * There is no need for a lock on the monet object here.
+			 * Since we just created the object, and the reference to
+			 * this object has not yet been returned to the caller,
+			 * noone can (in a legal way) know about the object.
 			 */
 
 			// we're debugging here... uhm, should be off in real life
@@ -277,6 +279,8 @@ public class MonetConnection extends Thread implements Connection {
 				lang = LANG_SQL;
 			} else if ("xquery".equals(language)) {
 				lang = LANG_XQUERY;
+			} else if ("mil".equals(language)) {
+				lang = LANG_MIL;
 			} else {
 				lang = LANG_UNKNOWN;
 			}
@@ -994,6 +998,8 @@ public class MonetConnection extends Thread implements Connection {
 				query = "s" + query + ";";
 			} else if (lang == LANG_XQUERY) {
 				query = "xml-seq-mapi\n" + query;
+			} else if (lang == LANG_MIL) {
+				query = query + ";";
 			}
 			hdrl = new HeaderList(query, cacheSize, maxRows, rsType, rsConcur);
 			queryQueue.add(hdrl);
