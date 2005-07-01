@@ -2574,13 +2574,13 @@ mapi_param_store(MapiHdl hdl)
 				buf[0] = *(char *) src;
 				buf[1] = 0;
 				val = mapi_quote(buf, 1);
-				checkSpace(strlen(val));
+				checkSpace(strlen(val)+3);
 				sprintf(hdl->query + k, "'%s'", val);
 				free(val);
 				break;
 			case MAPI_VARCHAR:
 				val = mapi_quote((char *) src, hdl->params[i].sizeptr ? *hdl->params[i].sizeptr : -1);
-				checkSpace(strlen(val));
+				checkSpace(strlen(val)+3);
 				sprintf(hdl->query + k, "'%s'", val);
 				free(val);
 				break;
@@ -2595,7 +2595,7 @@ mapi_param_store(MapiHdl hdl)
 		p = q + 1;
 		q = strchr(p, PLACEHOLDER);
 	}
-	checkSpace(strlen(p));
+	checkSpace(strlen(p)+1);
 	strcpy(hdl->query + k, p);
 	if (hdl->mid->trace)
 		printf("param_store: result=%s\n", hdl->query);

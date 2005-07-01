@@ -142,16 +142,6 @@ AM_CONDITIONAL(HAVE_MONET5,test x$have_monet5 = xyes)
 AC_DEFUN([AM_MONETDB_COMPILER],
 [
 
-dnl Some special requirements for MacOS X/Darwin
-case "$host" in
-powerpc-apple-darwin*)
-	if test "$host" = "powerpc-apple-darwin6.8"; then
-		dnl  Jaguar still requires this...
-		CFLAGS="$CFLAGS -Ddlsym=dlsym_prepend_underscore"
-	fi
-	;;
-esac
-
 dnl check for compiler
 icc_ver=""
 gcc_ver=""
@@ -351,6 +341,12 @@ yes-*-*)
 		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch off -Werror
 		dnl  in src/mel/Makefile.ag .
 		NO_INLINE_CFLAGS='-Wno-error'
+		dnl  (At least on Fedora Core 4,) when mel is compiled with 
+		dnl  g++ 4.0.0 ("Red Hat 4.0.0-8") and optimization enabled (-O2),
+		dnl  mel segfaults (at least on src/modules/plain/streams.mx); hence,
+		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch off optimization (-O0)
+		dnl  in src/mel/Makefile.ag .
+		NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -O0"
 		;;
 	esac
 	;;
