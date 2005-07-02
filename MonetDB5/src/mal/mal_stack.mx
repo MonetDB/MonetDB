@@ -70,7 +70,7 @@ typedef struct MALSTK {
 
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
 #define newStack(S,CNT) S= (MalStkPtr) alloca(stackSize(CNT));\
-            bzero((char *) S, stackSize(CNT));\
+            bzero((char *) S, stackSize(0)); \
             (S)->stksize=CNT;
     
 
@@ -126,7 +126,9 @@ MalStkPtr reallocStack(MalStkPtr s, int cnt){
 
     if( s->stksize >cnt ) return s;
     k = ((cnt/STACKINCR)+1) * STACKINCR;
-    newStack(s, k);
+	s= (MalStkPtr) alloca(stackSize(k));
+	bzero((char *) s, stackSize(k));
+	(s)->stksize=k;
     memcpy(s, old, stackSize(old->stksize)); 
     s->stksize = k;
     GDKfree(old);

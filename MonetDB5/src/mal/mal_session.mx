@@ -337,7 +337,7 @@ table may have grown in size.
 @c
 str MALexitClient(Client c){
 	if (c->glb) {
-    	garbageCollector(c->curprg->def,c->glb,TRUE);
+    	garbageCollectAll(c->curprg->def,c->glb);
 		GDKfree(c->glb);
 	}
 	c->glb = 0;

@@ -70,8 +70,8 @@ mal_export void waitForChildren(MalStkPtr stk);
 mal_export str setDynamicType(MalBlkPtr mb, 
         VarPtr v, int tpe,int pc);
 mal_export void garbageElement(ValPtr v);
-mal_export void garbageCollector(MalBlkPtr mb, 
-        MalStkPtr stk, int forceall);
+mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk);
+mal_export void garbageCollectAll(MalBlkPtr mb, MalStkPtr stk);
 mal_export void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid);
 
 mal_export ptr getArgValue(MalStkPtr stk, 
@@ -152,7 +152,6 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
     case TYPE_str: ret= (ptr) & v->val.sval; break;
     default:
          ret= (ptr) & v->val.pval; 
-        /* GDKerror("eretParameters:unknown value type\n");*/
     }
     return ret;
 #endif
@@ -211,6 +210,8 @@ being called.
         pci= pcicaller;
     } else {
         newStack(stk,mb->vsize);
+        if(env == 0 && mbcaller==0)
+			bzero((char *) stk, stackSize(mb->vsize));
         stk->stktop= mb->vtop; 
         stk->stksize= mb->vsize;
         stk->blk= mb;
@@ -279,10 +280,7 @@ pattern operators to deal with it.
         lhs = &stk->stk[i];
         if( tpe != TYPE_any)
             lhs->vtype = getVarGDKType(mb,i);
-        if(env == 0 && mbcaller==0)
-            lhs->val.ival =0; 
     }
-    /* run the program */
 #ifdef STACKTRACE
     stream_printf(GDKout,"Stack before loop\n");
     printStack(GDKout,mb,stk); fflush(GDKout);
@@ -307,8 +305,11 @@ pattern operators to deal with it.
     stream_printf(GDKout,"Stack after loop\n");
     printStack(GDKout,mb,stk); fflush(GDKout);
 #endif
-    if( !stk->keepAlive)
-        garbageCollector(mb,stk,env != stk);
+    if( !stk->keepAlive){
+		if( env!= stk)
+			garbageCollectAll(mb,stk);
+        else garbageCollector(mb,stk);
+	}
     return ret;
 }
 @-
@@ -346,8 +347,11 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	stream_printf(GDKout,"Stack after loop\n");
 	printStack(GDKout,mb,stk); fflush(GDKout);
 #endif
-	if( !stk->keepAlive)
-		garbageCollector(mb,stk,env != stk);
+	if( !stk->keepAlive){
+		if( env!= stk)
+			garbageCollectAll(mb,stk);
+        else garbageCollector(mb,stk);
+	}
 	return ret;
 }
 @-
@@ -361,7 +365,6 @@ str runMALsequence( malTask *task)
     Client cntxt= task->cntxt; 
     MalBlkPtr mb= task->mb; 
     MalStkPtr stk= task->stk;
-    int startpc= task->startpc; 
     MalStkPtr env= task->env;
     InstrPtr pcicaller= task->pcicaller;
     int childProcess= task->pci?getDestVar(task->pci):0;
@@ -376,7 +379,7 @@ str runMALsequence( malTask *task)
     @:performanceVariables@
 
 MALrestart:
-    stkpc = startpc;
+    stkpc = task->startpc;
     stkexception = -1;
     while(stkpc < mb->stop && stkpc != task->stoppc ){
         pci = getInstrPtr(mb,stkpc);
@@ -1321,16 +1324,8 @@ The first step is to always safe the destination variable
 before a function call is made.
 @{
 @c
-#ifdef NOGARBAGE
-int nogarbage;
-#endif
 void garbageElement(ValPtr v)
 {   
-#ifdef NOGARBAGE
-    if( nogarbage++==0) 
-        stream_printf(GDKout,"NO GARBAGECOLLECT ");
-    return;
-#endif
     if( v->vtype == TYPE_str) {
 		if(v->len && v->val.pval) {
 			GDKfree(v->val.pval);
@@ -1382,8 +1377,9 @@ Beware that variables may be know polymorphic, their actual
 type should be saved for variables that recide on a global
 stack frame.
 @c
-void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
+void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
 {   int k;
+	ValPtr v;
 
 #ifdef STACKTRACE
     stream_printf(GDKout,"--->stack before garbage collector,"
@@ -1391,10 +1387,10 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
     printStack(GDKout,mb,stk);
 #endif
     for(k=0;k<mb->vtop; k++) {
-        if(forceall || isTmpVar(mb,k)){
-            garbageElement(&stk->stk[k]);
-            stk->stk[k].vtype= TYPE_int;
-            stk->stk[k].val.ival= int_nil;
+        if(isTmpVar(mb,k)){
+            garbageElement(v= &stk->stk[k]);
+            v->vtype= TYPE_int;
+            v->val.ival= int_nil;
         }
     }
 #ifdef STACKTRACE
@@ -1402,6 +1398,16 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk, int forceall)
             " forceall %d\n",forceall);
     printStack(GDKout,mb,stk);
 #endif
+}
+void garbageCollectAll(MalBlkPtr mb, MalStkPtr stk)
+{   int k;
+	ValPtr v;
+
+    for(k=0;k<mb->vtop; k++) {
+            garbageElement(v= &stk->stk[k]);
+            v->vtype= TYPE_int;
+            v->val.ival= int_nil;
+    }
 }
 @-
 Sometimes it helps to release a BAT when it won;t be used anymore.

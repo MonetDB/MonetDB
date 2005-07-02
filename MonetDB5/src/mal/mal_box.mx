@@ -321,7 +321,7 @@ void freeBoxes(){
     int i;
     for(i=0;i<MAXSPACES;i++)
     if( box[i]){
-        garbageCollector(box[i]->sym, box[i]->val, TRUE);
+        garbageCollectAll(box[i]->sym, box[i]->val);
         GDKfree(box[i]->name);
         freeMalBlk(box[i]->sym);
         GDKfree(box[i]->val);
