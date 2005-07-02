@@ -302,6 +302,8 @@ keyphrase2(Client cntxt, str kw)
 A similar approach is used for string literals.
 Beware, string lengths returned include the
 brackets and escapes. They are eaten away in strCopy.
+We should provide the C-method to split strings and
+concatenate them upon retrieval[todo]
 @c
 int 
 stringLength(Client cntxt)
@@ -651,7 +653,7 @@ parseTypeId(Client cntxt, int defaultType)
         advance(cntxt,4);
         return TYPE_bat;
     } 
-    if( s[1]=='c' && strncmp(s,":col",4)==0){
+    if( s[1]=='c' && strncmp(s,":col",4)==0 && !idCharacter[(int) s[4]]) {
         /* parse default for :col[:any] */
         advance(cntxt,4);
         return newColType(TYPE_any);
