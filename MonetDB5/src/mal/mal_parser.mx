@@ -1721,6 +1721,7 @@ the information.
 					TYPE_str,GDKstrdup(start),FALSE);
 				setVarUsed(curBlk,getArg(curInstr,0),FALSE);
 			}
+            echoInput(cntxt);
 		}
               continue;
         case 'A': case 'a':

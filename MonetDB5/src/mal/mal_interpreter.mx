@@ -250,7 +250,8 @@ of the return statement.
 
             rhs = &env->stk[pci->argv[i]];
             VALcopy(lhs,rhs);
-            @:BATfix(rhs)@
+			if( lhs->vtype == TYPE_bat)
+				BBPincref(lhs->val.br.id, TRUE);
         }
         stk->up = env;
         env->down = stk;
@@ -374,7 +375,8 @@ str runMALsequence( malTask *task)
     InstrPtr pci=0, altpci=0; 
     int stkexception;
     str ret=0;
-    /* ptr argv[MAXARG];*/
+	int backup[MAXARG];
+	str sbackup[MAXARG];
 	long total=0;
     @:performanceVariables@
 
@@ -599,9 +601,11 @@ possible change in the control flow.
                 rhs = &stk->stk[pp->argv[i]];
                 lhs = &env->stk[pci->argv[i]];
                 VALcopy(lhs,rhs);
-                @:BATfix(lhs)@
+				if( lhs->vtype == TYPE_bat)
+					BBPincref(lhs->val.br.id, TRUE);
             }
             @:garbageTypeCheck@
+			garbageCollectAll(mb, stk);
 			/* propagate fake response time */
 			if( total )
 				cntxt->timer= GDKusec()-total;
@@ -629,8 +633,7 @@ their. They seem superflous and the way they are used will
 cause errors in multi-assignment statements.
 @-
 @= assignStmt
-{	int backup[MAXARG];
-	str sbackup[MAXARG];
+{	
 	@:safeTarget@
     for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
         lhs = &stk->stk[pci->argv[k]];
@@ -696,22 +699,23 @@ the bind(namespace,batname,mode) operation.[todo]
 @= safeTarget
     if( garbageControl(pci) ){ 
 		for(i=0; i<pci->retc; i++) {
-		sbackup[i]= 0;  backup[i]= 0;
-		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat)
-			backup[i]= stk->stk[getArg(pci,i)].val.br.id;
-		else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
-				backup[i]= stk->stk[getArg(pci,i)].len;
-				sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
+			sbackup[i]= 0;  
+			backup[i]= 0;  
+			if( stk->stk[getArg(pci,i)].vtype == TYPE_bat)
+				backup[i]= stk->stk[getArg(pci,i)].val.br.id;
+			else if( stk->stk[getArg(pci,i)].vtype == TYPE_str){
+					backup[i]= stk->stk[getArg(pci,i)].len;
+					sbackup[i]= stk->stk[getArg(pci,i)].val.sval;
+			} 
 		}
-		}
-	}
+	} 
 @= restoreTarget
     if( garbageControl(pci) ){ 
 		for(i=0; i<pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			if( backup[i] ){
 				BBPdecref(backup[i],TRUE);
-			}
+			} 
  			if(!isVarUsed(mb,getArg(pci,i)) ){
 				garbageElement(&stk->stk[getArg(pci,i)]);
 			}
@@ -722,7 +726,7 @@ the bind(namespace,batname,mode) operation.[todo]
 				if( backup[i] > 0) 
 					GDKfree(sbackup[i]);
 				backup[i]=0;
-			}
+			} 
  			if(!isVarUsed(mb,a) ){
 				garbageElement(&stk->stk[a]);
 			}
@@ -730,27 +734,9 @@ the bind(namespace,batname,mode) operation.[todo]
 	}
 @-
 @= commandcall
-{	int backup[MAXARG];
-	str sbackup[MAXARG];
+{	
 	@:safeTarget
     /* improve performance with 20 ms/1M calls*/
-/*
-    switch(pci->argc){
-    case 9: argv[8] =(ptr) getArgReference(stk,pci,8);
-    case 8: argv[7] =(ptr) getArgReference(stk,pci,7);
-    case 7: argv[6] =(ptr) getArgReference(stk,pci,6);
-    case 6: argv[5] =(ptr) getArgReference(stk,pci,5);
-    case 5: argv[4] =(ptr) getArgReference(stk,pci,4);
-    case 4: argv[3] =(ptr) getArgReference(stk,pci,3);
-    case 3: argv[2] =(ptr) getArgReference(stk,pci,2);
-    case 2: argv[1] =(ptr) getArgReference(stk,pci,1);
-    case 1: argv[0] =(ptr) getArgReference(stk,pci,0);
-        break;
-    default:
-        ret= raiseException(mb,stkpc,MALexception,
-            "too many arguments for command call\n");
-    }
-*/
     switch(pci->argc){
     case 0 : ret = (str) (*pci->fcn)(); break;
     case 1 : ret = (str) (*pci->fcn)(
@@ -828,8 +814,6 @@ the bind(namespace,batname,mode) operation.[todo]
         ret= raiseException(mb,stkpc,MALexception,
             "address of pattern missing\n");
     else {
-		int backup[MAXARG];
-		str sbackup[MAXARG];
 		@:safeTarget@
         ret = (str) (*pci->fcn)(mb,stk,pci);
 		@:restoreTarget@
@@ -1304,11 +1288,6 @@ keep bat_views around, which depend on the existence of the
 underlying BAT.
 
 Look further in mal_instruction.mx for the before/after calls.
-@{
-@= BATfix
-if(@1->vtype == TYPE_bat && @1->val.bval){
-    BBPincref(@1->val.bval,TRUE);
-}
 @-
 @}
 
@@ -1332,6 +1311,7 @@ void garbageElement(ValPtr v)
 			v->val.pval= NULL;
 		}
 		v->len= 0;
+		return;
     }
     if( v->vtype== TYPE_bat && v->val.bval) {
 @}
@@ -1387,7 +1367,7 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
     printStack(GDKout,mb,stk);
 #endif
     for(k=0;k<mb->vtop; k++) {
-        if(isTmpVar(mb,k)){
+        if(isVarGarbage(mb,k) && isTmpVar(mb,k)){
             garbageElement(v= &stk->stk[k]);
             v->vtype= TYPE_int;
             v->val.ival= int_nil;
@@ -1403,7 +1383,8 @@ void garbageCollectAll(MalBlkPtr mb, MalStkPtr stk)
 {   int k;
 	ValPtr v;
 
-    for(k=0;k<mb->vtop; k++) {
+    for(k=0;k<mb->vtop; k++) 
+	if( isVarGarbage(mb,k)) {
             garbageElement(v= &stk->stk[k]);
             v->vtype= TYPE_int;
             v->val.ival= int_nil;

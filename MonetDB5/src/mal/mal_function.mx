@@ -353,8 +353,9 @@ and marking all non-temporary variables as being (potentially) used.
 @c
     if( mb->stop == 3) /* interactive use */
     {   int i;
-        for(i=0;i<p->retc; i++)
+        for(i=0;i<3; i++){
             garbageControl(getInstrPtr(mb,i))= FALSE;
+        }
         for(i=0; i<mb->vtop; i++)
         if( !isTmpVar(mb,i))
             setVarUsed(mb,i, TRUE);

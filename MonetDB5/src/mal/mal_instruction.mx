@@ -491,6 +491,7 @@ for separate name space management.
 #define isFixed(M,I)        ((M)->var[I]->fixtype)
 #define setFixed(M,I)       ((M)->var[I]->fixtype= 1)
 #define setVarCleanup(M,I)     ((M)->var[I]->cleanup)
+#define isVarGarbage(M,I)     ((M)->var[I]->cleanup)
 #define getVarConstant(M,I)     ((M)->var[I]->value)
 #define getVarType(M,I)     ((M)->var[I]->type)
 #define getVarGDKType(M,I)      ((M)->var[I]->gdktype)
@@ -1077,19 +1078,6 @@ int newVariable(MalBlkPtr mb, str name, malType type){
         int n;
         
     @:makeVarSpace@
-/* is already chacked in all places where it matters
-    n= findVariable(mb,name);
-    if( n>=0){
-        if( type != TYPE_any){
-            if( getVarType(mb,n) != type  &&
-                getVarType(mb,n) != TYPE_any)
-            GDKerror("'%s' type mismatch %d vs %d\n",
-                name, getVarType(mb,n),type);
-        }
-        GDKfree(name);  
-        return n;
-    }
-*/
     if( isTmpName(name)){
         int i= atol(name+1);
         /* test validity*/
