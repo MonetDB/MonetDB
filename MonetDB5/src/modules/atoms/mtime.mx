@@ -289,8 +289,7 @@ address MTIMEepoch
 comment "unix-time (epoch) support: seconds since the Unix epoch";
 command epoch(t:timestamp):lng 
 address MTIMEepoch2lng
-comment "unix-time (epoch) support:
-	seconds since epoch";
+comment "unix-time (epoch) support: seconds since epoch";
 
 @:compareGrp(timestamp)@
 
@@ -397,12 +396,10 @@ comment "generate the nil date";
 
 command tzone_local(t:tzone):void 
 address MTIMEtzone_set_local 
-comment "set the local tzone; which is used 
-	for printing timestamps";
+comment "set the local tzone; which is used for printing timestamps";
 command tzone_local() :tzone 
 address MTIMEtzone_get_local 
-comment "get the local tzone; which is used 
-	for printing timestamps";
+comment "get the local tzone; which is used for printing timestamps";
 
 @+ Time/date construction
 Construct temporal values from simple(r) parameters.
@@ -425,15 +422,12 @@ command daytime(h:int,m:int,s:int,mi:int)
 address MTIMEdaytime_create 
 comment "creates a time from (hours,minutes,
 	seconds,milliseconds) parameters.";
-command timestamp(d:date,dt:daytime,t:tzone)
-		:timestamp 
+command timestamp(d:date,dt:daytime,t:tzone) :timestamp 
 address MTIMEtimestamp_create 
-comment "creates a timestamp from (date,
-	 daytime,tzone) parameters.";
+comment "creates a timestamp from (date, daytime,tzone) parameters.";
 command timestamp(d:date,dt:daytime) :timestamp 
 address MTIMEtimestamp_create_default 
-comment "creates a timestamp from (d,dt) 
-	parameters (in the local timezone).";
+comment "creates a timestamp from (d,dt) parameters (in the local timezone).";
 
 command rule(s:str):rule
 address MTIMErule_fromstr
@@ -897,6 +891,7 @@ of the calendar).
 #include <gdk.h>
 #include <mal.h>
 
+
 typedef int date;
 #define date_nil ((date) int_nil)
 @c
@@ -966,6 +961,13 @@ tzone tzone_local;
 mal_export void fromdate(int n, int *d, int *m, int *y);
 mal_export void fromtime(int n, int *hour, int *min, int *sec, int *msec);
 mal_export int daytime_tz_fromstr(str buf, int *len, daytime **ret);
+
+mal_export str MTIMEcurrent_timestamp(timestamp *t);
+mal_export str MTIMEcurrent_date(date *d);
+mal_export str MTIMEcurrent_time(daytime *t);
+mal_export int timestamp_tostr(str *buf, int *len, timestamp *val);
+mal_export int timestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
+
 #endif	/* _MONETTIME_H_ */
 @+ Defines
 @c
@@ -3236,5 +3238,4 @@ bunins_failed:
 @:Extract(daytime,minutes,int)@
 @:Extract(daytime,seconds,int)@
 @:Extract(daytime,milliseconds,int)@
-
 @}

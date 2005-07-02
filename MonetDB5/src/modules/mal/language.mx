@@ -138,7 +138,6 @@ str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( b== NULL) {
 			return throwMessage("mal.print","descriptor access failed");
 		}
-		/* BATprint(b);*/
 		BATmultiprintf(GDKout,2,&b,TRUE,0,TRUE);
 		return MAL_SUCCEED;
 	}

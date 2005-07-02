@@ -44,23 +44,25 @@ include streams;
 
 #atom extensions
 include blob;
+include color;
 include str;
 include url;
 include mtime;
 
 # the kernel stuff to make it work
 include bat;
-#include mkey;
 include pcre;
 include algebra;
 include calc;
-include batcalc;
-include batstr;
 include status;
 include group;
 include aggrX3;
 include array;
 include mapi;
+
+# the hardwired multiplex extensions
+include batcalc;
+include batstr;
 
 # MAL related extensions
 include clients;
