@@ -65,7 +65,7 @@ class sample
 
 	// Exceptions are really nice, I told you before...
 	if (sqltest) {
-		if (mapi.query("create table emp(name varchar(), age int);") != mapi.MOK)
+		if (mapi.query("create table emp(name varchar(20), age int);") != mapi.MOK)
 			die(mapi);
 		if (mapi.query("insert into emp values(\"John\",23);") != mapi.MOK)
 			die(mapi);
