@@ -1430,7 +1430,6 @@ str BKCinsert_void_bun(int *r, int *bid, ptr t) {
 
 str BKCinsert_bun(int *r, int *bid, ptr h, ptr t) {
 	BAT *b;
-	(void) r;
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("bat.insert", "Cannot access descriptor");
     }
