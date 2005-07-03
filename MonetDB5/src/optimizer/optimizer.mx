@@ -327,7 +327,7 @@ lng QOTjoinEstimate(BAT *l, BAT *r){
 str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
     BAT *joins[MAXARG],*b=0;
     lng estimate,e;
-    int top,top2,i,j,ret = 0,*bid;
+    int top,i,j,ret = 0,*bid;
     (void) mb;
     (void)ret;
     top=0;
@@ -342,7 +342,6 @@ str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
         joins[top++]=b;
     }
-	top2= top;
     /* solve the join by pairing the smallest first */
     while( top>2){
         j =0;
@@ -358,6 +357,8 @@ str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
         printf("join %d and %d\n",joins[j]->batCacheid,joins[j+1]->batCacheid);
 #endif
         b= BATjoin(joins[j],joins[j+1],estimate);
+		BBPunfix(joins[j]->batCacheid);
+		BBPunfix(joins[j+1]->batCacheid);
         joins[j]=b;
         for(i=j+1;i<top;i++)
             joins[i]= joins[i+1];
@@ -368,10 +369,11 @@ str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 #endif
     estimate = BATcount(joins[0]);
     b= BATjoin(joins[0],joins[1],estimate);
+	BBPunfix(joins[0]->batCacheid);
+	BBPunfix(joins[1]->batCacheid);
+
     BBPfix(b->batCacheid);
     *(int*) getArgReference(stk,pci,0) = b->batCacheid;
-	for(i=0;i<top2;i++)
-		BBPunfix(joins[i]->batCacheid);
     return NULL;
 }
 @}
