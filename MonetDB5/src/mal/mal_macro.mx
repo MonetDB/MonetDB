@@ -128,12 +128,12 @@ str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     str nme, fcn,msg=MAL_SUCCEED;
 
     (void)stk;
-    removeInstruction(mb,p);
     nme= getVarConstant(mb, getArg(p,1)).val.sval;
     fcn= getVarConstant(mb, getArg(p,2)).val.sval;
 #ifdef DEBUG_MAL_MACRO
     printf("@1optimizer: %s.%s\n",nme,fcn);
 #endif
+    removeInstruction(mb,p);
 
 
     s= findModule(mal_scope, putName(nme,strlen(nme)));

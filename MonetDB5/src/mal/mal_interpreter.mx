@@ -210,8 +210,12 @@ being called.
         pci= pcicaller;
     } else {
         newStack(stk,mb->vsize);
-        if(env == 0 && mbcaller==0)
-			bzero((char *) stk, stackSize(mb->vsize));
+		/* selectively clear stack , does not work yet, it leaves uninitialized data
+		if( env && mbcaller){
+			bzero((char *) stk, stackSize(getInstrPtr(mb,0)->argc));
+		} else
+		*/
+			bzero((char *) stk, stackSize(mb->vtop));
         stk->stktop= mb->vtop; 
         stk->stksize= mb->vsize;
         stk->blk= mb;
@@ -498,6 +502,8 @@ elements in the value stack.
             ret= shutdownFactory(mb);
 		if( total )
 			cntxt->timer= GDKusec()-total;
+		@:garbageTypeCheck@
+		garbageCollectAll(mb, stk);
         @:endProfile@
         goto MALevalExit;
     default:
@@ -601,8 +607,8 @@ possible change in the control flow.
                 rhs = &stk->stk[pp->argv[i]];
                 lhs = &env->stk[pci->argv[i]];
                 VALcopy(lhs,rhs);
-				if( lhs->vtype == TYPE_bat)
-					BBPincref(lhs->val.br.id, TRUE);
+				if( lhs->vtype == TYPE_bat )
+					BBPincref(lhs->val.br.id, TRUE); 
             }
             @:garbageTypeCheck@
 			garbageCollectAll(mb, stk);
@@ -832,7 +838,9 @@ non-returned values.
             "reference to MAL function missing\n");
     else {
         stk->pcup = stkpc;
+		@:safeTarget@
         ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
+		@:restoreTarget@
     }
     @:resultParameter@
 }

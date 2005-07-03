@@ -114,11 +114,6 @@ void initClientPrg(Client cntxt, str nme){
     setVarType(mb,findVariable(mb,nme), TYPE_int);
     insertSymbol(cntxt->nspace, cntxt->curprg);
     cntxt->glb = 0;
-/*
-	cntxt->glb = newGlobalStack(MAXGLOBALS+mb->vsize);
-	cntxt->glb->stktop = mb->vtop;
-	cntxt->glb->blk = mb;
-*/
 }
 @}
 @+ Client authorization
