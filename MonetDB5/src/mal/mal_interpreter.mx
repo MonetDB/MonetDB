@@ -503,7 +503,8 @@ elements in the value stack.
 		if( total )
 			cntxt->timer= GDKusec()-total;
 		@:garbageTypeCheck@
-		garbageCollectAll(mb, stk);
+		if( pcicaller)
+			garbageCollectAll(mb, stk);
         @:endProfile@
         goto MALevalExit;
     default:
