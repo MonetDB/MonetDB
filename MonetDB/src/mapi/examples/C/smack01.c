@@ -22,13 +22,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#define die(X) (mapi_explain(X, stdout), exit(-1))
+#define die(dbh,hdl) (hdl?mapi_explain_query(hdl,stderr):		\
+			  dbh?mapi_explain(dbh,stderr):			\
+			      fprintf(stderr,"command failed\n"),	\
+		      exit(-1))
 
 int
 main(int argc, char **argv)
 {
 	Mapi dbh;
-	MapiHdl hdl;
+	MapiHdl hdl = NULL;
 	int i;
 	char buf[40], *line;
 	int port;
@@ -45,19 +48,22 @@ main(int argc, char **argv)
 
 	for (i = 0; i < 1000; i++) {
 		/* printf("setup connection %d\n", i); */
-		dbh = mapi_connect("localhost", port, "monetdb", "monetdb", (sql) ? "sql" : 0);
-		if (mapi_error(dbh))
-			die(dbh);
+		dbh = mapi_connect("localhost", port, "monetdb", "monetdb", sql ? "sql" : 0);
+		if (dbh == NULL || mapi_error(dbh))
+			die(dbh, hdl);
 		if (sql)
 			snprintf(buf, 40, "select %d;", i);
 		else
 			snprintf(buf, 40, "print(%d);", i);
-		if ((hdl = mapi_query(dbh, buf)) == NULL)
-			die(dbh);
+		if ((hdl = mapi_query(dbh, buf)) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
 		while ((line = mapi_fetch_line(hdl))) {
 			printf("%s \n", line);
 		}
-		mapi_close_handle(hdl);
+		if (mapi_error(dbh))
+			die(dbh, hdl);
+		if (mapi_close_handle(hdl) != MOK)
+			die(dbh, hdl);
 		mapi_disconnect(dbh);
 		/* printf("close connection %d\n", i); */
 	}
