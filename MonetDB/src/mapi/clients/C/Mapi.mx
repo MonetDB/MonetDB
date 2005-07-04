@@ -89,8 +89,8 @@ int main(int argc, char **argv)
 \end{verbatim}
 
 The mapi\_connect() operation establishes a communication channel with
-a running server on the local machine. The user identification is the
-ubiquitous anonymous guest, for whom we do not require a password.
+a running server on the local machine. The user name is "monetdb" with
+password "monetdb".
 The query language interface is either "sql" of "mil".  Future
 versions are expected to recognize also "xcore" and "xquery", and the
 experimental languages "ram" and "mal".
