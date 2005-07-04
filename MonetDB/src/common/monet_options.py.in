@@ -36,12 +36,13 @@ class BuiltinOptions:
     gdk_dbname = 'tst'
     gdk_dbfarm = os.path.join('@QXlocalstatedir@','@PACKAGE@')
     gdk_debug = '8'
-    gdk_mem_bigsize = '32M'
-    gdk_vm_minsize = '128M'
-    monet_admin = 'adm'
-    monet_prompt = '>'
-    monet_welcome = 'yes'
-    monet_mod_path = os.path.join('@QXlibdir@','@PACKAGE@') + \
+    # gdk_mem_bigsize & gdk_vm_minsize will be set/limited to
+    # 1/2 of the physically available amount of main-memory
+    # during start-up in src/tools/Mserver.mx
+    gdk_mem_bigsize = '128G'
+    gdk_vm_minsize = '128G' monet_admin = 'adm' monet_prompt = '>'
+    monet_welcome = 'yes' monet_mod_path =
+    os.path.join('@QXlibdir@','@PACKAGE@') + \
                      os.pathsep + \
                      os.path.join('@QXlibdir@','bin')
     monet_daemon = 'yes'
