@@ -256,10 +256,16 @@ Monet_init(opt *set, int setlen)
 	GDKfree(n);
 
 
-	if ((p = GDKgetenv("gdk_mem_bigsize")))
+	if ((p = GDKgetenv("gdk_mem_bigsize"))) {
 		GDK_mem_bigsize = strtol(p, NULL, 10);
-	if ((p = GDKgetenv("gdk_vm_minsize")))
+		if (GDK_mem_bigsize > GDK_mem_maxsize)
+			GDK_mem_bigsize = GDK_mem_maxsize/2;
+	}
+	if ((p = GDKgetenv("gdk_vm_minsize"))) {
 		GDK_vm_minsize = strtol(p, NULL, 10);
+		if (GDK_vm_minsize > GDK_mem_maxsize)
+			GDK_vm_minsize = GDK_mem_maxsize/2;
+	}
 	if (GDKgetenv_isyes("gdk_embedded")) {
 		GDKembedded = 1;
 		monet_daemon = 1;

@@ -22,13 +22,16 @@
 #include <stdio.h>
 #include <string.h>
 
-#define die(X) (mapi_explain(X, stdout), exit(-1))
+#define die(dbh,hdl) (hdl?mapi_explain_query(hdl,stderr):		\
+			  dbh?mapi_explain(dbh,stderr):			\
+			      fprintf(stderr,"command failed\n"),	\
+		      exit(-1))
 
 int
 main(int argc, char **argv)
 {
 	Mapi dbh;
-	MapiHdl hdl;
+	MapiHdl hdl = NULL;
 
 	if (argc != 4) {
 		printf("usage:%s <host> <port> <language>\n", argv[0]);
@@ -36,35 +39,41 @@ main(int argc, char **argv)
 	}
 
 	dbh = mapi_connect(argv[1], atoi(argv[2]), "monetdb", "monetdb", argv[3]);
-	if (mapi_error(dbh))
-		die(dbh);
+	if (dbh == NULL || mapi_error(dbh))
+		die(dbh, hdl);
 
 	/* mapi_trace(dbh, 1); */
 	mapi_cache_limit(dbh, 2);
 	if (strcmp(argv[3], "sql") == 0) {
-		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL)
-			die(dbh);
-		mapi_close_handle(hdl);
-		if ((hdl = mapi_query(dbh, "insert into emp values('John', 23)")) == NULL)
-			die(dbh);
-		mapi_close_handle(hdl);
-		if ((hdl = mapi_query(dbh, "insert into emp values('Mary', 22)")) == NULL)
-			die(dbh);
-		mapi_close_handle(hdl);
-		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL)
-			die(dbh);
+		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if (mapi_close_handle(hdl) != MOK)
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "insert into emp values('John', 23)")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if (mapi_close_handle(hdl) != MOK)
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "insert into emp values('Mary', 22)")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if (mapi_close_handle(hdl) != MOK)
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "select * from emp")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
 	} else {
-		if ((hdl = mapi_query(dbh, "var emp:= new(str,int);")) == NULL)
-			die(dbh);
-		mapi_close_handle(hdl);
-		if ((hdl = mapi_query(dbh, "emp.insert(\"John\",23);")) == NULL)
-			die(dbh);
-		mapi_close_handle(hdl);
-		if ((hdl = mapi_query(dbh, "emp.insert(\"Mary\",22);")) == NULL)
-			die(dbh);
-		mapi_close_handle(hdl);
-		if ((hdl = mapi_query(dbh, "print(emp);")) == NULL)
-			die(dbh);
+		if ((hdl = mapi_query(dbh, "var emp:= new(str,int);")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if (mapi_close_handle(hdl) != MOK)
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "emp.insert(\"John\",23);")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if (mapi_close_handle(hdl) != MOK)
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "emp.insert(\"Mary\",22);")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
+		if (mapi_close_handle(hdl) != MOK)
+			die(dbh, hdl);
+		if ((hdl = mapi_query(dbh, "print(emp);")) == NULL || mapi_error(dbh))
+			die(dbh, hdl);
 	}
 
 	while (mapi_fetch_row(hdl)) {
@@ -73,9 +82,12 @@ main(int argc, char **argv)
 
 		printf("%s is %s\n", nme, age);
 	}
+	if (mapi_error(dbh))
+		die(dbh, hdl);
 	/* mapi_stat(dbh);
 	   printf("mapi_ping %d\n",mapi_ping(dbh)); */
-	mapi_close_handle(hdl);
+	if (mapi_close_handle(hdl) != MOK)
+		die(dbh, hdl);
 	mapi_disconnect(dbh);
 
 	return 0;

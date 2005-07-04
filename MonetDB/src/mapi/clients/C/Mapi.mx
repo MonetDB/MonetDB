@@ -37,35 +37,51 @@ operations.
 #include <Mapi.h>
 #include <stdio.h>
 
-#define die(X) (mapi_explain(X, stderr), exit(-1))
+#define die(dbh,hdl) (hdl?mapi_explain_query(hdl,stderr):		\
+                          dbh?mapi_explain(dbh,stderr):			\
+                              fprintf(stderr,"command failed\n"),	\
+                      exit(-1))
 
 int main(int argc, char **argv)
 {
     Mapi dbh;
-    MapiHdl hdl;
+    MapiHdl hdl = NULL;
 
-    dbh = mapi_connect("localhost", 45123, "guest", 0, "sql");
+    dbh = mapi_connect("localhost", 45123, "monetdb", "monetdb", "sql");
     if (mapi_error(dbh))
-        die(dbh);
+        die(dbh, hdl);
 
-    if ((hdl = mapi_query(dbh, "create table emp(name varchar, age int)")) == NULL)
-        die(dbh);
+    if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL
+        || mapi_error(dbh) != MOK)
+        die(dbh, hdl);
+    if (mapi_close_handle(hdl) != MOK)
+        die(dbh, hdl);
+    if ((hdl = mapi_query(dbh, "insert into emp values('John', 23)")) == NULL
+        || mapi_error(dbh) != MOK)
+        die(dbh, hdl);
     mapi_close_handle(hdl);
-    if ((hdl = mapi_query(dbh, "insert into emp values('John', 23)")) == NULL)
-        die(dbh);
+    if (mapi_error(dbh) != MOK)
+        die(dbh, hdl);
+    if ((hdl = mapi_query(dbh, "insert into emp values('Mary', 22)")) == NULL
+        || mapi_error(dbh) != MOK)
+        die(dbh, hdl);
     mapi_close_handle(hdl);
-    if ((hdl = mapi_query(dbh, "insert into emp values('Mary', 22)")) == NULL)
-        die(dbh);
-    mapi_close_handle(hdl);
-    if ((hdl = mapi_query(dbh, "select * from emp")) == NULL)
-        die(dbh);
+    if (mapi_error(dbh) != MOK)
+        die(dbh, hdl);
+    if ((hdl = mapi_query(dbh, "select * from emp")) == NULL
+        || mapi_error(dbh) != MOK)
+        die(dbh, hdl);
 
     while (mapi_fetch_row(hdl)) {
         char *nme = mapi_fetch_field(hdl, 0);
         char *age = mapi_fetch_field(hdl, 1);
         printf("%s is %s\n", nme, age);
     }
+    if (mapi_error(dbh) != MOK)
+        die(dbh, hdl);
     mapi_close_handle(hdl);
+    if (mapi_error(dbh) != MOK)
+        die(dbh, hdl);
     mapi_disconnect(dbh);
 
     return 0;
@@ -73,8 +89,8 @@ int main(int argc, char **argv)
 \end{verbatim}
 
 The mapi\_connect() operation establishes a communication channel with
-a running server on the local machine. The user identification is the
-ubiquitous anonymous guest, for whom we do not require a password.
+a running server on the local machine. The user name is "monetdb" with
+password "monetdb".
 The query language interface is either "sql" of "mil".  Future
 versions are expected to recognize also "xcore" and "xquery", and the
 experimental languages "ram" and "mal".
