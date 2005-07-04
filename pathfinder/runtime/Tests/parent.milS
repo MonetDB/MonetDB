@@ -14,8 +14,20 @@ frag.access(BAT_READ);
 proc print_scj (bat[void,bat] scj) : void { print(scj.fetch(0), scj.fetch(1), scj.fetch(2)); }
 
 loop_lifted_parent_step(iter,item,frag,ws).print_scj();
-loop_lifted_parent_step_with_kind_test(iter,item,frag,ws,ELEMENT).print_scj();
-loop_lifted_parent_step_with_ns_test(iter,item,frag,ws,"").print_scj();
-loop_lifted_parent_step_with_loc_test(iter,item,frag,ws,"book").print_scj();
-loop_lifted_parent_step_with_nsloc_test(iter,item,frag,ws,"","a").print_scj();
+loop_lifted_parent_step_with_kind_test_pre(iter,item,frag,ws,ELEMENT).print_scj();
+loop_lifted_parent_step_with_ns_test_pre(iter,item,frag,ws,"").print_scj();
+loop_lifted_parent_step_with_loc_test_pre(iter,item,frag,ws,"book").print_scj();
+loop_lifted_parent_step_with_nsloc_test_pre(iter,item,frag,ws,"","a").print_scj();
+
+loop_lifted_parent_step(iter,item,frag,ws).print_scj();
+loop_lifted_parent_step_with_kind_test_post(iter,item,frag,ws,ELEMENT).print_scj();
+loop_lifted_parent_step_with_ns_test_post(iter,item,frag,ws,"").print_scj();
+loop_lifted_parent_step_with_loc_test_post(iter,item,frag,ws,"book").print_scj();
+loop_lifted_parent_step_with_nsloc_test_post(iter,item,frag,ws,"","a").print_scj();
+
+iterative_parent_step(iter,item,frag,ws).print_scj();
+iterative_parent_step_with_kind_test_post(iter,item,frag,ws,ELEMENT).print_scj();
+iterative_parent_step_with_ns_test_post(iter,item,frag,ws,"").print_scj();
+iterative_parent_step_with_loc_test_post(iter,item,frag,ws,"book").print_scj();
+iterative_parent_step_with_nsloc_test_post(iter,item,frag,ws,"","a").print_scj();
 

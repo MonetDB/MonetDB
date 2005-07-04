@@ -20,7 +20,12 @@ Usage: pf [OPTION] [FILE]
 = -h, --help: print this help message
 = -H, --fullhelp: print help message for advanced options
 = -T, --timing: print elapsed times for compiler phases
-= -O[0-3], --optimize: select optimization level (default=1)
+= -O[0-31], --optimize: enable optimization features (default=31, i.e., "all"):
+        1: dead-code elimination
+        2: join recognition
+        4: loop-lifted staircasejoin (with post-tests)
+        8: loop-lifted staircasejoin with pre-tests
+       16: order awareness
 
 Enjoy.
 

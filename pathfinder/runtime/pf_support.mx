@@ -270,17 +270,17 @@ module(xtables);
 
 PROC get_type (bat[void,int] kind, int type_) : bat[oid,void]
 {
-        return kind.[and](63).ord_uselect(type_); # 63 = 2^6 - 1
+        return kind.[and](63).Xord_uselect(type_); # 63 = 2^6 - 1
 }
 
 PROC get_type_node (bat[void,int] kind) : bat[oid,void]
 {
-        return kind.ord_uselect(NODE, int(nil));
+        return kind.Xord_uselect(NODE, int(nil));
 }
 
 PROC get_type_atomic (bat[void,int] kind) : bat[oid,void]
 {
-        return kind.ord_uselect(int(nil), ATOMIC);
+        return kind.Xord_uselect(int(nil), ATOMIC);
 }
 
 PROC get_fragment (bat[void,int] kind) : bat[void,oid]
@@ -309,14 +309,26 @@ PROC tuniqueALT (bat[any::1,any::2] input) : bat[any::2,void] {
 
 PROC chk_order( BAT[any::1,any::2] b ) : bat[any::1,any::2] 
 {
-        VAR h1 := b.ordered();
-        VAR t1 := b.reverse().ordered();
+	if (and(optimize,16) != 0) {
+		VAR h1 := b.ordered();
+		VAR t1 := b.reverse().ordered();
+	}
+	return b;
+}
+PROC chk__order( BAT[any::1,any::2] b ) : bat[any::1,any::2] 
+{
+	if (and(optimize,16) = 0) {
+		VAR h1 := b.ordered();
+		VAR t1 := b.reverse().ordered();
+	}
 	return b;
 }
 PROC chk_order( BAT[any::1,any::2] b, bit warn ) : int 
 {
-        VAR h1 := b.ordered();
-        VAR t1 := b.reverse().ordered();
+	if (and(optimize,16) != 0) {
+		VAR h1 := b.ordered();
+		VAR t1 := b.reverse().ordered();
+	}
         VAR rtrn := 0;
         if (not(h1)) {
 		# head is not sorted
@@ -400,13 +412,13 @@ bat[oid,any::3]
 @
 @= lx_join
     if (not(isnil(lx))) {
-        @1 := reverse(leftfetchjoin(reverse(@1),reverse(lx)));
+        @1 := reverse(Xleftfetchjoin(reverse(@1),reverse(lx)));
         lx := nil;
     }
 @
 @= rx_join
     if (not(isnil(rx))) {
-        @1 := leftfetchjoin(@1,rx);
+        @1 := Xleftfetchjoin(@1,rx);
         rx := nil;
     }
 @mil
@@ -438,17 +450,19 @@ proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
             l := {min}(l);
             r := {max}(r.reverse()).reverse();
         }
-        # now warm up r with a nice sequential scan.. investigating what is to come
-        var cnt := nlthetajoin(r.reverse(), l.sample(16).reverse(), mode, int(l).count());
-        cnt := int(cnt).count();
-        if (cnt > (int(r).count() / 16LL)) {
-            # if not done, yet, join with lx/rx
-            @6
-            # a large intermediate result is better handled with nested loop
-            return nlthetajoin(l, r, mode, (cnt / 16LL)*int(l).count()); # no reordering necessary!!
+        if (and(optimize,16) != 0) {
+            # now warm up r with a nice sequential scan.. investigating what is to come
+            var cnt := nlthetajoin(r.reverse(), l.sample(16).reverse(), mode, int(l).count());
+            cnt := int(cnt).count();
+            if (cnt > (int(r).count() / 16LL)) {
+                # if not done, yet, join with lx/rx
+                @6
+                # a large intermediate result is better handled with nested loop
+                return nlthetajoin(l, r, mode, (cnt / 16LL)*int(l).count()); # no reordering necessary!!
+            }
         }
     }
-    var join_order := leftthetajoin(l, r, mode);
+    var join_order := Xleftthetajoin(l, r, mode);
 
     # avoid error (lng(max(bat(oid,oid))) = nil)
     if (join_order.count() = 0) { return join_order; }
@@ -499,9 +513,125 @@ PROC fake_leftfetchjoin (bat[oid,oid] l, bat[oid,any::3] r) : bat[oid,any::3]
 	if (is_fake_project(r)) {
 		return r;
 	} else {
-		return leftfetchjoin(l,r);
+		return Xleftfetchjoin(l,r);
 	}
 }
+  
+PROC Xmerged_union ( BAT[oid,any::1] left, BAT[oid,any::1] right, ..BAT[oid,any].. ) : BAT[void,BAT]
+{
+    if (and(optimize,16) != 0) {
+	return merged_union($(1..));
+    } else {
+	var num_bats := $0;
+	var res_size := count(left) + count(right);
+	var res := new(void,BAT,num_bats/2).seqbase(0@0);
+	var tt := ttype(left);
+	if (tt = void) {
+	    tt := oid;
+	}
+	var X := new(void,tt,res_size);
+	    X := X.insert(left.reverse().mark(nil).reverse());
+	    X := X.insert(right.reverse().mark(nil).reverse());
+	    X := X.seqbase(0@0).access(BAT_READ);
+	var Z := X.reverse().sort().reverse();
+	    Z := Z.CTrefine(X.mirror()).mark(nil);
+	res.insert(nil,X.fetch(Z).reverse().mark(0@0).reverse());
+	X := nil;
+	var i := 2;
+	while ( i < num_bats ) {
+		var l := $(i+1);
+		var r := $(i+2);
+		if (is_fake_project(l)) {
+			l := left.project(l.fetch(0));
+		}
+		if (is_fake_project(r)) {
+			r := right.project(r.fetch(0));
+		}
+		var tl := ttype(l);
+		if (tl = void) {
+		    tl := oid;
+		}
+		var tr := ttype(r);
+		if (tr = void) {
+		    tr := oid;
+		}
+		if (tl != tr) {
+			# cope with broken tail()/ttype() after mark() ...
+			tl := oid;
+		}
+		var X := new(void,tl,res_size);
+		    X := X.insert(l.reverse().mark(nil).reverse());
+		    X := X.insert(r.reverse().mark(nil).reverse());
+		    X := X.access(BAT_READ);
+		res.insert(nil,X.fetch(Z).reverse().mark(0@0).reverse());
+		i :+= 2;
+	}
+	return res.access(BAT_READ);
+    }
+}
+
+
+@= select
+PROC Xord_@1select ( BAT[any::1,any::2] b, any::2 low, any::2 high, bit l_in, bit h_in) : BAT[any::1, @2]
+{
+    if (and(optimize,16) != 0) {
+	return ord_@1select($(1..));
+    } else {
+	var X_t := b.reverse().mark(0@0).reverse();
+	    X_t := X_t.uselect(low, high, l_in, h_in).sort();
+	return b@3.fetch(X_t);
+    }
+}
+PROC Xord_@1select ( BAT[any::1,any::2] b, any::2 low, any::2 high) : BAT[any::1, @2]
+{
+	return Xord_@1select(b, low, high, TRUE, TRUE);
+}
+PROC Xord_@1select ( BAT[any::1,any::2] b, any::2 val) : BAT[any::1, @2]
+{
+    if (and(optimize,16) != 0) {
+	return ord_@1select($(1..));
+    } else {
+	var X_t := b.reverse().mark(0@0).reverse();
+	    X_t := X_t.uselect(val).sort();
+	return b@3.fetch(X_t);
+    }
+}
+@mil
+@:select(,any::2,)@
+@:select(u,void,.mark(nil))@
+
+
+PROC Xleftthetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, int mode) : BAT[any::1,any::3]
+{
+    if (and(optimize,16) != 0) {
+	return leftthetajoin($(1..));
+    } else {
+	var lh_X := left.mark(0@0);
+	var X_lt := left.reverse().mark(0@0).reverse();
+	var X_rt := thetajoin(X_lt, right, mode, max(count(int(X_lt)), count(int(right))));
+	X_lt := nil;
+	return lh_X.leftjoin(sort(X_rt));
+    }
+}
+@= leftjoin
+PROC Xleft@1join ( BAT[any::1,any::2] left, BAT[any::2,any::3] right) : BAT[any::1,any::3]
+{
+    if (and(optimize,16) != 0) {
+	return left@1join($(1..));
+    } else {
+	var lh_X := left.mark(0@0);
+	var X_lt := left.reverse().mark(0@0).reverse();
+	var X_rt := @1join(X_lt, right);
+	X_lt := nil;
+	return lh_X.leftjoin(sort(X_rt));
+    }
+}
+@mil
+@:leftjoin()@
+@:leftjoin(fetch)@
+@:leftjoin(merge)@
+@:leftjoin(hash)@
+@:leftjoin(index)@
 
 
 @- loop-lifted staircase join
@@ -513,10 +643,8 @@ PROC fake_leftfetchjoin (bat[oid,oid] l, bat[oid,any::3] r) : bat[oid,any::3]
 # interface provides...
 # 
 
-@(
 @:step(descendant,descendant,scj_desc,,@:sizes_code@,,)@
 @:step(descendant_or_self,descendant-or-self,scj_descorself,,@:sizes_code@,,)@
-@)
 
 @:wrap(descendant)@
 @:wrap(descendant_or_self)@
@@ -524,9 +652,7 @@ PROC fake_leftfetchjoin (bat[oid,oid] l, bat[oid,any::3] r) : bat[oid,any::3]
 @:step(ancestor,ancestor,scj_anc,,@:sizes_code@,,)@
 @:step(ancestor_or_self,ancestor-or-self,scj_ancorself,,@:sizes_code@,,)@
 
-@(
 @:step(child,child,lev_child,@:level_intro@,@:level_code@,,)@
-@)
 
 @:wrap(child)@
 
@@ -565,7 +691,7 @@ PROC fake_leftfetchjoin (bat[oid,oid] l, bat[oid,any::3] r) : bat[oid,any::3]
 	var fst := item.fetch(@2);
 	var lst := oid(int(fst) + pre_size.fetch(fst));
         fst := oid(int(fst) + skip_self);
-	var item_descs := cands.ord_select(fst,lst).reverse();
+	var item_descs := cands.Xord_select(fst,lst).reverse();
 @
 @= wrap
 PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int order, BAT[oid,oid] cands) : BAT[oid,oid] 
@@ -590,8 +716,10 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 	if ( ((tail(cands) = "void") or (ttype(cands) = 0)) and isnil(seqbase(reverse(cands))) ) {
 		ERROR("@1(2): tail of cands must not be NIL!");
 	}
-	@:chk_order(@1(3),0,iter)@
-	@:chk_order(@1(4),1,item)@
+	if (and(optimize,16) != 0) {
+		@:chk_order(@1(3),0,iter)@
+		@:chk_order(@1(4),1,item)@
+	}
 	cands := cands.chk_order(); # just in case...
 	if ( not(ordered(reverse(cands))) ) {
 		ERROR("@1(5): tail of cands must be sorted!");
@@ -646,13 +774,20 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 	max_iter := max(iter);
 
 	# pre-sort input
-	if ( and(order,1) = 0 ) {
+	if ( (and(order,1) = 0) or (and(optimize,16) = 0) ) {
 		var ord := item.reverse().sort().reverse();
 		    ord := ord.CTrefine(iter).mark(0@0).reverse();
-		iter := ord.leftfetchjoin(iter);
-		item := ord.leftfetchjoin(item);
-		iter := iter.chk_order();
-		item := item.chk_order();
+		iter := ord.Xleftfetchjoin(iter);
+		item := ord.Xleftfetchjoin(item);
+		if (and(optimize,16) = 0) {
+			if (one_item) {
+			iter := iter.chk__order();
+			}
+			item := item.chk__order();
+		} else {
+			iter := iter.chk_order();
+			item := item.chk_order();
+		}
 	}
 
 	# the actual location step
@@ -663,17 +798,19 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 	}
 	
 	# post-sort output
-	if ( (and(order,2) = 2) and not(ordered(reverse(result))) ) {
+	if (and(optimize,16) != 0) {
+	    if ( (and(order,2) = 2) and not(ordered(reverse(result))) ) {
 		iter := result.mark(0@0).reverse();
 		item := result.reverse().mark(0@0).reverse();
 		var ord := item.reverse().sort().reverse();
 		    ord := ord.CTrefine(iter).mark(nil);
 		result := result.fetch(ord);
 		result := result.chk_order();
+	    }
 	}
 	
 	# post-sort output
-	if ( (and(order,2) = 0) and not(ordered(result)) ) {
+	if ( ((and(order,2) = 0) and not(ordered(result))) or (and(optimize,16) = 0) ) {
 		iter := result.mark(0@0).reverse();
 		item := result.reverse().mark(0@0).reverse();
 		var ord := iter.reverse().sort().reverse();
@@ -770,15 +907,28 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @:loop_lifted_scj_step1(ancestor)@
 @:loop_lifted_scj_step1(ancestor_or_self)@
 
-@:loop_lifted_scj_wrap1(child)@
-@:loop_lifted_scj_wrap1(descendant)@
-@:loop_lifted_scj_wrap1(descendant_or_self)@
+@:loop_lifted_scj_step1(child)@
+@:loop_lifted_scj_step1(descendant)@
+@:loop_lifted_scj_step1(descendant_or_self)@
 
 @:loop_lifted_scj_step1(following)@
 @:loop_lifted_scj_step1(following_sibling)@
 @:loop_lifted_scj_step1(parent)@
 @:loop_lifted_scj_step1(preceding)@
 @:loop_lifted_scj_step1(preceding_sibling)@
+
+@:loop_lifted_scj_NOwrap1(ancestor)@
+@:loop_lifted_scj_NOwrap1(ancestor_or_self)@
+
+@:loop_lifted_scj_wrap1(child)@
+@:loop_lifted_scj_wrap1(descendant)@
+@:loop_lifted_scj_wrap1(descendant_or_self)@
+
+@:loop_lifted_scj_NOwrap1(following)@
+@:loop_lifted_scj_NOwrap1(following_sibling)@
+@:loop_lifted_scj_NOwrap1(parent)@
+@:loop_lifted_scj_NOwrap1(preceding)@
+@:loop_lifted_scj_NOwrap1(preceding_sibling)@
 @
 #==================================================================
 # expansions of the loop lifted scj
@@ -826,29 +976,29 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
-		    qn_nsloc  := qn_nsloc.ord_uselect(loc+str('\1')+ns);
+		    qn_nsloc  := qn_nsloc.Xord_uselect(loc+str('\1')+ns);
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
 		if (flt(count(pre_prop)) <= (1.1 * flt(count(result_part_item)))) {
 			var pre_nsloc;
 			if (count(qn_nsloc) = 1) {
-				pre_nsloc := pre_prop.ord_uselect(qn_nsloc.reverse().fetch(0));
+				pre_nsloc := pre_prop.Xord_uselect(qn_nsloc.reverse().fetch(0));
 			} else {
-				pre_nsloc := pre_prop.leftjoin(qn_nsloc);
+				pre_nsloc := pre_prop.Xleftjoin(qn_nsloc);
 			}
 			pre_prop := nil;
 			qn_nsloc := nil;
-			tmp_res := result_part_item.leftjoin(pre_nsloc).mark(0@0).reverse();
+			tmp_res := result_part_item.Xleftjoin(pre_nsloc).mark(0@0).reverse();
 		} else {
-			var res_prop := result_part_item.leftjoin(pre_prop);
+			var res_prop := result_part_item.Xleftjoin(pre_prop);
 			pre_prop := nil;
-			tmp_res := res_prop.leftjoin(qn_nsloc).mark(0@0).reverse();
+			tmp_res := res_prop.Xleftjoin(qn_nsloc).mark(0@0).reverse();
 		}
 	} else {
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
-		var res_prop := result_part_item.leftjoin(pre_prop);
+		    pre_frag := pre_prop.mirror().Xleftfetchjoin(pre_frag);
+		var res_prop := result_part_item.Xleftjoin(pre_prop);
 		    pre_prop := nil;
-		var res_frag := result_part_item.leftjoin(pre_frag);
+		var res_frag := result_part_item.Xleftjoin(pre_frag);
 		    pre_frag := nil;
 		var X_res    := res_prop.mark(0@0).reverse();
 		var X_prop   := res_prop.reverse().mark(0@0).reverse();
@@ -858,9 +1008,9 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var X_nsloc  := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC_URI));
 		    X_prop   := nil;
 		    X_frag   := nil;
-		var _X       := X_nsloc.ord_uselect(loc+str('\1')+ns).reverse();
+		var _X       := X_nsloc.Xord_uselect(loc+str('\1')+ns).reverse();
 		    X_nsloc  := nil;
-		tmp_res := _X.leftfetchjoin(X_res).reverse().mark(0@0).reverse();
+		tmp_res := _X.Xleftfetchjoin(X_res).reverse().mark(0@0).reverse();
 	}
 	@:mapping_code@
  }
@@ -882,29 +1032,29 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
-		    @1_@2 := @1_@2.ord_uselect(@2);
+		    @1_@2 := @1_@2.Xord_uselect(@2);
 		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
 		if (flt(count(pre_prop)) <= (1.1 * flt(count(result_part_item)))) {
 			var pre_@2;
 			if (count(@1_@2) = 1) {
-				pre_@2 := pre_prop.ord_uselect(@1_@2.reverse().fetch(0));
+				pre_@2 := pre_prop.Xord_uselect(@1_@2.reverse().fetch(0));
 			} else {
-				pre_@2 := pre_prop.leftjoin(@1_@2);
+				pre_@2 := pre_prop.Xleftjoin(@1_@2);
 			}
 			pre_prop := nil;
 			@1_@2 := nil;
-			tmp_res := result_part_item.leftjoin(pre_@2).mark(0@0).reverse();
+			tmp_res := result_part_item.Xleftjoin(pre_@2).mark(0@0).reverse();
 		} else {
-			var res_prop := result_part_item.leftjoin(pre_prop);
+			var res_prop := result_part_item.Xleftjoin(pre_prop);
 			pre_prop := nil;
-			tmp_res := res_prop.leftjoin(@1_@2).mark(0@0).reverse();
+			tmp_res := res_prop.Xleftjoin(@1_@2).mark(0@0).reverse();
 		}
 	} else {
 		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
-		var res_prop := result_part_item.leftjoin(pre_prop);
+		    pre_frag := pre_prop.mirror().Xleftfetchjoin(pre_frag);
+		var res_prop := result_part_item.Xleftjoin(pre_prop);
 		    pre_prop := nil;
-		var res_frag := result_part_item.leftjoin(pre_frag);
+		var res_frag := result_part_item.Xleftjoin(pre_frag);
 		    pre_frag := nil;
 		var X_res    := res_prop.mark(0@0).reverse();
 		var X_prop   := res_prop.reverse().mark(0@0).reverse();
@@ -914,9 +1064,9 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var X_@2     := mposjoin(X_prop, X_frag, ws.fetch(@3_@4));
 		    X_prop   := nil;
 		    X_frag   := nil;
-		var _X       := X_@2.ord_uselect(@2).reverse();
+		var _X       := X_@2.Xord_uselect(@2).reverse();
 		    X_@2     := nil;
-		tmp_res := _X.leftfetchjoin(X_res).reverse().mark(0@0).reverse();
+		tmp_res := _X.Xleftfetchjoin(X_res).reverse().mark(0@0).reverse();
 	}
 	@:mapping_code@
  }
@@ -924,14 +1074,14 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= kind_post
  {
 	var pre_kind := ws.fetch(KIND_PRE + int(@1)).fetch(theFrag).reverse();
-	tmp_res := result_part_item.leftjoin(pre_kind).mark(0@0).reverse();
+	tmp_res := result_part_item.Xleftjoin(pre_kind).mark(0@0).reverse();
 	pre_kind := nil;
 	@:mapping_code@
  }
 @
 @= mapping_code
-	result_part_iter := tmp_res.leftfetchjoin(result_part_iter);
-	result_part_item := tmp_res.leftfetchjoin(result_part_item);
+	result_part_iter := tmp_res.Xleftfetchjoin(result_part_iter);
+	result_part_item := tmp_res.Xleftfetchjoin(result_part_item);
 	tmp_res := nil;
 @
 @= shrink_code
@@ -940,14 +1090,14 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var min_cand := min(cands);
 		var min_item := min(result_part_item);
 		if ( min_cand < min_item ) {
-			cands := cands.ord_select(min_item,oid(nil));
+			cands := cands.Xord_select(min_item,oid(nil));
 		}
 	}
 	if ( (count(cands) > 0) and (count(result_part_item) > 0) ) {
 		var max_cand := max(cands);
 		var max_item := max(result_part_item);
 		if ( max_cand < max_item ) {
-			tmp_res := result_part_item.ord_uselect(oid(nil),max_cand).mark(0@0).reverse();
+			tmp_res := result_part_item.Xord_uselect(oid(nil),max_cand).mark(0@0).reverse();
 			@:mapping_code@
 		}
 	}
@@ -969,18 +1119,18 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var qn_nsloc := ws.fetch(QN_LOC_URI).fetch(frag);
-		    qn_nsloc := qn_nsloc.ord_uselect(loc+str('\1')+ns);
+		    qn_nsloc := qn_nsloc.Xord_uselect(loc+str('\1')+ns);
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
 		if (count(qn_nsloc) = 1) {
-			cands := pre_prop.ord_uselect(qn_nsloc.reverse().fetch(0)).reverse();
+			cands := pre_prop.Xord_uselect(qn_nsloc.reverse().fetch(0)).reverse();
 		} else {
-			cands := pre_prop.leftjoin(qn_nsloc).reverse();
+			cands := pre_prop.Xleftjoin(qn_nsloc).reverse();
 		}
 		pre_prop := nil;
 		qn_nsloc := nil;
 	} else {
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
+		    pre_frag := pre_prop.mirror().Xleftfetchjoin(pre_frag);
 		var X_pre    := pre_prop.mark(0@0).reverse();
 		var X_prop   := pre_prop.reverse().mark(0@0).reverse();
 		    pre_prop := nil;
@@ -989,9 +1139,9 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var X_nsloc  := mposjoin(X_prop, X_frag, ws.fetch(QN_LOC_URI));
 		    X_prop   := nil;
 		    X_frag   := nil;
-		var _X       := X_nsloc.ord_uselect(loc+str('\1')+ns).reverse();
+		var _X       := X_nsloc.Xord_uselect(loc+str('\1')+ns).reverse();
 		    X_nsloc  := nil;
-		cands := _X.leftfetchjoin(X_pre);
+		cands := _X.Xleftfetchjoin(X_pre);
 	}
 	cands := cands.chk_order();
 	@:shrink_code@
@@ -1014,18 +1164,18 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var frag := pre_frag.fetch(0);
 		pre_frag := nil;
 		var @1_@2 := ws.fetch(@3_@4).fetch(frag);
-		    @1_@2 := @1_@2.ord_uselect(@2);
+		    @1_@2 := @1_@2.Xord_uselect(@2);
 		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
 		if (count(@1_@2) = 1) {
-			cands := pre_prop.ord_uselect(@1_@2.reverse().fetch(0)).reverse();
+			cands := pre_prop.Xord_uselect(@1_@2.reverse().fetch(0)).reverse();
 		} else {
-			cands := pre_prop.leftjoin(@1_@2).reverse();
+			cands := pre_prop.Xleftjoin(@1_@2).reverse();
 		}
 		pre_prop := nil;
 		@1_@2 := nil;
 	} else {
 		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
-		    pre_frag := pre_prop.mirror().leftfetchjoin(pre_frag);
+		    pre_frag := pre_prop.mirror().Xleftfetchjoin(pre_frag);
 		var X_pre    := pre_prop.mark(0@0).reverse();
 		var X_prop   := pre_prop.reverse().mark(0@0).reverse();
 		    pre_prop := nil;
@@ -1034,9 +1184,9 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var X_@2     := mposjoin(X_prop, X_frag, ws.fetch(@3_@4));
 		    X_prop   := nil;
 		    X_frag   := nil;
-		var _X       := X_@2.ord_uselect(@2).reverse();
+		var _X       := X_@2.Xord_uselect(@2).reverse();
 		    X_@2     := nil;
-		cands := _X.leftfetchjoin(X_pre);
+		cands := _X.Xleftfetchjoin(X_pre);
 	}
 	cands := cands.chk_order();
 	@:shrink_code@
@@ -1046,30 +1196,49 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 # expanding the scj for the different tests
 @= loop_lifted_scj_wrap1
 @:loop_lifted_scj_wrap_pre(@1)@
+@:loop_lifted_scj_wrap_post(@1)@
 @
 @= loop_lifted_scj_wrap_pre
-@:loop_lifted_scj_step2(@1,,,,,                                             @:params2@,@:no_pre@        )@
-@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@,, @:params2@,@:kind_pre(kind)@)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,,   @:params2@,@:ns_pre@        )@
-@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,,  @:params2@,@:loc_pre@       )@
-@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,,  @:params2@,@:target_pre@    )@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,,@:params2@,@:nsloc_pre@     )@
+@:loop_lifted_scj_step2(@1,_with_kind_test,    @:kind_args@, @:kind_params@,,                   @:params2@,@:kind_pre(kind)@,loop_lifted,_pre)@
+@:loop_lifted_scj_step2(@1,_with_ns_test,      @:ns_args@,   @:ns_params@,,                     @:params2@,@:ns_pre@        ,loop_lifted,_pre)@
+@:loop_lifted_scj_step2(@1,_with_loc_test,     @:loc_args@,  @:loc_params@,,                    @:params2@,@:loc_pre@       ,loop_lifted,_pre)@
+@:loop_lifted_scj_step2(@1,_with_target_test,  @:tgt_args@,  @:tgt_params@,,                    @:params2@,@:target_pre@    ,loop_lifted,_pre)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test,   @:nsloc_args@,@:nsloc_params@,,                  @:params2@,@:nsloc_pre@     ,loop_lifted,_pre)@
 @
 @= loop_lifted_scj_wrap_post
-@:loop_lifted_scj_step2(@1,,,,,                                                               @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@, @:kind_post(kind)@,@:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@,        @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@,       @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@,    @:params2@,@:no_pre@)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params2@,@:no_pre@)@
+@:loop_lifted_scj_step2(@1,,,,,                                                                 @:params2@,@:no_pre@        ,loop_lifted)@
+@:loop_lifted_scj_step2(@1,_with_kind_test,    @:kind_args@, @:kind_params@, @:kind_post(kind)@,@:params2@,@:no_pre@        ,loop_lifted,_post)@
+@:loop_lifted_scj_step2(@1,_with_ns_test,      @:ns_args@,   @:ns_params@,   @:ns_post@,        @:params2@,@:no_pre@        ,loop_lifted,_post)@
+@:loop_lifted_scj_step2(@1,_with_loc_test,     @:loc_args@,  @:loc_params@,  @:loc_post@,       @:params2@,@:no_pre@        ,loop_lifted,_post)@
+@:loop_lifted_scj_step2(@1,_with_target_test,  @:tgt_args@,  @:tgt_params@,  @:target_post@,    @:params2@,@:no_pre@        ,loop_lifted,_post)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test,   @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params2@,@:no_pre@        ,loop_lifted,_post)@
+@
+@= loop_lifted_scj_NOwrap1
+@:loop_lifted_scj_NOwrap_pre(@1)@
+@:loop_lifted_scj_NOwrap_post(@1)@
+@
+@= loop_lifted_scj_NOwrap_pre
+@:loop_lifted_scj_NOstep2(@1,_with_kind_test,  @:kind_args@, @:kind_params@,,                   @:params2@,@:kind_pre(kind)@,loop_lifted,_pre)@
+@:loop_lifted_scj_NOstep2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,,                     @:params2@,@:ns_pre@        ,loop_lifted,_pre)@
+@:loop_lifted_scj_NOstep2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,,                    @:params2@,@:loc_pre@       ,loop_lifted,_pre)@
+@:loop_lifted_scj_NOstep2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,,                    @:params2@,@:target_pre@    ,loop_lifted,_pre)@
+@:loop_lifted_scj_NOstep2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,,                  @:params2@,@:nsloc_pre@     ,loop_lifted,_pre)@
+@
+@= loop_lifted_scj_NOwrap_post
+@:loop_lifted_scj_NOstep2(@1,,,,,                                                               @:params2@,@:no_pre@        ,loop_lifted,)@
+@:loop_lifted_scj_NOstep2(@1,_with_kind_test,  @:kind_args@, @:kind_params@, @:kind_post(kind)@,@:params2@,@:no_pre@        ,loop_lifted,_post)@
+@:loop_lifted_scj_NOstep2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@,        @:params2@,@:no_pre@        ,loop_lifted,_post)@
+@:loop_lifted_scj_NOstep2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@,       @:params2@,@:no_pre@        ,loop_lifted,_post)@
+@:loop_lifted_scj_NOstep2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@,    @:params2@,@:no_pre@        ,loop_lifted,_post)@
+@:loop_lifted_scj_NOstep2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@,     @:params2@,@:no_pre@        ,loop_lifted,_post)@
 @
 @= loop_lifted_scj_step1
-@:loop_lifted_scj_step2(@1,,,,,,                                                               )@
-@:loop_lifted_scj_step2(@1,_with_kind_test,  @:kind_args@, @:kind_params@, @:kind_post(kind)@,,)@
-@:loop_lifted_scj_step2(@1,_with_ns_test,    @:ns_args@,   @:ns_params@,   @:ns_post@        ,,)@
-@:loop_lifted_scj_step2(@1,_with_loc_test,   @:loc_args@,  @:loc_params@,  @:loc_post@       ,,)@
-@:loop_lifted_scj_step2(@1,_with_target_test,@:tgt_args@,  @:tgt_params@,  @:target_post@    ,,)@
-@:loop_lifted_scj_step2(@1,_with_nsloc_test, @:nsloc_args@,@:nsloc_params@,@:nsloc_post@     ,,)@
+@:loop_lifted_scj_step2(@1,,,,,,                                                                                            ,iterative,)@
+@:loop_lifted_scj_step2(@1,_with_kind_test,    @:kind_args@, @:kind_params@, @:kind_post(kind)@,,                           ,iterative,_post)@
+@:loop_lifted_scj_step2(@1,_with_ns_test,      @:ns_args@,   @:ns_params@,   @:ns_post@        ,,                           ,iterative,_post)@
+@:loop_lifted_scj_step2(@1,_with_loc_test,     @:loc_args@,  @:loc_params@,  @:loc_post@       ,,                           ,iterative,_post)@
+@:loop_lifted_scj_step2(@1,_with_target_test,  @:tgt_args@,  @:tgt_params@,  @:target_post@    ,,                           ,iterative,_post)@
+@:loop_lifted_scj_step2(@1,_with_nsloc_test,   @:nsloc_args@,@:nsloc_params@,@:nsloc_post@     ,,                           ,iterative,_post)@
 @
 #==================================================================
 # actual definition of the scj proc
@@ -1090,12 +1259,26 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	# post-test
 	@2
 @
-@= loop_lifted_scj_step2
-proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws @3) : bat[void,bat]
+@= loop_lifted_scj_NOstep2
+proc @8_@1_step@2@9 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws @3) : bat[void,bat]
 {
-     return loop_lifted_@1_step@2 (iter, item, frag, ws, 0 @4);
+     return @8_@1_step@2@9 (iter, item, frag, ws, 0 @4);
 }
-proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws, int order @3) : bat[void,bat]
+proc @8_@1_step@2@9 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws, int order @3) : bat[void,bat]
+{
+     if ("@9" = "") {
+         return iterative_@1_step@2 (iter, item, frag, ws, order @4);
+     } else {
+         return iterative_@1_step@2_post (iter, item, frag, ws, order @4);
+     }
+}
+@
+@= loop_lifted_scj_step2
+proc @8_@1_step@2@9 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws @3) : bat[void,bat]
+{
+     return @8_@1_step@2@9 (iter, item, frag, ws, 0 @4);
+}
+proc @8_@1_step@2@9 (bat[void, oid] iter, bat[void, oid] item, bat[void, oid] frag, bat[void, bat] ws, int order @3) : bat[void,bat]
 {
     # handle empty results correctly
     if (iter.count() = 0) {
@@ -1130,9 +1313,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
         result_part_item := nil;
         result_part_frag := nil;
     } else {
-        var result_part_frag := frag.ord_uselect(theFrag).mark(0@0).reverse();
-        var result_part_iter := result_part_frag.leftfetchjoin(iter);
-        var result_part_item := result_part_frag.leftfetchjoin(item);
+        var result_part_frag := frag.Xord_uselect(theFrag).mark(0@0).reverse();
+        var result_part_iter := result_part_frag.Xleftfetchjoin(iter);
+        var result_part_item := result_part_frag.Xleftfetchjoin(item);
 
         @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
 
@@ -1146,13 +1329,13 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
         var res_mu;
 	uniqueFrag.slice(1,uniqueFrag.count() - 1)@batloop () {
 	    theFrag := $h;
-            result_part_frag := frag.ord_uselect(theFrag).mark(0@0).reverse();
-            result_part_iter := result_part_frag.leftfetchjoin(iter);
-            result_part_item := result_part_frag.leftfetchjoin(item);
+            result_part_frag := frag.Xord_uselect(theFrag).mark(0@0).reverse();
+            result_part_iter := result_part_frag.Xleftfetchjoin(iter);
+            result_part_item := result_part_frag.Xleftfetchjoin(item);
 
             @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
 
-            res_mu := merged_union(result_iter, result_part_iter,
+            res_mu := Xmerged_union(result_iter, result_part_iter,
 				   result_item, result_part_item,
 				   result_frag, result_part_frag);
             result_part_iter := nil;

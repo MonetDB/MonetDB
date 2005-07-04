@@ -40,7 +40,7 @@ loop_lifted_ancestor_step(iter,item,frag,ws).print_scj();
 [ 8@0,	  2@0,		  39@0,		  2@0		  ]
 [ 9@0,	  3@0,		  0@0,		  1@0		  ]
 [ 10@0,	  3@0,		  1@0,		  1@0		  ]
-loop_lifted_ancestor_step_with_kind_test(iter,item,frag,ws,ELEMENT).print_scj();
+loop_lifted_ancestor_step_with_kind_test_pre(iter,item,frag,ws,ELEMENT).print_scj();
 #---------------------------------------------------------#
 # h	tmp_105		tmp_106		tmp_119		  # name
 # void	oid		oid		oid		  # type
@@ -52,7 +52,7 @@ loop_lifted_ancestor_step_with_kind_test(iter,item,frag,ws,ELEMENT).print_scj();
 [ 4@0,	  2@0,		  21@0,		  2@0		  ]
 [ 5@0,	  2@0,		  39@0,		  2@0		  ]
 [ 6@0,	  3@0,		  1@0,		  1@0		  ]
-loop_lifted_ancestor_step_with_ns_test(iter,item,frag,ws,"").print_scj();
+loop_lifted_ancestor_step_with_ns_test_pre(iter,item,frag,ws,"").print_scj();
 #---------------------------------------------------------#
 # h	tmp_112		tmp_121		tmp_125		  # name
 # void	oid		oid		oid		  # type
@@ -64,7 +64,7 @@ loop_lifted_ancestor_step_with_ns_test(iter,item,frag,ws,"").print_scj();
 [ 4@0,	  2@0,		  21@0,		  2@0		  ]
 [ 5@0,	  2@0,		  39@0,		  2@0		  ]
 [ 6@0,	  3@0,		  1@0,		  1@0		  ]
-loop_lifted_ancestor_step_with_loc_test(iter,item,frag,ws,"book").print_scj();
+loop_lifted_ancestor_step_with_loc_test_pre(iter,item,frag,ws,"book").print_scj();
 #---------------------------------------------------------#
 # h	tmp_113		tmp_104		tmp_124		  # name
 # void	oid		oid		oid		  # type
@@ -72,7 +72,119 @@ loop_lifted_ancestor_step_with_loc_test(iter,item,frag,ws,"book").print_scj();
 [ 0@0,	  1@0,		  21@0,		  2@0		  ]
 [ 1@0,	  2@0,		  21@0,		  2@0		  ]
 [ 2@0,	  2@0,		  39@0,		  2@0		  ]
-loop_lifted_ancestor_step_with_nsloc_test(iter,item,frag,ws,"","a").print_scj();
+loop_lifted_ancestor_step_with_nsloc_test_pre(iter,item,frag,ws,"","a").print_scj();
+#---------------------------------------------------------#
+# h	tmp_131		tmp_103		tmp_111		  # name
+# void	oid		oid		oid		  # type
+#---------------------------------------------------------#
+[ 0@0,	  1@0,		  1@0,		  1@0		  ]
+[ 1@0,	  3@0,		  1@0,		  1@0		  ]
+
+loop_lifted_ancestor_step(iter,item,frag,ws).print_scj();
+#---------------------------------------------------------#
+# h	tmp_110		tmp_116		tmp_115		  # name
+# void	oid		oid		oid		  # type
+#---------------------------------------------------------#
+[ 0@0,	  1@0,		  0@0,		  1@0		  ]
+[ 1@0,	  1@0,		  1@0,		  1@0		  ]
+[ 2@0,	  1@0,		  0@0,		  2@0		  ]
+[ 3@0,	  1@0,		  1@0,		  2@0		  ]
+[ 4@0,	  1@0,		  21@0,		  2@0		  ]
+[ 5@0,	  2@0,		  0@0,		  2@0		  ]
+[ 6@0,	  2@0,		  1@0,		  2@0		  ]
+[ 7@0,	  2@0,		  21@0,		  2@0		  ]
+[ 8@0,	  2@0,		  39@0,		  2@0		  ]
+[ 9@0,	  3@0,		  0@0,		  1@0		  ]
+[ 10@0,	  3@0,		  1@0,		  1@0		  ]
+loop_lifted_ancestor_step_with_kind_test_post(iter,item,frag,ws,ELEMENT).print_scj();
+#---------------------------------------------------------#
+# h	tmp_105		tmp_106		tmp_119		  # name
+# void	oid		oid		oid		  # type
+#---------------------------------------------------------#
+[ 0@0,	  1@0,		  1@0,		  1@0		  ]
+[ 1@0,	  1@0,		  1@0,		  2@0		  ]
+[ 2@0,	  1@0,		  21@0,		  2@0		  ]
+[ 3@0,	  2@0,		  1@0,		  2@0		  ]
+[ 4@0,	  2@0,		  21@0,		  2@0		  ]
+[ 5@0,	  2@0,		  39@0,		  2@0		  ]
+[ 6@0,	  3@0,		  1@0,		  1@0		  ]
+loop_lifted_ancestor_step_with_ns_test_post(iter,item,frag,ws,"").print_scj();
+#---------------------------------------------------------#
+# h	tmp_112		tmp_121		tmp_125		  # name
+# void	oid		oid		oid		  # type
+#---------------------------------------------------------#
+[ 0@0,	  1@0,		  1@0,		  1@0		  ]
+[ 1@0,	  1@0,		  1@0,		  2@0		  ]
+[ 2@0,	  1@0,		  21@0,		  2@0		  ]
+[ 3@0,	  2@0,		  1@0,		  2@0		  ]
+[ 4@0,	  2@0,		  21@0,		  2@0		  ]
+[ 5@0,	  2@0,		  39@0,		  2@0		  ]
+[ 6@0,	  3@0,		  1@0,		  1@0		  ]
+loop_lifted_ancestor_step_with_loc_test_post(iter,item,frag,ws,"book").print_scj();
+#---------------------------------------------------------#
+# h	tmp_113		tmp_104		tmp_124		  # name
+# void	oid		oid		oid		  # type
+#---------------------------------------------------------#
+[ 0@0,	  1@0,		  21@0,		  2@0		  ]
+[ 1@0,	  2@0,		  21@0,		  2@0		  ]
+[ 2@0,	  2@0,		  39@0,		  2@0		  ]
+loop_lifted_ancestor_step_with_nsloc_test_post(iter,item,frag,ws,"","a").print_scj();
+#---------------------------------------------------------#
+# h	tmp_131		tmp_103		tmp_111		  # name
+# void	oid		oid		oid		  # type
+#---------------------------------------------------------#
+[ 0@0,	  1@0,		  1@0,		  1@0		  ]
+[ 1@0,	  3@0,		  1@0,		  1@0		  ]
+
+iterative_ancestor_step(iter,item,frag,ws).print_scj();
+#---------------------------------------------------------#
+# h	tmp_110		tmp_116		tmp_115		  # name
+# void	oid		oid		oid		  # type
+#---------------------------------------------------------#
+[ 0@0,	  1@0,		  0@0,		  1@0		  ]
+[ 1@0,	  1@0,		  1@0,		  1@0		  ]
+[ 2@0,	  1@0,		  0@0,		  2@0		  ]
+[ 3@0,	  1@0,		  1@0,		  2@0		  ]
+[ 4@0,	  1@0,		  21@0,		  2@0		  ]
+[ 5@0,	  2@0,		  0@0,		  2@0		  ]
+[ 6@0,	  2@0,		  1@0,		  2@0		  ]
+[ 7@0,	  2@0,		  21@0,		  2@0		  ]
+[ 8@0,	  2@0,		  39@0,		  2@0		  ]
+[ 9@0,	  3@0,		  0@0,		  1@0		  ]
+[ 10@0,	  3@0,		  1@0,		  1@0		  ]
+iterative_ancestor_step_with_kind_test_post(iter,item,frag,ws,ELEMENT).print_scj();
+#---------------------------------------------------------#
+# h	tmp_105		tmp_106		tmp_119		  # name
+# void	oid		oid		oid		  # type
+#---------------------------------------------------------#
+[ 0@0,	  1@0,		  1@0,		  1@0		  ]
+[ 1@0,	  1@0,		  1@0,		  2@0		  ]
+[ 2@0,	  1@0,		  21@0,		  2@0		  ]
+[ 3@0,	  2@0,		  1@0,		  2@0		  ]
+[ 4@0,	  2@0,		  21@0,		  2@0		  ]
+[ 5@0,	  2@0,		  39@0,		  2@0		  ]
+[ 6@0,	  3@0,		  1@0,		  1@0		  ]
+iterative_ancestor_step_with_ns_test_post(iter,item,frag,ws,"").print_scj();
+#---------------------------------------------------------#
+# h	tmp_112		tmp_121		tmp_125		  # name
+# void	oid		oid		oid		  # type
+#---------------------------------------------------------#
+[ 0@0,	  1@0,		  1@0,		  1@0		  ]
+[ 1@0,	  1@0,		  1@0,		  2@0		  ]
+[ 2@0,	  1@0,		  21@0,		  2@0		  ]
+[ 3@0,	  2@0,		  1@0,		  2@0		  ]
+[ 4@0,	  2@0,		  21@0,		  2@0		  ]
+[ 5@0,	  2@0,		  39@0,		  2@0		  ]
+[ 6@0,	  3@0,		  1@0,		  1@0		  ]
+iterative_ancestor_step_with_loc_test_post(iter,item,frag,ws,"book").print_scj();
+#---------------------------------------------------------#
+# h	tmp_113		tmp_104		tmp_124		  # name
+# void	oid		oid		oid		  # type
+#---------------------------------------------------------#
+[ 0@0,	  1@0,		  21@0,		  2@0		  ]
+[ 1@0,	  2@0,		  21@0,		  2@0		  ]
+[ 2@0,	  2@0,		  39@0,		  2@0		  ]
+iterative_ancestor_step_with_nsloc_test_post(iter,item,frag,ws,"","a").print_scj();
 #---------------------------------------------------------#
 # h	tmp_131		tmp_103		tmp_111		  # name
 # void	oid		oid		oid		  # type

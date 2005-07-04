@@ -314,7 +314,7 @@ void opt_mil(opt_t *o, char* milbuf) {
 	opt_name_t name, assign;
 	char *p = milbuf;
 
-	if (o->optimize == 0) {
+	if ((o->optimize & 1) == 0) {
 		opt_append(o, milbuf, o->sec);
 		return;
 	} 

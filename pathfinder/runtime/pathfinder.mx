@@ -128,6 +128,8 @@ start the xquery server.",
 # get a handle to the global lock
 var pf_lock := pflock();
 
+var optimize := 31;
+
 # DEFINITION of constants concerning the data model
 const PRE_BASE := 0@0;
 const ELEMENT := chr(0);

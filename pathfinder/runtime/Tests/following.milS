@@ -14,9 +14,23 @@ frag.access(BAT_READ);
 proc print_scj (bat[void,bat] scj) : void { print(scj.fetch(0), scj.fetch(1), scj.fetch(2)); }
 
 loop_lifted_following_step(iter,item,frag,ws).print_scj();
-loop_lifted_following_step_with_kind_test(iter,item,frag,ws,TEXT).print_scj();
-loop_lifted_following_step_with_kind_test(iter,item,frag,ws,ELEMENT).print_scj();
-loop_lifted_following_step_with_ns_test(iter,item,frag,ws,"").print_scj();
-loop_lifted_following_step_with_loc_test(iter,item,frag,ws,"last").print_scj();
-loop_lifted_following_step_with_nsloc_test(iter,item,frag,ws,"","e").print_scj();
+loop_lifted_following_step_with_kind_test_pre(iter,item,frag,ws,TEXT).print_scj();
+loop_lifted_following_step_with_kind_test_pre(iter,item,frag,ws,ELEMENT).print_scj();
+loop_lifted_following_step_with_ns_test_pre(iter,item,frag,ws,"").print_scj();
+loop_lifted_following_step_with_loc_test_pre(iter,item,frag,ws,"last").print_scj();
+loop_lifted_following_step_with_nsloc_test_pre(iter,item,frag,ws,"","e").print_scj();
+
+loop_lifted_following_step(iter,item,frag,ws).print_scj();
+loop_lifted_following_step_with_kind_test_post(iter,item,frag,ws,TEXT).print_scj();
+loop_lifted_following_step_with_kind_test_post(iter,item,frag,ws,ELEMENT).print_scj();
+loop_lifted_following_step_with_ns_test_post(iter,item,frag,ws,"").print_scj();
+loop_lifted_following_step_with_loc_test_post(iter,item,frag,ws,"last").print_scj();
+loop_lifted_following_step_with_nsloc_test_post(iter,item,frag,ws,"","e").print_scj();
+
+iterative_following_step(iter,item,frag,ws).print_scj();
+iterative_following_step_with_kind_test_post(iter,item,frag,ws,TEXT).print_scj();
+iterative_following_step_with_kind_test_post(iter,item,frag,ws,ELEMENT).print_scj();
+iterative_following_step_with_ns_test_post(iter,item,frag,ws,"").print_scj();
+iterative_following_step_with_loc_test_post(iter,item,frag,ws,"last").print_scj();
+iterative_following_step_with_nsloc_test_post(iter,item,frag,ws,"","e").print_scj();
 

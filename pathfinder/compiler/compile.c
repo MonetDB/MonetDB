@@ -105,7 +105,7 @@ PFstate_t PFstate = {
     .print_pretty        = false,
     .stop_after          = 0,
     .print_types         = false,
-    .optimize            = 1,
+    .optimize            = 31,
     .print_parse_tree    = false,
     .print_core_tree     = false,
     .print_algebra_tree  = false,
@@ -528,6 +528,15 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         if (strncmp(mode,"debug",5) == 0 ) {
                 PFstate.debug = 1;
                 mode += 6;
+        }
+        if (strncmp(mode,"optimize=",9) == 0 ) {
+                mode += 9;
+                PFstate.optimize = atoi(mode);
+                mode += ((PFstate.optimize<10) ? 2 : 3);
+        }
+        if (strncmp(mode,"optimize",8) == 0 ) {
+                PFstate.optimize = 31;
+                mode += 9;
         }
         if ( strcmp(mode,"dm") == 0 ) {
                 PFstate.genType = PF_GEN_DM;

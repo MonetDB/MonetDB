@@ -562,8 +562,13 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'H'));
             printf ("  -T%s: print elapsed times for compiler phases\n",
                     long_option (opt_buf, ", --%s", 'T'));
-            printf ("  -O[0-3]%s: select optimization level (default=1)\n",
+            printf ("  -O[0-31]%s: enable optimization features (default=31, i.e., \"all\"):\n",
                     long_option (opt_buf, ", --%s", 'O'));
+            printf ("        1: dead-code elimination\n");
+            printf ("        2: join recognition\n");
+            printf ("        4: loop-lifted staircasejoin (with post-tests)\n");
+            printf ("        8: loop-lifted staircasejoin with pre-tests\n");
+            printf ("       16: order awareness\n");
             printf ("\n");
             printf ("Enjoy.\n");
             exit (0);
@@ -597,8 +602,13 @@ main (int argc, char *argv[])
                     long_option (opt_buf, ", --%s", 'D'));
             printf ("  -T%s: print elapsed times for compiler phases\n",
                     long_option (opt_buf, ", --%s", 'T'));
-            printf ("  -O[0-3]%s: select optimization level (default=1)\n",
+            printf ("  -O[0-31]%s: enable optimization features (default=31, i.e., \"all\"):\n",
                     long_option (opt_buf, ", --%s", 'O'));
+            printf ("        1: dead-code elimination\n");
+            printf ("        2: join recognition\n");
+            printf ("        4: loop-lifted staircasejoin (with post-tests)\n");
+            printf ("        8: loop-lifted staircasejoin with pre-tests\n");
+            printf ("       16: order awareness\n");
             printf ("  -t%s: print static types (in {...}) for Core\n",
                     long_option (opt_buf, ", --%s", 't'));
             printf ("  -s%s: stop processing after certain phase:\n",
@@ -677,7 +687,7 @@ main (int argc, char *argv[])
              break;
 
         case 'O':
-            status->optimize = optarg ? atoi(optarg) : 1;
+            status->optimize = optarg ? atoi(optarg) : 31;
             break;
 
         case 't':
