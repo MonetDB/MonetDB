@@ -211,7 +211,7 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 "Returns the current size (in number of elements) of a BAT."
 
 .COMMAND count ( BAT[void,void] b, lng cnt ) : lng = CMDsetcount_bat;
-"Returns the current size (in number of elements) of a BAT."
+"Sets the size (in number of elements) of a BAT."
 
 .COMMAND capacity ( int bid ) : lng = CMDcapacity;
 "Returns the current allocation size (in max number of elements) of a BAT."
@@ -739,9 +739,8 @@ CMDdelete_bat_head(BAT **r, BAT *b, BAT *s)
 
 
 @-
-The next collection of operators fill a hole in the Monet kernel libraries.
-It provide handy operations on void-BATs. The sole reason not to move it to
-the bat.mx module is that overall the kernel does not support bat[void,void]
+The next collection of operators fill a hole in the MonetDB kernel libraries.
+It provide handy operations on void-BATs.
 @c
 size_t
 void_append_bat(BAT *b, BAT *u)
