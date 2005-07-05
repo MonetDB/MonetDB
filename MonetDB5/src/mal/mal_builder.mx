@@ -39,6 +39,8 @@ mal_export InstrPtr newStmtId( MalBlkPtr mb, char *id, char *module, char *name 
 mal_export InstrPtr newAssignment( MalBlkPtr mb );
 mal_export InstrPtr newFcnCall( MalBlkPtr mb, char *mod, char *fcn );
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val) ;
+mal_export InstrPtr pushOid(MalBlkPtr mb, InstrPtr q, oid val) ;
+mal_export InstrPtr pushVoid(MalBlkPtr mb, InstrPtr q) ;
 mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, long val) ;
 mal_export InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, double val) ;
 mal_export InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val) ;
@@ -96,6 +98,27 @@ pushInt(MalBlkPtr mb, InstrPtr q, int val)
 
 	snprintf(bufi,BUFSIZ,"%d",val);
 	_t= newConstant(mb,TYPE_int,GDKstrdup(bufi),TRUE); 
+	return pushArgument(mb,q,_t);
+}
+
+InstrPtr 
+pushOid(MalBlkPtr mb, InstrPtr q, oid val) 
+{	
+	int _t; 
+	char bufi[BUFSIZ];
+
+	snprintf(bufi,BUFSIZ,"%d@0",val);
+	_t= newConstant(mb,TYPE_oid,GDKstrdup(bufi),TRUE); 
+	return pushArgument(mb,q,_t);
+}
+InstrPtr 
+pushVoid(MalBlkPtr mb, InstrPtr q) 
+{	
+	int _t; 
+	char bufi[BUFSIZ];
+
+	snprintf(bufi,BUFSIZ,"nil");
+	_t= newConstant(mb,TYPE_void,GDKstrdup(bufi),TRUE); 
 	return pushArgument(mb,q,_t);
 }
 
