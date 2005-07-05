@@ -34,7 +34,7 @@ main(int argc, char **argv)
 	char *nme = 0;
 	int age = 0;
 	char *parm[] = { "peter", "25", 0 };
-	Mapi dbh;
+	Mapi dbh= NULL;
 	MapiHdl hdl = NULL;
 
 	if (argc != 4) {
