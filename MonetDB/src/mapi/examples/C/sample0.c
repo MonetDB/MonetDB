@@ -31,7 +31,7 @@ int
 main(int argc, char **argv)
 {
 	Mapi dbh;
-	MapiHdl hdl;
+	MapiHdl hdl = NULL;
 	int sqltest = 0;
 
 	if (argc != 4) {
