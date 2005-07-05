@@ -401,6 +401,7 @@ str MALengine(Client c){
 	str msg = 0;
 	MalBlkRecord oldstate;
 	oldstate.stop=0; 
+	oldstate.vtop=0; 
 
 	/* check for unfinished blocks */
 	if( c->blkmode) 

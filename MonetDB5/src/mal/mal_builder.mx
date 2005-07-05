@@ -107,7 +107,7 @@ pushOid(MalBlkPtr mb, InstrPtr q, oid val)
 	int _t; 
 	char bufi[BUFSIZ];
 
-	snprintf(bufi,BUFSIZ,"%d@0",val);
+	snprintf(bufi,BUFSIZ,"%d@0",(int)val);
 	_t= newConstant(mb,TYPE_oid,GDKstrdup(bufi),TRUE); 
 	return pushArgument(mb,q,_t);
 }

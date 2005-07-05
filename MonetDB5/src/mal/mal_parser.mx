@@ -435,6 +435,10 @@ int cstLength(Client cntxt, int *type)
 		i++;
 		s++;
 	}
+	if( *s == '0' && (s[1] == 'x' || s[1] == 'X')){
+		/* deal with hex */
+		s+=2;
+	}
     if( !isdigit(*s)) {
         if (*s != '.') 
 			goto parseTFN;
