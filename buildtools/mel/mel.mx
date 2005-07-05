@@ -196,11 +196,6 @@ extern int sem_error;
 extern char *progname;
 extern int yylineno;
 
-#ifdef YYTEXT_POINTER
-extern char *yytext;
-#else
-extern char yytext[];
-#endif
 extern FILE *yyin;
 
 extern Symtable *table;
@@ -722,6 +717,37 @@ YY_SPACES    	[\t\n ]*
 .		{ 	fprintf(stderr, "discarding '%c'\n", yytext[0]);}
 %%
 int str = 0, esc = 0, chr = 0;
+
+void
+mel_yyerror(const char *err)
+{
+	if (progname) {
+		cerr << progname << ": ";
+	}
+	if (fileinfo->FileName()) {
+		cerr << "\"" << fileinfo->FileName() << "\", ";
+	}
+	if (yylineno > 0) {
+		cerr << "line " << (yylineno) << ", ";
+	}
+	cerr << err;
+	if (*yytext) {
+		int i;
+
+		for (i = 0; i < 20; i++) {
+			if (!yytext[i] || yytext[i] == '\n') {
+				break;
+			}
+		}
+		if (i) {
+			cerr << " at \"" << i << "\" of " << yytext;
+		}
+	} else {
+		cerr << " at end-of-file";
+	}
+	cerr << ".\n";
+	parse_error++;
+}
 
 void
 script_start()
@@ -1250,37 +1276,6 @@ module_ident:
 	{ $$.s = (char*)type2str(yyval.i); }
     ;
 %%
-
-void
-mel_yyerror(const char *err)
-{
-	if (progname) {
-		cerr << progname << ": ";
-	}
-	if (fileinfo->FileName()) {
-		cerr << "\"" << fileinfo->FileName() << "\", ";
-	}
-	if (yylineno > 0) {
-		cerr << "line " << (yylineno) << ", ";
-	}
-	cerr << err;
-	if (*yytext) {
-		int i;
-
-		for (i = 0; i < 20; i++) {
-			if (!yytext[i] || yytext[i] == '\n') {
-				break;
-			}
-		}
-		if (i) {
-			cerr << " at \"" << i << "\" of " << yytext;
-		}
-	} else {
-		cerr << " at end-of-file";
-	}
-	cerr << ".\n";
-	parse_error++;
-}
 
 void
 semerror()
