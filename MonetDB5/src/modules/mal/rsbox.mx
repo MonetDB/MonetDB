@@ -1156,7 +1156,7 @@ str RSwriteHeader(int* retval, int* handle) {
 
 			/* calculate width if not set */
 			if (col->width == -1) {
-				int width;
+				int width= 0;
 				if ((tmp = RStailWidth(&width, col->bat)) != MAL_SUCCEED)
 					return(tmp);
 				if ((bt = stream_printf(s, "%d", width)) < 0)
