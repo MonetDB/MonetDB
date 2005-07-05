@@ -3,12 +3,13 @@ MonetDB suite.
 
 Mx - The tool to extract sources and documentation from .mx files.
 mel - The MonetDB Extension Language tool.
+autogen - A tool to create Makefiles from Makefile.ag.
 
 Mx is needed by many other packages and doesn't itself depend on
 anything else, so build Mx first.
 
-To build the various tools, change into the tool's directory, and
-execute the command
+To build the various tools (except for autogen), change into the
+tool's directory, and execute the command
 	./bootstrap
 This command will call the various autoconf/automake etc. tools in the
 correct order to build a configure script.  Then decide where you want

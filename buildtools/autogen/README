@@ -1,0 +1,8 @@
+To build, run
+	python setup.py build
+then to install, run
+	python setup.py install
+
+Use
+	python setup.py --help
+to get more information about the possible options.
