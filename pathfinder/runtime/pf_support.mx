@@ -781,7 +781,6 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 
 	# pre-sort input
 	if ( (and(order,1) = 0) or (and(optimize,16) = 0) ) {
-		print("pre-sort input");
 		var ord := item.reverse().sort().reverse();
 		    ord := ord.CTrefine(iter).mark(0@0).reverse();
 		iter := ord.Xleftfetchjoin(iter);
