@@ -10095,7 +10095,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
 
     /* define working set and all other MIL context (global vars for the query) */
     opt_output(f, OPT_SEC_QUERY);
-    milprintf(f, "\n\n# MAIN MIL QUERY\n\n{\n var time_trans := 123456789, err, ws := int(nil);\n err := CATCH({");
+    milprintf(f, "\n\n# MAIN MIL QUERY\n\n{\n var time_trans := 123456789;\n var err, ws := int(nil);\n err := CATCH({");
 
     if (status->timing) 
         milprintf(f, 
