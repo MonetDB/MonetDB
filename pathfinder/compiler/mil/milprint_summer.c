@@ -10059,6 +10059,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
 {
     PFarray_t *way, *counter;
     opt_t *f = opt_open(status->optimize);
+    char *trans_time;
 
     LLSCJ___fix
 
@@ -10094,7 +10095,15 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
 
     /* define working set and all other MIL context (global vars for the query) */
     opt_output(f, OPT_SEC_QUERY);
-    milprintf(f, "\n\n# MAIN MIL QUERY\n\n{\n var err, ws := int(nil);\n err := CATCH({");
+    milprintf(f, "\n\n# MAIN MIL QUERY\n\n{\n var time_trans := 123456789, err, ws := int(nil);\n err := CATCH({");
+
+    if (status->timing) 
+        milprintf(f, 
+            "var time_read := 0;\n"
+            "var time_shred := 0;\n"
+            "var time_print := 0;\n"
+            "var time_exec := time();\n\n");
+
     init (f);
 
     /* get_var_usage appends information to the core nodes and creates a 
@@ -10116,13 +10125,6 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "  vu_fid := sorting.Xleftfetchjoin(vu_fid);\n"
             "  sorting := nil_oid_oid;\n"
             "}\n");
-
-    if (status->timing) 
-        milprintf(f, 
-            "var time_read := 0;\n"
-            "var time_shred := 0;\n"
-            "var time_print := 0;\n"
-            "var time_exec := time();\n\n");
         
     /* recursive translation of the core tree */
     translate2MIL (f, 0, 0, 0, c);
@@ -10154,11 +10156,10 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
       milprintf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* expected!\n");
     }
     if (status->timing) {
-        tm = PFtimer_stop(tm);
         milprintf(f, 
             "\ntime_print := time() - time_print;\n"
-            "printf(\"\\nTrans % 7d.%03d msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
-            "       time_shred, time_exec - time_shred, time_print);\n\n", tm/1000, tm%1000);
+            "printf(\"\\nTrans %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
+            "       time_trans, time_shred, time_exec - time_shred, time_print);\n\n");
     }
 
     milprintf(f, "}); destroy_ws(ws); if (not(isnil(err))) ERROR(err);\n}\n\n# MIL EPILOGUE\n");
@@ -10176,6 +10177,12 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "drop(\"mmath\");\n");
 
     opt_close(f, prologue, query, epilogue);
+
+    trans_time=strstr(*query, "123456789");
+    tm = PFtimer_stop(tm);
+    sprintf(trans_time,"% 9d", tm/1000);
+    trans_time[9]=',';
+
     return NULL;
 }
 
