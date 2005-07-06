@@ -54,8 +54,8 @@ class language {
 	virtual const char *get_name() const {
 		return "name";
 	} 
-	virtual ~ language () { }
-
+	virtual ~ language () {
+	}
 	virtual int handle_args(int, char **) {
 		return 1;
 	} 
