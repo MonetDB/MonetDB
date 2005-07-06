@@ -4975,7 +4975,7 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "input_str := res_mu_is2ns.fetch(1);\n"
             "input_const := res_mu_is2ns.fetch(2);\n"
             "res_mu_is2ns := nil_oid_bat;\n"
-            "var input_iter := input_order.Xleftfetchjoin(iter%03u).chk__order();\n"
+            "var input_iter := input_order.Xleftfetchjoin(iter%03u).chk___order();\n"
             "var result_size := iter%03u.tunique().count() + nodes_order.count() + 1;\n"
             /* doesn't believe, that iter as well as input_order are ordered on h & t */
             /* apply the rules for the content of element construction */
@@ -5077,7 +5077,7 @@ is2ns_node (opt_t *f, int counter)
             "var input_str := res_mu_is2ns.fetch(1);\n"
             "var input_const := res_mu_is2ns.fetch(2);\n"
             "res_mu_is2ns := nil_oid_bat;\n"
-            "var input_iter := input_order.Xleftfetchjoin(_elem_iter).chk_order();\n"
+            "var input_iter := input_order.Xleftfetchjoin(_elem_iter).chk___order();\n"
             "var result_size := _elem_iter.tunique().count() + elem_nodes.count() + 1;\n"
             "elem_nodes := nil_oid_oid;\n"
             /* doesn't believe, that iter as well as input_order are ordered on h & t */
