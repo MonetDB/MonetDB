@@ -523,7 +523,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
                 PFstate.timing = 1;
                 mode += 7;
         } else {
-                PFstate.timing = 0;
+                PFstate.timing = 0; /* default */
         }
         if (strncmp(mode,"debug",5) == 0 ) {
                 PFstate.debug = 1;
@@ -533,10 +533,11 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
                 mode += 9;
                 PFstate.optimize = atoi(mode);
                 mode += ((PFstate.optimize<10) ? 2 : 3);
-        }
-        if (strncmp(mode,"optimize",8) == 0 ) {
-                PFstate.optimize = 31;
-                mode += 9;
+        } else {
+                PFstate.optimize = 31; /* default */
+                if (strncmp(mode,"optimize",8) == 0 ) {
+                        mode += 9;
+                }
         }
         if ( strcmp(mode,"dm") == 0 ) {
                 PFstate.genType = PF_GEN_DM;
