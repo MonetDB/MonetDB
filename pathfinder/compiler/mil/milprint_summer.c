@@ -10178,10 +10178,12 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
 
     opt_close(f, prologue, query, epilogue);
 
-    trans_time=strstr(*query, "123456789");
-    tm = PFtimer_stop(tm);
-    sprintf(trans_time,"% 9d", tm/1000);
-    trans_time[9]=',';
+    if (status->timing) {
+        trans_time=strstr(*query, "123456789");
+        tm = PFtimer_stop(tm);
+        sprintf(trans_time,"% 9d", tm/1000);
+        trans_time[9]=',';
+    }
 
     return NULL;
 }
