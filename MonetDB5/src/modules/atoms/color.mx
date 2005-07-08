@@ -31,6 +31,7 @@ rgb = (byte,byte,byte) colorspace r,g,b=[0..255]
 hsv = (flt,flt,flt) colorspace h=[0..360], s,v=[0..1]
 ycc = (byte,byte,byte) colorspace y,c,c=[0..255]
 
+@{
 @* Implementation
 
 @mal
@@ -38,6 +39,15 @@ atom color:int;
 
 command tostr():str address color_tostr;
 command fromstr():color address color_fromstr;
+
+command print(c:color)
+address CLRprintf;
+command printf(s:str, c:color)
+address CLRprintf2;
+
+command str(s:color):str
+address CLRstr
+comment "Converts color to string ";
 
 command color(s:str):color
 address CLRcolor
@@ -58,6 +68,18 @@ comment	"Extracts green component from a color atom";
 command blue (c:color) :int 
 address CLRblue
 comment	"Extracts blue component from a color atom";
+
+command hue(c:color) :int 
+address CLRhueInt
+comment	"Extracts hue component from a color atom";
+
+command saturation(c:color) :int
+address CLRsaturationInt
+comment	"Extracts saturation component from a color atom";
+
+command value(c:color) :int 
+address CLRvalueInt
+comment	"Extracts value component from a color atom";
 
 command hsv(h:flt,s:flt, v:flt) :color 
 address CLRhsv
@@ -93,7 +115,6 @@ comment	"Extracts Cb(blue color) component from a color atom";
 
 @+ C implementation
 @c
-
 /*
 #define DEBUG_COLOR 
 */
@@ -103,26 +124,25 @@ comment	"Extracts Cb(blue color) component from a color atom";
 #define _COLOR_H
 typedef unsigned int color;
 
-#include "color.proto.h"
-#define color_nil ((color)int_nil)
-@-
-Type-mappers for convenience
-@= HT_bunfastins_typemap
-#define @1@2_bunfastins_nocheck_noinc(b, p, h, t) @1@3_bunfastins_nocheck_noinc(b, p, h, t)
-#define @1@2_bunfastins_nocheck(b, p, h, t, s)    @1@3_bunfastins_nocheck(b, p, h, t, s)
-#define @1@2_bunfastins(b, h, t) @1@3_bunfastins_nocheck_noinc(b, h, t)
-#define @2@1_bunfastins_nocheck_noinc(b, p, h, t) @3@1_bunfastins_nocheck_noinc(b, p, h, t)
-#define @2@1_bunfastins_nocheck(b, p, h, t, s)    @3@1_bunfastins_nocheck(b, p, h, t, s)
-#define @2@1_bunfastins(b, h, t) @3@1_bunfastins_nocheck_noinc(b, h, t)
-@h
-@:HT_bunfastins_typemap(void,color,int)@
-@:HT_bunfastins_typemap(oid,color,int)@
-@:HT_bunfastins_typemap(chr,color,int)@
-@:HT_bunfastins_typemap(sht,color,int)@
-@:HT_bunfastins_typemap(int,color,int)@
-@:HT_bunfastins_typemap(lng,color,int)@
-@:HT_bunfastins_typemap(any,color,int)@
+mal_export str CLRstr(str *val, color *c);
+mal_export str CLRcolor(color *c, str *val);
+mal_export str CLRred(int *r, color *c);
+mal_export str CLRgreen(int *g, color *c);
+mal_export str CLRblue(int *b, color *c);
+mal_export str CLRhue(flt *r, color *c);
+mal_export str CLRsaturation(flt *g, color *c);
+mal_export str CLRvalue(flt *b, color *c);
+mal_export str CLRhueInt(int *r, color *c);
+mal_export str CLRsaturationInt(int *g, color *c);
+mal_export str CLRvalueInt(int *b, color *c);
+mal_export str CLRluminance(int *r, color *c);
+mal_export str CLRcr(int *r, color *c);
+mal_export str CLRcb(int *g, color *c);
+mal_export str CLRhsv(color *c, flt *h, flt *s, flt *v);
+mal_export str CLRrgb(color *rgb, int *r, int *g, int *b);
+mal_export str CLRycc(color *c, int *y, int *cr, int *cb);
 
+#define color_nil ((color)int_nil)
 #endif
 @c
 #include "mal.h"
@@ -187,7 +207,7 @@ color_fromstr(char *colorStr, int *len, color **c)
 			**c = (color) (r << 16 | g << 8 | b);
 		} else {
 			GDKwarning("Invalid color string representation '%s'\n", p);
-			**c = chr_nil;
+			**c = int_nil;
 		}
 	}
 
@@ -231,7 +251,31 @@ color_tostr(char **colorStr, int *len, color *c)
 	return strlen(*colorStr);
 }
 
+str
+CLRprintf(int *ret, color *c){
+	str s=0;
+	int len=0;
+	(void) ret;
+	color_tostr(&s,&len, c);
+	stream_printf(GDKout,"[ %s ]\n",s);
+	return MAL_SUCCEED;
+}
+str
+CLRprintf2(int *ret, str *form, color *c){
+	(void) ret;
+	stream_printf(GDKout,*form,*c);
+	return MAL_SUCCEED;
+}
 
+str
+CLRstr(str *s, color *c){
+	int len=0;
+	str t= 0;
+
+	color_tostr(&t,&len,c);
+	*s= (str) t;
+	return MAL_SUCCEED;
+}
 str
 CLRrgb(color *rgb, int *r, int *g, int *b)
 {
@@ -365,6 +409,15 @@ CLRhue(flt *f, color *c)
 	*f = h;
 	return (MAL_SUCCEED);
 }
+str
+CLRhueInt(int *f, color *c)
+{
+	float h, s, v;
+
+	color_rgb2hsv(&h, &s, &v, (*c >> 16) & 0xFF, (*c >> 8) & 0xFF, (*c) & 0xFF);
+	*f = h;
+	return (MAL_SUCCEED);
+}
 
 str
 CLRsaturation(flt *f, color *c)
@@ -377,7 +430,27 @@ CLRsaturation(flt *f, color *c)
 }
 
 str
+CLRsaturationInt(int *f, color *c)
+{
+	float h, s, v;
+
+	color_rgb2hsv(&h, &s, &v, (*c >> 16) & 0xFF, (*c >> 8) & 0xFF, (*c) & 0xFF);
+	*f = s;
+	return (MAL_SUCCEED);
+}
+
+str
 CLRvalue(flt *f, color *c)
+{
+	float h, s, v;
+
+	color_rgb2hsv(&h, &s, &v, (*c >> 16) & 0xFF, (*c >> 8) & 0xFF, (*c) & 0xFF);
+	*f = v;
+	return (MAL_SUCCEED);
+}
+
+str
+CLRvalueInt(int *f, color *c)
 {
 	float h, s, v;
 
@@ -447,3 +520,4 @@ CLRcolor(color *c, str *val){
 	color_fromstr(*val, &len, &c);
 	return MAL_SUCCEED;
 }
+@}

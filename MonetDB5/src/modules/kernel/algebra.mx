@@ -98,6 +98,7 @@ comment "Returns a positional selection of b by the oid
         head values of s";
 
 @- Range selection
+The range selections are targeted at the tail of the BAT.
 @mal
 command select(b:bat[:any$1,:any$2], low:any$2, high:any$2) 
             :bat[:any$1,:any$2] 
@@ -127,6 +128,24 @@ comment "Select all BUNs of a BAT with a certain
 	tail value. Selection on NIL is also 
 	possible (it should be properly casted, 
 	e.g.:int(nil)).";
+
+@-
+The second group uses the head to perform the range selection.
+@mal
+command selectHead(b:bat[:any$1,:any$2], low:any$1, high:any$1) 
+            :bat[:any$1,:any$2] 
+address ALGselectHead;
+
+command selectHead(b:bat[:any$1,:any$2], low:any$1, 
+	high:any$1, li:bit, hi:bit) :bat[:any$1,:any$2] 
+address ALGselectInclusiveHead;
+
+command selectHead(b:bat[:any$1,:any$2],value:any$1) :bat[:any$1,:any$2] 
+address ALGselect1Head;
+
+@-
+The second group uses the head to perform the range selection
+@mal
 
 command fragment ( b:bat[:any$1,:any$2], hlow:any$1, hhigh:any$1,
 		tlow:any$2, thigh:any$2 ) :bat[:any$1,:any$2] 
@@ -1628,6 +1647,24 @@ str ALGselect1(int *result, int *bid, ptr value) {
 	}
 	return throwMessage("algebra.select", "GDKerror");
 }
+str ALGselect1Head(int *result, int *bid, ptr value) {
+	BAT *b, *bn = NULL;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("algebra.select", "Cannot access descriptor");
+    }
+	b= BATmirror(b);
+	@:derefStr(b,t,value)@
+	CMDselect1(&bn,b,value);
+	bn= BATmirror(bn);
+	BBPunfix(b->batCacheid);
+	if( bn ) {
+		bn= BATsetaccess(bn,1);
+		BBPincref(*result = bn->batCacheid, TRUE);
+		BBPunfix(*result);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.select", "GDKerror");
+}
 
 str ALGuselect1(int *result, int *bid, ptr value) {
 	BAT *b, *bn= NULL;
@@ -1663,6 +1700,25 @@ str ALGselect(int *result, int *bid, ptr low, ptr high) {
 	}
 	return throwMessage("algebra.select", "GDKerror");
 }
+str ALGselectHead(int *result, int *bid, ptr low, ptr high) {
+	BAT *b, *bn= NULL;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("algebra.select", "Cannot access descriptor");
+    }
+	b= BATmirror(b);
+	@:derefStr(b,t,low)@
+	@:derefStr(b,t,high)@
+	CMDselect(&bn,b,low,high);
+	bn= BATmirror(bn);
+	BBPunfix(b->batCacheid);
+	if( bn ) {
+		bn= BATsetaccess(bn,1);
+		BBPincref(*result = bn->batCacheid, TRUE);
+		BBPunfix(*result);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.select", "GDKerror");
+}
 str ALGuselect(int *result, int *bid, ptr low, ptr high) {
 	BAT *b, *bn= NULL;
     if( (b= BATdescriptor(*bid)) == NULL ){
@@ -1689,6 +1745,25 @@ str ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *
 	@:derefStr(b,t,low)@
 	@:derefStr(b,t,high)@
 	CMDselect_(&bn,b,low,high,lin,rin);
+	BBPunfix(b->batCacheid);
+	if( bn ) {
+		bn= BATsetaccess(bn,1);
+		BBPincref(*result = bn->batCacheid, TRUE);
+		BBPunfix(*result);
+		return MAL_SUCCEED;
+	}
+	return throwMessage("algebra.select", "GDKerror");
+}
+str ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin) {
+	BAT *b, *bn= NULL;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("algebra.select", "Cannot access descriptor");
+    }
+	b= BATmirror(b);
+	@:derefStr(b,t,low)@
+	@:derefStr(b,t,high)@
+	CMDselect_(&bn,b,low,high,lin,rin);
+	bn= BATmirror(bn);
 	BBPunfix(b->batCacheid);
 	if( bn ) {
 		bn= BATsetaccess(bn,1);
