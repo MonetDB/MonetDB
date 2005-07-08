@@ -55,6 +55,7 @@ comment "Define a data pump query.";
 #include "mal_builder.h"
 #include "../optimizer/mal_optimizer.h"
 #include "../optimizer/mal_emptyset.h"
+#include "../optimizer/mal_singleton.h"
 #include "../optimizer/mal_peephole.h"
 #include "../modules/mal/tablet.h"
 
@@ -188,7 +189,7 @@ The output of the SQL compiler is first cleaned up, such that
 it becomes easier to manipulate.
 This cleanup involves removal of all sql.column and sql.output
 statements, while the sql.bind instruction should be replaced
-with the datacell bind operation towards.
+with the datacell bind operation.
 @= tstName
 	( getName(@2,strlen(@2)) == moduleId(@1) &&
 	  getName(@3,strlen(@3)) == functionId(@1) )
@@ -264,7 +265,8 @@ The dbat can only be dropped for connection points.[todo]
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
 @-
-We now have to propagate the knowledge about empty sets
+We now can propagate knowledge about empty sets and perform
+some peephole optimization.
 @c
 	ESevaluate(mb,z,emptyset);
 	PHoptimizer(mb,0,0);
@@ -280,7 +282,7 @@ DCmakePlans(int *ret, str *nme, str *newname){
 	DCpump pump;
 	InstrPtr p;
 	char buf[128];
-	int i,idx,es[1];
+	int i,idx, *es;
 
 	(void) ret;
 	s= findMALSymbol(putName("user",4), putName(*nme,strlen(*nme)) );
@@ -290,6 +292,8 @@ DCmakePlans(int *ret, str *nme, str *newname){
 	if( pump== 0 )
 		return throwMessage("datacell.makePlans","pump not found");
 	mb= s->def;
+
+	es= (int*) alloca(mb->stop);
 	PHoptimizer(mb,0,0);
 @-
 We are using three different plans based on the cardinality of the
@@ -343,21 +347,20 @@ with the empty set and singleton set.
 		p= getInstrPtr(mb,i);
 		if( @:tstName(p,"sql","bind")@  &&
 			 isReceptor( getVarLiteral(mb, getArg(p,2))) ){
-				es[0]= getArg(p,0); idx++;
-				break;
+				es[idx]= getArg(p,0); idx++;
 			}
 	}
-printf("OPTIMIZE TO ARGUMENT %d\n",es[0]);
-	ESevaluate(pump->malblk[1],idx,es);
-@-
-The reduction is performed inplace, dropping instructions
-that are not considered relevant for the DataCell.
-Moreover, we contain the empty variables that should be removed.
-
-@c
 	DCplan(pump->malblk[0], *newname);
+
+	printf("OPTIMIZE EMPTYSET TO ARGUMENT %d\n",es[0]);
+	ESevaluate(pump->malblk[1],idx,es);
 	DCplan(pump->malblk[1], *newname);
-	DCplan(pump->malblk[2], *newname);
+
+	if( idx > 0){
+		DCplan(pump->malblk[2], *newname);
+		printf("OPTIMIZE SINGLETONSET ON ARGUMENT %d\n",es[0]);
+		SSevaluate(pump->malblk[2],idx,es);
+	}
 	return MAL_SUCCEED;
 }
 @-
@@ -390,6 +393,7 @@ DCsqlReshuffle(MalBlkPtr mb, str newname){
 #ifdef _DC_COMPILE_DEBUG
 	stream_printf(GDKout,"start reshuffle :\n");
 #endif
+	(void) newname;
 	old= mb->stmt;
 	limit= mb->stop;
 	points = (str*) alloca(mb->stop*sizeof(str));
@@ -402,18 +406,13 @@ First step is to collect the all receptor/emitter bindings.
 	for(i=1; i< limit-1; i++)
 	if( strncmp(functionId(old[i]),"bind",4)==0  &&
                strcmp(moduleId(old[i]),"datacell")==0 ){
+		pushInstruction(mb,old[i]);
 		unit= getVarLiteral(mb,getArg(old[i],1));
 		for(j=0;j<u;j++)
 		if( strcmp(points[j],unit)== 0) break;
-		if( j== u){
-			p= newFcnCall(mb, getName("datacell",8),getName("isolate",7));
-			pushStr(mb,p,newname);
-			pushStr(mb,p, unit);
-			setVarType(mb,getArg(p,0), TYPE_void);
+		if( j== u)
 			points[u++]= unit;
-		} 
-		pushInstruction(mb,old[i]);
-	} else 
+	} else
 	if( match(old[i],"bat","append") &&
 		(unit= isEmitterDestination(mb, getArg(old[i],1)) ) ){
 		setFunctionId(old[i],putName("keep",4));

@@ -146,12 +146,13 @@ DCisolate(int *ret, str *uname, str *target){
 			BATcount(p->public[0]),BATcount(p->private[0]));
 #endif
 	mal_set_lock(p->lock,"datacellIsolate");
-	if( p->usedby && p->usedby != p-pumps)
+	if( p->usedby && p->usedby != p-pumps){
+		mal_unset_lock(p->lock,"datacellIsolate");
 		return throwMessage("datacell.isolate","Pump still in use\n");
-	p->usedby= p - pumps;
+	}
 	if( p->kind == EMITTER) {
 		 /* they take care of it */
-	} else {
+	} else if(p->usedby ==0 ) {
 		del= BATcount(p->public[0]);
 		for(i=0; i< p->cols; i++){
 			b= p->private[i];
@@ -160,6 +161,7 @@ DCisolate(int *ret, str *uname, str *target){
 			if(del) BATclear(p->private[i]);
 		}
 	}
+	p->usedby= p - pumps;
 	mal_unset_lock(p->lock,"datacellIsolate");
 #ifdef DEBUG_DC_SCHEDULER
 		stream_printf(GDKerr,"#%s\n",log);

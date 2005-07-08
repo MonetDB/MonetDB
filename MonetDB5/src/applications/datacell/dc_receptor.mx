@@ -60,14 +60,19 @@ command datacell.getReceptorStatus(nme:str)
 address DCgetReceptorStatus
 comment "Display the actual state of a receptor.";
 
-command data.bindReceptor(sname:str,pname:str) 
+command datacell.bindReceptor(sname:str,pname:str) 
 		(public:bat[:void,:any$1],private:bat[:void,:any$1])
 address DCbindReceptor
-comment "Provide access to a column.";
+comment "Provide private access to a column.";
 
-command data.bindReceptor(sname:str,pname:str) :bat[:void,:any$1]
+command datacell.bindReceptorTuple(sname:str,pname:str) 
+		(head:any$1,tail:any$2)
+address DCbindReceptorTuple
+comment "Extract a single tuple from the public bats.";
+
+command datacell.bindReceptor(sname:str,pname:str) :bat[:void,:any$1]
 address DCbindReceptorPublic
-comment "Provide access to a public version of a column.";
+comment "Provide private access to a public version of a column.";
 
 @{
 @- Implementation
@@ -157,7 +162,10 @@ DCgetReceptorStatus(int *ret){
 	return MAL_SUCCEED;
 }
 
-
+@-
+Gaining access to a column also sets the lock to avoid interference
+of other pumps.
+@c
 str
 DCbindReceptor(int *retpublic, int *retprivate, str *name, str *cname){
 	DCpump p;
@@ -168,13 +176,47 @@ DCbindReceptor(int *retpublic, int *retprivate, str *name, str *cname){
 		return throwMessage("datacell.bindReceptor","unknown receptor");
 	if( p->kind!= RECEPTOR)
 		return throwMessage("datacell.bindReceptor","unknown receptor");
-#ifdef DEBUG_DCRECEPTOR
-	stream_printf(GDKout,"#bindReceptor %s.%s\n",*name,*cname);
-#endif
 	for(i=0; i < p->cols ; i++)
 	if( strcmp(p->columns[i],*cname) == 0 ){
+		mal_set_lock(p->lock,"datacellIsolate");
+		if( p->usedby && p->usedby != p-pumps){
+			mal_unset_lock(p->lock,"datacellIsolate");
+			return throwMessage("datacell.isolate","Pump still in use\n");
+		}
+
 		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
 		BBPincref( *retprivate= p->private[i]->batCacheid, TRUE);
+		p->usedby= p - pumps;
+		mal_unset_lock(p->lock,"datacellIsolate");
+		break;
+	}
+    return MAL_SUCCEED;
+}
+@-
+It is also possible to pick up a single tuple from the public part.
+@c
+str
+DCbindReceptorTuple(int *retpublic, int *retprivate, str *name, str *cname){
+	DCpump p;
+	int i;
+
+	p= DClocatePump(*name);
+	if( p == 0)
+		return throwMessage("datacell.bindReceptor","unknown receptor");
+	if( p->kind!= RECEPTOR)
+		return throwMessage("datacell.bindReceptor","unknown receptor");
+	for(i=0; i < p->cols ; i++)
+	if( strcmp(p->columns[i],*cname) == 0 ){
+		mal_set_lock(p->lock,"datacellIsolate");
+		if( p->usedby && p->usedby != p-pumps){
+			mal_unset_lock(p->lock,"datacellIsolate");
+			return throwMessage("datacell.isolate","Pump still in use\n");
+		}
+
+		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
+		BBPincref( *retprivate= p->private[i]->batCacheid, TRUE);
+		p->usedby= p - pumps;
+		mal_unset_lock(p->lock,"datacellIsolate");
 		break;
 	}
     return MAL_SUCCEED;
@@ -189,11 +231,15 @@ DCbindReceptorPublic(int *retpublic, str *name, str *cname){
 		return throwMessage("datacell.bindReceptor","unknown receptor");
 	if( p->kind!= RECEPTOR)
 		return throwMessage("datacell.bindReceptor","unknown receptor");
-#ifdef DEBUG_DCRECEPTOR
-	stream_printf(GDKout,"#bindReceptor %s.%s\n",*name,*cname);
-#endif
 	for(i=0; i < p->cols ; i++)
 	if( strcmp(p->columns[i],*cname) == 0 ){
+		mal_set_lock(p->lock,"datacellIsolate");
+		if( p->usedby && p->usedby != p-pumps){
+			mal_unset_lock(p->lock,"datacellIsolate");
+			return throwMessage("datacell.isolate","Pump still in use\n");
+		}
+		p->usedby= p - pumps;
+		mal_unset_lock(p->lock,"datacellIsolate");
 		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
 		break;
 	}
@@ -521,5 +567,4 @@ DClistenThread(SensorInfo sensor)
 error:
 	return throwMessage("datacell.listen",msg);
 }
-
 @}
