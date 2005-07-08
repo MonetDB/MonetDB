@@ -158,6 +158,14 @@ execution by permutation of the query components
 Approach:
 Impact:
 
+@emph{Singleton Set (SSoptimizer)}
+Goal: to replace sets that are known to produce precisely
+one tuple.
+Rationale: Singleton sets can be represented by value pairs in the
+MAL program, which reduces to a scalar expression.
+Approach: Identify a set variable for replacement.
+Impact:
+
 @emph{Result Cacher (RCoptimizer)}
 Goal: to reduce the processing cost by keeping track of expensive to
 compute intermediate results

@@ -10,7 +10,8 @@ lib_optimizer = {
 	SOURCES = mal_optimizer.mx optimizer.mx  mal_factorize.mx \
 		mal_garbageCollector.mx mal_strengthReduction.mx \
 		mal_commonExpressions.mx mal_partitionedQuery.mx \
-		mal_emptyset.mx mal_peephole.mx mal_multiplex.mx
+		mal_emptyset.mx mal_peephole.mx mal_multiplex.mx \
+		mal_singleton.mx
 
 	HEADERS = h 
 	SCRIPTS = mal
