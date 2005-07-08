@@ -297,7 +297,7 @@ It expects a string and returns the name of the
 corresponding MAL block as it is known in the
 SQL_cache, where it can be picked up.
 @c
-/* #define _SQL_COMPILE */
+#define _SQL_COMPILE 
 str
 SQLcompile(str *ret, str *expr, int *flag)
 {
@@ -388,31 +388,36 @@ endofcompile:
 	GDKfree(n);
 	GDKfree(b);
 
-	if( flag)
+	if( *flag==0) {
+#ifdef _SQL_COMPILE
+		stream_printf(GDKout,"commit the catalogue\n");
+#endif
 		mvc_commit(m, 0, NULL); /* keep the changes */
-	else mvc_rollback(m, 0, NULL);
+	} else mvc_rollback(m, 0, NULL);
 	res_tables_destroy(m->results);
 	mvc_destroy(m);
 
 	SQLexit(c);
 	return msg;
 }
+str
+SQLcompile0(str *ret, str *expr)
+{
+	int flag= -1;
+	return SQLcompile(ret,expr,&flag);
+}
 @-
 Implementation of the execution of a single SQL statement is postponed.
 @c
 str
-SQLstatement(int *ret, str *cmd)
+SQLstatement(str *ret, str *cmd)
 {
-	Client c;
+	int flag=0;
 
-	(void) cmd;
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout, "#SQLstatement:%s\n", *cmd);
 #endif
-	c = getClient();
-	(void) c;
-	/*appendInput(c,*cmd); */
-	*ret = 0;
+	SQLcompile(ret,cmd,&flag);
 	return MAL_SUCCEED;
 }
 
@@ -793,7 +798,7 @@ unless auto_commit has been set.
 	}
 	c->glb = oldglb;
 	if (explainPerformance()) {
-		int ret;
+		str ret;
 		lng tot = be->Tparse;
 		char buf[BUFSIZ], *qs, *stmt = buf;
 
@@ -818,7 +823,7 @@ Then the SQL history table is just a view over a few basic bats.
 			GDKfree(be->qry);
 		be->qry = NULL;
 
-		(void) SQLstatement(&ret, &stmt);
+		SQLstatement(&ret, &stmt);
 	}
 
 	/*
@@ -832,7 +837,7 @@ Then the SQL history table is just a view over a few basic bats.
 
 			for (id = 0; id <m->qc->id; id ++) {
 				char buf[BUFSIZ], *nme = buf;
-				snprintf(buf, BUFSIZ, "sql%d", id);
+				snprintf(buf, BUFSIZ, "sql%d", (int) id);
 
 				SQLCacheRemove(&ret, &nme);
 			}

@@ -322,7 +322,8 @@ dump_multiplex(MalBlkPtr mb, char *name, int o1, int o2, int type)
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
 	} else {
-		q = newStmt(mb, "multiplex", "script");
+		q = newStmt(mb, "optimizer","multiplex");
+		setVarType(mb,getArg(q,0), newBatType(TYPE_void,type));
 		q = pushStr(mb, q, name);
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
@@ -368,10 +369,6 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 		switch (s->type) {
 		case st_none:
-			q = newAssignment(mb);
-			q = pushStr(mb, q, "none");
-			q = pushStr(mb, q, "none");
-			s->nr = getDestVar(q);
 			break;
 		case st_sql:{
 			int o1 = backend_dumpstmt(sql, mb, s->op1.stval);
@@ -920,7 +917,8 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					s->nr = getDestVar(q);
 					q = pushArgument(mb, q, l);
 				} else {
-					q = newStmt(mb, "multiplex", "script");
+					q = newStmt(mb, "optimizer","multiplex");
+					setVarType(mb,getArg(q,0), newBatType(TYPE_void,a->type->localtype));
 					s->nr = getDestVar(q);
 					q = pushStr(mb, q, convertOperator(s->op4.funcval->func->imp));
 					q = pushArgument(mb, q, l);
@@ -981,7 +979,9 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					}
 				}
 
-				q = newStmt(mb, "multiplex", "script");
+				q = newStmt(mb, "optimizer","multiplex");
+				setVarType(mb,getArg(q,0), 
+					newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
 				q = pushStr(mb, q, convertOperator(s->op4.funcval->func->imp));
 				for (i = 0; i < opslen; i++) {
 					q = pushArgument(mb, q, ops[i]);
