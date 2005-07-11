@@ -428,6 +428,7 @@ handled by newConstant. So be lazy for the time being.
 int cstLength(Client cntxt, int *type)
 {   
 	int i = 0;
+	int hex=0;
 	str s = CURRENT(cntxt);
 
     *type = TYPE_int;
@@ -437,16 +438,21 @@ int cstLength(Client cntxt, int *type)
 	}
 	if( *s == '0' && (s[1] == 'x' || s[1] == 'X')){
 		/* deal with hex */
+		hex= TRUE;
+		i+=2;
 		s+=2;
 	}
-    if( !isdigit(*s)) {
+    if( !isdigit(*s) && !hex) {
         if (*s != '.') 
 			goto parseTFN;
     } 
-	while (isdigit(*s)) {
+	while (isdigit(*s) || (hex && isalpha(*s)) ) {
+		if( hex  && !((tolower(*s) >= 'a' && tolower(*s) <= 'f') 
+			|| isdigit(*s)) ) return i;
 		i++;
 		s++;
 	}
+	if( hex) return i;
 	if (*s == '.' && isdigit(*(s+1)) ) {
 		i++;
 		s++;

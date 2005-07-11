@@ -495,6 +495,7 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
                 	cntxt->timer = GDKusec();
             	else
                         cntxt->timer = 0;
+				stk->cmd= 0;
         	}
         	break;
     	case 'v': {	/* show the symbol table and bindings */
@@ -735,7 +736,7 @@ signatures satisfying the pattern.
 			break;
 		}
     	case 'r': /* reset program counter */
-			stream_printf(out,"%srestart with current stack\n","#mdb ");
+			stream_printf(out,"%s restart with current stack\n","#mdb ");
 			stk->cmd= 'r';
         	break;
     	default:
@@ -762,7 +763,6 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
         mdbCommand(cntxt,mb,stk,p,pc);
         break;
     case 'r': stk->cmd = 'n';
-	case 'T': ;
     }
     if( cntxt->timer) cntxt->timer = GDKusec();
     stream_flush(cntxt->fdout);

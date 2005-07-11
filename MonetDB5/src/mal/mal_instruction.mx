@@ -847,7 +847,7 @@ Copying an instruction is space conservative.
 InstrPtr copyInstruction(InstrPtr p)
 {
     InstrPtr new;
-    new = (InstrPtr) GDKmalloc(sizeof(InstrRecord) + sizeof(int) * p->argc);
+    new = (InstrPtr) GDKmalloc(sizeof(InstrRecord) + sizeof(int) * p->maxarg-1);
     oldmoveInstruction(new,p);
     return new;
 }
