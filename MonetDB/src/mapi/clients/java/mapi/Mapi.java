@@ -97,9 +97,6 @@ See the corresponding documentation. A synopsis is given only.
 
 package mapi;
 
-import java.awt.*;
-import java.applet.Applet;
-import java.applet.*;
 import java.io.*;
 import java.net.Socket;
 
