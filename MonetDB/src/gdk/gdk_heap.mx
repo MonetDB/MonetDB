@@ -293,7 +293,7 @@ HEAPload(Heap *h, str nme, str ext, int trunc)
 	size_t truncsize = (1 + (((size_t) (h->free * 1.05)) >> 16)) << 16;
 	size_t minsize = (1 + ((h->size - 1) >> 16)) << 16;
 	int priv_storage = (h->storage == STORE_PRIV);
-	char priv[80];
+	char priv[80]={0};
 
 	h->maxsize = h->size;
 	h->filename = NULL;
