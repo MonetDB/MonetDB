@@ -8,9 +8,11 @@ datacell.open();
 
 datacell.receptor("ping","localhost", 6000);
 datacell.define("ping","value",:int);
+datacell.putPicture("ping","http://www.cwi.nl/~mk/datacell/images/jinjang.jpg");
 
 datacell.emitter("pong","localhost", 6001);
 datacell.define("pong","value",:int);
+datacell.putPicture("pong","http://www.cwi.nl/~mk/datacell/images/jinjang.jpg");
 
 datacell.dump();
 
@@ -40,4 +42,5 @@ datacell.startScheduler(1000);
 io.print(publ);
 io.print(priv);
 
+mapi.listen();
 #datacell.close();
