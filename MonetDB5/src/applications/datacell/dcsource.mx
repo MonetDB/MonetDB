@@ -124,11 +124,13 @@ char *connect_to_server(char * hostname, int port)
 void usage(){
 	printf("sensorDump -h <host> -p <port>  -C <columns> -N <tuples> -B <batch> -d <delay>\n");
 	printf("-h host name, default localhost\n");
-	printf("-p port id, default 50000\n");
+	printf("-p port id \n");
 	printf("-C number of columns, default 1\n");
 	printf("-N number of generated tuples, default 1\n");
 	printf("-B batch size, default 1\n");
 	printf("-d delay in milliseconds, default 0\n");
+	printf("-t use temporal events \n");
+	exit(-1);
 }
 
 int main(int argc, char **argv){
@@ -138,9 +140,10 @@ int main(int argc, char **argv){
 	int port=50000;
 	char *fname= "";
 	int delay = -1;
-	int batch=1,N=1, cols=1;
+	int batch=1,N=1, cols=1, random=1, temporal=0;
 	char buf[MAXBUF];
 
+	if( argc== 1) usage();
 	for(i=1;i<argc; i++)
 	switch( argv[i][1]){
 	case 'h':
@@ -167,6 +170,14 @@ int main(int argc, char **argv){
 		break;
 	case 'f':
 		fname= argv[++i];
+		break;
+	case 'r':
+		/* generate random number records */
+		random=1; temporal=0;
+		break;
+	case 't':
+		/* generate temporal event records */
+		random=0; temporal=1;
 		break;
 	case '?':
 		usage();
@@ -196,7 +207,7 @@ int main(int argc, char **argv){
 			if( delay<0) printf("%d",r);
 
 			for(i=1;i<cols; i++){
-				r= rand();
+				r= random? rand(): time(0);
 				stream_printf(toServer,",%d",r);
 				if( delay<0) printf(",%d",r);
 			}

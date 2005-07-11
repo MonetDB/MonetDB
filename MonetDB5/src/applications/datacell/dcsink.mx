@@ -115,6 +115,7 @@ void usage(){
     printf("-h host name, default localhost\n");
     printf("-p port id, default 50000\n");
     printf("-d delay in milliseconds, default 0\n");
+	exit(-1);
 }
 
 int main(int argc, char **argv){
@@ -122,7 +123,10 @@ int main(int argc, char **argv){
 	char *err;
 	char *host= "localhost"; int port=50000;
 	int delay = -1;
-	/* char buf[MAXBUFFER];*/
+	time_t t;
+	char buf[MAXBUFFER];
+
+	if( argc == 1) usage();
 
 	for(i=1;i<argc; i++)
 	switch( argv[i][1]){
@@ -148,22 +152,8 @@ int main(int argc, char **argv){
 		return -1;
 	}
 
-	/* collect events 
-		while(fgets(buf,MAXBUFFER,fd) != 0){
-			if( delay <0){
-				printf("%s",buf);
-				printf("send it?");
-				getchar();
-			}
-			stream_write(toServer,buf,1, strlen(buf));
-			if( batch){
-				if( b<=1){
-					if( batch >1) printf("flushed\n");
-					stream_flush(toServer);
-					b= batch;
-				} else b--;
-			
-			}
-		}
-	*/
+	while(fgets(buf,MAXBUFFER,fd) != 0){
+		time(&t);
+		printf("%s: %s\n", ctime(&t) ,buf);
+	}
 }

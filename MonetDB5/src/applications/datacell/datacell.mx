@@ -1043,7 +1043,7 @@ DCputPicture(int *ret,str  *name, str *txt){
 		p->picture= GDKstrdup(*txt);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("datacell.putPicture","Picture not defined");
+	return throwMessage("datacell.putPicture","Pump not defined");
 }
 
 
