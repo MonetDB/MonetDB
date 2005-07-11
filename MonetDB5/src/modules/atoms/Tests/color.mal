@@ -1,6 +1,3 @@
-include color;
-include batcolor;
-
 function testcolor();	
     c:= color.rgb(100,101,102);
     io.print(c);	

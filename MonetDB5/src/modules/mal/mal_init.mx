@@ -63,6 +63,7 @@ include mapi;
 # the hardwired multiplex extensions
 include batcalc;
 include batstr;
+include batcolor;
 
 # MAL related extensions
 include clients;
