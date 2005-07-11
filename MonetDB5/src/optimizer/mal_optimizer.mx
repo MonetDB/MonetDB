@@ -781,7 +781,7 @@ int ARoptimizerStep(MalBlkPtr mb, int pc)
 {   int k,kn=0;
     InstrPtr p;
     p= getInstrPtr(mb,pc);
-    if( moduleId(p) || functionId(p)) return pc;
+    if(p==0 || moduleId(p) || functionId(p)) return pc;
     if( p->token != ASSIGNsymbol) return pc;
     if( blockStart(p) || blockExit(p) || blockCntrl(p)) return pc;
 
@@ -800,11 +800,10 @@ int ARoptimizerStep(MalBlkPtr mb, int pc)
        }
     }
     /* delete the instruction if all targets have been replaced */
-    if(kn == p->retc)
+    if(kn == p->retc && kn)
     {
         /* all target variables pushed through */
-		if(p) 
-			removeInstruction(mb,p);
+		removeInstruction(mb,p);
         return pc-1;
     }
     return pc;
@@ -1087,6 +1086,7 @@ int hasSideEffects(InstrPtr p){
     if(functionId(p) && idcmp("destroy",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("prelude",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("decimal_prelude",functionName(p))==0) return TRUE;
+    if(functionId(p) && idcmp("keep",functionName(p))==0) return TRUE;
     return FALSE;
 }
 str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

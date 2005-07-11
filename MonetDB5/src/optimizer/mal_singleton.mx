@@ -149,11 +149,9 @@ variables on the stack.
 				setModuleId(p,NULL);
 				setFunctionId(p,NULL);
 				SSnewTuple(mb,getArg(p,0), &top, tuples);
-				p->argc=0;
-				pushReturn(mb,p, tuples[top-1].hidx);
-				tuples[top-1].tidx= tuples[k].tidx;
-				pushReturn(mb,p, tuples[k].tidx);
-				p->retc=2;
+				p->argv[0]= tuples[k].hidx;
+				p->argv[1]= tuples[k].tidx;
+				p->retc= p->argc=2;
 				pushVoid(mb,p);
 				pushArgument(mb,p, tuples[k].tidx);
 				p->token= ASSIGNsymbol;
@@ -165,10 +163,9 @@ variables on the stack.
 				setModuleId(p,NULL);
 				setFunctionId(p,NULL);
 				SSnewTuple(mb,getArg(p,0), &top, tuples);
-				p->argc=0;
-				pushReturn(mb,p, tuples[top-1].hidx);
-				pushReturn(mb,p, tuples[top-1].tidx);
-				p->retc=2;
+				p->argv[0]= tuples[k].hidx;
+				p->argv[1]= tuples[k].tidx;
+				p->retc= p->argc=2;
 				pushArgument(mb,p, tuples[k].hidx);
 				pushVoid(mb,p);
 				p->token= ASSIGNsymbol;
@@ -209,7 +206,7 @@ variables on the stack.
 				getName("indexjoin",9)== functionId(p) ||
 				getName("hashjoin",8)== functionId(p) ||
 				getName("cartesianproduct",16)== functionId(p) ||
-				getName("union",5)== functionId(p) ){
+				getName("union",5)== functionId(p) )
 */
 			if( getName("count",5)== functionId(p)  &&
 				( k= SSalias(getArg(p,1),top,tuples)) >= 0){
@@ -229,7 +226,7 @@ variables on the stack.
 					setArgument(mb,p,1,tuples[k].tidx);
 					p->retc++;
 			} else
-			if( getName("keep",4) &&
+			if( getName("keep",4) &&  p->argc>=3 &&
 				(k = SSalias(getArg(p,3),top,tuples)) >= 0){
 				getArg(p,3)= tuples[k].tidx;
 			}
@@ -245,7 +242,6 @@ variables on the stack.
 		}
 		pushInstruction(mb,p);
 	}
-	GDKfree(old);
 	if( doAR) {
 #ifdef DEBUG_MAL_SINGLETON
 		printf("MID STAGE doAR=%d\n",doAR);
@@ -256,9 +252,11 @@ variables on the stack.
 			tuples[i].tidx, getTypeName(tuples[i].ttpe));
 		stream_printf(GDKout,"\n");
 #endif
+		setLifespan(mb);
 		ARoptimizer(mb,0,0);
-		/*DCoptimizer(mb,0,0);*/
+		DCoptimizer(mb,0,0);
 	}
+	GDKfree(old);
 
 	optimizerCheck(mb,"mal.emptyset",1,GDKusec()-clk);
 #ifdef DEBUG_MAL_SINGLETON
