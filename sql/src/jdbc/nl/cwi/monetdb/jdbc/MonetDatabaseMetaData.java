@@ -189,7 +189,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 	 * @return the JDBC driver name.
 	 */
 	public String getDriverVersion() {
-		return(((MonetDriver)driver).getDriverVersion());
+		return(MonetDriver.getDriverVersion());
 	}
 
 	/**
@@ -1672,7 +1672,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"cast(null AS varchar(1)) AS \"SCOPE_CATALOG\", " +
 			"cast(null AS varchar(1)) AS \"SCOPE_SCHEMA\", " +
 			"cast(null AS varchar(1)) AS \"SCOPE_TABLE\", " +
-			"cast(" + ((MonetDriver)driver).getJavaType("other") + " AS smallint) AS \"SOURCE_DATA_TYPE\", " +
+			"cast(" + MonetDriver.getJavaType("other") + " AS smallint) AS \"SOURCE_DATA_TYPE\", " +
 			"CASE \"null\" " +
 				"WHEN true THEN CAST ('YES' AS varchar(3)) " +
 				"WHEN false THEN CAST ('NO' AS varchar(3)) " +
@@ -1947,7 +1947,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			String[] result = new String[8];
 			result[0]  = "" + DatabaseMetaData.bestRowSession;
 			result[1]  = rs.getString("column_name");
-			result[2]  = "" + ((MonetDriver)driver).getJavaType(rs.getString("type_name"));
+			result[2]  = "" + MonetDriver.getJavaType(rs.getString("type_name"));
 			result[3]  = rs.getString("type_name");
 			result[4]  = rs.getString("column_size");
 			result[5]  = rs.getString("buffer_length");

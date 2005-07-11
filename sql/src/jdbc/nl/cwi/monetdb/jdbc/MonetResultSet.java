@@ -21,10 +21,8 @@ package nl.cwi.monetdb.jdbc;
 import java.sql.*;
 import java.io.*;
 import java.util.*;
-import java.util.regex.*;
 import java.math.*;
 import java.net.*;
-import java.text.SimpleDateFormat;
 
 /**
  * A ResultSet suitable for the MonetDB database.

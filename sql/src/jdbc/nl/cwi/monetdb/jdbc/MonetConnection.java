@@ -23,7 +23,6 @@ import java.util.*;
 import java.io.*;
 import java.nio.ByteOrder;
 import java.text.SimpleDateFormat;
-import java.util.regex.*;
 
 /**
  * A Connection suitable for the MonetDB database.

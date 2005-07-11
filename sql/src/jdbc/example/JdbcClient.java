@@ -302,9 +302,8 @@ public class JdbcClient {
 		// protector
 		String user = ((ArrayList)(arg.get("u"))).get(1).toString();
 		if (pass == null || user.charAt(0) != ' ') {
-			PasswordField passfield = new PasswordField();
 			try {
-				char[] tmp = passfield.getPassword(System.in, "password: ");
+				char[] tmp = PasswordField.getPassword(System.in, "password: ");
 				if (tmp != null) pass = String.valueOf(tmp);
 			} catch(IOException ioe) {
 				System.err.println("Invalid password!");
@@ -1560,7 +1559,7 @@ class MaskingThread extends Thread {
 				System.err.flush();
 				try {
 					// attempt masking at this rate
-					this.sleep(1);
+					Thread.sleep(1);
 				} catch (InterruptedException iex) {
 					Thread.currentThread().interrupt();
 					return;
