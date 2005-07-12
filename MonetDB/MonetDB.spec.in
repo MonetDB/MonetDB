@@ -17,7 +17,7 @@ Group: System
 Source: %{name}-%{version}.tar.gz
 BuildRoot: /var/tmp/%{name}-root
 Packager: Niels Nes <Niels.Nes@cwi.nl>
-Copyright:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+License:   MPL - http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
 BuildRequires: python 
 
 %define builddoc 0
