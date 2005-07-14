@@ -40,7 +40,7 @@ class language;
 class Symbol {
       public:
 	Symbol (int token, const char *name);
-	 virtual ~ Symbol ();
+	virtual ~ Symbol ();
 
 	int operator==(const Symbol &) const;
 	int Token() const;
