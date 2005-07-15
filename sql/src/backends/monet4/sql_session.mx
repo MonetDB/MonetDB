@@ -457,7 +457,7 @@ output_prepare(stream *out, mvc *c, cq *q)
 		"# " SZFMT " # querytype\n"
 		"# prepare,	prepare,	prepare # table_name\n"
 		"# type,	digits,	scale # name\n"
-		"# varchar, 	int,	int # type\n"
+		"# varchar,	int,	int # type\n"
 		"# 0,	0,	0 # length\n"
 		"# %d # tuplecount\n"
 		"# %d # id\n",
