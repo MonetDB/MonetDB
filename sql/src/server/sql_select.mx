@@ -1803,6 +1803,13 @@ sql_compare(mvc *sql, stmt *ls, stmt *rs, char *compare_op, int f)
 	if (!ls || !rs)
 		return NULL;
 
+	if (convert_types(sql, &ls, &rs, 1) < 0) {
+		if (ls)
+			stmt_destroy(ls);
+		if (rs)
+			stmt_destroy(rs);
+		return NULL;
+	}
 	/* predicate case ? */
 	if (f == sql_sel || (ls->nrcols <= 0 && rs->nrcols <= 0)) {
 		return sql_binop_(sql, NULL, compare_op, ls, rs);
@@ -1829,13 +1836,6 @@ sql_compare(mvc *sql, stmt *ls, stmt *rs, char *compare_op, int f)
 		}
 	}
 	if (join) {
-		if (convert_types(sql, &ls, &rs, 1) < 0) {
-			if (ls)
-				stmt_destroy(ls);
-			if (rs)
-				stmt_destroy(rs);
-			return NULL;
-		}
 		if (ls->h && rs->h && ls->h == rs->h) {
 			return stmt_uselect(ls, rs, type);
 		}
@@ -1858,13 +1858,6 @@ sql_compare(mvc *sql, stmt *ls, stmt *rs, char *compare_op, int f)
 				type = cmp_gte;
 			else if (type == cmp_gte) 
 				type = cmp_lte;
-		}
-		if (convert_types(sql, &ls, &rs, 1) < 0) {
-			if (ls)
-				stmt_destroy(ls);
-			if (rs)
-				stmt_destroy(rs);
-			return NULL;
 		}
 		res = stmt_uselect(ls, rs, type);
 		if (f == sql_where && (ls->nrcols == 2 || rs->nrcols == 2))

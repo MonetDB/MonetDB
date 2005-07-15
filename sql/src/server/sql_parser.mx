@@ -543,9 +543,10 @@ SQLCODE SQLERROR UNDER WHENEVER
 sqlstmt:
    sql ';'		{ mvc *m = (mvc*)parm;
 			  m->sym = $$ = $1; YYACCEPT; }
- | PREPARE sql ';' 	{ mvc *m = (mvc*)parm;
-		  	  m->mode = m_prepare;
-		  	  m->sym = $$ = $2; YYACCEPT; }
+ | PREPARE 		{ mvc *m = (mvc*)parm;
+		  	  m->mode = m_prepare; }
+   sql ';' 		{ mvc *m = (mvc*)parm;
+		  	  m->sym = $$ = $3; YYACCEPT; }
  | SQL_EXPLAIN sql ';' 	{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_explain;
 		  	  m->sym = $$ = $2; YYACCEPT; }
@@ -1545,10 +1546,12 @@ atom_commalist:
 insert_atom:
     scalar_exp
  |  NULLX
-	{ /* replace by argument */
-	  mvc *m = (mvc*)parm;
-	  int len = (m->args)?list_length(m->args):0;
-	  if (len < MAXPARAMS-2 && m->cache){
+	 { 
+	   mvc *m = (mvc*)parm;
+	   int len = (m->args)?list_length(m->args):0;
+
+	   if (m -> mode != m_prepare && len < MAXPARAMS-2 && m->cache){
+		/* replace by argument */
 		atom *a = atom_general( sql_dup_subtype(
 				sql_bind_localtype("str")), NULL, 0);
 
@@ -2277,12 +2280,14 @@ opt_alias_name:
 
 atom:
     literal
-	{ /* replace by argument */
+	{ 
 	  mvc *m = (mvc*)parm;
 	  int len = (m->args)?list_length(m->args):0;
-	  if (len < MAXPARAMS-2 && m->cache){
+	
+	  if (m -> mode != m_prepare && len < MAXPARAMS-2 && m->cache){
+	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
-
+	
 	  	sql_add_arg( m, an->a);
 		an->a = NULL;
 	  	/* we miss use SQL_COLUMN also for param's, maybe
