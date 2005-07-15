@@ -706,7 +706,6 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 	sql_subtype *t = NULL, *st = tail_type(s);
 
 	if (!st) {
-		assert(0);
 		stmt_destroy(s);
 		return sql_error(sql, 02, "statement has no type information");
 	}
@@ -887,6 +886,11 @@ convert_types(mvc *sql, stmt **L, stmt **R, int scale_fixing)
 	stmt *rs = *R;
 	sql_subtype *lt = tail_type(ls);
 	sql_subtype *rt = tail_type(rs);
+
+	if (!rt && !lt) {
+		sql_error(sql, 01, "Cannot have a parameter (?) on both sides of an expression");
+		return -1;
+	}
 
 	if (rt && !lt)
 		return set_type_param(rt, ls);

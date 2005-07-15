@@ -2719,7 +2719,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 	for ( n = selection->h; n; n = n->next) {
 		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel);
 
-		if (!cs) {
+		if (!cs || !tail_type(cs)) {
 			if (subset) stmt_destroy(subset);
 			list_destroy(rl);
 			return NULL;
@@ -2907,7 +2907,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 		for (n = sn->selection->h; n; n = n->next) {
 			stmt *cs = sql_column_exp(sql, scp, n->data.sym, grp, subset, sql_sel);
 
-			if (!cs) {
+			if (!cs || !tail_type(cs)) {
 				list_destroy(sl);
 				list_destroy(rl);
 				sql_select_cleanup(sql, s, subset, grp);
