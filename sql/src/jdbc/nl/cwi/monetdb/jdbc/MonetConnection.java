@@ -1772,11 +1772,26 @@ public class MonetConnection extends Thread implements Connection {
 			) {
 				String error = "";
 				if (!isSet[4]) error += "querytype header missing\n";
-				if (queryType == MonetStatement.Q_TABLE) {
+				if (
+						queryType == MonetStatement.Q_TABLE ||
+						queryType == MonetStatement.Q_PREPARE
+				) {
 					if (!isSet[0]) error += "name header missing\n";
 					if (!isSet[1]) error += "type header missing\n";
+					if (!isSet[5]) error += "table name header missing\n";
+					if (!isSet[6]) error += "column width header missing\n";
 					if (!isSet[2]) error += "tuplecount header missing\n";
 					if (!isSet[3]) error += "id header missing\n";
+					if (isSet[0] && isSet[1] && isSet[5] && isSet[6]) {
+						int cols = name.length;
+						if (
+								cols != type.length ||
+								cols != tableNames.length ||
+								cols != columnLengths.length
+						) {
+							error += "name (" + cols + "), type (" + type.length + "), table (" + tableNames.length + ") and length (" + columnLengths.length + ") do not have the same number of columns\n";
+						}
+					}
 				} else if (
 					queryType == MonetStatement.Q_UPDATE ||
 					queryType == MonetStatement.Q_TRANS
