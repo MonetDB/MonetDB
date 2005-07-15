@@ -127,13 +127,13 @@ dir("Server");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "Server",	  "oid",  "url",  1,	  0,	  "diffs",	  "disk", "pers", 0,	  2		  ]
+[ "Server",	  "oid",  "url",  1,	  0,	  "swapped",	  "disk", "pers", 0,	  2		  ]
 [ "Server2",	  "oid",  "url",  1,	  0,	  "dirty",	  "load", "pers", 0,	  2		  ]
 dir("Clients");
 #---------------------------------------------------------------------------------------------------------#
 # name		| htype	| ttype	| count	| heat	| dirty		| status| kind	| refcnt| lrefcnt	  #
 #---------------------------------------------------------------------------------------------------------#
-[ "Clients",	  "oid",  "int",  1,	  0,	  "diffs",	  "disk", "pers", 0,	  2		  ]
+[ "Clients",	  "oid",  "int",  1,	  0,	  "swapped",	  "disk", "pers", 0,	  2		  ]
 [ "Clients2",	  "oid",  "int",  1,	  0,	  "dirty",	  "load", "pers", 0,	  2		  ]
 abort();
 dir("Server");

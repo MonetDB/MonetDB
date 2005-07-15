@@ -723,7 +723,7 @@ static int
 new_bbpentry(stream *s, bat i)
 {
 	int r = stream_printf(s, "[  %d, %d, %s",
-			      (int) i, BBP_status(i) & BBPSTATUS, BBPname(i));
+			      (int) i, BBP_status(i) & BBPPERSISTENT, BBPname(i));
 
 	if (r < 0)
 		return r;

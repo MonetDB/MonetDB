@@ -693,7 +693,7 @@ view_bbp_dirty(BAT **retval	/* put pointer to BAT[int,str] record here. */
 			if (BBPvalid(i)) {
 				BAT *bn = BBP_cache(i);
 
-				BUNins(b, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean");
+				BUNins(b, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "swapped" : "clean");
 			}
 		}
 	BBPunlock("view_bbp_dirty");
