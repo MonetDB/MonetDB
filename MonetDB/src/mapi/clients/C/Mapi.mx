@@ -2519,7 +2519,8 @@ mapi_param_store(MapiHdl hdl)
 		hdl->query[k] = 0;
 
 		if (hdl->params[i].inparam == 0) {
-			hdl->query[k++] = PLACEHOLDER;
+			checkSpace(5);
+			strcpy(hdl->query + k, hdl->mid->languageId == LANG_SQL ? "NULL" : "nil");
 			hdl->query[k] = 0;
 		} else {
 			void *src = hdl->params[i].inparam;	/* abbrev */
@@ -2604,8 +2605,8 @@ mapi_param_store(MapiHdl hdl)
 				strcpy(hdl->query + k, src);
 				break;
 			}
-			k += strlen(hdl->query + k);
 		}
+		k += strlen(hdl->query + k);
 
 		i++;
 		p = q + 1;
