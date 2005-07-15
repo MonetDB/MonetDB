@@ -1482,7 +1482,9 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 			bit overflow = FALSE;
 
 			assert(b->ttype != TYPE_void && tpe != TYPE_void);
+#if SIZEOF_OID != SIZEOF_INT
 			assert(b->ttype != TYPE_oid && tpe != TYPE_oid);
+#endif
 			/* assert(b->ttype > tpe && ... ); */
 @= interpret_batcast_source_switch
 		switch (b->ttype) {
@@ -1494,16 +1496,19 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		@:interpret_batcast_source_case(lng,\
 			@:interpret_batcast_target_case(lng,chr)@\
 			@:interpret_batcast_target_case(lng,sht)@\
-			@:interpret_batcast_target_case(lng,int)@)@
+			@:interpret_batcast_target_case(lng,int)@\
+			@:interpret_batcast_target_case(lng,oid)@)@
 		@:interpret_batcast_source_case(flt,\
 			@:interpret_batcast_target_case(flt,chr)@\
 			@:interpret_batcast_target_case(flt,sht)@\
 			@:interpret_batcast_target_case(flt,int)@\
+			@:interpret_batcast_target_case(flt,oid)@\
 			@:interpret_batcast_target_case(flt,lng)@)@
 		@:interpret_batcast_source_case(dbl,\
 			@:interpret_batcast_target_case(dbl,chr)@\
 			@:interpret_batcast_target_case(dbl,sht)@\
 			@:interpret_batcast_target_case(dbl,int)@\
+			@:interpret_batcast_target_case(dbl,oid)@\
 			@:interpret_batcast_target_case(dbl,lng)@\
 			@:interpret_batcast_target_case(dbl,flt)@)@
 		default:
