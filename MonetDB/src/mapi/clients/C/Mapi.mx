@@ -2521,7 +2521,6 @@ mapi_param_store(MapiHdl hdl)
 		if (hdl->params[i].inparam == 0) {
 			checkSpace(5);
 			strcpy(hdl->query + k, hdl->mid->languageId == LANG_SQL ? "NULL" : "nil");
-			hdl->query[k] = 0;
 		} else {
 			void *src = hdl->params[i].inparam;	/* abbrev */
 
