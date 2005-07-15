@@ -544,7 +544,7 @@ BBPinit(void)
 			c = fgets(buffer, sizeof(buffer), fp);
 		}
 		if (ptrsize != SIZEOF_SIZE_T || oidsize != SIZEOF_OID) {
-			GDKerror("database created with incompatibel Mserver");
+			GDKerror("database created with incompatible Mserver");
 			exit(1);
 		}
 		if (c != NULL) {
