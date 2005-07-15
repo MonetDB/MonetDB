@@ -2810,6 +2810,7 @@ CMDlastmod_time(timestamp *ret, str filename) {
 	timestamp ts;
         daytime dt;
 	date d;
+	tzone tz;
 
 	if (stat(filename, &st)) {
 		return GDK_FAIL;
@@ -2817,7 +2818,8 @@ CMDlastmod_time(timestamp *ret, str filename) {
 	msecs = 1000*st.st_mtime;
         return date_create(&d, &year, &one, &one) &&
                daytime_create(&dt, &zero, &zero, &zero, &zero) &&
-               timestamp_create_default(&ts, &d, &dt) &&
+	       tzone_create(&tz, &zero) &&
+               timestamp_create(&ts, &d, &dt, &tz) &&
                timestamp_add(ret, &ts, &msecs);
 }
 

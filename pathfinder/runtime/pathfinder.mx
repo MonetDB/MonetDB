@@ -560,7 +560,7 @@ PROC pin_doc(oid doc_oid, int ws) : void
 }
 
 # HACK: this proc overwrites variables 'lifetime' and 'ts'
-PROC add_doc_locked(str name, timestamp ts, int ws) : oid
+PROC add_doc_locked(str name, int ws) : oid
 {
     var doc_oid := nil;
     var filename := name;
@@ -639,7 +639,7 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
 
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
-    err := CATCH(doc_oid := add_doc_locked(name, ts, int(ws)));
+    err := CATCH(doc_oid := add_doc_locked(name, int(ws)));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
