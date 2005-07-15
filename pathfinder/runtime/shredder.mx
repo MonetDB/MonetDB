@@ -1477,6 +1477,7 @@ xmlSAXHandler shredder = {
 static int 
 mainSHREDDER(shredCtxStruct* shredCtx, char* location)
 {
+    int wellFormed = 0;
     xmlParserCtxtPtr xmlCtx;
 
     /* this code is not really Unicode or multi-byte aware (yet) */
@@ -1540,8 +1541,10 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location)
      	stream_printf(GDKerr,"ERROR: xmlCtxtReadFile()=%d failed.\n",xmlCtx->errNo);
      */
 
-    /* The goog old xmlParseDocument() works without complaining! */
+    /* The good old xmlParseDocument() works without complaining! */
     (void) xmlParseDocument (xmlCtx);
+    wellFormed = xmlCtx->wellFormed;
+    xmlFreeParserCtxt(xmlCtx);
 
     /* free the TEXT buffer */
     free(shredCtx->content_buf);
@@ -1550,7 +1553,7 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location)
     if ( shredCtx->err ) {
         return -1;
     }
-    if (! xmlCtx->wellFormed) {
+    if (! wellFormed) {
         stream_printf(GDKerr, 
                  "!ERROR: XML input not well-formed.\n");
         return -1;
