@@ -2013,7 +2013,10 @@ atom_exp:
 		$$ = _symbol_create_list(SQL_ESCAPE, l);
 	  }
 	}
- |  '?'	{ $$ = _symbol_create( SQL_PARAMETER, NULL ); }
+ |  '?'	
+	{ dlist *l = _dlist_create();
+	  _dlist_append_symbol(l, _symbol_create( SQL_PARAMETER, NULL ));
+	  $$ = _symbol_create_list(SQL_ESCAPE, l ); }
  ;
 
 test_for_null:

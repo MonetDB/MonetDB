@@ -596,7 +596,8 @@ stmt_destroy(stmt *s)
 		case st_var:
 			if (s->op1.sval)
 				_DELETE(s->op1.sval);
-			sql_subtype_destroy(s->op2.typeval);
+			if (s->op2.typeval)
+				sql_subtype_destroy(s->op2.typeval);
 			break;
 
 			/* reference only independently managed resources */

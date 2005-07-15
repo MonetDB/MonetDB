@@ -2193,6 +2193,11 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		if (!ls)
 			return NULL;
 
+		if (!tail_type(ls)) {
+			stmt_destroy(ls);
+			return sql_error(sql, 02, "No parameter allowed on left hand of LIKE statement");
+		}
+
 		lo = ro->data.lval->h->data.sym;
 		a = sql_value_exp(sql, scp, lo, grp, subset, f);
 
@@ -2204,7 +2209,14 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			es = ro->data.lval->h->next->data.sval;
 			e = stmt_atom_string(_strdup(es));
 		}
-		if ((a = check_types(sql, st, a, type_equal)) == NULL) {
+		if (!tail_type(a)) {
+			if (set_type_param(st, a) == -1) {
+				stmt_destroy(ls);
+				stmt_destroy(a);
+				return sql_error(sql, 02, "wrong type used with LIKE statement, should be string");
+			}
+		} else if ((a = check_types(sql, st, a, type_equal)) == NULL) {
+			stmt_destroy(ls);
 			return sql_error(sql, 02, "wrong type used with LIKE statement, should be string");
 		}
 		/* predicate case ? */
