@@ -111,16 +111,48 @@ mal_export str DClistenThread(SensorInfo sensor);
 
 #endif /* DC_H */
 
+#include "mal.h"
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+#include  <stdio.h>
+#ifdef HAVE_PWD_H
+#include  <pwd.h>
+#endif
+
 #include  <sys/types.h>
+
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
-#ifdef HAVE_WIN32
+#ifdef NATIVE_WIN32
 # include <winsock.h>
 #endif
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
+
+#include  <signal.h>
+#include  <string.h>
+#include  <memory.h>
+
+#if TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# if HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
+#if defined(HAVE_WINSOCK_H) && defined(NATIVE_WIN32)
+#include <winsock.h>        /* for timeval */
+#endif
+
+#include <stream.h>     /* for stream */
 
 #define SOCKPTR struct sockaddr *
 #if HAVE_SOCKLEN_T
