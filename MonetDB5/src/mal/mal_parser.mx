@@ -446,7 +446,7 @@ int cstLength(Client cntxt, int *type)
         if (*s != '.') 
 			goto parseTFN;
     } 
-	while (isdigit(*s) || (hex && isalpha(*s)) ) {
+	while (isdigit((int)*s) || (hex && isalpha((int)*s)) ) {
 		if( hex  && !((tolower(*s) >= 'a' && tolower(*s) <= 'f') 
 			|| isdigit(*s)) ) return i;
 		i++;
