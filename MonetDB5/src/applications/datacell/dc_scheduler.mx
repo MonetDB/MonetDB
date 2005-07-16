@@ -43,6 +43,10 @@ command datacell.startScheduler(delay:int)
 address DCstartScheduler
 comment "Give an overview of the actions taken";
 
+command datacell.startScheduler(tries:int,delay:int)
+address DCnaiveScheduler
+comment "Give an overview of the actions taken";
+
 command datacell.stopScheduler()
 address DCstopScheduler
 comment "Give an overview of the actions taken";
@@ -51,13 +55,16 @@ command datacell.schedulerLog():bat[:timestamp,:str]
 address DCschedulerLog
 comment "Give an overview of the actions taken";
 
+command datacell.dumpSchedulers():void
+address DCdumpSchedulers
+comment "Show the status of the datacell schedulers";
 @- Implementation
 
 @h
 #ifndef _DC_SCHEDULER_DEF
 #define _DC_SCHEDULER_DEF
 
-/* #define DEBUG_DC_SCHEDULER */
+/* #define DEBUG_DC_SCHEDULER*/
 
 #include "mal.h"
 #include "mal_client.h"
@@ -74,7 +81,7 @@ comment "Give an overview of the actions taken";
 #include "mal_exception.h"
 #include "dc_receptor.h"
 
-extern str DCnaiveScheduler();
+extern str DCnaiveScheduler(int *ret, int *tries, int *delay);
 
 #define MAXBUF 1024
 
@@ -85,37 +92,96 @@ DCschedulerLog(int *ret, str* expr){
 }
 str
 DCstartScheduler(int *ret, int* delay){
-	(void) ret;
-	return DCnaiveScheduler(5, *delay);
+	int tries= 5;
+	return DCnaiveScheduler(ret,&tries, delay);
 }
 str
 DCstopScheduler(int *ret, str* expr){
 	(void) expr; (void) ret;
 	return throwMessage("datacell.stopScheduler","nyi");
 }
-@- Naive scheduling
+@- Scheduler infrastructure
+There may be different schedulers active to process
+the queries. Each pump is associated with a single scheduler
+queue using its identity. It is up to the application
+to avoid that conflicting pumps end up in concurrent execution.
+
 @c
-str
-DCnaiveScheduler(int cycles, int delay){
+struct{
+	str name;
+	MT_Lock lock;
+	MT_Id pid;
+	int id;
+	int cycles, delay;
+} schedulers[2]={ {"idle",0,0,0,0,0}, {"naive",0,0,-1,0,0}};
+
+str DCdumpSchedulers(int *ret){
 	int i;
+	(void) ret;
+	for(i=0; i<2; i++)
+		stream_printf(GDKout,"scheduler %s: pid=%d id=%d cycles=%d delay=%d\n",
+			schedulers[i].name,
+			schedulers[i].pid,
+			schedulers[i].id,
+			schedulers[i].cycles,
+			schedulers[i].delay
+		);
+	return MAL_SUCCEED;
+}
+@- Naive scheduling
+The naive scheduler is #0 in the scheduler list.
+@c
+void DCnaiveLoop(int v){
+	DCpump p, plimit;
 	Client c= getClient();
 	str msg;
-#ifdef DEBUG_DC_SCHEDULER
-	stream_printf(GDKerr,"#Start scheduling pumps with delay %d\n",delay);
-#endif
-	while( cycles-- > 0){
-		for(i=0; i< pumpindex; i++)
-		if( pumps[i].name  && pumps[i].mal[0] && pumps[i].kind== NUCLEUS){
+	timestamp ts;
+	int	duration;
+	oid o= oid_nil;
+	(void) v;
+	while( schedulers[1].cycles-- > 0){
+		plimit = pumps+pumpindex;
+		for(p=pumps; p< plimit; p++)
+		if( p->status > 0 && p->mal[0] && p->scheduler== 1){
 #ifdef DEBUG_DC_SCHEDULER
 		stream_printf(GDKerr,"#Run %s\n",p->name);
-		printFunction(GDKout,pumps[i].malblk[0],0);
+		printFunction(GDKout,p->malblk[0],0);
 #endif
-			msg= runMAL(c,pumps[i].malblk[0],1,0,0,0);
+			duration= (int) GDKusec();
+			msg= runMAL(c,p->malblk[0],1,0,0,0);
+			duration= (int) GDKusec() - duration;
 			if( msg)
 				stream_printf(GDKout,"%s",msg);
+			p->calls++;
+			MTIMEcurrent_timestamp(&ts);
+			BUNins(p->public[0],&o, &ts);
+			BUNins(p->public[1],&o, &duration);
+			BUNins(p->public[2],&o, msg?msg:"OK");
 		}
-		MT_sleep_ms(delay);
+		MT_sleep_ms( schedulers[1].delay);
 	}
+	schedulers[1].pid = 0;
+}
+str
+DCnaiveScheduler(int *ret, int *cycles, int *delay){
+	(void) ret;
+#ifdef DEBUG_DC_SCHEDULER
+	stream_printf(GDKerr,"#Start scheduling pumps with delay %d\n", *delay);
+#endif
+	if( schedulers[1].lock== 0)
+		schedulers[1].lock= MT_create_lock();
+	mal_set_lock(schedulers[1].lock,"naiveScheduler");
+	schedulers[1].cycles= *cycles;
+	schedulers[1].delay = *delay;
+	if( schedulers[1].pid == 0){
+		/* start this scheduler if it wasn;t running */
+		if( MT_create_thread(&schedulers[1].pid,
+					(void(*) (void*)) DCnaiveLoop,0)< 0){
+			throwMessage("datacell.scheduler","could not start scheduler");
+			schedulers[1].pid = 0;
+		}
+	}
+	mal_unset_lock(schedulers[1].lock,"naiveScheduler");
 	return MAL_SUCCEED;
 }
 
@@ -163,9 +229,6 @@ DCisolate(int *ret, str *uname, str *target){
 	}
 	p->usedby= p - pumps;
 	mal_unset_lock(p->lock,"datacellIsolate");
-#ifdef DEBUG_DC_SCHEDULER
-		stream_printf(GDKerr,"#%s\n",log);
-#endif
     return MAL_SUCCEED;
 }
 str
@@ -194,17 +257,13 @@ DCstartPump(int *ret, str *name)
 	p= DClocatePump(*name);
 	if( p == 0)
 		return throwMessage("datacell.startReceptor","unknown host");
-	if( p->host == 0 )
-		return throwMessage("datacell.startReceptor","unknown host");
-	if( p->port < 0 )
-		return throwMessage("datacell.startReceptor","unknown port");
 #ifdef DEBUG_DCRECEPTOR
 	stream_printf(GDKout,"#Activate reception %s at port %d of %s\n",
 		p->name,p->port,p->host);
 #endif
 
 	if( p->status == -1){
-		if( p->kind == RECEPTOR)
+		if( p->kind == RECEPTOR )
 			msg= DClistenReceptor(p, NULL);
 		else msg= throwMessage("datacell.startPump","NYI");
 	}
@@ -219,10 +278,6 @@ DCstopPump(int *ret, str *name)
 	p= DClocatePump(*name);
 	if( p == 0)
 		return throwMessage("datacell.startReceptor","unknown host");
-	if( p->host == 0 )
-		return throwMessage("datacell.startReceptor","unknown host");
-	if( p->port < 0 )
-		return throwMessage("datacell.startReceptor","unknown port");
 #ifdef DEBUG_DCRECEPTOR
 	stream_printf(GDKout,"#Deactivate reception %s at port %d of %s\n",
 		p->name,p->port,p->host);

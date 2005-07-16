@@ -168,10 +168,23 @@ DCpumpDefinition(int *ret, str *name, str *lang, str *qry ){
 	if( DClocatePump(*name) )
 		return throwMessage("datacell.pump","pump re-defined");
 	p= DCnewPump();
+	DCclick(p);
+    if( p->cols< p->cap){
+        p->columns[p->cols]= GDKstrdup("duration");
+        p->types[p->cols]=  TYPE_int;
+        p->private[p->cols]= DCcontainer(TYPE_int,256);
+        p->public[p->cols++]=  DCcontainer(TYPE_int,256);
+        p->columns[p->cols]= GDKstrdup("status");
+        p->types[p->cols]=  TYPE_str;
+        p->private[p->cols]= DCcontainer(TYPE_str,256);
+        p->public[p->cols++]=  DCcontainer(TYPE_str,256);
+    } else
+        return throwMessage("datacell.define","out of column space");
 	p->kind= NUCLEUS;
 	p->name= GDKstrdup(*name);
 	p->lang= GDKstrdup(*lang);
 	p->query= GDKstrdup(*qry);
+	p->scheduler= 1;  /* default to naive scheduling */
 	if( strcmp("sql",*lang)==0){
 		msg= DCcompileQuery(&prg,qry,name);
 		/* renameFunction(prg,"pumps",*name);*/
@@ -180,7 +193,7 @@ DCpumpDefinition(int *ret, str *name, str *lang, str *qry ){
 		if( s== 0 )
 			return throwMessage("datacell.pump","symbol not found");
 		p->malblk[0]= s->def;
-		DCflowDependencies(p);
+		/* DCflowDependencies(p);*/
 	} else return throwMessage("datacell.pump","Non-supported language");
 	return msg;
 }

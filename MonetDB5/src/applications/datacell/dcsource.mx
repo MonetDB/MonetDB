@@ -202,7 +202,7 @@ int main(int argc, char **argv){
 	
 		while(N-->0){
 			int i,r;
-			r= rand();
+			r= random? rand(): time(0);
 			stream_printf(toServer,"%d",r);
 			if( delay<0) printf("%d",r);
 

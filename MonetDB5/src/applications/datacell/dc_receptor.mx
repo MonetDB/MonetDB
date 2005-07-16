@@ -459,7 +459,7 @@ is interrupted with each stream_flush from the sensorSource.
 		p->pending += res;
 		p->received += res;
 		if( res )
-			p->batches++;
+			p->calls++;
 	}
 	for(i=0; i<k; i++) {
         GDKfree( fmt[i].sep );

@@ -7,38 +7,39 @@ include datacell;
 datacell.open();
 
 datacell.receptor("ping","localhost", 6000);
-datacell.define("ping","value",:int);
+datacell.define("ping","event",:int);
 datacell.putPicture("ping","http://www.cwi.nl/~mk/datacell/images/jinjang.jpg");
 
 datacell.emitter("pong","localhost", 6001);
-datacell.define("pong","value",:int);
+datacell.define("pong","event",:int);
 datacell.putPicture("pong","http://www.cwi.nl/~mk/datacell/images/jinjang.jpg");
 
 datacell.dump();
 
-datacell.pump("ball","sql","insert into pong select * from ping;");
+datacell.pump("bat","sql","insert into pong select * from ping;");
 #g:= datacell.compiler("insert into pong select * from ping;");
 #io.print(g);
 #mdb.showFunction("user",g);
 
-s:= datacell.getSource("ball");
+s:= datacell.getSource("bat");
 io.print(s);
-s:= datacell.getSink("ball");
+s:= datacell.getSink("bat");
 io.print(s);
 
 #manually fill the receptor private buffer with a single element
 # it should be transported to the emitter
 datacell.startPump("ping");
 (pub:bat[:void,:timestamp], priv:bat[:void,:timestamp]) := datacell.bindReceptor("ping","click");
-bat.insert(priv,nil,1:timestamp);
-(public:bat[:void,:int], private:bat[:void,:int]) := datacell.bindReceptor("ping","value");
+z := mtime.current_timestamp();
+bat.insert(priv,nil,z);
+(public:bat[:void,:int], private:bat[:void,:int]) := datacell.bindReceptor("ping","event");
 bat.insert(private,nil,3);
 io.print(private);
 
 #perform a single schedule run
 datacell.startScheduler(1000);
 
-(publ,priv) := datacell.bindEmitter("pong","value");
+(publ,priv) := datacell.bindEmitter("pong","event");
 io.print(publ);
 io.print(priv);
 

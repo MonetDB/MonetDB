@@ -286,12 +286,13 @@ typedef struct DC_PUMP{
 	int	timeout;	/* in milliseconds */
 
 	/* scheduling properties here */
+	int scheduler;	/* which queue to use */
 	int status;		/* scheduling status */
 	int pending;	/* events received for processing */
 	int received; 	/* total received events since start */
 	timestamp start;/* first event time stamp */
 	int ticks;		/* ticks spent in receiving data */
-	int batches;	/* number of batch reads */
+	int calls;	/* number of batch reads */
 } *DCpump, DCpumpRecord;
 
 mal_export DCpump DCnewPump();
@@ -299,6 +300,7 @@ mal_export ptr isReceptor(str name);
 mal_export ptr isEmitter(str name);
 mal_export DCpump DClocatePump(str nme);
 mal_export BAT *DCcontainer(int tpe, int cap);
+mal_export void DCclick(DCpump p);
 
 mal_export DCpump pumps;
 mal_export int pumpindex, pumplimit;
@@ -311,7 +313,7 @@ Furthermore, the BATs can be made accessible from the SQL frontend.
 @c
 #include "datacell.h"
 
-char *cellKind[]= {"receptor","nucleus","emitter"};
+char *cellKind[]= {"receptor","nucleus","emitter","pump"};
 @-
 The pump containers are actually simple relational tables.
 The first implementation was focussed on storing everything
@@ -599,6 +601,15 @@ BAT *DCcontainer(int tpe, int cap){
 	return bn;
 }
 
+void DCclick(DCpump p){
+	if( p->cols ==0 ){
+		p->columns[0]= GDKstrdup("click");
+		p->types[0]=  getTypeIndex("timestamp",9,TYPE_int);
+		p->private[0]= DCcontainer(p->types[0],256);
+		p->public[0]=  DCcontainer(p->types[0],256);
+		p->cols++;
+	}
+}
 str DCdefine(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	DCpump p;
@@ -620,13 +631,7 @@ str DCdefine(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	if( strcmp(p->columns[i],cname)==0)
 		return throwMessage("datacell.define","Column already defined");
 
-	if( p->cols ==0 ){
-		p->columns[0]= GDKstrdup("click");
-		p->types[0]=  getTypeIndex("timestamp",9,TYPE_int);
-		p->private[0]= DCcontainer(p->types[0],256);
-		p->public[0]=  DCcontainer(p->types[0],256);
-		p->cols++;
-	}
+	DCclick(p);
 
 	if( p->cols< p->cap){
 		p->columns[p->cols]= GDKstrdup(cname);
@@ -854,9 +859,11 @@ DCgetDynamicProperties(int *bid, str *name){
          return throwMessage("datacell.getDynamicProperties", 
 			"Cannot create container");
 
-	BUNins(bn,"host",p->host);
-	snprintf(buf,128,"%d",p->port);
-	BUNins(bn,"port",buf);
+	if( p->host) {
+		BUNins(bn,"host",p->host);
+		snprintf(buf,128,"%d",p->port);
+		BUNins(bn,"port",buf);
+	}
 
 	snprintf(buf,128,"%d",p->status);
 	BUNins(bn,"status",buf);
@@ -888,8 +895,8 @@ DCgetDynamicProperties(int *bid, str *name){
 	if( p->status >=0){
 		snprintf(buf,128,"%d",p->received);
 		BUNins(bn,"received",buf);
-		snprintf(buf,128,"%d",p->batches);
-		BUNins(bn,"batches",buf);
+		snprintf(buf,128,"%d",p->calls);
+		BUNins(bn,"calls",buf);
 		if( p->ticks> 0){
 			snprintf(buf,128,"%4.2f/ms",(p->received+0.0)/(p->ticks/1000));
 			BUNins(bn,"rate",buf);
@@ -1002,8 +1009,7 @@ str
 DCgetQuery(str *ret,str  *name){
 	DCpump p;
 	p= DClocatePump(*name);
-	if( p  && (p->kind== RECEPTOR || p->kind== EMITTER || p->kind==NUCLEUS) &&
-		p->query ){
+	if( p  && p->query ){
 		*ret= GDKstrdup(p->query);
 	} else
 		*ret= GDKstrdup("");
@@ -1184,4 +1190,5 @@ DCkeepTuple(int *ret, str *name, int *dst, void *src){
 	mal_unset_lock(p->lock,"datacell.append");
 	return msg;
 }
+
 @}
