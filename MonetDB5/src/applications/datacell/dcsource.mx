@@ -140,7 +140,7 @@ int main(int argc, char **argv){
 	int port=50000;
 	char *fname= "";
 	int delay = -1;
-	int batch=1,N=1, cols=1, random=1, temporal=0;
+	int batch=1,N=1, cols=1, random=1;
 	char buf[MAXBUF];
 
 	if( argc== 1) usage();
@@ -173,11 +173,11 @@ int main(int argc, char **argv){
 		break;
 	case 'r':
 		/* generate random number records */
-		random=1; temporal=0;
+		random=1; 
 		break;
 	case 't':
 		/* generate temporal event records */
-		random=0; temporal=1;
+		random=0; 
 		break;
 	case '?':
 		usage();

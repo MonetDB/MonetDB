@@ -1480,7 +1480,7 @@ str RSfromString(str* src, int *len, resultset* retval) {
  * @return "ResultSet"
  */
 int RStoString(str* retval, int* len, ptr handle) {
-	resultset* rs;
+	resultset* rs= 0;
 
 	if (RSBgetResultSet(&rs, handle) != MAL_SUCCEED) {
 		if (*retval == NULL) *retval = GDKmalloc(sizeof(str) * 4);
