@@ -12,8 +12,6 @@ stdout of test 'color` in directory 'src/modules/atoms` itself:
 # dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_atoms
 # Visit http://monetdb.cwi.nl/ for further information.
-#include color;
-!ERROR: Redefinition of atom 'color'
 #function testcolor();	
 #    c:= color.rgb(100,101,102);
 #    io.print(c);	
