@@ -5,7 +5,8 @@ system architecture, services, and
 best practices on using its components.
 
 The manual is produced from a Texinfo framework file, which collects
-and organizes bits-and-pieces of information. 
+and organizes bits-and-pieces of information scattered around the many
+source components comprising the MonetDB software family. 
 Since the system is under constant development,
 there is no guarantee of consistency
 between the documentation of the individual system components.
@@ -19,12 +20,13 @@ using @emph{ps2pdf}.
 Alternative formats, e.g. XML and DocBook format, can be
 readily obtained from the Texinfo file.
 
-This copyright(2004) and the MonetDB logo are owned by CWI.
+The copyright(2005) and the MonetDB logo are owned by CWI.
 Other trademarks and copyrights referred to in this manual are
 the property of their respective owners.
 
 @emph{Disclaimer} The reference manual is still under development,
-much like the underlying source code base. This may lead to inconsistencies,
+much like the underlying source code base. This may lead to 
+incomplete and inconsistencies descriptions,
 for which we apologize in advance. You can help improving the manual
 using the user commentary system included in the web-site.
 @menu
@@ -35,24 +37,40 @@ using the user commentary system included in the web-site.
 
 @node Intended audience, Manual Generation,,About this manual
 @section Intended Audience
-The information contained in the manual is purposely dense and geared
-at users with a basic background in database technology. 
-The manual does not contain a general introduction to relational DBMS 
-technology, the query languages SQL and Xquery, or 
-the application programming interfaces JDBC and ODBC. 
-We refer to the abundance of articles and papers on these topics.
+The MonetDB reference manual is aimed at programmers and application
+developers with an intermediate level exposure to database technology,
+its embedding in host environments such as C, PHP, or middleware
+solutions based on JDBC and ODBC.
+
+The route towards becoming a database application expert is long
+and hard. It requires building experiences from small toy examples
+towards large business critical application.
+The MonetDB reference manual is not designed for this purpose,
+but in combination with the abundance of articles and papers on the web
+it should be possible to create your first MonetDB/SQL application
+without much difficulty.
 
 Users interested in building applications on top of the MonetDB
 product suite are advised to read the following sections:
 @iftex
+@enumerate
+@item
+Getting started
+@item 
+The SQL language
+@end enumerate
 @end iftex
 @menu
 * Installation ::
+* SQL ::
 * The application interfaces::
 @end menu
 
+The bulk of the MonetDB reference manual exposes the techniques
+available in the back-end and which provides the basis for really
+high-performent applications.
 
-Detailed information can be obtained from the source files, which 
+More detailed information can be obtained from the source files, which 
 is mostly extensively commented.
 @menu
 * Intended audience::
@@ -95,4 +113,6 @@ The result, however, still includes the unexpanded tex info macros.
 @end menu
 
 @node Conventions and notation, , Manual Generation,About this manual
-[to be filled]
+The conventions used in this manual are straightforward.
+The program snippets follow the style of the @emph{texi} example
+environment.

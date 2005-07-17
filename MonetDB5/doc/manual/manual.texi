@@ -5,14 +5,14 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED 21/11/2004
+@set UPDATED 17/07/2005
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
      
 Last updated: @value{UPDATED}
 
-     Copyright (C) 2000-2004 CWI
+     Copyright (C) 2000-2005 CWI
      
      Permission is granted to make and distribute verbatim
      copies of this manual provided the copyright notice and
@@ -156,6 +156,16 @@ Table of contents
 
 @node Optimizer framework, Property management , Boxed variables, TOC
 @include mal_optimizer.bdy.texi
+@include mal_commonExpressions.bdy.texi
+@include mal_emptyset.bdy.texi
+@include mal_factorize.bdy.texi
+@include mal_garbageCollector.bdy.texi
+@include mal_multiplex.bdy.texi
+@include mal_partitionedQuery.bdy.texi
+@include mal_peephole.bdy.texi
+@include mal_strengthReduction.bdy.texi
+@include mal_costmodel.bdy.texi
+@include optimizer.bdy.texi
 
 @node Property management, Name space management , Optimizer framework, TOC
 @include mal_properties.bdy.texi
