@@ -119,6 +119,7 @@ printf("first=%d last=%d \n",first,last);
 	}
 	return MAL_SUCCEED;
 }
+@}
 @-
 The translation of a MAL block into a multi-iterator only works if
 the network flow is simple, i.e there exists a 'single' sink, 
@@ -130,6 +131,7 @@ The validFlowNetwork searches the next basic block to
 be considered as safe to expand. It first skips to the
 next instruction that uses the variable mentioned.
 An assignment to the target is not allowed [to be checked separately]
+@{
 @c
 int
 BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid){
@@ -163,6 +165,7 @@ BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid){
 	}
 	return iocount>0 ;
 }
+@}
 @-
 The first implementation takes a query block and replaces the first
 bat variable with its partitioned equivalent.
@@ -171,6 +174,7 @@ your way through the complete graph incrementally.
 They denote an inclusive range.
 A copy of the program block is made by default. This could be
 optimized away later.
+@{
 @c
 str
 BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid){
@@ -244,3 +248,4 @@ accumulated version.
 	optimizerCheck(mb,"BPTreplacement",actions,GDKusec()-clk);
 	return MAL_SUCCEED;
 }
+@}

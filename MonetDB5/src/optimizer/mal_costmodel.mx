@@ -37,9 +37,6 @@ information produced by the front-end compiler.
 
 Ideally the BAT variable comes with a histogram property
 to make accurate prediction, otherwise the following heuristics are used.
-@table
-@item selections
-@end table
 @{
 @+ Implementation section
 @h

@@ -554,6 +554,7 @@ instruction can be removed from further consideration. However, in the case
 that a designated function is selected for optimization (e.g. 
 CXoptimizer(user,qry)) the pc is assumed 0. The first instruction always
 denotes the signature and can not be removed.
+@{
 @c
 #include "mal_optimizer.h"
 #include "mal_interpreter.h"
@@ -621,6 +622,7 @@ str MALoptimizer(Client c)
 {
 	return optimizeMALBlock(c->curprg->def);
 }
+@}
 @+ Lifespan analysis
 The lifespan is calculated once at the beginning of the optimizer sequence.
 It should either be maintained to reflect the most accurate situation while
@@ -631,6 +633,7 @@ Unclear what will be the best strategy. For the time being we just recalc.
 Also take care of the nested block structure. Because the span should
 fall within a single block. Alternatively, the end of lifespan
 should adhire to the end of block. [TODO]
+@{
 @c
 void debugLifespan(MalBlkPtr mb){
     int i;
@@ -683,6 +686,7 @@ int isTouched(MalBlkPtr mb, int varid, int p1, int p2){
     }
     return FALSE;
 }
+@}
 @+ Flow analysis
 The flow graph plays a crucial role in many optimization steps.
 It is unclear as yet what primitives and what storage structure is
@@ -694,6 +698,7 @@ pca flows directly into pcb, without its parameters being changed inbetween.
 This calls for checking assignments as well as operators that use any of
 the targets of pca, but which also change them (e.g. insert/delete bat)
 TODO, now more restrictive then needed.
+@{
 @c
 int flowStep(MalBlkPtr mb, int pca, int pcb){
     InstrPtr pa,pb;
@@ -714,6 +719,7 @@ int flowStep(MalBlkPtr mb, int pca, int pcb){
     }
     return TRUE;
 }
+@}
 @+ Basic Algebraic Blocks
 Many code snippets produced by e.g. the SQL compiler is just 
 a linear representation of an algebra tree/graph. Its detection
@@ -736,6 +742,7 @@ occurences of the variable within an iterator block.
 
 During this process, we should be aware that parameters could be
 changed as part of a call. They are marked as unsafe.
+@{
 @c
 int ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
 {   int i,k, blkcount=0;
@@ -826,11 +833,13 @@ str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	optimizerCheck(mb,"aliasRemoval",1,GDKusec()-clk);
     return NULL;
 }
+@}
 @+ Access Mode optimizer
 Walk through the program code searching for setWriteMode
 and make sure it is done once per basic block. It assumes
 that instructions do not change the access mode as a side
 effect.
+@{
 @c
 static MALfcn AMsetWriteMode;
 
@@ -873,7 +882,7 @@ str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		removeInstruction(mb,pci);
     return MAL_SUCCEED;
 }
-
+@}
 @+ Common subexpression elimination
 Common subexpression elimination merely involves a single scan through the 
 program block to detect re-curring statements.
@@ -888,6 +897,7 @@ the dataflow graph for all objects involved (BATs, everything kept in boxes).
 Example, `function insert(b:bat{+unsafe}, ...)`
 Function whose side-effect may be dissastrous for any variable are marked
 as 'corrupt'.
+@{
 @c
 
 int hasSameSignature(InstrPtr p, InstrPtr q){   
@@ -915,11 +925,12 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 	}
     return TRUE;
 }
-
+@}
 @-
 If two instructions have elements in common in their target list,
 it means a variable is re-initialized and should not be considered
 an alias.
+@{
 @c
 int hasCommonResults(InstrPtr p, InstrPtr q)
 {
@@ -929,10 +940,12 @@ int hasCommonResults(InstrPtr p, InstrPtr q)
     if( p->argv[k]== q->argv[l]) return TRUE;
     return FALSE;
 }
+@}
 @-
 For each function it should be relatively easy to determine its
 safety property. This calls for accessing the function MAL block
 and to inspect the arguments of the signature.
+@{
 @c
 int isUnsafeFunction(MalBlkPtr mb,  InstrPtr q)
 {
@@ -967,6 +980,7 @@ int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid)
     (void) mb; (void)pcf; (void) pcl; (void) varid; /*fool compiler */
     return TRUE;
 }
+@}
 @-
 Any instruction may block identification of a common
 subexpression. It suffices to stumble upon an unsafe function 
@@ -987,6 +1001,7 @@ The instruction G1:=g(D,E,F) is blocking if G1 is an alias for {A,B,C}.
 Alternatively, function g() may be unsafe and {D,E,F} has a non-empty
 intersection with {A,B,C}. An alias can only be used later on for
 readonly (and not be used for a function with sideeffects)
+@{
 @c
 int safetyBarrier(MalBlkPtr mb,InstrPtr p, InstrPtr q)
 {
@@ -1050,6 +1065,7 @@ int isUpdated(MalBlkPtr mb, int pc)
     }
     return FALSE;
 }
+@}
 @+ Dead Coder Removal
 Dead code fragments are recognized by assignments to variables
 whose value is not consumed any more. Note that the DCR should
@@ -1074,6 +1090,7 @@ functions should be marked with a property (sideeffects)
 The assigments in an iterator also requires care, because
 the REDO statement may turn an instruction into a source for
 previouse ones. 
+@{
 @c
 int hasSideEffects(InstrPtr p){
     if( blockStart(p) || blockExit(p) || blockCntrl(p)) return TRUE;
@@ -1166,6 +1183,7 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     /* remove the DCoptimizer request */
     return NULL;
 }
+@}
 @-
 The second form of dead code removal is to detect expressions, whose
 result is not used. This can be detected by look-ahead for any
@@ -1222,6 +1240,7 @@ y:= join(R,S);
 z:= semiselect(y,Z,l,h);
 @end example
 
+@{
 @-
 During a final pass through the program, we can convert all combinators 
 back into their elementary steps.
@@ -1232,7 +1251,6 @@ back into their elementary steps.
 A more complete implementation should als push the selection through
 multiple operators. In particular, a reverse operator may obscure
 the opportunity to perform the select push through. 
-
 @c
 int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 {
@@ -1333,6 +1351,7 @@ str SPoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	optimizerCheck(mb,"selectPushDown",squeeze, GDKusec()-clk);
     return NULL;
 }
+@}
 @-
 Pushing a selection geared at the left operand through the join operator
 is more complex, because you can only recognize those instances when later
@@ -1347,10 +1366,11 @@ Za := select(ZZ, l,h);
 Note that this operation depends on SPoptimizer, because it already
 pushes down the selection through the semijoin.
 SHould be done differently
-@c
+
 @+ Reverse removal
 Combinations of reversals should be removed. It should be called
 whenever a new reversal is introduced.
+@{
 @c
 str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,k,pc;
@@ -1394,6 +1414,7 @@ str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	optimizerCheck(mb,"reverseReverse",actions,GDKusec()-clk);
     return MAL_SUCCEED;
 }
+@}
 @+ Flow analysis
 For each variable we should determine its scope of stability.
 End-points in the flow graph are illustrative as dead-code,
@@ -1404,6 +1425,7 @@ Side-effect free evaluation is a property that should be known upfront.
 For the time being, we assume it for all operations known to the system.
 The property `unsafe` is reserved to identify cases where this does not hold.
 Typically, a bun-insert operation is unsafe, as it changes one of the parameters.
+@{
 @c
 int showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f){
     InstrPtr p;
@@ -1473,6 +1495,7 @@ int removeDeadSource(MalBlkPtr mb, int pc, InstrPtr p){
     (void)mb; (void) pc; (void) p; /* fool the compiler */
     return FALSE;
 }
+@}
 @+ Barrier related optimizations
 The barrier blocks provide several bottlenecks for program analysis.
 In particular, properties of variables outside the block may depend
@@ -1482,14 +1505,19 @@ A few generic case can, however, be solved within the semantic context of
 the MAL intermediate. This include evaluation of constant expressions,
 and strength reduction, by moving possible expensive operations out of the
 loop if their are safe.
+@{
+@c
 int removeConstantExpression(MalBlkPtr mb, int pc, InstrPtr p){
     /* simple constant expressions within barrier blocks should be avoided*/
     /* return if it worked out */
+	(void) mb; (void) pc; (void) p;
     return FALSE;
 }
 int reduceBarrierStrength(MalBlkPtr mb, int pcfirst, int pclast){
+	(void) mb; (void) pcfirst; (void) pclast;
     return FALSE;
 }
+@}
 @+ Optimizer utilities
 Building optimizer variants require several utilities to ease the life
 of the developer. This includes primitives the walk through the
@@ -1503,13 +1531,14 @@ of the MAL block before this irreversable step is taken.
 The argument is the index of the instruction to be moved around to
 the new location identified by the target.
 The routines for this aspect are available from in mal_instruction.mx
-
+@{
 @c
 void moveConstantsFirst(MalBlkPtr mb){
     /* move all expression dealing with constants to the beginning */
     /* could be used to shortcut stack initialization */
     (void) mb; /*fool compilers */
 }
+@}
 @+ Relational expression optimizer
 The query plans produced by a relational query optimizer can be
 fine-tuned before being executed. In particular, it makes sense
@@ -1519,6 +1548,7 @@ of BATs to minimize joins.
 The optimizer routines below provide the building blocks.
 They can be called as ordinary MAL instructions, which eases
 debugging.
+@{
 @c
 str RXoptimizer(Client cntxt, MalBlkPtr mb, int pc){
 	(void) cntxt; (void) mb; (void) pc;
@@ -1530,6 +1560,7 @@ str RXoptimizer(Client cntxt, MalBlkPtr mb, int pc){
 #endif
 	return MAL_SUCCEED;
 }
+@}
 @-
 The RXemptyBAT operator has knowledge on a limited set
 of relational operators.
@@ -1539,6 +1570,7 @@ with a simple assignment.
 The patterns are interpreted in a strictly linear fashion.
 This is used to activate multiple operations on the same
 pattern.
+@{
 @c
 #define REMEMBER	0
 #define ALIAS_1		1
@@ -1621,29 +1653,34 @@ str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		removeInstruction(mb,pci);
 	return MAL_SUCCEED;
 }
-@+ Operator Reduction
-Scientific calculations are pretty expensive in the current kernel,
-because new BATs are created with each operator. We can reduce this 
-memory hunger by detecting opportunities for accumulated processing.
+@}
+@+ Operand replacement
+Bulk arithmetic calculations are pretty expensive,
+because new BATs are created for each expression. 
+This memory hunger can be reduced
+by detecting opportunities for cummulative processing, i.e.
+where a temporary variable is overwritten.
 
 For example, consider the query
 @example
 	t3:= batcalc.*(64,t2);
 	t4:= batcalc,+(t1,t3);
 @end example
-If variable t2 is not used any further, we can re-use its storage space
-and propagate the alias through the remainder of the code.
+If variable t2 is not used any further and retains its type throughout
+the program block, we can re-use its storage space
+and propagate its alias through the remainder of the code.
 @example
 	batcalc.*(t2,64,t2);
 	t4:= batcalc.+(t2,t1,t2);
 @end example
 
-The implementation is straight forward. We only deal with the
+The implementation is straight forward. It only deals with the
 arithmetic operations available in batcalc right now.
 This set will be gradually be extended.
 The key decision is to determine whether we may overwrite
 any of the arguments. We assume this is permissible if the argument
 was produced by an operator from the algebra, algebra2, group, aggrX3 modules.
+@{
 @c
 int ORvalidSource(MalBlkPtr mb, int v, int pc, int stop){
 	InstrPtr p;
