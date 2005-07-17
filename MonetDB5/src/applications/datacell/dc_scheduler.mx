@@ -265,7 +265,6 @@ DCstartPump(int *ret, str *name)
 	if( p->status == -1){
 		if( p->kind == RECEPTOR )
 			msg= DClistenReceptor(p, NULL);
-		else msg= throwMessage("datacell.startPump","NYI");
 	}
 	p->status=1;
 	return msg;
@@ -284,5 +283,5 @@ DCstopPump(int *ret, str *name)
 #endif
 
 	p->status=0;
-	return throwMessage("datacell.stopPump","nyi");
+	return MAL_SUCCEED;
 }

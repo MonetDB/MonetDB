@@ -155,4 +155,5 @@ int main(int argc, char **argv){
 		time(&t);
 		printf("%s: %s\n", ctime(&t) ,buf);
 	}
+	return 0;
 }

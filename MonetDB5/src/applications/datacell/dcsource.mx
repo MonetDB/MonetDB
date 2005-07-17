@@ -253,4 +253,5 @@ int main(int argc, char **argv){
 			/* deal with timed delays */
 		}
 	}
+	return 0;
 }
