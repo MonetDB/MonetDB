@@ -12,7 +12,7 @@ import nl.cwi.monetdb.mcl.*;
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
-public class MCLIOException {
+public class MCLIOException extends MCLException {
 	public MCLIOException(String msg) {
 		super(msg);
 	}

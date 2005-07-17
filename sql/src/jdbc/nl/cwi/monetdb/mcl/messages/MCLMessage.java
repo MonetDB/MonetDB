@@ -127,15 +127,22 @@ abstract class MCLMessage {
 	 * addSentence() method which checks them for validity.
 	 *
 	 * @param in the InputStream to write from
+	 * @return an MCLMessage as read from the stream
 	 * @throws MCLException if the data read from the stream is invalid
 	 * or reading from the stream failed
 	 */
-	public static void readFromStream(MCLInputStream in) throws MCLException {
+	public static MCLMessage readFromStream(MCLInputStream in) throws MCLException {
 		// read till prompt and feed to addSentence implementation
 		// function
 		MCLSentence sentence = in.readSentence();
+
+		// find out which message we need: synchronisation problem
+		MCLMessage msg = new ChallengeMessage();
+		
 		while (sentence.getType() != MCLSentence.PROMPT) {
-			addSentence(sentence);
+			msg.addSentence(sentence);
 		}
+
+		return(msg);
 	}
 }

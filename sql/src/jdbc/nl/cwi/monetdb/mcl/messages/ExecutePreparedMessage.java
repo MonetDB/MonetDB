@@ -71,16 +71,12 @@ public class ExecutePreparedMessage extends MCLVariableMessage {
 		
 		sentences = new MCLSentence[4];
 		this.id = id;
-		try {
-			this.columncount = Integer.parseInt(columncount);
-			this.tuplecount = Integer.parseInt(tuplecount);
-		} catch (NumberFormatException e) {
-			throw new MCLException("columncount (" + columncount + ") or tuplecount(" + tuplecount + ") is not a parsable number");
-		}
+		this.columncount = columncount;
+		this.tuplecount = tuplecount;
 		this.ctype = ctype;
 		sentences[0] = new MCLSentence(MCLSentence.MCLMETADATA, "id", id);
-		sentences[1] = new MCLSentence(MCLSentence.MCLMETADATA, "columncount", columncount);
-		sentences[2] = new MCLSentence(MCLSentence.MCLMETADATA, "tuplecount", tuplecount);
+		sentences[1] = new MCLSentence(MCLSentence.MCLMETADATA, "columncount", "" + columncount);
+		sentences[2] = new MCLSentence(MCLSentence.MCLMETADATA, "tuplecount", "" + tuplecount);
 		sentences[3] = new MCLSentence(MCLSentence.MCLMETADATA, "ctype", ctype);
 		variableSentences = new ArrayList(this.tuplecount);
 	}
@@ -132,10 +128,18 @@ public class ExecutePreparedMessage extends MCLVariableMessage {
 					id = value;
 					sentences[0] = in;
 				} else if ("columncount".equals(prop)) {
-					// columncount = value;
+					try {
+						columncount = Integer.parseInt(value);
+					} catch (NumberFormatException e) {
+						throw new MCLException("columncount (" + columncount + ") is not a parsable number");
+					}
 					sentences[1] = in;
 				} else if ("tuplecount".equals(prop)) {
-					// tuplecount = value;
+					try {
+						tuplecount = Integer.parseInt(value);
+					} catch (NumberFormatException e) {
+						throw new MCLException("tuplecount (" + tuplecount + ") is not a parsable number");
+					}
 					sentences[2] = in;
 				} else if ("ctype".equals(prop)) {
 					ctype = value;
@@ -149,7 +153,6 @@ public class ExecutePreparedMessage extends MCLVariableMessage {
 			break;
 			default:
 				throw new MCLException("Sentence type not allowed for this message: " + (char)in.getType());
-			break;
 		}
 	}
 
@@ -164,7 +167,7 @@ public class ExecutePreparedMessage extends MCLVariableMessage {
 	 * @throws MCLException if the input parameter is null or incorrect,
 	 * or if there are already tuplecount number of sentences as data.
 	 */
-	public void addQuerySentence(Sentence data) throws MCLException {
+	public void addQuerySentence(MCLSentence data) throws MCLException {
 		if (data == null) throw
 			new MCLException("sentence should not be null");
 		if (data.getType() != MCLSentence.QUERY) throw

@@ -45,9 +45,9 @@ public class MCLInputStream {
 			byte[] data = new byte[4];
 			int size = in.read(data);
 			if (size == -1) throw
-				new MCLException("End of stream reached");
+				new MCLIOException("End of stream reached");
 			if (size < 4) throw
-				new MCLException("Illegal start of sentence");
+				new MCLIOException("Illegal start of sentence (not enough data available)");
 
 			// put the four bytes in the ByteBuffer
 			bbuf.rewind();
@@ -63,13 +63,14 @@ public class MCLInputStream {
 			data = new byte[size - 1]; // minus the first byte (identifier)
 			lastType = in.read();
 			if (lastType < 0) throw
-				new MCLException("End of stream reached");
+				new MCLIOException("End of stream reached");
 			if (in.read(data) != size) throw
-				new MCLException("Unable to read complete sentence");
+				new MCLIOException("Unable to read complete sentence");
 
+			// note: MCLSentence constructor throws MCLException
 			return(new MCLSentence(lastType, data));
 		} catch (IOException e) {
-			throw new MCLException("IO operation failed: " + e.getMessage());
+			throw new MCLIOException("IO operation failed: " + e.getMessage());
 		}
 	}
 
@@ -93,7 +94,10 @@ public class MCLInputStream {
 			try {
 				readSentence();
 			} catch (MCLIOException e) {
-				// this is fatal, so rethrow it
+				// Hey look! we can catch a sub-exception of the
+				// Exception being thrown! :)  Doesn't that save us from
+				// a lot of work? ;;)  Anywayz, this is fatal, so
+				// rethrow it
 				throw e;
 			} catch (MCLException e) {
 				// we can just ignore this, for this error is

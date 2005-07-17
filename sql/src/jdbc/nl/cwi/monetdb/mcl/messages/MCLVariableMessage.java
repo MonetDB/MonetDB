@@ -1,5 +1,6 @@
 package nl.cwi.monetdb.mcl.messages;
 
+import java.util.*;
 import nl.cwi.monetdb.mcl.*;
 import nl.cwi.monetdb.mcl.io.*;
 
@@ -39,7 +40,7 @@ abstract class MCLVariableMessage extends MCLMessage {
 			if (sentences[i] == null)
 				return("Invalid Message");
 
-			ret += ((Message)variableSentences.get(i)).toString() + "\n";
+			ret += ((MCLMessage)variableSentences.get(i)).toString() + "\n";
 		}
 		ret += promptSentence.toString();
 		
@@ -64,10 +65,10 @@ abstract class MCLVariableMessage extends MCLMessage {
 			out.writeSentence(sentences[i]);
 		}
 		for (int i = 0; i < variableSentences.size(); i++) {
-			if (sentences[i] == null)
-				return("Invalid Message");
+			if (sentences[i] == null) throw
+				new MCLException("Invalid Message");
 
-			out.writeSentence((Message)variableSentences.get(i));
+			out.writeSentence((MCLSentence)variableSentences.get(i));
 		}
 		out.writeSentence(promptSentence);
 
