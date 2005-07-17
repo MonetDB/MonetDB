@@ -1,1 +1,1 @@
-let $a := doc("book.xml")//book[2]/author[1] return $a/self::last
+let $a := doc("book.xml")//book[2]/author[1]/last return $a/self::last
