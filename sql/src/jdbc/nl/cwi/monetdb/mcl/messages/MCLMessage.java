@@ -19,8 +19,10 @@ abstract class MCLMessage {
 
 	static {
 		try {
-			promptSentence = new MCLSentence('.', "");
-			morePromptSentence = new MCLSentence(',', "");
+			promptSentence =
+				new MCLSentence(MCLSentence.PROMPT, "");
+			morePromptSentence =
+				new MCLSentence(MCLSentence.MOREPROMPT, "");
 		} catch (MCLException e) {
 			throw new AssertionError("Unable to create core sentences");
 		}
@@ -129,6 +131,11 @@ abstract class MCLMessage {
 	 * or reading from the stream failed
 	 */
 	public static void readFromStream(MCLInputStream in) throws MCLException {
-		// implementation should go here :-o
+		// read till prompt and feed to addSentence implementation
+		// function
+		MCLSentence sentence = in.readSentence();
+		while (sentence.getType() != MCLSentence.PROMPT) {
+			addSentence(sentence);
+		}
 	}
 }

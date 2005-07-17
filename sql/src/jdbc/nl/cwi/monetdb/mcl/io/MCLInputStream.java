@@ -19,6 +19,8 @@ public class MCLInputStream {
 	private final InputStream in;
 	private final ByteBuffer bbuf;
 
+	private int lastType = 0;	// there is no line type with (char)0
+
 	/**
 	 * Creates a MCLInputStream and saves its argument, the input stream
 	 * in for later use.
@@ -38,7 +40,7 @@ public class MCLInputStream {
 	 * @throws MCLException if an IO error occurs or the sentence seems
 	 *         to be invalid
 	 */
-	public MCLSentence readSentence() throws MCLException {
+	public synchronized MCLSentence readSentence() throws MCLException {
 		try {
 			byte[] data = new byte[4];
 			int size = in.read(data);
@@ -59,15 +61,44 @@ public class MCLInputStream {
 				new MCLException("Illegal sentence length: " + size);
 
 			data = new byte[size - 1]; // minus the first byte (identifier)
-			int type = in.read();
-			if (type < 0) throw
+			lastType = in.read();
+			if (lastType < 0) throw
 				new MCLException("End of stream reached");
 			if (in.read(data) != size) throw
 				new MCLException("Unable to read complete sentence");
 
-			return(new MCLSentence(type, data));
+			return(new MCLSentence(lastType, data));
 		} catch (IOException e) {
 			throw new MCLException("IO operation failed: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * Tries to sync the protocol dialog by skipping sentences until
+	 * the prompt is found.  After an error has occurred when reading
+	 * sentences, like when an unknown sentence has been encountered,
+	 * a call of sync() tries to resync the protocol in order to allow
+	 * the client to continue the session.  If syncing fails (for
+	 * example because the stream is closed) an Exception is thrown.
+	 * Calling the method sync() on an MCLInputStream which is already
+	 * in sync (for instance when calling sync() twice) is a no-op, and
+	 * does not affect the stream in any way.
+	 *
+	 * @return all errors found when looking for the prompt as a String,
+	 * or null if no errors were found. 
+	 * @throws MCLException if syncing failed
+	 */
+	public void sync() throws MCLException {
+		while (lastType != MCLSentence.PROMPT) {
+			try {
+				readSentence();
+			} catch (MCLIOException e) {
+				// this is fatal, so rethrow it
+				throw e;
+			} catch (MCLException e) {
+				// we can just ignore this, for this error is
+				// recoverable
+			}
 		}
 	}
 

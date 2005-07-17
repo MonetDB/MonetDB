@@ -4,14 +4,15 @@ import java.util.*;
 import nl.cwi.monetdb.mcl.*;
 
 /**
- * An DereferenceRequestMessage is a server received message, sent by the
- * client in order to retrieve a reference from a result set.
+ * A PrepareMessage is a server received message, sent by the client in
+ * order to prepare a query that will be sent later which has optional
+ * unknown values represented by '?' characters.
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
-public class DereferenceRequestMessage extends MCLMessage {
+public class PrepareMessage extends MCLMessage {
 	/** The character that identifies this message */
-	public static final char identifier = 'r';
+	public static final char identifier = 'p';
 
 	private final static MCLSentence startOfMessageSentence;
 	
@@ -25,34 +26,33 @@ public class DereferenceRequestMessage extends MCLMessage {
 	}
 
 	// these represent the internal values of this Message
-	private String id;
+	private String data;
 	
 	/**
-	 * Constructs an empty DereferenceRequestMessage.  The sentences
-	 * need to be added using the addSentence() method.  This
-	 * constructor is suitable when reconstructing messages from a
-	 * stream.
+	 * Constructs an empty PrepareMessage.  The sentences need to be
+	 * added using the addSentence() method.  This constructor is
+	 * suitable when reconstructing messages from a stream.
 	 */
-	public DereferenceRequestMessage() {
+	public PrepareMessage() {
 		// nothing has to be done here
 		sentences = new MCLSentence[1];
 	}
 
 	/**
-	 * Constructs a filled DereferenceRequestMessage.  All required
+	 * Constructs a filled PreparedMessage.  All required
 	 * information is supplied and stored in this
-	 * DreferenceRequestMessage.
+	 * PrepareMessage.
 	 *
-	 * @param id the server side reference id
-	 * @throws MCLException if the id string is null
+	 * @param data the prepare query
+	 * @throws MCLException if the data string is null
 	 */
-	public DereferenceRequestMessage(String id) throws MCLException {
-		if (id == null) throw
-			new MCLException("Reference id may not be null");
+	public PrepareMessage(String data) throws MCLException {
+		if (data == null) throw
+			new MCLException("Query data may not be null");
 		
 		sentences = new MCLSentence[1];
-		this.id = id;
-		sentences[0] = new MCLSentence(MCLSentence.MCLMETADATA, "id", id);
+		this.data = data;
+		sentences[0] = new MCLSentence(MCLSentence.QUERY, data);
 	}
 
 	/**
@@ -65,7 +65,7 @@ public class DereferenceRequestMessage extends MCLMessage {
 	}
 
 	/**
-	 * Returns the start of message sentence for this Message: &amp;e.
+	 * Returns the start of message sentence for this Message: &amp;p.
 	 *
 	 * @return the start of message sentence
 	 */
@@ -85,22 +85,13 @@ public class DereferenceRequestMessage extends MCLMessage {
 	 * be valid
 	 */
 	public void addSentence(MCLSentence in) throws MCLException {
-		// see if it is a supported header
-		if (in.getType() != MCLSentence.MCLMETADATA) throw
+		// see if it is a supported line
+		if (in.getType() != MCLSentence.QUERY) throw
 			new MCLException("Sentence type not allowed for this message: " + (char)in.getType());
-		String prop = in.getField(1);
-		if (prop == null) throw
-			new MCLException("Illegal sentence (no property): " + in.getString());
-		String value = in.getField(2);
-		if (value == null) throw
-			new MCLException("Illegal sentence (no value): " + in.getString());
-
-
-		if (prop.equals("id")) {
-			sentences[0] = in;
-		} else {
-			throw new MCLException("Illegal property '" + prop + "' for this Message");
-		}
+		data = in.getString();
+		if (data == null) throw
+			new MCLException("Illegal sentence (no data)");
+		sentences[0] = in;
 	}
 
 
@@ -108,11 +99,11 @@ public class DereferenceRequestMessage extends MCLMessage {
 	// values inside the message
 
 	/**
-	 * Retrieves the reference id contained in this Message object.
+	 * Retrieves the query data contained in this Message object.
 	 *
-	 * @return the result set id
+	 * @return the query data
 	 */
-	public String getId() {
-		return(id);
+	public String getData() {
+		return(data);
 	}
 }
