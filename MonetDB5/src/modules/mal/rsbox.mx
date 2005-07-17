@@ -462,7 +462,7 @@ static str RSfreeColumnSet(resultset* rs, columnset* cs) {
  * @param handle a resultset handle
  */
 str RSBdelete(void* retval, int* handle) {
-	resultset* rs;
+	resultset* rs = NULL;
 	str tmp;
 	int i;
 	(void)retval;	/* make compiler happy */
@@ -670,7 +670,7 @@ static void RSinitColumn(columnset* cs, int* colindex) {
  */
 str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 	BAT* b;
-	resultset* rs;
+	resultset* rs = NULL;
 	columnset* cs;
 	columnset* lastcs = NULL;
 	str tmp;
@@ -737,7 +737,7 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 str RSsetPropertyStr(int* retval, int* handle, int* colno, str* nme, str* val) {
 	column* col;
 	int ret = 0;
-	resultset* rs;
+	resultset* rs = NULL;
 	columnset* cs;
 	str tmp;
 
@@ -809,9 +809,9 @@ str RSsetPropertyStr(int* retval, int* handle, int* colno, str* nme, str* val) {
  * @return true if there was a previous value, false otherwise
  */
 str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
-	column* col;
+	column* col=0;
 	int ret = 0;
-	resultset* rs;
+	resultset* rs = NULL;
 	columnset* cs;
 	str tmp;
 
@@ -892,7 +892,7 @@ static str RSsetComplete(resultset* rs) {
  */
 str RSunion(int* retval, int* handle) {
 	int j;
-	resultset* rs;
+	resultset* rs = NULL;
 	columnset* cs;
 	str tmp;
 
@@ -926,7 +926,7 @@ str RSunion(int* retval, int* handle) {
  */
 str RSdePopulate(int* retval, int* handle) {
 	int i;
-	resultset* rs;
+	resultset* rs = NULL;
 	columnset* cs;
 	str tmp;
 
@@ -963,7 +963,7 @@ str RSdePopulate(int* retval, int* handle) {
 str RSwriteHeader(int* retval, int* handle) {
 	int bytes = 0, bt, i;
 	stream* s = GDKout;
-	resultset* rs;
+	resultset* rs = NULL;
 	column* col;
 	str tmp;
 	str mask;
@@ -1200,7 +1200,7 @@ str RSwriteHeader(int* retval, int* handle) {
 str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 	int bytes = 0, bt, i;
 	column* col;
-	resultset* rs;
+	resultset* rs = NULL;
 	columnset* cs;
 	str tmp;
 	stream* s = GDKout;
@@ -1351,7 +1351,7 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
  * @returns the number of rows in the ResultSet
  */
 str RSgetLength(int* retval, int* handle) {
-	resultset* rs;
+	resultset* rs = NULL;
 	str tmp;
 
 	rethrow("resultset.getLength", tmp, RSBgetResultSet(&rs, handle));
@@ -1370,7 +1370,7 @@ str RSgetLength(int* retval, int* handle) {
  * @return the handle
  */
 str RSsetBlockSize(int* retval, int* handle, int size) {
-	resultset* rs;
+	resultset* rs = NULL;
 	str tmp;
 
 	rethrow("resultset.setBlockSize", tmp, RSBgetResultSet(&rs, handle));
@@ -1395,7 +1395,7 @@ str RSsetBlockSize(int* retval, int* handle, int size) {
  * @return the number of times writeNextPart can be called
  */
 str RShasNextPart(int* retval, int* handle) {
-	resultset* rs;
+	resultset* rs = NULL;
 	str tmp;
 
 	rethrow("resultset.hasNextPart", tmp, RSBgetResultSet(&rs, handle));
@@ -1424,7 +1424,7 @@ str RShasNextPart(int* retval, int* handle) {
 str RSwriteNextPart(int* retval, int* handle) {
 	int hbytes = 0, bbytes = 0;
 	int upper, lower;
-	resultset* rs;
+	resultset* rs = NULL;
 	str tmp;
 
 	rethrow("resultset.writeNextPart", tmp, RSBgetResultSet(&rs, handle));
