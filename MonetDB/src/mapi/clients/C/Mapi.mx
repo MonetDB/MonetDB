@@ -668,6 +668,7 @@ typedef int MapiMsg;
 #define MERROR		(-1)
 #define MTIMEOUT	(-2)
 #define MMORE		(-3)
+#define MSERVER		(-4)
 
 #define LANG_MAL	0
 #define LANG_MIL	1
@@ -3013,6 +3014,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				hdl->active = result;
 			}
 			add_error(result, line);
+			if (!mid->error) 
+				mid->error = MSERVER;
 			break;
 		case '#':
 			if (lookahead < 0)
