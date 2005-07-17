@@ -19,7 +19,6 @@
 @a Alex van Ballegooij
 @v 1.0
 @* Introduction
-@T
 The color atom is a simple 32bit (24bit+zeros) encoding of a standard RGB 
 color encoding, consisting of the red component in bits 16-23, 
 the green component in bits 8-15, and the blue component in bits 0-7.
@@ -27,9 +26,14 @@ the green component in bits 8-15, and the blue component in bits 0-7.
 The module contains a number of color conversion methods to construct
 colors in various colorspaces and extract relevant color channels.
 
-rgb = (byte,byte,byte) colorspace r,g,b=[0..255]
-hsv = (flt,flt,flt) colorspace h=[0..360], s,v=[0..1]
-ycc = (byte,byte,byte) colorspace y,c,c=[0..255]
+@enumerate
+@item rgb
+= (byte,byte,byte) colorspace r,g,b=[0..255]
+@item hsv
+= (flt,flt,flt) colorspace h=[0..360], s,v=[0..1]
+@item ycc
+= (byte,byte,byte) colorspace y,c,c=[0..255]
+@end enumerate
 
 @{
 @* Implementation
