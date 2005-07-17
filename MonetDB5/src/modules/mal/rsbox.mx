@@ -809,7 +809,7 @@ str RSsetPropertyStr(int* retval, int* handle, int* colno, str* nme, str* val) {
  * @return true if there was a previous value, false otherwise
  */
 str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
-	column* col=0;
+	column* col = 0;
 	int ret = 0;
 	resultset* rs = NULL;
 	columnset* cs;
