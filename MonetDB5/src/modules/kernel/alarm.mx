@@ -374,7 +374,7 @@ str ALARMsleep(int *res,int *secs){
 }
 
 str ALARMsetalarm(int *res, int *secs, str *action){
-	(void)res, (void)secs, (void)action; /* foolc compiler */
+	(void)res; (void)secs; (void)action; /* foolc compiler */
 	return throwMessage("alarm.setalarm", "not yet implemented");
 }
 str ALARMtimers(int *res){
