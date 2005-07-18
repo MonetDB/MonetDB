@@ -1166,6 +1166,8 @@ int newTmpSink(MalBlkPtr mb, malType type){
 }
 int newTypeVariable(MalBlkPtr mb, malType type){
     int n;
+	n= findTmpVariable(mb, type);
+	if( n > 0  && isTypeVar(mb,n)) return n;
     n= newTmpVariable(mb,type);
     isTypeVar(mb,n)= TRUE;
     return n;
