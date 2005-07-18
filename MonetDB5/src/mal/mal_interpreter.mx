@@ -1182,6 +1182,7 @@ starts with the exception identifer, followed by contextual details.
 			cntxt->resource= ru;
 		}
 		printTraceCall(cntxt,mb,stk,pci);
+		cntxt->timer= GDKusec();
 	}
 
 if( ret != MAL_SUCCEED ) {
