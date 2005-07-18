@@ -35,10 +35,10 @@ on the port number specified in the parameter file.
 \begin{verbatim}
 Mserver { [ --dbname <db-name> ] 
 	  [ --dbfarm <dbfarm> ]
-          [ --dbinit <stmt>]
+          [ --dbinit <stmt> ]
           [ -c|--config <config-file> ] 
-          [ -d<value>|--debug=value]
-          [ -s|--set [option=value] set option can be given multiple times
+          [ -d<value>|--debug=value ]
+          [ -s|--set [option=value] ] set option can be given multiple times
                                     to override verious options
         } [ <mil-script> ]
 \end{verbatim}
@@ -179,7 +179,7 @@ usage(char *prog, int debug, opt *set, int setlen)
 	fprintf(stderr, "                       --dbname=<database_name>     \n");
 	fprintf(stderr, "                       --dbfarm=<database_directory>\n");
 	fprintf(stderr, "                       --dbinit=<MIL_statement>     \n");
-	fprintf(stderr, " -d <debug_level>    | --debug=<debug_level>        \n");
+	fprintf(stderr, " -d<debug_level>     | --debug=<debug_level>        \n");
 	fprintf(stderr, " -s <option>=<value> | --set <option>=<value>       \n");
 	fprintf(stderr, " -?                  | --help                       \n");
 	if (debug)
