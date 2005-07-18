@@ -236,6 +236,12 @@ the test case.
 Using the command setTimer() instead of setTrace() produces timing
 statistics in micro-seconds. Aside from the time spent in each statement
 separately, it accumulate the timeing for the complete call.
+Note that timing also influences the measurements somewhat,
+which can be seen from the example above where the trace command
+also dumps the total execution time.
+However, the relative times are often a good indicator where
+the program is spending its time. For detailed information the Linux
+tool @emph{valgrind} may be of help.
 
 @example
 >function test(i:int):str;
@@ -249,19 +255,19 @@ separately, it accumulate the timeing for the complete call.
 >	return test:= "ok";
 >end test;
 >user.test(1);
-#     7 usec!    mdb.setTimer($3=true)
+#     6 usec!    mdb.setTimer($3=true)
 [ 1 ]
-#   138 usec!    io.print(i=1)
-#   186 usec!    i := calc.*(i=2, $5=2)
-#   253 usec!    b := bbp.new($7=0, $8=0)
-#   306 usec!    bat.insert(b=<tmp_1226>, $10=1, i=2)
+#    60 usec!    io.print(i=1)
+#    67 usec!    i := calc.*(i=2, $5=2)
+#    93 usec!    b := bbp.new($7=0, $8=0)
+#   106 usec!    bat.insert(b=<tmp_1226>, $10=1, i=2)
 #-----------------#
 # h     t         # name
 # int   int       # type
 #-----------------#
 [ 1,      2       ]
-#   519 usec!    io.print(b=<tmp_1226>)
-#  1410 usec!    user.test($2=1)
+#   278 usec!    io.print(b=<tmp_1226>)
+#   611 usec!    user.test($2=1)
 @end example
 
 It is also possible to directly activate the debugger with the
@@ -496,10 +502,15 @@ void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
     stream_printf(cntxt->fdout,"%s\n",msg);
     GDKfree(msg);
 }
+@-
+Beware, the printTraceCall is a rather expensive routine and obscures
+the actual timing. We therefore compensate the global timing maintained
+@c
 void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     int k;
     str msg;
     str s;
+	long t= GDKusec();
 
     msg= instruction2str(mb,p,FALSE);
     s= strchr(msg,'(');
@@ -523,6 +534,8 @@ void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
         stream_printf(cntxt->fdout,")\n");
     } else stream_printf(cntxt->fdout,"%s\n",msg);
     GDKfree(msg);
+	if( cntxt->timer)
+		cntxt->timer += (GDKusec()-t);
 }
 
 @+ MAL parser
