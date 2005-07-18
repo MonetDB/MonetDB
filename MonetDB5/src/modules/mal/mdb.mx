@@ -35,32 +35,25 @@ will be affected by breakpoints being set.
 @mal
 module mdb;
 
-pattern start(b:bit):void 
-address MDBtoggle
-comment "Start/stop interactive debugger";
 pattern start():void 
-address MDBtoggle
+address MDBstart
 comment "Start interactive debugger";
 
-pattern trace():void
-address MDBtrace
-comment "Run the current function in timer trace mode";
+pattern stop():void
+address MDBstop
+comment "Stop the interactive debugger";
 
 pattern setTrace(b:bit):void
 address MDBsetTrace
 comment "Turn on/off tracing of current routine";
 
-pattern setTrace(mod:str,fcn:str,b:bit)
-address MDBsetTrace2
-comment "Turn on/off trace of specific operation";
+#pattern setBreakpoint(fcn:str)
+#address MDBsetBreakpoint
+#comment "Turn on/off breakpoint on instruction in current operation";
 
-pattern setBreakpoint(fcn:str)
-address MDBsetBreakpoint
-comment "Turn on/off breakpoint on instruction in current operation";
-
-pattern clearBreakpoints()
-address MDBclrBreakpoints
-comment "Remove all breakpoints";
+#pattern clearBreakpoints()
+#address MDBclrBreakpoints
+#comment "Remove all breakpoints";
 
 pattern setTimer(b:bit):void
 address MDBsetTimer
@@ -178,6 +171,34 @@ str MDBtoggle(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     cntxt->itrace= b?'n':0;
     return MAL_SUCCEED;
 }
+str MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	Client cntxt= getClient();
+	cntxt->timer = 0;
+	stk->cmd='n';
+	cntxt->itrace='n';
+	(void)mb; (void) p;
+	return MAL_SUCCEED;
+}
+str MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	Client cntxt= getClient();
+	cntxt->timer = 0;
+	stk->cmd=0;
+	cntxt->itrace=0;
+	(void)mb; (void) p;
+	return MAL_SUCCEED;
+}
+
+void MDBtraceFlag(Client cntxt, MalStkPtr stk, int b){
+	if( b) {
+		cntxt->timer = GDKusec();
+		stk->cmd= 'T';
+		cntxt->itrace= 'T';
+	} else {
+		cntxt->timer = 0;
+		stk->cmd= 0;
+		cntxt->itrace= 0;
+	}
+}
 str MDBtrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Client cntxt= getClient();
 	cntxt->timer = GDKusec();
@@ -187,32 +208,10 @@ str MDBtrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	return MAL_SUCCEED;
 }
 str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Client cntxt= getClient();
     int b;
     (void) mb; /* still unused */
     b= *(chr *) getArgReference(stk,p,1);
-    MDBstatus(b);
-    stk->cmd= b?'T':0;
-    cntxt->itrace= b? 'T':0;
-    return MAL_SUCCEED;
-}
-str MDBsetTrace2(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Client cntxt= getClient();
-    bit b;
-    str mod,fcn;
-    Symbol s;
-
-    (void) mb; /* still unused */
-    mod= *(str *) getArgReference(stk,p,1);
-    fcn= *(str *) getArgReference(stk,p,2);
-    b= *(bit *) getArgReference(stk,p,3);
-    s= findMALSymbol( putName(mod,strlen(mod)),
-				putName(fcn,strlen(fcn)));
-    if( s == 0)
-	return throwMessage("mdb.setTrace", "can not find operation");
-    MDBstatus(b);
-    stk->cmd= b?'T':0;
-    cntxt->itrace= b? 'T':0;
+	MDBtraceFlag(getClient(), stk,b);
     return MAL_SUCCEED;
 }
 str MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
