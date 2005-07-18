@@ -705,10 +705,13 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 {
 	sql_subtype *t = NULL, *st = tail_type(s);
 
-	if (!st) {
-		stmt_destroy(s);
-		return sql_error(sql, 02, "statement has no type information");
+	if (!st && set_type_param(ct, s) == 0) {
+		return s;
+	} else if (!st) {
+	        stmt_destroy(s);
+                return sql_error(sql, 02, "statement has no type information");
 	}
+
 
 	/* first try cheap internal (inplace) convertions ! */
 	s = inplace_convert(sql, ct, s);
