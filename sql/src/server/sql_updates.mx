@@ -1063,9 +1063,22 @@ sql_update_table(mvc *sql, sql_schema *schema, char *tname, dlist *assignmentlis
 
 		if (opt_where) {
 			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where);
-			if (s)
+			if (s && s->type != st_set && s->type != st_sets) {
+				s = stmt_set(s);
+			}
+			if (s) {
+				/* check if the table is used in the query */
+				stmt *tmp = complex_find_subset(s, tv->s);
+
+				if (!tmp) { /* not used do a select all */
+					cvar *cv = tv->columns->h->data;
+
+					tmp = stmt_dup(cv->s);
+					s = sql_and(sql, scp, s, tmp, sql_where);
+				}
+
 				s = stmt2pivot(scp, s);
-			if (!s) {
+			} else {
 				scope_close(scp);
 				return NULL;
 			}
@@ -1234,7 +1247,20 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		if (opt_where) {
 			stmt *subset = NULL;
 			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where);
+			if (s && s->type != st_set && s->type != st_sets) {
+				s = stmt_set(s);
+			}
 			if (s) {
+				/* check if the table is used in the query */
+				stmt *tmp = complex_find_subset(s, tv->s);
+
+				if (!tmp) { /* not used do a select all */
+					cvar *cv = tv->columns->h->data;
+
+					tmp = stmt_dup(cv->s);
+					s = sql_and(sql, scp, s, tmp, sql_where);
+				}
+
 				subset = stmt2pivot(scp,s);
 			} else {
 				scope_close(scp);

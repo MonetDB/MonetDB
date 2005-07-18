@@ -46,6 +46,9 @@ extern stmt *sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt 
 extern stmt *stmt2pivot(scope *scp, stmt *s);
 
 extern stmt *sql_compare(mvc *sql, stmt *ls, stmt *rs, char *compare_op, int f);
+extern stmt *complex_find_subset(stmt *subset, stmt *t);
+extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
+
 #endif /*_SQL_SELECT_H_*/
 @c
 
@@ -374,7 +377,7 @@ find_pivot(stmt *subset, stmt *t)
 /* before the pivot table is created we need to check on both head and
  * tail for the subset.
  * */
-static stmt *
+stmt *
 complex_find_subset(stmt *subset, stmt *t)
 {
 
@@ -1986,7 +1989,7 @@ filter(stmt *ptable, stmt *s)
 	ps->key &= s->key;
 }
 
-static stmt *
+stmt *
 sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f)
 {
 	stmt *res = NULL;
