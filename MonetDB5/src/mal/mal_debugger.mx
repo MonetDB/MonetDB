@@ -17,82 +17,261 @@
 
 @a M.L. Kersten
 @* The MAL debugger
-To ease debugging and performance monitoring, the MAL interpreter
-comes with a gdb-like text-based debugger.
-The debugger can be entered at any time using the call mdb() against
-a MonetDB client.
 
-@+ The debugger instruction set
-@multitable @columnfractions .2 .8
-@item next
-@tab  Advance to next statement
-@item continue
-@tab  Continue program being debugged
-@item break
-@tab set breakpoint on current instruction
-@item break @emph{ var}
-@tab break on assignment to @emph{ var}
-@item call
-@tab execute MAL instruction [todo]
-@item continue
-@tab to next breakpoint
-@item delete @emph{ var}
-@tab remove break point @emph{ var}
-@item step
-@tab advance to next MAL instruction
-@item module
-@tab display the module signatures
-@item finish
-@tab finish current call
-@item quit
-@tab leave debugger
-@item list
-@tab list current program block
-@item List
-@tab list with type information
-@item var
-@tab print symbol table [with bindings]
-@item print @emph{ var}
-@tab display value of a variable
-@item print @emph{ var} @emph{ c}[@emph{ f}]
-@tab display BAT chunk c:(c+f)
-@item info @emph{ var}
-@tab display bat variable properties
-@item run
-@tab restart current procedure
-@item where
-@tab print stack trace
-@item down
-@tab go down the stack
-@item up
-@tab go up the stack
-@item timer
-@tab micro-second response time
-@item help
-@tab the help message
-@end multitable
+In practice it is hard to write a correct MAL program the
+first time around. Instead, it is more often constructed by
+trial-and-error. As long as there are syntax and semantic errors
+the MAL compiler provides a sufficient handle to proceed. Once
+it passes the compiler we have to resort to a debugger to
+assess its behavior.
+
+To ease debugging and performance monitoring, the MAL interpreter
+comes with a gdb-like debugger.
+An illustrative session elicits the functionality offered.
+
+@example
+>function test(i:int):str;
+>	io.print(i);
+>	i:= i*2;
+>	b:= bbp.new(:int,:int);
+>	bat.insert(b,1,i);
+>	io.print(b);
+>	return test:= "ok";
+>end test;
+>user.test(1);
+[ 1 ]
+#-----------------#
+# h     t         # name
+# int   int       # type
+#-----------------#
+[ 1,      2       ]
+@end example
+
+The debugger can be entered at any time using the call mdb.start().
+An overview of the available commands is readily available.
+@example
+>mdb.start();
+#mdb !end main;
+mdb>help
+next       -- Advance to next statement
+continue   -- Continue program being debugged
+break      -- set breakpoint on current instruction
+break <var>    -- break on assignment to <var>
+delete <var>   -- remove break point <var>
+step       -- advance to next MAL instruction
+module     -- display the module signatures
+finish     -- finish current call
+quit       -- leave debugger
+list <fcn> -- list current program block
+List <fcn> -- list with type information
+var  <fcn>  -- print symbol table for module
+optimizer <idx>  -- display program after optimizer step
+print <var>    -- display value of a variable
+print <var> <cnt>[<first>] -- display BAT chunk
+info <var>     -- display bat variable properties
+run        -- restart current procedure
+where      -- print stack trace
+down       -- go down the stack
+up         -- go up the stack
+timer      -- produce micro-second response time
+io         -- produce page activity trace
+help       -- this message
+mdb>
+@end example
+
+We walk our way through a debugging session, highlighting the
+effects of the debugger commands.
+The call to mdb.start() has been encapsulated in a complete
+MAL function, as shown by issuing the list command.
+A more detailed listing shows the binding to the actual C-routines
+and the result of type resolution.
+@example
+>mdb.start();
+#mdb !end main;
+mdb>l
+function user.main():int;
+    mdb.start();
+end main;
+mdb>L
+function user.main():int;       # 0  (main:int)
+    io.print(1);        # 1 IOprint_val ($1:int)<-($2:int)
+end main;       # 2
+@end example
+The user module is the default place for function defined at
+the console. The modules loaded can be shown typeing the
+command 'modules' or 'module'(or 'm'  for short). 
+The former merely enumerates the module names, the latter also shows 
+the names of the function in each.
+The function signatures become visible using the module and optionally
+the function name.
+@example
+mdb>m alarm
+!command alarm.alarm(secs:int,action:str):void address ALARMsetalarm;
+!command alarm.ctime():str address ALARMctime;
+!command alarm.epilogue():void address ALARMepilogue;
+!command alarm.epoch():int address ALARMepoch;
+!command alarm.prelude():void address ALARMprelude;
+!command alarm.sleep(secs:int):void address ALARMsleep;
+!command alarm.time():int address ALARMtime;
+!command alarm.timers():bat[:str,:str] address ALARMtimers;
+!command alarm.usec():lng address ALARMusec;
+mdb>m alarm.sleep
+!command alarm.sleep(secs:int):void address ALARMsleep;
+mdb>
+@end example
+The debugger mode is left with a <return>.
+Any subsequent MAL instruction re-activates the debugger to
+await for commands. The default operation is to step through
+the execution using the 'next' ('n') or 'step' ('s) commands,
+as shown below.
+@example
+>user.test(1);
+#mdb !    user.test(1);
+mdb>n
+#mdb !    io.print(i);
+mdb>
+[ 1 ]
+#mdb !    i := calc.*(i,2);
+mdb>
+#mdb !    b := bbp.new(:int,:int);
+mdb>
+@end example
+The last instruction show is ready to be executed, which means
+the calculation has already been finished. The value assigned
+to a variable can be
+shown using a print statement, which contains the location of
+the variable on the stack frame, its name, its value and type.
+The complete stack frame becomes visible with 'values' ('v')
+command:
+@example
+#mdb !    bat.insert(b,1,i);
+mdb>
+#mdb !    io.print(b);
+mdb>v
+#mdb  test
+Stack size=32 top=11
+[0] test        = nil:str
+[1] i   = 2:int
+[2] $2  = 0:int   unused
+[3] $3  = 2:int  constant
+[4] b   = <tmp_1226>:bat[:int,:int]   count=1 lrefs=1 refs=0
+[5] $5  = 0:int   type variable
+[6] $6  = 0:int   type variable
+[7] $7  = nil:bat[:int,:int]   unused
+[8] $8  = 1:int  constant
+[9] $9  = 0:int   unused
+[10] $10        = "ok":str  constant
+mdb>
+@end example
+It illustrates basic BAT properties. A complete description of the
+BAT structure can be obtained using the 'info' ('i') command.
+A sample of the BAT can be printed passing tuple indices, e.g.
+'print b 10 10' prints the second batch of ten tuples.
 
 @+ Breakpoints
-A powerful mechanism for debugging a program is to set breakpoints.
+A powerful mechanism for debugging a program is to set breakpoints
+during the debugging session.
 In MAL they are designated by the <operator> or <variable> name.
 As soon as the variable recieves a new value  or the operation
 is called the debugger is activated.
 
-@+ Embedded debugger calls
-Part of the debugger functionality can also be controlled using
-MAL instructions. For, the debugger can be (de-)activated using the
-corresponding mdb() instruction with a boolean argument.
+The snippet below illustrates the reaction to set a break point
+on assignment to variable 'i'. Notice that the first request fails,
+because the breakpoint can only be set within a visibile program
+context. Setting arbitrary breakpoints is on the feature request list.
+@example
+>mdb.start();
+#mdb !end main;
+mdb>
+>user.test(1);
+#mdb !    user.test(1);
+mdb>b i
+breakpoint on 'i' not set
+mdb>n
+#mdb !    io.print(i);
+mdb>break i
+mdb>c
+[ 1 ]
+#mdb !    i := calc.*(i,2);
+mdb>
+@end example
+
+@+ Debugger module operations
+Part of the debugger functionality can also be controlled directly using
+MAL instructions. One of the more usefull constructs is to issue a
+call mdb.setTrace(true), which will proces a line-by-line trace of 
+the instructions being executed with timing information.
+The tracing stops when it encounters the command mdb.setTrace(false);
+Using a boolean argument makes it easy to control the performance trace
+at run time. The following snippet shows the effect of patching
+the test case.
+@example
+>function test(i:int):str;
+>   mdb.setTrace(true);
+>	io.print(i);
+>	i:= i*2;
+>	b:= bbp.new(:int,:int);
+>	bat.insert(b,1,i);
+>	io.print(b);
+>   mdb.setTrace(false);
+>	return test:= "ok";
+>end test;
+>user.test(1);
+!    mdb.setTrace($3=true)
+[ 1 ]
+!    io.print(i=1)
+!    i := calc.*(i=2, $5=2)
+!    b := bbp.new($7=0, $8=0)
+!    bat.insert(b=<tmp_1226>, $10=1, i=2)
+#-----------------#
+# h     t         # name
+# int   int       # type
+#-----------------#
+[ 1,      2       ]
+!    io.print(b=<tmp_1226>)
+#   261 usec!    user.test($2=1)
+>
+@end example
+
+Using the command setTimer() instead of setTrace() produces timing
+statistics in micro-seconds. Aside from the time spent in each statement
+separately, it accumulate the timeing for the complete call.
+
+@example
+>function test(i:int):str;
+>   mdb.setTimer(true);
+>	io.print(i);
+>	i:= i*2;
+>	b:= bbp.new(:int,:int);
+>	bat.insert(b,1,i);
+>	io.print(b);
+>   mdb.setTimer(false);
+>	return test:= "ok";
+>end test;
+>user.test(1);
+#     7 usec!    mdb.setTimer($3=true)
+[ 1 ]
+#   138 usec!    io.print(i=1)
+#   186 usec!    i := calc.*(i=2, $5=2)
+#   253 usec!    b := bbp.new($7=0, $8=0)
+#   306 usec!    bat.insert(b=<tmp_1226>, $10=1, i=2)
+#-----------------#
+# h     t         # name
+# int   int       # type
+#-----------------#
+[ 1,      2       ]
+#   519 usec!    io.print(b=<tmp_1226>)
+#  1410 usec!    user.test($2=1)
+@end example
+
+It is also possible to directly activate the debugger with the
+call mdb.start(). It remains in this mode until 
+you either issue a quit command, or the command mdb.stop() instruction is
+encountered. 
 The debugger is only activated when the user can direct its execution
 from the client interface. Otherwise, there is no proper input channel
 and the debugger will run in trace mode.
 
-A particular operation can be traced using the command
-setTrace(<modulename>,<operation>,<on/off>).
-Likewise, breackpoints can be set and cleared on operations and variables
-to escape to the debugger.
-
-The debugger flag setTimer(<on/off>) enables tracing the micro-seconds
-spent on each instruction.
 @{
 @- Compilation control
 Being able to debug comes at a price.
@@ -591,7 +770,6 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
         	if( strncmp("io",b,2)==0){
             	if( cntxt->timer==0)
                 	cntxt->timer = GDKusec();
-				stream_printf(out,"#turn on resource traceing\n");
 				getrusage(RUSAGE_SELF,&cntxt->resource);
 				stream_printf(out,"#maxrss %d ixrss=%d idrss=%d isrss=%d"
 					" minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n",

@@ -384,6 +384,9 @@ str runMALsequence( malTask *task)
 	long total=0;
     @:performanceVariables@
 
+	if( cntxt->timer)
+		cntxt->timer= GDKusec();
+		
 MALrestart:
     stkpc = task->startpc;
     stkexception = -1;
@@ -500,7 +503,7 @@ elements in the value stack.
     case ENDsymbol: 
         if( getInstrPtr(mb,0)->token == FACTORYsymbol)
             ret= shutdownFactory(mb);
-		if( total )
+		if( total  )
 			cntxt->timer= GDKusec()-total;
 		@:garbageTypeCheck@
 		if( pcicaller)
@@ -664,7 +667,7 @@ to a recursive call to the interpreter.
 
 CMDcall initiates calling a linked function, passing pointers 
 to the parameters and result variable, i.e.  f(ptr a0,..., ptr aN)
-The function returns a MAL_SUCCEED upon success and a pointer
+The function returns a MAL-SUCCEED upon success and a pointer
 to an exception string upon failure.
 Failure leads to raiseing an exception in the interpreter loop,
 by either looking up the relevant exception message in the module
@@ -700,7 +703,7 @@ After the parameters are fixed, we can safely free the destination
 variable and re-initialize it to nil;
 
 The policy implemented here is to make pin/unpin decisions part of
-the bind(namespace,batname,mode) operation.[todo]
+the bind(namespace, batname, mode) operation. [todo]
 
 @{
 @= safeTarget
@@ -1165,7 +1168,8 @@ starts with the exception identifer, followed by contextual details.
 		long n= GDKusec();
 		long l= n - cntxt->timer;
 		total += l;
-		stream_printf(cntxt->fdout,"#%6d usec",l);
+		if( stk->cmd != 'T')
+			stream_printf(cntxt->fdout,"#%6d usec",l);
 		if( cntxt->resource.ru_minflt > 0){
 			struct rusage ru;
 			getrusage(RUSAGE_SELF,&ru);
@@ -1293,11 +1297,11 @@ becomes shared and rely on the garbage collector to properly
 decrement the count before abanding a execution frame.
 Second, we could try to avoid dangling pointers by permitting
 just one reference per BAT. This doesn't work, because we may
-keep bat_views around, which depend on the existence of the
+keep BAT-views around, which depend on the existence of the
 underlying BAT.
 
+@{
 Look further in mal_instruction.mx for the before/after calls.
-@-
 @}
 
 @+ Garbage collection
@@ -1311,6 +1315,7 @@ have to be freed explicitly before a MAL function returns.
 The first step is to always safe the destination variable
 before a function call is made.
 @{
+@-
 @c
 void garbageElement(ValPtr v)
 {   
@@ -1336,6 +1341,7 @@ Actually, the libraries should not leave the
 physical reference count being set. This is only
 allowed during a GDK operation. All references
 should be logical.
+@-
 @{
 @c
         int bid= ABS(v->val.bval);
