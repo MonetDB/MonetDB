@@ -8,9 +8,11 @@ import nl.cwi.monetdb.mcl.io.*;
  * A Message object represents one of the messages present in the MCL
  * protocol.  A Message has some default functionality, which is defined
  * in this abstract class, and some required functionality which each
- * implementing class is required to fill in.  Since MCL is defined to
- * have a fixed number of different Messages, it is not possible to
- * dynamically extend the set of known Messages.
+ * implementing class is required to fill in.  In comparison with the
+ * MCLMessage, the MCLVariableMessage has an upfront unknown number of
+ * Sentences, next to the fixed Sentences as used in MCLMessage.
+ * Typical Messages that need this behaviour are Messages that store
+ * data such as queries or their results.
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
