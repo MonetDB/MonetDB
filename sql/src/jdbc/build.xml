@@ -130,7 +130,7 @@
     <echo message="Building distribution jar (debug=off, optimize=on)" />
 	<echo message="Compiling JDBC and XML:DB drivers" />
     <javac
-		classpath="${srcdir}"
+		classpath="${srcdir}:${libdir}/xmldb.jar"
 		srcdir="${srcdir}"
 		destdir="${builddir}"
 		debug="false"
