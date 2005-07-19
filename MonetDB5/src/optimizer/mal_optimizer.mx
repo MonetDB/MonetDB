@@ -380,46 +380,11 @@ them in a preferred order of deployment.
 @-
 Alias removal can be applied after each other optimization step.
 @+ Optimizer building blocks
-@- Lifespan analysis
-The variables have a lifespan in the code blocks, denoted by properties
-beginLifespan,endLifespan. The beginLifespan denotes the intruction where
-it receives its first value, the endLifespan the last instruction in which 
-it was used as operand or target.
 
-If, however, the last use lies within a BARRIER block, we can not be sure
-about its end of life status, because a block redo may implictly
-revive it. For these situations we associate the endLifespan with
-the block exit.
-
-In many cases, we have to determine if the lifespan interferes with 
-a optimization decision being prepared.
-
-@- Flow analysis
-In many optimization rules, the data flow dependency between statements is
-of crucial importance. The MAL language provides a multi-source, multi-sink
-dataflow network. Optimizers typically extract part of the workflow and use
-the language properties to enumerate semantic equivalent solutions, which
-under a given cost model turns out to result in better performance.
-
-@- Common subexpression optimalization 
-A special case of flow analysis is to remove common sub-expressions.
-A recurring situation is to find operator calls which depend on the same
-argments, and whose arguments have not been changed. For example
-@example
-t0 := select(A,0,100);
-t2 := select(A,0,100);
-@end example
-@
-Evidently, T2 is an alias for t0 unless inbetween the two statements A was
-updated. A program block can be analysed for such recurring situations,
-provided it knows the side-effects of operators.
-
-@- Static evaluation
 Some instructions are independent of the execution context. In particular,
 expressions over side-effect free functions with constant parameters could
 be evaluated before the program block is considered further.
 
-@- Pattern replacement
 A major task for an optimizer is to select instruction (sequences) which
 can and should be replaced with cheaper ones. The cost model underlying
 this decision depends on the processing stage and the overall objective.
@@ -427,7 +392,6 @@ For example, based on a symbolic analysis their may exist better
 implementations within the interpreter to perform the job (e.g. hashjoin vs
 mergejoin). Alternative, expensive intermediates may be cached for later use.
 
-@- Plan enumeration
 Plan enumeration is often implemented as a Memo structure, which
 designates alternative sub-plans based on a cost metric.
 Perhaps we can combine these memo structures into a large table
@@ -624,6 +588,18 @@ str MALoptimizer(Client c)
 }
 @}
 @- Lifespan analysis
+The variables have a lifespan in the code blocks, denoted by properties
+beginLifespan,endLifespan. The beginLifespan denotes the intruction where
+it receives its first value, the endLifespan the last instruction in which 
+it was used as operand or target.
+
+If, however, the last use lies within a BARRIER block, we can not be sure
+about its end of life status, because a block redo may implictly
+revive it. For these situations we associate the endLifespan with
+the block exit.
+
+In many cases, we have to determine if the lifespan interferes with 
+a optimization decision being prepared.
 The lifespan is calculated once at the beginning of the optimizer sequence.
 It should either be maintained to reflect the most accurate situation while
 optimizing the code base. In particular it means that any move/remove/addition
@@ -688,6 +664,12 @@ int isTouched(MalBlkPtr mb, int varid, int p1, int p2){
 }
 @}
 @- Flow analysis
+In many optimization rules, the data flow dependency between statements is
+of crucial importance. The MAL language encodes a multi-source, multi-sink
+dataflow network. Optimizers typically extract part of the workflow and use
+the language properties to enumerate semantic equivalent solutions, which
+under a given cost model turns out to result in better performance.
+
 The flow graph plays a crucial role in many optimization steps.
 It is unclear as yet what primitives and what storage structure is
 most adequate. For the time being we introduce the operations needed and
