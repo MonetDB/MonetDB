@@ -623,7 +623,7 @@ str MALoptimizer(Client c)
 	return optimizeMALBlock(c->curprg->def);
 }
 @}
-@+ Lifespan analysis
+@- Lifespan analysis
 The lifespan is calculated once at the beginning of the optimizer sequence.
 It should either be maintained to reflect the most accurate situation while
 optimizing the code base. In particular it means that any move/remove/addition
@@ -687,7 +687,7 @@ int isTouched(MalBlkPtr mb, int varid, int p1, int p2){
     return FALSE;
 }
 @}
-@+ Flow analysis
+@- Flow analysis
 The flow graph plays a crucial role in many optimization steps.
 It is unclear as yet what primitives and what storage structure is
 most adequate. For the time being we introduce the operations needed and
@@ -720,7 +720,7 @@ int flowStep(MalBlkPtr mb, int pca, int pcb){
     return TRUE;
 }
 @}
-@+ Basic Algebraic Blocks
+@- Basic Algebraic Blocks
 Many code snippets produced by e.g. the SQL compiler is just 
 a linear representation of an algebra tree/graph. Its detection
 makes a number of optimization decisions more easy, because
@@ -1066,30 +1066,52 @@ int isUpdated(MalBlkPtr mb, int pc)
     return FALSE;
 }
 @}
-@+ Dead Coder Removal
+@+ Dead Code Removal
 Dead code fragments are recognized by assignments to variables
-whose value is not consumed any more. Note that the DCR should
-not be used for testing, because it will trim most programs to
-an empty list.
-
-Dead code can be detected running backwards from RETURN statements
+whose value is not consumed any more. 
+It can be detected running backwards from RETURN statements
 and marking all variables used as arguments as relevant. In parallel,
 we built a list of instructions that should appear in the final result.
-The new code block is than built in one scan.
+The new code block is than built in one scan, discarding the
+remaining instructions.
+
+We should also be aware of instructions that produce side effects
+to the environment, e.g. printing and BAT updates. Such (possibly recursive)
+functions should be marked with a property (unsafe)
+(For now we recognize a few important ones)
 
 A source of side effect is the affected control flow in barrier blocks.
 They should be retained in the first phase. After we have removed all
 remaining code, we may wish to get rid of empty iterator blocks as well.
 [This refinement left for the future]
 
-We should also be aware of instructions that produce side effects
-to the environment, e.g. printing and BAT updates. Such (possibly recursive)
-functions should be marked with a property (sideeffects)
-(For now we recognize a few important ones)
-
+An illustrative example is the following MAL snippet:
+@example
+function user.test():void;
+    V7 := bbp.new(:void,:int);
+    V10 := bbp.new(:int,:void);
+    V16 := algebra.markH(V7);
+    V17 := algebra.join(V16,V7);
+    V19 := bbp.new(:void,:int);
+    V22 := bbp.new(:void,:int);
+    V23 := algebra.join(V16,V22);
+    io.print("done");
+end test;
+optimizer.deadCodeRemoval("user","test");
+@end example
+The dead code removal trims this program to a very short one.
+@example
+function user.test():void;
+    io.print("done");
+end test;
+@end example
 The assigments in an iterator also requires care, because
 the REDO statement may turn an instruction into a source for
 previouse ones. 
+
+The dead code remover should
+not be used for testing, because it will trim most programs to
+an empty list.
 @{
 @c
 int hasSideEffects(InstrPtr p){
@@ -1097,7 +1119,7 @@ int hasSideEffects(InstrPtr p){
     if(functionId(p) && strncmp("print",functionName(p),5)==0) return TRUE;
     if(functionId(p) && idcmp("deposit",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("insert",functionName(p))==0) return TRUE;
-    if(functionId(p) && idcmp("new",functionName(p))==0) return TRUE;
+    /* if(functionId(p) && idcmp("new",functionName(p))==0) return TRUE;*/
     if(functionId(p) && idcmp("append",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("delete",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("destroy",functionName(p))==0) return TRUE;
@@ -1137,23 +1159,24 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         case RETURNsymbol:
             pcused[i]=1;
             for(k=0; k<p->retc;k++)
-                varused[p->argv[k]]=1;
+                varused[p->argv[k]]= !isTypeVar(mb,p->argv[k]);
             break;
         default:
             se=0;
-            for(k=0; k< p->argc; k++)
+            for(k= 0; k< p->argc; k++)
                 if( varused[p->argv[k]]) se++;
             /* do not deal with dead barrier blocks */
             if( hasSideEffects(p) || se){
-                for(k=0; k<p->argc;k++) varused[p->argv[k]]=1;
+                for(k=0; k<p->argc;k++) 
+					varused[p->argv[k]]= !isTypeVar(mb,p->argv[k]);
                 pcused[i]=1;
             } else dc++; 
         }
     }
 #ifdef DEBUG_MAL_OPTIMIZER
 	{Client cntxt= getClient();
-    if( cntxt->debugOptimizer){
-    if(dc){
+    /*if( cntxt->debugOptimizer){
+    if(dc){ */
     stream_printf(GDKout,"Dead code variables \n");
     for(i=0;i< mb->vtop; i++)
         if( varused[i]==0) 
@@ -1163,7 +1186,7 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     if( pcused[i]==0)
     printInstruction(cntxt->fdout,mb, getInstrPtr(mb,i), LIST_MAL_ALL);
     stream_printf(cntxt->fdout,"End of DCoptimizer\n");
-    }}}
+    }
 #endif
     /* compress the code block */
     for(i=j=1;i< mb->stop;i++){

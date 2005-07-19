@@ -83,6 +83,12 @@ pattern strengthReduction(mod:str, fcn:str):str
 address QOTSRoptimizerCALL
 comment "Move constant expressions out of the loop";
 
+pattern emptySet():str 
+address QOTESoptimizer;
+pattern emptySet(mod:str, fcn:str):str 
+address QOTESoptimizerCALL
+comment "Move constant expressions out of the loop";
+
 pattern garbageCollector():str 
 address QOTGCoptimizer;
 pattern garbageCollector(mod:str, fcn:str):str 
@@ -184,6 +190,7 @@ optimizer.prelude();
 #include "mal_namespace.h"
 
 extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @
 Upon loading the module it should inspect the scenario table
 for any unresolved references to the MALoptimizer and set the 
@@ -261,6 +268,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:QOTC(OR,"expressionAccumulation")@
 	@:QOTC(FT,"factorize")@
 	@:QOTC(SR,"strengthReduction")@
+	@:QOTC(ES,"emptySet")@
 
 str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str modnme;

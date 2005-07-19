@@ -17,17 +17,64 @@
 
 @f mal_emptyset
 @a M. Kersten
-@* Emptyset reduction
-Empty set reduction creates a copy of a MAL program
-using a symbolic evaluation when an variable is known
-to be empty under all circumstances.
-During this evaluation, we may create
-more empty BATs, leading to a ripple effect through
-the code.
+@+ Emptyset reduction
+One of the key decisions during MAL optimization is to estimate
+the size of the BATs produced and consumed. Two cases are of interest
+for symbolic processing. Namely when a BAT is known to contain no
+tuples and those that have precisely one element.
+Such information may come from application domain knowledge or as a
+side effect from symbolic evaluation. It is associated with the
+program under inspection as properties.
 
-The approach taken is to only replace instructions when
-the variables remains empty under all invocations.
+The empty set property is looked for by the reduction algorithm
+presented here. Any empty set is propagated through the program
+to arrive at a smaller and therefore faster evaluation.
+
+For example, consider the following MAL test 
+@example
+function test():void;
+    V1 := bbp.new(:void,:int);
+    V7 := bbp.new(:void,:int);
+    V10{empty} := bbp.new(:int,:void);
+    V11 := bat.reverse(V10);
+    V12 := algebra.kdiff(V7,V11);
+    V16 := algebra.markH(V12);
+    V17 := algebra.join(V16,V7);
+    bat.append(V1,V17);
+    V19 := bbp.new(:void,:int);
+    V22 := bbp.new(:void,:int);
+    V23 := algebra.join(V16,V22);
+    bat.append(V19,V23);
+    V25 := algebra.count(V17);
+end test;
+optimizer.emptySet("user","test");
+@end example
+Calling the optimizer optimize.emptySet("user","test") replaces this program
+by the following code snippet.
+@example
+function user.test():void;
+     V1 := bbp.new(:void,:int);
+     V7 := bbp.new(:void,:int);
+     V16 := algebra.markH(V7);
+     V17 := algebra.join(V16,V7);
+     bat.append(V1,V17);
+     V19 := bbp.new(:void,:int);
+     V22 := bbp.new(:void,:int);
+     V23 := algebra.join(V16,V22);
+     bat.append(V19,V23);
+end test;
+@end example
+During empty set propagation, new candidates may appear. For example,
+taking the intersection with an empty set creates a target variable
+that is empty too. It becomes an immediate target for optimization.
+
+The actual implementation is conservative. A limited set of
+instructions are considered. Any addition to the MonetDB instruction
+set would call for assessment on their effect.
+Moreover, 
 @{
+The implementation differs slightly from other optimizers in that
+we need the variables that are designated as being empty
 @h
 #ifndef _MAL_EMPTYSET_
 #define _MAL_EMPTYSET_
@@ -35,6 +82,7 @@ the variables remains empty under all invocations.
 
 #define DEBUG_MAL_EMPTYSET     /* show partial result */
 
+mal_export str ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str ESevaluate(MalBlkPtr mb, int cnt, int *vars);
 #endif
 @c
@@ -42,6 +90,25 @@ mal_export str ESevaluate(MalBlkPtr mb, int cnt, int *vars);
 #include "mal_interpreter.h"    /* for showErrors() */
 #include "mal_builder.h"
 #include "mal_namespace.h"
+
+str ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	int *sets;
+	int i,k = 0;
+	PropertySet ps;
+
+	sets= (int*) alloca(mb->vtop * sizeof(int));
+	(void) mb; (void) stk; (void) p;
+printf("ESoptimizer called, collect empty sets and process them\n");
+	for(i=0; i< mb->vtop; i++){
+		ps= getVarProperties(mb,i);
+		if( fndProperty(ps,"empty")){
+			sets[k++]= i;
+			printf("found %d  %s\n",i,getVarName(mb,i));
+		}
+	}
+	ESevaluate(mb,k,sets);
+	return MAL_SUCCEED;
+}
 
 str
 ESevaluate(MalBlkPtr mb, int cnt, int *vars){
