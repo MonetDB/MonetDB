@@ -1049,6 +1049,8 @@ public class MonetResultSet implements ResultSet {
 
 			/**
 			 * Gets the designated column's table's catalog name.
+			 * Because MonetDB handles only one catalog (dbfarm) at a
+			 * time, the current one is the one we deal with here.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return the name of the catalog for the table in which the given
@@ -1056,8 +1058,6 @@ public class MonetResultSet implements ResultSet {
 			 */
 			public String getCatalogName(int column) throws SQLException {
 				if (getTableName(column) != "") {
-					// because MonetDB handles only one catalog (dbfarm) at
-					// a time, the current one is the one we deal with here
 					return(getStatement().getConnection().getCatalog());
 				} else {
 					return("");

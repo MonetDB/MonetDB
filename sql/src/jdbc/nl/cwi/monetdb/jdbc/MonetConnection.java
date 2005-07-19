@@ -63,6 +63,9 @@ public class MonetConnection extends Thread implements Connection {
 	private final String password;
 	/** The language which is used */
 	private final int lang;
+	/** Whether to use server-side (native) or Java emulated
+	 * PreparedStatements */
+	private final boolean nativePreparedStatements;
 	/** A connection to Mserver using a TCP socket */
 	private final MonetSocket monet;
 
@@ -71,7 +74,8 @@ public class MonetConnection extends Thread implements Connection {
 
 	/** The stack of warnings for this Connection object */
 	private SQLWarning warnings = null;
-	/** The Connection specific mapping of user defined types to Java types (not used) */
+	/** The Connection specific mapping of user defined types to Java
+	 * types (not used) */
 	private Map typeMap = new HashMap();
 
 	// See javadoc for documentation about WeakHashMap if you don't know what
@@ -140,7 +144,11 @@ public class MonetConnection extends Thread implements Connection {
 		this.database = props.getProperty("database");
 		this.username = props.getProperty("user");
 		this.password = props.getProperty("password");
+		this.nativePreparedStatements = Boolean.valueOf(props.getProperty("native_prepared_statements")).booleanValue();
+
 		String language = props.getProperty("language");
+		boolean blockMode = Boolean.valueOf(props.getProperty("blockmode")).booleanValue();
+		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
 
 		// check input arguments
 		if (hostname == null || hostname.trim().equals(""))
@@ -157,9 +165,6 @@ public class MonetConnection extends Thread implements Connection {
 			language = "sql";
 			addWarning("No language given, defaulting to 'sql'");
 		}
-
-		boolean blockMode = Boolean.valueOf(props.getProperty("blockmode")).booleanValue();
-		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
 
 		try {
 			// make connection to MonetDB
@@ -683,10 +688,18 @@ public class MonetConnection extends Thread implements Connection {
 		throws SQLException
 	{
 		try {
-			PreparedStatement ret =
-				new MonetPreparedStatement(
+			PreparedStatement ret;
+			if (nativePreparedStatements) {
+				// use a server-side PreparedStatement
+				ret = new MonetPreparedStatement(
 					this, resultSetType, resultSetConcurrency, sql
 				);
+			} else {
+				// use a Java implementation of a PreparedStatement
+				ret = new MonetPreparedStatementJavaImpl(
+					this, resultSetType, resultSetConcurrency, sql
+				);
+			}
 			// store it in the map for when we close...
 			statements.put(ret, null);
 			return(ret);
