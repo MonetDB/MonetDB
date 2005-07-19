@@ -123,8 +123,8 @@ end main;	# 15
 [ 1880@0, "sema"	  ]
 [ 1884@0, "unix"	  ]
 [ 1886@0, "mdb"		  ]
-[ 1904@0, "crackers"	  ]
-[ 1917@0, "thread"	  ]
+[ 1900@0, "crackers"	  ]
+[ 1913@0, "thread"	  ]
 #-------------------------#
 # help	Comment		  # name
 # str	str		  # type

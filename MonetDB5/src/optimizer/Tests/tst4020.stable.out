@@ -33,19 +33,19 @@ stdout of test 'tst4020` in directory 'src/optimizer` itself:
 #SPoptimizer(Admin,qry);
 #end qry;
 function user.qry():void;	# 0  (qry:void)
-    r := bbp.new(:int,:int);	# 1 CMDBATnew (r:bat[:int,:int])<-($2:int)($3:int)
+    r := bbp.new(:int,:int);	# 1 CMDBATnew (r:bat[:int,:int])<-($2:int)($2:int)
     sc := algebra.copy(r);	# 2 ALGcopy (sc:bat[:int,:int])<-(r:bat[:int,:int])
     s := bat.reverse(sc);	# 3 BKCreverse (s:bat[:int,:int])<-(sc:bat[:int,:int])
     a := algebra.semijoin(r,s);	# 4 ALGsemijoin (a:bat[:int,:int])<-(r:bat[:int,:int])(s:bat[:int,:int])
-    io.print(a);	# 5 IOprint_val ($7:int)<-(a:bat[:int,:int])
+    io.print(a);	# 5 IOprint_val ($6:int)<-(a:bat[:int,:int])
     s := bat.reverse(sc);	# 6 BKCreverse (s:bat[:int,:int])<-(sc:bat[:int,:int])
-    z := algebra.select(s,0:int,2:int);	# 7 ALGselect (z:bat[:int,:int])<-(s:bat[:int,:int])($9:int)($10:int)
-    io.print(z);	# 8 IOprint_val ($11:int)<-(z:bat[:int,:int])
+    z := algebra.select(s,0:int,2:int);	# 7 ALGselect (z:bat[:int,:int])<-(s:bat[:int,:int])($8:int)($9:int)
+    io.print(z);	# 8 IOprint_val ($10:int)<-(z:bat[:int,:int])
     t := algebra.semijoin(r,s);	# 9 ALGsemijoin (t:bat[:int,:int])<-(r:bat[:int,:int])(s:bat[:int,:int])
-    z := algebra.select(t,0:int,6:int);	# 10 ALGselect (z:bat[:int,:int])<-(t:bat[:int,:int])($9:int)($13:int)
-    io.print(z);	# 11 IOprint_val ($14:int)<-(z:bat[:int,:int])
-    optimizer.setDebug();	# 12 QOTdebugOptimizers ($15:void)
-    optimizer.selectPushdown("user","qry");	# 13 QOTSPoptimizerCALL ($16:str)<-($17:str)($18:str)
+    z := algebra.select(t,0:int,6:int);	# 10 ALGselect (z:bat[:int,:int])<-(t:bat[:int,:int])($8:int)($12:int)
+    io.print(z);	# 11 IOprint_val ($13:int)<-(z:bat[:int,:int])
+    optimizer.setDebug();	# 12 QOTdebugOptimizers ($14:void)
+    optimizer.selectPushdown("user","qry");	# 13 QOTSPoptimizerCALL ($15:str)<-($16:str)($17:str)
 end qry;	# 14  
 #
 function user.main():int;	# 0  (main:int)

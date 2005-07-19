@@ -24,13 +24,13 @@ stdout of test 'tst1000` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 #Access BATs  	# 1  ($2:str)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($5:int)
-    bat.insert(b,1,2);	# 3 BKCinsert_bun ($6:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($8:int)
-    bat.setName(b,"mybat");	# 4 BKCsetName ($9:bat[:int,:int])<-(b:bat[:int,:int])($10:str)
-    c := bbp.bind("mybat");	# 5 CMDbbpbind (c:any)<-($10:str)
-    io.print(c);	# 6 IOprint_val ($12:int)<-(c:any)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($4:int)
+    bat.insert(b,1,2);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(b:bat[:int,:int])($6:int)($7:int)
+    bat.setName(b,"mybat");	# 4 BKCsetName ($8:bat[:int,:int])<-(b:bat[:int,:int])($9:str)
+    c := bbp.bind("mybat");	# 5 CMDbbpbind (c:any)<-($9:str)
+    io.print(c);	# 6 IOprint_val ($11:int)<-(c:any)
     x := bbp.getNames();	# 7 CMDbbpNames (x:bat[:int,:str])
-    io.print(x);	# 8 IOprint_val ($14:int)<-(x:bat[:int,:str])
+    io.print(x);	# 8 IOprint_val ($13:int)<-(x:bat[:int,:str])
 end main;	# 9  
 #-----------------#
 # h	mybat	  # name

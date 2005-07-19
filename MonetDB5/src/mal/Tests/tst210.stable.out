@@ -23,12 +23,12 @@ stdout of test 'tst210` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 # simple renaming of a bat; 	# 1  ($2:str)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($5:int)
-    bat.insert(b,1,1);	# 3 BKCinsert_bun ($6:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($7:int)
-    io.print(b);	# 4 IOprint_val ($8:int)<-(b:bat[:int,:int])
-    bat.setName(b,"myhome");	# 5 BKCsetName ($9:bat[:int,:int])<-(b:bat[:int,:int])($10:str)
-    bat.setColumn(b,"first","last");	# 6 BKCsetColumns ($11:bat[:int,:int])<-(b:bat[:int,:int])($12:str)($13:str)
-    io.print(b);	# 7 IOprint_val ($14:int)<-(b:bat[:int,:int])
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($4:int)
+    bat.insert(b,1,1);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(b:bat[:int,:int])($6:int)($6:int)
+    io.print(b);	# 4 IOprint_val ($7:int)<-(b:bat[:int,:int])
+    bat.setName(b,"myhome");	# 5 BKCsetName ($8:bat[:int,:int])<-(b:bat[:int,:int])($9:str)
+    bat.setColumn(b,"first","last");	# 6 BKCsetColumns ($10:bat[:int,:int])<-(b:bat[:int,:int])($11:str)($12:str)
+    io.print(b);	# 7 IOprint_val ($13:int)<-(b:bat[:int,:int])
 end main;	# 8  
 #-----------------#
 # h	tmp_4	  # name

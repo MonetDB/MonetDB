@@ -29,12 +29,12 @@ stdout of test 'tst4010` in directory 'src/optimizer` itself:
 function user.main():int;	# 0  (main:int)
 # testing the library for unsafe instructions 	# 1  ($2:str)
 # bat C can still be shared with B 	# 2  ($4:str)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($9:int)($10:int)
-    c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-($12:int)($13:int)
-    bat.insert(b,1,1);	# 5 BKCinsert_bun ($14:bat[:int,:int])<-(b:bat[:int,:int])($15:int)($15:int)
-# in this case D should be left alone 	# 6  ($17:str)
-    d := bbp.new(:int,:int);	# 7 CMDBATnew (d:bat[:int,:int])<-($19:int)($20:int)
-    bat.insert(d,2,2);	# 8 BKCinsert_bun ($21:bat[:int,:int])<-(d:bat[:int,:int])($22:int)($22:int)
+    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($9:int)($9:int)
+    c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-($9:int)($9:int)
+    bat.insert(b,1,1);	# 5 BKCinsert_bun ($11:bat[:int,:int])<-(b:bat[:int,:int])($12:int)($12:int)
+# in this case D should be left alone 	# 6  ($14:str)
+    d := bbp.new(:int,:int);	# 7 CMDBATnew (d:bat[:int,:int])<-($16:int)($16:int)
+    bat.insert(d,2,2);	# 8 BKCinsert_bun ($17:bat[:int,:int])<-(d:bat[:int,:int])($18:int)($18:int)
 end main;	# 9  
 
 # 08:01:45 >  

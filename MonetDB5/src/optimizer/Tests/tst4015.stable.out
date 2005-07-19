@@ -24,10 +24,10 @@ stdout of test 'tst4015` in directory 'src/optimizer` itself:
 #
 function user.main():int;	# 0  (main:int)
 # testing repeatative reverse optimalisation 	# 1  ($2:str)
-    r := bbp.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-($4:int)($5:int)
-    bat.insert(r,5:int,1:int);	# 3 BKCinsert_bun ($6:bat[:int,:int])<-(r:bat[:int,:int])($7:int)($8:int)
-    k := 23:int;	# 4  (k:int)<-($11:int)
-    io.print(r);	# 5 IOprint_val ($13:int)<-(r:bat[:int,:int])
+    r := bbp.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-($4:int)($4:int)
+    bat.insert(r,5:int,1:int);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(r:bat[:int,:int])($6:int)($7:int)
+    k := 23:int;	# 4  (k:int)<-($10:int)
+    io.print(r);	# 5 IOprint_val ($12:int)<-(r:bat[:int,:int])
 end main;	# 6  
 #-----------------#
 # h	tmp_4	  # name

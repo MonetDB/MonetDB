@@ -102,11 +102,11 @@ function user.main():int;	# 0  (main:int)
 #inspection of the runtime setting 	# 1  ($2:str)
 #it uses the dynamic type analysis scheme 	# 2  ($4:str)
     io.print("start test");	# 3 IOprint_val ($5:int)<-($6:str)
-    b := bbp.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-($8:int)($9:int)
-    bat.setName(b,"simplemind");	# 5 BKCsetName ($10:bat[:int,:int])<-(b:bat[:int,:int])($11:str)
+    b := bbp.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-($8:int)($8:int)
+    bat.setName(b,"simplemind");	# 5 BKCsetName ($9:bat[:int,:int])<-(b:bat[:int,:int])($10:str)
     z := bbp.getNames();	# 6 CMDbbpNames (z:bat[:int,:str])
-    user.dir(z);	# 7  ($13:void)<-(z:bat[:int,:str])
-    user.dir("simple");	# 8  ($14:void)<-($15:str)
+    user.dir(z);	# 7  ($12:void)<-(z:bat[:int,:str])
+    user.dir("simple");	# 8  ($13:void)<-($14:str)
 end main;	# 9  
 [ "start test" ]
 #---------------------------------------------------------------------------------------------------------------------------------#

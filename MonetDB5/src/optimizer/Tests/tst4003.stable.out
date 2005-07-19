@@ -25,11 +25,11 @@ stdout of test 'tst4003` in directory 'src/optimizer` itself:
 function user.main():int;	# 0  (main:int)
 # The 4000 series deals with strategic optimizer constructs 	# 1  ($2:str)
 # common subexpression evaluation 	# 2  ($4:str)
-    b := bbp.new(:str,:str);	# 3 CMDBATnew (b:bat[:str,:str])<-($8:str)($9:str)
-    c := bbp.new(:str,:str);	# 4 CMDBATnew (c:bat[:str,:str])<-($11:str)($12:str)
-# identical until insert takes place 	# 5  ($14:str)
-    d := algebra.select(b,"hello","world");	# 6 ALGselect (d:bat[:str,:str])<-(b:bat[:str,:str])($16:str)($17:str)
-# mapped onto one instruction 	# 7  ($20:str)
+    b := bbp.new(:str,:str);	# 3 CMDBATnew (b:bat[:str,:str])<-($8:str)($8:str)
+    c := bbp.new(:str,:str);	# 4 CMDBATnew (c:bat[:str,:str])<-($8:str)($8:str)
+# identical until insert takes place 	# 5  ($11:str)
+    d := algebra.select(b,"hello","world");	# 6 ALGselect (d:bat[:str,:str])<-(b:bat[:str,:str])($13:str)($14:str)
+# mapped onto one instruction 	# 7  ($17:str)
 end main;	# 8  
 
 # 11:08:28 >  

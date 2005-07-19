@@ -23,9 +23,9 @@ end test;	# 2
 #test("hello",b,c);
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($3:int)
-    c := bbp.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-($5:int)($6:int)
-    user.test("hello",b,c);	# 3  ($7:void)<-($8:str)(b:bat[:int,:int])(c:bat[:int,:int])
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($2:int)
+    c := bbp.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-($2:int)($2:int)
+    user.test("hello",b,c);	# 3  ($4:void)<-($5:str)(b:bat[:int,:int])(c:bat[:int,:int])
 end main;	# 4  
 [ "hello" ]
 

@@ -53,15 +53,15 @@ function user.main():int;	# 0  (main:int)
     nb_a := bat.insert(t,6,mb_a);	# 13 BKCinsert_bun (nb_a:bat[:int,:url])<-(t:bat[:int,:url])($27:int)(mb_a:url)
     qb_a := io.print("build a table finished");	# 14 IOprint_val (qb_a:int)<-($29:str)
     io.print(t);	# 15 IOprint_val ($30:int)<-(t:bat[:int,:url])
-    rb := bbp.new(:int,:url);	# 16 CMDBATnew (rb:bat[:int,:url])<-($32:int)($33:url)
-    io.print("start loop");	# 17 IOprint_val ($34:int)<-($35:str)
+    rb := bbp.new(:int,:url);	# 16 CMDBATnew (rb:bat[:int,:url])<-($32:int)($3:url)
+    io.print("start loop");	# 17 IOprint_val ($33:int)<-($34:str)
 barrier (mloop,h,B2):= chopper.newIterator(t);	# 18 CHPbunIterator (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 23
-    io.print(h);	# 19 IOprint_val ($39:int)<-(h:int)
-    io.print(B2);	# 20 IOprint_val ($40:int)<-(B2:url)
-    bat.insert(rb,h,B2);	# 21 BKCinsert_bun ($41:bat[:int,:url])<-(rb:bat[:int,:url])(h:int)(B2:url)
+    io.print(h);	# 19 IOprint_val ($38:int)<-(h:int)
+    io.print(B2);	# 20 IOprint_val ($39:int)<-(B2:url)
+    bat.insert(rb,h,B2);	# 21 BKCinsert_bun ($40:bat[:int,:url])<-(rb:bat[:int,:url])(h:int)(B2:url)
     redo (mloop,h,B2):= chopper.hasMoreElements(t);	# 22 CHPbunHasMoreElements (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 19
 exit mloop;	# 23  (mloop:lng)
-    io.print(rb);	# 24 IOprint_val ($42:int)<-(rb:bat[:int,:url])
+    io.print(rb);	# 24 IOprint_val ($41:int)<-(rb:bat[:int,:url])
 end main;	# 25  
 [ "build a table finished" ]
 #-------------------------------------------------------------------------#

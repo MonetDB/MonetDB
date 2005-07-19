@@ -12,5 +12,5 @@ end clkticks;
 
 # trace all instructions executed with timing information
 mdb.setTimer(true);
-mdb.setTrace("user","clkticks",true);
+mdb.setTrace(true);
 user.clkticks(2);

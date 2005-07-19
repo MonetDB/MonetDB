@@ -33,12 +33,12 @@ function user.main():int;	# 0  (main:int)
     b1 := bbp.new(:void,:int);	# 3 CMDBATnew (b1:bat[:void,:int])<-($6:void)($7:int)
     bat.insert(b1,42);	# 4 BKCinsert_void_bun ($8:bat[:int,:any])<-(b1:bat[:void,:int])($9:int)
     bat.insert(b1,49);	# 5 BKCinsert_void_bun ($10:bat[:int,:any])<-(b1:bat[:void,:int])($11:int)
-    b2 := bbp.new(:void,:str);	# 6 CMDBATnew (b2:bat[:void,:str])<-($13:void)($14:str)
-    bat.insert(b2,"hello world");	# 7 BKCinsert_void_bun ($15:bat[:str,:any])<-(b2:bat[:void,:str])($16:str)
-    bat.insert(b2,"goodbye world");	# 8 BKCinsert_void_bun ($17:bat[:str,:any])<-(b2:bat[:void,:str])($18:str)
-    tablet.setFormat(b1,b2);	# 9 TABsetFormat ($19:void)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
-    tablet.setProperties("name,type,dense,sorted,key,min,max");	# 10 TABsetProperties ($20:int)<-($21:str)
-    tablet.display(b1,b2);	# 11 TABdisplayTable ($22:int)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
+    b2 := bbp.new(:void,:str);	# 6 CMDBATnew (b2:bat[:void,:str])<-($6:void)($13:str)
+    bat.insert(b2,"hello world");	# 7 BKCinsert_void_bun ($14:bat[:str,:any])<-(b2:bat[:void,:str])($15:str)
+    bat.insert(b2,"goodbye world");	# 8 BKCinsert_void_bun ($16:bat[:str,:any])<-(b2:bat[:void,:str])($17:str)
+    tablet.setFormat(b1,b2);	# 9 TABsetFormat ($18:void)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
+    tablet.setProperties("name,type,dense,sorted,key,min,max");	# 10 TABsetProperties ($19:int)<-($20:str)
+    tablet.display(b1,b2);	# 11 TABdisplayTable ($21:int)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
 end main;	# 12  
 #---------------------------------------#
 # tmp_4,	tmp_5			# name

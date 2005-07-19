@@ -47,14 +47,6 @@ pattern setTrace(b:bit):void
 address MDBsetTrace
 comment "Turn on/off tracing of current routine";
 
-#pattern setBreakpoint(fcn:str)
-#address MDBsetBreakpoint
-#comment "Turn on/off breakpoint on instruction in current operation";
-
-#pattern clearBreakpoints()
-#address MDBclrBreakpoints
-#comment "Remove all breakpoints";
-
 pattern setTimer(b:bit):void
 address MDBsetTimer
 comment "Turn on/off performance timer for debugger";
@@ -220,21 +212,6 @@ str MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     (void) mb; /* still unused */
     b= *(chr *) getArgReference(stk,p,1);
     cntxt->timer= b? GDKusec():0;
-    return MAL_SUCCEED;
-}
-str MDBsetBreakpoint(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Client cntxt= getClient();
-    str fcn;
-    fcn= *(str *) getArgReference(stk,p,1);
-    mdbSetBreakpoint(cntxt,mb,p,fcn,'s');
-    return MAL_SUCCEED;
-}
-str MDBclrBreakpoints(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Client cntxt= getClient();
-    str fcn;
-    (void) mb;
-    fcn= *(str *) getArgReference(stk,p,1);
-    mdbClrBreakpointName(cntxt,fcn);
     return MAL_SUCCEED;
 }
 

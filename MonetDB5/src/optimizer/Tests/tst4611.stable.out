@@ -38,12 +38,12 @@ end joinPath;	# 4
 #
 function user.main():int;	# 0  (main:int)
 # the first test for macro expansions and inversions 	# 1  ($2:str)
-    a := bbp.new(:int,:int);	# 2 CMDBATnew (a:bat[:int,:int])<-($7:int)($8:int)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($10:int)($11:int)
-    c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-($13:int)($14:int)
+    a := bbp.new(:int,:int);	# 2 CMDBATnew (a:bat[:int,:int])<-($7:int)($7:int)
+    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($7:int)($7:int)
+    c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-($7:int)($7:int)
     g := algebra.join(a,b);	# 5 ALGjoin (g:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])
     h := algebra.join(g,c);	# 6 ALGjoin (h:bat[:int,:int])<-(g:bat[:int,:int])(c:bat[:int,:int])
-    mdb.showFunction();	# 7 MDBshowFunction ($17:void)
+    mdb.showFunction();	# 7 MDBshowFunction ($12:void)
 end main;	# 8  
 function user.main():int;
     a := bbp.new(:int,:int);

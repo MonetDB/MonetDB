@@ -39,12 +39,12 @@ function user.main():int;	# 0  (main:int)
     s := "hello";	# 4  (s:str)<-($8:str)
     i := 1:sht;	# 5  (i:sht)<-($10:sht)
     b := true;	# 6  (b:bit)<-($12:bit)
-    z := bbp.new(:int,:int);	# 7 CMDBATnew (z:bat[:int,:int])<-($14:int)($15:int)
-# type resolver should complain on the rest 	# 8  ($17:str)
-    j := 1:lng;	# 9  unknown (j:sht)<-($19:lng)
+    z := bbp.new(:int,:int);	# 7 CMDBATnew (z:bat[:int,:int])<-($14:int)($14:int)
+# type resolver should complain on the rest 	# 8  ($16:str)
+    j := 1:lng;	# 9  unknown (j:sht)<-($18:lng)
     k := 1:sht;	# 10  unknown (k:lng)<-($10:sht)
-    y := bbp.new(:int,:int);	# 11  unknown (y:bat[:str,:int])<-($22:int)($23:int)
-    f := "wrong";	# 12  unknown (f:flt)<-($25:str)
+    y := bbp.new(:int,:int);	# 11  unknown (y:bat[:str,:int])<-($14:int)($14:int)
+    f := "wrong";	# 12  unknown (f:flt)<-($22:str)
 end main;	# 13  
 
 # 07:58:46 >  

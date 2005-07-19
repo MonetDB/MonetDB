@@ -36,6 +36,7 @@ MIL 4 'loss' in M5
 MAL language issues
 - rethink the before/after structure for garabage collection
   and handle it explicitly in the interpreter.
+- reference counting is still not ok, see tst220
 - look into the nested (referenced) bat issues
 - check all routines for proper match return type and actual
 action.

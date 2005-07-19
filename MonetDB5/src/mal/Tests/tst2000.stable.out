@@ -40,27 +40,23 @@ function user.main():int;	# 0  (main:int)
 #we start with a non-parallel version 	# 2  ($4:str)
 # trace all instructions executed with timing information 	# 3  ($6:str)
     mdb.setTimer(true);	# 4 MDBsetTimer ($7:void)<-($8:bit)
-    mdb.setTrace("user","clkticks",true);	# 5 MDBsetTrace2 ($9:void)<-($10:str)($11:str)($8:bit)
-    user.clkticks(2);	# 6  ($12:void)<-($13:int)
+    mdb.setTrace(true);	# 5 MDBsetTrace ($9:void)<-($8:bit)
+    user.clkticks(2);	# 6  ($10:void)<-($11:int)
 end main;	# 7  
 #     6 usec!    mdb.setTimer($8=true)
-#Monet Debugger on
-#Monet Debugger on
-#mdb !    Admin.clkticks(2)
-#mdb !barrier b := calc.>(2,0)
-#mdb !    io.printf("clock tick\\n")
+!    mdb.setTrace($8=true)
+!barrier b := calc.>(n=2, $3=0)
 clock tick
-#mdb !    alarm.sleep(2)
-#mdb !    n := calc.-(2,1)
-#mdb !    redo b := calc.>(1,0)
-#mdb !    io.printf("clock tick\\n")
+!    io.printf($5="clock tick\\n")
+!    alarm.sleep($7=2)
+!    n := calc.-(n=1, $8=1)
+!    redo b := calc.>(n=1, $3=0)
 clock tick
-#mdb !    alarm.sleep(2)
-#mdb !    n := calc.-(1,1)
-#mdb !    redo b := calc.>(0,0)
-#mdb !exit b;
-#mdb !end clkticks;
-#mdb !end main;
+!    io.printf($5="clock tick\\n")
+!    alarm.sleep($7=2)
+!    n := calc.-(n=0, $8=1)
+!    redo b := calc.>(n=0, $3=0)
+!    user.clkticks($11=2)
 
 # 07:59:19 >  
 # 07:59:19 >  Done.
