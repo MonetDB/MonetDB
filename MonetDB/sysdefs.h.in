@@ -71,4 +71,8 @@
 # define __ASMNAME(cname)  __ASMNAME2 (__USER_LABEL_PREFIX__, cname)
 # define __ASMNAME2(prefix, cname) __STRING (prefix) cname
 # define __interface
+/* work around bug in glibc header files */
+#ifndef __GLIBC_HAVE_LONG_LONG
+#define __GLIBC_HAVE_LONG_LONG 1
+#endif
 #endif
