@@ -97,7 +97,7 @@ public class QueryMessage extends MCLVariableMessage {
 	}
 
 	/**
-	 * Adds the given String to this Message if it matches the Message
+	 * Adds the given Sentence to this Message if it matches the Message
 	 * type.  The sentence is parsed as far as that is considered to be
 	 * necessary to validate it against the Message type.  If a sentence
 	 * is not valid, an MCLException is thrown.
@@ -125,11 +125,11 @@ public class QueryMessage extends MCLVariableMessage {
 	// values inside the message
 
 	/**
-	 * Retrieves the reference id contained in this Message object.
+	 * Returns the query in the data Sentence.
 	 *
-	 * @return the result set id
+	 * @return the query in its Sentence
 	 */
-	public String getId() {
-		return(id);
+	public MCLSentence getDataSentence() {
+		return(sentences[0]);
 	}
 }

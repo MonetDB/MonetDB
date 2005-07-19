@@ -20,60 +20,55 @@ abstract class MCLVariableMessage extends MCLMessage {
 	protected List variableSentences;
 	
 	/**
-	 * Returns a String representation of the current contents of this
-	 * Message object.  The String representation is equal to what would
-	 * get sent over the wire when calling the method writeToStream()
-	 * with the exception that each sentence is not prefixed with its
-	 * length and ends with a newline.  If this Message is not valid,
-	 * this method will return the string "Invalid Message".
+	 * Returns an Iterator over all Sentences contained within this
+	 * Message.  The StartOfMessage and Prompt Sentences are not
+	 * included in the Iterator.
 	 *
-	 * @return a String representation of this object
+	 * @return an Iterator over all Sentences
 	 */
-	public String toString() {
-		String ret = getName() + ":\n";
-		ret += getSomSentence().toString();
-		for (int i = 0; i < sentences.length; i++) {
-			if (sentences[i] == null)
-				return("Invalid Message");
+	public Iterator getSentences() {
+		return(new Iterator() {
+			boolean hasNext = true;
+			int pos = 0;
 
-			ret += sentences[i].toString() + "\n";
-		}
-		for (int i = 0; i < variableSentences.size(); i++) {
-			if (sentences[i] == null)
-				return("Invalid Message");
+			/**
+			 * Returns true if the iteration has more elements. (In
+			 * other words, returns true if next would return an element
+			 * rather than throwing an exception.)
+			 *
+			 * @return true if the iterator has more elements.
+			 */
+			public boolean hasNext() {
+				return(hasNext);
+			}
 
-			ret += ((MCLMessage)variableSentences.get(i)).toString() + "\n";
-		}
-		ret += promptSentence.toString();
-		
-		return(ret);
-	}
+			/**
+			 * Returns the next element in the iteration.
+			 *
+			 * @return the next element in the iteration.
+			 * @throws NoSuchElementException iteration has no more
+			 * elements.
+			 */
+			public Object next() throws NoSuchElementException {
+				if (!hasNext) throw new NoSuchElementException();
+				
+				if (pos < sentences.length) {
+					return(sentences[pos]);
+				} else {
+					if (variableSentences.size() == 0 ||
+							variableSentences.size() - 1 == pos - sentences.length)
+						hasNext = false;
 
-	/**
-	 * Writes the current contents of this Message object to the given
-	 * OutputStream.  Writing is done per sentence, after which a flush
-	 * is performed.
-	 *
-	 * @param out the OutputStream to write to
-	 * @throws MCLException if this Message is not valid, or writing to
-	 * the stream failed
-	 */
-	public void writeToStream(MCLOutputStream out) throws MCLException {
-		out.writeSentence(getSomSentence());
-		for (int i = 0; i < sentences.length; i++) {
-			if (sentences[i] == null) throw
-				new MCLException("Invalid Message");
+					return(variableSentences.get(pos - sentences.length));
+				}
+			}
 
-			out.writeSentence(sentences[i]);
-		}
-		for (int i = 0; i < variableSentences.size(); i++) {
-			if (sentences[i] == null) throw
-				new MCLException("Invalid Message");
-
-			out.writeSentence((MCLSentence)variableSentences.get(i));
-		}
-		out.writeSentence(promptSentence);
-
-		out.flush();
+			/**
+			 * Remove is not supported.
+			 */
+			public void remove() throws UnsupportedOperationException {
+				throw new UnsupportedOperationException();
+			}
+		});
 	}
 }

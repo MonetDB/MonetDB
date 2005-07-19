@@ -74,8 +74,19 @@ public class BatchMessage extends MCLVariableMessage {
 		variableSentences.add(sentence);
 	}
 
-
-	// the following are message specific getters that retrieve the
-	// values inside the message
-
+	/**
+	 * Adds the given Sentence to this Message if it matches the Message
+	 * type.  The sentence is parsed as far as that is considered to be
+	 * necessary to validate it against the Message type.  If a sentence
+	 * is not valid, an MCLException is thrown.
+	 * 
+	 * @param in an MCLSentence object
+	 * @throws MCLException if the given sentence is not considered to
+	 * be valid
+	 */
+	public void addSentence(MCLSentence in) throws MCLException {
+		// since we only have data sentences, we can defer the validity
+		// check to the addDataSentence() method
+		addDataSentence(in);
+	}
 }

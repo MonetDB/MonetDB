@@ -1,5 +1,6 @@
 package nl.cwi.monetdb.mcl.messages;
 
+import java.util.*;
 import nl.cwi.monetdb.mcl.*;
 import nl.cwi.monetdb.mcl.io.*;
 
@@ -41,13 +42,17 @@ abstract class MCLMessage {
 	 * @return a String representation of this object
 	 */
 	public String toString() {
+		Iterator it = getSentences();
+		MCLSentence sentence;
 		String ret = getName() + ":\n";
+
 		ret += getSomSentence().toString();
-		for (int i = 0; i < sentences.length; i++) {
-			if (sentences[i] == null)
+		while (it.hasNext()) {
+			sentence = (MCLSentence)(it.next());
+			if (sentence == null)
 				return("Invalid Message");
 
-			ret += sentences[i].toString() + "\n";
+			ret += sentence.toString() + "\n";
 		}
 		ret += promptSentence.toString();
 		
@@ -95,18 +100,69 @@ abstract class MCLMessage {
 	 * the stream failed
 	 */
 	public void writeToStream(MCLOutputStream out) throws MCLException {
+		Iterator it = getSentences();
+		MCLSentence sentence;
+
 		out.writeSentence(getSomSentence());
-		for (int i = 0; i < sentences.length; i++) {
-			if (sentences[i] == null) throw
+		while (it.hasNext()) {
+			sentence = (MCLSentence)(it.next());
+			if (sentence == null) throw
 				new MCLException("Invalid Message");
 
-			out.writeSentence(sentences[i]);
+			out.writeSentence(sentence);
 		}
 		out.writeSentence(promptSentence);
 
 		out.flush();
 	}
 
+	/**
+	 * Returns an Iterator over all Sentences contained within this
+	 * Message.  The StartOfMessage and Prompt Sentences are not
+	 * included in the Iterator.
+	 *
+	 * @return an Iterator over all Sentences
+	 */
+	public Iterator getSentences() {
+		return(new Iterator() {
+			boolean hasNext = true;
+			int pos = 0;
+
+			/**
+			 * Returns true if the iteration has more elements. (In
+			 * other words, returns true if next would return an element
+			 * rather than throwing an exception.)
+			 *
+			 * @return true if the iterator has more elements.
+			 */
+			public boolean hasNext() {
+				return(hasNext);
+			}
+
+			/**
+			 * Returns the next element in the iteration.
+			 *
+			 * @return the next element in the iteration.
+			 * @throws NoSuchElementException iteration has no more
+			 * elements.
+			 */
+			public Object next() throws NoSuchElementException {
+				if (!hasNext) throw new NoSuchElementException();
+				
+				if (sentences.length == 0 || sentences.length - 1 == pos)
+					hasNext = false;
+
+				return(sentences[pos]);
+			}
+
+			/**
+			 * Remove is not supported.
+			 */
+			public void remove() throws UnsupportedOperationException {
+				throw new UnsupportedOperationException();
+			}
+		});
+	}
 
 	/**
 	 * Adds the given String to this Message if it matches the Message
