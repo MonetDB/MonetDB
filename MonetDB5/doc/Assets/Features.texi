@@ -3,8 +3,7 @@
 In this section we give a short overview of the key features of MonetDB.
 Its evolution in the area of database mining and datawarehousing makes
 it an ideal choice for high volumn, complex query dominant applications.
-In this light, it may be less adequate for secure OLTP settings, but
-it is being lookup upon by first-time MonetDB users.
+In this light, it may be less adequate for secure OLTP settings.
 
 It is important to recognize that MonetDB is primarilly aimed at
 experienced system programmers and administrators. End-users are
@@ -20,16 +19,17 @@ It design goes back over a decade, when we decided that the database hotset
 - the part used by the applications- can be largely held in main-memory
 or where a few columns of a broad relational table are sufficient to
 hande a request.
-
+These design decisions have proofed pivotal to exploit
+cache-conscious algorithms.
 
 @strong{A multi-model system}
 
 MonetDB supports multiple query language front-ends. Aside from
 its proprietary language, called MonetDB Assembler Language (MAL),
-it supports ANSI SQL-99 and W3C Xquery. Their underlying storage
-models and compuational scheme differs widely. The system is designed
+it supports ANSI SQL-99 and W3C Xquery. Their underlying logical
+data model and computational scheme differs widely. The system is designed
 to provide a common ground both both, and is prepared to support
-languages based on yet another syntax or processing paradigm.
+languages based on yet another datamodel or processing paradigm.
 
 @strong{A binary-relation database kernel}
 
@@ -42,7 +42,6 @@ This lead to an architecture where the traditional page-pool is
 replaced by a much larger granularity, called the BATs. They are
 sizeable entities- up to hundredrs of megabytes- swapped into
 memory upon need.
-
 The benefit of this approach has been shown in numerous papers
 in the scientific literature.
 

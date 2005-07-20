@@ -46,7 +46,7 @@ Last updated: @value{UPDATED}
 @end ifnottex
 
 @node Introduction V5, ,About this manual, Top
-@include Assets/About_this_manual_gdk
+@include Assets/About-this-manual-gdk.texi
 
 @include gdk.bdy.texi
 @include gdk_atoms.bdy.texi

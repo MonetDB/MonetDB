@@ -75,7 +75,7 @@ Table of contents
 
 --- The Xquery front-end ---
 
-* The application interfaces ::
+* Programming interfaces ::
 
 * MonetDB Assembler Language::
 @menu
@@ -95,13 +95,12 @@ Table of contents
 * Atom types::
 * Type resolution::
 * Boxed variables::
-* Optimizer framework::
 * Property management::
+* Optimizer framework::
 * Name space management::
 * MAL syntax::
 @end menu
 
-* XML interface::
 * The MAL debugger::
 * The MAL profiler::
 
@@ -113,18 +112,18 @@ Table of contents
 @end ifnottex
 
 @node About this manual, Installation , TOC , TOC
-@include Assets/About_this_manual
+@include Assets/About-this-manual.texi
 
 @node Installation , MonetDB overview, About this manual , TOC
-@include Assets/Features
+@include Assets/Features.texi
 @node MonetDB overview, MonetDB Assembler Language, Installation, TOC
 @include mal.bdy.texi
 @include mal_scenario.bdy.texi
 @include mal_client.bdy.texi
 @include mal_session.bdy.texi
-@include Assets/History
+@include Assets/History.texi
 
-@node MonetDB Assembler Language , XML interface, MonetDB overview , TOC
+@node MonetDB Assembler Language , The MAL debugger, MonetDB overview , TOC
 @include mal_instruction.bdy.texi
 @include mal_parser.bdy.texi
 
@@ -151,10 +150,17 @@ Table of contents
 @include mal_type.bdy.texi
 @include mal_resolve.bdy.texi
 
-@node Boxed variables, Optimizer framework , Type resolution, TOC
+@node Boxed variables, Name space management , Type resolution, TOC
 @include mal_box.bdy.texi
 
-@node Optimizer framework, Property management , Boxed variables, TOC
+@node Name space management, Property management, Boxed variables , TOC
+@include mal_namespace.bdy.texi
+@include mal_module.bdy.texi
+
+@node Property management,  Optimizer framework, Name space management, TOC
+@include mal_properties.bdy.texi
+
+@node Optimizer framework, , Property management , TOC
 @include mal_optimizer.bdy.texi
 @include mal_commonExpressions.bdy.texi
 @include mal_emptyset.bdy.texi
@@ -165,19 +171,8 @@ Table of contents
 @include mal_peephole.bdy.texi
 @include mal_strengthReduction.bdy.texi
 @include mal_costmodel.bdy.texi
-@include optimizer.bdy.texi
 
-@node Property management, Name space management , Optimizer framework, TOC
-@include mal_properties.bdy.texi
-
-@node Name space management, , Property management, TOC
-@include mal_namespace.bdy.texi
-@include mal_module.bdy.texi
-
-@node XML interface, The MAL debugger, MonetDB Assembler Language, TOC
-@include mal_xml.bdy.texi
-
-@node The MAL debugger, The MAL profiler , XML interface, TOC
+@node The MAL debugger, The MAL profiler , MonetDB Assembler Language, TOC
 @include mal_debugger.bdy.texi
 
 @node The MAL profiler, MAL syntax , The MAL debugger, TOC
@@ -189,6 +184,7 @@ Table of contents
 @end ifnottex
 
 @include Assets/ApplicationInterfaces
+@include mal_xml.bdy.texi
 
 
 @bye
