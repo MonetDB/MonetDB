@@ -16,7 +16,7 @@ Options are:
                        --dbname=<database_name>     
                        --dbfarm=<database_directory>
                        --dbinit=<MIL_statement>              
- -d <debug_level>    | --debug=<debug_level>        
+ -d<debug_level>     | --debug=<debug_level>        
  -s <option>=<value> | --set <option>=<value>       
  -?                  | --help                       
 
