@@ -1071,7 +1071,8 @@ optimizers to make decisions. (See the section on properties).
 @= propList
     if( keyphrase1(cntxt,"{")) {
         do {
-            str pname;
+            str pname,opname;
+			int i,lt,lo;
 
             l = idLength(cntxt);
             if(l==0) 
@@ -1080,54 +1081,58 @@ optimizers to make decisions. (See the section on properties).
             if( curBlk->var[@1]->props== NULL)
                 curBlk->var[@1]->props= newPropertySet();
 			/* localize value , simplified version */
-			if(keyphrase1(cntxt,"=")) {
-				int i,lt;
-				if( (i= cstLength(cntxt,&lt))){
-					char *nxt= CURRENT(cntxt);
-					switch(lt){
-					case TYPE_sht:
-					case TYPE_int:{
-						int l= strtol(nxt, NULL,10);
-						int ival= (int)l;
-						setVarProperty(curBlk,@1,pname, lt, &ival);
-						break;
-						}
-					case TYPE_lng:{
-						lng l= strtol(nxt, NULL,10);
-						setVarProperty(curBlk,@1,pname, lt, &l);
-						break;
-						}
-					case TYPE_dbl:
-					case TYPE_flt:{
-						double l= strtod(nxt,NULL);
-						setVarProperty(curBlk,@1,pname, lt, &l);
-						break;
-						}
-					case TYPE_bit:{
-						int bval;
-						if( strncmp(nxt,"true",4)==0 && i==4)
-							bval= TRUE;
-						else
-						if( strncmp(nxt,"false",5)==0 && i==4)
-							bval= FALSE;
-						else
-						if( strncmp(nxt,"TRUE",4)==0 && i==4)
-							bval= TRUE;
-						else
-						if( strncmp(nxt,"FALSE",4)==0 && i==4)
-							bval= FALSE;
-						setVarProperty(curBlk,@1,pname, lt, &bval);
-						break;
-						}
-					case TYPE_str:
-						setVarProperty(curBlk,@1,pname, lt,
-							GDKstrdup(cstCopy(cntxt,i)));
+			lo= operatorLength(cntxt);
+			if( lo > 0) 
+				opname= operatorCopy(cntxt,lo);
+			else opname= GDKstrdup("");
+			if( (i= cstLength(cntxt,&lt))){
+				char *nxt= CURRENT(cntxt);
+				switch(lt){
+				case TYPE_sht:
+				case TYPE_int:{
+					int l= strtol(nxt, NULL,10);
+					int ival= (int)l;
+					setVarProperty(curBlk,@1,pname, opname, lt, &ival);
+					break;
 					}
-					advance(cntxt,i);
+				case TYPE_lng:{
+					lng l= strtol(nxt, NULL,10);
+					setVarProperty(curBlk,@1,pname,  opname,lt, &l);
+					break;
+					}
+				case TYPE_dbl:
+				case TYPE_flt:{
+					double l= strtod(nxt,NULL);
+					setVarProperty(curBlk,@1,pname, opname, lt, &l);
+					break;
+					}
+				case TYPE_bit:{
+					int bval;
+					if( strncmp(nxt,"true",4)==0 && i==4)
+						bval= TRUE;
+					else
+					if( strncmp(nxt,"false",5)==0 && i==4)
+						bval= FALSE;
+					else
+					if( strncmp(nxt,"TRUE",4)==0 && i==4)
+						bval= TRUE;
+					else
+					if( strncmp(nxt,"FALSE",4)==0 && i==4)
+						bval= FALSE;
+					setVarProperty(curBlk,@1,pname, opname, lt, &bval);
+					break;
+					}
+				case TYPE_str:
+					setVarProperty(curBlk,@1,pname, opname, lt,
+						GDKstrdup(cstCopy(cntxt,i)));
 				}
-			} else 
-				setVarProperty(curBlk,@1,pname, TYPE_str,GDKstrdup(""));
+				advance(cntxt,i);
+			} else{ bit t= TRUE;
+				setVarProperty(curBlk,@1,pname, opname, TYPE_bit, &t);
+			}
             GDKfree(pname); 
+            GDKfree(opname); 
+			skipSpace(cntxt);
         } while( keyphrase1(cntxt,","));
         if( !keyphrase1(cntxt,"}") )
             /* return (MalBlkPtr) */

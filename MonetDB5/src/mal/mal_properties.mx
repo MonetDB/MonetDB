@@ -17,10 +17,6 @@
 
 @' 
 @' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 @f mal_properties
 @a M. Kersten
@@ -357,6 +353,7 @@ Not used right now.
 
 typedef struct PROPrecord{
 	str		nme;
+	str		operator;
 	ValRecord	val;
 	struct PROPrecord *nxt;
 } *Property;
@@ -373,7 +370,7 @@ mal_export PropertySet cpyPropertySet(PropertySet old);
 mal_export Property cpyProperty(PropertySet *target, Property src);
 mal_export Property fndProperty(PropertySet ps, str nme);
 mal_export Property fndPropertyIndexed(PropertySet ps, int first, int last, str nme);
-mal_export Property setProperty(PropertySet ps, str nme, int tpe, ptr val);
+mal_export Property setProperty(PropertySet ps, str nme, str op, int tpe, ptr val);
 mal_export ptr getPropertyValue(PropertySet ps, str nme);
 mal_export int getPropertyType(PropertySet ps, str nme);
 mal_export str propertySet2str(PropertySet ps);
@@ -401,7 +398,8 @@ PropertySet cpyPropertySet(PropertySet old){
 
 Property cpyProperty(PropertySet *target, Property src){
 	if( *target == 0) *target = newPropertySet();
-	return setProperty(*target,src->nme, src->val.vtype, VALptr(&src->val));
+	return setProperty(*target,src->nme, src->operator, 
+						src->val.vtype, VALptr(&src->val));
 }
 void freePropertySet(PropertySet ps){
 	Property p1,p2;
@@ -448,7 +446,7 @@ Property fndPropertyIndexed(PropertySet ps, int first, int last, str nme){
 @-
 A property is assigned to a specific property list.
 @c
-Property setPropertyIndexed(PropertySet ps, int idx, str nme, int tpe, ptr val)
+Property setPropertyIndexed(PropertySet ps, int idx, str nme, str op, int tpe, ptr val)
 {	Property pr;
 
 	pr= fndPropertyIndexed(ps,idx,idx+1,nme);	
@@ -460,10 +458,11 @@ Property setPropertyIndexed(PropertySet ps, int idx, str nme, int tpe, ptr val)
 	}
 	if( val ) 
 		VALset(&pr->val, tpe, val);
+	pr->operator= GDKstrdup(op);
 	return pr;
 }
-Property setProperty(PropertySet ps, str nme, int tpe, ptr val){
-	return setPropertyIndexed(ps, 0, nme, tpe, val);
+Property setProperty(PropertySet ps, str nme, str op, int tpe, ptr val){
+	return setPropertyIndexed(ps, 0, nme, op, tpe, val);
 }
 @-
 The users of properties need a simple scheme to localize a
@@ -497,7 +496,9 @@ str propertySet2str(PropertySet ps){
 	while(pr){
 		t=0;
 		ATOMformat(pr->val.vtype, VALget(&pr->val), &t);
-		sprintf(s,"%s=%s",pr->nme,t);
+		if( pr->operator && *pr->operator)
+			sprintf(s,"%s%s%s",pr->nme,pr->operator,t);
+		else sprintf(s,"%s",pr->nme);
 		while(*s) s++;
 		pr= pr->nxt;
 		if( pr) *s++ = ',';

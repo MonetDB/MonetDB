@@ -164,10 +164,9 @@ Stack size=32 top=11
 @end example
 The variables marked 'unused' have been introduced as temporary variables,
 but which are not referenced in the remainder of the program.
-
-It illustrates basic BAT properties. A complete description of the
-BAT structure can be obtained using the 'info' ('i') command.
-A sample of the BAT can be printed passing tuple indices, e.g.
+It also illustrates basic BAT properties, a complete description of which
+can be obtained using the 'info' ('i') command.
+A sample of the BAT content can be printed passing tuple indices, e.g.
 'print b 10 10' prints the second batch of ten tuples.
 
 @+ Breakpoints
@@ -178,7 +177,7 @@ As soon as the variable recieves a new value  or the operation
 is called the debugger is activated.
 
 The snippet below illustrates the reaction to set a break point
-on assignment to variable 'i'. Notice that the first request fails,
+on assignment to variable 'i'. The current implementation is limited,
 because the breakpoint can only be set within a visibile program
 context. Setting arbitrary breakpoints is on the feature request list.
 @example
@@ -200,11 +199,13 @@ mdb>
 
 @+ Debugger module operations
 Part of the debugger functionality can also be controlled directly using
-MAL instructions. One of the more usefull constructs is to issue a
-call mdb.setTrace(true), which will proces a line-by-line trace of 
-the instructions being executed with timing information.
-The tracing stops when it encounters the command mdb.setTrace(false);
-Using a boolean argument makes it easy to control the performance trace
+MAL instructions. One of the more useful constructs is to issue a
+call mdb.setTrace(true), which produces a line-by-line trace of 
+the instructions being executed. If the command mdb.setTimer(true)
+is used instead, it will trace with timing information.
+The tracing stops when it encounters the command mdb.setTrace(false)
+or mdb.setTrace(false).
+Using a boolean argument makes it easy to control the (performance) trace
 at run time. The following snippet shows the effect of patching
 the test case.
 @example
@@ -235,8 +236,8 @@ the test case.
 >
 @end example
 
-Using the command setTimer() instead of setTrace() produces timing
-statistics in micro-seconds. Aside from the time spent in each statement
+The command setTimer() produces timing statistics in micro-seconds. 
+Aside from the time spent in each statement
 separately, it accumulate the timeing for the complete call.
 The time spent on preparing the trace information is excluded
 from the time reported.
@@ -270,8 +271,8 @@ tool @emph{valgrind} may be of help.
 #   261 usec!    user.test($2=1)
 @end example
 
-It is also possible to directly activate the debugger with the
-call mdb.start(). It remains in this mode until 
+It is also possible to activate the debugger from within a program using
+mdb.start(). It remains in this mode until 
 you either issue a quit command, or the command mdb.stop() instruction is
 encountered. 
 The debugger is only activated when the user can direct its execution
