@@ -487,6 +487,8 @@ for separate name space management.
 #define setVarUsed(M,I,X)      ((M)->var[I]->isused)=X
 #define isVarInitialized(M,I)   ((M)->var[I]->isinit)
 #define getVarScope(M,I)   ((M)->var[I]->scope)
+#define getVarProperties(M,I)   ((M)->var[I]->props)
+
 #define getVarDepth(M,I)   ((M)->var[I]->depth)
 #define isFixed(M,I)        ((M)->var[I]->fixtype)
 #define setFixed(M,I)       ((M)->var[I]->fixtype= 1)
