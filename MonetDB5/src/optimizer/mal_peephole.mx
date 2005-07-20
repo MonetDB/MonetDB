@@ -17,12 +17,14 @@
 
 @f mal_peephole
 @a M. Kersten
-@* Peephole optimization
+@+ Peephole optimization
 Recursive descend query compilers easily miss opportunities
-for better code generation, because limite context is retained
+for better code generation, because limited context is retained
 or lookahead available. The peephole optimizer is
 built around such recurring patterns and compensates
 for the compilers 'mistakes'.
+The collection of peephole patterns should grow over time.
+
 @{
 @h
 #ifndef _MAL_PEEPHOLE_
@@ -50,6 +52,9 @@ occurs often. This can be replaced with '$j:= algebra.markT($k)';
 Another example of a 2-way instruction sequence produced is then
 '$j:= algebra.markT($k); $l:= bat.reverse($j);',
 which can be replaced by '$l:= algebra.markH($k);'.
+
+The reverse-reverse operation also falls into this category
+and shouldbe moved around.
 
 In all cases we should ensure that the intermediates dropped are not
 used for other purposes as well.

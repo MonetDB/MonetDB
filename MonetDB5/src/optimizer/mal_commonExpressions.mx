@@ -17,15 +17,6 @@
 
 @f mal_commonExpressions
 @a M. Kersten
-@* Strength reduction
-The strength reduction optimizer walks its way through a program
-and moves instructions out of loops.
-
-This optimizer requires knowledge on the what blocks are real
-iterators and which are merely conditional blocks. In the latter
-case you don;t want to do strength reduction, because you
-are not sure the block will be entered.
-
 @{
 @h
 #ifndef _MAL_STRENGTHREDUCTION_

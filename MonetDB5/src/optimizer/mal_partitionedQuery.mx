@@ -17,7 +17,7 @@
 
 @f mal_partitionedQuery
 @a M. Kersten
-@* Partition query processing
+@+ Partitioned query processing
 Limitations on the addressing space in older PCs and the need
 for distributed storage makes that BATs ideally should be 
 looked upon as a union of smaller BATs. However, this view calls

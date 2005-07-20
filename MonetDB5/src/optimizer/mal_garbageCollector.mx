@@ -17,7 +17,7 @@
 
 @f mal_garbageCollector
 @a M. Kersten
-@* Garbage collection
+@+ Garbage collection
 The GCoptimizer removes all BATs that are at their end of
 life to make room for new ones.
 This optimizer should not be called when the scheduler

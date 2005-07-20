@@ -17,7 +17,7 @@
 
 @f mal_strengthReduction
 @a M. Kersten
-@* Factorization
+@+ Strength reduction
 The strength reduction optimizer walks its way through a program
 and moves instructions out of loops.
 

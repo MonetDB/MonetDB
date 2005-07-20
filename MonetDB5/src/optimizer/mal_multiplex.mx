@@ -18,7 +18,7 @@
 
 @f mal_multiplex
 @a M. Kersten
-@* Multiplex compilation
+@+ Multiplex compilation
 This module contains the implementation of the 
 MonetDB version 4 multiplex operators scheme.
 Multiplex operators provide the possibility to execute any

@@ -26,12 +26,13 @@ Such information may come from application domain knowledge or as a
 side effect from symbolic evaluation. It is associated with the
 program under inspection as properties.
 
-The empty set property is looked for by the reduction algorithm
+The empty set property is used by the reduction algorithm
 presented here. Any empty set is propagated through the program
 to arrive at a smaller and therefore faster evaluation.
 
 For example, consider the following MAL test 
 @example
+@verbatim
 function test():void;
     V1 := bbp.new(:void,:int);
     V7 := bbp.new(:void,:int);
@@ -48,6 +49,7 @@ function test():void;
     V25 := algebra.count(V17);
 end test;
 optimizer.emptySet("user","test");
+@end verbatim
 @end example
 Calling the optimizer optimize.emptySet("user","test") replaces this program
 by the following code snippet.
