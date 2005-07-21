@@ -43,6 +43,10 @@ pattern stop():void
 address MDBstop
 comment "Stop the interactive debugger";
 
+pattern inspect(mod:str,fcn:str):void
+address MDBinspect
+comment "Run the debugger on a specific function";
+
 pattern setTrace(b:bit):void
 address MDBsetTrace
 comment "Turn on/off tracing of current routine";
@@ -213,6 +217,28 @@ str MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
     b= *(chr *) getArgReference(stk,p,1);
     cntxt->timer= b? GDKusec():0;
     return MAL_SUCCEED;
+}
+str MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+    str modnme;
+    str fcnnme;
+    Module  scope=NULL;
+    Symbol s= NULL;
+    Client c= getClient();
+    if( stk != 0){
+        modnme= (str)getArgValue(stk,p,1);
+        fcnnme= (str)getArgValue(stk,p,2);
+    } else {
+        modnme= getArgDefault(mb,p,1);
+        fcnnme= getArgDefault(mb,p,2);
+    }
+
+	scope = findModule(c->nspace,putName(modnme,strlen(modnme)) );
+    if( scope)
+        s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
+
+    if( s == NULL)
+        return throwMessage("mdb.inspect","Could not find function\n");
+	return runMALDebugger(s);
 }
 
 @+ Variables and stack information
