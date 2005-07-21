@@ -36,6 +36,14 @@ INCLUDES = ../include ../common ../storage $(MONETDB_INCS)
 
 YFLAGS = -d -p sql -v
 
+#  (At least on Fedora Core 4,) bison 2.0 seems to generate code
+#  that icc 8.1 does not like; since the problem only occurs with
+#  sql/src/server/sql_parser.mx, we "mis-use" the NO_INLINE_CFLAGS
+#  to disable the respective warning as locally as possible
+#  via "-wd592" (#592: variable "." is used before its value is set)
+#  (see also MonetDB/conf/monet.m4).
+CFLAGS = $(NO_INLINE_CFLAGS)
+
 lib_sqlserver = {
 	NOINST
 	DIR = libdir
