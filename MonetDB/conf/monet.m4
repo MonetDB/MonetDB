@@ -335,12 +335,6 @@ yes-*-*)
 	esac
 	case $gcc_ver in
 	4.0.0*)
-		dnl  (At least on Fedora Core 3,) g++ 4.0.0 complains about
-		dnl  "language.h:32: warning: ‘class language’ has virtual functions but non-virtual destructor"
-		dnl  (not only for language.h/.mx!) when compiling src/mel; hence,
-		dnl  we "mis-use" the NO_INLINE_CFLAGS to switch off -Werror
-		dnl  in src/mel/Makefile.ag .
-		NO_INLINE_CFLAGS='-Wno-error'
 		dnl  (At least on Fedora Core 4,) when mel is compiled with 
 		dnl  g++ 4.0.0 ("Red Hat 4.0.0-8") and optimization enabled (-O2),
 		dnl  mel segfaults (at least on src/modules/plain/streams.mx); hence,
@@ -414,6 +408,17 @@ yes-*-*)
 	dnl  # 102: forward declaration of enum type is nonstandard
 	dnl  #  70: incomplete type is not allowed
 	dnl  #1572: floating-point equality and inequality comparisons are unreliable
+
+	dnl  (At least on Fedora Core 4,) bison 2.0 seems to generate code
+	dnl  that icc 8.1 does not like; since the problem only occurs with
+	dnl  sql/src/server/sql_parser.mx, we "mis-use" the NO_INLINE_CFLAGS
+	dnl  to disable the respective warning as locally as possible
+	dnl  (see also sql/src/server/Makefile.ag).
+	case "`bison -V | head -n1`" in
+	*2.0*)
+		NO_INLINE_CFLAGS="$NO_INLINE_CFLAGS -wd592"
+		dnl  # 592: variable "." is used before its value is set
+	esac
 	;;
 -pgcc*-linux*)
 	dnl  Portland Group (PGI) (pgcc/pgCC on Linux)
