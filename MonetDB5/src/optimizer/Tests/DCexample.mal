@@ -1,4 +1,3 @@
-function user.test():void;
     V7 := bbp.new(:void,:int);
     V10 := bbp.new(:int,:void);
     V16 := algebra.markH(V7);
@@ -7,7 +6,6 @@ function user.test():void;
     V22 := bbp.new(:void,:int);
     V23 := algebra.join(V16,V22);
 	io.print("done");
-end test;
 
-optimizer.deadCodeRemoval("user","test");
-mdb.showFunction("user","test");
+optimizer.deadCodeRemoval();
+mdb.showFunction();

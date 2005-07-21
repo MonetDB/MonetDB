@@ -936,30 +936,58 @@ It suffice to respect the flow graph.
 [unclear as what we need]
 @* The Optimizer Toolkit
 In this section we introduce the collection of MAL optimizers currently
-included in the code base. The tool kit is incrementally built. Triggered
-by experimentation and curiousity. Each requires further development
-to cope with the many features making up the MonetDB system.
-The limitations on the implementation are indicated where appropriate.
+included in the code base. The tool kit is incrementally built, triggered
+by experimentation and curiousity. Several optimizers require
+further development to cope with the many features making up the MonetDB system.
+Such limitations on the implementation are indicated where appropriate.
+
 @+ Alias Removal
-The alias removal walks through the program looking for simple
-assignment statements, e.g. V:=W. It will replace all subsequent
-occurrences of W by V and condense the instruction block.
-
-Such replacements is only started when V is assigned a value only once,
-while V and W are only read in the remainder of the code.
-
-Since the iterators may cause a jump backwards, we have to maintain
-its block structure and check for it. Instead, we merely check for possible
-occurences of the variable within an iterator block.
-
-During this process, we should be aware that parameters could be
-changed as part of a call. They are marked as unsafe.
+The routine @code{optimizer.aliasRemoval()}
+walks through the program looking for simple
+assignment statements, e.g. V:=W. It replaces all subsequent
+occurrences of V by W, provided V is assigned a value once and
+W does not change in the remainder of the code.
+Special care should be taken for iterator blocks as illustrated in
+the case below:
+@verbatim
+	i:=0;
+	d:= "first";
+barrier go:= true;
+	c:=i+1;
+	d:="second";
+	v:=d;
+	io.print(v);
+	i:=c;
+redo go:= i<2;
+exit go;
+@end verbatim
+The constant string is propagated to the @code{print()} routine, while
+the initial assigment @code{i:=0} should be retained. The code block becomes:
+@verbatim
+	i:=0;
+barrier go:= true;
+	c:=i+1;
+	io.print("second");
+	i:=c;
+redo go:= i<2;
+exit go;
+@end verbatim
 @{
+The key decision is to find the next statement that
+changes the candidate. 
+Beware that parameters could be changed as part of a call.
+They are marked as unsafe.
 @c
 int ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
 {   int i,k, blkcount=0;
     InstrPtr p,q;
     p= getInstrPtr(mb,pc);
+	for(i=0; i<pc; i++){
+        q= getInstrPtr(mb,i);
+        if( blockStart(q)) blkcount++;
+        if( blockExit(q)) blkcount--;
+	}
+
     for(i=pc; i< mb->stop && isAlife(mb,varid,i); i++){
         q= getInstrPtr(mb,i);
         for(k=0; k < q->retc; k++)
@@ -994,8 +1022,14 @@ void ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
 				v->endLifespan =pc;
 		}
     }
-	setLifespan(mb);
 }
+@-
+Alias removal is targeted at simple assignments only,
+because MAL does not allow for nested expressions.
+Instructions changing the flow of control should also be ignored.
+In all other cases the target variables are potential candidates
+for alias removal.
+@c
 int ARoptimizerStep(MalBlkPtr mb, int pc)
 {   int k,kn=0;
     InstrPtr p;
@@ -1019,10 +1053,10 @@ int ARoptimizerStep(MalBlkPtr mb, int pc)
        }
     }
     /* delete the instruction if all targets have been replaced */
-    if(kn == p->retc && kn)
-    {
+    if(kn == p->retc && kn) {
         /* all target variables pushed through */
 		removeInstruction(mb,p);
+		setLifespan(mb);
         return pc-1;
     }
     return pc;
@@ -1115,8 +1149,7 @@ remaining code, we may wish to get rid of empty iterator blocks as well.
 [This refinement left for the future]
 
 An illustrative example is the following MAL snippet:
-@example
-function user.test():void;
+@verbatim
     V7 := bbp.new(:void,:int);
     V10 := bbp.new(:int,:void);
     V16 := algebra.markH(V7);
@@ -1125,15 +1158,12 @@ function user.test():void;
     V22 := bbp.new(:void,:int);
     V23 := algebra.join(V16,V22);
     io.print("done");
-end test;
-optimizer.deadCodeRemoval("user","test");
-@end example
+	optimizer.deadCodeRemoval();
+@end verbatim
 The dead code removal trims this program to a very short one.
-@example
-function user.test():void;
+@verbatim
     io.print("done");
-end test;
-@end example
+@end verbatim
 The assigments in an iterator also requires care, because
 the REDO statement may turn an instruction into a source for
 previouse ones. 
