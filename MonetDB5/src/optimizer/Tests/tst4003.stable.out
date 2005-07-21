@@ -26,10 +26,12 @@ function user.main():int;	# 0  (main:int)
 # The 4000 series deals with strategic optimizer constructs 	# 1  ($2:str)
 # common subexpression evaluation 	# 2  ($4:str)
     b := bbp.new(:str,:str);	# 3 CMDBATnew (b:bat[:str,:str])<-($8:str)($8:str)
-# identical until insert takes place 	# 4  ($11:str)
-    d := algebra.select(b,"hello","world");	# 5 ALGselect (d:bat[:str,:str])<-(b:bat[:str,:str])($13:str)($14:str)
-# mapped onto one instruction 	# 6  ($17:str)
-end main;	# 7  
+    c := b;	# 4 CMDBATnew (c:bat[:str,:str])<-(b:bat[:str,:str])
+# identical until insert takes place 	# 5  ($11:str)
+    d := algebra.select(b,"hello","world");	# 6 ALGselect (d:bat[:str,:str])<-(b:bat[:str,:str])($13:str)($14:str)
+    e := d;	# 7 ALGselect (e:bat[:str,:str])<-(d:bat[:str,:str])
+# mapped onto one instruction 	# 8  ($17:str)
+end main;	# 9  
 
 # 11:08:28 >  
 # 11:08:28 >  Done.

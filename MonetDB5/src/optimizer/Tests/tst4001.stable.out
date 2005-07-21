@@ -28,7 +28,7 @@ function user.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
     z := mmath.sin(i);	# 2 MATHunary_SINdbl (z:dbl)<-(i:dbl)
     j := 1.0:dbl;	# 3  (j:dbl)<-($2:dbl)
     k := mmath.sin(j);	# 4 MATHunary_SINdbl (k:dbl)<-(j:dbl)
-    l := calc.+(k,1.0:dbl);	# 5 CALCbinaryADDdbldbl (l:dbl)<-(k:dbl)($2:dbl)
+    l := calc.+(k,i);	# 5 CALCbinaryADDdbldbl (l:dbl)<-(k:dbl)(i:dbl)
     return z;	# 6  (z:dbl)
 end qry;	# 7  
 #t0:= alarm.usec();

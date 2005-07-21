@@ -3,7 +3,6 @@
 optimizer.setDebug();
 optimizer.commonExpressionRemoval();
 optimizer.aliasRemoval();
-#optimizer.deadCodeRemoval();
 b:= bbp.new(:int,:int);
 c:= bbp.new(:int,:int);       # identical until insert takes place
 d:= algebra.select(b,0,100);

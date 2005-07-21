@@ -183,10 +183,6 @@ end f1;	# 77
 #
 #
 !ERROR: YIELD type mismatch at type 1
-!ERROR: 't48' may not be used before being set in f1[65]
-!ERROR: 't48' may not be used before being set in f1[65]
-!ERROR: 't82' may not be used before being set in f1[83]
-!ERROR: 't82' may not be used before being set in f1[83]
 Optimizer factorize failed
 factory user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t1 := bbp.bind("TREC2003_test_priors_8x32318");	# 1 CMDbbpbind (t1:bat[:void,:dbl])<-($3:str)
@@ -212,111 +208,129 @@ factory user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t18 := array.grid(100,8,14,0);	# 21 ARRAYgrid (t18:bat[:void,:int])<-($10:int)($6:int)($32:int)($8:int)
     t19 := array.grid(1,100,112,0);	# 22 ARRAYgrid (t19:bat[:void,:int])<-($7:int)($10:int)($35:int)($8:int)
     t20 := array.grid(1,100,112,0,8);	# 23 ARRAYgridShift (t20:bat[:void,:int])<-($7:int)($10:int)($35:int)($8:int)($6:int)
-    t18 := batcalc.+(t18,t18,t20);	# 24 CMDbataccumADD (t18:bat[:void,:int])<-(t18:bat[:void,:int])(t18:bat[:void,:int])(t20:bat[:void,:int])
-    bbp.garbage(t20);	# 25 CMDbbpgarbage ($114:void)<-(t20:bat[:void,:int])
-    t22 := batcalc.*(14,t18);	# 26 CMDcstMULbat (t22:bat[:void,:int])<-($32:int)(t18:bat[:void,:int])
-    t17 := batcalc.+(t17,t17,t22);	# 27 CMDbataccumADD (t17:bat[:void,:int])<-(t17:bat[:void,:int])(t17:bat[:void,:int])(t22:bat[:void,:int])
-    bbp.garbage(t22);	# 28 CMDbbpgarbage ($115:void)<-(t22:bat[:void,:int])
-    t24 := batcalc.oid(t17);	# 29 CMDconvertvoid_int_oid (t24:bat[:void,:oid])<-(t17:bat[:void,:int])
-    bbp.garbage(t17);	# 30 CMDbbpgarbage ($116:void)<-(t17:bat[:void,:int])
-    t25 := algebra.join(t24,t16);	# 31 ALGjoin (t25:bat[:void,:dbl])<-(t24:bat[:void,:oid])(t16:bat[:void,:dbl])
-    bbp.garbage(t24);	# 32 CMDbbpgarbage ($117:void)<-(t24:bat[:void,:oid])
-    t30 := batcalc.oid(t18);	# 33 CMDconvertvoid_int_oid (t30:bat[:void,:oid])<-(t18:bat[:void,:int])
-    bbp.garbage(t18);	# 34 CMDbbpgarbage ($118:void)<-(t18:bat[:void,:int])
-    t31 := array.grid(1,800,1,0);	# 35 ARRAYgrid (t31:bat[:void,:int])<-($44:int)($31:int)($44:int)($45:int)
-    t32 := aggrX3.prod(t25,t30,t31);	# 36 AX3aggrX3_prod3_dbl_dbl (t32:bat[:void,:dbl])<-(t25:bat[:void,:dbl])(t30:bat[:void,:oid])(t31:bat[:void,:int])
-    bbp.garbage(t25);	# 37 CMDbbpgarbage ($119:void)<-(t25:bat[:void,:dbl])
-    bbp.garbage(t30);	# 38 CMDbbpgarbage ($120:void)<-(t30:bat[:void,:oid])
-    bbp.garbage(t31);	# 39 CMDbbpgarbage ($121:void)<-(t31:bat[:void,:int])
-    t32 := batcalc.*(t32,t14,t32);	# 40 CMDbataccumMULcst2 (t32:bat[:void,:dbl])<-(t32:bat[:void,:dbl])(t14:dbl)(t32:bat[:void,:dbl])
-    t32 := batcalc./(t32,t8,t32);	# 41 CMDbataccumDIVcst2 (t32:bat[:void,:dbl])<-(t32:bat[:void,:dbl])(t8:dbl)(t32:bat[:void,:dbl])
-    t40 := algebra.join(t6,t32);	# 42 ALGjoin (t40:bat[:void,:dbl])<-(t6:bat[:void,:oid])(t32:bat[:void,:dbl])
-    bbp.garbage(t6);	# 43 CMDbbpgarbage ($122:void)<-(t6:bat[:void,:oid])
-    bbp.garbage(t32);	# 44 CMDbbpgarbage ($123:void)<-(t32:bat[:void,:dbl])
-    t41 := calc.dbl(-0.5);	# 45 CALCflt2dbl (t41:dbl)<-($51:flt)
-    t43 := array.grid(1056000,14,1,0);	# 46 ARRAYgrid (t43:bat[:void,:int])<-($54:int)($32:int)($44:int)($45:int)
-    t44 := array.grid(100,1320,112,0);	# 47 ARRAYgrid (t44:bat[:void,:int])<-($56:int)($57:int)($35:int)($45:int)
-    t45 := array.grid(100,1320,112,0,14);	# 48 ARRAYgridShift (t45:bat[:void,:int])<-($56:int)($57:int)($35:int)($45:int)($32:int)
-    t45 := batcalc.+(t45,t43,t45);	# 49 CMDbataccumADD (t45:bat[:void,:int])<-(t45:bat[:void,:int])(t43:bat[:void,:int])(t45:bat[:void,:int])
-    t47 := batcalc.oid(t45);	# 50 CMDconvertvoid_int_oid (t47:bat[:void,:oid])<-(t45:bat[:void,:int])
-    bbp.garbage(t45);	# 51 CMDbbpgarbage ($124:void)<-(t45:bat[:void,:int])
-    bbp.garbage(t47);	# 52 CMDbbpgarbage ($125:void)<-(t47:bat[:void,:oid])
-    t49 := bbp.bind("TREC2003_test_mus_14x8x32318");	# 53 CMDbbpbind (t49:bat[:void,:dbl])<-($63:str)
-    t51 := array.grid(132000,8,14,0);	# 54 ARRAYgrid (t51:bat[:void,:int])<-($65:int)($66:int)($67:int)($45:int)
-    t52 := array.grid(1,100,147840,0);	# 55 ARRAYgrid (t52:bat[:void,:int])<-($44:int)($56:int)($69:int)($45:int)
-    t53 := array.grid(1,100,147840,0,8);	# 56 ARRAYgridShift (t53:bat[:void,:int])<-($44:int)($56:int)($69:int)($45:int)($66:int)
-    t53 := batcalc.+(t53,t51,t53);	# 57 CMDbataccumADD (t53:bat[:void,:int])<-(t53:bat[:void,:int])(t51:bat[:void,:int])(t53:bat[:void,:int])
-    t53 := batcalc.*(t53,14,t53);	# 58 CMDbataccumMULcst2 (t53:bat[:void,:int])<-(t53:bat[:void,:int])($67:int)(t53:bat[:void,:int])
-    t43 := batcalc.+(t43,t43,t53);	# 59 CMDbataccumADD (t43:bat[:void,:int])<-(t43:bat[:void,:int])(t43:bat[:void,:int])(t53:bat[:void,:int])
-    bbp.garbage(t53);	# 60 CMDbbpgarbage ($127:void)<-(t53:bat[:void,:int])
-    t57 := batcalc.oid(t43);	# 61 CMDconvertvoid_int_oid (t57:bat[:void,:oid])<-(t43:bat[:void,:int])
-    bbp.garbage(t43);	# 62 CMDbbpgarbage ($128:void)<-(t43:bat[:void,:int])
-    t58 := algebra.join(t57,t49);	# 63 ALGjoin (t58:bat[:void,:dbl])<-(t57:bat[:void,:oid])(t49:bat[:void,:dbl])
-    bbp.garbage(t49);	# 64 CMDbbpgarbage ($129:void)<-(t49:bat[:void,:dbl])
-    t48 := batcalc.-(t48,t48,t58);	# 65 CMDbataccumMIN (t48:bat[:void,:dbl])<-(t48:bat[:void,:dbl])(t48:bat[:void,:dbl])(t58:bat[:void,:dbl])
-    bbp.garbage(t58);	# 66 CMDbbpgarbage ($130:void)<-(t58:bat[:void,:dbl])
-    t48 := batcalc.*(t48,t48,t48);	# 67 CMDbataccumMUL (t48:bat[:void,:dbl])<-(t48:bat[:void,:dbl])(t48:bat[:void,:dbl])(t48:bat[:void,:dbl])
-    t71 := algebra.join(t57,t16);	# 68 ALGjoin (t71:bat[:void,:dbl])<-(t57:bat[:void,:oid])(t16:bat[:void,:dbl])
-    bbp.garbage(t57);	# 69 CMDbbpgarbage ($131:void)<-(t57:bat[:void,:oid])
-    bbp.garbage(t16);	# 70 CMDbbpgarbage ($132:void)<-(t16:bat[:void,:dbl])
-    t48 := batcalc./(t48,t48,t71);	# 71 CMDbataccumDIV (t48:bat[:void,:dbl])<-(t48:bat[:void,:dbl])(t48:bat[:void,:dbl])(t71:bat[:void,:dbl])
-    bbp.garbage(t71);	# 72 CMDbbpgarbage ($133:void)<-(t71:bat[:void,:dbl])
-    t52 := batcalc.*(t52,1320,t52);	# 73 CMDbataccumMULcst2 (t52:bat[:void,:int])<-(t52:bat[:void,:int])($57:int)(t52:bat[:void,:int])
-    t44 := batcalc.+(t44,t44,t52);	# 74 CMDbataccumADD (t44:bat[:void,:int])<-(t44:bat[:void,:int])(t44:bat[:void,:int])(t52:bat[:void,:int])
-    bbp.garbage(t52);	# 75 CMDbbpgarbage ($134:void)<-(t52:bat[:void,:int])
-    t44 := batcalc.*(t44,8,t44);	# 76 CMDbataccumMULcst2 (t44:bat[:void,:int])<-(t44:bat[:void,:int])($66:int)(t44:bat[:void,:int])
-    t51 := batcalc.+(t51,t51,t44);	# 77 CMDbataccumADD (t51:bat[:void,:int])<-(t51:bat[:void,:int])(t51:bat[:void,:int])(t44:bat[:void,:int])
-    bbp.garbage(t44);	# 78 CMDbbpgarbage ($135:void)<-(t44:bat[:void,:int])
-    t80 := batcalc.oid(t51);	# 79 CMDconvertvoid_int_oid (t80:bat[:void,:oid])<-(t51:bat[:void,:int])
-    bbp.garbage(t51);	# 80 CMDbbpgarbage ($136:void)<-(t51:bat[:void,:int])
-    t81 := array.grid(1,1056000,1,0);	# 81 ARRAYgrid (t81:bat[:void,:int])<-($86:int)($87:int)($86:int)($88:int)
-    bbp.garbage(t80);	# 82 CMDbbpgarbage ($138:void)<-(t80:bat[:void,:oid])
-    t82 := batcalc.*(t82,t41,t82);	# 83 CMDbataccumMULcst2 (t82:bat[:void,:dbl])<-(t82:bat[:void,:dbl])(t41:dbl)(t82:bat[:void,:dbl])
-    t82 := batcalc.exp(t82);	# 84 CMDsciencevoid_exp (t82:bat[:void,:dbl])<-(t82:bat[:void,:dbl])
-    t40 := batcalc.*(t40,t40,t82);	# 85 CMDbataccumMUL (t40:bat[:void,:dbl])<-(t40:bat[:void,:dbl])(t40:bat[:void,:dbl])(t82:bat[:void,:dbl])
-    t7 := batcalc.*(t7,t7,t40);	# 86 CMDbataccumMUL (t7:bat[:void,:dbl])<-(t7:bat[:void,:dbl])(t7:bat[:void,:dbl])(t40:bat[:void,:dbl])
-    bbp.garbage(t40);	# 87 CMDbbpgarbage ($140:void)<-(t40:bat[:void,:dbl])
-    t87 := array.grid(t81,100,1320,8,0);	# 88 ARRAYgridBAT (t87:bat[:void,:int])<-(t81:bat[:void,:int])($95:int)($96:int)($66:int)($88:int)
-    bbp.garbage(t81);	# 89 CMDbbpgarbage ($141:void)<-(t81:bat[:void,:int])
-    t3 := batcalc.*(t3,1320,t3);	# 90 CMDbataccumMULcst2 (t3:bat[:void,:int])<-(t3:bat[:void,:int])($96:int)(t3:bat[:void,:int])
-    t87 := batcalc.+(t87,t87,t3);	# 91 CMDbataccumADD (t87:bat[:void,:int])<-(t87:bat[:void,:int])(t87:bat[:void,:int])(t3:bat[:void,:int])
-    bbp.garbage(t3);	# 92 CMDbbpgarbage ($142:void)<-(t3:bat[:void,:int])
-    t91 := batcalc.oid(t87);	# 93 CMDconvertvoid_int_oid (t91:bat[:void,:oid])<-(t87:bat[:void,:int])
-    bbp.garbage(t87);	# 94 CMDbbpgarbage ($143:void)<-(t87:bat[:void,:int])
-    t92 := array.grid(1,132000,1,0);	# 95 ARRAYgrid (t92:bat[:void,:int])<-($86:int)($101:int)($86:int)($88:int)
-    t93 := aggrX3.sum(t7,t91,t92);	# 96 AX3aggrX3_sum3_dbl_dbl (t93:bat[:void,:dbl])<-(t7:bat[:void,:dbl])(t91:bat[:void,:oid])(t92:bat[:void,:int])
-    bbp.garbage(t7);	# 97 CMDbbpgarbage ($144:void)<-(t7:bat[:void,:dbl])
-    bbp.garbage(t91);	# 98 CMDbbpgarbage ($145:void)<-(t91:bat[:void,:oid])
-    bbp.garbage(t92);	# 99 CMDbbpgarbage ($146:void)<-(t92:bat[:void,:int])
-    t93 := batcalc.log(t93);	# 100 CMDsciencevoid_log (t93:bat[:void,:dbl])<-(t93:bat[:void,:dbl])
-    t95 := array.grid(1,100,1320,0);	# 101 ARRAYgrid (t95:bat[:void,:int])<-($86:int)($95:int)($96:int)($88:int)
-    t96 := batcalc.oid(t95);	# 102 CMDconvertvoid_int_oid (t96:bat[:void,:oid])<-(t95:bat[:void,:int])
-    bbp.garbage(t95);	# 103 CMDbbpgarbage ($147:void)<-(t95:bat[:void,:int])
-    t97 := array.grid(1,100,1,0);	# 104 ARRAYgrid (t97:bat[:void,:int])<-($86:int)($95:int)($86:int)($88:int)
-    t98 := aggrX3.sum(t93,t96,t97);	# 105 AX3aggrX3_sum3_dbl_dbl (t98:bat[:void,:dbl])<-(t93:bat[:void,:dbl])(t96:bat[:void,:oid])(t97:bat[:void,:int])
-    bbp.garbage(t93);	# 106 CMDbbpgarbage ($148:void)<-(t93:bat[:void,:dbl])
-    bbp.garbage(t96);	# 107 CMDbbpgarbage ($149:void)<-(t96:bat[:void,:oid])
-    top := t98;	# 108  (top:bat[:void,:dbl])<-(t98:bat[:void,:dbl])
-    bbp.garbage(t98);	# 109 CMDbbpgarbage ($150:void)<-(t98:bat[:void,:dbl])
-    io.table(t97,top);	# 110 IOttable ($109:int)<-(t97:bat[:void,:int])(top:bat[:void,:dbl])
-    bbp.garbage(t97);	# 111 CMDbbpgarbage ($151:void)<-(t97:bat[:void,:int])
-    bbp.garbage(top);	# 112 CMDbbpgarbage ($152:void)<-(top:bat[:void,:dbl])
-barrier always := true;	# 113  (always:bit)<-($153:bit) jump 122
-    t42 := bbp.bind(s);	# 114 CMDbbpbind (t42:bat[:void,:dbl])<-(s:str)
-    t48 := algebra.join(t47,t42);	# 115 ALGjoin (t48:bat[:void,:dbl])<-(t47:bat[:void,:oid])(t42:bat[:void,:dbl])
-    bbp.garbage(t42);	# 116 CMDbbpgarbage ($126:void)<-(t42:bat[:void,:dbl])
-    t82 := aggrX3.sum(t48,t80,t81);	# 117 AX3aggrX3_sum3_dbl_dbl (t82:bat[:void,:dbl])<-(t48:bat[:void,:dbl])(t80:bat[:void,:oid])(t81:bat[:void,:int])
-    bbp.garbage(t48);	# 118 CMDbbpgarbage ($137:void)<-(t48:bat[:void,:dbl])
-    bbp.garbage(t82);	# 119 CMDbbpgarbage ($139:void)<-(t82:bat[:void,:dbl])
-    yield always;	# 120  (always:bit)
-    redo always;	# 121  (always:bit) jump 114
-exit always;	# 122  (always:bit)
-end f1;	# 123  
+    t21 := batcalc.+(t18,t20);	# 24 CMDbatADD (t21:bat[:void,:int])<-(t18:bat[:void,:int])(t20:bat[:void,:int])
+    bbp.garbage(t18);	# 25 CMDbbpgarbage ($114:void)<-(t18:bat[:void,:int])
+    bbp.garbage(t20);	# 26 CMDbbpgarbage ($115:void)<-(t20:bat[:void,:int])
+    t22 := batcalc.*(14,t21);	# 27 CMDcstMULbat (t22:bat[:void,:int])<-($32:int)(t21:bat[:void,:int])
+    t23 := batcalc.+(t17,t22);	# 28 CMDbatADD (t23:bat[:void,:int])<-(t17:bat[:void,:int])(t22:bat[:void,:int])
+    bbp.garbage(t17);	# 29 CMDbbpgarbage ($116:void)<-(t17:bat[:void,:int])
+    bbp.garbage(t22);	# 30 CMDbbpgarbage ($117:void)<-(t22:bat[:void,:int])
+    t24 := batcalc.oid(t23);	# 31 CMDconvertvoid_int_oid (t24:bat[:void,:oid])<-(t23:bat[:void,:int])
+    bbp.garbage(t23);	# 32 CMDbbpgarbage ($118:void)<-(t23:bat[:void,:int])
+    t25 := algebra.join(t24,t16);	# 33 ALGjoin (t25:bat[:void,:dbl])<-(t24:bat[:void,:oid])(t16:bat[:void,:dbl])
+    bbp.garbage(t24);	# 34 CMDbbpgarbage ($119:void)<-(t24:bat[:void,:oid])
+    t30 := batcalc.oid(t21);	# 35 CMDconvertvoid_int_oid (t30:bat[:void,:oid])<-(t21:bat[:void,:int])
+    bbp.garbage(t21);	# 36 CMDbbpgarbage ($120:void)<-(t21:bat[:void,:int])
+    t31 := array.grid(1,800,1,0);	# 37 ARRAYgrid (t31:bat[:void,:int])<-($44:int)($31:int)($44:int)($45:int)
+    t32 := aggrX3.prod(t25,t30,t31);	# 38 AX3aggrX3_prod3_dbl_dbl (t32:bat[:void,:dbl])<-(t25:bat[:void,:dbl])(t30:bat[:void,:oid])(t31:bat[:void,:int])
+    bbp.garbage(t25);	# 39 CMDbbpgarbage ($121:void)<-(t25:bat[:void,:dbl])
+    bbp.garbage(t30);	# 40 CMDbbpgarbage ($122:void)<-(t30:bat[:void,:oid])
+    bbp.garbage(t31);	# 41 CMDbbpgarbage ($123:void)<-(t31:bat[:void,:int])
+    t33 := batcalc.*(t14,t32);	# 42 CMDcstMULbat (t33:bat[:void,:dbl])<-(t14:dbl)(t32:bat[:void,:dbl])
+    bbp.garbage(t32);	# 43 CMDbbpgarbage ($124:void)<-(t32:bat[:void,:dbl])
+    t34 := batcalc./(t8,t33);	# 44 CMDcstDIVbat (t34:bat[:void,:dbl])<-(t8:dbl)(t33:bat[:void,:dbl])
+    bbp.garbage(t33);	# 45 CMDbbpgarbage ($125:void)<-(t33:bat[:void,:dbl])
+    t40 := algebra.join(t6,t34);	# 46 ALGjoin (t40:bat[:void,:dbl])<-(t6:bat[:void,:oid])(t34:bat[:void,:dbl])
+    bbp.garbage(t6);	# 47 CMDbbpgarbage ($126:void)<-(t6:bat[:void,:oid])
+    bbp.garbage(t34);	# 48 CMDbbpgarbage ($127:void)<-(t34:bat[:void,:dbl])
+    t41 := calc.dbl(-0.5);	# 49 CALCflt2dbl (t41:dbl)<-($51:flt)
+    t43 := array.grid(1056000,14,1,0);	# 50 ARRAYgrid (t43:bat[:void,:int])<-($54:int)($32:int)($44:int)($45:int)
+    t44 := array.grid(100,1320,112,0);	# 51 ARRAYgrid (t44:bat[:void,:int])<-($56:int)($57:int)($35:int)($45:int)
+    t45 := array.grid(100,1320,112,0,14);	# 52 ARRAYgridShift (t45:bat[:void,:int])<-($56:int)($57:int)($35:int)($45:int)($32:int)
+    t46 := batcalc.+(t43,t45);	# 53 CMDbatADD (t46:bat[:void,:int])<-(t43:bat[:void,:int])(t45:bat[:void,:int])
+    bbp.garbage(t45);	# 54 CMDbbpgarbage ($128:void)<-(t45:bat[:void,:int])
+    t47 := batcalc.oid(t46);	# 55 CMDconvertvoid_int_oid (t47:bat[:void,:oid])<-(t46:bat[:void,:int])
+    bbp.garbage(t46);	# 56 CMDbbpgarbage ($129:void)<-(t46:bat[:void,:int])
+    bbp.garbage(t47);	# 57 CMDbbpgarbage ($130:void)<-(t47:bat[:void,:oid])
+    t49 := bbp.bind("TREC2003_test_mus_14x8x32318");	# 58 CMDbbpbind (t49:bat[:void,:dbl])<-($63:str)
+    t51 := array.grid(132000,8,14,0);	# 59 ARRAYgrid (t51:bat[:void,:int])<-($65:int)($66:int)($67:int)($45:int)
+    t52 := array.grid(1,100,147840,0);	# 60 ARRAYgrid (t52:bat[:void,:int])<-($44:int)($56:int)($69:int)($45:int)
+    t53 := array.grid(1,100,147840,0,8);	# 61 ARRAYgridShift (t53:bat[:void,:int])<-($44:int)($56:int)($69:int)($45:int)($66:int)
+    t54 := batcalc.+(t51,t53);	# 62 CMDbatADD (t54:bat[:void,:int])<-(t51:bat[:void,:int])(t53:bat[:void,:int])
+    bbp.garbage(t53);	# 63 CMDbbpgarbage ($132:void)<-(t53:bat[:void,:int])
+    t55 := batcalc.*(14,t54);	# 64 CMDcstMULbat (t55:bat[:void,:int])<-($67:int)(t54:bat[:void,:int])
+    bbp.garbage(t54);	# 65 CMDbbpgarbage ($133:void)<-(t54:bat[:void,:int])
+    t56 := batcalc.+(t43,t55);	# 66 CMDbatADD (t56:bat[:void,:int])<-(t43:bat[:void,:int])(t55:bat[:void,:int])
+    bbp.garbage(t43);	# 67 CMDbbpgarbage ($134:void)<-(t43:bat[:void,:int])
+    bbp.garbage(t55);	# 68 CMDbbpgarbage ($135:void)<-(t55:bat[:void,:int])
+    t57 := batcalc.oid(t56);	# 69 CMDconvertvoid_int_oid (t57:bat[:void,:oid])<-(t56:bat[:void,:int])
+    bbp.garbage(t56);	# 70 CMDbbpgarbage ($136:void)<-(t56:bat[:void,:int])
+    t58 := algebra.join(t57,t49);	# 71 ALGjoin (t58:bat[:void,:dbl])<-(t57:bat[:void,:oid])(t49:bat[:void,:dbl])
+    bbp.garbage(t49);	# 72 CMDbbpgarbage ($137:void)<-(t49:bat[:void,:dbl])
+    bbp.garbage(t58);	# 73 CMDbbpgarbage ($139:void)<-(t58:bat[:void,:dbl])
+    t71 := algebra.join(t57,t16);	# 74 ALGjoin (t71:bat[:void,:dbl])<-(t57:bat[:void,:oid])(t16:bat[:void,:dbl])
+    bbp.garbage(t57);	# 75 CMDbbpgarbage ($141:void)<-(t57:bat[:void,:oid])
+    bbp.garbage(t16);	# 76 CMDbbpgarbage ($142:void)<-(t16:bat[:void,:dbl])
+    bbp.garbage(t71);	# 77 CMDbbpgarbage ($144:void)<-(t71:bat[:void,:dbl])
+    t76 := batcalc.*(1320,t52);	# 78 CMDcstMULbat (t76:bat[:void,:int])<-($57:int)(t52:bat[:void,:int])
+    bbp.garbage(t52);	# 79 CMDbbpgarbage ($145:void)<-(t52:bat[:void,:int])
+    t77 := batcalc.+(t44,t76);	# 80 CMDbatADD (t77:bat[:void,:int])<-(t44:bat[:void,:int])(t76:bat[:void,:int])
+    bbp.garbage(t44);	# 81 CMDbbpgarbage ($146:void)<-(t44:bat[:void,:int])
+    bbp.garbage(t76);	# 82 CMDbbpgarbage ($147:void)<-(t76:bat[:void,:int])
+    t78 := batcalc.*(8,t77);	# 83 CMDcstMULbat (t78:bat[:void,:int])<-($66:int)(t77:bat[:void,:int])
+    bbp.garbage(t77);	# 84 CMDbbpgarbage ($148:void)<-(t77:bat[:void,:int])
+    t79 := batcalc.+(t51,t78);	# 85 CMDbatADD (t79:bat[:void,:int])<-(t51:bat[:void,:int])(t78:bat[:void,:int])
+    bbp.garbage(t51);	# 86 CMDbbpgarbage ($149:void)<-(t51:bat[:void,:int])
+    bbp.garbage(t78);	# 87 CMDbbpgarbage ($150:void)<-(t78:bat[:void,:int])
+    t80 := batcalc.oid(t79);	# 88 CMDconvertvoid_int_oid (t80:bat[:void,:oid])<-(t79:bat[:void,:int])
+    bbp.garbage(t79);	# 89 CMDbbpgarbage ($151:void)<-(t79:bat[:void,:int])
+    t81 := array.grid(1,1056000,1,0);	# 90 ARRAYgrid (t81:bat[:void,:int])<-($86:int)($87:int)($86:int)($88:int)
+    bbp.garbage(t80);	# 91 CMDbbpgarbage ($153:void)<-(t80:bat[:void,:oid])
+    bbp.garbage(t40);	# 92 CMDbbpgarbage ($156:void)<-(t40:bat[:void,:dbl])
+    bbp.garbage(t7);	# 93 CMDbbpgarbage ($158:void)<-(t7:bat[:void,:dbl])
+    t87 := array.grid(t81,100,1320,8,0);	# 94 ARRAYgridBAT (t87:bat[:void,:int])<-(t81:bat[:void,:int])($95:int)($96:int)($66:int)($88:int)
+    bbp.garbage(t81);	# 95 CMDbbpgarbage ($160:void)<-(t81:bat[:void,:int])
+    t89 := batcalc.*(1320,t3);	# 96 CMDcstMULbat (t89:bat[:void,:int])<-($96:int)(t3:bat[:void,:int])
+    bbp.garbage(t3);	# 97 CMDbbpgarbage ($161:void)<-(t3:bat[:void,:int])
+    t90 := batcalc.+(t87,t89);	# 98 CMDbatADD (t90:bat[:void,:int])<-(t87:bat[:void,:int])(t89:bat[:void,:int])
+    bbp.garbage(t87);	# 99 CMDbbpgarbage ($162:void)<-(t87:bat[:void,:int])
+    bbp.garbage(t89);	# 100 CMDbbpgarbage ($163:void)<-(t89:bat[:void,:int])
+    t91 := batcalc.oid(t90);	# 101 CMDconvertvoid_int_oid (t91:bat[:void,:oid])<-(t90:bat[:void,:int])
+    bbp.garbage(t90);	# 102 CMDbbpgarbage ($164:void)<-(t90:bat[:void,:int])
+    t92 := array.grid(1,132000,1,0);	# 103 ARRAYgrid (t92:bat[:void,:int])<-($86:int)($101:int)($86:int)($88:int)
+    bbp.garbage(t91);	# 104 CMDbbpgarbage ($166:void)<-(t91:bat[:void,:oid])
+    bbp.garbage(t92);	# 105 CMDbbpgarbage ($167:void)<-(t92:bat[:void,:int])
+    t95 := array.grid(1,100,1320,0);	# 106 ARRAYgrid (t95:bat[:void,:int])<-($86:int)($95:int)($96:int)($88:int)
+    t96 := batcalc.oid(t95);	# 107 CMDconvertvoid_int_oid (t96:bat[:void,:oid])<-(t95:bat[:void,:int])
+    bbp.garbage(t95);	# 108 CMDbbpgarbage ($169:void)<-(t95:bat[:void,:int])
+    t97 := array.grid(1,100,1,0);	# 109 ARRAYgrid (t97:bat[:void,:int])<-($86:int)($95:int)($86:int)($88:int)
+    bbp.garbage(t96);	# 110 CMDbbpgarbage ($171:void)<-(t96:bat[:void,:oid])
+    bbp.garbage(t97);	# 111 CMDbbpgarbage ($173:void)<-(t97:bat[:void,:int])
+barrier always := true;	# 112  (always:bit)<-($175:bit) jump 144
+    t42 := bbp.bind(s);	# 113 CMDbbpbind (t42:bat[:void,:dbl])<-(s:str)
+    t48 := algebra.join(t47,t42);	# 114 ALGjoin (t48:bat[:void,:dbl])<-(t47:bat[:void,:oid])(t42:bat[:void,:dbl])
+    bbp.garbage(t42);	# 115 CMDbbpgarbage ($131:void)<-(t42:bat[:void,:dbl])
+    t59 := batcalc.-(t48,t58);	# 116 CMDbatMIN (t59:bat[:void,:dbl])<-(t48:bat[:void,:dbl])(t58:bat[:void,:dbl])
+    bbp.garbage(t48);	# 117 CMDbbpgarbage ($138:void)<-(t48:bat[:void,:dbl])
+    t61 := batcalc.*(t59,t59);	# 118 CMDbatMUL (t61:bat[:void,:dbl])<-(t59:bat[:void,:dbl])(t59:bat[:void,:dbl])
+    bbp.garbage(t59);	# 119 CMDbbpgarbage ($140:void)<-(t59:bat[:void,:dbl])
+    t72 := batcalc./(t61,t71);	# 120 CMDbatDIV (t72:bat[:void,:dbl])<-(t61:bat[:void,:dbl])(t71:bat[:void,:dbl])
+    bbp.garbage(t61);	# 121 CMDbbpgarbage ($143:void)<-(t61:bat[:void,:dbl])
+    t82 := aggrX3.sum(t72,t80,t81);	# 122 AX3aggrX3_sum3_dbl_dbl (t82:bat[:void,:dbl])<-(t72:bat[:void,:dbl])(t80:bat[:void,:oid])(t81:bat[:void,:int])
+    bbp.garbage(t72);	# 123 CMDbbpgarbage ($152:void)<-(t72:bat[:void,:dbl])
+    t83 := batcalc.*(t41,t82);	# 124 CMDcstMULbat (t83:bat[:void,:dbl])<-(t41:dbl)(t82:bat[:void,:dbl])
+    bbp.garbage(t82);	# 125 CMDbbpgarbage ($154:void)<-(t82:bat[:void,:dbl])
+    t84 := batcalc.exp(t83);	# 126 CMDsciencevoid_exp (t84:bat[:void,:dbl])<-(t83:bat[:void,:dbl])
+    bbp.garbage(t83);	# 127 CMDbbpgarbage ($155:void)<-(t83:bat[:void,:dbl])
+    t85 := batcalc.*(t40,t84);	# 128 CMDbatMUL (t85:bat[:void,:dbl])<-(t40:bat[:void,:dbl])(t84:bat[:void,:dbl])
+    bbp.garbage(t84);	# 129 CMDbbpgarbage ($157:void)<-(t84:bat[:void,:dbl])
+    t86 := batcalc.*(t7,t85);	# 130 CMDbatMUL (t86:bat[:void,:dbl])<-(t7:bat[:void,:dbl])(t85:bat[:void,:dbl])
+    bbp.garbage(t85);	# 131 CMDbbpgarbage ($159:void)<-(t85:bat[:void,:dbl])
+    t93 := aggrX3.sum(t86,t91,t92);	# 132 AX3aggrX3_sum3_dbl_dbl (t93:bat[:void,:dbl])<-(t86:bat[:void,:dbl])(t91:bat[:void,:oid])(t92:bat[:void,:int])
+    bbp.garbage(t86);	# 133 CMDbbpgarbage ($165:void)<-(t86:bat[:void,:dbl])
+    t94 := batcalc.log(t93);	# 134 CMDsciencevoid_log (t94:bat[:void,:dbl])<-(t93:bat[:void,:dbl])
+    bbp.garbage(t93);	# 135 CMDbbpgarbage ($168:void)<-(t93:bat[:void,:dbl])
+    t98 := aggrX3.sum(t94,t96,t97);	# 136 AX3aggrX3_sum3_dbl_dbl (t98:bat[:void,:dbl])<-(t94:bat[:void,:dbl])(t96:bat[:void,:oid])(t97:bat[:void,:int])
+    bbp.garbage(t94);	# 137 CMDbbpgarbage ($170:void)<-(t94:bat[:void,:dbl])
+    top := t98;	# 138  (top:bat[:void,:dbl])<-(t98:bat[:void,:dbl])
+    bbp.garbage(t98);	# 139 CMDbbpgarbage ($172:void)<-(t98:bat[:void,:dbl])
+    io.table(t97,top);	# 140 IOttable ($109:int)<-(t97:bat[:void,:int])(top:bat[:void,:dbl])
+    bbp.garbage(top);	# 141 CMDbbpgarbage ($174:void)<-(top:bat[:void,:dbl])
+    yield always;	# 142  (always:bit)
+    redo always;	# 143  (always:bit) jump 113
+exit always;	# 144  (always:bit)
+end f1;	# 145  
 !ERROR: YIELD type mismatch at type 1
-!ERROR: 't48' may not be used before being set in f1[65]
-!ERROR: 't48' may not be used before being set in f1[65]
-!ERROR: 't82' may not be used before being set in f1[83]
-!ERROR: 't82' may not be used before being set in f1[83]
 Optimizer factorize optimizer failed
 factory user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t1 := bbp.bind("TREC2003_test_priors_8x32318");	# 1 CMDbbpbind (t1:bat[:void,:dbl])<-($3:str)
@@ -342,106 +356,128 @@ factory user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t18 := array.grid(100,8,14,0);	# 21 ARRAYgrid (t18:bat[:void,:int])<-($10:int)($6:int)($32:int)($8:int)
     t19 := array.grid(1,100,112,0);	# 22 ARRAYgrid (t19:bat[:void,:int])<-($7:int)($10:int)($35:int)($8:int)
     t20 := array.grid(1,100,112,0,8);	# 23 ARRAYgridShift (t20:bat[:void,:int])<-($7:int)($10:int)($35:int)($8:int)($6:int)
-    t18 := batcalc.+(t18,t18,t20);	# 24 CMDbataccumADD (t18:bat[:void,:int])<-(t18:bat[:void,:int])(t18:bat[:void,:int])(t20:bat[:void,:int])
-    bbp.garbage(t20);	# 25 CMDbbpgarbage ($114:void)<-(t20:bat[:void,:int])
-    t22 := batcalc.*(14,t18);	# 26 CMDcstMULbat (t22:bat[:void,:int])<-($32:int)(t18:bat[:void,:int])
-    t17 := batcalc.+(t17,t17,t22);	# 27 CMDbataccumADD (t17:bat[:void,:int])<-(t17:bat[:void,:int])(t17:bat[:void,:int])(t22:bat[:void,:int])
-    bbp.garbage(t22);	# 28 CMDbbpgarbage ($115:void)<-(t22:bat[:void,:int])
-    t24 := batcalc.oid(t17);	# 29 CMDconvertvoid_int_oid (t24:bat[:void,:oid])<-(t17:bat[:void,:int])
-    bbp.garbage(t17);	# 30 CMDbbpgarbage ($116:void)<-(t17:bat[:void,:int])
-    t25 := algebra.join(t24,t16);	# 31 ALGjoin (t25:bat[:void,:dbl])<-(t24:bat[:void,:oid])(t16:bat[:void,:dbl])
-    bbp.garbage(t24);	# 32 CMDbbpgarbage ($117:void)<-(t24:bat[:void,:oid])
-    t30 := batcalc.oid(t18);	# 33 CMDconvertvoid_int_oid (t30:bat[:void,:oid])<-(t18:bat[:void,:int])
-    bbp.garbage(t18);	# 34 CMDbbpgarbage ($118:void)<-(t18:bat[:void,:int])
-    t31 := array.grid(1,800,1,0);	# 35 ARRAYgrid (t31:bat[:void,:int])<-($44:int)($31:int)($44:int)($45:int)
-    t32 := aggrX3.prod(t25,t30,t31);	# 36 AX3aggrX3_prod3_dbl_dbl (t32:bat[:void,:dbl])<-(t25:bat[:void,:dbl])(t30:bat[:void,:oid])(t31:bat[:void,:int])
-    bbp.garbage(t25);	# 37 CMDbbpgarbage ($119:void)<-(t25:bat[:void,:dbl])
-    bbp.garbage(t30);	# 38 CMDbbpgarbage ($120:void)<-(t30:bat[:void,:oid])
-    bbp.garbage(t31);	# 39 CMDbbpgarbage ($121:void)<-(t31:bat[:void,:int])
-    t32 := batcalc.*(t32,t14,t32);	# 40 CMDbataccumMULcst2 (t32:bat[:void,:dbl])<-(t32:bat[:void,:dbl])(t14:dbl)(t32:bat[:void,:dbl])
-    t32 := batcalc./(t32,t8,t32);	# 41 CMDbataccumDIVcst2 (t32:bat[:void,:dbl])<-(t32:bat[:void,:dbl])(t8:dbl)(t32:bat[:void,:dbl])
-    t40 := algebra.join(t6,t32);	# 42 ALGjoin (t40:bat[:void,:dbl])<-(t6:bat[:void,:oid])(t32:bat[:void,:dbl])
-    bbp.garbage(t6);	# 43 CMDbbpgarbage ($122:void)<-(t6:bat[:void,:oid])
-    bbp.garbage(t32);	# 44 CMDbbpgarbage ($123:void)<-(t32:bat[:void,:dbl])
-    t41 := calc.dbl(-0.5);	# 45 CALCflt2dbl (t41:dbl)<-($51:flt)
-    t43 := array.grid(1056000,14,1,0);	# 46 ARRAYgrid (t43:bat[:void,:int])<-($54:int)($32:int)($44:int)($45:int)
-    t44 := array.grid(100,1320,112,0);	# 47 ARRAYgrid (t44:bat[:void,:int])<-($56:int)($57:int)($35:int)($45:int)
-    t45 := array.grid(100,1320,112,0,14);	# 48 ARRAYgridShift (t45:bat[:void,:int])<-($56:int)($57:int)($35:int)($45:int)($32:int)
-    t45 := batcalc.+(t45,t43,t45);	# 49 CMDbataccumADD (t45:bat[:void,:int])<-(t45:bat[:void,:int])(t43:bat[:void,:int])(t45:bat[:void,:int])
-    t47 := batcalc.oid(t45);	# 50 CMDconvertvoid_int_oid (t47:bat[:void,:oid])<-(t45:bat[:void,:int])
-    bbp.garbage(t45);	# 51 CMDbbpgarbage ($124:void)<-(t45:bat[:void,:int])
-    bbp.garbage(t47);	# 52 CMDbbpgarbage ($125:void)<-(t47:bat[:void,:oid])
-    t49 := bbp.bind("TREC2003_test_mus_14x8x32318");	# 53 CMDbbpbind (t49:bat[:void,:dbl])<-($63:str)
-    t51 := array.grid(132000,8,14,0);	# 54 ARRAYgrid (t51:bat[:void,:int])<-($65:int)($66:int)($67:int)($45:int)
-    t52 := array.grid(1,100,147840,0);	# 55 ARRAYgrid (t52:bat[:void,:int])<-($44:int)($56:int)($69:int)($45:int)
-    t53 := array.grid(1,100,147840,0,8);	# 56 ARRAYgridShift (t53:bat[:void,:int])<-($44:int)($56:int)($69:int)($45:int)($66:int)
-    t53 := batcalc.+(t53,t51,t53);	# 57 CMDbataccumADD (t53:bat[:void,:int])<-(t53:bat[:void,:int])(t51:bat[:void,:int])(t53:bat[:void,:int])
-    t53 := batcalc.*(t53,14,t53);	# 58 CMDbataccumMULcst2 (t53:bat[:void,:int])<-(t53:bat[:void,:int])($67:int)(t53:bat[:void,:int])
-    t43 := batcalc.+(t43,t43,t53);	# 59 CMDbataccumADD (t43:bat[:void,:int])<-(t43:bat[:void,:int])(t43:bat[:void,:int])(t53:bat[:void,:int])
-    bbp.garbage(t53);	# 60 CMDbbpgarbage ($127:void)<-(t53:bat[:void,:int])
-    t57 := batcalc.oid(t43);	# 61 CMDconvertvoid_int_oid (t57:bat[:void,:oid])<-(t43:bat[:void,:int])
-    bbp.garbage(t43);	# 62 CMDbbpgarbage ($128:void)<-(t43:bat[:void,:int])
-    t58 := algebra.join(t57,t49);	# 63 ALGjoin (t58:bat[:void,:dbl])<-(t57:bat[:void,:oid])(t49:bat[:void,:dbl])
-    bbp.garbage(t49);	# 64 CMDbbpgarbage ($129:void)<-(t49:bat[:void,:dbl])
-    t48 := batcalc.-(t48,t48,t58);	# 65 CMDbataccumMIN (t48:bat[:void,:dbl])<-(t48:bat[:void,:dbl])(t48:bat[:void,:dbl])(t58:bat[:void,:dbl])
-    bbp.garbage(t58);	# 66 CMDbbpgarbage ($130:void)<-(t58:bat[:void,:dbl])
-    t48 := batcalc.*(t48,t48,t48);	# 67 CMDbataccumMUL (t48:bat[:void,:dbl])<-(t48:bat[:void,:dbl])(t48:bat[:void,:dbl])(t48:bat[:void,:dbl])
-    t71 := algebra.join(t57,t16);	# 68 ALGjoin (t71:bat[:void,:dbl])<-(t57:bat[:void,:oid])(t16:bat[:void,:dbl])
-    bbp.garbage(t57);	# 69 CMDbbpgarbage ($131:void)<-(t57:bat[:void,:oid])
-    bbp.garbage(t16);	# 70 CMDbbpgarbage ($132:void)<-(t16:bat[:void,:dbl])
-    t48 := batcalc./(t48,t48,t71);	# 71 CMDbataccumDIV (t48:bat[:void,:dbl])<-(t48:bat[:void,:dbl])(t48:bat[:void,:dbl])(t71:bat[:void,:dbl])
-    bbp.garbage(t71);	# 72 CMDbbpgarbage ($133:void)<-(t71:bat[:void,:dbl])
-    t52 := batcalc.*(t52,1320,t52);	# 73 CMDbataccumMULcst2 (t52:bat[:void,:int])<-(t52:bat[:void,:int])($57:int)(t52:bat[:void,:int])
-    t44 := batcalc.+(t44,t44,t52);	# 74 CMDbataccumADD (t44:bat[:void,:int])<-(t44:bat[:void,:int])(t44:bat[:void,:int])(t52:bat[:void,:int])
-    bbp.garbage(t52);	# 75 CMDbbpgarbage ($134:void)<-(t52:bat[:void,:int])
-    t44 := batcalc.*(t44,8,t44);	# 76 CMDbataccumMULcst2 (t44:bat[:void,:int])<-(t44:bat[:void,:int])($66:int)(t44:bat[:void,:int])
-    t51 := batcalc.+(t51,t51,t44);	# 77 CMDbataccumADD (t51:bat[:void,:int])<-(t51:bat[:void,:int])(t51:bat[:void,:int])(t44:bat[:void,:int])
-    bbp.garbage(t44);	# 78 CMDbbpgarbage ($135:void)<-(t44:bat[:void,:int])
-    t80 := batcalc.oid(t51);	# 79 CMDconvertvoid_int_oid (t80:bat[:void,:oid])<-(t51:bat[:void,:int])
-    bbp.garbage(t51);	# 80 CMDbbpgarbage ($136:void)<-(t51:bat[:void,:int])
-    t81 := array.grid(1,1056000,1,0);	# 81 ARRAYgrid (t81:bat[:void,:int])<-($86:int)($87:int)($86:int)($88:int)
-    bbp.garbage(t80);	# 82 CMDbbpgarbage ($138:void)<-(t80:bat[:void,:oid])
-    t82 := batcalc.*(t82,t41,t82);	# 83 CMDbataccumMULcst2 (t82:bat[:void,:dbl])<-(t82:bat[:void,:dbl])(t41:dbl)(t82:bat[:void,:dbl])
-    t82 := batcalc.exp(t82);	# 84 CMDsciencevoid_exp (t82:bat[:void,:dbl])<-(t82:bat[:void,:dbl])
-    t40 := batcalc.*(t40,t40,t82);	# 85 CMDbataccumMUL (t40:bat[:void,:dbl])<-(t40:bat[:void,:dbl])(t40:bat[:void,:dbl])(t82:bat[:void,:dbl])
-    t7 := batcalc.*(t7,t7,t40);	# 86 CMDbataccumMUL (t7:bat[:void,:dbl])<-(t7:bat[:void,:dbl])(t7:bat[:void,:dbl])(t40:bat[:void,:dbl])
-    bbp.garbage(t40);	# 87 CMDbbpgarbage ($140:void)<-(t40:bat[:void,:dbl])
-    t87 := array.grid(t81,100,1320,8,0);	# 88 ARRAYgridBAT (t87:bat[:void,:int])<-(t81:bat[:void,:int])($95:int)($96:int)($66:int)($88:int)
-    bbp.garbage(t81);	# 89 CMDbbpgarbage ($141:void)<-(t81:bat[:void,:int])
-    t3 := batcalc.*(t3,1320,t3);	# 90 CMDbataccumMULcst2 (t3:bat[:void,:int])<-(t3:bat[:void,:int])($96:int)(t3:bat[:void,:int])
-    t87 := batcalc.+(t87,t87,t3);	# 91 CMDbataccumADD (t87:bat[:void,:int])<-(t87:bat[:void,:int])(t87:bat[:void,:int])(t3:bat[:void,:int])
-    bbp.garbage(t3);	# 92 CMDbbpgarbage ($142:void)<-(t3:bat[:void,:int])
-    t91 := batcalc.oid(t87);	# 93 CMDconvertvoid_int_oid (t91:bat[:void,:oid])<-(t87:bat[:void,:int])
-    bbp.garbage(t87);	# 94 CMDbbpgarbage ($143:void)<-(t87:bat[:void,:int])
-    t92 := array.grid(1,132000,1,0);	# 95 ARRAYgrid (t92:bat[:void,:int])<-($86:int)($101:int)($86:int)($88:int)
-    t93 := aggrX3.sum(t7,t91,t92);	# 96 AX3aggrX3_sum3_dbl_dbl (t93:bat[:void,:dbl])<-(t7:bat[:void,:dbl])(t91:bat[:void,:oid])(t92:bat[:void,:int])
-    bbp.garbage(t7);	# 97 CMDbbpgarbage ($144:void)<-(t7:bat[:void,:dbl])
-    bbp.garbage(t91);	# 98 CMDbbpgarbage ($145:void)<-(t91:bat[:void,:oid])
-    bbp.garbage(t92);	# 99 CMDbbpgarbage ($146:void)<-(t92:bat[:void,:int])
-    t93 := batcalc.log(t93);	# 100 CMDsciencevoid_log (t93:bat[:void,:dbl])<-(t93:bat[:void,:dbl])
-    t95 := array.grid(1,100,1320,0);	# 101 ARRAYgrid (t95:bat[:void,:int])<-($86:int)($95:int)($96:int)($88:int)
-    t96 := batcalc.oid(t95);	# 102 CMDconvertvoid_int_oid (t96:bat[:void,:oid])<-(t95:bat[:void,:int])
-    bbp.garbage(t95);	# 103 CMDbbpgarbage ($147:void)<-(t95:bat[:void,:int])
-    t97 := array.grid(1,100,1,0);	# 104 ARRAYgrid (t97:bat[:void,:int])<-($86:int)($95:int)($86:int)($88:int)
-    t98 := aggrX3.sum(t93,t96,t97);	# 105 AX3aggrX3_sum3_dbl_dbl (t98:bat[:void,:dbl])<-(t93:bat[:void,:dbl])(t96:bat[:void,:oid])(t97:bat[:void,:int])
-    bbp.garbage(t93);	# 106 CMDbbpgarbage ($148:void)<-(t93:bat[:void,:dbl])
-    bbp.garbage(t96);	# 107 CMDbbpgarbage ($149:void)<-(t96:bat[:void,:oid])
-    top := t98;	# 108  (top:bat[:void,:dbl])<-(t98:bat[:void,:dbl])
-    bbp.garbage(t98);	# 109 CMDbbpgarbage ($150:void)<-(t98:bat[:void,:dbl])
-    io.table(t97,top);	# 110 IOttable ($109:int)<-(t97:bat[:void,:int])(top:bat[:void,:dbl])
-    bbp.garbage(t97);	# 111 CMDbbpgarbage ($151:void)<-(t97:bat[:void,:int])
-    bbp.garbage(top);	# 112 CMDbbpgarbage ($152:void)<-(top:bat[:void,:dbl])
-barrier always := true;	# 113  (always:bit)<-($153:bit) jump 122
-    t42 := bbp.bind(s);	# 114 CMDbbpbind (t42:bat[:void,:dbl])<-(s:str)
-    t48 := algebra.join(t47,t42);	# 115 ALGjoin (t48:bat[:void,:dbl])<-(t47:bat[:void,:oid])(t42:bat[:void,:dbl])
-    bbp.garbage(t42);	# 116 CMDbbpgarbage ($126:void)<-(t42:bat[:void,:dbl])
-    t82 := aggrX3.sum(t48,t80,t81);	# 117 AX3aggrX3_sum3_dbl_dbl (t82:bat[:void,:dbl])<-(t48:bat[:void,:dbl])(t80:bat[:void,:oid])(t81:bat[:void,:int])
-    bbp.garbage(t48);	# 118 CMDbbpgarbage ($137:void)<-(t48:bat[:void,:dbl])
-    bbp.garbage(t82);	# 119 CMDbbpgarbage ($139:void)<-(t82:bat[:void,:dbl])
-    yield always;	# 120  (always:bit)
-    redo always;	# 121  (always:bit) jump 114
-exit always;	# 122  (always:bit)
-end f1;	# 123  
+    t21 := batcalc.+(t18,t20);	# 24 CMDbatADD (t21:bat[:void,:int])<-(t18:bat[:void,:int])(t20:bat[:void,:int])
+    bbp.garbage(t18);	# 25 CMDbbpgarbage ($114:void)<-(t18:bat[:void,:int])
+    bbp.garbage(t20);	# 26 CMDbbpgarbage ($115:void)<-(t20:bat[:void,:int])
+    t22 := batcalc.*(14,t21);	# 27 CMDcstMULbat (t22:bat[:void,:int])<-($32:int)(t21:bat[:void,:int])
+    t23 := batcalc.+(t17,t22);	# 28 CMDbatADD (t23:bat[:void,:int])<-(t17:bat[:void,:int])(t22:bat[:void,:int])
+    bbp.garbage(t17);	# 29 CMDbbpgarbage ($116:void)<-(t17:bat[:void,:int])
+    bbp.garbage(t22);	# 30 CMDbbpgarbage ($117:void)<-(t22:bat[:void,:int])
+    t24 := batcalc.oid(t23);	# 31 CMDconvertvoid_int_oid (t24:bat[:void,:oid])<-(t23:bat[:void,:int])
+    bbp.garbage(t23);	# 32 CMDbbpgarbage ($118:void)<-(t23:bat[:void,:int])
+    t25 := algebra.join(t24,t16);	# 33 ALGjoin (t25:bat[:void,:dbl])<-(t24:bat[:void,:oid])(t16:bat[:void,:dbl])
+    bbp.garbage(t24);	# 34 CMDbbpgarbage ($119:void)<-(t24:bat[:void,:oid])
+    t30 := batcalc.oid(t21);	# 35 CMDconvertvoid_int_oid (t30:bat[:void,:oid])<-(t21:bat[:void,:int])
+    bbp.garbage(t21);	# 36 CMDbbpgarbage ($120:void)<-(t21:bat[:void,:int])
+    t31 := array.grid(1,800,1,0);	# 37 ARRAYgrid (t31:bat[:void,:int])<-($44:int)($31:int)($44:int)($45:int)
+    t32 := aggrX3.prod(t25,t30,t31);	# 38 AX3aggrX3_prod3_dbl_dbl (t32:bat[:void,:dbl])<-(t25:bat[:void,:dbl])(t30:bat[:void,:oid])(t31:bat[:void,:int])
+    bbp.garbage(t25);	# 39 CMDbbpgarbage ($121:void)<-(t25:bat[:void,:dbl])
+    bbp.garbage(t30);	# 40 CMDbbpgarbage ($122:void)<-(t30:bat[:void,:oid])
+    bbp.garbage(t31);	# 41 CMDbbpgarbage ($123:void)<-(t31:bat[:void,:int])
+    t33 := batcalc.*(t14,t32);	# 42 CMDcstMULbat (t33:bat[:void,:dbl])<-(t14:dbl)(t32:bat[:void,:dbl])
+    bbp.garbage(t32);	# 43 CMDbbpgarbage ($124:void)<-(t32:bat[:void,:dbl])
+    t34 := batcalc./(t8,t33);	# 44 CMDcstDIVbat (t34:bat[:void,:dbl])<-(t8:dbl)(t33:bat[:void,:dbl])
+    bbp.garbage(t33);	# 45 CMDbbpgarbage ($125:void)<-(t33:bat[:void,:dbl])
+    t40 := algebra.join(t6,t34);	# 46 ALGjoin (t40:bat[:void,:dbl])<-(t6:bat[:void,:oid])(t34:bat[:void,:dbl])
+    bbp.garbage(t6);	# 47 CMDbbpgarbage ($126:void)<-(t6:bat[:void,:oid])
+    bbp.garbage(t34);	# 48 CMDbbpgarbage ($127:void)<-(t34:bat[:void,:dbl])
+    t41 := calc.dbl(-0.5);	# 49 CALCflt2dbl (t41:dbl)<-($51:flt)
+    t43 := array.grid(1056000,14,1,0);	# 50 ARRAYgrid (t43:bat[:void,:int])<-($54:int)($32:int)($44:int)($45:int)
+    t44 := array.grid(100,1320,112,0);	# 51 ARRAYgrid (t44:bat[:void,:int])<-($56:int)($57:int)($35:int)($45:int)
+    t45 := array.grid(100,1320,112,0,14);	# 52 ARRAYgridShift (t45:bat[:void,:int])<-($56:int)($57:int)($35:int)($45:int)($32:int)
+    t46 := batcalc.+(t43,t45);	# 53 CMDbatADD (t46:bat[:void,:int])<-(t43:bat[:void,:int])(t45:bat[:void,:int])
+    bbp.garbage(t45);	# 54 CMDbbpgarbage ($128:void)<-(t45:bat[:void,:int])
+    t47 := batcalc.oid(t46);	# 55 CMDconvertvoid_int_oid (t47:bat[:void,:oid])<-(t46:bat[:void,:int])
+    bbp.garbage(t46);	# 56 CMDbbpgarbage ($129:void)<-(t46:bat[:void,:int])
+    bbp.garbage(t47);	# 57 CMDbbpgarbage ($130:void)<-(t47:bat[:void,:oid])
+    t49 := bbp.bind("TREC2003_test_mus_14x8x32318");	# 58 CMDbbpbind (t49:bat[:void,:dbl])<-($63:str)
+    t51 := array.grid(132000,8,14,0);	# 59 ARRAYgrid (t51:bat[:void,:int])<-($65:int)($66:int)($67:int)($45:int)
+    t52 := array.grid(1,100,147840,0);	# 60 ARRAYgrid (t52:bat[:void,:int])<-($44:int)($56:int)($69:int)($45:int)
+    t53 := array.grid(1,100,147840,0,8);	# 61 ARRAYgridShift (t53:bat[:void,:int])<-($44:int)($56:int)($69:int)($45:int)($66:int)
+    t54 := batcalc.+(t51,t53);	# 62 CMDbatADD (t54:bat[:void,:int])<-(t51:bat[:void,:int])(t53:bat[:void,:int])
+    bbp.garbage(t53);	# 63 CMDbbpgarbage ($132:void)<-(t53:bat[:void,:int])
+    t55 := batcalc.*(14,t54);	# 64 CMDcstMULbat (t55:bat[:void,:int])<-($67:int)(t54:bat[:void,:int])
+    bbp.garbage(t54);	# 65 CMDbbpgarbage ($133:void)<-(t54:bat[:void,:int])
+    t56 := batcalc.+(t43,t55);	# 66 CMDbatADD (t56:bat[:void,:int])<-(t43:bat[:void,:int])(t55:bat[:void,:int])
+    bbp.garbage(t43);	# 67 CMDbbpgarbage ($134:void)<-(t43:bat[:void,:int])
+    bbp.garbage(t55);	# 68 CMDbbpgarbage ($135:void)<-(t55:bat[:void,:int])
+    t57 := batcalc.oid(t56);	# 69 CMDconvertvoid_int_oid (t57:bat[:void,:oid])<-(t56:bat[:void,:int])
+    bbp.garbage(t56);	# 70 CMDbbpgarbage ($136:void)<-(t56:bat[:void,:int])
+    t58 := algebra.join(t57,t49);	# 71 ALGjoin (t58:bat[:void,:dbl])<-(t57:bat[:void,:oid])(t49:bat[:void,:dbl])
+    bbp.garbage(t49);	# 72 CMDbbpgarbage ($137:void)<-(t49:bat[:void,:dbl])
+    bbp.garbage(t58);	# 73 CMDbbpgarbage ($139:void)<-(t58:bat[:void,:dbl])
+    t71 := algebra.join(t57,t16);	# 74 ALGjoin (t71:bat[:void,:dbl])<-(t57:bat[:void,:oid])(t16:bat[:void,:dbl])
+    bbp.garbage(t57);	# 75 CMDbbpgarbage ($141:void)<-(t57:bat[:void,:oid])
+    bbp.garbage(t16);	# 76 CMDbbpgarbage ($142:void)<-(t16:bat[:void,:dbl])
+    bbp.garbage(t71);	# 77 CMDbbpgarbage ($144:void)<-(t71:bat[:void,:dbl])
+    t76 := batcalc.*(1320,t52);	# 78 CMDcstMULbat (t76:bat[:void,:int])<-($57:int)(t52:bat[:void,:int])
+    bbp.garbage(t52);	# 79 CMDbbpgarbage ($145:void)<-(t52:bat[:void,:int])
+    t77 := batcalc.+(t44,t76);	# 80 CMDbatADD (t77:bat[:void,:int])<-(t44:bat[:void,:int])(t76:bat[:void,:int])
+    bbp.garbage(t44);	# 81 CMDbbpgarbage ($146:void)<-(t44:bat[:void,:int])
+    bbp.garbage(t76);	# 82 CMDbbpgarbage ($147:void)<-(t76:bat[:void,:int])
+    t78 := batcalc.*(8,t77);	# 83 CMDcstMULbat (t78:bat[:void,:int])<-($66:int)(t77:bat[:void,:int])
+    bbp.garbage(t77);	# 84 CMDbbpgarbage ($148:void)<-(t77:bat[:void,:int])
+    t79 := batcalc.+(t51,t78);	# 85 CMDbatADD (t79:bat[:void,:int])<-(t51:bat[:void,:int])(t78:bat[:void,:int])
+    bbp.garbage(t51);	# 86 CMDbbpgarbage ($149:void)<-(t51:bat[:void,:int])
+    bbp.garbage(t78);	# 87 CMDbbpgarbage ($150:void)<-(t78:bat[:void,:int])
+    t80 := batcalc.oid(t79);	# 88 CMDconvertvoid_int_oid (t80:bat[:void,:oid])<-(t79:bat[:void,:int])
+    bbp.garbage(t79);	# 89 CMDbbpgarbage ($151:void)<-(t79:bat[:void,:int])
+    t81 := array.grid(1,1056000,1,0);	# 90 ARRAYgrid (t81:bat[:void,:int])<-($86:int)($87:int)($86:int)($88:int)
+    bbp.garbage(t80);	# 91 CMDbbpgarbage ($153:void)<-(t80:bat[:void,:oid])
+    bbp.garbage(t40);	# 92 CMDbbpgarbage ($156:void)<-(t40:bat[:void,:dbl])
+    bbp.garbage(t7);	# 93 CMDbbpgarbage ($158:void)<-(t7:bat[:void,:dbl])
+    t87 := array.grid(t81,100,1320,8,0);	# 94 ARRAYgridBAT (t87:bat[:void,:int])<-(t81:bat[:void,:int])($95:int)($96:int)($66:int)($88:int)
+    bbp.garbage(t81);	# 95 CMDbbpgarbage ($160:void)<-(t81:bat[:void,:int])
+    t89 := batcalc.*(1320,t3);	# 96 CMDcstMULbat (t89:bat[:void,:int])<-($96:int)(t3:bat[:void,:int])
+    bbp.garbage(t3);	# 97 CMDbbpgarbage ($161:void)<-(t3:bat[:void,:int])
+    t90 := batcalc.+(t87,t89);	# 98 CMDbatADD (t90:bat[:void,:int])<-(t87:bat[:void,:int])(t89:bat[:void,:int])
+    bbp.garbage(t87);	# 99 CMDbbpgarbage ($162:void)<-(t87:bat[:void,:int])
+    bbp.garbage(t89);	# 100 CMDbbpgarbage ($163:void)<-(t89:bat[:void,:int])
+    t91 := batcalc.oid(t90);	# 101 CMDconvertvoid_int_oid (t91:bat[:void,:oid])<-(t90:bat[:void,:int])
+    bbp.garbage(t90);	# 102 CMDbbpgarbage ($164:void)<-(t90:bat[:void,:int])
+    t92 := array.grid(1,132000,1,0);	# 103 ARRAYgrid (t92:bat[:void,:int])<-($86:int)($101:int)($86:int)($88:int)
+    bbp.garbage(t91);	# 104 CMDbbpgarbage ($166:void)<-(t91:bat[:void,:oid])
+    bbp.garbage(t92);	# 105 CMDbbpgarbage ($167:void)<-(t92:bat[:void,:int])
+    t95 := array.grid(1,100,1320,0);	# 106 ARRAYgrid (t95:bat[:void,:int])<-($86:int)($95:int)($96:int)($88:int)
+    t96 := batcalc.oid(t95);	# 107 CMDconvertvoid_int_oid (t96:bat[:void,:oid])<-(t95:bat[:void,:int])
+    bbp.garbage(t95);	# 108 CMDbbpgarbage ($169:void)<-(t95:bat[:void,:int])
+    t97 := array.grid(1,100,1,0);	# 109 ARRAYgrid (t97:bat[:void,:int])<-($86:int)($95:int)($86:int)($88:int)
+    bbp.garbage(t96);	# 110 CMDbbpgarbage ($171:void)<-(t96:bat[:void,:oid])
+    bbp.garbage(t97);	# 111 CMDbbpgarbage ($173:void)<-(t97:bat[:void,:int])
+barrier always := true;	# 112  (always:bit)<-($175:bit) jump 144
+    t42 := bbp.bind(s);	# 113 CMDbbpbind (t42:bat[:void,:dbl])<-(s:str)
+    t48 := algebra.join(t47,t42);	# 114 ALGjoin (t48:bat[:void,:dbl])<-(t47:bat[:void,:oid])(t42:bat[:void,:dbl])
+    bbp.garbage(t42);	# 115 CMDbbpgarbage ($131:void)<-(t42:bat[:void,:dbl])
+    t59 := batcalc.-(t48,t58);	# 116 CMDbatMIN (t59:bat[:void,:dbl])<-(t48:bat[:void,:dbl])(t58:bat[:void,:dbl])
+    bbp.garbage(t48);	# 117 CMDbbpgarbage ($138:void)<-(t48:bat[:void,:dbl])
+    t61 := batcalc.*(t59,t59);	# 118 CMDbatMUL (t61:bat[:void,:dbl])<-(t59:bat[:void,:dbl])(t59:bat[:void,:dbl])
+    bbp.garbage(t59);	# 119 CMDbbpgarbage ($140:void)<-(t59:bat[:void,:dbl])
+    t72 := batcalc./(t61,t71);	# 120 CMDbatDIV (t72:bat[:void,:dbl])<-(t61:bat[:void,:dbl])(t71:bat[:void,:dbl])
+    bbp.garbage(t61);	# 121 CMDbbpgarbage ($143:void)<-(t61:bat[:void,:dbl])
+    t82 := aggrX3.sum(t72,t80,t81);	# 122 AX3aggrX3_sum3_dbl_dbl (t82:bat[:void,:dbl])<-(t72:bat[:void,:dbl])(t80:bat[:void,:oid])(t81:bat[:void,:int])
+    bbp.garbage(t72);	# 123 CMDbbpgarbage ($152:void)<-(t72:bat[:void,:dbl])
+    t83 := batcalc.*(t41,t82);	# 124 CMDcstMULbat (t83:bat[:void,:dbl])<-(t41:dbl)(t82:bat[:void,:dbl])
+    bbp.garbage(t82);	# 125 CMDbbpgarbage ($154:void)<-(t82:bat[:void,:dbl])
+    t84 := batcalc.exp(t83);	# 126 CMDsciencevoid_exp (t84:bat[:void,:dbl])<-(t83:bat[:void,:dbl])
+    bbp.garbage(t83);	# 127 CMDbbpgarbage ($155:void)<-(t83:bat[:void,:dbl])
+    t85 := batcalc.*(t40,t84);	# 128 CMDbatMUL (t85:bat[:void,:dbl])<-(t40:bat[:void,:dbl])(t84:bat[:void,:dbl])
+    bbp.garbage(t84);	# 129 CMDbbpgarbage ($157:void)<-(t84:bat[:void,:dbl])
+    t86 := batcalc.*(t7,t85);	# 130 CMDbatMUL (t86:bat[:void,:dbl])<-(t7:bat[:void,:dbl])(t85:bat[:void,:dbl])
+    bbp.garbage(t85);	# 131 CMDbbpgarbage ($159:void)<-(t85:bat[:void,:dbl])
+    t93 := aggrX3.sum(t86,t91,t92);	# 132 AX3aggrX3_sum3_dbl_dbl (t93:bat[:void,:dbl])<-(t86:bat[:void,:dbl])(t91:bat[:void,:oid])(t92:bat[:void,:int])
+    bbp.garbage(t86);	# 133 CMDbbpgarbage ($165:void)<-(t86:bat[:void,:dbl])
+    t94 := batcalc.log(t93);	# 134 CMDsciencevoid_log (t94:bat[:void,:dbl])<-(t93:bat[:void,:dbl])
+    bbp.garbage(t93);	# 135 CMDbbpgarbage ($168:void)<-(t93:bat[:void,:dbl])
+    t98 := aggrX3.sum(t94,t96,t97);	# 136 AX3aggrX3_sum3_dbl_dbl (t98:bat[:void,:dbl])<-(t94:bat[:void,:dbl])(t96:bat[:void,:oid])(t97:bat[:void,:int])
+    bbp.garbage(t94);	# 137 CMDbbpgarbage ($170:void)<-(t94:bat[:void,:dbl])
+    top := t98;	# 138  (top:bat[:void,:dbl])<-(t98:bat[:void,:dbl])
+    bbp.garbage(t98);	# 139 CMDbbpgarbage ($172:void)<-(t98:bat[:void,:dbl])
+    io.table(t97,top);	# 140 IOttable ($109:int)<-(t97:bat[:void,:int])(top:bat[:void,:dbl])
+    bbp.garbage(top);	# 141 CMDbbpgarbage ($174:void)<-(top:bat[:void,:dbl])
+    yield always;	# 142  (always:bit)
+    redo always;	# 143  (always:bit) jump 113
+exit always;	# 144  (always:bit)
+end f1;	# 145  
 function user.main():int;	# 0  (main:int)
 #t4 := batcalc.*(8,t3); doing a reconstruction saves a lot 	# 1  ($2:str)
 #t20 := batcalc.*(8,t19); 	# 2  ($4:str)
@@ -477,102 +513,124 @@ factory user.f1(s:str):void;
     t18 := array.grid(100,8,14,0);
     t19 := array.grid(1,100,112,0);
     t20 := array.grid(1,100,112,0,8);
-    t18 := batcalc.+(t18,t18,t20);
+    t21 := batcalc.+(t18,t20);
+    bbp.garbage(t18);
     bbp.garbage(t20);
-    t22 := batcalc.*(14,t18);
-    t17 := batcalc.+(t17,t17,t22);
-    bbp.garbage(t22);
-    t24 := batcalc.oid(t17);
+    t22 := batcalc.*(14,t21);
+    t23 := batcalc.+(t17,t22);
     bbp.garbage(t17);
+    bbp.garbage(t22);
+    t24 := batcalc.oid(t23);
+    bbp.garbage(t23);
     t25 := algebra.join(t24,t16);
     bbp.garbage(t24);
-    t30 := batcalc.oid(t18);
-    bbp.garbage(t18);
+    t30 := batcalc.oid(t21);
+    bbp.garbage(t21);
     t31 := array.grid(1,800,1,0);
     t32 := aggrX3.prod(t25,t30,t31);
     bbp.garbage(t25);
     bbp.garbage(t30);
     bbp.garbage(t31);
-    t32 := batcalc.*(t32,t14,t32);
-    t32 := batcalc./(t32,t8,t32);
-    t40 := algebra.join(t6,t32);
-    bbp.garbage(t6);
+    t33 := batcalc.*(t14,t32);
     bbp.garbage(t32);
+    t34 := batcalc./(t8,t33);
+    bbp.garbage(t33);
+    t40 := algebra.join(t6,t34);
+    bbp.garbage(t6);
+    bbp.garbage(t34);
     t41 := calc.dbl(-0.5);
     t43 := array.grid(1056000,14,1,0);
     t44 := array.grid(100,1320,112,0);
     t45 := array.grid(100,1320,112,0,14);
-    t45 := batcalc.+(t45,t43,t45);
-    t47 := batcalc.oid(t45);
+    t46 := batcalc.+(t43,t45);
     bbp.garbage(t45);
+    t47 := batcalc.oid(t46);
+    bbp.garbage(t46);
     bbp.garbage(t47);
     t49 := bbp.bind("TREC2003_test_mus_14x8x32318");
     t51 := array.grid(132000,8,14,0);
     t52 := array.grid(1,100,147840,0);
     t53 := array.grid(1,100,147840,0,8);
-    t53 := batcalc.+(t53,t51,t53);
-    t53 := batcalc.*(t53,14,t53);
-    t43 := batcalc.+(t43,t43,t53);
+    t54 := batcalc.+(t51,t53);
     bbp.garbage(t53);
-    t57 := batcalc.oid(t43);
+    t55 := batcalc.*(14,t54);
+    bbp.garbage(t54);
+    t56 := batcalc.+(t43,t55);
     bbp.garbage(t43);
+    bbp.garbage(t55);
+    t57 := batcalc.oid(t56);
+    bbp.garbage(t56);
     t58 := algebra.join(t57,t49);
     bbp.garbage(t49);
-    t48 := batcalc.-(t48,t48,t58);
     bbp.garbage(t58);
-    t48 := batcalc.*(t48,t48,t48);
     t71 := algebra.join(t57,t16);
     bbp.garbage(t57);
     bbp.garbage(t16);
-    t48 := batcalc./(t48,t48,t71);
     bbp.garbage(t71);
-    t52 := batcalc.*(t52,1320,t52);
-    t44 := batcalc.+(t44,t44,t52);
+    t76 := batcalc.*(1320,t52);
     bbp.garbage(t52);
-    t44 := batcalc.*(t44,8,t44);
-    t51 := batcalc.+(t51,t51,t44);
+    t77 := batcalc.+(t44,t76);
     bbp.garbage(t44);
-    t80 := batcalc.oid(t51);
+    bbp.garbage(t76);
+    t78 := batcalc.*(8,t77);
+    bbp.garbage(t77);
+    t79 := batcalc.+(t51,t78);
     bbp.garbage(t51);
+    bbp.garbage(t78);
+    t80 := batcalc.oid(t79);
+    bbp.garbage(t79);
     t81 := array.grid(1,1056000,1,0);
     bbp.garbage(t80);
-    t82 := batcalc.*(t82,t41,t82);
-    t82 := batcalc.exp(t82);
-    t40 := batcalc.*(t40,t40,t82);
-    t7 := batcalc.*(t7,t7,t40);
     bbp.garbage(t40);
+    bbp.garbage(t7);
     t87 := array.grid(t81,100,1320,8,0);
     bbp.garbage(t81);
-    t3 := batcalc.*(t3,1320,t3);
-    t87 := batcalc.+(t87,t87,t3);
+    t89 := batcalc.*(1320,t3);
     bbp.garbage(t3);
-    t91 := batcalc.oid(t87);
+    t90 := batcalc.+(t87,t89);
     bbp.garbage(t87);
+    bbp.garbage(t89);
+    t91 := batcalc.oid(t90);
+    bbp.garbage(t90);
     t92 := array.grid(1,132000,1,0);
-    t93 := aggrX3.sum(t7,t91,t92);
-    bbp.garbage(t7);
     bbp.garbage(t91);
     bbp.garbage(t92);
-    t93 := batcalc.log(t93);
     t95 := array.grid(1,100,1320,0);
     t96 := batcalc.oid(t95);
     bbp.garbage(t95);
     t97 := array.grid(1,100,1,0);
-    t98 := aggrX3.sum(t93,t96,t97);
-    bbp.garbage(t93);
     bbp.garbage(t96);
-    top := t98;
-    bbp.garbage(t98);
-    io.table(t97,top);
     bbp.garbage(t97);
-    bbp.garbage(top);
 barrier always := true;
     t42 := bbp.bind(s);
     t48 := algebra.join(t47,t42);
     bbp.garbage(t42);
-    t82 := aggrX3.sum(t48,t80,t81);
+    t59 := batcalc.-(t48,t58);
     bbp.garbage(t48);
+    t61 := batcalc.*(t59,t59);
+    bbp.garbage(t59);
+    t72 := batcalc./(t61,t71);
+    bbp.garbage(t61);
+    t82 := aggrX3.sum(t72,t80,t81);
+    bbp.garbage(t72);
+    t83 := batcalc.*(t41,t82);
     bbp.garbage(t82);
+    t84 := batcalc.exp(t83);
+    bbp.garbage(t83);
+    t85 := batcalc.*(t40,t84);
+    bbp.garbage(t84);
+    t86 := batcalc.*(t7,t85);
+    bbp.garbage(t85);
+    t93 := aggrX3.sum(t86,t91,t92);
+    bbp.garbage(t86);
+    t94 := batcalc.log(t93);
+    bbp.garbage(t93);
+    t98 := aggrX3.sum(t94,t96,t97);
+    bbp.garbage(t94);
+    top := t98;
+    bbp.garbage(t98);
+    io.table(t97,top);
+    bbp.garbage(top);
     yield always;
     redo always;
 exit always;
