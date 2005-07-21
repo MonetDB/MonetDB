@@ -951,15 +951,16 @@ Special care should be taken for iterator blocks as illustrated in
 the case below:
 @verbatim
 	i:=0;
-	d:= "first";
+	b:= "done";
 barrier go:= true;
 	c:=i+1;
-	d:="second";
+	d:="step";
 	v:=d;
 	io.print(v);
 	i:=c;
 redo go:= i<2;
 exit go;
+	io.print(b);
 @end verbatim
 The constant string is propagated to the @code{print()} routine, while
 the initial assigment @code{i:=0} should be retained. The code block becomes:
@@ -967,10 +968,11 @@ the initial assigment @code{i:=0} should be retained. The code block becomes:
 	i:=0;
 barrier go:= true;
 	c:=i+1;
-	io.print("second");
+	io.print("step");
 	i:=c;
 redo go:= i<2;
 exit go;
+	io.print("done");
 @end verbatim
 @{
 The key decision is to find the next statement that
@@ -979,29 +981,30 @@ Beware that parameters could be changed as part of a call.
 They are marked as unsafe.
 @c
 int ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
-{   int i,k, blkcount=0;
+{   int i,k, blkcount=0, used =0;
     InstrPtr p,q;
     p= getInstrPtr(mb,pc);
-	for(i=0; i<pc; i++){
-        q= getInstrPtr(mb,i);
-        if( blockStart(q)) blkcount++;
-        if( blockExit(q)) blkcount--;
-	}
 
     for(i=pc; i< mb->stop && isAlife(mb,varid,i); i++){
         q= getInstrPtr(mb,i);
         for(k=0; k < q->retc; k++)
-        if( q->argv[k]== varid) {
-            return i;
-        }
+        if( q->argv[k]== varid) 
+			goto ARfound;
         for(;k < q->argc; k++)
-        if( q->argv[k]== varid && ! isInvariant(mb,pc,i,varid)) 
-            return i;
-        if( blockStart(p)) blkcount++;
-        if( blockExit(p)) blkcount--;
-        if( blkcount<0) return pc; /* it is part of a block */
+        if( q->argv[k]== varid){
+			used++;
+			if(  ! isInvariant(mb,pc,i,varid)) 
+				goto ARfound;
+		}
+        if( blockStart(q)) blkcount++;
+        if( blockExit(q)) blkcount--;
+        if( blockCntrl(q)) blkcount--;
+        if( blkcount<0) break; /* it is part of a block */
+        if( blockCntrl(q)) blkcount++;
     }
-    return mb->stop;
+ARfound:
+	if( blkcount || !used ) return pc-1;
+    return i;
 }
 @-
 When you propagate an alias through the program, the properties
@@ -1041,7 +1044,7 @@ int ARoptimizerStep(MalBlkPtr mb, int pc)
     for(k=0;k<p->retc; k++){
        int m;
        m= ARnxtAssignment(mb,pc+1,p->argv[k]);
-       if( m!=pc ){
+       if( m != pc){
         ARreplaceAlias(mb,pc+1,m,p->argv[k], p->argv[p->retc+k]);
         kn++;
 #ifdef DEBUG_MAL_OPTIMIZER
@@ -1071,6 +1074,7 @@ str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		printFunction(GDKout,mb,LIST_MAL_ALL);
 	}
 #endif
+	setLifespan(mb);
     for(i=1;i< mb->stop; i++)
         i= ARoptimizerStep(mb,i);
     /* remove the ARoptimizer request */
@@ -1150,14 +1154,14 @@ remaining code, we may wish to get rid of empty iterator blocks as well.
 
 An illustrative example is the following MAL snippet:
 @verbatim
-    V7 := bbp.new(:void,:int);
-    V10 := bbp.new(:int,:void);
-    V16 := algebra.markH(V7);
-    V17 := algebra.join(V16,V7);
-    V19 := bbp.new(:void,:int);
-    V22 := bbp.new(:void,:int);
-    V23 := algebra.join(V16,V22);
-    io.print("done");
+	V7 := bbp.new(:void,:int);
+	V10 := bbp.new(:int,:void);
+	V16 := algebra.markH(V7);
+	V17 := algebra.join(V16,V7);
+	V19 := bbp.new(:void,:int);
+	V22 := bbp.new(:void,:int);
+	V23 := algebra.join(V16,V22);
+	io.print("done");
 	optimizer.deadCodeRemoval();
 @end verbatim
 The dead code removal trims this program to a very short one.
