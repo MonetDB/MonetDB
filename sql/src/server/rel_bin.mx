@@ -1,0 +1,502 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f rel_bin
+@a N.J. Nes
+@* 
+
+@h
+#ifndef _REL_BIN_H_
+#define _REL_BIN_H_
+
+#include "rel_semantic.h"
+#include "sql_statement.h"
+
+extern stmt * rel_bin(mvc *sql, sql_rel *rel);
+
+#endif /*_REL_BIN_H_*/
+@c
+#define LINESIZE 80
+
+#include "rel_bin.h"
+
+static stmt * subrel_bin(mvc *sql, sql_rel *rel);
+
+static void
+print_indent( mvc *sql, int depth)
+{
+	char buf[LINESIZE+1];
+	int i;
+
+	(void)sql;
+	depth *= 4; /* tab stop 4 */
+	if (depth > LINESIZE)
+		depth = LINESIZE;
+	for(i=0; i<depth; i++){
+		buf[i] = ' ';
+	}
+	buf[i] = 0;
+	printf("\n%s", buf);
+}
+
+static void
+cmp_print(mvc *sql, int cmp) 
+{
+	char *r;
+
+	(void)sql;
+	switch(cmp) {
+	case cmp_gt: 		r = ">"; break;
+	case cmp_gte: 		r = ">="; break;
+	case cmp_lte: 		r = "<="; break;
+	case cmp_lt: 		r = "<"; break;
+	case cmp_equal: 	r = "="; break;
+	case cmp_notequal: 	r = "!="; break;
+	case cmp_notlike: 	r = "notlike"; break;
+	case cmp_like: 		r = "like"; break;
+	case cmp_all: 		r = "all"; break;
+	default:
+		r = "";
+	}
+	printf(" %s ", r);
+}
+
+static void exps_print(mvc *sql, list *exps, int depth, int alias);
+
+static void
+exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias) 
+{
+	(void)sql;
+	if (!e)
+		return;
+	switch(e->type) {
+	case e_exp: 
+		exp_print(sql, e->l, depth, 0, 0);
+		printf(", ");
+		exp_print(sql, e->r, depth, 0, 0);
+	 	break;
+	case e_atom: {
+		atom *a = e->l;
+		char *s = atom2string(a);
+		if (a->tpe->type->localtype == TYPE_str)
+			printf("'%s'", s);
+		else
+			printf("%s", s);
+		_DELETE(s);
+	} 	break;
+	case e_func: {
+		sql_subfunc *f = e->f;
+		printf("'%s' ", f->func->base.name );
+		exps_print( sql, e->l, depth, alias);
+	} 	break;
+	case e_aggr: {
+		sql_subaggr *a = e->f;
+		printf("'%s' ", a->aggr->base.name );
+		exps_print( sql, e->l, depth, alias);
+	} 	break;
+	case e_relation: 
+		subrel_bin(sql, e->l );
+	 	break;
+	case e_column: 
+		if (e->l)
+			printf("%s.", (char*)e->l);
+		printf("%s", (char*)e->r);
+	 	break;
+	case e_cmp: 
+		exp_print(sql, e->l, depth+1, 0, 0);
+		cmp_print(sql, e->flag );
+		exp_print(sql, e->r, depth+1, 0, 0);
+	 	break;
+	default:
+		;
+	}
+	if (e->name && alias)
+		printf(" as %s", e->name);
+	if (comma)
+		printf(", ");
+}
+
+static void
+exps_print(mvc *sql, list *exps, int depth, int alias) 
+{
+	node *en;
+
+	if (!exps)
+		return;
+
+	printf(" [ ");
+	for( en = exps->h; en; en = en->next ) 
+		exp_print(sql, en->data, depth+1, (en->next!=NULL), alias);
+	printf(" ]");
+}
+
+static stmt *
+bin_find_column( stmt *sub, char *rname, char *name ) 
+{
+	node *n;
+
+	if (rname) {
+		for (n = sub->op1.lval->h; n; n = n->next) {
+			char *rnme = table_name(n->data);
+			char *nme = column_name(n->data);
+
+			if (strcmp(rnme, rname) == 0 && strcmp(nme, name) == 0) 
+				return stmt_dup(n->data);
+		}
+	} else {
+		for (n = sub->op1.lval->h; n; n = n->next) {
+			char *nme = column_name(n->data);
+
+			if (strcmp(nme, name) == 0) 
+				return stmt_dup(n->data);
+		}
+	}
+	return NULL;
+}
+
+static stmt *
+bin_first_column( stmt *sub ) 
+{
+	node *n = sub->op1.lval->h;
+
+	return stmt_dup(n->data);
+}
+
+static stmt *
+exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right) 
+{
+	stmt *s = NULL;
+
+	if (!e)
+		return NULL;
+
+	switch(e->type) {
+	case e_exp: 
+		exp_print(sql, e->l, 0, 0, 0);
+		printf(", ");
+		exp_print(sql, e->r, 0, 0, 0);
+	 	break;
+	case e_atom: {
+		atom *a = e->l;
+		s = stmt_atom(atom_dup(a));
+	}	break;
+	case e_func: {
+		sql_subfunc *f = e->f;
+		printf("'%s' ", f->func->base.name );
+		exps_print( sql, e->l, 0, 0);
+	} 	break;
+	case e_aggr: {
+		sql_subaggr *a = e->f;
+		printf("'%s' ", a->aggr->base.name );
+		exps_print( sql, e->l, 0, 0);
+	} 	break;
+	case e_relation: 
+		s = subrel_bin(sql, e->l );
+	 	break;
+	case e_column: 
+		if (left) /* check relation names */
+			s = bin_find_column(left, e->l, e->r);
+		if (!s && right) 
+			s = bin_find_column(right, e->l, e->r);
+	 	break;
+	case e_cmp: {
+		stmt *l = exp_bin(sql, e->l, left, right);
+		stmt *r;
+
+		/* the escape charachter of like is in the right expression */
+		if (e->flag == cmp_notlike || e->flag == cmp_like) {
+			stmt *escape = NULL;
+			sql_exp *re = e->r;
+
+			if (re->type == e_exp) {
+ 				r = exp_bin(sql, re->l, left, right);
+ 				escape = exp_bin(sql, re->r, left, right);
+			} else {
+ 				r = exp_bin(sql, e->r, left, right);
+				escape = stmt_atom_string(_strdup(""));
+			}
+			if (!l || !r || !escape) {
+				if (l) stmt_destroy(l);
+				if (r) stmt_destroy(r);
+				if (escape) stmt_destroy(escape);
+				return NULL;
+			}
+			return stmt_likeselect(l, r, escape, e->flag);
+		}
+ 		r = exp_bin(sql, e->r, left, right);
+		if (!l || !r) {
+			if (l) stmt_destroy(l);
+			if (r) stmt_destroy(r);
+			return NULL;
+		}
+		if (left && right) {
+			s = stmt_join(l, stmt_reverse(r), e->flag);
+		} else {
+			s = stmt_select(l, r, e->flag);
+		}
+	 }	break;
+	default:
+		;
+	}
+	return s;
+}
+
+static stmt *
+rel2bin_basetable( mvc *sql, sql_rel *rel )
+{
+	list *l; 
+	stmt *ts;
+	sql_table *t = rel->l;
+	node *n;
+			
+	(void)sql;
+	l = create_stmt_list();
+	ts = stmt_basetable(t, (rel->name)?rel->name:t->base.name);
+	for (n = t->columns.set->h; n; n = n->next) {
+		sql_column *c = n->data;
+
+		stmt *sc = stmt_cbat(c, stmt_dup(ts), RDONLY, st_bat);
+		list_append(l, sc);
+	}
+	stmt_destroy(ts);
+	return stmt_list(l);
+}
+
+static stmt *
+rel2bin_join( mvc *sql, sql_rel *rel )
+{
+	list *l; 
+	node *en, *n;
+	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr;
+
+	if (rel->l) /* first construct the left sub relation */
+		left = subrel_bin(sql, rel->l);
+	if (rel->r) /* first construct the right sub relation */
+		right = subrel_bin(sql, rel->r);
+	if (!left || !right) { 
+		if (left) stmt_destroy(left);
+		if (right) stmt_destroy(right);
+		return NULL;	
+	}
+	if (rel->exps) for( en = rel->exps->h; en; en = en->next ) {
+		stmt *s = exp_bin(sql, en->data, left, right);
+
+		if (!s) {
+			stmt_destroy(left);
+			stmt_destroy(right);
+			return NULL;
+		}
+		if (join) /* TODO use stmt_reljoin */
+			join = stmt_semijoin(join, s);
+		else
+			join = s;
+	} else {
+		join = stmt_join(
+			bin_first_column(left), 
+			stmt_reverse(bin_first_column(right)), cmp_all); 
+		
+	}
+	/* construct relation */
+	l = create_stmt_list();
+	jl = stmt_mark(stmt_dup(join),0);
+	for( n = left->op1.lval->h; n; n = n->next ) {
+		list_append(l, stmt_join(stmt_dup(jl), stmt_dup(n->data), cmp_equal));
+	}
+	stmt_destroy(jl);
+	stmt_destroy(left);
+	jr = stmt_mark(stmt_reverse(join),0);
+	for( n = right->op1.lval->h; n; n = n->next ) {
+		list_append(l, stmt_join(stmt_dup(jr), stmt_dup(n->data), cmp_equal));
+	}
+	stmt_destroy(jr);
+	stmt_destroy(right);
+	return stmt_list(l);
+}
+
+static stmt *
+rel2bin_project( mvc *sql, sql_rel *rel )
+{
+	list *l; 
+	node *en;
+	stmt *sub = NULL;
+
+	if (!rel->exps)
+		return NULL;
+
+	if (rel->l) { /* first construct the sub relation */
+		sub = subrel_bin(sql, rel->l);
+		if (!sub) 
+			return NULL;	
+	}
+	l = create_stmt_list();
+	for( en = rel->exps->h; en; en = en->next ) {
+		sql_exp *exp = en->data;
+		stmt *s = exp_bin(sql, exp, sub, NULL);
+
+		if (!s) {
+			list_destroy(l);
+			return NULL;
+		}
+		if (rel->name || exp->name) {
+			char *name = exp->name;
+			char *rname = rel->name;
+
+			if (!name)
+				name = column_name(s);
+			if (!rname)
+				rname = table_name(s);
+			s = stmt_alias(s, rname, name);
+		}
+		list_append(l, s);
+	}
+	return stmt_list(l);
+}
+
+static stmt *
+rel2bin_select( mvc *sql, sql_rel *rel )
+{
+	list *l; 
+	node *en, *n;
+	stmt *sub = NULL, *sel = NULL;
+
+	if (!rel->exps)
+		return NULL;
+
+	if (rel->l) /* first construct the sub relation */
+		sub = subrel_bin(sql, rel->l);
+	if (!sub) 
+		return NULL;	
+	for( en = rel->exps->h; en; en = en->next ) {
+		stmt *s = exp_bin(sql, en->data, sub, NULL);
+
+		if (!s) {
+			stmt_destroy(sub);
+			return NULL;
+		}
+		if (sel)
+			sel = stmt_semijoin(sel, s);
+		else
+			sel = s;
+	}
+	/* construct relation */
+	l = create_stmt_list();
+	sel = stmt_mark(stmt_reverse(sel),0);
+	for( n = sub->op1.lval->h; n; n = n->next ) {
+		list_append(l, stmt_join(stmt_dup(sel), stmt_dup(n->data), cmp_equal));
+	}
+	stmt_destroy(sub);
+	stmt_destroy(sel);
+	return stmt_list(l);
+}
+
+static stmt *
+subrel_bin(mvc *sql, sql_rel *rel ) 
+{
+	stmt *s = NULL;
+	char *r = NULL;
+	int depth = 0;
+
+	if (!rel)
+		return s;
+	switch (rel->op) {
+	case op_basetable:
+		s = rel2bin_basetable(sql, rel);
+		break;
+	case op_join: 
+		s = rel2bin_join(sql, rel);
+		break;
+	case op_union: 
+	case op_inter: 
+	case op_diff: 
+		r = "join";
+		if (rel->op == op_union)
+			r = "union";
+		else if (rel->op == op_inter)
+			r = "intersect";
+		else if (rel->op == op_diff)
+			r = "minus";
+		else if (!rel->exps)
+			r = "crossproduct";
+		print_indent(sql, depth);
+		printf("%s (", r);
+		subrel_bin(sql, rel->l);
+		printf(",");
+		subrel_bin(sql, rel->r);
+		print_indent(sql, depth);
+		printf(")");
+		exps_print(sql, rel->exps, depth, 0);
+		break;
+	case op_project:
+		s = rel2bin_project(sql, rel);
+		break;
+	case op_select: 
+		s = rel2bin_select(sql, rel);
+		break;
+	case op_groupby: 
+	case op_orderby: 
+	case op_topn: 
+		r = "project";
+		if (rel->op == op_select)
+			r = "select";
+		if (rel->op == op_groupby)
+			r = "group by";
+		if (rel->op == op_orderby)
+			r = "order by";
+		if (rel->op == op_topn)
+			r = "top N";
+		if (rel->l) {
+			print_indent(sql, depth);
+			printf("%s (", r);
+			subrel_bin(sql, rel->l );
+			print_indent(sql, depth);
+			printf(")");
+		}
+		exps_print(sql, rel->exps, depth, (rel->op == op_project));
+		if (rel->name)
+			printf(" as %s", rel->name);
+		break;
+	default:
+		printf("todo: print %d\n", rel->op);
+	}
+	return s;
+}
+
+stmt *
+rel_bin(mvc *sql, sql_rel *rel ) 
+{
+	stmt *s = subrel_bin( sql, rel);
+	if (s) {
+		s = stmt_output(s);
+		sql->type = Q_TABLE;
+	}
+	return s;
+}
