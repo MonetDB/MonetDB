@@ -962,7 +962,7 @@ redo go:= i<2;
 exit go;
 	io.print(b);
 @end verbatim
-The constant string is propagated to the @code{print()} routine, while
+The constant strings are propagated to the @code{print()} routine, while
 the initial assigment @code{i:=0} should be retained. The code block becomes:
 @verbatim
 	i:=0;
@@ -1084,59 +1084,10 @@ str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return NULL;
 }
 @}
-@+ Access Mode optimizer
-Walk through the program code searching for setWriteMode
-and make sure it is done once per basic block. It assumes
-that instructions do not change the access mode as a side
-effect.
-@{
-@c
-static MALfcn AMsetWriteMode;
-
-int AMoptimizerStep(MalBlkPtr mb, int pc)
-{   int k,kn=0;
-    InstrPtr p;
-	long clk= GDKusec();
-	int actions=0;
-
-    p= getInstrPtr(mb,pc);
-    if( p->fcn != AMsetWriteMode) return pc;
-    kn = getArg(p,1);
-
-    for(k=pc-1;k>1; k--){
-        p= getInstrPtr(mb,k);
-        if( p->barrier) return pc;
-        if( p->fcn != AMsetWriteMode) continue;
-        if( getArg(p,1) == kn){
-			if(p) 
-				removeInstruction(mb,p);
-			actions++;
-            return pc-1;
-        }
-    }
-	optimizerCheck(mb,"accessMode",actions,GDKusec()-clk);
-    return pc;
-}
-str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i;
-    Symbol s;
-	(void) stk;
-    s= findMALSymbol("bat","setWriteMode");
-    if( s== 0)
-        return throwMessage("AMoptimizer","bat.setWriteMode missing\n");
-    AMsetWriteMode = getSignature(s)->fcn;
-    for(i=1;i< mb->stop; i++)
-        i= AMoptimizerStep(mb,i);
-    /* remove the AMoptimizer request */
-	if(pci) 
-		removeInstruction(mb,pci);
-    return MAL_SUCCEED;
-}
-@}
 @+ Dead Code Removal
 Dead code fragments are recognized by assignments to variables
 whose value is not consumed any more. 
-It can be detected running backwards from RETURN statements
+It can be detected running backwards from @code{return} statements
 and marking all variables used as arguments as relevant. In parallel,
 we built a list of instructions that should appear in the final result.
 The new code block is than built in one scan, discarding the
@@ -1169,13 +1120,13 @@ The dead code removal trims this program to a very short one.
     io.print("done");
 @end verbatim
 The assigments in an iterator also requires care, because
-the REDO statement may turn an instruction into a source for
+the @code{redo} statement may turn an instruction into a source for
 previouse ones. 
 
+@{
 The dead code remover should
 not be used for testing, because it will trim most programs to
 an empty list.
-@{
 @c
 int hasSideEffects(InstrPtr p){
     if( blockStart(p) || blockExit(p) || blockCntrl(p)) return TRUE;
@@ -1270,12 +1221,6 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return NULL;
 }
 @}
-@-
-The second form of dead code removal is to detect expressions, whose
-result is not used. This can be detected by look-ahead for any
-alternative assignment. The blocks are causing problems here,
-because the variable should be re-assigned in each related block before we
-can safely conclude that it is dead code. (see test4004)
 
 @+ Select Push Down heuristic
 One of the oldest optimizer tricks in relation processing is
@@ -1291,7 +1236,40 @@ select r.a,s.d from r,s where r.a=s.c and r.a<10 and s.d>5;
 
 The optimal code would be [todo]
 while the code block produced by the SQL front-end generates
-[todo]
+@verbatim
+function sql_cache.sql0(A0:sht,A1:sht):any;
+    $3 := sql.bind("sys","r","a",0);
+    $8 := sql.bind_dbat("sys","r",0);
+    $9 := bat.reverse($8);
+    $10 := algebra.kdiff($3,$9);
+    $11 := A0;
+    $12 := calc.int($11);
+    $13 := algebra.select($10,nil,$12,false,false);
+    $16 := sql.bind("sys","s","c",0);
+    $19 := sql.bind_dbat("sys","s",0);
+    $20 := bat.reverse($19);
+    $21 := algebra.kdiff($16,$20);
+    $22 := sql.bind("sys","s","d",0);
+    $24 := A1;
+    $25 := calc.int($24);
+    $26 := algebra.uselect($22,$25,nil,false,false);
+?    $27 := algebra.semijoin($21,$26);
+?    $28 := bat.reverse($27);
+?    $29 := algebra.join($13,$28);
+    $30 := calc.oid(0@0);
+?    $32 := algebra.markT($29,$30);
+?    $33 := bat.reverse($32);
+?    $34 := algebra.join($33,$3);
+?    $35 := bat.reverse($29);
+    $36 := calc.oid(0@0);
+?    $37 := algebra.markT($35,$36);
+?    $38 := bat.reverse($37);
+?    $39 := algebra.join($38,$22);
+    sql.column($34,"a","int",9,0);
+    sql.column($39,"d","int",9,0);
+    sql.output(0,$34,$39);
+end sql0;
+@end verbatim
 @-
 The approach taken is to combine multiple MAL statements in a
 single statement, or replacing/exchancing pairs based on the flow
@@ -1881,6 +1859,55 @@ at the end of the optimization attempt.
 		showErrors();
 		return throwMessage("ORoptimizer","Optimization raised errors");
 	}
+    return MAL_SUCCEED;
+}
+@}
+@+ Access Mode optimizer
+Walk through the program code searching for setWriteMode
+and make sure it is done once per basic block. It assumes
+that instructions do not change the access mode as a side
+effect.
+@{
+@c
+static MALfcn AMsetWriteMode;
+
+int AMoptimizerStep(MalBlkPtr mb, int pc)
+{   int k,kn=0;
+    InstrPtr p;
+	long clk= GDKusec();
+	int actions=0;
+
+    p= getInstrPtr(mb,pc);
+    if( p->fcn != AMsetWriteMode) return pc;
+    kn = getArg(p,1);
+
+    for(k=pc-1;k>1; k--){
+        p= getInstrPtr(mb,k);
+        if( p->barrier) return pc;
+        if( p->fcn != AMsetWriteMode) continue;
+        if( getArg(p,1) == kn){
+			if(p) 
+				removeInstruction(mb,p);
+			actions++;
+            return pc-1;
+        }
+    }
+	optimizerCheck(mb,"accessMode",actions,GDKusec()-clk);
+    return pc;
+}
+str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{   int i;
+    Symbol s;
+	(void) stk;
+    s= findMALSymbol("bat","setWriteMode");
+    if( s== 0)
+        return throwMessage("AMoptimizer","bat.setWriteMode missing\n");
+    AMsetWriteMode = getSignature(s)->fcn;
+    for(i=1;i< mb->stop; i++)
+        i= AMoptimizerStep(mb,i);
+    /* remove the AMoptimizer request */
+	if(pci) 
+		removeInstruction(mb,pci);
     return MAL_SUCCEED;
 }
 @}
