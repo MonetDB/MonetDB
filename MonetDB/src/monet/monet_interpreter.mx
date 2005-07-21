@@ -1665,6 +1665,7 @@ interpret_batcast(str atom, int argc, ValPtr val, ValPtr res)
 		} else if ((!bn->tkey) && (!reduce)) {
 			BATkey(BATmirror(bn), b->tkey);
 		}
+		BATsetaccess(bn, BAT_READ);
 	}
 	ok = 1;
       bunins_failed:
