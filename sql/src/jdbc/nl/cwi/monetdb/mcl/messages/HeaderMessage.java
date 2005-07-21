@@ -357,9 +357,6 @@ public class HeaderMessage extends MCLMessage {
 			default:
 				throw new MCLException("Sentence type not allowed for this message: " + (char)in.getType());
 		}
-
-
-
 	}
 
 
