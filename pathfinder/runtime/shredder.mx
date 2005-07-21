@@ -1544,6 +1544,8 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location)
     /* The good old xmlParseDocument() works without complaining! */
     (void) xmlParseDocument (xmlCtx);
     wellFormed = xmlCtx->wellFormed;
+    xmlCtx->sax      = NULL; /* avoid double free() */
+    xmlCtx->_private = NULL; /* avoid double free() */
     xmlFreeParserCtxt(xmlCtx);
 
     /* free the TEXT buffer */
