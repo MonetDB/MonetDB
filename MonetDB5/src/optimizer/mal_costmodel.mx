@@ -73,7 +73,7 @@ static void RMcpyProperty(MalBlkPtr mb, str srcnme, int src, str dstnme, int dst
     pr= fndProperty(getProps(src), srcnme);
     if( pr) {
 		fixPropertySet(mb,dst);
-		setProperty( getProps(dst), dstnme, pr->val.vtype, VALptr(&pr->val));
+		setProperty( getProps(dst), dstnme, "=", pr->val.vtype, VALptr(&pr->val));
 	}
 }
 
@@ -88,7 +88,7 @@ The cost formula are repetative
 		if( c1 == NULL) continue;
 		k= @2;
 		fixPropertySet(mb, getArg(p,0));
-		setProperty(getProps(getArg(p,0)),"RMcost", TYPE_int, &k);
+		setProperty(getProps(getArg(p,0)),"RMcost", "=", TYPE_int, &k);
 @= newCost2
 		c1 = getVarCost(getArg(p,@1));
 		c2 = getVarCost(getArg(p,@2));
@@ -96,7 +96,7 @@ The cost formula are repetative
 		if( c2 == NULL) continue;
 		k= (@3);
 		fixPropertySet(mb, getArg(p,0));
-		setProperty(getProps(getArg(p,0)),"RMcost", TYPE_int, &k);
+		setProperty(getProps(getArg(p,0)),"RMcost","=", TYPE_int, &k);
 @c
 void RMcalculator( MalBlkPtr mb){
     int i,j, *c, *c1, *c2,k;
@@ -161,7 +161,7 @@ void RMcalculator( MalBlkPtr mb){
 			/* propagate count to RMcost */
 			for(j=0;j<p->retc; j++){
 				if( (c = (int*)getVarCost(p->argv[j])) )
-					setProperty(getProps(p->argv[j]), "RMcost", TYPE_int, c);
+					setProperty(getProps(p->argv[j]), "RMcost", "=", TYPE_int, c);
 			}
 		}
 	}
