@@ -105,7 +105,37 @@ public class MCLSentence {
 	 * @param property a property name
 	 * @param value the property values
 	 */
-	public MCLSentence(int type, String property, String[] values) throws MCLException {
+	public MCLSentence(int type, String property, Object[] values) throws MCLException {
+		if (property == null || values == null) throw
+			new MCLException("property or values may not be null");
+		if (values.length == 0) throw
+			new MCLException("values should contain at least one value");
+
+		if (!isValidType(type)) throw
+			new MCLException("Unknown sentence type: " + (char)type + " (" + type + ")");
+
+		this.type = type;
+		try {
+			String tmp = property;
+			for (int i = 0; i < values.length; i++)
+				tmp += "\t" + values[i].toString();
+			this.data = tmp.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// this should not happen actually
+			throw new AssertionError("UTF-8 encoding not supported!");
+		}
+	}
+
+	/**
+	 * Convenience constructor which takes a type, a property and a list
+	 * of int values and constructs a Sentence of type with property and
+	 * values.
+	 *
+	 * @param type an int representing the type of this sentence
+	 * @param property a property name
+	 * @param value the property values
+	 */
+	public MCLSentence(int type, String property, int[] values) throws MCLException {
 		if (property == null || values == null) throw
 			new MCLException("property or values may not be null");
 		if (values.length == 0) throw
@@ -173,6 +203,18 @@ public class MCLSentence {
 	}
 
 	/**
+	 * Returns an array of fields.  The sentence is split on tab
+	 * characters, hence this method will not work properly when dealing
+	 * with complex sentences.  For such sentences a special
+	 * implementation should be made.
+	 *
+	 * @return an array of field values
+	 */
+	public String[] getFields() {
+		return(getString().split("\t"));
+	}
+
+	/**
 	 * Extracts the xth field from the sentence where fields are
 	 * separated by tab characters.  This method only works correctly
 	 * when dealing with sentences which have no values containing tab
@@ -183,7 +225,7 @@ public class MCLSentence {
 	 */
 	public String getField(int field) {
 		if (field < 1) return(null);
-		String[] fields = getString().split("\t");
+		String[] fields = getFields();
 		if (field > fields.length) return(null);
 		return(fields[field - 1]);
 	}
