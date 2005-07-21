@@ -75,6 +75,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "mal_parser.h"
 #include <bat/res_table.h>
 #include "mal_namespace.h"
+#include "mal_debugger.h"
 
 static void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit);
 
@@ -546,8 +547,9 @@ SQLsetDebugger(Client c, int onoff)
 	c->itrace='n';
 	q = newInstruction(ASSIGNsymbol);
 	moduleId(q) = putName("mdb",3);
-	functionId(q) = putName("start",5);
-	q = pushArgument(c->curprg->def, q, newConstant(c->curprg->def, TYPE_bit, GDKstrdup(onoff ? "true" : "false"), 0));
+	if( onoff)
+		functionId(q) = putName("start",5);
+	else functionId(q) = putName("stop",5);
 	pushInstruction(c->curprg->def, q);
 }
 
@@ -728,6 +730,8 @@ query block.
 			/* restore the state */
 			if (c->listing || explainPlan())
 				printFunction(c->fdout, c->curprg->def, c->listing);
+			if( m->debug)
+				runMALDebugger(c->curprg);
 			resetInstructions(c->curprg->def, oldstate.stop);
 			resetVariables(c->curprg->def, c->glb, oldstate.vtop);
 			c->curprg->def->errors = 0;

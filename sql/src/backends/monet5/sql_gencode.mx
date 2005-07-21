@@ -895,7 +895,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		case st_op:{
 			@:SQLprelude@
-			if (s->op1.stval->nrcols) 
+			if (s->op1.stval && s->op1.stval->nrcols) 
 				q = newStmt(mb, "algebra", s->op4.funcval->func->imp);
 			else
 				q = newStmt(mb, "calc", s->op4.funcval->func->imp);
