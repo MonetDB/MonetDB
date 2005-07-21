@@ -2330,7 +2330,21 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 				stmt *rs = stmt_dup(sq->op1.lval->h->data);
 
 				stmt_destroy(sq);
-				if (f != sql_sel) {
+				/* predicate case ? */
+				if (ls->nrcols == 0) {
+					sql_subtype *tp = tail_type(ls);
+					sql_subaggr *exist;
+
+					if (sc->token == SQL_IN) {
+						/* exist(rs,ls) */
+						exist = sql_bind_aggr(sql->trans->module, "exist", tp);
+					} else {
+						/* exist(rs,ls) */
+						exist = sql_bind_aggr(sql->trans->module, "not_exist", tp);
+					}
+					rs = stmt_reverse(rs);
+					return stmt_aggr2(rs, ls, exist);
+				} else if (f != sql_sel) {
 					if (sc->token == SQL_IN) {
 						if (rs->nrcols) {	/* set in (select set) */
 							return stmt_reverse(stmt_semijoin(stmt_reverse(ls), stmt_reverse(rs)));
