@@ -109,7 +109,8 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_SET:
 
 	case SQL_PREP:
-		return sql_error(sql, 02, "Not implemented");
+		//return sql_error(sql, 02, "Not implemented");
+		return NULL;
 
 	case SQL_SELECT:
 	case SQL_JOIN:

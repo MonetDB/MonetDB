@@ -2012,7 +2012,7 @@ atom_exp:
 	  } else {
 		dlist *l = _dlist_create();
 		_dlist_append_symbol(l, $1);
-		_dlist_append_string(l, $3);
+		_dlist_append_string(l, s);
 		$$ = _symbol_create_list(SQL_ESCAPE, l);
 	  }
 	}
@@ -2473,17 +2473,17 @@ literal:
 
 		  lngFromStr($1, &len, &p);
 		  if (value == lng_nil)
-		  err = 2;
+		  	err = 2;
 
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
+		    int bits = digits2bits(digits);
 		    if (value >= GDK_sht_min && value <= GDK_sht_max)
-		  	  t = sql_bind_subtype("smallint", digits, 0 );
+		  	  t = sql_bind_subtype("smallint", bits, 0 );
 		    else if (value >= GDK_int_min && value <= GDK_int_max)
-		  	  t = sql_bind_subtype("int", digits, 0 );
-		    else if ((digits <= 64) &&
-				(value >= GDK_lng_min && value <= GDK_lng_max))
-		  	  t = sql_bind_subtype("bigint", digits, 0 );
+		  	  t = sql_bind_subtype("int", bits, 0 );
+		    else if ((value >= GDK_lng_min && value <= GDK_lng_max))
+		  	  t = sql_bind_subtype("bigint", bits, 0 );
 		    else
 			  err = 1;
 		  }

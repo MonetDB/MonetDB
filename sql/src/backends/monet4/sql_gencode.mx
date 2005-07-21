@@ -788,6 +788,32 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			backend_dump_nil(sql, s->op2.stval);
 			break;
 		}
+		case st_convert:{
+			/* convert types and make sure they are rounded up correctly */
+			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
+			size_t buflen = strlen(s->op4.funcval->func->imp) + 64;
+
+			buf = NEW_ARRAY(char, buflen + 1);
+			if (s->op1.stval->nrcols) {
+				len = snprintf(buf, buflen, "var s%d := [%s](", -s->nr, s->op4.typeval->type->base.name);
+			} else {
+				len = snprintf(buf, buflen, "var s%d := %s(", -s->nr, s->op4.typeval->type->base.name);
+			}
+
+			if (s->op3.typeval->type->eclass == EC_DEC) 
+				len += snprintf(buf+len, buflen-len, "%d, ", s->op3.typeval->scale);
+	
+			len += snprintf(buf+len, buflen-len, "s%d", l);
+
+			if (s->op4.typeval->type->eclass == EC_DEC) 
+				len += snprintf(buf+len, buflen-len, ", %d, %d", s->op4.typeval->digits, s->op4.typeval->scale);
+			len += snprintf(buf+len, buflen-len, ");\n");
+			assert(len <= buflen);
+			dump(sql, buf, len, -s->nr);
+			_DELETE(buf);
+			backend_dump_nil(sql, s->op1.stval);
+			break;
+		}
 		case st_op:{
 			size_t buflen = strlen(s->op4.funcval->func->imp) + 32;
 			buf = NEW_ARRAY(char, buflen + 1);

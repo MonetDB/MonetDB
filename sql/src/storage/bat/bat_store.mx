@@ -827,14 +827,14 @@ load_type(sql_trans *tr, sql_module * m, BAT *types, BUN j)
 	BAT *type_digits = sys_bat(tr->bm, "types_digits");
 	BAT *type_scale = sys_bat(tr->bm, "types_scale");
 	BAT *type_radix = sys_bat(tr->bm, "types_radix");
-	BAT *type_bits = sys_bat(tr->bm, "types_bits");
+	BAT *type_eclass = sys_bat(tr->bm, "types_eclass");
 
 	base_init(&t->base, *(sqlid *) bun_find(type_id, lid), TR_OLD, bun_find(type_systemname, lid));
 	t->sqlname = _strdup((char *) bun_find(type_sqlname, lid));
 	t->digits = *(int *) bun_find(type_digits, lid);
 	t->scale = *(int *) bun_find(type_scale, lid);
 	t->radix = *(int *) bun_find(type_radix, lid);
-	t->bits = *(int *) bun_find(type_bits, lid);
+	t->eclass = *(int *) bun_find(type_eclass, lid);
 	t->localtype = ATOMindex(t->base.name);
 	t->m = m;
 
@@ -844,7 +844,7 @@ load_type(sql_trans *tr, sql_module * m, BAT *types, BUN j)
 	bat_destroy(type_digits);
 	bat_destroy(type_scale);
 	bat_destroy(type_radix);
-	bat_destroy(type_bits);
+	bat_destroy(type_eclass);
 	return t;
 }
 
@@ -1374,7 +1374,7 @@ bs_init_type(struct bm *bm)
 	BAT *type_digits = mvc_bat(bm, "types_digits", TYPE_int);
 	BAT *type_scale = mvc_bat(bm, "types_scale", TYPE_int);
 	BAT *type_radix = mvc_bat(bm, "types_radix", TYPE_int);
-	BAT *type_bits = mvc_bat(bm, "types_bits", TYPE_int);
+	BAT *type_eclass = mvc_bat(bm, "types_eclass", TYPE_int);
 	BAT *type_module_id = mvc_bat(bm, "types_module_id", TYPE_int);
 	BAT *type_systemname = mvc_bat(bm, "types_systemname", TYPE_str);
 	BAT *U_type_id = mvc_bat(bm, "U_types_id", TYPE_int);
@@ -1382,7 +1382,7 @@ bs_init_type(struct bm *bm)
 	BAT *U_type_digits = mvc_bat(bm, "U_types_digits", TYPE_int);
 	BAT *U_type_scale = mvc_bat(bm, "U_types_scale", TYPE_int);
 	BAT *U_type_radix = mvc_bat(bm, "U_types_radix", TYPE_int);
-	BAT *U_type_bits = mvc_bat(bm, "U_types_bits", TYPE_int);
+	BAT *U_type_eclass = mvc_bat(bm, "U_types_eclass", TYPE_int);
 	BAT *U_type_module_id = mvc_bat(bm, "U_types_module_id", TYPE_int);
 	BAT *U_type_systemname = mvc_bat(bm, "U_types_systemname", TYPE_str);
 	BAT *D_type = mvc_bat(bm, "D_types", TYPE_oid);
@@ -1392,7 +1392,7 @@ bs_init_type(struct bm *bm)
 			oid nil = oid_nil;
 			sql_type *t = n->data;
 			int radix = t->radix;
-			int bits = t->bits;
+			int eclass = t->eclass;
 
 			BUNins(type_id, &nil, &t->base.id);
 
@@ -1400,7 +1400,7 @@ bs_init_type(struct bm *bm)
 			BUNins(type_digits, &nil, &t->digits);
 			BUNins(type_scale, &nil, &t->scale);
 			BUNins(type_radix, &nil, &radix);
-			BUNins(type_bits, &nil, &bits);
+			BUNins(type_eclass, &nil, &eclass);
 			BUNins(type_module_id, &nil, &zero);
 			BUNins(type_systemname, &nil, t->base.name);
 		}
@@ -1410,7 +1410,7 @@ bs_init_type(struct bm *bm)
 	bat_destroy(type_digits);
 	bat_destroy(type_scale);
 	bat_destroy(type_radix);
-	bat_destroy(type_bits);
+	bat_destroy(type_eclass);
 	bat_destroy(type_module_id);
 	bat_destroy(type_systemname);
 	bat_destroy(U_type_id);
@@ -1418,7 +1418,7 @@ bs_init_type(struct bm *bm)
 	bat_destroy(U_type_digits);
 	bat_destroy(U_type_scale);
 	bat_destroy(U_type_radix);
-	bat_destroy(U_type_bits);
+	bat_destroy(U_type_eclass);
 	bat_destroy(U_type_module_id);
 	bat_destroy(U_type_systemname);
 	bat_destroy(D_type);
@@ -1855,7 +1855,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "digits", "int", 9);
 		bootstrap_create_column(tr, t, "scale", "int", 9);
 		bootstrap_create_column(tr, t, "radix", "int", 9);
-		bootstrap_create_column(tr, t, "bits", "int", 9);
+		bootstrap_create_column(tr, t, "eclass", "int", 9);
 		bootstrap_create_column(tr, t, "module_id", "int", 9);
 
 		t = bootstrap_create_table(tr, s, "functions", 0);
@@ -3176,13 +3176,13 @@ sql_trans_create_type(sql_trans *tr, sql_module * m, char *sqlname, int digits, 
 	t->digits = digits;
 	t->scale = scale;
 	t->radix = radix;
-	t->bits = 2;
+	t->eclass = EC_ANY;
 	t->localtype = ATOMindex(t->base.name);
 	t->m = m;
 
 	cs_add(&m->types, t, TR_NEW);
 
-	table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &t->radix, &t->bits, &m->base.id);
+	table_insert(tr, systype, &t->base.id, t->base.name, t->sqlname, &t->digits, &t->scale, &t->radix, &t->eclass, &m->base.id);
 
 	systype->base.wtime = systype->s->base.wtime = t->base.wtime = m->base.wtime = tr->wtime = tr->stime;
 	return t;

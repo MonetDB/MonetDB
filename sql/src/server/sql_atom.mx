@@ -284,7 +284,7 @@ atom_dup(atom *a)
 	*r = *a;
 	r->tpe = sql_dup_subtype(a->tpe);
 	if (!a->isnull) {
-		a->destroy = 1;
+		r->destroy = 1;
 		VALcopy(&r->data, &a->data);
 	}
 	return r;
@@ -304,7 +304,8 @@ atom_cast(atom *a, sql_subtype *tp)
 		(!tp->type->digits || at->type->digits <= tp->type->scale) &&
 		(!tp->type->scale || at->type->scale == tp->type->scale))
 		return 1;
-	if (at->type->fixed && at->type->localtype < tp->type->localtype) {
+	if (at->type->eclass == EC_NUM && 
+	    at->type->localtype < tp->type->localtype) {
 		/* cast numerics */
 		switch( tp->type->localtype) {
 		case TYPE_int:

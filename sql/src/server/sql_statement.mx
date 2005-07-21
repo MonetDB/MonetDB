@@ -98,6 +98,7 @@ typedef enum stmt_type {
 	st_group,
 	st_derive,
 	st_unique,
+	st_convert,
 	st_op,
 	st_unop,
 	st_binop,
@@ -246,6 +247,7 @@ extern stmt *stmt_limit(stmt *s, int offset, int limit, int direction);
 extern stmt *stmt_order(stmt *s, int direction);
 extern stmt *stmt_reorder(stmt *s, stmt *t, int direction);
 
+extern stmt *stmt_convert(stmt *v, sql_subtype *from, sql_subtype *to);
 extern stmt *stmt_op(sql_subfunc *op);
 extern stmt *stmt_unop(stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(stmt *op1, stmt *op2, sql_subfunc *op);
@@ -630,6 +632,12 @@ stmt_destroy(stmt *s)
 			if (s->op3.stval)
 				stmt_destroy(s->op3.stval);
 			sql_subaggr_destroy(s->op4.aggrval);
+			break;
+		case st_convert:
+			if (s->op1.stval)
+				stmt_destroy(s->op1.stval);
+			sql_subtype_destroy(s->op3.typeval);
+			sql_subtype_destroy(s->op4.typeval);
 			break;
 		case st_op:
 		case st_unop:
@@ -1459,6 +1467,22 @@ stmt_exception(stmt *cond, char *errstr, int errcode)
 }
 
 stmt *
+stmt_convert(stmt *v, sql_subtype *from, sql_subtype *to)
+{
+	stmt *s = stmt_create(st_convert);
+
+	s->op1.stval = v;
+	s->op3.typeval = from;
+	s->op4.typeval = to;
+	s->nrcols = 0;		/* function without arguments returns single value */
+	s->h = stmt_dup(v->h);
+	s->key = v->key;
+	s->nrcols = v->nrcols;
+	s->aggr = v->aggr;
+	return s;
+}
+
+stmt *
 stmt_op(sql_subfunc *op)
 {
 	stmt *s = stmt_create(st_op);
@@ -1655,6 +1679,8 @@ tail_type(stmt *st)
 
 	case st_aggr:
 		return st->op4.aggrval->res;
+	case st_convert:
+		return st->op4.typeval;
 	case st_op:
 	case st_unop:
 	case st_binop:
@@ -1825,6 +1851,7 @@ column_name(stmt *st)
 	case st_unique:
 	case st_pivot:
 	case st_replace:
+	case st_convert:
 		return column_name(st->op1.stval);
 
 	case st_op:
@@ -2083,6 +2110,15 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 	/*
 			sql_subaggr_destroy(s->op4.aggrval);
 	*/
+			break;
+
+		case st_convert:
+			if (s->op1.stval) 
+				fprintf(fp, "id%d -> id%d [headlabel=\"1\"];\n",
+					stmt_stmt2dot(s->op1.stval, l, i, fp), -(s->optimized));
+			fprintf(fp,"func_convert[label=\"func 'convert'\",shape=ellipse];\n" );
+			fprintf(fp, "func_convert -> id%d [headlabel=\"4\"];\n",
+				-(s->optimized));
 			break;
 
 		case st_op: case st_unop: case st_binop: case st_Nop:

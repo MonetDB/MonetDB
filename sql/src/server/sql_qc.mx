@@ -165,12 +165,14 @@ param_cmp(sql_subtype *t1, sql_subtype *t2)
 
 	if (t1->scale != t2->scale)
 		return -1;
-	res = subtype_cmp(t1, t2);
-	if (res)
+	res = is_subtype(t2, t1);
+	if (!res)
 		return -1;
+/*
 	if ((t1->digits > 0 && t1->scale == 0 && t1->digits < t2->digits) || (t1->scale > 0 && t1->digits > 0 && t1->digits - t1->scale < t2->digits - t2->scale)) {
 		return -1;
 	}
+*/
 	return 0;
 }
 

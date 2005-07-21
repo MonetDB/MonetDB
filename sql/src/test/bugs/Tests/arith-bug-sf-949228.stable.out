@@ -52,7 +52,7 @@ Over..
 # 3 # length
 # 1 # tuplecount
 # 4 # id
-[ 10.0	]
+[ 10	]
 # 3 # querytype
 #  # table_name
 # sql_mul_single_value # name

@@ -51,6 +51,7 @@ typedef enum expression_type {
 	e_func,
 	e_aggr,
 	e_unique,
+	e_convert,
 } expression_type;
 
 typedef struct expression {

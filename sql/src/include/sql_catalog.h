@@ -58,11 +58,12 @@
 #define ISO_SERIALIZABLE    4
 
 #define SCALE_NONE	0
-#define SCALE_FIX	1
+#define SCALE_FIX	1	/* many numerical functions require equal
+				   scales/precision for all there inputs */
 #define SCALE_NOFIX	2
-#define SCALE_ADD	3
-#define SCALE_SUB	4
-#define DIGITS_ADD	5
+#define SCALE_ADD	3	/* multiplication gives the sum of scales */
+#define SCALE_SUB	4	/* on the other hand reduces the scales */ 
+#define DIGITS_ADD	5	/* some types grow under functions (concat) */
 #define INOUT		6	/* output type equals input type */
 
 #define TR_OLD 0
@@ -123,7 +124,7 @@ typedef struct sql_type {
 	int localtype;		/* localtype, need for coersions */
 	unsigned char radix;
 	unsigned int bits;
-	unsigned char fixed;
+	unsigned char eclass; 	/* type are grouped into equivalence classes */ 
 	sql_module *m;
 } sql_type;
 

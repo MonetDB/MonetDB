@@ -385,7 +385,7 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = NULL;
-			if (strcmp(col->type->type->sqlname, "decimal") == 0) {
+			if (col->type->type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
 				fmt[i].extra = col->type;
@@ -491,7 +491,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		res_col *c = t->cols + i;
 
 		if (c->type->type->localtype == TYPE_str) {
-			if (strcmp(c->type->type->sqlname, "char") == 0) {
+			if (c->type->type->eclass == EC_CHAR) {
 				ok = (stream_printf(s, SZFMT, c->type->digits) >= 0);
 			} else {
 				count = 0;
@@ -509,43 +509,40 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 			   max value and calculating the number of digits from that
 			   value, instead of the maximum values taken now, which
 			   include the optional sign */
-		} else if (strcmp(c->type->type->sqlname, "smallint") == 0) {
-			count = 1;
-			count += c->type->digits ? c->type->digits : 5;
-			ok = (stream_printf(s, SZFMT, count) >= 0);
-		} else if (strcmp(c->type->type->sqlname, "int") == 0) {
-			count = 1;
-			count += c->type->digits ? c->type->digits : 10;
-			ok = (stream_printf(s, SZFMT, count) >= 0);
-		} else if (strcmp(c->type->type->sqlname, "bigint") == 0) {
-			count = 1;
-			count += c->type->digits ? c->type->digits : 19;
-			ok = (stream_printf(s, SZFMT, count) >= 0);
-		} else if (strcmp(c->type->type->sqlname, "real") == 0) {
-			/* [sign]+digit+period+[max 6 digits]+E+[sign]+[max 2 digits] */
-			ok = (stream_printf(s, SZFMT, 13) >= 0);
-		} else if (strcmp(c->type->type->sqlname, "double") == 0) {
-			/* [sign]+digit+period+[max 14 digits]+E+[sign]+[max 3 digits] */
-			ok = (stream_printf(s, SZFMT, 22) >= 0);
-		} else if (strcmp(c->type->type->sqlname, "decimal") == 0) {
+		} else if (c->type->type->eclass == EC_NUM) {
+			if (c->type->type->localtype == TYPE_sht) {
+				count = 6;
+				ok = (stream_printf(s, SZFMT, count) >= 0);
+			} else if (c->type->type->localtype == TYPE_int) {
+				count = 10;
+				ok = (stream_printf(s, SZFMT, count) >= 0);
+			} else { /* TYPE_lng */
+				count = 20;
+				ok = (stream_printf(s, SZFMT, count) >= 0);
+			}
+		} else if (c->type->type->eclass == EC_FLT) {
+		/* [sign]+digit+period+[max 6 digits]+E+[sign]+[max 2 digits] */
+			if (c->type->type->localtype == TYPE_flt) {
+				ok = (stream_printf(s, SZFMT, 13) >= 0);
+		/* [sign]+digit+period+[max 14 digits]+E+[sign]+[max 3 digits] */
+			} else { /* TYPE_dbl */
+				ok = (stream_printf(s, SZFMT, 22) >= 0);
+			}
+		} else if (c->type->type->eclass == EC_DEC) {
 			count = 1 + c->type->digits;
 			if (c->type->scale > 0)
 				count += 1;
 			ok = (stream_printf(s, SZFMT, count) >= 0);
-		} else if (strcmp(c->type->type->sqlname, "date") == 0) {
+		} else if (c->type->type->eclass == EC_DATE) {
 			ok = (stream_write(s, "10", 2, 1) == 1);
-		} else if (
-			strcmp(c->type->type->sqlname, "time") == 0 || 
-			strcmp(c->type->type->sqlname, "timetz") == 0) {
+		} else if (c->type->type->eclass == EC_TIME) {
 			count = 8;
 			if (c->type->scale)	/* time zone */
 				count += 6;	/* +03:30 */
 			if (c->type->digits)	/* fractional seconds precision */
 				count += 1 + c->type->digits;
 			ok = (stream_printf(s, SZFMT, count) >= 0);
-		} else if (
-			strcmp(c->type->type->sqlname, "timestamp") == 0 ||
-			strcmp(c->type->type->sqlname, "timestamptz") == 0) {
+		} else if (c->type->type->eclass == EC_TIMESTAMP) {
 			count = 10 + 1 + 8;
 			if (c->type->type->scale)	/* time zone */
 				count += 6;		/* +03:30 */
@@ -612,7 +609,7 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 				break;
 		}
 
-		if (c->type->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "decimal") == 0) {
+		if (c->type->type->eclass == EC_DEC) {
 			char *buf = NULL;
 			int len = 0;
 			int l = dec_tostr((void *) (ptrdiff_t) c->type->scale, &buf, &len,
@@ -620,7 +617,7 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 
 			ok = (stream_write(s, buf, l, 1) == 1);
 			_DELETE(buf);
-		} else if (c->type->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "timetz") == 0) {
+		} else if (c->type->type->eclass == EC_TIME && strcmp(c->type->type->sqlname, "timetz") == 0) {
 			char *buf = NULL;
 			int len = 0;
 			int l = sql_time_tostr((void *) m, &buf, &len,
@@ -628,7 +625,7 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 
 			ok = (stream_write(s, buf, l, 1) == 1);
 			_DELETE(buf);
-		} else if (c->type->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
+		} else if (c->type->type->eclass == EC_TIMESTAMP && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
 			char *buf = NULL;
 			int len = 0;
 			int l = sql_timestamp_tostr((void *) m, &buf, &len,
@@ -724,15 +721,15 @@ mvc_export_table(mvc *m, stream *s, int res_id, unsigned int offset, unsigned in
 		fmt[i].tostr = &_ASCIIadt_toStr;
 		fmt[i].frstr = &_ASCIIadt_frStr;
 		fmt[i].extra = NULL;
-		if (c->type->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "decimal") == 0) {
+		if (c->type->type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
 			fmt[i].extra = (void *) (ptrdiff_t) c->type->scale;
-		} else if (c->type->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
+		} else if (c->type->type->eclass == EC_TIMESTAMP && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
 			fmt[i].tostr = &sql_timestamp_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = m;
-		} else if (c->type->type->scale == SCALE_FIX && strcmp(c->type->type->sqlname, "timetz") == 0) {
+		} else if (c->type->type->eclass == EC_TIME && strcmp(c->type->type->sqlname, "timetz") == 0) {
 			fmt[i].tostr = &sql_time_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = m;

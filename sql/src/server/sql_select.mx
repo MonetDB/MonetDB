@@ -947,7 +947,8 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		return NULL;
 	a = sql_bind_aggr(sql->trans->module, aggrstr, tail_type(s));
 	if (a) {
-		/* type may have changed, ie. need to fix_scale */
+		/* type may have changed, ie. need to 
+			fix_scale (avg(dec(sht)) -> double */
 		sql_subtype *t = tail_type(s);
 
 		/* inconsistent sql requires NULL != NULL and NULL <> NULL, ie unknown

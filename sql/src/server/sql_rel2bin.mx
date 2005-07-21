@@ -95,6 +95,7 @@ tail_column(stmt *st)
 	case st_alias:
 
 	case st_pivot:
+	case st_convert:
 
 		return tail_column(st->op1.stval);
 
@@ -173,6 +174,7 @@ head_column(stmt *st)
 	case st_alias:
 
 	case st_pivot:
+	case st_convert:
 
 		return head_column(st->op1.stval);
 
@@ -1114,6 +1116,7 @@ rel2bin(mvc *c, stmt *s)
 	case st_unop:
 	case st_binop:
 	case st_Nop:
+	case st_convert:
 
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
@@ -1123,21 +1126,23 @@ rel2bin(mvc *c, stmt *s)
 			stmt_destroy(os);
 			s->op1.stval = ns;
 		}
-		if (s->op2.stval) {
-			stmt *os = s->op2.stval;
-			stmt *ns = rel2bin(c, os);
-
-			assert(ns != s);
-			stmt_destroy(os);
-			s->op2.stval = ns;
-		}
-		if (s->op3.stval) {
-			stmt *os = s->op3.stval;
-			stmt *ns = rel2bin(c, os);
-
-			assert(ns != s);
-			stmt_destroy(os);
-			s->op3.stval = ns;
+		if (s->type != st_convert) {
+			if (s->op2.stval) {
+				stmt *os = s->op2.stval;
+				stmt *ns = rel2bin(c, os);
+	
+				assert(ns != s);
+				stmt_destroy(os);
+				s->op2.stval = ns;
+			}
+			if (s->op3.stval) {
+				stmt *os = s->op3.stval;
+				stmt *ns = rel2bin(c, os);
+	
+				assert(ns != s);
+				stmt_destroy(os);
+				s->op3.stval = ns;
+			}
 		}
 		s->optimized = 2;
 		return stmt_dup(s);

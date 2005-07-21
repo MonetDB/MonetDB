@@ -72,6 +72,7 @@ lib_sqlserver = {
 		sql_query.mx \
 		rel_semantic.mx \
 		rel_select.mx \
+		rel_bin.mx \
 		rel_dump.mx
 
 	WINLIBS = ../storage/bat/libbatstore ../common/libsqlcommon -lbat -lmonet -lstream -l_streams -l_bat -l_builtin -l_ascii_io -l_algebra 

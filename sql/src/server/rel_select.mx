@@ -157,6 +157,10 @@ exp_column( char *tname, char *cname, sql_subtype *t)
 	return e;
 }
 
+/* TODO change to lists of expressions for expression operators which work
+   on more than 2 input expressions (ex like)
+ */
+
 static sql_exp * 
 exp_exp( sql_exp *l, sql_exp *r ) 
 {
@@ -230,6 +234,19 @@ exp_op( list *l, sql_subfunc *f )
 	e->r = NULL;
 	e->type = e_func;
 	e->f = f; 
+	return e;
+}
+
+static sql_exp * 
+exp_convert( sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype )
+{
+	sql_exp *e = NEW(sql_exp);
+	e->name = NULL;
+	e->card = exp->card;
+	e->l = fromtype;
+	e->r = totype;
+	e->type = e_convert;
+	e->f = NULL; 
 	return e;
 }
 
@@ -604,7 +621,6 @@ static char * rel_get_name( sql_rel *rel )
 	return NULL;
 }
 
-
 /* forward refs */
 static sql_rel * rel_subquery(mvc *sql, sql_rel *rel, symbol *sq);
 static sql_exp * rel_value_exp(mvc *sql, sql_rel *rel, symbol *se, int f);
@@ -710,6 +726,7 @@ rel_column_ref(mvc *sql, sql_rel *rel, symbol *column_r)
 		/* TODO fix args  (cache is temporarily disabled)
 		return stmt_varnr(l->h->data.ival, sql_dup_subtype(sql_bind_arg(sql, l->h->data.ival)->tpe));
 		*/
+		return exp_atom(atom_dup(sql_bind_arg(sql, l->h->data.ival)));
 	} else if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
 		
@@ -762,9 +779,20 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 static sql_exp * 
 rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int typecheck)
 {
-	/* TODO convert */
+	sql_subtype *fromtype = exp_subtype(exp);
+	
+	if (fromtype && subtype_cmp(t, fromtype) != 0) {
+		fromtype = NULL;
+	}
+	if (!fromtype) {
+		sql_subtype *nt;
+		int c = sql_type_convert(fromtype->type->eclass, t->type->eclass);
+		if (!c) 
+			return NULL;
+ 		nt = sql_create_subtype(t->type, t->digits, fromtype->scale);
+		exp = exp_convert(exp, sql_dup_subtype(fromtype), nt);
+	}
 	(void)sql;
-	(void)t;
 	(void)typecheck;
 	return exp;
 }
@@ -1530,8 +1558,10 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection)
 		/* here we should merge the column expressions we obtained
 		 * sofar with the table expression, ie t1.* or a subquery 
 		 */
-		exps = list_merge( exps, te, (fdup)&exp_dup);
-		/*list_destroy(te);*/
+		if (te) {
+			exps = list_merge( exps, te, (fdup)&exp_dup);
+			/*list_destroy(te);*/
+		}
 	}
 	rel = rel_project(rel, exps);
 	return rel;

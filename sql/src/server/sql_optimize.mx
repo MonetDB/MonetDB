@@ -1357,6 +1357,7 @@ optimize(mvc *c, stmt *s)
 	case st_unop:
 	case st_binop:
 	case st_Nop:
+	case st_convert:
 
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;
@@ -1366,21 +1367,23 @@ optimize(mvc *c, stmt *s)
 			s->op1.stval = ns;
 			stmt_destroy(os);
 		}
-		if (s->op2.stval) {
-			stmt *os = s->op2.stval;
-			stmt *ns = optimize(c, os);
-
-			assert(ns != s);
-			s->op2.stval = ns;
-			stmt_destroy(os);
-		}
-		if (s->op3.stval) {
-			stmt *os = s->op3.stval;
-			stmt *ns = optimize(c, os);
-
-			assert(ns != s);
-			s->op3.stval = ns;
-			stmt_destroy(os);
+		if (s->type != st_convert) {
+			if (s->op2.stval) {
+				stmt *os = s->op2.stval;
+				stmt *ns = optimize(c, os);
+	
+				assert(ns != s);
+				s->op2.stval = ns;
+				stmt_destroy(os);
+			}
+			if (s->op3.stval) {
+				stmt *os = s->op3.stval;
+				stmt *ns = optimize(c, os);
+	
+				assert(ns != s);
+				s->op3.stval = ns;
+				stmt_destroy(os);
+			}
 		}
 		s->optimized = 1;
 		return stmt_dup(s);

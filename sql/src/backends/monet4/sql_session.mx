@@ -8,22 +8,6 @@
 @' License for the specific language governing rights and limitations
 @' under the License.
 @'
-@' The Original Code is the MonetDB Database System.
-@'
-@' The Initial Developer of the Original Code is CWI.
-@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
-@' All Rights Reserved.
-
-@' The contents of this file are subject to the MonetDB Public License
-@' Version 1.1 (the "License"); you may not use this file except in
-@' compliance with the License. You may obtain a copy of the License at
-@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
-@'
-@' Software distributed under the License is distributed on an "AS IS"
-@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
-@' License for the specific language governing rights and limitations
-@' under the License.
-@'
 @' The Original Code is the Monet Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
@@ -75,6 +59,7 @@ extern int mvc_sql(mvc *c, str query);
 #include "sql_gencode.h"	/* for backend_dumpproc() */
 #include <sql_semantic.h>
 #include <rel_semantic.h>
+#include <rel_bin.h>
 #include <sql_optimize.h>
 #include <sql_privileges.h>
 #include <sql_rel2bin.h>
@@ -306,28 +291,6 @@ backend_fastpath(Cntxt procstk, YYSTREE callnode, list *args)
 	return interpret(procstk, callnode->yysons[1]->yysons[0], &v);
 }
 
-@-
-A connection error means that not only the channels to the database should
-be reset, but also this client should be terminated immediately.
-@c
-int
-connect_error(stream *in, stream *out)
-{
-	/* Make sure that the write- (out-) stream is closed first,
-	 * as the related read- (in-) stream closes the shared
-	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
-	 */
-	if (out) {
-		stream_close(out);
-		stream_destroy(out);
-	}
-	if (in) {
-		stream_close(in);
-		stream_destroy(in);
-	}
-	return GDK_FAIL;
-}
-
 static int
 error(stream *out, char *str)
 {
@@ -379,17 +342,21 @@ explain_cmd(mvc *c, char *cmd, stream *out)
 stmt *
 sql_symbol2stmt(mvc *c)
 {
-	stmt *s;
+	stmt *s = NULL;
 
 	if (mvc_debug_on(c,16384)) {
-		sql_rel *r = rel_semantic(c, c->sym);
-		if (!r)
-			return NULL;
-	} 
-	/*
-	printf("# semantic\n");
-	*/
-	s = semantic(c, c->sym);
+		sql_rel *r;
+		printf("# semantic relational algebra\n");
+		r = rel_semantic(c, c->sym);
+		if (!r) {
+			printf("# falling back to direct mode \n");
+			s = semantic(c, c->sym);
+		} else 
+			s = rel_bin(c, r);
+	}  else {
+		printf("# semantic binary algebra\n");
+		s = semantic(c, c->sym);
+	}
 
 	if (s){
 		stmt *opt;
@@ -1121,11 +1088,13 @@ Use default setting for trace.
 @c
 	if (in == 0) {
 		GDKsyserror("mapisqlclient:stream-r problems\n");
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 	if (out == 0) {
 		GDKsyserror("mapisqlclient:stream-w problems\n");
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 	/* send challenge string, currently empty (disabled) */
 	challenge = "::mserver_sql:4\n";
@@ -1137,12 +1106,16 @@ Use default setting for trace.
 	/* get user name */
 	memset(buf, 0, BUFSIZ);
 	user = buf;
-	if (stream_read(in, user, 1, 1) < 0)
-		return connect_error(in, out);
+	if (stream_read(in, user, 1, 1) < 0) {
+		closeClient(client, 0); 	
+		return GDK_FAIL;
+	}
 	for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
 		user++;
-		if (stream_read(in, user, 1, 1) < 0)
-			return connect_error(in, out);
+		if (stream_read(in, user, 1, 1) < 0) {
+			closeClient(client, 0); 	
+			return GDK_FAIL;
+		}
 	}
 	*user = 0;
 	user = buf;
@@ -1164,7 +1137,8 @@ Use default setting for trace.
 		user = _strdup(buf);
 		passwd = _strdup(passwd);
 	} else {
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 
 	if (blocked) {
@@ -1178,7 +1152,8 @@ Use default setting for trace.
 		GDKsyserror("mapisqlclient:stream-w problems\n");
 		GDKfree(user);
 		GDKfree(passwd);
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 @-
 The server should emit an identity message, e.g. the Mserver version
@@ -1199,13 +1174,15 @@ These lines should be eaten away into the prompt is encountered.
 			stream_flush(out);
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 	/* Send the profile to the client for inspection */
 	if (!sendProperty(out, "version", "4") || !sendProperty(out, "language", "sql") || !sendProperty(out, "schema", schema) || stream_flush(out) < 0) {
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 
 	ret = sqlclient2(m, stk, rs, out, trace, 0);
