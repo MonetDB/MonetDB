@@ -1646,9 +1646,11 @@ variable to hold the result instead.
 }
 void pushEndInstruction(MalBlkPtr mb){
     InstrPtr p;
+	int varid;
+
     p= newInstruction(ENDsymbol);
-    setDestVar(p, findVariable(mb,functionName(getInstrPtr(mb,0))));
-	setVarInitialized(mb,getDestVar(p));
+    setDestVar(p, varid= findVariable(mb,functionName(getInstrPtr(mb,0))) );
+	if(varid >= 0) setVarInitialized(mb,getDestVar(p));
     p->argc =0;
     p->retc = 0;
     pushInstruction(mb,p);

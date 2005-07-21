@@ -317,6 +317,7 @@ mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra);
 
+mal_export str runMALDebugger(Symbol s);
 mal_export void printBBPinfo(stream *out);
 
 mal_export void resetOptimizerDebugger();
@@ -325,7 +326,6 @@ mal_export str optimizeMALBlock(MalBlkPtr mb);
 mal_export void showOptimizerStep(int i,int flg);
 mal_export void showOptimizerHistory();
 mal_export str debugOptimizers(MalBlkPtr mb,MalStkPtr stk, InstrPtr pci);
-
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
 Before the interpreter is allowed to proceed we give control
@@ -955,6 +955,19 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
     }
     if( cntxt->timer) cntxt->timer = GDKusec();
     stream_flush(cntxt->fdout);
+}
+@-
+It would come in handy if at any time you could activate
+the debugger on a specific function. This calls for the
+creation of a minimal execution environment first.
+@c
+str runMALDebugger(Symbol s){
+	Client c= getClient();
+
+	printf("call debugger\n");
+	c->itrace= 'n';
+	runMAL(c,s->def, 1,0,0,0);
+	return MAL_SUCCEED;
 }
 @+ Utilities
 Dumping a stack on a file is primarilly used for debugging.

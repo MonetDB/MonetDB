@@ -184,7 +184,8 @@ str runMAL(Client cntxt, MalBlkPtr mb, int startpc, MalBlkPtr mbcaller,
         showErrors();
         sprintf(buf, "'%s.%s' contains errors\n",
             getModName(mb),getFcnName(mb));
-        return raiseException(mb,0,"SyntaxError",buf);
+		if( cntxt->itrace == 0 )
+			return raiseException(mb,0,"SyntaxError",buf);
     }
 @-
 Prepare a new interpreter call. This involves two steps, (1) allocate
@@ -341,7 +342,7 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	task.pcicaller=pcicaller;
 	task.pci= 0;
 
-	if(env && stk->cmd!='f') stk->cmd = env->cmd ;
+	if(env && stk && stk->cmd!='f') stk->cmd = env->cmd ;
 
 	ret= runMALsequence(&task);
 
