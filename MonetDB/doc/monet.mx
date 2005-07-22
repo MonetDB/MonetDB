@@ -771,11 +771,11 @@ MonetDB provides two tuning thresholds that steer the behavior of the BBP @[<acr
 \item[mem] the physical resource limit.  The maximum is set with the
 {\tt @[<a href="../Modules/sys/index.html#mod_2_0_1">mem_maxsize(lng)</a>@} command, where the default
 is 80 percent of the RAM+swap-file size of the system. The current usage of physical resources
-can be retrieved with {\tt @[<a href="../Modules/sys/index.html#mod_2_0_1">mem_curize():lng</a>@}.
+can be retrieved with {\tt @[<a href="../Modules/sys/index.html#mod_2_0_1">mem_cursize():lng</a>@}.
 \item[vm] the virtual memory address space consumption limit.  The maximum is set with the
 {\tt @[<a href="../Modules/sys/index.html#mod_2_0_1">vm_maxsize(lng)</a>@} command, where the default
 is 80 percent of the RAM+swap-file size of the system. The current usage of virtual address
-space can be retrieved with {\tt @[<a href="../Modules/sys/index.html#mod_2_0_1">vm_curize():lng</a>@}.
+space can be retrieved with {\tt @[<a href="../Modules/sys/index.html#mod_2_0_1">vm_cursize():lng</a>@}.
 \end{description}
 
 A particular problem that can occur on 32-bit systems is when it seems that the virtual address

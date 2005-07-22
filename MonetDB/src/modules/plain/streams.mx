@@ -66,7 +66,13 @@ data files.
 	"write an integer on the stream"
 
 .COMMAND stream_readInt( Stream s ) : int = stream_readInt_wrap;
-	"write an integer on the stream"
+	"read an integer from the stream"
+
+.COMMAND stream_writeLng( Stream s, lng data ) = stream_writeLng_wrap;
+	"write a long integer on the stream"
+
+.COMMAND stream_readLng( Stream s ) : lng = stream_readLng_wrap;
+	"read a long integer from the stream"
 
 .COMMAND stream_read( Stream s ) : str = stream_read_string;
 	"read data from the stream"
@@ -245,6 +251,22 @@ stream_readInt_wrap(int *data, Stream *S)
 	stream *s = *(stream **) S;
 
 	return stream_readInt(s, data) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+stream_writeLng_wrap(Stream *S, long long *data)
+{
+	stream *s = *(stream **) S;
+
+	return stream_writeLng(s, *data) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+stream_readLng_wrap(long long *data, Stream *S)
+{
+	stream *s = *(stream **) S;
+
+	return stream_readLng(s, data) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 #define CHUNK (64*1024)
