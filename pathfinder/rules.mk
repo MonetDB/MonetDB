@@ -92,7 +92,11 @@ HIDE=1
 %.m: %.mx
 	$(MX) $(MXFLAGS) -x m $<
 
-%.mil: %.m %.tmpmil $(MEL)
+# Dependency "lib_%.la" prevents the %.mil script of a module from being
+# linked to the .libs/ directory in case the C-code of the module failed to
+# compile; thus, "make check" can recognize that the module is not
+# available, and will properly skip the tests that require it.
+%.mil: %.m %.tmpmil $(MEL) lib_%.la
 	$(MEL) $(INCLUDES) -mil $*.m > $@
 	cat $*.tmpmil >> $@
 	test -e .libs || mkdir -p .libs
@@ -102,7 +106,11 @@ HIDE=1
 	$(MX) $(MXFLAGS) -l -x mil $<
 	$(MV) $*.mil $*.tmpmil
 
-%.mil: %.m $(MEL)
+# Dependency "lib_%.la" prevents the %.mil script of a module from being
+# linked to the .libs/ directory in case the C-code of the module failed to
+# compile; thus, "make check" can recognize that the module is not
+# available, and will properly skip the tests that require it.
+%.mil: %.m $(MEL) lib_%.la
 	$(MEL) $(INCLUDES) -mil $*.m > $@
 	test -e .libs || mkdir -p .libs
 	test -e .libs/$@ || $(LN_S) ../$@ .libs/$@
