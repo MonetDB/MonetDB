@@ -2,8 +2,8 @@
 r:= bbp.new(:int,:int);
 bat.insert(r,5:int,1:int);
 s:= bat.reverse(r);
-k:=23:int;
 t:= bat.reverse(s);
+k:=23:int;
 io.print(t);
 optimizer.setDebug();
-optimizer.reversalRemoval();
+optimizer.peephole();
