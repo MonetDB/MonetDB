@@ -291,6 +291,10 @@ command semijoin( left:bat[:void,:any$2], right:bat[:oid,:any] )
 		:bat[:oid,:any$2] 
 address ALGsemijoin
 comment "Patch to enable semijoin over void/oid columns";
+command semijoin( left:bat[:oid,:any$2], right:bat[:void,:any] ) 
+		:bat[:oid,:any$2] 
+address ALGsemijoin
+comment "Patch to enable semijoin over void/oid columns";
 
 command kintersect( left:bat[:any$1,:any$2], right:bat[:any$1,:any] ) 
 		:bat[:any$1,:any$2] 
