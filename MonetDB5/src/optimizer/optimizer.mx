@@ -59,18 +59,6 @@ pattern deadCodeRemoval(mod:str, fcn:str):str
 address QOTDCoptimizerCALL
 comment "Dead code optimizer";
 
-pattern selectPushdown():str 
-address QOTSPoptimizer;
-pattern selectPushdown(mod:str, fcn:str):str 
-address QOTSPoptimizerCALL
-comment "Selection push-down optimizer";
-
-pattern reversalRemoval():str 
-address QOTRRoptimizer;
-pattern reversalRemoval(mod:str, fcn:str):str 
-address QOTRRoptimizerCALL
-comment "Reversal idempotency removal";
-
 pattern expressionAccumulation():str 
 address QOTORoptimizer;
 pattern expressionAccumulation(mod:str, fcn:str):str 
@@ -88,6 +76,12 @@ address QOTESoptimizer;
 pattern emptySet(mod:str, fcn:str):str 
 address QOTESoptimizerCALL
 comment "Move constant expressions out of the loop";
+
+pattern peephole():str 
+address QOTPHoptimizer;
+pattern peephole(mod:str, fcn:str):str 
+address QOTPHoptimizerCALL
+comment "Perform local rewrites";
 
 pattern garbageCollector():str 
 address QOTGCoptimizer;
@@ -140,21 +134,10 @@ pattern macroContraction(mod:str, fcn:str):void
 address QOTMCoptimizerSymbol
 comment "Inliner of a specific function";
 
-@-
-The remaining operations are used to debug portions of the optimizer.
-@mal
-pattern RXemptyBAT(:bat[:any,:any])
-address RXemptyBAT
-comment "The argument is as an empty BAT";
-
-pattern RXalignedBATs(:bat[:any,:any]...)
-address RXalignedBATs
-comment "Consider the BATs aligned";
-
-
-pattern multiplex(CMD:str, a:any...):any 
+pattern multiplex(CMD:str, a:any...):any
 address OPTmultiplex
 comment "Compiler for multiplexed instructions.";
+
 @-
 The remainder of this file contains dynamic optimization
 routines, i.e. those not covered by the current backend.
@@ -188,6 +171,7 @@ optimizer.prelude();
 #include "mal_strengthReduction.h"
 #include "mal_scenario.h"
 #include "mal_namespace.h"
+#include "mal_peephole.h"
 
 extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -261,14 +245,14 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:QOTC(CX,"commonExpressionRemoval")@
 	@:QOTC(AR,"aliasRemoval")@
 	@:QOTC(DC,"deadCodeRemoval")@
-	@:QOTC(SP,"selectPushdown")@
+	@:QOTC(HR,"heuristics")@
 	@:QOTC(GC,"garbageCollector")@
-	@:QOTC(RR,"reversalRemoval")@
 	@:QOTC(BPT,"partitionedQuery")@
 	@:QOTC(OR,"expressionAccumulation")@
 	@:QOTC(FT,"factorize")@
 	@:QOTC(SR,"strengthReduction")@
 	@:QOTC(ES,"emptySet")@
+	@:QOTC(PH,"peephole")@
 
 str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str modnme;

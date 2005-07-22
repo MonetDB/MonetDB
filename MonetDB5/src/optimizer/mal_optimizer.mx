@@ -71,7 +71,7 @@ to do so. The result of a static evaluation provides a ground for AR.
 Impact: relevant for stored queries (MAL functions)
 Prereq: AR, CX
 
-@emph{Relational expression optimizer (RXoptimizer)}
+@emph{Relational Expression Optimizer (RXoptimizer)}
 Goal: to evaluate a relational plan using properties of BATs,
 such as being empty or forming an aligned group.
 These optimizations assume that the code generator can detect properties
@@ -118,18 +118,7 @@ a large number of simple assignments.
 Approach: Every instruction should produce a value used somewhere else.
 Impact: low
 
-@emph{Idempotent Removal (RRoptimizer)}
-Goal: combinations of reversals kan be removed
-Rationale: reversal pairs may occur due to the processing scheme of a front-end
-or as a side-effect from other optimization steps. Such reversal pairs should
-be removed as quickly as possible, so as to reduce the complexity of finding
-alternative optimization opportunities.
-Another form of idempotency is performing selections/semijoins
-that are bound to produce the operand. 
-Approach: simple find the reverse combos.
-Impact: low (peephole optimizer)
-
-@emph{Selection Push Down (SPoptimizer)}
+@emph{Heuristic Rule Rewrites (HRoptimizer)}
 Goal: to reduce the volume as quick as possible.
 Rationale: most queries are focussed on a small part of the database.
 To avoid carrying too many intermediates, the selection should be performed as
@@ -326,7 +315,7 @@ them in a preferred order of deployment.
 @item 
 @tab    Static expression evaluator. (SXoptimizer)
 @item 
-@tab    Relational expression evaluator. (RXoptimizer)
+@tab    Relational Expression Evaluator. (RXoptimizer)
 @item 
 @tab    Strength Reduction (SRoptimizer)
 
@@ -336,8 +325,6 @@ them in a preferred order of deployment.
 @tab    Query Evaluation Maps (QMoptimizer)
 
 @item Group C:
-@tab    Selection Push Down (SPoptimizer)
-@item 
 @tab    Join Path Optimizer (JPoptimizer)
 @item 
 @tab    Operator Cost Reduction (OCoptimizer)
@@ -349,6 +336,8 @@ them in a preferred order of deployment.
 @tab    Aggregate Groups (AGoptimizer)
 @item 
 @tab    Data Cube optimizer (DCoptimizer)
+@item 
+@tab    Heuristic Rule Rewrite (HRoptimizer)
 
 @item group D:
 @tab    Code Parallizer (CPoptimizer)
@@ -454,8 +443,7 @@ mal_export str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str SPoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RXemptyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -982,8 +970,7 @@ They are marked as unsafe.
 @c
 int ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
 {   int i,k, blkcount=0, used =0;
-    InstrPtr p,q;
-    p= getInstrPtr(mb,pc);
+    InstrPtr q;
 
     for(i=pc; i< mb->stop && isAlife(mb,varid,i); i++){
         q= getInstrPtr(mb,i);
@@ -1218,234 +1205,7 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 @}
 
-@+ Heuristic rewrites rules
-One of the oldest optimizer tricks in relational query processing is
-to push a selection predicate through another operator.
-They are relatively easy to apply in a context where the expression
-is still abstract expression tree. It SQL front-end already applies
-such heuristics.
-
-Finding rewrite opportunities within a linear MAL program may
-be more difficult. For, the pattern should respect the flow
-of control that may already be represented.
-
-Ignoring performance overhead , we model the heuristic rewrite
-operations as separate routines. The enclosing optimizer then merely
-attempts to deploy them until it fails to find a match.
-The following table summarizes those considered and implementated.
-Predicates are modelled through the naming scheme.
-The combinators all assume that the flow path between both operations
-is safe. The code base contains an example how to built such routines.
-It translates the pattern:
-@example
-y:= reverse(R);
-z:= select(y,l,h);          
-@end example
-into the statement:
-@example
-z:= selectHead(x,R,l,h) 
-@end example
-
 @{
-@-
-During a final pass through the program, we can convert all combinators 
-back into their elementary steps.
-@= fndOperator
-    (( moduleId(@1)==0 || (@2 && idcmp(moduleName(@1),@2)==0) ) &&
-         (functionId(@1)==0 || (@3 && idcmp(functionName(@1),@3)==0) ))
-@-
-A more complete implementation should als push the selection through
-multiple operators. In particular, a reverse operator may obscure
-the opportunity to perform the select push through. 
-@c
-int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
-{
-    InstrPtr p,q;
-    p= getInstrPtr(mb,pc1);
-    q= getInstrPtr(mb,pc2);
-    if( @:fndOperator(p,"bat","reverse")@ ){
-	/* OUT OF DATE
-        if( @:fndOperator(q,"algebra","semijoin")@ ){
-            if( p->argv[0]== q->argv[2]){
-				setModuleId(p, putName("algebra",7));
-                setFunctionId(p, putName("reverse_semijoin",16));
-                p= pushArgument(mb,p,q->argv[1]);
-                removeInstruction(mb,q);
-                chkFlow(mb);
-				chkDeclarations(mb,TRUE);
-                return 1;
-            }
-        }
-	*/
-        if( @:fndOperator(q,"algebra","select")@ ){
-            if( p->argv[0]== q->argv[1]){
-				setModuleId(p, putName("algebra",7));
-                setFunctionId(p, putName("reverse_select",14));
-                p= pushArgument(mb,p,q->argv[1]);
-                p= pushArgument(mb,p,q->argv[2]);
-                p= pushArgument(mb,p,q->argv[3]);
-                removeInstruction(mb,q);
-                chkFlow(mb);
-				chkDeclarations(mb,TRUE);
-                return 1;
-            }
-        }
-    }/* OUT OF DATE
-	 else
-    if( @:fndOperator(p,"algebra","semijoin")@ ){
-        if( @:fndOperator(q,"algebra","select")@ ){
-            if( p->argv[0]== q->argv[1]){
-				setModuleId(p, putName("algebra",7));
-                setFunctionId(p, putName("semijoin_select",15));
-                p= pushArgument(mb,p,q->argv[2]);
-                p= pushArgument(mb,p,q->argv[3]);
-                removeInstruction(mb,q);
-                chkFlow(mb);
-				chkDeclarations(mb,TRUE);
-                return 1;
-            }
-        }
-    }
-	*/
-    return 0;
-}
-int SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
-{
-    InstrPtr p,q;
-    p= getInstrPtr(mb,pc1);
-    q= getInstrPtr(mb,pc2);
-    (void) p; (void) q; /* do something useful later on */
-    return 0;
-}
-str SPoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i,k,combis=0,squeeze=0;
-    InstrPtr p;
-	long clk= GDKusec();
-	(void) stk; /* fool compilers */
-
-    /* process the combinators */
-    for(i=0; i<mb->stop-1; i++){
-        p= getInstrPtr(mb,i);
-        for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
-        if( SPcombi000(mb,i,k)){
-#ifdef DEBUG_MAL_OPTIMIZER
-            if( getClient()->debugOptimizer){
-            stream_printf(GDKout,"Combinator found\n");
-            printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
-            }
-#endif
-            combis++;
-            k--; /* an instruction has been removed */
-            setLifespan(mb); /* expensive but needed */
-        }
-    }
-    /* process the squeezers */
-    for(i=0; i<mb->stop-1; i++){
-        p= getInstrPtr(mb,i);
-        for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
-        if( SPsqueezer000(mb,i,k)){
-#ifdef DEBUG_MAL_OPTIMIZER
-            if( getClient()->debugOptimizer){
-            stream_printf(GDKout,"Squeezer found\n");
-            printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
-            }
-#endif
-            squeeze++;
-            k--; /* an instruction has been removed */
-        }
-    }
-
-    /* remove the SPoptimizer request */
-	if(pci) 
-		removeInstruction(mb,pci);
-	optimizerCheck(mb,"selectPushDown",squeeze, GDKusec()-clk);
-    return NULL;
-}
-@}
-@-
-Pushing a selection geared at the left operand through the join operator
-is more complex, because you can only recognize those instances when later
-on the semijoin is recognized. The pattern we are looking for
-@T
-\begin{verbatim}
-AD := join (AB, CD);
-ZZ := semijoin (AB, AD);
-Za := select(ZZ, l,h);
-\end{verbatim}
-@-
-Note that this operation depends on SPoptimizer, because it already
-pushes down the selection through the semijoin.
-SHould be done differently
-
-@+ Reverse removal
-Combinations of reversals should be removed. It should be called
-whenever a new reversal is introduced.
-@{
-@c
-str RRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i,k,pc;
-    InstrPtr q,p;
-	int actions=0;
-	long clk=GDKusec();
-	(void) stk;
-
-	pc= getPC(mb,pci);
-    for(i=1; i< mb->stop; i++){
-        p = getInstrPtr(mb,i);
-        if( @:fndOperator(p,"bat","reverse")@ ){
-            for(k=i+1; k<mb->stop; k++){
-                q= getInstrPtr(mb,k);
-                if( @:fndOperator(q,"bat","reverse")@ &&
-                    p->argv[0]== q->argv[1] && 
-                   !isTouched(mb,p->argv[0],i+1,k)){
-#ifdef DEBUG_MAL_OPTIMIZER
-        if( getClient()->debugOptimizer){
-            stream_printf(GDKout,"Reverse Removal\n");
-            printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-            printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-        }
-#endif
-                ARreplaceAlias(mb,i,mb->stop,
-                    p->argv[0], p->argv[1]);
-                ARreplaceAlias(mb,k+1,mb->stop,
-                    q->argv[0], p->argv[1]);
-                removeInstruction(mb,q);
-                if( pc>k) pc--;
-                removeInstruction(mb,p); i--;
-                if( pc>i) pc--;
-				actions++;
-                break;
-                }
-            }
-        }
-    }
-	if(pci) 
-		removeInstruction(mb,pci);
-	optimizerCheck(mb,"reverseReverse",actions,GDKusec()-clk);
-    return MAL_SUCCEED;
-}
-@}
-@+ Barrier related optimizations
-The barrier blocks provide several bottlenecks for program analysis.
-In particular, properties of variables outside the block may depend
-on the actual execution flow.
-
-A few generic case can, however, be solved within the semantic context of
-the MAL intermediate. This include evaluation of constant expressions,
-and strength reduction, by moving possible expensive operations out of the
-loop if their are safe.
-@{
-@c
-int removeConstantExpression(MalBlkPtr mb, int pc, InstrPtr p){
-    /* simple constant expressions within barrier blocks should be avoided*/
-    /* return if it worked out */
-	(void) mb; (void) pc; (void) p;
-    return FALSE;
-}
-int reduceBarrierStrength(MalBlkPtr mb, int pcfirst, int pclast){
-	(void) mb; (void) pcfirst; (void) pclast;
-    return FALSE;
-}
 @+ Optimizer utilities
 Building optimizer variants require several utilities to ease the life
 of the developer. This includes primitives the walk through the
@@ -1465,128 +1225,12 @@ void moveConstantsFirst(MalBlkPtr mb){
     (void) mb; /*fool compilers */
 }
 @}
-@+ Relational expression optimizer
-The query plans produced by a relational query optimizer can be
-fine-tuned before being executed. In particular, it makes sense
-to handle empty BATs at a symbolic level and to exploit alignment
-of BATs to minimize joins.
-
-The optimizer routines below provide the building blocks.
-They can be called as ordinary MAL instructions, which eases
-debugging.
-@{
-@c
-str RXoptimizer(Client cntxt, MalBlkPtr mb, int pc){
-	(void) cntxt; (void) mb; (void) pc;
-
-#ifdef DEBUG_MAL_OPTIMIZER
-	if( cntxt->debugOptimizer){
-		stream_printf(GDKout,"Relational expression optimizer\n");
-	}
-#endif
-	return MAL_SUCCEED;
-}
-@}
-@-
-The RXemptyBAT operator has knowledge on a limited set
-of relational operators.
-The hunt for specific relational operators that can be replaced
-with a simple assignment.
-
-The patterns are interpreted in a strictly linear fashion.
-This is used to activate multiple operations on the same
-pattern.
-@{
-@c
-#define REMEMBER	0
-#define ALIAS_1		1
-static struct{
-	str modnme,fcnnme;
-	MALfcn fcn;
-	int	operand;
-	int action;
-} pattern[]={
-{"bat","reverse", 0, 1, REMEMBER},
-{"algebra","kdiff", 0, 2, ALIAS_1},
-{"algebra","join", 0, 2, ALIAS_1},
-{0,0,0,0,0}
-}; 
-
-str RXemptyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int i,j,k, *target, top;
-	InstrPtr p;
-	(void) stk; 
-
-	target= (int*) alloca(mb->vtop *sizeof(int));
-	target[0] = getArg(pci,1);
-	top = 1;
-@-
-To speed up matching we first locate the instructions of interest
-to be matched. Note that there may be multiple occurrences of
-the same operation.
-@c
-	for(i=0;pattern[i].fcnnme; i++)
-	if( pattern[i].fcn == 0){
-		Symbol s;
-		pattern[i].modnme=putName(pattern[i].modnme, strlen(pattern[i].modnme));
-		pattern[i].fcnnme=putName(pattern[i].fcnnme, strlen(pattern[i].fcnnme));
-		s= findMALSymbol( pattern[i].modnme, pattern[i].fcnnme);
-		if( s ) pattern[i].fcn = getSignature(s)->fcn;
-	}
-
-#ifdef DEBUG_MAL_OPTIMIZER
-	stream_printf(GDKout,"Relational expression optimizer\n");
-	stream_printf(GDKout,"target= %s\n", getVarName(mb,getArg(pci,1)));
-#endif
-	for(i=1; i<mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		/* check use as first operand */
-		/* check use as second operand */
-		for(k=0; k< top; k++)
-		for(j=0; pattern[j].fcnnme; j++)
-		if( getArg(p,pattern[j].operand) == target[k] && 
-			functionId(p) &&
-			(pattern[j].fcn == p->fcn  ||
-			( pattern[j].modnme == moduleId(p) &&
-			  pattern[j].fcnnme == functionName(p) )
-			)) {
-#ifdef DEBUG_MAL_OPTIMIZER
-			stream_printf(GDKout,"Hit on pattern %d pc %d\n",j,i);
-#endif
-			switch(pattern[j].action){
-			case REMEMBER:
-				target[top++] = p->argv[0];
-				break;
-			case ALIAS_1:
-				if( moduleId(p)) freeModuleName(p);
-				p->token=ASSIGNsymbol;
-				p->argc= 2;
-				p->argv[1]= p->argv[1];
-			}
-		}
-	}
-	if(pci) 
-		removeInstruction(mb,pci);
-	return MAL_SUCCEED;
-}
-str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void) stk; (void) mb; (void) pci;
-
-#ifdef DEBUG_MAL_OPTIMIZER
-	stream_printf(GDKout,"Relational expression optimizer, aligned BATs\n");
-#endif
-	if(pci) 
-		removeInstruction(mb,pci);
-	return MAL_SUCCEED;
-}
-@}
-@+ Operand replacement
+@+ Accumulator Evaluations
 Bulk arithmetic calculations are pretty expensive,
 because new BATs are created for each expression. 
 This memory hunger can be reduced
-by detecting opportunities for cummulative processing, i.e.
-where a temporary variable is overwritten.
-
+by detecting opportunities for accummulator processing, i.e.
+where a (temporary) variable is overwritten.
 For example, consider the query
 @example
 	t3:= batcalc.*(64,t2);
@@ -1599,7 +1243,6 @@ and propagate its alias through the remainder of the code.
 	batcalc.*(t2,64,t2);
 	t4:= batcalc.+(t2,t1,t2);
 @end example
-
 The implementation is straight forward. It only deals with the
 arithmetic operations available in batcalc right now.
 This set will be gradually be extended.
@@ -1856,4 +1499,164 @@ str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		removeInstruction(mb,pci);
     return MAL_SUCCEED;
 }
+@}
+@+ Heuristic rewrites rules
+One of the oldest optimizer tricks in relational query processing is
+to apply heuristic rules to reduce the processing cost. For example,
+a selection predicate is pushed through another operator to reduce
+the number of tuples to consider.
+Heuristic rewrites are relatively easy to apply in a context where 
+the expression is still close to a relational algebra tree.
+Therefore, many of the standard rewrite rules are already applied by the SQL
+front-end as part of its strategic optimization decisions.
+
+Finding rewrite opportunities within a linear MAL program may
+be more difficult. For, the pattern should respect the flow
+of control that may already be introduced.
+The last resort for the optimizer builder is to write a C-function
+to look for a pattern of interest and transform it.
+
+The @code{optimizer.heuristic(CfunctionName)} accesses the
+user supplied function and applies it to the program repeatedly
+until it fails to find a match.
+The code base contains an example how to built such routines.
+It translates the pattern:
+@example
+y:= reverse(R);
+z:= select(y,l,h);          
+@end example
+into the statement:
+@example
+z:= selectHead(x,R,l,h) 
+@end example
+
+@{
+@-
+During a final pass through the program, we can convert all combinators 
+back into their elementary steps.
+@= fndOperator
+    (( moduleId(@1)==0 || (@2 && idcmp(moduleName(@1),@2)==0) ) &&
+         (functionId(@1)==0 || (@3 && idcmp(functionName(@1),@3)==0) ))
+@-
+A more complete implementation should als push the selection through
+multiple operators. In particular, a reverse operator may obscure
+the opportunity to perform the select push through. 
+@c
+int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
+{
+    InstrPtr p,q;
+    p= getInstrPtr(mb,pc1);
+    q= getInstrPtr(mb,pc2);
+    if( @:fndOperator(p,"bat","reverse")@ ){
+	/* OUT OF DATE
+        if( @:fndOperator(q,"algebra","semijoin")@ ){
+            if( p->argv[0]== q->argv[2]){
+				setModuleId(p, putName("algebra",7));
+                setFunctionId(p, putName("reverse_semijoin",16));
+                p= pushArgument(mb,p,q->argv[1]);
+                removeInstruction(mb,q);
+                chkFlow(mb);
+				chkDeclarations(mb,TRUE);
+                return 1;
+            }
+        }
+	*/
+        if( @:fndOperator(q,"algebra","select")@ ){
+            if( p->argv[0]== q->argv[1]){
+				setModuleId(p, putName("algebra",7));
+                setFunctionId(p, putName("reverse_select",14));
+                p= pushArgument(mb,p,q->argv[1]);
+                p= pushArgument(mb,p,q->argv[2]);
+                p= pushArgument(mb,p,q->argv[3]);
+                removeInstruction(mb,q);
+                chkFlow(mb);
+				chkDeclarations(mb,TRUE);
+                return 1;
+            }
+        }
+    }/* OUT OF DATE
+	 else
+    if( @:fndOperator(p,"algebra","semijoin")@ ){
+        if( @:fndOperator(q,"algebra","select")@ ){
+            if( p->argv[0]== q->argv[1]){
+				setModuleId(p, putName("algebra",7));
+                setFunctionId(p, putName("semijoin_select",15));
+                p= pushArgument(mb,p,q->argv[2]);
+                p= pushArgument(mb,p,q->argv[3]);
+                removeInstruction(mb,q);
+                chkFlow(mb);
+				chkDeclarations(mb,TRUE);
+                return 1;
+            }
+        }
+    }
+	*/
+    return 0;
+}
+int SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
+{
+    InstrPtr p,q;
+    p= getInstrPtr(mb,pc1);
+    q= getInstrPtr(mb,pc2);
+    (void) p; (void) q; /* do something useful later on */
+    return 0;
+}
+str HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{   int i,k,combis=0,squeeze=0;
+    InstrPtr p;
+	long clk= GDKusec();
+	(void) stk; /* fool compilers */
+
+    /* process the combinators */
+    for(i=0; i<mb->stop-1; i++){
+        p= getInstrPtr(mb,i);
+        for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
+        if( SPcombi000(mb,i,k)){
+#ifdef DEBUG_MAL_OPTIMIZER
+            if( getClient()->debugOptimizer){
+            stream_printf(GDKout,"Combinator found\n");
+            printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
+            }
+#endif
+            combis++;
+            k--; /* an instruction has been removed */
+            setLifespan(mb); /* expensive but needed */
+        }
+    }
+    /* process the squeezers */
+    for(i=0; i<mb->stop-1; i++){
+        p= getInstrPtr(mb,i);
+        for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
+        if( SPsqueezer000(mb,i,k)){
+#ifdef DEBUG_MAL_OPTIMIZER
+            if( getClient()->debugOptimizer){
+            stream_printf(GDKout,"Squeezer found\n");
+            printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
+            }
+#endif
+            squeeze++;
+            k--; /* an instruction has been removed */
+        }
+    }
+
+    /* remove the HRoptimizer request */
+	if(pci) 
+		removeInstruction(mb,pci);
+	optimizerCheck(mb,"selectPushDown",squeeze, GDKusec()-clk);
+    return NULL;
+}
+@-
+Pushing a selection geared at the left operand through the join operator
+is more complex, because you can only recognize those instances when later
+on the semijoin is recognized. The pattern we are looking for
+@T
+\begin{verbatim}
+AD := join (AB, CD);
+ZZ := semijoin (AB, AD);
+Za := select(ZZ, l,h);
+\end{verbatim}
+@-
+Note that this operation depends on HRoptimizer, because it already
+pushes down the selection through the semijoin.
+SHould be done differently
 @}

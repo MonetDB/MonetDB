@@ -53,16 +53,20 @@ Another example of a 2-way instruction sequence produced is then
 '$j:= algebra.markT($k); $l:= bat.reverse($j);',
 which can be replaced by '$l:= algebra.markH($k);'.
 
-The reverse-reverse operation also falls into this category
-and shouldbe moved around.
-
-In all cases we should ensure that the intermediates dropped are not
+The reverse-reverse operation also falls into this category.
+Reversal pairs may result from the processing scheme of a front-end compiler
+or from a side-effect from other optimization steps. Such reversal pairs should
+be removed as quickly as possible, so as to reduce the complexity of finding
+alternative optimization opportunities.
+eas
+asIn all cases we should ensure that the intermediates dropped are not
 used for other purposes as well.
 
 The type of a variable may have to be reset when you change
 the program structure.
 @{
 @c
+#define DEBUG_MAL_PEEPHOLE
 str
 PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	InstrPtr p,q,r, *old;
@@ -124,7 +128,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				match(q,"algebra","join") 
 			){
 #ifdef DEBUG_MAL_PEEPHOLE
-				printf("PEEPHOLE 2\n");
+				printf("PEEPHOLE markH-join\n");
 				printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 				printInstruction(GDKout,mb,q,LIST_MAL_ALL);
 #endif
@@ -139,6 +143,27 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 				} else
 					pushInstruction(mb,p);
 			} else
+			if( q && match(p,"bat","reverse") &&
+				match(q,"bat","reverse")  &&
+				getArg(p,0) == getArg(q,1) &&
+				getVar(mb,getArg(p,0))->endLifespan== i+1 
+			){
+#ifdef DEBUG_MAL_PEEPHOLE
+				printf("PEEPHOLE reverse-reverse\n");
+				printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+				printInstruction(GDKout,mb,q,LIST_MAL_ALL);
+#endif
+				r= newInstruction(ASSIGNsymbol);
+				getArg(r,0)= getArg(q,0);
+				pushArgument(mb,r,getArg(p,1));
+				freeInstruction(p);
+				freeInstruction(q);
+				pushInstruction(mb,r);
+				i++; aropt++; doit++;
+			} else
+			if( match(p,"optimizer","peephole") )
+				freeInstruction(p);
+			else
 				pushInstruction(mb,p);
 		}
 		GDKfree(old);
