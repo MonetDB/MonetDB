@@ -612,13 +612,16 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			mdbHelp(out);
 			break;
 		case 'e':
-		{	MalStkPtr su;
+		{	
         	/* terminate the execution for ordinary functions only*/
 			if( strncmp("exit",b,4)==0 ){
 		case 'x':
-				if( !getInstrPtr(mb,0)->token == FACcall)
-				for(su= stk; su; su= su->up)
-					su->cmd= 'x';
+				if( ! (getInstrPtr(mb,0)->token == FACcall) ){
+					stk->cmd= 'x';
+					cntxt->fdin= oldin;
+					cntxt->prompt = oldprompt;
+					cntxt->promptlength = oldpromptlength;
+				}
 			}
 			return;
 		}
@@ -1223,7 +1226,7 @@ void mdbHelp(stream *f){
     stream_printf(f,"module     -- display the module signatures\n");
     stream_printf(f,"finish     -- finish current call\n");
     stream_printf(f,"exit       -- terminate executionr\n");
-    stream_printf(f,"quite       -- turn off debugging\n");
+    stream_printf(f,"quit       -- turn off debugging\n");
     stream_printf(f,"list <fcn> -- list current program block\n");
     stream_printf(f,"List <fcn> -- list with type information\n");
     stream_printf(f,"var  <fcn>  -- print symbol table for module\n");
