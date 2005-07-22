@@ -891,8 +891,33 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			}
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
-		}
 			break;
+		}
+		case st_convert: {
+			/* convert types and make sure they are rounded up correctly */
+			int l = backend_dumpstmt(sql, mb, s->op1.stval);
+
+			@:SQLprelude@
+
+			/* Lookup the sql convert function, there is no need
+			 * to for single value vs bat, this is handled by the 
+			 * mal function resolution */
+			q = newStmt(mb, "sql", s->op4.typeval->type->base.name);
+
+			if (s->op3.typeval->type->eclass == EC_DEC) 
+				/* scale of the current decimal */
+				q = pushInt(mb, q, s->op3.typeval->scale);
+			q = pushArgument(mb, q, l);
+	
+			if (s->op4.typeval->type->eclass == EC_DEC) {
+				/* digits, scale of the result decimal */
+				q = pushInt(mb, q, s->op4.typeval->digits);
+				q = pushInt(mb, q, s->op4.typeval->scale);
+			}
+			s->nr = getDestVar(q);
+			@:SQLpostlude@
+			break;
+		}
 		case st_op:{
 			@:SQLprelude@
 			if (s->op1.stval && s->op1.stval->nrcols) 
