@@ -22,11 +22,30 @@ stdout of test 'tst4015` in directory 'src/optimizer` itself:
 #debugOptimizers();
 #RRoptimizer();
 #
+Peephole optimizer started
+PEEPHOLE reverse-reverse
+    s := bat.reverse(r);	# -1 BKCreverse (s:bat[:int,:int])<-(r:bat[:int,:int])
+    t := bat.reverse(s);	# -1 BKCreverse (t:bat[:int,:int])<-(s:bat[:int,:int])
+PEEPHOLE 1
 function user.main():int;	# 0  (main:int)
 # testing repeatative reverse optimalisation 	# 1  ($2:str)
     r := bbp.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-($4:int)($4:int)
     bat.insert(r,5:int,1:int);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(r:bat[:int,:int])($6:int)($7:int)
-    k := 23:int;	# 4  (k:int)<-($10:int)
+    k := 23:int;	# 4  (k:int)<-($11:int)
+    io.print(r);	# 5 IOprint_val ($12:int)<-(r:bat[:int,:int])
+end main;	# 6  
+function user.main():int;	# 0  (main:int)
+# testing repeatative reverse optimalisation 	# 1  ($2:str)
+    r := bbp.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-($4:int)($4:int)
+    bat.insert(r,5:int,1:int);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(r:bat[:int,:int])($6:int)($7:int)
+    k := 23:int;	# 4  (k:int)<-($11:int)
+    io.print(r);	# 5 IOprint_val ($12:int)<-(r:bat[:int,:int])
+end main;	# 6  
+function user.main():int;	# 0  (main:int)
+# testing repeatative reverse optimalisation 	# 1  ($2:str)
+    r := bbp.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-($4:int)($4:int)
+    bat.insert(r,5:int,1:int);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(r:bat[:int,:int])($6:int)($7:int)
+    k := 23:int;	# 4  (k:int)<-($11:int)
     io.print(r);	# 5 IOprint_val ($12:int)<-(r:bat[:int,:int])
 end main;	# 6  
 #-----------------#
