@@ -396,7 +396,7 @@ MALrestart:
         @:exceptionTypeTest@
         if( stk->cmd  ) {
             mdbStep(cntxt,mb,stk,stkpc);
-            if( stk->cmd == 'q') goto MALevalExit;
+            if( stk->cmd == 'x') goto MALevalExit;
             if( stk->cmd == 'r') {
                 stk->cmd = 'n';
                 goto MALrestart;

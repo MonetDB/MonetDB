@@ -296,6 +296,9 @@ str callFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller,
     int i,k;
     InstrPtr psig= getInstrPtr(mb,0);
     ValPtr lhs,rhs;
+	char cmd;
+	str msg;
+
 #ifdef DEBUG_MAL_FACTORY
     stream_printf(GDKout,"factoryMgr called\n");
 #endif
@@ -333,7 +336,7 @@ Let's call it as a synchronous action, without concern on parallelism.
     pl->pci = pci;
     pl->inuse = 1;
     /* inherit debugging */
-    pl->stk->cmd = stk->cmd;
+    cmd= pl->stk->cmd = stk->cmd;
 
     /* copy the calling arguments onto the stack 
       of the factory */
@@ -349,8 +352,13 @@ Let's call it as a synchronous action, without concern on parallelism.
     if( mb->errors)
         return throwMessage("factory.call","Factory contains errors");
     if( u == 0)
-        return runMAL(cntxt,mb,1,0,pl->stk,0);
-    return reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
+        msg= runMAL(cntxt,mb,1,0,pl->stk,0);
+    else msg= reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
+	/* propagate change in debugging status */
+	if( cmd && pl->stk->cmd != cmd && cmd != 'x')
+		for(; stk; stk= stk->up)
+			stk->cmd= pl->stk->cmd;
+	return msg;
 }
 @-
 A new plant is constructed. The properties of the factory

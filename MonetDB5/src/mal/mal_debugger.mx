@@ -62,7 +62,8 @@ delete <var>   -- remove break point <var>
 step       -- advance to next MAL instruction
 module     -- display the module signatures
 finish     -- finish current call
-quit       -- leave debugger
+exit       -- terminate current call
+quit       -- turn off debugging
 list <fcn> -- list current program block
 List <fcn> -- list with type information
 var  <fcn>  -- print symbol table for module
@@ -545,7 +546,7 @@ The commands are self-explanatory.
 The prompt string sent to the user indicates the debugger mode.
 @c
 #define MDBstatus(X) if(cntxt->fdout) \
-	stream_printf(cntxt->fdout,"#Monet Debugger %s\n", (X?"on":"off"));
+	stream_printf(cntxt->fdout,"#MonetDB Debugger %s\n", (X?"on":"off"));
 
 void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 {
@@ -610,15 +611,30 @@ void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
     	case 'h':
 			mdbHelp(out);
 			break;
+		case 'e':
+		{	MalStkPtr su;
+        	/* terminate the execution for ordinary functions only*/
+			if( strncmp("exit",b,4)==0 ){
+		case 'x':
+				if( !getInstrPtr(mb,0)->token == FACcall)
+				for(su= stk; su; su= su->up)
+					su->cmd= 'x';
+			}
+			return;
+		}
     	case 'q':
-        	stk->cmd= 'q';/* return from this debugger */
+		{	MalStkPtr su;
+        	/* return from this debugger */
+			for(su= stk; su; su= su->up)
+				su->cmd= 0;
         	cntxt->itrace= 0;
         	cntxt->timer= 0;
-        	MDBstatus(0);
+        	/* MDBstatus(0);*/
 			cntxt->fdin= oldin;
 			cntxt->prompt = oldprompt;
 			cntxt->promptlength = oldpromptlength;
 			return;
+		}
     	case 'f': /* finish */
     	case 'n': /* next */
     	case 's': /* step */
@@ -943,15 +959,12 @@ void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
     switch(stk->cmd){
     case 'c':
 		p= getInstrPtr(mb,pc);
-        if( isBreakpoint(cntxt,p) ){
+        if( isBreakpoint(cntxt,p) )
             mdbCommand(cntxt,mb,stk,p,pc);
-        }
         break;
     case 's': case 'n':
 		p= getInstrPtr(mb,pc);
         mdbCommand(cntxt,mb,stk,p,pc);
-        break;
-    case 'r': stk->cmd = 'n';
     }
     if( cntxt->timer) cntxt->timer = GDKusec();
     stream_flush(cntxt->fdout);
@@ -1209,7 +1222,8 @@ void mdbHelp(stream *f){
     stream_printf(f,"step       -- advance to next MAL instruction\n");
     stream_printf(f,"module     -- display the module signatures\n");
     stream_printf(f,"finish     -- finish current call\n");
-    stream_printf(f,"quit       -- leave debugger\n");
+    stream_printf(f,"exit       -- terminate executionr\n");
+    stream_printf(f,"quite       -- turn off debugging\n");
     stream_printf(f,"list <fcn> -- list current program block\n");
     stream_printf(f,"List <fcn> -- list with type information\n");
     stream_printf(f,"var  <fcn>  -- print symbol table for module\n");
