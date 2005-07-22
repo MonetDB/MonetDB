@@ -833,19 +833,11 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 				a = tail_type(s);
 				v = tail_type(s->op1.stval);
-				if (v && a->type->localtype == v->type->localtype && strcmp(s->op4.funcval->func->base.name, "convert") == 0) {
-					buflen = BUFSIZ;
-					buf = NEW_ARRAY(char, buflen + 1);
+				buflen = strlen(s->op4.funcval->func->imp) + 64;
+				buf = NEW_ARRAY(char, buflen + 1);
 
-					len = snprintf(buf, buflen, "var s%d := s%d;\n", -s->nr, l);
-					assert(len <= buflen);
-				} else {
-					buflen = strlen(s->op4.funcval->func->imp) + 64;
-					buf = NEW_ARRAY(char, buflen + 1);
-
-					len = snprintf(buf, buflen, "var s%d := [%s](s%d);\n", -s->nr, s->op4.funcval->func->imp, l);
-					assert(len <= buflen);
-				}
+				len = snprintf(buf, buflen, "var s%d := [%s](s%d);\n", -s->nr, s->op4.funcval->func->imp, l);
+				assert(len <= buflen);
 			} else {
 				buflen = strlen(s->op4.funcval->func->imp) + 64;
 				buf = NEW_ARRAY(char, buflen + 1);

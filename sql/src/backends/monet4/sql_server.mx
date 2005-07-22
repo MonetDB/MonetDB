@@ -187,8 +187,8 @@ stream.
 @:mel_cast_2dec(lng,dbl)@
 
 @= mel_cast_dec2
- .COMMAND @1( int s1, @2 v ) : @1 = @2_dec2_@1; "cast decimal to @1 and check for overflow"
- .COMMAND @1( int s1, @2 v, int d2, int s2 ) : @1 = @2_dec2dec_@1; "cast decimal to decimale(@1) and check for overflow"
+ .COMMAND @1( int s1, @2 v ) : @1 = @2_dec2_@1; "cast decimal(@2) to @1 and check for overflow"
+ .COMMAND @1( int s1, @2 v, int d2, int s2 ) : @1 = @2_dec2dec_@1; "cast decimal(@2) to decimale(@1) and check for overflow"
 @m
 
 @= mel_cast2
@@ -542,14 +542,17 @@ int @1_round_wrap( @1 *res, @1 *v, @1 *r )
 	@1 val = *v;
 	@1 add = *r;
 
-	/* not nil */
-	if (ATOMcmp(TYPE_@1, v, ATOMnilptr(TYPE_@1)) != 0) {
-		add >>=1;
-		if (val < 0) 
-			add = -add;
-		val += add; 
-		val /= *r;
+	/* shortcut nil */
+	if (*v == @1_nil) {
+		*res = @1_nil;
+		return(GDK_SUCCEED);
 	}
+
+	add >>=1;
+	if (val < 0) 
+		add = -add;
+	val += add; 
+	val /= *r;
 	*res = val;
 	return GDK_SUCCEED;
 }
@@ -580,7 +583,8 @@ int str_2dec_@1( @1 *res, str val, int *d, int *sc )
 		/* the current scale is too big, decrease it by correctly rounding */
 		int d = scale - *sc;	/* CANNOT be 0 */
 		value /= (d - 1) * 10;
-		if (value % 10 >= 5) value += 10;
+		if (value % 10 >= 5) 
+			value += 10;
 		value /= 10;
 		scale -= d;
 		digits -= d;
@@ -617,7 +621,6 @@ int @1_round_wrap( @1 *res, @1 *v, @1 *r )
 	return GDK_SUCCEED;
 }
 @c
-
 @:fround(flt)@
 @:fround(dbl)@
 
@@ -642,9 +645,7 @@ str_2_@1( @1 *res, str val )
 		GDKfree(p);
 	return GDK_SUCCEED;
 }
-
 @c
-
 @:cast(sht)@
 @:cast(int)@
 @:cast(lng)@

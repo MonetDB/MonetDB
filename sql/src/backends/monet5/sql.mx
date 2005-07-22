@@ -204,44 +204,77 @@ address dbl_round_wrap
 comment "round off the value v to nearests multiple of r";
 
 @= mal_cast
-command cast2@1( v:str ) :@1 
-address cast2@1
-comment "cast to @1";
+command @1( v:str ) :@1 
+address str_2_@1
+comment "cast to @1 and check for overflow";
 command @1( v:str, digits:int ) :@1 
-address trunc2@1
-comment "cast string to @1";
-command cast2@1( v:str, digits:int, scale:int ) :@1 
-address trunc2@1
-comment "cast string to @1";
+address str_2num_@1
+comment "cast to @1 and check for overflow";
+command @1( v:str, digits:int, scale:int ) :@1 
+address str_2dec_@1
+comment "cast to dec(@1) and check for overflow";
 @mal
 @:mal_cast(sht)@
 @:mal_cast(int)@
 @:mal_cast(lng)@
-@:mal_cast(flt)@
-@:mal_cast(dbl)@
+
+@= mal_fcast
+command @1( v:str ) :@1 
+address str_2_@1
+comment "cast to @1";
+@mal
+@:mal_fcast(flt)@
+@:mal_fcast(dbl)@
+
 @mal
 @+ todo
 command str( v:any, digits:int ) :str 
 address str_cast
-comment "cast value to string";
+comment "cast to string and check for overflow";
 
-@= mal_cast2
-command @1( v:@2, digits:int ) :@1 
+@= mal_cast_2dec
+command @1( v:@2) :@1 
 address @2_2_@1
 comment "cast @1 to @1 and check for overflow";
+command @1( v:@2, digits:int, scale:int ) :@1 
+address @2_num2dec_@1
+comment "cast number to decimal(@1) and check for overflow";
+@mal
+@:mal_cast_2dec(sht,flt)@
+@:mal_cast_2dec(int,flt)@
+@:mal_cast_2dec(lng,flt)@
+@:mal_cast_2dec(sht,dbl)@
+@:mal_cast_2dec(int,dbl)@
+@:mal_cast_2dec(lng,dbl)@
+
+@= mal_cast_dec2
+command @1( s1:int, v:@2) :@1 
+address @2_dec2_@1
+comment "cast decimal(@2) to @1 and check for overflow";
+command @1( s1:int, v:@2, d2:int, s2:int ) :@1 
+address @2_dec2dec_@1
+comment "cast decimal(@2) to decimal(@1) and check for overflow";
+@mal
+
+@= mal_cast2
+@:mal_cast_2dec(@1,@2)@
+@:mal_cast_dec2(@1,@2)@
 @mal
 @:mal_cast2(sht,sht)@
 @:mal_cast2(sht,int)@
 @:mal_cast2(sht,lng)@
-@:mal_cast2(sht,dbl)@
 @:mal_cast2(int,sht)@
 @:mal_cast2(int,int)@
 @:mal_cast2(int,lng)@
-@:mal_cast2(int,dbl)@
 @:mal_cast2(lng,sht)@
 @:mal_cast2(lng,int)@
 @:mal_cast2(lng,lng)@
-@:mal_cast2(lng,dbl)@
+@:mal_cast2(flt,sht)@
+@:mal_cast2(flt,int)@
+@:mal_cast2(flt,lng)@
+@:mal_cast2(dbl,sht)@
+@:mal_cast2(dbl,int)@
+@:mal_cast2(dbl,lng)@
 @-
 Include the sql_cache functionality
 @mal
@@ -804,6 +837,12 @@ str @1_round_wrap( @1 *res, @1 *v, @1 *r )
 	@1 val = *v;
 	@1 add = *r;
 
+	/* shortcut nil */
+	if (*v == @1_nil) {
+		*res = @1_nil;
+		return NULL;
+	}
+
 	add >>=1;
 	if (val < 0) 
 		add = -add;
@@ -819,7 +858,7 @@ str @1_dbl_round_wrap( @1 *res, @1 *v, dbl *r )
 }
 
 str
-trunc2@1( @1 *res, str *val, int *d, int *sc )
+str_2dec_@1( @1 *res, str *val, int *d, int *sc )
 {
 	char *s = strip_extra_zeros(*val);
 	char *dot = strchr(s, '.');
@@ -828,7 +867,7 @@ trunc2@1( @1 *res, str *val, int *d, int *sc )
 	lng value = 0;
 
 	if (!dot) {
-		return throwException(MALEXCEPTION, "trunc2", 
+		return throwException(MALEXCEPTION, "@1", 
 			"\"%s\" is no decimal value (doesn't contain a '.')", *val);
 	}
 		
@@ -852,11 +891,17 @@ trunc2@1( @1 *res, str *val, int *d, int *sc )
 		digits -= d;
 	}
 	if (digits > *d) {
-		return throwException(MALEXCEPTION,"trunc2", 
+		return throwException(MALEXCEPTION,"@1", 
 		     "decimal (%s) doesn't have format (%d,%d)", *val, *d, *sc);
 	}
 	*res = (@1) value;
 	return MAL_SUCCEED;
+}
+str
+str_2num_@1( @1 *res, str *v, int *len )
+{
+	int zero = 0;
+	return str_2dec_@1( res, v, len, &zero );
 }
 @c
 
@@ -868,58 +913,21 @@ trunc2@1( @1 *res, str *val, int *d, int *sc )
 str @1_round_wrap( @1 *res, @1 *v, @1 *r )
 {
 	@1 val = *v;
-/* assume float does correct rounding 
-	@1 add = *r;
 
-	add /= 2;
-	if (val < 0) 
-		add = -add;
-	val += add;
-*/
-	val /= *r;
+	/* not nil */
+	if (ATOMcmp(TYPE_@1, v, ATOMnilptr(TYPE_@1)) != 0) {
+		val /= *r;
+	}
 	*res = val;
 	return MAL_SUCCEED;
 }
-
-str
-trunc2@1( @1 *res, str *val, int *d, int *s )
-{
-	ptr p = NULL;
-	int len = 0;
-	int e;
-	int digits = *d - *s;
-	lng value = 1;
-	
-	e = ATOMfromstr(TYPE_@1, &p, &len, *val);
-	if (e < 0 || !p || 
-	   (ATOMcmp(TYPE_@1, p, ATOMnilptr(TYPE_@1)) == 0 &&
-	    ATOMcmp(TYPE_str, *val, ATOMnilptr(TYPE_str)) != 0) ) {
-		if (p)
-			GDKfree(p);
-		return throwMessage("trunc", "atom nil");
-	}
-	while (digits > 0) {
-		digits--;
-		value *= 10;
-	}
-	if (*(@1*)p > value) {
-		return throwException(MALEXCEPTION,"trunc", 
-			"double (%s) doesn't have format (%d,%d)", *val, *d, *s);
-		
-	}
-	*res = *(@1*)p;
-	if (p)
-		GDKfree(p);
-	return MAL_SUCCEED;
-}
 @c
-
 @:fround(flt)@
 @:fround(dbl)@
 
 @= cast
 str
-cast2@1( @1 *res, str *val )
+str_2_@1( @1 *res, str *val )
 {
 	ptr p = NULL;
 	int len = 0;
@@ -932,16 +940,14 @@ cast2@1( @1 *res, str *val )
 	{
 		if (p)
 			GDKfree(p);
-		return throwMessage("cast", "atom nil");
+		return throwMessage("@1", "atom nil");
 	}
 	*res = *(@1*)p;
 	if (p)
 		GDKfree(p);
 	return MAL_SUCCEED;
 }
-
 @c
-
 @:cast(sht)@
 @:cast(int)@
 @:cast(lng)@
@@ -976,38 +982,48 @@ str_cast(str *res, ptr v, int tpe, int *len)
 	return MAL_SUCCEED;
 }
 
-@= str_cast
-str
-str2@1( @1 *res, str *v, int *len )
-{
-	int slen = strlen(*v); 
+lng scales[20] = {
+	LL_CONSTANT(0),
+	LL_CONSTANT(10),
+	LL_CONSTANT(100),
+	LL_CONSTANT(1000),
+	LL_CONSTANT(10000),
+	LL_CONSTANT(100000),
+	LL_CONSTANT(1000000),
+	LL_CONSTANT(10000000),
+	LL_CONSTANT(100000000),
+	LL_CONSTANT(1000000000),
+	LL_CONSTANT(10000000000),
+	LL_CONSTANT(100000000000),
+	LL_CONSTANT(1000000000000),
+	LL_CONSTANT(10000000000000),
+	LL_CONSTANT(100000000000000),
+	LL_CONSTANT(1000000000000000),
+	LL_CONSTANT(10000000000000000),
+	LL_CONSTANT(100000000000000000),
+	LL_CONSTANT(1000000000000000000)
+};
 
-	if (slen > *len || slen > 5) {
-		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), *v) != 0) {
-			return throwException(MALEXCEPTION, "str2@1", 
-				"value too long for type int(%d)\n",*len);
-		} else {
-			*res = @1_nil;
-			return MAL_SUCCEED;
-		}
+@= simpleupcast
+str @2_2_@1( @1 *res, @2 *v )
+{
+	/* shortcut nil */
+	if (*v == @2_nil) {
+		*res = @1_nil;
+		return(MAL_SUCCEED);
 	}
-	if (ATOMfromstr(TYPE_@1, (ptr)res, &slen, *v) <=0 || *res == @1_nil) {
-		return throwException(MALEXCEPTION,"str2@1",
-			"incorrect int(%d) value\n", *len);
-	}
-	return MAL_SUCCEED;
+	
+	/* since the @1 type is bigger than or equal to the @2 type, it will
+	   always fit */
+	*res = (@1)*v;
+	return(MAL_SUCCEED);
 }
-
 @c
-@:str_cast(sht)@
-@:str_cast(int)@
-@:str_cast(lng)@
 
-@= numcastup
-str @2_2_@1( @1 *res, @2 *v, int *len )
+@= simpledowncast
+str @2_2_@1( @1 *res, @2 *v )
 {
-	int p = *len, inlen = 1;
-	@2 cpyval = *v;
+	lng val = *v;
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -1015,31 +1031,46 @@ str @2_2_@1( @1 *res, @2 *v, int *len )
 		return(MAL_SUCCEED);
 	}
 	
-	while (cpyval /= 10)
-		inlen++;
-	if (p && inlen > p) {
-		return(throwException(MALEXCEPTION,"@2_2_@1",
-			"too many digits (%d > %d)\n", inlen, p));
+	/* see if the number fits in the data type */
+	if (val >= GDK_@1_min && val <= GDK_@1_max)	{
+		*res = (@1)val;
+		return(MAL_SUCCEED);
+	} else {
+		return throwException(MALEXCEPTION,"convert",
+			"value (%d) exceeds limits of type @1\n", val);
+	}
+}
+@c
+
+@= numcastup
+@:simpleupcast(@1,@2)@
+
+str @2_dec2_@1( @1 *res, int *s1, @2 *v )
+{
+	int scale = *s1;
+	@1 r, h = (*v<0)?-5:5; 
+
+	/* shortcut nil */
+	if (*v == @2_nil) {
+		*res = @1_nil;
+		return(MAL_SUCCEED);
 	}
 
 	/* since the @1 type is bigger than or equal to the @2 type, it will
 	   always fit */
-	*res = (@1)*v;
+	r = (@1)*v;
+	if (scale) 
+		r = (r+h)/scales[scale];
+	*res = r;
 	return(MAL_SUCCEED);
 }
-@c
-@:numcastup(sht,sht)@
-@:numcastup(int,sht)@
-@:numcastup(int,int)@
-@:numcastup(lng,sht)@
-@:numcastup(lng,int)@
-@:numcastup(lng,lng)@
 
-@= numcastdown
-str @2_2_@1( @1 *res, @2 *v, int *len )
+str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 {
-	int p = *len, inlen = 1;
-	lng val = *v, cpyval = val;
+	int p = *d2, inlen = 1;
+	@2 cpyval = *v;
+	int s1 = *S1, s2 = *S2;
+	@1 r, h = (*v<0)?-5:5; 
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -1050,24 +1081,223 @@ str @2_2_@1( @1 *res, @2 *v, int *len )
 	/* count the number of digits in the input */
 	while (cpyval /= 10)
 		inlen++;
+
+	/* rounding is allowed */
+	inlen += (s2-s1);
+	if (p && inlen > p) {
+		return(throwException(MALEXCEPTION,"convert",
+			"too many digits (%d > %d)\n", inlen, p));
+	}
+
+	/* since the @1 type is bigger than or equal to the @2 type, it will
+	   always fit */
+	r = (@1)*v;
+	if (s2 > s1) 
+		r *= scales[s2-s1];
+	else if (s2 != s1) 
+		r = (r+h)/scales[s1-s2];
+	*res = r;
+	return(MAL_SUCCEED);
+}
+
+str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
+{
+	int zero = 0;
+	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
+}
+
+@c
+@:numcastup(sht,sht)@
+@:numcastup(int,sht)@
+@:numcastup(int,int)@
+@:numcastup(lng,sht)@
+@:numcastup(lng,int)@
+@:numcastup(lng,lng)@
+
+@= fnumcastdown
+@:simpledowncast(@1,@2)@
+
+/* when casting a floating point to an decimal we like to preserve the 
+ * precision.  This means we first scale the float before converting.
+*/
+str @2_num2dec_@1( @1 *res, @2 *v, int *s2, int *d2 )
+{
+	int p = *d2, inlen = 1, scale = *s2;
+	@2 r;
+	lng cpyval;
+
+	/* shortcut nil */
+	if (*v == @2_nil) {
+		*res = @1_nil;
+		return(MAL_SUCCEED);
+	}
+	
+	/* since the @1 type is bigger than or equal to the @2 type, it will
+	   always fit */
+	r = (@1)*v;
+	if (scale) 
+		r *= scales[scale];
+	cpyval = r;
+
+	/* count the number of digits in the input */
+	while (cpyval /= 10)
+		inlen++;
+	/* rounding is allowed */
+	if (p && inlen > p) {
+		return(throwException(MALEXCEPTION,"convert",
+			"too many digits (%d > %d)\n", inlen, p));
+	}
+	*res = r;
+	return MAL_SUCCEED;
+}
+@c
+@:fnumcastdown(sht,flt)@
+@:fnumcastdown(int,flt)@
+@:fnumcastdown(lng,flt)@
+@:fnumcastdown(sht,dbl)@
+@:fnumcastdown(int,dbl)@
+@:fnumcastdown(lng,dbl)@
+
+@= fnumcastup
+@:simpleupcast(@1,@2)@
+
+str @2_dec2_@1( @1 *res, int *s1, @2 *v )
+{
+	int scale = *s1;
+	@1 r;
+
+	/* shortcut nil */
+	if (*v == @2_nil) {
+		*res = @1_nil;
+		return(MAL_SUCCEED);
+	}
+	
+	/* since the @1 type is bigger than or equal to the @2 type, it will
+	   always fit */
+	r = (@1)*v;
+	if (scale) 
+		r /= scales[scale];
+	*res = r;
+	return MAL_SUCCEED;
+}
+
+str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
+{
+	int p = *d2, inlen = 1;
+	@2 cpyval = *v;
+	int s1 = *S1, s2 = *S2;
+	@1 r;
+
+	/* shortcut nil */
+	if (*v == @2_nil) {
+		*res = @1_nil;
+		return(MAL_SUCCEED);
+	}
+	
+	/* count the number of digits in the input */
+	while (cpyval /= 10)
+		inlen++;
+	/* rounding is allowed */
+	inlen += (s2-s1);
+	if (p && inlen > p) {
+		return(throwException(MALEXCEPTION,"convert",
+			"too many digits (%d > %d)\n", inlen, p));
+	}
+
+	/* since the @1 type is bigger than or equal to the @2 type, it will
+	   always fit */
+	r = (@1)*v;
+	if(s2 > s1) 
+		r *= scales[s2-s1];
+	else if (s2 != s1) 
+		r /= scales[s1-s2];
+	*res = r;
+	return MAL_SUCCEED;
+}
+
+str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
+{
+	int zero = 0;
+	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
+}
+@c
+@:fnumcastup(flt,sht)@
+@:fnumcastup(flt,int)@
+@:fnumcastup(flt,lng)@
+@:fnumcastup(dbl,sht)@
+@:fnumcastup(dbl,int)@
+@:fnumcastup(dbl,lng)@
+
+@c
+@= numcastdown
+@:simpledowncast(@1,@2)@
+
+str @2_dec2_@1( @1 *res, int *s1, @2 *v )
+{
+	int scale = *s1;
+	lng val = *v, h = (val<0)?-5:5;
+
+	/* shortcut nil */
+	if (*v == @2_nil) {
+		*res = @1_nil;
+		return(MAL_SUCCEED);
+	}
+	
+	if (scale) 
+		val = (val+h)/scales[scale];
+	/* see if the number fits in the data type */
+	if (val >= GDK_@1_min && val <= GDK_@1_max)	{
+		*res = (@1)val;
+		return MAL_SUCCEED;
+	} else {
+		return throwException(MALEXCEPTION,"convert",
+			"value (%d) exceeds limits of type @1\n", val);
+	}
+}
+
+str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
+{
+	int p = *d2, inlen = 1;
+	lng val = *v, cpyval = val, h = (val<0)?-5:5;
+	int s1 = *S1, s2 = *S2;
+
+	/* shortcut nil */
+	if (*v == @2_nil) {
+		*res = @1_nil;
+		return(MAL_SUCCEED);
+	}
+	
+	/* count the number of digits in the input */
+	while (cpyval /= 10)
+		inlen++;
+	/* rounding is allowed */
+	inlen += (s2-s1);
 	if (p && inlen > p) {
 		return(throwException(MALEXCEPTION,"@2_2_@1",
 			"too many digits (%d > %d)\n", inlen, p));
 	}
 
+	if(s2 > s1) 
+		val *= scales[s2-s1];
+	else if (s2 != s1) 
+		val = (val+h)/scales[s1-s2];
+
 	/* see if the number fits in the data type */
-	if (val >= GDK_@1_min && val <= GDK_@1_max) {
-		*res = (@1)*v;
-		return(MAL_SUCCEED);
+	if (val >= GDK_@1_min && val <= GDK_@1_max)	{
+		*res = (@1)val;
+		return MAL_SUCCEED;
 	} else {
-		return throwException(MALEXCEPTION,"@2_2_@1",
+		return throwException(MALEXCEPTION,"convert",
 			"value (%d) exceeds limits of type @1\n", val);
 	}
+}
+
+str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
+{
+	int zero = 0;
+	return @2_dec2dec_@1( res, &zero, v, d2, s2 );
 }
 @c
 @:numcastdown(sht,int)@
 @:numcastdown(sht,lng)@
-@:numcastdown(sht,dbl)@
 @:numcastdown(int,lng)@
-@:numcastdown(int,dbl)@
-@:numcastdown(lng,dbl)@
