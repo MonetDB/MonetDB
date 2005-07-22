@@ -935,7 +935,7 @@ This can be used to re-order the plan without concern on impact of the outcome.
 It suffice to respect the flow graph.
 [unclear as what we need]
 @* The Optimizer Toolkit
-In this section we introduce the collection of MAL optimizers currently
+In this section we introduce the collection of MAL optimizers 
 included in the code base. The tool kit is incrementally built, triggered
 by experimentation and curiousity. Several optimizers require
 further development to cope with the many features making up the MonetDB system.
@@ -1087,21 +1087,22 @@ str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @+ Dead Code Removal
 Dead code fragments are recognized by assignments to variables
 whose value is not consumed any more. 
-It can be detected running backwards from @code{return} statements
-and marking all variables used as arguments as relevant. In parallel,
-we built a list of instructions that should appear in the final result.
+It can be detected  by marking all variables used as 
+arguments as being relevant. 
+In parallel, we built a list of instructions that should appear 
+in the final result.
 The new code block is than built in one scan, discarding the
 remaining instructions.
 
-We should also be aware of instructions that produce side effects
+We should be aware of instructions that produce side effects
 to the environment, e.g. printing and BAT updates. Such (possibly recursive)
 functions should be marked with a property (unsafe)
 (For now we recognize a few important ones)
 
 A source of side effect is the affected control flow in barrier blocks.
-They should be retained in the first phase. After we have removed all
+They should always be retained. After we have removed all
 remaining code, we may wish to get rid of empty iterator blocks as well.
-[This refinement left for the future]
+[This refinement is left for the future]
 
 An illustrative example is the following MAL snippet:
 @verbatim
@@ -1119,9 +1120,6 @@ The dead code removal trims this program to a very short one.
 @verbatim
     io.print("done");
 @end verbatim
-The assigments in an iterator also requires care, because
-the @code{redo} statement may turn an instruction into a source for
-previouse ones. 
 
 @{
 The dead code remover should
@@ -1169,7 +1167,7 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                 varused[p->argv[k]]=1;
             break;
         case EXITsymbol:
-            stream_printf(getClient()->fdout,"#Handle DCR in iterator\n");
+        /*     stream_printf(getClient()->fdout,"#Handle DCR in iterator\n");*/
         case RETURNsymbol:
             pcused[i]=1;
             for(k=0; k<p->retc;k++)
@@ -1180,7 +1178,7 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
             for(k= 0; k< p->argc; k++)
                 if( varused[p->argv[k]]) se++;
             /* do not deal with dead barrier blocks */
-            if( hasSideEffects(p) || se){
+            if(blockCntrl(p) || hasSideEffects(p) || se){
                 for(k=0; k<p->argc;k++) 
 					varused[p->argv[k]]= !isTypeVar(mb,p->argv[k]);
                 pcused[i]=1;
@@ -1189,8 +1187,6 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     }
 #ifdef DEBUG_MAL_OPTIMIZER
 	{Client cntxt= getClient();
-    /*if( cntxt->debugOptimizer){
-    if(dc){ */
     stream_printf(GDKout,"Dead code variables \n");
     for(i=0;i< mb->vtop; i++)
         if( varused[i]==0) 
@@ -1222,86 +1218,32 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 @}
 
-@+ Select Push Down heuristic
-One of the oldest optimizer tricks in relation processing is
+@+ Heuristic rewrites rules
+One of the oldest optimizer tricks in relational query processing is
 to push a selection predicate through another operator.
-This trick is rather complicated to apply to a MAL block, due to
-anomalies introduced by the binary datamodel. This leads to a rather
-complex compilation of e.g.  (tables r(a,b), s(c,d)
-@example
-create table r( a int, b int);
-create table s( c int, d int);
-select r.a,s.d from r,s where r.a=s.c and r.a<10 and s.d>5;
-@end example
+They are relatively easy to apply in a context where the expression
+is still abstract expression tree. It SQL front-end already applies
+such heuristics.
 
-The optimal code would be [todo]
-while the code block produced by the SQL front-end generates
-@verbatim
-function sql_cache.sql0(A0:sht,A1:sht):any;
-    $3 := sql.bind("sys","r","a",0);
-    $8 := sql.bind_dbat("sys","r",0);
-    $9 := bat.reverse($8);
-    $10 := algebra.kdiff($3,$9);
-    $11 := A0;
-    $12 := calc.int($11);
-    $13 := algebra.select($10,nil,$12,false,false);
-    $16 := sql.bind("sys","s","c",0);
-    $19 := sql.bind_dbat("sys","s",0);
-    $20 := bat.reverse($19);
-    $21 := algebra.kdiff($16,$20);
-    $22 := sql.bind("sys","s","d",0);
-    $24 := A1;
-    $25 := calc.int($24);
-    $26 := algebra.uselect($22,$25,nil,false,false);
-?    $27 := algebra.semijoin($21,$26);
-?    $28 := bat.reverse($27);
-?    $29 := algebra.join($13,$28);
-    $30 := calc.oid(0@0);
-?    $32 := algebra.markT($29,$30);
-?    $33 := bat.reverse($32);
-?    $34 := algebra.join($33,$3);
-?    $35 := bat.reverse($29);
-    $36 := calc.oid(0@0);
-?    $37 := algebra.markT($35,$36);
-?    $38 := bat.reverse($37);
-?    $39 := algebra.join($38,$22);
-    sql.column($34,"a","int",9,0);
-    sql.column($39,"d","int",9,0);
-    sql.output(0,$34,$39);
-end sql0;
-@end verbatim
-@-
-The approach taken is to combine multiple MAL statements in a
-single statement, or replacing/exchancing pairs based on the flow
-graph restrictions.
+Finding rewrite opportunities within a linear MAL program may
+be more difficult. For, the pattern should respect the flow
+of control that may already be represented.
 
-Ignoring performance overhead for the time being, we model the rewrite
-operations as separate routines first. The enclosing optimizer then merely
+Ignoring performance overhead , we model the heuristic rewrite
+operations as separate routines. The enclosing optimizer then merely
 attempts to deploy them until it fails to find a match.
 The following table summarizes those considered and implementated.
 Predicates are modelled through the naming scheme.
 The combinators all assume that the flow path between both operations
-is safe.
-
-[redo]
-
+is safe. The code base contains an example how to built such routines.
+It translates the pattern:
 @example
-y:= reverse(x); 
-z:= semijoin(R,x);          z:= revsemijoin(x,R) 
-y:= reverse(x); 
-z:= select(R,l,h);          z:= revselect(x,R,l,h) 
-y:= semijoin(R,x); 
-z:= select(y,l,h);          z:= semiseselect(R,x,l,h) 
-y:= revsemijoin(x,R); \n
-z:= select(y,l,h);          z:= revsemiselect(R,x,l,h) 
-y:= join(R,S); 
-z:= semiselect(y,R,l,h);    y:= select(R,l,h)
-                            z:= join(y,S)
-y:= join(R,S);
-z:= revsemiselect(y,S,l,h); y:= select(S,l,h):\n
-z:= join(R,y) 
-y:= join(R,S);
-z:= semiselect(y,Z,l,h);
+y:= reverse(R);
+z:= select(y,l,h);          
+@end example
+into the statement:
+@example
+z:= selectHead(x,R,l,h) 
 @end example
 
 @{
@@ -1322,6 +1264,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
     p= getInstrPtr(mb,pc1);
     q= getInstrPtr(mb,pc2);
     if( @:fndOperator(p,"bat","reverse")@ ){
+	/* OUT OF DATE
         if( @:fndOperator(q,"algebra","semijoin")@ ){
             if( p->argv[0]== q->argv[2]){
 				setModuleId(p, putName("algebra",7));
@@ -1333,6 +1276,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
                 return 1;
             }
         }
+	*/
         if( @:fndOperator(q,"algebra","select")@ ){
             if( p->argv[0]== q->argv[1]){
 				setModuleId(p, putName("algebra",7));
@@ -1346,7 +1290,8 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
                 return 1;
             }
         }
-    } else
+    }/* OUT OF DATE
+	 else
     if( @:fndOperator(p,"algebra","semijoin")@ ){
         if( @:fndOperator(q,"algebra","select")@ ){
             if( p->argv[0]== q->argv[1]){
@@ -1361,6 +1306,7 @@ int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
             }
         }
     }
+	*/
     return 0;
 }
 int SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
