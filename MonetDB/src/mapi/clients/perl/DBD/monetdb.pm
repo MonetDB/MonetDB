@@ -494,7 +494,7 @@ sub STORE {
 
     if ($key eq 'AutoCommit') {
         if ($value != ($dbh->{$key} || 0) && $dbh->{monetdb_language} eq 'sql') {
-            $dbh->do("set auto_commit = $value")
+            $dbh->do('set auto_commit = ' . ( $value ? 'true' : 'false') )
                 or return $dbh->set_err($dbh->err, $dbh->errstr);
             $dbh->{$key} = $value;
         }
