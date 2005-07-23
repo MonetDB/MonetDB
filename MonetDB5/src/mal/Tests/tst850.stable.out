@@ -36,7 +36,7 @@ catch MALexception;	# 11  (MALexception:str) jump 12
 exit MALexception;	# 12  (MALexception:str)
     redo ($23,$24,$25):= chopper.hasMoreElements(t);	# 13 CHPbunHasMoreElements ($23:lng)($24:void)($25:str)<-(t:bat[:void,:str]) jump 9
 exit ($23,$24,$25);	# 14  ($23:lng)($24:void)($25:str)
-    b := $19;	# 15  (b:bat[:void,:bit])<-($19:bat[:void,:bit])
+    b:bat[:void,:bit]  := $19;	# 15  (b:bat[:void,:bit])<-($19:bat[:void,:bit])
     bat.setSequenceBase(b,0@0);	# 16 BKCsetSequenceBase ($17:bat[:void,:bit])<-(b:bat[:void,:bit])($7:oid)
     io.print(b);	# 17 IOprint_val ($18:int)<-(b:bat[:void,:bit])
 end main;	# 18  

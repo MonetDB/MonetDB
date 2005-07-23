@@ -20,7 +20,7 @@ stdout of test 'tst380` in directory 'src/mal` itself:
 #	return z;
 #end get;
 function user.get(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (get:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
-    b := bbp.nme();	# 1  unknown (b:bat[:int,:str])
+    b:bat[:int,:str]  := bbp.nme();	# 1  unknown (b:bat[:int,:str])
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:str])<-(br:bat[:any$1,:any$2])(b:bat[:int,:str])
     bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:str])<-(z:bat[:any,:str])(title:str)
     return z;	# 4  (z:bat[:any,:str])
@@ -32,7 +32,7 @@ end get;	# 5
 #	return z;
 #end getInt;
 function user.getInt(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (getInt:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
-    b := bbp.nme();	# 1  unknown (b:bat[:int,:int])
+    b:bat[:int,:int]  := bbp.nme();	# 1  unknown (b:bat[:int,:int])
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:int])<-(br:bat[:any$1,:any$2])(b:bat[:int,:int])
     bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:int])<-(z:bat[:any,:int])(title:str)
     return z;	# 4  (z:bat[:any,:int])
@@ -44,7 +44,7 @@ end getInt;	# 5
 #	return z;
 #end getLng;
 function user.getLng(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (getLng:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
-    b := bbp.nme();	# 1  unknown (b:bat[:int,:lng])
+    b:bat[:int,:lng]  := bbp.nme();	# 1  unknown (b:bat[:int,:lng])
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:lng])<-(br:bat[:any$1,:any$2])(b:bat[:int,:lng])
     bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:lng])<-(z:bat[:any,:lng])(title:str)
     return z;	# 4  (z:bat[:any,:lng])

@@ -60,9 +60,9 @@ function user.main():int;	# 0  (main:int)
     io.print(t);	# 17 IOprint_val ($34:int)<-(t:bat[:int,:url])
     rb := bbp.new(:int,:url);	# 18 CMDBATnew (rb:bat[:int,:url])<-($36:int)($3:url)
     io.print("start loop");	# 19 IOprint_val ($37:int)<-($38:str)
-barrier (mloop,h,B2):= chopper.newIterator(t);	# 20 CHPbunIterator (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 23
+barrier (mloop:lng ,h:int ,B2:url ):= chopper.newIterator(t);	# 20 CHPbunIterator (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 23
     io.print(B2);	# 21 IOprint_val ($42:int)<-(B2:url)
-    redo (mloop,h,B2):= chopper.hasMoreElements(t);	# 22 CHPbunHasMoreElements (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 21
+    redo (mloop:lng ,h:int ,B2:url ):= chopper.hasMoreElements(t);	# 22 CHPbunHasMoreElements (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 21
 exit mloop;	# 23  (mloop:lng)
 end main;	# 24  
 [ "build a table finished" ]

@@ -41,7 +41,7 @@ catch MALexception;	# 13  (MALexception:str) jump 14
 exit MALexception;	# 14  (MALexception:str)
     redo ($18,$19,$20):= chopper.hasMoreElements(b);	# 15 CHPbunHasMoreElements ($18:lng)($19:lng)($20:lng)<-(b:bat[:lng,:lng]) jump 10
 exit ($18,$19,$20);	# 16  ($18:lng)($19:lng)($20:lng)
-    x := $15;	# 17  (x:bat[:lng,:lng])<-($15:bat[:lng,:lng])
+    x:bat[:lng,:lng]  := $15;	# 17  (x:bat[:lng,:lng])<-($15:bat[:lng,:lng])
     io.print(x);	# 18 IOprint_val ($14:int)<-(x:bat[:lng,:lng])
 end main;	# 19  
 #-----------------#

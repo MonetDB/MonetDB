@@ -642,7 +642,7 @@ catch MALexception;	# 58  (MALexception:str) jump 59
 exit MALexception;	# 59  (MALexception:str)
     redo ($1026,$1027,$1028):= chopper.hasMoreElements(rule_bat);	# 60 CHPbunHasMoreElements ($1026:lng)($1027:str)($1028:rule)<-(rule_bat:bat[:str,:rule]) jump 56
 exit ($1026,$1027,$1028);	# 61  ($1026:lng)($1027:str)($1028:rule)
-    na_a := $1022;	# 62  (na_a:bat[:str,:int])<-($1022:bat[:str,:int])
+    na_a:bat[:str,:int]  := $1022;	# 62  (na_a:bat[:str,:int])<-($1022:bat[:str,:int])
     oa_a := bat.setColumn(na_a,"month");	# 63 BKCsetColumn (oa_a:bat[:str,:int])<-(na_a:bat[:str,:int])($120:str)
 #      [month](rule_bat).bat.setColumn("month"), 	# 64  ($122:str)
     $1036 := bbp.new(:str,:int);	# 65 CMDBATnew ($1036:bat[:str,:int])<-($1023:str)($1024:int)
@@ -653,7 +653,7 @@ catch MALexception;	# 69  (MALexception:str) jump 70
 exit MALexception;	# 70  (MALexception:str)
     redo ($1038,$1039,$1040):= chopper.hasMoreElements(rule_bat);	# 71 CHPbunHasMoreElements ($1038:lng)($1039:str)($1040:rule)<-(rule_bat:bat[:str,:rule]) jump 67
 exit ($1038,$1039,$1040);	# 72  ($1038:lng)($1039:str)($1040:rule)
-    pa_a := $1036;	# 73  (pa_a:bat[:str,:int])<-($1036:bat[:str,:int])
+    pa_a:bat[:str,:int]  := $1036;	# 73  (pa_a:bat[:str,:int])<-($1036:bat[:str,:int])
     qa_a := bat.setColumn(pa_a,"weekday");	# 74 BKCsetColumn (qa_a:bat[:str,:int])<-(pa_a:bat[:str,:int])($126:str)
 #      [weekday](rule_bat).bat.setColumn("weekday"), 	# 75  ($128:str)
     $1048 := bbp.new(:str,:int);	# 76 CMDBATnew ($1048:bat[:str,:int])<-($1023:str)($1024:int)
@@ -664,7 +664,7 @@ catch MALexception;	# 80  (MALexception:str) jump 81
 exit MALexception;	# 81  (MALexception:str)
     redo ($1050,$1051,$1052):= chopper.hasMoreElements(rule_bat);	# 82 CHPbunHasMoreElements ($1050:lng)($1051:str)($1052:rule)<-(rule_bat:bat[:str,:rule]) jump 78
 exit ($1050,$1051,$1052);	# 83  ($1050:lng)($1051:str)($1052:rule)
-    ra_a := $1048;	# 84  (ra_a:bat[:str,:int])<-($1048:bat[:str,:int])
+    ra_a:bat[:str,:int]  := $1048;	# 84  (ra_a:bat[:str,:int])<-($1048:bat[:str,:int])
     sa_a := bat.setColumn(ra_a,"day");	# 85 BKCsetColumn (sa_a:bat[:str,:int])<-(ra_a:bat[:str,:int])($132:str)
 #      [day](rule_bat).bat.setColumn("day"), 	# 86  ($134:str)
     $1060 := bbp.new(:str,:int);	# 87 CMDBATnew ($1060:bat[:str,:int])<-($1023:str)($1024:int)
@@ -675,7 +675,7 @@ catch MALexception;	# 91  (MALexception:str) jump 92
 exit MALexception;	# 92  (MALexception:str)
     redo ($1062,$1063,$1064):= chopper.hasMoreElements(rule_bat);	# 93 CHPbunHasMoreElements ($1062:lng)($1063:str)($1064:rule)<-(rule_bat:bat[:str,:rule]) jump 89
 exit ($1062,$1063,$1064);	# 94  ($1062:lng)($1063:str)($1064:rule)
-    ta_a := $1060;	# 95  (ta_a:bat[:str,:int])<-($1060:bat[:str,:int])
+    ta_a:bat[:str,:int]  := $1060;	# 95  (ta_a:bat[:str,:int])<-($1060:bat[:str,:int])
     ua_a := bat.setColumn(ta_a,"minutes");	# 96 BKCsetColumn (ua_a:bat[:str,:int])<-(ta_a:bat[:str,:int])($138:str)
     io.print("rule_bat,na_a,pa_a,ra_a,ta_a");	# 97 IOprint_val ($139:int)<-($140:str)
     va_a := io.print(rule_bat,na_a,pa_a,ra_a,ta_a);	# 98 IOtable (va_a:int)<-(rule_bat:bat[:str,:rule])(na_a:bat[:str,:int])(pa_a:bat[:str,:int])(ra_a:bat[:str,:int])(ta_a:bat[:str,:int])
@@ -690,7 +690,7 @@ catch MALexception;	# 106  (MALexception:str) jump 107
 exit MALexception;	# 107  (MALexception:str)
     redo ($1074,$1075,$1076):= chopper.hasMoreElements(rule_bat);	# 108 CHPbunHasMoreElements ($1074:lng)($1075:str)($1076:rule)<-(rule_bat:bat[:str,:rule]) jump 104
 exit ($1074,$1075,$1076);	# 109  ($1074:lng)($1075:str)($1076:rule)
-    xa_a := $1072;	# 110  (xa_a:bat[:str,:date])<-($1072:bat[:str,:date])
+    xa_a:bat[:str,:date]  := $1072;	# 110  (xa_a:bat[:str,:date])<-($1072:bat[:str,:date])
     ya_a := bat.setColumn(xa_a,"2001");	# 111 BKCsetColumn (ya_a:bat[:str,:date])<-(xa_a:bat[:str,:date])($150:str)
 #      [compute](rule_bat, 2001).bat.setColumn("2001"), 	# 112  ($152:str)
     $1084 := bbp.new(:str,:date);	# 113 CMDBATnew ($1084:bat[:str,:date])<-($1023:str)($486:date)
@@ -701,7 +701,7 @@ catch MALexception;	# 117  (MALexception:str) jump 118
 exit MALexception;	# 118  (MALexception:str)
     redo ($1086,$1087,$1088):= chopper.hasMoreElements(rule_bat);	# 119 CHPbunHasMoreElements ($1086:lng)($1087:str)($1088:rule)<-(rule_bat:bat[:str,:rule]) jump 115
 exit ($1086,$1087,$1088);	# 120  ($1086:lng)($1087:str)($1088:rule)
-    ab_a := $1084;	# 121  (ab_a:bat[:str,:date])<-($1084:bat[:str,:date])
+    ab_a:bat[:str,:date]  := $1084;	# 121  (ab_a:bat[:str,:date])<-($1084:bat[:str,:date])
     $1096 := bbp.new(:str,:int);	# 122 CMDBATnew ($1096:bat[:str,:int])<-($1023:str)($1024:int)
 barrier ($1098,$1099,$1100):= chopper.newIterator(ab_a);	# 123 CHPbunIterator ($1098:lng)($1099:str)($1100:date)<-(ab_a:bat[:str,:date]) jump 129
     $1102 := mtime.dayofweek($1100);	# 124 MTIMEdate_extract_dayofweek ($1102:int)<-($1100:date)
@@ -710,7 +710,7 @@ catch MALexception;	# 126  (MALexception:str) jump 127
 exit MALexception;	# 127  (MALexception:str)
     redo ($1098,$1099,$1100):= chopper.hasMoreElements(ab_a);	# 128 CHPbunHasMoreElements ($1098:lng)($1099:str)($1100:date)<-(ab_a:bat[:str,:date]) jump 124
 exit ($1098,$1099,$1100);	# 129  ($1098:lng)($1099:str)($1100:date)
-    bb_a := $1096;	# 130  (bb_a:bat[:str,:int])<-($1096:bat[:str,:int])
+    bb_a:bat[:str,:int]  := $1096;	# 130  (bb_a:bat[:str,:int])<-($1096:bat[:str,:int])
     $1108 := bbp.new(:str,:str);	# 131 CMDBATnew ($1108:bat[:str,:str])<-($1023:str)($1023:str)
 barrier ($1110,$1111,$1112):= chopper.newIterator(bb_a);	# 132 CHPbunIterator ($1110:lng)($1111:str)($1112:int)<-(bb_a:bat[:str,:int]) jump 138
     $1114 := mtime.dayname($1112);	# 133 MTIMEday_to_str ($1114:str)<-($1112:int)
@@ -719,7 +719,7 @@ catch MALexception;	# 135  (MALexception:str) jump 136
 exit MALexception;	# 136  (MALexception:str)
     redo ($1110,$1111,$1112):= chopper.hasMoreElements(bb_a);	# 137 CHPbunHasMoreElements ($1110:lng)($1111:str)($1112:int)<-(bb_a:bat[:str,:int]) jump 133
 exit ($1110,$1111,$1112);	# 138  ($1110:lng)($1111:str)($1112:int)
-    cb_a := $1108;	# 139  (cb_a:bat[:str,:str])<-($1108:bat[:str,:str])
+    cb_a:bat[:str,:str]  := $1108;	# 139  (cb_a:bat[:str,:str])<-($1108:bat[:str,:str])
     bat.setColumn(cb_a,"2001");	# 140 BKCsetColumn ($158:bat[:str,:str])<-(cb_a:bat[:str,:str])($150:str)
 #      [dayname]([dayofweek]([compute](rule_bat, 2001))).bat.setColumn("2001"), 	# 141  ($160:str)
     $1120 := bbp.new(:str,:date);	# 142 CMDBATnew ($1120:bat[:str,:date])<-($1023:str)($486:date)
@@ -730,7 +730,7 @@ catch MALexception;	# 146  (MALexception:str) jump 147
 exit MALexception;	# 147  (MALexception:str)
     redo ($1122,$1123,$1124):= chopper.hasMoreElements(rule_bat);	# 148 CHPbunHasMoreElements ($1122:lng)($1123:str)($1124:rule)<-(rule_bat:bat[:str,:rule]) jump 144
 exit ($1122,$1123,$1124);	# 149  ($1122:lng)($1123:str)($1124:rule)
-    eb_a := $1120;	# 150  (eb_a:bat[:str,:date])<-($1120:bat[:str,:date])
+    eb_a:bat[:str,:date]  := $1120;	# 150  (eb_a:bat[:str,:date])<-($1120:bat[:str,:date])
     bat.setColumn(eb_a,"1999");	# 151 BKCsetColumn ($163:bat[:str,:date])<-(eb_a:bat[:str,:date])($164:str)
 #      [compute](rule_bat, 1999).bat.setColumn("1999"), 	# 152  ($166:str)
     $1132 := bbp.new(:str,:date);	# 153 CMDBATnew ($1132:bat[:str,:date])<-($1023:str)($486:date)
@@ -741,7 +741,7 @@ catch MALexception;	# 157  (MALexception:str) jump 158
 exit MALexception;	# 158  (MALexception:str)
     redo ($1134,$1135,$1136):= chopper.hasMoreElements(rule_bat);	# 159 CHPbunHasMoreElements ($1134:lng)($1135:str)($1136:rule)<-(rule_bat:bat[:str,:rule]) jump 155
 exit ($1134,$1135,$1136);	# 160  ($1134:lng)($1135:str)($1136:rule)
-    gb_a := $1132;	# 161  (gb_a:bat[:str,:date])<-($1132:bat[:str,:date])
+    gb_a:bat[:str,:date]  := $1132;	# 161  (gb_a:bat[:str,:date])<-($1132:bat[:str,:date])
     $1144 := bbp.new(:str,:int);	# 162 CMDBATnew ($1144:bat[:str,:int])<-($1023:str)($1024:int)
 barrier ($1146,$1147,$1148):= chopper.newIterator(gb_a);	# 163 CHPbunIterator ($1146:lng)($1147:str)($1148:date)<-(gb_a:bat[:str,:date]) jump 169
     $1150 := mtime.dayofweek($1148);	# 164 MTIMEdate_extract_dayofweek ($1150:int)<-($1148:date)
@@ -750,7 +750,7 @@ catch MALexception;	# 166  (MALexception:str) jump 167
 exit MALexception;	# 167  (MALexception:str)
     redo ($1146,$1147,$1148):= chopper.hasMoreElements(gb_a);	# 168 CHPbunHasMoreElements ($1146:lng)($1147:str)($1148:date)<-(gb_a:bat[:str,:date]) jump 164
 exit ($1146,$1147,$1148);	# 169  ($1146:lng)($1147:str)($1148:date)
-    hb_a := $1144;	# 170  (hb_a:bat[:str,:int])<-($1144:bat[:str,:int])
+    hb_a:bat[:str,:int]  := $1144;	# 170  (hb_a:bat[:str,:int])<-($1144:bat[:str,:int])
     $1156 := bbp.new(:str,:str);	# 171 CMDBATnew ($1156:bat[:str,:str])<-($1023:str)($1023:str)
 barrier ($1158,$1159,$1160):= chopper.newIterator(hb_a);	# 172 CHPbunIterator ($1158:lng)($1159:str)($1160:int)<-(hb_a:bat[:str,:int]) jump 178
     $1162 := mtime.dayname($1160);	# 173 MTIMEday_to_str ($1162:str)<-($1160:int)
@@ -759,7 +759,7 @@ catch MALexception;	# 175  (MALexception:str) jump 176
 exit MALexception;	# 176  (MALexception:str)
     redo ($1158,$1159,$1160):= chopper.hasMoreElements(hb_a);	# 177 CHPbunHasMoreElements ($1158:lng)($1159:str)($1160:int)<-(hb_a:bat[:str,:int]) jump 173
 exit ($1158,$1159,$1160);	# 178  ($1158:lng)($1159:str)($1160:int)
-    ib_a := $1156;	# 179  (ib_a:bat[:str,:str])<-($1156:bat[:str,:str])
+    ib_a:bat[:str,:str]  := $1156;	# 179  (ib_a:bat[:str,:str])<-($1156:bat[:str,:str])
     bat.setColumn(ib_a,"1999");	# 180 BKCsetColumn ($170:bat[:str,:str])<-(ib_a:bat[:str,:str])($164:str)
 #      [dayname]([dayofweek]([compute](rule_bat, 1999))).bat.setColumn("1999"), 	# 181  ($172:str)
     $1168 := bbp.new(:str,:date);	# 182 CMDBATnew ($1168:bat[:str,:date])<-($1023:str)($486:date)
@@ -770,7 +770,7 @@ catch MALexception;	# 186  (MALexception:str) jump 187
 exit MALexception;	# 187  (MALexception:str)
     redo ($1170,$1171,$1172):= chopper.hasMoreElements(rule_bat);	# 188 CHPbunHasMoreElements ($1170:lng)($1171:str)($1172:rule)<-(rule_bat:bat[:str,:rule]) jump 184
 exit ($1170,$1171,$1172);	# 189  ($1170:lng)($1171:str)($1172:rule)
-    kb_a := $1168;	# 190  (kb_a:bat[:str,:date])<-($1168:bat[:str,:date])
+    kb_a:bat[:str,:date]  := $1168;	# 190  (kb_a:bat[:str,:date])<-($1168:bat[:str,:date])
     bat.setColumn(kb_a,"1992");	# 191 BKCsetColumn ($175:bat[:str,:date])<-(kb_a:bat[:str,:date])($176:str)
 #      [compute](rule_bat, 1992).bat.setColumn("1992"), 	# 192  ($178:str)
     $1180 := bbp.new(:str,:date);	# 193 CMDBATnew ($1180:bat[:str,:date])<-($1023:str)($486:date)
@@ -781,7 +781,7 @@ catch MALexception;	# 197  (MALexception:str) jump 198
 exit MALexception;	# 198  (MALexception:str)
     redo ($1182,$1183,$1184):= chopper.hasMoreElements(rule_bat);	# 199 CHPbunHasMoreElements ($1182:lng)($1183:str)($1184:rule)<-(rule_bat:bat[:str,:rule]) jump 195
 exit ($1182,$1183,$1184);	# 200  ($1182:lng)($1183:str)($1184:rule)
-    mb_a := $1180;	# 201  (mb_a:bat[:str,:date])<-($1180:bat[:str,:date])
+    mb_a:bat[:str,:date]  := $1180;	# 201  (mb_a:bat[:str,:date])<-($1180:bat[:str,:date])
     $1192 := bbp.new(:str,:int);	# 202 CMDBATnew ($1192:bat[:str,:int])<-($1023:str)($1024:int)
 barrier ($1194,$1195,$1196):= chopper.newIterator(mb_a);	# 203 CHPbunIterator ($1194:lng)($1195:str)($1196:date)<-(mb_a:bat[:str,:date]) jump 209
     $1198 := mtime.dayofweek($1196);	# 204 MTIMEdate_extract_dayofweek ($1198:int)<-($1196:date)
@@ -790,7 +790,7 @@ catch MALexception;	# 206  (MALexception:str) jump 207
 exit MALexception;	# 207  (MALexception:str)
     redo ($1194,$1195,$1196):= chopper.hasMoreElements(mb_a);	# 208 CHPbunHasMoreElements ($1194:lng)($1195:str)($1196:date)<-(mb_a:bat[:str,:date]) jump 204
 exit ($1194,$1195,$1196);	# 209  ($1194:lng)($1195:str)($1196:date)
-    nb_a := $1192;	# 210  (nb_a:bat[:str,:int])<-($1192:bat[:str,:int])
+    nb_a:bat[:str,:int]  := $1192;	# 210  (nb_a:bat[:str,:int])<-($1192:bat[:str,:int])
     $1204 := bbp.new(:str,:str);	# 211 CMDBATnew ($1204:bat[:str,:str])<-($1023:str)($1023:str)
 barrier ($1206,$1207,$1208):= chopper.newIterator(nb_a);	# 212 CHPbunIterator ($1206:lng)($1207:str)($1208:int)<-(nb_a:bat[:str,:int]) jump 218
     $1210 := mtime.dayname($1208);	# 213 MTIMEday_to_str ($1210:str)<-($1208:int)
@@ -799,7 +799,7 @@ catch MALexception;	# 215  (MALexception:str) jump 216
 exit MALexception;	# 216  (MALexception:str)
     redo ($1206,$1207,$1208):= chopper.hasMoreElements(nb_a);	# 217 CHPbunHasMoreElements ($1206:lng)($1207:str)($1208:int)<-(nb_a:bat[:str,:int]) jump 213
 exit ($1206,$1207,$1208);	# 218  ($1206:lng)($1207:str)($1208:int)
-    ob_a := $1204;	# 219  (ob_a:bat[:str,:str])<-($1204:bat[:str,:str])
+    ob_a:bat[:str,:str]  := $1204;	# 219  (ob_a:bat[:str,:str])<-($1204:bat[:str,:str])
     bat.setColumn(ob_a,"1992");	# 220 BKCsetColumn ($183:bat[:str,:str])<-(ob_a:bat[:str,:str])($176:str)
     io.print("rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a");	# 221 IOprint_val ($184:int)<-($185:str)
     qb_a := io.print(rule_bat,xa_a,cb_a,eb_a,ib_a,kb_a,ob_a);	# 222 IOtable (qb_a:int)<-(rule_bat:bat[:str,:rule])(xa_a:bat[:str,:date])(cb_a:bat[:str,:str])(eb_a:bat[:str,:date])(ib_a:bat[:str,:str])(kb_a:bat[:str,:date])(ob_a:bat[:str,:str])
@@ -814,7 +814,7 @@ catch MALexception;	# 230  (MALexception:str) jump 231
 exit MALexception;	# 231  (MALexception:str)
     redo ($1218,$1219,$1220):= chopper.hasMoreElements(rule_bat);	# 232 CHPbunHasMoreElements ($1218:lng)($1219:str)($1220:rule)<-(rule_bat:bat[:str,:rule]) jump 228
 exit ($1218,$1219,$1220);	# 233  ($1218:lng)($1219:str)($1220:rule)
-    sb_a := $1216;	# 234  (sb_a:bat[:str,:date])<-($1216:bat[:str,:date])
+    sb_a:bat[:str,:date]  := $1216;	# 234  (sb_a:bat[:str,:date])<-($1216:bat[:str,:date])
     tb_a := bat.setColumn(sb_a,"1572");	# 235 BKCsetColumn (tb_a:bat[:str,:date])<-(sb_a:bat[:str,:date])($196:str)
 #      [compute](rule_bat, 1572).bat.setColumn("1572"), 	# 236  ($198:str)
     $1228 := bbp.new(:str,:date);	# 237 CMDBATnew ($1228:bat[:str,:date])<-($1023:str)($486:date)
@@ -825,7 +825,7 @@ catch MALexception;	# 241  (MALexception:str) jump 242
 exit MALexception;	# 242  (MALexception:str)
     redo ($1230,$1231,$1232):= chopper.hasMoreElements(rule_bat);	# 243 CHPbunHasMoreElements ($1230:lng)($1231:str)($1232:rule)<-(rule_bat:bat[:str,:rule]) jump 239
 exit ($1230,$1231,$1232);	# 244  ($1230:lng)($1231:str)($1232:rule)
-    ub_a := $1228;	# 245  (ub_a:bat[:str,:date])<-($1228:bat[:str,:date])
+    ub_a:bat[:str,:date]  := $1228;	# 245  (ub_a:bat[:str,:date])<-($1228:bat[:str,:date])
     $1240 := bbp.new(:str,:int);	# 246 CMDBATnew ($1240:bat[:str,:int])<-($1023:str)($1024:int)
 barrier ($1242,$1243,$1244):= chopper.newIterator(ub_a);	# 247 CHPbunIterator ($1242:lng)($1243:str)($1244:date)<-(ub_a:bat[:str,:date]) jump 253
     $1246 := mtime.dayofweek($1244);	# 248 MTIMEdate_extract_dayofweek ($1246:int)<-($1244:date)
@@ -834,7 +834,7 @@ catch MALexception;	# 250  (MALexception:str) jump 251
 exit MALexception;	# 251  (MALexception:str)
     redo ($1242,$1243,$1244):= chopper.hasMoreElements(ub_a);	# 252 CHPbunHasMoreElements ($1242:lng)($1243:str)($1244:date)<-(ub_a:bat[:str,:date]) jump 248
 exit ($1242,$1243,$1244);	# 253  ($1242:lng)($1243:str)($1244:date)
-    vb_a := $1240;	# 254  (vb_a:bat[:str,:int])<-($1240:bat[:str,:int])
+    vb_a:bat[:str,:int]  := $1240;	# 254  (vb_a:bat[:str,:int])<-($1240:bat[:str,:int])
     $1252 := bbp.new(:str,:str);	# 255 CMDBATnew ($1252:bat[:str,:str])<-($1023:str)($1023:str)
 barrier ($1254,$1255,$1256):= chopper.newIterator(vb_a);	# 256 CHPbunIterator ($1254:lng)($1255:str)($1256:int)<-(vb_a:bat[:str,:int]) jump 262
     $1258 := mtime.dayname($1256);	# 257 MTIMEday_to_str ($1258:str)<-($1256:int)
@@ -843,7 +843,7 @@ catch MALexception;	# 259  (MALexception:str) jump 260
 exit MALexception;	# 260  (MALexception:str)
     redo ($1254,$1255,$1256):= chopper.hasMoreElements(vb_a);	# 261 CHPbunHasMoreElements ($1254:lng)($1255:str)($1256:int)<-(vb_a:bat[:str,:int]) jump 257
 exit ($1254,$1255,$1256);	# 262  ($1254:lng)($1255:str)($1256:int)
-    wb_a := $1252;	# 263  (wb_a:bat[:str,:str])<-($1252:bat[:str,:str])
+    wb_a:bat[:str,:str]  := $1252;	# 263  (wb_a:bat[:str,:str])<-($1252:bat[:str,:str])
     xb_a := bat.setColumn(wb_a,"1572");	# 264 BKCsetColumn (xb_a:bat[:str,:str])<-(wb_a:bat[:str,:str])($196:str)
 #      [dayname]([dayofweek]([compute](rule_bat, 1572))).bat.setColumn("1572"), 	# 265  ($206:str)
     $1264 := bbp.new(:str,:date);	# 266 CMDBATnew ($1264:bat[:str,:date])<-($1023:str)($486:date)
@@ -854,7 +854,7 @@ catch MALexception;	# 270  (MALexception:str) jump 271
 exit MALexception;	# 271  (MALexception:str)
     redo ($1266,$1267,$1268):= chopper.hasMoreElements(rule_bat);	# 272 CHPbunHasMoreElements ($1266:lng)($1267:str)($1268:rule)<-(rule_bat:bat[:str,:rule]) jump 268
 exit ($1266,$1267,$1268);	# 273  ($1266:lng)($1267:str)($1268:rule)
-    yb_a := $1264;	# 274  (yb_a:bat[:str,:date])<-($1264:bat[:str,:date])
+    yb_a:bat[:str,:date]  := $1264;	# 274  (yb_a:bat[:str,:date])<-($1264:bat[:str,:date])
     ac_a := bat.setColumn(yb_a,"1");	# 275 BKCsetColumn (ac_a:bat[:str,:date])<-(yb_a:bat[:str,:date])($210:str)
 #      [compute](rule_bat, 1).bat.setColumn("1"), 	# 276  ($212:str)
     $1276 := bbp.new(:str,:date);	# 277 CMDBATnew ($1276:bat[:str,:date])<-($1023:str)($486:date)
@@ -865,7 +865,7 @@ catch MALexception;	# 281  (MALexception:str) jump 282
 exit MALexception;	# 282  (MALexception:str)
     redo ($1278,$1279,$1280):= chopper.hasMoreElements(rule_bat);	# 283 CHPbunHasMoreElements ($1278:lng)($1279:str)($1280:rule)<-(rule_bat:bat[:str,:rule]) jump 279
 exit ($1278,$1279,$1280);	# 284  ($1278:lng)($1279:str)($1280:rule)
-    bc_a := $1276;	# 285  (bc_a:bat[:str,:date])<-($1276:bat[:str,:date])
+    bc_a:bat[:str,:date]  := $1276;	# 285  (bc_a:bat[:str,:date])<-($1276:bat[:str,:date])
     $1288 := bbp.new(:str,:int);	# 286 CMDBATnew ($1288:bat[:str,:int])<-($1023:str)($1024:int)
 barrier ($1290,$1291,$1292):= chopper.newIterator(bc_a);	# 287 CHPbunIterator ($1290:lng)($1291:str)($1292:date)<-(bc_a:bat[:str,:date]) jump 293
     $1294 := mtime.dayofweek($1292);	# 288 MTIMEdate_extract_dayofweek ($1294:int)<-($1292:date)
@@ -874,7 +874,7 @@ catch MALexception;	# 290  (MALexception:str) jump 291
 exit MALexception;	# 291  (MALexception:str)
     redo ($1290,$1291,$1292):= chopper.hasMoreElements(bc_a);	# 292 CHPbunHasMoreElements ($1290:lng)($1291:str)($1292:date)<-(bc_a:bat[:str,:date]) jump 288
 exit ($1290,$1291,$1292);	# 293  ($1290:lng)($1291:str)($1292:date)
-    cc_a := $1288;	# 294  (cc_a:bat[:str,:int])<-($1288:bat[:str,:int])
+    cc_a:bat[:str,:int]  := $1288;	# 294  (cc_a:bat[:str,:int])<-($1288:bat[:str,:int])
     $1300 := bbp.new(:str,:str);	# 295 CMDBATnew ($1300:bat[:str,:str])<-($1023:str)($1023:str)
 barrier ($1302,$1303,$1304):= chopper.newIterator(cc_a);	# 296 CHPbunIterator ($1302:lng)($1303:str)($1304:int)<-(cc_a:bat[:str,:int]) jump 302
     $1306 := mtime.dayname($1304);	# 297 MTIMEday_to_str ($1306:str)<-($1304:int)
@@ -883,7 +883,7 @@ catch MALexception;	# 299  (MALexception:str) jump 300
 exit MALexception;	# 300  (MALexception:str)
     redo ($1302,$1303,$1304):= chopper.hasMoreElements(cc_a);	# 301 CHPbunHasMoreElements ($1302:lng)($1303:str)($1304:int)<-(cc_a:bat[:str,:int]) jump 297
 exit ($1302,$1303,$1304);	# 302  ($1302:lng)($1303:str)($1304:int)
-    dc_a := $1300;	# 303  (dc_a:bat[:str,:str])<-($1300:bat[:str,:str])
+    dc_a:bat[:str,:str]  := $1300;	# 303  (dc_a:bat[:str,:str])<-($1300:bat[:str,:str])
     ec_a := bat.setColumn(dc_a,"1");	# 304 BKCsetColumn (ec_a:bat[:str,:str])<-(dc_a:bat[:str,:str])($210:str)
 #      [dayname]([dayofweek]([compute](rule_bat, 1))).bat.setColumn("1"), 	# 305  ($219:str)
     $1312 := bbp.new(:str,:date);	# 306 CMDBATnew ($1312:bat[:str,:date])<-($1023:str)($486:date)
@@ -894,7 +894,7 @@ catch MALexception;	# 310  (MALexception:str) jump 311
 exit MALexception;	# 311  (MALexception:str)
     redo ($1314,$1315,$1316):= chopper.hasMoreElements(rule_bat);	# 312 CHPbunHasMoreElements ($1314:lng)($1315:str)($1316:rule)<-(rule_bat:bat[:str,:rule]) jump 308
 exit ($1314,$1315,$1316);	# 313  ($1314:lng)($1315:str)($1316:rule)
-    fc_a := $1312;	# 314  (fc_a:bat[:str,:date])<-($1312:bat[:str,:date])
+    fc_a:bat[:str,:date]  := $1312;	# 314  (fc_a:bat[:str,:date])<-($1312:bat[:str,:date])
     gc_a := bat.setColumn(fc_a,"-2000");	# 315 BKCsetColumn (gc_a:bat[:str,:date])<-(fc_a:bat[:str,:date])($223:str)
 #      [compute](rule_bat, -2000).bat.setColumn("-2000"), 	# 316  ($225:str)
     $1324 := bbp.new(:str,:date);	# 317 CMDBATnew ($1324:bat[:str,:date])<-($1023:str)($486:date)
@@ -905,7 +905,7 @@ catch MALexception;	# 321  (MALexception:str) jump 322
 exit MALexception;	# 322  (MALexception:str)
     redo ($1326,$1327,$1328):= chopper.hasMoreElements(rule_bat);	# 323 CHPbunHasMoreElements ($1326:lng)($1327:str)($1328:rule)<-(rule_bat:bat[:str,:rule]) jump 319
 exit ($1326,$1327,$1328);	# 324  ($1326:lng)($1327:str)($1328:rule)
-    hc_a := $1324;	# 325  (hc_a:bat[:str,:date])<-($1324:bat[:str,:date])
+    hc_a:bat[:str,:date]  := $1324;	# 325  (hc_a:bat[:str,:date])<-($1324:bat[:str,:date])
     $1336 := bbp.new(:str,:int);	# 326 CMDBATnew ($1336:bat[:str,:int])<-($1023:str)($1024:int)
 barrier ($1338,$1339,$1340):= chopper.newIterator(hc_a);	# 327 CHPbunIterator ($1338:lng)($1339:str)($1340:date)<-(hc_a:bat[:str,:date]) jump 333
     $1342 := mtime.dayofweek($1340);	# 328 MTIMEdate_extract_dayofweek ($1342:int)<-($1340:date)
@@ -914,7 +914,7 @@ catch MALexception;	# 330  (MALexception:str) jump 331
 exit MALexception;	# 331  (MALexception:str)
     redo ($1338,$1339,$1340):= chopper.hasMoreElements(hc_a);	# 332 CHPbunHasMoreElements ($1338:lng)($1339:str)($1340:date)<-(hc_a:bat[:str,:date]) jump 328
 exit ($1338,$1339,$1340);	# 333  ($1338:lng)($1339:str)($1340:date)
-    ic_a := $1336;	# 334  (ic_a:bat[:str,:int])<-($1336:bat[:str,:int])
+    ic_a:bat[:str,:int]  := $1336;	# 334  (ic_a:bat[:str,:int])<-($1336:bat[:str,:int])
     $1348 := bbp.new(:str,:str);	# 335 CMDBATnew ($1348:bat[:str,:str])<-($1023:str)($1023:str)
 barrier ($1350,$1351,$1352):= chopper.newIterator(ic_a);	# 336 CHPbunIterator ($1350:lng)($1351:str)($1352:int)<-(ic_a:bat[:str,:int]) jump 342
     $1354 := mtime.dayname($1352);	# 337 MTIMEday_to_str ($1354:str)<-($1352:int)
@@ -923,7 +923,7 @@ catch MALexception;	# 339  (MALexception:str) jump 340
 exit MALexception;	# 340  (MALexception:str)
     redo ($1350,$1351,$1352):= chopper.hasMoreElements(ic_a);	# 341 CHPbunHasMoreElements ($1350:lng)($1351:str)($1352:int)<-(ic_a:bat[:str,:int]) jump 337
 exit ($1350,$1351,$1352);	# 342  ($1350:lng)($1351:str)($1352:int)
-    jc_a := $1348;	# 343  (jc_a:bat[:str,:str])<-($1348:bat[:str,:str])
+    jc_a:bat[:str,:str]  := $1348;	# 343  (jc_a:bat[:str,:str])<-($1348:bat[:str,:str])
     kc_a := bat.setColumn(jc_a,"-2000");	# 344 BKCsetColumn (kc_a:bat[:str,:str])<-(jc_a:bat[:str,:str])($223:str)
     io.print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");	# 345 IOprint_val ($230:int)<-($231:str)
     lc_a := io.print(rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a);	# 346 IOtable (lc_a:int)<-(rule_bat:bat[:str,:rule])(sb_a:bat[:str,:date])(wb_a:bat[:str,:str])(yb_a:bat[:str,:date])(dc_a:bat[:str,:str])(fc_a:bat[:str,:date])(jc_a:bat[:str,:str])
@@ -1009,7 +1009,7 @@ catch MALexception;	# 425  (MALexception:str) jump 426
 exit MALexception;	# 426  (MALexception:str)
     redo ($1363,$1364,$1365):= chopper.hasMoreElements(tzone_bat);	# 427 CHPbunHasMoreElements ($1363:lng)($1364:oid)($1365:tzone)<-(tzone_bat:bat[:oid,:tzone]) jump 423
 exit ($1363,$1364,$1365);	# 428  ($1363:lng)($1364:oid)($1365:tzone)
-    kd_a := $1360;	# 429  (kd_a:bat[:oid,:int])<-($1360:bat[:oid,:int])
+    kd_a:bat[:oid,:int]  := $1360;	# 429  (kd_a:bat[:oid,:int])<-($1360:bat[:oid,:int])
     bat.setColumn(kd_a,"minutes");	# 430 BKCsetColumn ($372:bat[:oid,:int])<-(kd_a:bat[:oid,:int])($373:str)
 #io.print([minutes](tzone_bat).bat.setColumn("minutes"), 	# 431  ($375:str)
     $1373 := bbp.new(:oid,:rule);	# 432 CMDBATnew ($1373:bat[:oid,:rule])<-($1361:oid)($78:rule)
@@ -1020,7 +1020,7 @@ catch MALexception;	# 436  (MALexception:str) jump 437
 exit MALexception;	# 437  (MALexception:str)
     redo ($1375,$1376,$1377):= chopper.hasMoreElements(tzone_bat);	# 438 CHPbunHasMoreElements ($1375:lng)($1376:oid)($1377:tzone)<-(tzone_bat:bat[:oid,:tzone]) jump 434
 exit ($1375,$1376,$1377);	# 439  ($1375:lng)($1376:oid)($1377:tzone)
-    md_a := $1373;	# 440  (md_a:bat[:oid,:rule])<-($1373:bat[:oid,:rule])
+    md_a:bat[:oid,:rule]  := $1373;	# 440  (md_a:bat[:oid,:rule])<-($1373:bat[:oid,:rule])
     bat.setColumn(md_a,"start_dst");	# 441 BKCsetColumn ($378:bat[:oid,:rule])<-(md_a:bat[:oid,:rule])($379:str)
 #      [start_dst](tzone_bat).bat.setColumn("start_dst"), 	# 442  ($381:str)
     $1385 := bbp.new(:oid,:rule);	# 443 CMDBATnew ($1385:bat[:oid,:rule])<-($1361:oid)($78:rule)
@@ -1031,7 +1031,7 @@ catch MALexception;	# 447  (MALexception:str) jump 448
 exit MALexception;	# 448  (MALexception:str)
     redo ($1387,$1388,$1389):= chopper.hasMoreElements(tzone_bat);	# 449 CHPbunHasMoreElements ($1387:lng)($1388:oid)($1389:tzone)<-(tzone_bat:bat[:oid,:tzone]) jump 445
 exit ($1387,$1388,$1389);	# 450  ($1387:lng)($1388:oid)($1389:tzone)
-    od_a := $1385;	# 451  (od_a:bat[:oid,:rule])<-($1385:bat[:oid,:rule])
+    od_a:bat[:oid,:rule]  := $1385;	# 451  (od_a:bat[:oid,:rule])<-($1385:bat[:oid,:rule])
     bat.setColumn(od_a,"end_dst");	# 452 BKCsetColumn ($384:bat[:oid,:rule])<-(od_a:bat[:oid,:rule])($385:str)
     io.print("print(kd_a,md_a,od_a)");	# 453 IOprint_val ($386:int)<-($387:str)
     qd_a := io.print(kd_a,md_a,od_a);	# 454 IOtable (qd_a:int)<-(kd_a:bat[:oid,:int])(md_a:bat[:oid,:rule])(od_a:bat[:oid,:rule])
@@ -1122,7 +1122,7 @@ catch MALexception;	# 538  (MALexception:str) jump 539
 exit MALexception;	# 539  (MALexception:str)
     redo ($1399,$1400,$1401):= chopper.hasMoreElements(date_bat);	# 540 CHPbunHasMoreElements ($1399:lng)($1400:oid)($1401:date)<-(date_bat:bat[:oid,:date]) jump 536
 exit ($1399,$1400,$1401);	# 541  ($1399:lng)($1400:oid)($1401:date)
-    oe_a := $1397;	# 542  (oe_a:bat[:oid,:int])<-($1397:bat[:oid,:int])
+    oe_a:bat[:oid,:int]  := $1397;	# 542  (oe_a:bat[:oid,:int])<-($1397:bat[:oid,:int])
     pe_a := bat.setColumn(oe_a,"year");	# 543 BKCsetColumn (pe_a:bat[:oid,:int])<-(oe_a:bat[:oid,:int])($554:str)
 #      [year](date_bat).bat.setColumn("year"), 	# 544  ($556:str)
     $1409 := bbp.new(:oid,:int);	# 545 CMDBATnew ($1409:bat[:oid,:int])<-($1361:oid)($1024:int)
@@ -1133,7 +1133,7 @@ catch MALexception;	# 549  (MALexception:str) jump 550
 exit MALexception;	# 550  (MALexception:str)
     redo ($1411,$1412,$1413):= chopper.hasMoreElements(date_bat);	# 551 CHPbunHasMoreElements ($1411:lng)($1412:oid)($1413:date)<-(date_bat:bat[:oid,:date]) jump 547
 exit ($1411,$1412,$1413);	# 552  ($1411:lng)($1412:oid)($1413:date)
-    qe_a := $1409;	# 553  (qe_a:bat[:oid,:int])<-($1409:bat[:oid,:int])
+    qe_a:bat[:oid,:int]  := $1409;	# 553  (qe_a:bat[:oid,:int])<-($1409:bat[:oid,:int])
     re_a := bat.setColumn(qe_a,"day");	# 554 BKCsetColumn (re_a:bat[:oid,:int])<-(qe_a:bat[:oid,:int])($560:str)
 #      [day](date_bat).bat.setColumn("day"), 	# 555  ($562:str)
     $1421 := bbp.new(:oid,:int);	# 556 CMDBATnew ($1421:bat[:oid,:int])<-($1361:oid)($1024:int)
@@ -1144,7 +1144,7 @@ catch MALexception;	# 560  (MALexception:str) jump 561
 exit MALexception;	# 561  (MALexception:str)
     redo ($1423,$1424,$1425):= chopper.hasMoreElements(date_bat);	# 562 CHPbunHasMoreElements ($1423:lng)($1424:oid)($1425:date)<-(date_bat:bat[:oid,:date]) jump 558
 exit ($1423,$1424,$1425);	# 563  ($1423:lng)($1424:oid)($1425:date)
-    se_a := $1421;	# 564  (se_a:bat[:oid,:int])<-($1421:bat[:oid,:int])
+    se_a:bat[:oid,:int]  := $1421;	# 564  (se_a:bat[:oid,:int])<-($1421:bat[:oid,:int])
     $1433 := bbp.new(:oid,:str);	# 565 CMDBATnew ($1433:bat[:oid,:str])<-($1361:oid)($1023:str)
 barrier ($1435,$1436,$1437):= chopper.newIterator(se_a);	# 566 CHPbunIterator ($1435:lng)($1436:oid)($1437:int)<-(se_a:bat[:oid,:int]) jump 572
     $1439 := mtime.monthname($1437);	# 567 MTIMEmonth_to_str ($1439:str)<-($1437:int)
@@ -1153,7 +1153,7 @@ catch MALexception;	# 569  (MALexception:str) jump 570
 exit MALexception;	# 570  (MALexception:str)
     redo ($1435,$1436,$1437):= chopper.hasMoreElements(se_a);	# 571 CHPbunHasMoreElements ($1435:lng)($1436:oid)($1437:int)<-(se_a:bat[:oid,:int]) jump 567
 exit ($1435,$1436,$1437);	# 572  ($1435:lng)($1436:oid)($1437:int)
-    te_a := $1433;	# 573  (te_a:bat[:oid,:str])<-($1433:bat[:oid,:str])
+    te_a:bat[:oid,:str]  := $1433;	# 573  (te_a:bat[:oid,:str])<-($1433:bat[:oid,:str])
     ue_a := bat.setColumn(te_a,"monthname");	# 574 BKCsetColumn (ue_a:bat[:oid,:str])<-(te_a:bat[:oid,:str])($568:str)
 #      [monthname]([month](date_bat)).bat.setColumn("monthname"), 	# 575  ($570:str)
     $1445 := bbp.new(:oid,:int);	# 576 CMDBATnew ($1445:bat[:oid,:int])<-($1361:oid)($1024:int)
@@ -1164,7 +1164,7 @@ catch MALexception;	# 580  (MALexception:str) jump 581
 exit MALexception;	# 581  (MALexception:str)
     redo ($1447,$1448,$1449):= chopper.hasMoreElements(date_bat);	# 582 CHPbunHasMoreElements ($1447:lng)($1448:oid)($1449:date)<-(date_bat:bat[:oid,:date]) jump 578
 exit ($1447,$1448,$1449);	# 583  ($1447:lng)($1448:oid)($1449:date)
-    ve_a := $1445;	# 584  (ve_a:bat[:oid,:int])<-($1445:bat[:oid,:int])
+    ve_a:bat[:oid,:int]  := $1445;	# 584  (ve_a:bat[:oid,:int])<-($1445:bat[:oid,:int])
     $1457 := bbp.new(:oid,:str);	# 585 CMDBATnew ($1457:bat[:oid,:str])<-($1361:oid)($1023:str)
 barrier ($1459,$1460,$1461):= chopper.newIterator(ve_a);	# 586 CHPbunIterator ($1459:lng)($1460:oid)($1461:int)<-(ve_a:bat[:oid,:int]) jump 592
     $1463 := mtime.monthname($1461);	# 587 MTIMEmonth_to_str ($1463:str)<-($1461:int)
@@ -1173,7 +1173,7 @@ catch MALexception;	# 589  (MALexception:str) jump 590
 exit MALexception;	# 590  (MALexception:str)
     redo ($1459,$1460,$1461):= chopper.hasMoreElements(ve_a);	# 591 CHPbunHasMoreElements ($1459:lng)($1460:oid)($1461:int)<-(ve_a:bat[:oid,:int]) jump 587
 exit ($1459,$1460,$1461);	# 592  ($1459:lng)($1460:oid)($1461:int)
-    we_a := $1457;	# 593  (we_a:bat[:oid,:str])<-($1457:bat[:oid,:str])
+    we_a:bat[:oid,:str]  := $1457;	# 593  (we_a:bat[:oid,:str])<-($1457:bat[:oid,:str])
     $1469 := bbp.new(:oid,:int);	# 594 CMDBATnew ($1469:bat[:oid,:int])<-($1361:oid)($1024:int)
 barrier ($1471,$1472,$1473):= chopper.newIterator(we_a);	# 595 CHPbunIterator ($1471:lng)($1472:oid)($1473:str)<-(we_a:bat[:oid,:str]) jump 601
     $1475 := mtime.monthnum($1473);	# 596 MTIMEmonth_from_str ($1475:int)<-($1473:str)
@@ -1182,7 +1182,7 @@ catch MALexception;	# 598  (MALexception:str) jump 599
 exit MALexception;	# 599  (MALexception:str)
     redo ($1471,$1472,$1473):= chopper.hasMoreElements(we_a);	# 600 CHPbunHasMoreElements ($1471:lng)($1472:oid)($1473:str)<-(we_a:bat[:oid,:str]) jump 596
 exit ($1471,$1472,$1473);	# 601  ($1471:lng)($1472:oid)($1473:str)
-    xe_a := $1469;	# 602  (xe_a:bat[:oid,:int])<-($1469:bat[:oid,:int])
+    xe_a:bat[:oid,:int]  := $1469;	# 602  (xe_a:bat[:oid,:int])<-($1469:bat[:oid,:int])
     ye_a := bat.setColumn(xe_a,"monthnum");	# 603 BKCsetColumn (ye_a:bat[:oid,:int])<-(xe_a:bat[:oid,:int])($576:str)
     io.print("print(date_bat,oe_a,qe_a,te_a,xe_a)");	# 604 IOprint_val ($577:int)<-($578:str)
     af_a := io.print(date_bat,oe_a,qe_a,te_a,xe_a);	# 605 IOtable (af_a:int)<-(date_bat:bat[:oid,:date])(oe_a:bat[:oid,:int])(qe_a:bat[:oid,:int])(te_a:bat[:oid,:str])(xe_a:bat[:oid,:int])
@@ -1195,7 +1195,7 @@ catch MALexception;	# 611  (MALexception:str) jump 612
 exit MALexception;	# 612  (MALexception:str)
     redo ($1483,$1484,$1485):= chopper.hasMoreElements(date_bat);	# 613 CHPbunHasMoreElements ($1483:lng)($1484:oid)($1485:date)<-(date_bat:bat[:oid,:date]) jump 609
 exit ($1483,$1484,$1485);	# 614  ($1483:lng)($1484:oid)($1485:date)
-    date_addyears := $1481;	# 615  (date_addyears:bat[:oid,:date])<-($1481:bat[:oid,:date])
+    date_addyears:bat[:oid,:date]  := $1481;	# 615  (date_addyears:bat[:oid,:date])<-($1481:bat[:oid,:date])
 #var date_addyears := [addyears](date_bat, -100); 	# 616  ($586:str)
     $1493 := bbp.new(:oid,:date);	# 617 CMDBATnew ($1493:bat[:oid,:date])<-($1361:oid)($486:date)
 barrier ($1495,$1496,$1497):= chopper.newIterator(date_bat);	# 618 CHPbunIterator ($1495:lng)($1496:oid)($1497:date)<-(date_bat:bat[:oid,:date]) jump 624
@@ -1205,7 +1205,7 @@ catch MALexception;	# 621  (MALexception:str) jump 622
 exit MALexception;	# 622  (MALexception:str)
     redo ($1495,$1496,$1497):= chopper.hasMoreElements(date_bat);	# 623 CHPbunHasMoreElements ($1495:lng)($1496:oid)($1497:date)<-(date_bat:bat[:oid,:date]) jump 619
 exit ($1495,$1496,$1497);	# 624  ($1495:lng)($1496:oid)($1497:date)
-    date_addmonths := $1493;	# 625  (date_addmonths:bat[:oid,:date])<-($1493:bat[:oid,:date])
+    date_addmonths:bat[:oid,:date]  := $1493;	# 625  (date_addmonths:bat[:oid,:date])<-($1493:bat[:oid,:date])
 #var date_addmonths := [addmonths](date_bat, 1); 	# 626  ($591:str)
     bat.setColumn(date_bat,"date");	# 627 BKCsetColumn ($592:bat[:oid,:date])<-(date_bat:bat[:oid,:date])($593:str)
 #io.print(date_bat.bat.setColumn("date"), 	# 628  ($595:str)
@@ -1220,7 +1220,7 @@ catch MALexception;	# 636  (MALexception:str) jump 637
 exit MALexception;	# 637  (MALexception:str)
     redo ($1507,$1508,$1509):= chopper.hasMoreElements(date_addyears);	# 638 CHPbunHasMoreElements ($1507:lng)($1508:oid)($1509:date)<-(date_addyears:bat[:oid,:date]) jump 633
 exit ($1507,$1508,$1509);	# 639  ($1507:lng)($1508:oid)($1509:date)
-    df_a := $1505;	# 640  (df_a:bat[:oid,:int])<-($1505:bat[:oid,:int])
+    df_a:bat[:oid,:int]  := $1505;	# 640  (df_a:bat[:oid,:int])<-($1505:bat[:oid,:int])
     bat.setColumn(df_a,"diff");	# 641 BKCsetColumn ($602:bat[:oid,:int])<-(df_a:bat[:oid,:int])($603:str)
     io.print("print(date_bat,date_addyears,df_a)");	# 642 IOprint_val ($604:int)<-($605:str)
     ff_a := io.print(date_bat,date_addyears,df_a);	# 643 IOtable (ff_a:int)<-(date_bat:bat[:oid,:date])(date_addyears:bat[:oid,:date])(df_a:bat[:oid,:int])
@@ -1238,7 +1238,7 @@ catch MALexception;	# 654  (MALexception:str) jump 655
 exit MALexception;	# 655  (MALexception:str)
     redo ($1521,$1522,$1523):= chopper.hasMoreElements(date_addmonths);	# 656 CHPbunHasMoreElements ($1521:lng)($1522:oid)($1523:date)<-(date_addmonths:bat[:oid,:date]) jump 651
 exit ($1521,$1522,$1523);	# 657  ($1521:lng)($1522:oid)($1523:date)
-    if_a := $1519;	# 658  (if_a:bat[:oid,:int])<-($1519:bat[:oid,:int])
+    if_a:bat[:oid,:int]  := $1519;	# 658  (if_a:bat[:oid,:int])<-($1519:bat[:oid,:int])
     bat.setColumn(if_a,"diff");	# 659 BKCsetColumn ($616:bat[:oid,:int])<-(if_a:bat[:oid,:int])($603:str)
     io.print(" print(date_bat,date_addmonths,if_a)");	# 660 IOprint_val ($617:int)<-($618:str)
     kf_a := io.print(date_bat,date_addmonths,if_a);	# 661 IOtable (kf_a:int)<-(date_bat:bat[:oid,:date])(date_addmonths:bat[:oid,:date])(if_a:bat[:oid,:int])
@@ -1270,7 +1270,7 @@ catch MALexception;	# 686  (MALexception:str) jump 687
 exit MALexception;	# 687  (MALexception:str)
     redo ($1535,$1536,$1537):= chopper.hasMoreElements(date_seq);	# 688 CHPbunHasMoreElements ($1535:lng)($1536:int)($1537:date)<-(date_seq:bat[:int,:date]) jump 684
 exit ($1535,$1536,$1537);	# 689  ($1535:lng)($1536:int)($1537:date)
-    sf_a := $1533;	# 690  (sf_a:bat[:int,:int])<-($1533:bat[:int,:int])
+    sf_a:bat[:int,:int]  := $1533;	# 690  (sf_a:bat[:int,:int])<-($1533:bat[:int,:int])
     tf_a := bat.setColumn(sf_a,"weekofyear");	# 691 BKCsetColumn (tf_a:bat[:int,:int])<-(sf_a:bat[:int,:int])($653:str)
 #      [weekofyear](date_seq).bat.setColumn("weekofyear"), 	# 692  ($655:str)
     $1545 := bbp.new(:int,:int);	# 693 CMDBATnew ($1545:bat[:int,:int])<-($1024:int)($1024:int)
@@ -1281,7 +1281,7 @@ catch MALexception;	# 697  (MALexception:str) jump 698
 exit MALexception;	# 698  (MALexception:str)
     redo ($1547,$1548,$1549):= chopper.hasMoreElements(date_seq);	# 699 CHPbunHasMoreElements ($1547:lng)($1548:int)($1549:date)<-(date_seq:bat[:int,:date]) jump 695
 exit ($1547,$1548,$1549);	# 700  ($1547:lng)($1548:int)($1549:date)
-    uf_a := $1545;	# 701  (uf_a:bat[:int,:int])<-($1545:bat[:int,:int])
+    uf_a:bat[:int,:int]  := $1545;	# 701  (uf_a:bat[:int,:int])<-($1545:bat[:int,:int])
     $1557 := bbp.new(:int,:str);	# 702 CMDBATnew ($1557:bat[:int,:str])<-($1024:int)($1023:str)
 barrier ($1559,$1560,$1561):= chopper.newIterator(uf_a);	# 703 CHPbunIterator ($1559:lng)($1560:int)($1561:int)<-(uf_a:bat[:int,:int]) jump 709
     $1563 := mtime.dayname($1561);	# 704 MTIMEday_to_str ($1563:str)<-($1561:int)
@@ -1290,7 +1290,7 @@ catch MALexception;	# 706  (MALexception:str) jump 707
 exit MALexception;	# 707  (MALexception:str)
     redo ($1559,$1560,$1561):= chopper.hasMoreElements(uf_a);	# 708 CHPbunHasMoreElements ($1559:lng)($1560:int)($1561:int)<-(uf_a:bat[:int,:int]) jump 704
 exit ($1559,$1560,$1561);	# 709  ($1559:lng)($1560:int)($1561:int)
-    vf_a := $1557;	# 710  (vf_a:bat[:int,:str])<-($1557:bat[:int,:str])
+    vf_a:bat[:int,:str]  := $1557;	# 710  (vf_a:bat[:int,:str])<-($1557:bat[:int,:str])
     wf_a := bat.setColumn(vf_a,"dayofweek");	# 711 BKCsetColumn (wf_a:bat[:int,:str])<-(vf_a:bat[:int,:str])($661:str)
 #      [dayname]([dayofweek](date_seq)).bat.setColumn("dayofweek"), 	# 712  ($663:str)
     $1569 := bbp.new(:int,:int);	# 713 CMDBATnew ($1569:bat[:int,:int])<-($1024:int)($1024:int)
@@ -1301,7 +1301,7 @@ catch MALexception;	# 717  (MALexception:str) jump 718
 exit MALexception;	# 718  (MALexception:str)
     redo ($1571,$1572,$1573):= chopper.hasMoreElements(date_seq);	# 719 CHPbunHasMoreElements ($1571:lng)($1572:int)($1573:date)<-(date_seq:bat[:int,:date]) jump 715
 exit ($1571,$1572,$1573);	# 720  ($1571:lng)($1572:int)($1573:date)
-    xf_a := $1569;	# 721  (xf_a:bat[:int,:int])<-($1569:bat[:int,:int])
+    xf_a:bat[:int,:int]  := $1569;	# 721  (xf_a:bat[:int,:int])<-($1569:bat[:int,:int])
     $1581 := bbp.new(:int,:str);	# 722 CMDBATnew ($1581:bat[:int,:str])<-($1024:int)($1023:str)
 barrier ($1583,$1584,$1585):= chopper.newIterator(xf_a);	# 723 CHPbunIterator ($1583:lng)($1584:int)($1585:int)<-(xf_a:bat[:int,:int]) jump 729
     $1587 := mtime.dayname($1585);	# 724 MTIMEday_to_str ($1587:str)<-($1585:int)
@@ -1310,7 +1310,7 @@ catch MALexception;	# 726  (MALexception:str) jump 727
 exit MALexception;	# 727  (MALexception:str)
     redo ($1583,$1584,$1585):= chopper.hasMoreElements(xf_a);	# 728 CHPbunHasMoreElements ($1583:lng)($1584:int)($1585:int)<-(xf_a:bat[:int,:int]) jump 724
 exit ($1583,$1584,$1585);	# 729  ($1583:lng)($1584:int)($1585:int)
-    yf_a := $1581;	# 730  (yf_a:bat[:int,:str])<-($1581:bat[:int,:str])
+    yf_a:bat[:int,:str]  := $1581;	# 730  (yf_a:bat[:int,:str])<-($1581:bat[:int,:str])
     $1593 := bbp.new(:int,:int);	# 731 CMDBATnew ($1593:bat[:int,:int])<-($1024:int)($1024:int)
 barrier ($1595,$1596,$1597):= chopper.newIterator(yf_a);	# 732 CHPbunIterator ($1595:lng)($1596:int)($1597:str)<-(yf_a:bat[:int,:str]) jump 738
     $1599 := mtime.daynum($1597);	# 733 MTIMEday_from_str ($1599:int)<-($1597:str)
@@ -1319,7 +1319,7 @@ catch MALexception;	# 735  (MALexception:str) jump 736
 exit MALexception;	# 736  (MALexception:str)
     redo ($1595,$1596,$1597):= chopper.hasMoreElements(yf_a);	# 737 CHPbunHasMoreElements ($1595:lng)($1596:int)($1597:str)<-(yf_a:bat[:int,:str]) jump 733
 exit ($1595,$1596,$1597);	# 738  ($1595:lng)($1596:int)($1597:str)
-    ag_a := $1593;	# 739  (ag_a:bat[:int,:int])<-($1593:bat[:int,:int])
+    ag_a:bat[:int,:int]  := $1593;	# 739  (ag_a:bat[:int,:int])<-($1593:bat[:int,:int])
     bg_a := bat.setColumn(ag_a,"num");	# 740 BKCsetColumn (bg_a:bat[:int,:int])<-(ag_a:bat[:int,:int])($669:str)
 #      [daynum]([dayname]([dayofweek](date_seq))).bat.setColumn("num"), 	# 741  ($671:str)
     $1605 := bbp.new(:int,:int);	# 742 CMDBATnew ($1605:bat[:int,:int])<-($1024:int)($1024:int)
@@ -1330,7 +1330,7 @@ catch MALexception;	# 746  (MALexception:str) jump 747
 exit MALexception;	# 747  (MALexception:str)
     redo ($1607,$1608,$1609):= chopper.hasMoreElements(date_seq);	# 748 CHPbunHasMoreElements ($1607:lng)($1608:int)($1609:date)<-(date_seq:bat[:int,:date]) jump 744
 exit ($1607,$1608,$1609);	# 749  ($1607:lng)($1608:int)($1609:date)
-    cg_a := $1605;	# 750  (cg_a:bat[:int,:int])<-($1605:bat[:int,:int])
+    cg_a:bat[:int,:int]  := $1605;	# 750  (cg_a:bat[:int,:int])<-($1605:bat[:int,:int])
     dg_a := bat.setColumn(cg_a,"dayofyear");	# 751 BKCsetColumn (dg_a:bat[:int,:int])<-(cg_a:bat[:int,:int])($675:str)
     io.print("date_seq,sf_a,vf_a,ag_a,cg_a");	# 752 IOprint_val ($676:int)<-($677:str)
     eg_a := io.print(date_seq,sf_a,vf_a,ag_a,cg_a);	# 753 IOtable (eg_a:int)<-(date_seq:bat[:int,:date])(sf_a:bat[:int,:int])(vf_a:bat[:int,:str])(ag_a:bat[:int,:int])(cg_a:bat[:int,:int])
@@ -1417,7 +1417,7 @@ catch MALexception;	# 833  (MALexception:str) jump 834
 exit MALexception;	# 834  (MALexception:str)
     redo ($1619,$1620,$1621):= chopper.hasMoreElements(daytime_bat);	# 835 CHPbunHasMoreElements ($1619:lng)($1620:oid)($1621:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 831
 exit ($1619,$1620,$1621);	# 836  ($1619:lng)($1620:oid)($1621:daytime)
-    bh_a := $1617;	# 837  (bh_a:bat[:oid,:int])<-($1617:bat[:oid,:int])
+    bh_a:bat[:oid,:int]  := $1617;	# 837  (bh_a:bat[:oid,:int])<-($1617:bat[:oid,:int])
     bat.setColumn(bh_a,"hours");	# 838 BKCsetColumn ($836:bat[:oid,:int])<-(bh_a:bat[:oid,:int])($837:str)
 #      [hours](daytime_bat).bat.setColumn("hours"), 	# 839  ($839:str)
     $1629 := bbp.new(:oid,:int);	# 840 CMDBATnew ($1629:bat[:oid,:int])<-($1361:oid)($1024:int)
@@ -1428,7 +1428,7 @@ catch MALexception;	# 844  (MALexception:str) jump 845
 exit MALexception;	# 845  (MALexception:str)
     redo ($1631,$1632,$1633):= chopper.hasMoreElements(daytime_bat);	# 846 CHPbunHasMoreElements ($1631:lng)($1632:oid)($1633:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 842
 exit ($1631,$1632,$1633);	# 847  ($1631:lng)($1632:oid)($1633:daytime)
-    dh_a := $1629;	# 848  (dh_a:bat[:oid,:int])<-($1629:bat[:oid,:int])
+    dh_a:bat[:oid,:int]  := $1629;	# 848  (dh_a:bat[:oid,:int])<-($1629:bat[:oid,:int])
     bat.setColumn(dh_a,"minutes");	# 849 BKCsetColumn ($842:bat[:oid,:int])<-(dh_a:bat[:oid,:int])($843:str)
 #      [minutes](daytime_bat).bat.setColumn("minutes"), 	# 850  ($845:str)
     $1641 := bbp.new(:oid,:int);	# 851 CMDBATnew ($1641:bat[:oid,:int])<-($1361:oid)($1024:int)
@@ -1439,7 +1439,7 @@ catch MALexception;	# 855  (MALexception:str) jump 856
 exit MALexception;	# 856  (MALexception:str)
     redo ($1643,$1644,$1645):= chopper.hasMoreElements(daytime_bat);	# 857 CHPbunHasMoreElements ($1643:lng)($1644:oid)($1645:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 853
 exit ($1643,$1644,$1645);	# 858  ($1643:lng)($1644:oid)($1645:daytime)
-    fh_a := $1641;	# 859  (fh_a:bat[:oid,:int])<-($1641:bat[:oid,:int])
+    fh_a:bat[:oid,:int]  := $1641;	# 859  (fh_a:bat[:oid,:int])<-($1641:bat[:oid,:int])
     bat.setColumn(fh_a,"seconds");	# 860 BKCsetColumn ($848:bat[:oid,:int])<-(fh_a:bat[:oid,:int])($849:str)
 #      [seconds](daytime_bat).bat.setColumn("seconds"), 	# 861  ($851:str)
     $1653 := bbp.new(:oid,:int);	# 862 CMDBATnew ($1653:bat[:oid,:int])<-($1361:oid)($1024:int)
@@ -1450,7 +1450,7 @@ catch MALexception;	# 866  (MALexception:str) jump 867
 exit MALexception;	# 867  (MALexception:str)
     redo ($1655,$1656,$1657):= chopper.hasMoreElements(daytime_bat);	# 868 CHPbunHasMoreElements ($1655:lng)($1656:oid)($1657:daytime)<-(daytime_bat:bat[:oid,:daytime]) jump 864
 exit ($1655,$1656,$1657);	# 869  ($1655:lng)($1656:oid)($1657:daytime)
-    hh_a := $1653;	# 870  (hh_a:bat[:oid,:int])<-($1653:bat[:oid,:int])
+    hh_a:bat[:oid,:int]  := $1653;	# 870  (hh_a:bat[:oid,:int])<-($1653:bat[:oid,:int])
     bat.setColumn(hh_a,"milliseconds");	# 871 BKCsetColumn ($854:bat[:oid,:int])<-(hh_a:bat[:oid,:int])($855:str)
     io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");	# 872 IOprint_val ($856:int)<-($857:str)
     jh_a := io.print(daytime_bat,bh_a,dh_a,fh_a,hh_a);	# 873 IOtable (jh_a:int)<-(daytime_bat:bat[:oid,:daytime])(bh_a:bat[:oid,:int])(dh_a:bat[:oid,:int])(fh_a:bat[:oid,:int])(hh_a:bat[:oid,:int])
@@ -1468,7 +1468,7 @@ catch MALexception;	# 884  (MALexception:str) jump 885
 exit MALexception;	# 885  (MALexception:str)
     redo ($1668,$1669,$1670):= chopper.hasMoreElements(date_bat);	# 886 CHPbunHasMoreElements ($1668:lng)($1669:oid)($1670:date)<-(date_bat:bat[:oid,:date]) jump 880
 exit ($1668,$1669,$1670);	# 887  ($1668:lng)($1669:oid)($1670:date)
-    kh_a := $1665;	# 888  (kh_a:bat[:oid,:timestamp])<-($1665:bat[:oid,:timestamp])
+    kh_a:bat[:oid,:timestamp]  := $1665;	# 888  (kh_a:bat[:oid,:timestamp])<-($1665:bat[:oid,:timestamp])
     timestamp_bat := kh_a;	# 889  (timestamp_bat:bat[:oid,:timestamp])<-(kh_a:bat[:oid,:timestamp])
     bat.setWriteMode(kh_a);	# 890 BKCsetWriteMode ($870:bat[:oid,:timestamp])<-(kh_a:bat[:oid,:timestamp])
 #var timestamp_bat := [timestamp](date_bat,daytime_bat,tzone_bat).access(BAT_WRITE); 	# 891  ($872:str)
@@ -1487,7 +1487,7 @@ catch MALexception;	# 903  (MALexception:str) jump 904
 exit MALexception;	# 904  (MALexception:str)
     redo ($1685,$1686,$1687):= chopper.hasMoreElements(timestamp_bat);	# 905 CHPbunHasMoreElements ($1685:lng)($1686:oid)($1687:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 900
 exit ($1685,$1686,$1687);	# 906  ($1685:lng)($1686:oid)($1687:timestamp)
-    mh_a := $1682;	# 907  (mh_a:bat[:oid,:date])<-($1682:bat[:oid,:date])
+    mh_a:bat[:oid,:date]  := $1682;	# 907  (mh_a:bat[:oid,:date])<-($1682:bat[:oid,:date])
     bat.setColumn(mh_a,"date");	# 908 BKCsetColumn ($887:bat[:oid,:date])<-(mh_a:bat[:oid,:date])($888:str)
 #      [date](timestamp_bat,tzone_bat).bat.setColumn("date"), 	# 909  ($890:str)
     $1697 := bbp.new(:oid,:daytime);	# 910 CMDBATnew ($1697:bat[:oid,:daytime])<-($1361:oid)($1698:daytime)
@@ -1499,17 +1499,17 @@ catch MALexception;	# 915  (MALexception:str) jump 916
 exit MALexception;	# 916  (MALexception:str)
     redo ($1700,$1701,$1702):= chopper.hasMoreElements(timestamp_bat);	# 917 CHPbunHasMoreElements ($1700:lng)($1701:oid)($1702:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 912
 exit ($1700,$1701,$1702);	# 918  ($1700:lng)($1701:oid)($1702:timestamp)
-    oh_a := $1697;	# 919  (oh_a:bat[:oid,:daytime])<-($1697:bat[:oid,:daytime])
+    oh_a:bat[:oid,:daytime]  := $1697;	# 919  (oh_a:bat[:oid,:daytime])<-($1697:bat[:oid,:daytime])
     bat.setColumn(oh_a,"daytime");	# 920 BKCsetColumn ($893:bat[:oid,:daytime])<-(oh_a:bat[:oid,:daytime])($894:str)
     io.print("print(timestamp_bat,mh_a,oh_a)");	# 921 IOprint_val ($895:int)<-($896:str)
     io.print(timestamp_bat,mh_a,oh_a);	# 922 IOtable ($897:int)<-(timestamp_bat:bat[:oid,:timestamp])(mh_a:bat[:oid,:date])(oh_a:bat[:oid,:daytime])
 #      [daytime](timestamp_bat,tzone_bat).bat.setColumn("daytime")); 	# 923  ($899:str)
     rh_a := bat.setColumn(timestamp_bat,"timestamp");	# 924 BKCsetColumn (rh_a:bat[:oid,:timestamp])<-(timestamp_bat:bat[:oid,:timestamp])($882:str)
 #io.print(timestamp_bat.bat.setColumn("timestamp"), 	# 925  ($884:str)
-    timezones := bbp.bind("timezones");	# 926 CMDbbpbind (timezones:bat[:str,:tzone])<-($903:str)
+    timezones:bat[:str,:tzone]  := bbp.bind("timezones");	# 926 CMDbbpbind (timezones:bat[:str,:tzone])<-($903:str)
     io.print("print(timezones)");	# 927 IOprint_val ($904:int)<-($905:str)
     io.print(timezones);	# 928 IOprint_val ($906:int)<-(timezones:bat[:str,:tzone])
-    sh_a := algebra.find(timezones,"Wake Island");	# 929 ALGfind (sh_a:tzone)<-(timezones:bat[:str,:tzone])($908:str)
+    sh_a:tzone  := algebra.find(timezones,"Wake Island");	# 929 ALGfind (sh_a:tzone)<-(timezones:bat[:str,:tzone])($908:str)
     $1712 := bbp.new(:oid,:date);	# 930 CMDBATnew ($1712:bat[:oid,:date])<-($1361:oid)($1683:date)
 barrier ($1714,$1715,$1716):= chopper.newIterator(timestamp_bat);	# 931 CHPbunIterator ($1714:lng)($1715:oid)($1716:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 937
     $1718 := mtime.date($1716,sh_a);	# 932 MTIMEtimestamp_extract_date ($1718:date)<-($1716:timestamp)(sh_a:tzone)
@@ -1518,10 +1518,10 @@ catch MALexception;	# 934  (MALexception:str) jump 935
 exit MALexception;	# 935  (MALexception:str)
     redo ($1714,$1715,$1716):= chopper.hasMoreElements(timestamp_bat);	# 936 CHPbunHasMoreElements ($1714:lng)($1715:oid)($1716:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 932
 exit ($1714,$1715,$1716);	# 937  ($1714:lng)($1715:oid)($1716:timestamp)
-    th_a := $1712;	# 938  (th_a:bat[:oid,:date])<-($1712:bat[:oid,:date])
-    uh_a := bat.setColumn(th_a,"Wake Island");	# 939 BKCsetColumn (uh_a:bat[:oid,:date])<-(th_a:bat[:oid,:date])($908:str)
+    th_a:bat[:oid,:date]  := $1712;	# 938  (th_a:bat[:oid,:date])<-($1712:bat[:oid,:date])
+    uh_a:bat[:oid,:date]  := bat.setColumn(th_a,"Wake Island");	# 939 BKCsetColumn (uh_a:bat[:oid,:date])<-(th_a:bat[:oid,:date])($908:str)
 #      [date](timestamp_bat,algebra.find(timezones,"Wake Island")).bat.setColumn("Wake Island"), 	# 940  ($912:str)
-    vh_a := algebra.find(timezones,"Wake Island");	# 941 ALGfind (vh_a:tzone)<-(timezones:bat[:str,:tzone])($908:str)
+    vh_a:tzone  := algebra.find(timezones,"Wake Island");	# 941 ALGfind (vh_a:tzone)<-(timezones:bat[:str,:tzone])($908:str)
     $1724 := bbp.new(:oid,:daytime);	# 942 CMDBATnew ($1724:bat[:oid,:daytime])<-($1361:oid)($1698:daytime)
 barrier ($1726,$1727,$1728):= chopper.newIterator(timestamp_bat);	# 943 CHPbunIterator ($1726:lng)($1727:oid)($1728:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 949
     $1730 := mtime.daytime($1728,vh_a);	# 944 MTIMEtimestamp_extract_daytime ($1730:daytime)<-($1728:timestamp)(vh_a:tzone)
@@ -1530,9 +1530,9 @@ catch MALexception;	# 946  (MALexception:str) jump 947
 exit MALexception;	# 947  (MALexception:str)
     redo ($1726,$1727,$1728):= chopper.hasMoreElements(timestamp_bat);	# 948 CHPbunHasMoreElements ($1726:lng)($1727:oid)($1728:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 944
 exit ($1726,$1727,$1728);	# 949  ($1726:lng)($1727:oid)($1728:timestamp)
-    wh_a := $1724;	# 950  (wh_a:bat[:oid,:daytime])<-($1724:bat[:oid,:daytime])
+    wh_a:bat[:oid,:daytime]  := $1724;	# 950  (wh_a:bat[:oid,:daytime])<-($1724:bat[:oid,:daytime])
 #      [daytime](timestamp_bat,algebra.find(timezones,"Wake Island")), 	# 951  ($916:str)
-    xh_a := algebra.find(timezones,"American Samoa");	# 952 ALGfind (xh_a:tzone)<-(timezones:bat[:str,:tzone])($918:str)
+    xh_a:tzone  := algebra.find(timezones,"American Samoa");	# 952 ALGfind (xh_a:tzone)<-(timezones:bat[:str,:tzone])($918:str)
     $1736 := bbp.new(:oid,:date);	# 953 CMDBATnew ($1736:bat[:oid,:date])<-($1361:oid)($1683:date)
 barrier ($1738,$1739,$1740):= chopper.newIterator(timestamp_bat);	# 954 CHPbunIterator ($1738:lng)($1739:oid)($1740:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 960
     $1742 := mtime.date($1740,xh_a);	# 955 MTIMEtimestamp_extract_date ($1742:date)<-($1740:timestamp)(xh_a:tzone)
@@ -1541,10 +1541,10 @@ catch MALexception;	# 957  (MALexception:str) jump 958
 exit MALexception;	# 958  (MALexception:str)
     redo ($1738,$1739,$1740):= chopper.hasMoreElements(timestamp_bat);	# 959 CHPbunHasMoreElements ($1738:lng)($1739:oid)($1740:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 955
 exit ($1738,$1739,$1740);	# 960  ($1738:lng)($1739:oid)($1740:timestamp)
-    yh_a := $1736;	# 961  (yh_a:bat[:oid,:date])<-($1736:bat[:oid,:date])
+    yh_a:bat[:oid,:date]  := $1736;	# 961  (yh_a:bat[:oid,:date])<-($1736:bat[:oid,:date])
     ai_a := bat.setColumn(yh_a,"American Samoa");	# 962 BKCsetColumn (ai_a:bat[:oid,:date])<-(yh_a:bat[:oid,:date])($918:str)
 #      [date](timestamp_bat,algebra.find(timezones,"American Samoa")).bat.setColumn("American Samoa"), 	# 963  ($923:str)
-    bi_a := algebra.find(timezones,"American Samoa");	# 964 ALGfind (bi_a:tzone)<-(timezones:bat[:str,:tzone])($918:str)
+    bi_a:tzone  := algebra.find(timezones,"American Samoa");	# 964 ALGfind (bi_a:tzone)<-(timezones:bat[:str,:tzone])($918:str)
     $1748 := bbp.new(:oid,:daytime);	# 965 CMDBATnew ($1748:bat[:oid,:daytime])<-($1361:oid)($1698:daytime)
 barrier ($1750,$1751,$1752):= chopper.newIterator(timestamp_bat);	# 966 CHPbunIterator ($1750:lng)($1751:oid)($1752:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 972
     $1754 := mtime.daytime($1752,bi_a);	# 967 MTIMEtimestamp_extract_daytime ($1754:daytime)<-($1752:timestamp)(bi_a:tzone)
@@ -1553,7 +1553,7 @@ catch MALexception;	# 969  (MALexception:str) jump 970
 exit MALexception;	# 970  (MALexception:str)
     redo ($1750,$1751,$1752):= chopper.hasMoreElements(timestamp_bat);	# 971 CHPbunHasMoreElements ($1750:lng)($1751:oid)($1752:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 967
 exit ($1750,$1751,$1752);	# 972  ($1750:lng)($1751:oid)($1752:timestamp)
-    ci_a := $1748;	# 973  (ci_a:bat[:oid,:daytime])<-($1748:bat[:oid,:daytime])
+    ci_a:bat[:oid,:daytime]  := $1748;	# 973  (ci_a:bat[:oid,:daytime])<-($1748:bat[:oid,:daytime])
     io.print("print(timestamp_bat,th_a,wh_a,yh_a,ci_a)");	# 974 IOprint_val ($927:int)<-($928:str)
     di_a := io.print(timestamp_bat,th_a,wh_a,yh_a,ci_a);	# 975 IOtable (di_a:int)<-(timestamp_bat:bat[:oid,:timestamp])(th_a:bat[:oid,:date])(wh_a:bat[:oid,:daytime])(yh_a:bat[:oid,:date])(ci_a:bat[:oid,:daytime])
 #      [daytime](timestamp_bat,algebra.find(timezones,"American Samoa"))); 	# 976  ($931:str)
@@ -1569,7 +1569,7 @@ catch MALexception;	# 985  (MALexception:str) jump 986
 exit MALexception;	# 986  (MALexception:str)
     redo ($1762,$1763,$1764):= chopper.hasMoreElements(timestamp_bat);	# 987 CHPbunHasMoreElements ($1762:lng)($1763:oid)($1764:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 983
 exit ($1762,$1763,$1764);	# 988  ($1762:lng)($1763:oid)($1764:timestamp)
-    timestamp_plus := $1760;	# 989  (timestamp_plus:bat[:oid,:timestamp])<-($1760:bat[:oid,:timestamp])
+    timestamp_plus:bat[:oid,:timestamp]  := $1760;	# 989  (timestamp_plus:bat[:oid,:timestamp])<-($1760:bat[:oid,:timestamp])
 #var timestamp_plus := [add](timestamp_bat, calc.lng(23*60*60*1000)); 	# 990  ($942:str)
     ii_a := calc.*(-60,1000);	# 991 CALCbinaryMULintint (ii_a:int)<-($944:int)($934:int)
     ji_a := calc.lng(ii_a);	# 992 CALCint2lng (ji_a:lng)<-(ii_a:int)
@@ -1581,7 +1581,7 @@ catch MALexception;	# 997  (MALexception:str) jump 998
 exit MALexception;	# 998  (MALexception:str)
     redo ($1774,$1775,$1776):= chopper.hasMoreElements(timestamp_bat);	# 999 CHPbunHasMoreElements ($1774:lng)($1775:oid)($1776:timestamp)<-(timestamp_bat:bat[:oid,:timestamp]) jump 995
 exit ($1774,$1775,$1776);	# 1000  ($1774:lng)($1775:oid)($1776:timestamp)
-    timestamp_minus := $1772;	# 1001  (timestamp_minus:bat[:oid,:timestamp])<-($1772:bat[:oid,:timestamp])
+    timestamp_minus:bat[:oid,:timestamp]  := $1772;	# 1001  (timestamp_minus:bat[:oid,:timestamp])<-($1772:bat[:oid,:timestamp])
 #var timestamp_minus := [add](timestamp_bat, calc.lng(-60*1000)); 	# 1002  ($948:str)
     ki_a := bat.setColumn(timestamp_bat,"timestamp");	# 1003 BKCsetColumn (ki_a:bat[:oid,:timestamp])<-(timestamp_bat:bat[:oid,:timestamp])($950:str)
 #io.print(timestamp_bat.bat.setColumn("timestamp"), 	# 1004  ($952:str)
@@ -1598,7 +1598,7 @@ catch MALexception;	# 1014  (MALexception:str) jump 1015
 exit MALexception;	# 1015  (MALexception:str)
     redo ($1787,$1788,$1789):= chopper.hasMoreElements(timestamp_plus);	# 1016 CHPbunHasMoreElements ($1787:lng)($1788:oid)($1789:timestamp)<-(timestamp_plus:bat[:oid,:timestamp]) jump 1011
 exit ($1787,$1788,$1789);	# 1017  ($1787:lng)($1788:oid)($1789:timestamp)
-    ni_a := $1784;	# 1018  (ni_a:bat[:oid,:lng])<-($1784:bat[:oid,:lng])
+    ni_a:bat[:oid,:lng]  := $1784;	# 1018  (ni_a:bat[:oid,:lng])<-($1784:bat[:oid,:lng])
     oi_a := calc.*(60,1000);	# 1019 CALCbinaryMULintint (oi_a:int)<-($933:int)($934:int)
     pi_a := calc.*(60,oi_a);	# 1020 CALCbinaryMULintint (pi_a:int)<-($933:int)(oi_a:int)
     qi_a := calc.lng(pi_a);	# 1021 CALCint2lng (qi_a:lng)<-(pi_a:int)
@@ -1607,7 +1607,7 @@ exit ($1787,$1788,$1789);	# 1017  ($1787:lng)($1788:oid)($1789:timestamp)
     io.print("print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a)");	# 1024 IOprint_val ($969:int)<-($970:str)
     ti_a := io.print(timestamp_bat,timestamp_plus,timestamp_minus,ri_a);	# 1025 IOtable (ti_a:int)<-(timestamp_bat:bat[:oid,:timestamp])(timestamp_plus:bat[:oid,:timestamp])(timestamp_minus:bat[:oid,:timestamp])(ri_a:bat[:oid,:lng])
 #	[/]([diff](timestamp_plus, timestamp_minus),calc.lng(60*60*1000)).bat.setColumn("diff")); 	# 1026  ($973:str)
-    ui_a := algebra.find(timezones,"West/Europe");	# 1027 ALGfind (ui_a:tzone)<-(timezones:bat[:str,:tzone])($975:str)
+    ui_a:tzone  := algebra.find(timezones,"West/Europe");	# 1027 ALGfind (ui_a:tzone)<-(timezones:bat[:str,:tzone])($975:str)
     $1799 := bbp.new(:int,:timestamp);	# 1028 CMDBATnew ($1799:bat[:int,:timestamp])<-($1024:int)($1800:timestamp)
 barrier ($1802,$1803,$1804):= chopper.newIterator(date_seq);	# 1029 CHPbunIterator ($1802:lng)($1803:int)($1804:date)<-(date_seq:bat[:int,:date]) jump 1035
     $1806 := mtime.timestamp($1804,daytime_00,ui_a);	# 1030 MTIMEtimestamp_create ($1806:timestamp)<-($1804:date)(daytime_00:daytime)(ui_a:tzone)
@@ -1616,9 +1616,9 @@ catch MALexception;	# 1032  (MALexception:str) jump 1033
 exit MALexception;	# 1033  (MALexception:str)
     redo ($1802,$1803,$1804):= chopper.hasMoreElements(date_seq);	# 1034 CHPbunHasMoreElements ($1802:lng)($1803:int)($1804:date)<-(date_seq:bat[:int,:date]) jump 1030
 exit ($1802,$1803,$1804);	# 1035  ($1802:lng)($1803:int)($1804:date)
-    timestamp_eur := $1799;	# 1036  (timestamp_eur:bat[:int,:timestamp])<-($1799:bat[:int,:timestamp])
+    timestamp_eur:bat[:int,:timestamp]  := $1799;	# 1036  (timestamp_eur:bat[:int,:timestamp])<-($1799:bat[:int,:timestamp])
 #var timestamp_eur := [timestamp](date_seq, daytime_00, algebra.find(timezones,"West/Europe")); 	# 1037  ($979:str)
-    vi_a := algebra.find(timezones,"Andes/Brazil");	# 1038 ALGfind (vi_a:tzone)<-(timezones:bat[:str,:tzone])($981:str)
+    vi_a:tzone  := algebra.find(timezones,"Andes/Brazil");	# 1038 ALGfind (vi_a:tzone)<-(timezones:bat[:str,:tzone])($981:str)
     $1812 := bbp.new(:int,:timestamp);	# 1039 CMDBATnew ($1812:bat[:int,:timestamp])<-($1024:int)($1800:timestamp)
 barrier ($1814,$1815,$1816):= chopper.newIterator(date_seq);	# 1040 CHPbunIterator ($1814:lng)($1815:int)($1816:date)<-(date_seq:bat[:int,:date]) jump 1046
     $1818 := mtime.timestamp($1816,daytime_00,vi_a);	# 1041 MTIMEtimestamp_create ($1818:timestamp)<-($1816:date)(daytime_00:daytime)(vi_a:tzone)
@@ -1627,7 +1627,7 @@ catch MALexception;	# 1043  (MALexception:str) jump 1044
 exit MALexception;	# 1044  (MALexception:str)
     redo ($1814,$1815,$1816):= chopper.hasMoreElements(date_seq);	# 1045 CHPbunHasMoreElements ($1814:lng)($1815:int)($1816:date)<-(date_seq:bat[:int,:date]) jump 1041
 exit ($1814,$1815,$1816);	# 1046  ($1814:lng)($1815:int)($1816:date)
-    timestamp_bra := $1812;	# 1047  (timestamp_bra:bat[:int,:timestamp])<-($1812:bat[:int,:timestamp])
+    timestamp_bra:bat[:int,:timestamp]  := $1812;	# 1047  (timestamp_bra:bat[:int,:timestamp])<-($1812:bat[:int,:timestamp])
 #var timestamp_bra := [timestamp](date_seq, daytime_00, algebra.find(timezones,"Andes/Brazil")); 	# 1048  ($984:str)
     wi_a := bat.setColumn(date_seq,"date");	# 1049 BKCsetColumn (wi_a:bat[:int,:date])<-(date_seq:bat[:int,:date])($986:str)
 #io.print(date_seq.bat.setColumn("date"),  	# 1050  ($988:str)
@@ -1639,7 +1639,7 @@ catch MALexception;	# 1055  (MALexception:str) jump 1056
 exit MALexception;	# 1056  (MALexception:str)
     redo ($1826,$1827,$1828):= chopper.hasMoreElements(date_seq);	# 1057 CHPbunHasMoreElements ($1826:lng)($1827:int)($1828:date)<-(date_seq:bat[:int,:date]) jump 1053
 exit ($1826,$1827,$1828);	# 1058  ($1826:lng)($1827:int)($1828:date)
-    xi_a := $1824;	# 1059  (xi_a:bat[:int,:int])<-($1824:bat[:int,:int])
+    xi_a:bat[:int,:int]  := $1824;	# 1059  (xi_a:bat[:int,:int])<-($1824:bat[:int,:int])
     $1836 := bbp.new(:int,:str);	# 1060 CMDBATnew ($1836:bat[:int,:str])<-($1024:int)($1023:str)
 barrier ($1838,$1839,$1840):= chopper.newIterator(xi_a);	# 1061 CHPbunIterator ($1838:lng)($1839:int)($1840:int)<-(xi_a:bat[:int,:int]) jump 1067
     $1842 := mtime.dayname($1840);	# 1062 MTIMEday_to_str ($1842:str)<-($1840:int)
@@ -1648,12 +1648,12 @@ catch MALexception;	# 1064  (MALexception:str) jump 1065
 exit MALexception;	# 1065  (MALexception:str)
     redo ($1838,$1839,$1840):= chopper.hasMoreElements(xi_a);	# 1066 CHPbunHasMoreElements ($1838:lng)($1839:int)($1840:int)<-(xi_a:bat[:int,:int]) jump 1062
 exit ($1838,$1839,$1840);	# 1067  ($1838:lng)($1839:int)($1840:int)
-    yi_a := $1836;	# 1068  (yi_a:bat[:int,:str])<-($1836:bat[:int,:str])
+    yi_a:bat[:int,:str]  := $1836;	# 1068  (yi_a:bat[:int,:str])<-($1836:bat[:int,:str])
     aj_a := bat.setColumn(yi_a,"day");	# 1069 BKCsetColumn (aj_a:bat[:int,:str])<-(yi_a:bat[:int,:str])($994:str)
 #	[dayname]([dayofweek](date_seq)).bat.setColumn("day"), 	# 1070  ($996:str)
     bj_a := bat.setColumn(timestamp_eur,"West/Europe");	# 1071 BKCsetColumn (bj_a:bat[:int,:timestamp])<-(timestamp_eur:bat[:int,:timestamp])($975:str)
 #	timestamp_eur.bat.setColumn("West/Europe"), 	# 1072  ($999:str)
-    cj_a := algebra.find(timezones,"West/Europe");	# 1073 ALGfind (cj_a:tzone)<-(timezones:bat[:str,:tzone])($975:str)
+    cj_a:tzone  := algebra.find(timezones,"West/Europe");	# 1073 ALGfind (cj_a:tzone)<-(timezones:bat[:str,:tzone])($975:str)
     $1848 := bbp.new(:int,:bit);	# 1074 CMDBATnew ($1848:bat[:int,:bit])<-($1024:int)($1849:bit)
 barrier ($1851,$1852,$1853):= chopper.newIterator(timestamp_eur);	# 1075 CHPbunIterator ($1851:lng)($1852:int)($1853:timestamp)<-(timestamp_eur:bat[:int,:timestamp]) jump 1081
     $1855 := mtime.dst($1853,cj_a);	# 1076 MTIMEtimestamp_inside_dst ($1855:bit)<-($1853:timestamp)(cj_a:tzone)
@@ -1662,12 +1662,12 @@ catch MALexception;	# 1078  (MALexception:str) jump 1079
 exit MALexception;	# 1079  (MALexception:str)
     redo ($1851,$1852,$1853):= chopper.hasMoreElements(timestamp_eur);	# 1080 CHPbunHasMoreElements ($1851:lng)($1852:int)($1853:timestamp)<-(timestamp_eur:bat[:int,:timestamp]) jump 1076
 exit ($1851,$1852,$1853);	# 1081  ($1851:lng)($1852:int)($1853:timestamp)
-    dj_a := $1848;	# 1082  (dj_a:bat[:int,:bit])<-($1848:bat[:int,:bit])
+    dj_a:bat[:int,:bit]  := $1848;	# 1082  (dj_a:bat[:int,:bit])<-($1848:bat[:int,:bit])
     ej_a := bat.setColumn(dj_a,"dst");	# 1083 BKCsetColumn (ej_a:bat[:int,:bit])<-(dj_a:bat[:int,:bit])($1004:str)
 #	[dst](timestamp_eur,algebra.find(timezones,"West/Europe")).bat.setColumn("dst"), 	# 1084  ($1006:str)
     fj_a := bat.setColumn(timestamp_bra,"Andes/Brazil");	# 1085 BKCsetColumn (fj_a:bat[:int,:timestamp])<-(timestamp_bra:bat[:int,:timestamp])($981:str)
 #	timestamp_bra.bat.setColumn("Andes/Brazil"), 	# 1086  ($1009:str)
-    gj_a := algebra.find(timezones,"Andes/Brazil");	# 1087 ALGfind (gj_a:tzone)<-(timezones:bat[:str,:tzone])($981:str)
+    gj_a:tzone  := algebra.find(timezones,"Andes/Brazil");	# 1087 ALGfind (gj_a:tzone)<-(timezones:bat[:str,:tzone])($981:str)
     $1861 := bbp.new(:int,:bit);	# 1088 CMDBATnew ($1861:bat[:int,:bit])<-($1024:int)($1849:bit)
 barrier ($1863,$1864,$1865):= chopper.newIterator(timestamp_bra);	# 1089 CHPbunIterator ($1863:lng)($1864:int)($1865:timestamp)<-(timestamp_bra:bat[:int,:timestamp]) jump 1095
     $1867 := mtime.dst($1865,gj_a);	# 1090 MTIMEtimestamp_inside_dst ($1867:bit)<-($1865:timestamp)(gj_a:tzone)
@@ -1676,7 +1676,7 @@ catch MALexception;	# 1092  (MALexception:str) jump 1093
 exit MALexception;	# 1093  (MALexception:str)
     redo ($1863,$1864,$1865):= chopper.hasMoreElements(timestamp_bra);	# 1094 CHPbunHasMoreElements ($1863:lng)($1864:int)($1865:timestamp)<-(timestamp_bra:bat[:int,:timestamp]) jump 1090
 exit ($1863,$1864,$1865);	# 1095  ($1863:lng)($1864:int)($1865:timestamp)
-    hj_a := $1861;	# 1096  (hj_a:bat[:int,:bit])<-($1861:bat[:int,:bit])
+    hj_a:bat[:int,:bit]  := $1861;	# 1096  (hj_a:bat[:int,:bit])<-($1861:bat[:int,:bit])
     ij_a := bat.setColumn(hj_a,"dst");	# 1097 BKCsetColumn (ij_a:bat[:int,:bit])<-(hj_a:bat[:int,:bit])($1004:str)
     io.print("print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a)");	# 1098 IOprint_val ($1013:int)<-($1014:str)
     jj_a := io.print(date_seq,yi_a,timestamp_eur,dj_a,timestamp_bra,hj_a);	# 1099 IOtable (jj_a:int)<-(date_seq:bat[:int,:date])(yi_a:bat[:int,:str])(timestamp_eur:bat[:int,:timestamp])(dj_a:bat[:int,:bit])(timestamp_bra:bat[:int,:timestamp])(hj_a:bat[:int,:bit])

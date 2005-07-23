@@ -23,7 +23,7 @@ stdout of test 'tst070` in directory 'src/mal` itself:
 function user.main():int;	# 0  (main:int)
 # parsing operations with multi-assignments 	# 1  ($2:str)
     (x,y):= user.point(z);	# 2  unknown (x:any)(y:any)<-(z:int)
-    (initial,surname):= user.getName();	# 3  unknown (initial:str)(surname:str)
+    (initial:str ,surname:str ):= user.getName();	# 3  unknown (initial:str)(surname:str)
 end main;	# 4  
 
 # 07:58:49 >  
