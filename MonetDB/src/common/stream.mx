@@ -450,6 +450,7 @@ stream_flush(stream *s)
 #ifdef STREAM_DEBUG
 	printf("flush %s\n", s->name ? s->name : "<unnamed>");
 #endif
+	if (!s) return -1;
 	assert(s->access == ST_WRITE);
 	if (s->errnr) return s->errnr;
 	if (s->flush)
@@ -1077,7 +1078,7 @@ socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
 	ssize_t nr = 0, res = 0, size = elmsize * cnt;
 
-	if (s->errnr)
+	if (!s || s->errnr) 
 		return -1;
 
 	if (size == 0 || elmsize == 0)
@@ -1111,8 +1112,8 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 {
 	ssize_t nr = 0, res = 0, size = elmsize * cnt;
 
-	if (s->errnr)
-		return -1;
+	if (!s || s->errnr) 
+		return(-1);
 
 	errno = 0;
 	while (res < size && (
@@ -1300,8 +1301,8 @@ ssl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	SSL *ssl;
 	size_t res = 0, size = elmsize * cnt;
 
-	if (s->errnr)
-		return -1;
+	if (!s || s->errnr) 
+		return(-1);
 
 	assert(s->stream_data.p);
 	ssl = ((struct ssl_data *) s->stream_data.p)->ssl;
@@ -2142,7 +2143,7 @@ stream_read@1(stream *s, @2 *val)
 int
 stream_writeSht(stream *s, short val)
 {
-	if (s->errnr) return(0);
+	if (!s || s->errnr) return(0);
 	return s->write(s, (void *) &val, sizeof(val), 1) == 1;
 }
 
@@ -2151,7 +2152,7 @@ stream_writeSht(stream *s, short val)
 int
 stream_writeInt(stream *s, int val)
 {
-	if (s->errnr) return(0);
+	if (!s || s->errnr) return(0);
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
@@ -2160,7 +2161,7 @@ stream_writeInt(stream *s, int val)
 int
 stream_writeLng(stream *s, lng val)
 {
-	if (s->errnr) return(0);
+	if (!s || s->errnr) return(0);
 	return s->write(s, (void *) &val, sizeof(val), (size_t) 1) == 1;
 }
 
@@ -2187,7 +2188,7 @@ stream_read@1Array(stream *s, @2 *val, size_t cnt)
 int
 stream_writeShtArray(stream *s, const short *val, size_t cnt)
 {
-	if (s->errnr) return(0);
+	if (!s || s->errnr) return(0);
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
@@ -2196,7 +2197,7 @@ stream_writeShtArray(stream *s, const short *val, size_t cnt)
 int
 stream_writeIntArray(stream *s, const int *val, size_t cnt)
 {
-	if (s->errnr) return(0);
+	if (!s || s->errnr) return(0);
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
@@ -2205,7 +2206,7 @@ stream_writeIntArray(stream *s, const int *val, size_t cnt)
 int
 stream_writeLngArray(stream *s, const lng *val, size_t cnt)
 {
-	if (s->errnr) return(0);
+	if (!s || s->errnr) return(0);
 	return s->write(s, (void *) val, sizeof(*val), cnt) == (ssize_t) cnt;
 }
 
@@ -2216,7 +2217,7 @@ stream_printf(stream *s, const char *format, ...)
 	int i = 0;
 	size_t bfsz = BUFSIZ;
 	va_list ap;
-	if (s->errnr) return(-1);
+	if (!s || s->errnr) return(-1);
 
 @= stream_printf_va_vsnprintf
 	va_start(ap, format);
