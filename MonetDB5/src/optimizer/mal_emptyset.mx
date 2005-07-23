@@ -17,7 +17,7 @@
 
 @f mal_emptyset
 @a M. Kersten
-@+ Emptyset reduction
+@+ Emptyset Reduction
 One of the key decisions during MAL optimization is to estimate
 the size of the BATs produced and consumed. Two cases are of interest
 for symbolic processing. Namely when a BAT is known to contain no
@@ -33,7 +33,6 @@ to arrive at a smaller and therefore faster evaluation.
 For example, consider the following MAL test 
 @example
 @verbatim
-function test():void;
     V1 := bbp.new(:void,:int);
     V7 := bbp.new(:void,:int);
     V10{empty} := bbp.new(:int,:void);
@@ -47,14 +46,12 @@ function test():void;
     V23 := algebra.join(V16,V22);
     bat.append(V19,V23);
     V25 := algebra.count(V17);
-end test;
-optimizer.emptySet("user","test");
+	optimizer.emptySet();
 @end verbatim
 @end example
 Calling the optimizer optimize.emptySet("user","test") replaces this program
 by the following code snippet.
 @example
-function user.test():void;
      V1 := bbp.new(:void,:int);
      V7 := bbp.new(:void,:int);
      V16 := algebra.markH(V7);
@@ -64,7 +61,6 @@ function user.test():void;
      V22 := bbp.new(:void,:int);
      V23 := algebra.join(V16,V22);
      bat.append(V19,V23);
-end test;
 @end example
 During empty set propagation, new candidates may appear. For example,
 taking the intersection with an empty set creates a target variable

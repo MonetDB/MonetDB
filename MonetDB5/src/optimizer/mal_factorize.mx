@@ -17,7 +17,7 @@
 
 @f mal_factorize
 @a M. Kersten
-@+ Factorization
+@+ Code Factorization
 In most real-life situations queries are repeatedly called with
 only slight changes in their parameters. This situation can be
 captured by the query compilers by keeping a cache of recent query
@@ -32,7 +32,31 @@ all information.
 Such a program can be represented by a MAL factory, which is
 a re-entrend query plan.
 
-The factorizer presented here is a prototype implementation
+An example of how factorize changes the code is shown below:
+@verbatim
+function test(s:str):lng;
+	b:= bbp.new(:int,:str);
+	bat.insert(b,1,"hello");
+	z:= algebra.select(b,s,s);
+	i:= algebra.count(z);
+	return i;
+end test;
+optimizer.factorize("user","test");
+@end verbatim
+which translates into the following block: 
+@verbatim
+factory user.test(s:str):lng;
+    b := bbp.new(:int,:str);
+    bat.insert(b,1,"hello");
+barrier always := true;
+    z := algebra.select(b,s,s);
+    i := algebra.count(z);
+    yield i;
+    redo always;
+exit always;
+end test;
+@end verbatim
+The factorizer included is a prototype implementation
 of MAL factorization. The approach taken is to split the program
 into two pieces and wrap it as a MAL factory. The optimization
 assumes that the database is not changed on tables accessed only
@@ -45,7 +69,8 @@ to any of the possible available factories to deal with the request.
 For the time being we simple reorganize the plan for all
 parameters
 
-Caveats. The factorize operation interferes with ORoptimizer,
+Caveats. The factorize operation interferes with 
+@code{optimizer.expressionAccumulation()}
 because that may overwrite the arguments.
 For the time being this is captured in a local routine.
 @{
@@ -81,11 +106,12 @@ str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,k,t,v, noop=0,se;
     InstrPtr p;
 	int fk=0,sk=0,blk=0, blkstart=0;
-    int *varused;
+    int *varused, returnseen=0;
     InstrPtr *first,*second;
 	long clk= GDKusec();
     (void) pci; (void) stk;  /* to fool compilers */
 
+	setLifespan(mb);
     varused= GDKmalloc(mb->vtop * sizeof(int));
     for(i=0;i<mb->vtop;i++) varused[i]=0;
 
@@ -122,6 +148,11 @@ str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for( k=0; k<p->retc; k++)
 			if( getVar(mb,p->argv[k])->beginLifespan < i ||
 			    ! FTallowed(p) ) se = 0;
+		if( p->barrier == RETURNsymbol){
+			se=1;
+			p->barrier = YIELDsymbol;
+			returnseen=1;
+		}
 
 		if( se==0 && blk==0 )
 			first[fk++]= p;
@@ -170,9 +201,11 @@ str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mb->stmt[k++]= second[i];
 
 	/* finalize the factory */
-    p = newInstruction(YIELDsymbol);
-	pushReturn(mb,p,v);
-    mb->stmt[k++] = p;
+	if( returnseen==0){
+		p = newInstruction(YIELDsymbol);
+		pushReturn(mb,p,findVariable(mb,getFcnName(mb)));
+		mb->stmt[k++] = p;
+	}
     p = newInstruction(REDOsymbol);
 	pushReturn(mb,p,v);
     mb->stmt[k++] = p;

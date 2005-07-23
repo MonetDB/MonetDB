@@ -32,20 +32,17 @@ mal_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_commonExpressions.h"
 #include "mal_interpreter.h"    /* for showErrors() */
 @}
-@+ Common subexpression elimination
+@+ Common Subexpression Elimination
 Common subexpression elimination merely involves a single scan through the 
 program block to detect re-curring statements.
-A naive implementation is given below, which changes the code block in place.
-
 The key problem to be addressed is to make sure that the parameters involved
 in the repeatative instruction are invariant. 
 
-The analysis is rather crude. All functions with possible side-effects on
-their arguments are marked as 'unsafe'. Their use within a MAL block breaks 
-the dataflow graph for all objects involved (BATs, everything kept in boxes).
-Example, `function insert(b:bat{+unsafe}, ...)`
-Function whose side-effect may be dissastrous for any variable are marked
-as 'corrupt'.
+The analysis of @code{optimizer.commonExpressionRemoval()}
+is rather crude. All functions with possible side-effects on
+their arguments should have been marked as 'unsafe'.
+Their use within a MAL block breaks the dataflow graph for all 
+objects involved (BATs, everything kept in boxes).
 @-
 The common subexpression optimizer locates backwards the identical 
 instructions. 
@@ -53,14 +50,41 @@ It stops as soon as it has found an identical one. Before we can replace the
 expression with the variable(s) of the previous one, we should assure that
 we haven;t passed a safety barrier.
 
-The implementation below is rather expensive for large MAL block.
+@verbatim
+	b:= bbp.new(:int,:int);
+	c:= bbp.new(:int,:int);
+	d:= algebra.select(b,0,100);
+	e:= algebra.select(b,0,100);
+	k1:= 24;
+	k2:= 27;
+	l:= k1+k2;
+	l2:= k1+k2;
+	l3:= l2+k1;
+	optimizer.commonExpressionRemoval();
+@end verbatim
+is translated into the code block where the first two instructions 
+are not common, because they have side effects.
+@verbatim
+    b := bbp.new(:int,:int);
+    c := bbp.new(:int,:int);
+    d := algebra.select(b,0,100);
+    e := d;
+    k1 := 24;
+    k2 := 27;
+    l := calc.+(k1,k2);
+    l3 := calc.+(l,k1);
+@end verbatim
+The current implementation is rather expensive nested-loop algorithm,
+which does not perform well for large MAL blocks.
+Furthermore, after each hit we apply alias removal.
+This potentially generates more common expressions.
 The search can be improved significantly when a dataflow graph
 is maintained for all variables. For, equality of instruction implies that
 all variables have been used before in a similar context.
 
+@{
 Note, we skip the first instruction because it signifies the signature.
 The last instruction signifies the end.
-@{
 @c
 str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {   int i,j,k;
