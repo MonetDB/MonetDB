@@ -17,21 +17,54 @@
 
 @f mal_garbageCollector
 @a M. Kersten
-@+ Garbage collection
-The GCoptimizer removes all BATs that are at their end of
-life to make room for new ones.
-This optimizer should not be called when the scheduler
-intends to keep intermediates around for re-use.
+@+ Garbage Collection
+Garbage collection of temporary variables, such as strings and BATs,
+takes place upon returning from a function call. Especially for BATs
+this may keep sizable resources locked longer than strictly necessary.
+Although the programmer can influence their lifespan by assignment
+of the @code{nil}, thereby triggering the garbage collector,
+it is more appropriate to rely on an optimizer to inject these statements. 
+For, it keeps the program smaller and a better
+target for code-optimizations.
 
-The algorithm is straight forward. After each instruction
-we check whether BAT arguments are needed in the future.
-If not, we inject a statement to release them.
-This should be done carefully, because the instruction
-may be part of a loop.
-If the variable is defined inside the loop, we can
-safely remove it. 
-If it is outside the loop, we still have be careful,
+The operation @code{optimizer.garbageCollector()} removes all 
+BATs that are at their end of life to make room for new ones.
+It is typically called as one of the last optimizer steps.
+A snippet of a the effect of the garbage collector:
+@verbatim
+    t1 := bbp.new(:void,:int);
+    t2 := array.grid(132000,8,1,0);
+    t3 := array.grid(1,100,10560,0);
+    t4 := array.grid(1,100,10560,0,8);
+    t5 := batcalc.+(t2,t4);
+    t6 := batcalc.oid(t5);
+    t7 := algebra.join(t6,t1);
+    optimizer.garbageCollector();
+@end verbatim
+is translated into the following code block:
+@verbatim
+    t1 := bbp.new(:void,:int);
+    t2 := array.grid(132000,8,1,0);
+    t3 := array.grid(1,100,10560,0);
+    t4 := array.grid(1,100,10560,0,8);
+    t5 := batcalc.+(t2,t4);
+    bbp.garbage(t2);
+    bbp.garbage(t4);
+    t6 := batcalc.oid(t5);
+    bbp.garbage(t5);
+    t7 := algebra.join(t6,t1);
+    bbp.garbage(t6);
+    bbp.garbage(t1);
+@end verbatim
 
+The current algorithm is straight forward. After each instruction
+we check whether its BAT arguments are needed in the future.
+If not, we inject a garbage collection statement to release them,
+provided there are no other reasons to retain it.
+This should be done carefully, because the instruction may be part of a loop.
+If the variable is defined inside the loop, we can safely remove it. 
+
+@{
 A variable can only be released in the scope in which
 it is introduced. This means we need an overview of
 the scope nesting and maintain a list of variables
@@ -41,7 +74,8 @@ We don;t have to worry about pre-mature return from the
 function, because this will trigger garbage collection
 anyway.
 
-@{
+This optimizer should not be called when the scheduler
+intends to keep intermediates around for re-use.
 @h
 #ifndef _MAL_GARBAGE_
 #define _MAL_GARBAGE_

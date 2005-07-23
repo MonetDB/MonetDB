@@ -17,15 +17,20 @@
 
 @f mal_strengthReduction
 @a M. Kersten
-@+ Strength reduction
-The strength reduction optimizer walks its way through a program
-and moves instructions out of loops.
+@+ Strength Reduction
+An effective optimization technique in compiler construction is to
+move invariant out of the loops. The equivalent strategy can be
+applied to the loops modelled in MAL programs.
 
-This optimizer requires knowledge on the what blocks are real
+It requires knowledge on the what blocks are real
 iterators and which are merely conditional blocks. In the latter
 case you don;t want to do strength reduction, because you
 are not sure the block will be entered.
 
+@verbatim
+@end verbatim
+@verbatim
+@end verbatim
 @{
 @h
 #ifndef _MAL_STRENGTHREDUCTION_

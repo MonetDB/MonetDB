@@ -35,11 +35,11 @@ a re-entrend query plan.
 An example of how factorize changes the code is shown below:
 @verbatim
 function test(s:str):lng;
-	b:= bbp.new(:int,:str);
-	bat.insert(b,1,"hello");
-	z:= algebra.select(b,s,s);
-	i:= algebra.count(z);
-	return i;
+    b:= bbp.new(:int,:str);
+    bat.insert(b,1,"hello");
+    z:= algebra.select(b,s,s);
+    i:= algebra.count(z);
+    return i;
 end test;
 optimizer.factorize("user","test");
 @end verbatim

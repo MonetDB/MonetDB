@@ -24,12 +24,12 @@ looked upon as a union of smaller BATs. However, this view calls
 for excessively more MAL programming effort, especially when it comes to
 avoiding work using semantic knowledge.
 
-The partitionedQuery optimizer deals with a large fragment of the
-problem space. It assumes that the partitioned BATs
-are all of type :bat[:void,:any]. 
+The operation @code{optimizer.partitionedQuery} deals with 
+a large fragment of the problem space. It assumes that the partitioned BATs
+are all of type @code{:bat[:void,:any]}. 
 Each partition is responsible for a dense range.
-This means we can use the minimum and maximum oid as a
-range constraint in our optimizations decisions.
+This means we can use the minimum and maximum @code{oid} as a
+range constraint in optimizations decisions.
 
 The optimizer is designed incrementally. The focus is
 on supporting the SQL front-end. In particularly, the
@@ -51,6 +51,33 @@ e.g. the language specific optimizer. Alternatively, a scheduler
 may decide to rework the plan based on more accurate knowledge
 of the task at hand.
 
+A snippet of the partitioning optimizer is shown below. It assumes
+that the BATs @code{a1,a2,a3} are type equivalent. The partition
+module groups them together under the name @code{a1}.
+A subsequent call of the partition optimizer will replace
+the print command with a sequence of print commands.
+@verbatim
+# add it to the BAT partition table
+partitions.deposit(a1);
+partitions.deposit(a1,a2);
+partitions.deposit(a1,a3);
+
+function qry(a:bat[:void,:any]);
+        io.print("hello");
+        io.print(a);
+end qry;
+optimizer.partitionedQuery("user","qry");
+@end verbatim
+The query is transformed into the following version.
+@verbatim
+function user.qry(a:bat[:void,:any]):void;
+    io.print("hello");
+barrier ($5,$6):= partitions.newIterator(a);
+    io.print($6);
+    redo ($5,$6):= partitions.hasMoreElements(a);
+exit ($5,$6);
+end qry;
+@end verbatim
 @{
 @h
 #ifndef _MAL_PARTITIONED_
@@ -127,11 +154,11 @@ or all the information is compressed
 into variables that are passed back to the caller as a single value,
 or is sent non-interupted to the output channels.
 The bottom-line is to avoid expansion.
+An assignment to the target is not allowed [to be checked separately]
+@{
 The validFlowNetwork searches the next basic block to
 be considered as safe to expand. It first skips to the
 next instruction that uses the variable mentioned.
-An assignment to the target is not allowed [to be checked separately]
-@{
 @c
 int
 BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid){

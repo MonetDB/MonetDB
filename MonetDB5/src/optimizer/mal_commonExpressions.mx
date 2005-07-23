@@ -51,16 +51,16 @@ expression with the variable(s) of the previous one, we should assure that
 we haven;t passed a safety barrier.
 
 @verbatim
-	b:= bbp.new(:int,:int);
-	c:= bbp.new(:int,:int);
-	d:= algebra.select(b,0,100);
-	e:= algebra.select(b,0,100);
-	k1:= 24;
-	k2:= 27;
-	l:= k1+k2;
-	l2:= k1+k2;
-	l3:= l2+k1;
-	optimizer.commonExpressionRemoval();
+    b:= bbp.new(:int,:int);
+    c:= bbp.new(:int,:int);
+    d:= algebra.select(b,0,100);
+    e:= algebra.select(b,0,100);
+    k1:= 24;
+    k2:= 27;
+    l:= k1+k2;
+    l2:= k1+k2;
+    l3:= l2+k1;
+    optimizer.commonExpressionRemoval();
 @end verbatim
 is translated into the code block where the first two instructions 
 are not common, because they have side effects.
@@ -101,14 +101,14 @@ str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                 goto nxtCommonSubExpression;
 #ifdef DEBUG_MAL_OPTIMIZER
     printf("%d, %d  %d %d ",i,j, hasSameSignature(p,q), hasSameArguments(mb,p,q) );
-    printf(" :%d %d %d \n", !isUpdated(mb,i), !hasCommonResults(p,q), !hasSideEffects(p));
+    printf(" :%d %d %d \n", !isUpdated(mb,i), !hasCommonResults(p,q), !hasSideEffects(p,TRUE));
 
 #endif
             if( hasSameSignature(p,q) && 
                 hasSameArguments(mb,p,q) &&
                !isUpdated(mb,i) &&
                !hasCommonResults(p,q) &&
-               !hasSideEffects(p) ){
+               !hasSideEffects(p,TRUE) ){
 #ifdef DEBUG_MAL_OPTIMIZER
 				if( getClient()->debugOptimizer){
 					stream_printf(GDKout,"Found a common expression "

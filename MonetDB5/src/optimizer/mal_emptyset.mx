@@ -65,11 +65,9 @@ by the following code snippet.
 During empty set propagation, new candidates may appear. For example,
 taking the intersection with an empty set creates a target variable
 that is empty too. It becomes an immediate target for optimization.
-
-The actual implementation is conservative. A limited set of
-instructions are considered. Any addition to the MonetDB instruction
+The current implementation is conservative. A limited set of
+instructions is considered. Any addition to the MonetDB instruction
 set would call for assessment on their effect.
-Moreover, 
 @{
 The implementation differs slightly from other optimizers in that
 we need the variables that are designated as being empty

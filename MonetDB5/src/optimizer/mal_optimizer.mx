@@ -458,7 +458,7 @@ mal_export int hasSameSignature(InstrPtr p, InstrPtr q);
 mal_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 mal_export int isUpdated(MalBlkPtr mb, int pc);
 mal_export int hasCommonResults(InstrPtr p, InstrPtr q);
-mal_export int hasSideEffects(InstrPtr p);
+mal_export int hasSideEffects(InstrPtr p,int strict);
 @}
 @+ Optimizer framework
 The large number of query transformers calls for a flexible scheme for
@@ -713,7 +713,7 @@ int isUpdated(MalBlkPtr mb, int pc)
         /* result is used in an unsafe function*/
         for(j=0; j<p->retc; j++)
         for(k=q->retc; k<q->argc; k++)
-        if( p->argv[j]==q->argv[k] && hasSideEffects(q)) return TRUE;
+        if( p->argv[j]==q->argv[k] && hasSideEffects(q,TRUE)) return TRUE;
     }
     return FALSE;
 }
@@ -1100,7 +1100,7 @@ An illustrative example is the following MAL snippet:
 	io.print("done");
 	optimizer.deadCodeRemoval();
 @end verbatim
-The dead code removal trims this program to a very short one.
+The dead code removal trims this program to the following short block:
 @verbatim
     io.print("done");
 @end verbatim
@@ -1110,12 +1110,12 @@ The dead code remover should
 not be used for testing, because it will trim most programs to
 an empty list.
 @c
-int hasSideEffects(InstrPtr p){
+int hasSideEffects(InstrPtr p, int strict){
     if( blockStart(p) || blockExit(p) || blockCntrl(p)) return TRUE;
     if(functionId(p) && strncmp("print",functionName(p),5)==0) return TRUE;
     if(functionId(p) && idcmp("deposit",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("insert",functionName(p))==0) return TRUE;
-    if(functionId(p) && idcmp("new",functionName(p))==0) return TRUE;
+    if(strict && functionId(p) && idcmp("new",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("append",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("delete",functionName(p))==0) return TRUE;
     if(functionId(p) && idcmp("destroy",functionName(p))==0) return TRUE;
@@ -1162,7 +1162,7 @@ str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
             for(k= 0; k< p->argc; k++)
                 if( varused[p->argv[k]]) se++;
             /* do not deal with dead barrier blocks */
-            if(blockCntrl(p) || hasSideEffects(p) || se){
+            if(blockCntrl(p) || hasSideEffects(p,FALSE) || se){
                 for(k=0; k<p->argc;k++) 
 					varused[p->argv[k]]= !isTypeVar(mb,p->argv[k]);
                 pcused[i]=1;
