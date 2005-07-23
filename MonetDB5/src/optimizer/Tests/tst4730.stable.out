@@ -90,14 +90,14 @@ stdout of test 'tst4730` in directory 'src/optimizer` itself:
 #exit always;
 #end qry1;
 factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;	# 0  dynamic (qry1:any)<-(A0:sht)(A1:sht)(A2:sht)(A3:date)(A4:int)
-    V6 := sql.bind("sys","lineitem","l_shipdate",0);	# 1 mvc_bind_wrap (V6:bat[:void,:date])<-($7:str)($8:str)($9:str)($10:int)
-    V11 := sql.bind_dbat("sys","lineitem",0);	# 2 mvc_bind_dbat_wrap (V11:bat[:void,:oid])<-($7:str)($8:str)($10:int)
-    V22 := sql.bind("sys","lineitem","l_returnflag",0);	# 3 mvc_bind_wrap (V22:bat[:void,:bit])<-($7:str)($8:str)($13:str)($10:int)
-    V29 := sql.bind("sys","lineitem","l_linestatus",0);	# 4 mvc_bind_wrap (V29:bat[:void,:bit])<-($7:str)($8:str)($15:str)($10:int)
-    V53 := sql.bind("sys","lineitem","l_quantity",0);	# 5 mvc_bind_wrap (V53:bat[:void,:int])<-($7:str)($8:str)($17:str)($10:int)
-    V60 := sql.bind("sys","lineitem","l_extendedprice",0);	# 6 mvc_bind_wrap (V60:bat[:void,:flt])<-($7:str)($8:str)($19:str)($10:int)
-    V75 := sql.bind("sys","lineitem","l_discount",0);	# 7 mvc_bind_wrap (V75:bat[:void,:flt])<-($7:str)($8:str)($21:str)($10:int)
-    V105 := sql.bind("sys","lineitem","l_tax",0);	# 8 mvc_bind_wrap (V105:bat[:void,:flt])<-($7:str)($8:str)($23:str)($10:int)
+    V6:bat[:void,:date]  := sql.bind("sys","lineitem","l_shipdate",0);	# 1 mvc_bind_wrap (V6:bat[:void,:date])<-($7:str)($8:str)($9:str)($10:int)
+    V11:bat[:void,:oid]  := sql.bind_dbat("sys","lineitem",0);	# 2 mvc_bind_dbat_wrap (V11:bat[:void,:oid])<-($7:str)($8:str)($10:int)
+    V22:bat[:void,:bit]  := sql.bind("sys","lineitem","l_returnflag",0);	# 3 mvc_bind_wrap (V22:bat[:void,:bit])<-($7:str)($8:str)($13:str)($10:int)
+    V29:bat[:void,:bit]  := sql.bind("sys","lineitem","l_linestatus",0);	# 4 mvc_bind_wrap (V29:bat[:void,:bit])<-($7:str)($8:str)($15:str)($10:int)
+    V53:bat[:void,:int]  := sql.bind("sys","lineitem","l_quantity",0);	# 5 mvc_bind_wrap (V53:bat[:void,:int])<-($7:str)($8:str)($17:str)($10:int)
+    V60:bat[:void,:flt]  := sql.bind("sys","lineitem","l_extendedprice",0);	# 6 mvc_bind_wrap (V60:bat[:void,:flt])<-($7:str)($8:str)($19:str)($10:int)
+    V75:bat[:void,:flt]  := sql.bind("sys","lineitem","l_discount",0);	# 7 mvc_bind_wrap (V75:bat[:void,:flt])<-($7:str)($8:str)($21:str)($10:int)
+    V105:bat[:void,:flt]  := sql.bind("sys","lineitem","l_tax",0);	# 8 mvc_bind_wrap (V105:bat[:void,:flt])<-($7:str)($8:str)($23:str)($10:int)
 barrier always := true;	# 9  (always:bit)<-($25:bit) jump 72
     V12 := bat.reverse(V11);	# 10 BKCreverse (V12:bat[:oid,:void])<-(V11:bat[:void,:oid])
     V13 := algebra.kdiff(V6,V12);	# 11 ALGkdiff (V13:bat[:oid,:date])<-(V6:bat[:void,:date])(V12:bat[:oid,:void])
@@ -172,14 +172,14 @@ function user.main():int;	# 0  (main:int)
     mdb.showFunction("user","qry1");	# 2 MDBshowFunction3 ($4:void)<-($2:str)($3:str)
 end main;	# 3  
 factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;
-    V6 := sql.bind("sys","lineitem","l_shipdate",0);
-    V11 := sql.bind_dbat("sys","lineitem",0);
-    V22 := sql.bind("sys","lineitem","l_returnflag",0);
-    V29 := sql.bind("sys","lineitem","l_linestatus",0);
-    V53 := sql.bind("sys","lineitem","l_quantity",0);
-    V60 := sql.bind("sys","lineitem","l_extendedprice",0);
-    V75 := sql.bind("sys","lineitem","l_discount",0);
-    V105 := sql.bind("sys","lineitem","l_tax",0);
+    V6:bat[:void,:date]  := sql.bind("sys","lineitem","l_shipdate",0);
+    V11:bat[:void,:oid]  := sql.bind_dbat("sys","lineitem",0);
+    V22:bat[:void,:bit]  := sql.bind("sys","lineitem","l_returnflag",0);
+    V29:bat[:void,:bit]  := sql.bind("sys","lineitem","l_linestatus",0);
+    V53:bat[:void,:int]  := sql.bind("sys","lineitem","l_quantity",0);
+    V60:bat[:void,:flt]  := sql.bind("sys","lineitem","l_extendedprice",0);
+    V75:bat[:void,:flt]  := sql.bind("sys","lineitem","l_discount",0);
+    V105:bat[:void,:flt]  := sql.bind("sys","lineitem","l_tax",0);
 barrier always := true;
     V12 := bat.reverse(V11);
     V13 := algebra.kdiff(V6,V12);

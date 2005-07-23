@@ -98,7 +98,7 @@ stdout of test 'tst4900` in directory 'src/optimizer` itself:
 #	io.table(t97,top);
 #end f1;
 function user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
-    t1 := bbp.bind("TREC2003_test_priors_8x32318");	# 1 CMDbbpbind (t1:bat[:void,:dbl])<-($3:str)
+    t1:bat[:void,:dbl]  := bbp.bind("TREC2003_test_priors_8x32318");	# 1 CMDbbpbind (t1:bat[:void,:dbl])<-($3:str)
     t2 := array.grid(132000,8,1,0);	# 2 ARRAYgrid (t2:bat[:void,:int])<-($5:int)($6:int)($7:int)($8:int)
     t3 := array.grid(1,100,10560,0);	# 3 ARRAYgrid (t3:bat[:void,:int])<-($7:int)($10:int)($11:int)($8:int)
     t4 := array.grid(1,100,10560,0,8);	# 4 ARRAYgridShift (t4:bat[:void,:int])<-($7:int)($10:int)($11:int)($8:int)($6:int)
@@ -113,7 +113,7 @@ function user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t13 := mmath.pow(t11,t12);	# 13 MATHbinary_POWdbl (t13:dbl)<-(t11:dbl)(t12:dbl)
     t14 := mmath.sqrt(t13);	# 14 MATHunary_SQRTdbl (t14:dbl)<-(t13:dbl)
     t15 := calc.dbl(t14);	# 15 CALCdbl2dbl (t15:dbl)<-(t14:dbl)
-    t16 := bbp.bind("TREC2003_test_sigs_14x8x32318");	# 16 CMDbbpbind (t16:bat[:void,:dbl])<-($29:str)
+    t16:bat[:void,:dbl]  := bbp.bind("TREC2003_test_sigs_14x8x32318");	# 16 CMDbbpbind (t16:bat[:void,:dbl])<-($29:str)
     t17 := array.grid(800,14,1,0);	# 17 ARRAYgrid (t17:bat[:void,:int])<-($31:int)($32:int)($7:int)($8:int)
     t18 := array.grid(100,8,14,0);	# 18 ARRAYgrid (t18:bat[:void,:int])<-($10:int)($6:int)($32:int)($8:int)
     t19 := array.grid(1,100,112,0);	# 19 ARRAYgrid (t19:bat[:void,:int])<-($7:int)($10:int)($35:int)($8:int)
@@ -130,14 +130,14 @@ function user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t34 := batcalc./(t8,t33);	# 30 CMDcstDIVbat (t34:bat[:void,:dbl])<-(t8:dbl)(t33:bat[:void,:dbl])
     t40 := algebra.join(t6,t34);	# 31 ALGjoin (t40:bat[:void,:dbl])<-(t6:bat[:void,:oid])(t34:bat[:void,:dbl])
     t41 := calc.dbl(-0.5);	# 32 CALCflt2dbl (t41:dbl)<-($51:flt)
-    t42 := bbp.bind(s);	# 33 CMDbbpbind (t42:bat[:void,:dbl])<-(s:str)
+    t42:bat[:void,:dbl]  := bbp.bind(s);	# 33 CMDbbpbind (t42:bat[:void,:dbl])<-(s:str)
     t43 := array.grid(1056000,14,1,0);	# 34 ARRAYgrid (t43:bat[:void,:int])<-($54:int)($32:int)($44:int)($45:int)
     t44 := array.grid(100,1320,112,0);	# 35 ARRAYgrid (t44:bat[:void,:int])<-($56:int)($57:int)($35:int)($45:int)
     t45 := array.grid(100,1320,112,0,14);	# 36 ARRAYgridShift (t45:bat[:void,:int])<-($56:int)($57:int)($35:int)($45:int)($32:int)
     t46 := batcalc.+(t43,t45);	# 37 CMDbatADD (t46:bat[:void,:int])<-(t43:bat[:void,:int])(t45:bat[:void,:int])
     t47 := batcalc.oid(t46);	# 38 CMDconvertvoid_int_oid (t47:bat[:void,:oid])<-(t46:bat[:void,:int])
     t48 := algebra.join(t47,t42);	# 39 ALGjoin (t48:bat[:void,:dbl])<-(t47:bat[:void,:oid])(t42:bat[:void,:dbl])
-    t49 := bbp.bind("TREC2003_test_mus_14x8x32318");	# 40 CMDbbpbind (t49:bat[:void,:dbl])<-($63:str)
+    t49:bat[:void,:dbl]  := bbp.bind("TREC2003_test_mus_14x8x32318");	# 40 CMDbbpbind (t49:bat[:void,:dbl])<-($63:str)
     t51 := array.grid(132000,8,14,0);	# 41 ARRAYgrid (t51:bat[:void,:int])<-($65:int)($66:int)($67:int)($45:int)
     t52 := array.grid(1,100,147840,0);	# 42 ARRAYgrid (t52:bat[:void,:int])<-($44:int)($56:int)($69:int)($45:int)
     t53 := array.grid(1,100,147840,0,8);	# 43 ARRAYgridShift (t53:bat[:void,:int])<-($44:int)($56:int)($69:int)($45:int)($66:int)
@@ -194,7 +194,7 @@ function user.main():int;	# 0  (main:int)
 ##f1(); 	# 9  ($22:str)
 end main;	# 10  
 factory user.f1(s:str):void;
-    t1 := bbp.bind("TREC2003_test_priors_8x32318");
+    t1:bat[:void,:dbl]  := bbp.bind("TREC2003_test_priors_8x32318");
     t2 := array.grid(132000,8,1,0);
     t3 := array.grid(1,100,10560,0);
     t4 := array.grid(1,100,10560,0,8);
@@ -212,7 +212,7 @@ factory user.f1(s:str):void;
     t12 := calc.dbl(14.0);
     t13 := mmath.pow(t11,t12);
     t14 := mmath.sqrt(t13);
-    t16 := bbp.bind("TREC2003_test_sigs_14x8x32318");
+    t16:bat[:void,:dbl]  := bbp.bind("TREC2003_test_sigs_14x8x32318");
     t17 := array.grid(800,14,1,0);
     t18 := array.grid(100,8,14,0);
     t19 := array.grid(1,100,112,0);
@@ -251,7 +251,7 @@ factory user.f1(s:str):void;
     t47 := batcalc.oid(t46);
     bbp.garbage(t46);
     bbp.garbage(t47);
-    t49 := bbp.bind("TREC2003_test_mus_14x8x32318");
+    t49:bat[:void,:dbl]  := bbp.bind("TREC2003_test_mus_14x8x32318");
     t51 := array.grid(132000,8,14,0);
     t52 := array.grid(1,100,147840,0);
     t53 := array.grid(1,100,147840,0,8);
@@ -306,7 +306,7 @@ factory user.f1(s:str):void;
     bbp.garbage(t96);
     bbp.garbage(t97);
 barrier always := true;
-    t42 := bbp.bind(s);
+    t42:bat[:void,:dbl]  := bbp.bind(s);
     t48 := algebra.join(t47,t42);
     bbp.garbage(t42);
     t59 := batcalc.-(t48,t58);
