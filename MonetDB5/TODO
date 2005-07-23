@@ -1,3 +1,5 @@
+- bring property names also into the namespace.
+
 Pathfinder support
 - it heavily relies on BAT admininistration, which is currently
   not well covered by the type system.  (tst800)
@@ -91,6 +93,8 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20050723 the user defined variable types are retained
+20050720 turn properties into simple terms (e.g. cnt<1)
 20050619 The role of multiplex is reconsidered, because it is 
 an efficient implementation of a macro at language level.
 It has new become an optimizer. Where appropriate the 
