@@ -63,6 +63,7 @@ this buffer contains the complete MIL structure to be parsed.
 
 #define CURRENT(c) (c->fdin->buf + c->fdin->pos + c->yycur)
 #define currChar(X) (*CURRENT(X))
+#define peekChar(X) (*((X)->fdin->buf + (X)->fdin->pos + (X)->yycur+1))
 #define nextChar(X) X->yycur++
 #define prevChar(X) if(X->yycur) X->yycur--
 
@@ -1370,6 +1371,7 @@ parseAssign(Client cntxt, int cntrl)
             type = typeElm(cntxt,-1);
 			if( type == TYPE_any)
 					curInstr->polymorphic = 1;
+			getVar(curBlk,varid)->udftype = type != TYPE_any;
             if (type>0) 
 				setVarType(curBlk,varid,type);
             /* check for any properties */
@@ -1419,6 +1421,7 @@ parseAssign(Client cntxt, int cntrl)
                 type = typeElm(cntxt,-1);
 				if( type == TYPE_any)
 						curInstr->polymorphic = 1;
+				getVar(curBlk,varid)->udftype = type != TYPE_any;
                 if (type>0) 
 					setVarType(curBlk,varid,type);
                 /* check for any properties */

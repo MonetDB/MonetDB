@@ -384,6 +384,7 @@ typedef struct VARRECORD{
 	short	depth;	/* ... depth in nesting */
     short   isused; /* for stack copying scope */
     short   fixtype;/* the type has been fixed */
+	short   udftype;/* type defined in program */
     short   cleanup;/* remove upon function return */
     short   beginLifespan, endLifespan, updLifespan; /* for optimizers */
     str     literal;/* initial value string */
@@ -1108,6 +1109,7 @@ int newVariable(MalBlkPtr mb, str name, malType type){
     setVarCleanup(mb,n) = FALSE;
     setVarUsed(mb,n,FALSE);
     isVarInitialized(mb,n) = FALSE;
+	getVar(mb,n)->udftype= 0;
     mb->vtop++;
     return n;
 } 
@@ -1155,6 +1157,7 @@ int newTmpVariable(MalBlkPtr mb, malType type){
     setVarCleanup(mb,n) = FALSE;
     setVarUsed(mb,n,FALSE);
     isVarInitialized(mb,n) = FALSE;
+	getVar(mb,n)->udftype= 0;
     mb->vtop++;
     return n;
 } 
@@ -1191,6 +1194,7 @@ void    copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
 	w->gdktype = v->gdktype;
 	w->cleanup = v->cleanup;
 	w->fixtype = v->fixtype;
+	w->udftype = v->udftype;
 	w->literal= v->literal? GDKstrdup(v->literal):NULL;
 	w->isaconstant = v->isaconstant;
 	w->isatypevar = v->isatypevar;
@@ -1944,33 +1948,31 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
                 sprintf(t,"%s%s",nme,pstring); 
             } else
             if( !getVarTmp(mb, getDestVar(p)) || isVarUsed(mb,getDestVar(p)) ){
-                if( p->retc == 1){
-                    sprintf(t,"%s%s ",nme,pstring); 
-                    advance(t);
-                    if( p->argc > p->retc || functionId(p))
-                    { 
-                        sprintf(t,":= ");t+=3;
-                    }
-                    break;
-                } else {
-                    /* display multi-assignment */
-                    *t++ = '(';
-                    for(i=0;i<p->retc;i++){
-                        ps= getVar(mb,getArg(p,i))->props;
-                        pstring= propertySet2str(ps);
-                        sprintf(t,"%s%s",getArgName(mb,p,i),
-                            pstring);
-                        if(pstring){GDKfree(pstring);pstring=0;}
-                        advance(t);
-                        if( i<p->retc-1) 
-                            *t++= ',';
-                    }
-                    sprintf(t,")");t++;
-                    if( p->argc > p->retc || functionId(p))
-                    { 
-                        sprintf(t,":= ");t+=3;
-                    }
-                }
+				/* display multi-assignment */
+				if( p->retc > 1)
+					*t++ = '(';
+				
+				for(i=0;i<p->retc;i++){
+					ps= getVar(mb,getArg(p,i))->props;
+					pstring= propertySet2str(ps);
+					if( getVar(mb, getArg(p,i))->udftype){
+						str tpe= getTypeName(getVarType(mb,getArg(p,i)));
+						sprintf(t,"%s:%s%s ",getArgName(mb,p,i),tpe,pstring); 
+						GDKfree(tpe);
+					} else
+						sprintf(t,"%s%s ",getArgName(mb,p,i), pstring);
+					if(pstring){GDKfree(pstring);pstring=0;}
+					advance(t);
+					if( i<p->retc-1) 
+						*t++= ',';
+				}
+				if( p->retc > 1)
+					*t++ = ')';
+				
+				if( p->argc > p->retc || functionId(p))
+				{ 
+					sprintf(t,":= ");t+=3;
+				}
             }
             break;
         case ENDsymbol:
