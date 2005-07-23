@@ -1960,19 +1960,22 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 						sprintf(t,"%s:%s%s ",getArgName(mb,p,i),tpe,pstring); 
 						GDKfree(tpe);
 					} else
-						sprintf(t,"%s%s ",getArgName(mb,p,i), pstring);
+						sprintf(t,"%s%s",getArgName(mb,p,i), pstring);
 					if(pstring){GDKfree(pstring);pstring=0;}
 					advance(t);
-					if( i<p->retc-1) 
+					if( i<p->retc-1 )
 						*t++= ',';
 				}
 				if( p->retc > 1)
 					*t++ = ')';
+				else *t++= ' ';
 				
 				if( p->argc > p->retc || functionId(p))
 				{ 
-					sprintf(t,":= ");t+=3;
-				}
+					sprintf(t,":= ");
+					t+=3;
+				} 
+				*t= 0;
             }
             break;
         case ENDsymbol:

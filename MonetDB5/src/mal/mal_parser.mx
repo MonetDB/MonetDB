@@ -1371,7 +1371,7 @@ parseAssign(Client cntxt, int cntrl)
             type = typeElm(cntxt,-1);
 			if( type == TYPE_any)
 					curInstr->polymorphic = 1;
-			getVar(curBlk,varid)->udftype = type != TYPE_any;
+			getVar(curBlk,varid)->udftype = type != TYPE_any && type != -1;
             if (type>0) 
 				setVarType(curBlk,varid,type);
             /* check for any properties */
@@ -1421,7 +1421,7 @@ parseAssign(Client cntxt, int cntrl)
                 type = typeElm(cntxt,-1);
 				if( type == TYPE_any)
 						curInstr->polymorphic = 1;
-				getVar(curBlk,varid)->udftype = type != TYPE_any;
+				getVar(curBlk,varid)->udftype = type != TYPE_any && type != -1;
                 if (type>0) 
 					setVarType(curBlk,varid,type);
                 /* check for any properties */
