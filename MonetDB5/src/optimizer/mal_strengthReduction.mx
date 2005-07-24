@@ -19,18 +19,38 @@
 @a M. Kersten
 @+ Strength Reduction
 An effective optimization technique in compiler construction is to
-move invariant out of the loops. The equivalent strategy can be
-applied to the loops modelled in MAL programs.
-
-It requires knowledge on the what blocks are real
-iterators and which are merely conditional blocks. In the latter
-case you don;t want to do strength reduction, because you
-are not sure the block will be entered.
+move invariant statements out of the loops. The equivalent strategy can be
+applied to the guarded blocks in MAL programs.
+Any variable introduced in a block and assigned a value using a
+side-effect free operation is a candidate to be moved.
+Furthermore, it may not be used outside the block and the expression
+may not depend on variables assigned a value within the same block.
 
 @verbatim
+    j:= "hello world";
+barrier go:=true;
+    i:= 23;
+    j:= "not moved";
+    k:= j; 
+    io.print(i);
+exit go;
+optimizer.strengthReduction();
 @end verbatim
+which is translated into the following code:
 @verbatim
+    j := "hello world";
+    i := 23;
+barrier go := true;
+    j := "not moved";
+	k := j;
+    io.print(i);
+exit go;
 @end verbatim
+Application of the strength reduction should be done with care,
+because execution of a statement outside the guarded block
+consumes processing resources which may have been prohibited by
+the block condition.
+
 @{
 @h
 #ifndef _MAL_STRENGTHREDUCTION_
@@ -52,8 +72,15 @@ This first shot assumes a single loop, so we do not have to
 maintain a complex administration. We simply split the code
 into two sections. Those that should do Before and  Within the loop.
 @c
+int SRoverwritten(InstrPtr p, int varid){
+	int i;
+	for(i=0; i<p->retc; i++)
+	if( getArg(p,i)== varid) return 1;
+	return 0;
+}
+
 str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	int i,j,k,n,se/*,moves*/;
+{	int i,j=0,k,se/*,moves*/;
     InstrPtr p;
 	int bk, ik, b, blk, blkstart, actions=0;
     InstrPtr *before,*within;
@@ -79,7 +106,7 @@ str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			blk--;
 			if( blk== 0 ) blkstart= 0;
 			/* move the saved instruction into place */
-#ifdef _DEBUG_MAL_OPTIMIZER
+#ifdef DEBUG_MAL_STRENGTHREDUCTION
 			stream_printf(GDKout, "combine both %d %d\n",bk,ik);
 #endif
 			/* moves += ik;*/
@@ -89,52 +116,62 @@ str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			before[bk++]= p;
 			continue;
 		}
-		/* inside a block we have to do the work */
-		se= p->barrier!=0;
-		for(k=p->retc; k< p->argc; k++){
+		if( (se= p->barrier!=0)) goto noreduction;
 @-
-You have to check if it was already assigned before
+Only variables introduced in the block can be moved out.
 @c
-			if( !isConstant(mb,getArg(p,k))  )
-			for(j=i-1;j>=0;j--){
-				InstrPtr q= getInstrPtr(mb,j);
-				se++;
-				for(n=0;n<q->retc; n++)
-				if( getArg(q,n)== getArg(p,k)) {
-					se= blk;
-					goto noreduction;
-				}
-				if( blockStart(p))
-					break;
-			}
-@-
-But also look ahead if you are inside a block to check
-if the variable is overwritten, because they you can not move
-@c
+		for( k=0; k<p->retc; k++)
+		if( getVar(mb,getArg(p,k))->beginLifespan != i){
+			se= i;
+			goto noreduction;
 		}
+@-
+Search the end of the block
+@c
 		b= blk;
 		if( blk ) 
 		for(j=i+1;j<mb->stop;j++){
 			InstrPtr q= getInstrPtr(mb,j);
-			for(k=0; k<p->retc; k++){
-				for(n=0;n<q->retc; n++)
-				if( getArg(q,n)== getArg(p,k)) {
-					se= blk;
-					goto noreduction;
-				}
-			}
 			if( blockStart(q))
 				b++;
 			if( blockExit(q))
 				b--;
-			if( b<blk) break;
+			if( b<blk) break;	/* exit the block */
 		}
-		noreduction:
-#ifdef _DEBUG_MAL_OPTIMIZER
+@-
+Make sure the variables are not used outside the block
+@c
+		for( k=0; k<p->retc; k++)
+		if( getVar(mb,getArg(p,k))->endLifespan > j){
+			se= j;
+			goto noreduction;
+		}
+@-
+Search the beginning of the block and make sure that
+none of the target variables is assigned a new value.
+@c
+		b= blk;
+		if( blk ) 
+		for(j=i-1;j>0;j--){
+			InstrPtr q= getInstrPtr(mb,j);
+			for(k=0; k<p->retc; k++)
+			if( SRoverwritten(p, getArg(p,k)) ){
+				se= j;
+				goto noreduction;
+			}
+			if( blockStart(q))
+				b--;
+			if( blockExit(q))
+				b++;
+			if( b<blk) break;	/* exit the block */
+		}
+
+	noreduction:
+#ifdef DEBUG_MAL_STRENGTHREDUCTION
 		stream_printf(GDKout, "move %d to stack %s\n",i, (se?"within":"before"));
 		printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
-		if( se==0) before[bk++]=p;
+		if( se==0 && !hasSideEffects(p,TRUE)) before[bk++]=p;
 		else within[ik++]= p;
 	}
 	actions +=ik;

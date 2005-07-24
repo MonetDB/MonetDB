@@ -71,6 +71,7 @@ used for other purposes as well.
     io.print(t);
     optimizer.peephole();
 @end verbatim
+which is translated by the peephole optimizer into:
 @verbatim
     r:bat[:int,:int] := bbp.new(:int,:int);
     rr := algebra.markH(r);

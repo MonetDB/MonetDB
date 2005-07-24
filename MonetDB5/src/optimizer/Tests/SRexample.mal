@@ -1,0 +1,10 @@
+# simple strength reduction
+	j:= "hello world";
+barrier go:=true;
+	i:=23;
+	j:= "not moved";
+	k:= j;
+	io.print(i);
+exit go;
+optimizer.strengthReduction();
+mdb.showFunction();
