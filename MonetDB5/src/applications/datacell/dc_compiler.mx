@@ -306,7 +306,7 @@ DCmakePlans(int *ret, str *nme, str *newname){
 		return throwMessage("datacell.makePlans","pump not found");
 	mb= s->def;
 
-	es= (int*) alloca(mb->stop);
+	es= (int*) alloca(mb->vtop);
 	PHoptimizer(mb,0,0);
 @-
 We are using three different plans based on the cardinality of the
@@ -372,7 +372,8 @@ with the empty set and singleton set.
 	if( idx > 0){
 		DCplan(pump->malblk[2], *newname);
 		printf("OPTIMIZE SINGLETONSET ON ARGUMENT %d\n",es[0]);
-		SSevaluate(pump->malblk[2],idx,es);
+		STevaluate(pump->malblk[2],idx,es);
+		DCoptimizer(pump->malblk[2],0,0);
 	}
 	return MAL_SUCCEED;
 }
