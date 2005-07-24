@@ -38,6 +38,7 @@ mal_export str PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #define match(X,M,F) ( (X) && functionId(X) && strcmp(functionId(X),F)==0 && \
 	moduleId(X) && strcmp(moduleId(X),M)==0)
 #endif
+
 @c
 #include "mal_peephole.h"
 #include "mal_namespace.h"
@@ -186,10 +187,12 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			setLifespan(mb);
 			ARoptimizer(mb,0,0);
 		}
+#ifdef DEBUG_MAL_PEEPHOLE
 		if( doit){
 			stream_printf(GDKout,"PEEPHOLE %d\n",doit);
 			printFunction(GDKout,mb,LIST_MAL_ALL);
 		}
+#endif
 	} while(doit);
 #ifdef DEBUG_MAL_PEEPHOLE
 	printFunction(GDKout,mb,LIST_MAL_ALL);

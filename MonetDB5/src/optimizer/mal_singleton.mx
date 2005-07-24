@@ -17,29 +17,46 @@
 
 @f mal_singleton
 @a M. Kersten
-@* Singleton set reduction
-Singleton set reduction creates a copy of a MAL program
-using a symbolic evaluation when an variable is known
-to be produce a single tuple.
-During this evaluation, we may create more singleton sets, 
+@+ Singleton Set Reduction
+Application semantics and precise cost analysis may
+identify the result of an operation to produce a BAT with
+a single element. Such variables can be tagged with the
+property @code{singleton}, whereafter the operation
+@code{optimizer.singleton()} derives an MAL program
+using a symbolic evaluation as far as possible.
+
+During its evaluation, more singleton sets can be created, 
 leading to a ripple effect through the code.
+A non-optimizable instruction leads to
+a construction of a new table with the single instance.
 
-The algorithm assumes that each singleton set destination variable
-can be safely be replaced by the tuple pair.
-Also, when we encounter a non-optimizable instruction we
-can safely construct a new table with a single instance.
-
-The approach taken is to only replace instructions when
-the variables remains empty under all invocations.
+@verbatim
+    b:= bbp.new(:int,:int);
+    bat.insert(b,1,2);
+    c{singleton}:= algebra.select(b,0,4);
+    d:= algebra.markH(c);
+    io.print(d);
+    optimizer.singleton();
+@end verbatim
+is translated by into the code block
+@verbatim
+    b := bbp.new(:int,:int);
+    bat.insert(b,1,2);
+    c{singleton} := algebra.select(b,0,4);
+    ($15,$16):= bbp.unpack(c{singleton});
+    d := bbp.pack(nil,$16);
+    io.print(d);
+@end verbatim
 @{
 @h
 #ifndef _MAL_SINGLETON_
 #define _MAL_SINGLETON_
 #include "mal_optimizer.h"
 
-#define DEBUG_MAL_SINGLETON     /* show partial result */
+/* #define DEBUG_MAL_SINGLETON     show partial result */
 
-mal_export str SSevaluate(MalBlkPtr mb, int cnt, int *vars);
+mal_export str SToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str STevaluate(MalBlkPtr mb, int cnt, int *vars);
 #endif
 @c
 #include "mal_singleton.h"
@@ -57,9 +74,10 @@ typedef struct {
 	int htpe;
 	int tidx;
 	int ttpe;
-} SStuple;
+	int packed;
+} STtuple;
 
-void SSrebuildSet(MalBlkPtr mb, int sidx, int hidx, int tidx){
+void STrebuildSet(MalBlkPtr mb, int sidx, int hidx, int tidx){
 	InstrPtr p;
 	int tpe;
 
@@ -78,14 +96,15 @@ void SSrebuildSet(MalBlkPtr mb, int sidx, int hidx, int tidx){
 	pushArgument(mb,p,tidx);
 }
 
-int SSalias(int idx, int top, SStuple *tuples){
+int STalias(int idx, int top, STtuple *tuples){
 	int i;
 	for( i=0; i<top; i++)
 	if( tuples[i].vidx== idx) return i;
 	return -1;
 }
 
-void SSnewTuple(MalBlkPtr mb, int vidx, int *top, SStuple *tuples){
+int STnewTuple(MalBlkPtr mb, int vidx, int *top, STtuple *tuples){
+		tuples[*top].packed= 1;
 		tuples[*top].vidx= vidx;
 		tuples[*top].htpe= getHeadType(getVarType(mb,vidx));
 		tuples[*top].hidx= newTmpVariable(mb, tuples[*top].htpe);
@@ -96,18 +115,39 @@ void SSnewTuple(MalBlkPtr mb, int vidx, int *top, SStuple *tuples){
 		setVarUsed(mb, tuples[*top].tidx,TRUE);
 		setVarInitialized(mb, tuples[*top].tidx);
 		*top = *top +1;
+		return *top-1;
+}
+void STunpack(MalBlkPtr mb, int varid, STtuple *tuples){
+	InstrPtr p=0;
+	if( tuples[varid].packed == 0) return;
+
+	p= newFcnCall(mb, putName("bbp",3), putName("unpack",6));
+	getArg(p,0)= tuples[varid].hidx;
+	setArgument(mb,p,1,tuples[varid].tidx);
+	p->retc++;
+	pushArgument(mb,p,tuples[varid].vidx);
+	tuples[varid].packed=0;
+}
+void STpack(MalBlkPtr mb, int varid, STtuple *tuples){
+	InstrPtr p=0;
+	p= newFcnCall(mb, putName("bbp",3), putName("pack",6));
+	getArg(p,0)= tuples[varid].vidx;
+	p->retc=1;
+	p->argc=1;
+	pushArgument(mb,p,tuples[varid].hidx);
+	pushArgument(mb,p,tuples[varid].tidx);
 }
 
 str
-SSevaluate(MalBlkPtr mb, int cnt, int *vars){
+STevaluate(MalBlkPtr mb, int cnt, int *vars){
 	long clk= GDKusec();
 	int i,j=0,k,limit,doAR=0;
 	InstrPtr p;
 	InstrPtr *old;
-	SStuple *tuples;
+	STtuple *tuples;
 	int top=0;
 
-	tuples = alloca(mb->stop * sizeof(SStuple));
+	tuples = alloca(mb->stop * sizeof(STtuple));
 	limit= mb->stop;
 	old= mb->stmt;
 
@@ -116,7 +156,7 @@ Prepare the list of tuple aliases using allocation of
 variables on the stack.
 @c
 	for(i=0; i<cnt; i++)
-		SSnewTuple(mb,vars[i], &top, tuples);
+		STnewTuple(mb,vars[i], &top, tuples);
 #ifdef DEBUG_MAL_SINGLETON
 	stream_printf(GDKout,"START SINGLETON OPTIMIZER %d:",cnt);
 	for(i=0;i<top; i++) stream_printf(GDKout,"[%d,%d,%d] ",
@@ -131,57 +171,74 @@ variables on the stack.
 		p= old[i];
 		/* decode operations */
 		if( getName("bat",3) == moduleId(p)){
-			if( getName("insert",6)== functionId(p) ||
-				getName("delete",6)== functionId(p) ||
-				getName("append",6)== functionId(p) ){
-					/* use insert tuple instead of bat ?*/
-				if( p->argc==3 && (k = SSalias(getArg(p,2),top,tuples)) >=0){
-				} 
-			} else 
 			if( getName("reverse",7)== functionId(p) &&
-				(k = SSalias(getArg(p,1), top, tuples) >=0 ) ){
-				/* revert the tuple */
-			} 
+				(k = STalias(getArg(p,1), top, tuples) >=0 ) ){
+				/* revert the tuple if it was already unpacked */
+				if( tuples[k].packed ==0){
+					int h= tuples[k].hidx;
+					tuples[k].hidx= tuples[k].vidx;
+					tuples[k].tidx= h;
+					h= tuples[k].htpe;
+					tuples[k].htpe= tuples[k].ttpe;
+					tuples[k].ttpe= h;
+				}
+			} else goto STrepack; 
+		} else
+		if( getName("io",2)== moduleId(p)){
+			if( getName("print",5)== functionId(p) &&
+				p->argc== 3 &&
+				( k= STalias(getArg(p,1),top,tuples)) >= 0){
+					if( tuples[k].packed == 0){
+						getArg(p,1)= tuples[k].hidx;
+						pushArgument(mb,p,tuples[k].tidx);
+					} else goto STrepack;
+			} else goto STrepack;
 		} else
 		if( getName("algebra",7)== moduleId(p)){
 			if( getName("markH",5)== functionId(p) &&
-				(k= SSalias(getArg(p,1),top,tuples)) >=0 ){
+				(k= STalias(getArg(p,1),top,tuples)) >=0 ){
+				STunpack(mb,k,tuples);
 				setModuleId(p,NULL);
 				setFunctionId(p,NULL);
-				SSnewTuple(mb,getArg(p,0), &top, tuples);
-				p->argv[0]= tuples[k].hidx;
-				p->argv[1]= tuples[k].tidx;
 				p->retc= p->argc=2;
 				pushVoid(mb,p);
 				pushArgument(mb,p, tuples[k].tidx);
+				k=STnewTuple(mb,getArg(p,0), &top, tuples);
+				tuples[k].packed =0;
+				p->argv[0]= tuples[k].hidx;
+				p->argv[1]= tuples[k].tidx;
 				p->token= ASSIGNsymbol;
 				p->fcn= NULL;
 				doAR++;
 			} else
 			if( getName("markT",5)== functionId(p) &&
-				(k= SSalias(getArg(p,1),top,tuples)) >=0 ){
+				(k= STalias(getArg(p,1),top,tuples)) >=0 ){
+				STunpack(mb,k,tuples);
 				setModuleId(p,NULL);
 				setFunctionId(p,NULL);
-				SSnewTuple(mb,getArg(p,0), &top, tuples);
-				p->argv[0]= tuples[k].hidx;
-				p->argv[1]= tuples[k].tidx;
 				p->retc= p->argc=2;
 				pushArgument(mb,p, tuples[k].hidx);
 				pushVoid(mb,p);
+				k=STnewTuple(mb,getArg(p,0), &top, tuples);
+				tuples[k].packed =0;
+				p->argv[0]= tuples[k].hidx;
+				p->argv[1]= tuples[k].tidx;
 				p->token= ASSIGNsymbol;
 				p->fcn= NULL;
 				doAR++;
 			} else
 			if( getName("join",4)== functionId(p) ){
-				int k1 = SSalias(getArg(p,1),top,tuples);
-				int k2 = SSalias(getArg(p,2),top,tuples);
+				int k1 = STalias(getArg(p,1),top,tuples);
+				int k2 = STalias(getArg(p,2),top,tuples);
 				if( k1 >= 0 && k2 >= 0){
 					if( tuples[k2].htpe == TYPE_void &&
 					    tuples[k1].htpe == TYPE_void){
+						STunpack(mb,k1,tuples);
+						STunpack(mb,k2,tuples);
 						printf("MERGE VOID JOIN \n");
 						setModuleId(p,NULL);
 						setFunctionId(p,NULL);
-						SSnewTuple(mb,getArg(p,0), &top, tuples);
+						STnewTuple(mb,getArg(p,0), &top, tuples);
 						p->argc=0;
 						pushReturn(mb,p, tuples[top-1].hidx);
 						pushReturn(mb,p, tuples[top-1].tidx);
@@ -193,9 +250,12 @@ variables on the stack.
 					}
 				} else
 				if( k1 >= 0 ){
+					goto STrepack;
 				} else
 				if( k2 >= 0 ) {
-				} 
+					goto STrepack;
+				} else 
+					goto STrepack;
 				/* just push instruction */
 			} else
 /*
@@ -209,25 +269,33 @@ variables on the stack.
 				getName("union",5)== functionId(p) )
 */
 			if( getName("count",5)== functionId(p)  &&
-				( k= SSalias(getArg(p,1),top,tuples)) >= 0){
+				( k= STalias(getArg(p,1),top,tuples)) >= 0){
+				STunpack(mb,k,tuples);
 				/* count propagation */
 				setModuleId(p,NULL);
 				setFunctionId(p,NULL);
 				p->argc=1;
 				p->token= ASSIGNsymbol;
 				pushArgument(mb,p, newConstant(mb,TYPE_lng,GDKstrdup("1"),FALSE));
+			} else {
+STrepack:
+				/* pack everything you need */
+				for( j=0; j<p->argc; j++)
+				if( (k= STalias(getArg(p,j),top,tuples)) >=0 &&
+					tuples[k].packed== 0)
+						STpack(mb,k,tuples);
 			}
 		} else 
 		if( getName("datacell",8)== moduleId(p)){
 			if( getName("bindReceptor",12) &&
-				(k = SSalias(getArg(p,0),top,tuples)) >= 0){
+				(k = STalias(getArg(p,0),top,tuples)) >= 0){
 					setFunctionId(p,putName("bindReceptorTuple",17));
 					getArg(p,0) = tuples[k].hidx;
 					setArgument(mb,p,1,tuples[k].tidx);
 					p->retc++;
 			} else
 			if( getName("keep",4) &&  p->argc>=3 &&
-				(k = SSalias(getArg(p,3),top,tuples)) >= 0){
+				(k = STalias(getArg(p,3),top,tuples)) >= 0){
 				getArg(p,3)= tuples[k].tidx;
 			}
 		} else {
@@ -252,9 +320,7 @@ variables on the stack.
 			tuples[i].tidx, getTypeName(tuples[i].ttpe));
 		stream_printf(GDKout,"\n");
 #endif
-		setLifespan(mb);
 		ARoptimizer(mb,0,0);
-		DCoptimizer(mb,0,0);
 	}
 	GDKfree(old);
 
@@ -263,5 +329,24 @@ variables on the stack.
 	printf("FINAL STAGE SINGLETON errors=%d\n",mb->errors);
 	printFunction(GDKout,mb,LIST_MAL_ALL);
 #endif
+	return MAL_SUCCEED;
+}
+
+str
+SToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	int *vars;
+	int cnt=0, i,j;
+	vars = (int*) alloca(mb->vtop);
+
+	removeInstruction(mb,p);
+	for( i=1; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		for(j=0;j<p->retc; j++)
+		if( fndProperty(getVarProperties(mb,getArg(p,j)),"singleton")){
+			vars[cnt++]= getArg(p,j);
+		}
+	}
+	STevaluate(mb,cnt,vars);
+	(void) stk; 
 	return MAL_SUCCEED;
 }

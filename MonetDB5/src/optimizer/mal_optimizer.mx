@@ -43,7 +43,7 @@ explores part of the space using a limited (up to 300) rewriting rules.
 
 Our hypothesis is that query optimization should be realized with
 a collection of query optimizer transformers (QOT),
-each targeted at a specific task.
+each dedicated to a specific task.
 Furthermore, they are assembled in scenarios to support specific application
 domains or achieve a desired behavior. Such scenarios are selected on a
 session basis, a query basis, or dynamically at

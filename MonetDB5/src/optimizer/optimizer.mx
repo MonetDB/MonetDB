@@ -29,6 +29,7 @@ routine in which it is called. This can be used to maintain status
 information between successive calls. 
 
 The routines below are linked with the kernel by default
+
 @mal
 
 module optimizer;
@@ -75,13 +76,19 @@ pattern emptySet():str
 address QOTESoptimizer;
 pattern emptySet(mod:str, fcn:str):str 
 address QOTESoptimizerCALL
-comment "Move constant expressions out of the loop";
+comment "Move constant expressions out of the blocks";
 
 pattern peephole():str 
 address QOTPHoptimizer;
 pattern peephole(mod:str, fcn:str):str 
 address QOTPHoptimizerCALL
 comment "Perform local rewrites";
+
+pattern singleton():str 
+address QOTSToptimizer;
+pattern singleton(mod:str, fcn:str):str 
+address QOTSToptimizerCALL
+comment "Perform singleton optimization";
 
 pattern garbageCollector():str 
 address QOTGCoptimizer;
@@ -93,13 +100,19 @@ pattern factorize():str
 address QOTFToptimizer;
 pattern factorize(mod:str, fcn:str):str 
 address QOTFToptimizerCALL
-comment "Garbage collector optimizer";
+comment "Turn function into a factory";
 
 pattern partitionedQuery():str 
 address QOTBPToptimizer;
 pattern partitionedQuery(mod:str, fcn:str):str 
 address QOTBPToptimizerCALL
-comment "Reversal idempotency removal";
+comment "Experiment with partitioned databases";
+
+pattern costEstimation():str 
+address QOTRMoptimizer;
+pattern costEstimation(mod:str, fcn:str):str 
+address QOTRMoptimizerCALL
+comment "Estimate the cost of a relational expression";
 
 pattern setDebug():void 
 address QOTdebugOptimizers;
@@ -172,9 +185,11 @@ optimizer.prelude();
 #include "mal_scenario.h"
 #include "mal_namespace.h"
 #include "mal_peephole.h"
+#include "mal_singleton.h"
+#include "mal_emptyset.h"
+#include "mal_costmodel.h"
 
 extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @
 Upon loading the module it should inspect the scenario table
 for any unresolved references to the MALoptimizer and set the 
@@ -252,7 +267,9 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:QOTC(FT,"factorize")@
 	@:QOTC(SR,"strengthReduction")@
 	@:QOTC(ES,"emptySet")@
+	@:QOTC(ST,"singleton")@
 	@:QOTC(PH,"peephole")@
+	@:QOTC(RM,"costEstimation")@
 
 str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str modnme;

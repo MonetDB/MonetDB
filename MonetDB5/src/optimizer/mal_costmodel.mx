@@ -23,27 +23,43 @@ The cost parameters are typically the size of the (intermediate)
 results and response time. Alternatively, they are running
 aggregates, e.g. max memory and total execution time,
 obtained from a simulated run.
+The current implementation contains a framework and example for
+building your own cost-based optimized.
 
-The cost model implementation is collected here and is 
-expected to grow to several calculators, each geared at a particular
-subset of MAL or focussed to support a particular frontend.
-
-The RMcalculator works its way through a MAL program in search for
+The @code{optimizer.costEstimation()} works its way through a 
+MAL program in search for
 relational operators and estimates their result size. 
 The operations taken into account are @{reverse, select, join, mark,
 uselect, kdiff,cross@}
-The estimated size is left behind as property RMcost, to avoid overwriting
-information produced by the front-end compiler.
+The estimated size is left behind as property @code{RMcost},
+to avoid overwriting information produced by the front-end compiler.
+@verbatim
+    r{count=100} := bbp.new(:void,:int);
+    s{count=1000}:= bbp.new(:void,:int);
+    rs:= algebra.select(s,1,1);
+    rr:= bat.reverse(r);
+    j:= algebra.join(rs,rr);
+    optimizer.costEstimation();
+@end verbatim
+changes the properties of the instructions as follows:
+@verbatim
+    r{RMcost=100,count=100} := bbp.new(:void,:int);
+    s{RMcost=1000,count=1000} := bbp.new(:void,:int);
+    rs{RMcost=500} := algebra.select(s{RMcost=1000,count=1000},1,1);
+    rr{RMcost=100} := bat.reverse(r{RMcost=100,count=100});
+    j{RMcost=100} := algebra.join(rs{RMcost=500},rr{RMcost=100});
+@end verbatim
 
-Ideally the BAT variable comes with a histogram property
-to make accurate prediction, otherwise the following heuristics are used.
+The cost estimation does not use any statistics on the actual
+data distribution yet. It just applies a few heuristic cost
+estimators.
 @{
 @+ Implementation section
 @h
 #ifndef _MAL_COSTMODEL_H_
 #define _MAL_COSTMODEL_H_
 
-/* #define DEBUG_MAL_COSTMODEL */
+#define DEBUG_MAL_COSTMODEL
 
 #include "mal.h"
 #include <math.h>
@@ -55,11 +71,13 @@ to make accurate prediction, otherwise the following heuristics are used.
 #define getProps(Y) mb->var[Y]->props
 
 mal_export void RMcalculator( MalBlkPtr mb);
+mal_export str RMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export int getCost(MalBlkPtr mb, int varid);
 #endif /* _MAL_COSTMODEL_H_ */
 @-
 @c
 #include "mal_costmodel.h"
+#include "mal_optimizer.h"
 
 static void fixPropertySet(MalBlkPtr mb, int dst){
 	if( mb->var[dst]->props == 0) 
@@ -114,6 +132,9 @@ void RMcalculator( MalBlkPtr mb){
             if(functionId(p) && idcmp(functionName(p),"join")==0){
 				@:newCost2(1,2, *c1<*c2? *c1: *c2)@
             } else
+            if(functionId(p) && idcmp(functionName(p),"select")==0){
+				@:newCost(1, *c1>100? *c1/2: *c1)@
+            } else
             if(functionId(p) && idcmp(functionName(p),"uselect")==0){
 				@:newCost(1, *c1>100? *c1/2: *c1)@
             } else
@@ -165,6 +186,16 @@ void RMcalculator( MalBlkPtr mb){
 			}
 		}
 	}
+}
+str
+RMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	lng clk= GDKusec();
+	(void) stk; 
+	if( p) 
+		removeInstruction(mb,p);
+	RMcalculator(mb);
+	optimizerCheck(mb,"mal.costEstimation",1,GDKusec()-clk);
+	return MAL_SUCCEED;
 }
 @-
 The cost will be used in many places to make decisions.

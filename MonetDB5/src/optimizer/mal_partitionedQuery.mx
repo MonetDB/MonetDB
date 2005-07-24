@@ -63,7 +63,6 @@ partitions.deposit(a1,a2);
 partitions.deposit(a1,a3);
 
 function qry(a:bat[:void,:any]);
-        io.print("hello");
         io.print(a);
 end qry;
 optimizer.partitionedQuery("user","qry");
@@ -71,7 +70,6 @@ optimizer.partitionedQuery("user","qry");
 The query is transformed into the following version.
 @verbatim
 function user.qry(a:bat[:void,:any]):void;
-    io.print("hello");
 barrier ($5,$6):= partitions.newIterator(a);
     io.print($6);
     redo ($5,$6):= partitions.hasMoreElements(a);
