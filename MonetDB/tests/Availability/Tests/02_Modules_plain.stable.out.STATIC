@@ -1169,8 +1169,8 @@ Module: "stats"
 
 Module: "streams"
 
-[ 33 ]
-[ 33 ]
+[ 35 ]
+[ 35 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature						help									  # name
 # str			str		str							str									  # type
@@ -1203,10 +1203,12 @@ Module: "streams"
 [ "stream_close",	  "COMMAND:   ",  "stream_close(Stream) : void",			  "close and destroy the stream s"					  ]
 [ "stream_flush",	  "COMMAND:   ",  "stream_flush(Stream) : void",			  "flush the stream"							  ]
 [ "stream_read",	  "COMMAND:   ",  "stream_read(Stream) : str",				  "read data from the stream"						  ]
-[ "stream_readInt",	  "COMMAND:   ",  "stream_readInt(Stream) : int",			  "write an integer on the stream"					  ]
+[ "stream_readInt",	  "COMMAND:   ",  "stream_readInt(Stream) : int",			  "read an integer from the stream"					  ]
+[ "stream_readLng",	  "COMMAND:   ",  "stream_readLng(Stream) : lng",			  "read a long integer from the stream"					  ]
 [ "stream_rstream",	  "COMMAND:   ",  "stream_rstream(Stream) : Stream",			  "convert an ascii stream to binary"					  ]
 [ "stream_write",	  "COMMAND:   ",  "stream_write(Stream, str) : void",			  "write data on the stream"						  ]
 [ "stream_writeInt",	  "COMMAND:   ",  "stream_writeInt(Stream, int) : void",		  "write an integer on the stream"					  ]
+[ "stream_writeLng",	  "COMMAND:   ",  "stream_writeLng(Stream, lng) : void",		  "write a long integer on the stream"					  ]
 [ "stream_wstream",	  "COMMAND:   ",  "stream_wstream(Stream) : Stream",			  "convert an ascii stream to binary"					  ]
 
 Module: "tcpip"
