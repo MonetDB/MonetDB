@@ -154,7 +154,7 @@ Singleton sets are ideally not represented by BATs, but they
 nevertheless emerge as the result of an operation.
 They can be packed/unpacked easily.
 @mal
-command unpack(b:bat[:any$1,:any$2])(h:any$1,t:any$2)
+pattern unpack(b:bat[:any$1,:any$2])(h:any$1,t:any$2)
 address CMDbatunpack
 comment "Extract the first tuple from a bat";
 pattern pack(h:any$1,t:any$2):bat[:any$1,:any$2]
@@ -1009,15 +1009,50 @@ str CMDbbp@2( int *ret){
 @c
         @:headtailProperty(htype,HeadType)@
         @:headtailProperty(ttype,TailType)@
+
+extern ValPtr VALinit(ValPtr d, int tpe, ptr s);
+
+ValPtr VALinit(ValPtr d, int tpe, ptr s){
+        if ( ATOMextern(tpe) == 0) {
+                d->vtype= tpe;
+                memcpy(&d->val.ival, s, ATOMlen(tpe,s));
+        } else
+        if (s == 0) {
+                GDKerror("VALinit:unsupported init\n");
+                d->vtype= TYPE_int;
+        } else if( tpe >= TYPE_str && ATOMstorage(tpe) == TYPE_str) {
+                d->vtype = TYPE_str;
+                d->val.sval = GDKstrdup(s);
+                d->len = strLen(s);
+        } else {
+                d->vtype= tpe;
+                d->len = ATOMlen(tpe,s);
+                d->val.pval = GDKmalloc(d->len);
+                memcpy(d->val.pval, s, d->len);
+        }
+        return d;
+}
 str
-CMDbatunpack(ptr hd, ptr tl, int *bid){
+CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT	*b;
-    if( (b= BATdescriptor(*bid)) == NULL ){ 
+	int bid;
+	ptr p;
+	ValPtr head, tail;
+
+	bid= *(int *) getArgValue(stk,pci,2);
+
+    if( (b= BATdescriptor(bid)) == NULL ){ 
          return throwMessage("bbp.unpack", "Cannot access descriptor");
 	}
 
-	doCMDfetch(hd, b, 0);
-	doCMDfetch(tl, BATmirror(b), 0);
+    head = &stk->stk[pci->argv[1]];
+    tail = &stk->stk[pci->argv[2]];
+    p = BUNfirst(b);
+	if( p){
+		VALinit( head, getArgType(mb,pci,0),BUNhead(b,p));
+		VALinit( tail, getArgType(mb,pci,1),BUNtail(b,p));
+	}
+
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
