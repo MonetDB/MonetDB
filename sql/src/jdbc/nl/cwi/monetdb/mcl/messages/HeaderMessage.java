@@ -4,7 +4,7 @@ import java.util.*;
 import nl.cwi.monetdb.mcl.*;
 
 /**
- * An HeaderMessafe is a server originated message, sent by the
+ * An HeaderMessage is a server originated message, sent by the
  * server in order to indicate a result set is available.
  *
  * @author Fabian Groffen <Fabian.Groffen>
@@ -256,7 +256,7 @@ public class HeaderMessage extends MCLMessage {
 		String prop;
 		// see if it is a supported header
 		switch (in.getType()) {
-			case '$':
+			case MCLSentence.MCLMETADATA:
 				prop = in.getField(1);
 				if (prop == null) throw
 					new MCLException("Illegal sentence (no property): " + in.getString());
@@ -292,7 +292,7 @@ public class HeaderMessage extends MCLMessage {
 					throw new MCLException("Illegal property '" + prop + "' for this Message");
 				}
 			break;
-			case '%':
+			case MCLSentence.METADATA:
 				if (columncount == 0) throw
 					new MCLException("columncount header not yet set");
 				String[] values = in.getFields();
