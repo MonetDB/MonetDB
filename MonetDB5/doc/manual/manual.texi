@@ -164,11 +164,12 @@ Table of contents
 @include mal_optimizer.bdy.texi
 @include mal_commonExpressions.bdy.texi
 @include mal_emptyset.bdy.texi
-@include mal_factorize.bdy.texi
-@include mal_garbageCollector.bdy.texi
-@include mal_multiplex.bdy.texi
-@include mal_partitionedQuery.bdy.texi
+@include mal_singleton.bdy.texi
 @include mal_peephole.bdy.texi
+@include mal_multiplex.bdy.texi
+@include mal_garbageCollector.bdy.texi
+@include mal_factorize.bdy.texi
+@include mal_partitionedQuery.bdy.texi
 @include mal_strengthReduction.bdy.texi
 @include mal_costmodel.bdy.texi
 
