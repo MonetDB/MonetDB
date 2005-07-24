@@ -80,7 +80,6 @@ include language;
 include profiler;
 
 include statistics;
-include costmodel;
 include optimizer;
 include chopper;
 include transaction;

@@ -149,6 +149,18 @@ address CMDBATnewDerived;
 command new(nme:str):bat[:any$1,:any$2]
 address CMDBATderivedByName
 comment "Localize a bat by name and produce a variant";
+@- Singleton Set management
+Singleton sets are ideally not represented by BATs, but they
+nevertheless emerge as the result of an operation.
+They can be packed/unpacked easily.
+@mal
+command unpack(b:bat[:any$1,:any$2])(h:any$1,t:any$2)
+address CMDbatunpack
+comment "Extract the first tuple from a bat";
+pattern pack(h:any$1,t:any$2):bat[:any$1,:any$2]
+address CMDbatpack
+comment "Pack a pair into a BAT";
+
 @+ Algebraic operators
 Those that rely on knowledge of the runtime environment
 @mal
@@ -225,6 +237,8 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "mal_client.h"
 #include "mal.h"
 #include "mal_interpreter.h"
+extern int doCMDfetch(ptr ret, BAT *b, size_t i);
+
 @-
 Access to a box calls for resolving the first parameter
 to a named box. The bbp box is automatically opened.
@@ -995,3 +1009,36 @@ str CMDbbp@2( int *ret){
 @c
         @:headtailProperty(htype,HeadType)@
         @:headtailProperty(ttype,TailType)@
+str
+CMDbatunpack(ptr hd, ptr tl, int *bid){
+	BAT	*b;
+    if( (b= BATdescriptor(*bid)) == NULL ){ 
+         return throwMessage("bbp.unpack", "Cannot access descriptor");
+	}
+
+	doCMDfetch(hd, b, 0);
+	doCMDfetch(tl, BATmirror(b), 0);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+str
+CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+	BAT *b;
+	int *ret;
+	int ht, tt;
+	size_t cap=0;
+
+	ht= getArgType(mb,pci,1);
+	tt= getArgType(mb,pci,2);
+	ret= (int *) getArgReference(stk,pci,0);
+
+	if( ht == TYPE_any || tt == TYPE_any)
+		return throwMessage("bbp.new","Explicit type required\n");
+	if( isaBatType(ht)) ht= TYPE_bat;
+	if( isaBatType(tt)) tt= TYPE_bat;
+	b= BATnew(ht,tt,cap);
+	BBPincref(*ret=b->batCacheid,TRUE);
+	BUNins(b,(ptr) getArgValue(stk,pci,1), getArgValue(stk,pci,2));
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
+}
