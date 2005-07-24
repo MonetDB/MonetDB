@@ -77,5 +77,5 @@ barrier always := true;
 exit always;
 end qry1;
 
-costmodel.recalculate("user","qry1");
+optimizer.costEstimation("user","qry1");
 mdb.showFunction("user","qry1");

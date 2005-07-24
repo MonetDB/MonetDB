@@ -168,9 +168,8 @@ end qry1;	# 73
 #showFunction(Admin,qry1);
 #
 function user.main():int;	# 0  (main:int)
-    costmodel.recalculate("user","qry1");	# 1 CMrecalculate ($1:void)<-($2:str)($3:str)
-    mdb.showFunction("user","qry1");	# 2 MDBshowFunction3 ($4:void)<-($2:str)($3:str)
-end main;	# 3  
+    mdb.showFunction("user","qry1");	# 1 MDBshowFunction3 ($4:void)<-($2:str)($3:str)
+end main;	# 2  
 factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;
     V6:bat[:void,:date]  := sql.bind("sys","lineitem","l_shipdate",0);
     V11:bat[:void,:oid]  := sql.bind_dbat("sys","lineitem",0);

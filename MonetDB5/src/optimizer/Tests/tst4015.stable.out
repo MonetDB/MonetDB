@@ -22,16 +22,6 @@ stdout of test 'tst4015` in directory 'src/optimizer` itself:
 #debugOptimizers();
 #RRoptimizer();
 #
-PEEPHOLE 1
-function user.main():int;	# 0  (main:int)
-# testing repeatative reverse optimalisation 	# 1  ($2:str)
-    r := bbp.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-($4:int)($4:int)
-    bat.insert(r,5:int,1:int);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(r:bat[:int,:int])($6:int)($7:int)
-    rr := bat.reverse(r);	# 4 BKCreverse (rr:bat[:int,:int])<-(r:bat[:int,:int])
-    z := algebra.markT(rr,0:oid);	# 5 ALGtmark (z:bat[:int,:void])<-(rr:bat[:int,:int])($9:oid)
-    k := 23:int;	# 6  (k:int)<-($15:int)
-    io.print(r);	# 7 IOprint_val ($16:int)<-(r:bat[:int,:int])
-end main;	# 8  
 function user.main():int;	# 0  (main:int)
 # testing repeatative reverse optimalisation 	# 1  ($2:str)
     r := bbp.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-($4:int)($4:int)

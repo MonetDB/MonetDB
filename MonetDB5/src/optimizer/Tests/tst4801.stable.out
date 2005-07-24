@@ -31,8 +31,9 @@ end f3;	# 6
 #	showFunction("Admin","f3");
 #
 function user.main():int;	# 0  (main:int)
-    mdb.showFunction("user","f3");	# 1 MDBshowFunction3 ($5:void)<-($2:str)($3:str)
-end main;	# 2  
+#optimizer.expressionAccumulation("user","f3"); 	# 1  ($2:str)
+    mdb.showFunction("user","f3");	# 2 MDBshowFunction3 ($6:void)<-($4:str)($5:str)
+end main;	# 3  
 function user.f3():void;
     t28 := array.grid(1,500,1,0);
     t36 := array.grid(500,500,1,0);

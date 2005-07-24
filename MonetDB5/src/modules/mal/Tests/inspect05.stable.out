@@ -248,7 +248,7 @@ end main;	# 7
 [ 215@0,  "pattern",	  "bbp",	  "releaseAll",		  "():void address CMDbbpReleasA;"											  ]
 [ 216@0,  "pattern",	  "bbp",	  "toString",		  "(name:str):str address CMbbptoStr;"											  ]
 [ 217@0,  "pattern",	  "bbp",	  "take",		  "(name:str):bat[:any,:any] address CMDbbptake;"									  ]
-[ 218@0,  "command",	  "bbp",	  "unpack",		  "(b:bat[:any$1,:any$2]) (h:any$1,t:any$2) address CMDbatunpack;"							  ]
+[ 218@0,  "pattern",	  "bbp",	  "unpack",		  "(b:bat[:any$1,:any$2]) (h:any$1,t:any$2) address CMDbatunpack;"							  ]
 [ 219@0,  "pattern",	  "const",	  "close",		  "():void address CSTclose;"												  ]
 [ 220@0,  "pattern",	  "const",	  "discard",		  "(name:any):void address CSTdiscard;"											  ]
 [ 221@0,  "pattern",	  "const",	  "deposit",		  "(name:str,val:any):void address CSTdeposit;"										  ]
