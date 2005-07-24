@@ -1045,8 +1045,8 @@ CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
          return throwMessage("bbp.unpack", "Cannot access descriptor");
 	}
 
-    head = &stk->stk[pci->argv[1]];
-    tail = &stk->stk[pci->argv[2]];
+    head = &stk->stk[pci->argv[0]];
+    tail = &stk->stk[pci->argv[1]];
     p = BUNfirst(b);
 	if( p){
 		VALinit( head, getArgType(mb,pci,0),BUNhead(b,p));
