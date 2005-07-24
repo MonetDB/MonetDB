@@ -1194,7 +1194,7 @@ CMDfetchbat(BAT **ret, BAT *b, BAT *s)
 	return (*ret = BATfetch(b, s)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-static int
+int
 doCMDfetch(ptr ret, BAT *b, size_t i)
 {
 	if (i >= BATcount(b)) {
