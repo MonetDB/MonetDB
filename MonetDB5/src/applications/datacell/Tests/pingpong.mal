@@ -16,14 +16,14 @@ datacell.putPicture("pong","http://www.cwi.nl/~mk/datacell/images/jinjang.jpg");
 
 datacell.dump();
 
-datacell.pump("bat","sql","insert into pong select * from ping;");
+datacell.pump("ball","sql","insert into pong select * from ping;");
 #g:= datacell.compiler("insert into pong select * from ping;");
 #io.print(g);
 #mdb.showFunction("user",g);
 
-s:= datacell.getSource("bat");
+s:= datacell.getSource("ball");
 io.print(s);
-s:= datacell.getSink("bat");
+s:= datacell.getSink("ball");
 io.print(s);
 
 #manually fill the receptor private buffer with a single element

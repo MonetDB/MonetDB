@@ -1,0 +1,37 @@
+#The simpliest throughput experiment consists of pingpong
+#This part tests the pong side, where events should be delivered
+
+include datacell;
+
+datacell.open();
+
+datacell.receptor("ping","localhost", 6000);
+datacell.define("ping","event",:int);
+datacell.putPicture("ping","http://www.cwi.nl/~mk/datacell/images/jinjang.jpg");
+
+datacell.emitter("pong","localhost", 6001);
+datacell.define("pong","event",:int);
+datacell.putPicture("pong","http://www.cwi.nl/~mk/datacell/images/jinjang.jpg");
+
+datacell.dump();
+
+#datacell.pump("ball","sql","insert into pong select * from ping;");
+
+#datacell.startPump("ping");
+#manually fill the private emitter buffer with a single element
+(pub:bat[:void,:timestamp], priv:bat[:void,:timestamp]) := datacell.bindEmitter("pong","click");
+z := mtime.current_timestamp();
+bat.insert(priv,nil,z);
+(public:bat[:void,:int], private:bat[:void,:int]) := datacell.bindEmitter("pong","event");
+bat.insert(private,nil,3);
+io.print(private);
+
+#perform a single schedule run
+#datacell.startScheduler(1000);
+
+(p,q) := datacell.bindEmitter("pong","event");
+io.print(p);
+io.print(q);
+
+#mapi.listen();
+#datacell.close();
