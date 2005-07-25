@@ -56,7 +56,6 @@ Table of contents
 
 * MonetDB overview ::
 @menu
-* The history of MonetDB::
 * Architecture overview:: 
 * Design considerations:: 
 * Backward compatibility:: 
@@ -116,12 +115,14 @@ Table of contents
 
 @node Installation , MonetDB overview, About this manual , TOC
 @include Assets/Features.texi
+@include Assets/History.texi
+@include Assets/Conventions.texi
+
 @node MonetDB overview, MonetDB Assembler Language, Installation, TOC
 @include mal.bdy.texi
 @include mal_scenario.bdy.texi
 @include mal_client.bdy.texi
 @include mal_session.bdy.texi
-@include Assets/History.texi
 
 @node MonetDB Assembler Language , The MAL debugger, MonetDB overview , TOC
 @include mal_instruction.bdy.texi

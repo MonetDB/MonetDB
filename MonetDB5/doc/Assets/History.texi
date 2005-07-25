@@ -1,5 +1,5 @@
 @node The History of MonetDB , Architecture overview, , MonetDB overview
-@subsection The History of MonetDB
+@subsection A Brief History of MonetDB
 @strong{A Dark Ages [1979-2002]}
 The development of the MonetDB software family goes back as far as the
 early eighties when the first relational kernel, called Troll, was delivered to

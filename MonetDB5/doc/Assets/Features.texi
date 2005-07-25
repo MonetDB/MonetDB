@@ -99,6 +99,14 @@ Given the abundance of main memory nowadays and the slack CPU cycles
 to process database request, it may be profitable to consider serial
 execution of OLTP transaction. 
 
+@strong{Security.}
+MonetDB has not been designed from scratch with a strong focus on
+security. The major precautions have been taken, but are incomplete
+when access to the hosting machine is granted or when direct access
+is granted to the MonetDB Interface Programming Language features.
+The system should preferrably be deployed in a sand-boxed environment,
+where remote access is encapsulated an dedicated application framework.
+
 @strong{Scaleing over multiple machines.}
 MonetDB does not provide a centralised controlled, distributed database
 infrastructure. Instead, we move towards an architecture where
