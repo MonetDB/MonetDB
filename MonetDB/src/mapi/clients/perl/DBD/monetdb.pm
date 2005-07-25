@@ -556,10 +556,12 @@ sub execute {
     my $mapi = $dbh->{monetdb_connection};
     my $hdl = $sth->{monetdb_hdl};
     MapiLib::mapi_query_handle($hdl, $statement);
-    my $err = MapiLib::mapi_error($mapi);
-    return $sth->set_err($err, MapiLib::mapi_error_str($mapi)) if $err;
-    my $result_error = MapiLib::mapi_result_error($hdl);
-    return $sth->set_err(-1, $result_error) if $result_error;
+    my $error = MapiLib::mapi_error($mapi) || 0;
+    my $error_str = MapiLib::mapi_error_str($mapi) || '';
+    my $result_error = MapiLib::mapi_result_error($hdl) || '';
+    $error ||= -1 if $result_error;
+    $result_error ||= $error_str;
+    return $sth->set_err($error, $result_error) if $error;
 
     my $rows = MapiLib::mapi_rows_affected($hdl);
 
