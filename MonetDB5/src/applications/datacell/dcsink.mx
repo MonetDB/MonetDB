@@ -46,9 +46,7 @@ a number of milliseconds.
 
 #define MAXBUFFER 1024
 
-FILE *fd;
-
-stream *toServer;
+stream *fromServer;
 
 char *connect_to_server(char * hostname, int port)
 {
@@ -102,8 +100,8 @@ char *connect_to_server(char * hostname, int port)
 #endif
 		return "Setup connection failed";
 	}
-	toServer = block_stream(socket_wstream(s, "sensorDump write"));
-	if ((toServer) == NULL || stream_errnr(toServer)) {           \
+	fromServer = block_stream(socket_wstream(s, "sensorDump write"));
+	if ((fromServer) == NULL || stream_errnr(fromServer)) {           \
 		return "stream closed";
 	}
 
@@ -124,6 +122,7 @@ int main(int argc, char **argv){
 	int delay = -1;
 	time_t t;
 	char buf[MAXBUFFER];
+	bstream *bs;
 
 	if( argc == 1) usage();
 
@@ -151,9 +150,13 @@ int main(int argc, char **argv){
 		return -1;
 	}
 
-	while(fgets(buf,MAXBUFFER,fd) != 0){
+	bs= bstream_create(fromServer,MAXBUFFER);
+	while( !stream_errnr(bs->s)){
 		time(&t);
-		printf("%s: %s\n", ctime(&t) ,buf);
+		if( bstream_read(bs,MAXBUFFER) == 0)
+			printf("%s: READ ERROR\n",ctime(&t));
+		else
+			printf("%s: %s\n", ctime(&t) ,buf);
 	}
 	return 0;
 }

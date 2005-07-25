@@ -207,21 +207,6 @@ command commit(fname:str):lng
 address DCsaveCatalogue
 comment "Save a text file to reload the catalogue";
 
-@-
-Control the runtime behaviour of the datacell.
-@mal
-command bindEmitter(sname:str,pname:str)
-			(public:bat[:any$1,:any$2], private:bat[:any$1,:any$2])
-address DCbindEmitter
-comment "Provide access to a private version of a column.";
-command bindEmitter(sname:str,pname:str):bat[:any$1,:any$2]
-address DCbindEmitterPublic
-comment "Provide access to a private version of a column.";
-
-command bind(sname:str,pname:str):any
-address DCbind
-comment "Provide access to a private version of a column.";
-
 command dump()
 address DCdumpCatalogue
 comment "Display the datacell cataloque";
@@ -232,6 +217,7 @@ comment "Show a page of the (reverse ordered) container";
 
 include dc_compiler;
 include dc_receptor;
+include dc_emitter;
 include dc_scheduler;
 @- Implementation
 The implementation is based on the assumption that 
@@ -1098,66 +1084,6 @@ int setStatus(str name, int status){
 	return 0;
 }
 
-str
-DCbind(int *ret, str *sname, str *pname, int *access){
-	(void) ret; (void) sname; (void) pname; (void) access;
-	return throwMessage("datacell.bind","nyi\n");
-}
-str
-DCbindEmitter(int *public, int *private, str *name, str *cname){
-	DCpump p;
-    int i;
-
-    p= DClocatePump(*name);
-    if( p == 0)
-        return throwMessage("datacell.bindEmitter","unknown receptor");
-    if( p->kind != EMITTER)
-        return throwMessage("datacell.bindEmitter","unknown receptor");
-#ifdef DEBUG_DCRECEPTOR
-    stream_printf(GDKout,"#bindReceptor %s.%s\n",*name,*cname);
-#endif
-    for(i=0; i < p->cols ; i++)
-    if( strcmp(p->columns[i],*cname) == 0 ){
-        mal_set_lock(p->lock,"datacellIsolate");
-        if( p->usedby && p->usedby != p-pumps){
-            mal_unset_lock(p->lock,"datacellIsolate");
-            return throwMessage("datacell.isolate","Pump still in use\n");
-        }
-        p->usedby= p - pumps;
-        mal_unset_lock(p->lock,"datacellIsolate");
-        BBPincref( *public= p->public[i]->batCacheid, TRUE);
-        BBPincref( *private= p->private[i]->batCacheid, TRUE);
-		break;
-    }
-    return MAL_SUCCEED;
-}
-str
-DCbindEmitterPublic(int *public, str *name, str *cname){
-	DCpump p;
-    int i;
-
-    p= DClocatePump(*name);
-    if( p == 0)
-        return throwMessage("datacell.bindEmitter","unknown receptor");
-    if( p->kind != EMITTER)
-        return throwMessage("datacell.bindEmitter","unknown receptor");
-#ifdef DEBUG_DCRECEPTOR
-    stream_printf(GDKout,"#bindReceptor %s.%s\n",*name,*cname);
-#endif
-    for(i=0; i < p->cols ; i++)
-    if( strcmp(p->columns[i],*cname) == 0 ){
-        mal_set_lock(p->lock,"datacellIsolate");
-        if( p->usedby && p->usedby != p-pumps){
-            mal_unset_lock(p->lock,"datacellIsolate");
-            return throwMessage("datacell.isolate","Pump still in use\n");
-        }
-        p->usedby= p - pumps;
-        mal_unset_lock(p->lock,"datacellIsolate");
-        BBPincref( *public= p->public[i]->batCacheid, TRUE);
-		break;
-    }
-    return MAL_SUCCEED;
-}
 @-
 Before you start updating the emitter public part it should be locked.
 It is released explicitedly.

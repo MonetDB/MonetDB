@@ -10,7 +10,7 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		datacell.mx dc_compiler.mx dc_scheduler.mx \
-		dc_receptor.mx
+		dc_receptor.mx dc_emitter.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -30,7 +30,7 @@ bin_dcsink = {
 scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = datacell.mx dc_compiler.mx dc_scheduler.mx \
-		dc_receptor.mx
+		dc_receptor.mx dc_emitter.mx
 }
 
 #EXTRA_DIST_DIR = Tests

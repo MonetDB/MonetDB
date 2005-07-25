@@ -121,7 +121,7 @@ char *connect_to_server(char * hostname, int port)
 }
 
 void usage(){
-	printf("sensorDump -h <host> -p <port>  -C <columns> -N <tuples> -B <batch> -d <delay>\n");
+	printf("dcsource -h <host> -p <port>  -C <columns> -N <tuples> -B <batch> -d <delay>\n");
 	printf("-h host name, default localhost\n");
 	printf("-p port id \n");
 	printf("-C number of columns, default 1\n");
