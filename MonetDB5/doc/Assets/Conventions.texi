@@ -48,13 +48,20 @@ experimentation, tool migration and feedback.
 
 @section Conventions and Notation
 The  typographical conventions used in this manual are straightforward.
-@code{Monospaced} text is used to designate names in the code base. 
+@code{Monospaced} text is used to designate names in the code base
+and examples. 
 @emph{Italics} is used in explanations to indicate where a user
 supplied value should be substituted.
 
 Snippets of code are illustrated in verbatim font. 
 The interaction with textual interfaces uses the default 
 prompt-setting of the underlying operating system. 
+
+Keywords in the MonetDB interface languages are key sensitive;
+SQL keyword are not case insensitive. No distinction is made
+in this manual.
+
+?BNF conventions
 
 @section Additional Resources
 Although this reference manual aims to be complete, it depends on
@@ -72,7 +79,7 @@ MonetDB only.
 The resource locations identified below may in times proof valuable.
 
 @multitable {example}{and the remainder is long}
-@item Perl 
+@item Perl DBI
 @tab @url{http://www.perl.org,http://www.perl.org}
 @item PHP5
 @tab @url{http://www.php.net,http://www.php.net}

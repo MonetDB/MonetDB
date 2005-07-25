@@ -73,6 +73,10 @@ appreciated, especially before you embark on a complex programming
 project. If the envisioned functionality is generally applicable it makes
 sense to contribute it to the community.
 
+The preferred channel to share your comments is through the
+MonetDB mailing list http://XYZ held at SourceForge.
+
+
 @menu
 * Intended audience::
 * Manual Generation::

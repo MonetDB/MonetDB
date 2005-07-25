@@ -109,3 +109,4 @@ In the multimedia applications we have exploited the inherent
 data parallelism to speed up processing and reduce the synchronization cost.
 The underlying platforms were 16-32 Linux-based cluster computers with
 sizeable main memories.
+
