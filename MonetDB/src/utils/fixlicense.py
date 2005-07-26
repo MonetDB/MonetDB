@@ -198,6 +198,12 @@ def addlicense(file, pre = None, post = None, start = None, end = None):
             # add a blank line
             addblank = True
             line = f.readline()
+        if line[:5] == '<?xml':
+            # if line starts with an XML declaration, keep the line there
+            g.write(line)
+            # add a blank line
+            addblank = True
+            line = f.readline()
         if addblank:
             g.write('\n')
         if pre:
@@ -343,6 +349,11 @@ def dellicense(file, pre = None, post = None, start = None, end = None):
             if line and line == '\n':
                 line = f.readline()
         if line.find('-*-') >= 0:
+            g.write(line)
+            line = f.readline()
+            if line and line == '\n':
+                line = f.readline()
+        if line[:5] == '<?xml':
             g.write(line)
             line = f.readline()
             if line and line == '\n':
