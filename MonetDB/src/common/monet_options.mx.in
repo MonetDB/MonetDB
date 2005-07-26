@@ -333,7 +333,7 @@ mo_builtin_settings(opt **Set)
 	i++;
 	set[i].kind = opt_builtin;
 	set[i].name = strdup("monet_pid");
-	snprintf(buf, BUFSIZ, "%d", getpid());
+	snprintf(buf, BUFSIZ, "%d", (int) getpid());
 	set[i].value = strdup(buf);
 	i++;
 
