@@ -1196,7 +1196,7 @@ static int  seqHeadStart(
         /* write SQL-ish header */
         stream_printf(GDKout,"#-\n");
         stream_printf(GDKout,"# 3\t# querytype\n");
-        stream_printf(GDKout,"# xquery_result,\txquery_result\t# table_name\n");
+        stream_printf(GDKout,"# xquery_result\t# table_name\n");
         stream_printf(GDKout,"# xml\t# name\n");
         stream_printf(GDKout,"# varchar\t# type\n");
         stream_printf(GDKout,"# %d\t# length\n", 60);
