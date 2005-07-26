@@ -1,3 +1,0 @@
-mal.call("io.print(1);");
-mal.call("io.print(\"hello\");");
-mal.call("s:=\"goodbye\";io.print(s);");
