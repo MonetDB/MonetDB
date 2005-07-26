@@ -23,9 +23,11 @@
 #define _SQL_DECIMAL_H
 
 #include "sql_mem.h"
+#include "sql_types.h"
 #include <gdk.h>
 
 extern lng decimal_from_str(char *dec);
+extern char * decimal_to_str(lng v, sql_subtype *t);
 
 #endif /* _SQL_DECIMAL_H */
 
@@ -54,3 +56,32 @@ decimal_from_str(char *dec)
 	else
 		return res;
 }
+
+char *
+decimal_to_str(lng v, sql_subtype *t) 
+{
+	char buf[32];
+	int scale = t->scale, cur = 31, neg = (v<0)?1:0, i, done = 0;
+
+	if (v<0) v = -v;
+
+	buf[cur--] = 0;
+	if (scale){
+		for (i=0; i<scale; i++) {
+			buf[cur--] = (char) (v%10 + '0');
+			v /= 10;
+		}
+		buf[cur--] = '.';
+	}
+	while (v) {
+		buf[cur--] = (char ) (v%10 + '0');
+		v /= 10;
+		done = 1;
+	}
+	if (!done)
+		buf[cur--] = '0';
+	if (neg)
+		buf[cur--] = '-';
+	return _strdup(buf);
+}
+

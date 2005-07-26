@@ -47,6 +47,7 @@ extern atom *atom_dup( atom *a);
 extern int atom_cast(atom *a, sql_subtype *tp);
 
 extern char *atom2string(atom *a);
+extern char *atom2sql(atom *a);
 extern sql_subtype *atom_type(atom *a);
 
 extern void atom_destroy(atom *a);
@@ -57,6 +58,7 @@ extern void atom_dump(atom *a, stream *s);
 @c
 #include "sql_atom.h"
 #include <sql_string.h>
+#include <sql_decimal.h>
 #include <monettime.h>
 
 static int atom_debug = 0;
@@ -184,7 +186,7 @@ atom_general(sql_subtype *tpe, char *val, int destroy)
 			a->isnull = 0;
 			a->data.val.sval = sql2str(val);
 			a->data.len = strlen(a->data.val.sval);
-		} else {
+		} else { 
 			int res = ATOMfromstr(type, &p, &a->data.len, val);
 
 			/* no result or nil means error (SQL has NULL not nil) */
@@ -225,7 +227,7 @@ atom2string(atom *a)
 {
 	char buf[BUFSIZ];
 
-	switch (a->data.vtype) {
+	switch (a->data.vtype) { 
 	case TYPE_lng:
 		sprintf(buf, "%lld", a->data.val.lval);
 		break;
@@ -253,6 +255,75 @@ atom2string(atom *a)
 	}
 	return _strdup(buf);
 }
+
+char *
+atom2sql(atom *a)
+{
+	char buf[BUFSIZ];
+
+	/* todo handle NULL's early */
+	switch (a->tpe->type->eclass) {
+	case EC_BIT:
+		assert( a->data.vtype == TYPE_bit);
+		if (a->data.val.cval[0])
+			return _strdup("true");
+		return _strdup("false");
+	case EC_CHAR:
+	case EC_STRING:
+		assert (a->data.vtype == TYPE_str);
+		if (a->data.val.sval)
+			sprintf(buf, "'%s'", a->data.val.sval);
+		else
+			sprintf(buf, "NULL");
+		break;
+	case EC_BLOB:
+		/* TODO atom to string */
+		break;
+	case EC_NUM:
+		switch (a->data.vtype) {
+		case TYPE_lng:
+			sprintf(buf, "%lld", a->data.val.lval);
+			break;
+		case TYPE_int:
+			sprintf(buf, "%d", a->data.val.ival);
+			break;
+		case TYPE_sht:
+			sprintf(buf, "%d", a->data.val.shval);
+			break;
+		default:
+			break;
+		}
+	case EC_DEC: {
+		lng v = 0;
+		switch (a->data.vtype) {
+		case TYPE_lng: v = a->data.val.lval; break;
+		case TYPE_int: v = a->data.val.ival; break;
+		case TYPE_sht: v = a->data.val.shval; break;
+		default: break;
+		}
+		return decimal_to_str(v, a->tpe);
+	}
+	case EC_FLT:
+		assert (a->data.vtype == TYPE_dbl);
+		sprintf(buf, "%f", a->data.val.dval);
+		break;
+	case EC_TIME:
+	case EC_DATE:
+	case EC_TIMESTAMP:
+		if (a->data.vtype == TYPE_str) {
+			if (a->data.val.sval)
+				sprintf(buf, "%s '%s'", a->tpe->type->sqlname, 
+					a->data.val.sval);
+			else
+				sprintf(buf, "NULL");
+		}
+		break;
+        default:
+                snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
+	}
+	return _strdup(buf);
+}
+
 
 sql_subtype *
 atom_type(atom *a)
