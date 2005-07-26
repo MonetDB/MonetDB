@@ -984,6 +984,7 @@ mapi_export char *mapi_get_name(MapiHdl hdl, int fnr);
 mapi_export char *mapi_get_type(MapiHdl hdl, int fnr);
 mapi_export int mapi_get_len(MapiHdl hdl, int fnr);
 mapi_export int mapi_get_querytype(MapiHdl hdl);
+mapi_export int mapi_get_tableid(MapiHdl hdl);
 mapi_export char *mapi_quote(const char *msg, int size);
 mapi_export char *mapi_unquote(char *msg);
 
@@ -3197,6 +3198,8 @@ mapi_execute_array(MapiHdl hdl, char **val)
 	mapi_hdl_check(hdl, "mapi_execute_array");
 	ret = mapi_prepare_array_internal(hdl, val);
 	if (ret == MOK)
+		ret = mapi_execute_internal(hdl);
+	if (ret == MOK)
 		ret = read_into_cache(hdl, 1);
 	return ret;
 }
@@ -4143,6 +4146,18 @@ mapi_get_querytype(MapiHdl hdl)
 	if ((result = hdl->result) != 0)
 		return result->querytype;
 	mapi_setError(hdl->mid, "No query result", "mapi_get_querytype", MERROR);
+	return 0;
+}
+
+int
+mapi_get_tableid(MapiHdl hdl)
+{
+	struct MapiResultSet *result;
+
+	mapi_hdl_check0(hdl, "mapi_get_tableid");
+	if ((result = hdl->result) != 0)
+		return result->tableid;
+	mapi_setError(hdl->mid, "No query result", "mapi_get_tableid", MERROR);
 	return 0;
 }
 
