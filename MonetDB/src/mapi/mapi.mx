@@ -515,9 +515,10 @@ Get the new information for the server socket and start listening.
 				t1->yyval.val.pval = fdin;
 				t2->yyval.val.pval = fdout;
 				sig.token = TBL_normal_resolve(cmd, 3, fds, &sig, father-monet_clients);
-				if (sig.token < 0 || sig.token != TOK_BUILTIN) {
+				if (sig.token != TOK_BUILTIN) {
 					GDKerror("Client builtin function %s(stream,stream) unknown\n", cmd);
-					break;
+					closeClient(c, FALSE);
+					continue;
 				}
 				c->mil_accept->yyval.val.pval = sig.fast_fcn;
 			}
