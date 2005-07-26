@@ -21,10 +21,8 @@ package nl.cwi.monetdb.jdbc;
 import java.sql.*;
 import java.io.*;
 import java.util.*;
-import java.util.regex.*;
 import java.math.*;
 import java.net.*;
-import java.text.SimpleDateFormat;
 
 /**
  * A ResultSet suitable for the MonetDB database.
@@ -207,11 +205,11 @@ public class MonetResultSet implements ResultSet {
 		StringBuffer uesc = new StringBuffer();
 		for (; i < len; i++) {
 			switch(chrLine[i]) {
-				case '\\':
-					escaped = !escaped;
-				break;
 				default:
 					escaped = false;
+				break;
+				case '\\':
+					escaped = !escaped;
 				break;
 				case '"':
 					/**
@@ -1051,6 +1049,8 @@ public class MonetResultSet implements ResultSet {
 
 			/**
 			 * Gets the designated column's table's catalog name.
+			 * Because MonetDB handles only one catalog (dbfarm) at a
+			 * time, the current one is the one we deal with here.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return the name of the catalog for the table in which the given
@@ -1058,8 +1058,6 @@ public class MonetResultSet implements ResultSet {
 			 */
 			public String getCatalogName(int column) throws SQLException {
 				if (getTableName(column) != "") {
-					// because MonetDB handles only one catalog (dbfarm) at
-					// a time, the current one is the one we deal with here
 					return(getStatement().getConnection().getCatalog());
 				} else {
 					return("");
@@ -1263,7 +1261,7 @@ public class MonetResultSet implements ResultSet {
 	 * @param type a value from java.sql.Types
 	 * @return a Class object from which an instance would be returned
 	 */
-	private Class getClassForType(int type) {
+	static Class getClassForType(int type) {
 		/**
 		 * This switch returns the types as objects according to table B-3 from
 		 * Sun's JDBC specification 3.0

@@ -25,48 +25,41 @@ import java.io.*;
 import java.math.*;	// BigDecimal, etc.
 
 /**
- * A PreparedStatement suitable for the MonetDB database.
+ * A PreparedStatement suitable for the MonetDB database implemented in
+ * Java.
  * <br /><br />
- * This implementation of the PreparedStatement interface uses the
- * capabilities of the MonetDB/SQL backend to prepare and execute
- * queries.  The backend takes care of finding the '?'s in the input and
- * returns the types it expects for them.
+ * DEPRECATED.<br />
+ * Although this class is deprecated, and has been replaced by an
+ * implementation that makes use of server side capabilities, this class
+ * is still provided for users that somehow rely on the behaviours from
+ * this Java implementation of a PreparedStatement.
  * <br /><br />
- * An example of a server response on a prepare query is:
- * <pre>
- * % prepare select name from tables where id &gt; ? and id &lt; ?;
- * # 10 # querytype
- * # prepare,      prepare,        prepare # table_name
- * # type, digits, scale # name
- * # varchar,      int,    int # type
- * # 0,    0,      0 # length
- * # 2 # tuplecount
- * # 1 # id
- * [ "int",        9,      0       ]
- * [ "int",        9,      0       ]
- * </pre>
+ * This implementation is purely for enabling applications to use the
+ * interface PreparedStatement, for it does currently not use a PREPARE
+ * call on the MonetDB SQL backend.
+ * <br /><br />
+ * Because we have no DBMS support here, we need to fake the lot to make
+ * it work.  We try to spot `?', when not enclosed by single or double
+ * quotes.  The positions of the question marks will later be replaced
+ * by the appropriate SQL and sent to the server using the underlying
+ * Statement.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.1
+ * @version 0.3
  */
-public class MonetPreparedStatement
+public class MonetPreparedStatementJavaImpl
 	extends MonetStatement
 	implements PreparedStatement
 {
-	private final String[] monetdbType;
-	private final int[] javaType;
-	private final int[] digits;
-	private final int[] scale;
-	private final int id;
-	private final int size;
+	private final String pQuery;
 
-	private final String[] values;
+	private final int[] pos;
+	private final String[] value;
 
 	/**
-	 * MonetPreparedStatement constructor which checks the arguments for
-	 * validity.  A MonetPreparedStatement is backed by a
-	 * MonetStatement, which deals with most of the required stuff of
-	 * this class.
+	 * MonetStatement constructor which checks the arguments for validity, tries
+	 * to set up a socket to MonetDB and attempts to login.
+	 * This constructor is only accessible to classes from the jdbc package.
 	 *
 	 * @param connection the connection that created this Statement
 	 * @param resultSetType type of ResultSet to produce
@@ -74,7 +67,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if an error occurs during login
 	 * @throws IllegalArgumentException is one of the arguments is null or empty
 	 */
-	MonetPreparedStatement(
+	MonetPreparedStatementJavaImpl(
 		MonetConnection connection,
 		int resultSetType,
 		int resultSetConcurrency,
@@ -87,29 +80,95 @@ public class MonetPreparedStatement
 			resultSetConcurrency
 		);
 
-		if (!super.execute("PREPARE " + prepareQuery))
-			throw new SQLException("Unexpected server response");
+		pQuery = prepareQuery;
 
-		// cheat a bit to get the ID and the number of columns
-		id = header.getID();
-		size = header.getTupleCount();
+		// find qualifying ?'s
+		List tpos = new ArrayList();
 
-		// initialise blank finals
-		monetdbType = new String[size];
-		javaType = new int[size];
-		digits = new int[size];
-		scale = new int[size];
-		values = new String[size];
-
-		// fill the arrays
-		ResultSet rs = super.getResultSet();
-		for (int i = 0; rs.next(); i++) {
-			monetdbType[i] = rs.getString("type");
-			javaType[i] = MonetDriver.getJavaType(monetdbType[i]);
-			digits[i] = rs.getInt("digits");
-			scale[i] = rs.getInt("scale");
+		boolean inString = false;
+		boolean inIdentifier = false;
+		boolean escaped = false;
+		int len = pQuery.length();
+		for (int i = 0; i < len; i++) {
+			switch(pQuery.charAt(i)) {
+				case '\\':
+					escaped = !escaped;
+				break;
+				default:
+					escaped = false;
+				break;
+				case '\'':
+					/**
+					 * We can not be in a string if we are in an identifier. So
+					 * If we find a ' and are not in an identifier, and not in
+					 * a string we can safely assume we will be now in a string.
+					 * If we are in a string already, we should stop being in a
+					 * string if we find a quote which is not prefixed by a \,
+					 * for that would be an escaped quote. However, a nasty
+					 * situation can occur where the string is like 'test \\'.
+					 * As obvious, a test for a \ in front of a ' doesn't hold
+					 * here. Because 'test \\\'' can exist as well, we need to
+					 * know if a quote is prefixed by an escaping slash or not.
+					 */
+					if (!inIdentifier) {
+						if (!inString && !escaped) {
+							// although it makes no sense to escape a quote
+							// outside a string, it is escaped, thus not meant
+							// as quote for us, apparently
+							inString = true;
+						} else if (inString && !escaped) {
+							inString = false;
+						}
+					} else {
+						// reset escaped flag
+						escaped = false;
+					}
+				break;
+				case '"':
+					if (!inString) {
+						if (!inIdentifier && !escaped) {
+							inIdentifier = true;
+						} else if (inIdentifier && !escaped) {
+							inIdentifier = false;
+						}
+					} else {
+						// reset escaped flag
+						escaped = false;
+					}
+				break;
+				case '-':
+					if (!escaped && !(inString || inIdentifier) && i + 1 < len && pQuery.charAt(i + 1) == '-') {
+						int nl = pQuery.indexOf('\n', i + 1);
+						if (nl == -1) {
+							// no newline found, so we don't need to skip and
+							// can stop right away
+							len = pQuery.length();
+						} else {
+							// skip the comment when scanning for `?'
+							i = nl;
+						}
+					}
+					escaped = false;
+				break;
+				case '?':
+					if (!escaped && !(inString || inIdentifier) && !escaped) {
+						// mark this location
+						tpos.add(new Integer(i));
+					}
+					escaped = false;
+				break;
+			}
 		}
-		rs.close();
+
+		// initialize the ? container arrays
+		int size = tpos.size();
+		pos = new int[size];
+		value = new String[size];
+
+		// fill the position array
+		for (int i = 0; i < size; i++) {
+			pos[i] = ((Integer)(tpos.get(i))).intValue();
+		}
 	}
 
 
@@ -140,22 +199,23 @@ public class MonetPreparedStatement
 	 * calling the method clearParameters.
 	 */
 	public void clearParameters() {
-		for (int i = 0; i < values.length; i++) {
-			values[i] = null;
+		for (int i = 0; i < pos.length; i++) {
+			value[i] = null;
 		}
 	}
 
 	/**
-	 * Executes the SQL statement in this PreparedStatement object,
-	 * which may be any kind of SQL statement.  Some prepared statements
-	 * return multiple results; the execute method handles these complex
-	 * statements as well as the simpler form of statements handled by
-	 * the methods executeQuery and executeUpdate.
+	 * Executes the SQL statement in this PreparedStatement object, which may
+	 * be any kind of SQL statement. Some prepared statements return multiple
+	 * results; the execute method handles these complex statements as well as
+	 * the simpler form of statements handled by the methods executeQuery and
+	 * executeUpdate.
 	 * <br /><br />
-	 * The execute method returns a boolean to indicate the form of the
-	 * first result.  You must call either the method getResultSet or
-	 * getUpdateCount to retrieve the result; you must call
-	 * getMoreResults to move to any subsequent result(s).
+
+	 * The execute method returns a boolean to indicate the form of the first
+	 * result. You must call either the method getResultSet or getUpdateCount
+	 * to retrieve the result; you must call getMoreResults to move to any
+	 * subsequent result(s).
 	 *
 	 * @return true if the first result is a ResultSet object; false if the
 	 *              first result is an update count or there is no result
@@ -215,19 +275,19 @@ public class MonetPreparedStatement
 	}
 
 	/**
-	 * Retrieves a ResultSetMetaData object that contains information
-	 * about the columns of the ResultSet object that will be returned
-	 * when this PreparedStatement object is executed.
+	 * Retrieves a ResultSetMetaData object that contains information about the
+	 * columns of the ResultSet object that will be returned when this
+	 * PreparedStatement object is executed.
 	 * <br /><br />
-	 * Because a PreparedStatement object is precompiled, it is possible
-	 * to know about the ResultSet object that it will return without
-	 * having to execute it.  Consequently, it is possible to invoke the
-	 * method getMetaData on a PreparedStatement object rather than
-	 * waiting to execute it and then invoking the ResultSet.getMetaData
-	 * method on the ResultSet object that is returned.
+	 * Because a PreparedStatement object is precompiled, it is possible to
+	 * know about the ResultSet object that it will return without having to
+	 * execute it. Consequently, it is possible to invoke the method
+	 * getMetaData on a PreparedStatement object rather than waiting to execute
+	 * it and then invoking the ResultSet.getMetaData method on the ResultSet
+	 * object that is returned.
 	 * <br /><br />
-	 * NOTE: Using this method is expensive for this driver due to the
-	 * lack of underlying DBMS support.  Currently not implemented
+	 * NOTE: Using this method is expensive for this driver due to the lack of
+	 * underlying DBMS support.  Currently not implemented
 	 *
 	 * @return the description of a ResultSet object's columns or null if the
 	 *         driver cannot return a ResultSetMetaData object
@@ -238,183 +298,21 @@ public class MonetPreparedStatement
 	}
 
     /**
-	 * Retrieves the number, types and properties of this
-	 * PreparedStatement object's parameters.
+	 * Retrieves the number, types and properties of this PreparedStatement
+	 * object's parameters.
 	 *
-	 * @return a ParameterMetaData object that contains information
-	 *         about the number, types and properties of this
-	 *         PreparedStatement object's parameters
+	 * @return a ParameterMetaData object that contains information about the
+	 *         number, types and properties of this PreparedStatement object's
+	 *         parameters
 	 * @throws SQLException if a database access error occurs
 	 */
 	public ParameterMetaData getParameterMetaData() throws SQLException {
-		return(new ParameterMetaData() {
-			/**
-			 * Retrieves the number of parameters in the
-			 * PreparedStatement object for which this ParameterMetaData
-			 * object contains information.
-			 *
-			 * @return the number of parameters
-			 * @throws SQLException if a database access error occurs
-			 */
-			public int getParameterCount() throws SQLException {
-				return(size);
-			}
-
-			/**
-			 * Retrieves whether null values are allowed in the
-			 * designated parameter.
-			 * <br /><br />
-			 * This is currently always unknown for MonetDB/SQL.
-			 *
-			 * @param param the first parameter is 1, the second is 2, ... 
-			 * @return the nullability status of the given parameter;
-			 *         one of ParameterMetaData.parameterNoNulls,
-			 *         ParameterMetaData.parameterNullable, or
-			 *         ParameterMetaData.parameterNullableUnknown 
-			 * @throws SQLException if a database access error occurs
-			 */
-			public int isNullable(int param) throws SQLException {
-				return(ParameterMetaData.parameterNullableUnknown);
-			}
-
-			/**
-			 * Retrieves whether values for the designated parameter can
-			 * be signed numbers.
-			 *
-			 * @param param the first parameter is 1, the second is 2, ... 
-			 * @return true if so; false otherwise 
-			 * @throws SQLException if a database access error occurs
-			 */
-			public boolean isSigned(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
-
-				// we can hardcode this, based on the colum type
-				// (from ResultSetMetaData.isSigned)
-				switch (javaType[param - 1]) {
-					case Types.NUMERIC:
-					case Types.DECIMAL:
-					case Types.TINYINT:
-					case Types.SMALLINT:
-					case Types.INTEGER:
-					case Types.BIGINT:
-					case Types.REAL:
-					case Types.FLOAT:
-					case Types.DOUBLE:
-						return(true);
-					case Types.BIT: // we don't use type BIT, it's here for completeness
-					case Types.BOOLEAN:
-					case Types.DATE:
-					case Types.TIME:
-					case Types.TIMESTAMP:
-					default:
-						return(false);
-				}
-			}
-
-			/**
-			 * Retrieves the designated parameter's number of decimal
-			 * digits.
-			 *
-			 * @param param the first parameter is 1, the second is 2, ... 
-			 * @return precision
-			 * @throws SQLException if a database access error occurs
-			 */
-			public int getPrecision(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
-
-				return(digits[param - 1]);
-			}
-
-			/**
-			 * Retrieves the designated parameter's number of digits to
-			 * right of the decimal point.
-			 *
-			 * @param param the first parameter is 1, the second is 2, ... 
-			 * @return scale 
-			 * @throws SQLException if a database access error occurs
-			 */
-			public int getScale(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
-
-				return(scale[param - 1]);
-			}
-
-			/**
-			 * Retrieves the designated parameter's SQL type.
-			 *
-			 * @param param the first parameter is 1, the second is 2, ... 
-			 * @return SQL type from java.sql.Types 
-			 * @throws SQLException if a database access error occurs
-			 */
-			public int getParameterType(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
-
-				return(javaType[param - 1]);
-			}
-
-			/**
-			 * Retrieves the designated parameter's database-specific
-			 * type name.
-			 *
-			 * @param param the first parameter is 1, the second is 2, ... 
-			 * @return type the name used by the database.  If the
-			 *         parameter type is a user-defined type, then a
-			 *         fully-qualified type name is returned. 
-			 * @throws SQLException if a database access error occurs
-			 */
-			public String getParameterTypeName(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
-
-				return(monetdbType[param - 1]);
-			}
-
-			/**
-			 * Retrieves the fully-qualified name of the Java class
-			 * whose instances should be passed to the method
-			 * PreparedStatement.setObject.
-			 *
-			 * @param param the first parameter is 1, the second is 2, ... 
-			 * @return the fully-qualified name of the class in the Java
-			 *         programming language that would be used by the
-			 *         method PreparedStatement.setObject to set the
-			 *         value in the specified parameter. This is the
-			 *         class name used for custom mapping. 
-			 * @throws SQLException if a database access error occurs
-			 */
-			public String getParameterClassName(int param) throws SQLException {
-				if (param < 1 || param > size)
-					throw new SQLException("No such parameter with index: " + param);
-
-				return(MonetResultSet.getClassForType(javaType[param - 1]).getName());
-			}
-
-			/**
-			 * Retrieves the designated parameter's mode.
-			 * For MonetDB/SQL this is currently always unknown.
-			 *
-			 * @param param - the first parameter is 1, the second is 2, ... 
-			 * @return mode of the parameter; one of
-			 *         ParameterMetaData.parameterModeIn,
-			 *         ParameterMetaData.parameterModeOut, or
-			 *         ParameterMetaData.parameterModeInOut
-			 *         ParameterMetaData.parameterModeUnknown. 
-			 * @throws SQLException if a database access error occurs
-			 */
-			public int getParameterMode(int param) throws SQLException {
-				return(ParameterMetaData.parameterModeUnknown);
-			}
-		});
+		throw new SQLException("Method currently not supported, sorry!");
 	}
 
 	/**
-	 * Sets the designated parameter to the given Array object.  The
-	 * driver converts this to an SQL ARRAY value when it sends it to
-	 * the database.
+	 * Sets the designated parameter to the given Array object. The driver
+	 * converts this to an SQL ARRAY value when it sends it to the database.
      *
 	 * @param i the first parameter is 1, the second is 2, ...
 	 * @param x an Array object that maps an SQL ARRAY value
@@ -583,7 +481,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setDate(int parameterIndex, java.sql.Date x) throws SQLException {
-		setValue(parameterIndex, "date '" + x.toString() + "'");
+		setValue(parameterIndex, "'" + x.toString() + "'");
 	}
 
 	/**
@@ -605,7 +503,7 @@ public class MonetPreparedStatement
 	{
 		synchronized (MonetConnection.mDate) {
 			MonetConnection.mDate.setTimeZone(cal.getTimeZone());
-			setValue(parameterIndex, "date '" + MonetConnection.mDate.format(x) + "'");
+			setValue(parameterIndex, "'" + MonetConnection.mDate.format(x) + "'");
 		}
 	}
 
@@ -667,8 +565,7 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setNull(int parameterIndex, int sqlType) throws SQLException {
-		// we discard the given type here, the backend converts the
-		// value NULL to whatever it needs for the column
+		// should be: "CAST(NULL AS " + asMonetType(sqlType) + ")"
 		setValue(parameterIndex, "NULL");
 	}
 
@@ -702,37 +599,61 @@ public class MonetPreparedStatement
 	}
 
 	/**
-	 * Sets the value of the designated parameter using the given
-	 * object.  The second parameter must be of type Object; therefore,
-	 * the java.lang equivalent objects should be used for built-in
-	 * types.
+	 * Sets the value of the designated parameter using the given object. The
+	 * second parameter must be of type Object; therefore, the java.lang
+	 * equivalent objects should be used for built-in types.
 	 * <br /><br />
-	 * The JDBC specification specifies a standard mapping from Java
-	 * Object types to SQL types. The given argument will be converted
-	 * to the corresponding SQL type before being sent to the database.
+	 * The JDBC specification specifies a standard mapping from Java Object
+	 * types to SQL types. The given argument will be converted to the
+	 * corresponding SQL type before being sent to the database.
 	 * <br /><br />
-	 * Note that this method may be used to pass datatabase-specific
-	 * abstract data types, by using a driver-specific Java type. If the
-	 * object is of a class implementing the interface SQLData, the JDBC
-	 * driver should call the method SQLData.writeSQL to write it to the
-	 * SQL data stream. If, on the other hand, the object is of a class
-	 * implementing Ref, Blob, Clob, Struct, or Array, the driver should
-	 * pass it to the database as a value of the corresponding SQL type.
+	 * Note that this method may be used to pass datatabase-specific abstract
+	 * data types, by using a driver-specific Java type. If the object is of a
+	 * class implementing the interface SQLData, the JDBC driver should call
+	 * the method SQLData.writeSQL to write it to the SQL data stream. If, on
+	 * the other hand, the object is of a class implementing Ref, Blob, Clob,
+	 * Struct, or Array, the driver should pass it to the database as a value
+	 * of the corresponding SQL type.
 	 * <br /><br />
-	 * This method throws an exception if there is an ambiguity, for
-	 * example, if the object is of a class implementing more than one
-	 * of the interfaces named above.
+	 * This method throws an exception if there is an ambiguity, for example,
+	 * if the object is of a class implementing more than one of the interfaces
+	 * named above.
 	 *
-	 * @param index the first parameter is 1, the second is 2, ...
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param x the object containing the input parameter value
 	 * @throws SQLException if a database access error occurs or the type of
 	 *                      the given object is ambiguous
 	 */
-	public void setObject(int index, Object x) throws SQLException {
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
-
-		setObject(index, x, javaType[index - 1]);
+	public void setObject(int parameterIndex, Object x) throws SQLException {
+		/**
+		 * NOTE:
+		 * This function should convert (see table B-5) the given object to the
+		 * underlying datatype of the query requirements.
+		 * This conversion is impossible since we don't know anything about the
+		 * query at this point.  Future real prepare queries should solve this.
+		 */
+		if (x instanceof SQLData) {
+			// do something with:
+			// ((SQLData)x).writeSQL( [java.sql.SQLOutput] );
+			// needs an SQLOutput stream... bit too far away from reality
+			throw new SQLException("Operation currently not supported!");
+		} else if (x instanceof Blob) {
+			setBlob(parameterIndex, (Blob)x);
+		} else if (x instanceof java.sql.Date) {
+			setDate(parameterIndex, (java.sql.Date)x);
+		} else if (x instanceof Timestamp) {
+			setTimestamp(parameterIndex, (Timestamp)x);
+		} else if (x instanceof Time) {
+			setTime(parameterIndex, (Time)x);
+		} else if (x instanceof Number) {
+			// catches:
+			// BigDecimal, BigInteger, Byte, Double, Float, Integer, Long, Short
+			// just write them as is
+			setValue(parameterIndex, x.toString());
+		} else {
+			// write the rest as 'varchar'
+			setString(parameterIndex, x.toString());
+		}
 	}
 
 	/**
@@ -1135,15 +1056,12 @@ public class MonetPreparedStatement
 	 * driver converts this to an SQL TIME value when it sends it to the
 	 * database.
 	 *
-	 * @param index the first parameter is 1, the second is 2, ...
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setTime(int index, Time x) throws SQLException {
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
-
-		setValue(index, monetdbType[index - 1] + " '" + x.toString() + "'");
+	public void setTime(int parameterIndex, Time x) throws SQLException {
+		setValue(parameterIndex, "'" + x.toString() + "'");
 	}
 
 	/**
@@ -1155,22 +1073,19 @@ public class MonetPreparedStatement
 	 * specified, the driver uses the default timezone, which is that of the
 	 * virtual machine running the application.
 	 *
-	 * @param index the first parameter is 1, the second is 2, ...
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
 	 * @param cal the Calendar object the driver will use to construct the time
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setTime(int index, Time x, Calendar cal)
+	public void setTime(int parameterIndex, Time x, Calendar cal)
 		throws SQLException
 	{
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
-
 		synchronized (MonetConnection.mTimeZ) {
 			MonetConnection.mTimeZ.setTimeZone(cal.getTimeZone());
 
 			String RFC822 = MonetConnection.mTimeZ.format(x);
-			setValue(index, monetdbType[index - 1] + " '" +
+			setValue(parameterIndex, "'" +
 				RFC822.substring(0, 15) + ":" + RFC822.substring(15) + "'");
 		}
 	}
@@ -1180,17 +1095,14 @@ public class MonetPreparedStatement
 	 * driver converts this to an SQL TIMESTAMP value when it sends it to the
 	 * database.
 	 *
-	 * @param index the first parameter is 1, the second is 2, ...
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setTimestamp(int index, Timestamp x)
+	public void setTimestamp(int parameterIndex, Timestamp x)
 		throws SQLException
 	{
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
-
-		setValue(index, monetdbType[index - 1] + " '" + x.toString() + "'");
+		setValue(parameterIndex, "'" + x.toString() + "'");
 	}
 
     /**
@@ -1202,23 +1114,20 @@ public class MonetPreparedStatement
 	 * is specified, the driver uses the default timezone, which is that of the
 	 * virtual machine running the application.
 	 *
-	 * @param index the first parameter is 1, the second is 2, ...
+	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param x the parameter value
 	 * @param cal the Calendar object the driver will use to construct the
 	 *            timestamp
 	 * @throws SQLException if a database access error occurs
 	 */
-	public void setTimestamp(int index, Timestamp x, Calendar cal)
+	public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
 		throws SQLException
 	{
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
-
 		if (cal == null) cal = Calendar.getInstance();
 		synchronized (MonetConnection.mTimestampZ) {
 			MonetConnection.mTimestampZ.setTimeZone(cal.getTimeZone());
 			String RFC822 = MonetConnection.mTimestampZ.format(x);
-			setValue(index, monetdbType[index - 1] + " '" +
+			setValue(parameterIndex, "'" +
 				RFC822.substring(0, 26) + ":" + RFC822.substring(26) + "'");
 		}
 	}
@@ -1275,10 +1184,10 @@ public class MonetPreparedStatement
 	 * @throws SQLException if the given index is out of bounds
 	 */
 	private void setValue(int index, String val) throws SQLException {
-		if (index < 1 || index > size)
-			throw new SQLException("No such parameter with index: " + index);
+		if (index <= 0 || index > pos.length) throw
+			new SQLException("No such parameter index: " + index);
 
-		values[index - 1] = val;
+		value[index - 1] = val;
 	}
 
 	/**
@@ -1291,19 +1200,17 @@ public class MonetPreparedStatement
 	 * @throws SQLException if not all columns are set
 	 */
 	private String transform() throws SQLException {
-		StringBuffer ret = new StringBuffer("exec ");
-		ret.append(id);
-		ret.append("(");
+		StringBuffer ret = new StringBuffer(pQuery);
 		// check if all columns are set and do a replace
-		for (int i = 0; i < size; i++) {
-			if (i > 0) ret.append(", ");
-			if (values[i] == null) throw
+		int offset = 0;
+		for (int i = 0; i < pos.length; i++) {
+			if (value[i] == null) throw
 				new SQLException("Cannot execute, parameter " +  (i + 1) + " is missing.");
 
-			ret.append(values[i]);
+			ret.replace(offset + pos[i], offset + pos[i] + 1, value[i]);
+			offset += value[i].length() - 1;
 		}
-		ret.append(")");
-		
+
 		return(ret.toString());
 	}
 }

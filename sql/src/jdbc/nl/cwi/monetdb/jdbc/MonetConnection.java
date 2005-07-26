@@ -23,7 +23,6 @@ import java.util.*;
 import java.io.*;
 import java.nio.ByteOrder;
 import java.text.SimpleDateFormat;
-import java.util.regex.*;
 
 /**
  * A Connection suitable for the MonetDB database.
@@ -49,7 +48,7 @@ import java.util.regex.*;
  * independent from what the client requests (pre-fetching strategy).
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.8
+ * @version 0.9
  */
 public class MonetConnection extends Thread implements Connection {
 	/** The hostname to connect to */
@@ -62,6 +61,11 @@ public class MonetConnection extends Thread implements Connection {
 	private final String username;
 	/** The password to use when authenticating */
 	private final String password;
+	/** The language which is used */
+	private final int lang;
+	/** Whether to use server-side (native) or Java emulated
+	 * PreparedStatements */
+	private final boolean nativePreparedStatements;
 	/** A connection to Mserver using a TCP socket */
 	private final MonetSocket monet;
 
@@ -70,7 +74,8 @@ public class MonetConnection extends Thread implements Connection {
 
 	/** The stack of warnings for this Connection object */
 	private SQLWarning warnings = null;
-	/** The Connection specific mapping of user defined types to Java types (not used) */
+	/** The Connection specific mapping of user defined types to Java
+	 * types (not used) */
 	private Map typeMap = new HashMap();
 
 	// See javadoc for documentation about WeakHashMap if you don't know what
@@ -98,9 +103,17 @@ public class MonetConnection extends Thread implements Connection {
 	final static SimpleDateFormat mDate =
 		new SimpleDateFormat("yyyy-MM-dd");
 
+	/** the SQL language */
+	final static int LANG_SQL = 0;
+	/** the XQuery language */
+	final static int LANG_XQUERY = 1;
+	/** the MIL language (officially *NOT* supported) */
+	final static int LANG_MIL = 2;
+	/** an unknown language */
+	final static int LANG_UNKNOWN = -1;
+
 	/** a simple sequence counter for MonetConnections */
 	private static int sequence = 0;
-
 
 	/**
 	 * Constructor of a Connection for MonetDB. At this moment the current
@@ -131,7 +144,11 @@ public class MonetConnection extends Thread implements Connection {
 		this.database = props.getProperty("database");
 		this.username = props.getProperty("user");
 		this.password = props.getProperty("password");
+		this.nativePreparedStatements = Boolean.valueOf(props.getProperty("native_prepared_statements")).booleanValue();
+
 		String language = props.getProperty("language");
+		boolean blockMode = Boolean.valueOf(props.getProperty("blockmode")).booleanValue();
+		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
 
 		// check input arguments
 		if (hostname == null || hostname.trim().equals(""))
@@ -149,9 +166,6 @@ public class MonetConnection extends Thread implements Connection {
 			addWarning("No language given, defaulting to 'sql'");
 		}
 
-		boolean blockMode = Boolean.valueOf(props.getProperty("blockmode")).booleanValue();
-		boolean debug = Boolean.valueOf(props.getProperty("debug")).booleanValue();
-
 		try {
 			// make connection to MonetDB
 			if (blockMode) {
@@ -166,11 +180,11 @@ public class MonetConnection extends Thread implements Connection {
 				monet = new MonetSocket(hostname, port);
 			}
 
-			/**
-			 * There is no need for a lock on the monet object here.  Since we just
-			 * created the object, and the reference to this object has not yet been
-			 * returned to the caller, noone can (in a legal way) know about the
-			 * object.
+			/*
+			 * There is no need for a lock on the monet object here.
+			 * Since we just created the object, and the reference to
+			 * this object has not yet been returned to the caller,
+			 * noone can (in a legal way) know about the object.
 			 */
 
 			// we're debugging here... uhm, should be off in real life
@@ -255,6 +269,7 @@ public class MonetConnection extends Thread implements Connection {
 					database
 				));
 			}
+
 			// read monet response till prompt
 			String err;
 			if ((err = monet.waitForPrompt()) != null) {
@@ -262,7 +277,19 @@ public class MonetConnection extends Thread implements Connection {
 				throw new SQLException(err);
 			}
 
-			// we're logged in and ready for commands!
+			// we seem to have managed to log in, let's store the
+			// language used
+			if ("sql".equals(language)) {
+				lang = LANG_SQL;
+			} else if ("xquery".equals(language)) {
+				lang = LANG_XQUERY;
+			} else if ("mil".equals(language)) {
+				lang = LANG_MIL;
+			} else {
+				lang = LANG_UNKNOWN;
+			}
+			
+			// we're ready for commands!
 		} catch (IOException e) {
 			throw new SQLException("Unable to connect (" + hostname + ":" + port + "): " + e.getMessage());
 		}
@@ -273,16 +300,20 @@ public class MonetConnection extends Thread implements Connection {
 		setDaemon(true);
 		start();
 
-		// enable auto commit
-		setAutoCommit(true);
-		// set our time zone on the server
-		Calendar cal = Calendar.getInstance();
-		int offset = (cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET)) / (60 * 1000);
-		String tz = offset < 0 ? "-" : "+";
-		tz += (Math.abs(offset) / 60 < 10 ? "0" : "") + (Math.abs(offset) / 60) + ":";
-		offset -= (offset / 60) * 60;
-		tz += (offset < 10 ? "0" : "") + offset;
-		sendIndependantCommand("SSET TIME ZONE INTERVAL '" + tz + "' HOUR TO MINUTE;");
+		// the following initialisers are only valid when the language
+		// is SQL...
+		if (lang == LANG_SQL) {
+			// enable auto commit
+			setAutoCommit(true);
+			// set our time zone on the server
+			Calendar cal = Calendar.getInstance();
+			int offset = (cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET)) / (60 * 1000);
+			String tz = offset < 0 ? "-" : "+";
+			tz += (Math.abs(offset) / 60 < 10 ? "0" : "") + (Math.abs(offset) / 60) + ":";
+			offset -= (offset / 60) * 60;
+			tz += (offset < 10 ? "0" : "") + offset;
+			sendIndependantCommand("SET TIME ZONE INTERVAL '" + tz + "' HOUR TO MINUTE");
+		}
 
 		// we're absolutely not closed, since we're brand new
 		closed = false;
@@ -391,7 +422,7 @@ public class MonetConnection extends Thread implements Connection {
 	 */
 	public void commit() throws SQLException {
 		// send commit to the server (note the s in front is a protocol issue)
-		sendIndependantCommand("sCOMMIT;");
+		sendIndependantCommand("COMMIT");
 	}
 
 	/**
@@ -479,9 +510,13 @@ public class MonetConnection extends Thread implements Connection {
 	 * Retrieves this Connection object's current catalog name.
 	 *
 	 * @return the current catalog name or null if there is none
-	 * @throws SQLException if a database access error occurs
+	 * @throws SQLException if a database access error occurs or the
+	 *         current language is not SQL
 	 */
 	public String getCatalog() throws SQLException {
+		if (lang != LANG_SQL)
+			throw new SQLException("This method is only supported in SQL mode");
+
 		// this is a dirty hack, but it works as long as MonetDB
 		// only handles one catalog (dbfarm) at a time
 		ResultSet rs = getMetaData().getCatalogs();
@@ -503,9 +538,13 @@ public class MonetConnection extends Thread implements Connection {
 	 * SQL grammar, its stored procedures, the capabilities of this connection,
 	 * and so on.
 	 *
+	 * @throws SQLException if the current language is not SQL
 	 * @return a DatabaseMetaData object for this Connection object
 	 */
-	public DatabaseMetaData getMetaData() {
+	public DatabaseMetaData getMetaData() throws SQLException {
+		if (lang != LANG_SQL)
+			throw new SQLException("This method is only supported in SQL mode");
+
 		return(new MonetDatabaseMetaData(this));
 	}
 
@@ -649,10 +688,18 @@ public class MonetConnection extends Thread implements Connection {
 		throws SQLException
 	{
 		try {
-			PreparedStatement ret =
-				new MonetPreparedStatement(
+			PreparedStatement ret;
+			if (nativePreparedStatements) {
+				// use a server-side PreparedStatement
+				ret = new MonetPreparedStatement(
 					this, resultSetType, resultSetConcurrency, sql
 				);
+			} else {
+				// use a Java implementation of a PreparedStatement
+				ret = new MonetPreparedStatementJavaImpl(
+					this, resultSetType, resultSetConcurrency, sql
+				);
+			}
 			// store it in the map for when we close...
 			statements.put(ret, null);
 			return(ret);
@@ -685,7 +732,7 @@ public class MonetConnection extends Thread implements Connection {
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
 
 		// send the appropriate query string to the database
-		sendIndependantCommand("sRELEASE SAVEPOINT " + sp.getName() + ";");
+		sendIndependantCommand("RELEASE SAVEPOINT " + sp.getName());
 	}
 
 	/**
@@ -699,7 +746,7 @@ public class MonetConnection extends Thread implements Connection {
 	 */
 	public void rollback() throws SQLException {
 		// send commit to the server (note the s in front is a protocol issue)
-		sendIndependantCommand("sROLLBACK;");
+		sendIndependantCommand("ROLLBACK");
 	}
 
 	/**
@@ -719,7 +766,7 @@ public class MonetConnection extends Thread implements Connection {
 		MonetSavepoint sp = (MonetSavepoint)savepoint;
 
 		// send the appropriate query string to the database
-		sendIndependantCommand("sROLLBACK TO SAVEPOINT " + sp.getName() + ";");
+		sendIndependantCommand("ROLLBACK TO SAVEPOINT " + sp.getName());
 	}
 
 	/**
@@ -746,7 +793,7 @@ public class MonetConnection extends Thread implements Connection {
 	 * @see #getAutoCommit()
 	 */
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		sendIndependantCommand("SSET auto_commit = " + autoCommit + ";");
+		sendIndependantCommand("SET auto_commit = " + autoCommit);
 	}
 
 	public void setCatalog(String catalog) {}
@@ -765,7 +812,7 @@ public class MonetConnection extends Thread implements Connection {
 		// create a new Savepoint object
 		MonetSavepoint sp = new MonetSavepoint();
 		// send the appropriate query string to the database
-		sendIndependantCommand("sSAVEPOINT " + sp.getName() + ";");
+		sendIndependantCommand("SAVEPOINT " + sp.getName());
 
 		return(sp);
 	}
@@ -788,7 +835,7 @@ public class MonetConnection extends Thread implements Connection {
 			throw new SQLException(e.getMessage());
 		}
 		// send the appropriate query string to the database
-		sendIndependantCommand("sSAVEPOINT " + sp.getName() + ";");
+		sendIndependantCommand("SAVEPOINT " + sp.getName());
 
 		return(sp);
 	}
@@ -959,6 +1006,13 @@ public class MonetConnection extends Thread implements Connection {
 
 		HeaderList hdrl;
 		synchronized(queryQueue) {
+			if (lang == LANG_SQL) {
+				query = "s" + query + ";";
+			} else if (lang == LANG_XQUERY) {
+				query = "xml-seq-mapi\n" + query;
+			} else if (lang == LANG_MIL) {
+				query = query + ";";
+			}
 			hdrl = new HeaderList(query, cacheSize, maxRows, rsType, rsConcur);
 			queryQueue.add(hdrl);
 			queryQueue.notify();
@@ -1054,7 +1108,7 @@ public class MonetConnection extends Thread implements Connection {
 				size = hdrl.cachesize == 0 ? DEF_FETCHSIZE : hdrl.cachesize;
 				size = hdrl.maxrows != 0 ? Math.min(hdrl.maxrows, size) : size;
 				// don't do work if it's not needed
-				if (size != 0 && size != curReplySize) {
+				if (lang == LANG_SQL && size != 0 && size != curReplySize) {
 					monet.writeln("SSET reply_size = " + size + ";");
 
 					String error = monet.waitForPrompt();
@@ -1731,11 +1785,26 @@ public class MonetConnection extends Thread implements Connection {
 			) {
 				String error = "";
 				if (!isSet[4]) error += "querytype header missing\n";
-				if (queryType == MonetStatement.Q_TABLE) {
+				if (
+						queryType == MonetStatement.Q_TABLE ||
+						queryType == MonetStatement.Q_PREPARE
+				) {
 					if (!isSet[0]) error += "name header missing\n";
 					if (!isSet[1]) error += "type header missing\n";
+					if (!isSet[5]) error += "table name header missing\n";
+					if (!isSet[6]) error += "column width header missing\n";
 					if (!isSet[2]) error += "tuplecount header missing\n";
 					if (!isSet[3]) error += "id header missing\n";
+					if (isSet[0] && isSet[1] && isSet[5] && isSet[6]) {
+						int cols = name.length;
+						if (
+								cols != type.length ||
+								cols != tableNames.length ||
+								cols != columnLengths.length
+						) {
+							error += "name (" + cols + "), type (" + type.length + "), table (" + tableNames.length + ") and length (" + columnLengths.length + ") do not have the same number of columns\n";
+						}
+					}
 				} else if (
 					queryType == MonetStatement.Q_UPDATE ||
 					queryType == MonetStatement.Q_TRANS

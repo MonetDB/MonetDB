@@ -30,6 +30,7 @@ jar_MonetDB_JDBC = {
 	          nl/cwi/monetdb/jdbc/MonetSocket.java \
 	          nl/cwi/monetdb/jdbc/MonetStatement.java \
 	          nl/cwi/monetdb/jdbc/MonetPreparedStatement.java \
+	          nl/cwi/monetdb/jdbc/MonetPreparedStatementJavaImpl.java \
 	          nl/cwi/monetdb/jdbc/MonetSocketBlockMode.java \
 	          nl/cwi/monetdb/jdbc/MonetDataSource.java \
 	          nl/cwi/monetdb/jdbc/MonetClob.java \
