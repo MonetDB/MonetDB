@@ -394,6 +394,10 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			dump_1(sql, mb, s, "sql", "update_var");
 		}
 			break;
+		case st_seq_next:{
+			dump_1(sql, mb, s, "sql", "next_value");
+		}
+			break;
 		case st_temp:{
 			int l, r;
 			int ht = TYPE_void;

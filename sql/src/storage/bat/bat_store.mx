@@ -57,6 +57,7 @@ extern BAT *bind_uidx(sql_trans *tr, sql_idx * i, int access);
 #include "bat_bm.h"
 #include "sql_types.h"
 #include "sql_backend.h"
+#include "bat_sequence.h"
 
 /* version 02.00.00 of catalog */
 #define CATALOG_VERSION 20001
@@ -286,20 +287,6 @@ update_table_bat(BAT *b, BAT *ub, BAT *db)
 	}
 }
 
-static BAT *
-sys_bat(struct bm *bm, char *name)
-{
-	oid lbid = bm_find_bat(bm, name);
-	BAT *b = bm_lbid2bat(bm, lbid);
-
-	if (!bm_lbid2mode(bm, lbid)) {
-		b = bat_lcopy(b, "sys_bat");
-		bm_new_bat(bm, lbid, b);
-	}
-	assert(b);
-	return b;
-}
-
 void
 kc_destroy(sql_kc *kc)
 {
@@ -406,6 +393,21 @@ tr_flag(sql_base * b, int flag)
 		return flag;
 	return b->flag;
 }
+
+static BAT *
+sys_bat(struct bm *bm, char *name)
+{
+	oid lbid = bm_find_bat(bm, name);
+	BAT *b = bm_lbid2bat(bm, lbid);
+
+	if (!bm_lbid2mode(bm, lbid)) {
+		b = bat_lcopy(b, "sys_bat");
+		bm_new_bat(bm, lbid, b);
+	}
+	assert(b);
+	return b;
+}
+
 
 static void
 load_keycolumn(sql_trans *tr, BAT *columns, BUN j, sql_key *k)
@@ -1787,6 +1789,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 	bs_init_idx(bm);
 	bs_init_type(bm);
 	bs_init_func(bm);
+	sequences_init();
 
 	gtrans = load_trans(bm, stk);
 
@@ -1895,6 +1898,7 @@ store_exit()
 	if (!logger)
 		return;
 
+	sequences_exit();
 	MT_set_lock(bs_lock, "store_exit");
 	/* busy wait till the logmanager is ready with the cleanup */
 	while (cleanup)

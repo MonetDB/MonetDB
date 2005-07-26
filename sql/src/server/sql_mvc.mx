@@ -188,8 +188,8 @@ extern void mvc_drop_idx(mvc *c, sql_schema *s, char *iname);
 #include "sql_statement.h"
 #include "sql_types.h"
 #include "sql_env.h"
-#include "sql_sequence.h"
 #include "sql_semantic.h"
+#include "sql_sequence.h"
 #include "sql_privileges.h"
 
 static int mvc_debug = 0;
@@ -266,7 +266,6 @@ mvc_init(int debug, backend_stack stk)
 		sql_create_history(m, s);
 		sql_create_sessions(m, s);
 		sql_create_sequences(m, s);
-
 		sql_create_privileges(m, s);
 
 		m->trans->schema = s;

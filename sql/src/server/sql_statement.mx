@@ -50,6 +50,7 @@ typedef enum stmt_type {
 	st_sql,			/* sometimes a query rewrite is easier */
 	st_var,			/* still needs work */
 	st_update_var,
+	st_seq_next,		
 
 	st_basetable,
 	st_temp,		/* temporal bat */
@@ -171,6 +172,7 @@ extern stmt *stmt_sql(char *query);
 extern stmt *stmt_var(char *varname, sql_subtype *t);
 extern stmt *stmt_varnr(int nr, sql_subtype *t);
 extern stmt *stmt_update_var(char *varname);
+extern stmt *stmt_seq_next(char *seqname);
 
 extern stmt *stmt_basetable(sql_table *t, char *tname);
 
@@ -295,6 +297,8 @@ st_type2string(st_type type)
 		ST(none);
 		ST(sql);
 		ST(var);
+		ST(update_var);
+		ST(seq_next);
 
 		ST(basetable);
 		ST(temp);
@@ -567,6 +571,7 @@ stmt_destroy(stmt *s)
 		case st_find:
 		case st_sql:
 		case st_update_var:
+		case st_seq_next:
 
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
@@ -769,6 +774,16 @@ stmt_update_var(char *varname)
 	stmt *s = stmt_create(st_update_var);
 
 	s->op1.stval = stmt_atom_string(varname);
+	s->key = 1;
+	return s;
+}
+
+stmt *
+stmt_seq_next(char *seqname)
+{
+	stmt *s = stmt_create(st_seq_next);
+
+	s->op1.stval = stmt_atom_string(seqname);
 	s->key = 1;
 	return s;
 }
@@ -1671,6 +1686,7 @@ tail_type(stmt *st)
 		} else if (st->op1.idxval->type == join_idx) {
 			return sql_bind_localtype("oid");
 		}
+	case st_seq_next:
 	case st_table_clear:
 		return sql_bind_localtype("lng");
 	case st_mirror:
@@ -1852,6 +1868,7 @@ column_name(stmt *st)
 	case st_pivot:
 	case st_replace:
 	case st_convert:
+	case st_seq_next:
 		return column_name(st->op1.stval);
 
 	case st_op:

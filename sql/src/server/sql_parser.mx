@@ -156,7 +156,8 @@ typedef enum tokens {
 	SQL_ESCAPE,
 	SQL_COPYFROM,
 	SQL_COPYTO,
-	SQL_EXPORT
+	SQL_EXPORT,
+	SQL_NEXT
 } tokens;
 
 typedef enum jt {
@@ -2137,6 +2138,7 @@ value_exp:
  |  column_ref 		{ $$ = _symbol_create_list( SQL_COLUMN, $1); }
  |  aggr_ref
  |  func_ref
+ |  NEXT VALUE FOR ident	{ $$ = _symbol_create( SQL_NEXT, $4); }
  |  datetime_funcs
  |  string_funcs
  |  case_exp

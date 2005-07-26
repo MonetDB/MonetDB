@@ -1312,7 +1312,6 @@ sqltypeinit()
 	sql_create_func("dayofmonth", "day", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func("week", "weekofyear", DTE, NULL, INT, SCALE_FIX);
 
-
 	for (t = strings; t < numerical; t++) {
 		sql_create_func("locate", "locate", *t, *t, INT, SCALE_NONE);
 		sql_create_func3("locate", "locate", *t, *t, INT, INT, SCALE_NONE);

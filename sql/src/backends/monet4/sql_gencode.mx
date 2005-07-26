@@ -371,6 +371,10 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			mvc_dump_1(sql, s, "update_var", nr);
 			break;
 		}
+		case st_seq_next:{
+			mvc_dump_1(sql, s, "next_value", nr);
+			break;
+		}
 		case st_temp:{
 			size_t buflen = strlen(s->op4.typeval->type->base.name) + 64;
 			buf = NEW_ARRAY(char, buflen + 1);
