@@ -9,7 +9,7 @@
  * License for the specific language governing rights and limitations
  * under the License.
  *
- * The Original Code is the Monet Database System.
+ * The Original Code is the MonetDB Database System.
  *
  * The Initial Developer of the Original Code is CWI.
  * Portions created by CWI are Copyright (C) 1997-2005 CWI.
