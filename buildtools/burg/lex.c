@@ -5,7 +5,7 @@ char rcsid_lex[] = "$Id$";
 #include <string.h>
 #include "b.h"
 #include "fe.h"
-#include "gram.tab.h"
+#include "gram.h"
 
 static char buf[BUFSIZ];
 

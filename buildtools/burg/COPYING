@@ -6,7 +6,7 @@ web page at
   http://research.microsoft.com/~toddpro/ .
 
 Modifications to the Burg code are listed in the file
-`MODIFICATIONS'.  Please do not report any bugs related to
+`ChangeLog'.  Please do not report any bugs related to
 this modified version of Burg to Todd A. Proebsting, but
 contact the Pathfinder development team at
 pathfinder@inf.uni-konstanz.de.

@@ -1,8 +1,21 @@
 ----
 This is a modified version of Burg.  Please refer to the
-file `COPYRIGHT' for information on Burg and the applicable
+file `COPYING' for information on Burg and the applicable
 licenses.
 ----
+
+
+To compile, first run the script
+	./bootstrap
+then do the usual sequence,
+	./configure
+	make
+	make install
+
+Use
+	./configure --help
+to find out the options you can give to configure.
+
 
 
 To format the documentation, type "make doc.dvi" and print the result.

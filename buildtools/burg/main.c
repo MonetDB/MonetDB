@@ -1,6 +1,6 @@
 char rcsid_main[] = "$Id$";
 
-#include "pf_config.h"
+#include "burg_config.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
