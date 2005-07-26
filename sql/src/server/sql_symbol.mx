@@ -92,7 +92,6 @@ extern symbol *newSelectNode(sql_allocator *sa, int distinct, struct dlist *sele
 
 extern symbol *newAtomNode(sql_allocator *sa, atom *a);
 
-
 #endif /* SQL_SYMBOL_H */
 
 @c
@@ -472,3 +471,4 @@ symbol_cmp(symbol *s1, symbol *s2)
 	}
 	return 0;		/* never reached, just to pacify compilers */
 }
+
