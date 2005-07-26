@@ -1054,6 +1054,12 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			return stmt_atom(atom_dup(an->a));
 		}
 	}
+		break;
+	case SQL_NEXT:{
+		char *seq = se->data.sval;
+		return stmt_seq_next( _strdup(seq) );
+	}
+		break;
 	case SQL_CAST:
 		return sql_cast(sql, scp, se, grp, subset, f);
 	case SQL_CASE:
@@ -2496,11 +2502,6 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 
 		/* TRUE or FALSE */
 		return stmt_atom(atom_dup(an->a));
-	}
-		break;
-	case SQL_NEXT:{
-		char *seq = sc->data.sval;
-		return stmt_seq_next( _strdup(seq) );
 	}
 		break;
 	default:

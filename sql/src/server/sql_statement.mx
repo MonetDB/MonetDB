@@ -336,6 +336,7 @@ st_type2string(st_type type)
 
 		ST(derive);
 		ST(unique);
+		ST(convert);
 		ST(op);
 		ST(unop);
 		ST(binop);
