@@ -947,6 +947,21 @@ column_option(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs,
 		res = column_constraint_type(sql, opt_name, sym, ss, t, cs, alter);
 	}
 		break;
+	case SQL_DEFAULT:{
+		char *r;
+		stmt *tmp = sql_value_exp(sql, NULL, s->data.sym, NULL, NULL, sql_sel);
+		
+		if (!tmp ||
+		   (tmp = check_types(sql, cs->type, tmp, type_equal)) == NULL) 
+			return SQL_ERR;
+		stmt_destroy(tmp);
+
+ 		r = symbol2string(sql, s->data.sym);
+		mvc_default(sql, cs, r);
+		_DELETE(r);
+		res = SQL_OK;
+	}
+		break;
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) s;
 

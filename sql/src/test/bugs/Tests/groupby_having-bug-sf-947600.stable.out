@@ -61,6 +61,7 @@ Over..
 [ "functions",	"tcolumns",	2	]
 [ "functions",	"ttables",	2	]
 [ "functions",	"users",	1	]
+[ "history",	"sequences",	1	]
 [ "idxs",	"args",	3	]
 [ "idxs",	"auths",	2	]
 [ "idxs",	"columns",	4	]

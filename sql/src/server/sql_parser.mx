@@ -305,6 +305,7 @@ int yydebug=1;
 	datetime_funcs
 	string_funcs
 	scalar_exp
+	simple_scalar_exp
 	value_exp
 	column_exp
 	atom
@@ -1066,21 +1067,18 @@ column_option_list:
 column_option: default | column_constraint ;
 
 default:
-    DEFAULT default_value { $$ = $2; }
+    DEFAULT default_value { $$ = _symbol_create_symbol(SQL_DEFAULT, $2); }
  ;
 
-/* TODO add auto increment */
 default_value:
-    literal
-
+    simple_scalar_exp 	{ $$ = $1; }
  |  BOOL_FALSE
-               { sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
-                 $$ = _newAtomNode( atom_bool(t, FALSE)); }
+		{ sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(t, FALSE)); }
  |  BOOL_TRUE
-               { sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
-                 $$ = _newAtomNode( atom_bool(t, TRUE)); }
- |  NULLX
-		{ $$ = _newAtomNode( NULL);  }
+		{ sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(t, TRUE)); }
+ |  NULLX 	{ $$ = _newAtomNode( NULL);  }
  ;
 
 column_constraint:
@@ -1510,7 +1508,9 @@ insert_stmt:
  ;
 
 values_or_query_spec:
-    VALUES row_commalist
+/* empty values list */
+		{ $$ = _symbol_create_list( SQL_VALUES, _dlist_create()); }
+ |   VALUES row_commalist
 		{ $$ = _symbol_create_list( SQL_VALUES, $2); }
  |  select_stmt
  ;
@@ -2071,8 +2071,8 @@ subquery:
 	}
  ;
 
-	/* scalar expressions */
-scalar_exp:
+	/* simple_scalar expressions */
+simple_scalar_exp:
     value_exp
 
  |  scalar_exp '+' scalar_exp
@@ -2113,6 +2113,10 @@ scalar_exp:
 	  		  _dlist_append_symbol(l, $2);
 	  		  $$ = _symbol_create_list( SQL_UNOP, l ); }
  |  '(' scalar_exp ')' 	{ $$ = $2; }
+ ;
+
+scalar_exp:
+    simple_scalar_exp 	{ $$ = $1; }
  |  subquery	%prec UMINUS
  |  predicate
  ;
