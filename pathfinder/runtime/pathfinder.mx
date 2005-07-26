@@ -922,7 +922,7 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 	/* send challenge */
 	snprintf(buf, 100, "%2u%s", (unsigned int)strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
 	if (stream_write(out, buf, strlen(buf), 1) < 0) 
-	return connect_error(in, out);
+		return connect_error(in, out);
 
 	/* get user name (ignored later), and mapiclient mode */
 	memset(buf, 0, BUFSIZ);
