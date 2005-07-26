@@ -807,7 +807,6 @@ The port where MonetDB daemon listens to. Default for SQL is 45123.
 The following methods are currently not supported:
 
   last_insert_id
-  bind_param_inout
 
 All MetaData methods are supported. However, column_info() currently doesn't
 provide length (size, ...) related information.
@@ -818,6 +817,7 @@ because it provides additional information about unique keys.
 
 The following methods are currently not supported:
 
+  bind_param_inout
   more_results
   blob_read
 
