@@ -1,4 +1,0 @@
-stderr of test '05_Modules_geometry` in directory 'tests/Availability` itself:
-
-#> Mtest:	milS 05_Modules_geometry milS
-#> Mtest:	Mserver -yaccsilent -d8 -home /ufs/manegold/Current/monet/IRIX6.3 -db tests_Availability -single 05_Modules_geometry.milS
