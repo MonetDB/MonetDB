@@ -66,6 +66,8 @@ extern void sql_destroy_params(mvc *sql);	/* used in backend */
 extern void sql_destroy_args(mvc *sql);	/* used in backend */
 
 extern int set_type_param(sql_subtype *type, stmt *param);
+extern char *symbol2string(mvc *sql, symbol *s);
+
 
 #endif /*_SQL_SEMANTIC_H_*/
 
@@ -752,6 +754,81 @@ first_subset(stmt *subset)
 	return NULL;
 }
 
+char *symbol2string(mvc *sql, symbol *se)
+{
+	int len = 0;
+	char buf[BUFSIZ];
+
+	buf[0] = 0;
+	switch (se->token) {
+	case SQL_NOP: {
+		dnode *lst = se->data.lval->h;
+		dnode *ops = lst->next->data.lval->h;
+		char *op = lst->data.sval;
+
+		len = snprintf( buf+len, BUFSIZ-len, "%s(", op); 
+		for (; ops; ops = ops->next) {
+			char *tmp;
+			len = snprintf( buf+len, BUFSIZ-len, "%s%s", 
+				tmp = symbol2string(sql, ops->data.sym), 
+				(ops->next)?",":"");
+			_DELETE(tmp);
+		}
+		len = snprintf( buf+len, BUFSIZ-len, ")"); 
+	} break;
+	case SQL_BINOP: {
+		dnode *lst = se->data.lval->h;
+		char *op = lst->data.sval;
+		char *l = symbol2string(sql, lst->next->data.sym);
+		char *r = symbol2string(sql, lst->next->next->data.sym);
+		len = snprintf( buf+len, BUFSIZ-len, "%s(%s,%s)", op, l, r); 
+		_DELETE(l);
+		_DELETE(r);
+	} break;
+	case SQL_OP: {
+		dnode *lst = se->data.lval->h;
+		char *op = lst->data.sval;
+		len = snprintf( buf+len, BUFSIZ-len, "%s()", op ); 
+	} break;
+	case SQL_UNOP: {
+		dnode *lst = se->data.lval->h;
+		char *op = lst->data.sval;
+		char *l = symbol2string(sql, lst->next->data.sym);
+		len = snprintf( buf+len, BUFSIZ-len, "%s(%s)", op, l); 
+		_DELETE(l);
+	}
+	case SQL_NULL:
+		strcpy(buf,"NULL");
+		break;
+	case SQL_ATOM:{
+		AtomNode *an = (AtomNode *) se;
+		return atom2sql(an->a);
+	}
+	case SQL_NEXT:{
+		char *seq = se->data.sval;
+		len = snprintf( buf+len, BUFSIZ-len, "next value for %s", seq); 
+	}	break;
+	case SQL_COLUMN: {
+		/* can only be variables */ 
+		dlist *l = se->data.lval;
+		if (dlist_length(l) == 1 && l->h->type == type_int) {
+			atom *a = sql_bind_arg(sql, l->h->data.ival);
+			return atom2sql(a);
+		}
+		return NULL;
+	} 	
+	case SQL_AGGR:
+	case SQL_SELECT:
+	case SQL_PARAMETER:
+	case SQL_CASE:
+	case SQL_COALESCE:
+	case SQL_NULLIF:
+	case SQL_CAST:
+	default:
+		return NULL;
+	}
+	return _strdup(buf);
+}
 
 
 stmt *
