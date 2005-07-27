@@ -541,7 +541,7 @@ static int emit_escaped(char* src, int mode, int onlyEntity) {
         if (isspecial_tab[0] == 0) /* module not initialized yet */
                 init_isspecial();
         for(end=0; src[end]; end++) {
-            if ( (isspecial_ch = isspecial_tab[(int)src[end]]) ) {
+            if ( (isspecial_ch = isspecial_tab[(int)(unsigned char)src[end]]) ) {
                 stream_write(GDKout,&src[start],end-start,1); /*flush */
                 start = end+1;
 
