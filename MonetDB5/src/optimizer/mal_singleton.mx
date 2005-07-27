@@ -293,6 +293,7 @@ STrepack:
 					getArg(p,0) = tuples[k].hidx;
 					setArgument(mb,p,1,tuples[k].tidx);
 					p->retc++;
+					tuples[k].packed=0;
 			} else
 			if( getName("keep",4) &&  p->argc>=3 &&
 				(k = STalias(getArg(p,3),top,tuples)) >= 0){
