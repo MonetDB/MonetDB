@@ -476,8 +476,9 @@ int yydebug=1;
 %token <operation> sqlIN EXISTS ESCAPE HAVING GROUP NULLX
 %token <operation> FROM FOR MATCH
 
-/* datetime operations */
 %token <operation> EXTRACT
+
+/* sequence operations */
 %token SEQUENCE INCREMENT MAXVALUE MINVALUE CYCLE
 %token NEXT VALUE
 %token GENERATED IDENTITY
