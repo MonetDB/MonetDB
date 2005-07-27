@@ -1,6 +1,4 @@
 # the first test for macro expansions and inversions
-include sql;
-
 function welcome(lim:int):void;
     i:= 0;
 barrier j:= i<lim;

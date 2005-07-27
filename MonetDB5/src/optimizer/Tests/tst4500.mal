@@ -1,13 +1,14 @@
 # Beware this is not the correct TPC-1, but a merely a test
-include sql;
 optimizer.setDebug();
 optimizer.commonExpressionRemoval();
 optimizer.aliasRemoval();
 optimizer.deadCodeRemoval();
-clients.quit();
-#s14 := sql.bind("sys",  "lineitem", "l_shipdate"); #lineitem
+#don;t depend on SQL library
+function user.bind(s:str,t:str,c:str,i:int):bat[:any$1,:any$2];
+end bind;
+#s14 := user.bind("sys",  "lineitem", "l_shipdate"); #lineitem
 	myc:= bbp.bind("myc");
-	s14:bat[:void,:date] := sql.bind("sys","lineitem","l_shipdate",0);
+	s14:bat[:void,:date] := user.bind("sys","lineitem","l_shipdate",0);
 #s16 := date("1998-12-01");
 	s16 := mtime.date("1998-12-01");
 #s17 := 7776000;
@@ -24,14 +25,14 @@ clients.quit();
 	ca_a := bat.reverse(s12,);
 	da_a := algebra.markT(ca_a,ba_a);
 	s11 := bat.reverse(da_a,);
-#s18 := sql.bind("sys",  "lineitem", "l_returnflag"); #lineitem
-	s18:bat[:void,:chr] := sql.bind("sys","lineitem","l_returnflag",0);
+#s18 := user.bind("sys",  "lineitem", "l_returnflag"); #lineitem
+	s18:bat[:void,:chr] := user.bind("sys","lineitem","l_returnflag",0);
 #s10 := s11.join(s18);
 	s10 := algebra.join(s11,s18);
 #s9 := s10.group();
 	(h,s9) := group.group(s10);
-#s20 := sql.bind("sys",  "lineitem", "l_linestatus"); #lineitem
-	s20:bat[:void,:chr] := sql.bind("sys","lineitem","l_linestatus",0);
+#s20 := user.bind("sys",  "lineitem", "l_linestatus"); #lineitem
+	s20:bat[:void,:chr] := user.bind("sys","lineitem","l_linestatus",0);
 #s19 := s11.join(s20);
 	s19 := algebra.join(s11,s20);
 #s8 := s9.group(s19);
@@ -61,14 +62,14 @@ clients.quit();
 	s27 := algebra.join(s11,s20);
 #s26 := s7.join(s27);
 	s26 := algebra.join(s7,s27);
-#s31 := sql.bind("sys",  "lineitem", "l_quantity"); #lineitem
-	s31:bat[:void,:int] := sql.bind("sys","lineitem","l_quantity",0);
+#s31 := user.bind("sys",  "lineitem", "l_quantity"); #lineitem
+	s31:bat[:void,:int] := user.bind("sys","lineitem","l_quantity",0);
 #s30 := s11.join(s31);
 	s30 := algebra.join(s11,s31);
 #s29 := {sum}(s30, s8, s7);
 	s29 := group.sum(s30,s8);
-#s35 := sql.bind("sys",  "lineitem", "l_extendedprice"); #lineitem
-	s35:bat[:void,:int] := sql.bind("sys","lineitem","l_extendedprice",0);
+#s35 := user.bind("sys",  "lineitem", "l_extendedprice"); #lineitem
+	s35:bat[:void,:int] := user.bind("sys","lineitem","l_extendedprice",0);
 #s34 := s11.join(s35);
 	s34 := algebra.join(s11,s35);
 #s33 := {sum}(s34, s8, s7);
@@ -79,8 +80,8 @@ clients.quit();
 	s42 := 1;
 #s41 := flt(s42);
 	s41 := calc.flt(s42);
-#s44 := sql.bind("sys",  "lineitem", "l_discount"); #lineitem
-	s44:bat[:void,:int] := sql.bind("sys","lineitem","l_discount",0);
+#s44 := user.bind("sys",  "lineitem", "l_discount"); #lineitem
+	s44:bat[:void,:int] := user.bind("sys","lineitem","l_discount",0);
 #s43 := s11.join(s44);
 	s43 := algebra.join(s11,s44);
 #s45 := [s43 ~ s41];
@@ -111,8 +112,8 @@ clients.quit();
 	s58 := 1;
 #s57 := flt(s58);
 	s57 := calc.flt(s58);
-#s60 := sql.bind("sys",  "lineitem", "l_tax"); #lineitem
-	s60:bat[:void,:int] := sql.bind("sys","lineitem","l_tax",0);
+#s60 := user.bind("sys",  "lineitem", "l_tax"); #lineitem
+	s60:bat[:void,:int] := user.bind("sys","lineitem","l_tax",0);
 #s59 := s11.join(s60);
 	s59 := algebra.join(s11,s60);
 #s61 := [s59 ~ s57];

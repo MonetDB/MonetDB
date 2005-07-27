@@ -1,5 +1,9 @@
 # TPCH Q1 non-optimized
-include sql;
+#don;t depend on SQL library
+function user.bind(s:str,t:str,c:str,i:int):bat[:any$1,:any$2];
+end bind;
+function user.column(b:bat[:void,:any$1],s:str,t:str,i:int,j:int):void;
+end column;
 function qry1();
     V3 := sql.bind("sys","lineitem","l_shipdate",0);
     V8 := sql.bind_dbat("sys","lineitem",0);
