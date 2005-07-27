@@ -23,11 +23,11 @@ import java.util.zip.*;
 import java.net.*;
 
 /**
- * This program acts like an extended client program for MonetDB. Its look
- * and feel is very much like PostgreSQL's interactive terminal program.
- * Although it looks like this client is designed for MonetDB, it demonstrates
- * the power of the JDBC interface since it built on top of JDBC only.
- * Every database which has a JDBC driver should work with this client.
+ * This program acts like an extended client program for MonetDB. Its
+ * look and feel is very much like PostgreSQL's interactive terminal
+ * program.  Although it looks like this client is designed for MonetDB,
+ * it demonstrates the power of the JDBC interface since it built on top
+ * of JDBC only.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version 1.1
@@ -70,6 +70,8 @@ public class JdbcClient {
 		value = (ArrayList)(value.clone());
 		arg.put("l", value);
 		arg.put("-language", value);
+		value = (ArrayList)(value.clone());
+		arg.put("Xprepare", value);
 
 		// arguments which can have zero to lots of arguments
 		value = new ArrayList();
@@ -98,7 +100,6 @@ public class JdbcClient {
 		arg.put("e", value);
 		arg.put("-echo", value);
 
-
 		// default values, the username is prefixed with a space to identify
 		// at a later stage if it has been set via the command line
 		((ArrayList)(arg.get("u"))).add(" " + System.getProperty("user.name"));
@@ -111,6 +112,7 @@ public class JdbcClient {
 		((ArrayList)(arg.get("d"))).add(null);
 		((ArrayList)(arg.get("Xdebug"))).add(null);
 		((ArrayList)(arg.get("Xbatching"))).add(null);
+		((ArrayList)(arg.get("Xprepare"))).add("native");
 		((ArrayList)(arg.get("-help"))).add(null);
 		((ArrayList)(arg.get("e"))).add(null);
 		((ArrayList)(arg.get("b"))).add("demo");
@@ -144,6 +146,8 @@ public class JdbcClient {
 					((ArrayList)(arg.get("Xmode"))).set(1, prop.getProperty("mode"));
 				if (prop.containsKey("debug"))
 					((ArrayList)(arg.get("Xdebug"))).set(1, prop.getProperty("debug"));
+				if (prop.containsKey("prepare"))
+					((ArrayList)(arg.get("Xprepare"))).set(1, prop.getProperty("prepare"));
 				if (prop.containsKey("database"))
 					((ArrayList)(arg.get("b"))).set(1, prop.getProperty("database"));
 				if (prop.containsKey("language"))
@@ -290,7 +294,14 @@ public class JdbcClient {
 "           communication with the server for each statement.  If a number is\n" +
 "           given, it is used as batch size.  I.e. 8000 would execute the\n" +
 "           contents on the batch after each 8000 read rows.  Batching can\n" +
-"           greatly speedup the process of restoring a database dump.\n"
+"           greatly speedup the process of restoring a database dump.\n" +
+/*
+"-Xprepare  Specifies which PreparedStatement to use.  Valid arguments are:\n" +
+"           'native' and 'java'.  The default behaviour if not specified or\n" +
+"           with an unknown value is to request for a native PreparedStatement\n" +
+"           at the MonetDB JDBC driver.\n" +
+*/
+""
 );
 			System.exit(0);
 		}
@@ -332,6 +343,8 @@ public class JdbcClient {
 		if (tmp != null) attr += "blockmode_blocksize=" + tmp + "&";
 		String lang = (String)(((ArrayList)(arg.get("l"))).get(1));
 		if (!"sql".equals(lang)) attr += "language=" + lang + "&";
+		tmp = (String)(((ArrayList)(arg.get("Xprepare"))).get(1));
+		attr += "native_prepared_statements=" + ("java".equals(tmp) ? "false" : "true") + "&";
 
 		ArrayList ltmp = (ArrayList)(arg.get("Xdebug"));
 		if (ltmp.get(1) != null) {
