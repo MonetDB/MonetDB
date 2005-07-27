@@ -144,7 +144,13 @@ public class MonetConnection extends Thread implements Connection {
 		this.database = props.getProperty("database");
 		this.username = props.getProperty("user");
 		this.password = props.getProperty("password");
-		this.nativePreparedStatements = Boolean.valueOf(props.getProperty("native_prepared_statements")).booleanValue();
+		boolean natPrepStIsSet =
+			props.getProperty("native_prepared_statements") == null;
+		if (!natPrepStIsSet) {
+			this.nativePreparedStatements = Boolean.valueOf(props.getProperty("native_prepared_statements")).booleanValue();
+		} else {
+			this.nativePreparedStatements = true;
+		}
 
 		String language = props.getProperty("language");
 		boolean blockMode = Boolean.valueOf(props.getProperty("blockmode")).booleanValue();
