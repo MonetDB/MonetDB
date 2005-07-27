@@ -612,7 +612,7 @@ bbp_convert( str batdir )
 			c = fgets(buffer, sizeof(buffer), fp);
 		}
 		if (ptrsize != SIZEOF_SIZE_T || oidsize != SIZEOF_OID) {
-			GDKerror("BBP incompatibel with current Mserver");
+			GDKerror("BBP incompatible with current Mserver");
 			return GDK_FAIL;
 		}
 		if (c != NULL) {
