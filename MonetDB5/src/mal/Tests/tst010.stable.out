@@ -1,18 +1,19 @@
 stdout of test 'tst010` in directory 'src/mal` itself:
 
 
-# 07:58:35 >  
-# 07:58:35 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst010.mal </dev/null
-# 07:58:35 >  
+# 22:12:14 >  
+# 22:12:14 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=31014 --set sql_port=48610 --set xquery_port=58900 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst010.mal </dev/null
+# 22:12:14 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ## syntax analysis test for guarded blocks, redo's and leave's
+## forcefully end the block, because the parser counts barrier/exit pairs
 #barrier	L:= 1;
 #	#do it
 #	leave Z;	# not known in block
@@ -153,7 +154,7 @@ barrier unfinished := 1;	# 42  (unfinished:int)<-($6:int)
 end main;	# 44  
 end main;	# 45  unknown 
 
-# 07:58:35 >  
-# 07:58:35 >  Done.
-# 07:58:35 >  
+# 22:12:14 >  
+# 22:12:14 >  Done.
+# 22:12:14 >  
 
