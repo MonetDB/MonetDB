@@ -1014,12 +1014,12 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:binaryint(sample,BATsample)@
 
 int
-CMDcount_nil(lng *result, BAT *b, bit *ignore_nils)
+CMDcount_nil(size_t *result, BAT *b, bit *ignore_nils)
 {
 	if (*ignore_nils)
-		*result = (int) BATcount_no_nil(b);
+		*result = BATcount_no_nil(b);
 	else
-		*result = (int) BATcount(b);
+		*result = BATcount(b);
 	return GDK_SUCCEED;
 }
 
@@ -2092,20 +2092,24 @@ str ALGthsort(int *result, int *lid ) {
 }
 str ALGcount_bat(lng *result, int *bid) {
 	BAT *b;
+	size_t cnt;
 	bit ignore_nils= FALSE;
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("algebra.count", "Cannot access descriptor");
     }
-	CMDcount_nil(result,b,&ignore_nils);
+	CMDcount_nil(&cnt,b,&ignore_nils);
+	*result = cnt;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 str ALGcount_nil(lng *result, int *bid, bit *ignore_nils) {
 	BAT *b;
+	size_t cnt;
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("algebra.count", "Cannot access descriptor");
     }
-	CMDcount_nil(result,b,ignore_nils);
+	CMDcount_nil(&cnt,b,ignore_nils);
+	*result = cnt;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
