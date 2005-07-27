@@ -692,44 +692,7 @@ AC_PROG_LIBTOOL()
 AM_PROG_LIBTOOL()
 
 dnl AC_PROG_CC_STDC()
-case "$bits-$host_os" in
-64-darwin8*)
-	dnl  The test hereafter fails on Tiger; hence, we skip it.
-	have_libfl=no
-	have_libl=no
-	CC64="$CC"
-	CC="$CC32"
-	;;
-64-*)
-	dnl  On 64-bit systems, there might be no 64-bit libfl or libl, which is not a major problem,
-	dnl  as we define our own yywrap function, and hence don't need these libraries.
-	dnl  However, the standard "AC_PROG_LEX" & "AM_PROG_LEX" tests fail to correctly determine,
-	dnl  whether [f]lex defines yytext as pointer or array, in case there is no proper lib[f]l.
-	dnl  Hence, we first check, whether there is a suitable lib[f]l --- we check for function
-	dnl  main instead of yywrap, as otherwise configure would cache the result, and check again
-	dnl  in the 32-bit version hereafter. In case there is no suitable lib[f]l, we temporarly 
-	dnl  switch back to the 32-bit version for "AC_PROG_LEX" & "AM_PROG_LEX".
-	AC_CHECK_LIB(fl, main, 
-		[ AC_DEFINE(HAVE_LIBFL, 1, [Define if you have the fl[ex] library]) 
-		  have_libfl=yes ] , 
-		[ have_libfl=no
-		  AC_CHECK_LIB(l, main, 
-			[ AC_DEFINE(HAVE_LIBL, 1, [Define if you have the l[ex] library]) 
-		  	  have_libl=yes ] ,
-			[ have_libl=no
-			  CC64="$CC"
-			  CC="$CC32"
-			] )
-		] )
-	;;
-esac
-AC_PROG_LEX
 AM_PROG_LEX()
-if test "$CC64" != ""; then
-	dnl  Back to 64-bit, and don't use the 32-bit lib[f]l that might have been found.
-	CC="$CC64"
-	LEXLIB=""
-fi
 AC_PROG_YACC()
 AC_PROG_LN_S()
 AC_CHECK_PROG(RM,rm,rm -f)
