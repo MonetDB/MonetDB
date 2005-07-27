@@ -1108,7 +1108,7 @@ optimizers to make decisions. (See the section on properties).
 					break;
 					}
 				case TYPE_bit:{
-					int bval;
+					bit bval;
 					if( strncmp(nxt,"true",4)==0 && i==4)
 						bval= TRUE;
 					else
