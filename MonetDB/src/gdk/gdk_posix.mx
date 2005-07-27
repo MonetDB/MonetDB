@@ -156,7 +156,25 @@ gdk_export int MT_alloc_table(void);
 # endif
 #endif
 
-/* the new mmap modes, mimick default MADV_* madvise POSIX constants */
+/* in case they are still not defined, define these values as
+   something that doesn't do anything */
+#ifndef POSIX_MADV_NORMAL
+#define POSIX_MADV_NORMAL 0
+#endif
+#ifndef POSIX_MADV_RANDOM
+#define POSIX_MADV_RANDOM 0
+#endif
+#ifndef POSIX_MADV_SEQUENTIAL
+#define POSIX_MADV_SEQUENTIAL 0
+#endif
+#ifndef POSIX_MADV_WILLNEED
+#define POSIX_MADV_WILLNEED 0
+#endif
+#ifndef POSIX_MADV_DONTNEED
+#define POSIX_MADV_DONTNEED 0
+#endif
+
+/* the new mmap modes, mimic default MADV_* madvise POSIX constants */
 #define MMAP_NORMAL     	POSIX_MADV_NORMAL	/* no further special treatment */
 #define MMAP_RANDOM     	POSIX_MADV_RANDOM	/* expect random page references */
 #define MMAP_SEQUENTIAL 	POSIX_MADV_SEQUENTIAL	/* expect sequential page references */

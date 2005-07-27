@@ -678,10 +678,6 @@
    first (like Motorola and SPARC, unlike Intel and VAX). */
 /* #undef WORDS_BIGENDIAN */
 
-/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
-   `char[]'. */
-#define YYTEXT_POINTER 1
-
 /* Number of bits in a file offset, on hosts where this is settable. */
 #define _FILE_OFFSET_BITS 32
 
@@ -1322,10 +1318,6 @@
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
 /* #undef WORDS_BIGENDIAN */
-
-/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
-   `char[]'. */
-#define YYTEXT_POINTER 1
 
 /* Number of bits in a file offset, on hosts where this is settable. */
 /* #undef _FILE_OFFSET_BITS */
