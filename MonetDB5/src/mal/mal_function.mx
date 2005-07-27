@@ -408,11 +408,12 @@ we have to remember the scope assigned to a variable.
 @c
 void chkDeclarations(MalBlkPtr mb,int reset){
 	int pc,i, k;
-	int fnd,s;
+	int fnd;
 	InstrPtr p;
-	int blks[MAXDEPTH], top= 0,blk=1;
+	short s, blks[MAXDEPTH], top= 0, blkId=1;
 	str nme;
 
+    for(i=0;i<MAXDEPTH; i++) blks[i]= -1;
 	blks[top] = 1;
 	blks[++top]= 0;
 	if( reset) 
@@ -468,9 +469,9 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			}
 		}
 		if( blockStart(p)){
-			blk++;
+			blkId++;
 			if( top <MAXDEPTH-2){
-			    blks[top]= blk;
+			    blks[top]= blkId;
 			    blks[++top]= 0;
 /*
 	printf("enter block [");
@@ -488,7 +489,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			    top--;
 			    blks[top]= 0;
 /*
-	printf("leave block %d [",blk);
+	printf("leave block %d [",blkId);
 	for(z=0;z<top; z++) printf(" %d",blks[z]);
 	printf("]\n");
 */
