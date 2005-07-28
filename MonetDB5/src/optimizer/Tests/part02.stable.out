@@ -58,10 +58,10 @@ stdout of test 'part02` in directory 'src/optimizer` itself:
 #	j:= join(a,b);
 #	print(j);
 #end qry;
-function user.qry(a:bat[:void,:any],b:bat[:void,:any]):void;	# 0  (qry:void)<-(a:bat[:void,:any])(b:bat[:void,:any])
+function user.qry(a:bat[:void,:int],b:bat[:int,:void]):void;	# 0  (qry:void)<-(a:bat[:void,:int])(b:bat[:int,:void])
     io.print("experiment 3");	# 1 IOprint_val ($3:int)<-($4:str)
-    j := algebra.join(a,b);	# 2 ALGjoin (j:bat[:void,:any])<-(a:bat[:void,:any])(b:bat[:void,:any])
-    io.print(j);	# 3 IOprint_val ($6:int)<-(j:bat[:void,:any])
+    j := algebra.join(a,b);	# 2 ALGjoin (j:bat[:void,:oid])<-(a:bat[:void,:int])(b:bat[:int,:void])
+    io.print(j);	# 3 IOprint_val ($6:int)<-(j:bat[:void,:oid])
 end qry;	# 4  
 #
 #optimizer.partitionedQuery("Admin","qry");
@@ -74,11 +74,6 @@ replace first=2 last=3
 variable replacement 'a' instructions 2-3  lifespan 2-2
 first=7 last=7 
 first=8 last=7 
-start first=1 last=6 
-replace first=3 last=4 
-variable replacement 'b' instructions 3-4  lifespan 3-3
-first=8 last=10 
-first=11 last=10 
 function user.main():int;	# 0  (main:int)
 #testing the partition optimizer 	# 1  ($2:str)
     a1 := bbp.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-($4:void)($5:int)
@@ -115,8 +110,9 @@ exit (go,i);	# 22  (go:bit)(i:int)
 # a double nested loop 	# 33  ($46:str)
     mdb.showFunction("user","qry");	# 34 MDBshowFunction3 ($50:void)<-($48:str)($49:str)
     io.print("run experiment");	# 35 IOprint_val ($51:int)<-($52:str)
-    user.qry(a1,b1);	# 36  ($53:void)<-(a1:bat[:void,:int])(b1:bat[:void,:int])
-end main;	# 37  
+    br := bat.reverse(b1);	# 36 BKCreverse (br:bat[:int,:void])<-(b1:bat[:void,:int])
+    user.qry(a1,br);	# 37  ($54:void)<-(a1:bat[:void,:int])(br:bat[:int,:void])
+end main;	# 38  
 ptop=6 plimit=1024
 [0] bid=13 pid=13 f=0, l=10 prv=-1 nxt=1 cap=-1
 [1] bid=13 pid=14 f=10, l=20 prv=0 nxt=2 cap=-1
@@ -124,23 +120,58 @@ ptop=6 plimit=1024
 [3] bid=16 pid=16 f=0, l=10 prv=-1 nxt=4 cap=-1
 [4] bid=16 pid=17 f=10, l=20 prv=3 nxt=5 cap=-1
 [5] bid=16 pid=18 f=20, l=30 prv=4 nxt=-1 cap=-1
-function user.qry(a:bat[:void,:any],b:bat[:void,:any]):void;
+function user.qry(a:bat[:void,:int],b:bat[:int,:void]):void;
     io.print("experiment 3");
 barrier ($7,$8):= partitions.newIterator(a);
-barrier ($9,$10):= partitions.newIterator(b);
-    j := algebra.join($8,$10);
+    j := algebra.join($8,b);
     io.print(j);
-    redo ($9,$10):= partitions.hasMoreElements(b);
-exit ($9,$10);
     redo ($7,$8):= partitions.hasMoreElements(a);
 exit ($7,$8);
 end qry;
 [ "run experiment" ]
 [ "experiment 3" ]
-!ERROR: BATjoin: type conflict
-!ERROR: BATpropcheck: BAT parameter: BAT required.
-!ERROR: MALexception:algebra.join:GDKerror
-#
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 1@0,	  1@0	  ]
+[ 2@0,	  2@0	  ]
+[ 3@0,	  3@0	  ]
+[ 4@0,	  4@0	  ]
+[ 5@0,	  5@0	  ]
+[ 6@0,	  6@0	  ]
+[ 7@0,	  7@0	  ]
+[ 8@0,	  8@0	  ]
+[ 9@0,	  9@0	  ]
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 10@0,	  0@0	  ]
+[ 11@0,	  1@0	  ]
+[ 12@0,	  2@0	  ]
+[ 13@0,	  3@0	  ]
+[ 14@0,	  4@0	  ]
+[ 15@0,	  5@0	  ]
+[ 16@0,	  6@0	  ]
+[ 17@0,	  7@0	  ]
+[ 18@0,	  8@0	  ]
+[ 19@0,	  9@0	  ]
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 20@0,	  0@0	  ]
+[ 21@0,	  1@0	  ]
+[ 22@0,	  2@0	  ]
+[ 23@0,	  3@0	  ]
+[ 24@0,	  4@0	  ]
+[ 25@0,	  5@0	  ]
+[ 26@0,	  6@0	  ]
+[ 27@0,	  7@0	  ]
+[ 28@0,	  8@0	  ]
+[ 29@0,	  9@0	  ]
 
 # 12:35:27 >  
 # 12:35:27 >  Done.
