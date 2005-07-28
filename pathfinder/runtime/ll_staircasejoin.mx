@@ -206,9 +206,16 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         oid lst_ctx = 0;
         BUN dst = 0, p = 0;
         int bs_res = 0;
+        size_t max_size = 0;
         
         BUNfndVOID(p, pre_size, &fst_ctx);
-        res_size = BATcount(iter_bat) * (size_t)(*(int*)BUNtloc(pre_size, p) + (int)self);
+        max_size = res_size = (size_t)(*(int*)BUNtloc(pre_size, p) + (int)self);
+        if ( cand_bat ) {
+            if ( BATcount(cand_bat) < res_size ) {
+                res_size = BATcount(cand_bat);
+            }
+        }
+        res_size *= BATcount(iter_bat);
         res = BATnew(TYPE_oid, TYPE_oid, res_size);
         if (res == NULL) 
         { 
@@ -217,7 +224,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         }
         res_size /= BATcount(iter_bat);
         fst_ctx = fst_ctx + (oid)(1 - (int)self);
-        lst_ctx = fst_ctx + (oid)res_size;
+        lst_ctx = fst_ctx + (oid)max_size;
         dst = BUNlast(res);
         assert(!res->hloc);
         bs_res = BUNsize(res);

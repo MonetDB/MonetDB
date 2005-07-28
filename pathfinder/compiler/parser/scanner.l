@@ -179,6 +179,13 @@ gotoState (int s)
 
 void
 pfStart( char* buf) {
+    if (!pfin) {
+#ifdef NATIVE_WIN32
+        pfin = fopen("C:nul","r");
+#else
+        pfin = fopen("/dev/null","r");
+#endif
+    }
     if (pfinput) {
         YY_FLUSH_BUFFER;
         gotoState(0);
