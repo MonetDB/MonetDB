@@ -2,9 +2,9 @@
 b:= bbp.new(:int,:int);
 l:= 0;
 barrier (v,i):= mal.newRange(0:int);
-        k:= mmath.rand();
-        l:= calc.int(k);
         bat.insert(b,l,l);
+		l:= l+1;
+		l:= i *i;
         redo (v,i):= mal.nextElement(1:int,1000000:int);
 exit (v,i);
 #setReadMode(b);
