@@ -1345,7 +1345,7 @@ to make the user aware of this situation.
 @c
 retryConstant:
     switch( parsetype){ 
-    case TYPE_bit: { int x = (val[0]=='t' || val[0]=='T')?TRUE:FALSE;
+    case TYPE_bit: { bit x = (val[0]=='t' || val[0]=='T')?TRUE:FALSE;
              vr->vtype= TYPE_bit;
              vr->val.cval[0]= (tonil)?bit_nil:x; 
              vr->val.cval[1]= 0;
