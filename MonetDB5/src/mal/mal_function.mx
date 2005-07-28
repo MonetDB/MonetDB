@@ -455,7 +455,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			    /* is the block still active ? */
 			    for( i=0; i< top; i++)
 			    if( blks[i] == getVarScope(mb,getArg(p,k)) ) break;
-			    if( blks[i]!= getVarScope(mb,getArg(p,k)) && 
+			    if( i< top && blks[i]!= getVarScope(mb,getArg(p,k)) && 
 			        !isTmpVar(mb, getArg(p,k))){
 /*
 	printf("blk %d defs %d [",i,defs[p->argv[k]]);
