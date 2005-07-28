@@ -1,78 +1,80 @@
 stdout of test 'test_02` in directory 'tests/suite_00` itself:
 
 
-# 15:33:21 >  
-# 15:33:21 >  Mtimeout -timeout 60 Mserver "--config=/ufs/boncz/MonetDB/linux/etc/monet.conf" --debug=10 --set "monet_mod_path=/ufs/boncz/MonetDB/linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/boncz/MonetDB/linux/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/boncz/MonetDB/linux/var/MonetDB/log" --set mapi_port=55437 --set sql_port=50559 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  < test_02.milS
-# 15:33:21 >  
+# 16:30:31 >  
+# 16:30:31 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39663 --set sql_port=45036 --set xquery_port=50998 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_02.mal </dev/null
+# 16:30:31 >  
 
-# Monet Database Server V4.3.13
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_suite_00
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## Monet Mil to Mal compiler
+#include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
-## Predefined code segment
+##Predefined code segment
 ##The compiler can not guarantee an accurate compilation,
 ##because MIL unlike MAL is a dynamically typed language.
 ##A few guidelines to maximize usefullness.
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
 #	mil.line("setoid(oid(20000000));");
-#	aa_a := oid(20000000);
-#	ba_a := setoid(aa_a);
-#	mil.line("var s:= new(str,int);");
-#	s := new(:str,:int);
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
+#	mil.line("var s:= bbp.new(str,int);");
+#	s := bbp.new(nil:str,nil:int);
 #	mil.line("insert(s,\"hello\",1);");
-#	ca_a := insert(s,"hello",1);
+#	ca_a := bat.insert(s,"hello",1);
 #	mil.line("print(find(s,\"hello\"));");
-#	da_a := find(s,"hello");
-#	ea_a := print(da_a);
+#	da_a := algebra.find(s,"hello");
+#	ea_a := io.print(da_a);
 #	mil.line("insert(s,\"bello\",2);");
-#	fa_a := insert(s,"bello",2);
+#	fa_a := bat.insert(s,"bello",2);
 #	mil.line("insert(s,\"cello\",3);");
-#	ga_a := insert(s,"cello",3);
+#	ga_a := bat.insert(s,"cello",3);
 #	mil.line("insert(s,\"dello\",4);");
-#	ha_a := insert(s,"dello",4);
+#	ha_a := bat.insert(s,"dello",4);
 #	mil.line("insert(s,\"eello\",5);");
-#	ia_a := insert(s,"eello",5);
+#	ia_a := bat.insert(s,"eello",5);
 #	mil.line("insert(s,\"fello\",6);");
-#	ja_a := insert(s,"fello",6);
+#	ja_a := bat.insert(s,"fello",6);
 #	mil.line("insert(s,\"gello\",7);");
-#	ka_a := insert(s,"gello",7);
+#	ka_a := bat.insert(s,"gello",7);
 #	mil.line("insert(s,\"hello\",8);");
-#	la_a := insert(s,"hello",8);
+#	la_a := bat.insert(s,"hello",8);
 #	mil.line("printf(\"#~BeginVariableOutput~#\\n\"); info(s).print(); printf(\"#~EndVariableOutput~#\\n\");");
-#	ma_a := printf("#~BeginVariableOutput~#\n");
-#	na_a := info(s);
-#	oa_a := print(na_a);
-#	pa_a := printf("#~EndVariableOutput~#\n");
+#	ma_a := io.printf("#~BeginVariableOutput~#\n");
+#	na_a := bat.info(s);
+#	oa_a := io.print(na_a);
+#	pa_a := io.printf("#~EndVariableOutput~#\n");
 #	mil.line("print(find(s,\"cello\"));");
-#	qa_a := find(s,"cello");
-#	ra_a := print(qa_a);
+#	qa_a := algebra.find(s,"cello");
+#	ra_a := io.print(qa_a);
 #	mil.line("delete(s,\"cello\",3);");
-#	sa_a := delete(s,"cello",3);
+#	sa_a := bat.delete(s,"cello",3);
 #	mil.line("print(s);");
-#	ta_a := print(s);
-#	mil.line("var sn:= select(s,1,5);");
-#	sn := select(s,1,5);
+#	ta_a := io.print(s);
+#	mil.line("var sn:= algebra.select(s,1,5);");
+#	sn := algebra.select(s,1,5);
 #	mil.line("print(sn);");
-#	ua_a := print(sn);
+#	ua_a := io.print(sn);
 #	mil.line("var s2:= semijoin(s.reverse(),sn.reverse());");
-#	va_a := reverse(s);
-#	wa_a := reverse(sn);
-#	s2 := semijoin(va_a,wa_a);
+#	va_a := bat.reverse(s);
+#	wa_a := bat.reverse(sn);
+#	s2 := algebra.semijoin(va_a,wa_a);
 #	mil.line("print(s2);");
-#	xa_a := print(s2);
-#	mil.line("var x:= join(s,s2);");
-#	x := join(s,s2);
+#	xa_a := io.print(s2);
+#	mil.line("var x:= algebra.join(s,s2);");
+#	x := algebra.join(s,s2);
 #	mil.line("print(x);");
-#	ya_a := print(x);
+#	ya_a := io.print(x);
 #	mil.line("quit();");
-#	ab_a := quit();
+#	ab_a := clients.quit();
 #
 function user.main():int;	# 0  (main:int)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  ($32:str)
@@ -137,83 +139,83 @@ function user.main():int;	# 0  (main:int)
     ab_a := clients.quit();	# 60 CLTquit (ab_a:void)
 end main;	# 61  
 #setoid(oid(20000000));
-#var s:= new(str,int);
-#insert(s,"hello",1);
-#print(find(s,"hello"));
+#var s:= bbp.new(str,int);
+#insert(s,\"hello\",1);
+#print(find(s,\"hello\"));
 [ 1 ]
-#insert(s,"bello",2);
-#insert(s,"cello",3);
-#insert(s,"dello",4);
-#insert(s,"eello",5);
-#insert(s,"fello",6);
-#insert(s,"gello",7);
-#insert(s,"hello",8);
-#printf("#~BeginVariableOutput~#\n"); info(s).print(); printf("#~EndVariableOutput~#\n");
+#insert(s,\"bello\",2);
+#insert(s,\"cello\",3);
+#insert(s,\"dello\",4);
+#insert(s,\"eello\",5);
+#insert(s,\"fello\",6);
+#insert(s,\"gello\",7);
+#insert(s,\"hello\",8);
+#printf(\"#~BeginVariableOutput~#\\n\"); info(s).print(); printf(\"#~EndVariableOutput~#\\n\");
 #~BeginVariableOutput~#
 #-----------------------------------------#
-# h			tmp_14		  # name
+# h			t		  # name
 # str			str		  # type
 #-----------------------------------------#
 [ "version",		  "20749"	  ]
 [ "batId",		  "tmp_15"	  ]
-[ "batCacheid",			  "13"		  ]
-[ "batParentid",		  "0"		  ]
-[ "batSharecnt",		  "0"		  ]
-[ "head",			  "str"		  ]
-[ "tail",			  "int"		  ]
-[ "batPersistence",		  "transient"	  ]
-[ "batRestricted",		  "updatable"	  ]
-[ "batRefcnt",			  "1"		  ]
+[ "batCacheid",		  "13"		  ]
+[ "batParentid",	  "0"		  ]
+[ "batSharecnt",	  "0"		  ]
+[ "head",		  "str"		  ]
+[ "tail",		  "int"		  ]
+[ "batPersistence",	  "transient"	  ]
+[ "batRestricted",	  "updatable"	  ]
+[ "batRefcnt",		  "1"		  ]
 [ "batLRefcnt",		  "1"		  ]
-[ "batDirty",			  "dirty"	  ]
-[ "batSet",			  "0"		  ]
-[ "void_tid",			  "0"		  ]
-[ "void_cnt",			  "0"		  ]
-[ "hsorted",			  "0"		  ]
-[ "hident",			  "h"		  ]
-[ "hdense",			  "0"		  ]
-[ "hseqbase",			  "0@0"		  ]
-[ "hkey",			  "0"		  ]
-[ "hloc",			  "0"		  ]
-[ "hvarsized",			  "1"		  ]
-[ "halign",			  "0"		  ]
-[ "tident",			  "t"		  ]
-[ "tdense",			  "0"		  ]
-[ "tseqbase",			  "0@0"		  ]
+[ "batDirty",		  "dirty"	  ]
+[ "batSet",		  "0"		  ]
+[ "void_tid",		  "0"		  ]
+[ "void_cnt",		  "0"		  ]
+[ "hsorted",		  "0"		  ]
+[ "hident",		  "h"		  ]
+[ "hdense",		  "0"		  ]
+[ "hseqbase",		  "0@0"		  ]
+[ "hkey",		  "0"		  ]
+[ "hloc",		  "0"		  ]
+[ "hvarsized",		  "1"		  ]
+[ "halign",		  "0"		  ]
+[ "tident",		  "t"		  ]
+[ "tdense",		  "0"		  ]
+[ "tseqbase",		  "0@0"		  ]
 [ "tsorted",		  "65"		  ]
-[ "tkey",			  "1"		  ]
-[ "tloc",			  "4"		  ]
-[ "tvarsized",			  "0"		  ]
-[ "talign",			  "0"		  ]
+[ "tkey",		  "1"		  ]
+[ "tloc",		  "8"		  ]
+[ "tvarsized",		  "0"		  ]
+[ "talign",		  "0"		  ]
 [ "batInserted",	  "0"		  ]
-[ "batDeleted",			  "0"		  ]
+[ "batDeleted",		  "0"		  ]
 [ "top",		  "8"		  ]
-[ "batStamp",			  "13"		  ]
-[ "lastUsed",			  "163"		  ]
-[ "curStamp",			  "14"		  ]
-[ "batCopiedtodisk",		  "0"		  ]
-[ "batDirtydesc",		  "clean"	  ]
-[ "batDirtybuns",		  "clean"	  ]
-[ "batBuns.free",	  "64"		  ]
-[ "batBuns.size",	  "400"		  ]
-[ "batBuns.maxsize",	  "400"		  ]
-[ "batBuns.storage",		  "malloced"	  ]
+[ "batStamp",		  "13"		  ]
+[ "lastUsed",		  "163"		  ]
+[ "curStamp",		  "14"		  ]
+[ "batCopiedtodisk",	  "0"		  ]
+[ "batDirtydesc",	  "clean"	  ]
+[ "batDirtybuns",	  "clean"	  ]
+[ "batBuns.free",	  "128"		  ]
+[ "batBuns.size",	  "800"		  ]
+[ "batBuns.maxsize",	  "800"		  ]
+[ "batBuns.storage",	  "malloced"	  ]
 [ "batBuns.filename",	  "15.buns"	  ]
-[ "hheapdirty",			  "clean"	  ]
-[ "hheap->free",	  "4180"	  ]
-[ "hheap->size",	  "4700"	  ]
-[ "hheap->maxsize",	  "4700"	  ]
+[ "hheapdirty",		  "clean"	  ]
+[ "hheap->free",	  "8304"	  ]
+[ "hheap->size",	  "8800"	  ]
+[ "hheap->maxsize",	  "8800"	  ]
 [ "hheap->storage",	  "malloced"	  ]
 [ "hheap->filename",	  "15.hheap"	  ]
-[ "theapdirty",			  "clean"	  ]
+[ "theapdirty",		  "clean"	  ]
 #~EndVariableOutput~#
-#print(find(s,"cello"));
+#print(find(s,\"cello\"));
 [ 3 ]
-#delete(s,"cello",3);
+#delete(s,\"cello\",3);
 #print(s);
 #-------------------------#
-# BAT:		  tmp_28  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "hello",	  1	  ]
 [ "bello",	  2	  ]
@@ -222,11 +224,11 @@ end main;	# 61
 [ "eello",	  5	  ]
 [ "fello",	  6	  ]
 [ "gello",	  7	  ]
-#var sn:= select(s,1,5);
+#var sn:= algebra.select(s,1,5);
 #print(sn);
 #-------------------------#
-# BAT:		  tmp_29  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "hello",	  1	  ]
 [ "bello",	  2	  ]
@@ -235,18 +237,18 @@ end main;	# 61
 #var s2:= semijoin(s.reverse(),sn.reverse());
 #print(s2);
 #-------------------------#
-# BAT:	  tmp_30	  #
-# (int)	  (str)		  #
+# h	t		  # name
+# int	str		  # type
 #-------------------------#
 [ 1,	  "hello"	  ]
 [ 2,	  "bello"	  ]
 [ 4,	  "dello"	  ]
 [ 5,	  "eello"	  ]
-#var x:= join(s,s2);
+#var x:= algebra.join(s,s2);
 #print(x);
 #---------------------------------#
-# BAT:		  tmp_29	  #
-# (str)		  (str)		  #
+# h		t		  # name
+# str		str		  # type
 #---------------------------------#
 [ "hello",	  "hello"	  ]
 [ "bello",	  "bello"	  ]
@@ -254,7 +256,7 @@ end main;	# 61
 [ "eello",	  "eello"	  ]
 #quit();
 
-# 15:33:22 >  
-# 15:33:22 >  Done.
-# 15:33:22 >  
+# 16:30:31 >  
+# 16:30:31 >  Done.
+# 16:30:31 >  
 
