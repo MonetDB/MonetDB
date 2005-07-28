@@ -69,10 +69,7 @@ stdout of test 'tst2040` in directory 'src/mal` itself:
 !ERROR: 'i' may not be used before being set in main[19]
 !ERROR: 'i' may not be used before being set in main[34]
 !ERROR: 'i' may not be used before being set in main[35]
-!ERROR: 'b' used outside declaration scope in main[35]
-!ERROR: 'b' used outside declaration scope in main[37]
 !ERROR: 'i' may not be used before being set in main[38]
-!ERROR: 'i' used outside declaration scope in main[45]
 function user.main():int;	# 0  (main:int)
 #The 2000 serie  is focussed on parallelism 	# 1  ($2:str)
 # Example of a simple producer/consumer pair 	# 2  ($4:str)

@@ -103,9 +103,6 @@ end main;	# 44
 !ERROR: exit-label 'F' without begin-label in main[31]
 !ERROR: exit-label 'A' without begin-label in main[41]
 !ERROR: begin 'unfinished' without exit in main[45]
-!ERROR: 'D' used outside declaration scope in main[38]
-!ERROR: 'D' used outside declaration scope in main[40]
-!ERROR: 'A' used outside declaration scope in main[41]
 #
 function user.main():int;	# 0  (main:int)
 # syntax analysis test for guarded blocks, redo's and leave's 	# 1  ($2:str)
