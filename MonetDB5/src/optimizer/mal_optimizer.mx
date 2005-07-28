@@ -742,10 +742,9 @@ optimizing the code base. In particular it means that any move/remove/addition
 of an instruction calls for either a recalculation or delta propagation.
 Unclear what will be the best strategy. For the time being we just recalc.
 
-Also take care of the nested block structure. Because the span should
-fall within a single block. Alternatively, the end of lifespan
-should adhire to the end of block. [TODO]
 @{
+Also take care of the nested block structure. Because the span should
+fall within a single block. This is handled by the chkflow already.
 @c
 void debugLifespan(MalBlkPtr mb){
     int i;
