@@ -31,23 +31,17 @@ on stack initialization and garbage collection cost
 MIL 4 'loss' in M5
 - M2mal is only meant to enable transition between systems.
 - generic [m] is depreciated and replaced by map+BAT* modules
-- dynamic typing is gone (e.g. *str() )
 - naming conventions get/set properties
 - [ht]operation convention or operation[ht]_[ht]
 
 MAL language issues
 - rethink the before/after structure for garabage collection
   and handle it explicitly in the interpreter.
-- reference counting is still not ok, see tst220
 - look into the nested (referenced) bat issues
 - check all routines for proper match return type and actual
 action.
 - Modules should make the expections being thrown explicit
 - Expand the property management infrastructure. tst3K serie
-- Test proper declaration of variables to avoid uninitalized variabless
-
-- consider statistics/type catalog at MAL layer only.
-- insert(b,2) should work on bat(void,int)
 
 - a hard bug appears in the following case
   via MapiClient Tapestry_1M-2
@@ -56,8 +50,6 @@ action.
   and works when GDB is applied
 - BATs entered into a box should become persistent? (tst1004,1005,1014)
 
-- printing result tables should be improved.
-- rethink position of enum types
 - use a process buffer pool to avoid expensive client starts.
 
 - implement the Box authorization scheme
@@ -70,18 +62,10 @@ functionality
 - global resource management is not ok yet, for 10M tapestry it
 is about 5 times slower. It appears that it grows too slow,
 spending its time on copying bats all the time.
-- store also the module and function name on the MAL block symbol
-table. This can reduce the number of malloc/free calls significantly.
-[estimate about >15% speed] 
-
-Optimizer
-- the lifespan analyses should take care of nested blocks
 
 API issues
-- Japi should be aligned with latest Mapi 
 - The java front-end terminal and profiler should be re-vived
 - Multi-client (concurrent) access has not been tested yet
-- roll-forward Mapi packages .php, .py, .tcl
 
 V4 issues
 - overlay V4 database with V5 session
@@ -93,6 +77,7 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20050728 reference counting is still not ok, see tst220
 20050723 the user defined variable types are retained
 20050720 turn properties into simple terms (e.g. cnt<1)
 20050619 The role of multiplex is reconsidered, because it is 
@@ -113,6 +98,7 @@ fast bat* operations should be used.
 20050414 exception utils bijwerken
 20050414 GDK uses too many BATcounts while they are stable , removed
 a few from the code base.
+20050404 enum types are gone
 20050302 re-enact calling the debugger from a script
 20050228 The garbage control is too complicated and consumes too much power.
   before/after calls are only focussed on the first destination argument.
@@ -120,6 +106,7 @@ a few from the code base.
   Garbage collector redone.
 
 20050225 added statistics catalog at MAL layer only.
+Test proper declaration of variables to avoid uninitalized variabless
 20041220 Split inpection module into mdb+inspect
 20041216 A function may carry an address, to enable JIT
 20041216 The replace/insert operations for bats arguments should set the 
