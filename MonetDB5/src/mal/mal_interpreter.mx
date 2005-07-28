@@ -612,8 +612,11 @@ possible change in the control flow.
                 rhs = &stk->stk[pp->argv[i]];
                 lhs = &env->stk[pci->argv[i]];
                 VALcopy(lhs,rhs);
+				for(k= pci->retc; k< pci->argc; k++)
+					if( getArg(pci,k) == getArg(pci,i) ) goto noinc;
 				if( lhs->vtype == TYPE_bat )
 					BBPincref(lhs->val.br.id, TRUE); 
+				noinc:;
             }
             @:garbageTypeCheck@
 			garbageCollectAll(mb, stk);
