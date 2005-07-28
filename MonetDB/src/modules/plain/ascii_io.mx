@@ -1113,7 +1113,7 @@ int
 ASCIIoutput_file(ascii *as, BAT *order, stream *s)
 {
 	oid base = oid_nil;
-	unsigned int maxnr = BATcount(order);
+	size_t maxnr = BATcount(order);
 
 	/* only set nr if it is zero or lower (bogus) to the maximum value
 	 * possible (BATcount), if already set within BATcount range,
