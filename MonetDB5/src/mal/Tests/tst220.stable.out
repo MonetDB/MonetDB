@@ -25,21 +25,30 @@ stdout of test 'tst220` in directory 'src/mal` itself:
 #end steal; 
 function user.steal(bb:bat[:any$1,:any$2]):bat[:any$1,:any$2];	# 0  dynamic (steal:bat[:any$1,:any$2])<-(bb:bat[:any$1,:any$2])
     i := bbp.getLRefCount(bb);	# 1 CMDgetBATlrefcnt (i:int)<-(bb:bat[:any$1,:any$2])
-    io.printf("enter function refcount =%d[2]\n",i);	# 2 IOprint_formatted_int ($3:int)<-($4:str)(i:int)
+    io.printf("enter function refcount =%d[2,3]\n",i);	# 2 IOprint_formatted_int ($3:int)<-($4:str)(i:int)
     loc := bb;	# 3  (loc:bat[:any$1,:any$2])<-(bb:bat[:any$1,:any$2])
     i := bbp.getLRefCount(bb);	# 4 CMDgetBATlrefcnt (i:int)<-(bb:bat[:any$1,:any$2])
-    io.printf("local in function refcount =%d[2]\n",i);	# 5 IOprint_formatted_int ($6:int)<-($7:str)(i:int)
+    io.printf("local in function refcount =%d[2,3]\n",i);	# 5 IOprint_formatted_int ($6:int)<-($7:str)(i:int)
     return bb;	# 6  (bb:bat[:any$1,:any$2])
 end steal;	# 7  
 #
-#	b:= new(:int,:str);
-#	i:= getLRefCount(b);
-#	printf("refcount =%d[1]\n",i);	
+#function createone():bat[:int,:str];
+#	b:= bbp.new(:int,:str);
+#	return b;
+#end createone;
+function user.createone():bat[:int,:str];	# 0  (createone:bat[:int,:str])
+    b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-($2:int)($3:str)
+    return b;	# 2  (b:bat[:int,:str])
+end createone;	# 3  
 #
-#	insert(b,1,"bat B");
-#	print(b);
-#	i:= getLRefCount(b);
-#	printf("refcount =%d[1]\n",i);
+#	b:= bbp.new(:int,:str);
+#	i:= bbp.getLRefCount(b);
+#	io.printf("refcount =%d[1]\n",i);	
+#
+#	bat.insert(b,1,"bat B");
+#	io.print(b);
+#	i:= bbp.getLRefCount(b);
+#	io.printf("refcount =%d[1]\n",i);
 #
 #	#handle an alias
 #	b2:= b;			
@@ -95,33 +104,33 @@ function user.main():int;	# 0  (main:int)
     io.printf("after assignment refcount =%d[1]\n",i);	# 12 IOprint_formatted_int ($17:int)<-($18:str)(i:int)
 #re-use a bat variable 	# 13  ($20:str)
     b3 := b;	# 14  (b3:bat[:int,:str])<-(b:bat[:int,:str])
-    i := bbp.getLRefCount(b);	# 15 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("after 2nd assignment refcount =%d[2]\n",i);	# 16 IOprint_formatted_int ($22:int)<-($23:str)(i:int)
-#re-use a bat variable 	# 17  ($20:str)
-    b3 := bbp.new(:int,:str);	# 18 CMDBATnew (b3:bat[:int,:str])<-($25:int)($26:str)
-    i := bbp.getLRefCount(b);	# 19 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("after 3rd assignment refcount =%d[1]\n",i);	# 20 IOprint_formatted_int ($27:int)<-($28:str)(i:int)
-    i := bbp.getLRefCount(b3);	# 21 CMDgetBATlrefcnt (i:int)<-(b3:bat[:int,:str])
-    io.printf("assignment refcount =%d[1]\n",i);	# 22 IOprint_formatted_int ($29:int)<-($30:str)(i:int)
-#re-use a bat variable 	# 23  ($20:str)
-    b4 := algebra.select(b,"bat B","bat B");	# 24 ALGselect (b4:bat[:int,:str])<-(b:bat[:int,:str])($11:str)($11:str)
-    io.print(b4);	# 25 IOprint_val ($33:int)<-(b4:bat[:int,:str])
-    i := bbp.getLRefCount(b);	# 26 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("after 4rd assignment refcount =%d[1]\n",i);	# 27 IOprint_formatted_int ($34:int)<-($35:str)(i:int)
-# remove by assignment 	# 28  ($37:str)
-    b2 := b3;	# 29  (b2:bat[:int,:str])<-(b3:bat[:int,:str])
-    i := bbp.getLRefCount(b);	# 30 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("after 5rd assignment refcount =%d[1]\n",i);	# 31 IOprint_formatted_int ($38:int)<-($39:str)(i:int)
-    io.printf("call function\n");	# 32 IOprint_str ($40:int)<-($41:str)
-    d := user.steal(b);	# 33  (d:bat[:int,:str])<-(b:bat[:int,:str])
-    i := bbp.getLRefCount(b);	# 34 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
-    io.printf("return from function refcount =%d[2]\n",i);	# 35 IOprint_formatted_int ($43:int)<-($44:str)(i:int)
-    io.printf("check self replacement\n");	# 36 IOprint_str ($45:int)<-($46:str)
-    i := bbp.getLRefCount(b);	# 37 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
-    b := user.steal(b);	# 38  (b:bat[:int,:str])<-(b:bat[:int,:str])
-    j := bbp.getLRefCount(b);	# 39 CMDgetBATlrefcnt (j:int)<-(b:bat[:int,:str])
-    io.print(i);	# 40 IOprint_val ($48:int)<-(i:int)
-    io.print(j);	# 41 IOprint_val ($49:int)<-(j:int)
+    cnt := algebra.count(b3);	# 15 ALGcount_bat (cnt:lng)<-(b3:bat[:int,:str])
+# forced use 	# 16  ($24:str)
+    i := bbp.getLRefCount(b);	# 17 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
+    io.printf("after 2nd assignment refcount =%d[2]\n",i);	# 18 IOprint_formatted_int ($25:int)<-($26:str)(i:int)
+#re-use a bat variable 	# 19  ($20:str)
+    b3 := user.createone();	# 20  (b3:bat[:int,:str])
+    i := bbp.getLRefCount(b);	# 21 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
+    io.printf("after 3rd assignment refcount =%d[1]\n",i);	# 22 IOprint_formatted_int ($28:int)<-($29:str)(i:int)
+    i := bbp.getLRefCount(b3);	# 23 CMDgetBATlrefcnt (i:int)<-(b3:bat[:int,:str])
+    io.printf("assignment refcount =%d[1]\n",i);	# 24 IOprint_formatted_int ($30:int)<-($31:str)(i:int)
+#re-use a bat variable 	# 25  ($20:str)
+    b4 := algebra.select(b,"bat C","bat C");	# 26 ALGselect (b4:bat[:int,:str])<-(b:bat[:int,:str])($34:str)($34:str)
+    io.print(b4);	# 27 IOprint_val ($35:int)<-(b4:bat[:int,:str])
+    i := bbp.getLRefCount(b);	# 28 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
+    io.printf("after 4rd assignment refcount =%d[1]\n",i);	# 29 IOprint_formatted_int ($36:int)<-($37:str)(i:int)
+# remove by assignment 	# 30  ($39:str)
+    b2 := b3;	# 31  (b2:bat[:int,:str])<-(b3:bat[:int,:str])
+    i := bbp.getLRefCount(b);	# 32 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
+    io.printf("after 5rd assignment refcount =%d[1]\n",i);	# 33 IOprint_formatted_int ($40:int)<-($41:str)(i:int)
+    io.printf("call function\n");	# 34 IOprint_str ($42:int)<-($43:str)
+    d := user.steal(b);	# 35  (d:bat[:int,:str])<-(b:bat[:int,:str])
+    i := bbp.getLRefCount(b);	# 36 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
+    io.printf("return from function refcount =%d[2]\n",i);	# 37 IOprint_formatted_int ($45:int)<-($46:str)(i:int)
+    io.printf("check self replacement, overrule refcount!\n");	# 38 IOprint_str ($47:int)<-($48:str)
+    b := user.steal(b);	# 39  (b:bat[:int,:str])<-(b:bat[:int,:str])
+    i := bbp.getLRefCount(b);	# 40 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
+    io.printf("return from function refcount =%d[2]\n",i);	# 41 IOprint_formatted_int ($49:int)<-($46:str)(i:int)
     z := bbp.getRefCount();	# 42 CMDbbpRefCount (z:bat[:int,:int])
     zl := bbp.getLRefCount();	# 43 CMDbbpLRefCount (zl:bat[:int,:int])
     zn := bbp.getNames();	# 44 CMDbbpNames (zn:bat[:int,:str])
@@ -141,21 +150,19 @@ assignment refcount =1[1]
 #-------------------------#
 # h	tmp_6		  # name
 # int	str		  # type
-#-------------------------#
-[ 1,	  "bat B"	  ]
+#-----------------#
 after 4rd assignment refcount =1[1]
 after 5rd assignment refcount =1[1]
 call function
-enter function refcount =2[2]
-local in function refcount =2[2]
+enter function refcount =2[2,3]
+local in function refcount =2[2,3]
 return from function refcount =2[2]
-check self replacement
-enter function refcount =3[2]
-local in function refcount =3[2]
-[ 2 ]
-[ 3 ]
-#-------------------------------------------------#
-# bbp	tmp_18			tmp_16	tmp_17	  # name
+check self replacement, overrule refcount!
+enter function refcount =3[2,3]
+local in function refcount =3[2,3]
+return from function refcount =2[2]
+#---------------------------------------------------------#
+# bbp	name			refcnt	lrefcnt		  # name
 # int	str			int	int		  # type
 #---------------------------------------------------------#
 [ 1,	  "monet_environment",	  1,	  0		  ]
@@ -170,7 +177,7 @@ local in function refcount =3[2]
 [ 10,	  "stat_id_min_lng",	  1,	  1		  ]
 [ 11,	  "stat_id_max_lng",	  1,	  1		  ]
 [ 12,	  "stat_id_histogram",	  1,	  1		  ]
-[ 13,	  "tmp_15",		  0,	  3	  ]
+[ 13,	  "tmp_15",		  0,	  2		  ]
 [ 14,	  "tmp_16",		  0,	  1	  ]
 [ 15,	  "tmp_17",		  0,	  1	  ]
 

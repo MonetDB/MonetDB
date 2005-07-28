@@ -1,11 +1,11 @@
 # a test checking BAT reference counting under various situations
 function steal(bb:bat[:any$1,:any$2]) :bat[:any$1,:any$2];
 	i:= bbp.getLRefCount(bb);
-	io.printf("enter function refcount =%d[2]\n",i);
+	io.printf("enter function refcount =%d[2,3]\n",i);
 
 	loc:= bb;
 	i:= bbp.getLRefCount(bb);
-	io.printf("local in function refcount =%d[2]\n",i);
+	io.printf("local in function refcount =%d[2,3]\n",i);
 
 	return bb;
 end steal; 
