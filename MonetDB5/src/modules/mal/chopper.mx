@@ -176,6 +176,7 @@ str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	lng *cursor;
 	int *bid;
+	size_t yy;
 	BUN p;
 	ValPtr head, tail;
 
@@ -197,7 +198,8 @@ str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	*cursor = BUNindex(b,BUNfirst(b));
 
 	/* get head = ... tail = ... */
-	p = BUNptr(b,*cursor);
+	yy= *cursor;
+	p = BUNptr(b,yy);
 	VALinit( head, getArgType(mb,pci,1),BUNhead(b,p));
 	VALinit( tail, getArgType(mb,pci,2),BUNtail(b,p));
 	BBPunfix(b->batCacheid);
@@ -206,24 +208,26 @@ str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 str CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BAT *b;
 	lng *cursor;
-	int *bid;
+	size_t yy;
+	bat *bid;
 	BUN p;
 	ValPtr head, tail;
 
 	cursor = (lng *) getArgReference(stk,pci,0);
 	head = &stk->stk[pci->argv[1]];
 	tail = &stk->stk[pci->argv[2]];
-	bid = (int *) getArgReference(stk,pci,3);
+	bid = (bat *) getArgReference(stk,pci,3);
 
 	if( (b= BATdescriptor(*bid)) == NULL ){
          return throwMessage("chopper.newChunkMoreElements",
 				"Cannot access 'bid' descriptor");
     }
 
-	*cursor = *cursor+1;
+	yy= *cursor+1;
+	*cursor = yy;
 
 	/* get head = ... tail = ... */
-	p = BUNptr(b,*cursor);
+	p = BUNptr(b,yy);
 	if( p >= BUNlast(b)){
 		*cursor = -1;
 		BBPunfix(b->batCacheid);

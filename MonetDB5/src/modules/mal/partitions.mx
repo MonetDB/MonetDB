@@ -189,7 +189,7 @@ extern str BKCdelete(int *r, int *bid, ptr h) ;
 extern str BKCdelete_bat(int *r, int *bid, int *bnid) ;
 
 typedef struct{
-	int bid;	/* group bat identifier */
+	bat bid;	/* group bat identifier */
 	int pid;	/* group element identifier */
 	oid first;	/* lowest oid stored */
 	oid last;	/* largest oid stored or nil */
