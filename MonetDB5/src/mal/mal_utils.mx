@@ -43,23 +43,17 @@ void
 unquote(char *msg)
 {
     char *p = msg, *s;
-    /*char quote;*//* StM: not used !? */
 
     /* first skip over leading white space */
     while (*p && isspace((int) *p))
         p++;
-    /*quote = *p;*//* StM: not used !? */
-    /* get quoted string and remove trailing bracket first */
+    /* get quoted string and remove leading bracket first */
     p++;
     s = p;
     while (*p ) {
         if (*p == '\\') {
             p++;
             switch (*p) {
-            /* later
-               case '0': case '1': case '2': case '3': case '4':
-               case '5': case '6': case '7': case '8': case '9':
-             */
             case 'n':
                 *s = '\n';
                 break;
