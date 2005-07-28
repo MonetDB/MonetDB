@@ -22,12 +22,12 @@ import java.util.*;
 import nl.cwi.monetdb.mcl.*;
 
 /**
- * A CloseMessage is a server received message, sent by the client in
- * order indicate it is done using a result set.
+ * A RawResultMessage is a server originated message, sent by the server
+ * for a result with large character data.
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
-public class CloseMessage extends MCLMessage {
+public class RawResultMessage extends MCLMessage {
 	/** The character that identifies this message */
 	public static final char identifier = 'C';
 
@@ -43,32 +43,36 @@ public class CloseMessage extends MCLMessage {
 	}
 
 	// these represent the internal values of this Message
-	private String id;
+	private String type;
 	
 	/**
-	 * Constructs an empty CloseMessage.  The sentences need to be added
-	 * using the addSentence() method.  This constructor is suitable
-	 * when reconstructing messages from a stream.
+	 * Constructs an empty RawResultMessage.  The sentences need to be
+	 * added using the addSentence() method.  This constructor is
+	 * suitable when reconstructing messages from a stream.
 	 */
-	public CloseMessage() {
+	public RawResultMessage() {
 		// nothing has to be done here
-		sentences = new MCLSentence[1];
+		sentences = new MCLSentence[2];
 	}
 
 	/**
-	 * Constructs a filled CloseMessage.  All required information is
-	 * supplied and stored in this CloseMessage.
+	 * Constructs a filled RawResultMessage.  All required information
+	 * is supplied and stored in this RawResultMessage.  If type is
+	 * null, the default MIME of <tt>plain/text</tt> is assumed.
 	 *
-	 * @param id the server side reference id
-	 * @throws MCLException if the id string is null
+	 * @param type the data MIME type of the data
+	 * @param data the actual UTF8 data in this message
+	 * @throws MCLException if the data is null
 	 */
-	public CloseMessage(String id) throws MCLException {
-		if (id == null) throw
-			new MCLException("Reference id may not be null");
+	public RawResultMessage(String type, byte[] data) throws MCLException {
+		if (data == null) throw
+			new MCLException("data may not be null");
+		if (type == null) type = "plain/text";
 		
-		sentences = new MCLSentence[1];
-		this.id = id;
-		sentences[0] = new MCLSentence(MCLSentence.MCLMETADATA, "id", id);
+		sentences = new MCLSentence[2];
+		this.type = type;
+		sentences[0] = new MCLSentence(MCLSentence.MCLMETADATA, "type", type);
+		sentences[1] = new MCLSentence(MCLSentence.DATA, data);
 	}
 
 	/**
@@ -102,20 +106,28 @@ public class CloseMessage extends MCLMessage {
 	 */
 	public void addSentence(MCLSentence in) throws MCLException {
 		// see if it is a supported header
-		if (in.getType() != MCLSentence.MCLMETADATA) throw
-			new MCLException("Sentence type not allowed for this message: " + (char)in.getType());
-		String prop = in.getField(1);
-		if (prop == null) throw
-			new MCLException("Illegal sentence (no property): " + in.getString());
-		String value = in.getField(2);
-		if (value == null) throw
-			new MCLException("Illegal sentence (no value): " + in.getString());
+		switch (in.getType()) {
+			case MCLSentence.MCLMETADATA:
+				String prop = in.getField(1);
+				if (prop == null) throw
+					new MCLException("Illegal sentence (no property): " + in.getString());
+				String value = in.getField(2);
+				if (value == null) throw
+					new MCLException("Illegal sentence (no value): " + in.getString());
 
-
-		if (prop.equals("id")) {
-			sentences[0] = in;
-		} else {
-			throw new MCLException("Illegal property '" + prop + "' for this Message");
+				if (prop.equals("type")) {
+					sentences[0] = in;
+				} else {
+					throw new MCLException("Illegal property '" + prop + "' for this Message");
+				}
+			break;
+			case MCLSentence.DATA:
+				if (sentences[1] != null) throw
+					new MCLException("Data sentence already set, can only have one!");
+				sentences[1] = in;
+			break;
+			default:
+				throw new MCLException("Sentence type not allowed for this message: " + (char)in.getType());
 		}
 	}
 
@@ -128,7 +140,7 @@ public class CloseMessage extends MCLMessage {
 	 *
 	 * @return the result set id
 	 */
-	public String getId() {
-		return(id);
+	public String getMimeType() {
+		return(type);
 	}
 }
