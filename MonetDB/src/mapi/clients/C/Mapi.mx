@@ -2646,12 +2646,19 @@ read_line(Mapi mid)
 				/* extend space */
 				len += BLOCK;
 			}
-			newbuf = malloc(len + 1);
-			memcpy(newbuf, mid->blk.buf + mid->blk.nxt, mid->blk.end - mid->blk.nxt + 1);
-			free(mid->blk.buf);
-			mid->blk.buf = newbuf;
-			mid->blk.end -= mid->blk.nxt;
-			mid->blk.nxt = 0;
+			if (mid->blk.nxt > 0) {
+				newbuf = malloc(len + 1);
+				memcpy(newbuf, mid->blk.buf + mid->blk.nxt, mid->blk.end - mid->blk.nxt + 1);
+				free(mid->blk.buf);
+				mid->blk.buf = newbuf;
+				mid->blk.end -= mid->blk.nxt;
+				mid->blk.nxt = 0;
+			} else {
+				/* avoid repeated "malloc(); memcpy(); free();"
+				 * with VERY LONG lines (e.g., XML results in MonetDB/XQuery)
+				 */
+				mid->blk.buf = realloc(mid->blk.buf, len + 1);
+			}
 			mid->blk.lim = len;
 		}
 

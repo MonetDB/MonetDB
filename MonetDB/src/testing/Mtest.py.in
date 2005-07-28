@@ -2369,7 +2369,7 @@ else:
         RELEASE = os.uname()[2].split("(", 1)[0]
 
 # this is for the wine/mingw setup 
-if CONDITIONALS['CROSS_COMPILING']:
+if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
     OS = 'WindowsNT'
     HOST = "WINE"
     RELEASE = "5.2"

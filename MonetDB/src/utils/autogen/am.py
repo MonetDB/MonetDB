@@ -265,11 +265,31 @@ def am_scripts(fd, var, scripts, am):
         s,ext2 = rsplit_filename(script)
         if not ext2 in ext:
             continue
+
+        cond = ''
+        s = script
+        scriptname = "script_" + script
+        if scripts.has_key('COND'):
+            condname = string.join(scripts['COND'], '+')
+            mkname = string.replace(script, '.', '_')
+            cond = '#' + condname
+            s = "$(C_" + mkname + ")"
+            scriptname = "$(C_script_" + mkname + ")"
+
         name = "script_" + script
-        if name not in am['BIN_SCRIPTS']:
-            am['BIN_SCRIPTS'].append(name)
+        if scriptname not in am['BIN_SCRIPTS'] and name not in am['BIN_SCRIPTS']:
+            am['BIN_SCRIPTS'].append(scriptname)
         else:
             continue
+
+        if cond:
+            fd.write("uninstall-local-:\n");
+            fd.write("install-exec-local-:\n");
+            fd.write("if %s\n" % (condname))
+            fd.write(" C_%s = %s\n" % (mkname,script))
+            fd.write(" C_script_%s = script_%s\n" % (mkname, script))
+            fd.write("endif\n")
+
         fd.write("script_%s: %s\n" % (script, script))
         fd.write("\tchmod a+x $<\n")
         if sd == "$(sysconfdir)":
@@ -286,19 +306,6 @@ def am_scripts(fd, var, scripts, am):
             fd.write("uninstall-local-%s: \n" % script)
             fd.write("\t$(RM) $(DESTDIR)%s/%s\n\n" % (sd, script))
 
-	cond = ''
-	s = script
-	if scripts.has_key('COND'):
-            condname = string.join(scripts['COND'], '+')
-	    fd.write("uninstall-local-:\n");
-	    fd.write("install-exec-local-:\n");
-    	    name = string.replace(script, '.', '_')
-            fd.write("if %s\n" % (condname))
-            fd.write(" C_%s = %s\n" % (name,script))
-            fd.write("endif\n")
-            cond = '#' + condname
-	    s = "$(C_" + name + ")"
-		
         am['INSTALL'].append(s)
         am['UNINSTALL'].append(s)
         am['InstallList'].append("\t"+sd+"/"+script+cond+"\n")
@@ -434,11 +441,11 @@ def am_binary(fd, var, binmap, am):
         cond = '#' + condname
         fd.write("if %s\n" % (condname))
         fd.write(" C_%s = %s\n" % (name,name))
-    	fd.write(" %s_PROGRAMS =%s\n" % (norm_binname,  binname))
+        fd.write(" %s_PROGRAMS =%s\n" % (norm_binname,  binname))
         fd.write("endif\n")
-	cname = "$(C_" + name + ")"
+        cname = "$(C_" + name + ")"
     else:
-    	fd.write("%s_PROGRAMS =%s\n" % (norm_binname,  binname))
+        fd.write("%s_PROGRAMS =%s\n" % (norm_binname,  binname))
 
     am['InstallList'].append("\t%s/%s%s\n" % (bd, binname, cond))
 
@@ -586,8 +593,18 @@ def am_library(fd, var, libmap, am):
     if libmap.has_key('SEP'):
         sep = libmap['SEP'][0]
 
+    cname = libname
+    cond = ''
+    condname = ''
+    if libmap.has_key('COND'):
+        condname = string.join(libmap['COND'], '+')
+        cond = '#' + condname
+        fd.write("if %s\n" % condname)
+        fd.write(" C_%s = %s\n" % (libname, libname))
+        cname = "$(C_" + libname + ")"
+
     if name[0] == '_':
-	name = name[1:]
+        name = name[1:]
     fd.write("lib%s%s_la_CFLAGS=-DLIB%s $(AM_CFLAGS)\n" % (sep,libname,string.upper(name)))
 
     ld = "libdir"
@@ -598,17 +615,6 @@ def am_library(fd, var, libmap, am):
     scripts_ext = []
     if libmap.has_key('SCRIPTS'):
         scripts_ext = libmap['SCRIPTS']
-
-    cname = libname
-    cond = ''
-    condname = ''
-    if libmap.has_key('COND'):
-        condname = string.join(libmap['COND'], '+')
-        cond = '#' + condname
-        fd.write("if %s\n" % (condname))
-        fd.write(" C_%s = %s\n" % (libname,libname))
-        fd.write("endif\n")
-	cname = "$(C_" + libname + ")"
 
     ld = am_translate_dir(ld, am)
     fd.write("%sdir = %s\n" % (libname, ld))
@@ -649,6 +655,9 @@ def am_library(fd, var, libmap, am):
                 nsrcs = nsrcs + " " + src
     fd.write(nsrcs + "\n")
     fd.write(srcs + "\n")
+
+    if cond:
+        fd.write("endif\n")
 
     if len(SCRIPTS) > 0:
         fd.write("%s_scripts = %s\n" % (libname, am_list2string(SCRIPTS, " ", "")))
@@ -694,17 +703,17 @@ def am_libs(fd, var, libsmap, am):
 #      fd.write(am_additional_libs(libname, sep, "LIB", libsmap[libname + "_LIBS"], am))
 #    elif libsmap.has_key("LIBS"):
 #      fd.write(am_additional_libs(libname, sep, "LIB", libsmap["LIBS"], am))
-	_libs = []
+        _libs = []
         if libsmap.has_key(libname + "_DLIBS"):
-	    _libs += libsmap[libname + "_DLIBS"]
+            _libs += libsmap[libname + "_DLIBS"]
             fd.write(am_additional_install_libs(libname, sep, libsmap[libname+ "_DLIBS"], am))
 
-    	if libsmap.has_key("LIBS"):
-		_libs += libsmap["LIBS"];
+        if libsmap.has_key("LIBS"):
+            _libs += libsmap["LIBS"];
         if libsmap.has_key("LDFLAGS"):
-		_libs += libsmap["LDFLAGS"];
-	if len(_libs) > 0:
-		fd.write(am_additional_libs(libname, sep, "LIB", _libs, am))
+            _libs += libsmap["LDFLAGS"];
+        if len(_libs) > 0:
+            fd.write(am_additional_libs(libname, sep, "LIB", _libs, am))
 
         nsrcs = "nodist_"+"lib"+sep+libname+"_la_SOURCES ="
         srcs = "dist_"+"lib"+sep+libname+"_la_SOURCES ="
@@ -993,8 +1002,8 @@ CXXEXT = \\\"cc\\\"
 
     if len(am['BUILT_SOURCES']) > 0:
         fd.write("BUILT_SOURCES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
-	# the BUILT_SOURCES should be cleanup by make (mostly)clean
-	fd.write("MOSTLYCLEANFILES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
+        # the BUILT_SOURCES should be cleaned up by make (mostly)clean
+        fd.write("MOSTLYCLEANFILES =%s\n" % am_list2string(am['BUILT_SOURCES'], " ", ""))
 
     fd.write("EXTRA_DIST = Makefile.ag Makefile.msc%s\n" % \
           am_list2string(am['EXTRA_DIST'], " ", ""))
@@ -1010,12 +1019,12 @@ CXXEXT = \\\"cc\\\"
         libs = am_sort_libs(am['LIBS'], tree)
         s = ""
         for (pref, lib, sep, cond) in am['LIBS']:
-	    if cond != '':
-        	fd.write("if %s\n" % (cond))
-            	fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
-        	fd.write("endif\n")
-	    else:
-            	fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
+            if cond != '':
+                fd.write("if %s\n" % (cond))
+                fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
+                fd.write("endif\n")
+            else:
+                fd.write("%s_LTLIBRARIES = %s%s%s.la\n" % (lib, pref, sep, lib))
 
     if am['NLIBS']:
         fd.write("noinst_LTLIBRARIES =")
