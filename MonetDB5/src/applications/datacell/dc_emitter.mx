@@ -101,6 +101,8 @@ mal_export str DCspeakThread(SensorInfo sensor);
 #ifndef DC_H
 #define DC_H
 
+#include "mal.h"
+
 #define NEW_ARRAY( type, size )	(type*)GDKmalloc((size)*sizeof(type))
 #define STREQ(a, b) 		(strcmp(a, b)==0)
 
@@ -108,58 +110,20 @@ mal_export str DCspeakThread(SensorInfo sensor);
 
 #include "mal.h"
 
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-#include  <stdio.h>
-#ifdef HAVE_PWD_H
-#include  <pwd.h>
-#endif
-
-#include  <sys/types.h>
+#include <stream.h>     /* for stream */
 
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
 #endif
-#ifdef NATIVE_WIN32
-# include <winsock.h>
-#endif
 #ifdef HAVE_SYS_UN_H
 #include <sys/un.h>
 #endif
-
-#include  <signal.h>
-#include  <string.h>
-#include  <memory.h>
-
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-
-#if defined(HAVE_WINSOCK_H) && defined(NATIVE_WIN32)
-#include <winsock.h>        /* for timeval */
-#endif
-
-#include <stream.h>     /* for stream */
 
 #define SOCKPTR struct sockaddr *
 #if HAVE_SOCKLEN_T
 #define SOCKLEN socklen_t
 #else
 #define SOCKLEN int
-#endif
-
-#ifdef NATIVE_WIN32
-#define s_close(s)	closesocket(s)
-#else
-#define s_close(s)	close(s)
 #endif
 
 #ifdef HAVE_OPENSSL
