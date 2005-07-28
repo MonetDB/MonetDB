@@ -37,31 +37,22 @@ stdout of test 'tst4004` in directory 'src/optimizer` itself:
 #optimizer.deadCodeRemoval();
 #
 #
-!ERROR: 'F' used outside declaration scope in main[15]
-!ERROR: 'E' may not be used before being set in main[20]
 function user.main():int;	# 0  (main:int)
-#dead code by forward analysis 	# 1  ($2:str)
-    A := 23;	# 2  (A:int)<-($4:int)
-    D := 22;	# 3  (D:int)<-($6:int)
-    B := true;	# 4  (B:bit)<-($8:bit)
-barrier c := B;	# 5  (c:bit)<-(B:bit) jump 12
-    A := 1;	# 6  (A:int)<-($10:int)
-    D := 3;	# 7  (D:int)<-($11:int)
-# may not be removed 	# 8  ($13:str)
-    E := 5;	# 9  (E:int)<-($15:int)
-    F := 6;	# 10  (F:int)<-($17:int)
-# may be removed 	# 11  ($19:str)
-exit c;	# 12  (c:bit)
-barrier c := calc.not(B);	# 13 CALCunarybitNOT (c:bit)<-(B:bit) jump 17
-    A := 2;	# 14  (A:int)<-($20:int)
-    F := 7;	# 15  (F:int)<-($21:int)
-# may be removed 	# 16  ($19:str)
-exit c;	# 17  (c:bit)
-    io.print(A);	# 18 IOprint_val ($23:int)<-(A:int)
-    io.print(D);	# 19 IOprint_val ($24:int)<-(D:int)
-    io.print(E);	# 20 IOprint_val ($25:int)<-(E:int)
-    optimizer.deadCodeRemoval();	# 21 QOTDCoptimizer ($26:str)
-end main;	# 22  
+    A := 23;	# 1  (A:int)<-($4:int)
+    D := 22;	# 2  (D:int)<-($6:int)
+    B := true;	# 3  (B:bit)<-($8:bit)
+barrier c := B;	# 4  (c:bit)<-(B:bit) jump 7
+    A := 1;	# 5  (A:int)<-($10:int)
+    D := 3;	# 6  (D:int)<-($11:int)
+exit c;	# 7  (c:bit)
+barrier c := calc.not(B);	# 8 CALCunarybitNOT (c:bit)<-(B:bit) jump 10
+    A := 2;	# 9  (A:int)<-($20:int)
+exit c;	# 10  (c:bit)
+    io.print(A);	# 11 IOprint_val ($23:int)<-(A:int)
+    io.print(D);	# 12 IOprint_val ($24:int)<-(D:int)
+end main;	# 13  
+[ 1 ]
+[ 3 ]
 
 # 11:08:28 >  
 # 11:08:28 >  Done.

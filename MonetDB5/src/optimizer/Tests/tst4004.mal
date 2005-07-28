@@ -18,7 +18,6 @@ exit c;
 
 io.print(A);
 io.print(D);
-io.print(E);
 
 optimizer.deadCodeRemoval();
 
