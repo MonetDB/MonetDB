@@ -6,7 +6,7 @@ Reading the events from the DataCell can be delayed (-D)
 a number of milliseconds.
 @f dcsink
 @c
-#include "mal.h"
+#include "mal_config.h"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>

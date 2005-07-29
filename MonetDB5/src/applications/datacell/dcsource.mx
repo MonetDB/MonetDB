@@ -10,7 +10,7 @@ Sending the events to the DataCell can be batched (-B) or delayed (-D)
 a number of milliseconds.
 @f dcsource
 @c
-#include "mal.h"
+#include "mal_config.h"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>

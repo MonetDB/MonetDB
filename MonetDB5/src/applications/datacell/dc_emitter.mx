@@ -101,8 +101,6 @@ mal_export str DCspeakThread(SensorInfo sensor);
 #ifndef DC_H
 #define DC_H
 
-#include "mal.h"
-
 #define NEW_ARRAY( type, size )	(type*)GDKmalloc((size)*sizeof(type))
 #define STREQ(a, b) 		(strcmp(a, b)==0)
 
@@ -256,7 +254,6 @@ DClistenEmitter(DCpump p, str *Usockfile)
 	struct sockaddr_in server;
 	int sock = -1;
 	SensorInfo     sensor = GDKmalloc(sizeof(SensorInfo));
-	channel= p;
 
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
@@ -267,6 +264,7 @@ DClistenEmitter(DCpump p, str *Usockfile)
 	int pid, *pidp= &pid;
 	char msg[512], *usockfile, host[512];
 
+	channel = p;
 	if (Usockfile == NULL || *Usockfile == 0 || strcmp(*Usockfile, str_nil) == 0)
 		usockfile = NULL;
 	else {
