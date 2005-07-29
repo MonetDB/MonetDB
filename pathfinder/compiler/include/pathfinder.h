@@ -98,7 +98,9 @@ struct PFstate_t {
     bool print_algebra_tree;  /**< command line switch: -a */
     bool print_ma_tree;       /**< command line switch: -m */
     bool summer_branch;       /**< command line switch: -M */
+#if 0
     bool parse_hsk;           /**< command line switch: -H */
+#endif
     unsigned int genType;     /* kind of output */
     enum PFinvocation_t invocation;
 };

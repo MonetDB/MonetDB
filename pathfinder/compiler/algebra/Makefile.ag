@@ -22,7 +22,8 @@
 #
 
 
-SUBDIRS = hskparser
+#SUBDIRS = hskparser
+SUBDIRS = 
 
 YFLAGS = -d -p pf
 LFLAGS = -Ppf -olex.yy.c
