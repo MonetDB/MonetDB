@@ -23,17 +23,8 @@
 
 class ListIterator {
       public:
-	ListIterator(void **base, int nr) {
-		_base = base;
-		_nr = nr;
-		_cur = 0;
-	} int next(void **obj) {
-		if (_cur < _nr) {
-			*obj = _base[_cur++];
-			return 1;
-		}
-		return 0;
-	}
+	ListIterator(void **base, int nr);
+	int next(void **obj);
 
       private:
 	void **_base;
@@ -43,3 +34,22 @@ class ListIterator {
 
 
 #endif // _LISTITERATOR_H_
+
+@C
+#include "ListIterator.h"
+
+ListIterator::ListIterator(void **base, int nr) 
+{
+	_base = base;
+	_nr = nr;
+	_cur = 0;
+}
+
+int ListIterator::next ( void **obj) 
+{
+	if (_cur < _nr) {
+		*obj = _base[_cur++];
+		return 1;
+	}
+	return 0;
+}
