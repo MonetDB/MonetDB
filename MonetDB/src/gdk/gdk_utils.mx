@@ -2127,6 +2127,9 @@ THRprintf(stream *s, const char *format, ...)
 	char c;
 	va_list ap;
 
+	if (!s)
+		return -1;
+
 	if (MT_system_lock) {
 		gdk_set_lock(MT_system_lock, "THRprintf");
 	}

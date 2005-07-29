@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define die(dbh,hdl) (hdl?mapi_explain_query(hdl,stderr):		\
+#define die(dbh,hdl) (hdl?mapi_explain_result(hdl,stderr):		\
 			  dbh?mapi_explain(dbh,stderr):			\
 			      fprintf(stderr,"command failed\n"),	\
 		      exit(-1))

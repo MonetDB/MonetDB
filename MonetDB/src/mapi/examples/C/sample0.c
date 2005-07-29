@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define die(dbh,hdl) (hdl?mapi_explain_query(hdl,stderr):		\
+#define die(dbh,hdl) (hdl?mapi_explain_result(hdl,stderr):		\
 			  dbh?mapi_explain(dbh,stderr):			\
 			      fprintf(stderr,"command failed\n"),	\
 		      exit(-1))
@@ -46,7 +46,7 @@ main(int argc, char **argv)
 
 	/* mapi_trace(dbh, 1); */
 	if (strcmp(argv[3], "sql") == 0) {
-		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL || mapi_error(dbh))
+		if ((hdl = mapi_query(dbh, "create table emp(name varchar(20), age int)")) == NULL || mapi_error(dbh)) 
 			die(dbh, hdl);
 		if (mapi_close_handle(hdl) != MOK)
 			die(dbh, hdl);

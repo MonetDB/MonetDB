@@ -126,6 +126,8 @@ yytoProlog(YYSTREE t, int cnt)
 {
 	stream *out = GDKout;
 
+	if (!out)
+		return -1;
 	yylim = yybuffer + cnt;
 	yybuffer[0] = 0;
 	yylim = yybuffer + 4000;

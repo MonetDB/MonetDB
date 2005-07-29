@@ -346,9 +346,10 @@ freeClient(Client c)
 		bkin = t->data[1];
 		bkout = t->data[0];
 
-		monetSetChannel(t, bkin, bkout);
 		TBL_exitclient(c);	/* module drops */
+
 		/* GDKlog("Mserver: %s session ends", c->user); */
+		monetSetChannel(t, bkin, bkout);
 		stream_close(c->fdout);
 		stream_destroy(c->fdout);
 		stream_close(c->fdin);
