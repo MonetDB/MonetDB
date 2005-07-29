@@ -114,6 +114,12 @@ pattern costEstimation(mod:str, fcn:str):str
 address QOTRMoptimizerCALL
 comment "Estimate the cost of a relational expression";
 
+pattern reduce():str 
+address QOTMRoptimizer;
+pattern reduce(mod:str, fcn:str):str 
+address QOTMRoptimizerCALL
+comment "Estimate the cost of a relational expression";
+
 pattern setDebug():void 
 address QOTdebugOptimizers;
 pattern clrDebug():void 
@@ -188,6 +194,7 @@ optimizer.prelude();
 #include "mal_singleton.h"
 #include "mal_emptyset.h"
 #include "mal_costmodel.h"
+#include "mal_reduce.h"
 
 extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @
@@ -270,6 +277,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	@:QOTC(ST,"singleton")@
 	@:QOTC(PH,"peephole")@
 	@:QOTC(RM,"costEstimation")@
+	@:QOTC(MR,"reduce")@
 
 str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str modnme;

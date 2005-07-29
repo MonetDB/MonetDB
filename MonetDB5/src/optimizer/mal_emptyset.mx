@@ -94,7 +94,9 @@ str ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	sets= (int*) alloca(mb->vtop * sizeof(int));
 	(void) mb; (void) stk; (void) p;
-printf("ESoptimizer called, collect empty sets and process them\n");
+#ifdef DEBUG_MAL_EMPTYSET
+	printf("ESoptimizer called, collect empty sets and process them\n");
+#endif
 	for(i=0; i< mb->vtop; i++){
 		ps= getVarProperties(mb,i);
 		if( fndProperty(ps,"empty")){
@@ -203,13 +205,16 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars){
 				if( getName("diff",4)== functionId(p) ||
 					getName("kdiff",5)== functionId(p) ||
 					getName("semijoin",8)== functionId(p) ){
-					/* always empty */
-					setModuleId(p,NULL);
-					setFunctionId(p,NULL);
-					p->argc=2;
-					p->token= ASSIGNsymbol;
-					if( j == 1) empty[getArg(p,0)] = 1;
-					doAR++;
+					if(getVar(mb,getArg(p,0))->updLifespan == 1 ){
+						/* always empty */
+						setModuleId(p,NULL);
+						setFunctionId(p,NULL);
+						getVarType(mb,getArg(p,0))= getVarType(mb,getArg(p,1));
+						p->argc=2;
+						p->token= ASSIGNsymbol;
+						if( j == 1) empty[getArg(p,0)] = 1;
+						doAR++;
+					}
 					break;
 				} else 
 				if( getName("sunion",6)== functionId(p) ||
