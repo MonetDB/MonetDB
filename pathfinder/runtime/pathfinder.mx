@@ -45,7 +45,7 @@
 .BUILTIN xquery_server(Stream in, Stream out) : void = CMDxquery_server;
  "read xquery from stream, and print on a stream."
 
-.COMMAND xquery(str, str) : void = CMDxquery;
+.COMMAND xquery(str, str) : str = CMDxquery;
  "xquery execution. usage: xquery(\"xml\", str)"
 
 .PRELUDE = pathfinder_prelude;
@@ -84,6 +84,10 @@ PROC xquery_server_start(bit global) : void {
 
 PROC xquery_server_start() : void {
 	xquery_server_start(false);
+}
+
+PROC xquery(str query) : str {
+	return xquery("xml", query);
 }
 
 #############################################
@@ -783,8 +787,8 @@ MT_Lock pf_compiler_lock;
 /*
  * translate xquery to MIL and execute
  */
-int
-CMDxquery(char *mode, char* xquery) {
+static int
+exec_xquery(char *mode, char* xquery) {
     char *prologue = NULL, *query = NULL, *epilogue = NULL, *err = NULL;
     int len = 0, ret = GDK_FAIL, debug = strstr(mode,"debug") != NULL;
     char *mapi = strstr(mode, "mapi")?"=":"";
@@ -859,6 +863,30 @@ CMDxquery(char *mode, char* xquery) {
     if (prologue) free(prologue);
     if (query) free(query);
     if (epilogue) free(epilogue);
+    return ret;
+}
+
+	
+int
+CMDxquery(char** res, char *mode, char* xquery) {
+    buffer *b = buffer_create(16384);
+    stream *s = buffer_wastream(b, "CMDxquery");
+    stream *o = GDKout;
+    int ret = 0;
+  
+    /* run the query, but collect all output in a buffer */
+    THRsetdata(0,s);
+    ret = exec_xquery(mode, xquery);
+    THRsetdata(0,o);
+    stream_close(s);
+
+    if (ret == GDK_SUCCEED) {
+	char *dst = *res = GDKmalloc(b->pos+1);
+	memcpy(dst, b->buf, b->pos);
+	dst[b->pos] = 0;
+    }
+    buffer_destroy(b);
+    stream_destroy(s);
     return ret;
 }
 
@@ -976,7 +1004,7 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 					break;
 				}
 
-			ret = CMDxquery(buf, xquery); /* execute, see above */
+			ret = exec_xquery(buf, xquery); /* execute, see above */
 		}
 	}
 	GDKfree(buf);

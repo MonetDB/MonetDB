@@ -78,7 +78,7 @@ module 'pathfinder'
 [ "xmlcache_print() : void"			  ]
 [ "xmlcache_print_rules() : void"		  ]
 [ "xmldb_print() : void"			  ]
-[ "xquery(str, str) : void"														  ]
+[ "xquery(str, str) : str"														  ]
 [ "xquery_server(Stream in, Stream out) : void "											  ]
 
 quit();
