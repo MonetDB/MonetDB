@@ -17,9 +17,10 @@ all: mel.exe
 MEL_OBJS = any_arg.obj atom_arg.obj atom.obj atomops.obj bat_arg.obj   \
 	   builtin.obj command.obj debug.obj depend.obj dependency.obj \
 	   epilogue.obj FileInfo.obj glue.obj html.obj iterator.obj    \
-	   link.obj mel.obj mel.tab.obj mel.yy.obj mil.obj module.obj  \
-	   object.obj operator.obj ops.obj prelude.obj proto.obj       \
-	   symbol.obj symtable.obj type_arg.obj use.obj var_arg.obj
+	   link.obj ListIterator.obj mel.obj mel.tab.obj mel.yy.obj    \
+	   mil.obj module.obj object.obj operator.obj ops.obj	       \
+	   prelude.obj proto.obj symbol.obj symtable.obj type_arg.obj  \
+	   use.obj var_arg.obj
 
 clean:
 	$(DEL) *.cxx *.obj *.exe any_arg.h atom.h atom_arg.h atomops.h	  \
@@ -119,7 +120,9 @@ link.cxx: link.mx
 link.h: link.mx
 link.obj: link.cxx link.h language.h symbol.h list.h ListIterator.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h mel_config.h
 list.h: list.mx
+ListIterator.cxx: ListIterator.mx
 ListIterator.h: ListIterator.mx
+ListIterator.obj: ListIterator.cxx ListIterator.h
 mel.cxx: mel.mx
 mel.h: mel.mx
 mel.ll: mel.mx

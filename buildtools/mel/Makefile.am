@@ -1,19 +1,20 @@
 MX = @MX@
 bin_PROGRAMS = mel
-nodist_mel_SOURCES = any_arg.cc any_arg.h atom_arg.cc atom_arg.h       \
-		     atom.cc atom.h atomops.cc atomops.h bat_arg.cc    \
-		     bat_arg.h builtin.cc builtin.h command.cc	       \
-		     command.h debug.cc debug.h depend.cc	       \
-		     dependency.cc dependency.h depend.h epilogue.cc   \
-		     epilogue.h FileInfo.cc FileInfo.h glue.cc glue.h  \
-		     html.cc html.h iterator.cc iterator.h language.h  \
-		     link.cc link.h list.h ListIterator.h mel.cc mel.h \
-		     mel.tab.cc mel.tab.h mel.yy.cc mil.cc mil.h       \
-		     module.cc module.h object.cc object.h operator.cc \
-		     operator.h ops.cc ops.h prelude.cc prelude.h      \
-		     proto.cc proto.h symbol.cc symbol.h symtable.cc   \
-		     symtable.h type_arg.cc type_arg.h use.cc use.h    \
-		     var_arg.cc var_arg.h
+nodist_mel_SOURCES = any_arg.cc any_arg.h atom_arg.cc atom_arg.h      \
+		     atom.cc atom.h atomops.cc atomops.h bat_arg.cc   \
+		     bat_arg.h builtin.cc builtin.h command.cc	      \
+		     command.h debug.cc debug.h depend.cc	      \
+		     dependency.cc dependency.h depend.h epilogue.cc  \
+		     epilogue.h FileInfo.cc FileInfo.h glue.cc glue.h \
+		     html.cc html.h iterator.cc iterator.h language.h \
+		     link.cc link.h list.h ListIterator.cc	      \
+		     ListIterator.h mel.cc mel.h mel.tab.cc mel.tab.h \
+		     mel.yy.cc mil.cc mil.h module.cc module.h	      \
+		     object.cc object.h operator.cc operator.h ops.cc \
+		     ops.h prelude.cc prelude.h proto.cc proto.h      \
+		     symbol.cc symbol.h symtable.cc symtable.h	      \
+		     type_arg.cc type_arg.h use.cc use.h var_arg.cc   \
+		     var_arg.h
 dist_mel_SOURCES =
 
 YFLAGS = -d
@@ -68,7 +69,9 @@ link.cc: link.mx
 link.h: link.mx
 link.lo link.o: link.cc link.h language.h symbol.h list.h ListIterator.h symtable.h module.h dependency.h atom.h ops.h type_arg.h atomops.h command.h mel.h FileInfo.h mel.tab.h operator.h builtin.h iterator.h object.h atom_arg.h var_arg.h bat_arg.h any_arg.h prelude.h epilogue.h
 list.h: list.mx
+ListIterator.cc: ListIterator.mx
 ListIterator.h: ListIterator.mx
+ListIterator.lo ListIterator.o: ListIterator.cc ListIterator.h
 mel.cc: mel.mx
 mel.h: mel.mx
 mel.ll: mel.mx
