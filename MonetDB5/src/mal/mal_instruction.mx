@@ -1420,7 +1420,7 @@ retryConstant:
             else vr->val.dval= d;
             vr->vtype= type;
             break;}
-    case TYPE_lng: {lng l= strtoll(val,NULL,0);
+    case TYPE_lng: {lng l= strtol(val,NULL,0);
             if( tonil) vr->val.lval = lng_nil; 
             else vr->val.lval= l;
             vr->vtype= type;
