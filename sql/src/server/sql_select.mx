@@ -2193,6 +2193,11 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		if (!ls)
 			return NULL;
 
+		if (!tail_type(ls)) {
+			stmt_destroy(ls);
+			return sql_error(sql, 02, "No parameter allowed on left hand of LIKE statement");
+		}
+
 		lo = ro->data.lval->h->data.sym;
 		a = sql_value_exp(sql, scp, lo, grp, subset, f);
 
@@ -2204,7 +2209,14 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 			es = ro->data.lval->h->next->data.sval;
 			e = stmt_atom_string(_strdup(es));
 		}
-		if ((a = check_types(sql, st, a, type_equal)) == NULL) {
+		if (!tail_type(a)) {
+			if (set_type_param(st, a) == -1) {
+				stmt_destroy(ls);
+				stmt_destroy(a);
+				return sql_error(sql, 02, "wrong type used with LIKE statement, should be string");
+			}
+		} else if ((a = check_types(sql, st, a, type_equal)) == NULL) {
+			stmt_destroy(ls);
 			return sql_error(sql, 02, "wrong type used with LIKE statement, should be string");
 		}
 		/* predicate case ? */
@@ -2321,7 +2333,21 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 				stmt *rs = stmt_dup(sq->op1.lval->h->data);
 
 				stmt_destroy(sq);
-				if (f != sql_sel) {
+				/* predicate case ? */
+				if (ls->nrcols == 0) {
+					sql_subtype *tp = tail_type(ls);
+					sql_subaggr *exist;
+
+					if (sc->token == SQL_IN) {
+						/* exist(rs,ls) */
+						exist = sql_bind_aggr(sql->trans->module, "exist", tp);
+					} else {
+						/* exist(rs,ls) */
+						exist = sql_bind_aggr(sql->trans->module, "not_exist", tp);
+					}
+					rs = stmt_reverse(rs);
+					return stmt_aggr2(rs, ls, exist);
+				} else if (f != sql_sel) {
 					if (sc->token == SQL_IN) {
 						if (rs->nrcols) {	/* set in (select set) */
 							return stmt_reverse(stmt_semijoin(stmt_reverse(ls), stmt_reverse(rs)));
@@ -2714,7 +2740,7 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 	for ( n = selection->h; n; n = n->next) {
 		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel);
 
-		if (!cs) {
+		if (!cs || !tail_type(cs)) {
 			if (subset) stmt_destroy(subset);
 			list_destroy(rl);
 			return NULL;
@@ -2902,7 +2928,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 		for (n = sn->selection->h; n; n = n->next) {
 			stmt *cs = sql_column_exp(sql, scp, n->data.sym, grp, subset, sql_sel);
 
-			if (!cs) {
+			if (!cs || !tail_type(cs)) {
 				list_destroy(sl);
 				list_destroy(rl);
 				sql_select_cleanup(sql, s, subset, grp);

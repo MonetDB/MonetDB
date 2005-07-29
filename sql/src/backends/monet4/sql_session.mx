@@ -290,28 +290,6 @@ backend_fastpath(Cntxt procstk, YYSTREE callnode, list *args)
 	return interpret(procstk, callnode->yysons[1]->yysons[0], &v);
 }
 
-@-
-A connection error means that not only the channels to the database should
-be reset, but also this client should be terminated immediately.
-@c
-int
-connect_error(stream *in, stream *out)
-{
-	/* Make sure that the write- (out-) stream is closed first,
-	 * as the related read- (in-) stream closes the shared
-	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
-	 */
-	if (out) {
-		stream_close(out);
-		stream_destroy(out);
-	}
-	if (in) {
-		stream_close(in);
-		stream_destroy(in);
-	}
-	return GDK_FAIL;
-}
-
 static int
 error(stream *out, char *str)
 {
@@ -431,29 +409,39 @@ sqlcleanup(mvc *c, int err)
 static int
 output_prepare(stream *out, mvc *c, cq *q)
 {
-	int i;
 	node *n;
-	char buf[BUFSIZ];
 
 	if (!out)
 		return 0;
 	/* indicate to client that a new SQL command starts here */
-	if (stream_write(out, "#-\n", 3, 1) != 1) {
+	if (stream_printf(out,
+		"#-\n"
+		"# " SZFMT " # querytype\n"
+		"# prepare,	prepare,	prepare # table_name\n"
+		"# type,	digits,	scale # name\n"
+		"# varchar,	int,	int # type\n"
+		"# 0,	0,	0 # length\n"
+		"# %d # tuplecount\n"
+		"# %d # id\n",
+		Q_PREPARE,
+		c->params ? list_length(c->params) : 0,
+		q->id
+	) < 0) {
 		return -1;
 	}
 
-	i = snprintf(buf, BUFSIZ, "%d\n%d\n", q->id, c->params ? list_length(c->params) : 0);
-	if (stream_write(out, buf, i, 1) != 1) {
-		return -1;
-	}
 	if (c->params) {
 		for (n = c->params->h; n; n = n->next) {
 			var_ *v = n->data;
 			sql_subtype *t = tail_type(v->s);
 
 			if (t) {
-				i = snprintf(buf, BUFSIZ, "%s(%d,%d)\n", t->type->sqlname, t->digits, t->scale);
-				if (stream_write(out, buf, i, 1) != 1) {
+				if (stream_printf(out,
+					"[ \"%s\",	%d,	%d	]\n",
+					t->type->sqlname,
+					t->digits,
+					t->scale
+				) < 0) {
 					return -1;
 				}
 				/* add to the query cache param list */
@@ -497,6 +485,11 @@ sqlexecute(backend *be, stream *out)
 	if (explain == ex_profile)
 		T0 = GDKusec();
 
+	/* sqlparse needs sql allocator to be available.  It can be NULL at
+	 * this point if this is a recursive call. */
+	if (!c->sa)
+		c->sa = sa_create();
+
 	if ((err = sqlparse(c)) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(c) && c->type != Q_TRANS) || !c->sym) {
@@ -521,15 +514,19 @@ sqlexecute(backend *be, stream *out)
 		int argc, parc, id = c->sym->data.lval->h->data.ival;
 
 		q = qc_find(c->qc, id);
+		if (!q) {
+			error(out, "no prepared statement with the given id\n");
+			err = -1;
+			c->status = err;
+			return sqlcleanup(c, err);
+		}
 		argc = c->args?list_length(c->args):0;
 		parc = q->params?list_length(q->params):0;
-		if (!q) {
-			error(out, "no prepared statement with the given query id\n");
-			err = -1;
-		} else if (argc != parc) {
+		if (argc != parc) {
 			error(out, "wrong number of arguments for prepared statement\n");
 			err = -1;
-			q = NULL;
+			c->status = err;
+			return sqlcleanup(c, err);
 		} else {
 			if (c->args)
 				for (a = c->args->h, p = q->params->h; a && p; a = a->next, p = p->next) {
@@ -542,7 +539,8 @@ sqlexecute(backend *be, stream *out)
 						snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
 						error(out, buf);
 						err = -1;
-						q = NULL;
+						c->status = err;
+						return sqlcleanup(c, err);
 					}
 				}
 		}
@@ -675,7 +673,7 @@ sqlexecute(backend *be, stream *out)
 	if (!err && explain != ex_plan) {
 		if (mvc_status(c) < 0) {
 			error(out, "Error in result");
-		} else if (c->cache && c->type != Q_RESULT && c->type != Q_UPDATE) {
+		} else if (c->cache && c->type != Q_RESULT && c->type != Q_UPDATE && !(q && c->mode == m_prepare)) {
 			err = mvc_export_default(c, out);
 		}
 	}
@@ -1085,11 +1083,13 @@ Use default setting for trace.
 @c
 	if (in == 0) {
 		GDKsyserror("mapisqlclient:stream-r problems\n");
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 	if (out == 0) {
 		GDKsyserror("mapisqlclient:stream-w problems\n");
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 	/* send challenge string, currently empty (disabled) */
 	challenge = "::mserver_sql:4\n";
@@ -1101,12 +1101,16 @@ Use default setting for trace.
 	/* get user name */
 	memset(buf, 0, BUFSIZ);
 	user = buf;
-	if (stream_read(in, user, 1, 1) < 0)
-		return connect_error(in, out);
+	if (stream_read(in, user, 1, 1) < 0) {
+		closeClient(client, 0); 	
+		return GDK_FAIL;
+	}
 	for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
 		user++;
-		if (stream_read(in, user, 1, 1) < 0)
-			return connect_error(in, out);
+		if (stream_read(in, user, 1, 1) < 0) {
+			closeClient(client, 0); 	
+			return GDK_FAIL;
+		}
 	}
 	*user = 0;
 	user = buf;
@@ -1128,7 +1132,8 @@ Use default setting for trace.
 		user = _strdup(buf);
 		passwd = _strdup(passwd);
 	} else {
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 
 	if (blocked) {
@@ -1142,7 +1147,8 @@ Use default setting for trace.
 		GDKsyserror("mapisqlclient:stream-w problems\n");
 		GDKfree(user);
 		GDKfree(passwd);
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 @-
 The server should emit an identity message, e.g. the Mserver version
@@ -1163,13 +1169,15 @@ These lines should be eaten away into the prompt is encountered.
 			stream_flush(out);
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 	/* Send the profile to the client for inspection */
 	if (!sendProperty(out, "version", "4") || !sendProperty(out, "language", "sql") || !sendProperty(out, "schema", schema) || stream_flush(out) < 0) {
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
-		return connect_error(in, out);
+		closeClient(client, 0); 	
+		return GDK_FAIL;
 	}
 
 	ret = sqlclient2(m, stk, rs, out, trace, 0);
