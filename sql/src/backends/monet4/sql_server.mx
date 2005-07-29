@@ -331,8 +331,9 @@ mvc_update_var_wrap(mvc *c, str varname)
 int
 mvc_next_value(lng *res, mvc *c, str seq)
 {
-	*res = sql_next_value((*(mvc **) c)->trans, seq);
-	return GDK_SUCCEED;
+	if (sql_next_value((*(mvc **) c)->trans, seq, res))
+		return GDK_SUCCEED;
+	return GDK_FAIL;
 }
 
 static BAT *

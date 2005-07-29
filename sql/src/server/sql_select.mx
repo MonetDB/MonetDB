@@ -57,6 +57,7 @@ extern stmt *sql_and(mvc *sql, scope *scp, stmt *ls, stmt *rs, int f);
 #include "sql_parser.h"
 #include "sql_scope.h"
 #include "sql_semantic.h"
+#include "sql_sequence.h"
 #include "sql_privileges.h"
 #include "sql_env.h"
 
@@ -1057,6 +1058,8 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		break;
 	case SQL_NEXT:{
 		char *seq = se->data.sval;
+		if (!sql_find_seq(sql, seq))
+			return sql_error(sql, 02, "NEXT VALUE FOR SEQUENCE failed: no such sequence %s", seq);
 		return stmt_seq_next( _strdup(seq) );
 	}
 		break;

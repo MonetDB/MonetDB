@@ -26,6 +26,7 @@
 #include <sql_statement.h>
 
 extern int sql_create_sequences(mvc *sql, sql_schema *s);
+extern int sql_find_seq(mvc *m, str seq);
 
 extern stmt *sequences(mvc *sql, symbol *s);
 
@@ -54,8 +55,8 @@ sql_create_sequences(mvc *m, sql_schema *s)
 	return 0;
 }
 
-static int
-find_seq(mvc *m, str seq)
+int
+sql_find_seq(mvc *m, str seq)
 {
 	int res = 0;
 	sql_schema *sys = find_sql_schema(m->trans, "sys");
@@ -75,7 +76,7 @@ sql_create_seq(mvc *sql, sql_schema *ss, dlist *qname, sql_subtype *tpe, int sta
 	char *name = qname_table(qname);
 
 	(void) tpe;
-	if (find_seq(sql, name)) {
+	if (sql_find_seq(sql, name)) {
 		return sql_error(sql, 02,
 				 "CREATE SEQUENCE failed: "
 				 "name %s already in use", name);
@@ -95,7 +96,7 @@ sql_drop_seq(mvc *sql, sql_schema *ss, dlist *qname)
 	char buf[BUFSIZ];
 	char *name = qname_table(qname);
 
-	if (!find_seq(sql, name)) {
+	if (!sql_find_seq(sql, name)) {
 		return sql_error(sql, 02, "DROP SEQUENCE failed: no such sequence %s", name);
 	} else if (!schema_privs(sql->role_id, ss)) {
 		return sql_error(sql, 02, "User/Role is not allowed to drop sequences in schema %s", ss->base.name);
