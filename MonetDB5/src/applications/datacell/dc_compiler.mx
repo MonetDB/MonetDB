@@ -415,7 +415,7 @@ DCsqlReshuffle(MalBlkPtr mb, str newname){
 
 	pushInstruction(mb, old[0]);
 @-
-First step is to collect the all receptor/emitter bindings.
+First step is to collect the receptor/emitter bindings.
 @c
 	for(i=1; i< limit-1; i++)
 	if( strncmp(functionId(old[i]),"bind",4)==0  &&
