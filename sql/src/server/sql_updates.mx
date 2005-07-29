@@ -65,7 +65,7 @@ insert_value(mvc *sql, scope *scp, sql_column *c, symbol *s)
 	} else {
 		stmt *n = NULL;
 		stmt *a = sql_value_exp(sql, scp, s, NULL, NULL, sql_sel);
-	
+
 		if (!a)
 			return(NULL);
 			
