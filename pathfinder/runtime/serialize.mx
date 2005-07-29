@@ -542,12 +542,11 @@ static int emit_escaped(char* src, int mode, int onlyEntity) {
                 init_isspecial();
         for(end=0; src[end]; end++) {
             if ( (isspecial_ch = isspecial_tab[(int)(unsigned char)src[end]]) ) {
-                stream_write(GDKout,&src[start],end-start,1); /*flush */
+                stream_write(GDKout,&src[start],end-start,1); 
                 start = end+1;
 
                 if ( isspecial_ch < 3 ) {
                    stream_printf(GDKout,"\\%03o",(unsigned char)src[end]);
-                   stream_flush(GDKout);
                 } else {
                    char *emit_val = isspecial_val[mode+(int)isspecial_ch];
 
@@ -560,8 +559,7 @@ static int emit_escaped(char* src, int mode, int onlyEntity) {
             }
         }
         if ( start < end ) {
-                stream_flush(GDKout);
-                stream_write(GDKout,&src[start],end-start,1); /* flush */
+                stream_write(GDKout,&src[start],end-start,1); 
         }
 	return 1;
 }
