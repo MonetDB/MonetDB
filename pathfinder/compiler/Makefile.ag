@@ -48,7 +48,6 @@ bin_pf = {
 		core/libcore \
 		algebra/libalgebra \
 		mil/libmil \
-                algebra/hskparser/libhskparser \
 		libcompiler2 \
 		$(LIBXML2_LDADD) $(LIBXML2_LIBS) \
 		$(SOCKET_LIBS) $(DL_LIBS)

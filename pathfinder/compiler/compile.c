@@ -71,7 +71,7 @@
 #include "oops.h"
 #include "mem.h"
 #include "coreopt.h"
-#include "hsk_parser.h"
+/* #include "hsk_parser.h" */
 
 static char *phases[] = {
     [ 1]  = "right after input parsing",
@@ -110,7 +110,7 @@ PFstate_t PFstate = {
     .print_core_tree     = false,
     .print_algebra_tree  = false,
     .print_ma_tree       = false,
-    .parse_hsk           = false,
+/*    .parse_hsk           = false, */
     .summer_branch       = true,
     .genType             = PF_GEN_XML
 };
@@ -180,12 +180,14 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     signal (SIGSEGV, segfault_handler);
 #endif
 
+#if 0
     /* Parsing of Haskell XQuery to Algebra output */
     if (status->parse_hsk)
     {
         aroot = PFhsk_parse ();
         goto subexelim;
     }
+#endif
 
     /* compiler chain below 
      */
