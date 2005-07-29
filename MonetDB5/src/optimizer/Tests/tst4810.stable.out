@@ -184,8 +184,8 @@ end f3;	# 52
 #	transaction.commit();
 #end f4;
 function user.f4():void;	# 0  (f4:void)
-    SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:any)<-($2:str)
-    bat.persists(SIM_bat,false);	# 2  unknown ($3:any)<-(SIM_bat:any)($4:bit)
+    SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:bat[:any,:any])<-($2:str)
+    bat.persists(SIM_bat,false);	# 2  unknown ($3:any)<-(SIM_bat:bat[:any,:any])($4:bit)
     transaction.commit();	# 3 TRNglobal_commit ($5:void)
 end f4;	# 4  
 !ERROR: 'bat.persists' undefined in user.f4[2]
@@ -199,8 +199,8 @@ end f4;	# 4
 #	transaction.commit();
 #end f5;
 function user.f5():void;	# 0  (f5:void)
-    B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:any)<-($2:str)
-    bat.persists(B_bat,false);	# 2  unknown ($3:any)<-(B_bat:any)($4:bit)
+    B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:bat[:any,:any])<-($2:str)
+    bat.persists(B_bat,false);	# 2  unknown ($3:any)<-(B_bat:bat[:any,:any])($4:bit)
     transaction.commit();	# 3 TRNglobal_commit ($5:void)
 end f5;	# 4  
 !ERROR: 'bat.persists' undefined in user.f5[2]
@@ -214,8 +214,8 @@ end f5;	# 4
 #	transaction.commit();
 #end f6;
 function user.f6():void;	# 0  (f6:void)
-    A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:any)<-($2:str)
-    bat.persists(A_bat,false);	# 2  unknown ($3:any)<-(A_bat:any)($4:bit)
+    A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:bat[:any,:any])<-($2:str)
+    bat.persists(A_bat,false);	# 2  unknown ($3:any)<-(A_bat:bat[:any,:any])($4:bit)
     transaction.commit();	# 3 TRNglobal_commit ($5:void)
 end f6;	# 4  
 !ERROR: 'bat.persists' undefined in user.f6[2]
@@ -776,87 +776,93 @@ end f3;	# 66
 !ERROR: 'bat.persists' undefined in user.f4[2]
 Optimizer expressionAccumulation failed
 function user.f4():void;	# 0  (f4:void)
-    SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:any)<-($2:str)
-    bat.persists(SIM_bat,false);	# 2  unknown ($3:any)<-(SIM_bat:any)($4:bit)
+    SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:bat[:any,:any])<-($2:str)
+    bat.persists(SIM_bat,false);	# 2  unknown ($3:any)<-(SIM_bat:bat[:any,:any])($4:bit)
     transaction.commit();	# 3 TRNglobal_commit ($5:void)
 end f4;	# 4  
 !ERROR: 'bat.persists' undefined in user.f4[2]
 Optimizer expressionAccumulation optimizer failed
 function user.f4():void;	# 0  (f4:void)
-    SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:any)<-($2:str)
-    bat.persists(SIM_bat,false);	# 2  unknown ($3:any)<-(SIM_bat:any)($4:bit)
+    SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:bat[:any,:any])<-($2:str)
+    bat.persists(SIM_bat,false);	# 2  unknown ($3:any)<-(SIM_bat:bat[:any,:any])($4:bit)
     transaction.commit();	# 3 TRNglobal_commit ($5:void)
 end f4;	# 4  
 !ERROR: 'bat.persists' undefined in user.f4[2]
 Optimizer garbageCollector failed
 function user.f4():void;	# 0  (f4:void)
-    SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:any)<-($2:str)
-    bat.persists(SIM_bat,false);	# 2  unknown ($3:any)<-(SIM_bat:any)($4:bit)
-    transaction.commit();	# 3 TRNglobal_commit ($5:void)
-end f4;	# 4  
+    SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:bat[:any,:any])<-($2:str)
+    bat.persists(SIM_bat,false);	# 2  unknown ($3:any)<-(SIM_bat:bat[:any,:any])($4:bit)
+    bbp.garbage(SIM_bat);	# 3 CMDbbpgarbage ($6:void)<-(SIM_bat:bat[:any,:any])
+    transaction.commit();	# 4 TRNglobal_commit ($5:void)
+end f4;	# 5  
 !ERROR: 'bat.persists' undefined in user.f4[2]
 Optimizer garbageCollector optimizer failed
 function user.f4():void;	# 0  (f4:void)
-    SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:any)<-($2:str)
-    bat.persists(SIM_bat,false);	# 2  unknown ($3:any)<-(SIM_bat:any)($4:bit)
-    transaction.commit();	# 3 TRNglobal_commit ($5:void)
-end f4;	# 4  
+    SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:bat[:any,:any])<-($2:str)
+    bat.persists(SIM_bat,false);	# 2  unknown ($3:any)<-(SIM_bat:bat[:any,:any])($4:bit)
+    bbp.garbage(SIM_bat);	# 3 CMDbbpgarbage ($6:void)<-(SIM_bat:bat[:any,:any])
+    transaction.commit();	# 4 TRNglobal_commit ($5:void)
+end f4;	# 5  
 !ERROR: 'bat.persists' undefined in user.f5[2]
 Optimizer expressionAccumulation failed
 function user.f5():void;	# 0  (f5:void)
-    B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:any)<-($2:str)
-    bat.persists(B_bat,false);	# 2  unknown ($3:any)<-(B_bat:any)($4:bit)
+    B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:bat[:any,:any])<-($2:str)
+    bat.persists(B_bat,false);	# 2  unknown ($3:any)<-(B_bat:bat[:any,:any])($4:bit)
     transaction.commit();	# 3 TRNglobal_commit ($5:void)
 end f5;	# 4  
 !ERROR: 'bat.persists' undefined in user.f5[2]
 Optimizer expressionAccumulation optimizer failed
 function user.f5():void;	# 0  (f5:void)
-    B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:any)<-($2:str)
-    bat.persists(B_bat,false);	# 2  unknown ($3:any)<-(B_bat:any)($4:bit)
+    B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:bat[:any,:any])<-($2:str)
+    bat.persists(B_bat,false);	# 2  unknown ($3:any)<-(B_bat:bat[:any,:any])($4:bit)
     transaction.commit();	# 3 TRNglobal_commit ($5:void)
 end f5;	# 4  
 !ERROR: 'bat.persists' undefined in user.f5[2]
 Optimizer garbageCollector failed
 function user.f5():void;	# 0  (f5:void)
-    B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:any)<-($2:str)
-    bat.persists(B_bat,false);	# 2  unknown ($3:any)<-(B_bat:any)($4:bit)
-    transaction.commit();	# 3 TRNglobal_commit ($5:void)
-end f5;	# 4  
+    B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:bat[:any,:any])<-($2:str)
+    bat.persists(B_bat,false);	# 2  unknown ($3:any)<-(B_bat:bat[:any,:any])($4:bit)
+    bbp.garbage(B_bat);	# 3 CMDbbpgarbage ($6:void)<-(B_bat:bat[:any,:any])
+    transaction.commit();	# 4 TRNglobal_commit ($5:void)
+end f5;	# 5  
 !ERROR: 'bat.persists' undefined in user.f5[2]
 Optimizer garbageCollector optimizer failed
 function user.f5():void;	# 0  (f5:void)
-    B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:any)<-($2:str)
-    bat.persists(B_bat,false);	# 2  unknown ($3:any)<-(B_bat:any)($4:bit)
-    transaction.commit();	# 3 TRNglobal_commit ($5:void)
-end f5;	# 4  
+    B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:bat[:any,:any])<-($2:str)
+    bat.persists(B_bat,false);	# 2  unknown ($3:any)<-(B_bat:bat[:any,:any])($4:bit)
+    bbp.garbage(B_bat);	# 3 CMDbbpgarbage ($6:void)<-(B_bat:bat[:any,:any])
+    transaction.commit();	# 4 TRNglobal_commit ($5:void)
+end f5;	# 5  
 !ERROR: 'bat.persists' undefined in user.f6[2]
 Optimizer expressionAccumulation failed
 function user.f6():void;	# 0  (f6:void)
-    A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:any)<-($2:str)
-    bat.persists(A_bat,false);	# 2  unknown ($3:any)<-(A_bat:any)($4:bit)
+    A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:bat[:any,:any])<-($2:str)
+    bat.persists(A_bat,false);	# 2  unknown ($3:any)<-(A_bat:bat[:any,:any])($4:bit)
     transaction.commit();	# 3 TRNglobal_commit ($5:void)
 end f6;	# 4  
 !ERROR: 'bat.persists' undefined in user.f6[2]
 Optimizer expressionAccumulation optimizer failed
 function user.f6():void;	# 0  (f6:void)
-    A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:any)<-($2:str)
-    bat.persists(A_bat,false);	# 2  unknown ($3:any)<-(A_bat:any)($4:bit)
+    A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:bat[:any,:any])<-($2:str)
+    bat.persists(A_bat,false);	# 2  unknown ($3:any)<-(A_bat:bat[:any,:any])($4:bit)
     transaction.commit();	# 3 TRNglobal_commit ($5:void)
 end f6;	# 4  
 !ERROR: 'bat.persists' undefined in user.f6[2]
 Optimizer garbageCollector failed
 function user.f6():void;	# 0  (f6:void)
-    A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:any)<-($2:str)
-    bat.persists(A_bat,false);	# 2  unknown ($3:any)<-(A_bat:any)($4:bit)
-    transaction.commit();	# 3 TRNglobal_commit ($5:void)
-end f6;	# 4  
+    A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:bat[:any,:any])<-($2:str)
+    bat.persists(A_bat,false);	# 2  unknown ($3:any)<-(A_bat:bat[:any,:any])($4:bit)
+    bbp.garbage(A_bat);	# 3 CMDbbpgarbage ($6:void)<-(A_bat:bat[:any,:any])
+    transaction.commit();	# 4 TRNglobal_commit ($5:void)
+end f6;	# 5  
 !ERROR: 'bat.persists' undefined in user.f6[2]
 Optimizer garbageCollector optimizer failed
 function user.f6():void;	# 0  (f6:void)
-    A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:any)<-($2:str)
-    bat.persists(A_bat,false);	# 2  unknown ($3:any)<-(A_bat:any)($4:bit)
-    transaction.commit();	# 3 TRNglobal_commit ($5:void)
-end f6;	# 4  
+    A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:bat[:any,:any])<-($2:str)
+    bat.persists(A_bat,false);	# 2  unknown ($3:any)<-(A_bat:bat[:any,:any])($4:bit)
+    bbp.garbage(A_bat);	# 3 CMDbbpgarbage ($6:void)<-(A_bat:bat[:any,:any])
+    transaction.commit();	# 4 TRNglobal_commit ($5:void)
+end f6;	# 5  
 function user.main():int;	# 0  (main:int)
     _time := alarm.usec();	# 1 ALARMusec (_time:lng)
 #f1(); 	# 2  ($7:str)

@@ -102,10 +102,10 @@ pattern prelude():void
 address CMDbbpprelude
 comment "Initialize the bbp box";
 
-pattern bind(name:str,loc:str) :any
+pattern bind(name:str,loc:str) :bat[:any,:any]
 address CMDbbpbindDefinition
 comment "Relate a logical name to a physical BAT in the buffer pool.";
-pattern bind(name:str):any
+pattern bind(name:str):bat[:any,:any]
 address CMDbbpbind
 comment "Locate the BAT using its logical name,
 	but without making a local copy. 
