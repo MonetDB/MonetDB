@@ -263,7 +263,7 @@ Watch out bind_dbat needs different binding. [costed me a day]
 @-
 Empty BATs can be symbolically optimized. Disabled for a while.
 @c
-				if (b == NULL /* || (l= BATcount(b)) == 0 */ ) {
+				if ( FALSE /* b == NULL || (l= BATcount(b)) == 0 */ ) {
 					qc = newInstruction(ASSIGNsymbol);
 					setModuleId(qc, putName("optimizer",9));
 					setFunctionId(qc, putName("RXemptyBAT",10));

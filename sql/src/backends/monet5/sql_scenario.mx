@@ -882,12 +882,12 @@ SQLoutput(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	/* remember to skip the extra 'order' argument */
 	if (p->argc == 3)
-		IOprintBoth(mb, stk, p, 2, "[ ", " ]\n");
+		IOprintBoth(mb, stk, p, 2, "[ ", " ]\n",TRUE);
 	else {
-		IOprintBoth(mb, stk, p, 2, "[ ", 0);
+		IOprintBoth(mb, stk, p, 2, "[ ", 0,TRUE);
 		for (i = 3; i < p->argc - 2; i++)
-			IOprintBoth(mb, stk, p, i, ", ", 0);
-		IOprintBoth(mb, stk, p, i, ", ", "]\n");
+			IOprintBoth(mb, stk, p, i, ", ", 0,TRUE);
+		IOprintBoth(mb, stk, p, i, ", ", "]\n",TRUE);
 	}
 	return MAL_SUCCEED;
 }
