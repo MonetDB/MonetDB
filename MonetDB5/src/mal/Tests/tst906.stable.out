@@ -1,42 +1,41 @@
 stdout of test 'tst906` in directory 'src/mal` itself:
 
 
-# 08:01:37 >  
-# 08:01:37 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst906.mal </dev/null
-# 08:01:37 >  
+# 19:09:38 >  
+# 19:09:38 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=36033 --set sql_port=47929 --set xquery_port=59799 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst906.mal </dev/null
+# 19:09:38 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ## the multiplex code blocks.
 ## check detection of the underlying fast implementations
 #
-#b:= new(:lng,:lng);
-#barrier (v,i):= newRange(0:lng);
-#	insert(b,i,i);
-#	redo (v,i):= nextElement(1:lng,10:lng);
+#b:= bbp.new(:lng,:lng);
+#barrier (v,i):= mal.newRange(0:lng);
+#	bat.insert(b,i,i);
+#	redo (v,i):= mal.nextElement(1:lng,10:lng);
 #exit (v,i);
-#
-#c:= copy(b);
-#print(c);
-#x:= multiplex.tactics("+",b,c);
-#print(x);
-#x:= multiplex.tactics("+",b,1:lng);
-#print(x);
-#x:= multiplex.tactics("/",b,1:lng);
-#print(x);
-#x:= multiplex.tactics("*",b,c);
-#print(x);
-#y:= multiplex.tactics("==",b,b);
-#print(y);
-#y:= multiplex.tactics("==",b,x);
-#print(y);
-#z:= multiplex.tactics("not",y);
-#print(z);
+#c:= algebra.copy(b);
+#io.print(c);
+#x:= batcalc.+(b,c);
+#io.print(x);
+#x:= batcalc.+(b,1:lng);
+#io.print(x);
+#x:= batcalc./(b,1:lng);
+#io.print(x);
+#x:= batcalc.*(b,c);
+#io.print(x);
+#y:= batcalc.==(b,b);
+#io.print(y);
+#y:= batcalc.==(b,x);
+#io.print(y);
+#z:= batcalc.not(y);
+#io.print(z);
 #
 #
 function user.main():int;	# 0  (main:int)
@@ -65,7 +64,7 @@ exit (v,i);	# 7  (v:bit)(i:lng)
     io.print(z);	# 23 IOprint_val ($24:int)<-(z:bat[:lng,:bit])
 end main;	# 24  
 #-----------------#
-# h	tmp_5	  # name
+# h	t	  # name
 # lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
@@ -79,7 +78,7 @@ end main;	# 24
 [ 8,	  8	  ]
 [ 9,	  9	  ]
 #-----------------#
-# h	tmp_6	  # name
+# h	t	  # name
 # lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
@@ -93,7 +92,7 @@ end main;	# 24
 [ 8,	  16	  ]
 [ 9,	  18	  ]
 #-----------------#
-# h	tmp_7	  # name
+# h	t	  # name
 # lng	lng	  # type
 #-----------------#
 [ 0,	  1	  ]
@@ -107,7 +106,7 @@ end main;	# 24
 [ 8,	  9	  ]
 [ 9,	  10	  ]
 #-----------------#
-# h	tmp_8	  # name
+# h	t	  # name
 # lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
@@ -121,7 +120,7 @@ end main;	# 24
 [ 8,	  8	  ]
 [ 9,	  9	  ]
 #-----------------#
-# h	tmp_7	  # name
+# h	t	  # name
 # lng	lng	  # type
 #-----------------#
 [ 0,	  0	  ]
@@ -135,7 +134,7 @@ end main;	# 24
 [ 8,	  64	  ]
 [ 9,	  81	  ]
 #-----------------#
-# h	tmp_8	  # name
+# h	t	  # name
 # lng	bit	  # type
 #-----------------#
 [ 0,	  true	  ]
@@ -149,7 +148,7 @@ end main;	# 24
 [ 8,	  true	  ]
 [ 9,	  true	  ]
 #-----------------#
-# h	tmp_9	  # name
+# h	t	  # name
 # lng	bit	  # type
 #-----------------#
 [ 0,	  true	  ]
@@ -163,7 +162,7 @@ end main;	# 24
 [ 8,	  false	  ]
 [ 9,	  false	  ]
 #-----------------#
-# h	tmp_10	  # name
+# h	t	  # name
 # lng	bit	  # type
 #-----------------#
 [ 0,	  false	  ]
@@ -177,7 +176,7 @@ end main;	# 24
 [ 8,	  true	  ]
 [ 9,	  true	  ]
 
-# 08:01:38 >  
-# 08:01:38 >  Done.
-# 08:01:38 >  
+# 19:09:39 >  
+# 19:09:39 >  Done.
+# 19:09:39 >  
 
