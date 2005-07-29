@@ -500,8 +500,18 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 static int mainSHREDDER(shredCtxStruct* shredCtx, char* location);
 static char *timer_str (long elapsed);
 
+/* simplistic check whether location is an URL:
+   protocols consist of more than one letter, so we consider location
+   a URL if it starts with at least two letters, followed by a
+   colon. */
 int isURL(char* location) {
-	return strchr(location,':') != NULL;
+	int i = 0;
+	while (*location && (('a' <= *location && *location <= 'z') ||
+			     ('A' <= *location && *location <= 'Z'))) {
+		location++;
+		i++;
+	}
+	return i > 1 && *location == ':';
 }
 
 off_t  fileSize(char* location) {
