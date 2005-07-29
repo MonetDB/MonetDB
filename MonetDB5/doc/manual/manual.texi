@@ -173,6 +173,7 @@ Table of contents
 @include mal_partitionedQuery.bdy.texi
 @include mal_strengthReduction.bdy.texi
 @include mal_costmodel.bdy.texi
+@include mal_reduce.bdy.texi
 
 @node The MAL debugger, The MAL profiler , MonetDB Assembler Language, TOC
 @include mal_debugger.bdy.texi
