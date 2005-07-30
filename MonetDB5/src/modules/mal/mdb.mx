@@ -370,7 +370,7 @@ str MDBlist3Detail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 str MDBvar(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Client c= getClient();
 	(void) p; (void) stk;
-	printStack(c->fdout,mb,0);
+	printStack(c->fdout,mb,stk);
 	return MAL_SUCCEED;
 }
 str MDBvar3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
@@ -384,7 +384,7 @@ str MDBvar3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( s == NULL)
 		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
 	else 
-		printStack(c->fdout,s->def,0);
+		printStack(c->fdout,s->def, (s->def==mb?stk:0));
 	(void) mb;
 	return NULL;
 }
