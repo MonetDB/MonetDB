@@ -1,47 +1,49 @@
 stdout of test 'tst350` in directory 'src/mal` itself:
 
 
-# 11:28:52 >  
-# 11:28:52 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=43122 --set sql_port=57578 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst350.mal </dev/null
-# 11:28:52 >  
+# 22:58:40 >  
+# 22:58:40 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34825 --set sql_port=41534 --set xquery_port=54229 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst350.mal </dev/null
+# 22:58:40 >  
 
-# Monet Database Server V4.5.0
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # config:/ufs/mk/monet5/src/mal/Tests/All.conf
 # dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ##inspection of the runtime setting
+##it uses the dynamic type analysis scheme
+#
 #function dir(b:bat[:int,:str]):void;
 #	atm:= inspect.getAtomNames();
-#	brev:= reverse(b);
-#	bm := mirror(brev);
+#	brev:= bat.reverse(b);
+#	bm := bat.mirror(brev);
 #	h := bbp.getHeadType();
-#	bHead:= join(brev,h);
-#	setColumn(bHead,"htype");
+#	bHead:= algebra.join(brev,h);
+#	bat.setColumn(bHead,"htype");
 #	h := bbp.getTailType();
-#	bTail:= join(brev,h);
-#	setColumn(bTail,"ttype");
+#	bTail:= algebra.join(brev,h);
+#	bat.setColumn(bTail,"ttype");
 #	bcount:= bbp.getCount();
-#	bCount:= join(brev,bcount);
-#	setColumn(bCount,"count");
+#	bCount:= algebra.join(brev,bcount);
+#	bat.setColumn(bCount,"count");
 #	bheat:= bbp.getHeat();
-#	bHeat:= join(brev,bheat);
-#	setColumn(bHeat,"heat");
+#	bHeat:= algebra.join(brev,bheat);
+#	bat.setColumn(bHeat,"heat");
 #	bdirty:= bbp.getDirty();
-#	bDirty:= join(brev,bdirty);
-#	setColumn(bDirty,"dirty");
+#	bDirty:= algebra.join(brev,bdirty);
+#	bat.setColumn(bDirty,"dirty");
 #	bstatus:= bbp.getDirty();
-#	bStatus:= join(brev,bstatus);
-#	setColumn(bStatus,"status");
+#	bStatus:= algebra.join(brev,bstatus);
+#	bat.setColumn(bStatus,"status");
 #	bkind:= bbp.getKind();
-#	bKind:= join(brev,bkind);
-#	setColumn(bKind,"kind");
+#	bKind:= algebra.join(brev,bkind);
+#	bat.setColumn(bKind,"kind");
 #	bref:= bbp.getRefCount();
-#	bRef:= join(brev,bref);
-#	setColumn(bRef,"refcnt");
-#	table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
+#	bRef:= algebra.join(brev,bref);
+#	bat.setColumn(bRef,"refcnt");
+#	io.table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
 #end dir;
 function user.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
     atm := inspect.getAtomNames();	# 1 INSPECTatom_names (atm:bat[:int,:str])
@@ -75,11 +77,11 @@ function user.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
 end dir;	# 29  
 #
 #function dir(s:str):void;
-#	print("Search directory by name");
+#	io.print("Search directory by name");
 #	t:= bbp.getNames();
-#	tn:= like(t,s);
-#	print(tn);
-#	dir(tn);
+#	tn:= algebra.like(t,s);
+#	io.print(tn);
+#	user.dir(tn);
 #end dir;
 function user.dir(s:str):void;	# 0  (dir:void)<-(s:str)
     io.print("Search directory by name");	# 1 IOprint_val ($2:int)<-($3:str)
@@ -88,14 +90,14 @@ function user.dir(s:str):void;	# 0  (dir:void)<-(s:str)
     io.print(tn);	# 4 IOprint_val ($6:int)<-(tn:bat[:int,:str])
     user.dir(tn);	# 5  ($7:void)<-(tn:bat[:int,:str])
 end dir;	# 6  
-#print("start test");
-#b:=new(:int,:int);
-#setName(b,"simplemind");
+#io.print("start test");
+#b:=bbp.new(:int,:int);
+#bat.setName(b,"simplemind");
 #
 #z:= bbp.getNames();
-#dir(z);
+#user.dir(z);
 #
-#dir("simple");
+#user.dir("simple");
 #
 #
 function user.main():int;	# 0  (main:int)
@@ -110,7 +112,7 @@ function user.main():int;	# 0  (main:int)
 end main;	# 9  
 [ "start test" ]
 #---------------------------------------------------------------------------------------------------------------------------------#
-# bbp	tmp_8			htype	ttype		count	heat	dirty		status		kind		refcnt	  # name
+# bbp	t			htype	ttype		count	heat	dirty		status		kind		refcnt	  # name
 # int	str			str	str		lng	int	str		str		str		int	  # type
 #---------------------------------------------------------------------------------------------------------------------------------#
 [ 1,	  "monet_environment",	  "str",  "str",	  32,	  151,	  "dirty",	  "dirty",	  "transient",	  1	  ]
@@ -128,17 +130,17 @@ end main;	# 9
 [ 13,	  "simplemind",		  "int",  "int",	  0,	  163,	  "dirty",	  "dirty",	  "transient",	  0	  ]
 [ "Search directory by name" ]
 #-------------------------#
-# h	tmp_21		  # name
+# h	t		  # name
 # int	str		  # type
 #-------------------------#
 [ 13,	  "simplemind"	  ]
 #-----------------------------------------------------------------------------------------------------------------#
-# tmp_21	tmp_19		htype	ttype	count	heat	dirty		status		kind		refcnt	  # name
+# h	t		htype	ttype	count	heat	dirty		status		kind		refcnt	  # name
 # int	str		str	str	lng	int	str		str		str		int	  # type
 #-----------------------------------------------------------------------------------------------------------------#
 [ 13,	  "simplemind",	  "int",  "int",  0,	  248,	  "dirty",	  "dirty",	  "transient",	  0	  ]
 
-# 11:28:52 >  
-# 11:28:52 >  Done.
-# 11:28:52 >  
+# 22:58:40 >  
+# 22:58:40 >  Done.
+# 22:58:40 >  
 
