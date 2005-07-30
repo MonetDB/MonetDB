@@ -26,6 +26,6 @@ function qry(a:bat[:void,:any]);
 end qry;
 
 optimizer.partitionedQuery("user","qry");
-mdb.showFunction("user","qry");
+mdb.list("user","qry");
 io.print("run experiment");
 user.qry(a1);

@@ -117,7 +117,7 @@ exit (go,i);	# 22  (go:bit)(i:int)
 # this query is already tricky because there are 	# 31  ($42:str)
 # two sinks. A naive translation will produce 	# 32  ($44:str)
 # a double nested loop 	# 33  ($46:str)
-    mdb.showFunction("user","qry");	# 34 MDBshowFunction3 ($50:void)<-($48:str)($49:str)
+    mdb.list("user","qry");	# 34 MDBlist3 ($50:void)<-($48:str)($49:str)
     io.print("run experiment");	# 35 IOprint_val ($51:int)<-($52:str)
     user.qry(a1,b1);	# 36  ($53:void)<-(a1:bat[:void,:int])(b1:bat[:void,:int])
 end main;	# 37  

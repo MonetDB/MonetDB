@@ -190,7 +190,7 @@ function user.main():int;	# 0  (main:int)
 #t53 := batcalc.*(8,t52); 	# 5  ($10:str)
 #t61 := batcalc.pow(t59,t9); 	# 6  ($12:str)
 #t87 := array.grid(100,1320,8,0); will save 30% by reuse 	# 7  ($14:str)
-    mdb.showFunction("user","f1");	# 8 MDBshowFunction3 ($20:void)<-($16:str)($17:str)
+    mdb.list("user","f1");	# 8 MDBlist3 ($20:void)<-($16:str)($17:str)
 ##f1(); 	# 9  ($22:str)
 end main;	# 10  
 factory user.f1(s:str):void;

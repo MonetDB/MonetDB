@@ -18,5 +18,5 @@ io.print("execute");
 z:= user.qry(0.0:dbl);
 io.print(z);
 io.print("done");
-mdb.showFunction("user","qry");
-mdb.showFunction("user","main");
+mdb.list("user","qry");
+mdb.list("user","main");

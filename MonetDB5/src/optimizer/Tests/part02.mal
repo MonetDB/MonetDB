@@ -44,7 +44,7 @@ function qry(a:bat[:void,:int], b:bat[:int,:void]);
 end qry;
 
 optimizer.partitionedQuery("user","qry");
-mdb.showFunction("user","qry");
+mdb.list("user","qry");
 io.print("run experiment");
 br:= bat.reverse(b1);
 user.qry(a1,br);

@@ -32,7 +32,7 @@ end test;	# 6
 #
 function user.main():int;	# 0  (main:int)
 #Code factorization 	# 1  ($2:str)
-    mdb.showFunction("user","test");	# 2 MDBshowFunction3 ($6:void)<-($4:str)($5:str)
+    mdb.list("user","test");	# 2 MDBlist3 ($6:void)<-($4:str)($5:str)
 end main;	# 3  
 factory user.test(s:str):lng;
     b := bbp.new(:int,:str);

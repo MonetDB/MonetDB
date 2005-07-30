@@ -16,4 +16,4 @@ c:= bbp.new(:int,:int);
 g:= algebra.join(a,b);
 h:= algebra.join(g,c);
 
-mdb.showFunction();
+mdb.list();

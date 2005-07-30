@@ -28,7 +28,7 @@ function user.main():int;	# 0  (main:int)
     r:bat[:int,:int]  := bbp.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-($4:int)($4:int)
     rr := algebra.markH(r);	# 3 ALGmarkHead_default (rr:bat[:void,:int])<-(r:bat[:int,:int])
     io.print(r);	# 4 IOprint_val ($11:int)<-(r:bat[:int,:int])
-    mdb.showFunction();	# 5 MDBshowFunction ($13:void)
+    mdb.list();	# 5 MDBlist ($13:void)
 end main;	# 6  
 #-----------------#
 # h	t	  # name
@@ -39,7 +39,7 @@ function user.main():int;
     r:bat[:int,:int]  := bbp.new(:int,:int);
     rr := algebra.markH(r);
     io.print(r);
-    mdb.showFunction();
+    mdb.list();
 end main;
 
 # 20:14:00 >  

@@ -29,7 +29,7 @@ function user.main():int;	# 0  (main:int)
     ($15,$16):= bbp.unpack(c{singleton});	# 5 CMDbatunpack ($15:int)($16:int)<-(c:bat[:int,:int])
     d := bbp.pack(nil,$15);	# 6 CMDbatpack (d:bat[:void,:int])<-($18:void)($15:int)
     io.print(d);	# 7 IOprint_val ($12:int)<-(d:bat[:void,:int])
-    mdb.showFunction();	# 8 MDBshowFunction ($14:void)
+    mdb.list();	# 8 MDBlist ($14:void)
 end main;	# 9  
 #-----------------#
 # h	t	  # name
@@ -44,7 +44,7 @@ function user.main():int;
     ($15,$16):= bbp.unpack(c{singleton});
     d := bbp.pack(nil,$15);
     io.print(d);
-    mdb.showFunction();
+    mdb.list();
 end main;
 
 # 21:57:48 >  

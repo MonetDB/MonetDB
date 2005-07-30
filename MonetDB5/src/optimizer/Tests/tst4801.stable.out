@@ -32,7 +32,7 @@ end f3;	# 6
 #
 function user.main():int;	# 0  (main:int)
 #optimizer.expressionAccumulation("user","f3"); 	# 1  ($2:str)
-    mdb.showFunction("user","f3");	# 2 MDBshowFunction3 ($6:void)<-($4:str)($5:str)
+    mdb.list("user","f3");	# 2 MDBlist3 ($6:void)<-($4:str)($5:str)
 end main;	# 3  
 function user.f3():void;
     t28 := array.grid(1,500,1,0);

@@ -38,7 +38,7 @@ function user.main():int;	# 0  (main:int)
     k2 := 27;	# 8  (k2:int)<-($16:int)
     l := calc.+(k1,k2);	# 9 CALCbinaryADDintint (l:int)<-(k1:int)(k2:int)
     l3 := calc.+(l,k1);	# 10 CALCbinaryADDintint (l3:int)<-(l:int)(k1:int)
-    mdb.showFunction();	# 11 MDBshowFunction ($20:void)
+    mdb.list();	# 11 MDBlist ($20:void)
 end main;	# 12  
 function user.main():int;
 # The 4000 series deals with strategic optimizer constructs 
@@ -51,7 +51,7 @@ function user.main():int;
     k2 := 27;
     l := calc.+(k1,k2);
     l3 := calc.+(l,k1);
-    mdb.showFunction();
+    mdb.list();
 end main;
 
 # 23:27:48 >  

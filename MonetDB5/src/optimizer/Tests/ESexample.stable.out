@@ -80,7 +80,7 @@ function user.test():void;	# 0  (test:void)
 end test;	# 10  
 function user.main():int;	# 0  (main:int)
 #optimizer.setProperty("user","test","V10","empty",1); 	# 1  ($2:str)
-    mdb.showFunction("user","test");	# 2 MDBshowFunction3 ($6:void)<-($4:str)($5:str)
+    mdb.list("user","test");	# 2 MDBlist3 ($6:void)<-($4:str)($5:str)
 end main;	# 3  
 function user.test():void;
     V1 := bbp.new(:void,:int);

@@ -76,7 +76,7 @@ exit (go,i);	# 13  (go:bit)(i:int)
     partitions.deposit(a1,a2);	# 16 BPTdeposit2 ($26:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
     partitions.deposit(a1,a3);	# 17 BPTdeposit2 ($27:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
     partitions.dump();	# 18 BPTdump ($28:void)
-    mdb.showFunction("user","qry");	# 19 MDBshowFunction3 ($32:void)<-($30:str)($31:str)
+    mdb.list("user","qry");	# 19 MDBlist3 ($32:void)<-($30:str)($31:str)
     io.print("run experiment");	# 20 IOprint_val ($33:int)<-($34:str)
     user.qry(a1);	# 21  ($35:void)<-(a1:bat[:void,:int])
 end main;	# 22  

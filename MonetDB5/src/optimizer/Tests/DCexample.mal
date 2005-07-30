@@ -8,4 +8,4 @@
 	io.print("done");
 
 optimizer.deadCodeRemoval();
-mdb.showFunction();
+mdb.list();

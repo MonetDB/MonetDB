@@ -7,4 +7,4 @@ function test(s:str):lng;
 	return i;
 end test;
 optimizer.factorize("user","test");
-mdb.showFunction("user","test");
+mdb.list("user","test");

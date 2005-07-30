@@ -35,7 +35,7 @@ function user.main():int;	# 0  (main:int)
     t7 := algebra.join(t6,t1);	# 10 ALGjoin (t7:bat[:void,:int])<-(t6:bat[:void,:oid])(t1:bat[:void,:int])
     bbp.garbage(t6);	# 11 CMDbbpgarbage ($21:void)<-(t6:bat[:void,:oid])
     bbp.garbage(t1);	# 12 CMDbbpgarbage ($22:void)<-(t1:bat[:void,:int])
-    mdb.showFunction();	# 13 MDBshowFunction ($17:void)
+    mdb.list();	# 13 MDBlist ($17:void)
 end main;	# 14  
 function user.main():int;
     t1 := bbp.new(:void,:int);
@@ -50,7 +50,7 @@ function user.main():int;
     t7 := algebra.join(t6,t1);
     bbp.garbage(t6);
     bbp.garbage(t1);
-    mdb.showFunction();
+    mdb.list();
 end main;
 
 # 23:27:48 >  

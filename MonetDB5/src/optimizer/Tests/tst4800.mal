@@ -29,4 +29,4 @@ function f3():void;
 #       io.table(bat_0,bat_1,top);
 end f3;
 	optimizer.expressionAccumulation("user","f3");
-	mdb.showFunction("user","f3");
+	mdb.list("user","f3");

@@ -16,4 +16,4 @@ end test;
 
 #optimizer.setProperty("user","test","V10","empty",1);
 optimizer.emptySet("user","test");
-mdb.showFunction("user","test");
+mdb.list("user","test");

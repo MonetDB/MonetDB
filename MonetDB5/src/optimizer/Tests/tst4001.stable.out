@@ -53,8 +53,8 @@ function user.main():int;	# 0  (main:int)
     z := user.qry(0.0:dbl);	# 7  (z:dbl)<-($15:dbl)
     io.print(z);	# 8 IOprint_val ($16:int)<-(z:dbl)
     io.print("done");	# 9 IOprint_val ($17:int)<-($18:str)
-    mdb.showFunction("user","qry");	# 10 MDBshowFunction3 ($19:void)<-($7:str)($8:str)
-    mdb.showFunction("user","main");	# 11 MDBshowFunction3 ($20:void)<-($7:str)($21:str)
+    mdb.list("user","qry");	# 10 MDBlist3 ($19:void)<-($7:str)($8:str)
+    mdb.list("user","main");	# 11 MDBlist3 ($20:void)<-($7:str)($21:str)
 end main;	# 12  
 [ "execute" ]
 [ 0.8414709848078965 ]
@@ -72,8 +72,8 @@ function user.main():int;
     z := user.qry(0.0:dbl);
     io.print(z);
     io.print("done");
-    mdb.showFunction("user","qry");
-    mdb.showFunction("user","main");
+    mdb.list("user","qry");
+    mdb.list("user","main");
 end main;
 #
 

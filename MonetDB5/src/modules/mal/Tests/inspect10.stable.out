@@ -23,8 +23,9 @@ function user.dummy(i:int):void;	# 0  (dummy:void)<-(i:int)
     io.print(i);	# 1 IOprint_val ($2:int)<-(i:int)
     b := mdb.getDefinition();	# 2 MDBcodeDump (b:bat[:void,:str])
     io.print(b);	# 3 IOprint_val ($4:int)<-(b:bat[:void,:str])
-    mdb.showFunction();	# 4 MDBshowFunction ($5:void)
+    mdb.showFunction();	# 4  unknown ($5:any)
 end dummy;	# 5  
+!ERROR: 'mdb.showFunction' undefined in user.dummy[4]
 #
 #dummy(1);
 #
@@ -34,43 +35,15 @@ end dummy;	# 5
 #
 #inspect.showFunction("Admin","dummy");
 #
+!ERROR: 'mdb.showFunction' undefined in user.main[6]
 function user.main():int;	# 0  (main:int)
 #self inspection of the code base 	# 1  ($2:str)
     user.dummy(1);	# 2  ($3:void)<-($4:int)
     io.printf("get function properties\n");	# 3 IOprint_str ($5:int)<-($6:str)
     l := inspect.getSignature("user","dummy");	# 4 INSPECTgetSignature (l:bat[:str,:str])<-($8:str)($9:str)
     io.print(l);	# 5 IOprint_val ($10:int)<-(l:bat[:str,:str])
-    mdb.showFunction("user","dummy");	# 6 MDBshowFunction3 ($11:void)<-($8:str)($9:str)
+    mdb.showFunction("user","dummy");	# 6  unknown ($11:any)<-($8:str)($9:str)
 end main;	# 7  
-[ 1 ]
-#-------------------------------------------------#
-# fcn	stmt					  # name
-# int	str					  # type
-#-------------------------------------------------#
-[ 0,	  "function user.dummy(i:int):void;"	  ]
-[ 1,	  "    io.print(i);"			  ]
-[ 2,	  "    b := mdb.getDefinition();"	  ]
-[ 3,	  "    io.print(b);"			  ]
-[ 4,	  "    mdb.showFunction();"		  ]
-[ 5,	  "end dummy;"				  ]
-function user.dummy(i:int):void;
-    io.print(i);
-    b := mdb.getDefinition();
-    io.print(b);
-    mdb.showFunction();
-end dummy;
-get function properties
-#---------------------------------#
-# view		input		  # name
-# str		str		  # type
-#---------------------------------#
-[ "i:int",	  ":void"	  ]
-function user.dummy(i:int):void;
-    io.print(i);
-    b := mdb.getDefinition();
-    io.print(b);
-    mdb.showFunction();
-end dummy;
 
 # 22:47:40 >  
 # 22:47:40 >  Done.

@@ -43,7 +43,7 @@ function user.main():int;	# 0  (main:int)
     c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-($7:int)($7:int)
     g := algebra.join(a,b);	# 5 ALGjoin (g:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])
     h := algebra.join(g,c);	# 6 ALGjoin (h:bat[:int,:int])<-(g:bat[:int,:int])(c:bat[:int,:int])
-    mdb.showFunction();	# 7 MDBshowFunction ($12:void)
+    mdb.list();	# 7 MDBlist ($12:void)
 end main;	# 8  
 function user.main():int;
     a := bbp.new(:int,:int);
@@ -51,7 +51,7 @@ function user.main():int;
     c := bbp.new(:int,:int);
     g := algebra.join(a,b);
     h := algebra.join(g,c);
-    mdb.showFunction();
+    mdb.list();
 end main;
 
 # 08:01:51 >  

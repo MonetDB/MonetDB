@@ -120,4 +120,4 @@ end qry1;
 optimizer.setDebug();
 optimizer.aliasRemoval("user","qry1");
 optimizer.garbageCollector("user","qry1");
-mdb.showFunction("user","qry1");
+mdb.list("user","qry1");

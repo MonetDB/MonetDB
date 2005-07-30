@@ -7,4 +7,4 @@ barrier go:=true;
 	io.print(i);
 exit go;
 optimizer.strengthReduction();
-mdb.showFunction();
+mdb.list();

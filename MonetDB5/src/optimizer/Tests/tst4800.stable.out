@@ -76,7 +76,7 @@ end f3;	# 27
 function user.main():int;	# 0  (main:int)
 # testing the optimization of the pocket calculator 	# 1  ($2:str)
 #       io.table(bat_0,bat_1,top); 	# 2  ($4:str)
-    mdb.showFunction("user","f3");	# 3 MDBshowFunction3 ($8:void)<-($6:str)($7:str)
+    mdb.list("user","f3");	# 3 MDBlist3 ($8:void)<-($6:str)($7:str)
 end main;	# 4  
 function user.f3():void;
     t1:bat[:void,:int]  := bbp.bind("A_bat");

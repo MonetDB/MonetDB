@@ -47,7 +47,7 @@ function user.main():int;	# 0  (main:int)
 # error handling 	# 2  ($4:str)
     io.print("test expansion");	# 3 IOprint_val ($8:int)<-($9:str)
     a := user.welcome(2);	# 4  (a:int)<-($11:int)
-    mdb.showFunction();	# 5 MDBshowFunction ($12:void)
+    mdb.list();	# 5 MDBlist ($12:void)
 end main;	# 6  
 end main;	# 7  
 

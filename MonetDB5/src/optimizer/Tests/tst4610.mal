@@ -17,4 +17,4 @@ g:= algebra.join(a,b);
 h:= algebra.join(g,c);
 
 r:= algebra.joinPath(a,b,c);
-mdb.showFunction();
+mdb.list();

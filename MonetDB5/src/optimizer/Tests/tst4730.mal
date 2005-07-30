@@ -82,4 +82,4 @@ exit always;
 end qry1;
 
 optimizer.costEstimation("user","qry1");
-mdb.showFunction("user","qry1");
+mdb.list("user","qry1");

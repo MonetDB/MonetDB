@@ -122,8 +122,8 @@ end main;	# 15
 [ 1887@0, "sema"	  ]
 [ 1891@0, "unix"	  ]
 [ 1893@0, "mdb"		  ]
-[ 1908@0, "crackers"	  ]
-[ 1921@0, "thread"	  ]
+[ 1912@0, "crackers"	  ]
+[ 1925@0, "thread"	  ]
 #-------------------------#
 # help	Comment		  # name
 # str	str		  # type

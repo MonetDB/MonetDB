@@ -1183,7 +1183,7 @@ end qry1;	# 118
 function user.main():int;	# 0  (main:int)
 # TPCH Q1 non-optimized 	# 1  ($2:str)
 #don;t depend on SQL library 	# 2  ($4:str)
-    mdb.showFunction("user","qry1");	# 3 MDBshowFunction3 ($10:void)<-($7:str)($8:str)
+    mdb.list("user","qry1");	# 3 MDBlist3 ($10:void)<-($7:str)($8:str)
 end main;	# 4  
 function user.qry1():void;
     V3 := sql.bind("sys","lineitem","l_shipdate",0);

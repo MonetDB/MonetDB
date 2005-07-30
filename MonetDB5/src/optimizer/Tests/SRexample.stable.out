@@ -32,7 +32,7 @@ barrier go := true;	# 4  (go:bit)<-($6:bit) jump 8
     k := j;	# 6  (k:str)<-(j:str)
     io.print(i);	# 7 IOprint_val ($11:int)<-(i:int)
 exit go;	# 8  (go:bit)
-    mdb.showFunction();	# 9 MDBshowFunction ($13:void)
+    mdb.list();	# 9 MDBlist ($13:void)
 end main;	# 10  
 [ 23 ]
 function user.main():int;
@@ -44,7 +44,7 @@ barrier go := true;
     k := j;
     io.print(i);
 exit go;
-    mdb.showFunction();
+    mdb.list();
 end main;
 
 # 11:06:45 >  

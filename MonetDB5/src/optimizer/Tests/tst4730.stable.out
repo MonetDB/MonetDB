@@ -353,7 +353,7 @@ function user.main():int;	# 0  (main:int)
 #TPCH query 1 	# 1  ($2:str)
 # the basis for further optimizer tests 	# 2  ($4:str)
 #don;t depend on SQL library 	# 3  ($6:str)
-    mdb.showFunction("user","qry1");	# 4 MDBshowFunction3 ($10:void)<-($8:str)($9:str)
+    mdb.list("user","qry1");	# 4 MDBlist3 ($10:void)<-($8:str)($9:str)
 end main;	# 5  
 factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;
     V6:bat[:void,:date]  := user.bind("sys","lineitem","l_shipdate",0);

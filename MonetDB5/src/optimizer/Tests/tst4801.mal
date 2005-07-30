@@ -7,4 +7,4 @@ exit (go,i1);
 end f3;
 	#optimizer.expressionAccumulation("user","f3");
 	optimizer.strengthReduction("user","f3");
-	mdb.showFunction("user","f3");
+	mdb.list("user","f3");
