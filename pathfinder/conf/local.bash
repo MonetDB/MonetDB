@@ -55,8 +55,10 @@ if [ "${os}.${BITS}.${hw}.${COMP}.${cc}" = "Linux.64.x86_64.GNU." ] ; then
 	if [ -s /etc/fedora-release ] ; then
 		distver="`cat /etc/fedora-release | head -n1 | perl -pe 's|^.*Fedora Core.* release ([0-9][^ \n]*)( .*)?$|$1|'`" 
 		gccver="`gcc -dumpversion 2>/dev/null`"
-		if [ "${distver}.${gccver}" = "4.4.0.0" ] ; then
-			cc='gcc32'
+		case "${distver}-${gccver}" in
+			4-4.0.[01])
+				cc='gcc32';;
+		esac
 		fi
 	fi
 fi
