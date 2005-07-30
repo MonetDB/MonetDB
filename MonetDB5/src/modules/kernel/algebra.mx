@@ -2093,11 +2093,10 @@ str ALGthsort(int *result, int *lid ) {
 str ALGcount_bat(lng *result, int *bid) {
 	BAT *b;
 	size_t cnt;
-	bit ignore_nils= FALSE;
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("algebra.count", "Cannot access descriptor");
     }
-	CMDcount_nil(&cnt,b,&ignore_nils);
+	cnt = BATcount(b);
 	*result = cnt;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2108,7 +2107,10 @@ str ALGcount_nil(lng *result, int *bid, bit *ignore_nils) {
     if( (b= BATdescriptor(*bid)) == NULL ){
         return throwMessage("algebra.count", "Cannot access descriptor");
     }
-	CMDcount_nil(&cnt,b,ignore_nils);
+	if( *ignore_nils)
+		cnt = BATcount_no_nil(b);
+	else
+		cnt = BATcount(b);
 	*result = cnt;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
