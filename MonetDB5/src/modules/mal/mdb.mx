@@ -74,16 +74,31 @@ address MDBgetExceptionContext
 comment "extract the context string from the exception message";
 
 @+ Display operation code
+Part of the debugger operations can also be used independently.
 A key tool for analysis of the MAL code is being able to dump
 any routine, module. For queries, it is also illustrative to display
 the flow graph. [TODO]
 @mal
-pattern showFunction():void 
-address MDBshowFunction
+pattern list():void 
+address MDBlist
 comment "Dump the current routine on standard out.";
-pattern showFunction(M:str,F:str):void 
-address MDBshowFunction3
+pattern list(M:str,F:str):void 
+address MDBlist3
 comment "Dump the routine M.F on standard out.";
+
+pattern List():void 
+address MDBlistDetail
+comment "Dump the current routine on standard out.";
+pattern List(M:str,F:str):void 
+address MDBlist3Detail
+comment "Dump the routine M.F on standard out.";
+
+pattern var():void 
+address MDBvar
+comment "Dump the symboltable of current routine on standard out.";
+pattern var(M:str,F:str):void 
+address MDBvar3
+comment "Dump the symboltable of routine M.F on standard out.";
 
 @+ Interpreter runtime status
 The prime scheme to inspect the MAL interpreter status is to use
@@ -310,13 +325,13 @@ str MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 }
 @+ Display routines
 @c
-str MDBshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str MDBlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Client c= getClient();
 	(void) p; (void) stk;
 	printFunction(c->fdout,mb,LIST_INPUT);
 	return MAL_SUCCEED;
 }
-str MDBshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str MDBlist3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str     modnme= (str) getArgValue(stk,p,1);
 	str     fcnnme= (str) getArgValue(stk,p,2);
 	Symbol s= NULL;
@@ -329,6 +344,48 @@ str MDBshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	else 
 		printFunction(c->fdout,s->def,LIST_INPUT);
 	(void) mb; /* fool compiler */
+	return NULL;
+}
+str MDBlistDetail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	Client c= getClient();
+	(void) p; (void) stk;
+	printFunction(c->fdout,mb,LIST_MAL_ALL);
+	return MAL_SUCCEED;
+}
+str MDBlist3Detail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str     modnme= (str) getArgValue(stk,p,1);
+	str     fcnnme= (str) getArgValue(stk,p,2);
+	Symbol s= NULL;
+	Client c= getClient();
+
+	s= findMALSymbol(putName(modnme,strlen(modnme)),
+			putName(fcnnme,strlen(fcnnme)));
+	if( s == NULL)
+		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
+	else 
+		printFunction(c->fdout,s->def,LIST_MAL_ALL);
+	(void) mb; /* fool compiler */
+	return NULL;
+}
+str MDBvar(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	Client c= getClient();
+	(void) p; (void) stk;
+	printStack(c->fdout,mb,0);
+	return MAL_SUCCEED;
+}
+str MDBvar3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	str     modnme= (str) getArgValue(stk,p,1);
+	str     fcnnme= (str) getArgValue(stk,p,2);
+	Symbol s= NULL;
+	Client c= getClient();
+
+	s= findMALSymbol(putName(modnme,strlen(modnme)),
+			putName(fcnnme,strlen(fcnnme)));
+	if( s == NULL)
+		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
+	else 
+		printStack(c->fdout,s->def,0);
+	(void) mb;
 	return NULL;
 }
 @-
