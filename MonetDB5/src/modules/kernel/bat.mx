@@ -1702,9 +1702,11 @@ size_t void_insert_bat( BAT *b, BAT *u){
 
 size_t void_append_bat( BAT *b, BAT *u){
 	size_t sz = BUNsize(u);
+	size_t old= u->hseqbase;
 	size_t sbase = b->hseqbase + BATcount(b);
 	BATseqbase(u, sbase);
 	BATins(b, u);
+	BATseqbase(u, old);
 	return sz;
 }
 str BKCbat_append_void_bat_wrap( int *r, int *bid, int *uid )
