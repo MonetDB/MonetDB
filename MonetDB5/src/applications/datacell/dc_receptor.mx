@@ -41,6 +41,7 @@ The benefit of this approach is that the query and
 channel manager do not have to regulate their activities
 using expensive locking. It is only required at the moment
 the private buffer is turned into a public buffer.
+The public table is cleared when the receptor releases it.
 
 The content of the private table is fully controlled by the
 receptor thread. The default policy is to discard
@@ -98,7 +99,8 @@ typedef struct {
 mal_export str DCstartChannel(DCpump p, bstream *bs);
 mal_export str DClistenReceptor(DCpump p, str *Usockfile);
 mal_export str DClistenThread(SensorInfo sensor);
-
+mal_export int DCrollforward(DCpump p);
+mal_export void DCreleaseReceptor(DCpump p);
 #endif /* _DCRECEPTOR_DEF */
 @c
 #include "dc_receptor.h"
@@ -158,8 +160,43 @@ DCgetReceptorStatus(int *ret){
 
 @-
 Gaining access to a column also sets the lock to avoid interference
-of other pumps.
+of other pumps. All tuples are obtained from the public BATs, which
+are cleaned out by the data pump release
 @c
+int
+DCrollforward(DCpump p){
+	int i;
+	BAT *b;
+	size_t cnt;
+
+	if( (cnt= BATcount(p->public[0])) == 0 && 
+		BATcount(p->private[0])== 0) 
+			return 0;
+	if( cnt) return 1;
+#ifdef DEBUG_DCRECEPTOR
+	printf("#roll receptor forward\n");
+#endif
+	mal_set_lock(p->lock,"datacellIsolate");
+	for(i=0; i< p->cols; i++){
+#ifdef DEBUG_DCRECEPTOR
+	printf("#roll receptor forward %d\n",i);
+#endif
+		b= p->public[i];
+		p->public[i]= p->private[i];
+		p->private[i]= b;
+	}
+	cnt= BATcount(p->public[0]);
+	p->pending -= cnt;
+	mal_unset_lock(p->lock,"datacellIsolate");
+	return 1;
+}
+void
+DCreleaseReceptor(DCpump p){
+	int i;
+	for( i=0; i<p->cols; i++)
+		BATclear(p->public[i]);
+}
+
 str
 DCbindReceptor(int *retpublic, int *retprivate, str *name, str *cname){
 	DCpump p;
@@ -170,20 +207,20 @@ DCbindReceptor(int *retpublic, int *retprivate, str *name, str *cname){
 		return throwMessage("datacell.bindReceptor","unknown receptor");
 	if( p->kind!= RECEPTOR)
 		return throwMessage("datacell.bindReceptor","unknown receptor");
+	mal_set_lock(p->lock,"datacellIsolate");
 	for(i=0; i < p->cols ; i++)
 	if( strcmp(p->columns[i],*cname) == 0 ){
-		mal_set_lock(p->lock,"datacellIsolate");
 		if( p->usedby && p->usedby != p-pumps){
 			mal_unset_lock(p->lock,"datacellIsolate");
-			return throwMessage("datacell.isolate","Pump still in use\n");
+			return throwMessage("datacell.bindReceptor","Pump still in use\n");
 		}
 
 		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
 		BBPincref( *retprivate= p->private[i]->batCacheid, TRUE);
 		p->usedby= p - pumps;
-		mal_unset_lock(p->lock,"datacellIsolate");
 		break;
 	}
+	mal_unset_lock(p->lock,"datacellIsolate");
     return MAL_SUCCEED;
 }
 @-
@@ -199,9 +236,9 @@ DCbindReceptorTuple(int *retpublic, int *retprivate, str *name, str *cname){
 		return throwMessage("datacell.bindReceptor","unknown receptor");
 	if( p->kind!= RECEPTOR)
 		return throwMessage("datacell.bindReceptor","unknown receptor");
+	mal_set_lock(p->lock,"datacellIsolate");
 	for(i=0; i < p->cols ; i++)
 	if( strcmp(p->columns[i],*cname) == 0 ){
-		mal_set_lock(p->lock,"datacellIsolate");
 		if( p->usedby && p->usedby != p-pumps){
 			mal_unset_lock(p->lock,"datacellIsolate");
 			return throwMessage("datacell.isolate","Pump still in use\n");
@@ -210,9 +247,9 @@ DCbindReceptorTuple(int *retpublic, int *retprivate, str *name, str *cname){
 		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
 		BBPincref( *retprivate= p->private[i]->batCacheid, TRUE);
 		p->usedby= p - pumps;
-		mal_unset_lock(p->lock,"datacellIsolate");
 		break;
 	}
+	mal_unset_lock(p->lock,"datacellIsolate");
     return MAL_SUCCEED;
 }
 str
@@ -225,18 +262,18 @@ DCbindReceptorPublic(int *retpublic, str *name, str *cname){
 		return throwMessage("datacell.bindReceptor","unknown receptor");
 	if( p->kind!= RECEPTOR)
 		return throwMessage("datacell.bindReceptor","unknown receptor");
+	mal_set_lock(p->lock,"datacellIsolate");
 	for(i=0; i < p->cols ; i++)
 	if( strcmp(p->columns[i],*cname) == 0 ){
-		mal_set_lock(p->lock,"datacellIsolate");
 		if( p->usedby && p->usedby != p-pumps){
 			mal_unset_lock(p->lock,"datacellIsolate");
 			return throwMessage("datacell.isolate","Pump still in use\n");
 		}
 		p->usedby= p - pumps;
-		mal_unset_lock(p->lock,"datacellIsolate");
 		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
 		break;
 	}
+	mal_unset_lock(p->lock,"datacellIsolate");
     return MAL_SUCCEED;
 }
 

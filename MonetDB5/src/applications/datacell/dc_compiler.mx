@@ -168,7 +168,7 @@ DCpumpDefinition(int *ret, str *name, str *lang, str *qry ){
 	if( DClocatePump(*name) )
 		return throwMessage("datacell.pump","pump re-defined");
 	p= DCnewPump();
-	DCclick(p);
+	DCstamp(p);
     if( p->cols< p->cap){
         p->columns[p->cols]= GDKstrdup("duration");
         p->types[p->cols]=  TYPE_int;

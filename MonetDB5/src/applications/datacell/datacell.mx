@@ -275,7 +275,7 @@ typedef struct DC_PUMP{
 	int scheduler;	/* which queue to use */
 	int status;		/* scheduling status */
 	int pending;	/* events received for processing */
-	int received; 	/* total received events since start */
+	int received; 	/* total received/sent events since start */
 	timestamp start;/* first event time stamp */
 	int ticks;		/* ticks spent in receiving data */
 	int calls;	/* number of batch reads */
@@ -286,7 +286,7 @@ mal_export ptr isReceptor(str name);
 mal_export ptr isEmitter(str name);
 mal_export DCpump DClocatePump(str nme);
 mal_export BAT *DCcontainer(int tpe, int cap);
-mal_export void DCclick(DCpump p);
+mal_export void DCstamp(DCpump p);
 
 mal_export DCpump pumps;
 mal_export int pumpindex, pumplimit;
@@ -507,8 +507,8 @@ DCshowContainer(int *ret, str *cname, int *first, int *last)
 	p= DClocatePump(*cname);
 	if( p == 0)
 		return throwMessage("datacell.showContainer","Pump not found");
-	BATmultiprintf(GDKout,p->cols+1,p->private,1,0,1);
 	BATmultiprintf(GDKout,p->cols+1,p->public,1,0,1);
+	/* BATmultiprintf(GDKout,p->cols+1,p->private,1,0,1);*/
 	return MAL_SUCCEED;
 }
 @- Module initializaton
@@ -587,9 +587,9 @@ BAT *DCcontainer(int tpe, int cap){
 	return bn;
 }
 
-void DCclick(DCpump p){
+void DCstamp(DCpump p){
 	if( p->cols ==0 ){
-		p->columns[0]= GDKstrdup("click");
+		p->columns[0]= GDKstrdup("stamp");
 		p->types[0]=  getTypeIndex("timestamp",9,TYPE_int);
 		p->private[0]= DCcontainer(p->types[0],256);
 		p->public[0]=  DCcontainer(p->types[0],256);
@@ -609,7 +609,7 @@ str DCdefine(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	p= DClocatePump(name);
 	if( p == 0)
 		return throwMessage("datacell.define","Pump not found");
-	if( strcmp(cname,"click")==0)
+	if( strcmp(cname,"stamp")==0)
 		return throwMessage("datacell.define","reserved identifier");
 
 	/* check for duplicates */
@@ -617,7 +617,7 @@ str DCdefine(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	if( strcmp(p->columns[i],cname)==0)
 		return throwMessage("datacell.define","Column already defined");
 
-	DCclick(p);
+	DCstamp(p);
 
 	if( p->cols< p->cap){
 		p->columns[p->cols]= GDKstrdup(cname);
@@ -851,6 +851,14 @@ DCgetDynamicProperties(int *bid, str *name){
 		BUNins(bn,"port",buf);
 	}
 
+	if( p->delay){
+		snprintf(buf,128,"%d",p->delay);
+		BUNins(bn,"delay",buf);
+	}
+	if( p->timeout){
+		snprintf(buf,128,"%d",p->timeout);
+		BUNins(bn,"timeout",buf);
+	}
 	snprintf(buf,128,"%d",p->status);
 	BUNins(bn,"status",buf);
 	if( p->pending){
@@ -880,11 +888,19 @@ DCgetDynamicProperties(int *bid, str *name){
 	}
 	if( p->status >=0){
 		snprintf(buf,128,"%d",p->received);
-		BUNins(bn,"received",buf);
+		if( p->kind== RECEPTOR)
+			BUNins(bn,"received",buf);
+		else BUNins(bn,"sent",buf);
 		snprintf(buf,128,"%d",p->calls);
-		BUNins(bn,"calls",buf);
+		if( p->kind== NUCLEUS)
+			BUNins(bn,"runs",buf);
+		else BUNins(bn,"batches",buf);
 		if( p->ticks> 0){
-			snprintf(buf,128,"%4.2f/ms",(p->received+0.0)/(p->ticks/1000));
+			double rate=(p->received+0.0)/(p->ticks/1000.0);
+			if( rate*1000 >=1)
+				snprintf(buf,128,"%4.2f/sec",rate*1000.0);
+			else
+				snprintf(buf,128,"%4.2f/ms",rate);
 			BUNins(bn,"rate",buf);
 		}
 	}
@@ -1098,9 +1114,9 @@ DCkeep(int *ret, str *name, int *dst, int *src){
 	p= DClocatePump(*name);
 	if( p == 0 || p->kind!= EMITTER)
 		return throwMessage("datacell.append","Pump lost");
-	mal_set_lock(p->lock,"datacell.append");
+	/* mal_set_lock(p->lock,"datacell.append");*/
 	msg= (str) BKCbat_append_void_bat_wrap(ret,dst,src);
-	mal_unset_lock(p->lock,"datacell.append");
+	/* mal_unset_lock(p->lock,"datacell.append");*/
 	return msg;
 }
 str
@@ -1111,9 +1127,9 @@ DCkeepTuple(int *ret, str *name, int *dst, void *src){
 	p= DClocatePump(*name);
 	if( p == 0 || p->kind!= EMITTER)
 		return throwMessage("datacell.append","Pump lost");
-	mal_set_lock(p->lock,"datacell.append");
+	/* mal_set_lock(p->lock,"datacell.append");*/
 	msg= (str) BKCbat_append_val_wrap(ret,dst,src);
-	mal_unset_lock(p->lock,"datacell.append");
+	/* mal_unset_lock(p->lock,"datacell.append");*/
 	return msg;
 }
 

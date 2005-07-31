@@ -100,7 +100,7 @@ char *connect_to_server(char * hostname, int port)
 #endif
 		return "Setup connection failed";
 	}
-	fromServer = block_stream(socket_wstream(s, "sensorDump write"));
+	fromServer = block_stream(socket_rstream(s, "sensorDump "));
 	if ((fromServer) == NULL || stream_errnr(fromServer)) {           \
 		return "stream closed";
 	}
@@ -119,9 +119,9 @@ int main(int argc, char **argv){
 	int i;
 	char *err;
 	char *host= "localhost"; int port=50000;
-	int delay = -1;
+	int delay = -1, bytes, tries =10;
 	time_t t;
-	char buf[MAXBUFFER];
+	char buf[4*BLOCK];
 	bstream *bs;
 
 	if( argc == 1) usage();
@@ -150,13 +150,23 @@ int main(int argc, char **argv){
 		return -1;
 	}
 
-	bs= bstream_create(fromServer,MAXBUFFER);
-	while( !stream_errnr(bs->s)){
-		time(&t);
-		if( bstream_read(bs,MAXBUFFER) == 0)
+	bs= bstream_create(fromServer,4*BLOCK);
+	do{
+		bytes= stream_read(bs->s,buf,4*BLOCK,1);
+		if( buf[0] ){
+			time(&t);
+			printf("#%s%s\n", ctime(&t) ,buf);
+			bs->pos = 0;
+			bs->len = 0;
+			bs->eof=0;
+			buf[0]=0;
+		} else {
+			printf("wait\n");
+			sleep(1);
+			tries--;
+		}
+	} while(tries>=0 && !stream_errnr(bs->s));
+	if( stream_errnr(bs->s) )
 			printf("%s: READ ERROR\n",ctime(&t));
-		else
-			printf("%s: %s\n", ctime(&t) ,buf);
-	}
 	return 0;
 }

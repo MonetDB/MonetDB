@@ -2,7 +2,7 @@
 # experiment with the effect of delays
 
 #variants can be constructed using a larger receptor batch
-(pub:bat[:void,:timestamp], priv:bat[:void,:timestamp]) := datacell.bindReceptor("ping","click");
+(pub:bat[:void,:timestamp], priv:bat[:void,:timestamp]) := datacell.bindReceptor("ping","stamp");
 (public:bat[:void,:int], private:bat[:void,:int]) := datacell.bindReceptor("ping","event");
 
 barrier (go,i):= mal.newRange(0:lng);

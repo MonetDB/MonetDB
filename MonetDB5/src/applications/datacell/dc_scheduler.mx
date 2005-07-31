@@ -80,6 +80,7 @@ comment "Show the status of the datacell schedulers";
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 #include "dc_receptor.h"
+#include "dc_emitter.h"
 
 extern str DCnaiveScheduler(int *ret, int *tries, int *delay);
 
@@ -142,10 +143,11 @@ void DCnaiveLoop(int v){
 	while( schedulers[1].cycles-- > 0){
 		plimit = pumps+pumpindex;
 		for(p=pumps; p< plimit; p++)
-		if( p->status > 0 && p->mal[0] && p->scheduler== 1){
+		if( p->kind == RECEPTOR) DCrollforward(p); else
+		if( p->status > 0 && p->mal[0] && p->scheduler== 1 ){
 #ifdef DEBUG_DC_SCHEDULER
-		stream_printf(GDKerr,"#Run %s\n",p->name);
-		printFunction(GDKout,p->malblk[0],0);
+			stream_printf(GDKerr,"#Run %s\n",p->name);
+			/* printFunction(GDKout,p->malblk[0],0);*/
 #endif
 			duration= (int) GDKusec();
 			msg= runMAL(c,p->malblk[0],1,0,0,0);
@@ -196,8 +198,6 @@ space used in the past is claimed.
 str
 DCisolate(int *ret, str *uname, str *target){
 	DCpump p,u;
-	int i,del=0;
-	BAT *b;
 
     (void) ret; 
 	u= DClocatePump(*uname);
@@ -216,21 +216,13 @@ DCisolate(int *ret, str *uname, str *target){
 		mal_unset_lock(p->lock,"datacellIsolate");
 		return throwMessage("datacell.isolate","Pump still in use\n");
 	}
-	if( p->kind == EMITTER) {
-		 /* they take care of it */
-	} else if(p->usedby ==0 ) {
-		del= BATcount(p->public[0]);
-		for(i=0; i< p->cols; i++){
-			b= p->private[i];
-			p->private[i]= p->public[i];
-			p->public[i]= b;
-			if(del) BATclear(p->private[i]);
-		}
-	}
 	p->usedby= p - pumps;
 	mal_unset_lock(p->lock,"datacellIsolate");
     return MAL_SUCCEED;
 }
+@-
+When you release a Receptor, all its tables are cleared.
+@c
 str
 DCrelease(int *ret, str *target){
 	DCpump p;
@@ -242,9 +234,11 @@ DCrelease(int *ret, str *target){
 #ifdef DEBUG_DC_SCHEDULER
 		stream_printf(GDKerr,"#release %s\n",*target);
 #endif
+	if( p->kind== EMITTER)
+		DCreleaseEmitter(p);
+	if( p->kind== RECEPTOR)
+		DCreleaseReceptor(p);
 	p->usedby = 0;
-	if( p->kind== EMITTER && p->lock)
-		mal_unset_lock(p->lock,"datacell.release");
     return MAL_SUCCEED;
 }
 
@@ -258,13 +252,15 @@ DCstartPump(int *ret, str *name)
 	if( p == 0)
 		return throwMessage("datacell.startReceptor","unknown host");
 #ifdef DEBUG_DCRECEPTOR
-	stream_printf(GDKout,"#Activate reception %s at port %d of %s\n",
+	stream_printf(GDKout,"#Activate '%s' at port %d of %s\n",
 		p->name,p->port,p->host);
 #endif
 
 	if( p->status == -1){
 		if( p->kind == RECEPTOR )
 			msg= DClistenReceptor(p, NULL);
+		if( p->kind == EMITTER )
+			msg= DClistenEmitter(p,NULL);
 	}
 	p->status=1;
 	return msg;
