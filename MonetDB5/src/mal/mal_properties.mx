@@ -15,19 +15,18 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@' 
-@' Contributor(s):
-
 @f mal_properties
 @a M. Kersten
 @* Property management
-One of the shortcomings of the Monet version 4 system is that most variables,
-e.g. BATS have static/dynamic properties hardwired into the system. 
+@{
+One of the shortcomings of earlier implementations is that most variables,
+e.g. BATs, have static/dynamic properties hardwired into the system. 
 The consequence is that it is often hard to detect the property state, and,
 more importantly, to reason about the state before actual execution takes place.
+@}
 
 Properties come in several classes, those linked with the symbol table and
-those linked with the runtime environment. The former are often determined
+those linked with the runtime environment. The former are determined
 once upon parsing or catalogue lookup. The runtime properties have two 
 major subclasses, i.e. reflective and prescriptive. The reflective properties 
 merely provide a fast cache to information aggregated from the target.
@@ -37,77 +36,21 @@ This multifacetted world makes it difficult to come up with a concise model
 for dealing with properties. The approach taken here is an experimental step
 into this direction.
 
-This module provides a generic scheme to administer property sets and to
-provide a concise API for (runtime) optimizers to manage them. The property
-model assumes a namespace built around Identifiers. Furthermore, their
-semantics does not depend on the context in which this name is used.
-I.e. property names have global semantics.
-
-Object of interest may collect a set of properties over their life time.
-They may be collected explicitly, i.e. at some point in the operational
-sequence a property tag is added (removed),
-or implicitly, i.e. the property ceases to
-exist if the underlying expression can not be proven/evaluated.
-This leads to predicates hasProperty(Object,PropertyName) and
-hasnotProperty(Object,PropertyName), which are semantically complementary.
+This @code{mal_properties} module
+provides a generic scheme to administer property sets and 
+a concise API to manage them. 
+Its design is geared towards support of MAL optimizers, which
+typically make multiple passes over a program to derive an
+alternative, better version. Such code-transformations are
+aided by keeping track of derived information, e.g. the expected
+size of a temporary result or the alignment property between BATs.
 
 Properties capture part of the state of the system in the form of an 
-expression. This expression may be hidden deep in the algorithm, or even
-be visible at the external level. (e.g. de count property over a table could
-be a simple query)
-
-Another assumption for all properties is their functional behavior.
-The property values can only change as a result of using the target object,
-e.g. being it an analysis step, an update, query access, 
-or migration on the host storage system. 
-
-To effectively work with properties, we should be careful not to let this
-set explode beyond control. One way to achieve this is to make
-properties part of the function space, which prohibits dynamic creation.
-Furthermore, the properties could then be grouped into modules, which
-addresses a particular issue.
-The rationale is to model and understand the reasoning going
-on with properties. Large property sets are best split into orthogonal
-groups to deal with the complexity of interference.
-
-Properties can be classified by their type structure. The generic
-structure is that of a pair (property name, value). Depending on the 
-value type, their use, and volatility leads to a different storage scheme.
-For example, simple boolean valued properties could be assembled in a bit
-vector, while values obtained from an ADT could require a rather complex
-storage structure. For the time being, we take a relaxed approach, modelling
-the pair with a simple record structure organized in a linked list.
-
-To speedup management of the property values, they too have properties.
-Aside from their value type, it is worth to know if the value is constant,
-frozen upon first assignment, need be refreshed upon each read,...
-Likewise, for operations we should identify which subset of properties 
-propagate to the result structures and which not.
-
-@+ Property use
-Properties can be accessed from many places in the code, i.e. the parser,
-an optimizer, code scheduler, or a DBMS kernel routine. Furthermore,
-the properties and their manipulation may become part of the query plans,
-which stresses the computational properties of such a language.
-
-One of the decision points is whether the set of properties for an object
-is defined for its complete scope. I.e. properties are independent on
-the position in the execution graph. 
-[We might restrict property definitions to
-the signature, or we should make properties location dependent (=pc)]
-
-Some properties have a life-time for the duration of a session.
-These are typical global variables and should be handled as such.
-
-Properties may be organized in an inheritance scheme. Compare with
-the file access mode in your Unix shell.
-
-[Does it make sense to dynamically add/delete properties.?]
-
-In the middle layers we find properties such as the size of a (temporary)
-BAT with a lifetime of just a few instructions.
-At the extreme side, we find properties accessed and maintained by the DBMS
-kernel routines, but whose value should be made known at the upper layers.
+simple term expression @code{(name,operator,constant)}.
+The property model assumes a namespace built around Identifiers. 
+The operator can be any identifier, but conditional operators are
+quite common, e.g. the triple (count,<,1000) can be used to denote a small
+table.
 
 @+ Who is allowed to carry properties?
 The objects comming to mind in the MAL setting are: variables (symbol table
@@ -115,9 +58,15 @@ entries), MAL instructions, MAL blocks, function signatures, and
 function arguments.
 Furthermore, SQL queries, Boxes (containers with persistent data), modules,...
 
-MAL variables. A variable already contains a number of properties, e.g. type,
+@emph{MAL variables.}
+A variable already contains a number of properties, e.g. type,
 isaconstant, isused (both read and written), garbage(for garbage collector).
 Especially for BATs we have to extend this list significantly.
+@verbatim
+	b{count=1000,sorted=false}:= mymodule.action("table");
+	name{align="grp1"} := bbp.take("person_name");
+	age{align="grp1"} := bbp.take("person_age");
+@end verbatim
 
 Properties associated with a variable have a scope identical to the scope 
 of the variable. However, its value depends on the position in a simulated
@@ -125,12 +74,13 @@ execution. I.e., consider the instruction sort(B) in
 a MAL block. It leads to the property 'sorted' for B,
 whose value is a posterori true, and not necessarily before execution.
 
-MAL blocks. Every MAL block is semantically a callable function. Such a block
+@emph{MAL blocks.}
+Every MAL block is semantically a callable function. Such a block
 could be tagged with properties to identify the stages of processing it went
 through (e.g. optimized or not), ownership, scheduling primitives etc. These are
 typically workflow related properties.
 
-MAL function signatures. A function signature contains a description of
+@emph{MAL function signatures.} A function signature contains a description of
 the kind of objects it is willing to accept and an indication of the
 result. It seems appropriate to be able to tag parameters with properties
 that 'should be obeyed, or implied' by the actual arguments. As such,
@@ -138,7 +88,7 @@ it extends the typing scheme used during compilation/optimization.
 Likewise, the return values could be tagged with properties that 'at least'
 exist after the function returns. (See below)
 
-MAL instructions. Properties associated with an instruction are aimed
+@emph{MAL instructions.} Properties associated with an instruction are aimed
 at the a tactical optimizer and execution engine. It says something about
 the context in which the instruction should take place, e.g. a timeout 
 property.
@@ -152,11 +102,11 @@ an operation should produce a sorted BAT. This calls for a runtime test and
 possible coercion. Alternatively, the desired property leads to a different
 selection of an operator implementation.
 
-Although we may constrain the number of properties, we probably can not limit
-the number of objects for which properties may have to be maintained. Just
-imagine the total cost of execution for a very simple instruction.
-
-@+ How to propagate properties?
+@emph{How to propagate properties?}
+Property inspection and manipulation is strongly linked with the operators
+of interest. Optimizers continuously inspect and update the properties, while
+kernel operators should not be bothered with their existence.
+@{
 Property propagation is strongly linked with the actual operator 
 implementation.  We examine a few recurring cases.
 
@@ -234,7 +184,6 @@ Aside, it may be valuable to collect information on e.g. the execution time
 of functions as a basis for future optimizations. Rather then cluttering the
 property section, it makes sense to explicitly update this information in
 a catalog.
-
 @+ Properties at the MAL level
 Aside from routines targeted as changing the MAL blocks, it should
 be possible to reason about the properties within the language itself.
@@ -243,7 +192,7 @@ For example, the following snippet shows how properties
 are used in a code block.
 
 @example
-B := new(int,int);
+B := bbp.new(int,int);
 I := properties.has(B,@{hsorted@}); 
 J := properties.get(B,@{cost@});
 print(J);
@@ -258,7 +207,7 @@ executed throug patterns, which also accept a stack frame.
 
 Sample problem with dropping properties:
 @example
-    B := new(int,int);
+    B := bbp.new(int,int);
 barrier tst:= randomChoice()
     I := properties.drop(B,@{hsorted@}); 
 exit	tst;
@@ -301,7 +250,7 @@ where car.name= person.name
 @end example
 @+ Implementation rules
 Properties can be associated with variables, MAL blocks, and MAL instructions.
-This property list is only initialized upon explicit request, e.g. by
+The property list is initialized upon explicit request only, e.g. by
 the frontend parser, a box manager, or as a triggered action.
 
 Every property should come with a function that accepts a reference to 
@@ -310,7 +259,6 @@ either once or automatically upon each selection.
 
 @+ Property ADT implementation
 
-Given a property P, what are the permissible actions.
 
 addProperty(O,P) adds property P to the list associated with O. If O represents
 a compound structure, e.g. a BAT, we should indicate the component as well. For
@@ -343,7 +291,6 @@ The MAL language uses a few defaults, recognizable as properties
 @tab data can be appended
 @end multitable
 @-
-@{
 The code base supports multiple property sets.
 Not used right now.
 @h

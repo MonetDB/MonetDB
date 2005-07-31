@@ -1086,7 +1086,7 @@ optimizers to make decisions. (See the section on properties).
 			if( lo > 0) 
 				opname= operatorCopy(cntxt,lo);
 			else opname= GDKstrdup("");
-			if( (i= cstLength(cntxt,&lt))){
+			if((i= cstLength(cntxt,&lt))){
 				char *nxt= CURRENT(cntxt);
 				switch(lt){
 				case TYPE_sht:
@@ -1123,11 +1123,14 @@ optimizers to make decisions. (See the section on properties).
 					setVarProperty(curBlk,@1,pname, opname, lt, &bval);
 					break;
 					}
-				case TYPE_str:
-					setVarProperty(curBlk,@1,pname, opname, lt,
-						GDKstrdup(cstCopy(cntxt,i)));
 				}
 				advance(cntxt,i);
+			} else if( currChar(cntxt)=='\'' ){
+				str val = charCst(cntxt);
+				setVarProperty(curBlk,@1,pname, opname, TYPE_chr, val);
+			} else if( (i= stringLength(cntxt)) > 0){
+				str val= strCopy(cntxt,i);
+				setVarProperty(curBlk,@1,pname, opname, TYPE_str, val);
 			} else{ bit t= TRUE;
 				setVarProperty(curBlk,@1,pname, opname, TYPE_bit, &t);
 			}
