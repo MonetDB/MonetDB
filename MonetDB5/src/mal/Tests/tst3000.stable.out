@@ -34,15 +34,19 @@ function user.main():int;	# 0  (main:int)
     j{blah=2} := "kk";	# 3  (j:str)<-($6:str)
     k{freeze=1,blah=4} := "whatever";	# 4  (k:str)<-($8:str)
     n{cost=12} := bbp.new(:int,:int);	# 5 CMDBATnew (n:bat[:int,:int])<-($10:int)($10:int)
-#o{cost=12}:= bbp.new(int,int); 	# 6  ($12:str)
-#q:= 1:int{frozen}; 	# 7  ($14:str)
-#Alternative format using post-predicates 	# 8  ($16:str)
-#default interpretation for i.prop is boolean value true 	# 9  ($18:str)
-# i:= 1;		{i.constant:=true;} 	# 10  ($20:str)
-# j:= "kk"; 	{j.constant:=true;} 	# 11  ($22:str)
-# k:= "whatever"; {k.blah:=true;k.freeze:=true;} 	# 12  ($24:str)
-# n:= bbp.new(int,int);{n.cost:=12;} 	# 13  ($26:str)
-end main;	# 14  
+    m{grp="person"} := bbp.take("person_name");	# 6 CMDbbptake (m:bat[:any,:any])<-($12:str)
+#o{sex='m'}:= true; 	# 7  ($14:str)
+#o{cost=12}:= bbp.new(int,int); 	# 8  ($16:str)
+#q:= 1:int{frozen}; 	# 9  ($18:str)
+#Alternative format using post-predicates 	# 10  ($20:str)
+#default interpretation for i.prop is boolean value true 	# 11  ($22:str)
+# i:= 1;		{i.constant:=true;} 	# 12  ($24:str)
+# j:= "kk"; 	{j.constant:=true;} 	# 13  ($26:str)
+# k:= "whatever"; {k.blah:=true;k.freeze:=true;} 	# 14  ($28:str)
+# n:= bbp.new(int,int);{n.cost:=12;} 	# 15  ($30:str)
+end main;	# 16  
+!ERROR: MALexception:bbp.take:failed to take 'person_name' from box
+#
 
 # 08:01:13 >  
 # 08:01:13 >  Done.

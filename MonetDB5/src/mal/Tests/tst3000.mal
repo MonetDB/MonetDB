@@ -3,6 +3,8 @@ i{constant=true}:= 1;
 j{blah=2} := "kk";
 k{blah=4,freeze=1} := "whatever";
 n{cost=12}:= bbp.new(:int,:int);
+m{grp="person"}:= bbp.take("person_name");
+#o{sex='m'}:= true;
 #o{cost=12}:= bbp.new(int,int);
 #q:= 1:int{frozen};
 
