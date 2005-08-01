@@ -80,7 +80,7 @@ and analyse the data.
 #ifndef _DC_EMITTER_DEF
 #define _DC_EMITTER_DEF
 
-#define DEBUG_DC_EMITTER
+/* #define DEBUG_DC_EMITTER */
 
 #include "datacell.h"
 #include "dc_receptor.h"
@@ -257,7 +257,7 @@ DClistenEmitter(DCpump p, str *Usockfile)
 	int on = 1;
 	int i = 0;
 	int pid, *pidp= &pid;
-	char msg[512], *usockfile, host[512];
+	char *usockfile, host[512];
 
 	channel = p;
 	if (Usockfile == NULL || *Usockfile == 0 || strcmp(*Usockfile, str_nil) == 0)
@@ -343,9 +343,13 @@ Get the new information for the server socket and start listening.
     if(p->host==0) 
 		gethostname(host,(int)512); 
 	else strcpy(host, p->host);
-	snprintf(msg,(int)512,"#Ready to read sensor data from connection %s:%d\n",
+#ifdef DEBUG_DC_EMITTER
+	{ char msg[512];
+	snprintf(msg,(int)512,"#Ready to write sensor data to connection %s:%d\n",
 		host,p->port);
 	stream_printf(GDKout,"%s",msg);
+	}
+#endif
 	return MAL_SUCCEED;
 }
 @+ Event delivery
@@ -369,9 +373,12 @@ DCstartDelivery(DCpump p, stream *bs){
 #endif
 	do{
 		if( (cnt= BATcount(p->private[0])) ){
+#ifdef DEBUG_DC_EMITTER
+			stream_printf(GDKout,"sent tuples %d\n",cnt);
+#endif
 			BATmultiprintf(bs, p->cols+1,p->private,0,0,0);
 			stream_flush(bs);
-			if(stream_errnr(bs)) break;
+			if(stream_errnr(bs)) break; 
 			p->received += cnt;
 			p->calls++;
 			if(p->drain){
@@ -386,6 +393,9 @@ DCstartDelivery(DCpump p, stream *bs){
 #endif
 			/* new tuples have arrived */
 			mal_set_lock(p->lock,"datacellIsolate");
+#ifdef DEBUG_DC_EMITTER
+			stream_printf(GDKout,"got them tuples %d\n",cnt);
+#endif
 			for(i=0; i< p->cols; i++){
 				b= p->public[i];
 				p->public[i]= p->private[i];
@@ -394,14 +404,12 @@ DCstartDelivery(DCpump p, stream *bs){
 			mal_unset_lock(p->lock,"datacellIsolate");
 		} else
 		if( p->delay ) {
-#ifdef DEBUG_DC_EMITTER
-			stream_printf(GDKout,"wait for new tuples\n");
-#endif
 			MT_sleep_ms(p->delay);
 		}
-	} while(cnt>0 && !stream_errnr(bs));
+	} while(!stream_errnr(bs));
 #ifdef DEBUG_DC_EMITTER
 	stream_printf(GDKerr, "#DCstartDelivery:channel writing finished\n");
+	stream_printf(GDKerr, "#DCstartDelivery:error= %d\n",stream_errnr(bs));
 #endif
 	stream_close(bs);
 	return MAL_SUCCEED;
@@ -447,12 +455,13 @@ DCspeakThread(SensorInfo sensor)
 		retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
 		if (retval == 0) {
 			/* nothing interesting has happened */
+			MT_sleep_ms(100);
 			continue;
 		}
 		if (retval < 0) {
 			if (MT_geterrno() != EINTR) {
 				msg= "select failed\n";
-				goto error;
+				goto emittererror;
 			}
 			continue;
 		}
@@ -460,7 +469,7 @@ DCspeakThread(SensorInfo sensor)
 			if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 				if (MT_geterrno() != EINTR) {
 					msg="accept failed\n";
-					goto error;
+					goto emittererror;
 				}
 				continue;
 			}
@@ -469,7 +478,7 @@ DCspeakThread(SensorInfo sensor)
 			if ((msgsock = accept(usock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 				if (MT_geterrno() != EINTR) {
 					msg="accept failed\n";
-					goto error;
+					goto emittererror;
 				}
 				continue;
 			}
@@ -490,8 +499,11 @@ DCspeakThread(SensorInfo sensor)
 		stream_printf(GDKerr, "#DCspeak:channel accepted %d\n", msgsock);
 #endif
 		msg= DCstartDelivery(channel, fromServer);
-	} while (0);
-error:
+	} while ( msg == MAL_SUCCEED);
+emittererror:
+#ifdef DEBUG_DC_EMITTER
+			stream_printf(GDKout,"Connection failed: %s\n",msg);
+#endif
 	return throwMessage("datacell.listen",msg);
 }
 @}

@@ -86,7 +86,7 @@ and analyse the data.
 #ifndef _DCRECEPTOR_DEF
 #define _DCRECEPTOR_DEF
 
-#define DEBUG_DCRECEPTOR
+/* #define DEBUG_DC_RECEPTOR*/
 
 #include "datacell.h"
 
@@ -173,12 +173,12 @@ DCrollforward(DCpump p){
 		BATcount(p->private[0])== 0) 
 			return 0;
 	if( cnt) return 1;
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 	printf("#roll receptor forward\n");
 #endif
 	mal_set_lock(p->lock,"datacellIsolate");
 	for(i=0; i< p->cols; i++){
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 	printf("#roll receptor forward %d\n",i);
 #endif
 		b= p->public[i];
@@ -295,7 +295,7 @@ DClistenReceptor(DCpump p, str *Usockfile)
 	int on = 1;
 	int i = 0;
 	int pid, *pidp= &pid;
-	char msg[512], *usockfile, host[512];
+	char *usockfile, host[512];
 
 	channel= p;
 	if (Usockfile == NULL || *Usockfile == 0 || strcmp(*Usockfile, str_nil) == 0)
@@ -364,7 +364,7 @@ Get the new information for the server socket and start listening.
 	}
 #endif
 
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 		THRprintf(GDKerr, "DClisten:Network started at %d\n", p->port);
 #endif
 	sensor->socket = sock;
@@ -381,9 +381,13 @@ Get the new information for the server socket and start listening.
     if(p->host==0) 
 		gethostname(host,(int)512); 
 	else strcpy(host, p->host);
+#ifdef DEBUG_DC_RECEPTOR
+	{ char msg[512];
 	snprintf(msg,(int)512,"#Ready to read sensor data from connection %s:%d\n",
 		host,p->port);
 	stream_printf(GDKout,"%s",msg);
+	}
+#endif
 	return MAL_SUCCEED;
 }
 @+ The collector
@@ -429,7 +433,7 @@ DCstartChannel(DCpump p, bstream *bs){
 	int i,res,k=0;
 	Column *fmt;
 
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 	stream_printf(GDKout,"#Start sensor reception %s %d columns\n",	
 			p->name,p->cols);
 #endif
@@ -445,7 +449,7 @@ DCstartChannel(DCpump p, bstream *bs){
 	for(i=1; i< p->cols ; i++){
 		fmt[k].name = p->columns[i];
 		fmt[k].bval = p->private[i];
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 		stream_printf(GDKerr, "#added field %s\n", fmt[k].name );
 #endif
 		fmt[k].sep = GDKstrdup((char*)",");
@@ -467,7 +471,7 @@ DCstartChannel(DCpump p, bstream *bs){
 	fmt[k-1].extra= (void*) p;
 	if( k-1 == 0) fmt[0].frstr = &singleRecognition;
 	/* here we fork and prepare for reading */
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 		stream_printf(GDKerr, "#start loading sensor data\n");
 #endif
 @-
@@ -483,7 +487,7 @@ is interrupted with each stream_flush from the sensorSource.
 		bs->eof=0;
 		as.nr = ~(size_t) 0;
 		res=TABLETload_file(&as, bs);
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 		stream_printf(GDKerr, "#load %d events\n",res);
 #endif
 		p->ticks += GDKusec()-start;
@@ -497,7 +501,7 @@ is interrupted with each stream_flush from the sensorSource.
 	}
     GDKfree(fmt);
 	return MAL_SUCCEED;
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 	stream_printf(GDKerr, "#finished receiving data\n");
 #endif
 }
@@ -513,7 +517,7 @@ DClistenThread(SensorInfo sensor)
 	stream *fdin;
 	bstream *bs;
 
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 	stream_printf(GDKerr, "#Reading thread started\n");
 #endif
 	do {
@@ -572,7 +576,7 @@ DClistenThread(SensorInfo sensor)
 #endif
 		} else
 			continue;
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 		stream_printf(GDKerr,"#receptor connection request:accepted\n");
 #endif
 		fdin = socket_rstream(msgsock, "DataCell receptor input");
@@ -584,13 +588,13 @@ DClistenThread(SensorInfo sensor)
 
 		fdin = block_stream(fdin);
 
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 		stream_printf(GDKerr, "#DClisten:channel accepted %d\n", msgsock);
 #endif
 		bs = bstream_create(fdin,4*BLOCK);
 		/* now read the stream until it is closed */
 		msg= DCstartChannel(channel, bs);
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_RECEPTOR
 		stream_printf(GDKerr, "#DClisten:channel reading finished\n");
 #endif
 		

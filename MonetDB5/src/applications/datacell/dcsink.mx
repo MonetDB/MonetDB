@@ -161,7 +161,6 @@ int main(int argc, char **argv){
 			bs->eof=0;
 			buf[0]=0;
 		} else {
-			printf("wait\n");
 			sleep(1);
 			tries--;
 		}

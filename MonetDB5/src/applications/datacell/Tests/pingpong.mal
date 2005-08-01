@@ -41,12 +41,11 @@ io.print(t);
 datacell.startPump("ping");
 datacell.startPump("bat");
 datacell.startPump("pong");
-#perform a single schedule run
-#datacell.startScheduler(1000);
+datacell.startScheduler(100); # 100 microseconds delay
 
-(publ,priv) := datacell.bindEmitter("pong","event");
-io.print(publ);
-io.print(priv);
+#(publ,priv) := datacell.bindEmitter("pong","event");
+#io.print(publ);
+#io.print(priv);
 
 mapi.listen();
 #datacell.close();

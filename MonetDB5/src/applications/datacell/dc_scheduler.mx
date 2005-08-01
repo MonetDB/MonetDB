@@ -93,7 +93,7 @@ DCschedulerLog(int *ret, str* expr){
 }
 str
 DCstartScheduler(int *ret, int* delay){
-	int tries= 5;
+	int tries= -1; /* forever */
 	return DCnaiveScheduler(ret,&tries, delay);
 }
 str
@@ -140,7 +140,11 @@ void DCnaiveLoop(int v){
 	int	duration;
 	oid o= oid_nil;
 	(void) v;
-	while( schedulers[1].cycles-- > 0){
+	while( schedulers[1].cycles ){
+		if( schedulers[1].cycles > 0) 
+				schedulers[1].cycles--;
+		/* otherwise continue forever */
+
 		plimit = pumps+pumpindex;
 		for(p=pumps; p< plimit; p++)
 		if( p->kind == RECEPTOR) DCrollforward(p); else
@@ -163,6 +167,9 @@ void DCnaiveLoop(int v){
 		MT_sleep_ms( schedulers[1].delay);
 	}
 	schedulers[1].pid = 0;
+#ifdef DEBUG_DC_SCHEDULER
+	stream_printf(GDKerr,"#Naiveloop scheduling pumps finished\n");
+#endif
 }
 str
 DCnaiveScheduler(int *ret, int *cycles, int *delay){
@@ -251,7 +258,7 @@ DCstartPump(int *ret, str *name)
 	p= DClocatePump(*name);
 	if( p == 0)
 		return throwMessage("datacell.startReceptor","unknown host");
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_SCHEDULER
 	stream_printf(GDKout,"#Activate '%s' at port %d of %s\n",
 		p->name,p->port,p->host);
 #endif
@@ -273,7 +280,7 @@ DCstopPump(int *ret, str *name)
 	p= DClocatePump(*name);
 	if( p == 0)
 		return throwMessage("datacell.startReceptor","unknown host");
-#ifdef DEBUG_DCRECEPTOR
+#ifdef DEBUG_DC_SCHEDULER
 	stream_printf(GDKout,"#Deactivate reception %s at port %d of %s\n",
 		p->name,p->port,p->host);
 #endif
