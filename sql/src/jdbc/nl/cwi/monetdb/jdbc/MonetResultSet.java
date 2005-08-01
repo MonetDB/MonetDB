@@ -311,7 +311,7 @@ public class MonetResultSet implements ResultSet {
 			}
 		}
 		// check if this result is of the size we expected it to be
-		if (column != columns.length) throw new AssertionError("Illegal result length: " + column + "\nlast read: " + result[column - 1]);
+		if (column != columns.length) throw new AssertionError("Illegal result length: " + column + "\nlast read: " + (column > 0 ? result[column - 1] : "<none>"));
 
 		// reset lastColumnRead
 		lastColumnRead = -1;
