@@ -83,9 +83,9 @@ sed -r \
 
 file="../../NT/configure.py"
 sed -r \
-	-e "s/'@JDBC_MAJOR@',        '${ESC_MAJOR}'/'@JDBC_MAJOR@',        '${NEW_MAJOR}'/g" \
-	-e "s/'@JDBC_MINOR@',        '${ESC_MINOR}'/'@JDBC_MINOR@',        '${NEW_MINOR}'/g" \
-	-e "s/'@JDBC_VER_SUFFIX@',   '${ESC_SUFFIX}'/'@JDBC_VER_SUFFIX@',   '${NEW_SUFFIX}'/g" \
+	-e "s/'@JDBC_MAJOR@',( )+'${ESC_MAJOR}'/'@JDBC_MAJOR@',        '${NEW_MAJOR}'/g" \
+	-e "s/'@JDBC_MINOR@',( )+'${ESC_MINOR}'/'@JDBC_MINOR@',        '${NEW_MINOR}'/g" \
+	-e "s/'@JDBC_VER_SUFFIX@',( )+'${ESC_SUFFIX}'/'@JDBC_VER_SUFFIX@',   '${NEW_SUFFIX}'/g" \
 	${file} | ${diff} ${file} - | ${patch}
 
 file="../../configure.ag"
