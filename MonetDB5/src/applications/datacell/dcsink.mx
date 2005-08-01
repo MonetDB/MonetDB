@@ -119,7 +119,7 @@ int main(int argc, char **argv){
 	int i;
 	char *err;
 	char *host= "localhost"; int port=50000;
-	int delay = -1, bytes, tries =10;
+	int delay = -1, tries =10;
 	time_t t;
 	char buf[4*BLOCK];
 	bstream *bs;
@@ -152,7 +152,7 @@ int main(int argc, char **argv){
 
 	bs= bstream_create(fromServer,4*BLOCK);
 	do{
-		bytes= stream_read(bs->s,buf,4*BLOCK,1);
+		stream_read(bs->s,buf,4*BLOCK,1);
 		if( buf[0] ){
 			time(&t);
 			printf("#%s%s\n", ctime(&t) ,buf);
