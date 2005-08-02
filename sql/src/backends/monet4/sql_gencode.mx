@@ -72,7 +72,7 @@ write_tail(backend *sql, int nr)
 	if (mvc_debug_on(sql->mvc, 2)) {
 		char dbg[BUFSIZ];
 		int l = snprintf(dbg, BUFSIZ,
-				 "var t1 := usec(); printf(\"%d %%d\\n\", t1 - t0);\n", nr);
+				 "var t1 := usec(); printf(\"%d %%lld\\n\", t1 - t0);\n", nr);
 
 		assert(l < BUFSIZ);
 		stream_write(sql->out, dbg, 1, l);
