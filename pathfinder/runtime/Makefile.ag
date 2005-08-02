@@ -55,7 +55,6 @@ lib__pathfinder = {
 		../compiler/core/libcore \
 		../compiler/algebra/libalgebra \
 		../compiler/mil/libmil \
-                ../compiler/algebra/hskparser/libhskparser \
 		../compiler/libcompiler2 \
 		$(PF_LIBS) $(MONETDB_LIBS) \
 		-lbat -lmonet -lstream \

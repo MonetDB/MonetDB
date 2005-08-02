@@ -73,6 +73,7 @@ typedef struct PFstate_t PFstate_t;
 #define PF_GEN_DM_MAPI  4
 #define PF_GEN_SAX      5
 #define PF_GEN_NONE     6 
+#define PF_GEN_XML_SEQ_MAPI 7 
 
 /**
  * Has the Pathfinder compiler been invoked on the command line,
@@ -97,7 +98,9 @@ struct PFstate_t {
     bool print_algebra_tree;  /**< command line switch: -a */
     bool print_ma_tree;       /**< command line switch: -m */
     bool summer_branch;       /**< command line switch: -M */
+#if 0
     bool parse_hsk;           /**< command line switch: -H */
+#endif
     unsigned int genType;     /* kind of output */
     enum PFinvocation_t invocation;
 };

@@ -71,7 +71,7 @@
 #include "oops.h"
 #include "mem.h"
 #include "coreopt.h"
-#include "hsk_parser.h"
+/* #include "hsk_parser.h" */
 
 static char *phases[] = {
     [ 1]  = "right after input parsing",
@@ -110,7 +110,7 @@ PFstate_t PFstate = {
     .print_core_tree     = false,
     .print_algebra_tree  = false,
     .print_ma_tree       = false,
-    .parse_hsk           = false,
+/*    .parse_hsk           = false, */
     .summer_branch       = true,
     .genType             = PF_GEN_XML
 };
@@ -180,12 +180,14 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     signal (SIGSEGV, segfault_handler);
 #endif
 
+#if 0
     /* Parsing of Haskell XQuery to Algebra output */
     if (status->parse_hsk)
     {
         aroot = PFhsk_parse ();
         goto subexelim;
     }
+#endif
 
     /* compiler chain below 
      */
@@ -549,6 +551,8 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
                 PFstate.genType = PF_GEN_XML;
         } else if ( strcmp(mode,"xml-mapi") == 0 ) {
                 PFstate.genType = PF_GEN_XML_MAPI;
+        } else if ( strcmp(mode,"xml-seq-mapi") == 0 ) {
+                PFstate.genType = PF_GEN_XML_SEQ_MAPI; 
         } else if ( strcmp(mode,"none") ) {
                 PFinfo (OOPS_WARNING,
                         "pf_compile_interface: unknown output mode \"%s\", using \"xml\".\n",

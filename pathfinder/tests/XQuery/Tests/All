@@ -54,6 +54,10 @@ step_descendant-or-self1
 step_descendant-or-self2
 step_descendant-or-self3
 step_descendant-or-self4
+step_self1
+step_self2
+step_self3
+step_self4
 step_attribute1
 step_attribute2
 step_child5

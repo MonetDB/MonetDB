@@ -13,6 +13,13 @@ Cygwin (http://www.cygwin.com/) installation.  Apart from all the
 usual Cygwin packages and the packages specifically required for
 building MonetDB, no additional packages are required.
 
+Note: when compiling MonetDB/XQuery using MinGW, you will need the 
+'Mx'- and 'mel'-tools compiled without MinGW. These tools are 
+available as a separate package. You can check the sources of these 
+tools out from CVS (modulename is 'buildtools'). It comes with a 
+README file in which the steps towards a successful compilation are 
+explained.
+
 Building libxml2.
 
 The libxml2 library sources can be found at
