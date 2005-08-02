@@ -37,7 +37,7 @@ the cpu clock.They return an integer and string, respectively.
 .COMMAND alarm(int secs, str action) = CMDalarm; "execute action in X secs"
 .COMMAND timers() : BAT[str,str] = CMDtimers; "give a list of all active timers"
 .COMMAND time() : int = CMDtime; "time in milliseconds"
-.COMMAND usec() : int = CMDusec; "time in microseconds"
+.COMMAND usec() : lng = CMDusec; "time in microseconds"
 .COMMAND epoch() : int = CMDepoch; "current time as unix epoch"
 .COMMAND ctime() : str = CMDctime; "current time as a string"
 
@@ -298,9 +298,9 @@ CMDepoch(int *retval)
 
 /* should return lng */
 int
-CMDusec(int *retval)
+CMDusec(lng *retval)
 {
-	*retval = (int) GDKusec();
+	*retval = GDKusec();
 	return GDK_SUCCEED;
 }
 
