@@ -58,7 +58,17 @@ typedef void *MT_Sema;
 typedef void *MT_Cond;
 typedef size_t MT_Id;
 
-#define THREAD_STACK_SIZE	((size_t)512*1024)
+#if SIZEOF_VOID_P == 4
+/* "limited" stack size on 32-bit systems */
+/* to avoid address space fragmentation   */
+#define THREAD_STACK_SIZE	((size_t)  512*1024)
+#else
+/* "increased" stack size on 64-bit systems    */
+/* since some compilers seem to require this   */
+/* for burg-generated code in pathfinder       */
+/* and address space fragmentation is no issue */
+#define THREAD_STACK_SIZE	((size_t)4*512*1024)
+#endif
 
 #define MAXLOCKS	256
 #define MAXSEMAS	64
