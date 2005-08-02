@@ -47,18 +47,3 @@ for d in "${MONETDB_PREFIX}" "${PATHFINDER_PREFIX}" "${softpath}" "${xml}" ; do
 	fi
 done
 
-# Compiling pathfinder with Fedora Core 4's default gcc 4.0.0 on x86_64
-# results in various segfault, mostly within burg code;
-# with gcc 3.2.3, everythings seems to work fine;
-# hence, we use the latter to compile pathfinder.
-if [ "${os}.${BITS}.${hw}.${COMP}.${cc}" = "Linux.64.x86_64.GNU." ] ; then
-	if [ -s /etc/fedora-release ] ; then
-		distver="`cat /etc/fedora-release | head -n1 | perl -pe 's|^.*Fedora Core.* release ([0-9][^ \n]*)( .*)?$|$1|'`" 
-		gccver="`gcc -dumpversion 2>/dev/null`"
-		case "${distver}-${gccver}" in
-			4-4.0.[01])
-				cc='gcc32';;
-		esac
-		fi
-	fi
-fi

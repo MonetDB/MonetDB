@@ -428,9 +428,9 @@ PROC shred_doc_base(str location, str name, bit doCommit, str opt) : BAT[void,ba
     us := usec() - us;
     var ms := us/1000;
     if ( doCommit ) {
-        printf("# Shredded XML doc(\"%s\"), total time after commit=%d.%03ds\n", name, ms/1000,ms%1000);
+        printf("# Shredded XML doc(\"%s\"), total time after commit=%lld.%03llds\n", name, ms/1000,ms%1000);
     } else {
-        printf("# Shredded XML doc(\"%s\") uncommitted, total time =%d.%03ds\n", name, ms/1000,ms%1000);
+        printf("# Shredded XML doc(\"%s\") uncommitted, total time =%lld.%03llds\n", name, ms/1000,ms%1000);
     }
     return docBAT;
 }
