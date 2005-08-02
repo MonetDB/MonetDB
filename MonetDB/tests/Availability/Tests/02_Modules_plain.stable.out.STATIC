@@ -272,7 +272,7 @@ Module: "alarm"
 [ "sleep",	  "COMMAND:   ",  "sleep(int) : void",		  "sleep X secs"			  ]
 [ "time",	  "COMMAND:   ",  "time() : int",		  "time in milliseconds"		  ]
 [ "timers",	  "COMMAND:   ",  "timers() : BAT[str,str]",	  "give a list of all active timers"	  ]
-[ "usec",	  "COMMAND:   ",  "usec() : int",		  "time in microseconds"		  ]
+[ "usec",	  "COMMAND:   ",  "usec() : lng",		  "time in microseconds"		  ]
 
 Module: "ascii_io"
 
