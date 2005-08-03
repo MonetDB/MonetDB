@@ -20,6 +20,8 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include <pf_config.h>
+
 /*
  * Simple and portable HTTP server, http://shttpd.sourceforge.net
  *
