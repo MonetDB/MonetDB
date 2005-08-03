@@ -1334,10 +1334,9 @@ BATkey(BAT *b, int flag)
 		if (b->hseqbase == oid_nil && flag == BOUND2BTRUE) {
 			GDKerror("BATkey: nil-column cannot be kept unique.\n");
 		}
-		if (b->hseqbase == oid_nil || flag == FALSE) {
+		if (b->hseqbase == oid_nil) {
 			return b;
 		}
-		flag = TRUE;	/* we only allow TRUE on dense void bats */
 	}
 	if (flag)
 		flag |= (1 | b->hkey);
