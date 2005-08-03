@@ -312,9 +312,9 @@ CMDepoch(int *retval)
 
 /* should return lng */
 int
-CMDusec(int *retval)
+CMDusec(lng *retval)
 {
-	*retval = (int) GDKusec();
+	*retval = GDKusec();
 	return GDK_SUCCEED;
 }
 
@@ -362,7 +362,7 @@ str ALARMepilogue(){
 	return MAL_SUCCEED;
 }
 
-str ALARMusec(int *ret){
+str ALARMusec(lng *ret){
 	CMDusec(ret);
 	return MAL_SUCCEED;
 }
