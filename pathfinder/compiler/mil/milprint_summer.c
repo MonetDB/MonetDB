@@ -544,7 +544,7 @@ init (opt_t *f)
 static void
 saveResult_ (opt_t *f, int counter, int rcode)
 {
-    char *item_ext = kind_str(rcode);
+    char *item_ext = kind_str(rcode); /* item_ext = "" */
 
     milprintf(f, "{ # saveResult%i () : int\n", counter);
     milprintf(f, "var iter%03u := iter;\n", counter);
@@ -639,7 +639,7 @@ saveResult_node (opt_t *f, int counter)
 static void
 deleteResult_ (opt_t *f, int counter, int rcode)
 {
-    char *item_ext = kind_str(rcode);
+    char *item_ext = kind_str(rcode); /* item_ext = "" */
 
     milprintf(f, "# deleteResult%i ()\n", counter);
     milprintf(f, "iter%03u := nil_oid_oid;\n", counter);
@@ -705,7 +705,8 @@ deleteResult_node (opt_t *f, int counter)
  * back the offsets for all values
  *
  * @param f the Stream the MIL code is printed to
- * @param tablename the variable name where the entries are inserted
+ * @param t_co t_co.table the variable name where the entries are inserted
+ *             t_co.mil_type the type of the entered values
  * @param varname the variable which holds the input entries and
  *        gets the offsets of the added items
  * @param var_type the type of the entered values
@@ -1207,14 +1208,14 @@ translateSequence (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
     if (code == NODE)
     {
         rc1 = translateElemContent (f, code, cur_level, counter, L(c));
-        if (!rc1)
+        if (rc1 == NORMAL)
             map2NODE_interface (f);
 
         counter++;
         saveResult_node (f, counter);
     
         rc2 = translateElemContent (f, code, cur_level, counter, R(c));
-        if (!rc2)
+        if (rc2 == NORMAL)
             map2NODE_interface (f);
     
         translateSeq_node (f, counter);
@@ -1230,18 +1231,18 @@ translateSequence (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
     {
         item_ext = kind_str(kind);
         rc1 = translate2MIL (f, code, cur_level, counter, L(c));
-        if (!rc1)
+        if (rc1 == NORMAL)
             milprintf(f, "item%s := item%s;\n", 
                       item_ext, val_join(kind));
         counter++;
         saveResult_ (f, counter, kind);
 
         rc2 = translate2MIL (f, code, cur_level, counter, R(c));
-        if (!rc2)
+        if (rc2 == NORMAL)
             milprintf(f, "item%s := item%s;\n", 
                       item_ext, val_join(kind));
 
-        if (rc1 && rc2 && rc1 != rc2) 
+        if (rc1 != NORMAL && rc2 != NORMAL && rc1 != rc2) 
             mps_error ("we get a type mismatch (%i != %i) "
                        "in sequence construction (using the value interface).",
                        rc1, rc2); 
@@ -1783,7 +1784,7 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter,
         item_ext = kind_str(rcode);
         rc1 = translateIfThen (f, code, cur_level, counter,
                                then_, 1, bool_res);
-        if (!rc1)
+        if (rc1 == NORMAL)
             milprintf(f, "item%s := item%s;\n", 
                       item_ext, val_join(rcode));
         counter++;
@@ -1791,11 +1792,11 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter,
 
         rc2 = translateIfThen (f, code, cur_level, counter,
                                else_, 0, bool_res);
-        if (!rc2)
+        if (rc2 == NORMAL)
             milprintf(f, "item%s := item%s;\n", 
                       item_ext, val_join(rcode));
 
-        if (rc1 && rc2 && rc1 != rc2) 
+        if (rc1 != NORMAL && rc2 != NORMAL && rc1 != rc2) 
             mps_error ("we get a type mismatch (%i != %i) "
                        "in the sequence construction (using the value interface).",
                        rc1, rc2); 
@@ -2534,7 +2535,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
     if (rc != NORMAL && rc != NODE)
         mps_error ("unexpected interface chosen in element construction.");
 
-    if (rc)
+    if (rc != NORMAL)
     {
         milprintf(f,
                 "{ # loop_liftedElemConstr (counter)\n"
@@ -3092,13 +3093,13 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "} # end of loop_liftedElemConstr (counter)\n"
                );
 
-        if (rcode)
+        if (rcode != NORMAL)
             mps_error ("expected iter|pos|item|kind interface in element "
                        "construction (got %i).", rcode);
         else
             return;
     }
-    if (rcode)
+    if (rcode != NORMAL)
     {
         milprintf(f, "} # end of loop_liftedElemConstr (counter)\n");
     }
@@ -3263,7 +3264,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
             "strings := nil_oid_str;\n",
             item_ext, str_values,
             (rc)?item_ext:val_join(STR));
-    if (rcode)
+    if (rcode != NORMAL)
     {
         translateEmpty_node (f);
         milprintf(f,
@@ -3314,7 +3315,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
     milprintf(f,
             "{ # adding new strings to text node content and create new nodes\n"
             "var ws_prop_text := ws.fetch(PROP_TEXT).fetch(WS);\n");
-    if (rc)
+    if (rc != NORMAL)
     {
         milprintf(f,
              /* because tunique() is to slow on strings we do stupid things */
@@ -3354,7 +3355,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
             "X_prop := nil;\n",
             (rc)?item_ext:val_join(STR), (rc)?item_ext:val_join(STR));
 
-    if (rcode)
+    if (rcode != NORMAL)
     {
         translateEmpty_node (f);
         milprintf(f,
@@ -3501,7 +3502,7 @@ evaluateCast (opt_t *f,
 {
     char *item_ext = kind_str(rcode);
 
-    if (rc)
+    if (rc != NORMAL)
         milprintf(f,
                 "var cast_val := item%s.%s;\n", kind_str(rc), cast);
     else if (ori.kind != BOOL)
@@ -3520,7 +3521,7 @@ evaluateCast (opt_t *f,
 
     if (target.kind == BOOL)
         milprintf(f, "item := cast_val.[oid]();\n");
-    else if (!rcode)
+    else if (rcode == NORMAL)
         addValues (f, target, "cast_val", "item");
     else
         milprintf(f, "item%s := cast_val;\n", item_ext);
@@ -3550,11 +3551,11 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
 
     if (TY_EQ (input_type, PFty_integer ()))
     {
-        if (rcode && !rc)
+        if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
                     item_ext, val_join(rcode));
-        else if (!rcode && rc)
+        else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
             item = strcat (strcpy (item, "item"), kind_str(rc));
@@ -3574,7 +3575,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, bool_container(), int_container(), "[int]()");
     else /* handles the choice type */
     {
-        if (rc) 
+        if (rc != NORMAL) 
             mps_error ("forgot to cope with type '%s' in integer cast.",
                        kind_container(rc).name);
 
@@ -3595,7 +3596,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
                 "if (_val.ord_uselect(int(nil)).count() != 0)\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to integer.\"); }\n");
  
-        if (rcode)
+        if (rcode != NORMAL)
             milprintf(f, "item%s := _val;\n", item_ext);
         else
             addValues(f, int_container(), "_val", "item");
@@ -3626,11 +3627,11 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, int_container(), dec_container(), "[dbl]()");
     else if (TY_EQ (input_type, PFty_decimal ()))
     {
-        if (rcode && !rc)
+        if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
                     item_ext, val_join(rcode));
-        else if (!rcode && rc)
+        else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
             item = strcat (strcpy (item, "item"), kind_str(rc));
@@ -3648,7 +3649,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, bool_container(), dec_container(), "[dbl]()");
     else /* handles the choice type */ 
     {
-        if (rc) 
+        if (rc != NORMAL) 
             mps_error ("forgot to cope with type '%s' in decimal cast.",
                        kind_container(rc).name);
 
@@ -3669,7 +3670,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
                 "if (_val.ord_uselect(dbl(nil)).count() != 0)\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to decimal.\"); }\n");
  
-        if (rcode)
+        if (rcode != NORMAL)
             milprintf(f, "item%s := _val;\n", item_ext);
         else
             addValues(f, dec_container(), "_val", "item");
@@ -3702,11 +3703,11 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, dec_container(), dbl_container(), "[dbl]()");
     else if (TY_EQ (input_type, PFty_double ()))
     {
-        if (rcode && !rc)
+        if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
                     item_ext, val_join(rcode));
-        else if (!rcode && rc)
+        else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
             item = strcat (strcpy (item, "item"), kind_str(rc));
@@ -3722,7 +3723,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, bool_container(), dbl_container(), "[dbl]()");
     else /* handles the choice type */ 
     {
-        if (rc) 
+        if (rc != NORMAL) 
             mps_error ("forgot to cope with type '%s' in double cast.",
                        kind_container(rc).name);
 
@@ -3743,7 +3744,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
                 "if (_val.ord_uselect(dbl(nil)).count() != 0)\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to double.\"); }\n");
  
-        if (rcode)
+        if (rcode != NORMAL)
             milprintf(f, "item%s := _val;\n", item_ext);
         else
             addValues(f, dbl_container(), "_val", "item");
@@ -3780,11 +3781,11 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_string ()) ||
              TY_EQ (input_type, PFty_untypedAtomic ()))
     {
-        if (rcode && !rc)
+        if (rcode != NORMAL && rc == NORMAL)
             milprintf(f,
                     "item%s := item%s;\n",
                     item_ext, val_join(rcode));
-        else if (!rcode && rc)
+        else if (rcode == NORMAL && rc != NORMAL)
         {   /* we'r unlucky and have to add the values to the references */
             char *item = (char *) PFmalloc (strlen ("item") + strlen (kind_str(rc)) + 1);
             item = strcat (strcpy (item, "item"), kind_str(rc));
@@ -3802,7 +3803,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCast (f, rcode, rc, bool_container(), cast_container, "[str]()");
     else /* handles the choice type */ 
     {
-        if (rc) 
+        if (rc != NORMAL) 
             mps_error ("forgot to cope with type '%s' in string cast.",
                        kind_container(rc).name);
 
@@ -3823,7 +3824,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
                 "if (_val.ord_uselect(str(nil)).count() != 0)\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to string.\"); }\n");
  
-        if (rcode)
+        if (rcode != NORMAL)
             milprintf(f, "item%s := _val;\n", item_ext);
         else
             addValues(f, str_container(), "_val", "item");
@@ -3861,7 +3862,7 @@ translateCast2BOOL (opt_t *f, int rcode, int rc, PFty_t input_type)
     else if (TY_EQ (input_type, PFty_boolean ()));
     else /* handles the choice type */ 
     {
-        if (rc) 
+        if (rc != NORMAL) 
             mps_error ("forgot to cope with type '%s' in boolean cast.",
                        kind_container(rc).name);
 
@@ -3997,14 +3998,14 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
     /* FIXME: assume that both intermediate results are aligned 
               otherwise this doesn't work */
     /* get values for the second argument */
-    if (rc2)
+    if (rc2 != NORMAL)
         milprintf(f, "var val_snd := item%s;\n", kind_str(rc2));
     else
         milprintf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
     /* item%03u is the older (first) argument and has to be the first operand
        for the evaluation */
     /* get the values for the first argument */
-    if (rc1)
+    if (rc1 != NORMAL)
         milprintf(f, "var val_fst := item%s%03u;\n", kind_str(rc1), counter);
     else
         milprintf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n",
@@ -4017,7 +4018,7 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
                 div);
     milprintf(f, "val_fst := val_fst.[%s](val_snd);\n", operator);
 
-    if (rcode) /* return `real' values */
+    if (rcode != NORMAL) /* return `real' values */
         milprintf(f, "item%s := val_fst;\n", item_ext);
     else /* return references to values */
         addValues(f, t_co, "val_fst", "item");
@@ -4055,7 +4056,7 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
 
     milprintf(f, "{ # '%s' calculation with optional type\n", operator);
     /* get values for the second argument */
-    if (rc2)
+    if (rc2 != NORMAL)
         milprintf(f, "var val_snd := iter.reverse().leftfetchjoin(item%s);\n",
                 kind_str(rc2));
     else
@@ -4064,7 +4065,7 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
                 "val_snd := iter.reverse().leftfetchjoin(val_snd);\n",
                 t_co.table);
     /* get the values for the first argument */
-    if (rc1)
+    if (rc1 != NORMAL)
         milprintf(f, "var val_fst := iter%03u.reverse().leftfetchjoin(item%s%03u);\n",
                 counter, kind_str(rc1), counter);
     else
@@ -4086,7 +4087,7 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
     milprintf(f, "pos := iter.project(1@0);\n");
     milprintf(f, "kind := iter.project(%s);\n", kind);
 
-    if (rcode) /* return `real' values */
+    if (rcode != NORMAL) /* return `real' values */
         milprintf(f, "item%s := val_fst;\n", item_ext);
     else /* return references to values */
         addValues(f, t_co, "val_fst", "item");
@@ -4200,13 +4201,13 @@ evaluateComp (opt_t *f, int rc1, int rc2,
        otherwise this doesn't work */
     if (t_co.kind != BOOL)
     {
-        if (rc2)
+        if (rc2 != NORMAL)
             milprintf(f, "var val_snd := item%s;\n", kind_str(rc2));
         else
             milprintf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
         /* item%03u is the older (first) argument and has to be
            the first operand for the evaluation */
-        if (rc1)
+        if (rc1 != NORMAL)
             milprintf(f, "var val_fst := item%s%03u;\n", 
                     kind_str(rc1), counter);
         else
@@ -4249,7 +4250,7 @@ evaluateCompOpt (opt_t *f, int rc1, int rc2,
     milprintf(f, "{ # '%s' comparison with optional type\n", operator);
     if (t_co.kind != BOOL)
     {
-        if (rc2)
+        if (rc2 != NORMAL)
             milprintf(f,
                     "var val_snd := iter.reverse().leftfetchjoin(item%s);\n",
                     kind_str(rc2));
@@ -4260,7 +4261,7 @@ evaluateCompOpt (opt_t *f, int rc1, int rc2,
                     t_co.table);
         /* item%03u is the older (first) argument and has to be
            the first operand for the evaluation */
-        if (rc1)
+        if (rc1 != NORMAL)
             milprintf(f,
                     "var val_fst := iter%03u.reverse()"
                                            ".leftfetchjoin(item%s%03u);\n",
@@ -4485,7 +4486,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
     }
     else if (PFty_subtype (input_type, PFty_star(PFty_atomic ())))
     {
-        if (rc) 
+        if (rc != NORMAL) 
             mps_error ("forgot to cope with type '%s' in fn:boolean.",
                        kind_container(rc).name);
 
@@ -5402,7 +5403,7 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
     int rc;
 
     rc  = translate2MIL (f, VALUES, cur_level, counter, L(c));
-    if (!rc)
+    if (rc == NORMAL)
         milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
 
     counter++;
@@ -5487,14 +5488,14 @@ prep_str_funs (opt_t *f, int cur_level, int counter, PFcnode_t *c)
 {
     char *item_ext = kind_str(STR);
     int rc = translate2MIL (f, VALUES, cur_level, counter, L(c));
-    if (!rc)
+    if (rc == NORMAL)
         milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
     add_empty_strings (f, STR, cur_level);
 
     counter++;
     saveResult_ (f, counter, STR);
     rc = translate2MIL (f, VALUES, cur_level, counter, RL(c));
-    if (!rc)
+    if (rc == NORMAL)
         milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
     add_empty_strings (f, STR, cur_level);
 
@@ -5569,6 +5570,119 @@ fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
 }
 
 /**
+ * fn_replace translates the builtin function fn:replace
+ * @param f the Stream the MIL code is printed to
+ * @param code the number indicating, which result interface is preferred
+ * @param cur_level the level of the for-scope
+ * @param counter the actual offset of saved variables
+ * @param fun the function information
+ * @param c the head of the function argument list
+ */
+static int
+fn_replace (opt_t *f, int code, int cur_level, int counter, 
+            PFfun_t *fun, PFcnode_t *args)
+{
+    char* item_ext = kind_str(STR); /* return "_str_"; */
+
+    (void) fun; /* FUTURE: check fun->arity==4 if we want to support the extra 'flags' parameter */
+
+    if (translate2MIL (f, VALUES, cur_level, counter, L(args)) == NORMAL)
+    {
+        milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+    }
+
+    counter++;
+    saveResult_ (f, counter, STR);
+
+    if (translate2MIL (f, VALUES, cur_level, counter, RL(args)) == NORMAL)
+    {
+        milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+    }
+
+    counter++;
+    saveResult_ (f, counter, STR);
+
+    if (translate2MIL (f, VALUES, cur_level, counter, RRL(args)) == NORMAL)
+    {
+        milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+    }
+
+    milprintf(f,
+                "{ # fn:replace (string?, string?, string?) as string\n"
+                "var strings;\n"
+                "if (iter%03u.count() != loop%03u.count())\n"
+                "{\n"
+                "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
+                "difference := difference.mark(0@0).reverse();\n"
+                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, "
+                                           "fake_project(\"\"));\n"
+                "difference := nil_oid_oid;\n"
+                "strings := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "} "
+                "else {\n"
+                "strings := item%s%03u;\n"
+                "}\n",
+                counter-1, cur_level, 
+                cur_level, counter-1,
+                counter-1, item_ext, counter-1,
+                item_ext, counter-1);
+    milprintf(f,
+                "var patterns;\n"
+                "if (iter%03u.count() != loop%03u.count())\n"
+                "{\n"
+                "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
+                "difference := difference.mark(0@0).reverse();\n"
+                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, "
+                                           "fake_project(\"\"));\n"
+                "difference := nil_oid_oid;\n"
+                "patterns := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "} "
+                "else {\n"
+                "patterns := item%s%03u;\n"
+                "}\n",
+                counter, cur_level, 
+                cur_level, counter,
+                counter, item_ext, counter,
+                item_ext, counter);
+    milprintf(f,
+                "var replacements;\n"
+                "if (iter.count() != loop%03u.count())\n"
+                "{\n"
+                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+                "difference := difference.mark(0@0).reverse();\n"
+                "var res_mu := merged_union(iter, difference, item%s, "
+                                           "fake_project(\"\"));\n"
+                "difference := nil_oid_oid;\n"
+                "replacements := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "} "
+                "else {\n"
+                "replacements := item%s;\n"
+                "}\n",
+                cur_level,
+                cur_level,
+                item_ext,
+                item_ext);
+    milprintf(f,
+                "var res := [pcre_replace](strings,patterns,replacements);\n"
+                "strings := nil_oid_str;\n"
+                "patterns := nil_oid_str;\n"
+                "replacements := nil_oid_str;\n"
+                "iter := loop%03u.reverse().mark(0@0).reverse();\n"
+                "pos := iter.project(1@0);\n"
+                "kind := iter.project(STR);\n",
+                cur_level);
+
+    return_str_funs (f, code, cur_level, 
+                "fn:replace (string?, string?, string?) as string");
+    deleteResult_ (f, counter, STR);
+    deleteResult_ (f, counter-1, STR);
+    return VALUES;
+}
+
+/**
  * fn_substring translates the builtin function fn:substring 
  * @param f the Stream the MIL code is printed to
  * @param code the number indicating, which result interface is preferred
@@ -5588,7 +5702,7 @@ fn_substring (opt_t *f, int code, int cur_level, int counter,
     dbl_ext = kind_str(DBL);
 
     rc = translate2MIL (f, VALUES, cur_level, counter, L(c));
-    if (!rc)
+    if (rc == NORMAL)
         milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
     add_empty_strings (f, STR, cur_level);
     counter++;
@@ -5596,7 +5710,7 @@ fn_substring (opt_t *f, int code, int cur_level, int counter,
     saveResult_ (f, str_counter, STR);
 
     rc = translate2MIL (f, VALUES, cur_level, counter, RL(c));
-    if (!rc)
+    if (rc == NORMAL)
         milprintf(f, "item%s := item.leftfetchjoin(dbl_values);\n", dbl_ext);
     counter++;
     saveResult_ (f, counter, DBL);
@@ -5605,7 +5719,7 @@ fn_substring (opt_t *f, int code, int cur_level, int counter,
     if (fun->arity == 3)
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, RRL(c));
-        if (!rc)
+        if (rc == NORMAL)
             milprintf(f, "item%s := item.leftfetchjoin(dbl_values);\n", dbl_ext);
         milprintf(f,
                 "{ # fn:substring\n"
@@ -6691,7 +6805,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             PFty_subtype (TY(L(args)), PFty_star (PFty_node ())))
         {
             rc = translateElemContent (f, NODE, cur_level, counter, L(args));
-            if (!rc)
+            if (rc == NORMAL)
                 map2NODE_interface (f);
             is2ns_node (f, counter);
             return NODE;
@@ -6781,7 +6895,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         item_ext = (code)?item_str:"";
 
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
         }
@@ -6790,7 +6904,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult_ (f, counter, STR);
 
         rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-        if (!rc2)
+        if (rc2 == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
         }
@@ -6832,7 +6946,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         item_ext = kind_str(STR);
 
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
         }
@@ -6841,7 +6955,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult_ (f, counter, STR);
 
         rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-        if (!rc2)
+        if (rc2 == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
         }
@@ -6886,7 +7000,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 item_ext,
                 item_ext);
         milprintf(f,
-                "item := strings.[search](search_strs).[!=](-1).[oid]();\n"
+                "item := [search](strings,search_strs).[!=](-1).[oid]();\n"
                 "strings := nil_oid_str;\n"
                 "search_strs := nil_oid_str;\n"
                 "iter := loop%03u.reverse().mark(0@0).reverse();\n"
@@ -6904,7 +7018,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         item_ext = (code)?item_str:"";
 
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
         }
@@ -6913,7 +7027,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult_ (f, counter, STR);
 
         rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-        if (!rc2)
+        if (rc2 == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_str, val_join(STR));
         }
@@ -6961,6 +7075,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         fn_substring (f, code, cur_level, counter, fun, args);
         return (code)?STR:NORMAL;
     }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"replace")))
+    {
+        return fn_replace (f, code, cur_level, counter, fun, args);
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"substring-before")))
     {
         item_ext = kind_str(STR);
@@ -7001,7 +7119,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         item_ext = kind_str(STR);
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
         milprintf(f,
                 "{ # fn:normalize-space\n"
@@ -7017,7 +7135,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         item_ext = kind_str(STR);
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
         milprintf(f,
                 "{ # fn:lower-case\n"
@@ -7033,7 +7151,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         item_ext = kind_str(STR);
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
         milprintf(f,
                 "{ # fn:upper-case\n"
@@ -7051,7 +7169,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         item_ext = kind_str(STR);
 
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
             milprintf(f, "item%s := item.leftfetchjoin(str_values);\n", item_ext);
         add_empty_strings (f, STR, cur_level);
         milprintf(f,
@@ -7085,7 +7203,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
 
         /* cast to dbl is inlined nil represents NaN value */
-        if (rc)
+        if (rc != NORMAL)
             milprintf(f,
                     "var cast_val := item%s.[dbl]();\n", kind_str(rc));
         else if (PFty_subtype (TY(L(args)), PFty_boolean ()))
@@ -7136,7 +7254,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         item_ext = (code)?item_int:"";
 
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_int, val_join(INT));
         }
@@ -7145,7 +7263,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult_ (f, counter, INT);
 
         rc2 = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-        if (!rc2)
+        if (rc2 == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_int, val_join(INT));
         }
@@ -7233,7 +7351,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
         rc = translateAggregates (f, VALUES, rc, fun, args, "sum");
-        if (!rc)
+        if (rc == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_ext, val_join(rcode));
         }
@@ -7244,7 +7362,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         {
 
             rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-            if (!rc)
+            if (rc == NORMAL)
             {
                 milprintf(f, "item%s := item%s;\n", item_ext, val_join(rcode));
             }
@@ -7324,7 +7442,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"abs")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
         {
             rc = get_kind(fun->ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
@@ -7335,7 +7453,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"ceiling")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
         {
             rc = get_kind(fun->ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
@@ -7346,7 +7464,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"floor")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
         {
             rc = get_kind(fun->ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
@@ -7357,7 +7475,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"round")))
     {
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
         {
             rc = get_kind(fun->ret_ty);
             milprintf(f, "item%s := item%s;\n", kind_str(rc), val_join(rc));
@@ -7613,7 +7731,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         item_ext = kind_str(STR);
 
         rc = translate2MIL (f, VALUES, cur_level, counter, L(args));
-        if (!rc)
+        if (rc == NORMAL)
         {
             milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
         }
@@ -7640,7 +7758,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
             saveResult_ (f, counter, STR);
 
             rc = translate2MIL (f, VALUES, cur_level, counter, RL(args));
-            if (!rc)
+            if (rc == NORMAL)
             {
                 milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
             }
@@ -7657,17 +7775,14 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
         return NORMAL;
     }
-    else 
-    {
-        PFoops(OOPS_FATAL,"function %s is not supported.",
-              PFqname_str (fnQname));
-        milprintf(f,
+
+    PFoops(OOPS_FATAL,"function %s is not supported.", PFqname_str (fnQname));
+    milprintf(f,
                 "# empty intermediate result "
                 "instead of unsupported function %s\n",
                 PFqname_str (fnQname));
-        translateEmpty (f);
-        return NORMAL;
-    }
+    translateEmpty (f);
+    return NORMAL;
 }
 
 /**
@@ -7958,9 +8073,9 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             saveResult (f, counter);
 
             rc = translateElemContent (f, NODE, cur_level, counter, R(c));
-            if (!rc && !rcode)
+            if (rc == NORMAL&& rcode == NORMAL)
                 loop_liftedElemConstr (f, NORMAL, NORMAL, counter);
-            else if (!rc)
+            else if (rc == NORMAL)
             {
                 map2NODE_interface (f);
                 loop_liftedElemConstr (f, rcode, NODE, counter);
@@ -10056,6 +10171,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "module(\"aggrX3\");\n"
             "module(\"xtables\");\n"
             "module(\"malalgebra\");\n"
+            "module(\"pcre\");\n"
             "module(\"mmath\");\n");
 
     if (status->timing) 
