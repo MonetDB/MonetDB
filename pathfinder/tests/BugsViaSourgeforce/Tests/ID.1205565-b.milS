@@ -1,3 +1,3 @@
 module("pathfinder");
-xquery("xml","text { <node/> }");
+xquery("xml","text { <node/> }").printf();
 quit();

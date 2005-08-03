@@ -12,7 +12,7 @@ stdout of test 'ID.1207029` in directory 'tests/BugsViaSourgeforce` itself:
 module(pathfinder);
 xquery("xml","for $t in (text { \"Hello \" }, text {\"my \" }, \"World\")\n\
 where string($t) != \"my \"\n\
-return text { $t }");
+return text { $t }").printf();
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
 Hello World

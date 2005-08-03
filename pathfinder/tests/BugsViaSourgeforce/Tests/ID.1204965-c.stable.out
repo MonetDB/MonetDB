@@ -49,7 +49,7 @@ return \n\
      </author>\n\
  }\n\
 </authlist>\n\
-");
+").printf();
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
 <authlist><author><name>Abiteboul</name><books><title>Data on the Web</title></books></author><author><name>Buneman</name><books><title>Data on the Web</title></books></author><author><name>Stevens</name><books><title>Advanced Programming

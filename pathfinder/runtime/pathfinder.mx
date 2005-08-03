@@ -46,7 +46,9 @@
  "read xquery from stream, and print on a stream."
 
 .COMMAND xquery(str, str) : str = CMDxquery;
- "xquery execution. usage: xquery(\"xml\", str)"
+ "xquery execution.
+usage:  var result := xquery(\"xml\", str); printf(result);
+   or:  printf(xquery(\"xml\", str));"
 
 .PRELUDE = pathfinder_prelude;
 .EPILOGUE = pathfinder_epilogue;
@@ -89,6 +91,9 @@ PROC xquery_server_start() : void {
 PROC xquery(str query) : str {
 	return xquery("xml", query);
 }
+ADDHELP("xquery", "boncz", "Juli 2005",
+"shortcut for 'xquery(\"xml\", str query) : str'",
+"pathfinder");
 
 #############################################
 # User-level document management functions:
