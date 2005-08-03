@@ -1,3 +1,4 @@
+vim: ts=4:sw=4:ft=c
 @' The contents of this file are subject to the MonetDB Public License
 @' Version 1.1 (the "License"); you may not use this file except in
 @' compliance with the License. You may obtain a copy of the License at
@@ -58,6 +59,14 @@
 .COMMAND pcre_uselect(str pattern, BAT[any::1,str] strs) : BAT[any::1,void] = pcre_uselect;
    "Select tuples based on the pattern, only returning the head"
 
+.COMMAND pcre_replace(str origin_str, str pattern, str replacement) : str = pcre_replace;
+   "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replacement\". 
+    If no matches found, the original string is returned."
+   
+.COMMAND pcre_replace(BAT[any::1, str] origin_strs, str pattern, str replacement) : BAT[any::1, str] = pcre_replace_bat;
+   "Replace _all_ matches of \"pattern\" in every string contained in \"origin_strs\" with \"replacement\".
+    If no matches found in a string, the string is just copied to the returned BAT"
+
 .PRELUDE  = pcre_init;
 .EPILOGUE = pcre_exit;
 
@@ -103,6 +112,26 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 {
 	(void) res, (void) pattern;
 	(void) strs;
+	return GDK_FAIL;
+}
+
+int
+pcre_replace(str *res, str origin_str, str pattern, str replacement)
+{
+	(void) res;
+	(void) s;
+	(void) pattern;
+	(void) replacement;
+	return GDK_FAIL;
+}
+
+int
+pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement)
+{
+	(void) res;
+	(void) strs;
+	(void) pattern;
+	(void) replacement;
 	return GDK_FAIL;
 }
 
@@ -226,6 +255,194 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 	}
 	my_pcre_free(re);
 	*res = r;
+	return GDK_SUCCEED;
+}
+
+#define MAX_NR_CAPTURES  1024 /* Maximal number of captured substrings in one original string */
+
+int
+pcre_replace(str *res, str origin_str, str pattern, str replacement)
+{
+	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
+	pcre *pcre_code = NULL;
+	pcre_extra *extra;
+	str tmpres;
+	int i, j, k, len, errpos = 0, offset = 0;
+	int *ovector, ovecsize;
+	int len_origin_str = strlen(origin_str);
+	int len_replacement = strlen(replacement);
+	int capture_offsets[MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
+
+	if ((pcre_code = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+		GDKerror("pcre_replace: pcre compile of pattern (%s) failed\n",
+			pattern);
+		return GDK_FAIL;
+	}
+
+	/* Since the compiled pattern is ging to be used several times, it is worth spending 
+	 * more time analyzing it in order to speed up the time taken for matching.
+	 */
+	extra = pcre_study(pcre_code, 0, &err_p2);/* FIXME: why is extra NULL? */
+	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
+	ovecsize = (i + 1) * 3;
+	if ((ovector = (int *) GDKzalloc(ovecsize)) == NULL) {
+		GDKerror("pcre_replace: not enough memory\n");
+		my_pcre_free(pcre_code);
+		return GDK_FAIL;
+	}
+	
+	i = 0;
+	do {
+		j = pcre_exec(pcre_code, extra, origin_str, len_origin_str, 
+						offset, 0, ovector, ovecsize);
+		if (j > 0){
+			capture_offsets[i] = ovector[0];
+			capture_offsets[i+1] = ovector[1];
+			ncaptures++;
+			i += 2;
+			len_del += (ovector[1] - ovector[0]);
+			offset = ovector[1];
+		}
+	} while((j > 0) && (offset < len_origin_str) && (ncaptures < MAX_NR_CAPTURES));
+	
+	if (ncaptures > 0){
+		tmpres = GDKzalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
+		if (!tmpres) {
+			GDKerror("pcre_replace: not enough memory\n");
+			my_pcre_free(pcre_code);
+			GDKfree((void*)ovector); /* FIXME: this free can cause trouble */
+			return GDK_FAIL;
+		}
+
+		j = k = 0;
+
+		/* copy eventually the substring before the first captured substring */
+		strncpy(tmpres, origin_str, capture_offsets[j]); 
+		k = capture_offsets[j];
+		j++;
+
+		for (i = 0; i < ncaptures - 1; i++) {
+			strncpy(tmpres+k, replacement, len_replacement);
+			k += len_replacement;
+			/* copy the substring between two captured substrings */
+			len = capture_offsets[j+1] - capture_offsets[j];
+			strncpy(tmpres+k, origin_str+capture_offsets[j], len);
+			k += len;
+			j += 2;
+		}
+
+		/* replace the last captured substring */
+		strncpy(tmpres+k, replacement, len_replacement);
+		k += len_replacement;
+		/* copy eventually the substring after the last captured substring */
+		len = len_origin_str - capture_offsets[j];
+		strncpy(tmpres+k, origin_str+capture_offsets[j], len);
+		k += len;
+		tmpres[k] = '\0';
+	} else { /* no captured substrings, return the original string*/
+		tmpres = GDKstrdup(origin_str);
+	}
+
+	my_pcre_free(pcre_code);
+	/* GDKfree(ovector); */ /* FIXME: this free causes trouble */
+	*res = tmpres;
+	return GDK_SUCCEED;
+}
+
+int
+pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement)
+{
+	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
+	int i, j, k, len, errpos = 0, offset = 0;
+	pcre *pcre_code = NULL;
+	pcre_extra *extra;
+	BAT *tmpbat;
+	BUN p, q;
+	int *ovector, ovecsize;
+	int len_origin_str, len_replacement = strlen(replacement);
+	int capture_offsets[MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
+	str origin_str, replaced_str;
+
+	if ((pcre_code = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+		GDKerror("pcre_uselect: pcre compile of pattern (%s) failed\n",
+			pattern);
+		return GDK_FAIL;
+	}
+
+	/* Since the compiled pattern is ging to be used several times, it is worth spending 
+	 * more time analyzing it in order to speed up the time taken for matching.
+	 */
+	extra = pcre_study(pcre_code, 0, &err_p2); /* FIXME: why is extra NULL? */
+	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
+	ovecsize = (i + 1) * 3;
+	if ((ovector = (int *) GDKzalloc(ovecsize)) == NULL) {
+		GDKerror("pcre_replace: not enough memory\n");
+		my_pcre_free(pcre_code);
+		return GDK_FAIL;
+	}
+	
+	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs));
+	BATloop(origin_strs, p, q) {
+		origin_str = BUNtail(origin_strs, p);
+		len_origin_str = strlen(origin_str);
+		i = ncaptures = len_del = offset = 0;
+		do {
+			j = pcre_exec(pcre_code, extra, origin_str, len_origin_str, 
+						  offset, 0, ovector, ovecsize);
+			if (j > 0){
+				capture_offsets[i] = ovector[0];
+				capture_offsets[i+1] = ovector[1];
+				ncaptures++;
+				i += 2;
+				len_del += (ovector[1] - ovector[0]);
+				offset = ovector[1];
+			}
+		} while((j > 0) && (offset < len_origin_str) && (ncaptures < MAX_NR_CAPTURES));
+	
+		if (ncaptures > 0){
+			replaced_str = GDKzalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
+			if (!replaced_str) {
+				GDKerror("pcre_replace: not enough memory\n");
+				my_pcre_free(pcre_code);
+				GDKfree((void*)ovector); /* FIXME: this free can cause trouble */
+				return GDK_FAIL;
+			}
+
+			j = k = 0;
+
+			/* copy eventually the substring before the first captured substring */
+			strncpy(replaced_str, origin_str, capture_offsets[j]); 
+			k = capture_offsets[j];
+			j++;
+
+			for (i = 0; i < ncaptures - 1; i++) {
+				strncpy(replaced_str+k, replacement, len_replacement);
+				k += len_replacement;
+				/* copy the substring between two captured substrings */
+				len = capture_offsets[j+1] - capture_offsets[j];
+				strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
+				k += len;
+				j += 2;
+			}
+
+			/* replace the last captured substring */
+			strncpy(replaced_str+k, replacement, len_replacement);
+			k += len_replacement;
+			/* copy eventually the substring after the last captured substring */
+			len = len_origin_str - capture_offsets[j];
+			strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
+			k += len;
+			replaced_str[k] = '\0';
+			BUNins(tmpbat, BUNhead(origin_strs, p), replaced_str);
+			/* GDKfree(replaced_str); */ /* FIXME: should I do this??? */
+		} else { /* no captured substrings, copy the original string into new bat */
+			BUNins(tmpbat, BUNhead(origin_strs, p), origin_str);
+		}
+	}
+
+	my_pcre_free(pcre_code);
+	/* GDKfree(ovector); *//* FIXME: this free causes trouble */
+	*res = tmpbat;
 	return GDK_SUCCEED;
 }
 
