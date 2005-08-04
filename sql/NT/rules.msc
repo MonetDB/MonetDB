@@ -108,9 +108,13 @@ MONET4=yes
 .m.mil: 
 	$(MEL) $(INCLUDES) -mil $*.m > $@
 	type $*.tmpmil >> $@
+	if not exist .libs $(MKDIR) .libs
+	$(INSTALL) $@ .libs\$@
 
 .m.mil:
 	$(MEL) $(INCLUDES) -mil $*.m > $@
+	if not exist .libs $(MKDIR) .libs
+	$(INSTALL) $@ .libs\$@
 
 {$(SRCDIR)}.mx.tmpmil:
 	$(MX) $(MXFLAGS) -x mil $<
