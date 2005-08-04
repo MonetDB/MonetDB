@@ -119,7 +119,7 @@ int
 pcre_replace(str *res, str origin_str, str pattern, str replacement)
 {
 	(void) res;
-	(void) s;
+	(void) origin_str;
 	(void) pattern;
 	(void) replacement;
 	return GDK_FAIL;
@@ -129,7 +129,7 @@ int
 pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement)
 {
 	(void) res;
-	(void) strs;
+	(void) origin_strs;
 	(void) pattern;
 	(void) replacement;
 	return GDK_FAIL;
