@@ -1,0 +1,69 @@
+module("pcre");
+
+# Tests of replacing of a single string
+
+pcre_replace("abracadabra", "bra", "*").print();
+# result: "a*cada*"
+
+pcre_replace("abracadabra", "a.*a", "*").print();
+# result: "*"
+
+pcre_replace("abracadabra", "a.*?a", "*").print();
+# result: "*c*bra"
+
+pcre_replace("abracadabra", "a", "").print();
+# result: "brcdbr"
+
+# Tests of replacing of a BAT of strings
+var mybat := bat(void, str);
+mybat.append("aaaaabracadabra");
+mybat.append("bbbbabracadabra");
+mybat.append("ccccabracadabra");
+mybat.append("ddddabracadabra");
+mybat.append("aabbabracadabra");
+mybat.append("abababracadabra");
+mybat.append("aaccabracadabra");
+mybat.append("acacabracadabra");
+mybat.append("bcdbabracadabra");
+mybat.append("abcdabracadabra");
+mybat.append("ccddabracadabra");
+mybat.append("cdcdabracadabra");
+mybat.append("babracadabraddc");
+mybat.append("abracadabra");
+mybat:=mybat.reverse().mark(0@0).reverse();
+#mybat.print();
+
+pcre_replace(mybat, "bra", "*").print();
+pcre_replace(mybat, "a.*a", "*").print();
+pcre_replace(mybat, "a.*?a", "*").print();
+pcre_replace(mybat, "a", "").print();
+
+# Test if pcre_replace indeed only replace the matched string, and copy other
+# strings unchanged
+pcre_replace(mybat, "aaaa", "").print();
+
+# Test if the head column is kept after a replace operation
+mybat := bat(int, str);
+mybat.insert(int(20),  "aaaaabracadabra");
+mybat.insert(int(1), "bbbbabracadabra");
+mybat.insert(int(2), "ccccabracadabra");
+mybat.insert(int(3), "ddddabracadabra");
+mybat.insert(int(4), "aabbabracadabra");
+mybat.insert(int(5), "abababracadabra");
+mybat.insert(int(6), "aaccabracadabra");
+mybat.insert(int(7), "acacabracadabra");
+mybat.insert(int(8), "bcdbabracadabra");
+mybat.insert(int(9), "abcdabracadabra");
+mybat.insert(int(10), "ccddabracadabra");
+mybat.insert(int(11), "cdcdabracadabra");
+mybat.insert(int(12), "babracadabraddc");
+mybat.insert(int(42), "abracadabra");
+#mybat.print();
+
+pcre_replace(mybat, "bra", "*").print();
+pcre_replace(mybat, "a.*a", "*").print();
+pcre_replace(mybat, "a.*?a", "*").print();
+pcre_replace(mybat, "a", "").print();
+# Test if pcre_replace indeed only replace the matched string, and copy other
+# strings unchanged
+pcre_replace(mybat, "aaaa", "").print();
