@@ -59,6 +59,17 @@ trim(str(nil)).print();
 substitute("A.B.C",".","\\.",false).print();
 substitute("A.B.C",".","\\.",true).print();
 
+translate("bar","abc","ABC").print();
+translate("--aaa--","abc-","ABC").print();
+translate("abcdabc","abc","AB").print();
+translate(str(nil),"abc","ABC").print();
+translate("bar",str(nil),"ABC").print();
+translate("bar","abc",str(nil)).print();
+translate("","abc","ABC").print();
+translate("abcdabc","","AB").print();
+translate("abcdabc","abc","").print();
+translate("abcdabc","abc","\303\244B").print();
+
 #unicode tests
 var i := 0;
 while((i :+= 1) < 65535) {

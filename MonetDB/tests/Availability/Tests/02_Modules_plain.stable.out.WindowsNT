@@ -831,14 +831,16 @@ Module: "pcl"
 
 Module: "pcre"
 
-[ 4 ]
-[ 4 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 6 ]
+[ 6 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature							help								  # name
 # str		str		str								str								  # type
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "pcre_compile", "COMMAND:   ",  "pcre_compile(str) : pcre",					  "compile a pattern"						  ]
 [ "pcre_match",	  "COMMAND:   ",  "pcre_match(pcre, str) : bit",				  "match a pattern"						  ]
+[ "pcre_replace", "COMMAND:   ",  "pcre_replace(BAT[any::1,str], str, str) : BAT[any::1,str]",	  "Replace _all_ matches of \"pattern\" in every string contained in \"origin_strs\" with \"replacement\".\n    If no matches found in a string, the string is just copied to the returned BAT"	  ]
+[ "pcre_replace", "COMMAND:   ",  "pcre_replace(str, str, str) : str",				  "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replacement\". \n    If no matches found, the original string is returned."							  ]
 [ "pcre_select",  "COMMAND:   ",  "pcre_select(str, BAT[any::1,str]) : BAT[any::1,str]",	  "Select tuples based on the pattern"				  ]
 [ "pcre_uselect", "COMMAND:   ",  "pcre_uselect(str, BAT[any::1,str]) : BAT[any::1,void]",	  "Select tuples based on the pattern, only returning the head"	  ]
 

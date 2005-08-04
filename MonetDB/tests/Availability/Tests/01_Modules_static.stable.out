@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 675 ]
+[ 676 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 675 ]
+[ 676 ]
 
 var All:=0;
 
@@ -685,8 +685,8 @@ Module: "builtin"
 
 Module: "str"
 
-[ 24 ]
-#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 25 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature									help																																					  # name
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "+",		  "OPERATOR:  ",  "+(str, any) : str",											  "Concatenate two strings."																																																																									  ]
@@ -710,6 +710,7 @@ Module: "str"
 [ "substitute",	  "COMMAND:   ",  "substitute(str, str, str, bit) : str",							  "Substitute first occurrence of substring 'src' by 'dst'.\nIff repeated = true this is repeated while 'src' can be found in the result string.\nIn order to prevent recursion and result strings of unlimited size, repeating\nis only done iff src is not a substring of dst."																										  ]
 [ "toLower",	  "COMMAND:   ",  "toLower(str) : str",											  "Convert a string to lower case."																																																																								  ]
 [ "toUpper",	  "COMMAND:   ",  "toUpper(str) : str",											  "Convert a string to upper case."																																																																								  ]
+[ "translate",	  "COMMAND:   ",  "translate(str, str, str) : str",								  "Return the value of src modified so that every character in the value of\nsrc that occurs at some position N in the value of mapstr has been replaced\nby the character that occurs at position N in the value of transtr.\nEvery character in the value of src that does not appear in the value of\nmapstr is unchanged.\nEvery character in the value of src that appears at some position M in the\nvalue of mapstr, where the value of transtr is less than M characters in\nlength, is omitted from the returned value.\nIf any of the inputs is nil, the result is nil.\nNote that all three strings are UTF-8 encoded and that the function works\nat the Unicode level, not the byte level."  ]
 [ "trim",	  "COMMAND:   ",  "trim(str) : str",											  "Strip whitespaces around a string."																																																																								  ]
 [ "unicode",	  "COMMAND:   ",  "unicode(int) : str",											  "convert a unicode to a one-character string. (!DS2.2)"																																																																					  ]
 [ "unicodeAt",	  "COMMAND:   ",  "unicodeAt(str, int) : int",										  "get a unicode character (as an int) from a string position. (!DS2.2)"																																																																			  ]
@@ -811,7 +812,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 675 ]
+[ 676 ]
 
 quit();
 
