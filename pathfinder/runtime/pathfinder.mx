@@ -378,7 +378,7 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     else if (exists) ERROR("shred_doc(%s): already exists in database!\n", name);
 
     # shred it unlocked
-    var docBAT := new(str,bat); # contains all new bats
+    var docBAT := new(str,bat,WS_SIZE); # contains all new bats
     var us := usec();
     var shredRES := shred2bats(location,opt);
 
@@ -411,6 +411,7 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
 
     height := shredRES.fetch(PRE_LEVEL).max().int() + 1;
 
+    docBAT := docBAT.access(BAT_READ);
     if (doCommit) {
         [mmap](docBAT, STORE_MMAP);
 	[save](docBAT);
@@ -453,7 +454,7 @@ Shred xml document to the internal Pathfinder format, (analog to import_doc())."
 "pathfinder");
 
 PROC delete_doc_locked(oid doc_oid) : bit {
-    var docBAT := new(void,str);
+    var docBAT := new(void,str,WS_SIZE);
 
     if (doc_sema.exist(doc_oid)) {
 	# somebody else is deleting the same doc!
@@ -483,6 +484,7 @@ PROC delete_doc_locked(oid doc_oid) : bit {
         docBAT.insert(nil, toLower("@1"));
 @mil
     @:ws(getlower)@
+    docBAT := docBAT.access(BAT_READ);
   
     # docBAT becomes [name,bat]
     docBAT := [bat]([+](docBAT, str(int(doc_oid))).reverse().mirror());
