@@ -79,7 +79,7 @@ Actually, the logger should issue commit statements after each block.
 @m
 .MODULE logger;
 
-.COMMAND logger_start( str filename ) : bit = logger_start;
+.COMMAND logger_start( str dirname, str dbname ) : bit = logger_start;
 "Start logging; if first start, check if recovery is needed. if already logging, close the old file."
 
 .COMMAND log_trans_start( bit update ) : oid = trans_start; 
@@ -168,10 +168,59 @@ typedef struct logger {
 	int changes;
 	int version;
 	int id;
-	int tid;
+	oid tid;
 	char *dir;
 	stream *log;
 } logger;
+
+static logger *glog = NULL;
+
+int
+logger_start( bit *checked, str dirname, str dbname ) 
+{
+	*checked = FALSE;
+	if (glog) {
+		logger_destroy(glog);
+		*checked = TRUE;
+	}
+	glog = logger_create( 0, dirname, dbname, 0);
+	if (!glog) 
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+int
+trans_start( oid *tid, bit *update  ) {
+	(void)update;
+	if (!glog)
+		return GDK_FAIL;
+	if (log_tstart(glog) == LOG_ERR)
+		return GDK_FAIL;
+	*tid = glog->tid;
+	return GDK_SUCCEED;
+}
+
+int
+trans_end( bit *success, oid *tid) {
+	if (!glog || *tid != glog->tid || log_tend(glog) == LOG_ERR) {
+		*success = FALSE;
+		return GDK_FAIL;
+	}
+	*success = TRUE;
+	return GDK_SUCCEED;
+}
+
+int
+log_delta(bit *success, BAT *b, BAT *delta, oid *tid )
+{
+	if (!glog || *tid != glog->tid ||
+	    log_bat(glog, b->batCacheid, delta) == LOG_ERR) {
+		*success = FALSE;
+		return GDK_FAIL;
+	}
+	*success = TRUE;
+	return GDK_SUCCEED;
+}
 
 static int
 log_read_format(logger *l, logformat *data)
@@ -382,7 +431,7 @@ logger_readlog(logger *logger, char *filename)
 
 			break;
 		case LOG_END:
-			if (logger->tid != l.nr) {
+			if (logger->tid != (oid)l.nr) {
 				/* somehow we found a different end of transaction, big problem */
 				return -1;
 			}
@@ -792,7 +841,7 @@ log_tstart(logger *logger)
 	l.nr = ++logger->tid;
 
 	if (logger->debug)
-		fprintf(stderr, "log_tstart %d\n", logger->tid);
+		fprintf(stderr, "log_tstart " SZFMT "\n", logger->tid);
 
 	return log_write_format(logger, &l);
 }
@@ -803,7 +852,7 @@ log_tend(logger *logger)
 	logformat l;
 
 	if (logger->debug)
-		fprintf(stderr, "log_tend %d\n", logger->tid);
+		fprintf(stderr, "log_tend " SZFMT "\n", logger->tid);
 
 	l.flag = LOG_END;
 	l.nr = logger->tid;
@@ -812,3 +861,14 @@ log_tend(logger *logger)
 
 	return LOG_OK;
 }
+
+@mil
+
+proc logger_start() : void {
+	var dir := bat("monet_environment").find("sql_logdir");
+	var db := bat("monet_environment").find("gdk_dbname");
+	print(dir);
+	print(db);
+	logger_start(dir, db);
+}
+
