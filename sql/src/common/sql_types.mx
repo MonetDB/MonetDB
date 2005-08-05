@@ -1084,6 +1084,7 @@ sqltypeinit()
 	numerical = t;
 
 	OID = *t++ = sql_create_type("OID", 31, 0, 2, EC_NUM, "oid");
+	(void)OID; /* pacify picky compilers */
 	/*sql_create_type("TINYINT",   8, SCALE_FIX, 2,  EC_NUM, "uchr"); */
 	      *t++ = sql_create_type("SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
 	INT = *t++ = sql_create_type("INT",      32, SCALE_FIX, 2, EC_NUM, "int");
