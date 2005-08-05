@@ -1086,7 +1086,7 @@ BUNinplace(BAT *b, BUN p, ptr h, ptr t)
 		} else {
 			@:uncommit_replace(loc)@
 		}
-		if (b->tkey && !(b->tkey & BOUND2BTRUE)) {
+		if (b->ttype != TYPE_void && b->tkey && !(b->tkey & BOUND2BTRUE)) {
 			BATkey(bm, FALSE);
 		}
 		b->batDirtybuns = b->theapdirty = TRUE;
@@ -1334,10 +1334,12 @@ BATkey(BAT *b, int flag)
 		if (b->hseqbase == oid_nil && flag == BOUND2BTRUE) {
 			GDKerror("BATkey: nil-column cannot be kept unique.\n");
 		}
+		if (b->hseqbase != oid_nil && flag == FALSE) {
+			GDKerror("BATkey: dense column must be unique.\n");
+		}
 		if (b->hseqbase == oid_nil || flag == FALSE) {
 			return b;
 		}
-		flag = TRUE;	/* we only allow TRUE on dense void bats */
 	}
 	if (flag)
 		flag |= (1 | b->hkey);
