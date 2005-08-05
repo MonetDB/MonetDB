@@ -129,6 +129,8 @@ kernel libraries, e.g. bat.mx
 
 	.COMMAND append( BAT[oid,void] i, BAT[oid,void] u ) : BAT[oid,void] = bat_append_oidvoid_bat_wrap; "Special case append for empty bats, works around impossible void,void case"
 
+	.COMMAND inplace( BAT[void,any::1] o, oid id, any::1 val ) : BAT[void,any::1] = bat_inplace; "inplace replace values on the given locations"
+
 	.COMMAND inplace( BAT[void,any::1] o, BAT[oid,any::1] d ) : BAT[void,any::1] = bat_replace_oid_bat_wrap; "inplace replace values on the given locations"
 
 @- BAT properties
@@ -790,6 +792,15 @@ void_inplace(BAT *b, oid id, ptr val)
 	return res;
 }
 
+int
+bat_inplace(BAT **res, BAT *b, oid *id, ptr val )
+{
+	int ret = void_inplace(b,*id,val);
+	*res = b;
+	BBPfix(b->batCacheid);
+	return ret;
+}
+ 
 ssize_t
 void_replace_bat(BAT *b, BAT *u)
 {
