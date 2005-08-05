@@ -25,29 +25,19 @@ be paid when necessary. Transaction management is for this purpose
 implemented as a separate module and applications are required to
 obey the transaction policy, e.g. obtaining/releasing locks. 
 
-This module is designed to support efficient logging of SQL database.
+This module is designed to support efficient logging of database updates.
 Once loaded, the SQL compiler will insert the proper calls at
 transaction commit to include the changes in the log file.
 
-[The alternative storage structure is an ASCII dump, using a slightly
-enhanced Monet dump file format.
- +batname[hv,tv]	insert the bun
- -batname[hv,tv]	delete the bun
- *batname[headtype,tailtype]	define a bat
- =bat timestamp		check/update the bat timestamp
-
-possibly use the tag and batname as a mode switcher to reduce the
-the storage, i.e.
-=mybat[int,int]
-+[1,1]
-[2,2]
-[3,3]
--[2,2]
-=yourbat[int,str]
-*yourbat 16824
--[3,3]
-
-]
+The logger uses a directory to store its log files. One master log file
+stores information about the version of the logger, the transaction log files
+and logged transactions in these log files. This file is a simple ascii file.
+With the following format: 
+ 	6DIGIT-VERSION\n[log file number \n [\t transaction id\n]*]*
+The transaction log files have a binary format, which stores fixed size 
+logformat headers (flag,nr,bid), where the flag is the type of update logged.
+The nr field indicates how many changes there were (incase of inserts/deletes).
+The bid stores the bid identifier.
 
 The key decision to be made by the user is the location of the log file.
 Ideally, it should be stored in fail-safe environment, or at least
@@ -59,8 +49,8 @@ and therefor the writes are done to the same disk, but could also
 reside on an other system and then the changes are flushed through the network.  
 The logger works under the assumption that it is called to safeguard
 updates on the database when it has an exclusive lock on
-the latest version. This lock should be guaranteed by calling
-the transaction manager first.
+the latest version. This lock should be guaranteed by the calling
+transaction manager first.
 
 Finding the updates applied to a BAT is relatively easy, because each
 BAT contains a delta structure. On commit these changes are
@@ -68,12 +58,8 @@ written to the log file and the delta management is reset. Since each
 commit is written to the same log file, the beginning and end are 
 marked by a log identifier.
 
-Shouldn't you dump the BAT version/timestamp? Updates are only
-allowed when the BAT timestamp does not prohibit this.
-
-A server restart should only (re)process blocks which are completely 
-written to disk. 
-Actually, the logger should issue commit statements after each block.
+A server restart should only (re)process transactions which are completely 
+written to disk, ie which are writen in the master log file. 
 
 @* Module Definition
 @m
@@ -124,31 +110,8 @@ extern int log_tend(struct logger *logger);
 #include "logger.h"
 #include "stream.h"
 
-@-
-The log record encoding is geared at reduced storage space, but
-at the expense of readability. A user can not easily inspect the
-log a posteriori to check what has happened.
-
-Since the logger uses global variables, you could opt to provide the
-exclusive access as part of the logger implementation. 
-This means that a client should use the following scheme
-
-... update bat B ...
-logger.start()
-logger.safe(B)
-... other BAT updates to be saved.
-logger.commit()
-gdk.commit()	# implied by the logger.commit?
-
-[Niels, why not keeping a log per bat, e.g. mybat.log.230102.1 ?
-this simplifies parallel 
-recovery after a crash. Furthermore, the log time stamp can be
-compared with the BAT to see if you need to consult the log file.]
-[Martin, this is not done as keeping multiple files open (or opening
-multiple files) has a too great performance impact.]
-@c
 #define LOG_START		1
-#define LOG_END		2
+#define LOG_END			2
 #define LOG_INSERT		3
 #define LOG_DELETE		4
 #define LOG_CREATE		5
