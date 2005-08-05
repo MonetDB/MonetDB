@@ -817,10 +817,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			size_t buflen;
 
 			if (s->op1.stval->nrcols) {
-				sql_subtype *v, *a;
-
-				a = tail_type(s);
-				v = tail_type(s->op1.stval);
 				buflen = strlen(s->op4.funcval->func->imp) + 64;
 				buf = NEW_ARRAY(char, buflen + 1);
 
