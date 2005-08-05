@@ -430,6 +430,8 @@ def msc_deps(fd, deps, objext, msc):
                 if b+".tmpmil" in deplist:
                     fd.write('\t$(MEL) $(INCLUDES) -mil "%s.m" > "$@"\n' % (b))
                     fd.write('\ttype "%s.tmpmil" >> "$@"\n' % (b))
+                    fd.write('\tif not exist .libs $(MKDIR) .libs\n')
+                    fd.write('\t$(INSTALL) "%s.mil" ".libs\\%s.mil"\n' % (b, b))
             if ext in ("$O", "glue.$O", "tab.$O", "yy.$O"):
                 target, name = msc_find_target(tar, msc)
                 if name[0] == '_':
@@ -839,6 +841,9 @@ def msc_library(fd, var, libmap, msc):
         fd.write("%s%s: $(%s_OBJS) \n" % (ln, dll, ln.replace('-','_')))
         fd.write("\t$(CC) $(CFLAGS) -LD $(OUTPUTEXE)%s%s $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile1))
         fd.write("!ENDIF\n")
+        if sep == '_':
+            fd.write('\tif not exist .libs $(MKDIR) .libs\n')
+            fd.write('\t$(INSTALL) "%s%s" ".libs\\%s%s"\n' % (ln, dll, ln, dll))
     fd.write("\n")
 
     if SCRIPTS:
@@ -928,6 +933,9 @@ def msc_libs(fd, var, libsmap, msc):
         fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_OBJS)\n")
         fd.write("\t$(CC) $(CFLAGS) -LD $(OUTPUTEXE)%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile1))
         fd.write("!ENDIF\n")
+        if sep == '_':
+            fd.write('\tif not exist .libs $(MKDIR) .libs\n')
+            fd.write('\t$(INSTALL) "%s.dll" ".libs\\%s.dll"\n' % (ln, ln))
         fd.write("\n")
 
     if SCRIPTS:
