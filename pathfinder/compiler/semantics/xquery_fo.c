@@ -1086,6 +1086,12 @@
   { .ns = PFns_fn, .loc = "string-length",                               \
     .arity = 1, .par_ty = { PFty_opt (PFty_string ()) },                 \
     .ret_ty = PFty_integer () }                                          \
+, /* fn:translate (string?, string, string) as string */                 \
+  { .ns = PFns_fn, .loc = "translate",                                   \
+    .arity = 3, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_string (),                              \
+                            PFty_string () },                            \
+    .ret_ty = PFty_string () }                                           \
 , /* pf:node-name-eq (xs:string, xs:string,                          */  \
   /*                  (xs:anyElement | xs:anyAttribute) *)           */  \
   /*     as xs:boolean                                               */  \

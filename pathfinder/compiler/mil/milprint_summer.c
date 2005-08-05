@@ -5570,17 +5570,20 @@ fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
 }
 
 /**
- * fn_replace translates the builtin function fn:replace
+ * fn_replace translates the builtin functions fn:replace and fn:translate
  * @param f the Stream the MIL code is printed to
  * @param code the number indicating, which result interface is preferred
  * @param cur_level the level of the for-scope
  * @param counter the actual offset of saved variables
  * @param fun the function information
- * @param c the head of the function argument list
+ * @param args the head of the function argument list
+ * @param xqfunc the name of the XQuery function being translated
+ * @param milfunc the name of the MIL function to be called
  */
 static int
-fn_replace (opt_t *f, int code, int cur_level, int counter, 
-            PFfun_t *fun, PFcnode_t *args)
+fn_replace_translate (opt_t *f, int code, int cur_level, int counter, 
+            PFfun_t *fun, PFcnode_t *args,
+            const char *xqfunc, const char *milfunc)
 {
     char* item_ext = kind_str(STR); /* return "_str_"; */
 
@@ -5608,7 +5611,7 @@ fn_replace (opt_t *f, int code, int cur_level, int counter,
     }
 
     milprintf(f,
-                "{ # fn:replace (string?, string?, string?) as string\n"
+                "{ # fn:%s (string?, string?, string?) as string\n"
                 "var strings;\n"
                 "if (iter%03u.count() != loop%03u.count())\n"
                 "{\n"
@@ -5623,6 +5626,7 @@ fn_replace (opt_t *f, int code, int cur_level, int counter,
                 "else {\n"
                 "strings := item%s%03u;\n"
                 "}\n",
+                xqfunc,
                 counter-1, cur_level, 
                 cur_level, counter-1,
                 counter-1, item_ext, counter-1,
@@ -5666,17 +5670,19 @@ fn_replace (opt_t *f, int code, int cur_level, int counter,
                 item_ext,
                 item_ext);
     milprintf(f,
-                "var res := [pcre_replace](strings,patterns,replacements);\n"
+                "var res := [%s](strings,patterns,replacements);\n"
                 "strings := nil_oid_str;\n"
                 "patterns := nil_oid_str;\n"
                 "replacements := nil_oid_str;\n"
                 "iter := loop%03u.reverse().mark(0@0).reverse();\n"
                 "pos := iter.project(1@0);\n"
                 "kind := iter.project(STR);\n",
+                milfunc,
                 cur_level);
 
-    return_str_funs (f, code, cur_level, 
-                "fn:replace (string?, string?, string?) as string");
+    char buf[64];
+    snprintf(buf, sizeof(buf), "fn:%s (string?, string, string) as string", xqfunc);
+    return_str_funs (f, code, cur_level, buf);
     deleteResult_ (f, counter, STR);
     deleteResult_ (f, counter-1, STR);
     return VALUES;
@@ -7077,7 +7083,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"replace")))
     {
-        return fn_replace (f, code, cur_level, counter, fun, args);
+        return fn_replace_translate (f, code, cur_level, counter, fun, args, "replace", "pcre_replace");
+    }
+    else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"translate")))
+    {
+        return fn_replace_translate (f, code, cur_level, counter, fun, args, "translate", "translate");
     }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"substring-before")))
     {
