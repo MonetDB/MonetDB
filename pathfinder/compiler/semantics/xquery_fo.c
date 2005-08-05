@@ -1092,6 +1092,19 @@
                             PFty_string (),                              \
                             PFty_string () },                            \
     .ret_ty = PFty_string () }                                           \
+, /* fn:replace (string?, string, string) as string? */                  \
+  { .ns = PFns_fn, .loc = "replace",                                     \
+    .arity = 3, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_string (),                              \
+                            PFty_string () },                            \
+    .ret_ty = PFty_opt( PFty_string ()) }                                \
+, /* fn:replace (string?, string, string, string) as string? */          \
+  { .ns = PFns_fn, .loc = "replace",                                     \
+    .arity = 4, .par_ty = { PFty_opt (PFty_string ()),                   \
+                            PFty_string (),                              \
+                            PFty_string (),                              \
+                            PFty_string () },                            \
+    .ret_ty = PFty_opt( PFty_string ()) }                                \
 , /* pf:node-name-eq (xs:string, xs:string,                          */  \
   /*                  (xs:anyElement | xs:anyAttribute) *)           */  \
   /*     as xs:boolean                                               */  \
