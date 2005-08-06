@@ -83,7 +83,6 @@ typedef struct {
 
 @c
 #include "alarm.h"
-#include "alarm.proto.h"
 #include <time.h>
 
 static monet_timer_t timer[MAXtimer];
