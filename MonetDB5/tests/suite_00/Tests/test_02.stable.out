@@ -182,8 +182,8 @@ end main;	# 61
 [ "tident",		  "t"		  ]
 [ "tdense",		  "0"		  ]
 [ "tseqbase",		  "0@0"		  ]
-[ "tsorted",		  "0"		  ]
-[ "tkey",		  "0"		  ]
+[ "tsorted",		  "65"		  ]
+[ "tkey",		  "1"		  ]
 [ "tloc",		  "8"		  ]
 [ "tvarsized",		  "0"		  ]
 [ "talign",		  "0"		  ]
@@ -208,10 +208,6 @@ end main;	# 61
 [ "hheap->storage",	  "malloced"	  ]
 [ "hheap->filename",	  "15.hheap"	  ]
 [ "theapdirty",		  "clean"	  ]
-[ "hhash->type",	  "str"		  ]
-[ "hhash->mask",	  "15"		  ]
-[ "hhash->lim",		  "50"		  ]
-[ "hhash->collision",	  "8 on 1"	  ]
 #~EndVariableOutput~#
 #print(find(s,\"cello\"));
 [ 3 ]

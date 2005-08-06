@@ -17,18 +17,18 @@ stdout of test 'tst3010` in directory 'src/mal` itself:
 #	j:= j+i;
 #	return j{freeze};
 #end add;
-function user.add(i:int{read=true},j:int{freeze=true,read=true}):int;	# 0  (add:int)<-(i:int)(j:int)
-    j{freeze=true,read=true} := calc.+(j{freeze=true,read=true},i{read=true});	# 1 CALCbinaryADDintint (j:int)<-(j:int)(i:int)
-    return j{freeze=true,read=true};	# 2  (j:int)
+function user.add(i:int{readonly},j:int{readonly}):int;	# 0  (add:int)<-(i:int)(j:int)
+    j{readonly} := calc.+(j{readonly},i{readonly});	# 1 CALCbinaryADDintint (j:int)<-(j:int)(i:int)
+    return j{readonly};	# 2  (j:int)
 end add;	# 3  
 #
 #function add2(i:int,j:int{read}):int{write,safe};
 #	k:= j+i;
 #	return k{freeze};
 #end ;
-function user.add2(i:int,j:int{read=true}):int;	# 0  (add2:int)<-(i:int)(j:int)
-    k{freeze=true} := calc.+(j{read=true},i);	# 1 CALCbinaryADDintint (k:int)<-(j:int)(i:int)
-    return k{freeze=true};	# 2  (k:int)
+function user.add2(i:int,j:int):int;	# 0  (add2:int)<-(i:int)(j:int)
+    k := calc.+(j,i);	# 1 CALCbinaryADDintint (k:int)<-(j:int)(i:int)
+    return k;	# 2  (k:int)
 end add2;	# 3  
 #
 #i{cost}:= 23;
@@ -60,24 +60,9 @@ function user.main():int;	# 0  (main:int)
 #Parsing properties and keeping them around 	# 1  ($2:str)
     i{cost=23} := 23;	# 2  (i:int)<-($4:int)
     z := user.add(i{cost=23},i{cost=23});	# 3  (z:int)<-(i:int)(i:int)
-    kk := user.add2(i{cost=23},i{cost=23});	# 4  (kk:int)<-(i:int)(i:int)
-#alternative structure 	# 5  ($8:str)
-#function add(i:int,j:int):int;  	# 6  ($10:str)
-#			?{i.read, j.read} 	# 7  ($12:str)
-#			{add.write:=true; add.safe:=true;} 	# 8  ($14:str)
-#	j:= j+i; 	# 9  ($16:str)
-#	return j{freeze}; 	# 10  ($18:str)
-#end add; 	# 11  ($20:str)
-#function add2(i:int,j:int):int; 	# 12  ($22:str)
-#			?{i.read=true;j.read=true;} 	# 13  ($24:str)
-#			{add2.write:=true; add2.safe:=true;} 	# 14  ($26:str)
-#	k:= j+i; 	# 15  ($28:str)
-#	return k{freeze}; 	# 16  ($30:str)
-#end ; 	# 17  ($32:str)
-#i:= 23;		{i.cost:=0;} 	# 18  ($34:str)
-#z:= add(i,i); 	# 19  ($36:str)
-#kk:= add2(i,i); 	# 20  ($38:str)
-end main;	# 21  
+#violates properties 	# 4  ($7:str)
+    kk := user.add2(i{cost=23},i{cost=23});	# 5  (kk:int)<-(i:int)(i:int)
+end main;	# 6  
 
 # 08:01:14 >  
 # 08:01:14 >  Done.

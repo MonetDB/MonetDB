@@ -320,8 +320,8 @@ instruction in the source.]
 
 @node Before-after calls, The parser ,Instruction Records, MonetDB Assembler Language
 @+ Before-after calls
-The instruction records contain three optional pointers to functions:
-beforeCall and afterCall.  All are passed the runtime context. 
+The instruction records contain two optional pointers to functions:
+beforeCall and afterCall. They are passed the runtime context. 
 The beforeCall is activated
 just before you enter a routine and can be used to initialize
 the stack frame, perform debugging, etc.etc.
@@ -379,12 +379,12 @@ typedef struct VARRECORD{
     bit     isaconstant;    /* value cannot change */
     bit     isatypevar; /* denotes a type variable */
     int     tmpindex;   /* temporary variable */
-    short   isinit; /* used once as destination */
+    short   issetonce; /* used once as destination */
 	short	scope;	/* block id where it is declared */
 	short	depth;	/* ... depth in nesting */
     short   isused; /* for stack copying scope */
     short   fixtype;/* the type has been fixed */
-	short   udftype;/* type defined in program */
+	short   isudftype;/* type defined in program */
     short   cleanup;/* remove upon function return */
     short   beginLifespan, endLifespan, updLifespan; /* for optimizers */
     str     literal;/* initial value string */
@@ -486,7 +486,7 @@ for separate name space management.
 #define isTmpVar(M,I)   ((M)->var[I]->tmpindex)
 #define isVarUsed(M,I)      ((M)->var[I]->isused)
 #define setVarUsed(M,I,X)      ((M)->var[I]->isused)=X
-#define isVarInitialized(M,I)   ((M)->var[I]->isinit)
+#define isVarInitialized(M,I)   ((M)->var[I]->issetonce)
 #define getVarScope(M,I)   ((M)->var[I]->scope)
 #define getVarProperties(M,I)   ((M)->var[I]->props)
 
@@ -1109,7 +1109,7 @@ int newVariable(MalBlkPtr mb, str name, malType type){
     setVarCleanup(mb,n) = FALSE;
     setVarUsed(mb,n,FALSE);
     isVarInitialized(mb,n) = FALSE;
-	getVar(mb,n)->udftype= 0;
+	getVar(mb,n)->isudftype= 0;
     mb->vtop++;
     return n;
 } 
@@ -1157,7 +1157,7 @@ int newTmpVariable(MalBlkPtr mb, malType type){
     setVarCleanup(mb,n) = FALSE;
     setVarUsed(mb,n,FALSE);
     isVarInitialized(mb,n) = FALSE;
-	getVar(mb,n)->udftype= 0;
+	getVar(mb,n)->isudftype= 0;
     mb->vtop++;
     return n;
 } 
@@ -1194,13 +1194,13 @@ void    copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
 	w->gdktype = v->gdktype;
 	w->cleanup = v->cleanup;
 	w->fixtype = v->fixtype;
-	w->udftype = v->udftype;
+	w->isudftype = v->isudftype;
 	w->literal= v->literal? GDKstrdup(v->literal):NULL;
 	w->isaconstant = v->isaconstant;
 	w->isatypevar = v->isatypevar;
 	w->tmpindex = v->tmpindex;
 	w->isused = v->isused;
-	w->isinit = v->isinit;
+	w->issetonce = v->issetonce;
 	w->depth = v->depth;
 	w->scope = v->scope;
     VALcopy(&w->value,&v->value);
@@ -1955,7 +1955,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
 				for(i=0;i<p->retc;i++){
 					ps= getVar(mb,getArg(p,i))->props;
 					pstring= propertySet2str(ps);
-					if( getVar(mb, getArg(p,i))->udftype){
+					if( getVar(mb, getArg(p,i))->isudftype){
 						str tpe= getTypeName(getVarType(mb,getArg(p,i)));
 						sprintf(t,"%s:%s%s ",getArgName(mb,p,i),tpe,pstring); 
 						GDKfree(tpe);

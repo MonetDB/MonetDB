@@ -58,7 +58,7 @@ MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	/* build the alias table */
 	for( i=0; i<mb->vtop; i++){
-		if( !mb->var[i]->isused && !mb->var[i]->udftype && 
+		if( !mb->var[i]->isused && !mb->var[i]->isudftype && 
 			!isConstant(mb,i) && getVarType(mb,i) != TYPE_any){
 			for(j=i-1; j>=0; j--)
 			if( mb->var[j] &&

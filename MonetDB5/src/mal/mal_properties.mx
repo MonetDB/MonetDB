@@ -17,13 +17,7 @@
 
 @f mal_properties
 @a M. Kersten
-@* Property management
-@{
-One of the shortcomings of earlier implementations is that most variables,
-e.g. BATs, have static/dynamic properties hardwired into the system. 
-The consequence is that it is often hard to detect the property state, and,
-more importantly, to reason about the state before actual execution takes place.
-@}
+@* Property Management
 
 Properties come in several classes, those linked with the symbol table and
 those linked with the runtime environment. The former are determined
@@ -48,45 +42,59 @@ size of a temporary result or the alignment property between BATs.
 Properties capture part of the state of the system in the form of an 
 simple term expression @code{(name,operator,constant)}.
 The property model assumes a namespace built around Identifiers. 
-The operator can be any identifier, but conditional operators are
-quite common, e.g. the triple (count,<,1000) can be used to denote a small
-table.
+The operator satisfy the syntax rules for MAL operators.
+Conditional operators are quite common, e.g. the triple (count,<,1000) 
+can be used to denote a small table.
 
-@+ Who is allowed to carry properties?
-The objects comming to mind in the MAL setting are: variables (symbol table
-entries), MAL instructions, MAL blocks, function signatures, and
-function arguments.
-Furthermore, SQL queries, Boxes (containers with persistent data), modules,...
+@+ Property Associations
+The property bearing objects in the MAL setting are 
+variables (symbol table entries) and MAL function blocks.
+The direct relationship between instructions and
+a target variable, make it possible to keep the instruction properties
+in the corresponding target variable. 
 
-@emph{MAL variables.}
-A variable already contains a number of properties, e.g. type,
-isaconstant, isused (both read and written), garbage(for garbage collector).
-Especially for BATs we have to extend this list significantly.
+@emph{Variables properties.}
+The variables can be extended at any time with a property set.
+Properties have a scope identical to the scope of the corresponding variable. 
+Ommision of the operator and value turns it into a boolean valued property,
+whose value is @code{true}.
 @verbatim
-	b{count=1000,sorted=false}:= mymodule.action("table");
-	name{align="grp1"} := bbp.take("person_name");
-	age{align="grp1"} := bbp.take("person_age");
+	b{count=1000,sorted}:= mymodule.action("table");
+	name{aligngroup=312} := bbp.take("person_name");
+	age{aligngroup=312} := bbp.take("person_age");
 @end verbatim
+The example illustrates a mechanism to maintain alignment information.
+Such a property is helpful for optimizers to pick an efficient algorithm.
 
-Properties associated with a variable have a scope identical to the scope 
-of the variable. However, its value depends on the position in a simulated
-execution. I.e., consider the instruction sort(B) in
-a MAL block. It leads to the property 'sorted' for B,
-whose value is a posterori true, and not necessarily before execution.
-
-@emph{MAL blocks.}
-Every MAL block is semantically a callable function. Such a block
-could be tagged with properties to identify the stages of processing it went
-through (e.g. optimized or not), ownership, scheduling primitives etc. These are
-typically workflow related properties.
-
-@emph{MAL function signatures.} A function signature contains a description of
-the kind of objects it is willing to accept and an indication of the
-result. It seems appropriate to be able to tag parameters with properties
+@emph{MAL function signatures.} 
+A function signature contains a description of
+the objects it is willing to accept and an indication of the 
+expected result. The arguments can be tagged with properties
 that 'should be obeyed, or implied' by the actual arguments. As such,
 it extends the typing scheme used during compilation/optimization.
-Likewise, the return values could be tagged with properties that 'at least'
-exist after the function returns. (See below)
+Likewise, the return values can be tagged with properties that 'at least'
+exist upon function return. 
+@verbatim
+    function test(b:bat[:void,:int]{count<1000}):bat[:void,:int]{sorted}
+       #code block
+    end test
+@end verbatim
+
+These properties are informative to optimizers. They can be enforced
+at runtime using the operation
+@code{optimizer.enforceRules()} which injects calls into 
+the program to check them. 
+An assertion error is raised if the property does not hold.
+The code snippet
+@verbatim
+	z:= user.test(b);
+@end verbatim
+is translated into the following code block;
+@verbatim
+	mal.assert(b,"count","<",1000);
+	z:= user.test(b);
+	mal.assert(z,"sorted");
+@end verbatim
 
 @emph{MAL instructions.} Properties associated with an instruction are aimed
 at the a tactical optimizer and execution engine. It says something about

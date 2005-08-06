@@ -77,6 +77,13 @@ command raise(msg:str) :str
 address CMDraise
 comment "Raise an exception labeled 
 	with a specific message.";
+pattern assert(v:any,term:str):void
+address CMDassertProperty
+comment "Check a property";
+pattern assert(v:any,pname:str,oper:str,val:any):void
+address CMDassertProperty
+comment "Check a property";
+
 @+ Macro expansion
 Running a script stored in a file is interpreted as
 It is typically used to initialize a context, therefore we need
@@ -113,6 +120,11 @@ str CMDraise(str *ret,  str *msg){
 	*ret= GDKstrdup(*msg);
 	return GDKstrdup(*msg);
 }
+str
+CMDassertProperty(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+    (void) mb; (void)stk; (void) pci;
+    return throwMessage("mal.assert","NYI");
+}
 @}
 @+ Printing
 The print commands are implemented as single instruction rules,
@@ -123,104 +135,6 @@ The old method in V4 essentially causes a lot of overhead
 because you have to prepare for the worst (e.g. mismatch format
 identifier and argument value)
 @{
-@c
-str CMDprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int tpe = getArgType(mb,pci,1);
-	ptr val = (ptr) getArgReference(stk,pci,1);
-        stream *fp = GDKout;
-	if( val==NULL) {
-		ATOMprint(TYPE_str, "nil", GDKout);
-		return MAL_SUCCEED;
-	}
-	if( isaBatType(tpe)){
-		BAT *b = BATdescriptor(*(int*)val);
-		if( b== NULL) {
-			return throwMessage("mal.print","descriptor access failed");
-		}
-		BATmultiprintf(GDKout,2,&b,TRUE,0,TRUE);
-		return MAL_SUCCEED;
-	}
-	if( isaColType(tpe)){
-		return throwMessage("mal.print","column nys");
-	}
-		
-	stream_printf(fp,"[ ");
-	if( tpe == TYPE_str)
-		ATOMprint(tpe, *(str*)val, fp);
-        else  	ATOMprint(tpe, val, fp);
-        stream_printf(fp," ]\n");
-	stream_flush(fp);
-        return MAL_SUCCEED;
-}
-str CMDprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int tpe = getArgType(mb,pci,1);
-	ptr val = (ptr) getArgReference(stk,pci,1);
-	if( val==NULL) {
-		ATOMprint(TYPE_str, "nil", GDKout);
-		return MAL_SUCCEED;
-	}
-	if( tpe == TYPE_str)
-		ATOMprint(TYPE_str, *(str*)val, GDKout);
-	else ATOMprint(tpe, val, GDKout);
-	stream_flush(GDKout);
-	return MAL_SUCCEED;
-}
-
-str CMDotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int o, int flg){
-        BAT *piv[MAXPARAMS],*b;
-        int nbats = 0;
-	int tpe,i=1,order=0;
-	ptr val;
-
-	if(o){
-		order = *(int*) getArgReference(stk,pci,1);
-		i++;
-	}
-	for(; i< pci->argc;i++) {
-		tpe = getArgType(mb,pci,i);
-		val = (ptr) getArgReference(stk,pci,i);
-		if( !isaBatType(tpe)) 
-			return throwMessage("mal.otable"," BAT expected");
-		b= BATdescriptor(*(int*)val);
-		if(b == NULL) return throwMessage("mal.otable","GDKerror");
-                piv[nbats++] = b;
-        } 
-        BATmultiprintf(GDKout, nbats, piv, flg, order, TRUE);
-	stream_flush(GDKout);
-        return MAL_SUCCEED;
-}
-
-str CMDprint_otable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	CMDotable(mb,stk,pci,1,TRUE);
-        return MAL_SUCCEED;
-}
-
-str CMDprint_table( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	CMDotable(mb,stk,pci,0,FALSE);
-        return MAL_SUCCEED;
-}
-
-str CMDprint_table_default( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-        BAT *piv[MAXPARAMS],*b;
-        int nbats = 0;
-	int tpe,i;
-	ptr val;
-
-	for(i=pci->retc; i< pci->argc;i++) {
-		tpe = getArgType(mb,pci,i);
-		val = (ptr) getArgReference(stk,pci,i);
-		if( !isaBatType(tpe)) 
-			return throwMessage("mal.print_table_default","BAT expected");
-		b= BATdescriptor(*(int*)val);
-		if(b == NULL) return throwMessage("mal.print_table_default","GDKerror");
-                piv[nbats++] = b;
-        } 
-        BATmultiprintf(GDKout, i-1, piv, FALSE, 0, TRUE);
-	stream_flush(GDKout);
-        return MAL_SUCCEED;
-}
 @- Input redirectionrs
 @c
 str CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
