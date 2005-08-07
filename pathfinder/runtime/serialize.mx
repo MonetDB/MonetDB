@@ -49,7 +49,7 @@ static bit is_fake_project (BAT* b)
 
 #define MAXTAGDEPTH        1024
 
-#define WS_BATS     HEIGHT
+#define WS_BATS     WS_SIZE
 
 /**
  *
@@ -283,10 +283,14 @@ static BAT* fetchWsContextBAT(XqueryCtx* ctx, BAT* ws, int batID, int wsID) {
  * anyway.
  */
 static BAT* wsBAT(XqueryCtx* ctx, int batId) {
+	if ( batId >= WS_BATS ) {
+		fatal_err(ctx,"wsBAT: batId=%d >= WS_BATS=%d",batId,WS_BATS);
+		return NULL;
+	}
 	if ( !ctx->curBAT[batId] ) {
 		if ( !( ctx->curBAT[batId] =
 					fetchWsContextBAT(ctx,ctx->ws,batId,ctx->curFRAG)) ) {
-			fatal_err(ctx,"unable to load wsBAT[%d]",batId);
+			fatal_err(ctx,"wsBAT: unable to load wsBAT[%d]",batId);
 			return NULL;
 		}
 	}
@@ -868,10 +872,10 @@ static ptr idxTV(XqueryCtx* ctx, str name, BAT* b, oid oid_index) {
 	ptr res = NULL;
 
 	if ( !b ) {
-		fatal_err(ctx,"idxTV: NIL BAT[\"%s\"]",name);
+		fatal_err(ctx,"idxTV: NIL BAT[%s/%s]",name,BATgetId(b));
 		return NULL;
 	} else if ( BATcount(b) == 0 ) {
-		fatal_err(ctx,"idxTV: BAT[%s] is empty",name);
+		fatal_err(ctx,"idxTV: BAT[%s/%s] is empty",name,BATgetId(b));
 		return NULL;
 	} else if ( is_fake_project(b) ) {
 		res = BUNtail(b,BUNfirst(b));
@@ -882,14 +886,14 @@ static ptr idxTV(XqueryCtx* ctx, str name, BAT* b, oid oid_index) {
 		if ( bun ) {
 			res = BUNtail(b,bun);
 		} else {
-			fatal_err(ctx,"idxTV, BAT[%s]: "SZFMT" not within ["SZFMT","SZFMT"]",
-					name, (size_t)oid_index, (size_t)(*(oid*)BUNhead(b,BUNfirst(b))),
+			fatal_err(ctx,"idxTV, BAT[%s/%s]: "SZFMT" not within ["SZFMT","SZFMT"]",
+					name, BATgetId(b), (size_t)oid_index, (size_t)(*(oid*)BUNhead(b,BUNfirst(b))),
 					(size_t)(*(oid*)BUNhead(b,BUNlast(b)-BUNsize(b))));
 			return NULL;
 		}
 	}
 	if ( ! res ) {
-		fatal_err(ctx,"idxTV: BAT[%s]["SZFMT"], NULL (ptr) result",name,(size_t)oid_index);
+		fatal_err(ctx,"idxTV: BAT[%s/%s]["SZFMT"], NULL (ptr) result",name,BATgetId(b),(size_t)oid_index);
 		return NULL;
 	}
 	return res;
@@ -962,10 +966,21 @@ static int process_attr(XqueryCtx* ctx, int frag, oid id, int top) {
 
 static int process_node_attr(XqueryCtx* ctx, int nFRAG, oid pre, int emptyNode) {
 	BAT *b;
+	oid nid = oid_nil;
+	BUN p, q; 
 
-	if ( !(b  = BATuselect(wsBAT(ctx,ATTR_OWN),&pre,&pre)) )
+	b = wsBAT(ctx,PRE_NID);
+	BUNfndVOID(p, b, &pre);
+	if ( p ) {
+		nid = *(oid*)BUNtail(b,p);
+	} else {
+		fatal_err(ctx,"process_node_attr: "SZFMT" not within ["SZFMT","SZFMT"]", 
+			  (size_t)pre, (size_t)(*(oid*)BUNhead(b,BUNfirst(b))), 
+			  (size_t)(*(oid*)BUNhead(b,BUNlast(b)-BUNsize(b))));
+		return 0;
+	}
+	if ( !(b  = BATuselect(wsBAT(ctx,ATTR_OWN),&nid,&nid)) )
 		return fatal_err(ctx,"process_node_attr: uselect fails\n");
-	BUN p, q;
 	BATloop(b, p, q) {
 		oid id = *(oid*)BUNhead(b, p);
 		if ( ! process_attr(ctx,nFRAG,id,0/*top*/) ) {
@@ -994,6 +1009,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
 		CHKVP(vp = idxTV(ctx,"par_pre_frag",pre_frag,pre));
 		vFRAG = (int)*(oid*)vp;
 	}
+	if (kind == chr_nil) return -1;
 	switch( kind ) {
 		case (char)0:
 			{	/* ELEMENT */
@@ -1053,7 +1069,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
 				break;
 			}
 		default:
-			return fatal_err(ctx,"Unknow kind IN xquery_node_print");
+			return fatal_err(ctx,"Unknow kind %d IN xquery_node_print", (int)kind);
 	}
 	return 1;
 }
@@ -1103,10 +1119,12 @@ static int MY_xquery_pre_range(XqueryCtx* ctx, oid from, oid to, BAT* pre_frag, 
 	oid pre = from;
 
 	do {
-		if ( !xquery_node_print(ctx, pre,pre_frag,top&&(from==to)) /*cheat*/ )
+		if ( !xquery_node_print(ctx, pre,pre_frag,top&&(from==to)) /*cheat*/ ) {
 			return 0;
-		if ( !xquery_endtag_print(ctx,++pre) )
+		}
+		if ( !xquery_endtag_print(ctx,++pre) ) {
 			return 0;
+		}
 	} while( moreTags(ctx) && (pre<=to) );
 	return 1;
 }
@@ -1263,6 +1281,7 @@ static int seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag, int top) {
 	/* incomplete, different for dmMode ?? */
 	CHKVP(vp = idxTVinWS(ctx,PRE_SIZE,preVal));
 	int size = *(int*)vp;
+	if (size&(1<<31)) fprintf(stderr,"= seqEmitNode: size["SZFMT"] = %d\n", preVal, size);
 	return MY_xquery_pre_range(ctx,preVal,preVal+size, pre_frag, top);
 }
 

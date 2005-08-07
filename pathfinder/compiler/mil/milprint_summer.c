@@ -923,6 +923,7 @@ map2NODE_interface (opt_t *f)
             /* create subtree copies for all bats except content_level */
             "_elem_iter  := res_iter;\n"
             "_elem_size  := mposjoin(res_item, res_frag, ws.fetch(PRE_SIZE));\n"
+            "_elem_size  := correct_sizes(res_iter, res_item, _elem_size);\n"
             "_elem_kind  := mposjoin(res_item, res_frag, ws.fetch(PRE_KIND));\n"
             "_elem_prop  := mposjoin(res_item, res_frag, ws.fetch(PRE_PROP));\n"
             "_elem_frag  := mposjoin(res_item, res_frag, ws.fetch(PRE_FRAG));\n"
@@ -968,7 +969,7 @@ map2NODE_interface (opt_t *f)
 
             /* get the attributes of the subtree copy elements */
             "{ # create attribute subtree copies\n"
-            "var temp_attr := mvaljoin(res_item, res_frag, ws.fetch(ATTR_OWN));\n"
+            "var temp_attr := mvaljoin( mposjoin(res_item, res_frag, ws.fetch(PRE_NID)), res_frag, ws.fetch(ATTR_OWN));\n"
             "var oid_attr := temp_attr.reverse().mark(0@0).reverse();\n"
             "var oid_frag;\n"
             "if (is_fake_project(res_frag)) {\n"
@@ -1992,7 +1993,7 @@ loop_liftedSCJ (opt_t *f,
             "unq := nil_oid_oid;\n"
             */
             /* get the attribute ids from the pre values */
-            "var temp1 := mvaljoin (oid_item, oid_frag, ws.fetch(ATTR_OWN));\n"
+            "var temp1 := mvaljoin ( mposjoin(oid_item, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(ATTR_OWN));\n"
             "oid_item := nil_oid_oid;\n"
             "oid_frag := temp1.mark(0@0).reverse().leftfetchjoin(oid_frag);\n"
             "var oid_attr := temp1.reverse().mark(0@0).reverse();\n"
@@ -2083,7 +2084,7 @@ loop_liftedSCJ (opt_t *f,
         if (kind)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(%s))).mark(0@0).reverse();\n"
+                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(KIND_NID + int(%s))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -2093,7 +2094,7 @@ loop_liftedSCJ (opt_t *f,
         else if (ns && loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
+                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(KIND_NID + int(ELEMENT))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -2113,7 +2114,7 @@ loop_liftedSCJ (opt_t *f,
         else if (loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
+                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(KIND_NID + int(ELEMENT))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -2133,7 +2134,7 @@ loop_liftedSCJ (opt_t *f,
         else if (ns)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
+                    "var temp1 := mvaljoin( mposjoin(oid_item, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(KIND_NID + int(ELEMENT))).mark(0@0).reverse();\n"
                     "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
                     "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
@@ -2706,10 +2707,21 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "    res_frag := pruned_input.reverse().leftjoin(ctx_dn_frag);\n"
                 "    res_frag := res_frag.reverse().mark(0@0).reverse();\n"
                 "}\n"
-    
+
                 /* create subtree copies for all bats except content_level */
                 "var content_size := mposjoin(res_item, res_frag, "
                                              "ws.fetch(PRE_SIZE));\n"
+                /* StM (more guessing than knowing...):
+                 * Fixing the subtree sizes via correct_sizes() as for
+                 * _elem_size in map2NODE_interface() above does not seem to
+                 * work, here; res_item does not seem to contain complete
+                 * subtrees!??
+                 * Apparently, we're only dealing with fragment 0@0, here,
+                 * i.e., the transient document, which does not contain any
+                 * holes, and hence, does fixing the size is not necessary
+                 * at all... !??
+                 * "content_size  := correct_sizes(res_iter, res_item, content_size);\n"
+                 */
                 "var content_prop := mposjoin(res_item, res_frag, "
                                              "ws.fetch(PRE_PROP));\n"
                 "var content_kind := mposjoin(res_item, res_frag, "
@@ -2781,6 +2793,17 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 /* calculate the sizes for the root nodes */
                 "var contentRoot_size := mposjoin(node_items, node_frags, "
                                                  "ws.fetch(PRE_SIZE)).[+](1);\n"
+                /* StM (more guessing than knowing...):
+                 * Fixing the subtree sizes via correct_sizes() as for
+                 * _elem_size in map2NODE_interface() above does not seem to
+                 * work, here; res_item does not seem to contain complete
+                 * subtrees!??
+                 * Apparently, we're only dealing with fragment 0@0, here,
+                 * i.e., the transient document, which does not contain any
+                 * holes, and hence, does fixing the size is not necessary
+                 * at all... !??
+                 * "contentRoot_size  := correct_sizes(node_iters, node_items, contentRoot_size);\n"
+                 */
                 "var size_oid := contentRoot_size.reverse();\n"
                 "contentRoot_size := nil_oid_int;\n"
                 "size_oid := size_oid.leftfetchjoin(oid_oid);\n"
@@ -2904,6 +2927,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 /* insert the new trees into the working set */
                 "ws.fetch(PRE_LEVEL).fetch(WS).insert(root_level);\n"
                 "ws.fetch(PRE_SIZE).fetch(WS).insert(root_size);\n"
+                "ws.fetch(PRE_NID).fetch(WS).insert(root_size.mirror());\n"
+                "ws.fetch(NID_PRE).fetch(WS).insert(root_size.mirror());\n"
                 "ws.fetch(PRE_KIND).fetch(WS).insert(root_kind);\n"
                 "ws.fetch(PRE_PROP).fetch(WS).insert(root_prop);\n"
                 "ws.fetch(PRE_FRAG).fetch(WS).insert(root_frag);\n"
@@ -2911,17 +2936,17 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "  var knd := ELEMENT;\n"
                 "  while ( knd <= DOCUMENT ) {\n"
                 "    var kind_root := root_kind.ord_uselect(knd).reverse().chk_order();\n"
-                "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS);\n"
-                "    kind_pre.insert(kind_root);\n"
+                "    var kind_nid := ws.fetch(KIND_NID + int(knd)).fetch(WS);\n"
+                "    kind_nid.insert(kind_root);\n"
                 "    if ( knd = ELEMENT ) {\n"
                 "      var prop_root := kind_root.reverse().mirror().leftfetchjoin(root_prop).reverse().chk_order();\n"
-                "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS);\n"
-                "      prop_pre.insert(prop_root);\n"
+                "      var prop_nid := ws.fetch(PROP_NID + int(knd)).fetch(WS);\n"
+                "      prop_nid.insert(prop_root);\n"
                 "    }\n"
                 "    if ( knd = PI ) {\n"
                 "      var prop_root := kind_root.reverse().mirror().leftfetchjoin(root_prop).reverse().chk_order();\n"
-                "      var prop_pre := ws.fetch(PROP_PRE + 1).fetch(WS);\n"
-                "      prop_pre.insert(prop_root);\n"
+                "      var prop_nid := ws.fetch(PROP_NID + 1).fetch(WS);\n"
+                "      prop_nid.insert(prop_root);\n"
                 "    }\n"
                 "    knd :+= chr(1);\n"
                 "  }\n"
@@ -2980,7 +3005,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var oid_preNew := content_preNew_preOld.mark(0@0).reverse();\n"
                 "content_preNew_preOld := nil_oid_oid;\n"
                 "var oid_frag := oid_preNew.leftfetchjoin(preNew_frag);\n"
-                "var temp_attr := mvaljoin(oid_preOld, oid_frag, ws.fetch(ATTR_OWN));\n"
+                "var temp_attr := mvaljoin( mposjoin(oid_preOld, oid_frag, ws.fetch(PRE_NID)), oid_frag, ws.fetch(ATTR_OWN));\n"
                 "oid_preOld := nil_oid_oid;\n"
                 "var oid_attr := temp_attr.reverse().mark(0@0).reverse();\n"
                 "oid_frag := temp_attr.reverse().leftfetchjoin(oid_frag);\n"
@@ -3123,6 +3148,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "}\n"
             /* insert the new trees into the working set */
             "ws.fetch(PRE_SIZE).fetch(WS).insert(_elem_size);\n"
+            "ws.fetch(PRE_NID).fetch(WS).insert(_elem_size.mirror());\n"
+            "ws.fetch(NID_PRE).fetch(WS).insert(_elem_size.mirror());\n"
             "ws.fetch(PRE_LEVEL).fetch(WS).insert(_elem_level);\n"
             "ws.fetch(PRE_KIND).fetch(WS).insert(_elem_kind);\n"
             "ws.fetch(PRE_PROP).fetch(WS).insert(_elem_prop);\n"
@@ -3131,17 +3158,17 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "  var knd := ELEMENT;\n"
             "  while ( knd <= DOCUMENT ) {\n"
             "    var kind__elem := _elem_kind.ord_uselect(knd).reverse().chk_order();\n"
-            "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS);\n"
-            "    kind_pre.insert(kind__elem);\n"
+            "    var kind_nid := ws.fetch(KIND_NID + int(knd)).fetch(WS);\n"
+            "    kind_nid.insert(kind__elem);\n"
             "    if ( knd = ELEMENT ) {\n"
             "      var prop__elem := kind__elem.reverse().mirror().leftfetchjoin(_elem_prop).reverse().chk_order();\n"
-            "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS);\n"
-            "      prop_pre.insert(prop__elem);\n"
+            "      var prop_nid := ws.fetch(PROP_NID + int(knd)).fetch(WS);\n"
+            "      prop_nid.insert(prop__elem);\n"
             "    }\n"
             "    if ( knd = PI ) {\n"
             "      var prop__elem := kind__elem.reverse().mirror().leftfetchjoin(_elem_prop).reverse().chk_order();\n"
-            "      var prop_pre := ws.fetch(PROP_PRE + 1).fetch(WS);\n"
-            "      prop_pre.insert(prop__elem);\n"
+            "      var prop_nid := ws.fetch(PROP_NID + 1).fetch(WS);\n"
+            "      prop_nid.insert(prop__elem);\n"
             "    }\n"
             "    knd :+= chr(1);\n"
             "  }\n"
@@ -3375,13 +3402,15 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "newPre_prop := newPre_prop.reverse().mark(seqb).reverse();\n"
                 "ws.fetch(PRE_PROP).fetch(WS).insert(newPre_prop);\n"
                 "ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));\n"
+                "ws.fetch(PRE_NID).fetch(WS).insert(newPre_prop.mirror());\n"
+                "ws.fetch(NID_PRE).fetch(WS).insert(newPre_prop.mirror());\n"
                 "ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));\n"
                 "ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(TEXT));\n"
                 "ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));\n"
                 "{\n"
-                "  var kind_pre_ := newPre_prop.mark(nil).reverse().chk_order();\n"
-                "  var kind_pre := ws.fetch(KIND_PRE + int(TEXT)).fetch(WS);\n"
-                "  kind_pre.insert(kind_pre_);\n"
+                "  var kind_nid_ := newPre_prop.mark(nil).reverse().chk_order();\n"
+                "  var kind_nid := ws.fetch(KIND_NID + int(TEXT)).fetch(WS);\n"
+                "  kind_nid.insert(kind_nid_);\n"
                 "}\n"
                 "newPre_prop := nil_oid_oid;\n"
                 "item := item%s.mark(seqb);\n"
@@ -5424,11 +5453,12 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
             "frag := oid_map.leftfetchjoin(frag);\n"
             "oid_map := nil_oid_oid;\n"
             /* get id nodes */
-            "# var nodes := mvaljoin(id_str, frag, ws.fetch(ID%s_PRE));\n"
+            "# var nodes := mvaljoin( mposjoin(id_str, frag, ws.fetch(PRE_NID)), frag, ws.fetch(ID%s_NID));\n"
             "var iterator := frag.tunique().reverse();\n"
             "var nodes;\n"
             "if (iterator.count() = 1) {\n"
-            "    nodes := id_str.leftjoin(ws.fetch(ID%s_PRE).fetch(iterator.fetch(0)));\n"
+            "    nodes := id_str.leftjoin(ws.fetch(ID%s_NID).fetch(iterator.fetch(0)))"
+                               ".leftjoin(ws.fetch( NID_PRE).fetch(iterator.fetch(0)));\n"
             "} else {\n"
             "    var nodes_part;\n"
             "    var frag_part;\n"
@@ -5437,8 +5467,8 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
             "    iterator@batloop () {\n"
             "        frag_part := frag.ord_uselect($t).mirror();\n"
             "        id_str_part := frag_part.leftfetchjoin(id_str);\n"
-            "        nodes_part := id_str_part.leftjoin(ws.fetch(ID%s_PRE)"
-                                                         ".fetch($t));\n"
+            "        nodes_part := id_str_part.leftjoin(ws.fetch(ID%s_NID).fetch($t))"
+                                             ".leftjoin(ws.fetch( NID_PRE).fetch($t));\n"
             "        nodes := nodes.insert(nodes_part);\n"
             "    }\n"
             "}\n"

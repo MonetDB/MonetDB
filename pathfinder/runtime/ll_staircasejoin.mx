@@ -205,11 +205,14 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         oid fst_ctx = *(oid*)BUNtail(ctx_bat, BUNfirst(ctx_bat));
         oid lst_ctx = 0;
         BUN dst = 0, p = 0;
-        int bs_res = 0;
         size_t max_size = 0;
+        int bs_res = 0, sze = 0, *size = 0;
+
+        @:bat2array(pre_size,size,int)@
         
         BUNfndVOID(p, pre_size, &fst_ctx);
-        max_size = res_size = (size_t)(*(int*)BUNtloc(pre_size, p) + (int)self);
+        sze = *(int*)BUNtloc(pre_size, p);
+        max_size = res_size = (size_t)((sze&GDK_int_max) + (int)self);
         if ( cand_bat ) {
             if ( BATcount(cand_bat) < res_size ) {
                 res_size = BATcount(cand_bat);
@@ -566,34 +569,38 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
         if (BATtdense(cand_bat)) {
             oid fst_pre = MAX(pre, cand_bat->tseqbase);
             oid lst_pre = MIN(@1 , cand_bat->tseqbase + BATcount(cand_bat) - 1);
-            for (; pre <= @1 && pre <  fst_pre; pre += size[pre] + 1) {};
-            for (;              pre <= lst_pre; pre += size[pre] + 1) {
+            for (; pre <= @1 && pre <  fst_pre; pre += (size[pre]&GDK_int_max) + 1) {
+            };
+            for (;              pre <= lst_pre; pre += (size[pre]&GDK_int_max) + 1) {
                 @:inner_loop_child_body@
             }
-            for (; pre <= @1; pre += size[pre] + 1) {};
+            for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
+            };
         } else {
             oid fst_ctx = pre, lst_ctx = @1;
             int bs_cand_bat = BUNsize(cand_bat);
             BUN fst_pre = BUNtloc(cand_bat, SORTfndfirst_oid(cand_bat, &fst_ctx));
             BUN lst_pre = BUNtloc(cand_bat, SORTfndlast_oid (cand_bat, &lst_ctx)) - bs_cand_bat;
-            for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += size[pre] + 1) {};
-            for (; pre <= @1 && pre <= *(oid*)lst_pre; pre += size[pre] + 1) {
+            for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += (size[pre]&GDK_int_max) + 1) {
+            };
+            for (; pre <= @1 && pre <= *(oid*)lst_pre; pre += (size[pre]&GDK_int_max) + 1) {
                 while (*(oid*)fst_pre < pre && fst_pre < lst_pre) {
                     fst_pre += bs_cand_bat;
                 }
 /*
-            for (; pre <= @1 && pre <= *(oid*)lst_pre && fst_pre <= lst_pre; pre += size[pre] + 1, fst_pre += bs_cand_bat) {
-                for (;            pre < *(oid*)fst_pre &&     pre < @1     ;     pre += size[pre] + 1) {};
-                for (; *(oid*)fst_pre <            pre && fst_pre < lst_pre; fst_pre += bs_cand_bat     ) {};
+            for (; pre <= @1 && pre <= *(oid*)lst_pre && fst_pre <= lst_pre;     pre += (size[pre]&GDK_int_max) + 1, fst_pre += bs_cand_bat) {
+                for (;            pre < *(oid*)fst_pre &&     pre < @1     ;     pre += (size[pre]&GDK_int_max) + 1) {};
+                for (; *(oid*)fst_pre <            pre && fst_pre < lst_pre; fst_pre += bs_cand_bat       ) {};
 */
                 if (*(oid*)fst_pre == pre) {
                     @:inner_loop_child_body@
                 }
             }
-            for (; pre <= @1; pre += size[pre] + 1) {};
+            for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
+            };
         }
     } else {
-        for (; pre <= @1; pre += size[pre] + 1) {
+        for (; pre <= @1; pre += (size[pre]&GDK_int_max) + 1) {
             @:inner_loop_child_body@
         }
     }
