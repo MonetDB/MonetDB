@@ -13,21 +13,52 @@ module("pcre");
 
 # Tests of replacing of a single string
 
-pcre_replace("abracadabra", "bra", "*").print();
+pcre_replace("abracadabra", "bra", "*", "").print();
 [ "a*cada*" ]
 # result: "a*cada*"
 
-pcre_replace("abracadabra", "a.*a", "*").print();
+pcre_replace("abracadabra", "a.*a", "*", "").print();
 [ "*" ]
 # result: "*"
 
-pcre_replace("abracadabra", "a.*?a", "*").print();
+pcre_replace("abracadabra", "a.*?a", "*", "").print();
 [ "*c*bra" ]
 # result: "*c*bra"
 
-pcre_replace("abracadabra", "a", "").print();
+pcre_replace("abracadabra", "a", "", "").print();
 [ "brcdbr" ]
 # result: "brcdbr"
+
+# Case _sensitive_ replacing
+pcre_replace("abracadabraABRACADABRA", "a.*?a", "*", "").print();
+[ "*c*braABRACADABRA" ]
+# result: "*c*braABRACADABRA"
+
+# Case _insensitive_ replacing
+pcre_replace("abracadabraABRACADABRA", "a.*?a", "*", "i").print();
+[ "*c*br*BR*D*" ]
+# result: "*c*br*BR*D*"
+
+# Multi-line string _without_ 'm' flag
+pcre_replace("abcd\nabcd", "(^a)", "*", "").print();
+[ "*bcd\nabcd" ]
+# result: "*bcd\nabcd"
+
+# Multi-line string _with_ 'm' flag
+pcre_replace("abcd\nabcd", "(^a)", "*", "m").print();
+[ "*bcd\n*bcd" ]
+# result: "*bcd\n*bcd"
+
+# Multi-line, case-insensitive
+pcre_replace("abcd\nABCD", "(^a)", "*", "m").print();
+[ "*bcd\nABCD" ]
+# result: "*bcd\nABCD"
+
+# Multi-line, case-sensitive
+pcre_replace("abcd\nABCD", "(^a)", "*", "mi").print();
+[ "*bcd\n*BCD" ]
+# result: "*bcd\n*BCD"
+
 
 # Tests of replacing of a BAT of strings
 var mybat := bat(void, str);
@@ -45,11 +76,13 @@ mybat.append("ccddabracadabra");
 mybat.append("cdcdabracadabra");
 mybat.append("babracadabraddc");
 mybat.append("abracadabra");
+mybat.append("abracadabra\nABRACADABRA\nabracadabra\nABRACADABRA");
 mybat:=mybat.reverse().mark(0@0).reverse();
 #mybat.print();
 
-pcre_replace(mybat, "bra", "*").print();
-#-------------------------#
+# pcre_replace(mybat, "bra", "*", "")
+pcre_replace(mybat, "bra", "*", "").print();
+#---------------------------------------------------------#
 # h	t		  # name
 # void	str		  # type
 #-------------------------#
@@ -67,8 +100,11 @@ pcre_replace(mybat, "bra", "*").print();
 [ 11@0,	  "cdcda*cada*"	  ]
 [ 12@0,	  "ba*cada*ddc"	  ]
 [ 13@0,	  "a*cada*"	  ]
-pcre_replace(mybat, "a.*a", "*").print();
-#-------------------------#
+[ 14@0,	  "a*cada*\nABRACADABRA\na*cada*\nABRACADABRA"	  ]
+
+# pcre_replace(mybat, "a.*a", "*", "")
+pcre_replace(mybat, "a.*a", "*", "").print();
+#-------------------------------------------------#
 # h	t		  # name
 # void	str		  # type
 #-------------------------#
@@ -86,8 +122,11 @@ pcre_replace(mybat, "a.*a", "*").print();
 [ 11@0,	  "cdcd*"	  ]
 [ 12@0,	  "b*ddc"	  ]
 [ 13@0,	  "*"		  ]
-pcre_replace(mybat, "a.*?a", "*").print();
-#-------------------------#
+[ 14@0,	  "*\nABRACADABRA\n*\nABRACADABRA"	  ]
+
+# pcre_replace(mybat, "a.*?a", "*", "")
+pcre_replace(mybat, "a.*?a", "*", "").print();
+#---------------------------------------------------------#
 # h	t		  # name
 # void	str		  # type
 #-------------------------#
@@ -105,8 +144,11 @@ pcre_replace(mybat, "a.*?a", "*").print();
 [ 11@0,	  "cdcd*c*bra"	  ]
 [ 12@0,	  "b*c*braddc"	  ]
 [ 13@0,	  "*c*bra"	  ]
-pcre_replace(mybat, "a", "").print();
-#-------------------------#
+[ 14@0,	  "*c*bra\nABRACADABRA\n*c*bra\nABRACADABRA"	  ]
+
+# pcre_replace(mybat, "a", "", "")
+pcre_replace(mybat, "a", "", "").print();
+#---------------------------------------------------------#
 # h	t		  # name
 # void	str		  # type
 #-------------------------#
@@ -124,11 +166,122 @@ pcre_replace(mybat, "a", "").print();
 [ 11@0,	  "cdcdbrcdbr"	  ]
 [ 12@0,	  "bbrcdbrddc"	  ]
 [ 13@0,	  "brcdbr"	  ]
+[ 14@0,	  "brcdbr\nABRACADABRA\nbrcdbr\nABRACADABRA"	  ]
+
+# pcre_replace(mybat, "a.*?a", "*", "i")
+pcre_replace(mybat, "a.*?a", "*", "i").print();
+#-------------------------------------------------#
+# h	t					  # name
+# void	str					  # type
+#-------------------------------------------------#
+[ 0@0,	  "***c*bra"				  ]
+[ 1@0,	  "bbbb*c*bra"				  ]
+[ 2@0,	  "cccc*c*bra"				  ]
+[ 3@0,	  "dddd*c*bra"				  ]
+[ 4@0,	  "*bb*c*bra"				  ]
+[ 5@0,	  "*b*c*bra"				  ]
+[ 6@0,	  "*cc*c*bra"				  ]
+[ 7@0,	  "*c*c*bra"				  ]
+[ 8@0,	  "bcdb*c*bra"				  ]
+[ 9@0,	  "*br*d*"				  ]
+[ 10@0,	  "ccdd*c*bra"				  ]
+[ 11@0,	  "cdcd*c*bra"				  ]
+[ 12@0,	  "b*c*braddc"				  ]
+[ 13@0,	  "*c*bra"				  ]
+[ 14@0,	  "*c*bra\n*C*BRA\n*c*bra\n*C*BRA"	  ]
+
+# pcre_replace(mybat, "(^a)", "*", "")
+pcre_replace(mybat, "(^a)", "*", "").print();
+#-----------------------------------------------------------------#
+# h	t							  # name
+# void	str							  # type
+#-----------------------------------------------------------------#
+[ 0@0,	  "*aaaabracadabra"					  ]
+[ 1@0,	  "bbbbabracadabra"					  ]
+[ 2@0,	  "ccccabracadabra"					  ]
+[ 3@0,	  "ddddabracadabra"					  ]
+[ 4@0,	  "*abbabracadabra"					  ]
+[ 5@0,	  "*bababracadabra"					  ]
+[ 6@0,	  "*accabracadabra"					  ]
+[ 7@0,	  "*cacabracadabra"					  ]
+[ 8@0,	  "bcdbabracadabra"					  ]
+[ 9@0,	  "*bcdabracadabra"					  ]
+[ 10@0,	  "ccddabracadabra"					  ]
+[ 11@0,	  "cdcdabracadabra"					  ]
+[ 12@0,	  "babracadabraddc"					  ]
+[ 13@0,	  "*bracadabra"						  ]
+[ 14@0,	  "*bracadabra\nABRACADABRA\nabracadabra\nABRACADABRA"	  ]
+
+# pcre_replace(mybat, "(^a)", "*", "m")
+pcre_replace(mybat, "(^a)", "*", "i").print();
+#-----------------------------------------------------------------#
+# h	t							  # name
+# void	str							  # type
+#-----------------------------------------------------------------#
+[ 0@0,	  "*aaaabracadabra"					  ]
+[ 1@0,	  "bbbbabracadabra"					  ]
+[ 2@0,	  "ccccabracadabra"					  ]
+[ 3@0,	  "ddddabracadabra"					  ]
+[ 4@0,	  "*abbabracadabra"					  ]
+[ 5@0,	  "*bababracadabra"					  ]
+[ 6@0,	  "*accabracadabra"					  ]
+[ 7@0,	  "*cacabracadabra"					  ]
+[ 8@0,	  "bcdbabracadabra"					  ]
+[ 9@0,	  "*bcdabracadabra"					  ]
+[ 10@0,	  "ccddabracadabra"					  ]
+[ 11@0,	  "cdcdabracadabra"					  ]
+[ 12@0,	  "babracadabraddc"					  ]
+[ 13@0,	  "*bracadabra"						  ]
+[ 14@0,	  "*bracadabra\nABRACADABRA\nabracadabra\nABRACADABRA"	  ]
+
+# pcre_replace(mybat, "(^a)", "*", "m")
+pcre_replace(mybat, "(^a)", "*", "m").print();
+#-----------------------------------------------------------------#
+# h	t							  # name
+# void	str							  # type
+#-----------------------------------------------------------------#
+[ 0@0,	  "*aaaabracadabra"					  ]
+[ 1@0,	  "bbbbabracadabra"					  ]
+[ 2@0,	  "ccccabracadabra"					  ]
+[ 3@0,	  "ddddabracadabra"					  ]
+[ 4@0,	  "*abbabracadabra"					  ]
+[ 5@0,	  "*bababracadabra"					  ]
+[ 6@0,	  "*accabracadabra"					  ]
+[ 7@0,	  "*cacabracadabra"					  ]
+[ 8@0,	  "bcdbabracadabra"					  ]
+[ 9@0,	  "*bcdabracadabra"					  ]
+[ 10@0,	  "ccddabracadabra"					  ]
+[ 11@0,	  "cdcdabracadabra"					  ]
+[ 12@0,	  "babracadabraddc"					  ]
+[ 13@0,	  "*bracadabra"						  ]
+[ 14@0,	  "*bracadabra\nABRACADABRA\n*bracadabra\nABRACADABRA"	  ]
+
+# pcre_replace(mybat, "(^a)", "*", "mi")
+pcre_replace(mybat, "(^a)", "*", "mi").print();
+#-----------------------------------------------------------------#
+# h	t							  # name
+# void	str							  # type
+#-----------------------------------------------------------------#
+[ 0@0,	  "*aaaabracadabra"					  ]
+[ 1@0,	  "bbbbabracadabra"					  ]
+[ 2@0,	  "ccccabracadabra"					  ]
+[ 3@0,	  "ddddabracadabra"					  ]
+[ 4@0,	  "*abbabracadabra"					  ]
+[ 5@0,	  "*bababracadabra"					  ]
+[ 6@0,	  "*accabracadabra"					  ]
+[ 7@0,	  "*cacabracadabra"					  ]
+[ 8@0,	  "bcdbabracadabra"					  ]
+[ 9@0,	  "*bcdabracadabra"					  ]
+[ 10@0,	  "ccddabracadabra"					  ]
+[ 11@0,	  "cdcdabracadabra"					  ]
+[ 12@0,	  "babracadabraddc"					  ]
+[ 13@0,	  "*bracadabra"						  ]
+[ 14@0,	  "*bracadabra\n*BRACADABRA\n*bracadabra\n*BRACADABRA"	  ]
 
 # Test if pcre_replace indeed only replace the matched string, and copy other
 # strings unchanged
-pcre_replace(mybat, "aaaa", "").print();
-#---------------------------------#
+pcre_replace(mybat, "aaaa", "", "").print();
+#-----------------------------------------------------------------#
 # h	t			  # name
 # void	str			  # type
 #---------------------------------#
@@ -146,6 +299,7 @@ pcre_replace(mybat, "aaaa", "").print();
 [ 11@0,	  "cdcdabracadabra"	  ]
 [ 12@0,	  "babracadabraddc"	  ]
 [ 13@0,	  "abracadabra"		  ]
+[ 14@0,	  "abracadabra\nABRACADABRA\nabracadabra\nABRACADABRA"	  ]
 
 # Test if the head column is kept after a replace operation
 mybat := bat(int, str);
@@ -163,88 +317,36 @@ mybat.insert(int(10), "ccddabracadabra");
 mybat.insert(int(11), "cdcdabracadabra");
 mybat.insert(int(12), "babracadabraddc");
 mybat.insert(int(42), "abracadabra");
+mybat.insert(int(30), "abracadabra\nABRACADABRA\nabracadabra\nABRACADABRA");
 #mybat.print();
 
-pcre_replace(mybat, "bra", "*").print();
-#-------------------------#
+# pcre_replace(mybat, "(^a)", "*", "mi")
+pcre_replace(mybat, "(^a)", "*", "mi").print();
+#-----------------------------------------------------------------#
 # h	t		  # name
 # int	str		  # type
-#-------------------------#
-[ 20,	  "aaaaa*cada*"	  ]
-[ 1,	  "bbbba*cada*"	  ]
-[ 2,	  "cccca*cada*"	  ]
-[ 3,	  "dddda*cada*"	  ]
-[ 4,	  "aabba*cada*"	  ]
-[ 5,	  "ababa*cada*"	  ]
-[ 6,	  "aacca*cada*"	  ]
-[ 7,	  "acaca*cada*"	  ]
-[ 8,	  "bcdba*cada*"	  ]
-[ 9,	  "abcda*cada*"	  ]
-[ 10,	  "ccdda*cada*"	  ]
-[ 11,	  "cdcda*cada*"	  ]
-[ 12,	  "ba*cada*ddc"	  ]
-[ 42,	  "a*cada*"	  ]
-pcre_replace(mybat, "a.*a", "*").print();
-#-------------------------#
-# h	t		  # name
-# int	str		  # type
-#-------------------------#
-[ 20,	  "*"		  ]
-[ 1,	  "bbbb*"	  ]
-[ 2,	  "cccc*"	  ]
-[ 3,	  "dddd*"	  ]
-[ 4,	  "*"		  ]
-[ 5,	  "*"		  ]
-[ 6,	  "*"		  ]
-[ 7,	  "*"		  ]
-[ 8,	  "bcdb*"	  ]
-[ 9,	  "*"		  ]
-[ 10,	  "ccdd*"	  ]
-[ 11,	  "cdcd*"	  ]
-[ 12,	  "b*ddc"	  ]
-[ 42,	  "*"		  ]
-pcre_replace(mybat, "a.*?a", "*").print();
-#-------------------------#
-# h	t		  # name
-# int	str		  # type
-#-------------------------#
-[ 20,	  "***c*bra"	  ]
-[ 1,	  "bbbb*c*bra"	  ]
-[ 2,	  "cccc*c*bra"	  ]
-[ 3,	  "dddd*c*bra"	  ]
-[ 4,	  "*bb*c*bra"	  ]
-[ 5,	  "*b*c*bra"	  ]
-[ 6,	  "*cc*c*bra"	  ]
-[ 7,	  "*c*c*bra"	  ]
-[ 8,	  "bcdb*c*bra"	  ]
-[ 9,	  "*br*d*"	  ]
-[ 10,	  "ccdd*c*bra"	  ]
-[ 11,	  "cdcd*c*bra"	  ]
-[ 12,	  "b*c*braddc"	  ]
-[ 42,	  "*c*bra"	  ]
-pcre_replace(mybat, "a", "").print();
-#-------------------------#
-# h	t		  # name
-# int	str		  # type
-#-------------------------#
-[ 20,	  "brcdbr"	  ]
-[ 1,	  "bbbbbrcdbr"	  ]
-[ 2,	  "ccccbrcdbr"	  ]
-[ 3,	  "ddddbrcdbr"	  ]
-[ 4,	  "bbbrcdbr"	  ]
-[ 5,	  "bbbrcdbr"	  ]
-[ 6,	  "ccbrcdbr"	  ]
-[ 7,	  "ccbrcdbr"	  ]
-[ 8,	  "bcdbbrcdbr"	  ]
-[ 9,	  "bcdbrcdbr"	  ]
-[ 10,	  "ccddbrcdbr"	  ]
-[ 11,	  "cdcdbrcdbr"	  ]
-[ 12,	  "bbrcdbrddc"	  ]
-[ 42,	  "brcdbr"	  ]
+#-----------------------------------------------------------------#
+[ 20,	  "*aaaabracadabra"					  ]
+[ 1,	  "bbbbabracadabra"					  ]
+[ 2,	  "ccccabracadabra"					  ]
+[ 3,	  "ddddabracadabra"					  ]
+[ 4,	  "*abbabracadabra"					  ]
+[ 5,	  "*bababracadabra"					  ]
+[ 6,	  "*accabracadabra"					  ]
+[ 7,	  "*cacabracadabra"					  ]
+[ 8,	  "bcdbabracadabra"					  ]
+[ 9,	  "*bcdabracadabra"					  ]
+[ 10,	  "ccddabracadabra"					  ]
+[ 11,	  "cdcdabracadabra"					  ]
+[ 12,	  "babracadabraddc"					  ]
+[ 42,	  "*bracadabra"						  ]
+[ 30,	  "*bracadabra\n*BRACADABRA\n*bracadabra\n*BRACADABRA"	  ]
+
 # Test if pcre_replace indeed only replace the matched string, and copy other
 # strings unchanged
-pcre_replace(mybat, "aaaa", "").print();
-#---------------------------------#
+# pcre_replace(mybat, "aaaa", "", "")
+pcre_replace(mybat, "aaaa", "", "").print();
+#-----------------------------------------------------------------#
 # h	t			  # name
 # int	str			  # type
 #---------------------------------#
@@ -262,6 +364,7 @@ pcre_replace(mybat, "aaaa", "").print();
 [ 11,	  "cdcdabracadabra"	  ]
 [ 12,	  "babracadabraddc"	  ]
 [ 42,	  "abracadabra"		  ]
+[ 30,	  "abracadabra\nABRACADABRA\nabracadabra\nABRACADABRA"	  ]
 quit();
 
 # 11:55:03 >  

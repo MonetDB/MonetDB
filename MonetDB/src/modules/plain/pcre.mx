@@ -59,13 +59,24 @@ vim: ts=4:sw=4:ft=c
 .COMMAND pcre_uselect(str pattern, BAT[any::1,str] strs) : BAT[any::1,void] = pcre_uselect;
    "Select tuples based on the pattern, only returning the head"
 
-.COMMAND pcre_replace(str origin_str, str pattern, str replacement) : str = pcre_replace;
-   "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replacement\". 
-    If no matches found, the original string is returned."
+.COMMAND pcre_replace(str origin_str, str pattern, str replacement, str flags) : str = pcre_replace;
+   "Replace _all_ matches of \"pattern\" in \"origin_str\" with\
+	\"replacement\".\n\
+    Parameter \"flags\" accept two flags: 'i' and/or 'm'.\n\
+    'i': match pattern in a case-insensitive fashion.\n\
+    'm': the \"origin_str\" contains multiple lines.\n\
+	The \"flags\" itself is case-insensitive, so letters 'I' and 'M' have the\
+	same effects as letter 'i' and 'm'.\n\
+	If \"flags\" contains other letters than 'i' or 'm', they are ignored.\n\
+	If \"flags\" contains more than two letters, only the first two are\
+	significant.\n\
+	Returns the replaced string, or if no matches found, the original string."
    
-.COMMAND pcre_replace(BAT[any::1, str] origin_strs, str pattern, str replacement) : BAT[any::1, str] = pcre_replace_bat;
-   "Replace _all_ matches of \"pattern\" in every string contained in \"origin_strs\" with \"replacement\".
-    If no matches found in a string, the string is just copied to the returned BAT"
+.COMMAND pcre_replace(BAT[any::1, str] origin_strs, str pattern, str replacement, str flags) : BAT[any::1, str] = pcre_replace_bat;
+   "Replace _all_ matches of \"pattern\" in every string contained in\
+   \"origin_strs\" with \"replacement\".\n\
+   If no matches found in a string, the string is just copied to the returned\
+   BAT."
 
 .PRELUDE  = pcre_init;
 .EPILOGUE = pcre_exit;
@@ -116,22 +127,24 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 }
 
 int
-pcre_replace(str *res, str origin_str, str pattern, str replacement)
+pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 {
 	(void) res;
 	(void) origin_str;
 	(void) pattern;
 	(void) replacement;
+	(void) flags;
 	return GDK_FAIL;
 }
 
 int
-pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement)
+pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str flags)
 {
 	(void) res;
 	(void) origin_strs;
 	(void) pattern;
 	(void) replacement;
+	(void) flags;
 	return GDK_FAIL;
 }
 
@@ -261,19 +274,29 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 #define MAX_NR_CAPTURES  1024 /* Maximal number of captured substrings in one original string */
 
 int
-pcre_replace(str *res, str origin_str, str pattern, str replacement)
+pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 {
 	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
 	pcre *pcre_code = NULL;
 	pcre_extra *extra;
 	str tmpres;
 	int i, j, k, len, errpos = 0, offset = 0;
+	int options = PCRE_UTF8;
 	int *ovector, ovecsize;
 	int len_origin_str = strlen(origin_str);
 	int len_replacement = strlen(replacement);
 	int capture_offsets[MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
+	
+	if (flags[0] != '\0'){
+		if (flags[0] == 'i' || flags[1] == 'i' || flags[0] == 'I' || flags[1] == 'I')  {
+			options |= PCRE_CASELESS;
+		}
+		if (flags[0] == 'm' || flags[1] == 'm' || flags[0] == 'M' || flags[1] == 'M')  {
+			options |= PCRE_MULTILINE;
+		}
+	}
 
-	if ((pcre_code = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+	if ((pcre_code = pcre_compile(pattern, options, &err_p, &errpos, NULL)) == NULL) {
 		GDKerror("pcre_replace: pcre compile of pattern (%s) failed\n",
 			pattern);
 		return GDK_FAIL;
@@ -351,10 +374,11 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement)
 }
 
 int
-pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement)
+pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str flags)
 {
 	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
 	int i, j, k, len, errpos = 0, offset = 0;
+	int options = PCRE_UTF8;
 	pcre *pcre_code = NULL;
 	pcre_extra *extra;
 	BAT *tmpbat;
@@ -364,7 +388,16 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement)
 	int capture_offsets[MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
 	str origin_str, replaced_str;
 
-	if ((pcre_code = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+	if (flags[0] != '\0'){
+		if (flags[0] == 'i' || flags[1] == 'i' || flags[0] == 'I' || flags[1] == 'I')  {
+			options |= PCRE_CASELESS;
+		}
+		if (flags[0] == 'm' || flags[1] == 'm' || flags[0] == 'M' || flags[1] == 'M')  {
+			options |= PCRE_MULTILINE;
+		}
+	}
+
+	if ((pcre_code = pcre_compile(pattern, options, &err_p, &errpos, NULL)) == NULL) {
 		GDKerror("pcre_uselect: pcre compile of pattern (%s) failed\n",
 			pattern);
 		return GDK_FAIL;
