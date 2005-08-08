@@ -475,7 +475,7 @@ sub disconnect {
     my ($dbh) = @_;
 
     my $mapi = $dbh->{monetdb_connection};
-    MapiLib::mapi_disconnect($mapi);
+    MapiLib::mapi_disconnect($mapi) if $mapi;
     $dbh->STORE('Active', 0 );
     return 1;
 }
