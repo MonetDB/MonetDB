@@ -808,7 +808,7 @@ static int
 mysocketpair(int sp[2])
 {
 	struct sockaddr_in	sa;
-	int			sock, ret = -1;
+	int			sock, ret = -1, yes=1;
 	socklen_t		len = sizeof(sa);
 
 	(void) memset(&sa, 0, sizeof(sa));
@@ -818,6 +818,10 @@ mysocketpair(int sp[2])
 
 	if ((sock = socket(AF_INET, SOCK_STREAM, 6)) == -1) {
 		elog(0, "mysocketpair: socket(): %d", ERRNO);
+	} else if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0) {
+		/* get rid of the "Address already in use" error message */
+		elog(0, "mysocketpair: setsockopt(): %d", ERRNO);
+		(void) closesocket(sock);
 	} else if (bind(sock, (struct sockaddr *) &sa, len) != 0) {
 		elog(0, "mysocketpair: bind(): %d", ERRNO);
 		(void) closesocket(sock);
@@ -1334,7 +1338,7 @@ get_dir(struct conn *c)
 		(void) snprintf(file, sizeof(file),
 		    "%s%s%s",c->path, slash, dp->d_name);
 		(void) mystat(file, &st);
-		if (st.st_mode & S_IFDIR)
+		if (S_ISDIR(st.st_mode))
 			snprintf(size,sizeof(size),"        %s","&lt;DIR&gt;");
 		else
 			(void) snprintf(size, sizeof(size),"%10.2f kB",
@@ -1347,7 +1351,7 @@ get_dir(struct conn *c)
 		    "<td>&nbsp;&nbsp;%s</td>"
 		    "<td><pre>%s</pre></td></tr>\n",
 		    c->uri, slash, dp->d_name, dp->d_name,
-		    st.st_mode & S_IFDIR ? "/" : "", mod, size);
+		    S_ISDIR(st.st_mode) ? "/" : "", mod, size);
 		(void) memcpy(c->local.buf + c->local.nread, line, n);
 		c->local.nread += n;
 		left -= n;
@@ -2523,19 +2527,19 @@ decide(struct conn *c)
 #endif /* WITH_PUT_AND_DELETE */
 	} else if (mystat(path, &c->st) != 0) {
 		senderr(c, 404, "Not Found","", "Not Found");
-	} else if ((c->st.st_mode & S_IFDIR) && path[strlen(path) - 1] != '/') {
+	} else if (S_ISDIR(c->st.st_mode) && path[strlen(path) - 1] != '/') {
 		(void) snprintf(buf, sizeof(buf), "Location: %s/", c->uri);
 		senderr(c, 301, "Moved Permanently", buf, "Moved, %s", buf);
-	} else if ((c->st.st_mode & S_IFDIR) &&
+	} else if (S_ISDIR(c->st.st_mode) &&
 	    useindex(c, path, sizeof(path) - 1) == -1 &&
 	    INTOPT(OPT_DIRLIST) == 0) {
 		senderr(c, 403, "Forbidden", "", "Directory Listing Denied");
-	} else if ((c->st.st_mode & S_IFDIR) && INTOPT(OPT_DIRLIST)) {
+	} else if (S_ISDIR(c->st.st_mode) && INTOPT(OPT_DIRLIST)) {
 		if ((c->path = mystrdup(path)) != NULL)
 			do_dir(c);
 		else
 			senderr(c, 500, "Error", "", "strdup");
-	} else if ((c->st.st_mode & S_IFDIR) && INTOPT(OPT_DIRLIST) == 0) {
+	} else if (S_ISDIR(c->st.st_mode) && INTOPT(OPT_DIRLIST) == 0) {
 		elog(0, "decide: %s: Denied", path);
 		senderr(c, 403, "Forbidden", "", "Directory listing denied");
 #ifndef NO_CGI
