@@ -5645,7 +5645,10 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "} "
                 "else {\n"
                 "patterns := item%s%03u;\n"
-                "}\n",
+                "}\n"
+                "# replace empty sequences with empty strings\n"
+                "strings := outerjoin(patterns.mirror(), strings);\n"
+                "strings := [ifthenelse]([isnil](strings), \"\", strings);\n",
                 counter, cur_level, 
                 cur_level, counter,
                 counter, item_ext, counter,
