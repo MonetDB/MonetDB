@@ -78,7 +78,6 @@ comment "Prints an array, using 1 value bat and N aligned index bats";
 #include <gdk.h>
 #include <algebra.h>		/* to include BATmin and BATmax */
 
-/* #include "array.proto.h" NOT IN M5 */
 extern ptr BATmin(BAT *b, ptr aggr);
 extern ptr BATmax(BAT *b, ptr aggr);
 

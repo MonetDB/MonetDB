@@ -72,8 +72,6 @@ typedef ptr sema;
 typedef ptr monet_lock;
 typedef ptr monet_sema;
 
-#include "lock.proto.h"
-
 int
 create_lock(monet_lock *l)
 {

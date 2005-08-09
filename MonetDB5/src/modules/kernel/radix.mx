@@ -1102,8 +1102,6 @@ radix_cluster(attr_int,
 #define integer128 int
 #define integer256 int
 
-#include "radix.proto.h"
-
 #if defined(ia64) && !defined(__GNUC__)
 /* constants for use with _mm_prefetch */
 #include <xmmintrin.h>
