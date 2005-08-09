@@ -73,6 +73,8 @@
 #define RRR(p) R(R(R(p)))
 #define LLL(p) L(L(L(p)))
 
+#define RRRL(p) L(R(R(R(p))))
+
 static void milprintf(opt_t *o, const char *format, ...)
 {
         int j, i = strlen(format) + 80;
@@ -5570,7 +5572,7 @@ fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
 }
 
 /**
- * fn_replace translates the builtin functions fn:replace and fn:translate
+ * fn_replace_translate translates the builtin functions fn:replace and fn:translate
  * @param f the Stream the MIL code is printed to
  * @param code the number indicating, which result interface is preferred
  * @param cur_level the level of the for-scope
@@ -5586,8 +5588,9 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
             const char *xqfunc, const char *milfunc)
 {
     char* item_ext = kind_str(STR); /* return "_str_"; */
-
-    (void) fun; /* FUTURE: check fun->arity==4 if we want to support the extra 'flags' parameter */
+    int opt_arity = fun->arity == 4 ? 1 : 0; /* Do you have the optional arity? */
+    int replace = strcmp(xqfunc, "replace") == 0 ? 1 : 0;
+    PFcnode_t *flags_node;
 
     if (translate2MIL (f, VALUES, cur_level, counter, L(args)) == NORMAL)
     {
@@ -5610,8 +5613,28 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
     }
 
+    counter++;
+    saveResult_ (f, counter, STR);
+
+    if (replace)
+    {
+        if (opt_arity)
+        {
+            flags_node = RRRL(args);
+        }
+        else{
+            flags_node = PFcore_str("");
+        }
+
+        if (translate2MIL (f, VALUES, cur_level, counter, flags_node) == NORMAL)
+        {
+            milprintf(f, "item%s := item%s;\n", item_ext, val_join(STR));
+        }
+    }
+
+
     milprintf(f,
-                "{ # fn:%s (string?, string?, string?) as string\n"
+                "{ # fn:%s (string?, string, string%s) as string\n"
                 "var strings;\n"
                 "if (iter%03u.count() != loop%03u.count())\n"
                 "{\n"
@@ -5626,11 +5649,11 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "else {\n"
                 "strings := item%s%03u;\n"
                 "}\n",
-                xqfunc,
-                counter-1, cur_level, 
-                cur_level, counter-1,
-                counter-1, item_ext, counter-1,
-                item_ext, counter-1);
+                xqfunc, opt_arity ? ", string" : "",
+                counter-2, cur_level, 
+                cur_level, counter-2,
+                counter-2, item_ext, counter-2,
+                item_ext, counter-2);
     milprintf(f,
                 "var patterns;\n"
                 "if (iter%03u.count() != loop%03u.count())\n"
@@ -5649,45 +5672,74 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "# replace empty sequences with empty strings\n"
                 "strings := outerjoin(patterns.mirror(), strings);\n"
                 "strings := [ifthenelse]([isnil](strings), \"\", strings);\n",
-                counter, cur_level, 
-                cur_level, counter,
-                counter, item_ext, counter,
-                item_ext, counter);
+                counter-1, cur_level, 
+                cur_level, counter-1,
+                counter-1, item_ext, counter-1,
+                item_ext, counter-1);
+
     milprintf(f,
                 "var replacements;\n"
-                "if (iter.count() != loop%03u.count())\n"
+                "if (iter%03u.count() != loop%03u.count())\n"
                 "{\n"
-                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+                "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter, difference, item%s, "
+                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, "
                                            "fake_project(\"\"));\n"
                 "difference := nil_oid_oid;\n"
                 "replacements := res_mu.fetch(1);\n"
                 "res_mu := nil_oid_bat;\n"
                 "} "
                 "else {\n"
-                "replacements := item%s;\n"
+                "replacements := item%s%03u;\n"
+                "}\n",
+                counter, cur_level, 
+                cur_level, counter,
+                counter, item_ext, counter,
+                item_ext, counter);
+
+    if (replace)
+    {
+        milprintf(f,
+                "var flagss;\n"
+                "if (iter.count() != loop%03u.count())\n"
+                "{\n"
+                "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
+                "difference := difference.mark(0@0).reverse();\n"
+                "var res_mu := merged_union(iter, difference, item%s, "
+                "fake_project(\"\"));\n"
+                "difference := nil_oid_oid;\n"
+                "flagss := res_mu.fetch(1);\n"
+                "res_mu := nil_oid_bat;\n"
+                "} "
+                "else {\n"
+                "flagss := item%s;\n"
                 "}\n",
                 cur_level,
                 cur_level,
                 item_ext,
                 item_ext);
-    milprintf(f,
-                "var res := [%s](strings,patterns,replacements);\n"
-                "strings := nil_oid_str;\n"
-                "patterns := nil_oid_str;\n"
-                "replacements := nil_oid_str;\n"
-                "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(STR);\n",
-                milfunc,
-                cur_level);
+    }
 
-    char buf[64];
-    snprintf(buf, sizeof(buf), "fn:%s (string?, string, string) as string", xqfunc);
+    milprintf(f, "var res := [%s](strings,patterns,replacements%s);\n", 
+            milfunc, replace ? ", flagss": "");
+
+    milprintf(f,
+            "strings := nil_oid_str;\n"
+            "patterns := nil_oid_str;\n"
+            "replacements := nil_oid_str;\n"
+            "iter := loop%03u.reverse().mark(0@0).reverse();\n"
+            "pos := iter.project(1@0);\n"
+            "kind := iter.project(STR);\n",
+            cur_level);
+
+    char buf[128];
+    snprintf(buf, sizeof(buf), "fn:%s (string?, string, string%s) as string", 
+            xqfunc, opt_arity ? ", string": "");
+
     return_str_funs (f, code, cur_level, buf);
     deleteResult_ (f, counter, STR);
     deleteResult_ (f, counter-1, STR);
+    deleteResult_ (f, counter-2, STR);
     return VALUES;
 }
 
