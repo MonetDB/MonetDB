@@ -63,6 +63,23 @@ lib__xtables = {
 #	SOURCES = xtables.mx
 #}
 
+lib__logger = {
+	DIR = pkglibdir
+	SEP = _
+	SOURCES = logger.mx
+	HEADERS = h proto.h m
+	#SCRIPTS = mil ""
+	LIBS = ../../common/libstream ../../gdk/libbat \
+		../../monet/libmonet ./lib_bat \
+		$(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+}
+
+#doc_logger = {
+#	DIR = pkgdatadir/docs/plain/
+#	SOURCES = logger.mx
+#}
+
 LIBS = {
 	DIR = pkglibdir
 	SEP = _
@@ -71,8 +88,7 @@ LIBS = {
 		mkey.mx profiler.mx \
 		aggr.mx aggrX3.mx alarm.mx ascii_io.mx bat_arith.mx blob.mx \
 		decimal.mx enum.mx lock.mx mmath.mx monettime.mx \
-		radix.mx stats.mx tcpip.mx unix.mx url.mx pqueue.mx upgrade.mx \
-		logger.mx
+		radix.mx stats.mx tcpip.mx unix.mx url.mx pqueue.mx upgrade.mx
 	HEADERS = h proto.h m
 	#SCRIPTS = mil ""
 	LIBS = ../../common/libstream ../../gdk/libbat \
