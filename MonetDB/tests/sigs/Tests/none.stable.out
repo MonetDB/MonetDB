@@ -68,6 +68,7 @@ view_modules().reverse().mark(oid(nil)).kunique().sort().print();
 [ "image",	  nil	  ]
 [ "iterator",	  nil	  ]
 [ "lock",	  nil	  ]
+[ "logger",	  nil	  ]
 [ "malalgebra",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "mel",	  nil	  ]
@@ -175,6 +176,7 @@ others.mark(oid(nil)).print();
 [ "mel",	  nil	  ]
 [ "mapi",	  nil	  ]
 [ "malalgebra",	  nil	  ]
+[ "logger",	  nil	  ]
 [ "lock",	  nil	  ]
 [ "iterator",	  nil	  ]
 [ "image",	  nil	  ]
@@ -1131,7 +1133,44 @@ others@batloop(){
 	dropping malalgebra
 
 #---------------------------------#
-# module	| usage_count	  #
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+
+	loading logger
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
+#---------------------------------#
+[ "algebra",	  1		  ]
+[ "arith",	  1		  ]
+[ "bat",	  1		  ]
+[ "builtin",	  1		  ]
+[ "logger",	  1		  ]
+[ "main",	  1		  ]
+[ "str",	  1		  ]
+[ "sys",	  1		  ]
+[ "trans",	  1		  ]
+#-------------------------#
+# h		t	  # name
+# str		void	  # type
+#-------------------------#
+[ "logger",	  nil	  ]
+
+	dropping logger
+
+#---------------------------------#
+# module		usage_count	  # name
+# str		int		  # type
 #---------------------------------#
 [ "algebra",	  1		  ]
 [ "arith",	  1		  ]
