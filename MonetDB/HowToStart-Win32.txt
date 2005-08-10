@@ -34,14 +34,15 @@ Python
 
 Pthreads for Win32
 	(ftp://sources.redhat.com/pub/pthreads-win32/)
-	Pthreads should be installed to C:\Pthreads, otherwise you need
-	to patch the "PTHREAD = C:\Pthreads" line in "NT\rules.msc"
-	according to your setup. Newer versions of Pthreads seem to
-	have the "include" & "lib" directory not in C:\Pthreads, but in
-	C:\Pthreads\prebuilt. In that case, you either have to move the
-	"include" & "lib" directory from C:\Pthreads\prebuilt to 
-	C:\Pthreads, or set "PTHREAD = C:\Pthreads\prebuilt" in
-	"NT\rules.msc".
+	Download the archive (the latest version we have tried is
+	pthreads-w32-2-7-0-release.exe) and extract it.  Pthreads
+	should be installed to C:\Pthreads, so copy the contents of
+	the prebuilt or Pre-built.2 folder from the extracted archive
+	to C:\Pthreads (so that you end up with folders
+	C:\Pthreads\lib and C:\Pthreads\include).  Otherwise you will
+	need to edit the definition of PTHREAD in NT\rules.msc.  The
+	value should be the name of the folder that contains the lib
+	and include folders.
 
 UnxUtils for Win32
 	(http://UnxUtils.sourceforge.net/)
@@ -88,27 +89,24 @@ Optional Software:
 ==================
 
 PHP
-	Download both the Windows binaries in a zip package (i.e. not
-	the Windows installer) and the source package from
+	Download the Windows binaries in a zip package (i.e. not the
+	Windows installer) and the source package from
 	http://www.php.net/.  Unzip the binaries into e.g. C:\ (for
 	PHP-4, the zip file contains a top-level directory
-	php-4...-Win32 and so can be unzipped into C:).  If you want
-	to follow the PHP standard, rename the resulting dirctory to
-	C:\php4.  We will follow this convention.  In any case, make
-	sure there are no spaces in the path chosen.
-	Also extract the sources somewhere, e.g. in a directory
-	parallel to MonetDB.
-	If you don't use C:\php4 for the binaries or you don't extract
-	the sources into php-4.3.11 in the same directory where
-	MonetDB is extracted, you will have to edit MonetDB's
-	NT\rules.msc to change the variables PHP_SRCDIR and
+	php-4...-Win32 and so can be unzipped into C:).  In any case,
+	make sure there are no spaces in the path chosen.  Also
+	extract the sources somewhere, e.g. in a directory parallel to
+	MonetDB.  If you don't use C:\php-4.4.0-Win32 for the binaries
+	or you don't extract the sources into php-4.4.0 in the same
+	directory where MonetDB is extracted, you will have to edit
+	MonetDB's NT\rules.msc to change the variables PHP_SRCDIR and
 	PHP_INSTDIR to reflect this.  Make sure there are no spaces in
 	these two path names.  Also note that the paths are only used
 	from inside the NT\src\mapi\clients\php directory, so if they
-	are relative, they have to be relative from there.
-	When compiling MonetDB, add the flag HAVE_PHP=1 to the nmake
-	command line.
-	Note that only PHP version 4.3.11 has been tested.
+	are relative, they have to be relative from there.  When
+	compiling MonetDB, add the flag HAVE_PHP=1 to the nmake
+	command line.  Note that only PHP versions 4.3.11 and 4.4.0
+	have been tried.
 
 Pear:
 	Pear is the PHP Extension and Application Repository.  At the
@@ -127,7 +125,8 @@ Getting the Software:
 =====================
 
 This command should be done once.  It records a password on the local
-machine to be used for all subsequent CVS accesses with this server.
+machine to be used for all subsequent CVS accesses with this
+repository.
 
  cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
 
@@ -160,8 +159,10 @@ When all prerequisites have been satisfied, you type
  cd NT
  nmake
 
-to compile the source code.
+to compile the source code.  If you want to compile with Java and PHP
+support, the command is
 
+ nmake HAVE_JAVA=1 HAVE_PHP=1
 
 Testing the Build:
 ==================
@@ -172,9 +173,9 @@ If nmake went successfully, you can try
 
 This will do a lot of tests, some are unfortunately still expected to
 fail, but most should go successfully.  At the end of the output there
-is a reference to an HTML file which is created by the test process and
-shows the test results.  An explanation of the test results can be found
-in XXX--to be filled in.
+is a reference to an HTML file which is created by the test process
+and shows the test results.  An explanation of the test results can be
+found in XXX--to be filled in.
 
 Testing takes about 46 MB of disk space in the build directory.
 

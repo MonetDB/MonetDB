@@ -29,8 +29,8 @@ PTHREAD_LIBS = "$(PTHREAD)\lib\libpthreadGC2.a"
 PTHREAD_INCS = "-I$(PTHREAD)\include"
 PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2.lib"
 !ENDIF
-PHP_SRCDIR = $(TOPDIR)\..\..\php-4.3.11
-PHP_INSTDIR = C:\php4
+PHP_SRCDIR = $(TOPDIR)\..\..\php-4.4.0
+PHP_INSTDIR = C:\php-4.4.0-Win32
 # for these, also see configure.py
 PHP_PEARDIR = share\pear
 PHP_EXTENSIONDIR = lib\php4
