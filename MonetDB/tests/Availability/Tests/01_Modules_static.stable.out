@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 676 ]
+[ 677 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 676 ]
+[ 677 ]
 
 var All:=0;
 
@@ -567,9 +567,9 @@ Module: "arith"
 
 Module: "bat"
 
-[ 61 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
-# tmp_35		tmp_29		tmp_31											tmp_32																																																																												  # name
+[ 62 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "BAT",	  "COMMAND:   ",  "BAT(int, int) : BAT[any,any]",							  "Creates a new empty transient BAT, with head- and tail-types as indicated."																																																				  ]
@@ -608,6 +608,7 @@ Module: "bat"
 [ "hot",	  "COMMAND:   ",  "hot(str) : void",										  "Makes a BAT very hot for the BBP. The chance of being chosen for swapout is\n small, afterwards.  Returns the BAT itself."																						  ]
 [ "info",	  "COMMAND:   ",  "info(BAT[any,any]) : BAT[str,str]",							  "Produce a BAT containing info about a BAT in \"attribute\",\"value\" format.\n It contains all properties of the BAT record. See the BAT documentation in\n GDK for more information."																																						  ]
 [ "inplace",	  "COMMAND:   ",  "inplace(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]",			  "inplace replace values on the given locations"																																																						  ]
+[ "inplace",	  "COMMAND:   ",  "inplace(BAT[void,any::1], oid, any::1) : BAT[void,any::1]",				  "inplace replace values on the given locations"																																																																															  ]
 [ "insert",	  "COMMAND:   ",  "insert(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "Insert all BUNs of the second BAT into the first.\n Returns the modified BAT."																											  ]
 [ "insert",	  "COMMAND:   ",  "insert(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Insert one BUN[h,t] in a BAT.\n Returns the modified BAT."																														  ]
 [ "key",	  "COMMAND:   ",  "key(BAT[any::1,any::2]) : bit",							  "return whether the head column of a BAT is unique (key)."																																																						  ]
@@ -812,7 +813,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 676 ]
+[ 677 ]
 
 quit();
 

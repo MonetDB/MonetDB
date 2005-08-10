@@ -25,6 +25,7 @@ MODULES.replace("enum",      "plain");
 MODULES.replace("io",        "plain");
 MODULES.replace("kernel",    "plain");
 MODULES.replace("lock",      "plain");
+MODULES.replace("logger",    "plain");
 MODULES.replace("mapi",      "plain");
 MODULES.replace("mkey",      "plain");
 MODULES.replace("mmath",     "plain");

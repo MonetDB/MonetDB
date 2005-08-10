@@ -58,6 +58,7 @@ monettime: loading... done.
       mel: loading... done.
      mapi: loading... done.
 malalgebra: loading... done.
+   logger: loading... done.
      lock: loading... done.
  iterator: loading... done.
     image: loading... done.
@@ -111,6 +112,7 @@ table(mmn().reverse().sort().reverse().col_name(sprintf("%i modules",mmn().count
 [ "image"	  ]
 [ "iterator"	  ]
 [ "lock"	  ]
+[ "logger"	  ]
 [ "main"	  ]
 [ "malalgebra"	  ]
 [ "mapi"	  ]

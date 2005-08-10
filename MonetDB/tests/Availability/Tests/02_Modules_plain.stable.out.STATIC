@@ -39,6 +39,7 @@ table(Plain_mods.reverse().col_name(sprintf("%i modules",Plain_mods.count())));
 [ "decimal"	  ]
 [ "enum"	  ]
 [ "lock"	  ]
+[ "logger"	  ]
 [ "mapi"	  ]
 [ "mkey"	  ]
 [ "mmath"	  ]
@@ -593,6 +594,21 @@ Module: "lock"
 [ "sema_destroy", "COMMAND:   ",  "sema_destroy(sema) : void",	  "destroy a sema"							  ]
 [ "sema_down",	  "COMMAND:   ",  "sema_down(sema) : void",	  "decrease the semaphpore if >0; else block"				  ]
 [ "sema_up",	  "COMMAND:   ",  "sema_up(sema) : void",	  "increase the semaphore"						  ]
+
+Module: "logger"
+
+[ 6 ]
+[ 6 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+# function			type		signature							help													  # name
+# str			str		str								str													  # type
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "log_delta",		  "COMMAND:   ",  "log_delta(BAT[void,any::1], BAT[oid,any::1], oid) : bit",	  "log the delta in the WAL (return success)"								  ]
+[ "log_insert",		  "COMMAND:   ",  "log_insert(BAT[void,any::1], oid) : bit",			  "log the inserts in the WAL (return success)"								  ]
+[ "log_trans_end",	  "COMMAND:   ",  "log_trans_end(oid) : bit",					  "write transaction end in the WAL (return success)"							  ]
+[ "log_trans_start",	  "COMMAND:   ",  "log_trans_start(bit) : oid",					  "Log a start of a transaction, return new transaction id"						  ]
+[ "logger_start",	  "COMMAND:   ",  "logger_start(str, str) : bit",				  "Start logging; if first start, check if recovery is needed. if already logging, close the old file."	  ]
+[ "logger_start",	  "PROC:      ",  "logger_start() : void",					  "not available"											  ]
 
 Module: "mapi"
 
