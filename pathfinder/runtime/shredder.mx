@@ -527,7 +527,6 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
          * BATprintf(GDKout,shredCtx->dstBAT[IDREF_PRE].bat);
 	 */
 
-
 	/*
 	*/
 #ifdef POST_COMPRESS
@@ -540,6 +539,12 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
         	stream_printf(GDKerr,"compressing PROP_VAL fails\n");
                 return NULL;
 	}
+	/* */
+	if ( BATcount(pv->bat) != BATcount(xlate_oid) ) {
+		stream_printf(GDKerr,"ERROR: pf_compress() returns bad # of xlate oids: %d (expected %d)\n",BATcount(xlate_oid),BATcount(pv->bat));
+		return NULL;
+	}
+	/* */
 	BBPunfix(BBPcacheid(pv->bat));
 	pv->bat = pvu;
 
@@ -549,6 +554,10 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 	BBPunfix(BBPcacheid(ap->bat));
 	ap->bat = lj;
 #endif
+	if ( 0 ) {
+		BATprintf(GDKout,shredCtx->dstBAT[ATTR_PROP].bat);
+		BATprintf(GDKout,shredCtx->dstBAT[PROP_VAL].bat);
+	}
 
         for(i=0; i<SHRED_BATS; i++) {
                 shredBAT* sb = &shredCtx->dstBAT[i];
