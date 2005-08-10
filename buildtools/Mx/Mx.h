@@ -19,6 +19,10 @@
 /* Debug control
  */
 
+#if defined(__MINGW32__)
+#define NATIVE_WIN32
+#endif 
+
 #ifdef NATIVE_WIN32
 # include <io.h>
 # include <direct.h>
