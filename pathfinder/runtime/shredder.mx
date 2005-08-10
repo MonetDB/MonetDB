@@ -38,7 +38,7 @@
 /* #define DEBUG */
 
 /* use compression of the attribute values AFTER all has been shred */
-#define POST_COMPRESS 1
+/* #define POST_COMPRESS 1 */
 
 #define USE_COMPRESSION
 #define PRINT_STAT 0
