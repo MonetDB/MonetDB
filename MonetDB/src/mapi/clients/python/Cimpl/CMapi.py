@@ -25,7 +25,8 @@ class Mapi:
             raise IOError(self.error_str())
 
     def __del__(self):
-        MapiLib.mapi_destroy(self.__mid)
+        if MapiLib:
+            MapiLib.mapi_destroy(self.__mid)
         del self.__mid
 
     def error(self):
