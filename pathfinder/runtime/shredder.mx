@@ -38,7 +38,7 @@
 /* #define DEBUG */
 
 /* use compression of the attribute values AFTER all has been shred */
-/* #define POST_COMPRESS 1 */
+#define POST_COMPRESS 1
 
 #define USE_COMPRESSION
 #define PRINT_STAT 0
@@ -414,15 +414,14 @@ int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
   if (tmp_i != NULL && BAThash(tmp_i, hashmask_size) != NULL) {     
     tmp_i = BATins_kunique(tmp_i, bm); /* bat[str,oid] */
     if (tmp_i != NULL) {
-      tmp_m = BATmark(BATsetaccess(tmp_i, BAT_READ), 0); /*
-bat[str,void] */
+      tmp_m = BATmark(BATsetaccess(tmp_i, BAT_READ), 0); /* bat[str,void] */
       if (tmp_m != NULL) {
         tmp_o = BATmark(BATmirror(tmp_i), 0); /* bat[oid,void] */
         if (tmp_o != NULL) {
-          *map = BAThashjoin(b, tmp_m, BATcount(b)); /* bat[void,oid] */
+          *map = BATleftjoin(b, tmp_m, BATcount(b)); /* bat[void,oid] */
           if (*map != NULL) {
             b->ttype = bm->htype = TYPE_str; /* undo hack for join */
-            *unq = BATleftfetchjoin(BATmirror(tmp_o), b, BATcount(tmp_o));
+            *unq = BATleftfetchjoin(BATmirror(tmp_o), b, BATcount(tmp_o)); /* bat[v?oid,oid] */
             if (*unq != NULL) {
               BATsetaccess(*map, BAT_READ);
               BATsetaccess(*unq, BAT_READ);
@@ -433,11 +432,10 @@ bat[str,void] */
           }
           BBPreclaim(tmp_o);
         }
-	  BBPreclaim(tmp_m);
+        BBPreclaim(tmp_m);
       }
       BBPreclaim(tmp_i);
     }
-    /* BBPreclaim(tmp_i); ERROR: BBPclear: range error 58 here */
   }
   b->ttype = bm->htype = TYPE_str; /* undo hack (in error case) */
   return ret;
