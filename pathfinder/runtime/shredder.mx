@@ -38,7 +38,7 @@
 /* #define DEBUG */
 
 /* use compression of the attribute values AFTER all has been shred */
-/* #define POST_COMPRESS 1 */
+#define POST_COMPRESS 1
 
 #define USE_COMPRESSION
 #define PRINT_STAT 0
@@ -400,7 +400,7 @@ int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
                 BAT **unq, /* BAT[void,str] output with unique strings */
                 BAT **map  /* BAT[void,oid] output maps old oids into new */
 ){
-  BAT *tmp_i, *tmp_u, *tmp_m, *tmp_o, *bm = BATmirror(b);
+  BAT *tmp_i, *tmp_m, *tmp_o, *bm = BATmirror(b);
   size_t hashmask_size = BATcount(b);
   int ret = -1;
 
@@ -412,12 +412,12 @@ int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
   /* guarantee a hash table suitable for some serious double elim */
   tmp_i = BATnew(b->ttype, TYPE_oid , hashmask_size);
   if (tmp_i != NULL && BAThash(tmp_i, hashmask_size) != NULL) {     
-    tmp_u = BATins_kunique(tmp_i, bm); /* bat[str,oid] */
-    if (tmp_u != NULL) {
-      tmp_m = BATmark(BATsetaccess(tmp_u, BAT_READ), 0); /*
+    tmp_i = BATins_kunique(tmp_i, bm); /* bat[str,oid] */
+    if (tmp_i != NULL) {
+      tmp_m = BATmark(BATsetaccess(tmp_i, BAT_READ), 0); /*
 bat[str,void] */
       if (tmp_m != NULL) {
-        tmp_o = BATmark(BATmirror(tmp_u), 0); /* bat[oid,void] */
+        tmp_o = BATmark(BATmirror(tmp_i), 0); /* bat[oid,void] */
         if (tmp_o != NULL) {
           *map = BAThashjoin(b, tmp_m, BATcount(b)); /* bat[void,oid] */
           if (*map != NULL) {
@@ -435,9 +435,9 @@ bat[str,void] */
         }
 	  BBPreclaim(tmp_m);
       }
-      BBPreclaim(tmp_u);
+      BBPreclaim(tmp_i);
     }
-    BBPreclaim(tmp_i); /* ERROR: BBPclear: range error 58 here */
+    /* BBPreclaim(tmp_i); ERROR: BBPclear: range error 58 here */
   }
   b->ttype = bm->htype = TYPE_str; /* undo hack (in error case) */
   return ret;
