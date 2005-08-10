@@ -147,6 +147,10 @@ stream_export stream *open_bzwastream(const char *filename);
 
 stream_export void close_stream(stream *s);
 
+#ifdef HAVE_CURL
+stream_export stream * open_urlstream(const char *url);
+#endif
+
 stream_export stream *socket_rstream(int socket, const char *name);
 stream_export stream *socket_wstream(int socket, const char *name);
 stream_export stream *socket_rastream(int socket, const char *name);
@@ -403,7 +407,7 @@ stream_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 }
 
 /* Write cnt elements of size elmsize to the stream.  Returns the
-   number of elements actually read.  If elmsize or cnt equals zero,
+   number of elements actually written.  If elmsize or cnt equals zero,
    returns cnt. */
 ssize_t
 stream_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
@@ -1071,7 +1075,216 @@ append_wastream(const char *filename)
 	return open_wastream_(filename, "a");
 }
 
+#ifdef HAVE_CURL
+#include <curl/curl.h>
 
+#ifdef USE_CURL_MULTI
+static CURLM *multi_handle;
+#endif
+
+struct curl_data {
+	CURL *handle;
+	char *buffer;		/* buffer to store incoming data */
+	size_t maxsize;		/* size of allocated buffer */
+	size_t usesize;		/* end of used data */
+	size_t offset;		/* start of unread data */
+	int running;		/* whether still transferring */
+#ifdef USE_CURL_MULTI
+	CURLMcode result;	/* result of transfer (if !running) */
+	struct curl_data *next;	/* linked list (curl_handles) */
+#endif
+};
+#ifdef USE_CURL_MULTI
+static struct curl_data *curl_handles;
+#endif
+
+/* this function is called by libcurl when there is data for us */
+static size_t
+write_callback(char *buffer, size_t size, size_t nitems, void *userp)
+{
+	stream *s = (stream *) userp;
+	struct curl_data *c = (struct curl_data *) s->stream_data.p;
+
+	size *= nitems;
+	/* allocate a buffer if we don't have one yet */
+	if (c->buffer == NULL && size != 0) {
+		/* BLOCK had better be a power of 2! */
+		c->maxsize = (size + BLOCK - 1) & ~(BLOCK - 1);
+		if ((c->buffer = malloc(c->maxsize)) == NULL)
+			return 0;
+		c->usesize = 0;
+		c->offset = 0;
+	}
+#ifndef USE_CURL_MULTI
+	/* move data if we don't have enough space */
+	if (c->maxsize - c->usesize < size && c->offset > 0) {
+		memmove(c->buffer, c->buffer + c->offset, c->usesize - c->offset);
+		c->usesize -= c->offset;
+		c->offset = 0;
+	}
+#endif
+	/* allocate more buffer space if we still don't have enough space */
+	if (c->maxsize - c->usesize < size) {
+		c->maxsize = (c->usesize + size + BLOCK - 1) & ~(BLOCK - 1);
+		c->buffer = realloc(c->buffer, c->usesize + size);
+	}
+	/* finally, store the data we received */
+	memcpy(c->buffer + c->usesize, buffer, size);
+	c->usesize += size;
+	return size;
+}
+
+static void
+curl_destroy(stream *s)
+{
+	struct curl_data *c;
+#ifdef USE_CURL_MULTI
+	struct curl_data **cp;
+#endif
+
+	if ((c = (struct curl_data *) s->stream_data.p) != NULL) {
+		s->stream_data.p = NULL;
+#ifdef USE_CURL_MULTI
+		/* lock access to curl_handles */
+		cp = &curl_handles;
+		while (*cp && *cp != c)
+			cp = &(*cp)->next;
+		if (*cp)
+			*cp = c->next;
+		/* unlock access to curl_handles */
+#endif
+		if (c->handle) {
+#ifdef USE_CURL_MULTI
+			curl_multi_remove_handle(mult_handle, c->handle);
+#endif
+			curl_easy_cleanup(c->handle);
+		}
+		if (c->buffer)
+			free(c->buffer);
+		free(c);
+	}
+	destroy(s);
+}
+
+static ssize_t
+curl_read(stream *s, void *buf, size_t elmsize, size_t cnt)
+{
+	struct curl_data *c = (struct curl_data *) s->stream_data.p;
+	size_t size;
+
+	if (c->usesize - c->offset >= elmsize || !c->running) {
+		/* there is at least one element's worth of data
+		   available, or we have reached the end: return as
+		   much as we have, but no more than requested */
+		if (cnt * elmsize > c->usesize - c->offset)
+			cnt = (c->usesize - c->offset) / elmsize;
+		size = cnt * elmsize;
+		memcpy(buf, c->buffer + c->offset, size);
+		c->offset += size;
+		if (c->offset == c->usesize)
+			c->usesize = c->offset = 0;
+		return (ssize_t) cnt;
+	}
+	/* not enough data, we must wait until we get some */
+#ifndef USE_CURL_MULTI
+	return 0;
+#endif
+}
+
+static ssize_t
+curl_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
+{
+	(void) s;
+	(void) buf;
+	(void) elmsize;
+	(void) cnt;
+	assert(0);
+	return -1;
+}
+
+static void
+curl_close(stream *s)
+{
+	(void) s;
+}
+
+stream *
+open_urlstream(const char *url)
+{
+	stream *s;
+	struct curl_data *c;
+#ifdef USE_CURL_MULTI
+	CURLMsg *msg;
+#endif
+
+	if ((c = malloc(sizeof(*c))) == NULL)
+		return NULL;
+	c->handle = NULL;
+	c->buffer = NULL;
+	c->maxsize = c->usesize = c->offset = 0;
+	c->running = 1;
+	if ((s = create_stream(url)) == NULL) {
+		free(c);
+		return NULL;
+	}
+#ifdef USE_CURL_MULTI
+	/* lock access to curl_handles */
+	c->next = curl_handles;
+	curl_handles = c;
+	/* unlock access to curl_handles */
+#endif
+	s->read = curl_read;
+	s->write = curl_write;
+	s->close = curl_close;
+	s->destroy = curl_destroy;
+	s->stream_data.p = (void *) c;
+	if ((c->handle = curl_easy_init()) == NULL) {
+		destroy(s);
+		return NULL;
+	}
+	curl_easy_setopt(c->handle, CURLOPT_URL, s->name);
+	curl_easy_setopt(c->handle, CURLOPT_WRITEDATA, s);
+	curl_easy_setopt(c->handle, CURLOPT_VERBOSE, FALSE);
+	curl_easy_setopt(c->handle, CURLOPT_NOSIGNAL, TRUE);
+	curl_easy_setopt(c->handle, CURLOPT_WRITEFUNCTION, write_callback);
+#ifdef USE_CURL_MULTI
+	if (multi_handle == NULL)
+		multi_handle = curl_multi_init();
+	curl_multi_add_handle(multi_handle, c->handle);
+	while (curl_multi_perform(multi_handle, NULL) == CURLM_CALL_MULTI_PERFORM)
+		;
+	while ((msg = curl_multi_info_read(multi_handle, NULL)) != NULL) {
+		struct curl_data *p;
+		/* lock access to curl_handles */
+		for (p = curl_handles; p; p = p->next) {
+			if (p->handle == msg->easy_handle) {
+				switch (msg->msg) {
+				case CURLMSG_DONE:
+					p->running = 0;
+					p->result = msg->data.result;
+					curl_multi_remove_handle(multi_handle, p->handle);
+					curl_easy_cleanup(p->handle);
+					p->handle = NULL;
+					break;
+				default:
+					break;
+				}
+				break;
+			}
+		}
+		/* unlock access to curl_handles */
+	}
+#else
+	if (curl_easy_perform(c->handle) != CURLE_OK)
+		s->errnr = OPEN_ERROR;
+	curl_easy_cleanup(c->handle);
+	c->handle = NULL;
+	c->running = 0;
+#endif
+	return s;
+}
+
+#endif /* HAVE_CURL */
 
 static ssize_t
 socket_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
