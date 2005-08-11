@@ -97,6 +97,7 @@ pcre_compile_wrap(pcre ** res, str pattern)
 {
 	(void) res;
 	(void) pattern;
+	GDKerror("pcre_compile_wrap() no available as required version of libpcre was not found by configure.\n");
 	return GDK_FAIL;
 }
 
@@ -106,6 +107,7 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 	(void) res;
 	(void) pattern;
 	(void) s;
+	GDKerror("pcre_exec_wrap() no available as required version of libpcre was not found by configure.\n");
 	return GDK_FAIL;
 }
 
@@ -114,6 +116,7 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 {
 	(void) res, (void) pattern;
 	(void) strs;
+	GDKerror("pcre_select() no available as required version of libpcre was not found by configure.\n");
 	return GDK_FAIL;
 }
 
@@ -122,6 +125,7 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 {
 	(void) res, (void) pattern;
 	(void) strs;
+	GDKerror("pcre_uselect() no available as required version of libpcre was not found by configure.\n");
 	return GDK_FAIL;
 }
 
@@ -133,6 +137,7 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 	(void) pattern;
 	(void) replacement;
 	(void) flags;
+	GDKerror("pcre_replace() no available as required version of libpcre was not found by configure.\n");
 	return GDK_FAIL;
 }
 
@@ -144,6 +149,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 	(void) pattern;
 	(void) replacement;
 	(void) flags;
+	GDKerror("pcre_replace_bat() no available as required version of libpcre was not found by configure.\n");
 	return GDK_FAIL;
 }
 
