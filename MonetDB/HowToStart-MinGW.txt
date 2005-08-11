@@ -27,8 +27,12 @@ and optionally:
 
 In addition to Cygwin, we also need the Pthreads library compiled for
 Native Windows.  It can be found at
-ftp://sources.redhat.com/pub/pthreads-win32/.  Copy the contents of
-the Pre-built folder to e.g. C:\Pthreads.  Don't use spaces in the
+ftp://sources.redhat.com/pub/pthreads-win32/.  Download the archive
+(the latest version we have tried is pthreads-w32-2-7-0-release.exe)
+and extract it.  Pthreads should be installed to C:\Pthreads, so copy
+the contents of the prebuilt or Pre-built.2 folder from the extracted
+archive to C:\Pthreads (so that you end up with folders
+C:\Pthreads\lib and C:\Pthreads\include).  Don't use spaces in the
 name of the folder where you install the Pre-built files.
 
 In order to compile and install MonetDB, I use the following commands:
