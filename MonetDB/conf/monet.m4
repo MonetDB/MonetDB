@@ -1732,7 +1732,7 @@ if test "x$have_pcre" != xno; then
     if test "x$have_pcre" = xyes; then
     	save_LIBS="$LIBS"
     	LIBS="$LIBS $PCRE_LIBS"
-    	AC_CHECK_LIB(pcre, pcre_compile, PCRE_LIBS="$PCRE_LIBS -lpcre" have_pcre=yes, have_pcre=no)
+    	AC_CHECK_LIB(pcre, pcre_compile, have_pcre=yes, have_pcre=no)
     	LIBS="$save_LIBS"
     fi
 
