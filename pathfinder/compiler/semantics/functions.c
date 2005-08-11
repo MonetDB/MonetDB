@@ -207,7 +207,7 @@ add_ufun (PFpnode_t *n)
     unsigned int   arity;
     PFvar_t      **params;
 
-    assert (n->kind = p_fun_decl);
+    assert (n->kind == p_fun_decl);
     assert (n->child[0] && n->child[0]->child[0]);
 
     /* count formal function arguments */

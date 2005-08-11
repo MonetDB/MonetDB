@@ -22,6 +22,10 @@
 
 #include <pf_config.h>
 
+#if ! HAVE_SOCKLEN_T
+#define NO_SOCKLEN_T 1
+#endif
+
 /*
  * Simple and portable HTTP server, http://shttpd.sourceforge.net
  *
@@ -56,7 +60,9 @@
 #define	_STR2(x)	_STR(x)
 
 #ifdef _WIN32					/* Windows specific */
+#ifndef __MINGW32__
 #pragma comment(lib,"ws2_32")
+#endif
 #include <winsock.h>
 #include <windows.h>
 #include <process.h>
@@ -611,7 +617,7 @@ copypath(const char *src, char *dst, size_t dstlen)
 	*dst = '\0';
 }
 
-#if defined(_WIN32) && !defined(__GNUC__)
+#if (defined(_WIN32) && !defined(__GNUC__)) || defined(__MINGW32__)
 /*
  * POSIX directory management (limited implementation, enough for shttpd)
  */
@@ -818,7 +824,7 @@ mysocketpair(int sp[2])
 
 	if ((sock = socket(AF_INET, SOCK_STREAM, 6)) == -1) {
 		elog(0, "mysocketpair: socket(): %d", ERRNO);
-	} else if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) < 0) {
+	} else if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (void *) &yes, sizeof(int)) < 0) {
 		/* get rid of the "Address already in use" error message */
 		elog(0, "mysocketpair: setsockopt(): %d", ERRNO);
 		(void) closesocket(sock);
@@ -995,12 +1001,12 @@ readremote(struct conn *c, char *buf, size_t len)
 static int
 nonblock(int fd)
 {
-	int	ret = -1;
 #ifdef	_WIN32
 	unsigned long	on = 1;
 
 	return (ioctlsocket(fd, FIONBIO, &on));
 #else
+	int	ret = -1;
 	int	flags;
 
 	if ((flags = fcntl(fd, F_GETFL, 0)) == -1)
@@ -1033,7 +1039,7 @@ shttpd_open_port(int port)
 	else if (nonblock(sock) != 0)
 		elog(1, "shttpd_open_port: nonblock");
 	else if (setsockopt(sock, SOL_SOCKET,
-	    SO_REUSEADDR,(char *) &on, sizeof(on)) != 0)
+	    SO_REUSEADDR,(void *) &on, sizeof(on)) != 0)
 		elog(1, "shttpd_open_port: setsockopt");
 	else if (bind(sock, &sa.u.sa, sa.len) < 0)
 		elog(1, "shttpd_open_port: bind(%d): %s", port,strerror(ERRNO));
@@ -2973,7 +2979,7 @@ shttpd_init(const char *fname)
 		int	opt = SO_SYNCHRONOUS_NONALERT;
 		WSAStartup(MAKEWORD(2,2), &data);
 		if (setsockopt(INVALID_SOCKET, SOL_SOCKET, SO_OPENTYPE,
-		    (char *)&opt,sizeof(opt)) < 0)
+		    (void *)&opt,sizeof(opt)) < 0)
 			elog(1, "setsockopt: %d", ERRNO);
 	}
 #endif /* _WIN32 */

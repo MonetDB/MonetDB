@@ -908,6 +908,8 @@ entity_ref (const char *s, char **endptr)
     }
 
     PFoops (OOPS_PARSE, "error in entity reference: `%s'", s);
+    assert(0); /* we should never come here! */
+    return '\0'; /* pacify picky compilers */
 }
 
 /**
@@ -978,6 +980,8 @@ extract_string (const char *s)
         }
     }
     PFoops (OOPS_PARSE, "Error in StringLiteral");
+    assert(0); /* we should never come here! */
+    return NULL; /* pacify picky compilers */
 }
 
 /**

@@ -23,9 +23,6 @@
 
 INCLUDES = ../include $(MONETDB_INCS)
 
-# locally disable "-Werror"
-X_CFLAGS =
-
 lib_core = {
 	NOINST
 	DIR = libdir

@@ -1614,6 +1614,8 @@ type_test (PFty_t ty, PFalg_pair_t e, PFalg_op_t *loop)
      * We should never reach this point.
      */
     PFoops (OOPS_FATAL, "Error in type_test().");
+    assert(0); /* we should never come here! */
+    return NULL; /* pacify picky compilers */
 }
 
 static PFalg_op_t *
