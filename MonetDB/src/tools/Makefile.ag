@@ -40,6 +40,7 @@ smallTOC_SHARED_MODS =	\
 	../modules/plain/lib_decimal	\
 	../modules/plain/lib_enum	\
 	../modules/plain/lib_lock	\
+	../modules/plain/lib_logger	\
 	../modules/plain/lib_mkey	\
 	../modules/plain/lib_mmath	\
 	../modules/plain/lib_monettime	\
