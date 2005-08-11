@@ -68,7 +68,7 @@ lib__pf_httpd = {
 	SOURCES = shttpd.c pf_httpd.mx
 	
 	LIBS = \
-		$(MONETDB_LIBS) \
+		$(MONETDB_LIBS) $(SOCKET_LIBS) \
 		-lbat -lmonet -lstream \
 		-l_streams -l_builtin -l_ascii_io
 }

@@ -69,7 +69,9 @@ start the HTTP server for xquery (default port: 8080).",
 #ifdef _WIN32
 #include <winsock.h>
 #define snprintf _snprintf
+#ifndef __MINGW32__
 #pragma comment(lib, "ws2_32")
+#endif
 #else
 #include <sys/types.h>
 #include <sys/select.h>
@@ -103,7 +105,6 @@ display_query_results(struct shttpd_callback_arg *arg, const char *results)
 	return (n);
 }
 
-int CMDxquery(char** res, char *mode, char* xquery);
 static int
 handle_xquery(struct shttpd_callback_arg *arg)
 {

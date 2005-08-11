@@ -1185,8 +1185,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 #include <monet.h>
 #include <monet_interpreter.h>
 #include <monettime.h>
-typedef ptr lock;
-typedef ptr sema;
+#include <lock.h>
 #include "pf_support.proto.h"
 
 #endif

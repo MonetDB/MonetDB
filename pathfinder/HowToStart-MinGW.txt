@@ -13,22 +13,22 @@ Cygwin (http://www.cygwin.com/) installation.  Apart from all the
 usual Cygwin packages and the packages specifically required for
 building MonetDB, no additional packages are required.
 
-Note: when compiling MonetDB/XQuery using MinGW, you will need the 
-'Mx'- and 'mel'-tools compiled without MinGW. These tools are 
-available as a separate package. You can check the sources of these 
-tools out from CVS (modulename is 'buildtools'). It comes with a 
-README file in which the steps towards a successful compilation are 
-explained.
+Note: when compiling MonetDB/XQuery using MinGW, you will need Mx and
+mel compiled without MinGW.  These tools are available as a separate
+package.  You can check the sources of these tools out from CVS
+(modulename is 'buildtools').  It comes with a README file in which
+the steps towards a successful compilation are explained.
 
 Building libxml2.
 
 The libxml2 library sources can be found at
 http://xmlsoft.org/downloads.html.  Choose one of the mirrors, and
-download libxml2-2.6.19.tar.gz.  Unpack this file (Cygwin command
-"tar xzf libxml2-2.6.19.tar.gz").  Then inside the newly created
-folder libxml2-2.6.19, execute the configure script and then build and
+download libxml2-2.6.20.tar.gz.  Unpack this file (Cygwin command
+"tar xzf libxml2-2.6.20.tar.gz").  Then inside the newly created
+folder libxml2-2.6.20, execute the configure script and then build and
 install:
-cd libxml2-2.6.19
+
+cd libxml2-2.6.20
 ./configure CC='gcc -g -mwin32 -mno-cygwin' \
 	    CXX='g++ -g -mwin32 -mno-cygwin' \
 	    LDFLAGS=-L/usr/lib/w32api \

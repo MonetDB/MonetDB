@@ -778,9 +778,14 @@ ADDHELP("xmldb_print", "boncz", "May 2005",
 #ifndef PATHFINDER_H
 #define PATHFINDER_H
 
+#include <monettime.h>
+#include <lock.h>
 #include <monet.h>
 #include <monet_interpreter.h>
 #include <streams.h>
+#include <pathfinder.proto.h>
+
+pathfinder_export int CMDxquery(char** res, char *mode, char* xquery);
 
 #endif
 
