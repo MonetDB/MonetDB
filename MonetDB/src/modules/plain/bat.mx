@@ -350,11 +350,11 @@ allocated arena gets to be large, BATs may be swapped out.
 
 .COMMAND hot(str name) : void = CMDhot;
 "Makes a BAT very hot for the BBP. The chance of being chosen for swapout is
- small, afterwards.  Returns the BAT itself."
+ small, afterwards."
 
 .COMMAND cold(str nme) : void = CMDcold;
 "Makes a BAT very cold for the BBP. The chance of being choses for swapout is
- big, afterwards.  Returns the BAT itself."
+ big, afterwards."
 
 .COMMAND heat(str nme) : int = CMDheat;
 "returns the current BBP heat (LRU stamp)"
