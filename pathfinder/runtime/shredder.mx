@@ -394,8 +394,6 @@ static shredCtxStruct *createShredCtx(char* location, off_t  fileSize) {
 /* Compress a [void,str] BAT in the most efficient way. 
  * (c:)P.Boncz
  */
-extern BAT* BATins_kunique(BAT*, BAT*);
-
 int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
                 BAT **unq, /* BAT[void,str] output with unique strings */
                 BAT **map  /* BAT[void,oid] output maps old oids into new */
