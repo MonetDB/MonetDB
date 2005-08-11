@@ -175,7 +175,7 @@ static int insertAttrDB(specAttrDbStr* adb, char* oTag, char* aTag, int type) {
         adb->doCheck = 1; /* signal database is in use */
 	if ( findAttrDB(adb,oTag,aTag) ) {
 		GDKerror("shredder.mx:insertAttrDB: specAttrDb(%s,%s,%d) is duplicate.\n",oTag, aTag, type);
-		return 0;
+		return -1;
 	}
 	if ( ++adb->n_specAttr > adb->max_specAttr ) {
 		int newsz = (adb->max_specAttr?(adb->max_specAttr*2):ADB_STARTSIZE);
@@ -444,7 +444,7 @@ int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
 /* function to tailor the exact size 'n' of the bat ctx->dstBAT[idx]. If
  * correct the batsize will always shrink!
  */
-static void setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
+static int setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
         BAT* b = shredCtx->dstBAT[idx].bat;
 
         void* top;
@@ -459,18 +459,19 @@ static void setBATcapacity(shredCtxStruct* shredCtx, int idx, int n) {
                 b->batBuns->free = n; 
                 BATsetcount(b, n);
                 b->tsorted = 0;
-                return;
+                return 1;
                 }
          case TYPE_oid:
                 top = &shredCtx->dstBAT[idx].cast.oidCAST[bottomTop];
                 break;
          default:
                 GDKerror("shredder.mx:setBATcapacity: bad tailType\n");
-                return;
+                return -1;
         }
         b->batBuns->free = ((BUN)top) - BUNfirst(b);
         BATsetcount(b, n);
         b->tsorted = 0;
+	return 1;
 }
 
 static void printStat(shredCtxStruct* shredCtx) {
@@ -511,22 +512,20 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
                 GDKerror("shredder.mx:finalizeShredCtx: resultBAT:create failed.\n");
                 return NULL;
         }
-        setBATcapacity(shredCtx,PRE_SIZE, shredCtx->nnode_pre);
-        setBATcapacity(shredCtx,PRE_LEVEL,shredCtx->nnode_pre);
-        setBATcapacity(shredCtx,PRE_PROP, shredCtx->nnode_pre);
-        setBATcapacity(shredCtx,PRE_KIND, shredCtx->nnode_pre);
-
-        setBATcapacity(shredCtx,ATTR_OWN, shredCtx->nnode_attr);
-        setBATcapacity(shredCtx,ATTR_QN,  shredCtx->nnode_attr);
-        setBATcapacity(shredCtx,ATTR_PROP,shredCtx->nnode_attr);
-
+	if (
+          (setBATcapacity(shredCtx,PRE_SIZE, shredCtx->nnode_pre)  < 0) ||
+          (setBATcapacity(shredCtx,PRE_LEVEL,shredCtx->nnode_pre)  < 0) ||
+          (setBATcapacity(shredCtx,PRE_PROP, shredCtx->nnode_pre)  < 0) ||
+          (setBATcapacity(shredCtx,PRE_KIND, shredCtx->nnode_pre)  < 0) ||
+          (setBATcapacity(shredCtx,ATTR_OWN, shredCtx->nnode_attr) < 0) ||
+          (setBATcapacity(shredCtx,ATTR_QN,  shredCtx->nnode_attr) < 0) ||
+          (setBATcapacity(shredCtx,ATTR_PROP,shredCtx->nnode_attr) < 0)
+	)
+		return NULL;
 	/* 
          * BATprintf(GDKout,shredCtx->dstBAT[ID_PRE].bat);
          * BATprintf(GDKout,shredCtx->dstBAT[IDREF_PRE].bat);
 	 */
-
-	/*
-	*/
 #ifdef POST_COMPRESS
 	shredBAT* pv = &shredCtx->dstBAT[PROP_VAL];
 
@@ -758,7 +757,7 @@ static INLINE nat append_str2bat(shredCtxStruct* shredCtx, int idx, str v) {
 static INLINE nat append_str_oid2bat(shredCtxStruct* shredCtx, int idx, str s, oid o) {
         shredBAT* sb = & shredCtx->dstBAT[idx];
 #ifdef VERBOSE
-        GDKerror("shredder.mx:append_str_oid2bat: APPEND-STR-OID[%s](%s,%d)\n",sb->def->name,s,o);
+        stream_printf(GDKout,"APPEND-STR-OID[%s](%s,%d)\n",sb->def->name,s,o);
 #endif
         if ( !BUNins(sb->bat,(ptr)s,(ptr)&o) ) {
             return NIL;
@@ -948,7 +947,7 @@ handleXmlCharacters (shredCtxStruct* shredCtx)
     return 1;
 }
 
-static nat store_PfxLocORG(shredCtxStruct* shredCtx, char* pfxloc) {
+static nat store_PfxLoc4SAX1(shredCtxStruct* shredCtx, char* pfxloc) {
 #ifdef USE_COMPRESSION
         BUN bun;
         if ( (bun = BUNfnd(shredCtx->pfxlocBAT,pfxloc)) ) {
@@ -1048,11 +1047,6 @@ static nat store_PfxLocNEW(
 }
 
 
-
-
-
-
-
 /* forward definition of tokenize_IDREFS() */
 static int tokenize_IDREFS( shredCtxStruct *shredCtx, char* ownerTag, oid pre, str attrTag, str attrVal);
 
@@ -1124,7 +1118,7 @@ tokenize_IDREFS( shredCtxStruct *shredCtx,
  * SAX callback, invoked whenever `<t ...>' is seen
  */
 void 
-shred_start_elementNEW(void *xmlCtx, 
+shred_start_element(void *xmlCtx, 
                      const xmlChar  *e_uri, 
                      const xmlChar  *e_pfx, 
                      const xmlChar  *e_loc, 
@@ -1147,7 +1141,7 @@ shred_start_elementNEW(void *xmlCtx,
 
     /* descend one level */
     if ( shredCtx->level++ >= xml_depth_max) {
-        GDKerror("shredder.mx:shred_start_elementNEW: max document nesting exceeded:(MAX==%d)\n", xml_depth_max);
+        GDKerror("shredder.mx:shred_start_element: max document nesting exceeded:(MAX==%d)\n", xml_depth_max);
         BAILOUT(xmlCtx);
     }
 
@@ -1217,7 +1211,7 @@ shred_start_elementNEW(void *xmlCtx,
 }
 
 void 
-shred_start_elementORG(void *xmlCtx, 
+shred_start_element4SAX1(void *xmlCtx, 
                      const xmlChar *t, const xmlChar **atts)
 {
     node_t node;
@@ -1241,7 +1235,7 @@ shred_start_elementORG(void *xmlCtx,
     if (shredCtx->level > shredCtx->depth)
         shredCtx->depth = shredCtx->level;
 
-    if ( (node.prop = store_PfxLocORG(shredCtx, (char*) t)) == NIL ) {
+    if ( (node.prop = store_PfxLoc4SAX1(shredCtx, (char*) t)) == NIL ) {
         BAILOUT(xmlCtx);
     }
 
@@ -1251,7 +1245,7 @@ shred_start_elementORG(void *xmlCtx,
     /* (2) process the element's attribute(s), if any */
     if (atts)
         while (*atts) {            
-            qn_id  = store_PfxLocORG(shredCtx, (char*) *atts);
+            qn_id  = store_PfxLoc4SAX1(shredCtx, (char*) *atts);
             val_id = append_str2bat(shredCtx,PROP_VAL,(char*)*(atts + 1));
             /* */
             if ( 
@@ -1327,7 +1321,7 @@ shred_characters (void *xmlCtx, const xmlChar *cs, int n)
     shredCtx->content += l;
 
     if (l < n)
-        GDKerror("shredder.mx:shred_characters: WARNING: truncated text node > %" NATFMT " characters (starts with `%.16s...')\n",
+        GDKwarning("shredder.mx:shred_characters: WARNING: truncated text node > %" NATFMT " characters (starts with `%.16s...')\n",
                  PFSHRED_STRLEN_MAX,cs);
 }
 
@@ -1443,12 +1437,16 @@ void catchAttributeDef(	void *ctx,
 	 case XML_ATTRIBUTE_ID:
 	 case XML_ATTRIBUTE_IDREF:
 	 case XML_ATTRIBUTE_IDREFS:
-	 	insertAttrDB(adb,(char*)elem,(char*)fullname,type); break;
+	 	if ( insertAttrDB(adb,(char*)elem,(char*)fullname,type) < 0 ) {
+			BAILOUT(ctx);
+		}
+		break;
 	}
 }
 
 int handleExternalSubset(shredCtxStruct* shredCtx, xmlDtdPtr dtd) {
 	struct _xmlNode *p = dtd->children;
+
 	while( p ) {
 	   if ( p->type == XML_ATTRIBUTE_DECL ) {
 	   	xmlAttributePtr ap = (xmlAttributePtr)p;
@@ -1457,7 +1455,9 @@ int handleExternalSubset(shredCtxStruct* shredCtx, xmlDtdPtr dtd) {
 		 case XML_ATTRIBUTE_ID:
 		 case XML_ATTRIBUTE_IDREF:
 		 case XML_ATTRIBUTE_IDREFS:
-	 		insertAttrDB(&shredCtx->specAttrDb,(char*)ap->elem,(char*)ap->name,ap->atype);
+	 		if ( insertAttrDB(&shredCtx->specAttrDb,(char*)ap->elem,(char*)ap->name,ap->atype) < 0 ) {
+				return -1;
+			}
 			break;
 		 default:
 		 	break; /* ignore */
@@ -1486,11 +1486,12 @@ void catchExternalSubset(
 
 		if ( (dtd=xmlParseDTD(ExternalID,SystemID)) ) {
 			if ( !handleExternalSubset(SHREDCTX(ctx),dtd) )
-			    GDKerror("shredder.mx:catchExternalSubset: WARNING: xmlParseDTD(\"%s\") SUBSET HANDLING FAILED, NO ID/IDREF QUERIES\n",SystemID);
+			    GDKwarning("shredder.mx:catchExternalSubset: WARNING: xmlParseDTD(\"%s\") SUBSET HANDLING FAILED, NO ID/IDREF QUERIES\n",SystemID);
 			xmlFreeDtd(dtd);
 		} else {
 			GDKerror("shredder.mx:catchExternalSubset: WARNING: xmlParseDTD(\"%s\") FAILED, NO ID/IDREF QUERIES\n",SystemID);
 			GDKerror("shredder.mx:catchExternalSubset: NOTE   : maybe using absolute filenames works, sorry!\n");
+			BAILOUT(ctx);
 		}
 	}
 }
@@ -1508,7 +1509,7 @@ static void my_startElementNsSAX2Func(
 		const xmlChar ** attributes) {
 	(void)nb_namespaces; 
 	(void)namespaces; 
-	shred_start_elementNEW(ctx,URI,prefix,localname,nb_attributes+nb_defaulted,attributes);
+	shred_start_element(ctx,URI,prefix,localname,nb_attributes+nb_defaulted,attributes);
 }
 
 /* libxml2 SAX2 version for the endElement construction */
@@ -1533,7 +1534,7 @@ xmlSAXHandler shredder = {
   , .startElement          = 0
   , .endElement            = 0
 #else
-  , .startElement          = shred_start_elementORG
+  , .startElement          = shred_start_element4SAX1
   , .endElement            = shred_end_element
 #endif
   , .characters            = shred_characters
@@ -1617,25 +1618,6 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location)
     xmlCtx->sax        = &shredder;
     xmlCtx->_private = shredCtx; /* set the SHREDCTX() value */
     xmlSwitchEncoding (xmlCtx, XML_CHAR_ENCODING_UTF8);
-
-
-    /*
-     * Attempt to make parser read an external Subset if defined. This does not
-     * have any effect! Reason not known! Now use catchExternalSubset() callback
-     * in shredder to do this by hand.
-     */
-    /* if ( xmlCtxtUseOptions(xmlCtx,XML_PARSE_DTDLOAD) )
-     *	GDKerror("shredder.mx:mainSHREDDER: WARNING: XML_PARSE_DTDLOAD option failed.\n");
-     */
-    /* another feeble attempt to automate external subset loading. Failed too 
-     * xmlLoadExtDtdDefaultValue = XML_DETECT_IDS;
-     * xmlCtx->loadsubset = 1;
-     */
-    
-    /* Next statement returns NULL and does not work. Reason not known! */
-    /* if (! xmlCtxtReadFile(xmlCtx,xmlFile,0,XML_PARSE_DTDLOAD) )
-     	GDKerror("shredder.mx:mainSHREDDER: xmlCtxtReadFile()=%d failed.\n",xmlCtx->errNo);
-     */
 
     /* The good old xmlParseDocument() works without complaining! */
     (void) xmlParseDocument (xmlCtx);
