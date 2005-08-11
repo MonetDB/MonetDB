@@ -3054,6 +3054,7 @@ gdk_export BAT *BATfetch(BAT *b, BAT *s);
 gdk_export BAT *BATfetchjoin(BAT *b, BAT *s, size_t estimate);
 gdk_export BAT *BATleftfetchjoin(BAT *b, BAT *s, size_t estimate);
 
+gdk_export BAT *BATins_kunique(BAT *bn, BAT *b);
 gdk_export BAT *BATsunique(BAT *b);
 gdk_export BAT *BATkunique(BAT *b);
 gdk_export BAT *BATukunique(BAT *b);
