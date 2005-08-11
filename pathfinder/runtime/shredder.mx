@@ -975,7 +975,7 @@ static nat store_PfxLocORG(shredCtxStruct* shredCtx, char* pfxloc) {
         if ( (res=append_str2bat(shredCtx,QN_PREFIX,nsStr))==NIL)
                 return NIL;
         if ( res != append_str2bat(shredCtx,QN_LOC,locStr) ) {
-                GDKerror("shredder.mx:store_PfxLoc: NS-LOC sync error");
+                GDKerror("shredder.mx:store_PfxLoc: NS-LOC sync error\n");
                 return NIL;
         }
 #ifdef USE_COMPRESSION
@@ -1030,7 +1030,7 @@ static nat store_PfxLocNEW(
         if ( res != append_str2bat(shredCtx,QN_PREFIX,(char*)a_pfx) )
                 return NIL;
         if ( res != append_str2bat(shredCtx,QN_LOC,(char*)a_tag) ) {
-                GDKerror("shredder.mx:store_PfxLoc: NS-LOC sync error");
+                GDKerror("shredder.mx:store_PfxLoc: NS-LOC sync error\n");
                 return NIL;
         }
 #ifdef USE_COMPRESSION
