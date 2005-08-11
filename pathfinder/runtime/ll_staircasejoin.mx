@@ -206,10 +206,8 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         oid lst_ctx = 0;
         BUN dst = 0, p = 0;
         size_t max_size = 0;
-        int bs_res = 0, sze = 0, *size = 0;
+        int bs_res = 0, sze = 0;
 
-        @:bat2array(pre_size,size,int)@
-        
         BUNfndVOID(p, pre_size, &fst_ctx);
         sze = *(int*)BUNtloc(pre_size, p);
         max_size = res_size = (size_t)((sze&GDK_int_max) + (int)self);
