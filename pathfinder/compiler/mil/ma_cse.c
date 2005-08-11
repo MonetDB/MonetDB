@@ -105,7 +105,8 @@ subexp_eq (PFma_op_t *a, PFma_op_t *b)
     }
 
     PFoops (OOPS_FATAL, "Error in MIL Algebra CSE.");
-
+    assert(0); /* we should never come here! */
+    return 0; /* pacify picky compilers */
 }
 
 static PFma_op_t *

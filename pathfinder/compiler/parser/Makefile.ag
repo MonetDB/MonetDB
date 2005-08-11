@@ -24,7 +24,8 @@
 YFLAGS = -d -p pf
 LFLAGS = -Ppf -olex.yy.c
 
-## disable -Werror
+## disable -Werror, 
+## since flex/bison produce code that does not pass "-Wall -Werror"
 X_CFLAGS = 
 
 INCLUDES = ../include $(MONETDB_INCS)

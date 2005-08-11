@@ -675,7 +675,7 @@ PFalg_op_t *
 PFalg_scjoin (PFalg_op_t *doc, PFalg_op_t *n, PFalg_op_t *dummy)
 {
     PFalg_op_t *ret;
-    int         i;
+    int         i=0;
 
     assert (n); assert (doc);
 

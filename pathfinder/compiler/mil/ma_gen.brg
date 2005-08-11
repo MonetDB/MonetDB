@@ -883,6 +883,8 @@ literal (PFalg_atom_t atom)
                                "been implemented.");
                        break;
     }
+    assert(0); /* we should never come here! */
+    return NULL; /* pacify picky compilers */
 }
 
 /**
@@ -899,9 +901,13 @@ implty (PFalg_simple_type_t t)
         case aat_dec:    return m_dbl;
         case aat_dbl:    return m_dbl;
         case aat_bln:    return m_bit;
+        /* pacify picky compilers: */
+        default:
+        	PFoops (OOPS_FATAL, "Cannot determine implementation type of %x", t);
+                assert(0); /* we should never come here! */
     }
-
-    PFoops (OOPS_FATAL, "Cannot determine implementation type of %x", t);
+    assert(0); /* we should never come here! */
+    return m_void; /* pacify picky compilers */
 }
 
 /**
@@ -919,6 +925,8 @@ attr_type (PFalg_op_t *n, PFalg_att_t attname)
     PFoops (OOPS_FATAL,
             "Unable to determine type of attribute `%s': attribute not found.",
             attname);
+    assert(0); /* we should never come here! */
+    return 0; /* pacify picky compilers */
 }
 
 
