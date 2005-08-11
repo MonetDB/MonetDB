@@ -1281,7 +1281,7 @@ static int seqEmitNode(XqueryCtx* ctx, oid preVal, BAT* pre_frag, int top) {
 	/* incomplete, different for dmMode ?? */
 	CHKVP(vp = idxTVinWS(ctx,PRE_SIZE,preVal));
 	int size = *(int*)vp;
-	if (size&(1<<31)) fprintf(stderr,"= seqEmitNode: size["SZFMT"] = %d\n", preVal, size);
+	if (size&(1<<31)) fprintf(stderr,"= seqEmitNode: size["SZFMT"] = %d\n", (size_t) preVal, size);
 	return MY_xquery_pre_range(ctx,preVal,preVal+size, pre_frag, top);
 }
 
