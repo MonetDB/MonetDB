@@ -1292,6 +1292,12 @@ find_subexp (PFalg_op_t *new)
         case aop_dummy:
             PFoops (OOPS_FATAL, "illegal node in algebra expression tree");
             break;
+
+        /* pacify picky compilers: */
+        case aop_string_val:
+            PFoops (OOPS_FATAL, "case 'aop_string_val' not handled in switch(new->kind) in function find_subexp() in compiler/algebra/algebra_cse.c");
+            assert(0); /* we should never come here! */
+            break;
     }
 
     return new;
