@@ -406,6 +406,7 @@ int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
 
   if (b->ttype == TYPE_str && GDK_ELIMDOUBLES(b->theap)) {
     b->ttype = bm->htype = TYPE_var; /* hack: use str offsets as int */
+    b->tvarsized = bm->hvarsized = 0;
     hashmask_size = 65536;
   }
 
@@ -421,6 +422,7 @@ int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
           *map = BATleftjoin(b, tmp_m, BATcount(b)); /* bat[void,oid] */
           if (*map != NULL) {
             b->ttype = bm->htype = TYPE_str; /* undo hack for join */
+	    b->tvarsized = bm->hvarsized = 1;
             *unq = BATleftfetchjoin(BATmirror(tmp_o), b, BATcount(tmp_o)); /* bat[v?oid,oid] */
             if (*unq != NULL) {
               BATsetaccess(*map, BAT_READ);
@@ -438,6 +440,7 @@ int pf_compress(BAT *b,    /* BAT[void,str] input with duplicates */
     }
   }
   b->ttype = bm->htype = TYPE_str; /* undo hack (in error case) */
+  b->tvarsized = bm->hvarsized = 1;
   return ret;
 }
 
@@ -538,7 +541,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 	}
 	/* */
 	if ( BATcount(pv->bat) != BATcount(xlate_oid) ) {
-		GDKerror("shredder.mx:finalizeShredCtx: pf_compress() returns bad # of xlate oids: %d (expected %d)\n",BATcount(xlate_oid),BATcount(pv->bat));
+		GDKerror("shredder.mx:finalizeShredCtx: pf_compress() returns bad # of xlate oids: " SZFMT " (expected " SZFMT ")\n",BATcount(xlate_oid),BATcount(pv->bat));
 		return NULL;
 	}
 	/* */
