@@ -63,12 +63,14 @@ as already present in the Monet system.
 
 @{
 @* Implementation
-@c
-#include <gdk.h>
+@h
 typedef ptr lock;
 typedef ptr sema;
 typedef ptr monet_lock;
 typedef ptr monet_sema;
+@c
+#include <gdk.h>
+#include "lock.h"
 
 #include "lock.proto.h"
 
