@@ -530,7 +530,12 @@ public class MonetPreparedStatement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public void setBytes(int parameterIndex, byte[] x) throws SQLException {
-		throw new SQLException("Operation currently not supported!");
+		try {
+			setString(parameterIndex, new String(x, "UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			// this should never happen
+			throw new AssertionError(e.toString());
+		}
 	}
 
 	/**
