@@ -8,7 +8,7 @@ licenses.
 To compile, first run the script
 	./bootstrap
 then do the usual sequence,
-	./configure
+	./configure [--prefix=<install-dir-prefix>]
 	make
 	make install
 
