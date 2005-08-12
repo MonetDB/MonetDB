@@ -27,6 +27,7 @@ pathfinder/bootstrap
 pathfinder/de-bootstrap
 pathfinder/rules.mk
 pathfinder/conf/conf.bash
+buildtools/conf/conf.bash
 EOF
     then
 	cat <<EOF
