@@ -35,6 +35,9 @@ archive to C:\Pthreads (so that you end up with folders
 C:\Pthreads\lib and C:\Pthreads\include).  Don't use spaces in the
 name of the folder where you install the Pre-built files.
 
+For some information about compiling the optional PCRE library, see
+the file HowToStart-MinGW-pcre.txt.
+
 In order to compile and install MonetDB, I use the following commands:
 
 ./bootstrap
@@ -46,7 +49,7 @@ cd MinGW
 	     --with-translatepath='cygpath -w' \
 	     --with-pthread=C:/Pthreads \
 	     --without-iconv \
-	     --without-pcre \
+	     --with-pcre="$HOME/MinGW" \
 	     --without-php \
 	     --without-swig \
 	     --prefix="$HOME/MinGW"
@@ -61,6 +64,10 @@ supposed to work.  However, these executables are Windows (i.e. not
 Cygwin) executables, and so don't understand Cygwin paths.  They do
 however understand / as a directory separator (in addition to the
 normal Windows directory separator \).
+
+If you don't have PCRE installed, use --without-pcre instead of the
+--with-pcre=... option.  If you have installed it somewhere else,
+change the location.
 
 It is also possible to use precompiled versions of Mx and mel.  In
 that case use the --with-mx=.../Mx.exe and --with-mel=.../mel.exe
