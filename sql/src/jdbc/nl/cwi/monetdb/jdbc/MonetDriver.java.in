@@ -239,7 +239,7 @@ public class MonetDriver implements Driver {
 
 		prop = new DriverPropertyInfo("native_prepared_statements", "true");
 		prop.required = false;
-		prop.description = "Whether server side prepared statements or a Java implementation should be used";
+		prop.description = "Whether server side prepared statements (true) or a Java implementation (false) should be used";
 		props.add(prop);
 
 		DriverPropertyInfo[] dpi = new DriverPropertyInfo[props.size()];
