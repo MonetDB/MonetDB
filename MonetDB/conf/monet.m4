@@ -1745,6 +1745,7 @@ if test "x$have_pcre" != xno; then
 fi
 AC_SUBST(PCRE_CFLAGS)
 AC_SUBST(PCRE_LIBS)
+AM_CONDITIONAL(HAVE_PCRE,test x$have_pcre != xno)
 
 AC_CHECK_HEADERS(locale.h langinfo.h)
 AC_CHECK_FUNCS(nl_langinfo setlocale)

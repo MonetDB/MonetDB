@@ -23,4 +23,4 @@ tcpip2
 slice
 enum
 radix
-NOT_WIN32?pcre
+HAVE_PCRE?pcre

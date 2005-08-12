@@ -74,6 +74,7 @@ subs = [
     ('@HAVE_JAVA_FALSE@',        have_java_false),
     ('@HAVE_MONET5_FALSE@',      ''),
     ('@HAVE_MONET_FALSE@',       '#'),
+    ('@HAVE_PCRE_FALSE@',        ''),
     ('@HAVE_PERL_FALSE@',        ''),
     ('@HAVE_PERL_DEVEL_FALSE@',  ''),
     ('@HAVE_PERL_SWIG_FALSE@',   ''),

@@ -74,6 +74,7 @@ CONDITIONALS = {
     'HAVE_JAVA'        : "@HAVE_JAVA_FALSE@",
     'HAVE_MONET5'      : "@HAVE_MONET5_FALSE@",
     'HAVE_MONET'       : "@HAVE_MONET_FALSE@",
+    'HAVE_PCRE'        : "@HAVE_PCRE_FALSE@",
     'HAVE_PERL'        : "@HAVE_PERL_FALSE@",
     'HAVE_PERL_DEVEL'  : "@HAVE_PERL_DEVEL_FALSE@",
     'HAVE_PERL_SWIG'   : "@HAVE_PERL_SWIG_FALSE@",
