@@ -607,9 +607,10 @@ JAVA_VERSION=""
 JAVA="java"
 JAVAC="javac"
 JAR="jar"
+JAVADOC="javadoc"
 AC_ARG_WITH(java,
 	AC_HELP_STRING([--with-java=DIR],
-		[javac and jar are installed in DIR/bin]),
+		[java, javac, jar and javadoc are installed in DIR/bin]),
 	have_java="$withval",
 	have_java=auto)
 JPATH=$PATH
@@ -635,6 +636,7 @@ if test "x$have_java" != xno; then
 
   AC_PATH_PROG(JAVAC,javac,,$JPATH)
   AC_PATH_PROG(JAR,jar,,$JPATH)
+  AC_PATH_PROG(JAVADOC,javadoc,,$JPATH)
   if test x$have_java_1_4 != xyes; then
      if test "x$have_java" = xyes; then
 	AC_MSG_ERROR([Java version too old (1.4 required)])
@@ -659,6 +661,7 @@ if test "x$have_java" != xno; then
     JAVA=""
     JAVAC=""
     JAR=""
+    JAVADOC=""
     CLASSPATH=""
   fi
 fi
@@ -666,6 +669,7 @@ AC_SUBST(JAVAVERS)
 AC_SUBST(JAVA)
 AC_SUBST(JAVAC)
 AC_SUBST(JAR)
+AC_SUBST(JAVADOC)
 AC_SUBST(CLASSPATH)
 AM_CONDITIONAL(HAVE_JAVA,test x$have_java != xno)
 
