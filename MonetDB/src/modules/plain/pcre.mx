@@ -199,6 +199,8 @@ pcre_compile_wrap(pcre ** res, str pattern)
 	int errpos = 0;
 
 	if ((r = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
+		GDKerror("pcre_compile() failed with\n'%s'\nat %d in\n'%s'.\n",
+			err_p, errpos, pattern);
 		return GDK_FAIL;
 	}
 	*(pcre **) res = p2m(r);
@@ -230,8 +232,8 @@ pcre_select(BAT **res, str pattern, BAT *strs)
 	else
 		r = BATnew(strs->htype, TYPE_str, BATcount(strs));
 	if ((re = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
-		GDKerror("pcre_select: pcre compile of pattern (%s) failed\n",
-			pattern);
+		GDKerror("pcre_select: pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
+			pattern, errpos, err_p);
 		return GDK_FAIL;
 	}
 	BATloop(strs, p, q) {
@@ -260,8 +262,8 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 	else
 		r = BATnew(strs->htype, TYPE_void, BATcount(strs));
 	if ((re = pcre_compile(pattern, PCRE_UTF8, &err_p, &errpos, NULL)) == NULL) {
-		GDKerror("pcre_uselect: pcre compile of pattern (%s) failed\n",
-			pattern);
+		GDKerror("pcre_uselect: pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
+			pattern, errpos, err_p);
 		return GDK_FAIL;
 	}
 	BATloop(strs, p, q) {
@@ -312,7 +314,7 @@ pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
 	}
 
 	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
-		GDKerror("pcre_replace: pcre compile of pattern (%s) failed\n", pattern);
+		GDKerror("pcre_replace: pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
 		return GDK_FAIL;
 	}
 
@@ -414,13 +416,13 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 		} else if (flags[i] == 'x') {
 			compile_options |= PCRE_EXTENDED;
 		} else {
-			GDKerror("pcre_replace: \"flags\" contains invalid character '%c'\n", flags[i]);
+			GDKerror("pcre_replace_bat: \"flags\" contains invalid character '%c'\n", flags[i]);
 			return GDK_FAIL;
 		}
 	}
 
 	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
-		GDKerror("pcre_uselect: pcre compile of pattern (%s) failed\n", pattern);
+		GDKerror("pcre_replace_bat: pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
 		return GDK_FAIL;
 	}
 
@@ -431,7 +433,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKzalloc(sizeof(int) * ovecsize)) == NULL) {
-		GDKerror("pcre_replace: not enough memory\n");
+		GDKerror("pcre_replace_bat: not enough memory\n");
 		my_pcre_free(pcre_code);
 		return GDK_FAIL;
 	}
@@ -457,7 +459,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str 
 		if (ncaptures > 0){
 			replaced_str = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
 			if (!replaced_str) {
-				GDKerror("pcre_replace: not enough memory\n");
+				GDKerror("pcre_replace_bat: not enough memory\n");
 				my_pcre_free(pcre_code);
 				GDKfree(ovector);
 				return GDK_FAIL;
