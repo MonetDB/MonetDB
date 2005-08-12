@@ -64,7 +64,7 @@ public class MonetClob implements Clob {
 	 */
 	public String getSubString(long pos, int length) throws SQLException {
 		try {
-			return(buf.substring((int)(pos - 1), (int)(pos + length)));
+			return(buf.substring((int)(pos - 1), (int)(pos - 1 + length)));
 		} catch (IndexOutOfBoundsException e) {
 			throw new SQLException(e.getMessage());
 		}
