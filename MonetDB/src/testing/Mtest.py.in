@@ -410,11 +410,13 @@ def CreateHtmlIndex (env, *body) :
         os.chdir(TSTTRGDIR)
 
         if TSTDIR:
-            header = Element('a',
-                             {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
-                              'target': '%s%s_%s_body' % (URLSUFFIX_D, OSVER, TSTDIR),
-                              'class': 'black'},
-                             Text(TSTDIR))
+            header = Text(TSTDIR)
+            if URLPREFIX:
+                header = Element('a',
+                                 {'href': '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF),
+                                  'target': '%s%s_%s_body' % (URLSUFFIX_D, OSVER, TSTDIR),
+                                  'class': 'black'},
+                                 header)
         else:
             header = Element('span', {'class': 'black'},
                              Text(OSVER))
@@ -595,6 +597,11 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
     f.close()
     f = open(".%s%s.head.html" % (TST, WHAT),"w")
     target = '%s_%s_%s_%s_body' % (OSVER, TSTDIR, TST, WHAT[1:])
+    cvs = Text('cvs')
+    if URLPREFIX:
+        cvs = Element('a', {'href': '%s%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, URLSUFFIX_D),
+                            'target': target},
+                      cvs)
     text = Element('div', {'class': 'header'},
                    Text(SYSTEM),
                    Text(' '),
@@ -617,9 +624,7 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT) :
                    Element('a', {'href': './', 'target': target},
                            Text(TSTDIR)),
                    Text(' ('),
-                   Element('a', {'href': '%s%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, URLSUFFIX_D),
-                                 'target': target},
-                           Text('cvs')),
+                   cvs,
                    Text(', '),
                    Element('a', {'href': url(env['RELSRCDIR']),
                                  'target': target},
@@ -653,6 +658,24 @@ def CreateSrcIndex (env, TST, EXT) :
     TSTSRCDIR = env['TSTSRCDIR']
     TSTDIR    = env['TSTDIR']
 
+    if URLPREFIX:
+        framesrc = '%s%s/%s/%s%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, URLSUFFIX_F)
+    else:
+        f = open("."+TST+".nosrc.index.html","w")
+        html = Element('html', {},
+                       Element('head', {},
+                               Element('title', {},
+                                       Text(HTMLTITLE)),
+                               stylesheet),
+                       Element('body',
+                               {'bgcolor': white,
+                                'text': black,
+                                'link': green,
+                                'vlink': darkgreen,
+                                'alink': lime},
+                               Element('center', {},
+                                       Text('no source available'))))
+        framesrc = '.%s.nosrc.index.html' % TST
     html = Element('html', {},
                    Element('head', {},
                            Element('title', {}, Text(HTMLTITLE))),
@@ -672,7 +695,7 @@ def CreateSrcIndex (env, TST, EXT) :
                                     'marginwidth': '0',
                                     'marginheight': '0'}),
                            Element('frame',
-                                   {'src': '%s%s/%s/%s%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT, URLSUFFIX_F),
+                                   {'src': framesrc,
                                     'scrolling': 'auto',
                                     'name': '%s_%s_%s_body' % (OSVER, TSTDIR, TST),
                                     'frameborder': 'yes',
@@ -688,11 +711,14 @@ def CreateSrcIndex (env, TST, EXT) :
                          Text(TST)))
     for s in os.listdir(TSTSRCDIR):
         if len(s) >= len(TST)  and  s[:len(TST)] == TST:
+            slink = Text(s)
+            if URLPREFIX:
+                slink = Element('a',
+                                {'href': '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, s, URLSUFFIX_F),
+                                 'target': '%s_%s_%s_body' % (OSVER, TSTDIR, TST)},
+                                slink)
             tr.addchild(Element('td', {'class': 'header'},
-                                Element('a',
-                                        {'href': '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, s, URLSUFFIX_F),
-                                         'target': '%s_%s_%s_body' % (OSVER, TSTDIR, TST)},
-                                        Text(s))))
+                                slink))
     html = Element('html', {},
                    Element('head', {},
                            Element('title', {},
@@ -2393,7 +2419,16 @@ else:
         HTMLTITLE = " for "+COMPILER
     HTMLTITLE = ""+THISFILE+" results"+HTMLTITLE+" on "+OSVER       #"+ ("`date`")"
 
-URLPREFIX   = 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/MonetDB/'
+URLPREFIXMAP = {
+    'MonetDB': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/MonetDB/',
+    'sql': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/sql/',
+    'pathfinder': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/pathfinder/',
+    'xml': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/xml/',
+    'buildtools': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/buildtools/',
+    'pf-tools': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/pf-tools/',
+    'pf-haskell': 'http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/monetdb/pf-haskell/',
+    }
+URLPREFIX   = None
 ##URLSUFFIX_F = '?cvsroot=Monet-4.3'
 URLSUFFIX_F = ''
 ##URLSUFFIX_D = '?cvsroot=Monet-4.3'
@@ -2779,6 +2814,14 @@ def main(argv) :
         env['SQL_SERVER'] = "sql_server"
         env['SQL_TRACE'] = ""
 
+    # fix up URLPREFIX
+    global URLPREFIX
+    if os.path.exists(os.path.join(env['TSTSRCBASE'], 'CVS', 'Repository')):
+        repo = open(os.path.join(env['TSTSRCBASE'], 'CVS', 'Repository')).read()[:-1]
+        i = repo.find('/')
+        if i > 0:
+            repo = repo[:i]
+        URLPREFIX = URLPREFIXMAP.get(repo) # None if unknown
     # export and display env
     STDERR.flush()
     if THISFILE in ["Mtest.py", "Mprofile.py"]:
