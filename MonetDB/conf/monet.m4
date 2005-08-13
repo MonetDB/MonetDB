@@ -1695,6 +1695,7 @@ have_pcre=auto
 PCRE_CFLAGS=""
 PCRE_LIBS=""
 PCRE_CONFIG=""
+PCRETEST=""
 AC_ARG_WITH(pcre,
 	AC_HELP_STRING([--with-pcre=DIR],
 		[pcre library is installed in DIR]),
@@ -1724,6 +1725,21 @@ if test "x$have_pcre" != xno; then
       		have_pcre=no
       		AC_MSG_RESULT($have_pcre (found only $pcre_ver))
     	fi
+    fi
+
+    if test "x$have_pcre" = xyes; then
+        AC_PATH_PROG(PCRETEST,pcretest,,$MPATH)
+        AC_MSG_CHECKING(whether pcre comes with UTF-8 support)
+        if test "x$PCRETEST" = x; then
+            have_pcre=no
+            AC_MSG_RESULT($have_pcre (could not find pcretest to check it))
+        else
+            pcre_utf8="`$PCRETEST -C 2>/dev/null | grep 'UTF-8 support' | sed -e 's|^ *||' -e 's| *$||'`"
+            if test "x$pcre_utf8" != "xUTF-8 support"; then
+                have_pcre=no
+            fi
+            AC_MSG_RESULT($have_pcre (pcretest says "$pcre_utf8"))
+        fi
     fi
 
     if test "x$have_pcre" = xyes; then
