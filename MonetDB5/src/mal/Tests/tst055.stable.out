@@ -24,7 +24,7 @@ stdout of test 'tst055` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 # Nil values 	# 1  ($2:str)
-    s:str := "nil:str";	# 2  (s:str)<-($4:str)
+    s:str  := nil:str;	# 2  (s:str)<-($4:str)
     io.print(s);	# 3 IOprint_val ($5:int)<-(s:str)
     i:sht := nil:sht;	# 4  (i:sht)<-($7:sht)
     io.print(i);	# 5 IOprint_val ($8:int)<-(i:sht)

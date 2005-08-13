@@ -16,15 +16,12 @@
 @' All Rights Reserved.
 
 @a M. L. Kersten
-@* Module Management
+@+ Module Management
 
-The MAL name spaces are organized in separate modules.
+The operations are organized in separate MAL modules.
 Each module contains a local symbol table of all function names
-known to it so far. These names are never removed to guarantee stability
-of remote references.
-
-The symbol descriptors within a scope are organized in a list of subscopes 
-indexed by the first character of the function name.
+known to it so far. These names are stored in the global namespace
+pool and never removed to guarantee stability of remote references.
 
 All dynamically loaded functions remain in existing
 for the duration of the server session. Only the administrator can
@@ -34,6 +31,9 @@ Global (private) variables can be realized keeping the symbol table
 and runtime stack around between requests.
 
 @{
+The symbol descriptors within a scope are organized in a list of subscopes 
+indexed by the first character of the function name.
+
 The modules are still collected in a linked list to ease access
 and debug its content. It should be used with care for 
 resolving unknown modules.
@@ -55,7 +55,6 @@ typedef struct SCOPEDEF {
 	struct SCOPEDEF   *sibling; /* module with same start */
 	str	    name;			/* index in namespace */
 	int		inheritance; 	/* set when it plays a role in inheritance */
-	MALfcn  typeChecker;    /* function address for type checker */
 	Symbol *subscope; 		/* type dispatcher table */
 	Box box;    			/* module related objects */
 	int isAtomModule; 		/* atom module definition ? */
@@ -105,7 +104,6 @@ point for the modules to be added later.
 	cur->name = nme;
 	cur->outer = NULL;
 	cur->sibling = NULL;
-	cur->typeChecker = NULL;
 	cur->inheritance = TRUE;
 	cur->subscope = NULL; 
 	cur->isAtomModule = FALSE;
@@ -237,18 +235,20 @@ void insertSymbol(Module scope, Symbol prg){
 		} else scope = c;
 	}
 	t = getSubScope(functionName(sig));
-	if( scope->subscope == NULL){
+	if( scope->subscope == NULL)
 		newSubScope(scope);
-		scope->subscope[t] = prg;
-	} else {
+	if(scope->subscope[t] == prg){
+		/* already known, last inserted */
+	 } else  {
 		prg->peer= scope->subscope[t];
+		scope->subscope[t] = prg;
 		if( prg->peer && 
 			idcmp(prg->name,prg->peer->name) == 0)
 			prg->skip = prg->peer->skip;
 		else
 			prg->skip = prg->peer;
-		scope->subscope[t] = prg;
 	}
+	assert(prg != prg->peer);
 }
 @-
 Removal of elements from the symbol table should be
@@ -269,7 +269,7 @@ void deleteSymbol(Module scope, Symbol prg){
 			GDKwarning("deleteSymbol:undefined module\n");
 		} else scope = c;
 	}
-		t = getSubScope(functionName(sig));
+	t = getSubScope(functionName(sig));
 	if( scope->subscope[t] == prg){
 		scope->subscope[t] = scope->subscope[t]->peer;
 	} else {
@@ -286,7 +286,12 @@ void deleteSymbol(Module scope, Symbol prg){
 		}
 }
 
-@+ Inheritance structure 
+@+ Inheritance
+The MAL type checker does not apply type inheritance. Such a functionality
+can, however, be readily implemented with a MAL rewriter.
+
+An early version of the interpreter contained a simple inheritance scheme,
+which quickly became too complex to manage properly.
 The default inheritance sequence is derived from the include order.
 Most recently modules shield older modules, unless the user has specified
 an explicit module name. This dus not work for dynamically loaded modules,
@@ -408,7 +413,6 @@ void  printModuleScope(stream *fd, Module scope, int tab, int outer)
 
 	stream_printf(fd,"%smodule %s", 
 		(scope->isAtomModule?"atom ":""),s->name);
-	if( s->typeChecker) stream_printf(fd, " typechecker");
 	stream_printf(fd,"\n");
 	if( s->subscope)
 	for(j=0;j<MAXSCOPE;j++)

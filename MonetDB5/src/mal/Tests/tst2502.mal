@@ -8,7 +8,7 @@ barrier always:= true;
 	yield i;
 	redo always;
 exit always;
-end;
+end random;
 
 r1:= user.random(0);
 io.print(r1);

@@ -30,7 +30,7 @@ function user.main():int;	# 0  unknown (main:int)
     $3 := 23;	# 6  unknown ($3:any)<-($11:int)
 # error, overwriting non-temp 	# 7  unknown ($13:str)
     $5 := 23;	# 8  unknown ($5:any)<-($11:int)
-    io.print();	# 9  unknown ($14:any)<-($5:any)
+    io.print($5);	# 9  unknown ($14:any)<-($5:any)
 end main;	# 10  unknown 
 
 # 07:58:40 >  

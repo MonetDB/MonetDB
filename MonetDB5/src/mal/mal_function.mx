@@ -526,6 +526,7 @@ void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 #ifdef DEBUG_MAL_FCN
 		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
 #endif 
+	if( p->polymorphic)
 	for(i=0;i<p->argc; i++)
 	if( isPolymorphic(x= getArgType(mb,p,i))) {
 		if( isaBatType(x)){

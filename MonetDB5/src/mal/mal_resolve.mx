@@ -15,71 +15,67 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@' 
 @a M. Kersten
-@v 0.0
-@* MAL type resolution
-The type resolution scheme should be flexible and efficient.
+@v 1.0
+@* MAL Type Resolution
 Given the interpretative nature of many of the MAL instructions,
 when and where type resolution takes place is a critical design issue.
-Performing it too late, i.e. at each instruction, leads to 
+Performing it too late, i.e. at each instruction call, leads to 
 performance problems if we derive the same information over and over again.
-However, many built-in operators handle polymorphic typed objects, 
+However, many built-in operators have polymorphic typed signatures, 
 so we cannot escape it altogether.
 
-Consider the small illustrative MAL program which we should
-definitely support at the language level.
+Consider the small illustrative MAL program:
 @example
 @verbatim
 function sample(nme:str, val:any):bit;
-   c := 2*3;
+   c := 2 * 3;
    b := bbp.bind(nme);  #find a BAT
-   h := select(b,val,val);
-   t := count(h);
-   x := print(t);
-   y := print(val);
+   h := algebra.select(b,val,val);
+   t := algebra.count(h);
+   x := io.print(t);
+   y := io.print(val);
 end sample;
 @end verbatim
 @end example
 @-
-The function definition is polymorphic typed on the 2cnd argument,
-it becomes a concrete type upon invocation. 
+The function definition is polymorphic typed on the 2nd argument,
+it becomes a concrete type upon invocation. The system could attempt
+a type check, but quickly runs into assumptions that generally do not hold.
 
 The first assignment can be type checked during parsing
-and could even lead to a frozen value. Looking up a BAT leads to
-an element bat[ht,tt] where ht and tt are runtime dependent types.
-We can not typecheck the bat selection. It should be done at runtime.
-We can check t at compile time, because we only have to assure
-that count() is given a bat argument. This assumes that we can infer
-that 'h' is indeed a BAT, which requires assurance that all 'select'
-operators produce a bat. In general, this is not possible, as a user may
-overload the select() operation  to return somethin else as a bat[any,any];
-Because print(t) contains an undetermined typed
+and a symbolic optimizer could even evaluate the expression once. 
+Looking up a BAT in the buffer pool leads to
+an element @code{:bat[@emph{ht,tt}]} where @emph{ht} and @emph{tt}
+are runtime dependent types, which means that the selection operation can
+not be type-checked immediately. It is an example of an embedded
+polypmorphic statement, which requires intervention of the user/optimizer
+to make the type explicit before the type resolver becomes active.
+The operation @code{count} can be checked, if it is given a BAT argument. 
+This assumes that we can infer that 'h' is indeed a BAT, which requires 
+assurance that @code{algebra.select} produces one. However, there are
+no rules to avoid addition of new operators, or to differentiate among
+different implementations based on the argument types.
+Since @code{print(t)} contains an undetermined typed
 argument we should postpone typechecking as well.
 The last print statement can be checked upon function invocation.
 
-Life becomes really complex if the body contains a loop, which changes
-the variable types. For then we also have to keep track of the original
+Life becomes really complex if the body contains a loop with 
+variable types. For then we also have to keep track of the original
 state of the function. Or alternatively, type checking should consider
 the runtime stack rather than the function definition itself.
 
-A few conclusions can be drawn. 1) Every statement should carry a
-flag to indicate whether it has been type-resolved. 
-2) polymorphic functions can be cloned to built a cache of instantiated 
-functions.
-3) you can always postpone type checking, but then
-we have to call the type-checker potentially at every instruction
-and its result is call specific, this means we have to propagate
-the type through the runtime stack rather than the symbol table,
-4) once the type of a variable is fixed, we should stick to it.
-This precludes loops where the typing scheme changes with each step.
-Instead, such type changes should be factored out algoritmically.
-
+These examples give little room to achieve our prime objective, i.e.
+a fast and early type resolution scheme. Any non-polymorphic function
+can be type checked and marked type-safe upon completion.
+Type checking polymorphic functions are post-poned until a concrete
+type instance is known. It leads to a clone, which can be type checked
+and is entered into the symbol table.
+@{
 The type resolution status is marked in each instruction.
 TYPE_RESOLVED implies that the type of the instruction is fully
 resolved, it is marked TYPE_DYNAMIC otherwise.
 
-@{
 @h
 #ifndef _MAL_RESOLVE_H
 #define _MAL_RESOLVE_H
@@ -113,8 +109,6 @@ For a polymorphic MAL function we make a fully instantiated clone.
 It will be prepended to the symbol list as it is more restrictive.
 This effectively overloads the MAL procedure.
 
-Debugging of this module can be dynamically controlled in the debugger
-by setting the routine of interest.
 @c
 #include "mal_resolve.h"
 #include "mal_namespace.h"
@@ -139,28 +133,29 @@ malType findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
     int foundbutwrong=0;
     int polytype[MAXTYPEVAR];
     int *returntype;
-
-@-
-Check first for a module specific type checker. It takes
-precedence and should handle all cases. It returns -1
-upon failure, which shortcuts the execution.
-@c
-    if(scope->typeChecker && moduleName(p)==scope->name ){
-        if( (scope->typeChecker)(scope,mb,p,FALSE)!=0)
-            return getArgType(mb,p,0);
-        return -3;
-    }
 @-
 Within a module find the subscope to locate the element in its list
 of symbols. A skiplist is used to speed up the search for the
 definition of the function.
+
+For the implementation we should be aware that over 90% of the
+functions in the kernel have just a few arguments and a single
+return value.
+A point of concern is that polymorphic arithmetic operations
+lead to an explosion in the symbol table. This increase the
+loop to find a candidate.
+
+Consider to collect the argument type into a separate structure, because
+it will be looked up multiple types to resolve the instruction.[todo]
+Simplify polytype using a map into the concrete argument table.
 @c
     m= scope;
     s= m->subscope[(int)(getSubScope(functionName(p)))];
-    while(s != NULL){   /* single scope element check */
-    if(functionName(p) && functionName(p) != s->name  ){
-        s= s->skip; continue;
-    }
+	if( functionName(p))
+	while(s != NULL){   /* single scope element check */
+	if( functionName(p) != s->name  ){
+		s= s->skip; continue;
+	}
 @-
 Perform a strong type-check on the actual arguments. If it turns
 out to be a polymorphic MAL function, we have to clone it. 
@@ -178,12 +173,10 @@ and type(Ai)=type(Yi). Furthermore, the variables Xi obtain their type
 from Bi (or type(Bi)==type(Xi)).
 @c
     sig = getSignature(s); 
-    if( ! ( sig->retc == p->retc &&
-          ( sig->argc== p->argc ||
-          ( sig->argc<p->argc && sig->varargs))
-      ) ) {
-         s=s->peer; continue;
-    }
+    if( sig->retc != p->retc) {
+		s= s->peer;
+		continue;
+	}
     polymorphic = 0;
     unmatched = 0;
 
@@ -200,7 +193,7 @@ from Bi (or type(Bi)==type(Xi)).
 The simple case could be taken care of separately to speedup processing
 However, it turned out not to make a big difference.
 The first time we encounter a polymorphic argument in the
-signature, we initialize a type variable table.
+signature.
 Subsequently, the polymorphic arguments update this table
 and check for any type mismatches that might occur.
 There are at most 2 type variables involved per argument
@@ -208,44 +201,79 @@ due to the limited type nesting permitted.
 Note, each function returns at least one value.
 @c
     if( sig->polymorphic ){
-        if(polyVector[0]==0) polyInit();
-        memcpy(polytype,polyVector, sizeof(polyVector));
-        polymorphic++;
-        for(k=i=p->retc; i<p->argc; i++){
-            int actual = getArgType(mb,p,i);
-            int formal = getArgType(s->def,sig,k);
+	int limit = sig->polymorphic;
+	if( ! (sig->argc== p->argc ||
+		(sig->argc<p->argc && sig->varargs)) ){
+		s= s->peer; continue;
+	}
+      /*  if(polyVector[0]==0) polyInit();
+        memcpy(polytype,polyVector, 2*sig->argc*sizeof(int)); */
+
+	for(k=0; k< limit; k++) polytype[k] = TYPE_any;
+	polymorphic++;
 @-
-Take care of variable argument lists. They are allowed as the last in the
-signature only.
+Most polymorphic functions don;t have a variable argument
+list. So we save some instructions factoring this caise out.
+@c
+	  if( sig->varargs == 0)
+        for(i=p->retc; i<p->argc; i++){
+            int actual = getArgType(mb,p,i);
+            int formal = getArgType(s->def,sig,i);
+@-
+Take care of variable argument lists. 
+They are allowed as the last in the signature only.
 Furthermore, for patterns if the formal type is 'any' then all remaining arguments 
 are acceptable and detailed type analysis becomes part of the pattern 
 implementation.
 In all other cases the type should apply to all remaining arguments.
 @c
-
+		if( formal == actual)
+			continue;
             if( updateTypeMap(formal, actual, polytype)){
                 unmatched= i; 
-                break;
+               break;
             }
             formal= getPolyType(formal,polytype);
 @-
 Collect the polymorphic types and resolve them.
 If it fails, we know this isn;t the function we are
-after.
+looking for.
 @c
-            if( formal != actual &&  
-                resolveType( formal,actual) == -1 ){
+            if( resolveType( formal,actual) == -1 ){
+                unmatched= i;
+                break;
+            }
+        }
+	  else /* sig->varargs */
+        for(k=i=p->retc; i<p->argc; i++){
+            int actual = getArgType(mb,p,i);
+            int formal = getArgType(s->def,sig,k);
+		if( formal == actual) {
+			k++;		
+			if(sig->varargs && k == sig->argc) k--;
+			continue;
+		}
+            if( updateTypeMap(formal, actual, polytype)){
+                unmatched= i; 
+               break;
+            }
+            formal= getPolyType(formal,polytype);
+            if( resolveType( formal,actual) == -1 ){
                 unmatched= i;
                 break;
             }
             k++;
             if(sig->varargs && k == sig->argc) k--;
         }
-    } else {
+   } else {
 @-
 We have to check the argument types to determine a
-possible match 
+possible match for the non-polymorphic case.
 @c
+        if( sig->argc != p->argc){
+            s= s->peer;
+            continue;
+        }
         for(i=p->retc;i<p->argc;i++){
             int actual = getArgType(mb,p,i);
             int formal = getArgType(s->def,sig,i);
@@ -293,7 +321,7 @@ If any of the arguments refer to a constraint type, any$x, then
 the resulting type can not be determined.
 @c
     s1 = 0;
-	returntype= (int*) alloca(p->maxarg * sizeof(int));
+	returntype= (int*) alloca(p->retc * sizeof(int));
     for(k=i=0; i < p->retc; i++){
         int actual = getArgType(mb,p,i);
         int formal = getArgType(s->def,sig,k);
@@ -567,18 +595,20 @@ functions. Errors are simply ignored at this point of the game,
 because they may be resolved as part of the calling sequence.
 @c
 void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent){
-    str n1 = getTypeName(lhs);
-    str n2 = getTypeName(rhs);
+    str n1;
+    str n2;
     char buf[1024];
     int i;
 
 	if( !silent) {
+		n1 = getTypeName(lhs);
+		n2 = getTypeName(rhs);
 		snprintf(buf,1024,"type mismatch %s := ",n1);
 		i= strlen(buf);
 		snprintf(buf+i,1024-i,"%s\n",n2);
 		showException(mb, getPC(mb,p),"MALresolve",buf);
+		GDKfree(n1); GDKfree(n2);
 	}
-	GDKfree(n1); GDKfree(n2);
     mb->errors++;
     p->typechk= TYPE_UNKNOWN;
 }
@@ -599,11 +629,10 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
     Module m=0;
 	p->typechk= TYPE_UNKNOWN;
 
-	if( p->fcn && (p->token== CMDcall || p->token== PATcall ||
-		p->token==FCNcall || p->token == FACcall)){
-			p->token= ASSIGNsymbol;
-			p->fcn = NULL;
-			p->blk = NULL;
+	if( p->fcn && p->token>= FCNcall && p->token<= PATcall){
+		p->token= ASSIGNsymbol;
+		p->fcn = NULL;
+		p->blk = NULL;
 	}
 
     if( isaSignature(p) ) {
@@ -632,7 +661,7 @@ In all other cases we should generate a message, but only if we know
 that the error was not caused by checking the definition
 of a polymorphic function or the module or function name are variables,
 In those cases, the detailed analysis is performed upon an actual call.
-@c
+[ NOT ALLOWED ANYMORE
         if( moduleId(p) && (i=findVariable(mb,moduleName(p))) != -1 &&
                     getVarType(mb,i) == TYPE_str){
             for(i=0;i<p->retc;i++) setFixed(mb,getArg(p,i));
@@ -645,6 +674,7 @@ In those cases, the detailed analysis is performed upon an actual call.
             p->typechk= TYPE_UNKNOWN; 
 			return; 
         }
+@c
         if( ! isaSignature(p) && !getInstrPtr(mb,0)->polymorphic )  {
             mb->errors++;
 			if( !silent)
@@ -905,5 +935,11 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
     }
     return 0;
 }
+@-
+A completely different mechanism would have been to hardcode some of the mostly
+occurring type checks. For example, the type checker for the instruction
+bat.insert(b:bat[:any$1,:any$2],h:any$1,t:any$2):bat[:any$1,:any$2].
+The disadvantage is an abundance of code and less efficient instruction
+cache hits.
 @}
 /* vim:set shiftwidth=4 expandtab: */

@@ -33,7 +33,9 @@ stdout of test 'no.098` in directory 'tests/BugReports` itself:
 # even when it's not in the selection range:
 # 
 !ERROR: 	ba_a := setoid(aa_a);
-!	               ^module name expected
+!	                     ^module name missing
+!ERROR: 	mil.line("var b:=new(oid,oid);");
+!	                                  	  ^<identifier> expected
 function user.main():int;	# 0  (main:int)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  unknown ($32:str)
 #Predefined code segment 	# 2  unknown ($34:str)
@@ -78,8 +80,8 @@ function user.main():int;	# 0  (main:int)
     mil.line("# #-----------------#\n");	# 41  unknown ($106:any)<-($97:str)
     mil.line("setoid(oid(20000000));");	# 42  unknown ($107:any)<-($108:str)
     aa_a := calc.oid(20000000);	# 43  unknown (aa_a:any)<-($110:int)
-    ba_a;	# 44  unknown (ba_a:any)
-    mil.line("var b:=new(oid,oid);");	# 45  unknown ($112:any)<-($113:str)
+    ba_a := setoid;	# 44  unknown (ba_a:any)<-(setoid:any)
+    ;	# 45  unknown ($113:any)
     b := bbp.new(nil:oid,nil:oid);	# 46  unknown (b:any)<-($115:oid)($115:oid)
     mil.line("b.insert(oid(1),oid(2));");	# 47  unknown ($116:any)<-($117:str)
     ca_a := calc.oid(1);	# 48  unknown (ca_a:any)<-($119:int)

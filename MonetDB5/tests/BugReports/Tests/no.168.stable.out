@@ -44,25 +44,27 @@ stdout of test 'no.168` in directory 'tests/BugReports` itself:
 # so, it's no bug in module url, but somewhere else.
 # 
 !ERROR: 	u := url("http://www.cwi.nl/~mk/Acoi/index.html");
-!	            ^module name expected
+!	               ^module name missing
+!ERROR: 	mil.line("u.print();");
+!	                        	  ^<identifier> expected
 !ERROR: 	da_a := getHost(u);
-!	               ^module name expected
+!	                    	 ^module name missing
 !ERROR: 	fa_a := getPort(u);
-!	               ^module name expected
+!	                    	 ^module name missing
 !ERROR: 	ha_a := getDomain(u);
-!	               ^module name expected
+!	                      	 ^module name missing
 !ERROR: 	ja_a := getFile(u);
-!	               ^module name expected
+!	                    	 ^module name missing
 !ERROR: 	la_a := getAnchor(u);
-!	               ^module name expected
+!	                      	 ^module name missing
 !ERROR: 	na_a := getBasename(u);
-!	               ^module name expected
+!	                        	 ^module name missing
 !ERROR: 	pa_a := getProtocol(u);
-!	               ^module name expected
+!	                        	 ^module name missing
 !ERROR: 	ra_a := getUser(u);
-!	               ^module name expected
+!	                    	 ^module name missing
 !ERROR: 	ta_a := getDirectory(u);
-!	               ^module name expected
+!	                         	 ^module name missing
 function user.main():int;	# 0  (main:int)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  unknown ($32:str)
 #Predefined code segment 	# 2  unknown ($34:str)
@@ -143,39 +145,30 @@ function user.main():int;	# 0  (main:int)
     aa_a := calc.oid(20000000);	# 77  unknown (aa_a:any)<-($175:int)
     ba_a := calc.setoid(aa_a);	# 78  unknown (ba_a:any)<-(aa_a:any)
     mil.line("var u:= url(\"http://www.cwi.nl/~mk/Acoi/index.html\");");	# 79  unknown ($177:any)<-($178:str)
-    u;	# 80  unknown (u:any)
-    mil.line("u.print();");	# 81  unknown ($180:any)<-($181:str)
+    u := url;	# 80  unknown (u:any)<-(url:any)
+    ;	# 81  unknown ($181:any)
     ca_a := bat.print(u);	# 82  unknown (ca_a:any)<-(u:any)
     mil.line("u.getHost().print();");	# 83  unknown ($183:any)<-($184:str)
-    da_a;	# 84  unknown (da_a:any)
-    ea_a := bat.print(da_a);	# 85  unknown (ea_a:any)<-(da_a:any)
-    mil.line("u.getPort().print();");	# 86  unknown ($187:any)<-($188:str)
-    fa_a;	# 87  unknown (fa_a:any)
-    ga_a := bat.print(fa_a);	# 88  unknown (ga_a:any)<-(fa_a:any)
-    mil.line("u.getDomain().print();");	# 89  unknown ($191:any)<-($192:str)
-    ha_a;	# 90  unknown (ha_a:any)
-    ia_a := bat.print(ha_a);	# 91  unknown (ia_a:any)<-(ha_a:any)
-    mil.line("u.getFile().print();");	# 92  unknown ($195:any)<-($196:str)
-    ja_a;	# 93  unknown (ja_a:any)
-    ka_a := bat.print(ja_a);	# 94  unknown (ka_a:any)<-(ja_a:any)
-    mil.line("u.getAnchor().print();");	# 95  unknown ($199:any)<-($200:str)
-    la_a;	# 96  unknown (la_a:any)
-    ma_a := bat.print(la_a);	# 97  unknown (ma_a:any)<-(la_a:any)
-    mil.line("u.getBasename().print();");	# 98  unknown ($203:any)<-($204:str)
-    na_a;	# 99  unknown (na_a:any)
-    oa_a := bat.print(na_a);	# 100  unknown (oa_a:any)<-(na_a:any)
-    mil.line("u.getProtocol().print();");	# 101  unknown ($207:any)<-($208:str)
-    pa_a;	# 102  unknown (pa_a:any)
-    qa_a := bat.print(pa_a);	# 103  unknown (qa_a:any)<-(pa_a:any)
-    mil.line("u.getUser().print();");	# 104  unknown ($211:any)<-($212:str)
-    ra_a;	# 105  unknown (ra_a:any)
-    sa_a := bat.print(ra_a);	# 106  unknown (sa_a:any)<-(ra_a:any)
-    mil.line("u.getDirectory().print();");	# 107  unknown ($215:any)<-($216:str)
-    ta_a;	# 108  unknown (ta_a:any)
-    ua_a := bat.print(ta_a);	# 109  unknown (ua_a:any)<-(ta_a:any)
-    mil.line("quit();");	# 110  unknown ($219:any)<-($220:str)
-    va_a := clients.quit();	# 111  unknown (va_a:any)
-end main;	# 112  unknown 
+    da_a := getHost;	# 84  unknown (da_a:any)<-(getHost:any)
+    mil.line("u.getPort().print();");	# 85  unknown ($187:any)<-($188:str)
+    fa_a := getPort;	# 86  unknown (fa_a:any)<-(getPort:any)
+    mil.line("u.getDomain().print();");	# 87  unknown ($191:any)<-($192:str)
+    ha_a := getDomain;	# 88  unknown (ha_a:any)<-(getDomain:any)
+    mil.line("u.getFile().print();");	# 89  unknown ($195:any)<-($196:str)
+    ja_a := getFile;	# 90  unknown (ja_a:any)<-(getFile:any)
+    mil.line("u.getAnchor().print();");	# 91  unknown ($199:any)<-($200:str)
+    la_a := getAnchor;	# 92  unknown (la_a:any)<-(getAnchor:any)
+    mil.line("u.getBasename().print();");	# 93  unknown ($203:any)<-($204:str)
+    na_a := getBasename;	# 94  unknown (na_a:any)<-(getBasename:any)
+    mil.line("u.getProtocol().print();");	# 95  unknown ($207:any)<-($208:str)
+    pa_a := getProtocol;	# 96  unknown (pa_a:any)<-(getProtocol:any)
+    mil.line("u.getUser().print();");	# 97  unknown ($211:any)<-($212:str)
+    ra_a := getUser;	# 98  unknown (ra_a:any)<-(getUser:any)
+    mil.line("u.getDirectory().print();");	# 99  unknown ($215:any)<-($216:str)
+    ta_a := getDirectory;	# 100  unknown (ta_a:any)<-(getDirectory:any)
+    mil.line("quit();");	# 101  unknown ($219:any)<-($220:str)
+    va_a := clients.quit();	# 102  unknown (va_a:any)
+end main;	# 103  unknown 
 
 # 14:17:59 >  
 # 14:17:59 >  Done.

@@ -557,7 +557,7 @@ int parseMILfactor(Client cntxt, MalBlkPtr currBlk){
 
 	if( (len = stringLength(cntxt)) ){
 		advance(cntxt,1);
-		nme= cstCopy(cntxt,len-2);
+		nme= idCopy(cntxt,len-2);
 		advance(cntxt,1);
 		varid = newConstant(currBlk,TYPE_str,nme,FALSE);
 	} else
@@ -566,7 +566,7 @@ int parseMILfactor(Client cntxt, MalBlkPtr currBlk){
 	} else
 	if( (len = cstLength(cntxt,&tpe)) >0 ){
 		/* factor */
-		nme= cstCopy(cntxt,len);
+		nme= idCopy(cntxt,len);
 		varid = newConstant(currBlk,tpe,nme,TRUE);
 	} else 
 	if( (len = idLength(cntxt)) > 0){
@@ -777,7 +777,7 @@ void parseMILifstmt(Client cntxt, MalBlkPtr currBlk){
 	pushInstruction(currBlk,currInstr);
 
 	skipMILspace(cntxt,currBlk);
-	if( keyphrase(cntxt,"else",4)) {
+	if( MALkeyword(cntxt,"else",4)) {
 		cvar = newTmpVariable(currBlk, TYPE_bit);
 		setVarUsed(currBlk,cvar,TRUE);
 		currInstr= newInstruction(ASSIGNsymbol);
@@ -809,10 +809,10 @@ void parseMILbatloop(Client cntxt, MalBlkPtr currBlk, int lhs){
                 nextChar(cntxt);
         else parseError(cntxt,"']' expected\n");
     }
-	if( !keyphrase(cntxt,"batloop",7) )
+	if( !MALkeyword(cntxt,"batloop",7) )
 		parseError(cntxt,"'batloop' expected\n");
 	skipMILspace(cntxt,currBlk);
-	if( !keyphrase(cntxt,"()",2) )
+	if( !MALkeyword(cntxt,"()",2) )
 		parseError(cntxt,"'()' expected\n");
 	skipMILspace(cntxt,currBlk);
 
@@ -1007,7 +1007,7 @@ void parseMILparameter(Client cntxt, MalBlkPtr currBlk, InstrPtr currInstr){
 	int vararg=0,len,tpe,varid;
 	str tnme, nme;
 	
-	if( keyphrase(cntxt,"...",3)) vararg=1;
+	if( MALkeyword(cntxt,"...",3)) vararg=1;
 	len= idLength(cntxt);
 	if( len == 0){
 		parseError(cntxt,"<identifier> or <type> expected\n");
@@ -1032,7 +1032,7 @@ void parseMILparameter(Client cntxt, MalBlkPtr currBlk, InstrPtr currInstr){
 	newId(cntxt,GDKstrdup(nme),varid);
 	skipMILspace(cntxt,currBlk);
 	if( vararg){
-		if( !keyphrase(cntxt,"...",3)) 
+		if( !MALkeyword(cntxt,"...",3)) 
 			parseError(cntxt,"'...' expected\n");
 		skipMILspace(cntxt,currBlk);
 	}

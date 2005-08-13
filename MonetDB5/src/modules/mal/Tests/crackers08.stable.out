@@ -134,12 +134,12 @@ stdout of test 'crackers08` in directory 'src/modules/mal` itself:
 function user.main():int;	# 0  (main:int)
 # determine basic costs for cracking a larger table. 	# 1  ($2:str)
     b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($4:int)
-    l := 0;	# 3  (l:int)<-($6:int)
-barrier (v,i):= mal.newRange(0);	# 4 RNGnewRange_int (v:bit)(i:int)<-($6:int) jump 9
+    l := 0:int;	# 3  (l:int)<-($6:int)
+barrier (v,i):= mal.newRange(0:int);	# 4 RNGnewRange_int (v:bit)(i:int)<-($6:int) jump 9
     bat.insert(b,l,l);	# 5 BKCinsert_bun ($9:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(l:int)
-    l := calc.+(l,1);	# 6 CALCbinaryADDintint (l:int)<-(l:int)($10:int)
+    l := calc.+(l,1:int);	# 6 CALCbinaryADDintint (l:int)<-(l:int)($10:int)
     l := calc.*(i,i);	# 7 CALCbinaryMULintint (l:int)<-(i:int)(i:int)
-    redo (v,i):= mal.nextElement(1,1000000:int);	# 8 RNGnextElement_int (v:bit)(i:int)<-($10:int)($11:int) jump 5
+    redo (v,i):= mal.nextElement(1:int,1000000:int);	# 8 RNGnextElement_int (v:bit)(i:int)<-($10:int)($11:int) jump 5
 exit (v,i);	# 9  (v:bit)(i:int)
 #setReadMode(b); 	# 10  ($15:str)
     mx := algebra.max(b);	# 11 ALGmax_int (mx:int)<-(b:bat[:int,:int])

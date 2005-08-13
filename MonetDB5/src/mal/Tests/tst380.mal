@@ -10,33 +10,42 @@ function get(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
 	return z;
 end get;
 # Note the type of the variables will be fixed during the first call
-# Thus, a better schould would be a term rewriter call, which
-# replaces an instruction
-#rule get(Y:bat,N:str)
-function getInt(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
-	b:bat[:int,:int] := bbp.nme();
-	z:= algebra.join(br,b);
-	bat.setColumn(z,title);
-	return z;
-end getInt;
-function getLng(br:bat[:any$1,:any$2],nme:str, title:str):bat[:any$3,:any$4];
-	b:bat[:int,:lng] := bbp.nme();
-	z:= algebra.join(br,b);
-	bat.setColumn(z,title);
-	return z;
-end getLng;
 function dir(b:bat[:int,:str]):void;
 	atm:= inspect.getAtomNames();
 	brev:= bat.reverse(b);
 	bm := bat.mirror(brev);
-	bHead:= user.get(brev,"getHeadType","htype");
-	bTail:= user.get(brev,"getTailType","ttype");
-	bCount:= user.getLng(brev,"getCount","count");
-	bHeat:= user.getInt(brev,"getHeat","heat");
-	bDirty:= user.get(brev,"getDirty","dirty");
-	bStatus:= user.get(brev,"getStatus","status");
-	bKind:= user.get(brev,"getKind","kind");
-	bRef:= user.getInt(brev,"getRefCount","refCount");
+	b1:bat[:int,:str] := bbp.getHeadType();
+	bHead:= algebra.join(brev,b1);
+	bat.setColumn(bHead,"htype");
+
+	b2:bat[:int,:str] := bbp.getTailType();
+	bTail:= algebra.join(brev,b2);
+	bat.setColumn(bTail,"ttype");
+
+	b8:bat[:int,:lng] := bbp.getCount();
+	bCount:= algebra.join(brev,b8);
+	bat.setColumn(bCount,"count");
+
+	b7:bat[:int,:int] := bbp.getHeat();
+	bHeat:= algebra.join(brev,b7);
+	bat.setColumn(bHeat,"heat");
+
+	b3:bat[:int,:str] := bbp.getDirty();
+	bDirty:= algebra.join(brev,b3);
+	bat.setColumn(bDirty,"dirty");
+
+	b4:bat[:int,:str] := bbp.getStatus();
+	bStatus:= algebra.join(brev,b4);
+	bat.setColumn(bStatus,"status");
+
+	b5:bat[:int,:str] := bbp.getKind();
+	bKind:= algebra.join(brev,b5);
+	bat.setColumn(bKind,"kind");
+
+	b6:bat[:int,:int] := bbp.getRefCount();
+	bRef:= algebra.join(brev,b6);
+	bat.setColumn(bRef,"refCount");
+
 	io.table(brev, bm, bHead,bTail,bCount, bHeat,bDirty,bStatus,bKind,bRef);
 end dir;
 

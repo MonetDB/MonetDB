@@ -67,8 +67,6 @@ mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
 mal_export str runMALsequence( malTask *task);
 mal_export void runMALtask(malTask *task);
 mal_export void waitForChildren(MalStkPtr stk);
-mal_export str setDynamicType(MalBlkPtr mb, 
-        VarPtr v, int tpe,int pc);
 mal_export void garbageElement(ValPtr v);
 mal_export void garbageCollector(MalBlkPtr mb, MalStkPtr stk);
 mal_export void garbageCollectAll(MalBlkPtr mb, MalStkPtr stk);
@@ -78,6 +76,7 @@ mal_export ptr getArgValue(MalStkPtr stk,
         InstrPtr pci, int k);
 mal_export ptr getArgReference(MalStkPtr stk, 
         InstrPtr pci, int k);
+mal_export str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 
 #endif /*  _MAL_INTERPRET_H*/
 @c
@@ -216,11 +215,11 @@ being called.
 			bzero((char *) stk, stackSize(getInstrPtr(mb,0)->argc));
 		} else
 		*/
-			bzero((char *) stk, stackSize(mb->vtop));
-        stk->stktop= mb->vtop; 
-        stk->stksize= mb->vsize;
-        stk->blk= mb;
-        stk->cmd= cntxt->itrace; /* set debug mode */
+		bzero((char *) stk, stackSize(mb->vtop));
+		stk->stktop= mb->vtop; 
+		stk->stksize= mb->vsize;
+		stk->blk= mb;
+		stk->cmd= cntxt->itrace; /* set debug mode */
         if( env) {
             stk->stkdepth= stk->stksize + env->stkdepth;
             @:safeguardStack@
@@ -263,15 +262,14 @@ of the return statement.
     } 
 @-
 An optimization is to copy all constant variables used in functions immediately
-onto the value stack. Then we do not have to check for the location
+onto the value stack. Then we do not have to check for their location
 later on any more. At some point, the effect is optimal, if at least several
 constants are referenced in a function (a gain on tst400a of 20% has been 
 observed due the small size of the function).
 
 Moreover, we have to copy the result types to the stack for later
 use. The stack value is cleared to avoid misinterpretation of left-over
-information. In particular, to enable proper dynamic type analysis.
-Since a stack frame may contain values of a previous call,
+information. Since a stack frame may contain values of a previous call,
 we should first remove garbage. A problematic case is when
 the variable accepts any type, then we leave it up to the 
 pattern operators to deal with it.
@@ -1246,6 +1244,7 @@ if( ret != MAL_SUCCEED ) {
 @-
 @}
 @+ Dynamic type checking
+[OUTDATED, don;t support this, but what about patterns that set the type? such as bbp.bind.
 During execution we may end up with functions that require
 a dynamic type check, because their arguments may not have
 been known upon compile time.
@@ -1254,11 +1253,7 @@ the instruction is encountered. Moreover, we may not store the
 type information in the program description, because the
 actual types may differ between calls.
 
-Note that the module and function name may be obtained from
-a string variable. [not any more] Before we return the original values
-should be reset.
 @{
-
 @= dynamicTypeCheck
     altpci= pci;
     pci= dynamicTypeChecker(getClient()->nspace,mb,stk,pci);
@@ -1474,4 +1469,5 @@ we have to keep track of essential system counter information.
 			profilerEvent(cntxt->nspace,mb,stk,pci);
     }
 #endif
+/* vim:set shiftwidth=4 expandtab: */
 @}

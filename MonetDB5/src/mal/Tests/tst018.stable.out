@@ -35,7 +35,7 @@ function user.main():int;	# 0  (main:int)
     b := nil;	# 6  (b:bat[:int,:int])<-($14:BAT)
     io.print(b);	# 7 IOprint_val ($9:int)<-(b:bat[:int,:int])
     s := "hello";	# 8  (s:str)<-($11:str)
-    s := "nil";	# 9  (s:str)<-($15:str)
+    s := nil;	# 9  (s:str)<-($15:str)
     io.print(s);	# 10 IOprint_val ($12:int)<-(s:str)
 end main;	# 11  
 [ 0 ]

@@ -4,6 +4,7 @@
 
 	cWait:= true;	#consumer put to sleep
 	pWait:= true;	#consumer put to sleep
+	i:= 0;
 
 thread 	producer;	
 	io.printf("Created producer thread\n");

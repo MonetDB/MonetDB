@@ -75,13 +75,12 @@ Comment starts with a sharp '#' and continues to the end of the line.
 
 Built-in operators adhere to the conventional syntax
 as pre-, post-, and infix notations. They are translated
-during parsing to the generic form.
+during parsing to the generic functional form.
 
 The assignment patterns recognized are illustrated below.
 @example
 (t1,..,t32) := module.fcn(a1,..,a32);
 t1 := module.fcn(a1,..,a32);
-t1 := fcn(a1,..,a32);
 t1 := v1 operator v2;
 t1 := constant;
 (t1,..,tn) := (c1,..,cn);
@@ -562,6 +561,7 @@ mal_export void     setVarType(MalBlkPtr mb, int i, int tpe);
 mal_export void     setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
 mal_export void     setReturnArgument(InstrPtr p, int varid);
 mal_export malType  destinationType(MalBlkPtr mb, InstrPtr p);
+mal_export void		setPolymorphic(InstrPtr p, int tpe, int force);
 mal_export void 	setVarProperty(MalBlkPtr mb, int i, str name, str op, int tpe, ptr val);
 mal_export str      fcnClass(InstrPtr p);
 mal_export str      fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg );
@@ -1299,7 +1299,7 @@ int fndConstant(MalBlkPtr mb, str val, int len){
 }
 int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
     int i,k,idx,parsetype=type;
-    str s,colon = 0;
+    str s;
     ValPtr vr;
     int tonil= FALSE;
 
@@ -1315,7 +1315,6 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
         }
     }
     idx= k = newTmpVariable(mb,type);
-/* printf("new constant %d val %s %d\n",k,val,type);*/
     getVarLiteral(mb,k)= val;
     isConstant(mb,k) = 1;
 	setFixed(mb,k);
@@ -1324,14 +1323,10 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
     vr = &getVarConstant(mb,k);
     tonil= niltst && strncmp(val,"nil",3)==0;
 
-    /* remember the type classifier location */
-    if( type != TYPE_str && type != TYPE_chr && *val !='(')
-        colon = strchr(val,':');
     if( type == TYPE_str && strncmp(val,"nil",3)==0 && niltst){
-        colon = strchr(val,':');
+		getVarLiteral(mb,k)= GDKstrdup(str_nil);
         tonil= TRUE;
     }
-    if( colon) *colon = 0;
 @-
 @}
 The current GDK layer does not perform a value range check.
@@ -1466,8 +1461,6 @@ end.
 #endif
         }
     }
-    /* restore original input */
-    if(colon) *colon= ':';
     return idx;
 }
 
@@ -1560,29 +1553,9 @@ void delArgument(InstrPtr p, int idx){
     if( idx < p->retc) p->retc--;
 }
 
-/* old stuff to test for errors
-int getVarType(MalBlkPtr mb, int i) 
-{
-    if(i<0) { 
-        GDKwarning("getVarType:array bound error %d %d\n",i, mb->vtop);
-        return TYPE_any;
-    }
-    if( i >= mb->vsize) {
-        GDKwarning("getVarType:array bound error %d %d\n",i, mb->vtop);
-        return;
-    }
-    return mb->var[i]->type;
-}
-*/
 void setVarType(MalBlkPtr mb, int i, int tpe) 
 {
     if(i<0) return;
-/*
-    if( i >= mb->vsize) {
-        GDKwarning("setVarType:array bound error %d %d %d\n",i,tpe, mb->vtop);
-        return;
-    }
-*/
     mb->var[i]->type= tpe;
     mb->var[i]->gdktype= findGDKtype(tpe);
 }
@@ -1616,7 +1589,30 @@ malType destinationType(MalBlkPtr mb, InstrPtr p){
     if( p->argc>0) return getVarType(mb, getDestVar(p));
     return TYPE_any;
 }
-
+@-
+For polymorphic instructions we should keep around the
+maximal index to later allocate sufficient space
+for type resolutions maps.
+Beware, that we only consider the instruction polymorphic
+if it has an index or belongs to the signature.
+In other cases it merely has to be filled.
+@c
+INLINE void
+setPolymorphic(InstrPtr p, int tpe, int force){
+	int c1=0,c2=0;
+	if( force==FALSE && tpe == TYPE_any ) return;
+	if( isaBatType(tpe) ){
+		if( getHeadIndex(tpe) > 0 ) c1= getHeadIndex(tpe);
+		else if( getHeadType(tpe) == TYPE_any) c1=1;
+	}
+	if( getTailIndex(tpe) > 0 )
+		c2= getTailIndex(tpe);
+	else 
+		if( getTailType(tpe) == TYPE_any) c2=1;
+	c1= c1>c2? c1: c2;
+	if(c1>0 && c1 >= p->polymorphic) p->polymorphic = c1+1;
+	
+}
 @-
 Instructions are simply appended to a MAL block.
 It is also the place to collect information to speed-up use later on.
@@ -2012,53 +2008,58 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
         if( (def=getArgDefault(mb,p,i)) != NULL){
             if( getArgType(mb,p,i)== TYPE_str)
                 if( strcmp(def,str_nil)==0)
-                     sprintf(t,"nil%s", pstring);
-                else sprintf(t,"\"%s\"%s", def, pstring);
+                     sprintf(t,"nil" );
+                else sprintf(t,"\"%s\"", def);
             else
             if( getArgType(mb,p,i)== TYPE_chr)
-                if( *def== chr_nil)
-                     sprintf(t,"nil%s", pstring);
-                else sprintf(t,"'%s'%s", def, pstring);
-            else    sprintf(t,"%s%s", def, pstring);
+                if( strcmp(def,"nil")== 0)
+                     sprintf(t,"nil");
+                else sprintf(t,"'%s'", def);
+            else 
+				sprintf(t,"%s", def);
         } else {
             if( isTmpVar(mb, getArg(p,i)) ) {
                 if( isVarInitialized(mb,getArg(p,i)) )
                 sprintf(t,"%c%d", TMPMARKER, getVarTmp(mb,getArg(p,i)));
                 advance(t);
-                sprintf(t,"%s", pstring);
             } else 
-            sprintf(t,"%s%s", mb->var[getArg(p,i)]->name,pstring);
+				sprintf(t,"%s", mb->var[getArg(p,i)]->name);
         }
 @-
 Dump the type and value information.
 @c
         advance(t);
         if(!isTmpVar(mb,getArg(p,i)) &&
-            idcmp("bat",getArgName(mb,p,i))==0 ){
+            idcmp("bat",getArgName(mb,p,i))==0){
             str hprop=0, tprop=0;
             str d1=getTypeName(getHeadType( getArgType(mb,p,i))),
                 d2 =getTypeName(getTailType(getArgType(mb,p,i)));
             hprop= propertySet2str(ps);
             tprop= propertySet2str(ps);
             if(hprop==NULL && tprop==NULL)
-                sprintf(t,"[:%s,:%s]%s",d1,d2,pstring);
+                sprintf(t,":bat[:%s,:%s]%s",d1,d2,pstring);
             else if(tprop==NULL)
-                sprintf(t,"[:%s%s,:%s]%s",
+                sprintf(t,":bat[:%s%s,:%s]%s",
                     d1,hprop,d2,pstring);
             else if(hprop==NULL)
-                sprintf(t,"[:%s,:%s%s]%s",
+                sprintf(t,":bat[:%s,:%s%s]%s",
                     d1,d2,tprop,pstring);
-            else    sprintf(t,"[:%s%s,:%s%s]%s",
+            else    sprintf(t,":bat[:%s%s,:%s%s]%s",
                     d1,hprop,d2,tprop,pstring);
             GDKfree(hprop); GDKfree(tprop);
             GDKfree(d1); GDKfree(d2);
             advance(t);
         } else
-		if(isTypeVar(mb,getArg(p,i)) ){
+		if(isTypeVar(mb,getArg(p,i)) ||
+			(getVar(mb,getArg(p,i))->isudftype &&
+			isConstant(mb,getArg(p,i)) ) ) {
 				char *tnme= getTypeName(getArgType(mb,p,i));
 				sprintf(t,":%s%s",tnme,(pstring==NULL?"":pstring));
 				GDKfree(tnme);
 				advance(t);
+		} else if( pstring){
+			sprintf(t,"%s",pstring);
+			advance(t);
 		}
 
 		if(i+1<high) sprintf(t,",");

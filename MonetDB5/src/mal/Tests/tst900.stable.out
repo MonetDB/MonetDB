@@ -19,7 +19,7 @@ stdout of test 'tst900` in directory 'src/mal` itself:
 #d:= [+](b,c) ;;# parser bug
 #a:= b [+] b;
 !ERROR: d:= [+](b,c) ;;# parser bug
-!           ^<identifier> or <unary operator> expected
+!           ^operator expected
 !ERROR: a:= b [+] b;
 !            	^operator expected
 function user.main():int;	# 0  unknown (main:int)
