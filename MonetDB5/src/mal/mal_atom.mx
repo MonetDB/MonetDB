@@ -36,7 +36,7 @@ They implement types considered essential for end-user applications,
 such as date, time, blob, and url.
 They are implemented using the type extension mechanism described below.
 As such, they provide examples for future extensions.
-A concrete example is the 'blob' datatype in the MonetDB 5 atom module
+A concrete example is the 'blob' datatype in the MonetDB atom module
 library(see ../modules/atoms/blob.mx)
 
 @+ User defined types

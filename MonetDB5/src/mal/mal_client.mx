@@ -35,10 +35,11 @@ a single serverside client thread, geared at providing
 a particular service.
 
 The number of clients permitted concurrent access is 
-currently a compile time option.
-They are referenced internally by number. The console is the first and 
-should always be present. It reads from standard input and writes to 
-standard output.
+currently a compile time option. The console is the first and 
+is always present.
+It reads from standard input and writes to standard output.
+[It is an instance of MapiClient, directly linked
+with the server code]
 
 Client records are linked into a hierarchy, where the top record
 denotes the context of the Monet administrator. The next layer

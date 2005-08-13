@@ -16,22 +16,24 @@
 @' All Rights Reserved.
 
 @a M.L. Kersten
-@* MAL name space.
-We can gain significant speed at type resolution and during the 
-optimization phases when each module or function identifier is 
-replaced by a fixed length internal identifier.
-Therefore, a separate namespace organisation seems in place.
-Their number managed by the MAL engine is expected to be rather 
-limited except for those generated on the fly to represent temporaries 
-functions.
+@+ Name Space Management.
+Significant speed improvement at type resolution and during the 
+optimization phases can be gained when each module or function identifier is 
+replaced by a fixed length internal identifier. This translation is
+done once during parsing.
 Variables are always stored local to the MAL block in which they
 are used.
 
-The namespace manager is organized as a shared table. The alternative
-considered would be a namespace per client. However, this would force
+The number of module and function names is expected to be limited. 
+Therefore, the namespace manager is organized as a shared table. The alternative
+is a namespace per client. However, this would force
 passing around the client identity or an expensive operation to deduce
 this from the process id. The price paid is that updates to the namespace
 should be protected against concurrent access.
+
+The space can, however, also become polluted with identifiers generated on the fly.
+Compilers are adviced to be conservative in their naming, or explicitly manage
+the name space by deletion of non-used names once in a while.
 @{
 @h
 #ifndef _MAL_NAMESPACE_H
@@ -41,6 +43,7 @@ mal_export void initNamespace();
 mal_export void finishNamespace();
 mal_export str putName(str nme,int len);
 mal_export str getName(str nme,int len);
+mal_export void delName(str nme,int len);
 mal_export void dumpNamespaceStatistics(stream *f, int details);
 
 #endif /* _MAL_NAMESPACE_H */
@@ -54,8 +57,8 @@ too expensive. An alternative would be to use a BAT to handle the collection.
 #define MAXIDENTIFIERS 1024
 
 typedef struct NAMESPACE{
-    int  size;  /* amount of space available */
-    int  nmetop;
+	int  size;  /* amount of space available */
+	int  nmetop;
     str  *nme;
     int  *link;
     int  *hit;
@@ -125,6 +128,15 @@ str getName(str nme, int len)
         }
     }
 	return 0;
+}
+void delName(str nme, int len){
+	str n;
+	n= getName(nme,len);
+	if( nme[0]==0 || n == 0) return ;
+	
+	mal_set_lock(mal_contextLock,"putName");
+	GDKwarning("Namespace garbage collection not yet implemented");
+	mal_unset_lock(mal_contextLock,"putName");
 }
 str putName(str nme, int len)
 {

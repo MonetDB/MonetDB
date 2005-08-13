@@ -25,7 +25,7 @@ and others have found a resting place in the attic.
 The architecture is designed to accommodate a wide-spectrum 
 of query language front-ends (SQL,Xquery,RAM,MIL),
 a variety of query transformation schemes, and
-different execution platforms (interpreted MAL, x100, and
+different execution platforms (interpreted MAL, and
 dynamic compilation).
 
 The system expands the MonetDB software infrastructure, distributed
@@ -65,7 +65,7 @@ abstract database machine with its associated assembler language (MAL).
 In the development of Version 5 the requirements of the
 following components are taken into account.
 @itemize
-@item @emph{ front-ends} SQL and Xquery should compile 
+@item @emph{ front-ends} SQL should compile 
 directly on both old and new versions. MIL programs can
 mostly be converted to the MAL language.@footnote{
 Only those features are compiled that do not require runtime
