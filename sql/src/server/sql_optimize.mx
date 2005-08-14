@@ -1320,6 +1320,7 @@ optimize(mvc *c, stmt *s)
 	case st_reverse:
 	case st_const:
 	case st_mark:
+	case st_gen_group:
 	case st_group:
 	case st_group_ext:
 	case st_derive:

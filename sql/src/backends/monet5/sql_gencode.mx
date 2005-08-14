@@ -477,6 +477,10 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			dump_2(sql, mb, s, "algebra", "markT");
 		}
 			break;
+		case st_gen_group:{
+			dump_1(sql, mb, s, "algebra", "gen_group");
+		}
+			break;
 		case st_reverse:{
 			dump_1(sql, mb, s, "bat", "reverse");
 		}

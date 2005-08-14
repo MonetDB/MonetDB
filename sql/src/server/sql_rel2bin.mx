@@ -105,6 +105,7 @@ tail_column(stmt *st)
 	case st_var:
 	case st_update_var:
 	case st_mark:
+	case st_gen_group:
 	case st_derive:
 	case st_group_ext:
 	case st_group:
@@ -126,6 +127,7 @@ head_column(stmt *st)
 	switch (st->type) {
 	case st_const:
 	case st_mark:
+	case st_gen_group:
 	case st_mirror:
 
 	case st_filter:
@@ -1082,6 +1084,7 @@ rel2bin(mvc *c, stmt *s)
 	case st_mirror:
 	case st_const:
 	case st_mark:
+	case st_gen_group:
 	case st_group:
 	case st_group_ext:
 	case st_derive:

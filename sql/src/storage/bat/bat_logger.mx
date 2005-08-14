@@ -210,8 +210,10 @@ log_read_clear(logger *logger, char *name)
 	if (logger->debug & 1)
 		fprintf(stderr, "logger found log_read_clear %s\n", name);
 
-	if (b)
+	if (b) {
 		BATclear(b);
+		bat_destroy(b);
+	}
 }
 
 static void

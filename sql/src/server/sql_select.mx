@@ -1410,39 +1410,94 @@ static stmt *
 sql_except(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 {
 	node *n, *m;
+
 	list *stmts = create_stmt_list();
-
 	if (!cols) {
-		cvar *c;
 		/*
-		 * The multi column except is handled using a multi column
-		 * join and a diff on the base oids. 
-		 *
-		 * so A minus B translates to A diff (A join B)
+		 * The multi column except is handled using group by's and
+		 * group size counts on both sides of the except. We then
+		 * return for each group of A with (A.count - B.count) > 0, 
+	         * number of rows.
+		 * 
+		 * The problem with this approach is that the groups should
+		 * have equal group identifiers. So we take the union of all
+		 * columns before the group by.
 		 */
-		stmt *s = stmt_reljoin_init();
+		group *lgrp = NULL, *rgrp = NULL;
+		stmt *s, *lm, *ld, *ls = NULL, *rs = NULL;
+		sql_subaggr *a;
 
+		for (n = tv1->columns->h; n; n = n->next) {
+			cvar *lc = n->data;
+			stmt *l = stmt_dup(lc->s);
+
+			lgrp = grp_create(l, lgrp, NULL);
+		}
+		for (n = tv2->columns->h; n; n = n->next) {
+			cvar *rc = n->data;
+			stmt *r = stmt_dup(rc->s);
+
+			rgrp = grp_create(r, rgrp, NULL);
+		}
+ 		a = sql_bind_aggr(sql->trans->module, "count", NULL);
+		ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
+		a = sql_dup_aggr(a);
+		rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
+
+		/* now find the matching groups */
+		s = stmt_reljoin_init();
 		for (n = tv1->columns->h, m = tv2->columns->h; n && m; n = n->next, m = m->next) {
 			cvar *lc = n->data;
 			cvar *rc = m->data;
-			stmt *rs = stmt_dup(rc->s);
-			stmt *ls = stmt_dup(lc->s);
+			stmt *l = stmt_dup(lc->s);
+			stmt *r = stmt_dup(rc->s);
 
-			if ((convert_types(sql, &ls, &rs, 1) < 0)) {
-				if (ls)
-					stmt_destroy(ls);
-				if (rs)
-					stmt_destroy(rs);
+			if ((convert_types(sql, &l, &r, 1) < 0)) {
+				if (l)
+					stmt_destroy(l);
+				if (r)
+					stmt_destroy(r);
+				if (lgrp)
+					grp_destroy(lgrp);
+				if (rgrp)
+					grp_destroy(rgrp);
 				list_destroy(stmts);
 				return NULL;
 			}
-			stmt_reljoin_fill(s, ls, rs);
+			l = stmt_join(stmt_dup(lgrp->ext), l, cmp_equal);
+			r = stmt_join(stmt_dup(rgrp->ext), r, cmp_equal);
+			stmt_reljoin_fill(s, l, r);
 		}
-		c = tv1->columns->h->data;
-		if (!distinct)
-			s = stmt_reverse(stmt_unique(stmt_reverse(s), NULL));
-		s = stmt_diff( stmt_dup(c->s), s);
-		s = stmt_mark( stmt_reverse(s), 100);
+		
+		/* the join of the groups removed those in A but not in B,
+		 * we need these later so keep these in 'ld' */
+		ld = stmt_diff(stmt_dup(ls), stmt_dup(s));
+
+		if (!distinct) {
+			lm = stmt_reverse(stmt_mark_tail(stmt_dup(s),0));
+			ls = stmt_join(stmt_dup(lm),ls,cmp_equal);
+			rs = stmt_join(stmt_mark(s,0),rs,cmp_equal);
+
+			s = sql_binop_(sql, NULL, "sql_sub", ls, rs);
+			s = stmt_select(s, stmt_atom_int(0), cmp_gt);
+
+			/* A ids */
+			s = stmt_join(stmt_reverse(lm), s, cmp_equal);
+			/* now we need to add the groups which weren't in B */
+			s = stmt_union(ld,s);
+			/* now we have gid,cnt, blowup to full groupsizes */
+			s = stmt_gen_group(s);
+		} else {
+			stmt_destroy(s);
+			s = ld;
+		}
+		s = stmt_mark_tail(s, 500); 
+		/* from gid back to A id's */
+		s = stmt_reverse(stmt_join(stmt_dup(lgrp->ext), s, cmp_equal));
+
+		grp_destroy(lgrp);
+		grp_destroy(rgrp);
+
 		/* project columns of left hand expression */
 		for (n = tv1->columns->h; n; n = n->next) {
 			cvar *lc = n->data;
@@ -1469,33 +1524,79 @@ sql_intersect(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols, int distinct )
 
 	if (!cols) {
 		/*
-		 * The multi column intersect is handled using a multi column
-		 * join and a distinct on the base oids. 
-		 *
-		 * so A intersect B translates to 
-		 * 		project [A.*] distinct((A join B)) 
+		 * The multi column intersect is handled using group by's and
+		 * group size counts on both sides of the intersect. We then
+		 * return for each group of A with min(A.count,B.count), 
+	         * number of rows.
+		 * 
+		 * The problem with this approach is that the groups should
+		 * have equal group identifiers. So we take the union of all
+		 * columns before the group by.
 		 */
-		stmt *s = stmt_reljoin_init();
+		group *lgrp = NULL, *rgrp = NULL;
+		stmt *s, *lm, *ls = NULL, *rs = NULL;
+		sql_subaggr *a;
 
+		for (n = tv1->columns->h; n; n = n->next) {
+			cvar *lc = n->data;
+			stmt *l = stmt_dup(lc->s);
+
+			lgrp = grp_create(l, lgrp, NULL);
+		}
+		for (n = tv2->columns->h; n; n = n->next) {
+			cvar *rc = n->data;
+			stmt *r = stmt_dup(rc->s);
+
+			rgrp = grp_create(r, rgrp, NULL);
+		}
+ 		a = sql_bind_aggr(sql->trans->module, "count", NULL);
+		ls = stmt_aggr(stmt_dup(lgrp->grp), grp_dup(lgrp), a); 
+		a = sql_dup_aggr(a);
+		rs = stmt_aggr(stmt_dup(rgrp->grp), grp_dup(rgrp), a); 
+
+		/* now find the matching groups */
+		s = stmt_reljoin_init();
 		for (n = tv1->columns->h, m = tv2->columns->h; n && m; n = n->next, m = m->next) {
 			cvar *lc = n->data;
 			cvar *rc = m->data;
-			stmt *rs = stmt_dup(rc->s);
-			stmt *ls = stmt_dup(lc->s);
+			stmt *l = stmt_dup(lc->s);
+			stmt *r = stmt_dup(rc->s);
 
-			if ((convert_types(sql, &ls, &rs, 1) < 0)) {
-				if (ls)
-					stmt_destroy(ls);
-				if (rs)
-					stmt_destroy(rs);
+			if ((convert_types(sql, &l, &r, 1) < 0)) {
+				if (l)
+					stmt_destroy(l);
+				if (r)
+					stmt_destroy(r);
+				if (lgrp)
+					grp_destroy(lgrp);
+				if (rgrp)
+					grp_destroy(rgrp);
 				list_destroy(stmts);
 				return NULL;
 			}
-			stmt_reljoin_fill(s, ls, rs);
+			l = stmt_join(stmt_dup(lgrp->ext), l, cmp_equal);
+			r = stmt_join(stmt_dup(rgrp->ext), r, cmp_equal);
+			stmt_reljoin_fill(s, l, r);
 		}
-		if (!distinct)
-			s = stmt_reverse(stmt_unique(stmt_reverse(s), NULL));
-		s = stmt_mark( stmt_reverse(s), 100);
+		
+		if (!distinct) {
+			lm = stmt_reverse(stmt_mark_tail(stmt_dup(s),0));
+			ls = stmt_join(stmt_dup(lm),ls,cmp_equal);
+			rs = stmt_join(stmt_mark(s,0),rs,cmp_equal);
+
+			s = sql_binop_(sql, NULL, "sql_min", ls, rs);
+			/* A ids */
+			s = stmt_join(stmt_reverse(lm), s, cmp_equal);
+			/* now we have gid,cnt, blowup to full groupsizes */
+			s = stmt_gen_group(s);
+		}
+		s = stmt_mark_tail(s, 500); 
+		/* from gid back to A id's */
+		s = stmt_reverse(stmt_join(stmt_dup(lgrp->ext), s, cmp_equal));
+
+		grp_destroy(lgrp);
+		grp_destroy(rgrp);
+
 		/* project columns of left hand expression */
 		for (n = tv1->columns->h; n; n = n->next) {
 			cvar *lc = n->data;

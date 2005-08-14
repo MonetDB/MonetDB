@@ -45,6 +45,7 @@ typedef enum stmt_type {
 	st_idxbat,
 	st_const,
 	st_mark,
+	st_gen_group,
 	st_reverse,
 	st_mirror,
 
@@ -226,6 +227,7 @@ extern stmt *stmt_exception(stmt *cond, char *errstr, int errcode);
 extern stmt *stmt_const(stmt *s, stmt *val);
 extern stmt *stmt_mark(stmt *s, int id);
 extern stmt *stmt_mark_tail(stmt *s, int id);
+extern stmt *stmt_gen_group(stmt *s); /* given a gid,cnt blowup to full groups */
 extern stmt *stmt_reverse(stmt *s);
 extern stmt *stmt_mirror(stmt *s);
 
@@ -296,6 +298,7 @@ st_type2string(st_type type)
 		ST(const);
 
 		ST(mark);
+		ST(gen_group);
 		ST(reverse);
 		ST(mirror);
 
@@ -648,6 +651,7 @@ stmt_destroy(stmt *s)
 			/* simple case of statements of only statements */
 		case st_const:
 		case st_mark:
+		case st_gen_group:
 		case st_reverse:
 		case st_mirror:
 		case st_limit:
@@ -886,6 +890,20 @@ stmt_mark_tail(stmt *s, int id)
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
 	ns->aggr = s->aggr;
+	ns->h = stmt_dup(s->h);
+	return ns;
+}
+
+stmt *
+stmt_gen_group(stmt *s)
+{
+	stmt *ns = stmt_create(st_gen_group);
+
+	ns->op1.stval = s;
+
+	ns->nrcols = s->nrcols;
+	ns->key = 0;
+	ns->aggr = 0;
 	ns->h = stmt_dup(s->h);
 	return ns;
 }
@@ -1658,6 +1676,7 @@ tail_type(stmt *st)
 	case st_group:
 	case st_group_ext:
 	case st_mark:
+	case st_gen_group:
 		return tail_type(st->op1.stval);
 
 	case st_list:
@@ -1728,6 +1747,7 @@ head_type(stmt *st)
 	case st_replace:
 	case st_pivot:
 	case st_mark:
+	case st_gen_group:
 	case st_group:
 	case st_group_ext:
 	case st_order:
@@ -1841,6 +1861,7 @@ column_name(stmt *st)
 	case st_union:
 	case st_append:
 	case st_mark:
+	case st_gen_group:
 	case st_filter:
 	case st_select:
 	case st_select2:
@@ -1918,6 +1939,7 @@ table_name(stmt *st)
 	case st_union:
 	case st_append:
 	case st_mark:
+	case st_gen_group:
 	case st_filter:
 	case st_select:
 	case st_select2:
@@ -2161,7 +2183,7 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 
 		/* simple case of statements of only statements */
 
-		case st_const: case st_mark:
+		case st_const: case st_mark: case st_gen_group:
 		case st_reverse: case st_mirror:
 		case st_limit: case st_order: case st_reorder:
 		case st_ordered: case st_output:

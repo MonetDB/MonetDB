@@ -443,6 +443,9 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_mark:
 			dump_2(sql, s, "sql_mark", nr);
 			break;
+		case st_gen_group:
+			dump_1(sql, s, "group", nr);
+			break;
 		case st_reverse:
 			dump_1(sql, s, "reverse", nr);
 			break;
