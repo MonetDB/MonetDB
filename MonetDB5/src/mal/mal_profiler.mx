@@ -17,47 +17,133 @@
 
 @a M. Kersten
 @v 0.0
-@* MAL dynamic profiler
+@* Execution Profiling
 A key issue in the road towards a high performance implementation
 is to understand where resources are being spent. This information
 can be obtained using different tools and at different levels of
 abstraction.
 A coarse grain insight for a particular application can be obtained
 using injection of the necessary performance
-capturing statements in the instruction sequence of the application.
+capturing statements in the instruction sequence.
 Fine-grain, platform specific information can be obtained using
-existing profilers, like valgrind, or even hardware counters.
+existing profilers, like valgrind (http://www.valgrind.org),
+or hardware performance counters.
 
-The dynamic profiler is a hook into the MAL interpreter.
-The default strategy is to ship the event record immediately over a stream
-to a performance monitor, formatted as a tuple.
-An alternative strategy is preparation for off-line performance analysis.
-For this case the event record is turned into a XML structure and
-sent over the stream (most likely linked with a file)
-To reduce the  interference of performance measurement with
-the experiments, the user can use an event cache, which is
-emptied explicitly upon need.
- 
-Aside from shipping events to a separate process, the profiler
-can also keep the events in a local BAT group. Ofcourse,
-such a measurement scheme does not come for free and may
-even obscure performance measurements obtained throug e.g. kcachegrind.
-
-The profiler event collects basic performance information, such
+The MAL profiler collects detailed performance information, such
 as cpu, memory and statement information. It is optionally extended
 with IO activity, which is needed for coarse grain profiling only.
 
+The execution profiler is supported by hooks in the MAL interpreter.
+The default strategy is to ship an event record immediately over a stream
+to a separate performance monitor, formatted as a tuple.
+An alternative strategy is preparation for off-line performance analysis.
+For this case the event record is turned into a XML structure and
+sent over the stream (most likely linked with a file)
+Reflective performance analysis is supported by an event cache,
+emptied explicitly upon need.
+ 
+@+ Filtering Events
 The profiler supports selective retrieval of such information by
 tagging the instructions of interest. This means that a profiler
 call has a global effect,
 all concurrent users are affected by the performance overhead.
 Therefore, it is of primary interest to single user sessions.
 
+The example below illustrates how the different performance
+counter groups are activated, instructions are filtered for
+tracking, and where the profile information is retained for
+a posteriori analysis. The tuple format is chosen.
+@example
+profiler.activate("time");
+profiler.activate("ticks");
+#profiler.activate("cpu");
+#profiler.activate("memory");
+#profiler.activate("io");
+#profiler.activate("pc");
+#profiler.activate("event");
+profiler.activate("statement");
+profiler.setFilter("*","insert");
+profiler.setFilter("*","print");
+
+profiler.openStream("/tmp/MonetDBevents");
+profiler.start();
+b:= bbp.new(:int,:int);
+bat.insert(b,1,15);
+bat.insert(b,2,4);
+bat.insert(b,3,9);
+io.print(b);
+profiler.stop();
+profiler.closeStream();
+@end example
+
+The information on CPU, IO, memory use, program counter
+and the event identifier are not retained. 
+Furthermore, we are interested in all
+functions name @code{insert} and @code{print}. A wildcard
+can be used to signify any name, e.g.
+no constraints are put on the module in which the operations
+are defined.
+
+Execution of the sample leads to the creation of a file with
+the following content. The ticks are measured in micro-seconds.
+
+@verbatim
+# time, ticks,  stmt,   # name
+[ "15:17:56",   12,      "$27 := bat.insert(<tmp_15>,1,15);",    ]
+[ "15:17:56",   2,       "$30 := bat.insert(<tmp_15>,2,4);",     ]
+[ "15:17:56",   2,       "$33 := bat.insert(<tmp_15>,3,9);",     ]
+[ "15:17:56",   245,     "$36 := io.print(<tmp_15>);",   ]
+@end verbatim
+The XML-formatted output is produced by encapsulation
+of a code block with the pair @code{profiler.setOfflineProfiling()}.
+The default is tuple format, which can be requested
+explicitly using @code{profiler.setOnlineProfiling()}.
+
+@+ Event Caching
+Aside from shipping events to a separate process, the profiler
+can keep the events in a local @code{BAT} group, 
+triggered with the command @code{profiler.setCachedProfiling()}.
+Ofcourse, every measurement scheme does not come for free and may
+even obscure performance measurements obtained throug e.g. valgrind.
+The separate event caches can be accessed using the 
+operator @code{profiler.getTrace}(@emph{name}).
+The current implementation only supports 
+access to @code{time},@code{ticks},@code{pc},@code{statement}.
+The event cache can be cleared with @code{profiler.clearTrace()}.
+
+Consider the following MAL program snippet:
+@example
+profiler.setAll();
+profiler.setCachedProfiling();
+profiler.startTrace();
+b:= bbp.new(:int,:int);
+bat.insert(b,1,15);
+io.print(b);
+profiler.stopTrace();
+s:= profiler.getTrace("statement");
+t:= profiler.getTrace("ticks");
+io.print(s,t);
+@end example
+The result of the program execution becomes:
+@verbatim
+#-----------------#
+# h     t         # name
+# int   int       # type
+#-----------------#
+[ 1,      15      ]
+#---------------------------------------------------------#
+# h     t                                       t         # name
+# int   str                                     int       # type
+#---------------------------------------------------------#
+[ 1,      "b := bbp.new(0,0);",                   51      ]
+[ 2,      "$6 := bat.insert(<tmp_22>,1,15);",     16      ]
+[ 3,      "$9 := io.print(<tmp_22>);",            189     ]
+@end verbatim
+@{
 The profiler is activated by defining MALprofiler in the source tree.
 This leads to securing space for the counters and for code
 in the interpreter to collect the information.
 
-@{
 @h
 #ifndef _MAL_PROFILER_H
 #define _MAL_PROFILER_H
@@ -133,7 +219,6 @@ avoid concurrency conflicts amongst clients. It avoid cluthered
 event records on the event stream. Since this event stream is owned
 by a client, we should ensure that the profiler is automatically be
 reset once the owner leaves. The routine profilerReset() handles the case.
-
 @c
 #include "mal_function.h"
 #include "mal_profiler.h"
@@ -160,24 +245,28 @@ static int profileAll=0;/* all instructions should be profiled */
 static int delayswitch=0; /* to wait before sending the profile info */
 
 @c
-#define PROFlabel   0
-#define PROFcpu     1
-#define PROFmemory  2
-#define PROFio      3
-#define PROFpc      4
-#define PROFstmt    5
+#define PROFtime    0
+#define PROFlabel   1
+#define PROFcpu     2
+#define PROFmemory  3
+#define PROFio      4
+#define PROFpc      5
+#define PROFevent   6
+#define PROFstmt    7
 
 static struct{
     str name;   /* which logical counter is needed */
     int status; /* trace it or not */
 } profileCounter[]={
-    /*  0 */ {"ticks",1},
-    /*  1 */ {"cpu",1},
-    /*  2 */ {"memory",1},
-    /*  3 */ {"io",1},
-    /*  4 */ {"pc",1},
-    /*  5 */ {"statement",1},
-    /*  6 */ {0,0}
+    /*  0 */ {"time",0},
+    /*  1 */ {"ticks",0},
+    /*  2 */ {"cpu",0},
+    /*  3 */ {"memory",0},
+    /*  4 */ {"io",0},
+    /*  5 */ {"pc",0},
+    /*  6 */ {"event",0},
+    /*  7 */ {"statement",0},
+    /*  8 */ {0,0}
 };
 
 @-
@@ -240,10 +329,12 @@ void onlineProfilerHeader(){
         log0("caller,\t");
         log0("callee,\t");
     }
+    if( profileCounter[PROFtime].status ){
+        log0("time,\t");
+    }
     if( profileCounter[PROFlabel].status ){
         log0("ticks,\t");
-        log0("clock,\t");
-    }
+	}
     if( profileCounter[PROFstmt].status ){
         log0("stmt,\t");
     }
@@ -273,7 +364,10 @@ void onlineProfilerHeader(){
         log0("context switch,\t");
         log0("involunarty switch,\t");
     }
-    log0("event\t# name\n");
+	if( profileCounter[PROFevent].status){
+		log0("event\t# name\n");
+	} else
+		log0("# name\n");
     flushLog();
     mal_unset_lock(profileLock,"profileLock");
 }
@@ -291,7 +385,6 @@ void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     (void) cntxt; (void) stk; /* still unused */
 
-    if(!profileAll && pci->trace== FALSE) return;
     if( delayswitch >0){
         /* first call to profiled */
         onlineProfilerHeader();
@@ -302,6 +395,7 @@ void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
     if( delayswitch==0){
         delayswitch= -1;
     } 
+    if(!profileAll && pci->trace== FALSE) return;
     times(&newTms);
     infoMalloc = MT_mallinfo();
 #ifdef HAVE_SYS_RESOURCE_H
@@ -322,9 +416,19 @@ void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
             log("\"%s\",\t",operatorName(pci->token));
         }
     }
+    if( profileCounter[PROFtime].status ){
+		char tbuf[100], *c;
+		ctime_r(&pci->clock,tbuf);
+		c= strchr(tbuf,'\n');
+		if(c) {
+			c[-5]='"';
+			c[-4]=0;
+		}
+		tbuf[10]='"';
+		log("%s,\t",tbuf+10);
+    }
     if( profileCounter[PROFlabel].status ){
         log("%d,\t", pci->ticks);
-        log("%d,\t", pci->clk);
     }
     if( profileCounter[PROFstmt].status ){
         /* generate actual call statement */
@@ -365,7 +469,11 @@ void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         prevUsage = infoUsage;
     }
 #endif
-    log("%d ]\n",eventcounter);
+	if( profileCounter[PROFevent].status ){
+		log("%d ]\n",eventcounter);
+	} else {
+		log(" ]\n","");
+	}
     eventcounter++;
     flushLog();
     mal_unset_lock(profileLock,"profileLock");
@@ -748,7 +856,13 @@ void setFilter(Module cntxt, str mod, str fcn){
     InstrPtr p;
 
     profileAll= strcmp(mod,"*")==0 && strcmp(fcn,"*")==0;
-    if( profileAll) return;
+    if( profileAll) {
+		int i;
+		for(i=0; profileCounter[i].name; i++)
+			profileCounter[i].status=1;
+		return;
+	}
+
     if( profileLock==0) profileLock= MT_create_lock();
     mal_set_lock(profileLock,"profileLock");
         while(s!= NULL){
@@ -815,10 +929,12 @@ They are made persistent to accumate information over
 multiple sessions. This means it has to be explicitly reset
 to avoid disc overflow.
 @c
-BAT *TRACE_id_ticks;
-BAT *TRACE_id_pc;
-BAT *TRACE_id_modfcn;
-BAT *TRACE_id_stmt;
+static int TRACE_init;
+static BAT *TRACE_id_time;
+static BAT *TRACE_id_ticks;
+static BAT *TRACE_id_pc;
+static BAT *TRACE_id_modfcn;
+static BAT *TRACE_id_stmt;
 
 static BAT *
 TRACEcreate(str hnme, str tnme, int ht, int tt)
@@ -843,12 +959,14 @@ TRACEcreate(str hnme, str tnme, int ht, int tt)
 
 void
 initTrace(){
-	if( TRACE_id_ticks) return; /* already initialized */
+	if( TRACE_init) return; /* already initialized */
 	mal_set_lock(mal_contextLock, "trace");
+	TRACE_id_time= TRACEcreate("id","time",TYPE_int,TYPE_str);
 	TRACE_id_ticks= TRACEcreate("id","ticks",TYPE_int,TYPE_int);
 	TRACE_id_pc= TRACEcreate("id","pc",TYPE_int,TYPE_str);
 	TRACE_id_modfcn= TRACEcreate("id","modfcn",TYPE_int,TYPE_str);
 	TRACE_id_stmt= TRACEcreate("id","statement",TYPE_int,TYPE_str);
+	TRACE_init = 1;
 	mal_unset_lock(mal_contextLock, "trace");
 }
 void
@@ -856,7 +974,6 @@ startTrace(){
 	initTrace();
     malProfileMode = TRUE;
 	cachedProfiling= TRUE;
-    delayswitch=1;  /* avoid an incomplete initial profile event */
 }
 void
 stopTrace(){
@@ -886,6 +1003,7 @@ void
 clearTrace(){
 	initTrace();
 	/* drop all trace tables */
+	BATclear(TRACE_id_time); 
 	BATclear(TRACE_id_ticks); 
 	BATclear(TRACE_id_pc); 
 	BATclear(TRACE_id_modfcn); 
@@ -893,6 +1011,7 @@ clearTrace(){
 }
 BAT *
 getTrace(str nme){
+	if( strcmp(nme,"time")==0) return TRACE_id_time;
 	if( strcmp(nme,"ticks")==0) return TRACE_id_ticks;
 	if( strcmp(nme,"pc")==0) return TRACE_id_pc;
 	if( strcmp(nme,"modfcn")==0) return TRACE_id_modfcn;
@@ -914,8 +1033,7 @@ void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
 	(void) cntxt; (void) stk; /* still unused */
 
-	if(!profileAll && pci->trace== FALSE) return;
-	if( TRACE_id_ticks == 0) return;
+	if( TRACE_init == 0) return;
 	if( delayswitch >0){
 		/* first call to profiled */
 		delayswitch--;
@@ -924,13 +1042,14 @@ void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if( delayswitch==0){
         delayswitch= -1;
     } 
+	if(!profileAll && pci->trace== FALSE) return;
 	times(&newTms);
 	/* infoMalloc = MT_mallinfo();*/
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF,&infoUsage);
 #endif
 	mal_set_lock(profileLock,"profileLock");
-	evnt= (int) BATcount(TRACE_id_ticks);
+	evnt= TRACE_init++;
 
     /* update the Trace tables */
     if( profileCounter[PROFpc].status ){
@@ -947,10 +1066,20 @@ void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         }
 		BUNins(TRACE_id_modfcn,&evnt,buf);
     }
+    if( profileCounter[PROFtime].status ){
+		char tbuf[100], *c;
+		ctime_r(&pci->clock,tbuf);
+		c= strchr(tbuf,'\n');
+		if(c) {
+			c[-5]='"';
+			c[-4]=0;
+		}
+		tbuf[10]='"';
+		BUNins(TRACE_id_time, &evnt, tbuf+10);
+    }
     if( profileCounter[PROFlabel].status ){
     	int ticks= GDKusec() - pci->clk;
 		BUNins(TRACE_id_ticks, &evnt,&ticks);
-        /* log("%d,\t", pci->clk);*/
     }
     if( profileCounter[PROFstmt].status ){
         /* generate actual call statement */
@@ -959,7 +1088,7 @@ void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
         while(c && *c && (isspace((int)*c) || *c == '!') ) c++;
 		BUNins(TRACE_id_stmt, &evnt,c);
     }
-/*
+/* The remainder requires their own BATs
     if( profileCounter[PROFcpu].status ){
         log("%d,\t", newTms.tms_utime - pci->timer.tms_utime);
         log("%d,\t", newTms.tms_cutime - pci->timer.tms_cutime);

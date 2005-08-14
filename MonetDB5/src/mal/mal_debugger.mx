@@ -16,7 +16,7 @@
 @' All Rights Reserved.
 
 @a M.L. Kersten
-@* The MAL debugger
+@* Program Debugging
 
 In practice it is hard to write a correct MAL program the
 first time around. Instead, it is more often constructed by
@@ -85,7 +85,7 @@ We walk our way through a debugging session, highlighting the
 effects of the debugger commands.
 The call to mdb.start() has been encapsulated in a complete
 MAL function, as shown by issuing the list command.
-A more detailed listing shows the binding to the actual C-routines
+A more detailed listing shows the binding to the C-routine
 and the result of type resolution.
 @example
 >mdb.start();
@@ -96,7 +96,7 @@ function user.main():int;
 end main;
 mdb>L
 function user.main():int;       # 0  (main:int)
-    io.print(1);        # 1 IOprint_val ($1:int)<-($2:int)
+    mdb.start();        # 1 MDBstart ($1:void)
 end main;       # 2
 @end example
 The user module is the default place for function defined at
@@ -170,7 +170,7 @@ can be obtained using the 'info' ('i') command.
 A sample of the BAT content can be printed passing tuple indices, e.g.
 'print b 10 10' prints the second batch of ten tuples.
 
-@+ Breakpoints
+@+ Handling Breakpoints
 A powerful mechanism for debugging a program is to set breakpoints
 during the debugging session.
 In MAL they are designated by the <operator> or <variable> name.
@@ -198,14 +198,12 @@ mdb>c
 mdb>
 @end example
 
-@+ Debugger module operations
-Part of the debugger functionality can also be controlled directly using
-MAL instructions. One of the more useful constructs is to issue a
-call mdb.setTrace(true), which produces a line-by-line trace of 
-the instructions being executed. If the command mdb.setTimer(true)
-is used instead, it will trace with timing information.
-The tracing stops when it encounters the command mdb.setTrace(false)
-or mdb.setTrace(false).
+@+ Runtime Debugging
+Part of the debugger functionality can also be used directly with
+MAL instructions.
+The execution trace of a snippet of code can be visualized 
+encapsulation with @code{mdb.setTrace(true)} and @code{mdb.setTrace(false)}.
+Likewise, the performance can be monitored with the command @code{mdb.setTimer(on/off)}.
 Using a boolean argument makes it easy to control the (performance) trace
 at run time. The following snippet shows the effect of patching
 the test case.
@@ -272,14 +270,28 @@ tool @emph{valgrind} may be of help.
 #   261 usec!    user.test($2=1)
 @end example
 
-It is also possible to activate the debugger from within a program using
-mdb.start(). It remains in this mode until 
+It is also possible to activate the debugger from within a program 
+using @code{mdb.start()}. It remains in this mode until 
 you either issue a quit command, or the command mdb.stop() instruction is
 encountered. 
 The debugger is only activated when the user can direct its execution
 from the client interface. Otherwise, there is no proper input channel
 and the debugger will run in trace mode.
 
+@+ Runtime Inspection and Reflection
+The program listing functionality of the debugger is 
+also captured in the MAL debugger module. The current code
+block can be listed using @code{mdb.list()} and @code{mdb.List()}.
+An arbitrary code block can be shown with  @code{mdb.list}(@emph{module},@emph{function})
+and @code{mdb.List}(@emph{module},@emph{function}).
+A BAT representation of the current function is return by @code{mdb.getDefinition()}@.
+
+The symbol table and stack content, if available, can be shown with
+the operations @code{mdb.var()} and @code{mdb.list}(@emph{module},@emph{function})
+Access to the stack frames may be helpful in the context of exception handling.
+The operation @code{mdb.getStackDepth()} gives the depth and individual
+elements can be accessed as BATs using @code{mdb.getStackFrame(@emph{n})}.
+The top stack frame is accessed using @code{mdb.getStackFrame()}.
 @{
 @- Compilation control
 Being able to debug comes at a price.

@@ -415,7 +415,8 @@ and the total time spent while executing the instruction.
 @h
 #ifdef MALprofiler
     short   trace;      /* facilitate filter-based profiling */
-    struct  tms timer;  /* clock information */
+    struct  tms timer;  /* timing information */
+	time_t	clock;	/* clock */
     lng clk;        /* microseconds clock */
     long    counter;
     long    ticks;      /* micro seconds spent */
@@ -547,7 +548,7 @@ mal_export int      newTypeVariable(MalBlkPtr mb, malType type);
 mal_export void     delVariable(MalBlkPtr mb, int varid);
 mal_export void     freeVariable(MalBlkPtr mb, int varid);
 mal_export int      newConstant(MalBlkPtr mb, malType type, str val, int f);
-mal_export int      fndConstant(MalBlkPtr mb, str val, int len);
+mal_export int      fndConstant(MalBlkPtr mb, str val, int len, int tpe);
 /* mal_export int       isaSignature(InstrPtr p);*/
 
 mal_export void     pushInstruction(MalBlkPtr mb, InstrPtr p);
@@ -833,6 +834,7 @@ with modifier
     p->timer.tms_stime = 0;
     p->timer.tms_cutime = 0;
     p->timer.tms_cstime = 0;
+    p->clock = 0;
     p->clk = 0;
     p->ticks = 0;
     p->trace= 0;
@@ -1284,13 +1286,14 @@ This start of the constant list is kept in the MalBlk.
 @{
 @c
 #define MAL_VAR_WINDOW  2*MAXARG
-int fndConstant(MalBlkPtr mb, str val, int len){
+int fndConstant(MalBlkPtr mb, str val, int len, int tpe){
 	int i,k;
     k= mb->vtop - MAL_VAR_WINDOW;
     if( k<0) k=0;
     for(i= mb->vtop-1; i>=k;i--){
         VarPtr v= getVar(mb,i);
         if( v->literal && 
+			v->type == tpe &&
             strncmp(v->literal,val,len)==0 &&
 			v->literal[len]==0 ) 
 				return i;

@@ -1455,6 +1455,7 @@ we have to keep track of essential system counter information.
         /* mostly true */;
     else {
         pci->clk= GDKusec();
+        time(&pci->clock);
         times(&pci->timer);
     }
 #endif
