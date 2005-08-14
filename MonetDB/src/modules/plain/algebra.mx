@@ -346,6 +346,9 @@ increasing integers (starting with 0) in the tail column."
 "Produces a new BAT with identical head column, and in the tail column groups of equally valued
 integers within each group. Parameters: a start group value, group number increment, group size."
 
+.COMMAND group(BAT[any::1, int] b) : BAT[any::1, void] = CMDgen_group;
+"Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes."
+
 @+ BAT fragmentation commands
 Various operations for splitting BATs into useful fragments.
 
@@ -1724,6 +1727,40 @@ CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize)
 {
 	return (*result = BATgroup(b, *start, *incr, *grpsize)) ? GDK_SUCCEED : GDK_FAIL;
 }
+
+int
+CMDgen_group(BAT **result, BAT *b )
+{
+	BUN u, v;
+	int xx;
+	int htpe = (b->htype == TYPE_void)?TYPE_oid:b->htype;
+	BAT *r = BATnew(htpe, TYPE_void, BATcount(b)*2);
+
+	if (b->hvarsized) {
+		BATloopFast(b, u, v, xx) {
+		    int i, sz = *(int*)BUNtloc(b, u);
+		    for(i = 0; i < sz; i++) {
+			if (BUNfastins(r, BUNhvar(b, u), NULL) == NULL) {
+				BBPreclaim(r);
+				return GDK_FAIL;
+			}
+		    }
+		}
+	} else {
+		BATloopFast(b, u, v, xx) {
+		    int i, sz = *(int*)BUNtloc(b, u);
+		    for(i = 0; i < sz; i++) {
+			if (BUNfastins(r, BUNhloc(b, u), NULL) == NULL) {
+				BBPreclaim(r);
+				return GDK_FAIL;
+			}
+		    }
+		}
+	}
+	*result = r;
+	return GDK_SUCCEED;
+}
+
 
 int
 CMDproject(BAT **res, BAT *b, ptr p, int t)
