@@ -19,68 +19,71 @@
 @a M. Kersten
 @v 0.0
 @-
-@node Session management , ,MAL synopsis , MonetDB overview
-@* Sessions
+@node Session Scenarios , Scenario Management ,MAL synopsis , MonetDB overview
+@+ Session Scenarios
 In MonetDB multiple languages, optimizers, and execution engines can
 be combined at run time to satisfy a wide user-community.
-Such an assemblage of components is called a @emph{ scenario}
-and consists of a @emph{ reader}, @emph{ parser}, @emph{ optimizer},
-@emph{ tactic scheduler} and @emph{ engine}. These hooks allow
+Such an assemblage of components is called a @emph{scenario}
+and consists of a @emph{reader}, @emph{parser}, @emph{optimizer},
+@emph{tactic scheduler} and @emph{engine}. These hooks allow
 for both linked-in and external components.
 
-The languages "currently" supported are SQL, MIL ( a large 
-part of Monet version 4), and MAL (Monet Assembler Language).
-The default being to accept MAL instructions immediately
-followed by a MAL optimization \& interpreter call.
+The languages supported are SQL, XQuery, a large 
+part of Monet Version 4 MIL, and the Monet Assembler Language (MAL).
+The default scenario handles MAL instructions, which is used
+to illustrate the behavior of the scenario steps.
 
-The @emph{ reader} component merely handles interaction with
+The MAL reader component handles interaction with
 a front-end to obtain a string for subsequent compilation and
-execution. The string is associated with the client record
-for the duration of its execution.
-Possible functional enhancements are a query cache,
-history scheme, replication to remote Mservers,....
+execution. The reader uses the common stream package to read
+data in large chunks, if possible. In interactive mode the lines
+are processed one at a time. 
 
-The prime task of the parser is to prepare a
-MAL block for subsequent processing. It could be as simple
-as generating a MAL program string followed by separate 
-compilation of the back-end,
-or parsing the front-end directly into MAL data structures.
+The MAL parser component turns the string into
+an internal MAL representation of the program. 
+During this phase semantic checks are performed, such that
+we end up with a type correct program.
 
-The MAL code block are sent through an
-optimizer, which normally deploys language specific optimizations,
+The code block is subsequently sent to an MAL optimizer.
+In the default case the program is left untouched. For other languages, 
+the optimizer deploys language specific code transformations,
 e.g. foreign-key optimizations in joins and volume reduction over
-intermediates. All information is statically derived from the
-code blocks. They may leave advice and their findings in properties
-in the symbol table.
+intermediates. All optimization information is statically derived from the
+code blocks and possible catalogues maintained for the query language
+at hand. Optimizers leave advice and their findings in properties
+in the symbol table, see @ref{Property management}.
 
-Once the MAL block has thus been prepared for execution, the
-scheduler prepares for tactical optimizations.
+Once the program has thus been refined, the
+MAL scheduler prepares for execution using tactical optimizations.
 For example, it may parallelize the code, generate an ad-hoc
 user-defined function, or prepare for efficient replication management.
+In the default case, the program is handed over to the MAL interpreter
+without any further modification.
 
 The final stage is to choose an execution paradigm,
 i.e. interpretative (default), compilation of an ad-hoc user
 defined function, dataflow driven interpretation,
 or vectorized pipe-line execution by a dedicated engine.
 
+A failure encountered in any of the steps terminates the scenario
+cycle. It returns to the user for a new command.
 @menu
-* Session management::
 * Client administration::
-* Session scenarios::
+* Scenario management::
 * MAL execution::
 @end menu
-@node Session scenarios, MAL execution , Client administration, Session management, 
-@+ Scenario scenarios
+@node Scenario Management, MAL execution , Client administration, Session Scenarios 
+@- Scenario management
 Scenarios are captured in modules; they can be dynamically loaded
 and remain active until the system is brought to a halt.
 The first time a scenario is used, the system looks for a scenario
-initialization routine and executes it. It is typically used to 
-prepare the server for language specific interactions.
+initialization routine @code{XYZinitSystem()} and executes it. 
+It is typically used to prepare the server for language specific interactions.
 Thereafter its components are set to those required by
 the scenario (e.g. "SQL") and the client initialization takes place.
 
 When the last user interested in a particular scenario leaves the
-scene, we activate its finalization routine.
+scene, we activate its finalization routine calling @code{XYZexitSystem()}.
 It typically perform cleanup, backup and monitoring functions.
 
 A scenario is interpreted in a strictly linear fashion,
@@ -475,27 +478,32 @@ void exitScenario(Client c){
         (*scen->exitSystemCmd)(c);
 }
 @}
-@-
-@+ Scenario Administration
+@- 
 The building blocks of scenarios are routines obeying a strict
-signature. They all require sole access to the client
+name signature. They require exclusive access to the client
 record. Any specific information should be accessible from
 there, e.g. access to a scenario specific state descriptor.
+The client scenario initialization and finalization brackets
+are  @code{XYZinitClient()} and @code{XYZexitClient()}.
 
-The XYZparser(Client c) contains the parser for language XYZ
+The @code{XYZparser(Client c)} contains the parser for language XYZ
 and should fill the mal program block associated with the client record.
 The latter may have been initialized with variables. 
 Each language parser may require a catalog with information
 on the translation of language specific datastructures into their BAT
 equivalent.
 
-The XYZoptimizer(Client c) contains language specific optimizations
+The @code{XYZoptimizer(Client c)} contains language specific optimizations
 using the MAL intermediate code as a starting point.
 
-The XYZtactics(Client c) synchronizes the program execution with the
+The @code{XYZtactics(Client c)} synchronizes the program execution with the
 state of the machine, e.g. claiming resources, the history of the client 
 or alignment of the request with concurrent actions (e.g. transaction
 coordination).
+
+The @code{XYZengine(Client c)} contains the applicable back-end engine.
+The default is the MAL interpreter, which provides good balance
+between speed and ability to analysis its behavior.
 
 @menu
 * Session management::

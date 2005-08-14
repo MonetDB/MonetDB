@@ -17,7 +17,7 @@
 
 @a M. Kersten
 @v 0.0
-@* MAL execution
+@* The MAL Interpreter
 The MAL interpreter always works in the context of a single user session,
 which provides for storage access to global variables and modules.
 

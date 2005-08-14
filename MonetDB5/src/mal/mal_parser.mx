@@ -16,7 +16,7 @@
 
 @-
 @node The parser ,Reverse programming, Before-after calls , MonetDB Assembler Language
-@+ The parser
+@+ The Parser Implementation
 The parser (and its target language) are designed for speed of analysis.
 For, parsing is a dominant cost-factor in applications interfering with
 MonetDB. For the language design it meant that look-ahead and ambiguity
@@ -28,7 +28,7 @@ a list of include commands, a list of function/ pattern/ command/ factory
 definitions and concludes with the statements to be executed as
 the main body of the program.  All components are optional.
 
-The program may be decorated with comments, which starts with a \# and
+The program may be decorated with comments, which starts with a # and
 runs till the end of the current line. Comments are retained
 in the code block for debugging, but can be removed with an optimizer to reduce space
 and interpretation overhead.
@@ -1109,7 +1109,6 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 		cntxt->backup = 0;
 	}
 	skipSpace(cntxt);
-@}
 @- Short-cut function calls
 Most functions are (dynamically) linked with the kernel as
 commands or pattern definitions.  This enables for fast execution.
@@ -1121,7 +1120,6 @@ will use the MAL block instead.
 This scheme is intended for just-in-time compilation.
 
 [note, command and patterns do not have a MAL block]
-@{
 @c
 	if( MALkeyword(cntxt,"address",7)){
 		str nme;

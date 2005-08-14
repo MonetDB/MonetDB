@@ -40,18 +40,7 @@ In the remainder of this section we shortly introduce the
 MonetDB product family, the design considerations and
 a quick overview of the MonetDB Version 5 architecture.
 
-@menu
-* The history of MonetDB::
-* Architecture overview:: 
-* Design considerations:: 
-* Backward compatibility:: 
-* MAL synopsis:: 
-* Session management::
-
-@end menu
-
-
-@node  Design considerations, Backward compatibility, Architecture overview,MonetDB overview
+@node  Design considerations, Architecture overview, ,MonetDB overview
 @+ Design considerations
 Redesign of the MonetDB software stack was driven by the need to
 reduce the Total Execution Cost (TEC) for query execution.
@@ -101,12 +90,14 @@ effort otherwise needed to develop test and application programs.
 * The history of MonetDB::
 * Architecture overview:: 
 * Design considerations:: 
+@menu
 * Backward compatibility:: 
+@end menu
 * MAL synopsis:: 
-* Session management::
+* Session Scenarios::
 @end menu
 
-@node Architecture overview, Design considerations, The history of MonetDB ,TOC
+@node Architecture overview, MAL synopsis, Design considerations, MonetDB overview
 @+ Architecture overview
 The software stack for Version 5 is shown in Figure
  @c image{architecture}
@@ -118,13 +109,15 @@ oriented catalog, which may, but need not be stored in the MonetDB database.
 * The history of MonetDB::
 * Architecture overview:: 
 * Design considerations:: 
+@menu
 * Backward compatibility:: 
+@end menu
 * MAL synopsis:: 
-* Session management::
+* Session Scenarios::
 @end menu
 
-@node MAL synopsis, Session management, Backward compatibility , MonetDB overview
-@+ MAL synopsis
+@node MAL synopsis, Backward compatibility, Architectural overview,  MonetDB overview
+@+ MonetDB Assembler Language (MAL)
 The target language for Version 5 is an assembler-like language,
 derived as a subset of the Monet Interface Language introduced
 previously. This language provides the textual interface to
@@ -150,85 +143,24 @@ resources through wrappers, and high-volume transaction support.
 Much in the spirit of Version 4
 MAL can be readily extended with user defined types and
 service modules. 
-Moreover, it supports polymorphic functions.
-
 Furthermore, the language design is meant to support the
 full breath of computational paradigms deployed in a database
 setting. In particular, it should provide a clean infrastructure
 to implement triggers and stream-based database applications.
-
-The design and implementation takes the functionality a 
+Its design and implementation takes the functionality a 
 significant step further. To name a few:
 @itemize
-@item @emph{ strong typing}. All instructions are strongly
-typed before being executed. However, type checking depends on
-the structure of the signature, e.g. polymorphic functions are supported. 
+@item All instructions are strongly typed before being executed. 
+@item Polymorphic functions are supported. 
 They act as templates that produce strongly typed instantiations when needed.
-@item @emph{ function style expressions}, 
-each assignment instruction can receives multiple target results;
+@item Function style expressions where 
+each assignment instruction can receive multiple target results;
 it forms a point in the dataflow graph. 
-@item @emph{ factories}, to support co-routines and building
+@item Co-routines (Factories) support and building
 streaming applications.
-@item @emph{ properties} The objects can be assigned properties
-for use during compilation and optimization.
+@item Properties are associated with the program code for
+ease of optimization and scheduling.
 @end itemize
-@menu
-* The history of MonetDB::
-* Architecture overview:: 
-* Design considerations:: 
-* Backward compatibility:: 
-* MAL synopsis:: 
-* Session management::
-
-@end menu
-
-@node Backward compatibility, MAL synopsis ,Design considerations, MonetDB overview
-
-@+ Backward compatibility
-The oldest MonetDB software runs back to the early nineties and
-external users have since the mid-nineties based their business
-critical applications on the platform. This long history creates
-a challenge in a research laboratory setting to find an evoluationary
-software developement track. Fortunately, the core development team
-is still at CWI and is dedicated to maintain the software base.
-Ofcourse, within the confines of limited resources available
-and in balance with the primary research activities.
-
-The development of Version 5 was driven by the following 
-compatibility requirements:
-@itemize
-@item The programming interface technology (ODBC, JDBC, Mapi)
-are all retained to reduce impact on external applications.
-@item SQL and XQuery should compile 
-directly on both old and new versions. 
-@item The MIL language is depreciated, but MIL programs can
-mostly be converted to the MAL language.@footnote{
-Only those features are compiled that do not require runtime
-knowledge on the typing structure.}
-@item The kernel library GDK remains the primary
-execution engine, but it
-should also facilitate alternatives, such as the column buffer manager, and 
-possibly the X100 kernel.
-@item The key extension modules to the GDK kernel
-are mostly carried over without change.
-@item Nested BATs are not supported anymore, due to unnecessary
-complexity at the language layer. However, the concept of a BAT type
-is retained, it denotes the bat of interest with a guarantee
-that the bat was not removed after it got referenced.
-@item Auxiliary search paths are not supported, due to lack
-of interest in Version 4 user community and alternatives based on
-the BAT algebra.
-@end itemize
-
-@menu
-* The history of MonetDB::
-* Architecture overview:: 
-* Design considerations:: 
-* Backward compatibility:: 
-* MAL synopsis:: 
-* Session management::
-
-@end menu
 @-
 @{
 @+ Critical sections and semaphores
@@ -288,21 +220,22 @@ str             *monet_script;
 
 @}
 @-
-@node MAL execution, , Session scenarios, Session management
-@+ MAL execution
+@node MAL execution, Backward compatibility, , MonetDB overview
+@- MonetDB bootstrap
 
-Startup of the Monet engine consists of two steps. First, the
-system kernel libraries are loaded.
-The global symbol table is initialized with pre-compiled commands
-and pattern definitions.
+Startup of the MonetDB engine leads to loading the system kernel
+libraries as defined in a bootstrap script @code{mal_init.mx}.
+The global symbol table is initialized with signatures, and
+the pre-compiled commands and pattern code blocks are loaded. 
+Expect tens of modules and hundreds of operations to become readily available.
 
-The information for this phase consists of commands 
-signatures bound to actual routine implementations.
 The corresponding libraries may be statically linked or dynamically loaded.
 Failure to find the startup-files terminates to session, because
 there is no way to activate a linked procedure.
+The location of the libraries is decribed in the MonetDB configuration
+file.
 
-Unlike Version 4 we do not allow for dropping of modules with
+Unlike previous versions, we do not allow for dropping of modules with
 linked code.
 The rational behind this design decision is that the feature
 was hardly used and severely complicates the code base.
@@ -312,11 +245,55 @@ Especially, dropping modules may cause sever problems by not being
 able to detect references kept around.
 This danger required all accesses to global information to be packaged
 in a critical section, which was known to be a performance hindrence.
-@-
+
+@node Backward compatibility, ,MAL execution , MonetDB overview
+@- Backward compatibility
+The oldest MonetDB software runs back to the early nineties and
+users have based their business
+critical applications on the platform since the mid-nineties.
+This long history creates
+a challenge in a research laboratory setting to find an evoluationary
+software developement track. Fortunately, the core development team
+is still at CWI and is dedicated to maintain the software base.
+Ofcourse, within the confines of limited resources available
+and in balance with the primary research activities.
+
+The development of Version 5 was driven by the following 
+compatibility requirements:
+@itemize
+@item The programming interface technology (ODBC, JDBC, Mapi)
+are all retained to reduce impact on external applications.
+@item SQL and XQuery should compile 
+directly on both old and new versions. 
+@item The MIL language is depreciated, but MIL programs can
+mostly be converted to the MAL language.@footnote{
+Only those features are compiled that do not require runtime
+knowledge on the typing structure.}
+@item The kernel library GDK remains the primary
+execution engine, but it
+should also facilitate alternatives, such as the column buffer manager, and 
+possibly the X100 kernel.
+@item The key extension modules to the GDK kernel
+are mostly carried over without change.
+@item Nested BATs are not supported anymore, due to unnecessary
+complexity at the language layer. However, the concept of a BAT type
+is retained, it denotes the bat of interest with a guarantee
+that the bat was not removed after it got referenced.
+@item Auxiliary search paths are not supported, due to lack
+of interest in Version 4 user community and alternatives based on
+the BAT algebra.
+@end itemize
+
 @menu
-* Client administration::
-* Session scenarios::
-* MAL execution::
+* The history of MonetDB::
+* Architecture overview:: 
+* Design considerations:: 
+@menu
+* Backward compatibility:: 
+@end menu
+* MAL synopsis:: 
+* Session management::
+
 @end menu
 @{
 @h

@@ -1,6 +1,7 @@
-@node The application interfaces,,,TOC
-[TO BE FILLED]
+@appendix MAL Syntax
+To be included
 @menu
+* MAL syntax ::
 * Installation ::
 * The application interfaces::
 @end menu

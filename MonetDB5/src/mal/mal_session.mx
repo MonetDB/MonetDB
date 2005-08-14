@@ -17,16 +17,17 @@
 
 @a M. Kersten
 @v 0.0
-@+ Session startup
+@- Server Bootstrapping
 
-The Monet server uses a startup script to boot the system.
+The MonetDB server uses a startup script to boot the system.
 This script is an ordinary MAL program, but will mostly
-consist of include statements to load modules of interest.
+consist of include statements to load modules of general interest.
 The startup script is ran as user Admin.
 Its location is described in Monet configuration file.
+The default location is:
 
-In addition, startup scripts will be looked for each
-time a user initializes a session against a database.[todo]
+It may overwritten using a command line argument.
+
 @{
 @h
 #ifndef _MAL_SESSION_H

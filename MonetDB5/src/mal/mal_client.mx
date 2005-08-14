@@ -19,10 +19,10 @@
 @v 5.0
 @-
 @node Client administration, Session scenarios, Session management, Session management
-@* Monet Client Interface
+@+ MonetDB Client Interface
 Clients gain access to the Monet server through a internet connection
 or through its server console.
-Access through the internet requires a Monet client program at the
+Access through the internet requires a MonetDB client program at the
 source, but ordinary telnet connections can be applied when the internet
 port number of the database server is publicised.
 
@@ -35,8 +35,7 @@ a single serverside client thread, geared at providing
 a particular service.
 
 The number of clients permitted concurrent access is 
-currently a compile time option. The console is the first and 
-is always present.
+a compile time option. The console is the first and is always present.
 It reads from standard input and writes to standard output.
 [It is an instance of MapiClient, directly linked
 with the server code]
@@ -133,12 +132,13 @@ information should be dealt with separately.[TODO]
 @-
 @}
 @-
-
 Client sessions remain in existence until the corresponding
 communication channels break or its retention timer expires
-A client can manipulate the timeout with a system call.
-An option should be provided to also re-connect to an
-existing session.[TODO]
+The administrator and owner of a sesssion
+can manipulate the timeout with a system call.
+
+Session structures are currently not saved over network failures.
+Future releases may support a re-connect facility.  [TODO]
 @{
 @h
     time_t      login;  
@@ -174,7 +174,10 @@ Nesting is indicated using a '+' before the prompt.
 @-
 @}
 @-
-
+Keeping track of instructions executed is a valueable tool for
+script processing. Its value is defined in the MonetDB environment
+variable profile. It can be changed at runtime using
+the operation @code{clients.listin}(@emph{mask}).
 A listing bit controls the level of detail to be generated during
 program execution tracing. The lowest level (1) simply dumps the input,
 (2) also demonstrates the MAL internal structur (4) adds the hidden information
@@ -184,11 +187,9 @@ program execution tracing. The lowest level (1) simply dumps the input,
 @-
 @}
 @-
-
-Debugger control consists of tracing the interaction using a
-journal file for offline inspection.
-The debug flag can be set to trace both the GDK kernel and
-the MAL layer.
+The MAL debugger uses the client record to keep track of
+any pervasive debugger command. For detailed information
+on the debugger features see @ref{The MAL debugger}.
 @{
 @h
     bitset debug;
@@ -196,7 +197,6 @@ the MAL layer.
     stream  *journal;
     int mode;           /* FREECLIENT..BLOCKED */
     str cwd;            /* working directory of client */
-@-
 @-
 Client records are organized into a two-level dependency
 tree, where children may be created to deal with parallel processing
@@ -247,12 +247,11 @@ mal_export void     popClientInput(Client c);
 @-
 @}
 
-Upon acceptance of a connection a client record is initialized.
-After initializion the client record is activated in its own
-thread of control until it finds a
+A client record is initialized upon acceptance of a connection.
+The client runs in his own thread of control until it finds a
 soft-termination request mode (FINISHING) or its IO file
-descriptors are closed. This will generate an IO error, which
-should lead to a safe termination.
+descriptors are closed. The latter generates an IO error, which
+leads to a safe termination.
 
 The system administrator client runs in the primary thread of
 control to simplify debugging with external debuggers.
@@ -477,7 +476,6 @@ the proper IO descriptors.
     t->data[1] = c->fdin;
     t->data[0] = c->fdout;
 } 
-@}
 @- Client decendants
 Forking is a relatively cheap way to create a new client.
 The new client record shares the IO descriptors.
@@ -486,7 +484,6 @@ output by closing the input-side.
 
 If the father itself is a temporary client, let 
 the new child depend on the grandfather.
-@{
 @c
 Client forkClient(Client father){
         Client son = NULL;

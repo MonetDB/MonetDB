@@ -14,7 +14,7 @@ distributed main-memory datase system in the context of the
 national project PRISMA. A fully functional system over 100
 processors and a wealthy 1Gb of main memory showed the road
 to develop database technologie from a different perspective.
-A more detailed account on the experiences can be found in \cite{}.
+A more detailed account on the experiences can be found in REF.
 
 @strong{The Early Days [1993-1995]}
 Immediately after the PRISMA project was termed dead, the basis

@@ -25,7 +25,7 @@ the MAL compiler provides a sufficient handle to proceed. Once
 it passes the compiler we have to resort to a debugger to
 assess its behavior.
 
-@+ The debugging option
+@+ The MAL debugger
 To ease debugging and performance monitoring, the MAL interpreter
 comes with a gdb-like debugger.
 An illustrative session elicits the functionality offered.
@@ -198,7 +198,7 @@ mdb>c
 mdb>
 @end example
 
-@+ Runtime Debugging
+@+ Runtime Inspection and Reflection
 Part of the debugger functionality can also be used directly with
 MAL instructions.
 The execution trace of a snippet of code can be visualized 
@@ -278,7 +278,6 @@ The debugger is only activated when the user can direct its execution
 from the client interface. Otherwise, there is no proper input channel
 and the debugger will run in trace mode.
 
-@+ Runtime Inspection and Reflection
 The program listing functionality of the debugger is 
 also captured in the MAL debugger module. The current code
 block can be listed using @code{mdb.list()} and @code{mdb.List()}.

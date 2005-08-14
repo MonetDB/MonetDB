@@ -654,9 +654,9 @@ l2:= f(A,B,C);
 L2:= h()
 @end example
 @
-The instruction G1:=g(D,E,F) is blocking if G1 is an alias for {A,B,C}.
-Alternatively, function g() may be unsafe and {D,E,F} has a non-empty
-intersection with {A,B,C}. An alias can only be used later on for
+The instruction G1:=g(D,E,F) is blocking if G1 is an alias for @{A,B,C@}.
+Alternatively, function g() may be unsafe and @{D,E,F@} has a non-empty
+intersection with @{A,B,C@}. An alias can only be used later on for
 readonly (and not be used for a function with sideeffects)
 @{
 @c

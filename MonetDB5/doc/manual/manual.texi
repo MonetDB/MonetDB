@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED 17/07/2005
+@set UPDATED 14/08/2005
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -39,7 +39,7 @@ Last updated: @value{UPDATED}
 @page
 @node Top, TOC,  , 
 @top MonetDB Reference Manual
-@include Assets/General_information
+@include Assets/General-information.texi
 
 @node TOC, About this manual, Top,(Dir)
 Table of contents
@@ -58,8 +58,8 @@ Table of contents
 @menu
 * Architecture overview:: 
 * Design considerations:: 
-* Backward compatibility:: 
 * MAL synopsis:: 
+* Backward compatibility:: 
 * Session management::
 @menu
 * Client administration::
@@ -69,12 +69,15 @@ Table of contents
 @end menu
 
 
+* SQL ::
+@menu
+* SQL Introduction ::
+@end menu
 
---- The SQL front-end ---
-
---- The Xquery front-end ---
-
-* Programming interfaces ::
+* XQuery ::
+@menu
+* XQuery Introduction ::
+@end menu
 
 * MonetDB Assembler Language::
 @menu
@@ -97,7 +100,10 @@ Table of contents
 * Property management::
 * Optimizer framework::
 * Name space management::
+* Appendices::
+@menu
 * MAL syntax::
+@end menu
 @end menu
 
 * The MAL debugger::
@@ -110,23 +116,30 @@ Table of contents
 
 @end ifnottex
 
-@node About this manual, Installation , TOC , TOC
+@node About this manual, Introduction, TOC , TOC
 @include Assets/About-this-manual.texi
 
-@node Installation , MonetDB overview, About this manual , TOC
+@node Introduction , Installation, About this manual , TOC
 @include Assets/Features.texi
 @include Assets/History.texi
 @include Assets/Conventions.texi
 
-@node MonetDB overview, MonetDB Assembler Language, Installation, TOC
+@node Installation, MonetDB overview, Introduction, TOC
+@include mal_session.bdy.texi
+
+@node MonetDB overview, SQL, Installation, TOC
 @include mal.bdy.texi
 @include mal_scenario.bdy.texi
 @include mal_client.bdy.texi
-@include mal_session.bdy.texi
 
-@node MonetDB Assembler Language , The MAL debugger, MonetDB overview , TOC
+@node SQL, XQuery, MonetDB overview, TOC
+@include Assets/SQLoverview.texi
+
+@node XQuery, MonetDB Assembler Language, SQL, TOC
+@include Assets/XQueryOverview.texi
+
+@node MonetDB Assembler Language, The MAL debugger, MonetDB overview , TOC
 @include mal_instruction.bdy.texi
-@include mal_parser.bdy.texi
 
 @node Function definitions, Factory definitions , , TOC
 @include mal_function.bdy.texi
@@ -134,17 +147,10 @@ Table of contents
 @node Factory definitions, Bootstrap , Function definitions, TOC
 @include mal_factory.bdy.texi
 
-@node Bootstrap , Modules ,Factory definitions, TOC
+@node Bootstrap , Atom types ,Factory definitions, TOC
 @include mal_linker.bdy.texi
 
-@node Modules , MAL interpreter ,Bootstrap, TOC
-@include mal_import.bdy.texi
-
-@node MAL interpreter, Atom types, Modules, TOC
-@include mal_interpreter.bdy.texi
-@include mal_stack.bdy.texi
-
-@node Atom types, Type resolution,MAL interpreter, TOC
+@node Atom types, Type resolution, Bootstrap, TOC
 @include mal_atom.bdy.texi
 
 @node Type resolution, Boxed variables, Atom types, TOC
@@ -158,10 +164,18 @@ Table of contents
 @include mal_namespace.bdy.texi
 @include mal_module.bdy.texi
 
-@node Property management,  Optimizer framework, Name space management, TOC
+@node Property management,  Modules, Name space management, TOC
 @include mal_properties.bdy.texi
+@include mal_parser.bdy.texi
 
-@node Optimizer framework, , Property management , TOC
+@node Modules , MAL interpreter , Property management, TOC
+@include mal_import.bdy.texi
+
+@node MAL interpreter, Optimizer framework, Modules, TOC
+@include mal_interpreter.bdy.texi
+@include mal_stack.bdy.texi
+
+@node Optimizer framework, The MAL debugger, MAL interpreter , TOC
 @include mal_optimizer.bdy.texi
 @include mal_commonExpressions.bdy.texi
 @include mal_emptyset.bdy.texi
@@ -175,19 +189,18 @@ Table of contents
 @include mal_costmodel.bdy.texi
 @include mal_reduce.bdy.texi
 
-@node The MAL debugger, The MAL profiler , MonetDB Assembler Language, TOC
+@node The MAL debugger, The MAL profiler , Optimizer framework, TOC
 @include mal_debugger.bdy.texi
 
-@node The MAL profiler, MAL syntax , The MAL debugger, TOC
+@node The MAL profiler, Appendices , The MAL debugger, TOC
 @include mal_profiler.bdy.texi
 
-@node MAL syntax,, The MAL profiler, TOC
+@node Appendices,, The MAL profiler, TOC
+@include Assets/MALsyntax.texi
 @ifnottex
 @include mal_syntax.bdy.texi
 @end ifnottex
 
-@include Assets/ApplicationInterfaces
-@include mal_xml.bdy.texi
 
 
 @bye
