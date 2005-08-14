@@ -140,6 +140,7 @@ enum PFctype_t {
   , c_fun_decl           = 55 /**< function declaration */
   , c_params             = 56 /**< function declaration parameter list */
   , c_param              = 57 /**< function declaration parameter */
+  , c_cast               = 58 /**< function declaration parameter */
 
 };
 
@@ -260,6 +261,7 @@ PFcnode_t *PFcore_fun_decl (PFfun_t *fun, const PFcnode_t *, const PFcnode_t *);
 PFcnode_t *PFcore_fun_decls (const PFcnode_t *fun, const PFcnode_t *funs);
 PFcnode_t *PFcore_params (const PFcnode_t *param, const PFcnode_t *params);
 PFcnode_t *PFcore_param (const PFcnode_t *type, const PFcnode_t *var);
+PFcnode_t *PFcore_cast (const PFcnode_t *type, const PFcnode_t *expr);
 
 
 PFfun_t *PFcore_function (PFqname_t);

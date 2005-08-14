@@ -77,6 +77,7 @@
 #undef fs_convert_op
 #undef fn_data
 #undef some
+#undef cast    
 
 #define nil()                 PFcore_nil ()
 #define new_var(v)            PFcore_new_var (v)
@@ -87,6 +88,7 @@
 #define str(s)                PFcore_str (s)
 #define seqtype(t)            PFcore_seqtype (t)
 #define seqcast(e1,e2)        PFcore_seqcast ((e1), (e2))
+#define cast(e1,e2)           PFcore_cast ((e1), (e2))
 #define proof(a,b)            PFcore_proof ((a), (b))
 #define subty(a,b)            PFcore_subty ((a), (b))
 #define stattype(e)           PFcore_stattype (e)

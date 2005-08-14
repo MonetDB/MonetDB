@@ -2303,7 +2303,7 @@ reduce (PFpnode_t * p, int goalnt)
 
             C(p) = let (letbind (var (v1), C(L(p))),
                         let (letbind (var (v2), fn_data (var (v1))),
-                             seqcast (C(R(p)), var (v2))));
+                             cast (C(R(p)), var (v2))));
         } break;
 
         /* UnaryExpr:              ValueExpr */
@@ -2567,6 +2567,10 @@ reduce (PFpnode_t * p, int goalnt)
              *             default return ebv ($v2)
              *           return
              *             if ($v3) then $fs:dot else ()
+             *
+             * FIXME: This seqcast is actually unsafe. $v2 is not neccessarily
+             *        a subtype of xs:integer. We need fs:convert-operand here
+             *        instead.
              */
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
