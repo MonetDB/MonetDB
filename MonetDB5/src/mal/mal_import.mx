@@ -177,8 +177,8 @@ resolving addresses.
 		str msg = MAL_SUCCEED;
 
 		initClientPrg(c, "main");	/* create new context */
-		@:runPhase(READER, restoreClient1)@
-		@:runPhase(PARSER, restoreClient1)@
+		@:runPhase(READER,restoreClient1)@
+		@:runPhase(PARSER,restoreClient1)@
 		/* restore IO channel */
 		if (c->fdin) {
 			(void) stream_close(c->fdin->s);
@@ -187,9 +187,9 @@ resolving addresses.
 		}
 		@:restoreClient1()@
 		c->listing = listing;
-		@:runPhase(OPTIMIZE, restoreClient2)@
-		@:runPhase(SCHEDULER, restoreClient2)@
-		@:runPhase(ENGINE, restoreClient2)@
+		@:runPhase(OPTIMIZE,restoreClient2)@
+		@:runPhase(SCHEDULER,restoreClient2)@
+		@:runPhase(ENGINE,restoreClient2)@
 		c->listing = oldlisting;
 		@:restoreClient2()@
 		return;
@@ -260,13 +260,13 @@ callString(Client c, str s, int listing)
 	buffer_init(b, s, len);
 	pushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "");
 	initClientPrg(c, "main");	/* create new context */
-	@:runPhase(READER, restoreClient1)@
-	@:runPhase(PARSER, restoreClient1)@
+	@:runPhase(READER,restoreClient1)@
+	@:runPhase(PARSER,restoreClient1)@
 	/* restore IO channel */
 	@:restoreClient1()@
-	@:runPhase(OPTIMIZE, restoreClient2)@
-	@:runPhase(SCHEDULER, restoreClient2)@
-	@:runPhase(ENGINE, restoreClient2)@
+	@:runPhase(OPTIMIZE,restoreClient2)@
+	@:runPhase(SCHEDULER,restoreClient2)@
+	@:runPhase(ENGINE,restoreClient2)@
 	@:restoreClient2()@
 }
 
