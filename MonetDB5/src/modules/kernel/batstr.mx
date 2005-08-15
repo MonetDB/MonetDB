@@ -216,8 +216,8 @@ bunins_failed:
 }
 
 @c
-@:BATint(Length, strLength, str)@
-@:BATint(Bytes, strBytes, str)@
+@:BATint(Length,strLength,str)@
+@:BATint(Bytes,strBytes,str)@
 
 @= BATstr
 str STRbat@1(int *ret, int *l)
@@ -246,11 +246,11 @@ bunins_failed:
 	return throwMessage("batstr.==", "bunins failed");
 }
 @c
-@:BATstr(Lower, strLower, str, str)@
-@:BATstr(Upper, strUpper, str, str)@
-@:BATstr(Strip, strStrip, str, str)@
-@:BATstr(Ltrim, strLtrim, str, str)@
-@:BATstr(Rtrim, strRtrim, str, str)@
+@:BATstr(Lower,strLower,str,str)@
+@:BATstr(Upper,strUpper,str,str)@
+@:BATstr(Strip,strStrip,str,str)@
+@:BATstr(Ltrim,strLtrim,str,str)@
+@:BATstr(Rtrim,strRtrim,str,str)@
 
 @-
 @c
@@ -457,14 +457,14 @@ bunins_failed:
 	return throwMessage("batstr"@5, "bunins failed");
 }
 @c
-@:binarySTRstr(Prefix, bit, str, STRPrefix, "prefix", vp)@
-@:binarySTRstr(Suffix, bit, str, STRSuffix, "suffix", vp)@
-@:binarySTRstr(strSearch, int, str, STRstrSearch, "search", vp)@
-@:binarySTRstr(RstrSearch, int, str, STRReverseStrSearch, "r_search", vp)@
-@:binarySTRstr(Concat, str, str, STRConcat, "+", v)@
-@:binarySTR(Tail, str, int, strTail, "tail")@
-@:binarySTR(WChrAt, int, int, strWChrAt, "chrAt")@
-@:binarySTR(ChrAt, chr, int, strChrAt, "chrAt")@
+@:binarySTRstr(Prefix,bit,str,STRPrefix,"prefix",vp)@
+@:binarySTRstr(Suffix,bit,str,STRSuffix,"suffix",vp)@
+@:binarySTRstr(strSearch,int,str,STRstrSearch,"search",vp)@
+@:binarySTRstr(RstrSearch,int,str,STRReverseStrSearch,"r_search",vp)@
+@:binarySTRstr(Concat,str,str,STRConcat,"+",v)@
+@:binarySTR(Tail,str,int,strTail,"tail")@
+@:binarySTR(WChrAt,int,int,strWChrAt,"chrAt")@
+@:binarySTR(ChrAt,chr,int,strChrAt,"chrAt")@
 
 str
 STRbattostr(int *ret, int *bid)

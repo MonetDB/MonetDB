@@ -471,11 +471,11 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 	return MAL_SUCCEED;
 }
 @c
-@:arraymultiply(sht, lng)@
-@:arraymultiply(sht, int)@
-@:arraymultiply(int, int)@
-@:arraymultiply(int, lng)@
-@:arraymultiply(lng, lng)@
+@:arraymultiply(sht,lng)@
+@:arraymultiply(sht,int)@
+@:arraymultiply(int,int)@
+@:arraymultiply(int,lng)@
+@:arraymultiply(lng,lng)@
 
 str
 ARRAYproduct(int *ret, int *bid, int *rid)

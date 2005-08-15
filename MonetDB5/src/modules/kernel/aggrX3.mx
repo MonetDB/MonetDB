@@ -559,15 +559,15 @@ CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 @:arithsum(@1,@2,@3)@
 @:arithprod(@1,@2,@3)@
 @c
-@:arithsumprod(sht, loc, sht)@
-@:arithsumprod(sht, loc, int)@
-@:arithsumprod(sht, loc, lng)@
-@:arithsumprod(int, loc, int)@
-@:arithsumprod(int, loc, lng)@
-@:arithsumprod(lng, loc, lng)@
-@:arithsumprod(flt, loc, flt)@
-@:arithsumprod(flt, loc, dbl)@
-@:arithsumprod(dbl, loc, dbl)@
+@:arithsumprod(sht,loc,sht)@
+@:arithsumprod(sht,loc,int)@
+@:arithsumprod(sht,loc,lng)@
+@:arithsumprod(int,loc,int)@
+@:arithsumprod(int,loc,lng)@
+@:arithsumprod(lng,loc,lng)@
+@:arithsumprod(flt,loc,flt)@
+@:arithsumprod(flt,loc,dbl)@
+@:arithsumprod(dbl,loc,dbl)@
 
 /*	arithavg
 	@6:		sht / int / lng / flt / dbl	b/bn-tail-type
@@ -629,11 +629,11 @@ CMDaggrX3_avg_@1(BAT **ret, BAT *b, BAT *e)
 	return GDK_SUCCEED;
 }
 @c
-@:arithavg(sht, loc)@
-@:arithavg(int, loc)@
-@:arithavg(lng, loc)@
-@:arithavg(flt, loc)@
-@:arithavg(dbl, loc)@
+@:arithavg(sht,loc)@
+@:arithavg(int,loc)@
+@:arithavg(lng,loc)@
+@:arithavg(flt,loc)@
+@:arithavg(dbl,loc)@
 
 @- "Extremes" (Min & Max)
 @c
@@ -796,8 +796,8 @@ CMDaggrX3_@1(BAT **ret, BAT *b, BAT *e)
 	return rtrn;
 }
 @c
-@:extreme(min, <)@
-@:extreme(max, >)@
+@:extreme(min,<)@
+@:extreme(max,>)@
 
 @- Count
 @c
@@ -929,24 +929,24 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count(0, 0, BUNfndVOID, var, &bhsb;bhsb++, BUNtloc(bn, r))@
+			@:aggrX3_count(0,0,BUNfndVOID,var,&bhsb;bhsb++,BUNtloc(bn,r))@
 		} else {
-			@:aggrX3_count(0, 0, BUNfndVOID, var, BUNhloc(b, p), BUNtloc(bn, r))@
+			@:aggrX3_count(0,0,BUNfndVOID,var,BUNhloc(b,p),BUNtloc(bn,r))@
 		}
 		/* e->htype == TYPE_oid */
 	} else if (range > SMALL_AGGR_MAX) {
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count(0, 1, HASHfnd_oid, loc, &bhsb;bhsb++, BUNtloc(bn, r))@
+			@:aggrX3_count(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,BUNtloc(bn,r))@
 		} else {
-			@:aggrX3_count(0, 1, HASHfnd_oid, loc, BUNhloc(b, p), BUNtloc(bn, r))@
+			@:aggrX3_count(0,1,HASHfnd_oid,loc,BUNhloc(b,p),BUNtloc(bn,r))@
 		}
 	} else {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count(1, 0, CHKrange, loc, &bhsb;bhsb++, &cnt[(*(oid *) h) - min])@
+			@:aggrX3_count(1,0,CHKrange,loc,&bhsb;bhsb++,&cnt[(*(oid *) h) - min])@
 		} else {
-			@:aggrX3_count(1, 0, CHKrange, loc, BUNhloc(b, p), &cnt[(*(oid *) h) - min])@
+			@:aggrX3_count(1,0,CHKrange,loc,BUNhloc(b,p),&cnt[(*(oid *) h) - min])@
 		}
 	}
 
@@ -1455,15 +1455,15 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 @:arithprod3(@1,@2)@
 @c
 
-@:arithsumprod3(sht, sht)@
-@:arithsumprod3(sht, int)@
-@:arithsumprod3(sht, lng)@
-@:arithsumprod3(int, int)@
-@:arithsumprod3(int, lng)@
-@:arithsumprod3(lng, lng)@
-@:arithsumprod3(flt, flt)@
-@:arithsumprod3(flt, dbl)@
-@:arithsumprod3(dbl, dbl)@
+@:arithsumprod3(sht,sht)@
+@:arithsumprod3(sht,int)@
+@:arithsumprod3(sht,lng)@
+@:arithsumprod3(int,int)@
+@:arithsumprod3(int,lng)@
+@:arithsumprod3(lng,lng)@
+@:arithsumprod3(flt,flt)@
+@:arithsumprod3(flt,dbl)@
+@:arithsumprod3(dbl,dbl)@
 
 /*	arithavg3
 	@6:		sht / int / lng / flt / dbl	b/bn-tail-type
@@ -1536,11 +1536,11 @@ CMDaggrX3_avg3_@1(BAT **ret, BAT *b, BAT *g, BAT *e)
 	return GDK_SUCCEED;
 }
 @c
-@:arithavg3(sht, loc)@
-@:arithavg3(int, loc)@
-@:arithavg3(lng, loc)@
-@:arithavg3(flt, loc)@
-@:arithavg3(dbl, loc)@
+@:arithavg3(sht,loc)@
+@:arithavg3(int,loc)@
+@:arithavg3(lng,loc)@
+@:arithavg3(flt,loc)@
+@:arithavg3(dbl,loc)@
 
 @- "Extremes" (Min & Max)
 @c
@@ -1724,8 +1724,8 @@ CMDaggrX3_@13(BAT **ret, BAT *b, BAT *g, BAT *e)
 	return rtrn;
 }
 @c
-@:extreme3(min, <)@
-@:extreme3(max, >)@
+@:extreme3(min,<)@
+@:extreme3(max,>)@
 
 @- Count
 @c
@@ -1874,24 +1874,24 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count3(0, 0, BUNfndVOID, var, &bhsb;bhsb++, BUNtloc(bn, r))@
+			@:aggrX3_count3(0,0,BUNfndVOID,var,&bhsb;bhsb++,BUNtloc(bn,r))@
 		} else {
-			@:aggrX3_count3(0, 0, BUNfndVOID, var, BUNhloc(b, p), BUNtloc(bn, r))@
+			@:aggrX3_count3(0,0,BUNfndVOID,var,BUNhloc(b,p),BUNtloc(bn,r))@
 		}
 		/* e->htype == TYPE_oid */
 	} else if (range > SMALL_AGGR_MAX) {
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count3(0, 1, HASHfnd_oid, loc, &bhsb;bhsb++, BUNtloc(bn, r))@
+			@:aggrX3_count3(0,1,HASHfnd_oid,loc,&bhsb;bhsb++,BUNtloc(bn,r))@
 		} else {
-			@:aggrX3_count3(0, 1, HASHfnd_oid, loc, BUNhloc(b, p), BUNtloc(bn, r))@
+			@:aggrX3_count3(0,1,HASHfnd_oid,loc,BUNhloc(b,p),BUNtloc(bn,r))@
 		}
 	} else {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count3(1, 0, CHKrange, loc, &bhsb;bhsb++, &cnt[(*(oid *) h) - min])@
+			@:aggrX3_count3(1,0,CHKrange,loc,&bhsb;bhsb++,&cnt[(*(oid *) h) - min])@
 		} else {
-			@:aggrX3_count3(1, 0, CHKrange, loc, BUNhloc(b, p), &cnt[(*(oid *) h) - min])@
+			@:aggrX3_count3(1,0,CHKrange,loc,BUNhloc(b,p),&cnt[(*(oid *) h) - min])@
 		}
 	}
 
@@ -1961,15 +1961,15 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 	@:AX3prod(@1,@2,@3)@
 @c
 
-@:AX3sumprod(sht, tloc, sht)@
-@:AX3sumprod(sht, tloc, int)@
-@:AX3sumprod(sht, tloc, lng)@
-@:AX3sumprod(int, tloc, int)@
-@:AX3sumprod(int, tloc, lng)@
-@:AX3sumprod(lng, tloc, lng)@
-@:AX3sumprod(flt, tloc, flt)@
-@:AX3sumprod(flt, tloc, dbl)@
-@:AX3sumprod(dbl, tloc, dbl)@
+@:AX3sumprod(sht,tloc,sht)@
+@:AX3sumprod(sht,tloc,int)@
+@:AX3sumprod(sht,tloc,lng)@
+@:AX3sumprod(int,tloc,int)@
+@:AX3sumprod(int,tloc,lng)@
+@:AX3sumprod(lng,tloc,lng)@
+@:AX3sumprod(flt,tloc,flt)@
+@:AX3sumprod(flt,tloc,dbl)@
+@:AX3sumprod(dbl,tloc,dbl)@
 
 @-
 @= AX3arithavg
@@ -1995,11 +1995,11 @@ str AX3aggrX3_avg_@1(int *retid, int *bid, int *eid){
 	return throwMessage("aggrX3_avg.@1","GDKerror");
 }
 @c
-@:AX3arithavg(sht, loc)@
-@:AX3arithavg(int, loc)@
-@:AX3arithavg(lng, loc)@
-@:AX3arithavg(flt, loc)@
-@:AX3arithavg(dbl, loc)@
+@:AX3arithavg(sht,loc)@
+@:AX3arithavg(int,loc)@
+@:AX3arithavg(lng,loc)@
+@:AX3arithavg(flt,loc)@
+@:AX3arithavg(dbl,loc)@
 
 
 @- "Extremes" (Min & Max)
@@ -2026,8 +2026,8 @@ str AX3aggrX3_@1(int *ret, int *bid, int *eid){
 	return throwMessage("aggrX3_@1","GDKerror");
 }
 @c
-@:AX3extreme(min, <)@
-@:AX3extreme(max, >)@
+@:AX3extreme(min,<)@
+@:AX3extreme(max,>)@
 
 @- Count
 @c
@@ -2149,15 +2149,15 @@ str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 @:AX3prod3(@1,@2)@
 @c
 
-@:AX3sumprod3(sht, sht)@
-@:AX3sumprod3(sht, int)@
-@:AX3sumprod3(sht, lng)@
-@:AX3sumprod3(int, int)@
-@:AX3sumprod3(int, lng)@
-@:AX3sumprod3(lng, lng)@
-@:AX3sumprod3(flt, flt)@
-@:AX3sumprod3(flt, dbl)@
-@:AX3sumprod3(dbl, dbl)@
+@:AX3sumprod3(sht,sht)@
+@:AX3sumprod3(sht,int)@
+@:AX3sumprod3(sht,lng)@
+@:AX3sumprod3(int,int)@
+@:AX3sumprod3(int,lng)@
+@:AX3sumprod3(lng,lng)@
+@:AX3sumprod3(flt,flt)@
+@:AX3sumprod3(flt,dbl)@
+@:AX3sumprod3(dbl,dbl)@
 
 @= AX3arithavg3
 str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
@@ -2190,11 +2190,11 @@ str AX3aggrX3_avg3_@1(int *retid,int *bid, int *gid, int *eid){
 	return throwMessage("aggrX3_prod3","GDKerror");
 }
 @c
-@:AX3arithavg3(sht, loc)@
-@:AX3arithavg3(int, loc)@
-@:AX3arithavg3(lng, loc)@
-@:AX3arithavg3(flt, loc)@
-@:AX3arithavg3(dbl, loc)@
+@:AX3arithavg3(sht,loc)@
+@:AX3arithavg3(int,loc)@
+@:AX3arithavg3(lng,loc)@
+@:AX3arithavg3(flt,loc)@
+@:AX3arithavg3(dbl,loc)@
 
 @- "Extremes" (Min & Max)
 @c
@@ -2228,8 +2228,8 @@ str AX3aggrX3_@13(int *ret,int *bid, int *gid, int *eid){
 	return throwMessage("aggrX3_prod3","GDKerror");
 }
 @c
-@:AX3extreme3(min, <)@
-@:AX3extreme3(max, >)@
+@:AX3extreme3(min,<)@
+@:AX3extreme3(max,>)@
 
 str
 AX3aggrX3_count3(int *retid, int *bid, int *gid, int *eid, bit *ignore_nils)

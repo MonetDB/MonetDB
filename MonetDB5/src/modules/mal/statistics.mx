@@ -765,10 +765,10 @@ STATget@1(lng *ret, str *nme){
 	return MAL_SUCCEED;
 }
 @c
-@:stat(Count, count)@
-@:stat(Size, size)@
-@:stat(Min, min_lng)@
-@:stat(Max, max_lng)@
+@:stat(Count,count)@
+@:stat(Size,size)@
+@:stat(Min,min_lng)@
+@:stat(Max,max_lng)@
 
 
 str

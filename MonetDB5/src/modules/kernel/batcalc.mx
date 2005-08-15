@@ -756,10 +756,10 @@ str CMD@1init_sht(int *ret, sht *size, @1 *cst){
 @:initImpl(flt)@
 @:initImpl(bit)@
 
-@:arithmeticImpl(DIV, /)@
-@:arithmeticImpl(MUL, *)@
-@:arithmeticImpl(MIN, -)@
-@:arithmeticImpl(ADD, +)@
+@:arithmeticImpl(DIV,/)@
+@:arithmeticImpl(MUL,*)@
+@:arithmeticImpl(MIN,-)@
+@:arithmeticImpl(ADD,+)@
 
 @-  Modulo arithmetic
 The Modulo function doesn;t work on all types. Therefore we 
@@ -934,8 +934,8 @@ str CMDcst@1bat(int *ret,void *cst, int *l)
 	return msg;
 }
 @c
-@:numeric_funcs(MOD, %)@
-@:numeric_funcs(XOR, ^)@
+@:numeric_funcs(MOD,%)@
+@:numeric_funcs(XOR,^)@
 
 @- Implementation of unary operations
 @= accumUnary
@@ -1000,9 +1000,9 @@ str CMDunary@1(int *ret, int *bid){
 	return msg;
 }
 @c
-@:unary_impl(MIN, -)@
-@:unary_impl(MINMIN, --)@
-@:unary_impl(PLUSPLUS, ++)@
+@:unary_impl(MIN,-)@
+@:unary_impl(MINMIN,--)@
+@:unary_impl(PLUSPLUS,++)@
 
 @- Implementation of comparisons
 The structure of this code is copied from the arithmetic scheme.
@@ -1183,28 +1183,28 @@ bunins_failed:
 
 @-
 @c
-@:compareImpl(GE, >=)@
-@:compareImpl(LE, <=)@
-@:compareImpl(GT, >)@
-@:compareImpl(LT, <)@
-@:compareImpl(EQ, ==)@
-@:compareImpl(NEQ, !=)@
-@:cmpCstImpl(GE, >=)@
-@:cmpCstImpl(LE, <=)@
-@:cmpCstImpl(GT, >)@
-@:cmpCstImpl(LT, <)@
-@:cmpCstImpl(EQ, ==)@
-@:cmpCstImpl(NEQ, !=)@
+@:compareImpl(GE,>=)@
+@:compareImpl(LE,<=)@
+@:compareImpl(GT,>)@
+@:compareImpl(LT,<)@
+@:compareImpl(EQ,==)@
+@:compareImpl(NEQ,!=)@
+@:cmpCstImpl(GE,>=)@
+@:cmpCstImpl(LE,<=)@
+@:cmpCstImpl(GT,>)@
+@:cmpCstImpl(LT,<)@
+@:cmpCstImpl(EQ,==)@
+@:cmpCstImpl(NEQ,!=)@
 
 @- Implementations of boolean operators
 The code base is straightforward.
 @-
 The expanded code for the binary and boolean operations.
 @c
-@:compareImpl(AND, &&)@
-@:compareImpl(OR, ||)@
-@:cmpCstImpl(AND, &&)@
-@:cmpCstImpl(OR, ||)@
+@:compareImpl(AND,&&)@
+@:compareImpl(OR,||)@
+@:cmpCstImpl(AND,&&)@
+@:cmpCstImpl(OR,||)@
 
 str
 CMDbitbataccumNOT(int *ret, int *d, int *l)
@@ -1222,8 +1222,8 @@ CMDbitbataccumNOT(int *ret, int *d, int *l)
 	}
 
 	@:chkSize(dst,left,CMDbitbataccum@1)@
-	@:batinit(1,left)@
-	@:batinit(2,dst)@
+	@:batinit(1,left);
+	@:batinit(2,dst);
 	hend = (str) BUNlast(left);
 	while (p1 < hend) {
 		/* this code is better as x?nil:y */
@@ -1379,43 +1379,43 @@ The lengthly list of coercions options could have been generated.
 @:Idempotent(str)@
 @:Idempotent(chr)@
 
-@:General(sht, int)@
-@:Enlarge(sht, int)@
-@:General(sht, lng)@
-@:Enlarge(sht, lng)@
-@:General(sht, flt)@
-@:Enlarge(sht, flt)@
-@:General(sht, dbl)@
-@:Enlarge(sht, dbl)@
+@:General(sht,int)@
+@:Enlarge(sht,int)@
+@:General(sht,lng)@
+@:Enlarge(sht,lng)@
+@:General(sht,flt)@
+@:Enlarge(sht,flt)@
+@:General(sht,dbl)@
+@:Enlarge(sht,dbl)@
 
-@:General(int, sht)@
-@:General(int, lng)@
-@:Enlarge(int, lng)@
-@:General(int, flt)@
-@:Enlarge(int, flt)@
-@:General(int, dbl)@
-@:Enlarge(int, dbl)@
+@:General(int,sht)@
+@:General(int,lng)@
+@:Enlarge(int,lng)@
+@:General(int,flt)@
+@:Enlarge(int,flt)@
+@:General(int,dbl)@
+@:Enlarge(int,dbl)@
 
-@:General(lng, sht)@
-@:General(lng, int)@
-@:General(lng, flt)@
-@:Enlarge(lng, flt)@
-@:General(lng, dbl)@
-@:Enlarge(lng, dbl)@
+@:General(lng,sht)@
+@:General(lng,int)@
+@:General(lng,flt)@
+@:Enlarge(lng,flt)@
+@:General(lng,dbl)@
+@:Enlarge(lng,dbl)@
 
-@:General(flt, sht)@
-@:General(flt, int)@
-@:General(flt, lng)@
-@:General(flt, dbl)@
-@:Enlarge(flt, dbl)@
+@:General(flt,sht)@
+@:General(flt,int)@
+@:General(flt,lng)@
+@:General(flt,dbl)@
+@:Enlarge(flt,dbl)@
 
-@:General(dbl, sht)@
-@:General(dbl, int)@
-@:General(dbl, lng)@
-@:General(dbl, flt)@
-@:Enlarge(dbl, flt)@
+@:General(dbl,sht)@
+@:General(dbl,int)@
+@:General(dbl,lng)@
+@:General(dbl,flt)@
+@:Enlarge(dbl,flt)@
 
-@:General(int, oid)@
+@:General(int,oid)@
 str
 CMDconvertstr_int(int *ret, int *bid)
 {
@@ -1541,9 +1541,9 @@ CMDconvertvoid_int_oid(int *ret, int *bid)
 	round is not binary...
 	@:scienceBinaryImpl(round,int)@
 @c
-@:scienceBinaryImpl(fmod, dbl)@
-@:scienceBinaryImpl(atan2, dbl)@
-@:scienceBinaryImpl(pow, dbl)@
+@:scienceBinaryImpl(fmod,dbl)@
+@:scienceBinaryImpl(atan2,dbl)@
+@:scienceBinaryImpl(pow,dbl)@
 
 @-
 @= scienceFcnImpl
@@ -1641,7 +1641,7 @@ CMDifThen(int *ret, int *iid, int *tid)
 		BBPunfix(ib->batCacheid);
 		return throwMessage("batcalc.ifThen", "Cannot access descriptor");
 	}
-	@:chkSize(ib, tb, CMDifThen)@
+	@:chkSize(ib,tb,CMDifThen)@
 
 	bn = BATnew(BAThtype(ib), BATttype(tb), BATcount(ib));
 	@:tstBat(CMDifThen)@
@@ -1779,8 +1779,8 @@ CMDifThenElse(int *ret, int *iid, int *tid, int *eid)
 		BBPunfix(tb->batCacheid);
 		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
 	}
-	@:chkSize(ib, tb, CMDifThenElse)@
-	@:chkSize(ib, eb, CMDifThenElse)@
+	@:chkSize(ib,tb,CMDifThenElse)@
+	@:chkSize(ib,eb,CMDifThenElse)@
 
 	bn = BATnew(BAThtype(ib), BATttype(tb), BATcount(ib));
 	@:tstBat(ifThenElse)@
@@ -1823,7 +1823,7 @@ CMDifThenElseCst1(int *ret, int *iid, ptr *val, int *eid)
 		BBPunfix(ib->batCacheid);
 		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
 	}
-	@:chkSize(ib, eb, CMDifThenElse)@
+	@:chkSize(ib,eb,CMDifThenElse)@
 
 	tpe = BATttype(eb);
 	nilptr = ATOMnilptr(tpe);
@@ -1866,7 +1866,7 @@ CMDifThenElseCst2(int *ret, int *iid, int *tid, ptr *val)
 		BBPunfix(ib->batCacheid);
 		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
 	}
-	@:chkSize(ib, tb, CMDifThenElse)@
+	@:chkSize(ib,tb,CMDifThenElse)@
 
 	tpe = BATttype(tb);
 	nilptr = ATOMnilptr(tpe);

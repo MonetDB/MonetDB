@@ -1970,10 +1970,10 @@ case TYPE_@1: {
 break;
 @c
 					switch (c->adt) {
-						@:setAggr(int, min, "%d")@
-						@:setAggr(lng, min, "%lld")@
-						@:setAggr(sht, min, "%d")@
-						@:setAggr(dbl, min, "%f")@
+						@:setAggr(int,min,"%d")@
+						@:setAggr(lng,min,"%lld")@
+						@:setAggr(sht,min,"%d")@
+						@:setAggr(dbl,min,"%f")@
 
 					default:
 						prop = GDKstrdup("");
@@ -1981,10 +1981,10 @@ break;
 				}
 				if (strcmp(p, "max") == 0) {
 					switch (c->adt) {
-						@:setAggr(int, max, "%d")@
-						@:setAggr(lng, max, "%lld")@
-						@:setAggr(sht, max, "%d")@
-						@:setAggr(dbl, max, "%f")@
+						@:setAggr(int,max,"%d")@
+						@:setAggr(lng,max,"%lld")@
+						@:setAggr(sht,max,"%d")@
+						@:setAggr(dbl,max,"%f")@
 
 					default:
 						prop = GDKstrdup("");

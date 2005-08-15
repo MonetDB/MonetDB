@@ -831,25 +831,25 @@ int CMDmax_@1(@1* result, BAT *b) {
 
 @c
 
-@:sum_implementation(sht, sht, 0)@
-@:sum_implementation(sht, int, 0)@
-@:sum_implementation(sht, lng, 0)@
-@:sum_implementation(int, int, 0)@
-@:sum_implementation(int, lng, 0)@
-@:sum_implementation(lng, lng, 0)@
-@:sum_implementation(flt, flt, 0.0)@
-@:sum_implementation(flt, dbl, 0.0)@
-@:sum_implementation(dbl, dbl, 0.0)@
+@:sum_implementation(sht,sht,0)@
+@:sum_implementation(sht,int,0)@
+@:sum_implementation(sht,lng,0)@
+@:sum_implementation(int,int,0)@
+@:sum_implementation(int,lng,0)@
+@:sum_implementation(lng,lng,0)@
+@:sum_implementation(flt,flt,0.0)@
+@:sum_implementation(flt,dbl,0.0)@
+@:sum_implementation(dbl,dbl,0.0)@
 
-@:prod_implementation(sht, sht, 1)@
-@:prod_implementation(sht, int, 1)@
-@:prod_implementation(sht, lng, 1)@
-@:prod_implementation(int, int, 1)@
-@:prod_implementation(int, lng, 1)@
-@:prod_implementation(lng, lng, 1)@
-@:prod_implementation(flt, flt, 1.0)@
-@:prod_implementation(flt, dbl, 1.0)@
-@:prod_implementation(dbl, dbl, 1.0)@
+@:prod_implementation(sht,sht,1)@
+@:prod_implementation(sht,int,1)@
+@:prod_implementation(sht,lng,1)@
+@:prod_implementation(int,int,1)@
+@:prod_implementation(int,lng,1)@
+@:prod_implementation(lng,lng,1)@
+@:prod_implementation(flt,flt,1.0)@
+@:prod_implementation(flt,dbl,1.0)@
+@:prod_implementation(dbl,dbl,1.0)@
 
 @:aggregate_implementation(sht)@
 @:aggregate_implementation(int)@
@@ -997,25 +997,25 @@ CMD@1(BAT **result, BAT* b, int *param)
 	return (*result = @2(b, *param))?GDK_SUCCEED:GDK_FAIL;
 }
 @c
-@:unaryint(count, BATcount)@
-@:unary(histogram, BAThistogram)@
-@:unary(sort, BATsort)@
-@:unary(tsort, BATsort_rev)@
-@:unary(number, BATnumber)@
-@:unary(copy, BATcopy)@
-@:unary(kunique, BATkunique)@
-@:unary(sunique, BATsunique)@
-@:binary(semijoin, BATsemijoin)@
-@:binary(cross, BATcross)@
-@:binaryestimate(join, BATjoin)@
-@:binaryestimate(outerjoin, BATouterjoin)@
-@:binary(sunion, BATsunion)@
-@:binary(kunion, BATkunion)@
-@:binary(sintersect, BATsintersect)@
-@:binary(kintersect, BATkintersect)@
-@:binary(sdiff, BATsdiff)@
-@:binary(kdiff, BATkdiff)@
-@:binaryint(sample, BATsample)@
+@:unaryint(count,BATcount)@
+@:unary(histogram,BAThistogram)@
+@:unary(sort,BATsort)@
+@:unary(tsort,BATsort_rev)@
+@:unary(number,BATnumber)@
+@:unary(copy,BATcopy)@
+@:unary(kunique,BATkunique)@
+@:unary(sunique,BATsunique)@
+@:binary(semijoin,BATsemijoin)@
+@:binary(cross,BATcross)@
+@:binaryestimate(join,BATjoin)@
+@:binaryestimate(outerjoin,BATouterjoin)@
+@:binary(sunion,BATsunion)@
+@:binary(kunion,BATkunion)@
+@:binary(sintersect,BATsintersect)@
+@:binary(kintersect,BATkintersect)@
+@:binary(sdiff,BATsdiff)@
+@:binary(kdiff,BATkdiff)@
+@:binaryint(sample,BATsample)@
 
 int
 CMDcount_nil(size_t * result, BAT *b, bit *ignore_nils)
@@ -1206,7 +1206,7 @@ doCMDfetch(ptr ret, BAT *b, size_t i)
 		return GDK_FAIL;
 	}
 	i += BUNindex(b, BUNfirst(b));
-	@:putTail(BUNptr(b, i))@
+	@:putTail(BUNptr(b,i))@
 @= putTail
 	if (b->theap) {
 		ptr _src = BUNtvar(b,@1);/*b->theap->base + *(var_t*) BUNtloc(b,@1);*/
@@ -1433,8 +1433,8 @@ CMDfind_@2(oid *ret, BAT *b, ptr v)
 	return GDK_SUCCEED;
 }
 @c
-@:find_bounds(min, higher, <, last, -)@
-@:find_bounds(max, lower, >, first, +, if (idx && (p >= BUNlast(b) || ATOMcmp(b->htype, v, BUNhead(b, p)))) idx--) @
+@:find_bounds(min,higher,<,last,-)@
+@:find_bounds(max,lower,>,first,+,if (idx && (p >= BUNlast(b) || ATOMcmp(b->htype, v, BUNhead(b, p)))) idx--)@
 
 int
 CMDmerge(BAT **ret, BAT *b)
@@ -1515,25 +1515,25 @@ str ALGprod_@1_@2(@2* res, int *bid) {
 }
 @c
 
-@:ALGsum_implementation(sht, sht, 0)@
-@:ALGsum_implementation(sht, int, 0)@
-@:ALGsum_implementation(sht, lng, 0)@
-@:ALGsum_implementation(int, int, 0)@
-@:ALGsum_implementation(int, lng, 0)@
-@:ALGsum_implementation(lng, lng, 0)@
-@:ALGsum_implementation(flt, flt, 0.0)@
-@:ALGsum_implementation(flt, dbl, 0.0)@
-@:ALGsum_implementation(dbl, dbl, 0.0)@
+@:ALGsum_implementation(sht,sht,0)@
+@:ALGsum_implementation(sht,int,0)@
+@:ALGsum_implementation(sht,lng,0)@
+@:ALGsum_implementation(int,int,0)@
+@:ALGsum_implementation(int,lng,0)@
+@:ALGsum_implementation(lng,lng,0)@
+@:ALGsum_implementation(flt,flt,0.0)@
+@:ALGsum_implementation(flt,dbl,0.0)@
+@:ALGsum_implementation(dbl,dbl,0.0)@
 
-@:ALGprod_implementation(sht, sht, 1)@
-@:ALGprod_implementation(sht, int, 1)@
-@:ALGprod_implementation(sht, lng, 1)@
-@:ALGprod_implementation(int, int, 1)@
-@:ALGprod_implementation(int, lng, 1)@
-@:ALGprod_implementation(lng, lng, 1)@
-@:ALGprod_implementation(flt, flt, 1.0)@
-@:ALGprod_implementation(flt, dbl, 1.0)@
-@:ALGprod_implementation(dbl, dbl, 1.0)@
+@:ALGprod_implementation(sht,sht,1)@
+@:ALGprod_implementation(sht,int,1)@
+@:ALGprod_implementation(sht,lng,1)@
+@:ALGprod_implementation(int,int,1)@
+@:ALGprod_implementation(int,lng,1)@
+@:ALGprod_implementation(lng,lng,1)@
+@:ALGprod_implementation(flt,flt,1.0)@
+@:ALGprod_implementation(flt,dbl,1.0)@
+@:ALGprod_implementation(dbl,dbl,1.0)@
 
 @-
 @= ALGaggregate_implementation
@@ -1668,7 +1668,7 @@ ALGselect1(int *result, int *bid, ptr value)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.select", "Cannot access descriptor");
 	}
-	@:derefStr(b, t, value)@
+	@:derefStr(b,t,value)@
 	CMDselect1(&bn, b, value);
 	BBPunfix(b->batCacheid);
 	if (bn) {
@@ -1689,7 +1689,7 @@ ALGselect1Head(int *result, int *bid, ptr value)
 		return throwMessage("algebra.select", "Cannot access descriptor");
 	}
 	b = BATmirror(b);
-	@:derefStr(b, t, value)@
+	@:derefStr(b,t,value)@
 	CMDselect1(&bn, b, value);
 	bn = BATmirror(bn);
 	BBPunfix(b->batCacheid);
@@ -1710,7 +1710,7 @@ ALGuselect1(int *result, int *bid, ptr value)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.uselect", "Cannot access descriptor");
 	}
-	@:derefStr(b, t, value)@
+	@:derefStr(b,t,value)@
 	CMDuselect1(&bn, b, value);
 	BBPunfix(b->batCacheid);
 	if (bn) {
@@ -1730,8 +1730,8 @@ ALGselect(int *result, int *bid, ptr low, ptr high)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.select", "Cannot access descriptor");
 	}
-	@:derefStr(b, t, low)@
-	@:derefStr(b, t, high)@
+	@:derefStr(b,t,low)@
+	@:derefStr(b,t,high)@
 	CMDselect(&bn, b, low, high);
 	BBPunfix(b->batCacheid);
 	if (bn) {
@@ -1752,8 +1752,8 @@ ALGselectHead(int *result, int *bid, ptr low, ptr high)
 		return throwMessage("algebra.select", "Cannot access descriptor");
 	}
 	b = BATmirror(b);
-	@:derefStr(b, t, low)@
-	@:derefStr(b, t, high)@
+	@:derefStr(b,t,low)@
+	@:derefStr(b,t,high)@
 	CMDselect(&bn, b, low, high);
 	bn = BATmirror(bn);
 	BBPunfix(b->batCacheid);
@@ -1774,8 +1774,8 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.uselect", "Cannot access descriptor");
 	}
-	@:derefStr(b, t, low);@
-	@:derefStr(b, t, high);@
+	@:derefStr(b,t,low);@
+	@:derefStr(b,t,high);@
 	CMDuselect(&bn, b, low, high);
 	BBPunfix(b->batCacheid);
 	if (bn) {
@@ -1796,8 +1796,8 @@ ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.select", "Cannot access descriptor");
 	}
-	@:derefStr(b, t, low)@
-	@:derefStr(b, t, high)@
+	@:derefStr(b,t,low)@
+	@:derefStr(b,t,high)@
 	CMDselect_(&bn, b, low, high, lin, rin);
 	BBPunfix(b->batCacheid);
 	if (bn) {
@@ -1818,8 +1818,8 @@ ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *
 		return throwMessage("algebra.select", "Cannot access descriptor");
 	}
 	b = BATmirror(b);
-	@:derefStr(b, t, low)@
-	@:derefStr(b, t, high)@
+	@:derefStr(b,t,low)@
+	@:derefStr(b,t,high)@
 	CMDselect_(&bn, b, low, high, lin, rin);
 	bn = BATmirror(bn);
 	BBPunfix(b->batCacheid);
@@ -1840,8 +1840,8 @@ ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.select", "Cannot access descriptor");
 	}
-	@:derefStr(b, t, low);@
-	@:derefStr(b, t, high);@
+	@:derefStr(b,t,low);@
+	@:derefStr(b,t,high);@
 	CMDuselect_(&bn, b, low, high, lin, rin);
 	BBPunfix(b->batCacheid);
 	if (bn) {
@@ -1861,10 +1861,10 @@ ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.fragment", "Cannot access descriptor");
 	}
-	@:derefStr(b, h, hlow);@
-	@:derefStr(b, h, hhigh);@
-	@:derefStr(b, t, tlow);@
-	@:derefStr(b, t, thigh);@
+	@:derefStr(b,h,hlow);@
+	@:derefStr(b,h,hhigh);@
+	@:derefStr(b,t,tlow);@
+	@:derefStr(b,t,thigh);@
 	CMDfragment(&bn, b, hlow, hhigh, tlow, thigh);
 	BBPunfix(b->batCacheid);
 	if (bn) {
@@ -2444,7 +2444,7 @@ ALGposition(int *retval, int *bid, ptr val)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.position", "Cannot access descriptor");
 	}
-	@:derefStr(b, h, val)@
+	@:derefStr(b,h,val)@
 	CMDposition(retval, b, val);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2458,8 +2458,8 @@ ALGpositionBUN(int *retval, int *bid, ptr val, ptr tval)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.position", "Cannot access descriptor");
 	}
-	@:derefStr(b, h, val)@
-	@:derefStr(b, t, tval)@
+	@:derefStr(b,h,val)@
+	@:derefStr(b,t,tval)@
 	CMDpositionBUN(retval, b, val, tval);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2473,7 +2473,7 @@ doALGfetch(ptr ret, BAT *b, lng *pos)
 	if ((i < 0) || (i >= BATcount(b)))
 		return throwMessage("algebra.fetch", " idx out of range");
 	i += BUNindex(b, BUNfirst(b));
-	@:putTail(BUNptr(b, i))@
+	@:putTail(BUNptr(b,i))@
 @= putTail
         if (b->theap) {
             ptr _src = BUNtvar(b,@1); /*b->theap->base + *(var_t*) BUNtloc(b,@1);*/
@@ -2570,7 +2570,7 @@ ALGexist(bit *ret, int *bid, ptr val)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.exist", "Cannot access descriptor");
 	}
-	@:derefStr(b, h, val)@
+	@:derefStr(b,h,val)@
 	CMDexist(ret, b, val);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2584,8 +2584,8 @@ ALGexistBUN(bit *ret, int *bid, ptr val, ptr tval)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.exist", "Cannot access descriptor");
 	}
-	@:derefStr(b, h, val)@
-	@:derefStr(b, t, tval)@
+	@:derefStr(b,h,val)@
+	@:derefStr(b,t,tval)@
 	CMDexistBUN(ret, b, val, tval);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2599,7 +2599,7 @@ ALGfind(ptr ret, int *bid, ptr val)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.find", "Cannot access descriptor");
 	}
-	@:derefStr(b, h, val)@
+	@:derefStr(b,h,val)@
 	if (CMDfind(ret, b, val) == GDK_FAIL) {
 		BBPunfix(b->batCacheid);
 		return throwMessage("algebra.find", "can not find element");

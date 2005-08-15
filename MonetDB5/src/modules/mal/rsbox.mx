@@ -825,9 +825,9 @@ RSsetPropertyStr(int *retval, int *handle, int *colno, str *nme, str *val)
 		col->@1 = GDKstrdup(*val);
 	}
 @c
-	@:MX - setPropertyStrNoNil(name)@
+	@:MX-setPropertyStrNoNil(name)@
 	else
-	@:MX - setPropertyStrNoNil(type)@
+	@:MX-setPropertyStrNoNil(type)@
 	else
 @= MX-setPropertyStr
 	if (strcmp("@1", *nme) == 0) {
@@ -840,9 +840,9 @@ RSsetPropertyStr(int *retval, int *handle, int *colno, str *nme, str *val)
 		col->@1 = GDKstrdup(*val);
 	}
 @c
-	@:MX - setPropertyStr(table)@
+	@:MX-setPropertyStr(table)@
 	else
-	@:MX - setPropertyStr(schema)@
+	@:MX-setPropertyStr(schema)@
 	else
 	throwRSf("resultset.setProperty", "Invalid property '%s'", *nme);
 
@@ -900,11 +900,11 @@ RSsetPropertyInt(int *retval, int *handle, int *colno, str *nme, int *val)
 		col->@1 = *val;
 	}
 @c
-	@:MX - setPropertyInt(digits)@
+	@:MX-setPropertyInt(digits)@
 	else
-	@:MX - setPropertyInt(scale)@
+	@:MX-setPropertyInt(scale)@
 	else
-	@:MX - setPropertyInt(width)@
+	@:MX-setPropertyInt(width)@
 	else
 	throwRSf("resultset.setProperty", "Invalid property '%s'", *nme);
 
@@ -1055,10 +1055,9 @@ RSwriteHeader(int *retval, int *handle)
 	bytes += bt;
 @c
 	/* serialise the header to the stream */
-	@:MX - writeHeaderLineSingleValue("%d", rs->id, "id")@
-
-	@:MX - writeHeaderLineSingleValue("%d", rs->columnCount, "columncount")@
-	@:MX - writeHeaderLineSingleValue("%d", rs->length, "tuplecount")@
+	@:MX-writeHeaderLineSingleValue("%d",rs->id,"id")@
+	@:MX-writeHeaderLineSingleValue("%d",rs->columnCount,"columncount")@
+	@:MX-writeHeaderLineSingleValue("%d",rs->length,"tuplecount")@
 	/* create columntype charmask */
 	mask = tmp = GDKmalloc(sizeof(char) * (rs->columnCount + 1));
 	for (i = 0; i < rs->columnCount; i++) {
@@ -1099,7 +1098,7 @@ RSwriteHeader(int *retval, int *handle)
 		}
 	}
 	*tmp = '\0';
-	@:MX - writeHeaderLineSingleValue("%s", mask, "ctype")@
+	@:MX-writeHeaderLineSingleValue("%s", mask, "ctype")@
 	GDKfree(mask);
 
 	/* walk through the columns, and set those properties that are not
@@ -1157,8 +1156,8 @@ RSwriteHeader(int *retval, int *handle)
 	}
 @c
 	/* yeah baby!  dirty as hell! */
-	@:MX - writeHeaderLine("%s", col->table, "table", col->table != NULL)@
-	@:MX - writeHeaderLine("%s", col->schema, "schema", col->schema != NULL)@
+	@:MX-writeHeaderLine("%s", col->table, "table", col->table != NULL)@
+	@:MX-writeHeaderLine("%s", col->schema, "schema", col->schema != NULL)@
 	/* serialise the header to the stream */
 	if ((bt = stream_printf(s, "%c%s\t", RS_LINE_HEADER, "type")) > 0) {
 		bytes += bt;
@@ -1217,8 +1216,8 @@ RSwriteHeader(int *retval, int *handle)
 		*retval = 0;
 		throwIO("resultset.writeHeader", "Error while writing to the stream");
 	}
-	@:MX - writeHeaderLine("%d", col->digits, "digits", col->digits > -1)@
-	@:MX - writeHeaderLine("%d", col->scale, "scale", col->scale > -1)@
+	@:MX-writeHeaderLine("%d", col->digits, "digits", col->digits > -1)@
+	@:MX-writeHeaderLine("%d", col->scale, "scale", col->scale > -1)@
 	/* serialise the header to the stream */
 	if ((bt = stream_printf(s, "%c%s\t", RS_LINE_HEADER, "width")) > 0) {
 		bytes += bt;
@@ -1352,39 +1351,39 @@ RSwriteBlock(int *retval, int *handle, int *upper, int *lower)
 @c
 			switch (col->bat->ttype) {
 			case TYPE_bit:
-				@:MX - writeNull(*(unsigned char *) p == bit_nil)@
+				@:MX-writeNull(*(unsigned char *) p == bit_nil)@
 				bt = stream_printf(s, "%d", (*(unsigned char *) p ? 1 : 0));
 				break;
 			case TYPE_chr:
-				@:MX - writeNull(*(char *) p == chr_nil)@
+				@:MX-writeNull(*(char *) p == chr_nil)@
 				bt = stream_printf(s, "%c", *(char *) p);
 				break;
 			case TYPE_str:
-				@:MX - writeNull(strNil(p))@
+				@:MX-writeNull(strNil(p))@
 				bt = stream_printf(s, "%d:%s", strlen(p), p);
 				break;
 			case TYPE_oid:
-				@:MX - writeNull(*(size_t *) p == oid_nil)@
+				@:MX-writeNull(*(size_t *) p == oid_nil)@
 				bt = stream_printf(s, "%d", *(size_t *) p);
 				break;
 			case TYPE_sht:
-				@:MX - writeNull(*(sht *) p == sht_nil)@
+				@:MX-writeNull(*(sht *) p == sht_nil)@
 				bt = stream_printf(s, "%hd", *(sht *) p);
 				break;
 			case TYPE_int:
-				@:MX - writeNull(*(int *) p == int_nil)@
+				@:MX-writeNull(*(int *) p == int_nil)@
 				bt = stream_printf(s, "%d", *(int *) p);
 				break;
 			case TYPE_lng:
-				@:MX - writeNull(*(lng *) p == lng_nil)@
+				@:MX-writeNull(*(lng *) p == lng_nil)@
 				bt = stream_printf(s, "%ld", *(lng *) p);
 				break;
 			case TYPE_flt:
-				@:MX - writeNull(*(flt *) p == flt_nil)@
+				@:MX-writeNull(*(flt *) p == flt_nil)@
 				bt = stream_printf(s, "%e", *(flt *) p);
 				break;
 			case TYPE_dbl:
-				@:MX - writeNull(*(dbl *) p == dbl_nil)@
+				@:MX-writeNull(*(dbl *) p == dbl_nil)@
 				bt = stream_printf(s, "%e", *(dbl *) p);
 				break;
 			case TYPE_ptr:	/* C pointer! */

@@ -302,8 +302,8 @@ MILdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ValPtr v;
 	Box box;
 
-	@:authorize(@
-			 1) @ @:OpenBox(deposit)@
+	@:authorize(@1)@
+	@:OpenBox(deposit)@
 	name = (str) getArgValue(stk, pci, 1);
 	v = &stk->stk[pci->argv[2]];
 	if (depositBox(box, name, v))

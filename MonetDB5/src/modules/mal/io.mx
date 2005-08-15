@@ -546,7 +546,7 @@ IOprint_formatted_str(int *ret, ptr fmt, str *s)
 
 	if (strNil(*s))
 		return IOprint_formatted_nil(fd, *(str *) fmt, ret);
-	@:formatConversion(s, *s)@
+	@:formatConversion(s,*s)@
 	return MAL_SUCCEED;
 }
 
@@ -571,7 +571,7 @@ IOprint_oid(int *ret, ptr fmt, oid *s)
 		msg = (str) GDKmalloc(len);
 		OIDtoStr(&msg, &len, s);
 	}
-	@:formatConversion(s, msg)@
+	@:formatConversion(s,msg)@
 	GDKfree(msg);
 	if (*ret == EOF)
 		return throwMessage("system.print", "end-of-file error");
@@ -599,18 +599,18 @@ IOprint_formatted_bit(int *ret, ptr fmt, bit *s)
 		msg = "true";
 	else
 		msg = "false";
-	@:formatConversion(s, msg)@
+	@:formatConversion(s,msg)@
 	if (*ret == EOF)
 		return throwMessage("system.print", "end-of-file error");
 	return MAL_SUCCEED;
 }
 
-@:printFormatted(chr, c)@
-@:printFormatted(sht, d)@
-@:printFormatted(int, d)@
-@:printFormatted(lng, d)@
-@:printFormatted(flt, f)@
-@:printFormatted(dbl, f)@
+@:printFormatted(chr,c)@
+@:printFormatted(sht,d)@
+@:printFormatted(int,d)@
+@:printFormatted(lng,d)@
+@:printFormatted(flt,f)@
+@:printFormatted(dbl,f)@
 
 @-
 @+ Bulk export/loading
@@ -754,8 +754,8 @@ Parse the line, and insert a BUN.
 		}
 		p += @1(p, @3, @4);
 @c
-		@:parsevalue(hconvert, '[', &lh, (ptr *) &h)@
-		@:parsevalue(tconvert, COMMA, &lt, (ptr *) &t)@
+		@:parsevalue(hconvert,'[',&lh,(ptr *) &h)@
+		@:parsevalue(tconvert,COMMA,&lt,(ptr *) &t)@
 		BUNins(b, h, t);
 
 @-

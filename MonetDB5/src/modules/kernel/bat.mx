@@ -774,7 +774,7 @@ CMDorder_rev(BAT **ret, BAT *b)
 int
 CMDinsert_bun(BAT **r, BAT *b, ptr h, ptr t)
 {
-	if (BUNins(*r = b, MXMACRObatconvert(b, h);, @:batconvert(b, t)@) == NULL)
+	if (BUNins(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -792,7 +792,7 @@ CMDinsert_bat(BAT **r, BAT *b, BAT *s)
 int
 CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t)
 {
-	if (BUNreplace(*r = b, MXMACRObatconvert(b, h);, @:batconvert(b, t)@) == NULL)
+	if (BUNreplace(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -819,7 +819,7 @@ CMDdelete_bun(BAT **r, BAT *b, ptr h, ptr t)
 int
 CMDdelete_head(BAT **r, BAT *b, ptr h)
 {
-	if (BUNdelHead(*r = b, @:batconvert(b, h)@) == NULL)
+	if (BUNdelHead(*r = b, @:batconvert(b,h)@) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -1377,9 +1377,9 @@ CMDsave(bit *res, str input)
 int
 CMDmmap(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
 {
-	@:change_heap(bns, b->batBuns)@
-	@:change_heap(hhp, b->hheap)@
-	@:change_heap(thp, b->theap)@
+	@:change_heap(bns,b->batBuns)@
+	@:change_heap(hhp,b->hheap)@
+	@:change_heap(thp,b->theap)@
 	if (BATmmap(*r = b, *bns, *hhp, *thp) == 0) {
 		BBPfix(b->batCacheid);
 		return GDK_SUCCEED;
@@ -1590,8 +1590,8 @@ BKCinsert_void_bun(int *r, int *bid, ptr t)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
-	@:derefStr(b, t, t)@
-	BUNins(b, (ptr) &h, @:batconvert(b, t)@
+	@:derefStr(b,t,t)@
+	BUNins(b, (ptr) &h, @:batconvert(b,t)@
 	    );
 	BBPincref(*r = b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
@@ -1606,11 +1606,9 @@ BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.insert", "Cannot access descriptor");
 	}
-	@:derefStr(b, h, h)@
-	@:derefStr(b, t, t)@
-	BUNins(b, @:batconvert(b, h)@
-	       , @:batconvert(b, t)@
-	    );
+	@:derefStr(b,h,h)@
+	@:derefStr(b,t,t)@
+	BUNins(b, @:batconvert(b,h)@, @:batconvert(b,t)@);
 	BBPincref(*r = b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -1647,8 +1645,8 @@ BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.replace", "Cannot access descriptor");
 	}
-	@:derefStr(b, h, h)@
-	@:derefStr(b, t, t)@
+	@:derefStr(b,h,h)@
+	@:derefStr(b,t,t)@
 	CMDreplace_bun(&bn, b, h, t);
 	BBPincref(*r = bn->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
@@ -1689,8 +1687,8 @@ BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.delete", "Cannot access descriptor");
 	}
-	@:derefStr(b, h, h)@
-	@:derefStr(b, t, t)@
+	@:derefStr(b,h,h)@
+	@:derefStr(b,t,t)@
 	if (CMDdelete_bun(&bn, b, h, t) == GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
@@ -1709,7 +1707,7 @@ BKCdelete(int *r, int *bid, ptr h)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.delete", "Cannot access descriptor");
 	}
-	@:derefStr(b, h, h)@
+	@:derefStr(b,h,h)@
 	if (CMDdelete_head(&bn, b, h) == GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
@@ -2083,7 +2081,7 @@ BKCoid_bat_append_val_wrap(int *r, int *bid, ptr u)
 	assert(i->htype == TYPE_oid);
 	o = oid_max(i);
 	o++;
-	@:derefStr(i, t, u)@
+	@:derefStr(i,t,u)@
 	BUNins(i, (ptr) &o, u);
 	*r = i->batCacheid;
 	BBPincref(i->batCacheid, TRUE);
@@ -2103,7 +2101,7 @@ BKCbat_append_val_wrap(int *r, int *bid, ptr u)
 		return throwMessage("bat.append", "Cannot access descriptor");
 	}
 	h = i->hseqbase + BATcount(i);
-	@:derefStr(i, t, u)@
+	@:derefStr(i,t,u)@
 	i = BATsetaccess(i, 0);
 	BUNins(i, (ptr) &h, u);
 	*r = i->batCacheid;
@@ -2396,9 +2394,9 @@ str BKChas@1(bit *res, int *bid) {
 }
 @-
 @c
-@:accessMode(WriteMode, 0, w)@
-@:accessMode(ReadMode, 1, r)@
-@:accessMode(AppendMode, 2, a)@
+@:accessMode(WriteMode,0,w)@
+@:accessMode(ReadMode,1,r)@
+@:accessMode(AppendMode,2,a)@
 
 str
 BKCaccess(int *res, int *bid, int *m)

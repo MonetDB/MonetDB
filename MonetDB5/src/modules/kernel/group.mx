@@ -330,8 +330,8 @@ typedef struct {
 	Heap hp;		/* storage for hash buckets */
 } map_T;
 
-@:map_init_def(STANDARD, STANDARD_MASK, 4096)@
-@:map_init_def(CUSTOM, custom_MASK, custom_rng)@
+@:map_init_def(STANDARD,STANDARD_MASK,4096)@
+@:map_init_def(CUSTOM,custom_MASK,custom_rng)@
 
 @= map_init_def
 #define map_init_@1(map,hash,mask,entry,mapsize)			\
@@ -711,15 +711,15 @@ derive(BAT **B, BAT **H, BAT *ct, BAT *b, int tt, map_T *m)
 	/* CTderive with correct lookup method (hash,synced) and type */
 	if (synced) {
 		if (((ct->tsorted) & 1) && !(ct->tkey)) {
-			@:choosederive(sync, clustered)@
+			@:choosederive(sync,clustered)@
 		} else {
-			@:choosederive(sync, unclustered)@
+			@:choosederive(sync,unclustered)@
 		}
 	} else {
 		if (((ct->tsorted) & 1) && !(ct->tkey)) {
-			@:choosederive(hash, clustered)@
+			@:choosederive(hash,clustered)@
 		} else {
-			@:choosederive(hash, unclustered)@
+			@:choosederive(hash,unclustered)@
 		}
 	}
 	if (histo == NULL) {
@@ -1001,7 +1001,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		if (a_void) {
 			@:refine_loop(@:refine_void_1@,@:refine_void_2@,GDKfree(base);,this = base;)@
 		} else {
-			@:refine_loop(r += a->tloc);@
+			@:refine_loop(r += a->tloc;)@
 		}
 @= refine_void_2
 	off = (size_t) (this - base);
@@ -1119,7 +1119,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("group.group", "Cannot access descriptor");
 	}
-	@:chkHeader(b, GRPgroup)@
+	@:chkHeader(b,GRPgroup)@
 	CTgroup(&bn, &histo, b);
 	*rethisto = histo ? histo->batCacheid : 0;
 	BBPincref(*retbid = bn->batCacheid, TRUE);
@@ -1136,7 +1136,7 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("group.group", "Cannot access descriptor");
 	}
-	@:chkHeader(b, GRPgroup)@
+	@:chkHeader(b,GRPgroup)@
 	CTgroup_custom(&bn, &histo, b, N, rng);
 	*rethisto = histo ? histo->batCacheid : 0;
 	BBPincref(*retbid = bn->batCacheid, TRUE);
@@ -1154,12 +1154,12 @@ GRPderive(int *hid, int *mid, int *ctid, int *bid)
 	if ((ct = BATdescriptor(*ctid)) == NULL) {
 		return throwMessage("group.derive", "Cannot access descriptor");
 	}
-	@:chkHeader(ct, GRPderive)@
+	@:chkHeader(ct,GRPderive)@
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		BBPunfix(ct->batCacheid);
 		return throwMessage("group.derive", "Cannot access descriptor");
 	}
-	@:chkHeader(b, GRPderive)@
+	@:chkHeader(b,GRPderive)@
 	CTderive(&bn, &histo, ct, b);
 	*mid = bn->batCacheid;
 	*hid = histo->batCacheid;
@@ -1181,7 +1181,7 @@ GRPsubhisto(int *retid, int *selid, int *grpid, int *domid)
 		BBPunfix(sel->batCacheid);
 		return throwMessage("group.subhisto", "Cannot access descriptor");
 	}
-	@:chkHeader(grp, GRPsubhisto)@
+	@:chkHeader(grp,GRPsubhisto)@
 	if ((dom = BATdescriptor(*domid)) == NULL) {
 		return throwMessage("group.subhisto", "Cannot access descriptor");
 	}
@@ -1209,11 +1209,11 @@ GRPrefine(int *retid, int *bid, int *aid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("group.refine", "Cannot access descriptor");
 	}
-	@:chkHeader(b, GRPrefine)@
+	@:chkHeader(b,GRPrefine)@
 	if ((a = BATdescriptor(*aid)) == NULL) {
 		return throwMessage("group.refine", "Cannot access descriptor");
 	}
-	@:chkHeader(a, GRPrefine)@
+	@:chkHeader(a,GRPrefine)@
 
 	CTrefine(&bn, b, a);
 	BBPincref(*retid = bn->batCacheid, TRUE);
@@ -1464,11 +1464,11 @@ str GRPavg_@1(int *retval, int *bid,int  *eid){
 }
 
 @c
-@:arithpump(sht, tloc)@
-@:arithpump(int, tloc)@
-@:arithpump(lng, tloc)@
-@:arithpump(flt, tloc)@
-@:arithpump(dbl, tloc)@
+@:arithpump(sht,tloc)@
+@:arithpump(int,tloc)@
+@:arithpump(lng,tloc)@
+@:arithpump(flt,tloc)@
+@:arithpump(dbl,tloc)@
 
 @= extreme
 str GRP@1(int *retval, int *bid,int  *eid){
@@ -1533,8 +1533,8 @@ str GRP@1(int *retval, int *bid,int  *eid){
         return MAL_SUCCEED;
 }
 @c
-@:extreme(min, <)@
-@:extreme(max, >)@
+@:extreme(min,<)@
+@:extreme(max,>)@
 @-
 @= large_aggr_count
         (void) BATprepareHash(bn);
@@ -1590,12 +1590,12 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 		return throwMessage("group.count", "Cannot access descriptor");
 	}
 
-	@:chkHeader(b, GRPaggr_count)@
+	@:chkHeader(b,GRPaggr_count)@
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		return throwMessage("group.count", "Cannot access descriptor");
 	}
-	@:chkHeader(e, GRPaggr_count)@
+	@:chkHeader(e,GRPaggr_count)@
 
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));
 	btt = b->ttype;
@@ -1628,7 +1628,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 		if (*ignore_nils) {
 			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (unsigned long) range, SMALL_AGGR_MAX);
 
-			@:large_aggr_count(if (ATOMcmp(btt, t, bt_nil))) @
+			@:large_aggr_count(if (ATOMcmp(btt, t, bt_nil)))@
 		} else {
 			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n", (unsigned long) range, SMALL_AGGR_MAX);
 
@@ -1639,7 +1639,7 @@ GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
 		if (*ignore_nils) {
 			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (unsigned long) range, SMALL_AGGR_MAX);
 
-			@:small_aggr_count(if (ATOMcmp(btt, t, bt_nil))) @
+			@:small_aggr_count(if (ATOMcmp(btt, t, bt_nil)))@
 		} else {
 			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n", (unsigned long) range, SMALL_AGGR_MAX);
 
@@ -1668,12 +1668,12 @@ GRPsize(int *retval, int *bid, int *eid)
 		return throwMessage("group.size", "Cannot access descriptor");
 	}
 
-	@:chkHeader(b, GRPsize)@
+	@:chkHeader(b,GRPsize)@
 	if ((e = BATdescriptor(*eid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		return throwMessage("group.size", "Cannot access descriptor");
 	}
-	@:chkHeader(e, GRPsize)@
+	@:chkHeader(e,GRPsize)@
 
 	bn = BATnew(e->htype, TYPE_int, BATcount(e));
 	/* init: set all sums to zero */
@@ -1753,10 +1753,10 @@ str GRPwindowsum_@1(int *retval, int *bid, int  *size){
 	return GRPslidingsum_@1(retval,bid,size,size);
 }
 @c
-@:windowsum(sht, lng)@
-@:windowsum(int, lng)@
-@:windowsum(lng, lng)@
-@:windowsum(flt, dbl)@
-@:windowsum(dbl, dbl)@
+@:windowsum(sht,lng)@
+@:windowsum(int,lng)@
+@:windowsum(lng,lng)@
+@:windowsum(flt,dbl)@
+@:windowsum(dbl,dbl)@
 
 @}

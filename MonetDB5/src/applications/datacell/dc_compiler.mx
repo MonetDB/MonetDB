@@ -239,15 +239,15 @@ DCplan(MalBlkPtr mb, str newname)
 	emptyset = (int *) alloca(mb->stop * sizeof(int *));
 	for (j = i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (MXMACROtstName(p, "sql", "output"); ||@:tstName(p, "sql", "column")@) {
+		if (@:tstName(p,"sql","output")@ || @:tstName(p,"sql","column")@) {
 			/* skip it */
 			freeInstruction(p);
 			continue;
 		}
-		if (@:tstName(p, "bat", "setWriteMode")@) {
+		if (@:tstName(p,"bat","setWriteMode")@) {
 			for (k = j - 1; k >= 0; k--) {
 				q = getInstrPtr(mb, k);
-				if (getArg(p, 1) == getArg(q, 0) && @:tstName(q, "datacell", "bind")@) {
+				if (getArg(p, 1) == getArg(q, 0) && @:tstName(q,"datacell","bind")@) {
 					/* no duplicate mode setting */ ;
 					freeInstruction(p);
 					break;
@@ -255,7 +255,7 @@ DCplan(MalBlkPtr mb, str newname)
 			}
 			continue;
 		}
-		if (@:tstName(p, "sql", "bind_dbat")@) {
+		if (@:tstName(p,"sql","bind_dbat")@) {
 			if (isReceptor(getVarLiteral(mb, getArg(p, 2)))) {
 				emptyset[z++] = getArg(p, 0);
 				freeInstruction(p);
@@ -269,7 +269,7 @@ DCplan(MalBlkPtr mb, str newname)
 The dbat can only be dropped for connection points.[todo]
 @c
 		}
-		if (@:tstName(p, "sql", "bind")@) {
+		if (@:tstName(p,"sql","bind")@) {
 			/* tst name to determine its kind */
 			if (isReceptor(getVarLiteral(mb, getArg(p, 2)))) {
 				delArgument(p, 4);
@@ -377,7 +377,7 @@ with the empty set and singleton set.
 	idx = 0;
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (@:tstName(p, "sql", "bind")@ &&isReceptor(getVarLiteral(mb, getArg(p, 2)))) {
+		if (@:tstName(p,"sql","bind")@ &&isReceptor(getVarLiteral(mb, getArg(p, 2)))) {
 			es[idx] = getArg(p, 0);
 			idx++;
 		}

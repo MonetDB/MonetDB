@@ -295,29 +295,29 @@ MNisinf(double x)
 #endif /* HAVE_ISINF */
 #endif /* HAVE_FPCLASSIFY */
 
-@:unop(_ACOS, acos)@
-@:unop(_ASIN, asin)@
-@:unop(_ATAN, atan)@
-@:binop(_ATAN2, atan2)@
-@:unop(_COS, cos)@
-@:unop(_SIN, sin)@
-@:unop(_TAN, tan)@
+@:unop(_ACOS,acos)@
+@:unop(_ASIN,asin)@
+@:unop(_ATAN,atan)@
+@:binop(_ATAN2,atan2)@
+@:unop(_COS,cos)@
+@:unop(_SIN,sin)@
+@:unop(_TAN,tan)@
 
-@:unop(_COSH, cosh)@
-@:unop(_SINH, sinh)@
-@:unop(_TANH, tanh)@
+@:unop(_COSH,cosh)@
+@:unop(_SINH,sinh)@
+@:unop(_TANH,tanh)@
 
-@:unop(_EXP, exp)@
-@:unop(_LOG, log)@
-@:unop(_LOG10, log10)@
+@:unop(_EXP,exp)@
+@:unop(_LOG,log)@
+@:unop(_LOG10,log10)@
 
-@:binop(_POW, pow)@
-@:unop(_SQRT, sqrt)@
+@:binop(_POW,pow)@
+@:unop(_SQRT,sqrt)@
 
-@:unop(_CEIL, ceil)@
-@:unop(_FABS, fabs)@
-@:unop(_FLOOR, floor)@
-@:binop(_FMOD, fmod)@
+@:unop(_CEIL,ceil)@
+@:unop(_FABS,fabs)@
+@:unop(_FLOOR,floor)@
+@:binop(_FMOD,fmod)@
 
 @= unop
 int
@@ -508,29 +508,29 @@ str MATHbinary_ROUND@1(@1 *res, @1 *x, int *y) {
   return MAL_SUCCEED;
 }
 @c
-@:unopM5(_ACOS, acos)@
-@:unopM5(_ASIN, asin)@
-@:unopM5(_ATAN, atan)@
-@:binopM5(_ATAN2, atan2)@
-@:unopM5(_COS, cos)@
-@:unopM5(_SIN, sin)@
-@:unopM5(_TAN, tan)@
+@:unopM5(_ACOS,acos)@
+@:unopM5(_ASIN,asin)@
+@:unopM5(_ATAN,atan)@
+@:binopM5(_ATAN2,atan2)@
+@:unopM5(_COS,cos)@
+@:unopM5(_SIN,sin)@
+@:unopM5(_TAN,tan)@
 
-@:unopM5(_COSH, cosh)@
-@:unopM5(_SINH, sinh)@
-@:unopM5(_TANH, tanh)@
+@:unopM5(_COSH,cosh)@
+@:unopM5(_SINH,sinh)@
+@:unopM5(_TANH,tanh)@
 
-@:unopM5(_EXP, exp)@
-@:unopM5(_LOG, log)@
-@:unopM5(_LOG10, log10)@
+@:unopM5(_EXP,exp)@
+@:unopM5(_LOG,log)@
+@:unopM5(_LOG10,log10)@
 
-@:binopM5(_POW, pow)@
-@:unopM5(_SQRT, sqrt)@
+@:binopM5(_POW,pow)@
+@:unopM5(_SQRT,sqrt)@
 
-@:unopM5(_CEIL, ceil)@
-@:unopbaseM5(_FABS, fabs, dbl)@
-@:unopM5(_FLOOR, floor)@
-@:binopM5(_FMOD, fmod)@
+@:unopM5(_CEIL,ceil)@
+@:unopbaseM5(_FABS,fabs,dbl)@
+@:unopM5(_FLOOR,floor)@
+@:binopM5(_FMOD,fmod)@
 
 @:roundM5(dbl)@
 @:roundM5(flt)@
