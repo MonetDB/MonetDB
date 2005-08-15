@@ -309,7 +309,6 @@ CMDepoch(int *retval)
 	return GDK_SUCCEED;
 }
 
-/* should return lng */
 int
 CMDusec(lng *retval)
 {
