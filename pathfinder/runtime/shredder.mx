@@ -1403,17 +1403,12 @@ shred_comment (void *xmlCtx, const xmlChar *c)
 static void 
 print_error (void *ctx, const char *msg, ...)
 {
-    char buf[PFSHRED_BUFLEN];
-    int len = 0;
     va_list msgs;
     (void) ctx;
 
-    len +=  snprintf(buf+len, PFSHRED_BUFLEN-len-1, "!ERROR: ");
     va_start (msgs, msg);
-    len += vsnprintf(buf+len, PFSHRED_BUFLEN-len-1, msg,  msgs);
+    GDKerror(msg,  msgs);
     va_end (msgs);
-
-    stream_printf (GDKerr, buf, len, 1);
 }
 
 /** 

@@ -227,7 +227,7 @@ static int fatal_err(XqueryCtx* ctx, const char *msg, ...) {
 	vsnprintf (errmsg, 1024, msg, msgs);
 	va_end (msgs);
 	/* */
-	stream_printf(GDKerr,"\n!ERROR: XML Generation: %s\n",errmsg);
+	GDKerror("XML Generation: %s\n",errmsg);
 	/* */
 	return 0;
 }
@@ -1145,7 +1145,7 @@ static int ws_documentIndex(BAT* ws, str docName) {
 int xquery_print_doc_main(str mode, BAT* ws, str docName) {
 	int docIndex = ws_documentIndex(ws,docName);
 	if ( docIndex < 0 ) {
-		stream_printf(GDKerr,"# unable to find document \"%s\" in working set!\n",docName);
+		GDKwarning("serialize.mx:xquery_print_doc_main: unable to find document \"%s\" in working set!\n",docName);
 		return GDK_SUCCEED;
 	}
 	/* */
@@ -1488,7 +1488,8 @@ int xquery_print_result_main(
 					break;
 				}
 			default:
-				stream_printf(GDKerr,"[kind=%d, frag=%d]\n",XTRACT_KIND(cmbn_frag_kind),XTRACT_FRAG(cmbn_frag_kind));
+				GDKerror("serialize.mx:xquery_print_result_main: [kind=%d, frag=%d]\n",
+				          XTRACT_KIND(cmbn_frag_kind),XTRACT_FRAG(cmbn_frag_kind));
 				fatal_err(ctx,"UNKNOW_TYPE(\'%c\'ch(%d))\n",cmbn_frag_kind,cmbn_frag_kind);
 				return GDK_FAIL;
 		}
