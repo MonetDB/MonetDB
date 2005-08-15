@@ -146,6 +146,7 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term fun_decl           = 55 /**< function declaration */
 %term params             = 56 /**< function declaration parameter list */
 %term param              = 57 /**< function declaration parameter */
+%term cast               = 58 /**< XQuery `cast as' operation */
 
 %%
 
@@ -171,7 +172,7 @@ CoreExpr:           seq (Atom, Atom)                            =   9 (10);
 CoreExpr:           typesw (Atom,
                             cases (case_ (SequenceType,
                                           CoreExpr),
-                                   default_ (CoreExpr)))        =   10 (10);
+                                   default_ (CoreExpr)))        =  10 (10);
 
 SequenceTypeCast:   seqcast (SequenceType, CoreExpr)            =  11 (10);
 
@@ -230,16 +231,18 @@ CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  46 (10);
 OrderSpecs:         orderspecs (CoreExpr, nil)                  =  47 (10);
 OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  48 (10);
 
-Atom:               var                                         =  49 (10);
-Atom:               LiteralValue                                =  50 (10);
+CoreExpr:           cast (SequenceType, CoreExpr)               =  49 (10);
 
-LiteralValue:       lit_str                                     =  51 (10);
-LiteralValue:       lit_int                                     =  52 (10);
-LiteralValue:       lit_dec                                     =  53 (10);
-LiteralValue:       lit_dbl                                     =  54 (10);
-LiteralValue:       true_                                       =  55 (10);
-LiteralValue:       false_                                      =  56 (10);
-LiteralValue:       empty                                       =  57 (10);
+Atom:               var                                         =  50 (10);
+Atom:               LiteralValue                                =  51 (10);
+
+LiteralValue:       lit_str                                     =  52 (10);
+LiteralValue:       lit_int                                     =  53 (10);
+LiteralValue:       lit_dec                                     =  54 (10);
+LiteralValue:       lit_dbl                                     =  55 (10);
+LiteralValue:       true_                                       =  56 (10);
+LiteralValue:       false_                                      =  57 (10);
+LiteralValue:       empty                                       =  58 (10);
 
 FunctionDecls:      nil                                         =  65 (10);
 FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  66 (10);
@@ -804,8 +807,13 @@ reduce (PFcnode_t * p, int goalnt)
             /* FIXME: Are there any type constraints on the order expression? */
             break;
 
-        /* Atom:               var */
+        /* CoreExpr:           cast (SequenceType, CoreExpr) */
         case 49:
+            TY(p) = TY(L(p));
+            break;
+
+        /* Atom:               var */
+        case 50:
             /* W3C XQuery, 5.1.2
              *
              * E.varType(Var) = t
@@ -817,11 +825,11 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* Atom:               LiteralValue */
-        case 50:
+        case 51:
             break;
 
         /* LiteralValue:       lit_str */
-        case 51:
+        case 52:
             /* W3C XQuery, 5.1.1
              *
              * --------------------------
@@ -831,7 +839,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
      
         /* LiteralValue:       lit_int */
-        case 52:
+        case 53:
             /* W3C XQuery, 5.1.1
              *
              * ---------------------------
@@ -841,7 +849,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       lit_dec */
-        case 53:
+        case 54:
             /* W3C XQuery, 5.1.1
              *
              * ---------------------------
@@ -851,7 +859,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       lit_dbl */
-        case 54:
+        case 55:
             /* W3C XQuery, 5.1.1
              *
              * --------------------------
@@ -861,7 +869,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       true_ */
-        case 55:
+        case 56:
             /* 
              * -------------------------
              * Env |- true_ : xs:boolean
@@ -870,7 +878,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       false_ */
-        case 56:
+        case 57:
             /* 
              * --------------------------
              * Env |- false_ : xs:boolean
@@ -879,7 +887,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* LiteralValue:       empty */
-        case 57:
+        case 58:
             /*
              * ------------------
              * Env |- empty_ : ()

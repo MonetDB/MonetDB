@@ -140,6 +140,7 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term fun_decl           = 55 /**< function declaration */
 %term params             = 56 /**< function declaration parameter list */
 %term param              = 57 /**< function declaration parameter */
+%term cast               = 58 /**< XQuery `cast as' operation */
 
 %%
 
@@ -227,28 +228,30 @@ CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  53 (10);
 OrderSpecs:         orderspecs (CoreExpr, nil)                  =  54 (10);
 OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  55 (10);
 
-Atom:               var                                         =  56 (10);
-Atom:               empty                                       =  57 (10);
-Atom:               LiteralValue                                =  58 (10);
+CoreExpr:           cast (SequenceType, CoreExpr)               =  56 (10);
 
-LiteralValue:       lit_str                                     =  59 (10);
-LiteralValue:       lit_int                                     =  60 (10);
-LiteralValue:       lit_dec                                     =  61 (10);
-LiteralValue:       lit_dbl                                     =  62 (10);
-LiteralValue:       true_                                       =  63 (10);
-LiteralValue:       false_                                      =  64 (10);
+Atom:               var                                         =  57 (10);
+Atom:               empty                                       =  58 (10);
+Atom:               LiteralValue                                =  59 (10);
 
-FunctionDecls:      nil                                         =  65 (10);
-FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  66 (10);
+LiteralValue:       lit_str                                     =  60 (10);
+LiteralValue:       lit_int                                     =  61 (10);
+LiteralValue:       lit_dec                                     =  62 (10);
+LiteralValue:       lit_dbl                                     =  63 (10);
+LiteralValue:       true_                                       =  64 (10);
+LiteralValue:       false_                                      =  65 (10);
 
-FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  67 (10);
+FunctionDecls:      nil                                         =  66 (10);
+FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  67 (10);
 
-ParamList:          nil                                         =  68 (10);
-ParamList:          params (FunParam, ParamList)                =  69 (10);
+FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  68 (10);
 
-FunctionBody:       CoreExpr                                    =  70 (10);
+ParamList:          nil                                         =  69 (10);
+ParamList:          params (FunParam, ParamList)                =  70 (10);
 
-FunParam:           param (SequenceType, var)                   =  71 (10);
+FunctionBody:       CoreExpr                                    =  71 (10);
+
+FunParam:           param (SequenceType, var)                   =  72 (10);
 
 %%
 
@@ -389,6 +392,7 @@ reduce (PFcnode_t * p, int goalnt)
                 rewritten = true;
                 break;
             }
+
             /*
              * If we iterate over a sequence that we know (from static
              * typing) to always have length 1, replace the `for' by
@@ -421,7 +425,19 @@ reduce (PFcnode_t * p, int goalnt)
                 PFcoreopt_label (p);
                 break;
             }
-                
+
+            /*
+             * If we know (from static typing) that we are iterating
+             * over the empty sequence, replace the whole thing by
+             * the empty sequence.
+             */
+            if (PFty_subtype (TY(LR(p)), PFty_empty ())) {
+                *p = *empty ();
+                relabel (p, kids);
+                rewritten = true;
+                break;
+            }
+
             break;
 
         /* CoreExpr:           let (letbind (var, Atom), CoreExpr) */
