@@ -2550,18 +2550,18 @@ int @1_comp_@2(bit *retval, @1 *val1, @1 *val2)
 	return GDK_SUCCEED;
 }
 @c
-@:compare(date, EQ, ==)@
-@:compare(date, NE, !=)@
-@:compare(date, LT, <)@
-@:compare(date, GT, >)@
-@:compare(date, LE, <=)@
-@:compare(date, GE, >=)@
-@:compare(daytime, EQ, ==)@
-@:compare(daytime, NE, !=)@
-@:compare(daytime, LT, <)@
-@:compare(daytime, GT, >)@
-@:compare(daytime, LE, <=)@
-@:compare(daytime, GE, >=)@
+@:compare(date,EQ,==)@
+@:compare(date,NE,!=)@
+@:compare(date,LT,<)@
+@:compare(date,GT,>)@
+@:compare(date,LE,<=)@
+@:compare(date,GE,>=)@
+@:compare(daytime,EQ,==)@
+@:compare(daytime,NE,!=)@
+@:compare(daytime,LT,<)@
+@:compare(daytime,GT,>)@
+@:compare(daytime,LE,<=)@
+@:compare(daytime,GE,>=)@
 
 int
 timestamp_isnil(bit *retval, timestamp *val)
@@ -2653,8 +2653,8 @@ str MTIME@1_2@2(@2 *ret,@1 *src){
 	return MAL_SUCCEED;
 }
 @c
-@:coerce(date, lng)@
-@:coerce(daytime, lng)@
+@:coerce(date,lng)@
+@:coerce(daytime,lng)@
 
 str
 MTIMEnil2date(date *ret, int *src)
@@ -3479,12 +3479,12 @@ bunins_failed:
 
 @-
 @c
-@:Extract(date, year, int)@
-@:Extract(date, month, int)@
-@:Extract(date, day, int)@
-@:Extract(daytime, hours, int)@
-@:Extract(daytime, minutes, int)@
-@:Extract(daytime, seconds, int)@
-@:Extract(daytime, milliseconds, int)@
+@:Extract(date,year,int)@
+@:Extract(date,month,int)@
+@:Extract(date,day,int)@
+@:Extract(daytime,hours,int)@
+@:Extract(daytime,minutes,int)@
+@:Extract(daytime,seconds,int)@
+@:Extract(daytime,milliseconds,int)@
 
 @}

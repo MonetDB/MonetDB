@@ -1411,7 +1411,7 @@ strFromWChr(str *res, int *c)
 {
 	str s = *res = GDKmalloc(7);
 
-	@:UTF8_PUTCHAR(*c, s)@
+	@:UTF8_PUTCHAR(*c,s)@
 	*s = 0;
 	return GDK_SUCCEED;
 }
@@ -1425,7 +1425,7 @@ strWChrAt(int *res, str val, int *at)
 	RETURN_NIL_IF(strNil(val) || *at == int_nil || *at < 0, TYPE_chr);
 	s = (unsigned char *) UTF8_strtail((str) s, *at);
 	RETURN_NIL_IF(*s == 0, TYPE_chr);
-	@:UTF8_GETCHAR(*res, s)@
+	@:UTF8_GETCHAR(*res,s)@
 	return GDK_SUCCEED;
 }
 
@@ -1548,8 +1548,8 @@ strLower(str *res, str s)
 	while (src < end) {
 		int c;
 
-		@:UTF8_GETCHAR(c, src)@
-		@:UTF8_CONV(c, tolower)@
+		@:UTF8_GETCHAR(c,src)@
+		@:UTF8_CONV(c,tolower)@
 		if (dst + 6 > (unsigned char *) *res + len) {
 			/* not guaranteed to fit, so allocate more space;
 			   also allocate enough for the rest of the source */
@@ -1558,7 +1558,7 @@ strLower(str *res, str s)
 			*res = GDKrealloc(*res, (len += 6 + (end - src)) + 1);
 			dst = (unsigned char *) *res + off;
 		}
-		@:UTF8_PUTCHAR(c, dst)@
+		@:UTF8_PUTCHAR(c,dst)@
 	}
 	*dst = 0;
 	return GDK_SUCCEED;
@@ -1576,8 +1576,8 @@ strUpper(str *res, str s)
 	while (src < end) {
 		int c;
 
-		@:UTF8_GETCHAR(c, src)@
-		@:UTF8_CONV(c, toupper)@
+		@:UTF8_GETCHAR(c,src)@
+		@:UTF8_CONV(c,toupper)@
 		if (dst + 6 > (unsigned char *) *res + len) {
 			/* not guaranteed to fit, so allocate more space;
 			   also allocate enough for the rest of the source */
@@ -1586,7 +1586,7 @@ strUpper(str *res, str s)
 			*res = GDKrealloc(*res, (len += 6 + (end - src)) + 1);
 			dst = (unsigned char *) *res + off;
 		}
-		@:UTF8_PUTCHAR(c, dst)@
+		@:UTF8_PUTCHAR(c,dst)@
 	}
 	*dst = 0;
 	return GDK_SUCCEED;
@@ -1635,7 +1635,7 @@ strChrSearch(int *res, str s, chr *c)
 	char buf[7], *p = buf;
 
 	RETURN_NIL_IF(strNil(s) || *c == chr_nil, TYPE_int);
-	@:UTF8_PUTCHAR(i, p)@
+	@:UTF8_PUTCHAR(i,p)@
 	*p = 0;
 	return strStrSearch(res, s, buf);
 }
@@ -1647,7 +1647,7 @@ strReverseChrSearch(int *res, str s, chr *c)
 	char buf[7], *p = buf;
 
 	RETURN_NIL_IF(strNil(s) || *c == chr_nil, TYPE_int);
-	@:UTF8_PUTCHAR(i, p)@
+	@:UTF8_PUTCHAR(i,p)@
 	*p = 0;
 	return strReverseStrSearch(res, s, buf);
 }

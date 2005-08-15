@@ -299,8 +299,8 @@ STRbatEqual(int *ret, int *l, int *r)
 	int xx, yy;
 
 	prepareOperand2(left, l, right, r, "==");
-	@:chkSize(left, right, CMDcompare@
-		       1) @ prepareResult2(bn, left, right, TYPE_bit, "==");
+	@:chkSize(left,right,CMDcompare@1)@
+	prepareResult2(bn, left, right, TYPE_bit, "==");
 
 	o = BUNfirst(left);
 	p = BUNfirst(right);

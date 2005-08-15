@@ -929,9 +929,7 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count(0, 0, BUNfndVOID, var, &bhsb@
-
-					    bhsb++, BUNtloc(bn, r));
+			@:aggrX3_count(0, 0, BUNfndVOID, var, &bhsb;bhsb++, BUNtloc(bn, r))@
 		} else {
 			@:aggrX3_count(0, 0, BUNfndVOID, var, BUNhloc(b, p), BUNtloc(bn, r))@
 		}
@@ -939,16 +937,14 @@ CMDaggrX3_count(BAT **ret, BAT *b, BAT *e, bit *ignore_nils)
 	} else if (range > SMALL_AGGR_MAX) {
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count(0, 1, HASHfnd_oid, loc, &bhsb@
-					    bhsb++, BUNtloc(bn, r));
+			@:aggrX3_count(0, 1, HASHfnd_oid, loc, &bhsb;bhsb++, BUNtloc(bn, r))@
 		} else {
 			@:aggrX3_count(0, 1, HASHfnd_oid, loc, BUNhloc(b, p), BUNtloc(bn, r))@
 		}
 	} else {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count(1, 0, CHKrange, loc, &bhsb@
-					    bhsb++, &cnt[(*(oid *) h) - min]);
+			@:aggrX3_count(1, 0, CHKrange, loc, &bhsb;bhsb++, &cnt[(*(oid *) h) - min])@
 		} else {
 			@:aggrX3_count(1, 0, CHKrange, loc, BUNhloc(b, p), &cnt[(*(oid *) h) - min])@
 		}
@@ -1878,9 +1874,7 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	if (e->htype == TYPE_void) {
 		/* void lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count3(0, 0, BUNfndVOID, var, &bhsb@
-
-					     bhsb++, BUNtloc(bn, r));
+			@:aggrX3_count3(0, 0, BUNfndVOID, var, &bhsb;bhsb++, BUNtloc(bn, r))@
 		} else {
 			@:aggrX3_count3(0, 0, BUNfndVOID, var, BUNhloc(b, p), BUNtloc(bn, r))@
 		}
@@ -1888,16 +1882,14 @@ CMDaggrX3_count3(BAT **ret, BAT *b, BAT *g, BAT *e, bit *ignore_nils)
 	} else if (range > SMALL_AGGR_MAX) {
 		/* hash lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count3(0, 1, HASHfnd_oid, loc, &bhsb@
-					     bhsb++, BUNtloc(bn, r));
+			@:aggrX3_count3(0, 1, HASHfnd_oid, loc, &bhsb;bhsb++, BUNtloc(bn, r))@
 		} else {
 			@:aggrX3_count3(0, 1, HASHfnd_oid, loc, BUNhloc(b, p), BUNtloc(bn, r))@
 		}
 	} else {
 		/* array lookup */
 		if (b->htype == TYPE_void) {
-			@:aggrX3_count3(1, 0, CHKrange, loc, &bhsb@
-					     bhsb++, &cnt[(*(oid *) h) - min]);
+			@:aggrX3_count3(1, 0, CHKrange, loc, &bhsb;bhsb++, &cnt[(*(oid *) h) - min])@
 		} else {
 			@:aggrX3_count3(1, 0, CHKrange, loc, BUNhloc(b, p), &cnt[(*(oid *) h) - min])@
 		}

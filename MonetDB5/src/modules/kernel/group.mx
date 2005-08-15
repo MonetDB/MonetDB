@@ -999,13 +999,9 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		dst = (oid *) BUNfirst(bn);
 
 		if (a_void) {
-			@:refine_loop(@
-		      :		   refine_void_1 @, @:refine_void_2@
-					   , GDKfree(base);
-					   , this = base;
-		) @} else {
-			@:refine_loop(r += a->tloc@
-			    );
+			@:refine_loop(@:refine_void_1@,@:refine_void_2@,GDKfree(base);,this = base;)@
+		} else {
+			@:refine_loop(r += a->tloc);@
 		}
 @= refine_void_2
 	off = (size_t) (this - base);

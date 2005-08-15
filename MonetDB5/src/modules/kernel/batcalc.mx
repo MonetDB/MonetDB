@@ -1221,9 +1221,9 @@ CMDbitbataccumNOT(int *ret, int *d, int *l)
 		return throwMessage("batcalc.@1", "Cannot access descriptor");
 	}
 
-	@:chkSize(dst, left, CMDbitbataccum@
-      1) @ @:	       batinit(1, left);
-      @:batinit(2, dst);
+	@:chkSize(dst,left,CMDbitbataccum@1)@
+	@:batinit(1,left)@
+	@:batinit(2,dst)@
 	hend = (str) BUNlast(left);
 	while (p1 < hend) {
 		/* this code is better as x?nil:y */
