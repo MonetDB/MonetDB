@@ -10185,7 +10185,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
     if (status->timing) {
         trans_time=strstr(*query, "123456789");
         tm = PFtimer_stop(tm);
-        sprintf(trans_time,"% 9d", tm/1000);
+        sprintf(trans_time,"% 9ld", tm/1000);
         trans_time[9]=';';
     }
 
