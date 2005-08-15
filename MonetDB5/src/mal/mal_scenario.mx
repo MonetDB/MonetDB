@@ -19,7 +19,6 @@
 @a M. Kersten
 @v 0.0
 @-
-@node Session Scenarios , Scenario Management ,MAL synopsis , MonetDB overview
 @+ Session Scenarios
 In MonetDB multiple languages, optimizers, and execution engines can
 be combined at run time to satisfy a wide user-community.
@@ -67,12 +66,7 @@ or vectorized pipe-line execution by a dedicated engine.
 
 A failure encountered in any of the steps terminates the scenario
 cycle. It returns to the user for a new command.
-@menu
-* Client administration::
-* Scenario management::
-* MAL execution::
-@end menu
-@node Scenario Management, MAL execution , Client administration, Session Scenarios 
+@node Scenario management, Client administration, Session scenarios, MonetDB overview 
 @- Scenario management
 Scenarios are captured in modules; they can be dynamically loaded
 and remain active until the system is brought to a halt.
@@ -506,7 +500,7 @@ The default is the MAL interpreter, which provides good balance
 between speed and ability to analysis its behavior.
 
 @menu
-* Session management::
+* Scenario management::
 * Client administration::
 * Session scenarios::
 * MAL execution::

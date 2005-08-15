@@ -18,7 +18,6 @@
 @a M. L. Kersten
 @v 5.0
 @-
-@node Client administration, Session scenarios, Session management, Session management
 @+ MonetDB Client Interface
 Clients gain access to the Monet server through a internet connection
 or through its server console.
@@ -189,7 +188,7 @@ program execution tracing. The lowest level (1) simply dumps the input,
 @-
 The MAL debugger uses the client record to keep track of
 any pervasive debugger command. For detailed information
-on the debugger features see @ref{The MAL debugger}.
+on the debugger features see @ref{Program Debugging}.
 @{
 @h
     bitset debug;

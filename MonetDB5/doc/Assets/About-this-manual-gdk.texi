@@ -28,6 +28,12 @@ for which we apologize in advance. You can help improving the manual
 using the user commentary system included in the web-site.
 @menu
 * Intended audience::
+* Features and Limitations::
+@menu
+* When to consider MonetDB::
+* When not to consider MonetDB::
+@end menu
+* The History of MonetDB::
 * Manual Generation::
 * Conventions and notation::
 @end menu
@@ -43,12 +49,6 @@ The manual does not contain a general introduction to MonetDB or
 relational DBMS technology, the query languages SQL and Xquery, or 
 the application programming interfaces JDBC and ODBC. 
 We refer to the related MonetDB documentation papers on these topics.
-
-@menu
-* Intended audience::
-* Manual Generation::
-* Conventions and notation::
-@end menu
 
 @node Manual Generation, Conventions and notation, Intended audience,About this manual
 @section Manual Generation
@@ -77,12 +77,6 @@ Mx  <filename>.mx
 latex <filename>.tex
 @end example
 The result, however, still includes the unexpanded tex info macros.
-
-@menu
-* Intended audience::
-* Manual Generation::
-* Conventions and notation::
-@end menu
 
 @node Conventions and notation, , Manual Generation,About this manual
 [to be filled]

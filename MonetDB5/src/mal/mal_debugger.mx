@@ -25,6 +25,7 @@ the MAL compiler provides a sufficient handle to proceed. Once
 it passes the compiler we have to resort to a debugger to
 assess its behavior.
 
+@node The MAL Debugger, Handling Breakpoints, Program Debugging, TOC
 @+ The MAL debugger
 To ease debugging and performance monitoring, the MAL interpreter
 comes with a gdb-like debugger.
@@ -170,6 +171,7 @@ can be obtained using the 'info' ('i') command.
 A sample of the BAT content can be printed passing tuple indices, e.g.
 'print b 10 10' prints the second batch of ten tuples.
 
+@node Handling Breakpoints, Runtime Inspection, The MAL Debugger, TOC
 @+ Handling Breakpoints
 A powerful mechanism for debugging a program is to set breakpoints
 during the debugging session.
@@ -198,6 +200,7 @@ mdb>c
 mdb>
 @end example
 
+@node Runtime Inspection, Execution Profiling, Handling Breakpoints,  TOC
 @+ Runtime Inspection and Reflection
 Part of the debugger functionality can also be used directly with
 MAL instructions.

@@ -1,3 +1,4 @@
+@node Features and Limitations, When to consider MonetDB, About this manual, TOC
 @section Features and Limitations
 
 In this section we give a short overview of the key features of MonetDB.
@@ -10,7 +11,12 @@ experienced system programmers and administrators. End-users are
 advised to use any of the open-source graphical SQL workbenches to
 interact with the system. [see section x]
 
-@subsection When to consider MonetDB ?
+@menu
+* When to consider MonetDB::
+* When not to consider MonetDB::
+@end menu
+@node When to consider MonetDB, When not to consider MonetDB, Features and Limitations, TOC
+@subsubsection When to consider MonetDB ?
 @strong{A high-performance database management system.}
 MonetDB is an easily accessible open-source DBMS for SQL-based applications
 and database research. It is used both in research and in commercial settings.
@@ -66,6 +72,7 @@ Signing up on the MonetDB users mailing list gives a glimpse on the
 audience and helps to justify the on-and-off office hours put into
 its development and maintenance.
 
+@node When not to consider MonetDB, The History of MonetDB, When to consider MonetDB, TOC
 @subsection When not to consider MonetDB ?
 There are several areas where MonetDB has not yet built a reputation.
 They are the prime candidates for experimentation, but also areas

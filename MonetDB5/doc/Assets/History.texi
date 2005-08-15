@@ -1,4 +1,4 @@
-@node The History of MonetDB , Architecture overview, , MonetDB overview
+@node The History of MonetDB, Installation, When not to consider MonetDB, TOC
 @subsection A Brief History of MonetDB
 @strong{A Dark Ages [1979-2002]}
 The development of the MonetDB software family goes back as far as the
@@ -47,12 +47,3 @@ still provide a coherent functional view to its users.
 In its approach is challenges many dogmas in database technology, such
 as the perspective on global consistency, the role of the client in
 managing the distributed world, and the way resources are spread.
-
-@menu
-* The History of MonetDB::
-* Architecture overview::
-* Design considerations::
-* Backward compatibility::
-* MAL synopsis::
-* Session management::
-@end menu

@@ -26,6 +26,12 @@ for which we apologize in advance. You can help improving the manual
 using the user commentary system included in the web-site.
 @menu
 * Intended audience::
+* Features and Limitations::
+@menu
+* When to consider MonetDB::
+* When not to consider MonetDB::
+@end menu
+* The History of MonetDB::
 * Manual Generation::
 * Conventions and notation::
 @end menu
@@ -46,20 +52,7 @@ it should be possible to create your first MonetDB/SQL application
 without much difficulty.
 
 Users interested in building applications on top of the MonetDB
-product suite are advised to read the following sections:
-@iftex
-@enumerate
-@item
-Getting started
-@item 
-The SQL language
-@end enumerate
-@end iftex
-@menu
-* Installation ::
-* SQL ::
-* Programming interfaces::
-@end menu
+product suite are advised to read the @ref{Installation} and @ref{SQL} sections.
 
 The bulk of the MonetDB reference manual deals with the techniques
 available in the back-end for the expert user. Judicious use
@@ -75,11 +68,4 @@ sense to contribute it to the community.
 
 The preferred channel to share your comments is through the
 MonetDB mailing list http://XYZ held at SourceForge.
-
-
-@menu
-* Intended audience::
-* Manual Generation::
-* Conventions and notation::
-@end menu
 

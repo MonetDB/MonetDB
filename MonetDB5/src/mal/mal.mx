@@ -23,7 +23,7 @@ already been shipped to happy customers, some are still in the making,
 and others have found a resting place in the attic.
 
 The MonetDB architecture is designed to accommodate a wide-spectrum 
-of standardized query language front-ends (SQL, Xquery),
+of standardized query language front-ends (SQL, XQuery),
 a variety of query transformation schemes, and
 different execution platforms (interpreted MAL, dynamic compilation).
 
@@ -40,7 +40,17 @@ In the remainder of this section we shortly introduce the
 MonetDB product family, the design considerations and
 a quick overview of the MonetDB Version 5 architecture.
 
-@node  Design considerations, Architecture overview, ,MonetDB overview
+@menu
+* Design considerations::
+* Architecture overview::
+* MAL synopsis::
+* MAL execution::
+* Backward compatibility::
+* Session scenarios::
+* Scenario management::
+* Client administration ::
+@end menu
+@node  Design considerations, Architecture overview, MonetDB overview ,MonetDB overview
 @+ Design considerations
 Redesign of the MonetDB software stack was driven by the need to
 reduce the Total Execution Cost (TEC) for query execution.
@@ -86,17 +96,6 @@ showed that the overhead can be kept within acceptable limits.
 Moreover, a textual interface reduces the programming
 effort otherwise needed to develop test and application programs.
 
-@menu
-* The history of MonetDB::
-* Architecture overview:: 
-* Design considerations:: 
-@menu
-* Backward compatibility:: 
-@end menu
-* MAL synopsis:: 
-* Session Scenarios::
-@end menu
-
 @node Architecture overview, MAL synopsis, Design considerations, MonetDB overview
 @+ Architecture overview
 The software stack for Version 5 is shown in Figure
@@ -105,18 +104,7 @@ The top layer consists of the query language processors and their
 strategic optimizers. Moreover, each language comes with its language
 oriented catalog, which may, but need not be stored in the MonetDB database.
 
-@menu
-* The history of MonetDB::
-* Architecture overview:: 
-* Design considerations:: 
-@menu
-* Backward compatibility:: 
-@end menu
-* MAL synopsis:: 
-* Session Scenarios::
-@end menu
-
-@node MAL synopsis, Backward compatibility, Architectural overview,  MonetDB overview
+@node MAL synopsis, MAL execution, Architecture overview,  MonetDB overview
 @+ MonetDB Assembler Language (MAL)
 The target language for Version 5 is an assembler-like language,
 derived as a subset of the Monet Interface Language introduced
@@ -220,7 +208,7 @@ str             *monet_script;
 
 @}
 @-
-@node MAL execution, Backward compatibility, , MonetDB overview
+@node MAL execution, Backward compatibility, MAL synopsis , MonetDB overview
 @- MonetDB bootstrap
 
 Startup of the MonetDB engine leads to loading the system kernel
@@ -246,7 +234,7 @@ able to detect references kept around.
 This danger required all accesses to global information to be packaged
 in a critical section, which was known to be a performance hindrence.
 
-@node Backward compatibility, ,MAL execution , MonetDB overview
+@node Backward compatibility, Session scenarios ,MAL execution, MonetDB overview
 @- Backward compatibility
 The oldest MonetDB software runs back to the early nineties and
 users have based their business
@@ -284,17 +272,6 @@ of interest in Version 4 user community and alternatives based on
 the BAT algebra.
 @end itemize
 
-@menu
-* The history of MonetDB::
-* Architecture overview:: 
-* Design considerations:: 
-@menu
-* Backward compatibility:: 
-@end menu
-* MAL synopsis:: 
-* Session management::
-
-@end menu
 @{
 @h
 

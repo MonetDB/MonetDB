@@ -654,10 +654,11 @@ l2:= f(A,B,C);
 L2:= h()
 @end example
 @
-The instruction G1:=g(D,E,F) is blocking if G1 is an alias for @{A,B,C@}.
-Alternatively, function g() may be unsafe and @{D,E,F@} has a non-empty
-intersection with @{A,B,C@}. An alias can only be used later on for
-readonly (and not be used for a function with sideeffects)
+The instruction G1:=g(D,E,F) is blocking if G1 is an alias 
+for @verb{ { }A,B,C@verb{ } }.
+Alternatively, function g() may be unsafe and @verb{ { }D,E,F@verb{ } }
+has a non-empty intersection with @verb{ { }A,B,C@verb{ } }. 
+An alias can only be used later on for readonly (and not be used for a function with sideeffects)
 @{
 @c
 int safetyBarrier(MalBlkPtr mb,InstrPtr p, InstrPtr q)
@@ -926,6 +927,9 @@ the operations are known to be side-effect free within the tree/graph.
 This can be used to re-order the plan without concern on impact of the outcome.
 It suffice to respect the flow graph.
 [unclear as what we need]
+
+@node Optimizer framework, Program Debugging, Optimizer landscape , TOC
+
 @* The Optimizer Toolkit
 In this section we introduce the collection of MAL optimizers 
 included in the code base. The tool kit is incrementally built, triggered
