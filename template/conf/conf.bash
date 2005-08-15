@@ -312,6 +312,7 @@ if [ "${os}" = "IRIX64" ] ; then
 	if [ -d "${soft32}"  -a  "${BITS}" = "64" ] ; then
 		# some tools are not in ${soft64} on medusa
 		binpath="${soft32}/bin:${binpath}"
+		libpath="${soft32}/lib:${libpath}"
 	fi
 	if [ -d "${soft32}"  -a  "${COMP}${BITS}" = "GNU64" ] ; then
 		# our gcc/g++ on medusa is in ${soft32} (also for 64 bit)
