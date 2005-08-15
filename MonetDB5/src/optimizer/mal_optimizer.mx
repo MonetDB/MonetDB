@@ -31,7 +31,19 @@ Another major issue is to be able to generate and explore a space of
 alternative evaluation plans. This exploration may take place up front, 
 but can also be ran at runtime for query fragments.
 
-@+ What optimizers should be considered?
+@menu
+* Optimizer landscape::
+@menu
+* What optimizers to consider?::
+* Optimization Dependencies::
+* Optimizer Building Blocks::
+* Optimizer Framework::
+@end menu
+* Optimizer toolkit::
+@end menu
+
+@node What optimizers to consider?, Optimization Dependencies ,Optimizer landscape, Optimizer landscape
+@+ What optimizers to consider?
 A query optimizer is often a large and complex piece of code, which
 enumerates alternative evaluation plans from which 'the best' plan
 is selected for evaluation. Limited progress has been made sofar to
@@ -301,6 +313,7 @@ Rationale: the code produced by the SQL frontend involves foreign key
 constraints, which provides many opportunities for speedy code.
 Impact: large
 
+@node Optimization Dependencies, Optimizer Building Blocks, What optimizers to consider?, Optimizer landscape
 @section What is the dependency between optimizers?
 The optimizers are highly targeted to a particular problem.
 Aside from the resources available to invest in plan optimization,
@@ -368,6 +381,7 @@ them in a preferred order of deployment.
 @end multitable
 @-
 Alias removal can be applied after each other optimization step.
+@node Optimizer Building Blocks, Optimizer Framework, Optimization Dependencies, Optimizer landscape
 @+ Optimizer building blocks
 
 Some instructions are independent of the execution context. In particular,
@@ -412,9 +426,7 @@ The rule applied for all optimizers is to not-return
 before checking the state of the MAL program,
 and to assure the dataflow and variable scopes are properly set.
 It costs some performance, but the difficulties
-that arise from optimizer interference are very hard
-to debug.
-@+ Optimizer Pitfalls
+that arise from optimizer interference are very hard to debug.
 One of the easiest pitfalls is to derive an optimized
 version of a MAL function while it is already referenced by or
 when polymorphic typechecking is required afterwards.
@@ -466,6 +478,8 @@ mal_export int hasCommonResults(InstrPtr p, InstrPtr q);
 mal_export int hasSideEffects(InstrPtr p, int strict);
 
 @}
+@-
+@node Optimizer Framework, Optimizer toolkit, Optimizer Building Blocks, Optimizer landscape
 @+ Optimizer framework
 The large number of query transformers calls for a flexible scheme for
 the deploy them. The approach taken is to make all optimizers visible
@@ -1013,7 +1027,7 @@ This can be used to re-order the plan without concern on impact of the outcome.
 It suffice to respect the flow graph.
 [unclear as what we need]
 
-@node Optimizer framework, Alias Removal, Optimizer landscape , TOC
+@node Optimizer toolkit, Alias Removal, Optimizer Framework , Optimizer landscape
 
 @* The Optimizer Toolkit
 In this section we introduce the collection of MAL optimizers 
@@ -1022,7 +1036,25 @@ by experimentation and curiousity. Several optimizers require
 further development to cope with the many features making up the MonetDB system.
 Such limitations on the implementation are indicated where appropriate.
 
-@node Alias Removal, Dead Code Removal, Optimizer framework, TOC
+@menu
+* Alias Removal::
+* Dead Code Removal::
+* Accumulator Evaluations::
+* Heuristic Rewrite Rules::
+* Common Sub-Expression Removal::
+* Empty Set Reduction::
+* Singleton Set Replacement::
+* Peephole Optimization::
+* Multiplex Compiler::
+* Garbage Collector::
+* Code Factorization::
+* Partitioned Database Optimizer::
+* Strength Reduction::
+* Costmodels::
+* Variable Stack Reduction::
+@end menu
+
+@node Alias Removal, Dead Code Removal, Optimizer toolkit, Optimizer toolkit
 @+ Alias Removal
 The routine @code{optimizer.aliasRemoval()}
 walks through the program looking for simple
@@ -1192,7 +1224,7 @@ ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 @}
 @-
-@node Dead Code Removal, Accumulator Evaluations, Alias Removal, TOC
+@node Dead Code Removal, Accumulator Evaluations, Alias Removal, Optimizer toolkit
 @+ Dead Code Removal
 Dead code fragments are recognized by assignments to variables
 whose value is not consumed any more. 
@@ -1350,7 +1382,7 @@ DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 @}
 
 @-
-@node Accumulator Evaluations, Heuristic Rewrite Rules, Dead Code Removal, TOC
+@node Accumulator Evaluations, Heuristic Rewrite Rules, Dead Code Removal, Optimizer toolkit
 @+ Accumulator Evaluations
 Bulk arithmetic calculations are pretty expensive,
 because new @code{BAT}s are created for each expression. 
@@ -1598,7 +1630,7 @@ at the end of the optimization attempt.
 
 @}
 @-
-@node Heuristic Rewrite Rules, Common Sub-Expression Removal, Accumulator Evaluations,  TOC
+@node Heuristic Rewrite Rules, Common Sub-Expression Removal, Accumulator Evaluations,  Optimizer toolkit
 @+ Heuristic rewrites rules
 One of the oldest optimizer tricks in relational query processing is
 to apply heuristic rules to reduce the processing cost. For example,

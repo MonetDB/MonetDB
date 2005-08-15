@@ -1,3 +1,2 @@
-@chapter XQuery
-@section A Brief Introduction to XQuery
+@section XQuery
 Give a 3 page introduction on how to use XQuery

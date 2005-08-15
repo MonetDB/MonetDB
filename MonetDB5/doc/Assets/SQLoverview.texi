@@ -1,3 +1,2 @@
-@chapter SQL
-@section A Brief Introduction to SQL
+@section SQL
 Give a brief introduction to using SQL on MonetDB

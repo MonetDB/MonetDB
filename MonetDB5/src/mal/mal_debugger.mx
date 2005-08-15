@@ -25,6 +25,11 @@ the MAL compiler provides a sufficient handle to proceed. Once
 it passes the compiler we have to resort to a debugger to
 assess its behavior.
 
+@menu
+* The MAL Debugger::
+* Handling Breakpoints::
+* Runtime Inspection::
+@end menu
 @node The MAL Debugger, Handling Breakpoints, Program Debugging, TOC
 @+ The MAL debugger
 To ease debugging and performance monitoring, the MAL interpreter

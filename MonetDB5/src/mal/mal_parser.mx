@@ -15,7 +15,7 @@
 @v 1.1
 
 @-
-@node The parser ,Reverse programming, Before-after calls , MonetDB Assembler Language
+@{
 @+ The Parser Implementation
 The parser (and its target language) are designed for speed of analysis.
 For, parsing is a dominant cost-factor in applications interfering with
@@ -33,19 +33,6 @@ runs till the end of the current line. Comments are retained
 in the code block for debugging, but can be removed with an optimizer to reduce space
 and interpretation overhead.
 
-@menu
-* MAL constants::
-* MAL variables::
-* MAL instructions::
-* Flow of control::
-* Instruction Records::
-* Before-after calls::
-* The parser ::
-* Reverse programming::
-@end menu
-
-
-@{
 @+ The lexical analyzer
 The implementation of the lexical analyzer is straightforward:
 the input is taken from a client input buffer. It is assumed that

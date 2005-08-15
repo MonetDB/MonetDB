@@ -40,7 +40,17 @@ the interpretation order or denote a synchronization point.
 
 The first statement of a MAL block is always taken up by a signature
 description. (See functions)
-
+@menu
+* Function definitions::
+* Factory definitions::
+* Bootstrap::
+* Atom types::
+* Type resolution::
+* Boxed variables::
+* Name space management::
+* Property management::
+* Modules::
+@end menu
 @menu
 * MAL constants::
 * MAL variables::
@@ -48,7 +58,6 @@ description. (See functions)
 * Flow of control::
 * Instruction Records::
 * Before-after calls::
-* The parser ::
 * Reverse programming::
 @end menu
 
@@ -120,7 +129,6 @@ bulk assignment instructions.
 * Flow of control::
 * Instruction Records::
 * Before-after calls::
-* The parser ::
 * Reverse programming::
 @end menu
 @node Flow of control, Instruction Records,MAL instructions, MonetDB Assembler Language
@@ -313,11 +321,10 @@ instruction in the source.]
 * Flow of control::
 * Instruction Records::
 * Before-after calls::
-* The parser ::
 * Reverse programming::
 @end menu
 
-@node Before-after calls, The parser ,Instruction Records, MonetDB Assembler Language
+@node Before-after calls, Reverse programming ,Instruction Records, MonetDB Assembler Language
 @+ Before-after calls
 The instruction records contain two optional pointers to functions:
 beforeCall and afterCall. They are passed the runtime context. 
@@ -333,7 +340,6 @@ used to finalize the administration.
 * Flow of control::
 * Instruction Records::
 * Before-after calls::
-* The parser ::
 * Reverse programming::
 @end menu
 @{
@@ -1135,7 +1141,6 @@ produced if it does not satisfy this condition.
 * Flow of control::
 * Instruction Records::
 * Before-after calls::
-* The parser ::
 * Reverse programming::
 @end menu
 @{
@@ -1280,7 +1285,6 @@ This start of the constant list is kept in the MalBlk.
 * Flow of control::
 * Instruction Records::
 * Before-after calls::
-* The parser ::
 * Reverse programming::
 @end menu
 @{
@@ -1668,7 +1672,7 @@ void setVarProperty(MalBlkPtr mb, int i, str name,str op,  int tpe, ptr val){
 }
 @}
 @-
-@node Reverse programming, , The parser, MonetDB Assembler Language
+@node Reverse programming, , Before-after calls, MonetDB Assembler Language
 @+ Reverse programming
 Since MAL programs can be created on the fly by linked-in query
 compilers, or transformed by optimizers, it becomes
@@ -1686,7 +1690,6 @@ interpretation. Provided, the code did not produce an error.
 * Flow of control::
 * Instruction Records::
 * Before-after calls::
-* The parser ::
 * Reverse programming::
 @end menu
 @{

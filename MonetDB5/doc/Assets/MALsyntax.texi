@@ -1,3 +1,2 @@
 @appendix MAL Syntax
-To be included
 

@@ -58,7 +58,11 @@ Table of contents
 * Conventions and notation::
 @end menu
 
-* Installation ::
+* Download and Installation::
+@menu
+* Binary Distributions::
+* Source Distributions::
+@end menu
 
 * MonetDB overview ::
 @menu
@@ -75,10 +79,13 @@ Table of contents
 @end menu
 
 
+* Query Languages::
+@menu
 * SQL ::
-
 * XQuery ::
+@end menu
 
+* Application Interfaces::
 * MonetDB Assembler Language::
 @menu
 * MAL constants::
@@ -87,7 +94,6 @@ Table of contents
 * Flow of control::
 * Instruction Records::
 * Before-after calls::
-* The parser::
 * Reverse programming::
 * Function definitions::
 * Factory definitions::
@@ -98,13 +104,18 @@ Table of contents
 * Type resolution::
 * Boxed variables::
 * Property management::
-* Optimizer framework::
 * Name space management::
-* Appendices::
 @end menu
 
 * Optimizer landscape::
-* Optimizer framework::
+@menu
+* What optimizers to consider?::
+* Optimization Dependencies::
+* Optimizer Building Blocks::
+* Optimizer Framework::
+@end menu
+
+* Optimizer toolkit::
 @menu
 * Alias Removal::
 * Dead Code Removal::
@@ -134,9 +145,10 @@ Table of contents
 * Event Caching::
 @end menu
 
---- Extension modules ---
-
---- The BAT kernel ---
+* MonetDB Extension Modules ::
+* MonetDB BAT Kernel ::
+* Advanced Topics::
+* Appendices::
 @end menu
 
 @end ifnottex
@@ -148,37 +160,32 @@ Table of contents
 @include Assets/History.texi
 @include Assets/Conventions.texi
 
-@node Installation, MonetDB overview, The History of MonetDB, TOC
-@include mal_session.bdy.texi
+@node Download and Installation, Binary Distributions, Conventions and notation, TOC
+@include Assets/Downloads.texi
 
-@node MonetDB overview, Design considerations, Installation, TOC
+@node MonetDB overview, Design considerations, Source Distributions, TOC
 
 @include mal.bdy.texi
 
 @node Session scenarios , Scenario management , Backward compatibility, MonetDB overview
 @include mal_scenario.bdy.texi
 
-@node Client administration, SQL, Scenario management, MonetDB overview
+
+@node Client administration, Query Languages, Scenario management, MonetDB overview
 @include mal_client.bdy.texi
 
-@node SQL, XQuery, Client administration, TOC
+@node Query Languages, SQL, Client administration, TOC
+@include Assets/QueryLanguages.texi
+@node SQL, XQuery, Query Languages, Query Languages
 @include Assets/SQLoverview.texi
-
-@node XQuery, MonetDB Assembler Language, SQL, TOC
+@node XQuery, Application Interfaces, SQL, Query Languages
 @include Assets/XQueryOverview.texi
 
-@node MonetDB Assembler Language, Function definitions, XQuery , TOC
-@menu
-* Function definitions::
-* Factory definitions::
-* Bootstrap::
-* Atom types::
-* Type resolution::
-* Boxed variables::
-* Name space management::
-* Property management::
-* Modules::
-@end menu
+@node Application Interfaces, MonetDB Assembler Language, XQuery, TOC
+@chapter Application Interfaces
+Give a brief introduction to Mapi, JDBC, ODBC,Perl....
+
+@node MonetDB Assembler Language, Function definitions, Application Interfaces , TOC
 @include mal_instruction.bdy.texi
 
 @node Function definitions, Factory definitions ,MonetDB Assembler Language , MonetDB Assembler Language
@@ -206,7 +213,6 @@ Table of contents
 
 @node Property management,  Modules, Name space management, MonetDB Assembler Language
 @include mal_properties.bdy.texi
-@include mal_parser.bdy.texi
 
 @node Modules , MAL interpreter , Property management, MonetDB Assembler Language
 @include mal_import.bdy.texi
@@ -215,7 +221,7 @@ Table of contents
 @include mal_interpreter.bdy.texi
 @include mal_stack.bdy.texi
 
-@node Optimizer landscape, Optimizer framework, MAL interpreter, TOC
+@node Optimizer landscape, What optimizers to consider?, MAL interpreter, TOC
 @include mal_optimizer.bdy.texi
 @include mal_commonExpressions.bdy.texi
 @include mal_emptyset.bdy.texi
@@ -235,12 +241,14 @@ Table of contents
 @node Execution Profiling, Event Filtering, Runtime Inspection, TOC
 @include mal_profiler.bdy.texi
 
-@node Appendices,, Event Caching, TOC
-@include Assets/MALsyntax.texi
+@node MonetDB Extension Modules , MonetDB BAT Kernel, Event Caching, TOC
+@node MonetDB BAT Kernel , Advanced Topics, MonetDB Extension Modules , TOC
+@node Advanced Topics , Appendices, MonetDB BAT Kernel , TOC
+This is the place to describe Membedded, distribution stuff...
+
+@node Appendices,, Advanced Topics, TOC
 @ifnottex
 @include mal_syntax.bdy.texi
 @end ifnottex
-
-
-
+@appendix Conversion of MIL programs
 @bye

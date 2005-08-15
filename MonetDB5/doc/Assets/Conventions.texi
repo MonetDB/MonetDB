@@ -33,7 +33,7 @@ The result, however, still includes the unexpanded tex info macros.
 * Conventions and notation::
 @end menu
 
-@node Conventions and notation, , Manual Generation,About this manual
+@node Conventions and notation, Download and Installation, Manual Generation,About this manual
 @section Software Versions
 At the time of writing MonetDB Version 4.9 is distributed worldwide
 through SourceForge.

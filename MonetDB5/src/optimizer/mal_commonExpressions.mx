@@ -33,7 +33,7 @@ mal_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_interpreter.h"	/* for showErrors() */
 @}
 @-
-@node Common Sub-Expression Removal,Empty Set Reduction, Heuristic Rewrite Rules,   TOC
+@node Common Sub-Expression Removal,Empty Set Reduction, Heuristic Rewrite Rules,   Optimizer toolkit
 @+ Common Subexpression Elimination
 Common subexpression elimination merely involves a single scan through the 
 program block to detect re-curring statements.

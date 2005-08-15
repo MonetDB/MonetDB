@@ -52,7 +52,7 @@ it should be possible to create your first MonetDB/SQL application
 without much difficulty.
 
 Users interested in building applications on top of the MonetDB
-product suite are advised to read the @ref{Installation} and @ref{SQL} sections.
+product suite are advised to read the @ref{Download and Installation} and @ref{SQL} sections.
 
 The bulk of the MonetDB reference manual deals with the techniques
 available in the back-end for the expert user. Judicious use
