@@ -83,28 +83,31 @@ a valid program.
 extern str OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 str
-OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	InstrPtr *old,p;
-	int i,limit;
-	long clk= GDKusec();
+OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	InstrPtr *old, p;
+	int i, limit;
+	long clk = GDKusec();
 
-	(void) stk; (void) pci;
-	old= mb->stmt;
-	limit= mb->stop;
-	newMalBlkStmt(mb,mb->stop);
-	for(i=0;i<limit; i++){
-		p= old[i];
-		if( moduleId(p)== putName("optimizer",9) &&
-		 	functionId(p)== putName("multiplex",9)){
-			OPTexpandMultiplex(mb,stk,p);
-			freeInstruction (p);
-		} else 
-			pushInstruction(mb,p);
+	(void) stk;
+	(void) pci;
+	old = mb->stmt;
+
+	limit = mb->stop;
+	newMalBlkStmt(mb, mb->stop);
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		if (moduleId(p) == putName("optimizer", 9) && functionId(p) == putName("multiplex", 9)) {
+			OPTexpandMultiplex(mb, stk, p);
+			freeInstruction(p);
+		} else
+			pushInstruction(mb, p);
 	}
 	GDKfree(old);
-    optimizerCheck(mb,"optimizer.multiplex",1,GDKusec()-clk);
+	optimizerCheck(mb, "optimizer.multiplex", 1, GDKusec() - clk);
 	return MAL_SUCCEED;
 }
+
 @-
 The generic solution to the multiplex operators is to translate
 them to a MAL loop. 
@@ -131,35 +134,37 @@ code construction.
 	pushReturn(mb,q,@2);
 	pushInstruction(mb,q);
 @c
-str 
-OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	int i,k,mloop,resB,iter,cr;
-	int hvar,tvar;
-	str newFcn= (str) getVarLiteral(mb,getArg(pci,1));
-	str mod= newFcn,fcn;
-	str msg= MAL_SUCCEED;
+str
+OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i, k, mloop, resB, iter, cr;
+	int hvar, tvar;
+	str newFcn = (str) getVarLiteral(mb, getArg(pci, 1));
+	str mod = newFcn, fcn;
+	str msg = MAL_SUCCEED;
 	int alias[MAXARG];
 	char buf[128];
 	InstrPtr q;
 
 	(void) stk;
-	strcpy(buf,newFcn);
-	if( newFcn && (fcn= strchr(buf,'.')) ){
-		mod= buf;
+	strcpy(buf, newFcn);
+	if (newFcn && (fcn = strchr(buf, '.'))) {
+		mod = buf;
 		*fcn = 0;
 		fcn++;
 	} else {
-		mod="unknownModule";
-		fcn= buf;
+		mod = "unknownModule";
+		fcn = buf;
 	}
 	/* search the iterator bat */
-	iter=getArg(pci,2);
-	for(i=2;i<pci->argc;i++) 
-	if( isaBatType(getArgType(mb,pci,i))){
-		iter= getArg(pci,i);
-		break;
-	}
+	iter = getArg(pci, 2);
 
+	for (i = 2; i < pci->argc; i++)
+		if (isaBatType(getArgType(mb, pci, i))) {
+			iter = getArg(pci, i);
+
+			break;
+		}
 #ifdef DEBUG_OPT_MULTIPLEX
 	printf("calling the optimize multiplex script routine\n");
 	printf("multiplex against operator %s \n", s);
@@ -170,94 +175,96 @@ because in the end we issue a recursive function call that should
 find the actual arguments at the proper place of the callee.
 @c
 	/* resB := new(refBat) */
-	q= newFcnCall(mb,"bbp","new");
-	resB = getArg(q,0);
-	if( isAnyExpression(getArgType(mb,pci,0)) )
-		msg= throwMessage("optimizer.multiplex","Target type is missing");
-	pushArgument(mb,q, newTypeVariable(mb,getHeadType(getArgType(mb,pci,0))));
-	pushArgument(mb,q, newTypeVariable(mb,getTailType(getArgType(mb,pci,0))));
-	setVarUsed(mb,resB,TRUE);
-	setVarInitialized(mb,resB);
-	
+	q = newFcnCall(mb, "bbp", "new");
+	resB = getArg(q, 0);
+	if (isAnyExpression(getArgType(mb, pci, 0)))
+		msg = throwMessage("optimizer.multiplex", "Target type is missing");
+	pushArgument(mb, q, newTypeVariable(mb, getHeadType(getArgType(mb, pci, 0))));
+	pushArgument(mb, q, newTypeVariable(mb, getTailType(getArgType(mb, pci, 0))));
+	setVarUsed(mb, resB, TRUE);
+	setVarInitialized(mb, resB);
+
 	/* barrier (mloop,h,r):= newIterator(refBat); */
-	q= newFcnCall(mb,"chopper","newIterator");
-	q->barrier= BARRIERsymbol;
-	getArg(q,0)= mloop= newTmpVariable(mb,TYPE_lng);
-	setVarUsed(mb,mloop,TRUE);
-	setVarInitialized(mb,mloop);
-	hvar= newTmpVariable(mb,TYPE_any);
-	setVarUsed(mb,hvar,TRUE);
-	setVarInitialized(mb,hvar);
-	pushReturn(mb,q,hvar);
-	tvar= newTmpVariable(mb,TYPE_any);
-	pushReturn(mb,q,tvar);
-	setVarUsed(mb,tvar,TRUE);
-	setVarInitialized(mb,tvar);
-	pushArgument(mb,q,iter);
+	q = newFcnCall(mb, "chopper", "newIterator");
+	q->barrier = BARRIERsymbol;
+	getArg(q, 0) = mloop = newTmpVariable(mb, TYPE_lng);
+	setVarUsed(mb, mloop, TRUE);
+	setVarInitialized(mb, mloop);
+	hvar = newTmpVariable(mb, TYPE_any);
+	setVarUsed(mb, hvar, TRUE);
+	setVarInitialized(mb, hvar);
+	pushReturn(mb, q, hvar);
+	tvar = newTmpVariable(mb, TYPE_any);
+	pushReturn(mb, q, tvar);
+	setVarUsed(mb, tvar, TRUE);
+	setVarInitialized(mb, tvar);
+	pushArgument(mb, q, iter);
 
 	/* $1:= bat.find(Ai,h) or constant */
-	alias[2]= tvar;
-	for(i=3;i<pci->argc;i++)
-	if( isaBatType(getArgType(mb,pci,i))){
-		q= newFcnCall(mb,"algebra","find");
-		alias[i]= newTmpVariable(mb,  getTailType(getArgType(mb,pci,i)));
-		setVarUsed(mb,alias[i],TRUE);
-		setVarInitialized(mb,alias[i]);
-		getArg(q,0)= alias[i];
-		pushArgument(mb,q,getArg(pci,i));
-		pushArgument(mb,q,hvar);
-	} 
+	alias[2] = tvar;
+
+	for (i = 3; i < pci->argc; i++)
+		if (isaBatType(getArgType(mb, pci, i))) {
+			q = newFcnCall(mb, "algebra", "find");
+			alias[i] = newTmpVariable(mb, getTailType(getArgType(mb, pci, i)));
+			setVarUsed(mb, alias[i], TRUE);
+			setVarInitialized(mb, alias[i]);
+			getArg(q, 0) = alias[i];
+			pushArgument(mb, q, getArg(pci, i));
+			pushArgument(mb, q, hvar);
+		}
 
 	/* cr:= mod.CMD($1,...,$n); */
-	q= newFcnCall(mb,mod,fcn);
-	cr= getArg(q,0)= newTmpVariable(mb, TYPE_any);
-	setVarUsed(mb,cr,TRUE);
-	setVarInitialized(mb,cr);
+	q = newFcnCall(mb, mod, fcn);
+	cr = getArg(q, 0) = newTmpVariable(mb, TYPE_any);
+	setVarUsed(mb, cr, TRUE);
+	setVarInitialized(mb, cr);
 
-	for(i=2;i<pci->argc;i++) 
-	if( isaBatType(getArgType(mb,pci,i))){
-		pushArgument(mb,q,alias[i]);
-	} else {
-		q= pushArgument(mb,q,getArg(pci,i));
-	}
+	for (i = 2; i < pci->argc; i++)
+		if (isaBatType(getArgType(mb, pci, i))) {
+			pushArgument(mb, q, alias[i]);
+		} else {
+			q = pushArgument(mb, q, getArg(pci, i));
+		}
 
 	/* insert(resB,h,cr); */
-	q= newFcnCall(mb,"bat","insert");
-	setVarUsed(mb,resB,TRUE);
-	setVarInitialized(mb,resB);
-	pushArgument(mb,q,resB);
-	pushArgument(mb,q,hvar);
-	pushArgument(mb,q,cr);
+	q = newFcnCall(mb, "bat", "insert");
+	setVarUsed(mb, resB, TRUE);
+	setVarInitialized(mb, resB);
+	pushArgument(mb, q, resB);
+	pushArgument(mb, q, hvar);
+	pushArgument(mb, q, cr);
 
 /* catch   MALexception and ignore them  and replace value with nil*/
-	q= newInstruction(CATCHsymbol);
-	k= newVariable(mb, GDKstrdup("MALexception"),TYPE_str);
-	pushReturn(mb,q,k);
-	setVarUsed(mb,k,TRUE);
-	setVarInitialized(mb,k);
-	pushInstruction(mb,q);
-	@:malInstr(EXIT,k)@	
+	q = newInstruction(CATCHsymbol);
+	k = newVariable(mb, GDKstrdup("MALexception"), TYPE_str);
+	pushReturn(mb, q, k);
+	setVarUsed(mb, k, TRUE);
+	setVarInitialized(mb, k);
+	pushInstruction(mb, q);
+	@:malInstr(EXIT, k)@
 
 
 /* redo (mloop,h,r):= hasMoreElements(refBat); */
-	q= newFcnCall(mb,"chopper","hasMoreElements");
-	q->barrier= REDOsymbol;
-	getArg(q,0)= mloop;
-	pushReturn(mb,q,hvar); 
-	pushReturn(mb,q,tvar);
-	pushArgument(mb,q,iter);
+	q = newFcnCall(mb, "chopper", "hasMoreElements");
+	q->barrier = REDOsymbol;
+	getArg(q, 0) = mloop;
+	pushReturn(mb, q, hvar);
+	pushReturn(mb, q, tvar);
+	pushArgument(mb, q, iter);
 
-	q= newAssignment(mb);
-	q->barrier= EXITsymbol;
-	getArg(q,0)= mloop;
-	pushReturn(mb,q,hvar);
-	pushReturn(mb,q,tvar);
+	q = newAssignment(mb);
+	q->barrier = EXITsymbol;
+	getArg(q, 0) = mloop;
+	pushReturn(mb, q, hvar);
+	pushReturn(mb, q, tvar);
 
-	q= newAssignment(mb);
-	getArg(q,0)= getArg(pci,0);
-	setVarUsed(mb,getArg(q,0),TRUE);
-	setVarInitialized(mb,getArg(q,0));
-	pushArgument(mb,q,resB);
+	q = newAssignment(mb);
+	getArg(q, 0) = getArg(pci, 0);
+	setVarUsed(mb, getArg(q, 0), TRUE);
+	setVarInitialized(mb, getArg(q, 0));
+	pushArgument(mb, q, resB);
 	return msg;
 }
+
 @}

@@ -903,6 +903,7 @@ of the calendar).
 #endif
 
 typedef int date;
+
 #define date_nil ((date) int_nil)
 @c
 #include "mtime.h"
@@ -912,6 +913,7 @@ Daytime values are also stored as the number of milliseconds that passed since
 the start of the day (i.e. midnight).
 @h
 typedef int daytime;
+
 #define daytime_nil ((daytime) int_nil)
 
 @- timestamp
@@ -940,6 +942,7 @@ typedef union {
 	} s;
 	int asint;		/* the same, seen as single value */
 } rule;
+
 @c
 #define get_rule(r)	((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
 #define set_rule(r,i) { (r).s.weekday = (i)&15;\
@@ -960,6 +963,7 @@ typedef struct {
 	unsigned int dst:1, off1:6, dst_start:25;
 	unsigned int off2:7, dst_end:25;
 } tzone;
+
 @c
 /* as the offset field got split in two, we need macros to get and set them */
 #define get_offset(z)	(((int) (((z)->off1 << 7) + (z)->off2)) - OFFSET_ZERO)
@@ -978,7 +982,7 @@ mal_export str MTIMEcurrent_time(daytime *t);
 mal_export int timestamp_tostr(str *buf, int *len, timestamp *val);
 mal_export int timestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
 
-#endif	/* _MONETTIME_H_ */
+#endif /* _MONETTIME_H_ */
 @+ Defines
 @c
 str MONTHS[13] = { NULL, "january", "february", "march", "april", "may", "june",
@@ -2230,6 +2234,7 @@ timestamp_extract_date_default(date *ret, timestamp *t)
 }
 
 int date_adddays(date *ret, date *v, int *delta);
+
 /* returns the date that comes a number of years after 'v' (or before iff *delta < 0). */
 int
 date_addyears(date *ret, date *v, int *delta)
@@ -2545,18 +2550,18 @@ int @1_comp_@2(bit *retval, @1 *val1, @1 *val2)
 	return GDK_SUCCEED;
 }
 @c
-@:compare(date,EQ,==)@
-@:compare(date,NE,!=)@
-@:compare(date,LT,<)@
-@:compare(date,GT,>)@
-@:compare(date,LE,<=)@
-@:compare(date,GE,>=)@
-@:compare(daytime,EQ,==)@
-@:compare(daytime,NE,!=)@
-@:compare(daytime,LT,<)@
-@:compare(daytime,GT,>)@
-@:compare(daytime,LE,<=)@
-@:compare(daytime,GE,>=)@
+@:compare(date, EQ, ==)@
+@:compare(date, NE, !=)@
+@:compare(date, LT, <)@
+@:compare(date, GT, >)@
+@:compare(date, LE, <=)@
+@:compare(date, GE, >=)@
+@:compare(daytime, EQ, ==)@
+@:compare(daytime, NE, !=)@
+@:compare(daytime, LT, <)@
+@:compare(daytime, GT, >)@
+@:compare(daytime, LE, <=)@
+@:compare(daytime, GE, >=)@
 
 int
 timestamp_isnil(bit *retval, timestamp *val)
@@ -2624,6 +2629,7 @@ timestamp_comp_GE(bit *retval, timestamp *val1, timestamp *val2)
 		*retval = val1->days > val2->days || (val1->days == val2->days && val1->msecs >= val2->msecs);
 	return GDK_SUCCEED;
 }
+
 @- Wrapper
 The Monet V5 API interface is defined here
 @= TIMEZONES
@@ -2647,19 +2653,25 @@ str MTIME@1_2@2(@2 *ret,@1 *src){
 	return MAL_SUCCEED;
 }
 @c
-@:coerce(date,lng)@
-@:coerce(daytime,lng)@
+@:coerce(date, lng)@
+@:coerce(daytime, lng)@
 
-str MTIMEnil2date(date *ret,int *src){
-    (void) src;
-    *ret= date_nil;
-    return MAL_SUCCEED;
+str
+MTIMEnil2date(date *ret, int *src)
+{
+	(void) src;
+	*ret = date_nil;
+	return MAL_SUCCEED;
 }
-str MTIMEdate2date(date *ret,date *src){
-    (void) src;
-    *ret= *src;
-    return MAL_SUCCEED;
+
+str
+MTIMEdate2date(date *ret, date *src)
+{
+	(void) src;
+	*ret = *src;
+	return MAL_SUCCEED;
 }
+
 @-
 The comparison implementations are relatively straightforward.
 @= compareImpl
@@ -2681,276 +2693,396 @@ str MTIME@1_isnil(int *ret, @1 *v){
         @:compareImpl(GT,>,@1)@
         @:compareImpl(GE,>=,@1)@
 @c
-	@:compareAll(date)@
-	@:compareAll(daytime)@
+@:compareAll(date)@
+@:compareAll(daytime)@
 
 extern str MTIMErule_fromstr(rule *ret, str *s);
 
 static BAT *timezones = NULL;
- 
-str MTIMEprelude(){
+
+str
+MTIMEprelude()
+{
 	Box box;
 	ValRecord vr;
 	int ticks;
 	rule RULE_MAR, RULE_OCT;
-	str s1="first sunday from end of march@02:00";
-	str s2="first sunday from end of october@02:00";
+	str s1 = "first sunday from end of march@02:00";
+	str s2 = "first sunday from end of october@02:00";
 
 	monettime_prelude();
 
 	/* here we should initialize the time box as well */
 	box = openBox("time");
-        if( box== 0) 
-                return throwMessage("time.prelude", "failed to open box");
-        /* if the box was already filled we can skip initialization */
-        if( box->sym->vtop == 0){
-		BAT *tz= BATnew(TYPE_str,ATOMindex("tzone"),30);
-		if( tz== NULL)
-                return throwMessage("time.prelude", "failed to create box");
-		BBPrename(tz->batCacheid,"timezones");
-		timezones= tz;
-		newVariable(box->sym,GDKstrdup("timezones"),
-			newBatType(TYPE_str,ATOMindex("tzone")));
-		if( bindBAT(box,"timezones","timezones") ){
+	if (box == 0)
+		return throwMessage("time.prelude", "failed to open box");
+	/* if the box was already filled we can skip initialization */
+	if (box->sym->vtop == 0) {
+		BAT *tz = BATnew(TYPE_str, ATOMindex("tzone"), 30);
+
+		if (tz == NULL)
+			return throwMessage("time.prelude", "failed to create box");
+		BBPrename(tz->batCacheid, "timezones");
+		timezones = tz;
+		newVariable(box->sym, GDKstrdup("timezones"), newBatType(TYPE_str, ATOMindex("tzone")));
+		if (bindBAT(box, "timezones", "timezones")) {
 			return throwMessage("time.prelude", "could not bind timezones");
 		}
-		vr.vtype= ATOMindex("tzone");
-		@:TIMEZONES("Wake Island",           12*60)@
-		@:TIMEZONES("Melbourne/Australia",   11*60)@
-		@:TIMEZONES("Brisbane/Australia",    10*60)@
-		@:TIMEZONES("Japan",                 9*60)@
-		@:TIMEZONES("Singapore",             8*60)@
-		@:TIMEZONES("Thailand",              7*60)@
-		@:TIMEZONES("Pakistan",              5*60)@
-		@:TIMEZONES("United Arab Emirates",  4*60)@ 
-		@:TIMEZONES("GMT",                   0*0)@ 
-		@:TIMEZONES("Azore Islands",        -1*60)@ 
-		@:TIMEZONES("Hawaii/USA",           -10*60)@ 
-		@:TIMEZONES("American Samoa",       -11*60)@ 
-		MTIMErule_fromstr(&RULE_MAR,&s1);
-		MTIMErule_fromstr(&RULE_OCT,&s2);
-		@:TIMEZONES2("Kazakhstan",      6*60, RULE_MAR, RULE_OCT)@ 
-		@:TIMEZONES2("Moscow/Russia",   3*60, RULE_MAR, RULE_OCT)@ 
-		@:TIMEZONES2("East/Europe",     2*60, RULE_MAR, RULE_OCT)@ 
-		@:TIMEZONES2("West/Europe",     1*60, RULE_MAR, RULE_OCT)@ 
-		@:TIMEZONES2("UK",              0*0, RULE_MAR, RULE_OCT)@ 
-		@:TIMEZONES2("Eastern/Brazil", -2*60, RULE_OCT, RULE_MAR)@ 
-		@:TIMEZONES2("Western/Brazil", -3*60, RULE_OCT, RULE_MAR)@ 
-		@:TIMEZONES2("Andes/Brazil",   -4*60, RULE_OCT, RULE_MAR)@ 
-		@:TIMEZONES2("East/USA",       -5*60, RULE_MAR, RULE_OCT)@ 
-		@:TIMEZONES2("Central/USA",    -6*60, RULE_MAR, RULE_OCT)@ 
-		@:TIMEZONES2("Mountain/USA",   -7*60, RULE_MAR, RULE_OCT)@ 
-		@:TIMEZONES2("Alaska/USA",     -9*60, RULE_MAR, RULE_OCT)@ 
+		vr.vtype = ATOMindex("tzone");
+		@:TIMEZONES("Wake Island", 12 * 60)@
+		@:TIMEZONES("Melbourne/Australia", 11 * 60)@
+		@:TIMEZONES("Brisbane/Australia", 10 * 60)@
+		@:TIMEZONES("Japan", 9 * 60)@
+		@:TIMEZONES("Singapore", 8 * 60)@
+		@:TIMEZONES("Thailand", 7 * 60)@
+		@:TIMEZONES("Pakistan", 5 * 60)@
+		@:TIMEZONES("United Arab Emirates", 4 * 60)@
+		@:TIMEZONES("GMT", 0 * 0)@
+		@:TIMEZONES("Azore Islands", -1 * 60)@
+		@:TIMEZONES("Hawaii/USA", -10 * 60)@
+		@:TIMEZONES("American Samoa", -11 * 60)@
+		MTIMErule_fromstr(&RULE_MAR, &s1);
+		MTIMErule_fromstr(&RULE_OCT, &s2);
+		@:TIMEZONES2("Kazakhstan", 6 * 60, RULE_MAR, RULE_OCT)@
+		@:TIMEZONES2("Moscow/Russia", 3 * 60, RULE_MAR, RULE_OCT)@
+		@:TIMEZONES2("East/Europe", 2 * 60, RULE_MAR, RULE_OCT)@
+		@:TIMEZONES2("West/Europe", 1 * 60, RULE_MAR, RULE_OCT)@
+		@:TIMEZONES2("UK", 0 * 0, RULE_MAR, RULE_OCT)@
+		@:TIMEZONES2("Eastern/Brazil", -2 * 60, RULE_OCT, RULE_MAR)@
+		@:TIMEZONES2("Western/Brazil", -3 * 60, RULE_OCT, RULE_MAR)@
+		@:TIMEZONES2("Andes/Brazil", -4 * 60, RULE_OCT, RULE_MAR)@
+		@:TIMEZONES2("East/USA", -5 * 60, RULE_MAR, RULE_OCT)@
+		@:TIMEZONES2("Central/USA", -6 * 60, RULE_MAR, RULE_OCT)@
+		@:TIMEZONES2("Mountain/USA", -7 * 60, RULE_MAR, RULE_OCT)@
+		@:TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT)@
 	}
 	return MAL_SUCCEED;
 }
-str time_epilogue(void){
+
+str
+time_epilogue(void)
+{
 	GDKfree(ts_nilptr);
 	GDKfree(tz_nilptr);
 	return MAL_SUCCEED;
 }
-str MTIMEsynonyms(bit* allow) {
+
+str
+MTIMEsynonyms(bit *allow)
+{
 	monettime_synonyms(allow);
 	return MAL_SUCCEED;
 }
-str MTIMEoldduration(int *ndays, str *s) {
+
+str
+MTIMEoldduration(int *ndays, str *s)
+{
 	oldduration(ndays, *s);
 	return MAL_SUCCEED;
-}	
-str MTIMEolddate(date *d, str *buf) {
-	olddate(d,*buf);
+}
+
+str
+MTIMEolddate(date *d, str *buf)
+{
+	olddate(d, *buf);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtimezone(tzone *z, str *name){
-        str s= *name;
-        (void)z;        /* fool compiler */
-        if( BUNfnd(timezones,s)==0) s = "GMT";
-        if( BUNfnd(timezones,s))
-                printf("MTIMEtimezone NYI\n");
-                ;
-        return MAL_SUCCEED;
+str
+MTIMEtimezone(tzone *z, str *name)
+{
+	str s = *name;
+
+	(void) z;		/* fool compiler */
+	if (BUNfnd(timezones, s) == 0)
+		s = "GMT";
+	if (BUNfnd(timezones, s))
+		printf("MTIMEtimezone NYI\n");
+	;
+	return MAL_SUCCEED;
 }
 
-str MTIMEtzone_set_local(int res, tzone *z) {
-	(void) res; /* fool compilers */
+str
+MTIMEtzone_set_local(int res, tzone *z)
+{
+	(void) res;		/* fool compilers */
 	tzone_set_local(z);
 	return MAL_SUCCEED;
 }
-str MTIMEtzone_get_local(tzone *z) {
+
+str
+MTIMEtzone_get_local(tzone *z)
+{
 	tzone_get_local(z);
 	return MAL_SUCCEED;
 }
-str MTIMEmonth_from_str(int *ret, str *month) {
-	month_from_str(ret,*month);
+
+str
+MTIMEmonth_from_str(int *ret, str *month)
+{
+	month_from_str(ret, *month);
 	return MAL_SUCCEED;
 }
-str MTIMEmonth_to_str(str *ret, int *month) {
-	month_to_str(ret,month);
+
+str
+MTIMEmonth_to_str(str *ret, int *month)
+{
+	month_to_str(ret, month);
 	return MAL_SUCCEED;
 }
-str MTIMEday_from_str(int *ret, str *day ){
-	day_from_str(ret,*day);
+
+str
+MTIMEday_from_str(int *ret, str *day)
+{
+	day_from_str(ret, *day);
 	return MAL_SUCCEED;
 }
-str MTIMEday_to_str(str *ret, int *day) {
+
+str
+MTIMEday_to_str(str *ret, int *day)
+{
 	day_to_str(ret, day);
 	return MAL_SUCCEED;
 }
 
-str MTIMEdate_tostr(str *ret, date *d){
-	int big=128;
-	char buf[128], *s1=buf;
-	*s1=0;
-	date_tostr(&s1,&big,d);
-	*ret= GDKstrdup(buf);
+str
+MTIMEdate_tostr(str *ret, date *d)
+{
+	int big = 128;
+	char buf[128], *s1 = buf;
+
+	*s1 = 0;
+	date_tostr(&s1, &big, d);
+	*ret = GDKstrdup(buf);
 	return MAL_SUCCEED;
 }
-str MTIMEdate_fromstr(date *ret, str *s){
-        int len=0;
-        date *d=0;
-        date_fromstr(*s,&len,&d);
-        *ret= *d;
-        return MAL_SUCCEED;
+
+str
+MTIMEdate_fromstr(date *ret, str *s)
+{
+	int len = 0;
+	date *d = 0;
+
+	date_fromstr(*s, &len, &d);
+	*ret = *d;
+	return MAL_SUCCEED;
 }
-str MTIMEdate_create(date *ret, int *year, int *month, int *day) {
+
+str
+MTIMEdate_create(date *ret, int *year, int *month, int *day)
+{
 	date_create(ret, year, month, day);
 	return MAL_SUCCEED;
 }
 
-str MTIMEdaytime_tostr(str *ret, daytime* d){
-	char buf[128],*s=buf;
-	int len=128;
-	*s=0;
+str
+MTIMEdaytime_tostr(str *ret, daytime *d)
+{
+	char buf[128], *s = buf;
+	int len = 128;
+
+	*s = 0;
 	daytime_tostr(&s, &len, d);
-	*ret= GDKstrdup(buf);
+	*ret = GDKstrdup(buf);
 	return MAL_SUCCEED;
 }
-str MTIMEdaytime_create(daytime* ret, int *hour, int *min, int* sec, int* msec) {
+
+str
+MTIMEdaytime_create(daytime *ret, int *hour, int *min, int *sec, int *msec)
+{
 	daytime_create(ret, hour, min, sec, msec);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtimestamp_tostr(str *s, timestamp* d){
-	char buf[128], *s1=buf;
-	int len=128;
-	*s1=0;
+str
+MTIMEtimestamp_tostr(str *s, timestamp *d)
+{
+	char buf[128], *s1 = buf;
+	int len = 128;
+
+	*s1 = 0;
 	timestamp_tostr(&s1, &len, d);
-	*s= GDKstrdup(buf);
+	*s = GDKstrdup(buf);
 	return MAL_SUCCEED;
 }
-str MTIMEtimestamp_fromstr(timestamp* ret, str *d){
-	int len =strlen(*d);
+
+str
+MTIMEtimestamp_fromstr(timestamp *ret, str *d)
+{
+	int len = strlen(*d);
+
 	timestamp_fromstr(*d, &len, &ret);
 	return MAL_SUCCEED;
 }
-str MTIMEtimestamp_create(timestamp* ret, date *d, daytime* t, tzone *z) {
+
+str
+MTIMEtimestamp_create(timestamp *ret, date *d, daytime *t, tzone *z)
+{
 	timestamp_create(ret, d, t, z);
 	return MAL_SUCCEED;
 }
-str MTIMEtimestamp_create_default(timestamp* ret, date *d, daytime* t) {
+
+str
+MTIMEtimestamp_create_default(timestamp *ret, date *d, daytime *t)
+{
 	return MTIMEtimestamp_create(ret, d, t, &tzone_local);
 }
-str MTIMEdate_extract_year(int *ret, date* v) {
+
+str
+MTIMEdate_extract_year(int *ret, date *v)
+{
 	date_extract_year(ret, v);
 	return MAL_SUCCEED;
 }
-str MTIMEdate_extract_month(int *ret, date* v) {
+
+str
+MTIMEdate_extract_month(int *ret, date *v)
+{
 	date_extract_month(ret, v);
 	return MAL_SUCCEED;
 }
-str MTIMEdate_extract_day(int *ret, date* v) {
+
+str
+MTIMEdate_extract_day(int *ret, date *v)
+{
 	date_extract_day(ret, v);
 	return MAL_SUCCEED;
 }
 
-str MTIMEdate_extract_dayofyear(int *ret, date* v) {
+str
+MTIMEdate_extract_dayofyear(int *ret, date *v)
+{
 	date_extract_dayofyear(ret, v);
 	return MAL_SUCCEED;
 }
-str MTIMEdate_extract_weekofyear(int *ret, date * v) {
+
+str
+MTIMEdate_extract_weekofyear(int *ret, date *v)
+{
 	date_extract_weekofyear(ret, v);
 	return MAL_SUCCEED;
 }
 
-str MTIMEdate_extract_dayofweek(int *ret, date *v) {
+str
+MTIMEdate_extract_dayofweek(int *ret, date *v)
+{
 	date_extract_dayofweek(ret, v);
 	return MAL_SUCCEED;
 }
 
-str MTIMEdaytime_extract_hours(int *ret, daytime *v) {
+str
+MTIMEdaytime_extract_hours(int *ret, daytime *v)
+{
 	daytime_extract_hours(ret, v);
 	return MAL_SUCCEED;
 }
 
-str MTIMEdaytime_extract_minutes(int *ret, daytime* v){
+str
+MTIMEdaytime_extract_minutes(int *ret, daytime *v)
+{
 	daytime_extract_minutes(ret, v);
 	return MAL_SUCCEED;
 }
 
-str MTIMEdaytime_extract_seconds(int *ret, daytime* v) {
+str
+MTIMEdaytime_extract_seconds(int *ret, daytime *v)
+{
 	daytime_extract_seconds(ret, v);
 	return MAL_SUCCEED;
 }
 
-str MTIMEdaytime_extract_milliseconds(int *ret, daytime* v) {
+str
+MTIMEdaytime_extract_milliseconds(int *ret, daytime *v)
+{
 	daytime_extract_milliseconds(ret, v);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtimestamp_extract_daytime(daytime* ret, timestamp* t, tzone *z) {
+str
+MTIMEtimestamp_extract_daytime(daytime *ret, timestamp *t, tzone *z)
+{
 	timestamp_extract_daytime(ret, t, z);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtimestamp_extract_daytime_default(daytime* ret, timestamp* t) {
+str
+MTIMEtimestamp_extract_daytime_default(daytime *ret, timestamp *t)
+{
 	return MTIMEtimestamp_extract_daytime(ret, t, &tzone_local);
 }
 
-str MTIMEtimestamp_extract_date(date* ret, timestamp *t, tzone *z) {
+str
+MTIMEtimestamp_extract_date(date *ret, timestamp *t, tzone *z)
+{
 	timestamp_extract_date(ret, t, z);
 	return MAL_SUCCEED;
 }
-str MTIMEtimestamp_extract_date_default(date* ret, timestamp *t) {
+
+str
+MTIMEtimestamp_extract_date_default(date *ret, timestamp *t)
+{
 	return MTIMEtimestamp_extract_date(ret, t, &tzone_local);
 }
-str MTIMEdate_addyears(date * ret, date *v, int *delta) {
+
+str
+MTIMEdate_addyears(date *ret, date *v, int *delta)
+{
 	date_addyears(ret, v, delta);
 	return MAL_SUCCEED;
 }
-str MTIMEdate_adddays(date * ret, date *v, int *delta) {
+
+str
+MTIMEdate_adddays(date *ret, date *v, int *delta)
+{
 	date_adddays(ret, v, delta);
 	return MAL_SUCCEED;
 }
 
-str MTIMEdate_addmonths(date * ret, date *v, int *delta) {
+str
+MTIMEdate_addmonths(date *ret, date *v, int *delta)
+{
 	date_addmonths(ret, v, delta);
 	return MAL_SUCCEED;
 }
 
-str MTIMEdate_diff(int *ret, date* v1, date *v2) {
+str
+MTIMEdate_diff(int *ret, date *v1, date *v2)
+{
 	date_diff(ret, v1, v2);
 	return MAL_SUCCEED;
 }
-str MTIMEtimestamp_add(timestamp* ret, timestamp *v, lng *msecs) {
+
+str
+MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs)
+{
 	timestamp_add(ret, v, msecs);
 	return MAL_SUCCEED;
 }
-str MTIMEtimestamp_diff(lng * ret, timestamp *v1, timestamp *v2) {
+
+str
+MTIMEtimestamp_diff(lng *ret, timestamp *v1, timestamp *v2)
+{
 	timestamp_diff(ret, v1, v2);
 	return MAL_SUCCEED;
 }
-str MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone* z) {
+
+str
+MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z)
+{
 	timestamp_inside_dst(ret, p, z);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtimestamp_isnil(bit *retval, timestamp *val) {
+str
+MTIMEtimestamp_isnil(bit *retval, timestamp *val)
+{
 	*retval = ts_isnil(*val);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2) {
+str
+MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2)
+{
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
@@ -2958,7 +3090,9 @@ str MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2) {
 	return MAL_SUCCEED;
 }
 
-str MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2) {
+str
+MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2)
+{
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
@@ -2966,238 +3100,342 @@ str MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2) {
 	return MAL_SUCCEED;
 }
 
-str MTIMEtimestamp_LT(bit *retval, timestamp *val1, timestamp *val2) {
+str
+MTIMEtimestamp_LT(bit *retval, timestamp *val1, timestamp *val2)
+{
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
-		*retval = val1->days < val2->days ||
-			  (val1->days == val2->days && val1->msecs < val2->msecs);
+		*retval = val1->days < val2->days || (val1->days == val2->days && val1->msecs < val2->msecs);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtimestamp_LE(bit *retval, timestamp *val1, timestamp *val2) {
+str
+MTIMEtimestamp_LE(bit *retval, timestamp *val1, timestamp *val2)
+{
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
-		*retval = val1->days < val2->days ||
-			  (val1->days == val2->days && val1->msecs <= val2->msecs);
+		*retval = val1->days < val2->days || (val1->days == val2->days && val1->msecs <= val2->msecs);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtimestamp_GT(bit *retval, timestamp *val1, timestamp *val2) {
+str
+MTIMEtimestamp_GT(bit *retval, timestamp *val1, timestamp *val2)
+{
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
-		*retval = val1->days > val2->days ||
-			  (val1->days == val2->days && val1->msecs > val2->msecs);
+		*retval = val1->days > val2->days || (val1->days == val2->days && val1->msecs > val2->msecs);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtimestamp_GE(bit *retval, timestamp *val1, timestamp *val2) {
+str
+MTIMEtimestamp_GE(bit *retval, timestamp *val1, timestamp *val2)
+{
 	if (ts_isnil(*val1) || ts_isnil(*val2))
 		*retval = bit_nil;
 	else
-		*retval = val1->days > val2->days ||
-			  (val1->days == val2->days && val1->msecs >= val2->msecs);
+		*retval = val1->days > val2->days || (val1->days == val2->days && val1->msecs >= val2->msecs);
 	return MAL_SUCCEED;
 }
-str MTIMErule_tostr(str *s, rule *r){
-	char buf[128], *s1=buf;
-	int len=128;
-	*s1=0;
+
+str
+MTIMErule_tostr(str *s, rule *r)
+{
+	char buf[128], *s1 = buf;
+	int len = 128;
+
+	*s1 = 0;
 	rule_tostr(&s1, &len, r);
-	*s= GDKstrdup(buf);
-        return MAL_SUCCEED;
-}
-str MTIMErule_fromstr(rule *ret, str *s){
-        int len = 0;
-        rule *d=0;
-        rule_fromstr(*s,&len,&d);
-        *ret = *d;
-        GDKfree(d);
-        return MAL_SUCCEED;
+	*s = GDKstrdup(buf);
+	return MAL_SUCCEED;
 }
 
-str MTIMErule_create(rule *ret, int *month, int* day, int* weekday, int *minutes) {
+str
+MTIMErule_fromstr(rule *ret, str *s)
+{
+	int len = 0;
+	rule *d = 0;
+
+	rule_fromstr(*s, &len, &d);
+	*ret = *d;
+	GDKfree(d);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMErule_create(rule *ret, int *month, int *day, int *weekday, int *minutes)
+{
 	rule_create(ret, month, day, weekday, minutes);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtzone_create_dst(tzone *ret, int* minutes, rule* start, rule* end) {
+str
+MTIMEtzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end)
+{
 	tzone_create_dst(ret, minutes, start, end);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtzone_create(tzone *ret, int* minutes) {
+str
+MTIMEtzone_create(tzone *ret, int *minutes)
+{
 	tzone_create(ret, minutes);
 	return MAL_SUCCEED;
 }
 
-str MTIMErule_extract_month(int *ret, rule* r) {
+str
+MTIMErule_extract_month(int *ret, rule *r)
+{
 	rule_extract_month(ret, r);
 	return MAL_SUCCEED;
 }
-str MTIMErule_extract_day(int *ret, rule* r) {
+
+str
+MTIMErule_extract_day(int *ret, rule *r)
+{
 	rule_extract_day(ret, r);
 	return MAL_SUCCEED;
 }
-str MTIMErule_extract_weekday(int *ret, rule* r) {
+
+str
+MTIMErule_extract_weekday(int *ret, rule *r)
+{
 	rule_extract_weekday(ret, r);
 	return MAL_SUCCEED;
 }
 
-str MTIMErule_extract_minutes(int *ret, rule* r) {
+str
+MTIMErule_extract_minutes(int *ret, rule *r)
+{
 	rule_extract_minutes(ret, r);
 	return MAL_SUCCEED;
 }
-str MTIMEtzone_extract_start(rule *ret, tzone* t) {
+
+str
+MTIMEtzone_extract_start(rule *ret, tzone *t)
+{
 	tzone_extract_start(ret, t);
 	return MAL_SUCCEED;
 }
-str MTIMEtzone_extract_end(rule *ret, tzone* t) {
+
+str
+MTIMEtzone_extract_end(rule *ret, tzone *t)
+{
 	tzone_extract_end(ret, t);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtzone_extract_minutes(int *ret, tzone* t) {
+str
+MTIMEtzone_extract_minutes(int *ret, tzone *t)
+{
 	tzone_extract_minutes(ret, t);
-        return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
-str MTIMEdate_sub_sec_interval_wrap(date *ret, date* t, int *sec) {
+
+str
+MTIMEdate_sub_sec_interval_wrap(date *ret, date *t, int *sec)
+{
 	date_sub_sec_interval_wrap(ret, t, sec);
-        return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
-str MTIMEdate_add_sec_interval_wrap(date *ret, date* t, int *sec) {
+
+str
+MTIMEdate_add_sec_interval_wrap(date *ret, date *t, int *sec)
+{
 	date_add_sec_interval_wrap(ret, t, sec);
-        return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
-str MTIMEdate_add_month_interval_wrap(date *ret, date* t, int *months) {
-        return MTIMEdate_addmonths(ret, t, months);
+
+str
+MTIMEdate_add_month_interval_wrap(date *ret, date *t, int *months)
+{
+	return MTIMEdate_addmonths(ret, t, months);
 }
-str MTIMEcompute_rule_foryear(date *ret, rule* val, int *year) {
+
+str
+MTIMEcompute_rule_foryear(date *ret, rule *val, int *year)
+{
 	compute_rule_foryear(ret, val, year);
 	return MAL_SUCCEED;
 }
 
-str MTIMEtzone_tostr(str *s,tzone *ret){
-	char buf[128], *s1=buf;
-	int len=128;
-	*s1=0;
+str
+MTIMEtzone_tostr(str *s, tzone *ret)
+{
+	char buf[128], *s1 = buf;
+	int len = 128;
+
+	*s1 = 0;
 	tzone_tostr(&s1, &len, ret);
-	*s= GDKstrdup(buf);
-        return MAL_SUCCEED;
+	*s = GDKstrdup(buf);
+	return MAL_SUCCEED;
 }
-str MTIMEtzone_fromstr(tzone *ret, str *s){
-        int len = 0;
-        tzone *d=0;
-        tzone_fromstr(*s,&len,&d);
-        *ret = *d;
-        return MAL_SUCCEED;
+
+str
+MTIMEtzone_fromstr(tzone *ret, str *s)
+{
+	int len = 0;
+	tzone *d = 0;
+
+	tzone_fromstr(*s, &len, &d);
+	*ret = *d;
+	return MAL_SUCCEED;
 }
-str MTIMEdaytime_fromstr(daytime* ret, str *s){
-        int len=0;
-        daytime *d=0;
-        daytime_fromstr(*s, &len, &d);
-        *ret = *d;
-        return MAL_SUCCEED;
+
+str
+MTIMEdaytime_fromstr(daytime *ret, str *s)
+{
+	int len = 0;
+	daytime *d = 0;
+
+	daytime_fromstr(*s, &len, &d);
+	*ret = *d;
+	return MAL_SUCCEED;
 }
 
 @-
 The utilities from Monet V4
 @c
-str MTIMEmsecs(lng *ret,int *d, int *h, int *m, int *s, int *ms){
-	*ret = ((lng)*ms) + 1000* (*s + 60 *(*m + 60 *(*h +  24 * *d)));
+str
+MTIMEmsecs(lng *ret, int *d, int *h, int *m, int *s, int *ms)
+{
+	*ret = ((lng) *ms) + 1000 * (*s + 60 * (*m + 60 * (*h + 24 * *d)));
 	return MAL_SUCCEED;
 }
-str MTIMEdaytime1(daytime *ret, int *h){
-	int m=0, s=0, ms=0;
+
+str
+MTIMEdaytime1(daytime *ret, int *h)
+{
+	int m = 0, s = 0, ms = 0;
+
 	daytime_create(ret, h, &m, &s, &ms);
 	return MAL_SUCCEED;
 }
-str MTIMEdaytime2(daytime *ret, int *h, int *m){
-	int s=0, ms=0;
+
+str
+MTIMEdaytime2(daytime *ret, int *h, int *m)
+{
+	int s = 0, ms = 0;
+
 	daytime_create(ret, h, m, &s, &ms);
 	return MAL_SUCCEED;
 }
-str MTIMEdaytime3(daytime *ret, int *h, int *m, int *s){
-	int ms=0;
+
+str
+MTIMEdaytime3(daytime *ret, int *h, int *m, int *s)
+{
+	int ms = 0;
+
 	daytime_create(ret, h, m, s, &ms);
 	return MAL_SUCCEED;
 }
 
-str MTIMEunix_epoch(timestamp *ret){
-	date d0= todate(1,1,1970);
-	int zero=0;
-	str s= "GMT";
+str
+MTIMEunix_epoch(timestamp *ret)
+{
+	date d0 = todate(1, 1, 1970);
+	int zero = 0;
+	str s = "GMT";
 	daytime d1;
 	tzone d2;
-	daytime_create(&d1,&zero,&zero,&zero,&zero);
+
+	daytime_create(&d1, &zero, &zero, &zero, &zero);
 	MTIMEtzone_fromstr(&d2, &s);
-	timestamp_create(ret,&d0,&d1,&d2);
+	timestamp_create(ret, &d0, &d1, &d2);
 	return MAL_SUCCEED;
 }
 
-str MTIMEepoch(timestamp *ret) {
+str
+MTIMEepoch(timestamp *ret)
+{
 	timestamp ts;
-	lng t = ((lng)time(0)) * 1000;
+	lng t = ((lng) time(0)) * 1000;
 	str e;
+
 	/* convert number of seconds into a timestamp */
-	(e = MTIMEunix_epoch(&ts)) == MAL_SUCCEED &&
-		(e = MTIMEtimestamp_add(ret, &ts, &t)) == MAL_SUCCEED;
-	return(e);
+	(e = MTIMEunix_epoch(&ts)) == MAL_SUCCEED && (e = MTIMEtimestamp_add(ret, &ts, &t)) == MAL_SUCCEED;
+	return (e);
 }
 
-str MTIMEepoch2lng(lng *ret, timestamp *t){
+str
+MTIMEepoch2lng(lng *ret, timestamp *t)
+{
 	timestamp e;
 	lng v;
+
 	MTIMEunix_epoch(&e);
-	timestamp_diff(&v,&e,t);
-	*ret = v/1000;
+	timestamp_diff(&v, &e, t);
+	*ret = v / 1000;
 	return MAL_SUCCEED;
 }
-str MTIMEtimestamp(timestamp *ret, int *sec){
+
+str
+MTIMEtimestamp(timestamp *ret, int *sec)
+{
 	timestamp e;
 	lng l = *sec * 1000;
+
 	MTIMEunix_epoch(&e);
-	timestamp_add(ret,&e, &l);
+	timestamp_add(ret, &e, &l);
 	return MAL_SUCCEED;
 }
-str MTIMEruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint){
-	int d0 = 60* *h;
-	int d1 = d0+ *mint;
+
+str
+MTIMEruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint)
+{
+	int d0 = 60 * *h;
+	int d1 = d0 + *mint;
+
 	rule_create(ret, m, d, w, &d1);
 	return MAL_SUCCEED;
 }
-str MTIMEruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint){
+
+str
+MTIMEruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint)
+{
 	int d;
-	int d0 = 60* *h;
-	int d1 = d0+ *mint;
+	int d0 = 60 * *h;
+	int d1 = d0 + *mint;
+
 	day_from_str(&d, *dnme);
 	rule_create(ret, m, &d, w, &d1);
 	return MAL_SUCCEED;
 }
-str MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint){
+
+str
+MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint)
+{
 	int d;
+
 	day_from_str(&d, *dnme);
 	rule_create(ret, m, &d, w, mint);
 	return MAL_SUCCEED;
 }
 
-str MTIMEcurrent_timestamp(timestamp *t)
+str
+MTIMEcurrent_timestamp(timestamp *t)
 {
 	MTIMEepoch(t);
 	return MAL_SUCCEED;
 }
-str MTIMEcurrent_date(date *d)
+
+str
+MTIMEcurrent_date(date *d)
 {
 	timestamp stamp;
+
 	MTIMEcurrent_timestamp(&stamp);
 	MTIMEtimestamp_extract_date_default(d, &stamp);
 	return MAL_SUCCEED;
 }
-str MTIMEcurrent_time(daytime *t)
+
+str
+MTIMEcurrent_time(daytime *t)
 {
 	timestamp stamp;
+
 	MTIMEcurrent_timestamp(&stamp);
 	MTIMEtimestamp_extract_daytime_default(t, &stamp);
 	return MAL_SUCCEED;
@@ -3241,11 +3479,12 @@ bunins_failed:
 
 @-
 @c
-@:Extract(date,year,int)@
-@:Extract(date,month,int)@
-@:Extract(date,day,int)@
-@:Extract(daytime,hours,int)@
-@:Extract(daytime,minutes,int)@
-@:Extract(daytime,seconds,int)@
-@:Extract(daytime,milliseconds,int)@
+@:Extract(date, year, int)@
+@:Extract(date, month, int)@
+@:Extract(date, day, int)@
+@:Extract(daytime, hours, int)@
+@:Extract(daytime, minutes, int)@
+@:Extract(daytime, seconds, int)@
+@:Extract(daytime, milliseconds, int)@
+
 @}

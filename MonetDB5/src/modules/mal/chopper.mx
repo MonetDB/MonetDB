@@ -103,14 +103,17 @@ to determine how far to advance when the next chunk is retrieved.
 The number of elements in the chunk is limited by the granule
 size.
 @c
-str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule){
+str
+CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule)
+{
 	BAT *b, *view;
-	size_t cnt,first;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("chopper.newChunkIterator", "Cannot access descriptor");
-    }
-	if( *vid ){
-		if( (view= BATdescriptor(*vid)) == NULL ){
+	size_t cnt, first;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("chopper.newChunkIterator", "Cannot access descriptor");
+	}
+	if (*vid) {
+		if ((view = BATdescriptor(*vid)) == NULL) {
 			BBPunfix(b->batCacheid);
 			return throwMessage("chopper.newChunkIterator", "Cannot access 'vid' descriptor");
 		}
@@ -118,52 +121,55 @@ str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule){
 		   refer to the same BAT */
 	}
 	cnt = BATcount(b);
-	first = BUNindex(b,BUNfirst(b));
-	view= VIEWcreate_(b,TRUE);
+	first = BUNindex(b, BUNfirst(b));
+	view = VIEWcreate_(b, TRUE);
 	BBPunfix(b->batCacheid);
 
-	BBPincref(*vid=  view->batCacheid,TRUE);
+	BBPincref(*vid = view->batCacheid, TRUE);
 	/*  printf("set bat chunk bound to %d %d - %d\n",
-		*granule, first, MIN(cnt,(size_t) *granule)); */
-	VIEWbounds(view,(size_t) first, first + MIN(cnt,(size_t) *granule)-1);
-	BATseqbase(view,first-1);
-	/* BBPunfix(view->batCacheid);*/
-	*res = first ;
+	 *granule, first, MIN(cnt,(size_t) *granule)); */
+	VIEWbounds(view, (size_t) first, first + MIN(cnt, (size_t) * granule) - 1);
+	BATseqbase(view, first - 1);
+	/* BBPunfix(view->batCacheid); */
+	*res = first;
 	return MAL_SUCCEED;
 }
+
 @-
 The hasMoreElements version advances the chunk reader,
 which also means that the view descriptor is already available.
 The granule size may differ in each call.
 @c
-str CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule){
+str
+CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule)
+{
 	BAT *b, *view;
 	size_t i;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("chopper.newChunkMoreElements",
-				"Cannot access descriptor");
-    }
-	if( (view= BATdescriptor(*vid)) == NULL ){
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("chopper.newChunkMoreElements", "Cannot access descriptor");
+	}
+	if ((view = BATdescriptor(*vid)) == NULL) {
 		BBPunfix(b->batCacheid);
-        return throwMessage("chopper.newChunkMoreElements",
-				"Cannot access 'vid' descriptor");
-    }
+		return throwMessage("chopper.newChunkMoreElements", "Cannot access 'vid' descriptor");
+	}
 	i = *res + BATcount(view);
-	if( i >= BUNindex(b,BUNlast(b)) ){
+	if (i >= BUNindex(b, BUNlast(b))) {
 		*res = -1;
 		BBPunfix(b->batCacheid);
 		BBPunfix(view->batCacheid);
 		return MAL_SUCCEED;
 	}
 	/* printf("set bat chunk bound to %d - %d \n",
-		i, i+(size_t) *granule-1); */
-	VIEWbounds(view, i, i+(size_t) *granule-1);
-	BATseqbase(view,i-1);
+	   i, i+(size_t) *granule-1); */
+	VIEWbounds(view, i, i + (size_t) * granule - 1);
+	BATseqbase(view, i - 1);
 	BBPunfix(b->batCacheid);
 	BBPunfix(view->batCacheid);
 	*res = i;
 	return MAL_SUCCEED;
 }
+
 @-
 The BUN- and BAT-stream manipulate a long handle, i.e.
 the destination variable. It assumes it has been set to
@@ -172,7 +178,9 @@ it fetches a bun and returns the increment to the control
 variable. If it returns zero the control variable has been reset
 to zero and end of stream has been reached.
 @c
-str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	BAT *b;
 	lng *cursor;
 	int *bid;
@@ -180,32 +188,34 @@ str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BUN p;
 	ValPtr head, tail;
 
-	cursor = (lng *) getArgReference(stk,pci,0);
+	cursor = (lng *) getArgReference(stk, pci, 0);
 	head = &stk->stk[pci->argv[1]];
 	tail = &stk->stk[pci->argv[2]];
-	bid = (int *) getArgReference(stk,pci,3);
+	bid = (int *) getArgReference(stk, pci, 3);
 
-	if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("chopper.newChunkMoreElements",
-				"Cannot access 'bid' descriptor");
-    }
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("chopper.newChunkMoreElements", "Cannot access 'bid' descriptor");
+	}
 
-	if( BATcount(b) == 0) {
+	if (BATcount(b) == 0) {
 		*cursor = -1;
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	*cursor = BUNindex(b,BUNfirst(b));
+	*cursor = BUNindex(b, BUNfirst(b));
 
 	/* get head = ... tail = ... */
-	yy= *cursor;
-	p = BUNptr(b,yy);
-	VALinit( head, getArgType(mb,pci,1),BUNhead(b,p));
-	VALinit( tail, getArgType(mb,pci,2),BUNtail(b,p));
+	yy = *cursor;
+	p = BUNptr(b, yy);
+	VALinit(head, getArgType(mb, pci, 1), BUNhead(b, p));
+	VALinit(tail, getArgType(mb, pci, 2), BUNtail(b, p));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-str CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	BAT *b;
 	lng *cursor;
 	size_t yy;
@@ -213,31 +223,31 @@ str CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BUN p;
 	ValPtr head, tail;
 
-	cursor = (lng *) getArgReference(stk,pci,0);
+	cursor = (lng *) getArgReference(stk, pci, 0);
 	head = &stk->stk[pci->argv[1]];
 	tail = &stk->stk[pci->argv[2]];
-	bid = (bat *) getArgReference(stk,pci,3);
+	bid = (bat *) getArgReference(stk, pci, 3);
 
-	if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("chopper.newChunkMoreElements",
-				"Cannot access 'bid' descriptor");
-    }
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("chopper.newChunkMoreElements", "Cannot access 'bid' descriptor");
+	}
 
-	yy= *cursor+1;
+	yy = *cursor + 1;
 	*cursor = yy;
 
 	/* get head = ... tail = ... */
-	p = BUNptr(b,yy);
-	if( p >= BUNlast(b)){
+	p = BUNptr(b, yy);
+	if (p >= BUNlast(b)) {
 		*cursor = -1;
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	VALinit( head, getArgType(mb,pci,1),BUNhead(b,p));
-	VALinit( tail, getArgType(mb,pci,2),BUNtail(b,p));
+	VALinit(head, getArgType(mb, pci, 1), BUNhead(b, p));
+	VALinit(tail, getArgType(mb, pci, 2), BUNtail(b, p));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 @-
 
 @-
@@ -246,7 +256,9 @@ you know the underlying type. Often it is cheaper to use
 the extended BAT iterator, because then it can re-use the
 BAT descriptor.
 @c
-str CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	BAT *b;
 	lng *cursor;
 	int *bid;
@@ -254,27 +266,29 @@ str CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BUN p;
 	ValPtr head;
 
-	cursor = (lng *) getArgReference(stk,pci,2);
-	bid = (int *) getArgReference(stk,pci,1);
+	cursor = (lng *) getArgReference(stk, pci, 2);
+	bid = (int *) getArgReference(stk, pci, 1);
 	head = &stk->stk[pci->argv[0]];
 
-	if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("chopper.getHead",
-				"Cannot access 'bid' descriptor");
-    }
-	limit=  BUNindex(b,BUNlast(b));
-	if( *cursor<0  || *cursor >=limit) {
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("chopper.getHead", "Cannot access 'bid' descriptor");
+	}
+	limit = BUNindex(b, BUNlast(b));
+	if (*cursor < 0 || *cursor >= limit) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("mal.getHead","range error");
+		return throwMessage("mal.getHead", "range error");
 	}
 
 	/* get head = ... */
-	p = BUNptr(b,*cursor);
-	VALinit( head, getArgType(mb,pci,3),BUNhead(b,p));
+	p = BUNptr(b, *cursor);
+	VALinit(head, getArgType(mb, pci, 3), BUNhead(b, p));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-str CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	BAT *b;
 	lng *cursor;
 	int *bid;
@@ -282,25 +296,25 @@ str CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BUN p;
 	ValPtr tail;
 
-	cursor = (lng *) getArgReference(stk,pci,2);
-	bid = (int *) getArgReference(stk,pci,1);
+	cursor = (lng *) getArgReference(stk, pci, 2);
+	bid = (int *) getArgReference(stk, pci, 1);
 	tail = &stk->stk[pci->argv[0]];
 
-	if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("chopper.getTail",
-				"Cannot access 'bid' descriptor");
-    }
-	limit=  BUNindex(b,BUNlast(b));
-	if( *cursor<0  || *cursor >=limit) {
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("chopper.getTail", "Cannot access 'bid' descriptor");
+	}
+	limit = BUNindex(b, BUNlast(b));
+	if (*cursor < 0 || *cursor >= limit) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("mal.getTail","range error");
+		return throwMessage("mal.getTail", "range error");
 	}
 
 	/* get tail = ... */
-	p = BUNptr(b,*cursor);
-	VALinit( tail, getArgType(mb,pci,3),BUNtail(b,p));
+	p = BUNptr(b, *cursor);
+	VALinit(tail, getArgType(mb, pci, 3), BUNtail(b, p));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 @-
 @}

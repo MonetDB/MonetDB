@@ -187,134 +187,189 @@ Using the Monet Performance Profiler is constrained by the mal_profiler.
 	":Monet not compiled for performance monitoring");
 
 
-str CMDactivateProfiler(int *res, str *name){
-	(void) res; /* fool compiler */
+str
+CMDactivateProfiler(int *res, str *name)
+{
+	(void) res;		/* fool compiler */
 	checkProfiler("activate");
 	activateCounter(*name);
 	return MAL_SUCCEED;
 }
 
-str CMDdeactivateProfiler(int *res, str *name){
-	(void) res; /* fool compiler */
+str
+CMDdeactivateProfiler(int *res, str *name)
+{
+	(void) res;		/* fool compiler */
 	checkProfiler("deactivate");
 	deactivateCounter(*name);
 	return MAL_SUCCEED;
 }
 
-str CMDsetFilterProfiler(int *res, str *mod, str *fcn){
-	(void) res; /* fool compiler */
+str
+CMDsetFilterProfiler(int *res, str *mod, str *fcn)
+{
+	(void) res;		/* fool compiler */
 	checkProfiler("setFilter");
 	setFilter(getClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
-str CMDsetAllProfiler(int *res){
+str
+CMDsetAllProfiler(int *res)
+{
 	str x = GDKstrdup("*");
 	str y = GDKstrdup("*");
-	(void) res; /* fool compiler */
+
+	(void) res;		/* fool compiler */
 	return CMDsetFilterProfiler(res, &x, &y);
 }
-str CMDclrFilterProfiler(int *res, str *mod, str *fcn){
-	(void) res; /* fool compiler */
+
+str
+CMDclrFilterProfiler(int *res, str *mod, str *fcn)
+{
+	(void) res;		/* fool compiler */
 	checkProfiler("clrFilter");
-	resetFilter(getClient()->nspace , *mod, *fcn);
+	resetFilter(getClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
-str CMDsetNoneProfiler(int *res){
+
+str
+CMDsetNoneProfiler(int *res)
+{
 	str x = GDKstrdup("");
 	str y = GDKstrdup("");
-	(void) res; /* fool compiler */
+
+	(void) res;		/* fool compiler */
 	return CMDclrFilterProfiler(res, &x, &y);
 }
 
-str CMDsetProfilerStream(int *res, str *fnme){
-	(void) res; /* fool compiler */
+str
+CMDsetProfilerStream(int *res, str *fnme)
+{
+	(void) res;		/* fool compiler */
 	checkProfiler("setProfiler");
 	setLogFile(getClient()->nspace, *fnme);
 	return MAL_SUCCEED;
 }
 
-str CMDstartPointProfiler(int *res, str *mod, str *fcn){
-	(void) res; /* fool compiler */
+str
+CMDstartPointProfiler(int *res, str *mod, str *fcn)
+{
+	(void) res;		/* fool compiler */
 	checkProfiler("startPoint");
 	setStartPoint(getClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
-str CMDendPointProfiler(int *res, str *mod, str *fcn){
-	(void) res; /* fool compiler */
+str
+CMDendPointProfiler(int *res, str *mod, str *fcn)
+{
+	(void) res;		/* fool compiler */
 	checkProfiler("endPoint");
 	setStartPoint(getClient()->nspace, *mod, *fcn);
 	return MAL_SUCCEED;
 }
 
-str CMDstopProfiler(int *res){
-	Client c= getClient();
-	(void) res; /* fool compiler */
+str
+CMDstopProfiler(int *res)
+{
+	Client c = getClient();
+
+	(void) res;		/* fool compiler */
 	checkProfiler("stop");
-	stream_printf(c->fdout,"# Performance profiling stopped\n");
+	stream_printf(c->fdout, "# Performance profiling stopped\n");
 	stopProfiling();
 	return MAL_SUCCEED;
 }
-str CMDstartProfiler(int *res){
-	Client c= getClient();
-	(void) res; /* fool compiler */
+
+str
+CMDstartProfiler(int *res)
+{
+	Client c = getClient();
+
+	(void) res;		/* fool compiler */
 	checkProfiler("start");
-	stream_printf(c->fdout,"# Start performance profiling\n");
+	stream_printf(c->fdout, "# Start performance profiling\n");
 	startProfiling();
 	return MAL_SUCCEED;
 }
+
 @-
 Tracing an active system.
 @c
-str CMDstartTrace(int *res){
-	(void) res; /* fool compiler */
+str
+CMDstartTrace(int *res)
+{
+	(void) res;		/* fool compiler */
 	checkProfiler("start");
 	startTrace();
 	return MAL_SUCCEED;
 }
-str CMDstopTrace(int *res){
-	(void) res; /* fool compiler */
+
+str
+CMDstopTrace(int *res)
+{
+	(void) res;		/* fool compiler */
 	checkProfiler("stop");
 	stopTrace();
 	return MAL_SUCCEED;
 }
-str CMDclearTrace(int *res){
-	(void) res; /* fool compiler */
+
+str
+CMDclearTrace(int *res)
+{
+	(void) res;		/* fool compiler */
 	checkProfiler("stop");
 	clearTrace();
 	return MAL_SUCCEED;
 }
-str CMDdumpTrace(int *res){
-	(void) res; /* fool compiler */
+
+str
+CMDdumpTrace(int *res)
+{
+	(void) res;		/* fool compiler */
 	checkProfiler("dump");
 	stopTrace();
 	return MAL_SUCCEED;
 }
-str CMDgetTrace(int *res, str *ev){
+
+str
+CMDgetTrace(int *res, str *ev)
+{
 	BAT *bn;
-	(void) res; /* fool compiler */
+
+	(void) res;		/* fool compiler */
 	checkProfiler("dump");
-	bn= getTrace(*ev);
-	if( bn){
-		BBPincref(*res=bn->batCacheid,TRUE);
+	bn = getTrace(*ev);
+	if (bn) {
+		BBPincref(*res = bn->batCacheid, TRUE);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("getTrace","Failed to find event profile");
+	return throwMessage("getTrace", "Failed to find event profile");
 }
-str CMDsetCachedProfiling(int *ret){
-	(void)ret;
+
+str
+CMDsetCachedProfiling(int *ret)
+{
+	(void) ret;
 	setCachedProfiling();
 	return MAL_SUCCEED;
 }
-str CMDsetOnlineProfiling(int *ret){
-	(void)ret;
+
+str
+CMDsetOnlineProfiling(int *ret)
+{
+	(void) ret;
 	setOnlineProfiling();
 	return MAL_SUCCEED;
 }
-str CMDsetOfflineProfiling(int *ret){
-	(void)ret;
+
+str
+CMDsetOfflineProfiling(int *ret)
+{
+	(void) ret;
 	setOnlineProfiling();
 	return MAL_SUCCEED;
 }
+
 @}

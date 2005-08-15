@@ -53,12 +53,12 @@ For the time being we assume that all commands are statically linked.
 /*#define DEBUG_MAL_LINKER  */
 #define MONET64 1
 mal_export MALfcn getAddress(str fcnname, int silent);
-mal_export char * MSP_locate_script(const char *mod_name);
-mal_export char * MSP_locate_module(const char *mod_name);
+mal_export char *MSP_locate_script(const char *mod_name);
+mal_export char *MSP_locate_module(const char *mod_name);
 mal_export str loadModuleLibrary(str modulename);
 mal_export void unloadModuleLibraries();
 mal_export void initLibraries();
-mal_export int  isPreloaded(str nme);
+mal_export int isPreloaded(str nme);
 mal_export int isLoaded(str modulename);
 #endif
 @}
@@ -77,54 +77,59 @@ the current directory.
 @{
 @c
 #include "mal_linker.h"
-#include "mal_function.h"   /* for throwException() */
-#include "mal_import.h"     /* for slash_2_dir_sep() */
+#include "mal_function.h"	/* for throwException() */
+#include "mal_import.h"		/* for slash_2_dir_sep() */
 
 static int noDlopen;
 
-MALfcn getLocalObjectFile(str fcnname){
-    int mode = RTLD_NOW|RTLD_GLOBAL;
-    void *handle = NULL;
-    char *fullname;
+MALfcn
+getLocalObjectFile(str fcnname)
+{
+	int mode = RTLD_NOW | RTLD_GLOBAL;
+	void *handle = NULL;
+	char *fullname;
 
-    fullname = MSP_locate_module(fcnname);
-    if( fullname == NULL) {
-        /* stream_printf(GDKout,"Name not resolved %s\n",fullname);*/
-        return 0;
-    }
-    /* printf("attempt to load function %s\n",fullname);*/
-    handle = dlopen(fullname, mode);
-    /* printf("loaded ? %s\n",(handle!=0?"yes":"no"));*/
-    if( handle)
-        return (MALfcn) dlsym(handle,fcnname);
-    stream_printf(GDKout,"could not access library %s\n",dlerror());
-    return 0;
+	fullname = MSP_locate_module(fcnname);
+	if (fullname == NULL) {
+		/* stream_printf(GDKout,"Name not resolved %s\n",fullname); */
+		return 0;
+	}
+	/* printf("attempt to load function %s\n",fullname); */
+	handle = dlopen(fullname, mode);
+	/* printf("loaded ? %s\n",(handle!=0?"yes":"no")); */
+	if (handle)
+		return (MALfcn) dlsym(handle, fcnname);
+	stream_printf(GDKout, "could not access library %s\n", dlerror());
+	return 0;
 }
 
-MALfcn getAddress(str fcnname, int silent){
-    void *dl;
-    MALfcn adr;
+MALfcn
+getAddress(str fcnname, int silent)
+{
+	void *dl;
+	MALfcn adr;
 
 #ifdef DEBUG_MAL_LINKER2
-        stream_printf(GDKout,"addres of %s ?\n", fcnname);
+	stream_printf(GDKout, "addres of %s ?\n", fcnname);
 #endif
-    dl= dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
-    if(dl==NULL ){
-        GDKfatal("getAddress:can;t get dl-handle\n");
-        exit(0);
-    }
-    adr= (MALfcn) dlsym(dl,fcnname);
-    if( adr == NULL) adr = getLocalObjectFile(fcnname);
-    if(noDlopen && adr == NULL && silent == 0)
-        GDKerror("address of '%s' not found\n", fcnname);
+	dl = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
+	if (dl == NULL) {
+		GDKfatal("getAddress:can;t get dl-handle\n");
+		exit(0);
+	}
+	adr = (MALfcn) dlsym(dl, fcnname);
+	if (adr == NULL)
+		adr = getLocalObjectFile(fcnname);
+	if (noDlopen && adr == NULL && silent == 0)
+		GDKerror("address of '%s' not found\n", fcnname);
 #ifdef DEBUG_MAL_LINKER2
-    if( adr != NULL)
-        stream_printf(GDKout,"addres of %s %o %s\n", 
-            fcnname,(int) adr, dlerror());
+	if (adr != NULL)
+		stream_printf(GDKout, "addres of %s %o %s\n", fcnname, (int) adr, dlerror());
 #endif
-    dlclose(dl);
-    return adr;
+	dlclose(dl);
+	return adr;
 }
+
 @}
 @+ Module loading
 The default location to search for the module is in monet_mod_path
@@ -147,134 +152,141 @@ already loaded.
 
 static str *moduleLoaded;
 static void **moduleHandle;
-static int maxmodules= 0;
-static int lastmodule= 0;
+static int maxmodules = 0;
+static int lastmodule = 0;
 
-static void initM5Loader(){
+static void
+initM5Loader()
+{
 	str *newModuleLoaded;
 	void **newModuleHandle;
-	int i,newsize= maxmodules+MAXMODULES;
+	int i, newsize = maxmodules + MAXMODULES;
 
 	/* assume a safe call environment */
-	if( moduleLoaded == NULL){
+	if (moduleLoaded == NULL) {
 		mal_set_lock(mal_contextLock, "loadModule");
-		if( moduleLoaded == NULL){
-			maxmodules= MAXMODULES;
-			moduleLoaded = (str*) GDKmalloc(maxmodules * sizeof(str));
+		if (moduleLoaded == NULL) {
+			maxmodules = MAXMODULES;
+			moduleLoaded = (str *) GDKmalloc(maxmodules * sizeof(str));
 			moduleHandle = (void **) GDKmalloc(maxmodules * sizeof(void *));
-			for(i=0;i<maxmodules;i++){
-				moduleLoaded[i]=NULL;
-				moduleHandle[i]=NULL;
+			for (i = 0; i < maxmodules; i++) {
+				moduleLoaded[i] = NULL;
+				moduleHandle[i] = NULL;
 			}
 		}
 		mal_unset_lock(mal_contextLock, "loadModule");
-	} else if( lastmodule+2 == maxmodules){
+	} else if (lastmodule + 2 == maxmodules) {
 		/* guarantee at least one free slot */
 		mal_set_lock(mal_contextLock, "loadModule");
-		newModuleLoaded = (str*) GDKmalloc(newsize * sizeof(str));
+		newModuleLoaded = (str *) GDKmalloc(newsize * sizeof(str));
 		newModuleHandle = (void **) GDKmalloc(newsize * sizeof(void *));
-		bzero((char*) newModuleLoaded, newsize * sizeof(str));
-		memcpy((char*) newModuleLoaded, (char*)moduleLoaded, 
-				maxmodules * sizeof(str*));
-		memcpy((char*) newModuleHandle, (char*)moduleHandle, 
-				maxmodules * sizeof(void **));
+		bzero((char *) newModuleLoaded, newsize * sizeof(str));
+		memcpy((char *) newModuleLoaded, (char *) moduleLoaded, maxmodules * sizeof(str *));
+		memcpy((char *) newModuleHandle, (char *) moduleHandle, maxmodules * sizeof(void **));
 		GDKfree(moduleLoaded);
 		GDKfree(moduleHandle);
 		moduleLoaded = newModuleLoaded;
 		moduleHandle = newModuleHandle;
-		for(i=maxmodules;i<newsize;i++){
-			moduleLoaded[i]=NULL;
-			moduleHandle[i]=NULL;
+		for (i = maxmodules; i < newsize; i++) {
+			moduleLoaded[i] = NULL;
+			moduleHandle[i] = NULL;
 		}
-		maxmodules= newsize;
+		maxmodules = newsize;
 		mal_unset_lock(mal_contextLock, "loadModule");
 	}
 }
 
-int isLoaded(str modulename){
+int
+isLoaded(str modulename)
+{
 	int idx;
-    for(idx=0;moduleLoaded[idx] && idx<maxmodules;idx++)
-        if( strcmp(moduleLoaded[idx],modulename)==0) {
-            return 1;
+
+	for (idx = 0; moduleLoaded[idx] && idx < maxmodules; idx++)
+		if (strcmp(moduleLoaded[idx], modulename) == 0) {
+			return 1;
 		}
 	return 0;
 }
-str loadModuleLibrary(str modulename){
-    int mode = RTLD_NOW|RTLD_GLOBAL;
-    char nme[MAXPATHLEN];
-    char errbuf[1024];
-    void *handle = NULL;
-    str fullname,s;
-    int i = 0, idx;
+
+str
+loadModuleLibrary(str modulename)
+{
+	int mode = RTLD_NOW | RTLD_GLOBAL;
+	char nme[MAXPATHLEN];
+	char errbuf[1024];
+	void *handle = NULL;
+	str fullname, s;
+	int i = 0, idx;
 
 	initM5Loader();
-    for(idx=0;moduleLoaded[idx] && idx<maxmodules;idx++)
-        if( strcmp(moduleLoaded[idx],modulename)==0) {
+	for (idx = 0; moduleLoaded[idx] && idx < maxmodules; idx++)
+		if (strcmp(moduleLoaded[idx], modulename) == 0) {
 #ifdef DEBUG_MAL_LINKER
-        stream_printf(GDKout,"already load:%s:%s\n",modulename,handle==NULL?
-            (handle==NULL?errbuf:"failed"):"succeeded");
-            return (str) throwException("loaderException",
-                "Module loaded twice",modulename);
+			stream_printf(GDKout, "already load:%s:%s\n", modulename, handle == NULL ? (handle == NULL ? errbuf : "failed") : "succeeded");
+			return (str) throwException("loaderException", "Module loaded twice", modulename);
 #endif
 			return MAL_SUCCEED;
 		}
 @-
 Use the search path provided in the configuration file
 @c
-    s= strrchr(modulename,DIR_SEP);
-    snprintf(nme,MAXPATHLEN,"_%s", s? s+1:modulename);
-    fullname = MSP_locate_module(nme);
+	s = strrchr(modulename, DIR_SEP);
+	snprintf(nme, MAXPATHLEN, "_%s", s ? s + 1 : modulename);
+	fullname = MSP_locate_module(nme);
 
 /* AIX requires RTLD_MEMBER to load a module that is a member of an archive.  */
 #ifdef RTLD_MEMBER
-        mode |= RTLD_MEMBER;
+	mode |= RTLD_MEMBER;
 #endif
-    if( fullname){
-        handle = dlopen(fullname, mode);
+	if (fullname) {
+		handle = dlopen(fullname, mode);
 #ifdef DEBUG_MAL_LINKER
-        stream_printf(GDKout,"load:%s:%s\n",fullname,handle==NULL?
-            (handle==NULL?errbuf:"failed"):"succeeded");
+		stream_printf(GDKout, "load:%s:%s\n", fullname, handle == NULL ? (handle == NULL ? errbuf : "failed") : "succeeded");
 #endif
-        if(handle == NULL) {
-			snprintf(errbuf,1024,"%s: loader error %s",modulename,dlerror());
-            GDKfree(fullname);
-            return (str) throwException("loaderException",
-                "loadModuleLibrary",errbuf);
-        }
-        GDKfree(fullname);
-    } else {
-		GDKerror("Failed to bind module '%s' to library\n",modulename);
-		return (str) throwException("loaderException",
-			"loadModuleLibrary",modulename);
+		if (handle == NULL) {
+			snprintf(errbuf, 1024, "%s: loader error %s", modulename, dlerror());
+			GDKfree(fullname);
+			return (str) throwException("loaderException", "loadModuleLibrary", errbuf);
+		}
+		GDKfree(fullname);
+	} else {
+		GDKerror("Failed to bind module '%s' to library\n", modulename);
+		return (str) throwException("loaderException", "loadModuleLibrary", modulename);
 	}
 
 	mal_set_lock(mal_contextLock, "loadModule");
-    for(i=0;moduleLoaded[i] && i<=lastmodule;i++);
-    if( i==maxmodules)
-        GDKerror("loadModule:internal error, too many modules loaded\n");
-    else {
-        moduleLoaded[i]= GDKstrdup(modulename);
-        moduleHandle[i]= handle;
-		lastmodule= i;
-    }
+	for (i = 0; moduleLoaded[i] && i <= lastmodule; i++)
+		;
+	if (i == maxmodules)
+		GDKerror("loadModule:internal error, too many modules loaded\n");
+	else {
+		moduleLoaded[i] = GDKstrdup(modulename);
+		moduleHandle[i] = handle;
+		lastmodule = i;
+	}
 	mal_unset_lock(mal_contextLock, "loadModule");
-    return 0;
+	return 0;
 }
+
 @-
 For analysis of memory leaks we should cleanup the libraries before
 we exit the server
 @c
-void unloadModuleLibraries(){
-    int i;
+void
+unloadModuleLibraries()
+{
+	int i;
+
 	mal_set_lock(mal_contextLock, "loadModule");
-    for(i=0;i<maxmodules;i++)
-    if( moduleHandle[i]) {
-        dlclose(moduleHandle[i]);
-        GDKfree(moduleLoaded[i]);
-    }
-	lastmodule=0;
+	for (i = 0; i < maxmodules; i++)
+		if (moduleHandle[i]) {
+			dlclose(moduleHandle[i]);
+			GDKfree(moduleLoaded[i]);
+		}
+	lastmodule = 0;
 	mal_unset_lock(mal_contextLock, "loadModule");
 }
+
 @}
 @+ Static pre-loading
 To speedup restart and to simplify debugging, the Monet server can
@@ -290,21 +302,29 @@ In the current version we use the former approach.
 The routine below turns off dynamic loading while parsing the
 command signature files.
 @c
-static str preloaded[]={
-    "kernel/bat",
-    0 };
+static str preloaded[] = {
+	"kernel/bat",
+	0
+};
 
-int isPreloaded(str nme){
-    int i;
+int
+isPreloaded(str nme)
+{
+	int i;
+
 #ifdef DEBUG_MAL_LINKER
-    stream_printf(GDKout,"load:%s:preloaded?\n",nme);
+	stream_printf(GDKout, "load:%s:preloaded?\n", nme);
 #endif
-    for(i=0;preloaded[i];i++) 
-    if( strcmp(preloaded[i],nme)==0) return 1;
-    return 0;
+	for (i = 0; preloaded[i]; i++)
+		if (strcmp(preloaded[i], nme) == 0)
+			return 1;
+	return 0;
 }
-void initLibraries() {
-    noDlopen = TRUE;
+
+void
+initLibraries()
+{
+	noDlopen = TRUE;
 /*
     for(i=0;preloaded[i];i++) {
         stream_printf(GDKout,"loading %s\n",preloaded[i]);
@@ -312,6 +332,7 @@ void initLibraries() {
     }
 */
 }
+
 @+ Handling of Module Search Path
 The plausible locations of the modules can be designated by
 an environment variable. 

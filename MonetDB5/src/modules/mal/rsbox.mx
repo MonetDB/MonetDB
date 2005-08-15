@@ -220,31 +220,31 @@ type analysis of the resultset box operations.
 #include "mal_interpreter.h"
 
 typedef struct column_t {
-	BAT* bat;				/* BAT that backs this (part of the) column */
-	BUN bun;				/* a walker variable */
-	str name;				/* the name/id of this column */
-	str table;				/* name of the table this column belongs to */
-	str schema;				/* name of the schema this column belongs to */
-	str type;				/* name of the type of this column */
-	int digits;				/* digits of this data type */
-	int scale;				/* scale of this data type */
-	int width;				/* the maximum field width of this column */
+	BAT *bat;		/* BAT that backs this (part of the) column */
+	BUN bun;		/* a walker variable */
+	str name;		/* the name/id of this column */
+	str table;		/* name of the table this column belongs to */
+	str schema;		/* name of the schema this column belongs to */
+	str type;		/* name of the type of this column */
+	int digits;		/* digits of this data type */
+	int scale;		/* scale of this data type */
+	int width;		/* the maximum field width of this column */
 } column;
 
 typedef struct columnset_t {
-	column** columns;		/* an array of associated columns */
-	size_t length;			/* the number of rows in this block */
-	char complete;			/* whether this ResultSet block can be serialised */
-	struct columnset_t* nextSet;	/* the next ResultSet block (if not NULL) */
+	column **columns;	/* an array of associated columns */
+	size_t length;		/* the number of rows in this block */
+	char complete;		/* whether this ResultSet block can be serialised */
+	struct columnset_t *nextSet;	/* the next ResultSet block (if not NULL) */
 } columnset;
 
 typedef struct resultset_t {
 	unsigned int blocksize;	/* the number of rows per block */
-	size_t id;				/* external reference ID of this ResultSet */
-	char type;				/* type of result */
-	int columnCount;		/* the number of columns in this ResultSet */
-	size_t length;			/* the number of rows in this ResultSet */
-	size_t pos;				/* the current row position */
+	size_t id;		/* external reference ID of this ResultSet */
+	char type;		/* type of result */
+	int columnCount;	/* the number of columns in this ResultSet */
+	size_t length;		/* the number of rows in this ResultSet */
+	size_t pos;		/* the current row position */
 	columnset columnSet;	/* the first column set of this ResultSet */
 } resultset;
 
@@ -252,7 +252,7 @@ typedef struct resultset_t {
 /* level 1: protocol synchronisation */
 #define RS_LINE_PROMPT				"\001\001"
 #define RS_LINE_PROMPT_MORE			"\001\002"
-#define RS_LINE_START_OF_HEADER		'&' /* followed by header type also in level 2 */
+#define RS_LINE_START_OF_HEADER		'&'	/* followed by header type also in level 2 */
 /* level 2: MCL meta-data */
 #define RS_LINE_CONTROL_HEADER		'$'
 #define RS_LINE_SWITCHROLE			'^'	/* switch from client to server and vice-versa */
@@ -295,23 +295,26 @@ typedef struct resultset_t {
 /** How many elements we can handle at a time */
 #define RSB_MAX_ELEMS	20
 /** Array which contains all the resultsets contained in this Set */
-static resultset* elements[RSB_MAX_ELEMS];
+static resultset *elements[RSB_MAX_ELEMS];
+
 /** A global ResultSet ID counter */
 static size_t RS_nextID = 1;	/* start at 1 */
 
-static void RSinitColumn(columnset* rs, int* colindex);
-static str RSBgetResultSet(resultset** retval, int* handle);
-static str RSBfreeColumn(column* col);
-static str RSfreeColumnSet(resultset* rs, columnset* cs);
-static str RStailWidth(int* retval, BAT* b);
-static str RSsetComplete(resultset* rs);
+static void RSinitColumn(columnset * rs, int *colindex);
+static str RSBgetResultSet(resultset ** retval, int *handle);
+static str RSBfreeColumn(column * col);
+static str RSfreeColumnSet(resultset * rs, columnset * cs);
+static str RStailWidth(int *retval, BAT *b);
+static str RSsetComplete(resultset * rs);
 
 /**
  * Returns the resultset from an element for a given array slot.
  * An exception is thrown if the array slot is empty or out of
  * bounds.
  */
-static str RSBgetResultSet(resultset** retval, int* handle) {
+static str
+RSBgetResultSet(resultset ** retval, int *handle)
+{
 	if (handle == NULL)
 		throwIllArg("rsbox.getResultSet", "Handle should not be NULL");
 	if (*handle < 0 || *handle > RSB_MAX_ELEMS)
@@ -322,7 +325,7 @@ static str RSBgetResultSet(resultset** retval, int* handle) {
 		throwIllArg("rsbox.getResultSet", "Handle points to an empty slot");
 
 	*retval = elements[*handle - 1];
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 @- Operator implementation
@@ -333,8 +336,12 @@ static str RSBgetResultSet(resultset** retval, int* handle) {
  *
  * @throws exception
  */
-str RSBdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	(void)mb; (void)stk; (void)pci; /* make compiler happy */
+str
+RSBdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* make compiler happy */
 	throwRS("rsbox.deposit", "Operation not supported: use rsbox.create");
 }
 
@@ -349,7 +356,9 @@ str RSBdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * @param columns the number of columns this ResultSet has
  * @param type the ResultSet type.
  */
-str RSBcreate(int* retval, int* columns, char* type) {
+str
+RSBcreate(int *retval, int *columns, char *type)
+{
 	int i, j, free = -1;
 	char tpe;
 
@@ -358,9 +367,7 @@ str RSBcreate(int* retval, int* columns, char* type) {
 	tpe = *type;
 	if (tpe == RS_TYPE_E_ERROR)
 		throwIllArg("rsbox.create", "use TODOError.create to send error messages");
-	if (tpe != RS_TYPE_R_DEFAULT && tpe != RS_TYPE_R_MONET5 &&
-		tpe != RS_TYPE_R_RAW && tpe != RS_TYPE_U_AFFROW &&
-		tpe != RS_TYPE_U_BATCH && tpe != RS_TYPE_U_SUCCESS)
+	if (tpe != RS_TYPE_R_DEFAULT && tpe != RS_TYPE_R_MONET5 && tpe != RS_TYPE_R_RAW && tpe != RS_TYPE_U_AFFROW && tpe != RS_TYPE_U_BATCH && tpe != RS_TYPE_U_SUCCESS)
 		throwIllArgf("rsbox.create", "ResultSet type unknown: %c", tpe);
 
 	/* find the first free slot */
@@ -374,10 +381,11 @@ str RSBcreate(int* retval, int* columns, char* type) {
 				memset(elements[i], 0, sizeof(resultset));
 				/* set the id */
 				elements[i]->id = RS_nextID++;
+
 				elements[i]->columnCount = *columns;
 				elements[i]->type = tpe;
-				elements[i]->columnSet.columns = GDKmalloc(sizeof(column*) * *columns);
-				memset(elements[i]->columnSet.columns, 0, sizeof(column*) * *columns);
+				elements[i]->columnSet.columns = GDKmalloc(sizeof(column *) * *columns);
+				memset(elements[i]->columnSet.columns, 0, sizeof(column *) * *columns);
 				for (j = 0; j < *columns; j++)
 					RSinitColumn(&(elements[i]->columnSet), &j);
 				elements[i]->columnSet.length = -1;
@@ -390,7 +398,7 @@ str RSBcreate(int* retval, int* columns, char* type) {
 
 	/* and return the index as handle */
 	*retval = free + 1;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -398,13 +406,15 @@ str RSBcreate(int* retval, int* columns, char* type) {
  * Throws an exception if no such ResultSet is found.
  * The actual int returned is the container element array position.
  */
-str RSBtake(int* retval, int* id) {
+str
+RSBtake(int *retval, int *id)
+{
 	int i;
 
 	for (i = 0; i < RSB_MAX_ELEMS; i++) {
 		if (elements[i] != NULL && elements[i]->id == *id) {
 			*retval = i + 1;
-			return(MAL_SUCCEED);
+			return (MAL_SUCCEED);
 		}
 	}
 
@@ -416,18 +426,26 @@ str RSBtake(int* retval, int* id) {
  *
  * @param column the column to free
  */
-static str RSBfreeColumn(column* col) {
+static str
+RSBfreeColumn(column * col)
+{
 	if (col == NULL)
 		throwIllArg("resultset.freeColumn", "Column should NOT be NULL");
 
-	if (col->bat) BBPunfix(col->bat->batCacheid);
-	if (col->name) GDKfree(col->name);
-	if (col->table) GDKfree(col->table);
-	if (col->schema) GDKfree(col->schema);
-	if (col->type) GDKfree(col->type);
+	if (col->bat)
+		BBPunfix(col->bat->batCacheid);
+
+	if (col->name)
+		GDKfree(col->name);
+	if (col->table)
+		GDKfree(col->table);
+	if (col->schema)
+		GDKfree(col->schema);
+	if (col->type)
+		GDKfree(col->type);
 	GDKfree(col);
 
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -437,23 +455,25 @@ static str RSBfreeColumn(column* col) {
  * @param rs the resultset the to be freed columnset belongs to
  * @param cs the columnset to be freed
  */
-static str RSfreeColumnSet(resultset* rs, columnset* cs) {
+static str
+RSfreeColumnSet(resultset * rs, columnset * cs)
+{
 	int i;
 	str tmp;
 
 	if (cs == NULL)
-		return(MAL_SUCCEED);
+		return (MAL_SUCCEED);
 
 	if (cs->nextSet != NULL)
 		if ((tmp = RSfreeColumnSet(rs, cs->nextSet)) != MAL_SUCCEED)
-			return(tmp);
+			return (tmp);
 
 	for (i = 0; i < rs->columnCount; i++) {
 		if ((tmp = RSBfreeColumn(cs->columns[i])) != MAL_SUCCEED)
-			return(tmp);
+			return (tmp);
 	}
 
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -461,11 +481,14 @@ static str RSfreeColumnSet(resultset* rs, columnset* cs) {
  *
  * @param handle a resultset handle
  */
-str RSBdelete(void* retval, int* handle) {
-	resultset* rs = NULL;
+str
+RSBdelete(void *retval, int *handle)
+{
+	resultset *rs = NULL;
 	str tmp;
 	int i;
-	(void)retval;	/* make compiler happy */
+
+	(void) retval;		/* make compiler happy */
 
 	rethrow("rsbox.delete", tmp, RSBgetResultSet(&rs, handle));
 
@@ -480,7 +503,7 @@ str RSBdelete(void* retval, int* handle) {
 	GDKfree(rs);
 
 	*handle = 0;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -488,19 +511,25 @@ str RSBdelete(void* retval, int* handle) {
  *
  * @param id a resultset id
  */
-str RSBrelease(void* retval, int* id) {
+str
+RSBrelease(void *retval, int *id)
+{
 	str tmp;
 	int handle;
-	(void)retval;	/* make compiler happy */
+
+	(void) retval;		/* make compiler happy */
 
 	rethrow("rsbox.release", tmp, RSBtake(&handle, id));
-	return(RSBdelete(NULL, &handle));
+
+	return (RSBdelete(NULL, &handle));
 }
 
 /**
  * Releases all the ResultSets that are associated to the user.
  */
-str RSBreleaseAll() {
+str
+RSBreleaseAll()
+{
 	str tmp;
 	int i, handle;
 
@@ -511,7 +540,7 @@ str RSBreleaseAll() {
 		}
 	}
 
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -521,17 +550,19 @@ str RSBreleaseAll() {
  * @return ret1 iterator cursor
  * @return ret2 resultset handle
  */
-str RSBhasMoreElements(lng* ret1, int* ret2) {
+str
+RSBhasMoreElements(lng *ret1, int *ret2)
+{
 	int pos, handle;
 
 	if (*ret1 + 1 < RSB_MAX_ELEMS) {
-		pos = ((int)*ret1) + 1;
+		pos = ((int) *ret1) + 1;
 		for (; pos < RSB_MAX_ELEMS; pos++) {
 			if (elements[pos] != NULL) {
 				handle = pos + 1;
-				*ret1 = (lng)pos;
+				*ret1 = (lng) pos;
 				*ret2 = handle;
-				return(MAL_SUCCEED);
+				return (MAL_SUCCEED);
 			}
 		}
 	}
@@ -539,7 +570,7 @@ str RSBhasMoreElements(lng* ret1, int* ret2) {
 	/* tell there are no more elements */
 	*ret1 = -1;
 	*ret2 = 0;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -550,13 +581,15 @@ str RSBhasMoreElements(lng* ret1, int* ret2) {
  * @return ret1 iterator cursor
  * @return ret2 resultset handle
  */
-str RSBiterator(lng* ret1, int* ret2) {
+str
+RSBiterator(lng *ret1, int *ret2)
+{
 	str tmp;
-	
+
 	*ret1 = -1;
-	
+
 	rethrow("rsbox.iterator", tmp, RSBhasMoreElements(ret1, ret2));
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 @-
@@ -570,7 +603,9 @@ str RSBiterator(lng* ret1, int* ret2) {
  * @param b the BAT to scan the tail from
  * @return the max width of the tail
  */
-static str RStailWidth(int* retval, BAT* b) {
+static str
+RStailWidth(int *retval, BAT *b)
+{
 	BUN p, q;
 	int max = 0;
 
@@ -578,61 +613,74 @@ static str RStailWidth(int* retval, BAT* b) {
 		throwIllArg("resultset.tailWidth", "BAT should not be NULL");
 
 	switch (b->ttype) {
-		case TYPE_bit:
-			max = 5;	/* false */
+	case TYPE_bit:
+		max = 5;	/* false */
 		break;
-		case TYPE_chr:
-			max = 1;
+	case TYPE_chr:
+		max = 1;
 		break;
-		case TYPE_oid:
-			max = 11;	/* wild guess */
+	case TYPE_oid:
+		max = 11;	/* wild guess */
 		break;
-		case TYPE_sht: {
-			lng maxval = 0;
-			BATloop(b, p, q) {
-				sht *l = (sht*)BUNtail(b, p);
-				maxval += *l;
-			}
-			while (maxval /= 10) max++;
-		} break;
-		case TYPE_int: {
-			lng maxval = 0;
-			BATloop(b, p, q) {
-				int *l = (int*)BUNtail(b, p);
-				maxval += *l;
-			}
-			while (maxval /= 10) max++;
-		} break;
-		case TYPE_lng: {
-			lng maxval = 0;
-			BATloop(b, p, q) {
-				lng *l = (lng*)BUNtail(b, p);
-				maxval += *l;
-			}
-			while (maxval /= 10) max++;
-		} break;
-		case TYPE_flt:
-			max = 12;	/* SQL99 max stdout */
-		break;
-		case TYPE_dbl:
-			max = 24;	/* SQL99 max stdout */
-		break;
-		case TYPE_str:
-			BATloop(b, p, q) {
-				char *s = BUNtail(b, p);
-				int l = strlen(s);
+	case TYPE_sht:{
+		lng maxval = 0;
 
-				if (l > max) max = l;
-			}
+		BATloop(b, p, q) {
+			sht *l = (sht *) BUNtail(b, p);
+
+			maxval += *l;
+		}
+		while (maxval /= 10)
+			max++;
+	}
 		break;
-		case TYPE_ptr: /* C pointer! */
-		case TYPE_bat: /* BAT id: index in BBPcache */
-		default:
-			max = 0;
+	case TYPE_int:{
+		lng maxval = 0;
+
+		BATloop(b, p, q) {
+			int *l = (int *) BUNtail(b, p);
+
+			maxval += *l;
+		}
+		while (maxval /= 10)
+			max++;
+	}
+		break;
+	case TYPE_lng:{
+		lng maxval = 0;
+
+		BATloop(b, p, q) {
+			lng *l = (lng *) BUNtail(b, p);
+
+			maxval += *l;
+		}
+		while (maxval /= 10)
+			max++;
+	}
+		break;
+	case TYPE_flt:
+		max = 12;	/* SQL99 max stdout */
+		break;
+	case TYPE_dbl:
+		max = 24;	/* SQL99 max stdout */
+		break;
+	case TYPE_str:
+	BATloop(b, p, q) {
+		char *s = BUNtail(b, p);
+		int l = strlen(s);
+
+		if (l > max)
+			max = l;
+	}
+		break;
+	case TYPE_ptr:		/* C pointer! */
+	case TYPE_bat:		/* BAT id: index in BBPcache */
+	default:
+		max = 0;
 	}
 
 	*retval = max;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 
@@ -644,9 +692,12 @@ static str RStailWidth(int* retval, BAT* b) {
  * not checked.  If the column to be initialised is not NULL
  * it is free'd first.
  */
-static void RSinitColumn(columnset* cs, int* colindex) {
+static void
+RSinitColumn(columnset * cs, int *colindex)
+{
 	/* free if not empty */
-	if (cs->columns[*colindex]) RSBfreeColumn(cs->columns[*colindex]);
+	if (cs->columns[*colindex])
+		RSBfreeColumn(cs->columns[*colindex]);
 
 	/* malloc some space */
 	cs->columns[*colindex] = GDKmalloc(sizeof(column));
@@ -668,18 +719,20 @@ static void RSinitColumn(columnset* cs, int* colindex) {
  * @param bat a :void,:any BAT
  * @return the modified ResultSet
  */
-str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
-	BAT* b;
-	resultset* rs = NULL;
-	columnset* cs;
-	columnset* lastcs = NULL;
+str
+RSpopulateColumn(int *retval, int *handle, int *colno, int *bat)
+{
+	BAT *b;
+	resultset *rs = NULL;
+	columnset *cs;
+	columnset *lastcs = NULL;
 	str tmp;
 
 	rethrow("resultset.populateColumn", tmp, RSBgetResultSet(&rs, handle));
-    if ((b = BATdescriptor(*bat)) == NULL)
-        throwIllArg("resultset.populateColumn", "Cannot access BAT descriptor");
-	if (b->ttype < 0 || b->ttype >= GDKatomcnt ||
-		b->ttype == TYPE_bat || b->ttype == TYPE_ptr)
+	if ((b = BATdescriptor(*bat)) == NULL)
+		throwIllArg("resultset.populateColumn", "Cannot access BAT descriptor");
+
+	if (b->ttype < 0 || b->ttype >= GDKatomcnt || b->ttype == TYPE_bat || b->ttype == TYPE_ptr)
 		throwIllArg("resultset.populateColumn", "Illegal BAT tail type");
 	if (colno == NULL || *colno == int_nil)
 		throwIllArg("resultset.populateColumn", "Column index should not be NULL or nil");
@@ -708,14 +761,15 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
 		rs->length += cs->length;
 	}
 	/* add the BAT */
-	if (cs->columns[*colno - 1]->bat != NULL)
+	if (cs->columns[*colno - 1]->bat !=NULL)
 		BBPunfix(cs->columns[*colno - 1]->bat->batCacheid);
+
 	if (lastcs != NULL && b->ttype != lastcs->columns[*colno - 1]->bat->ttype)
 		throwRS("resultset.populateColumn", "The tail type of the to be added column does not match the previous union part");
 	cs->columns[*colno - 1]->bat = b;
 
 	*retval = *handle;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -734,16 +788,19 @@ str RSpopulateColumn(int* retval, int* handle, int* colno, int* bat) {
  * @param val the string value of the property
  * @return true if there was a previous value, false otherwise
  */
-str RSsetPropertyStr(int* retval, int* handle, int* colno, str* nme, str* val) {
-	column* col;
+str
+RSsetPropertyStr(int *retval, int *handle, int *colno, str *nme, str *val)
+{
+	column *col;
 	int ret = 0;
-	resultset* rs = NULL;
-	columnset* cs;
+	resultset *rs = NULL;
+	columnset *cs;
 	str tmp;
 
 	rethrow("resultset.setPropertyStr", tmp, RSBgetResultSet(&rs, handle));
 	cs = &(rs->columnSet);
-	while (cs->nextSet != NULL) cs = cs->nextSet;
+	while (cs->nextSet != NULL)
+		cs = cs->nextSet;
 	if (cs->complete)
 		throwRS("resultset.setProperty", "Unable to modify a complete ResultSet");
 	if (colno == NULL || *colno == int_nil)
@@ -768,9 +825,9 @@ str RSsetPropertyStr(int* retval, int* handle, int* colno, str* nme, str* val) {
 		col->@1 = GDKstrdup(*val);
 	}
 @c
-	@:MX-setPropertyStrNoNil(name)@
+	@:MX - setPropertyStrNoNil(name)@
 	else
-	@:MX-setPropertyStrNoNil(type)@
+	@:MX - setPropertyStrNoNil(type)@
 	else
 @= MX-setPropertyStr
 	if (strcmp("@1", *nme) == 0) {
@@ -783,14 +840,14 @@ str RSsetPropertyStr(int* retval, int* handle, int* colno, str* nme, str* val) {
 		col->@1 = GDKstrdup(*val);
 	}
 @c
-	@:MX-setPropertyStr(table)@
+	@:MX - setPropertyStr(table)@
 	else
-	@:MX-setPropertyStr(schema)@
+	@:MX - setPropertyStr(schema)@
 	else
-		throwRSf("resultset.setProperty", "Invalid property '%s'", *nme);
+	throwRSf("resultset.setProperty", "Invalid property '%s'", *nme);
 
 	*retval = ret;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -808,16 +865,19 @@ str RSsetPropertyStr(int* retval, int* handle, int* colno, str* nme, str* val) {
  * @param val the int value of the property
  * @return true if there was a previous value, false otherwise
  */
-str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
-	column* col = 0;
+str
+RSsetPropertyInt(int *retval, int *handle, int *colno, str *nme, int *val)
+{
+	column *col = 0;
 	int ret = 0;
-	resultset* rs = NULL;
-	columnset* cs;
+	resultset *rs = NULL;
+	columnset *cs;
 	str tmp;
 
 	rethrow("resultset.setPropertyInt", tmp, RSBgetResultSet(&rs, handle));
 	cs = &(rs->columnSet);
-	while (cs->nextSet != NULL) cs = cs->nextSet;
+	while (cs->nextSet != NULL)
+		cs = cs->nextSet;
 	if (cs->complete)
 		throwRS("resultset.setProperty", "Unable to modify a complete ResultSet");
 	if (colno == NULL || *colno == int_nil)
@@ -840,16 +900,16 @@ str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
 		col->@1 = *val;
 	}
 @c
-	@:MX-setPropertyInt(digits)@
+	@:MX - setPropertyInt(digits)@
 	else
-	@:MX-setPropertyInt(scale)@
+	@:MX - setPropertyInt(scale)@
 	else
-	@:MX-setPropertyInt(width)@
+	@:MX - setPropertyInt(width)@
 	else
-		throwRSf("resultset.setProperty", "Invalid property '%s'", *nme);
+	throwRSf("resultset.setProperty", "Invalid property '%s'", *nme);
 
 	*retval = ret;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -862,13 +922,16 @@ str RSsetPropertyInt(int* retval, int* handle, int* colno, str* nme, int* val) {
  *
  * @param rs a resultset
  */
-static str RSsetComplete(resultset* rs) {
+static str
+RSsetComplete(resultset * rs)
+{
 	int i;
-	columnset* cs;
-	column* col;
+	columnset *cs;
+	column *col;
 
 	cs = &(rs->columnSet);
-	while (cs->nextSet != NULL) cs = cs->nextSet;
+	while (cs->nextSet != NULL)
+		cs = cs->nextSet;
 
 	for (i = 0; i < rs->columnCount; i++) {
 		col = cs->columns[i];
@@ -877,9 +940,9 @@ static str RSsetComplete(resultset* rs) {
 			throwRS("resultset.setComplete", "ResultSet contains at least one column that has not been populated yet");
 	}
 
-	cs->complete = (char)1;
+	cs->complete = (char) 1;
 
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -890,30 +953,33 @@ static str RSsetComplete(resultset* rs) {
  * @param rs a resultset
  * @return the same resultset handle
  */
-str RSunion(int* retval, int* handle) {
+str
+RSunion(int *retval, int *handle)
+{
 	int j;
-	resultset* rs = NULL;
-	columnset* cs;
+	resultset *rs = NULL;
+	columnset *cs;
 	str tmp;
 
 	rethrow("resultset.union", tmp, RSBgetResultSet(&rs, handle));
 	cs = &(rs->columnSet);
-	while (cs->nextSet != NULL) cs = cs->nextSet;
-	
+	while (cs->nextSet != NULL)
+		cs = cs->nextSet;
+
 	/* make sure the last column set is complete */
 	rethrow("resultset.union", tmp, RSsetComplete(rs));
 
 	/* add a new column set and initialise the values */
 	cs = cs->nextSet = GDKmalloc(sizeof(columnset));
 	memset(cs, 0, sizeof(columnset));
-	cs->columns = GDKmalloc(sizeof(column*) * rs->columnCount);
-	memset(cs->columns, 0, sizeof(column*) * rs->columnCount);
+	cs->columns = GDKmalloc(sizeof(column *) * rs->columnCount);
+	memset(cs->columns, 0, sizeof(column *) * rs->columnCount);
 	for (j = 0; j < rs->columnCount; j++)
 		RSinitColumn(cs, &j);
 	cs->length = -1;
 
 	*retval = *handle;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -924,30 +990,32 @@ str RSunion(int* retval, int* handle) {
  * @param handle a resultset handle
  * @return the resultset handle
  */
-str RSdePopulate(int* retval, int* handle) {
+str
+RSdePopulate(int *retval, int *handle)
+{
 	int i;
-	resultset* rs = NULL;
-	columnset* cs;
+	resultset *rs = NULL;
+	columnset *cs;
 	str tmp;
 
 	rethrow("resultset.dePopulate", tmp, RSBgetResultSet(&rs, handle));
 	cs = &(rs->columnSet);
 
 	RSfreeColumnSet(rs, cs->nextSet);
-	
+
 	for (i = 0; i < rs->columnCount; i++) {
-		if (cs->columns[i]->bat != NULL)
+		if (cs->columns[i]->bat !=NULL)
 			BBPunfix(cs->columns[i]->bat->batCacheid);
 		cs->columns[i]->bat = NULL;
 	}
 	cs->length = -1;
-	cs->complete = (char)0;
+	cs->complete = (char) 0;
 	cs->nextSet = NULL;
 	rs->length = 0;
 	rs->id = RS_nextID++;
 
 	*retval = *handle;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -960,11 +1028,13 @@ str RSdePopulate(int* retval, int* handle) {
  * @param s a stream to write to
  * @returns the number of bytes written
  */
-str RSwriteHeader(int* retval, int* handle) {
+str
+RSwriteHeader(int *retval, int *handle)
+{
 	int bytes = 0, bt, i;
-	stream* s = GDKout;
-	resultset* rs = NULL;
-	column* col;
+	stream *s = GDKout;
+	resultset *rs = NULL;
+	column *col;
 	str tmp;
 	str mask;
 
@@ -985,50 +1055,51 @@ str RSwriteHeader(int* retval, int* handle) {
 	bytes += bt;
 @c
 	/* serialise the header to the stream */
-	@:MX-writeHeaderLineSingleValue("%d", rs->id, "id")@
-	@:MX-writeHeaderLineSingleValue("%d", rs->columnCount, "columncount")@
-	@:MX-writeHeaderLineSingleValue("%d", rs->length, "tuplecount")@
+	@:MX - writeHeaderLineSingleValue("%d", rs->id, "id")@
+
+	@:MX - writeHeaderLineSingleValue("%d", rs->columnCount, "columncount")@
+	@:MX - writeHeaderLineSingleValue("%d", rs->length, "tuplecount")@
 	/* create columntype charmask */
 	mask = tmp = GDKmalloc(sizeof(char) * (rs->columnCount + 1));
 	for (i = 0; i < rs->columnCount; i++) {
 		col = rs->columnSet.columns[i];
-		
+
 		switch (col->bat->ttype) {
-			case TYPE_bit:
-				*tmp++ = 'b';
+		case TYPE_bit:
+			*tmp++ = 'b';
 			break;
-			case TYPE_chr:
-				*tmp++ = 'c';
+		case TYPE_chr:
+			*tmp++ = 'c';
 			break;
-			case TYPE_str:
-				*tmp++ = 'S';
+		case TYPE_str:
+			*tmp++ = 'S';
 			break;
-			case TYPE_oid:
-				*tmp++ = 'o';
+		case TYPE_oid:
+			*tmp++ = 'o';
 			break;
-			case TYPE_sht:
-				*tmp++ = 's';
+		case TYPE_sht:
+			*tmp++ = 's';
 			break;
-			case TYPE_int:
-				*tmp++ = 'i';
+		case TYPE_int:
+			*tmp++ = 'i';
 			break;
-			case TYPE_lng:
-				*tmp++ = 'l';
+		case TYPE_lng:
+			*tmp++ = 'l';
 			break;
-			case TYPE_flt:
-				*tmp++ = 'f';
+		case TYPE_flt:
+			*tmp++ = 'f';
 			break;
-			case TYPE_dbl:
-				*tmp++ = 'd';
+		case TYPE_dbl:
+			*tmp++ = 'd';
 			break;
-			case TYPE_ptr: /* C pointer! */
-			case TYPE_bat: /* BAT id: index in BBPcache */
-			default:
-				*tmp++ = 'S';
+		case TYPE_ptr:	/* C pointer! */
+		case TYPE_bat:	/* BAT id: index in BBPcache */
+		default:
+			*tmp++ = 'S';
 		}
 	}
 	*tmp = '\0';
-	@:MX-writeHeaderLineSingleValue("%s", mask, "ctype")@
+	@:MX - writeHeaderLineSingleValue("%s", mask, "ctype")@
 	GDKfree(mask);
 
 	/* walk through the columns, and set those properties that are not
@@ -1086,8 +1157,8 @@ str RSwriteHeader(int* retval, int* handle) {
 	}
 @c
 	/* yeah baby!  dirty as hell! */
-	@:MX-writeHeaderLine("%s", col->table, "table", col->table != NULL)@
-	@:MX-writeHeaderLine("%s", col->schema, "schema", col->schema != NULL)@
+	@:MX - writeHeaderLine("%s", col->table, "table", col->table != NULL)@
+	@:MX - writeHeaderLine("%s", col->schema, "schema", col->schema != NULL)@
 	/* serialise the header to the stream */
 	if ((bt = stream_printf(s, "%c%s\t", RS_LINE_HEADER, "type")) > 0) {
 		bytes += bt;
@@ -1097,37 +1168,37 @@ str RSwriteHeader(int* retval, int* handle) {
 			/* type defaults to the BAT tail type if not set */
 			if (col->type == NULL) {
 				switch (col->bat->ttype) {
-					case TYPE_bit:
-						bt = stream_printf(s, "%s", "boolean");
+				case TYPE_bit:
+					bt = stream_printf(s, "%s", "boolean");
 					break;
-					case TYPE_chr:
-						bt = stream_printf(s, "%s", "char");
+				case TYPE_chr:
+					bt = stream_printf(s, "%s", "char");
 					break;
-					case TYPE_oid:
-						bt = stream_printf(s, "%s", "oid");
+				case TYPE_oid:
+					bt = stream_printf(s, "%s", "oid");
 					break;
-					case TYPE_sht:
-						bt = stream_printf(s, "%s", "smallint");
+				case TYPE_sht:
+					bt = stream_printf(s, "%s", "smallint");
 					break;
-					case TYPE_int:
-						bt = stream_printf(s, "%s", "int");
+				case TYPE_int:
+					bt = stream_printf(s, "%s", "int");
 					break;
-					case TYPE_lng:
-						bt = stream_printf(s, "%s", "bigint");
+				case TYPE_lng:
+					bt = stream_printf(s, "%s", "bigint");
 					break;
-					case TYPE_flt:
-						bt = stream_printf(s, "%s", "real");
+				case TYPE_flt:
+					bt = stream_printf(s, "%s", "real");
 					break;
-					case TYPE_dbl:
-						bt = stream_printf(s, "%s", "double");
+				case TYPE_dbl:
+					bt = stream_printf(s, "%s", "double");
 					break;
-					case TYPE_str:
-						bt = stream_printf(s, "%s", "varchar");
+				case TYPE_str:
+					bt = stream_printf(s, "%s", "varchar");
 					break;
-					case TYPE_ptr: /* C pointer! */
-					case TYPE_bat: /* BAT id: index in BBPcache */
-					default:
-						bt = stream_printf(s, "%s", "varchar");
+				case TYPE_ptr:	/* C pointer! */
+				case TYPE_bat:	/* BAT id: index in BBPcache */
+				default:
+					bt = stream_printf(s, "%s", "varchar");
 				}
 			} else {
 				if ((bt = stream_printf(s, "%s", col->type)) < 0)
@@ -1146,8 +1217,8 @@ str RSwriteHeader(int* retval, int* handle) {
 		*retval = 0;
 		throwIO("resultset.writeHeader", "Error while writing to the stream");
 	}
-	@:MX-writeHeaderLine("%d", col->digits, "digits", col->digits > -1)@
-	@:MX-writeHeaderLine("%d", col->scale, "scale", col->scale > -1)@
+	@:MX - writeHeaderLine("%d", col->digits, "digits", col->digits > -1)@
+	@:MX - writeHeaderLine("%d", col->scale, "scale", col->scale > -1)@
 	/* serialise the header to the stream */
 	if ((bt = stream_printf(s, "%c%s\t", RS_LINE_HEADER, "width")) > 0) {
 		bytes += bt;
@@ -1156,9 +1227,10 @@ str RSwriteHeader(int* retval, int* handle) {
 
 			/* calculate width if not set */
 			if (col->width == -1) {
-				int width= 0;
+				int width = 0;
 				if ((tmp = RStailWidth(&width, col->bat)) != MAL_SUCCEED)
-					return(tmp);
+					 return (tmp);
+
 				if ((bt = stream_printf(s, "%d", width)) < 0)
 					throwIO("resultset.writeHeader", "Error while writing to the stream");
 			} else {
@@ -1180,7 +1252,7 @@ str RSwriteHeader(int* retval, int* handle) {
 	}
 
 	*retval = bytes;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -1197,13 +1269,15 @@ str RSwriteHeader(int* retval, int* handle) {
  * @param lower from which row of the result (inclusive)
  * @returns the number of bytes written
  */
-str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
+str
+RSwriteBlock(int *retval, int *handle, int *upper, int *lower)
+{
 	int bytes = 0, bt, i;
-	column* col;
-	resultset* rs = NULL;
-	columnset* cs;
+	column *col;
+	resultset *rs = NULL;
+	columnset *cs;
 	str tmp;
-	stream* s = GDKout;
+	stream *s = GDKout;
 	int low = *lower, up = *upper;
 	ptr p;
 
@@ -1219,7 +1293,7 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 	do {
 		if (cs->complete == 0)
 			rethrow("resultset.writeBlock", tmp, RSsetComplete(rs));
-		
+
 		/* correct lower value if necessary */
 		if (low >= cs->length) {
 			low -= cs->length;
@@ -1228,14 +1302,14 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 			break;
 		}
 	} while ((cs = cs->nextSet) != NULL);
-	
+
 	if (cs == NULL)
 		throwRS("resultset.writeBlock", "Panic! lower value seems to be higher than the actual size!");
 
 	/* initialise all column BUN pointers */
 	for (i = 0; i < rs->columnCount; i++) {
 		col = cs->columns[i];
-		col->bun = (BUN)((char *)BUNfirst(col->bat) + BUNsize(col->bat) * low);
+		col->bun = (BUN) ((char *) BUNfirst(col->bat) + BUNsize(col->bat) * low);
 	}
 	/* write the desired block of results */
 	for (; low < up; low++) {
@@ -1252,10 +1326,10 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 			/* initialise all column BUN pointers */
 			for (i = 0; i < rs->columnCount; i++) {
 				col = cs->columns[i];
-				col->bun = (BUN)((char *)BUNfirst(col->bat) + BUNsize(col->bat) * low);
+				col->bun = (BUN) ((char *) BUNfirst(col->bat) + BUNsize(col->bat) * low);
 			}
 		}
-		
+
 		if ((bt = stream_printf(s, "%c", RS_LINE_TUPLE)) <= 0) {
 			bytes = 0;
 			break;
@@ -1264,8 +1338,10 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 		for (i = 0; i < rs->columnCount; i++) {
 			col = cs->columns[i];
 			/* write value */
-			p = (ptr)BUNtail(col->bat, col->bun);
-			if (!p) throwRS("resultset.writeBlock", "Illegal tail value pointer: NULL");
+			p = (ptr) BUNtail(col->bat, col->bun);
+
+			if (!p)
+				throwRS("resultset.writeBlock", "Illegal tail value pointer: NULL");
 
 @= MX-writeNull
 			if (@1) {
@@ -1275,51 +1351,52 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 			}
 @c
 			switch (col->bat->ttype) {
-				case TYPE_bit:
-					@:MX-writeNull(*(unsigned char*)p == bit_nil)@
-					bt = stream_printf(s, "%d", (*(unsigned char*)p ? 1 : 0));
+			case TYPE_bit:
+				@:MX - writeNull(*(unsigned char *) p == bit_nil)@
+				bt = stream_printf(s, "%d", (*(unsigned char *) p ? 1 : 0));
 				break;
-				case TYPE_chr:
-					@:MX-writeNull(*(char*)p == chr_nil)@
-					bt = stream_printf(s, "%c", *(char*)p);
+			case TYPE_chr:
+				@:MX - writeNull(*(char *) p == chr_nil)@
+				bt = stream_printf(s, "%c", *(char *) p);
 				break;
-				case TYPE_str:
-					@:MX-writeNull(strNil(p))@
-					bt = stream_printf(s, "%d:%s", strlen(p), p);
+			case TYPE_str:
+				@:MX - writeNull(strNil(p))@
+				bt = stream_printf(s, "%d:%s", strlen(p), p);
 				break;
-				case TYPE_oid:
-					@:MX-writeNull(*(size_t*)p == oid_nil)@
-					bt = stream_printf(s, "%d", *(size_t*)p);
+			case TYPE_oid:
+				@:MX - writeNull(*(size_t *) p == oid_nil)@
+				bt = stream_printf(s, "%d", *(size_t *) p);
 				break;
-				case TYPE_sht:
-					@:MX-writeNull(*(sht*)p == sht_nil)@
-					bt = stream_printf(s, "%hd", *(sht*)p);
+			case TYPE_sht:
+				@:MX - writeNull(*(sht *) p == sht_nil)@
+				bt = stream_printf(s, "%hd", *(sht *) p);
 				break;
-				case TYPE_int:
-					@:MX-writeNull(*(int*)p == int_nil)@
-					bt = stream_printf(s, "%d", *(int*)p);
+			case TYPE_int:
+				@:MX - writeNull(*(int *) p == int_nil)@
+				bt = stream_printf(s, "%d", *(int *) p);
 				break;
-				case TYPE_lng:
-					@:MX-writeNull(*(lng*)p == lng_nil)@
-					bt = stream_printf(s, "%ld", *(lng*)p);
+			case TYPE_lng:
+				@:MX - writeNull(*(lng *) p == lng_nil)@
+				bt = stream_printf(s, "%ld", *(lng *) p);
 				break;
-				case TYPE_flt:
-					@:MX-writeNull(*(flt*)p == flt_nil)@
-					bt = stream_printf(s, "%e", *(flt*)p);
+			case TYPE_flt:
+				@:MX - writeNull(*(flt *) p == flt_nil)@
+				bt = stream_printf(s, "%e", *(flt *) p);
 				break;
-				case TYPE_dbl:
-					@:MX-writeNull(*(dbl*)p == dbl_nil)@
-					bt = stream_printf(s, "%e", *(dbl*)p);
+			case TYPE_dbl:
+				@:MX - writeNull(*(dbl *) p == dbl_nil)@
+				bt = stream_printf(s, "%e", *(dbl *) p);
 				break;
-				case TYPE_ptr: /* C pointer! */
-				case TYPE_bat: /* BAT id: index in BBPcache */
-				default: {
-					str buf = NULL;
-					int len = 0, size = 0;
-					len = (*BATatoms[col->bat->ttype].atomToStr) (&buf, &size, p);
-					bt = stream_printf(s, "%d:%s", len, buf);
-					GDKfree(buf);
-				}
+			case TYPE_ptr:	/* C pointer! */
+			case TYPE_bat:	/* BAT id: index in BBPcache */
+			default:{
+				str buf = NULL;
+				int len = 0, size = 0;
+				len = (*BATatoms[col->bat->ttype].atomToStr) (&buf, &size, p);
+
+				bt = stream_printf(s, "%d:%s", len, buf);
+				GDKfree(buf);
+			}
 			}
 
 			/* advance to the next value in the BAT */
@@ -1338,7 +1415,7 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
 
 	*retval = bytes;
 	if (bytes) {
-		return(MAL_SUCCEED);
+		return (MAL_SUCCEED);
 	} else {
 		throwIO("resultset.writeBlock", "Error while writing to the stream");
 	}
@@ -1350,8 +1427,10 @@ str RSwriteBlock(int* retval, int* handle, int* upper, int* lower) {
  * @param handle a resultset handle
  * @returns the number of rows in the ResultSet
  */
-str RSgetLength(int* retval, int* handle) {
-	resultset* rs = NULL;
+str
+RSgetLength(int *retval, int *handle)
+{
+	resultset *rs = NULL;
 	str tmp;
 
 	rethrow("resultset.getLength", tmp, RSBgetResultSet(&rs, handle));
@@ -1359,7 +1438,7 @@ str RSgetLength(int* retval, int* handle) {
 		throwRS("resultset.getLength", "Unable to get length of a non-complete ResultSet");
 
 	*retval = rs->length;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -1369,19 +1448,21 @@ str RSgetLength(int* retval, int* handle) {
  * @param size the size
  * @return the handle
  */
-str RSsetBlockSize(int* retval, int* handle, int size) {
-	resultset* rs = NULL;
+str
+RSsetBlockSize(int *retval, int *handle, int size)
+{
+	resultset *rs = NULL;
 	str tmp;
 
 	rethrow("resultset.setBlockSize", tmp, RSBgetResultSet(&rs, handle));
 	/* is this useful?  I don't see any problems now
-	if (!rs->columnSet.complete)
-		return(throwMessage("resultset.setBlockSize", "Unable to serialise a non-complete ResultSet"));
-	*/
+	   if (!rs->columnSet.complete)
+	   return(throwMessage("resultset.setBlockSize", "Unable to serialise a non-complete ResultSet"));
+	 */
 
 	rs->blocksize = size;
 	*retval = *handle;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -1394,8 +1475,10 @@ str RSsetBlockSize(int* retval, int* handle, int size) {
  * @param handle a resultset handle
  * @return the number of times writeNextPart can be called
  */
-str RShasNextPart(int* retval, int* handle) {
-	resultset* rs = NULL;
+str
+RShasNextPart(int *retval, int *handle)
+{
+	resultset *rs = NULL;
 	str tmp;
 
 	rethrow("resultset.hasNextPart", tmp, RSBgetResultSet(&rs, handle));
@@ -1407,7 +1490,7 @@ str RShasNextPart(int* retval, int* handle) {
 	} else {
 		*retval = rs->pos < rs->length;
 	}
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -1421,10 +1504,12 @@ str RShasNextPart(int* retval, int* handle) {
  * @param s a stream to write to
  * @return the number of bytes written
  */
-str RSwriteNextPart(int* retval, int* handle) {
+str
+RSwriteNextPart(int *retval, int *handle)
+{
 	int hbytes = 0, bbytes = 0;
 	int upper, lower;
-	resultset* rs = NULL;
+	resultset *rs = NULL;
 	str tmp;
 
 	rethrow("resultset.writeNextPart", tmp, RSBgetResultSet(&rs, handle));
@@ -1440,7 +1525,8 @@ str RSwriteNextPart(int* retval, int* handle) {
 			/* serialise only a block */
 			lower = rs->pos;
 			upper = rs->pos + rs->blocksize;
-			if (upper > rs->length) upper = rs->length;
+			if (upper > rs->length)
+				upper = rs->length;
 		}
 	} else {
 		throwRS("resultset.writeNextPart", "No next part, all rows already serialised");
@@ -1455,7 +1541,7 @@ str RSwriteNextPart(int* retval, int* handle) {
 	rethrow("resultset.writeNextPart", tmp, RSwriteBlock(&bbytes, handle, &upper, &lower));
 
 	*retval = hbytes + bbytes;
-	return(MAL_SUCCEED);
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -1465,11 +1551,13 @@ str RSwriteNextPart(int* retval, int* handle) {
  * @param val input string
  * @return always null
  */
-str RSfromString(str* src, int *len, resultset* retval) {
-	(void)src;	/* make compiler happy */
-	(void)retval;
-	(void)len;
-	return(MAL_SUCCEED);
+str
+RSfromString(str *src, int *len, resultset * retval)
+{
+	(void) src;		/* make compiler happy */
+	(void) retval;
+	(void) len;
+	return (MAL_SUCCEED);
 }
 
 /**
@@ -1479,13 +1567,16 @@ str RSfromString(str* src, int *len, resultset* retval) {
  * @param handle input ResultSet handle
  * @return "ResultSet"
  */
-int RStoString(str* retval, int* len, ptr handle) {
-	resultset* rs = NULL;
+int
+RStoString(str *retval, int *len, ptr handle)
+{
+	resultset *rs = NULL;
 
 	if (RSBgetResultSet(&rs, handle) != MAL_SUCCEED) {
-		if (*retval == NULL) *retval = GDKmalloc(sizeof(str) * 4);
+		if (*retval == NULL)
+			*retval = GDKmalloc(sizeof(str) * 4);
 		strcpy(*retval, "NULL");
-		return(*len = 4);
+		return (*len = 4);
 	}
 
 	/* you can do all kinds of fancy things like telling how much
@@ -1495,7 +1586,7 @@ int RStoString(str* retval, int* len, ptr handle) {
 	if (*retval == NULL) {
 		*retval = GDKmalloc(sizeof(str) * (*len = 13 + 10));
 	}
-	return(*len = snprintf(*retval, *len, "ResultSet '" SZFMT "'", rs->id));
+	return (*len = snprintf(*retval, *len, "ResultSet '" SZFMT "'", rs->id));
 }
 
 @}

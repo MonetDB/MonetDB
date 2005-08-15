@@ -105,7 +105,7 @@ comment "Merge the instructions stored in the
 @h
 #ifndef _LANGUAGE_H
 #define _LANGUAGE_H
-#endif /* _LANGUAGE_H*/
+#endif /* _LANGUAGE_H */
 @c
 
 #include "language.h"
@@ -116,15 +116,22 @@ comment "Merge the instructions stored in the
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-str CMDraise(str *ret,  str *msg){
-	*ret= GDKstrdup(*msg);
+str
+CMDraise(str *ret, str *msg)
+{
+	*ret = GDKstrdup(*msg);
 	return GDKstrdup(*msg);
 }
+
 str
-CMDassertProperty(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-    (void) mb; (void)stk; (void) pci;
-    return throwMessage("mal.assert","NYI");
+CMDassertProperty(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	return throwMessage("mal.assert", "NYI");
 }
+
 @}
 @+ Printing
 The print commands are implemented as single instruction rules,
@@ -137,67 +144,94 @@ identifier and argument value)
 @{
 @- Input redirectionrs
 @c
-str CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str src;
-	str buf=0;
-	int len =0;
+	str buf = 0;
+	int len = 0;
 	str *s;
 
-	(void) mb; /* fool compiler */
-	s = (str *) getArgReference(stk,pci,1);
-	if(strlen(*s)==0) return MAL_SUCCEED;
-	src= (str) GDKmalloc(len=strlen(*s)+3);
+	(void) mb;		/* fool compiler */
+	s = (str *) getArgReference(stk, pci, 1);
+	if (strlen(*s) == 0)
+		return MAL_SUCCEED;
+	src = (str) GDKmalloc(len = strlen(*s) + 3);
 	/* GDK_atom routine requires enclosing quotes */
-	strcpy(src,"\"");
-	strcat(src,*s);
-	strcat(src,"\"");
-	strFromStr( src, &len, &buf);
+	strcpy(src, "\"");
+	strcat(src, *s);
+	strcat(src, "\"");
+	strFromStr(src, &len, &buf);
 
-	callString(getClient(),buf,FALSE);
+	callString(getClient(), buf, FALSE);
 	GDKfree(src);
 	GDKfree(buf);
 	return MAL_SUCCEED;
 }
-str CMDevalFile(int *ret, str *fnme){
+
+str
+CMDevalFile(int *ret, str *fnme)
+{
 	str s = *fnme;
-	Client c= getClient();
+	Client c = getClient();
 	char buffer[1024];
 
-	(void) ret; /* fool compiler */
-	if( s==0 ){
-		return throwMessage("mal.setCwd","File name missing\n");
+	(void) ret;		/* fool compiler */
+	if (s == 0) {
+		return throwMessage("mal.setCwd", "File name missing\n");
 	}
-	if( strlen(s)+strlen(c->cwd)+2>=1024){
-		return throwMessage("mal.setCwd","Evaluation buffer too small\n");
+	if (strlen(s) + strlen(c->cwd) + 2 >= 1024) {
+		return throwMessage("mal.setCwd", "Evaluation buffer too small\n");
 	}
-	buffer[0]=0;
-	if( *s != '/'){
-		strcpy(buffer,c->cwd);
-		strcat(buffer,"/");
+	buffer[0] = 0;
+
+	if (*s != '/') {
+		strcpy(buffer, c->cwd);
+		strcat(buffer, "/");
 	}
-	strcat(buffer,s);
-	malInclude(getClient(),buffer,0,FALSE);
+	strcat(buffer, s);
+	malInclude(getClient(), buffer, 0, FALSE);
+
 	return MAL_SUCCEED;
 }
-str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void) mb; (void)stk; (void) pci; /* fool compiler */
-	return throwMessage("mal.call","Not yet implemented");
+
+str
+CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	return throwMessage("mal.call", "Not yet implemented");
 }
-str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void) mb; (void)stk; (void) pci; /* fool compiler */
-	return throwMessage("mal.include","Not yet implemented");
+
+str
+CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	return throwMessage("mal.include", "Not yet implemented");
 }
-str CMDdebug(int *ret, int *flg){
+
+str
+CMDdebug(int *ret, int *flg)
+{
 	*ret = GDKdebug;
-	if( *flg) GDKdebug = *flg;
+	if (*flg)
+		GDKdebug = *flg;
 	return MAL_SUCCEED;
 }
-str CMDsetCwd(str *ret, str *fnme){
-	Client c= getClient();
+
+str
+CMDsetCwd(str *ret, str *fnme)
+{
+	Client c = getClient();
+
 	*ret = c->cwd;
-	c->cwd= GDKstrdup(*fnme);
+	c->cwd = GDKstrdup(*fnme);
 	return MAL_SUCCEED;
 }
+
 @}
 @+ MAL iterator code
 This module contains the framework for the construction of iterators.

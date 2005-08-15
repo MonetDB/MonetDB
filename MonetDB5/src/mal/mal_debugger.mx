@@ -306,26 +306,26 @@ It should be possible to turn off the feature at compile time.
 #include "mal_scenario.h"
 #include "mal_client.h"
 
-#define MAL_DEBUGGER 	/* debugger is active */
+#define MAL_DEBUGGER		/* debugger is active */
 
 #define MAXBREAKS 32
 
-mal_export int MDBdelay; /* do not immediately react */
+mal_export int MDBdelay;	/* do not immediately react */
 typedef struct {
-    MalBlkPtr   brkBlock[MAXBREAKS];
-    int     brkVar[MAXBREAKS];
-    char        brkCmd[MAXBREAKS];
-    str     brkVarName[MAXBREAKS];
-    int     brkTop;
+	MalBlkPtr brkBlock[MAXBREAKS];
+	int brkVar[MAXBREAKS];
+	char brkCmd[MAXBREAKS];
+	str brkVarName[MAXBREAKS];
+	int brkTop;
 } mdbStateRecord, *mdbState;
 
-mal_export void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name,char cmd);
+mal_export void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name, char cmd);
 mal_export void mdbClrBreakpointName(Client cntxt, str name);
 mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export void mdbHelp(stream *f);
-mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v,int index, int cnt,int first);
+mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int cnt, int first);
 mal_export void printBATelm(stream *f, int i, int cnt, int first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
@@ -336,26 +336,26 @@ mal_export str runMALDebugger(Symbol s);
 mal_export void printBBPinfo(stream *out);
 
 mal_export void resetOptimizerDebugger();
-mal_export void optimizerDebug(MalBlkPtr mb, str name,int actions,long usec);
+mal_export void optimizerDebug(MalBlkPtr mb, str name, int actions, long usec);
 mal_export str optimizeMALBlock(MalBlkPtr mb);
-mal_export void showOptimizerStep(int i,int flg);
+mal_export void showOptimizerStep(int i, int flg);
 mal_export void showOptimizerHistory();
-mal_export str debugOptimizers(MalBlkPtr mb,MalStkPtr stk, InstrPtr pci);
+mal_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _MAL_DEBUGGER_h */
 @+ Debugger framework
 Before the interpreter is allowed to proceed we give control
 to the user to alter the trace/debugger options.
 @c
 #include "mal_debugger.h"
-#include "mal_atom.h"       /* for showAtoms() */
-#include "mal_interpreter.h"    /* for getArgReference() */
-#include "mal_linker.h"     /* for getAddress() */
-#include "mal_module.h"      /* for showModuleStatistics() */
+#include "mal_atom.h"		/* for showAtoms() */
+#include "mal_interpreter.h"	/* for getArgReference() */
+#include "mal_linker.h"		/* for getAddress() */
+#include "mal_module.h"		/* for showModuleStatistics() */
 #include "mal_parser.h"
 #include "mal_namespace.h"
 
 
-int MDBdelay; /* do not immediately react */
+int MDBdelay;			/* do not immediately react */
 
 #define skipBlanc(c,X)    while(*(X) && isspace((int)*X)){ X++; }
 #define skipNonBlanc(c,X) while(*(X) && !isspace((int) *X)){ X++; }
@@ -367,104 +367,120 @@ and much less expensive as reserving debugger space in each instruction.
 @c
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
 
-char isBreakpoint(Client cntxt, InstrPtr p){
-    int i,j;
+char
+isBreakpoint(Client cntxt, InstrPtr p)
+{
+	int i, j;
 
-    for(i=0;i<mdbTable[cntxt->idx].brkTop;i++){
-        if( functionId(p) &&
-            strcmp(functionName(p),
-                mdbTable[cntxt->idx].brkVarName[i])==0)
-            return mdbTable[cntxt->idx].brkCmd[i];
-        for(j=0;j<p->retc;j++)
-        if( p->argv[j] == mdbTable[cntxt->idx].brkVar[i])
-            return mdbTable[cntxt->idx].brkCmd[i];
-    }
-    return 0;
+	for (i = 0; i < mdbTable[cntxt->idx].brkTop; i++) {
+		if (functionId(p) && strcmp(functionName(p), mdbTable[cntxt->idx].brkVarName[i]) == 0)
+			return mdbTable[cntxt->idx].brkCmd[i];
+		for (j = 0; j < p->retc; j++)
+			if (p->argv[j] == mdbTable[cntxt->idx].brkVar[i])
+				return mdbTable[cntxt->idx].brkCmd[i];
+	}
+	return 0;
 }
+
 @-
 Break points can be set on assignment to a specific variable
 or specific operation.
 @c
-void mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd){
-    int i,j,cnt=0;
-    InstrPtr p;
+void
+mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd)
+{
+	int i, j, cnt = 0;
+	InstrPtr p;
 
-    for(i=0;i<mb->stop; i++){
-        p= getInstrPtr(mb,i);
-        if( functionId(p) && strcmp(functionName(p),name) == 0 ){
-            mdbSetBreakpoint(cntxt,mb,p,name,cmd);
-            cnt++;
-            continue;
-        }
-        for(j=0; j<p->retc; j++)
-        if( strcmp(getArgName(mb,p,j),name) == 0){
-            mdbSetBreakpoint(cntxt,mb,p,name,cmd);
-            cnt++;
-            continue;
-        }
-    }
-    if(cnt == 0)
-    stream_printf(cntxt->fdout,"breakpoint on '%s' not set\n", name);
+	for (i = 0; i < mb->stop; i++) {
+		p = getInstrPtr(mb, i);
+		if (functionId(p) && strcmp(functionName(p), name) == 0) {
+			mdbSetBreakpoint(cntxt, mb, p, name, cmd);
+			cnt++;
+			continue;
+		}
+		for (j = 0; j < p->retc; j++)
+			if (strcmp(getArgName(mb, p, j), name) == 0) {
+				mdbSetBreakpoint(cntxt, mb, p, name, cmd);
+				cnt++;
+				continue;
+			}
+	}
+	if (cnt == 0)
+		stream_printf(cntxt->fdout, "breakpoint on '%s' not set\n", name);
 }
+
 @-
 A breakpoint should be set once for each combination
 @c
-void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name, char cmd)
-{   mdbState mdb= mdbTable + cntxt->idx;
+void
+mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name, char cmd)
+{
+	mdbState mdb = mdbTable + cntxt->idx;
 	int i;
-	for(i=0;i<mdb->brkTop; i++)
-	if( mdb->brkBlock[i] == mb &&
-    	strcmp(mdb->brkVarName[i], name)==0 ) return;
-    mdb->brkBlock[mdb->brkTop] = mb;
-    mdb->brkVar[mdb->brkTop] = getDestVar(p);
-    mdb->brkVarName[mdb->brkTop] = GDKstrdup(name);
-    mdb->brkCmd[mdb->brkTop] =cmd;
-    if( mdb->brkTop+1< MAXBREAKS)
-        mdb->brkTop++;
-}
-void mdbShowBreakpoints(Client cntxt)
-{   int i;
-    mdbState mdb= mdbTable + cntxt->idx;
 
-    for(i=0;i<mdb->brkTop;i++)
-    stream_printf(cntxt->fdout,"breakpoint on '%s' with id %d\n",
-            mdb->brkVarName[i], mdb->brkVar[i]);
+	for (i = 0; i < mdb->brkTop; i++)
+		if (mdb->brkBlock[i] == mb && strcmp(mdb->brkVarName[i], name) == 0)
+			return;
+	mdb->brkBlock[mdb->brkTop] = mb;
+	mdb->brkVar[mdb->brkTop] = getDestVar(p);
+	mdb->brkVarName[mdb->brkTop] = GDKstrdup(name);
+	mdb->brkCmd[mdb->brkTop] = cmd;
+	if (mdb->brkTop + 1 < MAXBREAKS)
+		mdb->brkTop++;
 }
 
-void mdbClrBreakpoint(Client cntxt, InstrPtr p)
-{   int i,j=0;
-    mdbState mdb= mdbTable + cntxt->idx;
+void
+mdbShowBreakpoints(Client cntxt)
+{
+	int i;
+	mdbState mdb = mdbTable + cntxt->idx;
 
-    for(i=0;i<mdb->brkTop;i++){
-        mdb->brkVar[j]= mdb->brkVar[i];
-        mdb->brkVarName[j]= mdb->brkVarName[i];
-        mdb->brkCmd[j]= mdb->brkCmd[i];
-        mdb->brkBlock[j]= mdb->brkBlock[i];
-        if( mdb->brkVar[i] != getDestVar(p)) j++;
-        else {
-            GDKfree(mdb->brkVarName[i]);
-            mdb->brkVarName[i]= 0;
-        }
-
-    }
-    mdb->brkTop = j;
+	for (i = 0; i < mdb->brkTop; i++)
+		stream_printf(cntxt->fdout, "breakpoint on '%s' with id %d\n", mdb->brkVarName[i], mdb->brkVar[i]);
 }
-void mdbClrBreakpointName(Client cntxt, str name)
-{   int i,j=0;
-    mdbState mdb= mdbTable + cntxt->idx;
 
-    for(i=0;i<mdb->brkTop;i++){
-        mdb->brkVar[j]= mdb->brkVar[i];
-        mdb->brkVarName[j]= mdb->brkVarName[i];
-        mdb->brkCmd[j]= mdb->brkCmd[i];
-        mdb->brkBlock[j]= mdb->brkBlock[i];
-        if( strcmp(mdb->brkVarName[i],name) ) j++;
-        else {
-            GDKfree(mdb->brkVarName[i]);
-            mdb->brkVarName[i]= 0;
-        }
-    }
-    mdb->brkTop = j;
+void
+mdbClrBreakpoint(Client cntxt, InstrPtr p)
+{
+	int i, j = 0;
+	mdbState mdb = mdbTable + cntxt->idx;
+
+	for (i = 0; i < mdb->brkTop; i++) {
+		mdb->brkVar[j] = mdb->brkVar[i];
+		mdb->brkVarName[j] = mdb->brkVarName[i];
+		mdb->brkCmd[j] = mdb->brkCmd[i];
+		mdb->brkBlock[j] = mdb->brkBlock[i];
+		if (mdb->brkVar[i] != getDestVar(p))
+			j++;
+		else {
+			GDKfree(mdb->brkVarName[i]);
+			mdb->brkVarName[i] = 0;
+		}
+
+	}
+	mdb->brkTop = j;
+}
+
+void
+mdbClrBreakpointName(Client cntxt, str name)
+{
+	int i, j = 0;
+	mdbState mdb = mdbTable + cntxt->idx;
+
+	for (i = 0; i < mdb->brkTop; i++) {
+		mdb->brkVar[j] = mdb->brkVar[i];
+		mdb->brkVarName[j] = mdb->brkVarName[i];
+		mdb->brkCmd[j] = mdb->brkCmd[i];
+		mdb->brkBlock[j] = mdb->brkBlock[i];
+		if (strcmp(mdb->brkVarName[i], name))
+			j++;
+		else {
+			GDKfree(mdb->brkVarName[i]);
+			mdb->brkVarName[i] = 0;
+		}
+	}
+	mdb->brkTop = j;
 }
 
 @-
@@ -472,83 +488,93 @@ The instruction call stack is the most common command.
 Prepare a string for an instruction call. The flag indicates
 a need for position information as well.
 @c
-str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra){
+str
+call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra)
+{
 	InstrPtr p;
-	char target[BLOCK],buf[BLOCK];
-	int l,k;
+	char target[BLOCK], buf[BLOCK];
+	int l, k;
 
-	p= getInstrPtr(mb, pc);
-	if( p != NULL){
-		target[0]=0;
-		fillTarget(mb,p,target);
-		if( moduleId(p) && functionId(p)){
-			snprintf(buf,BLOCK,"%s%s.%s(", target,
-				moduleName(p),functionName(p));
-			for(k= p->retc; k<p->argc; k++){
-				str msg=0;
-				ValPtr v= &stk->stk[getArg(p,k)];
+	p = getInstrPtr(mb, pc);
+	if (p != NULL) {
+		target[0] = 0;
+		fillTarget(mb, p, target);
+		if (moduleId(p) && functionId(p)) {
+			snprintf(buf, BLOCK, "%s%s.%s(", target, moduleName(p), functionName(p));
+			for (k = p->retc; k < p->argc; k++) {
+				str msg = 0;
+				ValPtr v = &stk->stk[getArg(p, k)];
 
-                ATOMformat(v->vtype, VALptr(v), &msg);
-                l= strlen(buf);
-                snprintf(buf+l,BLOCK-l,"%s",msg);
-                GDKfree(msg);
-                if( k < p->argc-1 ) {
-                    l= strlen(buf);
-                    snprintf(buf+l,BLOCK-l,",");
-                }
-            }
-            l= strlen(buf);
-            snprintf(buf+l,BLOCK-l,");");
-        } else{
-			strcpy(buf,instruction2str(mb,p,FALSE));
-			strcpy(buf,target);
+				ATOMformat(v->vtype, VALptr(v), &msg);
+				l = strlen(buf);
+				snprintf(buf + l, BLOCK - l, "%s", msg);
+				GDKfree(msg);
+				if (k < p->argc - 1) {
+					l = strlen(buf);
+					snprintf(buf + l, BLOCK - l, ",");
+				}
+			}
+			l = strlen(buf);
+			snprintf(buf + l, BLOCK - l, ");");
+		} else {
+			strcpy(buf, instruction2str(mb, p, FALSE));
+			strcpy(buf, target);
 		}
 	}
-	if( extra){
-		p= getInstrPtr(mb,0);
-		l= strlen(buf);
-		snprintf(buf+l,BLOCK-l," at #%d in %s", pc, functionName(p));
+	if (extra) {
+		p = getInstrPtr(mb, 0);
+		l = strlen(buf);
+		snprintf(buf + l, BLOCK - l, " at #%d in %s", pc, functionName(p));
 	}
-    return GDKstrdup(buf);
+	return GDKstrdup(buf);
 }
-void printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc){
-    str msg;
 
-    msg= call2str(mb,stk,pc,TRUE);
-    stream_printf(cntxt->fdout,"%s\n",msg);
-    GDKfree(msg);
+void
+printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+{
+	str msg;
+
+	msg = call2str(mb, stk, pc, TRUE);
+	stream_printf(cntxt->fdout, "%s\n", msg);
+	GDKfree(msg);
 }
+
 @-
 Beware, the printTraceCall is a rather expensive routine and obscures
 the actual timing. We therefore compensate the global timing maintained
 @c
-void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    int k;
-    str msg;
-    str s;
+void
+printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int k;
+	str msg;
+	str s;
 
-    msg= instruction2str(mb,p,FALSE);
-    s= strchr(msg,'(');
-	if( p->retc > 1 && s){
-		s= strchr(s+1,'(');
+	msg = instruction2str(mb, p, FALSE);
+	s = strchr(msg, '(');
+	if (p->retc > 1 && s) {
+		s = strchr(s + 1, '(');
 	}
-    if(s){
-        s++;
-        *s = 0;
-        stream_printf(cntxt->fdout,"%s",msg);
-        for(k= p->retc; k<p->argc; k++){
-			VarPtr v= getVar(mb, getArg(p,k));
-            ValPtr val= &stk->stk[getArg(p,k)];
-			if( v->tmpindex == 0)
-				stream_printf(cntxt->fdout,"%s=",v->name);
+	if (s) {
+		s++;
+		*s = 0;
+		stream_printf(cntxt->fdout, "%s", msg);
+		for (k = p->retc; k < p->argc; k++) {
+			VarPtr v = getVar(mb, getArg(p, k));
+			ValPtr val = &stk->stk[getArg(p, k)];
+
+			if (v->tmpindex == 0)
+				stream_printf(cntxt->fdout, "%s=", v->name);
 			else
-				stream_printf(cntxt->fdout,"%c%d=",TMPMARKER,v->tmpindex);
-            ATOMprint(val->vtype,VALptr(val),cntxt->fdout);
-            if( k < p->argc-1 ) stream_printf(cntxt->fdout,", ");
-            }
-        stream_printf(cntxt->fdout,")\n");
-    } else stream_printf(cntxt->fdout,"%s\n",msg);
-    GDKfree(msg);
+				stream_printf(cntxt->fdout, "%c%d=", TMPMARKER, v->tmpindex);
+			ATOMprint(val->vtype, VALptr(val), cntxt->fdout);
+			if (k < p->argc - 1)
+				stream_printf(cntxt->fdout, ", ");
+		}
+		stream_printf(cntxt->fdout, ")\n");
+	} else
+		stream_printf(cntxt->fdout, "%s\n", msg);
+	GDKfree(msg);
 }
 
 @+ MAL parser
@@ -562,443 +588,453 @@ The prompt string sent to the user indicates the debugger mode.
 #define MDBstatus(X) if(cntxt->fdout) \
 	stream_printf(cntxt->fdout,"#MonetDB Debugger %s\n", (X?"on":"off"));
 
-void mdbCommand(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
+void
+mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 {
-    int m = 1;
-    char *b,*c;
+	int m = 1;
+	char *b, *c;
 	bstream *oldin;
-    stream *out = cntxt->fdout;
-    int listing = cntxt->listing;
+	stream *out = cntxt->fdout;
+	int listing = cntxt->listing;
 	char *oldprompt = cntxt->prompt;
 	int oldpromptlength = cntxt->promptlength;
 
-    if( p != NULL){
-        stream_printf(out,"#mdb ");
-        printInstruction(out,mb,p,listing);
-    }
-	if (cntxt==mal_clients){
-		cntxt -> prompt = "mdb>";
-		cntxt -> promptlength = 4;
+	if (p != NULL) {
+		stream_printf(out, "#mdb ");
+		printInstruction(out, mb, p, listing);
 	}
-	oldin= cntxt->fdin;
-	cntxt->fdin= getConsole(cntxt);
-    cntxt->fdin->pos += cntxt->yycur;
+	if (cntxt == mal_clients) {
+		cntxt->prompt = "mdb>";
+		cntxt->promptlength = 4;
+	}
+	oldin = cntxt->fdin;
+	cntxt->fdin = getConsole(cntxt);
+	cntxt->fdin->pos += cntxt->yycur;
 	cntxt->yycur = 0;
 	cntxt->fdin->buf[cntxt->fdin->pos] = 0;
-    do {
+	do {
 		if (cntxt->phase[READER]) {
- 			if(  (*cntxt->phase[READER])(cntxt) ) {
-        		    break;
+			if ((*cntxt->phase[READER]) (cntxt)) {
+				break;
 			}
-		} else if ( readClient(cntxt) <= 0) {
-        	break;
+		} else if (readClient(cntxt) <= 0) {
+			break;
 		}
-    	b = CURRENT(cntxt);
+		b = CURRENT(cntxt);
 
-        /* terminate the line with zero */
-        c = strchr(b,'\n');
-        if (c) {
+		/* terminate the line with zero */
+		c = strchr(b, '\n');
+		if (c) {
 			*c = 0;
-    		cntxt->fdin->pos += (c-b)+1;
+			cntxt->fdin->pos += (c - b) + 1;
 		} else {
-    		cntxt->fdin->pos = cntxt->fdin->len;
+			cntxt->fdin->pos = cntxt->fdin->len;
 		}
 
-    	skipBlanc(cntxt,b);
-    	switch(*b){
-    	case 0:
+		skipBlanc(cntxt, b);
+		switch (*b) {
+		case 0:
 			m = 0;
 			break;
-    	case 'a':
-			if( strncmp("atoms",b,5)==0)
+		case 'a':
+			if (strncmp("atoms", b, 5) == 0)
 				showAtoms(out);
-        	break;
-    	case 'c':
-			if( strncmp("call",b,4)==0) {
-            	GDKerror("call instruction not yet implemented\n");
-            	break;
-         	}
-         	stk->cmd= 'c';
-        	skipWord(cntxt,b);
+			break;
+		case 'c':
+			if (strncmp("call", b, 4) == 0) {
+				GDKerror("call instruction not yet implemented\n");
+				break;
+			}
+			stk->cmd = 'c';
+			skipWord(cntxt, b);
 			m = 0;
 			break;
-    	case 'h':
+		case 'h':
 			mdbHelp(out);
 			break;
 		case 'e':
-		{	
-        	/* terminate the execution for ordinary functions only*/
-			if( strncmp("exit",b,4)==0 ){
+		{
+			/* terminate the execution for ordinary functions only */
+			if (strncmp("exit", b, 4) == 0) {
 		case 'x':
-				if( ! (getInstrPtr(mb,0)->token == FACcall) ){
-					stk->cmd= 'x';
-					cntxt->fdin= oldin;
+				if (!(getInstrPtr(mb, 0)->token == FACcall)) {
+					stk->cmd = 'x';
+					cntxt->fdin = oldin;
 					cntxt->prompt = oldprompt;
 					cntxt->promptlength = oldpromptlength;
 				}
 			}
 			return;
 		}
-    	case 'q':
-		{	MalStkPtr su;
-        	/* return from this debugger */
-			for(su= stk; su; su= su->up)
-				su->cmd= 0;
-        	cntxt->itrace= 0;
-        	cntxt->timer= 0;
-        	/* MDBstatus(0);*/
-			cntxt->fdin= oldin;
+		case 'q':
+		{
+			MalStkPtr su;
+
+			/* return from this debugger */
+			for (su = stk; su; su = su->up)
+				su->cmd = 0;
+			cntxt->itrace = 0;
+			cntxt->timer = 0;
+			/* MDBstatus(0); */
+			cntxt->fdin = oldin;
 			cntxt->prompt = oldprompt;
 			cntxt->promptlength = oldpromptlength;
 			return;
 		}
-    	case 'f': /* finish */
-    	case 'n': /* next */
-    	case 's': /* step */
-        	if( strncmp("scenarios",b,3)==0){
-            	showAllScenarios(out);
-        	} else if( strncmp("scenario",b,3)==0){
-            	showScenarioByName(out, cntxt->scenario);
-        	} else if( strncmp("scope",b,3)==0){
-            	showModuleStatistics(out,cntxt->nspace);
-            	break;
-        	}
-        	stk->cmd= *b;
+		case 'f':	/* finish */
+		case 'n':	/* next */
+		case 's':	/* step */
+			if (strncmp("scenarios", b, 3) == 0) {
+				showAllScenarios(out);
+			} else if (strncmp("scenario", b, 3) == 0) {
+				showScenarioByName(out, cntxt->scenario);
+			} else if (strncmp("scope", b, 3) == 0) {
+				showModuleStatistics(out, cntxt->nspace);
+				break;
+			}
+			stk->cmd = *b;
 			m = 0;
 			break;
-    	case 'm': /* display a module */
-        	{
-        		str modname, fcnname;
-        		Module fsym;
-        		Symbol fs;
-        		int i;
-
-        		if( strncmp("modules",b,7)==0){
-            		showModules(out, cntxt->nspace);
-            		continue;
-        		}
-
-        		skipWord(cntxt,b);
-        		if(*b){
-            		modname=b;
-					fcnname= strchr(b,'.');
-					if( fcnname ){
-						*fcnname= 0;
-						fcnname++;
-					}
-					fsym= findModule(cntxt->nspace, putName(modname,strlen(modname)));
-
-					if( fsym == NULL){
-						stream_printf(out,"%s module not found\n",modname);
-						continue;
-					}
-					for(i=0;i<MAXSCOPE;i++){
-						fs= fsym->subscope[i];
-						while(fs != NULL){
-							if( fcnname == NULL)
-								printSignature(out,fs,listing);
-							else if( strcmp(fcnname,getFcnName(fs->def))==0)
-								printSignature(out,fs,listing);
-							fs= fs->peer;
-						}
-					}
-					continue;
-        		}
-        		debugModule(out,cntxt->nspace,b);
-        	}
-        	break;
-    	case 't': /* trace breakpoint */
-        	if( strncmp("type",b,4)==0){
-            	skipWord(cntxt,b); skipBlanc(cntxt,b);
-            	if(strchr(b,'\n'))
-                        *strchr(b,'\n')= 0;
-           		traceFcnName= GDKstrdup(b);
-        	} else if( strncmp("timer",b,5)==0){
-            	if( cntxt->timer==0)
-                	cntxt->timer = GDKusec();
-            	else
-                        cntxt->timer = 0;
-				stk->cmd= 0;
-        	}
-        	break;
-    	case 'v': {	/* show the symbol table and bindings */
-				str modname, fcnname;
-        		Module fsym;
-        		Symbol fs;
-        		int i;
-				skipWord(cntxt,b);
-				if( *b!= 0){
-					modname=b;
-					fcnname= strchr(b,'.');
-					if( fcnname == NULL){
-						fsym= findModule(cntxt->nspace, putName(modname,strlen(modname)));
-						if( fsym==0) {
-							stream_printf(out,"%s module not found\n", modname);
-							continue;
-						}
-						for(i=0;i<MAXSCOPE;i++){
-							fs= fsym->subscope[i];
-							while(fs != NULL){
-								printStack(out,fs->def,0);
-								fs= fs->peer;
-							}
-						}
-						continue;
-					}
-            		*fcnname = 0;
-            		fcnname ++;
-            		fsym= findModule(cntxt->nspace, putName(modname,strlen(modname)));
-            		if( fsym==0) {
-               		 	stream_printf(out,"%s module not found\n",modname);
-						continue;
-            		}
-            		/* display the overloaded symbol definition */
-					for(i=0;i<MAXSCOPE;i++){
-						fs= fsym->subscope[i];
-						while(fs != NULL){
-							if( strcmp(fs->name,fcnname)==0)
-								printStack(out,fs->def,0);
-							fs= fs->peer;
-						}
-					}
-        		} else
-        			printStack(out,mb,stk);
-        		break;
-			}
-    	case 'b':
-			if( strcmp(b,"bbp") == 0 ){
+		case 'm':	/* display a module */
+		{
+			str modname, fcnname;
+			Module fsym;
+			Symbol fs;
 			int i;
-				for(i=1; i < BBPsize; i++)
-				if (BBP_logical(i) && BBP_cache(i)) {
-					stream_printf(out,"[%d] %s lref = %d ref= %d ", i,
-						BBP_logical(i), BBP_lrefs(i), BBP_refs(i));
-					stream_printf(out," dirty=%d \n", BATdirty(BBP_cache(i)) );
+
+			if (strncmp("modules", b, 7) == 0) {
+				showModules(out, cntxt->nspace);
+				continue;
+			}
+
+			skipWord(cntxt, b);
+			if (*b) {
+				modname = b;
+				fcnname = strchr(b, '.');
+				if (fcnname) {
+					*fcnname = 0;
+					fcnname++;
+				}
+				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+
+				if (fsym == NULL) {
+					stream_printf(out, "%s module not found\n", modname);
+					continue;
+				}
+				for (i = 0; i < MAXSCOPE; i++) {
+					fs = fsym->subscope[i];
+					while (fs != NULL) {
+						if (fcnname == NULL)
+							printSignature(out, fs, listing);
+						else if (strcmp(fcnname, getFcnName(fs->def)) == 0)
+							printSignature(out, fs, listing);
+						fs = fs->peer;
+					}
 				}
 				continue;
 			}
-			if( strcmp(b,"breakpoints") == 0 ){
+			debugModule(out, cntxt->nspace, b);
+		}
+			break;
+		case 't':	/* trace breakpoint */
+			if (strncmp("type", b, 4) == 0) {
+				skipWord(cntxt, b);
+				skipBlanc(cntxt, b);
+				if (strchr(b, '\n'))
+					*strchr(b, '\n') = 0;
+				traceFcnName = GDKstrdup(b);
+			} else if (strncmp("timer", b, 5) == 0) {
+				if (cntxt->timer == 0)
+					cntxt->timer = GDKusec();
+				else
+					cntxt->timer = 0;
+				stk->cmd = 0;
+			}
+			break;
+		case 'v':{	/* show the symbol table and bindings */
+			str modname, fcnname;
+			Module fsym;
+			Symbol fs;
+			int i;
+
+			skipWord(cntxt, b);
+			if (*b != 0) {
+				modname = b;
+				fcnname = strchr(b, '.');
+				if (fcnname == NULL) {
+					fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+					if (fsym == 0) {
+						stream_printf(out, "%s module not found\n", modname);
+						continue;
+					}
+					for (i = 0; i < MAXSCOPE; i++) {
+						fs = fsym->subscope[i];
+						while (fs != NULL) {
+							printStack(out, fs->def, 0);
+							fs = fs->peer;
+						}
+					}
+					continue;
+				}
+				*fcnname = 0;
+				fcnname++;
+				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+				if (fsym == 0) {
+					stream_printf(out, "%s module not found\n", modname);
+					continue;
+				}
+				/* display the overloaded symbol definition */
+				for (i = 0; i < MAXSCOPE; i++) {
+					fs = fsym->subscope[i];
+					while (fs != NULL) {
+						if (strcmp(fs->name, fcnname) == 0)
+							printStack(out, fs->def, 0);
+						fs = fs->peer;
+					}
+				}
+			} else
+				printStack(out, mb, stk);
+			break;
+		}
+		case 'b':
+			if (strcmp(b, "bbp") == 0) {
+				int i;
+
+				for (i = 1; i < BBPsize; i++)
+					if (BBP_logical(i) && BBP_cache(i)) {
+						stream_printf(out, "[%d] %s lref = %d ref= %d ", i, BBP_logical(i), BBP_lrefs(i), BBP_refs(i));
+						stream_printf(out, " dirty=%d \n", BATdirty(BBP_cache(i)));
+					}
+				continue;
+			}
+			if (strcmp(b, "breakpoints") == 0) {
 				mdbShowBreakpoints(cntxt);
 				continue;
 			}
-			if( strncmp(b,"break",5) == 0 ) b+=4;
-			if( isspace((int)b[1]) ){
-				skipWord(cntxt,b);
-				if( *b && !isspace((int)*b) )
+			if (strncmp(b, "break", 5) == 0)
+				b += 4;
+			if (isspace((int) b[1])) {
+				skipWord(cntxt, b);
+				if (*b && !isspace((int) *b))
 					/* set breakpoints by name */
-					mdbSetBreakpointName(cntxt,mb,b,'s');
-				 else
-					mdbSetBreakpoint(cntxt,mb,p,getArgName(mb,p,0),'s');
+					mdbSetBreakpointName(cntxt, mb, b, 's');
+				else
+					mdbSetBreakpoint(cntxt, mb, p, getArgName(mb, p, 0), 's');
 				continue;
 			}
-        	continue;
-    	case 'd':
-        	if( strncmp(b,"down",2)==0 && stk->down!= NULL){
-            	stream_printf(out,"%sgo down the stack\n","#mdb ");
-            	stk= stk->down;
-            	mb = stk->blk;
-            	break;
-        	}
-        	skipWord(cntxt,b);
-        	/* get rid of break point */
-        	if(*b && !isspace((int)*b)){
-            	mdbClrBreakpointName(cntxt,b);
-        	} else {
-            	mdbClrBreakpoint(cntxt,p);
-        	}
-        	continue;
-    	case 'i':
-    	{
-			int i;
-        	char *t;
-
-        	if( strncmp("io",b,2)==0){
-            	if( cntxt->timer==0)
-                	cntxt->timer = GDKusec();
-				getrusage(RUSAGE_SELF,&cntxt->resource);
-				stream_printf(out,"#maxrss %d ixrss=%d idrss=%d isrss=%d"
-					" minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n",
-					cntxt->resource.ru_maxrss,
-					cntxt->resource.ru_ixrss,
-					cntxt->resource.ru_idrss,
-					cntxt->resource.ru_isrss,
-					cntxt->resource.ru_minflt,
-					cntxt->resource.ru_majflt,
-					cntxt->resource.ru_nswap,
-					cntxt->resource.ru_inblock,
-					cntxt->resource.ru_oublock);
-				continue;
-			}
-        	skipWord(cntxt,b);
-        	t=b;
-        	skipNonBlanc(cntxt,t);
-        	*t = 0;
-        	/* search the symbol */
-        	i = findVariable(mb,b);
-        	if( i<0){
-            	stream_printf(out,"%s Symbol not found\n","#mdb ");
-        	} else{
-            	printBatInfo(out,getVar(mb,i),stk->stk+i);
-        	}
-        	continue;
-    	}
-    	case 'p':
-    	{
-			int i, size=0,first=0;
-        	char *t;
-
-        	skipWord(cntxt,b);
-        	t=b;
-        	skipNonBlanc(cntxt,t);
-        	*t = 0;
-        	/* you can identify a start and length */
-        	t++;
-			skipBlanc(cntxt,t);
-        	if(isdigit((int)*t)){
-            	size= atol(t);
-            	skipWord(cntxt,t);
-            	if( isdigit((int)*t))
-					first= atol(t);
-        	}
-        	/* search the symbol */
-        	i = findVariable(mb,b);
-        	if( i<0){
-				i= BBPindex(b);
-				if( i != 0)
-					printBATelm(out, i, size,first);
-				else 
-					stream_printf(out,"%s Symbol not found\n","#mdb ");
-            	continue;
-        	}
-        	printStackElm(out, mb, getVar(mb,i),stk->stk+i,i,size,first);
-        	continue;
-    	}
-		case 'S':
-			dumpNamespaceStatistics(out,1);
-			break;
-    	case 'u':
-        	if( stk->up == NULL)
+			continue;
+		case 'd':
+			if (strncmp(b, "down", 2) == 0 && stk->down != NULL) {
+				stream_printf(out, "%sgo down the stack\n", "#mdb ");
+				stk = stk->down;
+				mb = stk->blk;
 				break;
-        	stream_printf(out,"%s go up the stack\n","#mdb ");
-        	stk= stk->up;
-        	mb = stk->blk;
-        	printCall(cntxt,mb,stk,pc);
-        	continue;
-    	case 'w':
-    	{
+			}
+			skipWord(cntxt, b);
+			/* get rid of break point */
+			if (*b && !isspace((int) *b)) {
+				mdbClrBreakpointName(cntxt, b);
+			} else {
+				mdbClrBreakpoint(cntxt, p);
+			}
+			continue;
+		case 'i':
+		{
+			int i;
+			char *t;
+
+			if (strncmp("io", b, 2) == 0) {
+				if (cntxt->timer == 0)
+					cntxt->timer = GDKusec();
+				getrusage(RUSAGE_SELF, &cntxt->resource);
+				stream_printf(out, "#maxrss %d ixrss=%d idrss=%d isrss=%d" " minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n", cntxt->resource.ru_maxrss, cntxt->resource.ru_ixrss, cntxt->resource.ru_idrss, cntxt->resource.ru_isrss,
+					      cntxt->resource.ru_minflt, cntxt->resource.ru_majflt, cntxt->resource.ru_nswap, cntxt->resource.ru_inblock, cntxt->resource.ru_oublock);
+				continue;
+			}
+			skipWord(cntxt, b);
+			t = b;
+			skipNonBlanc(cntxt, t);
+			*t = 0;
+			/* search the symbol */
+			i = findVariable(mb, b);
+			if (i < 0) {
+				stream_printf(out, "%s Symbol not found\n", "#mdb ");
+			} else {
+				printBatInfo(out, getVar(mb, i), stk->stk + i);
+			}
+			continue;
+		}
+		case 'p':
+		{
+			int i, size = 0, first = 0;
+			char *t;
+
+			skipWord(cntxt, b);
+			t = b;
+			skipNonBlanc(cntxt, t);
+			*t = 0;
+			/* you can identify a start and length */
+			t++;
+			skipBlanc(cntxt, t);
+			if (isdigit((int) *t)) {
+				size = atol(t);
+				skipWord(cntxt, t);
+				if (isdigit((int) *t))
+					first = atol(t);
+			}
+			/* search the symbol */
+			i = findVariable(mb, b);
+			if (i < 0) {
+				i = BBPindex(b);
+				if (i != 0)
+					printBATelm(out, i, size, first);
+				else
+					stream_printf(out, "%s Symbol not found\n", "#mdb ");
+				continue;
+			}
+			printStackElm(out, mb, getVar(mb, i), stk->stk + i, i, size, first);
+			continue;
+		}
+		case 'S':
+			dumpNamespaceStatistics(out, 1);
+			break;
+		case 'u':
+			if (stk->up == NULL)
+				break;
+			stream_printf(out, "%s go up the stack\n", "#mdb ");
+			stk = stk->up;
+			mb = stk->blk;
+			printCall(cntxt, mb, stk, pc);
+			continue;
+		case 'w':
+		{
 			MalStkPtr w;
-        	MalBlkPtr mw=mb;
-			int pci=pc; /*  how to find enclosing pc */
-        	for(w=stk;w!= NULL; w=w->up){
-            	mw = w->blk;
-            	stream_printf(out,"#mdb ");
-            	printCall(cntxt,mw,w,pci);
-				if( w->up)
-					pci=w->up->pcup;
-        	}
-        	continue;
-    	}
+			MalBlkPtr mw = mb;
+			int pci = pc;	/*  how to find enclosing pc */
+
+			for (w = stk; w != NULL; w = w->up) {
+				mw = w->blk;
+				stream_printf(out, "#mdb ");
+				printCall(cntxt, mw, w, pci);
+				if (w->up)
+					pci = w->up->pcup;
+			}
+			continue;
+		}
 @-
 While debugging it should be possible to inspect the symbol
 table using the 'module.function' name. The default is to list all
 signatures satisfying the pattern.
 @c
-    	case 'L':
-    	case 'l': /* list the current code block */
-    	{
+		case 'L':
+		case 'l':	/* list the current code block */
+		{
 			str modname, fcnname;
-        	Module fsym;
-        	Symbol fs;
-        	int i, lstng;
+			Module fsym;
+			Symbol fs;
+			int i, lstng;
 
-        	lstng = /* listing |*/ (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR);
-        	skipWord(cntxt,b);
-        	if( *b!= 0){
-            	modname=b;
-            	fcnname= strchr(b,'.');
-            	if( fcnname == NULL){
-                	fsym= findModule(cntxt->nspace,putName(modname,strlen(modname)));
-                	if( fsym==0) {
-                    	stream_printf(out,"%s module not found\n", modname);
-                    	continue;
-                	}
-                	for(i=0;i<MAXSCOPE;i++){
-                    	fs= fsym->subscope[i];
-                    	while(fs != NULL){
-                        	printFunction(out,fs->def,lstng);
-                        	fs= fs->peer;
-                    	}
-                	}
-                	continue;
-            	}
-            	*fcnname = 0;
-            	fcnname ++;
-            	fsym= findModule(cntxt->nspace,putName(modname,strlen(modname)));
-            	if( fsym==0) {
-                	stream_printf(out,"%s module not found\n",modname);
-                	continue;
-            	}
-            	/* display the overloaded symbol definition */
-            	if( displayModule(out,fsym,fcnname,lstng)==0){
-                	stream_printf(out,"%sSymbol '%s.%s' not found\n",
-                    	"#mdb ",modname,fcnname);
-            	}
-        	} else {
-				printFunction(out,mb,lstng);
+			lstng = /* listing | */ (*b == 'L' ? LIST_MAL_ALL : LIST_MAL_INSTR);
+			skipWord(cntxt, b);
+			if (*b != 0) {
+				modname = b;
+				fcnname = strchr(b, '.');
+				if (fcnname == NULL) {
+					fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+					if (fsym == 0) {
+						stream_printf(out, "%s module not found\n", modname);
+						continue;
+					}
+					for (i = 0; i < MAXSCOPE; i++) {
+						fs = fsym->subscope[i];
+						while (fs != NULL) {
+							printFunction(out, fs->def, lstng);
+							fs = fs->peer;
+						}
+					}
+					continue;
+				}
+				*fcnname = 0;
+				fcnname++;
+				fsym = findModule(cntxt->nspace, putName(modname, strlen(modname)));
+				if (fsym == 0) {
+					stream_printf(out, "%s module not found\n", modname);
+					continue;
+				}
+				/* display the overloaded symbol definition */
+				if (displayModule(out, fsym, fcnname, lstng) == 0) {
+					stream_printf(out, "%sSymbol '%s.%s' not found\n", "#mdb ", modname, fcnname);
+				}
+			} else {
+				printFunction(out, mb, lstng);
 			}
-        	continue;
-    	}
-		case 'o': case 'O': /* optimizer steps */
-		{ 	int flg= *b == 'o'? LIST_MAL_INSTR:LIST_MAL_ALL;
+			continue;
+		}
+		case 'o':
+		case 'O':	/* optimizer steps */
+		{
+			int flg = *b == 'o' ? LIST_MAL_INSTR : LIST_MAL_ALL;
 			int idx;
-			skipWord(cntxt,b);
-			if( *b ){
-				idx= atoi(b);
-				showOptimizerStep(idx,flg);
-			} else showOptimizerHistory();
+
+			skipWord(cntxt, b);
+			if (*b) {
+				idx = atoi(b);
+				showOptimizerStep(idx, flg);
+			} else
+				showOptimizerHistory();
 			break;
 		}
-    	case 'r': /* reset program counter */
-			stream_printf(out,"%s restart with current stack\n","#mdb ");
-			stk->cmd= 'r';
-        	break;
-    	default:
-        	stream_printf(out,"%s debugger command expected\n","#mdb ");
-        	mdbHelp(out);
-    	}
-    } while(m);
-	cntxt->fdin= oldin;
+		case 'r':	/* reset program counter */
+			stream_printf(out, "%s restart with current stack\n", "#mdb ");
+			stk->cmd = 'r';
+			break;
+		default:
+			stream_printf(out, "%s debugger command expected\n", "#mdb ");
+			mdbHelp(out);
+		}
+	} while (m);
+	cntxt->fdin = oldin;
 	cntxt->prompt = oldprompt;
 	cntxt->promptlength = oldpromptlength;
 }
-void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc ){
-    InstrPtr p;
 
-    switch(stk->cmd){
-    case 'c':
-		p= getInstrPtr(mb,pc);
-        if( isBreakpoint(cntxt,p) )
-            mdbCommand(cntxt,mb,stk,p,pc);
-        break;
-    case 's': case 'n':
-		p= getInstrPtr(mb,pc);
-        mdbCommand(cntxt,mb,stk,p,pc);
-    }
-    if( cntxt->timer) cntxt->timer = GDKusec();
-    stream_flush(cntxt->fdout);
+void
+mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+{
+	InstrPtr p;
+
+	switch (stk->cmd) {
+	case 'c':
+		p = getInstrPtr(mb, pc);
+		if (isBreakpoint(cntxt, p))
+			mdbCommand(cntxt, mb, stk, p, pc);
+		break;
+	case 's':
+	case 'n':
+		p = getInstrPtr(mb, pc);
+		mdbCommand(cntxt, mb, stk, p, pc);
+	}
+	if (cntxt->timer)
+		cntxt->timer = GDKusec();
+	stream_flush(cntxt->fdout);
 }
+
 @-
 It would come in handy if at any time you could activate
 the debugger on a specific function. This calls for the
 creation of a minimal execution environment first.
 @c
-str runMALDebugger(Symbol s){
-	Client c= getClient();
+str
+runMALDebugger(Symbol s)
+{
+	Client c = getClient();
 
 	printf("call debugger\n");
-	c->itrace= 'n';
-	runMAL(c,s->def, 1,0,0,0);
+	c->itrace = 'n';
+	runMAL(c, s->def, 1, 0, 0, 0);
 	return MAL_SUCCEED;
 }
+
 @+ Utilities
 Dumping a stack on a file is primarilly used for debugging.
 Printing the stack requires access to both the symbol table and
@@ -1009,140 +1045,158 @@ It has been zeroed upon creation.
 The routine  can also be used to inspect the symbol table of
 arbitrary functions.
 @c
-void printStack(stream *f, MalBlkPtr mb, MalStkPtr s){
-        int i = 0;
+void
+printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
+{
+	int i = 0;
 
-    stream_printf(f,"#mdb  %s\n", getInstrPtr(mb,0)->fcnname);
-	if( s) {
-		stream_printf(f,"Stack size=%d top=%d\n",s->stksize,s->stktop);
-        for( ; i<mb->vtop ; i++)
-			printStackElm(f, mb, getVar(mb,i), s->stk+i,i,0,0);
+	stream_printf(f, "#mdb  %s\n", getInstrPtr(mb, 0)->fcnname);
+	if (s) {
+		stream_printf(f, "Stack size=%d top=%d\n", s->stksize, s->stktop);
+		for (; i < mb->vtop; i++)
+			printStackElm(f, mb, getVar(mb, i), s->stk + i, i, 0, 0);
 	} else
-        for( ; i<mb->vtop ; i++)
-			printStackElm(f, mb, getVar(mb,i), 0,i,0,0);
+		for (; i < mb->vtop; i++)
+			printStackElm(f, mb, getVar(mb, i), 0, i, 0, 0);
 }
-void printBATelm(stream *f, int i, int cnt, int first){
-	BAT *b,*bs;
-	str tpe/*,nme*/;
-	b= BATdescriptor(i);
-	if( b){
+
+void
+printBATelm(stream *f, int i, int cnt, int first)
+{
+	BAT *b, *bs;
+	str tpe /*,nme */ ;
+
+	b = BATdescriptor(i);
+	if (b) {
 		/* nme= BATgetId(b); */
-		tpe= getTypeName(newBatType(b->htype,b->ttype));
+		tpe = getTypeName(newBatType(b->htype, b->ttype));
 		/* ignore ref count of this call */
-		stream_printf(f,"type=%s count=%d lrefs=%d refs=%d \n",
-			tpe,
-			BATcount(b),BBP_lrefs(ABS(b->batCacheid)),
-			BBP_refs(ABS(b->batCacheid))-1);
-        if(cnt < BATcount(b)) {
-            stream_printf(f,"Sample %d out of %d\n",cnt, BATcount(b));
-        }
-        /* cut out a portion of the BAT for display */
-        bs= BATslice(b,first,first+cnt);
-        if(bs== NULL)
-            stream_printf(f,"Failed to take chunk\n");
-        else BATmultiprintf(f,2,&bs,TRUE,0,TRUE);
+		stream_printf(f, "type=%s count=%d lrefs=%d refs=%d \n", tpe, BATcount(b), BBP_lrefs(ABS(b->batCacheid)), BBP_refs(ABS(b->batCacheid)) - 1);
+		if (cnt < BATcount(b)) {
+			stream_printf(f, "Sample %d out of %d\n", cnt, BATcount(b));
+		}
+		/* cut out a portion of the BAT for display */
+		bs = BATslice(b, first, first + cnt);
+
+		if (bs == NULL)
+			stream_printf(f, "Failed to take chunk\n");
+		else
+			BATmultiprintf(f, 2, &bs, TRUE, 0, TRUE);
 		BBPunfix(bs->batCacheid);
+
 		BBPunfix(b->batCacheid);
 		GDKfree(tpe);
 	}
 }
 
-void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int cnt,int first){
-    str nme,nmeOnStk;
-    char nmebuf[PATHLENGTH];
-    (void) mb; /* fool the compiler */
-    if( n->tmpindex){
-        snprintf(nmebuf,PATHLENGTH,"%c%d",TMPMARKER, n->tmpindex);
-        nme= nmebuf;
-    } else nme = n->name;
-    stream_printf(f,"[%d] %s\t= ",index,nme);
-    if( n->type == TYPE_void)
-        stream_printf(f,"nil");
-    else if(v)
-    	ATOMprint(v->vtype,VALptr(v),f);
-	else if( n->literal)
-		stream_printf(f,"%s", n->literal);
+void
+printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int cnt, int first)
+{
+	str nme, nmeOnStk;
+	char nmebuf[PATHLENGTH];
 
-    nme= getTypeName(n->type);
-    stream_printf(f,":%s", nme);
-    nmeOnStk= v? getTypeName(v->vtype):GDKstrdup(nme);
-    if( strcmp(nmeOnStk,nme) ){
-		if( isaBatType(n->type)){
+	(void) mb;		/* fool the compiler */
+	if (n->tmpindex) {
+		snprintf(nmebuf, PATHLENGTH, "%c%d", TMPMARKER, n->tmpindex);
+		nme = nmebuf;
+	} else
+		nme = n->name;
+	stream_printf(f, "[%d] %s\t= ", index, nme);
+	if (n->type == TYPE_void)
+		stream_printf(f, "nil");
+	else if (v)
+		ATOMprint(v->vtype, VALptr(v), f);
+	else if (n->literal)
+		stream_printf(f, "%s", n->literal);
+
+	nme = getTypeName(n->type);
+	stream_printf(f, ":%s", nme);
+	nmeOnStk = v ? getTypeName(v->vtype) : GDKstrdup(nme);
+	if (strcmp(nmeOnStk, nme)) {
+		if (isaBatType(n->type)) {
 			BAT *b;
-			b= BATdescriptor(v->val.ival);
-			if( b){
-				nmeOnStk= getTypeName(newBatType(b->htype,b->ttype));
-				if( strcmp(nme,nmeOnStk))
-					stream_printf(f," != :%s", nmeOnStk);
+
+			b = BATdescriptor(v->val.ival);
+			if (b) {
+				nmeOnStk = getTypeName(newBatType(b->htype, b->ttype));
+				if (strcmp(nme, nmeOnStk))
+					stream_printf(f, " != :%s", nmeOnStk);
 				BBPunfix(b->batCacheid);
 			}
-		} else
-        if( !(isaBatType(n->type) && strcmp(nmeOnStk,"BAT")==0))
-			stream_printf(f," != %s", nmeOnStk);
-    }
-    stream_printf(f," %s", (n->isaconstant?" constant":""));
-    stream_printf(f," %s", (n->isatypevar?" type variable":""));
-    GDKfree(nme); GDKfree(nmeOnStk);
-
-	if( !n->isused) stream_printf(f," unused");
-    if(cnt && isaBatType(n->type) && v && v->val.ival){
-        BAT *b,*bs;
-        b= BATdescriptor(v->val.ival);
-        if( b== NULL){
-            stream_printf(f,"Could not access descriptor\n");
-            return;
-        }
-        stream_printf(f,"\n");
-        if(cnt <= BATcount(b)) {
-            stream_printf(f,"Sample %d out of %d\n",cnt, BATcount(b));
-        }
-        /* cut out a portion of the BAT for display */
-        bs= BATslice(b,first,first+cnt);
-        if(bs== NULL)
-            stream_printf(f,"Failed to take chunk\n");
-        else BATmultiprintf(f,2,&bs,TRUE,0,TRUE);
-		BBPunfix(bs->batCacheid);
-        BBPunfix(b->batCacheid);
-    } else
-    if( isaBatType(n->type) && v){
-        BAT *b;
-        b= BATdescriptor(v->val.ival);
-        if(b){
-            /* ignore ref count of this call */
-            stream_printf(f," count=%d lrefs=%d refs=%d",
-                BATcount(b),BBP_lrefs(ABS(b->batCacheid)),
-                BBP_refs(ABS(b->batCacheid))-1);
-            BBPunfix(b->batCacheid);
-        }
-    } else
-    if(cnt && isaColType(n->type) && v && v->val.ival){
-		stream_printf(f,"Operation not yet implemented for :col types\n");
+		} else if (!(isaBatType(n->type) && strcmp(nmeOnStk, "BAT") == 0))
+			stream_printf(f, " != %s", nmeOnStk);
 	}
-    stream_printf(f,"\n");
-}
-void printBatInfo(stream *f, VarPtr n, ValPtr v){
-    if(isaBatType(n->type) && v->val.ival){
-        int bid;
-        int ret;
-        MALfcn fcn;
+	stream_printf(f, " %s", (n->isaconstant ? " constant" : ""));
+	stream_printf(f, " %s", (n->isatypevar ? " type variable" : ""));
+	GDKfree(nme);
+	GDKfree(nmeOnStk);
 
-        fcn = getAddress("BKCinfo",0);
-        if(fcn){
-            BAT *b;
-            bid = v->val.ival;
-            stream_printf(f,"Show info for %d\n",bid);
-            (*fcn)(&ret,&bid);
-            stream_printf(f,"got the info bat from %d\n",bid);
-            b= BATdescriptor(ret);
-            if( b== NULL){
-                stream_printf(f,"Could not access descriptor\n");
-                return;
-            }
-            BATmultiprintf(f,2,&b,TRUE,0,TRUE);
-            BBPunfix(b->batCacheid);
-        }
-    }
+	if (!n->isused)
+		stream_printf(f, " unused");
+	if (cnt && isaBatType(n->type) && v && v->val.ival) {
+		BAT *b, *bs;
+
+		b = BATdescriptor(v->val.ival);
+		if (b == NULL) {
+			stream_printf(f, "Could not access descriptor\n");
+			return;
+		}
+		stream_printf(f, "\n");
+		if (cnt <= BATcount(b)) {
+			stream_printf(f, "Sample %d out of %d\n", cnt, BATcount(b));
+		}
+		/* cut out a portion of the BAT for display */
+		bs = BATslice(b, first, first + cnt);
+
+		if (bs == NULL)
+			stream_printf(f, "Failed to take chunk\n");
+		else
+			BATmultiprintf(f, 2, &bs, TRUE, 0, TRUE);
+		BBPunfix(bs->batCacheid);
+
+		BBPunfix(b->batCacheid);
+	} else if (isaBatType(n->type) && v) {
+		BAT *b;
+
+		b = BATdescriptor(v->val.ival);
+		if (b) {
+			/* ignore ref count of this call */
+			stream_printf(f, " count=%d lrefs=%d refs=%d", BATcount(b), BBP_lrefs(ABS(b->batCacheid)), BBP_refs(ABS(b->batCacheid)) - 1);
+			BBPunfix(b->batCacheid);
+		}
+	} else if (cnt && isaColType(n->type) && v && v->val.ival) {
+		stream_printf(f, "Operation not yet implemented for :col types\n");
+	}
+	stream_printf(f, "\n");
 }
+
+void
+printBatInfo(stream *f, VarPtr n, ValPtr v)
+{
+	if (isaBatType(n->type) && v->val.ival) {
+		int bid;
+		int ret;
+		MALfcn fcn;
+
+		fcn = getAddress("BKCinfo", 0);
+		if (fcn) {
+			BAT *b;
+
+			bid = v->val.ival;
+			stream_printf(f, "Show info for %d\n", bid);
+			(*fcn) (&ret, &bid);
+			stream_printf(f, "got the info bat from %d\n", bid);
+			b = BATdescriptor(ret);
+			if (b == NULL) {
+				stream_printf(f, "Could not access descriptor\n");
+				return;
+			}
+			BATmultiprintf(f, 2, &b, TRUE, 0, TRUE);
+			BBPunfix(b->batCacheid);
+		}
+	}
+}
+
 @-
 The memory positions for the BATs is useful information to
 asses for memory fragmentation.
@@ -1169,93 +1223,104 @@ More then 9 elements makes it full.
     stream_printf(GDKout,"start %d lim %d\n",start,lim);
 
 @c
-str memProfileVector(int cells){
-    str v= GDKmalloc(cells+1);
-    int i;
-    long max= (long) sbrk(0);
-    long min= 0;
-    long granule= 0;
-    if( cells<=0) {
-        GDKerror("memProfileVector:positive argument expected\n");
-        return GDKstrdup("");
-    }
-    v= GDKmalloc(cells+1);
-    if( v== 0)
-        GDKfatal("memProfileVector:malloc failure\n");
+str
+memProfileVector(int cells)
+{
+	str v = GDKmalloc(cells + 1);
+	int i;
+	long max = (long) sbrk(0);
+	long min = 0;
+	long granule = 0;
 
-    for(i=0; i<cells;i++) v[i]='.';
-    v[i]=0;
+	if (cells <= 0) {
+		GDKerror("memProfileVector:positive argument expected\n");
+		return GDKstrdup("");
+	}
+	v = GDKmalloc(cells + 1);
+	if (v == 0)
+		GDKfatal("memProfileVector:malloc failure\n");
 
-    for(i=1; i<BBPsize; i++)
-    if( BBP_status(i) & BBPLOADED ){
-        BAT *b = BATdescriptor(i);
-        Heap *hp;
-        Hash *h;
-        long start,lim;
+	for (i = 0; i < cells; i++)
+		v[i] = '.';
+	v[i] = 0;
 
-        stream_printf(GDKout,"\tdesc=%d size=%d\n",b, sizeof(*b));
-        hp= b->batBuns;
-        stream_printf(GDKout,"\tbuns=%d size=%d\n",hp->base, hp->size);
-        if( min==0){
-            min= (long)b;
-            max= min + GDKmem_heapsize();
-            granule= (max-min)/cells;
-            stream_printf(GDKout,"granule %dK\n",granule/1024);
-        }
-        @:setVector(b,sizeof(*b))@
-        @:setVector(hp->base,hp->size)@
+	for (i = 1; i < BBPsize; i++)
+		if (BBP_status(i) & BBPLOADED) {
+			BAT *b = BATdescriptor(i);
+			Heap *hp;
+			Hash *h;
+			long start, lim;
 
-        @:heapinfo(hheap)@
-        @:heapinfo(theap)@
-        @:hashinfo(hhash)@
-        @:hashinfo(thash)@
-        BBPunfix(b->batCacheid);
-    }
-    return v;
+			stream_printf(GDKout, "\tdesc=%d size=%d\n", b, sizeof(*b));
+			hp = b->batBuns;
+			stream_printf(GDKout, "\tbuns=%d size=%d\n", hp->base, hp->size);
+			if (min == 0) {
+				min = (long) b;
+				max = min + GDKmem_heapsize();
+				granule = (max - min) / cells;
+				stream_printf(GDKout, "granule %dK\n", granule / 1024);
+			}
+			@:setVector(b, sizeof(*b))@
+			@:setVector(hp->base, hp->size)@
+
+			@:heapinfo(hheap)@
+			@:heapinfo(theap)@
+			@:hashinfo(hhash)@
+			@:hashinfo(thash)@
+			BBPunfix(b->batCacheid);
+		}
+	return v;
 }
-void printBBPinfo(stream *out){
-    str v;
 
-    stream_printf(out,"#BBP memory layout\n");
-    stream_printf(out,"#heap maximum =%d/M\n",GDKmem_heapsize()/(1024*1024));
-    v= memProfileVector(32);
-    stream_printf(out,"#%s\n",v);
-    GDKfree(v);
+void
+printBBPinfo(stream *out)
+{
+	str v;
+
+	stream_printf(out, "#BBP memory layout\n");
+	stream_printf(out, "#heap maximum =%d/M\n", GDKmem_heapsize() / (1024 * 1024));
+	v = memProfileVector(32);
+	stream_printf(out, "#%s\n", v);
+	GDKfree(v);
 #ifdef GDK_VM_KEEPHISTO
-    stream_printf(out,"#BBP VM history available\n");
+	stream_printf(out, "#BBP VM history available\n");
 #else
-    stream_printf(out,"#BBP VM history not available\n");
+	stream_printf(out, "#BBP VM history not available\n");
 #endif
 }
+
 @-
 Some utilities for the debugger
 @c
-void mdbHelp(stream *f){
-    stream_printf(f,"next       -- Advance to next statement\n");
-    stream_printf(f,"continue   -- Continue program being debugged\n");
-    stream_printf(f,"break      -- set breakpoint on current instruction\n");
-    stream_printf(f,"break <var>    -- break on assignment to <var>\n");
-    stream_printf(f,"delete <var>   -- remove break point <var>\n");
-    stream_printf(f,"step       -- advance to next MAL instruction\n");
-    stream_printf(f,"module     -- display the module signatures\n");
-    stream_printf(f,"finish     -- finish current call\n");
-    stream_printf(f,"exit       -- terminate executionr\n");
-    stream_printf(f,"quit       -- turn off debugging\n");
-    stream_printf(f,"list <fcn> -- list current program block\n");
-    stream_printf(f,"List <fcn> -- list with type information\n");
-    stream_printf(f,"var  <fcn>  -- print symbol table for module\n");
-    stream_printf(f,"optimizer <idx>  -- display program after optimizer step\n");
-    stream_printf(f,"print <var>    -- display value of a variable\n");
-    stream_printf(f,"print <var> <cnt>[<first>] -- display BAT chunk\n");
-    stream_printf(f,"info <var>     -- display bat variable properties\n");
-    stream_printf(f,"run        -- restart current procedure\n");
-    stream_printf(f,"where      -- print stack trace\n");
-    stream_printf(f,"down       -- go down the stack\n");
-    stream_printf(f,"up         -- go up the stack\n");
-    stream_printf(f,"timer      -- produce micro-second response time\n");
-    stream_printf(f,"io         -- produce page activity trace \n");
-    stream_printf(f,"help       -- this message\n");
+void
+mdbHelp(stream *f)
+{
+	stream_printf(f, "next       -- Advance to next statement\n");
+	stream_printf(f, "continue   -- Continue program being debugged\n");
+	stream_printf(f, "break      -- set breakpoint on current instruction\n");
+	stream_printf(f, "break <var>    -- break on assignment to <var>\n");
+	stream_printf(f, "delete <var>   -- remove break point <var>\n");
+	stream_printf(f, "step       -- advance to next MAL instruction\n");
+	stream_printf(f, "module     -- display the module signatures\n");
+	stream_printf(f, "finish     -- finish current call\n");
+	stream_printf(f, "exit       -- terminate executionr\n");
+	stream_printf(f, "quit       -- turn off debugging\n");
+	stream_printf(f, "list <fcn> -- list current program block\n");
+	stream_printf(f, "List <fcn> -- list with type information\n");
+	stream_printf(f, "var  <fcn>  -- print symbol table for module\n");
+	stream_printf(f, "optimizer <idx>  -- display program after optimizer step\n");
+	stream_printf(f, "print <var>    -- display value of a variable\n");
+	stream_printf(f, "print <var> <cnt>[<first>] -- display BAT chunk\n");
+	stream_printf(f, "info <var>     -- display bat variable properties\n");
+	stream_printf(f, "run        -- restart current procedure\n");
+	stream_printf(f, "where      -- print stack trace\n");
+	stream_printf(f, "down       -- go down the stack\n");
+	stream_printf(f, "up         -- go up the stack\n");
+	stream_printf(f, "timer      -- produce micro-second response time\n");
+	stream_printf(f, "io         -- produce page activity trace \n");
+	stream_printf(f, "help       -- this message\n");
 }
+
 @+ Optimizer debugging
 The modular approach to optimize a MAL program brings with it the
 need to check individual steps. Two options come to mind. If in
@@ -1270,18 +1335,21 @@ make it thread safe by assigning it to a client record.
 @c
 int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
 
-str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	Client cntxt= getClient();
+str
+debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Client cntxt = getClient();
+
 	(void) stk;
 
-    cntxt->debugOptimizer= cntxt->debugOptimizer? FALSE: TRUE;
-	if(pci)
-		removeInstruction(mb,pci);
+	cntxt->debugOptimizer = cntxt->debugOptimizer ? FALSE : TRUE;
+	if (pci)
+		removeInstruction(mb, pci);
 	return MAL_SUCCEED;
 }
 
 #define MAXSTEPS 128
-struct{
+struct {
 	str title;
 	int actions;
 	long usec;
@@ -1289,40 +1357,53 @@ struct{
 } optimizerHistory[MAXSTEPS];
 static int optTop;
 
-void optimizerDebug(MalBlkPtr mb, str name, int actions,long usec){
-	Client c= getClient();
-	if( !c->itrace ) return;
-	if( optTop+1 == MAXSTEPS) return;
-	optimizerHistory[optTop].title= GDKstrdup(name);
-	optimizerHistory[optTop].actions= actions;
-	optimizerHistory[optTop].usec= usec;
+void
+optimizerDebug(MalBlkPtr mb, str name, int actions, long usec)
+{
+	Client c = getClient();
+
+	if (!c->itrace)
+		return;
+	if (optTop + 1 == MAXSTEPS)
+		return;
+	optimizerHistory[optTop].title = GDKstrdup(name);
+	optimizerHistory[optTop].actions = actions;
+	optimizerHistory[optTop].usec = usec;
 	optimizerHistory[optTop].mb = copyMalBlk(mb);
 	optTop++;
 }
-void resetOptimizerDebugger(){
+
+void
+resetOptimizerDebugger()
+{
 	int i;
-	if( optTop){
+
+	if (optTop) {
 		/* garbage collect */
-		for(i=0;i<optTop; i++){
+		for (i = 0; i < optTop; i++) {
 			freeMalBlk(optimizerHistory[i].mb);
 			GDKfree(optimizerHistory[i].title);
 		}
 	}
-	optTop=0;
+	optTop = 0;
 }
-void showOptimizerStep(int i,int flg){
-	if( i<optTop) {
-		stream_printf(GDKout,"%s\n",optimizerHistory[i].title);
-		printFunction(GDKout,optimizerHistory[i].mb,flg);
+
+void
+showOptimizerStep(int i, int flg)
+{
+	if (i < optTop) {
+		stream_printf(GDKout, "%s\n", optimizerHistory[i].title);
+		printFunction(GDKout, optimizerHistory[i].mb, flg);
 	}
 }
-void showOptimizerHistory(){
+void
+showOptimizerHistory()
+{
 	int i;
-	stream *fd= GDKout;
-	for(i=0;i<optTop;i++)
-		stream_printf(fd,"[%d] %s \tactions=%2d time %d usec\n",i,
-			optimizerHistory[i].title,
-			optimizerHistory[i].actions,
-			optimizerHistory[i].usec);
+	stream *fd = GDKout;
+
+	for (i = 0; i < optTop; i++)
+		stream_printf(fd, "[%d] %s \tactions=%2d time %d usec\n", i, optimizerHistory[i].title, optimizerHistory[i].actions, optimizerHistory[i].usec);
 }
+
 @}

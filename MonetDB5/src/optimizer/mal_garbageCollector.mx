@@ -88,7 +88,7 @@ mal_export str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 @c
 #include "mal_factorize.h"
-#include "mal_interpreter.h"    /* for showErrors() */
+#include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_namespace.h"
 
 @= releaseBAT
@@ -99,68 +99,76 @@ mal_export str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 	pushInstruction(mb,q);
 	typeChecker(s,mb,q,TRUE);
 @c
-str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i,j,k,limit,done;
-    InstrPtr p, q, *stmt;
+str
+GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i, j, k, limit, done;
+	InstrPtr p, q, *stmt;
 	VarPtr v;
-	Client cntxt= getClient();
+	Client cntxt = getClient();
 	Module s = cntxt->nspace;
-	int  top=0, blk=1, actions=0;
-	long clk= GDKusec();
+	int top = 0, blk = 1, actions = 0;
+	long clk = GDKusec();
 
-    (void) pci; (void) stk;  /* to fool compilers */
+	(void) pci;
+	(void) stk;		/* to fool compilers */
 
-	stmt= (InstrPtr *) GDKmalloc( mb->ssize * sizeof(InstrPtr));
-	memcpy(stmt, mb->stmt,  mb->ssize * sizeof(InstrPtr));
-	limit= mb->stop;
+	stmt = (InstrPtr *) GDKmalloc(mb->ssize * sizeof(InstrPtr));
+	memcpy(stmt, mb->stmt, mb->ssize * sizeof(InstrPtr));
+
+	limit = mb->stop;
 
 	/* move to stable start */
 	mb->stop = 0;
-    for(i=0; i<limit; i++){
-        p= stmt[i];
-		pushInstruction(mb,p);
-		for(j= p->retc; j<p->argc; j++){
-			v= getVar(mb,getArg(p,j));
+	for (i = 0; i < limit; i++) {
+		p = stmt[i];
+
+		pushInstruction(mb, p);
+		for (j = p->retc; j < p->argc; j++) {
+			v = getVar(mb, getArg(p, j));
 			/* avoid duplicate releases */
 			done = 0;
-			for(k=j-1;k>=p->retc;k--)
-			if( getArg(p,j)== getArg(p,k)) done++;
+			for (k = j - 1; k >= p->retc; k--)
+				if (getArg(p, j) == getArg(p, k))
+					done++;
 
-			if( done==0 && v->endLifespan == i && isaBatType(getArgType(mb,p,j)) ){
+			if (done == 0 && v->endLifespan == i && isaBatType(getArgType(mb, p, j))) {
 /* 			printf("remove the variable %s at %d\n", getArgName(mb,p,j),i);*/
-				if( getVarScope(mb,getArg(p,j)) == blk){
+				if (getVarScope(mb, getArg(p, j)) == blk) {
 					@:releaseBAT()@
 					actions++;
 				}
 			}
 		}
-		if( blockStart(p)){
+		if (blockStart(p)) {
 			blk++;
-            if( top <MAXDEPTH-2){
-            } else {
-                mb->errors++;
-                return throwMessage("optimizer.garbageCollector",
-					"Too deeply nested MAL program\n");
-            }
-        }
-        if( blockExit(p))
-            if( top > 0) {
-                top--;
+			if (top < MAXDEPTH - 2) {
+			} else {
+				mb->errors++;
+				return throwMessage("optimizer.garbageCollector", "Too deeply nested MAL program\n");
+			}
 		}
+		if (blockExit(p))
+			if (top > 0) {
+				top--;
+			}
 
-    }
+	}
 #ifdef DEBUG_MAL_GARBAGE
-	{	
-    if( cntxt->debugOptimizer){
-    stream_printf(GDKout,"Garbage collected BAT variables \n");
-	printFunction(GDKout,mb, LIST_MAL_ALL);
-    stream_printf(GDKout,"End of GCoptimizer\n");
-    }}
+	{
+		if (cntxt->debugOptimizer) {
+			stream_printf(GDKout, "Garbage collected BAT variables \n");
+			printFunction(GDKout, mb, LIST_MAL_ALL);
+			stream_printf(GDKout, "End of GCoptimizer\n");
+		}
+	}
 #endif
 	GDKfree(stmt);
-	if(pci) 
-		removeInstruction(mb,pci);
-	optimizerCheck(mb,"garbageCollector",actions, GDKusec()-clk);
-    return NULL;
+
+	if (pci)
+		removeInstruction(mb, pci);
+	optimizerCheck(mb, "garbageCollector", actions, GDKusec() - clk);
+	return NULL;
 }
+
 @}

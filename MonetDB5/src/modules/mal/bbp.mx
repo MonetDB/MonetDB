@@ -251,129 +251,162 @@ to a named box. The bbp box is automatically opened.
 		return throwMessage("bbp." X,"box is not open");
 
 extern str BKCnewBATint(int *res, int *ht, int *tt, int *cap);
-extern str BKCdestroyImmediate(bit *r,int *bid, bit *immediate);
+extern str BKCdestroyImmediate(bit *r, int *bid, bit *immediate);
 
 
-str CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void) mb; (void)stk; (void) pci; /* fool compiler */
-	if( openBox("bbp")) return MAL_SUCCEED;
-	return throwMessage( "bbp.prelude","failed to open box");
+str
+CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	if (openBox("bbp"))
+		return MAL_SUCCEED;
+	return throwMessage("bbp.prelude", "failed to open box");
 }
+
 @- Operator implementation
 @c
-str CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void) mb; (void)stk; (void) pci; /* fool compiler */
-	if(openBox("bbp") != 0) return MAL_SUCCEED;
-	return throwMessage( "bbp.open","failed to open box");
+str
+CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	if (openBox("bbp") != 0)
+		return MAL_SUCCEED;
+	return throwMessage("bbp.open", "failed to open box");
 }
 
-str CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void) mb; (void)stk; (void) pci; /* fool compiler */
-	if( closeBox("bbp" ,TRUE) ==0) return MAL_SUCCEED;
-	return throwMessage( "bbp.close","failed to close 'bbp' box");
+str
+CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	if (closeBox("bbp", TRUE) == 0)
+		return MAL_SUCCEED;
+	return throwMessage("bbp.close", "failed to close 'bbp' box");
 }
-str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
-	(void) mb; (void)stk; (void) pci; /* fool compiler */
+
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
 	OpenBox("destroy");
-	if( getClient() != mal_clients)
-	return throwMessage( "bbp.destroy","not allowed to destroy 'bbp' box");
+	if (getClient() != mal_clients)
+		return throwMessage("bbp.destroy", "not allowed to destroy 'bbp' box");
 	destroyBox("bbp");
 	return MAL_SUCCEED;
 }
+
 @-
 Beware that once you deposit a BAT into a box, it should
 increment the reference count to assure it is not
 garbage collected. Moreover, it should be done so only once.
 @c
-str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	ValPtr v;
 	Box box;
 	int flg;
-	(void) mb; /* fool compiler */
+
+	(void) mb;		/* fool compiler */
 
 	OpenBox("deposit");
-	name = (str) getArgValue(stk,pci,1);
-	if( isIdentifier(name))
-			return throwMessage( "bbp.deposit","identifier expected");
-	v = &stk->stk[getArg(pci,2)];
-	flg= findVariable(box->sym,name)>=0;
-	if(depositBox(box,name,v) ) 
-	return throwException(MALEXCEPTION,"bbp.deposit",
-		"failed to deposit '%s' into box",name);
-	if(!flg)
-		BBPincref(v->val.bval,TRUE);
+	name = (str) getArgValue(stk, pci, 1);
+	if (isIdentifier(name))
+		return throwMessage("bbp.deposit", "identifier expected");
+	v = &stk->stk[getArg(pci, 2)];
+	flg = findVariable(box->sym, name) >= 0;
+	if (depositBox(box, name, v))
+		return throwException(MALEXCEPTION, "bbp.deposit", "failed to deposit '%s' into box", name);
+	if (!flg)
+		BBPincref(v->val.bval, TRUE);
 	return MAL_SUCCEED;
 }
 
-str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name, loc;
 	Box box;
 
-	(void) mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	OpenBox("bind");
-	name = (str) getArgValue(stk,pci,1);
-	loc = (str) getArgValue(stk,pci,2);
-	if( isIdentifier(name))
-			return throwMessage( "bbp.bind","identifier expected");
-	if( isIdentifier(name))
-			return throwMessage( "bbp.bind","identifier expected");
-	if(bindBAT(box,name,loc) )
-	return throwException(MALEXCEPTION,"bbp.bind",
-		"failed to bind '%s' ",name);
+	name = (str) getArgValue(stk, pci, 1);
+	loc = (str) getArgValue(stk, pci, 2);
+	if (isIdentifier(name))
+		return throwMessage("bbp.bind", "identifier expected");
+	if (isIdentifier(name))
+		return throwMessage("bbp.bind", "identifier expected");
+	if (bindBAT(box, name, loc))
+		return throwException(MALEXCEPTION, "bbp.bind", "failed to bind '%s' ", name);
 	return MAL_SUCCEED;
 }
-str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
-	ValPtr lhs,rhs;
-	int i= -1;
+	ValPtr lhs, rhs;
+	int i = -1;
 	BAT *b;
 
-	(void) mb; /* fool compiler */
-	lhs= &stk->stk[getArg(pci,0)];
-	name = (str) getArgValue(stk,pci,1);
-	if( isIdentifier(name))
-			return throwMessage( "bbp.bind","identifier expected");
-	box= findBox("bbp");
-	if(box && (i= findVariable(box->sym, name))>=0){
-		rhs= &box->val->stk[i];
-		VALcopy(lhs,rhs);
-		if( lhs->vtype == TYPE_bat){
+	(void) mb;		/* fool compiler */
+	lhs = &stk->stk[getArg(pci, 0)];
+	name = (str) getArgValue(stk, pci, 1);
+	if (isIdentifier(name))
+		return throwMessage("bbp.bind", "identifier expected");
+	box = findBox("bbp");
+	if (box && (i = findVariable(box->sym, name)) >= 0) {
+		rhs = &box->val->stk[i];
+		VALcopy(lhs, rhs);
+		if (lhs->vtype == TYPE_bat) {
 			BAT *b;
-			b= (BAT*) BBPgetdesc(lhs->val.bval);
-			if( b==NULL ) 
-				return throwMessage("bbp.bind","can not access descriptor");
-			BBPincref(b->batCacheid,TRUE);
+
+			b = (BAT *) BBPgetdesc(lhs->val.bval);
+			if (b == NULL)
+				return throwMessage("bbp.bind", "can not access descriptor");
+			BBPincref(b->batCacheid, TRUE);
 		}
 		return MAL_SUCCEED;
 	}
-	i= BBPindex(name);
-	if(i == 0)
-		return throwException(MALEXCEPTION,"bbp.bind",
-					"failed to locate '%s' in box",name);
+	i = BBPindex(name);
+	if (i == 0)
+		return throwException(MALEXCEPTION, "bbp.bind", "failed to locate '%s' in box", name);
 	/* make sure you load the descriptors and heaps */
-	b= (BAT*) BATdescriptor(i);
-	if( b == 0 )
+	b = (BAT *) BATdescriptor(i);
+	if (b == 0)
 		/* Simple ignore the binding if you can;t find the bat */
-		return throwException(MALEXCEPTION,"bbp.bind",
-					"failed to find '%s' in box",name);
-	
-	BBPincref(b->batCacheid,TRUE);
+		return throwException(MALEXCEPTION, "bbp.bind", "failed to find '%s' in box", name);
+
+	BBPincref(b->batCacheid, TRUE);
 	BBPunfix(i);
 	lhs->vtype = TYPE_bat;
-	lhs->val.bval= i;
+	lhs->val.bval = i;
 	return MAL_SUCCEED;
 }
-str CMDbbpbindindex(int *ret, int *bid){
+
+str
+CMDbbpbindindex(int *ret, int *bid)
+{
 	BAT *b;
-	b= (BAT*) BBPdescriptor(*bid);
-	if( b == 0 ) 
-		return throwMessage("bbp.bind","can not access descriptor");
+
+	b = (BAT *) BBPdescriptor(*bid);
+	if (b == 0)
+		return throwMessage("bbp.bind", "can not access descriptor");
 	BBPincref(*ret = *bid, TRUE);
 	return MAL_SUCCEED;
 }
+
 @-
 Moving BATs in/out of the box also involves
 checking the type already known for possible misfits.
@@ -381,133 +414,154 @@ Therefore, we need access to the runtime context.
 If the bat is not known in the box, we go to the bbp pool
 and make an attempt to load it directly.
 @c
-str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
 	ValPtr v;
 
-	(void) mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	OpenBox("take");
-	name = (str) getArgValue(stk,pci,1);
-	if( isIdentifier(name))
-			return throwMessage( "bbp.take","identifier expected");
-	v = &stk->stk[getArg(pci,0)];
-	if(takeBox(box,name,v, (int) getArgType(mb,pci,0)))  {
+	name = (str) getArgValue(stk, pci, 1);
+	if (isIdentifier(name))
+		return throwMessage("bbp.take", "identifier expected");
+	v = &stk->stk[getArg(pci, 0)];
+	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0))) {
 		int bid = BBPindex(name);
-		if( bid > 0 && (v->vtype== TYPE_any || v->vtype==TYPE_bat))  {
+
+		if (bid > 0 && (v->vtype == TYPE_any || v->vtype == TYPE_bat)) {
 			/* adjust the types as well */
-			v->vtype= TYPE_bat;
-			v->val.ival= bid;
-			BBPincref(bid,TRUE);
+			v->vtype = TYPE_bat;
+			v->val.ival = bid;
+			BBPincref(bid, TRUE);
 		} else
-			return throwException(MALEXCEPTION,"bbp.take",
-				"failed to take '%s' from box",name);
+			return throwException(MALEXCEPTION, "bbp.take", "failed to take '%s' from box", name);
 	}
 	/* make a private copy for this client session */
 	/* use the cheapest copy method */
-	/* printf("bbp.take not yet fully implemented\n");*/
+	/* printf("bbp.take not yet fully implemented\n"); */
 	return MAL_SUCCEED;
 }
 
-str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
 
-	(void) mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	OpenBox("release");
-	name = (str) getArgValue(stk,pci,1);
-	releaseBox(box,name);
+	name = (str) getArgValue(stk, pci, 1);
+	releaseBox(box, name);
 	/* merge the updates of this BAT with the master copy */
-	/* printf("bbp.release not yet fully implemented\n");*/
+	/* printf("bbp.release not yet fully implemented\n"); */
 	return MAL_SUCCEED;
 }
+
 @-
 A BAT can be released to make room for others.
 We decrease the reference count with one, but should not
 immediately release it, because there may be aliases.
 @c
-str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	int *bid;
 	Box box;
 
 	OpenBox("release");
-	bid = (int *) getArgValue(stk,pci,1);
-	BBPdecref(*bid,TRUE);
-	releaseBAT(mb,stk,*bid);
-	*bid= 0;
+	bid = (int *) getArgValue(stk, pci, 1);
+	BBPdecref(*bid, TRUE);
+	releaseBAT(mb, stk, *bid);
+	*bid = 0;
 	return MAL_SUCCEED;
 }
+
 @-
 A BAT designated as garbage can be removed, provided we
 do not keep additional references in the stack frame
 Be careful here not to remove persistent BATs.
 @c
 str
-CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	int *bid;
 	Box box;
 	BAT *b;
 
 	(void) mb;
 	OpenBox("release");
-	bid = (int *) getArgValue(stk,pci,1);
-    if( (b= BATdescriptor(*bid)) == NULL ){ 
-         return throwMessage("bbp.garbage", "Cannot access descriptor");
+	bid = (int *) getArgValue(stk, pci, 1);
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bbp.garbage", "Cannot access descriptor");
 	}
 
-	if( BBP_lrefs(*bid) ==0){
+	if (BBP_lrefs(*bid) == 0) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("bbp.garbage","Bat already gone");
+		return throwMessage("bbp.garbage", "Bat already gone");
 	}
-	if( BBP_lrefs(*bid) == 2 && b->batPersistence == PERSISTENT){
+	if (BBP_lrefs(*bid) == 2 && b->batPersistence == PERSISTENT) {
 		/* release BAT from pool altogether */
 		BBPunfix(b->batCacheid);
-		BBPdecref(*bid,TRUE);
-		*bid =0;
+		BBPdecref(*bid, TRUE);
+		*bid = 0;
 		return MAL_SUCCEED;
-	} 
+	}
 	BBPunfix(b->batCacheid);
-	if( *bid)
-	/* while( BBP_lrefs(*bid) > 1 )*/
-		BBPdecref(*bid,TRUE);
+	if (*bid)
+		/* while( BBP_lrefs(*bid) > 1 ) */
+		BBPdecref(*bid, TRUE);
 	*bid = 0;
 	return MAL_SUCCEED;
 }
+
 @-
 A BAT can be removed forever immediately or at the end of
 a session. The references within the current frame
 should also be zapped.
 @c
-str CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	bit ret=0;
+str
+CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bit ret = 0;
 	int *bid;
 	bit *immediate;
 	str msg;
-	bid = (int *) getArgValue(stk,pci,1);
-	immediate = (bit *) getArgValue(stk,pci,2);
-	msg= BKCdestroyImmediate(&ret,bid,immediate);
-	if( msg== MAL_SUCCEED) {
-		msg= CMDbbpreleaseBAT(mb,stk,pci);
-	}
-	return msg;
-}
-str CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	bit ret=0;
-	int *bid;
-	bit immediate= FALSE;
-	str msg;
-	bid = (int *) getArgValue(stk,pci,1);
-	msg= BKCdestroyImmediate(&ret,bid,&immediate);
-	if( msg== MAL_SUCCEED){
-		msg= CMDbbpreleaseBAT(mb,stk,pci);
+
+	bid = (int *) getArgValue(stk, pci, 1);
+	immediate = (bit *) getArgValue(stk, pci, 2);
+	msg = BKCdestroyImmediate(&ret, bid, immediate);
+	if (msg == MAL_SUCCEED) {
+		msg = CMDbbpreleaseBAT(mb, stk, pci);
 	}
 	return msg;
 }
 
-str CMDbbpReleasA(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bit ret = 0;
+	int *bid;
+	bit immediate = FALSE;
+	str msg;
+
+	bid = (int *) getArgValue(stk, pci, 1);
+	msg = BKCdestroyImmediate(&ret, bid, &immediate);
+	if (msg == MAL_SUCCEED) {
+		msg = CMDbbpreleaseBAT(mb, stk, pci);
+	}
+	return msg;
+}
+
+str
+CMDbbpReleasA(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
 
-	(void) mb; (void)stk;(void)pci; /* fool compiler */
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
 	OpenBox("releaseAll");
 	releaseAllBox(box);
 	/* merge the updates with the master copies */
@@ -515,194 +569,225 @@ str CMDbbpReleasA(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
 
-	(void) mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	OpenBox("discard");
-	name = (str) getArgValue(stk,pci,1);
-	if( discardBox(box,name) )
-		return throwException(MALEXCEPTION,"bbp.discard",
-				"failed to discard '%s' ", name);
-	/*printf("bbp.discard not yet fully implemented\n");*/
+	name = (str) getArgValue(stk, pci, 1);
+	if (discardBox(box, name))
+		return throwException(MALEXCEPTION, "bbp.discard", "failed to discard '%s' ", name);
+	/*printf("bbp.discard not yet fully implemented\n"); */
 	return MAL_SUCCEED;
 }
-str CMbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+CMbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
 	int i;
 	ValPtr v;
 	str nme;
 
-	(void) mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	OpenBox("toString");
-	nme = (str) getArgValue(stk,pci,1);
-	i= findVariable(box->sym,nme);
-	if( i <0)
-		return throwException(MALEXCEPTION,"bbp.toString",
-			"failed to take value '%s' from box",nme);
-	v= &box->val->stk[i];
-	garbageElement(&stk->stk[getArg(pci,0)]);
-	if( VALconvert(TYPE_str,v) == ILLEGALVALUE) 
-	return throwMessage("bbp.toString","illegal value conversion");
-	VALcopy(&stk->stk[getArg(pci,0)], v);
+	nme = (str) getArgValue(stk, pci, 1);
+	i = findVariable(box->sym, nme);
+	if (i < 0)
+		return throwException(MALEXCEPTION, "bbp.toString", "failed to take value '%s' from box", nme);
+	v = &box->val->stk[i];
+	garbageElement(&stk->stk[getArg(pci, 0)]);
+	if (VALconvert(TYPE_str, v) == ILLEGALVALUE)
+		return throwMessage("bbp.toString", "illegal value conversion");
+	VALcopy(&stk->stk[getArg(pci, 0)], v);
 	return MAL_SUCCEED;
 }
 
-str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
-	(void) mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	OpenBox("iterator");
-	cursor= (lng*) getArgValue(stk,pci,0);
-	v= &stk->stk[getArg(pci,1)];
-	if( nextBoxElement(box, cursor, v))
-		return throwMessage("bbp.iterator","failed");
+	cursor = (lng *) getArgValue(stk, pci, 0);
+	v = &stk->stk[getArg(pci, 1)];
+	if (nextBoxElement(box, cursor, v))
+		return throwMessage("bbp.iterator", "failed");
 	return MAL_SUCCEED;
 }
 
 @+ BAT enhancements
 The code to enhance thekernel
 @c
-str CMDBATclone(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+str
+CMDBATclone(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
 	BAT *b;
-	int bid=0,cap, ht,tt;
+	int bid = 0, cap, ht, tt;
 	int *res;
+
 	(void) m;
 
-	bid= *(int *) getArgReference(s,p,3);
-    if( (b= BATdescriptor(bid)) == NULL ){ 
-         return throwMessage("bbp.new", "Cannot access descriptor");
+	bid = *(int *) getArgReference(s, p, 3);
+	if ((b = BATdescriptor(bid)) == NULL) {
+		return throwMessage("bbp.new", "Cannot access descriptor");
 	}
-	res= (int *) getArgReference(s,p,0);
-	ht= getArgType(m,p,1);
-	tt= getArgType(m,p,2);
-	cap= BATcount(b)+64;
+	res = (int *) getArgReference(s, p, 0);
+	ht = getArgType(m, p, 1);
+	tt = getArgType(m, p, 2);
+	cap = BATcount(b) + 64;
 	BBPunfix(b->batCacheid);
-	return (str) BKCnewBATint(res,&ht,&tt,&cap);
+	return (str) BKCnewBATint(res, &ht, &tt, &cap);
 }
-str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+
+str
+CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
 	int ht, tt;
-	int cap=0;
+	int cap = 0;
 	int *res;
 
-	ht= getArgType(m,p,1);
-	tt= getArgType(m,p,2);
-	if( p->argc>3)
-		cap= *(int *) getArgReference(s,p,3);
-	res= (int *) getArgReference(s,p,0);
+	ht = getArgType(m, p, 1);
+	tt = getArgType(m, p, 2);
+	if (p->argc > 3)
+		cap = *(int *) getArgReference(s, p, 3);
+	res = (int *) getArgReference(s, p, 0);
 
-	if( ht == TYPE_any || tt == TYPE_any)
-		return throwMessage("bbp.new","Explicit type required\n");
-	if( isaBatType(ht)) ht= TYPE_bat;
-	if( isaBatType(tt)) tt= TYPE_bat;
-	return (str) BKCnewBATint(res,&ht,&tt,&cap);
+	if (ht == TYPE_any || tt == TYPE_any)
+		return throwMessage("bbp.new", "Explicit type required\n");
+	if (isaBatType(ht))
+		ht = TYPE_bat;
+	if (isaBatType(tt))
+		tt = TYPE_bat;
+	return (str) BKCnewBATint(res, &ht, &tt, &cap);
 }
-str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+
+str
+CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
 	int bid, ht, tt;
-	int cap=0;
+	int cap = 0;
 	int *res;
 	BAT *b;
 	str msg;
 	oid o;
+
 	(void) m;
 
-	bid= *(int *) getArgReference(s,p,1);
-    if( (b= BATdescriptor(bid)) == NULL ){ 
-         return throwMessage("bbp.new", "Cannot access descriptor");
+	bid = *(int *) getArgReference(s, p, 1);
+	if ((b = BATdescriptor(bid)) == NULL) {
+		return throwMessage("bbp.new", "Cannot access descriptor");
 	}
 
-	if( bid>0){
-		ht= b->htype;
-		tt= b->ttype;
+	if (bid > 0) {
+		ht = b->htype;
+		tt = b->ttype;
 	} else {
-		tt= b->htype;
-		ht= b->ttype;
+		tt = b->htype;
+		ht = b->ttype;
 	}
 
-	if( p->argc>2)
-		cap= *(int *) getArgReference(s,p,2);
-	else cap = BATcount(b);
+	if (p->argc > 2)
+		cap = *(int *) getArgReference(s, p, 2);
+	else
+		cap = BATcount(b);
 	BBPunfix(b->batCacheid);
-	o= b->hseqbase;
+	o = b->hseqbase;
 
-	res= (int *) getArgReference(s,p,0);
-	msg= (str) BKCnewBATint(res,&ht,&tt,&cap);
-	if(msg== MAL_SUCCEED && ht == TYPE_void){
-		b= BATdescriptor(*res);
-		BATseqbase(b,o);
+	res = (int *) getArgReference(s, p, 0);
+	msg = (str) BKCnewBATint(res, &ht, &tt, &cap);
+	if (msg == MAL_SUCCEED && ht == TYPE_void) {
+		b = BATdescriptor(*res);
+		BATseqbase(b, o);
 		BBPunfix(b->batCacheid);
 	}
 
 	return msg;
 }
-str CMDBATderivedByName(int *ret, str *nme){
+
+str
+CMDBATderivedByName(int *ret, str *nme)
+{
 	BAT *bn;
 	int bid;
-	bid= BBPindex(*nme);
-	if( bid<=0 || (bn= BATdescriptor(bid))==0 )
-		return throwMessage("bbp.new","Referenced BAT not found");
-	BBPincref( *ret= bn->batCacheid,TRUE);
+
+	bid = BBPindex(*nme);
+	if (bid <= 0 || (bn = BATdescriptor(bid)) == 0)
+		return throwMessage("bbp.new", "Referenced BAT not found");
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(bid);
 	return MAL_SUCCEED;
 }
-str CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p){
+
+str
+CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
 	int ht, tt;
-	int cap=0;
+	int cap = 0;
 	int *res;
 
-	ht= getArgType(m,p,1);
-	tt= getArgType(m,p,2);
-	cap= *(int *) getArgReference(s,p,3);
-	res= (int *) getArgReference(s,p,0);
+	ht = getArgType(m, p, 1);
+	tt = getArgType(m, p, 2);
+	cap = *(int *) getArgReference(s, p, 3);
+	res = (int *) getArgReference(s, p, 0);
 
-	return (str) BKCnewBATint(res,&ht,&tt,&cap);
+	return (str) BKCnewBATint(res, &ht, &tt, &cap);
 }
 
-str CMDBBPproject (MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	int *result, *bid, tt;
 	ptr *p;
 	BAT *b, *bn;
 
-	result= (int*) getArgReference(stk,pci,0);
-	bid= (int*) getArgReference(stk,pci,1);
-	p= (ptr*) getArgReference(stk,pci,2);
-	tt=  getArgType(mb,pci,2);
-    if( (b= BATdescriptor(*bid)) == NULL ){ 
-         return throwMessage("bbp.project", "Cannot access descriptor");
+	result = (int *) getArgReference(stk, pci, 0);
+	bid = (int *) getArgReference(stk, pci, 1);
+	p = (ptr *) getArgReference(stk, pci, 2);
+	tt = getArgType(mb, pci, 2);
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bbp.project", "Cannot access descriptor");
 	}
 
- 	if( tt >= TYPE_str ){ 
-		if(p== 0 || *(str*)p==0) 
-			p = (ptr*)str_nil;
-   	  	else 
-			p = *(ptr**)p; 
+	if (tt >= TYPE_str) {
+		if (p == 0 || *(str *) p == 0)
+			p = (ptr *) str_nil;
+		else
+			p = *(ptr **) p;
 	}
-	bn= BATconst(b, tt, p);
+	bn = BATconst(b, tt, p);
 	BBPunfix(b->batCacheid);
-	if( bn ) {
-		BBPincref(*result = bn->batCacheid,TRUE);
+	if (bn) {
+		BBPincref(*result = bn->batCacheid, TRUE);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("mal.project","GDKerror");
+	return throwMessage("mal.project", "GDKerror");
 }
 
-str CMDBBPprojectNil(int *ret, int *bid){
-	BAT *b,*bn;
-    if( (b= BATdescriptor(*bid)) == NULL ){ 
-         return throwMessage("bbp.project", "Cannot access descriptor");
+str
+CMDBBPprojectNil(int *ret, int *bid)
+{
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bbp.project", "Cannot access descriptor");
 	}
 
-	bn= BATconst(b,TYPE_void, &int_nil);
+	bn = BATconst(b, TYPE_void, &int_nil);
 	BBPunfix(b->batCacheid);
-	if( bn ) {
-		BBPincref(*ret = bn->batCacheid,TRUE);
+	if (bn) {
+		BBPincref(*ret = bn->batCacheid, TRUE);
 		return MAL_SUCCEED;
 	}
-	return throwMessage("mal.project","GDKerror");
+	return throwMessage("mal.project", "GDKerror");
 }
+
 @+ BBP status
 The BAT buffer pool datastructures describe the memory resident information
 on the whereabouts of the BATs. The three predominant tables are made accessible
@@ -721,110 +806,134 @@ it is simply removed first
 	BBPincref(*ret = b->batCacheid, TRUE);
 	BBPunfix(*ret);
 @c
-str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	BAT*    b;
-	int     i;
-	ValPtr  v;
-	Box 	box;
-	int	*ret;
+str
+CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b;
+	int i;
+	ValPtr v;
+	Box box;
+	int *ret;
 
-	(void) mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	OpenBox("getObjects");
-	b= BATnew(TYPE_int,TYPE_str,BBPsize);
-	if (b == 0) 
-		return throwMessage("bbp.getObjects","GDKerror");
-	for(i=0;i<box->sym->vtop;i++){
+	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	if (b == 0)
+		return throwMessage("bbp.getObjects", "GDKerror");
+	for (i = 0; i < box->sym->vtop; i++) {
 		v = &box->val->stk[i];
-		BUNins(b, &v->val.bval, getVarName(box->sym,i));
+		BUNins(b, &v->val.bval, getVarName(box->sym, i));
 	}
 
-	ret = (int *) getArgReference(stk,pci,0);
-	@:Pseudo2(bbp,objects)@
+	ret = (int *) getArgReference(stk, pci, 0);
+	@:Pseudo2(bbp, objects)@
 	return MAL_SUCCEED;
 }
-str CMDbbpNames( int *ret){       
-	BAT*    b;
-	int     i;
 
-	b= BATnew(TYPE_int,TYPE_str,BBPsize);
-	if (b == 0) 
+str
+CMDbbpNames(int *ret)
+{
+	BAT *b;
+	int i;
+
+	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	if (b == 0)
 		return throwMessage("catalog.bbpNames", "failed to create BAT");
 
 	BBPlock("CMDbbpNames");
-	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-		if (BBP_logical(i)) { 
-			BUNins(b, &i, BBP_logical(i));
+	for (i = 1; i < BBPsize; i++)
+		if (i != b->batCacheid) {
+			if (BBP_logical(i)) {
+				BUNins(b, &i, BBP_logical(i));
 				if (BBP_logical(-i)) {
-				int j = -i;
-				BUNins(b, &j, BBP_logical(j));
+					int j = -i;
+
+					BUNins(b, &j, BBP_logical(j));
+				}
 			}
 		}
-	}
 	BBPunlock("CMDbbpNames");
-	@:Pseudo2(bbp,name)@
+	@:Pseudo2(bbp, name)@
 	return MAL_SUCCEED;
 }
-str CMDbbpName( str *ret, int *bid){       
-	*ret = (str) GDKstrdup( BBP_logical(*bid));
-	return MAL_SUCCEED;
-}
-str CMDbbpRNames( int *ret){       
-	BAT*    b;
-	int     i;
 
-	b= BATnew(TYPE_int,TYPE_str,BBPsize);
-	if (b == 0) return throwMessage("bbp.getRNames", "failed to create BAT");
+str
+CMDbbpName(str *ret, int *bid)
+{
+	*ret = (str) GDKstrdup(BBP_logical(*bid));
+	return MAL_SUCCEED;
+}
+
+str
+CMDbbpRNames(int *ret)
+{
+	BAT *b;
+	int i;
+
+	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	if (b == 0)
+		return throwMessage("bbp.getRNames", "failed to create BAT");
 
 	BBPlock("CMDbbpRNames");
-	for(i=1; i < BBPsize; i++) 
-	if (i != b->batCacheid && BBP_logical(i)) { 
-		if( BBP_logical(-i)){
-			BUNins(b, &i, BBP_logical(-i));
-		} else 	BUNins(b, &i, BBP_logical(i));
-	}
+	for (i = 1; i < BBPsize; i++)
+		if (i != b->batCacheid && BBP_logical(i)) {
+			if (BBP_logical(-i)) {
+				BUNins(b, &i, BBP_logical(-i));
+			} else
+				BUNins(b, &i, BBP_logical(i));
+		}
 	BBPunlock("CMDbbpRNames");
-	@:Pseudo2(bbp,revname)@
+	@:Pseudo2(bbp, revname)@
 	return MAL_SUCCEED;
 }
-str CMDbbpCount( int *ret){       
-	BAT	*b,*bn;
+
+str
+CMDbbpCount(int *ret)
+{
+	BAT *b, *bn;
 	int i;
-	lng	l;
+	lng l;
 
-	b= BATnew(TYPE_int,TYPE_lng,BBPsize);
-	if (b == 0) return throwMessage("catalog.bbpCount", "failed to create BAT");
+	b = BATnew(TYPE_int, TYPE_lng, BBPsize);
+	if (b == 0)
+		return throwMessage("catalog.bbpCount", "failed to create BAT");
 
-	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-		if (BBP_logical(i)) { 
-			bn= BATdescriptor(i);
-			if(bn){
-				l= BATcount(bn);
-				BUNins(b, &i, &l);
-				BBPunfix(bn->batCacheid);
+	for (i = 1; i < BBPsize; i++)
+		if (i != b->batCacheid) {
+			if (BBP_logical(i)) {
+				bn = BATdescriptor(i);
+				if (bn) {
+					l = BATcount(bn);
+					BUNins(b, &i, &l);
+					BBPunfix(bn->batCacheid);
+				}
 			}
 		}
-	}
-	@:Pseudo2(bbp,count)@
+	@:Pseudo2(bbp, count)@
 	return MAL_SUCCEED;
 }
+
 @-
 The BAT status is redundantly stored in CMDbat_info.
 @c
-str CMDbbpLocation(int *ret){       
-	BAT*    b;
-	int     i;
+str
+CMDbbpLocation(int *ret)
+{
+	BAT *b;
+	int i;
 
-	b= BATnew(TYPE_int,TYPE_str,BBPsize);
-	if (b == 0) 
+	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	if (b == 0)
 		return throwMessage("catalog.bbpLocation", "failed to create BAT");
 
 	BBPlock("CMDbbpLocation");
-        for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-        	if (BBP_logical(i))
-                BUNins(b, &i, BBP_physical(i));
-	}
+	for (i = 1; i < BBPsize; i++)
+		if (i != b->batCacheid) {
+			if (BBP_logical(i))
+				BUNins(b, &i, BBP_physical(i));
+		}
 	BBPunlock("CMDbbpLocation");
-	@:Pseudo2(bbp,location)@
+	@:Pseudo2(bbp, location)@
 	return MAL_SUCCEED;
 }
 
@@ -832,153 +941,178 @@ str CMDbbpLocation(int *ret){
 #define monet_modulesilent (GDKdebug&4096)
 
 
-str CMDbbpHeat(int *ret){       
-	BAT*    b;
-	int     i;
+str
+CMDbbpHeat(int *ret)
+{
+	BAT *b;
+	int i;
 
-	b= BATnew(TYPE_int,TYPE_int,BBPsize);
-	if (b == 0) 
+	b = BATnew(TYPE_int, TYPE_int, BBPsize);
+	if (b == 0)
 		return throwMessage("catalog.bbpHeat", "failed to create BAT");
 
 	BBPlock("CMDbbpHeat");
-	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) {
-		if (BBP_cache(i) && !monet_modulesilent) {
-			int heat = BBP_lastused(i);
-			BUNins(b, &i, &heat);
-	    } else if (BBP_logical(i)) { 
-			int zero = 0;
-			BUNins(b, &i, &zero);
-	    }
-	}
+	for (i = 1; i < BBPsize; i++)
+		if (i != b->batCacheid) {
+			if (BBP_cache(i) && !monet_modulesilent) {
+				int heat = BBP_lastused(i);
+
+				BUNins(b, &i, &heat);
+			} else if (BBP_logical(i)) {
+				int zero = 0;
+
+				BUNins(b, &i, &zero);
+			}
+		}
 	BBPunlock("CMDbbpHeat");
-	@:Pseudo2(bbp,heat)@
+	@:Pseudo2(bbp, heat)@
 	return MAL_SUCCEED;
 }
 
 @-
 The BAT dirty status:dirty => (mem != disk); diffs = not-committed
 @c
-str CMDbbpDirty(int *ret){       
-	BAT*    b;
-	int     i;
+str
+CMDbbpDirty(int *ret)
+{
+	BAT *b;
+	int i;
 
-	b= BATnew(TYPE_int,TYPE_str,BBPsize);
-	if (b == 0) 
+	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	if (b == 0)
 		return throwMessage("catalog.bbpDirty", "failed to create BAT");
 
 	BBPlock("CMDbbpDirty");
-	for(i=1; i < BBPsize; i++) if (i != b->batCacheid) 
-	if (BBP_logical(i)){
-		BAT *bn = BBP_cache(i);
-		BUNins(b, &i, bn?
-		BATdirty(bn)?
-			"dirty":
-			DELTAdirty(bn)?
-				"diffs":
-				"clean":
-			(BBP_status(i)&BBPSWAPPED)?
-				"diffs": 
-				"clean");
-		}
+	for (i = 1; i < BBPsize; i++)
+		if (i != b->batCacheid)
+			if (BBP_logical(i)) {
+				BAT *bn = BBP_cache(i);
+
+				BUNins(b, &i, bn ? BATdirty(bn) ? "dirty" : DELTAdirty(bn) ? "diffs" : "clean" : (BBP_status(i) & BBPSWAPPED) ? "diffs" : "clean");
+			}
 	BBPunlock("CMDbbpDirty");
-	@:Pseudo2(bbp,status)@
-        return MAL_SUCCEED;
+	@:Pseudo2(bbp, status)@
+	return MAL_SUCCEED;
 }
 
 @-
 The BAT status is redundantly stored in CMDbat_info.
 @c
-str CMDbbpStatus(int *ret){       
-	BAT*    b;
-	int     i;
+str
+CMDbbpStatus(int *ret)
+{
+	BAT *b;
+	int i;
 
-	b= BATnew(TYPE_int,TYPE_str,BBPsize);
-	if (b == 0) 
+	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	if (b == 0)
 		return throwMessage("catalog.bbpStatus", "failed to create BAT");
 
 	BBPlock("CMDbbpStatus");
-	for(i=1; i < BBPsize; i++) if (i != b->batCacheid)
-	if (BBP_logical(i)){
-		char *loc = BBP_cache(i)?"load":"disk";
-		BUNins(b, &i,loc );
-	}
+	for (i = 1; i < BBPsize; i++)
+		if (i != b->batCacheid)
+			if (BBP_logical(i)) {
+				char *loc = BBP_cache(i) ? "load" : "disk";
+
+				BUNins(b, &i, loc);
+			}
 	BBPunlock("CMDbbpStatus");
-	@:Pseudo2(bbp,status)@
-        return MAL_SUCCEED;
+	@:Pseudo2(bbp, status)@
+	return MAL_SUCCEED;
 }
 
-str CMDbbpKind(int *ret){       
-	BAT*    b;
-	int     i;
+str
+CMDbbpKind(int *ret)
+{
+	BAT *b;
+	int i;
 
-	b= BATnew(TYPE_int,TYPE_str,BBPsize);
-	if (b == 0) 
+	b = BATnew(TYPE_int, TYPE_str, BBPsize);
+	if (b == 0)
 		return throwMessage("catalog.bbpKind", "failed to create BAT");
 
 	BBPlock("CMDbbpKind");
-	for(i=1; i < BBPsize; i++) if (i != b->batCacheid)
-	if (BBP_logical(i)) {
-	    char *mode = NULL;
-	    if ((BBP_status(i)&BBPDELETED) || !(BBP_status(i)&BBPPERSISTENT)) 
-			mode = "transient";
-	    else
-			mode = "persistent";
-	    if (mode) BUNins(b, &i, mode);
-	}
+	for (i = 1; i < BBPsize; i++)
+		if (i != b->batCacheid)
+			if (BBP_logical(i)) {
+				char *mode = NULL;
+
+				if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT))
+					mode = "transient";
+				else
+					mode = "persistent";
+				if (mode)
+					BUNins(b, &i, mode);
+			}
 	BBPunlock("CMDbbpKind");
-	@:Pseudo2(bbp,kind)@
+	@:Pseudo2(bbp, kind)@
 	return MAL_SUCCEED;
 }
 
-str CMDbbpRefCount(int *ret){       
-	BAT	 *b;
-	int     i;
+str
+CMDbbpRefCount(int *ret)
+{
+	BAT *b;
+	int i;
 
-	b= BATnew(TYPE_int,TYPE_int,BBPsize);
-	if (b == 0) 
+	b = BATnew(TYPE_int, TYPE_int, BBPsize);
+	if (b == 0)
 		return throwMessage("catalog.bbpRefCount", "failed to create BAT");
 
 	BBPlock("CMDbbpRefCount");
-	for(i=1; i < BBPsize; i++) 
-	if (i != b->batCacheid && BBP_logical(i)) {
+	for (i = 1; i < BBPsize; i++)
+		if (i != b->batCacheid && BBP_logical(i)) {
 			int refs = BBP_refs(i);
-			BUNins(b, &i, &refs);
-	}
-	BBPunlock("CMDbbpRefCount");
-	@:Pseudo2(bbp,refcnt)@
-        return MAL_SUCCEED;
-}
-str CMDbbpLRefCount(int *ret){       
-	BAT	 *b;
-	int     i;
 
-	b= BATnew(TYPE_int,TYPE_int,BBPsize);
-	if (b == 0) 
+			BUNins(b, &i, &refs);
+		}
+	BBPunlock("CMDbbpRefCount");
+	@:Pseudo2(bbp, refcnt)@
+	return MAL_SUCCEED;
+}
+
+str
+CMDbbpLRefCount(int *ret)
+{
+	BAT *b;
+	int i;
+
+	b = BATnew(TYPE_int, TYPE_int, BBPsize);
+	if (b == 0)
 		return throwMessage("catalog.bbpLRefCount", "failed to create BAT");
 
 	BBPlock("CMDbbpLRefCount");
-	for(i=1; i < BBPsize; i++) 
-	if (i != b->batCacheid && BBP_logical(i)) {
-		int refs = BBP_lrefs(i);
-		BUNins(b, &i, &refs);
-	}
+	for (i = 1; i < BBPsize; i++)
+		if (i != b->batCacheid && BBP_logical(i)) {
+			int refs = BBP_lrefs(i);
+
+			BUNins(b, &i, &refs);
+		}
 	BBPunlock("CMDbbpLRefCount");
-	@:Pseudo2(bbp,lrefcnt)@
+	@:Pseudo2(bbp, lrefcnt)@
 	return MAL_SUCCEED;
 }
-str CMDgetBATrefcnt(int *res, int *bid) {
+
+str
+CMDgetBATrefcnt(int *res, int *bid)
+{
 	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){ 
-         return throwMessage("bbp.getRefCount", "Cannot access descriptor");
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bbp.getRefCount", "Cannot access descriptor");
 	}
 	*res = BBP_refs(b->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-str CMDgetBATlrefcnt(int *res, int *bid) {
+
+str
+CMDgetBATlrefcnt(int *res, int *bid)
+{
 	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){ 
-         return throwMessage("bbp.getLRefCount", "Cannot access descriptor");
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("bbp.getLRefCount", "Cannot access descriptor");
 	}
 	*res = BBP_lrefs(b->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -1007,73 +1141,80 @@ str CMDbbp@2( int *ret){
 }
 
 @c
-        @:headtailProperty(htype,HeadType)@
-        @:headtailProperty(ttype,TailType)@
+@:headtailProperty(htype, HeadType)@
+@:headtailProperty(ttype, TailType)@
 
 extern ValPtr VALinit(ValPtr d, int tpe, ptr s);
 
-ValPtr VALinit(ValPtr d, int tpe, ptr s){
-        if ( ATOMextern(tpe) == 0) {
-                d->vtype= tpe;
-                memcpy(&d->val.ival, s, ATOMlen(tpe,s));
-        } else
-        if (s == 0) {
-                GDKerror("VALinit:unsupported init\n");
-                d->vtype= TYPE_int;
-        } else if( tpe >= TYPE_str && ATOMstorage(tpe) == TYPE_str) {
-                d->vtype = TYPE_str;
-                d->val.sval = GDKstrdup(s);
-                d->len = strLen(s);
-        } else {
-                d->vtype= tpe;
-                d->len = ATOMlen(tpe,s);
-                d->val.pval = GDKmalloc(d->len);
-                memcpy(d->val.pval, s, d->len);
-        }
-        return d;
+ValPtr
+VALinit(ValPtr d, int tpe, ptr s)
+{
+	if (ATOMextern(tpe) == 0) {
+		d->vtype = tpe;
+		memcpy(&d->val.ival, s, ATOMlen(tpe, s));
+	} else if (s == 0) {
+		GDKerror("VALinit:unsupported init\n");
+		d->vtype = TYPE_int;
+	} else if (tpe >= TYPE_str && ATOMstorage(tpe) == TYPE_str) {
+		d->vtype = TYPE_str;
+		d->val.sval = GDKstrdup(s);
+		d->len = strLen(s);
+	} else {
+		d->vtype = tpe;
+		d->len = ATOMlen(tpe, s);
+		d->val.pval = GDKmalloc(d->len);
+		memcpy(d->val.pval, s, d->len);
+	}
+	return d;
 }
+
 str
-CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	BAT	*b;
+CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b;
 	int bid;
 	ptr p;
 	ValPtr head, tail;
 
-	bid= *(int *) getArgValue(stk,pci,2);
+	bid = *(int *) getArgValue(stk, pci, 2);
 
-    if( (b= BATdescriptor(bid)) == NULL ){ 
-         return throwMessage("bbp.unpack", "Cannot access descriptor");
+	if ((b = BATdescriptor(bid)) == NULL) {
+		return throwMessage("bbp.unpack", "Cannot access descriptor");
 	}
 
-    head = &stk->stk[pci->argv[0]];
-    tail = &stk->stk[pci->argv[1]];
-    p = BUNfirst(b);
-	if( p){
-		VALinit( head, getArgType(mb,pci,0),BUNhead(b,p));
-		VALinit( tail, getArgType(mb,pci,1),BUNtail(b,p));
+	head = &stk->stk[pci->argv[0]];
+	tail = &stk->stk[pci->argv[1]];
+	p = BUNfirst(b);
+	if (p) {
+		VALinit(head, getArgType(mb, pci, 0), BUNhead(b, p));
+		VALinit(tail, getArgType(mb, pci, 1), BUNtail(b, p));
 	}
 
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 str
-CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	BAT *b;
 	int *ret;
 	int ht, tt;
-	size_t cap=0;
+	size_t cap = 0;
 
-	ht= getArgType(mb,pci,1);
-	tt= getArgType(mb,pci,2);
-	ret= (int *) getArgReference(stk,pci,0);
+	ht = getArgType(mb, pci, 1);
+	tt = getArgType(mb, pci, 2);
+	ret = (int *) getArgReference(stk, pci, 0);
 
-	if( ht == TYPE_any || tt == TYPE_any)
-		return throwMessage("bbp.new","Explicit type required\n");
-	if( isaBatType(ht)) ht= TYPE_bat;
-	if( isaBatType(tt)) tt= TYPE_bat;
-	b= BATnew(ht,tt,cap);
-	BBPincref(*ret=b->batCacheid,TRUE);
-	BUNins(b,(ptr) getArgValue(stk,pci,1), getArgValue(stk,pci,2));
+	if (ht == TYPE_any || tt == TYPE_any)
+		return throwMessage("bbp.new", "Explicit type required\n");
+	if (isaBatType(ht))
+		ht = TYPE_bat;
+	if (isaBatType(tt))
+		tt = TYPE_bat;
+	b = BATnew(ht, tt, cap);
+	BBPincref(*ret = b->batCacheid, TRUE);
+	BUNins(b, (ptr) getArgValue(stk, pci, 1), getArgValue(stk, pci, 2));
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }

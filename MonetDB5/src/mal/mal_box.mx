@@ -233,26 +233,26 @@ the arglist.
 
 /*#define DEBUG_MAL_BOX */
 
-typedef struct BOX {        
-	MT_Lock lock;     /* provide exclusive access */
+typedef struct BOX {
+	MT_Lock lock;		/* provide exclusive access */
 	str name;
-	MalBlkPtr sym;      
+	MalBlkPtr sym;
 	MalStkPtr val;
 } *Box, BoxRecord;
 
 mal_export Box newBox(str name);
 mal_export Box findBox(str name);
 mal_export Box openBox(str name);
-mal_export int closeBox(str name,int flag);
+mal_export int closeBox(str name, int flag);
 mal_export void destroyBox(str name);
 mal_export str boxFileName(Box box, str extension);
-mal_export int saveBox(Box box,int flag);
+mal_export int saveBox(Box box, int flag);
 mal_export void loadBox(str nme);
 mal_export int releaseAllBox(Box box);
 
 mal_export int depositBox(Box box, str name, ValPtr val);
 mal_export void insertToBox(Box box, str name, str val);
-mal_export int takeBox(Box box, str name, ValPtr val,int tpe);
+mal_export int takeBox(Box box, str name, ValPtr val, int tpe);
 mal_export int bindBAT(Box box, str name, str location);
 mal_export int releaseBox(Box box, str name);
 mal_export int discardBox(Box box, str name);
@@ -281,165 +281,197 @@ only.
 @-
 @c
 #include "mal_box.h"
-#include "mal_interpreter.h"    /* for garbageCollector() & garbageElement() */
-#include "mal_client.h"     /* for getClient() */
-#include "mal_debugger.h"   /* for printStack() */
-#include "mal_import.h"     /* for malInclude() */
+#include "mal_interpreter.h"	/* for garbageCollector() & garbageElement() */
+#include "mal_client.h"		/* for getClient() */
+#include "mal_debugger.h"	/* for printStack() */
+#include "mal_import.h"		/* for malInclude() */
 
-#define MAXSPACES 64    /* >MAXCLIENTS+ max modules !! */
+#define MAXSPACES 64		/* >MAXCLIENTS+ max modules !! */
 Box box[MAXSPACES];
 
-Box newBox(str name){
-    Box obj= 0;
-    int i;
-        mal_set_lock(mal_contextLock, "newBox");
+Box
+newBox(str name)
+{
+	Box obj = 0;
+	int i;
+
+	mal_set_lock(mal_contextLock, "newBox");
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"create new box '%s'\n",name);
+	stream_printf(GDKout, "create new box '%s'\n", name);
 #endif
-    for(i=0; i<MAXSPACES; i++)
-    if( box[i]!= NULL && idcmp(name,box[i]->name)==0) {
-        mal_unset_lock(mal_contextLock, "newBox");
-        GDKwarning("newBox:duplicate box definition\n");
-        return box[i];
-    }
-    for(i=0; i<MAXSPACES; i++)
-    if( box[i]== NULL) {
-        @:newBOX@
-        box[i]= obj;
-        break;
-    }
-        mal_unset_lock(mal_contextLock, "newBox");
-    if( i== MAXSPACES)
-        GDKerror("too many boxes\n");
+	for (i = 0; i < MAXSPACES; i++)
+		if (box[i] != NULL && idcmp(name, box[i]->name) == 0) {
+			mal_unset_lock(mal_contextLock, "newBox");
+			GDKwarning("newBox:duplicate box definition\n");
+			return box[i];
+		}
+	for (i = 0; i < MAXSPACES; i++)
+		if (box[i] == NULL) {
+			@:newBOX@
+			box[i] = obj;
+			break;
+		}
+	mal_unset_lock(mal_contextLock, "newBox");
+	if (i == MAXSPACES)
+		GDKerror("too many boxes\n");
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"succeeded at %d\n",i);
+	stream_printf(GDKout, "succeeded at %d\n", i);
 #endif
-    return obj;
+	return obj;
 
 }
-void freeBoxes(){
-    int i;
-    for(i=0;i<MAXSPACES;i++)
-    if( box[i]){
-        garbageCollectAll(box[i]->sym, box[i]->val);
-        GDKfree(box[i]->name);
-        freeMalBlk(box[i]->sym);
-        GDKfree(box[i]->val);
-        GDKfree(box[i]);
-        box[i]=0;
-    }
+
+void
+freeBoxes()
+{
+	int i;
+
+	for (i = 0; i < MAXSPACES; i++)
+		if (box[i]) {
+			garbageCollectAll(box[i]->sym, box[i]->val);
+			GDKfree(box[i]->name);
+			freeMalBlk(box[i]->sym);
+			GDKfree(box[i]->val);
+			GDKfree(box[i]);
+			box[i] = 0;
+		}
 }
 
-Box findBox(str name){
-    int i;
-        mal_set_lock(mal_contextLock, "findBox");
+Box
+findBox(str name)
+{
+	int i;
 
-    for(i=0; i<MAXSPACES; i++)
-    if( box[i]!= NULL && idcmp(name,box[i]->name)==0) {
+	mal_set_lock(mal_contextLock, "findBox");
+
+	for (i = 0; i < MAXSPACES; i++)
+		if (box[i] != NULL && idcmp(name, box[i]->name) == 0) {
 #ifdef DEBUG_MAL_BOX
-        stream_printf(GDKout,"found the box '%s' %d\n",name,i);
+			stream_printf(GDKout, "found the box '%s' %d\n", name, i);
 #endif
-        mal_unset_lock(mal_contextLock, "findBox");
-        return box[i];
-    }
-        mal_unset_lock(mal_contextLock, "findBox");
+			mal_unset_lock(mal_contextLock, "findBox");
+			return box[i];
+		}
+	mal_unset_lock(mal_contextLock, "findBox");
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"could not find the box '%s' \n",name);
+	stream_printf(GDKout, "could not find the box '%s' \n", name);
 #endif
-    return 0;
+	return 0;
 
 }
-Box openBox(str name){
-    Box box = findBox(name);
-    if( box ) return box;
-    box = newBox(name);
-    loadBox(name);
-    return box;
+
+Box
+openBox(str name)
+{
+	Box box = findBox(name);
+
+	if (box)
+		return box;
+	box = newBox(name);
+	loadBox(name);
+	return box;
 }
-int closeBox(str name ,int flag){
-    Box box;
-    (void) flag; /* fool the compiler */
-    if( (box=findBox(name))){
-        saveBox(box,flag);
+
+int
+closeBox(str name, int flag)
+{
+	Box box;
+
+	(void) flag;		/* fool the compiler */
+	if ((box = findBox(name))) {
+		saveBox(box, flag);
 		return 0;
 	}
-    return -1;
+	return -1;
 }
-void destroyBox(str name){
-    int i,j;
-    str boxfile;
+
+void
+destroyBox(str name)
+{
+	int i, j;
+	str boxfile;
 
 	mal_set_lock(mal_contextLock, "destroyBox");
-    for(i=j=0;i<MAXSPACES;i++){
-        if( idcmp(box[j]->name,name) == 0){
-            free(box[i]->name);
-            freeMalBlk(box[i]->sym);
-            freeStack(box[i]->val);
-            boxfile= boxFileName(box[i],0);
-            unlink(boxfile);
-            GDKfree(boxfile); 
-        } else box[i] = box[j++];
-    }
+	for (i = j = 0; i < MAXSPACES; i++) {
+		if (idcmp(box[j]->name, name) == 0) {
+			free(box[i]->name);
+			freeMalBlk(box[i]->sym);
+			freeStack(box[i]->val);
+			boxfile = boxFileName(box[i], 0);
+			unlink(boxfile);
+			GDKfree(boxfile);
+		} else
+			box[i] = box[j++];
+	}
 	mal_unset_lock(mal_contextLock, "destroyBox");
 
 }
+
 @+ Operations
 The deposit operation silently accepts any request to store
 an element.
 @c
-int depositBox(Box box, str name, ValPtr val){
-    int i;
-    ValPtr v;
-    i= findVariable(box->sym, name);
-    if( i<0){
-        i= newVariable(box->sym,GDKstrdup(name),val->vtype);
-        chkStack(box->val,i);
-    }
-    v= &box->val->stk[i];
-    box->val->stktop++;
-    VALcopy(v,val);
+int
+depositBox(Box box, str name, ValPtr val)
+{
+	int i;
+	ValPtr v;
+
+	i = findVariable(box->sym, name);
+	if (i < 0) {
+		i = newVariable(box->sym, GDKstrdup(name), val->vtype);
+		chkStack(box->val, i);
+	}
+	v = &box->val->stk[i];
+	box->val->stktop++;
+	VALcopy(v, val);
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"depositBox: entered '%s' at %d type %d\n",
-        name,i,v->vtype);
+	stream_printf(GDKout, "depositBox: entered '%s' at %d type %d\n", name, i, v->vtype);
 #endif
-    return 0;
+	return 0;
 }
-void insertToBox(Box box, str nme, str val){
-        ValRecord vr;
-        vr.vtype= TYPE_str;
-        vr.val.pval= val;
-        depositBox(box,nme,&vr);
+
+void
+insertToBox(Box box, str nme, str val)
+{
+	ValRecord vr;
+
+	vr.vtype = TYPE_str;
+	vr.val.pval = val;
+	depositBox(box, nme, &vr);
 }
 
 @-
 Taking an element from a box is only permitted if the type of
 the receiver matches the type of the source.
 @c
-int takeBox(Box box, str name, ValPtr val, int tpe){
-    int i;
-    ValPtr v;
-    i= findVariable(box->sym, name);
+int
+takeBox(Box box, str name, ValPtr val, int tpe)
+{
+	int i;
+	ValPtr v;
+
+	i = findVariable(box->sym, name);
 #ifdef DEBUG_MAL_BOX
-        stream_printf(GDKout,"takeBox: found '%s' at %d\n",name,i);
+	stream_printf(GDKout, "takeBox: found '%s' at %d\n", name, i);
 #endif
-    if( i<0) return i;
-    v= &box->val->stk[i];
-    if(val->vtype != v->vtype && 
-       v->vtype!= TYPE_any && 
-       tpe!= TYPE_any){
+	if (i < 0)
+		return i;
+	v = &box->val->stk[i];
+	if (val->vtype != v->vtype && v->vtype != TYPE_any && tpe != TYPE_any) {
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"takeBox:type error %d,%d\n",
-            val->vtype,box->val->stk[i].vtype);
+		stream_printf(GDKout, "takeBox:type error %d,%d\n", val->vtype, box->val->stk[i].vtype);
 #endif
-        return -1;
-    }
-    VALcopy(val, &box->val->stk[i]);
-	if( val->vtype == TYPE_bat)
-		BBPincref(val->val.br.id,TRUE);
+		return -1;
+	}
+	VALcopy(val, &box->val->stk[i]);
+	if (val->vtype == TYPE_bat)
+		BBPincref(val->val.br.id, TRUE);
+
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"takeBox:'%s' from '%s'\n",name,box->name);
+	stream_printf(GDKout, "takeBox:'%s' from '%s'\n", name, box->name);
 #endif
-    return 0;
+	return 0;
 }
 
 @-
@@ -449,94 +481,125 @@ which provide users a partial view over the BAT storage area.
 That is, all bats bound can be taken out of the box upon need.
 A variable can be rebound to another BAT at any time.
 @c
-int bindBAT(Box box, str name, str location){
-    int i;
-    ValPtr v;
-    i= findVariable(box->sym, name);
-    if( i<0) i= newVariable(box->sym,GDKstrdup(name),TYPE_any);
-    v= &box->val->stk[i];
-    v->val.br.id = BBPindex(location);
-    if( v->val.br.id == 0) return -1;
-    v->vtype= TYPE_bat;
+int
+bindBAT(Box box, str name, str location)
+{
+	int i;
+	ValPtr v;
+
+	i = findVariable(box->sym, name);
+	if (i < 0)
+		i = newVariable(box->sym, GDKstrdup(name), TYPE_any);
+	v = &box->val->stk[i];
+	v->val.br.id = BBPindex(location);
+
+	if (v->val.br.id == 0)
+		return -1;
+	v->vtype = TYPE_bat;
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"bindBox:'%s' to '%s' [%d] in '%s'\n",
-        name,location,v->val.br.id,box->name);
+	stream_printf(GDKout, "bindBox:'%s' to '%s' [%d] in '%s'\n", name, location, v->val.br.id, box->name);
 #endif
-    return 0;
+	return 0;
 }
 
-int releaseBox(Box box, str name){
-    int i;
+int
+releaseBox(Box box, str name)
+{
+	int i;
 
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"releaseBox:%s from %s\n",name,box->name);
+	stream_printf(GDKout, "releaseBox:%s from %s\n", name, box->name);
 #endif
-    i= findVariable(box->sym,name);
-    if( i<0) return i;
-    return 0;
+	i = findVariable(box->sym, name);
+	if (i < 0)
+		return i;
+	return 0;
 }
 
-int releaseAllBox(Box box){
+int
+releaseAllBox(Box box)
+{
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"releaseAllBox:%s \n",box->name);
+	stream_printf(GDKout, "releaseAllBox:%s \n", box->name);
 #else
-    (void) box;
+	(void) box;
 #endif
-    return 0;
+	return 0;
 }
 
-int discardBox(Box box, str name){
-    int i,j;
+int
+discardBox(Box box, str name)
+{
+	int i, j;
+
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"discardBox:%s from %s\n",name,box->name);
+	stream_printf(GDKout, "discardBox:%s from %s\n", name, box->name);
 #endif
-    i= findVariable(box->sym,name);
-    if( i<0) return i;
-    garbageElement(&box->val->stk[i]);
-    for(j=i;j< box->sym->vtop-2;j++){
-        box->sym->var[j] = box->sym->var[j+1];
-        VALcopy(&box->val->stk[j], &box->val->stk[j+1]);
-    }
-    box->sym->vtop--;
-    box->val->stktop--;
-    return 0;
+	i = findVariable(box->sym, name);
+	if (i < 0)
+		return i;
+	garbageElement(&box->val->stk[i]);
+	for (j = i; j < box->sym->vtop - 2; j++) {
+		box->sym->var[j] = box->sym->var[j + 1];
+
+		VALcopy(&box->val->stk[j], &box->val->stk[j + 1]);
+	}
+	box->sym->vtop--;
+	box->val->stktop--;
+	return 0;
 }
+
 @+
 The elements can be obtained using iterator, which returns the name
 of the next element in the box.
 @c
-int nextBoxElement(Box box, lng *cursor, ValPtr v){
-	if( *cursor >= box->sym->vtop){
+int
+nextBoxElement(Box box, lng *cursor, ValPtr v)
+{
+	if (*cursor >= box->sym->vtop) {
 		*cursor = -1;
 		return 0;
 	}
 	garbageElement(v);
-	v->vtype= TYPE_str;
-	v->val.pval= getBoxName(box,*cursor);
-	*cursor= *cursor+1;
+	v->vtype = TYPE_str;
+	v->val.pval = getBoxName(box, *cursor);
+	*cursor = *cursor + 1;
 	return 0;
 }
-str getBoxName(Box box, lng i){
-    str s;
-    s= getVarName(box->sym,i);
-    return GDKstrdup(s);
+
+str
+getBoxName(Box box, lng i)
+{
+	str s;
+
+	s = getVarName(box->sym, i);
+	return GDKstrdup(s);
 }
-str toString(Box box, lng i){
-    (void) box; (void) i; /* fool the compiler */
-    return GDKstrdup("");
+
+str
+toString(Box box, lng i)
+{
+	(void) box;
+	(void) i;		/* fool the compiler */
+	return GDKstrdup("");
 }
-str getBoxNames(int *bid){
-    BAT *b;
-    int i;
-    b = BATnew(TYPE_int,TYPE_str,(size_t) MAXSPACES);
-    for(i=0; i<MAXSPACES; i++)
-    if( box[i]!= NULL ){
-        BUNins(b,&i, box[i]->name);
-    }
-    BBPincref(*bid = b->batCacheid,TRUE);
+
+str
+getBoxNames(int *bid)
+{
+	BAT *b;
+	int i;
+
+	b = BATnew(TYPE_int, TYPE_str, (size_t) MAXSPACES);
+	for (i = 0; i < MAXSPACES; i++)
+		if (box[i] != NULL) {
+			BUNins(b, &i, box[i]->name);
+		}
+	BBPincref(*bid = b->batCacheid, TRUE);
 	BBPunfix(*bid);
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
+
 @+ Persistency
 The content of a box is saved on a file for subsequent re-use.
 The storage is explicitly in terms of MAL operations.
@@ -555,133 +618,151 @@ The box container is created if it did not yet exist.
         }
     }
 @c
-str boxFileName(Box box, str backup){
-    char boxfile[PATHLENGTH];
-    int i= 0;
+str
+boxFileName(Box box, str backup)
+{
+	char boxfile[PATHLENGTH];
+	int i = 0;
 
-    snprintf(boxfile,PATHLENGTH,"%s/%s/box",
-            GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
-    @:checkDir@
-    i= strlen(boxfile);
-    if(backup) {
-        snprintf(boxfile+i,PATHLENGTH-i,"/%s/", backup);
-        @:checkDir@
-        i= strlen(boxfile);
-    }
-    snprintf(boxfile+i,PATHLENGTH-i,"/%s.box", box->name);
-    return GDKstrdup(boxfile);
+	snprintf(boxfile, PATHLENGTH, "%s/%s/box", GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
+	@:checkDir@
+	i = strlen(boxfile);
+	if (backup) {
+		snprintf(boxfile + i, PATHLENGTH - i, "/%s/", backup);
+		@:checkDir@
+		i = strlen(boxfile);
+	}
+	snprintf(boxfile + i, PATHLENGTH - i, "/%s.box", box->name);
+	return GDKstrdup(boxfile);
 }
 
-stream *prepareSaveBox(Box box, str *boxfile, str *boxfilebak){
-    stream *f;
+stream *
+prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
+{
+	stream *f;
 
-    *boxfile = boxFileName(box,0);
-    *boxfilebak = boxFileName(box,"backup");
+	*boxfile = boxFileName(box, 0);
+	*boxfilebak = boxFileName(box, "backup");
 
-    if(*boxfile==0) {
-        GDKerror("saveBox:can not determine box file\n");
-        return 0;
-    }
+	if (*boxfile == 0) {
+		GDKerror("saveBox:can not determine box file\n");
+		return 0;
+	}
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"saveBox:%s\n",boxfile);
+	stream_printf(GDKout, "saveBox:%s\n", boxfile);
 #endif
-    if( access(*boxfile,R_OK) == 0){
-        if(access(*boxfilebak,R_OK)==0  && unlink(*boxfilebak) ) {
+	if (access(*boxfile, R_OK) == 0) {
+		if (access(*boxfilebak, R_OK) == 0 && unlink(*boxfilebak)) {
 #ifdef DEBUG_MAL_BOX
-            stream_printf(GDKout,"saveBox:can not unlink %s\n",boxfilebak);
+			stream_printf(GDKout, "saveBox:can not unlink %s\n", boxfilebak);
 #endif
-            GDKerror("saveBox:can not unlink backup\n");
-            GDKfree(*boxfile); GDKfree(*boxfilebak);
-            return 0;
-        } 
+			GDKerror("saveBox:can not unlink backup\n");
+			GDKfree(*boxfile);
+			GDKfree(*boxfilebak);
+			return 0;
+		}
 
-        if( link(*boxfile,*boxfilebak)) {
+		if (link(*boxfile, *boxfilebak)) {
 #ifdef DEBUG_MAL_BOX
-            stream_printf(GDKout,"saveBox:%s \n-> %s\n",
-                    boxfile,boxfilebak);
+			stream_printf(GDKout, "saveBox:%s \n-> %s\n", boxfile, boxfilebak);
 #endif
-            GDKerror("saveBox:can not link backup\n");
-            GDKfree(*boxfile); GDKfree(*boxfilebak);
-            return 0;
-        }
-        unlink(*boxfile);
-    } 
+			GDKerror("saveBox:can not link backup\n");
+			GDKfree(*boxfile);
+			GDKfree(*boxfilebak);
+			return 0;
+		}
+		unlink(*boxfile);
+	}
 
-    f= open_wastream(*boxfile);
-	if( f != NULL)
+	f = open_wastream(*boxfile);
+	if (f != NULL)
 		chmod(*boxfile, (S_IRUSR | S_IWUSR));
-	else GDKerror("saveBox:can not create box file\n");
+	else
+		GDKerror("saveBox:can not create box file\n");
 	return f;
 }
-int saveBox(Box box,int flag){
-    int i;
-    stream *f;
-    ValPtr v;
+
+int
+saveBox(Box box, int flag)
+{
+	int i;
+	stream *f;
+	ValPtr v;
 	str boxfile, boxfilebak;
 
 	(void) flag;
 
-	f= prepareSaveBox(box, &boxfile, &boxfilebak);
-	if( f == NULL) return 1;
+	f = prepareSaveBox(box, &boxfile, &boxfilebak);
+	if (f == NULL)
+		return 1;
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"saveBox:created %s\n",boxfile);
+	stream_printf(GDKout, "saveBox:created %s\n", boxfile);
 #endif
-	for(i=0;i<box->sym->vtop; i++){
-		v= &box->val->stk[i];
-		if( v->vtype == TYPE_bat ) {
-		BAT *b= (BAT*)BBPgetdesc(v->val.br.id);
-		if( b && b->batPersistence & PERSISTENT)
-		stream_printf(f,"%s.bind(\"%s\",\"%s\");\n", 
-			box->name, getVarName(box->sym,i),
-			BBPname(v->val.br.id));
-		} else{
-			stream_printf(f,"%s := ", getVarName(box->sym,i));
-			ATOMprint(v->vtype,VALptr(v),f);
-			stream_printf(f,":%s;\n", getTypeName(v->vtype));
-			stream_printf(f,"%s.deposit(\"%s\",%s);\n", 
-				box->name, getVarName(box->sym,i),
-				getVarName(box->sym,i));
+	for (i = 0; i < box->sym->vtop; i++) {
+		v = &box->val->stk[i];
+		if (v->vtype == TYPE_bat) {
+			BAT *b = (BAT *) BBPgetdesc(v->val.br.id);
+
+			if (b && b->batPersistence & PERSISTENT)
+				stream_printf(f, "%s.bind(\"%s\",\"%s\");\n", box->name, getVarName(box->sym, i), BBPname(v->val.br.id));
+		} else {
+			stream_printf(f, "%s := ", getVarName(box->sym, i));
+			ATOMprint(v->vtype, VALptr(v), f);
+			stream_printf(f, ":%s;\n", getTypeName(v->vtype));
+			stream_printf(f, "%s.deposit(\"%s\",%s);\n", box->name, getVarName(box->sym, i), getVarName(box->sym, i));
 		}
 	}
 	stream_close(f);
-	if( link(boxfilebak,boxfile) && unlink(boxfilebak) ) {
-		GDKfree(boxfile); GDKfree(boxfilebak);
+	if (link(boxfilebak, boxfile) && unlink(boxfilebak)) {
+		GDKfree(boxfile);
+		GDKfree(boxfilebak);
 		return -1;
 	}
-	GDKfree(boxfile); GDKfree(boxfilebak);
+	GDKfree(boxfile);
+	GDKfree(boxfilebak);
 	return 0;
 }
+
 @-
 Loading a box is equivalent to reading a script.
 @c
-void loadBox(str name){
-    char boxfile[PATHLENGTH];
-    int i=0;
-    snprintf(boxfile,PATHLENGTH,"%s/%s/box/",
-            GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
-    i= strlen(boxfile);
-    snprintf(boxfile+i,PATHLENGTH-i,"%s.box",name);
+void
+loadBox(str name)
+{
+	char boxfile[PATHLENGTH];
+	int i = 0;
+
+	snprintf(boxfile, PATHLENGTH, "%s/%s/box/", GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
+	i = strlen(boxfile);
+	snprintf(boxfile + i, PATHLENGTH - i, "%s.box", name);
 #ifdef DEBUG_MAL_BOX
-    stream_printf(GDKout,"loadBox:start loading the file %s\n",boxfile);
+	stream_printf(GDKout, "loadBox:start loading the file %s\n", boxfile);
 #endif
-    if( access(boxfile,R_OK)== 0){
-        malInclude(getClient(),boxfile,0,0);
+	if (access(boxfile, R_OK) == 0) {
+		malInclude(getClient(), boxfile, 0, 0);
 #ifdef DEBUG_MAL_BOX
-        stream_printf(GDKout,"loadBox:loaded the file %s\n",boxfile);
+		stream_printf(GDKout, "loadBox:loaded the file %s\n", boxfile);
 #endif
-    } 
+	}
 }
+
 @+ Utilities
 Utilities for the debugger permit dumping of all the object
 spaces.
 @c
-void printBox(stream *fd, Box obj)
-{ printStack(fd,obj->sym,obj->val); }
-
-void printSomeBox(stream *fd, int k)
+void
+printBox(stream *fd, Box obj)
 {
-    if( box[k]== 0){
-        GDKerror("printSomeBox:illegal space id\n");
-    } else printBox(fd,box[k]);
+	printStack(fd, obj->sym, obj->val);
 }
+
+void
+printSomeBox(stream *fd, int k)
+{
+	if (box[k] == 0) {
+		GDKerror("printSomeBox:illegal space id\n");
+	} else
+		printBox(fd, box[k]);
+}
+
 @}

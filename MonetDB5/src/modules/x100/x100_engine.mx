@@ -120,13 +120,14 @@ These are defined as macros, since we do not want function calls (brrr!@#..) in 
 @:def(sint,, signed int)@
 @:def(ulng,, unsigned long long)@
 @:def(slng,, signed long long)@
+
 @:def(uidx,, size_t)@
 @c
 #include <math.h>
 #include "x100_engine.h"
 #include "x100.h"
 
-#define RESTRICT 
+#define RESTRICT
 #ifdef RESTRICT
 #define __r  __restrict__
 #else
@@ -134,60 +135,74 @@ These are defined as macros, since we do not want function calls (brrr!@#..) in 
 #endif
 
 
-@:def(eq,(x,y), ((x)==(y)))@
-@:def(ne,(x,y), ((x)!=(y)))@
-@:def(gt,(x,y), ((x)>(y)))@
-@:def(lt,(x,y), ((x)<(y)))@
-@:def(ge,(x,y), ((x)>=(y)))@
-@:def(le,(x,y), ((x)<=(y)))@
-@:def(and,(x,y), ((x)&&(y)))@
-@:def(or,(x,y), ((x)||(y)))@
+@:def(eq, (x, y), ((x) == (y)))@
+@:def(ne, (x, y), ((x) != (y)))@
+@:def(gt, (x, y), ((x) > (y)))@
+@:def(lt, (x, y), ((x) < (y)))@
+@:def(ge, (x, y), ((x) >= (y)))@
+@:def(le, (x, y), ((x) <= (y)))@
+@:def(and, (x, y), ((x) && (y)))@
+@:def(or, (x, y), ((x) || (y)))@
 
-@:def(directgrp,(x,y,z), ((x)+(((uidx)(y))<<(z))))@
-@:def(not,(x), !(x))@
+@:def(directgrp, (x, y, z), ((x) + (((uidx) (y)) << (z))))@
+@:def(not, (x), !(x))@
 
-@:def(mul,(x,y), ((x)*(y)))@
-@:def(div,(x,y), ((x)/(y)))@
-@:def(sub,(x,y), ((x)-(y)))@
-@:def(add,(x,y), ((x)+(y)))@
-@:def(neg,(x),   (-(x)))@
-@:def(inc,(x),   (x+1))@
-@:def(dec,(x),   (x-1))@
-@:def(bitshl,(x,y), (x)<<(y))@
-@:def(bitshr,(x,y), (x)>>(y))@
-@:def(bitand,(x,y), (x)&(y))@
-@:def(bitor,(x,y), (x)|(y))@
-@:def(bitxor,(x,y), (x)^(y))@
-@:def(bitnot,(x), ~(x))@
-@:def(sum,(x,y), ((x)+(y)))@
-@:def(min,(x,y), ((x)<(y)?(x):(y)))@
-@:def(max,(x,y), ((x)>(y)?(x):(y)))@
+@:def(mul, (x, y), ((x) * (y)))@
+@:def(div, (x, y), ((x) / (y)))@
+@:def(sub, (x, y), ((x) - (y)))@
+@:def(add, (x, y), ((x) + (y)))@
+@:def(neg, (x), (-(x)))@
+@:def(inc, (x), (x + 1))@
+@:def(dec, (x), (x - 1))@
+@:def(bitshl, (x, y), (x) << (y))@
+@:def(bitshr, (x, y), (x) >> (y))@
+@:def(bitand, (x, y), (x) & (y))@
+@:def(bitor, (x, y), (x) | (y))@
+@:def(bitxor, (x, y), (x) ^ (y))@
+@:def(bitnot, (x), ~(x))@
+@:def(sum, (x, y), ((x) + (y)))@
+@:def(min, (x, y), ((x) < (y) ? (x) : (y)))@
+@:def(max, (x, y), ((x) > (y) ? (x) : (y)))@
 @c
-size_t aggr_count_uidx_col(size_t n, uidx*__r res, uidx*__r grp, uidx*__r sel) {
+size_t
+aggr_count_uidx_col(size_t n, uidx * __r res, uidx * __r grp, uidx * __r sel)
+{
 	@:impl(res[grp[i]]++)@
 	return 0;
 }
-static size_t aggr4_count_uidx_col_multicursor(size_t n, uidx*__r res0, uidx*__r  res1, uidx*__r  res2, uidx*__r  res3, uidx*__r  grp, uidx*__r  sel) {
+static size_t
+aggr4_count_uidx_col_multicursor(size_t n, uidx * __r res0, uidx * __r res1, uidx * __r res2, uidx * __r res3, uidx * __r grp, uidx * __r sel)
+{
 	@:impl4(res0[grp[i]]++, res1[grp[i]]++, res2[grp[i]]++, res3[grp[i]]++)@
 	return 0;
 }
-size_t aggr4_count_uidx_col(size_t n, uidx*__r res0, uidx*__r grp, uidx*__r memchunk, uidx*__r sel) {
+
+size_t
+aggr4_count_uidx_col(size_t n, uidx * __r res0, uidx * __r grp, uidx * __r memchunk, uidx * __r sel)
+{
 	uidx m = *memchunk;
-	uidx* res1 = res0 + m;
-	uidx* res2 = res1 + m;
-	uidx* res3 = res2 + m;
-	if (n > 0) return aggr4_count_uidx_col_multicursor(n, res0, res1, res2, res3, grp, sel);
+	uidx *res1 = res0 + m;
+	uidx *res2 = res1 + m;
+	uidx *res3 = res2 + m;
+
+	if (n > 0)
+		return aggr4_count_uidx_col_multicursor(n, res0, res1, res2, res3, grp, sel);
 	/* calculate final result as aggregate over 4 partials */
-	for(n=0; n<m; n++) {
+	for (n = 0; n < m; n++) {
 		res0[n] += res1[n] + res2[n] + res3[n];
-	} 
+	}
 	return 0;
 }
-size_t select__uint_col(size_t n, uidx*__r res, uint*__r col1, uidx*__r sel) {
+
+size_t
+select__uint_col(size_t n, uidx * __r res, uint * __r col1, uidx * __r sel)
+{
 	size_t ret = 0;
-	@:impl(if (col1[i]) res[ret++] = i)@
-	return ret; 
+
+	@:impl(if (col1[i]) res[ret++] = i) @
+	return ret;
 }
+
 @= indextile
 size_t map_indextile_uidx_val_uidx_val_@1_val(size_t n, @1 *res, uidx *Pos, uidx *Mult, @1 *Domain) {
         uidx pos = *Pos, domain = *Domain, mult = *Mult, off = 0;
@@ -224,14 +239,13 @@ size_t map_indextile_uidx_val_uidx_val_@1_val(size_t n, @1 *res, uidx *Pos, uidx
 @:engine(impl)@
 
 FcnMap x100_fcnmap[] = {
-	{ "uidx", "aggr_count_uidx_col", (ExprFcn) aggr_count_uidx_col, },
-	{ "uidx", "aggr4_count_uidx_col", (ExprFcn) aggr4_count_uidx_col, },
-	{ "uidx", "select__uint_col,uidx", (ExprFcn) select__uint_col, },
-	{ "uidx", "map_indextile_uidx_val_uidx_val_uidx_val",  (ExprFcn) map_indextile_uidx_val_uidx_val_uidx_val, },
-	{ "dbl", "map_indextile_uidx_val_uidx_val_dbl_val",  (ExprFcn) map_indextile_uidx_val_uidx_val_dbl_val, },
+	{"uidx", "aggr_count_uidx_col", (ExprFcn) aggr_count_uidx_col,},
+	{"uidx", "aggr4_count_uidx_col", (ExprFcn) aggr4_count_uidx_col,},
+	{"uidx", "select__uint_col,uidx", (ExprFcn) select__uint_col,},
+	{"uidx", "map_indextile_uidx_val_uidx_val_uidx_val", (ExprFcn) map_indextile_uidx_val_uidx_val_uidx_val,},
+	{"dbl", "map_indextile_uidx_val_uidx_val_dbl_val", (ExprFcn) map_indextile_uidx_val_uidx_val_dbl_val,},
 	@:engine(decl)@
-	NULL, NULL,
-};
+NULL, NULL,};
 
 
 @+ Macro Implementations

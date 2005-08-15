@@ -167,8 +167,9 @@ static int usock = -1;
 str
 MAPIlistenThread(int *Sock)
 {
-	char *msg=0;
-	char *cmd= threadcommand;
+	char *msg = 0;
+	char *cmd = threadcommand;
+
 	do {
 		int retval;
 		struct timeval tv;
@@ -200,7 +201,7 @@ MAPIlistenThread(int *Sock)
 		}
 		if (retval < 0) {
 			if (MT_geterrno() != EINTR) {
-				msg= "select failed\n";
+				msg = "select failed\n";
 				goto error;
 			}
 			continue;
@@ -208,7 +209,7 @@ MAPIlistenThread(int *Sock)
 		if (sock >= 0 && FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 				if (MT_geterrno() != EINTR) {
-					msg="accept failed\n";
+					msg = "accept failed\n";
 					goto error;
 				}
 				continue;
@@ -217,7 +218,7 @@ MAPIlistenThread(int *Sock)
 		} else if (usock >= 0 && FD_ISSET(usock, &fds)) {
 			if ((msgsock = accept(usock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 				if (MT_geterrno() != EINTR) {
-					msg="accept failed\n";
+					msg = "accept failed\n";
 					goto error;
 				}
 				continue;
@@ -226,10 +227,10 @@ MAPIlistenThread(int *Sock)
 		} else
 			continue;
 #ifdef DEBUG_MAPI
-	printf("mapi:accepted\n");
-	fflush(stdout);
+		printf("mapi:accepted\n");
+		fflush(stdout);
 #endif
-		if (cmd== NULL) {
+		if (cmd == NULL) {
 			int i = 0;
 			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
 			char *challenge;
@@ -247,7 +248,7 @@ MAPIlistenThread(int *Sock)
 			/* write challenge string, the challenge is currently empty (disabled) */
 			challenge = "::mserver_mal:4\n";
 			/* temporarily misuse name */
-			snprintf(name, BLOCK, "%2d%s", (unsigned int)strlen(challenge), challenge);
+			snprintf(name, BLOCK, "%2d%s", (unsigned int) strlen(challenge), challenge);
 			stream_write(fdout, name, strlen(name), 1);
 			/* get user name */
 			*user = 0;
@@ -271,7 +272,8 @@ MAPIlistenThread(int *Sock)
 				continue;
 			}
 #ifdef DEBUG_MAPI
-            printf("mapi:Client accepted %s\n", name);fflush(stdout);
+			printf("mapi:Client accepted %s\n", name);
+			fflush(stdout);
 #endif
 			s = strrchr(name, ':');
 			blocked = s && strncmp(s, ":blocked", 8) == 0;
@@ -292,23 +294,25 @@ MAPIlistenThread(int *Sock)
 			THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 			THRprintf(GDKerr, "MAPIlisten:client string %s\n", name);
 #endif
-            bs = bstream_create(fdin,blocked?128*BLOCK:0);
-            if (blocked)
-                bs->eof = 1;
-            scheduleClient(name,bs,fdout);
+			bs = bstream_create(fdin, blocked ? 128 * BLOCK : 0);
+
+			if (blocked)
+				bs->eof = 1;
+			scheduleClient(name, bs, fdout);
 		} else {
-		/* in M4 it is possible to execute a command directly */
+			/* in M4 it is possible to execute a command directly */
 		}
 	} while (1);
-error:
-	return throwMessage("mapi.listen",msg);
+      error:
+	return throwMessage("mapi.listen", msg);
 }
+
 str
 MAPIlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 {
 	struct sockaddr_in server;
 	int sock = -1;
-	int     *Sock = GDKmalloc(sizeof(int));
+	int *Sock = GDKmalloc(sizeof(int));
 
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
@@ -316,7 +320,7 @@ MAPIlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 	SOCKLEN length = 0;
 	int on = 1;
 	int i = 0;
-	int pid, *pidp= &pid;
+	int pid, *pidp = &pid;
 	int port;
 	int maxusers;
 	char msg[512], *cmd, *usockfile, host[512];
@@ -333,20 +337,18 @@ MAPIlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 #endif
 	}
 	maxusers = *Maxusers;
-	cmd = Cmd? GDKstrdup(*Cmd) : NULL;
+	cmd = Cmd ? GDKstrdup(*Cmd) : NULL;
 
 	port = (port ? port : MAPIPORT);
 	maxusers = (maxusers ? maxusers : MAPIMAXUSERS);
 
-	if (port <= 0 && usockfile == NULL) 
-		return throwMessage("mapi.listen", 
-			"no port or socket file specified\n");
+	if (port <= 0 && usockfile == NULL)
+		return throwMessage("mapi.listen", "no port or socket file specified\n");
 
 	if (port > 0) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock < 0)
-			return throwMessage("mapi.listen",
-				"creation of stream socket failed\n");
+			return throwMessage("mapi.listen", "creation of stream socket failed\n");
 @-
 Set server port and allow network connections from any workstation.
 Bind the socket to the server port.
@@ -361,15 +363,13 @@ The port id should be obtained from the Homes file.
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
 		length = (SOCKLEN) sizeof(server);
-		if (bind(sock, (SOCKPTR) & server, length) < 0) 
-			return throwMessage("mapi.listen",
-						"binding to stream socket failed\n");
+		if (bind(sock, (SOCKPTR) & server, length) < 0)
+			return throwMessage("mapi.listen", "binding to stream socket failed\n");
 @-
 Get the new information for the server socket and start listening.
 @c
 		if (getsockname(sock, (SOCKPTR) & server, &length) < 0)
-			return throwMessage("mapi.listen",
-						"Failed getting socket name\n");
+			return throwMessage("mapi.listen", "Failed getting socket name\n");
 		listen(sock, maxusers);
 	}
 #ifdef HAVE_SYS_UN_H
@@ -377,8 +377,7 @@ Get the new information for the server socket and start listening.
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (usock < 0) {
 			unlink(usockfile);
-			return throwMessage("mapi.listen",
-						"creation of Unix socket failed\n");
+			return throwMessage("mapi.listen", "creation of Unix socket failed\n");
 		}
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
@@ -386,30 +385,28 @@ Get the new information for the server socket and start listening.
 		length = (SOCKLEN) sizeof(userver);
 		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
 			unlink(usockfile);
-			return throwMessage("mapi.listen",
-				"binding to Unix socket file failed\n");
+			return throwMessage("mapi.listen", "binding to Unix socket file failed\n");
 		}
 		listen(usock, maxusers);
 	}
 #endif
 
 #ifdef DEBUG_MAPI
-		THRprintf(GDKerr, "MAPIlisten:Network started at %d\n", port);
+	THRprintf(GDKerr, "MAPIlisten:Network started at %d\n", port);
 #endif
-	threadcommand= cmd;
+	threadcommand = cmd;
 	*Sock = sock;
 
-	if( MT_create_thread((MT_Id *)pidp,
-			(void (*)(void *))MAPIlistenThread, Sock) <0){
-			return throwMessage("mapi.listen", "starting thread failed");
+	if (MT_create_thread((MT_Id *) pidp, (void (*)(void *)) MAPIlistenThread, Sock) < 0) {
+		return throwMessage("mapi.listen", "starting thread failed");
 	}
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
 		unlink(usockfile);
 #endif
-    gethostname(host,(int)512);
-	snprintf(msg,(int)512,"#Ready to accept connections on %s:%d\n",host,port);
-	stream_printf(GDKout,"%s",msg);
+	gethostname(host, (int) 512);
+	snprintf(msg, (int) 512, "#Ready to accept connections on %s:%d\n", host, port);
+	stream_printf(GDKout, "%s", msg);
 	return MAL_SUCCEED;
 }
 
@@ -527,7 +524,7 @@ mapi_epilogue(void)
 }
 
 str
-MAPIlistenSSL(int *Port,int *Maxusers, str keyfile, str certfile, str cmd)
+MAPIlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd)
 {
 #ifdef HAVE_OPENSSL
 	struct sockaddr_in server;
@@ -550,20 +547,20 @@ MAPIlistenSSL(int *Port,int *Maxusers, str keyfile, str certfile, str cmd)
 
 	ctx = SSL_CTX_new(SSLv23_method());
 	if (ctx == NULL) {
-		msg="creation of SSL context failed\n";
+		msg = "creation of SSL context failed\n";
 		goto fail;
 	}
 	if (SSL_CTX_set_cipher_list(ctx, "ALL:!LOW") == 0) {
-		msg="SSL_CTX_set_cipher_list failed\n";
+		msg = "SSL_CTX_set_cipher_list failed\n";
 		goto fail;
 	}
 	if (keyfile && *keyfile && certfile && *certfile) {
 		if (SSL_CTX_use_PrivateKey_file(ctx, keyfile, SSL_FILETYPE_PEM) < 1) {
-			msg="SSL_CTX_use_PrivateKey_file failed\n";
+			msg = "SSL_CTX_use_PrivateKey_file failed\n";
 			goto fail;
 		}
 		if (SSL_CTX_use_certificate_chain_file(ctx, certfile) < 1) {
-			msg="SSL_CTX_use_certificate_chain_file failed\n";
+			msg = "SSL_CTX_use_certificate_chain_file failed\n";
 			goto fail;
 		}
 	}
@@ -601,13 +598,13 @@ The port id should be obtained from the Homes file.
 Get the new information for the server socket and start listening.
 @c
 	if (getsockname(sock, (SOCKPTR) & server, &length) < 0) {
-		msg="getting socket name\n";
+		msg = "getting socket name\n";
 		goto fail;
 	}
 	listen(sock, maxusers);
 
 #ifdef DEBUG_MAPI
-		THRprintf(GDKerr, "MAPIlistenSSL:Network started at %d\n", port);
+	THRprintf(GDKerr, "MAPIlistenSSL:Network started at %d\n", port);
 #endif
 	do {
 		int retval;
@@ -631,18 +628,18 @@ Get the new information for the server socket and start listening.
 		}
 		if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 			if (MT_geterrno() != EINTR) {
-				msg="accept failed\n";
+				msg = "accept failed\n";
 				goto fail;
 			}
 			continue;
 		}
 		if ((ssl = SSL_new(ctx)) == 0) {
-			msg="SSL_new failed\n";
+			msg = "SSL_new failed\n";
 			goto fail;
 		}
 
 		if (!SSL_set_fd(ssl, msgsock)) {
-			msg="SSL_set_fd failed\n";
+			msg = "SSL_set_fd failed\n";
 			goto fail;
 		}
 
@@ -675,7 +672,7 @@ Get the new information for the server socket and start listening.
 			break;
 		}
 
-		if (cmd== NULL) {
+		if (cmd == NULL) {
 			int i = 0;
 			char *name = (char *) GDKmalloc(BLOCK), *user = name, *s;
 			char *mp;
@@ -706,7 +703,8 @@ Get the new information for the server socket and start listening.
 			}
 			*user = 0;
 #ifdef DEBUG_MAPI
-			THRprintf(GDKerr,"mapi:Client accepted %s\n", name);fflush(stdout); 
+			THRprintf(GDKerr, "mapi:Client accepted %s\n", name);
+			fflush(stdout);
 #endif
 			s = strrchr(name, ':');
 			blocked = s && strncmp(s, ":blocked", 8) == 0;
@@ -727,12 +725,13 @@ Get the new information for the server socket and start listening.
 #ifdef DEBUG_MAPI
 			THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
 #endif
-            bs = bstream_create(fdin,blocked?128*BLOCK:0);
-            if (blocked)
-                bs->eof = 1;
-            scheduleClient(name,bs,fdout);
-		} 
-end_loop:;
+			bs = bstream_create(fdin, blocked ? 128 * BLOCK : 0);
+
+			if (blocked)
+				bs->eof = 1;
+			scheduleClient(name, bs, fdout);
+		}
+	      end_loop:;
 	} while (1);
 	SSL_CTX_free(ctx);
 	close(sock);
@@ -746,14 +745,14 @@ end_loop:;
 		SSL_CTX_free(ctx);
 	if (cmd)
 		GDKfree(cmd);
-	return throwMessage("MAPIlistenSSL",msg);
+	return throwMessage("MAPIlistenSSL", msg);
 #else
 	(void) Port;
 	(void) Maxusers;
 	(void) keyfile;
 	(void) certfile;
 	(void) cmd;
-	return throwMessage("MAPIlistenSSL","No SSL support\n");
+	return throwMessage("MAPIlistenSSL", "No SSL support\n");
 #endif /* HAVE_OPENSSL */
 }
 
@@ -795,69 +794,107 @@ stream_read_until(str *res, stream *S, str stop)
 @- Wrappers
 The Monet Version 5 wrappers are collected here
 @c
-str MAPIlisten_default(int *ret){
+str
+MAPIlisten_default(int *ret)
+{
 	int port = MAPIPORT;
 	int maxusers = MAPIMAXUSERS;
+
 	(void) ret;
-	return MAPIlisten( &port, 0, &maxusers,0);
+	return MAPIlisten(&port, 0, &maxusers, 0);
 }
-str MAPIlisten2(int *ret, int *port, int *maxusers){
+
+str
+MAPIlisten2(int *ret, int *port, int *maxusers)
+{
 	(void) ret;
-	return MAPIlisten( port, 0, maxusers, 0);
+	return MAPIlisten(port, 0, maxusers, 0);
 }
-str MAPIlisten3(int *ret, int *port, int *maxusers, str *cmd){
+
+str
+MAPIlisten3(int *ret, int *port, int *maxusers, str *cmd)
+{
 	(void) ret;
-	return MAPIlisten( port, 0, maxusers, cmd);
+	return MAPIlisten(port, 0, maxusers, cmd);
 }
-str MAPIlisten_port(int *ret, int *pid){
+
+str
+MAPIlisten_port(int *ret, int *pid)
+{
 	int port = *pid;
 	int maxusers = MAPIMAXUSERS;
+
 	(void) ret;
-	return MAPIlisten( &port, 0, &maxusers,0);
+	return MAPIlisten(&port, 0, &maxusers, 0);
 }
+
 @-
 An internet connection may be terminated from the server console.
 And killing the administrator this way is prohibited.
 @c
-str MAPIstop(int *ret, int *id) {
-        (void) ret; /* fool compiler */
-        return stopClientIndex(getClient(), *id);
+str
+MAPIstop(int *ret, int *id)
+{
+	(void) ret;		/* fool compiler */
+	return stopClientIndex(getClient(), *id);
 }
 
-str MAPIstopClient(int *ret, str *nme) {
-        (void) ret; /* fool compiler */
-        return stopClient(getClient(), *nme);
+str
+MAPIstopClient(int *ret, str *nme)
+{
+	(void) ret;		/* fool compiler */
+	return stopClient(getClient(), *nme);
 }
-str MAPIsuspendClient(int *ret, int *skey, int *timeout) {
-        (void) ret; /* fool compiler */
-        return suspendClient(getClient(), *skey, *timeout);
+
+str
+MAPIsuspendClient(int *ret, int *skey, int *timeout)
+{
+	(void) ret;		/* fool compiler */
+	return suspendClient(getClient(), *skey, *timeout);
 }
-str MAPIresumeClient(int *ret, int *skey) {
-        (void) ret; /* fool compiler */
-        return resumeClient(getClient(), *skey);
+
+str
+MAPIresumeClient(int *ret, int *skey)
+{
+	(void) ret;		/* fool compiler */
+	return resumeClient(getClient(), *skey);
 }
+
 @-
 It is advisable to trace the interactions of clients on the server
 side. At least as far as it concerns requests received.
 The kernel supports this 'spying' behavior with a file descriptor
 field in the client record.
 @c
-str MAPItrace2(int *ret, str *nme,int *flg){
-        (void) ret; /* fool compiler */
-        (void) traceClient(*nme,*flg);
-        return MAL_SUCCEED;
+str
+MAPItrace2(int *ret, str *nme, int *flg)
+{
+	(void) ret;		/* fool compiler */
+	(void) traceClient(*nme, *flg);
+	return MAL_SUCCEED;
 }
 
-str MAPItrace(int *res, int *flg){
-        (void) res; /* fool compiler */
-        (void) traceAllClients(*flg);
-        return MAL_SUCCEED;
+str
+MAPItrace(int *res, int *flg)
+{
+	(void) res;		/* fool compiler */
+	(void) traceAllClients(*flg);
+	return MAL_SUCCEED;
 }
-str MAPIsuspend(int *res, int *skey, int *timeout){
-        (void) res; (void)timeout; (void)skey; /* fool compiler */
-        return MAL_SUCCEED;
+
+str
+MAPIsuspend(int *res, int *skey, int *timeout)
+{
+	(void) res;
+	(void) timeout;
+	(void) skey;		/* fool compiler */
+	return MAL_SUCCEED;
 }
-str MAPIresume(int *res, int *skey){
-        (void) res; (void)skey; /* fool compiler */
-        return MAL_SUCCEED;
+
+str
+MAPIresume(int *res, int *skey)
+{
+	(void) res;
+	(void) skey;		/* fool compiler */
+	return MAL_SUCCEED;
 }

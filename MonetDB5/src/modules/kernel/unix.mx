@@ -93,12 +93,17 @@ End:
 The remainder simply wraps the old code.
 @c
 #include "mal.h"
-str UNIXgetenv(str *res, str *varname) {
+str
+UNIXgetenv(str *res, str *varname)
+{
 	unix_getenv(res, *varname);
 	return MAL_SUCCEED;
 }
-str UNIXsetenv(bit *res, str *name, str *value){
-	unix_setenv(res,*name, *value);
+
+str
+UNIXsetenv(bit *res, str *name, str *value)
+{
+	unix_setenv(res, *name, *value);
 	return MAL_SUCCEED;
 }
 

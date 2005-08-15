@@ -104,7 +104,7 @@ mal_export void DCreleaseEmitter(DCpump p);
 
 #include "mal.h"
 
-#include <stream.h>     /* for stream */
+#include <stream.h>		/* for stream */
 
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
@@ -128,22 +128,24 @@ mal_export void DCreleaseEmitter(DCpump p);
 #include "mtime.h"
 
 static int usock = -1;
+
 #define MAXemitters 5
 
-static DCpump channel; /* insecure channel between threads! */
+static DCpump channel;		/* insecure channel between threads! */
 
 
 str
-DCgetEmitterStatus(int *ret){
-	BAT *bn= DCcontainer(TYPE_int,pumplimit);
+DCgetEmitterStatus(int *ret)
+{
+	BAT *bn = DCcontainer(TYPE_int, pumplimit);
 	DCpump p;
-	oid o= oid_nil;
+	oid o = oid_nil;
 
-	for(p=pumps; p<pumps+pumplimit; p++)
-	if( p->name && p->kind== EMITTER ){
-		BUNins(bn,&o,&p->status);
-	}
-	BBPincref(*ret= bn->batCacheid,TRUE);
+	for (p = pumps; p < pumps + pumplimit; p++)
+		if (p->name && p->kind == EMITTER) {
+			BUNins(bn, &o, &p->status);
+		}
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
@@ -155,88 +157,101 @@ Emitter public bats are locked to avoid interference with the
 delivery thread.
 @c
 void
-DCreleaseEmitter(DCpump p){
-	if( p->lock)
-		mal_unset_lock(p->lock,"datacell.release");
+DCreleaseEmitter(DCpump p)
+{
+	if (p->lock)
+		mal_unset_lock(p->lock, "datacell.release");
 }
+
 str
-DCbindEmitter(int *retpublic, int *retprivate, str *name, str *cname){
+DCbindEmitter(int *retpublic, int *retprivate, str *name, str *cname)
+{
 	DCpump p;
 	int i;
 
-	p= DClocatePump(*name);
-	if( p == 0)
-		return throwMessage("datacell.bindEmitter","unknown emitter");
-	if( p->kind!= EMITTER)
-		return throwMessage("datacell.bindEmitter","unknown emitter");
-	for(i=0; i < p->cols ; i++)
-	if( strcmp(p->columns[i],*cname) == 0 ){
-		mal_set_lock(p->lock,"datacellIsolate");
-		if( p->usedby && p->usedby != p-pumps){
-			mal_unset_lock(p->lock,"datacellIsolate");
-			return throwMessage("datacell.isolate","Pump still in use\n");
-		}
+	p = DClocatePump(*name);
+	if (p == 0)
+		return throwMessage("datacell.bindEmitter", "unknown emitter");
+	if (p->kind != EMITTER)
+		return throwMessage("datacell.bindEmitter", "unknown emitter");
+	for (i = 0; i < p->cols; i++)
+		if (strcmp(p->columns[i], *cname) == 0) {
+			mal_set_lock(p->lock, "datacellIsolate");
 
-		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
-		BBPincref( *retprivate= p->private[i]->batCacheid, TRUE);
-		p->usedby= p - pumps;
-		mal_unset_lock(p->lock,"datacellIsolate");
-		break;
-	}
-    return MAL_SUCCEED;
+			if (p->usedby && p->usedby != p - pumps) {
+				mal_unset_lock(p->lock, "datacellIsolate");
+
+				return throwMessage("datacell.isolate", "Pump still in use\n");
+			}
+
+			BBPincref(*retpublic = p->public[i]->batCacheid, TRUE);
+			BBPincref(*retprivate = p->private[i]->batCacheid, TRUE);
+			p->usedby = p - pumps;
+			mal_unset_lock(p->lock, "datacellIsolate");
+			break;
+		}
+	return MAL_SUCCEED;
 }
+
 @-
 It is also possible to pick up a single tuple from the public part.
 @c
 str
-DCbindEmitterTuple(int *retpublic, int *retprivate, str *name, str *cname){
+DCbindEmitterTuple(int *retpublic, int *retprivate, str *name, str *cname)
+{
 	DCpump p;
 	int i;
 
-	p= DClocatePump(*name);
-	if( p == 0)
-		return throwMessage("datacell.bindEmitter","unknown emitter");
-	if( p->kind!= EMITTER)
-		return throwMessage("datacell.bindEmitter","unknown emitter");
-	for(i=0; i < p->cols ; i++)
-	if( strcmp(p->columns[i],*cname) == 0 ){
-		mal_set_lock(p->lock,"datacellIsolate");
-		if( p->usedby && p->usedby != p-pumps){
-			mal_unset_lock(p->lock,"datacellIsolate");
-			return throwMessage("datacell.isolate","Pump still in use\n");
-		}
+	p = DClocatePump(*name);
+	if (p == 0)
+		return throwMessage("datacell.bindEmitter", "unknown emitter");
+	if (p->kind != EMITTER)
+		return throwMessage("datacell.bindEmitter", "unknown emitter");
+	for (i = 0; i < p->cols; i++)
+		if (strcmp(p->columns[i], *cname) == 0) {
+			mal_set_lock(p->lock, "datacellIsolate");
 
-		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
-		BBPincref( *retprivate= p->private[i]->batCacheid, TRUE);
-		p->usedby= p - pumps;
-		mal_unset_lock(p->lock,"datacellIsolate");
-		break;
-	}
-    return MAL_SUCCEED;
+			if (p->usedby && p->usedby != p - pumps) {
+				mal_unset_lock(p->lock, "datacellIsolate");
+
+				return throwMessage("datacell.isolate", "Pump still in use\n");
+			}
+
+			BBPincref(*retpublic = p->public[i]->batCacheid, TRUE);
+			BBPincref(*retprivate = p->private[i]->batCacheid, TRUE);
+			p->usedby = p - pumps;
+			mal_unset_lock(p->lock, "datacellIsolate");
+			break;
+		}
+	return MAL_SUCCEED;
 }
+
 str
-DCbindEmitterPublic(int *retpublic, str *name, str *cname){
+DCbindEmitterPublic(int *retpublic, str *name, str *cname)
+{
 	DCpump p;
 	int i;
 
-	p= DClocatePump(*name);
-	if( p == 0)
-		return throwMessage("datacell.bindEmitter","unknown emitter");
-	if( p->kind!= EMITTER)
-		return throwMessage("datacell.bindEmitter","unknown emitter");
-	for(i=0; i < p->cols ; i++)
-	if( strcmp(p->columns[i],*cname) == 0 ){
-		mal_set_lock(p->lock,"datacellIsolate");
-		if( p->usedby && p->usedby != p-pumps){
-			mal_unset_lock(p->lock,"datacellIsolate");
-			return throwMessage("datacell.isolate","Pump still in use\n");
+	p = DClocatePump(*name);
+	if (p == 0)
+		return throwMessage("datacell.bindEmitter", "unknown emitter");
+	if (p->kind != EMITTER)
+		return throwMessage("datacell.bindEmitter", "unknown emitter");
+	for (i = 0; i < p->cols; i++)
+		if (strcmp(p->columns[i], *cname) == 0) {
+			mal_set_lock(p->lock, "datacellIsolate");
+
+			if (p->usedby && p->usedby != p - pumps) {
+				mal_unset_lock(p->lock, "datacellIsolate");
+
+				return throwMessage("datacell.isolate", "Pump still in use\n");
+			}
+			p->usedby = p - pumps;
+			mal_unset_lock(p->lock, "datacellIsolate");
+			BBPincref(*retpublic = p->public[i]->batCacheid, TRUE);
+			break;
 		}
-		p->usedby= p - pumps;
-		mal_unset_lock(p->lock,"datacellIsolate");
-		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
-		break;
-	}
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 @-
@@ -248,7 +263,7 @@ DClistenEmitter(DCpump p, str *Usockfile)
 {
 	struct sockaddr_in server;
 	int sock = -1;
-	SensorInfo     sensor = GDKmalloc(sizeof(SensorInfo));
+	SensorInfo sensor = GDKmalloc(sizeof(SensorInfo));
 
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
@@ -256,7 +271,7 @@ DClistenEmitter(DCpump p, str *Usockfile)
 	SOCKLEN length = 0;
 	int on = 1;
 	int i = 0;
-	int pid, *pidp= &pid;
+	int pid, *pidp = &pid;
 	char *usockfile, host[512];
 
 	channel = p;
@@ -271,15 +286,13 @@ DClistenEmitter(DCpump p, str *Usockfile)
 #endif
 	}
 
-	if (p->port <= 0 && usockfile == NULL) 
-		return throwMessage("datacell.listen", 
-			"no port or socket file specified\n");
+	if (p->port <= 0 && usockfile == NULL)
+		return throwMessage("datacell.listen", "no port or socket file specified\n");
 
 	if (p->port > 0) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock < 0)
-			return throwMessage("datacell.listen",
-				"creation of stream socket failed\n");
+			return throwMessage("datacell.listen", "creation of stream socket failed\n");
 @-
 Set server port and allow network connections from any workstation.
 Bind the socket to the server port.
@@ -294,15 +307,13 @@ The port id should be obtained from the Homes file.
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
 		length = (SOCKLEN) sizeof(server);
-		if (bind(sock, (SOCKPTR) & server, length) < 0) 
-			return throwMessage("datacell.listen",
-						"binding to stream socket failed\n");
+		if (bind(sock, (SOCKPTR) & server, length) < 0)
+			return throwMessage("datacell.listen", "binding to stream socket failed\n");
 @-
 Get the new information for the server socket and start listening.
 @c
 		if (getsockname(sock, (SOCKPTR) & server, &length) < 0)
-			return throwMessage("datacell.listen",
-						"Failed getting socket name\n");
+			return throwMessage("datacell.listen", "Failed getting socket name\n");
 		listen(sock, MAXemitters);
 	}
 #ifdef HAVE_SYS_UN_H
@@ -310,8 +321,7 @@ Get the new information for the server socket and start listening.
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (usock < 0) {
 			unlink(usockfile);
-			return throwMessage("datacell.listen",
-						"creation of Unix socket failed\n");
+			return throwMessage("datacell.listen", "creation of Unix socket failed\n");
 		}
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
@@ -319,39 +329,40 @@ Get the new information for the server socket and start listening.
 		length = (SOCKLEN) sizeof(userver);
 		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
 			unlink(usockfile);
-			return throwMessage("datacell.listen",
-				"binding to Unix socket file failed\n");
+			return throwMessage("datacell.listen", "binding to Unix socket file failed\n");
 		}
 		listen(usock, MAXemitters);
 	}
 #endif
 
 #ifdef DEBUG_DC_EMITTER
-		THRprintf(GDKerr, "DClisten:Network started at %d\n", p->port);
+	THRprintf(GDKerr, "DClisten:Network started at %d\n", p->port);
 #endif
 	sensor->socket = sock;
 
-	p->status= 1;
-	if( MT_create_thread((MT_Id *)pidp,
-		(void (*)(void *))DCspeakThread, sensor) <0){
-			return throwMessage("datacell.listen", "starting thread failed");
+	p->status = 1;
+	if (MT_create_thread((MT_Id *) pidp, (void (*)(void *)) DCspeakThread, sensor) < 0) {
+		return throwMessage("datacell.listen", "starting thread failed");
 	}
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
 		unlink(usockfile);
 #endif
-    if(p->host==0) 
-		gethostname(host,(int)512); 
-	else strcpy(host, p->host);
+	if (p->host == 0)
+		gethostname(host, (int) 512);
+	else
+		strcpy(host, p->host);
 #ifdef DEBUG_DC_EMITTER
-	{ char msg[512];
-	snprintf(msg,(int)512,"#Ready to write sensor data to connection %s:%d\n",
-		host,p->port);
-	stream_printf(GDKout,"%s",msg);
+	{
+		char msg[512];
+
+		snprintf(msg, (int) 512, "#Ready to write sensor data to connection %s:%d\n", host, p->port);
+		stream_printf(GDKout, "%s", msg);
 	}
 #endif
 	return MAL_SUCCEED;
 }
+
 @+ Event delivery
 The current implementation taps into the ASCII io writer,
 which means we are producing MonetDB tuple format descriptions.
@@ -361,57 +372,63 @@ Failure to write the tuples keep them around for a next pick up.
 The drain property can be used to move the content to a log table.
 @c
 str
-DCstartDelivery(DCpump p, stream *bs){
+DCstartDelivery(DCpump p, stream *bs)
+{
 	int i;
 	BAT *b;
 	size_t cnt;
 
-	(void) p; (void) bs;
+	(void) p;
+	(void) bs;
+
 #ifdef DEBUG_DC_EMITTER
-	stream_printf(GDKout,"#Start emitter %s %d columns\n",	
-			p->name,p->cols);
+	stream_printf(GDKout, "#Start emitter %s %d columns\n", p->name, p->cols);
 #endif
-	do{
-		if( (cnt= BATcount(p->private[0])) ){
+	do {
+		if ((cnt = BATcount(p->private[0]))) {
 #ifdef DEBUG_DC_EMITTER
-			stream_printf(GDKout,"sent tuples %d\n",cnt);
+			stream_printf(GDKout, "sent tuples %d\n", cnt);
 #endif
-			BATmultiprintf(bs, p->cols+1,p->private,0,0,0);
+			BATmultiprintf(bs, p->cols + 1, p->private, 0, 0, 0);
 			stream_flush(bs);
-			if(stream_errnr(bs)) break; 
+			if (stream_errnr(bs))
+				 break;
+
 			p->received += cnt;
 			p->calls++;
-			if(p->drain){
+			if (p->drain) {
 				/* safe the information sent out */
 			}
-			for(i=0; i<p->cols; i++)
+			for (i = 0; i < p->cols; i++)
 				BATclear(p->private[i]);
 		}
-		if( (cnt= BATcount(p->public[p->cols-1])) ){
+		if ((cnt = BATcount(p->public[p->cols - 1]))) {
 #ifdef DEBUG_DC_EMITTER
-			stream_printf(GDKout,"grab new tuples %d\n",cnt);
+			stream_printf(GDKout, "grab new tuples %d\n", cnt);
 #endif
 			/* new tuples have arrived */
-			mal_set_lock(p->lock,"datacellIsolate");
+			mal_set_lock(p->lock, "datacellIsolate");
+
 #ifdef DEBUG_DC_EMITTER
-			stream_printf(GDKout,"got them tuples %d\n",cnt);
+			stream_printf(GDKout, "got them tuples %d\n", cnt);
 #endif
-			for(i=0; i< p->cols; i++){
-				b= p->public[i];
-				p->public[i]= p->private[i];
-				p->private[i]= b;
+			for (i = 0; i < p->cols; i++) {
+				b = p->public[i];
+				p->public[i] = p->private[i];
+				p->private[i] = b;
 			}
-			mal_unset_lock(p->lock,"datacellIsolate");
-		} else
-		if( p->delay ) {
+			mal_unset_lock(p->lock, "datacellIsolate");
+		} else if (p->delay) {
 			MT_sleep_ms(p->delay);
 		}
-	} while(!stream_errnr(bs));
+	} while (!stream_errnr(bs));
+
 #ifdef DEBUG_DC_EMITTER
 	stream_printf(GDKerr, "#DCstartDelivery:channel writing finished\n");
-	stream_printf(GDKerr, "#DCstartDelivery:error= %d\n",stream_errnr(bs));
+	stream_printf(GDKerr, "#DCstartDelivery:error= %d\n", stream_errnr(bs));
 #endif
 	stream_close(bs);
+
 	return MAL_SUCCEED;
 }
 @-
@@ -422,7 +439,7 @@ and passed control to the event delivery
 str
 DCspeakThread(SensorInfo sensor)
 {
-	char *msg=0;
+	char *msg = 0;
 	stream *fromServer;
 
 #ifdef DEBUG_DC_EMITTER
@@ -460,7 +477,7 @@ DCspeakThread(SensorInfo sensor)
 		}
 		if (retval < 0) {
 			if (MT_geterrno() != EINTR) {
-				msg= "select failed\n";
+				msg = "select failed\n";
 				goto emittererror;
 			}
 			continue;
@@ -468,7 +485,7 @@ DCspeakThread(SensorInfo sensor)
 		if (sock >= 0 && FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 				if (MT_geterrno() != EINTR) {
-					msg="accept failed\n";
+					msg = "accept failed\n";
 					goto emittererror;
 				}
 				continue;
@@ -477,7 +494,7 @@ DCspeakThread(SensorInfo sensor)
 		} else if (usock >= 0 && FD_ISSET(usock, &fds)) {
 			if ((msgsock = accept(usock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 				if (MT_geterrno() != EINTR) {
-					msg="accept failed\n";
+					msg = "accept failed\n";
 					goto emittererror;
 				}
 				continue;
@@ -486,7 +503,7 @@ DCspeakThread(SensorInfo sensor)
 		} else
 			continue;
 #ifdef DEBUG_DC_EMITTER
-		stream_printf(GDKerr,"#emitter connection request:accepted\n");
+		stream_printf(GDKerr, "#emitter connection request:accepted\n");
 #endif
 		fromServer = block_stream(socket_wstream(msgsock, "Emitter output"));
 
@@ -494,16 +511,15 @@ DCspeakThread(SensorInfo sensor)
 			GDKsyserror("#DCspeak:fromServer problems\n");
 			continue;
 		}
-
 #ifdef DEBUG_DC_EMITTER
 		stream_printf(GDKerr, "#DCspeak:channel accepted %d\n", msgsock);
 #endif
-		msg= DCstartDelivery(channel, fromServer);
-	} while ( msg == MAL_SUCCEED);
-emittererror:
+		msg = DCstartDelivery(channel, fromServer);
+	} while (msg == MAL_SUCCEED);
+      emittererror:
 #ifdef DEBUG_DC_EMITTER
-			stream_printf(GDKout,"Connection failed: %s\n",msg);
+	stream_printf(GDKout, "Connection failed: %s\n", msg);
 #endif
-	return throwMessage("datacell.listen",msg);
+	return throwMessage("datacell.listen", msg);
 }
 @}

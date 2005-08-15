@@ -1121,106 +1121,119 @@ radix_cluster(attr_int,
 @- Data Generation
 @c
 
-int batuniform(BAT** bn, oid *base, int *size, int *domain) {
-        size_t n = (size_t) *size, i, r;
-        bat *b = BATnew(TYPE_oid, TYPE_int, n);
+int
+batuniform(BAT **bn, oid *base, int *size, int *domain)
+{
+	size_t n = (size_t) * size, i, r;
+	bat *b = BATnew(TYPE_oid, TYPE_int, n);
 	char *firstbun;
 	int bunsize;		/* initialized in batloopFast */
-        oid bs = *base;
+	oid bs = *base;
 	int j = 0;
 	BUN p, q;
 
-	if( b == NULL) return GDK_FAIL;
+	if (b == NULL)
+		return GDK_FAIL;
 	firstbun = (char *) BUNfirst(b);
 	/* preset b->batBuns->free to make batloopFast work */
 	b->batBuns->free = n * BUNsize(b);
 	BATsetcount(b, n);
 	/* create BUNs with uniform distribution */
 	batloopFast(b, p, q, bunsize) {
-		* (oid *) BUNhloc(b, p) = bs++;
-		* (int *) BUNtloc(b, p) = j;
-                if (++j >= *domain) j = 0;
-        }
+		*(oid *) BUNhloc(b, p) = bs ++;
+
+		*(int *) BUNtloc(b, p) = j;
+		if (++j >= *domain)
+			j = 0;
+	}
 	/* mix BUNs randomly */
-        for(r=i=0; i<n; i++) {
-                size_t idx = i + ((r += rand()) % (n-i));
+	for (r = i = 0; i < n; i++) {
+		size_t idx = i + ((r += rand()) % (n - i));
 		int val;
-		p = (BUN) (firstbun + i*bunsize); /* fast version of BUNptr */
-		q = (BUN) (firstbun + idx*bunsize);
-		val = * (int *) BUNtloc(b, p);
-		* (int *) BUNtloc(b, p) = * (int *) BUNtloc(b, q);
-                * (int *) BUNtloc(b, q) = val;
-        }
-        b->tsorted = FALSE;
-        b->hdense = TRUE;
-        batseqbase(b, *base);
-        batkey(b, TRUE);
-        *bn = b;
-        return GDK_SUCCEED;
+
+		p = (BUN) (firstbun + i * bunsize);	/* fast version of BUNptr */
+		q = (BUN) (firstbun + idx * bunsize);
+		val = *(int *) BUNtloc(b, p);
+		*(int *) BUNtloc(b, p) = *(int *) BUNtloc(b, q);
+		*(int *) BUNtloc(b, q) = val;
+	}
+	b->tsorted = FALSE;
+	b->hdense = TRUE;
+	batseqbase(b, *base);
+	batkey(b, TRUE);
+	*bn = b;
+	return GDK_SUCCEED;
 }
 
 
-int batnormal(BAT** bn, oid *base, int *size, int *domain, int *stddev, int *mean) {
-        size_t n = (size_t) *size, i;
+int
+batnormal(BAT **bn, oid *base, int *size, int *domain, int *stddev, int *mean)
+{
+	size_t n = (size_t) * size, i;
 	unsigned int r = (unsigned int) n;
-        size_t d = (size_t) *domain;
-        bat *b = BATnew(TYPE_oid, TYPE_int, n);
+	size_t d = (size_t) * domain;
+	bat *b = BATnew(TYPE_oid, TYPE_int, n);
 	char *firstbun;
 	int bunsize;
 	BUN p, q;
-  	int m = *mean, s = *stddev; 
-	oid bs = *base; 
+	int m = *mean, s = *stddev;
+	oid bs = *base;
 	int *itab;
 	flt *ftab, tot = 0.0;
 
-	if( b== NULL) return GDK_FAIL;
+	if (b == NULL)
+		return GDK_FAIL;
 	firstbun = (char *) BUNfirst(b);
-	itab = (int *) GDKmalloc(d*sizeof(int));
+	itab = (int *) GDKmalloc(d * sizeof(int));
 	ftab = (flt *) itab;
 
 	/* assert(0 <= *mean && *mean < *size); */
 
 	/* created inverted table */
-        for(i=0; i<d; i++) {
-		dbl tmp = (dbl) ((i-m)*(i-m));
-		tmp = pow(M_E, -tmp/(2*s*s))/sqrt(2*M_PI*s*s);
-                ftab[i] = (flt) tmp;
+	for (i = 0; i < d; i++) {
+		dbl tmp = (dbl) ((i - m) * (i - m));
+
+		tmp = pow(M_E, -tmp / (2 * s * s)) / sqrt(2 * M_PI * s * s);
+		ftab[i] = (flt) tmp;
 		tot += ftab[i];
-        }
-        for(tot = (flt) (1.0/tot), i=0; i<d; i++) {
-		itab[i] = (int) ((flt)n*ftab[i]*tot);
+	}
+	for (tot = (flt) (1.0 / tot), i = 0; i < d; i++) {
+		itab[i] = (int) ((flt) n * ftab[i] * tot);
 		r -= itab[i];
 	}
 	itab[m] += r;
 
 	/* preset b->batBuns->free to make batloopFast work */
-        b->batBuns->free = n*BUNsize(b);
+	b->batBuns->free = n * BUNsize(b);
 	BATsetcount(b, n);
 	/* create BUNs with normal distribution */
 	batloopFast(b, p, q, bunsize) {
-		* (oid *) BUNhloc(b, p) = bs++;
-		while(itab[r] == 0) r++;
+		*(oid *) BUNhloc(b, p) = bs ++;
+
+		while (itab[r] == 0)
+			r++;
 		itab[r]--;
-		* (int *) BUNtloc(b, p) = (int) r;
-        }
+		*(int *) BUNtloc(b, p) = (int) r;
+	}
 	GDKfree(itab);
 
 	/* mix BUNs randomly */
-        for(r=0,i=0; i<n; i++) {
-                size_t idx = i + ((r += rand()) % (n-i));
+	for (r = 0, i = 0; i < n; i++) {
+		size_t idx = i + ((r += rand()) % (n - i));
 		int val;
-		p = (BUN) (firstbun + i*bunsize); /* fast version of BUNptr */
-		q = (BUN) (firstbun + idx*bunsize);
-		val = * (int *) BUNtloc(b, p);
-		* (int *) BUNtloc(b, p) = * (int *) BUNtloc(b, q);
-                * (int *) BUNtloc(b, q) = val;
-        }
-        b->tsorted = FALSE;
-        b->hdense = TRUE;
-        batseqbase(b, *base);
-        batkey(b, TRUE);
-        *bn = b;
-        return GDK_SUCCEED;
+
+		p = (BUN) (firstbun + i * bunsize);	/* fast version of BUNptr */
+		q = (BUN) (firstbun + idx * bunsize);
+		val = *(int *) BUNtloc(b, p);
+		*(int *) BUNtloc(b, p) = *(int *) BUNtloc(b, q);
+		*(int *) BUNtloc(b, q) = val;
+	}
+	b->tsorted = FALSE;
+	b->hdense = TRUE;
+	batseqbase(b, *base);
+	batkey(b, TRUE);
+	*bn = b;
+	return GDK_SUCCEED;
 }
 
 @- data types for relational simulation
@@ -1238,11 +1251,12 @@ int  integer@1FromStr(str src, int* len, int** dst) { return intFromStr(src,len,
 int  integer@1Dummy(int i, int p) { S256; return i; } /* create some distance in the binary between fcns */
 int  integer@1Cmp(int* l, int* r) { return *l - *r; }
 @c
-#define S004 i=(i&255)*p; i=(i&255)*p; i=(i&255)*p; i=(i&255)*p; 
+#define S004 i=(i&255)*p; i=(i&255)*p; i=(i&255)*p; i=(i&255)*p;
 #define S016 S004 S004 S004 S004
 #define S256 S016 S016 S016 S016
 
-int  integer_nil[256];
+int integer_nil[256];
+
 @:integerdef(1)@
 @:integerdef(2)@
 @:integerdef(4)@
@@ -1254,79 +1268,95 @@ int  integer_nil[256];
 @:integerdef(256)@
 
 typedef struct {
-	size_t (*cpy)(void *dst, void *src, size_t size);
-	int (*fcn)(int i, int p);
+	size_t(*cpy) (void *dst, void *src, size_t size);
+	int (*fcn) (int i, int p);
 	size_t size;
 	int tpe;
 } atom_t;
 
-atom_t atomtbl[8] = { /* a simulated ADT lookup table */ 
-	{ integer1Copy, integer1Dummy, sizeof(int), 0, },
-	{ integer2Copy, integer2Dummy, sizeof(int), 4, },
-	{ integer4Copy, integer4Dummy, sizeof(int), 1, },
-	{ integer8Copy, integer8Dummy, sizeof(int), 5, },
-	{ integer16Copy, integer16Dummy, sizeof(int), 2, },
-	{ integer32Copy, integer32Dummy, sizeof(int), 6, },
-	{ integer64Copy, integer64Dummy, sizeof(int), 3, },
-	{ integer128Copy, integer128Dummy, sizeof(int), 7 },
+atom_t atomtbl[8] = {		/* a simulated ADT lookup table */
+	{integer1Copy, integer1Dummy, sizeof(int), 0,},
+	{integer2Copy, integer2Dummy, sizeof(int), 4,},
+	{integer4Copy, integer4Dummy, sizeof(int), 1,},
+	{integer8Copy, integer8Dummy, sizeof(int), 5,},
+	{integer16Copy, integer16Dummy, sizeof(int), 2,},
+	{integer32Copy, integer32Dummy, sizeof(int), 6,},
+	{integer64Copy, integer64Dummy, sizeof(int), 3,},
+	{integer128Copy, integer128Dummy, sizeof(int), 7},
 };
 
-int PAX_INT_PER_BLOCK=1024;
+int PAX_INT_PER_BLOCK = 1024;
 
-int int_type(char *src) {
+int
+int_type(char *src)
+{
 	char dst[32];
-	while(*src && (*src < '0' || *src > '9')) src++;
+
+	while (*src && (*src < '0' || *src > '9'))
+		src++;
 	sprintf(dst, "int%s", src);
 	return ATOMindex(dst);
 }
 
-void integerCopy(int *dst, bat *b, BUN p, int width, int distance) {
-	int *src = (int*) BUNhloc(b,p);
+void
+integerCopy(int *dst, bat *b, BUN p, int width, int distance)
+{
+	int *src = (int *) BUNhloc(b, p);
+
 	if (b->hatom[0] == 'p' && b->hatom[1] == 'a' && b->hatom[2] == 'x') {
 		/* PAX */
-		size_t idx = BUNindex(b,p) - BUNindex(b, BUNfirst(b));
-		int block_ntuples = PAX_INT_PER_BLOCK/width;
-		size_t block_idx = idx/block_ntuples;
-		size_t tuple_idx = idx%block_ntuples;
- 		src += block_idx*PAX_INT_PER_BLOCK + tuple_idx;
+		size_t idx = BUNindex(b, p) - BUNindex(b, BUNfirst(b));
+		int block_ntuples = PAX_INT_PER_BLOCK / width;
+		size_t block_idx = idx / block_ntuples;
+		size_t tuple_idx = idx % block_ntuples;
 
-		while(width-- > 0) {
-			int tpe = atomtbl[width&7].tpe;
-			if ((BUN) src >= BUNlast(b)) src = (int*) BUNfirst(b);
-			(void) (*atomtbl[tpe].cpy)(dst, src, atomtbl[tpe].size);
-			src += distance*block_ntuples; 
+		src += block_idx * PAX_INT_PER_BLOCK + tuple_idx;
+
+		while (width-- > 0) {
+			int tpe = atomtbl[width & 7].tpe;
+
+			if ((BUN) src >= BUNlast(b))
+				src = (int *) BUNfirst(b);
+			(void) (*atomtbl[tpe].cpy) (dst, src, atomtbl[tpe].size);
+			src += distance * block_ntuples;
 			dst++;
 		}
 	} else {
 		/* NSM */
-		while(width-- > 0) {
-			int tpe = atomtbl[width&7].tpe;
-			(void) (*atomtbl[tpe].cpy)(dst, src, atomtbl[tpe].size);
-			src += distance; 
+		while (width-- > 0) {
+			int tpe = atomtbl[width & 7].tpe;
+
+			(void) (*atomtbl[tpe].cpy) (dst, src, atomtbl[tpe].size);
+			src += distance;
 			dst++;
 		}
 	}
 }
 
-int batinteger(BAT **ret, BAT* b, int *width) {
- 	bat *bn, *m;
+int
+batinteger(BAT **ret, BAT *b, int *width)
+{
+	bat *bn, *m;
 	int tpe, log = 0;
 	int val = *width;
-	while(val) {
-		int stop = (val&1);
+
+	while (val) {
+		int stop = (val & 1);
+
 		val >>= 1;
-		if (stop) break;
-		log++; 
+		if (stop)
+			break;
+		log++;
 	}
-	if (*width <= 0 || log > 8 || val) { 
+	if (*width <= 0 || log > 8 || val) {
 		GDKerror("batinteger: unknown width %d\n", *width);
 		return GDK_FAIL;
 	}
-	tpe = TYPE_integer1 + log*2; 
+	tpe = TYPE_integer1 + log * 2;
 	if (ATOMsize(tpe) <= ATOMsize(b->ttype)) {
 		/* view implementation */
 		bn = VIEWcreate(b);
-		m = batmirror(bn);	
+		m = batmirror(bn);
 		ACCremoveall(bn);
 		sprintf(bn->tatom, "integer%d", *width);
 		m->htype = bn->ttype = tpe;
@@ -1334,15 +1364,18 @@ int batinteger(BAT **ret, BAT* b, int *width) {
 	} else {
 		int buf[256], xx, yy, zz;
 		BUN p, q, r;
+
 		bn = batnew(b->htype, tpe, BATcount(b));
-		if( bn == NULL) return GDK_FAIL;
+		if (bn == NULL)
+			return GDK_FAIL;
 		r = BUNfirst(bn);
 		zz = BUNsize(bn);
 		batloopFast(b, p, q, xx) {
-			for(yy=0; yy < *width; yy++) {
-				buf[yy] = *(int*) BUNtail(b,p);
+			for (yy = 0; yy < *width; yy++) {
+				buf[yy] = *(int *) BUNtail(b, p);
 			}
-			bunfastins_nocheck(bn, r, BUNhead(b,p), buf, zz); r += zz;
+			bunfastins_nocheck(bn, r, BUNhead(b, p), buf, zz);
+			r += zz;
 		}
 		ALIGNsetH(bn, b);
 		bn->tsorted = b->tsorted;
@@ -1352,14 +1385,17 @@ int batinteger(BAT **ret, BAT* b, int *width) {
 		bn->T->nokey[1] = b->T->nokey[1];
 	}
 	*ret = bn;
-       	return GDK_SUCCEED;
-bunins_failed:
+	return GDK_SUCCEED;
+      bunins_failed:
 	BBPreclaim(bn);
-       	return GDK_FAIL;
+	return GDK_FAIL;
 }
 
-int batpax(BAT **ret, BAT* b) {
+int
+batpax(BAT **ret, BAT *b)
+{
 	bat *bn = *ret = VIEWcreate(b);
+
 	ACCremoveall(bn);
 	bn->ttype = batmirror(bn)->htype = bn->ttype + 1;
 	strcpy(bn->tatom, ATOMname(bn->ttype));
@@ -1367,9 +1403,12 @@ int batpax(BAT **ret, BAT* b) {
 	return GDK_SUCCEED;
 }
 
-int batintX(BAT **ret, BAT* b) {
+int
+batintX(BAT **ret, BAT *b)
+{
 	bat *bn = *ret = VIEWcreate(b);
 	int tpe = int_type(ATOMname(b->ttype));
+
 	ACCremoveall(bn);
 	bn->ttype = batmirror(bn)->htype = tpe;
 	strcpy(bn->tatom, ATOMname(tpe));
@@ -1377,8 +1416,11 @@ int batintX(BAT **ret, BAT* b) {
 	return GDK_SUCCEED;
 }
 
-int pax_blocksize(int *ret, int* size) {
-	if (*size != int_nil) PAX_INT_PER_BLOCK = *size;
+int
+pax_blocksize(int *ret, int *size)
+{
+	if (*size != int_nil)
+		PAX_INT_PER_BLOCK = *size;
 	*ret = PAX_INT_PER_BLOCK;
 	return GDK_SUCCEED;
 }
@@ -1440,113 +1482,133 @@ typedef struct {
 #define HTYPE(b) ((b->htype >= TYPE_integer1 && b->htype <= TYPE_pax256)?int_type(b->hatom):bathtype(b))
 #define TTYPE(b) HTYPE(batmirror(b))
 
-bat* quickbat(BAT *b, size_t cap) {
-    bat *bn = BATnew(HTYPE(b), BATttype(b), cap);
-    if( bn == NULL) return NULL;
-    bn->hsorted = bn->tsorted = 0;
-    if (b->hkey) batkey(bn,TRUE);
-    if (b->tkey) batkey(BATmirror(bn),TRUE);
-    return bn;
+bat *
+quickbat(BAT *b, size_t cap)
+{
+	bat *bn = BATnew(HTYPE(b), BATttype(b), cap);
+
+	if (bn == NULL)
+		return NULL;
+	bn->hsorted = bn->tsorted = 0;
+	if (b->hkey)
+		batkey(bn, TRUE);
+	if (b->tkey)
+		batkey(BATmirror(bn), TRUE);
+	return bn;
 }
 
 /* take care: block sequences that are copied to the right should be done from
  *            right to left; and vice versa! Otherwise you overwrite blocks.
  */
-void move_chunks(move_t *mov, BUN base, size_t from, size_t end) {
-    assert(((ssize_t)end) >= 0); /* make sure that cop=(ssize_t)from does not overflow */
-    while (from < end) {
-	ssize_t cur, cop = (ssize_t)from;
-
-	while(++from < end) {
-	    if (mov[from].src >= mov[from].dst) break;
-	}
-	for(cur=from-1; cur >= cop;  cur--) {
-	    if (mov[cur].size) {
-		memcpy(base+mov[cur].dst, base+mov[cur].src, mov[cur].size);
-	    }
-	}
-    }
-}
-
-void rearrange_chunks(bat *b, BAT *limits, move_t *mov, BUN base, size_t* dst, size_t* lim, size_t *cnt, size_t n) {
-     size_t i, cur = 0, start = 0;
-     ssize_t id = -1;
-     if (limits && batcount(limits)) {
-	id = *(ssize_t*) BUNhloc(limits, BUNlast(limits) - BUNsize(limits));
-     }
-     for(i=0; i<n; i++) {
-	size_t end = dst[i];
-	size_t siz = end-start;
-	size_t nxt = cur + siz + cnt[i];
-
-	if (start <= cur && end >= cur) {
-		/* overlap at start of cur */
-		mov[i].src = start;
-		mov[i].dst = end;
-		mov[i].size = cur-start;
-		if (limits) {
-			ssize_t i0 = ++id;
-			size_t i1 = BUNindex(b, ((start==cur)?nxt:end));
-			size_t i2 = i1 - BUNindex(b,cur);
-			size_t i3 = BUNindex(b,nxt) - i1;
-			BUNins(limits, &i0, &i2); 
-			if (i3) BUNins(limits, &i0, &i3); 
-		}
-	} else if (start >= cur && start <= nxt) {
-		/* overlap just before nxt */
-		size_t hole = start-cur;
-		if (hole > siz) hole = siz;
-		mov[i].src = end-hole;
-		mov[i].dst = cur;
-		mov[i].size = hole;
-		if (limits) {
-			ssize_t i0 = ++id;
-			size_t i1 = BUNindex(b,cur+hole);
-			size_t i2 = i1 - BUNindex(b,cur);
-			size_t i3 = BUNindex(b,nxt) - i1;
-			if (i2) BUNins(limits, &i0, &i2); 
-			BUNins(limits, &i0, &i3); 
-		}
-	} else {
-		/* no overlap: copy all */
-		mov[i].src = start;
-		mov[i].dst = cur;
-		mov[i].size = siz;
-		if (limits) {
-			ssize_t i0 = ++id;
-			size_t i1 = BUNindex(b,cur);
-			size_t i2 = BUNindex(b,nxt) - i1;
-			BUNins(limits, &i0, &i2); 
-		}
-	}
-	start = lim[i];
-	lim[i] = cur = nxt; 
-	dst[i] = nxt - cnt[i]; 
-     }
-     move_chunks(mov, base, 0, n); 
-}
-
-void sample_buns(bat *bn, BAT *b, BUN src, BUN cur, BUN end, 
-		 size_t* dst, size_t* lim, size_t* cnt, size_t n) 
+void
+move_chunks(move_t *mov, BUN base, size_t from, size_t end)
 {
-    size_t ntuples = (end-src)/BUNsize(b);
-    size_t done = (cur-src)/BUNsize(b); 
-    int bunsize = BUNsize(bn);
-    size_t total = (ntuples-done);
-    size_t i, oldlim;
+	assert(((ssize_t) end) >= 0);	/* make sure that cop=(ssize_t)from does not overflow */
+	while (from < end) {
+		ssize_t cur, cop = (ssize_t) from;
 
-    /* extrapolate all processed buns as if they were a sample */
-    for(oldlim=i=0; i<n; oldlim=lim[i],i++) {
-	cnt[i] = (((dst[i] - oldlim)/bunsize)*(ntuples - done))/done;
-	total -= cnt[i];
-	cnt[i] *= bunsize;
-    }
+		while (++from < end) {
+			if (mov[from].src >= mov[from].dst)
+				break;
+		}
+		for (cur = from - 1; cur >= cop; cur--) {
+			if (mov[cur].size) {
+				memcpy(base + mov[cur].dst, base + mov[cur].src, mov[cur].size);
+			}
+		}
+	}
+}
 
-    /* add left-overs */	
-    for(i=0; total > 0; total--) {
-	cnt[i] += bunsize;
-	if (++i >= n) i = 0; 
-    }
+void
+rearrange_chunks(bat *b, BAT *limits, move_t *mov, BUN base, size_t * dst, size_t * lim, size_t * cnt, size_t n)
+{
+	size_t i, cur = 0, start = 0;
+	ssize_t id = -1;
+
+	if (limits && batcount(limits)) {
+		id = *(ssize_t *) BUNhloc(limits, BUNlast(limits) - BUNsize(limits));
+	}
+	for (i = 0; i < n; i++) {
+		size_t end = dst[i];
+		size_t siz = end - start;
+		size_t nxt = cur + siz + cnt[i];
+
+		if (start <= cur && end >= cur) {
+			/* overlap at start of cur */
+			mov[i].src = start;
+			mov[i].dst = end;
+			mov[i].size = cur - start;
+			if (limits) {
+				ssize_t i0 = ++id;
+				size_t i1 = BUNindex(b, ((start == cur) ? nxt : end));
+				size_t i2 = i1 - BUNindex(b, cur);
+				size_t i3 = BUNindex(b, nxt) - i1;
+
+				BUNins(limits, &i0, &i2);
+				if (i3)
+					BUNins(limits, &i0, &i3);
+			}
+		} else if (start >= cur && start <= nxt) {
+			/* overlap just before nxt */
+			size_t hole = start - cur;
+
+			if (hole > siz)
+				hole = siz;
+			mov[i].src = end - hole;
+			mov[i].dst = cur;
+			mov[i].size = hole;
+			if (limits) {
+				ssize_t i0 = ++id;
+				size_t i1 = BUNindex(b, cur + hole);
+				size_t i2 = i1 - BUNindex(b, cur);
+				size_t i3 = BUNindex(b, nxt) - i1;
+
+				if (i2)
+					BUNins(limits, &i0, &i2);
+				BUNins(limits, &i0, &i3);
+			}
+		} else {
+			/* no overlap: copy all */
+			mov[i].src = start;
+			mov[i].dst = cur;
+			mov[i].size = siz;
+			if (limits) {
+				ssize_t i0 = ++id;
+				size_t i1 = BUNindex(b, cur);
+				size_t i2 = BUNindex(b, nxt) - i1;
+
+				BUNins(limits, &i0, &i2);
+			}
+		}
+		start = lim[i];
+		lim[i] = cur = nxt;
+		dst[i] = nxt - cnt[i];
+	}
+	move_chunks(mov, base, 0, n);
+}
+
+void
+sample_buns(bat *bn, BAT *b, BUN src, BUN cur, BUN end, size_t * dst, size_t * lim, size_t * cnt, size_t n)
+{
+	size_t ntuples = (end - src) / BUNsize(b);
+	size_t done = (cur - src) / BUNsize(b);
+	int bunsize = BUNsize(bn);
+	size_t total = (ntuples - done);
+	size_t i, oldlim;
+
+	/* extrapolate all processed buns as if they were a sample */
+	for (oldlim = i = 0; i < n; oldlim = lim[i], i++) {
+		cnt[i] = (((dst[i] - oldlim) / bunsize) * (ntuples - done)) / done;
+		total -= cnt[i];
+		cnt[i] *= bunsize;
+	}
+
+	/* add left-overs */
+	for (i = 0; total > 0; total--) {
+		cnt[i] += bunsize;
+		if (++i >= n)
+			i = 0;
+	}
 }
 
 
@@ -1600,52 +1662,58 @@ bunins_failed:
     return NULL;
 }
 @c
-#define lng_CHECK(dst,v) dst = 0 /* dummy */
-#define int_CHECK(dst,v) dst = 0 /* dummy */
+#define lng_CHECK(dst,v) dst = 0	/* dummy */
+#define int_CHECK(dst,v) dst = 0	/* dummy */
 #define oid_CHECK(dst,v) dst |= *(oid*) (v)
 
 @:radix_buns(oid)@
 @:radix_buns(int)@
 @:radix_buns(lng)@
 
-BUN radix_buns_any(bat *bn, BAT *b, BUN src, BUN end, BUN base, 
-		    size_t* dst, size_t* lim, size_t mask, int shift, oid *maxbits) 
+BUN
+radix_buns_any(bat *bn, BAT *b, BUN src, BUN end, BUN base, size_t * dst, size_t * lim, size_t mask, int shift, oid *maxbits)
 {
-    int dst_bunsize = BUNsize(bn);
-    int src_bunsize = BUNsize(b); 
-    int htpe = bathtype(b);
-    int ttpe = batttype(b);
-    int any = ttpe; 
+	int dst_bunsize = BUNsize(bn);
+	int src_bunsize = BUNsize(b);
+	int htpe = bathtype(b);
+	int ttpe = batttype(b);
+	int any = ttpe;
 
 /* PETER start experimentation hack; must emulate relational projection cost  */
-if (htpe >= TYPE_integer1 && htpe <= TYPE_pax256) {
-    bat *p = VIEWparent(b)?BBP_cache(VIEWparent(b)):b;
-    int width = ATOMsize(b->htype) >> 2;
-    int distance = 1 << ((p->htype - htpe) >> 1);
-    
-    while(src < end) {
-    	hash_t x = any_RADIX(BUNtail(b,src),mask) >> shift;
-	BUN p = base + dst[x];
-    	if (dst[x] == lim[x]) break;
-	integerCopy((int*) BUNhloc(bn,p), b, src, width, distance);
-        ATOMput(ttpe, &bn->theap, BUNtloc(bn,p), BUNtail(b,src));
-	dst[x] += dst_bunsize; src += src_bunsize;
-    }
-} else
+	if (htpe >= TYPE_integer1 && htpe <= TYPE_pax256) {
+		bat *p = VIEWparent(b) ? BBP_cache(VIEWparent(b)) : b;
+		int width = ATOMsize(b->htype) >> 2;
+		int distance = 1 << ((p->htype - htpe) >> 1);
+
+		while (src < end) {
+			hash_t x = any_RADIX(BUNtail(b, src), mask) >> shift;
+			BUN p = base + dst[x];
+
+			if (dst[x] == lim[x])
+				break;
+			integerCopy((int *) BUNhloc(bn, p), b, src, width, distance);
+			ATOMput(ttpe, &bn->theap, BUNtloc(bn, p), BUNtail(b, src));
+			dst[x] += dst_bunsize;
+			src += src_bunsize;
+		}
+	} else
 /* PETER end experimentation hack */
 
-    while(src < end) {
-    	hash_t x = any_RADIX(BUNtail(b,src),mask) >> shift;
-	BUN p = base + dst[x];
-    	if (dst[x] == lim[x]) break;
-	ATOMput(htpe, &bn->hheap, BUNhloc(bn,p), BUNhead(b,src));
-        ATOMput(ttpe, &bn->theap, BUNtloc(bn,p), BUNtail(b,src));
-	dst[x] += dst_bunsize; src += src_bunsize;
-    }
-    *maxbits = 0;
-    return src;
-bunins_failed:
-    return NULL;
+		while (src < end) {
+			hash_t x = any_RADIX(BUNtail(b, src), mask) >> shift;
+			BUN p = base + dst[x];
+
+			if (dst[x] == lim[x])
+				break;
+			ATOMput(htpe, &bn->hheap, BUNhloc(bn, p), BUNhead(b, src));
+			ATOMput(ttpe, &bn->theap, BUNtloc(bn, p), BUNtail(b, src));
+			dst[x] += dst_bunsize;
+			src += src_bunsize;
+		}
+	*maxbits = 0;
+	return src;
+      bunins_failed:
+	return NULL;
 }
 
 @= cnt_buns
@@ -1666,18 +1734,19 @@ void cnt_buns_@1(bat *bn, BAT *b, BUN src, BUN end, size_t *cnt,
 @:cnt_buns(int)@
 @:cnt_buns(lng)@
 
-void cnt_buns_any(bat *bn, BAT *b, BUN src, BUN end, size_t *cnt, 
-              	  size_t mask, int shift) 
+void
+cnt_buns_any(bat *bn, BAT *b, BUN src, BUN end, size_t * cnt, size_t mask, int shift)
 {
-    int dst_bunsize = BUNsize(bn);
-    int src_bunsize = BUNsize(b); 
-    int any = b->ttype;
+	int dst_bunsize = BUNsize(bn);
+	int src_bunsize = BUNsize(b);
+	int any = b->ttype;
 
-    /* count what's left for each chunk */
-    for(; src < end; src += src_bunsize) {
-    	hash_t x = any_RADIX(BUNtail(b,src),mask) >> shift;
-	cnt[x] += dst_bunsize; 
-    }
+	/* count what's left for each chunk */
+	for (; src < end; src += src_bunsize) {
+		hash_t x = any_RADIX(BUNtail(b, src), mask) >> shift;
+
+		cnt[x] += dst_bunsize;
+	}
 }
 
 @= radix_chunk
@@ -1738,190 +1807,207 @@ int radix_chunk_@1(bat *bn, BAT *b, BAT *limits, BUN start, BUN init, BUN end, B
 @:radix_chunk(lng)@
 @:radix_chunk(any)@
 
-int radix_cluster(bat **ret, BAT *b, str nme, flt *perc, int *nbits, ...) {
-    int shift = ABS(*nbits), total_shift, res = 0;
-    size_t n;
-    size_t cap = batcount(b);
-    int radix[MAXPARAMS], argc = 1, *p;
-    size_t *lim;
-    oid maxbits = 0;
-    bat limitid = BBPindex(nme);
-    bat *bn = b, *limits = NULL;
-    flt prc = *perc;
-    va_list ap;
+int
+radix_cluster(bat **ret, BAT *b, str nme, flt *perc, int *nbits, ...)
+{
+	int shift = ABS(*nbits), total_shift, res = 0;
+	size_t n;
+	size_t cap = batcount(b);
+	int radix[MAXPARAMS], argc = 1, *p;
+	size_t *lim;
+	oid maxbits = 0;
+	bat limitid = BBPindex(nme);
+	bat *bn = b, *limits = NULL;
+	flt prc = *perc;
+	va_list ap;
 
-    if (limitid) {
-	limits = batdescriptor(limitid);
-    }
-    if (limits && 
+	if (limitid) {
+		limits = batdescriptor(limitid);
+	}
+	if (limits &&
 #if SIZEOF_OID == SIZEOF_INT
-	(limits->htype != TYPE_int || limits->ttype != TYPE_int)
+	    (limits->htype != TYPE_int || limits->ttype != TYPE_int)
 #else
-	(limits->htype != TYPE_lng || limits->ttype != TYPE_lng)
+	    (limits->htype != TYPE_lng || limits->ttype != TYPE_lng)
 #endif
 	    ) {
-	GDKerror("radix_cluster: limits %s is not of right type.\n", BATgetId(limits));
-	limits = NULL;
-    }
-    if (limits && (batcount(limits)==0 && limits->batRestricted == BAT_READ)) {
-	GDKerror("radix_cluster: limits %s is not empty and appendable.\n", BATgetId(limits));
-	limits = NULL;
-    }
+		GDKerror("radix_cluster: limits %s is not of right type.\n", BATgetId(limits));
+		limits = NULL;
+	}
+	if (limits && (batcount(limits) == 0 && limits->batRestricted == BAT_READ)) {
+		GDKerror("radix_cluster: limits %s is not empty and appendable.\n", BATgetId(limits));
+		limits = NULL;
+	}
 
-    ALGODEBUG THRprintf(GDKout, "radix_cluster(%s(%d,%d), %s,%g, %d", BATgetId(b),(int) b->batCacheid,battordered(b), nme, *perc, *nbits);
-    radix[0] = *nbits; 
-    va_start(ap,nbits);
-    while((p = va_arg(ap, int*)) != NULL) {
-	ALGODEBUG THRprintf(GDKout, ",%d", *p);
-        radix[argc] = *p; 
-	shift += ABS(radix[argc]); 
-	argc++; 
-    }
-    va_end(ap);
-    total_shift = shift; 
-    ALGODEBUG THRprintf(GDKout, ") -> ");
+	ALGODEBUG THRprintf(GDKout, "radix_cluster(%s(%d,%d), %s,%g, %d", BATgetId(b), (int) b->batCacheid, battordered(b), nme, *perc, *nbits);
 
-    if (limits && batcount(limits)) {
-	/* we can now resume partial clustering by passing in of a radix_count2 bat */
-	size_t tot=0;
-	ssize_t prev = -1;
-	int xx;
-	BUN r, q;
-        lim = (size_t*) GDKmalloc(batcount(limits)*sizeof(size_t));
-	
-	/* find the destination byte-offsets using the radix-count bat */
-	n = 0;
-	batloopFast(limits, r, q, xx) {
-		size_t cnt = *(size_t*) BUNtloc(limits,r);
-		ssize_t cur = *(ssize_t*) BUNhloc(limits,r);
-		if (cur <= prev) {
-			GDKerror("radix_cluster: non ascending bits %d,%d in limits bat %s!\n", prev, cur, BBP_logical(limitid));
+	radix[0] = *nbits;
+	va_start(ap, nbits);
+	while ((p = va_arg(ap, int *)) != NULL) {
+		ALGODEBUG THRprintf(GDKout, ",%d", *p);
+
+		radix[argc] = *p;
+		shift += ABS(radix[argc]);
+		argc++;
+	}
+	va_end(ap);
+	total_shift = shift;
+	ALGODEBUG THRprintf(GDKout, ") -> ");
+
+	if (limits && batcount(limits)) {
+		/* we can now resume partial clustering by passing in of a radix_count2 bat */
+		size_t tot = 0;
+		ssize_t prev = -1;
+		int xx;
+		BUN r, q;
+
+		lim = (size_t *) GDKmalloc(batcount(limits) * sizeof(size_t));
+
+		/* find the destination byte-offsets using the radix-count bat */
+		n = 0;
+		batloopFast(limits, r, q, xx) {
+			size_t cnt = *(size_t *) BUNtloc(limits, r);
+			ssize_t cur = *(ssize_t *) BUNhloc(limits, r);
+
+			if (cur <= prev) {
+				GDKerror("radix_cluster: non ascending bits %d,%d in limits bat %s!\n", prev, cur, BBP_logical(limitid));
+				BBPunfix(limitid);
+				GDKfree(lim);
+				return GDK_FAIL;
+			}
+			tot += cnt;
+			lim[n++] = BUNsize(b) * tot;
+			prev = cur;
+		}
+		if (n == 0 || tot != batcount(b)) {
+			GDKerror("radix_cluster: total number size %d of all limits %s does not end up to size %d of %s!\n", tot, nme, batcount(b), BBP_logical(b->batCacheid));
 			BBPunfix(limitid);
 			GDKfree(lim);
 			return GDK_FAIL;
 		}
-		tot += cnt;
-		lim[n++] = BUNsize(b) * tot;
-		prev = cur;
+		if (limits->batRestricted == bat_WRITE) {
+			batclear(limits);	/* overwrite with resulting bounds */
+		} else {
+			limits = NULL;
+		}
+		total_shift = 30 + MIN(0, radix[0]);	/* just assume the new cluster bits are consecutive.. */
+	} else {
+		/* just start with one cluster: the entire bat */
+		lim = (size_t *) GDKmalloc(sizeof(size_t));
+		lim[0] = BUNlast(b) - BUNfirst(b);
+		n = 1;
 	}
-	if (n == 0 || tot != batcount(b)) {
-		GDKerror("radix_cluster: total number size %d of all limits %s does not end up to size %d of %s!\n", 
-			tot, nme, batcount(b), BBP_logical(b->batCacheid));
+
+	while (--argc >= 0 && radix[argc] > 0) {
+		size_t i, h = 1 << radix[argc], j = h * sizeof(size_t), *k, *l = lim;
+		size_t *dst = (size_t *) GDKmalloc(sizeof(size_t) * h);
+		size_t *cnt = (size_t *) GDKmalloc(sizeof(size_t) * h);
+		bat *prev = bn, *lims = NULL;
+		BUN p, q;
+
+		if (limits && (argc == 0 || radix[argc - 1] <= 0)) {
+			lims = limits;	/* only pass limits on last iteration */
+		}
+		bn = quickbat(prev, cap);
+		bn->batBuns->free = cap * BUNsize(bn);
+		BATsetcount(bn, cap);
+		bn->hdense = b->hdense;
+		bn->tdense = b->tdense;
+		p = BUNfirst(prev);
+		q = BUNfirst(bn);
+
+		if (argc == 0) {
+			h = 0;	/* last radix: we can use the same lim for each i */
+		} else {
+			j *= n;	/* get n lims; next radix reuses them as l[] boundary */
+		}
+		k = lim = (size_t *) GDKmalloc(j);
+		shift -= radix[argc];
+
+		for (j = i = 0; i < n; j = l[i], i++) {
+			BUN r = p + j + (size_t) (prc * (l[i] - j));
+			size_t *kk = k + h;
+
+			if (b->ttype == TYPE_oid) {
+				res = radix_chunk_oid(bn, prev, lims, p + j, r, p + l[i], q + j, k, radix[argc], shift, dst, cnt, &maxbits);
+			} else if (ATOMstorage(b->ttype) == TYPE_int || ATOMstorage(b->ttype) == TYPE_flt) {
+				res = radix_chunk_int(bn, prev, lims, p + j, r, p + l[i], q + j, k, radix[argc], shift, dst, cnt, &maxbits);
+			} else if (ATOMstorage(b->ttype) == TYPE_dbl || ATOMstorage(b->ttype) == TYPE_lng) {
+				res = radix_chunk_lng(bn, prev, lims, p + j, r, p + l[i], q + j, k, radix[argc], shift, dst, cnt, &maxbits);
+			} else {
+				res = radix_chunk_any(bn, prev, lims, p + j, r, p + l[i], q + j, k, radix[argc], shift, dst, cnt, &maxbits);
+			}
+			if (res < 0)
+				break;
+			while (k < kk)
+				*(k++) += j;	/* make relative limits absolute ones */
+		}
+		if (prev != b)
+			BBPreclaim(prev);
+		prc = 1.0;
+		n *= h;
+		GDKfree(l);
+
+		GDKfree(dst);
+		GDKfree(cnt);
+		if (res < 0)
+			break;
+	}
+	GDKfree(lim);
+	ALGODEBUG THRprintf(GDKout, "(argc=%d,total_shift=%d) ", argc, total_shift);
+
+	if (argc >= 0) {
+		bn->tsorted = 0;	/* partial radix cluster */
+	} else {
+		if (bn->ttype == TYPE_oid) {
+			/* now check whether we saw any higher bits; if not, its sorted! */
+			bn->tsorted = (total_shift >= 30) || (maxbits & 0x3FFFFFFF) < ((oid) 1 << total_shift);
+		}
+		bn->tsorted |= total_shift << 1;	/* set radix bits */
+	}
+
+	if (bn == b) {
+		BBPfix(b->batCacheid);
+		if (limits) {
+			ssize_t zero = 0;
+			size_t cnt = batcount(b);
+
+			BUNins(limits, &zero, &cnt);
+		}
+	}
+	if (limitid) {
 		BBPunfix(limitid);
-		GDKfree(lim);
+	}
+	ALGODEBUG THRprintf(GDKout, "%s(%d,%d) = %d;\n", BATgetId(bn), (int) bn->batCacheid, battordered(bn), res);
+
+	if (res < 0) {
+		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	if (limits->batRestricted == bat_WRITE) {
-		batclear(limits); /* overwrite with resulting bounds */
-	} else {
-		limits = NULL;
-	}
-	total_shift = 30+MIN(0,radix[0]); /* just assume the new cluster bits are consecutive.. */
-    } else {
-	/* just start with one cluster: the entire bat */
-        lim = (size_t*) GDKmalloc(sizeof(size_t));
-        lim[0] = BUNlast(b)-BUNfirst(b);
-	n = 1;
-    }
-
-    while(--argc >= 0 && radix[argc] > 0) {
-	size_t i, h = 1<<radix[argc], j = h*sizeof(size_t), *k, *l = lim;
-	size_t *dst = (size_t*) GDKmalloc(sizeof(size_t)*h);
-	size_t *cnt = (size_t*) GDKmalloc(sizeof(size_t)*h);
-	bat *prev = bn, *lims = NULL;
-	BUN p, q;
-	
-	if (limits && (argc==0 || radix[argc-1] <= 0)) {
-		lims = limits; /* only pass limits on last iteration */
-	}
-	bn = quickbat(prev, cap);
-    	bn->batBuns->free = cap*BUNsize(bn);
-	BATsetcount(bn, cap);
-        bn->hdense = b->hdense;
-        bn->tdense = b->tdense;
-	p = BUNfirst(prev);
-	q = BUNfirst(bn);
-
-	if (argc == 0) {
-		h = 0; /* last radix: we can use the same lim for each i */ 
-	} else {
-		j *= n; /* get n lims; next radix reuses them as l[] boundary */
-	}
-        k = lim = (size_t*) GDKmalloc(j);
-	shift -= radix[argc]; 
-    
-	for(j=i=0; i<n; j=l[i],i++) {
-	    BUN r = p + j + (size_t)  (prc * (l[i]-j));
-	    size_t *kk = k + h;
-	
-	    if (b->ttype == TYPE_oid) {
-		res = radix_chunk_oid(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
-	    } else if (ATOMstorage(b->ttype) == TYPE_int || ATOMstorage(b->ttype) == TYPE_flt) {
-		res = radix_chunk_int(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
-	    } else if (ATOMstorage(b->ttype) == TYPE_dbl || ATOMstorage(b->ttype) == TYPE_lng) {
-		res = radix_chunk_lng(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
-	    } else {
-		res = radix_chunk_any(bn, prev, lims, p+j, r, p+l[i], q+j, k, radix[argc], shift, dst, cnt, &maxbits);
-	    }
-	    if (res < 0) break;
-	    while(k < kk) *(k++) += j; /* make relative limits absolute ones */
-	}
-	if (prev != b) BBPreclaim(prev); 
-        prc = 1.0; n *= h; GDKfree(l);
-
-	GDKfree(dst);
-	GDKfree(cnt);
-	if (res < 0) break;
-    }
-    GDKfree(lim);
-    ALGODEBUG THRprintf(GDKout, "(argc=%d,total_shift=%d) ",argc,total_shift);
-    if (argc >= 0) {
-	bn->tsorted = 0; /* partial radix cluster */
-    } else {
-        if (bn->ttype == TYPE_oid) {
-  	    /* now check whether we saw any higher bits; if not, its sorted! */
-		bn->tsorted = (total_shift >= 30) || (maxbits & 0x3FFFFFFF) < ((oid) 1 << total_shift);
-	}
-        bn->tsorted |= total_shift << 1; /* set radix bits */
-    }
-
-    if (bn == b) {
-	BBPfix(b->batCacheid);
-	if (limits) {
-		ssize_t zero=0;
-		size_t cnt = batcount(b); 
-		BUNins(limits, &zero, &cnt);
-	}
-    }
-    if (limitid) {
-	BBPunfix(limitid);
-    }
-    ALGODEBUG THRprintf(GDKout, "%s(%d,%d) = %d;\n", BATgetId(bn),(int) bn->batCacheid, battordered(bn), res);
-    if (res < 0) {
-	BBPreclaim(bn);
-	return GDK_FAIL;
-    }
-    *ret = bn;
-    return GDK_SUCCEED;
+	*ret = bn;
+	return GDK_SUCCEED;
 }
 
 @+ Radix Statistics
 
 @- radix bits
 @c 
-int radix_bits(int *nbits, bat* b) {
-        int radix_bits = (bathordered(b) >> 1);
-        if (bathordered(b)&1)
-        if (b->htype > TYPE_void && ATOMstorage(b->htype) <= TYPE_int) {
-                *nbits = ATOMsize(b->htype) << 3;
-                if (*nbits != radix_bits) {
-                        b->hsorted = (*nbits << 1) | 1;
-                        b->batDirtydesc = TRUE;
-                }
-                return GDK_SUCCEED;
-        }
-        *nbits = radix_bits;
-        return GDK_SUCCEED;
+int
+radix_bits(int *nbits, bat *b)
+{
+	int radix_bits = (bathordered(b) >> 1);
+
+	if (bathordered(b) & 1)
+		if (b->htype > TYPE_void && ATOMstorage(b->htype) <= TYPE_int) {
+			*nbits = ATOMsize(b->htype) << 3;
+			if (*nbits != radix_bits) {
+				b->hsorted = (*nbits << 1) | 1;
+				b->batDirtydesc = TRUE;
+			}
+			return GDK_SUCCEED;
+		}
+	*nbits = radix_bits;
+	return GDK_SUCCEED;
 }
 
 @- radix-count
@@ -1930,81 +2016,90 @@ radix setting for a certain bat dataset (tail column).
 @c
 #define RADIX_COUNT_MASK 65535
 
-int radix_count(bat **res, BAT* b, int *shift, int *radix) {
-    size_t mask = 1 << *radix;
-    int off = *shift;
-    bat *bn = BATnew(TYPE_int, TYPE_int, mask);
-    int bunsize;
+int
+radix_count(bat **res, BAT *b, int *shift, int *radix)
+{
+	size_t mask = 1 << *radix;
+	int off = *shift;
+	bat *bn = BATnew(TYPE_int, TYPE_int, mask);
+	int bunsize;
 
-    if( bn == NULL) return GDK_FAIL;
-    *res= bn;
-    bunsize = BUNsize(b);
+	if (bn == NULL)
+		return GDK_FAIL;
+	*res = bn;
+	bunsize = BUNsize(b);
 
-    /* assert(0 <= *radix && *radix < 32); */
-    bn->tsorted = 0;
-    mask = (mask-1) << off;
+	/* assert(0 <= *radix && *radix < 32); */
+	bn->tsorted = 0;
+	mask = (mask - 1) << off;
 
-    if (batcount(b)) {
-    	BUN p = BUNfirst(b);
-    	BUN q = BUNlast(b);
-    	int tcur, tbak = (int) (oid_RADIX(BUNtail(b,p), mask) >> off);
-    	oid hcur, hbak = *(oid*) BUNhead(b,p);
-    	int cnt = 1;
+	if (batcount(b)) {
+		BUN p = BUNfirst(b);
+		BUN q = BUNlast(b);
+		int tcur, tbak = (int) (oid_RADIX(BUNtail(b, p), mask) >> off);
+		oid hcur, hbak = *(oid *) BUNhead(b, p);
+		int cnt = 1;
 
-	while((p += bunsize) < q) {
-	    tcur = oid_RADIX(BUNtail(b,p), mask) >> off;
-            hcur = *(oid*) BUNhead(b,p);
+		while ((p += bunsize) < q) {
+			tcur = oid_RADIX(BUNtail(b, p), mask) >> off;
+			hcur = *(oid *) BUNhead(b, p);
 
-	    if (tcur != tbak || hcur < hbak) {
+			if (tcur != tbak || hcur < hbak) {
+				BUNfastins(bn, &tbak, &cnt);
+				if (tcur < tbak)
+					bn->hsorted = 0;
+				tbak = tcur;
+				cnt = 1;
+			} else {
+				cnt++;
+			}
+			hbak = hcur;
+		}
 		BUNfastins(bn, &tbak, &cnt);
-		if (tcur < tbak) bn->hsorted = 0;
-		tbak = tcur; cnt = 1; 
-	    } else {
-		cnt++;
-	    }
-	    hbak = hcur; 
-        } 
-	BUNfastins(bn, &tbak, &cnt);
-    }
-    if (b->halign == 0) {
-	b->halign = OIDnew(1);
-	b->batDirtydesc = TRUE;
-    }
-    /* sign the tail column of the radix_count so we can check later */
-    bn->talign = (*radix << 24) ^ (*shift << 16) ^ b->halign;
-    return GDK_SUCCEED; 
+	}
+	if (b->halign == 0) {
+		b->halign = OIDnew(1);
+		b->batDirtydesc = TRUE;
+	}
+	/* sign the tail column of the radix_count so we can check later */
+	bn->talign = (*radix << 24) ^ (*shift << 16) ^ b->halign;
+	return GDK_SUCCEED;
 }
 
-int radix_count2(bat **res, BAT* b, int *shift, int *radix) {
-    size_t mask = 1 << *radix;
-    int off = *shift;
-    bat *bn = *res = BATnew(TYPE_int, TYPE_int, mask);
-    size_t xx;
-    int *cnt;
-    BUN p, q;
+int
+radix_count2(bat **res, BAT *b, int *shift, int *radix)
+{
+	size_t mask = 1 << *radix;
+	int off = *shift;
+	bat *bn = *res = BATnew(TYPE_int, TYPE_int, mask);
+	size_t xx;
+	int *cnt;
+	BUN p, q;
 
-    if( bn == NULL) return GDK_FAIL;
-    cnt = (int*) BUNfirst(bn);
+	if (bn == NULL)
+		return GDK_FAIL;
+	cnt = (int *) BUNfirst(bn);
 
-    /* assert(0 <= *radix && *radix < 32); */
-    /* initialize the result bat with ascending head and zero counts */
-    for(xx=0; xx<mask; xx++) { 
-	cnt[xx+xx] = xx;
-	cnt[xx+xx+1] = 0; 
-    }
-    bn->batBuns->free = BUNsize(bn)*mask;
-    BATsetcount(bn, mask);
-    mask = (mask-1) << off;
+	/* assert(0 <= *radix && *radix < 32); */
+	/* initialize the result bat with ascending head and zero counts */
+	for (xx = 0; xx < mask; xx++) {
+		cnt[xx + xx] = xx;
+		cnt[xx + xx + 1] = 0;
+	}
+	bn->batBuns->free = BUNsize(bn) * mask;
+	BATsetcount(bn, mask);
+	mask = (mask - 1) << off;
 
-    /* compute the result: a histogram of bit patterns */
-    batloopFast(b, p, q, xx) {
-  	oid idx = oid_RADIX(BUNtail(b,p), mask) >> off;
-        cnt[idx+idx+1]++;
-    }
-    batkey(bn, TRUE);
-    bn->hsorted = 1;
-    bn->tsorted = 0;
-    return GDK_SUCCEED;
+	/* compute the result: a histogram of bit patterns */
+	batloopFast(b, p, q, xx) {
+		oid idx = oid_RADIX(BUNtail(b, p), mask) >> off;
+
+		cnt[idx + idx + 1]++;
+	}
+	batkey(bn, TRUE);
+	bn->hsorted = 1;
+	bn->tsorted = 0;
+	return GDK_SUCCEED;
 }
 
 @+ Phash Join
@@ -2050,83 +2145,93 @@ as the mask and link list for all phash invocations.
 	    integerCopy((int*) BUNtloc(b,_p), batmirror(tb), tp, width2, distance2);\
         }
 
-int hash_join(Hash *h, bat *bn, BAT *l, BUN llo, BUN lhi, 
-			bat* r, BUN rlo, BUN rhi, int rd, int cutoff) 
+int
+hash_join(Hash *h, bat *bn, BAT *l, BUN llo, BUN lhi, bat *r, BUN rlo, BUN rhi, int rd, int cutoff)
 {
-    int xx;
-    size_t zz=BUNindex(r,rlo);
-    hash_t yy = 0;
-    ptr nil = ATOMnilptr(l->ttype);
+	int xx;
+	size_t zz = BUNindex(r, rlo);
+	hash_t yy = 0;
+	ptr nil = ATOMnilptr(l->ttype);
 
-    if ((size_t) (rhi - rlo) > h->lim) { 
-	/* simplistic skew handling by holding on to initial hash mask size */
-        h->lim = rhi - rlo;
-        h->hash = (hash_t*) GDKrealloc(h->hash, (h->mask+1)*sizeof(hash_t) + h->lim);
-        h->link = h->hash + h->mask + 1;
-    }
-    memset(h->hash, ~0, (h->mask+1)*sizeof(hash_t));
+	if ((size_t) (rhi - rlo) > h->lim) {
+		/* simplistic skew handling by holding on to initial hash mask size */
+		h->lim = rhi - rlo;
+		h->hash = (hash_t *) GDKrealloc(h->hash, (h->mask + 1) * sizeof(hash_t) + h->lim);
+		h->link = h->hash + h->mask + 1;
+	}
+	memset(h->hash, ~0, (h->mask + 1) * sizeof(hash_t));
 
 /* PETER start experimentation hack */
-    if (l->htype >= TYPE_integer1 && l->htype <= TYPE_pax256 &&
-        r->ttype >= TYPE_integer1 && r->ttype <= TYPE_pax256) 
-    {
-	bat *p1 = VIEWparent(l)?BBP_cache(VIEWparent(l)):l;
-	bat *p2 = VIEWparent(r)?BBP_cache(VIEWparent(r)):r;
-        int width1 = ATOMsize(l->htype) >> 2;
-        int distance1 = 1 << ((p1->htype - l->htype) >> 1);
-        int width2 = ATOMsize(r->ttype) >> 2;
-        int distance2 = 1 << ((p2->ttype - r->ttype) >> 1);
-	int any  = ATOMstorage(r->htype);
-	size_t mask = ~ (size_t) 0;
-	if (cutoff) {
-	    @:hash_join(any,head,tail,atom,NOTSO,hloc,tloc,break;)@
-	} else {
-	    @:hash_join(any,head,tail,atom,NOTSO,hloc,tloc)@
-	}
-    } else
+	if (l->htype >= TYPE_integer1 && l->htype <= TYPE_pax256 && r->ttype >= TYPE_integer1 && r->ttype <= TYPE_pax256) {
+		bat *p1 = VIEWparent(l) ? BBP_cache(VIEWparent(l)) : l;
+		bat *p2 = VIEWparent(r) ? BBP_cache(VIEWparent(r)) : r;
+		int width1 = ATOMsize(l->htype) >> 2;
+		int distance1 = 1 << ((p1->htype - l->htype) >> 1);
+		int width2 = ATOMsize(r->ttype) >> 2;
+		int distance2 = 1 << ((p2->ttype - r->ttype) >> 1);
+		int any = ATOMstorage(r->htype);
+		size_t mask = ~(size_t) 0;
+
+		if (cutoff) {
+			@:hash_join(any, head, tail, atom, NOTSO, hloc, tloc, break@
+
+			    );
+		} else {
+			@:hash_join(any, head, tail, atom, NOTSO, hloc, tloc)@
+		}
+	} else
 /* PETER end experimentation hack */
 
-    if (ATOMstorage(r->htype) < TYPE_int || ATOMstorage(r->htype) > TYPE_dbl ||
-        ATOMstorage(l->htype) != TYPE_int || ATOMstorage(r->ttype) != TYPE_int) 
-    {
-	int any  = ATOMstorage(r->htype);
-	size_t mask = ~ (size_t) 0;
-	if (cutoff) {
-	    @:hash_join(any,head,tail,atom,bun,head,tail,break;)@
+	if (ATOMstorage(r->htype) < TYPE_int || ATOMstorage(r->htype) > TYPE_dbl || ATOMstorage(l->htype) != TYPE_int || ATOMstorage(r->ttype) != TYPE_int) {
+		int any = ATOMstorage(r->htype);
+		size_t mask = ~(size_t) 0;
+
+		if (cutoff) {
+			@:hash_join(any, head, tail, atom, bun, head, tail, break@
+
+			    );
+		} else {
+			@:hash_join(any, head, tail, atom, bun, head, tail)@
+		}
 	} else {
-	    @:hash_join(any,head,tail,atom,bun,head,tail)@
+		/* ATOMstorage(l->htype) == TYPE_int && ATOMstorage(r->ttype) == TYPE_int
+		   hence the result bat is [int,int], so this works */
+		int *_dst = (int *) (bn->batBuns->base + bn->batBuns->free);
+		int *_end = (int *) (bn->batBuns->base + bn->batBuns->size);
+		size_t mask = h->mask << rd;
+
+		if (r->htype == TYPE_oid) {
+			if (cutoff) {
+				@:hash_join(oid, hloc, tloc, simple, int, hloc, tloc, break@
+
+				    );
+			} else {
+				@:hash_join(oid, hloc, tloc, simple, int, hloc, tloc)@
+			}
+		} else if (ATOMstorage(r->htype) == TYPE_int || ATOMstorage(r->htype) == TYPE_flt) {
+			if (cutoff) {
+				@:hash_join(int, hloc, tloc, simple, int, hloc, tloc, break@
+
+				    );
+			} else {
+				@:hash_join(int, hloc, tloc, simple, int, hloc, tloc)@
+			}
+		} else {	/* if (ATOMstorage(r->htype) == TYPE_lng || ATOMstorage(r->htype) == TYPE_dbl) */
+
+			if (cutoff) {
+				@:hash_join(lng, hloc, tloc, simple, int, hloc, tloc, break@
+
+				    );
+			} else {
+				@:hash_join(lng, hloc, tloc, simple, int, hloc, tloc)@
+			}
+		}
+		bn->batBuns->free = ((BUN) _dst) - bn->batBuns->base;
+		BATsetcount(bn, bn->batBuns->free / BUNsize(bn));
 	}
-    } else {
-	/* ATOMstorage(l->htype) == TYPE_int && ATOMstorage(r->ttype) == TYPE_int
-	   hence the result bat is [int,int], so this works */
-        int *_dst = (int*) (bn->batBuns->base + bn->batBuns->free);
-        int *_end = (int*) (bn->batBuns->base + bn->batBuns->size);
-	size_t mask = h->mask << rd;
-	if (r->htype == TYPE_oid) {
-	    if (cutoff) {
-	        @:hash_join(oid,hloc,tloc,simple,int,hloc,tloc,break;)@
-	    } else {
-	        @:hash_join(oid,hloc,tloc,simple,int,hloc,tloc)@
-	    }
-        } else if (ATOMstorage(r->htype) == TYPE_int || ATOMstorage(r->htype) == TYPE_flt) {
-	    if (cutoff) {
-	        @:hash_join(int,hloc,tloc,simple,int,hloc,tloc,break;)@
-	    } else {
-	        @:hash_join(int,hloc,tloc,simple,int,hloc,tloc)@
-	    }
-        } else /* if (ATOMstorage(r->htype) == TYPE_lng || ATOMstorage(r->htype) == TYPE_dbl) */ {
-	    if (cutoff) {
-	        @:hash_join(lng,hloc,tloc,simple,int,hloc,tloc,break;)@
-	    } else {
-	        @:hash_join(lng,hloc,tloc,simple,int,hloc,tloc)@
-	    }
-        }
-	bn->batBuns->free = ((BUN) _dst) - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
-    }
-    return 0;
-bunins_failed:
-    return -1;
+	return 0;
+      bunins_failed:
+	return -1;
 }
 
 @= hash_join
@@ -2151,66 +2256,76 @@ bunins_failed:
 	}
     } 
 @c
-int phash_join(bat **res, BAT* l, BAT *r, int *radix, int *hitrate, bit *cutoff) {
-    ALGODEBUG THRprintf(GDKout, "phash_join(%s(%d,%d),%s(%d,%d),%d,%d,%d) -> ", BATgetId(l),(int)l->batCacheid,battordered(l), BATgetId(r),(int)r->batCacheid,BAThordered(r), *radix, *hitrate, *cutoff);
-    if (*radix != (battordered(l)>>1)) {
-	GDKerror("phash_join: tail of %s is radix clustered on %d bits.\n",
-			BATgetId(l), battordered(l)>>1);
-	return GDK_FAIL;
-    }
-    if (*radix != (bathordered(r)>>1)) {
-	GDKerror("phash_join: head of %s is radix clustered on %d bits.\n",
-			BATgetId(r), bathordered(r)>>1);
-	return GDK_FAIL;
-    }
-{   size_t k, m, rd = (1 << *radix) - 1; 
-    size_t estimate = MIN(batcount(r),BATcount(l))*(*hitrate);
-    bat *bn = BATnew(HTYPE(l), TTYPE(r), estimate);
-    BUN r_end, l_cur, l_last;
-    BUN l_end, r_cur, r_last;
-    int xx, yy;
-    int rcut = r->hkey || (*cutoff && (*hitrate == 1));
-    Hash h;
+int
+phash_join(bat **res, BAT *l, BAT *r, int *radix, int *hitrate, bit *cutoff)
+{
+	ALGODEBUG THRprintf(GDKout, "phash_join(%s(%d,%d),%s(%d,%d),%d,%d,%d) -> ", BATgetId(l), (int) l->batCacheid, battordered(l), BATgetId(r), (int) r->batCacheid, BAThordered(r), *radix, *hitrate, *cutoff);
 
-    if( bn == NULL) return GDK_FAIL;
-    l_cur = BUNfirst(l); l_last = BUNlast(l);
-    r_cur = BUNfirst(r); r_last = BUNlast(r);
-    xx = BUNsize(l); yy= BUNsize(r);
+	if (*radix != (battordered(l) >> 1)) {
+		GDKerror("phash_join: tail of %s is radix clustered on %d bits.\n", BATgetId(l), battordered(l) >> 1);
+		return GDK_FAIL;
+	}
+	if (*radix != (bathordered(r) >> 1)) {
+		GDKerror("phash_join: head of %s is radix clustered on %d bits.\n", BATgetId(r), bathordered(r) >> 1);
+		return GDK_FAIL;
+	}
+	{
+		size_t k, m, rd = (1 << *radix) - 1;
+		size_t estimate = MIN(batcount(r), BATcount(l)) * (*hitrate);
+		bat *bn = BATnew(HTYPE(l), TTYPE(r), estimate);
+		BUN r_end, l_cur, l_last;
+		BUN l_end, r_cur, r_last;
+		int xx, yy;
+		int rcut = r->hkey || (*cutoff && (*hitrate == 1));
+		Hash h;
 
-    /* alloc hash table */
-    h.lim = batcount(r) >> *radix; /* mean cluster size */
-    k = h.lim/(*hitrate); /* mean number of different elements per cluster */
-    for(m=1; m < k; m<<=1); /* perfect hashing */
-    h.lim <<= 2; /* make lim four times as big for handling some skew */
-    h.hash = (hash_t*) GDKmalloc((m+h.lim)*sizeof(hash_t));
-    h.link = h.hash + m;
-    h.type = ATOMtype(r->htype);
-    h.mask = m-1;
-    h.lim *= BUNsize(r); /* lim is used as a byte offset */
+		if (bn == NULL)
+			return GDK_FAIL;
+		l_cur = BUNfirst(l);
+		l_last = BUNlast(l);
+		r_cur = BUNfirst(r);
+		r_last = BUNlast(r);
+		xx = BUNsize(l);
+		yy = BUNsize(r);
 
-    /* set properties on result bat */
-    bn->hsorted = bathordered(l);
-    bn->tsorted = 0;
-    if (l->hkey && r->hkey) batkey(bn, TRUE);
-    if (r->tkey && l->tkey) batkey(BATmirror(bn), TRUE);
+		/* alloc hash table */
+		h.lim = batcount(r) >> *radix;	/* mean cluster size */
+		k = h.lim / (*hitrate);	/* mean number of different elements per cluster */
+		for (m = 1; m < k; m <<= 1) ;	/* perfect hashing */
+		h.lim <<= 2;	/* make lim four times as big for handling some skew */
+		h.hash = (hash_t *) GDKmalloc((m + h.lim) * sizeof(hash_t));
+		h.link = h.hash + m;
+		h.type = ATOMtype(r->htype);
+		h.mask = m - 1;
+		h.lim *= BUNsize(r);	/* lim is used as a byte offset */
 
-    if (batcount(r)) {
-    if (r->htype == TYPE_oid) {
-	@:hash_merge(oid,hloc,tloc)@
-    } else if (ATOMstorage(r->htype) == TYPE_int || ATOMstorage(r->htype) == TYPE_flt) {
-	@:hash_merge(int,hloc,tloc)@
-    } else if (ATOMstorage(r->htype) == TYPE_lng || ATOMstorage(r->htype) == TYPE_dbl) {
-	@:hash_merge(lng,hloc,tloc)@
-    } else {
-        int any = r->htype;
-	@:hash_merge(any,head,tail)@
-    }}
-xit:
-    GDKfree(h.hash);
-    ALGODEBUG THRprintf(GDKout, "%s(%d);\n", BATgetId(bn),(int)bn->batCacheid);
-    *res = bn;
-    return bn?GDK_SUCCEED:GDK_FAIL;
-}}
+		/* set properties on result bat */
+		bn->hsorted = bathordered(l);
+		bn->tsorted = 0;
+		if (l->hkey && r->hkey)
+			batkey(bn, TRUE);
+		if (r->tkey && l->tkey)
+			batkey(BATmirror(bn), TRUE);
+
+		if (batcount(r)) {
+			if (r->htype == TYPE_oid) {
+				@:hash_merge(oid, hloc, tloc)@
+			} else if (ATOMstorage(r->htype) == TYPE_int || ATOMstorage(r->htype) == TYPE_flt) {
+				@:hash_merge(int, hloc, tloc)@
+			} else if (ATOMstorage(r->htype) == TYPE_lng || ATOMstorage(r->htype) == TYPE_dbl) {
+				@:hash_merge(lng, hloc, tloc)@
+			} else {
+				int any = r->htype;
+				@:hash_merge(any, head, tail)@
+		}}
+	      xit:
+		GDKfree(h.hash);
+		ALGODEBUG THRprintf(GDKout, "%s(%d);\n", BATgetId(bn), (int) bn->batCacheid);
+
+		*res = bn;
+		return bn ? GDK_SUCCEED : GDK_FAIL;
+	}
+}
 
 
 @= hash_merge
@@ -2258,82 +2373,84 @@ if (rd == 0) {
 @+ Radix Join
 this is a nested-loop join on the matching clusters (inputs should be radix clustered)
 @c
-int radix_join(bat **res, BAT* l, BAT *r, int *radix, int *hitrate) {
-    size_t estimate = MIN(batcount(r),BATcount(l))*(*hitrate);
-    BUN r_end, l_cur = BUNfirst(l), l_last = BUNlast(l);
-    BUN l_end, r_cur = BUNfirst(r), r_last = BUNlast(r);
-    int xx = BUNsize(l), yy = BUNsize(r);
-    size_t rd = (1 << *radix) -1;	
-    int any = ATOMstorage(l->ttype);
-    ptr nil = ATOMnilptr(any);
-    bat *bn;
+int
+radix_join(bat **res, BAT *l, BAT *r, int *radix, int *hitrate)
+{
+	size_t estimate = MIN(batcount(r), BATcount(l)) * (*hitrate);
+	BUN r_end, l_cur = BUNfirst(l), l_last = BUNlast(l);
+	BUN l_end, r_cur = BUNfirst(r), r_last = BUNlast(r);
+	int xx = BUNsize(l), yy = BUNsize(r);
+	size_t rd = (1 << *radix) - 1;
+	int any = ATOMstorage(l->ttype);
+	ptr nil = ATOMnilptr(any);
+	bat *bn;
 
-    if (*radix != (battordered(l)>>1)) {
-	GDKerror("radix_join: tail of %s is radix clustered on %d bits.\n",
-			BATgetId(l), battordered(l)>>1);
-	return GDK_FAIL;
-    }
-    if (*radix != (bathordered(r)>>1)) {
-	GDKerror("radix_join: head of %s is radix clustered on %d bits.\n",
-			BATgetId(r), bathordered(r)>>1);
-	return GDK_FAIL;
-    }
+	if (*radix != (battordered(l) >> 1)) {
+		GDKerror("radix_join: tail of %s is radix clustered on %d bits.\n", BATgetId(l), battordered(l) >> 1);
+		return GDK_FAIL;
+	}
+	if (*radix != (bathordered(r) >> 1)) {
+		GDKerror("radix_join: head of %s is radix clustered on %d bits.\n", BATgetId(r), bathordered(r) >> 1);
+		return GDK_FAIL;
+	}
 
-    /* set properties on result bat; so we can return in any moment */
-    bn = *res = batnew(HTYPE(l), TTYPE(r), estimate);
-    if(bn == NULL ) return GDK_FAIL;
-    bn->hsorted = bathordered(l);
-    bn->tsorted = 0;
-    if (l->hkey && r->hkey) batkey(bn, TRUE);
-    if (r->tkey && l->tkey) batkey(BATmirror(bn), TRUE);
-   
-    if (batcount(r) == 0) return GDK_SUCCEED;	   
-    
+	/* set properties on result bat; so we can return in any moment */
+	bn = *res = batnew(HTYPE(l), TTYPE(r), estimate);
+	if (bn == NULL)
+		return GDK_FAIL;
+	bn->hsorted = bathordered(l);
+	bn->tsorted = 0;
+	if (l->hkey && r->hkey)
+		batkey(bn, TRUE);
+	if (r->tkey && l->tkey)
+		batkey(BATmirror(bn), TRUE);
+
+	if (batcount(r) == 0)
+		return GDK_SUCCEED;
+
 /* PETER start experimentation hack */
-    if (l->htype >= TYPE_integer1 && l->htype <= TYPE_pax256 &&
-        r->ttype >= TYPE_integer1 && r->ttype <= TYPE_pax256) 
-    {
-	bat *p1 = VIEWparent(l)?BBP_cache(VIEWparent(l)):l;
-	bat *p2 = VIEWparent(r)?BBP_cache(VIEWparent(r)):r;
-        int width1 = ATOMsize(l->htype) >> 2;
-        int distance1 = 1 << ((p1->htype - l->htype) >> 1);
-        int width2 = ATOMsize(r->ttype) >> 2;
-        int distance2 = 1 << ((p2->ttype - r->ttype) >> 1);
+	if (l->htype >= TYPE_integer1 && l->htype <= TYPE_pax256 && r->ttype >= TYPE_integer1 && r->ttype <= TYPE_pax256) {
+		bat *p1 = VIEWparent(l) ? BBP_cache(VIEWparent(l)) : l;
+		bat *p2 = VIEWparent(r) ? BBP_cache(VIEWparent(r)) : r;
+		int width1 = ATOMsize(l->htype) >> 2;
+		int distance1 = 1 << ((p1->htype - l->htype) >> 1);
+		int width2 = ATOMsize(r->ttype) >> 2;
+		int distance2 = 1 << ((p2->ttype - r->ttype) >> 1);
 
-	@:radix_join(any,tail,head,atom,NOTSO,hloc,tloc)@
-    } else
+		@:radix_join(any, tail, head, atom, NOTSO, hloc, tloc)@
+	} else
 /* PETER end experimentation hack */
 
-    if (ATOMstorage(l->htype) == TYPE_int && ATOMstorage(r->ttype) == TYPE_int) {
-        int *_dst = (int*) (bn->batBuns->base + bn->batBuns->free);
-        int *_end = (int*) (bn->batBuns->base + bn->batBuns->size);
+	if (ATOMstorage(l->htype) == TYPE_int && ATOMstorage(r->ttype) == TYPE_int) {
+		int *_dst = (int *) (bn->batBuns->base + bn->batBuns->free);
+		int *_end = (int *) (bn->batBuns->base + bn->batBuns->size);
 
-        if (l->ttype == TYPE_oid) {
-	    @:radix_join(oid,tloc,hloc,simple,int,hloc,tloc)@
-        } else if (any == TYPE_int || any == TYPE_flt) {
-	    @:radix_join(int,tloc,hloc,simple,int,hloc,tloc)@
-        } else if (any == TYPE_lng || any == TYPE_dbl) {
-	    @:radix_join(lng,tloc,hloc,simple,int,hloc,tloc)@
-        } else {
-	    @:radix_join(any,tail,head,atom,int,hloc,tloc)@
-        }
-	bn->batBuns->free = ((BUN) _dst) - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
-    } else {
-        if (l->ttype == TYPE_oid) {
-	    @:radix_join(oid,tloc,hloc,simple,bun,head,tail)@
-        } else if (any == TYPE_int || any == TYPE_flt) {
-	    @:radix_join(int,tloc,hloc,simple,bun,head,tail)@
-        } else if (any == TYPE_lng || any == TYPE_dbl) {
-	    @:radix_join(lng,tloc,hloc,simple,bun,head,tail)@
-        } else {
-	    @:radix_join(any,tail,head,atom,bun,head,tail)@
-        }
-    }
-    return GDK_SUCCEED;
-bunins_failed:
-    BBPreclaim(bn);
-    return GDK_FAIL;
+		if (l->ttype == TYPE_oid) {
+			@:radix_join(oid, tloc, hloc, simple, int, hloc, tloc)@
+		} else if (any == TYPE_int || any == TYPE_flt) {
+			@:radix_join(int, tloc, hloc, simple, int, hloc, tloc)@
+		} else if (any == TYPE_lng || any == TYPE_dbl) {
+			@:radix_join(lng, tloc, hloc, simple, int, hloc, tloc)@
+		} else {
+			@:radix_join(any, tail, head, atom, int, hloc, tloc)@
+		}
+		bn->batBuns->free = ((BUN) _dst) - bn->batBuns->base;
+		BATsetcount(bn, bn->batBuns->free / BUNsize(bn));
+	} else {
+		if (l->ttype == TYPE_oid) {
+			@:radix_join(oid, tloc, hloc, simple, bun, head, tail)@
+		} else if (any == TYPE_int || any == TYPE_flt) {
+			@:radix_join(int, tloc, hloc, simple, bun, head, tail)@
+		} else if (any == TYPE_lng || any == TYPE_dbl) {
+			@:radix_join(lng, tloc, hloc, simple, bun, head, tail)@
+		} else {
+			@:radix_join(any, tail, head, atom, bun, head, tail)@
+		}
+	}
+	return GDK_SUCCEED;
+      bunins_failed:
+	BBPreclaim(bn);
+	return GDK_FAIL;
 }
 
 @= radix_join
@@ -2409,7 +2526,7 @@ parameter is a radix\_count bat that must have been created with the radix\_coun
     } break;
 } 
 @c
-#define simple_put(var,tpe,val) var = *(tpe*) val 
+#define simple_put(var,tpe,val) var = *(tpe*) val
 #define atom_put(var,tpe,val) ATOMput(any, &bn->theap, &var, val)
 
 typedef struct {
@@ -2417,112 +2534,127 @@ typedef struct {
 	ssize_t nxt;
 } cnk_t;
 
-int radix_decluster(bat **res, BAT *b, BAT *cnts, int *multiplier) {
-    size_t cnt = batcount(cnts);
-    int tpe = b->ttype;
-    int any = ATOMstorage(tpe);
-    int width = ATOMsize(ATOMtype(any));
-    int mult = *multiplier;
-    int xx, zz;
-    ssize_t yy=0;
-    char *src = b->batBuns->base;
-    size_t offset;
-    oid cur, lim, lst;
-    BUN p, q;
-    bat *bn;
-    cnk_t *cnk;
+int
+radix_decluster(bat **res, BAT *b, BAT *cnts, int *multiplier)
+{
+	size_t cnt = batcount(cnts);
+	int tpe = b->ttype;
+	int any = ATOMstorage(tpe);
+	int width = ATOMsize(ATOMtype(any));
+	int mult = *multiplier;
+	int xx, zz;
+	ssize_t yy = 0;
+	char *src = b->batBuns->base;
+	size_t offset;
+	oid cur, lim, lst;
+	BUN p, q;
+	bat *bn;
+	cnk_t *cnk;
 
-    if ((cnts->talign&RADIX_COUNT_MASK) != (b->halign&RADIX_COUNT_MASK)) {
-	GDKerror("radix_decluster: %s is not a radix_count(%s)\n", BATgetId(cnts), BATgetId(b));
-	return GDK_FAIL;
-    } 
+	if ((cnts->talign & RADIX_COUNT_MASK) != (b->halign & RADIX_COUNT_MASK)) {
+		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", BATgetId(cnts), BATgetId(b));
+		return GDK_FAIL;
+	}
 /* TODO: propagation of tdense even when not sorted
     if (!b->hdense) {
 	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", BATgetId(b));
 	return GDK_FAIL;
     }
 */
-    if (bathdense(b)) {
-	batseqbase(*res = VIEWhead(b), b->hseqbase);
-	return GDK_SUCCEED;
-    }
+	if (bathdense(b)) {
+		batseqbase(*res = VIEWhead(b), b->hseqbase);
+		return GDK_SUCCEED;
+	}
 
-    /* init cluster offset arrays (byte distances) */
-    cnk = (cnk_t*) GDKmalloc(cnt*sizeof(cnk_t));
-    offset = BUNindex(b, BUNfirst(b))*BUNsize(b);
-    yy = -1;
-    zz = -1;
-    batloopFast(cnts, p, q, xx) {
-	ssize_t pos = yy, nxt = -1;
-	
-	if (*(int*) BUNhloc(cnts,p) != zz) {
-		zz = *(int*) BUNhloc(cnts,p); /* current bit pattern */
-		pos = ++yy; /* normal increment */
-	} else {
-		/* look in the other chunks to find who's first */
-	        while(*(oid*) BUNhloc(b, src+offset) > *(oid*) BUNhloc(b, src+cnk[pos].cur)) { 
-			if ((pos = cnk[pos].nxt) < 0) break;
-		}
-		if (pos > 0) {
-			cnk[nxt = --cnt] = cnk[pos]; /* insert in chain */
+	/* init cluster offset arrays (byte distances) */
+	cnk = (cnk_t *) GDKmalloc(cnt * sizeof(cnk_t));
+	offset = BUNindex(b, BUNfirst(b)) * BUNsize(b);
+	yy = -1;
+	zz = -1;
+	batloopFast(cnts, p, q, xx) {
+		ssize_t pos = yy, nxt = -1;
+
+		if (*(int *) BUNhloc(cnts, p) != zz) {
+			zz = *(int *) BUNhloc(cnts, p);	/* current bit pattern */
+			pos = ++yy;	/* normal increment */
 		} else {
-			pos = --cnt; /* insert at end */
+			/* look in the other chunks to find who's first */
+			while (*(oid *) BUNhloc(b, src + offset) > *(oid *) BUNhloc(b, src + cnk[pos].cur)) {
+				if ((pos = cnk[pos].nxt) < 0)
+					break;
+			}
+			if (pos > 0) {
+				cnk[nxt = --cnt] = cnk[pos];	/* insert in chain */
+			} else {
+				pos = --cnt;	/* insert at end */
+			}
+		}
+		cnk[pos].cur = offset;
+		offset += BUNsize(b) * (*(int *) BUNtloc(cnts, p));
+		cnk[pos].end = offset;
+		cnk[pos].nxt = nxt;
+	}
+
+	/* create destination bat and init some variables */
+	if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
+		tpe = any = TYPE_var;
+	}
+
+	/* init variables for the decluster operation */
+	offset = batcount(b);
+	bn = batnew(TYPE_void, tpe, offset);
+	if (bn == NULL)
+		return GDK_FAIL;
+	*res = NULL;
+	bn->batBuns->free = offset * width;
+	BATsetcount(bn, offset);
+	bn->tsorted = 0;
+	batseqbase(bn, lim = 0);	/* current oid */
+	lst = lim + batcount(b);	/* highest oid */
+	mult *= cnt;		/* window size */
+	xx = BUNsize(b);
+
+	/* do the merging work. TODO: multi-pass impl? */
+	switch (any) {
+	case TYPE_chr:
+		@:radix_decluster(chr, simple, tloc)@
+
+	case TYPE_sht:
+		@:radix_decluster(sht, simple, tloc)@
+
+	case TYPE_int:
+	case TYPE_flt:
+		@:radix_decluster(int, simple, tloc)@
+
+	case TYPE_lng:
+	case TYPE_dbl:
+		@:radix_decluster(lng, simple, tloc)@
+
+	default:
+		@:radix_decluster(int, atom, tail)@
+	}
+	*res = bn;
+      bunins_failed:
+	GDKfree(cnk);
+
+	/* string heaps with double elimination were treated as ints */
+	if (any == TYPE_var && ATOMstorage(b->ttype) == TYPE_str) {
+		bat *bm = BATmirror(bn);
+
+		if (HEAPcopy(&bn->theap, &b->theap) < 0) {
+			*res = NULL;
+		} else {
+			bm->htype = bn->ttype = b->ttype;
+			bm->hvarsized = bn->tvarsized = 1;
+
+			strcpy(bn->tatom, ATOMname(b->ttype));
 		}
 	}
-        cnk[pos].cur = offset; 
-	offset += BUNsize(b) * (*(int*) BUNtloc(cnts,p));
-        cnk[pos].end = offset;
-	cnk[pos].nxt = nxt;
-    }
-
-    /* create destination bat and init some variables */
-    if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_var;
-    }
-
-    /* init variables for the decluster operation */
-    offset = batcount(b);
-    bn = batnew(TYPE_void, tpe, offset);
-    if( bn == NULL) return GDK_FAIL;
-    *res = NULL;
-    bn->batBuns->free = offset*width;
-    BATsetcount(bn, offset);
-    bn->tsorted = 0;
-    batseqbase(bn, lim = 0); /* current oid */
-    lst = lim + batcount(b); /* highest oid */
-    mult *= cnt; /* window size */
-    xx = BUNsize(b);
-
-    /* do the merging work. TODO: multi-pass impl? */
-    switch(any) {
-    case TYPE_chr: @:radix_decluster(chr,simple,tloc)@
-    case TYPE_sht: @:radix_decluster(sht,simple,tloc)@
-    case TYPE_int: 
-    case TYPE_flt: @:radix_decluster(int,simple,tloc)@
-    case TYPE_lng:
-    case TYPE_dbl: @:radix_decluster(lng,simple,tloc)@
-    default:       @:radix_decluster(int,atom,tail)@ 
-    }
-    *res = bn;
-bunins_failed:
-    GDKfree(cnk);
-
-    /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && ATOMstorage(b->ttype) == TYPE_str) {
-	bat *bm = BATmirror(bn);
-        if (HEAPcopy(&bn->theap, &b->theap) < 0) {
-	    *res = NULL;
-	} else {
-            bm->htype = bn->ttype = b->ttype;
-            bm->hvarsized = bn->tvarsized = 1;
-            strcpy(bn->tatom, ATOMname(b->ttype));
+	if (*res == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
 	}
-    }
-    if (*res == NULL) {
-	BBPreclaim(bn);
-	return GDK_FAIL;
-    }
-    return GDK_SUCCEED;
+	return GDK_SUCCEED;
 }
 
 @- radix_decluster
@@ -2647,346 +2779,394 @@ typedef struct {
 	oid nxt;
 } cnk4_t;
 
-int radix_decluster2(bat **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
-    size_t cnt = batcount(cnts);
-    int tpe = a->ttype;
-    int any = ATOMstorage(tpe);
-    int width = ATOMsize(ATOMtype(any));
-    int mult = *multiplier;
-    int xx, zz;
-    ssize_t yy=0;
-    char *src1 = b->batBuns->base+b->tloc;
-    char *src2 = a->batBuns->base+a->tloc;
-    size_t offset1, offset2;
-    oid cur, lim, lst;
-    BUN p, q, r;
-    bat *bn;
-    cnk2_t *cnk;
+int
+radix_decluster2(bat **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
+{
+	size_t cnt = batcount(cnts);
+	int tpe = a->ttype;
+	int any = ATOMstorage(tpe);
+	int width = ATOMsize(ATOMtype(any));
+	int mult = *multiplier;
+	int xx, zz;
+	ssize_t yy = 0;
+	char *src1 = b->batBuns->base + b->tloc;
+	char *src2 = a->batBuns->base + a->tloc;
+	size_t offset1, offset2;
+	oid cur, lim, lst;
+	BUN p, q, r;
+	bat *bn;
+	cnk2_t *cnk;
 
-    if ((cnts->talign&RADIX_COUNT_MASK) != (b->talign&RADIX_COUNT_MASK)) {
-	GDKerror("radix_decluster: %s is not a radix_count(%s)\n", BATgetId(cnts), BATgetId(b));
-	return GDK_FAIL;
-    } 
+	if ((cnts->talign & RADIX_COUNT_MASK) != (b->talign & RADIX_COUNT_MASK)) {
+		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", BATgetId(cnts), BATgetId(b));
+		return GDK_FAIL;
+	}
 /* TODO: propagation of tdense even when not sorted
     if (!b->hdense) {
 	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", BATgetId(b));
 	return GDK_FAIL;
     }
 */
-    if (ALIGNsynced(b,a) == 0 || !(b->hkey || a->hkey) || b->ttype == TYPE_void) {
-	GDKerror("radix_decluster: %s and %s are not synced and unique\n", BATgetId(b), BATgetId(a));
-	return GDK_FAIL;
-    }
-    /* init cluster offset arrays (byte distances) */
-    cnk = (cnk2_t*) GDKmalloc(cnt*sizeof(cnk2_t));
-    offset1 = BUNindex(b, BUNfirst(b))*BUNsize(b);
-    offset2 = BUNindex(a, BUNfirst(a))*BUNsize(a);
-    zz = -1;
-    yy = -1;
-    batloopFast(cnts, p, q, xx) {
-	ssize_t pos = yy, nxt = -1;
-	
-	if (*(int*) BUNhloc(cnts,p) != zz) {
-		zz = *(int*) BUNhloc(cnts,p); /* current bit pattern */
-		pos = ++yy; /* normal increment */
-	} else {
-		ssize_t prev = -1;
-		/* look in the other chunks to find who's first */
-	        while(*(oid*) BUNtloc(b, src1+offset1) > *(oid*) BUNtloc(b, src1+cnk[pos].cur1)) { 
-			prev = pos;
-			if ((pos = cnk[pos].nxt) < 0) break;
-		}
-		if (pos > 0) {
-			cnk[nxt = --cnt] = cnk[pos]; /* insert in chain */
+	if (ALIGNsynced(b, a) == 0 || !(b->hkey || a->hkey) || b->ttype == TYPE_void) {
+		GDKerror("radix_decluster: %s and %s are not synced and unique\n", BATgetId(b), BATgetId(a));
+		return GDK_FAIL;
+	}
+	/* init cluster offset arrays (byte distances) */
+	cnk = (cnk2_t *) GDKmalloc(cnt * sizeof(cnk2_t));
+	offset1 = BUNindex(b, BUNfirst(b)) * BUNsize(b);
+	offset2 = BUNindex(a, BUNfirst(a)) * BUNsize(a);
+	zz = -1;
+	yy = -1;
+	batloopFast(cnts, p, q, xx) {
+		ssize_t pos = yy, nxt = -1;
+
+		if (*(int *) BUNhloc(cnts, p) != zz) {
+			zz = *(int *) BUNhloc(cnts, p);	/* current bit pattern */
+			pos = ++yy;	/* normal increment */
 		} else {
-			pos = --cnt; /* insert at end */
-			if (prev>=0)
-				cnk[prev].nxt = pos;
+			ssize_t prev = -1;
+
+			/* look in the other chunks to find who's first */
+			while (*(oid *) BUNtloc(b, src1 + offset1) > *(oid *) BUNtloc(b, src1 + cnk[pos].cur1)) {
+				prev = pos;
+				if ((pos = cnk[pos].nxt) < 0)
+					break;
+			}
+			if (pos > 0) {
+				cnk[nxt = --cnt] = cnk[pos];	/* insert in chain */
+			} else {
+				pos = --cnt;	/* insert at end */
+				if (prev >= 0)
+					cnk[prev].nxt = pos;
+			}
 		}
+		cnk[pos].cur1 = offset1;
+		cnk[pos].cur2 = offset2;
+		offset1 += BUNsize(b) * (*(int *) BUNtloc(cnts, p));
+		offset2 += BUNsize(a) * (*(int *) BUNtloc(cnts, p));
+		cnk[pos].end1 = offset1;
+		cnk[pos].nxt = nxt;
 	}
-        cnk[pos].cur1 = offset1; 
-        cnk[pos].cur2 = offset2; 
-	offset1 += BUNsize(b) * (*(int*) BUNtloc(cnts,p));
-	offset2 += BUNsize(a) * (*(int*) BUNtloc(cnts,p));
-        cnk[pos].end1 = offset1;
-	cnk[pos].nxt = nxt;
-    }
 
-    /* create destination bat and init some variables */
-    if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_var;
-    }
-
-    /* init variables for the decluster operation */
-    offset1 = batcount(b);
-    bn = batnew(TYPE_void, tpe, offset1);
-    if( bn == NULL) return GDK_FAIL;
-    *res = NULL;
-    bn->batBuns->free = offset1*width;
-    BATsetcount(bn, offset1);
-    bn->tsorted = 0;
-    lim = b->hseqbase;
-    batseqbase(bn, lim); /* current oid */
-    lst = lim + batcount(b); /* highest oid */
-    mult *= cnt; /* window size */
-    xx = BUNsize(b);
-    zz = BUNsize(a);
-
-    /* do the merging work. TODO: multi-pass impl? */
-    switch(any) {
-    case TYPE_chr: @:radix_decluster2(chr,simple,tloc)@
-    case TYPE_sht: @:radix_decluster2(sht,simple,tloc)@
-    case TYPE_int: 
-    case TYPE_flt: @:radix_decluster2(int,simple,tloc)@
-    case TYPE_lng:
-    case TYPE_dbl: @:radix_decluster2(lng,simple,tloc)@
-    default:       @:radix_decluster2(int,atom,tail)@ 
-    }
-    *res = bn;
-bunins_failed:
-    GDKfree(cnk);
-
-    /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
-	bat *bm = BATmirror(bn);
-        if (HEAPcopy(&bn->theap, &a->theap) < 0) {
-	    *res = NULL;
-	} else {
-            bm->htype = bn->ttype = a->ttype;
-            bm->hvarsized = bn->tvarsized = 1;
-            strcpy(bn->tatom, ATOMname(a->ttype));
+	/* create destination bat and init some variables */
+	if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
+		tpe = any = TYPE_var;
 	}
-    }
-    if (*res == NULL) {
-	BBPreclaim(bn);
-	return GDK_FAIL;
-    }
-    return GDK_SUCCEED;
-}
 
-int radix_decluster3(bat **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
-    size_t cnt = batcount(cnts);
-    int tpe = a->ttype;
-    int any = ATOMstorage(tpe);
-    int width = ATOMsize(ATOMtype(any));
-    int mult = *multiplier;
-    int xx, zz;
-    ssize_t yy=0;
-    char *src1 = b->batBuns->base+b->tloc;
-    char *src2 = a->batBuns->base+a->tloc;
-    size_t offset1, offset2;
-    oid cur, lim, lst;
-    BUN p, q, r;
-    bat *bn;
-    cnk2_t *cnk;
+	/* init variables for the decluster operation */
+	offset1 = batcount(b);
+	bn = batnew(TYPE_void, tpe, offset1);
+	if (bn == NULL)
+		return GDK_FAIL;
+	*res = NULL;
+	bn->batBuns->free = offset1 * width;
+	BATsetcount(bn, offset1);
+	bn->tsorted = 0;
+	lim = b->hseqbase;
+	batseqbase(bn, lim);	/* current oid */
+	lst = lim + batcount(b);	/* highest oid */
+	mult *= cnt;		/* window size */
+	xx = BUNsize(b);
+	zz = BUNsize(a);
 
-    if ((cnts->talign&RADIX_COUNT_MASK) != (b->talign&RADIX_COUNT_MASK)) {
-	GDKerror("radix_decluster: %s is not a radix_count(%s)\n", BATgetId(cnts), BATgetId(b));
-	return GDK_FAIL;
-    } 
-/* TODO: propagation of tdense even when not sorted
-    if (!b->hdense) {
-	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", BATgetId(b));
-	return GDK_FAIL;
-    }
-*/
-    if (ALIGNsynced(b,a) == 0 || !(b->hkey || a->hkey) || b->ttype == TYPE_void) {
-	GDKerror("radix_decluster: %s and %s are not synced and unique\n", BATgetId(b), BATgetId(a));
-	return GDK_FAIL;
-    }
-    /* init cluster offset arrays (byte distances) */
-    cnk = (cnk2_t*) GDKmalloc(cnt*sizeof(cnk2_t));
-    offset1 = BUNindex(b, BUNfirst(b))*BUNsize(b);
-    offset2 = BUNindex(a, BUNfirst(a))*BUNsize(a);
-    zz = -1;
-    yy = -1;
-    batloopFast(cnts, p, q, xx) {
-	ssize_t pos = yy, nxt = -1;
-	
-	if (*(int*) BUNhloc(cnts,p) != zz) {
-		zz = *(int*) BUNhloc(cnts,p); /* current bit pattern */
-		pos = ++yy; /* normal increment */
-	} else {
-		ssize_t prev = -1;
-		/* look in the other chunks to find who's first */
-	        while(*(oid*) BUNtloc(b, src1+offset1) > *(oid*) BUNtloc(b, src1+cnk[pos].cur1)) { 
-			prev = pos;
-			if ((pos = cnk[pos].nxt) < 0) break;
-		}
-		if (pos > 0) {
-			cnk[nxt = --cnt] = cnk[pos]; /* insert in chain */
+	/* do the merging work. TODO: multi-pass impl? */
+	switch (any) {
+	case TYPE_chr:
+		@:radix_decluster2(chr, simple, tloc)@
+
+	case TYPE_sht:
+		@:radix_decluster2(sht, simple, tloc)@
+
+	case TYPE_int:
+	case TYPE_flt:
+		@:radix_decluster2(int, simple, tloc)@
+
+	case TYPE_lng:
+	case TYPE_dbl:
+		@:radix_decluster2(lng, simple, tloc)@
+
+	default:
+		@:radix_decluster2(int, atom, tail)@
+	}
+	*res = bn;
+      bunins_failed:
+	GDKfree(cnk);
+
+	/* string heaps with double elimination were treated as ints */
+	if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
+		bat *bm = BATmirror(bn);
+
+		if (HEAPcopy(&bn->theap, &a->theap) < 0) {
+			*res = NULL;
 		} else {
-			pos = --cnt; /* insert at end */
-			if (prev>=0)
-				cnk[prev].nxt = pos;
+			bm->htype = bn->ttype = a->ttype;
+			bm->hvarsized = bn->tvarsized = 1;
+
+			strcpy(bn->tatom, ATOMname(a->ttype));
 		}
 	}
-        cnk[pos].cur1 = offset1; 
-        cnk[pos].cur2 = offset2; 
-	offset1 += BUNsize(b) * (*(int*) BUNtloc(cnts,p));
-	offset2 += BUNsize(a) * (*(int*) BUNtloc(cnts,p));
-        cnk[pos].end1 = offset1;
-	cnk[pos].nxt = nxt;
-    }
-
-    /* create destination bat and init some variables */
-    if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_var;
-    }
-
-    /* init variables for the decluster operation */
-    offset1 = batcount(b);
-    bn = *res = batnew(TYPE_void, tpe, offset1);
-    if( bn == NULL) return GDK_FAIL;
-    *res = NULL;
-    bn->batBuns->free = offset1*width;
-    BATsetcount(bn, offset1);
-    bn->tsorted = 0;
-    batseqbase(bn, lim = 0); /* current oid */
-    lst = lim + batcount(b); /* highest oid */
-    mult *= cnt; /* window size */
-    xx = BUNsize(b);
-    zz = BUNsize(a);
-
-    /* do the merging work. TODO: multi-pass impl? */
-    switch(any) {
-    case TYPE_chr: @:radix_decluster3(chr,simple,tloc)@
-    case TYPE_sht: @:radix_decluster3(sht,simple,tloc)@
-    case TYPE_int: 
-    case TYPE_flt: @:radix_decluster3(int,simple,tloc)@
-    case TYPE_lng:
-    case TYPE_dbl: @:radix_decluster3(lng,simple,tloc)@
-    default:       @:radix_decluster3(int,atom,tail)@ 
-    }
-    *res = bn;
-bunins_failed:
-    GDKfree(cnk);
-
-    /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
-	bat *bm = BATmirror(bn);
-        if (HEAPcopy(&bn->theap, &a->theap) < 0) {
-	    *res = NULL;
-	} else {
-            bm->htype = bn->ttype = a->ttype;
-            bm->hvarsized = bn->tvarsized = 1;
-            strcpy(bn->tatom, ATOMname(a->ttype));
- 	}
-    }
-    if (*res == NULL) {
-	BBPreclaim(bn);
-	return GDK_FAIL;
-    }
-    return GDK_SUCCEED;
+	if (*res == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 
-int radix_decluster4(bat **res, BAT *b, BAT *a, BAT *cnts, int *multiplier) {
-    size_t cnt = batcount(cnts), cntX = 0;
-    int tpe = a->ttype;
-    int any = ATOMstorage(tpe);
-    int width = ATOMsize(ATOMtype(any));
-    int mult = *multiplier;
-    int xx, zz;
-    ssize_t yy=0;
-    char *src1 = b->batBuns->base+b->tloc;
-    char *src2 = a->batBuns->base+a->tloc;
-    size_t offset1, offset2;
-    oid cur, lim, lst;
-    BUN p, q, r;
-    bat *bn;
-    cnk4_t *cnk;
+int
+radix_decluster3(bat **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
+{
+	size_t cnt = batcount(cnts);
+	int tpe = a->ttype;
+	int any = ATOMstorage(tpe);
+	int width = ATOMsize(ATOMtype(any));
+	int mult = *multiplier;
+	int xx, zz;
+	ssize_t yy = 0;
+	char *src1 = b->batBuns->base + b->tloc;
+	char *src2 = a->batBuns->base + a->tloc;
+	size_t offset1, offset2;
+	oid cur, lim, lst;
+	BUN p, q, r;
+	bat *bn;
+	cnk2_t *cnk;
 
-    if ((cnts->talign&RADIX_COUNT_MASK) != (b->talign&RADIX_COUNT_MASK)) {
-	GDKerror("radix_decluster: %s is not a radix_count(%s)\n", BATgetId(cnts), BATgetId(b));
-	return GDK_FAIL;
-    } 
+	if ((cnts->talign & RADIX_COUNT_MASK) != (b->talign & RADIX_COUNT_MASK)) {
+		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", BATgetId(cnts), BATgetId(b));
+		return GDK_FAIL;
+	}
 /* TODO: propagation of tdense even when not sorted
     if (!b->hdense) {
 	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", BATgetId(b));
 	return GDK_FAIL;
     }
 */
-    if (ALIGNsynced(b,a) == 0 || !(b->hkey || a->hkey) || b->ttype == TYPE_void) {
-	GDKerror("radix_decluster: %s and %s are not synced and unique\n", BATgetId(b), BATgetId(a));
-	return GDK_FAIL;
-    }
-    /* init cluster offset arrays (byte distances) */
-    cnk = (cnk4_t*) GDKmalloc(cnt*sizeof(cnk4_t));
-    offset1 = BUNindex(b, BUNfirst(b))*BUNsize(b);
-    offset2 = BUNindex(a, BUNfirst(a))*BUNsize(a);
-    yy = -1;
-    zz = -1;
-    batloopFast(cnts, p, q, xx) {
-	if (*(int*) BUNhloc(cnts,p) != zz) {
-		zz = *(int*) BUNhloc(cnts,p); /* current bit pattern */
-		cntX++; /* new "real" cluster */
+	if (ALIGNsynced(b, a) == 0 || !(b->hkey || a->hkey) || b->ttype == TYPE_void) {
+		GDKerror("radix_decluster: %s and %s are not synced and unique\n", BATgetId(b), BATgetId(a));
+		return GDK_FAIL;
 	}
-	yy++;
-	cnk[yy].nxt = *(oid*) BUNtloc(b, src1+offset1);
-        cnk[yy].cur1 = offset1; 
-        cnk[yy].cur2 = offset2; 
-	offset1 += BUNsize(b) * (*(int*) BUNtloc(cnts,p));
-	offset2 += BUNsize(a) * (*(int*) BUNtloc(cnts,p));
-        cnk[yy].end1 = offset1;
-    }
+	/* init cluster offset arrays (byte distances) */
+	cnk = (cnk2_t *) GDKmalloc(cnt * sizeof(cnk2_t));
+	offset1 = BUNindex(b, BUNfirst(b)) * BUNsize(b);
+	offset2 = BUNindex(a, BUNfirst(a)) * BUNsize(a);
+	zz = -1;
+	yy = -1;
+	batloopFast(cnts, p, q, xx) {
+		ssize_t pos = yy, nxt = -1;
 
-    /* create destination bat and init some variables */
-    if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
-	tpe = any = TYPE_var;
-    }
+		if (*(int *) BUNhloc(cnts, p) != zz) {
+			zz = *(int *) BUNhloc(cnts, p);	/* current bit pattern */
+			pos = ++yy;	/* normal increment */
+		} else {
+			ssize_t prev = -1;
 
-    /* init variables for the decluster operation */
-    offset1 = batcount(b);
-    bn = batnew(TYPE_void, tpe, offset1);
-    if( bn == NULL) return GDK_FAIL;
-    *res = NULL;
-    bn->batBuns->free = offset1*width;
-    BATsetcount(bn, offset1);
-    bn->tsorted = 0;
-    batseqbase(bn, lim = 0); /* current oid */
-    lst = lim + batcount(b); /* highest oid */
-    mult *= cntX; /* window size */
-    xx = BUNsize(b);
-    zz = BUNsize(a);
-
-    /* do the merging work. TODO: multi-pass impl? */
-    switch(any) {
-    case TYPE_chr: @:radix_decluster4(chr,simple,tloc)@
-    case TYPE_sht: @:radix_decluster4(sht,simple,tloc)@
-    case TYPE_int: 
-    case TYPE_flt: @:radix_decluster4(int,simple,tloc)@
-    case TYPE_lng:
-    case TYPE_dbl: @:radix_decluster4(lng,simple,tloc)@
-    default:       @:radix_decluster4(int,atom,tail)@ 
-    }
-    *res = bn;
-bunins_failed:
-    GDKfree(cnk);
-
-    /* string heaps with double elimination were treated as ints */
-    if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
-	bat *bm = BATmirror(bn);
-        if (HEAPcopy(&bn->theap, &a->theap) < 0) {
-	    *res = NULL;
-	} else {
-            bm->htype = bn->ttype = a->ttype;
-            bm->hvarsized = bn->tvarsized = 1;
-            strcpy(bn->tatom, ATOMname(a->ttype));
+			/* look in the other chunks to find who's first */
+			while (*(oid *) BUNtloc(b, src1 + offset1) > *(oid *) BUNtloc(b, src1 + cnk[pos].cur1)) {
+				prev = pos;
+				if ((pos = cnk[pos].nxt) < 0)
+					break;
+			}
+			if (pos > 0) {
+				cnk[nxt = --cnt] = cnk[pos];	/* insert in chain */
+			} else {
+				pos = --cnt;	/* insert at end */
+				if (prev >= 0)
+					cnk[prev].nxt = pos;
+			}
+		}
+		cnk[pos].cur1 = offset1;
+		cnk[pos].cur2 = offset2;
+		offset1 += BUNsize(b) * (*(int *) BUNtloc(cnts, p));
+		offset2 += BUNsize(a) * (*(int *) BUNtloc(cnts, p));
+		cnk[pos].end1 = offset1;
+		cnk[pos].nxt = nxt;
 	}
-    }
-    if (*res == NULL) {
-	BBPreclaim(bn);
-	return GDK_FAIL;
-    }
-    return GDK_SUCCEED;
+
+	/* create destination bat and init some variables */
+	if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
+		tpe = any = TYPE_var;
+	}
+
+	/* init variables for the decluster operation */
+	offset1 = batcount(b);
+	bn = *res = batnew(TYPE_void, tpe, offset1);
+	if (bn == NULL)
+		return GDK_FAIL;
+	*res = NULL;
+	bn->batBuns->free = offset1 * width;
+	BATsetcount(bn, offset1);
+	bn->tsorted = 0;
+	batseqbase(bn, lim = 0);	/* current oid */
+	lst = lim + batcount(b);	/* highest oid */
+	mult *= cnt;		/* window size */
+	xx = BUNsize(b);
+	zz = BUNsize(a);
+
+	/* do the merging work. TODO: multi-pass impl? */
+	switch (any) {
+	case TYPE_chr:
+		@:radix_decluster3(chr, simple, tloc)@
+
+	case TYPE_sht:
+		@:radix_decluster3(sht, simple, tloc)@
+
+	case TYPE_int:
+	case TYPE_flt:
+		@:radix_decluster3(int, simple, tloc)@
+
+	case TYPE_lng:
+	case TYPE_dbl:
+		@:radix_decluster3(lng, simple, tloc)@
+
+	default:
+		@:radix_decluster3(int, atom, tail)@
+	}
+	*res = bn;
+      bunins_failed:
+	GDKfree(cnk);
+
+	/* string heaps with double elimination were treated as ints */
+	if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
+		bat *bm = BATmirror(bn);
+
+		if (HEAPcopy(&bn->theap, &a->theap) < 0) {
+			*res = NULL;
+		} else {
+			bm->htype = bn->ttype = a->ttype;
+			bm->hvarsized = bn->tvarsized = 1;
+
+			strcpy(bn->tatom, ATOMname(a->ttype));
+		}
+	}
+	if (*res == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 
-int posjoin_tuple(bat **res, BAT *proj, BAT *attr) {
-	bat *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
+int
+radix_decluster4(bat **res, BAT *b, BAT *a, BAT *cnts, int *multiplier)
+{
+	size_t cnt = batcount(cnts), cntX = 0;
+	int tpe = a->ttype;
+	int any = ATOMstorage(tpe);
+	int width = ATOMsize(ATOMtype(any));
+	int mult = *multiplier;
+	int xx, zz;
+	ssize_t yy = 0;
+	char *src1 = b->batBuns->base + b->tloc;
+	char *src2 = a->batBuns->base + a->tloc;
+	size_t offset1, offset2;
+	oid cur, lim, lst;
+	BUN p, q, r;
+	bat *bn;
+	cnk4_t *cnk;
+
+	if ((cnts->talign & RADIX_COUNT_MASK) != (b->talign & RADIX_COUNT_MASK)) {
+		GDKerror("radix_decluster: %s is not a radix_count(%s)\n", BATgetId(cnts), BATgetId(b));
+		return GDK_FAIL;
+	}
+/* TODO: propagation of tdense even when not sorted
+    if (!b->hdense) {
+	GDKerror("radix_decluster: %s may not contain a dense collection of oids.\n", BATgetId(b));
+	return GDK_FAIL;
+    }
+*/
+	if (ALIGNsynced(b, a) == 0 || !(b->hkey || a->hkey) || b->ttype == TYPE_void) {
+		GDKerror("radix_decluster: %s and %s are not synced and unique\n", BATgetId(b), BATgetId(a));
+		return GDK_FAIL;
+	}
+	/* init cluster offset arrays (byte distances) */
+	cnk = (cnk4_t *) GDKmalloc(cnt * sizeof(cnk4_t));
+	offset1 = BUNindex(b, BUNfirst(b)) * BUNsize(b);
+	offset2 = BUNindex(a, BUNfirst(a)) * BUNsize(a);
+	yy = -1;
+	zz = -1;
+	batloopFast(cnts, p, q, xx) {
+		if (*(int *) BUNhloc(cnts, p) != zz) {
+			zz = *(int *) BUNhloc(cnts, p);	/* current bit pattern */
+			cntX++;	/* new "real" cluster */
+		}
+		yy++;
+		cnk[yy].nxt = *(oid *) BUNtloc(b, src1 + offset1);
+		cnk[yy].cur1 = offset1;
+		cnk[yy].cur2 = offset2;
+		offset1 += BUNsize(b) * (*(int *) BUNtloc(cnts, p));
+		offset2 += BUNsize(a) * (*(int *) BUNtloc(cnts, p));
+		cnk[yy].end1 = offset1;
+	}
+
+	/* create destination bat and init some variables */
+	if (any == TYPE_str && GDK_ELIMDOUBLES(&b->theap)) {
+		tpe = any = TYPE_var;
+	}
+
+	/* init variables for the decluster operation */
+	offset1 = batcount(b);
+	bn = batnew(TYPE_void, tpe, offset1);
+	if (bn == NULL)
+		return GDK_FAIL;
+	*res = NULL;
+	bn->batBuns->free = offset1 * width;
+	BATsetcount(bn, offset1);
+	bn->tsorted = 0;
+	batseqbase(bn, lim = 0);	/* current oid */
+	lst = lim + batcount(b);	/* highest oid */
+	mult *= cntX;		/* window size */
+	xx = BUNsize(b);
+	zz = BUNsize(a);
+
+	/* do the merging work. TODO: multi-pass impl? */
+	switch (any) {
+	case TYPE_chr:
+		@:radix_decluster4(chr, simple, tloc)@
+
+	case TYPE_sht:
+		@:radix_decluster4(sht, simple, tloc)@
+
+	case TYPE_int:
+	case TYPE_flt:
+		@:radix_decluster4(int, simple, tloc)@
+
+	case TYPE_lng:
+	case TYPE_dbl:
+		@:radix_decluster4(lng, simple, tloc)@
+
+	default:
+		@:radix_decluster4(int, atom, tail)@
+	}
+	*res = bn;
+      bunins_failed:
+	GDKfree(cnk);
+
+	/* string heaps with double elimination were treated as ints */
+	if (any == TYPE_var && ATOMstorage(a->ttype) == TYPE_str) {
+		bat *bm = BATmirror(bn);
+
+		if (HEAPcopy(&bn->theap, &a->theap) < 0) {
+			*res = NULL;
+		} else {
+			bm->htype = bn->ttype = a->ttype;
+			bm->hvarsized = bn->tvarsized = 1;
+
+			strcpy(bn->tatom, ATOMname(a->ttype));
+		}
+	}
+	if (*res == NULL) {
+		BBPreclaim(bn);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
+
+int
+posjoin_tuple(bat **res, BAT *proj, BAT *attr)
+{
+	bat *parent = VIEWparent(attr) ? BBP_cache(VIEWparent(attr)) : attr;
 	bat *bn = *res = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
 	bat *bm = BATmirror(attr);
-        int width = ATOMsize(attr->ttype) >> 2;
-        int distance = 1 << ((parent->ttype - attr->ttype) >> 1);
+	int width = ATOMsize(attr->ttype) >> 2;
+	int distance = 1 << ((parent->ttype - attr->ttype) >> 1);
 	BUN p, q, r, s;
 	int xx, yy;
 
@@ -2998,15 +3178,16 @@ int posjoin_tuple(bat **res, BAT *proj, BAT *attr) {
 	yy = BUNsize(bn);
 	batloopFast(proj, p, q, xx) {
 		BUNfndVOID(r, attr, BUNtail(proj, p));
-		integerCopy((int*) s, bm, r, width, distance);
+		integerCopy((int *) s, bm, r, width, distance);
 		s += yy;
 	}
-	bn->batBuns->free = BUNsize(bn)*batcount(proj);
+	bn->batBuns->free = BUNsize(bn) * batcount(proj);
 	BATsetcount(bn, BATcount(proj));
 	batseqbase(bn, proj->hseqbase);
 	ALIGNsetH(bn, proj);
-	bn->tsorted = battordered(proj)&BATtordered(attr);
-	if (proj->tkey && attr->tkey) batkey(BATmirror(bn), TRUE); 
+	bn->tsorted = battordered(proj) & BATtordered(attr);
+	if (proj->tkey && attr->tkey)
+		batkey(BATmirror(bn), TRUE);
 	return GDK_SUCCEED;
 }
 
@@ -3043,12 +3224,14 @@ if (@6 || proj->ttype != TYPE_void) {
 @c
 #define SIMPLEput(tpe,hp,dst,src) *(tpe*) (dst) = *(tpe*) (src)
 
-int jivejoin0(bat **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits) {
+int
+jivejoin0(bat **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits)
+{
 	int any = attr->ttype;
 	bat *bn = BATnew(proj->htype, any, BATcount(proj));
 	int zz = *shift;
 	size_t xx, yy = 1 << *nbits;
-	size_t *cluster = (size_t*) GDKmalloc((yy+1)*sizeof(size_t));
+	size_t *cluster = (size_t *) GDKmalloc((yy + 1) * sizeof(size_t));
 	BUN p, q, r, s;
 
 	if (bn == NULL || cluster == NULL) {
@@ -3058,56 +3241,68 @@ int jivejoin0(bat **res, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int
 	*res = NULL;
 
 	/* find the destination byte-offsets using the radix-count bat */
-	for(xx=0; xx<=yy; xx++) cluster[xx] = 0;
+	for (xx = 0; xx <= yy; xx++)
+		cluster[xx] = 0;
 	batloopFast(radix_count, p, q, xx) {
-		int idx = *(int*) BUNhloc(radix_count,p);
+		int idx = *(int *) BUNhloc(radix_count, p);
+
 		if (idx < 0 || (size_t) idx >= yy) {
 			BBPreclaim(bn);
 			GDKerror("jivejoin0: illegal cluster id %d in %s.\n", idx, BBP_logical(radix_count->batCacheid));
 			return GDK_FAIL;
 		}
-		cluster[1+idx] += *(int*) BUNtloc(radix_count,p);
+		cluster[1 + idx] += *(int *) BUNtloc(radix_count, p);
 	}
 	cluster[0] = BUNindex(bn, BUNfirst(bn));
-	for(xx=1; xx<=yy; xx++) cluster[xx] += cluster[xx-1];
+	for (xx = 1; xx <= yy; xx++)
+		cluster[xx] += cluster[xx - 1];
 	xx = cluster[yy] - cluster[0];
 	if (xx != batcount(proj)) {
 		BBPreclaim(bn);
-		GDKerror("jivejoin0: total cluster entries %lu in %s does not match size %lu of %s.\n",
-			xx, BBP_logical(radix_count->batCacheid), batcount(proj), BBP_logical(proj->batCacheid));
+		GDKerror("jivejoin0: total cluster entries %lu in %s does not match size %lu of %s.\n", xx, BBP_logical(radix_count->batCacheid), batcount(proj), BBP_logical(proj->batCacheid));
 		return GDK_FAIL;
 	}
-	yy = (yy-1) << zz; /* yy is mask, zz is shift */
+	yy = (yy - 1) << zz;	/* yy is mask, zz is shift */
 
-	switch(any = ATOMstorage(any)) {
-	case TYPE_chr:	@:jivejoin0(chr,SIMPLE,hloc,tloc,r,0)@  
-	case TYPE_sht:	@:jivejoin0(sht,SIMPLE,hloc,tloc,r,0)@ 
-	case TYPE_int:	
-	case TYPE_flt:	@:jivejoin0(int,SIMPLE,hloc,tloc,r,0)@ 
-	case TYPE_dbl:	
-	case TYPE_lng:	@:jivejoin0(lng,SIMPLE,hloc,tloc,r,0)@ 
-	default:	@:jivejoin0(any,ATOM,head,tail,BUNtail(attr,r),1)
-	}
-	*res = bn;
-bunins_failed:
+	switch (any = ATOMstorage(any)) {
+	case TYPE_chr:
+		@:jivejoin0(chr, SIMPLE, hloc, tloc, r, 0)@
+
+	case TYPE_sht:
+		@:jivejoin0(sht, SIMPLE, hloc, tloc, r, 0)@
+
+	case TYPE_int:
+	case TYPE_flt:
+		@:jivejoin0(int, SIMPLE, hloc, tloc, r, 0)@
+
+	case TYPE_dbl:
+	case TYPE_lng:
+		@:jivejoin0(lng, SIMPLE, hloc, tloc, r, 0)@
+
+	default:
+	      @:jivejoin0(any, ATOM, head, tail, BUNtail(attr, r), 1)
+	} *res = bn;
+      bunins_failed:
 	if (*res == NULL) {
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
 
 	/* restore normality in destination bats */
-	bn->batBuns->free = batcount(proj)*BUNsize(bn);
+	bn->batBuns->free = batcount(proj) * BUNsize(bn);
 	BATsetcount(bn, BATcount(proj));
 	if (proj->htype == TYPE_oid) {
 		bn->hsorted = 0;
-		if (proj->hkey) batkey(bn, TRUE); 
+		if (proj->hkey)
+			batkey(bn, TRUE);
 	} else {
 		batseqbase(bn, 0);
 	}
 	bn->tsorted = 0;
-	if (proj->tkey && attr->tkey) batkey(BATmirror(bn), TRUE); 
+	if (proj->tkey && attr->tkey)
+		batkey(BATmirror(bn), TRUE);
 	return GDK_SUCCEED;
-} 
+}
 
 @= jivejoin1
 if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
@@ -3122,13 +3317,15 @@ if (@6 || (proj->htype != TYPE_void && proj->ttype != TYPE_void)) {
 	} break;
 }
 @c
-int jivejoin1(bat **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits) {
-	bat *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
+int
+jivejoin1(bat **res, BAT *bo, BAT *proj, BAT *attr, BAT *radix_count, int *shift, int *nbits)
+{
+	bat *parent = VIEWparent(attr) ? BBP_cache(VIEWparent(attr)) : attr;
 	int any = attr->ttype;
 	bat *bn = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
 	size_t xx = bo->batBuns->free, yy = 1 << *nbits, cnt = bo->batCount;
 	int zz = *shift;
-	size_t *cluster = (size_t*) GDKmalloc((yy+1)*sizeof(size_t));
+	size_t *cluster = (size_t *) GDKmalloc((yy + 1) * sizeof(size_t));
 	BUN p, q, r, bobak;
 
 	if (bn == NULL || cluster == NULL) {
@@ -3137,7 +3334,7 @@ int jivejoin1(bat **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *s
 	}
 	*res = NULL;
 
-	bo->batBuns->free += batcount(proj)*BUNsize(bo);
+	bo->batBuns->free += batcount(proj) * BUNsize(bo);
 	bo->batCount += BATcount(proj);
 	if (bo->batBuns->free > bo->batBuns->size) {
 		bo->batBuns->free = xx;
@@ -3148,75 +3345,89 @@ int jivejoin1(bat **res, BAT* bo, BAT *proj, BAT *attr, BAT *radix_count, int *s
 	}
 
 	/* find the destination byte-offsets using the radix-count bat */
-	for(xx=0; xx<=yy; xx++) cluster[xx] = 0;
+	for (xx = 0; xx <= yy; xx++)
+		cluster[xx] = 0;
 	batloopFast(radix_count, p, q, xx) {
-		int idx = *(int*) BUNhloc(radix_count,p);
+		int idx = *(int *) BUNhloc(radix_count, p);
+
 		if (idx < 0 || (size_t) idx >= yy) {
 			BBPreclaim(bn);
 			GDKerror("jivejoin1: illegal cluster id %d in %s.\n", idx, BBP_logical(radix_count->batCacheid));
 			return GDK_FAIL;
 		}
-		cluster[1+idx] += *(int*) BUNtloc(radix_count,p);
+		cluster[1 + idx] += *(int *) BUNtloc(radix_count, p);
 	}
 	cluster[0] = BUNindex(bn, BUNfirst(bn));
-	for(xx=1; xx<=yy; xx++) cluster[xx] += cluster[xx-1];
+	for (xx = 1; xx <= yy; xx++)
+		cluster[xx] += cluster[xx - 1];
 	xx = cluster[yy] - cluster[0];
 	if (xx != batcount(proj)) {
 		BBPreclaim(bn);
-		GDKerror("jivejoin1: total cluster entries %d in %s does not match size %d of %s.\n",
-			xx, BBP_logical(radix_count->batCacheid), batcount(proj), BBP_logical(proj->batCacheid));
+		GDKerror("jivejoin1: total cluster entries %d in %s does not match size %d of %s.\n", xx, BBP_logical(radix_count->batCacheid), batcount(proj), BBP_logical(proj->batCacheid));
 		return GDK_FAIL;
 	}
-	yy = (yy-1) << zz; /* yy is mask, zz is shift */
+	yy = (yy - 1) << zz;	/* yy is mask, zz is shift */
 
 	/* make the BUNindex of bo the same as those in bn */
 	bobak = bo->batBuns->base;
-	bo->batBuns->base += BUNsize(bo)*(BUNindex(bo, BUNfirst(bo))-cluster[0]);
+	bo->batBuns->base += BUNsize(bo) * (BUNindex(bo, BUNfirst(bo)) - cluster[0]);
 
 /* PETER start experimentation hack; must emulate relational projection cost  */
-	if (any >= TYPE_integer1 && any <= TYPE_pax256) {
+	if (any >=TYPE_integer1 && any <=TYPE_pax256) {
 		bat *bm = BATmirror(attr);
-        	int width = ATOMsize(attr->ttype) >> 2;
-        	int distance = 1 << (parent->ttype - attr->ttype);
+		int width = ATOMsize(attr->ttype) >> 2;
+		int distance = 1 << (parent->ttype - attr->ttype);
 
 		batloopFast(proj, p, q, xx) {
-			oid curoid = *(oid*) BUNhead(proj,p);
-			size_t clusterid = (curoid&yy) >> zz;
-			BUNfndVOID(r, attr, BUNtail(proj,p));
-			*(oid*) BUNptr(bo,cluster[clusterid]) = curoid;
-			integerCopy((int*) BUNptr(bn,cluster[clusterid]), bm, r, width, distance);
+			oid curoid = *(oid *) BUNhead(proj, p);
+			size_t clusterid = (curoid & yy) >> zz;
+
+			BUNfndVOID(r, attr, BUNtail(proj, p));
+			*(oid *) BUNptr(bo, cluster[clusterid]) = curoid;
+			integerCopy((int *) BUNptr(bn, cluster[clusterid]), bm, r, width, distance);
+
 			cluster[clusterid]++;
 		}
-	} else 
+	} else
 /* PETER end experimentation hack */
-		switch(any = ATOMstorage(any)) {
-		case TYPE_chr:	@:jivejoin1(chr,SIMPLE,hloc,tloc,r,0)@  
-		case TYPE_sht:	@:jivejoin1(sht,SIMPLE,hloc,tloc,r,0)@ 
-		case TYPE_int:	
-		case TYPE_flt:	@:jivejoin1(int,SIMPLE,hloc,tloc,r,0)@ 
-		case TYPE_dbl:	
-		case TYPE_lng:	@:jivejoin1(lng,SIMPLE,hloc,tloc,r,0)@ 
-		default:	@:jivejoin1(any,ATOM,head,tail,BUNtail(attr,r),1)
-	}
-	*res = bn;
-bunins_failed:
+		switch (any = ATOMstorage(any)) {
+		case TYPE_chr:
+			@:jivejoin1(chr, SIMPLE, hloc, tloc, r, 0)@
+
+		case TYPE_sht:
+			@:jivejoin1(sht, SIMPLE, hloc, tloc, r, 0)@
+
+		case TYPE_int:
+		case TYPE_flt:
+			@:jivejoin1(int, SIMPLE, hloc, tloc, r, 0)@
+
+		case TYPE_dbl:
+		case TYPE_lng:
+			@:jivejoin1(lng, SIMPLE, hloc, tloc, r, 0)@
+
+		default:
+		      @:jivejoin1(any, ATOM, head, tail, BUNtail(attr, r), 1)
+		} *res = bn;
+      bunins_failed:
 
 	/* restore normality in destination bats */
 	bo->batBuns->base = bobak;
 	bo->tsorted = *nbits << 1;
-	if (proj->hkey) batkey(BATmirror(bo), TRUE); 
+	if (proj->hkey)
+		batkey(BATmirror(bo), TRUE);
 	batseqbase(bo, 0);
 	if (*res == NULL) {
 		BBPreclaim(bn);
 		return GDK_FAIL;
 	}
-	bn->batBuns->free = batcount(proj)*BUNsize(bn);
+	bn->batBuns->free = batcount(proj) * BUNsize(bn);
 	BATsetcount(bn, BATcount(proj));
 	bn->tsorted = 0;
-	if (proj->tkey && attr->tkey) batkey(BATmirror(bn), TRUE); 
+	if (proj->tkey && attr->tkey)
+		batkey(BATmirror(bn), TRUE);
 	batseqbase(bn, 0);
 	return GDK_SUCCEED;
-} 
+}
 
 @= jivejoin2
 if (@6 || proj->ttype != TYPE_void) {
@@ -3227,8 +3438,10 @@ if (@6 || proj->ttype != TYPE_void) {
 	} break;
 }
 @c
-int jivejoin2(bat **res, BAT *proj, BAT *attr) {
-	bat *parent = VIEWparent(attr)?BBP_cache(VIEWparent(attr)):attr;
+int
+jivejoin2(bat **res, BAT *proj, BAT *attr)
+{
+	bat *parent = VIEWparent(attr) ? BBP_cache(VIEWparent(attr)) : attr;
 	int any = attr->ttype;
 	bat *bn = BATnew(TYPE_void, TTYPE(attr), BATcount(proj));
 	BUN p, q, r, bnbak;
@@ -3243,40 +3456,49 @@ int jivejoin2(bat **res, BAT *proj, BAT *attr) {
 	bn->batBuns->base = BUNfirst(bn);
 
 /* PETER start experimentation hack; must emulate relational projection cost  */
-	if (any >= TYPE_integer1 && any <= TYPE_pax256) {
+	if (any >=TYPE_integer1 && any <=TYPE_pax256) {
 		bat *bm = BATmirror(attr);
-        	int width = ATOMsize(attr->ttype) >> 2;
-        	int distance = 1 << (parent->ttype - attr->ttype);
+		int width = ATOMsize(attr->ttype) >> 2;
+		int distance = 1 << (parent->ttype - attr->ttype);
 
 		batloopFast(proj, p, q, xx) {
 			BUNfndVOID(r, attr, BUNtail(proj, p));
-			integerCopy((int*) BUNptr(bn, *(oid*) BUNhead(proj,p)), bm, r, width, distance);
+			integerCopy((int *) BUNptr(bn, *(oid *) BUNhead(proj, p)), bm, r, width, distance);
 		}
-	} else 
+	} else
 /* PETER end experimentation hack */
-		switch(any = ATOMstorage(any)) {
-		case TYPE_chr:	@:jivejoin2(chr,SIMPLE,hloc,tloc,r,0)@ 
-		case TYPE_sht:	@:jivejoin2(sht,SIMPLE,hloc,tloc,r,0)@ 
-		case TYPE_int:	
-		case TYPE_flt:	@:jivejoin2(int,SIMPLE,hloc,tloc,r,0)@ 
-		case TYPE_dbl:	
-		case TYPE_lng:	@:jivejoin2(lng,SIMPLE,hloc,tloc,r,0)@ 
-		default:	@:jivejoin2(any,ATOM,head,tail,BUNtail(attr,r),1)
-	}
-	*res = bn;
-bunins_failed:
+		switch (any = ATOMstorage(any)) {
+		case TYPE_chr:
+			@:jivejoin2(chr, SIMPLE, hloc, tloc, r, 0)@
+
+		case TYPE_sht:
+			@:jivejoin2(sht, SIMPLE, hloc, tloc, r, 0)@
+
+		case TYPE_int:
+		case TYPE_flt:
+			@:jivejoin2(int, SIMPLE, hloc, tloc, r, 0)@
+
+		case TYPE_dbl:
+		case TYPE_lng:
+			@:jivejoin2(lng, SIMPLE, hloc, tloc, r, 0)@
+
+		default:
+		      @:jivejoin2(any, ATOM, head, tail, BUNtail(attr, r), 1)
+		} *res = bn;
+      bunins_failed:
 	if (*res == NULL) {
 		BBPreclaim(bn);
 		return GDK_FAIL;
-	}	
+	}
 
 	/* restore correct properties in bn */
 	bn->batBuns->base = bnbak;
 	bn->batBuns->free = BUNsize(bn) * BATcount(proj);
 	BATsetcount(bn, BATcount(proj));
-	batseqbase(bn,0);
-	bn->tsorted = bathordered(proj)&BATtordered(proj)&BATtordered(attr)&1;
-	if (proj->tkey && attr->tkey) batkey(BATmirror(bn), TRUE); 
+	batseqbase(bn, 0);
+	bn->tsorted = bathordered(proj) & BATtordered(proj) & BATtordered(attr) & 1;
+	if (proj->tkey && attr->tkey)
+		batkey(BATmirror(bn), TRUE);
 	return GDK_SUCCEED;
 }
 
@@ -3297,35 +3519,30 @@ prefetching, a software prefetch is implemented, ie a simple prefetch loop.
 #endif
 #endif
 
-#if defined(ATHLON) 
-static INLINE int Mem2Cache(int*__r from, size_t size )
+#if defined(ATHLON)
+static INLINE int
+Mem2Cache(int *__r from, size_t size)
 {
-	int cnt = size/128;
-	__asm__ __volatile__ (
-		"movl %2, %%eax\n\t"
-		"movl %0, %%esi\n\t"
-		"addl %1, %%esi\n\t"
-		"1: movl -128(%%esi), %%edx\n\t"
-		"movl -64(%%esi), %%edx\n\t"
-		"subl $128, %%esi\n\t"
-		"dec %%eax\n\t"
-		"jnz 1b\n\t"
-                :  : "r" (from), "r" (size), "r" (cnt) : "memory",  "%eax", "%edx", "%esi" );
+	int cnt = size / 128;
+	__asm__ __volatile__("movl %2, %%eax\n\t" "movl %0, %%esi\n\t" "addl %1, %%esi\n\t" "1: movl -128(%%esi), %%edx\n\t" "movl -64(%%esi), %%edx\n\t" "subl $128, %%esi\n\t" "dec %%eax\n\t" "jnz 1b\n\t"::"r"(from), "r"(size), "r"(cnt):"memory", "%eax",
+			     "%edx", "%esi");
 	return cnt;
 }
 #else
 
 #if defined(ia64)
 /* L2 has 128 byte cachelines */
-static INLINE int Mem2Cache(int*__r from, size_t size )
+static INLINE int
+Mem2Cache(int *__r from, size_t size)
 {
-	char *data = (char*) from;
+	char *data = (char *) from;
 	int i;
-	for(i=0; i<size; i += 64){
+
+	for (i = 0; i < size; i += 64) {
 #ifndef __GNUC__
-        	_mm_prefetch(data, _MM_HINT_NTA );
+		_mm_prefetch(data, _MM_HINT_NTA);
 #else
-        	__builtin_prefetch(data);
+		__builtin_prefetch(data);
 #endif
 		data += 64;
 	}
@@ -3336,22 +3553,24 @@ static INLINE int Mem2Cache(int*__r from, size_t size )
 #define CACHELINE (128)
 #define INTCACHELINE (CACHELINE/sizeof(int))
 
-static INLINE int Mem2Cache(int*__r p, size_t size){
+static INLINE int
+Mem2Cache(int *__r p, size_t size)
+{
 	size_t sum0 = 0, sum1 = 0, i = 0;
 	size /= sizeof(int);
 
-	while(i+(8*INTCACHELINE) < size){
-		sum0 += p[i+0*INTCACHELINE];
-		sum1 += p[i+1*INTCACHELINE];
-		sum0 += p[i+2*INTCACHELINE];
-		sum1 += p[i+3*INTCACHELINE];
-		sum0 += p[i+4*INTCACHELINE];
-		sum1 += p[i+5*INTCACHELINE];
-		sum0 += p[i+6*INTCACHELINE];
-		sum1 += p[i+7*INTCACHELINE];
-		i += INTCACHELINE*8;
+	while (i + (8 * INTCACHELINE) < size) {
+		sum0 += p[i + 0 * INTCACHELINE];
+		sum1 += p[i + 1 * INTCACHELINE];
+		sum0 += p[i + 2 * INTCACHELINE];
+		sum1 += p[i + 3 * INTCACHELINE];
+		sum0 += p[i + 4 * INTCACHELINE];
+		sum1 += p[i + 5 * INTCACHELINE];
+		sum0 += p[i + 6 * INTCACHELINE];
+		sum1 += p[i + 7 * INTCACHELINE];
+		i += INTCACHELINE * 8;
 	}
-	return sum0+sum1;
+	return sum0 + sum1;
 }
 
 #endif
@@ -3360,26 +3579,29 @@ static INLINE int Mem2Cache(int*__r p, size_t size){
 @+ clustered positional join
 @c
 static
-dbl prefetch(ssize_t n, int stride, dbl*__r src) {  
+    dbl
+prefetch(ssize_t n, int stride, dbl *__r src)
+{
 	dbl tot = 0;
 	ssize_t i;
+
 	n >>= 3;
 	if (stride == 1) {
-		Mem2Cache((int*) src, n);
+		Mem2Cache((int *) src, n);
 	} else if (stride == 32) {
-		for(i=0; i+16<n; i+=16) 
-			tot += src[i] + src[i+4] + src[i+8] + src[i+12];
-	} else if (stride == 64) { 
-		for(i=0; i+32<n; i+=32) 
-			tot += src[i] + src[i+8] + src[i+16] + src[i+24];
-	} else if (stride == 128) { 
-		for(i=0; i+64<n; i+=64) 
-			tot += src[i] + src[i+16] + src[i+32] + src[i+48];
-	} else if (stride == 256) { 
-		for(i=0; i+128<n; i+=128) 
-			tot += src[i] + src[i+32] + src[i+64] + src[i+96];
+		for (i = 0; i + 16 < n; i += 16)
+			tot += src[i] + src[i + 4] + src[i + 8] + src[i + 12];
+	} else if (stride == 64) {
+		for (i = 0; i + 32 < n; i += 32)
+			tot += src[i] + src[i + 8] + src[i + 16] + src[i + 24];
+	} else if (stride == 128) {
+		for (i = 0; i + 64 < n; i += 64)
+			tot += src[i] + src[i + 16] + src[i + 32] + src[i + 48];
+	} else if (stride == 256) {
+		for (i = 0; i + 128 < n; i += 128)
+			tot += src[i] + src[i + 32] + src[i + 64] + src[i + 96];
 	} else if (stride > 8) {
-		for(i=0; i<n; i+=stride) 
+		for (i = 0; i < n; i += stride)
 			tot += src[i];
 	}
 	return tot;
@@ -3463,9 +3685,11 @@ int oidhead, ssize_t n, @1*__r res, oid*__r pos, @1*__r val) {
 @:posjoin(int)@
 @:posjoin(dbl)@
 
-int posjoin_clustered(bat** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
+int
+posjoin_clustered(bat **r, BAT *c, BAT *v, int *rb, int *st, int *vs)
+{
 	ssize_t n, c_cnt = batcount(c), v_cnt = BATcount(v);
-	size_t prev_bits = ~ (size_t) 0;
+	size_t prev_bits = ~(size_t) 0;
 	int radix_shift, radix_bits = *rb;
 	int oidhead = (BUNsize(c) != sizeof(oid));
 	ssize_t width = BUNsize(v), i = MAX(1, batcount(v) - 1);
@@ -3480,11 +3704,12 @@ int posjoin_clustered(bat** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 		return GDK_FAIL;
 	}
 	bn = *r = batnew(TYPE_void, v->ttype, c_cnt);
-	if(bn == NULL) return GDK_FAIL;
-	pos = (oid*) BUNtloc(c,BUNfirst(c));
-	res = (BUN) BUNtloc(bn,BUNfirst(bn));
+	if (bn == NULL)
+		return GDK_FAIL;
+	pos = (oid *) BUNtloc(c, BUNfirst(c));
+	res = (BUN) BUNtloc(bn, BUNfirst(bn));
 
-	for(n=0; i > 0 ; n++) {
+	for (n = 0; i > 0; n++) {
 		i >>= 1;
 	}
 	radix_shift = n - radix_bits;
@@ -3493,56 +3718,54 @@ int posjoin_clustered(bat** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 	BATsetcount(bn, c_cnt);
 
 	/* compute skiprate and if set, prefetch full first cluster */
-	skiprate = ((dbl)v_cnt)/c_cnt;
+	skiprate = ((dbl) v_cnt) / c_cnt;
 	if (stride < 0) {
-		cur_prefetch = (char*) vf + width*MIN(v_cnt,1<<radix_shift);
-		prefetch(cur_prefetch - vf, 128, (dbl*) vf);
+		cur_prefetch = (char *) vf + width * MIN(v_cnt, 1 << radix_shift);
+		prefetch(cur_prefetch - vf, 128, (dbl *) vf);
 	}
 
-	for(i=0; i<c_cnt; i+=vectorsize) {
-		ssize_t probe = MIN(i+vectorsize,c_cnt)-1;
-		size_t cur_bits = pos[probe<<oidhead]&radix_mask;
+	for (i = 0; i < c_cnt; i += vectorsize) {
+		ssize_t probe = MIN(i + vectorsize, c_cnt) - 1;
+		size_t cur_bits = pos[probe << oidhead] & radix_mask;
 
-		n = MIN(c_cnt-i,vectorsize);
+		n = MIN(c_cnt - i, vectorsize);
 
 		/* handle prefetching of the next cluster */
 		if (cur_prefetch) {
 			/* increment concurrent prefetch pointer */
 			size_t prefetch_pos = (size_t) (i * skiprate) + (1 << radix_shift);
+
 			cur_prefetch = vf + width * prefetch_pos;
-			if (cur_prefetch + n*width*((int) skiprate) > BUNlast(v)) 
-				cur_prefetch = NULL; /* prefetch would cause SEGV */  
+			if (cur_prefetch + n * width * ((int) skiprate) > BUNlast(v))
+				cur_prefetch = NULL;	/* prefetch would cause SEGV */
 		} else if (stride >= 0) {
 			/* handle sequential prefetching if applicable */
 			if (prev_bits != cur_bits && radix_shift > 3) {
 				size_t length = width * MIN(v_cnt - cur_bits, (size_t) 1 << radix_shift);
-				(void) prefetch(length, stride, (dbl*) (vf+cur_bits*width));
-				if (skiprate*width > 128) {
-					(void) prefetch(length, stride, (dbl*) (vf+cur_bits*width));
+
+				(void) prefetch(length, stride, (dbl *) (vf + cur_bits * width));
+				if (skiprate * width > 128) {
+					(void) prefetch(length, stride, (dbl *) (vf + cur_bits * width));
 				}
 			}
 		}
 		/* do the join for this vector */
-		switch(ATOMstorage(v->ttype)){
-		case TYPE_chr: 
-			(void) posjoin_chr((int) skiprate, (chr*) cur_prefetch,
-					   oidhead, n, (chr*) res, pos+(i<<oidhead), (chr*) vf); 
+		switch (ATOMstorage(v->ttype)) {
+		case TYPE_chr:
+			(void) posjoin_chr((int) skiprate, (chr *) cur_prefetch, oidhead, n, (chr *) res, pos + (i << oidhead), (chr *) vf);
 			break;
-		case TYPE_sht: 
-			(void) posjoin_sht((int) skiprate, (sht*) cur_prefetch,
-					   oidhead, n, (sht*) res, pos+(i<<oidhead), (sht*) vf); 
+		case TYPE_sht:
+			(void) posjoin_sht((int) skiprate, (sht *) cur_prefetch, oidhead, n, (sht *) res, pos + (i << oidhead), (sht *) vf);
 			break;
-		case TYPE_int:	
-		case TYPE_flt: 
-			(void) posjoin_int((int) skiprate, (int*) cur_prefetch,
-				  	   oidhead, n, (int*) res, pos+(i<<oidhead), (int*) vf); 
+		case TYPE_int:
+		case TYPE_flt:
+			(void) posjoin_int((int) skiprate, (int *) cur_prefetch, oidhead, n, (int *) res, pos + (i << oidhead), (int *) vf);
 			break;
-		case TYPE_lng:	
-		case TYPE_dbl: 
-			(void) posjoin_dbl((int) skiprate, (dbl*) cur_prefetch,
-					   oidhead, n, (dbl*) res, pos+(i<<oidhead), (dbl*) vf); 
+		case TYPE_lng:
+		case TYPE_dbl:
+			(void) posjoin_dbl((int) skiprate, (dbl *) cur_prefetch, oidhead, n, (dbl *) res, pos + (i << oidhead), (dbl *) vf);
 			break;
-		default: 
+		default:
 			GDKerror("posjoin: type %s not implemented\n", ATOMname(v->ttype));
 			bn->batBuns->free -= c_cnt * BUNsize(bn);
 			bn->batCount -= c_cnt;
@@ -3555,4 +3778,5 @@ int posjoin_clustered(bat** r, BAT* c, BAT *v, int *rb, int *st, int *vs) {
 	bn->tsorted = 0;
 	return GDK_SUCCEED;
 }
+
 @}

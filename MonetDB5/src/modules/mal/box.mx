@@ -69,35 +69,49 @@ comment "Retrieve the names of all boxes";
 @h
 #ifndef _ITERATOR_H
 #define _ITERATOR_H
-#endif /* _ITERATOR_H*/
+#endif /* _ITERATOR_H */
 @c
 #include "mal_exception.h"
 #include "mal_box.h"
 #include "mal_interpreter.h"
 
-str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
-	(void)mb; /*fool compiler */
-	name = (str) getArgValue(stk,pci,1);
-	if(openBox(name) != 0) return MAL_SUCCEED;
-	return throwMessage("box.open","failed to open box");
+
+	(void) mb;		/*fool compiler */
+	name = (str) getArgValue(stk, pci, 1);
+	if (openBox(name) != 0)
+		return MAL_SUCCEED;
+	return throwMessage("box.open", "failed to open box");
 }
 
-str BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
-	(void)mb; /*fool compiler */
-	name = (str) getArgValue(stk,pci,1);
-	if( closeBox(name ,FALSE) ==0) return MAL_SUCCEED;
-	return throwMessage("box.close","failed to close box");
+
+	(void) mb;		/*fool compiler */
+	name = (str) getArgValue(stk, pci, 1);
+	if (closeBox(name, FALSE) == 0)
+		return MAL_SUCCEED;
+	return throwMessage("box.close", "failed to close box");
 }
-str BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
 	str name;
-	(void)mb;  (void) stk; /*fool compiler */
+
+	(void) mb;
+	(void) stk;		/*fool compiler */
 	@:OpenBox(destroy)@
 	destroyBox(name);
 	return MAL_SUCCEED;
 }
+
 @-
 Access to a box calls for resolving the first parameter
 to a named box.
@@ -108,92 +122,109 @@ to a named box.
 	return throwMessage("box.@1","box is not open");
 @-
 @c
-str BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	ValPtr v;
 	Box box;
 
 	(void) mb;
 	@:OpenBox(deposit)@
-	name = (str) getArgValue(stk,pci,2);
-	v = &stk->stk[getArg(pci,3)];
-	if(depositBox(box,name,v) )
-		return throwException(MALEXCEPTION,"box.deposit",
-			"failed to deposit '%s' into box",name);
+	name = (str) getArgValue(stk, pci, 2);
+	v = &stk->stk[getArg(pci, 3)];
+	if (depositBox(box, name, v))
+		return throwException(MALEXCEPTION, "box.deposit", "failed to deposit '%s' into box", name);
 	return MAL_SUCCEED;
 }
 
-str BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
 	ValPtr v;
 
 	@:OpenBox(take)@
-	name = (str) getArgValue(stk,pci,2);
-	v = &stk->stk[getArg(pci,0)];
-	if(takeBox(box,name,v, (int) getArgType(mb,pci,0)))
-		return throwException(MALEXCEPTION,"box.take",
-			"failed to take '%s' from box",name);
+	name = (str) getArgValue(stk, pci, 2);
+	v = &stk->stk[getArg(pci, 0)];
+	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
+		return throwException(MALEXCEPTION, "box.take", "failed to take '%s' from box", name);
 	(void) mb;
 	return MAL_SUCCEED;
 }
 
-str BOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+BOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
 
-	(void)mb; /*fool compiler */
+	(void) mb;		/*fool compiler */
 	@:OpenBox(release)@
-	name = (str) getArgValue(stk,pci,2);
-	releaseBox(box,name);
+	name = (str) getArgValue(stk, pci, 2);
+	releaseBox(box, name);
 	return MAL_SUCCEED;
 }
 
-str BOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+BOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
-	(void)mb; /*fool compiler */
+
+	(void) mb;		/*fool compiler */
 	@:OpenBox(releaseAll)@
 	releaseAllBox(box);
 	return MAL_SUCCEED;
 }
 
-str BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
 
-	(void)mb; /*fool compiler */
+	(void) mb;		/*fool compiler */
 	@:OpenBox(discard)@
-	name = (str) getArgValue(stk,pci,2);
-	if( discardBox(box,name) )
-		return throwException(MALEXCEPTION,"box.discard",
-			"failed to discard '%s' from box '%s'",
-			name, box->name);
+	name = (str) getArgValue(stk, pci, 2);
+	if (discardBox(box, name))
+		return throwException(MALEXCEPTION, "box.discard", "failed to discard '%s' from box '%s'", name, box->name);
 	return MAL_SUCCEED;
 }
 
-str BOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+BOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
-	(void)mb; (void)stk; /*fool compiler */
+
+	(void) mb;
+	(void) stk;		/*fool compiler */
 	@:OpenBox(toString)@
 	return MAL_SUCCEED;
 }
-str BOXgetBoxNames(int *bid){
+
+str
+BOXgetBoxNames(int *bid)
+{
 	return getBoxNames(bid);
 }
 
-str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
-	(void)mb; /*fool compiler */
+	(void) mb;		/*fool compiler */
 	@:OpenBox(iterator)@
-	cursor= (lng*) getArgValue(stk,pci,0);
-	v= &stk->stk[getArg(pci,2)];
+	cursor = (lng *) getArgValue(stk, pci, 0);
+	v = &stk->stk[getArg(pci, 2)];
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
 }
+
 @}

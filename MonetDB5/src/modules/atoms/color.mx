@@ -256,30 +256,36 @@ color_tostr(char **colorStr, int *len, color *c)
 }
 
 str
-CLRprintf(int *ret, color *c){
-	str s=0;
-	int len=0;
+CLRprintf(int *ret, color *c)
+{
+	str s = 0;
+	int len = 0;
+
 	(void) ret;
-	color_tostr(&s,&len, c);
-	stream_printf(GDKout,"[ %s ]\n",s);
-	return MAL_SUCCEED;
-}
-str
-CLRprintf2(int *ret, str *form, color *c){
-	(void) ret;
-	stream_printf(GDKout,*form,*c);
+	color_tostr(&s, &len, c);
+	stream_printf(GDKout, "[ %s ]\n", s);
 	return MAL_SUCCEED;
 }
 
 str
-CLRstr(str *s, color *c){
-	int len=0;
-	str t= 0;
-
-	color_tostr(&t,&len,c);
-	*s= (str) t;
+CLRprintf2(int *ret, str *form, color *c)
+{
+	(void) ret;
+	stream_printf(GDKout, *form, *c);
 	return MAL_SUCCEED;
 }
+
+str
+CLRstr(str *s, color *c)
+{
+	int len = 0;
+	str t = 0;
+
+	color_tostr(&t, &len, c);
+	*s = (str) t;
+	return MAL_SUCCEED;
+}
+
 str
 CLRrgb(color *rgb, int *r, int *g, int *b)
 {
@@ -413,6 +419,7 @@ CLRhue(flt *f, color *c)
 	*f = h;
 	return (MAL_SUCCEED);
 }
+
 str
 CLRhueInt(int *f, color *c)
 {
@@ -518,10 +525,14 @@ CLRcb(int *cb, color *c)
 	*cb = (int) (-0.1687f * (float) (r) - 0.3312f * (float) (g) + 0.5000f * (float) (b)) + 128;
 	return (MAL_SUCCEED);
 }
+
 str
-CLRcolor(color *c, str *val){
+CLRcolor(color *c, str *val)
+{
 	int len = strlen(*val);
+
 	color_fromstr(*val, &len, &c);
 	return MAL_SUCCEED;
 }
+
 @}

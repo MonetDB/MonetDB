@@ -122,7 +122,7 @@ comment "Produces a XML-formatted manual over all modules loaded.";
 @include prelude.mx
 @h
 #ifdef _INSPECT_H
-#endif /* _INSPECT_H*/
+#endif /* _INSPECT_H */
 @c
 #include "gdk.h"
 #include <stdarg.h>
@@ -138,49 +138,80 @@ comment "Produces a XML-formatted manual over all modules loaded.";
 Mal symbol table and environment analysis.
 @c
 
-str INSPECTmoduleNames(int *ret){
+str
+INSPECTmoduleNames(int *ret)
+{
 	Client c;
 	Module s;
-	int i=0;
+	int i = 0;
 	BAT *b = BATnew(TYPE_void, TYPE_str, 256);
 
-        if (b == 0) return throwMessage("inspect.moduleNames", "failed to create BAT");
-	c= getClient();
+	if (b == 0)
+		return throwMessage("inspect.moduleNames", "failed to create BAT");
+	c = getClient();
 
-	for(s=c->nspace; s; s= s->outer,i++)
-		BUNins(b,&int_nil,s->name);
+	for (s = c->nspace; s; s = s->outer, i++)
+		BUNins(b, &int_nil, s->name);
 
-	@:Pseudo(view,scope,names)@
+	@:Pseudo(view, scope, names)@
+
 	return MAL_SUCCEED;
 }
-str INSPECTsymbolFind(int *ret,int kind)
-{	Client c;
+
+str
+INSPECTsymbolFind(int *ret, int kind)
+{
+	Client c;
 	Module s;
 	Symbol t;
 	int i;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
 
-        if (b == 0) return throwMessage("inspect.symbolFind", "failed to create BAT");
-	c= getClient();
-	s= c->nspace;
-	while(s){
-        for(i=0;s && i<MAXSCOPE;i++)
-            if( s->subscope[i]){
-                for(t= s->subscope[i];t;t=t->peer){
-                InstrPtr sig= getSignature(t);
-                if( kind && kind != sig->token) continue;
-                BUNins(b,moduleName(sig),functionName(sig));
-                }
-            }
-            s= s->outer;
+	if (b == 0)
+		return throwMessage("inspect.symbolFind", "failed to create BAT");
+	c = getClient();
+	s = c->nspace;
+	while (s) {
+		for (i = 0; s && i < MAXSCOPE; i++)
+			if (s->subscope[i]) {
+				for (t = s->subscope[i]; t; t = t->peer) {
+					InstrPtr sig = getSignature(t);
+
+					if (kind && kind != sig->token)
+						continue;
+					BUNins(b, moduleName(sig), functionName(sig));
+				}
+			}
+		s = s->outer;
 	}
-	@:Pseudo(view,symbol,name)@
+	@:Pseudo(view, symbol, name)@
+
 	return MAL_SUCCEED;
 }
-str INSPECTfactoryNames(int *ret){ return INSPECTsymbolFind(ret,FACTORYsymbol); }
-str INSPECTfunctionNames(int *ret){ return INSPECTsymbolFind(ret,FUNCTIONsymbol); }
-str INSPECTpatternNames(int *ret){ return INSPECTsymbolFind(ret,PATTERNsymbol); }
-str INSPECTcommandNames(int *ret){ return INSPECTsymbolFind(ret,COMMANDsymbol); }
+
+str
+INSPECTfactoryNames(int *ret)
+{
+	return INSPECTsymbolFind(ret, FACTORYsymbol);
+}
+
+str
+INSPECTfunctionNames(int *ret)
+{
+	return INSPECTsymbolFind(ret, FUNCTIONsymbol);
+}
+
+str
+INSPECTpatternNames(int *ret)
+{
+	return INSPECTsymbolFind(ret, PATTERNsymbol);
+}
+
+str
+INSPECTcommandNames(int *ret)
+{
+	return INSPECTsymbolFind(ret, COMMANDsymbol);
+}
 
 @-
 Collect symbol table information in a series of BATs for analysis
@@ -188,378 +219,471 @@ and display. Note, the elements are aligned using a counter,
 which makes it susceptable for intermediate updates
 @c
 
-str INSPECTgetFunction(int *ret)
-{	Client c;
+str
+INSPECTgetFunction(int *ret)
+{
+	Client c;
 	Module s;
 	Symbol t;
 	int i;
-	oid k= 0;
+	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 
-	if (b == 0) 
+	if (b == 0)
 		return throwMessage("inspect.getfunctionName", "failed to create BAT");
-	BATseqbase(b,k);
-	c= getClient();
-	s= c->nspace;
-	while(s){
-        for(i=0;s && i<MAXSCOPE;i++)
-            if( s->subscope[i]){
-                for(t= s->subscope[i];t;t=t->peer){
-                    InstrPtr sig= getSignature(t);
-                    BUNins(b,&k,functionName(sig));
-                    k++;
-                }
-            }
-            s= s->outer;
+	BATseqbase(b, k);
+	c = getClient();
+	s = c->nspace;
+	while (s) {
+		for (i = 0; s && i < MAXSCOPE; i++)
+			if (s->subscope[i]) {
+				for (t = s->subscope[i]; t; t = t->peer) {
+					InstrPtr sig = getSignature(t);
+
+					BUNins(b, &k, functionName(sig));
+					k++;
+				}
+			}
+		s = s->outer;
 	}
-	@:Pseudo(view,symbol,function)@
+	@:Pseudo(view, symbol, function)@
+
 	return MAL_SUCCEED;
 }
-str INSPECTgetModule(int *ret)
-{	Client c;
+
+str
+INSPECTgetModule(int *ret)
+{
+	Client c;
 	Module s;
 	Symbol t;
 	int i;
-	oid k= 0;
+	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 
-	if (b == 0) 
+	if (b == 0)
 		return throwMessage("inspect.getmodule", "failed to create BAT");
-	BATseqbase(b,k);
-	c= getClient();
-	s= c->nspace;
-	while(s){
-        for(i=0;s && i<MAXSCOPE;i++)
-            if( s->subscope[i]){
-                for(t= s->subscope[i];t;t=t->peer){
-                    InstrPtr sig= getSignature(t);
-                    BUNins(b,&k,moduleName(sig));
-                    k++;
-                }
-            }
-            s= s->outer;
+	BATseqbase(b, k);
+	c = getClient();
+	s = c->nspace;
+	while (s) {
+		for (i = 0; s && i < MAXSCOPE; i++)
+			if (s->subscope[i]) {
+				for (t = s->subscope[i]; t; t = t->peer) {
+					InstrPtr sig = getSignature(t);
+
+					BUNins(b, &k, moduleName(sig));
+					k++;
+				}
+			}
+		s = s->outer;
 	}
-	@:Pseudo(view,symbol,module)@
+	@:Pseudo(view, symbol, module)@
+
 	return MAL_SUCCEED;
 }
 
-str INSPECTgetkind(int *ret)
-{	Client c;
+str
+INSPECTgetkind(int *ret)
+{
+	Client c;
 	Module s;
 	Symbol t;
 	int i;
-	oid k= 0;
+	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 
-	if (b == 0) 
+	if (b == 0)
 		return throwMessage("inspect.get@1", "failed to create BAT");
-	BATseqbase(b,k);
-	c= getClient();
-	s= c->nspace;
-	while(s){
-        for(i=0;s && i<MAXSCOPE;i++)
-            if( s->subscope[i]){
-                for(t= s->subscope[i];t;t=t->peer){
-                    InstrPtr sig= getSignature(t);
-                    str kind= operatorName(sig->token);
-                    BUNins(b,&k,kind);
-                    k++;
-                }
-            }
-            s= s->outer;
+	BATseqbase(b, k);
+	c = getClient();
+	s = c->nspace;
+	while (s) {
+		for (i = 0; s && i < MAXSCOPE; i++)
+			if (s->subscope[i]) {
+				for (t = s->subscope[i]; t; t = t->peer) {
+					InstrPtr sig = getSignature(t);
+					str kind = operatorName(sig->token);
+
+					BUNins(b, &k, kind);
+					k++;
+				}
+			}
+		s = s->outer;
 	}
-	@:Pseudo(view,symbol,kind)@
+	@:Pseudo(view, symbol, kind)@
+
 	return MAL_SUCCEED;
 }
 
-str INSPECTgetaddress(int *ret)
-{	Client c;
+str
+INSPECTgetaddress(int *ret)
+{
+	Client c;
 	Module s;
 	Symbol t;
 	int i;
-        oid k= 0;
+	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
 
-	if (b == 0) 
+	if (b == 0)
 		return throwMessage("inspect.get@1", "failed to create BAT");
-	BATseqbase(b,k);
-	c= getClient();
-	s= c->nspace;
-	while(s){
-        for(i=0;s && i<MAXSCOPE;i++)
-            if( s->subscope[i]){
-                for(t= s->subscope[i];t;t=t->peer){
-                    str kind= t->def->binding;
-                    if( kind== 0 ) kind= "";
-                    BUNins(b,&k,&kind);
-                    k++;
-                }
-            }
-            s= s->outer;
+	BATseqbase(b, k);
+	c = getClient();
+	s = c->nspace;
+	while (s) {
+		for (i = 0; s && i < MAXSCOPE; i++)
+			if (s->subscope[i]) {
+				for (t = s->subscope[i]; t; t = t->peer) {
+					str kind = t->def->binding;
+
+					if (kind == 0)
+						kind = "";
+					BUNins(b, &k, &kind);
+					k++;
+				}
+			}
+		s = s->outer;
 	}
-	@:Pseudo(view,symbol,address)@
+	@:Pseudo(view, symbol, address)@
+
 	return MAL_SUCCEED;
 }
 
 
-str INSPECTgetsignature(int *ret)
-{	Client c;
+str
+INSPECTgetsignature(int *ret)
+{
+	Client c;
 	Module s;
 	Symbol t;
 	int i;
-        oid k= 0;
+	oid k = 0;
 	BAT *b = BATnew(TYPE_oid, TYPE_str, 256);
-        char sig[4096];
+	char sig[4096];
 
-	if (b == 0) 
+	if (b == 0)
 		return throwMessage("inspect.get@1", "failed to create BAT");
-	BATseqbase(b,k);
-	c= getClient();
-	s= c->nspace;
-	while(s){
-        for(i=0;s && i<MAXSCOPE;i++)
-            if( s->subscope[i]){
-                for(t= s->subscope[i];t;t=t->peer){
-                    fcnDefinition(t->def, getSignature(t),sig,0);
-                    BUNins(b,&k,strchr(sig,'('));
-                    k++;
-                }
-            }
-            s= s->outer;
+	BATseqbase(b, k);
+	c = getClient();
+	s = c->nspace;
+	while (s) {
+		for (i = 0; s && i < MAXSCOPE; i++)
+			if (s->subscope[i]) {
+				for (t = s->subscope[i]; t; t = t->peer) {
+					fcnDefinition(t->def, getSignature(t), sig, 0);
+					BUNins(b, &k, strchr(sig, '('));
+					k++;
+				}
+			}
+		s = s->outer;
 	}
-	@:Pseudo(view,symbol,address)@
+	@:Pseudo(view, symbol, address)@
+
 	return MAL_SUCCEED;
 }
 
-str INSPECTgetDefinition(int *ret, str *nme, str *fcn)
-{	Symbol s;
+str
+INSPECTgetDefinition(int *ret, str *nme, str *fcn)
+{
+	Symbol s;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	if(b == 0) return throwMessage("inspect.getDefinition", 
-				"failed to create BAT");
-	
-	s= findMALSymbol(putName(*nme,strlen(*nme)),
-					putName(*fcn,strlen(*fcn)) );
-	while(s){
+
+	if (b == 0)
+		return throwMessage("inspect.getDefinition", "failed to create BAT");
+
+	s = findMALSymbol(putName(*nme, strlen(*nme)), putName(*fcn, strlen(*fcn)));
+	while (s) {
 		int i;
 		str ps;
-		for(i=0;i<s->def->stop;i++){
-			ps= instruction2str(s->def, getInstrPtr(s->def,i),0);
-			BUNins(b,&i,ps+1);
+
+		for (i = 0; i < s->def->stop; i++) {
+			ps = instruction2str(s->def, getInstrPtr(s->def, i), 0);
+			BUNins(b, &i, ps + 1);
 			GDKfree(ps);
 		}
-		s= s->peer;
+		s = s->peer;
 	}
-	@:Pseudo(view,fcn,stmt)@
+	@:Pseudo(view, fcn, stmt)@
+
 	return MAL_SUCCEED;
 }
-str INSPECTgetSignature(int *ret, str *mod, str *fcn)
-{	Symbol s;
+
+str
+INSPECTgetSignature(int *ret, str *mod, str *fcn)
+{
+	Symbol s;
 	str ps;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 12);
-        if (b == 0) return throwMessage("inspect.getSignature", 
-					"failed to create BAT");
 
-	s= findMALSymbol(putName(*mod,strlen(*mod)),
-			putName(*fcn,strlen(*fcn)));
-        if (s == 0) 
-		return throwMessage("inspect.getSignature", 
-			"failed to find <module>.<function>");
+	if (b == 0)
+		return throwMessage("inspect.getSignature", "failed to create BAT");
 
-	while(s!= NULL){
-		if( idcmp(s->name,*fcn)==0) {
+	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	if (s == 0)
+		return throwMessage("inspect.getSignature", "failed to find <module>.<function>");
+
+	while (s != NULL) {
+		if (idcmp(s->name, *fcn) == 0) {
 			char *i, *o;
-			ps= instruction2str(s->def, getSignature(s),0);
-			i= strchr(ps,'(');
-			if(i == 0) continue;
-			*i=0; i++;
-			o= strchr(i,')');
-			if(o == 0) continue;
-			*o= 0; o++;
-			if(*o== '(') o++;
-			if(strchr(o,')')) *strchr(o,'(')= 0;
-			if(strchr(o,';')) *strchr(o,';')= 0;
-			BUNins(b,i,o);
+
+			ps = instruction2str(s->def, getSignature(s), 0);
+			i = strchr(ps, '(');
+			if (i == 0)
+				continue;
+			*i = 0;
+			i++;
+			o = strchr(i, ')');
+			if (o == 0)
+				continue;
+			*o = 0;
+			o++;
+			if (*o == '(')
+				o++;
+			if (strchr(o, ')'))
+				*strchr(o, '(') = 0;
+			if (strchr(o, ';'))
+				*strchr(o, ';') = 0;
+			BUNins(b, i, o);
 			GDKfree(ps);
 		}
-		s= s->peer;
+		s = s->peer;
 	}
 
-	@:Pseudo(view,input,result)@
+	@:Pseudo(view, input, result)@
 	return MAL_SUCCEED;
 }
-str INSPECTsymbolType(int *ret, str *mod, str *fcn) 
-{	Symbol s;
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-        if (b == 0) return throwMessage("inspect.getType", 
-					"failed to create BAT");
 
-	s= findMALSymbol(*mod,*fcn);
-        if (s == 0) 
-		return throwMessage("inspect.getSignature", 
-			"failed to find <module>.<function>");
-	while(s!= NULL){
-		if( idcmp(s->name,*fcn)==0) {
-			str t=getTypeName(getDestType(s->def,getSignature(s)));
-			BUNins(b,s->name,t);
+str
+INSPECTsymbolType(int *ret, str *mod, str *fcn)
+{
+	Symbol s;
+	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+
+	if (b == 0)
+		return throwMessage("inspect.getType", "failed to create BAT");
+
+	s = findMALSymbol(*mod, *fcn);
+	if (s == 0)
+		return throwMessage("inspect.getSignature", "failed to find <module>.<function>");
+	while (s != NULL) {
+		if (idcmp(s->name, *fcn) == 0) {
+			str t = getTypeName(getDestType(s->def, getSignature(s)));
+
+			BUNins(b, s->name, t);
 			GDKfree(t);
 		}
-		s= s->peer;
+		s = s->peer;
 	}
-	@:Pseudo(view,fcn,type)@
+	@:Pseudo(view, fcn, type)@
 	return MAL_SUCCEED;
 }
 
-str INSPECTatom_names(int *ret)
-{	int i;
+str
+INSPECTatom_names(int *ret)
+{
+	int i;
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if (b == 0) return throwMessage("inspect.getAtomNames", 
-					"failed to create BAT");
 
-	for(i=0;i<GDKatomcnt;i++) BUNins(b,&i,ATOMname(i));
+	if (b == 0)
+		return throwMessage("inspect.getAtomNames", "failed to create BAT");
 
-	@:Pseudo(view,atom,name)@
+	for (i = 0; i < GDKatomcnt; i++)
+		BUNins(b, &i, ATOMname(i));
+
+	@:Pseudo(view, atom, name)@
+
 	return MAL_SUCCEED;
 }
-str INSPECTatom_sup_names(int *ret)
-{	int i,k;
-	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-        if (b == 0) return throwMessage("inspect.getAtomSuperNames", 
-			"failed to create BAT");
 
-	for(i=0;i<GDKatomcnt;i++) {
-		for(k= BATatoms[i].storage; k>TYPE_str; k= BATatoms[k].storage);
-		BUNins(b,&i,ATOMname(k));
+str
+INSPECTatom_sup_names(int *ret)
+{
+	int i, k;
+	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
+
+	if (b == 0)
+		return throwMessage("inspect.getAtomSuperNames", "failed to create BAT");
+
+	for (i = 0; i < GDKatomcnt; i++) {
+		for (k = BATatoms[i].storage; k > TYPE_str; k = BATatoms[k].storage)
+			;
+		BUNins(b, &i, ATOMname(k));
 	}
 
-	@:Pseudo(view,atom,sup_name)@
+	@:Pseudo(view, atom, sup_name)@
+
 	return MAL_SUCCEED;
 }
-str INSPECTatom_sizes(int *ret)
-{	int i;
+
+str
+INSPECTatom_sizes(int *ret)
+{
+	int i;
 	size_t s;
 	BAT *b = BATnew(TYPE_int, TYPE_int, 256);
-        if (b == 0) return throwMessage("inspect.getAtomSizes",
-		"failed to create BAT");
 
-	for(i=0;i<GDKatomcnt;i++) {
-		s= ATOMsize(i);
-		BUNins(b,&i,&s);
+	if (b == 0)
+		return throwMessage("inspect.getAtomSizes", "failed to create BAT");
+
+	for (i = 0; i < GDKatomcnt; i++) {
+		s = ATOMsize(i);
+		BUNins(b, &i, &s);
 	}
 
-	@:Pseudo(view,atom,size)@
+	@:Pseudo(view, atom, size)@
+
 	return MAL_SUCCEED;
 }
+
 @+ Display routines
 @c
-str INSPECTshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	Client c= getClient();
-	(void) p; (void) stk;
-	printFunction(c->fdout,mb,LIST_INPUT);
+str
+INSPECTshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	Client c = getClient();
+
+	(void) p;
+	(void) stk;
+	printFunction(c->fdout, mb, LIST_INPUT);
 	return MAL_SUCCEED;
 }
-str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	str     modnme= getArgName(mb,p,1);
-	str     fcnnme= getArgName(mb,p,2);
-	Module  scope=NULL;
-	Symbol s= NULL;
-	Client c= getClient();
 
-	scope = findModule(c->nspace,modnme);
-	if( scope)
-		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)) );
+str
+INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	str modnme = getArgName(mb, p, 1);
+	str fcnnme = getArgName(mb, p, 2);
+	Module scope = NULL;
+	Symbol s = NULL;
+	Client c = getClient();
 
-	if( s == NULL)
-		GDKerror("@1:Could not find %s.%s\n",modnme,fcnnme);
-	else 
-		printFunction(c->fdout,s->def,LIST_INPUT);
-	(void) stk; /* fool compiler */
+	scope = findModule(c->nspace, modnme);
+
+	if (scope)
+		s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
+
+	if (s == NULL)
+		GDKerror("@1:Could not find %s.%s\n", modnme, fcnnme);
+	else
+		printFunction(c->fdout, s->def, LIST_INPUT);
+	(void) stk;		/* fool compiler */
 	return NULL;
 }
 
-str INSPECTtypename(str *ret, int *tpe){
-        *ret = getTypeName(*tpe);
-        return MAL_SUCCEED;
-}
-str INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-        int *ret;
-        ret= (int*) getArgReference(stk,pci,0);
-        *ret= getArgType(mb,pci,1);
-        return MAL_SUCCEED;
+str
+INSPECTtypename(str *ret, int *tpe)
+{
+	*ret = getTypeName(*tpe);
+	return MAL_SUCCEED;
 }
 
-str MANUALcreate(int *ret, str *fname, str *mod,int *recursive){
+str
+INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *ret;
+
+	ret = (int *) getArgReference(stk, pci, 0);
+	*ret = getArgType(mb, pci, 1);
+	return MAL_SUCCEED;
+}
+
+str
+MANUALcreate(int *ret, str *fname, str *mod, int *recursive)
+{
 	stream *fs;
-	(void) ret; /* fool compiler */
-	fs= open_wastream(*fname);
-	if( fs== NULL) return throwMessage("manual.create","Could not open file\n");
+
+	(void) ret;		/* fool compiler */
+	fs = open_wastream(*fname);
+	if (fs == NULL)
+		return throwMessage("manual.create", "Could not open file\n");
 	dumpManualHeader(fs);
-	dumpManual(fs, findModule(getClient()->nspace,*mod),*recursive);
+	dumpManual(fs, findModule(getClient()->nspace, *mod), *recursive);
 	dumpManualFooter(fs);
 	return MAL_SUCCEED;
 }
-str MANUALcreate2(int *ret, str *fname, str *mod,int *recursive){
-	int r= 0;
-	(void) recursive; /* fool compiler */
-	return MANUALcreate(ret,fname,mod,&r);
+
+str
+MANUALcreate2(int *ret, str *fname, str *mod, int *recursive)
+{
+	int r = 0;
+
+	(void) recursive;	/* fool compiler */
+	return MANUALcreate(ret, fname, mod, &r);
 }
-str MANUALcreate1(int *ret, str *mod){
-	(void) ret; /* fool compiler */
+
+str
+MANUALcreate1(int *ret, str *mod)
+{
+	(void) ret;		/* fool compiler */
 	dumpManualHeader(GDKout);
-	dumpManual(GDKout, findModule(getClient()->nspace,*mod),0);
+	dumpManual(GDKout, findModule(getClient()->nspace, *mod), 0);
 	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
-str MANUALcreate0(int *ret){
-	(void) ret; /* fool compiler */
+
+str
+MANUALcreate0(int *ret)
+{
+	(void) ret;		/* fool compiler */
 	dumpManualHeader(GDKout);
-	dumpManual(GDKout, getClient()->nspace,1);
+	dumpManual(GDKout, getClient()->nspace, 1);
 	dumpManualFooter(GDKout);
 	return MAL_SUCCEED;
 }
-str MANUALhelp(int *ret, str *mod) 
-{	Client cntxt= getClient();
+
+str
+MANUALhelp(int *ret, str *mod)
+{
+	Client cntxt = getClient();
 	Module m;
 	Symbol s;
 	str msg;
 	int i;
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-        if (b == 0) 
-		return throwMessage("manual.help", "failed to create BAT");
-        return throwMessage("manual.help", "Search by keyword not yet available");
 
-	m= findModule(cntxt->nspace,*mod);
-	if(m)
-	for(i=0;i<256;i++){
-		s= m->subscope[i];
-		while(s!= NULL){
-			msg= s->def->help;
-			if( msg){
-				BUNins(b,s->name,msg);
+	if (b == 0)
+		return throwMessage("manual.help", "failed to create BAT");
+	return throwMessage("manual.help", "Search by keyword not yet available");
+
+	m = findModule(cntxt->nspace, *mod);
+	if (m)
+		for (i = 0; i < 256; i++) {
+			s = m->subscope[i];
+			while (s != NULL) {
+				msg = s->def->help;
+				if (msg) {
+					BUNins(b, s->name, msg);
+				}
+				s = s->peer;
 			}
-			s= s->peer;
 		}
-	}
-	@:Pseudo(help,Comment)@
+	@:Pseudo(help, Comment)@
 	return MAL_SUCCEED;
 }
-str MANUALhelp2(int *ret, str *mod, str *fcn) 
-{	Symbol s;
+
+str
+MANUALhelp2(int *ret, str *mod, str *fcn)
+{
+	Symbol s;
 	str msg;
 
 	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
-        if (b == 0) 
+
+	if (b == 0)
 		return throwMessage("manual.helpComment", "failed to create BAT");
 
-	s= findMALSymbol(*mod,*fcn);
-	while(s!= NULL){
-		if(idcmp(s->name,*fcn)==0){
-			msg= s->def->help;
-			if(msg== NULL) msg= str_nil;
-			BUNins(b,s->name,msg);
+	s = findMALSymbol(*mod, *fcn);
+	while (s != NULL) {
+		if (idcmp(s->name, *fcn) == 0) {
+			msg = s->def->help;
+			if (msg == NULL)
+				msg = str_nil;
+			BUNins(b, s->name, msg);
 		}
-		s= s->peer;
+		s = s->peer;
 	}
-	@:Pseudo(help,Comment)@
+	@:Pseudo(help, Comment)@
 	return MAL_SUCCEED;
 }
 

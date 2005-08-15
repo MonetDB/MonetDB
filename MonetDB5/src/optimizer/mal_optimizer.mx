@@ -434,10 +434,10 @@ For example,
                   (M)->var[I]->endLifespan)
 
 mal_export str MALoptimizer(Client c);
-mal_export int optimizerCheck(MalBlkPtr mb, str name,int actions,long usec);
+mal_export int optimizerCheck(MalBlkPtr mb, str name, int actions, long usec);
 mal_export void resetOptimizerDebugger();
 mal_export str optimizeMALBlock(MalBlkPtr mb);
-mal_export void showOptimizerStep(int i,int flg);
+mal_export void showOptimizerStep(int i, int flg);
 mal_export void showOptimizerHistory();
 mal_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -456,14 +456,15 @@ mal_export void setLifespan(MalBlkPtr mb);
 mal_export void debugLifespan(MalBlkPtr mb);
 mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 mal_export int isUnsafeInstruction(InstrPtr q);
-mal_export int isUnsafeFunction(MalBlkPtr mb,  InstrPtr q);
+mal_export int isUnsafeFunction(MalBlkPtr mb, InstrPtr q);
 mal_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
-mal_export int safetyBarrier(MalBlkPtr mb,InstrPtr p, InstrPtr q);
+mal_export int safetyBarrier(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 mal_export int hasSameSignature(InstrPtr p, InstrPtr q);
 mal_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 mal_export int isUpdated(MalBlkPtr mb, int pc);
 mal_export int hasCommonResults(InstrPtr p, InstrPtr q);
-mal_export int hasSideEffects(InstrPtr p,int strict);
+mal_export int hasSideEffects(InstrPtr p, int strict);
+
 @}
 @+ Optimizer framework
 The large number of query transformers calls for a flexible scheme for
@@ -494,67 +495,75 @@ denotes the signature and can not be removed.
 #include "mal_debugger.h"
 #include "mal_namespace.h"
 
-int optimizerCheck(MalBlkPtr mb, str name,int actions, long usec){
+int
+optimizerCheck(MalBlkPtr mb, str name, int actions, long usec)
+{
 	chkFlow(mb);
-	chkTypes(getClient()->nspace,mb);
-	chkDeclarations(mb,TRUE);
+	chkTypes(getClient()->nspace, mb);
+	chkDeclarations(mb, TRUE);
 	setLifespan(mb);
-	/* debugLifespan(mb);*/
-	if( mb->errors){
+	/* debugLifespan(mb); */
+	if (mb->errors) {
 		showErrors();
-		stream_printf(GDKout,"Optimizer %s failed\n", name);
-		printFunction(GDKout,mb,LIST_MAL_ALL);
+		stream_printf(GDKout, "Optimizer %s failed\n", name);
+		printFunction(GDKout, mb, LIST_MAL_ALL);
 	}
-	optimizerDebug(mb,name,actions,usec);
+	optimizerDebug(mb, name, actions, usec);
 	return mb->errors;
 }
+
 @-
 Limit the loop count in the optimizer.
 @c
-str optimizeMALBlock(MalBlkPtr mb)
-{   InstrPtr p;
-    int pc,qot=0;
-    str msg= NULL;
-    int cnt =0;
+str
+optimizeMALBlock(MalBlkPtr mb)
+{
+	InstrPtr p;
+	int pc, qot = 0;
+	str msg = NULL;
+	int cnt = 0;
+
 #ifdef DEBUG_MAL_OPTIMIZER
-    int oldstop= mb->stop;
+	int oldstop = mb->stop;
 #endif
 
-    do{
-        qot=0;
-        for(pc=0; pc< mb->stop; pc++ ){
-            p= getInstrPtr(mb,pc);
-            if( moduleId(p) && idcmp(moduleId(p),"optimizer")==0){
-                qot++;
-                if( p->fcn)
+	do {
+		qot = 0;
+		for (pc = 0; pc < mb->stop; pc++) {
+			p = getInstrPtr(mb, pc);
+			if (moduleId(p) && idcmp(moduleId(p), "optimizer") == 0) {
+				qot++;
+				if (p->fcn)
 					/* all optimizers should behave like patterns */
 					/* However, we don;t have a stack now */
-                    msg= (str) (*p->fcn)(mb,0,p);
-				else msg = throwMessage("optimizer","Implementation missing");
-                if( msg) {
-                    GDKerror(msg);
-                    showErrors();
-                    return msg;
-                }
+					msg = (str) (*p->fcn) (mb, 0, p);
+				else
+					msg = throwMessage("optimizer", "Implementation missing");
+				if (msg) {
+					GDKerror(msg);
+					showErrors();
+					return msg;
+				}
 				pc--;
-            } 
-        }
-    } while(qot && cnt++ < 64);
+			}
+		}
+	} while (qot && cnt++ < 64);
 #ifdef DEBUG_MAL_OPTIMIZER
-    if( getClient()->debugOptimizer && oldstop!=mb->stop){
-    stream_printf(GDKout,"Optimizer effect %d -> %d instructions\n",
-        oldstop,mb->stop);
-    }
+	if (getClient()->debugOptimizer && oldstop != mb->stop) {
+		stream_printf(GDKout, "Optimizer effect %d -> %d instructions\n", oldstop, mb->stop);
+	}
 #endif
-    if( cnt >= 64)
-        return throwMessage("optimizer.MALoptimizer",
-                "too many optimization cycles\n");
-    return 0;
+	if (cnt >= 64)
+		return throwMessage("optimizer.MALoptimizer", "too many optimization cycles\n");
+	return 0;
 }
-str MALoptimizer(Client c)
+
+str
+MALoptimizer(Client c)
 {
 	return optimizeMALBlock(c->curprg->def);
 }
+
 @}
 @{
 int hasSameSignature(InstrPtr p, InstrPtr q){   
@@ -589,14 +598,18 @@ it means a variable is re-initialized and should not be considered
 an alias.
 @{
 @c
-int hasCommonResults(InstrPtr p, InstrPtr q)
+int
+hasCommonResults(InstrPtr p, InstrPtr q)
 {
-    int k,l;
-    for(k= 0; k<p->retc; k++)
-    for(l= 0; l<q->retc; l++)
-    if( p->argv[k]== q->argv[l]) return TRUE;
-    return FALSE;
+	int k, l;
+
+	for (k = 0; k < p->retc; k++)
+		for (l = 0; l < q->retc; l++)
+			if (p->argv[k] == q->argv[l])
+				return TRUE;
+	return FALSE;
 }
+
 @}
 @-
 For each function it should be relatively easy to determine its
@@ -604,39 +617,54 @@ safety property. This calls for accessing the function MAL block
 and to inspect the arguments of the signature.
 @{
 @c
-int isUnsafeFunction(MalBlkPtr mb,  InstrPtr q)
+int
+isUnsafeFunction(MalBlkPtr mb, InstrPtr q)
 {
-    Symbol s=0;
-    Client c;
-    (void) mb;
-    if( q->fcn==0 || functionId(q)== 0) return FALSE;
-    c= getClient();
-    if( c ) s= getFunctionSymbol(c->nspace,q);
-    (void) s; /* simulated some action */
-    /* check arguments for 'unsafe' property */
-    return FALSE;
+	Symbol s = 0;
+	Client c;
+
+	(void) mb;
+	if (q->fcn == 0 || functionId(q) == 0)
+		return FALSE;
+	c = getClient();
+	if (c)
+		s = getFunctionSymbol(c->nspace, q);
+	(void) s;		/* simulated some action */
+	/* check arguments for 'unsafe' property */
+	return FALSE;
 }
+
 @-
 Instructions are unsafe is one of the arguments is also mentioned
 in the result list. Alternatively, the 'unsafe' property is set
 for the function call itself.
 @c
-int isUnsafeInstruction(InstrPtr q)
-{   int j,k;
-    for(j=0; j<q->retc; j++)
-    for(k=q->retc; k<q->argc; k++)
-    if( q->argv[k] == q->argv[j]) return TRUE;
-    return FALSE;
+int
+isUnsafeInstruction(InstrPtr q)
+{
+	int j, k;
+
+	for (j = 0; j < q->retc; j++)
+		for (k = q->retc; k < q->argc; k++)
+			if (q->argv[k] == q->argv[j])
+				return TRUE;
+	return FALSE;
 }
+
 @-
 The routine isInvariant determines if the variable V is not
 changed in the instruction sequence identified by the range [pcf,pcl].
 @c
-int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid)
+int
+isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid)
 {
-    (void) mb; (void)pcf; (void) pcl; (void) varid; /*fool compiler */
-    return TRUE;
+	(void) mb;
+	(void) pcf;
+	(void) pcl;
+	(void) varid;		/*fool compiler */
+	return TRUE;
 }
+
 @}
 @-
 Any instruction may block identification of a common
@@ -661,68 +689,76 @@ has a non-empty intersection with @verb{ { }A,B,C@verb{ } }.
 An alias can only be used later on for readonly (and not be used for a function with sideeffects)
 @{
 @c
-int safetyBarrier(MalBlkPtr mb,InstrPtr p, InstrPtr q)
+int
+safetyBarrier(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 {
-    int i,j;
-    for(j=0;j<q->retc; j++)
-    for(i=p->retc; i<p->argc;i++)
-    if( p->argv[i]== q->argv[j] ) {
+	int i, j;
+
+	for (j = 0; j < q->retc; j++)
+		for (i = p->retc; i < p->argc; i++)
+			if (p->argv[i] == q->argv[j]) {
 #ifdef DEBUG_MAL_OPTIMIZER2
-	if( getClient()->debugOptimizer){
-	stream_printf(GDKout,"Found assignment barrier for \n");
-	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-	printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-	}
+				if (getClient()->debugOptimizer) {
+					stream_printf(GDKout, "Found assignment barrier for \n");
+					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+					printInstruction(GDKout, mb, q, LIST_MAL_ALL);
+				}
 #endif
-        return TRUE;
-    }
+				return TRUE;
+			}
 
-    if( isUnsafeFunction(mb,q)){
-        for(i=p->retc; i<p->argc; i++)
-        for(j=q->retc; j<q->argc; j++)
-        if( p->argv[i]== q->argv[j] ) {
+	if (isUnsafeFunction(mb, q)) {
+		for (i = p->retc; i < p->argc; i++)
+			for (j = q->retc; j < q->argc; j++)
+				if (p->argv[i] == q->argv[j]) {
 #ifdef DEBUG_MAL_OPTIMIZER
-	if( getClient()->debugOptimizer){
-	stream_printf(GDKout,"Found overlapping assignment barrier for \n");
-	printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-	}
+					if (getClient()->debugOptimizer) {
+						stream_printf(GDKout, "Found overlapping assignment barrier for \n");
+						printInstruction(GDKout, mb, q, LIST_MAL_ALL);
+					}
 #endif
-            /* TODO check safety property of the argument */
-            return TRUE;
-        }
-    }
-    return FALSE;
+					/* TODO check safety property of the argument */
+					return TRUE;
+				}
+	}
+	return FALSE;
 }
-int isUpdated(MalBlkPtr mb, int pc)
-{   InstrPtr p,q;
-    int j,k;
 
-    p= getInstrPtr(mb,pc);
-    for(pc++; pc< mb->stop; pc++){
-        q= getInstrPtr(mb,pc);
-        /* target is later assigned a new value */
-        for(j=0;j<p->retc; j++)
-        for(k=0;k<q->retc; k++)
-        if( p->argv[j]==q->argv[k]) {
-            int c=0;
+int
+isUpdated(MalBlkPtr mb, int pc)
+{
+	InstrPtr p, q;
+	int j, k;
 
-            if( p->argc!= q->argc) return TRUE;
+	p = getInstrPtr(mb, pc);
+	for (pc++; pc < mb->stop; pc++) {
+		q = getInstrPtr(mb, pc);
+		/* target is later assigned a new value */
+		for (j = 0; j < p->retc; j++)
+			for (k = 0; k < q->retc; k++)
+				if (p->argv[j] == q->argv[k]) {
+					int c = 0;
 
-            /* instruction q may not be a common expression */
-            /* TO WEAK, test stability of its arguments */
-            for(j=0;j<p->argc;j++)
-            if( p->argv[j]==q->argv[k] && 
-                isInvariant(mb,0,pc,q->argv[k])) c++;
-            return c!= p->argc;
-        }
+					if (p->argc != q->argc)
+						return TRUE;
 
-        /* result is used in an unsafe function*/
-        for(j=0; j<p->retc; j++)
-        for(k=q->retc; k<q->argc; k++)
-        if( p->argv[j]==q->argv[k] && hasSideEffects(q,TRUE)) return TRUE;
-    }
-    return FALSE;
+					/* instruction q may not be a common expression */
+					/* TO WEAK, test stability of its arguments */
+					for (j = 0; j < p->argc; j++)
+						if (p->argv[j] == q->argv[k] && isInvariant(mb, 0, pc, q->argv[k]))
+							c++;
+					return c != p->argc;
+				}
+
+		/* result is used in an unsafe function */
+		for (j = 0; j < p->retc; j++)
+			for (k = q->retc; k < q->argc; k++)
+				if (p->argv[j] == q->argv[k] && hasSideEffects(q, TRUE))
+					return TRUE;
+	}
+	return FALSE;
 }
+
 @}
 @- Lifespan analysis
 The variables have a lifespan in the code blocks, denoted by properties
@@ -747,57 +783,71 @@ Unclear what will be the best strategy. For the time being we just recalc.
 Also take care of the nested block structure. Because the span should
 fall within a single block. This is handled by the chkflow already.
 @c
-void debugLifespan(MalBlkPtr mb){
-    int i;
-    for(i=0; i<mb->vtop; i++){
-        VarPtr v= getVar(mb,i);
-        if( isTmpVar(mb,i))
-        printf("%c%d %d - %d scope=%d,%d\n", TMPMARKER, v->tmpindex,
-                v->beginLifespan, v->endLifespan,v->scope,v->depth);
-        else
-        printf("%s %d - %d scope= %d,%d\n", v->name, 
-                v->beginLifespan, v->endLifespan,v->scope,v->depth);
-    }
-}
-void setLifespan(MalBlkPtr mb){
-    int pc,k;
-    InstrPtr p;
+void
+debugLifespan(MalBlkPtr mb)
+{
+	int i;
 
-    for(k=0;k<mb->vtop;k++){
-        VarPtr v= getVar(mb, k);
-        v->updLifespan = v->beginLifespan = v->endLifespan=0;
-    }
-    for(pc=0;pc<mb->stop; pc++){
-        p= getInstrPtr(mb,pc);
-        for(k=0;k<p->argc; k++){
-            VarPtr v= getVar(mb, p->argv[k]);
-            if( v->beginLifespan==0)
-				v->beginLifespan= pc;
-			if( k< p->retc)
+	for (i = 0; i < mb->vtop; i++) {
+		VarPtr v = getVar(mb, i);
+
+		if (isTmpVar(mb, i))
+			printf("%c%d %d - %d scope=%d,%d\n", TMPMARKER, v->tmpindex, v->beginLifespan, v->endLifespan, v->scope, v->depth);
+
+		else
+			printf("%s %d - %d scope= %d,%d\n", v->name, v->beginLifespan, v->endLifespan, v->scope, v->depth);
+	}
+}
+void
+setLifespan(MalBlkPtr mb)
+{
+	int pc, k;
+	InstrPtr p;
+
+	for (k = 0; k < mb->vtop; k++) {
+		VarPtr v = getVar(mb, k);
+
+		v->updLifespan = v->beginLifespan = v->endLifespan = 0;
+	}
+	for (pc = 0; pc < mb->stop; pc++) {
+		p = getInstrPtr(mb, pc);
+		for (k = 0; k < p->argc; k++) {
+			VarPtr v = getVar(mb, p->argv[k]);
+
+			if (v->beginLifespan == 0)
+				v->beginLifespan = pc;
+			if (k < p->retc)
 				v->updLifespan++;
-			if( pc > v->endLifespan ) {
-				/* end only if the beginLifspan falls in the same blk*/
+			if (pc > v->endLifespan) {
+				/* end only if the beginLifspan falls in the same blk */
 				/* otherwise it is the corresponding exit. */
 				v->endLifespan = pc;
 			}
-        }
-    }
-    /* debugLifespan(mb); */
+		}
+	}
+	/* debugLifespan(mb); */
 }
+
 @-
 In many cases we should be assured that a variable is not used in
 the instruction range identified. For, we may exchange some instructions that
 might change its content.
 @c
-int isTouched(MalBlkPtr mb, int varid, int p1, int p2){
-    int i,k;
-    for(i=p1;i<p2;i++) {
-        InstrPtr p= getInstrPtr(mb,i);
-        for(k=0; k<p->argc; k++)
-        if( p->argv[k]== varid) return TRUE;
-    }
-    return FALSE;
+int
+isTouched(MalBlkPtr mb, int varid, int p1, int p2)
+{
+	int i, k;
+
+	for (i = p1; i < p2; i++) {
+		InstrPtr p = getInstrPtr(mb, i);
+
+		for (k = 0; k < p->argc; k++)
+			if (p->argv[k] == varid)
+				return TRUE;
+	}
+	return FALSE;
 }
+
 @}
 @- Flow analysis
 In many optimization rules, the data flow dependency between statements is
@@ -818,25 +868,32 @@ the targets of pca, but which also change them (e.g. insert/delete bat)
 TODO, now more restrictive then needed.
 @{
 @c
-int flowStep(MalBlkPtr mb, int pca, int pcb){
-    InstrPtr pa,pb;
-    int i,k,l;
+int
+flowStep(MalBlkPtr mb, int pca, int pcb)
+{
+	InstrPtr pa, pb;
+	int i, k, l;
 
-    if( pca >pcb) return FALSE;
-    if( pca+1 == pcb) return TRUE;
+	if (pca > pcb)
+		return FALSE;
+	if (pca + 1 == pcb)
+		return TRUE;
 
-    pa= getInstrPtr(mb,pca);
-    for(i= pca+1; i<pcb;i++){
-        pb= getInstrPtr(mb,i);
-        if( hasCommonResults(pa,pb) ) return FALSE;
+	pa = getInstrPtr(mb, pca);
+	for (i = pca + 1; i < pcb; i++) {
+		pb = getInstrPtr(mb, i);
+		if (hasCommonResults(pa, pb))
+			return FALSE;
 
-        /* also be aware of operators with side effects */
-        for(k=0;k<pa->retc;k++)
-        for(l=pb->retc;l<pb->argc ;l++)
-        if( pa->argv[k] == pb->argv[l] ) return FALSE;
-    }
-    return TRUE;
+		/* also be aware of operators with side effects */
+		for (k = 0; k < pa->retc; k++)
+			for (l = pb->retc; l < pb->argc; l++)
+				if (pa->argv[k] == pb->argv[l])
+					return FALSE;
+	}
+	return TRUE;
 }
+
 @}
 @-
 For each variable we should determine its scope of stability.
@@ -850,74 +907,102 @@ The property `unsafe` is reserved to identify cases where this does not hold.
 Typically, a bun-insert operation is unsafe, as it changes one of the parameters.
 @{
 @c
-int showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f){
-    InstrPtr p;
-    int i,k;
-    for(i=pc+1; i<mb->stop-1; i++){
-        p= getInstrPtr(mb,i);
-        for(k=p->retc;k<p->argc;k++)
-        if( p->argv[k]==varid) {
-            stream_printf(f,"n%d -> n%d\n",pc,i);
-        }
-    }
-    return 0;
+int
+showOutFlow(MalBlkPtr mb, int pc, int varid, stream *f)
+{
+	InstrPtr p;
+	int i, k;
+
+	for (i = pc + 1; i < mb->stop - 1; i++) {
+		p = getInstrPtr(mb, i);
+		for (k = p->retc; k < p->argc; k++)
+			if (p->argv[k] == varid) {
+				stream_printf(f, "n%d -> n%d\n", pc, i);
+			}
+	}
+	return 0;
 }
+
 @-
 At a later stage we could extend the flow details with the status
 of crucial properties, e.g. processing time, cost, size
 @c
-void showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f){
-    str s,msg;
-    (void) stk; /* fool the compiler */
-    msg= instruction2str(mb,p,0);
-    stream_printf(f,"n%d [fontsize=8, shape=box, label=\"",pc);
-    for(s=msg; *s; s++)
-    if(*s =='"') stream_printf(f,"\\\""); else stream_printf(f,"%c",*s);
-    stream_printf(f,"\"];\n");
-    GDKfree(msg);
-}
-void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname){
-    stream *f;
-    InstrPtr p;
-    int i,k;
-    (void) stk; /* fool the compiler */
+void
+showFlowDetails(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc, stream *f)
+{
+	str s, msg;
 
-    if(idcmp(fname,"stdout")==0) f= GDKout; else
-    f= open_wastream(fname);
-    p= getInstrPtr(mb,0);
-    stream_printf(f,"digraph %s{\n", functionName(p));
-    p= getInstrPtr(mb,0);
-    showFlowDetails(mb,stk,p,0,f);
-    for(k=p->retc;k<p->argc;k++){
-        showOutFlow(mb,0,p->argv[k],f);
-    }
-    for(i=1;i<mb->stop-1;i++){
-        p= getInstrPtr(mb,i);
-        showFlowDetails(mb,stk,p,i,f);
-        for(k=0;k<p->retc;k++){
-            showOutFlow(mb,i,p->argv[k],f);
-        }
-    }
-    stream_printf(f,"}\n");
-    if(f!= GDKout) stream_close(f);
+	(void) stk;		/* fool the compiler */
+	msg = instruction2str(mb, p, 0);
+	stream_printf(f, "n%d [fontsize=8, shape=box, label=\"", pc);
+	for (s = msg; *s; s++)
+		if (*s == '"')
+			stream_printf(f, "\\\"");
+		else
+			stream_printf(f, "%c", *s);
+	stream_printf(f, "\"];\n");
+	GDKfree(msg);
 }
+
+void
+showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname)
+{
+	stream *f;
+	InstrPtr p;
+	int i, k;
+
+	(void) stk;		/* fool the compiler */
+
+	if (idcmp(fname, "stdout") == 0)
+		f = GDKout;
+	else
+		f = open_wastream(fname);
+	p = getInstrPtr(mb, 0);
+	stream_printf(f, "digraph %s{\n", functionName(p));
+	p = getInstrPtr(mb, 0);
+	showFlowDetails(mb, stk, p, 0, f);
+	for (k = p->retc; k < p->argc; k++) {
+		showOutFlow(mb, 0, p->argv[k], f);
+	}
+	for (i = 1; i < mb->stop - 1; i++) {
+		p = getInstrPtr(mb, i);
+		showFlowDetails(mb, stk, p, i, f);
+		for (k = 0; k < p->retc; k++) {
+			showOutFlow(mb, i, p->argv[k], f);
+		}
+	}
+	stream_printf(f, "}\n");
+	if (f != GDKout)
+		stream_close(f);
+}
+
 @
 Summarization of the data flow dependencies can be modelled as a dependency graph.
 It can be made explicit or kept implicit using the operators needed.
 We start with the latter. The primary steps to deal with is dead code removal.
 @c
-int removeDeadSink(MalBlkPtr mb, int pc, InstrPtr p){
-    /* detect if the destination variable is not used anymor*/
-    /* return if it worked out */
-    (void) mb; (void) pc; (void)p; /* fool the compiler */
-    return FALSE;
+int
+removeDeadSink(MalBlkPtr mb, int pc, InstrPtr p)
+{
+	/* detect if the destination variable is not used anymor */
+	/* return if it worked out */
+	(void) mb;
+	(void) pc;
+	(void) p;		/* fool the compiler */
+	return FALSE;
 }
-int removeDeadSource(MalBlkPtr mb, int pc, InstrPtr p){
-    /* detect if the source variable is not used anymor*/
-    /* return if it worked out */
-    (void)mb; (void) pc; (void) p; /* fool the compiler */
-    return FALSE;
+
+int
+removeDeadSource(MalBlkPtr mb, int pc, InstrPtr p)
+{
+	/* detect if the source variable is not used anymor */
+	/* return if it worked out */
+	(void) mb;
+	(void) pc;
+	(void) p;		/* fool the compiler */
+	return FALSE;
 }
+
 @}
 @- Basic Algebraic Blocks
 Many code snippets produced by e.g. the SQL compiler is just 
@@ -977,51 +1062,64 @@ changes the candidate.
 Beware that parameters could be changed as part of a call.
 They are marked as unsafe.
 @c
-int ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
-{   int i,k, blkcount=0, used =0;
-    InstrPtr q;
+int
+ARnxtAssignment(MalBlkPtr mb, int pc, int varid)
+{
+	int i, k, blkcount = 0, used = 0;
+	InstrPtr q;
 
-    for(i=pc; i< mb->stop && isAlife(mb,varid,i); i++){
-        q= getInstrPtr(mb,i);
-        for(k=0; k < q->retc; k++)
-        if( q->argv[k]== varid) 
-			goto ARfound;
-        for(;k < q->argc; k++)
-        if( q->argv[k]== varid){
-			used++;
-			if(  ! isInvariant(mb,pc,i,varid)) 
+	for (i = pc; i < mb->stop && isAlife(mb, varid, i); i++) {
+		q = getInstrPtr(mb, i);
+		for (k = 0; k < q->retc; k++)
+			if (q->argv[k] == varid)
 				goto ARfound;
-		}
-        if( blockStart(q)) blkcount++;
-        if( blockExit(q)) blkcount--;
-        if( blockCntrl(q)) blkcount--;
-        if( blkcount<0) break; /* it is part of a block */
-        if( blockCntrl(q)) blkcount++;
-    }
-ARfound:
-	if( blkcount || !used ) return pc-1;
-    return i;
+		for (; k < q->argc; k++)
+			if (q->argv[k] == varid) {
+				used++;
+				if (!isInvariant(mb, pc, i, varid))
+					goto ARfound;
+			}
+		if (blockStart(q))
+			blkcount++;
+		if (blockExit(q))
+			blkcount--;
+		if (blockCntrl(q))
+			blkcount--;
+		if (blkcount < 0)
+			break;	/* it is part of a block */
+		if (blockCntrl(q))
+			blkcount++;
+	}
+      ARfound:
+	if (blkcount || !used)
+		return pc - 1;
+	return i;
 }
+
 @-
 When you propagate an alias through the program, the properties
 maintained should also be updated. In particular, the lifespan
 of the alias changes as part of the move.
 @c
-void ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
-{   InstrPtr p;
+void
+ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias)
+{
+	InstrPtr p;
 	VarPtr v;
-    int k;
-	v =getVar(mb, alias);
-    for(; pc<pcl; pc++) {
-        p= getInstrPtr(mb,pc);
-        for(k= p->retc; k<p->argc; k++)
-        if( p->argv[k]== src ){
-			p->argv[k]= alias;
-			if( pc > v->endLifespan)
-				v->endLifespan =pc;
-		}
-    }
+	int k;
+
+	v = getVar(mb, alias);
+	for (; pc < pcl; pc++) {
+		p = getInstrPtr(mb, pc);
+		for (k = p->retc; k < p->argc; k++)
+			if (p->argv[k] == src) {
+				p->argv[k] = alias;
+				if (pc > v->endLifespan)
+					v->endLifespan = pc;
+			}
+	}
 }
+
 @-
 Alias removal is targeted at simple assignments only,
 because MAL does not allow for nested expressions.
@@ -1029,56 +1127,68 @@ Instructions changing the flow of control should also be ignored.
 In all other cases the target variables are potential candidates
 for alias removal.
 @c
-int ARoptimizerStep(MalBlkPtr mb, int pc)
-{   int k,kn=0;
-    InstrPtr p;
-    p= getInstrPtr(mb,pc);
-    if(p==0 || moduleId(p) || functionId(p)) return pc;
-    if( p->token != ASSIGNsymbol) return pc;
-    if( blockStart(p) || blockExit(p) || blockCntrl(p)) return pc;
+int
+ARoptimizerStep(MalBlkPtr mb, int pc)
+{
+	int k, kn = 0;
+	InstrPtr p;
 
-    for(k=0;k<p->retc; k++){
-       int m;
-       m= ARnxtAssignment(mb,pc+1,p->argv[k]);
-       if( m != pc){
-        ARreplaceAlias(mb,pc+1,m,p->argv[k], p->argv[p->retc+k]);
-        kn++;
+	p = getInstrPtr(mb, pc);
+	if (p == 0 || moduleId(p) || functionId(p))
+		return pc;
+	if (p->token != ASSIGNsymbol)
+		return pc;
+	if (blockStart(p) || blockExit(p) || blockCntrl(p))
+		return pc;
+
+	for (k = 0; k < p->retc; k++) {
+		int m;
+
+		m = ARnxtAssignment(mb, pc + 1, p->argv[k]);
+		if (m != pc) {
+			ARreplaceAlias(mb, pc + 1, m, p->argv[k], p->argv[p->retc + k]);
+			kn++;
 #ifdef DEBUG_MAL_OPTIMIZER
-        if( getClient()->debugOptimizer){
-			stream_printf(GDKout,"Delete alias assignment\n");
-			printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-        }
+			if (getClient()->debugOptimizer) {
+				stream_printf(GDKout, "Delete alias assignment\n");
+				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+			}
 #endif
-       }
-    }
-    /* delete the instruction if all targets have been replaced */
-    if(kn == p->retc && kn) {
-        /* all target variables pushed through */
-		removeInstruction(mb,p);
+		}
+	}
+	/* delete the instruction if all targets have been replaced */
+	if (kn == p->retc && kn) {
+		/* all target variables pushed through */
+		removeInstruction(mb, p);
 		setLifespan(mb);
-        return pc-1;
-    }
-    return pc;
+		return pc - 1;
+	}
+	return pc;
 }
-str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i;
-	long clk= GDKusec();
+
+str
+ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	long clk = GDKusec();
+
 	(void) stk;
 #ifdef DEBUG_MAL_OPTIMIZER
-	if( getClient()->debugOptimizer){
-		stream_printf(GDKout,"start alias removal\n");
-		printFunction(GDKout,mb,LIST_MAL_ALL);
+	if (getClient()->debugOptimizer) {
+		stream_printf(GDKout, "start alias removal\n");
+		printFunction(GDKout, mb, LIST_MAL_ALL);
 	}
 #endif
 	setLifespan(mb);
-    for(i=1;i< mb->stop; i++)
-        i= ARoptimizerStep(mb,i);
-    /* remove the ARoptimizer request */
-	if(pci) 
-		removeInstruction(mb,pci);
-	optimizerCheck(mb,"aliasRemoval",1,GDKusec()-clk);
-    return NULL;
+	for (i = 1; i < mb->stop; i++)
+		i = ARoptimizerStep(mb, i);
+	/* remove the ARoptimizer request */
+	if (pci)
+		removeInstruction(mb, pci);
+	optimizerCheck(mb, "aliasRemoval", 1, GDKusec() - clk);
+	return NULL;
 }
+
 @}
 @+ Dead Code Removal
 Dead code fragments are recognized by assignments to variables
@@ -1118,96 +1228,122 @@ The dead code remover should
 not be used for testing, because it will trim most programs to
 an empty list.
 @c
-int hasSideEffects(InstrPtr p, int strict){
-    if( blockStart(p) || blockExit(p) || blockCntrl(p)) return TRUE;
-    if(functionId(p) && strncmp("print",functionName(p),5)==0) return TRUE;
-    if(functionId(p) && idcmp("deposit",functionName(p))==0) return TRUE;
-    if(functionId(p) && idcmp("insert",functionName(p))==0) return TRUE;
-    if(strict && functionId(p) && idcmp("new",functionName(p))==0) return TRUE;
-    if(functionId(p) && idcmp("append",functionName(p))==0) return TRUE;
-    if(functionId(p) && idcmp("delete",functionName(p))==0) return TRUE;
-    if(functionId(p) && idcmp("destroy",functionName(p))==0) return TRUE;
-    if(functionId(p) && idcmp("prelude",functionName(p))==0) return TRUE;
-    if(functionId(p) && idcmp("decimal_prelude",functionName(p))==0) return TRUE;
-    if(functionId(p) && idcmp("keep",functionName(p))==0) return TRUE;
-    return FALSE;
+int
+hasSideEffects(InstrPtr p, int strict)
+{
+	if (blockStart(p) || blockExit(p) || blockCntrl(p))
+		return TRUE;
+	if (functionId(p) && strncmp("print", functionName(p), 5) == 0)
+		return TRUE;
+	if (functionId(p) && idcmp("deposit", functionName(p)) == 0)
+		return TRUE;
+	if (functionId(p) && idcmp("insert", functionName(p)) == 0)
+		return TRUE;
+	if (strict && functionId(p) && idcmp("new", functionName(p)) == 0)
+		return TRUE;
+	if (functionId(p) && idcmp("append", functionName(p)) == 0)
+		return TRUE;
+	if (functionId(p) && idcmp("delete", functionName(p)) == 0)
+		return TRUE;
+	if (functionId(p) && idcmp("destroy", functionName(p)) == 0)
+		return TRUE;
+	if (functionId(p) && idcmp("prelude", functionName(p)) == 0)
+		return TRUE;
+	if (functionId(p) && idcmp("decimal_prelude", functionName(p)) == 0)
+		return TRUE;
+	if (functionId(p) && idcmp("keep", functionName(p)) == 0)
+		return TRUE;
+	return FALSE;
 }
-str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i,j,k,dc=0,se;
-    InstrPtr p;
-    int *varused;
-    int *pcused;
-	int actions=0;
-	long clk= GDKusec();
-    (void) pci; (void) stk;  /* to fool compilers */
 
-    varused= GDKmalloc(mb->vtop * sizeof(int));
-    for(i=0;i<mb->vtop;i++) varused[i]=0;
+str
+DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i, j, k, dc = 0, se;
+	InstrPtr p;
+	int *varused;
+	int *pcused;
+	int actions = 0;
+	long clk = GDKusec();
 
-    pcused= GDKmalloc(mb->stop * sizeof(int));
-    for(i=0;i<mb->stop;i++) pcused[i]=0;
+	(void) pci;
+	(void) stk;		/* to fool compilers */
 
-    for(i=mb->stop-1; i>=0; i--){
-        p= getInstrPtr(mb,i);
-        switch( p->token){
-        case FUNCTIONsymbol:
-        case COMMANDsymbol:
-        case FACTORYsymbol:
-        case ENDsymbol: 
-            pcused[i]=1;
-            for(k=0; k<p->retc;k++)
-                varused[p->argv[k]]=1;
-            break;
-        case EXITsymbol:
-        /*     stream_printf(getClient()->fdout,"#Handle DCR in iterator\n");*/
-        case RETURNsymbol:
-            pcused[i]=1;
-            for(k=0; k<p->retc;k++)
-                varused[p->argv[k]]= !isTypeVar(mb,p->argv[k]);
-            break;
-        default:
-            se=0;
-            for(k= 0; k< p->argc; k++)
-                if( varused[p->argv[k]]) se++;
-            /* do not deal with dead barrier blocks */
-            if(blockCntrl(p) || hasSideEffects(p,FALSE) || se){
-                for(k=0; k<p->argc;k++) 
-					varused[p->argv[k]]= !isTypeVar(mb,p->argv[k]);
-                pcused[i]=1;
-            } else dc++; 
-        }
-    }
+	varused = GDKmalloc(mb->vtop * sizeof(int));
+	for (i = 0; i < mb->vtop; i++)
+		varused[i] = 0;
+
+	pcused = GDKmalloc(mb->stop * sizeof(int));
+	for (i = 0; i < mb->stop; i++)
+		pcused[i] = 0;
+
+	for (i = mb->stop - 1; i >= 0; i--) {
+		p = getInstrPtr(mb, i);
+		switch (p->token) {
+		case FUNCTIONsymbol:
+		case COMMANDsymbol:
+		case FACTORYsymbol:
+		case ENDsymbol:
+			pcused[i] = 1;
+			for (k = 0; k < p->retc; k++)
+				varused[p->argv[k]] = 1;
+			break;
+		case EXITsymbol:
+			/*     stream_printf(getClient()->fdout,"#Handle DCR in iterator\n"); */
+		case RETURNsymbol:
+			pcused[i] = 1;
+			for (k = 0; k < p->retc; k++)
+				varused[p->argv[k]] = !isTypeVar(mb, p->argv[k]);
+			break;
+		default:
+			se = 0;
+			for (k = 0; k < p->argc; k++)
+				if (varused[p->argv[k]])
+					se++;
+			/* do not deal with dead barrier blocks */
+			if (blockCntrl(p) || hasSideEffects(p, FALSE) || se) {
+				for (k = 0; k < p->argc; k++)
+					varused[p->argv[k]] = !isTypeVar(mb, p->argv[k]);
+				pcused[i] = 1;
+			} else
+				dc++;
+		}
+	}
 #ifdef DEBUG_MAL_OPTIMIZER
-	{Client cntxt= getClient();
-    stream_printf(GDKout,"Dead code variables \n");
-    for(i=0;i< mb->vtop; i++)
-        if( varused[i]==0) 
-            stream_printf(cntxt->fdout,"%s,", getVarName(mb,i));
-    stream_printf(getClient()->fdout,"\nDead code instructions \n");
-    for(i=1; i< mb->stop; i++)
-    if( pcused[i]==0)
-    printInstruction(cntxt->fdout,mb, getInstrPtr(mb,i), LIST_MAL_ALL);
-    stream_printf(cntxt->fdout,"End of DCoptimizer\n");
-    }
+	{
+		Client cntxt = getClient();
+
+		stream_printf(GDKout, "Dead code variables \n");
+		for (i = 0; i < mb->vtop; i++)
+			if (varused[i] == 0)
+				stream_printf(cntxt->fdout, "%s,", getVarName(mb, i));
+		stream_printf(getClient()->fdout, "\nDead code instructions \n");
+		for (i = 1; i < mb->stop; i++)
+			if (pcused[i] == 0)
+				printInstruction(cntxt->fdout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
+		stream_printf(cntxt->fdout, "End of DCoptimizer\n");
+	}
 #endif
-    /* compress the code block */
-    for(i=j=1;i< mb->stop;i++){
-        if(pcused[i]){
-            mb->stmt[j]= mb->stmt[i];
-            j++;
-        } else {
-            p = getInstrPtr(mb,i);  
-            freeInstruction(p);
+	/* compress the code block */
+	for (i = j = 1; i < mb->stop; i++) {
+		if (pcused[i]) {
+			mb->stmt[j] = mb->stmt[i];
+
+			j++;
+		} else {
+			p = getInstrPtr(mb, i);
+			freeInstruction(p);
 			actions++;
-        }
-    }
-    mb->stop=j; 
-    GDKfree(varused);
-    GDKfree(pcused);
-	optimizerCheck(mb,"deadCodeRemoval",actions,GDKusec()-clk);
-    /* remove the DCoptimizer request */
-    return NULL;
+		}
+	}
+	mb->stop = j;
+	GDKfree(varused);
+	GDKfree(pcused);
+	optimizerCheck(mb, "deadCodeRemoval", actions, GDKusec() - clk);
+	/* remove the DCoptimizer request */
+	return NULL;
 }
+
 @}
 
 @+ Accumulator Evaluations
@@ -1238,14 +1374,17 @@ was produced by an operator from the @code{algebra, algebra2, group, aggrX3}
 modules.
 @{
 @c
-int ORvalidSource(MalBlkPtr mb, int v, int pc, int stop){
+int
+ORvalidSource(MalBlkPtr mb, int v, int pc, int stop)
+{
 	InstrPtr p;
-	int i,j;
-	for(i=pc-1; i>=stop; i--){
-		p = getInstrPtr(mb,i);
-		if( p->barrier) 
+	int i, j;
+
+	for (i = pc - 1; i >= stop; i--) {
+		p = getInstrPtr(mb, i);
+		if (p->barrier)
 			return 0;
-		switch( p->token){
+		switch (p->token) {
 		case FUNCTIONsymbol:
 		case FACTORYsymbol:
 		case COMMANDsymbol:
@@ -1258,185 +1397,200 @@ int ORvalidSource(MalBlkPtr mb, int v, int pc, int stop){
 		case ENDsymbol:
 			return 0;
 		}
-		for(j=0;j<p->retc; j++)
-		if( getArg(p,j)== v) {
-			if( moduleId(p) && strcmp(moduleId(p),"batcalc")==0) return 1;
-			if( moduleId(p) && strcmp(moduleId(p),"algebra")==0) return 1;
-			if( moduleId(p) && strcmp(moduleId(p),"aggrX3")==0) return 1;
-			if( moduleId(p) && strcmp(moduleId(p),"group")==0) return 1;
-			if( moduleId(p) && strcmp(moduleId(p),"array")==0) return 1;
-		}
+		for (j = 0; j < p->retc; j++)
+			if (getArg(p, j) == v) {
+				if (moduleId(p) && strcmp(moduleId(p), "batcalc") == 0)
+					return 1;
+				if (moduleId(p) && strcmp(moduleId(p), "algebra") == 0)
+					return 1;
+				if (moduleId(p) && strcmp(moduleId(p), "aggrX3") == 0)
+					return 1;
+				if (moduleId(p) && strcmp(moduleId(p), "group") == 0)
+					return 1;
+				if (moduleId(p) && strcmp(moduleId(p), "array") == 0)
+					return 1;
+			}
 	}
 	return 1;
 }
-void ORcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
-{
-	int t,a,b;
 
-	a= getArg(p,0);
-	b= getArg(p,1);
-	t= getVarType(mb,b);
-	if( strcmp(functionName(p),"int")==0 && t== TYPE_int){
-		removeInstruction(mb,p);
-		ARreplaceAlias(mb,i,mb->stop, a, b);
+void
+ORcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
+{
+	int t, a, b;
+
+	a = getArg(p, 0);
+	b = getArg(p, 1);
+	t = getVarType(mb, b);
+	if (strcmp(functionName(p), "int") == 0 && t == TYPE_int) {
+		removeInstruction(mb, p);
+		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return;
 	}
-	if( strcmp(functionName(p),"str")==0 && t== TYPE_str){
-		removeInstruction(mb,p);
-		ARreplaceAlias(mb,i,mb->stop, a, b);
+	if (strcmp(functionName(p), "str") == 0 && t == TYPE_str) {
+		removeInstruction(mb, p);
+		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return;
 	}
-	if( strcmp(functionName(p),"oid")==0 && t== TYPE_oid){
-		removeInstruction(mb,p);
-		ARreplaceAlias(mb,i,mb->stop, a, b);
+	if (strcmp(functionName(p), "oid") == 0 && t == TYPE_oid) {
+		removeInstruction(mb, p);
+		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return;
 	}
-	if( strcmp(functionName(p),"lng")==0 && t== TYPE_lng){
-		removeInstruction(mb,p);
-		ARreplaceAlias(mb,i,mb->stop, a, b);
+	if (strcmp(functionName(p), "lng") == 0 && t == TYPE_lng) {
+		removeInstruction(mb, p);
+		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return;
 	}
-	if( strcmp(functionName(p),"sht")==0 && t== TYPE_sht){
-		removeInstruction(mb,p);
-		ARreplaceAlias(mb,i,mb->stop, a, b);
+	if (strcmp(functionName(p), "sht") == 0 && t == TYPE_sht) {
+		removeInstruction(mb, p);
+		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return;
 	}
-	if( strcmp(functionName(p),"bit")==0 && t== TYPE_bit){
-		removeInstruction(mb,p);
-		ARreplaceAlias(mb,i,mb->stop, a, b);
+	if (strcmp(functionName(p), "bit") == 0 && t == TYPE_bit) {
+		removeInstruction(mb, p);
+		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return;
 	}
-	if( strcmp(functionName(p),"dbl")==0 && t== TYPE_dbl){
-		removeInstruction(mb,p);
-		ARreplaceAlias(mb,i,mb->stop, a, b);
+	if (strcmp(functionName(p), "dbl") == 0 && t == TYPE_dbl) {
+		removeInstruction(mb, p);
+		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return;
 	}
-	if( strcmp(functionName(p),"flt")==0 && t== TYPE_flt){
-		removeInstruction(mb,p);
-		ARreplaceAlias(mb,i,mb->stop, a, b);
+	if (strcmp(functionName(p), "flt") == 0 && t == TYPE_flt) {
+		removeInstruction(mb, p);
+		ARreplaceAlias(mb, i, mb->stop, a, b);
 		return;
 	}
 }
-str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i,j,a,b,depth;
-    InstrPtr p;
-	Client cntxt= getClient();
-	Module scope= cntxt->nspace;
+str
+ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i, j, a, b, depth;
+	InstrPtr p;
+	Client cntxt = getClient();
+	Module scope = cntxt->nspace;
 	char *olderr;
-	int errlen,actions=0;
-	long clk= GDKusec();
-    (void) pci; (void) stk;  /* to fool compilers */
+	int errlen, actions = 0;
+	long clk = GDKusec();
+
+	(void) pci;
+	(void) stk;		/* to fool compilers */
 @-
 Safe the errors encountered sofar. They have to be reset
 at the end of the optimization attempt.
 @c
-	errlen= strlen(cntxt->errbuf)+1;
-	olderr= alloca(errlen);
-	if( errlen) strncpy(olderr,cntxt->errbuf,errlen);
-	if( errlen) strncpy(cntxt->errbuf,olderr,errlen);
-	
-    for(i=1; i<mb->stop; i++){
-        VarPtr v;
-        p= getInstrPtr(mb,i);
-		if( moduleId(p) == NULL) continue;
-		if( strcmp(moduleId(p),"calc")== 0) {
-			ORcoercionOptimizer(mb,i,p);
+	errlen = strlen(cntxt->errbuf) + 1;
+	olderr = alloca(errlen);
+	if (errlen)
+		strncpy(olderr, cntxt->errbuf, errlen);
+	if (errlen)
+		strncpy(cntxt->errbuf, olderr, errlen);
+
+	for (i = 1; i < mb->stop; i++) {
+		VarPtr v;
+
+		p = getInstrPtr(mb, i);
+		if (moduleId(p) == NULL)
 			continue;
-		} 
-		if( strcmp(moduleId(p),"batcalc")) continue;
+		if (strcmp(moduleId(p), "calc") == 0) {
+			ORcoercionOptimizer(mb, i, p);
+			continue;
+		}
+		if (strcmp(moduleId(p), "batcalc"))
+			continue;
 
-		depth= getVarDepth(mb,getArg(p,0));
-		if( p->argc == 3) {
+		depth = getVarDepth(mb, getArg(p, 0));
+		if (p->argc == 3) {
 			/* binary/unary operation, check first argument */
-			v= getVar(mb, a =getArg(p,1));
-			b= getArg(p,0);
+			v = getVar(mb, a = getArg(p, 1));
+			b = getArg(p, 0);
 
 #ifdef DEBUG_MAL_OPTIMIZER
-					stream_printf(GDKout,"Found binary OR candidate \n");
-					stream_printf(GDKout,"pc=%d valid=%d \n",
-							i, ORvalidSource(mb,a,i,v->beginLifespan));
-					stream_printf(GDKout,"target %d %d-%d\n", b,
-						getVar(mb, b)->beginLifespan, 
-						getVar(mb, b)->endLifespan);
-					stream_printf(GDKout,"arg 1 %d %d-%d\n", a,v->beginLifespan, v->endLifespan);
-					stream_printf(GDKout,"arg 2 %d %d-%d\n", getArg(p,2),
-						getVar(mb,getArg(p,2))->beginLifespan, 
-						getVar(mb,getArg(p,2))->endLifespan);
-					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+			stream_printf(GDKout, "Found binary OR candidate \n");
+			stream_printf(GDKout, "pc=%d valid=%d \n", i, ORvalidSource(mb, a, i, v->beginLifespan));
+			stream_printf(GDKout, "target %d %d-%d\n", b, getVar(mb, b)->beginLifespan, getVar(mb, b)->endLifespan);
+			stream_printf(GDKout, "arg 1 %d %d-%d\n", a, v->beginLifespan, v->endLifespan);
+			stream_printf(GDKout, "arg 2 %d %d-%d\n", getArg(p, 2), getVar(mb, getArg(p, 2))->beginLifespan, getVar(mb, getArg(p, 2))->endLifespan);
+			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
-			if( isaBatType(v->type) && (v->endLifespan ==i || a==b) && v->depth<= depth ) {
-				if( ORvalidSource(mb,a,i, v->beginLifespan) || a == b){
-					pushArgument(mb,p,a);
-					for(j= p->argc-1; j>p->retc; j--)
-						p->argv[j]= p->argv[j-1];
-					p->argv[p->retc]= p->argv[0]= a;
-					typeChecker(scope,mb,p,TRUE);
-					if( a !=b)
-						ARreplaceAlias(mb,i+1,mb->stop, b, a);
+			if (isaBatType(v->type) && (v->endLifespan == i || a == b) && v->depth <= depth) {
+				if (ORvalidSource(mb, a, i, v->beginLifespan) || a == b) {
+					pushArgument(mb, p, a);
+					for (j = p->argc - 1; j > p->retc; j--)
+						p->argv[j] = p->argv[j - 1];
+					p->argv[p->retc] = p->argv[0] = a;
+					typeChecker(scope, mb, p, TRUE);
+
+					if (a != b)
+						ARreplaceAlias(mb, i + 1, mb->stop, b, a);
 #ifdef DEBUG_MAL_OPTIMIZER
-					stream_printf(GDKout,"FIRST\n");
-					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+					stream_printf(GDKout, "FIRST\n");
+					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
 					actions++;
 					continue;
 				}
 			}
 			/* continue with binary version */
-			v= getVar(mb, a =getArg(p,2));
-			if( isaBatType(v->type) && (v->endLifespan ==i || a==b)  && v->depth<= depth) {
-				if( ORvalidSource(mb,a,i, v->beginLifespan)  || a== b){
-					pushArgument(mb,p,a);
-					for(j= p->argc-1; j>p->retc; j--)
-						p->argv[j]= p->argv[j-1];
-					p->argv[0]= p->argv[p->retc]= a;
-					typeChecker(scope,mb,p,TRUE);
-					if( a !=b)
-						ARreplaceAlias(mb,i+1,mb->stop, b, a);
+			v = getVar(mb, a = getArg(p, 2));
+			if (isaBatType(v->type) && (v->endLifespan == i || a == b) && v->depth <= depth) {
+				if (ORvalidSource(mb, a, i, v->beginLifespan) || a == b) {
+					pushArgument(mb, p, a);
+					for (j = p->argc - 1; j > p->retc; j--)
+						p->argv[j] = p->argv[j - 1];
+					p->argv[0] = p->argv[p->retc] = a;
+					typeChecker(scope, mb, p, TRUE);
+
+					if (a != b)
+						ARreplaceAlias(mb, i + 1, mb->stop, b, a);
 #ifdef DEBUG_MAL_OPTIMIZER
-					stream_printf(GDKout,"SECOND\n");
-					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+					stream_printf(GDKout, "SECOND\n");
+					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
 					actions++;
 					continue;
 				}
 			}
-		} else
-		if( p->argc == 2) {
-			/* binary/unary operation, check first argument  and return type*/
-			int olderr= mb->errors;
-			v= getVar(mb, a =getArg(p,1));
-			b= getArg(p,0);
+		} else if (p->argc == 2) {
+			/* binary/unary operation, check first argument  and return type */
+			int olderr = mb->errors;
 
-			if( isaBatType(v->type) && (v->endLifespan ==i ||a==b) && v->depth<=depth ) {
-				if( ORvalidSource(mb,a,i, v->beginLifespan)  || a == b){
+			v = getVar(mb, a = getArg(p, 1));
+			b = getArg(p, 0);
+
+			if (isaBatType(v->type) && (v->endLifespan == i || a == b) && v->depth <= depth) {
+				if (ORvalidSource(mb, a, i, v->beginLifespan) || a == b) {
 #ifdef DEBUG_MAL_OPTIMIZER
-					stream_printf(GDKout,"Found unary OR candidate\n");
-					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+					stream_printf(GDKout, "Found unary OR candidate\n");
+					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
-					mb->errors=0;
-					p->argv[0]= a;
-					typeChecker(scope,mb,p,TRUE);
-					if( p->typechk == TYPE_UNKNOWN){
-						mb->errors= olderr;
-						p->argv[0]= b;
-						typeChecker(scope,mb,p,TRUE);
-					} else
-					if( a != b )
-						ARreplaceAlias(mb,i+1,mb->stop, b, a);
+					mb->errors = 0;
+					p->argv[0] = a;
+					typeChecker(scope, mb, p, TRUE);
+
+					if (p->typechk == TYPE_UNKNOWN) {
+						mb->errors = olderr;
+						p->argv[0] = b;
+						typeChecker(scope, mb, p, TRUE);
+					} else if (a != b)
+						ARreplaceAlias(mb, i + 1, mb->stop, b, a);
 					actions++;
 				}
 			}
 		}
-    } 
-	if( errlen) strncpy(cntxt->errbuf,olderr,errlen);
-    /* remove the ORoptimizer request */
-	optimizerCheck(mb,"expressionAccumulation",actions,GDKusec()-clk);
-	if( mb->errors) {
-		showErrors();
-		return throwMessage("ORoptimizer","Optimization raised errors");
 	}
-    return MAL_SUCCEED;
+	if (errlen)
+		strncpy(cntxt->errbuf, olderr, errlen);
+	/* remove the ORoptimizer request */
+	optimizerCheck(mb, "expressionAccumulation", actions, GDKusec() - clk);
+	if (mb->errors) {
+		showErrors();
+		return throwMessage("ORoptimizer", "Optimization raised errors");
+	}
+	return MAL_SUCCEED;
 }
+
 @}
 @+ Heuristic rewrites rules
 One of the oldest optimizer tricks in relational query processing is
@@ -1477,80 +1631,91 @@ A more complete implementation should als push the selection through
 multiple operators. In particular, a reverse operator may obscure
 the opportunity to perform the select push through. 
 @c
-int SPcombi000(MalBlkPtr mb, int pc1, int pc2)
+int
+SPcombi000(MalBlkPtr mb, int pc1, int pc2)
 {
-    InstrPtr p,q;
-    p= getInstrPtr(mb,pc1);
-    q= getInstrPtr(mb,pc2);
-    if( @:fndOperator(p,"bat","reverse")@ ){
-        if( @:fndOperator(q,"algebra","select")@ ){
-            if( p->argv[0]== q->argv[1]){
-				setModuleId(p, putName("algebra",7));
-                setFunctionId(p, putName("reverse_select",14));
-                p= pushArgument(mb,p,q->argv[1]);
-                p= pushArgument(mb,p,q->argv[2]);
-                p= pushArgument(mb,p,q->argv[3]);
-                removeInstruction(mb,q);
-                chkFlow(mb);
-				chkDeclarations(mb,TRUE);
-                return 1;
-            }
-        }
-    }
-    return 0;
+	InstrPtr p, q;
+
+	p = getInstrPtr(mb, pc1);
+	q = getInstrPtr(mb, pc2);
+	if (@:fndOperator(p, "bat", "reverse")@) {
+		if (@:fndOperator(q, "algebra", "select")@) {
+			if (p->argv[0] == q->argv[1]) {
+				setModuleId(p, putName("algebra", 7));
+				setFunctionId(p, putName("reverse_select", 14));
+				p = pushArgument(mb, p, q->argv[1]);
+				p = pushArgument(mb, p, q->argv[2]);
+				p = pushArgument(mb, p, q->argv[3]);
+				removeInstruction(mb, q);
+				chkFlow(mb);
+				chkDeclarations(mb, TRUE);
+				return 1;
+			}
+		}
+	}
+	return 0;
 }
-int SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
+
+int
+SPsqueezer000(MalBlkPtr mb, int pc1, int pc2)
 {
-    InstrPtr p,q;
-    p= getInstrPtr(mb,pc1);
-    q= getInstrPtr(mb,pc2);
-    (void) p; (void) q; /* do something useful later on */
-    return 0;
-}
-str HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i,k,combis=0,squeeze=0;
-    InstrPtr p;
-	long clk= GDKusec();
-	(void) stk; /* fool compilers */
+	InstrPtr p, q;
 
-    /* process the combinators */
-    for(i=0; i<mb->stop-1; i++){
-        p= getInstrPtr(mb,i);
-        for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
-        if( SPcombi000(mb,i,k)){
-#ifdef DEBUG_MAL_OPTIMIZER
-            if( getClient()->debugOptimizer){
-            stream_printf(GDKout,"Combinator found\n");
-            printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
-            }
-#endif
-            combis++;
-            k--; /* an instruction has been removed */
-            setLifespan(mb); /* expensive but needed */
-        }
-    }
-    /* process the squeezers */
-    for(i=0; i<mb->stop-1; i++){
-        p= getInstrPtr(mb,i);
-        for(k=i+1; k<mb->stop && isAlife(mb,p->argv[0],k); k++)
-        if( SPsqueezer000(mb,i,k)){
-#ifdef DEBUG_MAL_OPTIMIZER
-            if( getClient()->debugOptimizer){
-            stream_printf(GDKout,"Squeezer found\n");
-            printInstruction(GDKout,mb,getInstrPtr(mb,i),LIST_MAL_ALL);
-            }
-#endif
-            squeeze++;
-            k--; /* an instruction has been removed */
-        }
-    }
-
-    /* remove the HRoptimizer request */
-	if(pci) 
-		removeInstruction(mb,pci);
-	optimizerCheck(mb,"selectPushDown",squeeze, GDKusec()-clk);
-    return NULL;
+	p = getInstrPtr(mb, pc1);
+	q = getInstrPtr(mb, pc2);
+	(void) p;
+	(void) q;		/* do something useful later on */
+	return 0;
 }
+
+str
+HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i, k, combis = 0, squeeze = 0;
+	InstrPtr p;
+	long clk = GDKusec();
+
+	(void) stk;		/* fool compilers */
+
+	/* process the combinators */
+	for (i = 0; i < mb->stop - 1; i++) {
+		p = getInstrPtr(mb, i);
+		for (k = i + 1; k < mb->stop && isAlife(mb, p->argv[0], k); k++)
+			if (SPcombi000(mb, i, k)) {
+#ifdef DEBUG_MAL_OPTIMIZER
+				if (getClient()->debugOptimizer) {
+					stream_printf(GDKout, "Combinator found\n");
+					printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
+				}
+#endif
+				combis++;
+				k--;	/* an instruction has been removed */
+				setLifespan(mb);	/* expensive but needed */
+			}
+	}
+	/* process the squeezers */
+	for (i = 0; i < mb->stop - 1; i++) {
+		p = getInstrPtr(mb, i);
+		for (k = i + 1; k < mb->stop && isAlife(mb, p->argv[0], k); k++)
+			if (SPsqueezer000(mb, i, k)) {
+#ifdef DEBUG_MAL_OPTIMIZER
+				if (getClient()->debugOptimizer) {
+					stream_printf(GDKout, "Squeezer found\n");
+					printInstruction(GDKout, mb, getInstrPtr(mb, i), LIST_MAL_ALL);
+				}
+#endif
+				squeeze++;
+				k--;	/* an instruction has been removed */
+			}
+	}
+
+	/* remove the HRoptimizer request */
+	if (pci)
+		removeInstruction(mb, pci);
+	optimizerCheck(mb, "selectPushDown", squeeze, GDKusec() - clk);
+	return NULL;
+}
+
 @-
 Pushing a selection geared at the left operand through the join operator
 is more complex, because you can only recognize those instances when later
@@ -1576,43 +1741,53 @@ effect.
 @c
 static MALfcn AMsetWriteMode;
 
-int AMoptimizerStep(MalBlkPtr mb, int pc)
-{   int k,kn=0;
-    InstrPtr p;
-	long clk= GDKusec();
-	int actions=0;
+int
+AMoptimizerStep(MalBlkPtr mb, int pc)
+{
+	int k, kn = 0;
+	InstrPtr p;
+	long clk = GDKusec();
+	int actions = 0;
 
-    p= getInstrPtr(mb,pc);
-    if( p->fcn != AMsetWriteMode) return pc;
-    kn = getArg(p,1);
+	p = getInstrPtr(mb, pc);
+	if (p->fcn != AMsetWriteMode)
+		return pc;
+	kn = getArg(p, 1);
 
-    for(k=pc-1;k>1; k--){
-        p= getInstrPtr(mb,k);
-        if( p->barrier) return pc;
-        if( p->fcn != AMsetWriteMode) continue;
-        if( getArg(p,1) == kn){
-			if(p) 
-				removeInstruction(mb,p);
+	for (k = pc - 1; k > 1; k--) {
+		p = getInstrPtr(mb, k);
+		if (p->barrier)
+			return pc;
+		if (p->fcn != AMsetWriteMode)
+			continue;
+		if (getArg(p, 1) == kn) {
+			if (p)
+				removeInstruction(mb, p);
 			actions++;
-            return pc-1;
-        }
-    }
-	optimizerCheck(mb,"accessMode",actions,GDKusec()-clk);
-    return pc;
+			return pc - 1;
+		}
+	}
+	optimizerCheck(mb, "accessMode", actions, GDKusec() - clk);
+	return pc;
 }
-str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i;
-    Symbol s;
+
+str
+AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i;
+	Symbol s;
+
 	(void) stk;
-    s= findMALSymbol("bat","setWriteMode");
-    if( s== 0)
-        return throwMessage("AMoptimizer","bat.setWriteMode missing\n");
-    AMsetWriteMode = getSignature(s)->fcn;
-    for(i=1;i< mb->stop; i++)
-        i= AMoptimizerStep(mb,i);
-    /* remove the AMoptimizer request */
-	if(pci) 
-		removeInstruction(mb,pci);
-    return MAL_SUCCEED;
+	s = findMALSymbol("bat", "setWriteMode");
+	if (s == 0)
+		return throwMessage("AMoptimizer", "bat.setWriteMode missing\n");
+	AMsetWriteMode = getSignature(s)->fcn;
+	for (i = 1; i < mb->stop; i++)
+		i = AMoptimizerStep(mb, i);
+	/* remove the AMoptimizer request */
+	if (pci)
+		removeInstruction(mb, pci);
+	return MAL_SUCCEED;
 }
+
 @}

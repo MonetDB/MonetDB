@@ -30,7 +30,7 @@ mal_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
 @c
 #include "mal_commonExpressions.h"
-#include "mal_interpreter.h"    /* for showErrors() */
+#include "mal_interpreter.h"	/* for showErrors() */
 @}
 @+ Common Subexpression Elimination
 Common subexpression elimination merely involves a single scan through the 
@@ -86,59 +86,58 @@ all variables have been used before in a similar context.
 Note, we skip the first instruction because it signifies the signature.
 The last instruction signifies the end.
 @c
-str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{   int i,j,k;
-    InstrPtr p,q;
-	int actions =0;
-	long clk= GDKusec();
+str
+CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i, j, k;
+	InstrPtr p, q;
+	int actions = 0;
+	long clk = GDKusec();
+
 	(void) stk;
 
-    for(i=1; i< mb->stop-1; i++){
-        p= getInstrPtr(mb,i);
-        if( p->retc!= p->argc)
-        for(j= i-1; j>=1; j--) {
-            if( safetyBarrier(mb,p,q=getInstrPtr(mb,j)) )
-                goto nxtCommonSubExpression;
+	for (i = 1; i < mb->stop - 1; i++) {
+		p = getInstrPtr(mb, i);
+		if (p->retc != p->argc)
+			for (j = i - 1; j >= 1; j--) {
+				if (safetyBarrier(mb, p, q = getInstrPtr(mb, j)))
+					goto nxtCommonSubExpression;
 #ifdef DEBUG_MAL_OPTIMIZER
-    printf("%d, %d  %d %d ",i,j, hasSameSignature(p,q), hasSameArguments(mb,p,q) );
-    printf(" :%d %d %d \n", !isUpdated(mb,i), !hasCommonResults(p,q), !hasSideEffects(p,TRUE));
+				printf("%d, %d  %d %d ", i, j, hasSameSignature(p, q), hasSameArguments(mb, p, q));
+				printf(" :%d %d %d \n", !isUpdated(mb, i), !hasCommonResults(p, q), !hasSideEffects(p, TRUE));
 
 #endif
-            if( hasSameSignature(p,q) && 
-                hasSameArguments(mb,p,q) &&
-               !isUpdated(mb,i) &&
-               !hasCommonResults(p,q) &&
-               !hasSideEffects(p,TRUE) ){
+				if (hasSameSignature(p, q) && hasSameArguments(mb, p, q) && !isUpdated(mb, i) && !hasCommonResults(p, q) && !hasSideEffects(p, TRUE)) {
 #ifdef DEBUG_MAL_OPTIMIZER
-				if( getClient()->debugOptimizer){
-					stream_printf(GDKout,"Found a common expression "
-						"%d <-> %d\n",j,i);
-					printInstruction(GDKout,mb,q,LIST_MAL_ALL);
-					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-				}
+					if (getClient()->debugOptimizer) {
+						stream_printf(GDKout, "Found a common expression " "%d <-> %d\n", j, i);
+						printInstruction(GDKout, mb, q, LIST_MAL_ALL);
+						printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+					}
 #endif
-                clrFunction(p);
-                p->token= ASSIGNsymbol;
-                p->argc= p->retc+q->retc;
-                for(k=0; k<q->retc; k++)
-                p->argv[p->retc+k]= q->argv[k];
+					clrFunction(p);
+					p->token = ASSIGNsymbol;
+					p->argc = p->retc + q->retc;
+					for (k = 0; k < q->retc; k++)
+						p->argv[p->retc + k] = q->argv[k];
 #ifdef DEBUG_MAL_OPTIMIZER
-				if( getClient()->debugOptimizer){
-					stream_printf(GDKout,"common expression");
-					printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-				}
+					if (getClient()->debugOptimizer) {
+						stream_printf(GDKout, "common expression");
+						printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+					}
 #endif
-                i= ARoptimizerStep(mb,i);
-				actions++;
-                goto nxtCommonSubExpression;
-            } 
-        }
-        nxtCommonSubExpression: ;
-    }
-    /* remove the CXoptimizer request */
-	if(pci) 
-		removeInstruction(mb,pci);
-	optimizerCheck(mb,"commonExpressions",actions, GDKusec()-clk);
-    return MAL_SUCCEED;
+					i = ARoptimizerStep(mb, i);
+					actions++;
+					goto nxtCommonSubExpression;
+				}
+			}
+	      nxtCommonSubExpression:;
+	}
+	/* remove the CXoptimizer request */
+	if (pci)
+		removeInstruction(mb, pci);
+	optimizerCheck(mb, "commonExpressions", actions, GDKusec() - clk);
+	return MAL_SUCCEED;
 }
+
 @}

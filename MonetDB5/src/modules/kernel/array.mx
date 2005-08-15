@@ -137,6 +137,7 @@ fillgrid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset, 
 
 	return GDK_SUCCEED;
 }
+
 int
 grid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
 {
@@ -151,10 +152,12 @@ grid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
 #endif
 
 	new_int_bat(*out, (i * (n - o) * r));
-	if( *out==0 ) return GDK_FAIL;
+	if (*out == 0)
+		return GDK_FAIL;
 	add_ints(*out, (i * (n - o) * r));
-	return fillgrid(out,groups,groupsize,clustersize,offset, &s);
+	return fillgrid(out, groups, groupsize, clustersize, offset, &s);
 }
+
 int
 gridShift(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset, int *shift)
 {
@@ -168,9 +171,10 @@ gridShift(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset,
 #endif
 
 	new_int_bat(*out, (i * (n - o) * r));
-	if( *out==0 ) return GDK_FAIL;
+	if (*out == 0)
+		return GDK_FAIL;
 	add_ints(*out, (i * (n - o) * r));
-	return fillgrid(out,groups,groupsize,clustersize,offset,shift);
+	return fillgrid(out, groups, groupsize, clustersize, offset, shift);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -379,49 +383,61 @@ The M5 wrapper code
 @c
 #include "mal.h"
 str
-ARRAYgrid(int *ret, int *groups, int *groupsize, int *clustersize, int *offset){
+ARRAYgrid(int *ret, int *groups, int *groupsize, int *clustersize, int *offset)
+{
 	BAT *bn;
-	if( grid(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
-		return throwMessage("array.grid","Failed to create the grid\n");
-	BBPincref( *ret= bn->batCacheid, TRUE);
-	BBPunfix(*ret);
-	return MAL_SUCCEED;
-}
-str
-ARRAYgridShift(int *ret, int *groups, int *groupsize, int *clustersize, int *offset, int *shift){
-	BAT *bn;
-	if( gridShift(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
-		return throwMessage("array.grid","Failed to create the grid\n");
-	BBPincref( *ret= bn->batCacheid, TRUE);
-	BBPunfix(*ret);
-	return MAL_SUCCEED;
-}
-str
-ARRAYgridBAT(int *ret, int *bid, int *groups, int *groupsize, int *clustersize, int *offset){
-	BAT *bn;
-	int shift= 1;
-    if( (bn= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("array.grid", "Cannot access descriptor");
-    }
 
-	if( fillgrid(&bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
-		return throwMessage("array.grid","Failed to create the grid\n");
-	BBPincref( *ret= bn->batCacheid, TRUE);
+	if (grid(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
+		return throwMessage("array.grid", "Failed to create the grid\n");
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
+
 str
-ARRAYgridBATshift(int *ret, int *bid, int *groups, int *groupsize, int *clustersize, int *offset, int *shift){
+ARRAYgridShift(int *ret, int *groups, int *groupsize, int *clustersize, int *offset, int *shift)
+{
 	BAT *bn;
-    if( (bn= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("array.grid", "Cannot access descriptor");
-    }
-	if( fillgrid(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
-		return throwMessage("array.grid","Failed to create the grid\n");
-	BBPincref( *ret= bn->batCacheid, TRUE);
+
+	if (gridShift(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
+		return throwMessage("array.grid", "Failed to create the grid\n");
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
+
+str
+ARRAYgridBAT(int *ret, int *bid, int *groups, int *groupsize, int *clustersize, int *offset)
+{
+	BAT *bn;
+	int shift = 1;
+
+	if ((bn = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("array.grid", "Cannot access descriptor");
+	}
+
+	if (fillgrid(&bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
+		return throwMessage("array.grid", "Failed to create the grid\n");
+	BBPincref(*ret = bn->batCacheid, TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
+}
+
+str
+ARRAYgridBATshift(int *ret, int *bid, int *groups, int *groupsize, int *clustersize, int *offset, int *shift)
+{
+	BAT *bn;
+
+	if ((bn = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("array.grid", "Cannot access descriptor");
+	}
+	if (fillgrid(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
+		return throwMessage("array.grid", "Failed to create the grid\n");
+	BBPincref(*ret = bn->batCacheid, TRUE);
+	BBPunfix(*ret);
+	return MAL_SUCCEED;
+}
+
 @-
 @= arraymultiply
 str
@@ -455,67 +471,74 @@ ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 	return MAL_SUCCEED;
 }
 @c
-@:arraymultiply(sht,lng)@
-@:arraymultiply(sht,int)@
-@:arraymultiply(int,int)@
-@:arraymultiply(int,lng)@
-@:arraymultiply(lng,lng)@
+@:arraymultiply(sht, lng)@
+@:arraymultiply(sht, int)@
+@:arraymultiply(int, int)@
+@:arraymultiply(int, lng)@
+@:arraymultiply(lng, lng)@
 
 str
-ARRAYproduct(int *ret, int *bid, int *rid){
+ARRAYproduct(int *ret, int *bid, int *rid)
+{
 	BAT *bn, *b, *r;
-	BUN p,q, s,t;
-	int x1,x2;
+	BUN p, q, s, t;
+	int x1, x2;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("array.product", "Cannot access descriptor");
-    }
-    if( (r= BATdescriptor(*rid)) == NULL ){
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("array.product", "Cannot access descriptor");
+	}
+	if ((r = BATdescriptor(*rid)) == NULL) {
 		BBPunfix(b->batCacheid);
-         return throwMessage("array.product", "Cannot access descriptor");
-    }
-    if( BATcount(b) > BATcount(r) || (BATcount(b)% BATcount(r)) !=BATcount(b)){
+		return throwMessage("array.product", "Cannot access descriptor");
+	}
+	if (BATcount(b) > BATcount(r) || (BATcount(b) % BATcount(r)) != BATcount(b)) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(r->batCacheid);
-        return throwMessage("array.product", "Illegal argument bounds");
-    }
-	bn= BATnew(b->ttype, r->ttype, BATcount(r));
-
-	BATloopFast(r,s,t,x2){
-		BATloopFast(b,p,q,x1){
-			BUNfastins(bn,BUNtail(b,p),BUNtail(r,s));
-			s+= x2;
-		}
-		s-= x2;
+		return throwMessage("array.product", "Illegal argument bounds");
 	}
-	BBPincref( *ret= bn->batCacheid, TRUE);
+	bn = BATnew(b->ttype, r->ttype, BATcount(r));
+
+	BATloopFast(r, s, t, x2) {
+		BATloopFast(b, p, q, x1) {
+			BUNfastins(bn, BUNtail(b, p), BUNtail(r, s));
+			s += x2;
+		}
+		s -= x2;
+	}
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	BBPunfix(b->batCacheid);
 	BBPunfix(r->batCacheid);
 	return MAL_SUCCEED;
 }
+
 str
-ARRAYproject(int *ret, int *bid, int *cst){
-	BAT *bn,*b;
-	int *ptr,i;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("array.project", "Cannot access descriptor");
-    }
+ARRAYproject(int *ret, int *bid, int *cst)
+{
+	BAT *bn, *b;
+	int *ptr, i;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("array.project", "Cannot access descriptor");
+	}
 	new_int_bat(bn, BATcount(b));
-	if( bn==0 ) 
-		return throwMessage("array.project","failed to create array\n");
-	add_ints(bn, i=  BATcount(b));
+	if (bn == 0)
+		return throwMessage("array.project", "failed to create array\n");
+	add_ints(bn, i = BATcount(b));
 	ptr = get_int_ptr(bn);
-	while (i-- >0) 
-				(*(ptr ++)) = * cst;
-	BBPincref( *ret= bn->batCacheid, TRUE);
+
+	while (i-- > 0)
+		(*(ptr ++)) = *cst;
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
+
 str
-ARRAYprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+ARRAYprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	return throwMessage("array.print","not supported yet\n");
+	return throwMessage("array.print", "not supported yet\n");
 }

@@ -306,161 +306,209 @@ Not used right now.
 
 #define MAXPROPLIST 3
 
-typedef struct PROPrecord{
-	str		nme;
-	str		operator;
-	ValRecord	val;
+typedef struct PROPrecord {
+	str nme;
+	str operator;
+	ValRecord val;
 	struct PROPrecord *nxt;
 } *Property;
 
-typedef struct PROPSET{
-	int 	refcount;
-	int	maxlist;
+typedef struct PROPSET {
+	int refcount;
+	int maxlist;
 	Property prop[MAXPROPLIST];
 } *PropertySet;
 
 mal_export PropertySet newPropertySet();
 mal_export void freePropertySet(PropertySet ps);
 mal_export PropertySet cpyPropertySet(PropertySet old);
-mal_export Property cpyProperty(PropertySet *target, Property src);
+mal_export Property cpyProperty(PropertySet * target, Property src);
 mal_export Property fndProperty(PropertySet ps, str nme);
 mal_export Property fndPropertyIndexed(PropertySet ps, int first, int last, str nme);
 mal_export Property setProperty(PropertySet ps, str nme, str op, int tpe, ptr val);
 mal_export ptr getPropertyValue(PropertySet ps, str nme);
 mal_export int getPropertyType(PropertySet ps, str nme);
 mal_export str propertySet2str(PropertySet ps);
+
 @c
 #include "mal_properties.h"
-#include "mal_type.h"	/* for idcmp() */
+#include "mal_type.h"		/* for idcmp() */
 
-PropertySet newPropertySet()
-{	int i;
+PropertySet
+newPropertySet()
+{
+	int i;
 	PropertySet ps;
 
-	ps= (PropertySet) GDKmalloc(sizeof(struct PROPSET));
-	ps->refcount=0;
-	ps->maxlist= MAXPROPLIST;
-	for(i=0;i<MAXPROPLIST;i++) ps->prop[i]=0;
+	ps = (PropertySet) GDKmalloc(sizeof(struct PROPSET));
+	ps->refcount = 0;
+	ps->maxlist = MAXPROPLIST;
+	for (i = 0; i < MAXPROPLIST; i++)
+		ps->prop[i] = 0;
 	return ps;
 }
-PropertySet cpyPropertySet(PropertySet old){
+
+PropertySet
+cpyPropertySet(PropertySet old)
+{
 	PropertySet ps;
-	ps= (PropertySet) GDKmalloc(sizeof(struct PROPSET));
-	memcpy((char*)ps, (char*)old, sizeof(struct PROPSET));
+	ps = (PropertySet) GDKmalloc(sizeof(struct PROPSET));
+	memcpy((char *) ps, (char *) old, sizeof(struct PROPSET));
 	GDKwarning("Property set copying not finished\n");
 	return ps;
 }
 
-Property cpyProperty(PropertySet *target, Property src){
-	if( *target == 0) *target = newPropertySet();
-	return setProperty(*target,src->nme, src->operator, 
-						src->val.vtype, VALptr(&src->val));
+Property
+cpyProperty(PropertySet * target, Property src)
+{
+	if (*target == 0)
+		*target = newPropertySet();
+	return setProperty(*target, src->nme, src->operator, src->val.vtype, VALptr(&src->val));
 }
-void freePropertySet(PropertySet ps){
-	Property p1,p2;
+
+void
+freePropertySet(PropertySet ps)
+{
+	Property p1, p2;
 	int i;
-	for(i=0;i<MAXPROPLIST;i++){
-		p1= ps->prop[i];
-		if(p1)
-		do{
-			p2= p1->nxt;
-			GDKfree(p1);
-			p1=p2;
-		} while(p2);
+
+	for (i = 0; i < MAXPROPLIST; i++) {
+		p1 = ps->prop[i];
+		if (p1)
+			do {
+				p2 = p1->nxt;
+				GDKfree(p1);
+				p1 = p2;
+			} while (p2);
 	}
 	GDKfree(ps);
 }
-Property fndProperty(PropertySet ps, str nme){
+
+Property
+fndProperty(PropertySet ps, str nme)
+{
 	Property pr;
 	int i;
 
-	if( ps == NULL) return NULL;
-	for(i=0; i<MAXPROPLIST; i++){
-		pr= ps->prop[i];
-		while(pr){
-			if( idcmp(pr->nme,nme)==0) return pr;
-			pr= pr->nxt;
+	if (ps == NULL)
+		return NULL;
+	for (i = 0; i < MAXPROPLIST; i++) {
+		pr = ps->prop[i];
+		while (pr) {
+			if (idcmp(pr->nme, nme) == 0)
+				return pr;
+			pr = pr->nxt;
 		}
 	}
 	return 0;
 }
-Property fndPropertyIndexed(PropertySet ps, int first, int last, str nme){
+
+Property
+fndPropertyIndexed(PropertySet ps, int first, int last, str nme)
+{
 	Property pr;
 	int i;
 
-	if( ps == NULL) return NULL;
-	for(i=first; i<last;i++){
-		pr= ps->prop[i];
-		while(pr){
-			if( idcmp(pr->nme,nme)==0) return pr;
-			pr= pr->nxt;
+	if (ps == NULL)
+		return NULL;
+	for (i = first; i < last; i++) {
+		pr = ps->prop[i];
+		while (pr) {
+			if (idcmp(pr->nme, nme) == 0)
+				return pr;
+			pr = pr->nxt;
 		}
 	}
 	return 0;
 }
+
 @-
 A property is assigned to a specific property list.
 @c
-Property setPropertyIndexed(PropertySet ps, int idx, str nme, str op, int tpe, ptr val)
-{	Property pr;
+Property
+setPropertyIndexed(PropertySet ps, int idx, str nme, str op, int tpe, ptr val)
+{
+	Property pr;
 
-	pr= fndPropertyIndexed(ps,idx,idx+1,nme);	
-	if(pr == 0){
+	pr = fndPropertyIndexed(ps, idx, idx + 1, nme);
+	if (pr == 0) {
 		pr = (Property) GDKmalloc(sizeof(struct PROPrecord));
-		pr->nxt= ps->prop[idx];
-		ps->prop[idx]= pr;
-		pr->nme= GDKstrdup(nme);
+		pr->nxt = ps->prop[idx];
+		ps->prop[idx] = pr;
+		pr->nme = GDKstrdup(nme);
 	}
-	if( val ) 
+	if (val)
 		VALset(&pr->val, tpe, val);
 	pr->operator= GDKstrdup(op);
 	return pr;
 }
-Property setProperty(PropertySet ps, str nme, str op, int tpe, ptr val){
+
+Property
+setProperty(PropertySet ps, str nme, str op, int tpe, ptr val)
+{
 	return setPropertyIndexed(ps, 0, nme, op, tpe, val);
 }
+
 @-
 The users of properties need a simple scheme to localize a
 property.
 @c
-ptr getPropertyValue(PropertySet ps, str nme){
+ptr
+getPropertyValue(PropertySet ps, str nme)
+{
 	Property pr;
-	pr= fndProperty(ps,nme);
-	if( pr) return VALptr(&pr->val);
+
+	pr = fndProperty(ps, nme);
+	if (pr)
+		return VALptr(&pr->val);
 	return NULL;
 }
-int getPropertyType(PropertySet ps, str nme){
+
+int
+getPropertyType(PropertySet ps, str nme)
+{
 	Property pr;
-	pr= fndProperty(ps,nme);
-	if( pr) return pr->val.vtype;
+
+	pr = fndProperty(ps, nme);
+	if (pr)
+		return pr->val.vtype;
 	return TYPE_void;
 }
+
 @-
 For debugging purposes we should be able to convert any property set
 back into a string. We simple assume the space required is limited.
 @c
-str propertySet2str(PropertySet ps){
-	char buf[128*1024];
-	str s=buf,t=0;
+str
+propertySet2str(PropertySet ps)
+{
+	char buf[128 * 1024];
+	str s = buf, t = 0;
 	Property pr;
-	int idx =0;
+	int idx = 0;
 
-	if(ps== NULL || ps->prop[idx]==NULL) return GDKstrdup("");
-	pr= ps->prop[idx];
-	*s++ = '{'; 
-	while(pr){
-		t=0;
+	if (ps == NULL || ps->prop[idx] == NULL)
+		return GDKstrdup("");
+	pr = ps->prop[idx];
+	*s++ = '{';
+	while (pr) {
+		t = 0;
 		ATOMformat(pr->val.vtype, VALget(&pr->val), &t);
-		if( pr->operator && *pr->operator)
-			sprintf(s,"%s%s%s",pr->nme,pr->operator,t);
-		else sprintf(s,"%s",pr->nme);
-		while(*s) s++;
-		pr= pr->nxt;
-		if( pr) *s++ = ',';
-		if( t) GDKfree(t);
+		if (pr->operator && * pr->operator)
+			sprintf(s, "%s%s%s", pr->nme, pr->operator, t);
+		else
+			sprintf(s, "%s", pr->nme);
+		while (*s)
+			s++;
+		pr = pr->nxt;
+		if (pr)
+			*s++ = ',';
+		if (t)
+			GDKfree(t);
 	}
-	*s++ = '}'; 
-	*s =0;
+	*s++ = '}';
+	*s = 0;
 	return GDKstrdup(buf);
 }
+
 @}

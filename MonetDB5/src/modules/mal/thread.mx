@@ -82,37 +82,71 @@ comment "Run a function independently";
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 #define DEBUG_MAL_ATOMS 1
-#endif /*  _MAL_ATOMS*/
+#endif /*  _MAL_ATOMS */
 
 @c
 #include "thread.h"
-str CMDthreadWait(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	(void) m; (void) p; /* fool compiler */
+str
+CMDthreadWait(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	(void) m;
+	(void) p;		/* fool compiler */
 	(void) waitForChildren(s);
 	return MAL_SUCCEED;
 }
-str CMDthreadSuspend(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	(void)s; (void) m; (void) p; /* fool compiler */
+
+str
+CMDthreadSuspend(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	(void) s;
+	(void) m;
+	(void) p;		/* fool compiler */
 	return throwMessage("thread.suspend", "not yet implemented\n");
 }
-str CMDthreadWaitList(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	(void) m; (void)s; (void) p; /* fool compiler */
+
+str
+CMDthreadWaitList(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	(void) m;
+	(void) s;
+	(void) p;		/* fool compiler */
 	return throwMessage("thread.wait", "not yet implemented\n");
 }
-str CMDthreadIsDead(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	(void) m; (void)s; (void) p; /* fool compiler */
+
+str
+CMDthreadIsDead(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	(void) m;
+	(void) s;
+	(void) p;		/* fool compiler */
 	return throwMessage("thread.isDead", "not yet implemented\n");
 }
-str CMDthreadKill(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	(void) m; (void)s; (void) p; /* fool compiler */
+
+str
+CMDthreadKill(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	(void) m;
+	(void) s;
+	(void) p;		/* fool compiler */
 	return throwMessage("thread.kill", "not yet implemented\n");
 }
-str CMDthreadTerminate(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	(void) m; (void)s; (void) p; /* fool compiler */
+
+str
+CMDthreadTerminate(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	(void) m;
+	(void) s;
+	(void) p;		/* fool compiler */
 	return throwMessage("thread.terminate", "not yet implemented\n");
 }
-str CMDthreadExec(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-	(void) m; (void)s; (void) p; /* fool compiler */
+
+str
+CMDthreadExec(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	(void) m;
+	(void) s;
+	(void) p;		/* fool compiler */
 	return throwMessage("thread.exec", "not yet implemented\n");
 }
+
 @}

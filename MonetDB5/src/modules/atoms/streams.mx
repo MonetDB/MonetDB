@@ -279,6 +279,7 @@ bstream_read_wrap(int *res, Bstream *BS, int *size)
 	*res = (int) bstream_read(*(bstream **) BS, (size_t) * size);
 	return GDK_SUCCEED;
 }
+
 @- Wrapper
 The remainder is the version 5 wrapper
 @= open_streamwrap
@@ -319,61 +320,85 @@ str stream_socket_@1wrap( Stream *S, int *socket, str *name ){
 @:open_socketwrap(rastream)@
 @:open_socketwrap(wastream)@
 
-str stream_write_stringwrap(int *ret, Stream *S, str *data ){
-    (void) ret;
-    if( stream_write_string(S,*data) == GDK_SUCCEED)
-        return MAL_SUCCEED;
-    return throwMessage("streams.writeStr","failed");
+str
+stream_write_stringwrap(int *ret, Stream *S, str *data)
+{
+	(void) ret;
+	if (stream_write_string(S, *data) == GDK_SUCCEED)
+		return MAL_SUCCEED;
+	return throwMessage("streams.writeStr", "failed");
 }
 
-str stream_writeIntwrap(int *ret, Stream *S, int *data ){
-    (void) ret;
-    if( stream_writeInt_wrap(S,data) == GDK_SUCCEED)
-        return MAL_SUCCEED;
-    return throwMessage("streams.writeInt","failed");
-}
-str stream_readIntwrap(int *ret, Stream *S){
-    if( stream_readInt_wrap(ret,S) == GDK_SUCCEED)
-        return MAL_SUCCEED;
-    return throwMessage("streams.readInt","failed");
+str
+stream_writeIntwrap(int *ret, Stream *S, int *data)
+{
+	(void) ret;
+	if (stream_writeInt_wrap(S, data) == GDK_SUCCEED)
+		return MAL_SUCCEED;
+	return throwMessage("streams.writeInt", "failed");
 }
 
-str stream_read_stringwrap(str *res, Stream *s){
-    if( stream_read_string(res,s) == GDK_SUCCEED)
-            return MAL_SUCCEED;
-    return throwMessage("streams.readStr","failed");
+str
+stream_readIntwrap(int *ret, Stream *S)
+{
+	if (stream_readInt_wrap(ret, S) == GDK_SUCCEED)
+		return MAL_SUCCEED;
+	return throwMessage("streams.readInt", "failed");
 }
 
-str stream_flush_streamwrap(int *ret, Stream *s){
-    (void) ret;
-    if( stream_flush_stream(s) == GDK_SUCCEED)
-        return MAL_SUCCEED;
-    return throwMessage("streams.flush","failed");
-}
-str stream_close_streamwrap(int *ret, Stream *s){
-    (void) ret;
-    if( stream_close_stream(s) == GDK_SUCCEED)
-        return MAL_SUCCEED;
-    return throwMessage("streams.close","failed");
-}
-str open_block_streamwrap(Stream *S, Stream *is){
-    if( open_block_stream(S,is) == GDK_SUCCEED)
-        return MAL_SUCCEED;
-    return throwMessage("bstreams.open","failed");
+str
+stream_read_stringwrap(str *res, Stream *s)
+{
+	if (stream_read_string(res, s) == GDK_SUCCEED)
+		return MAL_SUCCEED;
+	return throwMessage("streams.readStr", "failed");
 }
 
-str bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize){
-    if( bstream_create_wrap(Bs,S,bufsize)== GDK_SUCCEED)
-        return MAL_SUCCEED;
-    return throwMessage("bstreams.create","failed");
+str
+stream_flush_streamwrap(int *ret, Stream *s)
+{
+	(void) ret;
+	if (stream_flush_stream(s) == GDK_SUCCEED)
+		return MAL_SUCCEED;
+	return throwMessage("streams.flush", "failed");
 }
 
-str bstream_destroy_wrapwrap(int *ret, Bstream *BS){
-    (void) ret;
-    bstream_destroy_wrap(BS);
-    return MAL_SUCCEED;
+str
+stream_close_streamwrap(int *ret, Stream *s)
+{
+	(void) ret;
+	if (stream_close_stream(s) == GDK_SUCCEED)
+		return MAL_SUCCEED;
+	return throwMessage("streams.close", "failed");
 }
-str bstream_read_wrapwrap(int *res, Bstream *BS, int *size){
-    bstream_read_wrap(res,BS,size);
-    return MAL_SUCCEED;
+
+str
+open_block_streamwrap(Stream *S, Stream *is)
+{
+	if (open_block_stream(S, is) == GDK_SUCCEED)
+		return MAL_SUCCEED;
+	return throwMessage("bstreams.open", "failed");
+}
+
+str
+bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize)
+{
+	if (bstream_create_wrap(Bs, S, bufsize) == GDK_SUCCEED)
+		return MAL_SUCCEED;
+	return throwMessage("bstreams.create", "failed");
+}
+
+str
+bstream_destroy_wrapwrap(int *ret, Bstream *BS)
+{
+	(void) ret;
+	bstream_destroy_wrap(BS);
+	return MAL_SUCCEED;
+}
+
+str
+bstream_read_wrapwrap(int *res, Bstream *BS, int *size)
+{
+	bstream_read_wrap(res, BS, size);
+	return MAL_SUCCEED;
 }

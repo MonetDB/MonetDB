@@ -106,14 +106,20 @@ Compatibility code wrappers
 extern str BKCinsert_void_bun(int *r, int *bid, ptr t);
 extern str BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
 
-str MILinsert_void_bun(int *r, int *bid, ptr t) {
+str
+MILinsert_void_bun(int *r, int *bid, ptr t)
+{
 	*r = *bid;
-	return BKCinsert_void_bun(r,bid,t);
+	return BKCinsert_void_bun(r, bid, t);
 }
-str MILinsert_bun(int *r, int *bid, ptr h, ptr t) {
+
+str
+MILinsert_bun(int *r, int *bid, ptr h, ptr t)
+{
 	*r = *bid;
-	return BKCinsert_bun(r,bid,h,t);
+	return BKCinsert_bun(r, bid, h, t);
 }
+
 @-
 Version 4 contains a series of predefined constants.
 They are stored in a BOX for retrieval.
@@ -192,7 +198,7 @@ mil_utils.deposit("M_SQRT1_2",M_SQRT1_2);
 @h
 #ifndef _ITERATOR_H
 #define _ITERATOR_H
-#endif /* _ITERATOR_H*/
+#endif /* _ITERATOR_H */
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
 @= authorize
@@ -212,45 +218,73 @@ The content of this box my only be changed by the Administrator.
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-int isAuthorized(str nme){
+int
+isAuthorized(str nme)
+{
 	Client c;
-	if( nme == 0) return 1;
-	c= getClient();
-	return idcmp(c->user,nme)==0;
+
+	if (nme == 0)
+		return 1;
+	c = getClient();
+	return idcmp(c->user, nme) == 0;
 }
-str MILprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+MILprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
-	(void)mb;(void)stk;(void)pci; /* fool compiler*/
+
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
 	@:authorize(prelude)@
-	box= openBox("mil");
-	if( box== 0) 
-		return throwMessage("mil.prelude","failed to open box");
+	box = openBox("mil");
+	if (box == 0)
+		return throwMessage("mil.prelude", "failed to open box");
 	/* if the box was already filled we can skip initialization */
-	if( box->sym->vtop == 0){
-	/* old bat.mx and algebra.mx constants */
+	if (box->sym->vtop == 0) {
+		/* old bat.mx and algebra.mx constants */
 	}
 	return MAL_SUCCEED;
 }
+
 @- Operator implementation
 @c
-str MILopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void)mb;(void)stk;(void)pci; /* fool compiler*/
-	if(openBox("mil.open") != 0) return MAL_SUCCEED;
-	return throwMessage("mil.open","failed to open box");
+str
+MILopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	if (openBox("mil.open") != 0)
+		return MAL_SUCCEED;
+	return throwMessage("mil.open", "failed to open box");
 }
 
-str MILclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void)mb;(void)stk;(void)pci; /* fool compiler*/
-	if( closeBox("mil" ,TRUE) ==0) return MAL_SUCCEED;
-	return throwMessage("mil.close","failed to close box");
+str
+MILclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	if (closeBox("mil", TRUE) == 0)
+		return MAL_SUCCEED;
+	return throwMessage("mil.close", "failed to close box");
 }
-str MILdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+MILdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
-	(void)mb;(void)stk;(void)pci; /* fool compiler*/
+
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
 	@:OpenBox(destroy)@
 	destroyBox("mil");
 	return MAL_SUCCEED;
 }
+
 @-
 Access to a box calls for resolving the first parameter
 to a named box.
@@ -261,138 +295,164 @@ to a named box.
 	(void) mb;
 @-
 @c
-str MILdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+MILdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	ValPtr v;
 	Box box;
 
-	@:authorize(@1)@
-	@:OpenBox(deposit)@
-	name = (str) getArgValue(stk,pci,1);
+	@:authorize(@
+			 1) @ @:OpenBox(deposit)@
+	name = (str) getArgValue(stk, pci, 1);
 	v = &stk->stk[pci->argv[2]];
-	if(depositBox(box,name,v) )
-		return throwException(MALEXCEPTION,"mil.deposit",
-			"failed to deposit '%s' into box",name);
+	if (depositBox(box, name, v))
+		return throwException(MALEXCEPTION, "mil.deposit", "failed to deposit '%s' into box", name);
 	return MAL_SUCCEED;
 }
+
 @-
 We first have to take the element from the constant box.
 If we fail, the name could refer to a BAT
 @c
-str MILtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+MILtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
 	ValPtr v;
 	int tpe;
 
 	@:OpenBox(take)@
-	name = * (str*) getArgReference(stk,pci,1);
-	tpe = (int) getArgType(mb,pci,0);
-	(void)tpe;
+	name = *(str *) getArgReference(stk, pci, 1);
+	tpe = (int) getArgType(mb, pci, 0);
+	(void) tpe;
 	v = &stk->stk[pci->argv[0]];
-	if(takeBox(box,name,v,tpe)) {
-		return throwException(MALEXCEPTION,"mil.take",
-			"failed to take '%s' from box",name);
-	} 
+	if (takeBox(box, name, v, tpe)) {
+		return throwException(MALEXCEPTION, "mil.take", "failed to take '%s' from box", name);
+	}
 	/* also keep the copy in the variable */
-	VALcopy(&stk->stk[pci->argv[1]],v);
+	VALcopy(&stk->stk[pci->argv[1]], v);
 	return MAL_SUCCEED;
 }
 
-str MILrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+MILrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
-	(void)stk; /* fool compiler*/
+
+	(void) stk;		/* fool compiler */
 
 	@:OpenBox(release)@
-	name = (str) getArgValue(stk,pci,1);
-	releaseBox(box,name);
+	name = (str) getArgValue(stk, pci, 1);
+	releaseBox(box, name);
 	(void) mb;
 	return MAL_SUCCEED;
 }
 
-str MILreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+MILreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
 
-	(void)mb; (void)stk; (void) pci; /* fool compiler */
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
 	@:OpenBox(release)@
 	releaseAllBox(box);
 	return MAL_SUCCEED;
 }
 
-str MILdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+MILdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
 
-	(void)mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	@:OpenBox(discard)@
-	name = (str) getArgValue(stk,pci,1);
-	if( discardBox(box,name) == 0)
-			return throwException(MALEXCEPTION,"mil.discard",
-		"failed to discard '%s' from box", name);
+	name = (str) getArgValue(stk, pci, 1);
+	if (discardBox(box, name) == 0)
+		return throwException(MALEXCEPTION, "mil.discard", "failed to discard '%s' from box", name);
 	return MAL_SUCCEED;
 }
-str MILtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+MILtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
-	int i,len=0;
+	int i, len = 0;
 	ValPtr v;
-	str nme,s=0;
+	str nme, s = 0;
 
-	(void)mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	@:OpenBox(toString)@
-	nme = (str) getArgValue(stk,pci,1);
-	i= findVariable(box->sym,nme);
-	if( i <0) return throwException(MALEXCEPTION,"mil.toString",
-			"failed to take '%s' from box",nme);
+	nme = (str) getArgValue(stk, pci, 1);
+	i = findVariable(box->sym, nme);
+	if (i < 0)
+		return throwException(MALEXCEPTION, "mil.toString", "failed to take '%s' from box", nme);
 
-	v= &box->val->stk[i];
+	v = &box->val->stk[i];
 	garbageElement(&stk->stk[pci->argv[0]]);
 
-	if( v->vtype== TYPE_str) s= v->val.sval;
-	else (*BATatoms[v->vtype].atomToStr)(&s,&len,v);
-	if(s== NULL) return throwMessage("mil.toString","illegal value");
-	VALset(&stk->stk[pci->argv[0]], TYPE_str,s);
+	if (v->vtype == TYPE_str)
+		s = v->val.sval;
+	else
+		(*BATatoms[v->vtype].atomToStr) (&s, &len, v);
+	if (s == NULL)
+		return throwMessage("mil.toString", "illegal value");
+	VALset(&stk->stk[pci->argv[0]], TYPE_str, s);
 
 	/* if( VALconvert(TYPE_str,v, TRUE) == ILLEGALVALUE) 
-		return throwMessage("mil.toString","illegal value");
-	VALcopy(&stk->stk[pci->argv[0]], v); */
+	   return throwMessage("mil.toString","illegal value");
+	   VALcopy(&stk->stk[pci->argv[0]], v); */
 	return MAL_SUCCEED;
 }
 
-str MILnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+MILnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
-	(void)mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
-	cursor= (lng*) getArgValue(stk,pci,0);
-	v= &stk->stk[pci->argv[1]];
+	cursor = (lng *) getArgValue(stk, pci, 0);
+	v = &stk->stk[pci->argv[1]];
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
 }
-str MILhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+MILhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
 	lng *cursor;
 	ValPtr v;
 
-	(void)mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
-	cursor= (lng*) getArgValue(stk,pci,0);
-	v= &stk->stk[pci->argv[1]];
+	cursor = (lng *) getArgValue(stk, pci, 0);
+	v = &stk->stk[pci->argv[1]];
 	nextBoxElement(box, cursor, v);
 	return MAL_SUCCEED;
 }
 
-str MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str nme;
 	int len;
-	(void) mb; /* fool compiler */
-	nme = (str) getArgValue(stk,pci,1);
+
+	(void) mb;		/* fool compiler */
+	nme = (str) getArgValue(stk, pci, 1);
 	unquote(nme);
-	len=strlen(nme);
-	stream_printf(GDKout,"#%s%s",nme,(nme[len-1]=='\n'?"":"\n"));
-        stream_flush(GDKout);
+	len = strlen(nme);
+	stream_printf(GDKout, "#%s%s", nme, (nme[len - 1] == '\n' ? "" : "\n"));
+	stream_flush(GDKout);
 	return MAL_SUCCEED;
 }
+
 @}

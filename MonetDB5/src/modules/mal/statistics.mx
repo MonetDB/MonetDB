@@ -185,7 +185,7 @@ this interface.
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-mal_export str STATenroll(int *ret,str *nme);
+mal_export str STATenroll(int *ret, str *nme);
 mal_export str STATdrop(str nme);
 mal_export str STATenrollHistogram(int *ret, str *nme);
 mal_export str STATupdate(int *ret);
@@ -197,14 +197,14 @@ mal_export str STATdiscard2(int *ret, int *bid);
 @c
 #include "statistics.h"
 
-BAT *STAT_id_inuse;	/* BATs information taken from the box */
-BAT *STAT_id_nme;	/* mapping from BBP index */
+BAT *STAT_id_inuse;		/* BATs information taken from the box */
+BAT *STAT_id_nme;		/* mapping from BBP index */
 BAT *STAT_id_expire;
-BAT *STAT_id_stamp;	/* BAT last time stamp*/
+BAT *STAT_id_stamp;		/* BAT last time stamp */
 BAT *STAT_id_count;
 BAT *STAT_id_size;
-BAT *STAT_id_min_lng;	
-BAT *STAT_id_max_lng;	
+BAT *STAT_id_min_lng;
+BAT *STAT_id_max_lng;
 BAT *STAT_id_histogram;
 
 extern ptr BATmin(BAT *b, ptr aggr);
@@ -213,92 +213,111 @@ extern ptr BATmax(BAT *b, ptr aggr);
 static BAT *
 STAT_create(str hnme, str tnme, int ht, int tt)
 {
-    BAT *b;
-    char buf[128];
+	BAT *b;
+	char buf[128];
 
-    snprintf(buf,128, "stat_%s_%s", hnme,tnme);
-	b= BATdescriptor(BBPindex(buf));
-	if( b ) return b;
+	snprintf(buf, 128, "stat_%s_%s", hnme, tnme);
+	b = BATdescriptor(BBPindex(buf));
+	if (b)
+		return b;
 
-    b = BATnew(ht, tt, 256);
-    if (b == NULL)
-        GDKfatal("STAT_create: could not allocate.");
+	b = BATnew(ht, tt, 256);
+	if (b == NULL)
+		GDKfatal("STAT_create: could not allocate.");
 
 	BATkey(b, TRUE);
-    BBPrename(b->batCacheid, buf);
+	BBPrename(b->batCacheid, buf);
 	BATmode(b, PERSISTENT);
 	BATcommit(b);
 #ifdef DEBUG_STATISTICS
-	printf("created %s\n",buf);
+	printf("created %s\n", buf);
 #endif
 	return b;
 }
+
 void
-STATinit(){
+STATinit()
+{
 	mal_set_lock(mal_contextLock, "statistics");
-	STAT_id_inuse= STAT_create("id","inuse",TYPE_int,TYPE_int);
-	STAT_id_nme= STAT_create("id","nme",TYPE_int,TYPE_str);
-	STAT_id_expire= STAT_create("id","expire",TYPE_int,TYPE_int);
-	STAT_id_stamp= STAT_create("id","stamp",TYPE_int,TYPE_int);
-	STAT_id_count= STAT_create("id","count",TYPE_int,TYPE_lng);
-	STAT_id_size= STAT_create("id","size",TYPE_int,TYPE_lng);
-	STAT_id_min_lng= STAT_create("id","min_lng",TYPE_int,TYPE_lng);
-	STAT_id_max_lng= STAT_create("id","max_lng",TYPE_int,TYPE_lng);
-	STAT_id_histogram= STAT_create("id","histogram",TYPE_int,TYPE_str);
+	STAT_id_inuse = STAT_create("id", "inuse", TYPE_int, TYPE_int);
+	STAT_id_nme = STAT_create("id", "nme", TYPE_int, TYPE_str);
+	STAT_id_expire = STAT_create("id", "expire", TYPE_int, TYPE_int);
+	STAT_id_stamp = STAT_create("id", "stamp", TYPE_int, TYPE_int);
+	STAT_id_count = STAT_create("id", "count", TYPE_int, TYPE_lng);
+	STAT_id_size = STAT_create("id", "size", TYPE_int, TYPE_lng);
+	STAT_id_min_lng = STAT_create("id", "min_lng", TYPE_int, TYPE_lng);
+	STAT_id_max_lng = STAT_create("id", "max_lng", TYPE_int, TYPE_lng);
+	STAT_id_histogram = STAT_create("id", "histogram", TYPE_int, TYPE_str);
 	mal_unset_lock(mal_contextLock, "statistics");
 }
+
 @-
 Actually STATcommit is not a real transaction, it may fail during
 execution. The remainder of the code is set up to compensate for
 the situation.
 @c
 void
-STATcommit(){
+STATcommit()
+{
 	mal_set_lock(mal_contextLock, "statistics");
-	BATcommit(STAT_id_nme); BATsave(STAT_id_nme);
-	BATcommit(STAT_id_expire); BATsave(STAT_id_expire);
-	BATcommit(STAT_id_stamp); BATsave(STAT_id_stamp);
-	BATcommit(STAT_id_count); BATsave(STAT_id_count);
-	BATcommit(STAT_id_size); BATsave(STAT_id_size);
-	BATcommit(STAT_id_min_lng); BATsave(STAT_id_min_lng);
-	BATcommit(STAT_id_max_lng); BATsave(STAT_id_max_lng);
-	BATcommit(STAT_id_histogram); BATsave(STAT_id_histogram);
-	BATcommit(STAT_id_inuse); BATsave(STAT_id_inuse);
+	BATcommit(STAT_id_nme);
+	BATsave(STAT_id_nme);
+	BATcommit(STAT_id_expire);
+	BATsave(STAT_id_expire);
+	BATcommit(STAT_id_stamp);
+	BATsave(STAT_id_stamp);
+	BATcommit(STAT_id_count);
+	BATsave(STAT_id_count);
+	BATcommit(STAT_id_size);
+	BATsave(STAT_id_size);
+	BATcommit(STAT_id_min_lng);
+	BATsave(STAT_id_min_lng);
+	BATcommit(STAT_id_max_lng);
+	BATsave(STAT_id_max_lng);
+	BATcommit(STAT_id_histogram);
+	BATsave(STAT_id_histogram);
+	BATcommit(STAT_id_inuse);
+	BATsave(STAT_id_inuse);
 	mal_unset_lock(mal_contextLock, "statistics");
 }
+
 str
 STATdrop(str nme)
 {
 	ptr p;
 	int idx;
 
-	p= BUNfnd(BATmirror(STAT_id_nme),nme);
-	if( p== 0)
-		return throwMessage("statistics.drop","BAT not enrolled");
-	idx = * (int*) p;
-	BUNdelHead(STAT_id_nme,&idx);
-	BUNdelHead(STAT_id_expire,&idx);
-	BUNdelHead(STAT_id_stamp,&idx);
-	BUNdelHead(STAT_id_count,&idx);
-	BUNdelHead(STAT_id_size,&idx);
-	BUNdelHead(STAT_id_min_lng,&idx);
-	BUNdelHead(STAT_id_max_lng,&idx);
-	BUNdelHead(STAT_id_histogram,&idx);
-	BUNdelHead(STAT_id_inuse,&idx);
+	p = BUNfnd(BATmirror(STAT_id_nme), nme);
+	if (p == 0)
+		return throwMessage("statistics.drop", "BAT not enrolled");
+	idx = *(int *) p;
+	BUNdelHead(STAT_id_nme, &idx);
+	BUNdelHead(STAT_id_expire, &idx);
+	BUNdelHead(STAT_id_stamp, &idx);
+	BUNdelHead(STAT_id_count, &idx);
+	BUNdelHead(STAT_id_size, &idx);
+	BUNdelHead(STAT_id_min_lng, &idx);
+	BUNdelHead(STAT_id_max_lng, &idx);
+	BUNdelHead(STAT_id_histogram, &idx);
+	BUNdelHead(STAT_id_inuse, &idx);
 	STATcommit();
 	return MAL_SUCCEED;
 }
+
 str
 STATenroll(int *ret, str *nme)
 {
 	return STATforceUpdate(ret, nme);
 }
+
 str
 STATenrollHistogram(int *ret, str *nme)
 {
-	(void) ret; (void) nme;
+	(void) ret;
+	(void) nme;
 	return MAL_SUCCEED;
 }
+
 @-
 An update on all BATs in use can be requested.
 The amount of work is somewhat limited by ensuring
@@ -308,42 +327,48 @@ str
 STATupdateAll(int *ret, int forced)
 {
 	BAT *b;
-	BUN p,q;
+	BUN p, q;
 	str name;
 	int i;
-	
-	if( STAT_id_nme)
-	BATloop(STAT_id_nme,p,q){
-		name = (str) BUNtail(STAT_id_nme,p);
+
+	if (STAT_id_nme)
+		BATloop(STAT_id_nme, p, q) {
+		name = (str) BUNtail(STAT_id_nme, p);
 #ifdef DEBUG_STATISTICS
-		stream_printf(GDKout,"update statistics of %d\n", name);
+		stream_printf(GDKout, "update statistics of %d\n", name);
 #endif
-		i= BBPindex(name);
-		if( i ==0) continue;
-		if( forced== FALSE && BUNfnd(STAT_id_inuse,&i)==0) continue;
-		b= BATdescriptor(i);
-		if( b == 0){
+		i = BBPindex(name);
+		if (i == 0)
+			continue;
+		if (forced == FALSE && BUNfnd(STAT_id_inuse, &i) == 0)
+			continue;
+		b = BATdescriptor(i);
+		if (b == 0) {
 			/* BAT disappeared */
-			STATdiscard2(ret,&i);
+			STATdiscard2(ret, &i);
 			continue;
 		}
 		/* check the modification time with histogram */
-		/* if BBPolder(i,j) ) */{
-			STATforceUpdate(ret,&name);
+		/* if BBPolder(i,j) ) */  {
+			STATforceUpdate(ret, &name);
 		}
-	}
+		}
 
 	return MAL_SUCCEED;
 }
+
 str
-STATupdate(int *ret) {
-	return STATupdateAll(ret,FALSE);
+STATupdate(int *ret)
+{
+	return STATupdateAll(ret, FALSE);
 }
+
 str
 STATforceUpdateAll(int *ret)
 {
-	return  STATupdateAll(ret,TRUE);
+	return STATupdateAll(ret, TRUE);
 }
+
 @-
 Here the real work is done. This should be refined to
 accomodate different base types .
@@ -351,58 +376,66 @@ accomodate different base types .
 str
 STATforceUpdate(int *ret, str *nme)
 {
-	BAT *b,*h;
+	BAT *b, *h;
 	char buf[PATHLENGTH];
 	ptr p;
 	lng cnt;
 	int idx;
 
-	(void) ret; 
-	b= BATdescriptor(idx = BBPindex(*nme));
-	if( b== 0)
-		return throwMessage("statistics.forceUpdate","Could not find BAT\n");
-	p= BUNfnd(STAT_id_nme,&idx);
-	if( p ) BUNdelete(STAT_id_nme,p);
-	BUNins(STAT_id_nme,&idx,*nme);
+	(void) ret;
+	b = BATdescriptor(idx = BBPindex(*nme));
+	if (b == 0)
+		return throwMessage("statistics.forceUpdate", "Could not find BAT\n");
+	p = BUNfnd(STAT_id_nme, &idx);
+	if (p)
+		BUNdelete(STAT_id_nme, p);
+	BUNins(STAT_id_nme, &idx, *nme);
 	cnt = BATcount(b);
-	p= BUNfnd(STAT_id_count,&idx);
-	if( p ) BUNdelete(STAT_id_count,p);
-	BUNins(STAT_id_count,&idx,&cnt);
+	p = BUNfnd(STAT_id_count, &idx);
+	if (p)
+		BUNdelete(STAT_id_count, p);
+	BUNins(STAT_id_count, &idx, &cnt);
 
-	cnt = BATmemsize(b,0);
-	p= BUNfnd(STAT_id_size,&idx);
-	if( p ) BUNdelete(STAT_id_size,p);
-	BUNins(STAT_id_size,&idx,&cnt);
+	cnt = BATmemsize(b, 0);
+	p = BUNfnd(STAT_id_size, &idx);
+	if (p)
+		BUNdelete(STAT_id_size, p);
+	BUNins(STAT_id_size, &idx, &cnt);
 
-	p= BUNfnd(STAT_id_min_lng,&idx);
-	if( p ) BUNdelete(STAT_id_min_lng,p);
-	p= BUNfnd(STAT_id_max_lng,&idx);
-	if( p ) BUNdelete(STAT_id_max_lng,p);
+	p = BUNfnd(STAT_id_min_lng, &idx);
+	if (p)
+		BUNdelete(STAT_id_min_lng, p);
+	p = BUNfnd(STAT_id_max_lng, &idx);
+	if (p)
+		BUNdelete(STAT_id_max_lng, p);
 
-	if( b->ttype == TYPE_int) {
-		BATmin(b,&cnt);
+	if (b->ttype == TYPE_int) {
+		BATmin(b, &cnt);
 		BUNins(STAT_id_min_lng, &idx, &cnt);
-		BATmax(b,&cnt);
+		BATmax(b, &cnt);
 		BUNins(STAT_id_max_lng, &idx, &cnt);
 	} else {
 		BUNins(STAT_id_min_lng, &idx, &lng_nil);
 		BUNins(STAT_id_max_lng, &idx, &lng_nil);
 	}
-	h= BAThistogram(b);
-	if( h== 0) return MAL_SUCCEED;
-	snprintf(buf,PATHLENGTH,"H%s",BATgetId(b));
-    BBPrename(h->batCacheid, buf);
+	h = BAThistogram(b);
+	if (h == 0)
+		return MAL_SUCCEED;
+	snprintf(buf, PATHLENGTH, "H%s", BATgetId(b));
+	BBPrename(h->batCacheid, buf);
 	BATmode(h, PERSISTENT);
-	BBPincref(h->batCacheid,TRUE);
+	BBPincref(h->batCacheid, TRUE);
 	BATcommit(h);
 
-	p= BUNfnd(STAT_id_histogram,&idx);
-	if( p ) BUNdelete(STAT_id_histogram,p);
-	BUNins(STAT_id_histogram,&idx,BATgetId(h));
+	p = BUNfnd(STAT_id_histogram, &idx);
+	if (p)
+		BUNdelete(STAT_id_histogram, p);
+	BUNins(STAT_id_histogram, &idx, BATgetId(h));
 
-	p= BUNfnd(STAT_id_inuse,&idx);
-	if( p ) BUNdelete(STAT_id_inuse,p);
-	BUNins(STAT_id_inuse,&idx,&idx);
+	p = BUNfnd(STAT_id_inuse, &idx);
+	if (p)
+		BUNdelete(STAT_id_inuse, p);
+	BUNins(STAT_id_inuse, &idx, &idx);
 	STATcommit();
 	return MAL_SUCCEED;
 }
@@ -413,18 +446,19 @@ STATdump(int *ret)
 	BAT *piv[MAXPARAMS];
 
 	(void) ret;
-	piv[0]= STAT_id_nme;
-		/* STAT_id_expire, */
-		/* STAT_id_stamp, */
-	piv[1]=STAT_id_count;
-	piv[2]=STAT_id_size;
-	piv[3]=STAT_id_min_lng;
-	piv[4]=STAT_id_max_lng;
-	piv[5]=STAT_id_histogram;
-	
-	BATmultiprintf(GDKout, 6+1, piv, 0, 1, 1);
+	piv[0] = STAT_id_nme;
+	/* STAT_id_expire, */
+	/* STAT_id_stamp, */
+	piv[1] = STAT_id_count;
+	piv[2] = STAT_id_size;
+	piv[3] = STAT_id_min_lng;
+	piv[4] = STAT_id_max_lng;
+	piv[5] = STAT_id_histogram;
+
+	BATmultiprintf(GDKout, 6 + 1, piv, 0, 1, 1);
 	return MAL_SUCCEED;
 }
+
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
 @c
@@ -432,15 +466,20 @@ The content of this box my only be changed by the Administrator.
 #include "mal_interpreter.h"
 
 #define authorize(X)\
-	/* if( !isAuthorized("Admin"))\
-		return throwMessage("const." X ,"unauthorized access to 'const' box");*/
+				/* if( !isAuthorized("Admin"))\
+				   return throwMessage("const." X ,"unauthorized access to 'const' box"); */
 
-int isAuthorized(str nme){
+int
+isAuthorized(str nme)
+{
 	Client c;
-	if( nme == 0) return 1;
-	c= getClient();
-	return idcmp(c->user,nme)==0;
+
+	if (nme == 0)
+		return 1;
+	c = getClient();
+	return idcmp(c->user, nme) == 0;
 }
+
 @- Operator implementation
 @c
 #define OpenBox(X) \
@@ -450,41 +489,61 @@ int isAuthorized(str nme){
 	return throwMessage("statistics."X,"box is not open");
 
 str
-STATprelude(int *ret){
+STATprelude(int *ret)
+{
 	Box box;
-	box= openBox("statistics");
-    if( box== 0)
-        return throwMessage("statistics.prelude","failed to open box");
+
+	box = openBox("statistics");
+	if (box == 0)
+		return throwMessage("statistics.prelude", "failed to open box");
 	STATinit();
-	STATupdate( ret);
+	STATupdate(ret);
 	return MAL_SUCCEED;
 }
 
-str STATopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void)mb;(void)stk;(void)pci; /* fool compiler*/
+str
+STATopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
 	authorize("open");
-	if(openBox("statistics") != 0) return MAL_SUCCEED;
-	return throwMessage("statistics.open","failed to open statistics box");
+	if (openBox("statistics") != 0)
+		return MAL_SUCCEED;
+	return throwMessage("statistics.open", "failed to open statistics box");
 }
 
-str STATclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	(void)mb;(void)stk;(void)pci; /* fool compiler*/
+str
+STATclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
 	authorize("close");
-	if( closeBox("statistics" ,TRUE) ==0) return MAL_SUCCEED;
-	return throwMessage("statistics.close","failed to close box");
+	if (closeBox("statistics", TRUE) == 0)
+		return MAL_SUCCEED;
+	return throwMessage("statistics.close", "failed to close box");
 }
-str STATdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+STATdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
-	(void)mb;(void)stk;(void)pci; /* fool compiler*/
+
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
 	OpenBox("destroy");
 	destroyBox("statistics");
 	return MAL_SUCCEED;
 }
+
 @-
 Access to a box calls for resolving the first parameter
 to a named box.
 @c
-str STATdepositStr(int *ret, str *nme)
+str
+STATdepositStr(int *ret, str *nme)
 {
 	BAT *b;
 	Box box;
@@ -492,72 +551,81 @@ str STATdepositStr(int *ret, str *nme)
 	int idx;
 	str bnme;
 
-	b= BATdescriptor(idx= BBPindex(*nme));
-	if( b == NULL ) 
-		return throwMessage("statistics.deposit","BAT unknown");
+	b = BATdescriptor(idx = BBPindex(*nme));
+	if (b == NULL)
+		return throwMessage("statistics.deposit", "BAT unknown");
 	OpenBox("deposit");
-	val.val.bval= idx;
-	val.vtype= TYPE_bat;
-	if( depositBox(box, *nme, &val) )
-		return throwException(MALEXCEPTION,"statistics.deposit",
-			"failed to deposit '%s' into box", *nme);
-	bnme= BATgetId(b);
-	return STATenroll(ret,&bnme);
+	val.val.bval = idx;
+	val.vtype = TYPE_bat;
+	if (depositBox(box, *nme, &val))
+		return throwException(MALEXCEPTION, "statistics.deposit", "failed to deposit '%s' into box", *nme);
+	bnme = BATgetId(b);
+	return STATenroll(ret, &bnme);
 }
-str STATdeposit(int *ret, int *bid)
+
+str
+STATdeposit(int *ret, int *bid)
 {
 	BAT *b;
 	Box box;
 	str msg;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("statistics.deposit", "Cannot access descriptor");
-    }
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("statistics.deposit", "Cannot access descriptor");
+	}
 
 	OpenBox("deposit");
-	msg= BATgetId(b);
-	msg= STATenroll(ret,&msg);
+	msg = BATgetId(b);
+	msg = STATenroll(ret, &msg);
 	BBPunfix(b->batCacheid);
 	return msg;
 }
 
-str STATtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+STATtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
 	ValPtr v;
 
 	OpenBox("take");
-	name = (str) getArgName(mb,pci,1);
-	v = &stk->stk[getArg(pci,0)];
-	if(takeBox(box,name,v,(int) getArgType(mb,pci,0))) 
-		return throwException(MALEXCEPTION,"statistics.take",
-			"failed to take '%s' from box",name);
+	name = (str) getArgName(mb, pci, 1);
+	v = &stk->stk[getArg(pci, 0)];
+	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
+		return throwException(MALEXCEPTION, "statistics.take", "failed to take '%s' from box", name);
 	return MAL_SUCCEED;
 }
 
-str STATrelease(int *ret, int *bid){
+str
+STATrelease(int *ret, int *bid)
+{
 	BAT *b;
 	Box box;
+
 	(void) ret;
 	OpenBox("release");
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("statistics.release", "Cannot access descriptor");
-    }
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("statistics.release", "Cannot access descriptor");
+	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-str STATreleaseStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+STATreleaseStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
-	(void)stk; /* fool compiler*/
+
+	(void) stk;		/* fool compiler */
 
 	OpenBox("release");
-	name = (str) getArgName(mb,pci,1);
-	if( releaseBox(box,name))
-		return throwException(MALEXCEPTION,"statistics.release",
-			"failed to release '%s' from box",name);
+	name = (str) getArgName(mb, pci, 1);
+	if (releaseBox(box, name))
+		return throwException(MALEXCEPTION, "statistics.release", "failed to release '%s' from box", name);
 	return MAL_SUCCEED;
 }
+
 @-
 We should keep track of all BATs taken from the Box, for this
 can be used to upgrade the information quickly.
@@ -565,98 +633,123 @@ For example, the update functio only looks at those in use to detect
 stale information. All others are only updated with a forceful update.
 The release policy is not yet implemented.
 @c
-str STATreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+STATreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	Box box;
 
-	(void)mb; (void)stk; (void) pci; /* fool compiler */
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
 	OpenBox("release");
 	releaseAllBox(box);
 	return MAL_SUCCEED;
 }
 
-str STATdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+STATdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	str name;
 	Box box;
 
-	(void)mb; /* fool compiler */
+	(void) mb;		/* fool compiler */
 	OpenBox("discard");
-	name = (str) getArgValue(stk,pci,1);
+	name = (str) getArgValue(stk, pci, 1);
 	return STATdrop(name);
 }
-str STATdiscard2(int *ret, int *bid){
+
+str
+STATdiscard2(int *ret, int *bid)
+{
 	BAT *b;
 	Box box;
 	str msg;
 
 	(void) ret;
 	OpenBox("discard");
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("statistics.discard", "Cannot access descriptor");
-    }
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("statistics.discard", "Cannot access descriptor");
+	}
 
-	msg= STATdrop(BATgetId(b));
+	msg = STATdrop(BATgetId(b));
 	BBPunfix(b->batCacheid);
 	return msg;
 }
-str STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	Box box;
-	int i,len=0;
-	ValPtr v;
-	str nme,s=0;
 
-	(void)mb; /* fool compiler */
+str
+STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Box box;
+	int i, len = 0;
+	ValPtr v;
+	str nme, s = 0;
+
+	(void) mb;		/* fool compiler */
 	OpenBox("toString");
-	nme = (str) getArgValue(stk,pci,1);
-	i= findVariable(box->sym,nme);
-	if( i <0) return throwException(MALEXCEPTION,"statistics.toString",
-			"failed to take '%s' from box",nme);
+	nme = (str) getArgValue(stk, pci, 1);
+	i = findVariable(box->sym, nme);
+	if (i < 0)
+		return throwException(MALEXCEPTION, "statistics.toString", "failed to take '%s' from box", nme);
 
-	v= &box->val->stk[i];
-	if( v->vtype== TYPE_str) s= v->val.sval;
-	else (*BATatoms[v->vtype].atomToStr)(&s,&len,v);
-	if(s== NULL) return throwMessage("statistics.toString","illegal value");
-	VALset(&stk->stk[getArg(pci,0)], TYPE_str,s);
+	v = &box->val->stk[i];
+	if (v->vtype == TYPE_str)
+		s = v->val.sval;
+	else
+		(*BATatoms[v->vtype].atomToStr) (&s, &len, v);
+	if (s == NULL)
+		return throwMessage("statistics.toString", "illegal value");
+	VALset(&stk->stk[getArg(pci, 0)], TYPE_str, s);
 	return MAL_SUCCEED;
 }
 
-str STATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	Box box;
-	lng *cursor;
-	ValPtr v;
-
-	(void)mb; /* fool compiler */
-	OpenBox("iterator");
-	cursor= (lng*) getArgValue(stk,pci,0);
-	v= &stk->stk[getArg(pci,1)];
-	nextBoxElement(box, cursor, v);
-	return MAL_SUCCEED;
-}
-str STAThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	Box box;
-	lng *cursor;
-	ValPtr v;
-
-	(void)mb; /* fool compiler */
-	OpenBox("iterator");
-	cursor= (lng*) getArgValue(stk,pci,0);
-	v= &stk->stk[getArg(pci,1)];
-	nextBoxElement(box, cursor, v);
-	return MAL_SUCCEED;
-}
 str
-STATgetHotset(int *bid){
+STATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Box box;
+	lng *cursor;
+	ValPtr v;
+
+	(void) mb;		/* fool compiler */
+	OpenBox("iterator");
+	cursor = (lng *) getArgValue(stk, pci, 0);
+	v = &stk->stk[getArg(pci, 1)];
+	nextBoxElement(box, cursor, v);
+	return MAL_SUCCEED;
+}
+
+str
+STAThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Box box;
+	lng *cursor;
+	ValPtr v;
+
+	(void) mb;		/* fool compiler */
+	OpenBox("iterator");
+	cursor = (lng *) getArgValue(stk, pci, 0);
+	v = &stk->stk[getArg(pci, 1)];
+	nextBoxElement(box, cursor, v);
+	return MAL_SUCCEED;
+}
+
+str
+STATgetHotset(int *bid)
+{
 	BAT *b;
-	b= BATjoin(STAT_id_inuse, STAT_id_nme, BATcount(STAT_id_nme));
-	BBPincref( *bid= b->batCacheid,TRUE);
+
+	b = BATjoin(STAT_id_inuse, STAT_id_nme, BATcount(STAT_id_nme));
+	BBPincref(*bid = b->batCacheid, TRUE);
 	return MAL_SUCCEED;
 }
 
 str
-STATgetObjects(int *bid){
-	*bid= STAT_id_nme->batCacheid;
-	BBPincref(*bid,TRUE);
+STATgetObjects(int *bid)
+{
+	*bid = STAT_id_nme->batCacheid;
+	BBPincref(*bid, TRUE);
 	return MAL_SUCCEED;
 }
+
 @-
 @= stat
 str
@@ -672,28 +765,29 @@ STATget@1(lng *ret, str *nme){
 	return MAL_SUCCEED;
 }
 @c
-@:stat(Count,count)@
-@:stat(Size,size)@
-@:stat(Min,min_lng)@
-@:stat(Max,max_lng)@
+@:stat(Count, count)@
+@:stat(Size, size)@
+@:stat(Min, min_lng)@
+@:stat(Max, max_lng)@
 
 
 str
-STATgetHistogram(int *ret, str *nme){
+STATgetHistogram(int *ret, str *nme)
+{
 	ptr p;
 	int i;
 	BAT *h;
 
-	p= BUNfnd(BATmirror(STAT_id_nme),*nme);
-	if( p == NULL)
-		return throwMessage("statistics.getHistogram","BAT not known");
-	p= BUNfnd(STAT_id_histogram, (int *) p);
-	if( p == NULL)
-		return throwMessage("statistics.getHistogram","Histogram not known");
-	i= BBPindex((str) BUNtail(STAT_id_histogram, p));
-	if( i== 0)
-		return throwMessage("statistics.getHistogram","Histogram disappeared");
-	h= BATdescriptor(i);
-	BBPincref(*ret= h->batCacheid,TRUE);
+	p = BUNfnd(BATmirror(STAT_id_nme), *nme);
+	if (p == NULL)
+		return throwMessage("statistics.getHistogram", "BAT not known");
+	p = BUNfnd(STAT_id_histogram, (int *) p);
+	if (p == NULL)
+		return throwMessage("statistics.getHistogram", "Histogram not known");
+	i = BBPindex((str) BUNtail(STAT_id_histogram, p));
+	if (i == 0)
+		return throwMessage("statistics.getHistogram", "Histogram disappeared");
+	h = BATdescriptor(i);
+	BBPincref(*ret = h->batCacheid, TRUE);
 	return MAL_SUCCEED;
 }

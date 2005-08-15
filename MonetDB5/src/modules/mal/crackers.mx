@@ -148,21 +148,21 @@ is locally maintained.
 
 #define LEAF 'L'
 #define PHI  'P'		/* broken using a select */
-#define DIAMOND  'D'	/* broken using a join */
-#define OMEGA  'O'	/* broken using a group */
+#define DIAMOND  'D'		/* broken using a join */
+#define OMEGA  'O'		/* broken using a group */
 
-typedef struct{
-	char kind;	/* kind of piece */
-	int rng_max;	/* the value ranges */
-	int rng_min;	
-	int idx_first;	/* the slice boundaries */
-	int idx_last;	
-	int parent;	/* lineage */
-	int left, middle, right; /* tree branch directions */
+typedef struct {
+	char kind;		/* kind of piece */
+	int rng_max;		/* the value ranges */
+	int rng_min;
+	int idx_first;		/* the slice boundaries */
+	int idx_last;
+	int parent;		/* lineage */
+	int left, middle, right;	/* tree branch directions */
 } Piece;
 
-typedef struct{
-	int bid;	/* the original bat */
+typedef struct {
+	int bid;		/* the original bat */
 	int freepiece, maxpiece;
 	Piece *pieces;
 } CrackMap;
@@ -184,117 +184,144 @@ The granularity can be used to limit the number of pieces.
 #define MAXPIECE 1024*100
 
 static CrackMap *crackMap;
-static int maxCrackMap=0;
-static int minGranule= 2;
+static int maxCrackMap = 0;
+static int minGranule = 2;
 
-int findCrackMap(int bid){
-	int i,freemap= -1, units=1024;
-	for(i=0; i<maxCrackMap; i++)
-	if( crackMap[i].bid== bid) return i;
-	else 
-	if( crackMap[i].bid== -1) freemap=i;
+int
+findCrackMap(int bid)
+{
+	int i, freemap = -1, units = 1024;
 
-	if(freemap!= -1) {
-		crackMap[freemap].bid= bid;
+	for (i = 0; i < maxCrackMap; i++)
+		if (crackMap[i].bid == bid)
+			return i;
+		else if (crackMap[i].bid == -1)
+			freemap = i;
+
+	if (freemap != -1) {
+		crackMap[freemap].bid = bid;
 		return freemap;
 	}
 
-	if( i== maxCrackMap){
+	if (i == maxCrackMap) {
 		CrackMap *x;
-		if(maxCrackMap >0) units = 1.2 * maxCrackMap;
-		x= (CrackMap*) GDKmalloc(sizeof(CrackMap) * units);
-		bzero(x,sizeof(CrackMap) * units);
-		if(crackMap){
-			fprintf(stderr,"reallocate Crackmap\n");
-			memcpy(x,crackMap, sizeof(CrackMap)* i);
+
+		if (maxCrackMap > 0)
+			units = 1.2 * maxCrackMap;
+		x = (CrackMap *) GDKmalloc(sizeof(CrackMap) * units);
+		bzero(x, sizeof(CrackMap) * units);
+		if (crackMap) {
+			fprintf(stderr, "reallocate Crackmap\n");
+			memcpy(x, crackMap, sizeof(CrackMap) * i);
 			GDKfree(crackMap);
 		}
-		crackMap= x;
+		crackMap = x;
 		maxCrackMap = units;
 	}
 	/* init the crackmap */
-	crackMap[i].bid= bid;
-	crackMap[i].pieces = GDKmalloc(sizeof(Piece) *MAXPIECE);
-	bzero((void*) crackMap[i].pieces, sizeof(Piece) *MAXPIECE);
-	crackMap[i].freepiece= 0;
+	crackMap[i].bid = bid;
+	crackMap[i].pieces = GDKmalloc(sizeof(Piece) * MAXPIECE);
+	bzero((void *) crackMap[i].pieces, sizeof(Piece) * MAXPIECE);
+	crackMap[i].freepiece = 0;
 	crackMap[i].maxpiece = MAXPIECE;
 	return i;
 }
-void freeCrackMap(int m){
-	assert(m>=0);
+
+void
+freeCrackMap(int m)
+{
+	assert(m >= 0);
 	/* re-initialize crackmap */
-	crackMap[m].bid= -1;
-	bzero((void*) crackMap[m].pieces, sizeof(Piece) * crackMap[m].maxpiece);
-	crackMap[m].freepiece= 0;
+	crackMap[m].bid = -1;
+	bzero((void *) crackMap[m].pieces, sizeof(Piece) * crackMap[m].maxpiece);
+	crackMap[m].freepiece = 0;
 }
-void printCrackMapElement(Piece *list, int i, int bid){
-	stream_printf(GDKout,"[ %3d %3d, ",i,bid);
-	stream_printf(GDKout,"%c, ",list[i].kind);
-	stream_printf(GDKout,"%d ",list[i].parent);
-	stream_printf(GDKout,"%d, ",list[i].rng_min);
-	stream_printf(GDKout,"%d, ",list[i].rng_max);
-	stream_printf(GDKout,"%d, ",list[i].idx_first);
-	stream_printf(GDKout,"%d, ",list[i].idx_last);
-	stream_printf(GDKout,"%d, ",list[i].left);
-	stream_printf(GDKout,"%d, ",list[i].middle);
-	stream_printf(GDKout,"%d ]\n ",list[i].right);
+
+void
+printCrackMapElement(Piece * list, int i, int bid)
+{
+	stream_printf(GDKout, "[ %3d %3d, ", i, bid);
+	stream_printf(GDKout, "%c, ", list[i].kind);
+	stream_printf(GDKout, "%d ", list[i].parent);
+	stream_printf(GDKout, "%d, ", list[i].rng_min);
+	stream_printf(GDKout, "%d, ", list[i].rng_max);
+	stream_printf(GDKout, "%d, ", list[i].idx_first);
+	stream_printf(GDKout, "%d, ", list[i].idx_last);
+	stream_printf(GDKout, "%d, ", list[i].left);
+	stream_printf(GDKout, "%d, ", list[i].middle);
+	stream_printf(GDKout, "%d ]\n ", list[i].right);
 }
-void printCrackMap(int bid){
-	int i,m;
-	m= findCrackMap(bid);
-	if( crackMap[m].freepiece)
-	stream_printf(GDKout,"# idx bid kind parent rng_min rng_max idx_first idx_last left middle right# name\n");
-	for(i=0;i<crackMap[m].freepiece;i++)
-		printCrackMapElement(crackMap[m].pieces,i,bid);
+
+void
+printCrackMap(int bid)
+{
+	int i, m;
+
+	m = findCrackMap(bid);
+	if (crackMap[m].freepiece)
+		stream_printf(GDKout, "# idx bid kind parent rng_min rng_max idx_first idx_last left middle right# name\n");
+	for (i = 0; i < crackMap[m].freepiece; i++)
+		printCrackMapElement(crackMap[m].pieces, i, bid);
 }
-str initCrackMap(CrackMap *map, int *bid){
+
+str
+initCrackMap(CrackMap * map, int *bid)
+{
 	BAT *b;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("crackers.initCrackMap",
-					"Cannot access descriptor");
-    }
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.initCrackMap", "Cannot access descriptor");
+	}
 @-
 The target BAT should not be modified by the applications,
 otherwise the partitioning scheme becomes void
 already. [todo]
 @c
-	
-	map->pieces[0].rng_min= INT_MIN;
-	map->pieces[0].rng_max= INT_MAX;
-	map->pieces[0].idx_first = BUNindex(b,BUNfirst(b));
-	map->pieces[0].idx_last = BUNindex(b,BUNlast(b))-1;
+
+	map->pieces[0].rng_min = INT_MIN;
+	map->pieces[0].rng_max = INT_MAX;
+	map->pieces[0].idx_first = BUNindex(b, BUNfirst(b));
+	map->pieces[0].idx_last = BUNindex(b, BUNlast(b)) - 1;
 	map->pieces[0].kind = LEAF;
 	map->pieces[0].parent = -1;
 	map->pieces[0].left = -1;
 	map->pieces[0].middle = -1;
 	map->pieces[0].right = -1;
-	map->freepiece= 1;
+	map->freepiece = 1;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str CRKnew(int *cret, int *bid){
+str
+CRKnew(int *cret, int *bid)
+{
 	int m;
+
 	(void) cret;
-	m= findCrackMap(*bid);
-	initCrackMap(crackMap+m, bid);
+	m = findCrackMap(*bid);
+	initCrackMap(crackMap + m, bid);
 #ifdef DEBUG_CRACKERS
-	stream_printf(GDKout,"crackMap created\n");
+	stream_printf(GDKout, "crackMap created\n");
 #endif
 	return MAL_SUCCEED;
 }
-str CRKnewGranule(int *cret, int *bid, int *gran){
-	(void) minGranule; /* fool compile on its use */
-	minGranule= *gran;
-	return CRKnew(cret,bid);
+
+str
+CRKnewGranule(int *cret, int *bid, int *gran)
+{
+	(void) minGranule;	/* fool compile on its use */
+	minGranule = *gran;
+	return CRKnew(cret, bid);
 }
-str CRKinfo(int *k, int *bid)
-{	
+
+str
+CRKinfo(int *k, int *bid)
+{
 	(void) k;
 	printCrackMap(*bid);
 	return MAL_SUCCEED;
 }
+
 @-
 @= exchange
 #ifdef DEBUG_CRACKERS_DETAIL
@@ -354,68 +381,66 @@ First experiment is a simple partitioning on the tail value.
 	@2->left= @2->middle= @2->right = -1;
 	crackMap[@1].freepiece++;
 @c
-str CRKcrackRange(int *partid, int *bid, int *low, int *hgh)
-{	
+str
+CRKcrackRange(int *partid, int *bid, int *low, int *hgh)
+{
 	BAT *b;
 	Piece *piece, *npiece;
 	int xx;
 	ptr p;
-	char buf[128]; /* scratch space */
-	ptr vmax=0, vmin=0,vm;
-	int lim, m,i,l,h, pid= -1;
+	char buf[128];		/* scratch space */
+	ptr vmax = 0, vmin = 0, vm;
+	int lim, m, i, l, h, pid = -1;
 
 
-	if( *(int*) low > *(int*) hgh)
-		return throwMessage("crackers.crack","illegal range");
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("crackers.crackRange",
-					"Cannot access descriptor");
-    }
-	m= findCrackMap(*bid);
+	if (*(int *) low > *(int *) hgh)
+		return throwMessage("crackers.crack", "illegal range");
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.crackRange", "Cannot access descriptor");
+	}
+	m = findCrackMap(*bid);
 @-
 Inspect the value range table to only further crack qualifying fragments.
 @c
-	
-	lim= crackMap[m].freepiece;
+
+	lim = crackMap[m].freepiece;
 #ifdef DEBUG_CRACKERS
-	printf("search range %d %d [lim=%d]\n",*(int*)low, *(int*) hgh,lim);
+	printf("search range %d %d [lim=%d]\n", *(int *) low, *(int *) hgh, lim);
 #endif
-	for(i=0; i< lim; i++){
-		if( crackMap[m].pieces[i].kind != LEAF) continue;
-		if( *(int*) low <=  crackMap[m].pieces[i].rng_min &&
-		    *(int*) hgh >=  crackMap[m].pieces[i].rng_max) {
+	for (i = 0; i < lim; i++) {
+		if (crackMap[m].pieces[i].kind != LEAF)
+			continue;
+		if (*(int *) low <= crackMap[m].pieces[i].rng_min && *(int *) hgh >= crackMap[m].pieces[i].rng_max) {
 			continue;
 		}
-		if( crackMap[m].pieces[i].rng_max < *(int*) low) continue;
-		if( crackMap[m].pieces[i].rng_min > *(int*) hgh) continue;
+		if (crackMap[m].pieces[i].rng_max < *(int *) low)
+			continue;
+		if (crackMap[m].pieces[i].rng_min > *(int *) hgh)
+			continue;
 
-		piece = crackMap[m].pieces+i;
+		piece = crackMap[m].pieces + i;
 		/* set bounds */
-		xx= BUNsize(b);
-		vmin= (ptr)((char*)BUNptr(b,piece->idx_first)-xx);
-		vmax= (ptr)((char*)BUNptr(b,piece->idx_last)+xx);
+		xx = BUNsize(b);
+		vmin = (ptr) ((char *) BUNptr(b, piece->idx_first) - xx);
+		vmax = (ptr) ((char *) BUNptr(b, piece->idx_last) + xx);
 
-		vm= BUNtail(b,(ptr)((char*)vmin+xx));
-		for(p = (ptr)((char*) vmin+xx); p < vmax; 
-			p = (ptr)((char*)p+ xx), 
-			vm= (ptr)((char*)vm+xx)) {
-			if( *(int *)vm < *(int *)low){
-				/* exchange with first low*/
-				vmin= (ptr)((char*)vmin+xx);
-				if( vmin != p){
-					@:exchange(vmin,p)@
+		vm = BUNtail(b, (ptr) ((char *) vmin + xx));
+		for (p = (ptr) ((char *) vmin + xx); p < vmax; p = (ptr) ((char *) p + xx), vm = (ptr) ((char *) vm + xx)) {
+			if (*(int *) vm < *(int *) low) {
+				/* exchange with first low */
+				vmin = (ptr) ((char *) vmin + xx);
+				if (vmin != p) {
+					@:exchange(vmin, p)@
 				}
-			} else
-			if( *(int *)vm > *(int *) hgh){
+			} else if (*(int *) vm > *(int *) hgh) {
 				/* exchange with qualifying tail elm */
-				vmax= (ptr)((char*)vmax-xx);
-				while( *(int*) BUNtail(b,vmax) >
-						*(int*)hgh && vmax>p) 
-					vmax= (ptr)((char*)vmax-xx);
-				if( vmax != p){
-					@:exchange(vmax,p)@
-					vm= (ptr)((char*)vm-xx);
-					p= (ptr)((char*)p-xx);
+				vmax = (ptr) ((char *) vmax - xx);
+				while (*(int *) BUNtail(b, vmax) > *(int *) hgh && vmax > p)
+					vmax = (ptr) ((char *) vmax - xx);
+				if (vmax != p) {
+					@:exchange(vmax, p)@
+					vm = (ptr) ((char *) vm - xx);
+					p = (ptr) ((char *) p - xx);
 @-
 The chosen element could also be less then 'low' and an 
 exchange operation could be saved. It turned out that
@@ -431,108 +456,109 @@ an additional variable to keep track of the tail value.
 For each fragment discovered we have to break it into several pieces
 and update the administration BATs. 
 @c
-		l= BUNindex(b,vmin)+1;
-		h= BUNindex(b,vmax)-1;
+		l = BUNindex(b, vmin) + 1;
+		h = BUNindex(b, vmax) - 1;
 
-		if(piece->idx_first == l){
-			if( h< piece->idx_last){
+		if (piece->idx_first == l) {
+			if (h < piece->idx_last) {
 #ifdef DEBUG_CRACKERS
-		printf("left split [%d] %d-%d \n",i,l,h);
+				printf("left split [%d] %d-%d \n", i, l, h);
 #endif
 				piece->kind = PHI;
 				piece->left = pid = crackMap[m].freepiece;
-				@:newPiece(m,npiece)@
-				npiece->rng_min= piece->rng_min;
-				npiece->rng_max= *(int*)hgh;
-				npiece->idx_first= piece->idx_first;
+				@:newPiece(m, npiece)@
+				npiece->rng_min = piece->rng_min;
+				npiece->rng_max = *(int *) hgh;
+				npiece->idx_first = piece->idx_first;
 				npiece->idx_last = h;
 				npiece->kind = LEAF;
-				npiece->parent=i;
+				npiece->parent = i;
 
-				piece->middle = -1; 
+				piece->middle = -1;
 
-				piece->right= crackMap[m].freepiece;
-				@:newPiece(m,npiece)@
-				npiece->rng_min= *(int*)hgh + 1;
-				npiece->rng_max= piece->rng_max;
-				npiece->idx_first= h+1;
+				piece->right = crackMap[m].freepiece;
+				@:newPiece(m, npiece)@
+				npiece->rng_min = *(int *) hgh + 1;
+				npiece->rng_max = piece->rng_max;
+				npiece->idx_first = h + 1;
 				npiece->idx_last = piece->idx_last;
 				npiece->kind = LEAF;
-				npiece->parent=i;
-			} 
-		} else
-		if( piece->idx_last == h){
-			if( l>piece->idx_first){
+				npiece->parent = i;
+			}
+		} else if (piece->idx_last == h) {
+			if (l > piece->idx_first) {
 #ifdef DEBUG_CRACKERS
-		printf("right split [%d] %d-%d \n",i,l,h);
+				printf("right split [%d] %d-%d \n", i, l, h);
 #endif
 				/* falls at high end */
-				piece->kind= PHI;
+				piece->kind = PHI;
 				piece->left = crackMap[m].freepiece;
-				@:newPiece(m,npiece)@
-				npiece->rng_min= piece->rng_min;
-				npiece->rng_max= *(int*) low -1;
-				npiece->idx_first= piece->idx_first;
-				npiece->idx_last = l-1;
+				@:newPiece(m, npiece)@
+				npiece->rng_min = piece->rng_min;
+				npiece->rng_max = *(int *) low - 1;
+				npiece->idx_first = piece->idx_first;
+				npiece->idx_last = l - 1;
 				npiece->kind = LEAF;
-				npiece->parent=i;
+				npiece->parent = i;
 
 				piece->middle = -1;
 
 				piece->right = pid = crackMap[m].freepiece;
-				@:newPiece(m,npiece)@
-				npiece->rng_min= *(int*) low;
-				npiece->rng_max= piece->rng_max;
-				npiece->idx_first= l;
+				@:newPiece(m, npiece)@
+				npiece->rng_min = *(int *) low;
+				npiece->rng_max = piece->rng_max;
+				npiece->idx_first = l;
 				npiece->idx_last = piece->idx_last;
 				npiece->kind = LEAF;
-				npiece->parent=i;
-}
+				npiece->parent = i;
+			}
 		} else {
 #ifdef DEBUG_CRACKERS
-		printf("middle split [%d] %d-%d \n",i,l,h);
+			printf("middle split [%d] %d-%d \n", i, l, h);
 #endif
-				piece->kind= PHI;
-				piece->left = crackMap[m].freepiece;
-				@:newPiece(m,npiece)@
-				npiece->rng_min= piece->rng_min;
-				npiece->rng_max= *(int*) low -1;
-				npiece->idx_first= piece->idx_first;
-				npiece->idx_last = l-1;
-				npiece->kind = LEAF;
-				npiece->parent=i;
+			piece->kind = PHI;
+			piece->left = crackMap[m].freepiece;
+			@:newPiece(m, npiece)@
+			npiece->rng_min = piece->rng_min;
+			npiece->rng_max = *(int *) low - 1;
+			npiece->idx_first = piece->idx_first;
+			npiece->idx_last = l - 1;
+			npiece->kind = LEAF;
+			npiece->parent = i;
 
-				piece->middle = pid = crackMap[m].freepiece;
-				@:newPiece(m,npiece)@
-				npiece->rng_min= *(int*) low;
-				npiece->rng_max= *(int*) hgh;
-				npiece->idx_first= l;
-				npiece->idx_last = h;
-				npiece->kind = LEAF;
-				npiece->parent=i;
+			piece->middle = pid = crackMap[m].freepiece;
+			@:newPiece(m, npiece)@
+			npiece->rng_min = *(int *) low;
+			npiece->rng_max = *(int *) hgh;
+			npiece->idx_first = l;
+			npiece->idx_last = h;
+			npiece->kind = LEAF;
+			npiece->parent = i;
 
-				piece->right = crackMap[m].freepiece;
-				@:newPiece(m,npiece)@
-				npiece->rng_min= *(int*) hgh+1;
-				npiece->rng_max= piece->rng_max;
-				npiece->idx_first= h+1;
-				npiece->idx_last = piece->idx_last;
-				npiece->kind = LEAF;
-				npiece->parent=i;
-}
+			piece->right = crackMap[m].freepiece;
+			@:newPiece(m, npiece)@
+			npiece->rng_min = *(int *) hgh + 1;
+			npiece->rng_max = piece->rng_max;
+			npiece->idx_first = h + 1;
+			npiece->idx_last = piece->idx_last;
+			npiece->kind = LEAF;
+			npiece->parent = i;
+		}
 	}
 @-
 If this was the first cracking operation it makes sense to administer
 the ranges of the outer partitions as well.
 @c
 #ifdef DEBUG_CRACKERS
-	printf("pid returned %d\n",pid);
+	printf("pid returned %d\n", pid);
 #endif
 	BBPunfix(b->batCacheid);
-	*partid= pid;
+	*partid = pid;
 	return MAL_SUCCEED;
 }
-str CRKcrackJoin(int *partid, int *bid, int *cid)
+
+str
+CRKcrackJoin(int *partid, int *bid, int *cid)
 {
 	(void) bid;
 	(void) cid;
@@ -540,168 +566,184 @@ str CRKcrackJoin(int *partid, int *bid, int *cid)
 	*partid = 0;
 	return MAL_SUCCEED;
 }
+
 @- 
 The pieces of a cracked BAT are obtained through bat view.
 The nextPiece simply changes the dimensions of the BATview
 returned previously to represent a cracker piece.
 @c
-int CRKsetBounds(BAT *b, BAT *view, int mid, int pid){
-	int l,h;
-	(void) view; /* fool compiler */
+int
+CRKsetBounds(BAT *b, BAT *view, int mid, int pid)
+{
+	int l, h;
 
-	l= crackMap[mid].pieces[pid].idx_first;
-	h= crackMap[mid].pieces[pid].idx_last;
+	(void) view;		/* fool compiler */
+
+	l = crackMap[mid].pieces[pid].idx_first;
+	h = crackMap[mid].pieces[pid].idx_last;
 #ifdef DEBUG_CRACKERS
-	printf("set view to new dimension[%d,%d]: %d-%d\n",mid, pid,l,h);
+	printf("set view to new dimension[%d,%d]: %d-%d\n", mid, pid, l, h);
 #endif
-	VIEWbounds(view,l,h);
-	if (pid > 0 && (size_t)pid == BATcount(b)) return 0;
-	return pid+1;
+	VIEWbounds(view, l, h);
+	if (pid > 0 && (size_t) pid == BATcount(b))
+		return 0;
+	return pid + 1;
 }
 
-str CRKnewIterator(lng *newpid, int *vid, int *bid) 
+str
+CRKnewIterator(lng *newpid, int *vid, int *bid)
 {
 	BAT *b, *view;
-	int m,i;
+	int m, i;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("crackers.newIterator",
-					"Cannot access descriptor");
-    }
-	m= findCrackMap(*bid);
-
-	b->batRestricted= BAT_READ;
-	view= VIEWcreate_(b,TRUE);
-
-	*newpid= -1;
-	for(i=0; i<crackMap[m].freepiece; i++)
-	if( crackMap[m].pieces[i].kind == LEAF) {
-		*newpid = CRKsetBounds(b,view,m,i);
-		break;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.newIterator", "Cannot access descriptor");
 	}
+	m = findCrackMap(*bid);
+
+	b->batRestricted = BAT_READ;
+	view = VIEWcreate_(b, TRUE);
+
+	*newpid = -1;
+	for (i = 0; i < crackMap[m].freepiece; i++)
+		if (crackMap[m].pieces[i].kind == LEAF) {
+			*newpid = CRKsetBounds(b, view, m, i);
+			break;
+		}
 	BBPunfix(b->batCacheid);
-	BBPincref(*vid=  view->batCacheid,TRUE);
+	BBPincref(*vid = view->batCacheid, TRUE);
 	return MAL_SUCCEED;
 }
-str CRKhasMoreElements(lng *pid, int *vbid, int *bid) 
+
+str
+CRKhasMoreElements(lng *pid, int *vbid, int *bid)
 {
 	BAT *b, *vid;
-	int m,i;
+	int m, i;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("crackers.hasMoreElements",
-					"Cannot access descriptor");
-    }
-    if( (vid= BATdescriptor(*vbid)) == NULL ){
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.hasMoreElements", "Cannot access descriptor");
+	}
+	if ((vid = BATdescriptor(*vbid)) == NULL) {
 		BBPunfix(b->batCacheid);
-        return throwMessage("crackers.hasMoreElements",
-					"Cannot access descriptor");
-    }
-	m= findCrackMap(*bid);
+		return throwMessage("crackers.hasMoreElements", "Cannot access descriptor");
+	}
+	m = findCrackMap(*bid);
 
 	/* test validity of pid  [todo] */
-	if( *pid >crackMap[m].freepiece ){
-		*pid= -1;
+	if (*pid > crackMap[m].freepiece) {
+		*pid = -1;
 		BBPunfix(b->batCacheid);
 		BBPunfix(vid->batCacheid);
 		return MAL_SUCCEED;
 	}
-	if( *pid<=0 ){
-                return throwMessage("crackers.hasMoreElements",
-			"illegal piece");
+	if (*pid <= 0) {
+		return throwMessage("crackers.hasMoreElements", "illegal piece");
 	}
 
-	for( i= *pid; i< crackMap[m].freepiece; i++)
-	if( crackMap[m].pieces[i].kind == LEAF) {
-		*pid = CRKsetBounds(b,vid,m,i);
-		BBPunfix(b->batCacheid);
-		BBPunfix(vid->batCacheid);
-		return MAL_SUCCEED;
-	} 
-	*pid= -1;
+	for (i = *pid; i < crackMap[m].freepiece; i++)
+		if (crackMap[m].pieces[i].kind == LEAF) {
+			*pid = CRKsetBounds(b, vid, m, i);
+			BBPunfix(b->batCacheid);
+			BBPunfix(vid->batCacheid);
+			return MAL_SUCCEED;
+		}
+	*pid = -1;
 	BBPunfix(b->batCacheid);
 	BBPunfix(vid->batCacheid);
 	return MAL_SUCCEED;
 }
+
 @-
 Selectively retrieve the pieces from the jigsaw.
 @c
-str CRKgetPiece0(int *vbid, int *bid, int *piece) 
+str
+CRKgetPiece0(int *vbid, int *bid, int *piece)
 {
 	BAT *b, *vid;
-	int  m;
+	int m;
 	lng result = 0;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("crackers.getPiece",
-					"Cannot access descriptor");
-    }
-	CRKnewIterator( &result, vbid, bid);
-	m= result;
-    if( (vid= BATdescriptor(m)) == NULL ){
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.getPiece", "Cannot access descriptor");
+	}
+	CRKnewIterator(&result, vbid, bid);
+	m = result;
+	if ((vid = BATdescriptor(m)) == NULL) {
 		BBPunfix(b->batCacheid);
-         return throwMessage("crackers.getPiece",
-					"Cannot access descriptor");
-    }
-	m= findCrackMap(*vbid);
-	CRKsetBounds(b,vid,m,*piece);
+		return throwMessage("crackers.getPiece", "Cannot access descriptor");
+	}
+	m = findCrackMap(*vbid);
+	CRKsetBounds(b, vid, m, *piece);
 	BBPunfix(b->batCacheid);
 	BBPunfix(vid->batCacheid);
 	return MAL_SUCCEED;
 }
-str CRKgetPiece1(int *newpid, int *bid, int *vbid, int *piece) 
-{	int m;
+
+str
+CRKgetPiece1(int *newpid, int *bid, int *vbid, int *piece)
+{
+	int m;
 	BAT *b, *vid;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("crackers.getPiece",
-					"Cannot access descriptor");
-    }
-    if( (vid= BATdescriptor(*vbid)) == NULL ){
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.getPiece", "Cannot access descriptor");
+	}
+	if ((vid = BATdescriptor(*vbid)) == NULL) {
 		BBPunfix(b->batCacheid);
-        return throwMessage("crackers.getPiece",
-					"Cannot access descriptor");
-    }
-	m= findCrackMap(*bid);
+		return throwMessage("crackers.getPiece", "Cannot access descriptor");
+	}
+	m = findCrackMap(*bid);
 	/* test validity of piece */
-	CRKsetBounds(b,vid,m,*piece);
+	CRKsetBounds(b, vid, m, *piece);
 	BBPunfix(b->batCacheid);
 	BBPunfix(vid->batCacheid);
 	*newpid = 0;
 	return MAL_SUCCEED;
 }
+
 @-
 The combined pieces can be retrieved as an ordinary
 overloaded select.  The cracker administration is
 organized as an interval tree. The left and right
 branch are always set. The middle may be empty.
 @c
-int intervalFind(int m, int p, int *val){
-	int x= -1;
+int
+intervalFind(int m, int p, int *val)
+{
+	int x = -1;
+
 /* printf("search %d in %d[%d,%d]\n",
 	*val,p,crackMap[m].pieces[p].rng_min ,crackMap[m].pieces[p].rng_max); */
-	if( crackMap[m].pieces[p].left >0){
-		x= intervalFind(m, crackMap[m].pieces[p].left,val);
+	if (crackMap[m].pieces[p].left > 0) {
+		x = intervalFind(m, crackMap[m].pieces[p].left, val);
 	}
-	if( x== -1 && crackMap[m].pieces[p].middle >0){
-		x= intervalFind(m, crackMap[m].pieces[p].middle,val);
+	if (x == -1 && crackMap[m].pieces[p].middle > 0) {
+		x = intervalFind(m, crackMap[m].pieces[p].middle, val);
 	}
-	if( x== -1 && crackMap[m].pieces[p].right >0){
-		x= intervalFind(m, crackMap[m].pieces[p].right,val);
+	if (x == -1 && crackMap[m].pieces[p].right > 0) {
+		x = intervalFind(m, crackMap[m].pieces[p].right, val);
 	}
-	if( x== -1 && *val>= crackMap[m].pieces[p].rng_min && 
-	    *val<= crackMap[m].pieces[p].rng_max )
+	if (x == -1 && *val >= crackMap[m].pieces[p].rng_min && *val <= crackMap[m].pieces[p].rng_max)
 		return p;
 	return x;
 }
-void intervalSelect(int m, int p, int *low, int *high, int *first, int *last){
-	if( crackMap[m].pieces[p].rng_min> *low) *first= p;
-	else *first = intervalFind(m,p,low);
+
+void
+intervalSelect(int m, int p, int *low, int *high, int *first, int *last)
+{
+	if (crackMap[m].pieces[p].rng_min > *low)
+		*first = p;
+	else
+		*first = intervalFind(m, p, low);
 /* printf("left found %d\n",*first);*/
-	if( crackMap[m].pieces[p].rng_max< *high) *last= p;
-	else *last = intervalFind(m,p,high);
+	if (crackMap[m].pieces[p].rng_max < *high)
+		*last = p;
+	else
+		*last = intervalFind(m, p, high);
 /* printf("right found %d\n",*last);*/
 }
+
 @-
 The algorithm collects the elements by repeatedly
 inspecting the cracker table to extend the scope.
@@ -715,77 +757,75 @@ would be sufficient. This works because we know that
 the reshuffling of a range always takes place within the
 space of its origin.
 @c
-str CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
+str
+CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi)
+{
 	BAT *b, *view;
 	int m;
 	int left, right;
-	(void)li; (void) hi ;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("crackers.selectPiece",
-					"Cannot access descriptor");
-    }
-	m= findCrackMap(*bid);
+	(void) li;
+	(void) hi;
 
-	b->batRestricted= BAT_READ;
-	view= VIEWcreate_(b,TRUE);
-	*vid=  view->batCacheid;
-	intervalSelect(m,0,low,high, &left, &right);
-	/* printf("get range from %d %d\n",left,right);*/
-	if( left >=0 && right >=0 )
-		VIEWbounds(view, 
-			crackMap[m].pieces[left].idx_first, 
-			crackMap[m].pieces[right].idx_last);
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.selectPiece", "Cannot access descriptor");
+	}
+	m = findCrackMap(*bid);
+
+	b->batRestricted = BAT_READ;
+	view = VIEWcreate_(b, TRUE);
+	*vid = view->batCacheid;
+	intervalSelect(m, 0, low, high, &left, &right);
+	/* printf("get range from %d %d\n",left,right); */
+	if (left >= 0 && right >= 0)
+		VIEWbounds(view, crackMap[m].pieces[left].idx_first, crackMap[m].pieces[right].idx_last);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi){
+str
+CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi)
+{
 	BAT *b, *view;
-	int m,i;
+	int m, i;
 	int leftover, glued;
-	int idxlow= -1,idxhgh= -1;
-	(void)li; (void) hi ;
+	int idxlow = -1, idxhgh = -1;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("crackers.selectPiece",
-					"Cannot access descriptor");
-    }
-	m= findCrackMap(*bid);
+	(void) li;
+	(void) hi;
 
-	b->batRestricted= BAT_READ;
-	view= VIEWcreate_(b,TRUE);
-	*vid=  view->batCacheid;
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.selectPiece", "Cannot access descriptor");
+	}
+	m = findCrackMap(*bid);
+
+	b->batRestricted = BAT_READ;
+	view = VIEWcreate_(b, TRUE);
+	*vid = view->batCacheid;
 
 @-
 Select an interval with a desirable value to start the gluing process
 @c
-	for(i=0; i<crackMap[m].freepiece; i++)
-	if( crackMap[m].pieces[i].kind == LEAF && /* NOT NEEDED */
-	    ((crackMap[m].pieces[i].rng_min<= *(int*) low &&
-	     *(int*) low <= crackMap[m].pieces[i].rng_max) ||
-	    (crackMap[m].pieces[i].rng_min<= *(int*) high &&
-	     *(int*) high <= crackMap[m].pieces[i].rng_max)
-	) ) {
-		CRKsetBounds(b,view,m,i);
-		idxlow= crackMap[m].pieces[i].idx_first;
-		idxhgh= crackMap[m].pieces[i].idx_last;
+	for (i = 0; i < crackMap[m].freepiece; i++)
+		if (crackMap[m].pieces[i].kind == LEAF &&	/* NOT NEEDED */
+		    ((crackMap[m].pieces[i].rng_min <= *(int *) low && *(int *) low <= crackMap[m].pieces[i].rng_max) || (crackMap[m].pieces[i].rng_min <= *(int *) high && *(int *) high <= crackMap[m].pieces[i].rng_max)
+		    )) {
+			CRKsetBounds(b, view, m, i);
+			idxlow = crackMap[m].pieces[i].idx_first;
+			idxhgh = crackMap[m].pieces[i].idx_last;
 #ifdef DEBUG_CRACKERS
-		printf("start glue: [%d][%d]%d %d\n",m,i, 
-			crackMap[m].pieces[i].idx_first,
-			crackMap[m].pieces[i].idx_last);
+			printf("start glue: [%d][%d]%d %d\n", m, i, crackMap[m].pieces[i].idx_first, crackMap[m].pieces[i].idx_last);
 #endif
-		break;
-	}
+			break;
+		}
 	/* start glue cycle */
-	if(idxlow >=0)
-	do{
-		glued=0; leftover=0;
-		for(i=0; i<crackMap[m].freepiece; i++)
-		if( crackMap[m].pieces[i].kind == LEAF && /* NOT NEEDED */
-		    crackMap[m].pieces[i].rng_min>= *(int*) low &&
-		    crackMap[m].pieces[i].rng_max<= *(int*) high
-		) {
+	if (idxlow >= 0)
+		do {
+			glued = 0;
+			leftover = 0;
+			for (i = 0; i < crackMap[m].freepiece; i++)
+				if (crackMap[m].pieces[i].kind == LEAF &&	/* NOT NEEDED */
+				    crackMap[m].pieces[i].rng_min >= *(int *) low && crackMap[m].pieces[i].rng_max <= *(int *) high) {
 /* no little speedup, discarded
 			if( crackMap[m].pieces[i].idx_first < idxlow &&
 			    crackMap[m].pieces[i].idx_last > idxhgh){
@@ -795,93 +835,95 @@ Select an interval with a desirable value to start the gluing process
 				glued++;
 			} else
 */
-			if( crackMap[m].pieces[i].idx_last == idxlow-1){
+					if (crackMap[m].pieces[i].idx_last == idxlow - 1) {
 #ifdef DEBUG_CRACKERS
-				printf("lglue: [%d][%d]%d %d\n",m,i, 
-					crackMap[m].pieces[i].idx_first,
-					idxhgh);
+						printf("lglue: [%d][%d]%d %d\n", m, i, crackMap[m].pieces[i].idx_first, idxhgh);
 #endif
-				VIEWbounds(view,
-					idxlow= crackMap[m].pieces[i].idx_first,
-					idxhgh);
-				glued++;
-			} else
-			if( crackMap[m].pieces[i].idx_first == idxhgh+1){
+						VIEWbounds(view, idxlow = crackMap[m].pieces[i].idx_first, idxhgh);
+						glued++;
+					} else if (crackMap[m].pieces[i].idx_first == idxhgh + 1) {
 #ifdef DEBUG_CRACKERS
-				printf("rglue: [%d][%d]%d %d\n",m,i, idxlow,
-					crackMap[m].pieces[i].idx_last);
+						printf("rglue: [%d][%d]%d %d\n", m, i, idxlow, crackMap[m].pieces[i].idx_last);
 #endif
-				VIEWbounds(view, idxlow,
-					idxhgh=crackMap[m].pieces[i].idx_last);
-				glued++;
-			} else 
-			if( crackMap[m].pieces[i].idx_first > idxhgh ||
-			    crackMap[m].pieces[i].idx_last < idxlow 
-			) leftover++;
-			    
-		}
+						VIEWbounds(view, idxlow, idxhgh = crackMap[m].pieces[i].idx_last);
+						glued++;
+					} else if (crackMap[m].pieces[i].idx_first > idxhgh || crackMap[m].pieces[i].idx_last < idxlow)
+						leftover++;
+
+				}
 #ifdef DEBUG_CRACKERS
-		printf("glued %d leftover %d\n", glued,leftover);
+			printf("glued %d leftover %d\n", glued, leftover);
 #endif
-	}while(leftover);
+		} while (leftover);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 @-
 A common operation is to find all the pieces that
 overlap with a range. It can be used for subsequent
 iteration and flow-based processing.
 @c
-str CRKselectPieces(int *result, int *bid, int *low, int *hgh) 
+str
+CRKselectPieces(int *result, int *bid, int *low, int *hgh)
 {
 	BAT *b;
-	int m,i;
-	oid o= oid_nil;
+	int m, i;
+	oid o = oid_nil;
 
-	m= findCrackMap(*bid);
-	if( m<0) 
-		return throwMessage("crackers.select","Map non-existent");
-	b= BATnew(TYPE_void,TYPE_int,0);
-	if( b == 0)
-		return throwMessage("crackers.select","failed to create BAT");
-	for(i=0; i< crackMap[m].freepiece; i++)
-	if( crackMap[m].pieces[i].kind == LEAF){
-		if( crackMap[m].pieces[i].rng_max < *low) continue;
-		if( crackMap[m].pieces[i].rng_min > *hgh) continue;
-		BUNins(b,&o,&i);
-	}
-	BBPincref(*result = b->batCacheid,TRUE);
+	m = findCrackMap(*bid);
+	if (m < 0)
+		return throwMessage("crackers.select", "Map non-existent");
+	b = BATnew(TYPE_void, TYPE_int, 0);
+	if (b == 0)
+		return throwMessage("crackers.select", "failed to create BAT");
+	for (i = 0; i < crackMap[m].freepiece; i++)
+		if (crackMap[m].pieces[i].kind == LEAF) {
+			if (crackMap[m].pieces[i].rng_max < *low)
+				continue;
+			if (crackMap[m].pieces[i].rng_min > *hgh)
+				continue;
+			BUNins(b, &o, &i);
+		}
+	BBPincref(*result = b->batCacheid, TRUE);
 	return MAL_SUCCEED;
 }
+
 @-
 The GDK kernel contains an error about garbage collection
 of BATview objects. They have to be freed explicitly
 too.
 @c
-str CRKdropPiece(int *newpid, int *bid){
+str
+CRKdropPiece(int *newpid, int *bid)
+{
 	BAT *b;
 	int m;
+
 	(void) newpid;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("crackers.dropPiece",
-					"Cannot access descriptor");
-    }
-	m= findCrackMap(*bid);
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.dropPiece", "Cannot access descriptor");
+	}
+	m = findCrackMap(*bid);
 	freeCrackMap(m);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
-} 
-str CRKdropView(int *newpid, int *bid){
+}
+
+str
+CRKdropView(int *newpid, int *bid)
+{
 	BAT *b;
+
 	(void) newpid;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("crackers.dropPiece",
-					"Cannot access descriptor");
-    }
-	/* VIEWdestroy(b);*/
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("crackers.dropPiece", "Cannot access descriptor");
+	}
+	/* VIEWdestroy(b); */
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
-} 
+}
+
 @-
 Test cases for this experiment are stored under the sequence tst5000
 @}

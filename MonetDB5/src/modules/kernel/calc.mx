@@ -643,110 +643,110 @@ the string representations.
 #include "mal.h"
 #include "mal_exception.h"
 
-/* third param indicates return value if one of the params is nil */ 
-@:c_comp_ops(<,LT)@
-@:c_comp_ops(<=,LE)@
-@:c_comp_ops(==,EQ)@
-@:c_comp_ops(!=,NEQ)@
-@:c_comp_ops(>=,GE)@
-@:c_comp_ops(>,GT)@
+/* third param indicates return value if one of the params is nil */
+@:c_comp_ops(<, LT)@
+@:c_comp_ops(<=, LE)@
+@:c_comp_ops( ==, EQ)@
+@:c_comp_ops(!=, NEQ)@
+@:c_comp_ops(>=, GE)@
+@:c_comp_ops(>, GT)@
 
-@:c_calc_ops(chr,chr,chr)@
-@:c_calc_ops(chr,sht,sht)@
-@:c_calc_ops(chr,int,int)@
-@:c_calc_ops(chr,lng,lng)@
-@:c_calc_ops(chr,flt,flt)@
-@:c_calc_ops(chr,dbl,dbl)@
+@:c_calc_ops(chr, chr, chr)@
+@:c_calc_ops(chr, sht, sht)@
+@:c_calc_ops(chr, int, int)@
+@:c_calc_ops(chr, lng, lng)@
+@:c_calc_ops(chr, flt, flt)@
+@:c_calc_ops(chr, dbl, dbl)@
 
-@:c_calc_ops(sht,chr,sht)@
-@:c_calc_ops(sht,sht,sht)@
-@:c_calc_ops(sht,int,int)@
-@:c_calc_ops(sht,lng,lng)@
-@:c_calc_ops(sht,flt,flt)@
-@:c_calc_ops(sht,dbl,dbl)@
+@:c_calc_ops(sht, chr, sht)@
+@:c_calc_ops(sht, sht, sht)@
+@:c_calc_ops(sht, int, int)@
+@:c_calc_ops(sht, lng, lng)@
+@:c_calc_ops(sht, flt, flt)@
+@:c_calc_ops(sht, dbl, dbl)@
 
-@:c_calc_ops(int,chr,int)@
-@:c_calc_ops(int,sht,int)@
-@:c_calc_ops(int,int,int)@
-@:c_calc_ops(int,lng,lng)@
-@:c_calc_ops(int,flt,flt)@
-@:c_calc_ops(int,dbl,dbl)@
+@:c_calc_ops(int, chr, int)@
+@:c_calc_ops(int, sht, int)@
+@:c_calc_ops(int, int, int)@
+@:c_calc_ops(int, lng, lng)@
+@:c_calc_ops(int, flt, flt)@
+@:c_calc_ops(int, dbl, dbl)@
 
-@:c_calc_ops(lng,chr,lng)@
-@:c_calc_ops(lng,sht,lng)@
-@:c_calc_ops(lng,int,lng)@
-@:c_calc_ops(lng,lng,lng)@
-@:c_calc_ops(lng,flt,flt)@
-@:c_calc_ops(lng,dbl,dbl)@
+@:c_calc_ops(lng, chr, lng)@
+@:c_calc_ops(lng, sht, lng)@
+@:c_calc_ops(lng, int, lng)@
+@:c_calc_ops(lng, lng, lng)@
+@:c_calc_ops(lng, flt, flt)@
+@:c_calc_ops(lng, dbl, dbl)@
 
-@:c_calc_ops(flt,chr,flt)@
-@:c_calc_ops(flt,sht,flt)@
-@:c_calc_ops(flt,int,flt)@
-@:c_calc_ops(flt,lng,flt)@
-@:c_calc_ops(flt,flt,flt)@
-@:c_calc_ops(flt,dbl,dbl)@
+@:c_calc_ops(flt, chr, flt)@
+@:c_calc_ops(flt, sht, flt)@
+@:c_calc_ops(flt, int, flt)@
+@:c_calc_ops(flt, lng, flt)@
+@:c_calc_ops(flt, flt, flt)@
+@:c_calc_ops(flt, dbl, dbl)@
 
-@:c_calc_ops(dbl,chr,dbl)@
-@:c_calc_ops(dbl,sht,dbl)@
-@:c_calc_ops(dbl,int,dbl)@
-@:c_calc_ops(dbl,lng,dbl)@
-@:c_calc_ops(dbl,flt,dbl)@
-@:c_calc_ops(dbl,dbl,dbl)@
+@:c_calc_ops(dbl, chr, dbl)@
+@:c_calc_ops(dbl, sht, dbl)@
+@:c_calc_ops(dbl, int, dbl)@
+@:c_calc_ops(dbl, lng, dbl)@
+@:c_calc_ops(dbl, flt, dbl)@
+@:c_calc_ops(dbl, dbl, dbl)@
 
-@:c_calc_ops(oid,oid,oid)@
+@:c_calc_ops(oid, oid, oid)@
 
 #define calc_abs(s) ((s)>0)?(s):-(s)
-@:calc_unop(ABS,calc_abs,chr)@
-@:calc_unop(ABS,calc_abs,sht)@
-@:calc_unop(ABS,calc_abs,int)@
-@:calc_unop(ABS,calc_abs,flt)@
-@:calc_unop(ABS,calc_abs,dbl)@
-@:calc_unop(ABS,calc_abs,lng)@
+@:calc_unop(ABS, calc_abs, chr)@
+@:calc_unop(ABS, calc_abs, sht)@
+@:calc_unop(ABS, calc_abs, int)@
+@:calc_unop(ABS, calc_abs, flt)@
+@:calc_unop(ABS, calc_abs, dbl)@
+@:calc_unop(ABS, calc_abs, lng)@
 
 #define calc_inv(s) (1/(s))
-@:check_unop(INV,calc_inv,chr)@
-@:check_unop(INV,calc_inv,sht)@
-@:check_unop(INV,calc_inv,int)@
-@:check_unop(INV,calc_inv,flt)@
-@:check_unop(INV,calc_inv,dbl)@
-@:check_unop(INV,calc_inv,lng)@
+@:check_unop(INV, calc_inv, chr)@
+@:check_unop(INV, calc_inv, sht)@
+@:check_unop(INV, calc_inv, int)@
+@:check_unop(INV, calc_inv, flt)@
+@:check_unop(INV, calc_inv, dbl)@
+@:check_unop(INV, calc_inv, lng)@
 
 #define calc_neg(s) (-(s))
-@:calc_unop(NEG,calc_neg,chr)@
-@:calc_unop(NEG,calc_neg,sht)@
-@:calc_unop(NEG,calc_neg,int)@
-@:calc_unop(NEG,calc_neg,flt)@
-@:calc_unop(NEG,calc_neg,dbl)@
-@:calc_unop(NEG,calc_neg,lng)@
+@:calc_unop(NEG, calc_neg, chr)@
+@:calc_unop(NEG, calc_neg, sht)@
+@:calc_unop(NEG, calc_neg, int)@
+@:calc_unop(NEG, calc_neg, flt)@
+@:calc_unop(NEG, calc_neg, dbl)@
+@:calc_unop(NEG, calc_neg, lng)@
 
-@:any_binary_minmax(MIN,<=)@
-@:any_binary_minmax(MAX,>)@
+@:any_binary_minmax(MIN, <=)@
+@:any_binary_minmax(MAX, >)@
 
 #define calc_max(s1,s2) ((s1)>(s2))?(s1):(s2)
-@:calc_macrobinop(MAX,calc_max,chr)@
-@:calc_macrobinop(MAX,calc_max,sht)@
-@:calc_macrobinop(MAX,calc_max,int)@
-@:calc_macrobinop(MAX,calc_max,oid)@
-@:calc_macrobinop(MAX,calc_max,flt)@
-@:calc_macrobinop(MAX,calc_max,dbl)@
-@:calc_macrobinop(MAX,calc_max,lng)@
+@:calc_macrobinop(MAX, calc_max, chr)@
+@:calc_macrobinop(MAX, calc_max, sht)@
+@:calc_macrobinop(MAX, calc_max, int)@
+@:calc_macrobinop(MAX, calc_max, oid)@
+@:calc_macrobinop(MAX, calc_max, flt)@
+@:calc_macrobinop(MAX, calc_max, dbl)@
+@:calc_macrobinop(MAX, calc_max, lng)@
 
 #define calc_min(s1,s2) ((s1)<(s2))?(s1):(s2)
-@:calc_macrobinop(MIN,calc_min,chr)@
-@:calc_macrobinop(MIN,calc_min,sht)@
-@:calc_macrobinop(MIN,calc_min,int)@
-@:calc_macrobinop(MIN,calc_min,oid)@
-@:calc_macrobinop(MIN,calc_min,flt)@
-@:calc_macrobinop(MIN,calc_min,dbl)@
-@:calc_macrobinop(MIN,calc_min,lng)@
+@:calc_macrobinop(MIN, calc_min, chr)@
+@:calc_macrobinop(MIN, calc_min, sht)@
+@:calc_macrobinop(MIN, calc_min, int)@
+@:calc_macrobinop(MIN, calc_min, oid)@
+@:calc_macrobinop(MIN, calc_min, flt)@
+@:calc_macrobinop(MIN, calc_min, dbl)@
+@:calc_macrobinop(MIN, calc_min, lng)@
 
-@:calc_binop(MOD,%,chr,int,int)@
-@:calc_binop(MOD,%,sht,int,int)@
-@:calc_binop(MOD,%,int,int,int)@
-@:calc_binop(MOD,%,lng,int,int)@
-@:calc_binop(MOD,%,lng,lng,lng)@
-@:calc_binop(MOD,%,int,chr,chr)@
-@:calc_binop(MOD,%,int,sht,sht)@
+@:calc_binop(MOD, %, chr, int, int)@
+@:calc_binop(MOD, %, sht, int, int)@
+@:calc_binop(MOD, %, int, int, int)@
+@:calc_binop(MOD, %, lng, int, int)@
+@:calc_binop(MOD, %, lng, lng, lng)@
+@:calc_binop(MOD, %, int, chr, chr)@
+@:calc_binop(MOD, %, int, sht, sht)@
 
 @:c_bitwise_ops(chr)@
 @:c_bitwise_ops(sht)@
@@ -757,94 +757,126 @@ the string representations.
 @:c_shift_ops(sht)@
 @:c_shift_ops(int)@
 
-str CALCstrConcat(str *ret, str *l, str *r) {
+str
+CALCstrConcat(str *ret, str *l, str *r)
+{
 	str s;
-	s= GDKmalloc(strlen(*l)+strlen(*r)+1);
-	strcpy(s,*l);
-	strcat(s,*r);
-	*ret= s;
+
+	s = GDKmalloc(strlen(*l) + strlen(*r) + 1);
+	strcpy(s, *l);
+	strcat(s, *r);
+	*ret = s;
 	return MAL_SUCCEED;
 }
-str CALCstrConcatInt(str *ret, str *l, int *r) {
+
+str
+CALCstrConcatInt(str *ret, str *l, int *r)
+{
 	str s;
-	int len= strlen(*l)+32;
-	s= GDKmalloc(len);
-	snprintf(s,len,"%s%d",*l,*r);
-	*ret= s;
+	int len = strlen(*l) + 32;
+
+	s = GDKmalloc(len);
+	snprintf(s, len, "%s%d", *l, *r);
+	*ret = s;
 	return MAL_SUCCEED;
 }
-str CALCbinaryRSHlngint(lng *ret, lng *val, int *shift) {
-    if (*val == lng_nil || *shift == int_nil) {
-	*ret = lng_nil;
-    } else {
-	*ret = *val >> *shift; 
-    }
-    return MAL_SUCCEED;
-}
-str CALCbinaryLSHlngint(lng *ret, lng *val, int *shift) {
-    if (*val == lng_nil || *shift == int_nil) {
-	*ret = lng_nil;
-    } else {
-	*ret = *val << *shift;
-    }
-    return MAL_SUCCEED;
-}
-str CALCbinaryANDbit(bit *retval, bit *v1, bit *v2){
-    if (*v1 == FALSE || *v2 == FALSE) {
-	*retval = FALSE;
-    } else if (*v1 == bit_nil || *v2 == bit_nil) {
-	*retval = bit_nil;
-    } else {
-	*retval = TRUE;
-    }
-    return MAL_SUCCEED;
-}
-str CALCbinaryORbit(bit *retval, bit *v1, bit *v2){
-    if (*v1 && *v1 != bit_nil) {
-	*retval = TRUE;
-    } else if (*v2 && *v2 != bit_nil) {
-	*retval = TRUE;
-    } else if (*v1 == bit_nil || *v2 == bit_nil) {
-	*retval = bit_nil;
-    } else {
-	*retval = *v1 || *v2;
-    }
-    return MAL_SUCCEED;
-}
-str CALCbinaryXORbit(bit *retval, bit *v1, bit *v2){
-    if (*v1 == bit_nil || *v2 == bit_nil) {
-	*retval = bit_nil;
-    } else {
-	*retval = ((*v1 && *v2 == FALSE) || (*v1 == FALSE && *v2));
-    }
-    return MAL_SUCCEED;
-}
-str CALCunarybitNOT(bit *retval, bit *value){
-    if (*value == bit_nil) {
-	*retval = bit_nil;
-    } else {
-	*retval = (*value)?FALSE:TRUE;
-    }
-    return MAL_SUCCEED;
-}
-str CALCswitchbit(ptr retval, bit *b, ptr v1, int tpe, ptr v2) {
-	ptr p; 
-	(void) retval; (void) b; (void) v1; (void)v2;/* fool compiler */
-	return throwMessage("ifthenelse","not yet implemented\n");
-    if (*b == bit_nil) {
+
+str
+CALCbinaryRSHlngint(lng *ret, lng *val, int *shift)
+{
+	if (*val == lng_nil || *shift == int_nil) {
+		*ret = lng_nil;
+	} else {
+		*ret = *val >> *shift;
+	}
 	return MAL_SUCCEED;
-	p = ATOMnilptr(tpe);
-    } else if (*b) {
-	p = v1;
-    } else {
-	p = v2;
-    }
-    if (ATOMextern(tpe)) {
-	*(ptr**) retval = ATOMdup(tpe, p);
-    } else {
-	memcpy(retval, p, ATOMsize(tpe)); 
-    }
-    return MAL_SUCCEED;
+}
+
+str
+CALCbinaryLSHlngint(lng *ret, lng *val, int *shift)
+{
+	if (*val == lng_nil || *shift == int_nil) {
+		*ret = lng_nil;
+	} else {
+		*ret = *val << *shift;
+	}
+	return MAL_SUCCEED;
+}
+
+str
+CALCbinaryANDbit(bit *retval, bit *v1, bit *v2)
+{
+	if (*v1 == FALSE || *v2 == FALSE) {
+		*retval = FALSE;
+	} else if (*v1 == bit_nil || *v2 == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = TRUE;
+	}
+	return MAL_SUCCEED;
+}
+
+str
+CALCbinaryORbit(bit *retval, bit *v1, bit *v2)
+{
+	if (*v1 && *v1 != bit_nil) {
+		*retval = TRUE;
+	} else if (*v2 && *v2 != bit_nil) {
+		*retval = TRUE;
+	} else if (*v1 == bit_nil || *v2 == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = *v1 || *v2;
+	}
+	return MAL_SUCCEED;
+}
+
+str
+CALCbinaryXORbit(bit *retval, bit *v1, bit *v2)
+{
+	if (*v1 == bit_nil || *v2 == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = ((*v1 && *v2 == FALSE) || (*v1 == FALSE && *v2));
+	}
+	return MAL_SUCCEED;
+}
+
+str
+CALCunarybitNOT(bit *retval, bit *value)
+{
+	if (*value == bit_nil) {
+		*retval = bit_nil;
+	} else {
+		*retval = (*value) ? FALSE : TRUE;
+	}
+	return MAL_SUCCEED;
+}
+
+str
+CALCswitchbit(ptr retval, bit *b, ptr v1, int tpe, ptr v2)
+{
+	ptr p;
+
+	(void) retval;
+	(void) b;
+	(void) v1;
+	(void) v2;		/* fool compiler */
+	return throwMessage("ifthenelse", "not yet implemented\n");
+	if (*b == bit_nil) {
+		return MAL_SUCCEED;
+		p = ATOMnilptr(tpe);
+	} else if (*b) {
+		p = v1;
+	} else {
+		p = v2;
+	}
+	if (ATOMextern(tpe)) {
+		*(ptr **) retval = ATOMdup(tpe, p);
+	} else {
+		memcpy(retval, p, ATOMsize(tpe));
+	}
+	return MAL_SUCCEED;
 }
 
 
@@ -938,7 +970,9 @@ str CALCcomp@2any(bit *retval, ptr *v1, int tpe, ptr *v2){
 @:c_between_op(flt)@
 @:c_between_op(dbl)@
 @:c_between_op(lng)@
-str CALCcompBetweenstr(bit *retval, str *val, str *low, str *high){
+str
+CALCcompBetweenstr(bit *retval, str *val, str *low, str *high)
+{
 	int val_nil = strNil(*val);
 	int low_nil = strNil(*low);
 	int high_nil = strNil(*high);
@@ -946,29 +980,32 @@ str CALCcompBetweenstr(bit *retval, str *val, str *low, str *high){
 	if (val_nil || (low_nil && high_nil)) {
 		*retval = bit_nil;
 	} else if (low_nil) {
-		*retval = (strcmp(*val,*high) <= 0);
+		*retval = (strcmp(*val, *high) <= 0);
 	} else if (high_nil) {
-		*retval = (strcmp(*low,*val) <= 0);
+		*retval = (strcmp(*low, *val) <= 0);
 	} else {
-		*retval = (strcmp(*low,*val) <= 0 && strcmp(*val,*high) <= 0);
+		*retval = (strcmp(*low, *val) <= 0 && strcmp(*val, *high) <= 0);
 	}
 	return MAL_SUCCEED;
 }
-str CALCcompBetweenany(bit *retval, ptr *val, int tpe, ptr *low, ptr *high){
-	int (*cmp)(ptr,ptr) = BATatoms[tpe].atomCmp;
+
+str
+CALCcompBetweenany(bit *retval, ptr *val, int tpe, ptr *low, ptr *high)
+{
+	int (*cmp) (ptr, ptr) = BATatoms[tpe].atomCmp;
 	ptr nilptr = ATOMnilptr(tpe);
-	int val_nil = ((*cmp)(*val,nilptr) == 0);
-	int low_nil = ((*cmp)(*low,nilptr) == 0);
-	int high_nil = ((*cmp)(*high,nilptr) == 0);
+	int val_nil = ((*cmp) (*val, nilptr) == 0);
+	int low_nil = ((*cmp) (*low, nilptr) == 0);
+	int high_nil = ((*cmp) (*high, nilptr) == 0);
 
 	if (val_nil || (low_nil && high_nil)) {
 		*retval = bit_nil;
 	} else if (low_nil) {
-		*retval = ((*cmp)(*val,*high) <= 0);
+		*retval = ((*cmp) (*val, *high) <= 0);
 	} else if (high_nil) {
-		*retval = ((*cmp)(*low,*val) <= 0);
+		*retval = ((*cmp) (*low, *val) <= 0);
 	} else {
-		*retval = ((*cmp)(*low,*val) <= 0 && (*cmp)(*val,*high) <= 0);
+		*retval = ((*cmp) (*low, *val) <= 0 && (*cmp) (*val, *high) <= 0);
 	}
 	return MAL_SUCCEED;
 }
@@ -999,33 +1036,51 @@ str CALCnil2@1(@1 *retval, ptr val){
 @:c_isnil(ptr)@
 @:c_isnil(bat)@
 
-str CALCisnil_str(bit *retval, str *val) {
-	*retval = strcmp(*val, ATOMnilptr(TYPE_str))==0;
+str
+CALCisnil_str(bit *retval, str *val)
+{
+	*retval = strcmp(*val, ATOMnilptr(TYPE_str)) == 0;
 	return MAL_SUCCEED;
 }
-str CALCisnotnil_str(bit *retval, str *val) {
+
+str
+CALCisnotnil_str(bit *retval, str *val)
+{
 	*retval = strcmp(*val, ATOMnilptr(TYPE_str));
 	return MAL_SUCCEED;
 }
-str CALCstr2nil(str *retval, str *val) {
-	(void)val; /* fool compiler */
+
+str
+CALCstr2nil(str *retval, str *val)
+{
+	(void) val;		/* fool compiler */
 	*retval = GDKstrdup(ATOMnilptr(TYPE_str));
 	return MAL_SUCCEED;
 }
 
-str CALCisnil_any(bit *retval, ptr *val, int tpe) {
+str
+CALCisnil_any(bit *retval, ptr *val, int tpe)
+{
 	ptr nilval = ATOMnilptr(tpe);
+
 	*retval = (ATOMcmp(tpe, nilval, *val) == 0);
 	return MAL_SUCCEED;
 }
-str CALCisnil_void(bit *retval, oid *val) {
+
+str
+CALCisnil_void(bit *retval, oid *val)
+{
 	*retval = (*val == oid_nil);
 	return MAL_SUCCEED;
 }
-str CALCisnotnil_void(bit *retval, oid *val) {
+
+str
+CALCisnotnil_void(bit *retval, oid *val)
+{
 	*retval = (*val != oid_nil);
 	return MAL_SUCCEED;
 }
+
 @= c_between_op
 str CALCcompBetween@1(bit *retval, @1 *v, @1 *low, @1 *high){
 	if (*v == @1_nil || (*low == @1_nil && *high == @1_nil)) {
@@ -1149,83 +1204,89 @@ str CALC@22@1(@1 *res, @2 *a)
 }
 @-
 @c
-	@:mal_coercion_impl(bit,bit)@
-	@:mal_coercion_impl(bit,oid)@
-	@:mal_coercion_impl(bit,chr)@
-	@:mal_coercion_impl(bit,sht)@
-	@:mal_coercion_impl(bit,int)@
-	@:mal_coercion_impl(bit,lng)@
-	@:mal_coercion_impl(bit,flt)@
-	@:mal_coercion_impl(bit,dbl)@
+@:mal_coercion_impl(bit, bit)@
+@:mal_coercion_impl(bit, oid)@
+@:mal_coercion_impl(bit, chr)@
+@:mal_coercion_impl(bit, sht)@
+@:mal_coercion_impl(bit, int)@
+@:mal_coercion_impl(bit, lng)@
+@:mal_coercion_impl(bit, flt)@
+@:mal_coercion_impl(bit, dbl)@
 
-	@:mal_coercion_impl(lng,oid)@
-	@:mal_coercion_impl(lng,chr)@
-	@:mal_coercion_impl(lng,bit)@
-	@:mal_coercion_impl(lng,sht)@
-	@:mal_coercion_impl(lng,int)@
-	@:mal_coercion_impl(lng,lng)@
-	@:mal_coercion_impl(lng,flt)@
-	@:mal_coercion_impl(lng,dbl)@
+@:mal_coercion_impl(lng, oid)@
+@:mal_coercion_impl(lng, chr)@
+@:mal_coercion_impl(lng, bit)@
+@:mal_coercion_impl(lng, sht)@
+@:mal_coercion_impl(lng, int)@
+@:mal_coercion_impl(lng, lng)@
+@:mal_coercion_impl(lng, flt)@
+@:mal_coercion_impl(lng, dbl)@
 
-	@:mal_coercion_impl(sht,oid)@
-	@:mal_coercion_impl(sht,bit)@
-	@:mal_coercion_impl(sht,chr)@
-	@:mal_coercion_impl(sht,sht)@
-	@:mal_coercion_impl(sht,int)@
-	@:mal_coercion_impl(sht,lng)@
-	@:mal_coercion_impl(sht,flt)@
-	@:mal_coercion_impl(sht,dbl)@
+@:mal_coercion_impl(sht, oid)@
+@:mal_coercion_impl(sht, bit)@
+@:mal_coercion_impl(sht, chr)@
+@:mal_coercion_impl(sht, sht)@
+@:mal_coercion_impl(sht, int)@
+@:mal_coercion_impl(sht, lng)@
+@:mal_coercion_impl(sht, flt)@
+@:mal_coercion_impl(sht, dbl)@
 
-	@:mal_coercion_impl(int,oid)@
-	@:mal_coercion_impl(int,bit)@
-	@:mal_coercion_impl(int,chr)@
-	@:mal_coercion_impl(int,sht)@
-	@:mal_coercion_impl(int,int)@
-	@:mal_coercion_impl(int,lng)@
-	@:mal_coercion_impl(int,flt)@
-	@:mal_coercion_impl(int,dbl)@
+@:mal_coercion_impl(int, oid)@
+@:mal_coercion_impl(int, bit)@
+@:mal_coercion_impl(int, chr)@
+@:mal_coercion_impl(int, sht)@
+@:mal_coercion_impl(int, int)@
+@:mal_coercion_impl(int, lng)@
+@:mal_coercion_impl(int, flt)@
+@:mal_coercion_impl(int, dbl)@
 
-	@:mal_coercion_impl(oid,bit)@
-	@:mal_coercion_impl(oid,chr)@
-	@:mal_coercion_impl(oid,oid)@
-	@:mal_coercion_impl(oid,lng)@
-	@:mal_coercion_impl(oid,sht)@
-	@:mal_coercion_impl(oid,int)@
+@:mal_coercion_impl(oid, bit)@
+@:mal_coercion_impl(oid, chr)@
+@:mal_coercion_impl(oid, oid)@
+@:mal_coercion_impl(oid, lng)@
+@:mal_coercion_impl(oid, sht)@
+@:mal_coercion_impl(oid, int)@
 
-	@:mal_coercion_impl(flt,flt)@
-	@:mal_coercion_impl(flt,dbl)@
-	@:mal_coercion_impl(flt,sht)@
-	@:mal_coercion_impl(flt,chr)@
-	@:mal_coercion_impl(flt,int)@
-	@:mal_coercion_impl(flt,lng)@
+@:mal_coercion_impl(flt, flt)@
+@:mal_coercion_impl(flt, dbl)@
+@:mal_coercion_impl(flt, sht)@
+@:mal_coercion_impl(flt, chr)@
+@:mal_coercion_impl(flt, int)@
+@:mal_coercion_impl(flt, lng)@
 
-	@:mal_coercion_impl(dbl,dbl)@
-	@:mal_coercion_impl(dbl,flt)@
-	@:mal_coercion_impl(dbl,sht)@
-	@:mal_coercion_impl(dbl,int)@
-	@:mal_coercion_impl(dbl,chr)@
-	@:mal_coercion_impl(dbl,lng)@
+@:mal_coercion_impl(dbl, dbl)@
+@:mal_coercion_impl(dbl, flt)@
+@:mal_coercion_impl(dbl, sht)@
+@:mal_coercion_impl(dbl, int)@
+@:mal_coercion_impl(dbl, chr)@
+@:mal_coercion_impl(dbl, lng)@
 
-	@:mal_coercion_impl(chr,bit)@
-	@:mal_coercion_impl(chr,chr)@
-	@:mal_coercion_impl(chr,oid)@
-	@:mal_coercion_impl(chr,flt)@
-	@:mal_coercion_impl(chr,dbl)@
-	@:mal_coercion_impl(chr,sht)@
-	@:mal_coercion_impl(chr,int)@
-	@:mal_coercion_impl(chr,lng)@
+@:mal_coercion_impl(chr, bit)@
+@:mal_coercion_impl(chr, chr)@
+@:mal_coercion_impl(chr, oid)@
+@:mal_coercion_impl(chr, flt)@
+@:mal_coercion_impl(chr, dbl)@
+@:mal_coercion_impl(chr, sht)@
+@:mal_coercion_impl(chr, int)@
+@:mal_coercion_impl(chr, lng)@
 
 
-str CALClng2ptr(ptr *res, lng *a)
+str
+CALClng2ptr(ptr *res, lng *a)
 {
-	(void) res; (void) a; /* fool compiler */
+	(void) res;
+	(void) a;		/* fool compiler */
 	return MAL_SUCCEED;
 }
-str CALCptr2lng(lng *res, ptr *a)
+
+str
+CALCptr2lng(lng *res, ptr *a)
 {
-	(void) res; (void) a; /* fool compiler */
+	(void) res;
+	(void) a;		/* fool compiler */
 	return MAL_SUCCEED;
 }
+
 @-
 Old stuff, probably wrong
 	@:mal_coercion_impl2(str,sht,d)@
@@ -1260,75 +1321,118 @@ we recieve a pointer to the string directly.
 To make it work properly, we need a call be reference
 in those places where we leave a result behind.
 @c
-str voidFromStrImpl(void *ret, str val){
-	(void) val; /* fool compiler */
+str
+voidFromStrImpl(void *ret, str val)
+{
+	(void) val;		/* fool compiler */
 	memcpy(ret, ATOMnilptr(TYPE_void), ATOMsize(TYPE_void));
 	return MAL_SUCCEED;
 }
-str CALCnil2str(str *ret, void *val){
-	(void) val; /* fool compiler */
+
+str
+CALCnil2str(str *ret, void *val)
+{
+	(void) val;		/* fool compiler */
 	*ret = GDKstrdup(str_nil);
 	return MAL_SUCCEED;
 }
-str CALCstr2str(str *ret, str *val){
+
+str
+CALCstr2str(str *ret, str *val)
+{
 	*ret = GDKstrdup(*val);
 	return MAL_SUCCEED;
 }
-str CALCstr2oid(oid *ret, str *val){
+
+str
+CALCstr2oid(oid *ret, str *val)
+{
 	int l = strlen(*val);
+
 	(void) OIDfromStr(*val, &l, (ptr) ret);
 	return MAL_SUCCEED;
 }
-str CALCoid2str(str *ret, oid *val){
-	int l= sizeof(oid);
-	(void) OIDtoStr(ret,&l, val);
+
+str
+CALCoid2str(str *ret, oid *val)
+{
+	int l = sizeof(oid);
+
+	(void) OIDtoStr(ret, &l, val);
 	return MAL_SUCCEED;
 }
-str CALCnil2void(oid *ret, ptr *val){
-	(void) val; /* fool compiler */
+
+str
+CALCnil2void(oid *ret, ptr *val)
+{
+	(void) val;		/* fool compiler */
 	*ret = oid_nil;
 	return MAL_SUCCEED;
 }
-str CALClng2void(oid *ret, lng *val){
+
+str
+CALClng2void(oid *ret, lng *val)
+{
 	*ret = *val;
 	return MAL_SUCCEED;
 }
-str CALCsht2void(oid *ret, sht *val){
+
+str
+CALCsht2void(oid *ret, sht *val)
+{
 	*ret = *val;
 	return MAL_SUCCEED;
 }
-str CALCint2void(oid *ret, int *val){
+
+str
+CALCint2void(oid *ret, int *val)
+{
 	*ret = *val;
 	return MAL_SUCCEED;
 }
-str oidFromoidImpl(oid *ret, oid *val){
-	*ret= *val;
+
+str
+oidFromoidImpl(oid *ret, oid *val)
+{
+	*ret = *val;
 	return MAL_SUCCEED;
 }
-str oidFromvoidImpl(oid *ret, void *val){
-	(void) val; /* fool compiler */
+
+str
+oidFromvoidImpl(oid *ret, void *val)
+{
+	(void) val;		/* fool compiler */
 	memcpy(ret, ATOMnilptr(TYPE_oid), ATOMsize(TYPE_oid));
 	return MAL_SUCCEED;
 }
-str CALCbat2batid(int *ret, int *bid){
+
+str
+CALCbat2batid(int *ret, int *bid)
+{
 	BAT *b;
-	b= BATdescriptor(*bid);	
-	if( b==0)
-		throwMessage("calc.:bat","Bat does not exist");
-	*ret= b->batCacheid;
+
+	b = BATdescriptor(*bid);
+	if (b == 0)
+		throwMessage("calc.:bat", "Bat does not exist");
+	*ret = b->batCacheid;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-str CALCbatid2bat(int *bid, int *ret){
+
+str
+CALCbatid2bat(int *bid, int *ret)
+{
 	BAT *b;
-	b= BATdescriptor(*ret);	
-	if( b==0)
-		throwMessage("calc.:bat","Bat does not exist");
-	*bid= b->batCacheid;
-	BBPincref(*bid,TRUE);
+
+	b = BATdescriptor(*ret);
+	if (b == 0)
+		throwMessage("calc.:bat", "Bat does not exist");
+	*bid = b->batCacheid;
+	BBPincref(*bid, TRUE);
 	BBPunfix(*bid);
 	return MAL_SUCCEED;
 }
+
 @:convertImpl(sht)@
 @:convertImpl(int)@
 @:convertImpl(lng)@
@@ -1338,6 +1442,7 @@ str CALCbatid2bat(int *bid, int *ret){
 @:convertImpl(ptr)@
 @:convertImpl(bat)@
 @:convertImpl(chr)@
+
 @-
 @= setoidCode
 str @1SetoidImpl(str *ret, @1 *v){
@@ -1349,6 +1454,7 @@ str @1SetoidImpl(str *ret, @1 *v){
 @:setoidCode(oid)@
 @:setoidCode(lng)@
 @:setoidCode(int)@
+
 @-
 Type conversion template. Only allowed then no information is lost.
 
@@ -1358,27 +1464,32 @@ str @1From@2Impl(@1 *res, @2 *val){
 	return MAL_SUCCEED;
 }
 @c
-@:coercionImpl(lng,oid)@
-@:coercionImpl(lng,int)@
-@:coercionImpl(lng,sht)@
-@:coercionImpl(lng,bit)@
-@:coercionImpl(int,sht)@
-@:coercionImpl(int,bit)@
-@:coercionImpl(dbl,flt)@
-@:coercionImpl(oid,lng)@
-@:coercionImpl(oid,int)@
-@:coercionImpl(oid,sht)@
+@:coercionImpl(lng, oid)@
+@:coercionImpl(lng, int)@
+@:coercionImpl(lng, sht)@
+@:coercionImpl(lng, bit)@
+@:coercionImpl(int, sht)@
+@:coercionImpl(int, bit)@
+@:coercionImpl(dbl, flt)@
+@:coercionImpl(oid, lng)@
+@:coercionImpl(oid, int)@
+@:coercionImpl(oid, sht)@
 
-str shtFromlngImpl(sht *res, lng *val){
+str
+shtFromlngImpl(sht *res, lng *val)
+{
 	/* perform a range check !! */
-	if( *val<0 ||*val >255)
+	if (*val < 0 || *val > 255)
 		return throwMessage("calc.coercion", "error lng->sht");
 	*res = *val;
 	return MAL_SUCCEED;
 }
-str shtFromintImpl(sht *res, int *val){
+
+str
+shtFromintImpl(sht *res, int *val)
+{
 	/* perform a range check !! */
-	if( *val<0 ||*val >255)
+	if (*val < 0 || *val > 255)
 		return throwMessage("calc.coercion", "error int->sht");
 	*res = *val;
 	return MAL_SUCCEED;
@@ -1387,32 +1498,47 @@ str shtFromintImpl(sht *res, int *val){
 @+ Value, Types and Variables
 The routines below implement the OID utility functions.
 @c
-str CALCnewoidBase(oid *res){
-	*res= OIDnew(1);
+str
+CALCnewoidBase(oid *res)
+{
+	*res = OIDnew(1);
 	return MAL_SUCCEED;
 }
-str CALCnewoidInc(oid *res, int *inc){
-	if( *inc <=0)
-		*res= OIDnew(1);
-	else{
-		*res= OIDnew(*inc);
+
+str
+CALCnewoidInc(oid *res, int *inc)
+{
+	if (*inc <= 0)
+		*res = OIDnew(1);
+	else {
+		*res = OIDnew(*inc);
 	}
 	return MAL_SUCCEED;
 }
-str CALCnewoidInclng(oid *res, lng *inc){
-	if( *inc <=0)
-		*res= OIDnew(1);
-	else{
-		*res= OIDnew(*inc);
+
+str
+CALCnewoidInclng(oid *res, lng *inc)
+{
+	if (*inc <= 0)
+		*res = OIDnew(1);
+	else {
+		*res = OIDnew(*inc);
 	}
 	return MAL_SUCCEED;
 }
-str CALCsetoidBase(oid *res){
-	*res= OIDbase(1);
+
+str
+CALCsetoidBase(oid *res)
+{
+	*res = OIDbase(1);
 	return MAL_SUCCEED;
 }
-str CALCsetoidInc(oid *res,oid *inc){
-	*res= OIDbase(*inc);
+
+str
+CALCsetoidInc(oid *res, oid *inc)
+{
+	*res = OIDbase(*inc);
 	return MAL_SUCCEED;
 }
+
 @}

@@ -135,7 +135,7 @@ micro scheduling decisions.
 #include "mal.h"
 #include "mal_macro.h"
 
-#define DEBUG_MAL_SCHEDULER 
+#define DEBUG_MAL_SCHEDULER
 
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
@@ -151,9 +151,9 @@ micro scheduling decisions.
 #endif
 
 struct {
-	/*mallinfo memory;*/
+	/*mallinfo memory; */
 	/* rusage memused; */
-	int cpuload;	/* hard to get */
+	int cpuload;		/* hard to get */
 } runtime;
 
 mal_export str MALscheduler(Client c);
@@ -167,69 +167,77 @@ mal_export str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 	}
 @c
 #include "mal_scheduler.h"
-#include "mal_interpreter.h"    /* for showErrors() */
+#include "mal_interpreter.h"	/* for showErrors() */
 
-str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	Client cntxt= getClient();
+str
+debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Client cntxt = getClient();
+
 	(void) stk;
 
-    cntxt->debugScheduler= cntxt->debugScheduler? FALSE: TRUE;
+	cntxt->debugScheduler = cntxt->debugScheduler ? FALSE : TRUE;
 	@:schedulerCleanup(pci)@
 	return MAL_SUCCEED;
 }
+
 @-
 The implementation approach of the scheduler aligns with that of the
 optimizer. We look for specific scheduler module calls and act accordingly.
 The result should be a MAL block that can be executed by the corresponding
 engine. 
 @c
-str schedulerMALBlock(MalBlkPtr mb)
-{   InstrPtr p;
-    int callMALinterpreter=1, pc,cnt=0;
-    str msg= NULL;
-    int loops =0;
+str
+schedulerMALBlock(MalBlkPtr mb)
+{
+	InstrPtr p;
+	int callMALinterpreter = 1, pc, cnt = 0;
+	str msg = NULL;
+	int loops = 0;
+
 #ifdef DEBUG_MAL_SCHEDULER
-    int oldstop= mb->stop;
+	int oldstop = mb->stop;
 #endif
 	/* update the runtime status */
 
-    do{
-        cnt=0;
-        for(pc=0; pc< mb->stop; pc++){
-            p= getInstrPtr(mb,pc);
-            if( moduleId(p) && idcmp(moduleName(p),"scheduler")==0){
-                cnt++;
+	do {
+		cnt = 0;
+		for (pc = 0; pc < mb->stop; pc++) {
+			p = getInstrPtr(mb, pc);
+			if (moduleId(p) && idcmp(moduleName(p), "scheduler") == 0) {
+				cnt++;
 				callMALinterpreter++;
-                if( p->fcn)
+				if (p->fcn)
 					/* all schedulers should behave like patterns */
 					/* However, we don;t have a stack now */
-                    msg= (str) (*p->fcn)(mb,0,p);
-                if( msg) {
-                    GDKerror(msg);
-                    showErrors();
-                    return msg;
-                }
-                pc--; /*scheduler statement has been removed*/
-            }
-        }
-    } while(cnt && loops++ < 64);
-	if( callMALinterpreter )
+					msg = (str) (*p->fcn) (mb, 0, p);
+				if (msg) {
+					GDKerror(msg);
+					showErrors();
+					return msg;
+				}
+				pc--;	/*scheduler statement has been removed */
+			}
+		}
+	} while (cnt && loops++ < 64);
+	if (callMALinterpreter)
 		return MAL_SUCCEED;
 #ifdef DEBUG_MAL_SCHEDULER
-    if( getClient()->debugScheduler && oldstop!=mb->stop){
-    stream_printf(GDKout,"Scheduler effect %d -> %d instructions\n",
-        oldstop,mb->stop);
-    }
+	if (getClient()->debugScheduler && oldstop != mb->stop) {
+		stream_printf(GDKout, "Scheduler effect %d -> %d instructions\n", oldstop, mb->stop);
+	}
 #endif
-    if( cnt >= 64)
-        return throwMessage("scheduler.MALscheduler",
-                "too many optimization cycles\n");
-    return 0;
+	if (cnt >= 64)
+		return throwMessage("scheduler.MALscheduler", "too many optimization cycles\n");
+	return 0;
 }
-str MALscheduler(Client c)
+
+str
+MALscheduler(Client c)
 {
 	return schedulerMALBlock(c->curprg->def);
 }
+
 @}
 @+ Run isolation
 Run isolation involves making available a private copy for further massaging.
@@ -250,17 +258,20 @@ function main();
 @end example
 @{
 @c
-str RUNisolate(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-	Client cntxt= getClient();
+str
+RUNisolate(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	Client cntxt = getClient();
 
-	(void) stk; 
-	if( cntxt->backup)
-		return throwMessage("scheduler.isolation","no space for backup");
+	(void) stk;
+	if (cntxt->backup)
+		return throwMessage("scheduler.isolation", "no space for backup");
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg->def = copyMalBlk(mb);
-	removeInstruction(cntxt->curprg->def,p);
+	removeInstruction(cntxt->curprg->def, p);
 	return MAL_SUCCEED;
 }
+
 @}
 @-
 The second example is derived from the SQL environment, which
@@ -292,16 +303,21 @@ dynamic optimization, something that is not known at the MAL level.
 [The current optimizer also generates a factory, that should be
 done here and upon explicit request]
 @c
-str 
-RUNinline(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+str
+RUNinline(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
 	Symbol qc;
-	str modnme = getVarConstant(mb,getArg(p,1)).val.sval;
-	str fcnnme = getVarConstant(mb,getArg(p,2)).val.sval;
-	(void) stk; (void) p;
-	qc = findMALSymbol(modnme,fcnnme);
-	if( qc ) 
-		MACROprocessor(mb,qc);
-    return MAL_SUCCEED;
+	str modnme = getVarConstant(mb, getArg(p, 1)).val.sval;
+	str fcnnme = getVarConstant(mb, getArg(p, 2)).val.sval;
+
+	(void) stk;
+	(void) p;
+	qc = findMALSymbol(modnme, fcnnme);
+
+	if (qc)
+		MACROprocessor(mb, qc);
+
+	return MAL_SUCCEED;
 }
 
 @-
@@ -309,27 +325,28 @@ The SQL scheduler is presented merely as an example. The real one
 is located in  the SQL libraries for it needs specific information.
 @c
 str
-RUNsqlbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+RUNsqlbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
 	int i;
-	str msg=MAL_SUCCEED;
-	Client cntxt= getClient();
-	Symbol sqlbind= findMALSymbol("sql","bind");
-	MALfcn f= getSignature(sqlbind)->fcn;
+	str msg = MAL_SUCCEED;
+	Client cntxt = getClient();
+	Symbol sqlbind = findMALSymbol("sql", "bind");
+	MALfcn f = getSignature(sqlbind)->fcn;
 
-	for(i=0; i<mb->stop; i++)
-	{	p= getInstrPtr(mb,i);
-		if( p->fcn == f)
-		{
-			if( (msg = reenterMAL(cntxt,mb,i,i+1,stk,0,0)))
+	for (i = 0; i < mb->stop; i++) {
+		p = getInstrPtr(mb, i);
+		if (p->fcn == f) {
+			if ((msg = reenterMAL(cntxt, mb, i, i + 1, stk, 0, 0)))
 				break;
 			/* fetch the BAT properties and turn off this instruction */
 			p->token = NOOPsymbol;
 		}
 	}
 #ifdef DEBUG_MAL_SCHEDULER
-	stream_printf(GDKout,"scheduler.sqlbind results\n");
-	printFunction(GDKout,mb,LIST_MAL_ALL);
+	stream_printf(GDKout, "scheduler.sqlbind results\n");
+	printFunction(GDKout, mb, LIST_MAL_ALL);
 #endif
 	return msg;
 }
+
 @}

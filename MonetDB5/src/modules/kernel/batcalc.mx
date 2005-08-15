@@ -748,18 +748,18 @@ str CMD@1init_sht(int *ret, sht *size, @1 *cst){
 @c
 #include "batcalc.h"
 
-	@:initImpl(oid)@
-	@:initImpl(int)@
-	@:initImpl(sht)@
-	@:initImpl(lng)@
-	@:initImpl(dbl)@
-	@:initImpl(flt)@
-	@:initImpl(bit)@
+@:initImpl(oid)@
+@:initImpl(int)@
+@:initImpl(sht)@
+@:initImpl(lng)@
+@:initImpl(dbl)@
+@:initImpl(flt)@
+@:initImpl(bit)@
 
-	@:arithmeticImpl(DIV,/)@
-	@:arithmeticImpl(MUL,*)@
-	@:arithmeticImpl(MIN,-)@
-	@:arithmeticImpl(ADD,+)@
+@:arithmeticImpl(DIV, /)@
+@:arithmeticImpl(MUL, *)@
+@:arithmeticImpl(MIN, -)@
+@:arithmeticImpl(ADD, +)@
 
 @-  Modulo arithmetic
 The Modulo function doesn;t work on all types. Therefore we 
@@ -934,8 +934,8 @@ str CMDcst@1bat(int *ret,void *cst, int *l)
 	return msg;
 }
 @c
-@:numeric_funcs(MOD,%)@
-@:numeric_funcs(XOR,^)@
+@:numeric_funcs(MOD, %)@
+@:numeric_funcs(XOR, ^)@
 
 @- Implementation of unary operations
 @= accumUnary
@@ -1000,9 +1000,9 @@ str CMDunary@1(int *ret, int *bid){
 	return msg;
 }
 @c
-@:unary_impl(MIN,-)@
-@:unary_impl(MINMIN,--)@
-@:unary_impl(PLUSPLUS,++)@
+@:unary_impl(MIN, -)@
+@:unary_impl(MINMIN, --)@
+@:unary_impl(PLUSPLUS, ++)@
 
 @- Implementation of comparisons
 The structure of this code is copied from the arithmetic scheme.
@@ -1183,85 +1183,92 @@ bunins_failed:
 
 @-
 @c
-	@:compareImpl(GE,>=)@
-	@:compareImpl(LE,<=)@
-	@:compareImpl(GT,>)@
-	@:compareImpl(LT,<)@
-	@:compareImpl(EQ,==)@
-	@:compareImpl(NEQ,!=)@
-	@:cmpCstImpl(GE,>=)@
-	@:cmpCstImpl(LE,<=)@
-	@:cmpCstImpl(GT,>)@
-	@:cmpCstImpl(LT,<)@
-	@:cmpCstImpl(EQ,==)@
-	@:cmpCstImpl(NEQ,!=)@
+@:compareImpl(GE, >=)@
+@:compareImpl(LE, <=)@
+@:compareImpl(GT, >)@
+@:compareImpl(LT, <)@
+@:compareImpl(EQ, ==)@
+@:compareImpl(NEQ, !=)@
+@:cmpCstImpl(GE, >=)@
+@:cmpCstImpl(LE, <=)@
+@:cmpCstImpl(GT, >)@
+@:cmpCstImpl(LT, <)@
+@:cmpCstImpl(EQ, ==)@
+@:cmpCstImpl(NEQ, !=)@
 
 @- Implementations of boolean operators
 The code base is straightforward.
 @-
 The expanded code for the binary and boolean operations.
 @c
-	@:compareImpl(AND,&&)@
-	@:compareImpl(OR,||)@
-	@:cmpCstImpl(AND,&&)@
-	@:cmpCstImpl(OR,||)@
+@:compareImpl(AND, &&)@
+@:compareImpl(OR, ||)@
+@:cmpCstImpl(AND, &&)@
+@:cmpCstImpl(OR, ||)@
 
-str CMDbitbataccumNOT(int *ret, int *d, int *l)
-{	BAT *dst, *left;
-	int s1,s2;
-	ptr p1,p2, hend;
+str
+CMDbitbataccumNOT(int *ret, int *d, int *l)
+{
+	BAT *dst, *left;
+	int s1, s2;
+	ptr p1, p2, hend;
 
-    if( (dst= BATdescriptor(*d)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
-    if( (left= BATdescriptor(*l)) == NULL ){
+	if ((dst = BATdescriptor(*d)) == NULL) {
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
+	if ((left = BATdescriptor(*l)) == NULL) {
 		BBPunfix(dst->batCacheid);
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
 
-	@:chkSize(dst,left,CMDbitbataccum@1)@
-	@:batinit(1,left);
-	@:batinit(2,dst);
+	@:chkSize(dst, left, CMDbitbataccum@
+      1) @ @:	       batinit(1, left);
+      @:batinit(2, dst);
 	hend = (str) BUNlast(left);
-	while( p1 < hend ){
+	while (p1 < hend) {
 		/* this code is better as x?nil:y */
-		if(*(bit *)p1 == bit_nil )
-			*(bit*)p2 = bit_nil;
-		else *(bit*) p2 =  ! * (bit*) p1;
-		p2= (ptr)( ((char*)p2) + s2);
-		p1= (ptr)( ((char*)p1) + s1);
+		if (*(bit *) p1 == bit_nil)
+			*(bit *) p2 = bit_nil;
+		else
+			*(bit *) p2 = !*(bit *) p1;
+		p2 = (ptr) (((char *) p2) + s2);
+		p1 = (ptr) (((char *) p1) + s1);
 	}
 
 	*ret = dst->batCacheid;
 	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
 }
-str CMDbitbatNOT(int *ret, int *l)
-{	BAT *dst, *left;
-	int s1,xx,d;
+
+str
+CMDbitbatNOT(int *ret, int *l)
+{
+	BAT *dst, *left;
+	int s1, xx, d;
 	ptr p1;
-	bit bn= bit_nil;
-	BUN p,q;
+	bit bn = bit_nil;
+	BUN p, q;
 
-    if( (left= BATdescriptor(*l)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
-
-	dst= BATnew(BAThtype(left),TYPE_bit, BATcount(left));
-
-	s1= BUNsize(dst);
-	p1= BUNfirst(dst);
-	 
-	BATloopFast(left,p,q,xx){
-		ptr h= BUNhead(left,p);
-		bunfastins_nocheck(dst,p1,h,&bn,s1);
-		p1= (ptr)( ((char *)p1) + s1);
+	if ((left = BATdescriptor(*l)) == NULL) {
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
 	}
-bunins_failed:
-	dst->hsorted= BAThordered(left);
-	d= dst->batCacheid;
+
+	dst = BATnew(BAThtype(left), TYPE_bit, BATcount(left));
+
+	s1 = BUNsize(dst);
+	p1 = BUNfirst(dst);
+
+	BATloopFast(left, p, q, xx) {
+		ptr h = BUNhead(left, p);
+
+		bunfastins_nocheck(dst, p1, h, &bn, s1);
+		p1 = (ptr) (((char *) p1) + s1);
+	}
+      bunins_failed:
+	dst->hsorted = BAThordered(left);
+	d = dst->batCacheid;
 	BBPunfix(left->batCacheid);
-	return CMDbitbataccumNOT(ret,&d,l);
+	return CMDbitbataccumNOT(ret, &d, l);
 }
 
 @- Implementation of coercions
@@ -1270,14 +1277,19 @@ the space to re-use. Therefore, the code block is actually a hardwired
 version of a bunstream() operation. It runs, however, about 5-times
 faster then [lng](b) in Version 4.
 @c
-BAT *newBATresult(BAT *b, int tpe){
+BAT *
+newBATresult(BAT *b, int tpe)
+{
 	BAT *bn;
-	if( BAThvoid(b)){
-		bn= BATnew(TYPE_void, tpe, BATcount(b));
-		BATseqbase(bn,b->hseqbase);
-	} else bn= BATnew(b->htype, tpe, BATcount(b));
+
+	if (BAThvoid(b)) {
+		bn = BATnew(TYPE_void, tpe, BATcount(b));
+		BATseqbase(bn, b->hseqbase);
+	} else
+		bn = BATnew(b->htype, tpe, BATcount(b));
 	return bn;
 }
+
 @-
 The different coercion implementations exploit the fact
 that many coercions are simply space enlargers.
@@ -1359,153 +1371,180 @@ bunins_failed:
 @-
 The lengthly list of coercions options could have been generated.
 @c
-	@:Idempotent(sht)@
-	@:Idempotent(int)@
-	@:Idempotent(lng)@
-	@:Idempotent(flt)@
-	@:Idempotent(dbl)@
-	@:Idempotent(str)@
-	@:Idempotent(chr)@
+@:Idempotent(sht)@
+@:Idempotent(int)@
+@:Idempotent(lng)@
+@:Idempotent(flt)@
+@:Idempotent(dbl)@
+@:Idempotent(str)@
+@:Idempotent(chr)@
 
-	@:General(sht,int)@ @:Enlarge(sht,int)@
-	@:General(sht,lng)@ @:Enlarge(sht,lng)@
-	@:General(sht,flt)@ @:Enlarge(sht,flt)@
-	@:General(sht,dbl)@ @:Enlarge(sht,dbl)@
+@:General(sht, int)@
+@:Enlarge(sht, int)@
+@:General(sht, lng)@
+@:Enlarge(sht, lng)@
+@:General(sht, flt)@
+@:Enlarge(sht, flt)@
+@:General(sht, dbl)@
+@:Enlarge(sht, dbl)@
 
-	@:General(int,sht)@ 
-	@:General(int,lng)@ @:Enlarge(int,lng)@
-	@:General(int,flt)@ @:Enlarge(int,flt)@
-	@:General(int,dbl)@ @:Enlarge(int,dbl)@
+@:General(int, sht)@
+@:General(int, lng)@
+@:Enlarge(int, lng)@
+@:General(int, flt)@
+@:Enlarge(int, flt)@
+@:General(int, dbl)@
+@:Enlarge(int, dbl)@
 
-	@:General(lng,sht)@
-	@:General(lng,int)@
-	@:General(lng,flt)@ @:Enlarge(lng,flt)@
-	@:General(lng,dbl)@ @:Enlarge(lng,dbl)@
+@:General(lng, sht)@
+@:General(lng, int)@
+@:General(lng, flt)@
+@:Enlarge(lng, flt)@
+@:General(lng, dbl)@
+@:Enlarge(lng, dbl)@
 
-	@:General(flt,sht)@
-	@:General(flt,int)@
-	@:General(flt,lng)@
-	@:General(flt,dbl)@ @:Enlarge(flt,dbl)@
+@:General(flt, sht)@
+@:General(flt, int)@
+@:General(flt, lng)@
+@:General(flt, dbl)@
+@:Enlarge(flt, dbl)@
 
-	@:General(dbl,sht)@
-	@:General(dbl,int)@
-	@:General(dbl,lng)@
-	@:General(dbl,flt)@ @:Enlarge(dbl,flt)@
+@:General(dbl, sht)@
+@:General(dbl, int)@
+@:General(dbl, lng)@
+@:General(dbl, flt)@
+@:Enlarge(dbl, flt)@
 
-	@:General(int,oid)@
-str CMDconvertstr_int(int *ret, int *bid){
-	BAT *b,*bn;
+@:General(int, oid)@
+str
+CMDconvertstr_int(int *ret, int *bid)
+{
+	BAT *b, *bn;
 	int xx;
-	BUN p,q;
+	BUN p, q;
 	str x;
 	int y;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.convert", "Cannot access descriptor");
-    }
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("batcalc.convert", "Cannot access descriptor");
+	}
 
-	bn= newBATresult(b, TYPE_int);
+	bn = newBATresult(b, TYPE_int);
 	@:tstBat(CMDconvertstr_int)@
 
 	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b,p);
-		x= (str) BUNtail(b,p);
-		y= x== str_nil? int_nil: strtol(x,NULL,0);
+		ptr h = BUNhead(b, p);
+
+		x = (str) BUNtail(b, p);
+		y = x == str_nil ? int_nil : strtol(x, NULL, 0);
 		bunfastins(bn, h, &y);
 	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
+      bunins_failed:
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-str CMDconvertOIDclass(int *ret, int *bid){
+
+str
+CMDconvertOIDclass(int *ret, int *bid)
+{
 	BAT *b;
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.convert", "Cannot access descriptor");
-    }
-	BBPincref( *ret= b->batCacheid,TRUE);
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("batcalc.convert", "Cannot access descriptor");
+	}
+	BBPincref(*ret = b->batCacheid, TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
+
 /* You don;t have to materialize the oids.
 This is taken care upon access */
-str CMDconvertvoid_oid_oid(int *ret, int *bid){
+str
+CMDconvertvoid_oid_oid(int *ret, int *bid)
+{
 	BAT *b;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.convert", "Cannot access descriptor");
-    }
-	BBPincref( *ret= b->batCacheid,TRUE);
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("batcalc.convert", "Cannot access descriptor");
+	}
+	BBPincref(*ret = b->batCacheid, TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
-str CMDconvertvoid_int_oid(int *ret, int *bid){
-#if SIZEOF_OID == SIZEOF_INT
-	BAT *b,*bn;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.convert", "Cannot access descriptor");
-    }
-	bn= BATcopy(b);
-	bn->ttype= TYPE_oid;
+str
+CMDconvertvoid_int_oid(int *ret, int *bid)
+{
+#if SIZEOF_OID == SIZEOF_INT
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("batcalc.convert", "Cannot access descriptor");
+	}
+	bn = BATcopy(b);
+	bn->ttype = TYPE_oid;
 	/* simply recast the BAT  without doing anything */
-	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 #else
-	BAT *b,*bn;
+	BAT *b, *bn;
 	int xx;
-	BUN p,q;
+	BUN p, q;
 	oid x;
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.convert", "Cannot access descriptor");
-    }
-	bn= BATnew(TYPE_void,TYPE_oid, BATcount(b));
-	BATseqbase(bn,b->hseqbase);
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("batcalc.convert", "Cannot access descriptor");
+	}
+	bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
+	BATseqbase(bn, b->hseqbase);
 	@:tstBat(CMDconvertstr_int)@
-	x= b->hseqbase;
+	x = b->hseqbase;
 
 	BATloopFast(b, p, q, xx) {
-		oid t = *(int*)BUNtail(b,p);
+		oid t = *(int *) BUNtail(b, p);
+
 		bunfastins(bn, &x, &t);
 		x++;
 	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
+      bunins_failed:
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 #endif
 
 }
+
 @- Implementations of scientific functions
 @c
-	@:scienceFcnImpl(asin)@
-	@:scienceFcnImpl(acos)@
-	@:scienceFcnImpl(atan)@
-	@:scienceFcnImpl(cos)@
-	@:scienceFcnImpl(sin)@
-	@:scienceFcnImpl(tan)@
-	@:scienceFcnImpl(cosh)@
-	@:scienceFcnImpl(sinh)@
-	@:scienceFcnImpl(tanh)@
-	@:scienceFcnImpl(exp)@
-	@:scienceFcnImpl(log)@
-	@:scienceFcnImpl(log10)@
-	@:scienceFcnImpl(sqrt)@
-	@:scienceFcnImpl(ceil)@
-	@:scienceFcnImpl(fabs)@
-	@:scienceFcnImpl(floor)@
+@:scienceFcnImpl(asin)@
+@:scienceFcnImpl(acos)@
+@:scienceFcnImpl(atan)@
+@:scienceFcnImpl(cos)@
+@:scienceFcnImpl(sin)@
+@:scienceFcnImpl(tan)@
+@:scienceFcnImpl(cosh)@
+@:scienceFcnImpl(sinh)@
+@:scienceFcnImpl(tanh)@
+@:scienceFcnImpl(exp)@
+@:scienceFcnImpl(log)@
+@:scienceFcnImpl(log10)@
+@:scienceFcnImpl(sqrt)@
+@:scienceFcnImpl(ceil)@
+@:scienceFcnImpl(fabs)@
+@:scienceFcnImpl(floor)@
 @-
 	round is not binary...
 	@:scienceBinaryImpl(round,int)@
 @c
-	@:scienceBinaryImpl(fmod,dbl)@
-	@:scienceBinaryImpl(atan2,dbl)@
-	@:scienceBinaryImpl(pow,dbl)@
+@:scienceBinaryImpl(fmod, dbl)@
+@:scienceBinaryImpl(atan2, dbl)@
+@:scienceBinaryImpl(pow, dbl)@
+
 @-
 @= scienceFcnImpl
 str CMDscience_@1(int *ret, int *bid){
@@ -1587,44 +1626,46 @@ bunins_failed:
 @- IfThenElse
 The conditional multiplex operations .
 @c
-str CMDifThen(int *ret, int *iid, int *tid){
+str
+CMDifThen(int *ret, int *iid, int *tid)
+{
 	BAT *ib, *tb, *bn;
 	int xx;
-	BUN p,q;
-	bit bnil= bit_nil;
+	BUN p, q;
+	bit bnil = bit_nil;
 
-    if( (ib= BATdescriptor(*iid)) == NULL ){
-        return throwMessage("batcalc.ifThen", "Cannot access descriptor");
-    }
-    if( (tb= BATdescriptor(*tid)) == NULL ){
+	if ((ib = BATdescriptor(*iid)) == NULL) {
+		return throwMessage("batcalc.ifThen", "Cannot access descriptor");
+	}
+	if ((tb = BATdescriptor(*tid)) == NULL) {
 		BBPunfix(ib->batCacheid);
-        return throwMessage("batcalc.ifThen", "Cannot access descriptor");
-    }
-	@:chkSize(ib,tb,CMDifThen)@
+		return throwMessage("batcalc.ifThen", "Cannot access descriptor");
+	}
+	@:chkSize(ib, tb, CMDifThen)@
 
-	bn= BATnew(BAThtype(ib),BATttype(tb),BATcount(ib));
+	bn = BATnew(BAThtype(ib), BATttype(tb), BATcount(ib));
 	@:tstBat(CMDifThen)@
 
 	BATloopFast(ib, p, q, xx) {
-		ptr h = BUNhead(ib,p);
-		ptr t = BUNtail(ib,p);
-		int idx = BUNindex(ib,p);
+		ptr h = BUNhead(ib, p);
+		ptr t = BUNtail(ib, p);
+		int idx = BUNindex(ib, p);
 
-		if( *(bit*) t== bit_nil) {
+		if (*(bit *) t == bit_nil) {
 			bunfastins(bn, h, &bnil);
-		} else
-		if( *(bit*) t ) {
-			t= BUNtail(tb,BUNptr(tb,idx));
+		} else if (*(bit *) t) {
+			t = BUNtail(tb, BUNptr(tb, idx));
 			bunfastins(bn, h, t);
-		} 
+		}
 	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
+      bunins_failed:
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	BBPunfix(ib->batCacheid);
 	BBPunfix(tb->batCacheid);
 	return MAL_SUCCEED;
 }
+
 @-
 The constant versions are typed by the parser
 @= ifthencstImpl
@@ -1708,140 +1749,145 @@ bunins_failed:
 }
 @-
 @c
-	@:ifthencstImpl(int)@
-	@:ifthencstImpl(sht)@
-	@:ifthencstImpl(lng)@
-	@:ifthencstImpl(oid)@
-	@:ifthencstImpl(flt)@
-	@:ifthencstImpl(dbl)@
-	@:ifthencstImpl(str)@
-	@:ifthencstImpl(chr)@
-	@:ifthencstImpl(bit)@
+@:ifthencstImpl(int)@
+@:ifthencstImpl(sht)@
+@:ifthencstImpl(lng)@
+@:ifthencstImpl(oid)@
+@:ifthencstImpl(flt)@
+@:ifthencstImpl(dbl)@
+@:ifthencstImpl(str)@
+@:ifthencstImpl(chr)@
+@:ifthencstImpl(bit)@
 
-str CMDifThenElse(int *ret, int *iid, int *tid,int *eid){
+str
+CMDifThenElse(int *ret, int *iid, int *tid, int *eid)
+{
 	BAT *ib, *tb, *eb, *bn;
 	int xx;
-	BUN p,q;
-	bit bnil= bit_nil;
+	BUN p, q;
+	bit bnil = bit_nil;
 
-    if( (ib= BATdescriptor(*iid)) == NULL ){
-        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
-    }
-    if( (tb= BATdescriptor(*tid)) == NULL ){
+	if ((ib = BATdescriptor(*iid)) == NULL) {
+		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+	}
+	if ((tb = BATdescriptor(*tid)) == NULL) {
 		BBPunfix(tb->batCacheid);
-        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
-    }
-    if( (eb= BATdescriptor(*eid)) == NULL ){
+		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+	}
+	if ((eb = BATdescriptor(*eid)) == NULL) {
 		BBPunfix(ib->batCacheid);
 		BBPunfix(tb->batCacheid);
-        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
-    }
-	@:chkSize(ib,tb,CMDifThenElse)@
-	@:chkSize(ib,eb,CMDifThenElse)@
+		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+	}
+	@:chkSize(ib, tb, CMDifThenElse)@
+	@:chkSize(ib, eb, CMDifThenElse)@
 
-	bn= BATnew(BAThtype(ib),BATttype(tb),BATcount(ib));
+	bn = BATnew(BAThtype(ib), BATttype(tb), BATcount(ib));
 	@:tstBat(ifThenElse)@
 	BATloopFast(ib, p, q, xx) {
-		ptr h = BUNhead(ib,p);
-		ptr t = BUNtail(ib,p);
-		int idx = BUNindex(ib,p);
+		ptr h = BUNhead(ib, p);
+		ptr t = BUNtail(ib, p);
+		int idx = BUNindex(ib, p);
 
-		if( *(bit*) t== bit_nil) {
+		if (*(bit *) t == bit_nil) {
 			bunfastins(bn, h, &bnil);
-		} else
-		if( *(bit*) t ) {
-			t= BUNtail(tb,BUNptr(tb,idx));
+		} else if (*(bit *) t) {
+			t = BUNtail(tb, BUNptr(tb, idx));
 			bunfastins(bn, h, t);
-		} else{
-			t= BUNtail(eb,BUNptr(eb,idx));
+		} else {
+			t = BUNtail(eb, BUNptr(eb, idx));
 			bunfastins(bn, h, t);
 		}
 	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
+      bunins_failed:
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(ib->batCacheid);
 	BBPunfix(tb->batCacheid);
 	BBPunfix(eb->batCacheid);
 	return MAL_SUCCEED;
 }
-str CMDifThenElseCst1(int *ret, int *iid, ptr *val,int *eid){
+
+str
+CMDifThenElseCst1(int *ret, int *iid, ptr *val, int *eid)
+{
 	BAT *ib, *eb, *bn;
 	int xx;
-	BUN p,q;
+	BUN p, q;
 	ptr nilptr;
 	int tpe;
 
-    if( (ib= BATdescriptor(*iid)) == NULL ){
-        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
-    }
-    if( (eb= BATdescriptor(*eid)) == NULL ){
+	if ((ib = BATdescriptor(*iid)) == NULL) {
+		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+	}
+	if ((eb = BATdescriptor(*eid)) == NULL) {
 		BBPunfix(ib->batCacheid);
-        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
-    }
-	@:chkSize(ib,eb,CMDifThenElse)@
+		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+	}
+	@:chkSize(ib, eb, CMDifThenElse)@
 
-	tpe= BATttype(eb);
-	nilptr= ATOMnilptr(tpe);
-	bn= BATnew(BAThtype(ib),tpe,BATcount(ib));
+	tpe = BATttype(eb);
+	nilptr = ATOMnilptr(tpe);
+	bn = BATnew(BAThtype(ib), tpe, BATcount(ib));
 	@:tstBat(CMDifThenElseCst1)@
 	BATloopFast(ib, p, q, xx) {
-		ptr h = BUNhead(ib,p);
-		ptr t = BUNtail(ib,p);
-		int idx = BUNindex(ib,p);
+		ptr h = BUNhead(ib, p);
+		ptr t = BUNtail(ib, p);
+		int idx = BUNindex(ib, p);
 
-		if( ATOMcmp(tpe, t, nilptr)==0 ){
+		if (ATOMcmp(tpe, t, nilptr) == 0) {
 			bunfastins(bn, h, t);
-		} else
-		if( *(bit*) t ) {
+		} else if (*(bit *) t) {
 			bunfastins(bn, h, val);
-		} else{
-			t= BUNtail(eb,BUNptr(eb,idx));
+		} else {
+			t = BUNtail(eb, BUNptr(eb, idx));
 			bunfastins(bn, h, t);
 		}
 	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
+      bunins_failed:
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(ib->batCacheid);
 	BBPunfix(eb->batCacheid);
 	return MAL_SUCCEED;
 }
-str CMDifThenElseCst2(int *ret, int *iid, int *tid,ptr *val){
+
+str
+CMDifThenElseCst2(int *ret, int *iid, int *tid, ptr *val)
+{
 	BAT *ib, *tb, *bn;
 	int xx;
-	BUN p,q;
+	BUN p, q;
 	ptr nilptr;
 	int tpe;
 
-    if( (ib= BATdescriptor(*iid)) == NULL ){
-        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
-    }
-    if( (tb= BATdescriptor(*tid)) == NULL ){
+	if ((ib = BATdescriptor(*iid)) == NULL) {
+		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+	}
+	if ((tb = BATdescriptor(*tid)) == NULL) {
 		BBPunfix(ib->batCacheid);
-        return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
-    }
-	@:chkSize(ib,tb,CMDifThenElse)@
- 
-	tpe= BATttype(tb);
-	nilptr= ATOMnilptr(tpe);
-	bn= BATnew(BAThtype(ib),tpe,BATcount(ib));
+		return throwMessage("batcalc.ifThenElse", "Cannot access descriptor");
+	}
+	@:chkSize(ib, tb, CMDifThenElse)@
+
+	tpe = BATttype(tb);
+	nilptr = ATOMnilptr(tpe);
+	bn = BATnew(BAThtype(ib), tpe, BATcount(ib));
 	@:tstBat(CMDifThenElseCst2)@
 	BATloopFast(ib, p, q, xx) {
-		ptr h = BUNhead(ib,p);
-		ptr t = BUNtail(ib,p);
-		int idx = BUNindex(ib,p);
+		ptr h = BUNhead(ib, p);
+		ptr t = BUNtail(ib, p);
+		int idx = BUNindex(ib, p);
 
-		if( ATOMcmp(tpe, t, nilptr)==0 ){
+		if (ATOMcmp(tpe, t, nilptr) == 0) {
 			bunfastins(bn, h, t);
-		} else
-		if( *(bit*) t ) {
-			t= BUNtail(tb,BUNptr(tb,idx));
+		} else if (*(bit *) t) {
+			t = BUNtail(tb, BUNptr(tb, idx));
 			bunfastins(bn, h, t);
-		} else{
+		} else {
 			bunfastins(bn, h, val);
 		}
 	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
+      bunins_failed:
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(ib->batCacheid);
 	BBPunfix(tb->batCacheid);
 	return MAL_SUCCEED;

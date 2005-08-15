@@ -172,24 +172,25 @@ bunins_failed:
 }
 
 @c
-	@:BATwalk(Color,CLRcolor,str,color)@
-	@:BATwalk(Str,CLRstr,color,str)@
+@:BATwalk(Color, CLRcolor, str, color)@
+@:BATwalk(Str, CLRstr, color, str)@
 
-	@:BATwalk(Red,CLRred,color,int)@
-	@:BATwalk(Green,CLRgreen,color,int)@
-	@:BATwalk(Blue,CLRblue,color,int)@
+@:BATwalk(Red, CLRred, color, int)@
+@:BATwalk(Green, CLRgreen, color, int)@
+@:BATwalk(Blue, CLRblue, color, int)@
 
-	@:BATwalk(Hue,CLRhue,color,flt)@
-	@:BATwalk(Saturation,CLRsaturation,color,flt)@
-	@:BATwalk(Value,CLRvalue,color,flt)@
+@:BATwalk(Hue, CLRhue, color, flt)@
+@:BATwalk(Saturation, CLRsaturation, color, flt)@
+@:BATwalk(Value, CLRvalue, color, flt)@
 
-	@:BATwalk(HueInt,CLRhueInt,color,int)@
-	@:BATwalk(SaturationInt,CLRsaturationInt,color,int)@
-	@:BATwalk(ValueInt,CLRvalueInt,color,int)@
+@:BATwalk(HueInt, CLRhueInt, color, int)@
+@:BATwalk(SaturationInt, CLRsaturationInt, color, int)@
+@:BATwalk(ValueInt, CLRvalueInt, color, int)@
 
-	@:BATwalk(Luminance,CLRluminance,color,int)@
-	@:BATwalk(Cr,CLRcr,color,int)@
-	@:BATwalk(Cb,CLRcb,color,int)@
+@:BATwalk(Luminance, CLRluminance, color, int)@
+@:BATwalk(Cr, CLRcr, color, int)@
+@:BATwalk(Cb, CLRcb, color, int)@
+
 @-
 A few triple versions.
 
@@ -234,6 +235,6 @@ bunins_failed:
 	return throwMessage("batstr.==", "bunins failed");
 }
 @c
-	@:BATwalk3(Hsv,CLRhsv,flt,color)@
-	@:BATwalk3(Rgb,CLRrgb,int,color)@
-	@:BATwalk3(ycc,CLRycc,int,color)@
+@:BATwalk3(Hsv, CLRhsv, flt, color)@
+@:BATwalk3(Rgb, CLRrgb, int, color)@
+@:BATwalk3(ycc, CLRycc, int, color)@

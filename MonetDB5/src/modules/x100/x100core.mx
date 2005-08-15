@@ -309,6 +309,7 @@ These are defined as macros, since we do not want function calls (brrr!@#..) in 
 @:def(sint,, signed int)@
 @:def(ulng,, unsigned long long)@
 @:def(slng,, signed long long)@
+
 @:def(uidx,, size_t)@
 @c
 #include "x100core.h"
@@ -316,7 +317,7 @@ These are defined as macros, since we do not want function calls (brrr!@#..) in 
 #include "x100_engine.h"
  #include "x100.h"*/
 
-#define RESTRICT 
+#define RESTRICT
 #ifdef RESTRICT
 #define __r  __restrict__
 #else
@@ -324,55 +325,65 @@ These are defined as macros, since we do not want function calls (brrr!@#..) in 
 #endif
 
 
-@:def(eq,(x,y), ((x)==(y)))@
-@:def(ne,(x,y), ((x)!=(y)))@
-@:def(gt,(x,y), ((x)>(y)))@
-@:def(lt,(x,y), ((x)<(y)))@
-@:def(ge,(x,y), ((x)>=(y)))@
-@:def(le,(x,y), ((x)<=(y)))@
-@:def(and,(x,y), ((x)&&(y)))@
-@:def(or,(x,y), ((x)||(y)))@
+@:def(eq, (x, y), ((x) == (y)))@
+@:def(ne, (x, y), ((x) != (y)))@
+@:def(gt, (x, y), ((x) > (y)))@
+@:def(lt, (x, y), ((x) < (y)))@
+@:def(ge, (x, y), ((x) >= (y)))@
+@:def(le, (x, y), ((x) <= (y)))@
+@:def(and, (x, y), ((x) && (y)))@
+@:def(or, (x, y), ((x) || (y)))@
 
-@:def(directgrp,(x,y,z), ((x)+(((uidx)(y))<<(z))))@
-@:def(not,(x), !(x))@
+@:def(directgrp, (x, y, z), ((x) + (((uidx) (y)) << (z))))@
+@:def(not, (x), !(x))@
 
-@:def(mul,(x,y), ((x)*(y)))@
-@:def(div,(x,y), ((x)/(y)))@
-@:def(sub,(x,y), ((x)-(y)))@
-@:def(add,(x,y), ((x)+(y)))@
-@:def(neg,(x),   (-(x)))@
-@:def(inc,(x),   (x+1))@
-@:def(dec,(x),   (x-1))@
-@:def(bitshl,(x,y), (x)<<(y))@
-@:def(bitshr,(x,y), (x)>>(y))@
-@:def(bitand,(x,y), (x)&(y))@
-@:def(bitor,(x,y), (x)|(y))@
-@:def(bitxor,(x,y), (x)^(y))@
-@:def(bitnot,(x), ~(x))@
-@:def(sum,(x,y), ((x)+(y)))@
-@:def(min,(x,y), ((x)<(y)?(x):(y)))@
-@:def(max,(x,y), ((x)>(y)?(x):(y)))@
+@:def(mul, (x, y), ((x) * (y)))@
+@:def(div, (x, y), ((x) / (y)))@
+@:def(sub, (x, y), ((x) - (y)))@
+@:def(add, (x, y), ((x) + (y)))@
+@:def(neg, (x), (-(x)))@
+@:def(inc, (x), (x + 1))@
+@:def(dec, (x), (x - 1))@
+@:def(bitshl, (x, y), (x) << (y))@
+@:def(bitshr, (x, y), (x) >> (y))@
+@:def(bitand, (x, y), (x) & (y))@
+@:def(bitor, (x, y), (x) | (y))@
+@:def(bitxor, (x, y), (x) ^ (y))@
+@:def(bitnot, (x), ~(x))@
+@:def(sum, (x, y), ((x) + (y)))@
+@:def(min, (x, y), ((x) < (y) ? (x) : (y)))@
+@:def(max, (x, y), ((x) > (y) ? (x) : (y)))@
 @c
-size_t aggr_count_uint_col(size_t n, uint*__r res, uint*__r grp, uint*__r sel) {
+size_t
+aggr_count_uint_col(size_t n, uint * __r res, uint * __r grp, uint * __r sel)
+{
 	@:impl(res[grp[i]]++)@
 	return 0;
 }
-static size_t aggr4_count_uidx_col_multicursor(size_t n, uidx*__r res0, uidx*__r  res1, uidx*__r  res2, uidx*__r  res3, uidx*__r  grp, uidx*__r  sel) {
+static size_t
+aggr4_count_uidx_col_multicursor(size_t n, uidx * __r res0, uidx * __r res1, uidx * __r res2, uidx * __r res3, uidx * __r grp, uidx * __r sel)
+{
 	@:impl4(res0[grp[i]]++, res1[grp[i]]++, res2[grp[i]]++, res3[grp[i]]++)@
 	return 0;
 }
-size_t aggr4_count_uidx_col(size_t n, uidx*__r res0, uidx*__r grp, uidx*__r memchunk, uidx*__r sel) {
+
+size_t
+aggr4_count_uidx_col(size_t n, uidx * __r res0, uidx * __r grp, uidx * __r memchunk, uidx * __r sel)
+{
 	uidx m = *memchunk;
-	uidx* res1 = res0 + m;
-	uidx* res2 = res1 + m;
-	uidx* res3 = res2 + m;
-	if (n > 0) return aggr4_count_uidx_col_multicursor(n, res0, res1, res2, res3, grp, sel);
+	uidx *res1 = res0 + m;
+	uidx *res2 = res1 + m;
+	uidx *res3 = res2 + m;
+
+	if (n > 0)
+		return aggr4_count_uidx_col_multicursor(n, res0, res1, res2, res3, grp, sel);
 	/* calculate final result as aggregate over 4 partials */
-	for(n=0; n<m; n++) {
+	for (n = 0; n < m; n++) {
 		res0[n] += res1[n] + res2[n] + res3[n];
-	} 
+	}
 	return 0;
 }
+
 @-
 SelectCol can be used to collect the indices of a column with
 non-zero result.
@@ -707,16 +718,18 @@ code structure. A more tight coupling would be possible, but not sensibly at
 this stage of the game.
 
 @c
-str CMDx100new(MalBlkPtr m, MalStkPtr s, InstrPtr p){
-        int ht= TYPE_void, tt, cap=0;
-        int *res;
+str
+CMDx100new(MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	int ht = TYPE_void, tt, cap = 0;
+	int *res;
 
-        tt= getArgType(m,p,1);
-        if( p->argc>2)
-                cap= *(int *) getArgReference(s,p,2);
-        res= (int *) getArgReference(s,p,0);
+	tt = getArgType(m, p, 1);
+	if (p->argc > 2)
+		cap = *(int *) getArgReference(s, p, 2);
+	res = (int *) getArgReference(s, p, 0);
 
-        return (str) CMDnewBat2(res,&ht,&tt,&cap);
+	return (str) CMDnewBat2(res, &ht, &tt, &cap);
 }
 
 @-
@@ -736,43 +749,59 @@ vector limits are properly set and maintained.
 @c
 #include "mal_function.h"
 
-str aggr_count_uint_col_sel_wrap(int *ret, int *resBid, int *grpBid, int *selBid, lng *N){
+str
+aggr_count_uint_col_sel_wrap(int *ret, int *resBid, int *grpBid, int *selBid, lng *N)
+{
 	BAT *resBat, *grpBat, *selBat;
 	ptr resStart, grpStart, selStart;
 
-	@:getBATdescriptor(ret,resBid,resBat,aggr_count_uid_col)@
-	@:getBATdescriptor(ret,grpBid,grpBat,aggr_count_uid_col)@
-	if( *selBid){
-		@:getBATdescriptor(ret,selBid,selBat,aggr_count_uid_col)@
-		selStart= BUNtloc(selBat, BUNfirst(selBat));
-	} else selStart= 0;
+	@:getBATdescriptor(ret, resBid, resBat, aggr_count_uid_col)@
+	@:getBATdescriptor(ret, grpBid, grpBat, aggr_count_uid_col)@
+	if (*selBid) {
+		@:getBATdescriptor(ret, selBid, selBat, aggr_count_uid_col)@
+		selStart = BUNtloc(selBat, BUNfirst(selBat));
+	} else
+		selStart = 0;
 
-	resStart= BUNtloc(resBat, BUNfirst(resBat));
-	grpStart= BUNtloc(grpBat, BUNfirst(grpBat));
+	resStart = BUNtloc(resBat, BUNfirst(resBat));
+	grpStart = BUNtloc(grpBat, BUNfirst(grpBat));
 
-	if( aggr_count_uint_col(*N,resStart,grpStart,selStart))
-		return throwMessage("x100","aggr_count_uint_col error\n");
+	if (aggr_count_uint_col(*N, resStart, grpStart, selStart))
+		return throwMessage("x100", "aggr_count_uint_col error\n");
 	return MAL_SUCCEED;
 }
-str aggr_count_uint_col_wrap(int *ret, int *resBid, int *grpBid, lng *N){
-	int selBid=0;
-	return aggr_count_uint_col_sel_wrap(ret,resBid,grpBid,&selBid,N);
+
+str
+aggr_count_uint_col_wrap(int *ret, int *resBid, int *grpBid, lng *N)
+{
+	int selBid = 0;
+
+	return aggr_count_uint_col_sel_wrap(ret, resBid, grpBid, &selBid, N);
 }
-str aggr_count_uint_col_default_wrap(int *ret, int *resBid, int *grpBid){
-	int selBid=0;
+
+str
+aggr_count_uint_col_default_wrap(int *ret, int *resBid, int *grpBid)
+{
+	int selBid = 0;
 	BAT *grpBat;
-	lng N=0;
-	@:getBATdescriptor(ret,grpBid,grpBat,aggr_count_uid_col)@
-	N= BATcount(grpBat);
-	return aggr_count_uint_col_sel_wrap(ret,resBid,grpBid,&selBid,&N);
+	lng N = 0;
+
+	@:getBATdescriptor(ret, grpBid, grpBat, aggr_count_uid_col)@
+	N = BATcount(grpBat);
+	return aggr_count_uint_col_sel_wrap(ret, resBid, grpBid, &selBid, &N);
 }
-str aggr_count_uint_col_sel_default_wrap(int *ret, int *resBid, int *grpBid, int *selBid){
-	lng N=0;
+
+str
+aggr_count_uint_col_sel_default_wrap(int *ret, int *resBid, int *grpBid, int *selBid)
+{
+	lng N = 0;
 	BAT *grpBat;
-	@:getBATdescriptor(ret,grpBid,grpBat,aggr_count_uid_col)@
-	N= BATcount(grpBat);
-	return aggr_count_uint_col_sel_wrap(ret,resBid,grpBid,selBid,&N);
+
+	@:getBATdescriptor(ret, grpBid, grpBat, aggr_count_uid_col)@
+	N = BATcount(grpBat);
+	return aggr_count_uint_col_sel_wrap(ret, resBid, grpBid, selBid, &N);
 }
+
 @-
 The collect indices operator.
 @= filter
@@ -781,33 +810,41 @@ if( *selBid){
 	selStart= BUNtloc(selBat, BUNfirst(selBat));
 } else selStart= 0;
 @c
-str collect_uint_col_sel_wrap(lng *ret, int *resBid, int *colBid, int *selBid, lng *N){
+str
+collect_uint_col_sel_wrap(lng *ret, int *resBid, int *colBid, int *selBid, lng *N)
+{
 	BAT *resBat, *colBat, *selBat;
 	ptr resStart, colStart, selStart;
 
-	@:getBATdescriptor(ret,resBid,resBat,aggr_count_uid_col)@
-	@:getBATdescriptor(ret,colBid,colBat,aggr_count_uid_col)@
+	@:getBATdescriptor(ret, resBid, resBat, aggr_count_uid_col)@
+	@:getBATdescriptor(ret, colBid, colBat, aggr_count_uid_col)@
 	@:filter(aggr_count_uid_col)@
 
-	resStart= BUNtloc(resBat, BUNfirst(resBat));
-	colStart= BUNtloc(colBat, BUNfirst(colBat));
+	resStart = BUNtloc(resBat, BUNfirst(resBat));
+	colStart = BUNtloc(colBat, BUNfirst(colBat));
 
-	*ret= select__uint_col(*N,resStart,colStart,selStart);
+	*ret = select__uint_col(*N, resStart, colStart, selStart);
 	return MAL_SUCCEED;
 }
 
-str collect_uint_col_default_wrap(lng *ret, int *resBid, int *colBid){
-	int selBid=0;
+str
+collect_uint_col_default_wrap(lng *ret, int *resBid, int *colBid)
+{
+	int selBid = 0;
 	lng N;
 	BAT *colBat;
-	@:getBATdescriptor(ret,colBid,colBat,aggr_count_uid_col)@
-	N= BATcount(colBat);
+
+	@:getBATdescriptor(ret, colBid, colBat, aggr_count_uid_col)@
+	N = BATcount(colBat);
 	collect_uint_col_sel_wrap(ret, resBid, colBid, &selBid, &N);
 	return MAL_SUCCEED;
 }
 
-str collect_uint_col_wrap(lng *ret, int *resBid, int *colBid, lng *N){
-	int selBid=0;
+str
+collect_uint_col_wrap(lng *ret, int *resBid, int *colBid, lng *N)
+{
+	int selBid = 0;
+
 	collect_uint_col_sel_wrap(ret, resBid, colBid, &selBid, N);
 	return MAL_SUCCEED;
 }
@@ -858,21 +895,22 @@ str select_@1_@2_col_@2_val_wrap(lng *ret, int *resBid, int *colBid, @2 * val, l
 	return select_@1_@2_col_@2_val_sel_wrap(ret,resBid,colBid,val,&selBid,N);
 }
 @c
-@:selectOperation(le,uint,<=)@
-@:selectOperation(ge,uint,>=)@
-@:selectOperation(lt,uint,<)@
-@:selectOperation(gt,uint,>)@
-@:selectOperation(eq,uint,==)@
-@:selectOperation(ne,uint,!=)@
+@:selectOperation(le, uint, <=)@
+@:selectOperation(ge, uint, >=)@
+@:selectOperation(lt, uint, <)@
+@:selectOperation(gt, uint, >)@
+@:selectOperation(eq, uint, ==)@
+@:selectOperation(ne, uint, !=)@
 
-@:selectOperation(le,flt,<=)@
-@:selectOperation(ge,flt,>=)@
-@:selectOperation(lt,flt,<)@
-@:selectOperation(gt,flt,>)@
-@:selectOperation(le,dbl,<=)@
-@:selectOperation(ge,dbl,>=)@
-@:selectOperation(lt,dbl,<)@
-@:selectOperation(gt,dbl,>)@
+@:selectOperation(le, flt, <=)@
+@:selectOperation(ge, flt, >=)@
+@:selectOperation(lt, flt, <)@
+@:selectOperation(gt, flt, >)@
+@:selectOperation(le, dbl, <=)@
+@:selectOperation(ge, dbl, >=)@
+@:selectOperation(lt, dbl, <)@
+@:selectOperation(gt, dbl, >)@
+
 @-
 Most of the operators we have to deal with are arithmetic once.
 @= mapBinaryOperator
@@ -939,13 +977,13 @@ str map_@2_@3_val_wrap(lng *ret, int *resBid, int *val, lng *N){
 	return map_@2_@3_val_sel_wrap(ret,resBid,val,&selBid,N);
 }
 @c
-@:mapBinaryOperator(+,add,uint,uint)@
-@:mapBinaryOperator(-,sub,uint,uint)@
-@:mapBinaryOperator(/,div,uint,uint)@
-@:mapBinaryOperator(*,mul,uint,uint)@
-@:mapUnaryOperator(-,neg,uint)@
-@:mapUnaryOperator(touchr,touchr,uint)@
-		
+@:mapBinaryOperator(+, add, uint, uint)@
+@:mapBinaryOperator(-, sub, uint, uint)@
+@:mapBinaryOperator(/, div, uint, uint)@
+@:mapBinaryOperator(*, mul, uint, uint)@
+@:mapUnaryOperator(-, neg, uint)@
+@:mapUnaryOperator(touchr, touchr, uint)@
+
 @-
 The fetch operators.
 @= fetchOperation
@@ -969,10 +1007,12 @@ str map_fetch_@1_col_@2_col_wrap(lng *ret, int *resBid, int *col1Bid, int *col2B
 	return map_fetch_@1_col_@2_col_sel_wrap(ret,resBid,col1Bid,col2Bid,&selBid,N);
 }
 @c
-@:fetchOperation(dbl,uidx)@
-@:fetchOperation(dbl,dbl)@
-@:fetchOperation(uidx,uidx)@
-@:fetchOperation(uidx,dbl)@
+@:fetchOperation(dbl, uidx)@
+@:fetchOperation(dbl, dbl)@
+
+@:fetchOperation(uidx, uidx)@
+@:fetchOperation(uidx, dbl)@
+
 @-
 Aggregation in the x100 setup is always organized by groups.
 @= aggrOperation
@@ -1006,8 +1046,8 @@ str aggr_@1_@3_col_wrap(@3 *ret, int *colBid){
 	return MAL_SUCCEED;
 }
 @c
-@:aggrOperation(max,max,uint)@
-@:aggrOperation(min,min,uint)@
+@:aggrOperation(max, max, uint)@
+@:aggrOperation(min, min, uint)@
 @- directGrp
 str map_directgrp_@1_col_@2_col_@3_val_sel_wrap(int *ret,
 		int *resBid, int *col1Bid, 
@@ -1036,7 +1076,8 @@ str map_directgrp_@1_col_@2_col_@3_val_wrap(
 		ret, resBid, col1Bid, col2Bid, valBid, &selBid,N);
 }
 @c
-@:directGrp(uidx,uchr,uint)@
+@:directGrp(uidx, uchr, uint)@
+
 @-
 @= aggr4_count
 str aggr4_count_uidx_col_multicursor_sel_wrap(int *ret,
@@ -1104,11 +1145,11 @@ str cast_@1_@2(@2 *res, @1 *val){
 	return MAL_SUCCEED;
 }
 @c
-@:castImpl(lng,uidx)@
-@:castImpl(int,uidx)@
-@:castImpl(lng,uint)@
-@:castImpl(int,uint)@
-@:castImpl(uidx,lng)@
-@:castImpl(uidx,int)@
-@:castImpl(uint,lng)@
-@:castImpl(uint,int)@
+@:castImpl(lng, uidx)@
+@:castImpl(int, uidx)@
+@:castImpl(lng, uint)@
+@:castImpl(int, uint)@
+@:castImpl(uidx, lng)@
+@:castImpl(uidx, int)@
+@:castImpl(uint, lng)@
+@:castImpl(uint, int)@

@@ -156,7 +156,7 @@ emit a notify signal.
 static RETSIGTYPE
 CLKsignal(int nr)
 {
-	/* int restype;*/
+	/* int restype; */
 	int k = timerTop;
 	int t;
 
@@ -175,7 +175,7 @@ CLKsignal(int nr)
 		if (timer[k].action) {
 			TRGDEBUG THRprintf(GDKerr, "eval(%s)\n", timer[k].action);
 
-			/* monet_eval(timer[k].action, &restype);*/
+			/* monet_eval(timer[k].action, &restype); */
 			GDKfree(timer[k].action);
 		} else {
 			MT_up_sema(timer[k].sema, "CLKsignal");
@@ -330,66 +330,97 @@ Wrapping the Version 4 code base
 #include "mal.h"
 #include "mal_exception.h"
 
-void ALARMinitTimer(int sec, int usec){
+void
+ALARMinitTimer(int sec, int usec)
+{
 	CLKinitTimer(sec, usec);
 }
 
 #ifdef SIGALRM
-MT_Sema ALARMalarm(int t, str *action){
+MT_Sema
+ALARMalarm(int t, str *action)
+{
 	CLKalarm(t, *action);
 	return MAL_SUCCEED;
 }
 #endif
 
 #ifdef SIGALRM
-static RETSIGTYPE ALARMsignal(int nr){
+static RETSIGTYPE
+ALARMsignal(int nr)
+{
 	CLKsignal(nr);
 }
 #endif
 
-str ALARMprelude(){
+str
+ALARMprelude()
+{
 #ifdef SIGALRM
-        (void) signal(SIGALRM, (void (*)()) CLKsignal);
+	(void) signal(SIGALRM, (void (*)()) CLKsignal);
 	return MAL_SUCCEED;
 #else
 	return throwMessage("alarm.prelude", "SIGALRM not set");
 #endif
 }
 
-str ALARMepilogue(){
+str
+ALARMepilogue()
+{
 	CLKepilogue();
 	return MAL_SUCCEED;
 }
 
-str ALARMusec(lng *ret){
+str
+ALARMusec(lng *ret)
+{
 	CMDusec(ret);
 	return MAL_SUCCEED;
 }
 
-str ALARMsleep(int *res,int *secs){
-	(void) res; /* fool compilers */
+str
+ALARMsleep(int *res, int *secs)
+{
+	(void) res;		/* fool compilers */
 	CMDsleep(secs);
 	return MAL_SUCCEED;
 }
 
-str ALARMsetalarm(int *res, int *secs, str *action){
-	(void)res; (void)secs; (void)action; /* foolc compiler */
+str
+ALARMsetalarm(int *res, int *secs, str *action)
+{
+	(void) res;
+	(void) secs;
+	(void) action;		/* foolc compiler */
 	return throwMessage("alarm.setalarm", "not yet implemented");
 }
-str ALARMtimers(int *res){
-	(void)res; /* fool compiler */
+
+str
+ALARMtimers(int *res)
+{
+	(void) res;		/* fool compiler */
 	return throwMessage("alarm.timers", "not yet implemented");
 }
-str ALARMctime(str *res){
+
+str
+ALARMctime(str *res)
+{
 	CMDctime(res);
 	return MAL_SUCCEED;
 }
-str ALARMepoch(int *res){
+
+str
+ALARMepoch(int *res)
+{
 	CMDepoch(res);
 	return MAL_SUCCEED;
 }
-str ALARMtime(int *res){
+
+str
+ALARMtime(int *res)
+{
 	CMDtime(res);
 	return MAL_SUCCEED;
 }
+
 @}

@@ -171,28 +171,28 @@ str.STRprelude();
 
 mal_export str STRtostr(str *res, str *src);
 mal_export str STRConcat(str *res, str *val1, str *val2);
-mal_export str STRLength( int *res, str *arg1 );
-mal_export str STRBytes( int *res, str *arg1 );
-mal_export str STRTail( str *res, str *arg1, int *offset);
-mal_export str STRSubString( str *res, str *arg1, int *offset, int *length );
-mal_export str STRFromWChr( str *res, int *at );
-mal_export str STRWChrAt( int *res, str *arg1, int *at );
-mal_export str STRcodeset( str *res );
-mal_export str STRIconv( str *res, str *o, str *fp, str *tp);
-mal_export str STRChrAt( chr *res, str *arg1, int *at );
-mal_export str STRPrefix( bit *res, str *arg1, str *arg2 );
-mal_export str STRSuffix( bit *res, str *arg1, str *arg2 );
-mal_export str STRLower( str *res, str *arg1 );
-mal_export str STRUpper( str *res, str *arg1 );
-mal_export str STRChrSearch( int *res, str *arg1, chr *c );
-mal_export str STRstrSearch( int *res, str *arg1, str *arg2 );
-mal_export str STRReverseStrSearch( int *res, str *arg1, str *arg2 );
-mal_export str STRchrSearch( int *res, str *arg1, chr *c );
-mal_export str STRReverseChrSearch( int *res, str *arg1, chr *c );
-mal_export str STRStrip(str *res, str *arg1) ;
-mal_export str STRLtrim(str *res, str *arg1) ;
-mal_export str STRRtrim(str *res, str *arg1) ;
-mal_export str STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g) ;
+mal_export str STRLength(int *res, str *arg1);
+mal_export str STRBytes(int *res, str *arg1);
+mal_export str STRTail(str *res, str *arg1, int *offset);
+mal_export str STRSubString(str *res, str *arg1, int *offset, int *length);
+mal_export str STRFromWChr(str *res, int *at);
+mal_export str STRWChrAt(int *res, str *arg1, int *at);
+mal_export str STRcodeset(str *res);
+mal_export str STRIconv(str *res, str *o, str *fp, str *tp);
+mal_export str STRChrAt(chr *res, str *arg1, int *at);
+mal_export str STRPrefix(bit *res, str *arg1, str *arg2);
+mal_export str STRSuffix(bit *res, str *arg1, str *arg2);
+mal_export str STRLower(str *res, str *arg1);
+mal_export str STRUpper(str *res, str *arg1);
+mal_export str STRChrSearch(int *res, str *arg1, chr *c);
+mal_export str STRstrSearch(int *res, str *arg1, str *arg2);
+mal_export str STRReverseStrSearch(int *res, str *arg1, str *arg2);
+mal_export str STRchrSearch(int *res, str *arg1, chr *c);
+mal_export str STRReverseChrSearch(int *res, str *arg1, chr *c);
+mal_export str STRStrip(str *res, str *arg1);
+mal_export str STRLtrim(str *res, str *arg1);
+mal_export str STRRtrim(str *res, str *arg1);
+mal_export str STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g);
 
 mal_export int strConcat(str *res, str s, ptr val, int t);
 mal_export int strLength(int *res, str s);
@@ -1411,7 +1411,7 @@ strFromWChr(str *res, int *c)
 {
 	str s = *res = GDKmalloc(7);
 
-	@:UTF8_PUTCHAR(*c,s)@
+	@:UTF8_PUTCHAR(*c, s)@
 	*s = 0;
 	return GDK_SUCCEED;
 }
@@ -1425,7 +1425,7 @@ strWChrAt(int *res, str val, int *at)
 	RETURN_NIL_IF(strNil(val) || *at == int_nil || *at < 0, TYPE_chr);
 	s = (unsigned char *) UTF8_strtail((str) s, *at);
 	RETURN_NIL_IF(*s == 0, TYPE_chr);
-	@:UTF8_GETCHAR(*res,s)@
+	@:UTF8_GETCHAR(*res, s)@
 	return GDK_SUCCEED;
 }
 
@@ -1548,8 +1548,8 @@ strLower(str *res, str s)
 	while (src < end) {
 		int c;
 
-		@:UTF8_GETCHAR(c,src)@
-		@:UTF8_CONV(c,tolower)@
+		@:UTF8_GETCHAR(c, src)@
+		@:UTF8_CONV(c, tolower)@
 		if (dst + 6 > (unsigned char *) *res + len) {
 			/* not guaranteed to fit, so allocate more space;
 			   also allocate enough for the rest of the source */
@@ -1558,7 +1558,7 @@ strLower(str *res, str s)
 			*res = GDKrealloc(*res, (len += 6 + (end - src)) + 1);
 			dst = (unsigned char *) *res + off;
 		}
-		@:UTF8_PUTCHAR(c,dst)@
+		@:UTF8_PUTCHAR(c, dst)@
 	}
 	*dst = 0;
 	return GDK_SUCCEED;
@@ -1576,8 +1576,8 @@ strUpper(str *res, str s)
 	while (src < end) {
 		int c;
 
-		@:UTF8_GETCHAR(c,src)@
-		@:UTF8_CONV(c,toupper)@
+		@:UTF8_GETCHAR(c, src)@
+		@:UTF8_CONV(c, toupper)@
 		if (dst + 6 > (unsigned char *) *res + len) {
 			/* not guaranteed to fit, so allocate more space;
 			   also allocate enough for the rest of the source */
@@ -1586,7 +1586,7 @@ strUpper(str *res, str s)
 			*res = GDKrealloc(*res, (len += 6 + (end - src)) + 1);
 			dst = (unsigned char *) *res + off;
 		}
-		@:UTF8_PUTCHAR(c,dst)@
+		@:UTF8_PUTCHAR(c, dst)@
 	}
 	*dst = 0;
 	return GDK_SUCCEED;
@@ -1635,7 +1635,7 @@ strChrSearch(int *res, str s, chr *c)
 	char buf[7], *p = buf;
 
 	RETURN_NIL_IF(strNil(s) || *c == chr_nil, TYPE_int);
-	@:UTF8_PUTCHAR(i,p)@
+	@:UTF8_PUTCHAR(i, p)@
 	*p = 0;
 	return strStrSearch(res, s, buf);
 }
@@ -1647,7 +1647,7 @@ strReverseChrSearch(int *res, str s, chr *c)
 	char buf[7], *p = buf;
 
 	RETURN_NIL_IF(strNil(s) || *c == chr_nil, TYPE_int);
-	@:UTF8_PUTCHAR(i,p)@
+	@:UTF8_PUTCHAR(i, p)@
 	*p = 0;
 	return strReverseStrSearch(res, s, buf);
 }
@@ -1662,7 +1662,7 @@ strStrip(str *res, str s)
 		start++;
 
 	/* Remove the trailing spaces.  Make sure not to pass the start */
-	/* pointer in case a string only contains spaces.		*/
+	/* pointer in case a string only contains spaces.               */
 	s = start + strlen(start);
 	while (s > start && GDKisspace(*(s - 1)))
 		s--;
@@ -1762,103 +1762,175 @@ Here you find the wrappers around the version 4 library code
 @c
 #include "mal_exception.h"
 
-str STRtostr(str *res, str *src){
+str
+STRtostr(str *res, str *src)
+{
 	*res = GDKstrdup(*src);
 	return MAL_SUCCEED;
 }
+
 @-
 The concatenate operator requires a type in most cases.
 @c
-str STRConcat(str *res, str *val1, str *val2){
-	strConcat( res, *val1, *val2, TYPE_str);
+str
+STRConcat(str *res, str *val1, str *val2)
+{
+	strConcat(res, *val1, *val2, TYPE_str);
 	return MAL_SUCCEED;
 }
-str STRLength( int *res, str *arg1 ){
-	strLength( res, *arg1);
+
+str
+STRLength(int *res, str *arg1)
+{
+	strLength(res, *arg1);
 	return MAL_SUCCEED;
 }
-str STRBytes( int *res, str *arg1 ){
-	strBytes( res, *arg1);
+
+str
+STRBytes(int *res, str *arg1)
+{
+	strBytes(res, *arg1);
 	return MAL_SUCCEED;
 }
-str STRTail( str *res, str *arg1, int *offset){
-	strTail( res, *arg1, offset);
+
+str
+STRTail(str *res, str *arg1, int *offset)
+{
+	strTail(res, *arg1, offset);
 	return MAL_SUCCEED;
 }
-str STRSubString( str *res, str *arg1, int *offset, int *length ){
-	strSubString( res, *arg1, offset, length );
+
+str
+STRSubString(str *res, str *arg1, int *offset, int *length)
+{
+	strSubString(res, *arg1, offset, length);
 	return MAL_SUCCEED;
 }
-str STRFromWChr( str *res, int *at ){
+
+str
+STRFromWChr(str *res, int *at)
+{
 	strFromWChr(res, at);
 	return MAL_SUCCEED;
 }
-str STRWChrAt( int *res, str *arg1, int *at ){
-	strWChrAt(res, *arg1,at);
+
+str
+STRWChrAt(int *res, str *arg1, int *at)
+{
+	strWChrAt(res, *arg1, at);
 	return MAL_SUCCEED;
 }
-str STRcodeset( str *res ){
-	codeset( res);
+
+str
+STRcodeset(str *res)
+{
+	codeset(res);
 	return MAL_SUCCEED;
 }
-str STRIconv( str *res, str *o, str *fp, str *tp){
-	strIconv( res, *o, *fp, *tp);
+
+str
+STRIconv(str *res, str *o, str *fp, str *tp)
+{
+	strIconv(res, *o, *fp, *tp);
 	return MAL_SUCCEED;
 }
-str STRChrAt( chr *res, str *arg1, int *at ){
-	strChrAt(res,*arg1,at);
+
+str
+STRChrAt(chr *res, str *arg1, int *at)
+{
+	strChrAt(res, *arg1, at);
 	return MAL_SUCCEED;
 }
-str STRPrefix( bit *res, str *arg1, str *arg2 ){
-	strPrefix(res,*arg1,*arg2);
+
+str
+STRPrefix(bit *res, str *arg1, str *arg2)
+{
+	strPrefix(res, *arg1, *arg2);
 	return MAL_SUCCEED;
 }
-str STRSuffix( bit *res, str *arg1, str *arg2 ){
-	strSuffix(res,*arg1,*arg2);
+
+str
+STRSuffix(bit *res, str *arg1, str *arg2)
+{
+	strSuffix(res, *arg1, *arg2);
 	return MAL_SUCCEED;
 }
-str STRLower( str *res, str *arg1 ){
+
+str
+STRLower(str *res, str *arg1)
+{
 	strLower(res, *arg1);
 	return MAL_SUCCEED;
 }
-str STRUpper( str *res, str *arg1 ){
+
+str
+STRUpper(str *res, str *arg1)
+{
 	strUpper(res, *arg1);
 	return MAL_SUCCEED;
 }
-str STRChrSearch( int *res, str *arg1, chr *c ){
+
+str
+STRChrSearch(int *res, str *arg1, chr *c)
+{
 	strChrSearch(res, *arg1, c);
 	return MAL_SUCCEED;
 }
-str STRstrSearch( int *res, str *arg1, str *arg2 ){
+
+str
+STRstrSearch(int *res, str *arg1, str *arg2)
+{
 	strStrSearch(res, *arg1, *arg2);
 	return MAL_SUCCEED;
 }
-str STRReverseStrSearch( int *res, str *arg1, str *arg2 ){
-	strReverseStrSearch( res, *arg1, *arg2 );
+
+str
+STRReverseStrSearch(int *res, str *arg1, str *arg2)
+{
+	strReverseStrSearch(res, *arg1, *arg2);
 	return MAL_SUCCEED;
 }
-str STRchrSearch( int *res, str *arg1, chr *c ){
-	strReverseChrSearch( res, *arg1, c );
+
+str
+STRchrSearch(int *res, str *arg1, chr *c)
+{
+	strReverseChrSearch(res, *arg1, c);
 	return MAL_SUCCEED;
 }
-str STRReverseChrSearch( int *res, str *arg1, chr *c ){
-	strReverseChrSearch( res, *arg1, c );
+
+str
+STRReverseChrSearch(int *res, str *arg1, chr *c)
+{
+	strReverseChrSearch(res, *arg1, c);
 	return MAL_SUCCEED;
 }
-str STRStrip(str *res, str *arg1) {
-	strStrip(res,*arg1);
+
+str
+STRStrip(str *res, str *arg1)
+{
+	strStrip(res, *arg1);
 	return MAL_SUCCEED;
 }
-str STRLtrim(str *res, str *arg1) {
-	strLtrim(res,*arg1);
+
+str
+STRLtrim(str *res, str *arg1)
+{
+	strLtrim(res, *arg1);
 	return MAL_SUCCEED;
 }
-str STRRtrim(str *res, str *arg1) {
-	strRtrim(res,*arg1);
+
+str
+STRRtrim(str *res, str *arg1)
+{
+	strRtrim(res, *arg1);
 	return MAL_SUCCEED;
 }
-str STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g) {
+
+str
+STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
+{
 	strSubstitute(res, *arg1, *arg2, *arg3, g);
 	return MAL_SUCCEED;
 }
+
 @}

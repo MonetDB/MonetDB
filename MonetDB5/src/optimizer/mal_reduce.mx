@@ -42,6 +42,7 @@ the isused property, or this property can again be easily derived.
 #include "mal_optimizer.h"
 
 mal_export str MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
 /* #define DEBUG_MAL_REDUCE     show partial result */
 
 #endif
@@ -49,45 +50,46 @@ mal_export str MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 #include "mal_reduce.h"
 
 str
-MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
 	int *vars;
-	int cnt=0, i,j;
-	vars = (int*) alloca(mb->vtop * sizeof(int));
+	int cnt = 0, i, j;
+	vars = (int *) alloca(mb->vtop * sizeof(int));
 
 	chkFlow(mb);
 
 	/* build the alias table */
-	for( i=0; i<mb->vtop; i++){
-		if( !mb->var[i]->isused && !mb->var[i]->isudftype && 
-			!isConstant(mb,i) && getVarType(mb,i) != TYPE_any){
-			for(j=i-1; j>=0; j--)
-			if( mb->var[j] &&
-				!mb->var[j]->isused &&
-				getVarType(mb,i)== getVarType(mb,j) ){
-				freeVariable(mb,i);
-				vars[i]= j;
-				goto nxtReduce;
-			}
+	for (i = 0; i < mb->vtop; i++) {
+		if (!mb->var[i]->isused && !mb->var[i]->isudftype && !isConstant(mb, i) && getVarType(mb, i) != TYPE_any) {
+			for (j = i - 1; j >= 0; j--)
+				if (mb->var[j] && !mb->var[j]->isused && getVarType(mb, i) == getVarType(mb, j)) {
+					freeVariable(mb, i);
+					vars[i] = j;
+					goto nxtReduce;
+				}
 		}
 		vars[i] = i;
 		cnt++;
-		nxtReduce:;
+	      nxtReduce:;
 	}
 #ifdef DEBUG_MAL_REDUCE
-	stream_printf(GDKOUT,"Reduction %d -> %d\n",mb->vtop,cnt);
+	stream_printf(GDKOUT, "Reduction %d -> %d\n", mb->vtop, cnt);
 #endif
 
 	/* remap all variable references to their new position. */
-	/*removeInstruction(mb,p);*/
-	for( i=1; i< mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		for(j=0;j<p->argc; j++)
-			getArg(p,j)= vars[getArg(p,j)];
+	/*removeInstruction(mb,p); */
+	for (i = 1; i < mb->stop; i++) {
+		p = getInstrPtr(mb, i);
+		for (j = 0; j < p->argc; j++)
+			getArg(p, j) = vars[getArg(p, j)];
 	}
-	for(i=j=0; i<mb->vtop; i++)
-	if( mb->var[i]) mb->var[j++]= mb->var[i];
-	mb->vtop= j;
-	(void) stk; 
+	for (i = j = 0; i < mb->vtop; i++)
+		if (mb->var[i])
+			mb->var[j++] = mb->var[i];
+
+	mb->vtop = j;
+	(void) stk;
 	return MAL_SUCCEED;
 }
+
 @}

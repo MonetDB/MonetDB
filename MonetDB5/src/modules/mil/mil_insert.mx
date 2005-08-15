@@ -42,11 +42,16 @@ Compatibility code wrappers
 extern str BKCinsert_void_bun(int *r, int *bid, ptr t);
 extern str BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
 
-str MILinsert_void_bun(int *r, int *bid, ptr t) {
+str
+MILinsert_void_bun(int *r, int *bid, ptr t)
+{
 	*r = *bid;
-	return BKCinsert_void_bun(r,bid,t);
+	return BKCinsert_void_bun(r, bid, t);
 }
-str MILinsert_bun(int *r, int *bid, ptr h, ptr t) {
+
+str
+MILinsert_bun(int *r, int *bid, ptr h, ptr t)
+{
 	*r = *bid;
-	return BKCinsert_bun(r,bid,h,t);
+	return BKCinsert_bun(r, bid, h, t);
 }

@@ -194,32 +194,50 @@ comment "set the maximum usable amount of physical swapspace in KB";
 #  define HZ CLK_TCK
 # endif
 #endif
- 
+
 extern lng GDKcur_cursize();
-str SYSgetmem_cursize(lng *num) {
+str
+SYSgetmem_cursize(lng *num)
+{
 	*num = GDKmem_cursize();
 	return MAL_SUCCEED;
 }
-str SYSgetmem_maxsize(lng *num) {
+
+str
+SYSgetmem_maxsize(lng *num)
+{
 	*num = GDK_mem_maxsize;
 	return MAL_SUCCEED;
 }
-str set_mem_maxsize(lng *num) {
+
+str
+set_mem_maxsize(lng *num)
+{
 	GDK_mem_maxsize = *num;
 	return MAL_SUCCEED;
 }
-str SYSgetvm_cursize(lng *num) {
+
+str
+SYSgetvm_cursize(lng *num)
+{
 	*num = GDKvm_cursize();
 	return MAL_SUCCEED;
 }
-str SYSgetvm_maxsize(lng *num) {
+
+str
+SYSgetvm_maxsize(lng *num)
+{
 	*num = GDK_vm_maxsize;
 	return MAL_SUCCEED;
 }
-str SYSsetvm_maxsize(lng *num) {
-	GDK_vm_maxsize= *num;
+
+str
+SYSsetvm_maxsize(lng *num)
+{
+	GDK_vm_maxsize = *num;
 	return MAL_SUCCEED;
 }
+
 /*
 str memMap() {
         MT_alloc_print();
@@ -231,72 +249,86 @@ str memMap() {
 static int clk = 0;
 static struct tms state;
 
-str SYScpuStatistics(int *ret) {
-	int     i;
+str
+SYScpuStatistics(int *ret)
+{
+	int i;
 	struct tms newst;
 	BAT *b;
- 
- 
+
+
 	b = BATnew(TYPE_str, TYPE_int, 32);
-	if ( b == 0) 
-		return throwMessage("catalog.gdkCpu", 
-			"failed to create BAT");
-	if( clk == 0) {
-		clk= time(0);
+	if (b == 0)
+		return throwMessage("catalog.gdkCpu", "failed to create BAT");
+	if (clk == 0) {
+		clk = time(0);
 		times(&state);
 	}
 	times(&newst);
 	/* store counters, ignore errors */
 	i = time(0) - clk;
 	b = BUNins(b, "elapsed", &i);
-	i= newst.tms_utime *1000/HZ ;
+	i = newst.tms_utime * 1000 / HZ;
 	b = BUNins(b, "user", &i);
-	i= (newst.tms_utime - state.tms_utime)*1000/HZ;
+	i = (newst.tms_utime - state.tms_utime) * 1000 / HZ;
 	b = BUNins(b, "elapuser", &i);
-	i = newst.tms_stime *1000/HZ;
+	i = newst.tms_stime * 1000 / HZ;
 	b = BUNins(b, "system", &i);
-	i = (newst.tms_stime - state.tms_stime)*1000/HZ;
+	i = (newst.tms_stime - state.tms_stime) * 1000 / HZ;
 	b = BUNins(b, "elapsystem", &i);
 
-	state = newst; 
-	@:Pseudo(gdk,cpu)@
+	state = newst;
+	@:Pseudo(gdk, cpu)@
 	return MAL_SUCCEED;
 }
+
 @-
 Same observations as to SYScpuStatistics()
 @c
-static void *memincr=NULL;
-str SYSmemStatistics(int *ret) {
+static void *memincr = NULL;
+str
+SYSmemStatistics(int *ret)
+{
 	struct mallinfo m;
 	BAT *b;
 	int i;
+
 	m = MT_mallinfo();
- 
+
 	b = BATnew(TYPE_str, TYPE_int, 32);
-	if ( b == 0) 
-		return throwMessage("catalog.memStatistics", 
-			"failed to create BAT");
+	if (b == 0)
+		return throwMessage("catalog.memStatistics", "failed to create BAT");
 
 	/* store counters, ignore errors */
 	if (memincr == NULL) {
-		memincr = (char*)sbrk(0);
+		memincr = (char *) sbrk(0);
 	}
-	i= ((char*) sbrk(0) -  (char*) memincr);
- 
-	memincr = (char*) sbrk(0);
-        b = BUNins(b, "memincr", &i);
-        i = m.arena; b = BUNins(b, "arena", &i);
-        i = m.ordblks; b = BUNins(b, "ordblks", &i);
-        i = m.smblks; b = BUNins(b, "smblks", &i);
-        i = m.hblkhd; b = BUNins(b, "hblkhd", &i);
-        i = m.hblks; b = BUNins(b, "hblks", &i);
-        i = m.usmblks; b = BUNins(b, "usmblks", &i);
-        i = m.fsmblks; b = BUNins(b, "fsmblks", &i);
-        i = m.uordblks; b = BUNins(b, "uordblks", &i);
-        i = m.fordblks; b = BUNins(b, "fordblks", &i);
-	@:Pseudo(gdk,mem)@
+	i = ((char *) sbrk(0) - (char *) memincr);
+
+	memincr = (char *) sbrk(0);
+	b = BUNins(b, "memincr", &i);
+	i = m.arena;
+	b = BUNins(b, "arena", &i);
+	i = m.ordblks;
+	b = BUNins(b, "ordblks", &i);
+	i = m.smblks;
+	b = BUNins(b, "smblks", &i);
+	i = m.hblkhd;
+	b = BUNins(b, "hblkhd", &i);
+	i = m.hblks;
+	b = BUNins(b, "hblks", &i);
+	i = m.usmblks;
+	b = BUNins(b, "usmblks", &i);
+	i = m.fsmblks;
+	b = BUNins(b, "fsmblks", &i);
+	i = m.uordblks;
+	b = BUNins(b, "uordblks", &i);
+	i = m.fordblks;
+	b = BUNins(b, "fordblks", &i);
+	@:Pseudo(gdk, mem)@
 	return MAL_SUCCEED;
 }
+
 @= heap
 if (@2) {
 	sz = HEAP@1size(@3);
@@ -307,52 +339,67 @@ if (@2) {
 }
 @c
 
-str SYSmem_usage(int *ret, lng *minsize) {
-	lng buns=0, hhsh=0, thsh=0;
-	lng head=0, tail=0;
-	lng tot=0, n=0, sz;
-	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
+str
+SYSmem_usage(int *ret, lng *minsize)
+{
+	lng buns = 0, hhsh = 0, thsh = 0;
+	lng head = 0, tail = 0;
+	lng tot = 0, n = 0, sz;
+	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2 * BBPsize);
 	char buf[1024];
 	bat i;
 
 	BBPlock("SYSmem_usage");
-	for(i=1; i <BBPsize; i++) { 
+	for (i = 1; i < BBPsize; i++) {
 		BAT *b = BBP_cache(i);
 		str s = BBP_logical(i);
+
 		if (s == NULL) {
 			continue;
 		}
 		sz = 0;
-		if (BBP[i].cache)  sz += sizeof(BATstore);
-		if (BBP[i].nme[0]) n += strLen(BBP[i].nme[0]);
-		if (BBP[i].nme[1]) n += strLen(BBP[i].nme[1]);
-		if (BBP[i].path) n += strLen(BBP[i].path);
-		if (b) sz += sizeof(BAT); /* mirror */
-			
+		if (BBP[i].cache)
+			sz += sizeof(BATstore);
+		if (BBP[i].nme[0])
+			n += strLen(BBP[i].nme[0]);
+		if (BBP[i].nme[1])
+			n += strLen(BBP[i].nme[1]);
+		if (BBP[i].path)
+			n += strLen(BBP[i].path);
+		if (b)
+			sz += sizeof(BAT);	/* mirror */
+
 		if (sz > *minsize) {
-			sprintf(buf, "desc/%s", s); 
+			sprintf(buf, "desc/%s", s);
 			BUNins(bn, buf, &sz);
-		} tot += (lng) sz;
+		}
+		tot += (lng) sz;
 
 		if (b == NULL || VIEWparent(b)) {
 			continue;
 		}
-		@:heap(mem,b->batBuns,b->batBuns,buns)@
-		@:heap(mem,b->hhash,b->hhash->heap,hhsh)@
-		@:heap(mem,b->thash,b->thash->heap,thsh)@
-		@:heap(mem,b->hheap,b->hheap,head)@
-		@:heap(mem,b->theap,b->theap,tail)@
-	} 
+		@:heap(mem, b->batBuns, b->batBuns, buns)@
+		@:heap(mem, b->hhash, b->hhash->heap, hhsh)@
+		@:heap(mem, b->thash, b->thash->heap, thsh)@
+		@:heap(mem, b->hheap, b->hheap, head)@
+		@:heap(mem, b->theap, b->theap, tail)@
+	}
 	/* totals per category */
-	if (buns) BUNins(bn, "_tot/buns", &buns);
-	if (head) BUNins(bn, "_tot/head", &head);
-	if (tail) BUNins(bn, "_tot/tail", &tail);
-	if (hhsh) BUNins(bn, "_tot/hhsh", &hhsh);
-	if (thsh) BUNins(bn, "_tot/thsh", &thsh);
+	if (buns)
+		BUNins(bn, "_tot/buns", &buns);
+	if (head)
+		BUNins(bn, "_tot/head", &head);
+	if (tail)
+		BUNins(bn, "_tot/tail", &tail);
+	if (hhsh)
+		BUNins(bn, "_tot/hhsh", &hhsh);
+	if (thsh)
+		BUNins(bn, "_tot/thsh", &thsh);
 
 	/* special area 1: BBP rec */
-	sz = BBPlimit*sizeof(BBPrec) + n;
-	if (sz) BUNins(bn, "_tot/bbp", &sz);
+	sz = BBPlimit * sizeof(BBPrec) + n;
+	if (sz)
+		BUNins(bn, "_tot/bbp", &sz);
 	tot += sz;
 
 /* special area 2: monet context records 
@@ -361,19 +408,24 @@ str SYSmem_usage(int *ret, lng *minsize) {
 	if (sz) BUNins(bn, "_tot/mil", &sz);
 */
 	tot += sz;
-	if (tot) BUNins(bn, "_tot/found", &tot);
+	if (tot)
+		BUNins(bn, "_tot/found", &tot);
 	sz = GDKmem_heapsize();
-	if (sz) BUNins(bn, "_tot/sbrk", &sz);
+	if (sz)
+		BUNins(bn, "_tot/sbrk", &sz);
 /*	compilation errors !
 	if (GDK_mem_cursize) BUNins(bn, "_tot/valloc", &GDK_mem_cursize);
 
 */
 	sz = GDKmem_heapinuse();
-	if (sz) BUNins(bn, "_tot/malloc", &sz);
+	if (sz)
+		BUNins(bn, "_tot/malloc", &sz);
 	sz = sz + GDKmem_cursize() - tot;
-	if (sz) BUNins(bn, "_tot/malloc_unknown", &sz);
+	if (sz)
+		BUNins(bn, "_tot/malloc_unknown", &sz);
 	sz = GDKmem_cursize();
-	if (sz) BUNins(bn, "_tot/all", &sz);
+	if (sz)
+		BUNins(bn, "_tot/all", &sz);
 	BBPunlock("SYSmem_usage");
 
 	*ret = bn->batCacheid;
@@ -388,56 +440,68 @@ str SYSmemMap() {
 */
 
 
-str SYSvm_usage(int *ret, lng *minsize) {
-	lng buns=0, hhsh=0, thsh=0;
-	lng head=0, tail=0, tot=0, sz;
-	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2*BBPsize);
+str
+SYSvm_usage(int *ret, lng *minsize)
+{
+	lng buns = 0, hhsh = 0, thsh = 0;
+	lng head = 0, tail = 0, tot = 0, sz;
+	BAT *bn = BATnew(TYPE_str, TYPE_lng, 2 * BBPsize);
 	char buf[1024];
 	bat i;
 
 	BBPlock("SYSvm_usage");
-	for(i=1; i <BBPsize; i++) {
+	for (i = 1; i < BBPsize; i++) {
 		BAT *b = BBP_cache(i);
 		str s = BBP_logical(i);
+
 		if (s == NULL || b == NULL || VIEWparent(b)) {
 			continue;
 		}
-		@:heap(vm,b->batBuns,b->batBuns,buns)@
-		@:heap(vm,b->hhash,b->hhash->heap,hhsh)@
-		@:heap(vm,b->thash,b->thash->heap,thsh)@
-		@:heap(vm,b->hheap,b->hheap,head)@
-		@:heap(vm,b->theap,b->theap,tail)@
-	} 
+		@:heap(vm, b->batBuns, b->batBuns, buns)@
+		@:heap(vm, b->hhash, b->hhash->heap, hhsh)@
+		@:heap(vm, b->thash, b->thash->heap, thsh)@
+		@:heap(vm, b->hheap, b->hheap, head)@
+		@:heap(vm, b->theap, b->theap, tail)@
+	}
 	/* totals per category */
-	if (buns) BUNins(bn, "_tot/buns", &buns);
-	if (head) BUNins(bn, "_tot/head", &head);
-	if (tail) BUNins(bn, "_tot/tail", &tail);
-	if (hhsh) BUNins(bn, "_tot/hhsh", &hhsh);
-	if (thsh) BUNins(bn, "_tot/thsh", &thsh);
+	if (buns)
+		BUNins(bn, "_tot/buns", &buns);
+	if (head)
+		BUNins(bn, "_tot/head", &head);
+	if (tail)
+		BUNins(bn, "_tot/tail", &tail);
+	if (hhsh)
+		BUNins(bn, "_tot/hhsh", &hhsh);
+	if (thsh)
+		BUNins(bn, "_tot/thsh", &thsh);
 
 	/* special area 1: BBP rec */
-	sz = BBPmaxsize*sizeof(BBPrec);
-	if (sz) BUNins(bn, "_tot/bbp", &sz);
+	sz = BBPmaxsize * sizeof(BBPrec);
+	if (sz)
+		BUNins(bn, "_tot/bbp", &sz);
 	tot += sz;
 
 	/* special area 2: monet context records  DEPRICATE
-	sz = monet_cntxtlim*sizeof(CntxtRec);
-	if (sz) BUNins(bn, "_tot/mil", &sz);
-	tot += sz;
-	if (tot) BUNins(bn, "_tot/found", &tot);
-	*/
+	   sz = monet_cntxtlim*sizeof(CntxtRec);
+	   if (sz) BUNins(bn, "_tot/mil", &sz);
+	   tot += sz;
+	   if (tot) BUNins(bn, "_tot/found", &tot);
+	 */
 
 	/* look at sbkr() to determine how much we missed */
 	sz = GDKvm_cursize();
-	if (sz) BUNins(bn, "_tot/all", &sz);
+	if (sz)
+		BUNins(bn, "_tot/all", &sz);
 	sz -= tot;
 	tot = GDKvm_heapsize();
-	if (sz) BUNins(bn, "_tot/sbrk", &tot);
+	if (sz)
+		BUNins(bn, "_tot/sbrk", &tot);
 	BBPunlock("SYSvm_usage");
 
 	*ret = bn->batCacheid;
 	return MAL_SUCCEED;
 }
+
 @}
 @-
 Additional information on the process utilization is given by
@@ -476,52 +540,66 @@ The BAT grows. It should be compacted.
 #ifdef HAVE_SYS_RESOURCE_H
 # include <sys/resource.h>
 #endif
- 
-str SYSioStatistics(int *ret) {
+
+str
+SYSioStatistics(int *ret)
+{
 	struct rusage ru;
 	int i;
 	BAT *b;
- 
+
 	getrusage(RUSAGE_SELF, &ru);
 	b = BATnew(TYPE_str, TYPE_int, 32);
-	if (b == 0) 
-		return throwMessage("catalog.ioStatistics", 
-				"failed to create BAT");
- 
-	/* store counters, ignore errors */
-	i = ru.ru_maxrss; BUNins(b, "maxrss", &i); 
-	i = ru.ru_minflt; BUNins(b, "minflt", &i);
-	i = ru.ru_majflt; BUNins(b, "majflt", &i);
-	i = ru.ru_nswap; BUNins(b, "nswap", &i);
-	i = ru.ru_inblock; BUNins(b, "inblock", &i);
-	i = ru.ru_oublock; BUNins(b, "oublock", &i);
-	i = ru.ru_nvcsw; BUNins(b, "nvcsw", &i);
-	i = ru.ru_nivcsw; BUNins(b, "ninvcsw", &i);
+	if (b == 0)
+		return throwMessage("catalog.ioStatistics", "failed to create BAT");
 
-	@:Pseudo(gdk,io)@
+	/* store counters, ignore errors */
+	i = ru.ru_maxrss;
+	BUNins(b, "maxrss", &i);
+	i = ru.ru_minflt;
+	BUNins(b, "minflt", &i);
+	i = ru.ru_majflt;
+	BUNins(b, "majflt", &i);
+	i = ru.ru_nswap;
+	BUNins(b, "nswap", &i);
+	i = ru.ru_inblock;
+	BUNins(b, "inblock", &i);
+	i = ru.ru_oublock;
+	BUNins(b, "oublock", &i);
+	i = ru.ru_nvcsw;
+	BUNins(b, "nvcsw", &i);
+	i = ru.ru_nivcsw;
+	BUNins(b, "ninvcsw", &i);
+
+	@:Pseudo(gdk, io)@
 	return MAL_SUCCEED;
 }
 
-str SYSgdkEnv(int *ret){
+str
+SYSgdkEnv(int *ret)
+{
 	BAT *b = BATcopy(GDKenv);
-	@:Pseudo(gdk,env)@
-        return MAL_SUCCEED;
+
+	@:Pseudo(gdk, env)@
+	return MAL_SUCCEED;
 }
 
-str SYSgdkThread(int *ret){       
-	BAT*    b;
-        int     i;
+str
+SYSgdkThread(int *ret)
+{
+	BAT *b;
+	int i;
 
-        b= BATnew(TYPE_int,TYPE_str,THREADS);
-        if (b == 0) 
-		return throwMessage("catalog.gdkThread", 
-			"failed to create BAT");
+	b = BATnew(TYPE_int, TYPE_str, THREADS);
+	if (b == 0)
+		return throwMessage("catalog.gdkThread", "failed to create BAT");
 
-        for(i=0; i < THREADS; i++)
-	if( GDKthreads[i].pid) {
-                BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name);
-	}
-	@:Pseudo(gdk,thread)@
-        return MAL_SUCCEED;
+	for (i = 0; i < THREADS; i++)
+		if (GDKthreads[i].pid) {
+			BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name);
+		}
+	@:Pseudo(gdk, thread)@
+	return MAL_SUCCEED;
 }
+
 @}

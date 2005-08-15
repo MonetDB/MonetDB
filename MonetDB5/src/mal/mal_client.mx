@@ -636,36 +636,40 @@ handled.  Since they may be waiting for IO this can take a
 very long time, since we have access to the file descriptor it may
 work by closing them.
 @c 
-
-void killClient(Client c){
-    if (c && c->user && c->mythread) {
+ void
+killClient(Client c)
+{
+	if (c && c->user && c->mythread) {
+		
 #ifdef MAL_DEBUG_CLIENT
-    	printf("killClient %d\n",c-mal_clients);
-#endif
-        Thread victim = c->mythread;
-    	MT_Id pid= victim->pid;
+		    printf("killClient %d\n", c - mal_clients);
+		
+#endif	/*  */
+		Thread victim = c->mythread;
+		MT_Id pid = victim->pid;
 
-    	GDKwarning("killClient:forcing client to stop ...\n");
-    	/* the process may hang upon gaining access to the file descriptors */
-    	c->mode= FINISHING;
-    	(void) stream_flush(c->fdout);
-    	resetProfiler(c->fdout);
-    	(void) stream_close(c->fdout);
-    	(void) stream_destroy(c->fdout); 
-    	c->fdout= NULL;
-    	(void) stream_close(c->fdin->s);
-    	(void) stream_destroy(c->fdin->s); 
-    	(void) bstream_destroy(c->fdin);
-    	c->fdin= NULL;
-        assert(c->bak==NULL);
+		GDKwarning("killClient:forcing client to stop ...\n");
+		
+		    /* the process may hang upon gaining access to the file descriptors */ 
+		    c->mode = FINISHING;
+		(void) stream_flush(c->fdout);
+		resetProfiler(c->fdout);
+		(void) stream_close(c->fdout);
+		(void) stream_destroy(c->fdout);
+		c->fdout = NULL;
+		(void) stream_close(c->fdin->s);
+		(void) stream_destroy(c->fdin->s);
+		(void) bstream_destroy(c->fdin);
+		c->fdin = NULL;
+		assert(c->bak == NULL);
+		GDKwarning("killClient:about to kill process ...\n");
+		sleep(PROCESSTIMEOUT);
+		MT_kill_thread(pid);
+		sleep(PROCESSTIMEOUT);
+		GDKwarning("killClient:process killed\n");
+	}
+} 
 
-    	GDKwarning("killClient:about to kill process ...\n");
-    	sleep(PROCESSTIMEOUT);
-    	MT_kill_thread(pid);
-    	sleep(PROCESSTIMEOUT);
-    	GDKwarning("killClient:process killed\n");
-    }
-}
 @-
 At the end of the server session all remaining structured are
 explicitly released to simplify detection of memory leakage problems.

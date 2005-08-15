@@ -82,14 +82,14 @@ end qry;
 #define _MAL_PARTITIONED_
 #include "mal_optimizer.h"
 
-#define DEBUG_MAL_PARTITIONED     /* show partial result */
+#define DEBUG_MAL_PARTITIONED	/* show partial result */
 mal_export str BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 @c
 #include "mal_partitionedQuery.h"
 #include "mal_optimizer.h"
-#include "mal_interpreter.h"    /* for showErrors() */
+#include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_namespace.h"
 
 extern int BPTfindGrp(int bid);
@@ -97,22 +97,27 @@ extern int BPTfindGrp(int bid);
 extern str BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid);
 extern str BPTneedsExpansion(MalBlkPtr mb, int varid);
 extern int BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid);
+
 @-
 Calling the optimizer from the MAL context is currently
 focussed on replacing the BAT arguments only.
 @c
-str 
-BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	int i;
 	InstrPtr p;
-	(void) stk; (void) pci;
 
-	p= getInstrPtr(mb,0);
-	for( i=p->retc; i< p->argc; i++){
-		BPTneedsExpansion(mb,p->argv[i]);
+	(void) stk;
+	(void) pci;
+
+	p = getInstrPtr(mb, 0);
+	for (i = p->retc; i < p->argc; i++) {
+		BPTneedsExpansion(mb, p->argv[i]);
 	}
 	return MAL_SUCCEED;
 }
+
 @-
 Not all BATs call for iterator expansion. Unfortunately
 we can not check this always at compile time, because
@@ -120,30 +125,34 @@ we need the actual BAT identifier.  Therefor the user should
 supply the variable instead.
 We
 @c
-str 
-BPTneedsExpansion(MalBlkPtr mb, int varid){
+str
+BPTneedsExpansion(MalBlkPtr mb, int varid)
+{
 	int tpe;
 	int first, last;
-	str msg= 0;
+	str msg = 0;
 
-	tpe= getVarType(mb,varid);
-	if( isaBatType(tpe) && getHeadType(tpe)==TYPE_void ){
-		first= 1; last= mb->stop-2;
-printf("start first=%d last=%d \n",first,last);
-		for(;first <mb->stop && last <mb->stop;){
-			if( BPTvalidFlowNetwork(mb, &first, &last, varid)) {
-printf("replace first=%d last=%d \n",first,last);
-				msg= BPTreplacement(mb, &first, &last,varid);
-				if( msg) return msg;
-			} else { 
-				first= last;
-				last= mb->stop-1;
+	tpe = getVarType(mb, varid);
+	if (isaBatType(tpe) && getHeadType(tpe) == TYPE_void) {
+		first = 1;
+		last = mb->stop - 2;
+		printf("start first=%d last=%d \n", first, last);
+		for (; first < mb->stop && last < mb->stop;) {
+			if (BPTvalidFlowNetwork(mb, &first, &last, varid)) {
+				printf("replace first=%d last=%d \n", first, last);
+				msg = BPTreplacement(mb, &first, &last, varid);
+				if (msg)
+					return msg;
+			} else {
+				first = last;
+				last = mb->stop - 1;
 			}
-printf("first=%d last=%d \n",first,last);
+			printf("first=%d last=%d \n", first, last);
 		}
 	}
 	return MAL_SUCCEED;
 }
+
 @}
 @-
 The translation of a MAL block into a multi-iterator only works if
@@ -159,37 +168,45 @@ be considered as safe to expand. It first skips to the
 next instruction that uses the variable mentioned.
 @c
 int
-BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid){
-	int i,k=0,iocount=0;
+BPTvalidFlowNetwork(MalBlkPtr mb, int *first, int *last, int varid)
+{
+	int i, k = 0, iocount = 0;
 	InstrPtr p;
-	for(i= *first; i<= *last;i++){
-		p= getInstrPtr(mb,i);
-		for(k=0; k<p->retc;k++)
-		if( getArg(p,k)== varid) {
-			*first= i+1;
+
+	for (i = *first; i <= *last; i++) {
+		p = getInstrPtr(mb, i);
+		for (k = 0; k < p->retc; k++)
+			if (getArg(p, k) == varid) {
+				*first = i + 1;
+				return 0;
+			}
+		for (k = p->retc; k < p->argc; k++)
+			if (getArg(p, k) == varid)
+				break;
+		if (k < p->argc)
+			break;
+		if (i == *last) {
+			*last = mb->stop;
 			return 0;
 		}
-		for(k=p->retc;k<p->argc;k++)
-		if( getArg(p,k)== varid) break;
-		if( k< p->argc) break;
-		if( i == *last ) { *last= mb->stop; return 0;}
 	}
 	*first = i;
-	for(; i<= *last;i++){
-		p= getInstrPtr(mb,i);
-		if( functionId(p) && strncmp(functionId(p),"print",5)==0)
+	for (; i <= *last; i++) {
+		p = getInstrPtr(mb, i);
+		if (functionId(p) && strncmp(functionId(p), "print", 5) == 0)
 			iocount++;
-		else
-		if(p->barrier) iocount++;
-		else
-		if( p->token== ENDsymbol) iocount++;
-		if( iocount>1 ){
-			*last= i-1;
+		else if (p->barrier)
+			iocount++;
+		else if (p->token == ENDsymbol)
+			iocount++;
+		if (iocount > 1) {
+			*last = i - 1;
 			return TRUE;
 		}
 	}
-	return iocount>0 ;
+	return iocount > 0;
 }
+
 @}
 @-
 The first implementation takes a query block and replaces the first
@@ -202,44 +219,45 @@ optimized away later.
 @{
 @c
 str
-BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid){
-	InstrPtr *old,p;
-	int i,limit,actions=0;
-	int idx= -1,bid= -1;
+BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid)
+{
+	InstrPtr *old, p;
+	int i, limit, actions = 0;
+	int idx = -1, bid = -1;
 	int pcf, pcl;
-	long clk= GDKusec();
+	long clk = GDKusec();
 
 	setLifespan(mb);
-	old= mb->stmt;
-	limit= mb->stop;
-	newMalBlkStmt(mb,limit+10);
+	old = mb->stmt;
+
+	limit = mb->stop;
+	newMalBlkStmt(mb, limit + 10);
 #ifdef DEBUG_MAL_PARTITIONED
-		stream_printf(GDKout,"variable replacement '%s'", getVarName(mb,varid));
-		stream_printf(GDKout," instructions %d-%d ", *first,*last);
-		stream_printf(GDKout," lifespan %d-%d\n", mb->var[varid]->beginLifespan,
-			mb->var[varid]->endLifespan);
+	stream_printf(GDKout, "variable replacement '%s'", getVarName(mb, varid));
+	stream_printf(GDKout, " instructions %d-%d ", *first, *last);
+	stream_printf(GDKout, " lifespan %d-%d\n", mb->var[varid]->beginLifespan, mb->var[varid]->endLifespan);
 #endif
 	/* copy prelude into place */
-	for(i=0; i< *first; i++)
-		pushInstruction(mb,old[i]);
+	for (i = 0; i < *first; i++)
+		pushInstruction(mb, old[i]);
 
 	actions++;
 	/* barrier (idx,bid):= partitions.newIterator(var); */
-	p= newInstruction(ASSIGNsymbol);
-	setModuleId(p,putName("partitions",10));
-	setFunctionId(p,putName("newIterator",11));
-	p->barrier= BARRIERsymbol;
-	idx= newTmpVariable(mb,TYPE_int);
-	pushReturn(mb,p,idx);
-	bid= newTmpVariable(mb,getVarType(mb,varid));
-	pushReturn(mb,p,bid);
-	pushArgument(mb,p,varid);
-	pushInstruction(mb,p);
+	p = newInstruction(ASSIGNsymbol);
+	setModuleId(p, putName("partitions", 10));
+	setFunctionId(p, putName("newIterator", 11));
+	p->barrier = BARRIERsymbol;
+	idx = newTmpVariable(mb, TYPE_int);
+	pushReturn(mb, p, idx);
+	bid = newTmpVariable(mb, getVarType(mb, varid));
+	pushReturn(mb, p, bid);
+	pushArgument(mb, p, varid);
+	pushInstruction(mb, p);
 
-	pcf= mb->stop;
-	for(i= *first; i<= *last; i++)
-		pushInstruction(mb,old[i]);
-	pcl= mb->stop;
+	pcf = mb->stop;
+	for (i = *first; i <= *last; i++)
+		pushInstruction(mb, old[i]);
+	pcl = mb->stop;
 @-
 Before we finalize, we should also check all operations for being applicable 
 to partitions as well. Where necessary they should be replaced by an
@@ -247,30 +265,31 @@ accumulated version.
 @c
 	/* finalize the loop */
 	/* redo (idx,bid):= partitions.hasMoreElements(var); */
-	p= newInstruction(REDOsymbol);
-	setModuleId(p,putName("partitions",10));
-	setFunctionId(p,putName("hasMoreElements",15));
-	pushReturn(mb,p,idx);
-	pushReturn(mb,p,bid);
-	pushArgument(mb,p,varid);
-	pushInstruction(mb,p);
+	p = newInstruction(REDOsymbol);
+	setModuleId(p, putName("partitions", 10));
+	setFunctionId(p, putName("hasMoreElements", 15));
+	pushReturn(mb, p, idx);
+	pushReturn(mb, p, bid);
+	pushArgument(mb, p, varid);
+	pushInstruction(mb, p);
 	/* exit (idx,bid) */
-	p= newInstruction(EXITsymbol);
-	pushReturn(mb,p,idx);
-	pushReturn(mb,p,bid);
-	pushInstruction(mb,p);
+	p = newInstruction(EXITsymbol);
+	pushReturn(mb, p, idx);
+	pushReturn(mb, p, bid);
+	pushInstruction(mb, p);
 
-	*first= mb->stop;
+	*first = mb->stop;
 	/* copy the rest of the program back into place */
-	for(;i<limit; i++)
-		pushInstruction(mb,old[i]);
+	for (; i < limit; i++)
+		pushInstruction(mb, old[i]);
 	GDKfree(old);
-	*last = mb->stop-1;
+	*last = mb->stop - 1;
 
 	/* now replace variable with the alias bid */
-	if( bid != -1)
-		ARreplaceAlias(mb,pcf,pcl,varid,bid);
-	optimizerCheck(mb,"BPTreplacement",actions,GDKusec()-clk);
+	if (bid != -1)
+		ARreplaceAlias(mb, pcf, pcl, varid, bid);
+	optimizerCheck(mb, "BPTreplacement", actions, GDKusec() - clk);
 	return MAL_SUCCEED;
 }
+
 @}

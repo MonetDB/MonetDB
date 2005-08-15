@@ -53,32 +53,32 @@ ensure we are still within safe bounds.
 #define MAXSHARES   16
 
 typedef struct MALSTK {
-    int     stksize;
-    int stktop;
-    long    stkdepth;   /* to protect against overflow*/
-    int     keepAlive;  /* do not garbage collect when set */
-    MT_Lock stklock;    /* used for parallel processing */
-    int shares;     /* number of processes on this stack */
-    int childs[MAXSHARES];
-    char    cmd;        /* debugger communication */
-    int pcup;       /* saved pc upon a recursive all */
-    struct MALSTK *up;  /* stack trace list */
-    struct MALSTK *down;    /* stack trace list */
-    struct MALBLK *blk; /* associated definition */
-    ValRecord stk[1];
-}MalStack, *MalStkPtr;
+	int stksize;
+	int stktop;
+	long stkdepth;		/* to protect against overflow */
+	int keepAlive;		/* do not garbage collect when set */
+	MT_Lock stklock;	/* used for parallel processing */
+	int shares;		/* number of processes on this stack */
+	int childs[MAXSHARES];
+	char cmd;		/* debugger communication */
+	int pcup;		/* saved pc upon a recursive all */
+	struct MALSTK *up;	/* stack trace list */
+	struct MALSTK *down;	/* stack trace list */
+	struct MALBLK *blk;	/* associated definition */
+	ValRecord stk[1];
+} MalStack, *MalStkPtr;
 
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
 #define newStack(S,CNT) S= (MalStkPtr) alloca(stackSize(CNT));\
             bzero((char *) S, stackSize(0)); \
             (S)->stksize=CNT;
-    
+
 
 mal_export MalStkPtr newGlobalStack(int size);
 mal_export MalStkPtr reallocStack(MalStkPtr s, int cnt);
 mal_export MalStkPtr reallocGlobalStack(MalStkPtr s, int cnt);
 mal_export void freeStack(MalStkPtr stk);
-mal_export void chkStack(MalStkPtr stk, int i); /* used in src/mal/mal_box.c */
+mal_export void chkStack(MalStkPtr stk, int i);	/* used in src/mal/mal_box.c */
 
 #define VARfreeze(X)    if(X){X->frozen=TRUE;}
 #define VARfixate(X)    if(X){X->constant=TRUE;}
@@ -99,63 +99,82 @@ This can be recognized by the vtype component
 @c
 #include "mal_stack.h"
 
-MalStkPtr newGlobalStack(int size){
-    MalStkPtr s;
-    s= (MalStkPtr) GDKmalloc(stackSize(size)+sizeof(MalStack));
-    if( s== NULL)
-        GDKfatal("newGlobalStack:can not obtain memory\n");
-    bzero((char*)s, stackSize(size)+sizeof(MalStack));
-    s->stksize = size;
-    return s;
+MalStkPtr
+newGlobalStack(int size)
+{
+	MalStkPtr s;
+
+	s = (MalStkPtr) GDKmalloc(stackSize(size) + sizeof(MalStack));
+	if (s == NULL)
+		GDKfatal("newGlobalStack:can not obtain memory\n");
+	bzero((char *) s, stackSize(size) + sizeof(MalStack));
+	s->stksize = size;
+	return s;
 }
 
-MalStkPtr reallocGlobalStack(MalStkPtr old, int cnt){
-    int k;
-    MalStkPtr s; 
+MalStkPtr
+reallocGlobalStack(MalStkPtr old, int cnt)
+{
+	int k;
+	MalStkPtr s;
 
-    if( old->stksize >cnt ) return old;
-    k = ((cnt/STACKINCR)+1) * STACKINCR;
-    s= newGlobalStack(k);
-    memcpy(s, old, stackSize(old->stksize)); 
-    GDKfree(old);
-    return s;
+	if (old->stksize > cnt)
+		return old;
+	k = ((cnt / STACKINCR) + 1) * STACKINCR;
+	s = newGlobalStack(k);
+	memcpy(s, old, stackSize(old->stksize));
+	GDKfree(old);
+	return s;
 }
-MalStkPtr reallocStack(MalStkPtr s, int cnt){
-    int k;
-    MalStkPtr old= s; 
 
-    if( s->stksize >cnt ) return s;
-    k = ((cnt/STACKINCR)+1) * STACKINCR;
-	s= (MalStkPtr) alloca(stackSize(k));
+MalStkPtr
+reallocStack(MalStkPtr s, int cnt)
+{
+	int k;
+	MalStkPtr old = s;
+
+	if (s->stksize > cnt)
+		return s;
+	k = ((cnt / STACKINCR) + 1) * STACKINCR;
+	s = (MalStkPtr) alloca(stackSize(k));
 	bzero((char *) s, stackSize(k));
-	(s)->stksize=k;
-    memcpy(s, old, stackSize(old->stksize)); 
-    s->stksize = k;
-    GDKfree(old);
-    return s;
+	(s)->stksize = k;
+	memcpy(s, old, stackSize(old->stksize));
+	s->stksize = k;
+	GDKfree(old);
+	return s;
 }
+
 @-
 When you add a value to the stack, you should ensure that
 there is space left. It should only be used for global
 stack frames, because the others are allocated in the
 runtime stack.
 @c
-void chkStack(MalStkPtr stk, int i){
-    if(stk->stksize <=i){
-        reallocStack(stk,STACKINCR);
-    }
+void
+chkStack(MalStkPtr stk, int i)
+{
+	if (stk->stksize <= i) {
+		reallocStack(stk, STACKINCR);
+	}
 }
-void freeStack(MalStkPtr stk){
-    GDKfree(stk);
+void
+freeStack(MalStkPtr stk)
+{
+	GDKfree(stk);
 }
-void clearStack(MalStkPtr s){
-    ValPtr v;
-    int i = s->stktop;
 
-    for( v= s->stk; i >=0; i--, v++)
-    if (ATOMextern(v->vtype) && v->val.pval) {
-        stream_printf(GDKout,"freeing %s\n",v->val.sval);
-                GDKfree(v->val.pval);
-        }
+void
+clearStack(MalStkPtr s)
+{
+	ValPtr v;
+	int i = s->stktop;
+
+	for (v = s->stk; i >= 0; i--, v++)
+		if (ATOMextern(v->vtype) && v->val.pval) {
+			stream_printf(GDKout, "freeing %s\n", v->val.sval);
+			GDKfree(v->val.pval);
+		}
 }
+
 @}

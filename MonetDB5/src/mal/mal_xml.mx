@@ -31,24 +31,45 @@ mal_export char *xmlChr(str s);
 #endif /* _MAL_XML_H */
 @c
 #include "mal_xml.h"
-char *xmlChr(str s){
-        static char buf[BUFSIZ+5];
-        char *c=buf, *lim=buf+BUFSIZ;
-        while(s && c<lim && *s){
-                switch(*s){
-                case '_': sprintf(c,"\\_"); c+=2;break;
-                case '$': sprintf(c,"\\$"); c+=2;break;
-                case '%': sprintf(c,"\\%%"); c+= 4; break;
-                case '<': sprintf(c,"$&lt;$"); c+= 6; break;
-                case '>': sprintf(c,"$&gt;$"); c+= 6; break;
-                case '&': sprintf(c,"&amp;"); c+= 5; break;
-                default:
-                        *c++= *s;
-                }
-                s++;
-        }
-        *c=0;
-        return buf;
+char *
+xmlChr(str s)
+{
+	static char buf[BUFSIZ + 5];
+	char *c = buf, *lim = buf + BUFSIZ;
+
+	while (s && c < lim && *s) {
+		switch (*s) {
+		case '_':
+			sprintf(c, "\\_");
+			c += 2;
+			break;
+		case '$':
+			sprintf(c, "\\$");
+			c += 2;
+			break;
+		case '%':
+			sprintf(c, "\\%%");
+			c += 4;
+			break;
+		case '<':
+			sprintf(c, "$&lt;$");
+			c += 6;
+			break;
+		case '>':
+			sprintf(c, "$&gt;$");
+			c += 6;
+			break;
+		case '&':
+			sprintf(c, "&amp;");
+			c += 5;
+			break;
+		default:
+			*c++ = *s;
+		}
+		s++;
+	}
+	*c = 0;
+	return buf;
 }
 
 @}

@@ -214,8 +214,8 @@ macros identical to file names.
 #define _GROUP_H_
 #include "gdk.h"
 
-extern int CTderive(BAT** B, BAT **H, BAT* ct, BAT* b);
-extern int CTgroup(BAT** B, BAT **H, BAT* b );
+extern int CTderive(BAT **B, BAT **H, BAT *ct, BAT *b);
+extern int CTgroup(BAT **B, BAT **H, BAT *b);
 
 #endif /* _GROUP_H_ */
 @c
@@ -227,24 +227,24 @@ extern ptr BATmin(BAT *b, ptr aggr);
 extern ptr BATmax(BAT *b, ptr aggr);
 
 
-int 
-grp_new( BAT *b, BAT *h ) 
+int
+grp_new(BAT *b, BAT *h)
 {
-	BBPincref(b->batCacheid, TRUE );
+	BBPincref(b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
 
 	if (h) {
-                BATkey(h, TRUE);
-                h->tsorted = 0;
-                if ((h->hsorted = BAThordered(b)) & 1) {
-                        if (BATcount(h) == BATcount(b)) {
-                                ALIGNsetH(h, BATmirror(b));
-                        }
-                } else if (BATorder(h) == NULL) {
-                        BBPreclaim(h);
-                        return GDK_FAIL;
-                }
-		BBPincref(h->batCacheid, TRUE );
+		BATkey(h, TRUE);
+		h->tsorted = 0;
+		if ((h->hsorted = BAThordered(b)) & 1) {
+			if (BATcount(h) == BATcount(b)) {
+				ALIGNsetH(h, BATmirror(b));
+			}
+		} else if (BATorder(h) == NULL) {
+			BBPreclaim(h);
+			return GDK_FAIL;
+		}
+		BBPincref(h->batCacheid, TRUE);
 		BBPunfix(h->batCacheid);
 	} else {
 		assert(h);
@@ -278,7 +278,7 @@ hashing.
 #define match_hash(b,p,r) BUNfndOID(r,b,p); if (r == NULL) continue;
 
 #define declare_atom int any = b->ttype; hash_t (*hashfcn)(ptr) = BATatoms[any].atomHash;
-#define declare_simple	/* any and hash would otherwise give unused variable warning */
+#define declare_simple		/* any and hash would otherwise give unused variable warning */
 
 #define htype_sync(b) BAThdense(b)?TYPE_void:TYPE_oid
 #define htype_hash(b) TYPE_oid
@@ -330,8 +330,8 @@ typedef struct {
 	Heap hp;		/* storage for hash buckets */
 } map_T;
 
-@:map_init_def(STANDARD,STANDARD_MASK,4096)@
-@:map_init_def(CUSTOM,custom_MASK,custom_rng)@
+@:map_init_def(STANDARD, STANDARD_MASK, 4096)@
+@:map_init_def(CUSTOM, custom_MASK, custom_rng)@
 
 @= map_init_def
 #define map_init_@1(map,hash,mask,entry,mapsize)			\
@@ -511,21 +511,21 @@ tailtype(BAT *b, int str_trick)
 #define declare_mask_CUSTOM	hash_t mask = (1 << *N) - 1;
 
 int
-CTgroup(BAT**        retval, /* put pointer to BAT[oid,oid] record here. */
-   	BAT**        hbat,		/* put histogram BAT here */
-   	BAT*         b       /* pointer to BAT[oid,oid] record.*/
-)
+CTgroup(BAT **retval,		/* put pointer to BAT[oid,oid] record here. */
+	BAT **hbat,		/* put histogram BAT here */
+	BAT *b			/* pointer to BAT[oid,oid] record. */
+    )
 {
 	@:CTgroupbody(STANDARD)@
 }
 
 int
-CTgroup_custom(BAT**        retval, 	/* put pointer to BAT[oid,oid] record here. */
-	       BAT**        hbat,		/* put histogram BAT here */
-   	       BAT*         b,      	/* pointer to BAT[oid,oid] record.*/
-   	       int*	        N,		/* number of bits for hashmask */
-	       int*	        rng		/* expected number of entries in map */
-)
+CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
+	       BAT **hbat,	/* put histogram BAT here */
+	       BAT *b,		/* pointer to BAT[oid,oid] record. */
+	       int *N,		/* number of bits for hashmask */
+	       int *rng		/* expected number of entries in map */
+    )
 {
 	@:CTgroupbody(CUSTOM)@
 }
@@ -695,7 +695,7 @@ bunins_failed:
 	}
 @c
 int
-derive(BAT** B, BAT** H, BAT* ct, BAT* b, int tt, map_T *m)
+derive(BAT **B, BAT **H, BAT *ct, BAT *b, int tt, map_T *m)
 {
 	BAT *histo = NULL, *bn = NULL;
 	int synced = ALIGNsynced(ct, b);
@@ -711,15 +711,15 @@ derive(BAT** B, BAT** H, BAT* ct, BAT* b, int tt, map_T *m)
 	/* CTderive with correct lookup method (hash,synced) and type */
 	if (synced) {
 		if (((ct->tsorted) & 1) && !(ct->tkey)) {
-			@:choosederive(sync,clustered)@
+			@:choosederive(sync, clustered)@
 		} else {
-			@:choosederive(sync,unclustered)@
+			@:choosederive(sync, unclustered)@
 		}
 	} else {
 		if (((ct->tsorted) & 1) && !(ct->tkey)) {
-			@:choosederive(hash,clustered)@
+			@:choosederive(hash, clustered)@
 		} else {
-			@:choosederive(hash,unclustered)@
+			@:choosederive(hash, unclustered)@
 		}
 	}
 	if (histo == NULL) {
@@ -737,22 +737,22 @@ derive(BAT** B, BAT** H, BAT* ct, BAT* b, int tt, map_T *m)
 			BATkey(bn, TRUE);
 	}
 	*B = bn;
- 	*H = histo;
+	*H = histo;
 	return grp_new(bn, histo);
 }
 
 int
-CTderive(BAT** B, BAT **H, BAT* ct, BAT* b)
+CTderive(BAT **B, BAT **H, BAT *ct, BAT *b)
 {
 	BAT *bn = ct;
 	int ret;
 
 	if (tailtype(ct, TRUE) != TYPE_int) {
-		if (!CTgroup(B, H, ct)) 
+		if (!CTgroup(B, H, ct))
 			return GDK_FAIL;
 		ct = *B;
 		BBPunfix((*H)->batCacheid);
-	} 
+	}
 	ret = derive(B, H, ct, b, tailtype(b, TRUE), NULL);
 	if (bn != ct)
 		BBPunfix(ct->batCacheid);
@@ -764,11 +764,10 @@ The routine CThistosum takes an grouping and a histogram and produces
 a new histogram by summing the old values within the same group.
 @c
 int
-CThistosum(
-	BAT**	retval,	/* put pointer to BAT[oid,int] record here. */
-	BAT*	b,	/* pointer to BAT[oid,oid] record. */
-	BAT*	c	/* pointer to BAT[oid,int] record. */
-)
+CThistosum(BAT **retval,	/* put pointer to BAT[oid,int] record here. */
+	   BAT *b,		/* pointer to BAT[oid,oid] record. */
+	   BAT *c		/* pointer to BAT[oid,int] record. */
+    )
 {
 	BAT *res = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	BUN p, q, qb;
@@ -846,11 +845,11 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 		yy++;
 	}
 	bn->batBuns->free = (char *) r - (char *) Bunbase(bn);
-	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+	BATsetcount(bn, bn->batBuns->free / BUNsize(bn));
 	bn->tsorted = 0;
 	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
 	/* assert(offsetof(idxentry_t,hcur) == 0);
-	ALIGNsetH(bn, dom); */
+	   ALIGNsetH(bn, dom); */
 
 	/* add the counts for this selection using the hash table */
 	zz = BUNsize(sel);
@@ -907,7 +906,7 @@ sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid *dst, oid *id
 		val = base + buf->off;
 		if ((*cmp) (cur, val)) {
 			cur = val;
-			id++;
+			id ++;
 		}
 		*dst++ = buf->o;
 		*dst++ = id;
@@ -919,7 +918,7 @@ sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid *dst, oid *id
 	return dst;
 }
 
-static int 
+static int
 refine(BAT **res, BAT *b, BAT *a, int rv)
 {
 	str rev = rv ? "_rev" : "";
@@ -1000,9 +999,13 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		dst = (oid *) BUNfirst(bn);
 
 		if (a_void) {
-			@:refine_loop(@:refine_void_1@,@:refine_void_2@,GDKfree(base);,this = base;)@
-		} else {
-			@:refine_loop(r += a->tloc;)@
+			@:refine_loop(@
+		      :		   refine_void_1 @, @:refine_void_2@
+					   , GDKfree(base);
+					   , this = base;
+		) @} else {
+			@:refine_loop(r += a->tloc@
+			    );
 		}
 @= refine_void_2
 	off = (size_t) (this - base);
@@ -1052,20 +1055,20 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		if (a_void)
 			GDKfree(base);
 		bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
-		BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
+		BATsetcount(bn, bn->batBuns->free / BUNsize(bn));
 		bn->tsorted = GDK_SORTED;
 	}
 	*res = bn;
 	return GDK_SUCCEED;
 }
 
-int 
+int
 CTrefine(BAT **res, BAT *b, BAT *a)
 {
 	return refine(res, b, a, FALSE);
 }
 
-int 
+int
 CTrefine_rev(BAT **res, BAT *b, BAT *a)
 {
 	return refine(res, b, a, TRUE);
@@ -1085,67 +1088,82 @@ This is captured as a runtime check in the implementation.
 	if(@1->htype != TYPE_oid && @1->htype != TYPE_void)
 		return throwMessage("group.@2", "(v)oid head required\n");
 @c
-str GRPprelude(){
-	/* printf("#init group\n");*/
-	TYPE_mapentry = malAtomFixed(sizeof(mapentry_t),sizeof(oid),"mapentry");
-	TYPE_idxentry = malAtomFixed(sizeof(idxentry_t),sizeof(oid),"idxentry");
+str
+GRPprelude()
+{
+	/* printf("#init group\n"); */
+	TYPE_mapentry = malAtomFixed(sizeof(mapentry_t), sizeof(oid), "mapentry");
+	TYPE_idxentry = malAtomFixed(sizeof(idxentry_t), sizeof(oid), "idxentry");
 	return MAL_SUCCEED;
 }
-str GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize) {
-        BAT *result, *b;
-		if( (b= BATdescriptor(*bid)) == NULL ){
-			 return throwMessage("group.group", "Cannot access descriptor");
-		}
 
-        result = BATgroup(b, *start, *incr, *grpsize);
-        if( result== 0) return throwMessage("GRPgroup0","Failed to group");
-		BBPincref(*ret= result->batCacheid, TRUE);
-		BBPunfix(*ret);
-		BBPunfix(b->batCacheid);
-        return MAL_SUCCEED;
+str
+GRPgroup0(int *ret, int *bid, int *start, int *incr, int *grpsize)
+{
+	BAT *result, *b;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("group.group", "Cannot access descriptor");
+	}
+
+	result = BATgroup(b, *start, *incr, *grpsize);
+	if (result == 0)
+		return throwMessage("GRPgroup0", "Failed to group");
+	BBPincref(*ret = result->batCacheid, TRUE);
+	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
-str GRPgroup(int *rethisto, int *retbid, int *bid){
-	BAT *histo= 0, *b,  *bn=0;
+str
+GRPgroup(int *rethisto, int *retbid, int *bid)
+{
+	BAT *histo = 0, *b, *bn = 0;
 
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		 return throwMessage("group.group", "Cannot access descriptor");
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("group.group", "Cannot access descriptor");
 	}
-	@:chkHeader(b,GRPgroup)@
+	@:chkHeader(b, GRPgroup)@
 	CTgroup(&bn, &histo, b);
-	*rethisto= histo? histo->batCacheid:0;
-	BBPincref(*retbid=bn->batCacheid, TRUE);
+	*rethisto = histo ? histo->batCacheid : 0;
+	BBPincref(*retbid = bn->batCacheid, TRUE);
 	BBPunfix(*retbid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng){
-	BAT *histo= 0, *b,  *bn=0;
-	if( (b= BATdescriptor(*bid)) == NULL ){
-		 return throwMessage("group.group", "Cannot access descriptor");
+str
+GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
+{
+	BAT *histo = 0, *b, *bn = 0;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("group.group", "Cannot access descriptor");
 	}
-	@:chkHeader(b,GRPgroup)@
+	@:chkHeader(b, GRPgroup)@
 	CTgroup_custom(&bn, &histo, b, N, rng);
-	*rethisto= histo? histo->batCacheid:0;
-	BBPincref(*retbid=bn->batCacheid, TRUE);
+	*rethisto = histo ? histo->batCacheid : 0;
+	BBPincref(*retbid = bn->batCacheid, TRUE);
 	BBPunfix(*retbid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str GRPderive(int* hid, int* mid, int  *ctid, int* bid) {
+str
+GRPderive(int *hid, int *mid, int *ctid, int *bid)
+{
 	BAT *ct, *b;
 	BAT *bn = NULL, *histo = NULL;
-	if( (ct= BATdescriptor(*ctid)) == NULL ){
-		 return throwMessage("group.derive", "Cannot access descriptor");
+
+	if ((ct = BATdescriptor(*ctid)) == NULL) {
+		return throwMessage("group.derive", "Cannot access descriptor");
 	}
-	@:chkHeader(ct,GRPderive)@
-	if( (b= BATdescriptor(*bid)) == NULL ){
+	@:chkHeader(ct, GRPderive)@
+	if ((b = BATdescriptor(*bid)) == NULL) {
 		BBPunfix(ct->batCacheid);
 		return throwMessage("group.derive", "Cannot access descriptor");
 	}
-	@:chkHeader(b,GRPderive)@
+	@:chkHeader(b, GRPderive)@
 	CTderive(&bn, &histo, ct, b);
 	*mid = bn->batCacheid;
 	*hid = histo->batCacheid;
@@ -1154,52 +1172,55 @@ str GRPderive(int* hid, int* mid, int  *ctid, int* bid) {
 	return MAL_SUCCEED;
 }
 
-str GRPsubhisto(int *retid, int *selid, int *grpid, int *domid) {
+str
+GRPsubhisto(int *retid, int *selid, int *grpid, int *domid)
+{
 	BAT *sel, *grp, *dom;
 	BAT *bn;
-	if( (sel= BATdescriptor(*selid)) == NULL ){
+
+	if ((sel = BATdescriptor(*selid)) == NULL) {
 		return throwMessage("group.subhisto", "Cannot access descriptor");
 	}
-	if( (grp= BATdescriptor(*grpid)) == NULL ){
+	if ((grp = BATdescriptor(*grpid)) == NULL) {
 		BBPunfix(sel->batCacheid);
 		return throwMessage("group.subhisto", "Cannot access descriptor");
 	}
-	@:chkHeader(grp,GRPsubhisto)@
-    if( (dom= BATdescriptor(*domid)) == NULL ){
-         return throwMessage("group.subhisto", "Cannot access descriptor");
-    }
+	@:chkHeader(grp, GRPsubhisto)@
+	if ((dom = BATdescriptor(*domid)) == NULL) {
+		return throwMessage("group.subhisto", "Cannot access descriptor");
+	}
 
-	if( (dom= BATdescriptor(*domid)) == NULL ){
+	if ((dom = BATdescriptor(*domid)) == NULL) {
 		BBPunfix(sel->batCacheid);
 		BBPunfix(grp->batCacheid);
 		return throwMessage("group.subhisto", "Cannot access descriptor");
 	}
-	CTsubhisto(&bn,sel,grp,dom);
-	BBPincref(*retid= bn->batCacheid, TRUE);
+	CTsubhisto(&bn, sel, grp, dom);
+	BBPincref(*retid = bn->batCacheid, TRUE);
 	BBPunfix(*retid);
 	BBPunfix(sel->batCacheid);
 	BBPunfix(grp->batCacheid);
 	BBPunfix(dom->batCacheid);
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
-str 
+str
 GRPrefine(int *retid, int *bid, int *aid)
 {
 	BAT *b, *a;
 	BAT *bn;
 
-	if( (b= BATdescriptor(*bid)) == NULL ){
+	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("group.refine", "Cannot access descriptor");
 	}
-	@:chkHeader(b,GRPrefine)@
-	if( (a= BATdescriptor(*aid)) == NULL ){
+	@:chkHeader(b, GRPrefine)@
+	if ((a = BATdescriptor(*aid)) == NULL) {
 		return throwMessage("group.refine", "Cannot access descriptor");
 	}
-	@:chkHeader(a,GRPrefine)@
+	@:chkHeader(a, GRPrefine)@
 
 	CTrefine(&bn, b, a);
-	BBPincref(*retid= bn->batCacheid, TRUE);
+	BBPincref(*retid = bn->batCacheid, TRUE);
 	BBPunfix(*retid);
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
@@ -1447,11 +1468,12 @@ str GRPavg_@1(int *retval, int *bid,int  *eid){
 }
 
 @c
-@:arithpump(sht,tloc)@
-@:arithpump(int,tloc)@
-@:arithpump(lng,tloc)@
-@:arithpump(flt,tloc)@
-@:arithpump(dbl,tloc)@
+@:arithpump(sht, tloc)@
+@:arithpump(int, tloc)@
+@:arithpump(lng, tloc)@
+@:arithpump(flt, tloc)@
+@:arithpump(dbl, tloc)@
+
 @= extreme
 str GRP@1(int *retval, int *bid,int  *eid){
         BAT *b = NULL, *e = NULL;
@@ -1515,8 +1537,8 @@ str GRP@1(int *retval, int *bid,int  *eid){
         return MAL_SUCCEED;
 }
 @c
-@:extreme(min,<)@
-@:extreme(max,>)@
+@:extreme(min, <)@
+@:extreme(max, >)@
 @-
 @= large_aggr_count
         (void) BATprepareHash(bn);
@@ -1557,123 +1579,134 @@ str GRP@1(int *retval, int *bid,int  *eid){
 
 @c
 
-str GRPaggr_count(int *retval, int *bid,int  *eid, bit *ignore_nils){
-        BAT *b = NULL, *e = NULL;
-        BAT *bn ;
-        int zero = 0, *cnt;
-        BUN p, q, r;
-        int xx,i,range,min,max;
-        int btt;
-        ptr bt_nil;
-
-		if( (b= BATdescriptor(*bid)) == NULL ){
-			return throwMessage("group.count", "Cannot access descriptor");
-		}
-
-        @:chkHeader(b,GRPaggr_count)@
-		if( (e= BATdescriptor(*eid)) == NULL ){
-			BBPunfix(b->batCacheid);
-			return throwMessage("group.count", "Cannot access descriptor");
-		}
-        @:chkHeader(e,GRPaggr_count)@
-
-        bn = BATnew(e->htype, TYPE_int, BATcount(e));
-        btt = b->ttype;
-        bt_nil = ATOMnilptr(b->ttype);
-
-        /* init: set all sums to zero */
-        bn->tsorted = bn->hsorted = 0;
-        ALIGNsetH(bn, e);
-        if (BAThordered(e)&1) {
-                min = (int)(*(oid*)BUNhead(e, BUNfirst(e)));
-                BATloopFast(e, p, q, xx) {
-                        BUNfastins(bn, BUNhead(e,p), &zero);
-                }
-                max = (int)(*(oid*)BUNhead(e, BUNlast(e)-BUNsize(e)));
-        } else {
-                min = max = (int)(*(oid*)BUNhead(e, BUNfirst(e)));
-                BATloopFast(e, p, q, xx) {
-                        BUNfastins(bn, BUNhead(e,p), &zero);
-                        i = (int)(*(oid*)BUNhead(e, p));
-                        if (i < min) min = i;
-                        else
-                        if (i > max) max = i;
-                }
-        }
-        range = max - min + 1;
-
-        /* scan b, and add increment totals for true values */
-        if (range > SMALL_AGGR_MAX) {
-                if (*ignore_nils) {
-                ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n",(unsigned long)range,SMALL_AGGR_MAX);
-                       @:large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))@
-               } else {
-                       ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n",(unsigned long)range,SMALL_AGGR_MAX);
-                       @:large_aggr_count()@
-               }
-
-        } else {
-               if (*ignore_nils) {
-                       ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n",(unsigned long)range,SMALL_AGGR_MAX);
-                       @:small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))@
-               } else {
-                       ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n",(unsigned long)range,SMALL_AGGR_MAX);
-                       @:small_aggr_count()@
-               }
-
-        }
-
-	BBPincref(*retval= bn->batCacheid, TRUE);
-	BBPunfix(*retval);
-	BBPunfix(b->batCacheid);
-	BBPunfix(e->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str GRPsize(int *retval, int *bid,int  *eid){
+str
+GRPaggr_count(int *retval, int *bid, int *eid, bit *ignore_nils)
+{
 	BAT *b = NULL, *e = NULL;
-        BAT *bn;
-        int zero = 0;
-        BUN p, q, r;
-        int xx;
+	BAT *bn;
+	int zero = 0, *cnt;
+	BUN p, q, r;
+	int xx, i, range, min, max;
+	int btt;
+	ptr bt_nil;
 
-		if( (b= BATdescriptor(*bid)) == NULL ){
-			return throwMessage("group.size", "Cannot access descriptor");
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("group.count", "Cannot access descriptor");
+	}
+
+	@:chkHeader(b, GRPaggr_count)@
+	if ((e = BATdescriptor(*eid)) == NULL) {
+		BBPunfix(b->batCacheid);
+		return throwMessage("group.count", "Cannot access descriptor");
+	}
+	@:chkHeader(e, GRPaggr_count)@
+
+	bn = BATnew(e->htype, TYPE_int, BATcount(e));
+	btt = b->ttype;
+	bt_nil = ATOMnilptr(b->ttype);
+
+	/* init: set all sums to zero */
+	bn->tsorted = bn->hsorted = 0;
+	ALIGNsetH(bn, e);
+	if (BAThordered(e) & 1) {
+		min = (int) (*(oid *) BUNhead(e, BUNfirst(e)));
+		BATloopFast(e, p, q, xx) {
+			BUNfastins(bn, BUNhead(e, p), &zero);
+		}
+		max = (int) (*(oid *) BUNhead(e, BUNlast(e) - BUNsize(e)));
+	} else {
+		min = max = (int) (*(oid *) BUNhead(e, BUNfirst(e)));
+		BATloopFast(e, p, q, xx) {
+			BUNfastins(bn, BUNhead(e, p), &zero);
+			i = (int) (*(oid *) BUNhead(e, p));
+			if (i < min)
+				min = i;
+			else if (i > max)
+				max = i;
+		}
+	}
+	range = max - min + 1;
+
+	/* scan b, and add increment totals for true values */
+	if (range > SMALL_AGGR_MAX) {
+		if (*ignore_nils) {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (unsigned long) range, SMALL_AGGR_MAX);
+
+			@:large_aggr_count(if (ATOMcmp(btt, t, bt_nil))) @
+		} else {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) > SMALL_AGGR_MAX(=%d)  =>  large_aggr_count()\n", (unsigned long) range, SMALL_AGGR_MAX);
+
+			@:large_aggr_count()@
 		}
 
-        @:chkHeader(b,GRPsize)@
-		if( (e= BATdescriptor(*eid)) == NULL ){
-			BBPunfix(b->batCacheid);
-			return throwMessage("group.size", "Cannot access descriptor");
+	} else {
+		if (*ignore_nils) {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count(if (ATOMcmp(btt,t,bt_nil)))\n", (unsigned long) range, SMALL_AGGR_MAX);
+
+			@:small_aggr_count(if (ATOMcmp(btt, t, bt_nil))) @
+		} else {
+			ALGODEBUG THRprintf(GDKout, "CMDaggr_count: range(=%lu) <= SMALL_AGGR_MAX(=%d)  =>  small_aggr_count()\n", (unsigned long) range, SMALL_AGGR_MAX);
+
+			@:small_aggr_count()@
 		}
-        @:chkHeader(e,GRPsize)@
 
-        bn = BATnew(e->htype, TYPE_int, BATcount(e));
-        /* init: set all sums to zero */
-        bn->tsorted = bn->hsorted = 0;
-        ALIGNsetH(bn, e);
-        BATloopFast(e, p, q, xx) {
-                BUNfastins(bn, BUNhead(e,p), &zero);
-        }
-        /* scan b, and add increment totals for true values */
-        (void) BATprepareHash(bn);
-        BATloopFast(b, p, q, xx) {
-                if (*(bit*) BUNtloc(b,p) == TRUE) {
-                        oid *h = (oid*) BUNhead(b,p);
+	}
 
-                        BUNfndOID(r, bn, h);
-                        if (r) {
-                                int *dst = (int*) BUNtloc(bn, r);
-                                (*dst)++;
-                        }
-                }
-        }
-	BBPincref(*retval= bn->batCacheid, TRUE);
+	BBPincref(*retval = bn->batCacheid, TRUE);
 	BBPunfix(*retval);
 	BBPunfix(b->batCacheid);
 	BBPunfix(e->batCacheid);
 	return MAL_SUCCEED;
 }
+
+str
+GRPsize(int *retval, int *bid, int *eid)
+{
+	BAT *b = NULL, *e = NULL;
+	BAT *bn;
+	int zero = 0;
+	BUN p, q, r;
+	int xx;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("group.size", "Cannot access descriptor");
+	}
+
+	@:chkHeader(b, GRPsize)@
+	if ((e = BATdescriptor(*eid)) == NULL) {
+		BBPunfix(b->batCacheid);
+		return throwMessage("group.size", "Cannot access descriptor");
+	}
+	@:chkHeader(e, GRPsize)@
+
+	bn = BATnew(e->htype, TYPE_int, BATcount(e));
+	/* init: set all sums to zero */
+	bn->tsorted = bn->hsorted = 0;
+	ALIGNsetH(bn, e);
+	BATloopFast(e, p, q, xx) {
+		BUNfastins(bn, BUNhead(e, p), &zero);
+	}
+	/* scan b, and add increment totals for true values */
+	(void) BATprepareHash(bn);
+	BATloopFast(b, p, q, xx) {
+		if (*(bit *) BUNtloc(b, p) == TRUE) {
+			oid *h = (oid *) BUNhead(b, p);
+
+			BUNfndOID(r, bn, h);
+			if (r) {
+				int *dst = (int *) BUNtloc(bn, r);
+
+				(*dst)++;
+			}
+		}
+	}
+	BBPincref(*retval = bn->batCacheid, TRUE);
+	BBPunfix(*retval);
+	BBPunfix(b->batCacheid);
+	BBPunfix(e->batCacheid);
+	return MAL_SUCCEED;
+}
+
 @-
 The window aggregate functions
 @= windowsum
@@ -1724,9 +1757,10 @@ str GRPwindowsum_@1(int *retval, int *bid, int  *size){
 	return GRPslidingsum_@1(retval,bid,size,size);
 }
 @c
-@:windowsum(sht,lng)@
-@:windowsum(int,lng)@
-@:windowsum(lng,lng)@
-@:windowsum(flt,dbl)@
-@:windowsum(dbl,dbl)@
+@:windowsum(sht, lng)@
+@:windowsum(int, lng)@
+@:windowsum(lng, lng)@
+@:windowsum(flt, dbl)@
+@:windowsum(dbl, dbl)@
+
 @}

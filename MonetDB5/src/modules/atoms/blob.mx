@@ -694,77 +694,132 @@ This section contains the wrappers to re-use the implementation
 section of the blob modules from MonetDB 4.3
 @-
 @c
-int BLOBnequal(blob* l,blob*  r){
-	return blob_nequal(l,r);
+int
+BLOBnequal(blob *l, blob *r)
+{
+	return blob_nequal(l, r);
 }
-void BLOBdel(Heap* h,var_t* index){
-	blob_del(h,index);
+
+void
+BLOBdel(Heap *h, var_t *index)
+{
+	blob_del(h, index);
 }
-hash_t BLOBhash(blob* b){
+
+hash_t
+BLOBhash(blob *b)
+{
 	return blob_hash(b);
 }
-blob *BLOBnull(){
+
+blob *
+BLOBnull()
+{
 	return blob_null();
 }
-void BLOBconvert( blob *b, int direction){
-	blob_convert(b,direction);
+
+void
+BLOBconvert(blob *b, int direction)
+{
+	blob_convert(b, direction);
 }
-int BLOBlength(blob* p){
+
+int
+BLOBlength(blob *p)
+{
 	return blob_length(p);
 }
-void BLOBheap(Heap* heap, size_t capacity){
-	blob_heap(heap,capacity);
+
+void
+BLOBheap(Heap *heap, size_t capacity)
+{
+	blob_heap(heap, capacity);
 }
-var_t BLOBput(Heap* h,var_t* bun,blob* val){
-	return blob_put(h,bun,val);
+
+var_t
+BLOBput(Heap *h, var_t *bun, blob *val)
+{
+	return blob_put(h, bun, val);
 }
+
 #if 0
-int BLOBget(Heap* h,int* bun,int* l,blob** val){
-	return blob_get(h,bun,l,val);
+int
+BLOBget(Heap *h, int *bun, int *l, blob **val)
+{
+	return blob_get(h, bun, l, val);
 }
 #endif
-int BLOBnitems(int *ret,blob *b) {
-     *ret = b->nitems;
-     return GDK_SUCCEED;
+int
+BLOBnitems(int *ret, blob *b)
+{
+	*ret = b->nitems;
+	return GDK_SUCCEED;
 }
 
 #ifndef OLDSTYLE
-int BLOBtostr(str* tostr,int* l,blob** pin){
-	return blob_tostr(tostr,l,*pin);
+int
+BLOBtostr(str *tostr, int *l, blob **pin)
+{
+	return blob_tostr(tostr, l, *pin);
 }
-int BLOBfromstr(char* instr,int* l,blob** val){
-	return blob_fromstr(instr,l,val);
+
+int
+BLOBfromstr(char *instr, int *l, blob **val)
+{
+	return blob_fromstr(instr, l, val);
 }
 #else
-int BLOBtostr(str* dst,int* size,blob** srcin){
-	return blob_tostr(dst,size,*srcin);
+int
+BLOBtostr(str *dst, int *size, blob **srcin)
+{
+	return blob_tostr(dst, size, *srcin);
 }
-str BLOBeoln(char* src,char*  end){
-	return blob_eoln(src,end)
+
+str
+BLOBeoln(char *src, char *end)
+{
+	return blob_eoln(src, end)
 }
-int BLOBfromstr(char* instr,int* l,blob** val){
-	return blob_fromstr(instr,l,val);
+int
+BLOBfromstr(char *instr, int *l, blob **val)
+{
+	return blob_fromstr(instr, l, val);
 }
 #endif /* OLDSTYLE */
 
-str BLOBfromidx(str *retval, blob **binp, int *index){
-	fromblob_idx(retval, *binp,index);
+str
+BLOBfromidx(str *retval, blob **binp, int *index)
+{
+	fromblob_idx(retval, *binp, index);
 	return MAL_SUCCEED;
 }
-str BLOBfromblob(str *retval, blob **b){
-	fromblob(retval,*b);
+
+str
+BLOBfromblob(str *retval, blob **b)
+{
+	fromblob(retval, *b);
 	return MAL_SUCCEED;
 }
-str BLOBtoblob(blob **retval, str *s){
-	toblob(retval,*s);
+
+str
+BLOBtoblob(blob **retval, str *s)
+{
+	toblob(retval, *s);
 	return MAL_SUCCEED;
 }
-str SQLBLOBtostr(str *retval, int* l, blob **b){
-	sqlblob_tostr(retval,l,*b);
+
+str
+SQLBLOBtostr(str *retval, int *l, blob **b)
+{
+	sqlblob_tostr(retval, l, *b);
 	return MAL_SUCCEED;
 }
-str SQLBLOBfromstr(blob **val, int *l, str *s ){
-	sqlblob_fromstr(*s,l,val);
+
+str
+SQLBLOBfromstr(blob **val, int *l, str *s)
+{
+	sqlblob_fromstr(*s, l, val);
 	return MAL_SUCCEED;
 }
+
 @}

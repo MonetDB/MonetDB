@@ -140,59 +140,86 @@ destroy_sema(monet_sema *s)
 The old code base is wrapped to ease update propagation.
 @c
 #include "mal.h"
-int lockToStr(char **dst, int *len, ptr *src){
-	(void)len; /* fool compiler */
-	(void)src; /* fool compiler */
-	if( src == ptr_nil){
-		strcpy(*dst,"nil");
+int
+lockToStr(char **dst, int *len, ptr *src)
+{
+	(void) len;		/* fool compiler */
+	(void) src;		/* fool compiler */
+	if (src == ptr_nil) {
+		strcpy(*dst, "nil");
 		return 3;
 	}
-	/* sprintf(*dst,"%o", (ptr)*src);*/
-	sprintf(*dst,"redo lockToStr");
+	/* sprintf(*dst,"%o", (ptr)*src); */
+	sprintf(*dst, "redo lockToStr");
 	return strlen(*dst);
 }
 
-str LCKcreate(monet_lock *l){
-	create_lock( l);
-	return MAL_SUCCEED;
-}
-str LCKset(int *res, monet_lock *l){
-	set_lock(l);
-	*res=1;
-	return MAL_SUCCEED;
-}
-str LCKtry(int *res, monet_lock *l){
-	try_lock(res, l);
-	return MAL_SUCCEED;
-}
-str LCKunset(int *res, monet_lock *l){
-	unset_lock(l);
-	*res=1;
-	return MAL_SUCCEED;
-}
-str LCKdestroy(int *res, monet_lock *l){
-	destroy_lock(l);
-	*res=1;
+str
+LCKcreate(monet_lock *l)
+{
+	create_lock(l);
 	return MAL_SUCCEED;
 }
 
-str SEMAcreate(monet_sema *res, int *init){
+str
+LCKset(int *res, monet_lock *l)
+{
+	set_lock(l);
+	*res = 1;
+	return MAL_SUCCEED;
+}
+
+str
+LCKtry(int *res, monet_lock *l)
+{
+	try_lock(res, l);
+	return MAL_SUCCEED;
+}
+
+str
+LCKunset(int *res, monet_lock *l)
+{
+	unset_lock(l);
+	*res = 1;
+	return MAL_SUCCEED;
+}
+
+str
+LCKdestroy(int *res, monet_lock *l)
+{
+	destroy_lock(l);
+	*res = 1;
+	return MAL_SUCCEED;
+}
+
+str
+SEMAcreate(monet_sema *res, int *init)
+{
 	create_sema(res, init);
 	return MAL_SUCCEED;
 }
-str SEMAup(int *res, monet_sema *s){
+
+str
+SEMAup(int *res, monet_sema *s)
+{
 	up_sema(s);
-	*res=1;
+	*res = 1;
 	return MAL_SUCCEED;
 }
-str SEMAdown(int *res, monet_sema *s){
+
+str
+SEMAdown(int *res, monet_sema *s)
+{
 	down_sema(s);
-	*res=1;
+	*res = 1;
 	return MAL_SUCCEED;
 }
-str SEMAdestroy(int *res, monet_sema *s){
+
+str
+SEMAdestroy(int *res, monet_sema *s)
+{
 	destroy_sema(s);
-	*res =1;
+	*res = 1;
 	return MAL_SUCCEED;
 }
 

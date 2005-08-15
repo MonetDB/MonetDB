@@ -155,19 +155,17 @@ comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 #include "mal_interpreter.h"
 
 mal_export str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
-	 InstrPtr pci, int i, int order, int printhead, int printorderby);
-mal_export str IOprintBoth( MalBlkPtr mb, MalStkPtr stk, 
-	InstrPtr pci, int indx, str hd, str tl, int nobat) ;
+mal_export str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int order, int printhead, int printorderby);
+mal_export str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat);
 
 typedef struct {
 	int up, down;
 } bipipe;
 
-typedef FILE* fstream;
+typedef FILE *fstream;
 
 #define fileCheck(fp) if (!fp) \
-	return throwMessage( "io.@1","Incorrect file pointer"); 
+	return throwMessage( "io.@1","Incorrect file pointer");
 
 
 #endif /* _IO_H_ */
@@ -191,114 +189,131 @@ allow for any type to be assigned.
 str
 io_stdin(stream **ret)
 {
-    *ret = GDKin;
-    return MAL_SUCCEED;
+	*ret = GDKin;
+	return MAL_SUCCEED;
 }
 
 str
 io_stdout(stream **ret)
 {
-    *ret = GDKout;
-    return MAL_SUCCEED;
+	*ret = GDKout;
+	return MAL_SUCCEED;
 }
 
 str
 io_stderr(stream **ret)
 {
-    *ret = GDKerr;
-    return MAL_SUCCEED;
+	*ret = GDKerr;
+	return MAL_SUCCEED;
 }
-str IOprintBoth(
-	MalBlkPtr mb,
-	MalStkPtr stk,
-	InstrPtr pci,
-	int indx,
-	str hd,
-	str tl,
-	int nobat
-) {
+
+str
+IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat)
+{
 	int tpe = getArgType(mb, pci, indx);
-	ptr val = (ptr)getArgReference(stk, pci, indx);
+	ptr val = (ptr) getArgReference(stk, pci, indx);
 	stream *fp = GDKout;
-	(void)mb;
-	
-	if (tpe == TYPE_any) tpe = stk->stk[pci->argv[indx]].vtype;
+
+	(void) mb;
+
+	if (tpe == TYPE_any)
+		tpe = stk->stk[pci->argv[indx]].vtype;
 	if (val == NULL) {
-		if (hd) stream_printf(fp, "%s", hd);
+		if (hd)
+			stream_printf(fp, "%s", hd);
 		ATOMprint(TYPE_str, "nil", GDKout);
-		if (tl) stream_printf(fp, "%s", tl);
+		if (tl)
+			stream_printf(fp, "%s", tl);
 		return MAL_SUCCEED;
 	}
 	if (isaBatType(tpe) || tpe == TYPE_bat) {
 		BAT *b;
-		if (*(int*)val == 0) {
-			if (hd) stream_printf(fp, "%s", hd);
+
+		if (*(int *) val == 0) {
+			if (hd)
+				stream_printf(fp, "%s", hd);
 			ATOMprint(TYPE_str, "nil", GDKout);
-			if (tl) stream_printf(fp, "%s", tl);
+			if (tl)
+				stream_printf(fp, "%s", tl);
 			return MAL_SUCCEED;
 		}
-		b = BATdescriptor(*(int*)val);
+		b = BATdescriptor(*(int *) val);
 		if (b == NULL) {
-			return throwMessage("io.print","could not access descriptor");
+			return throwMessage("io.print", "could not access descriptor");
 		}
-		if(nobat){
-			if (hd) stream_printf(fp, "%s", hd);
+		if (nobat) {
+			if (hd)
+				stream_printf(fp, "%s", hd);
 			stream_printf(fp, "<%s>", BBPname(b->batCacheid));
-			if (tl) stream_printf(fp, "%s", tl);
+			if (tl)
+				stream_printf(fp, "%s", tl);
 		} else
 			BATmultiprintf(GDKout, 2, &b, TRUE, 0, TRUE);
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	if( isaColType(tpe)){
-		stream_printf(fp,"should call column pring\n");
+	if (isaColType(tpe)) {
+		stream_printf(fp, "should call column pring\n");
 		return MAL_SUCCEED;
 	}
-	if (hd) stream_printf(fp, "%s", hd);
-	
-	if (ATOMstorage(tpe) == TYPE_str  || ATOMstorage(tpe) > TYPE_str)
-		ATOMprint(tpe, *(str*)val, fp);
+	if (hd)
+		stream_printf(fp, "%s", hd);
+
+	if (ATOMstorage(tpe) == TYPE_str || ATOMstorage(tpe) > TYPE_str)
+		ATOMprint(tpe, *(str *) val, fp);
 	else
 		ATOMprint(tpe, val, fp);
 
-	if (tl) stream_printf(fp, "%s", tl);
+	if (tl)
+		stream_printf(fp, "%s", tl);
 	stream_flush(fp);
 	return MAL_SUCCEED;
 }
-str IOprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+
+str
+IOprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-        int i;
-        if( p->argc==2)
-                IOprintBoth(mb,stk,p,1,"[ "," ]\n",0);
-        else {
-                IOprintBoth(mb,stk,p,1,"[ ",0,1);
-                for(i=2; i<p->argc-1;i++)
-                        IOprintBoth(mb,stk,p,i,", ",0,1);
-                IOprintBoth(mb,stk,p,i,", ", "]\n",1);
-        }
-        return MAL_SUCCEED;
+	int i;
+
+	if (p->argc == 2)
+		IOprintBoth(mb, stk, p, 1, "[ ", " ]\n", 0);
+	else {
+		IOprintBoth(mb, stk, p, 1, "[ ", 0, 1);
+		for (i = 2; i < p->argc - 1; i++)
+			IOprintBoth(mb, stk, p, i, ", ", 0, 1);
+		IOprintBoth(mb, stk, p, i, ", ", "]\n", 1);
+	}
+	return MAL_SUCCEED;
 
 }
-str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-        IOtableAll(GDKout,mb,stk,p,1,0,FALSE,TRUE);
-        return MAL_SUCCEED;
+
+str
+IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	IOtableAll(GDKout, mb, stk, p, 1, 0, FALSE, TRUE);
+	return MAL_SUCCEED;
 }
 
-str IOprompt_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+str
+IOprompt_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return IOprintBoth(mb,stk,pci,1,0,0,1);
+	return IOprintBoth(mb, stk, pci, 1, 0, 0, 1);
 }
-str IOprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+
+str
+IOprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int tpe = getArgType(mb,pci,1);
-	ptr val = (ptr) getArgReference(stk,pci,1);
-	if( val==NULL) {
+	int tpe = getArgType(mb, pci, 1);
+	ptr val = (ptr) getArgReference(stk, pci, 1);
+
+	if (val == NULL) {
 		ATOMprint(TYPE_str, "nil", GDKout);
 		return MAL_SUCCEED;
 	}
-	if( tpe == TYPE_str)
-		ATOMprint(TYPE_str, *(str*)val, GDKout);
-	else ATOMprint(tpe, val, GDKout);
+	if (tpe == TYPE_str)
+		ATOMprint(TYPE_str, *(str *) val, GDKout);
+	else
+		ATOMprint(tpe, val, GDKout);
 	stream_flush(GDKout);
 	return MAL_SUCCEED;
 }
@@ -307,64 +322,85 @@ str IOprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 The table printing routine implementations rely on the multiprintf.
 They merely differ in destination and order prerequisite
 @c
-str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, 
-		  InstrPtr pci, int i, int order, int printhead, int printorder)
+str
+IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int order, int printhead, int printorder)
 {
-	BAT *piv[MAXPARAMS],*b;
+	BAT *piv[MAXPARAMS], *b;
 	int nbats = 0;
-	int tpe,k=i;
+	int tpe, k = i;
 	ptr val;
-	for(; i< pci->argc;i++) {
-		tpe = getArgType(mb,pci,i);
-		val = (ptr) getArgReference(stk,pci,i);
-		if( !isaBatType(tpe)) 
-			return throwMessage("io.table","BAT expected");
-		b= BATdescriptor(*(int*)val);
-		if(b == NULL) {
-			for(k=0; k< nbats;k++) BBPunfix(piv[k]->batCacheid);
-			return throwMessage("io.table","could not access descriptor");
+
+	for (; i < pci->argc; i++) {
+		tpe = getArgType(mb, pci, i);
+		val = (ptr) getArgReference(stk, pci, i);
+		if (!isaBatType(tpe))
+			return throwMessage("io.table", "BAT expected");
+		b = BATdescriptor(*(int *) val);
+		if (b == NULL) {
+			for (k = 0; k < nbats; k++)
+				BBPunfix(piv[k]->batCacheid);
+			return throwMessage("io.table", "could not access descriptor");
 		}
 		piv[nbats++] = b;
-	} 
-	/*if(printhead)*/ nbats++;
+	}
+	/*if(printhead) */ nbats++;
 	BATmultiprintf(f, nbats, piv, printhead, order, printorder);
 	stream_flush(f);
-	for(k=0; k< nbats-1;k++) BBPunfix(piv[k]->batCacheid);
+	for (k = 0; k < nbats - 1; k++)
+		BBPunfix(piv[k]->batCacheid);
 	return MAL_SUCCEED;
 }
 
-str IOotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+IOotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	int order;
-	order = *(int*) getArgReference(stk,pci,1);
-	return IOtableAll(GDKout,mb,stk,pci,2,order,TRUE,TRUE);
+
+	order = *(int *) getArgReference(stk, pci, 1);
+	return IOtableAll(GDKout, mb, stk, pci, 2, order, TRUE, TRUE);
 }
 
-str IOtable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	return IOtableAll(GDKout,mb,stk,pci,1,0,TRUE,TRUE);
+str
+IOtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return IOtableAll(GDKout, mb, stk, pci, 1, 0, TRUE, TRUE);
 }
-str IOfotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+IOfotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	stream *fp;
 	int order;
 
-	fp= *(stream **) getArgReference(stk,pci,1);
-	order = *(int*) getArgReference(stk,pci,2);
-	(void) order; /* fool compiler */
-	return IOtableAll(fp,mb,stk,pci,3,1,TRUE,TRUE);
+	fp = *(stream **) getArgReference(stk, pci, 1);
+	order = *(int *) getArgReference(stk, pci, 2);
+	(void) order;		/* fool compiler */
+	return IOtableAll(fp, mb, stk, pci, 3, 1, TRUE, TRUE);
 }
 
-str IOftable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+str
+IOftable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	stream *fp;
-	fp= *(stream **) getArgReference(stk,pci,1);
-	return IOtableAll(fp,mb,stk,pci,2,0,TRUE,TRUE);
+
+	fp = *(stream **) getArgReference(stk, pci, 1);
+	return IOtableAll(fp, mb, stk, pci, 2, 0, TRUE, TRUE);
 }
-str IOttable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	return IOtableAll(GDKout,mb,stk,pci,1,0,FALSE,TRUE);
+
+str
+IOttable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return IOtableAll(GDKout, mb, stk, pci, 1, 0, FALSE, TRUE);
 }
-str IOtotable( MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
+
+str
+IOtotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	int order;
-	order = *(int*) getArgReference(stk,pci,1);
-	(void) order; /* fool compiler */
-	return IOtableAll(GDKout,mb,stk,pci,2,order,FALSE,TRUE);
+
+	order = *(int *) getArgReference(stk, pci, 1);
+	(void) order;		/* fool compiler */
+	return IOtableAll(GDKout, mb, stk, pci, 2, order, FALSE, TRUE);
 }
 
 @- Formatter print
@@ -385,29 +421,39 @@ This avoids repeated type checking in most cases.
 	default : *ret = stream_printf(fd,"\\");stream_printf(fd,"%c",*c);
 	}
 @c
-str IOprint_str(int *ret, str *s){
-	stream *fd = GDKout; 
+str
+IOprint_str(int *ret, str *s)
+{
+	stream *fd = GDKout;
 	str c;
-	if( strNil(*s)) stream_printf(fd,"nil");
+
+	if (strNil(*s))
+		stream_printf(fd, "nil");
 	else {
-		for(c= *s;*c; c++){
-			if( *c=='\\'){
+		for (c = *s; *c; c++) {
+			if (*c == '\\') {
 				c++;
 				@:escaped@
-			} else stream_printf(fd,"%c",*c);
+			} else
+				stream_printf(fd, "%c", *c);
 		}
 	}
 	return MAL_SUCCEED;
 }
-int formatMarker(str format){
-	int i=0;
-	str t=format;
-	while( (t=strchr(t,'%')) != NULL){
+
+int
+formatMarker(str format)
+{
+	int i = 0;
+	str t = format;
+
+	while ((t = strchr(t, '%')) != NULL) {
 		t++;
 		i++;
 	}
 	return i;
 }
+
 @-
 Printing format values is limited to a single element each.
 This to simplify error handling
@@ -455,92 +501,117 @@ str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 @-
 String nil testing is slightly different.
 @c
-str IOprint_formatted_nil(stream *fd, str format, int *ret){
+str
+IOprint_formatted_nil(stream *fd, str format, int *ret)
+{
 	str c;
-	for(c= format;*c; c++){
-		if( *c=='\\'){
+
+	for (c = format; *c; c++) {
+		if (*c == '\\') {
 			c++;
 			@:escaped@
-		} else 
-		if( *c== '%'){
+		} else if (*c == '%') {
 			char newformat[1024];
-			int i=0;
+			int i = 0;
 
-			if(*(c+1)=='%'){ 
-				stream_printf(fd,"%c",*c);
-				c++; continue;
+			if (*(c + 1) == '%') {
+				stream_printf(fd, "%c", *c);
+				c++;
+				continue;
 			}
-			while( !isalpha((int)*c) && *c && i<1024)
-				 newformat[i++]= *c++;
-			newformat[i++]='s';
-			newformat[i]=0;
-			stream_printf(fd,newformat,"nil");
-		} else stream_printf(fd,"%c",*c);
+			while (!isalpha((int) *c) && *c && i < 1024)
+				newformat[i++] = *c++;
+			newformat[i++] = 's';
+			newformat[i] = 0;
+			stream_printf(fd, newformat, "nil");
+		} else
+			stream_printf(fd, "%c", *c);
 	}
 	return MAL_SUCCEED;
 }
-str IOprint_formatted_str(int *ret, ptr fmt, str *s){
+
+str
+IOprint_formatted_str(int *ret, ptr fmt, str *s)
+{
 	stream *fd = getClient()->fdout;
 	char *format;
 	str c;
+
 	/* TODO: check format properly !!! including sizes */
-	format= *(str *)fmt;
-	if( format== NULL) 
+	format = *(str *) fmt;
+	if (format == NULL)
 		return throwMessage("system.print", "format missing");
-	if( formatMarker(format)!=1) 
+	if (formatMarker(format) != 1)
 		return throwMessage("system.print", "too many %%");
 
-	if( strNil( *s)) return IOprint_formatted_nil(fd,* (str*) fmt, ret);
-	@:formatConversion(s,*s)@
+	if (strNil(*s))
+		return IOprint_formatted_nil(fd, *(str *) fmt, ret);
+	@:formatConversion(s, *s)@
 	return MAL_SUCCEED;
 }
-str IOprint_oid(int *ret, ptr fmt, oid *s){
+
+str
+IOprint_oid(int *ret, ptr fmt, oid *s)
+{
 	stream *fd = getClient()->fdout;
 	char *format;
-	str msg,c;
-	int len =50;
-	format= *(str *)fmt;
+	str msg, c;
+	int len = 50;
 
-	if( format== NULL) 
+	format = *(str *) fmt;
+
+	if (format == NULL)
 		return throwMessage("system.print", "format missing");
-	if( formatMarker(format)!=1) 
+	if (formatMarker(format) != 1)
 		return throwMessage("system.print", "too many %%");
 
-	if( *s == oid_nil) msg = GDKstrdup("nil");
-	else { msg = (str) GDKmalloc(len); OIDtoStr(&msg,&len,s);}
-	@:formatConversion(s,msg)@
+	if (*s == oid_nil)
+		msg = GDKstrdup("nil");
+	else {
+		msg = (str) GDKmalloc(len);
+		OIDtoStr(&msg, &len, s);
+	}
+	@:formatConversion(s, msg)@
 	GDKfree(msg);
-	if(*ret == EOF)
+	if (*ret == EOF)
 		return throwMessage("system.print", "end-of-file error");
 	return MAL_SUCCEED;
 }
-str IOprint_formatted_bit(int *ret, ptr fmt, bit *s){
+
+str
+IOprint_formatted_bit(int *ret, ptr fmt, bit *s)
+{
 	stream *fd = getClient()->fdout;
 	char *format;
 	str msg;
 	str c;
+
 	/* TODO: check format properly !!! including sizes */
-	format= *(str *)fmt;
-	if( format== NULL) 
+	format = *(str *) fmt;
+	if (format == NULL)
 		return throwMessage("system.print", "format missing");
-	if( formatMarker(format)!=1) 
+	if (formatMarker(format) != 1)
 		return throwMessage("system.print", "too many %%");
 
-	if( *s == bit_nil) msg = "nil";
-	else if( *s ) msg="true";
-	else 	msg="false";
-	@:formatConversion(s,msg)@
-	if(*ret == EOF)
+	if (*s == bit_nil)
+		msg = "nil";
+	else if (*s)
+		msg = "true";
+	else
+		msg = "false";
+	@:formatConversion(s, msg)@
+	if (*ret == EOF)
 		return throwMessage("system.print", "end-of-file error");
 	return MAL_SUCCEED;
 }
 
- 	@:printFormatted(chr,c)@
- 	@:printFormatted(sht,d)@
- 	@:printFormatted(int,d)@
- 	@:printFormatted(lng,d)@
- 	@:printFormatted(flt,f)@
- 	@:printFormatted(dbl,f)@
+@:printFormatted(chr, c)@
+@:printFormatted(sht, d)@
+@:printFormatted(int, d)@
+@:printFormatted(lng, d)@
+@:printFormatted(flt, f)@
+@:printFormatted(dbl, f)@
+
 @-
 @+ Bulk export/loading
 To simplify conversion between versions and to interface with other
@@ -556,18 +627,20 @@ The exported file is saved in the context of the directory
 where the server was started unless an absolute file name was
 presented.
 @c
-str IOexport(int *ret, int *bid, str *fnme) {
+str
+IOexport(int *ret, int *bid, str *fnme)
+{
 	BAT *b;
-	stream  *s = open_wastream(*fnme);
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("io.export", "Cannot access descriptor");
-    }
-	if (s== NULL || stream_errnr(s) ) {
-		*ret = FALSE;
-		return throwException(MALEXCEPTION,"bat.export",
-			"could not open %s",*fnme);
+	stream *s = open_wastream(*fnme);
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("io.export", "Cannot access descriptor");
 	}
-	BATprintf(s,b);
+	if (s == NULL || stream_errnr(s)) {
+		*ret = FALSE;
+		return throwException(MALEXCEPTION, "bat.export", "could not open %s", *fnme);
+	}
+	BATprintf(s, b);
 	stream_close(s);
 	stream_destroy(s);
 	*ret = TRUE;
@@ -580,49 +653,50 @@ The import command reads a single BAT from an ASCII file. It assumes
 a layout compatible with that produced by print or export.
 @c
 #define COMMA ','
-str IOimport(int *ret, int *bid, str *fnme) {
+str
+IOimport(int *ret, int *bid, str *fnme)
+{
 	BAT *b;
-	int	(*hconvert)(str, int*, ptr*), (*tconvert)(str, int*, ptr*);
-	size_t	bufsize = 2048; /* NIELS:tmp change used to be 1024 */
-	char	*base, *cur, *end;
-	char	*buf = (char *) GDKmalloc(bufsize);
-	ptr	h = 0, t = 0;
-	int	lh = 0,	lt = 0;
-	FILE	*fp = fopen(*fnme, "r");
+	int (*hconvert) (str, int *, ptr *), (*tconvert) (str, int *, ptr *);
+	size_t bufsize = 2048;	/* NIELS:tmp change used to be 1024 */
+	char *base, *cur, *end;
+	char *buf = (char *) GDKmalloc(bufsize);
+	ptr h = 0, t = 0;
+	int lh = 0, lt = 0;
+	FILE *fp = fopen(*fnme, "r");
 
-    if( (b= BATdescriptor(*bid)) == NULL ){
-         return throwMessage("io.import", "Cannot access descriptor");
-    }
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("io.import", "Cannot access descriptor");
+	}
 	hconvert = BATatoms[BAThtype(b)].atomFromStr;
 	tconvert = BATatoms[BATttype(b)].atomFromStr;
 @-
 Open the file. Memory map it to minimize buffering problems.
 @c
-	if (fp == NULL){
+	if (fp == NULL) {
 		BBPunfix(b->batCacheid);
-		return throwException(MALEXCEPTION,"bat.import",
-			"could not open file %s",fnme);
+		return throwException(MALEXCEPTION, "bat.import", "could not open file %s", fnme);
 	} else {
 		int fn;
 		struct stat st;
-		if ((fn=fileno(fp)) <= 0) {
-				BBPunfix(b->batCacheid);
-				return throwMessage("IOimport","fileno fails\n");
+
+		if ((fn = fileno(fp)) <= 0) {
+			BBPunfix(b->batCacheid);
+			return throwMessage("IOimport", "fileno fails\n");
 		}
 		if (fstat(fn, &st) != 0) {
-				BBPunfix(b->batCacheid);
-				return throwMessage("IOimports","fstat fails\n");
+			BBPunfix(b->batCacheid);
+			return throwMessage("IOimports", "fstat fails\n");
 		}
 
-		(void)fclose(fp);
-		if (st.st_size <= 0){
-				BBPunfix(b->batCacheid);
-				return throwMessage("IOimports",
-				"file empty or fstat broken?\n");
+		(void) fclose(fp);
+		if (st.st_size <= 0) {
+			BBPunfix(b->batCacheid);
+			return throwMessage("IOimports", "file empty or fstat broken?\n");
 		}
-            	base = cur = (char*)MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, st.st_size, NULL);
+		base = cur = (char *) MT_mmap(*fnme, MMAP_SEQUENTIAL, 0, st.st_size, NULL);
 		end = cur + st.st_size;
-		if (cur == (char*) -1) {
+		if (cur == (char *) -1) {
 			BBPunfix(b->batCacheid);
 			return throwMessage("IOimport", "MT_mmap failed\n");
 		}
@@ -631,20 +705,23 @@ Open the file. Memory map it to minimize buffering problems.
 @-
 Parse a line. Copy it into a buffer. Concat broken lines with a slash.
 @c
-	while(cur < end) {
+	while (cur < end) {
 		str dst = buf, src = cur, p = strchr(cur, '\n');
 		size_t l = p - cur;
 
 		if (!p) {
 			p = end;
-		} else while(src[l-1] == '\\') {
-			@:memcpy@
-			dst += l-1; src += l+1;
-			if ((p = strchr(src, '\n')) == 0) {
-				p = end; break;
+		} else
+			while (src[l - 1] == '\\') {
+				@:memcpy@
+				dst += l - 1;
+				src += l + 1;
+				if ((p = strchr(src, '\n')) == 0) {
+					p = end;
+					break;
+				}
+				l = p - src;
 			}
-			l = p - src;
-		}
 		@:memcpy@
 @-
 @= memcpy
@@ -657,12 +734,14 @@ Parse a line. Copy it into a buffer. Concat broken lines with a slash.
 		memcpy(dst, src, l-1);
 @c
 		dst[l] = 0;
-		cur = p+1;
+		cur = p + 1;
 @-
 Parse the line, and insert a BUN.
 @c
-		for(p = buf; *p && GDKisspace(*p); p++);
-		if (*p == '#') continue;
+		for (p = buf; *p && GDKisspace(*p); p++)
+			;
+		if (*p == '#')
+			continue;
 @-
 @= parsevalue
 		for (;*p && *p != @2; p++);
@@ -676,15 +755,15 @@ Parse the line, and insert a BUN.
 		p += @1(p, @3, @4);
 @c
 		@:parsevalue(hconvert, '[', &lh, (ptr *) &h)@
-		@:parsevalue(tconvert, COMMA, &lt, (ptr *)&t)@
+		@:parsevalue(tconvert, COMMA, &lt, (ptr *) &t)@
 		BUNins(b, h, t);
-		
+
 @-
 Unmap already parsed memory, to keep the memory usage low.
 @c
 #ifndef WIN32
 #define MAXBUF 40*MT_pagesize()
-		if ( (unsigned)(cur - base) > MAXBUF) {
+		if ((unsigned) (cur - base) > MAXBUF) {
 			MT_munmap(base, MAXBUF);
 			base += MAXBUF;
 		}
@@ -693,13 +772,16 @@ Unmap already parsed memory, to keep the memory usage low.
 @-
 Cleanup and exit. Return the filled BAT.
 @c
-	if (h) GDKfree(h);
-	if (t) GDKfree(t);
+	if (h)
+		GDKfree(h);
+	if (t)
+		GDKfree(t);
 	GDKfree(buf);
-	MT_munmap(base, end-base);
+	MT_munmap(base, end - base);
 	BBPincref(b->batCacheid, TRUE);
 	*ret = TRUE;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 @}

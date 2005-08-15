@@ -183,212 +183,231 @@ mal_export int BPTfindGrp(int bid);
 #endif
 @c
 #include "partitions.h"
-extern str BKCinsert_void_bun(int *r, int *bid, ptr t) ;
-extern str BKCinsert_bun(int *r, int *bid, ptr h, ptr t) ;
-extern str BKCdelete(int *r, int *bid, ptr h) ;
-extern str BKCdelete_bat(int *r, int *bid, int *bnid) ;
+extern str BKCinsert_void_bun(int *r, int *bid, ptr t);
+extern str BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
+extern str BKCdelete(int *r, int *bid, ptr h);
+extern str BKCdelete_bat(int *r, int *bid, int *bnid);
 
-typedef struct{
-	bat bid;	/* group bat identifier */
-	int pid;	/* group element identifier */
-	oid first;	/* lowest oid stored */
-	oid last;	/* largest oid stored or nil */
-	int next;	/* next one in the list */
-	int prev;	/* previous one in the list */
-	int cap;	/* maximum capacity */
+typedef struct {
+	bat bid;		/* group bat identifier */
+	int pid;		/* group element identifier */
+	oid first;		/* lowest oid stored */
+	oid last;		/* largest oid stored or nil */
+	int next;		/* next one in the list */
+	int prev;		/* previous one in the list */
+	int cap;		/* maximum capacity */
 } Partition;
 
 static Partition *partitions;
-static int ptop,plimit;
+static int ptop, plimit;
 
 #define INCREMENT 1024
 void
-BPTresize(int size){
+BPTresize(int size)
+{
 	Partition *p;
-	p= GDKmalloc(size * sizeof(Partition));
-	if( partitions){
-		if( ptop >size) GDKfatal("assertion error in BPTresize");
-		memcpy(p, partitions, sizeof(Partition)*ptop);
+
+	p = GDKmalloc(size * sizeof(Partition));
+	if (partitions) {
+		if (ptop > size)
+			GDKfatal("assertion error in BPTresize");
+		memcpy(p, partitions, sizeof(Partition) * ptop);
 		GDKfree(partitions);
-	} 
-	partitions= p;
-	partitions[0].bid= -1;
-	partitions[0].pid= -1;
-	partitions[0].prev= -1;
-	partitions[0].next= -1;
-	plimit= size;
+	}
+	partitions = p;
+	partitions[0].bid = -1;
+	partitions[0].pid = -1;
+	partitions[0].prev = -1;
+	partitions[0].next = -1;
+	plimit = size;
 }
 
-str BPTdump(){
-	stream *fd=GDKout;
+str
+BPTdump()
+{
+	stream *fd = GDKout;
 	int i;
-	stream_printf(fd,"ptop=%d plimit=%d\n",ptop,plimit);
-	for(i=0;i<ptop; i++)
-	stream_printf(fd,"[%d] bid=%d pid=%d f=%d, l=%d prv=%d nxt=%d cap=%d\n",i,
-		partitions[i].bid,
-		partitions[i].pid,
-		partitions[i].first,
-		partitions[i].last,
-		partitions[i].prev,
-		partitions[i].next,
-		partitions[i].cap);
+
+	stream_printf(fd, "ptop=%d plimit=%d\n", ptop, plimit);
+	for (i = 0; i < ptop; i++)
+		stream_printf(fd, "[%d] bid=%d pid=%d f=%d, l=%d prv=%d nxt=%d cap=%d\n", i, partitions[i].bid, partitions[i].pid, partitions[i].first, partitions[i].last, partitions[i].prev, partitions[i].next, partitions[i].cap);
 	return MAL_SUCCEED;
 }
+
 @- Box administration
 The box currently does not carry any client protection.
 This should later be added or being provided by the BAT
 access.
 @c
 str
-BPTprelude(int *ret){
-    Box box;
+BPTprelude(int *ret)
+{
+	Box box;
+
 	(void) ret;
-    box= openBox("partitions");
-    if( box== 0)
-        return throwMessage("partitions.prelude","failed to open box");
-    BPTresize(INCREMENT);
-    return MAL_SUCCEED;
+	box = openBox("partitions");
+	if (box == 0)
+		return throwMessage("partitions.prelude", "failed to open box");
+	BPTresize(INCREMENT);
+	return MAL_SUCCEED;
 }
 
-str 
-BPTopen(){
-    if(openBox("partitions") != 0) return MAL_SUCCEED;
-    return throwMessage("partitions.open","failed to open partitions box");
+str
+BPTopen()
+{
+	if (openBox("partitions") != 0)
+		return MAL_SUCCEED;
+	return throwMessage("partitions.open", "failed to open partitions box");
 }
 
-str 
-BPTclose(){
+str
+BPTclose()
+{
 	stream *f;
 	str boxfile, boxfilebak;
 	Box box;
 	int i;
 
-	box= openBox("partitions");
-	f= prepareSaveBox(box, &boxfile, &boxfilebak);
-	if( f != NULL){
+	box = openBox("partitions");
+	f = prepareSaveBox(box, &boxfile, &boxfilebak);
+	if (f != NULL) {
 		/* save the info */
-		for(i=0;i<ptop;i++)
-		if( partitions[i].bid != -1){
-			BAT *b= (BAT*)BBPgetdesc(partitions[i].pid);
-            if( b && b->batPersistence & PERSISTENT)
-            stream_printf(f,"%s.deposit(\"%s\",\"%s\",%d);\n",
-                box->name, 
-				BBPname(partitions[i].bid),
-				BBPname(partitions[i].pid),
-				partitions[i].cap);
-		}
-        stream_close(f);
-        (void) link(boxfilebak,boxfile);
+		for (i = 0; i < ptop; i++)
+			if (partitions[i].bid != -1) {
+				BAT *b = (BAT *) BBPgetdesc(partitions[i].pid);
+
+				if (b && b->batPersistence & PERSISTENT)
+					stream_printf(f, "%s.deposit(\"%s\",\"%s\",%d);\n", box->name, BBPname(partitions[i].bid), BBPname(partitions[i].pid), partitions[i].cap);
+			}
+		stream_close(f);
+		(void) link(boxfilebak, boxfile);
 		(void) unlink(boxfilebak);
 		GDKfree(boxfile);
 		GDKfree(boxfilebak);
 	}
-    return MAL_SUCCEED;
-}
-str 
-BPTdestroy(){
-    destroyBox("partitions");
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 str
-BPTtake(int *ret, int *idx){
-	if( *idx< 0 || *idx >= ptop)
-		return throwMessage("partitions.take","Index out of range");
+BPTdestroy()
+{
+	destroyBox("partitions");
+	return MAL_SUCCEED;
+}
+
+str
+BPTtake(int *ret, int *idx)
+{
+	if (*idx < 0 || *idx >= ptop)
+		return throwMessage("partitions.take", "Index out of range");
 	*ret = partitions[*idx].pid;
 	BBPincref(*ret, TRUE);
 	return MAL_SUCCEED;
 }
+
 @-
 Administration of new partitions.
 @c
-int BPTfindGrp(int bid){
+int
+BPTfindGrp(int bid)
+{
 	int i;
-	for(i=0; i<ptop; i++)
-	if( partitions[i].bid== bid) {
-		while( partitions[i].prev >= 0 )
-			i= partitions[i].prev;
-		return i;
-	}
+
+	for (i = 0; i < ptop; i++)
+		if (partitions[i].bid == bid) {
+			while (partitions[i].prev >= 0)
+				i = partitions[i].prev;
+			return i;
+		}
 	return -1;
 }
-int BPTfindPartition(int bid, int pid){
+
+int
+BPTfindPartition(int bid, int pid)
+{
 	int i;
-	for(i=0; i<ptop; i++)
-	if( partitions[i].bid== bid && partitions[i].pid==pid) return i;
+
+	for (i = 0; i < ptop; i++)
+		if (partitions[i].bid == bid && partitions[i].pid == pid)
+			return i;
 	return -1;
 }
+
 str
-BPTdeposit(int *ret, int *bid){
-	int idx,i;
+BPTdeposit(int *ret, int *bid)
+{
+	int idx, i;
 	BAT *b;
 
-	b= BATdescriptor(*bid);
-	if( b== NULL)
-		return throwMessage("partitions.deposit","Can not access descriptor");
-	idx= BPTfindGrp(*bid);
-	if( idx != -1)
-		return throwMessage("partitions.deposit","Duplicate group definition");
-	if( ptop == plimit)
+	b = BATdescriptor(*bid);
+	if (b == NULL)
+		return throwMessage("partitions.deposit", "Can not access descriptor");
+	idx = BPTfindGrp(*bid);
+	if (idx != -1)
+		return throwMessage("partitions.deposit", "Duplicate group definition");
+	if (ptop == plimit)
 		BPTresize(plimit + INCREMENT);
-	for(i=0; i<=ptop; i++)
-	if( partitions[i].bid == -1) break;
-	partitions[i].bid= *bid;
-	partitions[i].pid= *bid;
-	partitions[i].first= b->hseqbase;
-	partitions[i].last=  b->hseqbase+ BATcount(b);
-	partitions[i].prev= -1;
-	partitions[i].next= -1;
-	partitions[i].cap= -1;
-	if(i>= ptop) {
-		ptop=i+1;
-		partitions[ptop].bid= -1;
-		partitions[ptop].next= -1;
-		partitions[ptop].prev= -1;
+	for (i = 0; i <= ptop; i++)
+		if (partitions[i].bid == -1)
+			break;
+	partitions[i].bid = *bid;
+	partitions[i].pid = *bid;
+	partitions[i].first = b->hseqbase;
+	partitions[i].last = b->hseqbase + BATcount(b);
+	partitions[i].prev = -1;
+	partitions[i].next = -1;
+	partitions[i].cap = -1;
+	if (i >= ptop) {
+		ptop = i + 1;
+		partitions[ptop].bid = -1;
+		partitions[ptop].next = -1;
+		partitions[ptop].prev = -1;
 	}
 	BBPunfix(*bid);
 	(void) ret;
 	return MAL_SUCCEED;
 }
+
 str
-BPTdeposit2(int *ret, int *bid, int *pid){
-	int idx,i;
+BPTdeposit2(int *ret, int *bid, int *pid)
+{
+	int idx, i;
 	BAT *b;
 
-	b= BATdescriptor(*pid);
-	if( b== NULL)
-		return throwMessage("partitions.deposit","Can not access descriptor");
-	
-	idx= BPTfindGrp(*bid);
-	if( idx == -1){
+	b = BATdescriptor(*pid);
+	if (b == NULL)
+		return throwMessage("partitions.deposit", "Can not access descriptor");
+
+	idx = BPTfindGrp(*bid);
+	if (idx == -1) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("partitions.deposit","BAT group unknown");
+		return throwMessage("partitions.deposit", "BAT group unknown");
 	}
 
-	while( partitions[idx].next >= 0)
-		idx= partitions[idx].next;
-	if( b->hseqbase < partitions[idx].last &&
-			partitions[idx].last != -1){
-			BBPunfix(b->batCacheid);
-			return throwMessage("partitions.deposit","Partition already known");
+	while (partitions[idx].next >= 0)
+		idx = partitions[idx].next;
+	if (b->hseqbase < partitions[idx].last && partitions[idx].last != -1) {
+		BBPunfix(b->batCacheid);
+		return throwMessage("partitions.deposit", "Partition already known");
 	}
 
-	if( ptop == plimit)
+	if (ptop == plimit)
 		BPTresize(plimit + INCREMENT);
-	for(i=0; i<=ptop; i++)
-	if( partitions[i].bid == -1) break;
-	partitions[i].bid= *bid;
-	partitions[i].pid= *pid;
-	partitions[i].first= b->hseqbase;
-	partitions[i].last=  b->hseqbase+ BATcount(b);
-	partitions[i].cap= -1;
-	partitions[i].prev= idx;
-	partitions[idx].next= i;
-	if(i>= ptop) {
-		ptop=i+1;
-		partitions[ptop].bid= -1;
-		partitions[ptop].next= -1;
-		partitions[ptop].prev= -1;
+	for (i = 0; i <= ptop; i++)
+		if (partitions[i].bid == -1)
+			break;
+	partitions[i].bid = *bid;
+	partitions[i].pid = *pid;
+	partitions[i].first = b->hseqbase;
+	partitions[i].last = b->hseqbase + BATcount(b);
+	partitions[i].cap = -1;
+	partitions[i].prev = idx;
+	partitions[idx].next = i;
+	if (i >= ptop) {
+		ptop = i + 1;
+		partitions[ptop].bid = -1;
+		partitions[ptop].next = -1;
+		partitions[ptop].prev = -1;
 	}
 	BBPunfix(*pid);
 	(void) ret;
@@ -396,98 +415,117 @@ BPTdeposit2(int *ret, int *bid, int *pid){
 }
 
 str
-BPTdepositPartition(int *ret, str *bnme, str *pnme, int *cap){
+BPTdepositPartition(int *ret, str *bnme, str *pnme, int *cap)
+{
 	BAT *b, *bn;
 	str msg;
 	int idx;
 
-	idx= BBPindex(*bnme);
-	if( idx == 0)
-		return throwMessage("partitions.deposit","Can not access descriptor");
-	b= BATdescriptor(idx);
-	if( b== NULL)
-		return throwMessage("partitions.deposit","Can not access descriptor");
+	idx = BBPindex(*bnme);
+	if (idx == 0)
+		return throwMessage("partitions.deposit", "Can not access descriptor");
+	b = BATdescriptor(idx);
+	if (b == NULL)
+		return throwMessage("partitions.deposit", "Can not access descriptor");
 
-	idx= BBPindex(*pnme);
-	if( idx == 0)
-		return throwMessage("partitions.deposit","Can not access descriptor");
-	bn= BATdescriptor(idx);
-	if( bn== NULL){
+	idx = BBPindex(*pnme);
+	if (idx == 0)
+		return throwMessage("partitions.deposit", "Can not access descriptor");
+	bn = BATdescriptor(idx);
+	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("partitions.deposit","Can not access descriptor");
+		return throwMessage("partitions.deposit", "Can not access descriptor");
 	}
-	msg= BPTdeposit2(ret, &b->batCacheid, &bn->batCacheid);
-	if( msg) {
+	msg = BPTdeposit2(ret, &b->batCacheid, &bn->batCacheid);
+	if (msg) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
 		return msg;
 	}
-	idx= BPTfindPartition(b->batCacheid, bn->batCacheid);
-	partitions[idx].first= bn->hseqbase;
-	partitions[idx].last= bn->hseqbase + BATcount(bn)-1;
-	partitions[idx].cap= *cap;
+	idx = BPTfindPartition(b->batCacheid, bn->batCacheid);
+	partitions[idx].first = bn->hseqbase;
+	partitions[idx].last = bn->hseqbase + BATcount(bn) - 1;
+	partitions[idx].cap = *cap;
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
 str
-BPTgetRange(oid *first, oid *last, int *bid){
+BPTgetRange(oid *first, oid *last, int *bid)
+{
 	int i;
-	for(i=0;i<ptop; i++)
-	if( partitions[i].pid== *bid ){
-		*first = partitions[i].first;
-		*last = partitions[i].last;
-		return MAL_SUCCEED;
-	}
-	return throwMessage("partitions.getRange","Partition not known");
+
+	for (i = 0; i < ptop; i++)
+		if (partitions[i].pid == *bid) {
+			*first = partitions[i].first;
+			*last = partitions[i].last;
+			return MAL_SUCCEED;
+		}
+	return throwMessage("partitions.getRange", "Partition not known");
 }
+
 str
-BPTgetLastPartition(int *ret, int *bid){
+BPTgetLastPartition(int *ret, int *bid)
+{
 	int i;
-	for(i=0;i<ptop; i++)
-	if( partitions[i].bid== *bid &&
-		partitions[i].next== -1){
+
+	for (i = 0; i < ptop; i++)
+		if (partitions[i].bid == *bid && partitions[i].next == -1) {
 			*ret = partitions[i].pid;
 			return MAL_SUCCEED;
-	}
-	return throwMessage("partitions.getLastPartition","Partition not known");
+		}
+	return throwMessage("partitions.getLastPartition", "Partition not known");
 }
+
 str
-BPTdiscard(int *ret, int *bid){
+BPTdiscard(int *ret, int *bid)
+{
 	int i;
-	for(i=0; i<ptop; i++)
-	if( partitions[i].bid== *bid ||
-		partitions[i].pid== *bid) {
-		partitions[i].bid= -1;
-		partitions[i].pid= -1;
-	}
+
+	for (i = 0; i < ptop; i++)
+		if (partitions[i].bid == *bid || partitions[i].pid == *bid) {
+			partitions[i].bid = -1;
+			partitions[i].pid = -1;
+		}
 	(void) ret;
 	return MAL_SUCCEED;
 }
+
 str
-BPTdiscardAll(int *ret){
+BPTdiscardAll(int *ret)
+{
 	GDKfree(partitions);
-	partitions=0;
+	partitions = 0;
 	BPTresize(INCREMENT);
 	(void) ret;
 	return MAL_SUCCEED;
 }
+
 str
-BPTtoString(int *ret, int *bid){
-	(void) ret; (void) bid;
-	return throwMessage("partitions.toString","not yet implemented");
+BPTtoString(int *ret, int *bid)
+{
+	(void) ret;
+	(void) bid;
+	return throwMessage("partitions.toString", "not yet implemented");
 }
+
 str
-BPTreleaseAll(int *ret, int *bid){
-	(void) ret; (void) bid;
-	return throwMessage("partitions.release","not yet implemented");
+BPTreleaseAll(int *ret, int *bid)
+{
+	(void) ret;
+	(void) bid;
+	return throwMessage("partitions.release", "not yet implemented");
 }
+
 str
-BPTrelease(int *ret, int *bid){
-	(void) ret; (void) bid;
-	return throwMessage("partitions.release","not yet implemented");
+BPTrelease(int *ret, int *bid)
+{
+	(void) ret;
+	(void) bid;
+	return throwMessage("partitions.release", "not yet implemented");
 }
+
 @-
 We start with the large chunk iterator.
 The definition of the control statements require the same
@@ -497,74 +535,82 @@ The number of elements in the chunk is limited by the granule
 size.
 @c
 str
-BPTnewIteratorBase(int *ret){
+BPTnewIteratorBase(int *ret)
+{
 	*ret = 0;
-	if( *ret == ptop) *ret = -1;
-	return MAL_SUCCEED;
-}
-str
-BPThasMoreElementsBase(int *ret){
-	do{
-		*ret = *ret +1;
-		if( *ret >= ptop) {
-			*ret = -1;
-			return MAL_SUCCEED;
-		}
-	} while( partitions[*ret].bid == -1);
+	if (*ret == ptop)
+		*ret = -1;
 	return MAL_SUCCEED;
 }
 
-str 
-BPTnewIterator(int *res, int *pid, int *bid){
-	int i;
-	for(i=0;i<ptop; i++)
-	if( partitions[i].bid == *bid ){
-		*res = i;
-		*pid= partitions[i].pid;
-		BBPincref(*pid,TRUE);
-		return MAL_SUCCEED;
-	}
-	return throwMessage("partitions.newIterator","Group not found");
+str
+BPThasMoreElementsBase(int *ret)
+{
+	do {
+		*ret = *ret + 1;
+		if (*ret >= ptop) {
+			*ret = -1;
+			return MAL_SUCCEED;
+		}
+	} while (partitions[*ret].bid == -1);
+	return MAL_SUCCEED;
 }
-str 
-BPTnewIteratorRng(int *res, int *pid, int *bid, oid *first, oid *last){
+
+str
+BPTnewIterator(int *res, int *pid, int *bid)
+{
 	int i;
-	for(i=0;i<ptop; i++)
-	if( partitions[i].bid == *bid &&
-	 	!(partitions[i].last < *first ||
-		 partitions[i].first > *last) ){
-		*res = i;
-		*pid= partitions[i].pid;
-		BBPincref(*pid,TRUE);
-		return MAL_SUCCEED;
-	}
-	return throwMessage("partitions.newIterator","Group not found");
+
+	for (i = 0; i < ptop; i++)
+		if (partitions[i].bid == *bid) {
+			*res = i;
+			*pid = partitions[i].pid;
+			BBPincref(*pid, TRUE);
+			return MAL_SUCCEED;
+		}
+	return throwMessage("partitions.newIterator", "Group not found");
 }
-str 
-BPThasMoreElements(int *res, int *pid, int *bid){
-	if( partitions[*res].next != 0 &&
-		partitions[*res].bid== *bid){
+
+str
+BPTnewIteratorRng(int *res, int *pid, int *bid, oid *first, oid *last)
+{
+	int i;
+
+	for (i = 0; i < ptop; i++)
+		if (partitions[i].bid == *bid && !(partitions[i].last < *first || partitions[i].first > *last)) {
+			*res = i;
+			*pid = partitions[i].pid;
+			BBPincref(*pid, TRUE);
+			return MAL_SUCCEED;
+		}
+	return throwMessage("partitions.newIterator", "Group not found");
+}
+
+str
+BPThasMoreElements(int *res, int *pid, int *bid)
+{
+	if (partitions[*res].next != 0 && partitions[*res].bid == *bid) {
 		*res = partitions[*res].next;
-		*pid= partitions[*res].pid;
-		BBPincref(*pid,TRUE);
+		*pid = partitions[*res].pid;
+		BBPincref(*pid, TRUE);
 		return MAL_SUCCEED;
 	}
 	*res = -1;
 	return MAL_SUCCEED;
 }
-str 
-BPThasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last){
+
+str
+BPThasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last)
+{
 	int i;
 
-	for(i= *res+1;i<ptop; i++)
-	if( partitions[i].bid == *bid &&
-	 	!(partitions[i].last < *first ||
-		 partitions[i].first > *last) ){
-		*res = i;
-		*pid= partitions[i].pid;
-		BBPincref(*pid,TRUE);
-		return MAL_SUCCEED;
-	}
+	for (i = *res + 1; i < ptop; i++)
+		if (partitions[i].bid == *bid && !(partitions[i].last < *first || partitions[i].first > *last)) {
+			*res = i;
+			*pid = partitions[i].pid;
+			BBPincref(*pid, TRUE);
+			return MAL_SUCCEED;
+		}
 	*res = -1;
 	return MAL_SUCCEED;
 }
@@ -572,161 +618,195 @@ BPThasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last){
 @-
 Data management of the partitioned BATs.
 @c
-static int BPTgetlastindex(int bid){
+static int
+BPTgetlastindex(int bid)
+{
 	int i;
-	for(i=0;i<ptop; i++)
-	if( (partitions[i].bid== bid || partitions[i].pid==bid) &&
-		partitions[i].next== -1)
-			return i;
-	return -1;
-}
-static int BPTgetfirstindex(int bid){
-	int i;
-	for(i=0;i<ptop; i++)
-	if( (partitions[i].bid== bid || partitions[i].pid==bid) &&
-		partitions[i].prev== -1)
+
+	for (i = 0; i < ptop; i++)
+		if ((partitions[i].bid == bid || partitions[i].pid == bid) && partitions[i].next == -1)
 			return i;
 	return -1;
 }
 static int
-getpartitionsize(int idx){
-	return (int)partitions[idx].last - (int) partitions[idx].first+1;
+BPTgetfirstindex(int bid)
+{
+	int i;
+
+	for (i = 0; i < ptop; i++)
+		if ((partitions[i].bid == bid || partitions[i].pid == bid) && partitions[i].prev == -1)
+			return i;
+	return -1;
 }
-static int addPartition(int idx){
+static int
+getpartitionsize(int idx)
+{
+	return (int) partitions[idx].last - (int) partitions[idx].first + 1;
+}
+static int
+addPartition(int idx)
+{
 	int i;
 	BAT *b, *bn;
-	b= BATdescriptor(partitions[idx].pid);
-	if(b == 0) return -1;
-	bn= BATnew(b->htype,b->ttype, BATcount(b));
-	if(bn == 0) return -1;
 
-	partitions[idx].last= partitions[idx].first+BATcount(b);
-	for(i=0; i<=ptop; i++)
-	if( partitions[i].bid == -1) break;
-	partitions[i].bid= partitions[idx].bid;
-	partitions[i].pid= bn->batCacheid;
-	partitions[i].last= 
-	partitions[i].first= partitions[idx].last;
-	partitions[i].cap= partitions[idx].cap;
-	partitions[i].next= -1;
+	b = BATdescriptor(partitions[idx].pid);
+	if (b == 0)
+		return -1;
+	bn = BATnew(b->htype, b->ttype, BATcount(b));
+	if (bn == 0)
+		return -1;
 
-	if(i>= ptop) {
-		ptop=i+1;
-		partitions[ptop].bid= -1;
-		partitions[ptop].next= -1;
-		partitions[ptop].prev= -1;
+	partitions[idx].last = partitions[idx].first + BATcount(b);
+	for (i = 0; i <= ptop; i++)
+		if (partitions[i].bid == -1)
+			break;
+	partitions[i].bid = partitions[idx].bid;
+	partitions[i].pid = bn->batCacheid;
+	partitions[i].last = partitions[i].first = partitions[idx].last;
+	partitions[i].cap = partitions[idx].cap;
+	partitions[i].next = -1;
+
+	if (i >= ptop) {
+		ptop = i + 1;
+		partitions[ptop].bid = -1;
+		partitions[ptop].next = -1;
+		partitions[ptop].prev = -1;
 	}
 
-	partitions[idx].next= i;
+	partitions[idx].next = i;
 
 	BATseqbase(bn, partitions[i].first);
-	BBPincref(bn->batCacheid,TRUE);
+	BBPincref(bn->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return i;
 }
+
 str
-BPTsetCapacity(int *ret, int *bid, int *val){
+BPTsetCapacity(int *ret, int *bid, int *val)
+{
 	int i;
+
 	(void) ret;
-	i= BPTgetlastindex(*bid);
-	if( i >= 0){
+	i = BPTgetlastindex(*bid);
+	if (i >= 0) {
 		partitions[i].cap = *val;
 		return MAL_SUCCEED;
 	}
-	return throwMessage("partitions.setCapacity","BAT group not found");
+	return throwMessage("partitions.setCapacity", "BAT group not found");
 }
+
 str
-BPTinsert_void_bun(int *ret, int *bid, ptr val){
+BPTinsert_void_bun(int *ret, int *bid, ptr val)
+{
 	int i;
-	i= BPTgetlastindex(*bid);
-	if( i >= 0) {
-			if(partitions[i].cap != -1 && partitions[i].cap < getpartitionsize(i))
-				i= addPartition(i);
-			partitions[i].last++;
-			if( i>= 0)
-				return BKCinsert_void_bun(ret, &partitions[i].pid,val);
+
+	i = BPTgetlastindex(*bid);
+	if (i >= 0) {
+		if (partitions[i].cap != -1 && partitions[i].cap < getpartitionsize(i))
+			i = addPartition(i);
+		partitions[i].last++;
+		if (i >= 0)
+			return BKCinsert_void_bun(ret, &partitions[i].pid, val);
 	}
-	return throwMessage("partitions.insert","BAT group not found");
+	return throwMessage("partitions.insert", "BAT group not found");
 }
+
 str
-BPTinsert(int *ret, int *bid, ptr h, ptr t){
+BPTinsert(int *ret, int *bid, ptr h, ptr t)
+{
 	int i;
-	i= BPTgetlastindex(*bid);
-	if( i >= 0) {
-			if(partitions[i].cap != -1 && partitions[i].cap <= getpartitionsize(i))
-				i= addPartition(i);
-			if( i>= 0)
-				return BKCinsert_bun(ret, &partitions[i].pid,h,t);
+
+	i = BPTgetlastindex(*bid);
+	if (i >= 0) {
+		if (partitions[i].cap != -1 && partitions[i].cap <= getpartitionsize(i))
+			i = addPartition(i);
+		if (i >= 0)
+			return BKCinsert_bun(ret, &partitions[i].pid, h, t);
 	}
-	return throwMessage("partitions.insert","BAT group not found");
+	return throwMessage("partitions.insert", "BAT group not found");
 }
+
 str
-BPTinsertBAT(int *ret, int *bid, int *bnid){
-	(void) ret; (void) bid; (void) bnid;
-	return throwMessage("partitions.insert","BAT insert not yet implemented");
+BPTinsertBAT(int *ret, int *bid, int *bnid)
+{
+	(void) ret;
+	(void) bid;
+	(void) bnid;
+	return throwMessage("partitions.insert", "BAT insert not yet implemented");
 }
+
 @-
 A deletion over a BAT group may create holes between the groups comprising,
 which is solved by upgrading the hbase of the descriptors.
 @c
 str
-BPTdelete_oid(int *ret, int *bid, oid *h){
+BPTdelete_oid(int *ret, int *bid, oid *h)
+{
 	int i;
-	i= BPTgetlastindex(*bid);
-	if( i<0)
-		return throwMessage("partitions.delete","BAT group not found");
 
-	for(; i>=0; i= partitions[i].prev){
-		if( *h >= partitions[i].first)
-			return BKCdelete(ret, &partitions[i].pid,h);
-		if( partitions[i].prev < 0) return MAL_SUCCEED;
+	i = BPTgetlastindex(*bid);
+	if (i < 0)
+		return throwMessage("partitions.delete", "BAT group not found");
+
+	for (; i >= 0; i = partitions[i].prev) {
+		if (*h >= partitions[i].first)
+			return BKCdelete(ret, &partitions[i].pid, h);
+		if (partitions[i].prev < 0)
+			return MAL_SUCCEED;
 	}
-	return throwMessage("partitions.delete","Element not found in BAT group");
+	return throwMessage("partitions.delete", "Element not found in BAT group");
 }
+
 str
-BPTcompress(int *ret, int *bid){
+BPTcompress(int *ret, int *bid)
+{
 	BAT *b;
 	int i;
-	oid o=0;
+	oid o = 0;
+
 	(void) ret;
-	i= BPTgetfirstindex(*bid);
-	if( i<0)
-		return throwMessage("partitions.commpress","BAT group not found");
-	b= BATdescriptor(i);
-	if( b==0)
-		return throwMessage("partitions.commpress","BAT group not found");
-	for(; i>=0 ;  i= partitions[i].next){
+	i = BPTgetfirstindex(*bid);
+	if (i < 0)
+		return throwMessage("partitions.commpress", "BAT group not found");
+	b = BATdescriptor(i);
+	if (b == 0)
+		return throwMessage("partitions.commpress", "BAT group not found");
+	for (; i >= 0; i = partitions[i].next) {
 		partitions[i].first = o;
-		b= BATdescriptor(partitions[i].pid);
-		if( b==0) 
-			return throwMessage("partitions.compress","Internal error in BAT group");
+		b = BATdescriptor(partitions[i].pid);
+		if (b == 0)
+			return throwMessage("partitions.compress", "Internal error in BAT group");
 		b->hseqbase = partitions[i].first;
-		o=partitions[i].last += BATcount(b)-1;
+		o = partitions[i].last += BATcount(b) - 1;
 		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
+
 str
-BPTdeleteBAT(int *ret, int *bid, int *bnid){
+BPTdeleteBAT(int *ret, int *bid, int *bnid)
+{
 	int i;
 	BAT *b;
-	(void) ret; 
+
+	(void) ret;
 	i = BPTgetlastindex(*bid);
-	for( ; i>= 0; i= partitions[i].prev){
-		if( partitions[i].pid == *bnid){
+	for (; i >= 0; i = partitions[i].prev) {
+		if (partitions[i].pid == *bnid) {
 			/* remove a complete BAT */
-			if( partitions[i].next >= 0 )
-				partitions[partitions[i].next].prev= partitions[i].prev;
-			if( partitions[i].prev >= 0 )
-				partitions[partitions[i].prev].next= partitions[i].next;
+			if (partitions[i].next >= 0)
+				partitions[partitions[i].next].prev = partitions[i].prev;
+			if (partitions[i].prev >= 0)
+				partitions[partitions[i].prev].next = partitions[i].next;
 			return MAL_SUCCEED;
 		}
-		b= BATdescriptor(partitions[i].pid);
-		if( partitions[i].first <= b->hseqbase && b->hseqbase<=partitions[i].last)
-			BKCdelete_bat(ret,&partitions[i].pid,bnid);
+		b = BATdescriptor(partitions[i].pid);
+		if (partitions[i].first <= b->hseqbase && b->hseqbase <= partitions[i].last)
+			BKCdelete_bat(ret, &partitions[i].pid, bnid);
 		BBPunfix(b->batCacheid);
 	}
-	return throwMessage("partitions.delete","BAT delete not yet implemented");
+	return throwMessage("partitions.delete", "BAT delete not yet implemented");
 }
+
 @}

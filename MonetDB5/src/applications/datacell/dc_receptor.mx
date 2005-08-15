@@ -92,8 +92,8 @@ and analyse the data.
 
 
 typedef struct {
-    int socket;
-    /*str sname; does not work */
+	int socket;
+	/*str sname; does not work */
 } *SensorInfo;
 
 mal_export str DCstartChannel(DCpump p, bstream *bs);
@@ -115,7 +115,7 @@ mal_export void DCreleaseReceptor(DCpump p);
 
 #include "mal.h"
 
-#include <stream.h>     /* for stream */
+#include <stream.h>		/* for stream */
 
 #ifdef HAVE_SYS_SOCKET_H
 # include <sys/socket.h>
@@ -140,20 +140,21 @@ mal_export void DCreleaseReceptor(DCpump p);
 
 static int usock = -1;
 
-static DCpump channel; /* insecure channel between threads! */
+static DCpump channel;		/* insecure channel between threads! */
 
 
 str
-DCgetReceptorStatus(int *ret){
-	BAT *bn= DCcontainer(TYPE_int,pumplimit);
+DCgetReceptorStatus(int *ret)
+{
+	BAT *bn = DCcontainer(TYPE_int, pumplimit);
 	DCpump p;
-	oid o= oid_nil;
+	oid o = oid_nil;
 
-	for(p=pumps; p<pumps+pumplimit; p++)
-	if( p->name && p->kind== RECEPTOR ){
-		BUNins(bn,&o,&p->status);
-	}
-	BBPincref(*ret= bn->batCacheid,TRUE);
+	for (p = pumps; p < pumps + pumplimit; p++)
+		if (p->name && p->kind == RECEPTOR) {
+			BUNins(bn, &o, &p->status);
+		}
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
@@ -164,117 +165,133 @@ of other pumps. All tuples are obtained from the public BATs, which
 are cleaned out by the data pump release
 @c
 int
-DCrollforward(DCpump p){
+DCrollforward(DCpump p)
+{
 	int i;
 	BAT *b;
 	size_t cnt;
 
-	if( (cnt= BATcount(p->public[0])) == 0 && 
-		BATcount(p->private[0])== 0) 
-			return 0;
-	if( cnt) return 1;
+	if ((cnt = BATcount(p->public[0])) == 0 && BATcount(p->private[0]) == 0)
+		return 0;
+	if (cnt)
+		return 1;
 #ifdef DEBUG_DC_RECEPTOR
 	printf("#roll receptor forward\n");
 #endif
-	mal_set_lock(p->lock,"datacellIsolate");
-	for(i=0; i< p->cols; i++){
+	mal_set_lock(p->lock, "datacellIsolate");
+	for (i = 0; i < p->cols; i++) {
 #ifdef DEBUG_DC_RECEPTOR
-	printf("#roll receptor forward %d\n",i);
+		printf("#roll receptor forward %d\n", i);
 #endif
-		b= p->public[i];
-		p->public[i]= p->private[i];
-		p->private[i]= b;
+		b = p->public[i];
+		p->public[i] = p->private[i];
+		p->private[i] = b;
 	}
-	cnt= BATcount(p->public[0]);
+	cnt = BATcount(p->public[0]);
 	p->pending -= cnt;
-	mal_unset_lock(p->lock,"datacellIsolate");
+	mal_unset_lock(p->lock, "datacellIsolate");
+
 	return 1;
 }
+
 void
-DCreleaseReceptor(DCpump p){
+DCreleaseReceptor(DCpump p)
+{
 	int i;
-	for( i=0; i<p->cols; i++)
+
+	for (i = 0; i < p->cols; i++)
 		BATclear(p->public[i]);
 }
 
 str
-DCbindReceptor(int *retpublic, int *retprivate, str *name, str *cname){
+DCbindReceptor(int *retpublic, int *retprivate, str *name, str *cname)
+{
 	DCpump p;
 	int i;
 
-	p= DClocatePump(*name);
-	if( p == 0)
-		return throwMessage("datacell.bindReceptor","unknown receptor");
-	if( p->kind!= RECEPTOR)
-		return throwMessage("datacell.bindReceptor","unknown receptor");
-	mal_set_lock(p->lock,"datacellIsolate");
-	for(i=0; i < p->cols ; i++)
-	if( strcmp(p->columns[i],*cname) == 0 ){
-		if( p->usedby && p->usedby != p-pumps){
-			mal_unset_lock(p->lock,"datacellIsolate");
-			return throwMessage("datacell.bindReceptor","Pump still in use\n");
-		}
+	p = DClocatePump(*name);
+	if (p == 0)
+		return throwMessage("datacell.bindReceptor", "unknown receptor");
+	if (p->kind != RECEPTOR)
+		return throwMessage("datacell.bindReceptor", "unknown receptor");
+	mal_set_lock(p->lock, "datacellIsolate");
+	for (i = 0; i < p->cols; i++)
+		if (strcmp(p->columns[i], *cname) == 0) {
+			if (p->usedby && p->usedby != p - pumps) {
+				mal_unset_lock(p->lock, "datacellIsolate");
 
-		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
-		BBPincref( *retprivate= p->private[i]->batCacheid, TRUE);
-		p->usedby= p - pumps;
-		break;
-	}
-	mal_unset_lock(p->lock,"datacellIsolate");
-    return MAL_SUCCEED;
+				return throwMessage("datacell.bindReceptor", "Pump still in use\n");
+			}
+
+			BBPincref(*retpublic = p->public[i]->batCacheid, TRUE);
+			BBPincref(*retprivate = p->private[i]->batCacheid, TRUE);
+			p->usedby = p - pumps;
+			break;
+		}
+	mal_unset_lock(p->lock, "datacellIsolate");
+
+	return MAL_SUCCEED;
 }
+
 @-
 It is also possible to pick up a single tuple from the public part.
 @c
 str
-DCbindReceptorTuple(int *retpublic, int *retprivate, str *name, str *cname){
+DCbindReceptorTuple(int *retpublic, int *retprivate, str *name, str *cname)
+{
 	DCpump p;
 	int i;
 
-	p= DClocatePump(*name);
-	if( p == 0)
-		return throwMessage("datacell.bindReceptor","unknown receptor");
-	if( p->kind!= RECEPTOR)
-		return throwMessage("datacell.bindReceptor","unknown receptor");
-	mal_set_lock(p->lock,"datacellIsolate");
-	for(i=0; i < p->cols ; i++)
-	if( strcmp(p->columns[i],*cname) == 0 ){
-		if( p->usedby && p->usedby != p-pumps){
-			mal_unset_lock(p->lock,"datacellIsolate");
-			return throwMessage("datacell.isolate","Pump still in use\n");
-		}
+	p = DClocatePump(*name);
+	if (p == 0)
+		return throwMessage("datacell.bindReceptor", "unknown receptor");
+	if (p->kind != RECEPTOR)
+		return throwMessage("datacell.bindReceptor", "unknown receptor");
+	mal_set_lock(p->lock, "datacellIsolate");
+	for (i = 0; i < p->cols; i++)
+		if (strcmp(p->columns[i], *cname) == 0) {
+			if (p->usedby && p->usedby != p - pumps) {
+				mal_unset_lock(p->lock, "datacellIsolate");
 
-		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
-		BBPincref( *retprivate= p->private[i]->batCacheid, TRUE);
-		p->usedby= p - pumps;
-		break;
-	}
-	mal_unset_lock(p->lock,"datacellIsolate");
-    return MAL_SUCCEED;
+				return throwMessage("datacell.isolate", "Pump still in use\n");
+			}
+
+			BBPincref(*retpublic = p->public[i]->batCacheid, TRUE);
+			BBPincref(*retprivate = p->private[i]->batCacheid, TRUE);
+			p->usedby = p - pumps;
+			break;
+		}
+	mal_unset_lock(p->lock, "datacellIsolate");
+
+	return MAL_SUCCEED;
 }
+
 str
-DCbindReceptorPublic(int *retpublic, str *name, str *cname){
+DCbindReceptorPublic(int *retpublic, str *name, str *cname)
+{
 	DCpump p;
 	int i;
 
-	p= DClocatePump(*name);
-	if( p == 0)
-		return throwMessage("datacell.bindReceptor","unknown receptor");
-	if( p->kind!= RECEPTOR)
-		return throwMessage("datacell.bindReceptor","unknown receptor");
-	mal_set_lock(p->lock,"datacellIsolate");
-	for(i=0; i < p->cols ; i++)
-	if( strcmp(p->columns[i],*cname) == 0 ){
-		if( p->usedby && p->usedby != p-pumps){
-			mal_unset_lock(p->lock,"datacellIsolate");
-			return throwMessage("datacell.isolate","Pump still in use\n");
+	p = DClocatePump(*name);
+	if (p == 0)
+		return throwMessage("datacell.bindReceptor", "unknown receptor");
+	if (p->kind != RECEPTOR)
+		return throwMessage("datacell.bindReceptor", "unknown receptor");
+	mal_set_lock(p->lock, "datacellIsolate");
+	for (i = 0; i < p->cols; i++)
+		if (strcmp(p->columns[i], *cname) == 0) {
+			if (p->usedby && p->usedby != p - pumps) {
+				mal_unset_lock(p->lock, "datacellIsolate");
+
+				return throwMessage("datacell.isolate", "Pump still in use\n");
+			}
+			p->usedby = p - pumps;
+			BBPincref(*retpublic = p->public[i]->batCacheid, TRUE);
+			break;
 		}
-		p->usedby= p - pumps;
-		BBPincref( *retpublic= p->public[i]->batCacheid, TRUE);
-		break;
-	}
-	mal_unset_lock(p->lock,"datacellIsolate");
-    return MAL_SUCCEED;
+	mal_unset_lock(p->lock, "datacellIsolate");
+
+	return MAL_SUCCEED;
 }
 
 @-
@@ -286,7 +303,7 @@ DClistenReceptor(DCpump p, str *Usockfile)
 {
 	struct sockaddr_in server;
 	int sock = -1;
-	SensorInfo     sensor = GDKmalloc(sizeof(SensorInfo));
+	SensorInfo sensor = GDKmalloc(sizeof(SensorInfo));
 
 #ifdef HAVE_SYS_UN_H
 	struct sockaddr_un userver;
@@ -294,10 +311,10 @@ DClistenReceptor(DCpump p, str *Usockfile)
 	SOCKLEN length = 0;
 	int on = 1;
 	int i = 0;
-	int pid, *pidp= &pid;
+	int pid, *pidp = &pid;
 	char *usockfile, host[512];
 
-	channel= p;
+	channel = p;
 	if (Usockfile == NULL || *Usockfile == 0 || strcmp(*Usockfile, str_nil) == 0)
 		usockfile = NULL;
 	else {
@@ -309,15 +326,13 @@ DClistenReceptor(DCpump p, str *Usockfile)
 #endif
 	}
 
-	if (p->port <= 0 && usockfile == NULL) 
-		return throwMessage("datacell.listen", 
-			"no port or socket file specified\n");
+	if (p->port <= 0 && usockfile == NULL)
+		return throwMessage("datacell.listen", "no port or socket file specified\n");
 
 	if (p->port > 0) {
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock < 0)
-			return throwMessage("datacell.listen",
-				"creation of stream socket failed\n");
+			return throwMessage("datacell.listen", "creation of stream socket failed\n");
 @-
 Set server port and allow network connections from any workstation.
 Bind the socket to the server port.
@@ -332,15 +347,13 @@ The port id should be obtained from the Homes file.
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
 		length = (SOCKLEN) sizeof(server);
-		if (bind(sock, (SOCKPTR) & server, length) < 0) 
-			return throwMessage("datacell.listen",
-						"binding to stream socket failed\n");
+		if (bind(sock, (SOCKPTR) & server, length) < 0)
+			return throwMessage("datacell.listen", "binding to stream socket failed\n");
 @-
 Get the new information for the server socket and start listening.
 @c
 		if (getsockname(sock, (SOCKPTR) & server, &length) < 0)
-			return throwMessage("datacell.listen",
-						"Failed getting socket name\n");
+			return throwMessage("datacell.listen", "Failed getting socket name\n");
 		listen(sock, 1);
 	}
 #ifdef HAVE_SYS_UN_H
@@ -348,8 +361,7 @@ Get the new information for the server socket and start listening.
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (usock < 0) {
 			unlink(usockfile);
-			return throwMessage("datacell.listen",
-						"creation of Unix socket failed\n");
+			return throwMessage("datacell.listen", "creation of Unix socket failed\n");
 		}
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, usockfile, sizeof(userver.sun_path));
@@ -357,39 +369,40 @@ Get the new information for the server socket and start listening.
 		length = (SOCKLEN) sizeof(userver);
 		if (bind(usock, (SOCKPTR) & userver, length) < 0) {
 			unlink(usockfile);
-			return throwMessage("datacell.listen",
-				"binding to Unix socket file failed\n");
+			return throwMessage("datacell.listen", "binding to Unix socket file failed\n");
 		}
 		listen(usock, 1);
 	}
 #endif
 
 #ifdef DEBUG_DC_RECEPTOR
-		THRprintf(GDKerr, "DClisten:Network started at %d\n", p->port);
+	THRprintf(GDKerr, "DClisten:Network started at %d\n", p->port);
 #endif
 	sensor->socket = sock;
 
-	p->status= 1;
-	if( MT_create_thread((MT_Id *)pidp,
-		(void (*)(void *))DClistenThread, sensor) <0){
-			return throwMessage("datacell.listen", "starting thread failed");
+	p->status = 1;
+	if (MT_create_thread((MT_Id *) pidp, (void (*)(void *)) DClistenThread, sensor) < 0) {
+		return throwMessage("datacell.listen", "starting thread failed");
 	}
 #ifdef HAVE_SYS_UN_H
 	if (usockfile)
 		unlink(usockfile);
 #endif
-    if(p->host==0) 
-		gethostname(host,(int)512); 
-	else strcpy(host, p->host);
+	if (p->host == 0)
+		gethostname(host, (int) 512);
+	else
+		strcpy(host, p->host);
 #ifdef DEBUG_DC_RECEPTOR
-	{ char msg[512];
-	snprintf(msg,(int)512,"#Ready to read sensor data from connection %s:%d\n",
-		host,p->port);
-	stream_printf(GDKout,"%s",msg);
+	{
+		char msg[512];
+
+		snprintf(msg, (int) 512, "#Ready to read sensor data from connection %s:%d\n", host, p->port);
+		stream_printf(GDKout, "%s", msg);
 	}
 #endif
 	return MAL_SUCCEED;
 }
+
 @+ The collector
 Each sensor once activate is controlled by a separate thread,
 which listens to the port until the sensor is released.
@@ -403,76 +416,87 @@ to acquire and release the lock held on the receptor.
 This way, a pump query can step in and collect the events
 received.
 @c
-ptr *singleRecognition(void *extra, int type, char *s){
-	DCpump p= (DCpump) extra;
+ptr *
+singleRecognition(void *extra, int type, char *s)
+{
+	DCpump p = (DCpump) extra;
 	ptr i;
-	oid o= oid_nil;
+	oid o = oid_nil;
 	timestamp ts;
-	i =  TABLETadt_frStr(extra,type,s);
+
+	i = TABLETadt_frStr(extra, type, s);
 	/* insert a time stamp */
 	MTIMEcurrent_timestamp(&ts);
-	BUNins(p->private[0],&o,&ts);
+	BUNins(p->private[0], &o, &ts);
 	return i;
 }
-ptr *startRecognition(void *extra, int type, char *s){
-	return TABLETadt_frStr(extra,type,s);
+
+ptr *
+startRecognition(void *extra, int type, char *s)
+{
+	return TABLETadt_frStr(extra, type, s);
 }
-ptr *endRecognition(void *extra, int type, char *s){
-	DCpump p= (DCpump) extra;
+
+ptr *
+endRecognition(void *extra, int type, char *s)
+{
+	DCpump p = (DCpump) extra;
 	timestamp ts;
-	oid o= oid_nil;
+	oid o = oid_nil;
+
 	/* insert a time stamp */
 	MTIMEcurrent_timestamp(&ts);
-	BUNins(p->private[0],&o,&ts);
-	return TABLETadt_frStr(extra,type,s);
+	BUNins(p->private[0], &o, &ts);
+	return TABLETadt_frStr(extra, type, s);
 }
 
 str
-DCstartChannel(DCpump p, bstream *bs){
+DCstartChannel(DCpump p, bstream *bs)
+{
 	Tablet as;
-	int i,res,k=0;
+	int i, res, k = 0;
 	Column *fmt;
 
 #ifdef DEBUG_DC_RECEPTOR
-	stream_printf(GDKout,"#Start sensor reception %s %d columns\n",	
-			p->name,p->cols);
+	stream_printf(GDKout, "#Start sensor reception %s %d columns\n", p->name, p->cols);
 #endif
-	fmt= as.format= (Column*) GDKmalloc(sizeof(Column) * (MAXEVENTFIELDS+1));
-	bzero((char *) fmt,sizeof(Column) * (MAXEVENTFIELDS+1));
-	as.offset= 0;
-	as.nr_attrs= 0;
+	fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (MAXEVENTFIELDS + 1));
+	bzero((char *) fmt, sizeof(Column) * (MAXEVENTFIELDS + 1));
+	as.offset = 0;
+	as.nr_attrs = 0;
 	as.nr = (size_t) oid_nil;
 
 	/* construct the read structure */
 	/* the first column should be dealt with separately */
 	/* it should contain the timestamps */
-	for(i=1; i< p->cols ; i++){
+	for (i = 1; i < p->cols; i++) {
 		fmt[k].name = p->columns[i];
 		fmt[k].bval = p->private[i];
 #ifdef DEBUG_DC_RECEPTOR
-		stream_printf(GDKerr, "#added field %s\n", fmt[k].name );
+		stream_printf(GDKerr, "#added field %s\n", fmt[k].name);
 #endif
-		fmt[k].sep = GDKstrdup((char*)",");
-		fmt[k].seplen = (int) strlen( fmt[k].sep );
+		fmt[k].sep = GDKstrdup((char *) ",");
+		fmt[k].seplen = (int) strlen(fmt[k].sep);
 		fmt[k].adt = fmt[k].bval->ttype;
-		fmt[k].type = (char*)getTypeName(fmt[k].adt);
+		fmt[k].type = (char *) getTypeName(fmt[k].adt);
 		fmt[k].tostr = &TABLETadt_toStr;
 		fmt[k].frstr = &TABLETadt_frStr;
 		fmt[k].extra = NULL;
 		k++;
 	}
-	GDKfree(fmt[k-1].sep);
-	fmt[k-1].sep = GDKstrdup((char*)"\n");
-	fmt[k-1].seplen = (int) strlen( fmt[k-1].sep );
-	as.nr_attrs= k; 
-	fmt[0].frstr= &startRecognition;
-	fmt[0].extra= (void*) p;
-	fmt[k-1].frstr= &endRecognition;
-	fmt[k-1].extra= (void*) p;
-	if( k-1 == 0) fmt[0].frstr = &singleRecognition;
+	GDKfree(fmt[k - 1].sep);
+	fmt[k - 1].sep = GDKstrdup((char *) "\n");
+	fmt[k - 1].seplen = (int) strlen(fmt[k - 1].sep);
+	as.nr_attrs = k;
+	fmt[0].frstr = &startRecognition;
+	fmt[0].extra = (void *) p;
+	fmt[k - 1].frstr = &endRecognition;
+	fmt[k - 1].extra = (void *) p;
+	if (k - 1 == 0)
+		fmt[0].frstr = &singleRecognition;
 	/* here we fork and prepare for reading */
 #ifdef DEBUG_DC_RECEPTOR
-		stream_printf(GDKerr, "#start loading sensor data\n");
+	stream_printf(GDKerr, "#start loading sensor data\n");
 #endif
 @-
 Reading the stream is interleaved with interactions from the
@@ -481,30 +505,33 @@ pump scheduler is locked out from accessing the receptor table.
 This scheme works under the assumption that the TABLEload_file
 is interrupted with each stream_flush from the sensorSource.
 @c
-	res =1;
-	while(p->status && res>0 && !stream_errnr(bs->s)){
-		int start=GDKusec();
-		bs->eof=0;
+	res = 1;
+	while (p->status && res > 0 && !stream_errnr(bs->s)) {
+		int start = GDKusec();
+		bs->eof = 0;
+
 		as.nr = ~(size_t) 0;
-		res=TABLETload_file(&as, bs);
+		res = TABLETload_file(&as, bs);
+
 #ifdef DEBUG_DC_RECEPTOR
-		stream_printf(GDKerr, "#load %d events\n",res);
+		stream_printf(GDKerr, "#load %d events\n", res);
 #endif
-		p->ticks += GDKusec()-start;
+		p->ticks += GDKusec() - start;
 		p->pending += res;
 		p->received += res;
-		if( res )
+		if (res)
 			p->calls++;
 	}
-	for(i=0; i<k; i++) {
-        GDKfree( fmt[i].sep );
+	for (i = 0; i < k; i++) {
+		GDKfree(fmt[i].sep);
 	}
-    GDKfree(fmt);
+	GDKfree(fmt);
 	return MAL_SUCCEED;
 #ifdef DEBUG_DC_RECEPTOR
 	stream_printf(GDKerr, "#finished receiving data\n");
 #endif
 }
+
 @-
 The listen thread operation now simply opens the connection
 and passed control to the file loading.
@@ -513,7 +540,7 @@ and passed control to the file loading.
 str
 DClistenThread(SensorInfo sensor)
 {
-	char *msg=0;
+	char *msg = 0;
 	stream *fdin;
 	bstream *bs;
 
@@ -551,7 +578,7 @@ DClistenThread(SensorInfo sensor)
 		}
 		if (retval < 0) {
 			if (MT_geterrno() != EINTR) {
-				msg= "select failed\n";
+				msg = "select failed\n";
 				goto error;
 			}
 			continue;
@@ -559,7 +586,7 @@ DClistenThread(SensorInfo sensor)
 		if (sock >= 0 && FD_ISSET(sock, &fds)) {
 			if ((msgsock = accept(sock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 				if (MT_geterrno() != EINTR) {
-					msg="accept failed\n";
+					msg = "accept failed\n";
 					goto error;
 				}
 				continue;
@@ -568,7 +595,7 @@ DClistenThread(SensorInfo sensor)
 		} else if (usock >= 0 && FD_ISSET(usock, &fds)) {
 			if ((msgsock = accept(usock, (SOCKPTR) 0, (SOCKLEN *) 0)) < 0) {
 				if (MT_geterrno() != EINTR) {
-					msg="accept failed\n";
+					msg = "accept failed\n";
 					goto error;
 				}
 				continue;
@@ -577,7 +604,7 @@ DClistenThread(SensorInfo sensor)
 		} else
 			continue;
 #ifdef DEBUG_DC_RECEPTOR
-		stream_printf(GDKerr,"#receptor connection request:accepted\n");
+		stream_printf(GDKerr, "#receptor connection request:accepted\n");
 #endif
 		fdin = socket_rstream(msgsock, "DataCell receptor input");
 
@@ -591,15 +618,18 @@ DClistenThread(SensorInfo sensor)
 #ifdef DEBUG_DC_RECEPTOR
 		stream_printf(GDKerr, "#DClisten:channel accepted %d\n", msgsock);
 #endif
-		bs = bstream_create(fdin,4*BLOCK);
+		bs = bstream_create(fdin, 4 * BLOCK);
+
 		/* now read the stream until it is closed */
-		msg= DCstartChannel(channel, bs);
+		msg = DCstartChannel(channel, bs);
+
 #ifdef DEBUG_DC_RECEPTOR
 		stream_printf(GDKerr, "#DClisten:channel reading finished\n");
 #endif
-		
-	} while (msg== MAL_SUCCEED);
-error:
-	return throwMessage("datacell.listen",msg);
+
+	} while (msg == MAL_SUCCEED);
+      error:
+	return throwMessage("datacell.listen", msg);
 }
+
 @}

@@ -214,7 +214,7 @@ called sql_optimizer.
 #define _MAL_MES_H
 #include "mal.h"
 #include "mal_scheduler.h"
-#include "mal_interpreter.h"    /* for showErrors() */
+#include "mal_interpreter.h"	/* for showErrors() */
 #include "mal_function.h"
 
 
@@ -235,95 +235,107 @@ This will be collected at the start of the scheduler call
 and is available as global information.
 
 @c
-str meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name ){
-	int i,l,lb,r,rb;
+str
+meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name)
+{
+	int i, l, lb, r, rb;
 	InstrPtr *oldblk;
 	InstrPtr *garbage;
-	InstrPtr ql,qr;
-	int oldtop=0, g=0;
+	InstrPtr ql, qr;
+	int oldtop = 0, g = 0;
 	InstrPtr p;
 
 	(void) name;
 	oldblk = (InstrPtr *) mb->stmt;
+
 	oldtop = mb->stop;
-	mb->stmt = alloca(mb->stop *2 * sizeof(InstrPtr));
-	mb->stop= 0;
+	mb->stmt = alloca(mb->stop * 2 * sizeof(InstrPtr));
+
+	mb->stop = 0;
 	garbage = alloca(mb->stop * sizeof(InstrPtr));
 
 
-	for(i=0; i< oldtop; i++){
-		p= oldblk[i];
-		if( p->fcn != f) {
-			pushInstruction(mb,p);
+	for (i = 0; i < oldtop; i++) {
+		p = oldblk[i];
+		if (p->fcn != f) {
+			pushInstruction(mb, p);
 			continue;
 		}
 #ifdef MAL_MES_DEBUG
 		printf("meo_loop_optimizer attempt\n");
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+		printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
 
-	/* craft the new code block */
+		/* craft the new code block */
 		lb = newTmpVariable(mb, TYPE_bit);
-		l = newTmpVariable(mb, getVarType(mb,p->argv[1]));
+		l = newTmpVariable(mb, getVarType(mb, p->argv[1]));
 		rb = newTmpVariable(mb, TYPE_bit);
-		r = newTmpVariable(mb, getVarType(mb,p->argv[2]));
-		ql= newFcnCall(mb,GDKstrdup("chopper"),GDKstrdup("newIterator"));
-		ql->argv[0]= lb;
-		ql->argv[1]= l;
-		ql->retc= 2;
-		ql->argv[2]= p->argv[1];
+		r = newTmpVariable(mb, getVarType(mb, p->argv[2]));
+		ql = newFcnCall(mb, GDKstrdup("chopper"), GDKstrdup("newIterator"));
+		ql->argv[0] = lb;
+		ql->argv[1] = l;
+		ql->retc = 2;
+		ql->argv[2] = p->argv[1];
 		ql->argc = 3;
 
-		ql->barrier= BARRIERsymbol;
-		qr= newFcnCall(mb,GDKstrdup("chopper"),GDKstrdup("newIterator"));
-		qr->argv[0]= rb;
-		qr->argv[1]= r;
-		qr->retc= 2;
-		qr->argv[2]= p->argv[2];
+		ql->barrier = BARRIERsymbol;
+		qr = newFcnCall(mb, GDKstrdup("chopper"), GDKstrdup("newIterator"));
+		qr->argv[0] = rb;
+		qr->argv[1] = r;
+		qr->retc = 2;
+		qr->argv[2] = p->argv[2];
 		qr->argc = 3;
-		qr->barrier= BARRIERsymbol;
+		qr->barrier = BARRIERsymbol;
 
-	/* and the intelligence should come here */
+		/* and the intelligence should come here */
 
-	/* redo part */
-		qr= newFcnCall(mb,GDKstrdup("chopper"),GDKstrdup("hasMoreElements"));
-		qr->argv[0]= rb;
-		qr->argv[1]= r;
-		qr->retc=2;
-		qr->argc=3;
-		qr->barrier= REDOsymbol;
-		ql= newFcnCall(mb,GDKstrdup("chopper"),GDKstrdup("hasMoreElements"));
-		ql->argv[0]= lb;
-		ql->argv[1]= l;
-		ql->retc=2;
-		ql->argc=3;
-		ql->barrier= REDOsymbol;
+		/* redo part */
+		qr = newFcnCall(mb, GDKstrdup("chopper"), GDKstrdup("hasMoreElements"));
+		qr->argv[0] = rb;
+		qr->argv[1] = r;
+		qr->retc = 2;
+		qr->argc = 3;
+		qr->barrier = REDOsymbol;
+		ql = newFcnCall(mb, GDKstrdup("chopper"), GDKstrdup("hasMoreElements"));
+		ql->argv[0] = lb;
+		ql->argv[1] = l;
+		ql->retc = 2;
+		ql->argc = 3;
+		ql->barrier = REDOsymbol;
 
-	/* exit part */
-		ql= newAssignment(mb);
-		ql->argv[0]= l;
-		ql->argc=1;
-		ql->barrier= EXITsymbol;
-		qr= newAssignment(mb);
-		qr->argv[0]= r;
-		qr->argc=1;
-		qr->barrier= EXITsymbol;
+		/* exit part */
+		ql = newAssignment(mb);
+		ql->argv[0] = l;
+		ql->argc = 1;
+		ql->barrier = EXITsymbol;
+		qr = newAssignment(mb);
+		qr->argv[0] = r;
+		qr->argc = 1;
+		qr->barrier = EXITsymbol;
 	}
 	/* if we fail, garbage collection is easy */
-	for(i=0; i < g; i++)
-	if( garbage[i]) {
-	}
+	for (i = 0; i < g; i++)
+		if (garbage[i]) {
+		}
 	return MAL_SUCCEED;
 }
-str meo_loop_optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+
+str
+meo_loop_optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
 	MALfcn f;
-	(void) stk; (void) p;
-	f= findMALSymbol("algebra","cross")->def->stmt[0]->fcn;
-	meo_loop_optimizerImpl(mb, f,"cross");
-	f= findMALSymbol("algebra","join")->def->stmt[0]->fcn;
-	meo_loop_optimizerImpl(mb, f,"join");
+
+	(void) stk;
+	(void) p;
+	f = findMALSymbol("algebra", "cross")->def->stmt[0]->fcn;
+
+	meo_loop_optimizerImpl(mb, f, "cross");
+	f = findMALSymbol("algebra", "join")->def->stmt[0]->fcn;
+
+	meo_loop_optimizerImpl(mb, f, "join");
 	return MAL_SUCCEED;
 }
+
 @- Strawman Implementation
 The strawman implementation requires a few distinctive parts to be
 glued together.

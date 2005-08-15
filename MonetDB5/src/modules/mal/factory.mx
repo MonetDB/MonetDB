@@ -67,7 +67,7 @@ comment "Close a factory";
 @h
 #ifndef _FACTORY_H
 #define _FACTORY_H
-#endif /* _FACTORY_H*/
+#endif /* _FACTORY_H */
 @c
 #include "factory.h"
 #include "mal.h"
@@ -76,59 +76,78 @@ comment "Close a factory";
 
 @+ Inspection
 @c
-str FCTgetPlants(int *ret)
+str
+FCTgetPlants(int *ret)
 {
-    BAT *b ;
-    b= BATnew(TYPE_str,TYPE_str,256);
-    @:Pseudo(factory,name,plant)@
-    return MAL_SUCCEED;
+	BAT *b;
+
+	b = BATnew(TYPE_str, TYPE_str, 256);
+	@:Pseudo(factory, name, plant)@
+	return MAL_SUCCEED;
 }
-str FCTgetCaller(int *ret)
+
+str
+FCTgetCaller(int *ret)
 {
-    (void) ret; 
-    return throwMessage("factory.getCaller","not yet implemented");
+	(void) ret;
+	return throwMessage("factory.getCaller", "not yet implemented");
 }
-str FCTgetOwners(int *ret)
+
+str
+FCTgetOwners(int *ret)
 {
-    BAT *b ;
-    (void) ret; 
-    b= BATnew(TYPE_int,TYPE_str,256);
-    @:Pseudo(factory,plantid,location)@
-    return throwMessage("factory.getOwner","not yet implemented");
+	BAT *b;
+
+	(void) ret;
+	b = BATnew(TYPE_int, TYPE_str, 256);
+	@:Pseudo(factory, plantid, location)@
+	return throwMessage("factory.getOwner", "not yet implemented");
 }
-str FCTgetTimeStampIn(int *ret)
+
+str
+FCTgetTimeStampIn(int *ret)
 {
-    (void) ret; 
-    return throwMessage("factory.getTimeStampIn","not yet implemented");
+	(void) ret;
+	return throwMessage("factory.getTimeStampIn", "not yet implemented");
 }
-str FCTgetTimeStampOut(int *ret)
+
+str
+FCTgetTimeStampOut(int *ret)
 {
-    (void) ret; 
-    return throwMessage("factory.getTimeStampOut","not yet implemented");
+	(void) ret;
+	return throwMessage("factory.getTimeStampOut", "not yet implemented");
 }
-str FCTsetLocation(int *ret, str *loc)
+
+str
+FCTsetLocation(int *ret, str *loc)
 {
-    (void) ret; (void) loc;
-    return throwMessage("factory.setLocation","not yet implemented");
+	(void) ret;
+	(void) loc;
+	return throwMessage("factory.setLocation", "not yet implemented");
 }
-str FCTgetLocations(int *ret)
+
+str
+FCTgetLocations(int *ret)
 {
-    BAT *b ;
-    (void) ret; 
-    b= BATnew(TYPE_int,TYPE_str,256);
-    @:Pseudo(factory,plantid,location)@
-    return MAL_SUCCEED;
+	BAT *b;
+
+	(void) ret;
+	b = BATnew(TYPE_int, TYPE_str, 256);
+	@:Pseudo(factory, plantid, location)@
+	return MAL_SUCCEED;
 }
-str FCTshutdown(int *ret, str *mod, str *fcn)
+
+str
+FCTshutdown(int *ret, str *mod, str *fcn)
 {
-    Symbol s;
-    (void) ret;
-    s= findMALSymbol(putName(*mod,strlen(*mod)),
-			putName(*fcn,strlen(*fcn)));
-    if( s == NULL) 
-        return throwMessage("factory.shutdown","Factory not found");
-    shutdownFactory(s->def);
-    return MAL_SUCCEED;
+	Symbol s;
+
+	(void) ret;
+	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	if (s == NULL)
+		return throwMessage("factory.shutdown", "Factory not found");
+	shutdownFactory(s->def);
+	return MAL_SUCCEED;
 }
 
 @}

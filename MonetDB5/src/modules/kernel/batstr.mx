@@ -216,8 +216,9 @@ bunins_failed:
 }
 
 @c
-	@:BATint(Length,strLength,str)@
-	@:BATint(Bytes,strBytes,str)@
+@:BATint(Length, strLength, str)@
+@:BATint(Bytes, strBytes, str)@
+
 @= BATstr
 str STRbat@1(int *ret, int *l)
 {   BAT *bn, *b;
@@ -245,37 +246,43 @@ bunins_failed:
 	return throwMessage("batstr.==", "bunins failed");
 }
 @c
-	@:BATstr(Lower,strLower,str,str)@
-	@:BATstr(Upper,strUpper,str,str)@
-	@:BATstr(Strip,strStrip,str,str)@
-	@:BATstr(Ltrim,strLtrim,str,str)@
-	@:BATstr(Rtrim,strRtrim,str,str)@
+@:BATstr(Lower, strLower, str, str)@
+@:BATstr(Upper, strUpper, str, str)@
+@:BATstr(Strip, strStrip, str, str)@
+@:BATstr(Ltrim, strLtrim, str, str)@
+@:BATstr(Rtrim, strRtrim, str, str)@
+
 @-
 @c
-str STRbatEqualCst(int *ret, int *l,str *cst)
-{   BAT *bn, *b;
-	BUN p,q;
+str
+STRbatEqualCst(int *ret, int *l, str *cst)
+{
+	BAT *bn, *b;
+	BUN p, q;
 	int xx;
 	str x;
 	bit y;
 
-	prepareOperand(b,l,"==");
-	prepareResult(bn,b,TYPE_bit,"==");
+	prepareOperand(b, l, "==");
+	prepareResult(bn, b, TYPE_bit, "==");
 	BATloopFast(b, p, q, xx) {
-	    ptr h = BUNhead(b,p);
-	    x= (str) BUNtail(b,p);
-		if(x== 0 || *x == 0 || strcmp(x,str_nil)== 0)
-			y= bit_nil;
-		else y= strcmp(x,*cst)==0;
-	    bunfastins(bn, h, &y);
+		ptr h = BUNhead(b, p);
+
+		x = (str) BUNtail(b, p);
+		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0)
+			y = bit_nil;
+		else
+			y = strcmp(x, *cst) == 0;
+		bunfastins(bn, h, &y);
 	}
-	finalizeResult(ret,bn,b);
+	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
-bunins_failed:
+      bunins_failed:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return throwMessage("batstr.==", "bunins failed");
 }
+
 @-
 A general assumption in all cases is the bats are synchronized on their
 head column. This is not checked and may be mis-used to deploy the
@@ -284,41 +291,45 @@ implementation for shifted window arithmetic as well.
 	if( BATcount(@1) != BATcount(@2) )
 	return throwMessage("batcalc.@3", "requires bats of identical size");
 @c
-str STRbatEqual(int *ret, int *l, int *r)
-{   BAT *bn, *left, *right;
-	BUN o,p,q;
-	int xx,yy;
+str
+STRbatEqual(int *ret, int *l, int *r)
+{
+	BAT *bn, *left, *right;
+	BUN o, p, q;
+	int xx, yy;
 
-	prepareOperand2(left,l,right,r,"==");
-	@:chkSize(left,right,CMDcompare@1)@
-	prepareResult2(bn,left,right,TYPE_bit,"==");
+	prepareOperand2(left, l, right, r, "==");
+	@:chkSize(left, right, CMDcompare@
+		       1) @ prepareResult2(bn, left, right, TYPE_bit, "==");
 
 	o = BUNfirst(left);
 	p = BUNfirst(right);
 	q = BUNlast(right);
 	xx = BUNsize(left);
 	yy = BUNsize(right);
-	while(p<q) {
+	while (p < q) {
 		bit y = TRUE;
-	    ptr h = BUNhead(left,o);
-	    ptr tl = BUNtail(left,o);
-	    ptr tr = BUNtail(right,p);
-	if(tl == 0 || tr == 0 || strcmp(tl,tr) != 0)
-		y = FALSE;
-	    bunfastins(bn, h, &y);
-	o += xx;
-	p += yy;
+		ptr h = BUNhead(left, o);
+		ptr tl = BUNtail(left, o);
+		ptr tr = BUNtail(right, p);
+
+		if (tl == 0 || tr == 0 || strcmp(tl, tr) != 0)
+			y = FALSE;
+		bunfastins(bn, h, &y);
+		o += xx;
+		p += yy;
 	}
 	BBPunfix(right->batCacheid);
-	finalizeResult(ret,bn,left);
+	finalizeResult(ret, bn, left);
 	return MAL_SUCCEED;
 
-bunins_failed:
+      bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
 	return throwMessage("batstr.==", "bunins failed");
 }
+
 @= binarySTR
 str STRbat@1(int *ret, int *l, int *r)
 {   BAT *bn, *left, *right;
@@ -446,102 +457,114 @@ bunins_failed:
 	return throwMessage("batstr"@5, "bunins failed");
 }
 @c
-	@:binarySTRstr(Prefix,bit,str, STRPrefix,"prefix",vp)@
-	@:binarySTRstr(Suffix,bit,str, STRSuffix,"suffix",vp)@
-	@:binarySTRstr(strSearch,int,str, STRstrSearch,"search",vp)@
-	@:binarySTRstr(RstrSearch,int,str, STRReverseStrSearch,"r_search",vp)@
-	@:binarySTRstr(Concat,str,str,STRConcat,"+",v)@
-	@:binarySTR(Tail,str,int,strTail,"tail")@
-	@:binarySTR(WChrAt,int,int,strWChrAt,"chrAt")@
-	@:binarySTR(ChrAt,chr,int,strChrAt,"chrAt")@
+@:binarySTRstr(Prefix, bit, str, STRPrefix, "prefix", vp)@
+@:binarySTRstr(Suffix, bit, str, STRSuffix, "suffix", vp)@
+@:binarySTRstr(strSearch, int, str, STRstrSearch, "search", vp)@
+@:binarySTRstr(RstrSearch, int, str, STRReverseStrSearch, "r_search", vp)@
+@:binarySTRstr(Concat, str, str, STRConcat, "+", v)@
+@:binarySTR(Tail, str, int, strTail, "tail")@
+@:binarySTR(WChrAt, int, int, strWChrAt, "chrAt")@
+@:binarySTR(ChrAt, chr, int, strChrAt, "chrAt")@
 
 str
-STRbattostr(int *ret, int *bid){
-	BBPincref(*ret= *bid,TRUE);
+STRbattostr(int *ret, int *bid)
+{
+	BBPincref(*ret = *bid, TRUE);
 	return MAL_SUCCEED;
 }
 
-str STRbatSubStringcst(int *ret, int *l, int *offset, int *length)
-{   BAT *bn, *b;
-	BUN p,q;
+str
+STRbatSubStringcst(int *ret, int *l, int *offset, int *length)
+{
+	BAT *bn, *b;
+	BUN p, q;
 	int xx;
-	str x, *xp= &x;
+	str x, *xp = &x;
 	str y, *yp = &y;
 
-	prepareOperand(b,l,"subString");
-	prepareResult(bn,b,TYPE_int,"subString");
+	prepareOperand(b, l, "subString");
+	prepareResult(bn, b, TYPE_int, "subString");
 
 	BATloopFast(b, p, q, xx) {
-	    ptr h = BUNhead(b,p);
-	    x= (str) BUNtail(b,p);
-		if(x== 0 || *x == 0 || strcmp(x,str_nil)== 0)
-			y= str_nil;
-		else STRSubString(yp,xp,offset,length);
-	    bunfastins(bn, h, yp);
+		ptr h = BUNhead(b, p);
+
+		x = (str) BUNtail(b, p);
+		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0)
+			y = str_nil;
+		else
+			STRSubString(yp, xp, offset, length);
+		bunfastins(bn, h, yp);
 	}
-	finalizeResult(ret,bn,b);
+	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
-bunins_failed:
+      bunins_failed:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return throwMessage("batstr.subString", "bunins failed");
 }
 
-str STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
-{   BAT *bn, *b;
-	BUN p,q;
+str
+STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
+{
+	BAT *bn, *b;
+	BUN p, q;
 	int xx;
-	str x, *xp= &x;
+	str x, *xp = &x;
 	str y, *yp = &y;
 
-	prepareOperand(b,l,"subString");
-	prepareResult(bn,b,TYPE_int,"subString");
+	prepareOperand(b, l, "subString");
+	prepareResult(bn, b, TYPE_int, "subString");
 
 	BATloopFast(b, p, q, xx) {
-	    ptr h = BUNhead(b,p);
-	    x= (str) BUNtail(b,p);
-		if(x== 0 || *x == 0 || strcmp(x,str_nil)== 0)
-			y= str_nil;
-		else STRSubstitute(yp,xp,arg2,arg3,rep);
-	    bunfastins(bn, h, yp);
+		ptr h = BUNhead(b, p);
+
+		x = (str) BUNtail(b, p);
+		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0)
+			y = str_nil;
+		else
+			STRSubstitute(yp, xp, arg2, arg3, rep);
+		bunfastins(bn, h, yp);
 	}
-	finalizeResult(ret,bn,b);
+	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
-bunins_failed:
+      bunins_failed:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	return throwMessage("batstr.subString", "bunins failed");
 }
 
-str STRbatmatchCst(int  *ret, int *bid, str *pat){
+str
+STRbatmatchCst(int *ret, int *bid, str *pat)
+{
 	regex_t prg;
 	BAT *b, *bn;
-	int tpe,xx;
-	BUN p,q;
+	int tpe, xx;
+	BUN p, q;
 	ptr nilptr;
-	int error= regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
-	if( error<0)
-		return throwMessage("str.match",
-				"Compilation of regular expression failed");
+	int error = regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
 
-	prepareOperand(b,bid,"match");
-	bn= BATnew(BAThtype(b), TYPE_bit, BATcount(b));
+	if (error < 0)
+		return throwMessage("str.match", "Compilation of regular expression failed");
 
-	tpe= BATttype(b);
-	nilptr= ATOMnilptr(tpe);
+	prepareOperand(b, bid, "match");
+	bn = BATnew(BAThtype(b), TYPE_bit, BATcount(b));
+
+	tpe = BATttype(b);
+	nilptr = ATOMnilptr(tpe);
 	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b,p);
-		ptr t = BUNtail(b,p);
+		ptr h = BUNhead(b, p);
+		ptr t = BUNtail(b, p);
 
-		if( ATOMcmp(tpe, t, nilptr)==0 ){
+		if (ATOMcmp(tpe, t, nilptr) == 0) {
 			bunfastins(bn, h, t);
 		} else {
-			bit match=  regexec(&prg,t,0,0,0)==0;
+			bit match = regexec(&prg, t, 0, 0, 0) == 0;
+
 			bunfastins(bn, h, &match);
 		}
 	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
+      bunins_failed:
+	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
