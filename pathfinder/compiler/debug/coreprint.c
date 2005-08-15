@@ -116,6 +116,7 @@ char *c_id[]  = {
   , [c_fun_decl]           = "fun_decl"
   , [c_params]             = "params"
   , [c_param]              = "param"
+  , [c_cast]               = "cast"
 
 };
 

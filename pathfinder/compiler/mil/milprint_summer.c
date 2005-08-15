@@ -8219,6 +8219,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             loop_liftedTextConstr (f, rcode, rc);
             rc = rcode;
             break;
+        case c_cast:
         case c_seqcast:
             rc = translate2MIL (f, VALUES, cur_level, counter, R(c));
             rc = translateCast (f, code, rc, cur_level, c);
@@ -8699,6 +8700,7 @@ simplifyCoreTree (PFcnode_t *c)
             /* remove for expression, whose body contains only
                    the bound variable */
             break;
+        case c_cast:
         case c_seqcast:
             simplifyCoreTree (R(c));
             /* debugging information */
@@ -8718,7 +8720,7 @@ simplifyCoreTree (PFcnode_t *c)
 
             /* if casts are nested only the most outest
                cast has to be evaluated */
-            if (R(c)->kind == c_seqcast)
+            if (R(c)->kind == c_seqcast || R(c)->kind == c_cast)
             {
                 assert (RR(c));
                 R(c) = RR(c);
@@ -8942,7 +8944,8 @@ simplifyCoreTree (PFcnode_t *c)
                     {
                         if (TY_EQ (opt_expected, PFty_atomic ()))
                             /* avoid dummy casts */ ;
-                        else if (L(c)->kind == c_seqcast)
+                        else if (L(c)->kind == c_seqcast
+                                 || L(c)->kind == c_cast)
                         {
                             TY(L(c))  =
                             TY(LL(c)) =
@@ -9426,7 +9429,8 @@ static int test_join_pattern(PFcnode_t *for_node,
                 (L(LR(LR(fst_inner)))->kind == c_attribute ||
                  TY_EQ(LL(LR(LR(fst_inner)))->type,
                          PFty_text ())) &&
-                R(LR(fst_inner))->kind == c_seqcast &&
+                (R(LR(fst_inner))->kind == c_seqcast
+                 || R(LR(fst_inner))->kind == c_cast) &&
                 RL(LR(fst_inner))->kind == c_seqtype &&
                 TY_EQ (RL(LR(fst_inner))->sem.type, PFty_untypedAtomic()) &&
                 RR(LR(fst_inner))->kind == c_apply &&
@@ -9434,7 +9438,8 @@ static int test_join_pattern(PFcnode_t *for_node,
                              PFqname (PFns_pf,"string-value")) &&
                 DL(RR(LR(fst_inner)))->kind == c_var &&
                 DL(RR(LR(fst_inner)))->sem.var == LLL(LR(fst_inner))->sem.var &&
-                fst_inner_cast->kind == c_seqcast &&
+                (fst_inner_cast->kind == c_seqcast
+                 || fst_inner_cast->kind == c_cast) &&
                 R(fst_inner_cast)->kind == c_var && 
                 R(fst_inner_cast)->sem.var == LLL(fst_inner)->sem.var)
             {
@@ -9465,7 +9470,8 @@ static int test_join_pattern(PFcnode_t *for_node,
                 (L(LR(LR(snd_inner)))->kind == c_attribute ||
                  TY_EQ(LL(LR(LR(snd_inner)))->type,
                          PFty_text ())) &&
-                R(LR(snd_inner))->kind == c_seqcast &&
+                (R(LR(snd_inner))->kind == c_seqcast
+                 || R(LR(snd_inner))->kind == c_cast) &&
                 RL(LR(snd_inner))->kind == c_seqtype &&
                 TY_EQ (RL(LR(snd_inner))->sem.type, PFty_untypedAtomic()) &&
                 RR(LR(snd_inner))->kind == c_apply &&
@@ -9473,7 +9479,8 @@ static int test_join_pattern(PFcnode_t *for_node,
                              PFqname (PFns_pf,"string-value")) &&
                 DL(RR(LR(snd_inner)))->kind == c_var &&
                 DL(RR(LR(snd_inner)))->sem.var == LLL(LR(snd_inner))->sem.var &&
-                snd_inner_cast->kind == c_seqcast &&
+                (snd_inner_cast->kind == c_seqcast
+                 || snd_inner_cast->kind == c_cast) &&
                 R(snd_inner_cast)->kind == c_var && 
                 R(snd_inner_cast)->sem.var == LLL(snd_inner)->sem.var)
             {
