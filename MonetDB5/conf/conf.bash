@@ -46,6 +46,7 @@
 #
 #	COMP="GNU"	or	COMP="ntv"
 #	BITS="32"	or	BITS="64"
+#	OIDS="32"	or	OIDS="64"
 #	LINK="dynamic"	or	LINK="static"
 #	DEBUG="somevalue" 	or not set
 #	WARNING="somevalue" 	or not set
@@ -112,7 +113,7 @@ hw="`uname -m`"
 host="`hostname`"
 domain="`domainname`"
 
-# check for not or incorrectly set variables (${what}_BUILD, ${what}_PREFIX, COMP, BITS, LINK)
+# check for not or incorrectly set variables (${what}_BUILD, ${what}_PREFIX, COMP, BITS, OIDS, LINK)
 
 if [ ! "${WHAT_BUILD}" ] ; then
 	echo ''
@@ -138,6 +139,18 @@ if [ "${BITS}" != "32"   -a  "${BITS}" != "64"  ] ; then
 	echo 'BITS not set to either "32" or "64" to select the desired binary type.'
 	echo 'Using BITS="32" (default).'
 	BITS="32"
+fi
+if [ "${OIDS}" != "32"   -a  "${OIDS}" != "64"  ] ; then
+	echo ''
+	echo 'OIDS not set to either "32" or "64" to select the desired binary type.'
+	echo 'Using OIDS="'${BITS}'" (default).'
+	OIDS="${BITS}"
+fi
+if [ "${BITS}${OIDS}" == "3264" ] ; then
+	echo ''
+	echo 'Using 64-bit OIDS with 32-bit compilation is not possible.'
+	echo 'Using OIDS="'${BITS}'", instead.'
+	OIDS="${BITS}"
 fi
 case "${LINK}" in
 d*)	LINK="d";;
@@ -392,6 +405,9 @@ if [ "${cxx}" ] ; then
 fi
 if [ "${BITS}" = "64" ] ; then
 	conf_opts="${conf_opts} --enable-bits=${BITS}"
+fi
+if [ "${BITS}${OIDS}" = "6432" ] ; then
+	conf_opts="${conf_opts} --enable-oid32"
 fi
 
 if [ "${DEBUG}" ] ; then
