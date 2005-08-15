@@ -201,13 +201,11 @@ mal_export str             *monet_script;
 #define mal_down_sema(X,Y) if(GDKprotected) MT_down_sema(X,Y)
 @c 
 #include <mal.h>
- char monet_cwd[PATHLENGTH] = { 0 }
-int monet_welcome = 1
-str *monet_script
-
-
-@}
+char monet_cwd[PATHLENGTH] = { 0 };
+int monet_welcome = 1;
+str *monet_script;
 @-
+@}
 @node MAL execution, Backward compatibility, MAL synopsis , MonetDB overview
 @- MonetDB bootstrap
 
