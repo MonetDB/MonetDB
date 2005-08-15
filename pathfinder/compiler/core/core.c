@@ -304,17 +304,61 @@ PFcore_seqtype (PFty_t t)
 }
 
 /**
- * Create a core tree node to representing a cast along the <:
- * relationship:
+ * Create a `seqcast' Core tree node.  `seqcast' nodes make
+ * changes in the @b static type along the <: relationship
+ * explicit.  They do not have any semantics during query
+ * evaluation, but are only introduced to ensure correct
+ * static type inference/checking.
  *
- *   seqast (t, e)
+ * `seqcast' is only allowed along the <: relationship, and
+ * static type semantics need to make sure that the "cast"
+ * would always succeed. I.e., static semantics need to make
+ * sure that e.type <: t holds when applying seqcast (t, e).
  *
- * NB: the static or dynamic semantics need to make sure that
- *     e->type <: t or t <: e->type
+ * Example applications:
+ *
+ * - @verbatim
+       typeswitch ($x)
+         case $y as xs:integer return $y + 1
+         default return "not an integer"
+@endverbatim
+ *   .
+ *   If the dynamic type of @a x is @c xs:integer, we assign
+ *   @a x to @a y.  (There's no need to cast anything, as we
+ *   know that @a x already has type @c xs:integer.)  However,
+ *   for correct type inference, we need to somehow signal that
+ *   the @b static type of @a y is @c xs:integer, while for
+ *   @a x we may have some much more complex type.  (Note that
+ *   the arithmetics in the @c return part will most probably
+ *   fail if we use the static type of @a x.)  In XQuery Core,
+ *   we will thus implement this typeswitch as
+ *   @verbatim
+       typeswitch ($x)
+         case xs:integer return
+           let $y := seqcast (xs:integer, $x) return $y + 1
+         default return "not an integer"
+@endverbatim
+ *   (The `seqcast' makes the change in the static type explicit.)
+ *   .
+ * - @verbatim
+       let $x as xs:decimal := 42 return $x
+@endverbatim
+ *   .
+ *   XQuery semantics (Sec. 4.8.3 of the June 2005 FS draft) requires
+ *   that @a x is considered to have the @b static type @c xs:decimal
+ *   in the @c return clause.  The @b dynamic type of @a x, however,
+ *   is not affected by the @c as clause and remains @c xs:integer.
+ *   Additional semantics of the @c as clause requires that static
+ *   typing checks whether the assigned value (42) is actually a
+ *   subtype of the specified type (@c xs:decimal).
+ *
+ * If you want to cast values at @b runtime, have a look at
+ * PFcore_cast()!
  *
  * @param t SequenceType
- * @param e expression to cast
- * @return a core tree node representing the cast
+ * @param e expression to "cast". Static semantics must ensure
+ *          that e.type <: t always holds during query evaluation.
+ * @return a core tree node representing the seqcast
  */
 PFcnode_t *
 PFcore_seqcast (const PFcnode_t *t, const PFcnode_t *e)
@@ -322,6 +366,30 @@ PFcore_seqcast (const PFcnode_t *t, const PFcnode_t *e)
     assert (t && (t->kind == c_seqtype || t->kind == c_stattype));
 
     return PFcore_wire2 (c_seqcast, t, e);
+}
+
+/**
+ * Create a Core tree node that represents an XQuery cast:
+ *
+ * @verbatim
+        e cast as t
+@endverbatim
+ *
+ * Note that this is different from the `seqcast' nodes we
+ * introduce in our Core tree.  `cast' implements the actual
+ * cast, which may fail at runtime depending on dynamic values
+ * (e.g., <code>"foo" cast as xs:integer</code>).
+ *
+ * @param t SequenceType
+ * @param e expression to cast
+ * @return a core tree node representing the cast
+ */
+PFcnode_t *
+PFcore_cast (const PFcnode_t *t, const PFcnode_t *e)
+{
+    assert (t && (t->kind == c_seqtype || t->kind == c_stattype));
+
+    return PFcore_wire2 (c_cast, t, e);
 }
 
 /**
@@ -1316,8 +1384,8 @@ PFcore_fs_convert_op_by_type (const PFcnode_t *e, PFty_t t)
                         PFcore_cases 
                             (PFcore_case 
                                  (PFcore_seqtype (PFty_xdt_untypedAtomic ()),
-                       /*return*/ PFcore_seqcast (PFcore_seqtype (target),
-                                                  PFcore_var (v2))
+                       /*return*/ PFcore_cast (PFcore_seqtype (target),
+                                               PFcore_var (v2))
                                   ),
                              PFcore_default (PFcore_var (v2))))
                    )
@@ -1385,12 +1453,12 @@ PFcore_fs_convert_op_by_expr (const PFcnode_t *e1, const PFcnode_t *e2)
                                            (PFcore_case
                                                (PFcore_seqtype
                                                    (PFty_xdt_untypedAtomic ()),
-                                                PFcore_seqcast
+                                                PFcore_cast
                                                    (PFcore_seqtype
                                                        (PFty_xs_string ()),
                                                     PFcore_var (v3))),
                                             PFcore_default (
-                                                PFcore_seqcast (
+                                                PFcore_cast (
                                                     PFcore_stattype (
                                                         PFcore_var(v2)),
                                                     PFcore_var (v3)))))),

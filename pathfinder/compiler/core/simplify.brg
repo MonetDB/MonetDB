@@ -150,6 +150,7 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term fun_decl           = 55 /**< function declaration */
 %term params             = 56 /**< function declaration parameter list */
 %term param              = 57 /**< function declaration parameter */
+%term cast               = 58 /**< XQuery `cast as' operation */
 
 %%
 
@@ -248,28 +249,30 @@ CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  52 (10);
 OrderSpecs:         orderspecs (CoreExpr, nil)                  =  53 (10);
 OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  54 (10);
 
-Atom:               var                                         =  55 (10);
-Atom:               empty                                       =  56 (10);
-Atom:               LiteralValue                                =  57 (10);
+CoreExpr:           cast (SequenceType, CoreExpr)               =  55 (10);
 
-LiteralValue:       lit_str                                     =  58 (10);
-LiteralValue:       lit_int                                     =  59 (10);
-LiteralValue:       lit_dec                                     =  60 (10);
-LiteralValue:       lit_dbl                                     =  61 (10);
-LiteralValue:       true_                                       =  62 (10);
-LiteralValue:       false_                                      =  63 (10);
+Atom:               var                                         =  56 (10);
+Atom:               empty                                       =  57 (10);
+Atom:               LiteralValue                                =  58 (10);
 
-FunctionDecls:      nil                                         =  64 (10);
-FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  65 (10);
+LiteralValue:       lit_str                                     =  59 (10);
+LiteralValue:       lit_int                                     =  60 (10);
+LiteralValue:       lit_dec                                     =  61 (10);
+LiteralValue:       lit_dbl                                     =  62 (10);
+LiteralValue:       true_                                       =  63 (10);
+LiteralValue:       false_                                      =  64 (10);
 
-FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  66 (10);
+FunctionDecls:      nil                                         =  65 (10);
+FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  66 (10);
 
-ParamList:          nil                                         =  67 (10);
-ParamList:          params (FunParam, ParamList)                =  68 (10);
+FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  67 (10);
 
-FunctionBody:       CoreExpr                                    =  69 (10);
+ParamList:          nil                                         =  68 (10);
+ParamList:          params (FunParam, ParamList)                =  69 (10);
 
-FunParam:           param (SequenceType, var)                   =  70 (10);
+FunctionBody:       CoreExpr                                    =  70 (10);
+
+FunParam:           param (SequenceType, var)                   =  71 (10);
 
 %%
 
@@ -512,7 +515,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* FunctionDecl:       fun_decl (ParamList, FunctionBody) */
-        case 66:
+        case 67:
             /* During simplification, the function body root may have
              * changed. Fix it in the corresponding PFfun_t struct.
              */

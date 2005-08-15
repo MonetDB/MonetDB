@@ -144,6 +144,7 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term fun_decl           = 55 /**< function declaration */
 %term params             = 56 /**< function declaration parameter list */
 %term param              = 57 /**< function declaration parameter */
+%term cast               = 58 /**< XQuery `cast as' operation */
 
 %%
 
@@ -229,16 +230,18 @@ CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  43 (10);
 OrderSpecs:         orderspecs (CoreExpr, nil)                  =  44 (10);
 OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  45 (10);
 
-Atom:               var                                         =  46 (10);
-Atom:               LiteralValue                                =  47 (10);
+CoreExpr:           cast (seqtype, CoreExpr)                    =  46 (10);
 
-LiteralValue:       lit_str                                     =  48 (10);
-LiteralValue:       lit_int                                     =  49 (10);
-LiteralValue:       lit_dec                                     =  50 (10);
-LiteralValue:       lit_dbl                                     =  51 (10);
-LiteralValue:       true_                                       =  52 (10);
-LiteralValue:       false_                                      =  53 (10);
-LiteralValue:       empty                                       =  54 (10);
+Atom:               var                                         =  47 (10);
+Atom:               LiteralValue                                =  48 (10);
+
+LiteralValue:       lit_str                                     =  49 (10);
+LiteralValue:       lit_int                                     =  50 (10);
+LiteralValue:       lit_dec                                     =  51 (10);
+LiteralValue:       lit_dbl                                     =  52 (10);
+LiteralValue:       true_                                       =  53 (10);
+LiteralValue:       false_                                      =  54 (10);
+LiteralValue:       empty                                       =  55 (10);
 
 FunctionDecls:      nil                                         =  62 (10);
 FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  63 (10);
@@ -1236,7 +1239,7 @@ reduce (PFcnode_t * p, int goalnt)
             break;
 
         /* Atom:               var */
-        case 46:
+        case 47:
         {
             /*
              * Reference to variable, so look it up in the environment. It
@@ -1270,11 +1273,11 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* Atom:               LiteralValue */
-        case 47:
+        case 48:
             break;
 
         /* LiteralValue:       lit_str */
-        case 48:
+        case 49:
         {
             /* 
              *  -------------------------------------------------------------
@@ -1291,7 +1294,7 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* LiteralValue:       lit_int */
-        case 49:
+        case 50:
         {
             /*
              *  -------------------------------------------------------------
@@ -1308,7 +1311,7 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* LiteralValue:       lit_dec */
-        case 50:
+        case 51:
         {
             /*
              *  -------------------------------------------------------------
@@ -1325,7 +1328,7 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* LiteralValue:       lit_dbl */
-        case 51:
+        case 52:
         {
             /*
              *  -------------------------------------------------------------
@@ -1343,7 +1346,7 @@ reduce (PFcnode_t * p, int goalnt)
 
 
         /* LiteralValue:       true_ */
-        case 52:
+        case 53:
         {
             /*
              *  -------------------------------------------------------------
@@ -1360,7 +1363,7 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* LiteralValue:       false_ */
-        case 53:
+        case 54:
         {
             /*
              *  -------------------------------------------------------------
@@ -1377,7 +1380,7 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* LiteralValue:       empty */
-        case 54:
+        case 55:
         {
             /*
              *  -------------------------------------------------------------

@@ -2303,7 +2303,7 @@ reduce (PFpnode_t * p, int goalnt)
 
             C(p) = let (letbind (var (v1), C(L(p))),
                         let (letbind (var (v2), fn_data (var (v1))),
-                             seqcast (C(R(p)), var (v2))));
+                             cast (C(R(p)), var (v2))));
         } break;
 
         /* UnaryExpr:              ValueExpr */
@@ -2561,17 +2561,36 @@ reduce (PFpnode_t * p, int goalnt)
              *       let $v2 := e2 return
              *         let $v3 :=
              *           typeswitch ($v2)
-             *             case numeric
-             *               return let $v4 := seqcast (xs:integer, $v2) return
-             *                        fn:eq ($v4, $fs:position)
+             *             case numeric return
+             *               typeswitch ($v2)
+             *                 case $v4 as xs:integer
+             *                   return fn:eq ($v4, $fs:position)
+             *                 case $v5 as xs:decimal
+             *                   return fn:eq ($v5, $fs:position)
+             *                 case $v6 as xs:double
+             *                   return fn:eq ($v6, $fs:position)
+             *                 default return   (: should actually not happen :)
+             *                   let $v7 := $v2 cast as xs:double return
+             *                     fn:eq ($v7, $fs:position)
              *             default return ebv ($v2)
              *           return
              *             if ($v3) then $fs:dot else ()
+             *
+             * Note:
+             *   We explicitly line up the variants of type `numeric' here.
+             *   (a simple `case $v4 as numeric return fn:eq ($v4, $fs:pos)'
+             *   instead of the inner typeswitch would loose important
+             *   static type information: $v4 would get static type numeric,
+             *   and we would loose the (possibly more specific) type we
+             *   inferred so far.)
              */
             PFvar_t *v1 = new_var (NULL);
             PFvar_t *v2 = new_var (NULL);
             PFvar_t *v3 = new_var (NULL);
             PFvar_t *v4 = new_var (NULL);
+            PFvar_t *v5 = new_var (NULL);
+            PFvar_t *v6 = new_var (NULL);
+            PFvar_t *v7 = new_var (NULL);
             PFvar_t *dot;
             PFvar_t *position;
             PFvar_t *last;
@@ -2613,13 +2632,63 @@ reduce (PFpnode_t * p, int goalnt)
                                 cases (
                                   case_ (
                                     seqtype (PFty_numeric ()),
-                                    let (
-                                      letbind (
-                                        var (v4),
-                                        seqcast (seqtype (PFty_xs_integer ()),
-                                                 var (v2))),
-                                      APPLY (op_eq, var (v4), var (fs_position))
-                                      )),
+                                    typeswitch (
+                                      var (v2),
+                                      cases (
+                                        case_ (
+                                          seqtype (PFty_xs_integer ()),
+                                          let (
+                                            letbind (var (v4),
+                                                     seqcast (
+                                                       seqtype (
+                                                           PFty_xs_integer()),
+                                                       var (v2))),
+                                            APPLY (op_eq, var (v4),
+                                                   var (fs_position)))),
+                                        default_ (
+                                          typeswitch (
+                                            var (v2),
+                                            cases (
+                                              case_ (
+                                                seqtype (PFty_xs_decimal ()),
+                                                let (
+                                                  letbind (
+                                                    var (v5),
+                                                    seqcast (
+                                                      seqtype (
+                                                            PFty_xs_decimal ()),
+                                                      var (v2))),
+                                                  APPLY (op_eq, var (v5),
+                                                         var (fs_position)))),
+                                              default_ (
+                                                typeswitch (
+                                                  var (v2),
+                                                  cases (
+                                                    case_ (
+                                                      seqtype (
+                                                        PFty_xs_double ()),
+                                                      let (
+                                                        letbind (
+                                                          var (v6),
+                                                          seqcast (
+                                                            seqtype (
+                                                              PFty_xs_double()),
+                                                            var (v2))),
+                                                        APPLY (op_eq, var (v6),
+                                                               var (fs_position)
+                                                               ))),
+                                                    default_ (
+                                                      let (
+                                                        letbind (
+                                                          var (v7),
+                                                          cast (
+                                                            seqtype (
+                                                              PFty_xs_double()),
+                                                            var (v2))),
+                                                        APPLY (op_eq,
+                                                               var (v7),
+                                                               var (fs_position)
+                                                            )))))))))))),
                                   default_ (ebv (var (v2)))))),
                             if_ (
                               var (v3),
