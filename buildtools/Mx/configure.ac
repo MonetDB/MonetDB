@@ -30,6 +30,7 @@ AC_FUNC_STAT
 AC_FUNC_UTIME_NULL
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([memset mkdir strchr strcspn strrchr strstr utime])
+AC_CHECK_DECLS(getopt)
 
 # Other checks
 case "$host_os" in
