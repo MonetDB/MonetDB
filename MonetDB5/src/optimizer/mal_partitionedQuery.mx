@@ -17,6 +17,8 @@
 
 @f mal_partitionedQuery
 @a M. Kersten
+@-
+@node Partitioned Database Optimizer, Strength Reduction, Code Factorization, TOC
 @+ Partitioned query processing
 Limitations on the addressing space in older PCs and the need
 for distributed storage makes that BATs ideally should be 

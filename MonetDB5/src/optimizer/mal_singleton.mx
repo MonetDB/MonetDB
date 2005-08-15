@@ -17,6 +17,8 @@
 
 @f mal_singleton
 @a M. Kersten
+@-
+@node Singleton Set Replacement, Peephole Optimization, Empty Set Reduction,  TOC
 @+ Singleton Set Reduction
 Application semantics and precise cost analysis may
 identify the result of an operation to produce a BAT with

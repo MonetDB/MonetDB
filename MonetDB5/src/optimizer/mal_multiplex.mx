@@ -18,6 +18,8 @@
 
 @f mal_multiplex
 @a M. Kersten
+@-
+@node Multiplex Compiler, Garbage Collector,  Peephole Optimization, TOC
 @+ Multiplex Compilation
 The MonetDB operator multiplex concept has been pivotal to
 easily apply any scalar function to elements in a containers.

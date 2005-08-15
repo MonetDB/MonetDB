@@ -17,6 +17,8 @@
 
 @f mal_reduce
 @a M. Kersten
+@-
+@node Variable Stack Reduction, Program Debugging, Costmodels, TOC
 @+ Variable Stack Reduction
 The compilers producing MAL may generate an abundance of temporary variables
 to hold the result of expressions. This leads to a polution of the

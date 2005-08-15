@@ -105,6 +105,23 @@ Table of contents
 
 * Optimizer landscape::
 * Optimizer framework::
+@menu
+* Alias Removal::
+* Dead Code Removal::
+* Accumulator Evaluations::
+* Heuristic Rewrite Rules::
+* Common Sub-Expression Removal::
+* Empty Set Reduction::
+* Singleton Set Replacement::
+* Peephole Optimization::
+* Multiplex Compiler::
+* Garbage Collector::
+* Code Factorization::
+* Partitioned Database Optimizer::
+* Strength Reduction::
+* Costmodels::
+* Variable Stack Reduction::
+@end menu
 * Program Debugging::
 @menu
 * The MAL Debugger::
@@ -212,7 +229,7 @@ Table of contents
 @include mal_costmodel.bdy.texi
 @include mal_reduce.bdy.texi
 
-@node Program Debugging, The MAL Debugger, Optimizer framework, TOC
+@node Program Debugging, The MAL Debugger, Variable Stack Reduction, TOC
 @include mal_debugger.bdy.texi
 
 @node Execution Profiling, Event Filtering, Runtime Inspection, TOC
