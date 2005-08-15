@@ -5168,12 +5168,10 @@ is2ns_node (opt_t *f, int counter)
 static int
 fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 {
-    char *item_ext;
     int rcode, rc;
     PFty_t input_type = *PFty_simplify(PFty_defn(c->type));
 
     rcode = (code)?STR:NORMAL;
-    item_ext = kind_str(rcode);
 
     /* avoid problems because of optional type 
        (it is handled by the last part, which adds empty strings) */
@@ -5189,8 +5187,7 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 "iter := loop%03u.reverse().mark(0@0).reverse();\n"
                 "pos := iter.project(1@0);\n"
                 "kind := iter.project(STR);\n",
-                cur_level,
-                item_ext, item_ext);
+                cur_level);
 
         return rcode;
     }
@@ -7694,6 +7691,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         translateEmpty (f);
         return NORMAL;
     }
+    /* pacify picky compilers: */
+    PFoops(OOPS_FATAL,"control should never reach end of function translateFunction() in compiler/mil/milprint_summer.c");
+    assert(0); /* we should never come here! */
+    return -1; /* pacify picky compilers */
 }
 
 /**

@@ -143,6 +143,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_add_int (PFalg_op_t *loop __attribute__((unused)),
                           struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_int, PFalg_add, args);
 }
 
@@ -154,6 +155,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_add_dec (PFalg_op_t *loop __attribute__((unused)),
                           struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dec, PFalg_add, args);
 }
 
@@ -165,6 +167,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_add_dbl (PFalg_op_t *loop __attribute__((unused)),
                           struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dbl, PFalg_add, args);
 }
 
@@ -177,6 +180,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_subtract_int (PFalg_op_t *loop __attribute__((unused)),
                                struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_int, PFalg_subtract, args);
 }
 
@@ -188,6 +192,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_subtract_dec (PFalg_op_t *loop __attribute__((unused)),
                                struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dec, PFalg_subtract, args);
 }
 
@@ -199,6 +204,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_subtract_dbl (PFalg_op_t *loop __attribute__((unused)),
                                struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dbl, PFalg_subtract, args);
 }
 
@@ -211,6 +217,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_multiply_int (PFalg_op_t *loop __attribute__((unused)),
                                struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_int, PFalg_multiply, args);
 }
 
@@ -222,6 +229,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_multiply_dec (PFalg_op_t *loop __attribute__((unused)),
                                struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dec, PFalg_multiply, args);
 }
 
@@ -233,6 +241,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_multiply_dbl (PFalg_op_t *loop __attribute__((unused)),
                                struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dbl, PFalg_multiply, args);
 }
 
@@ -250,6 +259,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_divide_dec (PFalg_op_t *loop __attribute__((unused)),
                              struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dec, PFalg_divide, args);
 }
 
@@ -261,6 +271,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_divide_dbl (PFalg_op_t *loop __attribute__((unused)),
                              struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dbl, PFalg_divide, args);
 }
 
@@ -275,6 +286,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_idivide_int (PFalg_op_t *loop __attribute__((unused)),
 			      struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return (struct PFalg_pair_t) {
 	.rel = cast (bin_arith (aat_int, PFalg_divide, args).rel,
 		     "item", aat_int),
@@ -289,6 +301,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_idivide_dec (PFalg_op_t *loop __attribute__((unused)),
                              struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return (struct PFalg_pair_t) {
 	.rel = cast (bin_arith (aat_dec, PFalg_divide, args).rel,
 		     "item", aat_int),
@@ -303,6 +316,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_idivide_dbl (PFalg_op_t *loop __attribute__((unused)),
 			      struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return (struct PFalg_pair_t) {
 	.rel = cast (bin_arith (aat_dbl, PFalg_divide, args).rel,
 		     "item", aat_int),
@@ -318,6 +332,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_modulo_int (PFalg_op_t *loop __attribute__((unused)),
                              struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_int, PFalg_modulo, args);
 }
 
@@ -329,6 +344,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_modulo_dec (PFalg_op_t *loop __attribute__((unused)),
                              struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dec, PFalg_modulo, args);
 }
 
@@ -340,6 +356,7 @@ struct PFalg_pair_t
 PFbui_op_numeric_modulo_dbl (PFalg_op_t *loop __attribute__((unused)),
                              struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dbl, PFalg_modulo, args);
 }
 
@@ -352,6 +369,7 @@ struct PFalg_pair_t
 PFbui_op_gt_int (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_int, PFalg_gt, args);
 }
 
@@ -363,6 +381,7 @@ struct PFalg_pair_t
 PFbui_op_gt_dec (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dec, PFalg_gt, args);
 }
 
@@ -374,6 +393,7 @@ struct PFalg_pair_t
 PFbui_op_gt_dbl (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dbl, PFalg_gt, args);
 }
 
@@ -385,6 +405,7 @@ struct PFalg_pair_t
 PFbui_op_gt_bln (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_bln, PFalg_gt, args);
 }
 
@@ -396,6 +417,7 @@ struct PFalg_pair_t
 PFbui_op_gt_str (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_str, PFalg_gt, args);
 }
 
@@ -408,6 +430,7 @@ struct PFalg_pair_t
 PFbui_op_ge_int (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_int, PFalg_gt,
                       (struct PFalg_pair_t []) { args[1], args[0] }) });
@@ -421,6 +444,7 @@ struct PFalg_pair_t
 PFbui_op_ge_dec (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_dec, PFalg_gt,
                       (struct PFalg_pair_t []) { args[1], args[0] }) });
@@ -434,6 +458,7 @@ struct PFalg_pair_t
 PFbui_op_ge_dbl (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_dbl, PFalg_gt,
                       (struct PFalg_pair_t []) { args[1], args[0] }) });
@@ -447,6 +472,7 @@ struct PFalg_pair_t
 PFbui_op_ge_bln (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_bln, PFalg_gt,
                       (struct PFalg_pair_t []) { args[1], args[0] }) });
@@ -460,6 +486,7 @@ struct PFalg_pair_t
 PFbui_op_ge_str (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_str, PFalg_gt,
                       (struct PFalg_pair_t []) { args[1], args[0] }) });
@@ -474,6 +501,7 @@ struct PFalg_pair_t
 PFbui_op_lt_int (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_int, PFalg_gt,
                       (struct PFalg_pair_t []) { args[1], args[0] });
 }
@@ -486,6 +514,7 @@ struct PFalg_pair_t
 PFbui_op_lt_dec (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dec, PFalg_gt,
                       (struct PFalg_pair_t []) { args[1], args[0] });
 }
@@ -498,6 +527,7 @@ struct PFalg_pair_t
 PFbui_op_lt_dbl (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dbl, PFalg_gt,
                       (struct PFalg_pair_t []) { args[1], args[0] });
 }
@@ -510,6 +540,7 @@ struct PFalg_pair_t
 PFbui_op_lt_bln (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_bln, PFalg_gt,
                       (struct PFalg_pair_t []) { args[1], args[0] });
 }
@@ -522,6 +553,7 @@ struct PFalg_pair_t
 PFbui_op_lt_str (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_str, PFalg_gt,
                       (struct PFalg_pair_t []) { args[1], args[0] });
 }
@@ -535,6 +567,7 @@ struct PFalg_pair_t
 PFbui_op_le_int (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_int, PFalg_gt, args) });
 }
@@ -547,6 +580,7 @@ struct PFalg_pair_t
 PFbui_op_le_dec (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_dec, PFalg_gt, args) });
 }
@@ -559,6 +593,7 @@ struct PFalg_pair_t
 PFbui_op_le_dbl (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_dbl, PFalg_gt, args) });
 }
@@ -571,6 +606,7 @@ struct PFalg_pair_t
 PFbui_op_le_bln (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_bln, PFalg_gt, args) });
 }
@@ -583,6 +619,7 @@ struct PFalg_pair_t
 PFbui_op_le_str (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_str, PFalg_gt, args) });
 }
@@ -596,6 +633,7 @@ struct PFalg_pair_t
 PFbui_op_eq_int (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_int, PFalg_eq, args);
 }
 
@@ -607,6 +645,7 @@ struct PFalg_pair_t
 PFbui_op_eq_dec (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dec, PFalg_eq, args);
 }
 
@@ -618,6 +657,7 @@ struct PFalg_pair_t
 PFbui_op_eq_dbl (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_dbl, PFalg_eq, args);
 }
 
@@ -629,6 +669,7 @@ struct PFalg_pair_t
 PFbui_op_eq_bln (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_bln, PFalg_eq, args);
 }
 
@@ -640,6 +681,7 @@ struct PFalg_pair_t
 PFbui_op_eq_str (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_str, PFalg_eq, args);
 }
 
@@ -652,6 +694,7 @@ struct PFalg_pair_t
 PFbui_op_ne_int (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_int, PFalg_eq, args) });
 }
@@ -664,6 +707,7 @@ struct PFalg_pair_t
 PFbui_op_ne_dec (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_dec, PFalg_eq, args) });
 }
@@ -676,6 +720,7 @@ struct PFalg_pair_t
 PFbui_op_ne_dbl (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_dbl, PFalg_eq, args) });
 }
@@ -688,6 +733,7 @@ struct PFalg_pair_t
 PFbui_op_ne_bln (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_bln, PFalg_eq, args) });
 }
@@ -700,6 +746,7 @@ struct PFalg_pair_t
 PFbui_op_ne_str (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
         return un_func (aat_bln, PFalg_not,
 	    (struct PFalg_pair_t []) { bin_arith (aat_str, PFalg_eq, args) });
 }
@@ -712,6 +759,7 @@ struct PFalg_pair_t
 PFbui_fn_not_bln (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return un_func (aat_bln, PFalg_not, args);
 }
 
@@ -723,6 +771,7 @@ struct PFalg_pair_t
 PFbui_op_or_bln (PFalg_op_t *loop __attribute__((unused)),
                  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_bln, PFalg_or, args);
 }
 
@@ -734,6 +783,7 @@ struct PFalg_pair_t
 PFbui_op_and_bln (PFalg_op_t *loop __attribute__((unused)),
 		  struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_bln, PFalg_and, args);
 }
 
@@ -748,6 +798,7 @@ struct PFalg_pair_t
 PFbui_fn_boolean_bln (PFalg_op_t *loop __attribute__((unused)),
                        struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return args[0];
 }
 
@@ -760,6 +811,7 @@ struct PFalg_pair_t
 PFbui_op_is_same_node (PFalg_op_t *loop __attribute__((unused)),
 		       struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_node, PFalg_eq, args);
 }
 
@@ -771,6 +823,7 @@ struct PFalg_pair_t
 PFbui_op_node_before (PFalg_op_t *loop __attribute__((unused)),
 		      struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_node, PFalg_gt,
 		      (struct PFalg_pair_t []) { args[1], args[0] });
 }
@@ -783,6 +836,7 @@ struct PFalg_pair_t
 PFbui_op_node_after (PFalg_op_t *loop __attribute__((unused)),
 		     struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return bin_arith (aat_node, PFalg_gt, args);
 }
 
@@ -799,6 +853,7 @@ struct PFalg_pair_t
 PFbui_op_union (PFalg_op_t *loop __attribute__((unused)),
 		struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return (struct  PFalg_pair_t) {
         .rel = rownum (
 	           distinct (
@@ -826,6 +881,7 @@ struct PFalg_pair_t
 PFbui_op_intersect (PFalg_op_t *loop __attribute__((unused)),
 		    struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return (struct  PFalg_pair_t) {
         .rel = rownum (
 	           distinct (
@@ -855,6 +911,7 @@ struct PFalg_pair_t
 PFbui_op_except (PFalg_op_t *loop __attribute__((unused)),
 		 struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return (struct  PFalg_pair_t) {
         .rel = rownum (
 	           distinct (
@@ -904,6 +961,7 @@ struct PFalg_pair_t
 PFbui_pf_item_seq_to_node_seq (PFalg_op_t *loop __attribute__((unused)),
 			       struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     /* insert new, consecutive row numbering of "pos" column and
      * carry out type test on "node" type
      */
@@ -971,6 +1029,7 @@ struct PFalg_pair_t
 PFbui_pf_merge_adjacent_text_nodes (PFalg_op_t *loop __attribute__((unused)),
 			 struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     PFalg_op_t *merged = merge_adjacent (PFalg_set_to_alg (args[0].frag),
 					 args[0].rel);
 
@@ -990,6 +1049,7 @@ struct PFalg_pair_t
 PFbui_pf_distinct_doc_order (PFalg_op_t *loop __attribute__((unused)),
 			     struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return (struct  PFalg_pair_t) {
                  .rel = rownum (
                             distinct (
@@ -1023,6 +1083,7 @@ struct PFalg_pair_t
 PFbui_fn_boolean_optbln (PFalg_op_t *loop __attribute__((unused)),
 			 struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return (struct PFalg_pair_t) {
 	.rel = disjunion (args[0].rel,
 			  cross (
@@ -1047,6 +1108,7 @@ struct PFalg_pair_t
 PFbui_fn_boolean_item (PFalg_op_t *loop __attribute__((unused)),
                        struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return (struct PFalg_pair_t) {
 	.rel = cross (
                    disjunion (
@@ -1084,6 +1146,7 @@ struct PFalg_pair_t
 PFbui_fn_empty (PFalg_op_t *loop __attribute__((unused)),
                 struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return (struct PFalg_pair_t) {
 	.rel = cross (
                    disjunion (
@@ -1115,6 +1178,7 @@ struct PFalg_pair_t
 PFbui_fn_doc (PFalg_op_t *loop __attribute__((unused)),
               struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     PFalg_op_t *doc = doc_tbl (args[0].rel);
 
     return (struct PFalg_pair_t) {
@@ -1128,6 +1192,7 @@ struct PFalg_pair_t
 PFbui_pf_string_value (PFalg_op_t *loop __attribute__((unused)),
                        struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return (struct PFalg_pair_t) {
         .rel  = string_value (PFalg_set_to_alg (args[0].frag), args[0].rel),
         .frag = PFalg_empty_set () };
@@ -1140,5 +1205,6 @@ struct PFalg_pair_t
 PFbui_op_typed_value (PFalg_op_t *loop __attribute__((unused)),
                       struct PFalg_pair_t *args)
 {
+    (void)loop; /* pacify picky compilers that do not understand "__attribute__((unused))" */
     return args[0];
 }
