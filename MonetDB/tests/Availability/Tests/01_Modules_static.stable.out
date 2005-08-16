@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 677 ]
+[ 678 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 677 ]
+[ 678 ]
 
 var All:=0;
 
@@ -141,8 +141,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 110 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 111 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -172,6 +172,7 @@ Module: "algebra"
 [ "find_unescaped_occurrence",	  "PROC:      ",  "find_unescaped_occurrence(str, str, str) : int",							  "finds the first occurrence of c that is not escaped by esc"																																																													  ]
 [ "fragment",	  "COMMAND:   ",  "fragment(BAT[any::1,any::2], any::1, any::1, any::2, any::2) : BAT[any::1,any::2]",	  "Select both on head and tail range."																																	  ]
 [ "group",			  "COMMAND:   ",  "group(BAT[any::1,any], int, int, int) : BAT[any::1,int]",						  "Produces a new BAT with identical head column, and in the tail column groups of equally valued\nintegers within each group. Parameters: a start group value, group number increment, group size."																																												  ]
+[ "group",			  "COMMAND:   ",  "group(BAT[any::1,int]) : BAT[any::1,void]",						  "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes."																																																									  ]
 [ "hashsplit",	  "COMMAND:   ",  "hashsplit(BAT[any::1,any::2], int) : BAT[int,BAT]",					  "Split a BAT on tail column according (hash-value MOD buckets).\nReturns a recursive BAT, containing the fragments in the tail,\ntheir bucket number in the head."																	  ]
 [ "histogram",	  "COMMAND:   ",  "histogram(BAT[any,any::2]) : BAT[any::2,int]",					  "Produce a BAT containing the histogram of the tail values.\n bat.histogram() ::= {count}(bat.reverse)"																								  ]
 [ "intersect",	  "PROC:      ",  "intersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "backward compatibility: use sintersect() explicitly."																														  ]
@@ -813,7 +814,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 677 ]
+[ 678 ]
 
 quit();
 
