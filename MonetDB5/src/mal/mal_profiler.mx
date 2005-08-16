@@ -459,9 +459,9 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if (profileCounter[PROFtime].status) {
-		char tbuf[100], *c;
+		char *tbuf, *c;
 
-		ctime_r(&pci->clock, tbuf);
+		tbuf= ctime(&pci->clock);
 		c = strchr(tbuf, '\n');
 		if (c) {
 			c[-5] = '"';
@@ -1255,9 +1255,9 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNins(TRACE_id_modfcn, &evnt, buf);
 	}
 	if (profileCounter[PROFtime].status) {
-		char tbuf[100], *c;
+		char *tbuf, *c;
 
-		ctime_r(&pci->clock, tbuf);
+		tbuf= ctime(&pci->clock);
 		c = strchr(tbuf, '\n');
 		if (c) {
 			c[-5] = '"';

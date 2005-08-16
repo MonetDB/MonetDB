@@ -32,21 +32,21 @@ between a co-routine and the client for which it works.
 The co-routine concept researched in Monet 5 is the notion of a 'factory',
 which consists of 'factory plants' at possibly different locations and
 with different policies to handle client requests.
-Factory management is limited to its owner, which derived from the module
+Factory management is limited to its owner, which is derived from the module
 in which it is placed. By default Admin is the owner of all modules.
 
 The random generator example is used to illustrate its definition and use.
 @example
-FACTORY random(seed:int,limit:int):int;
+factory random(seed:int,limit:int):int;
     rnd:=seed;
     lim:= limit;
-BARRIER lim;
-    LEAVE lim:= lim-1;
+barrier lim;
+    leave lim:= lim-1;
     rnd:= rnd*125;
-    YIELD rnd:= rnd % 32676;
-    REDO lim;
-EXIT lim;
-END random;
+    yield rnd:= rnd % 32676;
+    redo lim;
+exit lim;
+end random;
 @end example
 
 The first time this factory is called, a factory plant
@@ -58,7 +58,7 @@ The random number is generated and @code{yield}  as
 a result of the call. The factory process is then put to sleep.
 The second call received by the factory wakes it up at the
 point where it went to sleep. In this case it will
-find a REDO statement and produces the next random number.
+find a @code{redo} statement and produces the next random number.
 Note that also in this case a seed and limit value are
 expected, but they are ignored in the body.
 This factory can be called upon to generate at most 'limit'
@@ -67,27 +67,27 @@ Thereafter it is being removed, i.e. reset to the original state.
 
 A cooperative group of factories can be readily constructed.
 For example, assume we would like the
-random factories to respond to both random(seed,limit) and
-random(). This can be defined as follows:
+random factories to respond to both @code{random(seed,limit)} 
+and @code{random()}. This can be defined as follows:
 @example
-FACTORY random(seed:int,limit:int):int;
+factory random(seed:int,limit:int):int;
     rnd:=seed;
     lim:= limit;
     box.deposit(rnd);
-BARRIER lim;
+barrier lim;
     LEAVE lim:= lim-1;
     rnd:= rnd*125;
     YIELD rnd:= rnd % 32676;
     REDO lim;
-EXIT lim;
-END random;
+exit lim;
+end random;
 
-FACTORY random():int;
-BARRIER forever:=true;
-    YIELD random(0,0);
-    REDO forever;
-EXIT forever;
-END random;
+factory random():int;
+barrier forever:=true;
+    yield random(0,0);
+    redo forever;
+exit forever;
+end random;
 @end example
 
 @+ Client support
@@ -101,41 +101,40 @@ plant for each factory. If necessary, the factory
 can keep track of a client list to differentiate
 the states.
 A possible implementation would be:
-
 @example
-FACTORY random(seed:int,clientid:int):int;
+factory random(seed:int,clientid:int):int;
     clt:= new(:int,:int);
     insert(clt,clientid,seed);
-BARRIER always:=true;
+barrier always:=true;
     rnd:= find(clt,clientid);
-CATCH   rnd; #failed to find client
+catch   rnd; #failed to find client
     insert(clt,clientid,seed);
     rnd:= find(clt,clientid);
-EXIT    rnd;
+exit    rnd;
     rnd:= rnd * 125;
     rnd:= rnd % 32676;
     replace(clt,clientid,rnd);
     yield rnd;
-    REDO always;
-EXIT always;
-END random;
+    redo always;
+exit always;
+end random;
 @end example
 
 The operators to built client aware factories are,
-factory.getCaller(), which returns a client index,
-factory.getModule() and factory.getFunction(), 
+@code{factory.getCaller()}, which returns a client 
+index, @code{factory.getModule()} and @code{factory.getFunction()}, 
 which returns the identity of scope enclosed.
 
 To illustrate, the client specific random generator
 can be shielded using the factory:
 @example
-FACTORY random(seed:int):int;
-BARRIER always:=true;
+factory random(seed:int):int;
+barrier always:=true;
     clientid:= factory.getCaller();
-    YIELD random(seed, clientid);
-    REDO always;
-EXIT always;
-END random;
+    yield random(seed, clientid);
+    redo always;
+exit always;
+end random;
 @end example
 
 @+ Factory control
@@ -153,7 +152,7 @@ It effectively leads to a @code{yield}  statement raising an exception.
 The state of a factory can be changed only when the system
 is awaiting a call for a new job. 
 
-@+ Complex examples 
+@+ Complex factory examples 
 One interesting use of the factory scheme is to model
 a volcano-style query processor. Each node in the query
 tree is an iterator that calls upon the operands to produce
@@ -164,55 +163,55 @@ implements a nested loop. The end of a sequence is identified
 by a NIL chunk.
 
 @example
-FACTORY query();
+factory query();
     Left:= bind("relationA");
     Right:= bind("relationB");
     rc:= joinStep(Left,Right);
-BARRIER rc!= nil;
+barrier rc!= nil;
     print(rc);
     rc:= joinStep(Left,Right);
-    REDO rc!= nil;
-EXIT rc;
-END query;
+    redo rc!= nil;
+exit rc;
+end query;
 
 #nested loop join
-FACTORY joinStep(Left:bat[:any,:any],Right:bat[:any,:any]):bat[:any,:any];
+factory joinStep(Left:bat[:any,:any],Right:bat[:any,:any]):bat[:any,:any];
     lc:= chunkStep(Left);
-BARRIER outer:= lc != nil;
+barrier outer:= lc != nil;
     rc:= chunkStep(Right);
-    BARRIER inner:= rc != nil;
+    barrier inner:= rc != nil;
         chunk:= join(lc,rc);
-        YIELD chunk;
+        yield chunk;
         rc:= chunkStep(Right);
-        REDO inner:= rc != nil;
-    EXIT inner;
+        redo inner:= rc != nil;
+    exit inner;
     lc:= chunkStep(Left);
-    REDO outer:= lc != nil;
-EXIT outer;
+    redo outer:= lc != nil;
+exit outer;
     # we have seen everything
     return nil;
-END joinStep;
+end joinStep;
 
 #factory for left branch
-FACTORY chunkStepL(L:bat[:any,:any]):bat[:any,:any];
+factory chunkStepL(L:bat[:any,:any]):bat[:any,:any];
     i:= 0;
     j:= 20;
     cnt:= count(L);
-BARRIER outer:= j<cnt;
+barrier outer:= j<cnt;
     chunk:= slice(L,i,j);
     i:= j;
     j:= i+ 20;
-    YIELD chunk;
-    REDO loop:= j<cnt;
-EXIT outer;
+    yield chunk;
+    redo loop:= j<cnt;
+exit outer;
     # sent last portion
     chunk:= slice(L,i,cnt);
-    YIELD chunk;
-    RETURN nil;
-END chunkStep;
+    yielD chunk;
+    return nil;
+end chunkStep;
 
 #factory for right leg
-FACTORY chunkStepR(L:bat[:any,:any]):bat[:any,:any];
+factory chunkStepR(L:bat[:any,:any]):bat[:any,:any];
 @end example
 
 So far we haven;t re-used the pattern that both legs are
@@ -227,10 +226,10 @@ What additional control do you need? Can you throw an
 exception to a Factory? implicitly yes.
 
 @example
-    RAISE reset:="reset";
+    raisE reset:="reset";
     chunkStep(L);   # receives 'reset' exception
-    CATCH reset;
-    EXIT reset;
+    catcH reset;
+    exit reset;
 @end example
 
 @{

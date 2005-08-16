@@ -204,8 +204,8 @@ mal_export str             *monet_script;
 char monet_cwd[PATHLENGTH] = { 0 };
 int monet_welcome = 1;
 str *monet_script;
-@-
 @}
+@-
 @node MAL execution, Backward compatibility, MAL synopsis , MonetDB overview
 @- MonetDB bootstrap
 
@@ -232,6 +232,7 @@ able to detect references kept around.
 This danger required all accesses to global information to be packaged
 in a critical section, which was known to be a performance hindrence.
 
+@-
 @node Backward compatibility, Session scenarios ,MAL execution, MonetDB overview
 @- Backward compatibility
 The oldest MonetDB software runs back to the early nineties and

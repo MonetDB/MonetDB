@@ -88,16 +88,14 @@ Table of contents
 * Application Interfaces::
 * MonetDB Assembler Language::
 @menu
-* MAL constants::
-* MAL variables::
 * MAL instructions::
 * Flow of control::
-* Instruction Records::
-* Before-after calls::
-* Reverse programming::
 * Function definitions::
+@menu
+* Function Clones::
+* Commands and Patterns::
+@end menu
 * Factory definitions::
-* Bootstrap::
 * Modules::
 * MAL interpreter::
 * Atom types::
@@ -185,26 +183,22 @@ Table of contents
 @chapter Application Interfaces
 Give a brief introduction to Mapi, JDBC, ODBC,Perl....
 
-@node MonetDB Assembler Language, Function definitions, Application Interfaces , TOC
+@node MonetDB Assembler Language, MAL instructions, Application Interfaces , TOC
 @include mal_instruction.bdy.texi
 
-@node Function definitions, Factory definitions ,MonetDB Assembler Language , MonetDB Assembler Language
+@node Function definitions, Function Clones ,Flow of control , MonetDB Assembler Language
 @include mal_function.bdy.texi
 
-@node Factory definitions, Bootstrap , Function definitions, MonetDB Assembler Language
+@node Factory definitions, Type resolution , Commands and Patterns, MonetDB Assembler Language
 @include mal_factory.bdy.texi
 
-@node Bootstrap , Atom types ,Factory definitions, MonetDB Assembler Language
-@include mal_linker.bdy.texi
-
-@node Atom types, Type resolution, Bootstrap, MonetDB Assembler Language
-@include mal_atom.bdy.texi
-
-@node Type resolution, Boxed variables, Atom types, MonetDB Assembler Language
+@node Type resolution, Atom types, Factory definitions, MonetDB Assembler Language
 @include mal_type.bdy.texi
 @include mal_resolve.bdy.texi
+@node Atom types, Boxed variables, Type resolution, MonetDB Assembler Language
+@include mal_atom.bdy.texi
 
-@node Boxed variables, Name space management , Type resolution, MonetDB Assembler Language
+@node Boxed variables, Name space management , Atom types, MonetDB Assembler Language
 @include mal_box.bdy.texi
 
 @node Name space management, Property management, Boxed variables , MonetDB Assembler Language
@@ -218,6 +212,7 @@ Give a brief introduction to Mapi, JDBC, ODBC,Perl....
 @include mal_import.bdy.texi
 
 @node MAL interpreter, Optimizer landscape, Modules, TOC
+@include mal_linker.bdy.texi
 @include mal_interpreter.bdy.texi
 @include mal_stack.bdy.texi
 

@@ -31,61 +31,54 @@ of intended computation and data flow behavior. It should be
 understood that its actual evaluation depends on the execution
 paradigm chosen in the scenario. The program blocks can both
 be interpreted as ordered sequences of assembler instructions,
-as a representation of a data-flow graph that should be resolved.
+or as a representation of a data-flow graph that should be resolved.
+The language syntax uses a functional style definition of actions and
+mark those that affect the flow explicitly.
+Flow of control keywords identify a point to chance
+the interpretation and denote a synchronization point.
 
-The language uses a slightly different keyword connotation 
-from programming language arena to make this distinction more evident.
-In particular, flow of control keywords identify a point to chance
-the interpretation order or denote a synchronization point.
+MAL is the target language for query compilers, such as the
+SQL and XQuery front-ends. 
+Even simple SQL queries generate a long sequence of MAL instructions.
+They represent both the administrative actions to ensure binding and transaction
+control, the flow dependencies to produce the query result,
+and the steps needed to prepare the result set for delivery to
+the front-end.
 
-The first statement of a MAL block is always taken up by a signature
-description. (See functions)
+Only when the algebraic structure is too limited (e.g. updates),
+or the database back-end lacks feasible builtin bulk operators,
+one has to rely on more detailed flow of control primitives.
+But even in that case, the basic blocks to be processed
+by a MAL back-end are considered large, e.g. tens of simple
+bulk assignment instructions.
+
+The remainder of this chapter provide a concise overview of the
+language features and illustrative examples.
 @menu
+* MAL instructions::
+* Flow of control::
 * Function definitions::
+@menu
+* Function Clones::
+* Commands and Patterns::
+@end menu
 * Factory definitions::
-* Bootstrap::
-* Atom types::
 * Type resolution::
+@menu
+* Atom types::
+@end menu
 * Boxed variables::
 * Name space management::
 * Property management::
 * Modules::
 @end menu
-@menu
-* MAL constants::
-* MAL variables::
-* MAL instructions::
-* Flow of control::
-* Instruction Records::
-* Before-after calls::
-* Reverse programming::
-@end menu
 
-@node MAL instructions,Flow of control, MAL variables, MonetDB Assembler Language
+@node MAL instructions, Flow of control, MonetDB Assembler Language , MonetDB Assembler Language
 @+ MAL instructions
-MAL instructions have a simple format. 
+MAL instructions have purposely a simple format. 
 Each instruction denotes a data-flow statement.
 It is syntactically represented by an assignment, where
 an expression (function call) delivers results to multiple target variables. 
-Input variables changed in the process preferably also appear in
-the target list, i.e. the instruction models the input/output flow.
-This greatly simplifies future optimization decisions.
-
-Variables are implicitly defined upon first use and take
-on a type through a type classifier or inherit it from
-the context in which they are used. 
-
-Omission of target variables is allowed. Then the compiler
-merely assigns temporary variables to hold the result of
-the expression. They act as data sinks in the flow graph.
-
-For parsing simplicity, each instruction fits on a single line.
-Comment starts with a sharp '#' and continues to the end of the line.
-
-Built-in operators adhere to the conventional syntax
-as pre-, post-, and infix notations. They are translated
-during parsing to the generic functional form.
-
 The assignment patterns recognized are illustrated below.
 @example
 (t1,..,t32) := module.fcn(a1,..,a32);
@@ -95,43 +88,39 @@ t1 := constant;
 (t1,..,tn) := (c1,..,cn);
 @end example
 
-Each operator is defined in a (user-defined) module.
-Using the module name speeds-up the binding, but its use is optional.
-Omission of the module name initiates a search for a possible
-matching definition in a hierarchical ordered scope
-structure. (See modules inheritance)
+Variables are implicitly defined upon first use and take
+on a type through a type classifier or inherit it from
+the context in which they are used, see @ref{Type resolution}. 
+Operators are grouped into user defined modules @ref{Modules}.
+Binary arithmetic operations are merely provided as a short-hand,
+e.g. the expression @code{t:=2+2} is converted directly 
+into @code{t:= calc.+(2,2)}.
 
-Variables and literal constants can be tagged with a type
-qualifier. The literal value should fit the domain of the
-type identified, e.g. 4:lng is valid, but "xyz":int raises an
-error. [TODO]
+Input variables changed in the process preferably also appear in
+the target list, i.e. the instruction models the input/output flow.
+This greatly simplifies future optimization decisions.
 
-Query languages like SQL are commonly mapped to an algebraic 
-operator model. In our case, even simple SQL queries generate
-a long sequence of MAL instructions.
-They form a compact representation of 
-both the administrative actions to ensure binding and transaction
-control, the flow dependencies to produce the query result,
-and the steps needed to prepare the result set for delivery to
-the front-end.
+Target variables are optional. The compiler introduces temporary 
+variables to hold the result of the expression upon need. 
+They act as data sinks in the flow graph.
 
-Only when the algebraic structure is too limited (e.g. updates),
-or the database back-end lacks feasible bulk operators,
-one has to rely on more detailed flow of control primitives.
-But even in that case, the basic blocks to be processed
-by a MAL back-end are considered large, e.g. tens of simple
-bulk assignment instructions.
+For parsing simplicity, each instruction fits on a single line.
+Comment starts with a sharp '#' and continues to the end of the line.
+They are retained in the internal code representation to ease
+debugging of compiler generated MAL programs.
 
-@menu
-* MAL constants::
-* MAL variables::
-* MAL instructions::
-* Flow of control::
-* Instruction Records::
-* Before-after calls::
-* Reverse programming::
-@end menu
-@node Flow of control, Instruction Records,MAL instructions, MonetDB Assembler Language
+The data structure to represent a MAL block is kept simple.
+It carries a sequence of MAL statements and a symbol table.
+The MAL instruction is a code byte string overlaid with the
+instruction pattern, which contains references into the symbol tables
+and administrative data for the interpreter. 
+
+This method leads to a large allocated block, which can be easily freed, and
+pattern makes it possible to accommodate a variable argument list.
+Variable- and stmt- block together describe the
+static part of a MAL procedure. It carries carry enough 
+information to produce a listing and to aid symbolic debugging.
+@node Flow of control, Function definitions, MAL instructions, MonetDB Assembler Language
 @+ Flow of control
 An assignment statement is turned into a flow of control statement
 by tagging it with a control modifier.
@@ -140,22 +129,19 @@ They mark the end of a function call and return one or more results
 to the calling environment. 
 The @code{ return} and @code{ yield} are followed by a target list
 or an assignment, which is executed first.
-The @code{end} marker identifies the end of functional abstraction. 
-Anything beyond it is ignored.
 
 The flow of control within a MAL program block can be changed by
 tagging an assignment with either
 @code{ barrier}, @code{ leave}, @code{ redo}, or @code{ exit}.
-The @code{ barrier} and @code{ exit} mark a block
-to be interpreted when the barrier can be taken.
+The @code{ barrier} and @code{ exit} pair mark a guarded statement block.
 
 The @code{barrier}, @code{leave} and @code{redo} are conditional 
 flow modifiers, because they use the value of the first target 
 variable after the expression has been evaluated to decide
-on the action to be taken.
+on the flow-of-control action to be taken.
 Built-in barrier controls exists for booleans and numeric values.
 The barrier is opened when the first target variable holds
-true, when its numeric value >= 0, when it is a non-empty
+true, when its numeric value >= 0, or when it is a non-empty
 string. The @code{ nil} value blocks entry in all cases.
 
 
@@ -170,8 +156,8 @@ The @code{ exit} marks the exit for a block. Its optional assignment
 can be used to re-initialize the barrier control variables
 or wrap-up any related administration.
 
-A control block is recognized by its target variable set.
-This implies that nesting on the same target set is prohibited.
+A control block is recognized by its target variable set,
+which implies that nesting on the same target set is prohibited.
 
 The barrier blocks can be properly nested to form
 a hierarchy of basic blocks.
@@ -191,11 +177,11 @@ They can be simulated as follows.
 Consider the statement @code{for(i=1;i<10;i++) print(i)}.
 The (optimized) MAL block to implement this becomes:
 @example
-     V:= 1;
-barrier B:= V<10;
-     print(V);
-     V:= V+1;
-redo B:= V<10;
+     i:= 1;
+barrier B:= i<10;
+     print(i);
+     i:= i+1;
+redo B:= i<10;
 exit B;
 @end example
 
@@ -215,8 +201,8 @@ Note that both guarded blocks can be interchanged without
 affecting the outcome. Moreover, neither block would
 have been entered if the variable happens to be assigned @code{ nil }.
 
-Beware that @code{ redo} is a flow modifier attached to an instruction.
-The generic form of an iterator looks like
+The primitives are sufficient to model a wide variety of iterators, 
+whose pattern look like:
 @example
 barrier i:= newIterator(T);
     elm:= getElement(T,i);
@@ -226,7 +212,7 @@ barrier i:= newIterator(T);
     redo i:= hasMoreElements(T);
 exit i:= exitIterator(T);
 @end example
-The semantics obeyed by the implementations should be as follows.
+The semantics obeyed by the iterator implementations is as follows.
 The redo expression updates the target variable @emph{ i} and control
 proceeds at the first statement after the barrier when the
 barrier is opened by @emph{ i}. If the barrier could not be
@@ -282,9 +268,6 @@ exit    hdl;
 [show thread inspection routines]
 
 @-
-@}
-@-
-@node Instruction Records,Before-after calls, Flow of control, MonetDB Assembler Language
 @+ The MAL instruction records
 The data structure to represent a MAL block is kept simple.
 It carries a sequence of MAL statements and a variable table.
@@ -299,54 +282,26 @@ pattern makes it possible to accommodate a variable argument list.
 Variable- and stmt- block together describe the
 static part of a MAL procedure. It carries carry enough 
 information to produce
-a listing and to aid symbolic debugging. Ideally, the listing
-of a MAL program is identical to the non-commented source.
+a listing and to aid symbolic debugging.
+
+Ideally, the listing of a MAL program is identical to the source.
 This costs some space, but will improve readability and permits
 instruction sequences generated internally also to be kept
 around as ASCII text for later inclusion.
 
-@{
 WARNING. The way we lay out the instructions means that 
 you can prepare only one instruction at a time, because you don't
 know how many arguments may be needed upfront.
 [TODO, rather then breaking the original input into pieces,
 it would be worthwhile to keep track of location of the
 instruction in the source.]
-@}
-@-
-@menu
-* MAL constants::
-* MAL variables::
-* MAL instructions::
-* Flow of control::
-* Instruction Records::
-* Before-after calls::
-* Reverse programming::
-@end menu
-
-@node Before-after calls, Reverse programming ,Instruction Records, MonetDB Assembler Language
 @+ Before-after calls
 The instruction records contain two optional pointers to functions:
 beforeCall and afterCall. They are passed the runtime context. 
-The beforeCall is activated
-just before you enter a routine and can be used to initialize
-the stack frame, perform debugging, etc.etc.
+The beforeCall is activated just before you enter a routine and 
+can be used to initialize the stack frame, perform debugging, etc.etc.
 The afterCall is activated after a successful return and can be
 used to finalize the administration.
-@menu
-* MAL constants::
-* MAL variables::
-* MAL instructions::
-* Flow of control::
-* Instruction Records::
-* Before-after calls::
-* Reverse programming::
-@end menu
-@{
-For implementation reasons the maximum number of parameters is a
-compile time constant. Its choice should be large enough to
-accommodate the functions you have in mind. 
-[TODO, the size is known after parsing]
 
 @h
 #ifndef _MAL_INSTR_H
@@ -1121,9 +1076,6 @@ int newVariable(MalBlkPtr mb, str name, malType type){
     mb->vtop++;
     return n;
 } 
-@}
-@-
-@node MAL variables, MAL instructions, MAL constants, MonetDB Assembler Language
 @+ MAL variables
 Temporary target variable act as sinks in the data flow graph.
 In this case, an optimizer can group them by underlying type and this way
@@ -1134,16 +1086,6 @@ the variable stack. Their default textual representation is '$'<digits>.
 Temporary names  are recognized by the parser and an error is
 produced if it does not satisfy this condition.
 
-@menu
-* MAL constants::
-* MAL variables::
-* MAL instructions::
-* Flow of control::
-* Instruction Records::
-* Before-after calls::
-* Reverse programming::
-@end menu
-@{
 Sharing of the temporary is only permitted if the type
 is a priory known and not TYPE_any.
 @c
@@ -1246,9 +1188,6 @@ void freeVariable(MalBlkPtr mb, int varid){
     GDKfree(v);
     getVar(mb,varid) = NULL;
 }
-@}
-@-
-@node MAL constants, MAL variables, , MonetDB Assembler Language
 @+ MAL constants
 Constants are stored in the symbol table and referenced
 by a variable identifier.
@@ -1278,16 +1217,6 @@ MAL interpretation.
 
 The constant values are linked together to improve searching them.
 This start of the constant list is kept in the MalBlk.
-@menu
-* MAL constants::
-* MAL variables::
-* MAL instructions::
-* Flow of control::
-* Instruction Records::
-* Before-after calls::
-* Reverse programming::
-@end menu
-@{
 @c
 #define MAL_VAR_WINDOW  2*MAXARG
 int fndConstant(MalBlkPtr mb, str val, int len, int tpe){
@@ -1671,8 +1600,6 @@ void setVarProperty(MalBlkPtr mb, int i, str name,str op,  int tpe, ptr val){
 	setProperty(mb->var[i]->props,name,op,tpe,val);
 }
 @}
-@-
-@node Reverse programming, , Before-after calls, MonetDB Assembler Language
 @+ Reverse programming
 Since MAL programs can be created on the fly by linked-in query
 compilers, or transformed by optimizers, it becomes
@@ -1683,15 +1610,6 @@ No guarantee is given to produce the exact input for a reversed
 MAL program, except that the output can be fed back for 
 interpretation. Provided, the code did not produce an error.
 
-@menu
-* MAL constants::
-* MAL variables::
-* MAL instructions::
-* Flow of control::
-* Instruction Records::
-* Before-after calls::
-* Reverse programming::
-@end menu
 @{
 The hiddenInstruction operator assumes a sufficiently large block
 to leave information on the signature behind.

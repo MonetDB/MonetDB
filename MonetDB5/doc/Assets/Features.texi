@@ -18,9 +18,9 @@ interact with the system. [see section x]
 @node When to consider MonetDB, When not to consider MonetDB, Features and Limitations, TOC
 @subsubsection When to consider MonetDB ?
 @strong{A high-performance database management system.}
-MonetDB is an easily accessible open-source DBMS for SQL-based applications
-and database research. It is used both in research and in commercial settings.
-It design goes back over a decade, when we decided that the database hotset
+MonetDB is an easily accessible open-source DBMS for SQL-/XQuery-based
+applications and database research projects. 
+Its origin goes back over a decade, when we decided that the database hotset
 - the part used by the applications- can be largely held in main-memory
 or where a few columns of a broad relational table are sufficient to
 hande a request.

@@ -2173,7 +2173,7 @@ hash_join(Hash *h, bat *bn, BAT *l, BUN llo, BUN lhi, bat *r, BUN rlo, BUN rhi, 
 		size_t mask = ~(size_t) 0;
 
 		if (cutoff) {
-			@:hash_join(any, head, tail, atom, NOTSO, hloc, tloc, break@
+			@:hash_join(any, head, tail, atom, NOTSO, hloc, tloc, break)@
 
 			    );
 		} else {
@@ -2187,7 +2187,7 @@ hash_join(Hash *h, bat *bn, BAT *l, BUN llo, BUN lhi, bat *r, BUN rlo, BUN rhi, 
 		size_t mask = ~(size_t) 0;
 
 		if (cutoff) {
-			@:hash_join(any, head, tail, atom, bun, head, tail, break@
+			@:hash_join(any, head, tail, atom, bun, head, tail, break)@
 
 			    );
 		} else {
@@ -2202,7 +2202,7 @@ hash_join(Hash *h, bat *bn, BAT *l, BUN llo, BUN lhi, bat *r, BUN rlo, BUN rhi, 
 
 		if (r->htype == TYPE_oid) {
 			if (cutoff) {
-				@:hash_join(oid, hloc, tloc, simple, int, hloc, tloc, break@
+				@:hash_join(oid, hloc, tloc, simple, int, hloc, tloc, break)@
 
 				    );
 			} else {
@@ -2210,7 +2210,7 @@ hash_join(Hash *h, bat *bn, BAT *l, BUN llo, BUN lhi, bat *r, BUN rlo, BUN rhi, 
 			}
 		} else if (ATOMstorage(r->htype) == TYPE_int || ATOMstorage(r->htype) == TYPE_flt) {
 			if (cutoff) {
-				@:hash_join(int, hloc, tloc, simple, int, hloc, tloc, break@
+				@:hash_join(int, hloc, tloc, simple, int, hloc, tloc, break)@
 
 				    );
 			} else {
@@ -2219,7 +2219,7 @@ hash_join(Hash *h, bat *bn, BAT *l, BUN llo, BUN lhi, bat *r, BUN rlo, BUN rhi, 
 		} else {	/* if (ATOMstorage(r->htype) == TYPE_lng || ATOMstorage(r->htype) == TYPE_dbl) */
 
 			if (cutoff) {
-				@:hash_join(lng, hloc, tloc, simple, int, hloc, tloc, break@
+				@:hash_join(lng, hloc, tloc, simple, int, hloc, tloc, break)@
 
 				    );
 			} else {
