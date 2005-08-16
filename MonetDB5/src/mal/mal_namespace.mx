@@ -117,7 +117,7 @@ str getName(str nme, int len)
 	char buf[1024];
 
 	if( len >= 1022 || nme== NULL || *nme==0) return 0;
-	strncpy(buf,nme,len);
+	memcpy(buf, nme, (size_t) len);
 	buf[len]=0;
     
     for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){
@@ -144,12 +144,9 @@ str putName(str nme, int len)
 	char buf[1024];
 	str s;
 
-	if( len >= 1022) return 0;
-	strncpy(buf,nme,len); /* this is fast */
-	buf[len]=0;
-    
     for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){
-        if( strcmp(buf,namespace.nme[l])==0) {
+        if( strncmp(nme,namespace.nme[l],len) == 0 &&
+			namespace.nme[l][len] == 0) {
             namespace.hit[l]++;
 			namespace.totalhit++;
 			/* aggressive test for reorganization needs */
@@ -166,6 +163,11 @@ str putName(str nme, int len)
         }
 		k=l;
     }
+
+	if( len >= 1022) return 0;
+	memcpy(buf, nme, (size_t) len); 
+	buf[len]=0;
+
 	mal_set_lock(mal_contextLock,"putName");
     if( namespace.nmetop+1== namespace.size)
         expandNamespace(MAXIDENTIFIERS);

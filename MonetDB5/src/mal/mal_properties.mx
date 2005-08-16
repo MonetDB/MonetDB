@@ -40,10 +40,10 @@ aided by keeping track of derived information, e.g. the expected
 size of a temporary result or the alignment property between BATs.
 
 Properties capture part of the state of the system in the form of an 
-simple term expression @code{(name,operator,constant)}.
+simple term expression @code{(name, operator, constant)}.
 The property model assumes a namespace built around Identifiers. 
 The operator satisfy the syntax rules for MAL operators.
-Conditional operators are quite common, e.g. the triple (count,<,1000) 
+Conditional operators are quite common, e.g. the triple (count, <, 1000) 
 can be used to denote a small table.
 
 @+ Property Associations
@@ -57,7 +57,7 @@ in the corresponding target variable.
 The variables can be extended at any time with a property set.
 Properties have a scope identical to the scope of the corresponding variable. 
 Ommision of the operator and value turns it into a boolean valued property,
-whose value is @code{true}.
+whose default value is @code{true}.
 @verbatim
 	b{count=1000,sorted}:= mymodule.action("table");
 	name{aligngroup=312} := bbp.take("person_name");
@@ -70,8 +70,8 @@ Such a property is helpful for optimizers to pick an efficient algorithm.
 A function signature contains a description of
 the objects it is willing to accept and an indication of the 
 expected result. The arguments can be tagged with properties
-that 'should be obeyed, or implied' by the actual arguments. As such,
-it extends the typing scheme used during compilation/optimization.
+that 'should be obeyed, or implied' by the actual arguments. 
+It extends the typing scheme used during compilation/optimization.
 Likewise, the return values can be tagged with properties that 'at least'
 exist upon function return. 
 @verbatim
@@ -80,8 +80,8 @@ exist upon function return.
     end test
 @end verbatim
 
-These properties are informative to optimizers. They can be enforced
-at runtime using the operation
+These properties are informative to optimizers. 
+They can be enforced at runtime using the operation
 @code{optimizer.enforceRules()} which injects calls into 
 the program to check them. 
 An assertion error is raised if the property does not hold.

@@ -17,7 +17,7 @@
 
 @a M. Kersten
 @v 0.0
-@* MAL functions
+@+ MAL functions
 MAL comes with a standard functional abstraction scheme.
 MAL functions are represented by MAL instruction lists, enclosed
 by a @code{function} and @code{exit} statement. The @code{function}
@@ -152,7 +152,7 @@ void renameFunction(str old, str modnme, str name){
         scope=scope->outer;
     }
 }
-@+ Flow of control
+@- Flow of control
 The nesting of (BARRIER, CATCH) and EXIT statements with their associated
 flow of control primitives LEAVE, REDO and RAISE should form a valid
 hierarchy. Failure to comply is considered a structural error
@@ -397,7 +397,7 @@ int getBarrierEnvelop(MalBlkPtr mb){
 	}
 	return newTmpVariable(mb,TYPE_any);
 }
-@+ Variable declaration
+@- Variable declaration
 Variables are implicitly declared upon first use.
 This feature may become a source of runtime errors and
 complicates the analyse during optimization.
@@ -445,6 +445,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 		for(k=p->retc;k<p->argc; k++){
 			    fnd=0;
 			    s= getVarScope(mb,getArg(p,k)); 
+                if(s)
 			    for( i=0; i< top; i++){
 			        if( blks[i] == s) { fnd++; break;}
 			    }
@@ -507,7 +508,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 @}
 @-
 @node Function Clones, Commands and Patterns, Function definitions, MonetDB Assembler Language
-@+ Function Clones
+@- Function Clones
 MAL supports functions defined with type variables.
 Each time such a MAL function is called, a copy of
 the polymorphic routine is generated, whereafter the type
@@ -537,7 +538,7 @@ For example, calling @code{helloWorld(3.14:flt)} echoes
 a float value.
 
 @node Commands and Patterns, Factory definitions, Function Clones, MonetDB Assembler Language
-@+ Commands and patterns
+@- Commands and patterns
 The MAL function body can also be implemented with a C-function.
 They are introduced to the MAL type checker by providing their
 signature and an @code{address} qualifier for linkage.

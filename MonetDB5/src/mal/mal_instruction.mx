@@ -65,10 +65,9 @@ language features and illustrative examples.
 * Factory definitions::
 * Type resolution::
 @menu
-* Atom types::
+* Atomary types::
 @end menu
 * Boxed variables::
-* Name space management::
 * Property management::
 * Modules::
 @end menu
@@ -742,11 +741,14 @@ Before compiling a large string, it makes sense to allocate approximately
 enough space to keep the intermediate code. Otherwise, we end up with a
 repeated extend on the MAL block, which really consumes a lot of memcpy
 resources.
+The average MAL string length has been derived from the
+test cases.
 @c
+#define AVGMALLENGTH 15
+
 void prepareMalBlk(MalBlkPtr mb, str s){
-    int cnt=1;
-    char *c;
-    for(c=s;*c;c++)if( *c=='\n') cnt++;
+    int cnt ;
+	cnt = strlen(s) / AVGMALLENGTH;
     expandMalBlk(mb,cnt);
 }
 

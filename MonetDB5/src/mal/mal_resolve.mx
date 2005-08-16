@@ -27,7 +27,6 @@ so we cannot escape it altogether.
 
 Consider the small illustrative MAL program:
 @example
-@verbatim
 function sample(nme:str, val:any):bit;
    c := 2 * 3;
    b := bbp.bind(nme);  #find a BAT
@@ -36,7 +35,6 @@ function sample(nme:str, val:any):bit;
    x := io.print(t);
    y := io.print(val);
 end sample;
-@end verbatim
 @end example
 @-
 The function definition is polymorphic typed on the 2nd argument,
@@ -743,10 +741,8 @@ InstrPtr dynamicTypeChecker(Module scope, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
     InstrPtr pci;
     int i;
 
-#ifdef DEBUG_MAL_RESOLVE
 	stream_printf(GDKout,"Start dynamic type check on:\n");
-	/*printInstruction(GDKout, mb, altpci,LIST_MAL_ALL);*/
-#endif
+	printInstruction(GDKout, mb, p,LIST_MAL_ALL);
 
     pci = copyInstruction(p);
 	if( functionId(pci) && (i=findVariable(mb,functionName(pci))) != -1){
@@ -918,6 +914,11 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
 {
     int h,t;
 
+    if( (h=getTailIndex(formal))  ){
+        t= getTailType(actual);
+        if( polytype[h] == TYPE_any ) polytype[h]=  t;
+        if( polytype[h] != t) return -1;
+    }
     if( isaBatType(formal)){
         if(!isaBatType(actual)) return -1;
         if( (h=getHeadIndex(formal)) ){
@@ -928,11 +929,6 @@ int updateTypeMap(int formal, int actual, int polytype[MAXTYPEVAR])
     } else
 	if( isaColType(formal))
         if(!isaColType(actual)) return -1;
-    if( (h=getTailIndex(formal))  ){
-        t= getTailType(actual);
-        if( polytype[h] == TYPE_any ) polytype[h]=  t;
-        if( polytype[h] != t) return -1;
-    }
     return 0;
 }
 @-

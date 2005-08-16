@@ -77,18 +77,18 @@ at a time.
 Example: consider the client function:
 @example
 function myfcn():void;
-    b:bat[:oid,:int] := bbp.take(mytable);
+    b:bat[:oid,:int] := bbp.take("mytable");
     c:bat[:int,:str] := sql.take("person","age");
     d:= intersect(b,c);
-    print(d);
+    io.print(d);
     u:str:= client.take(user);
-    print(u);
+    io.print(u);
     client.release(user);
 end function;
 @end example
 
-The function obtains a copy from the local persistent bat space,
-much like bat-names are resolved under MIL semantics. The second
+The function binds to a copy from the local persistent BAT space,
+much like bat-names are resolved in earlier versions. The second
 statement uses an implementation of take that searches a variable
 of interest using two string properties. It illustrates that
 a box manager is free to extend/overload the predefined scheme, 
@@ -97,7 +97,7 @@ which is geared towards storing MAL variables.
 The result bat 'c' is temporary and disappears upon garbage
 collection. The variable 'u' is looked up as the string object user.
 
-Note that bats b and c need be released at some point. In general
+Note that BATs b and c need be released at some point. In general
 this point in time does not coincide with a computational boundary
 like a function return. During a session, several bats may be taken
 out of the box, being processed, and only at the end of a session 
@@ -120,35 +120,16 @@ the exceptions it raises a valuable advice to reconsider
 the programming style.
 
 The type indicator for the destination variable should be
-provided to proceed with proper type checking as far as necessary. 
-It avoids multiple type checks later on and can resolve overloaded
-function selection. 
-Failure to find a properly typed object leads to a runtime exception
-or assuming the wrong type.
+provided to proceed with proper type checking. 
+It can resolve overloaded function selection. 
 
-For example, the code fragment
-
-@example
-M := mil.take("M_PI_2");
-b:= sin(M);
-@end example
-
-leads to a polymorphic type check for M. It is marked as TYPE\_any.
-This may cause an unwanted resolution later on, because 
-currently batcalc.sin(:bat) would be a permissible
-operation, because a BAT input matched against any
-[todo improve, the rhs is too permissive]
-
-The default is to mark the instruction as polymorphic, which means
-that the type is determined at runtime and may propagate thru
-the remainder of the routine.
-
-@+ Authorization
-Each box is [should] have an access control list, which names
-the users having permission to read/write its content.
-The first one to create the box becomes the owner. He may grant/revoke
-access to the box to users on a selective basis.
-[TODO]
+Inspection of the Box can be encoded using an iterator at the MAL
+layer and relying on the functionality of the box.
+However, to improve introspection, we assume that all box 
+implementations provide a few rudimentary functions, called objects(arglist)
+and dir(arglist). The function objects() produces a BAT with
+the object names, possibly limited to those identified by
+the arglist.
 
 @+ Future
 The world of boxes has not been explored deeply yet.
@@ -161,7 +142,12 @@ Nesting boxes (like Russian dolls) is possible. It provides a simple
 containment scheme between boxes, but in general will interfere with
 the semantics of each box. 
 
-@+ Session box
+Each box has [should] have an access control list, which names
+the users having permission to read/write its content.
+The first one to create the box becomes the owner. He may grant/revoke
+access to the box to users on a selective basis.
+
+@- Session box
 Aside from box associated with the modules, a session box is created
 dynamically on behalf of each client. Such boxes are considered private
 and require access by the user name (and password). 
@@ -183,7 +169,8 @@ system administrator. It will contain global client data, e.g.
 user, language, database, port, and any other session parameter.
 The boxes are all collected in the context of the database directory,
 i.e. the directory <dbfarm>/box
-@+ Garbage collection
+
+@- Garbage collection
 The key objects managed by MonetDB are the persistent BATs, which
 call for an efficient scheme to make them accessible for manipulation
 in the MAL procedures taking into account a possibly hostile
@@ -194,7 +181,7 @@ from the runtime stack. They should be garbage collected as soon as
 deemed possible to free-up space. By default, temporary results are
 garbage collected before returning from a MAL function.
 
-@+ Polymorphic globals
+@- Polymorphic globals
 The top level interaction keeps a 'box' with global variables,
 i.e. each MAL statement is interpreted in an already initialized
 stack frame.
@@ -216,14 +203,6 @@ statements are converted into a function and executed independently.
 Between function calls the variables are reset, i.e. temporary
 variables are removed and others are re-initialized. [check]
 
-@+ Box inspection
-Inspection of the Box can be encoded using an iterator at the MAL
-layer and relying on the functionality of the box.
-However, to improve introspection, we assume that all box 
-implementations provide a few rudimentary functions, called objects(arglist)
-and dir(arglist). The function objects() produces a BAT with
-the object names, possibly limited to those identified by
-the arglist.
 @{
 @h
 #ifndef _MAL_BOX_H

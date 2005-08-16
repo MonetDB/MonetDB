@@ -374,7 +374,7 @@ str runMALsequence( malTask *task)
 
     ValPtr lhs,rhs,v;
     int stkpc,i,k; 
-    InstrPtr pci=0, altpci=0; 
+    InstrPtr pci=0; 
     int stkexception;
     str ret=0;
 	int backup[MAXARG];
@@ -390,7 +390,6 @@ MALrestart:
     stkexception = -1;
     while(stkpc < mb->stop && stkpc != task->stoppc ){
         pci = getInstrPtr(mb,stkpc);
-        @:exceptionTypeTest@
         if( stk->cmd  ) {
             mdbStep(cntxt,mb,stk,stkpc);
             if( stk->cmd == 'x') goto MALevalExit;
@@ -503,7 +502,6 @@ elements in the value stack.
             ret= shutdownFactory(mb);
 		if( total  )
 			cntxt->timer= GDKusec()-total;
-		@:garbageTypeCheck@
 		if( pcicaller)
 			garbageCollectAll(mb, stk);
         @:endProfile@
@@ -514,7 +512,6 @@ elements in the value stack.
         goto MALevalExit;
     }
     @:MALflowofcontrol@
-    @:garbageTypeCheck@
     @:endProfile@
 @-
 After the expression has been evaluated we should check for a
@@ -615,7 +612,6 @@ possible change in the control flow.
 					BBPincref(lhs->val.br.id, TRUE); 
 				noinc:;
             }
-            @:garbageTypeCheck@
 			garbageCollectAll(mb, stk);
 			/* propagate fake response time */
 			if( total )
@@ -1125,25 +1121,6 @@ For the time being we have ignored cascaded/stacked exceptions.
 The policy is to pass the first recognized exception to a context
 in which it can be handled.
 
-@= exceptionTypeTest
-if( pci->typechk == TYPE_RESOLVED ) 
-    /* mostly true */ ;
-else {
-    @:dynamicTypeCheck@
-    if( pci->typechk== TYPE_UNKNOWN) {
-        ret= raiseException(mb,stkpc,MALexception,
-                    "Instruction type not fixed\n");
-        @:endProfile@
-        @:garbageTypeCheck@
-        goto MALevalExit;
-    }
-    if( pci->fcn== NULL){
-        ret= raiseException(mb,stkpc,MALexception,
-            "address of function missing\n");
-        goto MALevalExit;
-    }
-}
-@-
 @}
 @-
 Exceptions raised within a linked-in function requires some care.
@@ -1165,26 +1142,26 @@ starts with the exception identifer, followed by contextual details.
 @{
 
 @= exceptionHndlr
-	if( cntxt->timer){
-		long n= GDKusec();
-		long l= n - cntxt->timer;
-		total += l;
-		if( stk->cmd != 'T')
-			stream_printf(cntxt->fdout,"#%6d usec",l);
-		if( cntxt->resource.ru_minflt > 0){
-			struct rusage ru;
-			getrusage(RUSAGE_SELF,&ru);
-			if( ru.ru_inblock - cntxt->resource.ru_inblock > 0)
-				stream_printf(cntxt->fdout," %3d R",
-					ru.ru_inblock - cntxt->resource.ru_inblock);
-			if( ru.ru_oublock - cntxt->resource.ru_oublock > 0)
-				stream_printf(cntxt->fdout," %3d W",
-					ru.ru_oublock - cntxt->resource.ru_oublock);
-			cntxt->resource= ru;
-		}
-		printTraceCall(cntxt,mb,stk,pci);
-		cntxt->timer= GDKusec();
-	}
+if( cntxt->timer){
+    long n= GDKusec();
+    long l= n - cntxt->timer;
+    total += l;
+    if( stk->cmd != 'T')
+        stream_printf(cntxt->fdout,"#%6d usec",l);
+    if( cntxt->resource.ru_minflt > 0){
+        struct rusage ru;
+        getrusage(RUSAGE_SELF,&ru);
+        if( ru.ru_inblock - cntxt->resource.ru_inblock > 0)
+            stream_printf(cntxt->fdout," %3d R",
+                ru.ru_inblock - cntxt->resource.ru_inblock);
+        if( ru.ru_oublock - cntxt->resource.ru_oublock > 0)
+            stream_printf(cntxt->fdout," %3d W",
+                ru.ru_oublock - cntxt->resource.ru_oublock);
+        cntxt->resource= ru;
+    }
+    printTraceCall(cntxt,mb,stk,pci);
+    cntxt->timer= GDKusec();
+}
 
 if( ret != MAL_SUCCEED ) {
     str msg = 0, nxt;
@@ -1242,34 +1219,6 @@ if( ret != MAL_SUCCEED ) {
 }
 @-
 @}
-@+ Dynamic type checking
-[OUTDATED, don;t support this, but what about patterns that set 
-the type? such as bbp.bind. to be solved with an semantic optimizer
-
-During execution we may end up with functions that require
-a dynamic type check, because their arguments may not have
-been known upon compile time.
-This requires an additional call to the typechecker, each time
-the instruction is encountered. Moreover, we may not store the
-type information in the program description, because the
-actual types may differ between calls.
-
-@{
-@= dynamicTypeCheck
-    altpci= pci;
-    pci= dynamicTypeChecker(getClient()->nspace,mb,stk,pci);
-@-
-After the instruction has been executed we should
-throw away the temporary copy. Taking care of any
-substructure introduced.
-
-@= garbageTypeCheck
-    if( altpci){
-        freeInstruction(pci);
-        pci= altpci;
-        altpci=0;
-    }
-@-
 During instruction interpretation we may have to be
 assured that the type associated with a destination variable
 is in line with the result of an operation or exceoption.

@@ -16,7 +16,7 @@
 @' All Rights Reserved.
 
 @a M.L.Kersten
-@* Atomary types 
+@+ Atomary types 
 MonetDB supports an extensible type system to accomodate a wide
 spectrum of database kernels and application needs.
 The type administration keeps track of their properties and
@@ -29,24 +29,31 @@ properties should be communicated with the GDK kernel library.
 The commands defined in an @code{atom } block are screened as of interest 
 to the gdk_atom library. 
 
-@+ Predefined types
-The GDK atom structure is used to administer all types known.
-A small collection of user-defined types are shipped with the sysem.
+MonetDB comes with the hardwired types @code{bit,chr,sht,int,lng,oid,flt,
+dbl,str} and @code{bat}, the representation of a bat identifier.
+The kernel code has been optimized to deal with these types efficiently,
+i.e. without unnecessary function call overheads.
+
+A small collection of user-defined @code{atom} types is shipped with the sysem.
 They implement types considered essential for end-user applications,
-such as date, time, blob, and url.
+such as @code{color, date, time, blob}, and @code{url}.
 They are implemented using the type extension mechanism described below.
 As such, they provide examples for future extensions.
 A concrete example is the 'blob' datatype in the MonetDB atom module
 library(see ../modules/atoms/blob.mx)
 
-@+ User defined types
+@- Defining your own types
 For the courageous at heart, you may enter the difficult world
-of extending the kernel library. This calls for studying the
+of extending the kernel library. The easiest way is to derive
+the atom modules from one shipped in the source distributie.
+More involved atomary types require a study of the
 documentation associated with the atom structures (gdk_atoms),
-because you have to develop routines complying with the
+because you have to develop a handful routines complying with the
 signatures required in the GDK library.
+They are registered upon loading the @code{atom} module.
+@{
 @-
-The registration functions perform the necessary
+The atom registration functions perform the necessary
 type checks, but relies on the user to comply with this signature in
 its C-implementation. The ruler calls are part of a module
 initialization routine.
@@ -62,7 +69,6 @@ It is not meant for end-users trying to intruduce record- or
 struct-like objects in the database. They better decompose
 the complex object structure and represent the components in
 different BATs.
-@{
 @h
 #ifndef _MAL_ATOM_H
 #define _MAL_ATOM_H

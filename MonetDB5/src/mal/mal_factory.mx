@@ -17,7 +17,7 @@
 
 @a M. Kersten
 @v 0.0
-@* Factories 
+@+ Factories 
 A convenient programming construct is the co-routine, which
 is specified as an ordinary function, but maintains its
 own state between calls, and permits re-entry other than
@@ -90,9 +90,9 @@ exit forever;
 end random;
 @end example
 
-@+ Client support
+@- Client support
 The factory produces elements for multiple clients.
-Sharing of the factory state, paralle processing,
+Sharing the factory state, parallel processing,
 or even remote processing is up to the factory owner.
 They are set through properties for the factory plant.
 
@@ -137,22 +137,7 @@ exit always;
 end random;
 @end example
 
-@+ Factory control
-The predominant interaction between customer and factory
-is the ordinary call. The parameters can be used to instruct
-the factory on the actions to be taken. However, exceptional
-cases may occur which the factory should be told about.
-
-An exception raised in any client is also
-forwarded to any factory which it would have called otherwise.
-I.e. any outstanding factory call skipped while catching the exception
-gets a copy too.
-It effectively leads to a @code{yield}  statement raising an exception.
-
-The state of a factory can be changed only when the system
-is awaiting a call for a new job. 
-
-@+ Complex factory examples 
+@- Complex factory examples 
 One interesting use of the factory scheme is to model
 a volcano-style query processor. Each node in the query
 tree is an iterator that calls upon the operands to produce
@@ -218,19 +203,13 @@ So far we haven;t re-used the pattern that both legs are
 identical. This could be modeled by a generic chunk factory.
 Choosing a new factory for each query steps reduces the 
 administrative overhead.
-@+ Open issues
+
+The Factory concept is still rather experimental and many
+questions should be considered, e.g.
 What is the lifetime of a factory? Does it persists after
 all clients has disappeared?
-
 What additional control do you need? Can you throw an
-exception to a Factory? implicitly yes.
-
-@example
-    raisE reset:="reset";
-    chunkStep(L);   # receives 'reset' exception
-    catcH reset;
-    exit reset;
-@end example
+exception to a Factory?
 
 @{
 @h

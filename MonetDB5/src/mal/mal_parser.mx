@@ -203,7 +203,7 @@ typeidLength(Client cntxt)
 }
 str idCopy(Client cntxt, int length){
 	str s= GDKmalloc(length+1);
-	strncpy(s, CURRENT(cntxt), length);
+    memcpy(s, CURRENT(cntxt),(size_t) length);
 	s[length]=0;
 	advance(cntxt,length);
 	return s;
@@ -302,7 +302,7 @@ str strCopy(Client cntxt, int length){
 	*(short*)s = 0;
 	if (s == 0) 
 		GDKfatal("FATAL:strCopy:");
-	strncpy(s, CURRENT(cntxt) + 1, length - 2);
+	memcpy(s, CURRENT(cntxt) + 1, (size_t) (length - 2) );
 	s[length-2] = 0;
 	advance(cntxt,length);
 	return s;
