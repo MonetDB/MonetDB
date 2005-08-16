@@ -52,8 +52,6 @@ sub connect {
         }
     }
     my $lang  = $dsn{language} || 'sql';
-    die "!ERROR languages permitted are 'sql', 'mal', and 'mil'\n"
-        unless ($lang eq 'mal' || $lang eq 'sql' || $lang eq 'mil');
     my $host  = $dsn{host} || 'localhost';
     my $port  = $dsn{port} || ( $lang eq 'sql' ? 45123 : 50000 );
     $user     ||= 'monetdb';
