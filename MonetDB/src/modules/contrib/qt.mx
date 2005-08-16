@@ -884,8 +884,7 @@ match(direction_t direction, gdk_int16 *features, zid_t id, int *cstring, int ci
 
 	do {
 		cindex = cindex + cdelta;
-	} while (cindex < clength && cindex >= 0 && same_color(color, cstring[cindex]))
-			;
+	} while (cindex < clength && cindex >= 0 && same_color(color, cstring[cindex]));
 
 	if (debug)
 		printf("match: First ID considered: %d, cindex %d\n", id, cindex);
@@ -1004,676 +1003,689 @@ match(direction_t direction, gdk_int16 *features, zid_t id, int *cstring, int ci
 
 		do {
 			cindex = cindex + cdelta;
-		} while (cindex < clength && cindex >= 0 && same_color(color, cstring[cindex]))
-				;
+		} while (cindex < clength && cindex >= 0 && same_color(color, cstring[cindex]));
 
 		if (debug)
 			printf("match: Proceeding with id %d (cindex %d, num %d)\n", nid, cindex, clength);
 		id = nid;
+	}
+	if (debug)
+		printf("match: done\n");
+}
+
+int
+qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *persist)
+{
+	int n, nimages, nfeatures, id_size, hsv_size;
+	gdk_int16 *quadtree;
+	BUN inum_p, inum_q, ioffs_p, ioffs_q, ip, iq, hp, /*hq, */ sp, /*sq, */ vp /*,vq */ ;
+
+	/* Validity checks */
+	if (BATcount(qt_ioffs) != BATcount(qt_inum) || BATcount(qt_id) != BATcount(qt_hue) || BATcount(qt_id) != BATcount(qt_sat) || BATcount(qt_id) != BATcount(qt_val)) {
+		GDKerror("[qt_ir_cluster]: Table sizes differ %d %d %d %d %d %d\n", BATcount(qt_inum), BATcount(qt_ioffs), BATcount(qt_id), BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
+		return GDK_FAIL;
+	}
+
+	nimages = BATcount(qt_inum);
+	for (n = 0; n != NIRBINS * NIRBINS * NIRBINS; n++) {
+		char cname[128];
+		bit initial;
+
+		/* Remove old clusters, if any */
+		if (ir_nclusters[n])
+			BBPreclaim(ir_nclusters[n]);
+		if (ir_wclusters[n])
+			BBPreclaim(ir_wclusters[n]);
+
+		initial = 0;
+		if (bitvector_allocate(&ir_wclusters[n], &nimages, &initial) != GDK_SUCCEED) {
+			GDKerror("[qt_ir_cluster]: Cannot create bit vector\n");
+			return GDK_FAIL;
 		}
-		if (debug)
-			printf("match: done\n");
+		sprintf(cname, "IR_W_%d_%d_%d", n / (NIRBINS * NIRBINS), (n / NIRBINS) % NIRBINS, n % NIRBINS);
+		(void) BATrename(ir_wclusters[n], cname);
+
+		if (bitvector_allocate(&ir_nclusters[n], &nimages, &initial) != GDK_SUCCEED) {
+			GDKerror("[qt_ir_cluster]: Cannot create bit vector\n");
+			return GDK_FAIL;
 		}
+		sprintf(cname, "IR_N_%d_%d_%d", n / (NIRBINS * NIRBINS), (n / NIRBINS) % NIRBINS, n % NIRBINS);
+		(void) BATrename(ir_nclusters[n], cname);
+	}
 
-		int
-		 qt_ir_cluster(BAT *qt_ioffs, BAT *qt_inum, BAT *qt_id, BAT *qt_hue, BAT *qt_sat, BAT *qt_val, int *persist) {
-			int n, nimages, nfeatures, id_size, hsv_size;
-			gdk_int16 *quadtree;
-			BUN inum_p, inum_q, ioffs_p, ioffs_q, ip, iq, hp, /*hq, */ sp, /*sq, */ vp /*,vq */ ;
+	nfeatures = levels[NLEVELS - 1].lvl_sid + levels[NLEVELS - 1].lvl_nid;
+	quadtree = (gdk_int16 *) GDKmalloc(nfeatures * sizeof(gdk_int16));
+	assert(quadtree);
 
-			/* Validity checks */
-			if (BATcount(qt_ioffs) != BATcount(qt_inum) || BATcount(qt_id) != BATcount(qt_hue) || BATcount(qt_id) != BATcount(qt_sat) || BATcount(qt_id) != BATcount(qt_val)) {
-				GDKerror("[qt_ir_cluster]: Table sizes differ %d %d %d %d %d %d\n", BATcount(qt_inum), BATcount(qt_ioffs), BATcount(qt_id), BATcount(qt_hue), BATcount(qt_sat), BATcount(qt_val));
-				return GDK_FAIL;
-			}
+	/* Go over all images in the set, materialize them in an in-core 
+	   quad tree and find all three-color transitions */
+	id_size = BUNsize(qt_id);
+	hsv_size = BUNsize(qt_hue);
+	printf("id_size %d, hsv_size %d\n", id_size, hsv_size);
+	for (inum_p = BUNfirst(qt_inum), inum_q = BUNlast(qt_inum), ioffs_p = BUNfirst(qt_ioffs), ioffs_q = BUNlast(qt_ioffs); inum_p < inum_q && ioffs_p < ioffs_q; inum_p += BUNsize(qt_inum), ioffs_p += BUNsize(qt_ioffs)) {
+		int inum, ioffs, image, id, maxid;
 
-			nimages = BATcount(qt_inum);
-			for (n = 0; n != NIRBINS * NIRBINS * NIRBINS; n++) {
-				char cname[128];
-				bit initial;
-
-				/* Remove old clusters, if any */
-				if (ir_nclusters[n])
-					BBPreclaim(ir_nclusters[n]);
-				if (ir_wclusters[n])
-					BBPreclaim(ir_wclusters[n]);
-
-				initial = 0;
-				if (bitvector_allocate(&ir_wclusters[n], &nimages, &initial) != GDK_SUCCEED) {
-					GDKerror("[qt_ir_cluster]: Cannot create bit vector\n");
-					return GDK_FAIL;
-				}
-				sprintf(cname, "IR_W_%d_%d_%d", n / (NIRBINS * NIRBINS), (n / NIRBINS) % NIRBINS, n % NIRBINS);
-				(void) BATrename(ir_wclusters[n], cname);
-
-				if (bitvector_allocate(&ir_nclusters[n], &nimages, &initial) != GDK_SUCCEED) {
-					GDKerror("[qt_ir_cluster]: Cannot create bit vector\n");
-					return GDK_FAIL;
-				}
-				sprintf(cname, "IR_N_%d_%d_%d", n / (NIRBINS * NIRBINS), (n / NIRBINS) % NIRBINS, n % NIRBINS);
-				(void) BATrename(ir_nclusters[n], cname);
-			}
-
-			nfeatures = levels[NLEVELS - 1].lvl_sid + levels[NLEVELS - 1].lvl_nid;
-			quadtree = (gdk_int16 *) GDKmalloc(nfeatures * sizeof(gdk_int16));
-			assert(quadtree);
-
-			/* Go over all images in the set, materialize them in an in-core 
-			   quad tree and find all three-color transitions */
-			id_size = BUNsize(qt_id);
-			hsv_size = BUNsize(qt_hue);
-			printf("id_size %d, hsv_size %d\n", id_size, hsv_size);
-			for (inum_p = BUNfirst(qt_inum), inum_q = BUNlast(qt_inum), ioffs_p = BUNfirst(qt_ioffs), ioffs_q = BUNlast(qt_ioffs); inum_p < inum_q && ioffs_p < ioffs_q; inum_p += BUNsize(qt_inum), ioffs_p += BUNsize(qt_ioffs)) {
-				int inum, ioffs, image, id, maxid;
-
-				if (*BUNhead(qt_inum, inum_p) != *BUNhead(qt_ioffs, ioffs_p)) {
-					GDKerror("[qt_ir_cluster]: INUM/IOFFS heads differ %d %d\n", *BUNhead(qt_inum, inum_p), *BUNhead(qt_ioffs, ioffs_p));
-					GDKfree(quadtree);
-					return GDK_FAIL;
-				}
-
-				image = (inum_p - BUNfirst(qt_inum)) / BUNsize(qt_inum);
-				ioffs = *(int *) BUNtail(qt_ioffs, ioffs_p);
-				inum = *(int *) BUNtail(qt_inum, inum_p);
-
-				printf("Clustering image %d, ioffs %d, inum %d\n", image, ioffs, inum);
-
-				/* Materialize the quad tree */
-				memset(quadtree, -1, nfeatures * sizeof(gdk_int16));
-
-				maxid = -1;
-				for (ip = BUNfirst(qt_id) + ioffs * id_size, iq = BUNfirst(qt_id) + (ioffs + inum) * id_size, hp = BUNfirst(qt_hue) + ioffs * hsv_size,
-				     /* hq = BUNfirst(qt_hue) + (ioffs + inum) * hsv_size, */
-				     sp = BUNfirst(qt_sat) + ioffs * hsv_size,
-				     /* sq = BUNfirst(qt_sat) + (ioffs + inum) * hsv_size, */
-				     vp = BUNfirst(qt_val) + ioffs * hsv_size
-				     /* ,vq = BUNfirst(qt_val) + (ioffs + inum) * hsv_size */ ;
-				     ip < iq /* && hp < hq && sp < sq && vp < vq */ ;
-				     ip += id_size, hp += hsv_size, sp += hsv_size, vp += hsv_size) {
-
-					id = *(int *) BUNtail(qt_id, ip);
-					quadtree[id] = get_color((*(gdk_uint8 *) BUNtail(qt_hue, hp) << 16) | (*(gdk_uint8 *) BUNtail(qt_sat, sp) << 8) | *(gdk_uint8 *) BUNtail(qt_val, vp), ColorSpace_IR_12);
-
-					if (maxid < 0 || id >maxid)
-						maxid = id;
-				}
-
-				if (cluster(E, ir_wclusters, image, quadtree, maxid) != GDK_SUCCEED || cluster(N, ir_nclusters, image, quadtree, maxid) != GDK_SUCCEED) {
-					GDKfree(quadtree);
-					return GDK_FAIL;
-				}
-			}
+		if (*BUNhead(qt_inum, inum_p) != *BUNhead(qt_ioffs, ioffs_p)) {
+			GDKerror("[qt_ir_cluster]: INUM/IOFFS heads differ %d %d\n", *BUNhead(qt_inum, inum_p), *BUNhead(qt_ioffs, ioffs_p));
 			GDKfree(quadtree);
-
-			/* Make the clusters permanent and commit them */
-			if (*persist)
-				for (n = 0; n != NIRBINS * NIRBINS * NIRBINS; n++) {
-					(void) BATmode(ir_wclusters[n], PERSISTENT);
-					(void) BATsave(ir_wclusters[n]);
-					(void) BATmode(ir_nclusters[n], PERSISTENT);
-					(void) BATsave(ir_nclusters[n]);
-				}
-			return GDK_SUCCEED;
+			return GDK_FAIL;
 		}
 
-		static int
-		 cluster(direction_t direction, BAT **clusters, int image, gdk_int16 *quadtree, int id) {
-			/* Find all three color transitions in the quad tree */
-			for (; id >=0; id --) {
-				gdk_int16 c[3];
-				zid_t nid, pid;
+		image = (inum_p - BUNfirst(qt_inum)) / BUNsize(qt_inum);
+		ioffs = *(int *) BUNtail(qt_ioffs, ioffs_p);
+		inum = *(int *) BUNtail(qt_inum, inum_p);
 
-				if (quadtree[id] == -1)
-					continue;
-				c[1] = quadtree[id];
+		printf("Clustering image %d, ioffs %d, inum %d\n", image, ioffs, inum);
 
-				/* Proceed in one direction until we find a different color */
-				nid = id;
+		/* Materialize the quad tree */
+		memset(quadtree, -1, nfeatures * sizeof(gdk_int16));
 
+		maxid = -1;
+		for (ip = BUNfirst(qt_id) + ioffs * id_size, iq = BUNfirst(qt_id) + (ioffs + inum) * id_size, hp = BUNfirst(qt_hue) + ioffs * hsv_size,
+		     /* hq = BUNfirst(qt_hue) + (ioffs + inum) * hsv_size, */
+		     sp = BUNfirst(qt_sat) + ioffs * hsv_size,
+		     /* sq = BUNfirst(qt_sat) + (ioffs + inum) * hsv_size, */
+		     vp = BUNfirst(qt_val) + ioffs * hsv_size
+		     /* ,vq = BUNfirst(qt_val) + (ioffs + inum) * hsv_size */ ;
+		     ip < iq /* && hp < hq && sp < sq && vp < vq */ ;
+		     ip += id_size, hp += hsv_size, sp += hsv_size, vp += hsv_size) {
+
+			id = *(int *) BUNtail(qt_id, ip);
+			quadtree[id] = get_color((*(gdk_uint8 *) BUNtail(qt_hue, hp) << 16) | (*(gdk_uint8 *) BUNtail(qt_sat, sp) << 8) | *(gdk_uint8 *) BUNtail(qt_val, vp), ColorSpace_IR_12);
+
+			if (maxid < 0 || id >maxid)
+				maxid = id;
+		}
+
+		if (cluster(E, ir_wclusters, image, quadtree, maxid) != GDK_SUCCEED || cluster(N, ir_nclusters, image, quadtree, maxid) != GDK_SUCCEED) {
+			GDKfree(quadtree);
+			return GDK_FAIL;
+		}
+	}
+	GDKfree(quadtree);
+
+	/* Make the clusters permanent and commit them */
+	if (*persist)
+		for (n = 0; n != NIRBINS * NIRBINS * NIRBINS; n++) {
+			(void) BATmode(ir_wclusters[n], PERSISTENT);
+			(void) BATsave(ir_wclusters[n]);
+			(void) BATmode(ir_nclusters[n], PERSISTENT);
+			(void) BATsave(ir_nclusters[n]);
+		}
+	return GDK_SUCCEED;
+}
+
+static int
+cluster(direction_t direction, BAT **clusters, int image, gdk_int16 *quadtree, int id)
+{
+	/* Find all three color transitions in the quad tree */
+	for (; id >=0; id --) {
+		gdk_int16 c[3];
+		zid_t nid, pid;
+
+		if (quadtree[id] == -1)
+			continue;
+		c[1] = quadtree[id];
+
+		/* Proceed in one direction until we find a different color */
+		nid = id;
+
+		do {
+			pid = nid = neighbor(direction, nid);
+			if (pid >= 0 && quadtree[pid] < 0)
 				do {
-					pid = nid = neighbor(direction, nid);
-					if (pid >= 0 && quadtree[pid] < 0)
-						do {
-							pid = up(pid);
-						} while (pid >= 0 && quadtree[pid] < 0);
-				} while (pid >= 0 && quadtree[pid] == c[1]);
+					pid = up(pid);
+				} while (pid >= 0 && quadtree[pid] < 0);
+		} while (pid >= 0 && quadtree[pid] == c[1]);
 
-				c[0] = (pid < 0) ? -1 : quadtree[pid];
+		c[0] = (pid < 0) ? -1 : quadtree[pid];
 
-				/* Proceed in the other direction */
-				nid = id;
+		/* Proceed in the other direction */
+		nid = id;
 
+		do {
+			pid = nid = neighbor(opposite[direction], nid);
+			if (pid >= 0 && quadtree[pid] < 0)
 				do {
-					pid = nid = neighbor(opposite[direction], nid);
-					if (pid >= 0 && quadtree[pid] < 0)
-						do {
-							pid = up(pid);
-						} while (pid >= 0 && quadtree[pid] < 0);
-				} while (pid >= 0 && quadtree[pid] == c[1]);
+					pid = up(pid);
+				} while (pid >= 0 && quadtree[pid] < 0);
+		} while (pid >= 0 && quadtree[pid] == c[1]);
 
-				c[2] = (pid < 0) ? -1 : quadtree[pid];
+		c[2] = (pid < 0) ? -1 : quadtree[pid];
 
-				if (c[0] < 0 && c[2] < 0)
-					publish(clusters, c[1], c[1], c[1], image);
-				else if (c[0] < 0) {
-					publish(clusters, c[1], c[1], c[2], image);
-					publish(clusters, c[1], c[2], c[2], image);
-				} else if (c[2] < 0) {
-					publish(clusters, c[0], c[1], c[1], image);
-					publish(clusters, c[0], c[0], c[1], image);
-				} else
-					publish(clusters, c[0], c[1], c[2], image);
-			}
-			return GDK_SUCCEED;
-		}
+		if (c[0] < 0 && c[2] < 0)
+			publish(clusters, c[1], c[1], c[1], image);
+		else if (c[0] < 0) {
+			publish(clusters, c[1], c[1], c[2], image);
+			publish(clusters, c[1], c[2], c[2], image);
+		} else if (c[2] < 0) {
+			publish(clusters, c[0], c[1], c[1], image);
+			publish(clusters, c[0], c[0], c[1], image);
+		} else
+			publish(clusters, c[0], c[1], c[2], image);
+	}
+	return GDK_SUCCEED;
+}
 
-		static void
-		 publish(BAT **clusters, int c0, int c1, int c2, int image) {
-			int rv;
+static void
+publish(BAT **clusters, int c0, int c1, int c2, int image)
+{
+	int rv;
 
-			rv = bitvector_set(clusters[c0 * NIRBINS * NIRBINS + c1 * NIRBINS + c2], &image);
-			assert(rv == GDK_SUCCEED);
-			(void) rv;	/* fake usage to fool compilers in case assertions are disabled */
-		}
+	rv = bitvector_set(clusters[c0 * NIRBINS * NIRBINS + c1 * NIRBINS + c2], &image);
+	assert(rv == GDK_SUCCEED);
+	(void) rv;	/* fake usage to fool compilers in case assertions are disabled */
+}
 
-		int
-		 qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages) {
-			int n, rv, nbits;
-			cross_t *c;
-			BAT *bv, *_bv, *bv_cluster;
-			bit initial;
+int
+qt_cross_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
+{
+	int n, rv, nbits;
+	cross_t *c;
+	BAT *bv, *_bv, *bv_cluster;
+	bit initial;
 
-			printf("qt_cross_pre_select: Preselecting images\n");
-			MT_set_lock(qt_lock, "qt_cross_pre_select");
-			for (n = 0; n != NCROSSES; n++)
-				if (crosses[n].c_crossid == *crossid)
-					break;
-			if (n == NCROSSES) {
-				GDKerror("[qt_cross_pre_select]: Cannot find cross %d\n", *crossid);
-				MT_unset_lock(qt_lock, "qt_cross_pre_select");
-				return GDK_FAIL;
-			}
-			c = &crosses[n];
-			c->c_refs++;
-			MT_unset_lock(qt_lock, "qt_cross_pre_select");
+	printf("qt_cross_pre_select: Preselecting images\n");
+	MT_set_lock(qt_lock, "qt_cross_pre_select");
+	for (n = 0; n != NCROSSES; n++)
+		if (crosses[n].c_crossid == *crossid)
+			break;
+	if (n == NCROSSES) {
+		GDKerror("[qt_cross_pre_select]: Cannot find cross %d\n", *crossid);
+		MT_unset_lock(qt_lock, "qt_cross_pre_select");
+		return GDK_FAIL;
+	}
+	c = &crosses[n];
+	c->c_refs++;
+	MT_unset_lock(qt_lock, "qt_cross_pre_select");
 
-			printf("qt_cross_pre_select: allocating bitvector %d\n", *nimages);
-			/* Analyze the spot and select the right bit-fields.  Allocate an 
-			   empty result bit field with all images selected */
-			initial = 1;
-			if (bitvector_allocate(&bv, nimages, &initial) != GDK_SUCCEED) {
-				GDKerror("[qt_cross_pre_select]: Cannot allocate empty bit vector of size %d\n", *nimages);
-				c->c_refs--;
-				return GDK_FAIL;
-			}
+	printf("qt_cross_pre_select: allocating bitvector %d\n", *nimages);
+	/* Analyze the spot and select the right bit-fields.  Allocate an 
+	   empty result bit field with all images selected */
+	initial = 1;
+	if (bitvector_allocate(&bv, nimages, &initial) != GDK_SUCCEED) {
+		GDKerror("[qt_cross_pre_select]: Cannot allocate empty bit vector of size %d\n", *nimages);
+		c->c_refs--;
+		return GDK_FAIL;
+	}
 
-			bitvector_count(&nbits, bv);
-			printf("qt_cross_pre_select: nimages %d\n", nbits);
+	bitvector_count(&nbits, bv);
+	printf("qt_cross_pre_select: nimages %d\n", nbits);
 
-			if (*cspace != (int) ColorSpace_IR_12 || (int) c->c_cspace != *cspace || ir_wclusters[0] == NULL) {
+	if (*cspace != (int) ColorSpace_IR_12 || (int) c->c_cspace != *cspace || ir_wclusters[0] == NULL) {
 
-				printf("qt_cross_pre_select: No cache?\n");
+		printf("qt_cross_pre_select: No cache?\n");
 
-				/* No candidates, all images are candidates */
-				GDKwarning("qt_cross_pre_select: Warning: no cache\n");
+		/* No candidates, all images are candidates */
+		GDKwarning("qt_cross_pre_select: Warning: no cache\n");
 
-				rv = bitvector_decode(candidates, bv);
-				BATdelete(bv);
-				c->c_refs--;
-				return rv;
-			}
+		rv = bitvector_decode(candidates, bv);
+		BATdelete(bv);
+		c->c_refs--;
+		return rv;
+	}
 
-			if (debug)
-				bitvector_print(bv);
-			/* For the horizontal colors ... */
-			for (n = c->c_hlength - 1; n >= 2; n--) {
-				bv_cluster = ir_wclusters[c->c_hstring[n] * NIRBINS * NIRBINS + c->c_hstring[n - 1] * NIRBINS + c->c_hstring[n - 2]];
-				if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
-					c->c_refs--;
-					return GDK_FAIL;
-				}
-				BATdelete(bv);
-				bv = _bv;
-
-				if (1) {
-					bitvector_count(&nbits, bv);
-					printf("qt_cross_pre_select: (horizontal n %d) nimages %d\n", n, nbits);
-				}
-			}
-
-			/* ... and for the vertical colors.  Note that I don't do anything
-			   special for short color strings.  The reason is that since all 
-			   images have been preselected (see allocate), only false positives
-			   may be selected extra. */
-			for (n = c->c_vlength - 1; n >= 2; n--) {
-				bv_cluster = ir_nclusters[c->c_vstring[n] * NIRBINS * NIRBINS + c->c_vstring[n - 1] * NIRBINS + c->c_vstring[n - 2]];
-				if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
-					c->c_refs--;
-					return GDK_FAIL;
-				}
-				BATdelete(bv);
-				bv = _bv;
-
-				if (1) {
-					bitvector_count(&nbits, bv);
-					printf("qt_cross_pre_select: (vertical n %d) nimages %d\n", n, nbits);
-				}
-			}
-
-			/* The bitvector now describes all images that may be relevant. 
-			   Decode the bit vector and return the oids of the relevant images.
-			 */
-			rv = bitvector_decode(candidates, bv);
-			BATdelete(bv);
+	if (debug)
+		bitvector_print(bv);
+	/* For the horizontal colors ... */
+	for (n = c->c_hlength - 1; n >= 2; n--) {
+		bv_cluster = ir_wclusters[c->c_hstring[n] * NIRBINS * NIRBINS + c->c_hstring[n - 1] * NIRBINS + c->c_hstring[n - 2]];
+		if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
 			c->c_refs--;
-			return rv;
+			return GDK_FAIL;
 		}
+		BATdelete(bv);
+		bv = _bv;
 
-		int
-		 qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages) {
-			int n, rv, nbits, x, y;
-			cross_t *c;
-			BAT *bv, *_bv, *bv_cluster;
-			bit initial;
-
-			printf("qt_pre_select: Preselecting images\n");
-			MT_set_lock(qt_lock, "qt_pre_select");
-			for (n = 0; n != NCROSSES; n++)
-				if (crosses[n].c_crossid == *crossid)
-					break;
-			if (n == NCROSSES) {
-				GDKerror("[qt_pre_select]: Cannot find cross %d\n", *crossid);
-				MT_unset_lock(qt_lock, "qt_pre_select");
-				return GDK_FAIL;
-			}
-			c = &crosses[n];
-			c->c_refs++;
-			MT_unset_lock(qt_lock, "qt_pre_select");
-
-			printf("qt_pre_select: allocating bitvector %d\n", *nimages);
-			/* Analyze the spot and select the right bit-fields.  Allocate an 
-			   empty result bit field with all images selected */
-			initial = 1;
-			if (bitvector_allocate(&bv, nimages, &initial) != GDK_SUCCEED) {
-				GDKerror("[qt_pre_select]: Cannot allocate empty bit vector of size %d\n", *nimages);
-				c->c_refs--;
-				return GDK_FAIL;
-			}
-
+		if (1) {
 			bitvector_count(&nbits, bv);
-			printf("qt_pre_select: nimages %d\n", nbits);
+			printf("qt_cross_pre_select: (horizontal n %d) nimages %d\n", n, nbits);
+		}
+	}
 
-			if (*cspace != (int) ColorSpace_IR_12 || (int) c->c_cspace != *cspace || ir_wclusters[0] == NULL) {
+	/* ... and for the vertical colors.  Note that I don't do anything
+	   special for short color strings.  The reason is that since all 
+	   images have been preselected (see allocate), only false positives
+	   may be selected extra. */
+	for (n = c->c_vlength - 1; n >= 2; n--) {
+		bv_cluster = ir_nclusters[c->c_vstring[n] * NIRBINS * NIRBINS + c->c_vstring[n - 1] * NIRBINS + c->c_vstring[n - 2]];
+		if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
+			c->c_refs--;
+			return GDK_FAIL;
+		}
+		BATdelete(bv);
+		bv = _bv;
 
-				printf("qt_pre_select: No cache?\n");
+		if (1) {
+			bitvector_count(&nbits, bv);
+			printf("qt_cross_pre_select: (vertical n %d) nimages %d\n", n, nbits);
+		}
+	}
 
-				/* No candidates, all images are candidates */
-				GDKwarning("qt_pre_select: Warning: no cache\n");
+	/* The bitvector now describes all images that may be relevant. 
+	   Decode the bit vector and return the oids of the relevant images.
+	 */
+	rv = bitvector_decode(candidates, bv);
+	BATdelete(bv);
+	c->c_refs--;
+	return rv;
+}
 
-				rv = bitvector_decode(candidates, bv);
-				BATdelete(bv);
-				c->c_refs--;
-				return rv;
-			}
+int
+qt_pre_select(BAT **candidates, int *crossid, int *cspace, int *nimages)
+{
+	int n, rv, nbits, x, y;
+	cross_t *c;
+	BAT *bv, *_bv, *bv_cluster;
+	bit initial;
 
-			if (debug)
-				bitvector_print(bv);
+	printf("qt_pre_select: Preselecting images\n");
+	MT_set_lock(qt_lock, "qt_pre_select");
+	for (n = 0; n != NCROSSES; n++)
+		if (crosses[n].c_crossid == *crossid)
+			break;
+	if (n == NCROSSES) {
+		GDKerror("[qt_pre_select]: Cannot find cross %d\n", *crossid);
+		MT_unset_lock(qt_lock, "qt_pre_select");
+		return GDK_FAIL;
+	}
+	c = &crosses[n];
+	c->c_refs++;
+	MT_unset_lock(qt_lock, "qt_pre_select");
 
-			/* The horizontal color transitions */
-			for (y = 0; y != c->c_spot_h; y++) {
-				int colors[3], cindex, color;
+	printf("qt_pre_select: allocating bitvector %d\n", *nimages);
+	/* Analyze the spot and select the right bit-fields.  Allocate an 
+	   empty result bit field with all images selected */
+	initial = 1;
+	if (bitvector_allocate(&bv, nimages, &initial) != GDK_SUCCEED) {
+		GDKerror("[qt_pre_select]: Cannot allocate empty bit vector of size %d\n", *nimages);
+		c->c_refs--;
+		return GDK_FAIL;
+	}
 
-				colors[0] = colors[1] = colors[2] = -1;
-				cindex = 0;
-				for (x = 0; x != c->c_spot_w; x++) {
-					if (c->c_spot[y * c->c_spot_w + x] & QTE_VALID) {
-						color = get_color(c->c_spot[y * c->c_spot_w + x], ColorSpace_IR_12);
-						printf("cindex %d, color %d, prev %d\n", cindex, color, (cindex > 0) ? colors[cindex - 1] : -1);
+	bitvector_count(&nbits, bv);
+	printf("qt_pre_select: nimages %d\n", nbits);
 
-						if (cindex == 0 || color !=colors[cindex - 1]) {
-							colors[cindex++] = color;
+	if (*cspace != (int) ColorSpace_IR_12 || (int) c->c_cspace != *cspace || ir_wclusters[0] == NULL) {
 
-							if (cindex == 3) {
-								/* There is a 3 color transition! */
-								printf("Using (h) %d %d %d\n", colors[2], colors[1], colors[0]);
-								bv_cluster = ir_wclusters[colors[2] * NIRBINS * NIRBINS + colors[1] * NIRBINS + colors[0]];
+		printf("qt_pre_select: No cache?\n");
 
-								if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
-									c->c_refs--;
-									return GDK_FAIL;
-								}
+		/* No candidates, all images are candidates */
+		GDKwarning("qt_pre_select: Warning: no cache\n");
 
-								BATdelete(bv);
-								bv = _bv;
+		rv = bitvector_decode(candidates, bv);
+		BATdelete(bv);
+		c->c_refs--;
+		return rv;
+	}
 
-								colors[0] = colors[1];
-								colors[1] = colors[2];
-								cindex = 2;
+	if (debug)
+		bitvector_print(bv);
 
-								if (1) {
-									bitvector_count(&nbits, bv);
-									printf("qt_pre_select: (horizontal y %d, x %d) nimages %d\n", y, x, nbits);
-								}
-							}
+	/* The horizontal color transitions */
+	for (y = 0; y != c->c_spot_h; y++) {
+		int colors[3], cindex, color;
+
+		colors[0] = colors[1] = colors[2] = -1;
+		cindex = 0;
+		for (x = 0; x != c->c_spot_w; x++) {
+			if (c->c_spot[y * c->c_spot_w + x] & QTE_VALID) {
+				color = get_color(c->c_spot[y * c->c_spot_w + x], ColorSpace_IR_12);
+				printf("cindex %d, color %d, prev %d\n", cindex, color, (cindex > 0) ? colors[cindex - 1] : -1);
+
+				if (cindex == 0 || color !=colors[cindex - 1]) {
+					colors[cindex++] = color;
+
+					if (cindex == 3) {
+						/* There is a 3 color transition! */
+						printf("Using (h) %d %d %d\n", colors[2], colors[1], colors[0]);
+						bv_cluster = ir_wclusters[colors[2] * NIRBINS * NIRBINS + colors[1] * NIRBINS + colors[0]];
+
+						if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
+							c->c_refs--;
+							return GDK_FAIL;
+						}
+
+						BATdelete(bv);
+						bv = _bv;
+
+						colors[0] = colors[1];
+						colors[1] = colors[2];
+						cindex = 2;
+
+						if (1) {
+							bitvector_count(&nbits, bv);
+							printf("qt_pre_select: (horizontal y %d, x %d) nimages %d\n", y, x, nbits);
 						}
 					}
 				}
-
-				if (cindex > 0 && cindex < 3) {
-					if (cindex == 1)
-						colors[1] = colors[2] = colors[0];
-					else if (cindex == 2)
-						colors[2] = colors[1];
-
-					printf("Using (hlast) %d %d %d\n", colors[2], colors[1], colors[0]);
-					bv_cluster = ir_wclusters[colors[2] * NIRBINS * NIRBINS + colors[1] * NIRBINS + colors[0]];
-
-					if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
-						c->c_refs--;
-						return GDK_FAIL;
-					}
-
-					BATdelete(bv);
-					bv = _bv;
-				}
 			}
+		}
+
+		if (cindex > 0 && cindex < 3) {
+			if (cindex == 1)
+				colors[1] = colors[2] = colors[0];
+			else if (cindex == 2)
+				colors[2] = colors[1];
+
+			printf("Using (hlast) %d %d %d\n", colors[2], colors[1], colors[0]);
+			bv_cluster = ir_wclusters[colors[2] * NIRBINS * NIRBINS + colors[1] * NIRBINS + colors[0]];
+
+			if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
+				c->c_refs--;
+				return GDK_FAIL;
+			}
+
+			BATdelete(bv);
+			bv = _bv;
+		}
+	}
 
 #ifdef notdef
-			/* The vertical color transitions */
-			for (x = 0; x != c->c_spot_w; x++) {
-				int colors[3], cindex, color;
+	/* The vertical color transitions */
+	for (x = 0; x != c->c_spot_w; x++) {
+		int colors[3], cindex, color;
 
-				colors[0] = colors[1] = colors[2] = -1;
-				cindex = 0;
-				for (y = 0; y != c->c_spot_h; y++) {
-					if (c->c_spot[y * c->c_spot_w + x] & QTE_VALID) {
-						color = get_color(c->c_spot[y * c->c_spot_w + x], ColorSpace_IR_12);
-						printf("Vertical, got color %d (%d, %d)\n", color, x, y);
+		colors[0] = colors[1] = colors[2] = -1;
+		cindex = 0;
+		for (y = 0; y != c->c_spot_h; y++) {
+			if (c->c_spot[y * c->c_spot_w + x] & QTE_VALID) {
+				color = get_color(c->c_spot[y * c->c_spot_w + x], ColorSpace_IR_12);
+				printf("Vertical, got color %d (%d, %d)\n", color, x, y);
 
-						if (cindex == 0 || color !=colors[cindex - 1]) {
-							colors[cindex++] = color;
+				if (cindex == 0 || color !=colors[cindex - 1]) {
+					colors[cindex++] = color;
 
-							if (cindex == 3) {
-								/* There is a 3 color transition! */
-								printf("Using (v) %d %d %d\n", colors[2], colors[1], colors[0]);
-								bv_cluster = ir_nclusters[colors[2] * NIRBINS * NIRBINS + colors[1] * NIRBINS + colors[0]];
+					if (cindex == 3) {
+						/* There is a 3 color transition! */
+						printf("Using (v) %d %d %d\n", colors[2], colors[1], colors[0]);
+						bv_cluster = ir_nclusters[colors[2] * NIRBINS * NIRBINS + colors[1] * NIRBINS + colors[0]];
 
-								if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
-									c->c_refs--;
-									return GDK_FAIL;
-								}
+						if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
+							c->c_refs--;
+							return GDK_FAIL;
+						}
 
-								BATdelete(bv);
-								bv = _bv;
+						BATdelete(bv);
+						bv = _bv;
 
-								colors[0] = colors[1];
-								colors[1] = colors[2];
-								cindex = 2;
+						colors[0] = colors[1];
+						colors[1] = colors[2];
+						cindex = 2;
 
-								if (1) {
-									bitvector_count(&nbits, bv);
-									printf("qt_pre_select: (vertical x %d, y %d) nimages %d\n", x, y, nbits);
-								}
-							}
+						if (1) {
+							bitvector_count(&nbits, bv);
+							printf("qt_pre_select: (vertical x %d, y %d) nimages %d\n", x, y, nbits);
 						}
 					}
 				}
-
-				if (cindex > 0 && cindex < 3) {
-					if (cindex == 1)
-						colors[1] = colors[2] = colors[0];
-					else if (cindex == 2)
-						colors[2] = colors[1];
-
-					printf("Using (vlast) %d %d %d\n", colors[2], colors[1], colors[0]);
-					bv_cluster = ir_nclusters[colors[2] * NIRBINS * NIRBINS + colors[1] * NIRBINS + colors[0]];
-
-					if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
-						c->c_refs--;
-						return GDK_FAIL;
-					}
-
-					BATdelete(bv);
-					bv = _bv;
-				}
 			}
-#endif
-
-			/* The bitvector now describes all images that may be relevant. 
-			   Decode the bit vector and return the oids of the relevant images.
-			 */
-			rv = bitvector_decode(candidates, bv);
-			BATdelete(bv);
-			c->c_refs--;
-			return rv;
 		}
 
-		int
-		 convert_to_itten_runge_bin(int color) {
-			if (color <HUEBINS)
-				return (int) ((double) color /HUES_PER_ITTEN_RUNGE_BIN);
+		if (cindex > 0 && cindex < 3) {
+			if (cindex == 1)
+				colors[1] = colors[2] = colors[0];
+			else if (cindex == 2)
+				colors[2] = colors[1];
 
-			return (int) ((double) (color -HUEBINS) /GREYS_PER_ITTEN_RUNGE_BIN) + ITTEN_RUNGE_HUE_BINS;
-		}
+			printf("Using (vlast) %d %d %d\n", colors[2], colors[1], colors[0]);
+			bv_cluster = ir_nclusters[colors[2] * NIRBINS * NIRBINS + colors[1] * NIRBINS + colors[0]];
 
-		static int
-		 get_color(gdk_uint32 hsv, colorspace_t cspace) {
-			gdk_uint8 h, s, v;
-			int bin;
-
-			h = (hsv >> 16) & 0xFF;
-			s = (hsv >> 8) & 0xFF;
-			v = hsv & 0xFF;
-			bin = isgrey(s) ? (v * GREYBINS) / HUEBINS + HUEBINS : h;
-
-			switch (cspace) {
-			case ColorSpace_H_256:
-				break;
-			case ColorSpace_IR_12:
-				bin = convert_to_itten_runge_bin(bin);
-				break;
-			default:
-				assert("Unsupported color space" == 0);
-				abort();
-			}
-			return bin;
-		}
-
-		static int
-		 same_color(int c1, int c2) {
-			int delta;
-
-			if ((c1 < HUEBINS && c2 >= HUEBINS) || (c2 < HUEBINS && c1 >= HUEBINS))
-				/* Grey scales and colors are never the same */
-				return 0;
-
-			if (c1 >= HUEBINS) {
-				assert(c2 >= HUEBINS);
-				return abs(c1 - c2) < gband;
-			}
-
-			delta = abs(c1 - c2);
-			return min(delta, HUEBINS - delta) < hband;
-		}
-
-
-		static zid_t
-		 up(zid_t id) {
-			if (id == 0)
-				return -1;
-			assert(id >0);
-			return (id -1) /4;
-		}
-
-		static int
-		 get_nfeatures(zid_t lastid) {
-			int level;
-
-			/* First determine ID's level */
-			assert(levels);
-			for (level = 0; level != nlevels; level++)
-				if (lastid >= levels[level].lvl_sid && lastid < levels[level].lvl_sid + levels[level].lvl_nid)
-					break;
-
-			return (level == nlevels) ? -1 : levels[level].lvl_sid + levels[level].lvl_nid;
-		}
-
-		static int
-		 idlevel(zid_t id) {
-			int level;
-
-			/* First determine ID's level */
-			assert(levels);
-			for (level = 0; level != nlevels; level++)
-				if (id >=levels[level].lvl_sid && id <levels[level].lvl_sid + levels[level].lvl_nid)
-					break;
-			return (level >= nlevels) ? -1 : level;
-		}
-
-		static zid_t
-		 neighbor(direction_t direction, zid_t id) {
-			int x, y, level;
-			qtlevel_t *l;
-
-			/* First determine ID's level */
-			assert(levels);
-			for (level = 0; level != nlevels; level++)
-				if (id >=levels[level].lvl_sid && id <levels[level].lvl_sid + levels[level].lvl_nid)
-					break;
-			if (level >= nlevels)
-				return -1;
-
-			l = &levels[level];
-			id -=l->lvl_sid;
-			assert(id >=0 && id <l->lvl_nid);
-			x = l->lvl_idtoxy[id].id_x;
-			y = l->lvl_idtoxy[id].id_y;
-
-			switch (direction) {
-			case N:
-				y--;
-				break;
-			case NE:
-				x++;
-				y--;
-				break;
-			case E:
-				x++;
-				break;
-			case SE:
-				x++;
-				y++;
-				break;
-			case S:
-				y++;
-				break;
-			case SW:
-				x--;
-				y++;
-				break;
-			case W:
-				x--;
-				break;
-			case NW:
-				x--;
-				y--;
-				break;
-			default:
-				assert(0);
-				abort();
-			}
-
-			if (x < 0 || y < 0 || x >= l->lvl_nid_dir || y >= l->lvl_nid_dir)
-				return -1;
-
-			return l->lvl_xytoid[y * l->lvl_nid_dir + x] + l->lvl_sid;
-		}
-
-		int
-		 qt_debug(int *dbg) {
-			debug = *dbg;
-			return GDK_SUCCEED;
-		}
-
-		int
-		 qt_stats(int *mode, str outfile) {
-			int rv;
-
-			rv = GDK_SUCCEED;
-			switch (*mode) {
-				int bins, binwidth;
-				lng lo;
-
-			case 0:
-				bins = 100;
-				binwidth = 10;
-				lo = 0;
-
-				if (st_search == NULL)
-					rv = stats_histogram_new(&st_search, "qt_search", &bins, &binwidth, &lo);
-				if (rv != GDK_SUCCEED)
-					return rv;
-				if (st_bunins[0] == NULL)
-					rv = stats_histogram_new(&st_bunins[0], "bunins_ids", &bins, &binwidth, &lo);
-				if (rv != GDK_SUCCEED)
-					return rv;
-				if (st_bunins[1] == NULL)
-					rv = stats_histogram_new(&st_bunins[1], "bunins_images", &bins, &binwidth, &lo);
-				if (rv != GDK_SUCCEED)
-					return rv;
-				if (st_bunins[2] == NULL)
-					rv = stats_histogram_new(&st_bunins[2], "bunins_ncolors", &bins, &binwidth, &lo);
-				if (rv != GDK_SUCCEED)
-					return rv;
-				break;
-			case 1:
-				if (st_search)
-					rv = stats_report(&st_search, outfile);
-				if (rv != GDK_SUCCEED)
-					return rv;
-				if (st_bunins[0])
-					rv = stats_report(&st_bunins[0], outfile);
-				if (rv != GDK_SUCCEED)
-					return rv;
-				if (st_bunins[1])
-					rv = stats_report(&st_bunins[1], outfile);
-				if (rv != GDK_SUCCEED)
-					return rv;
-				if (st_bunins[2])
-					rv = stats_report(&st_bunins[2], outfile);
-				if (rv != GDK_SUCCEED)
-					return rv;
-				break;
-			case 2:
-				if (st_search) {
-					rv = stats_del(&st_search);
-					st_search = NULL;
-				}
-				if (rv != GDK_SUCCEED)
-					return rv;
-				if (st_bunins[0]) {
-					rv = stats_del(&st_bunins[0]);
-					st_bunins[0] = NULL;
-				}
-				if (rv != GDK_SUCCEED)
-					return rv;
-				if (st_bunins[1]) {
-					rv = stats_del(&st_bunins[1]);
-					st_bunins[1] = NULL;
-				}
-				if (rv != GDK_SUCCEED)
-					return rv;
-				if (st_bunins[2]) {
-					rv = stats_del(&st_bunins[2]);
-					st_bunins[2] = NULL;
-				}
-				if (rv != GDK_SUCCEED)
-					return rv;
-				break;
-			default:
-				GDKerror("Unsupported statistics mode %d\n", *mode);
+			if (bitvector_and(&_bv, bv, bv_cluster) != GDK_SUCCEED) {
+				c->c_refs--;
 				return GDK_FAIL;
 			}
-			return GDK_SUCCEED;
+
+			BATdelete(bv);
+			bv = _bv;
 		}
+	}
+#endif
+
+	/* The bitvector now describes all images that may be relevant. 
+	   Decode the bit vector and return the oids of the relevant images.
+	 */
+	rv = bitvector_decode(candidates, bv);
+	BATdelete(bv);
+	c->c_refs--;
+	return rv;
+}
+
+int
+convert_to_itten_runge_bin(int color)
+{
+	if (color <HUEBINS)
+		return (int) ((double) color /HUES_PER_ITTEN_RUNGE_BIN);
+
+	return (int) ((double) (color -HUEBINS) /GREYS_PER_ITTEN_RUNGE_BIN) + ITTEN_RUNGE_HUE_BINS;
+}
+
+static int
+get_color(gdk_uint32 hsv, colorspace_t cspace)
+{
+	gdk_uint8 h, s, v;
+	int bin;
+
+	h = (hsv >> 16) & 0xFF;
+	s = (hsv >> 8) & 0xFF;
+	v = hsv & 0xFF;
+	bin = isgrey(s) ? (v * GREYBINS) / HUEBINS + HUEBINS : h;
+
+	switch (cspace) {
+	case ColorSpace_H_256:
+		break;
+	case ColorSpace_IR_12:
+		bin = convert_to_itten_runge_bin(bin);
+		break;
+	default:
+		assert("Unsupported color space" == 0);
+		abort();
+	}
+	return bin;
+}
+
+static int
+same_color(int c1, int c2)
+{
+	int delta;
+
+	if ((c1 < HUEBINS && c2 >= HUEBINS) || (c2 < HUEBINS && c1 >= HUEBINS))
+		/* Grey scales and colors are never the same */
+		return 0;
+
+	if (c1 >= HUEBINS) {
+		assert(c2 >= HUEBINS);
+		return abs(c1 - c2) < gband;
+	}
+
+	delta = abs(c1 - c2);
+	return min(delta, HUEBINS - delta) < hband;
+}
+
+
+static zid_t
+up(zid_t id)
+{
+	if (id == 0)
+		return -1;
+	assert(id >0);
+	return (id -1) /4;
+}
+
+static int
+get_nfeatures(zid_t lastid)
+{
+	int level;
+
+	/* First determine ID's level */
+	assert(levels);
+	for (level = 0; level != nlevels; level++)
+		if (lastid >= levels[level].lvl_sid && lastid < levels[level].lvl_sid + levels[level].lvl_nid)
+			break;
+
+	return (level == nlevels) ? -1 : levels[level].lvl_sid + levels[level].lvl_nid;
+}
+
+static int
+idlevel(zid_t id)
+{
+	int level;
+
+	/* First determine ID's level */
+	assert(levels);
+	for (level = 0; level != nlevels; level++)
+		if (id >=levels[level].lvl_sid && id <levels[level].lvl_sid + levels[level].lvl_nid)
+			break;
+	return (level >= nlevels) ? -1 : level;
+}
+
+static zid_t
+neighbor(direction_t direction, zid_t id)
+{
+	int x, y, level;
+	qtlevel_t *l;
+
+	/* First determine ID's level */
+	assert(levels);
+	for (level = 0; level != nlevels; level++)
+		if (id >=levels[level].lvl_sid && id <levels[level].lvl_sid + levels[level].lvl_nid)
+			break;
+	if (level >= nlevels)
+		return -1;
+
+	l = &levels[level];
+	id -=l->lvl_sid;
+	assert(id >=0 && id <l->lvl_nid);
+	x = l->lvl_idtoxy[id].id_x;
+	y = l->lvl_idtoxy[id].id_y;
+
+	switch (direction) {
+	case N:
+		y--;
+		break;
+	case NE:
+		x++;
+		y--;
+		break;
+	case E:
+		x++;
+		break;
+	case SE:
+		x++;
+		y++;
+		break;
+	case S:
+		y++;
+		break;
+	case SW:
+		x--;
+		y++;
+		break;
+	case W:
+		x--;
+		break;
+	case NW:
+		x--;
+		y--;
+		break;
+	default:
+		assert(0);
+		abort();
+	}
+
+	if (x < 0 || y < 0 || x >= l->lvl_nid_dir || y >= l->lvl_nid_dir)
+		return -1;
+
+	return l->lvl_xytoid[y * l->lvl_nid_dir + x] + l->lvl_sid;
+}
+
+int
+qt_debug(int *dbg)
+{
+	debug = *dbg;
+	return GDK_SUCCEED;
+}
+
+int
+qt_stats(int *mode, str outfile)
+{
+	int rv;
+
+	rv = GDK_SUCCEED;
+	switch (*mode) {
+		int bins, binwidth;
+		lng lo;
+
+	case 0:
+		bins = 100;
+		binwidth = 10;
+		lo = 0;
+
+		if (st_search == NULL)
+			rv = stats_histogram_new(&st_search, "qt_search", &bins, &binwidth, &lo);
+		if (rv != GDK_SUCCEED)
+			return rv;
+		if (st_bunins[0] == NULL)
+			rv = stats_histogram_new(&st_bunins[0], "bunins_ids", &bins, &binwidth, &lo);
+		if (rv != GDK_SUCCEED)
+			return rv;
+		if (st_bunins[1] == NULL)
+			rv = stats_histogram_new(&st_bunins[1], "bunins_images", &bins, &binwidth, &lo);
+		if (rv != GDK_SUCCEED)
+			return rv;
+		if (st_bunins[2] == NULL)
+			rv = stats_histogram_new(&st_bunins[2], "bunins_ncolors", &bins, &binwidth, &lo);
+		if (rv != GDK_SUCCEED)
+			return rv;
+		break;
+	case 1:
+		if (st_search)
+			rv = stats_report(&st_search, outfile);
+		if (rv != GDK_SUCCEED)
+			return rv;
+		if (st_bunins[0])
+			rv = stats_report(&st_bunins[0], outfile);
+		if (rv != GDK_SUCCEED)
+			return rv;
+		if (st_bunins[1])
+			rv = stats_report(&st_bunins[1], outfile);
+		if (rv != GDK_SUCCEED)
+			return rv;
+		if (st_bunins[2])
+			rv = stats_report(&st_bunins[2], outfile);
+		if (rv != GDK_SUCCEED)
+			return rv;
+		break;
+	case 2:
+		if (st_search) {
+			rv = stats_del(&st_search);
+			st_search = NULL;
+		}
+		if (rv != GDK_SUCCEED)
+			return rv;
+		if (st_bunins[0]) {
+			rv = stats_del(&st_bunins[0]);
+			st_bunins[0] = NULL;
+		}
+		if (rv != GDK_SUCCEED)
+			return rv;
+		if (st_bunins[1]) {
+			rv = stats_del(&st_bunins[1]);
+			st_bunins[1] = NULL;
+		}
+		if (rv != GDK_SUCCEED)
+			return rv;
+		if (st_bunins[2]) {
+			rv = stats_del(&st_bunins[2]);
+			st_bunins[2] = NULL;
+		}
+		if (rv != GDK_SUCCEED)
+			return rv;
+		break;
+	default:
+		GDKerror("Unsupported statistics mode %d\n", *mode);
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
+}
 @}
