@@ -396,17 +396,17 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     # create our indices
     var knd := ELEMENT;
     while ( knd <= DOCUMENT ) {
-       docBAT.insert("kind_pre" + "_" + chr(48 + knd),
+       docBAT.insert("kind_pre" + "_" + str(chr(48 + knd)),
                      docBAT.find("pre_kind").ord_uselect(knd).reverse().chk_order());
        knd :+= chr(1);
     }
 
-    var knd_pre_bat := docBAT.find("kind_pre" + "_" + chr(48 + ELEMENT)).reverse().mirror();
-    docBAT.insert("prop_pre" + "_" + chr(48 + ELEMENT),
+    var knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + ELEMENT))).reverse().mirror();
+    docBAT.insert("prop_pre" + "_" + str(chr(48 + ELEMENT)),
                   knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order());
 
-    knd_pre_bat := docBAT.find("kind_pre" + "_" + chr(48 + PI)).reverse().mirror();
-    docBAT.insert("prop_pre" + "_" + chr(48 + PI),
+    knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + PI))).reverse().mirror();
+    docBAT.insert("prop_pre" + "_" + str(chr(48 + PI)),
                   knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order());
 
     height := shredRES.fetch(PRE_LEVEL).max().int() + 1;
