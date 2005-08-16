@@ -175,7 +175,7 @@ CLTInfo(int *ret)
 	BUNins(b, "scenario", c->scenario);
 	BUNins(b, "timer", local_itoa(c->timer));
 	BUNins(b, "trace", local_itoa(c->itrace));
-	@:Pseudo(client, info,)@
+	@:Pseudo(client,info,)@
 	return MAL_SUCCEED;
 }
 
@@ -213,7 +213,7 @@ CLTLogin(int *ret)
 			BUNins(b, &i, s);
 		}
 
-	@:Pseudo(client, login,)@
+	@:Pseudo(client,login,)@
 	return MAL_SUCCEED;
 }
 
@@ -231,7 +231,7 @@ CLTusers(int *ret)
 	for (i = 0; i < MAL_MAXCLIENTS; i++)
 		if (mal_clients[i].mode >= CLAIMED && mal_clients[i].user)
 			b = BUNins(b, &i, mal_clients[i].user);
-	@:Pseudo(client, users,)@
+	@:Pseudo(client,users,)@
 	return MAL_SUCCEED;
 }
 

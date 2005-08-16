@@ -343,7 +343,7 @@ MDBStkFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	if (b == 0)
 		return throwMessage("inspect.stkFrame", "failed to create BAT");
-	@:Pseudo(view, stk, frame)@
+	@:Pseudo(view,stk,frame)@
 	return MDBgetFrame(b, m, s, 0);
 }
 
@@ -358,7 +358,7 @@ MDBStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		return throwMessage("inspect.stkFrame", "illegal depth.");
 	if (n >= getStkDepth(s))
 		return throwMessage("inspect.stkFrame", "illegal depth.");
-	@:Pseudo(view, stk, frame)@
+	@:Pseudo(view,stk,frame)@
 	return MDBgetFrame(b, m, s, n);
 }
 
@@ -378,7 +378,7 @@ MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BUNins(b, &k, msg);
 		GDKfree(msg);
 	}
-	@:Pseudo(view, stk, trace)@
+	@:Pseudo(view,stk,trace)@
 	return MAL_SUCCEED;
 }
 
@@ -487,7 +487,7 @@ MDBcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		BUNins(b, &i, ps);
 		GDKfree(ps);
 	}
-	@:Pseudo(view, fcn, stmt)@
+	@:Pseudo(view,fcn,stmt)@
 
 	return MAL_SUCCEED;
 }

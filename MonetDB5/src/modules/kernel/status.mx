@@ -278,7 +278,7 @@ SYScpuStatistics(int *ret)
 	b = BUNins(b, "elapsystem", &i);
 
 	state = newst;
-	@:Pseudo(gdk, cpu)@
+	@:Pseudo(gdk,cpu)@
 	return MAL_SUCCEED;
 }
 
@@ -325,7 +325,7 @@ SYSmemStatistics(int *ret)
 	b = BUNins(b, "uordblks", &i);
 	i = m.fordblks;
 	b = BUNins(b, "fordblks", &i);
-	@:Pseudo(gdk, mem)@
+	@:Pseudo(gdk,mem)@
 	return MAL_SUCCEED;
 }
 
@@ -571,7 +571,7 @@ SYSioStatistics(int *ret)
 	i = ru.ru_nivcsw;
 	BUNins(b, "ninvcsw", &i);
 
-	@:Pseudo(gdk, io)@
+	@:Pseudo(gdk,io)@
 	return MAL_SUCCEED;
 }
 
@@ -580,7 +580,7 @@ SYSgdkEnv(int *ret)
 {
 	BAT *b = BATcopy(GDKenv);
 
-	@:Pseudo(gdk, env)@
+	@:Pseudo(gdk,env)@
 	return MAL_SUCCEED;
 }
 
@@ -598,7 +598,7 @@ SYSgdkThread(int *ret)
 		if (GDKthreads[i].pid) {
 			BUNins(b, &GDKthreads[i].tid, GDKthreads[i].name);
 		}
-	@:Pseudo(gdk, thread)@
+	@:Pseudo(gdk,thread)@
 	return MAL_SUCCEED;
 }
 

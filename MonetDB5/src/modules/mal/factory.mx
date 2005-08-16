@@ -82,7 +82,7 @@ FCTgetPlants(int *ret)
 	BAT *b;
 
 	b = BATnew(TYPE_str, TYPE_str, 256);
-	@:Pseudo(factory, name, plant)@
+	@:Pseudo(factory,name,plant)@
 	return MAL_SUCCEED;
 }
 
@@ -100,7 +100,7 @@ FCTgetOwners(int *ret)
 
 	(void) ret;
 	b = BATnew(TYPE_int, TYPE_str, 256);
-	@:Pseudo(factory, plantid, location)@
+	@:Pseudo(factory,plantid,location)@
 	return throwMessage("factory.getOwner", "not yet implemented");
 }
 
@@ -133,7 +133,7 @@ FCTgetLocations(int *ret)
 
 	(void) ret;
 	b = BATnew(TYPE_int, TYPE_str, 256);
-	@:Pseudo(factory, plantid, location)@
+	@:Pseudo(factory,plantid,location)@
 	return MAL_SUCCEED;
 }
 

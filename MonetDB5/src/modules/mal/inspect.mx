@@ -153,7 +153,7 @@ INSPECTmoduleNames(int *ret)
 	for (s = c->nspace; s; s = s->outer, i++)
 		BUNins(b, &int_nil, s->name);
 
-	@:Pseudo(view, scope, names)@
+	@:Pseudo(view,scope,names)@
 
 	return MAL_SUCCEED;
 }
@@ -184,7 +184,7 @@ INSPECTsymbolFind(int *ret, int kind)
 			}
 		s = s->outer;
 	}
-	@:Pseudo(view, symbol, name)@
+	@:Pseudo(view,symbol,name)@
 
 	return MAL_SUCCEED;
 }
@@ -246,7 +246,7 @@ INSPECTgetFunction(int *ret)
 			}
 		s = s->outer;
 	}
-	@:Pseudo(view, symbol, function)@
+	@:Pseudo(view,symbol,function)@
 
 	return MAL_SUCCEED;
 }
@@ -278,7 +278,7 @@ INSPECTgetModule(int *ret)
 			}
 		s = s->outer;
 	}
-	@:Pseudo(view, symbol, module)@
+	@:Pseudo(view,symbol,module)@
 
 	return MAL_SUCCEED;
 }
@@ -311,7 +311,7 @@ INSPECTgetkind(int *ret)
 			}
 		s = s->outer;
 	}
-	@:Pseudo(view, symbol, kind)@
+	@:Pseudo(view,symbol,kind)@
 
 	return MAL_SUCCEED;
 }
@@ -345,7 +345,7 @@ INSPECTgetaddress(int *ret)
 			}
 		s = s->outer;
 	}
-	@:Pseudo(view, symbol, address)@
+	@:Pseudo(view,symbol, address)@
 
 	return MAL_SUCCEED;
 }
@@ -378,7 +378,7 @@ INSPECTgetsignature(int *ret)
 			}
 		s = s->outer;
 	}
-	@:Pseudo(view, symbol, address)@
+	@:Pseudo(view, symbol,address)@
 
 	return MAL_SUCCEED;
 }
@@ -404,7 +404,7 @@ INSPECTgetDefinition(int *ret, str *nme, str *fcn)
 		}
 		s = s->peer;
 	}
-	@:Pseudo(view, fcn, stmt)@
+	@:Pseudo(view,fcn,stmt)@
 
 	return MAL_SUCCEED;
 }
@@ -450,7 +450,7 @@ INSPECTgetSignature(int *ret, str *mod, str *fcn)
 		s = s->peer;
 	}
 
-	@:Pseudo(view, input, result)@
+	@:Pseudo(view,input,result)@
 	return MAL_SUCCEED;
 }
 
@@ -475,7 +475,7 @@ INSPECTsymbolType(int *ret, str *mod, str *fcn)
 		}
 		s = s->peer;
 	}
-	@:Pseudo(view, fcn, type)@
+	@:Pseudo(view,fcn,type)@
 	return MAL_SUCCEED;
 }
 
@@ -491,7 +491,7 @@ INSPECTatom_names(int *ret)
 	for (i = 0; i < GDKatomcnt; i++)
 		BUNins(b, &i, ATOMname(i));
 
-	@:Pseudo(view, atom, name)@
+	@:Pseudo(view,atom,name)@
 
 	return MAL_SUCCEED;
 }
@@ -511,7 +511,7 @@ INSPECTatom_sup_names(int *ret)
 		BUNins(b, &i, ATOMname(k));
 	}
 
-	@:Pseudo(view, atom, sup_name)@
+	@:Pseudo(view,atom,sup_name)@
 
 	return MAL_SUCCEED;
 }
@@ -531,7 +531,7 @@ INSPECTatom_sizes(int *ret)
 		BUNins(b, &i, &s);
 	}
 
-	@:Pseudo(view, atom, size)@
+	@:Pseudo(view,atom,size)@
 
 	return MAL_SUCCEED;
 }
@@ -658,7 +658,7 @@ MANUALhelp(int *ret, str *mod)
 				s = s->peer;
 			}
 		}
-	@:Pseudo(help, Comment)@
+	@:Pseudo(help,Comment)@
 	return MAL_SUCCEED;
 }
 
@@ -683,7 +683,7 @@ MANUALhelp2(int *ret, str *mod, str *fcn)
 		}
 		s = s->peer;
 	}
-	@:Pseudo(help, Comment)@
+	@:Pseudo(help,Comment)@
 	return MAL_SUCCEED;
 }
 
