@@ -25,6 +25,8 @@ PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 # these defines are needed to get shttpd to compile the right way
 CFLAGS = -DEMBEDDED -DNO_CGI -DNO_AUTH
 
+EXTRA_DIST = shttpd.h
+
 lib__pf_support = {
 	DIR = libdir/MonetDB
 	SOURCES = \
