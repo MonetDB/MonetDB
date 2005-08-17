@@ -572,9 +572,9 @@ HASHinfoProfile(Hash *h, str s)
 		return;
 	snprintf(buf, MAXPATHLEN, "%s=\"\" mask=\"", s);
 	i = strlen(buf);
-	snprintf(buf + i, MAXPATHLEN - i, SZFMT "\" lim=\"", h->mask);
+	snprintf(buf + i, MAXPATHLEN - i, SZFMT "\" lim=\"", (size_t)h->mask);
 	i = strlen(buf);
-	snprintf(buf + i, MAXPATHLEN - i, SZFMT "\"", h->lim);
+	snprintf(buf + i, MAXPATHLEN - i, SZFMT "\"", (size_t)h->lim);
 	log0(buf);
 }
 
