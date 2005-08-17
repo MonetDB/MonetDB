@@ -544,6 +544,7 @@ static BAT* finalizeShredCtx(shredCtxStruct* shredCtx) {
 	}
 	/* */
 	BBPunfix(BBPcacheid(pv->bat));
+	pv->cnt = (nat)BATcount(pvu); /* set the correct #values in the bat */
 	pv->bat = pvu;
 
 	shredBAT* ap = &shredCtx->dstBAT[ATTR_PROP];
@@ -705,13 +706,19 @@ static INLINE nat direct_nat2bat(shredCtxStruct* shredCtx, int idx, nat i, nat v
         return i;
 }
 
-static INLINE nat direct_oid2bat(shredCtxStruct* shredCtx, int idx, nat i, oid v) {
+static INLINE nat direct_natoid2bat(shredCtxStruct* shredCtx, int idx, nat i, nat v_nat) {
         shredBAT* sb = & shredCtx->dstBAT[idx];
 #ifdef VERBOSE
         stream_printf(GDKout,"DIRECT[%s](%d) = %d@0\n",sb->def->name,i,v);
 #endif
         CHECK_BAT_SIZE(sb,i);
-        sb->cast.oidCAST[i] = v;
+	oid v_oid;
+	if ( v_nat != NIL ) {
+		v_oid = v_nat;
+	} else {
+        	v_oid = oid_nil;
+	}
+        sb->cast.oidCAST[i] = v_oid;
         return i;
 }
 
@@ -834,7 +841,7 @@ emitnode (shredCtxStruct* shredCtx, node_t node)
     if (
        direct_nat2bat(shredCtx,PRE_SIZE, node.pre,node.size)  == NIL ||
        direct_chr2bat(shredCtx,PRE_LEVEL,node.pre,node.level) == NIL ||
-       direct_oid2bat(shredCtx,PRE_PROP, node.pre,node.prop)  == NIL ||
+       direct_natoid2bat(shredCtx,PRE_PROP, node.pre,node.prop)  == NIL ||
        direct_chr2bat(shredCtx,PRE_KIND, node.pre,node.kind)  == NIL 
     )
         return -1;
@@ -1192,9 +1199,9 @@ shred_start_element(void *xmlCtx,
             if ( 
                qn_id  == NIL ||
                val_id == NIL ||
-               direct_oid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NIL ||
-               direct_oid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NIL ||
-               direct_oid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NIL
+               direct_natoid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NIL ||
+               direct_natoid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NIL ||
+               direct_natoid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NIL
             ) {
                 BAILOUT(xmlCtx);
             }
@@ -1252,9 +1259,9 @@ shred_start_element4SAX1(void *xmlCtx,
             if ( 
                qn_id  == NIL ||
                val_id == NIL ||
-               direct_oid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NIL ||
-               direct_oid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NIL ||
-               direct_oid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NIL
+               direct_natoid2bat(shredCtx,ATTR_OWN ,shredCtx->nnode_attr, node.pre) == NIL ||
+               direct_natoid2bat(shredCtx,ATTR_QN  ,shredCtx->nnode_attr, qn_id)    == NIL ||
+               direct_natoid2bat(shredCtx,ATTR_PROP,shredCtx->nnode_attr, val_id)   == NIL
             ) {
                 BAILOUT(xmlCtx);
             }
