@@ -141,14 +141,17 @@ instruction datastructures.
 @c
 short opCharacter[256];
 short idCharacter[256];
+short idCharacter2[256];
 
 void 
 initParser()
 {
 	int i;
 
-	for (i = 0; i < 256; i++)
+	for (i = 0; i < 256; i++){
+        idCharacter2[i]= isalpha(i) || isdigit(i);
 		idCharacter[i] = isalpha(i);
+    }
 	for (i = 0; i < 256; i++)
 	switch(i){
 	case '-': case '!': case '\\': case '$': case '%':
@@ -158,7 +161,9 @@ initParser()
 		opCharacter[i]=1; 
 	}
 	idCharacter['_']=1;
+	idCharacter2['_']=1;
 	idCharacter[TMPMARKER]=1;
+	idCharacter2[TMPMARKER]=1;
 }
 
 #undef isdigit
@@ -167,18 +172,14 @@ initParser()
 int 
 idLength(Client cntxt)
 {
-	int l;
-	str s = CURRENT(cntxt);
+	str s = CURRENT(cntxt),t=s;
 
 	if (!idCharacter[(int) (*s)])
 		return 0;
-	l = 1;
 	s++;
-	while (idCharacter[(int) (*s)] || isdigit(*s)) {
+	while (idCharacter2[(int) (*s)] ) 
 		s++;
-		l++;
-	}
-	return l;
+	return s-t;
 }
 @-
 Simple type identifiers can not be marked with a type variable.

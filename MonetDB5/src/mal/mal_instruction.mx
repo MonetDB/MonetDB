@@ -385,7 +385,8 @@ and the total time spent while executing the instruction.
     MALfcn  beforeCall; /* do something with the target object */
     MALfcn  afterCall;  /* do something with the result object */
     struct MALBLK *blk; /* resolved MAL function address */
-    int quickcleanup;    /* quick garbage control is needed */
+    short quickcleanup;    /* instruction needs garbage control */
+	short garbagecollect;	/* function needs garbage collector */
     int jump;       /* controlflow program counter */
 @-
 The MAL instruction representation. The strings should be garbage collected
@@ -429,7 +430,8 @@ for separate name space management.
 #define functionId(P)       (P)->fcnname
 #define setFunctionId(P,S)  (P)->fcnname= S
 #define functionName(P)     (P)->fcnname
-#define garbageControl(P)   (P)->quickcleanup
+#define garbageControl(P)   (P)->garbagecollect
+#define needsCleanup(P)   (P)->quickcleanup
 
 #define getInstrPtr(M,I)    (M)->stmt[I]
 #define getSignature(S)     getInstrPtr((S)->def,0)
@@ -741,14 +743,15 @@ Before compiling a large string, it makes sense to allocate approximately
 enough space to keep the intermediate code. Otherwise, we end up with a
 repeated extend on the MAL block, which really consumes a lot of memcpy
 resources.
-The average MAL string length has been derived from the
-test cases.
+The average MAL string length could been derived from the
+test cases. An error in the estimate is more expensive than
+just counting the lines.
 @c
-#define AVGMALLENGTH 15
 
 void prepareMalBlk(MalBlkPtr mb, str s){
-    int cnt ;
-	cnt = strlen(s) / AVGMALLENGTH;
+    int cnt=0;
+	for(; *s ; s++)
+	if( *s=='\n') cnt++;
     expandMalBlk(mb,cnt);
 }
 
@@ -802,6 +805,7 @@ with modifier
     p->ticks = 0;
     p->trace= 0;
     p->quickcleanup=0;
+    p->garbagecollect=0;
     p->jump=0;
     p->counter= 0;
 #endif
@@ -1324,14 +1328,14 @@ retryConstant:
                 vr->val.ival = int_nil;
                 break;
             } 
-            l= strtol(val,NULL,0);
+            l= strtoll(val,NULL,0);
             if( l> INT_MAX || l < INT_MIN){
                 if(type==TYPE_int)
                     setVarType(mb,idx, TYPE_lng);
                 vr->vtype= TYPE_lng;
                 vr->val.lval= l;
             } else {
-                vr->val.ival= l;
+                vr->val.ival= (int)l;
             }
             break;}
     case TYPE_void: 
@@ -1341,7 +1345,7 @@ retryConstant:
                 vr->val.oval = oid_nil;
                 break;
             }
-            vr->val.oval= strtol(val,NULL,10);
+            vr->val.oval= (oid)strtol(val,NULL,10);
             break; }
     case TYPE_flt: {double d= strtod(val,NULL); 
             if( tonil) vr->val.fval = flt_nil; 
@@ -1353,7 +1357,7 @@ retryConstant:
             else vr->val.dval= d;
             vr->vtype= type;
             break;}
-    case TYPE_lng: {lng l= strtol(val,NULL,0);
+    case TYPE_lng: {lng l= strtoll(val,NULL,0);
             if( tonil) vr->val.lval = lng_nil; 
             else vr->val.lval= l;
             vr->vtype= type;

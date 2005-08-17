@@ -704,7 +704,7 @@ the bind(namespace, batname, mode) operation. [todo]
 
 @{
 @= safeTarget
-    if( garbageControl(pci) ){ 
+    if( needsCleanup(pci) ){ 
 		for(i=0; i<pci->retc; i++) {
 			sbackup[i]= 0;  
 			backup[i]= 0;  
@@ -717,7 +717,7 @@ the bind(namespace, batname, mode) operation. [todo]
 		}
 	} 
 @= restoreTarget
-    if( garbageControl(pci) ){ 
+    if( needsCleanup(pci) ){ 
 		for(i=0; i<pci->retc; i++)
 		if( stk->stk[getArg(pci,i)].vtype == TYPE_bat){
 			if( backup[i] ){
@@ -1218,7 +1218,6 @@ if( ret != MAL_SUCCEED ) {
     pci= getInstrPtr(mb,stkpc);
 }
 @-
-@}
 During instruction interpretation we may have to be
 assured that the type associated with a destination variable
 is in line with the result of an operation or exceoption.
@@ -1331,6 +1330,7 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
             " forceall %d\n",forceall);
     printStack(GDKout,mb,stk);
 #endif
+    if( garbageControl(getInstrPtr(mb,0)) )
     for(k=0;k<mb->vtop; k++) {
         if(isVarGarbage(mb,k) && isTmpVar(mb,k)){
             garbageElement(v= &stk->stk[k]);
@@ -1348,6 +1348,7 @@ void garbageCollectAll(MalBlkPtr mb, MalStkPtr stk)
 {   int k;
 	ValPtr v;
 
+    if( garbageControl(getInstrPtr(mb,0)) )
     for(k=0;k<mb->vtop; k++) 
 	if( isVarGarbage(mb,k)) {
             garbageElement(v= &stk->stk[k]);

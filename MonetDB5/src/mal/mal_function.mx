@@ -30,6 +30,7 @@ An illustrative example is:
 function helloWorld(msg:str):str;
     io.print(msg);
     return msg;
+end hellowWorld;
 @end example
 
 The type checker ensures that all variables are assigned
@@ -363,7 +364,7 @@ and marking all non-temporary variables as being (potentially) used.
     if( mb->stop == 3) /* interactive use */
     {   int i;
         for(i=0;i<3; i++){
-            garbageControl(getInstrPtr(mb,i))= FALSE;
+            needsCleanup(getInstrPtr(mb,i))= FALSE;
         }
         for(i=0; i<mb->vtop; i++)
         if( !isTmpVar(mb,i))
@@ -509,16 +510,22 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 @-
 @node Function Clones, Commands and Patterns, Function definitions, MonetDB Assembler Language
 @- Function Clones
-MAL supports functions defined with type variables.
-Each time such a MAL function is called, a copy of
+MAL supports functions defined with type variables, i.e.
+polymorphic functions. The type variable is denoted
+by @code{any} and an optional index.
+Each time a polymorphic  MAL function is called, the
+symbol table is first inspected for the matching strongly typed
+version.  If non exists, a copy of
 the polymorphic routine is generated, whereafter the type
 variables are replaced with their concrete types.
-The function body is immediately type checked and if
-a correct clone can be obtained.
+The function body is immediately type checked and, if
+no errors occured, added to the symbol table.
 
-Beware that polymorphic type variables are propagated
-throughout the function body. This may invalidate 
-type resolutions taken @ref{Type resolution}.
+The generic type variable @code{any} designates an unknown type, which may
+be filled at type resolution time. Unlike indexed polymorphic type 
+arguments, @code{any} type arguments match possibly with different 
+concrete types.
+
 
 An example of a parameterised function is shown below:
 @example
@@ -528,9 +535,10 @@ function helloWorld(msg:any$1):any$1;
 @end example
 The type variables ensure that the return type equals the
 argument type. Type variables can be used at any place
-where a type is permitted. The degenerated type 
-variable @code{any} designates an unknown type, which may
-be filled at type resolution time.
+where a type name is permitted. 
+Beware that polymorphic type variables are propagated
+throughout the function body. This may invalidate 
+type resolutions taken @ref{Type resolution}.
 
 This version of @code{helloWorld} can also be used for
 other arguments types, i.e. @code{bit,sht,lng,flt,dbl,...}.

@@ -385,12 +385,12 @@ Beware, this is not yet effectuated in the interpreter.
             setVarType(mb, getArg(p,i),ts);
             setFixed(mb, getArg(p,i));
         }
-        @:prepostProcess(ts,i)@
+        @:prepostProcess(ts,i,mb)@
     }
     if( p == getSignature(s))
     for(i=p->retc;i<p->argc;i++) {
         int ts= getArgType(mb,p,i);
-        @:prepostProcess(ts,i)@
+        @:prepostProcess(ts,i,mb)@
     }
 @-
 It may happen that an argument was still untyped and as a result of
@@ -464,11 +464,14 @@ set the garbagge collection flag.
 @= prepostProcess
     if(isaBatType(@1)){
         setVarCleanup(mb,getArg(p,@2)) = TRUE;
-		garbageControl(p)= TRUE;
+        garbageControl(getInstrPtr(@3,0)) = TRUE;
+		needsCleanup(p)= TRUE;
     }
-    else if( !isPolyType(@1)  && @1< TYPE_any && @1>=0 && ATOMstorage(@1)== TYPE_str){
+    else if( !isPolyType(@1)  && @1< TYPE_any && 
+            @1>=0 && ATOMstorage(@1)== TYPE_str){
+        garbageControl(getInstrPtr(@3,0)) = TRUE;
         setVarCleanup(mb,getArg(p,@2)) = TRUE;
-		garbageControl(p)= TRUE;
+		needsCleanup(p)= TRUE;
     } 
 @c
 #ifdef DEBUG_MAL_RESOLVE
@@ -723,7 +726,7 @@ using the target type.
             setVarType(mb,getArg(p,k),rhs);
             setFixed(mb,getArg(p,k));
         }
-        @:prepostProcess(s1,0)@
+        @:prepostProcess(s1,0,mb)@
     }
 }
 @-
