@@ -157,6 +157,7 @@ comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 mal_export str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int order, int printhead, int printorderby);
 mal_export str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat);
+mal_export str IOprint_formatted_nil(stream *fd, str format, int *ret);
 
 typedef struct {
 	int up, down;
@@ -498,6 +499,14 @@ str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 	@:formatConversion(@2,*s)@
 	return MAL_SUCCEED;
 }
+@c
+@:printFormatted(chr,c)@
+@:printFormatted(sht,d)@
+@:printFormatted(int,d)@
+@:printFormatted(lng,d)@ /* should become LNGFMT */
+@:printFormatted(flt,f)@
+@:printFormatted(dbl,f)@
+
 @-
 String nil testing is slightly different.
 @c
@@ -604,13 +613,6 @@ IOprint_formatted_bit(int *ret, ptr fmt, bit *s)
 		return throwMessage("system.print", "end-of-file error");
 	return MAL_SUCCEED;
 }
-
-@:printFormatted(chr,c)@
-@:printFormatted(sht,d)@
-@:printFormatted(int,d)@
-@:printFormatted(lng,d)@
-@:printFormatted(flt,f)@
-@:printFormatted(dbl,f)@
 
 @-
 @+ Bulk export/loading
