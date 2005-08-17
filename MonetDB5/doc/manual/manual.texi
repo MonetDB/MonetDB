@@ -97,13 +97,15 @@ Table of contents
 @end menu
 * Factory definitions::
 * Modules::
-* MAL interpreter::
-* Atom types::
 * Type resolution::
+@menu
+* Atomary types::
+@end menu
 * Boxed variables::
 * Property management::
-* Name space management::
 @end menu
+
+* MAL interpreter::
 
 * Optimizer landscape::
 @menu
@@ -192,28 +194,23 @@ Give a brief introduction to Mapi, JDBC, ODBC,Perl....
 @node Factory definitions, Type resolution , Commands and Patterns, MonetDB Assembler Language
 @include mal_factory.bdy.texi
 
-@node Type resolution, Atom types, Factory definitions, MonetDB Assembler Language
-@include mal_type.bdy.texi
+@node Type resolution, Atomary types, Factory definitions, MonetDB Assembler Language
 @include mal_resolve.bdy.texi
-@node Atom types, Boxed variables, Type resolution, MonetDB Assembler Language
+@node Atomary types, Boxed variables, Type resolution, MonetDB Assembler Language
 @include mal_atom.bdy.texi
 
-@node Boxed variables, Name space management , Atom types, MonetDB Assembler Language
+@node Boxed variables, Property management , Atomary types, MonetDB Assembler Language
 @include mal_box.bdy.texi
 
-@node Name space management, Property management, Boxed variables , MonetDB Assembler Language
-@include mal_namespace.bdy.texi
-@include mal_module.bdy.texi
-
-@node Property management,  Modules, Name space management, MonetDB Assembler Language
+@node Property management,  Modules, Boxed variables, MonetDB Assembler Language
 @include mal_properties.bdy.texi
 
-@node Modules , MAL interpreter , Property management, MonetDB Assembler Language
+@node Modules , MAL interpreter , Property management, TOC
 @include mal_import.bdy.texi
 
 @node MAL interpreter, Optimizer landscape, Modules, TOC
-@include mal_linker.bdy.texi
 @include mal_interpreter.bdy.texi
+@include mal_linker.bdy.texi
 @include mal_stack.bdy.texi
 
 @node Optimizer landscape, What optimizers to consider?, MAL interpreter, TOC
