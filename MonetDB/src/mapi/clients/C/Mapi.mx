@@ -785,6 +785,21 @@ struct MapiStruct {
 	stream *from, *to;
 };
 
+/* this definition is a straight copy from sql_query.mx */
+typedef enum sql_query_t {
+	Q_END = 0,
+	Q_PARSE = 1,
+	Q_RESULT = 2,
+	Q_TABLE = 3,
+	Q_UPDATE = 4,
+	Q_DATA = 5,
+	Q_SCHEMA = 6,
+	Q_TRANS = 7,
+	Q_DEBUG = 8,
+	Q_DEBUGP = 9,
+	Q_PREPARE = 10
+} sql_query_t;
+
 struct MapiResultSet {
 	struct MapiResultSet *next;
 	struct MapiStatement *hdl;
@@ -1357,7 +1372,7 @@ close_result(MapiHdl hdl)
 	assert(mid != NULL);
 	if (mid->trace)
 		printf("closing result set\n");
-	if (result->tableid >= 0) {
+	if (result->tableid >= 0 && result->querytype != Q_PREPARE) {
 		if (mid->active && !mid->active->needmore && read_into_cache(mid->active, 0) != MOK)
 			return MERROR;
 		assert(hdl->npending_close == 0 || (hdl->npending_close > 0 && hdl->pending_close != NULL));
@@ -1472,9 +1487,11 @@ mapi_next_result(MapiHdl hdl)
 	while (hdl->result != NULL) {
 		if (close_result(hdl) != MOK)
 			return MERROR;
-		if (hdl->result && (hdl->result->querytype == -1 || hdl->result->querytype == 3 ||	/* Q_TABLE */
-				    hdl->result->querytype == 4 ||	/* Q_UPDATE */
-				    hdl->result->errorstr != NULL))
+		if (hdl->result &&
+		    (hdl->result->querytype == -1 ||
+		     hdl->result->querytype == Q_TABLE ||
+		     hdl->result->querytype == Q_UPDATE ||
+		     hdl->result->errorstr != NULL))
 			return 1;
 	}
 	return hdl->needmore ? MMORE : MOK;
@@ -1491,7 +1508,7 @@ mapi_more_results(MapiHdl hdl)
 		/* there are no results at all */
 		return 0;
 	}
-	if (result->querytype == 3 /* Q_TABLE */  &&
+	if (result->querytype == Q_TABLE &&
 	    hdl->mid->active == hdl) {
 		/* read until next result (if any) */
 		read_into_cache(hdl, -1);
@@ -1503,8 +1520,9 @@ mapi_more_results(MapiHdl hdl)
 	}
 	while (result->next) {
 		result = result->next;
-		if (result->querytype == -1 || result->querytype == 3 ||	/* Q_TABLE */
-		    result->querytype == 4 ||	/* Q_UPDATE */
+		if (result->querytype == -1 ||
+		    result->querytype == Q_TABLE ||
+		    result->querytype == Q_UPDATE ||
 		    result->errorstr != NULL)
 			return 1;
 	}
@@ -2817,9 +2835,8 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	} else if (strcmp(tag, "querytype") == 0) {
 		if (anchors[0]) {
 			result->querytype = atoi(anchors[0]);
-			if (result->querytype == 4 ||	/* Q_UPDATE */
-				result->querytype == 7)		/* Q_TRANS */
-			{
+			if (result->querytype == Q_UPDATE ||
+			    result->querytype == Q_TRANS) {
 				result->fieldcnt = 1;
 				result->row_count = 1;
 			}
@@ -2988,7 +3005,11 @@ read_into_cache(MapiHdl hdl, int lookahead)
 
 	mid = hdl->mid;
 	assert(mid->active == hdl);
-	assert(hdl->needmore == 0);
+	if (hdl->needmore) {
+		hdl->needmore = 0;
+		stream_flush(mid->to);
+		check_stream(mid, mid->to, "write error on stream", "read_into_cache", mid->error);
+	}
 	if ((result = hdl->active) == NULL)
 		result = hdl->result;	/* may also be NULL */
 	for (;;) {
@@ -3042,8 +3063,9 @@ read_into_cache(MapiHdl hdl, int lookahead)
 				hdl->active = result;
 			}
 			add_cache(result, strdup(line));
-			if (lookahead > 0 && (result->querytype == -1 /* unknown (not SQL) */  ||
-					      result->querytype == 3 /* Q_TABLE */ ))
+			if (lookahead > 0 &&
+			    (result->querytype == -1 /* unknown (not SQL) */ ||
+			     result->querytype == Q_TABLE))
 				return mid->error;
 			break;
 		}
@@ -3072,7 +3094,7 @@ mapi_virtual_result(MapiHdl hdl, int columns, const char **columnnames, const ch
 	result->fieldcnt = columns;
 	REALLOC(result->fields, columns);
 	memset(result->fields, 0, columns * sizeof(*result->fields));
-	result->querytype = 3;	/* Q_TABLE */
+	result->querytype = Q_TABLE;
 	for (i = 0; i < columns; i++) {
 		if (columnnames && columnnames[i])
 			result->fields[i].columnname = strdup(columnnames[i]);
@@ -4176,7 +4198,7 @@ mapi_rows_affected(MapiHdl hdl)
 	mapi_hdl_check(hdl, "mapi_rows_affected");
 	if ((result = hdl->result) == NULL)
 		return 0;
-	if (result->querytype == 4) {	/* Q_UPDATE */
+	if (result->querytype == Q_UPDATE) {
 		int i;
 
 		for (i = 0; result->cache.rows[i][0] != '[' && result->cache.rows[i][0] != '='; i++)
