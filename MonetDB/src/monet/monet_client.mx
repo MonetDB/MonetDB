@@ -551,6 +551,12 @@ readClient(Client c)
 		}
 		PARSEDEBUG THRprintf(GDKerr, "%.*s", c->top - (c->input + offset), c->input + offset);
 
+		if (c->input + offset == c->top) {
+			/* We didn't get any data this time round.
+			   This means that the other side doesn't have
+			   any more, so we will have to make do. */
+			break;
+		}
 		/* this loop wil check whether we got enough data for
 		   a complete MIL statement, and in addition will
 		   normalize line endings. */
