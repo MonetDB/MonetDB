@@ -20,7 +20,7 @@ EXTRA_DIST = rules.mk bootstrap lady.gif configure.ag RunMtest.in \
 		RunMtest.bat.in RunMapprove.in RunMapprove.bat.in \
 		sysdefs.h.in MonetDB.spec MonetDB.spec.in HowToStart \
 		HowToStart-Win32.txt RunMserver.bat.in rpm.mk.in \
-		RunMapiClient.bat.in
+		RunMapiClient.bat.in RunMserver.in
 
 EXTRA_DIST_DIR = NT tests
 
