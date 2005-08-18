@@ -83,6 +83,12 @@ mal_export str setDynamicType(MalBlkPtr mb, VarPtr v, int tpe, int pc);
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"       
 
+@-
+We can speed up the copying, provided we ignore copying ptr-based
+objects.
+@c
+#define VALcopy2(lhs,rhs) if( rhs->vtype < TYPE_str) *lhs = *rhs; else VALcopy(lhs,rhs);
+
 ptr getArgValue(MalStkPtr stk, InstrPtr pci, int k){
     int j=0;
     ValRecord *v;
@@ -252,7 +258,7 @@ of the return statement.
             if( k== pp->argc-1) k--; 
 
             rhs = &env->stk[pci->argv[i]];
-            VALcopy(lhs,rhs);
+            VALcopy2(lhs,rhs);
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.br.id, TRUE);
         }
@@ -277,7 +283,7 @@ pattern operators to deal with it.
     if( isConstant(mb,i) && isVarUsed(mb,i) ){
         lhs = &stk->stk[i];
         rhs = &getVarConstant(mb,i);
-        VALcopy(lhs,rhs);
+        VALcopy2(lhs,rhs);
     } else {
         int tpe= getVarType(mb,i);
         lhs = &stk->stk[i];
@@ -605,7 +611,7 @@ possible change in the control flow.
             for(i=0;i < pci->retc; i++){
                 rhs = &stk->stk[pp->argv[i]];
                 lhs = &env->stk[pci->argv[i]];
-                VALcopy(lhs,rhs);
+                VALcopy2(lhs,rhs);
 				for(k= pci->retc; k< pci->argc; k++)
 					if( getArg(pci,k) == getArg(pci,i) ) goto noinc;
 				if( lhs->vtype == TYPE_bat )
@@ -645,7 +651,7 @@ cause errors in multi-assignment statements.
     for(k=0, i=pci->retc; k<pci->retc && i<pci->argc; i++,k++){
         lhs = &stk->stk[pci->argv[k]];
         rhs = &stk->stk[pci->argv[i]];
-        VALcopy(lhs,rhs);
+        VALcopy2(lhs,rhs);
 		if( lhs->vtype == TYPE_bat)
 			BBPincref(lhs->val.br.id, TRUE);
     }
