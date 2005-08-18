@@ -215,11 +215,6 @@ being called.
         pci= pcicaller;
     } else {
         newStack(stk,mb->vsize);
-		/* selectively clear stack , does not work yet, it leaves uninitialized data
-		if( env && mbcaller){
-			bzero((char *) stk, stackSize(getInstrPtr(mb,0)->argc));
-		} else
-		*/
 		bzero((char *) stk, stackSize(mb->vtop));
 		stk->stktop= mb->vtop; 
 		stk->stksize= mb->vsize;
@@ -314,9 +309,9 @@ pattern operators to deal with it.
     stream_printf(GDKout,"Stack after loop\n");
     printStack(GDKout,mb,stk); fflush(GDKout);
 #endif
-    if( !stk->keepAlive){
-		if( env!= stk)
-			garbageCollectAll(mb,stk);
+    if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) ){
+		if( env!= stk) 
+                garbageCollectAll(mb,stk);
         else garbageCollector(mb,stk);
 	}
     return ret;
@@ -356,7 +351,7 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	stream_printf(GDKout,"Stack after loop\n");
 	printStack(GDKout,mb,stk); fflush(GDKout);
 #endif
-	if( !stk->keepAlive){
+    if( !stk->keepAlive && garbageControl(getInstrPtr(mb,0)) ){
 		if( env!= stk)
 			garbageCollectAll(mb,stk);
         else garbageCollector(mb,stk);
@@ -490,13 +485,7 @@ elements in the value stack.
     case PATcall: @:patterncall@ break;
     case CMDcall: @:commandcall@ break;
     case FACcall: @:factorycall@ break;
-    case FCNcall: 
-				if (pci->fcn) {
-                    @:commandcall@ 
-                } else {
-                    @:functioncall@ 
-                	break;
-                }
+    case FCNcall: @:functioncall@ break;
     case NOOPsymbol:
 	case REMsymbol:
     case COMMANDsymbol:
@@ -508,7 +497,7 @@ elements in the value stack.
             ret= shutdownFactory(mb);
 		if( total  )
 			cntxt->timer= GDKusec()-total;
-		if( pcicaller)
+		if( pcicaller && garbageControl(getInstrPtr(mb,0)) )
 			garbageCollectAll(mb, stk);
         @:endProfile@
         goto MALevalExit;
@@ -612,13 +601,16 @@ possible change in the control flow.
                 rhs = &stk->stk[pp->argv[i]];
                 lhs = &env->stk[pci->argv[i]];
                 VALcopy2(lhs,rhs);
-				for(k= pci->retc; k< pci->argc; k++)
-					if( getArg(pci,k) == getArg(pci,i) ) goto noinc;
-				if( lhs->vtype == TYPE_bat )
-					BBPincref(lhs->val.br.id, TRUE); 
+                if( needsCleanup(pci)){
+                    for(k= pci->retc; k< pci->argc; k++)
+                        if( getArg(pci,k) == getArg(pci,i) ) goto noinc;
+                    if( lhs->vtype == TYPE_bat )
+                        BBPincref(lhs->val.br.id, TRUE); 
+                }
 				noinc:;
             }
-			garbageCollectAll(mb, stk);
+            if( garbageControl(getInstrPtr(mb,0)) )
+                garbageCollectAll(mb, stk);
 			/* propagate fake response time */
 			if( total )
 				cntxt->timer= GDKusec()-total;
@@ -840,15 +832,10 @@ non-returned values.
 @-
 @= functioncall
 {	
-    if( pci->blk== NULL)
-        ret= raiseException(mb,stkpc,MALexception,
-            "reference to MAL function missing\n");
-    else {
-        stk->pcup = stkpc;
-		@:safeTarget@
-        ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
-		@:restoreTarget@
-    }
+    stk->pcup = stkpc;
+    @:safeTarget@
+    ret= runMAL(cntxt,pci->blk,1,mb,stk,pci);
+    @:restoreTarget@
     @:resultParameter@
 }
 @-
@@ -1336,7 +1323,6 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
             " forceall %d\n",forceall);
     printStack(GDKout,mb,stk);
 #endif
-    if( garbageControl(getInstrPtr(mb,0)) )
     for(k=0;k<mb->vtop; k++) {
         if(isVarGarbage(mb,k) && isTmpVar(mb,k)){
             garbageElement(v= &stk->stk[k]);
@@ -1354,7 +1340,6 @@ void garbageCollectAll(MalBlkPtr mb, MalStkPtr stk)
 {   int k;
 	ValPtr v;
 
-    if( garbageControl(getInstrPtr(mb,0)) )
     for(k=0;k<mb->vtop; k++) 
 	if( isVarGarbage(mb,k)) {
             garbageElement(v= &stk->stk[k]);

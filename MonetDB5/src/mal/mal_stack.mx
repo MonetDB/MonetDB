@@ -71,7 +71,6 @@ typedef struct MALSTK {
 
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + sizeof(MalStack))
 #define newStack(S,CNT) S= (MalStkPtr) alloca(stackSize(CNT));\
-            bzero((char *) S, stackSize(0)); \
             (S)->stksize=CNT;
 
 
