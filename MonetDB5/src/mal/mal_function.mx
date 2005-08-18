@@ -36,6 +36,10 @@ end hellowWorld;
 The type checker ensures that all variables are assigned
 a value before they are used as arguments. Moreover, variables
 introduced within guarded blocks may not be used elsewhere.
+
+Input variables changed in the process preferably also appear in
+the target list, i.e. the instruction models the input/output flow.
+This greatly simplifies future optimization decisions.
 @{
 @-
 The information maintained for each MAL function should both
@@ -417,7 +421,6 @@ we have to remember the scope assigned to a variable.
 @c
 void chkDeclarations(MalBlkPtr mb,int reset){
 	int pc,i, k;
-	int fnd;
 	InstrPtr p;
 	short s, blks[MAXDEPTH], top= 0, blkId=1;
 	str nme;
@@ -431,31 +434,35 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 		getVarScope(mb,i)=0;
 	}
 
-	/* all signature variables are declared */
+	/* all signature variables are declared at outer level */
 	p= getInstrPtr(mb,0);
-	for(k=0;k<p->argc; k++)
+	for(k=0;k<p->argc; k++){
 		getVarScope(mb,p->argv[k])= 1;
+        getVarDepth(mb,p->argv[k])= 0;
+    }
 	/* and the function name as well */
 	k= findVariable(mb,functionName(p));
 	getVarScope(mb,k) = 1;
+	getVarDepth(mb,k) = 1;
 	nme= functionName(p);
 	/* printFunction(GDKout,mb, LIST_MAL_ALL);*/
 
 	for(pc=0;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
-		for(k=p->retc;k<p->argc; k++){
-			    fnd=0;
-			    s= getVarScope(mb,getArg(p,k)); 
-                if(s)
-			    for( i=0; i< top; i++){
-			        if( blks[i] == s) { fnd++; break;}
-			    }
-			    if( (getVarDepth(mb,getArg(p,k)) >top  || fnd == 0)  &&
-			        !isTmpVar(mb, p->argv[k])  ){
+		for(k=p->retc;k<p->argc; k++) 
+        if( isConstant(mb, getArg(p,k)) ||
+            isTypeVar(mb, getArg(p,k)) ) {
+            /* ok defined */
+        } else 
+        if( (s = getVarScope(mb,getArg(p,k)) ) ==0 ) {
+                GDKerror("'%s' may not be used before being set in %s[%d]\n",
+                    getVarName(mb,getArg(p,k)), nme,pc);
+			        mb->errors++;
+        } else 
+        if( getVarDepth(mb,getArg(p,k)) >= top){
 			        GDKerror("'%s' may not be used before being set in %s[%d]\n",
 			            getVarName(mb,getArg(p,k)), nme,pc);
 			        mb->errors++;
-			    }
 		}
 		for(k=0; k<p->retc; k++){
 			if( getVarScope(mb, getArg(p,k)) == 0){
@@ -463,15 +470,10 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			    getVarDepth(mb, getArg(p,k)) = top-1;
 			} else {
 			    /* is the block still active ? */
+			    s = getVarScope(mb,getArg(p,k));
 			    for( i=0; i< top; i++)
-			    if( blks[i] == getVarScope(mb,getArg(p,k)) ) break;
-			    if( i< top && blks[i]!= getVarScope(mb,getArg(p,k)) && 
-			        !isTmpVar(mb, getArg(p,k))){
-/*
-	printf("blk %d defs %d [",i,defs[p->argv[k]]);
-	for(z=0;z<top; z++) printf(" %d",blks[z]);
-	printf("]\n");
-*/
+			    if( blks[i] == s ) break;
+			    if( i< top && blks[i]!= s && !isTmpVar(mb, getArg(p,k))){
 			            GDKerror("'%s' used outside declaration scope in %s[%d]\n",
 			            getVarName(mb,getArg(p,k)), nme,pc);
 			        mb->errors++;
@@ -483,11 +485,6 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			if( top <MAXDEPTH-2){
 			    blks[top]= blkId;
 			    blks[++top]= 0;
-/*
-	printf("enter block [");
-	for(z=0;z<top; z++) printf(" %d",blks[z]);
-	printf("]\n");
-*/
 			} else {
 			    GDKerror("too deeply nested  MAL program\n");
 			    mb->errors++;
@@ -498,11 +495,6 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			if( top > 0) {
 			    top--;
 			    blks[top]= 0;
-/*
-	printf("leave block %d [",blkId);
-	for(z=0;z<top; z++) printf(" %d",blks[z]);
-	printf("]\n");
-*/
 			}
 	}
 }

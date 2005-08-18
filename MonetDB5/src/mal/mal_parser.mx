@@ -845,7 +845,7 @@ the function definition in a particular module instead of the current one.
 	/* get calling parameters */
 	ch= currChar(cntxt);
 	while( ch !=')' && ch && !NL(ch)){
-		@:binding@
+		@:binding(1)@
 		/* the last argument may be variable length */
 		if( MALkeyword(cntxt,"...",3) ){
 			curInstr->varargs++;
@@ -887,7 +887,7 @@ during the final phase reshuffle the return values to the beginning (?)
 		while( ch !=')' && ch && !NL(ch)){
 			int varid=0;
 			int type= TYPE_any;
-			@:binding@
+			@:binding(0)@
 			if( (ch=currChar(cntxt)) != ',') {
 				 if( ch==')') break;
 				 return (MalBlkPtr) parseError(cntxt, "',' expected\n");
@@ -942,8 +942,21 @@ The common theme in definitions is to parse the argument list.
                 setPolymorphic(curInstr,type,TRUE);
             setVarType(curBlk,varid,type);
             @:propList(varid)@
-		} else
-            parseError(cntxt,"Argument identifier defined twice\n");
+		} else 
+        if( @1){
+            parseError(cntxt,"Argument defined twice\n");
+			typeElm(cntxt,getVarType(curBlk,varid));
+            @:propList(varid)@
+        } else {
+            advance(cntxt,l);
+			type= typeElm(cntxt,getVarType(curBlk,varid));
+            if( type != getVarType(curBlk,varid))
+                parseError(cntxt,"Incompatible argument type\n");
+            if( isPolymorphic(type) )
+                setPolymorphic(curInstr,type,TRUE);
+            setVarType(curBlk,varid,type);
+            @:propList(varid)@
+        }
 	} else if( currChar(cntxt)== ':' ){
 		type= typeElm(cntxt,TYPE_any);
         varid = newTmpVariable(curBlk,type);
