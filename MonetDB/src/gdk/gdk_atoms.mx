@@ -1165,14 +1165,30 @@ chrToStr(str *dst, int *len, chr *src)
 	if (*src == chr_nil) {
 		strcpy(*dst, "nil");
 		return 3;
-	} else if (*src & 0x80) {
-		(*dst)[0] = 0xC0 | ((*src >> 6) & 0x3);
-		(*dst)[1] = 0x80 | (*src & 0x3F);
-		(*dst)[2] = 0;
-		return 2;
 	} else {
-		(*dst)[0] = *src;
-		(*dst)[1] = 0;
+		str p = *dst;
+
+		*p++ = '\'';
+		if (*src & 0x80) {
+			*p++ = 0xC0 | ((*src >> 6) & 0x3);
+			*p++ = 0x80 | (*src & 0x3F);
+			*p++ = '\'';
+			*p = 0;
+		} else {
+			if (0 <= *src && *src < ' ') {
+				snprintf(p, chrStrlen - 3,
+					 "\\%03o", * (unsigned char *) src);
+				p += 4;
+			} else if (*src == '\\' || *src == '\'') {
+				*p++ = '\\';
+				*p++ = *src;
+			} else {
+				*p++ = *src;
+			}
+			*p++ = '\'';
+			*p = 0;
+		}
+		return (int) (p - *dst);
 	}
 	return 1;
 }

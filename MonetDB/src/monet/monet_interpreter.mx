@@ -1382,13 +1382,27 @@ interpret_cast(str atom, int argc, ValPtr val, ValPtr res)
 		}
 		res->vtype = tpe;
 	} else if (tpe == TYPE_str) {
-		if (ATOMcmp(val->vtype, VALptr(val), ATOMnilptr(val->vtype))) {
+		if (ATOMcmp(val->vtype, VALptr(val), ATOMnilptr(val->vtype)) == 0) {
+			/* nil */
+			res->val.sval = ATOMnil(TYPE_str);
+		} else if (val->vtype == TYPE_chr) {
+			/* special case for chr -> str */
+			char *s = res->val.sval = GDKmalloc(3);
+			if (val->val.cval[0] & 0x80) {
+				/* interpret as latin-1 (ISO-8859-1) */
+				*s++ = 0xC0 | ((val->val.cval[0] >> 6) & 0x3);
+				*s++ = 0x80 | (val->val.cval[0] & 0x3F);
+			} else {
+				/* (7-bit) ASCII */
+				*s++ = val->val.cval[0];
+			}
+			*s++ = 0;
+			res->len = s - res->val.sval;
+		} else {
 			char *s = 0;
 
 			res->len = 1 + VALformat(&s, val);
 			res->val.sval = s;
-		} else {
-			res->val.sval = ATOMnil(TYPE_str);
 		}
 		res->vtype = TYPE_str;
 	} else {

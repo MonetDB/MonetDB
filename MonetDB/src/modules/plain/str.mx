@@ -1325,14 +1325,23 @@ strConcat(str *res, str s, ptr val, int t)
 	str valstr = NULL;
 	size_t l1;
 	int l2 = 0;
+	char buf[7], *p = buf;
 
 	RETURN_NIL_IF(strNil(s) || ATOMcmp(t, val, ATOMnilptr(t)) == 0, TYPE_str);
 	if (t <= 0)
 		return GDK_FAIL;
 	l1 = strlen(s);
 	if (t != TYPE_str) {
-		BATatoms[t].atomToStr(&valstr, &l2, val);
-		val = (ptr) valstr;
+		if (t == TYPE_chr) {
+			/* put value in int to avoid warning from compiler */
+			l2 = * (char *) val;
+			@:UTF8_PUTCHAR(l2,p)@
+			l2 = p - buf;
+			val = (ptr) buf;
+		} else {
+			BATatoms[t].atomToStr(&valstr, &l2, val);
+			val = (ptr) valstr;
+		}
 	} else {
 		l2 = strlen((str) val);
 	}
