@@ -118,6 +118,9 @@ sql_logdir=@Xlocalstatedir@@DIRSEP@@PACKAGE@@DIRSEP@log
 # default port to address an Mserver for an XQuery session
 xquery_port=45789
 
+# default port to address the HTTP server for pathfinder
+pf_httpd_port=8080
+
 #output mode "dm" = pretty printed, 
 #            "xml" = enforce XML with enclosing <XQueryResult> tags
 xquery_output=dm                          
