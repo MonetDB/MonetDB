@@ -178,7 +178,8 @@
 , /* fn:boolean (item*) as boolean */                                    \
   { .ns = PFns_fn, .loc = "boolean",                                     \
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
-    .ret_ty = PFty_boolean () }                                          \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = PFbui_fn_boolean_item }                                       \
 , /* fn:contains (string?, string?) as boolean */                        \
   { .ns = PFns_fn, .loc = "contains",                                    \
     .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \
@@ -577,7 +578,8 @@
 , /* fn:count (item*) as integer */                                      \
   { .ns = PFns_fn, .loc = "count",                                       \
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
-    .ret_ty = PFty_integer () }                                          \
+    .ret_ty = PFty_integer (),                                           \
+    .alg = PFbui_fn_count }                                              \
 /* untypedAtomic needs to be casted into double therefore */             \
 /* fn:max (double*) is the last entry for fn:max */                      \
 , /* fn:avg (integer*) as double */                                      \
@@ -1130,8 +1132,8 @@ PFfun_xquery_fo ()
         unsigned int arity;
         PFty_t par_ty[XQUERY_FO_MAX_ARITY]; 
         PFty_t ret_ty;
-        struct PFalg_pair_t (*alg) (struct PFalg_op_t *,
-                                    struct PFalg_pair_t *);
+        struct PFla_pair_t (*alg) (const struct PFla_op_t *,
+                                   struct PFla_pair_t *);
     } xquery_fo[] = XQUERY_FO;
 
     PFqname_t    qn;

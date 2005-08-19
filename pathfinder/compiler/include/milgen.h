@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * Algebra to MIL tree compilation
+ * Physical algebra to MIL tree compilation
  *
  *
  * Copyright Notice:
@@ -27,8 +27,15 @@
  * $Id$
  */
 
-#include "milalgebra.h"
+#ifndef MILGEN_H
+#define MILGEN_H
+
+#include "physical.h"
 #include "mil.h"
 
 /** Generate MIL tree from algebra expression tree */
-PFmil_t *PFmilgen (PFma_op_t *);
+PFmil_t *PFmilgen (PFpa_op_t *);
+
+#endif  /* MILGEN_H */
+
+/* vim:set shiftwidth=4 expandtab: */

@@ -73,45 +73,52 @@ typedef struct {
 			   (strncmp((x)->suffix, (y)->suffix, OPT_NAME_SUFFIXLEN(x)) == 0)))
 
 typedef struct {
-        opt_name_t name; /* variable name  */
-        unsigned short scope; /* scope in which var was defined */
+    opt_name_t name;           /* variable name  */
+    unsigned short scope;      /* scope in which var was defined */
 
-	/* a set of statements that last assigned to it (may be multiple due to if-then-else) */
-        unsigned short lastset[OPT_REFS]; 
-        unsigned int stmt_nr[OPT_REFS]; 
-	unsigned char setmax; /* last occupied position  in lastset/stmt_nr */
+    /* a set of statements that last assigned to it
+     * (may be multiple due to if-then-else) */
+    unsigned short lastset[OPT_REFS]; 
+    unsigned int stmt_nr[OPT_REFS]; 
+    unsigned char setmax;      /* last occupied position  in lastset/stmt_nr */
 
 
-	/* range alive references in lastset/stmt_nr for a certain 'cond' */
-	unsigned char always; /* bitmask: var always assigned in cond (bitpos)? */
-	unsigned char setlo[OPT_CONDS+OPT_CONDS];
-	unsigned char sethi[OPT_CONDS+OPT_CONDS];
+    /* range alive references in lastset/stmt_nr for a certain 'cond' */
+    unsigned char always; /* bitmask: var always assigned in cond (bitpos)? */
+    unsigned char setlo[OPT_CONDS+OPT_CONDS];
+    unsigned char sethi[OPT_CONDS+OPT_CONDS];
 } opt_var_t;
 
-/* for each condlevel, there is a cond (even) for the if and (odd) for the else block 
- * 0 = root, 1 = unused, 2 = first iflevel 3= first elselevel, 4 = second iflevel, etc 
+/* for each condlevel, there is a cond (even) for the if and (odd) for
+ * the else block 
+ * 0 = root, 1 = unused, 2 = first iflevel 3= first elselevel,
+ * 4 = second iflevel, etc 
  */
 #define OPT_COND(o) ((o)->condlevel + (o)->condlevel + (o)->condifelse[(o)->condlevel])
 
 typedef struct {
-        unsigned int curstmt; /* number of detected MIL statements so far */
-        unsigned int scope; /* current scope depth */
-        unsigned int curvar; /* length of variable stack */
-        unsigned int iflevel; /* how many conditionals have we passed? */
-        unsigned int optimize; 
+    unsigned int curstmt;  /* number of detected MIL statements so far */
+    unsigned int scope;    /* current scope depth */
+    unsigned int curvar;   /* length of variable stack */
+    unsigned int iflevel;  /* how many conditionals have we passed? */
+    unsigned int optimize; 
 
-	unsigned char if_statement; 
-	unsigned char else_statement;
-        unsigned short condlevel; /* number of nested conditional blocks recorded on stack (<OPT_CONDS) */
-        unsigned short condscopes[OPT_CONDS]; /* scopes where each conditional block starts */
-        unsigned char condifelse[OPT_CONDS]; /* scopes where each conditional block starts */
+    unsigned char if_statement; 
+    unsigned char else_statement;
+    unsigned short condlevel;              /* number of nested conditional
+                                              blocks recorded on stack
+                                              (<OPT_CONDS) */
+    unsigned short condscopes[OPT_CONDS];  /* scopes where each conditional
+                                              block starts */
+    unsigned char condifelse[OPT_CONDS];   /* scopes where each conditional
+                                              block starts */
 
-        opt_stmt_t stmts[OPT_STMTS]; /* line buffer */
-        opt_var_t vars[OPT_VARS]; /* variable stack */
-	char *buf[3];
-	size_t off[3], len[3];
-	int sec;
-        FILE *fp; 
+    opt_stmt_t stmts[OPT_STMTS];   /* line buffer */
+    opt_var_t vars[OPT_VARS];      /* variable stack */
+    char *buf[3];
+    size_t off[3], len[3];
+    int sec;
+    FILE *fp; 
 } opt_t; /* should take ~1.5MB of RAM resources */
 
 #define opt_output(o,x) ((o)->sec = x)
@@ -119,3 +126,5 @@ typedef struct {
 opt_t *opt_open(int optimize);
 void opt_close(opt_t *o, char** prologue, char** query, char** epilogue);
 void opt_mil(opt_t *o, char* milbuf);
+
+/* vim:set shiftwidth=4 expandtab: */

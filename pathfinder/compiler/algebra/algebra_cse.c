@@ -42,43 +42,43 @@
 
 static PFarray_t *subexps = NULL;
 
-static PFalg_op_t * eliminate_subexp (PFalg_op_t *new);
-static PFalg_op_t * find_subexp (PFalg_op_t *new);
+static PFla_op_t * eliminate_subexp (PFla_op_t *new);
+static PFla_op_t * find_subexp (PFla_op_t *new);
 
-static PFalg_op_t * find_lit_tbl (PFalg_op_t *new);
-static PFalg_op_t * find_empty_tbl (PFalg_op_t *new);
-static PFalg_op_t * find_doc_tbl (PFalg_op_t *new);
-static PFalg_op_t * find_disjunion (PFalg_op_t *new);
-static PFalg_op_t * find_intersect (PFalg_op_t *new);
-static PFalg_op_t * find_cross (PFalg_op_t *new);
-static PFalg_op_t * find_difference (PFalg_op_t *new);
-static PFalg_op_t * find_eqjoin (PFalg_op_t *new);
-static PFalg_op_t * find_scjoin (PFalg_op_t *new);
-static PFalg_op_t * find_select (PFalg_op_t *new);
-static PFalg_op_t * find_type (PFalg_op_t *new);
-static PFalg_op_t * find_cast (PFalg_op_t *new);
-static PFalg_op_t * find_project (PFalg_op_t *new);
-static PFalg_op_t * find_rownum (PFalg_op_t *new);
-static PFalg_op_t * find_binary (PFalg_op_t *new);
-static PFalg_op_t * find_unary (PFalg_op_t *new);
-static PFalg_op_t * find_sum (PFalg_op_t *new);
-static PFalg_op_t * find_count (PFalg_op_t *new);
-static PFalg_op_t * find_distinct (PFalg_op_t *new);
-static PFalg_op_t * find_strconcat (PFalg_op_t *new);
-static PFalg_op_t * find_merge_adjacent (PFalg_op_t *new);
-static PFalg_op_t * find_roots (PFalg_op_t *new);
-static PFalg_op_t * find_fragment (PFalg_op_t *new);
-static PFalg_op_t * find_frag_union (PFalg_op_t *new);
-static PFalg_op_t * find_empty_frag (PFalg_op_t *new);
+static PFla_op_t * find_lit_tbl (PFla_op_t *new);
+static PFla_op_t * find_empty_tbl (PFla_op_t *new);
+static PFla_op_t * find_doc_tbl (PFla_op_t *new);
+static PFla_op_t * find_disjunion (PFla_op_t *new);
+static PFla_op_t * find_intersect (PFla_op_t *new);
+static PFla_op_t * find_cross (PFla_op_t *new);
+static PFla_op_t * find_difference (PFla_op_t *new);
+static PFla_op_t * find_eqjoin (PFla_op_t *new);
+static PFla_op_t * find_scjoin (PFla_op_t *new);
+static PFla_op_t * find_select (PFla_op_t *new);
+static PFla_op_t * find_type (PFla_op_t *new);
+static PFla_op_t * find_cast (PFla_op_t *new);
+static PFla_op_t * find_project (PFla_op_t *new);
+static PFla_op_t * find_rownum (PFla_op_t *new);
+static PFla_op_t * find_binary (PFla_op_t *new);
+static PFla_op_t * find_unary (PFla_op_t *new);
+static PFla_op_t * find_sum (PFla_op_t *new);
+static PFla_op_t * find_count (PFla_op_t *new);
+static PFla_op_t * find_distinct (PFla_op_t *new);
+static PFla_op_t * find_strconcat (PFla_op_t *new);
+static PFla_op_t * find_merge_adjacent (PFla_op_t *new);
+static PFla_op_t * find_roots (PFla_op_t *new);
+static PFla_op_t * find_fragment (PFla_op_t *new);
+static PFla_op_t * find_frag_union (PFla_op_t *new);
+static PFla_op_t * find_empty_frag (PFla_op_t *new);
 
 static bool tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b);
 
 
-PFalg_op_t *
-PFcse_eliminate (PFalg_op_t *n)
+PFla_op_t *
+PFcse_eliminate (PFla_op_t *n)
 {
     /* initialize subexpression array */
-    subexps = PFarray (sizeof (PFalg_op_t *));
+    subexps = PFarray (sizeof (PFla_op_t *));
 
     /* initiate subexpression elimination */
     return eliminate_subexp (n);
@@ -91,13 +91,13 @@ PFcse_eliminate (PFalg_op_t *n)
  * to @ new in the array of existing expressions, we return
  * the old one. Otherwise, @ new itself is used.
  */
-PFalg_op_t *
-eliminate_subexp (PFalg_op_t *new)
+PFla_op_t *
+eliminate_subexp (PFla_op_t *new)
 {
     int i;
 
     /* recursively call subexpression elimination on all children of 'n' */
-    for (i = 0; i < PFALG_OP_MAXCHILD && new->child[i] !=NULL; i++)
+    for (i = 0; i < PFLA_OP_MAXCHILD && new->child[i] !=NULL; i++)
         new->child[i] = eliminate_subexp (new->child[i]);
 
     /* check if this node (n) was already built */
@@ -115,7 +115,7 @@ eliminate_subexp (PFalg_op_t *new)
 bool
 tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
 {
-    int i;
+    unsigned int i;
     bool mismatch = false;
 
     /* schemata are not equal if they have a different number of attributes */
@@ -142,11 +142,6 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
                 if (strcmp(a.atoms[i].val.str, b.atoms[i].val.str))
                     mismatch = true;
                 break;
-            /* if type is node, compare node member of union */
-            case aat_node:
-                if (a.atoms[i].val.node != b.atoms[i].val.node)
-                    mismatch = true;
-                break;
             /* if type is float, compare float member of union */
             case aat_dec:
                 if (a.atoms[i].val.dec != b.atoms[i].val.dec)
@@ -167,6 +162,13 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
                 if (!PFqname_eq (a.atoms[i].val.qname, b.atoms[i].val.qname))
                     mismatch = true;
                 break;
+
+            /* anything else is actually bogus (e.g. there are no
+             * literal nodes */
+            default:
+                PFinfo (OOPS_WARNING, "literal value that do not make sense");
+                mismatch = true;
+                break;
         }
         if (mismatch)
             break;
@@ -181,18 +183,18 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
  * existing operators. It must have the same schema and the
  * same tuples as a table already in the array.
  */
-PFalg_op_t *
-find_lit_tbl (PFalg_op_t *new)
+PFla_op_t *
+find_lit_tbl (PFla_op_t *new)
 {
     unsigned int subex_idx;
-    int j;
+    unsigned int j;
 
     assert (new);
 
     /* search for table in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -233,7 +235,7 @@ find_lit_tbl (PFalg_op_t *new)
      * the table is a new operator, so add it to the array of
      * existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -244,18 +246,18 @@ find_lit_tbl (PFalg_op_t *new)
  * existing operators. It must have the same schema as a table
  * already in the array.
  */
-PFalg_op_t *
-find_empty_tbl (PFalg_op_t *new)
+PFla_op_t *
+find_empty_tbl (PFla_op_t *new)
 {
     unsigned int subex_idx;
-    int j;
+    unsigned int j;
 
     assert (new);
 
     /* search for table in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -283,7 +285,7 @@ find_empty_tbl (PFalg_op_t *new)
      * the table is a new operator, so add it to the array of
      * existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -295,8 +297,8 @@ find_empty_tbl (PFalg_op_t *new)
  * document table. This table can only exist once, so it suffices to
  * search for operators of kind 'document table'.
  */
-PFalg_op_t *
-find_doc_tbl (PFalg_op_t *new)
+PFla_op_t *
+find_doc_tbl (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -305,9 +307,9 @@ find_doc_tbl (PFalg_op_t *new)
     /* search for document table in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
-        if ((old->kind != aop_doc_tbl)
+        if ((old->kind != la_doc_tbl)
             || (old->child[0] != new->child[0])
             || (old->child[1] != new->child[1]))
             continue;
@@ -319,7 +321,7 @@ find_doc_tbl (PFalg_op_t *new)
      * the table is a new operator, so add it to the array of
      * existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -330,8 +332,8 @@ find_doc_tbl (PFalg_op_t *new)
  * that @ new has the same two children as a union operator in the
  * array of existing operators.
  */
-PFalg_op_t *
-find_disjunion (PFalg_op_t *new)
+PFla_op_t *
+find_disjunion (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -343,7 +345,7 @@ find_disjunion (PFalg_op_t *new)
      */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -369,7 +371,7 @@ find_disjunion (PFalg_op_t *new)
      * the union is a new operator, so add it to the array of existing
      * subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -380,7 +382,7 @@ find_disjunion (PFalg_op_t *new)
  * operators. We check, if @ new has the same child nodes as
  * another existing expression.
  */
-static PFalg_op_t * find_intersect (PFalg_op_t *new)
+static PFla_op_t * find_intersect (PFla_op_t *new)
 {
     return find_disjunion (new);
 }
@@ -391,7 +393,7 @@ static PFalg_op_t * find_intersect (PFalg_op_t *new)
  * operators. We check, if @ new has the same child nodes as
  * another existing expression.
  */
-static PFalg_op_t * find_cross (PFalg_op_t *new)
+static PFla_op_t * find_cross (PFla_op_t *new)
 {
     return find_disjunion (new);
 }
@@ -403,8 +405,8 @@ static PFalg_op_t * find_cross (PFalg_op_t *new)
  * child nodes and order of child nodes as the node from the
  * array.
  */
-PFalg_op_t *
-find_difference (PFalg_op_t *new)
+PFla_op_t *
+find_difference (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -416,7 +418,7 @@ find_difference (PFalg_op_t *new)
      */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -437,7 +439,7 @@ find_difference (PFalg_op_t *new)
      * the difference is a new operator, so add it to the array
      * of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -448,8 +450,8 @@ find_difference (PFalg_op_t *new)
  * the array of existing expressions. The equivalent must
  * have the same children and join attributes.
  */
-PFalg_op_t *
-find_eqjoin (PFalg_op_t *new)
+PFla_op_t *
+find_eqjoin (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -461,7 +463,7 @@ find_eqjoin (PFalg_op_t *new)
      */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -487,7 +489,7 @@ find_eqjoin (PFalg_op_t *new)
      * the equi-join is a new operator, so add it to the array
      * of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -499,8 +501,8 @@ find_eqjoin (PFalg_op_t *new)
  * have the same children and represent the same location step
  * and kind test.
  */
-PFalg_op_t *
-find_scjoin (PFalg_op_t *new)
+PFla_op_t *
+find_scjoin (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -512,7 +514,7 @@ find_scjoin (PFalg_op_t *new)
      */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -522,14 +524,19 @@ find_scjoin (PFalg_op_t *new)
              */
             if (new->child[0] != old->child[0]
              || new->child[1] != old->child[1]
+             /* FIXME
              || new->sem.scjoin.test != old->sem.scjoin.test
+             */
              || new->sem.scjoin.axis != old->sem.scjoin.axis
-             || (old->sem.scjoin.test == aop_name
+             /* FIXME
+             || (old->sem.scjoin.test == la_name
                  &&  PFqname_eq(new->sem.scjoin.str.qname,
                                 old->sem.scjoin.str.qname))
-             || (old->sem.scjoin.test == aop_pi_tar
+             || (old->sem.scjoin.test == la_pi_tar
                  && strcmp(new->sem.scjoin.str.target,
-                           old->sem.scjoin.str.target)))
+                           old->sem.scjoin.str.target))
+             */
+                           )
                 continue;
 
             /*
@@ -544,7 +551,7 @@ find_scjoin (PFalg_op_t *new)
      * the equi-join is a new operator, so add it to the array
      * of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -556,8 +563,8 @@ find_scjoin (PFalg_op_t *new)
  * 0. An equivalent operator must have the same child node and
  * selection attribute.
  */
-PFalg_op_t *
-find_select (PFalg_op_t *new)
+PFla_op_t *
+find_select (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -566,7 +573,7 @@ find_select (PFalg_op_t *new)
     /* search for selection operator in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -590,7 +597,7 @@ find_select (PFalg_op_t *new)
      * the selection is a new operator, so add it to the array
      * of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -602,8 +609,8 @@ find_select (PFalg_op_t *new)
  * have the same child node, the same typed and result attribute,
  * and the same requested type.
  */
-PFalg_op_t *
-find_type (PFalg_op_t *new)
+PFla_op_t *
+find_type (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -612,7 +619,7 @@ find_type (PFalg_op_t *new)
     /* search for type test operator in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -638,7 +645,7 @@ find_type (PFalg_op_t *new)
      * the type test is a new operator, so add it to the array
      * of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -650,8 +657,8 @@ find_type (PFalg_op_t *new)
  * have the same child node, the same typed attribute, and the same
  * requested type.
  */
-PFalg_op_t *
-find_cast (PFalg_op_t *new)
+PFla_op_t *
+find_cast (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -660,7 +667,7 @@ find_cast (PFalg_op_t *new)
     /* search for type cast operator in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -685,7 +692,7 @@ find_cast (PFalg_op_t *new)
      * the type cast is a new operator, so add it to the array
      * of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -697,8 +704,8 @@ find_cast (PFalg_op_t *new)
  * child node, attribute number, and projection list as its
  * equivalent operator.
  */
-PFalg_op_t *
-find_project (PFalg_op_t *new)
+PFla_op_t *
+find_project (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -707,8 +714,8 @@ find_project (PFalg_op_t *new)
     /* search for projection operator in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
-        int         j;
+        PFla_op_t    *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
+        unsigned int  j;
 
         if (new->kind == old->kind) {
 
@@ -743,7 +750,7 @@ find_project (PFalg_op_t *new)
      * the projection is a new operator, so add it to the array
      * of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -755,8 +762,8 @@ find_project (PFalg_op_t *new)
  * child node, row-numbering attribute, partitioning attribute,
  * and sort-by list.
  */
-PFalg_op_t *
-find_rownum (PFalg_op_t *new)
+PFla_op_t *
+find_rownum (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -765,8 +772,8 @@ find_rownum (PFalg_op_t *new)
     /* search for row-numbering operator in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
-        int         j;
+        PFla_op_t    *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
+        unsigned int  j;
 
         if (new->kind == old->kind) {
 
@@ -812,7 +819,7 @@ find_rownum (PFalg_op_t *new)
      * the projection is a new operator, so add it to the array
      * of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -823,8 +830,8 @@ find_rownum (PFalg_op_t *new)
  * the array of existing expressions. It must have the same
  * child nodes, operand attributes, and result attribute.
  */
-PFalg_op_t *
-find_binary (PFalg_op_t *new)
+PFla_op_t *
+find_binary (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -833,7 +840,7 @@ find_binary (PFalg_op_t *new)
     /* search for binary expression in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -859,7 +866,7 @@ find_binary (PFalg_op_t *new)
      * the binary expression is a new operator, so add it to
      * the array of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -870,8 +877,8 @@ find_binary (PFalg_op_t *new)
  * the array of existing expressions. It must have the same
  * child nodes, operand attribute, and result attribute.
  */
-PFalg_op_t *
-find_unary (PFalg_op_t *new)
+PFla_op_t *
+find_unary (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -880,7 +887,7 @@ find_unary (PFalg_op_t *new)
     /* search for unary expression in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -905,7 +912,7 @@ find_unary (PFalg_op_t *new)
      * the unary expression is a new operator, so add it to
      * the array of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -917,7 +924,7 @@ find_unary (PFalg_op_t *new)
  * child node, summed-up attribute, result attribute and list
  * of partitioning attributes.
  */
-static PFalg_op_t * find_sum (PFalg_op_t *new)
+static PFla_op_t * find_sum (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -926,7 +933,7 @@ static PFalg_op_t * find_sum (PFalg_op_t *new)
     /* search for sum expression in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -952,7 +959,7 @@ static PFalg_op_t * find_sum (PFalg_op_t *new)
      * the sum expression is a new operator, so add it to
      * the array of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -963,7 +970,7 @@ static PFalg_op_t * find_sum (PFalg_op_t *new)
  * the array of existing expressions. It must have the same
  * child node, result attribute and list of partitioning attributes.
  */
-static PFalg_op_t * find_count (PFalg_op_t *new)
+static PFla_op_t * find_count (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -972,7 +979,7 @@ static PFalg_op_t * find_count (PFalg_op_t *new)
     /* search for count expression in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -997,7 +1004,7 @@ static PFalg_op_t * find_count (PFalg_op_t *new)
      * the row count expression is a new operator, so add it to
      * the array of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -1008,7 +1015,7 @@ static PFalg_op_t * find_count (PFalg_op_t *new)
  * already exists in the array of existing expressions. It must
  * have the same child node.
  */
-static PFalg_op_t * find_distinct (PFalg_op_t *new)
+static PFla_op_t * find_distinct (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -1017,7 +1024,7 @@ static PFalg_op_t * find_distinct (PFalg_op_t *new)
     /* search for distinct expression in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind == old->kind) {
 
@@ -1037,7 +1044,7 @@ static PFalg_op_t * find_distinct (PFalg_op_t *new)
      * the distinct expression is a new operator, so add it to
      * the array of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -1048,7 +1055,7 @@ static PFalg_op_t * find_distinct (PFalg_op_t *new)
  * in the array of existing expressions. It must have the same child
  * node.
  */
-static PFalg_op_t * find_strconcat (PFalg_op_t *new)
+static PFla_op_t * find_strconcat (PFla_op_t *new)
 {
     return find_distinct (new);
 }
@@ -1060,7 +1067,7 @@ static PFalg_op_t * find_strconcat (PFalg_op_t *new)
  * nodes and the same order of child nodes, just like a difference
  * expression.
  */
-static PFalg_op_t * find_merge_adjacent (PFalg_op_t *new)
+static PFla_op_t * find_merge_adjacent (PFla_op_t *new)
 {
     return find_difference (new);
 }
@@ -1070,8 +1077,8 @@ static PFalg_op_t * find_merge_adjacent (PFalg_op_t *new)
  * See if we already saw a boolean grouping expression
  * (`seqty1' or `all') like @a new during CSE.
  */
-static PFalg_op_t *
-find_boolean_grouping (PFalg_op_t *new)
+static PFla_op_t *
+find_boolean_grouping (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -1080,7 +1087,7 @@ find_boolean_grouping (PFalg_op_t *new)
     /* search for distinct expression in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
         if (new->kind != old->kind)
             continue;
@@ -1104,7 +1111,7 @@ find_boolean_grouping (PFalg_op_t *new)
      * the grouping expression is a new operator, so add it to
      * the array of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -1116,7 +1123,7 @@ find_boolean_grouping (PFalg_op_t *new)
  * We can use find_distinct () for this pupose, it offers the
  * required functionality.
  */
-static PFalg_op_t * find_roots (PFalg_op_t *new)
+static PFla_op_t * find_roots (PFla_op_t *new)
 {
     return find_distinct (new);
 }
@@ -1128,7 +1135,7 @@ static PFalg_op_t * find_roots (PFalg_op_t *new)
  * We can use find_distinct () for this pupose, it offers the
  * required functionality.
  */
-static PFalg_op_t * find_fragment (PFalg_op_t *new)
+static PFla_op_t * find_fragment (PFla_op_t *new)
 {
     return find_distinct (new);
 }
@@ -1140,7 +1147,7 @@ static PFalg_op_t * find_fragment (PFalg_op_t *new)
  * in the array of existing operators.
  * The find_disjunion () routine offers the required functionality.
  */
-static PFalg_op_t * find_frag_union (PFalg_op_t *new)
+static PFla_op_t * find_frag_union (PFla_op_t *new)
 {
     return find_disjunion (new);
 }
@@ -1150,7 +1157,7 @@ static PFalg_op_t * find_frag_union (PFalg_op_t *new)
  * Check whether an empty fragment has already been created. If so,
  * return the existing one.
  */
-static PFalg_op_t * find_empty_frag (PFalg_op_t *new)
+static PFla_op_t * find_empty_frag (PFla_op_t *new)
 {
     unsigned int subex_idx;
 
@@ -1159,9 +1166,9 @@ static PFalg_op_t * find_empty_frag (PFalg_op_t *new)
     /* search for empty fragment in the array of existing operators */
     for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
 
-        PFalg_op_t *old = *((PFalg_op_t **) PFarray_at (subexps, subex_idx));
+        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
 
-        if (old->kind != aop_empty_frag)
+        if (old->kind != la_empty_frag)
             continue;
 
         return old;
@@ -1171,7 +1178,7 @@ static PFalg_op_t * find_empty_frag (PFalg_op_t *new)
      * the empty fragment has not yet been created, so add it to the
      * array of existing subexpressions
      */
-    *((PFalg_op_t **) PFarray_add (subexps)) = new;
+    *((PFla_op_t **) PFarray_add (subexps)) = new;
 
     return new;
 }
@@ -1180,121 +1187,121 @@ static PFalg_op_t * find_empty_frag (PFalg_op_t *new)
 /**
  *
  */
-PFalg_op_t *
-find_subexp (PFalg_op_t *new)
+PFla_op_t *
+find_subexp (PFla_op_t *new)
 {
     switch (new->kind)
     {
-        case aop_lit_tbl:
+        case la_lit_tbl:
             return find_lit_tbl (new);
 
-        case aop_empty_tbl:
+        case la_empty_tbl:
             return find_empty_tbl (new);
 
-        case aop_doc_tbl:
+        case la_doc_tbl:
             return find_doc_tbl (new);
 
-        case aop_disjunion:
+        case la_disjunion:
             return find_disjunion (new);
 
-        case aop_intersect:
+        case la_intersect:
             return find_intersect (new);
 
-        case aop_cross:
+        case la_cross:
             return find_cross (new);
 
-        case aop_difference:
+        case la_difference:
             return find_difference (new);
 
-        case aop_eqjoin:
+        case la_eqjoin:
             return find_eqjoin (new);
 
-        case aop_scjoin:
+        case la_scjoin:
             return find_scjoin (new);
 
-        case aop_select:
+        case la_select:
             return find_select (new);
 
-        case aop_type:
+        case la_type:
             return find_type (new);
 
-        case aop_cast:
+        case la_cast:
             return find_cast (new);
 
-        case aop_project:
+        case la_project:
             return find_project (new);
 
-        case aop_rownum:
+        case la_rownum:
             return find_rownum (new);
 
-        case aop_serialize:
+        case la_serialize:
             return new;
 
-        case aop_num_add:
-        case aop_num_subtract:
-        case aop_num_multiply:
-        case aop_num_divide:
-        case aop_num_modulo:
-        case aop_num_eq:
-        case aop_num_gt:
-        case aop_bool_and:
-        case aop_bool_or:
+        case la_num_add:
+        case la_num_subtract:
+        case la_num_multiply:
+        case la_num_divide:
+        case la_num_modulo:
+        case la_num_eq:
+        case la_num_gt:
+        case la_bool_and:
+        case la_bool_or:
             return find_binary (new);
 
-        case aop_num_neg:
-        case aop_bool_not:
+        case la_num_neg:
+        case la_bool_not:
 	    return find_unary (new);
 
-        case aop_sum:
+        case la_sum:
 	    return find_sum (new);
 
-        case aop_count:
+        case la_count:
 	    return find_count (new);
 
-        case aop_distinct:
+        case la_distinct:
 	    return find_distinct (new);
 
 	/* no common subexpression elimination performed here, since, even
 	 * if two element constructors are identical, they create two
 	 * separate instances of the element(s)
 	 */
-        case aop_element:
-        case aop_element_tag:
-        case aop_attribute:
-        case aop_textnode:
-        case aop_docnode:
-        case aop_comment:
-        case aop_processi:
+        case la_element:
+        case la_element_tag:
+        case la_attribute:
+        case la_textnode:
+        case la_docnode:
+        case la_comment:
+        case la_processi:
 	    return new;
 
-        case aop_concat:
+        case la_concat:
 	    return find_strconcat (new);
 
-        case aop_merge_adjacent:
+        case la_merge_adjacent:
 	    return find_merge_adjacent (new);
 
-        case aop_seqty1:
-        case aop_all:
+        case la_seqty1:
+        case la_all:
             return find_boolean_grouping (new);
 
-        case aop_roots:
+        case la_roots:
 	    return find_roots (new);
 
-        case aop_fragment:
+        case la_fragment:
 	    return find_fragment (new);
 
-        case aop_frag_union:
+        case la_frag_union:
 	    return find_frag_union (new);
 
-        case aop_empty_frag:
+        case la_empty_frag:
 	    return find_empty_frag (new);
 
-        case aop_dummy:
+        case la_dummy:
             PFoops (OOPS_FATAL, "illegal node in algebra expression tree");
             break;
 
         /* pacify picky compilers: */
-        case aop_string_val:
+        case la_string_val:
             PFoops (OOPS_FATAL, "case 'aop_string_val' not handled in switch(new->kind) in function find_subexp() in compiler/algebra/algebra_cse.c");
             assert(0); /* we should never come here! */
             break;
@@ -1302,3 +1309,5 @@ find_subexp (PFalg_op_t *new)
 
     return new;
 }
+
+/* vim:set shiftwidth=4 expandtab: */

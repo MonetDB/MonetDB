@@ -299,7 +299,7 @@ FunParam:           param (seqtype, var)                        =  68 (10);
 #define MAX_KIDS 10
 
 /** mnemonic algebra constructors */
-#include "algebra_mnemonic.h"
+#include "logical_mnemonic.h"
 
 /**
  * Variable environment (Gamma in our papers)
@@ -309,14 +309,15 @@ static PFarray_t  *env = NULL;
 /**
  * Current loop relation
  */
-static PFalg_op_t *loop = NULL;
+static PFla_op_t *loop = NULL;
 
 /* Constructor for environment entry */
-static PFalg_env_t enventry (PFvar_t *var, PFalg_op_t *result, PFarray_t *doc);
+static PFla_env_t enventry (PFvar_t *var, PFla_op_t *result, PFarray_t *doc);
 
-static PFalg_op_t *type_test (PFty_t ty, PFalg_pair_t e, PFalg_op_t *loop);
+/* worker to implement type tests */
+static PFla_op_t *type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop);
 
-static PFalg_op_t *locstep_dummy (PFalg_axis_t axis, PFty_t seqty);
+static PFla_op_t *locstep_dummy (PFalg_axis_t axis, PFty_t seqty);
 
 /**
  * Function parameter variable names (from PFfun_t).
@@ -340,8 +341,6 @@ reduce (PFcnode_t * p, int goalnt)
     /* determine rule that matches for this non-terminal */
     rule = PFcore2alg_rule (STATE_LABEL (p), goalnt);
 
-    /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
-
     /* initialize the kids[] vector */
     for (unsigned short i = 0; i < MAX_KIDS; i++)
         kids[i] = NULL;
@@ -353,8 +352,11 @@ reduce (PFcnode_t * p, int goalnt)
     nts = PFcore2alg_nts[rule];
     PFcore2alg_kids (p, rule, kids);
 
-    /* PFinfo (OOPS_NOTICE, "in rule %u", rule); */
-
+    /*
+     * Few translation rules require top-down processing. We figure
+     * them out here and skip the recursive compilation. The respective
+     * rules will explicitly trigger the compilation of their kids.
+     */
     switch (rule) {
         /* Query:              main (FunctionDecls, CoreExpr) */
         case 1:
@@ -403,8 +405,8 @@ reduce (PFcnode_t * p, int goalnt)
              * XQuery Core result.
              */
             reduce (kids[1], nts[1]);
-            A(p) = (PFalg_pair_t) {
-                     .rel = serialize (PFalg_set_to_alg (A(R(p)).frag),
+            A(p) = (PFla_pair_t) {
+                     .rel = serialize (PFla_set_to_la (A(R(p)).frag),
                                        A(R(p)).rel),
                      .frag = NULL };
             break;
@@ -448,7 +450,7 @@ reduce (PFcnode_t * p, int goalnt)
              * Given the updated environment and the new loop relation
              * compile e2. Return the (possibly intermediate) result.
              *
-             * env,loop,delta: e1 => q1,delta1
+             * env,loop: e1 => q1,delta1
              *
              *        pos
              * q(v) = --- X proj_iter:inner,item(row_pos1:<iter,pos> q1)
@@ -458,21 +460,20 @@ reduce (PFcnode_t * p, int goalnt)
              *
              * map = proj_outer:iter,inner(row_pos1:<iter,pos> q1)
              *
-             * updated_env,(v->q(v)) e updated_env,loop(v),delta1:
-             *                                                e2 => (q2,delta2)
+             * updated_env,(v->q(v)) e updated_env,loop(v): e2 => (q2,delta2)
              * -----------------------------------------------------------------
-             * env,loop,delta: for &v in e1 return e2 =>
+             * env,loop: for &v in e1 return e2 =>
              * (proj_iter:outer, pos:pos1,item
              *   (row_pos1:<iter,pos>/outer (q2 |X| (iter = inner)map)), delta2)
              */
-            PFalg_op_t   *var;
-            PFalg_op_t   *opt_var;
-            PFalg_op_t   *old_loop; 
-            PFalg_op_t   *map;
+            PFla_op_t   *var;
+            PFla_op_t   *opt_var;
+            PFla_op_t   *old_loop; 
+            PFla_op_t   *map;
             PFarray_t    *old_env;
             unsigned int  i;
-            PFalg_env_t   e;
-            PFalg_op_t   *new_bind;
+            PFla_env_t   e;
+            PFla_op_t   *new_bind;
 
             /* initiate translation of e1 */
             reduce (kids[1], nts[1]);
@@ -489,10 +490,10 @@ reduce (PFcnode_t * p, int goalnt)
 
             /* save old environment */
             old_env = env;
-            env = PFarray (sizeof (PFalg_env_t));
+            env = PFarray (sizeof (PFla_env_t));
 
             /* insert $v and "its document" into NEW environment */
-            *((PFalg_env_t *) PFarray_add (env))
+            *((PFla_env_t *) PFarray_add (env))
                 = enventry (LLL(p)->sem.var, var, A(LR(p)).frag);
 
             /* save old loop operator */
@@ -529,24 +530,24 @@ reduce (PFcnode_t * p, int goalnt)
                                        "item", aat_int));
 
                 /* insert $p into NEW environment */
-                *((PFalg_env_t *) PFarray_add (env)) =
-                    enventry (LLR(p)->sem.var, opt_var, PFalg_empty_set ());
+                *((PFla_env_t *) PFarray_add (env)) =
+                    enventry (LLR(p)->sem.var, opt_var, PFla_empty_set ());
             }
 
             /* update all variable bindings in old environment and put
              * them into new environment */
             for (i = 0; i < PFarray_last (old_env); i++) {
-                e = *((PFalg_env_t *) PFarray_at (old_env, i));
+                e = *((PFla_env_t *) PFarray_at (old_env, i));
                 new_bind = project (eqjoin (e.rel, map, "iter", "outer"),
                                    proj ("iter", "inner"),
                                    proj ("pos", "pos"),
                                    proj ("item", "item"));
-                *((PFalg_env_t *) PFarray_add (env)) =
+                *((PFla_env_t *) PFarray_add (env)) =
                     enventry (e.var, new_bind, e.frag);
             }
 
             /* translate e2 under the specified conditions (updated
-             * environment, loop(v), delta1)
+             * environment, loop(v))
              */
             reduce (kids[2], nts[2]);
 
@@ -557,7 +558,7 @@ reduce (PFcnode_t * p, int goalnt)
             env = old_env;
 
             /* compute result using old env and old loop. */
-            A(p) = (struct PFalg_pair_t) {
+            A(p) = (struct PFla_pair_t) {
                      .rel = project (rownum (eqjoin(A(R(p)).rel,
                                                     map, "iter", "inner"),
                                              "pos1",
@@ -571,12 +572,12 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* OptVar:             var */
         case 6:
-            /* (will never be called anyway, Rule 4 is top-down. */
+            /* (will never be called anyway, Rule 4 is top-down) */
             break;
 
         /* OptVar:             nil */
         case 7:
-            /* (will never be called anyway, Rule 4 is top-down. */
+            /* (will never be called anyway, Rule 4 is top-down) */
             break;
 
         /* CoreExpr:           let (letbind (var, CoreExpr), CoreExpr) */
@@ -590,11 +591,11 @@ reduce (PFcnode_t * p, int goalnt)
              * variable $v and add the resulting binding to the environment.
              * Compile e2 in the enriched environment.
              *
-             * env,loop,delta: e1 => (q1,delta1)
+             * env,loop: e1 => (q1,delta1)
              *
-             * env + (v -> q(v)),loop,delta1: e2 => (q2,delta2)
+             * env + (v -> q(v)),loop: e2 => (q2,delta2)
              * ------------------------------------------------------------------
-             * env,loop,delta: let $v := e1 return e2 => (q2,delta2)
+             * env,loop: let $v := e1 return e2 => (q2,delta2)
              *
              * NB: Translation of variable is:
              *
@@ -610,7 +611,7 @@ reduce (PFcnode_t * p, int goalnt)
             /* assign result of e1 to $v, i.e. add resulting binding to
              * environment together with the currently live nodes
              */
-            *((PFalg_env_t *) PFarray_add (env))
+            *((PFla_env_t *) PFarray_add (env))
                 = enventry (LL(p)->sem.var, A(LR(p)).rel, A(LR(p)).frag);
 
             /* now translate e2 in the new context */
@@ -631,24 +632,24 @@ reduce (PFcnode_t * p, int goalnt)
              * NB: SEL: select those rows where column value != 0
              *     
              *
-             * {..., $v -> q(v), ...},loop,delta: e1 => q1,delta1
+             * {..., $v -> q(v), ...},loop: e1 => q1,delta1
              * loop2 = proj_iter (SEL item q1)
              * loop3 = proj_iter (SEL res (NOT res item q1))
              * {..., $v -> 
              *  proj_iter,pos,item (q(v)|X|(iter=iter1)(proj_iter1:iter loop2)),
-             *                      ...},loop2,delta1: e2 => (q2,delta2) 
+             *                      ...},loop2: e2 => (q2,delta2) 
              * {..., $v ->
              *  proj_iter,pos,item (q(v)|X|(iter=iter1)(proj_iter1:iter loop3)),
-             *                      ...},loop3,delta2: e3 => (q3,delta3) 
+             *                      ...},loop3: e3 => (q3,delta3) 
              * -----------------------------------------------------------------
              * {..., $v -> q(v), ...},loop,delta: if e1 then e2 else e3 =>
-             *                        (q2 U q3, delta3)
+             *                        (q2 U q3, delta2 U delta3)
              */
-            PFalg_op_t *old_loop;
+            PFla_op_t *old_loop;
             PFarray_t  *old_env;
             unsigned int i;
-            PFalg_env_t e;
-            PFalg_op_t *new_bind;
+            PFla_env_t e;
+            PFla_op_t *new_bind;
 
             /* initiate translation of e1 */
             reduce (kids[0], nts[0]);
@@ -664,10 +665,10 @@ reduce (PFcnode_t * p, int goalnt)
             old_env = env;
 
             /* update the environment for translation of e2 */
-            env = PFarray (sizeof (PFalg_env_t));
+            env = PFarray (sizeof (PFla_env_t));
 
             for (i = 0; i < PFarray_last (old_env); i++) {
-                e = *((PFalg_env_t *) PFarray_at (old_env, i));
+                e = *((PFla_env_t *) PFarray_at (old_env, i));
                 new_bind = project (eqjoin (e.rel,
                                             project (loop,
                                                      proj ("iter1", "iter")),
@@ -676,7 +677,7 @@ reduce (PFcnode_t * p, int goalnt)
                                     proj ("iter", "iter"),
                                     proj ("pos", "pos"),
                                     proj ("item", "item"));
-                *((PFalg_env_t *) PFarray_add (env))
+                *((PFla_env_t *) PFarray_add (env))
                     = enventry (e.var, new_bind, e.frag);
             }
 
@@ -691,10 +692,10 @@ reduce (PFcnode_t * p, int goalnt)
                             proj ("iter", "iter"));
 
             /* update the environment for translation of e3 */
-            env = PFarray (sizeof (PFalg_env_t));
+            env = PFarray (sizeof (PFla_env_t));
 
             for (i = 0; i < PFarray_last (old_env); i++) {
-                e = *((PFalg_env_t *) PFarray_at (old_env, i));
+                e = *((PFla_env_t *) PFarray_at (old_env, i));
                 new_bind = project (eqjoin (e.rel,
                                             project (loop,
                                                      proj ("iter1", "iter")),
@@ -703,7 +704,7 @@ reduce (PFcnode_t * p, int goalnt)
                                     proj ("iter", "iter"),
                                     proj ("pos", "pos"),
                                     proj ("item", "item"));
-                *((PFalg_env_t *) PFarray_add (env)) =
+                *((PFla_env_t *) PFarray_add (env)) =
                     enventry (e.var, new_bind, e.frag);
             }
 
@@ -714,9 +715,9 @@ reduce (PFcnode_t * p, int goalnt)
             loop = old_loop;
             env = old_env;
 
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel  = disjunion (A(RL(p)).rel, A(RR(p)).rel),
-                     .frag = PFalg_set_union (A(RL(p)).frag, A(RR(p)).frag) };
+                     .frag = PFla_set_union (A(RL(p)).frag, A(RR(p)).frag) };
 
         } break;
 
@@ -724,9 +725,9 @@ reduce (PFcnode_t * p, int goalnt)
         case 10:
         {
             /*
-             * env,loop,delta: e1 => q1,delta1  env,loop,delta1: e2 => q2,delta2
+             *     env,loop: e1 => q1,delta1      env,loop: e2 => q2,delta2
              * -----------------------------------------------------------------
-             *                      env,loop,delta: (e1, e2) =>
+             *                        env,loop: (e1, e2) =>
              *
              *                      proj_iter,pos:pos1,item
              *  /                          / ord       \     / ord       \ \
@@ -734,7 +735,7 @@ reduce (PFcnode_t * p, int goalnt)
              *  \                          \  1        /     \  2        / /
              *
              */
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel = project (rownum (
                              disjunion (cross (lit_tbl (attlist ("ord"),
                                                         tuple (lit_nat (1))),
@@ -746,7 +747,7 @@ reduce (PFcnode_t * p, int goalnt)
                          proj ("iter", "iter"),
                          proj ("pos", "pos1"),
                          proj ("item", "item")),
-                     .frag = PFalg_set_union (A(L(p)).frag, A(R(p)).frag) };
+                     .frag = PFla_set_union (A(L(p)).frag, A(R(p)).frag) };
         } break;
 
         /* CoreExpr:           typesw (Atom,
@@ -763,11 +764,11 @@ reduce (PFcnode_t * p, int goalnt)
              * branch or the default branch of the overall typeswitch.
              *
              * A lot of work for this translation is captured in the
-             * function type_test() in core2alg_impl.c. Given an algebra
-             * expression and an XQuery sequence type, it will return
-             * a relation with columns `iter' and `subty', with `subty'
-             * set to true or false, depending on whether for this
-             * iteration the sequence type test succeeds or not.
+             * function type_test(). Given an algebra expression and
+             * an XQuery sequence type, it will return a relation
+             * with columns `iter' and `subty', with `subty' set to
+             * true or false, depending on whether for this iteration
+             * the sequence type test succeeds or not.
              *
              * env,loop: e1 => q1,delta1
              * tested_q1 = type_test (ty, q1, loop)
@@ -795,11 +796,11 @@ reduce (PFcnode_t * p, int goalnt)
              * to false.
              */
 
-            PFalg_op_t   *tested_q1;  /* true/false if iterat. satisfies test */
-            PFarray_t    *old_env;    /* backup of surrounding environment */
-            PFalg_op_t   *old_loop;   /* backup of surrounding loop relation */
-            PFalg_env_t   e;          /* helper variable */
-            PFalg_op_t   *new_bind;   /* helper variable */
+            PFla_op_t   *tested_q1;  /* true/false if iterat. satisfies test */
+            PFarray_t   *old_env;    /* backup of surrounding environment */
+            PFla_op_t   *old_loop;   /* backup of surrounding loop relation */
+            PFla_env_t   e;          /* helper variable */
+            PFla_op_t   *new_bind;   /* helper variable */
             unsigned int  i;
 
             /* translate CoreExpr1 */
@@ -816,10 +817,10 @@ reduce (PFcnode_t * p, int goalnt)
 
             /* map variable environment */
             old_env = env;
-            env = PFarray (sizeof (PFalg_env_t));
+            env = PFarray (sizeof (PFla_env_t));
 
             for (i = 0; i < PFarray_last (old_env); i++) {
-                e = *((PFalg_env_t *) PFarray_at (old_env, i));
+                e = *((PFla_env_t *) PFarray_at (old_env, i));
                 new_bind =
                     project (eqjoin (e.rel,
                                      project (loop, proj ("iter1", "iter")),
@@ -827,7 +828,7 @@ reduce (PFcnode_t * p, int goalnt)
                              proj ("iter", "iter"),
                              proj ("pos", "pos"),
                              proj ("item", "item"));
-                *((PFalg_env_t *) PFarray_add (env))
+                *((PFla_env_t *) PFarray_add (env))
                     = enventry (e.var, new_bind, e.frag);
             }
 
@@ -841,10 +842,10 @@ reduce (PFcnode_t * p, int goalnt)
                                      "notsub"),
                             proj ("iter", "iter"));
 
-            env = PFarray (sizeof (PFalg_env_t));
+            env = PFarray (sizeof (PFla_env_t));
 
             for (i = 0; i < PFarray_last (old_env); i++) {
-                e = *((PFalg_env_t *) PFarray_at (old_env, i));
+                e = *((PFla_env_t *) PFarray_at (old_env, i));
                 new_bind =
                     project (eqjoin (e.rel,
                                      project (loop, proj ("iter1", "iter")),
@@ -852,7 +853,7 @@ reduce (PFcnode_t * p, int goalnt)
                              proj ("iter", "iter"),
                              proj ("pos", "pos"),
                              proj ("item", "item"));
-                *((PFalg_env_t *) PFarray_add (env))
+                *((PFla_env_t *) PFarray_add (env))
                     = enventry (e.var, new_bind, e.frag);
             }
 
@@ -863,9 +864,9 @@ reduce (PFcnode_t * p, int goalnt)
             loop = old_loop;
             env = old_env;
 
-            A(p) = (struct PFalg_pair_t) {
+            A(p) = (struct PFla_pair_t) {
                 .rel  = disjunion (A(RLR(p)).rel, A(RRL(p)).rel),
-                .frag = PFalg_set_union (A(RLR(p)).frag, A(RRL(p)).frag)
+                .frag = PFla_set_union (A(RLR(p)).frag, A(RRL(p)).frag)
             };
 
         } break;
@@ -882,13 +883,16 @@ reduce (PFcnode_t * p, int goalnt)
         /* CoreExpr:           locsteps (LocationStep, CoreExpr) */
         case 14:
             /*
-             * env, loop, delta: e => q(e), delta 1
+             *                  env, loop: e => (q(e), delta)
              * ------------------------------------------------------------
-             * env, loop, delta: e/a::n 0> (row_pos<item>/iter (
-             *      proj_iter,item (q(e) join (doc U delta1)), delta1))
+             *                       env, loop: e/a::n =>
+             * (row_pos<item>/iter (SCJ (proj_iter,item (q(e)), delta)), delta)
+             *
+             * A(L(p)).rel contains a dummy node with information on the
+             * location step. Will be read out in PFla_scjoin().
              */
-            A(p) = (struct  PFalg_pair_t) {
-                     .rel = rownum (scjoin (PFalg_set_to_alg (A(R(p)).frag),
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = rownum (scjoin (PFla_set_to_la (A(R(p)).frag),
                                             project (A(R(p)).rel,
                                                      proj ("iter", "iter"),
                                                      proj ("item", "item")),
@@ -900,85 +904,97 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* LocationStep:       ancestor (seqtype) */
         case 15:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_anc, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_anc, L(p)->sem.type),
                        .frag = NULL };
             break;
 
         /* LocationStep:       ancestor_or_self (seqtype) */
         case 16:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_anc_s, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_anc_s, L(p)->sem.type),
                        .frag = NULL };
             break;
 
         /* LocationStep:       attribute (seqtype) */
         case 17:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_attr, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_attr, L(p)->sem.type),
                        .frag = NULL };
             break;
 
         /* LocationStep:       child (seqtype) */
         case 18:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_chld, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_chld, L(p)->sem.type),
                        .frag = NULL };
             break;
 
         /* LocationStep:       descendant (seqtype) */
         case 19:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_desc, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_desc, L(p)->sem.type),
                        .frag = NULL };
             break;
 
         /* LocationStep:       descendant_or_self (seqtype) */
         case 20:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_desc_s, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_desc_s, L(p)->sem.type),
                        .frag = NULL };
             break;
 
         /* LocationStep:       following (seqtype) */
         case 21:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_fol, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_fol, L(p)->sem.type),
                        .frag = NULL };
             break;
 
         /* LocationStep:       following_sibling (seqtype) */
         case 22:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_fol_s, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_fol_s, L(p)->sem.type),
                        .frag = NULL };
             break;
 
         /* LocationStep:       parent (seqtype) */
         case 23:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_par, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_par, L(p)->sem.type),
                        .frag = NULL };
             break;
 
         /* LocationStep:       preceding (seqtype) */
         case 24:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_prec, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_prec, L(p)->sem.type),
                        .frag = NULL };
             break;
 
         /* LocationStep:       preceding_sibling (seqtype) */
         case 25:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_prec_s, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_prec_s, L(p)->sem.type),
                        .frag = NULL };
             break;
 
         /* LocationStep:       self (seqtype) */
         case 26:
-            A(p) = (PFalg_pair_t)
-                     { .rel  = locstep_dummy (aop_self, L(p)->sem.type),
+            /* Set up dummy node to be used in rule 14 */
+            A(p) = (PFla_pair_t)
+                     { .rel  = locstep_dummy (alg_self, L(p)->sem.type),
                        .frag = NULL };
             break;
 
@@ -1003,11 +1019,11 @@ reduce (PFcnode_t * p, int goalnt)
             /* (1) Save current variable environment and create a new one. */
             old_env = env;
 
-            env = PFarray (sizeof (PFalg_env_t));
+            env = PFarray (sizeof (PFla_env_t));
 
             for (unsigned int i = 0; i < PFarray_last (old_env); i++)
-                *((PFalg_env_t *) PFarray_add (env))
-                    = *((PFalg_env_t *) PFarray_at (old_env, i));
+                *((PFla_env_t *) PFarray_add (env))
+                    = *((PFla_env_t *) PFarray_at (old_env, i));
 
             /* (2) Enter bindings for function parameters.
              *     We do this by reducing our child nodes in a
@@ -1017,7 +1033,7 @@ reduce (PFcnode_t * p, int goalnt)
             old_fun_args = fun_args;
 
             /* We will collect the argument values here */
-            fun_args = PFarray (sizeof (struct PFalg_pair_t));
+            fun_args = PFarray (sizeof (struct PFla_pair_t));
 
             /* Top-down processing puts all argument values into this array */
             reduce (kids[0], nts[0]);
@@ -1044,10 +1060,10 @@ reduce (PFcnode_t * p, int goalnt)
                  */
                 for (unsigned int i = 0; i < p->sem.fun->arity; i++) {
 
-                    PFalg_pair_t curr_arg
-                        = *(PFalg_pair_t *) PFarray_at (fun_args, i);
+                    PFla_pair_t curr_arg
+                        = *(PFla_pair_t *) PFarray_at (fun_args, i);
 
-                    *((PFalg_env_t *) PFarray_add (env))
+                    *((PFla_env_t *) PFarray_add (env))
                         = enventry (p->sem.fun->params[i],
                                     curr_arg.rel, curr_arg.frag);
                 }
@@ -1077,7 +1093,7 @@ reduce (PFcnode_t * p, int goalnt)
             reduce (kids[0], nts[0]);
 
             /* Append the new argument to function argument list */
-            *((PFalg_pair_t *) PFarray_add (fun_args)) = A(L(p));
+            *((PFla_pair_t *) PFarray_add (fun_args)) = A(L(p));
 
             /* go on to next arguments */
             reduce (kids[1], nts[1]);
@@ -1109,14 +1125,14 @@ reduce (PFcnode_t * p, int goalnt)
              *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
              *                                                            0
              *
-             * doc:        proj_pre,size,level,kind,prop,frag (n)
+             * frag:       proj_pre,size,level,kind,prop,frag (n)
              */
-            PFalg_op_t *elem = element (PFalg_set_to_alg (A(R(p)).frag),
+            PFla_op_t *elem = element (PFla_set_to_la (A(R(p)).frag),
                                         A(L(p)).rel, A(R(p)).rel);
 
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel = roots (elem),
-                     .frag = PFalg_set (fragment (elem))};
+                     .frag = PFla_set (fragment (elem))};
         } break;
 
         /* CoreExpr:           attr (TagName, CoreExpr) */
@@ -1140,23 +1156,23 @@ reduce (PFcnode_t * p, int goalnt)
              *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
              *                                                            0
              *
-             * doc:        proj_pre,size,level,kind,prop,frag (n)
+             * frag:       proj_pre,size,level,kind,prop,frag (n)
              */
-            PFalg_op_t *attr = attribute (A(L(p)).rel, A(R(p)).rel);
+            PFla_op_t *attr = attribute (A(L(p)).rel, A(R(p)).rel);
 
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel = roots (attr),
-                     .frag = PFalg_set (fragment (attr))};
+                     .frag = PFla_set (fragment (attr))};
         }
 
         /* TagName:            tag */
         case 35:
-            A(p) = (struct PFalg_pair_t) {
+            A(p) = (struct PFla_pair_t) {
                 .rel = cross (loop,
                               lit_tbl (attlist ("pos", "item"),
                                        tuple (lit_nat (1),
                                               lit_qname (p->sem.qname)))),
-                .frag = PFalg_empty_set () };
+                .frag = PFla_empty_set () };
             break;
 
         /* TagName:            CoreExpr */
@@ -1179,13 +1195,13 @@ reduce (PFcnode_t * p, int goalnt)
              *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
              *                                                            0
              *
-             * doc:        proj_pre,size,level,kind,prop,frag (n)
+             * frag:       proj_pre,size,level,kind,prop,frag (n)
              */
-            PFalg_op_t *textnode = textnode (A(L(p)).rel);
+            PFla_op_t *textnode = textnode (A(L(p)).rel);
 
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel = roots (textnode),
-                     .frag = PFalg_set (fragment (textnode))};
+                     .frag = PFla_set (fragment (textnode))};
         } break;
 
         /* CoreExpr:           doc (CoreExpr) */
@@ -1204,14 +1220,14 @@ reduce (PFcnode_t * p, int goalnt)
              *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
              *                                                            0
              *
-             * doc:        proj_pre,size,level,kind,prop,frag (n)
+             * frag:       proj_pre,size,level,kind,prop,frag (n)
              */
-            PFalg_op_t *docnode = docnode (PFalg_set_to_alg (A(L(p)).frag),
+            PFla_op_t *docnode = docnode (PFla_set_to_la (A(L(p)).frag),
                                            A(L(p)).rel);
 
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel = roots (docnode),
-                     .frag = PFalg_set (fragment (docnode))};
+                     .frag = PFla_set (fragment (docnode))};
         } break;
 
         /* CoreExpr:           comment (CoreExpr) */
@@ -1246,7 +1262,7 @@ reduce (PFcnode_t * p, int goalnt)
              * was inserted into the environment by a let or for expression.
              *
              * ---------------------------------------------------------------
-             * env, (v -> q(v)) e env, loop, delta: v => (q(v), delta)
+             * env, (v -> q(v)) e env, loop: v => (q(v), 0)
              */
             unsigned int i;
         
@@ -1258,10 +1274,10 @@ reduce (PFcnode_t * p, int goalnt)
              * environment
              */
             for (i = 0; i < PFarray_last (env); i++) {
-                PFalg_env_t e = *((PFalg_env_t *) PFarray_at (env, i));
+                PFla_env_t e = *((PFla_env_t *) PFarray_at (env, i));
             
                 if (p->sem.var == e.var) {
-                    A(p) = (struct  PFalg_pair_t) {
+                    A(p) = (struct  PFla_pair_t) {
                              .rel = e.rel,
                              .frag = e.frag };
                     break;
@@ -1281,16 +1297,16 @@ reduce (PFcnode_t * p, int goalnt)
         {
             /* 
              *  -------------------------------------------------------------
-             *                          /        / pos | item \ \
-             *  env, loop, delta: c => | loop X | -----+------ | |
-             *                          \        \   1 |   c  / /
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
              */
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel = cross (loop,
                                    lit_tbl( attlist ("pos", "item"),
                                             tuple (lit_nat (1),
                                                    lit_str (p->sem.str)))),
-                     .frag = PFalg_empty_set () };
+                     .frag = PFla_empty_set () };
         } break;
 
         /* LiteralValue:       lit_int */
@@ -1298,16 +1314,16 @@ reduce (PFcnode_t * p, int goalnt)
         {
             /*
              *  -------------------------------------------------------------
-             *                          /        / pos | item \ \
-             *  env, loop, delta: c => | loop X | -----+------ | |
-             *                          \        \   1 |   c  / /
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
              */
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel = cross (loop,
                                    lit_tbl( attlist ("pos", "item"),
                                             tuple (lit_nat (1),
                                                    lit_int (p->sem.num)))),
-                     .frag = PFalg_empty_set () };
+                     .frag = PFla_empty_set () };
         } break;
 
         /* LiteralValue:       lit_dec */
@@ -1315,16 +1331,16 @@ reduce (PFcnode_t * p, int goalnt)
         {
             /*
              *  -------------------------------------------------------------
-             *                          /        / pos | item \ \
-             *  env, loop, delta: c => | loop X | -----+------ | |
-             *                          \        \   1 |   c  / /
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
              */
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel = cross (loop,
                                    lit_tbl( attlist ("pos", "item"),
                                             tuple (lit_nat (1),
                                                    lit_dec (p->sem.dec)))),
-                     .frag = PFalg_empty_set () };
+                     .frag = PFla_empty_set () };
         } break;
 
         /* LiteralValue:       lit_dbl */
@@ -1332,16 +1348,16 @@ reduce (PFcnode_t * p, int goalnt)
         {
             /*
              *  -------------------------------------------------------------
-             *                          /        / pos | item \ \
-             *  env, loop, delta: c => | loop X | -----+------ | |
-             *                          \        \   1 |   c  / /
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
              */
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel = cross (loop,
                                    lit_tbl( attlist ("pos", "item"),
                                             tuple (lit_nat (1),
                                                    lit_dbl (p->sem.dbl)))),
-                     .frag = PFalg_empty_set () };
+                     .frag = PFla_empty_set () };
         } break;
 
 
@@ -1350,16 +1366,16 @@ reduce (PFcnode_t * p, int goalnt)
         {
             /*
              *  -------------------------------------------------------------
-             *                          /        / pos | item \ \
-             *  env, loop, delta: c => | loop X | -----+------ | |
-             *                          \        \   1 |   c  / /
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
              */
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel = cross (loop,
                                    lit_tbl( attlist ("pos", "item"),
                                             tuple (lit_nat (1),
                                                    lit_bln (true)))),
-                     .frag = PFalg_empty_set () };
+                     .frag = PFla_empty_set () };
         } break;
 
         /* LiteralValue:       false_ */
@@ -1367,16 +1383,16 @@ reduce (PFcnode_t * p, int goalnt)
         {
             /*
              *  -------------------------------------------------------------
-             *                          /        / pos | item \ \
-             *  env, loop, delta: c => | loop X | -----+------ | |
-             *                          \        \   1 |   c  / /
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
              */
-            A(p) = (struct  PFalg_pair_t) {
+            A(p) = (struct  PFla_pair_t) {
                      .rel = cross (loop,
                                    lit_tbl( attlist ("pos", "item"),
                                             tuple (lit_nat (1),
                                                    lit_bln (false)))),
-                     .frag = PFalg_empty_set () };
+                     .frag = PFla_empty_set () };
         } break;
 
         /* LiteralValue:       empty */
@@ -1384,13 +1400,13 @@ reduce (PFcnode_t * p, int goalnt)
         {
             /*
              *  -------------------------------------------------------------
-             *                              iter | pos | item
-             *  env, loop, delta: empty => ------+-----+------
+             *                       iter | pos | item
+             *  env, loop: empty => ------+-----+------ , 0
              * 
              */
-            A(p) = (struct  PFalg_pair_t) {
-                     .rel = PFalg_empty_tbl (attlist ("iter", "pos", "item")),
-                     .frag = PFalg_empty_set () };
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = PFla_empty_tbl (attlist ("iter", "pos", "item")),
+                     .frag = PFla_empty_set () };
         } break;
 
         default:
@@ -1403,10 +1419,10 @@ reduce (PFcnode_t * p, int goalnt)
  * Construct a new entry to be inserted into the variable environment.
  * Called whenever a new variable is declared.
  */
-static PFalg_env_t
-enventry (PFvar_t *var, PFalg_op_t *result, PFarray_t *doc)
+static PFla_env_t
+enventry (PFvar_t *var, PFla_op_t *result, PFarray_t *doc)
 {
-    return (PFalg_env_t) { .var = var, .rel = result, .frag = doc };
+    return (PFla_env_t) { .var = var, .rel = result, .frag = doc };
 }
 
 /**
@@ -1416,10 +1432,10 @@ enventry (PFvar_t *var, PFalg_op_t *result, PFarray_t *doc)
  * in @a loop there exists one tuple, with the subty attribute set to
  * true, if @a e has a subtype of @a ty, and false otherwise.
  */
-static PFalg_op_t *
-type_test (PFty_t ty, PFalg_pair_t e, PFalg_op_t *loop)
+static PFla_op_t *
+type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
 {
-    PFalg_op_t *itemty;
+    PFla_op_t *itemty;
 
     /*
      * Collect algebra expression with schema (iter,pos,itemty)
@@ -1621,38 +1637,17 @@ type_test (PFty_t ty, PFalg_pair_t e, PFalg_op_t *loop)
     return NULL; /* pacify picky compilers */
 }
 
-static PFalg_op_t *
+/**
+ * Set up a dummy node that contains parameters for staircase join
+ * invocations. Simplifies translation of location steps (see rule 14).
+ */
+static PFla_op_t *
 locstep_dummy (PFalg_axis_t axis, PFty_t seqty)
 {
-    PFalg_op_t *ret = dummy ();
+    PFla_op_t *ret = dummy ();
 
     ret->sem.scjoin.axis = axis;
-
-    if (PFty_subtype (seqty, PFty_xs_anyElement ())) {
-        ret->sem.scjoin.kind = node_kind_elem;
-        ret->sem.scjoin.str.qname = PFty_qname (seqty);
-    }
-    else if (PFty_subtype (seqty, PFty_xs_anyAttribute ())) {
-        ret->sem.scjoin.kind = node_kind_attr;
-        ret->sem.scjoin.str.qname = PFty_qname (seqty);
-    }
-    else if (PFty_subtype (seqty, PFty_text ())) {
-        ret->sem.scjoin.kind = node_kind_text;
-    }
-    else if (PFty_subtype (seqty, PFty_pi (NULL))) {
-        /* FIXME: support processing-instructions with target specification */
-        ret->sem.scjoin.kind = node_kind_pi;
-    }
-    else if (PFty_subtype (seqty, PFty_comm ())) {
-        ret->sem.scjoin.kind = node_kind_comm;
-    }
-    else if (PFty_subtype (seqty, PFty_doc (PFty_xs_anyType ()))) {
-        /* FIXME: document test needs work */
-        ret->sem.scjoin.kind = node_kind_doc;
-    }
-    else {
-        ret->sem.scjoin.kind = node_kind_node;
-    }
+    ret->sem.scjoin.ty   = seqty;
 
     return ret;
 }
@@ -1664,13 +1659,13 @@ locstep_dummy (PFalg_axis_t axis, PFty_t seqty)
  * @param r root of the Core tree.
  * @return the algebra equivalent of @a r
  */
-PFalg_op_t *
+PFla_op_t *
 PFcore2alg (PFcnode_t *r)
 {
     assert (r);
 
     /* yet empty environment */
-    env = PFarray (sizeof (PFalg_env_t));
+    env = PFarray (sizeof (PFla_env_t));
 
     /* loop is initially a table with just one tuple */
     loop = lit_tbl (attlist ("iter"), tuple (lit_nat (1)));

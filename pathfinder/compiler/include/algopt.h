@@ -29,8 +29,10 @@
 #ifndef ALGOPT_H
 #define ALGOPT_H
 
-#include "algebra.h"
+#include "logical.h"
 
-PFalg_op_t * PFalgopt (PFalg_op_t *root);
+PFla_op_t * PFalgopt (PFla_op_t *root);
 
 #endif  /* ALGOPT_H */
+
+/* vim:set shiftwidth=4 expandtab: */

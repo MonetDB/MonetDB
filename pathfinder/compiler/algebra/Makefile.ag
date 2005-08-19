@@ -30,15 +30,23 @@ LFLAGS = -Ppf -olex.yy.c
 
 INCLUDES = ../include $(MONETDB_INCS)
 
+# locally disable "-Werror"
+#X_CFLAGS = "-pedantic"
+
 lib_algebra = {
 	NOINST
 	DIR = libdir
 	SOURCES = \
-		algebra.c \
-		builtins.c \
-		algebra_cse.c \
 		core2alg.brg \
-		algopt.brg
+		algebra.c \
+		properties.c \
+		algopt.brg \
+		algebra_cse.c \
+		logical.c \
+		planner.c \
+		physical.c \
+		ordering.c \
+		builtins.c
 }
 
 #EXTRA_DIST =

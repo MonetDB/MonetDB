@@ -24,6 +24,7 @@
  * Portions created by the University of Konstanz are Copyright (C)
  * 2000-2005 University of Konstanz.  All Rights Reserved.
  *
+ * $Id$
  */
 
 #include "pathfinder.h"
@@ -51,27 +52,24 @@
 #include "abssynprint.h"
 #include "coreprint.h"
 #include "algdebug.h"
-#include "ma_debug.h"
 #include "timer.h"
 #include "fs.h"           /* core mapping (formal semantics) */
 #include "types.h"        /* type system */
 #include "import.h"       /* XML Schema import */
 #include "simplify.h"     /* core simplification */
+#include "coreopt.h"
 #include "typecheck.h"    /* type inference and check */
-#include "algebra.h"      /* algebra tree */
 #include "core2alg.h"     /* Compile Core to Relational Algebra */
 #include "algopt.h"
 #include "algebra_cse.h"
-#include "ma_gen.h"       /* MIL algebra generation */
-#include "ma_opt.h"
-#include "ma_cse.h"
+#include "planner.h"
+#include "physdebug.h"
 #include "milgen.h"       /* MIL command tree generation */
 #include "milprint.h"     /* create string representation of MIL tree */
 #include "milprint_summer.h" /* create MILcode directly from the Core tree */
 #include "oops.h"
 #include "mem.h"
 #include "coreopt.h"
-/* #include "hsk_parser.h" */
 
 static char *phases[] = {
     [ 1]  = "right after input parsing",
@@ -86,14 +84,12 @@ static char *phases[] = {
     [10]  = "after the Core tree has been simplified/normalized",
     [11]  = "after type inference and checking",
     [12]  = "after XQuery Core optimization",
-    [13]  = "after the Core tree has been translated to the internal algebra",
-    [14]  = "after the algebra tree has been rewritten/optimized",
-    [15]  = "after the common subexpression elimination on the algebra tree",
-    [16]  = "after the algebra has been translated to MIL algebra",
-    [17]  = "after MIL algebra optimization/simplification",
-    [18]  = "after MIL algebra common subexpression elimination",
-    [19]  = "after the MIL algebra has been compiled into MIL commands",
-    [20]  = "after the MIL program has been serialized"
+    [13]  = "after the Core tree has been translated to the logical algebra",
+    [14]  = "after the logical algebra tree has been rewritten/optimized",
+    [15]  = "after the CSE on the logical algebra tree",
+    [16]  = "after compiling logical into the physical algebra",
+    [17]  = "after compiling the physical algebra into MIL code",
+    [18]  = "after the MIL program has been serialized"
 };
 
 /* pretty ugly to have such a global, could not entirely remove it yet JF */
@@ -108,10 +104,12 @@ PFstate_t PFstate = {
     .optimize            = 1,
     .print_parse_tree    = false,
     .print_core_tree     = false,
-    .print_algebra_tree  = false,
-    .print_ma_tree       = false,
-/*    .parse_hsk           = false, */
+    .print_la_tree       = false,
+    .print_pa_tree       = false,
     .summer_branch       = true,
+
+    .format              = NULL,
+
     .genType             = PF_GEN_XML
 };
 
@@ -164,8 +162,8 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 {
     PFpnode_t  *proot  = NULL;
     PFcnode_t  *croot  = NULL;
-    PFalg_op_t *aroot  = NULL;
-    PFma_op_t  *maroot = NULL;
+    PFla_op_t  *laroot  = NULL;
+    PFpa_op_t  *paroot = NULL;
     PFmil_t    *mroot  = NULL;
     PFarray_t  *mil_program = NULL;
     char       *xquery = NULL;
@@ -184,7 +182,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     /* Parsing of Haskell XQuery to Algebra output */
     if (status->parse_hsk)
     {
-        aroot = PFhsk_parse ();
+        laroot = PFhsk_parse ();
         goto subexelim;
     }
 #endif
@@ -330,23 +328,24 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
      */
     tm = PFtimer_start ();
 
-    aroot = PFcore2alg (croot);
+    laroot = PFcore2alg (croot);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("Algebra tree generation:\t %s", PFtimer_str (tm));
+        PFlog ("Logical algebra tree generation:\t %s", PFtimer_str (tm));
 
     STOP_POINT(13);
 
     /* Rewrite/optimize algebra tree */
     tm = PFtimer_start ();
 
-    aroot = PFalgopt (aroot);
+    laroot = PFalgopt (laroot);
 
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("Algebra tree rewrite/optimization:\t %s", PFtimer_str (tm));
+        PFlog ("Logical algebra tree rewrite/optimization:\t %s",
+               PFtimer_str (tm));
 
     STOP_POINT(14);
 
@@ -358,61 +357,41 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 subexelim:
     tm = PFtimer_start ();
 
-    aroot = PFcse_eliminate (aroot);
+    laroot = PFcse_eliminate (laroot);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("Common subexpression elimination in algebra tree:\t %s",
+        PFlog ("Common subexpression elimination in logical algebra tree:\t %s",
                PFtimer_str (tm));
 
     STOP_POINT(15);
 
-    /* Compile algebra into two-column MIL algebra */
+    /* Compile algebra into physical algebra */
     tm = PFtimer_start ();
-    maroot = PFma_gen (aroot);
+    paroot = PFplan (laroot);
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("Compilation to MIL algebra:\t %s", PFtimer_str (tm));
+        PFlog ("Compilation to physical algebra:\t %s", PFtimer_str (tm));
 
     STOP_POINT(16);
 
-    /* MIL algebra common subexpression elimination */
+    /* Map physical algebra to MIL */
     tm = PFtimer_start ();
-    maroot = PFma_opt (maroot);
-    tm = PFtimer_stop (tm);
-
-    if (status->timing)
-        PFlog ("MIL algebra optimization:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(17);
-
-    /* MIL algebra common subexpression elimination */
-    tm = PFtimer_start ();
-    maroot = PFma_cse (maroot);
-    tm = PFtimer_stop (tm);
-
-    if (status->timing)
-        PFlog ("MIL algebra CSE:\t %s", PFtimer_str (tm));
-
-    STOP_POINT(18);
-
-    /* Map core to MIL */
-    tm = PFtimer_start ();
-    mroot = PFmilgen (maroot);
+    mroot = PFmilgen (paroot);
     tm = PFtimer_stop (tm);
 
     if (status->timing)
         PFlog ("MIL code generation:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(19);
+    STOP_POINT(17);
 
     /* Render MIL program in Monet MIL syntax 
      */
     if (!(mil_program = PFmil_serialize (mroot)))
         goto failure;
 
-    STOP_POINT(20);
+    STOP_POINT(18);
 
     /* Print MIL program to pfout */
     if (mil_program)
@@ -452,34 +431,36 @@ subexelim:
     }
 
     /* print algebra tree if requested */
-    if (status->print_algebra_tree) {
-        if (aroot) {
+    if (status->print_la_tree) {
+        if (laroot) {
             if (status->print_pretty) {
                 if (status->debug != 0)
                     printf ("Algebra tree %s:\n", phases[status->stop_after]);
-                PFalg_pretty (pfout, aroot);
+                /* PFalg_pretty (pfout, aroot); */
             }
             if (status->print_dot)
-                PFalg_dot (pfout, aroot);
+                PFla_dot (pfout, laroot);
+                /* PFalg_dot (pfout, laroot); */
         }
         else
             PFinfo (OOPS_NOTICE,
-                    "core tree not available at this point of compilation");
+                    "logical algebra tree not available "
+                    "at this point of compilation");
     }
 
     /* print MIL algebra tree if requested */
-    if (status->print_ma_tree) {
-        if (maroot) {
+    if (status->print_pa_tree) {
+        if (paroot) {
             if (status->print_pretty) {
                 PFinfo (OOPS_WARNING,
-                        "Cannot prettyprint MIL algebra tree. Sorry.");
+                        "Cannot prettyprint physical algebra tree. Sorry.");
             }
             if (status->print_dot)
-                PFma_dot (pfout, maroot);
+                PFpa_dot (pfout, paroot);
         }
         else
             PFinfo (OOPS_NOTICE,
-                    "MIL algebra tree not available at this "
+                    "Physical algebra tree not available at this "
                     "point of compilation");
     }
 

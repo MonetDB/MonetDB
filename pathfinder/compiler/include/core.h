@@ -46,8 +46,8 @@ extern unsigned int core_vars;
 /* PFfun_t */
 #include "functions.h"
 
-/* PFalg_pair_t */
-#include "algebra.h"
+/* PFla_pair_t */
+#include "logical.h"
 
 /** Maximum number of children of a core tree node */
 #define PFCNODE_MAXCHILD 2
@@ -171,7 +171,7 @@ struct PFcnode_t {
     PFcsem_t    sem;                     /**< semantic node information */
     PFcnode_t  *child[PFCNODE_MAXCHILD]; /**< child nodes */
     PFty_t      type;                    /**< static type */
-    struct PFalg_pair_t alg;
+    struct PFla_pair_t alg;
     short       state_label;       /**< for BURG pattern matcher */
 };
 

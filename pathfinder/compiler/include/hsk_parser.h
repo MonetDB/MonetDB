@@ -34,7 +34,7 @@
 #include "algebra.h"
 
 /* function prototype from parse.c */
-PFalg_op_t *PFhsk_parse (void);
+PFla_op_t *PFhsk_parse (void);
 
 #endif  /* HSK_PARSER_H */
 

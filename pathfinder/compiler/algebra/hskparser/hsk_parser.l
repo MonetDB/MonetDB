@@ -11,7 +11,7 @@
 #include "pathfinder.h"
 #include "mem.h"
 #include "oops.h"
-#include "algebra.h"
+#include "logical.h"
 #include "hsk_parser.tab.h"
 
 /** avoid `defined but not used' warnings */

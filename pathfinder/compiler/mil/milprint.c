@@ -8,12 +8,18 @@
  * @verbatim
  
    statements       : statements statements                    <m_seq>
+                    | 'if (' Expr ') {' stmts '} else {' stmts '}' <m_if>
+                    | <nothing>                                <m_nop>
                     | statement ';'                            <otherwise>
 
-   statement        : 'var' Variable ':=' expression           <m_assgn>
-                    | Variable ':=' expression                 <m_reassgn>
-                    | <nothing>                                <m_nop>
+   statement        : Variable ':=' expression                 <m_assgn>
+                    | expr '.insert (' expr ',' expr ')'       <m_insert>
+                    | expression '.append (' expression ')'    <m_bappend>
+                    | expression '.access (' restriction ')'   <m_access>
                     | 'serialize (...)'                        <m_serialize>
+                    | 'var' Variable                           <m_declare>
+                    | 'print (' args ')'                       <m_print>
+                    | 'col_name (' expr ',' expr ')'           <m_col_name>
 
    expression       : Variable                                 <m_var>
                     | literal                                  <m_lit_*, m_nil>
@@ -27,8 +33,13 @@
                     | expression '.join (' expression ')'      <m_join>
                     | expression '.leftjoin (' expression ')'  <m_leftjoin>
                     | expression '.kunion (' expression ')'    <m_kunion>
+                    | expression '.kdiff (' expression ')'     <m_kdiff>
                     | expression '.CTrefine (' expression ')'  <m_ctrefine>
+                    | expression '.CTderive (' expression ')'  <m_ctderive>
                     | expression '.insert (' expression ')'    <m_binsert>
+                    | expression '.append (' expression ')'    <m_bappend>
+                    | expression '.fetch (' expression ')'     <m_fetch>
+                    | expression '.set_kind (' expression ')'  <m_set_kind>
                     | expression '.kunique ()'                 <m_kunique>
                     | expression '.reverse ()'                 <m_reverse>
                     | expression '.mirror ()'                  <m_mirror>
@@ -36,8 +47,17 @@
                     | expression '.sort ()'                    <m_sort>
                     | expression '.max ()'                     <m_max>
                     | expression '.count ()'                   <m_count>
+                    | expression '.bat ()'                     <m_bat>
+                    | expression '.CTgroup ()'                 <m_ctgroup>
+                    | expression '.CTmap ()'                   <m_ctmap>
+                    | expression '.CTextend ()'                <m_ctextend>
+                    | expression '.get_fragment ()'            <m_get_fragment>
+                    | expression '.is_fake_project ()'         <m_is_fake_pr..>
+                    | expression '.chk_order ()'               <m_chk_order>
                     | expression '.access (' restriction ')'   <m_access>
+                    | expression '.key (' bool ')'             <m_key>
                     | expr '.insert (' expr ',' expr ')'       <m_insert>
+                    | expr '.select (' expr ',' expr ')'       <m_select2>
                     | Type '(' expression ')'                  <m_cast>
                     | '[' Type '](' expression ')'             <m_mcast>
                     | '+(' expression ',' expression ')'       <m_add>
@@ -45,9 +65,26 @@
                     | '[-](' expression ',' expression ')'     <m_msub>
                     | '[*](' expression ',' expression ')'     <m_mmult>
                     | '[/](' expression ',' expression ')'     <m_mdiv>
+                    | '[%](' expression ',' expression ')'     <m_mmod>
                     | '[>](' expression ',' expression ')'     <m_mgt>
                     | '[=](' expression ',' expression ')'     <m_meq>
                     | '[not](' expression ')'                  <m_mnot>
+                    | '[-](' expression ')'                    <m_mneg>
+                    | '[isnil](' expression ')'                <m_misnil>
+                    | '[and](' expression ',' expression ')'   <m_mand>
+                    | '[or](' expression ',' expression ')'    <m_mor>
+                    | '[ifthenelse](' exp ',' exp ',' exp ')'  <m_ifthenelse>
+                    | '{count}(' expression ')'                <m_gcount>
+                    | 'new_ws ()'                              <m_new_ws>
+                    | 'doc_tbl (' expr ',' expr ')'            <m_doc_tbl>
+                    | 'sc_desc (' ex ',' ex ',' ex ',' ex ')'  <m_sc_desc>
+                    | 'merged_union (' args ')'                <m_merged_union>
+
+                    | 'llscj_child (' a ',' b ',' c ',' d ')'  <m_llscj_child>
+                    | ... more staircase join variants ...
+
+   args             : args ',' args                            <m_arg>
+                    | expression                               <otherwise>
 
    literal          : IntegerLiteral                           <m_lit_int>
                     | StringLiteral                            <m_lit_str>
@@ -94,39 +131,204 @@
 
 static char *ID[] = {
 
-      [m_new]      = "new"
-    , [m_seqbase]  = "seqbase"
-    , [m_order]    = "order"
-    , [m_select]   = "select"
-    , [m_insert]   = "insert"
-    , [m_binsert]  = "insert"
-    , [m_project]  = "project"
-    , [m_mark]     = "mark"
-    , [m_mark_grp] = "mark_grp"
-    , [m_access]   = "access"
-    , [m_cross]    = "cross"
-    , [m_join]     = "join"
-    , [m_leftjoin] = "leftjoin"
-    , [m_reverse]  = "reverse"
-    , [m_mirror]   = "mirror"
-    , [m_copy]     = "copy"
-    , [m_kunique]  = "kunique"
-    , [m_kunion]   = "kunion"
+      [m_new]          = "new"
+    , [m_seqbase]      = "seqbase"
+    , [m_key]          = "key"
+    , [m_order]        = "order"
+    , [m_select]       = "select"
+    , [m_select2]      = "select"
+    , [m_insert]       = "insert"
+    , [m_binsert]      = "insert"
+    , [m_bappend]      = "append"
+    , [m_fetch]        = "fetch"
+    , [m_project]      = "project"
+    , [m_mark]         = "mark"
+    , [m_mark_grp]     = "mark_grp"
+    , [m_access]       = "access"
+    , [m_cross]        = "cross"
+    , [m_join]         = "join"
+    , [m_leftjoin]     = "leftjoin"
+    , [m_reverse]      = "reverse"
+    , [m_mirror]       = "mirror"
+    , [m_copy]         = "copy"
+    , [m_kunique]      = "kunique"
+    , [m_kunion]       = "kunion"
+    , [m_kdiff]        = "kdiff"
+    , [m_merged_union] = "merged_union"
+    , [m_var]          = "var"
 
-    , [m_sort]     = "sort"
-    , [m_ctrefine] = "CTrefine"
+    , [m_sort]         = "sort"
+    , [m_ctgroup]      = "CTgroup"
+    , [m_ctmap]        = "CTmap"
+    , [m_ctextend]     = "CTextend"
+    , [m_ctrefine]     = "CTrefine"
+    , [m_ctderive]     = "CTderive"
 
-    , [m_add]      = "+"
-    , [m_madd]     = "[+]"
-    , [m_msub]     = "[-]"
-    , [m_mmult]    = "[*]"
-    , [m_mdiv]     = "[/]"
-    , [m_mgt]      = "[>]"
-    , [m_meq]      = "[=]"
-    , [m_mnot]     = "[not]"
+    , [m_add]          = "+"
+    , [m_madd]         = "[+]"
+    , [m_msub]         = "[-]"
+    , [m_mmult]        = "[*]"
+    , [m_mdiv]         = "[/]"
+    , [m_mmod]         = "[%]"
+    , [m_mgt]          = "[>]"
+    , [m_meq]          = "[=]"
+    , [m_mnot]         = "[not]"
+    , [m_mneg]         = "[-]"
+    , [m_mand]         = "[and]"
+    , [m_mor]          = "[or]"
+    , [m_mifthenelse]  = "[ifthenelse]"
+    , [m_misnil]       = "[isnil]"
+    , [m_new_ws]       = "create_ws"
+    , [m_doc_tbl]      = "doc_tbl"
+
+    , [m_llscj_anc]              = "loop_lifted_ancestor_step"
+    , [m_llscj_anc_elem]         = "loop_lifted_ancestor_step_with_kind_test"
+    , [m_llscj_anc_text]         = "loop_lifted_ancestor_step_with_kind_test"
+    , [m_llscj_anc_comm]         = "loop_lifted_ancestor_step_with_kind_test"
+    , [m_llscj_anc_pi]           = "loop_lifted_ancestor_step_with_kind_test"
+    , [m_llscj_anc_elem_nsloc]   = "loop_lifted_ancestor_step_with_nsloc_test"
+    , [m_llscj_anc_elem_loc]     = "loop_lifted_ancestor_step_with_loc_test"
+    , [m_llscj_anc_elem_ns]      = "loop_lifted_ancestor_step_with_ns_test"
+    , [m_llscj_anc_pi_targ]      = "loop_lifted_ancestor_step_with_target_test"
+
+    , [m_llscj_anc_self]         
+        = "loop_lifted_ancestor_or_self_step"
+    , [m_llscj_anc_self_elem]
+        = "loop_lifted_ancestor_or_self_step_with_kind_test"
+    , [m_llscj_anc_self_text]
+        = "loop_lifted_ancestor_or_self_step_with_kind_test"
+    , [m_llscj_anc_self_comm]
+        = "loop_lifted_ancestor_or_self_step_with_kind_test"
+    , [m_llscj_anc_self_pi]
+        = "loop_lifted_ancestor_or_self_step_with_kind_test"
+    , [m_llscj_anc_self_elem_nsloc]
+        = "loop_lifted_ancestor_or_self_step_with_nsloc_test"
+    , [m_llscj_anc_self_elem_loc]
+        = "loop_lifted_ancestor_or_self_step_with_loc_test"
+    , [m_llscj_anc_self_elem_ns]
+        = "loop_lifted_ancestor_or_self_step_with_ns_test"
+    , [m_llscj_anc_self_pi_targ]
+        = "loop_lifted_ancestor_or_self_step_with_target_test"
+
+    , [m_llscj_child]            = "loop_lifted_child_step"
+    , [m_llscj_child_elem]       = "loop_lifted_child_step_with_kind_test"
+    , [m_llscj_child_text]       = "loop_lifted_child_step_with_kind_test"
+    , [m_llscj_child_comm]       = "loop_lifted_child_step_with_kind_test"
+    , [m_llscj_child_pi]         = "loop_lifted_child_step_with_kind_test"
+    , [m_llscj_child_elem_nsloc] = "loop_lifted_child_step_with_nsloc_test"
+    , [m_llscj_child_elem_loc]   = "loop_lifted_child_step_with_loc_test"
+    , [m_llscj_child_elem_ns]    = "loop_lifted_child_step_with_ns_test"
+    , [m_llscj_child_pi_targ]    = "loop_lifted_child_step_with_target_test"
+
+    , [m_llscj_desc]            = "loop_lifted_descendant_step"
+    , [m_llscj_desc_elem]       = "loop_lifted_descendant_step_with_kind_test"
+    , [m_llscj_desc_text]       = "loop_lifted_descendant_step_with_kind_test"
+    , [m_llscj_desc_comm]       = "loop_lifted_descendant_step_with_kind_test"
+    , [m_llscj_desc_pi]         = "loop_lifted_descendant_step_with_kind_test"
+    , [m_llscj_desc_elem_nsloc] = "loop_lifted_descendant_step_with_nsloc_test"
+    , [m_llscj_desc_elem_loc]   = "loop_lifted_descendant_step_with_loc_test"
+    , [m_llscj_desc_elem_ns]    = "loop_lifted_descendant_step_with_ns_test"
+    , [m_llscj_desc_pi_targ]    = "loop_lifted_descendant_step_with_target_test"
+
+    , [m_llscj_desc_self]
+        = "loop_lifted_descendant_or_self_step"
+    , [m_llscj_desc_self_elem]
+        = "loop_lifted_descendant_or_self_step_with_kind_test"
+    , [m_llscj_desc_self_text]
+        = "loop_lifted_descendant_or_self_step_with_kind_test"
+    , [m_llscj_desc_self_comm]
+        = "loop_lifted_descendant_or_self_step_with_kind_test"
+    , [m_llscj_desc_self_pi]
+        = "loop_lifted_descendant_or_self_step_with_kind_test"
+    , [m_llscj_desc_self_elem_nsloc]
+        = "loop_lifted_descendant_or_self_step_with_nsloc_test"
+    , [m_llscj_desc_self_elem_loc]
+        = "loop_lifted_descendant_or_self_step_with_loc_test"
+    , [m_llscj_desc_self_elem_ns]
+        = "loop_lifted_descendant_or_self_step_with_ns_test"
+    , [m_llscj_desc_self_pi_targ]
+        = "loop_lifted_descendant_or_self_step_with_target_test"
+
+    , [m_llscj_foll]            = "loop_lifted_following_step"
+    , [m_llscj_foll_elem]       = "loop_lifted_following_step_with_kind_test"
+    , [m_llscj_foll_text]       = "loop_lifted_following_step_with_kind_test"
+    , [m_llscj_foll_comm]       = "loop_lifted_following_step_with_kind_test"
+    , [m_llscj_foll_pi]         = "loop_lifted_following_step_with_kind_test"
+    , [m_llscj_foll_elem_nsloc] = "loop_lifted_following_step_with_nsloc_test"
+    , [m_llscj_foll_elem_loc]   = "loop_lifted_following_step_with_loc_test"
+    , [m_llscj_foll_elem_ns]    = "loop_lifted_following_step_with_ns_test"
+    , [m_llscj_foll_pi_targ]    = "loop_lifted_following_step_with_target_test"
+
+    , [m_llscj_foll_sibl]
+        = "loop_lifted_following_sibling_step"
+    , [m_llscj_foll_sibl_elem]
+        = "loop_lifted_following_sibling_step_with_kind_test"
+    , [m_llscj_foll_sibl_text]
+        = "loop_lifted_following_sibling_step_with_kind_test"
+    , [m_llscj_foll_sibl_comm]
+        = "loop_lifted_following_sibling_step_with_kind_test"
+    , [m_llscj_foll_sibl_pi]
+        = "loop_lifted_following_sibling_step_with_kind_test"
+    , [m_llscj_foll_sibl_elem_nsloc]
+        = "loop_lifted_following_sibling_step_with_nsloc_test"
+    , [m_llscj_foll_sibl_elem_loc]
+        = "loop_lifted_following_sibling_step_with_loc_test"
+    , [m_llscj_foll_sibl_elem_ns]
+        = "loop_lifted_following_sibling_step_with_ns_test"
+    , [m_llscj_foll_sibl_pi_targ]
+        = "loop_lifted_following_sibling_step_with_target_test"
+
+    , [m_llscj_parent]            = "loop_lifted_parent_step"
+    , [m_llscj_parent_elem]       = "loop_lifted_parent_step_with_kind_test"
+    , [m_llscj_parent_text]       = "loop_lifted_parent_step_with_kind_test"
+    , [m_llscj_parent_comm]       = "loop_lifted_parent_step_with_kind_test"
+    , [m_llscj_parent_pi]         = "loop_lifted_parent_step_with_kind_test"
+    , [m_llscj_parent_elem_nsloc] = "loop_lifted_parent_step_with_nsloc_test"
+    , [m_llscj_parent_elem_loc]   = "loop_lifted_parent_step_with_loc_test"
+    , [m_llscj_parent_elem_ns]    = "loop_lifted_parent_step_with_ns_test"
+    , [m_llscj_parent_pi_targ]    = "loop_lifted_parent_step_with_target_test"
+
+    , [m_llscj_prec]            = "loop_lifted_preceding_step"
+    , [m_llscj_prec_elem]       = "loop_lifted_preceding_step_with_kind_test"
+    , [m_llscj_prec_text]       = "loop_lifted_preceding_step_with_kind_test"
+    , [m_llscj_prec_comm]       = "loop_lifted_preceding_step_with_kind_test"
+    , [m_llscj_prec_pi]         = "loop_lifted_preceding_step_with_kind_test"
+    , [m_llscj_prec_elem_nsloc] = "loop_lifted_preceding_step_with_nsloc_test"
+    , [m_llscj_prec_elem_loc]   = "loop_lifted_preceding_step_with_loc_test"
+    , [m_llscj_prec_elem_ns]    = "loop_lifted_preceding_step_with_ns_test"
+    , [m_llscj_prec_pi_targ]    = "loop_lifted_preceding_step_with_target_test"
+
+    , [m_llscj_prec_sibl]
+        = "loop_lifted_preceding_sibling_step"
+    , [m_llscj_prec_sibl_elem]
+        = "loop_lifted_preceding_sibling_step_with_kind_test"
+    , [m_llscj_prec_sibl_text]
+        = "loop_lifted_preceding_sibling_step_with_kind_test"
+    , [m_llscj_prec_sibl_comm]
+        = "loop_lifted_preceding_sibling_step_with_kind_test"
+    , [m_llscj_prec_sibl_pi]
+        = "loop_lifted_preceding_sibling_step_with_kind_test"
+    , [m_llscj_prec_sibl_elem_nsloc]
+        = "loop_lifted_preceding_sibling_step_with_nsloc_test"
+    , [m_llscj_prec_sibl_elem_loc]
+        = "loop_lifted_preceding_sibling_step_with_loc_test"
+    , [m_llscj_prec_sibl_elem_ns]
+        = "loop_lifted_preceding_sibling_step_with_ns_test"
+    , [m_llscj_prec_sibl_pi_targ]
+        = "loop_lifted_preceding_sibling_step_with_target_test"
+
+    , [m_get_fragment]    = "get_fragment"
+    , [m_set_kind]        = "set_kind"
+    , [m_is_fake_project] = "is_fake_project"
+    , [m_chk_order]       = "chk_order"
+
+    , [m_sc_desc]  = "sc_desc"
 
     , [m_max]      = "max"
     , [m_count]    = "count"
+    , [m_gcount]       = "{count}"
+    , [m_bat]      = "bat"
+    , [m_col_name] = "col_name"
 
 };
 
@@ -144,6 +346,7 @@ static void print_variable (PFmil_t *);
 static void print_expression (PFmil_t *);
 static void print_literal (PFmil_t *);
 static void print_type (PFmil_t *);
+static void print_args (PFmil_t *);
 
 #ifdef NDEBUG
 #define debug_output
@@ -177,6 +380,19 @@ print_statements (PFmil_t * n)
             print_statements (n->child[1]);
             break;
 
+        case m_if:
+            milprintf ("if (");
+            print_expression (n->child[0]);
+            milprintf (") {\n");
+            print_statements (n->child[1]);
+            milprintf ("} else {\n");
+            print_statements (n->child[2]);
+            milprintf ("}\n");
+            break;
+
+        case m_nop:
+            break;
+
         /* statements : statement ';' */
         default:
             print_statement (n);
@@ -193,19 +409,49 @@ print_statements (PFmil_t * n)
 static void
 print_statement (PFmil_t * n)
 {
-    unsigned int i;
-
     switch (n->kind) {
 
-        /* statement : 'var' variable ':=' expression
-         *           | variable ':=' expression           */
+        /* statement : variable ':=' expression */
         case m_assgn:
-            milprintf ("var ");
-            /* fall through */
-        case m_reassgn:
             print_variable (n->child[0]);
             milprintf (" := ");
             print_expression (n->child[1]);
+            break;
+
+        /* statement : 'var' Variable */
+        case m_declare:
+            milprintf ("var ");
+            print_variable (n->child[0]);
+            break;
+
+        /* expr '.insert (' expr ',' expr ')' */
+        case m_insert:
+            print_expression (n->child[0]);
+            milprintf (".%s (", ID[n->kind]);
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (")");
+            break;
+
+        /* expression '.insert (' expression ')' */
+        case m_binsert:
+        /* expression '.append (' expression ')' */
+        case m_bappend:
+            print_expression (n->child[0]);
+            milprintf (".%s (", ID[n->kind]);
+            print_expression (n->child[1]);
+            milprintf (")");
+            break;
+
+        /* expression '.access (' restriction ')' */
+        case m_access:
+            print_expression (n->child[0]);
+            switch (n->sem.access) {
+                case BAT_READ:   milprintf (".access (BAT_READ)"); break;
+                case BAT_APPEND: milprintf (".access (BAT_APPEND)"); break;
+                case BAT_WRITE:  milprintf (".access (BAT_WRITE)"); break;
+            }
             break;
 
         case m_order:
@@ -214,22 +460,60 @@ print_statement (PFmil_t * n)
             break;
 
         /* `nop' nodes (`no operation') may be produced during compilation */
+        /*
         case m_nop:
+            break;
+        */
+
+        case m_print:
+            milprintf ("print (");
+            print_args (n->child[0]);
+            milprintf (")");
+            break;
+
+        case m_col_name:
+            print_expression (n->child[0]);
+            milprintf (".%s (", ID[n->kind]);
+            print_expression (n->child[1]);
+            milprintf (")");
             break;
 
         case m_serialize:
-            milprintf ("serialize (");
+            milprintf ("print_result (");
+            print_args (n->child[0]);
+#if 0
             for (i = 0; i < 7; i++) {
                 if (i)
                     milprintf (", ");
                 print_expression (n->child[i]);
             }
+#endif
             milprintf (")");
             break;
 
         default:
             debug_output;     /* Print MIL code so far when in debug mode. */
-            PFoops (OOPS_FATAL, "Illegal MIL tree. MIL printer skrewed up.");
+#ifndef NDEBUG
+            PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
+#endif
+            PFoops (OOPS_FATAL,
+                    "Illegal MIL tree. MIL printer skrewed up (kind: %u).",
+                    n->kind);
+    }
+}
+
+static void
+print_args (PFmil_t *n)
+{
+    switch (n->kind) {
+
+        case m_arg:   print_args (n->child[0]);
+                      milprintf (", ");
+                      print_args (n->child[1]);
+                      break;
+
+        default:      print_expression (n);
+                      break;
     }
 }
 
@@ -275,10 +559,20 @@ print_expression (PFmil_t * n)
         case m_leftjoin:
         /* expression : expression '.CTrefine (' expression ')' */
         case m_ctrefine:
+        /* expression : expression '.CTderive (' expression ')' */
+        case m_ctderive:
         /* expression : expression '.insert (' expression ')' */
         case m_binsert:
+        /* expression : expression '.append (' expression ')' */
+        case m_bappend:
+        /* expression : expression '.fetch (' expression ')' */
+        case m_fetch:
         /* expression : expression '.kunion (' expression ')' */
         case m_kunion:
+        /* expression : expression '.kdiff (' expression ')' */
+        case m_kdiff:
+        /* expression : expression '.set_kind (' expression ')' */
+        case m_set_kind:
             print_expression (n->child[0]);
             milprintf (".%s (", ID[n->kind]);
             print_expression (n->child[1]);
@@ -299,6 +593,20 @@ print_expression (PFmil_t * n)
         case m_max:
         /* expression : expression '.count' */
         case m_count:
+        /* expression : expression '.bat()' */
+        case m_bat:
+        /* expression '.CTgroup ()' */
+        case m_ctgroup:
+        /* expression '.CTmap ()' */
+        case m_ctmap:
+        /* expression '.CTextend ()' */
+        case m_ctextend:
+        /* expression '.get_fragment ()' */
+        case m_get_fragment:
+        /* expression '.is_fake_project ()' */
+        case m_is_fake_project:
+        /* expression '.chk_order ()' */
+        case m_chk_order:
             print_expression (n->child[0]);
             milprintf (".%s ()", ID[n->kind]);
             break;
@@ -310,6 +618,12 @@ print_expression (PFmil_t * n)
                 case BAT_APPEND: milprintf (".access (BAT_APPEND)"); break;
                 case BAT_WRITE:  milprintf (".access (BAT_WRITE)"); break;
             }
+            break;
+
+        /* expression '.key (' bool ')' */
+        case m_key:
+            print_expression (n->child[0]);
+            milprintf (".key (%s)", n->sem.b ? "true" : "false");
             break;
 
         /* expression : Type '(' expression ')' */
@@ -339,10 +653,16 @@ print_expression (PFmil_t * n)
         case m_mmult:
         /* expression : '[/](' expression ',' expression ')' */
         case m_mdiv:
+        /* expression : '[%](' expression ',' expression ')' */
+        case m_mmod:
         /* expression : '[>](' expression ',' expression ')' */
         case m_mgt:
         /* expression : '[=](' expression ',' expression ')' */
         case m_meq:
+        /* expression : '[and](' expression ',' expression ')' */
+        case m_mand:
+        /* expression : '[or](' expression ',' expression ')' */
+        case m_mor:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
@@ -350,10 +670,75 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
-        /* expression : '[not](' expression ')' */
-        case m_mnot:
+        /* expression : '[ifthenelse](' expr ',' expr ',' expr ')' */
+        case m_mifthenelse:
             milprintf ("%s(", ID[n->kind]);
             print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (")");
+            break;
+
+        /* expression: '{count}(' expression ')' */
+        case m_gcount:
+            milprintf ("%s(", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (")");
+            break;
+
+        /* expr '.select (' expr ',' expr ')' */
+        case m_select2:
+            print_expression (n->child[0]);
+            milprintf (".%s (", ID[n->kind]);
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (")");
+            break;
+
+        /* expression : '[not](' expression ')' */
+        case m_mnot:
+        /* expression : '[-](' expression ')' */
+        case m_mneg:
+        /* expression : '[isnil](' expression ')' */
+        case m_misnil:
+            milprintf ("%s(", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (")");
+            break;
+
+        /* expression : 'new_ws ()' */
+        case m_new_ws:
+            milprintf ("%s ()", ID[n->kind]);
+            break;
+
+        /* expression : 'doc_tbl (' expr ',' expr ')' */
+        case m_doc_tbl:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (")");
+            break;
+
+        /* expression : 'sc_desc (' expr ',' expr ',' expr ',' expr ')' */
+        case m_sc_desc:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (")");
+            break;
+
+        case m_merged_union:
+            milprintf ("%s (", ID[n->kind]);
+            print_args (n->child[0]);
             milprintf (")");
             break;
 
@@ -376,8 +761,231 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* staircase join variants */
+        case m_llscj_anc:
+        case m_llscj_anc_self:
+        case m_llscj_child:
+        case m_llscj_desc:
+        case m_llscj_desc_self:
+        case m_llscj_foll:
+        case m_llscj_foll_sibl:
+        case m_llscj_parent:
+        case m_llscj_prec:
+        case m_llscj_prec_sibl:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (")");
+            break;
+
+        case m_llscj_anc_elem:
+        case m_llscj_anc_self_elem:
+        case m_llscj_child_elem:
+        case m_llscj_desc_elem:
+        case m_llscj_desc_self_elem:
+        case m_llscj_foll_elem:
+        case m_llscj_foll_sibl_elem:
+        case m_llscj_parent_elem:
+        case m_llscj_prec_elem:
+        case m_llscj_prec_sibl_elem:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ELEMENT)");
+            break;
+
+        case m_llscj_anc_text:
+        case m_llscj_anc_self_text:
+        case m_llscj_child_text:
+        case m_llscj_desc_text:
+        case m_llscj_desc_self_text:
+        case m_llscj_foll_text:
+        case m_llscj_foll_sibl_text:
+        case m_llscj_parent_text:
+        case m_llscj_prec_text:
+        case m_llscj_prec_sibl_text:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", TEXT)");
+            break;
+
+        case m_llscj_anc_comm:
+        case m_llscj_anc_self_comm:
+        case m_llscj_child_comm:
+        case m_llscj_desc_comm:
+        case m_llscj_desc_self_comm:
+        case m_llscj_foll_comm:
+        case m_llscj_foll_sibl_comm:
+        case m_llscj_parent_comm:
+        case m_llscj_prec_comm:
+        case m_llscj_prec_sibl_comm:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", COMMENT)");
+            break;
+
+        case m_llscj_anc_pi:
+        case m_llscj_anc_self_pi:
+        case m_llscj_child_pi:
+        case m_llscj_desc_pi:
+        case m_llscj_desc_self_pi:
+        case m_llscj_foll_pi:
+        case m_llscj_foll_sibl_pi:
+        case m_llscj_parent_pi:
+        case m_llscj_prec_pi:
+        case m_llscj_prec_sibl_pi:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", PI)");
+            break;
+
+        case m_llscj_anc_elem_nsloc:
+        case m_llscj_anc_self_elem_nsloc:
+        case m_llscj_child_elem_nsloc:
+        case m_llscj_desc_elem_nsloc:
+        case m_llscj_desc_self_elem_nsloc:
+        case m_llscj_foll_elem_nsloc:
+        case m_llscj_foll_sibl_elem_nsloc:
+        case m_llscj_parent_elem_nsloc:
+        case m_llscj_prec_elem_nsloc:
+        case m_llscj_prec_sibl_elem_nsloc:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ");
+            print_expression (n->child[5]);
+            milprintf (", ");
+            print_expression (n->child[6]);
+            milprintf (")");
+            break;
+
+        case m_llscj_anc_elem_loc:
+        case m_llscj_anc_self_elem_loc:
+        case m_llscj_child_elem_loc:
+        case m_llscj_desc_elem_loc:
+        case m_llscj_desc_self_elem_loc:
+        case m_llscj_foll_elem_loc:
+        case m_llscj_foll_sibl_elem_loc:
+        case m_llscj_parent_elem_loc:
+        case m_llscj_prec_elem_loc:
+        case m_llscj_prec_sibl_elem_loc:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ");
+            print_expression (n->child[5]);
+            milprintf (")");
+            break;
+
+        case m_llscj_anc_elem_ns:
+        case m_llscj_anc_self_elem_ns:
+        case m_llscj_child_elem_ns:
+        case m_llscj_desc_elem_ns:
+        case m_llscj_desc_self_elem_ns:
+        case m_llscj_foll_elem_ns:
+        case m_llscj_foll_sibl_elem_ns:
+        case m_llscj_parent_elem_ns:
+        case m_llscj_prec_elem_ns:
+        case m_llscj_prec_sibl_elem_ns:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ");
+            print_expression (n->child[5]);
+            milprintf (")");
+            break;
+
+        case m_llscj_anc_pi_targ:
+        case m_llscj_anc_self_pi_targ:
+        case m_llscj_child_pi_targ:
+        case m_llscj_desc_pi_targ:
+        case m_llscj_desc_self_pi_targ:
+        case m_llscj_foll_pi_targ:
+        case m_llscj_foll_sibl_pi_targ:
+        case m_llscj_parent_pi_targ:
+        case m_llscj_prec_pi_targ:
+        case m_llscj_prec_sibl_pi_targ:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ");
+            print_expression (n->child[5]);
+            milprintf (")");
+            break;
+
+
+
         default:
             debug_output;     /* Print MIL code so far when in debug mode. */
+#ifndef NDEBUG
+            PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
+#endif
             PFoops (OOPS_FATAL, "Illegal MIL tree. MIL printer skrewed up.");
     }
 }
@@ -413,6 +1021,7 @@ print_literal (PFmil_t * n)
 
         /* literal : StringLiteral */
         case m_lit_str:
+            assert (n->sem.s);
             milprintf ("\"%s\"", PFesc_string (n->sem.s));
             break;
 
@@ -438,6 +1047,9 @@ print_literal (PFmil_t * n)
 
         default:
             debug_output;     /* Print MIL code so far when in debug mode. */
+#ifndef NDEBUG
+            PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
+#endif
             PFoops (OOPS_FATAL, "Illegal MIL tree, literal expected. "
                                 "MIL printer skrewed up.");
     }
@@ -453,10 +1065,14 @@ print_type (PFmil_t *n)
         , [m_str]   = "str"
         , [m_dbl]   = "dbl"
         , [m_bit]   = "bit"
+        , [m_chr]   = "chr"
     };
 
     if (n->kind != m_type) {
         debug_output;     /* Print MIL code so far when in debug mode. */
+#ifndef NDEBUG
+        PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
+#endif
         PFoops (OOPS_FATAL, "Illegal MIL tree, type expected. "
                             "MIL printer skrewed up.");
     }

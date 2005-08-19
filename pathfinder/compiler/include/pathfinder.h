@@ -95,12 +95,12 @@ struct PFstate_t {
     unsigned int optimize;    /**< command line switch: -O */
     bool print_parse_tree;    /**< command line switch: -p */
     bool print_core_tree;     /**< command line switch: -c */
-    bool print_algebra_tree;  /**< command line switch: -a */
-    bool print_ma_tree;       /**< command line switch: -m */
+    bool print_la_tree;       /**< command line switch: -l */
+    bool print_pa_tree;       /**< command line switch: -a */
     bool summer_branch;       /**< command line switch: -M */
-#if 0
-    bool parse_hsk;           /**< command line switch: -H */
-#endif
+
+    char *format;             /**< dot output format (command line switch -f) */
+
     unsigned int genType;     /* kind of output */
     enum PFinvocation_t invocation;
 };

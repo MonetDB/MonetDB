@@ -34,7 +34,7 @@ lib__pf_support = {
 		staircasejoin.mx \
 		ll_staircasejoin.mx \
 		prec_foll.mx \
-		levelsteps.mx \ 
+		levelsteps.mx \
 		shredder.mx \
 		serialize.mx
 

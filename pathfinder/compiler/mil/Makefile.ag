@@ -28,10 +28,6 @@ lib_mil = {
 	DIR = libdir
 	SOURCES = \
 		mil.c \
-		milalgebra.c \
-		ma_gen.brg \
-		ma_opt.brg \
-		ma_cse.c \
 		milgen.brg \
 		milprint.c \
 		mil_opt.c \

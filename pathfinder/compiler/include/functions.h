@@ -70,7 +70,7 @@ struct PFfun_t {
     bool           builtin;    /**< is this a builtin (XQuery F&O) function? */
     PFty_t        *par_ty;     /**< builtin: array of formal parameter types */
     PFty_t         ret_ty;     /**< builtin: return type */
-    struct PFalg_pair_t (*alg) (struct PFalg_op_t *, struct PFalg_pair_t *);
+    struct PFla_pair_t (*alg) (const struct PFla_op_t *, struct PFla_pair_t *);
     PFvar_t      **params;     /**< list of parameter variables */
     PFcnode_t     *core;
     int            fid;        /**< id for variable environment mapping (summer_branch) */
@@ -83,8 +83,8 @@ extern PFenv_t *PFfun_env;
 
 /** allocate a new struct to describe a (built-in or user) function */
 PFfun_t *PFfun_new (PFqname_t, unsigned int, bool, PFty_t *, PFty_t *,
-                    struct PFalg_pair_t (*alg) (struct PFalg_op_t *,
-                                                struct PFalg_pair_t *),
+                    struct PFla_pair_t (*alg) (const struct PFla_op_t *,
+                                               struct PFla_pair_t *),
                     PFvar_t **params);
 
 #endif   /* FUNCTIONS_H */

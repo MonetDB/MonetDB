@@ -298,6 +298,69 @@ PROC create_ws () : BAT[void,bat]
     return ws.access(BAT_READ);
 }
 
+
+PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
+{
+    # consider each document only once
+    var docs := item.tuniqueALT ().mark (0@0).reverse ();
+
+    # throw out documents we already have in the working set
+    docs := docs.reverse ()
+                .kdiff (ws.fetch (DOC_LOADED).reverse ())
+                .mark (0@0)
+                .reverse ();
+
+    # load all remaining documents into the working set
+    docs@batloop () {
+        ws := add_doc (ws, $t);
+    }
+
+    # The working set now contains all documents we need.
+    
+    # pick the according frag value for each document requested
+    var frag := item.leftjoin (ws.fetch (DOC_LOADED).reverse ())
+                    .reverse ()
+                    .mark (0@0)
+                    .reverse ();
+
+    # FIXME: `ELEM' is not actually a good name here. It specifies
+    #        that the node is to be found in the pre_... containers
+    #        (in contrast to the attribute containers).
+    var ret_kind := set_kind (frag, ELEM);
+
+    # pre values will all be zero
+    var ret_item := ret_kind.project (0@0);
+
+    # return result as a BAT of BATs
+    return new (void, BAT).insert (nil, ws)
+                          .insert (nil, ret_item)
+                          .insert (nil, ret_kind)
+                          .seqbase (0@0);
+}
+
+ADDHELP("create_ws", "tsheyar", "July 2004",
+"DESCRIPITON:\n\
+creates a new working set and gives back the reference",
+"pathfinder");
+
+ADDHELP("doc_tbl", "teubner", "Aug 2005",
+"PARAMETERS:\n\
+  ws    current working set; will be modified\n\
+  item  list of documents to add to the working set\n\
+DESCRIPTION:\n\
+Implementation of the algebra operator `doc_tbl' that\n\
+loads persistent documents into the working set.\n\
+Input is a list of document names. Output is a BAT of\n\
+BATs with the components\n\
+ (a) the modified working set,\n\
+ (b) an `item' column with the pre values of the\n\
+     document roots, and\n\
+ (c) a `kind' column that encodes node kind and document\n\
+     container (within the working set) according to our\n\
+     working set representation.",
+"pathfinder");
+
+
 PROC destroy_ws_locked(BAT[void,bat] ws) : void {
     doc_query.select(int(ws))@batloop() {
         var doc_oid := $h;

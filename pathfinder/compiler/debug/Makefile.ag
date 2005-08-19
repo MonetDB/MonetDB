@@ -29,8 +29,8 @@ lib_debug = {
 	SOURCES = \
 		abssynprint.c \
 		coreprint.c \
-		algdebug.c \
-		ma_debug.c \
+		logdebug.c \
+		physdebug.c \
 		prettyp.c 
 }
 
