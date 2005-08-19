@@ -650,6 +650,7 @@ mal_export char *BKCinsert_void_bun(int *r, int *bid, ptr t);
 mal_export char *BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
 mal_export char *BKCdelete(int *r, int *bid, ptr h);
 mal_export char *BKCdelete_bat(int *r, int *bid, int *bnid);
+mal_export char *BKCdestroy(signed char *r, int *bid);
 
 #endif /*_BAT_H_*/
 @c
@@ -1782,8 +1783,8 @@ BKCdestroyImmediate(signed char*r, int *bid)
 	return MAL_SUCCEED;
 }
 
-str
-BKCdestroy(bit *r, int *bid)
+char *
+BKCdestroy(signed char *r, int *bid)
 {
 	BAT *b;
 

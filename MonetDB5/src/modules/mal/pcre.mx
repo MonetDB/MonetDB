@@ -130,6 +130,7 @@ pcre_match(bit *ret, str *val, str *pat)
 #else
 
 #include <pcre.h>
+#include <regex.h>
 
 #define m2p(p) (pcre*)(((sht*)p)+1)
 #define p2m(p) (pcre*)(((sht*)p)-1)

@@ -353,10 +353,10 @@ results.
 For the time being, we use a simplistic model, based
 on the assumption that most joins are foreign key joins anyway.
 @c
-lng
+size_t
 QOTjoinEstimate(BAT *l, BAT *r)
 {
-	lng lc, rc;
+	size_t lc, rc;
 
 	lc = BATcount(l);
 	rc = BATcount(r);
@@ -367,7 +367,7 @@ str
 QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *joins[MAXARG], *b = 0;
-	lng estimate, e;
+	size_t estimate, e;
 	int top, i, j, ret = 0, *bid;
 
 	(void) mb;

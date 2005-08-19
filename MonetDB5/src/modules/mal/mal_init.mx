@@ -68,7 +68,7 @@ include batcolor;
 # MAL related extensions
 include clients;
 include tablet;
-include io;
+include print;
 include factory;
 #include multiplex;
 include const; 

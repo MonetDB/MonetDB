@@ -331,7 +331,7 @@ mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export void mdbHelp(stream *f);
 mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int cnt, int first);
-mal_export void printBATelm(stream *f, int i, int cnt, int first);
+mal_export void printBATelm(stream *f, int i, size_t cnt, size_t first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -873,7 +873,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		}
 		case 'p':
 		{
-			int i, size = 0, first = 0;
+			size_t size = 0, first = 0;
+			int i;
 			char *t;
 
 			skipWord(cntxt, b);
@@ -1068,7 +1069,7 @@ printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
 }
 
 void
-printBATelm(stream *f, int i, int cnt, int first)
+printBATelm(stream *f, int i, size_t cnt, size_t first)
 {
 	BAT *b, *bs;
 	str tpe /*,nme */ ;
@@ -1078,7 +1079,9 @@ printBATelm(stream *f, int i, int cnt, int first)
 		/* nme= BATgetId(b); */
 		tpe = getTypeName(newBatType(b->htype, b->ttype));
 		/* ignore ref count of this call */
-		stream_printf(f, "type=%s count=%d lrefs=%d refs=%d \n", tpe, BATcount(b), BBP_lrefs(ABS(b->batCacheid)), BBP_refs(ABS(b->batCacheid)) - 1);
+		stream_printf(f, "type=%s count=%d lrefs=%d refs=%d \n", tpe, 
+				BATcount(b), BBP_lrefs(ABS(b->batCacheid)), 
+				BBP_refs(ABS(b->batCacheid)) - 1);
 		if (cnt < BATcount(b)) {
 			stream_printf(f, "Sample %d out of %d\n", cnt, BATcount(b));
 		}
@@ -1168,7 +1171,9 @@ printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, int cnt, i
 		b = BATdescriptor(v->val.ival);
 		if (b) {
 			/* ignore ref count of this call */
-			stream_printf(f, " count=%d lrefs=%d refs=%d", BATcount(b), BBP_lrefs(ABS(b->batCacheid)), BBP_refs(ABS(b->batCacheid)) - 1);
+			stream_printf(f, " count=%d lrefs=%d refs=%d", 
+				BATcount(b), BBP_lrefs(ABS(b->batCacheid)), 
+				BBP_refs(ABS(b->batCacheid)) - 1);
 			BBPunfix(b->batCacheid);
 		}
 	} else if (cnt && isaColType(n->type) && v && v->val.ival) {

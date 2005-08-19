@@ -122,9 +122,9 @@ end main;	# 54
 [ "hello" ]
 [ nil ]
 [ "nil" ]
-[ Z ]
+[ 'Z' ]
 [ nil ]
-[ X ]
+[ 'X' ]
 [ 0 ]
 [ 1 ]
 #

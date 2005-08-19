@@ -78,7 +78,6 @@ different BATs.
 #include "mal_instruction.h"
 mal_export void malAtomDefinition(str name,int tpe);
 mal_export int malAtomProperty(MalBlkPtr mb, InstrPtr pci);
-mal_export int malAtomPropertyInt(MalBlkPtr mb, InstrPtr pci);
 mal_export int malAtomArray(int tpe, int idx);
 mal_export int malAtomFixed(int size, int align, char *name);
 mal_export void showAtoms(stream *fd);  /* used in src/mal/mal_debugger.c */
@@ -112,7 +111,6 @@ else{
 @= setItemInt
 if( idcmp(@1,name) || pci->argc != 1)
     return 0;
-else{
 #ifdef MAL_ATOM_DEBUG
     stream_printf(GDKout,"set the atom property %s.%s\n",
         moduleName(pci),functionName(pci));
@@ -120,7 +118,6 @@ else{
     BATatoms[tpe].@2= (*pci->fcn)();
     setAtomName(pci);
     return 1;
-}
 @c
 #include "mal_atom.h"
 #include "mal_namespace.h"
@@ -246,21 +243,6 @@ int malAtomProperty(MalBlkPtr mb, InstrPtr pci){
         } 
         break;
     case 'v': @:setItem("varsized",varsized,TYPE_int,long)@ 
-    }
-    return 0;
-}
-int malAtomPropertyInt(MalBlkPtr mb, InstrPtr pci){
-    str name= functionName(pci);
-    int tpe = getTypeIndex(moduleName(pci),strlen(moduleName(pci)), TYPE_any);
-    (void) mb; /* fool compiler */
-    if( tpe<0 || tpe>= GDKatomcnt)
-        GDKfatal("malAtomProperty:illegal type name");
-    if( pci->fcn == 0)
-        GDKwarning("malAtomProperty:function not bound\n");
-    switch(name[0]){
-    case 'a': @:setItemInt("align",align,TYPE_sht,long)@ break;
-    case 'l': @:setItemInt("linear",linear,TYPE_sht,long)@ break;
-    case 's': @:setItemInt("size",size,TYPE_sht,long)@ break;
     }
     return 0;
 }

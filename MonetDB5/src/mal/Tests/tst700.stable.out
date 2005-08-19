@@ -51,11 +51,11 @@ function user.main():int;	# 0  (main:int)
     io.printf("%6.2f\n",pi);	# 17 IOprint_formatted_flt ($30:int)<-($31:str)(pi:flt)
     io.printf("single line %s \n","hello");	# 18 IOprint_formatted_str ($32:int)<-($33:str)($34:str)
 end main;	# 19  
-[ c ]
+[ 'c' ]
 [ "hello world" ]
 [ 0 ]
 [ 1 ]
-[ c ]
+[ 'c' ]
 [ true ]
 [ 1 ]
 [ 3.14700007 ]
