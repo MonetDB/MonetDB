@@ -283,7 +283,7 @@ static struct opt {
 } options[] = {
 	{"document_root",	0, NULL, OPT_STR, {0}, NULL},
 	{"index_files",		0, NULL, OPT_STR, {0}, "index.html,index.cgi"},
-	{"list_directories",	0, NULL, OPT_INT, {0}, "1"},
+	{"list_directories",	0, NULL, OPT_INT, {0}, "0"},
 	{"cgi_extention",	0, NULL, OPT_STR, {0}, ".cgi"},
 	{"server_name",		0, NULL, OPT_STR, {0}, "mydomain.com"},
 	{"listen_port",		0, NULL, OPT_INT, {0}, "80"},
@@ -949,10 +949,6 @@ static int
 writeremote(struct conn *c, const char *buf, size_t len)
 {
 	int	n;
-
-	/* Make sure we will not send more than needed */
-	if (c->clength && c->nsent + len > c->clength)
-		len = c->clength - c->nsent;
 
 	/* Send the data via socket or SSL connection */
 #ifdef WITH_SSL
@@ -2479,6 +2475,7 @@ decide(struct conn *c)
 	if ((c->query = strchr(c->uri, '?')) != NULL) {
 		*c->query++ = '\0';
 		c->query = mystrdup(c->query);
+		urldecode(c->query, c->query);
 	}
 	urldecode(c->uri, c->uri);
 	docrootlen = strlen(STROPT(OPT_DOCROOT));
@@ -2758,13 +2755,15 @@ serve(struct conn *c, fd_set *rset, fd_set *wset)
 
 	/* Read from the local endpoint */
 	if (c->io && IO_SPACELEN(&c->local)) {
-		c->io(c);
+		c->io(c); /* do_embedded is called here */
 		c->expire += EXPIRE_TIME;
 	}
 
-	if ((len = IO_DATALEN(&c->local)) > 0 && FD_ISSET(c->sock, wset) &&
-	    (n = writeremote(c, c->local.buf + c->local.nwritten, len)) > 0)
-		io_inc_nwritten(&c->local, n);
+	if ((len = IO_DATALEN(&c->local)) > 0 && FD_ISSET(c->sock, wset)){
+	    n = writeremote(c, c->local.buf + c->local.nwritten, len);
+		if (n > 0)
+			io_inc_nwritten(&c->local, n);
+	}
 
 	if ((c->remote.done && c->remote.nread == 0) ||
 	    (c->local.done && c->local.nread == 0))
@@ -3073,7 +3072,6 @@ shttpd_get_var(struct conn *c, const char *var)
 				*e++ = '\0';
 			else
 				e = s + strlen(s);
-			urldecode(s, s);
 		}
 
 	/* Now, loop over all variables, find the right one, return value */
