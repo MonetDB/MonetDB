@@ -1,4 +1,3 @@
-vim: ts=4:sw=4:ft=c
 @' pf_httpd.mx
 @'
 @' HTTP server for MonetDB/XQuery
@@ -45,22 +44,22 @@ vim: ts=4:sw=4:ft=c
 @mil
 
 PROC pf_httpd_start(int port) : void {
-	fork(start_http_server(port));
+    fork(start_http_server(port));
 }
 ADDHELP("pf_httpd_start", "zhang", "July 2005",
-"PARAMETERS:\n\
-port to which port the HTTP server should listen (default port: 8080).\n\
-DESCRIPTION:\n\
-start the HTTP server for xquery.",
-"pf_httpd");
+        "PARAMETERS:\n\
+        port to which port the HTTP server should listen (default port: 8080).\n\
+        DESCRIPTION:\n\
+        start the HTTP server for xquery.",
+        "pf_httpd");
 
 PROC pf_httpd_start() : void {
-	pf_httpd_start(int(monet_environment.find("pf_httpd_port")));
+    pf_httpd_start(int(monet_environment.find("pf_httpd_port")));
 }
 ADDHELP("pf_httpd_start", "zhang", "July 2005",
-"DESCRIPTION:\n\
-start the HTTP server for xquery (default port: 8080).",
-"pf_httpd");
+        "DESCRIPTION:\n\
+        start the HTTP server for xquery (default port: 8080).",
+        "pf_httpd");
 
 @c
 #include "pathfinder.h"
@@ -85,81 +84,81 @@ start the HTTP server for xquery (default port: 8080).",
 static int
 handle_xquery(struct shttpd_callback_arg *arg)
 {
-	int n = 0, ret;
-	const char *query;
-	char **qres = GDKmalloc(sizeof(char *));
+    int n = 0, ret;
+    const char *query;
+    char **qres = GDKmalloc(sizeof(char *));
 
-	if( (query = shttpd_get_var(arg->connection, "req_xquery")) != NULL ) {
-		ret = CMDxquery(qres, "xml", (char*)query);		/* execute XQuery */
-		if (ret == GDK_SUCCEED) {
-			/* we might want to display the plain XML result
-			 * instead of having it rendered as HTML...      
-			 */
-			n = snprintf(arg->buf + n, arg->buflen - n, "%s%s",
-					"HTTP/1.1 200 OK\r\n"
-					"Content-Type: text/xml\r\n"
-					"\r\n",
-					*qres);
-		} else {
-			n = snprintf(arg->buf + n, arg->buflen - n, "%s",
-					"HTTP/1.1 500 Internal server error\r\n"
-					"\r\n");
-		} 
-	} else {
-		n += snprintf(arg->buf + n, arg->buflen - n, "%s",
-				"HTTP/1.1 200 OK\r\n"
-				"Content-Type: text/html\r\n"
-				"\r\n"
-				"<html><head><title>"
-				"XQuery submit form"
-				"</title></head>");
-		
-		n += snprintf(arg->buf + n, arg->buflen - n, "%s",
-				"<body>"
-				"<form method=\"post\">"
-				"Enter your XQuery:<br/>"
-				"<input type=\"text\" name=\"req_xquery\"/><br/>"
-				"<input type=\"submit\" value=\"Execute query\"/>"
-				"</form>"
-				"</body></html>");
-	}
-	arg->buf[n] = '\0';
-	return (n);
+    if( (query = shttpd_get_var(arg->connection, "req_xquery")) != NULL ) {
+        ret = CMDxquery(qres, "xml", (char*)query);		/* execute XQuery */
+        if (ret == GDK_SUCCEED) {
+            /* we might want to display the plain XML result
+             * instead of having it rendered as HTML...      
+             */
+            n = snprintf(arg->buf + n, arg->buflen - n, "%s%s",
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/xml\r\n"
+                    "\r\n",
+                    *qres);
+        } else {
+            n = snprintf(arg->buf + n, arg->buflen - n, "%s",
+                    "HTTP/1.1 500 Internal server error\r\n"
+                    "\r\n");
+        } 
+    } else {
+        n += snprintf(arg->buf + n, arg->buflen - n, "%s",
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Type: text/html\r\n"
+                "\r\n"
+                "<html><head><title>"
+                "XQuery submit form"
+                "</title></head>");
+
+        n += snprintf(arg->buf + n, arg->buflen - n, "%s",
+                "<body>"
+                "<form method=\"post\">"
+                "Enter your XQuery:<br/>"
+                "<input type=\"text\" name=\"req_xquery\"/><br/>"
+                "<input type=\"submit\" value=\"Execute query\"/>"
+                "</form>"
+                "</body></html>");
+    }
+    arg->buf[n] = '\0';
+    return (n);
 }
 
 void
 CMDstart_http_server(int* port)
 {
-	int sock;
+    int sock;
 
-	printf("MonetDB>HTTP server started on port %d\n", *port);
+    printf("MonetDB>HTTP server started on port %d\n", *port);
 
-	/* Initialize with specific config file, pass NULL to use default values */
-	shttpd_init(NULL);
+    /* Initialize with specific config file, pass NULL to use default values */
+    shttpd_init(NULL);
 
-	/* Register call back function */
-	shttpd_register_url("/exec_xquery", &handle_xquery, NULL);
+    /* Register call back function */
+    shttpd_register_url("/exec_xquery", &handle_xquery, NULL);
 
-	/* Open listening socket */
-	sock = shttpd_open_port(*port);
+    /* Open listening socket */
+    sock = shttpd_open_port(*port);
 
-	/* Serve connections infinitely until someone kills us */
-	for(;;){
-		shttpd_poll(sock, 200); /* the 2nd parameter is the wait time in milliseconds */
-	}
+    /* Serve connections infinitely until someone kills us */
+    for(;;){
+        shttpd_poll(sock, 200); /* the 2nd parameter is the wait time in milliseconds */
+    }
 }
 
 bat *
 pf_httpd_prelude()
 {
-	/* Nothing to do here. */
-	return NULL;
+    /* Nothing to do here. */
+    return NULL;
 }
 
 void
 pf_httpd_epilogue()
 {
-	/* Shut down the HTTP server. */
-	shttpd_fini();
+    /* Shut down the HTTP server. */
+    shttpd_fini();
 }
-
+/* vim:set shiftwidth=4 expandtab: */
