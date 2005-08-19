@@ -216,6 +216,9 @@ isLoaded(str modulename)
 	return 0;
 }
 
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif
 str
 loadModuleLibrary(str modulename)
 {

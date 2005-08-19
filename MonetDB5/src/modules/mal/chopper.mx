@@ -85,15 +85,9 @@ comment "return the BUN tail value using the cursor.";
 
 @include prelude.mx
 @+ BAT Iterator Implementation
-@-
-The routine VALinit is an utility routine to move
-a value from a BUN into a value record, making proper copies
-on the way.
 @c
 #include "mal.h"
 #include "mal_interpreter.h"
-
-extern ValPtr VALinit(ValPtr d, int tpe, ptr s);
 
 @-
 We start with the large chunk iterator.

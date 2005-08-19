@@ -23,8 +23,8 @@ LEX=flex
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
 PTHREAD = C:\Pthreads
-PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVCE.lib"
 PTHREAD_INCS = "-I$(PTHREAD)\include"
+PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2.lib"
 
 # not need to edit beyond here..
 

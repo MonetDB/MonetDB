@@ -223,8 +223,6 @@ extern int CTgroup(BAT **B, BAT **H, BAT *b);
 #include "algebra.h"
 static int TYPE_mapentry;
 static int TYPE_idxentry;
-extern ptr BATmin(BAT *b, ptr aggr);
-extern ptr BATmax(BAT *b, ptr aggr);
 
 
 int

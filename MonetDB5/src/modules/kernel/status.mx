@@ -213,7 +213,7 @@ SYSgetmem_maxsize(lng *num)
 str
 set_mem_maxsize(lng *num)
 {
-	GDK_mem_maxsize = *num;
+	GDK_mem_maxsize = (size_t) *num;
 	return MAL_SUCCEED;
 }
 
@@ -234,7 +234,7 @@ SYSgetvm_maxsize(lng *num)
 str
 SYSsetvm_maxsize(lng *num)
 {
-	GDK_vm_maxsize = *num;
+	GDK_vm_maxsize = (size_t) *num;
 	return MAL_SUCCEED;
 }
 
@@ -247,13 +247,17 @@ str memMap() {
 @
 @c
 static int clk = 0;
+#ifdef HAVE_TIMES
 static struct tms state;
+#endif
 
 str
 SYScpuStatistics(int *ret)
 {
 	int i;
+#ifdef HAVE_TIMES
 	struct tms newst;
+#endif
 	BAT *b;
 
 
@@ -262,12 +266,18 @@ SYScpuStatistics(int *ret)
 		return throwMessage("catalog.gdkCpu", "failed to create BAT");
 	if (clk == 0) {
 		clk = time(0);
+#ifdef HAVE_TIMES
 		times(&state);
+#endif
 	}
+
+#ifdef HAVE_TIMES
 	times(&newst);
+#endif
 	/* store counters, ignore errors */
 	i = time(0) - clk;
 	b = BUNins(b, "elapsed", &i);
+#ifdef HAVE_TIMES
 	i = newst.tms_utime * 1000 / HZ;
 	b = BUNins(b, "user", &i);
 	i = (newst.tms_utime - state.tms_utime) * 1000 / HZ;
@@ -278,6 +288,7 @@ SYScpuStatistics(int *ret)
 	b = BUNins(b, "elapsystem", &i);
 
 	state = newst;
+#endif
 	@:Pseudo(gdk,cpu)@
 	return MAL_SUCCEED;
 }
@@ -285,7 +296,9 @@ SYScpuStatistics(int *ret)
 @-
 Same observations as to SYScpuStatistics()
 @c
+#ifdef HAVE_SBRK
 static void *memincr = NULL;
+#endif
 str
 SYSmemStatistics(int *ret)
 {
@@ -300,6 +313,7 @@ SYSmemStatistics(int *ret)
 		return throwMessage("catalog.memStatistics", "failed to create BAT");
 
 	/* store counters, ignore errors */
+#ifdef HAVE_SBRK
 	if (memincr == NULL) {
 		memincr = (char *) sbrk(0);
 	}
@@ -307,6 +321,7 @@ SYSmemStatistics(int *ret)
 
 	memincr = (char *) sbrk(0);
 	b = BUNins(b, "memincr", &i);
+#endif
 	i = m.arena;
 	b = BUNins(b, "arena", &i);
 	i = m.ordblks;
@@ -544,16 +559,20 @@ The BAT grows. It should be compacted.
 str
 SYSioStatistics(int *ret)
 {
-	struct rusage ru;
 	int i;
 	BAT *b;
 
+#ifdef HAVE_SYS_RESOURCE_H
+	struct rusage ru;
+
 	getrusage(RUSAGE_SELF, &ru);
+#endif
 	b = BATnew(TYPE_str, TYPE_int, 32);
 	if (b == 0)
 		return throwMessage("catalog.ioStatistics", "failed to create BAT");
 
 	/* store counters, ignore errors */
+#ifdef HAVE_SYS_RESOURCE_H
 	i = ru.ru_maxrss;
 	BUNins(b, "maxrss", &i);
 	i = ru.ru_minflt;
@@ -570,6 +589,7 @@ SYSioStatistics(int *ret)
 	BUNins(b, "nvcsw", &i);
 	i = ru.ru_nivcsw;
 	BUNins(b, "ninvcsw", &i);
+#endif
 
 	@:Pseudo(gdk,io)@
 	return MAL_SUCCEED;

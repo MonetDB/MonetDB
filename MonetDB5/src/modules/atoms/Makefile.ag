@@ -1,4 +1,4 @@
-INCLUDES = $(MONETDB_INCS) -I../../mal \
+INCLUDES = -I../../mal $(MONETDB_INCS) \
 	 $(Z_CFLAGS) $(BZ_CFLAGS) $(HWCOUNTERS_INCS) $(PCL_CFLAGS)
 MTSAFE
 
@@ -8,8 +8,10 @@ LIBS = {
 	SOURCES = blob.mx url.mx mtime.mx streams.mx inet.mx color.mx
 
 	HEADERS = h 
-	SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) ../../mal/libmal
+	#SCRIPTS = mal
+	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) ../../mal/libmal
 }
 
 lib__str = {
@@ -18,8 +20,11 @@ lib__str = {
 	SOURCES = str.mx 
 
 	HEADERS = h 
-	SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) $(ICONV_LIBS) ../../mal/libmal
+	#SCRIPTS = mal
+	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+                $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) \
+		$(ICONV_LIBS) ../../mal/libmal
 }
 
 

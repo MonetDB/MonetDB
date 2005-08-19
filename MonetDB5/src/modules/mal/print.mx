@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@f io
+@f print
 @a N.J. Nes, M.L. Kersten
 @d 01/07/1996, 31/01/2002
 
@@ -173,7 +173,7 @@ typedef FILE *fstream;
 
 @c
 #include <mal_config.h>
-#include "io.h"
+#include "print.h"
 
 @+ Printing
 The print commands are implemented as single instruction rules,

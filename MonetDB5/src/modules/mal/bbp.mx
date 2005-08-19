@@ -235,8 +235,8 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 @c
 #include "mal_box.h"
 #include "mal_client.h"
-#include "mal.h"
 #include "mal_interpreter.h"
+#include "bat.h"
 extern int doCMDfetch(ptr ret, BAT *b, size_t i);
 
 @-
@@ -249,9 +249,6 @@ to a named box. The bbp box is automatically opened.
 		box= openBox("bbp");\
 	if( box ==0) \
 		return throwMessage("bbp." X,"box is not open");
-
-extern str BKCnewBATint(int *res, int *ht, int *tt, int *cap);
-extern str BKCdestroyImmediate(bit *r, int *bid, bit *immediate);
 
 
 str
@@ -1143,30 +1140,6 @@ str CMDbbp@2( int *ret){
 @c
 @:headtailProperty(htype,HeadType)@
 @:headtailProperty(ttype,TailType)@
-
-extern ValPtr VALinit(ValPtr d, int tpe, ptr s);
-
-ValPtr
-VALinit(ValPtr d, int tpe, ptr s)
-{
-	if (ATOMextern(tpe) == 0) {
-		d->vtype = tpe;
-		memcpy(&d->val.ival, s, ATOMlen(tpe, s));
-	} else if (s == 0) {
-		GDKerror("VALinit:unsupported init\n");
-		d->vtype = TYPE_int;
-	} else if (tpe >= TYPE_str && ATOMstorage(tpe) == TYPE_str) {
-		d->vtype = TYPE_str;
-		d->val.sval = GDKstrdup(s);
-		d->len = strLen(s);
-	} else {
-		d->vtype = tpe;
-		d->len = ATOMlen(tpe, s);
-		d->val.pval = GDKmalloc(d->len);
-		memcpy(d->val.pval, s, d->len);
-	}
-	return d;
-}
 
 str
 CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

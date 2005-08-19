@@ -417,7 +417,9 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	struct rusage infoUsage;
 #endif
 	static int eventcounter;
+#ifdef HAVE_TIMES
 	struct tms newTms;
+#endif
 	struct mallinfo infoMalloc;
 	str stmt, c;
 
@@ -436,7 +438,9 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (!profileAll && pci->trace == FALSE)
 		return;
+#ifdef HAVE_TIMES
 	times(&newTms);
+#endif
 	infoMalloc = MT_mallinfo();
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -584,14 +588,16 @@ void
 offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 #ifdef MALprofiler
+#ifdef HAVE_TIMES
 	struct tms newTms;
+#endif
 	struct mallinfo infoMalloc;
 
 #ifdef HAVE_SYS_RESOURCE_H
 	struct rusage infoUsage;
+	static struct rusage prevUsage;
 #endif
 	static struct mallinfo prevMalloc;
-	static struct rusage prevUsage;
 	str stmt, c;
 
 	(void) cntxt;		/* still unused */
@@ -609,7 +615,9 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		log0("<MonetProfile>\n");
 		delayswitch = -1;
 	}
+#ifdef HAVE_TIMES
 	times(&newTms);
+#endif
 	infoMalloc = MT_mallinfo();
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -1213,7 +1221,9 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* static struct mallinfo prevMalloc; */
 	/* static struct rusage   prevUsage; */
 	static int eventcounter;
+#ifdef HAVE_TIMES
 	struct tms newTms;
+#endif
 
 	/* struct mallinfo infoMalloc; */
 #ifdef HAVE_SYS_RESOURCE_H
@@ -1237,7 +1247,9 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (!profileAll && pci->trace == FALSE)
 		return;
+#ifdef HAVE_TIMES
 	times(&newTms);
+#endif
 	/* infoMalloc = MT_mallinfo(); */
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);

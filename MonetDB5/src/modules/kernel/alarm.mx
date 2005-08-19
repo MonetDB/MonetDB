@@ -94,7 +94,6 @@ The timer is awakened by a clock interrupt. The interrupt granularity
 is OS-dependent. The timer should be initialized as long as there
 are outstanding timer events.
 @c
-#ifdef SIGALRM
 void
 CLKinitTimer(int sec, int usec)
 {
@@ -103,9 +102,10 @@ CLKinitTimer(int sec, int usec)
 	(void) usec;
 	TRGDEBUG THRprintf(GDKerr, "CLKinitTimer: set timer to %d secs \n", i);
 
+#ifdef SIGALRM
 	alarm(i);
-}
 #endif
+}
 @-
 A new alarm is pushed onto the stack using @%CLKalarm@.
 The parameter is the real-time value to be approximated.

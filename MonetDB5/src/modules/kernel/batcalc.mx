@@ -364,7 +364,6 @@ The common set of math functions is supported.
 #include "gdk.h"
 #include "math.h"
 #include "mal_exception.h"
-#include <regex.h>
 
 #define NULLTST
 @-
@@ -723,7 +722,7 @@ str CMD@1init_int(int *ret, int *size, @1 *cst) {
 }
 str CMD@1init_lng(int *ret, lng *size, @1 *cst) {
 	BAT *dst;
-	size_t s= *size;
+	size_t s= (size_t) *size;
 	dst= BATnew(TYPE_void, TYPE_@1, s);
 	if( dst == NULL){
 		return throwMessage("batcalc.@1", "no space available ");
@@ -946,7 +945,7 @@ str CMDcst@1bat(int *ret,void *cst, int *l)
 			*(@1*)p1= @1_nil;
 		else 
 #endif
-			*(@1*)p1= @2 *(@1 *) p2;
+			*(@1*)p1= (@1) (@2 *(@1 *) p2);
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 	}
@@ -1359,7 +1358,7 @@ str CMDconvert@1_@2(int *ret, int *bid){
 	BATloopFast(b, p, q, xx) {
 		ptr h = BUNhead(b,p);
 		x= *(@1 *) BUNtail(b,p);
-		y= x== @1_nil? @2_nil: x;
+		y= x== @1_nil? @2_nil: (@2) x;
 		bunfastins(bn, h, &y);
 	}
 bunins_failed:

@@ -107,7 +107,7 @@ static int malloc_init = 1;
 @c
 extern int optind;
 
-#ifdef NATIVE_WIN32
+#if defined(_MSC_VER) && defined(__cplusplus)
 #include <eh.h>
 void
 Mserver_abort()
@@ -292,7 +292,7 @@ main(int argc, char **av, char **envp)
 		memset(envp[i], 0, strlen(envp[i]));
 	/* clear all arguments that contain non-printable characters */
 	for (i = 0; av[i] != 0; i++) {
-		int j;
+		size_t j;
 
 		for (j = 0; j < strlen(av[i]); j++) {
 			if (!isprint((int) av[i][j])) {
@@ -333,7 +333,7 @@ faster system start.
 	malloc_init=0;
 @c
 
-#ifdef NATIVE_WIN32
+#if defined(_MSC_VER) && defined(__cplusplus)
 	set_terminate(Mserver_abort);
 #endif
 /* to be activated at some point

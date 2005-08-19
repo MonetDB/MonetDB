@@ -191,22 +191,28 @@ CLTLogin(int *ret)
 	for (i = 0; i < MAL_MAXCLIENTS; i++)
 		if (mal_clients[i].mode >= CLAIMED && mal_clients[i].user) {
 			time_t logintime = (time_t) mal_clients[i].login;
-
-#ifdef CYGWIN32
-			localtime(&logintime);
-#else
 			struct tm localt;
 
-			localtime_r(&logintime, &localt);
+#ifdef HAVE_LOCALTIME_R
+			(void) localtime_r(&logintime, &localt);
+#else
+			/* race condition: return value could be
+			 * overwritten in parallel thread before
+			 * assignment complete */
+			localt = *localtime(&logintime);
 #endif
 
-#ifdef HAVE_CTIME_R3
-			asctime_r(&localt, s, 26);
+#ifdef HAVE_ASCTIME_R3
+			asctime_r(&localt, s, sizeof(s));
 #else
-#ifdef HAVE_CTIME_R
+#ifdef HAVE_ASCTIME_R
 			asctime_r(&localt, s);
 #else
-			strcpy(s, "no asctime in WIN32");
+			/* race condition: return value could be
+			 * overwritten in parallel thread before copy
+			 * complete, however on Windows, asctime is
+			 * thread-safe */
+			strncpy(s, asctime(&localt), 26);
 #endif
 #endif
 			s[24] = 0;

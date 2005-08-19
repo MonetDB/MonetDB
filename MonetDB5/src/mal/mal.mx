@@ -173,7 +173,7 @@ as well as in user defined module implementations.
 #include <stream.h>
 
 #ifdef _MSC_VER
-#ifndef LIBMONET
+#ifndef LIBMAL
 #define mal_export extern __declspec(dllimport)
 #else
 #define mal_export extern __declspec(dllexport)
@@ -302,6 +302,10 @@ mal_export int mal_init();
 #define MALexception    "MALexception"
 
 #define STRUCT_ALIGNED
+
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif
 
 #endif /*  _MAL_H*/
 @c

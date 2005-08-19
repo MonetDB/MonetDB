@@ -23,7 +23,7 @@
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
 MTSAFE
-INCLUDES = $(MONETDB_INCS) -I../mal \
+INCLUDES = -I../mal $(MONETDB_INCS) \
 		$(PTHREAD_INCS) 
 
 bin_Mserver = {

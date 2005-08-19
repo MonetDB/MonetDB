@@ -102,9 +102,7 @@ address MILinsert_bun;
 Compatibility code wrappers
 @c
 #include "mal.h"
-
-extern str BKCinsert_void_bun(int *r, int *bid, ptr t);
-extern str BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
+#include "bat.h"
 
 str
 MILinsert_void_bun(int *r, int *bid, ptr t)

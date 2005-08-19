@@ -1373,7 +1373,7 @@ CALCnil2void(oid *ret, ptr *val)
 str
 CALClng2void(oid *ret, lng *val)
 {
-	*ret = *val;
+	*ret = (oid) *val;
 	return MAL_SUCCEED;
 }
 
@@ -1447,7 +1447,7 @@ CALCbatid2bat(int *bid, int *ret)
 @= setoidCode
 str @1SetoidImpl(str *ret, @1 *v){
 	(void) ret; /* fool compiler */
-	OIDbase(*v);
+	OIDbase((oid) *v);
 	return MAL_SUCCEED;
 }
 @c
@@ -1460,7 +1460,7 @@ Type conversion template. Only allowed then no information is lost.
 
 @= coercionImpl
 str @1From@2Impl(@1 *res, @2 *val){
-	*res = *val;
+	*res = (@1) *val;
 	return MAL_SUCCEED;
 }
 @c
@@ -1481,7 +1481,7 @@ shtFromlngImpl(sht *res, lng *val)
 	/* perform a range check !! */
 	if (*val < 0 || *val > 255)
 		return throwMessage("calc.coercion", "error lng->sht");
-	*res = *val;
+	*res = (sht) *val;
 	return MAL_SUCCEED;
 }
 
@@ -1522,7 +1522,7 @@ CALCnewoidInclng(oid *res, lng *inc)
 	if (*inc <= 0)
 		*res = OIDnew(1);
 	else {
-		*res = OIDnew(*inc);
+		*res = OIDnew((size_t) *inc);
 	}
 	return MAL_SUCCEED;
 }

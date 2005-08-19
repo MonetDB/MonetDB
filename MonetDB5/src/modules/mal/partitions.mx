@@ -183,10 +183,7 @@ mal_export int BPTfindGrp(int bid);
 #endif
 @c
 #include "partitions.h"
-extern str BKCinsert_void_bun(int *r, int *bid, ptr t);
-extern str BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
-extern str BKCdelete(int *r, int *bid, ptr h);
-extern str BKCdelete_bat(int *r, int *bid, int *bnid);
+#include "bat.h"
 
 typedef struct {
 	bat bid;		/* group bat identifier */
@@ -280,8 +277,7 @@ BPTclose()
 					stream_printf(f, "%s.deposit(\"%s\",\"%s\",%d);\n", box->name, BBPname(partitions[i].bid), BBPname(partitions[i].pid), partitions[i].cap);
 			}
 		stream_close(f);
-		(void) link(boxfilebak, boxfile);
-		(void) unlink(boxfilebak);
+		(void) rename(boxfilebak, boxfile);
 		GDKfree(boxfile);
 		GDKfree(boxfilebak);
 	}

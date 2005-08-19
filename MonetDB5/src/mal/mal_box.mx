@@ -692,7 +692,7 @@ saveBox(Box box, int flag)
 		}
 	}
 	stream_close(f);
-	if (link(boxfilebak, boxfile) && unlink(boxfilebak)) {
+	if (rename(boxfilebak, boxfile)) {
 		GDKfree(boxfile);
 		GDKfree(boxfilebak);
 		return -1;
@@ -705,6 +705,10 @@ saveBox(Box box, int flag)
 @-
 Loading a box is equivalent to reading a script.
 @c
+#ifndef R_OK
+#define R_OK 4
+#endif
+
 void
 loadBox(str name)
 {

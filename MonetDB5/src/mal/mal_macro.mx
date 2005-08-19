@@ -553,7 +553,7 @@ ORCAMprocessor(MalBlkPtr mb, Symbol t)
 @-
 The optimizer call infrastructure
 @c
-mal_export str
+str
 MCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, str mod, str fcn)
 {
 	Module s;

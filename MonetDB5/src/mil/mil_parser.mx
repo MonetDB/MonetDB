@@ -122,22 +122,22 @@ typedef struct {
 } *MILbackend;
 
 
-mal_export MILbackend newMILbackend();
-mal_export int parseMILprg(Client cntxt, MalBlkPtr curPrg);
+mil_export MILbackend newMILbackend(void);
+mil_export int parseMILprg(Client cntxt, MalBlkPtr curPrg);
 
 #endif /* _MIL_PARSER_H */
 @c
 #include "mal_interpreter.h"
 #include "mal_builder.h"
 #include "mal_parser.h"
-#include "mil_parser.h"
 #include "mil.h"
+#include "mil_parser.h"
 extern int MALkeyword(Client cntxt, str kw, int length);
 
 
-mal_export str mapfcn(str n);
-mal_export str mapmod(str n);
-mal_export int ismapped(str n);
+mil_export str mapfcn(str n);
+mil_export str mapmod(str n);
+mil_export int ismapped(str n);
 
 #define BE(X) ((MILbackend)(X->state[PARSER]))
 #define needMore(X)  currChar(X)	/* need at least one more character */
@@ -1455,9 +1455,6 @@ we should also copy the input .
 This code fragment is largely copied from the MAL parser, which also
 included an automatic skiptoend not required here.
 @c
-extern char *lastline(Client c);
-extern int position(Client c);
-
 str
 parseWarning(Client cntxt, str msg)
 {

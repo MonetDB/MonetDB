@@ -99,7 +99,17 @@ typedef struct blob {
 
 #define sqlblob blob
 
-mal_export size_t blobsize(size_t nitems);
+#ifdef _MSC_VER
+#ifndef LIBATOMS
+#define atoms_export extern __declspec(dllimport)
+#else
+#define atoms_export extern __declspec(dllexport)
+#endif
+#else
+#define atoms_export extern
+#endif
+
+atoms_export size_t blobsize(size_t nitems);
 
 #endif /* __BLOB_H__ */
 @c

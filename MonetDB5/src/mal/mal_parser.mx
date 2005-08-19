@@ -68,6 +68,9 @@ mal_export int operatorLength(Client cntxt);
 mal_export str operatorCopy(Client cntxt, int length);
 mal_export int keyphrase1(Client cntxt, str kw);
 mal_export int keyphrase2(Client cntxt, str kw);
+mal_export int MALkeyword(Client cntxt, str kw, int length);
+mal_export str lastline(Client cntxt);
+mal_export long position(Client cntxt);
 
 #endif /* _MAL_PARSER_H */
 
@@ -83,8 +86,6 @@ request and each time we encounter EOL.
 #include "mal_interpreter.h"    /* for showErrors() */
 #include "mal_instruction.h"    /* for pushEndInstruction(), findVariableLength() */
 #include "mal_namespace.h"
-
-extern int MALkeyword(Client cntxt, str kw, int length);
 
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')

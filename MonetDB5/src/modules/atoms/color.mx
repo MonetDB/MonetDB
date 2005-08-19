@@ -426,7 +426,7 @@ CLRhueInt(int *f, color *c)
 	float h, s, v;
 
 	color_rgb2hsv(&h, &s, &v, (*c >> 16) & 0xFF, (*c >> 8) & 0xFF, (*c) & 0xFF);
-	*f = h;
+	*f = (int) h;
 	return (MAL_SUCCEED);
 }
 
@@ -446,7 +446,7 @@ CLRsaturationInt(int *f, color *c)
 	float h, s, v;
 
 	color_rgb2hsv(&h, &s, &v, (*c >> 16) & 0xFF, (*c >> 8) & 0xFF, (*c) & 0xFF);
-	*f = s;
+	*f = (int) s;
 	return (MAL_SUCCEED);
 }
 
@@ -466,7 +466,7 @@ CLRvalueInt(int *f, color *c)
 	float h, s, v;
 
 	color_rgb2hsv(&h, &s, &v, (*c >> 16) & 0xFF, (*c >> 8) & 0xFF, (*c) & 0xFF);
-	*f = v;
+	*f = (int) v;
 	return (MAL_SUCCEED);
 }
 

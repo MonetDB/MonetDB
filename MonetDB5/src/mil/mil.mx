@@ -60,11 +60,21 @@ include mil_utils;
 #include "mal_session.h"
 #include "mal_parser.h"
 
-mal_export str MILreader(Client c);
-mal_export str MILparser(Client c);
-mal_export str MILengine(Client c);
-mal_export void enterMILscope(Client c);
-mal_export void leaveMILscope(Client c);
+#ifdef _MSC_VER
+#ifndef LIBMIL
+#define mil_export extern __declspec(dllimport)
+#else
+#define mil_export extern __declspec(dllexport)
+#endif
+#else
+#define mil_export extern
+#endif
+
+mil_export str MILreader(Client c);
+mil_export str MILparser(Client c);
+mil_export str MILengine(Client c);
+mil_export void enterMILscope(Client c);
+mil_export void leaveMILscope(Client c);
 #endif
 @-
 The MIL compilation environment is tagged with the client record.
@@ -73,8 +83,8 @@ many variables are introduced, such that trimming the scope list is easy.
 @c
 #include "mal_interpreter.h"
 #include "mal_linker.h"
-#include "mil_parser.h"
 #include "mil.h"
+#include "mil_parser.h"
 
 /* #define _MIL_SCENARIO_DEBUG*/
 
@@ -205,7 +215,7 @@ Continue processing any left-over input from the previous round.
 		c->mode = FINISHING;
 		return throwMessage("MILreader", "end of MIL input\n");
 	}
-	be->readtime = GDKusec() - T0;
+	be->readtime = (long) (GDKusec() - T0);
 	return MAL_SUCCEED;
 }
 
@@ -289,7 +299,7 @@ to check the MAL program.
 		printFunction(c->fdout, c->curprg->def, LIST_MAL_ALL);
 #endif
 	stream_flush(c->fdout);
-	be->parsetime = GDKusec() - T0;
+	be->parsetime = (long) (GDKusec() - T0);
 	return msg;
 }
 
@@ -355,7 +365,7 @@ MILengine(Client c)
 	resetVariables(c->curprg->def, c->glb, 0);
 	c->curprg->def->errors = 0;
 	c->glb = oldglb;
-	be->exectime = GDKusec() - T0;
+	be->exectime = (long) (GDKusec() - T0);
 	return msg;
 }
 

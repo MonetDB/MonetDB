@@ -59,7 +59,7 @@ typedef struct{
 /*#define DEBUG_MAL_INTERPRETER */
 /*#define DEBUG_MAL_PARALLEL */
 /*#define STACKTRACE*/
-mal_export void showErrors();
+mal_export void showErrors(void);
 mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
         MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
 mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
@@ -1051,7 +1051,7 @@ Joining a process thread is controlled with a lock part of the stack frame
     stream_printf(GDKout," task->pci = %d\n",task->pci);
     printInstruction(GDKout, mb, pci,LIST_MAL_ALL);
 #endif
-    MT_create_thread(&pid, (void (*)())runMALtask, (void*) task);
+    MT_create_thread(&pid, (void (*) (void *))runMALtask, (void*) task);
     stkpc= pci->jump; /* search end of parallel block */
 }
 @= finishChild
@@ -1411,7 +1411,7 @@ we have to keep track of essential system counter information.
     else{
         newclk= GDKusec();
         pci->counter++;
-        pci->ticks += newclk - pci->clk;
+        pci->ticks += (long) (newclk - pci->clk);
 		if( pci->clk)
 			profilerEvent(cntxt->nspace,mb,stk,pci);
     }

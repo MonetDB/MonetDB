@@ -851,9 +851,11 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			if (strncmp("io", b, 2) == 0) {
 				if (cntxt->timer == 0)
 					cntxt->timer = GDKusec();
+#ifdef HAVE_SYS_RESOURCE_H
 				getrusage(RUSAGE_SELF, &cntxt->resource);
 				stream_printf(out, "#maxrss %d ixrss=%d idrss=%d isrss=%d" " minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n", cntxt->resource.ru_maxrss, cntxt->resource.ru_ixrss, cntxt->resource.ru_idrss, cntxt->resource.ru_isrss,
 					      cntxt->resource.ru_minflt, cntxt->resource.ru_majflt, cntxt->resource.ru_nswap, cntxt->resource.ru_inblock, cntxt->resource.ru_oublock);
+#endif
 				continue;
 			}
 			skipWord(cntxt, b);
@@ -1233,9 +1235,11 @@ memProfileVector(int cells)
 {
 	str v = GDKmalloc(cells + 1);
 	int i;
+#ifdef HAVE_SBRK
 	long max = (long) sbrk(0);
 	long min = 0;
 	long granule = 0;
+#endif
 
 	if (cells <= 0) {
 		GDKerror("memProfileVector:positive argument expected\n");
@@ -1254,11 +1258,14 @@ memProfileVector(int cells)
 			BAT *b = BATdescriptor(i);
 			Heap *hp;
 			Hash *h;
+#ifdef HAVE_SBRK
 			long start, lim;
+#endif
 
 			stream_printf(GDKout, "\tdesc=%d size=%d\n", b, sizeof(*b));
 			hp = b->batBuns;
 			stream_printf(GDKout, "\tbuns=%d size=%d\n", hp->base, hp->size);
+#ifdef HAVE_SBRK
 			if (min == 0) {
 				min = (long) b;
 				max = min + GDKmem_heapsize();
@@ -1267,6 +1274,7 @@ memProfileVector(int cells)
 			}
 			@:setVector(b, sizeof(*b))@
 			@:setVector(hp->base, hp->size)@
+#endif
 
 			@:heapinfo(hheap)@
 			@:heapinfo(theap)@

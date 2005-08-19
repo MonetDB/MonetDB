@@ -70,7 +70,6 @@ comment "POSIX pattern matching against a string";
 @c
 #include "mal.h"
 #include "mal_exception.h"
-#include <regex.h>
 
 #ifndef HAVE_LIBPCRE
 
@@ -120,6 +119,14 @@ pcre_exit(void)
 {
 }
 
+str
+pcre_match(bit *ret, str *val, str *pat)
+{
+	(void) ret;
+	(void) val;
+	(void) pat;
+	return GDK_FAIL;
+}
 #else
 
 #include <pcre.h>
@@ -183,6 +190,19 @@ pcre_init(void)
 void
 pcre_exit(void)
 {
+}
+
+str
+pcre_match(bit *ret, str *val, str *pat)
+{
+	regex_t prg;
+	int error = regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
+
+	if (error < 0)
+		return throwMessage("pcre.match", "Compilation of regular expression failed");
+	error = regexec(&prg, *val, 0, 0, 0);
+	*ret = (error == 0);
+	return MAL_SUCCEED;
 }
 #endif
 
@@ -257,19 +277,6 @@ void
 pcre_heap(Heap *heap, size_t capacity)
 {
 	HEAP_initialize(heap, capacity, 0, (int) sizeof(var_t));
-}
-
-str
-pcre_match(bit *ret, str *val, str *pat)
-{
-	regex_t prg;
-	int error = regcomp(&prg, *pat, REG_EXTENDED | REG_NOSUB);
-
-	if (error < 0)
-		return throwMessage("pcre.match", "Compilation of regular expression failed");
-	error = regexec(&prg, *val, 0, 0, 0);
-	*ret = (error == 0);
-	return MAL_SUCCEED;
 }
 
 @+ Wrapping

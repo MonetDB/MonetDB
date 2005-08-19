@@ -67,6 +67,7 @@ comment	"List deletions since last commit.";
 #include "gdk.h"
 #include "mal.h"
 #include "mal_interpreter.h"
+#include "bat.h"
 
 int
 global_sync(void)
@@ -239,9 +240,6 @@ TRNtrans_commit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	return MAL_SUCCEED;
 }
-
-extern str BKCgetAlpha(int *ret, int *bid);
-extern str BKCgetDelta(int *ret, int *bid);
 
 str
 TRNtrans_alpha(int *ret, int *bid)

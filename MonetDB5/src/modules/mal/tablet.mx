@@ -439,11 +439,10 @@ extern int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
 #endif
 @c
 #include "tablet.h"
+#include "algebra.h"
 
 #include <string.h>
 #include <ctype.h>
-extern ptr BATmin(BAT *b, ptr aggr);
-extern ptr BATmax(BAT *b, ptr aggr);
 
 #define CLEAR(X) if(X) {GDKfree(X);X = NULL;}
 #define isScalar(C)  C->adt != TYPE_bat

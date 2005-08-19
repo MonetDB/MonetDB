@@ -720,13 +720,55 @@ different situations as conditions.
 
 #include <gdk.h>
 #include "mal_exception.h"
+
+#ifdef _MSC_VER
+#ifndef LIBALGEBRA
+#define algebra_export extern __declspec(dllimport)
+#else
+#define algebra_export extern __declspec(dllexport)
+#endif
+#else
+#define algebra_export extern
+#endif
+algebra_export ptr BATmax(BAT *b, ptr aggr);
+algebra_export ptr BATmin(BAT *b, ptr aggr);
+
 #endif
 
 @c
 #include "algebra.h"
 
-extern ptr BATmin(BAT *b, ptr aggr);
-extern ptr BATmax(BAT *b, ptr aggr);
+@= BATaggr
+ptr BAT@1(BAT *b, ptr aggr) {
+        int t;
+        size_t s;
+        ptr v, x;
+
+        BATcheck(b, "BAT@1");
+        s = BATcount(b);
+        t = b->ttype;
+        if (BATtvoid(b)) {
+            @:aggr@1(chr,loc,simple,chr,void)@
+        } else {
+            switch(ATOMstorage(t)) {
+            case TYPE_chr: @:aggr@1(chr,loc,simple,chr,atom)@ break;
+            case TYPE_sht: @:aggr@1(sht,loc,simple,sht,atom)@ break;
+            case TYPE_int: @:aggr@1(int,loc,simple,int,atom)@ break;
+            case TYPE_flt: @:aggr@1(flt,loc,simple,flt,atom)@ break;
+            case TYPE_dbl: @:aggr@1(dbl,loc,simple,dbl,atom)@ break;
+            case TYPE_lng: @:aggr@1(lng,loc,simple,lng,atom)@ break;
+            default:if (b->tvarsized) {
+                           @:aggr@1(chr,var,atom,t,atom)@ break;
+                     } else {
+                           @:aggr@1(chr,loc,atom,t,atom)@ break;
+            }        }
+        }
+        return x;
+}
+
+@c
+@:BATaggr(min)@
+@:BATaggr(max)@
 
 @* Command Implementations in C
 This module contains just a wrapper implementations; since all described
@@ -1610,7 +1652,7 @@ ALGtopN(int *res, int *bid, lng *top)
 	if (b == NULL) {
 		return throwMessage("algebra.top", "Cannot access descriptor");
 	}
-	(void) BATtopN(b, *top);
+	(void) BATtopN(b, (size_t) *top);
 	BBPincref(*res = b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -2625,9 +2667,9 @@ ALGfetchjoin(int *result, int *lid, int *rid)
 	rfetch = (BAThdense(right) && ATOMstorage(left->ttype) <= TYPE_int);
 	lfetch = (BATtdense(left) && ATOMstorage(right->htype) <= TYPE_int);
 	if (lfetch && !(rfetch && BATcount(left) < BATcount(right))) {
-		bn = BATfetchjoin(left, right, lng_nil);
+		bn = BATfetchjoin(left, right, oid_nil);
 	} else if (rfetch)
-		bn = BATmirror(BATfetchjoin(BATmirror(right), BATmirror(left), lng_nil));
+		bn = BATmirror(BATfetchjoin(BATmirror(right), BATmirror(left), oid_nil));
 
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
@@ -2658,9 +2700,9 @@ ALGhashjoin(int *result, int *lid, int *rid)
 	rsize = right->batBuns->size + (right->hheap ? right->hheap->size : 0) + (right->theap ? right->theap->size : 0);
 
 	if (rsize < lsize)
-		bn = BATmirror(BAThashjoin(BATmirror(right), BATmirror(left), lng_nil));
+		bn = BATmirror(BAThashjoin(BATmirror(right), BATmirror(left), oid_nil));
 	else
-		bn = BAThashjoin(left, right, lng_nil);
+		bn = BAThashjoin(left, right, oid_nil);
 
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
@@ -2690,7 +2732,7 @@ ALGmergejoin(int *result, int *lid, int *rid)
 
 	if ((left->ttype == TYPE_void) || (right->htype == TYPE_void))
 		return throwMessage("algebra.mergejoin", "Cannot perform mergejoin on void fields.\n");
-	bn = BATmergejoin(left, right, lng_nil);
+	bn = BATmergejoin(left, right, oid_nil);
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if (bn) {
@@ -2715,7 +2757,7 @@ ALGindexjoin(int *result, int *lid, int *rid)
 		return throwMessage("algebra.indexjoin", "Cannot access descriptor");
 	}
 
-	bn = BATthetajoin(left, right, JOIN_EQ, lng_nil);
+	bn = BATthetajoin(left, right, JOIN_EQ, oid_nil);
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if (bn) {

@@ -1,7 +1,7 @@
 
-INCLUDES = $(MONETDB_INCS) \
-        -I../../modules/atoms \
-        -I../../mal $(Z_CFLAGS) $(BZ_CFLAGS)
+INCLUDES = -I../../modules/atoms \
+        -I../../mal $(MONETDB_INCS) \
+        $(Z_CFLAGS) $(BZ_CFLAGS)
 
 MTSAFE
 
