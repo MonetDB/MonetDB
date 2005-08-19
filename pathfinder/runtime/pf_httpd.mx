@@ -43,7 +43,6 @@ vim: ts=4:sw=4:ft=c
 .END pf_httpd;
 
 @mil
-module(mapi);
 
 PROC pf_httpd_start(int port) : void {
 	fork(start_http_server(port));
@@ -84,50 +83,28 @@ start the HTTP server for xquery (default port: 8080).",
 #include "shttpd.h"
 
 static int
-display_query_results(struct shttpd_callback_arg *arg, const char *results)
-{
-	int n = 0;
-	Stream buf = NULL;
-
-	/* we might want to display the plain XML result *
-         * instead of having it rendered as HTML...      */
-	n += snprintf(arg->buf + n, arg->buflen - n, "%s",
-			"HTTP/1.1 200 OK\r\n"
-			"Content-Type: text/xml\r\n"
-			"\r\n");
-	/* open temp. result stream/file */
-	buf = open_rastream(results);
-	/* read result from temp. stream/file and write it to output buffer */
-	/* TODO: check for buffer overflow! */
-    n += stream_read(buf, arg->buf + n, 1, arg->buflen - n);
-	/* close temp. result stream/file */
-    close_stream(buf);
-	return (n);
-}
-
-static int
 handle_xquery(struct shttpd_callback_arg *arg)
 {
-	int n = 0;
+	int n = 0, ret;
 	const char *query;
-	Thread t = THRget(THRgettid());
-	Stream in = GDKin;		/* save current GDKin  */
-	Stream out = GDKout;	/* save current GDKout */
-	Stream buf = NULL;		/* temp. output stream (->file), replacing GDKout */
-	char res[64];			/* temp. filename (local in <dbfarm>/<dbname>) */
-	char **qres = NULL;
+	char **qres = GDKmalloc(sizeof(char *));
 
-	if( (query = shttpd_get_var(arg->connection, "query")) != NULL ){
-		snprintf(res, 64, "%d-%d-" LLFMT ".xml", (int)getpid(), THRgettid(), GDKusec());
-
-		buf = open_wastream(res);			/* open temp. output stream/file */
-		monetSetChannel(t, in, buf);		/* redirect GDKout to temp. stream/file */
-		CMDxquery(qres, "xml",(char*)query);/* run XQuery */
-		monetSetChannel(t, in, out);		/* restore original GDKout */
-		close_stream(buf);					/* close temp. output stream/file */
-		n += display_query_results(arg, res);	/* display result */
-		unlink(res);						/* remove temp. output stream/file */
-		return n;
+	if( (query = shttpd_get_var(arg->connection, "req_xquery")) != NULL ) {
+		ret = CMDxquery(qres, "xml", (char*)query);		/* execute XQuery */
+		if (ret == GDK_SUCCEED) {
+			/* we might want to display the plain XML result
+			 * instead of having it rendered as HTML...      
+			 */
+			n = snprintf(arg->buf + n, arg->buflen - n, "%s%s",
+					"HTTP/1.1 200 OK\r\n"
+					"Content-Type: text/xml\r\n"
+					"\r\n",
+					*qres);
+		} else {
+			n = snprintf(arg->buf + n, arg->buflen - n, "%s",
+					"HTTP/1.1 500 Internal server error\r\n"
+					"\r\n");
+		} 
 	} else {
 		n += snprintf(arg->buf + n, arg->buflen - n, "%s",
 				"HTTP/1.1 200 OK\r\n"
@@ -139,14 +116,15 @@ handle_xquery(struct shttpd_callback_arg *arg)
 		
 		n += snprintf(arg->buf + n, arg->buflen - n, "%s",
 				"<body>"
-				"<form method=\"get\">"
+				"<form method=\"post\">"
 				"Enter your XQuery:<br/>"
-				"<input type=\"text\" name=\"query\"/><br/>"
+				"<input type=\"text\" name=\"req_xquery\"/><br/>"
 				"<input type=\"submit\" value=\"Execute query\"/>"
 				"</form>"
 				"</body></html>");
-		return (n);
 	}
+	arg->buf[n] = '\0';
+	return (n);
 }
 
 void
@@ -160,7 +138,7 @@ CMDstart_http_server(int* port)
 	shttpd_init(NULL);
 
 	/* Register call back function */
-	shttpd_register_url("/", &handle_xquery, NULL);
+	shttpd_register_url("/exec_xquery", &handle_xquery, NULL);
 
 	/* Open listening socket */
 	sock = shttpd_open_port(*port);
@@ -174,14 +152,14 @@ CMDstart_http_server(int* port)
 bat *
 pf_httpd_prelude()
 {
-	/* what can we do here? */
+	/* Nothing to do here. */
 	return NULL;
 }
 
 void
 pf_httpd_epilogue()
 {
-	/* Shut down the HTTP server */
+	/* Shut down the HTTP server. */
 	shttpd_fini();
 }
 
