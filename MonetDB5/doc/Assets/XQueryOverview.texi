@@ -1,2 +1,2 @@
-@section XQuery
+@chapter XQuery
 Give a 3 page introduction on how to use XQuery

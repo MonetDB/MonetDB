@@ -78,12 +78,20 @@ Table of contents
 @end menu
 @end menu
 
-
-* Query Languages::
-@menu
 * SQL ::
-* XQuery ::
+@menu
+* The VOC Tutorial::
+* SQL Feature Overview::
+@menu
+* SQL Feature List::
+* SQL Session Variables
+* SQL EXPLAIN Statement::
+* SQL DEBUG Statement::
 @end menu
+* SQL Planned Features::
+@end menu
+
+* XQuery ::
 
 * Application Interfaces::
 * MonetDB Assembler Language::
@@ -161,7 +169,8 @@ Table of contents
 @include Assets/Conventions.texi
 
 @node Download and Installation, Binary Distributions, Conventions and notation, TOC
-@include Assets/Downloads.texi
+@section Downloads and Installation
+@include Assets/Downloadintro.texi
 
 @node MonetDB overview, Design considerations, Source Distributions, TOC
 
@@ -171,14 +180,12 @@ Table of contents
 @include mal_scenario.bdy.texi
 
 
-@node Client administration, Query Languages, Scenario management, MonetDB overview
+@node Client administration, SQL, Scenario management, MonetDB overview
 @include mal_client.bdy.texi
 
-@node Query Languages, SQL, Client administration, TOC
-@include Assets/QueryLanguages.texi
-@node SQL, XQuery, Query Languages, Query Languages
+@node SQL, The VOC Tutorial, Client administration, TOC
 @include Assets/SQLoverview.texi
-@node XQuery, Application Interfaces, SQL, Query Languages
+@node XQuery, Application Interfaces, SQL Planned Features, TOC
 @include Assets/XQueryOverview.texi
 
 @node Application Interfaces, MonetDB Assembler Language, XQuery, TOC
