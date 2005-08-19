@@ -380,7 +380,7 @@ str runMALsequence( malTask *task)
     str ret=0;
 	int backup[MAXARG];
 	str sbackup[MAXARG];
-	long total=0;
+	lng total=0;
     @:performanceVariables@
 
 	if( cntxt->timer)
@@ -998,7 +998,7 @@ void waitForChildren(MalStkPtr stk){
         stream_printf(GDKout,"%d awaiting childs\n",
             MT_getpid());
 #endif
-        sleep(1); 
+        MT_sleep_ms(1000); 
     }
 }
 @-
@@ -1136,11 +1136,12 @@ starts with the exception identifer, followed by contextual details.
 
 @= exceptionHndlr
 if( cntxt->timer){
-    long n= GDKusec();
-    long l= n - cntxt->timer;
+    lng n= GDKusec();
+    lng l= n - cntxt->timer;
     total += l;
     if( stk->cmd != 'T')
         stream_printf(cntxt->fdout,"#%6d usec",l);
+#ifdef HAVE_SYS_RESOURCE_H
     if( cntxt->resource.ru_minflt > 0){
         struct rusage ru;
         getrusage(RUSAGE_SELF,&ru);
@@ -1152,6 +1153,7 @@ if( cntxt->timer){
                 ru.ru_oublock - cntxt->resource.ru_oublock);
         cntxt->resource= ru;
     }
+#endif
     printTraceCall(cntxt,mb,stk,pci);
     cntxt->timer= GDKusec();
 }
@@ -1388,7 +1390,7 @@ we have to keep track of essential system counter information.
 @{
 @= performanceVariables
 #ifdef MALprofiler
-    long newclk=0;
+    lng newclk=0;
 #endif
 @= beginProfile
 #ifdef MALprofiler

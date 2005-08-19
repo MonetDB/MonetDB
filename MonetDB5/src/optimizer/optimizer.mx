@@ -242,7 +242,7 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Symbol s= NULL;
 	Client c= getClient();
 	long clk= GDKusec();
-	int i=0;
+	char cmd= 0;
 
 	if( stk != 0){
 		modnme= (str)getArgValue(stk,p,1);
@@ -259,10 +259,10 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		GDKerror(@2" optimizer:Could not find %s.%s\n",modnme,fcnnme);
 		return NULL;
 	}
-	if(debugOpt) { i= c->itrace; c->itrace='n';}
+	if(debugOpt) { cmd= c->itrace; c->itrace='n';}
 	@1optimizer(s->def,0,0);
 	optimizerCheck(s->def,@2 " optimizer",1,GDKusec()-clk);
-	if(debugOpt) { c->itrace=i;}
+	if(debugOpt) { c->itrace= cmd;}
 	/* if(c->listing) printFunction(GDKout,s->def,c->listing);*/
 
 	removeInstruction(mb, p);

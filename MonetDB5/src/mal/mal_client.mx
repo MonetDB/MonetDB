@@ -122,9 +122,9 @@ information should be dealt with separately.[TODO]
     str scenario, oldscenario;  /* scenario management */
     void    *state[7], *oldstate[7];
     MALfcn  phase[7], oldphase[7];
-    short   itrace;     /* trace execution using interactive mdb */
+    char   itrace;     /* trace execution using interactive mdb */
     short   debugOptimizer,debugScheduler;
-    long    timer;      /* trace time in usec */
+    lng    timer;      /* trace time in usec */
 #ifdef HAVE_SYS_RESOURCE_H
 	struct rusage resource;	/* trace resource usage */
 #endif
