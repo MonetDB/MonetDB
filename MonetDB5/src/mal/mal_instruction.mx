@@ -508,7 +508,7 @@ mal_export int      newTypeVariable(MalBlkPtr mb, malType type);
 mal_export void     delVariable(MalBlkPtr mb, int varid);
 mal_export void     freeVariable(MalBlkPtr mb, int varid);
 mal_export int      newConstant(MalBlkPtr mb, malType type, str val, int f);
-mal_export int      fndConstant(MalBlkPtr mb, str val, int len, int tpe);
+mal_export int      fndConstant(MalBlkPtr mb, str val, int len);
 /* mal_export int       isaSignature(InstrPtr p);*/
 
 mal_export void     pushInstruction(MalBlkPtr mb, InstrPtr p);
@@ -1226,19 +1226,18 @@ The constant values are linked together to improve searching them.
 This start of the constant list is kept in the MalBlk.
 @c
 #define MAL_VAR_WINDOW  2*MAXARG
-int fndConstant(MalBlkPtr mb, str val, int len, int tpe){
+int fndConstant(MalBlkPtr mb, str val, int len){
 	int i,k;
     k= mb->vtop - MAL_VAR_WINDOW;
     if( k<0) k=0;
     for(i= mb->vtop-1; i>=k;i--){
         VarPtr v= getVar(mb,i);
         if( v->literal && 
-			v->type == tpe &&
             strncmp(v->literal,val,len)==0 &&
 			v->literal[len]==0 ) 
 				return i;
     }
-	return 0;
+	return -1;
 }
 int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
     int i,k,idx,parsetype=type;
@@ -1426,10 +1425,8 @@ before being assigned.
 Failure to obey should mark the instruction as type-error.
 @c
 InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
-	int n;
-        
-	n = p->argc;
-	if( n == p->maxarg-1){
+	p->argv[p->argc++] = varid;
+	if( p->argc == p->maxarg){
 		InstrPtr pn;
 		int pc = 0;
 		int space= (p->maxarg-1)*sizeof(int)+ sizeof(InstrRecord);
@@ -1441,8 +1438,6 @@ InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid){
 		GDKfree(p);
 		p=pn;
 	} 
-	p->argc++;
-	p->argv[n] = varid;
     setVarUsed(mb,varid,TRUE);
     return p;
 } 
@@ -1942,11 +1937,11 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
                      sprintf(t,"nil" );
                 else sprintf(t,"\"%s\"", def);
             else
-            if( getArgType(mb,p,i)== TYPE_chr)
+            if( getArgType(mb,p,i)== TYPE_chr){
                 if( strcmp(def,"nil")== 0)
                      sprintf(t,"nil");
                 else sprintf(t,"'%s'", def);
-            else 
+            } else 
 				sprintf(t,"%s", def);
         } else {
             if( isTmpVar(mb, getArg(p,i)) ) {

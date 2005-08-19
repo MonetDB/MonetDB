@@ -1367,38 +1367,40 @@ This code is used in both positions of the expression
 
 	if( (i= cstLength(cntxt,&lt))){
 		int cstidx = -1,csttpe= TYPE_any;
-        int bak = cntxt->yycur;
 
-		cstidx = fndConstant(curBlk,((char*)CURRENT(cntxt)),i,lt);
-		if( cstidx){
+		cstidx = fndConstant(curBlk,((char*)CURRENT(cntxt)),i);
+		if( cstidx >= 0){
 			advance(cntxt,i);
             if( currChar(cntxt)==':') {
                 csttpe = typeElm(cntxt,getVarType(curBlk,cstidx));
                 if(csttpe == getVarType(curBlk,cstidx) ){
                     getVar(curBlk,cstidx)->isudftype = TRUE;
-                    curInstr = pushArgument(curBlk,curInstr,cstidx);
-                    @1;
                 } else {
-                    lt= csttpe;
-                    cntxt->yycur = bak;
+                    cstidx = newConstant(curBlk,csttpe,
+                        GDKstrdup(getVarLiteral(curBlk,cstidx)),TRUE);
+                    setPolymorphic(curInstr,csttpe, FALSE);
+                    getVar(curBlk,cstidx)->isudftype = TRUE;
                 }
             } else
-                cntxt->yycur = bak;
-		} 
-        if( cntxt->yycur == bak){
-            if( CURRENT(cntxt)[i] != ':' ){
-                cstidx = newConstant(curBlk,lt,cstCopy(cntxt,i),TRUE);
-            } else {
-                v= cstCopy(cntxt,i);
-                csttpe = typeElm(cntxt,lt);
-                cstidx = newConstant(curBlk,csttpe,v,TRUE);
-                setPolymorphic(curInstr,csttpe, FALSE);
-                setVarType(curBlk,cstidx,csttpe);
-                getVar(curBlk,cstidx)->isudftype = TRUE;
-            }
+            if( lt != getVarType(curBlk,cstidx)){
+                    cstidx = newConstant(curBlk,lt,
+                        GDKstrdup(getVarLiteral(curBlk,cstidx)),TRUE);
+                    setPolymorphic(curInstr,lt, FALSE);
+            } 
             curInstr = pushArgument(curBlk,curInstr,cstidx);
+            @1;
+		} else { 
+            /* add a new constant */
+            int flag;
+            v= cstCopy(cntxt,i);
+            flag= currChar(cntxt)==':';
+            csttpe = typeElm(cntxt,lt);
+            cstidx = newConstant(curBlk,csttpe,v,TRUE);
+            setPolymorphic(curInstr,csttpe, FALSE);
+            getVar(curBlk,cstidx)->isudftype = flag;
+            curInstr = pushArgument(curBlk,curInstr,cstidx);
+            @1;
         }
-        @1;
 	} else if ( currChar(cntxt)=='\'' && (v = charCst(cntxt)) ){
 		lt = typeElm(cntxt,TYPE_chr);
 		setPolymorphic(curInstr,lt, FALSE);
