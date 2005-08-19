@@ -68,8 +68,10 @@ module 'pathfinder'
 # signature					  # name
 # str						  # type
 #-------------------------------------------------#
+[ "create_ws() : BAT[void,BAT]"                                   ]
 [ "delete_all_docs(bit) : void"			  ]
 [ "delete_doc(str) : void"			  ]
+[ "doc_tbl(BAT[void,BAT], BAT[void,str]) : BAT[void,BAT]"         ]
 [ "pfstart() : void"				  ]
 [ "pfstart(bit) : void"				  ]
 [ "shred_doc(str, str) : void"														  ]
