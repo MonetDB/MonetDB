@@ -1,4 +1,3 @@
-vim: ts=4:sw=4:tw=72:noexpandtab:ft=c
 @' Copyright Notice:
 @' -----------------
 @'
@@ -788,18 +787,14 @@ static int handle_characters(XqueryCtx* ctx, str ch, str top) {
 		}
 	} else { /* xmlMode */
 		if ( ctx->printMode ) {
+			if ( ctx->dmMode && top )
+				stream_printf(GDKout,"%s {\\\"", top);
+
 			/* we need to escape newlines */
 			emit_escaped(ch, ctx->saxMode, 1 /*JUST ENTITIES*/ );
-			/*
-			 * str nl;
-			 * while ((nl = strchr(ch, '\n')) != NULL) {
-			 * 	stream_printf(GDKout, "%.*s\\n", (nl - ch), ch);
-			 * 	nl++;
-			 * 	ch = nl;
-			 * }
-			 */
-		if ( ctx->dmMode && top )
-			stream_printf(GDKout,"%s {\"",top);
+
+			if ( ctx->dmMode && top )
+				stream_printf(GDKout,"\\\"}");
 		} else if ( ctx->mapiMode ) {
 			/* we need to prepend "=" to each line, so
 			   make sure that we print one after each
@@ -812,16 +807,25 @@ static int handle_characters(XqueryCtx* ctx, str ch, str top) {
 			 * 	ch = nl;
 			 * }
 			 */
+			if ( ctx->dmMode && top )
+				stream_printf(GDKout,"%s {\"", top);
+
 			emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/ );
+
+			if ( ctx->dmMode && top )
+				stream_printf(GDKout,"\"}");
 		} else {
 			/*
 			 * stream_printf(GDKout,"%s",ch);
 			 */
-			emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/ );
-		}
+			if ( ctx->dmMode && top )
+				stream_printf(GDKout,"%s {\"", top);
 
-		if ( ctx->dmMode && top )
-			stream_printf(GDKout,"\"}");
+			emit_escaped(ch,1+ctx->mapiMode, 1/*JUST ENTITIES*/ );
+
+			if ( ctx->dmMode && top )
+				stream_printf(GDKout,"\"}");
+		}
 	}
 	return 1;
 }
@@ -1508,3 +1512,5 @@ int xquery_print_result_main(
 	/* */
 	return GDK_SUCCEED;
 }
+/* vim: tw=72:noexpandtab:ft=c
+ * */
