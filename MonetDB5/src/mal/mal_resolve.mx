@@ -149,6 +149,7 @@ Simplify polytype using a map into the concrete argument table.
 @c
     m= scope;
     s= m->subscope[(int)(getSubScope(functionName(p)))];
+    if( s == 0) return -1;
 	if( functionName(p))
 	while(s != NULL){   /* single scope element check */
 	if( functionName(p) != s->name  ){
@@ -649,8 +650,7 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
         tracefcn= idcmp(functionName(p),traceFcnName)==0;
 #endif
         m= findModule(scope,moduleId(p));
-		if( m->subscope[(int)(getSubScope(functionName(p)))])
-			s1= findFunctionType(m,mb,p,silent);
+        s1= findFunctionType(m,mb,p,silent);
         if( s1>= 0) return;
 @-
 Could not find a function that statisfies the constraints.

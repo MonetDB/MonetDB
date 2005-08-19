@@ -927,6 +927,21 @@ location of a temporary variable should be flagged as an error.
             return i;
         return -1;
     } 
+@-
+Temporary names are not materialized as strings unless necessary.
+@c
+INLINE
+str getVarName(MalBlkPtr mb, int i){
+    str nme;
+    char buf[PATHLENGTH];
+
+    nme = mb->var[i]->name;
+    if(nme ==0){
+        snprintf(buf,PATHLENGTH,"%c%d",TMPMARKER,mb->var[i]->tmpindex);
+        nme= mb->var[i]->name = GDKstrdup(buf);
+    }
+    return nme;
+}
 @c
 int findVariable(MalBlkPtr mb, str name){
     int i;
@@ -1508,20 +1523,6 @@ void setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe)
 void setReturnArgument(InstrPtr p, int i)
 {
     setDestVar(p, i);
-}
-@-
-Temporary names are not materialized as strings unless necessary.
-@c
-str getVarName(MalBlkPtr mb, int i){
-    str nme;
-    char buf[PATHLENGTH];
-
-    nme = mb->var[i]->name;
-    if(nme ==0){
-        snprintf(buf,PATHLENGTH,"%c%d",TMPMARKER,mb->var[i]->tmpindex);
-        nme= mb->var[i]->name = GDKstrdup(buf);
-    }
-    return nme;
 }
 malType destinationType(MalBlkPtr mb, InstrPtr p){
     if( p->argc>0) return getVarType(mb, getDestVar(p));
