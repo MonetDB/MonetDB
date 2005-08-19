@@ -1414,5 +1414,4 @@ we have to keep track of essential system counter information.
 			profilerEvent(cntxt->nspace,mb,stk,pci);
     }
 #endif
-/* vim:set shiftwidth=4 expandtab: */
 @}
