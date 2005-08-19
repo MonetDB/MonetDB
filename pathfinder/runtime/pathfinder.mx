@@ -47,66 +47,67 @@
 "read xquery from stream, and print on a stream."
 
 .COMMAND xquery(str, str) : str = CMDxquery;
-"xquery execution.\
-		usage:  var result := xquery(\"xml\", str); printf(result);\
-		or:  printf(xquery(\"xml\", str));"
+ "xquery execution.\
+ usage:  var result := xquery(\"xml\", str); printf(result);\
+ or:  printf(xquery(\"xml\", str));"
 
-		.COMMAND xquery_remote(str location, int port, str query, str params) : str = CMDxquery_remote;
-		"xquery execution at remote host.\
-			Usage: xquery_remote(<hostname>, <portnr>, query)"
+.COMMAND xquery_remote(str location, int port, str query, str params) : str = CMDxquery_remote;
+ "xquery execution at remote host.\
+ Usage: xquery_remote(<hostname>, <portnr>, query)"
 
-			.PRELUDE = pathfinder_prelude;
-			.EPILOGUE = pathfinder_epilogue;
+.PRELUDE = pathfinder_prelude;
+.EPILOGUE = pathfinder_epilogue;
 
-			.END pathfinder;
-			@mil
-			module(mapi);
+.END pathfinder;
+@mil
+module(mapi);
 
-			PROC pfstart(bit open) : void {
-				mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server", open).fork();
-			}
-ADDHELP("pfstart", "boncz", "April 2005",
-		"PARAMETERS:\n\
-		bit whether the listener should listen to outside requests (default false: only local connections).\n\
-		DESCRIPTION:\n\
-		start the xquery server.",
-		"pathfinder");
-PROC pfstart() : void {
-	pfstart(false);
+PROC pfstart(bit open) : void {
+    mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server", open).fork();
 }
 ADDHELP("pfstart", "boncz", "April 2005",
-		"DESCRIPTION:\n\
-		start the xquery server.",
-		"pathfinder");
+        "PARAMETERS:\n\
+        bit whether the listener should listen to outside requests \
+        (default false: only local connections).\n\
+        DESCRIPTION:\n\
+        start the xquery server.",
+        "pathfinder");
+PROC pfstart() : void {
+    pfstart(false);
+}
+ADDHELP("pfstart", "boncz", "April 2005",
+        "DESCRIPTION:\n\
+        start the xquery server.",
+        "pathfinder");
 
 PROC xquery_server_start(bit global) : void {
-	fork(mapi_listen(
-				int(monet_environment.find("xquery_port")),
-				5,
-				"xquery_server",
-				global
-				)
-		);
+    fork(mapi_listen(
+                int(monet_environment.find("xquery_port")),
+                5,
+                "xquery_server",
+                global
+                )
+        );
 }
 
 PROC xquery_server_start() : void {
-	xquery_server_start(false);
+    xquery_server_start(false);
 }
 
 PROC xquery(str query) : str {
-	return xquery("xml", query);
+    return xquery("xml", query);
 }
 ADDHELP("xquery", "boncz", "Juli 2005",
-		"shortcut for 'xquery(\"xml\", str query) : str'",
-		"pathfinder");
+        "shortcut for 'xquery(\"xml\", str query) : str'",
+        "pathfinder");
 
 PROC xquery_remote(str location, str query, str params) : str {
-	return xquery_remote(location, 8080, query, params);
+    return xquery_remote(location, 8080, query, params);
 }
 ADDHELP("xquery_remote", "zhang", "August 2005",
-		"DESCRIPTION:\n\
-		execute xquery on a remote host.",
-		"pathfinder");
+        "DESCRIPTION:\n\
+        execute xquery on a remote host.",
+        "pathfinder");
 
 #############################################
 # User-level document management functions:
@@ -162,20 +163,20 @@ ADDHELP("xquery_remote", "zhang", "August 2005",
 #                depth of the fragment (starts with 0@0 - WS)
 
 # get a handle to the global lock
-		var pf_lock := pflock();
+var pf_lock := pflock();
 
 # DEFINITION of constants concerning the data model
-		const PRE_BASE := 0@0;
-		const ELEMENT := chr(0);
-		const TEXT := chr(1);
-		const COMMENT := chr(2);
-		const PI := chr(3);
-		const DOCUMENT := chr(4);
+const PRE_BASE := 0@0;
+const ELEMENT := chr(0);
+const TEXT := chr(1);
+const COMMENT := chr(2);
+const PI := chr(3);
+const DOCUMENT := chr(4);
 
 # types in translation
-		const QNAME := 2;
-		const BOOL := 3;
-		const INT := 4;
+const QNAME := 2;
+const BOOL := 3;
+const INT := 4;
 const DEC := 5;
 const DBL := 6;
 const STR := 7;
@@ -194,161 +195,161 @@ const WS := 0@0;
 @- ws definition
 
 This macro is used for the MIL const defs, the C const defs,
-	 but also in the MIL procs for creating, filling and destroying
-	 a working set.
+but also in the MIL procs for creating, filling and destroying
+a working set.
 
-	 We define a table with the column name, its number,
-	 the type of data (typically again a bat), and if
-	 so the head and tail type of that bat.
+We define a table with the column name, its number,
+the type of data (typically again a bat), and if
+so the head and tail type of that bat.
 
-	 actually the field 'tpe' is taken to be bat *always*, 
-	 EXCEPT when (child-T == void)
+actually the field 'tpe' is taken to be bat *always*, 
+EXCEPT when (child-T == void)
 
-	('tpe' = void means it is a view; without persistent name)
+('tpe' = void means it is a view; without persistent name)
 
-	name       number  tpe  col[H,T]    col-seqbase 
-	========   ======  ===  ==========  ===========
-	@= ws
-	@:@1_ws(PRE_SIZE,       0, bat, void,  int, PRE_BASE)@
-	@:@1_ws(PRE_LEVEL,      1, bat, void,  chr, PRE_BASE)@
-	@:@1_ws(PRE_PROP,       2, bat, void,  oid, PRE_BASE)@
-	@:@1_ws(PRE_KIND,       3, bat, void,  chr, PRE_BASE)@
-	@:@1_ws(PRE_FRAG,       4, void,void,  oid, PRE_BASE)@
-	@:@1_ws(QN_URI,         5, bat, void,  str, PRE_BASE)@
-	@:@1_ws(QN_PREFIX,      6, bat, void,  str, PRE_BASE)@
-	@:@1_ws(QN_LOC,         7, bat, void,  str, PRE_BASE)@
-	@:@1_ws(PROP_TEXT,      8, bat, void,  str, PRE_BASE)@
-	@:@1_ws(PROP_COM,       9, bat, void,  str, PRE_BASE)@
-	@:@1_ws(PROP_INS,      10, bat, void,  str, PRE_BASE)@
-	@:@1_ws(PROP_TGT,      11, bat, void,  str, PRE_BASE)@
-	@:@1_ws(ID_PRE,        12, bat,  str,  oid, nil)@
-	@:@1_ws(IDREF_PRE,     13, bat,  str,  oid, nil)@
-	@:@1_ws(ATTR_OWN,      14, bat, void,  oid, PRE_BASE)@
-	@:@1_ws(ATTR_QN,       15, bat, void,  oid, PRE_BASE)@
-	@:@1_ws(ATTR_PROP,     16, bat, void,  oid, PRE_BASE)@
-	@:@1_ws(ATTR_FRAG,     17, void,void,  oid, PRE_BASE)@
-	@:@1_ws(PROP_VAL,      18, bat, void,  str, PRE_BASE)@
-	@:@1_ws(DOC_LOADED,    19, str, void, void, nil)@
-	@:@1_ws(FRAG,          20, oid, void, void, nil)@
-	@:@1_ws(WS_FRAG,       21, oid, void, void, nil)@
-	@:@1_ws(HEIGHT,        22, int, void, void, nil)@
-	@:@1_ws(QN_PREFIX_URI, 23, bat, void,  str, PRE_BASE)@
-	@:@1_ws(QN_LOC_URI,    24, bat, void,  str, PRE_BASE)@
-	@:@1_ws(KIND_PRE_0,    25, bat, void,  oid, nil)@
-	@:@1_ws(KIND_PRE_1,    26, bat, void,  oid, nil)@
-	@:@1_ws(KIND_PRE_2,    27, bat, void,  oid, nil)@
-	@:@1_ws(KIND_PRE_3,    28, bat, void,  oid, nil)@
-	@:@1_ws(KIND_PRE_4,    29, bat, void,  oid, nil)@
-	@:@1_ws(PROP_PRE_0,    30, bat,  oid,  oid, nil)@
-	@:@1_ws(PROP_PRE_3,    31, bat,  oid,  oid, nil)@
+        name       number  tpe  col[H,T]    col-seqbase 
+        ========   ======  ===  ==========  ===========
+@= ws
+@:@1_ws(PRE_SIZE,       0, bat, void,  int, PRE_BASE)@
+@:@1_ws(PRE_LEVEL,      1, bat, void,  chr, PRE_BASE)@
+@:@1_ws(PRE_PROP,       2, bat, void,  oid, PRE_BASE)@
+@:@1_ws(PRE_KIND,       3, bat, void,  chr, PRE_BASE)@
+@:@1_ws(PRE_FRAG,       4, void,void,  oid, PRE_BASE)@
+@:@1_ws(QN_URI,         5, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_PREFIX,      6, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_LOC,         7, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_TEXT,      8, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_COM,       9, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_INS,      10, bat, void,  str, PRE_BASE)@
+@:@1_ws(PROP_TGT,      11, bat, void,  str, PRE_BASE)@
+@:@1_ws(ID_PRE,        12, bat,  str,  oid, nil)@
+@:@1_ws(IDREF_PRE,     13, bat,  str,  oid, nil)@
+@:@1_ws(ATTR_OWN,      14, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_QN,       15, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_PROP,     16, bat, void,  oid, PRE_BASE)@
+@:@1_ws(ATTR_FRAG,     17, void,void,  oid, PRE_BASE)@
+@:@1_ws(PROP_VAL,      18, bat, void,  str, PRE_BASE)@
+@:@1_ws(DOC_LOADED,    19, str, void, void, nil)@
+@:@1_ws(FRAG,          20, oid, void, void, nil)@
+@:@1_ws(WS_FRAG,       21, oid, void, void, nil)@
+@:@1_ws(HEIGHT,        22, int, void, void, nil)@
+@:@1_ws(QN_PREFIX_URI, 23, bat, void,  str, PRE_BASE)@
+@:@1_ws(QN_LOC_URI,    24, bat, void,  str, PRE_BASE)@
+@:@1_ws(KIND_PRE_0,    25, bat, void,  oid, nil)@
+@:@1_ws(KIND_PRE_1,    26, bat, void,  oid, nil)@
+@:@1_ws(KIND_PRE_2,    27, bat, void,  oid, nil)@
+@:@1_ws(KIND_PRE_3,    28, bat, void,  oid, nil)@
+@:@1_ws(KIND_PRE_4,    29, bat, void,  oid, nil)@
+@:@1_ws(PROP_PRE_0,    30, bat,  oid,  oid, nil)@
+@:@1_ws(PROP_PRE_3,    31, bat,  oid,  oid, nil)@
 
-	@= c_decl_ws
+@= c_decl_ws
 #define @1 @2
-	@h
-	@:ws(c_decl)@
+@h
+@:ws(c_decl)@
 #define WS_SIZE 32  /* should be last */
 
-	@= mil_decl_ws
-	const @1 := @2;
-	@mil
-	@:ws(mil_decl)@
-	const WS_SIZE  := 32; # WS_SIZE should be last
-	const KIND_PRE := KIND_PRE_0;
-	const PROP_PRE := PROP_PRE_0;
+@= mil_decl_ws
+const @1 := @2;
+@mil
+@:ws(mil_decl)@
+const WS_SIZE  := 32; # WS_SIZE should be last
+const KIND_PRE := KIND_PRE_0;
+const PROP_PRE := PROP_PRE_0;
 
-	var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
-	var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
+var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
+var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
 
-	PROC doc_init() : void
+PROC doc_init() : void
 {
-# check if anythimg is initialized at all
-	if (type(doc_query) != bat) {
-		if (not(isnil(CATCH(bat("doc_name").count())))) {
-# create doc_name table in case it does not exist
-			new(oid,str).persists(true).bbpname("doc_name");
-			new(oid,str).persists(true).bbpname("doc_location");
-			new(oid,timestamp).persists(true).bbpname("doc_timestamp");
-			new(oid,int).persists(true).bbpname("doc_height");
-			new(oid,lng).persists(true).bbpname("doc_size");
-			new(str,lng).persists(true).bbpname("uri_lifetime");
-		}
-		if (isnil(CATCH(bat("doc_query").count()))) {
-doc_query := bat("doc_query"); 
-doc_sema := bat("doc_sema"); 
-		} else {
-			(doc_query := new(oid,int)).bbpname("doc_query"); 
-			(doc_sema := new(oid,sema)).bbpname("doc_sema"); 
-		}
-	}
+    # check if anythimg is initialized at all
+    if (type(doc_query) != bat) {
+        if (not(isnil(CATCH(bat("doc_name").count())))) {
+            # create doc_name table in case it does not exist
+            new(oid,str).persists(true).bbpname("doc_name");
+            new(oid,str).persists(true).bbpname("doc_location");
+            new(oid,timestamp).persists(true).bbpname("doc_timestamp");
+            new(oid,int).persists(true).bbpname("doc_height");
+            new(oid,lng).persists(true).bbpname("doc_size");
+            new(str,lng).persists(true).bbpname("uri_lifetime");
+        }
+        if (isnil(CATCH(bat("doc_query").count()))) {
+            doc_query := bat("doc_query"); 
+            doc_sema := bat("doc_sema"); 
+        } else {
+            (doc_query := new(oid,int)).bbpname("doc_query"); 
+            (doc_sema := new(oid,sema)).bbpname("doc_sema"); 
+        }
+    }
 }
 
 PROC doc_check(str name) : bit
 {
-	doc_init();
-	return bat("doc_name").reverse().exist(name);
+    doc_init();
+    return bat("doc_name").reverse().exist(name);
 }
 
 PROC create_ws () : BAT[void,bat]
 {
-	var ws := bat(void,bat,WS_SIZE).seqbase(PRE_BASE);
+    var ws := bat(void,bat,WS_SIZE).seqbase(PRE_BASE);
 
-# use our ws macro to instatiate a working set with the proper types
-	@= create_ws
-		if (@5 != void) { # a bat of bats (persistent or view)
-			var b := bat(@4,@5);
-			if (not(isnil(@6))) b.seqbase(@6); 
-			ws.insert(nil, bat(void,bat).seqbase(PRE_BASE).insert(nil, b));
-		} else {
-			ws.insert(nil, bat(void,@3).seqbase(PRE_BASE)); # a constant bat
-		}
-	@mil
-		@:ws(create)@
+    # use our ws macro to instatiate a working set with the proper types
+@= create_ws
+    if (@5 != void) { # a bat of bats (persistent or view)
+        var b := bat(@4,@5);
+        if (not(isnil(@6))) b.seqbase(@6); 
+        ws.insert(nil, bat(void,bat).seqbase(PRE_BASE).insert(nil, b));
+    } else {
+        ws.insert(nil, bat(void,@3).seqbase(PRE_BASE)); # a constant bat
+    }
+@mil
+    @:ws(create)@
 
-# fill the constant bats with initial values
-		ws.fetch(DOC_LOADED).seqbase(1@0);
-	ws.fetch(FRAG).seqbase(0@0).insert(0@0,nil);
-	ws.fetch(HEIGHT).seqbase(0@0).insert(nil,0);
-	return ws.access(BAT_READ);
+    # fill the constant bats with initial values
+    ws.fetch(DOC_LOADED).seqbase(1@0);
+    ws.fetch(FRAG).seqbase(0@0).insert(0@0,nil);
+    ws.fetch(HEIGHT).seqbase(0@0).insert(nil,0);
+    return ws.access(BAT_READ);
 }
 
 
 PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
 {
-# consider each document only once
-	var docs := item.tuniqueALT ().mark (0@0).reverse ();
+    # consider each document only once
+    var docs := item.tuniqueALT ().mark (0@0).reverse ();
 
-# throw out documents we already have in the working set
-docs := docs.reverse ()
-		  .kdiff (ws.fetch (DOC_LOADED).reverse ())
-		  .mark (0@0)
-		  .reverse ();
+    # throw out documents we already have in the working set
+    docs := docs.reverse ()
+                .kdiff (ws.fetch (DOC_LOADED).reverse ())
+                .mark (0@0)
+                .reverse ();
 
-# load all remaining documents into the working set
-	  docs@batloop () {
-ws := add_doc (ws, $t);
-	  }
+    # load all remaining documents into the working set
+    docs@batloop () {
+        ws := add_doc (ws, $t);
+    }
 
-# The working set now contains all documents we need.
+    # The working set now contains all documents we need.
 
-# pick the according frag value for each document requested
-	  var frag := item.leftjoin (ws.fetch (DOC_LOADED).reverse ())
-		  .reverse ()
-		  .mark (0@0)
-		  .reverse ();
+    # pick the according frag value for each document requested
+    var frag := item.leftjoin (ws.fetch (DOC_LOADED).reverse ())
+                    .reverse ()
+                    .mark (0@0)
+                    .reverse ();
 
-# FIXME: `ELEM' is not actually a good name here. It specifies
-#        that the node is to be found in the pre_... containers
-#        (in contrast to the attribute containers).
-	  var ret_kind := set_kind (frag, ELEM);
+    # FIXME: `ELEM' is not actually a good name here. It specifies
+    #        that the node is to be found in the pre_... containers
+    #        (in contrast to the attribute containers).
+    var ret_kind := set_kind (frag, ELEM);
 
-# pre values will all be zero
-	  var ret_item := ret_kind.project (0@0);
+    # pre values will all be zero
+    var ret_item := ret_kind.project (0@0);
 
-# return result as a BAT of BATs
-	  return new (void, BAT).insert (nil, ws)
-		  .insert (nil, ret_item)
-		  .insert (nil, ret_kind)
-		  .seqbase (0@0);
+    # return result as a BAT of BATs
+    return new (void, BAT).insert (nil, ws)
+                          .insert (nil, ret_item)
+                          .insert (nil, ret_kind)
+                          .seqbase (0@0);
 }
 
 ADDHELP("create_ws", "tsheyar", "July 2004",
@@ -374,342 +375,344 @@ ADDHELP("doc_tbl", "teubner", "Aug 2005",
 		"pathfinder");
 
 
-PROC destroy_ws_locked(BAT[void,bat] ws) : void {
-	doc_query.select(int(ws))@batloop() {
-		var doc_oid := $h;
-		doc_query.delete(doc_oid, int(ws));
-		if (not(doc_query.exist(doc_oid))) {
-			if (doc_sema.exist(doc_oid)) {
-				sema_up(doc_sema.find(doc_oid));
-			}
-		}
-	}
-# determine whether a cache flush is desired (only count cached bats, those with a timestamp)
-	var cursize := sum(bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).mirror().join(bat("doc_size")));
-	var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
+PROC destroy_ws_locked(BAT[void,bat] ws) : void
+{
+    doc_query.select(int(ws))@batloop() {
+        var doc_oid := $h;
+        doc_query.delete(doc_oid, int(ws));
+        if (not(doc_query.exist(doc_oid))) {
+            if (doc_sema.exist(doc_oid)) {
+                sema_up(doc_sema.find(doc_oid));
+            }
+        }
+    }
+    # determine whether a cache flush is desired (only count cached bats, those with a timestamp)
+    var cursize := sum(bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).mirror().join(bat("doc_size")));
+    var maxsize := (1024LL * 1024LL) * lng(monet_environment.find("xquery_cacheMB"));
 
-	if (cursize > maxsize) {
-		delete_all_docs_locked(true);
-	}
+    if (cursize > maxsize) {
+        delete_all_docs_locked(true);
+    }
 }
 
-PROC destroy_ws(BAT[void,bat] ws) : void {
-	var err;
+PROC destroy_ws(BAT[void,bat] ws) : void
+{
+    var err;
 
-	if (type(doc_query) != bat) { return; }
+    if (type(doc_query) != bat) { return; }
 
-# always make sure not to cause errors while holding the lock
-	lock_set(pf_lock);
-err := CATCH(destroy_ws_locked(ws));
-	 lock_unset(pf_lock);
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(destroy_ws_locked(ws));
+    lock_unset(pf_lock);
 
-	 if (not(isnil(err))) { ERROR(err); }
+    if (not(isnil(err))) { ERROR(err); }
 }
 
 PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts, int ws, int height) : void 
 {
-# get a new persistent doc id
-	var doc_oid := 0@0;
-	if (bat("doc_name").count() > 0) 
-		doc_oid := oid(int(bat("doc_name").reverse().max()) + 1); 
+    # get a new persistent doc id
+    var doc_oid := 0@0;
+    if (bat("doc_name").count() > 0) 
+        doc_oid := oid(int(bat("doc_name").reverse().max()) + 1); 
 
-# rename all new bats with the doc id as suffix
-	[rename](docBAT, [+](mirror(docBAT), str(int(doc_oid))));
-	var totsize := sum([batsize](docBAT));
+    # rename all new bats with the doc id as suffix
+    [rename](docBAT, [+](mirror(docBAT), str(int(doc_oid))));
+    var totsize := sum([batsize](docBAT));
 
-# add to meta table
-	bat("doc_name").insert(doc_oid, name);
-	bat("doc_location").insert(doc_oid, location);
-	bat("doc_timestamp").insert(doc_oid, ts);
-	bat("doc_height").insert(doc_oid, height);
-	bat("doc_size").insert(doc_oid, totsize);
+    # add to meta table
+    bat("doc_name").insert(doc_oid, name);
+    bat("doc_location").insert(doc_oid, location);
+    bat("doc_timestamp").insert(doc_oid, ts);
+    bat("doc_height").insert(doc_oid, height);
+    bat("doc_size").insert(doc_oid, totsize);
 
-	[persists](docBAT, true);
+    [persists](docBAT, true);
 
-# add the meta table to the commit set 
-#docBAT.insert(str(nil),bat("doc_name"));
-#docBAT.insert(str(nil),bat("doc_location"));
-#docBAT.insert(str(nil),bat("doc_timestamp"));
-#docBAT.insert(str(nil),bat("doc_height"));
-#docBAT.insert(str(nil),bat("doc_size"));
-#if (not(subcommit(docBAT))) 
-	if (not(commit())) ERROR("shred_doc(%s) : commit failed\n");
+    # add the meta table to the commit set 
+    #docBAT.insert(str(nil),bat("doc_name"));
+    #docBAT.insert(str(nil),bat("doc_location"));
+    #docBAT.insert(str(nil),bat("doc_timestamp"));
+    #docBAT.insert(str(nil),bat("doc_height"));
+    #docBAT.insert(str(nil),bat("doc_size"));
+    #if (not(subcommit(docBAT))) 
+    if (not(commit())) ERROR("shred_doc(%s) : commit failed\n");
 
-	if (not(isnil(ws))) {
-		pin_doc(doc_oid, ws);
-	}
+    if (not(isnil(ws))) {
+        pin_doc(doc_oid, ws);
+    }
 }
 
 # HACK: overwrite 'height'
 PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts, int ws) : BAT[void,bat]
 {
-	var err, exists := false;
+    var err, exists := false;
 
-# always make sure not to cause errors while holding the lock
-	lock_set(pf_lock);
-err := CATCH(exists := doc_check(name));
-	 lock_unset(pf_lock);
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(exists := doc_check(name));
+    lock_unset(pf_lock);
 
-	 if (not(isnil(err))) ERROR(err);
-	 else if (exists) ERROR("shred_doc(%s): already exists in database!\n", name);
+    if (not(isnil(err))) ERROR(err);
+    else if (exists) ERROR("shred_doc(%s): already exists in database!\n", name);
 
-# shred it unlocked
-	 var docBAT := new(str,bat,WS_SIZE); # contains all new bats
-		 var us := usec();
-	 var shredRES := shred2bats(location,opt);
+    # shred it unlocked
+    var docBAT := new(str,bat,WS_SIZE); # contains all new bats
+    var us := usec();
+    var shredRES := shred2bats(location,opt);
 
-# use the ws macro to get the the basic working set (excluding views, constants and indices)
-	 @= shred_doc_ws
-		 if (and(=(@3, bat), <(@1, DOC_LOADED)))
-			 docBAT.insert(toLower("@1"), shredRES.fetch(@1));
-	 @mil
-		 @:ws(shred_doc)@
+    # use the ws macro to get the the basic working set (excluding views, constants and indices)
+@= shred_doc_ws
+    if (and(=(@3, bat), <(@1, DOC_LOADED)))
+        docBAT.insert(toLower("@1"), shredRES.fetch(@1));
+@mil
+    @:ws(shred_doc)@
 
-# these are simple concatenations (to accelerate combPRINT_WS_SZined lookup)
-		 docBAT.insert("qn_prefix_uri", docBAT.find("qn_prefix").[+](str('\1')).[+](docBAT.find("qn_uri")));
-	 docBAT.insert("qn_loc_uri",    docBAT.find("qn_loc").[+](str('\1')).[+](docBAT.find("qn_uri")));
+    # these are simple concatenations (to accelerate combPRINT_WS_SZined lookup)
+    docBAT.insert("qn_prefix_uri", docBAT.find("qn_prefix").[+](str('\1')).[+](docBAT.find("qn_uri")));
+    docBAT.insert("qn_loc_uri",    docBAT.find("qn_loc").[+](str('\1')).[+](docBAT.find("qn_uri")));
 
-# create our indices
-	 var knd := ELEMENT;
-	 while ( knd <= DOCUMENT ) {
-		 docBAT.insert("kind_pre" + "_" + str(chr(48 + knd)),
-				 docBAT.find("pre_kind").ord_uselect(knd).reverse().chk_order());
-knd :+= chr(1);
-	 }
+    # create our indices
+    var knd := ELEMENT;
+    while ( knd <= DOCUMENT ) {
+        docBAT.insert("kind_pre" + "_" + str(chr(48 + knd)),
+                      docBAT.find("pre_kind").ord_uselect(knd).reverse().chk_order());
+        knd :+= chr(1);
+    }
 
-	 var knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + ELEMENT))).reverse().mirror();
-	 docBAT.insert("prop_pre" + "_" + str(chr(48 + ELEMENT)),
-			 knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order());
+    var knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + ELEMENT))).reverse().mirror();
+    docBAT.insert("prop_pre" + "_" + str(chr(48 + ELEMENT)),
+                  knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order());
 
-knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + PI))).reverse().mirror();
-			 docBAT.insert("prop_pre" + "_" + str(chr(48 + PI)),
-					 knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order());
+    knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + PI))).reverse().mirror();
+    docBAT.insert("prop_pre" + "_" + str(chr(48 + PI)),
+                  knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order());
 
-height := shredRES.fetch(PRE_LEVEL).max().int() + 1;
+    height := shredRES.fetch(PRE_LEVEL).max().int() + 1;
 
-docBAT := docBAT.access(BAT_READ);
-		if (doCommit) {
-			[mmap](docBAT, STORE_MMAP);
-			[save](docBAT);
+    docBAT := docBAT.access(BAT_READ);
+    if (doCommit) {
+        [mmap](docBAT, STORE_MMAP);
+        [save](docBAT);
 
-# add doc to the database locked
-			lock_set(pf_lock);
-err := CATCH(shred_doc_locked(docBAT, location, name, ts, ws, height));
-	 lock_unset(pf_lock);
+        # add doc to the database locked
+        lock_set(pf_lock);
+        err := CATCH(shred_doc_locked(docBAT, location, name, ts, ws, height));
+        lock_unset(pf_lock);
 
-	 if (not(isnil(err))) ERROR(err);
-		}
-		return docBAT;
+        if (not(isnil(err))) ERROR(err);
+    }
+    return docBAT;
 }
 
 PROC shred_doc_base(str location, str name, bit doCommit, str opt) : BAT[void,bat]
 {
-	var height, us := usec();
-	var docBAT := shred_doc_impl(location, name, doCommit, opt, timestamp(nil), int(nil));
-# save all persistent BATs and print timings
-us := usec() - us;
-	var ms := us/1000;
-	if ( doCommit ) {
-		printf("# Shredded XML doc(\"%s\"), total time after commit=%lld.%03llds\n", name, ms/1000,ms%1000);
-	} else {
-		printf("# Shredded XML doc(\"%s\") uncommitted, total time =%lld.%03llds\n", name, ms/1000,ms%1000);
-	}
-	return docBAT;
+    var height, us := usec();
+    var docBAT := shred_doc_impl(location, name, doCommit, opt, timestamp(nil), int(nil));
+    # save all persistent BATs and print timings
+    us := usec() - us;
+    var ms := us/1000;
+    if ( doCommit ) {
+        printf("# Shredded XML doc(\"%s\"), total time after commit=%lld.%03llds\n", name, ms/1000,ms%1000);
+    } else {
+        printf("# Shredded XML doc(\"%s\") uncommitted, total time =%lld.%03llds\n", name, ms/1000,ms%1000);
+    }
+    return docBAT;
 }
 
 PROC shred_doc(str location, str name) : void
 {
-	shred_doc_base(location, name, true, "");
+    shred_doc_base(location, name, true, "");
 }
 ADDHELP("shred_doc", "flokstra", "Dec 2004",
-		"PARAMETERS:\n\
-		- str URI containing the xml document to be shredded)\n\
-	- str document name ('alias') in database\n\
-	DESCRIPTION:\n\
-	Shred xml document to the internal Pathfinder format, (analog to import_doc()).",
-		"pathfinder");
+        "PARAMETERS:\n\
+        - str URI containing the xml document to be shredded)\n\
+        - str document name ('alias') in database\n\
+        DESCRIPTION:\n\
+        Shred xml document to the internal Pathfinder format, (analog to import_doc()).",
+        "pathfinder");
 
-PROC delete_doc_locked(oid doc_oid) : bit {
-	var docBAT := new(void,str,WS_SIZE);
+PROC delete_doc_locked(oid doc_oid) : bit
+{
+    var docBAT := new(void,str,WS_SIZE);
 
-	if (doc_sema.exist(doc_oid)) {
-# somebody else is deleting the same doc!
-		while(doc_sema.exist(doc_oid)) {
-			lock_unset(pf_lock);
-			sleep(1);
-			lock_set(pf_lock);
-		}
-		return; # now he is done
-	}
-# we will delete it
-	while (doc_query.exist(doc_oid)) {
-		var sem := sema_create(0);
-		doc_sema.insert(doc_oid, sem);
+    if (doc_sema.exist(doc_oid)) {
+        # somebody else is deleting the same doc!
+        while(doc_sema.exist(doc_oid)) {
+            lock_unset(pf_lock);
+            sleep(1);
+            lock_set(pf_lock);
+        }
+        return; # now he is done
+    }
+    # we will delete it
+    while (doc_query.exist(doc_oid)) {
+        var sem := sema_create(0);
+        doc_sema.insert(doc_oid, sem);
 
-		lock_unset(pf_lock);
-		sema_down(sem); # wait for the users to go away 
-			lock_set(pf_lock);
+        lock_unset(pf_lock);
+        sema_down(sem); # wait for the users to go away 
+        lock_set(pf_lock);
 
-		sema_destroy(sem);
-		doc_sema.delete(doc_oid, sem);
-	}
+        sema_destroy(sem);
+        doc_sema.delete(doc_oid, sem);
+    }
 
-# use the ws macro to get the names of all non-(view or constant) bats
-	@= getlower_ws
-		if (@3 = bat)
-			docBAT.insert(nil, toLower("@1"));
-	@mil
-		@:ws(getlower)@
-		docBAT := docBAT.access(BAT_READ);
+    # use the ws macro to get the names of all non-(view or constant) bats
+@= getlower_ws
+    if (@3 = bat)
+        docBAT.insert(nil, toLower("@1"));
+@mil
+    @:ws(getlower)@
+    docBAT := docBAT.access(BAT_READ);
 
-# docBAT becomes [name,bat]
-docBAT := [bat]([+](docBAT, str(int(doc_oid))).reverse().mirror());
+    # docBAT becomes [name,bat]
+    docBAT := [bat]([+](docBAT, str(int(doc_oid))).reverse().mirror());
 
-# rename the bats so even in case of failure they don't bother us directly anymore
-		[rename](docBAT, [+]([+]("rm_", mirror(docBAT)), +("_" , str(lng(current_timestamp()))))).access(BAT_WRITE);
+    # rename the bats so even in case of failure they don't bother us directly anymore
+    [rename](docBAT, [+]([+]("rm_", mirror(docBAT)), +("_" , str(lng(current_timestamp()))))).access(BAT_WRITE);
 
-# remove them from the repository
-		[persists](docBAT, false);
+    # remove them from the repository
+    [persists](docBAT, false);
 
-		bat("doc_name").delete(doc_oid);
-		bat("doc_location").delete(doc_oid);
-		bat("doc_timestamp").delete(doc_oid);
-		bat("doc_height").delete(doc_oid);
-		bat("doc_size").delete(doc_oid);
+    bat("doc_name").delete(doc_oid);
+    bat("doc_location").delete(doc_oid);
+    bat("doc_timestamp").delete(doc_oid);
+    bat("doc_height").delete(doc_oid);
+    bat("doc_size").delete(doc_oid);
 
-# also commit the meta bats
-#docBAT.insert(str(nil), bat("doc_name"));
-#docBAT.insert(str(nil), bat("doc_location"));
-#docBAT.insert(str(nil), bat("doc_timestamp"));
-#docBAT.insert(str(nil), bat("doc_height"));
-#docBAT.insert(str(nil), bat("doc_size"));
-#return subcommit(docBAT);
-		return commit();
+    # also commit the meta bats
+    #docBAT.insert(str(nil), bat("doc_name"));
+    #docBAT.insert(str(nil), bat("doc_location"));
+    #docBAT.insert(str(nil), bat("doc_timestamp"));
+    #docBAT.insert(str(nil), bat("doc_height"));
+    #docBAT.insert(str(nil), bat("doc_size"));
+    #return subcommit(docBAT);
+    return commit();
 }
 
 PROC delete_doc(str name) : void
 {
-	var err, exists := false;
+    var err, exists := false;
 
-# always make sure not to cause errors while holding the lock
-	lock_set(pf_lock);
-err := CATCH(exists := doc_check(name));
-	 lock_unset(pf_lock);
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(exists := doc_check(name));
+    lock_unset(pf_lock);
 
-	 if (not(isnil(err))) ERROR(err);
-	 else if (not(exists)) ERROR("delete_doc(%s): document not found in database!\n", name);
+    if (not(isnil(err))) ERROR(err);
+    else if (not(exists)) ERROR("delete_doc(%s): document not found in database!\n", name);
 
-# always make sure not to cause errors while holding the lock
-	 lock_set(pf_lock);
-err := CATCH(delete_doc_locked(bat("doc_name").reverse().find(name)));
-	 lock_unset(pf_lock);
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(delete_doc_locked(bat("doc_name").reverse().find(name)));
+    lock_unset(pf_lock);
 
-	 if (not(isnil(err))) ERROR(err);
+    if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("delete_doc", "tsheyar", "July 2004",
-		"PARAMETERS:\n\
-		str document name\n\
-		DESCRIPTION:\n\
-		delete the persistent BATS that store the document.",
-		"pathfinder");
+        "PARAMETERS:\n\
+        str document name\n\
+        DESCRIPTION:\n\
+        delete the persistent BATS that store the document.",
+        "pathfinder");
 
 PROC delete_all_docs_locked(bit cachedOnly) : void
 {
-	doc_init();
-	bat("doc_timestamp").copy()@batloop() {
-		if (or(cachedOnly, not(isnil($t))))
-			delete_doc_locked($h);
-	}
+    doc_init();
+    bat("doc_timestamp").copy()@batloop() {
+        if (or(cachedOnly, not(isnil($t))))
+            delete_doc_locked($h);
+    }
 }
 
 PROC delete_all_docs(bit cachedOnly) : void
 {
-	var err, b := bat(timestamp,str);
+    var err, b := bat(timestamp,str);
 
-# always make sure not to cause errors while holding the lock
-	lock_set(pf_lock);
-err := CATCH(delete_all_docs_locked(cachedOnly));
-	 lock_unset(pf_lock);
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(delete_all_docs_locked(cachedOnly));
+    lock_unset(pf_lock);
 
-	 if (not(isnil(err))) ERROR(err);
-
+    if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("delete_all_docs", "tsheyar", "July 2004",
-		"DESCRIPTION:\n\
-		deletes all persistent document BATs that store xml documents.",
-		"pathfinder");
+        "DESCRIPTION:\n\
+        deletes all persistent document BATs that store xml documents.",
+        "pathfinder");
 
 
 PROC pin_doc(oid doc_oid, int ws) : void 
 {
-# pin the document on this working set (must hold lock!)
-	doc_query.insert(doc_oid, int(ws));
+    # pin the document on this working set (must hold lock!)
+    doc_query.insert(doc_oid, int(ws));
 }
 
 # HACK: this proc overwrites variables 'lifetime' and 'ts'
 PROC add_doc_locked(str name, int ws) : oid
 {
-	var doc_oid := nil;
-	var filename := name;
-	var lim := timestamp(nil);
+    var doc_oid := nil;
+    var filename := name;
+    var lim := timestamp(nil);
 
-# check if the document already existed
-	if (doc_check(name)) {
-doc_oid := bat("doc_name").reverse().find(name);
-	} else if (bat("doc_location").reverse().exist(name)) {
-# existed as cached location (URI): must check timestamp
-		var doc_oid := bat("doc_location").reverse().find(name);
-	}
+    # check if the document already existed
+    if (doc_check(name)) {
+        doc_oid := bat("doc_name").reverse().find(name);
+    } else if (bat("doc_location").reverse().exist(name)) {
+        # existed as cached location (URI): must check timestamp
+        var doc_oid := bat("doc_location").reverse().find(name);
+    }
 
-# do some first analysis on the URI
-	if (not(isnil(doc_oid))) { 
-filename := bat("doc_location").find(doc_oid);
-lim := bat("doc_timestamp").find(doc_oid);
-	}
+    # do some first analysis on the URI
+    if (not(isnil(doc_oid))) { 
+        filename := bat("doc_location").find(doc_oid);
+        lim := bat("doc_timestamp").find(doc_oid);
+    }
 
-	if (startsWith(filename, "file://") or startsWith(filename, "FILE://")) {
-filename := string(filename, 7);
-	} else {
-idx := search(filename, "://");
-	}
-	if (idx >= 0) {
-# add uri-dependent lifetime
-		var uri_lifetime := bat("uri_lifetime");
-		var b := [startsWith](filename, mirror(uri_lifetime)).uselect(true);
-		if (b.count() > 0) {
-			var matchlen := [length](mirror(b));
-lifetime := *(1000LL, uri_lifetime.find(matchlen.reverse().find(matchlen.max())));
-		} else {
-lifetime := lng(nil); # doc will *not* be cached 
-		}
-	} else {
-# a file: get lastmodification time
-		var tts;
-		var err := CATCH(tts := lastmod_time(filename));
-		if (isnil(err)) {
-ts := tts; # timestamp was read succesfully
-		} else if (not(isnil(lim))) {
-ts := add(lim, 1LL); # file-error on cached file: force remove
-		}
-	}
+    if (startsWith(filename, "file://") or startsWith(filename, "FILE://")) {
+        filename := string(filename, 7);
+    } else {
+        idx := search(filename, "://");
+    }
+    if (idx >= 0) {
+        # add uri-dependent lifetime
+        var uri_lifetime := bat("uri_lifetime");
+        var b := [startsWith](filename, mirror(uri_lifetime)).uselect(true);
+        if (b.count() > 0) {
+            var matchlen := [length](mirror(b));
+            lifetime := *(1000LL, uri_lifetime.find(matchlen.reverse().find(matchlen.max())));
+        } else {
+            lifetime := lng(nil); # doc will *not* be cached 
+        }
+    } else {
+        # a file: get lastmodification time
+        var tts;
+        var err := CATCH(tts := lastmod_time(filename));
+        if (isnil(err)) {
+            ts := tts; # timestamp was read succesfully
+        } else if (not(isnil(lim))) {
+            ts := add(lim, 1LL); # file-error on cached file: force remove
+        }
+    }
 
-	if (isnil(doc_oid)) {
-		return nil; # document not in database
-	} else if (and(not(isnil(lim)), >(ts,lim))) { # if so, check if it still valid
-# remove outdated document from the cache
-		delete_doc_locked(doc_oid); 
-		return nil;
-	}
-	pin_doc(doc_oid, ws); # make sure nobody can delete it
-		return doc_oid;
+    if (isnil(doc_oid)) {
+        return nil; # document not in database
+    } else if (and(not(isnil(lim)), >(ts,lim))) { # if so, check if it still valid
+        # remove outdated document from the cache
+        delete_doc_locked(doc_oid); 
+        return nil;
+    }
+    pin_doc(doc_oid, ws); # make sure nobody can delete it
+    return doc_oid;
 }
 
 # if docid != "", it holds the str(id) of the persistent doc
 # if not, the temporary document is in tmp_doc (by name without id)
 PROC add_doc_bat(BAT[str,bat] tmp_doc, str name, str docid) : bat[any,any]
 {
-	if (docid != "") return bat(name + docid);
-	return tmp_doc.find(name);
+    if (docid != "") return bat(name + docid);
+    return tmp_doc.find(name);
 }
 
 var time_shred := 0; # dummy declarartion to avoid errors when timing is not activated in the script
@@ -717,60 +720,60 @@ var time_shred := 0; # dummy declarartion to avoid errors when timing is not act
 # HACK: this proc overwrites variable 'time_shred' 
 PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
 {
-	var ts := current_timestamp();
-	var lifetime := 0LL;
-	var idx := -1;
-	var doc_oid;
-	var err, height;
-	var t := time();
+    var ts := current_timestamp();
+    var lifetime := 0LL;
+    var idx := -1;
+    var doc_oid;
+    var err, height;
+    var t := time();
 
-# always make sure not to cause errors while holding the lock
-	lock_set(pf_lock);
-err := CATCH(doc_oid := add_doc_locked(name, int(ws)));
-	 lock_unset(pf_lock);
+    # always make sure not to cause errors while holding the lock
+    lock_set(pf_lock);
+    err := CATCH(doc_oid := add_doc_locked(name, int(ws)));
+    lock_unset(pf_lock);
 
-	 if (not(isnil(err))) ERROR(err);
+    if (not(isnil(err))) ERROR(err);
 
-	 var docBAT, docid := "", doCommit := true;
+    var docBAT, docid := "", doCommit := true;
 
-	 if (isnil(doc_oid)) {
-ts := add(ts, lifetime);
-	if (isnil(ts)) doCommit := false;
-docBAT := shred_doc_impl(name, name, doCommit, "", ts, int(ws));
-# overwrites 'height'
-time_shred :+=  time() - t;
-	 } else {
-docBAT := new(str,bat);
-	 }
-	 if (doCommit) { 
-docid := str(int(bat("doc_name").reverse().find(name)));
-height := bat("doc_height").find(oid(int(docid)));
-	 }
+    if (isnil(doc_oid)) {
+        ts := add(ts, lifetime);
+        if (isnil(ts)) doCommit := false;
+        docBAT := shred_doc_impl(name, name, doCommit, "", ts, int(ws));
+        # overwrites 'height'
+        time_shred :+=  time() - t;
+    } else {
+        docBAT := new(str,bat);
+    }
+    if (doCommit) { 
+        docid := str(int(bat("doc_name").reverse().find(name)));
+        height := bat("doc_height").find(oid(int(docid)));
+    }
 
-# add it to the working set
-	 var frag := ws.fetch(DOC_LOADED).uselect(name);
-	 if (frag.count() = 0) {
-		 ws.fetch(DOC_LOADED).insert(nil,name);
-frag := oid(ws.fetch(DOC_LOADED).count());
+    # add it to the working set
+    var frag := ws.fetch(DOC_LOADED).uselect(name);
+    if (frag.count() = 0) {
+        ws.fetch(DOC_LOADED).insert(nil,name);
+        frag := oid(ws.fetch(DOC_LOADED).count());
 
-# use the ws macro to instantiate all non-(view or constant) bats
-	  @= add_doc_bat_ws
-		  if (@3 = bat)
-			  ws.fetch(@1).insert(nil,docBAT.add_doc_bat(toLower("@1"), docid));
-	  @mil
-		  @:ws(add_doc_bat)@
+        # use the ws macro to instantiate all non-(view or constant) bats
+@= add_doc_bat_ws
+        if (@3 = bat)
+            ws.fetch(@1).insert(nil,docBAT.add_doc_bat(toLower("@1"), docid));
+@mil
+        @:ws(add_doc_bat)@
 
-# create views
-		  ws.fetch(PRE_FRAG).insert(nil,fake_project(frag));
-	  ws.fetch(ATTR_FRAG).insert(nil,fake_project(frag));
+        # create views
+        ws.fetch(PRE_FRAG).insert(nil,fake_project(frag));
+        ws.fetch(ATTR_FRAG).insert(nil,fake_project(frag));
 
-# adapt constants
-	  ws.fetch(FRAG).replace(0@0,frag);
-	  ws.fetch(HEIGHT).insert(nil,height);
-	 } else { 
-		 ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); 
-	 }
-	 return ws;
+        # adapt constants
+        ws.fetch(FRAG).replace(0@0,frag);
+        ws.fetch(HEIGHT).insert(nil,height);
+     } else { 
+        ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); 
+     }
+     return ws;
 }
 
 
@@ -781,73 +784,73 @@ and control the behavior of the cache.
 @mil
 const xmlcache_help := 
 "The XML document cache keeps indexed copies of documents that where recently\n\
-		used in the fn:doc(URI) xquery function.\n\
-		\n\
-		The size of the cache is controlled using the 'xquery_cacheMB' setting in\n\
-		the 'MonetDB.conf' file.\n\
-		\n\
-		For file URIs, the cache looks at the last-modification-time of the file on disk\n\
-		to guarantee that the cached document is still up-to-date for answering queries from.\n\
-		\n\
-		For other URIs, *lifetime rules* determine how long documents can stay in the cache.\n\
-		Each lifetime rule consists of a URI prefix and the registered seconds of lifetime.\n\
-		\n\
-		The rule with longest prefix that matches an URI counts. Specifying a lifetime\n\
-		of 'int(nil)' seconds means that the URI will *not* be cached at all.\n\
-		This is also the default if no prefix matches an URI.\n\
-		\n\
-		The name of a cached document is the same as its location (URI). For explicitly\n\
-		shredded documents (with 'shred_doc(location,name)'), the name is an 'alias' and\n\
-		may differ from the URI. Explicitly shredded documents fall outside the XML document\n\
-		cache; documents are only removed at explicit user request (with 'delete_doc(name)').";
+used in the fn:doc(URI) xquery function.\n\
+\n\
+The size of the cache is controlled using the 'xquery_cacheMB' setting in\n\
+the 'MonetDB.conf' file.\n\
+\n\
+For file URIs, the cache looks at the last-modification-time of the file on disk\n\
+to guarantee that the cached document is still up-to-date for answering queries from.\n\
+\n\
+For other URIs, *lifetime rules* determine how long documents can stay in the cache.\n\
+Each lifetime rule consists of a URI prefix and the registered seconds of lifetime.\n\
+\n\
+The rule with longest prefix that matches an URI counts. Specifying a lifetime\n\
+of 'int(nil)' seconds means that the URI will *not* be cached at all.\n\
+This is also the default if no prefix matches an URI.\n\
+\n\
+The name of a cached document is the same as its location (URI). For explicitly\n\
+shredded documents (with 'shred_doc(location,name)'), the name is an 'alias' and\n\
+may differ from the URI. Explicitly shredded documents fall outside the XML document\n\
+cache; documents are only removed at explicit user request (with 'delete_doc(name)').";
 
 PROC xmlcache_add_rule(str uri, any lifetime) : void {
-	xmlcache_add_rule(uri, lng(lifetime)); 
+    xmlcache_add_rule(uri, lng(lifetime)); 
 }
 PROC xmlcache_add_rule(str uri, lng lifetime) : void {
-	lock_set(pf_lock);
-	var err := CATCH({ doc_init(); bat("uri_lifetime").delete(uri); bat("uri_lifetime").insert(uri, lifetime); });
-	lock_unset(pf_lock);
-	if (not(isnil(err))) ERROR(err);
+    lock_set(pf_lock);
+    var err := CATCH({ doc_init(); bat("uri_lifetime").delete(uri); bat("uri_lifetime").insert(uri, lifetime); });
+    lock_unset(pf_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_add_rule", "boncz", "May 2005",
-		"DESCRIPTION:\nadd a new URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
+        "DESCRIPTION:\nadd a new URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
 
 PROC xmlcache_del_rule(str uri) : void {
-	lock_set(pf_lock);
-	var err := CATCH({doc_init(); bat("uri_lifetime").delete(uri);});
-	lock_unset(pf_lock);
-	if (not(isnil(err))) ERROR(err);
+    lock_set(pf_lock);
+    var err := CATCH({doc_init(); bat("uri_lifetime").delete(uri);});
+    lock_unset(pf_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_del_rule", "boncz", "May 2005",
-		"DESCRIPTION:\ndeletes an existing URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
+        "DESCRIPTION:\ndeletes an existing URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
 
 PROC xmlcache_print_rules() : void {
-	lock_set(pf_lock);
-	var err := CATCH({ doc_init(); table(bat("uri_lifetime").mark(0@0).reverse().col_name("URI-prefix"), bat("uri_lifetime").reverse().mark(0@0).reverse().col_name("liftime-secs")); });
-	lock_unset(pf_lock);
-	if (not(isnil(err))) ERROR(err);
+    lock_set(pf_lock);
+    var err := CATCH({ doc_init(); table(bat("uri_lifetime").mark(0@0).reverse().col_name("URI-prefix"), bat("uri_lifetime").reverse().mark(0@0).reverse().col_name("liftime-secs")); });
+    lock_unset(pf_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_print_rules", "boncz", "May 2005",
-		"DESCRIPTION:\nshows all URI lifetime rules.\n\n" + xmlcache_help,  "pathfinder");
+        "DESCRIPTION:\nshows all URI lifetime rules.\n\n" + xmlcache_help,  "pathfinder");
 
 PROC xmlcache_print() : void {
-	lock_set(pf_lock);
-	var err := CATCH({ doc_init(); table(bat("doc_name").col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size"), bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
-	lock_unset(pf_lock);
-	if (not(isnil(err))) ERROR(err);
+    lock_set(pf_lock);
+    var err := CATCH({ doc_init(); table(bat("doc_name").col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size"), bat("doc_timestamp").select(timestamp(nil),timestamp(nil)).col_name("valid-thru")); });
+    lock_unset(pf_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_print", "boncz", "May 2005",
-		"DESCRIPTION:\nshows the actual content of the XML document cache.\n\n" + xmlcache_help,  "pathfinder");
+        "DESCRIPTION:\nshows the actual content of the XML document cache.\n\n" + xmlcache_help,  "pathfinder");
 
 PROC xmldb_print() : void {
-	lock_set(pf_lock);
-	var err := CATCH({ doc_init(); table(mirror(bat("doc_timestamp").uselect(timestamp(nil))).join(bat("doc_name")).col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size")); });
-	lock_unset(pf_lock);
-	if (not(isnil(err))) ERROR(err);
+    lock_set(pf_lock);
+    var err := CATCH({ doc_init(); table(mirror(bat("doc_timestamp").uselect(timestamp(nil))).join(bat("doc_name")).col_name("alias"), bat("doc_location").col_name("URI"), bat("doc_size").col_name("size")); });
+    lock_unset(pf_lock);
+    if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmldb_print", "boncz", "May 2005",
-		"DESCRIPTION:\nshows the actual content of the persistent XML document database (not the XML document cache).\n\nThis consists of all documents explicitly shredded with shred_doc(URI, alias).",  "pathfinder");
+        "DESCRIPTION:\nshows the actual content of the persistent XML document database (not the XML document cache).\n\nThis consists of all documents explicitly shredded with shred_doc(URI, alias).",  "pathfinder");
 
 
 @h
@@ -877,137 +880,137 @@ MT_Lock pf_compiler_lock;
  */
 static int
 exec_xquery(char *mode, char* xquery) {
-	char *prologue = NULL, *query = NULL, *epilogue = NULL, *err = NULL;
-	int len = 0, ret = GDK_FAIL, debug = strstr(mode,"debug") != NULL;
-	char *mapi = strstr(mode, "mapi")?"=":"";
+    char *prologue = NULL, *query = NULL, *epilogue = NULL, *err = NULL;
+    int len = 0, ret = GDK_FAIL, debug = strstr(mode,"debug") != NULL;
+    char *mapi = strstr(mode, "mapi")?"=":"";
 
-	if (debug) {
-		stream_printf(GDKout, "%s#xquery######################################################\n", mapi);
-		stream_write(GDKout, xquery, strlen(xquery), 1);
-	}
-	MT_set_lock(pf_compiler_lock, "CMDxquery");
-	err = pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
-	if (err) {
-		len = strlen(err);
-		if (*mapi) {
-			/* put ! before error lines */
-			char *p = err, *q = err;
-			while(*p) { if (*p++ == '\n') len++; }
-			err = (char*) alloca(len+3);
-			*err = '!'; 
-			for(p=err+1; *q; q++) {
-				*p++ = *q;
-				if (*q == '\n') *p++ = '!'; 
-			}
-			/* guard against errors that do not terminate in a newline */
-			if (*q && *q != '\n') *p++ = '\n';
-			else if (p[-1] == '!') p--;  
-			p[1] = 0;
-			len = p - err;
-		}
-	}
-	MT_unset_lock(pf_compiler_lock, "CMDxquery");
+    if (debug) {
+        stream_printf(GDKout, "%s#xquery######################################################\n", mapi);
+        stream_write(GDKout, xquery, strlen(xquery), 1);
+    }
+    MT_set_lock(pf_compiler_lock, "CMDxquery");
+    err = pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
+    if (err) {
+        len = strlen(err);
+        if (*mapi) {
+            /* put ! before error lines */
+            char *p = err, *q = err;
+            while(*p) { if (*p++ == '\n') len++; }
+            err = (char*) alloca(len+3);
+            *err = '!'; 
+            for(p=err+1; *q; q++) {
+                *p++ = *q;
+                if (*q == '\n') *p++ = '!'; 
+            }
+            /* guard against errors that do not terminate in a newline */
+            if (*q && *q != '\n') *p++ = '\n';
+            else if (p[-1] == '!') p--;  
+            p[1] = 0;
+            len = p - err;
+        }
+    }
+    MT_unset_lock(pf_compiler_lock, "CMDxquery");
 
-	if (debug) {
-		stream_printf(GDKout, "%s#mil#########################################################\n", mapi);
-		if (prologue) stream_write(GDKout, prologue, strlen(prologue), 1);
-		else stream_printf(GDKout, "%s#null prologue\n", mapi);
-		if (query) stream_write(GDKout, query, strlen(query), 1);
-		else stream_printf(GDKout, "%s#null query\n", mapi);
-		if (epilogue) stream_write(GDKout, epilogue, strlen(epilogue), 1);
-		else stream_printf(GDKout, "%s#null epilogue\n", mapi);
-	}
-	if (err) {
-		if (debug) {
-			stream_printf(GDKout, "%s#err#########################################################\n", mapi);
-		}
-		stream_write(GDKout, err, len, 1);
-	}
-	if (prologue && query && epilogue) {
-		if (debug) {
-			stream_printf(GDKout, "%s#exec prologue...############################################\n", mapi);
-		}
-		if (monet_exec(prologue) >= 0) {
-			if (debug) {
-				stream_printf(GDKout, "%s#exec query...###############################################\n", mapi);
-			}
-			if (monet_exec(query) >= 0) {
-				if (debug) {
-					stream_printf(GDKout, "%s#exec epilogue...############################################\n", mapi);
-				}
-				if (monet_exec(epilogue) >= 0) {
-					if (debug) {
-						stream_printf(GDKout, "%s#ok##########################################################\n", mapi);
-					}
-					ret = GDK_SUCCEED;
-				}
-			}
-		}
-	}
-	if (debug && ret != GDK_SUCCEED) {
-		stream_printf(GDKout, "%s#execution failed############################################\n", mapi);
-	}
-	/* what comes out of PF is alloced differently */
-	if (prologue) free(prologue);
-	if (query) free(query);
-	if (epilogue) free(epilogue);
-	return ret;
+    if (debug) {
+        stream_printf(GDKout, "%s#mil#########################################################\n", mapi);
+        if (prologue) stream_write(GDKout, prologue, strlen(prologue), 1);
+        else stream_printf(GDKout, "%s#null prologue\n", mapi);
+        if (query) stream_write(GDKout, query, strlen(query), 1);
+        else stream_printf(GDKout, "%s#null query\n", mapi);
+        if (epilogue) stream_write(GDKout, epilogue, strlen(epilogue), 1);
+        else stream_printf(GDKout, "%s#null epilogue\n", mapi);
+    }
+    if (err) {
+        if (debug) {
+            stream_printf(GDKout, "%s#err#########################################################\n", mapi);
+        }
+        stream_write(GDKout, err, len, 1);
+    }
+    if (prologue && query && epilogue) {
+        if (debug) {
+            stream_printf(GDKout, "%s#exec prologue...############################################\n", mapi);
+        }
+        if (monet_exec(prologue) >= 0) {
+            if (debug) {
+                stream_printf(GDKout, "%s#exec query...###############################################\n", mapi);
+            }
+            if (monet_exec(query) >= 0) {
+                if (debug) {
+                    stream_printf(GDKout, "%s#exec epilogue...############################################\n", mapi);
+                }
+                if (monet_exec(epilogue) >= 0) {
+                    if (debug) {
+                        stream_printf(GDKout, "%s#ok##########################################################\n", mapi);
+                    }
+                    ret = GDK_SUCCEED;
+                }
+            }
+        }
+    }
+    if (debug && ret != GDK_SUCCEED) {
+        stream_printf(GDKout, "%s#execution failed############################################\n", mapi);
+    }
+    /* what comes out of PF is alloced differently */
+    if (prologue) free(prologue);
+    if (query) free(query);
+    if (epilogue) free(epilogue);
+    return ret;
 }
 
 
 int
 CMDxquery(char** res, char *mode, char* xquery) {
-	buffer *b = buffer_create(16384);
-	stream *s = buffer_wastream(b, "CMDxquery");
-	stream *o = GDKout;
-	char *dst = NULL;
-	int ret = 0;
+    buffer *b = buffer_create(16384);
+    stream *s = buffer_wastream(b, "CMDxquery");
+    stream *o = GDKout;
+    char *dst = NULL;
+    int ret = 0;
 
-	/* run the query, but collect all output in a buffer */
-	THRsetdata(0,s);
-	ret = exec_xquery(mode, xquery);
-	THRsetdata(0,o);
-	stream_close(s);
+    /* run the query, but collect all output in a buffer */
+    THRsetdata(0,s);
+    ret = exec_xquery(mode, xquery);
+    THRsetdata(0,o);
+    stream_close(s);
 
-	if (ret == GDK_SUCCEED) {
-		dst = GDKmalloc(b->pos+1);
-		memcpy(dst, b->buf, b->pos);
-		dst[b->pos] = 0;
-	}
-	buffer_destroy(b);
-	stream_destroy(s);
-	*res = dst;
-	return ret;
+    if (ret == GDK_SUCCEED) {
+        dst = GDKmalloc(b->pos+1);
+        memcpy(dst, b->buf, b->pos);
+        dst[b->pos] = 0;
+    }
+    buffer_destroy(b);
+    stream_destroy(s);
+    *res = dst;
+    return ret;
 }
 
 @= builtin_operand
 {
-	int _k = interpret(stk, arg(lt, @1), res);
-	if (_k < 0) {
-		return _k;
-	}
-	@3 = VALconvert(@2, res);
-	if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
-		return handle_paramerror(res,@1,res->vtype,@2);
-	}
+    int _k = interpret(stk, arg(lt, @1), res);
+    if (_k < 0) {
+        return _k;
+    }
+    @3 = VALconvert(@2, res);
+    if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+        return handle_paramerror(res,@1,res->vtype,@2);
+    }
 }
 @c
-	int
+int
 connect_error(stream *in, stream *out)
 {
-	/* Make sure that the write- (out-) stream is closed first,
-	 * as the related read- (in-) stream closes the shared
-	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
-	 */
-	if (out) {
-		stream_close(out);
-		stream_destroy(out);
-	}
-	if (in) {
-		stream_close(in);
-		stream_destroy(in);
-	}
-	return GDK_FAIL;
+    /* Make sure that the write- (out-) stream is closed first,
+     * as the related read- (in-) stream closes the shared
+     * socket; see also MonetDB/src/common/stream.mx:socket_close .
+     */
+    if (out) {
+        stream_close(out);
+        stream_destroy(out);
+    }
+    if (in) {
+        stream_close(in);
+        stream_destroy(in);
+    }
+    return GDK_FAIL;
 }
 
 #define XQUERY_CHALLENGE "::mserver_xquery:4\n"
@@ -1015,273 +1018,273 @@ connect_error(stream *in, stream *out)
 /*
  * read xquery from input stream; execute and print on output stream 
  */  
-	int
+int
 CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 {
-	stream **In, **Out;
-	stream *in = NULL, *out = NULL;
-	Thread XQthread = THRget(THRgettid());
-	Client client;
-	size_t curlen = 0, maxlen = BUFSIZ;
-	char *xquery, *user, *buf = GDKmalloc(maxlen + 1); /* one extra for terminator */
-	int i, ret = GDK_FAIL;
+    stream **In, **Out;
+    stream *in = NULL, *out = NULL;
+    Thread XQthread = THRget(THRgettid());
+    Client client;
+    size_t curlen = 0, maxlen = BUFSIZ;
+    char *xquery, *user, *buf = GDKmalloc(maxlen + 1); /* one extra for terminator */
+    int i, ret = GDK_FAIL;
 
-	if (lt->cnt != 2)
-		return handle_argerror(res, lt->cnt, 2);
+    if (lt->cnt != 2)
+        return handle_argerror(res, lt->cnt, 2);
 
-	/* this is a BUILTIN because we must obtain the client context (and thus the streams) */
-	CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
-	@:builtin_operand(0,TYPE_Stream,In)@
-		in = *In;
-	@:builtin_operand(1,TYPE_Stream,Out)@
-		out = *Out;
-	monetSetChannel(XQthread, in, out);
+    /* this is a BUILTIN because we must obtain the client context (and thus the streams) */
+    CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
+    @:builtin_operand(0,TYPE_Stream,In)@
+    in = *In;
+    @:builtin_operand(1,TYPE_Stream,Out)@
+    out = *Out;
+    monetSetChannel(XQthread, in, out);
 
-	/* send challenge */
-	snprintf(buf, 100, "%2u%s", (unsigned int)strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
-	if (stream_write(out, buf, strlen(buf), 1) < 0) 
-		return connect_error(in, out);
+    /* send challenge */
+    snprintf(buf, 100, "%2u%s", (unsigned int)strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
+    if (stream_write(out, buf, strlen(buf), 1) < 0) 
+        return connect_error(in, out);
 
-	/* get user name (ignored later), and mapiclient mode */
-	memset(buf, 0, BUFSIZ);
-	user = buf;
-	if (stream_read(in, user, 1, 1) < 0)
-		return connect_error(in, out);
-	for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
-		user++;
-		if (stream_read(in, user, 1, 1) < 0)
-			return connect_error(in, out);
-	}
-	*user = 0;
+    /* get user name (ignored later), and mapiclient mode */
+    memset(buf, 0, BUFSIZ);
+    user = buf;
+    if (stream_read(in, user, 1, 1) < 0)
+        return connect_error(in, out);
+    for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
+        user++;
+        if (stream_read(in, user, 1, 1) < 0)
+            return connect_error(in, out);
+    }
+    *user = 0;
 
-	/* check for blocked mode */
-	if (strncmp(buf + i - 8, ":blocked", 8) == 0) {
-		in = block_stream(stream_rstream(in));
-		out = block_stream(stream_wstream(out));
-		monetSetChannel(XQthread, in, out);
-	}
+    /* check for blocked mode */
+    if (strncmp(buf + i - 8, ":blocked", 8) == 0) {
+        in = block_stream(stream_rstream(in));
+        out = block_stream(stream_wstream(out));
+        monetSetChannel(XQthread, in, out);
+    }
 
-	/* use the MAPI protocol to read as much xquery buffer as possible */
-	while (1) {
-		if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
-			return connect_error(in, out);
-		if (stream_flush(out))
-			return connect_error(in, out);
+    /* use the MAPI protocol to read as much xquery buffer as possible */
+    while (1) {
+        if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
+            return connect_error(in, out);
+        if (stream_flush(out))
+            return connect_error(in, out);
 
-		curlen = 0;
-		for (;buf;) {
-			ssize_t n = stream_read(in, buf + curlen, 1, maxlen - curlen);
-			if (n < 0)
-				return connect_error(in, out);
-			if (n == 0) {
-				break;
-			}
-			curlen += n;
-			if (curlen == maxlen) {
-				maxlen += 1024;
-				buf = GDKrealloc(buf, maxlen + 1);
-			}
-		}
+        curlen = 0;
+        for (;buf;) {
+            ssize_t n = stream_read(in, buf + curlen, 1, maxlen - curlen);
+            if (n < 0)
+                return connect_error(in, out);
+            if (n == 0) {
+                break;
+            }
+            curlen += n;
+            if (curlen == maxlen) {
+                maxlen += 1024;
+                buf = GDKrealloc(buf, maxlen + 1);
+            }
+        }
 
-		/* execute query */
-		if (buf) {
-			buf[curlen] = 0;	/* terminate (we know there is space) */
+        /* execute query */
+        if (buf) {
+            buf[curlen] = 0;	/* terminate (we know there is space) */
 
-			/* first line of the query is the mode */ 
-			for (xquery = buf; *xquery; xquery++)
-				if (*xquery == '\n') {
-					*xquery++ = 0;
-					break;
-				}
+            /* first line of the query is the mode */ 
+            for (xquery = buf; *xquery; xquery++)
+                if (*xquery == '\n') {
+                    *xquery++ = 0;
+                    break;
+                }
 
-			ret = exec_xquery(buf, xquery); /* execute, see above */
-		}
-	}
-	GDKfree(buf);
+            ret = exec_xquery(buf, xquery); /* execute, see above */
+        }
+    }
+    GDKfree(buf);
 
-	/* end of session */
-	stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
-	stream_flush(out);
-	closeClient(client, 0); 	
-	return ret;
+    /* end of session */
+    stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
+    stream_flush(out);
+    closeClient(client, 0); 	
+    return ret;
 }
 
-#ifdef _WIN32 		/* Windows specific */
-#pragma comment(lib, "ws2_32")
-#include <winsock.h>
-#define snprintf _snprintf
-#else				/* UNIX specific */
-#include <sys/types.h>	/* used by socket */
-#include <sys/socket.h>
-#include <unistd.h>
-#include <netinet/in.h> /* hton and ntoh */
-#include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
-#include <netdb.h>		/* convert domain names into IP addr */
-#include <errno.h>
-#include <ctype.h>
-#endif				/* _WIN32 */
+#ifdef _WIN32 		        /* Windows specific */
+    #pragma comment(lib, "ws2_32")
+    #include <winsock.h>
+    #define snprintf _snprintf
+#else				        /* UNIX specific */
+    #include <sys/types.h>	/* used by socket */
+    #include <sys/socket.h>
+    #include <unistd.h>
+    #include <netinet/in.h> /* hton and ntoh */
+    #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
+    #include <netdb.h>		/* convert domain names into IP addr */
+    #include <errno.h>
+    #include <ctype.h>
+#endif				        /* _WIN32 */
 
 /* Create a HTTP client socket.
  * Returns the socket if succeeded, -1 otherwise.
  */
-	int
+int
 setup_connection(str location, int port)
 {
-	int s_addr, sock, err=-1;
-	struct sockaddr_in sockaddr;
-	struct hostent *resolv = NULL;
+    int s_addr, sock, err=-1;
+    struct sockaddr_in sockaddr;
+    struct hostent *resolv = NULL;
 
-	errno = 0;
-	if (isdigit(location[0])) {
-		if ((s_addr = inet_addr(location)) < 0) {
-			GDKerror("setup_connection: invalid IP addressi \"%s\": %s\n",
-					location, errno ? strerror(errno) : "");
-			return err;
-		}
-	} else {
-		if (!(resolv = gethostbyname(location))) {
-			GDKerror("setup_connection: invalid location \"%s\": %s\n",
-					location, errno ? strerror(errno) : "");
-			return err;
-		}
-		s_addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
-	}
+    errno = 0;
+    if (isdigit(location[0])) {
+        if ((s_addr = inet_addr(location)) < 0) {
+            GDKerror("setup_connection: invalid IP addressi \"%s\": %s\n",
+                     location, errno ? strerror(errno) : "");
+            return err;
+        }
+    } else {
+        if (!(resolv = gethostbyname(location))) {
+            GDKerror("setup_connection: invalid location \"%s\": %s\n",
+                     location, errno ? strerror(errno) : "");
+            return err;
+        }
+        s_addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
+    }
 
-	sockaddr.sin_family = AF_INET;
-	sockaddr.sin_port   = htons(port);
-	sockaddr.sin_addr.s_addr = s_addr;
-	memset(&(sockaddr.sin_zero), '\0', 8);
+    sockaddr.sin_family = AF_INET;
+    sockaddr.sin_port   = htons(port);
+    sockaddr.sin_addr.s_addr = s_addr;
+    memset(&(sockaddr.sin_zero), '\0', 8);
 
-	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		GDKerror("setup_connection: failed to create socket\n");
-		return err;
-	}
-	if (connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr)) < 0) {
-		GDKerror("setup_connection: failed to setup connection\n");
-		close(sock);
-		return err;
-	}
-	return sock;
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        GDKerror("setup_connection: failed to create socket\n");
+        return err;
+    }
+    if (connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr)) < 0) {
+        GDKerror("setup_connection: failed to setup connection\n");
+        close(sock);
+        return err;
+    }
+    return sock;
 }
 
 /*
  * send xquery to a remote host to be executed
  * store results locally
  */
-	int
+int
 CMDxquery_remote(str *res, str location, int *port, str query, str params)
 {
 #define MIN_RESPONSE_SIZE 19
 
-	int i, n, len, ret, sock;
-	int bufsize, csize, hsize = 1024;
-	stream *rstream, *wstream;
-	char *strptr, *content = NULL, *buf = NULL;
-	const char *func = "exec_xquery"; /* Currently we only have one function */
+    int i, n, len, ret, sock;
+    int bufsize, csize, hsize = 1024;
+    stream *rstream, *wstream;
+    char *strptr, *content = NULL, *buf = NULL;
+    const char *func = "exec_xquery"; /* Currently we only have one function */
 
-	(void) params; /* not used yet */
+    (void) params; /* not used yet */
 
-	if (location[(len=strlen(location))-1] == '/')
-		location[len-1] = '\0'; /* remove last '/' if any */
+    if (location[(len=strlen(location))-1] == '/')
+        location[len-1] = '\0'; /* remove last '/' if any */
 
-	if ((sock = setup_connection(location, *port)) < 0)
-		return GDK_FAIL;
+    if ((sock = setup_connection(location, *port)) < 0)
+        return GDK_FAIL;
 
-	n = 4096 + strlen(query); /* 4k for static content, should be enough */
-	csize = BUFSIZ > n ? BUFSIZ : n;
-	if (!(content = GDKmalloc(csize))) {
-		GDKerror("xquery_remote: not enough memory");
-		close(sock);
-		return GDK_FAIL;
-	}
+    n = 4096 + strlen(query); /* 4k for static content, should be enough */
+    csize = BUFSIZ > n ? BUFSIZ : n;
+    if (!(content = GDKmalloc(csize))) {
+        GDKerror("xquery_remote: not enough memory");
+        close(sock);
+        return GDK_FAIL;
+    }
 
-	bufsize = hsize + csize;
-	if (!(buf = GDKmalloc(bufsize))) {
-		GDKerror("xquery_remote: not enough memory\n");
-		GDKfree(content); close(sock);
-		return GDK_FAIL;
-	}
+    bufsize = hsize + csize;
+    if (!(buf = GDKmalloc(bufsize))) {
+        GDKerror("xquery_remote: not enough memory\n");
+        GDKfree(content); close(sock);
+        return GDK_FAIL;
+    }
 
-	/* Currently, only send the query in a HTTP_POST request. 
-	 * No SOAP yet, needs to adapt the implementation of the
-	 * receiver to parse SOAP+XML */
-	len = snprintf(content, csize, "req_xquery=%s", query);
+    /* Currently, only send the query in a HTTP_POST request. 
+     * No SOAP yet, needs to adapt the implementation of the
+     * receiver to parse SOAP+XML */
+    len = snprintf(content, csize, "req_xquery=%s", query);
 
-	wstream = socket_wastream(sock, "http_write");
-	n = snprintf(buf, bufsize,
-			"POST /%s HTTP1.1\r\n"
-			"Host: %s\r\n"
-			"Accept: text/html, text/xml, application/soap+xml\r\n"
-			"Accept-Language: en-uk en-us\r\n"
-			"Content-Type: text/html; charset=\"utf-8\"\r\n"
-			"Content-Length: %d\r\n\r\n"
-			"%s",
-			func, location,
-			len,
-			content);
-	GDKfree(content);
+    wstream = socket_wastream(sock, "http_write");
+    n = snprintf(buf, bufsize,
+            "POST /%s HTTP1.1\r\n"
+            "Host: %s\r\n"
+            "Accept: text/html, text/xml, application/soap+xml\r\n"
+            "Accept-Language: en-uk en-us\r\n"
+            "Content-Type: text/html; charset=\"utf-8\"\r\n"
+            "Content-Length: %d\r\n\r\n"
+            "%s",
+            func, location,
+            len,
+            content);
+    GDKfree(content);
 
-	if ( (ret = stream_write(wstream, buf, 1, n)) != n) {
-		GDKerror("xquery_remote: failed to send request, only %d of %d bytes sent\n", ret, n);
-		GDKfree(buf); stream_close(wstream);
-		return GDK_FAIL;
-	}
+    if ( (ret = stream_write(wstream, buf, 1, n)) != n) {
+        GDKerror("xquery_remote: failed to send request, only %d of %d bytes sent\n", ret, n);
+        GDKfree(buf); stream_close(wstream);
+        return GDK_FAIL;
+    }
 
-	/***
-	 * Receive all response data
-	 */
-	rstream = socket_rastream(sock, "http_read");
-	n = 0;
-	/* while ((ret = stream_read(rstream, buf+n, 1, bufsize-n)) > 0) {*/
-	while ((ret = read(sock, (void *)buf+n, bufsize-n)) > 0){
-		n += ret;
-		buf[n] = '\0';
-		assert(n <= bufsize);
-		if (n == bufsize){
-			bufsize *= 2;
-			buf = (char *)GDKrealloc(buf, bufsize);
-		}
-	}
-	stream_close(wstream); stream_close(rstream);
-	if (ret < 0 || n < MIN_RESPONSE_SIZE || strstr(buf, "\r\n\r\n") == NULL){	
-		GDKerror("xquery_remote: failed to get response\n");
-		GDKfree(buf); 
-		return GDK_FAIL;
-	}
+    /***
+     * Receive all response data
+     */
+    rstream = socket_rastream(sock, "http_read");
+    n = 0;
+    /* while ((ret = stream_read(rstream, buf+n, 1, bufsize-n)) > 0) {*/
+    while ((ret = read(sock, (void *)buf+n, bufsize-n)) > 0){
+        n += ret;
+        buf[n] = '\0';
+        assert(n <= bufsize);
+        if (n == bufsize){
+            bufsize *= 2;
+            buf = (char *)GDKrealloc(buf, bufsize);
+        }
+    }
+    stream_close(wstream); stream_close(rstream);
+    if (ret < 0 || n < MIN_RESPONSE_SIZE || strstr(buf, "\r\n\r\n") == NULL){	
+        GDKerror("xquery_remote: failed to get response\n");
+        GDKfree(buf); 
+        return GDK_FAIL;
+    }
 
-	bufsize = n +1;
-	buf = (char *)GDKrealloc(buf, bufsize); /* release unused memory */
-	strptr = strchr(buf, ' '); strptr++; /* find the first whitespace */
-	if (strptr[0] != '2' || strptr[1] != '0' || strptr[2] != '0'){
-		/* Find the end of the first HTTP header line */
-		i = 0;
-		while (strptr[i] != '\r') i++;
-		strptr[i] = '\0';
-		GDKerror("xquery_remote: remote query execution failed.\n%s\n", strptr);
-		GDKfree(buf);
-		return GDK_FAIL;
-	}
+    bufsize = n +1;
+    buf = (char *)GDKrealloc(buf, bufsize); /* release unused memory */
+    strptr = strchr(buf, ' '); strptr++; /* find the first whitespace */
+    if (strptr[0] != '2' || strptr[1] != '0' || strptr[2] != '0'){
+        /* Find the end of the first HTTP header line */
+        i = 0;
+        while (strptr[i] != '\r') i++;
+        strptr[i] = '\0';
+        GDKerror("xquery_remote: remote query execution failed.\n%s\n", strptr);
+        GDKfree(buf);
+        return GDK_FAIL;
+    }
 
-	strptr = strstr(strptr, "\r\n\r\n");
-	strptr += 4;
-	len = buf + bufsize - strptr;
-	content = GDKmalloc(len);
-	memcpy(content, strptr, len);
-	GDKfree(buf);
-	*res = content;
-	return GDK_SUCCEED;
+    strptr = strstr(strptr, "\r\n\r\n");
+    strptr += 4;
+    len = buf + bufsize - strptr;
+    content = GDKmalloc(len);
+    memcpy(content, strptr, len);
+    GDKfree(buf);
+    *res = content;
+    return GDK_SUCCEED;
 }
 
-	bat *
+bat *
 pathfinder_prelude()
 {
-	pf_compiler_lock = MT_create_lock();
-	return NULL;
+    pf_compiler_lock = MT_create_lock();
+    return NULL;
 }
 
-	void
+void
 pathfinder_epilogue()
 {
-	MT_destroy_lock(pf_compiler_lock);
+    MT_destroy_lock(pf_compiler_lock);
 }
 /* vim:set shiftwidth=4 expandtab: */
