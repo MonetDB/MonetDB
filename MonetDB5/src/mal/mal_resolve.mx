@@ -941,4 +941,3 @@ bat.insert(b:bat[:any$1,:any$2],h:any$1,t:any$2):bat[:any$1,:any$2].
 The disadvantage is an abundance of code and less efficient instruction
 cache hits.
 @}
-/* vim:set shiftwidth=4 expandtab: */

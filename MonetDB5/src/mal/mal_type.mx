@@ -371,6 +371,4 @@ isIdentifier(str s)
 			return -1;
 	return 0;
 }
-
-/* vim:set shiftwidth=4 expandtab: */
 @}

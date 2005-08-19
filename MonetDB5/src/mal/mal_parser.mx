@@ -1713,5 +1713,4 @@ str parseError(Client cntxt, str msg)
 	GDKerror(buf);
 	return 0;
 }
-/* vim:set shiftwidth=4 expandtab: */
 @}

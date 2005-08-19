@@ -12,7 +12,8 @@ LIBS = {
 	SOURCES = \
 		calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx  batstr.mx \
-		batcolor.mx batcalc.mx group.mx aggrX3.mx array.mx
+		batcolor.mx batcalc.mx group.mx aggrX3.mx array.mx \
+		blockstream.mx mcl.mx
 
 	HEADERS = h 
 	SCRIPTS = mal mil ""
@@ -33,7 +34,15 @@ scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx alarm.mx batstr.mx \
-		batcolor.mx batcalc.mx group.mx aggrX3.mx array.mx
+		batcolor.mx batcalc.mx group.mx aggrX3.mx array.mx \
+		blockstream.mx mcl.mx
+}
+
+bin_MCLClient = {
+    SOURCES = mclclient.mx
+	LIBS = lib_blockstream $(SOCKET_LIBS) \
+		../../mal/libmal \
+		$(ICONV_LIBS)
 }
 
 

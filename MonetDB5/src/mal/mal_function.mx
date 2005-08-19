@@ -733,5 +733,4 @@ void printFunction(stream *fd, MalBlkPtr mb, int flg){
 	for(i=0;i<mb->stop;i++)
 	printInstruction(fd,mb, getInstrPtr(mb,i),flg);
 }
-/* vim:set shiftwidth=4 expandtab: */
 @}

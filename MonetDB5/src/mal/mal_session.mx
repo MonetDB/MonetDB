@@ -487,6 +487,4 @@ MALengine(Client c)
 	prg->def->errors = 0;
 	return msg;
 }
-
-/* vim:set shiftwidth=4 expandtab: */
 @}
