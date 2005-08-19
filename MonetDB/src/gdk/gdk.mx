@@ -739,6 +739,7 @@ gdk_export ptr VALconvert(int typ, ValPtr t);
 gdk_export int VALformat(char **buf, ValPtr res);
 gdk_export int VALprint(stream *fd, ValPtr res);
 gdk_export ValPtr VALcopy(ValPtr dst, ValPtr src);
+gdk_export ValPtr VALinit(ValPtr d, int tpe, ptr s);
 gdk_export void VALempty(ValPtr v);
 gdk_export void VALclear(ValPtr v);
 gdk_export ValPtr VALset(ValPtr v, int t, ptr p);
