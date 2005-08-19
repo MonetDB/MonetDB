@@ -139,16 +139,15 @@ end main;	# 61
 # gdk		mem		  # name
 # str		int		  # type
 #---------------------------------#
-[ "memincr",	  0		  ]
-[ "arena",	  2158592	  ]
+[ "arena",	  3534848	  ]
 [ "ordblks",	  36		  ]
-[ "smblks",	  105		  ]
+[ "smblks",	  96		  ]
 [ "hblkhd",	  0		  ]
 [ "hblks",	  0		  ]
 [ "usmblks",	  0		  ]
-[ "fsmblks",	  2936		  ]
-[ "uordblks",	  2059056	  ]
-[ "fordblks",	  99536		  ]
+[ "fsmblks",	  3616		  ]
+[ "uordblks",	  3258048	  ]
+[ "fordblks",	  276800	  ]
 #~EndVariableOutput~#
 #quit();
 
