@@ -27,9 +27,8 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
-#include "milalgebra.h"
-
 void lexical_init();
 
 #endif  /* SCANNER_H */
 
+/* vim:set shiftwidth=4 expandtab: */

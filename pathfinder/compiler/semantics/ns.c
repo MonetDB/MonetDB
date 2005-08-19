@@ -31,21 +31,6 @@
    - .../ax::ns:loc           (name test)
    - <ns:loc> ... </ns:loc>   (element construction)
    - <... ns:loc="..." ...>   (attributes)
-
-FIXME: these are old
-   - default function namespace = "uri"
-   - default element namespace = "uri"
-   - declare namespace ns = "uri"
-   - import schema namespace ns = "uri" [at "url"]
-   - define function ns:loc (...) { ... }
-  
-   - named types and schema references
-  
-   - $ns:loc                  (variable usage)
-   - ns:loc (...)             (function application)
-   - .../ax::ns:loc           (name test)
-   - <ns:loc> ... </ns:loc>   (element construction)
-   - <... ns:loc="..." ...>   (attributes)
 @endverbatim
  *
  * NS declaration attributes of the form `xmlns="uri"' and

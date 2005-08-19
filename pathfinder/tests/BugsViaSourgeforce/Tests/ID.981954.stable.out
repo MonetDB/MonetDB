@@ -88,7 +88,7 @@ print(iter,pos,item,kind);
 # t	tmp_48	tmp_46	tmp_52	tmp_50	  # name
 # void	oid	oid	oid	chr	  # type
 #-----------------------------------------#
-[ 0@0,	  1@0,	  1@0,	  0@0,	  s	  ]
+[ 0@0,	  1@0,	  1@0,	  0@0,	  's'	  ]
 iter := nil;
 pos := nil;
 item := nil;

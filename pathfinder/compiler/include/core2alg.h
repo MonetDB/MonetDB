@@ -31,11 +31,10 @@
 
 #include "array.h"
 
-
 #include "core.h"
 
 /** Compile XQuery Core into Relational Algebra */
-struct PFalg_op_t *PFcore2alg (PFcnode_t *);
+struct PFla_op_t *PFcore2alg (PFcnode_t *);
 
 
 /* ............. environment entry specification .............. */
@@ -48,13 +47,13 @@ struct PFalg_op_t *PFcore2alg (PFcnode_t *);
  */
 
 /** environment entry node */
-struct PFalg_env_t {
+struct PFla_env_t {
     PFvar_t               *var;
-    struct PFalg_op_t     *rel;
+    struct PFla_op_t      *rel;
     PFarray_t             *frag;
 };
 /** environment entry node */
-typedef struct PFalg_env_t PFalg_env_t;
+typedef struct PFla_env_t PFla_env_t;
 
 
 #endif   /* CORE2ALG_H */

@@ -42,18 +42,20 @@ Usage: pf [OPTION] [FILE]
         10  after the Core tree has been simplified/normalized
         11  after type inference and checking
         12  after XQuery Core optimization
-        13  after the Core tree has been translated to the internal algebra
-        14  after the algebra tree has been rewritten/optimized
-        15  after the common subexpression elimination on the algebra tree
-        16  after the algebra has been translated to MIL algebra
-        17  after MIL algebra optimization/simplification
-        18  after MIL algebra common subexpression elimination
-        19  after the MIL algebra has been compiled into MIL commands
-        20  after the MIL program has been serialized
-= -p, --print-parse-tree: print internal parse tree
+        13  after the Core tree has been translated to the logical algebra
+        14  after the logical algebra tree has been rewritten/optimized
+        15  after the CSE on the logical algebra tree
+        16  after compiling logical into the physical algebra
+        17  after compiling the physical algebra into MIL code
+        18  after the MIL program has been serialized
+= -a, --print-abstract-syntax-tree: print abstract syntax tree
 = -c, --print-core-tree: print internal Core language
-= -a, --print-algebra: print internal algebra tree
-= -m, --print-mil-algebra: print internal MIL algebra tree
+= -l, --print-logical-algebra: print logical algebra tree
+= -p, --print-physical-algebra: print physical algebra tree
+= -f format, --format=format: print optional information in algebra dot output:
+         C  print cost value (physical algebra)
+         c  print constant attributes (logical/physical algebra)
+         o  print orderings (physical algebra)
 
 Enjoy.
 

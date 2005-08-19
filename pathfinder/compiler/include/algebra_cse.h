@@ -30,9 +30,11 @@
 #ifndef ALGEBRA_CSE_H
 #define ALGEBRA_CSE_H
 
-#include "algebra.h"
+#include "logical.h"
 
 /* Recursively search the algebra tree for common subexpressions */
-PFalg_op_t * PFcse_eliminate (PFalg_op_t *n);
+PFla_op_t * PFcse_eliminate (PFla_op_t *n);
 
 #endif /* ALGEBRA_CSE_H */
+
+/* vim:set shiftwidth=4 expandtab: */

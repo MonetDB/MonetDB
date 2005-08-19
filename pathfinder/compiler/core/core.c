@@ -77,7 +77,7 @@ PFcore_leaf (PFctype_t kind)
 
     /* static type initialized to none */
     core->type = PFty_none ();
-    core->alg = (struct PFalg_pair_t) { .rel = NULL, .frag = NULL};
+    core->alg = (struct PFla_pair_t) { .rel = NULL, .frag = NULL};
   
     return core;
 }

@@ -36,6 +36,8 @@
 #include "algopt.h"
 #include "mem.h"          /* PFstrdup() */
 
+#include "properties.h"
+
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
@@ -43,7 +45,7 @@
 /*
  * Accessors for the burg matcher
  */
-typedef struct PFalg_op_t *NODEPTR_TYPE;
+typedef struct PFla_op_t *NODEPTR_TYPE;
 
 /* accessor to the node kind */
 #define OP_LABEL(p) ((p)->kind)
@@ -119,10 +121,10 @@ Query:  serialize (Frag, Rel)                     =  1 (10);
 
 Rel:    lit_tbl                                   =  2 (10);
 Rel:    disjunion (Rel, Rel)                      =  3 (10);
-Rel:    disjunion (EmptyRel, Rel)                 =  4 (10);
-Rel:    disjunion (Rel, EmptyRel)                 =  5 (10);
+Rel:    disjunion (EmptyRel, Rel)                 =  4 (5);
+Rel:    disjunion (Rel, EmptyRel)                 =  5 (5);
 Rel:    difference (Rel, Rel)                     =  6 (10);
-Rel:    difference (Rel, EmptyRel)                =  7 (10);
+Rel:    difference (Rel, EmptyRel)                =  7 (5);
 Rel:    intersect (Rel, Rel)                      =  8 (10);
 Rel:    cross (Rel, Rel)                          =  9 (10);
 Rel:    eqjoin (Rel, Rel)                         = 10 (10);
@@ -153,7 +155,7 @@ Rel:    string_val (Frag, Rel)                    = 34 (10);
 
 Rel:    roots_ (FragRel)                          = 35 (10);
 Rel:    element_tag (Rel, Rel)                    = 36 (10);
-Rel:    element_tag (Rel, EmptyRel)               = 37 (10);
+Rel:    element_tag (Rel, EmptyRel)               = 37 (5);
 
 
 FragRel:    element (Frag, Rel)                   = 38 (10);
@@ -172,50 +174,50 @@ Frag:    frag_union (empty_frag, empty_frag)      = 48 (10);
 Frag:    empty_frag                               = 49 (10);
 
 
-EmptyRel:    empty_tbl                            = 50 (10);
+EmptyRel:    empty_tbl                            = 50 (0);
 
-EmptyRel:    disjunion (EmptyRel, EmptyRel)       = 51 (10);
-EmptyRel:    difference (EmptyRel, Rel)           = 52 (10);
-EmptyRel:    intersect (EmptyRel, Rel)            = 54 (10);
-EmptyRel:    intersect (Rel, EmptyRel)            = 55 (10);
-EmptyRel:    cross (EmptyRel, Rel)                = 56 (10);
-EmptyRel:    cross (Rel, EmptyRel)                = 57 (10);
-EmptyRel:    eqjoin (EmptyRel, Rel)               = 58 (10);
-EmptyRel:    eqjoin (Rel, EmptyRel)               = 59 (10);
-EmptyRel:    scjoin (Frag, EmptyRel)              = 60 (10);
-EmptyRel:    rownum (EmptyRel)                    = 61 (10);
+EmptyRel:    disjunion (EmptyRel, EmptyRel)       = 51 (0);
+EmptyRel:    difference (EmptyRel, Rel)           = 52 (0);
+EmptyRel:    intersect (EmptyRel, Rel)            = 54 (0);
+EmptyRel:    intersect (Rel, EmptyRel)            = 55 (0);
+EmptyRel:    cross (EmptyRel, Rel)                = 56 (0);
+EmptyRel:    cross (Rel, EmptyRel)                = 57 (0);
+EmptyRel:    eqjoin (EmptyRel, Rel)               = 58 (0);
+EmptyRel:    eqjoin (Rel, EmptyRel)               = 59 (0);
+EmptyRel:    scjoin (Frag, EmptyRel)              = 60 (0);
+EmptyRel:    rownum (EmptyRel)                    = 61 (0);
 EmptyRel:    project (EmptyRel)                   = 62 (0);
-EmptyRel:    select_ (EmptyRel)                   = 63 (10);
-EmptyRel:    sum (EmptyRel)                       = 64 (10);
-EmptyRel:    count (EmptyRel)                     = 65 (10);
-EmptyRel:    distinct (EmptyRel)                  = 66 (10);
-EmptyRel:    type (EmptyRel)                      = 67 (10);
-EmptyRel:    cast (EmptyRel)                      = 68 (10);
-EmptyRel:    num_add (EmptyRel)                   = 69 (10);
-EmptyRel:    num_subtract (EmptyRel)              = 70 (10);
-EmptyRel:    num_multiply (EmptyRel)              = 71 (10);
-EmptyRel:    num_divide (EmptyRel)                = 72 (10);
-EmptyRel:    num_modulo (EmptyRel)                = 73 (10);
-EmptyRel:    num_neg (EmptyRel)                   = 74 (10);
-EmptyRel:    num_gt (EmptyRel)                    = 75 (10);
-EmptyRel:    num_eq (EmptyRel)                    = 76 (10);
-EmptyRel:    bool_and (EmptyRel)                  = 77 (10);
-EmptyRel:    bool_or (EmptyRel)                   = 78 (10);
-EmptyRel:    bool_not (EmptyRel)                  = 79 (10);
-EmptyRel:    concat (EmptyRel)                    = 80 (10);
-EmptyRel:    seqty1 (EmptyRel)                    = 81 (10);
-EmptyRel:    all (EmptyRel)                       = 82 (10);
+EmptyRel:    select_ (EmptyRel)                   = 63 (0);
+EmptyRel:    sum (EmptyRel)                       = 64 (0);
+EmptyRel:    count (EmptyRel)                     = 65 (0);
+EmptyRel:    distinct (EmptyRel)                  = 66 (0);
+EmptyRel:    type (EmptyRel)                      = 67 (0);
+EmptyRel:    cast (EmptyRel)                      = 68 (0);
+EmptyRel:    num_add (EmptyRel)                   = 69 (0);
+EmptyRel:    num_subtract (EmptyRel)              = 70 (0);
+EmptyRel:    num_multiply (EmptyRel)              = 71 (0);
+EmptyRel:    num_divide (EmptyRel)                = 72 (0);
+EmptyRel:    num_modulo (EmptyRel)                = 73 (0);
+EmptyRel:    num_neg (EmptyRel)                   = 74 (0);
+EmptyRel:    num_gt (EmptyRel)                    = 75 (0);
+EmptyRel:    num_eq (EmptyRel)                    = 76 (0);
+EmptyRel:    bool_and (EmptyRel)                  = 77 (0);
+EmptyRel:    bool_or (EmptyRel)                   = 78 (0);
+EmptyRel:    bool_not (EmptyRel)                  = 79 (0);
+EmptyRel:    concat (EmptyRel)                    = 80 (0);
+EmptyRel:    seqty1 (EmptyRel)                    = 81 (0);
+EmptyRel:    all (EmptyRel)                       = 82 (0);
 
-EmptyRel:    element_tag (EmptyRel, Rel)          = 83 (10);
+EmptyRel:    element_tag (EmptyRel, Rel)          = 83 (0);
 
 
-EmptyRel:    roots_ (element (Frag, EmptyRel))    = 84 (10);
-EmptyRel:    roots_ (attribute (EmptyRel, Rel))   = 85 (9);
-EmptyRel:    roots_ (attribute (Rel, EmptyRel))   = 86 (10);
-EmptyRel:    roots_ (textnode (EmptyRel))         = 87 (10);
-EmptyRel:    roots_ (comment (EmptyRel))          = 88 (10);
-EmptyRel:    roots_ (processi (EmptyRel))         = 89 (10);
-EmptyRel:    roots_ (merge_adjacent (Frag, EmptyRel)) = 90 (10);
+EmptyRel:    roots_ (element (Frag, EmptyRel))    = 84 (0);
+EmptyRel:    roots_ (attribute (EmptyRel, Rel))   = 85 (0);
+EmptyRel:    roots_ (attribute (Rel, EmptyRel))   = 86 (0);
+EmptyRel:    roots_ (textnode (EmptyRel))         = 87 (0);
+EmptyRel:    roots_ (comment (EmptyRel))          = 88 (0);
+EmptyRel:    roots_ (processi (EmptyRel))         = 89 (0);
+EmptyRel:    roots_ (merge_adjacent (Frag, EmptyRel)) = 90 (0);
 
 Rel:    EmptyRel                                  = 91 (0);
 
@@ -244,7 +246,7 @@ Rel:    project (project (Rel))                   = 92 (1);
 #define MAX_KIDS 10
 
 /* Relabel node p if it is not contained in kids. */
-static void relabel (PFalg_op_t *p,  PFalg_op_t **kids);
+static void relabel (PFla_op_t *p,  PFla_op_t **kids);
 
 /*
  * Check whether the second input projection list @a p1 is contained
@@ -259,58 +261,64 @@ static bool contains_projlist (PFalg_proj_t *p1, int n1,
  * contains all the action code for the above burg patterns.
  */
 static bool
-reduce (PFalg_op_t *p, int goalnt)
+reduce (PFla_op_t *p, int goalnt)
 {
-    int         rule;       /* rule number that matches for this node */
-    short      *nts;        /* target non-terminals for the leaf nodes of
-                               the current rule */
-    PFalg_op_t *kids[MAX_KIDS];   /* leaf nodes of this rule */
-    bool rewritten = false;
+    int              rule;       /* rule number that matches for this node */
+    short           *nts;        /* target non-terminals for the leaf nodes of
+                                    the current rule */
+    PFla_op_t       *kids[MAX_KIDS];   /* leaf nodes of this rule */
+    bool             rewritten = false;
 
-    short            state_label;
+    short            old_state_label;
     unsigned short   i;
 
-    /* determine rule that matches for this non-terminal */
-    rule = PFalgopt_rule (STATE_LABEL (p), goalnt);
+    do {
+        /* determine rule that matches for this non-terminal */
+        rule = PFalgopt_rule (STATE_LABEL (p), goalnt);
 
-    /*
-     * prepare recursive traversal: get information on leaf nodes of
-     * this rule
-     */
-    nts = PFalgopt_nts[rule];
-    PFalgopt_kids (p, rule, kids);
+        assert (rule);
 
-    /* recursively translate all leaf expressions */
-    for (i = 0; nts[i]; i++) {
-        rewritten = reduce (kids[i], nts[i]);
+        /* initialize the kids[] vector */
+        for (unsigned short i = 0; i < MAX_KIDS; i++)
+            kids[i] = NULL;
 
         /*
-         * Subtree below p was rewritten during reduction, so we must
-         * stop the reduction process here and start relabelling.
+         * prepare recursive traversal: get information on leaf nodes of
+         * this rule
          */
-        if (rewritten)
-            break;
-    }
+        nts = PFalgopt_nts[rule];
+        PFalgopt_kids (p, rule, kids);
 
-    if (rewritten) {
-        /* Remember p's old label. */
-        state_label = STATE_LABEL(p);
+        /* recursively translate all leaf expressions */
+        rewritten = false;
+        for (i = 0; nts[i]; i++)
+            if ((rewritten = reduce (kids[i], nts[i])))
+                break;  /* abort if a subtree was rewritten */
 
-        /*
-         * Relabel p and the children of p (until we reach p's kids
-         * which do not have to be relabelled).
-         */
-        relabel (p, kids);
+        if (rewritten) {
 
-        /* If old and new label differ, p's parent must be relabelled, too. */
-        if (state_label != STATE_LABEL(p))
-            return true;
-    }
+            /*
+             * If a subtree has been rewritten, we have to
+             *  - re-label that part of the tree, and
+             *  - possibly propagate the `rewritten' information upwards.
+             */
 
-    /*
-     * Stop if we have now already translated that expression.
-     * TODO: is that possible at all?
-     */
+            /* remember our old state_label (so we know if it has changed) */
+            old_state_label = STATE_LABEL(p);
+
+            /*
+             * Re-label current tree pattern.
+             * (at most down to the pattern leaves, as they should already be
+             * correctly labeled by the above reduce() call)
+             */
+            relabel (p, kids);
+
+            /* If our own state_label has changed, notify our caller. */
+            if (old_state_label != STATE_LABEL(p))
+                return true;
+        }
+    } while (rewritten);
+
 
     switch (rule) {
 
@@ -331,6 +339,7 @@ reduce (PFalg_op_t *p, int goalnt)
          * return right child
 	 */
         case 4:
+            assert (p->kind == la_disjunion);
             *p = *(R(p));
             rewritten = true;
             break;
@@ -340,6 +349,7 @@ reduce (PFalg_op_t *p, int goalnt)
          * return left child
 	 */ 
         case 5:
+            assert (p->kind == la_disjunion);
             *p = *(L(p));
             rewritten = true;
             break;
@@ -398,7 +408,7 @@ reduce (PFalg_op_t *p, int goalnt)
              * If an algebra expression already has the requested
              * type, remove the cast.
              */
-            int i;
+            unsigned int i;
 
             for (i = 0; i < L(p)->schema.count; i++)
                 if (!strcmp (p->sem.cast.att, L(p)->schema.items[i].name)) {
@@ -636,14 +646,14 @@ reduce (PFalg_op_t *p, int goalnt)
              * Replace any sub-tree that we determined empty with these
              * rules by the literal empty table.
              */
-            int          i;
-            PFalg_att_t *atts = PFmalloc (p->schema.count *
-	                                  sizeof (PFalg_att_t));
+            unsigned int   i;
+            PFalg_att_t   *atts = PFmalloc (p->schema.count *
+	                                    sizeof (PFalg_att_t));
 
             for (i = 0; i < p->schema.count; i++)
                  atts[i] = p->schema.items[i].name;
 
-            *p = *(PFalg_lit_tbl_ (PFalg_attlist_ (p->schema.count, atts),
+            *p = *(PFla_lit_tbl_ (PFalg_attlist_ (p->schema.count, atts),
                                 0 /* no of tuples */, NULL /* tuples */));
             rewritten = true;
         }
@@ -710,7 +720,7 @@ contains_projlist (PFalg_proj_t *p1, int n1,
 
 /* Relabel node p if it is not contained in kids. */
 static void
-relabel (PFalg_op_t *p,  PFalg_op_t **kids)
+relabel (PFla_op_t *p,  PFla_op_t **kids)
 {
     unsigned int i;
 
@@ -746,9 +756,12 @@ relabel (PFalg_op_t *p,  PFalg_op_t **kids)
 /**
  * Invoke algebra optimization.
  */
-PFalg_op_t *
-PFalgopt (PFalg_op_t *root)
+PFla_op_t *
+PFalgopt (PFla_op_t *root)
 {
+    /* Infer interesting properties about algebra expressions. */
+    PFprop_infer (root);
+
     /* Attach node labels in a tree walk bottom-up */
     PFalgopt_label (root);
 

@@ -202,7 +202,7 @@
  * of @c node (the static type of <code>$v</code> and the type @c node
  * are @em disjoint).
  *
- * @subsection core2alg Compiling Core to a Relational Algebra
+ * @subsection core2alg Compiling Core to a Logical Relational Algebra
  *
  * Pathfinder compiles XQuery expressions for execution on a relational
  * backend (MonetDB). The heart of the compiler is thus the compilation
@@ -227,58 +227,57 @@
  * an equivalent @em graph (DAG), with identical subexpressions only
  * appearing once.
  *
- * @subsection algopt Algebra Optimization
+ * @subsection algopt Logical Algebra Optimization
  *
  * The generated algebra code is another, maybe the most important,
  * hook for optimizations. The (twig based) code in @c algopt.mt does
  * some of them (e.g., removal of statically empty expressions).
  *
- * @subsection ma_gen Compilation to MIL Algebra
+ * @subsection physalg Compilation into Physical Algebra
  *
- * Our target language is the Monet Interpreter Language (MIL).  Before
- * actually generating (imperative) MIL programs, the algebraic query
- * representation is compiled into a more explicit algebra that is
- * closely aligned to MIL, the "MIL Algebra".
+ * Order is one of the fundamental concepts in XQuery. It thus turns
+ * out that the consideration of order can significantly help to
+ * optimize query plans.
  *
- * Much like the MonetDB data model, the "MIL Algebra" only knows
- * two-column relations (BATs). Some operations further require or
- * produce atomic values.
+ * We thus translate the logical algebra tree into a physical algebra.
+ * This physical algebra makes several logical operators more explicit
+ * (e.g., different implementations for a single logical operator, or
+ * the separation of sorting and numbering for the rownum operator).
  *
- * Compilation to the MIL algebra takes place in ma_gen.mt.sed. Most
- * files related to the MIL algebra carry the prefix @c ma_.
+ * Compilation into the physical algebra happens in algebra/planner.c.
+ * The planner derives costs for physical algebra subexpression trees
+ * and keeps track of properties like orderedness. The best plan is
+ * derived using a dynamic programming approach: For each subexpression,
+ * we keep a set of ``best'' plans, where a plan is a ``best'' plan if
+ * there's no other plan that provides the same ordering at a lower cost.
  *
- * @subsection ma_opt MIL Algebra Optimization
+ * The ordering framework is implemented in algebra/ordering.c. Note
+ * that we do not (yet) implement the notion of ordering that is
+ * mentioned in our technical review, but only a ``simple'' lexical
+ * ordering. The planner also considers properties on the logical
+ * algebra tree, like the information on constant columns. These
+ * properties are maintained via algebra/properties.c.
  *
- * The MIL algebra is a physical algebra, where properties like
- * sortedness or uniqueness are well defined. This properties can
- * lead to interesting optimizations that are performed in ma_opt.mt.
+ * We do not yet have a real cost model for our physical algebra.
+ * Instead, each physical algebra operator in algebra/physical.c
+ * derives some cost value in a rather naive way. This is okay for
+ * the current state of our algebraic optimizer, but we should really
+ * implement a real cost model.
  *
- * @subsection ma_cse MIL Algebra CSE
+ * For details on the algebra stuff, please refer to the
+ * @ref compilation page (algebra/algebra.c).
  *
- * Much like the relational algebra tree, the MIL algebra tree can
- * contain identical subtrees that are candidates for sharing in
- * the tree. The code in ma_cse.c thus rewrites the MIL algebra tree
- * so that identical subtrees are shared.
+ * @subsection milgen Compilation into a MIL tree
  *
- * @subsection milgen MIL Code Generation
+ * MIL is Pathfinder's target language. The code in mil/milgen.brg
+ * translates a physical algebra tree into MIL. We do not, however,
+ * directly generate a serialized MIl program, but assemble an 
+ * internal MIL syntax tree first. This MIL tree is serialized to
+ * ``real'' MIL afterwards in mil/milprint.c. This serializer
+ * follows some grammar that we define on our MIL trees, which at
+ * the same time validates the structure of the MIL tree during
+ * serialization.
  *
- * The algebraic (tree) MIL representation is converted into a serial
- * MIL program in milgen.mt. For nodes in the MIL algebra tree, it will
- * create unique variable names in which the expression results are
- * kept.
- *
- * The MIL code generation phase does not directly emit MIL code in
- * its serialized form, but creates an internal (tree) representation
- * of the MIL program that will be serialized in the subsequent
- * processing phase.
- *
- * @subsection milprint Printing the MIL Code as the Compiler Output
- *
- * The in-memory representation of the generated MIL code is serialized
- * to a string in milprint.c. The serialization follows a simple grammar
- * on the in-memory MIL tree that at the same time checks the tree for
- * correctness (will hopefully help to detect bugs in the generation
- * early).
  *
  * @section commandline Command Line Switches
  *
@@ -293,9 +292,9 @@
  * dot. By piping Pathfinder's output to dot, the tree can be represented
  * as PostScript or whatever. ``dot'' output is selected by the command
  * line option <code>-D</code>. (In the example, `<code>-p</code>'
- * requests to print the <code>p</code>arse tree in dot notation.)
+ * requests to print the <code>a</code>bstract syntax tree in dot notation.)
  @verbatim
- $ echo '/foo/bar' | ./pf -Dps6 | dot -Tps -o foo.ps
+ $ echo 'doc("foo.xml")/foo/bar' | ./pf -Das6 | dot -Tps -o foo.ps
  @endverbatim
  * See the dot manpage for more information about dot.
  *
@@ -306,15 +305,42 @@
  * wide ASCII terminal. Prettyprinted output can be selected with the
  * command line option <code>-P</code>:
  @verbatim
- $ echo '/foo/bar' | ./pf -Pps6
+ $ echo 'doc("foo.xml")/foo/bar' | ./pf -Pcs12
  @endverbatim
  *
  * @subsection what_to_print Data Structures that may be Printed
  *
- * The command line switches <code>-p</code>, <code>-c</code>, 
- * <code>-a</code>, and <code>-m</code> request printing of parse
- * tree (aka. abstract syntax tree), Core language tree, algebra
- * expression tree, or MIL algebra tree, respectively.
+ * The command line switches <code>-a</code>, <code>-c</code>, 
+ * <code>-l</code>, and <code>-p</code> request printing of abstract
+ * syntax tree (aka. parse tree), Core language tree, logical and
+ * physical algebra expression tree, respectively.
+ *
+ * @subsubsection print_formatting Configuring the dot output
+ *
+ * Logical and physical algebra trees are annotated with various
+ * additional properties.  As displaying all of them would blow
+ * the graphical tree output, printing of these annotations can
+ * be enabled separately.  For this, add a command line option
+ * <tt>-f</tt> (<tt>--format</tt>), followed by a format string.
+ * Each character in this format string will trigger the respective
+ * annotation to be printed in the dot output (if applicable):
+ *
+ *  - @c C (capital @c C): Print cost values in physical trees.
+ *
+ *  - @c c (lower-case @c c): List constant attributes in logical
+ *    and physical trees.
+ *
+ *  - @c o (lower-case @c o): List orderings guaranteed for each
+ *    physical tree node.
+ *
+ * Example:
+ *
+ * @verbatim
+      echo 'for $i in (1,2) return $i + 1' | ./pf -ADps16 -f Co | dot -Tps
+@endverbatim
+ * will print the physical algebra tree in dot format, annotated with
+ * information on cost values and on orderings provided by each
+ * sub-expression.
  *
  * @subsection stopping Stopping Processing at a Certain Point
  *
@@ -323,11 +349,11 @@
  * and will print out tree structures as requested by other switches.
  *
  * You find all the stop points listed by issuing the command line
- * help (option <code>-h</code>). The following example stops processing
+ * help (option <code>-H</code>). The following example stops processing
  * after mapping the abstract syntax tree to Core and prints the
  * resulting Core tree:
  * @verbatim
- $ echo '/foo/bar' | ./pf -Pcs9
+ $ echo 'doc("foo.xml")/foo/bar' | ./pf -Pcs9
 @endverbatim
  *
  * @subsection types Static typing for the core language
@@ -337,16 +363,23 @@
  * compiler print type annotations (in braces <code>{ }</code>) along
  * with core program output.
  *
+ * @verbatim
+ $ echo 'doc("foo.xml")/foo/bar' | ./pf -Pcts12
+@endverbatim
+ *
  *
  * @section credits Credits
  *
  * This project has been initiated by the
  * <a href="http://www.inf.uni-konstanz.de/dbis/">Database and Information
  * Systems Group</a> at <a href="http://www.uni-konstanz.de/">University
- * of Konstanz, Germany</a>. It is lead by Torsten Grust
- * (torsten.grust@uni-konstanz.de) and Jens Teubner
- * (jens.teubner@uni-konstanz.de). Several students from U Konstanz have
- * been involved in this project, namely
+ * of Konstanz, Germany</a>.  It is lead by Torsten Grust
+ * (torsten.grust@in.tum.de) and Jens Teubner
+ * (jens.teubner@in.tum.de), who have moved to the
+ * <a href='http://www-db.in.tum.de/'>Database Systems Group</a> at the
+ * <a href='http://www.tum.de'>Technische Universit&auml;t M&auml;nchen</a>.
+ * Several students from U Konstanz have been involved in this
+ * project, namely
  * 
  *  - Gerlinde Adam
  *  - Natalia Fibich
@@ -372,6 +405,12 @@
  * the <a href='monetdb.cwi.nl'>MonetDB</a> project, the main-memory
  * database system developed by the database group at
  * <a href='http://www.cwi.nl'>CWI Amsterdam</a>.
+ *
+ * The main distribution and discussion platform for research issues
+ * in the Pathfinder project is
+ * <a href='http://www.pathfinder-xquery.org/'>http://www.pathfinder-xquery.org/</a>.
+ * Software is distributed as the "MonetDB/XQuery" system at
+ * <a href='http://www.monetdb-xquery.org/'>http://www.monetdb-xquery.org/</a>.
  */
 
 #include "pathfinder.h"
@@ -406,12 +445,13 @@ static struct option long_options[] = {
     { "optimize",                  optional_argument, NULL, 'O' },
     { "print-human-readable",         no_argument,    NULL, 'P' },
     { "timing",                       no_argument,    NULL, 'T' },
-    { "print-algebra",                no_argument,    NULL, 'a' },
+    { "print-abstract-syntax-tree",   no_argument,    NULL, 'a' },
     { "print-core-tree",              no_argument,    NULL, 'c' },
     { "debug",                     optional_argument, NULL, 'd' },
+    { "format",                    required_argument, NULL, 'f' },
     { "help",                         no_argument,    NULL, 'h' },
-    { "print-mil-algebra",            no_argument,    NULL, 'm' },
-    { "print-parse-tree",             no_argument,    NULL, 'p' },
+    { "print-logical-algebra",        no_argument,    NULL, 'l' },
+    { "print-physical-algebra",       no_argument,    NULL, 'p' },
     { "quiet",                        no_argument,    NULL, 'q' },
     { "stop-after",                required_argument, NULL, 's' },
     { "typing",                       no_argument,    NULL, 't' },
@@ -422,7 +462,7 @@ static struct option long_options[] = {
  * character buffer large enough to hold longest
  * command line option plus some extra formatting space
  */
-static char opt_buf[sizeof ("print-human-readable") + 8];
+static char opt_buf[sizeof ("print-abstract-syntax-tree") + 8];
 
 static int 
 cmp_opt (const void *o1, const void *o2) 
@@ -476,14 +516,12 @@ static char *phases[] = {
     [10]  = "after the Core tree has been simplified/normalized",
     [11]  = "after type inference and checking",
     [12]  = "after XQuery Core optimization",
-    [13]  = "after the Core tree has been translated to the internal algebra",
-    [14]  = "after the algebra tree has been rewritten/optimized",
-    [15]  = "after the common subexpression elimination on the algebra tree",
-    [16]  = "after the algebra has been translated to MIL algebra",
-    [17]  = "after MIL algebra optimization/simplification",
-    [18]  = "after MIL algebra common subexpression elimination",
-    [19]  = "after the MIL algebra has been compiled into MIL commands",
-    [20]  = "after the MIL program has been serialized"
+    [13]  = "after the Core tree has been translated to the logical algebra",
+    [14]  = "after the logical algebra tree has been rewritten/optimized",
+    [15]  = "after the CSE on the logical algebra tree",
+    [16]  = "after compiling logical into the physical algebra",
+    [17]  = "after compiling the physical algebra into MIL code",
+    [18]  = "after the MIL program has been serialized"
 };
 
 /**
@@ -541,152 +579,177 @@ main (int argc, char *argv[])
 #if HAVE_GETOPT_H && HAVE_GETOPT_LONG
         int option_index = 0;
         opterr = 1;
-        c = getopt_long (argc, argv, "ADHMO::PTacd::hmpqrs:t", 
+        c = getopt_long (argc, argv, "ADHMO::PTacd::f:hlpqrs:t", 
                          long_options, &option_index);
 #else
-        c = getopt (argc, argv, "ADHMO::PTacd::hmpqrs:t");
+        c = getopt (argc, argv, "ADHMO::PTacd::f:hlpqrs:t");
 #endif
 
         if (c == -1)
             break;            /* end of command line */
         
         switch (c) {
-        case 'h':
-            printf ("Pathfinder XQuery Compiler ($Revision$, $Date$)\n");
-            printf ("(c) University of Konstanz, DBIS group\n\n");
-            printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
-            printf ("  Reads from standard input if FILE is omitted.\n\n");
-            printf ("  -h%s: print this help message\n",
-                    long_option (opt_buf, ", --%s", 'h'));
-            printf ("  -H%s: print help message for advanced options\n",
-                    long_option (opt_buf, ", --%s", 'H'));
-            printf ("  -T%s: print elapsed times for compiler phases\n",
-                    long_option (opt_buf, ", --%s", 'T'));
-            printf ("  -O[0-3]%s: select optimization level (default=1)\n",
-                    long_option (opt_buf, ", --%s", 'O'));
-            printf ("\n");
-            printf ("Enjoy.\n");
-            exit (0);
-          
-        case 'H':
-            printf ("Pathfinder XQuery Compiler ($Revision$, $Date$)\n");
-            printf ("(c) University of Konstanz, DBIS group\n\n");
-            printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
-            printf ("  Reads from standard input if FILE is omitted.\n\n");
-            printf ("  -h%s: print short help message\n",
-                    long_option (opt_buf, ", --%s", 'h'));
-            printf ("  -H%s: print this help message for advanced options\n",
-                    long_option (opt_buf, ", --%s", 'H'));
-            printf ("  -q%s: do not print informational messages to log file\n",
-                    long_option (opt_buf, ", --%s", 'q'));
-            printf ("  -d[N]%s: print debug information (default level=1)\n",
-                    long_option (opt_buf, ", --%s", 'd'));
-            /*
-            printf ("  -H%s: read algebra code from Teggy's Haskell prototype"
-                    "\n        (will not read XQuery input then)\n",
-                    long_option (opt_buf, ", --%s", 'H'));
-            */
-            printf ("  -A%s: turn on internal algebra code.\n"
-                    "        Don't use this, it WILL break.\n",
-                    long_option (opt_buf, ", --%s", 'A'));
-            printf ("  -M%s: print MIL code (summer version) (default)\n",
-                    long_option (opt_buf, ", --%s", 'M'));
-            printf ("  -P%s: print internal tree structure human-readable\n",
-                    long_option (opt_buf, ", --%s", 'P'));
-            printf ("  -D%s: print internal tree structure in AT&T dot notation\n",
-                    long_option (opt_buf, ", --%s", 'D'));
-            printf ("  -T%s: print elapsed times for compiler phases\n",
-                    long_option (opt_buf, ", --%s", 'T'));
-            printf ("  -O[0-3]%s: select optimization level (default=1)\n",
-                    long_option (opt_buf, ", --%s", 'O'));
-            printf ("  -t%s: print static types (in {...}) for Core\n",
-                    long_option (opt_buf, ", --%s", 't'));
-            printf ("  -s%s: stop processing after certain phase:\n",
-                    long_option (opt_buf, ", --%s", 's'));
+            case 'A':
+                status->summer_branch = false;
+                break;
 
-            for (i = 1; i < (sizeof (phases) / sizeof (char *)); i++)
-                printf ("        %2u  %s\n", i, phases[i]);
+            case 'D':
+                status->print_dot = true;
+                break;
 
-            printf ("  -p%s: print internal parse tree\n",
-                    long_option (opt_buf, ", --%s", 'p'));
-            printf ("  -c%s: print internal Core language\n",
-                    long_option (opt_buf, ", --%s", 'c'));
-            printf ("  -a%s: print internal algebra tree\n",
-                    long_option (opt_buf, ", --%s", 'a'));
-            printf ("  -m%s: print internal MIL algebra tree\n",
-                    long_option (opt_buf, ", --%s", 'm'));
-            printf ("\n");
-            printf ("Enjoy.\n");
-            exit (0);
-          
-        case 'q':
-            status->debug = 0;
-            break;
+                /*
+                   case 'H':
+                   status->parse_hsk = true;
+                   break;
+                   */
 
-        case 'p':
-            status->print_parse_tree = true;
-            break;
+            case 'H':
+                printf ("Pathfinder XQuery Compiler "
+                        "($Revision$, $Date$)\n");
+                printf ("(c) University of Konstanz, DBIS group\n\n");
+                printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
+                printf ("  Reads from standard input if FILE is omitted.\n\n");
+                printf ("  -h%s: print short help message\n",
+                        long_option (opt_buf, ", --%s", 'h'));
+                printf ("  -H%s: print this help message for advanced options\n",
+                        long_option (opt_buf, ", --%s", 'H'));
+                printf ("  -q%s: do not print informational messages to log file\n",
+                        long_option (opt_buf, ", --%s", 'q'));
+                printf ("  -d[N]%s: print debug information (default level=1)\n",
+                        long_option (opt_buf, ", --%s", 'd'));
+                /*
+                   printf ("  -H%s: read algebra code from Teggy's Haskell prototype"
+                   "\n        (will not read XQuery input then)\n",
+                   long_option (opt_buf, ", --%s", 'H'));
+                */
+                printf ("  -A%s: turn on internal algebra code.\n"
+                        "        Don't use this, it WILL break.\n",
+                        long_option (opt_buf, ", --%s", 'A'));
+                printf ("  -M%s: print MIL code (summer version) (default)\n",
+                        long_option (opt_buf, ", --%s", 'M'));
+                printf ("  -P%s: print internal tree structure human-readable\n",
+                        long_option (opt_buf, ", --%s", 'P'));
+                printf ("  -D%s: print internal tree structure in AT&T dot notation\n",
+                        long_option (opt_buf, ", --%s", 'D'));
+                printf ("  -T%s: print elapsed times for compiler phases\n",
+                        long_option (opt_buf, ", --%s", 'T'));
+                printf ("  -O[0-3]%s: select optimization level (default=1)\n",
+                        long_option (opt_buf, ", --%s", 'O'));
+                printf ("  -t%s: print static types (in {...}) for Core\n",
+                        long_option (opt_buf, ", --%s", 't'));
+                printf ("  -s%s: stop processing after certain phase:\n",
+                        long_option (opt_buf, ", --%s", 's'));
 
-        case 'c':
-            status->print_core_tree = true;
-            break;
+                for (i = 1; i < (sizeof (phases) / sizeof (char *)); i++)
+                    printf ("        %2u  %s\n", i, phases[i]);
 
-        case 'a':
-            status->print_algebra_tree = true;
-            break;
+                printf ("  -a%s: print abstract syntax tree\n",
+                        long_option (opt_buf, ", --%s", 'a'));
+                printf ("  -c%s: print internal Core language\n",
+                        long_option (opt_buf, ", --%s", 'c'));
+                printf ("  -l%s: print logical algebra tree\n",
+                        long_option (opt_buf, ", --%s", 'l'));
+                printf ("  -p%s: print physical algebra tree\n",
+                        long_option (opt_buf, ", --%s", 'p'));
+                printf ("  -f format%s: print optional information in algebra dot output:\n",
+                        long_option (opt_buf, ", --%s=format", 'f'));
 
-        case 'm':
-            status->print_ma_tree = true;
-            break;
+                printf ("         C  print cost value (physical algebra)\n");
+                printf ("         c  print constant attributes "
+                                     "(logical/physical algebra)\n");
+                printf ("         o  print orderings (physical algebra)\n");
 
-        case 's':
-            status->stop_after = atoi (optarg);
-            if (status->stop_after >= (sizeof (phases) / sizeof (*phases)))
-                PFoops (OOPS_CMDLINEARGS,
-                        "unrecognized stop point. Try `%s -h'", progname);
-            break;
+                printf ("\n");
+                printf ("Enjoy.\n");
+                exit (0);
 
-        case 'D':
-            status->print_dot = true;
-            break;
+            case 'M':
+                status->summer_branch = true;
+                break;
 
-        /*
-        case 'H':
-            status->parse_hsk = true;
-            break;
-        */
+            case 'O':
+                status->optimize = optarg ? atoi(optarg) : 1;
+                break;
 
-        case 'A':
-            status->summer_branch = false;
-            break;
+            case 'P':
+                status->print_pretty = true;
+                break;
 
-        case 'M':
-            status->summer_branch = true;
-            break;
+            case 'T':
+                status->timing = true;
+                break;
 
-        case 'P':
-            status->print_pretty = true;
-            break;
+            case 'a':
+                status->print_parse_tree = true;
+                break;
 
-        case 'T':
-            status->timing = true;
+            case 'c':
+                status->print_core_tree = true;
+                break;
 
-            break;
-        case 'd':
-             status->debug = optarg ? atoi(optarg) : 1;
-             break;
+            case 'd':
+                status->debug = optarg ? atoi(optarg) : 1;
+                break;
 
-        case 'O':
-            status->optimize = optarg ? atoi(optarg) : 1;
-            break;
+            case 'f':
+                if (!status->format)
+                    status->format = PFstrdup (optarg);
+                else {
+                    status->format = PFrealloc (strlen (status->format)
+                                                    + strlen (optarg) +1,
+                                                status->format);
+                    strcat (status->format, optarg);
+                }
 
-        case 't':
-            status->print_types = true;
-            break;
+                PFinfo (OOPS_NOTICE, "format: `%s'", status->format);
+                break;
 
-        default:
-            (void) PFoops (OOPS_CMDLINEARGS, "try `%s -h'", progname);
-            goto failure;
+            case 'h':
+                printf ("Pathfinder XQuery Compiler "
+                        "($Revision$, $Date$)\n");
+                printf ("(c) University of Konstanz, DBIS group\n\n");
+                printf ("Usage: %s [OPTION] [FILE]\n\n", argv[0]);            
+                printf ("  Reads from standard input if FILE is omitted.\n\n");
+                printf ("  -h%s: print this help message\n",
+                        long_option (opt_buf, ", --%s", 'h'));
+                printf ("  -H%s: print help message for advanced options\n",
+                        long_option (opt_buf, ", --%s", 'H'));
+                printf ("  -T%s: print elapsed times for compiler phases\n",
+                        long_option (opt_buf, ", --%s", 'T'));
+                printf ("  -O[0-3]%s: select optimization level (default=1)\n",
+                        long_option (opt_buf, ", --%s", 'O'));
+                printf ("\n");
+                printf ("Enjoy.\n");
+                exit (0);
+
+            case 'p':
+                status->print_pa_tree = true;
+                break;
+
+            case 'l':
+                status->print_la_tree = true;
+                break;
+
+            case 'q':
+                status->debug = 0;
+                break;
+
+            case 's':
+                status->stop_after = atoi (optarg);
+                if (status->stop_after >= (sizeof (phases) / sizeof (*phases)))
+                    PFoops (OOPS_CMDLINEARGS,
+                            "unrecognized stop point. Try `%s -h'", progname);
+                break;
+
+            case 't':
+                status->print_types = true;
+                break;
+
+                /*
+                   default:
+                   (void) PFoops (OOPS_CMDLINEARGS, "try `%s -h'", progname);
+                   goto failure;
+                */
         }           /* end of switch */
     }           /* end of while */
 

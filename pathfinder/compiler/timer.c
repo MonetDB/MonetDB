@@ -47,13 +47,15 @@
 #  include <time.h>
 # endif
 #endif
+
+
 /* sprintf() */
 #include <stdio.h>
 /* make abs() available */
 #include <stdlib.h>
 
 static long
-PFgettime ()
+PFgettime (void)
 {
 #ifdef NATIVE_WIN32
     SYSTEMTIME st;
@@ -76,6 +78,7 @@ PFgettime ()
 #endif
 #endif
 #endif
+
 }
 
 /**
