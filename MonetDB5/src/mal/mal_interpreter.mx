@@ -1397,7 +1397,9 @@ we have to keep track of essential system counter information.
     else {
         pci->clk= GDKusec();
         time(&pci->clock);
+#ifdef HAVE_TIMES
         times(&pci->timer);
+#endif
     }
 #endif
 @= endProfile

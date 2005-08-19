@@ -482,12 +482,14 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			c++;
 		log(" \"%s\",\t", c);
 	}
+#ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status) {
 		log("%d,\t", newTms.tms_utime - pci->timer.tms_utime);
 		log("%d,\t", newTms.tms_cutime - pci->timer.tms_cutime);
 		log("%d,\t", newTms.tms_stime - pci->timer.tms_stime);
 		log("%d,\t", newTms.tms_cstime - pci->timer.tms_cstime);
 	}
+#endif
 
 	if (profileCounter[PROFmemory].status) {
 #ifdef HAVE_SYS_RESOURCE_H
@@ -616,10 +618,12 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* make XML record */
 	log0("<event>\n");
 	if (profileCounter[PROFcpu].status) {
+#ifdef HAVE_TIMES
 		log("\t<tms utime=\"%d\" ", newTms.tms_utime - pci->timer.tms_utime);
 		log("cutime=\"%d\" ", newTms.tms_cutime - pci->timer.tms_cutime);
 		log("stime=\"%d\" ", newTms.tms_stime - pci->timer.tms_stime);
 		log("cstime=\"%d\" ", newTms.tms_cstime - pci->timer.tms_cstime);
+#endif
 		log("ticks=\"%d\" ", GDKusec() - pci->clk);
 		log0("/>\n");
 	}
@@ -1281,12 +1285,14 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNins(TRACE_id_stmt, &evnt, c);
 	}
 /* The remainder requires their own BATs
+#ifdef HAVE_TIMES
     if( profileCounter[PROFcpu].status ){
         log("%d,\t", newTms.tms_utime - pci->timer.tms_utime);
         log("%d,\t", newTms.tms_cutime - pci->timer.tms_cutime);
         log("%d,\t", newTms.tms_stime - pci->timer.tms_stime);
         log("%d,\t", newTms.tms_cstime - pci->timer.tms_cstime);
     }
+#endif
 
     if( profileCounter[PROFmemory].status ){
 #ifdef HAVE_SYS_RESOURCE_H

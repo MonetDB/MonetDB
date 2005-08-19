@@ -48,7 +48,9 @@ For the time being we assume that all commands are statically linked.
 @h
 #ifndef _MAL_LINKER_H
 #include "mal_module.h"
+#ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
+#endif
 
 /*#define DEBUG_MAL_LINKER  */
 #define MONET64 1

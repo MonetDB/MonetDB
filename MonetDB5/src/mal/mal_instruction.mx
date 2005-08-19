@@ -372,7 +372,9 @@ and the total time spent while executing the instruction.
 @h
 #ifdef MALprofiler
     short   trace;      /* facilitate filter-based profiling */
+#ifdef HAVE_TIMES
     struct  tms timer;  /* timing information */
+#endif
 	time_t	clock;	/* clock */
     lng clk;        /* microseconds clock */
     long    counter;
@@ -568,7 +570,7 @@ Symbol newSymbol(str nme, int kind){
     if( cur == NULL){
         GDKfatal("@1: cannot initialize scope\n");
     }
-    bzero((str)cur,sizeof(SymRecord));
+    memset((str)cur,0,sizeof(SymRecord));
     cur->name = nme;
     cur->kind = kind;
     cur->peer = NULL;
@@ -794,10 +796,12 @@ with modifier
         p->barrier= 0;
     }
 #ifdef MALprofiler
+#ifdef HAVE_TIMES
     p->timer.tms_utime = 0;
     p->timer.tms_stime = 0;
     p->timer.tms_cutime = 0;
     p->timer.tms_cstime = 0;
+#endif
     p->clock = 0;
     p->clk = 0;
     p->ticks = 0;
@@ -1325,7 +1329,7 @@ retryConstant:
                     if(type== TYPE_sht)
                         setVarType(mb, idx, TYPE_int);
                     vr->vtype= TYPE_int;
-                    vr->val.ival = l;
+                    vr->val.ival = (int)l;
                 } else {
                     if(type== TYPE_sht)
                         setVarType(mb, idx, TYPE_lng);
@@ -1334,7 +1338,7 @@ retryConstant:
                 }
             } else {
                 vr->vtype= TYPE_sht;
-                vr->val.shval= l;
+                vr->val.shval= (int) l;
             }
             break; }
     case TYPE_int: {lng l;
@@ -1364,7 +1368,7 @@ retryConstant:
             break; }
     case TYPE_flt: {double d= strtod(val,NULL); 
             if( tonil) vr->val.fval = flt_nil; 
-            else vr->val.fval= d;
+            else vr->val.fval= (float) d;
             vr->vtype= type;
             break; }
     case TYPE_dbl: {double d= strtod(val,NULL);
