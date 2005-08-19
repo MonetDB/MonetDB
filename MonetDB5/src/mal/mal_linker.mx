@@ -183,7 +183,7 @@ initM5Loader()
 		mal_set_lock(mal_contextLock, "loadModule");
 		newModuleLoaded = (str *) GDKmalloc(newsize * sizeof(str));
 		newModuleHandle = (void **) GDKmalloc(newsize * sizeof(void *));
-		bzero((char *) newModuleLoaded, newsize * sizeof(str));
+		memset((char *) newModuleLoaded, 0, newsize * sizeof(str));
 		memcpy((char *) newModuleLoaded, (char *) moduleLoaded, maxmodules * sizeof(str *));
 		memcpy((char *) newModuleHandle, (char *) moduleHandle, maxmodules * sizeof(void **));
 		GDKfree(moduleLoaded);

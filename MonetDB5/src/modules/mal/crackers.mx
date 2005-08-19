@@ -209,7 +209,7 @@ findCrackMap(int bid)
 		if (maxCrackMap > 0)
 			units = 1.2 * maxCrackMap;
 		x = (CrackMap *) GDKmalloc(sizeof(CrackMap) * units);
-		bzero(x, sizeof(CrackMap) * units);
+		memset(x, 0, sizeof(CrackMap) * units);
 		if (crackMap) {
 			fprintf(stderr, "reallocate Crackmap\n");
 			memcpy(x, crackMap, sizeof(CrackMap) * i);
@@ -221,7 +221,7 @@ findCrackMap(int bid)
 	/* init the crackmap */
 	crackMap[i].bid = bid;
 	crackMap[i].pieces = GDKmalloc(sizeof(Piece) * MAXPIECE);
-	bzero((void *) crackMap[i].pieces, sizeof(Piece) * MAXPIECE);
+	memset((void *) crackMap[i].pieces, 0, sizeof(Piece) * MAXPIECE);
 	crackMap[i].freepiece = 0;
 	crackMap[i].maxpiece = MAXPIECE;
 	return i;
@@ -233,7 +233,7 @@ freeCrackMap(int m)
 	assert(m >= 0);
 	/* re-initialize crackmap */
 	crackMap[m].bid = -1;
-	bzero((void *) crackMap[m].pieces, sizeof(Piece) * crackMap[m].maxpiece);
+	memset((void *) crackMap[m].pieces, 0, sizeof(Piece) * crackMap[m].maxpiece);
 	crackMap[m].freepiece = 0;
 }
 

@@ -193,7 +193,7 @@ newMILbackend()
 	MILbackend be;
 
 	be = GDKmalloc(sizeof(*be));
-	bzero(be, sizeof(*be));
+	memset(be, 0, sizeof(*be));
 	return be;
 }
 
@@ -203,7 +203,7 @@ resetMILbackend(Client cntxt)
 	MILbackend be;
 
 	be = BE(cntxt);
-	bzero(be, sizeof(*be));
+	memset(be, 0, sizeof(*be));
 }
 
 void

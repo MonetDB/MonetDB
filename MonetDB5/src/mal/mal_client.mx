@@ -422,7 +422,7 @@ collect the buffer when in use.
     c->itrace = 0;
     c->debugOptimizer = c->debugScheduler= 0;
 	c->timer = 0;
-	bzero( (char*) &c->resource, sizeof(c->resource));
+	memset( (char*) &c->resource, 0, sizeof(c->resource));
     c->errbuf = 0;
 
     c->cwd= GDKstrdup(monet_cwd);

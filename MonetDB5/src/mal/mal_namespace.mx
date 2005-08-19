@@ -95,9 +95,9 @@ static void expandNamespace(int incr){
 }
 void initNamespace() {
     namespace.nme= (str *) GDKmalloc(sizeof(str *) * MAXIDENTIFIERS);
-    bzero((char*) namespace.nme, sizeof(str *) * MAXIDENTIFIERS);
+    memset((char*) namespace.nme, 0, sizeof(str *) * MAXIDENTIFIERS);
     namespace.link= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
-    bzero((char*) namespace.link,sizeof(int) * MAXIDENTIFIERS);
+    memset((char*) namespace.link, 0, sizeof(int) * MAXIDENTIFIERS);
     namespace.hit= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
     namespace.size = MAXIDENTIFIERS;
     namespace.nmetop= 256; /* hash overflow */
