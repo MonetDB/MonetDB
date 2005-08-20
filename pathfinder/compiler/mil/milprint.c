@@ -481,13 +481,6 @@ print_statement (PFmil_t * n)
         case m_serialize:
             milprintf ("print_result (");
             print_args (n->child[0]);
-#if 0
-            for (i = 0; i < 7; i++) {
-                if (i)
-                    milprintf (", ");
-                print_expression (n->child[i]);
-            }
-#endif
             milprintf (")");
             break;
 

@@ -333,31 +333,6 @@ PFpa_op_t *
 PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
              const PFpa_op_t *n1, const PFpa_op_t *n2);
 
-#if 0
-
-  We cannot really support those, as MonetDB's join operators
-  do not give us sufficient control over the implementation
-  actually used.
-
-/**
- * NestedLoopJoin: Join two tables via nested iteration.
- *
- * Does not require any specific input order, but also does not
- * benefit from such order.
- *
- * @note
- *   The implementation as MIL code does not necessarily lead to
- *   nested-loops execution.  Instead, we use MonetDB's @c join
- *   operator that may choose optimized implementations instead.
- */
-PFpa_op_t *
-PFpa_nljoin (PFalg_att_t att1, PFalg_att_t att2,
-             const PFpa_op_t *n1, const PFpa_op_t *n2);
-
-PFpa_op_t *
-PFpa_merge_join (PFalg_att_t att1, PFalg_att_t att2,
-                 const PFpa_op_t *n1, const PFpa_op_t *n2);
-#endif
 
 /**
  * StandardSort: Introduce given sort order as the only new order.
