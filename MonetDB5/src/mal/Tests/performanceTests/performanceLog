@@ -650,3 +650,18 @@ tst400e		 0.412/0.387/0.015	1M incr fcn
 
 tst901a		 0.508/0.445/0.040	[+] call	 
 tst901b		 2.048/1.914/0.053	[+] call	
+======================== 20 aug 2005 ===================
+Setup on Gio version 4.9 kernel after enabling alloc_map
+The compilation mode for both V5 is CFLAGS=-O2 
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		gio( load 0)		 
+base		 0.048/0.036/0.012	
+tst400a		 0.104/0.093/0.011	1M loop	 	
+tst400a2	 0.155/0.149/0.006	1M loop inc	
+tst400bHuge	 0.222/0.184/0.039	100k count (io)
+tst400cHuge	 0.306/0.266/0.040	100k insert(io)	
+tst400d		 0.409/0.381/0.027	1M insert tuple 
+tst400e		 0.382/0.365/0.016	1M incr fcn     
+
+tst901a		 0.462/0.431/0.031	[+] call	 
+tst901b		 1.865/1.776/0.059	[+] call	
