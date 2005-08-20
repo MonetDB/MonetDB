@@ -306,24 +306,6 @@ PFmil_assgn (const PFmil_t *v, const PFmil_t *e)
     return wire2 (m_assgn, v, e);
 }
 
-#if 0
-/**
- * Construct a MIL variable assignment (Assign result of expression
- * @a e to variable @a v).
- *
- * @param v The variable in the assignment. Must be of kind #m_var.
- * @param e Expression to assign to @a v.
- */
-PFmil_t *
-PFmil_reassgn (const PFmil_t *v, const PFmil_t *e)
-{
-    /* left hand side of an assignment must be a variable */
-    assert (v->kind == m_var);
-
-    return wire2 (m_reassgn, v, e);
-}
-#endif
-
 /** MIL new() statement */
 PFmil_t *
 PFmil_new (const PFmil_t *head, const PFmil_t *tail)
