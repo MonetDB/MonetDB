@@ -7,8 +7,9 @@ If you are new to this world then pick up any of the
 introductionary books and study it carefully.
 
 The SQL Implementation front-end is based on the SQL-99 standard,
-which is nicely described in the books by 
-@url{bookSQL}
+which is covered in many text books e.g.
+@emph{J. Melton and A.R. Simon}, SQL:1999 Understanding
+Relational Language Components, ISBN 1558604561.
 
 The architecture is based on a separate compiler, which translates 
 SQL statements into MAL. In this process common optimization heuristics,
@@ -19,7 +20,7 @@ The SQL Implementation compiler can be downloaded from the
 section at SourceForge. It is already included in the Windows installers.
 
 There are bindings for SQL Implementation with for example JDBC, ODBC, PHP and C, 
-(see @ref{Application Interfaces} to integrate seamlessly in existing 
+(see @ref{MapiClient and Interfaces} to integrate seamlessly in existing 
 developments environments.
 Client utilities like Aqua Data Studio and iSQL will work flawlessly 
 with SQL Implementation to make your experience with MonetDB/SQL even better! 
@@ -44,7 +45,6 @@ features to analyse and your SQL code.
 @end menu
 
 @node The VOC Tutorial, SQL Feature Overview, SQL, SQL
-Many books exist t
 @section The VOC tutorial
 
 @node SQL Feature Overview, SQL Feature List, The VOC Tutorial, SQL
@@ -79,8 +79,71 @@ supported in the current release.
 
 @node SQL Session Variables, SQL EXPLAIN Statement, SQL Feature List, SQL
 @subsection SQL Session Variables
-SQL Implementation provides a rudimentary scheme to introduce and deal with
-session variables.
+
+MonetDB/SQL comes with a limited variable scheme.
+Globel, session based variables can be introduced using the
+construct:
+@example
+SET <variable>=<string>
+SET <variable>=<boolean>
+SET <variable>=<int>
+@end example
+Their type is inherited from the literal value supplied.
+The SQL engine comes with a limited set of environment variables
+to control its behavior.
+@itemize
+@item
+The @code{debug} variable takes an integer and sets the Mserver global
+debug flag. (See MonetDB documentation) It also activates the
+debugger when the query is being executed.
+@item
+The @code{explain} variable currently takes the values 'plan' or
+'performance'. The 'plan' qualifier produces a relational table with
+the plan derived for execution using the applicable back end and
+optimizer schemes. The 'performance' qualifier produces a performance
+trace of the SQL queries for post analysis. It is available in
+the system table called @code{history}. Omission of either qualifier merely
+results in a straight execution of the query.
+@item
+
+The @code{auto_commit} variable takes a boolean and controls automatic commit
+after a successful SQL execution, or conversely an automatic rollback.
+
+@item
+The @code{reply_size} limits the number of tuples sent to the front end.
+[It is unclear how the remainder can be obtained within the SQL language
+framework. The reply_size should be replaced by the @code{limit} language
+construct]
+
+@item
+The @code{history} variable is a boolean flag which leads to 
+capturing execution information of any SQL query in a table for post-analysis.
+@end itemize
+
+By default all remaining variables are stored as strings and
+any type analysis is up to the user. The can be freely used by the
+SQL programmer for inclusion in his queries. [TODO, a little more
+flexibilty would mean a lot]
+
+The variables and their type definition are assembled in a system table
+called 'sessions'. A snippet of its content is shown below:
+@example
+>select * from sessions;
+#-----------------------------------------------------------------#
+# t                     t               t               t         # name
+# str                   str             str             int       # type
+#-----------------------------------------------------------------#
+[ "debug",                "0",            "int",          0       ]
+[ "reply_size",           "-1",           "int",          0       ]
+[ "explain",              "",             "varchar",      0       ]
+[ "auto_commit",          "false",        "boolean",      0       ]
+[ "current_schema",       "sys",          "varchar",      1       ]
+[ "current_user",         "monetdb",      "varchar",      1       ]
+[ "current_role",         "monetdb",      "varchar",      0       ]
+[ "current_timezone",     "0",            "sec_interval", 0       ]
+[ "cache",                "true",         "boolean",      0       ]
+[ "factory",              "true",         "boolean",      0       ]
+@end example
 
 @node SQL EXPLAIN Statement, SQL DEBUG Statement, SQL Session Variables, SQL
 @subsection SQL EXPLAIN Statement
@@ -158,10 +221,19 @@ cache directly, e.g @code{explain;} or @code{explain sqlcache} or @code{explain 
 
 The default execution engine for SQL statements is 
 the MAL interpreter, which comes with a debugger (See @ref{The MAL Debugger})
+It provides a simple mechanism to trace the execution, hunting
+for possible errors and performance bottlenecks.
 
+The example below, illustrates how you can easily obtain a quick 
+overview of the cost components of the query.
 @example
+> debug select count(*) from tables;
+#mdb>timer
+...
 @end example
-
+Using the MAL debugger it is also possible to inspect
+the content of the intermediate results. See @ref{Runtime Inspection} for
+examples.
 
 @node SQL Optimizer Control, SQL Implementation Roadmap, SQL DEBUG Statement,  SQL
 @section SQL Optimizer Control
@@ -169,16 +241,37 @@ The code produced by MonetDB/SQL is massaged by several code optimizers
 to arrive at the best possible plan for evaluation.
 However, for development purposes and the rare case that more control
 is needed, the SQL session variable @code{optimizer} can be set
-to a comma separate list of optimizer requests. [todo]
+to a MAL instruction list to identify the optimizer steps needed. [todo]
 
-The results of each optimizer step become visible using the @code{explain}
-statement modifier.
 @example
->set optimizer="blah1,blah2";
+>select optimizer;
+#--------------------#
+# t                  # name
+# str                # type
+#--------------------#
+[ "optimizer.sql();" ]
+>set optimizer="optimizer.factorize();";
 >explain select 1;
 @end example
 
+The final result the optimizer steps become visible using the @code{explain}
+statement modifier. Alternatively, the optimizer script line may include
+a call to @code{optimizer.showPlan();}.
+
 @node SQL Implementation Roadmap, XQuery, SQL Optimizer Control,  SQL
-@section SQL Implementation
+@section SQL Implementation Roadmap
 In this section we summarize the SQL features scheduled for implementation
 and those that won;t be supported in the foreseeable future.
+@subsection Features that won;t make it.
+The database backend architecture prohibits easy implementation of
+several SQL-99 features. Those on the list below are not expected to
+be supported.
+@itemize
+@item
+Cursor based processing, because the execution engine is not based
+on the iterator model deployed in other engines. A simulation of the
+cursor based scheme would be utterly expensive from a performance
+point of view.
+@item
+Multi-level isolation levels.
+@end itemize
