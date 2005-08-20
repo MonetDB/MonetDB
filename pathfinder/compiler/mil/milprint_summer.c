@@ -875,6 +875,7 @@ static void
 map2NODE_interface (opt_t *f)
 {
     LLSCJ___fix
+    (void)LLSCJsuffix; /* pacify picky compilers */
 
     milprintf(f,
             "{ # map2NODE_interface (counter)\n"
@@ -2552,6 +2553,7 @@ static void
 loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
 {
     LLSCJ___fix
+    (void)LLSCJsuffix; /* pacify picky compilers */
 
     if (rc != NORMAL && rc != NODE)
         mps_error ("unexpected interface chosen in element construction.");
@@ -10068,8 +10070,6 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
     PFarray_t *way, *counter;
     opt_t *f = opt_open(status->optimize);
     char *trans_time;
-
-    LLSCJ___fix
 
     way = PFarray (sizeof (int));
     counter = PFarray (sizeof (int));
