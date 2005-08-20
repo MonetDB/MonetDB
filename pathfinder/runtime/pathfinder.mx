@@ -33,7 +33,6 @@
 @a Jens Teubner
 @a Stefan Manegold
 @a Peter Boncz 
-@a Ying Zhang
 
 @t Runtime Support for the Pathfinder XQuery Compiler
 
@@ -44,16 +43,12 @@
 .USE streams;
 
 .BUILTIN xquery_server(Stream in, Stream out) : void = CMDxquery_server;
-"read xquery from stream, and print on a stream."
+ "read xquery from stream, and print on a stream."
 
 .COMMAND xquery(str, str) : str = CMDxquery;
- "xquery execution.\
- usage:  var result := xquery(\"xml\", str); printf(result);\
- or:  printf(xquery(\"xml\", str));"
-
-.COMMAND xquery_remote(str location, int port, str query, str params) : str = CMDxquery_remote;
- "xquery execution at remote host.\
- Usage: xquery_remote(<hostname>, <portnr>, query)"
+ "xquery execution.
+usage:  var result := xquery(\"xml\", str); printf(result);
+   or:  printf(xquery(\"xml\", str));"
 
 .PRELUDE = pathfinder_prelude;
 .EPILOGUE = pathfinder_epilogue;
@@ -66,48 +61,39 @@ PROC pfstart(bit open) : void {
     mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server", open).fork();
 }
 ADDHELP("pfstart", "boncz", "April 2005",
-        "PARAMETERS:\n\
-        bit whether the listener should listen to outside requests \
-        (default false: only local connections).\n\
-        DESCRIPTION:\n\
-        start the xquery server.",
-        "pathfinder");
+"PARAMETERS:\n\
+bit whether the listener should listen to outside requests (default false: only local connections).\n\
+DESCRIPTION:\n\
+start the xquery server.",
+"pathfinder");
 PROC pfstart() : void {
     pfstart(false);
 }
 ADDHELP("pfstart", "boncz", "April 2005",
-        "DESCRIPTION:\n\
-        start the xquery server.",
-        "pathfinder");
+"DESCRIPTION:\n\
+start the xquery server.",
+"pathfinder");
 
 PROC xquery_server_start(bit global) : void {
-    fork(mapi_listen(
-                int(monet_environment.find("xquery_port")),
-                5,
-                "xquery_server",
-                global
-                )
-        );
+	fork(mapi_listen(
+		int(monet_environment.find("xquery_port")),
+		5,
+		"xquery_server",
+		global
+		)
+	);
 }
 
 PROC xquery_server_start() : void {
-    xquery_server_start(false);
+	xquery_server_start(false);
 }
 
 PROC xquery(str query) : str {
-    return xquery("xml", query);
+	return xquery("xml", query);
 }
 ADDHELP("xquery", "boncz", "Juli 2005",
-        "shortcut for 'xquery(\"xml\", str query) : str'",
-        "pathfinder");
-
-PROC xquery_remote(str location, str query, str params) : str {
-    return xquery_remote(location, 8080, query, params);
-}
-ADDHELP("xquery_remote", "zhang", "August 2005",
-        "DESCRIPTION:\n\
-        execute xquery on a remote host.",
-        "pathfinder");
+"shortcut for 'xquery(\"xml\", str query) : str'",
+"pathfinder");
 
 #############################################
 # User-level document management functions:
@@ -330,7 +316,7 @@ PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
     }
 
     # The working set now contains all documents we need.
-
+    
     # pick the according frag value for each document requested
     var frag := item.leftjoin (ws.fetch (DOC_LOADED).reverse ())
                     .reverse ()
@@ -353,30 +339,29 @@ PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
 }
 
 ADDHELP("create_ws", "tsheyar", "July 2004",
-		"DESCRIPITON:\n\
-		creates a new working set and gives back the reference",
-		"pathfinder");
+"DESCRIPITON:\n\
+creates a new working set and gives back the reference",
+"pathfinder");
 
 ADDHELP("doc_tbl", "teubner", "Aug 2005",
-		"PARAMETERS:\n\
-		ws    current working set; will be modified\n\
-		item  list of documents to add to the working set\n\
-		DESCRIPTION:\n\
-		Implementation of the algebra operator `doc_tbl' that\n\
-		loads persistent documents into the working set.\n\
-		Input is a list of document names. Output is a BAT of\n\
-		BATs with the components\n\
-		(a) the modified working set,\n\
-		(b) an `item' column with the pre values of the\n\
-		document roots, and\n\
-		(c) a `kind' column that encodes node kind and document\n\
-		container (within the working set) according to our\n\
-		working set representation.",
-		"pathfinder");
+"PARAMETERS:\n\
+  ws    current working set; will be modified\n\
+  item  list of documents to add to the working set\n\
+DESCRIPTION:\n\
+Implementation of the algebra operator `doc_tbl' that\n\
+loads persistent documents into the working set.\n\
+Input is a list of document names. Output is a BAT of\n\
+BATs with the components\n\
+ (a) the modified working set,\n\
+ (b) an `item' column with the pre values of the\n\
+     document roots, and\n\
+ (c) a `kind' column that encodes node kind and document\n\
+     container (within the working set) according to our\n\
+     working set representation.",
+"pathfinder");
 
 
-PROC destroy_ws_locked(BAT[void,bat] ws) : void
-{
+PROC destroy_ws_locked(BAT[void,bat] ws) : void {
     doc_query.select(int(ws))@batloop() {
         var doc_oid := $h;
         doc_query.delete(doc_oid, int(ws));
@@ -395,8 +380,7 @@ PROC destroy_ws_locked(BAT[void,bat] ws) : void
     }
 }
 
-PROC destroy_ws(BAT[void,bat] ws) : void
-{
+PROC destroy_ws(BAT[void,bat] ws) : void {
     var err;
 
     if (type(doc_query) != bat) { return; }
@@ -428,7 +412,7 @@ PROC shred_doc_locked(BAT[str,bat] docBAT, str location, str name, timestamp ts,
     bat("doc_size").insert(doc_oid, totsize);
 
     [persists](docBAT, true);
-
+   
     # add the meta table to the commit set 
     #docBAT.insert(str(nil),bat("doc_name"));
     #docBAT.insert(str(nil),bat("doc_location"));
@@ -452,7 +436,7 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     lock_set(pf_lock);
     err := CATCH(exists := doc_check(name));
     lock_unset(pf_lock);
-
+ 
     if (not(isnil(err))) ERROR(err);
     else if (exists) ERROR("shred_doc(%s): already exists in database!\n", name);
 
@@ -475,9 +459,9 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     # create our indices
     var knd := ELEMENT;
     while ( knd <= DOCUMENT ) {
-        docBAT.insert("kind_pre" + "_" + str(chr(48 + knd)),
-                      docBAT.find("pre_kind").ord_uselect(knd).reverse().chk_order());
-        knd :+= chr(1);
+       docBAT.insert("kind_pre" + "_" + str(chr(48 + knd)),
+                     docBAT.find("pre_kind").ord_uselect(knd).reverse().chk_order());
+       knd :+= chr(1);
     }
 
     var knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + ELEMENT))).reverse().mirror();
@@ -493,7 +477,7 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     docBAT := docBAT.access(BAT_READ);
     if (doCommit) {
         [mmap](docBAT, STORE_MMAP);
-        [save](docBAT);
+	[save](docBAT);
 
         # add doc to the database locked
         lock_set(pf_lock);
@@ -525,19 +509,18 @@ PROC shred_doc(str location, str name) : void
     shred_doc_base(location, name, true, "");
 }
 ADDHELP("shred_doc", "flokstra", "Dec 2004",
-        "PARAMETERS:\n\
-        - str URI containing the xml document to be shredded)\n\
-        - str document name ('alias') in database\n\
-        DESCRIPTION:\n\
-        Shred xml document to the internal Pathfinder format, (analog to import_doc()).",
-        "pathfinder");
+"PARAMETERS:\n\
+- str URI containing the xml document to be shredded)\n\
+- str document name ('alias') in database\n\
+DESCRIPTION:\n\
+Shred xml document to the internal Pathfinder format, (analog to import_doc()).",
+"pathfinder");
 
-PROC delete_doc_locked(oid doc_oid) : bit
-{
+PROC delete_doc_locked(oid doc_oid) : bit {
     var docBAT := new(void,str,WS_SIZE);
 
     if (doc_sema.exist(doc_oid)) {
-        # somebody else is deleting the same doc!
+	# somebody else is deleting the same doc!
         while(doc_sema.exist(doc_oid)) {
             lock_unset(pf_lock);
             sleep(1);
@@ -553,7 +536,7 @@ PROC delete_doc_locked(oid doc_oid) : bit
         lock_unset(pf_lock);
         sema_down(sem); # wait for the users to go away 
         lock_set(pf_lock);
-
+    
         sema_destroy(sem);
         doc_sema.delete(doc_oid, sem);
     }
@@ -565,7 +548,7 @@ PROC delete_doc_locked(oid doc_oid) : bit
 @mil
     @:ws(getlower)@
     docBAT := docBAT.access(BAT_READ);
-
+  
     # docBAT becomes [name,bat]
     docBAT := [bat]([+](docBAT, str(int(doc_oid))).reverse().mirror());
 
@@ -599,7 +582,7 @@ PROC delete_doc(str name) : void
     lock_set(pf_lock);
     err := CATCH(exists := doc_check(name));
     lock_unset(pf_lock);
-
+ 
     if (not(isnil(err))) ERROR(err);
     else if (not(exists)) ERROR("delete_doc(%s): document not found in database!\n", name);
 
@@ -611,11 +594,11 @@ PROC delete_doc(str name) : void
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("delete_doc", "tsheyar", "July 2004",
-        "PARAMETERS:\n\
-        str document name\n\
-        DESCRIPTION:\n\
-        delete the persistent BATS that store the document.",
-        "pathfinder");
+"PARAMETERS:\n\
+str document name\n\
+DESCRIPTION:\n\
+delete the persistent BATS that store the document.",
+"pathfinder");
 
 PROC delete_all_docs_locked(bit cachedOnly) : void
 {
@@ -629,18 +612,19 @@ PROC delete_all_docs_locked(bit cachedOnly) : void
 PROC delete_all_docs(bit cachedOnly) : void
 {
     var err, b := bat(timestamp,str);
-
+    
     # always make sure not to cause errors while holding the lock
     lock_set(pf_lock);
     err := CATCH(delete_all_docs_locked(cachedOnly));
     lock_unset(pf_lock);
 
     if (not(isnil(err))) ERROR(err);
+
 }
 ADDHELP("delete_all_docs", "tsheyar", "July 2004",
-        "DESCRIPTION:\n\
-        deletes all persistent document BATs that store xml documents.",
-        "pathfinder");
+"DESCRIPTION:\n\
+deletes all persistent document BATs that store xml documents.",
+"pathfinder");
 
 
 PROC pin_doc(oid doc_oid, int ws) : void 
@@ -667,16 +651,16 @@ PROC add_doc_locked(str name, int ws) : oid
     # do some first analysis on the URI
     if (not(isnil(doc_oid))) { 
         filename := bat("doc_location").find(doc_oid);
-        lim := bat("doc_timestamp").find(doc_oid);
+	lim := bat("doc_timestamp").find(doc_oid);
     }
 
     if (startsWith(filename, "file://") or startsWith(filename, "FILE://")) {
         filename := string(filename, 7);
     } else {
-        idx := search(filename, "://");
+	idx := search(filename, "://");
     }
     if (idx >= 0) {
-        # add uri-dependent lifetime
+	# add uri-dependent lifetime
         var uri_lifetime := bat("uri_lifetime");
         var b := [startsWith](filename, mirror(uri_lifetime)).uselect(true);
         if (b.count() > 0) {
@@ -689,11 +673,11 @@ PROC add_doc_locked(str name, int ws) : oid
         # a file: get lastmodification time
         var tts;
         var err := CATCH(tts := lastmod_time(filename));
-        if (isnil(err)) {
+	if (isnil(err)) {
             ts := tts; # timestamp was read succesfully
-        } else if (not(isnil(lim))) {
+	} else if (not(isnil(lim))) {
             ts := add(lim, 1LL); # file-error on cached file: force remove
-        }
+	}
     }
 
     if (isnil(doc_oid)) {
@@ -754,14 +738,14 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
     var frag := ws.fetch(DOC_LOADED).uselect(name);
     if (frag.count() = 0) {
         ws.fetch(DOC_LOADED).insert(nil,name);
-        frag := oid(ws.fetch(DOC_LOADED).count());
+	frag := oid(ws.fetch(DOC_LOADED).count());
 
         # use the ws macro to instantiate all non-(view or constant) bats
 @= add_doc_bat_ws
         if (@3 = bat)
             ws.fetch(@1).insert(nil,docBAT.add_doc_bat(toLower("@1"), docid));
 @mil
-        @:ws(add_doc_bat)@
+	@:ws(add_doc_bat)@
 
         # create views
         ws.fetch(PRE_FRAG).insert(nil,fake_project(frag));
@@ -770,10 +754,10 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
         # adapt constants
         ws.fetch(FRAG).replace(0@0,frag);
         ws.fetch(HEIGHT).insert(nil,height);
-     } else { 
+    } else { 
         ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); 
-     }
-     return ws;
+    }
+    return ws;
 }
 
 
@@ -814,7 +798,7 @@ PROC xmlcache_add_rule(str uri, lng lifetime) : void {
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_add_rule", "boncz", "May 2005",
-        "DESCRIPTION:\nadd a new URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
+"DESCRIPTION:\nadd a new URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
 
 PROC xmlcache_del_rule(str uri) : void {
     lock_set(pf_lock);
@@ -823,7 +807,7 @@ PROC xmlcache_del_rule(str uri) : void {
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_del_rule", "boncz", "May 2005",
-        "DESCRIPTION:\ndeletes an existing URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
+"DESCRIPTION:\ndeletes an existing URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
 
 PROC xmlcache_print_rules() : void {
     lock_set(pf_lock);
@@ -832,7 +816,7 @@ PROC xmlcache_print_rules() : void {
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_print_rules", "boncz", "May 2005",
-        "DESCRIPTION:\nshows all URI lifetime rules.\n\n" + xmlcache_help,  "pathfinder");
+"DESCRIPTION:\nshows all URI lifetime rules.\n\n" + xmlcache_help,  "pathfinder");
 
 PROC xmlcache_print() : void {
     lock_set(pf_lock);
@@ -841,7 +825,7 @@ PROC xmlcache_print() : void {
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_print", "boncz", "May 2005",
-        "DESCRIPTION:\nshows the actual content of the XML document cache.\n\n" + xmlcache_help,  "pathfinder");
+"DESCRIPTION:\nshows the actual content of the XML document cache.\n\n" + xmlcache_help,  "pathfinder");
 
 PROC xmldb_print() : void {
     lock_set(pf_lock);
@@ -850,7 +834,7 @@ PROC xmldb_print() : void {
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmldb_print", "boncz", "May 2005",
-        "DESCRIPTION:\nshows the actual content of the persistent XML document database (not the XML document cache).\n\nThis consists of all documents explicitly shredded with shred_doc(URI, alias).",  "pathfinder");
+"DESCRIPTION:\nshows the actual content of the persistent XML document database (not the XML document cache).\n\nThis consists of all documents explicitly shredded with shred_doc(URI, alias).",  "pathfinder");
 
 
 @h
@@ -883,53 +867,53 @@ exec_xquery(char *mode, char* xquery) {
     char *prologue = NULL, *query = NULL, *epilogue = NULL, *err = NULL;
     int len = 0, ret = GDK_FAIL, debug = strstr(mode,"debug") != NULL;
     char *mapi = strstr(mode, "mapi")?"=":"";
-
+     
     if (debug) {
         stream_printf(GDKout, "%s#xquery######################################################\n", mapi);
-        stream_write(GDKout, xquery, strlen(xquery), 1);
+	stream_write(GDKout, xquery, strlen(xquery), 1);
     }
     MT_set_lock(pf_compiler_lock, "CMDxquery");
     err = pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
     if (err) {
-        len = strlen(err);
-        if (*mapi) {
-            /* put ! before error lines */
-            char *p = err, *q = err;
-            while(*p) { if (*p++ == '\n') len++; }
-            err = (char*) alloca(len+3);
-            *err = '!'; 
-            for(p=err+1; *q; q++) {
-                *p++ = *q;
-                if (*q == '\n') *p++ = '!'; 
-            }
-            /* guard against errors that do not terminate in a newline */
-            if (*q && *q != '\n') *p++ = '\n';
-            else if (p[-1] == '!') p--;  
-            p[1] = 0;
-            len = p - err;
-        }
+      len = strlen(err);
+      if (*mapi) {
+	/* put ! before error lines */
+	char *p = err, *q = err;
+	while(*p) { if (*p++ == '\n') len++; }
+	err = (char*) alloca(len+3);
+	*err = '!'; 
+	for(p=err+1; *q; q++) {
+		*p++ = *q;
+		if (*q == '\n') *p++ = '!'; 
+	}
+	/* guard against errors that do not terminate in a newline */
+        if (*q && *q != '\n') *p++ = '\n';
+  	else if (p[-1] == '!') p--;  
+	p[1] = 0;
+	len = p - err;
+      }
     }
     MT_unset_lock(pf_compiler_lock, "CMDxquery");
 
     if (debug) {
         stream_printf(GDKout, "%s#mil#########################################################\n", mapi);
-        if (prologue) stream_write(GDKout, prologue, strlen(prologue), 1);
+	if (prologue) stream_write(GDKout, prologue, strlen(prologue), 1);
         else stream_printf(GDKout, "%s#null prologue\n", mapi);
-        if (query) stream_write(GDKout, query, strlen(query), 1);
+	if (query) stream_write(GDKout, query, strlen(query), 1);
         else stream_printf(GDKout, "%s#null query\n", mapi);
-        if (epilogue) stream_write(GDKout, epilogue, strlen(epilogue), 1);
+	if (epilogue) stream_write(GDKout, epilogue, strlen(epilogue), 1);
         else stream_printf(GDKout, "%s#null epilogue\n", mapi);
     }
     if (err) {
         if (debug) {
             stream_printf(GDKout, "%s#err#########################################################\n", mapi);
         }
-        stream_write(GDKout, err, len, 1);
+    	stream_write(GDKout, err, len, 1);
     }
     if (prologue && query && epilogue) {
         if (debug) {
             stream_printf(GDKout, "%s#exec prologue...############################################\n", mapi);
-        }
+	}
         if (monet_exec(prologue) >= 0) {
             if (debug) {
                 stream_printf(GDKout, "%s#exec query...###############################################\n", mapi);
@@ -942,10 +926,10 @@ exec_xquery(char *mode, char* xquery) {
                     if (debug) {
                         stream_printf(GDKout, "%s#ok##########################################################\n", mapi);
                     }
-                    ret = GDK_SUCCEED;
+	            ret = GDK_SUCCEED;
                 }
-            }
-        }
+	    }
+	}
     }
     if (debug && ret != GDK_SUCCEED) {
         stream_printf(GDKout, "%s#execution failed############################################\n", mapi);
@@ -957,15 +941,14 @@ exec_xquery(char *mode, char* xquery) {
     return ret;
 }
 
-
+	
 int
 CMDxquery(char** res, char *mode, char* xquery) {
     buffer *b = buffer_create(16384);
     stream *s = buffer_wastream(b, "CMDxquery");
     stream *o = GDKout;
-    char *dst = NULL;
     int ret = 0;
-
+  
     /* run the query, but collect all output in a buffer */
     THRsetdata(0,s);
     ret = exec_xquery(mode, xquery);
@@ -973,44 +956,43 @@ CMDxquery(char** res, char *mode, char* xquery) {
     stream_close(s);
 
     if (ret == GDK_SUCCEED) {
-        dst = GDKmalloc(b->pos+1);
-        memcpy(dst, b->buf, b->pos);
-        dst[b->pos] = 0;
+	char *dst = *res = GDKmalloc(b->pos+1);
+	memcpy(dst, b->buf, b->pos);
+	dst[b->pos] = 0;
     }
     buffer_destroy(b);
     stream_destroy(s);
-    *res = dst;
     return ret;
 }
 
 @= builtin_operand
 {
-    int _k = interpret(stk, arg(lt, @1), res);
-    if (_k < 0) {
-        return _k;
-    }
-    @3 = VALconvert(@2, res);
-    if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
-        return handle_paramerror(res,@1,res->vtype,@2);
-    }
+	int _k = interpret(stk, arg(lt, @1), res);
+	if (_k < 0) {
+		return _k;
+	}
+	@3 = VALconvert(@2, res);
+	if ((@3 == ILLEGALVALUE)  || (@2 == TYPE_bat && !@3)) {
+		return handle_paramerror(res,@1,res->vtype,@2);
+	}
 }
 @c
 int
 connect_error(stream *in, stream *out)
 {
-    /* Make sure that the write- (out-) stream is closed first,
-     * as the related read- (in-) stream closes the shared
-     * socket; see also MonetDB/src/common/stream.mx:socket_close .
-     */
-    if (out) {
-        stream_close(out);
-        stream_destroy(out);
-    }
-    if (in) {
-        stream_close(in);
-        stream_destroy(in);
-    }
-    return GDK_FAIL;
+	/* Make sure that the write- (out-) stream is closed first,
+	 * as the related read- (in-) stream closes the shared
+	 * socket; see also MonetDB/src/common/stream.mx:socket_close .
+	 */
+	if (out) {
+		stream_close(out);
+		stream_destroy(out);
+	}
+	if (in) {
+		stream_close(in);
+		stream_destroy(in);
+	}
+	return GDK_FAIL;
 }
 
 #define XQUERY_CHALLENGE "::mserver_xquery:4\n"
@@ -1021,258 +1003,92 @@ connect_error(stream *in, stream *out)
 int
 CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 {
-    stream **In, **Out;
-    stream *in = NULL, *out = NULL;
-    Thread XQthread = THRget(THRgettid());
-    Client client;
-    size_t curlen = 0, maxlen = BUFSIZ;
-    char *xquery, *user, *buf = GDKmalloc(maxlen + 1); /* one extra for terminator */
-    int i, ret = GDK_FAIL;
+	stream **In, **Out;
+	stream *in = NULL, *out = NULL;
+	Thread XQthread = THRget(THRgettid());
+	Client client;
+	size_t curlen = 0, maxlen = BUFSIZ;
+	char *xquery, *user, *buf = GDKmalloc(maxlen + 1); /* one extra for terminator */
+	int i, ret = GDK_FAIL;
 
-    if (lt->cnt != 2)
-        return handle_argerror(res, lt->cnt, 2);
+	if (lt->cnt != 2)
+		return handle_argerror(res, lt->cnt, 2);
 
-    /* this is a BUILTIN because we must obtain the client context (and thus the streams) */
-    CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
-    @:builtin_operand(0,TYPE_Stream,In)@
-    in = *In;
-    @:builtin_operand(1,TYPE_Stream,Out)@
-    out = *Out;
-    monetSetChannel(XQthread, in, out);
+	/* this is a BUILTIN because we must obtain the client context (and thus the streams) */
+	CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
+	@:builtin_operand(0,TYPE_Stream,In)@
+	in = *In;
+	@:builtin_operand(1,TYPE_Stream,Out)@
+	out = *Out;
+	monetSetChannel(XQthread, in, out);
 
-    /* send challenge */
-    snprintf(buf, 100, "%2u%s", (unsigned int)strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
-    if (stream_write(out, buf, strlen(buf), 1) < 0) 
-        return connect_error(in, out);
+	/* send challenge */
+	snprintf(buf, 100, "%2u%s", (unsigned int)strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
+	if (stream_write(out, buf, strlen(buf), 1) < 0) 
+		return connect_error(in, out);
 
-    /* get user name (ignored later), and mapiclient mode */
-    memset(buf, 0, BUFSIZ);
-    user = buf;
-    if (stream_read(in, user, 1, 1) < 0)
-        return connect_error(in, out);
-    for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
-        user++;
-        if (stream_read(in, user, 1, 1) < 0)
-            return connect_error(in, out);
-    }
-    *user = 0;
+	/* get user name (ignored later), and mapiclient mode */
+	memset(buf, 0, BUFSIZ);
+	user = buf;
+	if (stream_read(in, user, 1, 1) < 0)
+		return connect_error(in, out);
+	for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
+		user++;
+		if (stream_read(in, user, 1, 1) < 0)
+			return connect_error(in, out);
+	}
+	*user = 0;
 
-    /* check for blocked mode */
-    if (strncmp(buf + i - 8, ":blocked", 8) == 0) {
-        in = block_stream(stream_rstream(in));
-        out = block_stream(stream_wstream(out));
-        monetSetChannel(XQthread, in, out);
-    }
+	/* check for blocked mode */
+	if (strncmp(buf + i - 8, ":blocked", 8) == 0) {
+		in = block_stream(stream_rstream(in));
+		out = block_stream(stream_wstream(out));
+		monetSetChannel(XQthread, in, out);
+	}
 
-    /* use the MAPI protocol to read as much xquery buffer as possible */
-    while (1) {
-        if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
-            return connect_error(in, out);
-        if (stream_flush(out))
-            return connect_error(in, out);
+	/* use the MAPI protocol to read as much xquery buffer as possible */
+	while (1) {
+		if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
+			return connect_error(in, out);
+		if (stream_flush(out))
+			return connect_error(in, out);
 
-        curlen = 0;
-        for (;buf;) {
-            ssize_t n = stream_read(in, buf + curlen, 1, maxlen - curlen);
-            if (n < 0)
-                return connect_error(in, out);
-            if (n == 0) {
-                break;
-            }
-            curlen += n;
-            if (curlen == maxlen) {
-                maxlen += 1024;
-                buf = GDKrealloc(buf, maxlen + 1);
-            }
-        }
+		curlen = 0;
+		for (;buf;) {
+			ssize_t n = stream_read(in, buf + curlen, 1, maxlen - curlen);
+			if (n < 0)
+				return connect_error(in, out);
+			if (n == 0) {
+				break;
+			}
+			curlen += n;
+			if (curlen == maxlen) {
+				maxlen += 1024;
+				buf = GDKrealloc(buf, maxlen + 1);
+			}
+		}
 
-        /* execute query */
-        if (buf) {
-            buf[curlen] = 0;	/* terminate (we know there is space) */
+		/* execute query */
+		if (buf) {
+			buf[curlen] = 0;	/* terminate (we know there is space) */
 
-            /* first line of the query is the mode */ 
-            for (xquery = buf; *xquery; xquery++)
-                if (*xquery == '\n') {
-                    *xquery++ = 0;
-                    break;
-                }
+			/* first line of the query is the mode */ 
+			for (xquery = buf; *xquery; xquery++)
+				if (*xquery == '\n') {
+					*xquery++ = 0;
+					break;
+				}
 
-            ret = exec_xquery(buf, xquery); /* execute, see above */
-        }
-    }
-    GDKfree(buf);
+			ret = exec_xquery(buf, xquery); /* execute, see above */
+		}
+	}
+	GDKfree(buf);
 
-    /* end of session */
-    stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
-    stream_flush(out);
-    closeClient(client, 0); 	
-    return ret;
-}
-
-#ifdef _WIN32 		        /* Windows specific */
-    #pragma comment(lib, "ws2_32")
-    #include <winsock.h>
-    #define snprintf _snprintf
-#else				        /* UNIX specific */
-    #include <sys/types.h>	/* used by socket */
-    #include <sys/socket.h>
-    #include <unistd.h>
-    #include <netinet/in.h> /* hton and ntoh */
-    #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
-    #include <netdb.h>		/* convert domain names into IP addr */
-    #include <errno.h>
-    #include <ctype.h>
-#endif				        /* _WIN32 */
-
-/* Create a HTTP client socket.
- * Returns the socket if succeeded, -1 otherwise.
- */
-int
-setup_connection(str location, int port)
-{
-    int s_addr, sock, err=-1;
-    struct sockaddr_in sockaddr;
-    struct hostent *resolv = NULL;
-
-    errno = 0;
-    if (isdigit(location[0])) {
-        if ((s_addr = inet_addr(location)) < 0) {
-            GDKerror("setup_connection: invalid IP addressi \"%s\": %s\n",
-                     location, errno ? strerror(errno) : "");
-            return err;
-        }
-    } else {
-        if (!(resolv = gethostbyname(location))) {
-            GDKerror("setup_connection: invalid location \"%s\": %s\n",
-                     location, errno ? strerror(errno) : "");
-            return err;
-        }
-        s_addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
-    }
-
-    sockaddr.sin_family = AF_INET;
-    sockaddr.sin_port   = htons(port);
-    sockaddr.sin_addr.s_addr = s_addr;
-    memset(&(sockaddr.sin_zero), '\0', 8);
-
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        GDKerror("setup_connection: failed to create socket\n");
-        return err;
-    }
-    if (connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr)) < 0) {
-        GDKerror("setup_connection: failed to setup connection\n");
-        close(sock);
-        return err;
-    }
-    return sock;
-}
-
-/*
- * send xquery to a remote host to be executed
- * store results locally
- */
-int
-CMDxquery_remote(str *res, str location, int *port, str query, str params)
-{
-#define MIN_RESPONSE_SIZE 19
-
-    int i, n, len, ret, sock;
-    int bufsize, csize, hsize = 1024;
-    stream *rstream, *wstream;
-    char *strptr, *content = NULL, *buf = NULL;
-    const char *func = "exec_xquery"; /* Currently we only have one function */
-
-    (void) params; /* not used yet */
-
-    if (location[(len=strlen(location))-1] == '/')
-        location[len-1] = '\0'; /* remove last '/' if any */
-
-    if ((sock = setup_connection(location, *port)) < 0)
-        return GDK_FAIL;
-
-    n = 4096 + strlen(query); /* 4k for static content, should be enough */
-    csize = BUFSIZ > n ? BUFSIZ : n;
-    if (!(content = GDKmalloc(csize))) {
-        GDKerror("xquery_remote: not enough memory");
-        close(sock);
-        return GDK_FAIL;
-    }
-
-    bufsize = hsize + csize;
-    if (!(buf = GDKmalloc(bufsize))) {
-        GDKerror("xquery_remote: not enough memory\n");
-        GDKfree(content); close(sock);
-        return GDK_FAIL;
-    }
-
-    /* Currently, only send the query in a HTTP_POST request. 
-     * No SOAP yet, needs to adapt the implementation of the
-     * receiver to parse SOAP+XML */
-    len = snprintf(content, csize, "req_xquery=%s", query);
-
-    wstream = socket_wastream(sock, "http_write");
-    n = snprintf(buf, bufsize,
-            "POST /%s HTTP1.1\r\n"
-            "Host: %s\r\n"
-            "Accept: text/html, text/xml, application/soap+xml\r\n"
-            "Accept-Language: en-uk en-us\r\n"
-            "Content-Type: text/html; charset=\"utf-8\"\r\n"
-            "Content-Length: %d\r\n\r\n"
-            "%s",
-            func, location,
-            len,
-            content);
-    GDKfree(content);
-
-    if ( (ret = stream_write(wstream, buf, 1, n)) != n) {
-        GDKerror("xquery_remote: failed to send request, only %d of %d bytes sent\n", ret, n);
-        GDKfree(buf); stream_close(wstream);
-        return GDK_FAIL;
-    }
-
-    /***
-     * Receive all response data
-     */
-    rstream = socket_rastream(sock, "http_read");
-    n = 0;
-    /* while ((ret = stream_read(rstream, buf+n, 1, bufsize-n)) > 0) {*/
-    while ((ret = read(sock, (void *)(buf+n), bufsize-n)) > 0){
-        n += ret;
-        buf[n] = '\0';
-        assert(n <= bufsize);
-        if (n == bufsize){
-            bufsize *= 2;
-            buf = (char *)GDKrealloc(buf, bufsize);
-        }
-    }
-    stream_close(wstream); stream_close(rstream);
-    if (ret < 0 || n < MIN_RESPONSE_SIZE || strstr(buf, "\r\n\r\n") == NULL){	
-        GDKerror("xquery_remote: failed to get response\n");
-        GDKfree(buf); 
-        return GDK_FAIL;
-    }
-
-    bufsize = n +1;
-    buf = (char *)GDKrealloc(buf, bufsize); /* release unused memory */
-    strptr = strchr(buf, ' '); strptr++; /* find the first whitespace */
-    if (strptr[0] != '2' || strptr[1] != '0' || strptr[2] != '0'){
-        /* Find the end of the first HTTP header line */
-        i = 0;
-        while (strptr[i] != '\r') i++;
-        strptr[i] = '\0';
-        GDKerror("xquery_remote: remote query execution failed.\n%s\n", strptr);
-        GDKfree(buf);
-        return GDK_FAIL;
-    }
-
-    strptr = strstr(strptr, "\r\n\r\n");
-    strptr += 4;
-    len = buf + bufsize - strptr;
-    content = GDKmalloc(len);
-    memcpy(content, strptr, len);
-    GDKfree(buf);
-    *res = content;
-    return GDK_SUCCEED;
+	/* end of session */
+	stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
+	stream_flush(out);
+	closeClient(client, 0); 	
+	return ret;
 }
 
 bat *
@@ -1287,4 +1103,3 @@ pathfinder_epilogue()
 {
     MT_destroy_lock(pf_compiler_lock);
 }
-/* vim:set shiftwidth=4 expandtab: */
