@@ -1236,7 +1236,7 @@ CMDxquery_remote(str *res, str location, int *port, str query, str params)
     rstream = socket_rastream(sock, "http_read");
     n = 0;
     /* while ((ret = stream_read(rstream, buf+n, 1, bufsize-n)) > 0) {*/
-    while ((ret = read(sock, (void *)buf+n, bufsize-n)) > 0){
+    while ((ret = read(sock, (void *)(buf+n), bufsize-n)) > 0){
         n += ret;
         buf[n] = '\0';
         assert(n <= bufsize);
