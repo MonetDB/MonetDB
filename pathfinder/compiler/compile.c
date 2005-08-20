@@ -51,7 +51,7 @@
 #include "prettyp.h"
 #include "abssynprint.h"
 #include "coreprint.h"
-#include "algdebug.h"
+#include "logdebug.h"
 #include "timer.h"
 #include "fs.h"           /* core mapping (formal semantics) */
 #include "types.h"        /* type system */

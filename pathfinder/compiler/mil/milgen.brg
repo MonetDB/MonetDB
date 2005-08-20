@@ -1971,6 +1971,9 @@ type_of (PFpa_op_t *n, PFalg_att_t att)
 
     PFoops (OOPS_FATAL,
             "cannot determine implementation type of algebra expression");
+
+    assert (0); /* never reached due to "exit" in "PFoops" */
+    return NULL; /* pacify picky compilers */
 }
 
 
@@ -1995,6 +1998,9 @@ literal (PFalg_atom_t atom)
                                "been implemented.");
                        break;
     }
+
+    assert (0); /* never reached due to "exit" in "PFoops" */
+    return NULL; /* pacify picky compilers */
 }
 
 /** helper to handle staircase join steps with node test `node()' */
@@ -2026,6 +2032,7 @@ llscj_node (enum axis_t axis, const PFmil_t *iter, const PFmil_t *item,
     }
 
     assert (!"problem in llscj_node()");
+    return NULL; /* pacify picky compilers */
 }
 
 /** helper to handle staircase join steps with node test `element()' */
@@ -2057,6 +2064,7 @@ llscj_elem (enum axis_t axis, const PFmil_t *iter, const PFmil_t *item,
     }
 
     assert (!"problem in llscj_elem()");
+    return NULL; /* pacify picky compilers */
 }
 
 /** helper to handle staircase join steps with node test `text()' */
@@ -2088,6 +2096,7 @@ llscj_text (enum axis_t axis, const PFmil_t *iter, const PFmil_t *item,
     }
 
     assert (!"problem in llscj_text()");
+    return NULL; /* pacify picky compilers */
 }
 
 /** helper to handle staircase join steps with node test `comment()' */
@@ -2119,6 +2128,7 @@ llscj_comm (enum axis_t axis, const PFmil_t *iter, const PFmil_t *item,
     }
 
     assert (!"problem in llscj_comm()");
+    return NULL; /* pacify picky compilers */
 }
 
 /** helper to handle staircase join steps with node test `processing-instr()' */
@@ -2150,6 +2160,7 @@ llscj_pi (enum axis_t axis, const PFmil_t *iter, const PFmil_t *item,
     }
 
     assert (!"problem in llscj_pi()");
+    return NULL; /* pacify picky compilers */
 }
 
 /**
@@ -2184,7 +2195,8 @@ llscj_elem_loc (enum axis_t axis, const PFmil_t *iter, const PFmil_t *item,
             return llscj_prec_sibl_elem_loc (iter, item, frag, ws, ord, loc);
     }
 
-    assert (0);
+    assert (0); /* we should never come here! */
+    return NULL; /* pacify picky compilers */
 }
 
 /**
@@ -2219,7 +2231,8 @@ llscj_elem_ns (enum axis_t axis, const PFmil_t *iter, const PFmil_t *item,
             return llscj_prec_sibl_elem_ns (iter, item, frag, ws, ord, ns);
     }
 
-    assert (0);
+    assert (0); /* we should never come here! */
+    return NULL; /* pacify picky compilers */
 }
 
 /**
@@ -2258,7 +2271,8 @@ llscj_elem_nsloc (enum axis_t axis, const PFmil_t *iter, const PFmil_t *item,
                                                loc);
     }
 
-    assert (0);
+    assert (0); /* we should never come here! */
+    return NULL; /* pacify picky compilers */
 }
 
 /**
@@ -2293,7 +2307,8 @@ llscj_pi_targ (enum axis_t axis, const PFmil_t *iter, const PFmil_t *item,
             return llscj_prec_sibl_pi_targ (iter, item, frag, ws, ord, target);
     }
 
-    assert (0);
+    assert (0); /* we should never come here! */
+    return NULL; /* pacify picky compilers */
 }
 
 /**

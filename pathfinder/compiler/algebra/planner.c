@@ -1117,6 +1117,9 @@ plan_empty_frag (const PFla_op_t *n __attribute__((unused)))
 {
     PFplanlist_t *ret    = new_planlist ();
 
+    (void) n; /* pacify picky compilers that do not understand
+                 "__attribute__((unused))" */
+
     add_plan (ret, empty_frag ());
 
     return ret;

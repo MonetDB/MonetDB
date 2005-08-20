@@ -96,6 +96,9 @@ PFprop_const_val (const PFprop_t *prop, const PFalg_att_t attr)
     PFoops (OOPS_FATAL,
             "could not find attribute that is supposed to be constant: `%s'",
             attr);
+
+    assert(0); /* never reached due to "exit" in PFoops */
+    return PFalg_lit_int (0); /* pacify picky compilers */
 }
 
 /**

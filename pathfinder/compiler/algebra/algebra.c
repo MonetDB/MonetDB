@@ -626,6 +626,9 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
     }
     
     PFoops (OOPS_FATAL, "error comparing literal values");
+
+    assert(0); /* never reached due to "exit" in PFoops */
+    return 0; /* pacify picky compilers */
 }
 
 /* vim:set shiftwidth=4 expandtab: */
