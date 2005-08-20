@@ -33,49 +33,45 @@ As a default, the Mserver also starts the internet listener thread,
 on the port number specified in the parameter file.
 
 @- Usage
-@T
-\begin{verbatim}
+@verbatim
 Mserver { [ --dbname <db-name> ] 
           [ --dbfarm <dbfarm> ]
           [ --dbinit <stmt> ]
-	  [ -c|--config <config-file> ]
-          [ -d|--gdk_debug [value]
-	  [ --set [option=value] set option can be given multiple times
+		  [ -c | --config <config-file> ]
+          [ -d | --gdk_debug [value]
+		  [ --set [option=value] set option can be given multiple times
                                     to override verious options
         } [ <mal-script> ]
-\end{verbatim}
+@end verbatim
 
 Since the console has no command-line history nor file name completion,
-you are {\em recommended} to use the 
-Mclient program for interactive sessions instead.
+you are recommended to use the Mclient program for interactive sessions instead.
 
-The options have the following meaning:
-\begin{description}
-\item[{\tt --dbname $<$db-name$>$ }]
-	open the database {\em db-name}.
-\item[{\tt --config $<$config-file$>$ }]
+The Mserver options have the following meaning:
+@table @code
+@item --dbname <db-name>
+	open the database <db-name>.
+@item --config <config-file>
 	where to find the environment settings
-\item[{\tt --dbinit $<$stmt$>$ }]
+@item --dbinit <stmt>
         execute the statement first.
-
-\end{description}
+@end itemize
 
 @{
 @+ Implementation
 @h
-#ifndef _MSERVER_H_
-#define _MSERVER_H_
+#ifndef _MONET_GLOBAL_H_
+#define _MONET_GLOBAL_H_
 #include "mal_config.h"
 #include "monet_options.h"
-#include "gdk.h"
 #include "mal.h"
 #include "mal_session.h"
 #include "mal_import.h"
 #include "mal_client.h"
 #include "mal_function.h"
 
-/* #define MSERVER_DEBUG */
-#endif /* _MSERVER_H_ */
+/* #define MONET_GLOBAL_DEBUG */
+#endif /* _MONET_GLOBAL_H_ */
 @c
 #include "Mserver.h"
 #include "mal.h"
@@ -102,11 +98,9 @@ The server is stopped by cntrl-D or receiving the quit command.
 @
 
 @c
-static int malloc_init = 1;
-
-@c
 extern int optind;
-
+static int malloc_init = 1;
+/* NEEDED? */
 #if defined(_MSC_VER) && defined(__cplusplus)
 #include <eh.h>
 void
@@ -117,6 +111,7 @@ Mserver_abort()
 	MT_global_exit(0);
 }
 #endif
+
 void
 usage(char *prog)
 {
@@ -184,9 +179,9 @@ monet_init(opt *set, int setlen)
 	char buf[BUFSIZ];
 	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
 	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
+	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
 	char *modpath = mo_find_option(set, setlen, "monet_mod_path");
 	char *prefix = mo_find_option(set, setlen, "prefix");
-	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
 	char *pf = prefix;
 
 	if (modpath) {
@@ -209,10 +204,12 @@ monet_init(opt *set, int setlen)
 	strcpy(buf, dbfarmval);
 	mo_substitute(set, setlen, buf);
 
-	/* determine Monet's kernel settings. */
-	/* IGNORE now if (!GDKinit(dbname, buf,strcasecmp(alloc_map,"yes")==0)) return ; */
 	(void) alloc_map;
-	if (!GDKinit(dbname, buf, 0))
+	if ((p = GDKgetenv("gdk_debug")))
+		GDKdebug = strtol(p, NULL, 10);
+
+	/* determine Monet's kernel settings */
+	if (!GDKinit(dbname, buf,  strcasecmp(alloc_map, "yes") == 0) )
 		return;
 
 @-
@@ -244,12 +241,17 @@ monet_options.mx.in
 	}
 	free(n);
 
-	if ((p = GDKgetenv("gdk_debug")))
-		GDKdebug = strtol(p, NULL, 10);
-	if ((p = GDKgetenv("gdk_mem_bigsize")))
+	if ((p = GDKgetenv("gdk_mem_bigsize"))) {
 		GDK_mem_bigsize = strtol(p, NULL, 10);
-	if ((p = GDKgetenv("gdk_vm_minsize")))
+		if (GDK_mem_bigsize > GDK_mem_maxsize)
+			GDK_mem_bigsize = GDK_mem_maxsize/2;
+
+	}
+	if ((p = GDKgetenv("gdk_vm_minsize"))){
 		GDK_vm_minsize = strtol(p, NULL, 10);
+		if (GDK_vm_minsize > GDK_mem_maxsize)
+			GDK_vm_minsize = GDK_mem_maxsize/2;
+	}
 
 	if (GDKgetenv_isyes("gdk_embedded")) {
 		GDKembedded = 1;
@@ -268,7 +270,7 @@ monet_options.mx.in
 }
 
 int
-main(int argc, char **av, char **envp)
+main(int argc, char **av)
 {
 	char buf[BUFSIZ], *prog = *av;
 	opt *set = NULL;
@@ -286,22 +288,6 @@ main(int argc, char **av, char **envp)
 		{"trace", 0, 0, 't'},
 		{0, 0, 0, 0}
 	};
-
-	/* clear all environment variables */
-	for (i = 0; envp[i] != 0; i++)
-		memset(envp[i], 0, strlen(envp[i]));
-	/* clear all arguments that contain non-printable characters */
-	for (i = 0; av[i] != 0; i++) {
-		size_t j;
-
-		for (j = 0; j < strlen(av[i]); j++) {
-			if (!isprint((int) av[i][j])) {
-				/* non-printable char found! */
-				fprintf(stderr, "#warning: discarding argument %d: it contains non-printable characters\n", i);
-				memset(av[i], 0, strlen(av[i]));
-			}
-		}
-	}
 
 @-
 We give malloc advice here. Main goal: prevent fragmentation.
@@ -336,7 +322,7 @@ faster system start.
 #if defined(_MSC_VER) && defined(__cplusplus)
 	set_terminate(Mserver_abort);
 #endif
-/* to be activated at some point
+/* should be looked into
         if (setlocale(LC_CTYPE, "") == NULL){
                 GDKfatal( "cannot set locale\n");
         }
@@ -359,7 +345,7 @@ faster system start.
 	setlen = mo_add_option(&set, setlen, opt_config, "prefix", MONETDBPREFIX);
 	setlen = mo_add_option(&set, setlen, opt_config, "config", MONETDBCONFIG);
 
-	while (1) {
+	for(;;) {
 		int option_index = 0;
 
 		int c = getopt_long(argc, av, "c:d:t::?s:",
@@ -440,7 +426,7 @@ faster system start.
 
 	if (debug)
 		mo_print_options(set, setlen);
-#ifdef MSERVER_DEBUG
+#ifdef MONET_GLOBAL_DEBUG
 	else
 		mo_print_options(set, setlen);
 #endif
