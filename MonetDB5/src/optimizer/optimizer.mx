@@ -130,6 +130,12 @@ address QOTshowFlowGraph
 comment "Dump the data flow of the function 
 	M.F in a format recognizable by the 
 	command 'dot' on the file s";
+
+pattern showPlan(M:str,F:str,s:str):void 
+address QOTshowPlan;
+pattern showPlan()
+address QOTshowPlan
+comment "Illustrate the plan derived so far";
 @-
 The macro processors are also be called during optimizer time
 @mal
@@ -255,10 +261,12 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if( scope)
 		s= findSymbolInModule(scope,putName(fcnnme,strlen(fcnnme)));
 
-	if( s == NULL){
-		GDKerror(@2" optimizer:Could not find %s.%s\n",modnme,fcnnme);
-		return NULL;
+	if( s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n",modnme,fcnnme);
+		return throwMessage(@2".optimizer",buf);
 	}
+	
 	if(debugOpt) { cmd= c->itrace; c->itrace='n';}
 	@1optimizer(s->def,0,0);
 	optimizerCheck(s->def,@2 " optimizer",1,GDKusec()-clk);
@@ -266,12 +274,12 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	/* if(c->listing) printFunction(GDKout,s->def,c->listing);*/
 
 	removeInstruction(mb, p);
-	return NULL;
+	return MAL_SUCCEED;
 }
 str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	setLifespan(mb);
 	@1optimizer(mb, stk, pci);
-	return NULL;
+	return MAL_SUCCEED;
 }
 @c
 @:QOTC(CX, "commonExpressionRemoval")@
@@ -321,7 +329,6 @@ QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	Symbol s = NULL;
 	Client c = getClient();
 
-	(void) mb;
 	if (stk != 0) {
 		modnme = (str) getArgValue(stk, p, 1);
 		fcnnme = (str) getArgValue(stk, p, 2);
@@ -337,12 +344,51 @@ QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (scope)
 		s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
 
-	if (s == NULL)
-		GDKerror("@1:Could not find %s.%s\n", modnme, fcnnme);
-	else {
-		showFlowGraph(s->def, stk, fname);
+	if (s == NULL) {
+		char buf[1024];
+		snprintf(buf,1024, "Could not find %s.%s\n", modnme, fcnnme);
+		return throwMessage("optimizer.showFlowGraph", buf);
 	}
-	return NULL;
+	showFlowGraph(s->def, stk, fname);
+	return MAL_SUCCEED;
+}
+str
+QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	str fname;
+	str modnme;
+	str fcnnme;
+	Module scope = NULL;
+	Symbol s = NULL;
+	Client c = getClient();
+
+	if (stk != 0) {
+		modnme = (str) getArgValue(stk, p, 1);
+		fcnnme = (str) getArgValue(stk, p, 2);
+		fname = (str) getArgValue(stk, p, 3);
+	} else {
+		modnme = getArgDefault(mb, p, 1);
+		fcnnme = getArgDefault(mb, p, 2);
+		fname = getArgDefault(mb, p, 3);
+	}
+
+	stream_printf(c->fdout,"#showPlan()\n");
+	removeInstruction(mb, p);
+	if( modnme ) {
+		scope = findModule(c->nspace, putName(modnme, strlen(modnme)));
+
+		if (scope)
+			s = findSymbolInModule(scope, putName(fcnnme, strlen(fcnnme)));
+
+		if (s == NULL) {
+			char buf[1024];
+			snprintf(buf,1024, "Could not find %s.%s\n", modnme, fcnnme);
+			return throwMessage("optimizer.showPlan", buf);
+		}
+		mb= s->def;
+	}
+	printFunction(c->fdout, mb, LIST_INPUT);
+	return MAL_SUCCEED;
 }
 
 @-
