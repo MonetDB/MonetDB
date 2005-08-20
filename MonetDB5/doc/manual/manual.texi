@@ -87,8 +87,9 @@ Table of contents
 * SQL Session Variables
 * SQL EXPLAIN Statement::
 * SQL DEBUG Statement::
+* SQL Optimizer Control::
 @end menu
-* SQL Planned Features::
+* SQL Implementation Roadmap::
 @end menu
 
 * XQuery ::
@@ -185,7 +186,7 @@ Table of contents
 
 @node SQL, The VOC Tutorial, Client administration, TOC
 @include Assets/SQLoverview.texi
-@node XQuery, Application Interfaces, SQL Planned Features, TOC
+@node XQuery, Application Interfaces, SQL Implementation Roadmap, TOC
 @include Assets/XQueryOverview.texi
 
 @node Application Interfaces, MonetDB Assembler Language, XQuery, TOC

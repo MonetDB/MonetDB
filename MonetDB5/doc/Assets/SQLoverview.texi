@@ -1,20 +1,35 @@
 @chapter SQL
-MonetDB/SQL is a full-fledged SQL implementation which closely follows 
-the SQL-99 standards where possible.
-It is realized as a separate compiler, which translates SQL statements into MAL.
-In this process common optimization heuristics, specific to relational algebra
-are performed.
 
-The MonetDB/SQL compiler can be downloaded from the
+This chapter provides an introduction to SQL Implementation,
+a full-fledged SQL implementation for database management.
+It assumes basic knowledge on the SQL language syntax.
+If you are new to this world then pick up any of the
+introductionary books and study it carefully.
+
+The SQL Implementation front-end is based on the SQL-99 standard,
+which is nicely described in the books by 
+@url{bookSQL}
+
+The architecture is based on a separate compiler, which translates 
+SQL statements into MAL. In this process common optimization heuristics,
+specific to relational algebra are performed.
+
+The SQL Implementation compiler can be downloaded from the
 @url{"http://sourceforge.net/project/showfiles.php?group_id=56967",download} 
 section at SourceForge. It is already included in the Windows installers.
 
-There are bindings for MonetDB/SQL with for example JDBC, ODBC, PHP and C, 
-(see @ref{Application Interfaces} to integrate seemlessly in existing 
+There are bindings for SQL Implementation with for example JDBC, ODBC, PHP and C, 
+(see @ref{Application Interfaces} to integrate seamlessly in existing 
 developments environments.
 Client utilities like Aqua Data Studio and iSQL will work flawlessly 
-with MonetDB/SQL to make your experience with MonetDB/SQL even better! 
+with SQL Implementation to make your experience with MonetDB/SQL even better! 
 
+The remainder of this chapter provides a short tutorial to get
+going. A synopsis of the language features supported provides
+a quick intro on the scope of the current implementation and
+the plans.
+The programming support sections illustrate some of the advanced
+features to analyse and your SQL code.
 @menu
 * The VOC Tutorial::
 * SQL Feature Overview::
@@ -23,31 +38,39 @@ with MonetDB/SQL to make your experience with MonetDB/SQL even better!
 * SQL Session Variables::
 * SQL EXPLAIN Statement::
 * SQL DEBUG Statement::
+* SQL Optimizer Control::
 @end menu
-* SQL Planned Features::
+* SQL Implementation Roadmap ::
 @end menu
 
-@node The VOC Tutorial, SQL Feature Overview, SQL, TOC
+@node The VOC Tutorial, SQL Feature Overview, SQL, SQL
+Many books exist t
 @section The VOC tutorial
 
 @node SQL Feature Overview, SQL Feature List, The VOC Tutorial, SQL
 @section SQL Features 
-The MonetDB/SQL implementation is based on the SQL-99 standard. 
+The SQL Implementation implementation is based on the SQL-99 standard. 
 It is built incrementally over time to cope with the effort
 required to realize all features. Priority is given to those
-features relevant to our research and upon request from our major
-clients.
+features relevant to our research and upon request from our valued
+partners.
 
 The plethora of SQL implementations also show that the standard
 alone is hardly sufficient. All database systems have extended
 or twisted the language structure to satisfy the needs of their
 customer, support legacy, and to better tap into the functionality
 offered by their kernels. 
-MonetDB/SQL is bound to follow this path too. The kernel imposes
+SQL Implementation is bound to follow this path too. The kernel imposes
 limitations on the features that can and cannot be realized.
 
 In the context of programming support, we provide a few
-primitives to simplify debugging of SQL programs.
+primitives to simplify debugging of SQL programs. They are described
+separately. The list below provides a synopsis of the SQL features
+supported in the released version.
+@itemize
+\item 
+foreign key integrity
+@end itemize
 
 @node SQL Feature List, SQL Session Variables, SQL Feature Overview, SQL
 @subsection SQL-99 Feature list
@@ -56,18 +79,81 @@ supported in the current release.
 
 @node SQL Session Variables, SQL EXPLAIN Statement, SQL Feature List, SQL
 @subsection SQL Session Variables
-MonetDB/SQL provides a rudimentary scheme to introduce and deal with
+SQL Implementation provides a rudimentary scheme to introduce and deal with
 session variables.
 
 @node SQL EXPLAIN Statement, SQL DEBUG Statement, SQL Session Variables, SQL
 @subsection SQL EXPLAIN Statement
-The results of the MonetDB/SQL compiler can be made visible using
-the @code{explain} statement modifier.
+The intermediate code produced by the SQL Implementation compiler can be made 
+visible using the @code{explain} statement modifier. 
+It gives a detailed description of the actions taken to produce the
+answer. The example below illustrates what you can expect when a
+simple query is pre-pended by the @code{explain} modifier.
+Although the details of this program are better understood
+when you have read the Chapter on MAL @ref{MonetDB Assembler Language}
+the global structure is easy to explain.
 
-@example
-@end example
+@verbatim
+>select count(*) from tables;
+[ 23 ]
+>explain select count(*) from tables;
+!function user.main():int;
+!    sql_cache.sql1();
+!end main;
+!factory sql_cache.sql1():any;
+!    $1{count=0} := sql.bind("sys","ptables","id",0);
+!    $6{count=0} := sql.bind_dbat("sys","ptables",0);
+!    $14{count=0} := sql.bind("sys","ttables","id",0);
+!    $16{count=0} := sql.bind_dbat("sys","ttables",0);
+!barrier always := true;
+!    $7 := bat.reverse($6{count=0});
+!    $8 := algebra.kdiff($1{count=0},$7);
+!    $11 := algebra.markT($8,0@0);
+!    $12 := bat.reverse($11);
+!    $13 := algebra.join($12,$1{count=0});
+!    $17 := bat.reverse($16{count=0});
+!    $18 := algebra.kdiff($14{count=0},$17);
+!    $20 := algebra.markT($18,0@0);
+!    $21 := bat.reverse($20);
+!    $22 := algebra.join($21,$14{count=0});
+!    $23 := bat.append($13,$22);
+!    $25 := algebra.markT($23,0@0);
+!    $26 := bat.reverse($25);
+!    $27 := algebra.join($26,$23);
+!    $29 := algebra.markT($27,0@0);
+!    $30 := bat.reverse($29);
+!    $31 := algebra.join($30,$27);
+!    $32 := algebra.count($31);
+!    sql.column($32,"count_id","int",32,0);
+!    sql.output(0,$32);
+!    yield always;
+!    redo always;
+!exit always;
+!end sql1;
+@end verbatim
 
-@node SQL DEBUG Statement, SQL Planned Features, SQL EXPLAIN Statement, SQL
+The SQL compiler keeps a limited cache of queries and before MAL code is
+produced. Each query is looked up in the cache based on an expression pattern 
+match where the constants may take on different values.
+If it doesn;t exist, the query is converted into 
+a @emph{factory} code block and stored in the
+module @code{sqlcache}. 
+It consists of a prelude section, which locates
+the tables of interest in the SQL catalogs.
+The block between @code{barrier} and @code{yield} is the actual code
+executed upon each call of this function. It is a large collection
+of relational algebra operators, whose execution semantics depend
+on the actual MAL engine. The @code{factory} ensures that only this part
+is called when the query is executed repetitively.
+
+The call to the cached function is included in the function @code{main},
+which is the only piece of code produced if the query is used more than once.
+The query cache disappears when the server is brought to a halt. 
+
+When/how is the cache cleared? Can you list elements in the
+cache directly, e.g @code{explain;} or @code{explain sqlcache} or @code{explain sqlcache.sql0;}
+
+@node SQL DEBUG Statement, SQL Optimizer Control, SQL EXPLAIN Statement, SQL
 @subsection SQL DEBUG Statement
 
 The default execution engine for SQL statements is 
@@ -76,7 +162,23 @@ the MAL interpreter, which comes with a debugger (See @ref{The MAL Debugger})
 @example
 @end example
 
-@node SQL Planned Features, XQuery, SQL DEBUG Statement,  SQL
-@section Planned Features
+
+@node SQL Optimizer Control, SQL Implementation Roadmap, SQL DEBUG Statement,  SQL
+@section SQL Optimizer Control
+The code produced by MonetDB/SQL is massaged by several code optimizers
+to arrive at the best possible plan for evaluation.
+However, for development purposes and the rare case that more control
+is needed, the SQL session variable @code{optimizer} can be set
+to a comma separate list of optimizer requests. [todo]
+
+The results of each optimizer step become visible using the @code{explain}
+statement modifier.
+@example
+>set optimizer="blah1,blah2";
+>explain select 1;
+@end example
+
+@node SQL Implementation Roadmap, XQuery, SQL Optimizer Control,  SQL
+@section SQL Implementation
 In this section we summarize the SQL features scheduled for implementation
 and those that won;t be supported in the foreseeable future.
