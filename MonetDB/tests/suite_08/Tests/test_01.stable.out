@@ -236,39 +236,40 @@ printf("#~BeginVariableOutput~#\n"); view_gdk_env().print(); printf("#~EndVariab
 #---------------------------------------------------------------------------------------------------------#
 # h			monet_environment								  # name
 # str			str										  # type
-#---------------------------------------------------------------------------------------------------------#
-[ "config",		  "/ufs/niels/data/Linux-i686/etc/MonetDB.conf"					  ]
-[ "gdk_arch",		  "32biti686-redhat-linux-gnu"							  ]
-[ "gdk_version",	  "4.7.3"									  ]
-[ "monet_pid",		  "31260"									  ]
-[ "prefix",		  "/ufs/niels/data/Linux-i686"							  ]
-[ "exec_prefix",	  "/ufs/niels/data/Linux-i686"							  ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ "config",		  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX./etc/MonetDB.conf"										  ]
+[ "gdk_arch",		  "64bitx86_64-redhat-linux-gnu"																	  ]
+[ "gdk_version",	  "4.9.3"																				  ]
+[ "monet_pid",		  "21942"																				  ]
+[ "prefix",		  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX."												  ]
+[ "exec_prefix",	  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX."												  ]
 [ "gdk_dbname",		  "mTests_tests_suite_08"																																								  ]
-[ "gdk_dbfarm",		  "/ufs/niels/data/Linux-i686/var/MonetDB/dbfarm"				  ]
+[ "gdk_dbfarm",		  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX./var/MonetDB/dbfarm"										  ]
 [ "gdk_debug",		  "10"							  ]
-[ "gdk_mem_bigsize",	  "33554432"																											  ]
-[ "gdk_vm_minsize",	  "134217728"																											  ]
+[ "gdk_mem_bigsize",	  "137438953472"																			  ]
+[ "gdk_vm_minsize",	  "137438953472"																			  ]
 [ "gdk_alloc_map",	  "no"										  ]
 [ "monet_admin",	  "adm"							  ]
 [ "monet_prompt",	  ""							  ]
 [ "monet_welcome",	  "yes"							  ]
-[ "monet_mod_path",	  "/ufs/niels/data/Linux-i686/lib/MonetDB:/ufs/niels/data/Linux-i686/lib/bin"	  ]
+[ "monet_mod_path",	  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX./lib/bin"	  ]
 [ "monet_daemon",	  "no"																																											  ]
 [ "host",		  "localhost"						  ]
-[ "mapi_port",		  "34730"									  ]
+[ "mapi_port",		  "38059"																				  ]
 [ "mapi_noheaders",	  "no"							  ]
 [ "mapi_debug",		  "0"							  ]
 [ "mapi_clients",	  "2"										  ]
-[ "sql_port",		  "48221"									  ]
+[ "sql_port",		  "40836"																				  ]
 [ "sql_debug",		  "0"							  ]
 [ "sql_user",		  "monetdb"						  ]
 [ "sql_schema",		  "sys"																																												  ]
-[ "sql_logdir",		  "/ufs/niels/data/Linux-i686/var/MonetDB/log"					  ]
-[ "xquery_port",	  "52096"									  ]
+[ "sql_logdir",		  "/ufs/manegold/_/scratch0/Monet/Testing/Current/.ntv.64.64.d..PREFIX./var/MonetDB/log"										  ]
+[ "xquery_port",	  "53939"																				  ]
 [ "gdk_embedded",	  "no"								  ]
+[ "pf_httpd_port",	  "8080"																				  ]
 [ "xquery_output",	  "dm"																																																																  ]
 [ "xquery_cacheMB",	  "100"																																																																  ]
-[ "monet_cwd",		  "/net/stem.ins.cwi.nl/export/scratch1/niels/Linux-i686/mTests/tests/suite_08"	  ]
+[ "monet_cwd",		  "/net/corona.ins.cwi.nl/export/scratch0/manegold/Monet/Testing/Current/.ntv.64.64.d..PREFIX./mTests/tests/suite_08"							  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map thread to name
@@ -298,7 +299,7 @@ printf("#~BeginVariableOutput~#\n"); view_client_login().print(); printf("#~EndV
 # BAT:	  login				  #
 # (int)	  (str)				  #
 #-----------------------------------------#
-[ 0,	  "Wed May 18 00:06:46 2005"	  ]
+[ 0,	  "Sat Aug 20 10:04:16 2005"	  ]
 #~EndVariableOutput~#
 
 # Pseudo bat to map client identifier to its current active tree
