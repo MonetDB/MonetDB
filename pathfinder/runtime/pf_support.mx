@@ -888,8 +888,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	@:ns_loc_post(qn,ns,QN,URI,ELEMENT)@
 @
 @= target_post
-        @:ns_loc_post(prop,tgt,PROP,TGT,1)@
-@( FIXME: '1' is used instead of PI because we skip the other kinds @)
+        @:ns_loc_post(prop,tgt,PROP,TGT,PI)@
 @
 @= ns_loc_post
  {
@@ -950,7 +949,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= kind_post
  {
  	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
-	var pre_kind := ws.fetch(KIND_NID + int(@1)).fetch(theFrag).leftfetchjoin(nid_pre).reverse();
+	var pre_kind := ws.fetch(KIND_NID + int(@1)).fetch(theFrag).reverse().mark(nil).reverse().leftfetchjoin(nid_pre).reverse();
 	nid_pre := nil;
 	tmp_res := result_part_item.leftjoin(pre_kind).mark(0@0).reverse();
 	pre_kind := nil;
@@ -988,7 +987,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 @= kind_pre
 {
  	var nid_pre := ws.fetch(NID_PRE).fetch(theFrag);
-	cands := ws.fetch(KIND_NID + int(@1)).fetch(theFrag).leftfetchjoin(nid_pre);
+	cands := ws.fetch(KIND_NID + int(@1)).fetch(theFrag).reverse().mark(nil).reverse().leftfetchjoin(nid_pre);
 	nid_pre := nil;
 	cands := cands.reverse().access(BAT_WRITE).order().access(BAT_READ).reverse();
 	@:shrink_code@
@@ -1042,8 +1041,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	@:ns_loc_pre(qn,ns,QN,URI,ELEMENT)@
 @
 @= target_pre
-	@:ns_loc_pre(prop,tgt,PROP,TGT,1)@ 
-@( FIXME: '1' is used instead of PI because we skip the other kinds @)
+	@:ns_loc_pre(prop,tgt,PROP,TGT,PI)@ 
 @
 @= ns_loc_pre
  {

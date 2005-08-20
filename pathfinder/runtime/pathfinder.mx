@@ -235,29 +235,29 @@ EXCEPT when (child-T == void)
 @:@1_ws(HEIGHT,        22, int, void, void, nil)@
 @:@1_ws(QN_PREFIX_URI, 23, bat, void,  str, PRE_BASE)@
 @:@1_ws(QN_LOC_URI,    24, bat, void,  str, PRE_BASE)@
-@:@1_ws(KIND_NID_0,    25, bat, void,  oid, nil)@
+@:@1_ws(PROP_NID_0,    25, bat,  oid,  oid, nil)@
 @:@1_ws(KIND_NID_1,    26, bat, void,  oid, nil)@
 @:@1_ws(KIND_NID_2,    27, bat, void,  oid, nil)@
-@:@1_ws(KIND_NID_3,    28, bat, void,  oid, nil)@
+@:@1_ws(PROP_NID_3,    28, bat,  oid,  oid, nil)@
 @:@1_ws(KIND_NID_4,    29, bat, void,  oid, nil)@
-@:@1_ws(PROP_NID_0,    30, bat,  oid,  oid, nil)@
-@:@1_ws(PROP_NID_3,    31, bat,  oid,  oid, nil)@
-@:@1_ws(NID_PRE,       32, bat, void,  oid, PRE_BASE)@
-@:@1_ws(PRE_NID,       33, bat, void,  oid, PRE_BASE)@
+@:@1_ws(NID_PRE,       30, bat, void,  oid, PRE_BASE)@
+@:@1_ws(PRE_NID,       31, bat, void,  oid, PRE_BASE)@
 
 @= c_decl_ws
 #define @1 @2
 @h
 @:ws(c_decl)@
-#define WS_SIZE 34  /* should be last */
+#define WS_SIZE 32  /* should be last */
 
 @= mil_decl_ws
 const @1 := @2;
 @mil
 @:ws(mil_decl)@
-const WS_SIZE  := 34; # WS_SIZE should be last
-const KIND_NID := KIND_NID_0;
+const WS_SIZE  := 32; # WS_SIZE should be last
 const PROP_NID := PROP_NID_0;
+const KIND_NID := PROP_NID;
+const KIND_NID_0 := PROP_NID_0;
+const KIND_NID_3 := PROP_NID_3;
 
 var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
 var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
@@ -482,20 +482,17 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     # create our indices
     var knd := ELEMENT;
     while ( knd <= DOCUMENT ) {
-        docBAT.insert("kind_nid" + "_" + str(chr(48 + knd)),
-                      docBAT.find("pre_kind").ord_uselect(knd).reverse().leftfetchjoin(pre_nid).chk_order());
+        var the_name := str(chr(48 + knd));
+        var the_bat := docBAT.find("pre_kind").ord_uselect(knd).reverse().leftfetchjoin(pre_nid).chk_order();
+        if ( (knd = ELEMENT) or (knd = PI) ) {
+            the_name := "prop_nid_" + the_name;
+            the_bat := the_bat.reverse().mirror().leftfetchjoin(nid_pre).leftfetchjoin(docBAT.find("pre_prop")).reverse().leftfetchjoin(pre_nid).chk_order();
+        } else {
+            the_name := "kind_nid_" + the_name;
+        }
+        docBAT.insert(the_name,the_bat);
         knd :+= chr(1);
     }
-
-    var knd_nid_bat := docBAT.find("kind_nid" + "_" + str(chr(48 + ELEMENT))).reverse().mirror();
-    docBAT.insert("prop_nid" + "_" + str(chr(48 + ELEMENT)),
-                  knd_nid_bat.leftfetchjoin(nid_pre).leftfetchjoin(docBAT.find("pre_prop")).reverse().leftfetchjoin(pre_nid).chk_order());
-
-    knd_nid_bat := docBAT.find("kind_nid" + "_" + str(chr(48 + PI))).reverse().mirror();
-    docBAT.insert("prop_nid" + "_" + str(chr(48 + PI)),
-                  knd_nid_bat.leftfetchjoin(nid_pre).leftfetchjoin(docBAT.find("pre_prop")).reverse().leftfetchjoin(pre_nid).chk_order());
-
-    knd_nid_bat := nil;
 
     docBAT.insert("nid_pre", nid_pre);
     docBAT.insert("pre_nid", pre_nid);
