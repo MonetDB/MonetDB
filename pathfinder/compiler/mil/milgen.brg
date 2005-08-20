@@ -1973,7 +1973,7 @@ type_of (PFpa_op_t *n, PFalg_att_t att)
             "cannot determine implementation type of algebra expression");
 
     assert (0); /* never reached due to "exit" in "PFoops" */
-    return NULL; /* pacify picky compilers */
+    return aat_nat; /* pacify picky compilers */
 }
 
 
