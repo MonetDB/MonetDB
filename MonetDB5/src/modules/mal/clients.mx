@@ -98,6 +98,11 @@ or the client himself
 #include "mal_scenario.h"
 #include "mal_client.h"
 
+#ifdef HAVE_LIBREADLINE
+#include <readline/readline.h>
+#include <readline/history.h>
+#endif
+ 
 int
 isAuthorized(str nme)
 {
@@ -258,11 +263,20 @@ CLTsetHistory(int *ret, str *fname)
 {
 	(void) ret;
 	Client c= getClient();
-	if( c->history)
+	if( c->history){
+#ifdef HAVE_LIBREADLINE
+		write_history(c->history);
+#endif
 		GDKfree(c->history);
+	}
 	if( *fname == str_nil)
 		c->history = NULL;
-	else c->history = GDKstrdup(*fname);
+	else {
+		c->history = GDKstrdup(*fname);
+#ifdef HAVE_LIBREADLINE
+		read_history(c->history);
+#endif
+	}
 	return MAL_SUCCEED;
 }
 
