@@ -262,8 +262,6 @@ monet_options.mx.in
 	/* keep them around until goodbye */
 	monet_hello(set, setlen);
 
-	if (mal_init())
-		return;
 	if (pf != prefix)
 		free(pf);
 
@@ -431,6 +429,8 @@ faster system start.
 		mo_print_options(set, setlen);
 #endif
 	monet_init(set, setlen);
+	if (mal_init())
+		return 0;
 
 @-
 Time to execute the script files. Start with the init command[todo]
