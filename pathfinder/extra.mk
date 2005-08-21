@@ -21,6 +21,20 @@
 
 # extra make rules for Pathfinder
 
+#
+# -c 1000 makes burg abort if costs exceed 1000. This essentially
+#         detects recursion in burg rules and avoids infinite loops
+#         at build time (or segfaults).
+# -d      reports some statistics and reports on unused rules and
+#         terminals. (Please look at this output when making
+#         Pathfinder if you have modified any burg files. Unused
+#         rules indicate errors in your grammar!)
+# -I      makes burg emit standard code for some burg internal functions.
+#         (Otherwise we'd have to provide them ourselves.)
+# -p...   adds a prefix to each burg internal function. We base this
+#         prefix on the file name to avoid linker problems (as we use
+#         burg allover Pathfinder).
+#
 %.c : %.brg
 	$(RM) -f $@
 	$(top_builddir)/burg/burg -c 1000 -d -I -p PF$* $< -o $@
@@ -28,13 +42,18 @@
 
 #
 # If Burg fails, it will still produce some output. If somebody
-# invoked `make' again compilation will produce strange results
+# invoked `make' again compilation would produce strange results
 # with these corrupt .c files. We thus advise `make' to delete
 # them on error.
 #
-.DELETE_ON_ERROR: $(top_srcdir)/compiler/mil/ma_gen.c \
-                  $(top_srcdir)/compiler/mil/ma_opt.c \
-                  $(top_srcdir)/compiler/mil/milgen.c
+.DELETE_ON_ERROR: $(top_srcdir)/compiler/mil/milgen.c \
+                  $(top_srcdir)/compiler/core/coreopt.c \
+                  $(top_srcdir)/compiler/core/fs.c \
+                  $(top_srcdir)/compiler/core/simplify.c \
+                  $(top_srcdir)/compiler/semantics/normalize.c \
+                  $(top_srcdir)/compiler/semantics/typecheck.c \
+                  $(top_srcdir)/compiler/algebra/algopt.c \
+                  $(top_srcdir)/compiler/algebra/core2alg.c
 
 
 .PHONY: doc html
@@ -47,8 +66,7 @@ doc:
 	cd $(top_srcdir) ; doc/gen_doc.sh
 
 #
-# We do not only produce HTML documentation, so `html' is actually
-# the wrong make target name. Stefan's automated test system, however
-# uses `html', so we provide it here.
+# Stefan's automated test system uses `make docs', not `make doc'.
+# Make him happy as well.
 #
-html: doc
+docs: doc
