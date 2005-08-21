@@ -151,6 +151,7 @@ static void
 showCommands(void)
 {
     printf("?\t - show this message\n");
+    printf("!\t - show the history\n");
     printf("<file\t - read input from file\n");
     printf(">file\t - save response in file\n");
     printf(">\t - response to terminal\n");
@@ -265,6 +266,24 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 					continue;
 				}
 				break;
+			case '!':
+				{ char *nl;
+				  Client c= getClient();
+				  int i;
+					if(line[1]=='\n') {
+						for(i=0; i< history_length; i++){
+							nl= history_get(i)? history_get(i)->line:0;
+							if( nl)
+							stream_printf(c->fdout, "%d %s\n", i, nl);
+						}
+						line = NULL;
+					} else
+					if( history_expand(line,&nl) ==1  ) {
+						stream_printf(c->fdout,"#%s",nl);
+						line= nl;
+					} else line= NULL;
+				}
+				continue;
 			case '?':
 				showCommands();
 				line= NULL;
@@ -290,6 +309,8 @@ readConsole(Client cntxt){
 	/* read lines and move string to client buffer. */
 	if( initReadline ==0){
 		init_readline();
+		using_history();
+		stifle_history(1000);
 		initReadline =1 ;
 	}
 	buf= getConsoleInput(cntxt->prompt, 0, 1);
