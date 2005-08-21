@@ -157,7 +157,7 @@ comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 mal_export str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int order, int printhead, int printorderby);
 mal_export str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat);
-mal_export str IOprint_formatted_nil(stream *fd, str format, int *ret);
+mal_export str IOprint_formatted_nil(stream *fd, str format, char last);
 
 typedef struct {
 	int up, down;
@@ -415,11 +415,11 @@ This avoids repeated type checking in most cases.
 
 @= escaped
 	switch(*c){
-	case 'n': *ret =  stream_printf(fd,"\n");break;
-	case 't': *ret =  stream_printf(fd,"\t");break;
-	case 'r': *ret =  stream_printf(fd,"\r");break;
-	case '\\': *ret =  stream_printf(fd,"\\");break;
-	default : *ret = stream_printf(fd,"\\");stream_printf(fd,"%c",*c);
+	case 'n': stream_printf(fd,"\n");break;
+	case 't': stream_printf(fd,"\t");break;
+	case 'r': stream_printf(fd,"\r");break;
+	case '\\': stream_printf(fd,"\\");break;
+	default : stream_printf(fd,"\\");stream_printf(fd,"%c",*c);
 	}
 @c
 str
@@ -427,6 +427,7 @@ IOprint_str(int *ret, str *s)
 {
 	stream *fd = GDKout;
 	str c;
+	(void) ret;
 
 	if (strNil(*s))
 		stream_printf(fd, "nil");
@@ -488,22 +489,24 @@ str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 	stream *fd = getClient()->fdout;
 	char *format;
 	str c;
+	(void) ret;
 	/* TODO: check format properly !!! including sizes */
 	format= *(str *)fmt;
-	if( format== NULL) 
+	if( format== NULL || format== str_nil) 
 		return throwMessage("system.print", "format missing");
 	if( formatMarker(format)!=1) 
 		return throwMessage("system.print", "too many %%");
 
-	if( *s == @1_nil) return IOprint_formatted_nil(fd,* (str*) fmt, ret);
+	if( *s == @1_nil) 
+		return IOprint_formatted_nil(fd,* (str*) fmt, '@2');
 	@:formatConversion(@2,*s)@
+	stream_flush(fd);
 	return MAL_SUCCEED;
 }
 @c
 @:printFormatted(chr,c)@
 @:printFormatted(sht,d)@
 @:printFormatted(int,d)@
-@:printFormatted(lng,d)@ /* should become LNGFMT */
 @:printFormatted(flt,f)@
 @:printFormatted(dbl,f)@
 
@@ -511,7 +514,7 @@ str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 String nil testing is slightly different.
 @c
 str
-IOprint_formatted_nil(stream *fd, str format, int *ret)
+IOprint_formatted_nil(stream *fd, str format, char last)
 {
 	str c;
 
@@ -528,7 +531,7 @@ IOprint_formatted_nil(stream *fd, str format, int *ret)
 				c++;
 				continue;
 			}
-			while (!isalpha((int) *c) && *c && i < 1024)
+			while (!isalpha((int) *c) && *c && *c != last && i < 1024)
 				newformat[i++] = *c++;
 			newformat[i++] = 's';
 			newformat[i] = 0;
@@ -538,6 +541,51 @@ IOprint_formatted_nil(stream *fd, str format, int *ret)
 	}
 	return MAL_SUCCEED;
 }
+str
+IOprint_formatted_lng(int *ret, str *format, lng *val)
+{
+	str c;
+	stream *fd= getClient()->fdout;
+	(void) ret;
+
+	for (c = *format; *c; c++) {
+		if (*c == '\\') {
+			c++;
+			@:escaped@
+		} else if (*c == '%') {
+			char newformat[1024];
+			int i = 0;
+
+			if (*(c + 1) == '%') {
+				stream_printf(fd, "%c", *c);
+				c++;
+				continue;
+			}
+			while (!isalpha((int) *c) && *c && i < 1024)
+			if( *c =='d' ) {
+				break;
+			} else
+			if( *c=='l' && c[1]=='d') {
+				c++;
+				break;
+			} else
+				newformat[i++] = *c++;
+
+			if( *val == lng_nil){
+				newformat[i++] = 's';
+				newformat[i] = 0;
+				stream_printf(fd, newformat, "nil");
+			} else {
+				newformat[i++] = 'd';
+				newformat[i] = 0;
+				stream_printf(fd, newformat, *val);
+			}
+		} else
+			stream_printf(fd, "%c", *c);
+	}
+	stream_flush(fd);
+	return MAL_SUCCEED;
+}
 
 str
 IOprint_formatted_str(int *ret, ptr fmt, str *s)
@@ -545,6 +593,7 @@ IOprint_formatted_str(int *ret, ptr fmt, str *s)
 	stream *fd = getClient()->fdout;
 	char *format;
 	str c;
+	(void) ret;
 
 	/* TODO: check format properly !!! including sizes */
 	format = *(str *) fmt;
@@ -554,7 +603,7 @@ IOprint_formatted_str(int *ret, ptr fmt, str *s)
 		return throwMessage("system.print", "too many %%");
 
 	if (strNil(*s))
-		return IOprint_formatted_nil(fd, *(str *) fmt, ret);
+		return IOprint_formatted_nil(fd, *(str *) fmt, 's');
 	@:formatConversion(s,*s)@
 	return MAL_SUCCEED;
 }
@@ -603,8 +652,8 @@ IOprint_formatted_bit(int *ret, ptr fmt, bit *s)
 		return throwMessage("system.print", "too many %%");
 
 	if (*s == bit_nil)
-		msg = "nil";
-	else if (*s)
+		return IOprint_formatted_nil(fd, *(str *) fmt, 's');
+	if (*s)
 		msg = "true";
 	else
 		msg = "false";

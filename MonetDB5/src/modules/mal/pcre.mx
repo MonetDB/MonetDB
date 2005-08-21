@@ -129,8 +129,8 @@ pcre_match(bit *ret, str *val, str *pat)
 }
 #else
 
-#include <pcre.h>
 #include <regex.h>
+#include <pcre.h>
 
 #define m2p(p) (pcre*)(((sht*)p)+1)
 #define p2m(p) (pcre*)(((sht*)p)-1)
@@ -302,10 +302,14 @@ PCREcompile_wrap(pcre ** res, str *pattern)
 str
 PCREexec_wrap(bit *res, pcre * pattern, str *s)
 {
+#ifndef HAVE_LIBPCRE
 	(void) res;
 	(void) pattern;
 	(void) s;
+	return throwMessage("pcre_select", "library missing\n");
+#else
 	pcre_exec_wrap(res, pattern, *s);
+#endif
 	return MAL_SUCCEED;
 }
 
