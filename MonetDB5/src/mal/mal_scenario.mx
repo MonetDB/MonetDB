@@ -126,7 +126,7 @@ into an exception and aborts the scenario.
 #define MAXSCEN 128
 
 typedef struct SCENARIO {
-	str name;
+	str name, language;
 	str initSystem;
 	MALfcn initSystemCmd;
 	str exitSystem;
@@ -160,6 +160,7 @@ mal_export void runScenario(Client c);
 mal_export void runScenarioBody(Client c);
 mal_export void fillScenario(Client c, Scenario scen);
 mal_export void clrScenario(Client c);
+mal_export str getScenarioLanguage(Client c);
 
 mal_export str defaultScenario(Client c);	/* used in src/mal/mal_session.c */
 mal_export void exitScenario(Client c);	/* used in src/mal/mal_session.c */
@@ -181,8 +182,8 @@ mal_export void updateScenario(str nme, MALfcn fcn);
 #include "mal_linker.h"		/* for getAddress() */
 
 struct SCENARIO scenarioRec[MAXSCEN] = {
-	{"mal",
-	 0, 0,			/* no MALinit */
+	{"mal", "mal",
+	 0, 0,			/* hardwired MALinit*/
 	 0, 0,			/* no MALexit */
 	 0, 0,			/* no MALinitClient */
 	 "MALexitClient", 0,
@@ -191,7 +192,7 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 	 "MALoptimizer", 0, 0,	/* initialized upon module load */
 	 "MALscheduler", 0, 0,	/* initialized upon module load */
 	 "MALengine", 0, 0, 0},
-	{"mil",
+	{"mil","mil",
 	 "MILinit", 0,
 	 "MILexit", 0,
 	 "MILinitClient", 0,
@@ -201,7 +202,7 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 	 0, 0, 0,		/* no MILoptimizer */
 	 0, 0, 0,		/* no MILscheduler */
 	 "MILengine", 0, 0, 0},
-	{"milCompiler",
+	{"milCompiler","mil",
 	 "MILinit", 0,
 	 "MILexit", 0,
 	 "MILinitClient", 0,
@@ -212,7 +213,7 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 	 0, 0, 0,		/* no MILscheduler */
 	 0, 0, 0, 0		/* don;t execute */
 	 },
-	{"sql",
+	{"sql","sql",
 	 "SQLinit", 0,
 	 "SQLexit", 0,
 	 "SQLinitClient", 0,
@@ -222,7 +223,7 @@ struct SCENARIO scenarioRec[MAXSCEN] = {
 	 "SQLoptimizer", 0, 0,
 	 0, 0, 0,
 	 "SQLengine", 0, 0, 0},
-	{0,			/* name */
+	{0,0,			/* name */
 	 0, 0,			/* init */
 	 0, 0,			/* exit */
 	 0, 0,			/* initClient */
@@ -398,6 +399,11 @@ showAllScenarios(stream *f)
 		showScenario(f, scen);
 }
 
+str getScenarioLanguage(Client c){
+	Scenario scen= findScenario(c->scenario);
+	if( scen) return scen->language;
+	return "mal";
+}
 @-
 Changing the scenario for a particular client invalidates the
 state maintained for the previous scenario. The old scenario is

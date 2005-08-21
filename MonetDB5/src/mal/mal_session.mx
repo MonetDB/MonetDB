@@ -369,12 +369,20 @@ MALexitClient(Client c)
 str
 MALreader(Client c)
 {
+	int r= 1;
+
 	c->fdin->pos += c->yycur;
 	c->yycur = 0;
 	c->fdin->buf[c->fdin->pos] = 0;
-	if (readClient(c) > 0) {
+	if( c == mal_clients){
+		r= readConsole(c);
+		if (r <0 && c->fdin->eof == 0 )
+			r= readClient(c);
+		if( r > 0)
+			return 0;
+	} else
+	if (readClient(c) > 0)
 		return 0;
-	}
 	c->mode = FINISHING;
 	if (c->fdin)
 		c->fdin->buf[c->fdin->pos] = 0;

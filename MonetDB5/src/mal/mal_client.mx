@@ -194,7 +194,8 @@ on the debugger features see @ref{Program Debugging}.
     bitset debug;
     stream  *sysmon;        /* trace interaction */
     stream  *journal;
-    int mode;           /* FREECLIENT..BLOCKED */
+	str  history;			/* where to keep console history */
+    short mode;           /* FREECLIENT..BLOCKED */
     str cwd;            /* working directory of client */
 @-
 Client records are organized into a two-level dependency
@@ -229,6 +230,7 @@ mal_export void     freeClient  (Client c);
 mal_export int		countClients();
 mal_export void     appendInput(Client c, str msg);
 mal_export int      readClient  (Client c);
+mal_export int 		readConsole(Client cntxt);
 mal_export void     setClientTrace(Client c, int flag);
 mal_export str      stopClient(Client c, str nme);
 mal_export str      stopClientIndex(Client c, int id);
@@ -266,6 +268,7 @@ actions to obtain client records.
 @{
 @c
 #include "mal_client.h"
+#include "mal_readline.h"
 #include "mal_import.h"
 #include "mal_parser.h"
 #include "mal_namespace.h"
@@ -405,6 +408,7 @@ Client initClient(str nme, str passwd, bstream *fin, stream *fout){
     c->fdout = fout?fout: GDKout;
     c->sysmon = mal_clients[0].sysmon?mal_clients[0].fdout:0;
     c->journal = NULL;
+	c->history = 0;
 @-
 The output buffer is currently not used. Beware to garbage
 collect the buffer when in use.
@@ -816,10 +820,10 @@ void traceAllClients(int flag){
 @}
 @+ Client input
 Input to be processed is collected in a Client specific buffer.
-It is filled by reading information from a stream, or by scheduling
-strings constructed internally. The latter involves removing
-any escape character needed to manipulate the string within
-the kernel.
+It is filled by reading information from a stream, a terminal,
+or by scheduling strings constructed internally. 
+The latter involves removing any escape character needed to 
+manipulate the string within the kernel.
 The buffer space is automatically expanded to accommodate new 
 information and the read pointers are adjusted.
 @-
@@ -834,13 +838,6 @@ submission. This avoids a significant number of network interactions.
 @{
 @-
 Each operation received from a front-end consists of at least one line.
-If it contains the text #bytes:%6d then it is assumed that a block
-of data can be read in bulk mode containing the request to be processed.
-
-Otherwise the line is interpreted as a MAL instruction and appended
-to the main-procedure associated with a client record. As soon as a
-statementblock is recognized, it is taken into execution.
-
 To simplify misaligned communication with front-ends, we use different
 prompts structures. [think, can we avoid acks]
 
