@@ -1341,7 +1341,7 @@ retryConstant:
                 vr->val.shval= (int) l;
             }
             break; }
-    case TYPE_int: {lng l;
+    case TYPE_int: {long long int l;
             vr->vtype = type;
             if( tonil){ 
                 vr->val.ival = int_nil;
@@ -1352,7 +1352,7 @@ retryConstant:
                 if(type==TYPE_int)
                     setVarType(mb,idx, TYPE_lng);
                 vr->vtype= TYPE_lng;
-                vr->val.lval= l;
+                vr->val.lval= (lng) l;
             } else {
                 vr->val.ival= (int)l;
             }
@@ -1376,9 +1376,9 @@ retryConstant:
             else vr->val.dval= d;
             vr->vtype= type;
             break;}
-    case TYPE_lng: {lng l= strtoll(val,NULL,0);
+    case TYPE_lng: {long long int l= strtoll(val,NULL,0);
             if( tonil) vr->val.lval = lng_nil; 
-            else vr->val.lval= l;
+            else vr->val.lval= (lng) l;
             vr->vtype= type;
             break; }
     case TYPE_str: 
