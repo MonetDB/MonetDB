@@ -45,6 +45,10 @@ comment "Clear the flag in the debugging bitset";
 #address CLTsetPassword
 #comment "Change the password for the client";
 
+command setHistory(s:str)
+address CLTsetHistory
+comment "Designate console history file";
+
 command getUsers( ):bat[:int,:str] 
 address CLTusers
 comment "Pseudo bat of users logged in";
@@ -247,6 +251,19 @@ CLTsetDebug(int *ret, int *flg)
 	(void) ret;
 	(void) flg;		/*fool compiler */
 	return throwMessage("clients.setDebug", "not yet implemented");
+}
+
+str
+CLTsetHistory(int *ret, str *fname)
+{
+	(void) ret;
+	Client c= getClient();
+	if( c->history)
+		GDKfree(c->history);
+	if( *fname == str_nil)
+		c->history = NULL;
+	else c->history = GDKstrdup(*fname);
+	return MAL_SUCCEED;
 }
 
 str
