@@ -187,6 +187,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         res->tsorted = TRUE;
         res->tdense = TRUE;
         BATseqbase (BATmirror(res), (oid)0); /* does not really matter */
+        BATset(res, TRUE);
         *result = res;
         @:ll_return(GDK_SUCCEED)@
     }
@@ -405,6 +406,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
     }
     res->tsorted = GDK_SORTED;
     BATkey(BATmirror(res),(trivial||one_iter)); /* might be TRUE in some more cases... */
+    BATset(res, TRUE);
 }
     *result = res;
 
@@ -764,6 +766,24 @@ BATprint(cand_bat);
 #endif
         );
     }
+@
+@= skip_cands_before_pre
+        if (cand_bat) {
+            if (pre <= lst_cnd) {
+                if (cnd_bun) {
+                    while (cnd < pre) {
+                        cnd_bun += bs_cnd;
+                        cnd = *(oid*)cnd_bun;
+                    }
+                } else {
+                    if (cnd < pre) {
+                        cnd = pre;
+                    }
+                }
+            } else {
+                cnd = GDK_oid_max;
+            }
+        }
 @c
 
     /* iterate over all context nodes - evaluation is only done
@@ -776,31 +796,12 @@ BATprint(cand_bat);
            only a new (non-active) iters have to be added
            to the list of active iters */
         pre = ctx;
-        if (cand_bat) {
-            if (cnd_bun) {
-                while (cnd < pre && cnd < lst_cnd) {
-                    cnd_bun += bs_cnd;
-                    cnd = *(oid*)cnd_bun;
-                }
-            } else {
-                while (cnd < pre && cnd < lst_cnd) {
-                    cnd++;
-                }
-            }
-        }
+        @:skip_cands_before_pre@
         while (ctx_bun < ctx_last && ctx == cur_ctx) {
             @:pushctx_D@
             @:getnextctx_D@
         }
         @:sort_iters_on_stack@
-        if (cand_bat && cnd == pre && cnd < lst_cnd) {
-            if (cnd_bun) {
-                cnd_bun += bs_cnd;
-                cnd = *(oid*)cnd_bun;
-            } else {
-                cnd++;
-            }
-        }
         pre++;
         if (ctx_bun < ctx_last) {
             if (ctx <= stack[stack_top-1].eocs) {
@@ -839,19 +840,7 @@ BATprint(cand_bat);
     size_t grow = 0;
     BUN dst = NULL;
 
-    if (cand_bat) {
-        if (cnd_bun) {
-            while (cnd < pre && cnd < lst_cnd) {
-                cnd_bun += bs_cnd;
-                cnd = *(oid*)cnd_bun;
-            }
-        } else {
-            while (cnd < pre && cnd < lst_cnd) {
-                cnd++;
-            }
-        }
-    }
-
+    @:skip_cands_before_pre@
     if (cnd <= @1) {
         grow = (size_t)stack_top * ((@1 - cnd) + 1);
 
@@ -903,20 +892,7 @@ BATprint(cand_bat);
         BATsetcount(res, (res->batBuns->free+Bunbase(res)-BUNfirst(res))/bs_res);
     }
     
-    pre = @1;
-    if (cand_bat) {
-        if (cnd_bun) {
-            while (cnd < pre && cnd < lst_cnd) {
-                cnd_bun += bs_cnd;
-                cnd = *(oid*)cnd_bun;
-            }
-        } else {
-            while (cnd < pre && cnd < lst_cnd) {
-                cnd++;
-            }
-        }
-    }
-    pre++;
+    pre = @1 + 1;
 }
 @
 @c
