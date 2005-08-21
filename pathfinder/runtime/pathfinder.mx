@@ -1135,7 +1135,7 @@ setup_connection(str location, int port)
     struct hostent *resolv = NULL;
 
     errno = 0;
-    if (isdigit(location[0])) {
+    if (isdigit((int)location[0])) {
         if ((s_addr = inet_addr(location)) < 0) {
             GDKerror("setup_connection: invalid IP addressi \"%s\": %s\n",
                      location, errno ? strerror(errno) : "");
