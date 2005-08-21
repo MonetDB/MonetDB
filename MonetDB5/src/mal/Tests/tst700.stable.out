@@ -45,11 +45,11 @@ function user.main():int;	# 0  (main:int)
     io.print(pi);	# 11 IOprint_val ($19:int)<-(pi:flt)
     io.printf("hello\n");	# 12 IOprint_str ($20:int)<-($21:str)
     io.printf("%5d\n",0);	# 13 IOprint_formatted_int ($22:int)<-($23:str)($8:int)
-    io.printf("%5ld\n",1:lng);	# 14 IOprint_formatted_lng ($24:int)<-($25:str)($10:lng)
-    io.printf("%c\n",'c');	# 15 IOprint_formatted_chr ($26:int)<-($27:str)($4:chr)
-    io.printf("%-8s\n",true);	# 16 IOprint_formatted_bit ($28:int)<-($29:str)($13:bit)
-    io.printf("%6.2f\n",pi);	# 17 IOprint_formatted_flt ($30:int)<-($31:str)(pi:flt)
-    io.printf("single line %s \n","hello");	# 18 IOprint_formatted_str ($32:int)<-($33:str)($34:str)
+    io.printf("%5d\n",1:lng);	# 14 IOprint_formatted_lng ($24:int)<-($23:str)($10:lng)
+    io.printf("%c\n",'c');	# 15 IOprint_formatted_chr ($25:int)<-($26:str)($4:chr)
+    io.printf("%-8s\n",true);	# 16 IOprint_formatted_bit ($27:int)<-($28:str)($13:bit)
+    io.printf("%6.2f\n",pi);	# 17 IOprint_formatted_flt ($29:int)<-($30:str)(pi:flt)
+    io.printf("single line %s \n","hello");	# 18 IOprint_formatted_str ($31:int)<-($32:str)($33:str)
 end main;	# 19  
 [ 'c' ]
 [ "hello world" ]

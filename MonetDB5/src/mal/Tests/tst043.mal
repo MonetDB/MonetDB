@@ -1,0 +1,18 @@
+# this sequence tests nil type management 
+a:= calc.int(nil);	
+io.printf("formatted int %-3d\n",a);
+
+b:= calc.bit(nil);	
+io.printf("formatted bit %s\n",b);
+
+c:= calc.chr(nil);	
+io.printf("formatted chr %c\n",c);
+
+d:= calc.flt(nil);	
+io.printf("formatted flt %3.2f\n",d);
+
+e:= calc.str(nil);	
+io.printf("formatted str %+4s\n",e);
+
+l:= calc.lng(nil);	
+io.printf("formatted lng %5d\n",d);

@@ -11,7 +11,7 @@
 	io.print(pi);
 	io.printf("hello\n");
 	io.printf("%5d\n",0);
-	io.printf("%5ld\n",1:lng);
+	io.printf("%5d\n",1:lng);
 	io.printf("%c\n",'c');
 	io.printf("%-8s\n", true);
 	io.printf("%6.2f\n",pi);

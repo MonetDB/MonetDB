@@ -49,10 +49,10 @@ function user.tst(A2:bat[:void,:int],A3:bat[:void,:int]):bat[:void,:int];	# 0  (
     resB := bbp.new(:void,:int);	# 2 CMDBATnew (resB:bat[:void,:int])<-($5:void)($6:int)
     bat.setSequenceBase(resB,0@0);	# 3 BKCsetSequenceBase ($7:bat[:void,:int])<-(resB:bat[:void,:int])($8:oid)
     lim := algebra.count(A2);	# 4 ALGcount_bat (lim:lng)<-(A2:bat[:void,:int])
-    io.printf("count %ld\n",lim);	# 5 IOprint_formatted_lng ($10:int)<-($11:str)(lim:lng)
+    io.printf("count %d\n",lim);	# 5 IOprint_formatted_lng ($10:int)<-($11:str)(lim:lng)
     l := calc.lng(lim);	# 6 CALClng2lng (l:lng)<-(lim:lng)
 barrier (mloop,m):= mal.newRange(0:lng);	# 7 RNGnewRange_lng (mloop:bit)(m:lng)<-($15:lng) jump 18
-    io.printf("loopindex %ld\n",m);	# 8 IOprint_formatted_lng ($16:int)<-($17:str)(m:lng)
+    io.printf("loopindex %d\n",m);	# 8 IOprint_formatted_lng ($16:int)<-($17:str)(m:lng)
     B2 := algebra.fetch(A2,m);	# 9 ALGfetch (B2:int)<-(A2:bat[:void,:int])(m:lng)
     io.printf("B2 value %d\n",B2);	# 10 IOprint_formatted_int ($19:int)<-($20:str)(B2:int)
     B3 := algebra.fetch(A3,m);	# 11 ALGfetch (B3:int)<-(A3:bat[:void,:int])(m:lng)
