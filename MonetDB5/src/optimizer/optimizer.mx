@@ -355,7 +355,6 @@ QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	str fname;
 	str modnme;
 	str fcnnme;
 	Module scope = NULL;
@@ -365,11 +364,9 @@ QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (stk != 0) {
 		modnme = (str) getArgValue(stk, p, 1);
 		fcnnme = (str) getArgValue(stk, p, 2);
-		fname = (str) getArgValue(stk, p, 3);
 	} else {
 		modnme = getArgDefault(mb, p, 1);
 		fcnnme = getArgDefault(mb, p, 2);
-		fname = getArgDefault(mb, p, 3);
 	}
 
 	stream_printf(c->fdout,"#showPlan()\n");

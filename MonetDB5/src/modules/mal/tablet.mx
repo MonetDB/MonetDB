@@ -1935,7 +1935,7 @@ TABshowHeader(Tablet * t)
 				if (strcmp(p, "base") == 0) {
 					char buf[BUFSIZ];
 
-					sprintf(buf, SZFMT, c->bval->hseqbase);
+					sprintf(buf, SZFMT, (size_t)c->bval->hseqbase);
 					prop = GDKstrdup(buf);
 				}
 				if (strcmp(p, "sorted") == 0) {
