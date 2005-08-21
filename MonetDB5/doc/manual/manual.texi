@@ -80,6 +80,7 @@ Table of contents
 
 * SQL ::
 @menu
+* Getting Started with SQL::
 * The VOC Tutorial::
 * SQL Feature Overview::
 @menu
@@ -94,7 +95,7 @@ Table of contents
 
 * XQuery ::
 
-* Application Interfaces::
+* MapiClient and Interfaces::
 * MonetDB Assembler Language::
 @menu
 * MAL instructions::
@@ -184,16 +185,22 @@ Table of contents
 @node Client administration, SQL, Scenario management, MonetDB overview
 @include mal_client.bdy.texi
 
-@node SQL, The VOC Tutorial, Client administration, TOC
+@node SQL, Getting Started with SQL, Client administration, TOC
 @include Assets/SQLoverview.texi
-@node XQuery, Application Interfaces, SQL Implementation Roadmap, TOC
+@node XQuery, MapiClient and Interfaces, SQL Implementation Roadmap, TOC
 @include Assets/XQueryOverview.texi
 
-@node Application Interfaces, MonetDB Assembler Language, XQuery, TOC
-@chapter Application Interfaces
+@node MapiClient and Interfaces, MonetDB Assembler Language, XQuery, TOC
+@chapter MapiClient and Interfaces
+@section MapiClient
+@section Application Programming Interfaces
 Give a brief introduction to Mapi, JDBC, ODBC,Perl....
+@subsection PHP
+@subsection JDBC
+@subsection ODBC
+@subsection Perl
 
-@node MonetDB Assembler Language, MAL instructions, Application Interfaces , TOC
+@node MonetDB Assembler Language, MAL instructions, MapiClient and Interfaces , TOC
 @include mal_instruction.bdy.texi
 
 @node Function definitions, Function Clones ,Flow of control , MonetDB Assembler Language

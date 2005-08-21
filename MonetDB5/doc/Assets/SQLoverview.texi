@@ -1,11 +1,35 @@
 @chapter SQL
 
-This chapter provides an introduction to SQL Implementation,
-a full-fledged SQL implementation for database management.
-It assumes basic knowledge on the SQL language syntax.
+The de facto language for database applications is SQL.  It evolved
+through several phases of standardization to the version currently
+known as SQL-2003.
+The SQL standard provides an ideal language framework,
+in terms of standardization committee viewpoints.  It is, however,
+hardly met by any of the existing (commercial) implementations.
+This is largely due to legacy of old software and backward compatibility
+requirements from their client base.  See for instance
+@url{"http://www.dbazine.com/gulutzan3.shtml",this}
+on-line article on SQL standards.
+
+The MonetDB database system was originally developed as a database back end
+kernel with its own, low-level algebraic interface and scripting language.
+The development of a SQL front end has been purposely postponed to the point
+where the kernel code base was sufficiently mature and field tested in
+large, mission critical applications in the financial sector.
+
+In 2002 the first version of the SQL front end emerged.
+This late development made it possible to immediately start from the SQL'99
+definition. As soon as the SQL'03 specifications became available, its content
+was taken as the primary frame of reference.
+The SQL development strategy is driven by immediate needs of the
+user base, such that less-frequently used features end up low on
+the development stack.
+
+The purpose of this chapter is to give a quick introduction on the SQL
+front end, its limitations, and the way to use it.  Throughout this document
+proficiency in elementary use of SQL is assumed.
 If you are new to this world then pick up any of the
 introductionary books and study it carefully.
-
 The SQL Implementation front-end is based on the SQL-99 standard,
 which is covered in many text books e.g.
 @emph{J. Melton and A.R. Simon}, SQL:1999 Understanding
@@ -20,18 +44,18 @@ The SQL Implementation compiler can be downloaded from the
 section at SourceForge. It is already included in the Windows installers.
 
 There are bindings for SQL Implementation with for example JDBC, ODBC, PHP and C, 
-(see @ref{MapiClient and Interfaces} to integrate seamlessly in existing 
+(see @ref{MapiClient and Interfaces}) to integrate seamlessly in existing 
 developments environments.
 Client utilities like Aqua Data Studio and iSQL will work flawlessly 
 with SQL Implementation to make your experience with MonetDB/SQL even better! 
 
 The remainder of this chapter provides a short tutorial to get
-going. A synopsis of the language features supported provides
-a quick intro on the scope of the current implementation and
-the plans.
+going with MonetDB/SQL. A synopsis of the language features 
+provides a quick intro on the scope of the current implementation.
 The programming support sections illustrate some of the advanced
 features to analyse and your SQL code.
 @menu
+* Getting Started with SQL::
 * The VOC Tutorial::
 * SQL Feature Overview::
 @menu
@@ -41,11 +65,96 @@ features to analyse and your SQL code.
 * SQL DEBUG Statement::
 * SQL Optimizer Control::
 @end menu
+* Overlaying the BAT storage::
 * SQL Implementation Roadmap ::
 @end menu
 
-@node The VOC Tutorial, SQL Feature Overview, SQL, SQL
+@node Getting Started with SQL, The VOC Tutorial, SQL, SQL
+@section Getting Started with MonetDB/SQL
+MonetDB is designed to support a wide spectrum of front-ends, including SQL.
+However, you have to acquire the corresponding binaries and load them first.
+See the section @ref{Download and Installation} on where to get the version
+for your platform.
+
+Once found, the extension module for the language should be loaded, whereafter
+a language tailored scenario can be started (See @ref{Session scenarios} ).
+
+The two sample scripts illustrate how SQL is started at the Mserver
+console.
+@example
+shell> Mserver
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
+# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# dbname:demo
+# Visit http://monetdb.cwi.nl/ for further information.
+>include sql;
+>sql.start();
+#Continue as SQL session
+[ "version", "5" ]
+[ "language", "sql" ]
+[ "schema", "sys" ]
+sql>
+@end example
+A shortcut for this sequence is to use the command line option
+of the server.
+@example
+shell> Mserver --dbinit="include sql;sql.start();"
+#Continue as SQL session
+[ "version", "5" ]
+[ "language", "sql" ]
+[ "schema", "sys" ]
+sql>
+@end example
+
+Once the Mserver is made aware of the SQL extension library, it is
+also possible to connect to the server with one to the client programs
+(See @ref{MapiClient and Interfaces}).
+
+@node The VOC Tutorial, SQL Feature Overview, Getting Started with SQL, SQL
 @section The VOC tutorial
+Exploring the wealth of functionality offered by MonetDB is best
+started using a toy database.  An example of such database is the VOC data
+set that provides a peephole view into the administrative
+system of a multi-national company, 
+the @emph{Vereenigde geoctrooieerde Oostindische
+Compagnie} (VOC for short - The (Dutch) East Indian Company).
+
+The VOC was granted a monopoly on the trade in the East Indies on March 20, 1602
+by the representatives of the provinces of the Dutch republic.
+Attached to this monopoly was the duty to fight the enemies of the Republic and
+prevent other European nations to enter the East India trade.
+During its history of over 200 years, the VOC became the largest company of its kind,
+trading spices like nutmeg, cloves, cinnamon, pepper, and other consumer
+products like tea, silk and Chinese porcelain.
+Her factories or trade centers were world famous: Desjima in Japan,
+Mokha in Yemen, Surat in Persia and of course Batavia,
+the Company's headquarters on Java.
+
+The history of the VOC is an active area of research and
+a focal point for multi-country heritage projects, 
+e.g. @url{"http://www.tanap.net/content/voc/organization/organization_intro.htm", TANAP},
+which includes a short historic overview of the VOC written by
+world expert on the topic F. Gaastra.
+The archives of the VOC are spread around the world, but a large
+contingent still resides in the @url{ "http://www.nationaalarchief.nl/",National Archive<},
+The Hague.
+The archives comprise over 25 million historical records.
+Much of which has not (yet) been digitized.
+
+The MonetDB/SQL tutorial is based on the material published in the book
+J.R. Bruijn, F.S. Gaastra and I. Schaar, @emph{Dutch-Asiatic Shipping in the 17th
+and 18th Centuries}, which gives an account of the trips made to the East
+and ships returned safely (or wrecked on the way).  A total of 8000 records
+are provided.  They include information about ship name and type, captain,
+the arrival/departure of harbors along the route, personnel accounts,
+and anecdotal information.
+
+@subsection Acquiring and loading the VOC data set
+@subsection Exploring the VOC data set
+@subsection Background 
 
 @node SQL Feature Overview, SQL Feature List, The VOC Tutorial, SQL
 @section SQL Features 
@@ -57,25 +166,37 @@ partners.
 
 The plethora of SQL implementations also show that the standard
 alone is hardly sufficient. All database systems have extended
-or twisted the language structure to satisfy the needs of their
-customer, support legacy, and to better tap into the functionality
-offered by their kernels. 
-SQL Implementation is bound to follow this path too. The kernel imposes
+or twisted the language definition to satisfy the needs of their
+customer, to support legacy, and to better tap into the functionality
+offered by their kernel implementations. 
+MonetDB/SQL is bound to follow this path too. The kernel imposes
 limitations on the features that can and cannot be realized.
+The are summarized in @ref{SQL Implementation Roadmap}.
 
 In the context of programming support, we provide a few
 primitives to simplify debugging of SQL programs. They are described
 separately. The list below provides a synopsis of the SQL features
 supported in the released version.
-@itemize
-\item 
-foreign key integrity
-@end itemize
 
 @node SQL Feature List, SQL Session Variables, SQL Feature Overview, SQL
 @subsection SQL-99 Feature list
 In this section we give an itemized list of the SQL-99 features
 supported in the current release.
+@itemize
+@item 
+Primary and foreign key integrity enforcement.
+@item
+Subqueries are fully supported.
+@item
+Table expression @code{union} and @code{intersection}.
+@item
+Table views for query processing only.
+@item
+Binding SQL functions with to externally supplied routines.
+@item
+Auto-increment keys (SQL 2003).
+@end itemize
+
 
 @node SQL Session Variables, SQL EXPLAIN Statement, SQL Feature List, SQL
 @subsection SQL Session Variables
@@ -235,7 +356,7 @@ Using the MAL debugger it is also possible to inspect
 the content of the intermediate results. See @ref{Runtime Inspection} for
 examples.
 
-@node SQL Optimizer Control, SQL Implementation Roadmap, SQL DEBUG Statement,  SQL
+@node SQL Optimizer Control, Overlaying the BAT storage, SQL DEBUG Statement,  SQL
 @section SQL Optimizer Control
 The code produced by MonetDB/SQL is massaged by several code optimizers
 to arrive at the best possible plan for evaluation.
@@ -258,10 +379,86 @@ The final result the optimizer steps become visible using the @code{explain}
 statement modifier. Alternatively, the optimizer script line may include
 a call to @code{optimizer.showPlan();}.
 
-@node SQL Implementation Roadmap, XQuery, SQL Optimizer Control,  SQL
+@node Overlaying the BAT storage,SQL Implementation Roadmap, SQL Optimizer Control,  SQL
+@section Overlaying the BAT storage
+The SQL implementation exploits many facilities of the underlying
+MonetDB kernel. Most notably, its efficient column-wise storage
+scheme with associated algebraic primitives.
+However, this kernel can also be programmed directly using the
+MonetDB Assembler Language (MAL), which provides a much richer
+set of operators then strictly necessary for a correct implementation
+and execution of SQL
+
+Although the BATs used for SQL storage can be manipulated directly
+at the MAL layer, it is strongly discouraged. For, SQL uses a
+rather complex administration to realise transaction safety.
+Working at the MAL layer directly could easily compromise
+the integrity of the system as a whole.
+
+However, there are cases where access to a collection of BATs from
+the SQL environment can be handy. For example, to inspect some
+of the system tables maintained in the kernel.
+This functionality is realised using an variation of the @code{view
+statement}. It is best illustrated with a short example.
+
+First, create in MonetDB the BATs of interest. Only void-BATs are allowed
+and the user should guarantee that they are aligned.
+@example
+var a:=new(void,int);
+var b:=new(void,str);
+a.seqbase(oid(0));
+b.seqbase(oid(0));
+a.persists(true);
+b.persists(true);
+a.rename("age");
+b.rename("name");
+@end example
+These BATs can be filled with attribute values, but make sure
+that all BATs are given an equal number of tuples.
+To conclude, commit the database to disk, whereafter the BATs
+become available to SQL, once you restart Mserver/SQL.
+@example
+a.insert(oid(nil), 32);
+b.insert(oid(nil), "John");
+a.insert(oid(nil), 31);
+b.insert(oid(nil), "Mary");
+commit();
+@end example
+The BATs are made visible for read-only access using the a column
+specification. As it normally expects identifiers, we have to use
+double quotes instead.
+@example
+CREATE VIEW friends ("age","name") AS BATS;
+@end example
+At this point the content of the BATs can be queried
+using ordinary SQL queries. Updates are prohibited.
+
+@node SQL Implementation Roadmap, XQuery, Overlaying the BAT storage,  SQL
 @section SQL Implementation Roadmap
 In this section we summarize the SQL features scheduled for implementation
 and those that won;t be supported in the foreseeable future.
+A precise timeline can not be given. It depends too much on the
+available resources and urgency.
+
+Our current assessment of the features planned for upcoming releases,
+ in order of priority, are:
+@itemize
+@item
+Text retrieval support.
+@item 
+Stored SQL procedures.
+@item
+Support for multi-media objects.
+@item
+General constraint enforcement.
+@item
+Internationalization of the character sets.
+@item
+Triggers.
+@item
+Full outer-join queries.
+@end itemize
+
 @subsection Features that won;t make it.
 The database backend architecture prohibits easy implementation of
 several SQL-99 features. Those on the list below are not expected to
