@@ -39,7 +39,7 @@ exit yy;	# 8  (yy:any)
     io.printf("#finish thread\n");	# 9 IOprint_str ($10:int)<-($11:str)
     io.printf("#finish thread2\n");	# 10 IOprint_str ($12:int)<-($13:str)
 exit b1;	# 11  (b1:int)
-    alarm.sleep(10);	# 12 ALARMsleep ($14:void)<-($15:int)
+    alarm.sleep(5);	# 12 ALARMsleep ($14:void)<-($15:int)
     io.printf("#end of program, wait for child\n");	# 13 IOprint_str ($16:int)<-($17:str)
 end main;	# 14  
 #start thread

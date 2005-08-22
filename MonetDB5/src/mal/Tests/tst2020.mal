@@ -10,5 +10,5 @@ exit	yy;
 	io.printf("#finish thread\n");
 	io.printf("#finish thread2\n");
 exit b1;
-	alarm.sleep(10);
+	alarm.sleep(5);
 	io.printf("#end of program, wait for child\n");

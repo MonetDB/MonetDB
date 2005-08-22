@@ -13,11 +13,11 @@ end clkticks;
 
 thread 	hdl:=0;	# should not be assigned a value to get started
 	io.printf("#START THREAD \n");
-	user.clkticks(2);
 	io.printf("#About to exit child\n");
 exit	hdl;
+	alarm.sleep(2);
 	io.printf("#Wait for child to exit too\n");
-	alarm.sleep(15);
+	alarm.sleep(5);
 	io.printf("#Child should have died\n");
 	#wait hdl;
 	#io.printf("child has finished\n");
