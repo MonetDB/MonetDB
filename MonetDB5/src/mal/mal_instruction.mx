@@ -1348,7 +1348,7 @@ retryConstant:
                 break;
             } 
             l= strtoll(val,NULL,0);
-            if( l> INT_MAX || l < INT_MIN){
+            if( l> INT_MAX || l < int_nil){
                 if(type==TYPE_int)
                     setVarType(mb,idx, TYPE_lng);
                 vr->vtype= TYPE_lng;
