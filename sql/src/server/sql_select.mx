@@ -739,6 +739,17 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 		rs = stmt_join(scope_find_pivot(scp, rs->h), rs, cmp_equal);
 	}
 	f = sql_bind_func(sql->trans->module, fname, t1, t2);
+	if (!f && is_commutative(fname)) {
+		f = sql_bind_func(sql->trans->module, fname, t2, t1);
+		if (f) {
+			sql_subtype *tmp = t1;
+			t1 = t2;	
+			t2 = tmp;
+			res = ls;		
+			ls = rs;
+			rs = res;
+		}
+	}
 	if (f) {
 		if (f->func->res->scale == SCALE_FIX) {
 			ls = fix_scale(sql, t2, ls, 0, 0);

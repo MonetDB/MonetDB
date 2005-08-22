@@ -90,10 +90,16 @@ parse_interval_intern(mvc *sql, int sign, char *str, int sk, int ek, int *i)
 {
 	char *n = NULL;
 	int val = 0;
-	int mul = sign;
 	char sep = ':';
 	int type;
+	int mul;
 
+	if (*str == '-') {
+		sign *= -1; 
+		str++;
+	}
+	mul = sign;
+		
 	switch (sk) {
 	case iyear:
 		mul *= 12;
