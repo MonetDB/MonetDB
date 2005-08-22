@@ -1359,11 +1359,7 @@ retryConstant:
             break;}
     case TYPE_void: 
             vr->vtype= type;
-            if( tonil) {
-                vr->val.oval = oid_nil;
-                break;
-            }
-            vr->val.oval= (oid) strtol(val,NULL,10);
+			vr->val.oval = oid_nil;
             break; 
     case TYPE_oid: { long long int l;
             vr->vtype= type;
@@ -1375,7 +1371,7 @@ retryConstant:
             if( l> GDK_oid_max || l< 0){
 				vr->val.oval = oid_nil;
             } else 
-                vr->val.oval= (int)l;
+                vr->val.oval= (oid)l;
             break; }
     case TYPE_flt: {double d= strtod(val,NULL); 
             if( tonil) vr->val.fval = flt_nil; 
