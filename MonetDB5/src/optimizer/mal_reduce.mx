@@ -43,7 +43,7 @@ the isused property, or this property can again be easily derived.
 #define _MAL_REDUCE_
 #include "mal_optimizer.h"
 
-mal_export str MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 /* #define DEBUG_MAL_REDUCE     show partial result */
 

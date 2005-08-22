@@ -85,7 +85,7 @@ intends to keep intermediates around for re-use.
 
 /* #define DEBUG_MAL_GARBAGE     show partial result */
 
-mal_export str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 @c
@@ -110,7 +110,7 @@ GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Client cntxt = getClient();
 	Module s = cntxt->nspace;
 	int top = 0, blk = 1, actions = 0;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */

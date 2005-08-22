@@ -83,7 +83,7 @@ For the time being this is captured in a local routine.
 
 /* #define DEBUG_MAL_FACTORY     show partial result */
 
-mal_export str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 @c
@@ -116,7 +116,7 @@ FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int fk = 0, sk = 0, blk = 0, blkstart = 0;
 	int *varused, returnseen = 0;
 	InstrPtr *first, *second;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */

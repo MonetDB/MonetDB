@@ -146,12 +146,9 @@ comment "Substitute first occurrence of 'src' by
 #include <string.h>
 #include "mal_exception.h"
 #include "str.h"
-/* recheck on Windows
 #ifdef HAVE_REGEX_H
 #include <regex.h>
 #endif
-*/
-#include <regex.h>
 
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
@@ -541,9 +538,7 @@ STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 str
 STRbatmatchCst(int *ret, int *bid, str *pat)
 {
-/* should re-check on Windows
 #ifdef HAVE_REGEX_H
-*/
 	regex_t prg;
 	BAT *b, *bn;
 	int tpe, xx;
@@ -575,14 +570,12 @@ STRbatmatchCst(int *ret, int *bid, str *pat)
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
-/* recheck on windows
 #else
 	(void) ret;
 	(void) bid;
 	(void) pat;
 	return throwMessage("str.match", "No implementation available");
 #endif
-*/
 }
 
 @}

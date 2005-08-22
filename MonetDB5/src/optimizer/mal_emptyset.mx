@@ -80,8 +80,8 @@ we need the variables that are designated as being empty
 
 #define DEBUG_MAL_EMPTYSET	/* show partial result */
 
-mal_export str ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str ESevaluate(MalBlkPtr mb, int cnt, int *vars);
+opt_export str ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str ESevaluate(MalBlkPtr mb, int cnt, int *vars);
 #endif
 @c
 #include "mal_emptyset.h"
@@ -117,7 +117,7 @@ ESoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 str
 ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 {
-	long clk = GDKusec();
+	lng clk = GDKusec();
 	char *empty;
 	int i, j, limit, doAR = 0;
 	InstrPtr p;

@@ -69,17 +69,17 @@ estimators.
 #include "mal_interpreter.h"
 #include "mal_client.h"
 #include "mal_namespace.h"
+#include "mal_optimizer.h"
 
 #define getProps(Y) mb->var[Y]->props
 
-mal_export void RMcalculator(MalBlkPtr mb);
-mal_export str RMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export int getCost(MalBlkPtr mb, int varid);
+opt_export void RMcalculator(MalBlkPtr mb);
+opt_export str RMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export int getCost(MalBlkPtr mb, int varid);
 #endif /* _MAL_COSTMODEL_H_ */
 @-
 @c
 #include "mal_costmodel.h"
-#include "mal_optimizer.h"
 
 static void
 fixPropertySet(MalBlkPtr mb, int dst)

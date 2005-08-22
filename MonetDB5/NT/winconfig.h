@@ -36,6 +36,8 @@
 #include <stddef.h>
 #undef ERROR			/* too generic name defined in wingdi.h */
 
+#include "sysdefs.h"
+
 #define NATIVE_WIN32
 
 #define DIR_SEP '\\'

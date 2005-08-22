@@ -156,8 +156,18 @@ struct {
 	int cpuload;		/* hard to get */
 } runtime;
 
-mal_export str MALscheduler(Client c);
-mal_export str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#ifdef _MSC_VER
+#ifndef LIBSCHED
+#define sched_export extern __declspec(dllimport)
+#else
+#define sched_export extern __declspec(dllexport)
+#endif
+#else
+#define sched_export extern
+#endif
+
+sched_export str MALscheduler(Client c);
+sched_export str debugScheduler(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @+ Scheduler implementation
 @= schedulerCleanup

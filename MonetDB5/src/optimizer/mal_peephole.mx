@@ -35,7 +35,7 @@ front-end specific variations are foreseen.
 
 /* #define DEBUG_MAL_PEEPHOLE     show partial result */
 
-mal_export str PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #define match(X,M,F) ( (X) && functionId(X) && strcmp(functionId(X),F)==0 && \
 	moduleId(X) && strcmp(moduleId(X),M)==0)
@@ -89,7 +89,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
 	int i, limit, doit, aropt = 0;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 
 #ifdef DEBUG_MAL_PEEPHOLE
 	stream_printf(GDKout, "Peephole optimizer started\n");

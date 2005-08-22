@@ -1283,7 +1283,7 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNins(TRACE_id_time, &evnt, tbuf + 10);
 	}
 	if (profileCounter[PROFlabel].status) {
-		int ticks = GDKusec() - pci->clk;
+		int ticks = (int) (GDKusec() - pci->clk);
 
 		BUNins(TRACE_id_ticks, &evnt, &ticks);
 	}

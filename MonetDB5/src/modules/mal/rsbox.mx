@@ -136,7 +136,7 @@ comment "Sets the given property to the given value on the given column";
 command writeHeader(rs:resultset):int
 address RSwriteHeader
 comment "Writes the header of this ResultSet to the given stream";
-command writeBlock(rs:resultset,upper:int,lower:int):int
+command writeBlock(rs:resultset,upper:lng,lower:lng):int
 address RSwriteBlock
 comment "Writes the results from upper to lower to the stream";
 command getLength(rs:resultset):int
@@ -1268,7 +1268,7 @@ RSwriteHeader(int *retval, int *handle)
  * @returns the number of bytes written
  */
 str
-RSwriteBlock(int *retval, int *handle, int *upper, int *lower)
+RSwriteBlock(int *retval, int *handle, lng *upper, lng *lower)
 {
 	int bytes = 0, bt, i;
 	column *col;
@@ -1276,13 +1276,13 @@ RSwriteBlock(int *retval, int *handle, int *upper, int *lower)
 	columnset *cs;
 	str tmp;
 	stream *s = GDKout;
-	int low = *lower, up = *upper;
+	lng low = *lower, up = *upper;
 	ptr p;
 
 	rethrow("resultset.writeBlock", tmp, RSBgetResultSet(&rs, handle));
 	if (low < 0)
 		throwOutOfBndsf("resultset.writeBlock", "Lower index out of bounds (%d < 0)", low);
-	if (up > rs->length)
+	if (up > (lng) rs->length)
 		throwOutOfBndsf("resultset.writeBlock", "Upper index out of bounds (%d > ResultSet length)", up);
 	if (low >= up)
 		throwIllArg("resultset.writeBlock", "Lower index should be smaller than upper index");
@@ -1293,7 +1293,7 @@ RSwriteBlock(int *retval, int *handle, int *upper, int *lower)
 			rethrow("resultset.writeBlock", tmp, RSsetComplete(rs));
 
 		/* correct lower value if necessary */
-		if (low >= cs->length) {
+		if (low >= (lng) cs->length) {
 			low -= cs->length;
 			up -= cs->length;
 		} else {
@@ -1312,7 +1312,7 @@ RSwriteBlock(int *retval, int *handle, int *upper, int *lower)
 	/* write the desired block of results */
 	for (; low < up; low++) {
 		/* if we run out of our BAT... */
-		if (low >= cs->length) {
+		if (low >= (lng) cs->length) {
 			/* ... we have to do a move again ... */
 			low -= cs->length;
 			up -= cs->length;
@@ -1506,7 +1506,7 @@ str
 RSwriteNextPart(int *retval, int *handle)
 {
 	int hbytes = 0, bbytes = 0;
-	int upper, lower;
+	lng upper, lower;
 	resultset *rs = NULL;
 	str tmp;
 
@@ -1517,14 +1517,14 @@ RSwriteNextPart(int *retval, int *handle)
 	if (rs->pos < rs->length) {
 		if (rs->blocksize == 0) {
 			/* serialise the whole result */
-			lower = rs->pos;
-			upper = rs->length;
+			lower = (lng) rs->pos;
+			upper = (lng) rs->length;
 		} else {
 			/* serialise only a block */
-			lower = rs->pos;
-			upper = rs->pos + rs->blocksize;
-			if (upper > rs->length)
-				upper = rs->length;
+			lower = (lng) rs->pos;
+			upper = (lng) (rs->pos + rs->blocksize);
+			if (upper > (lng) rs->length)
+				upper = (lng) rs->length;
 		}
 	} else {
 		throwRS("resultset.writeNextPart", "No next part, all rows already serialised");

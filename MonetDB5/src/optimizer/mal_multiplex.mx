@@ -89,7 +89,7 @@ OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *old, p;
 	int i, limit;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 
 	(void) stk;
 	(void) pci;

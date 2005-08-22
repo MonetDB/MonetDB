@@ -6,14 +6,15 @@ INCLUDES = -I../modules/atoms \
 MTSAFE
 
 LIBS = {
+	NAME = sched
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = \
 	mal_scheduler.mx mal_mes.mx
 
 	HEADERS = h 
-	SCRIPTS = mal
-	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+	#SCRIPTS = mal
+	LIBS = ../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

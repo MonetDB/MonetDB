@@ -96,11 +96,11 @@ typedef struct {
 	/*str sname; does not work */
 } *SensorInfo;
 
-mal_export str DCstartChannel(DCpump p, bstream *bs);
-mal_export str DClistenReceptor(DCpump p, str *Usockfile);
-mal_export str DClistenThread(SensorInfo sensor);
-mal_export int DCrollforward(DCpump p);
-mal_export void DCreleaseReceptor(DCpump p);
+dc_export str DCstartChannel(DCpump p, bstream *bs);
+dc_export str DClistenReceptor(DCpump p, str *Usockfile);
+dc_export str DClistenThread(SensorInfo sensor);
+dc_export int DCrollforward(DCpump p);
+dc_export void DCreleaseReceptor(DCpump p);
 #endif /* _DCRECEPTOR_DEF */
 @c
 #include "dc_receptor.h"
@@ -461,7 +461,7 @@ DCstartChannel(DCpump p, bstream *bs)
 	stream_printf(GDKout, "#Start sensor reception %s %d columns\n", p->name, p->cols);
 #endif
 	fmt = as.format = (Column *) GDKmalloc(sizeof(Column) * (MAXEVENTFIELDS + 1));
-	bzero((char *) fmt, sizeof(Column) * (MAXEVENTFIELDS + 1));
+	memset((char *) fmt, 0, sizeof(Column) * (MAXEVENTFIELDS + 1));
 	as.offset = 0;
 	as.nr_attrs = 0;
 	as.nr = (size_t) oid_nil;
@@ -507,7 +507,7 @@ is interrupted with each stream_flush from the sensorSource.
 @c
 	res = 1;
 	while (p->status && res > 0 && !stream_errnr(bs->s)) {
-		int start = GDKusec();
+		lng start = GDKusec();
 		bs->eof = 0;
 
 		as.nr = ~(size_t) 0;

@@ -98,7 +98,6 @@ The server is stopped by cntrl-D or receiving the quit command.
 @
 
 @c
-extern int optind;
 static int malloc_init = 1;
 /* NEEDED? */
 #if defined(_MSC_VER) && defined(__cplusplus)

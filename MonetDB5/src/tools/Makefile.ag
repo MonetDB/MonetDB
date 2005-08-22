@@ -28,7 +28,7 @@ INCLUDES = -I../mal $(MONETDB_INCS) \
 
 bin_Mserver = {
 	SOURCES = Mserver.mx
-	LIBS = ../mal/libmal @SHARED_LIBS@ -lbat -lstream \
+	LIBS = ../mal/libmal @SHARED_LIBS@ $(MONETDB_LIBS) -lbat -lmutils -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

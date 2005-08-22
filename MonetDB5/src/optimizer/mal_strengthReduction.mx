@@ -61,7 +61,7 @@ the block condition.
 
 /* #define DEBUG_MAL_STRENGTHREDUCTION     show partial result */
 
-mal_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 @c
@@ -92,7 +92,7 @@ SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	InstrPtr p;
 	int bk, ik, b, blk, blkstart, actions = 0;
 	InstrPtr *before, *within;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */

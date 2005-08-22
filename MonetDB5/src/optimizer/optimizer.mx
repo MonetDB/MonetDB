@@ -247,7 +247,7 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	Module  scope=NULL;
 	Symbol s= NULL;
 	Client c= getClient();
-	long clk= GDKusec();
+	lng clk= GDKusec();
 	char cmd= 0;
 
 	if( stk != 0){

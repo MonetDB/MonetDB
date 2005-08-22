@@ -277,19 +277,29 @@ typedef struct DC_PUMP {
 	int pending;		/* events received for processing */
 	int received;		/* total received/sent events since start */
 	timestamp start;	/* first event time stamp */
-	int ticks;		/* ticks spent in receiving data */
+	lng ticks;		/* ticks spent in receiving data */
 	int calls;		/* number of batch reads */
 } *DCpump, DCpumpRecord;
 
-mal_export DCpump DCnewPump();
-mal_export ptr isReceptor(str name);
-mal_export ptr isEmitter(str name);
-mal_export DCpump DClocatePump(str nme);
-mal_export BAT *DCcontainer(int tpe, int cap);
-mal_export void DCstamp(DCpump p);
+#ifdef _MSC_VER
+#ifndef LIBDATACELL
+#define dc_export extern __declspec(dllimport)
+#else
+#define dc_export extern __declspec(dllexport)
+#endif
+#else
+#define dc_export extern
+#endif
 
-mal_export DCpump pumps;
-mal_export int pumpindex, pumplimit;
+dc_export DCpump DCnewPump();
+dc_export ptr isReceptor(str name);
+dc_export ptr isEmitter(str name);
+dc_export DCpump DClocatePump(str nme);
+dc_export BAT *DCcontainer(int tpe, int cap);
+dc_export void DCstamp(DCpump p);
+
+dc_export DCpump pumps;
+dc_export int pumpindex, pumplimit;
 #endif /* _DATACELL_DEF */
 @-
 The datacell module uses a global known dictionary to keep track
@@ -1265,8 +1275,8 @@ setStatus(str name, int status)
 Before you start updating the emitter public part it should be locked.
 It is released explicitedly.
 @c
-extern str BKCbat_append_void_bat_wrap(int *ret, int *dst, int *src);
-extern str BKCbat_append_val_wrap(int *ret, int *dst, void *src);
+#include "bat.h"
+
 str
 DCkeep(int *ret, str *name, int *dst, int *src)
 {

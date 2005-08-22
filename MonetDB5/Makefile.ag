@@ -22,7 +22,8 @@
 # 		Niels Nes <Niels.Nes@cwi.nl>
 # 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
-SUBDIRS = src conf	# scripts tests 
+SUBDIRS = src conf
+# scripts tests 
 
 EXTRA_DIST = rules.mk bootstrap configure.ag RunMtest.in RunMtest.bat.in RunMapprove.in RunMapprove.bat.in sysdefs.h.in rpm.mk.in
 #EXTRA_DIST_DIR = NT

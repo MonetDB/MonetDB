@@ -182,7 +182,7 @@ CLTInfo(int *ret)
 	BUNins(b, "password", (c->password ? c->password : ""));
 	BUNins(b, "permission", local_itoa(c->permission));
 	BUNins(b, "scenario", c->scenario);
-	BUNins(b, "timer", local_itoa(c->timer));
+	BUNins(b, "timer", local_itoa((int) c->timer));
 	BUNins(b, "trace", local_itoa(c->itrace));
 	@:Pseudo(client,info,)@
 	return MAL_SUCCEED;

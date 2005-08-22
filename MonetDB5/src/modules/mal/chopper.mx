@@ -147,7 +147,7 @@ CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule)
 		BBPunfix(b->batCacheid);
 		return throwMessage("chopper.newChunkMoreElements", "Cannot access 'vid' descriptor");
 	}
-	i = *res + BATcount(view);
+	i = (size_t) (*res + BATcount(view));
 	if (i >= BUNindex(b, BUNlast(b))) {
 		*res = -1;
 		BBPunfix(b->batCacheid);
@@ -178,7 +178,7 @@ CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	lng *cursor;
 	int *bid;
-	size_t yy;
+	lng yy;
 	BUN p;
 	ValPtr head, tail;
 
@@ -212,7 +212,7 @@ CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
 	lng *cursor;
-	size_t yy;
+	lng yy;
 	bat *bid;
 	BUN p;
 	ValPtr head, tail;

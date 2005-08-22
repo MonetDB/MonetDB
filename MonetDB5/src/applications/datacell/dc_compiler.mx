@@ -44,6 +44,11 @@ comment "Define a data pump query.";
 #include "mal.h"
 #include "datacell.h"
 
+dc_export str SQLcompile(str *ret, str *expr, int *flag);
+dc_export str DCmakePlans(int *ret, str *nme, str *newname);
+dc_export str DCsqlReshuffle(MalBlkPtr mb, str newname);
+dc_export void DCflowDependencies(DCpump p);
+
 #endif /* _DATACELL_COMPILER */
 @-
 @c
@@ -60,11 +65,6 @@ comment "Define a data pump query.";
 #include "../modules/mal/tablet.h"
 
 #define _DC_COMPILE_DEBUG
-
-mal_export str SQLcompile(str *ret, str *expr, int *flag);
-mal_export str DCmakePlans(int *ret, str *nme, str *newname);
-mal_export str DCsqlReshuffle(MalBlkPtr mb, str newname);
-mal_export void DCflowDependencies(DCpump p);
 
 @-
 The DataCell containers are all mapped to relational tables
@@ -100,16 +100,26 @@ MAL2SQLtype(int tpe)
 }
 
 str
+SQLcompile(str *ret, str *expr, int *flag)
+{
+	(void) ret;
+	(void) expr;
+	(void) flag;
+	return MAL_SUCCEED;
+}
+
+str
 DCcompileQuery(str *ret, str *expr, str *name)
 {
 	DCpump p;
 	char *buf;
-	int i = 0, k = 0, len = 0;
+	int k = 0;
+	size_t i = 0, len = 0;
 	str msg = MAL_SUCCEED, tpe;
 	int flag = 0;		/* do not keep the catalog changes */
 
 	len = pumpindex * 1024;
-	buf = (char *) alloca(len);
+	buf = alloca(len);
 
 	for (p = pumps; p < pumps + pumpindex; p++)
 		if (p->name) {
@@ -231,12 +241,12 @@ the new code block.
 str
 DCplan(MalBlkPtr mb, str newname)
 {
-	long clk = GDKusec();
+	lng clk = GDKusec();
 	int i, j, k, actions = 0;
 	InstrPtr p, q;
 	int *emptyset, z = 0;
 
-	emptyset = (int *) alloca(mb->stop * sizeof(int *));
+	emptyset = alloca(mb->stop * sizeof(int *));
 	for (j = i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (@:tstName(p,"sql","output")@ || @:tstName(p,"sql","column")@) {
@@ -323,7 +333,7 @@ DCmakePlans(int *ret, str *nme, str *newname)
 		return throwMessage("datacell.makePlans", "pump not found");
 	mb = s->def;
 
-	es = (int *) alloca(mb->vtop);
+	es = alloca(mb->vtop);
 	PHoptimizer(mb, 0, 0);
 @-
 We are using three different plans based on the cardinality of the
@@ -435,7 +445,7 @@ DCsqlReshuffle(MalBlkPtr mb, str newname)
 	old = mb->stmt;
 
 	limit = mb->stop;
-	points = (str *) alloca(mb->stop * sizeof(str));
+	points = alloca(mb->stop * sizeof(str));
 	newMalBlkStmt(mb, mb->stop + 4);
 
 	pushInstruction(mb, old[0]);

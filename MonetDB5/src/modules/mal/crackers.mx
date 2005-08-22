@@ -207,7 +207,7 @@ findCrackMap(int bid)
 		CrackMap *x;
 
 		if (maxCrackMap > 0)
-			units = 1.2 * maxCrackMap;
+			units = (int) (1.2 * maxCrackMap);
 		x = (CrackMap *) GDKmalloc(sizeof(CrackMap) * units);
 		memset(x, 0, sizeof(CrackMap) * units);
 		if (crackMap) {
@@ -641,7 +641,7 @@ CRKhasMoreElements(lng *pid, int *vbid, int *bid)
 		return throwMessage("crackers.hasMoreElements", "illegal piece");
 	}
 
-	for (i = *pid; i < crackMap[m].freepiece; i++)
+	for (i = (int) *pid; i < crackMap[m].freepiece; i++)
 		if (crackMap[m].pieces[i].kind == LEAF) {
 			*pid = CRKsetBounds(b, vid, m, i);
 			BBPunfix(b->batCacheid);
@@ -668,7 +668,7 @@ CRKgetPiece0(int *vbid, int *bid, int *piece)
 		return throwMessage("crackers.getPiece", "Cannot access descriptor");
 	}
 	CRKnewIterator(&result, vbid, bid);
-	m = result;
+	m = (int) result;
 	if ((vid = BATdescriptor(m)) == NULL) {
 		BBPunfix(b->batCacheid);
 		return throwMessage("crackers.getPiece", "Cannot access descriptor");

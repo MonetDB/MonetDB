@@ -125,7 +125,7 @@ pcre_match(bit *ret, str *val, str *pat)
 	(void) ret;
 	(void) val;
 	(void) pat;
-	return GDK_FAIL;
+	return throwMessage("pcre_select", "library missing\n");
 }
 #else
 
@@ -402,6 +402,5 @@ PCREuselect(int *res, str *pattern, int *bid)
 str
 PCREmatch(bit *ret, str *val, str *pat)
 {
-	pcre_match(ret, val, pat);
-	return MAL_SUCCEED;
+	return pcre_match(ret, val, pat);
 }

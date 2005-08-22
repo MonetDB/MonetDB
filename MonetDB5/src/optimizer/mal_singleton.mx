@@ -57,8 +57,8 @@ is translated by into the code block
 
 /* #define DEBUG_MAL_SINGLETON     show partial result */
 
-mal_export str SToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str STevaluate(MalBlkPtr mb, int cnt, int *vars);
+opt_export str SToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str STevaluate(MalBlkPtr mb, int cnt, int *vars);
 #endif
 @c
 #include "mal_singleton.h"
@@ -161,7 +161,7 @@ STpack(MalBlkPtr mb, int varid, STtuple * tuples)
 str
 STevaluate(MalBlkPtr mb, int cnt, int *vars)
 {
-	long clk = GDKusec();
+	lng clk = GDKusec();
 	int i, j = 0, k, limit, doAR = 0;
 	InstrPtr p;
 	InstrPtr *old;

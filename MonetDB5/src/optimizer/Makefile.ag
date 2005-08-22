@@ -14,8 +14,8 @@ lib_optimizer = {
 		mal_singleton.mx mal_costmodel.mx mal_reduce.mx
 
 	HEADERS = h 
-	SCRIPTS = mal
-	LIBS = $(MONETDB_LIBS) -lbat -lstream \
+	#SCRIPTS = mal
+	LIBS = ../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }

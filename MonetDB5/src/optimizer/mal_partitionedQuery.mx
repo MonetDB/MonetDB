@@ -85,7 +85,7 @@ end qry;
 #include "mal_optimizer.h"
 
 #define DEBUG_MAL_PARTITIONED	/* show partial result */
-mal_export str BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str BPToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 @c
@@ -227,7 +227,7 @@ BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid)
 	int i, limit, actions = 0;
 	int idx = -1, bid = -1;
 	int pcf, pcl;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 
 	setLifespan(mb);
 	old = mb->stmt;

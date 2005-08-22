@@ -25,7 +25,7 @@
 
 /* #define DEBUG_MAL_OPTIMIZER     show partial result */
 
-mal_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif
 @c
@@ -94,7 +94,7 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, j, k;
 	InstrPtr p, q;
 	int actions = 0;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 
 	(void) stk;
 

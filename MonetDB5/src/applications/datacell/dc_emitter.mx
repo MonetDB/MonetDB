@@ -85,10 +85,10 @@ and analyse the data.
 #include "datacell.h"
 #include "dc_receptor.h"
 
-mal_export str DCstartDelivery(DCpump p, stream *bs);
-mal_export str DClistenEmitter(DCpump p, str *Usockfile);
-mal_export str DCspeakThread(SensorInfo sensor);
-mal_export void DCreleaseEmitter(DCpump p);
+dc_export str DCstartDelivery(DCpump p, stream *bs);
+dc_export str DClistenEmitter(DCpump p, str *Usockfile);
+dc_export str DCspeakThread(SensorInfo sensor);
+dc_export void DCreleaseEmitter(DCpump p);
 
 #endif /* _DC_EMITTER_DEF */
 @c

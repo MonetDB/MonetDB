@@ -1,11 +1,11 @@
 
-INCLUDES = -I../../modules/atoms \
+INCLUDES = -I../../modules/atoms -I../../modules/kernel \
         -I../../mal $(MONETDB_INCS) \
         $(Z_CFLAGS) $(BZ_CFLAGS) $(PCRE_CFLAGS)
 
 MTSAFE
 
-LIBS = {
+lib_datacell = {
 	DIR = pkglibdir
 	SEP = _
 	SOURCES = \
@@ -13,18 +13,19 @@ LIBS = {
 		dc_receptor.mx dc_emitter.mx
 
 	HEADERS = h 
-	SCRIPTS = mal mil ""
-	LIBS = $(MONETDB_LIBS) -lbat -lstream
+	#SCRIPTS = mal mil ""
+	LIBS = ../../optimizer/lib_optimizer ../../mal/libmal ../../modules/atoms/lib_mtime ../../modules/kernel/lib_bat ../../modules/mal/lib_tablet \
+		$(MONETDB_LIBS) -lbat -lstream $(SOCKET_LIBS)
 }
 bin_dcsource = {
 	SOURCES = dcsource.mx
 	HEADERS = h 
-	LIBS = $(MONETDB_LIBS) -lstream  
+	LIBS = $(MONETDB_LIBS) -lstream  $(SOCKET_LIBS)
 }
 bin_dcsink = {
 	SOURCES = dcsink.mx
 	HEADERS = h 
-	LIBS = $(MONETDB_LIBS) -lstream  
+	LIBS = $(MONETDB_LIBS) -lbat -lstream   $(SOCKET_LIBS)
 }
 
 scripts_mal = {

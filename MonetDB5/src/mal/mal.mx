@@ -298,7 +298,7 @@ mal_export int mal_init();
 #define LIST_MAL_BIND   8       /* show binding information*/
 #define LIST_MAL_ALL    (LIST_MAL_INSTR | LIST_MAL_TYPE | LIST_MAL_BIND)
 
-#define MAL_SUCCEED (str) 0 /* apparently no error */
+#define MAL_SUCCEED ((str) 0) /* apparently no error */
 #define MALexception    "MALexception"
 
 #define STRUCT_ALIGNED

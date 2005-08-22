@@ -380,7 +380,7 @@ typedef struct Column_t {
 	BAT *bval;		/* set to NULL when scalar is meant */
 	ptr pval;
 	int base;		/* of first tuple */
-	int tabs;		/* field size in tab positions */
+	unsigned int tabs;	/* field size in tab positions */
 	str lbrk, rbrk;		/* column brackets */
 	str nullstr;		/* null representation */
 	int quoted;		/* escape charaters */
@@ -416,25 +416,35 @@ typedef struct Table_t {
 	Column *format;		/* remove later */
 	stream *fd;
 	BAT *pivot;
-	int rowwidth;		/* sum of columns used for mallocs */
+	unsigned int rowwidth;		/* sum of columns used for mallocs */
 	Column columns[1];
 } Tablet;
 
-extern BAT *TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr);
-extern BAT *TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, size_t nr);
-extern size_t TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
-extern void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr);
+#ifdef _MSC_VER
+#ifndef LIBTABLET
+#define tablet_export extern __declspec(dllimport)
+#else
+#define tablet_export extern __declspec(dllexport)
+#endif
+#else
+#define tablet_export extern
+#endif
+
+tablet_export BAT *TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr);
+tablet_export BAT *TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, size_t nr);
+tablet_export size_t TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
+tablet_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr);
 
 /* The low level routines are primarilly used by the SQL front-end.*/
-extern int TABLETcreate_bats(Tablet * as);
-extern size_t TABLETassign_BATs(Tablet * as, BAT *bats);
-extern int TABLETload_file(Tablet * as, bstream *b);
-extern BAT *TABLETcollect_bats(Tablet * as);
-extern void TABLETdestroy_format(Tablet * as);
-extern void TABLEToutput_file(Tablet * as, BAT *order, stream *s);
+tablet_export int TABLETcreate_bats(Tablet * as);
+tablet_export size_t TABLETassign_BATs(Tablet * as, BAT *bats);
+tablet_export int TABLETload_file(Tablet * as, bstream *b);
+tablet_export BAT *TABLETcollect_bats(Tablet * as);
+tablet_export void TABLETdestroy_format(Tablet * as);
+tablet_export void TABLEToutput_file(Tablet * as, BAT *order, stream *s);
 
-extern ptr *TABLETadt_frStr(void *extra, int type, char *s);
-extern int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
+tablet_export ptr *TABLETadt_frStr(void *extra, int type, char *s);
+tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
 
 #endif
 @c
@@ -459,10 +469,10 @@ static int isBATVector(Tablet * t);
 static void TABshowPage(Tablet * t);
 static int setTabwidth(Column * c);
 
-#define LINE(s, X)     { int n=X-1; stream_write(s, "#", 1, 1); while(--n>0)\
+#define LINE(s, X)     { int n=(int)(X)-1; stream_write(s, "#", 1, 1); while(--n>0) \
                                 stream_write(s, "-", 1, 1); \
                                 stream_printf(s, "#\n"); }
-#define TABS(s, X)     { int n=X; while(n-->0) stream_printf(s, "\t");  }
+#define TABS(s, X)     { int n=(int)(X); while(n-->0) stream_printf(s, "\t");  }
 @+
 The table formatting information is stored in a system wide table.
 Access is granted to a single client thread only.
@@ -2027,7 +2037,7 @@ void
 TABshowRow(Tablet * t)
 {
 	unsigned int i = 0;
-	int m = 0;
+	unsigned int m = 0;
 	char *buf = 0;
 	Column *c = t->columns + i;
 	unsigned int len;
@@ -2163,7 +2173,7 @@ setTabwidth(Column * c)
 	c->type = GDKstrdup(ATOMname(c->bval->ttype));
 	c->adt = c->bval->ttype;
 	buf = (char *) GDKmalloc(ret = strLen(title));
-	max = (int) MAX(strlen(c->type), ret);
+	max = MAX((int) strlen(c->type), ret);
 	if (c->nullstr)
 		max = MAX(max, strlen(c->nullstr));
 	if (c->lbrk)

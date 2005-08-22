@@ -27,8 +27,11 @@ $(SRCDIR)\Makefile.msc: "$(MONETDB_PREFIX)\lib\autogen\autogen.py" \
 
 all-msc: mal_config.h
 
-mal_config.h: winconfig.h
+mal_config.h: winconfig.h sysdefs.h
 	$(INSTALL) winconfig.h mal_config.h
+
+sysdefs.h: "$(SRCDIR)\sysdefs.h.in"
+	$(CONFIGURE) "$(SRCDIR)\sysdefs.h.in" > sysdefs.h
 
 unistd.h: 
 	$(ECHO) #ifndef UNISTD_H > unistd.h

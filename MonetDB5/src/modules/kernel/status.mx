@@ -559,10 +559,10 @@ The BAT grows. It should be compacted.
 str
 SYSioStatistics(int *ret)
 {
-	int i;
 	BAT *b;
 
 #ifdef HAVE_SYS_RESOURCE_H
+	int i;
 	struct rusage ru;
 
 	getrusage(RUSAGE_SELF, &ru);

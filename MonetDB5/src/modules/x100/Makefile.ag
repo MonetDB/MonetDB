@@ -11,7 +11,7 @@ LIBS = {
 	SOURCES = x100core.mx 
 
 	HEADERS = h 
-	SCRIPTS = mil ""
+	#SCRIPTS = mil ""
 	LIBS = $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)

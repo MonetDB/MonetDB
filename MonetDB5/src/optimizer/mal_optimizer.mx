@@ -445,37 +445,47 @@ For example,
 #define isSinglepoint(M,I)  ( (M)->var[I]->beginLifespan== \
                   (M)->var[I]->endLifespan)
 
-mal_export str MALoptimizer(Client c);
-mal_export int optimizerCheck(MalBlkPtr mb, str name, int actions, long usec);
-mal_export void resetOptimizerDebugger();
-mal_export str optimizeMALBlock(MalBlkPtr mb);
-mal_export void showOptimizerStep(int i, int flg);
-mal_export void showOptimizerHistory();
-mal_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export int ARoptimizerStep(MalBlkPtr mb, int pc);
-mal_export void ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias);
-mal_export str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str RXemptyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#ifdef _MSC_VER
+#ifndef LIBOPTIMIZER
+#define opt_export extern __declspec(dllimport)
+#else
+#define opt_export extern __declspec(dllexport)
+#endif
+#else
+#define opt_export extern
+#endif
 
-mal_export void setLifespan(MalBlkPtr mb);
-mal_export void debugLifespan(MalBlkPtr mb);
-mal_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
-mal_export int isUnsafeInstruction(InstrPtr q);
-mal_export int isUnsafeFunction(MalBlkPtr mb, InstrPtr q);
-mal_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
-mal_export int safetyBarrier(MalBlkPtr mb, InstrPtr p, InstrPtr q);
-mal_export int hasSameSignature(InstrPtr p, InstrPtr q);
-mal_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
-mal_export int isUpdated(MalBlkPtr mb, int pc);
-mal_export int hasCommonResults(InstrPtr p, InstrPtr q);
-mal_export int hasSideEffects(InstrPtr p, int strict);
+opt_export str MALoptimizer(Client c);
+opt_export int optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec);
+opt_export void resetOptimizerDebugger();
+opt_export str optimizeMALBlock(MalBlkPtr mb);
+opt_export void showOptimizerStep(int i, int flg);
+opt_export void showOptimizerHistory();
+opt_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export int ARoptimizerStep(MalBlkPtr mb, int pc);
+opt_export void ARreplaceAlias(MalBlkPtr mb, int pc, int pcl, int src, int alias);
+opt_export str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str RXemptyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+opt_export void setLifespan(MalBlkPtr mb);
+opt_export void debugLifespan(MalBlkPtr mb);
+opt_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
+opt_export int isUnsafeInstruction(InstrPtr q);
+opt_export int isUnsafeFunction(MalBlkPtr mb, InstrPtr q);
+opt_export int isInvariant(MalBlkPtr mb, int pcf, int pcl, int varid);
+opt_export int safetyBarrier(MalBlkPtr mb, InstrPtr p, InstrPtr q);
+opt_export int hasSameSignature(InstrPtr p, InstrPtr q);
+opt_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
+opt_export int isUpdated(MalBlkPtr mb, int pc);
+opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
+opt_export int hasSideEffects(InstrPtr p, int strict);
 
 @}
 @-
@@ -510,7 +520,7 @@ denotes the signature and can not be removed.
 #include "mal_namespace.h"
 
 int
-optimizerCheck(MalBlkPtr mb, str name, int actions, long usec)
+optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec)
 {
 	chkFlow(mb);
 	chkTypes(getClient()->nspace, mb);
@@ -1203,7 +1213,7 @@ str
 ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 
 	(void) stk;
 #ifdef DEBUG_MAL_OPTIMIZER
@@ -1299,7 +1309,7 @@ DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *varused;
 	int *pcused;
 	int actions = 0;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
@@ -1509,7 +1519,7 @@ ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Module scope = cntxt->nspace;
 	char *olderr;
 	int errlen, actions = 0;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
@@ -1712,7 +1722,7 @@ HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k, combis = 0, squeeze = 0;
 	InstrPtr p;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 
 	(void) stk;		/* fool compilers */
 
@@ -1785,7 +1795,7 @@ AMoptimizerStep(MalBlkPtr mb, int pc)
 {
 	int k, kn = 0;
 	InstrPtr p;
-	long clk = GDKusec();
+	lng clk = GDKusec();
 	int actions = 0;
 
 	p = getInstrPtr(mb, pc);
