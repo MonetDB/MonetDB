@@ -34,7 +34,7 @@ The routines below are linked with the kernel by default
 
 module optimizer;
 
-command prelude()
+pattern prelude()
 address optimizer_prelude
 comment "Initialize the optimizer";
 
@@ -210,8 +210,10 @@ for any unresolved references to the MALoptimizer and set the
 callback function.
 @c
 str
-optimizer_prelude()
+optimizer_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	(void) stk;
+	removeInstruction(mb, p);
 	updateScenario("MALoptimizer", (MALfcn) MALoptimizer);
 	return MAL_SUCCEED;
 }
