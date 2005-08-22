@@ -85,11 +85,11 @@ Table of contents
 * SQL Feature Overview::
 @menu
 * SQL Feature List::
-* SQL Session Variables
-* SQL EXPLAIN Statement::
-* SQL DEBUG Statement::
-* SQL Optimizer Control::
+* SET Statement::
+* EXPLAIN Statement::
+* DEBUG Statement::
 @end menu
+* Optimizer Control::
 * SQL Implementation Roadmap::
 @end menu
 

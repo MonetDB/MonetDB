@@ -60,11 +60,11 @@ features to analyse and your SQL code.
 * SQL Feature Overview::
 @menu
 * SQL Feature List::
-* SQL Session Variables::
-* SQL EXPLAIN Statement::
-* SQL DEBUG Statement::
-* SQL Optimizer Control::
+* SET Statement::
+* EXPLAIN Statement::
+* DEBUG Statement::
 @end menu
+* Optimizer Control::
 * Overlaying the BAT storage::
 * SQL Implementation Roadmap ::
 @end menu
@@ -178,7 +178,7 @@ primitives to simplify debugging of SQL programs. They are described
 separately. The list below provides a synopsis of the SQL features
 supported in the released version.
 
-@node SQL Feature List, SQL Session Variables, SQL Feature Overview, SQL
+@node SQL Feature List, SET Statement, SQL Feature Overview, SQL
 @subsection SQL-99 Feature list
 In this section we give an itemized list of the SQL-99 features
 supported in the current release.
@@ -198,8 +198,8 @@ Auto-increment keys (SQL 2003).
 @end itemize
 
 
-@node SQL Session Variables, SQL EXPLAIN Statement, SQL Feature List, SQL
-@subsection SQL Session Variables
+@node SET Statement, EXPLAIN Statement, SQL Feature List, SQL
+@subsection SET Statement
 
 MonetDB/SQL comes with a limited variable scheme.
 Globel, session based variables can be introduced using the
@@ -266,8 +266,8 @@ called 'sessions'. A snippet of its content is shown below:
 [ "factory",              "true",         "boolean",      0       ]
 @end example
 
-@node SQL EXPLAIN Statement, SQL DEBUG Statement, SQL Session Variables, SQL
-@subsection SQL EXPLAIN Statement
+@node EXPLAIN Statement, DEBUG Statement, SET Statement, SQL
+@subsection EXPLAIN Statement
 The intermediate code produced by the SQL Implementation compiler can be made 
 visible using the @code{explain} statement modifier. 
 It gives a detailed description of the actions taken to produce the
@@ -337,8 +337,8 @@ The query cache disappears when the server is brought to a halt.
 When/how is the cache cleared? Can you list elements in the
 cache directly, e.g @code{explain;} or @code{explain sqlcache} or @code{explain sqlcache.sql0;}
 
-@node SQL DEBUG Statement, SQL Optimizer Control, SQL EXPLAIN Statement, SQL
-@subsection SQL DEBUG Statement
+@node DEBUG Statement, Optimizer Control, EXPLAIN Statement, SQL
+@subsection DEBUG Statement
 
 The default execution engine for SQL statements is 
 the MAL interpreter, which comes with a debugger (See @ref{The MAL Debugger})
@@ -356,8 +356,8 @@ Using the MAL debugger it is also possible to inspect
 the content of the intermediate results. See @ref{Runtime Inspection} for
 examples.
 
-@node SQL Optimizer Control, Overlaying the BAT storage, SQL DEBUG Statement,  SQL
-@section SQL Optimizer Control
+@node Optimizer Control, Overlaying the BAT storage, DEBUG Statement,  SQL
+@section Optimizer Control
 The code produced by MonetDB/SQL is massaged by several code optimizers
 to arrive at the best possible plan for evaluation.
 However, for development purposes and the rare case that more control
@@ -379,7 +379,7 @@ The final result the optimizer steps become visible using the @code{explain}
 statement modifier. Alternatively, the optimizer script line may include
 a call to @code{optimizer.showPlan();}.
 
-@node Overlaying the BAT storage,SQL Implementation Roadmap, SQL Optimizer Control,  SQL
+@node Overlaying the BAT storage,SQL Implementation Roadmap, Optimizer Control,  SQL
 @section Overlaying the BAT storage
 The SQL implementation exploits many facilities of the underlying
 MonetDB kernel. Most notably, its efficient column-wise storage

@@ -104,7 +104,7 @@ end main;	# 7
 [ 70@0,	  "pattern",	  "optimizer",	  "partitionedQuery",		  "():str address QOTBPToptimizer;"										  ]
 [ 71@0,	  "pattern",	  "optimizer",	  "peephole",			  "(mod:str,fcn:str):str address QOTPHoptimizerCALL;"								  ]
 [ 72@0,	  "pattern",	  "optimizer",	  "peephole",			  "():str address QOTPHoptimizer;"										  ]
-[ 73@0,	  "command",	  "optimizer",	  "prelude",			  "():void address optimizer_prelude;"										  ]
+[ 73@0,	  "pattern",	  "optimizer",	  "prelude",			  "():void address optimizer_prelude;"										  ]
 [ 74@0,	  "pattern",	  "optimizer",	  "reduce",			  "(mod:str,fcn:str):str address QOTMRoptimizerCALL;"								  ]
 [ 75@0,	  "pattern",	  "optimizer",	  "reduce",			  "():str address QOTMRoptimizer;"										  ]
 [ 76@0,	  "pattern",	  "optimizer",	  "showPlan",			  "():void address QOTshowPlan;"										  ]
