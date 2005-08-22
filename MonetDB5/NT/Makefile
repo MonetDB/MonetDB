@@ -10,7 +10,7 @@ prefix = $(MAKEDIR)
 
 !INCLUDE "$(TOPDIR)\rules.msc"
 
-all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h
+all: "$(SRCDIR)\Makefile.msc" all-msc unistd.h RunMserver.bat
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" all
 
 check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
@@ -32,6 +32,9 @@ mal_config.h: winconfig.h sysdefs.h
 
 sysdefs.h: "$(SRCDIR)\sysdefs.h.in"
 	$(CONFIGURE) "$(SRCDIR)\sysdefs.h.in" > sysdefs.h
+
+RunMserver.bat: "$(SRCDIR)\RunMserver.bat.in"
+	$(CONFIGURE) "$(SRCDIR)\RunMserver.bat.in" > RunMserver.bat
 
 unistd.h: 
 	$(ECHO) #ifndef UNISTD_H > unistd.h

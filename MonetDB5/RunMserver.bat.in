@@ -1,0 +1,13 @@
+rem @echo off
+
+setlocal
+
+set builddir=@XMONETDB_BUILD@
+
+set MOD_PATH=%builddir%\NT\src\applications\datacell\.libs;%builddir%\NT\src\compiler\.libs;%builddir%\NT\src\mil\.libs;%builddir%\NT\src\modules\atoms\.libs;%builddir%\NT\src\modules\kernel\.libs;%builddir%\NT\src\modules\mal\.libs;%builddir%\NT\src\modules\mil\.libs;%builddir%\NT\src\optimizer\.libs;%builddir%\NT\src\scheduler\.libs
+set PATH=%builddir%\src\tools;%PATH%
+set PATH=%MOD_PATH%;%builddir%\src\mal;%PATH%
+
+"%builddir%\src\tools\Mserver.exe" "--config=%builddir%\conf\MonetDB5.conf" --set "monet_mod_path=%MOD_PATH%" %*
+
+endlocal

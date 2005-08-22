@@ -57,7 +57,7 @@ For the time being we assume that all commands are statically linked.
 #define RTLD_NOW_REPORT_ERROR   8
 #endif
 
-/*#define DEBUG_MAL_LINKER  */
+#define DEBUG_MAL_LINKER2
 #define MONET64 1
 mal_export MALfcn getAddress(str fcnname, int silent);
 mal_export char *MSP_locate_script(const char *mod_name);

@@ -15,7 +15,7 @@ lib_mal = {
 	mal_builder.mx mal_assert.mx mal_readline.mx
 
 	HEADERS = h 
-	#SCRIPTS = mal
+	SCRIPTS = mal
 	LIBS = $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(READLINE_LIBS)
