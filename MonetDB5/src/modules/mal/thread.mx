@@ -86,6 +86,8 @@ comment "Run a function independently";
 
 @c
 #include "thread.h"
+mal_export str
+CMDthreadWait(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str
 CMDthreadWait(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
@@ -95,6 +97,8 @@ CMDthreadWait(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
+mal_export str
+CMDthreadSuspend(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str
 CMDthreadSuspend(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
@@ -104,6 +108,8 @@ CMDthreadSuspend(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return throwMessage("thread.suspend", "not yet implemented\n");
 }
 
+mal_export str
+CMDthreadWaitList(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str
 CMDthreadWaitList(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
@@ -113,6 +119,8 @@ CMDthreadWaitList(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return throwMessage("thread.wait", "not yet implemented\n");
 }
 
+mal_export str
+CMDthreadIsDead(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str
 CMDthreadIsDead(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
@@ -122,6 +130,8 @@ CMDthreadIsDead(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return throwMessage("thread.isDead", "not yet implemented\n");
 }
 
+mal_export str
+CMDthreadKill(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str
 CMDthreadKill(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
@@ -131,6 +141,8 @@ CMDthreadKill(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return throwMessage("thread.kill", "not yet implemented\n");
 }
 
+mal_export str
+CMDthreadTerminate(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str
 CMDthreadTerminate(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
@@ -140,6 +152,8 @@ CMDthreadTerminate(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return throwMessage("thread.terminate", "not yet implemented\n");
 }
 
+mal_export str
+CMDthreadExec(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 str
 CMDthreadExec(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {

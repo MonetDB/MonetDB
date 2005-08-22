@@ -116,7 +116,7 @@ typedef ptr Bstream;
 #endif /*_STREAMS_H_*/
 @c
 #include <mal.h>
-#include "stream.h"
+#include "streams.h"
 #include <stdio.h>
 
 /*

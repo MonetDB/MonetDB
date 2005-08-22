@@ -55,7 +55,7 @@ LIBS = {
 	SEP = _
 	SOURCES = \
 		calc.mx bat.mx algebra.mx status.mx unix.mx \
-		mapi.mx mmath.mx lock.mx alarm.mx  \
+		mapi.mx mmath.mx lock.mx sema.mx alarm.mx  \
 		batcalc.mx aggrX3.mx
 
 	HEADERS = h 
@@ -69,14 +69,14 @@ LIBS = {
 #	DIR = pkgdatadir/docs/modules/kernel
 #	SOURCES = \
 #		calc.mx bat.mx algebra.mx status.mx unix.mx \
-#		mapi.mx mmath.mx lock.mx alarm.mx \
+#		mapi.mx mmath.mx lock.mx sema.mx alarm.mx \
 #		batcalc.mx group.mx aggrX3.mx  
 #}
 
 scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = calc.mx bat.mx algebra.mx status.mx unix.mx \
-		mapi.mx mmath.mx lock.mx alarm.mx batstr.mx \
+		mapi.mx mmath.mx lock.mx sema.mx alarm.mx batstr.mx \
 		batcolor.mx batcalc.mx group.mx aggrX3.mx array.mx
 }
 

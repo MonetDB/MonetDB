@@ -180,18 +180,19 @@ mal_export void updateScenario(str nme, MALfcn fcn);
 @c
 #include "mal_scenario.h"
 #include "mal_linker.h"		/* for getAddress() */
+#include "mal_client.h"
 
 struct SCENARIO scenarioRec[MAXSCEN] = {
 	{"mal", "mal",
 	 0, 0,			/* hardwired MALinit*/
 	 0, 0,			/* no MALexit */
 	 0, 0,			/* no MALinitClient */
-	 "MALexitClient", 0,
-	 "MALreader", 0, 0,
-	 "MALparser", 0, 0,
-	 "MALoptimizer", 0, 0,	/* initialized upon module load */
-	 "MALscheduler", 0, 0,	/* initialized upon module load */
-	 "MALengine", 0, 0, 0},
+	 "MALexitClient", (MALfcn) & MALexitClient,
+	 "MALreader", (MALfcn) &MALreader, 0,
+	 "MALparser", (MALfcn) &MALparser, 0,
+	 0, 0, 0,	
+	 0, 0, 0,
+	 "MALengine", (MALfcn) &MALengine, 0, 0},
 	{"mil","mil",
 	 "MILinit", 0,
 	 "MILexit", 0,
@@ -262,7 +263,7 @@ getFreeScenario()
 @-
 @= initScen
 if( @1->@2){
-    if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress( @1->@2,1);
+    if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress(0, @1->@2,1);
 }
 @-
 A scenario is initialized only once per session. 
@@ -281,7 +282,8 @@ initScenario(Client c, Scenario s)
 	if (s->initSystem && s->initSystemCmd == 0) {
 		/* prepare for conclicts */
 		mal_set_lock(mal_contextLock, "Scenario");
-		s->initSystemCmd = (MALfcn) getAddress(s->initSystem, 0);
+		if( s->initSystemCmd == 0)
+			s->initSystemCmd = (MALfcn) getAddress(0,s->initSystem, 0);
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		}

@@ -17,7 +17,8 @@ lib_optimizer = {
 	#SCRIPTS = mal
 	LIBS = ../mal/libmal $(MONETDB_LIBS) -lbat -lstream \
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
-                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
+                $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) 
+	LDFLAGS = -lm
 }
 
 #doc_ml = {

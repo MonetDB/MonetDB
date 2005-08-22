@@ -58,6 +58,7 @@ typedef struct SCOPEDEF {
 	Symbol *subscope; 		/* type dispatcher table */
 	Box box;    			/* module related objects */
 	int isAtomModule; 		/* atom module definition ? */
+	void *dll;				/* dlopen handle */
 	str help;   			/* short description of module functionality*/
 } *Module, ModuleRecord;
 

@@ -2038,6 +2038,7 @@ TABshowRow(Tablet * t)
 {
 	unsigned int i = 0;
 	unsigned int m = 0;
+	int zero = 0;
 	char *buf = 0;
 	Column *c = t->columns + i;
 	unsigned int len;
@@ -2052,7 +2053,8 @@ TABshowRow(Tablet * t)
 		u = 0;
 		v = 0;
 		if (c->pval)
-			(*BATatoms[c->adt].atomToStr) (&buf, &m, c->pval);
+			(*BATatoms[c->adt].atomToStr) (&buf, &zero, c->pval);
+		m= (unsigned int) zero;
 		if (strcmp(buf, "nil") == 0 && c->nullstr && strlen(c->nullstr) < m)
 			strcpy(buf, c->nullstr);
 		if (c->precision) {

@@ -1,4 +1,4 @@
-@' The contents of this file are subject to the MonetDB Public
+
 @' License Version 1.0 (the "License"); you may not use this file
 @' except in compliance with the License. You may obtain a copy of
 @' the License at
@@ -70,7 +70,7 @@ The Mserver options have the following meaning:
 #include "mal_client.h"
 #include "mal_function.h"
 
-#define MONET_GLOBAL_DEBUG
+/* #define MONET_GLOBAL_DEBUG */
 #endif /* _MONET_GLOBAL_H_ */
 @c
 #include "Mserver.h"
@@ -251,7 +251,7 @@ monet_options.mx.in
 int
 main(int argc, char **av)
 {
-	char buf[BUFSIZ], *prog = *av;
+	char *prog = *av;
 	opt *set = NULL;
 	int i, debug = 0, setlen = 0, listing = 0;
 	str dbinit = NULL;
@@ -433,5 +433,4 @@ Time to execute the script files. Start with the init command[todo]
 	/* MT_global_exit(0);  */
 	return 0;
 }
-
 @}

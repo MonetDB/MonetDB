@@ -1101,7 +1101,7 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	@:fcnHeader@
 	getInstrPtr(curBlk,0)->token= kind;
 	curPrg->kind = kind;
-	modnme= modnme? modnme:"user";
+	modnme= modnme? modnme:cntxt->nspace->name;
 	insertSymbol(findModule(cntxt->nspace, 
 			putName(modnme,strlen(modnme))), curPrg);
 	trimMalBlk(curBlk);
@@ -1136,7 +1136,7 @@ This scheme is intended for just-in-time compilation.
 		if( moduleId(curInstr)) freeModuleName(curInstr);
 		setModuleScope(curInstr, 
 			findModule(cntxt->nspace, putName(modnme,strlen(modnme))) );
-		curInstr->fcn = getAddress(nme,0);
+		curInstr->fcn = getAddress(modnme, nme, 0);
 		curBlk->binding = nme;
 		if( cntxt->nspace->isAtomModule) 
 			malAtomProperty(curBlk, curInstr);
@@ -1173,7 +1173,7 @@ MalBlkPtr parseFunction(Client cntxt, int kind){
 			return 0;
 		}
 		nme = idCopy(cntxt,i);
-		curInstr->fcn = getAddress(nme,0);
+		curInstr->fcn = getAddress(modnme,nme,0);
 		skipSpace(cntxt);
 	}
 	/* block is terminated at the END statement */

@@ -38,6 +38,7 @@ include crackers;
 include mdb;
 include unix;
 include lock;
+include sema;
 include alarm;
 include mmath;
 include streams;

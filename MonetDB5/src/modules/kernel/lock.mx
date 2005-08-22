@@ -47,30 +47,12 @@ command tostr(l:lock)
 address lockToStr
 comment "Overloaded atom function";
 
-@+ semaphores
-@mal
-atom sema:ptr;
-
-command create(init:int ) :sema 
-address SEMAcreate
-comment "Create an unset sema, with an initial value";
-command down(s:sema) 
-address SEMAdown
-comment "Decrement the semaphpore if >0; else block";
-command up(s:sema) 
-address SEMAup
-comment "Increment the semaphore";
-command destroy(s:sema) 
-address SEMAdestroy
-comment "Destroy a semaphore";
 @{
 @* Implementation
 @c
 #include <gdk.h>
 typedef ptr lock;
-typedef ptr sema;
 typedef ptr monet_lock;
-typedef ptr monet_sema;
 
 int
 create_lock(monet_lock *l)
@@ -107,33 +89,6 @@ destroy_lock(monet_lock *l)
 	return GDK_SUCCEED;
 }
 
-int
-create_sema(monet_sema *s, int *init)
-{
-	*s = MT_create_sema(*init);
-	return GDK_SUCCEED;
-}
-
-int
-up_sema(monet_sema *s)
-{
-	MT_up_sema((MT_Sema) *s, "up_sema");
-	return GDK_SUCCEED;
-}
-
-int
-down_sema(monet_sema *s)
-{
-	MT_down_sema((MT_Sema) *s, "down_sema");
-	return GDK_SUCCEED;
-}
-
-int
-destroy_sema(monet_sema *s)
-{
-	MT_destroy_sema((MT_Sema) *s);
-	return GDK_SUCCEED;
-}
 
 @}
 @-
@@ -188,37 +143,6 @@ str
 LCKdestroy(int *res, monet_lock *l)
 {
 	destroy_lock(l);
-	*res = 1;
-	return MAL_SUCCEED;
-}
-
-str
-SEMAcreate(monet_sema *res, int *init)
-{
-	create_sema(res, init);
-	return MAL_SUCCEED;
-}
-
-str
-SEMAup(int *res, monet_sema *s)
-{
-	up_sema(s);
-	*res = 1;
-	return MAL_SUCCEED;
-}
-
-str
-SEMAdown(int *res, monet_sema *s)
-{
-	down_sema(s);
-	*res = 1;
-	return MAL_SUCCEED;
-}
-
-str
-SEMAdestroy(int *res, monet_sema *s)
-{
-	destroy_sema(s);
 	*res = 1;
 	return MAL_SUCCEED;
 }
