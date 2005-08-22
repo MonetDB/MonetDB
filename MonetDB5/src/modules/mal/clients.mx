@@ -261,8 +261,8 @@ CLTsetDebug(int *ret, int *flg)
 str
 CLTsetHistory(int *ret, str *fname)
 {
-	(void) ret;
 	Client c= getClient();
+	(void) ret;
 	if( c->history){
 #ifdef HAVE_LIBREADLINE
 		write_history(c->history);

@@ -338,6 +338,7 @@ readConsole(Client cntxt){
 
 int 
 readConsole(Client cntxt){
+	(void) cntxt;
 	return -1;
 }
 #endif /* HAVE_LIBREADLINE */
