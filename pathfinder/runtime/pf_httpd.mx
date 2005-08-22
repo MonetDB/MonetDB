@@ -33,8 +33,8 @@
 
 .USE pathfinder;
 
-.COMMAND start_http_server(int port) : void = CMDstart_http_server;
-"start HTTP server on port 'port'"
+.COMMAND httpd_start(int port) : void = CMDstart_http_server;
+"start the HTTP server for remote XQuery on the specified port"
 
 .PRELUDE = pf_httpd_prelude;
 .EPILOGUE = pf_httpd_epilogue;
@@ -44,13 +44,11 @@
 @mil
 
 PROC pf_httpd_start(int port) : void {
-    fork(start_http_server(port));
+    fork(httpd_start(port));
 }
 ADDHELP("pf_httpd_start", "zhang", "July 2005",
-        "PARAMETERS:\n\
-        port to which port the HTTP server should listen (default port: 8080).\n\
-        DESCRIPTION:\n\
-        start the HTTP server for xquery.",
+        "DESCRIPTION:\n\
+        start the HTTP server for xquery on the specified port.",
         "pf_httpd");
 
 PROC pf_httpd_start() : void {
@@ -58,7 +56,7 @@ PROC pf_httpd_start() : void {
 }
 ADDHELP("pf_httpd_start", "zhang", "July 2005",
         "DESCRIPTION:\n\
-        start the HTTP server for xquery (default port: 8080).",
+        start the HTTP server for xquery on default port 8080.",
         "pf_httpd");
 
 @c
@@ -82,48 +80,191 @@ ADDHELP("pf_httpd_start", "zhang", "July 2005",
 #include "shttpd.h"
 
 static int
-handle_xquery(struct shttpd_callback_arg *arg)
-{
-    int n = 0, ret;
-    const char *query;
-    char **qres = GDKmalloc(sizeof(char *));
+send_web_form(struct shttpd_callback_arg *arg){
+    int n;
 
-    if( (query = shttpd_get_var(arg->connection, "req_xquery")) != NULL ) {
-        ret = CMDxquery(qres, "xml", (char*)query);		/* execute XQuery */
-        if (ret == GDK_SUCCEED) {
-            /* we might want to display the plain XML result
-             * instead of having it rendered as HTML...      
-             */
-            n = snprintf(arg->buf + n, arg->buflen - n, "%s%s",
-                    "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/xml\r\n"
-                    "\r\n",
-                    *qres);
-        } else {
-            n = snprintf(arg->buf + n, arg->buflen - n, "%s",
-                    "HTTP/1.1 500 Internal server error\r\n"
-                    "\r\n");
-        } 
-    } else {
-        n += snprintf(arg->buf + n, arg->buflen - n, "%s",
-                "HTTP/1.1 200 OK\r\n"
-                "Content-Type: text/html\r\n"
-                "\r\n"
-                "<html><head><title>"
-                "XQuery submit form"
-                "</title></head>");
-
-        n += snprintf(arg->buf + n, arg->buflen - n, "%s",
-                "<body>"
-                "<form method=\"post\">"
-                "Enter your XQuery:<br/>"
-                "<input type=\"text\" name=\"req_xquery\"/><br/>"
-                "<input type=\"submit\" value=\"Execute query\"/>"
-                "</form>"
-                "</body></html>");
-    }
+    n = snprintf(arg->buf, arg->buflen, "%s",
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/html\r\n"
+            "\r\n"
+            "<html>"
+            "<head><title>"
+            "XQuery submit form"
+            "</title></head>"
+            "<body>"
+            "<form method=\"post\">"
+            "Enter your XQuery:<br/>"
+            "<input type=\"text\" name=\"req_xquery\"/><br/>"
+            "<input type=\"submit\" value=\"Execute query\"/>"
+            "</form>"
+            "</body></html>");
     arg->buf[n] = '\0';
-    return (n);
+    return n;
+}
+
+static int
+handle_request(struct shttpd_callback_arg *arg, const char *msg)
+{
+    /* TODO: not yet implemented */
+    (void)arg;
+    (void)msg;
+    return 0;
+}
+
+static int
+print_soap_err( struct shttpd_callback_arg *arg,
+                char *content, int size, int httpcode, char *httpmsg, 
+                char *soapcodev, char *soapreasont)
+{
+    int n, len;
+
+    len = snprintf(content, size, "%s%s%s%s%s",
+            "<?xml version='1.0' ?>"
+            "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\"\n"
+            "             xmlns:xml=\"http://www.w3.org/XML/1998/namespace\">\n"
+            "  <env:Body>\n"
+            "    <env:Fault>\n"
+            "      <env:Code>\n"
+            "        <env:Value>",
+            soapcodev,
+            "</env:Value>\n"
+            "      </env:Code>\n"
+            "      <env:Reason>\n"
+            "        <env:Text xml:lang=\"en\">",
+            soapreasont,
+            "</env:Text>\n"
+            "      </env:Reason>\n"
+            "    </env:Fault>\n"
+            "  </env:Body>\n"
+            "</env:Envelope>\n");
+
+    n = snprintf(arg->buf, arg->buflen, "%s%d%s%s%s%d%s%s",
+            "HTTP/1.1 ",
+            httpcode,
+            " ",
+            httpmsg,
+            "\r\n"
+            "Content-Type: application/soap+xml; charset=\"utf-8\""
+            "Content-Length: ",
+            len,
+            "\r\n\r\n",
+            content);
+
+    arg->buf[n] = '\0';
+    return n;
+}
+
+static int
+handle_soap_request(struct shttpd_callback_arg *arg, const char *msg)
+{
+    int n = 0, len = 0, ret = 0;
+    const char *qend = NULL;
+    char *query = NULL, *content = GDKmalloc(BUFSIZ);
+    char **qres = GDKmalloc(sizeof(char *));
+    char tmpfname[64]; /* tmp. filename local in <dbfarm>/<dbname> */
+    Stream outbuf = NULL; /* tmp. output stream (->tmpfname) */
+    BAT **tmpbats = GDKmalloc(sizeof(BAT *));
+
+    /* Save the (SOAP) message in a temporary file */
+    snprintf(tmpfname, 64, "%d-%d-" LLFMT "-xquery-remote-req.xml",
+            (int)getpid(), THRgettid(), GDKusec());
+    outbuf = open_wastream(tmpfname);
+    len = strlen(msg);
+    ret = stream_write(outbuf, msg, 1, len); close_stream(outbuf);
+    if (ret != len) {
+        n = print_soap_err(arg, content, BUFSIZ, 500, "Internal server error",
+                "env:Receiver", "Receiver failed to parse request");
+        goto finish;
+    } 
+
+    /* Parse the SOAP message to see if it at least 
+     * contains a valid XML structure */
+    ret = CMDshred2bats(tmpbats, tmpfname, "");
+    if (ret == GDK_FAIL) {
+        n = print_soap_err(arg, content, BUFSIZ, 404, "Bad Request",
+                "env:Sender", "Invalid SOAP message");
+        goto finish;
+    }
+
+    /* Get the XQuery out of the SOAP message
+     * TODO: use CMDxquery to get the query when
+     *       the HTTP POST message is getting complecated,
+     *       i.e. parameters are used.
+     *       Do we then need to save/materialize "tmpbats"?
+     */
+    msg = strstr(msg, "<query>"); msg += 8;
+    qend = strstr(msg, "</query>");
+    len = qend - msg;
+    query = GDKmalloc(len+1);
+    memcpy(query, msg, len);
+    query[len] = 0;
+
+    /* Finally execute the query */
+    ret = CMDxquery(qres, "xml", (char*)query);
+    if (ret == GDK_FAIL) {
+        n = print_soap_err(arg, content, BUFSIZ, 404, "Bad Request",
+                "env:Sender", "Invalid XQuery");
+        goto finish;
+    } 
+
+    /* Send back the results in a SOAP envelope */
+    if ( (len = strlen(*qres)) > (BUFSIZ - 1024)){
+        GDKfree(content);
+        content = GDKmalloc(len + 1024);
+    }
+    len = snprintf(content, BUFSIZ, "%s%s%s",
+            "<?xml version='1.0' ?>"
+            "<env:Envelope xmlns:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
+            "  <env:Header>\n"
+            "  </env:Header>\n"
+            "  <env:Body>\n"
+            "    <results>\n",
+            *qres,
+            "\n"
+            "    </results>\n"
+            "  </env:Body>\n"
+            "</env:Envelope>\n");
+
+    n = snprintf(arg->buf, arg->buflen, "%s%d%s%s",
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: application/soap+xml; charset=\"urf-8\"\r\n"
+            "Content-Length: ",
+            len,
+            "\r\n\r\n",
+            content);
+
+    arg->buf[n] = '\0';
+    goto finish;
+
+finish:
+    GDKfree(qres); GDKfree(tmpbats); GDKfree(content);
+    if (query) GDKfree(query);
+    unlink(tmpfname);
+    return n;
+}
+
+static int
+serve_req(struct shttpd_callback_arg *arg)
+{
+    const char *msg = NULL;
+    int n = 0;
+
+    msg = shttpd_get_post_msg(arg->connection);
+    if (msg == NULL){
+        /* We got an initial request from a web browser.
+         * Send back the form in which an XQeury can be entered
+         */
+        n = send_web_form(arg);
+    } else if (strstr(msg, "<?xml") == msg) {
+        /* If the request begins with "<?xml", it is in the form
+         * of a SOAP message
+         */
+        n = handle_soap_request(arg, msg);
+    } else {
+        /* The request is a normal HTTP request */
+        n = handle_request(arg, msg);
+    }
+    return n;
 }
 
 void
@@ -137,7 +278,7 @@ CMDstart_http_server(int* port)
     shttpd_init(NULL);
 
     /* Register call back function */
-    shttpd_register_url("/exec_xquery", &handle_xquery, NULL);
+    shttpd_register_url("/exec_xquery", &serve_req, NULL);
 
     /* Open listening socket */
     sock = shttpd_open_port(*port);
