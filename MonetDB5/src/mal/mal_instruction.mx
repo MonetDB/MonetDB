@@ -1348,7 +1348,7 @@ retryConstant:
                 break;
             } 
             l= strtoll(val,NULL,0);
-            if( l> INT_MAX || l < int_nil){
+            if( l> INT_MAX || l < INT_MIN){
                 if(type==TYPE_int)
                     setVarType(mb,idx, TYPE_lng);
                 vr->vtype= TYPE_lng;
@@ -1358,13 +1358,24 @@ retryConstant:
             }
             break;}
     case TYPE_void: 
-    case TYPE_oid: {
             vr->vtype= type;
             if( tonil) {
                 vr->val.oval = oid_nil;
                 break;
             }
-            vr->val.oval= (oid)strtol(val,NULL,10);
+            vr->val.oval= (oid) strtol(val,NULL,10);
+            break; 
+    case TYPE_oid: { long long int l;
+            vr->vtype= type;
+            if( tonil) {
+                vr->val.oval = oid_nil;
+                break;
+            }
+            l= strtoll(val,NULL,0);
+            if( l> GDK_oid_max || l< 0){
+				vr->val.oval = oid_nil;
+            } else 
+                vr->val.oval= (int)l;
             break; }
     case TYPE_flt: {double d= strtod(val,NULL); 
             if( tonil) vr->val.fval = flt_nil; 
