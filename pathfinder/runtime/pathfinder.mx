@@ -44,7 +44,7 @@
 .USE streams;
 
 .BUILTIN xquery_server(Stream in, Stream out) : void = CMDxquery_server;
-"read xquery from stream, and print on a stream."
+ "read xquery from stream, and print on a stream."
 
 .COMMAND xquery(str, str) : str = CMDxquery;
  "xquery execution.\
@@ -52,8 +52,9 @@
  or:  printf(xquery(\"xml\", str));"
 
 .COMMAND xquery_remote(str location, int port, str query, str params) : str = CMDxquery_remote;
- "xquery execution at remote host.\
- Usage: xquery_remote(<hostname>, <portnr>, query)"
+ "send a xquery <query> together with the <params> to \"<location>:<port>\"\
+ and let it execute at the remote host.\
+ Usage: xquery_remote(<hostname>, <portnr>, <query>, <params>)"
 
 .PRELUDE = pathfinder_prelude;
 .EPILOGUE = pathfinder_epilogue;
@@ -106,8 +107,26 @@ PROC xquery_remote(str location, str query, str params) : str {
 }
 ADDHELP("xquery_remote", "zhang", "August 2005",
         "DESCRIPTION:\n\
-        execute xquery on a remote host.",
+        Usage: xquery_remote(<host>, <query>, <parameters>)\n\
+        Send <query> with the <parameters> to \"<host>:8080\" to let it execute",
         "pathfinder");
+
+PROC xquery_remote(str location, str query) : str {
+    return xquery_remote(location, 8080, query, "");
+}
+ADDHELP("xquery_remote", "zhang", "August 2005",
+        "Usage: xquery_remote(<host>, <query>)\n\
+        Send <query> with no parameters to \"<host>:8080\" to let it execute",
+        "pathfinder");
+
+PROC xquery_remote(str query) : str {
+    return xquery_remote("localhost", 8080, query, "");
+}
+ADDHELP("xquery_remote", "zhang", "August 2005",
+        "Usage: xquery_remote(<query>)\n\
+        Send <query> with no parameters to \"localhost:8080\" to let it execute",
+        "pathfinder");
+
 
 #############################################
 # User-level document management functions:
@@ -1205,10 +1224,20 @@ CMDxquery_remote(str *res, str location, int *port, str query, str params)
         return GDK_FAIL;
     }
 
-    /* Currently, only send the query in a HTTP_POST request. 
-     * No SOAP yet, needs to adapt the implementation of the
-     * receiver to parse SOAP+XML */
-    len = snprintf(content, csize, "req_xquery=%s", query);
+    len = snprintf(content, csize, "%s\n%s\n%s",
+            "<?xml version='1.0' ?>\n"
+            "<env:Envelope xmlnl:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
+            "<env:Header>\n"
+            "<r:remotequeryrequest\n"
+            "    env:encodingStyle=\"http://example.com/encoding\"\n"
+            "    env:mustUnderstand=\"true\" />\n"
+            "</env:Header>\n"
+            "<env:Body>\n"
+            "<query>",
+            query,
+            "</query>\n"
+            "</env:Body>\n"
+            "</env:Envelope>\n");
 
     wstream = socket_wastream(sock, "http_write");
     n = snprintf(buf, bufsize,
@@ -1235,8 +1264,7 @@ CMDxquery_remote(str *res, str location, int *port, str query, str params)
      */
     rstream = socket_rastream(sock, "http_read");
     n = 0;
-    /* while ((ret = stream_read(rstream, buf+n, 1, bufsize-n)) > 0) {*/
-    while ((ret = read(sock, (void *)(buf+n), bufsize-n)) > 0){
+    while ((ret = stream_read(rstream, buf+n, 1, bufsize-n)) > 0) {
         n += ret;
         buf[n] = '\0';
         assert(n <= bufsize);
@@ -1246,6 +1274,11 @@ CMDxquery_remote(str *res, str location, int *port, str query, str params)
         }
     }
     stream_close(wstream); stream_close(rstream);
+
+    /* TODO: check if the received message body indead has the same length
+     *       as specified in the Content-Length included in the response
+     *       message.
+     */
     if (ret < 0 || n < MIN_RESPONSE_SIZE || strstr(buf, "\r\n\r\n") == NULL){	
         GDKerror("xquery_remote: failed to get response\n");
         GDKfree(buf); 
@@ -1256,15 +1289,22 @@ CMDxquery_remote(str *res, str location, int *port, str query, str params)
     buf = (char *)GDKrealloc(buf, bufsize); /* release unused memory */
     strptr = strchr(buf, ' '); strptr++; /* find the first whitespace */
     if (strptr[0] != '2' || strptr[1] != '0' || strptr[2] != '0'){
-        /* Find the end of the first HTTP header line */
+        /* Find the end of the first HTTP header line 
+         * and print the HTTP error code + message */
         i = 0;
         while (strptr[i] != '\r') i++;
         strptr[i] = '\0';
-        GDKerror("xquery_remote: remote query execution failed.\n%s\n", strptr);
+        GDKerror("xquery_remote: error occured while execute query remotely.\n");
+        GDKerror("%s\n\n", strptr);
+
+        /* Print the SOAP fault message */
+        strptr = strstr(strptr+1, "\r\n\r\n"); strptr += 4;
+        GDKerror("%s\n", strptr);
         GDKfree(buf);
         return GDK_FAIL;
     }
 
+    /* Copy the response SOAP message to results buffer */
     strptr = strstr(strptr, "\r\n\r\n");
     strptr += 4;
     len = buf + bufsize - strptr;
@@ -1272,6 +1312,7 @@ CMDxquery_remote(str *res, str location, int *port, str query, str params)
     memcpy(content, strptr, len);
     GDKfree(buf);
     *res = content;
+
     return GDK_SUCCEED;
 }
 
