@@ -1149,13 +1149,13 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
 int
 setup_connection(str location, int port)
 {
-    int s_addr, sock, err=-1;
+    int addr, sock, err=-1;
     struct sockaddr_in sockaddr;
     struct hostent *resolv = NULL;
 
     errno = 0;
     if (isdigit((int)location[0])) {
-        if ((s_addr = inet_addr(location)) < 0) {
+        if ((addr = inet_addr(location)) < 0) {
             GDKerror("setup_connection: invalid IP addressi \"%s\": %s\n",
                      location, errno ? strerror(errno) : "");
             return err;
@@ -1166,12 +1166,12 @@ setup_connection(str location, int port)
                      location, errno ? strerror(errno) : "");
             return err;
         }
-        s_addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
+        addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
     }
 
     sockaddr.sin_family = AF_INET;
     sockaddr.sin_port   = htons(port);
-    sockaddr.sin_addr.s_addr = s_addr;
+    sockaddr.sin_addr.s_addr = addr;
     memset(&(sockaddr.sin_zero), '\0', 8);
 
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
