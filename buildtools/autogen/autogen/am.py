@@ -20,7 +20,6 @@ from codegen import find_org
 
 #automake_ext = ['c', 'cc', 'h', 'y', 'yy', 'l', 'll', 'glue.c']
 automake_ext = ['c', 'cc', 'h', 'tab.c', 'tab.cc', 'tab.h', 'yy.c', 'yy.cc', 'glue.c', 'proto.h', 'py.c', 'pm.c', '']
-script_ext = ['mil']
 am_assign = "+="
 
 def split_filename(f):
