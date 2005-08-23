@@ -1704,7 +1704,6 @@ we know that the head is oid (or a small version) here..
 set result bat properties
 @c
 	ret_val = 0;
-	BATkey(ret, TRUE);
 	ret->tsorted = 0;
 
 	if (histo) {
@@ -1719,6 +1718,8 @@ set result bat properties
 	} else {
 		ALIGNsetH(ret, extent);
 	}
+
+	BATkey(ret, TRUE);
 @-
 set return value
 @c
