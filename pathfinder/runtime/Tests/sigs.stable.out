@@ -11,6 +11,7 @@ stdout of test 'sigs` in directory 'runtime` itself:
 var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
+mods.insert(nil,"pf_httpd");
 
 mods@batloop(){
 	printf("module '%s'\n",$t);
@@ -87,6 +88,14 @@ module 'pathfinder'
 [ "xquery_remote(str, str) : str"				  ]
 [ "xquery_remote(str, str, str) : str"				  ]
 [ "xquery_server(Stream in, Stream out) : void "											  ]
+module 'pf_httpd'
+#---------------------------------#
+# signature			  # name
+# str				  # type
+#---------------------------------#
+[ "httpd_start(int) : void"	  ]
+[ "pf_httpd_start() : void"	  ]
+[ "pf_httpd_start(int) : void"	  ]
 
 quit();
 
