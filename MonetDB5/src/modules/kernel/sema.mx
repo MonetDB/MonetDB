@@ -1,0 +1,112 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f sema
+@v 1.0
+@a Peter Boncz
+@* Lightweight Lock Module
+This module provides simple SMP lock and thread functionality
+as already present in the MonetDB system.
+
+@+ semaphores
+@mal
+atom sema:ptr;
+
+command create(init:int ) :sema 
+address SEMAcreate
+comment "Create an unset sema, with an initial value";
+command down(s:sema) 
+address SEMAdown
+comment "Decrement the semaphpore if >0; else block";
+command up(s:sema) 
+address SEMAup
+comment "Increment the semaphore";
+command destroy(s:sema) 
+address SEMAdestroy
+comment "Destroy a semaphore";
+@{
+@* Implementation
+@c
+#include <gdk.h>
+typedef ptr sema;
+typedef ptr monet_sema;
+
+int
+create_sema(monet_sema *s, int *init)
+{
+	*s = MT_create_sema(*init);
+	return GDK_SUCCEED;
+}
+
+int
+up_sema(monet_sema *s)
+{
+	MT_up_sema((MT_Sema) *s, "up_sema");
+	return GDK_SUCCEED;
+}
+
+int
+down_sema(monet_sema *s)
+{
+	MT_down_sema((MT_Sema) *s, "down_sema");
+	return GDK_SUCCEED;
+}
+
+int
+destroy_sema(monet_sema *s)
+{
+	MT_destroy_sema((MT_Sema) *s);
+	return GDK_SUCCEED;
+}
+
+@}
+@-
+The old code base is wrapped to ease update propagation.
+@c
+#include "mal.h"
+str
+SEMAcreate(monet_sema *res, int *init)
+{
+	create_sema(res, init);
+	return MAL_SUCCEED;
+}
+
+str
+SEMAup(int *res, monet_sema *s)
+{
+	up_sema(s);
+	*res = 1;
+	return MAL_SUCCEED;
+}
+
+str
+SEMAdown(int *res, monet_sema *s)
+{
+	down_sema(s);
+	*res = 1;
+	return MAL_SUCCEED;
+}
+
+str
+SEMAdestroy(int *res, monet_sema *s)
+{
+	destroy_sema(s);
+	*res = 1;
+	return MAL_SUCCEED;
+}
+
+@}
