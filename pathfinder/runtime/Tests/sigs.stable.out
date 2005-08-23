@@ -82,7 +82,9 @@ module 'pathfinder'
 [ "xmldb_print() : void"			  ]
 [ "xquery(str) : str"				  ]
 [ "xquery(str, str) : str"														  ]
+[ "xquery_remote(str) : str"					  ]
 [ "xquery_remote(str, int, str, str) : str"			  ]
+[ "xquery_remote(str, str) : str"				  ]
 [ "xquery_remote(str, str, str) : str"				  ]
 [ "xquery_server(Stream in, Stream out) : void "											  ]
 
