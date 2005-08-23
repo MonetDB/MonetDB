@@ -263,7 +263,7 @@ getFreeScenario()
 @-
 @= initScen
 if( @1->@2){
-    if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress(0, @1->@2,1);
+    if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress(@1->@2,1);
 }
 @-
 A scenario is initialized only once per session. 
@@ -283,7 +283,7 @@ initScenario(Client c, Scenario s)
 		/* prepare for conclicts */
 		mal_set_lock(mal_contextLock, "Scenario");
 		if( s->initSystemCmd == 0)
-			s->initSystemCmd = (MALfcn) getAddress(0,s->initSystem, 0);
+			s->initSystemCmd = (MALfcn) getAddress(s->initSystem, 0);
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		}

@@ -60,7 +60,7 @@ For the time being we assume that all commands are statically linked.
 
 /*#define DEBUG_MAL_LINKER*/
 #define MONET64 1
-mal_export MALfcn getAddress(str modname, str fcnname, int silent);
+mal_export MALfcn getAddress(str fcnname, int silent);
 mal_export char *MSP_locate_script(const char *mod_name);
 mal_export char *MSP_locate_module(const char *mod_name);
 mal_export str loadModuleLibrary(str modulename);
@@ -123,7 +123,7 @@ getLocalObjectFile(str fcnname)
 }
 
 MALfcn
-getAddress(str modname, str fcnname, int silent)
+getAddress(str fcnname, int silent)
 {
 	void *dl = 0;
 	MALfcn adr;
@@ -131,7 +131,7 @@ getAddress(str modname, str fcnname, int silent)
 	char *errmsg;
 
 #ifdef DEBUG_MAL_LINKER2
-	stream_printf(GDKout, "addres of %s.%s ?\n",modname, fcnname);
+	stream_printf(GDKout, "addres of %s ?\n",fcnname);
 #endif
 @-
 First try the program at large.
@@ -143,17 +143,6 @@ First try the program at large.
 		errmsg= dlerror();
 		if( errmsg== NULL && adr != NULL) return adr;
 	}
-
-	for (idx = 0; idx < maxmodules && moduleLoaded[idx]; idx++)
-		if ( modname != 0 && strcmp(moduleLoaded[idx], modname) == 0) {
-			adr = dlsym(moduleHandle[idx], fcnname);
-			errmsg= dlerror();
-			if( errmsg== NULL && adr != NULL) return adr;
-#ifdef DEBUG_MAL_LINKER
-	stream_printf(GDKout,"tried %d for %s.%s\n",idx,modname,fcnname);
-#endif
-			break;
-		}
 @-
 Try all modules for occurrence of the function
 @c
@@ -162,7 +151,9 @@ Try all modules for occurrence of the function
 		errmsg= dlerror();
 		if( errmsg== NULL && adr != NULL) return adr;
 	}
-	
+@-
+Try to load it as a separate object
+@c	
 	adr = getLocalObjectFile(fcnname);
 	if (noDlopen && adr== 0 && silent == 0)
 		GDKerror("address of '%s' not found\n", fcnname);

@@ -1190,7 +1190,7 @@ printBatInfo(stream *f, VarPtr n, ValPtr v)
 		int ret;
 		MALfcn fcn;
 
-		fcn = getAddress("bat","BKCinfo", 0);
+		fcn = getAddress("BKCinfo", 0);
 		if (fcn) {
 			BAT *b;
 
