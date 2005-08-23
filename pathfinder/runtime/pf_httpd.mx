@@ -278,7 +278,7 @@ CMDstart_http_server(int* port)
     shttpd_init(NULL);
 
     /* Register call back function */
-    shttpd_register_url("/exec_xquery", &serve_req, NULL);
+    shttpd_register_url("/xquery_remote", &serve_req, NULL);
 
     /* Open listening socket */
     sock = shttpd_open_port(*port);

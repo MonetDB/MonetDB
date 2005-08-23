@@ -1199,7 +1199,7 @@ CMDxquery_remote(str *res, str location, int *port, str query, str params)
     int bufsize, csize, hsize = 1024;
     stream *rstream, *wstream;
     char *strptr, *content = NULL, *buf = NULL;
-    const char *func = "exec_xquery"; /* Currently we only have one function */
+    const char *func = "xquery_remote"; /* Currently we only have one function */
 
     (void) params; /* not used yet */
 
