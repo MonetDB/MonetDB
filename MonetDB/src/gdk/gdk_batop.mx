@@ -2048,8 +2048,6 @@ by bulk copying the heap as well
 		bm->ttype = bn->htype = b->ttype;
 		bm->tvarsized = bn->hvarsized = 1;
 	}
-	BATkey(bn, TRUE);
-	BATkey(BATmirror(bn), BATcount(bn) < 2);
 	bn->hsorted = (BATcount(bn) < 2 ? GDK_SORTED : BATtordered(b));
 	bn->tsorted = (BATcount(bn) < 2 ? GDK_SORTED : FALSE);
 	bn->halign = NOID_AGGR(b->talign);
@@ -2057,6 +2055,8 @@ by bulk copying the heap as well
 		BAT *bm = BATmirror(b);
 		ALIGNsetH(bn, bm);
 	}
+	BATkey(bn, TRUE);
+	BATkey(BATmirror(bn), BATcount(bn) < 2);
 	if (b->ttype == TYPE_bit) {
 		bit trueval = TRUE;
 		BUN p = BUNfnd(bn, &trueval);
