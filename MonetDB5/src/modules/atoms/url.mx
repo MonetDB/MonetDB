@@ -141,6 +141,38 @@ char x2c(char *what);
 void unescape_url(char *url);
 void plustospace(char *str);
 
+#ifdef _MSC_VER
+#ifndef LIBURL
+#define url_export extern __declspec(dllimport)
+#else
+#define url_export extern __declspec(dllexport)
+#endif
+#else
+#define url_export extern
+#endif
+
+url_export str URLnew(str *url, str *val);
+url_export str URLgetAnchor(str *retval, str *val);
+url_export str URLgetBasename(str *retval, str *t);
+url_export str URLgetContent(str *retval, str *Str1);
+url_export str URLgetContext(str *retval, str *val);
+url_export str URLgetDirectory(int *ret, str *tv);
+url_export str URLgetDomain(str *retval, str *tv);
+url_export str URLgetExtension(str *retval, str *tv);
+url_export str URLgetFile(str *retval, str *tv);
+url_export str URLgetHost(str *retval, str *tv);
+url_export str URLgetPort(str *retval, str *tv);
+url_export str URLgetProtocol(str *retval, str *tv);
+url_export str URLgetQuery(str *retval, str *tv);
+url_export str URLgetQueryArg(int *ret, str *tv);
+url_export str URLgetUser(str *retval, str *tv);
+url_export str URLgetRobotURL(str *retval, str *tv);
+url_export str URLisaURL(bit *retval, str *tv);
+url_export str URLnew4(str *url, str *protocol, str *server, int *port, str *file);
+url_export str URLnew3(str *url, str *protocol, str *server, str *file);
+url_export int URLfromString(str src, int *len, str *url);
+url_export int URLtoString(str *s, int *len, str src);
+
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL
  * SIGNATURE: getAnchor(url) : str; */
 int

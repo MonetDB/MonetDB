@@ -175,7 +175,7 @@ monet_init(opt *set, int setlen)
 	opt *n = (opt *) malloc(setlen * sizeof(opt));
 	int i, j, nlen = 0;
 
-	char buf[BUFSIZ];
+	char buf[8192];
 	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
 	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
 	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
@@ -220,7 +220,7 @@ monet_options.mx.in
 		}
 	}
 	for (i = 0; i < nlen; i++) {
-		strncpy(buf, n[i].value, BUFSIZ);
+		strncpy(buf, n[i].value, sizeof(buf));
 		mo_substitute(n, nlen, buf);
 		GDKsetenv(n[i].name, buf);
 	}

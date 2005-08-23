@@ -138,7 +138,7 @@ First try the program at large.
 @c
 	dl = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
 	errmsg= dlerror();
-	if( errmsg == NULL){
+	if( dl != NULL && errmsg == NULL){
 		adr = (MALfcn) dlsym(dl, fcnname);
 		errmsg= dlerror();
 		if( errmsg== NULL && adr != NULL) return adr;
@@ -149,7 +149,7 @@ Try all modules for occurrence of the function
 	for(idx =0; idx < maxmodules && moduleLoaded[idx]; idx++){
 		adr = dlsym(moduleHandle[idx], fcnname);
 		errmsg= dlerror();
-		if( errmsg== NULL && adr != NULL) return adr;
+		if( adr != NULL) return adr;
 	}
 @-
 Try to load it as a separate object
@@ -284,7 +284,7 @@ Use the search path provided in the configuration file
 		stream_printf(GDKout, "load[%d]:%s %s:%s\n", lastmodule, modulename, fullname, 
 			handle == NULL? (handle == NULL ? errbuf : "failed") : "succeeded");
 #endif
-		if ( (errmsg= dlerror()) ) {
+		if ( handle == NULL && (errmsg= dlerror()) ) {
 			snprintf(errbuf, 1024, "%s: loader error %s", modulename, errmsg);
 			GDKfree(fullname);
 			return (str) throwException("loaderException", 

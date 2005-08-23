@@ -1,10 +1,10 @@
-rem @echo off
+@echo off
 
 setlocal
 
 set builddir=@XMONETDB_BUILD@
 
-set MOD_PATH=%builddir%\NT\src\applications\datacell\.libs;%builddir%\NT\src\compiler\.libs;%builddir%\NT\src\mil\.libs;%builddir%\NT\src\modules\atoms\.libs;%builddir%\NT\src\modules\kernel\.libs;%builddir%\NT\src\modules\mal\.libs;%builddir%\NT\src\modules\mil\.libs;%builddir%\NT\src\optimizer\.libs;%builddir%\NT\src\scheduler\.libs
+set MOD_PATH=%builddir%\src\applications\datacell\.libs;%builddir%\src\compiler\.libs;%builddir%\src\mil\.libs;%builddir%\src\modules\atoms\.libs;%builddir%\src\modules\kernel\.libs;%builddir%\src\modules\mal\.libs;%builddir%\src\modules\mil\.libs;%builddir%\src\optimizer\.libs;%builddir%\src\scheduler\.libs
 set PATH=%builddir%\src\tools;%PATH%
 set PATH=%MOD_PATH%;%builddir%\src\mal;%PATH%
 

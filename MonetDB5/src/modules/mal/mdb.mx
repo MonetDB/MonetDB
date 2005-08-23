@@ -149,6 +149,36 @@ comment "Returns a string representation of the current function
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
+#ifdef _MSC_VER
+#ifndef LIBMDB
+#define mdb_export extern __declspec(dllimport)
+#else
+#define mdb_export extern __declspec(dllexport)
+#endif
+#else
+#define mdb_export extern
+#endif
+
+mdb_export str MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBgetExceptionVariable(str *ret, str *msg);
+mdb_export str MDBgetExceptionReason(str *ret, str *msg);
+mdb_export str MDBgetExceptionContext(str *ret, str *msg);
+mdb_export str MDBlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBlist3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBlistDetail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBlist3Detail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBvar(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBvar3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBStkDepth(MalBlkPtr mb, MalStkPtr s, InstrPtr p);
+mdb_export str MDBStkFrameN(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+mdb_export str MDBStkFrame(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+mdb_export str MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+mdb_export str MDBcodeDump(MalBlkPtr m, MalStkPtr stk, InstrPtr p);
+
 @-
 The primary debugger controls
 @c

@@ -154,21 +154,15 @@ HAVE_PEAR = 1
 .mx.mil:
 	$(MX) $(MXFLAGS) -x mil $<
 
-{$(SRCDIR)}.mx.tmpmal:
-	$(MX) $(MXFLAGS) -x mal $<
-	$(MV) $*.mal $*.tmpmal
-	$(DEL) $*.mal
-
 {$(SRCDIR)}.mx.mal:
 	$(MX) $(MXFLAGS) -x mal $<
-
-.mx.tmpmal:
-	$(MX) $(MXFLAGS) -x mal $<
-	$(MV) $*.mal $*.tmpmal
-	$(DEL) $*.mal
+	if not exist .libs $(MKDIR) .libs
+	$(INSTALL) $@ .libs\$@
 
 .mx.mal:
 	$(MX) $(MXFLAGS) -x mal $<
+	if not exist .libs $(MKDIR) .libs
+	$(INSTALL) $@ .libs\$@
 
 {$(SRCDIR)}.mx.y:
 	$(MX) $(MXFLAGS) -x y $<

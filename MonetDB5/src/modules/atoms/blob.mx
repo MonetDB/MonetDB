@@ -115,6 +115,27 @@ atoms_export size_t blobsize(size_t nitems);
 @c
 #include "blob.h"
 
+#ifdef _MSC_VER
+#ifndef LIBBLOB
+#define blob_export extern __declspec(dllimport)
+#else
+#define blob_export extern __declspec(dllexport)
+#endif
+#else
+#define blob_export extern
+#endif
+
+blob_export int BLOBtostr(str *tostr, int *l, blob **pin);
+blob_export int BLOBfromstr(char *instr, int *l, blob **val);
+blob_export int BLOBnequal(blob *l, blob *r);
+blob_export hash_t BLOBhash(blob *b);
+blob_export blob * BLOBnull();
+blob_export void BLOBconvert(blob *b, int direction);
+blob_export var_t BLOBput(Heap *h, var_t *bun, blob *val);
+blob_export void BLOBdel(Heap *h, var_t *index);
+blob_export int BLOBlength(blob *p);
+blob_export void BLOBheap(Heap *heap, size_t capacity);
+
 size_t
 blobsize(size_t nitems)
 {

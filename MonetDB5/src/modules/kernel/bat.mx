@@ -1775,7 +1775,6 @@ BKCdestroyImmediate(signed char*r, int *bid)
 	BAT *b;
 	char buf[512];
 
-	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.destroy", "Cannot access descriptor");
 	}
