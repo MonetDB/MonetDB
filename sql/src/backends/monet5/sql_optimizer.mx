@@ -136,7 +136,7 @@ to allow inspection.
 	if (c->curprg->def->errors) {
 		mvc *m;
 		m = ((mvc *) c->state[OPTIMIZE]);
-		showErrors(c);
+		showErrors();
 
 
 		if (c->listing)

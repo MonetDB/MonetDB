@@ -710,7 +710,7 @@ query block.
 		pushEndInstruction(c->curprg->def);
 		chkProgram(c->nspace, c->curprg->def);
 		if (c->curprg->def->errors) {
-			showErrors(c);
+			showErrors();
 			/* restore the state */
 			if (c->listing || explainPlan())
 				printFunction(c->fdout, c->curprg->def, c->listing);
