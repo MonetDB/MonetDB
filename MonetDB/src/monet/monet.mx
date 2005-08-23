@@ -606,7 +606,7 @@ monet_eval(str mil_script, int *ret_type)
 			return (ptr) b;
 		}
 		return (ptr) res;	/* HACK: value space is first!! */
-	} else if (i >= 0) {
+	} else if (i < 0) {
 		*ret_type = i;
 	} else {
 		*ret_type = TYPE_void;
@@ -626,8 +626,8 @@ monet_exec(str mil_script)
 	int restype = 0;
 	ptr resval = monet_eval(mil_script, &restype);
 
-	ATOMunfix(restype, resval);
 	if (restype > 0) {
+		ATOMunfix(restype, resval);
 		GDKfree(resval);
 	}
 	return restype;
