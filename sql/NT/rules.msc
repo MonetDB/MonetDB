@@ -53,8 +53,8 @@ LIBC_INCS = $(PTHREAD_INCS)
 SOCKET_LIBS = wsock32.lib
 
 CXX=$(CC)
-MEL="$(MONETDB_PREFIX)\bin\mel"
-MX="$(MONETDB_PREFIX)\bin\Mx"
+MEL="$(TOPDIR)\..\..\buildtools\mel\mel.exe"
+MX="$(TOPDIR)\..\..\buildtools\Mx\Mx.exe"
 CP=copy
 MV=copy
 DEL=del

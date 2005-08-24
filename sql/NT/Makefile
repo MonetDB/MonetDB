@@ -20,10 +20,8 @@ check: "$(SRCDIR)\Makefile.msc" RunMtest.bat
 install: targetdirs all
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
 
-$(SRCDIR)\Makefile.msc: "$(MONETDB_PREFIX)\lib\autogen\autogen.py" \
-	"$(MONETDB_PREFIX)\lib\autogen\codegen.py" \
-	"$(MONETDB_PREFIX)\lib\autogen\msc.py"
-	$(CD) "$(SRCDIR)" && "$(PYTHON)" "$(MONETDB_PREFIX)\lib\autogen\autogen.py"
+$(SRCDIR)\Makefile.msc:
+	$(CD) "$(SRCDIR)" && autogen.py
 
 all-msc: sql_config.h
 
