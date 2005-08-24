@@ -26,17 +26,17 @@
 # this is not meant to go into the distributions
 
 
-if [ -x src/utils/autogen/autogen.py ] ; then
-	AUTOGEN=src/utils/autogen/autogen.py 
+if [ -f conf/monet.m4 ]; then
+	# we're bootstrapping MonetDB itself
 	CONFDIR=
- else
-	if [ -z "$MONETDB_PREFIX" -a -n "$MONETDIST" ] ; then
-		MONETDB_PREFIX=$MONETDIST
+else
+	# we're bootstrapping one of the other packages
+	if [ -z "$MONETDB_PREFIX" -a -n "$MONETDIST" ]; then
+		MONETDB_PREFIX="$MONETDIST"
 	fi
 	if [ "$MONETDB_PREFIX" = "" ]; then
 		type -p monetdb-config > /dev/null 2>&1
-		ERROR=$?
-		if [ $ERROR -eq 0 ]; then
+		if [ $? -eq 0 ]; then
 			MONETDB_PREFIX="`monetdb-config --prefix`"
 		else
 			echo "!ERROR: requires MONETDB_PREFIX to be set or monetdb-config in your PATH"
@@ -49,8 +49,22 @@ if [ -x src/utils/autogen/autogen.py ] ; then
 	export MONETDB_INCLUDEDIR="`$MONETDB_PREFIX/bin/monetdb-config --pkgincludedir`"
 	export MONETDB_INCS="`$MONETDB_PREFIX/bin/monetdb-config --includes`"
 
-	AUTOGEN=$MONETDB_PREFIX/lib/autogen/autogen.py
 	CONFDIR="-I `$MONETDB_PREFIX/bin/monetdb-config --pkgdatadir`/conf"
+fi
+
+AUTOGEN=`type -p autogen.py`
+if [ "$AUTOGEN" -a -x "$AUTOGEN" ]; then
+	# autogen.py was properly installed and found
+	:
+elif [ -x src/utils/autogen/autogen.py ] ; then
+	# old MonetDB version (autogen.py still available)
+	AUTOGEN=src/utils/autogen/autogen.py 
+else
+	AUTOGEN=$MONETDB_PREFIX/lib/autogen/autogen.py
+	if [ ! -x "$AUTOGEN" ]; then
+		echo "!ERROR: requires autogen.py to be available"
+		exit 1
+	fi
 fi
 
 if [ "`uname`" = Darwin  -a  "`type -p glibtool 2>/dev/null`"  -a  "`type -p glibtoolize 2>/dev/null`" ] ; then
