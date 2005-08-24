@@ -19,7 +19,7 @@
 # 2000-2005 University of Konstanz.  All Rights Reserved.
 #
 
-SUBDIRS = conf burg compiler runtime
+SUBDIRS = conf compiler runtime
 
 EXTRA_DIST = rules.mk extra.mk RunMtest.in RunMtest.bat.in \
 		RunMapprove.in RunMapprove.bat.in \
