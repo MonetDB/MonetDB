@@ -145,6 +145,7 @@ comment	"Extracts Cb(blue color) component from a color atom";
 	BBPunfix(*X);\
 	BBPunfix(Z->batCacheid);
 @= BATwalk
+mal_export str CLRbat@1(int *ret, int *l);
 str CLRbat@1(int *ret, int *l)
 {   BAT *bn, *b;
 	BUN p,q;
@@ -195,6 +196,7 @@ bunins_failed:
 A few triple versions.
 
 @= BATwalk3
+mal_export str CLRbat@1(int *ret, int *l, int *bid2, int *bid3);
 str CLRbat@1(int *ret, int *l, int *bid2, int *bid3)
 {   BAT *bn, *b2,*b3, *b;
 	BUN p,q,p2,p3;

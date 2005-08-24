@@ -65,6 +65,14 @@ dc_export void DCflowDependencies(DCpump p);
 #include "../modules/mal/tablet.h"
 
 #define _DC_COMPILE_DEBUG
+mal_export str SQLcompile(str *ret, str *expr, int *flag);
+mal_export str DCcompileQuery(str *ret, str *expr, str *name);
+mal_export str DCsqlCompiler(str *ret, str *name, str *expr);
+mal_export str DCpumpDefinition(int *ret, str *name, str *lang, str *qry);
+mal_export str DCplan(MalBlkPtr mb, str newname);
+mal_export str DCmakePlans(int *ret, str *nme, str *newname);
+mal_export str isEmitterDestination(MalBlkPtr mb, int varid);
+mal_export str DCsqlReshuffle(MalBlkPtr mb, str newname);
 
 @-
 The DataCell containers are all mapped to relational tables
@@ -79,7 +87,7 @@ This only works in a growing system.
 @c
 static int containers = 0;
 
-str
+static str
 MAL2SQLtype(int tpe)
 {
 	switch (tpe) {

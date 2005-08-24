@@ -185,17 +185,41 @@ this interface.
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-mal_export str STATenroll(int *ret, str *nme);
-mal_export str STATdrop(str nme);
-mal_export str STATenrollHistogram(int *ret, str *nme);
-mal_export str STATupdate(int *ret);
-mal_export str STATforceUpdate(int *ret, str *nme);
-mal_export str STATforceUpdateAll(int *ret);
-mal_export str STATdiscard2(int *ret, int *bid);
 #endif /* _STATISTICS_DEF */
 @-
 @c
 #include "statistics.h"
+#include "algebra.h"
+mal_export str STATforceUpdateAll(int *ret);
+mal_export void STATinit();
+mal_export str STATdrop(str nme);
+mal_export str STATforceUpdateAll(int *ret);
+mal_export str STATenroll(int *ret, str *nme);
+mal_export str STATenrollHistogram(int *ret, str *nme);
+mal_export str STATdiscard2(int *ret, int *bid);
+mal_export str STATupdateAll(int *ret, int forced);
+mal_export str STATupdate(int *ret);
+mal_export str STATforceUpdate(int *ret, str *nme);
+mal_export str STATdump(int *ret);
+mal_export str STATprelude(int *ret);
+mal_export str STATopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str STATclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str STATdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str STATdepositStr(int *ret, str *nme);
+mal_export str STATdeposit(int *ret, int *bid);
+mal_export str STATtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str STATrelease(int *ret, int *bid);
+mal_export str STATreleaseStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str STATreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str STATdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str STATdiscard2(int *ret, int *bid);
+mal_export str STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str STATnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str STAThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str STATgetHotset(int *bid);
+mal_export str STATgetObjects(int *bid);
+mal_export str STATgetHistogram(int *ret, str *nme);
+
 
 BAT *STAT_id_inuse;		/* BATs information taken from the box */
 BAT *STAT_id_nme;		/* mapping from BBP index */
@@ -207,8 +231,6 @@ BAT *STAT_id_min_lng;
 BAT *STAT_id_max_lng;
 BAT *STAT_id_histogram;
 
-extern ptr BATmin(BAT *b, ptr aggr);
-extern ptr BATmax(BAT *b, ptr aggr);
 
 static BAT *
 STAT_create(str hnme, str tnme, int ht, int tt)
@@ -256,7 +278,7 @@ Actually STATcommit is not a real transaction, it may fail during
 execution. The remainder of the code is set up to compensate for
 the situation.
 @c
-void
+static void
 STATcommit()
 {
 	mal_set_lock(mal_contextLock, "statistics");
@@ -752,6 +774,7 @@ STATgetObjects(int *bid)
 
 @-
 @= stat
+mal_export str STATget@1(lng *ret, str *nme);
 str
 STATget@1(lng *ret, str *nme){
 	ptr p;

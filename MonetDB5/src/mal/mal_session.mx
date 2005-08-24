@@ -374,6 +374,7 @@ MALreader(Client c)
 	c->fdin->pos += c->yycur;
 	c->yycur = 0;
 	c->fdin->buf[c->fdin->pos] = 0;
+
 	if( c == mal_clients){
 		r= readConsole(c);
 		if (r <0 && c->fdin->eof == 0 )

@@ -285,6 +285,31 @@ typedef struct resultset_t {
 #include "mal.h"
 #include "mal_exception.h"
 
+mal_export str RSBdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str RSBcreate(int *retval, int *columns, char *type);
+mal_export str RSBtake(int *retval, int *id);
+mal_export str RSBdelete(void *retval, int *handle);
+mal_export str RSBrelease(void *retval, int *id);
+mal_export str RSBreleaseAll();
+mal_export str RSBhasMoreElements(lng *ret1, int *ret2);
+mal_export str RSBiterator(lng *ret1, int *ret2);
+mal_export str RSpopulateColumn(int *retval, int *handle, int *colno, int *bat);
+
+mal_export str RSsetPropertyStr(int *retval, int *handle, int *colno, str *nme,
+str *val);
+mal_export str RSsetPropertyInt(int *retval, int *handle, int *colno, str *nme,
+int *val);
+mal_export str RSunion(int *retval, int *handle);
+mal_export str RSdePopulate(int *retval, int *handle);
+mal_export str RSwriteHeader(int *retval, int *handle);
+mal_export str RSwriteBlock(int *retval, int *handle, lng *upper, lng *lower);
+mal_export str RSgetLength(int *retval, int *handle);
+mal_export str RSsetBlockSize(int *retval, int *handle, int size);
+mal_export str RShasNextPart(int *retval, int *handle);
+mal_export str RSwriteNextPart(int *retval, int *handle);
+mal_export str RSfromString(str *src, int *len, resultset * retval);
+mal_export int RStoString(str *retval, int *len, ptr handle);
+
 /* convenience macros */
 #define throwRS(X, Y) throw("ResultSetException", X, Y);
 #define throwRSf(X, Y, A) throwf("ResultSetException", X, Y, A);

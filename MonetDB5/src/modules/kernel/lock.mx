@@ -109,6 +109,7 @@ lockToStr(char **dst, int *len, ptr *src)
 	return strlen(*dst);
 }
 
+mal_export str LCKcreate(monet_lock *l);
 str
 LCKcreate(monet_lock *l)
 {
@@ -116,6 +117,7 @@ LCKcreate(monet_lock *l)
 	return MAL_SUCCEED;
 }
 
+mal_export str LCKset(int *res, monet_lock *l);
 str
 LCKset(int *res, monet_lock *l)
 {
@@ -124,6 +126,7 @@ LCKset(int *res, monet_lock *l)
 	return MAL_SUCCEED;
 }
 
+mal_export str LCKtry(int *res, monet_lock *l);
 str
 LCKtry(int *res, monet_lock *l)
 {
@@ -131,6 +134,7 @@ LCKtry(int *res, monet_lock *l)
 	return MAL_SUCCEED;
 }
 
+mal_export str LCKunset(int *res, monet_lock *l);
 str
 LCKunset(int *res, monet_lock *l)
 {
@@ -139,6 +143,7 @@ LCKunset(int *res, monet_lock *l)
 	return MAL_SUCCEED;
 }
 
+mal_export str LCKdestroy(int *res, monet_lock *l);
 str
 LCKdestroy(int *res, monet_lock *l)
 {

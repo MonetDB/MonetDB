@@ -250,6 +250,7 @@ to simplify data-flow analysis.
 We assume that the range boundaries comply with the underlying domain.
 @{
 @= newRange
+mal_export str RNGnewRange_@1(bit *res, @1 *i, @1 *first);
 str RNGnewRange_@1(bit *res, @1 *i, @1 *first){
 	*res = TRUE;
 	*i= *first;
@@ -257,6 +258,7 @@ str RNGnewRange_@1(bit *res, @1 *i, @1 *first){
 }
 
 @= nextElement
+mal_export str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last);
 str RNGnextElement_@1(bit *res, @1 *i, @1 *step, @1 *last){
 	@1 v = *i;
 	v = v + *step;

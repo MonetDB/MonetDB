@@ -85,6 +85,17 @@ detailed information.
 @h
 #ifndef _CLIENTS_H
 #define _CLIENTS_H
+#include "mal.h"
+
+mal_export str CLTsetListing(int *ret, int *flag);
+mal_export str CLTgetClientId(int *ret);
+mal_export str CLTgetScenario(str *ret);
+mal_export str CLTsetScenario(str *ret, str *nme);
+mal_export str CLTusers(int *ret);
+mal_export str CLTsetDebug(int *ret, int *flg);
+mal_export str CLTsetHistory(int *ret, str *fname);
+mal_export str CLTclearDebug(int *ret, int *flg);
+mal_export str CLTquit(int *ret);
 #endif /* _CLIENTS_H */
 @- Module initializaton
 The content of this clients table my only be changed by the Administrator
@@ -94,7 +105,7 @@ or the client himself
 		return throwMessage("const.@1","unauthorized access to 'const' box");
 @-
 @c
-#include "mal.h"
+#include "clients.h"
 #include "mal_scenario.h"
 #include "mal_client.h"
 
@@ -103,6 +114,7 @@ or the client himself
 #include <readline/history.h>
 #endif
  
+
 int
 isAuthorized(str nme)
 {

@@ -457,11 +457,63 @@ tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, p
 #define CLEAR(X) if(X) {GDKfree(X);X = NULL;}
 #define isScalar(C)  C->adt != TYPE_bat
 
+mal_export str TABsetFormat(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str TABheader(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str TABdisplayTable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str TABdisplayRow(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str TABpage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str TABsetProperties(int *ret, str *prop);
+mal_export str TABdump(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str TABfinishReport(int *ret);
+mal_export str TABsetStream(int *ret, stream **s);
+mal_export str TABsetPivot(int *ret, int *bid);
+mal_export str TABsetDelimiter(int *ret, str *sep);
+mal_export str TABsetColumn(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str TABsetColumnName(int *ret, int *idx, str *s);
+mal_export str TABsetTableBracket(int *ret, str *lbrk, str *rbrk);
+mal_export str TABsetRowBracket(int *ret, str *lbrk, str *rbrk);
+mal_export str TABsetColumnBracket(int *ret, int *idx, str *lbrk, str *rbrk);
+mal_export str TABsetColumnNull(int *ret, int *idx, str *nullstr);
+mal_export str TABsetColumnWidth(int *ret, int *idx, int *width);
+mal_export str TABsetColumnPosition(int *ret, int *idx, int *first, int *width);
+
+mal_export str TABsetColumnDecimal(int *ret, int *idx, int *scale, int *prec);
+mal_export str TABfirstPage(int *ret);
+mal_export str TABlastPage(int *ret);
+mal_export str TABnextPage(int *ret);
+mal_export str TABprevPage(int *ret);
+mal_export str TABgetPage(int *ret, int *pnr);
+mal_export str TABgetPageCnt(int *ret);
+mal_export ptr *TABLETadt_frStr(void *extra, int type, char *s);
+mal_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
+mal_export void TABLETdestroy_format(Tablet * as);
+mal_export size_t TABLETassign_BATs(Tablet * as, BAT *bats);
+mal_export int TABLETcreate_bats(Tablet * as);
+mal_export BAT * TABLETcollect_bats(Tablet * as);
+mal_export int TABLETload_file(Tablet * as, bstream *b);
+mal_export BAT * TABLETload(BAT *names, BAT *seps, BAT *types, char *datafile, size_t nr);
+mal_export BAT * TABLETinput(BAT *names, BAT *seps, BAT *types, bstream *s, size_t nr);
+mal_export void TABLETdump(BAT *names, BAT *seps, BAT *bats, char *datafile, size_t nr);
+mal_export void TABLEToutput_file(Tablet * as, BAT *order, stream *s);
+mal_export size_t TABLEToutput(BAT *order, BAT *seps, BAT *bats, stream *s);
+mal_export int init_tablet(int *debug);
+mal_export int tablet_load(BAT **bats, BAT *names, BAT *seps, BAT *types, str datafile, int *nr);
+mal_export int tablet_input(BAT **bats, BAT *names, BAT *seps, BAT *types, void
+**s, int *nr);
+mal_export int tablet_dump(BAT *names, BAT *seps, BAT *bats, str datafile, int *
+nr);
+mal_export int tablet_output(BAT *order, BAT *seps, BAT *bats, void **s);
+mal_export str CMDtablet_load(int *ret, int *nameid, int *sepid, int *typeid, str *filename, int *nr);
+mal_export str CMDtablet_dump(int *ret, int *nameid, int *sepid, int *bids, str
+*filename, int *nr);
+mal_export str CMDtablet_input(int *ret, int *nameid, int *sepid, int *typeid, stream *s, int *nr);
+mal_export str CMDtablet_output(int *ret, int *nameid, int *sepid, int *bids, void **s);
+mal_export void TABshowHeader(Tablet * t);
+mal_export void TABshowRow(Tablet * t);
+mal_export void TABshowRange(Tablet * t, lng first, lng last);
+
 static void makeTableSpace(int rnr, unsigned int acnt);
 static str bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k);
-static void TABshowHeader(Tablet * t);
-static void TABshowRow(Tablet * t);
-static void TABshowRange(Tablet * t, lng first, lng last);
 static void clearTable(Tablet * t);
 static int isScalarVector(Tablet * t);
 static int isBATVector(Tablet * t);
@@ -483,7 +535,7 @@ static int tablet_debug = 0;
 static Tablet *tableReports[MAL_MAXCLIENTS];
 
 
-void
+static void
 TABformatPrepare(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Client c = getClient();
@@ -1590,6 +1642,7 @@ tablet_input(BAT **bats, BAT *names, BAT *seps, BAT *types, void **s, int *nr)
 		return GDK_FAIL;
 	}
 }
+
 int
 tablet_dump(BAT *names, BAT *seps, BAT *bats, str datafile, int *nr)
 {

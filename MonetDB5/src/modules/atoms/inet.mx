@@ -53,6 +53,30 @@ typedef struct _inet {
 
 #define in_isnil(i) (i->q1 == 0 && i->q2 == 0 && i->q3 == 0 && i->q4 == 0 && i->mask == 0 && i->isnil != 0)
 
+mal_export str INETfromString(str *src, int *len, inet * retval);
+mal_export int INETtoString(str *retval, int *len, ptr handle);
+mal_export str INETnew(inet * retval, str *in);
+mal_export str INET_isnil(bit *retval, inet * val);
+mal_export str INET_comp_EQ(bit *retval, inet * val1, inet * val2);
+mal_export str INET_comp_NEQ(bit *retval, inet * val1, inet * val2);
+mal_export str INET_comp_LT(bit *retval, inet * val1, inet * val2);
+mal_export str INET_comp_GT(bit *retval, inet * val1, inet * val2);
+mal_export str INET_comp_LE(bit *retval, inet * val1, inet * val2);
+mal_export str INET_comp_GE(bit *retval, inet * val1, inet * val2);
+mal_export str INET_comp_CW(bit *retval, inet * val1, inet * val2);
+mal_export str INET_comp_CWE(bit *retval, inet * val1, inet * val2);
+mal_export str INET_comp_CS(bit *retval, inet * val1, inet * val2);
+mal_export str INET_comp_CSE(bit *retval, inet * val1, inet * val2);
+mal_export str INETbroadcast(inet * retval, inet * val);
+mal_export str INEThost(str *retval, inet * val);
+mal_export str INETmasklen(int *retval, inet * val);
+mal_export str INETsetmasklen(inet * retval, inet * val, int *mask);
+mal_export str INETnetmask(inet * retval, inet * val);
+mal_export str INEThostmask(inet * retval, inet * val);
+mal_export str INETnetwork(inet * retval, inet * val);
+mal_export str INETtext(str *retval, inet * val);
+mal_export str INETabbrev(str *retval, inet * val);
+
 @mal
 command fromstr() 
 address INETfromString
@@ -61,7 +85,6 @@ comment "Convert a string to an inet";
 /**
  * Creates a new inet from the given string.
  */
-mal_export str INETfromString(str *src, int *len, inet * retval);
 str
 INETfromString(str *src, int *len, inet * retval)
 {
@@ -151,7 +174,6 @@ comment "Convert inet to string equivalent";
  * Returns the string representation of the given inet value.
  * Warning: returns the length, instead of an exception string!
  */
-mal_export int INETtoString(str *retval, int *len, ptr handle);
 int
 INETtoString(str *retval, int *len, ptr handle)
 {
@@ -180,7 +202,6 @@ comment "Create an inet from a string literal";
  * Returns a inet, parsed from a string.  The fromStr function is used
  * to parse the string.
  */
-mal_export str INETnew(inet * retval, str *in);
 str
 INETnew(inet * retval, str *in)
 {
@@ -202,7 +223,6 @@ comment "Nil test for inet value";
 /**
  * Returns whether val represents a nil inet value
  */
-mal_export str INET_isnil(bit *retval, inet * val);
 str
 INET_isnil(bit *retval, inet * val)
 {
@@ -219,7 +239,6 @@ comment "Equality of two inets";
 /**
  * Returns whether val1 and val2 are equal.
  */
-mal_export str INET_comp_EQ(bit *retval, inet * val1, inet * val2);
 str
 INET_comp_EQ(bit *retval, inet * val1, inet * val2)
 {
@@ -242,7 +261,6 @@ comment "Inequality of two inets";
 /**
  * Returns whether val1 and val2 are not equal.
  */
-mal_export str INET_comp_NEQ(bit *retval, inet * val1, inet * val2);
 str
 INET_comp_NEQ(bit *retval, inet * val1, inet * val2)
 {
@@ -265,7 +283,6 @@ comment "Whether v is less than w";
 /**
  * Returns whether val1 is smaller than val2.
  */
-mal_export str INET_comp_LT(bit *retval, inet * val1, inet * val2);
 str
 INET_comp_LT(bit *retval, inet * val1, inet * val2)
 {
@@ -304,7 +321,6 @@ comment "Whether v is greater than w";
 /**
  * Returns whether val1 is greater than val2.
  */
-mal_export str INET_comp_GT(bit *retval, inet * val1, inet * val2);
 str
 INET_comp_GT(bit *retval, inet * val1, inet * val2)
 {
@@ -319,7 +335,6 @@ comment "Whether v is less than or equal to w";
 /**
  * Returns whether val1 is smaller than or equal to val2.
  */
-mal_export str INET_comp_LE(bit *retval, inet * val1, inet * val2);
 str
 INET_comp_LE(bit *retval, inet * val1, inet * val2)
 {
@@ -341,7 +356,6 @@ comment "Whether v is equal to or greater than w";
 /**
  * Returns whether val1 is smaller than or equal to val2.
  */
-mal_export str INET_comp_GE(bit *retval, inet * val1, inet * val2);
 str
 INET_comp_GE(bit *retval, inet * val1, inet * val2)
 {
@@ -365,7 +379,6 @@ comment "Whether v is contained within w";
 /**
  * Returns whether val1 is contained within val2
  */
-mal_export str INET_comp_CW(bit *retval, inet * val1, inet * val2);
 str
 INET_comp_CW(bit *retval, inet * val1, inet * val2)
 {
@@ -434,7 +447,6 @@ comment "Whether v is contained within or is equal to w";
 /**
  * Returns whether val1 is contained within or equal to val2
  */
-mal_export str INET_comp_CWE(bit *retval, inet * val1, inet * val2);
 str
 INET_comp_CWE(bit *retval, inet * val1, inet * val2)
 {
@@ -457,7 +469,6 @@ comment "Whether v contains w";
 /**
  * Returns whether val1 is contains val2
  */
-mal_export str INET_comp_CS(bit *retval, inet * val1, inet * val2);
 str
 INET_comp_CS(bit *retval, inet * val1, inet * val2)
 {
@@ -473,7 +484,6 @@ comment "Whether v contains or is equal to w";
 /**
  * Returns whether val1 contains or is equal to val2
  */
-mal_export str INET_comp_CSE(bit *retval, inet * val1, inet * val2);
 str
 INET_comp_CSE(bit *retval, inet * val1, inet * val2)
 {
@@ -493,7 +503,6 @@ comment "Returns the broadcast address for network";
  * Returns the broadcast address for the network the inet represents.
  * If the subnet mask is 32, the given input inet is returned.
  */
-mal_export str INETbroadcast(inet * retval, inet * val);
 str
 INETbroadcast(inet * retval, inet * val)
 {
@@ -553,7 +562,6 @@ comment "Extract IP address as text";
  * Extract only the IP address as text.  Unlike the toString function,
  * this function never returns the netmask length.
  */
-mal_export str INEThost(str *retval, inet * val);
 str
 INEThost(str *retval, inet * val)
 {
@@ -579,7 +587,6 @@ comment "Extract netmask length";
 /**
  * Extract netmask length.
  */
-mal_export str INETmasklen(int *retval, inet * val);
 str
 INETmasklen(int *retval, inet * val)
 {
@@ -599,7 +606,6 @@ comment "Set netmask length for inet value";
 /**
  * Set netmask length for inet value.
  */
-mal_export str INETsetmasklen(inet * retval, inet * val, int *mask);
 str
 INETsetmasklen(inet * retval, inet * val, int *mask)
 {
@@ -621,7 +627,6 @@ comment "Construct netmask for network";
 /**
  * Construct netmask for network.
  */
-mal_export str INETnetmask(inet * retval, inet * val);
 str
 INETnetmask(inet * retval, inet * val)
 {
@@ -672,7 +677,6 @@ comment "Construct host mask for network";
 /**
  * Construct host mask for network.
  */
-mal_export str INEThostmask(inet * retval, inet * val);
 str
 INEThostmask(inet * retval, inet * val)
 {
@@ -705,7 +709,6 @@ comment "Extract network part of address";
  * is equal to 32.  This function basically zeros out values that are
  * not covered by the netmask.
  */
-mal_export str INETnetwork(inet * retval, inet * val);
 str
 INETnetwork(inet * retval, inet * val)
 {
@@ -758,7 +761,6 @@ comment "Extract IP address and netmask length as text";
  * Extract IP address and netmask length as text.  Unlike the toStr
  * function, this function always prints the netmask length.
  */
-mal_export str INETtext(str *retval, inet * val);
 str
 INETtext(str *retval, inet * val)
 {
@@ -786,7 +788,6 @@ comment "Abbreviated display format as text";
  * the value has no bits set to right of mask.  Otherwise the return of
  * this function is equal to the function text.
  */
-mal_export str INETabbrev(str *retval, inet * val);
 str
 INETabbrev(str *retval, inet * val)
 {

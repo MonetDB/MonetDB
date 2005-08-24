@@ -903,7 +903,6 @@ of the calendar).
 #endif
 
 typedef int date;
-
 #define date_nil ((date) int_nil)
 @c
 #include "mtime.h"
@@ -969,18 +968,105 @@ typedef struct {
 #define get_offset(z)	(((int) (((z)->off1 << 7) + (z)->off2)) - OFFSET_ZERO)
 #define set_offset(z,i)	{ (z)->off1 = (((i)+4096)&8064) >> 7; (z)->off2 = ((i)+OFFSET_ZERO)&127; }
 
+@h
 tzone tzone_local;
 
-@h
+
 mal_export void fromdate(int n, int *d, int *m, int *y);
 mal_export void fromtime(int n, int *hour, int *min, int *sec, int *msec);
 mal_export int daytime_tz_fromstr(str buf, int *len, daytime **ret);
-
 mal_export str MTIMEcurrent_timestamp(timestamp *t);
 mal_export str MTIMEcurrent_date(date *d);
 mal_export str MTIMEcurrent_time(daytime *t);
 mal_export int timestamp_tostr(str *buf, int *len, timestamp *val);
 mal_export int timestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
+mal_export str MTIMEnil2date(date *ret, int *src);
+mal_export str MTIMEdate2date(date *ret, date *src);
+mal_export str MTIMErule_fromstr(rule *ret, str *s);
+mal_export str MTIMEprelude();
+mal_export str time_epilogue(void);
+mal_export str MTIMEsynonyms(bit *allow);
+mal_export str MTIMEoldduration(int *ndays, str *s);
+mal_export str MTIMEolddate(date *d, str *buf);
+mal_export str MTIMEtimezone(tzone *z, str *name);
+mal_export str MTIMEtzone_set_local(int res, tzone *z);
+mal_export str MTIMEtzone_get_local(tzone *z);
+mal_export str MTIMEmonth_from_str(int *ret, str *month);
+mal_export str MTIMEmonth_to_str(str *ret, int *month);
+mal_export str MTIMEday_from_str(int *ret, str *day);
+mal_export str MTIMEday_to_str(str *ret, int *day);
+mal_export str MTIMEdate_tostr(str *ret, date *d);
+mal_export str MTIMEdate_fromstr(date *ret, str *s);
+mal_export str MTIMEdate_create(date *ret, int *year, int *month, int *day);
+mal_export str MTIMEdaytime_tostr(str *ret, daytime *d);
+mal_export str MTIMEdaytime_create(daytime *ret, int *hour, int *min, int *sec, int *msec);
+mal_export str MTIMEtimestamp_fromstr(timestamp *ret, str *d);
+mal_export str MTIMEtimestamp_create(timestamp *ret, date *d, daytime *t, tzone *z);
+mal_export str MTIMEtimestamp_create_default(timestamp *ret, date *d, daytime *t);
+mal_export str MTIMEdate_extract_year(int *ret, date *v);
+mal_export str MTIMEdate_extract_month(int *ret, date *v);
+mal_export str MTIMEdate_extract_day(int *ret, date *v);
+mal_export str MTIMEdate_extract_dayofyear(int *ret, date *v);
+mal_export str MTIMEdate_extract_weekofyear(int *ret, date *v);
+mal_export str MTIMEdate_extract_dayofweek(int *ret, date *v);
+mal_export str MTIMEdaytime_extract_hours(int *ret, daytime *v);
+mal_export str MTIMEdaytime_extract_minutes(int *ret, daytime *v);
+mal_export str MTIMEdaytime_extract_seconds(int *ret, daytime *v);
+mal_export str MTIMEdaytime_extract_milliseconds(int *ret, daytime *v);
+mal_export str MTIMEtimestamp_extract_daytime(daytime *ret, timestamp *t, tzone *z);
+mal_export str MTIMEtimestamp_extract_daytime_default(daytime *ret, timestamp *t);
+mal_export str MTIMEtimestamp_extract_date(date *ret, timestamp *t, tzone *z);
+mal_export str MTIMEtimestamp_extract_date_default(date *ret, timestamp *t);
+mal_export str MTIMEdate_addyears(date *ret, date *v, int *delta);
+mal_export str MTIMEdate_adddays(date *ret, date *v, int *delta);
+mal_export str MTIMEdate_addmonths(date *ret, date *v, int *delta);
+mal_export str MTIMEdate_diff(int *ret, date *v1, date *v2);
+mal_export str MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs);
+mal_export str MTIMEtimestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
+mal_export str MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z);
+mal_export str MTIMEtimestamp_isnil(bit *retval, timestamp *val);
+mal_export str MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2);
+mal_export str MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2);
+mal_export str MTIMEtimestamp_LT(bit *retval, timestamp *val1, timestamp *val2);
+mal_export str MTIMEtimestamp_LE(bit *retval, timestamp *val1, timestamp *val2);
+mal_export str MTIMEtimestamp_GT(bit *retval, timestamp *val1, timestamp *val2);
+mal_export str MTIMEtimestamp_GE(bit *retval, timestamp *val1, timestamp *val2);
+mal_export str MTIMErule_tostr(str *s, rule *r);
+mal_export str MTIMErule_fromstr(rule *ret, str *s);
+mal_export str MTIMErule_create(rule *ret, int *month, int *day, int *weekday, int *minutes);
+mal_export str MTIMEtzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end);
+mal_export str MTIMEtzone_create(tzone *ret, int *minutes);
+mal_export str MTIMErule_extract_month(int *ret, rule *r);
+mal_export str MTIMErule_extract_day(int *ret, rule *r);
+mal_export str MTIMErule_extract_weekday(int *ret, rule *r);
+mal_export str MTIMErule_extract_minutes(int *ret, rule *r);
+mal_export str MTIMEtzone_extract_start(rule *ret, tzone *t);
+mal_export str MTIMEtzone_extract_end(rule *ret, tzone *t);
+mal_export str MTIMEtzone_extract_minutes(int *ret, tzone *t);
+mal_export str MTIMEdate_sub_sec_interval_wrap(date *ret, date *t, int *sec);
+mal_export str MTIMEdate_add_sec_interval_wrap(date *ret, date *t, int *sec);
+mal_export str MTIMEdate_add_month_interval_wrap(date *ret, date *t, int *months);
+mal_export str MTIMEcompute_rule_foryear(date *ret, rule *val, int *year);
+mal_export str MTIMEtzone_tostr(str *s, tzone *ret);
+mal_export str MTIMEtzone_fromstr(tzone *ret, str *s);
+mal_export str MTIMEdaytime_fromstr(daytime *ret, str *s);
+mal_export str MTIMEmsecs(lng *ret, int *d, int *h, int *m, int *s, int *ms);
+mal_export str MTIMEdaytime1(daytime *ret, int *h);
+mal_export str MTIMEdaytime2(daytime *ret, int *h, int *m);
+mal_export str MTIMEdaytime3(daytime *ret, int *h, int *m, int *s);
+mal_export str MTIMEunix_epoch(timestamp *ret);
+mal_export str MTIMEepoch(timestamp *ret);
+mal_export str MTIMEepoch2lng(lng *ret, timestamp *t);
+mal_export str MTIMEtimestamp(timestamp *ret, int *sec);
+mal_export str MTIMEruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint);
+mal_export str MTIMEruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint);
+mal_export str MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint);
+mal_export str MTIMEcurrent_timestamp(timestamp *t);
+mal_export str MTIMEcurrent_date(date *d);
+mal_export str MTIMEcurrent_time(daytime *t);
+
+@h
+
 
 #endif /* _MONETTIME_H_ */
 @+ Defines
@@ -2657,7 +2743,6 @@ str MTIME@1_2@2(@2 *ret,@1 *src){
 @:coerce(date,lng)@
 @:coerce(daytime,lng)@
 
-mal_export str MTIMEnil2date(date *ret, int *src);
 str
 MTIMEnil2date(date *ret, int *src)
 {
@@ -2666,7 +2751,6 @@ MTIMEnil2date(date *ret, int *src)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate2date(date *ret, date *src);
 str
 MTIMEdate2date(date *ret, date *src)
 {
@@ -2701,11 +2785,9 @@ str MTIME@1_isnil(int *ret, @1 *v){
 @:compareAll(date)@
 @:compareAll(daytime)@
 
-mal_export str MTIMErule_fromstr(rule *ret, str *s);
 
 static BAT *timezones = NULL;
 
-mal_export str MTIMEprelude();
 str
 MTIMEprelude()
 {
@@ -2765,7 +2847,6 @@ MTIMEprelude()
 	return MAL_SUCCEED;
 }
 
-mal_export str time_epilogue(void);
 str
 time_epilogue(void)
 {
@@ -2774,7 +2855,6 @@ time_epilogue(void)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEsynonyms(bit *allow);
 str
 MTIMEsynonyms(bit *allow)
 {
@@ -2782,7 +2862,6 @@ MTIMEsynonyms(bit *allow)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEoldduration(int *ndays, str *s);
 str
 MTIMEoldduration(int *ndays, str *s)
 {
@@ -2790,7 +2869,6 @@ MTIMEoldduration(int *ndays, str *s)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEolddate(date *d, str *buf);
 str
 MTIMEolddate(date *d, str *buf)
 {
@@ -2798,7 +2876,6 @@ MTIMEolddate(date *d, str *buf)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimezone(tzone *z, str *name);
 str
 MTIMEtimezone(tzone *z, str *name)
 {
@@ -2813,7 +2890,6 @@ MTIMEtimezone(tzone *z, str *name)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtzone_set_local(int res, tzone *z);
 str
 MTIMEtzone_set_local(int res, tzone *z)
 {
@@ -2822,7 +2898,6 @@ MTIMEtzone_set_local(int res, tzone *z)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtzone_get_local(tzone *z);
 str
 MTIMEtzone_get_local(tzone *z)
 {
@@ -2830,7 +2905,6 @@ MTIMEtzone_get_local(tzone *z)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEmonth_from_str(int *ret, str *month);
 str
 MTIMEmonth_from_str(int *ret, str *month)
 {
@@ -2838,7 +2912,6 @@ MTIMEmonth_from_str(int *ret, str *month)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEmonth_to_str(str *ret, int *month);
 str
 MTIMEmonth_to_str(str *ret, int *month)
 {
@@ -2846,7 +2919,6 @@ MTIMEmonth_to_str(str *ret, int *month)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEday_from_str(int *ret, str *day);
 str
 MTIMEday_from_str(int *ret, str *day)
 {
@@ -2854,7 +2926,6 @@ MTIMEday_from_str(int *ret, str *day)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEday_to_str(str *ret, int *day);
 str
 MTIMEday_to_str(str *ret, int *day)
 {
@@ -2862,7 +2933,6 @@ MTIMEday_to_str(str *ret, int *day)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_tostr(str *ret, date *d);
 str
 MTIMEdate_tostr(str *ret, date *d)
 {
@@ -2875,7 +2945,6 @@ MTIMEdate_tostr(str *ret, date *d)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_fromstr(date *ret, str *s);
 str
 MTIMEdate_fromstr(date *ret, str *s)
 {
@@ -2887,7 +2956,6 @@ MTIMEdate_fromstr(date *ret, str *s)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_create(date *ret, int *year, int *month, int *day);
 str
 MTIMEdate_create(date *ret, int *year, int *month, int *day)
 {
@@ -2895,7 +2963,6 @@ MTIMEdate_create(date *ret, int *year, int *month, int *day)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdaytime_tostr(str *ret, daytime *d);
 str
 MTIMEdaytime_tostr(str *ret, daytime *d)
 {
@@ -2908,7 +2975,6 @@ MTIMEdaytime_tostr(str *ret, daytime *d)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdaytime_create(daytime *ret, int *hour, int *min, int *sec, int *msec);
 str
 MTIMEdaytime_create(daytime *ret, int *hour, int *min, int *sec, int *msec)
 {
@@ -2916,7 +2982,6 @@ MTIMEdaytime_create(daytime *ret, int *hour, int *min, int *sec, int *msec)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_tostr(str *s, timestamp *d);
 str
 MTIMEtimestamp_tostr(str *s, timestamp *d)
 {
@@ -2929,7 +2994,6 @@ MTIMEtimestamp_tostr(str *s, timestamp *d)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_fromstr(timestamp *ret, str *d);
 str
 MTIMEtimestamp_fromstr(timestamp *ret, str *d)
 {
@@ -2939,7 +3003,6 @@ MTIMEtimestamp_fromstr(timestamp *ret, str *d)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_create(timestamp *ret, date *d, daytime *t, tzone *z);
 str
 MTIMEtimestamp_create(timestamp *ret, date *d, daytime *t, tzone *z)
 {
@@ -2947,14 +3010,12 @@ MTIMEtimestamp_create(timestamp *ret, date *d, daytime *t, tzone *z)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_create_default(timestamp *ret, date *d, daytime *t);
 str
 MTIMEtimestamp_create_default(timestamp *ret, date *d, daytime *t)
 {
 	return MTIMEtimestamp_create(ret, d, t, &tzone_local);
 }
 
-mal_export str MTIMEdate_extract_year(int *ret, date *v);
 str
 MTIMEdate_extract_year(int *ret, date *v)
 {
@@ -2962,7 +3023,6 @@ MTIMEdate_extract_year(int *ret, date *v)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_extract_month(int *ret, date *v);
 str
 MTIMEdate_extract_month(int *ret, date *v)
 {
@@ -2970,7 +3030,6 @@ MTIMEdate_extract_month(int *ret, date *v)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_extract_day(int *ret, date *v);
 str
 MTIMEdate_extract_day(int *ret, date *v)
 {
@@ -2978,7 +3037,6 @@ MTIMEdate_extract_day(int *ret, date *v)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_extract_dayofyear(int *ret, date *v);
 str
 MTIMEdate_extract_dayofyear(int *ret, date *v)
 {
@@ -2986,7 +3044,6 @@ MTIMEdate_extract_dayofyear(int *ret, date *v)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_extract_weekofyear(int *ret, date *v);
 str
 MTIMEdate_extract_weekofyear(int *ret, date *v)
 {
@@ -2994,7 +3051,6 @@ MTIMEdate_extract_weekofyear(int *ret, date *v)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_extract_dayofweek(int *ret, date *v);
 str
 MTIMEdate_extract_dayofweek(int *ret, date *v)
 {
@@ -3002,7 +3058,6 @@ MTIMEdate_extract_dayofweek(int *ret, date *v)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdaytime_extract_hours(int *ret, daytime *v);
 str
 MTIMEdaytime_extract_hours(int *ret, daytime *v)
 {
@@ -3010,7 +3065,6 @@ MTIMEdaytime_extract_hours(int *ret, daytime *v)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdaytime_extract_minutes(int *ret, daytime *v);
 str
 MTIMEdaytime_extract_minutes(int *ret, daytime *v)
 {
@@ -3018,7 +3072,6 @@ MTIMEdaytime_extract_minutes(int *ret, daytime *v)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdaytime_extract_seconds(int *ret, daytime *v);
 str
 MTIMEdaytime_extract_seconds(int *ret, daytime *v)
 {
@@ -3026,7 +3079,6 @@ MTIMEdaytime_extract_seconds(int *ret, daytime *v)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdaytime_extract_milliseconds(int *ret, daytime *v);
 str
 MTIMEdaytime_extract_milliseconds(int *ret, daytime *v)
 {
@@ -3034,7 +3086,6 @@ MTIMEdaytime_extract_milliseconds(int *ret, daytime *v)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_extract_daytime(daytime *ret, timestamp *t, tzone *z);
 str
 MTIMEtimestamp_extract_daytime(daytime *ret, timestamp *t, tzone *z)
 {
@@ -3042,14 +3093,12 @@ MTIMEtimestamp_extract_daytime(daytime *ret, timestamp *t, tzone *z)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_extract_daytime_default(daytime *ret, timestamp *t);
 str
 MTIMEtimestamp_extract_daytime_default(daytime *ret, timestamp *t)
 {
 	return MTIMEtimestamp_extract_daytime(ret, t, &tzone_local);
 }
 
-mal_export str MTIMEtimestamp_extract_date(date *ret, timestamp *t, tzone *z);
 str
 MTIMEtimestamp_extract_date(date *ret, timestamp *t, tzone *z)
 {
@@ -3057,14 +3106,12 @@ MTIMEtimestamp_extract_date(date *ret, timestamp *t, tzone *z)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_extract_date_default(date *ret, timestamp *t);
 str
 MTIMEtimestamp_extract_date_default(date *ret, timestamp *t)
 {
 	return MTIMEtimestamp_extract_date(ret, t, &tzone_local);
 }
 
-mal_export str MTIMEdate_addyears(date *ret, date *v, int *delta);
 str
 MTIMEdate_addyears(date *ret, date *v, int *delta)
 {
@@ -3072,7 +3119,6 @@ MTIMEdate_addyears(date *ret, date *v, int *delta)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_adddays(date *ret, date *v, int *delta);
 str
 MTIMEdate_adddays(date *ret, date *v, int *delta)
 {
@@ -3080,7 +3126,6 @@ MTIMEdate_adddays(date *ret, date *v, int *delta)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_addmonths(date *ret, date *v, int *delta);
 str
 MTIMEdate_addmonths(date *ret, date *v, int *delta)
 {
@@ -3088,7 +3133,6 @@ MTIMEdate_addmonths(date *ret, date *v, int *delta)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_diff(int *ret, date *v1, date *v2);
 str
 MTIMEdate_diff(int *ret, date *v1, date *v2)
 {
@@ -3096,7 +3140,6 @@ MTIMEdate_diff(int *ret, date *v1, date *v2)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs);
 str
 MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs)
 {
@@ -3104,7 +3147,6 @@ MTIMEtimestamp_add(timestamp *ret, timestamp *v, lng *msecs)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
 str
 MTIMEtimestamp_diff(lng *ret, timestamp *v1, timestamp *v2)
 {
@@ -3112,7 +3154,6 @@ MTIMEtimestamp_diff(lng *ret, timestamp *v1, timestamp *v2)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z);
 str
 MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z)
 {
@@ -3120,7 +3161,6 @@ MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_isnil(bit *retval, timestamp *val);
 str
 MTIMEtimestamp_isnil(bit *retval, timestamp *val)
 {
@@ -3128,7 +3168,6 @@ MTIMEtimestamp_isnil(bit *retval, timestamp *val)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2);
 str
 MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2)
 {
@@ -3139,7 +3178,6 @@ MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2);
 str
 MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2)
 {
@@ -3150,7 +3188,6 @@ MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_LT(bit *retval, timestamp *val1, timestamp *val2);
 str
 MTIMEtimestamp_LT(bit *retval, timestamp *val1, timestamp *val2)
 {
@@ -3161,7 +3198,6 @@ MTIMEtimestamp_LT(bit *retval, timestamp *val1, timestamp *val2)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_LE(bit *retval, timestamp *val1, timestamp *val2);
 str
 MTIMEtimestamp_LE(bit *retval, timestamp *val1, timestamp *val2)
 {
@@ -3172,7 +3208,6 @@ MTIMEtimestamp_LE(bit *retval, timestamp *val1, timestamp *val2)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_GT(bit *retval, timestamp *val1, timestamp *val2);
 str
 MTIMEtimestamp_GT(bit *retval, timestamp *val1, timestamp *val2)
 {
@@ -3183,7 +3218,6 @@ MTIMEtimestamp_GT(bit *retval, timestamp *val1, timestamp *val2)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp_GE(bit *retval, timestamp *val1, timestamp *val2);
 str
 MTIMEtimestamp_GE(bit *retval, timestamp *val1, timestamp *val2)
 {
@@ -3194,7 +3228,6 @@ MTIMEtimestamp_GE(bit *retval, timestamp *val1, timestamp *val2)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMErule_tostr(str *s, rule *r);
 str
 MTIMErule_tostr(str *s, rule *r)
 {
@@ -3207,7 +3240,6 @@ MTIMErule_tostr(str *s, rule *r)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMErule_fromstr(rule *ret, str *s);
 str
 MTIMErule_fromstr(rule *ret, str *s)
 {
@@ -3220,7 +3252,6 @@ MTIMErule_fromstr(rule *ret, str *s)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMErule_create(rule *ret, int *month, int *day, int *weekday, int *minutes);
 str
 MTIMErule_create(rule *ret, int *month, int *day, int *weekday, int *minutes)
 {
@@ -3228,7 +3259,6 @@ MTIMErule_create(rule *ret, int *month, int *day, int *weekday, int *minutes)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end);
 str
 MTIMEtzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end)
 {
@@ -3236,7 +3266,6 @@ MTIMEtzone_create_dst(tzone *ret, int *minutes, rule *start, rule *end)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtzone_create(tzone *ret, int *minutes);
 str
 MTIMEtzone_create(tzone *ret, int *minutes)
 {
@@ -3244,7 +3273,6 @@ MTIMEtzone_create(tzone *ret, int *minutes)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMErule_extract_month(int *ret, rule *r);
 str
 MTIMErule_extract_month(int *ret, rule *r)
 {
@@ -3252,7 +3280,6 @@ MTIMErule_extract_month(int *ret, rule *r)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMErule_extract_day(int *ret, rule *r);
 str
 MTIMErule_extract_day(int *ret, rule *r)
 {
@@ -3260,7 +3287,6 @@ MTIMErule_extract_day(int *ret, rule *r)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMErule_extract_weekday(int *ret, rule *r);
 str
 MTIMErule_extract_weekday(int *ret, rule *r)
 {
@@ -3268,7 +3294,6 @@ MTIMErule_extract_weekday(int *ret, rule *r)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMErule_extract_minutes(int *ret, rule *r);
 str
 MTIMErule_extract_minutes(int *ret, rule *r)
 {
@@ -3276,7 +3301,6 @@ MTIMErule_extract_minutes(int *ret, rule *r)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtzone_extract_start(rule *ret, tzone *t);
 str
 MTIMEtzone_extract_start(rule *ret, tzone *t)
 {
@@ -3284,7 +3308,6 @@ MTIMEtzone_extract_start(rule *ret, tzone *t)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtzone_extract_end(rule *ret, tzone *t);
 str
 MTIMEtzone_extract_end(rule *ret, tzone *t)
 {
@@ -3292,7 +3315,6 @@ MTIMEtzone_extract_end(rule *ret, tzone *t)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtzone_extract_minutes(int *ret, tzone *t);
 str
 MTIMEtzone_extract_minutes(int *ret, tzone *t)
 {
@@ -3300,7 +3322,6 @@ MTIMEtzone_extract_minutes(int *ret, tzone *t)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_sub_sec_interval_wrap(date *ret, date *t, int *sec);
 str
 MTIMEdate_sub_sec_interval_wrap(date *ret, date *t, int *sec)
 {
@@ -3308,7 +3329,6 @@ MTIMEdate_sub_sec_interval_wrap(date *ret, date *t, int *sec)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_add_sec_interval_wrap(date *ret, date *t, int *sec);
 str
 MTIMEdate_add_sec_interval_wrap(date *ret, date *t, int *sec)
 {
@@ -3316,14 +3336,12 @@ MTIMEdate_add_sec_interval_wrap(date *ret, date *t, int *sec)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdate_add_month_interval_wrap(date *ret, date *t, int *months);
 str
 MTIMEdate_add_month_interval_wrap(date *ret, date *t, int *months)
 {
 	return MTIMEdate_addmonths(ret, t, months);
 }
 
-mal_export str MTIMEcompute_rule_foryear(date *ret, rule *val, int *year);
 str
 MTIMEcompute_rule_foryear(date *ret, rule *val, int *year)
 {
@@ -3331,7 +3349,6 @@ MTIMEcompute_rule_foryear(date *ret, rule *val, int *year)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtzone_tostr(str *s, tzone *ret);
 str
 MTIMEtzone_tostr(str *s, tzone *ret)
 {
@@ -3344,7 +3361,6 @@ MTIMEtzone_tostr(str *s, tzone *ret)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtzone_fromstr(tzone *ret, str *s);
 str
 MTIMEtzone_fromstr(tzone *ret, str *s)
 {
@@ -3356,7 +3372,6 @@ MTIMEtzone_fromstr(tzone *ret, str *s)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdaytime_fromstr(daytime *ret, str *s);
 str
 MTIMEdaytime_fromstr(daytime *ret, str *s)
 {
@@ -3371,7 +3386,6 @@ MTIMEdaytime_fromstr(daytime *ret, str *s)
 @-
 The utilities from Monet V4
 @c
-mal_export str MTIMEmsecs(lng *ret, int *d, int *h, int *m, int *s, int *ms);
 str
 MTIMEmsecs(lng *ret, int *d, int *h, int *m, int *s, int *ms)
 {
@@ -3379,7 +3393,6 @@ MTIMEmsecs(lng *ret, int *d, int *h, int *m, int *s, int *ms)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdaytime1(daytime *ret, int *h);
 str
 MTIMEdaytime1(daytime *ret, int *h)
 {
@@ -3389,7 +3402,6 @@ MTIMEdaytime1(daytime *ret, int *h)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdaytime2(daytime *ret, int *h, int *m);
 str
 MTIMEdaytime2(daytime *ret, int *h, int *m)
 {
@@ -3399,7 +3411,6 @@ MTIMEdaytime2(daytime *ret, int *h, int *m)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEdaytime3(daytime *ret, int *h, int *m, int *s);
 str
 MTIMEdaytime3(daytime *ret, int *h, int *m, int *s)
 {
@@ -3409,7 +3420,6 @@ MTIMEdaytime3(daytime *ret, int *h, int *m, int *s)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEunix_epoch(timestamp *ret);
 str
 MTIMEunix_epoch(timestamp *ret)
 {
@@ -3425,7 +3435,6 @@ MTIMEunix_epoch(timestamp *ret)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEepoch(timestamp *ret);
 str
 MTIMEepoch(timestamp *ret)
 {
@@ -3438,7 +3447,6 @@ MTIMEepoch(timestamp *ret)
 	return (e);
 }
 
-mal_export str MTIMEepoch2lng(lng *ret, timestamp *t);
 str
 MTIMEepoch2lng(lng *ret, timestamp *t)
 {
@@ -3451,7 +3459,6 @@ MTIMEepoch2lng(lng *ret, timestamp *t)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEtimestamp(timestamp *ret, int *sec);
 str
 MTIMEtimestamp(timestamp *ret, int *sec)
 {
@@ -3463,7 +3470,6 @@ MTIMEtimestamp(timestamp *ret, int *sec)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint);
 str
 MTIMEruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint)
 {
@@ -3474,7 +3480,6 @@ MTIMEruleDef0(rule *ret, int *m, int *d, int *w, int *h, int *mint)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint);
 str
 MTIMEruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint)
 {
@@ -3487,7 +3492,6 @@ MTIMEruleDef1(rule *ret, int *m, str *dnme, int *w, int *h, int *mint)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint);
 str
 MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint)
 {
@@ -3498,7 +3502,6 @@ MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEcurrent_timestamp(timestamp *t);
 str
 MTIMEcurrent_timestamp(timestamp *t)
 {
@@ -3506,7 +3509,6 @@ MTIMEcurrent_timestamp(timestamp *t)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEcurrent_date(date *d);
 str
 MTIMEcurrent_date(date *d)
 {
@@ -3517,7 +3519,6 @@ MTIMEcurrent_date(date *d)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEcurrent_time(daytime *t);
 str
 MTIMEcurrent_time(daytime *t)
 {

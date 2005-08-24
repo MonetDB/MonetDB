@@ -1835,7 +1835,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
     s= GDKmalloc(len);
     if(flg) { s[0]=0; t=s; }
     else { 
-		s[0]='!';
+		s[0]='#';
 		if( p->typechk == TYPE_UNKNOWN) {
 			s[1]='?';
 			s[2]= 0;

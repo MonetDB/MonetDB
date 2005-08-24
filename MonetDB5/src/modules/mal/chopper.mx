@@ -89,6 +89,13 @@ comment "return the BUN tail value using the cursor.";
 #include "mal.h"
 #include "mal_interpreter.h"
 
+mal_export str CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule);
+mal_export str CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule);
+mal_export str CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 @-
 We start with the large chunk iterator.
 The definition of the control statements require the same

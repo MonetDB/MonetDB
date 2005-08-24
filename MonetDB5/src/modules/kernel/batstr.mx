@@ -191,6 +191,7 @@ comment "Substitute first occurrence of 'src' by
 	BBPunfix(*X);\
 	BBPunfix(Z->batCacheid);
 @= BATint
+mal_export str STRbat@1(int *ret, int *l);
 str STRbat@1(int *ret, int *l)
 {   BAT *bn, *b;
 	BUN p,q;
@@ -222,6 +223,7 @@ bunins_failed:
 @:BATint(Bytes,strBytes,str)@
 
 @= BATstr
+mal_export str STRbat@1(int *ret, int *l);
 str STRbat@1(int *ret, int *l)
 {   BAT *bn, *b;
 	BUN p,q;
@@ -256,6 +258,7 @@ bunins_failed:
 
 @-
 @c
+mal_export str STRbatEqualCst(int *ret, int *l, str *cst);
 str
 STRbatEqualCst(int *ret, int *l, str *cst)
 {
@@ -293,6 +296,7 @@ implementation for shifted window arithmetic as well.
 	if( BATcount(@1) != BATcount(@2) )
 	return throwMessage("batcalc.@3", "requires bats of identical size");
 @c
+mal_export str STRbatEqual(int *ret, int *l, int *r);
 str
 STRbatEqual(int *ret, int *l, int *r)
 {
@@ -333,6 +337,7 @@ STRbatEqual(int *ret, int *l, int *r)
 }
 
 @= binarySTR
+mal_export str STRbat@1(int *ret, int *l, int *r);
 str STRbat@1(int *ret, int *l, int *r)
 {   BAT *bn, *left, *right;
 	BUN o,p,q;
@@ -368,6 +373,7 @@ bunins_failed:
 	return throwMessage("batstr." @5, "bunins failed");
 }
 
+mal_export str STRbat@1cst(int *ret, int *l, @3 *cst);
 str STRbat@1cst(int *ret, int *l, @3 *cst)
 {   BAT *bn, *left;
 	BUN p,q;
@@ -396,6 +402,7 @@ bunins_failed:
 	return throwMessage("batstr"@5, "bunins failed");
 }
 @= binarySTRstr
+mal_export str STRbat@1(int *ret, int *l, int *r);
 str STRbat@1(int *ret, int *l, int *r)
 {   BAT *bn, *left, *right;
 	BUN o,p,q;
@@ -431,6 +438,7 @@ bunins_failed:
 	return throwMessage("batstr." @5, "bunins failed");
 }
 
+mal_export str STRbat@1cst(int *ret, int *l, @3 *cst);
 str STRbat@1cst(int *ret, int *l, @3 *cst)
 {   BAT *bn, *left;
 	BUN p,q;
@@ -468,6 +476,7 @@ bunins_failed:
 @:binarySTR(WChrAt,int,int,strWChrAt,"chrAt")@
 @:binarySTR(ChrAt,chr,int,strChrAt,"chrAt")@
 
+mal_export str STRbattostr(int *ret, int *bid);
 str
 STRbattostr(int *ret, int *bid)
 {
@@ -475,6 +484,7 @@ STRbattostr(int *ret, int *bid)
 	return MAL_SUCCEED;
 }
 
+mal_export str STRbatSubStringcst(int *ret, int *l, int *offset, int *length);
 str
 STRbatSubStringcst(int *ret, int *l, int *offset, int *length)
 {
@@ -505,6 +515,7 @@ STRbatSubStringcst(int *ret, int *l, int *offset, int *length)
 	return throwMessage("batstr.subString", "bunins failed");
 }
 
+mal_export str STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep);
 str
 STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 {
@@ -535,6 +546,7 @@ STRbatSubstitutecst(int *ret, int *l, str *arg2, str *arg3, bit *rep)
 	return throwMessage("batstr.subString", "bunins failed");
 }
 
+mal_export str STRbatmatchCst(int *ret, int *bid, str *pat);
 str
 STRbatmatchCst(int *ret, int *bid, str *pat)
 {

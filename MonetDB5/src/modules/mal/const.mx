@@ -96,6 +96,22 @@ const.prelude();
 @h
 #ifndef _ITERATOR_H
 #define _ITERATOR_H
+#include "mal.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+
+mal_export str CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CSTopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CSTclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CSTdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CSTreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CSTnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CSThasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _ITERATOR_H */
 @- Module initializaton
 The content of this box my only be changed by the Administrator.
@@ -109,9 +125,7 @@ The content of this box my only be changed by the Administrator.
 	GDKfree(msg);
 @c
 #include "const.h"
-#include "mal.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
+
 
 int
 isAuthorized(str nme)

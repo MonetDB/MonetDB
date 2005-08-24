@@ -132,7 +132,13 @@ static int usock = -1;
 #define MAXemitters 5
 
 static DCpump channel;		/* insecure channel between threads! */
-
+mal_export str DCgetEmitterStatus(int *ret);
+mal_export str DCbindEmitter(int *retpublic, int *retprivate, str *name, str *cname);
+mal_export str DCbindEmitterTuple(int *retpublic, int *retprivate, str *name, str *cname);
+mal_export str DCbindEmitterPublic(int *retpublic, str *name, str *cname);
+mal_export str DClistenEmitter(DCpump p, str *Usockfile);
+mal_export str DCstartDelivery(DCpump p, stream *bs);
+mal_export str DCspeakThread(SensorInfo sensor);
 
 str
 DCgetEmitterStatus(int *ret)

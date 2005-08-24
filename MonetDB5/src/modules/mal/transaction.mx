@@ -69,6 +69,15 @@ comment	"List deletions since last commit.";
 #include "mal_interpreter.h"
 #include "bat.h"
 
+mal_export str TRNglobal_sync(int *ret);
+mal_export str TRNglobal_abort(int *ret);
+mal_export str TRNglobal_commit(int *ret);
+mal_export str TRNtrans_clean(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str TRNtrans_abort(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str TRNtrans_commit(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str TRNtrans_alpha(int *ret, int *bid);
+mal_export str TRNtrans_delta(int *ret, int *bid);
+
 int
 global_sync(void)
 {

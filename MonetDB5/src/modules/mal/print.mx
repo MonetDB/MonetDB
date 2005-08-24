@@ -154,10 +154,6 @@ comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 #include "mal.h"
 #include "mal_interpreter.h"
 
-mal_export str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int order, int printhead, int printorderby);
-mal_export str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl, int nobat);
-mal_export str IOprint_formatted_nil(stream *fd, str format, char last);
 
 typedef struct {
 	int up, down;
@@ -174,6 +170,35 @@ typedef FILE *fstream;
 @c
 #include <mal_config.h>
 #include "print.h"
+
+mal_export str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+int i, int order, int printhead, int printorderby);
+mal_export str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
+str hd, str tl, int nobat);
+mal_export str IOprint_formatted_nil(stream *fd, str format, char last);
+mal_export str IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx,
+str hd, str tl, int nobat);
+mal_export str IOprint_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str IOprompt_val(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str IOprint_ft(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+int i, int order, int printhead, int printorder);
+mal_export str IOotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str IOtable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str IOfotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str IOftable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str IOttable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str IOtotable(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str IOprint_str(int *ret, str *s);
+mal_export str IOprint_formatted_nil(stream *fd, str format, char last);
+mal_export str IOprint_formatted_lng(int *ret, str *format, lng *val);
+mal_export str IOprint_formatted_str(int *ret, ptr fmt, str *s);
+mal_export str IOprint_oid(int *ret, ptr fmt, oid *s);
+mal_export str IOprint_formatted_bit(int *ret, ptr fmt, bit *s);
+mal_export str IOexport(int *ret, int *bid, str *fnme);
+mal_export str IOimport(int *ret, int *bid, str *fnme);
 
 @+ Printing
 The print commands are implemented as single instruction rules,
@@ -485,6 +510,7 @@ This to simplify error handling
 @-
 
 @= printFormatted
+mal_export str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s);
 str IOprint_formatted_@1(int *ret, ptr fmt, @1 *s){
 	stream *fd = getClient()->fdout;
 	char *format;

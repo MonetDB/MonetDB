@@ -84,7 +84,7 @@ pattern destroy(b:bat[:any,:any],immediate:bit)
 address CMDbbpdestroyBAT
 comment "Schedule a BAT for removal at session end or immediately";
 pattern toString(name:str):str 	
-address CMbbptoStr
+address CMDbbptoStr
 comment "Get the string representation of an element in the box";
 pattern discard(name:str):void 
 address CMDbbpdiscard
@@ -237,7 +237,49 @@ with a BAT descriptor. Upon failure we can simply abort the function.
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "bat.h"
-extern int doCMDfetch(ptr ret, BAT *b, size_t i);
+#include "algebra.h"
+
+mal_export str CMDbbpprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpbindindex(int *ret, int *bid);
+mal_export str CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbprelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpdestroyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpdestroyBAT1(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpReleasA(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDBATclone(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+mal_export str CMDBATnew(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+mal_export str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+mal_export str CMDBATderivedByName(int *ret, str *nme);
+mal_export str CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p);
+mal_export str CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbbpNames(int *ret);
+mal_export str CMDbbpName(str *ret, int *bid);
+mal_export str CMDbbpRNames(int *ret);
+mal_export str CMDbbpCount(int *ret);
+mal_export str CMDbbpLocation(int *ret);
+mal_export str CMDbbpHeat(int *ret);
+mal_export str CMDbbpDirty(int *ret);
+mal_export str CMDbbpStatus(int *ret);
+mal_export str CMDbbpKind(int *ret);
+mal_export str CMDbbpRefCount(int *ret);
+mal_export str CMDbbpLRefCount(int *ret);
+mal_export str CMDgetBATrefcnt(int *res, int *bid);
+mal_export str CMDgetBATlrefcnt(int *res, int *bid);
+mal_export str CMDbatunpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDbatpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @-
 Access to a box calls for resolving the first parameter
@@ -584,7 +626,7 @@ CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CMbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CMDbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	Box box;
 	int i;
@@ -1121,6 +1163,7 @@ CMDgetBATlrefcnt(int *res, int *bid)
 
 @-
 @= headtailProperty
+mal_export str CMDbbp@2( int *ret);
 str CMDbbp@2( int *ret){
 	BAT     *b,*bn;
 	int     i;

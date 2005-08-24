@@ -196,6 +196,7 @@ comment "set the maximum usable amount of physical swapspace in KB";
 #endif
 
 extern lng GDKcur_cursize();
+mal_export str SYSgetmem_cursize(lng *num);
 str
 SYSgetmem_cursize(lng *num)
 {
@@ -203,6 +204,7 @@ SYSgetmem_cursize(lng *num)
 	return MAL_SUCCEED;
 }
 
+mal_export str SYSgetmem_maxsize(lng *num);
 str
 SYSgetmem_maxsize(lng *num)
 {
@@ -210,6 +212,7 @@ SYSgetmem_maxsize(lng *num)
 	return MAL_SUCCEED;
 }
 
+mal_export str set_mem_maxsize(lng *num);
 str
 set_mem_maxsize(lng *num)
 {
@@ -217,6 +220,7 @@ set_mem_maxsize(lng *num)
 	return MAL_SUCCEED;
 }
 
+mal_export str SYSgetvm_cursize(lng *num);
 str
 SYSgetvm_cursize(lng *num)
 {
@@ -224,6 +228,7 @@ SYSgetvm_cursize(lng *num)
 	return MAL_SUCCEED;
 }
 
+mal_export str SYSgetvm_maxsize(lng *num);
 str
 SYSgetvm_maxsize(lng *num)
 {
@@ -231,6 +236,7 @@ SYSgetvm_maxsize(lng *num)
 	return MAL_SUCCEED;
 }
 
+mal_export str SYSsetvm_maxsize(lng *num);
 str
 SYSsetvm_maxsize(lng *num)
 {
@@ -251,6 +257,7 @@ static int clk = 0;
 static struct tms state;
 #endif
 
+mal_export str SYScpuStatistics(int *ret);
 str
 SYScpuStatistics(int *ret)
 {
@@ -299,6 +306,7 @@ Same observations as to SYScpuStatistics()
 #ifdef HAVE_SBRK
 static void *memincr = NULL;
 #endif
+mal_export str SYSmemStatistics(int *ret);
 str
 SYSmemStatistics(int *ret)
 {
@@ -354,6 +362,7 @@ if (@2) {
 }
 @c
 
+mal_export str SYSmem_usage(int *ret, lng *minsize);
 str
 SYSmem_usage(int *ret, lng *minsize)
 {
@@ -455,6 +464,7 @@ str SYSmemMap() {
 */
 
 
+mal_export str SYSvm_usage(int *ret, lng *minsize);
 str
 SYSvm_usage(int *ret, lng *minsize)
 {
@@ -556,6 +566,7 @@ The BAT grows. It should be compacted.
 # include <sys/resource.h>
 #endif
 
+mal_export str SYSioStatistics(int *ret);
 str
 SYSioStatistics(int *ret)
 {
@@ -595,6 +606,7 @@ SYSioStatistics(int *ret)
 	return MAL_SUCCEED;
 }
 
+mal_export str SYSgdkEnv(int *ret);
 str
 SYSgdkEnv(int *ret)
 {
@@ -604,6 +616,7 @@ SYSgdkEnv(int *ret)
 	return MAL_SUCCEED;
 }
 
+mal_export str SYSgdkThread(int *ret);
 str
 SYSgdkThread(int *ret)
 {

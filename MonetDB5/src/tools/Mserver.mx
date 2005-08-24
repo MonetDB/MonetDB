@@ -168,6 +168,8 @@ absolute_path(str s)
 The options obtained during initialization should be maintained as
 a global structure for other components to extract information.
 @c
+#define BSIZE 8192
+
 void
 monet_init(opt *set, int setlen)
 {
@@ -175,7 +177,7 @@ monet_init(opt *set, int setlen)
 	opt *n = (opt *) malloc(setlen * sizeof(opt));
 	int i, j, nlen = 0;
 
-	char buf[8192];
+	char buf[BSIZE];
 	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
 	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
 	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
@@ -187,6 +189,8 @@ monet_init(opt *set, int setlen)
 		return;
 	}
 
+	if(strlen(dbfarmval) >= BSIZE)
+			GDKfatal("monet_init: buffer overflow\n");
 	strcpy(buf, dbfarmval);
 	mo_substitute(set, setlen, buf);
 
@@ -220,6 +224,8 @@ monet_options.mx.in
 		}
 	}
 	for (i = 0; i < nlen; i++) {
+		if(strlen(n[i].value) >= BSIZE)
+				GDKfatal("monet_init: buffer overflow\n");
 		strncpy(buf, n[i].value, sizeof(buf));
 		mo_substitute(n, nlen, buf);
 		GDKsetenv(n[i].name, buf);

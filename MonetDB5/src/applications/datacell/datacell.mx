@@ -239,6 +239,7 @@ and analyse the data.
 #include "../modules/mal/tablet.h"
 #include "mal_exception.h"
 #include "mtime.h"
+#include "bat.h"
 
 typedef enum { RECEPTOR, NUCLEUS, EMITTER } DATACELLKIND;
 
@@ -308,8 +309,56 @@ to restart sensor input collection between sessions.
 Furthermore, the BATs can be made accessible from the SQL frontend.
 @c
 #include "datacell.h"
+#include "bat.h"
 
 char *cellKind[] = { "receptor", "nucleus", "emitter", "pump" };
+
+mal_export str DCsaveCatalogue(int *ret, str *backup);
+mal_export str DCloadCatalogue(int *ret, str *backup);
+mal_export str DCdropPump(str sname);
+mal_export str DCdumpCatalogue(int *ret);
+mal_export str DCshowContainer(int *ret, str *cname, int *first, int *last);
+mal_export str DCopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str DCclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str DCdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str DCdefine(MalBlkPtr mb, MalStkPtr stk, InstrPtr pc);
+mal_export str DCnucleus(int *ret, str *name);
+mal_export str DCreceptor(int *ret, str *name, str *host, int *port);
+mal_export str DCemitter(int *ret, str *name, str *host, int *port);
+mal_export str DCtake(int *ret, str *cname, str *pname);
+mal_export str DCstop(int *ret, str sname);
+mal_export str DCstopAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str DCdrop(int *ret, str *name);
+mal_export str DCgetKind(int *bid, int kind);
+mal_export str DCgetReceptors(int *bid);
+mal_export str DCgetNucleus(int *bid);
+mal_export str DCgetEmitters(int *bid);
+mal_export str DCgetPumps(int *bid);
+mal_export str DCgetQueries(int *bid);
+mal_export str DCgetSource(int *bid, str *name);
+mal_export str DCgetSink(int *bid, str *name);
+mal_export str DCgetProperties(int *bid, str *name);
+mal_export str DCgetDynamicProperties(int *bid, str *name);
+mal_export str DCgetLog(int *bid);
+mal_export str DCgetPort(int *ret, str *nme);
+mal_export str DCsetTimeWindow(int *ret, str *name, int *delay, int *timeout);
+mal_export str DCgetTimeout(int *ret, str *nme);
+mal_export str DCgetPorts(int *ret, int kind);
+mal_export str DCgetEmitterPorts(int *ret);
+mal_export str DCgetReceptorPorts(int *ret);
+mal_export str getHost(str name);
+mal_export str DCgetHost(str *ret, str *name);
+mal_export str DCgetDocumentation(str *ret, str *name);
+mal_export str DCgetQuery(str *ret, str *name);
+mal_export str DCputDocumentation(int *ret, str *name, str *txt);
+mal_export str DCgetPicture(str *ret, str *name);
+mal_export str DCputPicture(int *ret, str *name, str *txt);
+mal_export str DCgetHosts(int *ret, int kind);
+mal_export str DCgetEmitterHost(int *ret);
+mal_export str DCgetReceptorHost(int *ret);
+mal_export str DCgetStatus(int *ret);
+mal_export str DCkeep(int *ret, str *name, int *dst, int *src);
+mal_export str DCkeepTuple(int *ret, str *name, int *dst, void *src);
 
 @-
 The pump containers are actually simple relational tables.
@@ -1287,7 +1336,7 @@ DCkeep(int *ret, str *name, int *dst, int *src)
 	if (p == 0 || p->kind != EMITTER)
 		return throwMessage("datacell.append", "Pump lost");
 	/* mal_set_lock(p->lock,"datacell.append"); */
-	msg = (str) BKCbat_append_void_bat_wrap(ret, dst, src);
+	msg = BKCbat_append_void_bat_wrap(ret, dst, src);
 	/* mal_unset_lock(p->lock,"datacell.append"); */
 	return msg;
 }
@@ -1302,7 +1351,7 @@ DCkeepTuple(int *ret, str *name, int *dst, void *src)
 	if (p == 0 || p->kind != EMITTER)
 		return throwMessage("datacell.append", "Pump lost");
 	/* mal_set_lock(p->lock,"datacell.append"); */
-	msg = (str) BKCbat_append_val_wrap(ret, dst, src);
+	msg = BKCbat_append_val_wrap(ret, dst, src);
 	/* mal_unset_lock(p->lock,"datacell.append"); */
 	return msg;
 }

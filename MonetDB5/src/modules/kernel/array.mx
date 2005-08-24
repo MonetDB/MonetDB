@@ -98,6 +98,17 @@ comment "Prints an array, using 1 value bat and N aligned index bats";
 #include <math.h>
 #include <time.h>
 
+mal_export str ARRAYgrid(int *ret, int *groups, int *groupsize, int *clustersize
+, int *offset);
+mal_export str ARRAYgridShift(int *ret, int *groups, int *groupsize, int *clustersize, int *offset, int *shift);
+mal_export str ARRAYgridBAT(int *ret, int *bid, int *groups, int *groupsize, int
+ *clustersize, int *offset);
+mal_export str ARRAYgridBATshift(int *ret, int *bid, int *groups, int *groupsize
+, int *clustersize, int *offset, int *shift);
+mal_export str ARRAYproduct(int *ret, int *bid, int *rid);
+mal_export str ARRAYproject(int *ret, int *bid, int *cst);
+mal_export str ARRAYprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 /*----------------------------------------------------------------------------*/
 
 int
@@ -437,6 +448,7 @@ ARRAYgridBATshift(int *ret, int *bid, int *groups, int *groupsize, int *clusters
 
 @-
 @= arraymultiply
+mal_export str ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid);
 str
 ARRAYmultiply_@1_@2(int *ret, int *bid, int *rid){
 	BAT *bn, *b, *r;

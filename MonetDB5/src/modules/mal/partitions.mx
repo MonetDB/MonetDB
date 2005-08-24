@@ -178,12 +178,46 @@ as a handle.
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
-mal_export int BPTfindGrp(int bid);
 
 #endif
 @c
 #include "partitions.h"
 #include "bat.h"
+
+mal_export int BPTfindGrp(int bid);
+mal_export void BPTresize(int size);
+mal_export str BPTdump();
+mal_export str BPTprelude(int *ret);
+mal_export str BPTopen();
+mal_export str BPTclose();
+mal_export str BPTdestroy();
+mal_export str BPTtake(int *ret, int *idx);
+mal_export int BPTfindGrp(int bid);
+mal_export int BPTfindPartition(int bid, int pid);
+mal_export str BPTdeposit(int *ret, int *bid);
+mal_export str BPTdeposit2(int *ret, int *bid, int *pid);
+mal_export str BPTdepositPartition(int *ret, str *bnme, str *pnme, int *cap);
+mal_export str BPTgetRange(oid *first, oid *last, int *bid);
+mal_export str BPTgetLastPartition(int *ret, int *bid);
+mal_export str BPTdiscard(int *ret, int *bid);
+mal_export str BPTdiscardAll(int *ret);
+mal_export str BPTtoString(int *ret, int *bid);
+mal_export str BPTreleaseAll(int *ret, int *bid);
+mal_export str BPTrelease(int *ret, int *bid);
+mal_export str BPTnewIteratorBase(int *ret);
+mal_export str BPThasMoreElementsBase(int *ret);
+mal_export str BPTnewIterator(int *res, int *pid, int *bid);
+mal_export str BPTnewIteratorRng(int *res, int *pid, int *bid, oid *first, oid *
+last);
+mal_export str BPThasMoreElements(int *res, int *pid, int *bid);
+mal_export str BPThasMoreElementsRng(int *res, int *pid, int *bid, oid *first, oid *last);
+mal_export str BPTsetCapacity(int *ret, int *bid, int *val);
+mal_export str BPTinsert_void_bun(int *ret, int *bid, ptr val);
+mal_export str BPTinsert(int *ret, int *bid, ptr h, ptr t);
+mal_export str BPTinsertBAT(int *ret, int *bid, int *bnid);
+mal_export str BPTdelete_oid(int *ret, int *bid, oid *h);
+mal_export str BPTcompress(int *ret, int *bid);
+mal_export str BPTdeleteBAT(int *ret, int *bid, int *bnid);
 
 typedef struct {
 	bat bid;		/* group bat identifier */

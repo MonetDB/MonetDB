@@ -125,6 +125,29 @@ int io_stdout(Stream *ret) { *(stream**)ret = GDKout; return GDK_SUCCEED; }
 int io_stderr(Stream *ret) { *(stream**)ret = GDKerr; return GDK_SUCCEED; }
 */
 
+mal_export int stream_write_string(Stream *S, str data);
+mal_export int stream_writeInt_wrap(Stream *S, int *data);
+mal_export int stream_readInt_wrap(int *data, Stream *S);
+mal_export int stream_read_string(str *res, Stream *S);
+mal_export int stream_flush_stream(Stream *S);
+mal_export int stream_close_stream(Stream *S);
+mal_export int open_block_stream(Stream *S, Stream *is);
+mal_export int bstream_create_wrap(Bstream *BS, Stream *S, int *bufsize);
+mal_export int bstream_destroy_wrap(Bstream *BS);
+mal_export int bstream_read_wrap(int *res, Bstream *BS, int *size);
+mal_export str stream_write_stringwrap(int *ret, Stream *S, str *data);
+mal_export str stream_writeIntwrap(int *ret, Stream *S, int *data);
+mal_export str stream_readIntwrap(int *ret, Stream *S);
+mal_export str stream_read_stringwrap(str *res, Stream *s);
+mal_export str stream_flush_streamwrap(int *ret, Stream *s);
+mal_export str stream_close_streamwrap(int *ret, Stream *s);
+mal_export str open_block_streamwrap(Stream *S, Stream *is);
+mal_export str bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize);
+mal_export str bstream_destroy_wrapwrap(int *ret, Bstream *BS);
+mal_export str bstream_read_wrapwrap(int *res, Bstream *BS, int *size);
+mal_export str stream_readIntwrap(int *ret, Stream *S);
+mal_export str stream_read_stringwrap(str *res, Stream *s);
+
 @= open_stream
 mal_export int stream_open_@1(Stream *S, str filename);
 int
@@ -184,10 +207,6 @@ stream_socket_@1(Stream *S, int *socket, str name)
 @:open_socket(wastream)@
 
 @c
-mal_export int stream_write_string(Stream *S, str data);
-mal_export int stream_writeInt_wrap(Stream *S, int *data);
-mal_export int stream_readInt_wrap(int *data, Stream *S);
-mal_export int stream_read_string(str *res, Stream *S);
 int
 stream_write_string(Stream *S, str data)
 {
@@ -236,10 +255,6 @@ stream_read_string(str *res, Stream *S)
 	return GDK_SUCCEED;
 }
 
-mal_export int stream_flush_stream(Stream *S);
-mal_export int stream_close_stream(Stream *S);
-mal_export int open_block_stream(Stream *S, Stream *is);
-mal_export int bstream_create_wrap(Bstream *BS, Stream *S, int *bufsize);
 int
 stream_flush_stream(Stream *S)
 {
@@ -277,8 +292,6 @@ bstream_create_wrap(Bstream *BS, Stream *S, int *bufsize)
 	}
 }
 
-mal_export int bstream_destroy_wrap(Bstream *BS);
-mal_export int bstream_read_wrap(int *res, Bstream *BS, int *size);
 int
 bstream_destroy_wrap(Bstream *BS)
 {
@@ -336,16 +349,6 @@ str stream_socket_@1wrap( Stream *S, int *socket, str *name ){
 @:open_socketwrap(rastream)@
 @:open_socketwrap(wastream)@
 
-mal_export str stream_write_stringwrap(int *ret, Stream *S, str *data);
-mal_export str stream_writeIntwrap(int *ret, Stream *S, int *data);
-mal_export str stream_readIntwrap(int *ret, Stream *S);
-mal_export str stream_read_stringwrap(str *res, Stream *s);
-mal_export str stream_flush_streamwrap(int *ret, Stream *s);
-mal_export str stream_close_streamwrap(int *ret, Stream *s);
-mal_export str open_block_streamwrap(Stream *S, Stream *is);
-mal_export str bstream_create_wrapwrap(Bstream *Bs, Stream *S, int *bufsize);
-mal_export str bstream_destroy_wrapwrap(int *ret, Bstream *BS);
-mal_export str bstream_read_wrapwrap(int *res, Bstream *BS, int *size);
 str
 stream_write_stringwrap(int *ret, Stream *S, str *data)
 {
@@ -372,8 +375,6 @@ stream_readIntwrap(int *ret, Stream *S)
 	return throwMessage("streams.readInt", "failed");
 }
 
-mal_export str stream_readIntwrap(int *ret, Stream *S);
-mal_export str stream_read_stringwrap(str *res, Stream *s);
 str
 stream_read_stringwrap(str *res, Stream *s)
 {

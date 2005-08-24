@@ -74,6 +74,12 @@ comment "POSIX pattern matching against a string";
 #ifndef HAVE_LIBPCRE
 
 #define pcre str
+mal_export str PCREfromstr(str instr, int *l, pcre ** val);
+mal_export str PCREcompile_wrap(pcre ** res, str *pattern);
+mal_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
+mal_export str PCREselect(int *res, str *pattern, int *bid);
+mal_export str PCREmatch(bit *ret, str *val, str *pat);
+
 
 int
 pcre_compile_wrap(pcre ** res, str pattern)
@@ -131,6 +137,12 @@ pcre_match(bit *ret, str *val, str *pat)
 
 #include <regex.h>
 #include <pcre.h>
+
+mal_export str PCREfromstr(str instr, int *l, pcre ** val);
+mal_export str PCREcompile_wrap(pcre ** res, str *pattern);
+mal_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
+mal_export str PCREselect(int *res, str *pattern, int *bid);
+mal_export str PCREmatch(bit *ret, str *val, str *pat);
 
 #define m2p(p) (pcre*)(((sht*)p)+1)
 #define p2m(p) (pcre*)(((sht*)p)-1)

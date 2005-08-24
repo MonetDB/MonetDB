@@ -641,6 +641,10 @@ them to be used sparsely.
 #ifndef _BAT_H_
 #define _BAT_H_
 
+#include <gdk.h>
+#include <mal.h>
+
+
 mal_export char *BKCsetRole(int *r, int *bid, char **hname, char **tname);
 mal_export char *BKCdestroyImmediate(signed char *r, int *bid);
 mal_export char *BKCnewBATint(int *res, int *ht, int *tt, int *cap);
@@ -651,18 +655,82 @@ mal_export char *BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
 mal_export char *BKCdelete(int *r, int *bid, ptr h);
 mal_export char *BKCdelete_bat(int *r, int *bid, int *bnid);
 mal_export char *BKCdestroy(signed char *r, int *bid);
-mal_export str BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid);
-mal_export str BKCbat_append_val_wrap(int *r, int *bid, ptr u);
-
+mal_export char *BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid);
+mal_export char * BKCbat_append_val_wrap(int *r, int *bid, ptr u);
+mal_export str BKCnewBATlng(int *res, int *ht, int *tt);
+mal_export str BKCnewBat(int *res, int *ht, int *tt);
+mal_export str BKCreverse(int *ret, int *bid);
+mal_export str BKCmirror(int *ret, int *bid);
+mal_export str BKCconvert(int *ret, int *bid);
+mal_export str BKCrevert(int *ret, int *bid);
+mal_export str BKCorder(int *ret, int *bid);
+mal_export str BKCorder_rev(int *ret, int *bid);
+mal_export str BKCinsert_bat(int *r, int *bid, int *sid);
+mal_export str BKCreplace_bun(int *r, int *bid, ptr h, ptr t);
+mal_export str BKCreplace_bat(int *r, int *bid, int *sid);
+mal_export str BKCdelete_all(int *r, int *bid);
+mal_export str BKCdelete_bat_bun(int *r, int *bid, int *sid);
+mal_export str BKCdelete_bat(int *r, int *bid, int *sid);
+mal_export str BKCdestroy_bat(bit *r, str *input);
+mal_export str BKCbat_append_oid_bat_wrap(int *r, int *bid, int *uid);
+mal_export str BKCbat_append_oidvoid_bat_wrap(int *r, int *bid, int *uid);
+mal_export str BKCoid_bat_append_oid_bat_wrap(int *res, int *bid, int *uid);
+mal_export str BKCoid_bat_append_val_wrap(int *r, int *bid, ptr u);
+mal_export str BKCbat_replace_oid_bat_wrap(int *r, int *bod, int *did);
+mal_export str BKCgetCapacity(lng *res, int *bid);
+mal_export str BKCgetHeadType(str *res, int *bid);
+mal_export str BKCgetTailType(str *res, int *bid);
+mal_export str BKCgetRole(str *res, int *bid);
+mal_export str BKCsetkey(int *res, int *bid, bit *param);
+mal_export str BKCsetSet(int *res, int *bid, bit *param);
+mal_export str BKCisaSet(int *res, int *bid);
+mal_export str BKCsetSorted(bit *res, int *bid);
+mal_export str BKCisSorted(bit *res, int *bid);
+mal_export str BKCisSortedReverse(bit *res, int *bid);
+mal_export str BKCgetKey(bit *ret, int *bid);
+mal_export str BKCpersists(int *r, int *bid, int *flg);
+mal_export str BKCsetPersistent(int *r, int *bid);
+mal_export str BKCisPersistent(bit *res, int *bid);
+mal_export str BKCsetTransient(int *r, int *bid);
+mal_export str BKCisTransient(bit *res, int *bid);
+mal_export str BKCaccess(int *res, int *bid, int *m);
+mal_export str BKCsetAccess(int *res, int *bid, str *param);
+mal_export str BKCgetAccess(char *res, int *bid);
+mal_export str BKCinfo(int *retval, int *bid);
+mal_export str BKCbatsize(int *tot, int *bid);
+mal_export str BKCbatsize_str(int *tot, str batname);
+mal_export str BKCisSynced(bit *ret, int *bid1, int *bid2);
+mal_export str BKCsetColumn(int *r, int *bid, str *tname);
+mal_export str BKCsetColumns(int *r, int *bid, str *hname, str *tname);
+mal_export str BKCsetName(int *r, int *bid, str *s);
+mal_export str BKCgetBBPname(str *ret, int *bid);
+mal_export str BKCunload(bit *res, str *input);
+mal_export str BKCisCached(int *res, int *bid);
+mal_export str BKCload(int *res, str *input);
+mal_export str BKChot(int *res, str *input);
+mal_export str BKCcold(int *res, str *input);
+mal_export str BKCcoldBAT(int *res, int *bid);
+mal_export str BKCheat(int *res, str *input);
+mal_export str BKChotBAT(int *res, int *bid);
+mal_export str BKCsave(bit *res, str *input);
+mal_export str BKCsave2(int *r, int *bid);
+mal_export str BKCmmap(int *res, int *bid, int *bns, int *hhp, int *thp);
+mal_export str BKCmmap2(int *res, int *bid, int *bns);
+mal_export str BKCmadvise(int *res, int *bid, int *bns, int *hhp, int *thp);
+mal_export str BKCmadvise2(int *res, int *bid, int *mode);
+mal_export str BKCaccbuild(int *ret, int *bid, str *acc, ptr *param);
+mal_export str BKCaccbuild_std(int *ret, int *bid, int *acc);
+mal_export str BKCsetHash(bit *ret, int *bid, bit *prop);
+mal_export str BKCsetSequenceBase(int *r, int *bid, oid *o);
+mal_export str BKCsetSequenceBaseNil(int *r, int *bid, oid *o);
+mal_export str BKCgetSequenceBase(oid *r, int *bid);
 #endif /*_BAT_H_*/
-@c
-#include <gdk.h>
-#include <mal.h>
 
+@c
 #include "bat.h"
 #include <stream.h>
 #include "mal_exception.h"
-
+@-
 @= batconvert
 	(BAT@2type(@1) == TYPE_bat)?(BUN)&((BAT*)@2)->batCacheid:(BUN)@2
 
@@ -1918,7 +1986,7 @@ void_append_bat(BAT *b, BAT *u)
 	return sz;
 }
 
-str
+char *
 BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid)
 {
 	BAT *i, *u;
@@ -2065,7 +2133,7 @@ BKCoid_bat_append_val_wrap(int *r, int *bid, ptr u)
 }
 
 
-str
+char *
 BKCbat_append_val_wrap(int *r, int *bid, ptr u)
 {
 	BAT *i;
@@ -2346,6 +2414,7 @@ BKCisTransient(bit *res, int *bid)
 
 @-
 @= accessMode
+mal_export str BKCset@1(int *res, int *bid) ;
 str BKCset@1(int *res, int *bid) {
 	BAT *b, *bn = NULL;
 	int param=@2;
@@ -2358,6 +2427,7 @@ str BKCset@1(int *res, int *bid) {
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+mal_export str BKChas@1(bit *res, int *bid);
 str BKChas@1(bit *res, int *bid) {
 	BAT *b;
     if( (b= BATdescriptor(*bid)) == NULL ){
@@ -2822,5 +2892,4 @@ BKCgetSequenceBase(oid *r, int *bid)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-
 @}

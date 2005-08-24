@@ -167,6 +167,22 @@ typedef struct {
 	Piece *pieces;
 } CrackMap;
 
+mal_export str CRKnew(int *cret, int *bid);
+mal_export str CRKnewGranule(int *cret, int *bid, int *gran);
+mal_export str CRKinfo(int *k, int *bid);
+mal_export str CRKcrackRange(int *partid, int *bid, int *low, int *hgh);
+mal_export str CRKcrackJoin(int *partid, int *bid, int *cid);
+mal_export int CRKsetBounds(BAT *b, BAT *view, int mid, int pid);
+mal_export str CRKnewIterator(lng *newpid, int *vid, int *bid);
+mal_export str CRKhasMoreElements(lng *pid, int *vbid, int *bid);
+mal_export str CRKgetPiece0(int *vbid, int *bid, int *piece);
+mal_export str CRKgetPiece1(int *newpid, int *bid, int *vbid, int *piece);
+mal_export str CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi);
+mal_export str CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi);
+mal_export str CRKselectPieces(int *result, int *bid, int *low, int *hgh);
+mal_export str CRKdropPiece(int *newpid, int *bid);
+mal_export str CRKdropView(int *newpid, int *bid);
+
 #endif /* _CRACKERS_H */
 @-
 During initialization of the crackers structure we already
@@ -292,8 +308,6 @@ already. [todo]
 	return MAL_SUCCEED;
 }
 
-mal_export str
-CRKnew(int *cret, int *bid);
 str
 CRKnew(int *cret, int *bid)
 {
@@ -308,8 +322,6 @@ CRKnew(int *cret, int *bid)
 	return MAL_SUCCEED;
 }
 
-mal_export str
-CRKnewGranule(int *cret, int *bid, int *gran);
 str
 CRKnewGranule(int *cret, int *bid, int *gran)
 {
@@ -318,8 +330,6 @@ CRKnewGranule(int *cret, int *bid, int *gran)
 	return CRKnew(cret, bid);
 }
 
-mal_export str
-CRKinfo(int *k, int *bid);
 str
 CRKinfo(int *k, int *bid)
 {
@@ -387,8 +397,6 @@ First experiment is a simple partitioning on the tail value.
 	@2->left= @2->middle= @2->right = -1;
 	crackMap[@1].freepiece++;
 @c
-mal_export str
-CRKcrackRange(int *partid, int *bid, int *low, int *hgh);
 str
 CRKcrackRange(int *partid, int *bid, int *low, int *hgh)
 {
@@ -565,8 +573,6 @@ the ranges of the outer partitions as well.
 	return MAL_SUCCEED;
 }
 
-mal_export str
-CRKcrackJoin(int *partid, int *bid, int *cid);
 str
 CRKcrackJoin(int *partid, int *bid, int *cid)
 {
@@ -582,8 +588,6 @@ The pieces of a cracked BAT are obtained through bat view.
 The nextPiece simply changes the dimensions of the BATview
 returned previously to represent a cracker piece.
 @c
-mal_export int
-CRKsetBounds(BAT *b, BAT *view, int mid, int pid);
 int
 CRKsetBounds(BAT *b, BAT *view, int mid, int pid)
 {
@@ -602,8 +606,6 @@ CRKsetBounds(BAT *b, BAT *view, int mid, int pid)
 	return pid + 1;
 }
 
-mal_export str
-CRKnewIterator(lng *newpid, int *vid, int *bid);
 str
 CRKnewIterator(lng *newpid, int *vid, int *bid)
 {
@@ -629,8 +631,6 @@ CRKnewIterator(lng *newpid, int *vid, int *bid)
 	return MAL_SUCCEED;
 }
 
-mal_export str
-CRKhasMoreElements(lng *pid, int *vbid, int *bid);
 str
 CRKhasMoreElements(lng *pid, int *vbid, int *bid)
 {
@@ -673,8 +673,6 @@ CRKhasMoreElements(lng *pid, int *vbid, int *bid)
 @-
 Selectively retrieve the pieces from the jigsaw.
 @c
-mal_export str
-CRKgetPiece0(int *vbid, int *bid, int *piece);
 str
 CRKgetPiece0(int *vbid, int *bid, int *piece)
 {
@@ -698,8 +696,6 @@ CRKgetPiece0(int *vbid, int *bid, int *piece)
 	return MAL_SUCCEED;
 }
 
-mal_export str
-CRKgetPiece1(int *newpid, int *bid, int *vbid, int *piece);
 str
 CRKgetPiece1(int *newpid, int *bid, int *vbid, int *piece)
 {
@@ -777,8 +773,6 @@ would be sufficient. This works because we know that
 the reshuffling of a range always takes place within the
 space of its origin.
 @c
-mal_export str
-CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi);
 str
 CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi)
 {
@@ -805,8 +799,6 @@ CRKselectNew(int *vid, int *bid, int *low, int *high, bit *li, bit *hi)
 	return MAL_SUCCEED;
 }
 
-mal_export str
-CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi);
 str
 CRKselect(int *vid, int *bid, int *low, int *high, bit *li, bit *hi)
 {
@@ -888,8 +880,6 @@ A common operation is to find all the pieces that
 overlap with a range. It can be used for subsequent
 iteration and flow-based processing.
 @c
-mal_export str
-CRKselectPieces(int *result, int *bid, int *low, int *hgh);
 str
 CRKselectPieces(int *result, int *bid, int *low, int *hgh)
 {
@@ -920,8 +910,6 @@ The GDK kernel contains an error about garbage collection
 of BATview objects. They have to be freed explicitly
 too.
 @c
-mal_export str
-CRKdropPiece(int *newpid, int *bid);
 str
 CRKdropPiece(int *newpid, int *bid)
 {
@@ -938,8 +926,6 @@ CRKdropPiece(int *newpid, int *bid)
 	return MAL_SUCCEED;
 }
 
-mal_export str
-CRKdropView(int *newpid, int *bid);
 str
 CRKdropView(int *newpid, int *bid)
 {

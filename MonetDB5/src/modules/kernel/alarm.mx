@@ -85,6 +85,16 @@ typedef struct {
 #include "alarm.h"
 #include <time.h>
 
+mal_export str ALARMprelude();
+mal_export str ALARMepilogue();
+mal_export str ALARMusec(lng *ret);
+mal_export str ALARMsleep(int *res, int *secs);
+mal_export str ALARMsetalarm(int *res, int *secs, str *action);
+mal_export str ALARMtimers(int *res);
+mal_export str ALARMctime(str *res);
+mal_export str ALARMepoch(int *res);
+mal_export str ALARMtime(int *res);
+
 static monet_timer_t timer[MAXtimer];
 static int timerTop = 0;
 

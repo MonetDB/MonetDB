@@ -134,6 +134,34 @@ comment "Produces a XML-formatted manual over all modules loaded.";
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
+mal_export str INSPECTmoduleNames(int *ret);
+mal_export str INSPECTsymbolFind(int *ret, int kind);
+mal_export str INSPECTfactoryNames(int *ret);
+mal_export str INSPECTfunctionNames(int *ret);
+mal_export str INSPECTpatternNames(int *ret);
+mal_export str INSPECTcommandNames(int *ret);
+mal_export str INSPECTgetFunction(int *ret);
+mal_export str INSPECTgetModule(int *ret);
+mal_export str INSPECTgetkind(int *ret);
+mal_export str INSPECTgetaddress(int *ret);
+mal_export str INSPECTgetsignature(int *ret);
+mal_export str INSPECTgetDefinition(int *ret, str *nme, str *fcn);
+mal_export str INSPECTgetSignature(int *ret, str *mod, str *fcn);
+mal_export str INSPECTsymbolType(int *ret, str *mod, str *fcn);
+mal_export str INSPECTatom_names(int *ret);
+mal_export str INSPECTatom_sup_names(int *ret);
+mal_export str INSPECTatom_sizes(int *ret);
+mal_export str INSPECTshowFunction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str INSPECTshowFunction3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str INSPECTtypename(str *ret, int *tpe);
+mal_export str INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MANUALcreate(int *ret, str *fname, str *mod, int *recursive);
+mal_export str MANUALcreate2(int *ret, str *fname, str *mod, int *recursive);
+mal_export str MANUALcreate1(int *ret, str *mod);
+mal_export str MANUALcreate0(int *ret);
+mal_export str MANUALhelp(int *ret, str *mod);
+mal_export str MANUALhelp2(int *ret, str *mod, str *fcn);
+
 @+ Symbol table 
 Mal symbol table and environment analysis.
 @c

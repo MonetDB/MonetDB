@@ -85,6 +85,15 @@ comment "Show the status of the datacell schedulers";
 extern str DCnaiveScheduler(int *ret, int *tries, int *delay);
 
 #define MAXBUF 1024
+mal_export str DCschedulerLog(int *ret, str *expr);
+mal_export str DCstartScheduler(int *ret, int *delay);
+mal_export str DCstopScheduler(int *ret, str *expr);
+mal_export str DCdumpSchedulers(int *ret);
+mal_export str DCnaiveScheduler(int *ret, int *cycles, int *delay);
+mal_export str DCisolate(int *ret, str *uname, str *target);
+mal_export str DCrelease(int *ret, str *target);
+mal_export str DCstartPump(int *ret, str *name);
+mal_export str DCstopPump(int *ret, str *name);
 
 str
 DCschedulerLog(int *ret, str *expr)

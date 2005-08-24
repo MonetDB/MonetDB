@@ -181,6 +181,26 @@ Using the Monet Performance Profiler is constrained by the mal_profiler.
 @c
 #include "profiler.h"
 
+mal_export str CMDactivateProfiler(int *res, str *name);
+mal_export str CMDdeactivateProfiler(int *res, str *name);
+mal_export str CMDsetFilterProfiler(int *res, str *mod, str *fcn);
+mal_export str CMDsetAllProfiler(int *res);
+mal_export str CMDclrFilterProfiler(int *res, str *mod, str *fcn);
+mal_export str CMDsetNoneProfiler(int *res);
+mal_export str CMDsetProfilerStream(int *res, str *fnme);
+mal_export str CMDstartPointProfiler(int *res, str *mod, str *fcn);
+mal_export str CMDendPointProfiler(int *res, str *mod, str *fcn);
+mal_export str CMDstopProfiler(int *res);
+mal_export str CMDstartProfiler(int *res);
+mal_export str CMDstartTrace(int *res);
+mal_export str CMDstopTrace(int *res);
+mal_export str CMDclearTrace(int *res);
+mal_export str CMDdumpTrace(int *res);
+mal_export str CMDgetTrace(int *res, str *ev);
+mal_export str CMDsetCachedProfiling(int *ret);
+mal_export str CMDsetOnlineProfiling(int *ret);
+mal_export str CMDsetOfflineProfiling(int *ret);
+
 #define checkProfiler(X) \
 	if( ! profilerAvailable()) \
 	return throwMessage("profiler." X,\

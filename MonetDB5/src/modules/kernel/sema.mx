@@ -78,6 +78,7 @@ destroy_sema(monet_sema *s)
 The old code base is wrapped to ease update propagation.
 @c
 #include "mal.h"
+mal_export str SEMAcreate(monet_sema *res, int *init);
 str
 SEMAcreate(monet_sema *res, int *init)
 {
@@ -85,6 +86,7 @@ SEMAcreate(monet_sema *res, int *init)
 	return MAL_SUCCEED;
 }
 
+mal_export str SEMAup(int *res, monet_sema *s);
 str
 SEMAup(int *res, monet_sema *s)
 {
@@ -93,6 +95,7 @@ SEMAup(int *res, monet_sema *s)
 	return MAL_SUCCEED;
 }
 
+mal_export str SEMAdown(int *res, monet_sema *s);
 str
 SEMAdown(int *res, monet_sema *s)
 {
@@ -101,6 +104,7 @@ SEMAdown(int *res, monet_sema *s)
 	return MAL_SUCCEED;
 }
 
+mal_export str SEMAdestroy(int *res, monet_sema *s);
 str
 SEMAdestroy(int *res, monet_sema *s)
 {

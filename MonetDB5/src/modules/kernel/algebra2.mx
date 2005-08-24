@@ -356,6 +356,7 @@ int CMDclustered_sum_@1(BAT **ret, BAT *b ) {
 #include "algebra2.h"
 
 @= joincmdMAL
+mal_export str AL2@1join(int *ret, int *lid, int *rid );
 str AL2@1join(int *ret, int *lid, int *rid ){
 	BAT *bn,*left, *right;
     if( (left= BATdescriptor(*lid)) == NULL ){
@@ -386,6 +387,7 @@ str AL2@1join(int *ret, int *lid, int *rid ){
 @:joincmdMAL(index)@
 @:joincmdMAL(leftindex)@
 
+mal_export str AL2leftthetajoin(int *ret, int *lid, int *rid, int *mode);
 str
 AL2leftthetajoin(int *ret, int *lid, int *rid, int *mode)
 {
@@ -409,6 +411,7 @@ AL2leftthetajoin(int *ret, int *lid, int *rid, int *mode)
 	return MAL_SUCCEED;
 }
 
+mal_export str AL2nlthetajoin(int *ret, int *lid, int *rid, int *mode, lng *estimate);
 str
 AL2nlthetajoin(int *ret, int *lid, int *rid, int *mode, lng *estimate)
 {
@@ -432,6 +435,7 @@ AL2nlthetajoin(int *ret, int *lid, int *rid, int *mode, lng *estimate)
 }
 
 @= selectcmdMAL
+mal_export str AL2ord_@1select1(int *ret, int * bid, ptr *value);
 str AL2ord_@1select1(int *ret, int * bid, ptr *value) {
 	BAT *bn, *b;
     if( (b= BATdescriptor(*bid)) == NULL ){
@@ -446,6 +450,7 @@ str AL2ord_@1select1(int *ret, int * bid, ptr *value) {
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
+mal_export str AL2ord_@1select(int *ret, int *bid, ptr *low, ptr *high);
 str AL2ord_@1select(int *ret, int *bid, ptr *low, ptr *high) {
 	BAT *bn, *b;
     if( (b= BATdescriptor(*bid)) == NULL ){
@@ -459,6 +464,7 @@ str AL2ord_@1select(int *ret, int *bid, ptr *low, ptr *high) {
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
+mal_export str AL2ord_@1select_(int *ret, int *bid, ptr *lval, ptr *hval, bit *l_in, bit *h_in);
 str AL2ord_@1select_(int *ret, int *bid, ptr *lval, ptr *hval, bit *l_in, bit *h_in){
 	ptr low=*lval, high= *hval;
 	int tt ;

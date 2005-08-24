@@ -67,12 +67,23 @@ comment "Close a factory";
 @h
 #ifndef _FACTORY_H
 #define _FACTORY_H
-#endif /* _FACTORY_H */
-@c
-#include "factory.h"
+
 #include "mal.h"
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
+
+mal_export str FCTgetPlants(int *ret);
+mal_export str FCTgetCaller(int *ret);
+mal_export str FCTgetOwners(int *ret);
+mal_export str FCTgetTimeStampIn(int *ret);
+mal_export str FCTgetTimeStampOut(int *ret);
+mal_export str FCTsetLocation(int *ret, str *loc);
+mal_export str FCTgetLocations(int *ret);
+mal_export str FCTshutdown(int *ret, str *mod, str *fcn);
+#endif /* _FACTORY_H */
+@c
+#include "factory.h"
+
 
 @+ Inspection
 @c

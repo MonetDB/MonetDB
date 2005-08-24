@@ -67,13 +67,25 @@ comment "Retrieve the names of all boxes";
 @{
 @+ Dummy code 
 @h
-#ifndef _ITERATOR_H
-#define _ITERATOR_H
-#endif /* _ITERATOR_H */
+#ifndef __BOX_H
+#define __BOX_H
+mal_export str BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str BOXgetBoxNames(int *bid);
+mal_export str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#endif /* __BOX_H */
 @c
 #include "mal_exception.h"
 #include "mal_box.h"
 #include "mal_interpreter.h"
+
 
 str
 BOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

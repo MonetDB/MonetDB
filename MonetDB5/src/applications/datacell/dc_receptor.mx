@@ -142,7 +142,12 @@ static int usock = -1;
 
 static DCpump channel;		/* insecure channel between threads! */
 
-
+mal_export str DCgetReceptorStatus(int *ret);
+mal_export str DCbindReceptor(int *retpublic, int *retprivate, str *name, str *cname);
+mal_export str DCbindReceptorTuple(int *retpublic, int *retprivate, str *name, str *cname);
+mal_export str DClistenReceptor(DCpump p, str *Usockfile);
+mal_export str DCstartChannel(DCpump p, bstream *bs);
+mal_export str DClistenThread(SensorInfo sensor);
 str
 DCgetReceptorStatus(int *ret)
 {

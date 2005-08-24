@@ -757,6 +757,7 @@ the string representations.
 @:c_shift_ops(sht)@
 @:c_shift_ops(int)@
 
+mal_export str CALCstrConcat(str *ret, str *l, str *r);
 str
 CALCstrConcat(str *ret, str *l, str *r)
 {
@@ -769,6 +770,7 @@ CALCstrConcat(str *ret, str *l, str *r)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCstrConcatInt(str *ret, str *l, int *r);
 str
 CALCstrConcatInt(str *ret, str *l, int *r)
 {
@@ -781,6 +783,7 @@ CALCstrConcatInt(str *ret, str *l, int *r)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCbinaryRSHlngint(lng *ret, lng *val, int *shift);
 str
 CALCbinaryRSHlngint(lng *ret, lng *val, int *shift)
 {
@@ -792,6 +795,7 @@ CALCbinaryRSHlngint(lng *ret, lng *val, int *shift)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCbinaryLSHlngint(lng *ret, lng *val, int *shift);
 str
 CALCbinaryLSHlngint(lng *ret, lng *val, int *shift)
 {
@@ -803,6 +807,7 @@ CALCbinaryLSHlngint(lng *ret, lng *val, int *shift)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCbinaryANDbit(bit *retval, bit *v1, bit *v2);
 str
 CALCbinaryANDbit(bit *retval, bit *v1, bit *v2)
 {
@@ -816,6 +821,7 @@ CALCbinaryANDbit(bit *retval, bit *v1, bit *v2)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCbinaryORbit(bit *retval, bit *v1, bit *v2);
 str
 CALCbinaryORbit(bit *retval, bit *v1, bit *v2)
 {
@@ -831,6 +837,7 @@ CALCbinaryORbit(bit *retval, bit *v1, bit *v2)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCbinaryXORbit(bit *retval, bit *v1, bit *v2);
 str
 CALCbinaryXORbit(bit *retval, bit *v1, bit *v2)
 {
@@ -842,6 +849,7 @@ CALCbinaryXORbit(bit *retval, bit *v1, bit *v2)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCunarybitNOT(bit *retval, bit *value);
 str
 CALCunarybitNOT(bit *retval, bit *value)
 {
@@ -853,6 +861,7 @@ CALCunarybitNOT(bit *retval, bit *value)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCswitchbit(ptr retval, bit *b, ptr v1, int tpe, ptr v2);
 str
 CALCswitchbit(ptr retval, bit *b, ptr v1, int tpe, ptr v2)
 {
@@ -885,6 +894,7 @@ The @emph{c_comp} and @emph{c_comp_ops} macros implement the mil comparison
 operations.
 
 @= any_binary_minmax
+mal_export str CALCbinary@1any(ptr ret, ptr v1, int t, ptr v2);
 str CALCbinary@1any(ptr ret, ptr v1, int t, ptr v2){
 	int (*cmp)(ptr,ptr) = BATatoms[t].atomCmp;
 	ptr src, nil = ATOMnilptr(t);
@@ -904,6 +914,7 @@ str CALCbinary@1any(ptr ret, ptr v1, int t, ptr v2){
 }
 
 @= c_comp_op
+mal_export str CALCcomp@4@2@3(bit *retval, @2 *v1, @3 *v2);
 str CALCcomp@4@2@3(bit *retval, @2 *v1, @3 *v2){
 	if (*v1 == @2_nil || *v2 == @3_nil) {
 		*retval = bit_nil;
@@ -943,6 +954,7 @@ str CALCcomp@4@2@3(bit *retval, @2 *v1, @3 *v2){
         @:c_comp_op(@1,lng,int,@2)@
         @:c_comp_op(@1,lng,lng,@2)@
 
+mal_export str CALCcomp@2strstr(bit *retval, str *s1, str *s2);
 str CALCcomp@2strstr(bit *retval, str *s1, str *s2){
 	if (strNil(*s1) || strNil(*s2)) {
 		*retval = bit_nil; 
@@ -951,6 +963,7 @@ str CALCcomp@2strstr(bit *retval, str *s1, str *s2){
 	}
 	return MAL_SUCCEED;
 }
+mal_export str CALCcomp@2any(bit *retval, ptr *v1, int tpe, ptr *v2);
 str CALCcomp@2any(bit *retval, ptr *v1, int tpe, ptr *v2){
 	int (*cmp)(ptr,ptr) = BATatoms[tpe].atomCmp;
 	ptr nil = ATOMnilptr(tpe);
@@ -970,6 +983,7 @@ str CALCcomp@2any(bit *retval, ptr *v1, int tpe, ptr *v2){
 @:c_between_op(flt)@
 @:c_between_op(dbl)@
 @:c_between_op(lng)@
+mal_export str CALCcompBetweenstr(bit *retval, str *val, str *low, str *high);
 str
 CALCcompBetweenstr(bit *retval, str *val, str *low, str *high)
 {
@@ -989,6 +1003,7 @@ CALCcompBetweenstr(bit *retval, str *val, str *low, str *high)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCcompBetweenany(bit *retval, ptr *val, int tpe, ptr *low, ptr *high);
 str
 CALCcompBetweenany(bit *retval, ptr *val, int tpe, ptr *low, ptr *high)
 {
@@ -1011,14 +1026,17 @@ CALCcompBetweenany(bit *retval, ptr *val, int tpe, ptr *low, ptr *high)
 }
 
 @= c_isnil
+mal_export str CALCisnil_@1(bit *retval, @1 *val);
 str CALCisnil_@1(bit *retval, @1 *val) {
 	*retval = (*val == @1_nil);
 	return MAL_SUCCEED;
 }
+mal_export str CALCisnotnil_@1(bit *retval, @1 *val);
 str CALCisnotnil_@1(bit *retval, @1 *val) {
 	*retval = (*val != @1_nil);
 	return MAL_SUCCEED;
 }
+mal_export str CALCnil2@1(@1 *retval, ptr val);
 str CALCnil2@1(@1 *retval, ptr val){
 	(void) val;/* fool compiler */
 	memcpy(retval, ATOMnilptr(TYPE_@1), ATOMsize(TYPE_@1));
@@ -1036,6 +1054,7 @@ str CALCnil2@1(@1 *retval, ptr val){
 @:c_isnil(ptr)@
 @:c_isnil(bat)@
 
+mal_export str CALCisnil_str(bit *retval, str *val);
 str
 CALCisnil_str(bit *retval, str *val)
 {
@@ -1043,6 +1062,7 @@ CALCisnil_str(bit *retval, str *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCisnotnil_str(bit *retval, str *val);
 str
 CALCisnotnil_str(bit *retval, str *val)
 {
@@ -1050,6 +1070,7 @@ CALCisnotnil_str(bit *retval, str *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCstr2nil(str *retval, str *val);
 str
 CALCstr2nil(str *retval, str *val)
 {
@@ -1058,6 +1079,7 @@ CALCstr2nil(str *retval, str *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCisnil_any(bit *retval, ptr *val, int tpe);
 str
 CALCisnil_any(bit *retval, ptr *val, int tpe)
 {
@@ -1067,6 +1089,7 @@ CALCisnil_any(bit *retval, ptr *val, int tpe)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCisnil_void(bit *retval, oid *val);
 str
 CALCisnil_void(bit *retval, oid *val)
 {
@@ -1074,6 +1097,7 @@ CALCisnil_void(bit *retval, oid *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCisnotnil_void(bit *retval, oid *val);
 str
 CALCisnotnil_void(bit *retval, oid *val)
 {
@@ -1082,6 +1106,7 @@ CALCisnotnil_void(bit *retval, oid *val)
 }
 
 @= c_between_op
+mal_export str CALCcompBetween@1(bit *retval, @1 *v, @1 *low, @1 *high);
 str CALCcompBetween@1(bit *retval, @1 *v, @1 *low, @1 *high){
 	if (*v == @1_nil || (*low == @1_nil && *high == @1_nil)) {
 		*retval = bit_nil;
@@ -1107,6 +1132,7 @@ result type.
 @
 
 @= calc_unop
+mal_export str CALCunary@3@1(@3 *res , @3 *a );
 str CALCunary@3@1(@3 *res , @3 *a ) {
 #ifdef DEBUG
 	printf( "CALCunary@3@1\n");
@@ -1121,6 +1147,7 @@ str CALCunary@3@1(@3 *res , @3 *a ) {
 @
 
 @= check_unop
+mal_export str CALCunarycheck@3@1(@3 *res , @3 *a );
 str CALCunarycheck@3@1(@3 *res , @3 *a ) {
 #ifdef DEBUG
 	printf( "CALCunary@3@1\n");
@@ -1135,6 +1162,7 @@ str CALCunarycheck@3@1(@3 *res , @3 *a ) {
 @
 
 @= calc_binop
+mal_export str CALCbinary@1@3@4(@5 *res, @3 *a, @4 *b );
 str CALCbinary@1@3@4(@5 *res, @3 *a, @4 *b ) {
 #ifdef DEBUG
 	printf( "CALCbinary@1@3@4\n");
@@ -1149,6 +1177,7 @@ str CALCbinary@1@3@4(@5 *res, @3 *a, @4 *b ) {
 @
 
 @= check_binop
+mal_export str CALCbinarycheck@1@3@4(@5 *res, @3 *a, @4 *b );
 str CALCbinarycheck@1@3@4(@5 *res, @3 *a, @4 *b ) {
 #ifdef DEBUG
 	printf( "CALCbinarycheck@1@3@4\n");
@@ -1174,6 +1203,7 @@ str CALCbinarycheck@1@3@4(@5 *res, @3 *a, @4 *b ) {
 @:calc_binop(RSH,>>,@1,int,@1)@
 
 @= calc_macrobinop
+mal_export str CALCbinary@1@3(@3 *res , @3 *a, @3 *b );
 str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
 #ifdef DEBUG
 	printf( "CALCbinary@1@3\n");
@@ -1188,6 +1218,7 @@ str CALCbinary@1@3(@3 *res , @3 *a, @3 *b ) {
 @
 Coercions do not check on information loss
 @= mal_coercion_impl2
+mal_export str CALC@22@1(@1 *res, @2 *a);
 str CALC@22@1(@1 *res, @2 *a)
 {
 	char buf[1024];
@@ -1197,6 +1228,7 @@ str CALC@22@1(@1 *res, @2 *a)
 }
 @-
 @= mal_coercion_impl
+mal_export str CALC@22@1(@1 *res, @2 *a);
 str CALC@22@1(@1 *res, @2 *a)
 {
 	*res= (@1) *a;
@@ -1271,6 +1303,7 @@ str CALC@22@1(@1 *res, @2 *a)
 @:mal_coercion_impl(chr,lng)@
 
 
+mal_export str CALClng2ptr(ptr *res, lng *a);
 str
 CALClng2ptr(ptr *res, lng *a)
 {
@@ -1279,6 +1312,7 @@ CALClng2ptr(ptr *res, lng *a)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCptr2lng(lng *res, ptr *a);
 str
 CALCptr2lng(lng *res, ptr *a)
 {
@@ -1298,11 +1332,13 @@ Old stuff, probably wrong
 The conversion routines are relatively easy to define.
 @= convertImpl
 
+mal_export str CALCstr2@1(@1 *ret, str *val);
 str CALCstr2@1(@1 *ret, str *val){
 	int l = sizeof(@1);
 	(void) @1FromStr(*val, &l, &ret);
 	return MAL_SUCCEED;
 }
+mal_export str CALC@12str(str *ret, @1 *val);
 str CALC@12str(str *ret, @1 *val){
 	int l=0;
 
@@ -1329,6 +1365,7 @@ voidFromStrImpl(void *ret, str val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCnil2str(str *ret, void *val);
 str
 CALCnil2str(str *ret, void *val)
 {
@@ -1337,6 +1374,7 @@ CALCnil2str(str *ret, void *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCstr2str(str *ret, str *val);
 str
 CALCstr2str(str *ret, str *val)
 {
@@ -1344,6 +1382,7 @@ CALCstr2str(str *ret, str *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCstr2oid(oid *ret, str *val);
 str
 CALCstr2oid(oid *ret, str *val)
 {
@@ -1353,6 +1392,7 @@ CALCstr2oid(oid *ret, str *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCoid2str(str *ret, oid *val);
 str
 CALCoid2str(str *ret, oid *val)
 {
@@ -1362,6 +1402,7 @@ CALCoid2str(str *ret, oid *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCnil2void(oid *ret, ptr *val);
 str
 CALCnil2void(oid *ret, ptr *val)
 {
@@ -1370,6 +1411,7 @@ CALCnil2void(oid *ret, ptr *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALClng2void(oid *ret, lng *val);
 str
 CALClng2void(oid *ret, lng *val)
 {
@@ -1377,6 +1419,7 @@ CALClng2void(oid *ret, lng *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCsht2void(oid *ret, sht *val);
 str
 CALCsht2void(oid *ret, sht *val)
 {
@@ -1384,6 +1427,7 @@ CALCsht2void(oid *ret, sht *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCint2void(oid *ret, int *val);
 str
 CALCint2void(oid *ret, int *val)
 {
@@ -1391,6 +1435,7 @@ CALCint2void(oid *ret, int *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str oidFromoidImpl(oid *ret, oid *val);
 str
 oidFromoidImpl(oid *ret, oid *val)
 {
@@ -1398,6 +1443,7 @@ oidFromoidImpl(oid *ret, oid *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str oidFromvoidImpl(oid *ret, void *val);
 str
 oidFromvoidImpl(oid *ret, void *val)
 {
@@ -1406,6 +1452,7 @@ oidFromvoidImpl(oid *ret, void *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCbat2batid(int *ret, int *bid);
 str
 CALCbat2batid(int *ret, int *bid)
 {
@@ -1419,6 +1466,7 @@ CALCbat2batid(int *ret, int *bid)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCbatid2bat(int *bid, int *ret);
 str
 CALCbatid2bat(int *bid, int *ret)
 {
@@ -1445,6 +1493,7 @@ CALCbatid2bat(int *bid, int *ret)
 
 @-
 @= setoidCode
+mal_export str @1SetoidImpl(str *ret, @1 *v);
 str @1SetoidImpl(str *ret, @1 *v){
 	(void) ret; /* fool compiler */
 	OIDbase((oid) *v);
@@ -1459,6 +1508,7 @@ str @1SetoidImpl(str *ret, @1 *v){
 Type conversion template. Only allowed then no information is lost.
 
 @= coercionImpl
+mal_export str @1From@2Impl(@1 *res, @2 *val);
 str @1From@2Impl(@1 *res, @2 *val){
 	*res = (@1) *val;
 	return MAL_SUCCEED;
@@ -1475,6 +1525,7 @@ str @1From@2Impl(@1 *res, @2 *val){
 @:coercionImpl(oid,int)@
 @:coercionImpl(oid,sht)@
 
+mal_export str shtFromlngImpl(sht *res, lng *val);
 str
 shtFromlngImpl(sht *res, lng *val)
 {
@@ -1485,6 +1536,7 @@ shtFromlngImpl(sht *res, lng *val)
 	return MAL_SUCCEED;
 }
 
+mal_export str shtFromintImpl(sht *res, int *val);
 str
 shtFromintImpl(sht *res, int *val)
 {
@@ -1498,6 +1550,7 @@ shtFromintImpl(sht *res, int *val)
 @+ Value, Types and Variables
 The routines below implement the OID utility functions.
 @c
+mal_export str CALCnewoidBase(oid *res);
 str
 CALCnewoidBase(oid *res)
 {
@@ -1505,6 +1558,7 @@ CALCnewoidBase(oid *res)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCnewoidInc(oid *res, int *inc);
 str
 CALCnewoidInc(oid *res, int *inc)
 {
@@ -1516,6 +1570,7 @@ CALCnewoidInc(oid *res, int *inc)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCnewoidInclng(oid *res, lng *inc);
 str
 CALCnewoidInclng(oid *res, lng *inc)
 {
@@ -1527,6 +1582,7 @@ CALCnewoidInclng(oid *res, lng *inc)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCsetoidBase(oid *res);
 str
 CALCsetoidBase(oid *res)
 {
@@ -1534,6 +1590,7 @@ CALCsetoidBase(oid *res)
 	return MAL_SUCCEED;
 }
 
+mal_export str CALCsetoidInc(oid *res, oid *inc);
 str
 CALCsetoidInc(oid *res, oid *inc)
 {
