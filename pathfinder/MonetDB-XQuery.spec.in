@@ -93,7 +93,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files devel
 %defattr(-,monetdb,monetdb) 
-%{prefix}/bin/burg
 %{prefix}/include/pathfinder/*.h
 
 %if %{builddoc}

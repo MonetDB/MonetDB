@@ -84,6 +84,22 @@ fi   dnl Yacc found on the system?
 
 AC_LANG_C
 
+AC_ARG_WITH(burg,
+	AC_HELP_STRING([--with-burg=FILE], [burg is installed as FILE]),
+	have_burg="$withval",
+	have_burg=auto)
+if test "x$have_burg" = xauto; then
+	AC_PATH_PROGS(BURG,[ burg$EXEEXT burg ],,$PATH)
+	if test "x$BURG" = x; then
+		AC_ERROR([No burg$EXEEXT found in PATH=$PATH])
+	fi
+elif test "x$have_burg" = xno; then
+	AC_MSG_ERROR([burg is required])
+else
+	BURG="$withval"
+fi
+AC_SUBST(BURG)
+
 dnl
 dnl We support the GNU getopt library (and its features for long option
 dnl names) if we find it available. Otherwise we fall back to the standard

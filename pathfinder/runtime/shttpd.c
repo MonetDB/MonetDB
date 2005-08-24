@@ -3083,6 +3083,18 @@ shttpd_get_var(struct conn *c, const char *var)
 	return (NULL);
 }
 
+/*
+ * Returns the whole message-body of a HTTP POST request
+ */
+const char *
+shttpd_get_post_msg(struct conn *c)
+{
+    if (c->http_method != HTTP_POST)
+        return NULL;
+    else
+        return c->query;
+}
+
 static void
 substitute(char *buf, const char *kw, const char *subst)
 {

@@ -133,6 +133,7 @@ extern void		shttpd_protect_url(const char *url, const char *file);
 extern void		shttpd_merge_fds(fd_set *rset, fd_set *wset,int *maxfd);
 extern void		shttpd_poll(int sock, unsigned milliseconds);
 extern const char	*shttpd_get_var(struct conn *, const char *varname);
+extern const char	*shttpd_get_post_msg(struct conn *);
 extern int		shttpd_template(struct conn *, const char *headers,
 			const char *file, ...);
 
