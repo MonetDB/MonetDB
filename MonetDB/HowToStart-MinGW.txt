@@ -4,8 +4,9 @@ compiler gcc to produce code which does not depend on any extra .DLLs.
 
 There are basically two ways in which you can use the MinGW compiler.
 The first is by installing the tools directly from the MinGW website,
-and the second is by using the Cygwin (http://www.cygwin.com/) tools.
-Cygwin is a Linux-like environment for Windows.
+including the MSYS tools; and the second is by using the Cygwin
+(http://www.cygwin.com/) tools.  Cygwin is a Linux-like environment
+for Windows.
 
 I have used the latter method.  The main reason for this is that the
 Cygwin tools are more up-to-date.  Especially the bison parser
@@ -56,28 +57,19 @@ cd MinGW
 make
 make install
 
-It is essential that the path to the configure script is relative and
-does not contain any spaces.  The path is used to find the Mx and mel
-executables after they have been built, and, moreover, the path is
-passed to these executables to find the source files on which they are
-supposed to work.  However, these executables are Windows (i.e. not
-Cygwin) executables, and so don't understand Cygwin paths.  They do
-however understand / as a directory separator (in addition to the
-normal Windows directory separator \).
+As with the other ways of compiling MonetDB, compiling MonetDB with
+MinGW uses Mx and mel.  These pacakges (from the buildtools module of
+the MonetDB CVS repository) need to be compiled for Cygwin and need to
+be installed in a directory in $PATH.  Alternatively, it is possible
+to use the --with-mx=.../Mx.exe and --with-mel=.../mel.exe options to
+configure to specify where these binaries are located.
+
+???It is essential that the path to the configure script does not
+contain any spaces.
 
 If you don't have PCRE installed, use --without-pcre instead of the
 --with-pcre=... option.  If you have installed it somewhere else,
 change the location.
-
-It is also possible to use precompiled versions of Mx and mel.  In
-that case use the --with-mx=.../Mx.exe and --with-mel=.../mel.exe
-options to configure, and compilation of Mx and mel will be skipped.
-
-Note that in order to compile other projects in the MonetDB suite with
-MinGW you need Cygwin binaries of Mx and mel.  You can use these
-binaries here as well, however using the MinGW binaries to compile
-MonetDB itself also works, as long as the path to configure was
-relative.
 
 In order to run the resulting binary, a number of folders need to be
 added to the Windows PATH:

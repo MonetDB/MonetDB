@@ -16,8 +16,4 @@
 
 ## Process this file with automake to produce Makefile.in
 
-# When cross-compiling, we need a "mel" working on the building host, not on
-# the target host, hence we don't need to build a "mel", here. 
-# We actually skip building "mel" in order to avoid problems...
-
-SUBDIRS = utils COMPILE_MEL?mel common gdk monet modules mapi tools testing
+SUBDIRS = common gdk monet modules mapi tools testing

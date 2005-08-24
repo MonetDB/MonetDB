@@ -1,145 +1,189 @@
-This document helps you to install the MonetDB source and compile it.
-Once succeeded, refer to doc/MonetDB.html for the user documentation 
+How To Start with MonetDB
+=========================
+
+.. This document is written in reStructuredText (see
+   http://docutils.sourceforge.net/ for more information).
+
+This document helps you compile and install the MonetDB source.  Once
+this is done, refer to doc/MonetDB.html for the user documentation
 generated as part of the process.
 
-In case you prefer to install a pre-compiled binary distribution, please
-check-out http://sourceforge.net/project/showfiles.php?group_id=56967 .
+In case you prefer installing a pre-compiled binary distribution,
+please check-out `the SourceForge documentation`__.
 
-This document assumes that you are planning to compile and install
-MonetDB on a Unix system (e.g., Linux, IRIX, Solaris, AIX, MacOS
-X/Darwin, or CYGWIN).
+__ http://sourceforge.net/project/showfiles.php?group_id=56967
+
+This document assumes that you are planning on compiling and
+installing MonetDB on a Unix system (e.g., Linux, IRIX, Solaris, AIX,
+MacOS X/Darwin, or CYGWIN).
+
 For compilation and installation on a native Windows system (NT, 2000, XP)
-see the instructions in the file 'HowToStart-Win32.txt'.
+see the instructions in the file `HowToStart-Win32.txt`__.
 
+__ Windows/index.html
 
-Prerequisites:
-==============
+Prerequisites
+-------------
 
 CVS
-	You need to have a working CVS.  For instructions, see
-	http://sourceforge.net/docman/?group_id=1 and look under the
-	heading CVS Instructions.
+	You need to have a working CVS.  For instructions, see `the
+	SourceForge documentation`__ and look under the heading CVS
+	Instructions.
+
+__ http://sourceforge.net/docman/?group_id=1
 
 Python
 	MonetDB uses Python (version 2.0.0 or better) during
 	configuration of the software.  See http://www.python.org/ for
 	more information.
 
-autoconf/automake/libtool 
+autoconf/automake/libtool
 	MonetDB uses GNU autoconf (>= 2.53), automake (>= 1.5), and
 	libtool (>= 1.4) during configuration of the software.  See
 	http://www.gnu.org/software/autoconf/,
 	http://www.gnu.org/software/automake/, and
-	http://www.gnu.org/software/libtool/
-	for more information.  Libtool is also used during the build.
+	http://www.gnu.org/software/libtool/ for more information.
+	Libtool is also used during the build.
 
 standard software development tools
-	To compile MonetDB, you also need to have a the following 
-	standard software development tools installed and ready for use
-	on you system:
-	 - a C/C++ compiler (e.g., GNU's gcc/g++)
-	 - a lexical analyzer generator (e.g., "lex" or "flex")
-	 - a parser generator (e.g., "yacc" or "bison")
-	 - GNU make ("gmake") (native make's on, e.g., IRIX and Solaris
-	   usually don't work)
+	To compile MonetDB, you also need to have the following
+	standard software development tools installed and ready for
+	use on you system:
+
+	- a C/C++ compiler (e.g., GNU's gcc/g++)
+	- a lexical analyzer generator (e.g., ``lex`` or ``flex``)
+	- a parser generator (e.g., ``yacc`` or ``bison``)
+	- GNU make (``gmake``) (native make on, e.g., IRIX and Solaris
+	  usually don't work)
+
+Mx, mel, and autogen
+	Before building MonetDB, you first need to build and install
+	the MonetDB buildtools.  Check out buildtools with
+	::
+
+	 cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools
+
+	and follow the instructions in the README file, then proceed
+	with MonetDB.
 
 dlcompat (MacOS X/Darwin, only)
-	MacOS X/Darwin itself does not support dlopen, however, there's
-	a third-party library called dlcompat from Fink that provides
-	the respective functionality.  MonetDB requires dlcompat to be
-	installed on MacOS X/Darwin.
-	(http://fink.sourceforge.net/pdb/package.php/dlcompat)
+	MacOS X/Darwin itself does not support dlopen, however, there
+	is a third-party library called dlcompat from Fink that
+	provides the respective functionality.  MonetDB requires
+	dlcompat__ to be installed on MacOS X/Darwin.
 
 disk space
 	After downloading, MonetDB takes up about 40 MB of disk space;
-	compilation adds another 70 MB.  Testing takes about 45 MB, and
-	the installation about 20 MB (not including any databases).
+	compilation adds another 70 MB.  Testing takes about 45 MB,
+	and the installation about 20 MB (not including any
+	databases).
+
+__ http://fink.sourceforge.net/pdb/package.php/dlcompat
 
 
-Getting the Software:
-=====================
+Getting the Software
+--------------------
 
 There are two ways to get the source code:
+
 (1) checking it out from the CVS repository on SourceForge;
 (2) downloading the pre-packaged source distribution form
-    http://sourceforge.net/project/showfiles.php?group_id=56967 .
+    SourceForge__.
 
-The following instruction first describe how to check out the source code
-from the CVS repository on SourceForge; in case you downloaded the
-pre-packaged source distribution, you can skip this and proceed with to
-"Bootstrap, Configure and Make".
+__ http://sourceforge.net/project/showfiles.php?group_id=56967 .
+
+The following instructions first describe how to check out the source
+code from the CVS repository on SourceForge; in case you downloaded
+the pre-packaged source distribution, you can skip this section and
+proceed to `Bootstrap, Configure and Make`_.
 
 CVS checkout
-------------
+````````````
 
 This command should be done once.  It records a password on the local
 machine to be used for all subsequent CVS accesses with this server.
+
+::
 
  cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb login
 
 Just type RETURN when asked for the password.
 
-Then get the software by using the command:
+Then get the software by using the command::
 
- cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout MonetDB
+ cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools MonetDB
 
-This will create a directory MonetDB in your current working directory.
+This will create a directories buildtools and MonetDB in your current
+working directory.  Then first follow the instructions in
+buildtools/README before continuing with MonetDB.
 
-Also see http://sourceforge.net/cvs/?group_id=56967 for more
-information.
+Also see `the SourceForge documentation`__ for more
+information about using CVS.
 
+__ http://sourceforge.net/cvs/?group_id=56967
 
-Bootstrap, Configure and Make:
-==============================
+Bootstrap, Configure and Make
+-----------------------------
 
 Before executing the following steps, make sure that your
-shell-environment (especially variables like "PATH" and
-"LD_LIBRARY_PATH") is setup, thus that the tools listed above can be
-found. 
-("Bash"-users at CWI and DD are welcome to simply 
-  "source conf/conf.bash".
- This sets the proper environment and even provides aliases
- "configure_MonetDB" & "Mtest_MonetDB" for convenience.
- See conf/conf.bash itself for more details.)
+shell-environment (especially variables like ``PATH`` and
+``LD_LIBRARY_PATH``) is set up, thus that the tools listed above can be
+found.  (Bash users at CWI and DD can simply ``source
+conf/conf.bash``.  This sets the proper environment and even provides
+aliases ``configure_MonetDB`` and ``Mtest_MonetDB`` for convenience.
+See conf/conf.bash itself for more details.)
 
-In case you did checkout the CVS version, you have to run "bootstrap", first;
-in case you did download the pre-packaged source distribution, you must skip
-"bootstrap" and start with "configure" (see next step).
-In the top-level directory of MonetDB type the command:
+In case you checked out the CVS version, you have to run
+``bootstrap``, first; in case you downloaded the pre-packaged source
+distribution, you should skip ``bootstrap`` and start with
+``configure`` (see next step).  In the top-level directory of MonetDB
+type the command (note that this uses autogen.py which is part of the
+buildtools package--make sure it can be found in your ``$PATH``)::
 
  ./bootstrap
 
-Then in any directory (preferably a *new empty* directory and *not* in the
-MonetDB top-level directory) give the command
+Then in any directory (preferably a *new, empty* directory and *not*
+in the MonetDB top-level directory) give the command::
 
  .../configure [<options>]
 
-where ... is replaced with the (absolute or relative) path to the
+where ``...`` is replaced with the (absolute or relative) path to the
 MonetDB top-level directory.
 The directory where you execute configure is the place where all
 intermediate source and object files are generated during compilation
-via "make".
+via ``make``.
 
-By default, MonetDB is eventually (i.e., during "make install"; see
-below) installed to /usr/local/.  To choose another target directory, 
-you need to call
+By default, MonetDB is installed to ``/usr/local``.  To choose another
+target directory, you need to call
+
+::
+
  .../configure --prefix=<prefixdir> [<options>]
-A sample of other useful configure options is:
-  --enable-debug          enable full debugging default=off
-  --enable-optimize       enable extra optimization default=off
-  --enable-warning        enable extended compiler warnings default=off
-  --enable-profile        enable profiling default=off
-  --enable-instrument     enable instrument default=off
-  --with-gcc=<compiler>   which C compiler to use
-                          ("yes" = gcc/g++, 
-                           "no"  = system-specific C/C++ compiler,
-                           <other-compiler-name>)
-  --with-gxx=<compiler>   which C++ compiler to use
-  --enable-bits=<#bits>     specify number of bits (32 or 64)
-Use the --help option of configure to find out more about configure
-options.
+
+Some other useful configure options are:
+
+--enable-debug          enable full debugging default=off
+--enable-optimize       enable extra optimization default=off
+--enable-warning        enable extended compiler warnings default=off
+--enable-profile        enable profiling default=off
+--enable-instrument     enable instrument default=off
+--with-gcc=<compiler>   which C compiler to use
+                        (``yes`` = gcc/g++, 
+                        ``no`` = system-specific C/C++ compiler,
+                        <other-compiler-name>)
+--with-gxx=<compiler>   which C++ compiler to use
+--with-mx=<Mx>          which Mx binary to use (default: whichever
+                        Mx is found in your PATH)
+--with-mel=<mel>        which mel binary to use (default: whichever
+                        mel is found in your PATH)
+--enable-bits=<#bits>   specify number of bits (32 or 64)
+
+Use the ``--help`` option of configure to find out more about
+configure options.
 
 In the same directory (where you called configure) give the command
+
+::
 
  make
 
@@ -150,103 +194,118 @@ takes about 30 seconds, and make about 5 to 10 minutes, depending on
 the optimization level chosen during configure.
 
 
-Testing the Build:
-==================
+Testing the Build
+-----------------
 
 If make went successfully, you can try
 
+::
+
  make check
 
-This will do a lot of tests, some are unfortunately still expected to
-fail, but most should go successfully.  At the end of the output there
-is a reference to an HTML file which is created by the test process and
-shows the test results.  An explanation of the test results can be found
-in XXX--to be filled in.
+This will perform a large number of tests, some are unfortunately
+still expected to fail, but most should go successfully.  At the end
+of the output there is a reference to an HTML file which is created by
+the test process that shows the test results.  An explanation of the
+test results can be found in XXX--to be filled in.
 
 Testing takes about 46 MB of disk space in the build directory.
 
 Running the tests takes about 13 minutes on my system.
 
 
-Installing:
-===========
+Installing
+----------
 
 Give the command
+
+::
 
  make install
 
 By default (if no --prefix option was given to configure above), this
-will install in /usr/local/.  Make sure you have appropriate privileges.
+will install in /usr/local/.  Make sure you have appropriate
+privileges.
 
 
-Testing the Installation:
-=========================
+Testing the Installation
+------------------------
 
-Make sure that /usr/local/bin (respectively <prefixdir>/bin, where
-<prefixdir> is the directory you specified with --prefix when calling
-configure) is in your PATH.
+Make sure that ``/usr/local/bin`` (respectively ``<prefixdir>/bin``,
+where <prefixdir> is the directory you specified with ``--prefix``
+when calling ``configure``) is in your ``PATH``.
 
 In the MonetDB top-level directory issue the command
+
+::
 
  Mtest.py -r
 
 This should produce much the same output as make check above, but uses
 the installed version of MonetDB.
 
-You need write permissions on part of the installation directory for
+You need write permissions in part of the installation directory for
 this command: it will create subdirectories var/dbfarm and Tests.
 
 
-Usage:
-======
+Usage
+-----
 
-There are two alternatives to use MonetDB interactively.
-In both cases, you first need to make sure, that your environment is set as
-described in "Configure and Make" and "Testing the Installation" above.
+There are two alternatives for using MonetDB interactively.  In both
+cases you first need to make sure that your environment is set as
+described in `Bootstrap, Configure and Make`_ and `Testing the
+Installation`_ above.
 
-If you're "in a hurry", you can then simply start
+If you are "in a hurry", you can then simply start
+
+::
 
  Mserver
 
-an you get the "server console", where you can type you MIL commands.
-Please, that the server console is maily ment for administrative use, hence
-there are no conveniences such as commandline editing or command history.
+and you'll get the "server console", where you can type your MIL
+commands.  The server console is mainly meant for administrative use,
+hence there are no conveniences such as commandline editing or command
+history.
 
-For a more convenient MIL interface, you should use the "MapiClient" with
+For a more convenient MIL interface, you should use the ``MapiClient`` with
 the Mserver. To do so, first start an Mserver with MAPI (MonetDB Application
-Programmer's Interfaces) support as follows:
+Programmer's Interfaces) support as follows::
 
  Mserver --dbinit="module(mapi); mapi_start();"
 
 Then, in a second shell, set up the same environment and start the
-MapiClient:
+MapiClient::
 
  MapiClient
 
 With MapiClient, you get a text-based MIL interface that supports
-commandline editing and a commandline history. The latter can even be stored
-persistently to be re-used after stopping and restarting MapiClient; see
+commandline editing and a commandline history. The latter can even be
+stored persistently to be re-used after stopping and restarting
+MapiClient; see
+
+::
 
  MapiClient --help
 
 for details.
 
 
-Documentation:
-==============
+Documentation
+-------------
 
 The documentation starts in <prefixdir>/doc/MonetDB.html
 
-NOTE: the current 'make install' does not yet generate this
-      documentation to do this manually, execute *after* successful
-      'make install'.  In the top-level directory of the MonetDB build
-      tree, call
+NOTE: the current ``make install`` does not yet generate this
+documentation to do this manually, execute *after* successful ``make
+install``.  In the top-level directory of the MonetDB build tree, call
+
+::
 
  make docs
 
 
-Troubleshooting:
-================
+Troubleshooting
+---------------
 
 Bootstrap fails if any of the requisite programs can not be found or
 is an incompatible version.
@@ -255,6 +314,9 @@ Bootstrap adds files to the source directory, so it must have write
 permissions.
 
 During bootstrap, warnings like
+
+::
+
 	Remember to add `AC_PROG_LIBTOOL' to `configure.in'.
 	You should add the contents of `/usr/share/aclocal/libtool.m4' to `aclocal.m4'.
 	configure.in:37: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
@@ -270,13 +332,14 @@ During bootstrap, warnings like
 	Hunk #2 FAILED at 2444.
 	Hunk #3 FAILED at 2464.
 	3 out of 3 hunks FAILED -- saving rejects to file aclocal.m4.rej
+
 might occur.
-For some technical reasons, it's hard to completely avoid them. However,
-it is usually save to ignore them and simply proceed with the usual 
-compilation procedure. Only in case the subsequent configure or make
-do fail, these warning might have to be take more serious; in any case, 
-you should include the bootstrap output in whenever you report (see below)
-compilation problems.
+For some technical reasons, it's hard to completely avoid
+them. However, it is usually save to ignore them and simply proceed
+with the usual compilation procedure. Only in case the subsequent
+configure or make do fail, these warning might have to be take more
+serious; in any case, you should include the bootstrap output in
+whenever you report (see below) compilation problems.
 
 Configure will fail if certain essential programs can't be found or
 certain essential tasks (such as compiling a C program) can't be
@@ -284,65 +347,70 @@ executed.  The problem will usually be clear from the error message.
 
 E.g., if configure cannot find package XYZ, it is either not installed
 on your machine, or it is not installed in places that configure
-usually searches (i.e., /usr, /usr/local).  In the first case, you need
-to install package XYZ before you can configure, make, and install
-MonetDB.  In the latter case, you need to tell configure via
-"--with-XYZ=<DIR>" where to find packages XYZ on your machine. 
-configure then looks for the respective header files in <DIR>/include,
-and for the respective libraries in <DIR>/lib.
+usually searches (i.e., /usr, /usr/local).  In the first case, you
+need to install package XYZ before you can configure, make, and
+install MonetDB.  In the latter case, you need to tell configure via
+``--with-XYZ=<DIR>`` where to find packages XYZ on your
+machine. configure then looks for the respective header files in
+<DIR>/include, and for the respective libraries in <DIR>/lib.
 
-In case either of "bootstrap", "configure", or "make" fails --- especially
-after a "cvs update", or after you changed some code yourself --- please try
-the following steps (in that order; if you are using the pre-packages source
-distribution, you have to skip steps 2 & 3):
+In case either of ``bootstrap``, ``configure``, or ``make`` fails ---
+especially after a ``cvs update``, or after you changed some code
+yourself --- please try the following steps (in that order; if you are
+using the pre-packaged source distribution, you have to skip steps 2
+and 3):
 
-(In case you experience problems after a "cvs update", first make sure that
- you did use "cvs update -dP" (or have a line "update -dP" in your
- ~/.cvsrc); "-d" ensures, that cvs checks out directories that have been
- added since your last "cvs update"; "-P" removed directories that have
- become empty, because all their file have been removed from the cvs
- repository. In case you did not use "cvs update -dP", re-run "cvs update
- -dP", and remember to always use "cvs update -dP" from now on (or simply
- add a line "update -dP" to your ~/.cvsrc)!)
+(In case you experience problems after a ``cvs update``, first make sure
+that you used ``cvs update -dP`` (or have a line ``update -dP`` in
+your ~/.cvsrc); ``-d`` ensures, that cvs checks out directories that
+have been added since your last ``cvs update``; ``-P`` removed
+directories that have become empty, because all their file have been
+removed from the cvs repository. In case you did not use ``cvs update
+-dP``, re-run ``cvs update -dP``, and remember to always use ``cvs update
+-dP`` from now on (or simply add a line ``update -dP`` to your
+~/.cvsrc)!)
 
-0) In case only "make" fails, you can try to run
+0) In case only ``make`` fails, you can try running::
+
 	make clean
-   in your build-directory and proceed with step 5; 
-   however, if "make" then still fails, you have to re-start with step 1.
-1) Clean-up your whole build-directory (i.e., the one where you run
-   "configure" and "make") by going there and running
+
+   in your build directory and proceed with step 5; however, if ``make``
+   then still fails, you have to re-start with step 1.
+1) Clean up your whole build directory (i.e., the one where you ran
+   ``configure`` and ``make``) by going there and running::
+
 	make maintainer-clean
-   In case your build-directory is different from your source directory,
-   your are even advised to remove the whole build-directory.
-2) Go to the top-level source directory and run
+
+   In case your build directory is different from your source
+   directory, you are advised to remove the whole build directory.
+2) Go to the top-level source directory and run::
+
 	./de-bootstrap
-   This will remove all the files that were created during "bootstrap".
-3) In the top-level source directory, re-run
+
+   This will remove all the files that were created during
+   ``bootstrap``.
+3) In the top-level source directory, re-run::
+
 	./bootstrap
-4) In the build-directory, re-run
+
+4) In the build-directory, re-run::
+
 	configure
+
    as described above.
-5) In the build-directory, re-run
+5) In the build-directory, re-run::
+
 	make
 	make install
+
    as described above.
 
-If this still does not help, please contact us:
+If this still does not help, please contact us.
 
 Bugs and other problems with compiling or running MonetDB should be
-reported using the respective bug-tracking system at SourceFORGE (preferred;
-cf. https://sourceforge.net/tracker/?group_id=56967&atid=482468) or emailed
-to monet@cwi.nl; see also 
-http://monetdb.cwi.nl/Development/Bugtracker/index.html .
-Please make sure that you give a *detailed* description of your problem!
+reported using the bug tracking system at SourceForge__ (preferred) or
+emailed to monet@cwi.nl; see also
+http://monetdb.cwi.nl/Development/Bugtracker/index.html.  Please make
+sure that you give a *detailed* description of your problem!
 
-
-Running MonetDB with valgrind on Linux
-======================================
-
-In case you intend (or need) to run MonetDB with the memory debugging and
-profiling tool "valgrind", you need to take care to disable the 
-gdk_alloc_map. So you can callgrind (valgrinds profiling tool) 
-MonetDB with: 
-
- valgrind --tool=callgrind Mserver --set gdk_alloc_map=no
+__ https://sourceforge.net/tracker/?group_id=56967&atid=482468

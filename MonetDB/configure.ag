@@ -18,7 +18,7 @@ dnl -*- mode: autoconf -*-
 
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.53)
-AC_INIT(src/utils/Mx/Mx.h)
+AC_INIT(src/gdk/gdk.mx)
 AC_CONFIG_AUX_DIR(conf)
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -353,37 +353,33 @@ AC_ARG_WITH(mx,
 	AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
 	have_mx="$withval",
 	have_mx=auto)
-if test "x$have_mx" = xauto -a "x$cross_compiling" = xyes; then
-	dnl  When cross-compiling, we need to have MEL/Mx in our PATH that work on the building host.
-	AC_PATH_PROGS(MX, Mx Mx$EXEEXT,,$PATH)
+if test "x$have_mx" = xauto -o "x$have_mx" = xyes; then
+	AC_PATH_PROGS(MX,[ Mx$EXEEXT Mx ],,$PATH)
 	if test "x$MX" = x; then
 		AC_ERROR([No Mx$EXEEXT found in PATH=$PATH])
 	fi
-elif test "x$have_mx" = xauto; then
-	MX="$MONETDB_BUILD/src/utils/Mx/Mx$EXEEXT"
+elif test "x$have_mx" = xno; then
+	AC_MSG_ERROR([Mx is required])
 else
 	MX="$withval"
 fi
 AC_SUBST(MX)
-AM_CONDITIONAL(COMPILE_MX, test x$cross_compiling != xyes -a "x$have_mx" = xauto)
 
 AC_ARG_WITH(mel,
 	AC_HELP_STRING([--with-mel=FILE], [mel is installed as FILE]),
 	have_mel="$withval",
 	have_mel=auto)
-if test "x$have_mel" = xauto -a "x$cross_compiling" = xyes; then
-	dnl  When cross-compiling, we need to have mel in our PATH that work on the building host.
-	AC_PATH_PROGS(MEL, mel mel$EXEEXT,,$PATH)
+if test "x$have_mel" = xauto; then
+	AC_PATH_PROGS(MEL,[ mel$EXEEXT mel ],,$PATH)
 	if test "x$MEL" = x; then
 		AC_ERROR([No mel$EXEEXT found in PATH=$PATH])
 	fi
-elif test "x$have_mel" = xauto; then
-	MEL="$MONETDB_BUILD/src/mel/mel$EXEEXT"
+elif test "x$have_mel" = xno; then
+	AC_MSG_ERROR([mel is required])
 else
 	MEL="$withval"
 fi
 AC_SUBST(MEL)
-AM_CONDITIONAL(COMPILE_MEL, test x$cross_compiling != xyes -a "x$have_mel" = xauto)
 
 AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
 

@@ -1976,15 +1976,14 @@ AC_DEFUN([AM_MONETDB_CLIENT],[
 
 dnl check for Monet and some basic utilities
 AM_MONET($1)
-MPATH="$MONETDB_PREFIX/bin:$PATH"
 AC_ARG_WITH(mx,
 	AC_HELP_STRING([--with-mx=FILE], [Mx is installed as FILE]),
 	have_mx="$withval",
 	have_mx=auto)
 if test "x$have_mx" = xauto; then
-	AC_PATH_PROGS(MX,[ Mx$EXEEXT Mx ],,$MPATH)
+	AC_PATH_PROGS(MX,[ Mx$EXEEXT Mx ],,$PATH)
 	if test "x$MX" = x; then
-		AC_ERROR([No Mx$EXEEXT found in PATH=$MPATH])
+		AC_ERROR([No Mx$EXEEXT found in PATH=$PATH])
 	fi
 elif test "x$have_mx" = xno; then
 	AC_MSG_ERROR([Mx is required])
@@ -1997,9 +1996,9 @@ AC_ARG_WITH(mel,
 	have_mel="$withval",
 	have_mel=auto)
 if test "x$have_mel" = xauto; then
-	AC_PATH_PROGS(MEL,[ mel$EXEEXT mel ],,$MPATH)
+	AC_PATH_PROGS(MEL,[ mel$EXEEXT mel ],,$PATH)
 	if test "x$MEL" = x; then
-		AC_ERROR([No mel$EXEEXT found in PATH=$MPATH])
+		AC_ERROR([No mel$EXEEXT found in PATH=$PATH])
 	fi
 elif test "x$have_mel" = xno; then
 	AC_MSG_ERROR([mel is required])
