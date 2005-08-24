@@ -6,3 +6,16 @@ then to install, run
 Use
 	python setup.py --help
 to get more information about the possible options.
+
+If you use the --prefix option or otherwise install autogen in a
+different place, you may have to set your PYTHONPATH environment
+variable accordingly.  The directory which needs to be added is
+<install-dir-prefix>/lib/python<python-version>/site-packages, where
+<python-version is the version of Python used (e.g. 2.4).
+
+On Windows, to follow these instructions, Python must of course be
+found in your PATH.  The default location where autogen.py is
+installed is the Scripts subdirectory of the Python tree
+(i.e. C:\Python24\Scripts if you have installed Python 2.4 in the
+default location).  Make sure this folder is in your PATH when
+building MonetDB and the other packages.

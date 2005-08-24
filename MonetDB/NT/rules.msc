@@ -66,8 +66,8 @@ SOCKET_LIBS = wsock32.lib
 
 COMPILE_MEL=1
 COMPILE_MX=1
-MEL="$(TOPDIR)\src\mel\mel"
-MX="$(TOPDIR)\src\utils\Mx\Mx"
+MEL="$(TOPDIR)\..\..\buildtools\mel\mel.exe"
+MX="$(TOPDIR)\..\..\buildtools\Mx\Mx.exe"
 CP=copy
 MV=copy
 DEL=del

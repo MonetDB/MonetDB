@@ -1,4 +1,4 @@
-MX = Mx.exe
+MX = ..\Mx\Mx.exe
 !IFDEF DEBUG
 CFLAGS = -I. -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -G6 -Od -D_DEBUG -RTC1 -ZI
 !ELSE

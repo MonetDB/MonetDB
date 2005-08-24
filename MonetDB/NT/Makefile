@@ -27,10 +27,8 @@ install: targetdirs monetdb_config.h all
 	$(INSTALL) monetdb_config.h "$(includedir)"
 	$(MAKE) /nologo /f "$(SRCDIR)\Makefile.msc" "prefix=$(prefix)" install
 
-$(SRCDIR)\Makefile.msc: "$(SRCDIR)\src\utils\autogen\autogen.py" \
-	"$(SRCDIR)\src\utils\autogen\codegen.py" \
-	"$(SRCDIR)\src\utils\autogen\msc.py"
-	$(CD) "$(SRCDIR)" && "$(PYTHON)" src\utils\autogen\autogen.py
+$(SRCDIR)\Makefile.msc:
+	$(CD) "$(SRCDIR)" && autogen.py
 
 all-msc: monetdb_config.h
 

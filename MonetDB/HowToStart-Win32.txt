@@ -32,6 +32,15 @@ Python
 	configuration of the software.  See http://www.python.org/ for
 	more information.
 
+Mx, mel, and autogen
+	Before building MonetDB, you first need to build and install
+	the MonetDB buildtools.  Check out buildtools with
+
+	 cvs -d:pserver:anonymous@cvs.sourceforge.net:/cvsroot/monetdb checkout buildtools
+
+	and follow the instructions in the README file, then proceed
+	with MonetDB.
+
 Pthreads for Win32
 	(ftp://sources.redhat.com/pub/pthreads-win32/)
 	Download the archive (the latest version we have tried is
