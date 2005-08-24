@@ -147,7 +147,7 @@ First try the program at large.
 Try all modules for occurrence of the function
 @c
 	for(idx =0; idx < maxmodules && moduleLoaded[idx]; idx++){
-		adr = dlsym(moduleHandle[idx], fcnname);
+		adr = (MALfcn) dlsym(moduleHandle[idx], fcnname);
 		errmsg= dlerror();
 		if( adr != NULL) return adr;
 	}

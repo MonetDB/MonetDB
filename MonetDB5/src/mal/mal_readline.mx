@@ -188,8 +188,10 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 				buf[length] = 0;
 			}
 			line = buf;
-		} else
+		} else {
+			buf= malloc(BUFSIZ);
 			line = fgets(buf, BUFSIZ, stdin);
+		}
 		
 		if (line == NULL) {
 			/* end of file */
