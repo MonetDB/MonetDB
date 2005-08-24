@@ -92,7 +92,7 @@ send_web_form(struct shttpd_callback_arg *arg){
             "XQuery submit form"
             "</title></head>"
             "<body>"
-            "<form method=\"post\">"
+            "<form method=\"get\">"
             "Enter your XQuery:<br/>"
             "<input type=\"text\" name=\"req_xquery\"/><br/>"
             "<input type=\"submit\" value=\"Execute query\"/>"
@@ -103,12 +103,57 @@ send_web_form(struct shttpd_callback_arg *arg){
 }
 
 static int
-handle_request(struct shttpd_callback_arg *arg, const char *msg)
+handle_request(struct shttpd_callback_arg *arg)
 {
-    /* TODO: not yet implemented */
-    (void)arg;
-    (void)msg;
-    return 0;
+    const char *query;
+    char **qres = GDKmalloc(sizeof(char *));
+    int ret, n;
+    
+    if (!(query = shttpd_get_var(arg->connection, "req_xquery"))){
+        n = snprintf(arg->buf, arg->buflen, "%s",
+                "HTTP/1.1 404 Bad Request\r\n"
+                "Content-type: text/html\r\n"
+                "\r\n"
+                "<html>"
+                "<head><title>"
+                "ERROR: 404 Bad Request"
+                "</title></head>"
+                "<body>"
+                "<h3>404 Bad Request</h3>"
+                "<br><br>"
+                "<b>Invalid query</b>"
+                "</body></html>");
+        arg->buf[n] = '\0';
+        return n;
+    } else {
+        ret = CMDxquery(qres, "xml", (char*)query);
+        if (ret == GDK_FAIL){
+            n = snprintf(arg->buf, arg->buflen, "%s",
+                    "HTTP/1.1 500 Internal server error\r\n"
+                    "Content-type: text/html\r\n"
+                    "\r\n"
+                    "<html>"
+                    "<head><title>"
+                    "ERROR: 500 Internal server error"
+                    "</title></head>"
+                    "<body>"
+                    "<h3>500 Internal server error</h3>"
+                    "<br><br>"
+                    "<b>Internal server error, possibly caused by malformed query</b>"
+                    "</body></html>");
+        } else {
+            n = snprintf(arg->buf, arg->buflen, "%s%ld%s%s",
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/xml\r\n"
+                    "Content-Length: ",
+                    (unsigned long) strlen(*qres),
+                    "\r\n\r\n",
+                    *qres);
+        }
+    }
+    arg->buf[n] = '\0';
+    GDKfree(qres);
+    return n;
 }
 
 static int
@@ -249,7 +294,7 @@ serve_req(struct shttpd_callback_arg *arg)
     const char *msg = NULL;
     int n = 0;
 
-    msg = shttpd_get_post_msg(arg->connection);
+    msg = shttpd_get_msg(arg->connection);
     if (msg == NULL){
         /* We got an initial request from a web browser.
          * Send back the form in which an XQeury can be entered
@@ -262,7 +307,7 @@ serve_req(struct shttpd_callback_arg *arg)
         n = handle_soap_request(arg, msg);
     } else {
         /* The request is a normal HTTP request */
-        n = handle_request(arg, msg);
+        n = handle_request(arg);
     }
     return n;
 }
