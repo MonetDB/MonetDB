@@ -1,6 +1,6 @@
 # Polymorphic function tests
 # Cloning two versions of a single function
-function test(b:bat[:any,:any$2],c:any$2);
+function test(b:bat[:any$1,:any$2],c:any$2);
 	k:= 1+c;
 	io.print(k);
 end test;

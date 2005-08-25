@@ -36,7 +36,7 @@ partitions.dump();
 # this query is already tricky because there are
 # two sinks. A naive translation will produce
 # a double nested loop
-function qry(a:bat[:void,:any], b:bat[:void,:any]);
+function qry(a:bat[:void,:any$1], b:bat[:void,:any$2]);
 	io.print("experiment 2");
 	io.print(b);
 	io.print(a);

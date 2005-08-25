@@ -77,7 +77,7 @@ pattern getHead(b:bat[:any$1,:any],i:lng):any$1
 address CHPgetHead
 comment "return the BUN head value using the cursor.";
 
-pattern getTail(b:bat[:any,:any$1],i:lng):any$1 
+pattern getTail(b:bat[:any$2,:any$1],i:lng):any$1 
 address CHPgetTail
 comment "return the BUN tail value using the cursor.";
 @-

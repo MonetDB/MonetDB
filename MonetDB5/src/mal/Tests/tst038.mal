@@ -1,8 +1,5 @@
 #test the capability to deal with unspecified bats.
-function tst(b:bat);
-	bat.insert(b,"hello",1);
-end tst;
-function tst2(b:bat[:any,:any]);
+function tst2(b:bat[:any$1,:any$2]);
 	bat.insert(b,"hello",1);
 end tst2;
 
@@ -10,3 +7,4 @@ b:= bbp.new(:int,:str);
 
 #The call to tst2 fails at runtime
 user.tst2(b);
+io.print("shouldn't come here\n");

@@ -507,7 +507,7 @@ typeAlias(Client cntxt, int tpe)
 {
 	int t;
 
-	if (currChar(cntxt) != '$' || tpe !=TYPE_any)
+	if (currChar(cntxt) != TMPMARKER || tpe !=TYPE_any)
 		return -1;
 	nextChar(cntxt);
 	if (!isdigit((int) currChar(cntxt))) {

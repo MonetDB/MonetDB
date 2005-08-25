@@ -1,7 +1,7 @@
 # A exception in a factory should terminate it 
 
 factory tryme():void;
-    bat.setWriteMode(b:bat[:any,:any]);
+    bat.setWriteMode(b:bat[:any$1,:any$2]);
 barrier always:= true;
     yield always;
     redo always;

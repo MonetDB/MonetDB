@@ -415,11 +415,11 @@ Those accessible at the MAL command level are introduced below.
 @:convertCmd(ptr)@
 @:convertCmd(chr)@
 
-command bat(v:str):bat[:any,:any] 
+command bat(v:str):bat[:any$1,:any$2] 
 address CALCstr2bat;
-command str(v:bat[:any,:any]):str 
+command str(v:bat[:any$1,:any$2]):str 
 address CALCbat2str;
-command bat(v:void) :bat[:any,:any] 
+command bat(v:void) :bat[:any$1,:any$2] 
 address CALCnil2bat;
 
 command str(v:void) :str 

@@ -236,14 +236,14 @@ command ifthen(b:bat[:any$1,:bit], t:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 address CMDifThen
 comment "Ifthen operation to assemble a conditional result ";
 
-command ifthenelse(b:bat[:any,:bit], t:bat[:any$1,:any$2], 
+command ifthenelse(b:bat[:any$3,:bit], t:bat[:any$1,:any$2], 
 		e:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address CMDifThenElse
 comment "If-then-else operation to assemble a conditional result ";
 
 @-
 @= ifthenGrp
-command project(v:@1,b:bat[:any,:any$1]) :bat[:@1,:any$1] 
+command project(v:@1,b:bat[:any$2,:any$1]) :bat[:@1,:any$1] 
 address CMDprojecthead_@1
 comment "Fill the head with a constant, e.g. [0~b]";
 

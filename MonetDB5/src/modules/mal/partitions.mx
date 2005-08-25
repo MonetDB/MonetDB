@@ -31,7 +31,7 @@ A related, but separate issue, is the location of the BAT.
 
 The partition module provides a shared repository of managing
 such BAT groups. All elements in a group are assumed 
-of type :bat[:void,:any] and the partition represents
+of type :bat[:void,:any$1] and the partition represents
 a dense oid range. Moreover, all partitions in a group are 
 considered pairwise disjoint.
 
@@ -52,11 +52,11 @@ command destroy():void
 address BPTdestroy
 comment "Destroy the partition box";
 
-command take(idx:int):bat[:void,:any]
+command take(idx:int):bat[:void,:any$1]
 address BPTtake
 comment "Take a partition from the box";
 
-command deposit(b:bat[:void,:any]) :void
+command deposit(b:bat[:void,:any$1]) :void
 address BPTdeposit
 comment "Enter a new BAT into the partition box";
 command deposit(b:bat[:void,:any$1],p:bat[:void,:any$1]) :void
@@ -69,7 +69,7 @@ comment "Enter a new BAT into the partition box";
 pattern releaseAll():void
 address BPTreleaseAll
 comment "Release all partitions in the box";
-pattern release(b:bat[:void,:any]) :void
+pattern release(b:bat[:void,:any$1]) :void
 address BPTrelease
 comment "Release a single BAT with its partitions from the  box";
 
@@ -77,7 +77,7 @@ pattern toString(idx:int):str
 address BPTtoString
 comment "Get the string representation of an element in the box";
 
-command discard(name:bat[:void,:any]) :void
+command discard(name:bat[:void,:any$1]) :void
 address BPTdiscard
 comment "Release a BAT variable from the box";
 

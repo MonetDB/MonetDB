@@ -89,7 +89,7 @@ function user.main():int;	# 0  (main:int)
     io.print(b);	# 33 IOprint_val ($57:int)<-(b:bat[:int,:int])
     io.print(b,b,b);	# 34 IOtable ($58:int)<-(b:bat[:int,:int])(b:bat[:int,:int])(b:bat[:int,:int])
     profiler.stop();	# 35 CMDstopProfiler ($59:void)
-    profiler.closeStream();	# 36 closeProfilerStream ($60:void)
+    profiler.closeStream();	# 36 CMDcloseProfilerStream ($60:void)
 end main;	# 37  
 #~BeginVariableOutput~#
 #-------------------------------------------------#

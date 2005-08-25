@@ -254,7 +254,7 @@ command dump(names:bat[:void,:str], seps:bat[:void,:str],
 address CMDtablet_dump 
 comment "Dump the bat in ASCII format";
 
-command output(order:bat[:any,:any], seps:bat[:void,:str], 
+command output(order:bat[:any$1,:any$2], seps:bat[:void,:str], 
 		bats:bat[:void,:bat], s:stream) :void 
 address CMDtablet_output 
 comment "Send the bat to an output stream.";
@@ -262,7 +262,7 @@ comment "Send the bat to an output stream.";
 pattern display(v:any...):int 
 address TABdisplayRow
 comment "Display a formatted row";
-pattern display(v:bat[:any,:any]...):int 
+pattern display(v:bat[:any$1,:any]...):int 
 address TABdisplayTable
 comment "Display a formatted table";
 
@@ -305,7 +305,7 @@ address TABsetRowBracket
 comment "Format the brackets around a row";
 
 # Set the column properties 
-pattern setColumn(idx:int, v:any)
+pattern setColumn(idx:int, v:any$1)
 address TABsetColumn
 comment "Bind i-th output column to a variable";
 command setColumnName(idx:int, nme:str)

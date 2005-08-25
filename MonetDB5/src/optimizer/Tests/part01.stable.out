@@ -59,11 +59,11 @@ stdout of test 'part01` in directory 'src/optimizer` itself:
 #	print(a);
 #	print(b);
 #end qry;
-function user.qry(a:bat[:void,:any],b:bat[:void,:any]):void;	# 0  (qry:void)<-(a:bat[:void,:any])(b:bat[:void,:any])
+function user.qry(a:bat[:void,:any$1],b:bat[:void,:any$2]):void;	# 0  (qry:void)<-(a:bat[:void,:any$1])(b:bat[:void,:any$2])
     io.print("experiment 2");	# 1 IOprint_val ($3:int)<-($4:str)
-    io.print(b);	# 2 IOprint_val ($5:int)<-(b:bat[:void,:any])
-    io.print(a);	# 3 IOprint_val ($6:int)<-(a:bat[:void,:any])
-    io.print(b);	# 4 IOprint_val ($7:int)<-(b:bat[:void,:any])
+    io.print(b);	# 2 IOprint_val ($5:int)<-(b:bat[:void,:any$2])
+    io.print(a);	# 3 IOprint_val ($6:int)<-(a:bat[:void,:any$1])
+    io.print(b);	# 4 IOprint_val ($7:int)<-(b:bat[:void,:any$2])
 end qry;	# 5  
 #
 #optimizer.partitionedQuery("Admin","qry");
@@ -129,7 +129,7 @@ ptop=6 plimit=1024
 [3] bid=16 pid=16 f=0, l=10 prv=-1 nxt=4 cap=-1
 [4] bid=16 pid=17 f=10, l=20 prv=3 nxt=5 cap=-1
 [5] bid=16 pid=18 f=20, l=30 prv=4 nxt=-1 cap=-1
-function user.qry(a:bat[:void,:any],b:bat[:void,:any]):void;
+function user.qry(a:bat[:void,:int],b:bat[:void,:int]):void;
     io.print("experiment 2");
 barrier ($10,$11):= partitions.newIterator(b);
     io.print($11);

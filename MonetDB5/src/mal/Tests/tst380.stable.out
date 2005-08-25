@@ -126,16 +126,15 @@ function user.main():int;	# 0  (main:int)
 #inspection of the runtime setting 	# 1  ($2:str)
 #it uses the dynamic type analysis scheme 	# 2  ($4:str)
 # type error when the type variable numbers are ignored 	# 3  ($6:str)
-#function get(br:bat[:any,:any],nme:str, title:str):bat; 	# 4  ($8:str)
-# Note the type of the variables will be fixed during the first call 	# 5  ($10:str)
-    b := bbp.new(:int,:int);	# 6 CMDBATnew (b:bat[:int,:int])<-($12:int)($12:int)
-    bat.setName(b,"simplemind");	# 7 BKCsetName ($13:bat[:int,:int])<-(b:bat[:int,:int])($14:str)
-    z := bbp.getNames();	# 8 CMDbbpNames (z:bat[:int,:str])
-    io.print("Get first directory");	# 9 IOprint_val ($16:int)<-($17:str)
-    user.dir(z);	# 10  ($18:void)<-(z:bat[:int,:str])
-    io.print("Get second directory");	# 11 IOprint_val ($19:int)<-($20:str)
-    user.dir("simple");	# 12  ($21:void)<-($22:str)
-end main;	# 13  
+# Note the type of the variables will be fixed during the first call 	# 4  ($8:str)
+    b := bbp.new(:int,:int);	# 5 CMDBATnew (b:bat[:int,:int])<-($10:int)($10:int)
+    bat.setName(b,"simplemind");	# 6 BKCsetName ($11:bat[:int,:int])<-(b:bat[:int,:int])($12:str)
+    z := bbp.getNames();	# 7 CMDbbpNames (z:bat[:int,:str])
+    io.print("Get first directory");	# 8 IOprint_val ($14:int)<-($15:str)
+    user.dir(z);	# 9  ($16:void)<-(z:bat[:int,:str])
+    io.print("Get second directory");	# 10 IOprint_val ($17:int)<-($18:str)
+    user.dir("simple");	# 11  ($19:void)<-($20:str)
+end main;	# 12  
 [ "Get first directory" ]
 #---------------------------------------------------------------------------------------------------------------------------------#
 # bbp	t			htype	ttype		count	heat	dirty		status	kind		refCount		  # name

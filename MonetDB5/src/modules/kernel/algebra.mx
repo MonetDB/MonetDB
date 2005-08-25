@@ -51,7 +51,7 @@ that return a BAT.
 @mal
 module algebra;
 
-command exist(b:bat[:any$1,:any], h:any$1):bit 
+command exist(b:bat[:any$1,:any$2], h:any$1):bit 
 address ALGexist
 comment "Returns whether 'h' occurs as a head value in b.";
 
@@ -64,7 +64,7 @@ address ALGfind
 comment "Returns the tail value 't' for which some [h,t] BUN 
         exists in b.  If no such BUN exists, an error occurs." ;
 
-command position(b:bat[:any$1,:any], v:any$1):int
+command position(b:bat[:any$1,:any$2], v:any$1):int
 address ALGposition
 comment "Returns BAT position [0.. b.count] of 'v' in the head 
         column of b. It Return an error if 'v' does not exist.";
@@ -74,11 +74,11 @@ address ALGpositionBUN
 comment "Returns the position of the value pair It returns an 
         error if 'val' does not exist.";
 
-command fetch(b:bat[:any,:any$1], x:oid) :any$1 
+command fetch(b:bat[:any$2,:any$1], x:oid) :any$1 
 address ALGfetchoid;
-command fetch(b:bat[:any,:any$1], x:lng) :any$1 
+command fetch(b:bat[:any$2,:any$1], x:lng) :any$1 
 address ALGfetch;
-command fetch(b:bat[:any,:any$1], x:int) :any$1 
+command fetch(b:bat[:any$2,:any$1], x:int) :any$1 
 address ALGfetchint
 comment "Returns the tail value of the BUN at x-th position 
         with 0 <= x < b.count";
@@ -88,11 +88,11 @@ The operations are grouped by positional and range selections.
 A simple sampling operation is also provided.
 @- Positional selection
 @mal
-command fetch(b:bat[:any$1,:any$2], s:bat[:int,:any]) :bat[:any$1,:any$2] 
+command fetch(b:bat[:any$1,:any$2], s:bat[:int,:any$3]) :bat[:any$1,:any$2] 
 address ALGfetchbat;
-command fetch(b:bat[:any$1,:any$2], s:bat[:lng,:any] ) :bat[:any$1,:any$2] 
+command fetch(b:bat[:any$1,:any$2], s:bat[:lng,:any$3] ) :bat[:any$1,:any$2] 
 address ALGfetchbat;
-command fetch(b:bat[:any$1,:any$2], s:bat[:oid,:any]) :bat[:any$1,:any$2] 
+command fetch(b:bat[:any$1,:any$2], s:bat[:oid,:any$3]) :bat[:any$1,:any$2] 
 address ALGfetchbat
 comment "Returns a positional selection of b by the oid 
         head values of s";
@@ -540,21 +540,21 @@ These operations examine a BAT, and compute some simple aggregate result
 over it.
 @- BAT size
 @mal
-command count( b:bat[:any,:any] ) :lng 
+command count( b:bat[:any$1,:any] ) :lng 
 address ALGcount_bat
 comment "Return the current size (in number of elements) in a BAT.";
-command count ( b:bat[:any,:any], ignore_nils:bit ) :lng 
+command count ( b:bat[:any$1,:any], ignore_nils:bit ) :lng 
 address ALGcount_nil
 comment "Return the number of elements currently in a BAT ignores 
         BUNs with nil-tail iff ignore_nils==TRUE.";
 
-command count_no_nil ( b:bat[:any,:any]) :lng 
+command count_no_nil ( b:bat[:any$1,:any$2]) :lng 
 address ALGcount_no_nil
 comment "Return the number of elements currently 
 	in a BAT ignoring BUNs with nil-tail";
 @- Histogram on Tail
 @mal
-command histogram ( b:bat[:any,:any$2]) :bat[:any$2,:int] 
+command histogram ( b:bat[:any$1,:any$2]) :bat[:any$2,:int] 
 address ALGhistogram
 comment "Produce a BAT containing the histogram of the tail values.  
         bat.histogram() @= {count}(bat.reverse)";
@@ -573,7 +573,7 @@ Implementations a generic Min and Max routines get declared first. The
 The type-specific routines defined later are faster, and will
 override these any implementations.
 @mal
-command card ( b:bat[:any,:any] ) :lng 
+command card ( b:bat[:any$1,:any$2] ) :lng 
 address ALGcard
 comment "Return the cardinality of the BAT 
 	tail values.";
@@ -597,10 +597,10 @@ For X in @{ sht,int,flt,dbl,lng @},  we generate the
 aggregate functions using a macro.
 @-
 @= sum_definition
-command sum (b:bat[:any,:@1] ) :@2 
+command sum (b:bat[:any$1,:@1] ) :@2 
 address ALGsum_@1_@2
 comment "Gives the sum of all tail values";
-command prod(b:bat[:any,:@1] ) :@2 
+command prod(b:bat[:any$1,:@1] ) :@2 
 address ALGprod_@1_@2
 comment "Gives the product of all tail values";
 @mal
@@ -615,7 +615,7 @@ comment "Gives the product of all tail values";
 @:sum_definition(dbl,dbl)@
 @-
 @= aggregate_definition
-command @1 ( b:bat[:any,:@2] ) :@2 
+command @1 ( b:bat[:any$1,:@2] ) :@2 
 address ALG@1_@2 comment @3;
 @= aggregate
 @:aggregate_definition(@1,sht,@2)@

@@ -204,22 +204,22 @@ optimizer.prelude();
 #include "mal_macro.h"
 #include "mal_reduce.h"
 
-mal_export str QOTMEoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTMEoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTMEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTMCoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTMCoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTMCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str QOTMEoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str QOTMEoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str QOTMEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str QOTMCoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str QOTMCoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str QOTMCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-mal_export str optimizer_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str QOTclrdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export size_t QOTjoinEstimate(BAT *l, BAT *r);
-mal_export str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str optimizer_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str QOTclrdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export str QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+opt_export size_t QOTjoinEstimate(BAT *l, BAT *r);
+opt_export str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @
 Upon loading the module it should inspect the scenario table

@@ -49,16 +49,16 @@ The code speaks for itself
 
 module bat;
 
-command bat(ht:int, tt:int) :bat[:any,:any] 
+command bat(ht:int, tt:int) :bat[:any$1,:any$2] 
 address BKCnewBat
 comment "Creates a new empty transient BAT with head- and tail-types 
         as indicated.";
 
-command bat(ht:int, tt:int, size:int) :bat[:any,:any] 
+command bat(ht:int, tt:int, size:int) :bat[:any$1,:any$2] 
 address BKCnewBATint
 comment "Creates a new empty BAT, allocating 'size' elements.";
 
-command bat(ht:int, tt:int, size:lng) :bat[:any,:any] 
+command bat(ht:int, tt:int, size:lng) :bat[:any$1,:any$2] 
 address BKCnewBATlng
 comment "Creates a new empty BAT, allocating 'size' elements.";
 
@@ -91,7 +91,7 @@ comment "Puts all BUNs in a BAT in reverse order.  (Belongs to the
 Properties of BATs not necessarily require loading the BAT completely.
 The BAT identifier can be used to access the descriptors.
 These properties can be inspected with the 
-@emph{info(BAT[:any,:any]) :bat[str,str] } command:
+@emph{info(BAT[:any$1,:any$2]) :bat[str,str] } command:
 @verbatim
 > car_age.info.print;
 #---------------------------------#
@@ -144,25 +144,25 @@ bugs, as e,g, the binary search algorithms will yield erroneous results on a non
 sequence.
 
 @mal
-command info ( b:bat[:any,:any]) :bat[:str,:str] 
+command info ( b:bat[:any$1,:any$2]) :bat[:str,:str] 
 address BKCinfo
 comment "Produce a BAT containing info about a BAT in [attribute,value] format. 
         It contains all properties of the BAT record. See the BAT documentation 
         in GDK for more information.";
 
-command getCapacity(b:bat[:any,:any]):lng 
+command getCapacity(b:bat[:any$1,:any$2]):lng 
 address BKCgetCapacity
 comment "Returns the current allocation size (in max number of elements) of a BAT.";
 
-command getHeadType(b:bat[:any,:any] ) :str 
+command getHeadType(b:bat[:any$1,:any$2] ) :str 
 address BKCgetHeadType
 comment "Returns the type of the head column of a BAT, as an integer type number.";
 
-command getTailType( b:bat[:any,:any] ) :str 
+command getTailType( b:bat[:any$1,:any$2] ) :str 
 address BKCgetTailType 
 comment "Returns the type of the tail column of a BAT, as an integer type number.";
 
-command getRole ( bid:bat[:any,:any] ) :str 
+command getRole ( bid:bat[:any$1,:any$2] ) :str 
 address BKCgetRole
 comment "Returns the rolename of the head column of a BAT.";
 
@@ -174,7 +174,7 @@ comment "Sets the 'key' property of the head column to 'mode'. In 'key' mode,
 	function does not automatically eliminate duplicates. 
         Use b := b.kunique;";
 
-command isaKey( b:bat[:any,:any]) :bit 
+command isaKey( b:bat[:any$1,:any$2]) :bit 
 address BKCgetKey
 comment "return whether the head column of a BAT is unique (key).";
 
@@ -186,7 +186,7 @@ comment "Sets the 'set' property on this BAT to 'mode'. In 'set' mode,
         to TRUE, this function does not automatically eliminate duplicates. 
         Use b := b.sunique; Returns the BAT itself.";
 
-command isaSet( b:bat[:any,:any]) :bit 
+command isaSet( b:bat[:any$1,:any$1]) :bit 
 address BKCisaSet
 comment "return whether the BAT mode is set to unique.";
 
@@ -215,27 +215,27 @@ command setWriteMode( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 address BKCsetWriteMode
 comment "Change access privilige of BAT to read and write";
 
-command getAccess( b:bat[:any,:any]):chr 
+command getAccess( b:bat[:any$1,:any$2]):chr 
 address BKCgetAccess
 comment "return the access mode attached to this BAT as a character.";
 
-command hasAppendMode( b:bat[:any,:any]):bit 
+command hasAppendMode( b:bat[:any$1,:any$2]):bit 
 address BKChasAppendMode
 comment "return true if to this BAT is append only.";
 
-command hasWriteMode( b:bat[:any,:any]):bit 
+command hasWriteMode( b:bat[:any$1,:any$2]):bit 
 address BKChasWriteMode
 comment "return true if to this BAT is read and write.";
 
-command hasReadMode( b:bat[:any,:any]):bit 
+command hasReadMode( b:bat[:any$1,:any$2]):bit 
 address BKChasReadMode
 comment "return true if to this BAT is read only.";
 
 
-command getSequenceBase( b:bat[:void,:any]):oid 
+command getSequenceBase( b:bat[:void,:any$1]):oid 
 address BKCgetSequenceBase
 comment "Get the sequence base for the void column of a BAT.";
-command getSequenceBase( b:bat[:oid,:any]):oid 
+command getSequenceBase( b:bat[:oid,:any$1]):oid 
 address BKCgetSequenceBase;
 
 command setSequenceBase( b:bat[:void,:any$1], seqbase:oid):bat[:void,:any$1]
@@ -247,18 +247,18 @@ command setSequenceBase( b:bat[:void,:any$1], seqbase:void):bat[:void,:any$1]
 address BKCsetSequenceBaseNil;
 
 
-command setSorted(b:bat[:any,:any]) :bit 
+command setSorted(b:bat[:any$1,:any$2]) :bit 
 address BKCsetSorted
 comment "Assure BAT is ordered on head.";
 
-command isSorted(b:bat[:any,:any]) :bit 
+command isSorted(b:bat[:any$1,:any$2]) :bit 
 address BKCisSorted
 comment "Returns whether a BAT is ordered on head or not.";
-command isSortedReverse(b:bat[:any,:any]) :bit 
+command isSortedReverse(b:bat[:any$1,:any$2]) :bit 
 address BKCisSortedReverse
 comment "Returns whether a BAT is ordered on head or not.";
 
-command getBatSize(b:bat[:any,:any]) :int 
+command getBatSize(b:bat[:any$1,:any$2]) :int 
 address BKCbatsize
 comment "A version of BATsize that does not require loading the BAT.";
 
@@ -285,9 +285,9 @@ command insert(b:bat[:void,:any$1], v:any$1):bat[:any$1,:any$2]
 address BKCinsert_void_bun
 comment "Insert a value in a 'void' bat";
 
-command insert(b:bat[:any$1,:bat], v:any$1, z:bat[:any,:any]):bat[:any$1,:bat] 
+command insert(b:bat[:any$1,:bat], v:any$1, z:bat[:any$3,:any$4]):bat[:any$1,:bat] 
 address BKCinsert_bun;
-command insert(b:bat[:void,:bat], z:bat[:any,:any]):bat[:void,:bat] 
+command insert(b:bat[:void,:bat], z:bat[:any$1,:any$2]):bat[:void,:bat] 
 address BKCinsert_void_bun
 comment "Insert a value in a 'void' bat";
 
@@ -342,9 +342,9 @@ Destroying a BAT should also involve removing references
 maintained in the MAL program structure.
 Therefore it is moved to the bbp module
 @mal
-#command destroy(b:bat[:any,:any]):void
+#command destroy(b:bat[:any$1,:any$2]):void
 #address BKCdestroy;
-#command destroy(b:bat[:any,:any],now:bit):void
+#command destroy(b:bat[:any$1,:any$2],now:bit):void
 #address BKCdestroyImmediate;
 #command destroy(s:str,immediately:bit):void 
 #address BKCdestroy_bat
@@ -404,7 +404,7 @@ command setName ( b:bat[:any$1,:any$2] , s:str) :bat[:any$1,:any$2]
 address BKCsetName
 comment "Give a logical name to a BAT. ";
 
-command getName ( b:bat[:any,:any]) :str 
+command getName ( b:bat[:any$1,:any$2]) :str 
 address BKCgetBBPname
 comment "Gives back the logical name of a BAT.";
 
@@ -420,7 +420,7 @@ address BKCsetColumns
 comment "Give both columns of a BAT a new name.";
 
 
-command isTransient( b:bat[:any,:any]) :bit 
+command isTransient( b:bat[:any$1,:any$2]) :bit 
 address BKCisTransient;
 command setTransient( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
 address BKCsetTransient
@@ -428,9 +428,9 @@ comment "Make the BAT transient.  Returns
 	boolean which indicates if the
 BAT administration has indeed changed.";
 
-command isPersistent( b:bat[:any,:any]) :bit 
+command isPersistent( b:bat[:any$1,:any$2]) :bit 
 address BKCisPersistent;
-command setPersistent( b:bat[:any,:any],f:bit) :bat[:any$1,:any$2] 
+command setPersistent( b:bat[:any$1,:any$2],f:bit) :bat[:any$1,:any$2] 
 address BKCpersists
 comment "Backward compatibility";
 command setPersistent( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
@@ -448,7 +448,7 @@ comment "Save a BAT to storage, if it was loaded and dirty.
 	calling this function violates the atomic commit protocol!!";
 
 
-command load(name:str) :bat[:any,:any] 
+command load(name:str) :bat[:any$1,:any$2] 
 address BKCload
 comment "Load a particylar bat from disk";
 
@@ -457,7 +457,7 @@ address BKCunload
 comment "Swapout a BAT to disk. Transient BATs can also be swapped out.     
         Returns whether the unload indeed happened. ";
 
-command isCached(b:bat[:any,:any]):bit 
+command isCached(b:bat[:any$1,:any$2]):bit 
 address BKCisCached
 comment "Bat is stored in main memory.";
 
@@ -475,9 +475,9 @@ address BKCcold
 comment "Makes a BAT very cold for the BBP. The chance of being choses 
         for swapout is big, afterwards.  Returns the BAT itself.";
 
-command setCold(b:bat[:any,:any]) :void 
+command setCold(b:bat[:any$1,:any$1]) :void 
 address BKCcoldBAT;
-command setHot(b:bat[:any,:any]) :void 
+command setHot(b:bat[:any$1,:any$2]) :void 
 address BKChotBAT;
 
 @- Heap Specific Commands
@@ -511,7 +511,7 @@ For more technical information on BATs, we refer to the
 @[<a href="http://www.cwi.nl/~monet/www/scw/gdk/470_pseudo.html">GDK</a>@
 documentation.
 @mal
-command mmap(b:bat[:any,:any], buns_mode:int, hheap_mode:int, 
+command mmap(b:bat[:any$1,:any$2], buns_mode:int, hheap_mode:int, 
 		theap_mode:int) :bit 
 address BKCmmap
 comment "For each individual heap, you can change the allocation mode 
@@ -520,11 +520,11 @@ comment "For each individual heap, you can change the allocation mode
 	will cause a BAT save (this has to happen before the heap can 
         be mapped into virtual memory). These modes are persistent. ";
 
-command mmap(b:bat[:any,:any], mode:int):bit 
+command mmap(b:bat[:any$1,:any$2], mode:int):bit 
 address BKCmmap2
 comment "Alias for mmap(b,mode,mode,mode, mode,mode)";
 
-command madvise(b:bat[:any,:any], buns_mode:int, hheap_mode:int, 
+command madvise(b:bat[:any$1,:any$2], buns_mode:int, hheap_mode:int, 
 		theap_mode:int) :bit 
 address BKCmadvise
 comment "Modern Operating Systems allow users to influence the buffer 
@@ -539,11 +539,11 @@ comment "Modern Operating Systems allow users to influence the buffer
 	These buffer management modes are not persistent. 
 	Returns the BAT operated upon.";
 
-command madvise(b:bat[:any,:any], mode:int):bit 
+command madvise(b:bat[:any$1,:any$2], mode:int):bit 
 address BKCmadvise2
 comment "alias for madvise(b,mode,mode,mode, mode,mode)";
 
-command setHash(b:bat[:any,:any],prop:bit):bit 
+command setHash(b:bat[:any$1,:any$2],prop:bit):bit 
 address BKCsetHash;
 
 @- Synced BATs
@@ -563,7 +563,7 @@ By comparing two OIDs the Monet kernel can very quickly decide that
 two columns are exactly equal. All BAT algebra operations propagate
 these 'sync' OIDs with their own propagation rules.
 @mal
-command isSynced (b1:bat[:any,:any], b2:bat[:any,:any]) :bit 
+command isSynced (b1:bat[:any$1,:any$2], b2:bat[:any$3,:any$4]) :bit 
 address BKCisSynced
 comment "Tests whether two BATs are synced or not. ";
 

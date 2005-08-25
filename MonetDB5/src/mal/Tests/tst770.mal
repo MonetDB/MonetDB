@@ -1,9 +1,9 @@
-function test(b:bat[:any,:any$2],c:any$2):void;
+function test(b:bat[:any$1,:any$2],c:any$2):void;
         reduce := batcalc./(b,c); 
 end test;
-function test(b:bat[:any$1,:any],c:any$1):void;
+function test(b:bat[:any$1,:any$2],c:any$1):void;
         reduce := batcalc./(b,c); 
 end test;
-function test(b:bat[:any,:any]):void;
+function test(b:bat[:any$1,:any$2]):void;
         reduce := batcalc./(b,1); 
 end test;

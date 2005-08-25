@@ -82,7 +82,7 @@ command group(attr:bat[@{void,oid@},:any$1]
 @mal
 module group;
 
-command group(b:bat[:any$1,:any], start:int, incr:int, grpsize:int)
+command group(b:bat[:any$1,:any$2], start:int, incr:int, grpsize:int)
             :bat[:any$1,:int] 
 address GRPgroup0
 comment "Produces a new BAT with identical head column, and in the tail 
@@ -103,7 +103,7 @@ address GRPgroup_custom
 comment "Cross tabulation group initialization like GRPgroup, but with 
         user provided #bits in hashmask and #distinct values in range.";
 
-command group(ct:bat[:any$2,:any], attr:bat[:any$2,:any$1])
+command group(ct:bat[:any$2,:any$3], attr:bat[:any$2,:any$1])
 	(histo:bat[:any$1,:oid],grp:bat[:any$2,:oid]) 
 address GRPderive
 comment "Cross tabulation group extension step.  Returned head values are 
@@ -111,7 +111,7 @@ comment "Cross tabulation group extension step.  Returned head values are
         indicate further refinement of the groups in 'ct', taking into 
         account also the tail-values in 'attr'.";
 
-command refine(b:bat[:any$2,:any], a:bat[:any$2,:any]) :bat[:any$2,:oid] 
+command refine(b:bat[:any$2,:any$3], a:bat[:any$2,:any$1]) :bat[:any$2,:oid] 
 address GRPrefine
 comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
         values of a second bat 'a' (where the heads of a and b match 1-1).
@@ -131,7 +131,7 @@ and the tail contains the group elements. This leads to the situation that
 most value-based operators work on the tail, while counting groups
 is focussed on the head.
 @= grpSignature
-command sum(b:bat[:any$2,:@1], e:bat[:any$2,:any]) :bat[:any$2,:@1] 
+command sum(b:bat[:any$2,:@1], e:bat[:any$2,:any$1]) :bat[:any$2,:@1] 
 address GRPsum_@1
 comment "grouped tail sum";
 
@@ -143,7 +143,7 @@ command sum(b:bat[:any$2,:@1], size:int, shift:int) :bat[:any$2,:@1]
 address GRPslidingsum_@1
 comment "Tail sum of groups of a sliding window of fixed size";
 
-command avg(b:bat[:any$2,:@1], e:bat[:any$2,:any]) :bat[:any$2,:@1] 
+command avg(b:bat[:any$2,:@1], e:bat[:any$2,:any$1]) :bat[:any$2,:@1] 
 address GRPavg_@1
 comment "grouped tail average";
 
@@ -160,17 +160,17 @@ comment "grouped tail average";
 	@:grpSignature(flt)@
 	@:grpSignature(dbl)@
 
-command min(b:bat[:any$2,:any$1], e:bat[:any$2,:any]) :bat[:any$2,:any$1] 
+command min(b:bat[:any$2,:any$1], e:bat[:any$2,:any$3]) :bat[:any$2,:any$1] 
 address GRPmin
 comment "grouped tail minimum";
-command max(b:bat[:any$2,:any$1], e:bat[:any$2,:any]) :bat[:any$2,:any$1] 
+command max(b:bat[:any$2,:any$1], e:bat[:any$2,:any$3]) :bat[:any$2,:any$1] 
 address GRPmax
 comment "grouped tail maximum";
 
-command count(b:bat[:any$2,:any], e:bat[:any$2,:any], nonils:bit) :bat[:any$2,:int] 
+command count(b:bat[:any$2,:any$1], e:bat[:any$2,:any$3], nonils:bit) :bat[:any$2,:int] 
 address GRPaggr_count
 comment "grouped count";
-command size(b:bat[:any$2,:bit], e:bat[:any$2,:any]) :bat[:any$2,:int] 
+command size(b:bat[:any$2,:bit], e:bat[:any$2,:any$1]) :bat[:any$2,:int] 
 address GRPsize
 comment "grouped count of true values";
 
@@ -180,31 +180,6 @@ command prelude()
 address GRPprelude;
 
 group.prelude();
-@-
-@-
-old stuff
-    proc size(bat[:any,bit] b) :int {
-	var h := b.histogram;
-	if (h.exist(true))
-	    return h.find(true);
-	return 0;
-    }
-
-    proc avg(bat[:any, any$1] b) :any$1 {
-	var cnt := count(b);
-        if (cnt = 0)
-	    return cast(0,ttype(b));
-	return /(sum(b),cast(cnt,ttype(b)));
-    }
-
-    proc card(bat[:any,:any] b) :int {
-	return b.tunique.count;
-    }
-
-    proc {card}(bat[oid,:any] b, bat[oid,:any] e) :bat[oid,int] {
-	return {count}(b.sunique,e);
-    }
-
 @* Implementation Code
 Inclusion of the xtables requires some preliminary definitions
 and als renaming :group by something else, because Mx can;t handle

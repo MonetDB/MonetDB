@@ -20,7 +20,7 @@
 @+ Type implementation
 The MAL type module overloads the atom structure managed in the GDK
 library. 
-For the time being, we assume GDK to support at most 255 different
+For the time being, we assume GDK to support at most 127 different
 atomic types. 
 Type composition is limited to at most two builtin types to form
 a BAT. Furthermore, the polymorphic type @code{any} can be qualified
@@ -133,7 +133,7 @@ getTypeName(malType tpe)
 	if (isaBatType(tpe)) {
 		k = getHeadIndex(tpe);
 		if (k)
-			snprintf(buf, l, "bat[:any$%d,", k);
+			snprintf(buf, l, "bat[:any%c%d,", TMPMARKER, k);
 		else if (getHeadType(tpe) == TYPE_any)
 			snprintf(buf, l, "bat[:any,");
 		else
@@ -142,7 +142,7 @@ getTypeName(malType tpe)
 		s = buf + strlen(buf);
 		k = getTailIndex(tpe);
 		if (k)
-			snprintf(s, l, ":any$%d]", k);
+			snprintf(s, l, ":any%c%d]",TMPMARKER,  k);
 		else if (getTailType(tpe) == TYPE_any)
 			snprintf(s, l, ":any]");
 		else
@@ -155,7 +155,7 @@ getTypeName(malType tpe)
 	if (isaColType(tpe)) {
 		k = getTailIndex(tpe);
 		if (k)
-			snprintf(buf, l, "col[:any$%d]", k);
+			snprintf(buf, l, "col[:any%c%d]", TMPMARKER, k);
 		else if (getTailType(tpe) == TYPE_any)
 			snprintf(buf, l, "col[:any]");
 		else
@@ -168,7 +168,8 @@ getTypeName(malType tpe)
 	if (isAnyExpression(tpe)) {
 		strncpy(buf, "any", 4);
 		if (isAnyExpression(tpe))
-			snprintf(buf + 3, PATHLENGTH - 3, "$%d", getTailIndex(tpe));
+			snprintf(buf + 3, PATHLENGTH - 3, "%c%d",
+					TMPMARKER, getTailIndex(tpe));
 		return GDKstrdup(buf);
 	}
 #ifdef DEBUG_MAL_TYPE

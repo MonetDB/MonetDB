@@ -69,7 +69,9 @@ not deal with duplicates in the head of the bats.
 #define _OPT_MULTIPLEX_H_
 #include "mal.h"
 #include "mal_builder.h"
+#include "optimizer.h"
 
+opt_export str OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif /* _OPT_MULTIPLEX_H_ */
 
 @+ Code generation
@@ -81,8 +83,6 @@ a valid program.
 #include "mal_multiplex.h"
 #include "mal_interpreter.h"
 #include "mal_optimizer.h"
-
-extern str OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 @-
 The generic solution to the multiplex operators is to translate

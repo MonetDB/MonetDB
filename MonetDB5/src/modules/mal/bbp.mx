@@ -62,25 +62,25 @@ comment "Close the bbp box.";
 command destroy():void		
 address CMDbbpdestroy
 comment "Destroy the box";
-pattern take(name:str) :bat[:any,:any] 
+pattern take(name:str) :bat[:any$1,:any$2] 
 address CMDbbptake
 comment "Load a particular bat from disk and make a private copy";
-pattern deposit(name:str,v:bat[:any,:any]) :void 			
+pattern deposit(name:str,v:bat[:any$1,:any$2]) :void 			
 address CMDbbpdeposit
 comment "Enter a new bat into the bbp box.";
 pattern releaseAll():void 	
 address CMDbbpReleasA
 comment "Commit updates for this client";
-pattern release(name:str,val:bat[:any,:any]) :void 			
+pattern release(name:str,val:bat[:any$1,:any$2]) :void 			
 address CMDbbprelease
 comment "Commit updates and release this BAT.";
-pattern release(b:bat[:any,:any]):void
+pattern release(b:bat[:any$1,:any$2]):void
 address CMDbbpreleaseBAT
 comment "Remove the BAT from further consideration";
-pattern destroy(b:bat[:any,:any]):void
+pattern destroy(b:bat[:any$1,:any$2]):void
 address CMDbbpdestroyBAT1
 comment "BAT removal at session end";
-pattern destroy(b:bat[:any,:any],immediate:bit)
+pattern destroy(b:bat[:any$1,:any$2],immediate:bit)
 address CMDbbpdestroyBAT
 comment "Schedule a BAT for removal at session end or immediately";
 pattern toString(name:str):str 	
@@ -90,7 +90,7 @@ pattern discard(name:str):void
 address CMDbbpdiscard
 comment "Remove the BAT from the box";
 
-pattern garbage(b:bat[:any,:any]):void
+pattern garbage(b:bat[:any$1,:any$2]):void
 address CMDbbpgarbage
 comment "Designate a BAT as garbage";
 
@@ -102,15 +102,15 @@ pattern prelude():void
 address CMDbbpprelude
 comment "Initialize the bbp box";
 
-pattern bind(name:str,loc:str) :bat[:any,:any]
+pattern bind(name:str,loc:str) :bat[:any$1,:any$2]
 address CMDbbpbindDefinition
 comment "Relate a logical name to a physical BAT in the buffer pool.";
-pattern bind(name:str):bat[:any,:any]
+pattern bind(name:str):bat[:any$1,:any$2]
 address CMDbbpbind
 comment "Locate the BAT using its logical name,
 	but without making a local copy. 
 	No guarantees are given for consistent reads.";
-command bind(idx:int):bat[:any,:any] 
+command bind(idx:int):bat[:any$1,:any$2] 
 address CMDbbpbindindex
 comment "Locate the BAT using its BBP index";
 pattern getObjects():bat[:int,:str] 
@@ -123,7 +123,7 @@ to steer the process. This means the code can not belong to the
 kernel module, because MAL context knowledge is forbidden there.
 
 @mal
-pattern new(ht:any$1, tt:any$2, b:bat[:any,:any]) :bat[:any$1,:any$2] 	
+pattern new(ht:any$1, tt:any$2, b:bat[:any$3,:any$4]) :bat[:any$1,:any$2] 	
 address CMDBATclone
 comment "Creates a new empty transient BAT by cloning another";
 pattern new(ht:any$1, tt:any$2) :bat[:any$1,:any$2] 	
@@ -164,14 +164,14 @@ comment "Pack a pair into a BAT";
 @+ Algebraic operators
 Those that rely on knowledge of the runtime environment
 @mal
-command project(b:bat[:any$1,:any]) :bat[:any$1,:void]	
+command project(b:bat[:any$1,:any$2]) :bat[:any$1,:void]	
 address CMDBBPprojectNil
 comment "Extract the head of a BAT.";
 
-pattern project( b:bat[:any$1,:any], val:any$2) :bat[:any$1,:any$2] 	
+pattern project( b:bat[:any$1,:any$3], val:any$2) :bat[:any$1,:any$2] 	
 address CMDBBPproject
 comment "Fill the tail column with a constant.";
-pattern project(b:bat[:any$1,:any], val:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
+pattern project(b:bat[:any$1,:any$3], val:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
 address CMDBBPproject
 comment "Fill the tail column with a constant.";
                                                                                 
@@ -192,7 +192,7 @@ command getRNames() :bat[:int,:str]
 address CMDbbpRNames
 comment "Map a BAT into its bbp physical name";
 
-command getName( b:bat[:any,:any]):str
+command getName( b:bat[:any$1,:any$2]):str
 address CMDbbpName
 comment "Map a BAT into its internal name";
 command getCount() :bat[:int,:lng] 	
@@ -219,10 +219,10 @@ comment "Map a BAT into disk/load status";
 command getKind():bat[:int,:str] 
 address CMDbbpKind
 comment "Map a BAT into its persistency status";
-command getRefCount(b:bat[:any,:any]) :int
+command getRefCount(b:bat[:any$1,:any$2]) :int
 address CMDgetBATrefcnt
 comment "Utility for debugging MAL interpreter";
-command getLRefCount(b:bat[:any,:any]) :int
+command getLRefCount(b:bat[:any$1,:any$2]) :int
 address CMDgetBATlrefcnt
 comment "Utility for debugging MAL interpreter";
 @-

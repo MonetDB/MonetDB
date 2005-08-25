@@ -23,12 +23,12 @@ command user.lookup(nme:str):bat[:str,:str] address CMDlookup;	# 0  (lookup:bat[
 #   y := print(val);
 #   return sample:=true;
 #end sample;
-function user.sample(nme:str,val:any):bit;	# 0  (sample:bit)<-(nme:str)(val:any)
+function user.sample(nme:str,val:any$1):bit;	# 0  (sample:bit)<-(nme:str)(val:any$1)
     b := user.lookup(nme);	# 1  (b:bat[:str,:str])<-(nme:str)
-    h := algebra.select(b,val,val);	# 2  (h:any)<-(b:bat[:str,:str])(val:any)(val:any)
+    h := algebra.select(b,val,val);	# 2  (h:any)<-(b:bat[:str,:str])(val:any$1)(val:any$1)
     t := algebra.count(h);	# 3  (t:any)<-(h:any)
     x := io.print(t);	# 4 IOprint_val (x:int)<-(t:any)
-    y := io.print(val);	# 5 IOprint_val (y:int)<-(val:any)
+    y := io.print(val);	# 5 IOprint_val (y:int)<-(val:any$1)
     return sample := true;	# 6  (sample:bit)<-($8:bit)
 end sample;	# 7  
 #sample("hello","world");

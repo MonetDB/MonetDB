@@ -18,7 +18,7 @@ stdout of test 'tst750` in directory 'src/mal` itself:
 #	k:= 1+c;
 #	print(k);
 #end test;
-function user.test(b:bat[:any,:any$2],c:any$2):void;	# 0  (test:void)<-(b:bat[:any,:any$2])(c:any$2)
+function user.test(b:bat[:any$1,:any$2],c:any$2):void;	# 0  (test:void)<-(b:bat[:any$1,:any$2])(c:any$2)
     k := calc.+(1,c);	# 1  (k:any)<-($4:int)(c:any$2)
     io.print(k);	# 2 IOprint_val ($5:int)<-(k:any)
 end test;	# 3  

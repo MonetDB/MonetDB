@@ -66,7 +66,10 @@ command getSignature(mod:str,fcn:str)
 address INSPECTgetSignature
 comment "Returns the function signature(s)";
 
-pattern getType(v:any) :int 
+pattern getType(v:bat[:any$1,:any$2]) :int 
+address INSPECTtype
+comment "Return the type of a variable (expression)";
+pattern getType(v:any$1) :int 
 address INSPECTtype
 comment "Return the type of a variable (expression)";
 command getTypeName(v:int):str 

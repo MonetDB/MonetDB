@@ -17,19 +17,19 @@ function main():void;
 end main;
 
 # take uses the 'root' versions.
-function take(v:str):any;
+function take(v:str):any$1;
 	io.printf("looking for %s\n",v);
 	w:= constants.take(v);
 	return w;
 end take;
 
 # release is overloaded for testing only
-function release(v:any):void;
+function release(v:any$1):void;
 	BoxException:= "releasing a constant is forbidden";
 	raise BoxException;
 end release;
 
 # accept the definition of a new constant
-function deposit(v:any,name:str) 
+function deposit(v:any$1,name:str) 
 address space_deposit;
 

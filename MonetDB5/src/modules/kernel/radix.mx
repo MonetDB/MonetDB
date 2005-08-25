@@ -618,7 +618,7 @@ comment "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clus
  If you pass a non-empty but writable limits bat, it will be used as above for resume,
  and will also be overwritten with the new cluster boundaries";
 
-command radix_bits(b:bat[:any,:any]) :int 
+command radix_bits(b:bat[:any$1,:any$2]) :int 
 address radix_bits
 comment "return the number of bits on which 
 	the head column is radix clustered." ;
@@ -631,7 +631,7 @@ comment "return a histogram [radix-pattern,bucket-size] for the tail values of s
  command just detects consecutive chunks where (1) the tail values have the same specified
  radix-bits and (2) the head values are ascending";
 
-command radix_count2(b:bat[:any,:oid], shift:int, radix:int) :bat[:int,:int] 
+command radix_count2(b:bat[:any$1,:oid], shift:int, radix:int) :bat[:int,:int] 
 address radix_count2
 comment "generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail 
 the count of all tail value in b with these radix bits, ignoring the lowmost ones passed in shift";
@@ -651,11 +651,11 @@ address radix_decluster3;
 command radix_decluster4(b:bat[:any$2,:oid],a:bat[:any$2,:any$1],r:bat[:int,:int], multiplier:int) :bat[:void,:any$1] 
 address radix_decluster4 ;
 
-command radix_join(l:bat[:any$1,:any$2],r:bat[:any$2,:any$3], radix:int, hitrate:int) :bat[:any,:any] 
+command radix_join(l:bat[:any$1,:any$2],r:bat[:any$2,:any$3], radix:int, hitrate:int) :bat[:any$4,:any$5] 
 address radix_join 
 comment "nested-loop join on radix clustered inputs";
 
-command phash_join(l:bat[:any$1,:any$2],r:bat[:any$2,:any$3], radix:int, hitrate:int, cutoff:bit) :bat[:any,:any] 
+command phash_join(l:bat[:any$1,:any$2],r:bat[:any$2,:any$3], radix:int, hitrate:int, cutoff:bit) :bat[:any$4,:any$5] 
 address phash_join
 comment "partitioned hash-join on radix clustered inputs";
 
