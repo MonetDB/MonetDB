@@ -18,9 +18,9 @@ stdout of test 'tst077` in directory 'src/mal` itself:
 #        return (a,x);
 #
 #end swap;
-function user.swap(x:bat[:any$1,:int],y:bat[:int,:int]) (a:str,b:bat[:any$1,:int]);	# 0  (a:str)(b:bat[:any$1,:int])<-(x:bat[:any$1,:int])(y:bat[:int,:int])
+function user.swap(x:bat[:any_1,:int],y:bat[:int,:int]) (a:str,b:bat[:any_1,:int]);	# 0  (a:str)(b:bat[:any_1,:int])<-(x:bat[:any_1,:int])(y:bat[:int,:int])
     a := "done";	# 1  (a:str)<-($5:str)
-    return (a,x);	# 2  (a:str)(x:bat[:any$1,:int])
+    return (a,x);	# 2  (a:str)(x:bat[:any_1,:int])
 end swap;	# 3  
 #
 #X:= new(:int,:int);

@@ -55,14 +55,14 @@ stdout of test 'no.163` in directory 'tests/BugReports` itself:
 #	mil.line("");
 #	return ea_a :=b;
 #end tst;
-function user.tst(b:bat[:any,:int]):bat[:any,:any];	# 0  (tst:bat[:any,:any])<-(b:bat[:any,:int])
+function user.tst(b:bat[:any_1,:int]):bat[:any_2,:any_3];	# 0  dynamic (tst:bat[:any_2,:any_3])<-(b:bat[:any_1,:int])
     mil.line("");	# 1 MILline ($2:void)<-($3:str)
     i := 0;	# 2  (i:int)<-($5:int)
     mil.line("  i := 0;");	# 3 MILline ($6:void)<-($7:str)
 barrier ca_a := true;	# 4  (ca_a:bit)<-($9:bit) jump 13
 barrier da_a := calc.<(i,2);	# 5 CALCcompLTintint (da_a:bit)<-(i:int)($11:int) jump 12
     mil.line("  while (i < 2) {");	# 6 MILline ($12:void)<-($13:str)
-    b := batcalc.+(b,1);	# 7 CMDbatADDcst (b:bat[:any,:int])<-(b:bat[:any,:int])($14:int)
+    b := batcalc.+(b,1);	# 7 CMDbatADDcst (b:bat[:any_1,:int])<-(b:bat[:any_1,:int])($14:int)
     mil.line("    b := [+](b, 1);");	# 8 MILline ($15:void)<-($16:str)
     i := calc.+(i,1);	# 9 CALCbinaryADDintint (i:int)<-(i:int)($14:int)
     mil.line("    i := i + 1;");	# 10 MILline ($17:void)<-($18:str)
@@ -70,7 +70,7 @@ barrier da_a := calc.<(i,2);	# 5 CALCcompLTintint (da_a:bit)<-(i:int)($11:int) j
 exit da_a;	# 12  (da_a:bit)
 exit ca_a;	# 13  (ca_a:bit)
     mil.line("");	# 14 MILline ($19:void)<-($3:str)
-    return ea_a := b;	# 15  (ea_a:bat[:any,:int])<-(b:bat[:any,:int])
+    return ea_a := b;	# 15  (ea_a:bat[:any_1,:int])<-(b:bat[:any_1,:int])
 end tst;	# 16  
 #	mil.line("");
 #	b1 := new(nil:int,nil:int);

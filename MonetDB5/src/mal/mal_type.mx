@@ -47,7 +47,7 @@ This encoding scheme permits a limited number of different bat types.
 typedef int malType;
 
 #define malVARG " malVARG"
-#define TMPMARKER '$'
+#define TMPMARKER '_'
 
 #define newBatType(H,T)  (1<<16 | (((H & 0377) <<8) | (T & 0377) ))
 #define newColType(T)  (1<<25 | (((TYPE_void & 0377) <<8) | (T & 0377) ))

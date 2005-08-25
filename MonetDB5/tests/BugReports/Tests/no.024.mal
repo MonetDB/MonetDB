@@ -50,7 +50,7 @@ include mil;
 	mil.line("var b:= bbp.new(int,int);");
 	b := bbp.new(nil:int,nil:int);
 	mil.line("proc error1(bat B) : void {");
-function error1(B:bat[:any,:any]):void;
+function error1(B:bat[:any$1,:any$2]):void;
 	mil.line("        B.insert(1,2);");
 	aa_a := bat.insert(B,1,2);
 	mil.line("        B.insert(2,3);");

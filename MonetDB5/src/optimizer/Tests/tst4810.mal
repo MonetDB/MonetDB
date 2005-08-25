@@ -1,4 +1,4 @@
-_time:=alarm.usec();
+time:=alarm.usec();
 function f1():void;
 	t1 := array.grid(500,500,1,0);
 	top := t1;
@@ -116,9 +116,9 @@ end f6;
 #	f6();
 
 #f1();f2();f3();
-_time2:=alarm.usec();
+time2:=alarm.usec();
 
-diff := _time2 - _time;
+diff := time2 - time;
 secs := diff / 1000000;
 decs := diff % 1000000;
 io.printf("#TIME %d.",secs);

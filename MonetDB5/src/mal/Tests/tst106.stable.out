@@ -16,7 +16,7 @@ stdout of test 'tst106` in directory 'src/mal` itself:
 #
 #command f(a:any$1,b:any$2, c:any$1) :bat[:any$1, :any$2] 
 !ERROR: address of 'user.f' not found
-command user.f(a:any$1,b:any$2,c:any$1):bat[:any$1,:any$2] address f;	# 0  dynamic (f:bat[:any$1,:any$2])<-(a:any$1)(b:any$2)(c:any$1)
+command user.f(a:any_1,b:any_2,c:any_1):bat[:any_1,:any_2] address f;	# 0  dynamic (f:bat[:any_1,:any_2])<-(a:any_1)(b:any_2)(c:any_1)
 #
 #b:= f(1,2,"help");
 #a:= f(1,2,1);

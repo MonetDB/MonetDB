@@ -23,9 +23,9 @@ stdout of test 'tst380` in directory 'src/mal` itself:
 #	bat.setColumn(z,title);
 #	return z;
 #end get;
-function user.get(br:bat[:any$1,:any$2],nme:str,title:str):bat[:any$3,:any$4];	# 0  dynamic (get:bat[:any$3,:any$4])<-(br:bat[:any$1,:any$2])(nme:str)(title:str)
+function user.get(br:bat[:any_1,:any_2],nme:str,title:str):bat[:any_3,:any_4];	# 0  dynamic (get:bat[:any_3,:any_4])<-(br:bat[:any_1,:any_2])(nme:str)(title:str)
     b:bat[:int,:str]  := bbp.nme();	# 1  (b:bat[:int,:str])
-    z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:str])<-(br:bat[:any$1,:any$2])(b:bat[:int,:str])
+    z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:str])<-(br:bat[:any_1,:any_2])(b:bat[:int,:str])
     bat.setColumn(z,title);	# 3 BKCsetColumn ($6:bat[:any,:str])<-(z:bat[:any,:str])(title:str)
     return z;	# 4  (z:bat[:any,:str])
 end get;	# 5  

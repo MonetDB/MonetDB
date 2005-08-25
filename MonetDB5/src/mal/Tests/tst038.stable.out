@@ -16,8 +16,8 @@ stdout of test 'tst038` in directory 'src/mal` itself:
 #function tst2(b:bat[:any$1,:any$2]);
 #	bat.insert(b,"hello",1);
 #end tst2;
-function user.tst2(b:bat[:any$1,:any$2]):void;	# 0  (tst2:void)<-(b:bat[:any$1,:any$2])
-    bat.insert(b,"hello",1);	# 1 BKCinsert_bun ($2:bat[:str,:int])<-(b:bat[:any$1,:any$2])($3:str)($4:int)
+function user.tst2(b:bat[:any_1,:any_2]):void;	# 0  (tst2:void)<-(b:bat[:any_1,:any_2])
+    bat.insert(b,"hello",1);	# 1 BKCinsert_bun ($2:bat[:str,:int])<-(b:bat[:any_1,:any_2])($3:str)($4:int)
 end tst2;	# 2  
 #
 #b:=new(:int,:str);

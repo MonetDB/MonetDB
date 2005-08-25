@@ -18,9 +18,9 @@ stdout of test 'tst4620` in directory 'src/optimizer` itself:
 #    zz:= join(z,c);
 #    return zz;
 #end joinPath;
-function algebra.joinPath(a:bat[:any$1,:any$2],b:bat[:any$2,:any$3],c:bat[:any$3,:any$4]):bat[:any$1,:any$4];	# 0  dynamic (joinPath:bat[:any$1,:any$4])<-(a:bat[:any$1,:any$2])(b:bat[:any$2,:any$3])(c:bat[:any$3,:any$4])
-    z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:any,:any])<-(a:bat[:any$1,:any$2])(b:bat[:any$2,:any$3])
-    zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any$3,:any$4])
+function algebra.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];	# 0  dynamic (joinPath:bat[:any_1,:any_4])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])(c:bat[:any_3,:any_4])
+    z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:any,:any])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])
+    zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any_3,:any_4])
     return zz;	# 3  (zz:bat[:any,:any])
 end joinPath;	# 4  
 #

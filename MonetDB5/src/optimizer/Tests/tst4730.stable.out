@@ -19,12 +19,12 @@ stdout of test 'tst4730` in directory 'src/optimizer` itself:
 ##don;t depend on SQL library
 #function user.bind(s:str,t:str,c:str,i:int):bat[:any$1,:any$2];
 #end bind;
-function user.bind(s:str,t:str,c:str,i:int):bat[:any$1,:any$2];	# 0  dynamic (bind:bat[:any$1,:any$2])<-(s:str)(t:str)(c:str)(i:int)
+function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];	# 0  dynamic (bind:bat[:any_1,:any_2])<-(s:str)(t:str)(c:str)(i:int)
 end bind;	# 1  
 !ERROR: return missing
 #function user.column(b:bat[:void,:any$1],s:str,t:str,i:int,j:int):void;
 #end column;
-function user.column(b:bat[:void,:any$1],s:str,t:str,i:int,j:int):void;	# 0  (column:void)<-(b:bat[:void,:any$1])(s:str)(t:str)(i:int)(j:int)
+function user.column(b:bat[:void,:any_1],s:str,t:str,i:int,j:int):void;	# 0  (column:void)<-(b:bat[:void,:any_1])(s:str)(t:str)(i:int)(j:int)
 end column;	# 1  
 #factory qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;
 #    V6:bat[:void,:date] := user.bind("sys","lineitem","l_shipdate",0);

@@ -15,7 +15,7 @@ stdout of test 'tst027` in directory 'src/mal` itself:
 #function test(s:str, b:bat[:any$1,:any$2]...);
 #	print(s);
 #end test;
-function user.test(s:str,b:bat[:any$1,:any$2]...):void;	# 0  (test:void)<-(s:str)(b:bat[:any$1,:any$2])
+function user.test(s:str,b:bat[:any_1,:any_2]...):void;	# 0  (test:void)<-(s:str)(b:bat[:any_1,:any_2])
     io.print(s);	# 1 IOprint_val ($3:int)<-(s:str)
 end test;	# 2  
 #b:= new(:int,:int);

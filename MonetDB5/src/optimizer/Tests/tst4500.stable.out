@@ -20,7 +20,7 @@ stdout of test 'tst4500` in directory 'src/optimizer` itself:
 ##don;t depend on SQL library
 #function user.bind(s:str,t:str,c:str,i:int):bat[:any$1,:any$2];
 #end bind;
-function user.bind(s:str,t:str,c:str,i:int):bat[:any$1,:any$2];	# 0  dynamic (bind:bat[:any$1,:any$2])<-(s:str)(t:str)(c:str)(i:int)
+function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];	# 0  dynamic (bind:bat[:any_1,:any_2])<-(s:str)(t:str)(c:str)(i:int)
 end bind;	# 1  
 !ERROR: return missing
 ##s14 := user.bind("sys",  "lineitem", "l_shipdate"); #lineitem

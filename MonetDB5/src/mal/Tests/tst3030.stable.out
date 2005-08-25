@@ -16,7 +16,7 @@ stdout of test 'tst3030` in directory 'src/mal` itself:
 ## note the use of the first parameter to obtain property set
 #function newsemijoin(A:bat[:int,:any$1], 
 #end newsemijoin;
-function user.newsemijoin(A:bat[:int,:any$1],B:bat[:int,:any$2]):bat[:int,:any$1];	# 0  dynamic (newsemijoin:bat[:int,:any$1])<-(A:bat[:int,:any$1])(B:bat[:int,:any$2])
+function user.newsemijoin(A:bat[:int,:any_1],B:bat[:int,:any_2]):bat[:int,:any_1];	# 0  dynamic (newsemijoin:bat[:int,:any_1])<-(A:bat[:int,:any_1])(B:bat[:int,:any_2])
 end newsemijoin;	# 1  
 !ERROR: return missing
 #z:= bbp.new(:int{sorted=true},:int);

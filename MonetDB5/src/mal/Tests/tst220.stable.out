@@ -23,13 +23,13 @@ stdout of test 'tst220` in directory 'src/mal` itself:
 #
 #	return bb;
 #end steal; 
-function user.steal(bb:bat[:any$1,:any$2]):bat[:any$1,:any$2];	# 0  dynamic (steal:bat[:any$1,:any$2])<-(bb:bat[:any$1,:any$2])
-    i := bbp.getLRefCount(bb);	# 1 CMDgetBATlrefcnt (i:int)<-(bb:bat[:any$1,:any$2])
+function user.steal(bb:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (steal:bat[:any_1,:any_2])<-(bb:bat[:any_1,:any_2])
+    i := bbp.getLRefCount(bb);	# 1 CMDgetBATlrefcnt (i:int)<-(bb:bat[:any_1,:any_2])
     io.printf("enter function refcount =%d[2,3]\n",i);	# 2 IOprint_formatted_int ($3:int)<-($4:str)(i:int)
-    loc := bb;	# 3  (loc:bat[:any$1,:any$2])<-(bb:bat[:any$1,:any$2])
-    i := bbp.getLRefCount(bb);	# 4 CMDgetBATlrefcnt (i:int)<-(bb:bat[:any$1,:any$2])
+    loc := bb;	# 3  (loc:bat[:any_1,:any_2])<-(bb:bat[:any_1,:any_2])
+    i := bbp.getLRefCount(bb);	# 4 CMDgetBATlrefcnt (i:int)<-(bb:bat[:any_1,:any_2])
     io.printf("local in function refcount =%d[2,3]\n",i);	# 5 IOprint_formatted_int ($6:int)<-($7:str)(i:int)
-    return bb;	# 6  (bb:bat[:any$1,:any$2])
+    return bb;	# 6  (bb:bat[:any_1,:any_2])
 end steal;	# 7  
 #
 #function createone():bat[:int,:str];

@@ -1,7 +1,7 @@
 #detect illegal use of temporary variables
 i:= 12;		# internal location of i is 3
 
-$2:=55;		# acceptable
-$3:= 23;	# error, overwriting non-temp
-$5:=23;
-io.print($5);
+_2:=55;		# acceptable
+_3:= 23;	# error, overwriting non-temp
+_5:=23;
+io.print(_5);

@@ -16,7 +16,7 @@ include mil;
 	mil.line("# split and re-distribute BATs.\n");
 	mil.line("# This is supported by hashsplit, rangesplit,  and groupby operations.\n");
 	mil.line("PROC groupby(bat b, bat  rng) : bat {");
-function groupby(b:bat[:any,:any], rng:bat[:any,:any]):bat[:any,:any];
+function groupby(b:bat[:any$1,:any$2], rng:bat[:any$3,:any$4]):bat[:any$5,:any$6];
 	mil.line(" VAR r := rng.reverse().number().reverse();");
 	ca_a := bat.reverse(rng);
 	da_a := number(ca_a);

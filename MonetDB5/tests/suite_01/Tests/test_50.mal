@@ -14,7 +14,7 @@ include mil;
 	ba_a := setoid(aa_a);
 	mil.line("#advanced features BATs as primitives.\n");
 	mil.line("var c:= new(int,bat);");
-	c := new(nil:int,:bat[:any,:any]);
+	c := new(nil:int,:bat[:any$1,:any$2]);
 	mil.line("#c.insert(1,gdk_cpu_stat);\n");
 	cpu:= mil.take("cpu");
 	ca_a := insert(c,1,cpu);

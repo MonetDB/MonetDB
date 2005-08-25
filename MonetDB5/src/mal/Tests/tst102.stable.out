@@ -15,7 +15,7 @@ stdout of test 'tst102` in directory 'src/mal` itself:
 ## the calls are wrong, they violate the type constraint
 #command + (L:any$1, R:any$1):any$1 
 !ERROR: address of 'user.addIntInt' not found
-command user.+(L:any$1,R:any$1):any$1 address addIntInt;	# 0  dynamic (+:any$1)<-(L:any$1)(R:any$1)
+command user.+(L:any_1,R:any_1):any_1 address addIntInt;	# 0  dynamic (+:any_1)<-(L:any_1)(R:any_1)
 #
 #a:=1+"hello";
 #b:=3.5+1;

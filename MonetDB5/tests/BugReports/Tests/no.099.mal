@@ -62,7 +62,7 @@ include mil;
 	aa_a := calc.oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("PROC comp(any left, any right) : any {");
-function comp(left:any, right:any):any;
+function comp(left:any$1, right:any$2):any$3;
 	mil.line("  IF (left = right) {");
 barrier	ca_a := ==(left,right);
 	mil.line("    printf(\"left equals right\\n\");");

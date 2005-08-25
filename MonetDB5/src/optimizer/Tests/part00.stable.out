@@ -42,9 +42,9 @@ stdout of test 'part00` in directory 'src/optimizer` itself:
 #	print("hello");
 #	print(a);
 #end qry;
-function user.qry(a:bat[:void,:any$1]):void;	# 0  (qry:void)<-(a:bat[:void,:any$1])
+function user.qry(a:bat[:void,:any_1]):void;	# 0  (qry:void)<-(a:bat[:void,:any_1])
     io.print("hello");	# 1 IOprint_val ($2:int)<-($3:str)
-    io.print(a);	# 2 IOprint_val ($4:int)<-(a:bat[:void,:any$1])
+    io.print(a);	# 2 IOprint_val ($4:int)<-(a:bat[:void,:any_1])
 end qry;	# 3  
 #
 #optimizer.partitionedQuery("Admin","qry");

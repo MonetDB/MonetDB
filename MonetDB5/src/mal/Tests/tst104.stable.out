@@ -17,7 +17,7 @@ stdout of test 'tst104` in directory 'src/mal` itself:
 #
 #command f(a:any$1, b:bat[:any$2,:any$1],c:any$2):any 
 !ERROR: address of 'user.dummy' not found
-command user.f(a:any$1,b:bat[:any$2,:any$1],c:any$2):any address dummy;	# 0  dynamic (f:any)<-(a:any$1)(b:bat[:any$2,:any$1])(c:any$2)
+command user.f(a:any_1,b:bat[:any_2,:any_1],c:any_2):any address dummy;	# 0  dynamic (f:any)<-(a:any_1)(b:bat[:any_2,:any_1])(c:any_2)
 #
 #b:= new(:str,:int);
 #a:= f(1,b,"hello");

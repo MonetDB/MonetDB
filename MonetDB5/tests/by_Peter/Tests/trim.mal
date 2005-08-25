@@ -71,7 +71,7 @@ redo	oa_a;
 exit	pa_a;
 exit	oa_a;
 	mil.line("proc countall (..any..) : void {");
-function countall(,countall:any...):void;
+function countall(,countall:any$1...):void;
 	mil.line("  var i := 0;");
 	i := 0;
 	mil.line("  while(i < $0) {");

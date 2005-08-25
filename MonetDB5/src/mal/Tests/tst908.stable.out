@@ -22,10 +22,10 @@ stdout of test 'tst908` in directory 'src/mal` itself:
 #	reduce:= multiplex.tactics("/",b,div);
 #	print(reduce);
 #end perftst;
-function user.perftst(b:bat[:any$1,:any$2],div:any$2):void;	# 0  (perftst:void)<-(b:bat[:any$1,:any$2])(div:any$2)
+function user.perftst(b:bat[:any_1,:any_2],div:any_2):void;	# 0  (perftst:void)<-(b:bat[:any_1,:any_2])(div:any_2)
     io.print("perftst");	# 1 IOprint_val ($3:int)<-($4:str)
-    io.print(div);	# 2 IOprint_val ($5:int)<-(div:any$2)
-    reduce := batcalc./(b,div);	# 3 CMDbatDIVcst (reduce:bat[:any,:any])<-(b:bat[:any$1,:any$2])(div:any$2)
+    io.print(div);	# 2 IOprint_val ($5:int)<-(div:any_2)
+    reduce := batcalc./(b,div);	# 3 CMDbatDIVcst (reduce:bat[:any,:any])<-(b:bat[:any_1,:any_2])(div:any_2)
     io.print(reduce);	# 4 IOprint_val ($7:int)<-(reduce:bat[:any,:any])
 end perftst;	# 5  
 #
