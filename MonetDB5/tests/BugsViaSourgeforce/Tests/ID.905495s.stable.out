@@ -30,15 +30,15 @@ stdout of test 'ID.905495s` in directory 'tests/BugsViaSourgeforce` itself:
 #	aa_a := print("hello");
 #
 function user.main():int;	# 0  (main:int)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  ($32:str)
-# Predefined code segment 	# 2  ($34:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  ($36:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  ($38:str)
-#A few guidelines to maximize usefullness. 	# 5  ($40:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  ($42:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  ($44:str)
-#print("hello"); 	# 8  ($46:str)
-    aa_a := io.print("hello");	# 9 IOprint_val (aa_a:int)<-($48:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
+# Predefined code segment 	# 2  (_34:str)
+#The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 4  (_38:str)
+#A few guidelines to maximize usefullness. 	# 5  (_40:str)
+#- make the type of variables explicit, in particular 'nil' 	# 6  (_42:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_44:str)
+#print("hello"); 	# 8  (_46:str)
+    aa_a := io.print("hello");	# 9 IOprint_val (aa_a:int)<-(_48:str)
 end main;	# 10  
 [ "hello" ]
 

@@ -34,26 +34,26 @@ stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 #	aa_a := print(unknown);
 #end crash;
 function user.crash():void;	# 0  (crash:void)
-    mil.line("\tprint($t);");	# 1 MILline ($1:void)<-($2:str)
-    unknown := mil.take("unknown");	# 2 MILtake (unknown:any)<-($4:str)
+    mil.line("\tprint($t);");	# 1 MILline (_1:void)<-(_2:str)
+    unknown := mil.take("unknown");	# 2 MILtake (unknown:any)<-(_4:str)
     aa_a := io.print(unknown);	# 3 IOprint_val (aa_a:int)<-(unknown:any)
 end crash;	# 4  
 #	mil.line("crash();");
 #	ba_a := crash();
 #
 function user.main():int;	# 0  (main:int)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  ($32:str)
-#Predefined code segment 	# 2  ($34:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  ($36:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  ($38:str)
-#A few guidelines to maximize usefullness. 	# 5  ($40:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  ($42:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  ($44:str)
-#use the "mil_schema" for additional support routines 	# 8  ($46:str)
-    mil.line("PROC crash() : void");	# 9 MILline ($47:void)<-($48:str)
-#ERROR: no iterator 'T' on stack 	# 10  ($50:str)
-#ERROR: no iterator 'T' on stack 	# 11  ($50:str)
-    mil.line("crash();");	# 12 MILline ($52:void)<-($53:str)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
+#Predefined code segment 	# 2  (_34:str)
+#The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 4  (_38:str)
+#A few guidelines to maximize usefullness. 	# 5  (_40:str)
+#- make the type of variables explicit, in particular 'nil' 	# 6  (_42:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_44:str)
+#use the "mil_schema" for additional support routines 	# 8  (_46:str)
+    mil.line("PROC crash() : void");	# 9 MILline (_47:void)<-(_48:str)
+#ERROR: no iterator 'T' on stack 	# 10  (_50:str)
+#ERROR: no iterator 'T' on stack 	# 11  (_50:str)
+    mil.line("crash();");	# 12 MILline (_52:void)<-(_53:str)
     ba_a := user.crash();	# 13  (ba_a:void)
 end main;	# 14  
 #PROC crash() : void
