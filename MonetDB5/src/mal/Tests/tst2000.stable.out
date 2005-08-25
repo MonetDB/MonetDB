@@ -1,15 +1,15 @@
 stdout of test 'tst2000` in directory 'src/mal` itself:
 
 
-# 07:59:14 >  
-# 07:59:14 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst2000.mal </dev/null
-# 07:59:14 >  
+# 09:20:16 >  
+# 09:20:16 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34633 --set sql_port=45575 --set xquery_port=56057 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst2000.mal </dev/null
+# 09:20:16 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ##The 2000 serie  is focussed on parallelism
@@ -17,7 +17,7 @@ stdout of test 'tst2000` in directory 'src/mal` itself:
 #
 #function clkticks(n:int):void;
 #barrier	b:= n>0;
-#	printf("clock tick\n");
+#	io.printf("clock tick\n");
 #	alarm.sleep(2);
 #	n:= n-1;
 #redo	b:= n>0;
@@ -32,8 +32,10 @@ barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
 exit b;	# 6  (b:bit)
 end clkticks;	# 7  
 #
-#mdb('T');
-#clkticks(2);
+## trace all instructions executed with timing information
+#mdb.setTimer(true);
+#mdb.setTrace(true);
+#user.clkticks(2);
 #
 function user.main():int;	# 0  (main:int)
 #The 2000 serie  is focussed on parallelism 	# 1  ($2:str)
@@ -43,22 +45,22 @@ function user.main():int;	# 0  (main:int)
     mdb.setTrace(true);	# 5 MDBsetTrace ($9:void)<-($8:bit)
     user.clkticks(2);	# 6  ($10:void)<-($11:int)
 end main;	# 7  
-#     6 usec!    mdb.setTimer($8=true)
-!    mdb.setTrace($8=true)
-!barrier b := calc.>(n=2, $3=0)
+#     3 usec#    mdb.setTimer($8=true)
+#    mdb.setTrace($8=true)
+#barrier b := calc.>(n=2, $3=0)
 clock tick
-!    io.printf($5="clock tick\\n")
-!    alarm.sleep($7=2)
-!    n := calc.-(n=1, $8=1)
-!    redo b := calc.>(n=1, $3=0)
+#    io.printf($5="clock tick\\n")
+#    alarm.sleep($7=2)
+#    n := calc.-(n=1, $8=1)
+#    redo b := calc.>(n=1, $3=0)
 clock tick
-!    io.printf($5="clock tick\\n")
-!    alarm.sleep($7=2)
-!    n := calc.-(n=0, $8=1)
-!    redo b := calc.>(n=0, $3=0)
-!    user.clkticks($11=2)
+#    io.printf($5="clock tick\\n")
+#    alarm.sleep($7=2)
+#    n := calc.-(n=0, $8=1)
+#    redo b := calc.>(n=0, $3=0)
+#    user.clkticks($11=2)
 
-# 07:59:19 >  
-# 07:59:19 >  Done.
-# 07:59:19 >  
+# 09:20:20 >  
+# 09:20:20 >  Done.
+# 09:20:20 >  
 
