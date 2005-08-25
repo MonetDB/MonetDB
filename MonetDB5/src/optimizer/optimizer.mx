@@ -204,14 +204,27 @@ optimizer.prelude();
 #include "mal_macro.h"
 #include "mal_reduce.h"
 
-extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str QOTMEoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str QOTMEoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str QOTMEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str QOTMCoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str QOTMCoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str QOTMCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+mal_export str optimizer_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str QOTclrdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export size_t QOTjoinEstimate(BAT *l, BAT *r);
+mal_export str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @
 Upon loading the module it should inspect the scenario table
 for any unresolved references to the MALoptimizer and set the 
 callback function.
 @c
-mal_export str optimizer_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str
 optimizer_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -224,7 +237,6 @@ optimizer_prelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 
 static int debugOpt = 0;
-mal_export str QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
 QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -233,7 +245,6 @@ QOTdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-mal_export str QOTclrdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
 QOTclrdebugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -249,7 +260,6 @@ MAL functions can be optimized explicitly using the routines below.
 Beware, the function names should be known as literalstrings, because
 you may not know the runtime situation.
 @= QOTC
-mal_export str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str	modnme;
 	str	fcnnme;
@@ -285,7 +295,6 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	removeInstruction(mb, p);
 	return MAL_SUCCEED;
 }
-mal_export str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	setLifespan(mb);
 	@1optimizer(mb, stk, pci);
@@ -307,7 +316,6 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @:QOTC(RM, "costEstimation")@
 @:QOTC(MR, "reduce")@
 
-mal_export str QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
 QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -330,7 +338,6 @@ QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return optimizeMALBlock(s->def);
 }
 
-mal_export str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str
 QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -365,7 +372,6 @@ QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-mal_export str QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str
 QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
@@ -410,7 +416,6 @@ results.
 For the time being, we use a simplistic model, based
 on the assumption that most joins are foreign key joins anyway.
 @c
-mal_export size_t QOTjoinEstimate(BAT *l, BAT *r);
 size_t
 QOTjoinEstimate(BAT *l, BAT *r)
 {
@@ -421,7 +426,6 @@ QOTjoinEstimate(BAT *l, BAT *r)
 	return MIN(lc, rc);
 }
 
-mal_export str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str
 QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -479,3 +483,102 @@ QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 @}
+@= macroOptimizer
+mal_export str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+    Module s;
+    Symbol t;
+    int j;
+    str nme, fcn,msg=MAL_SUCCEED;
+
+    (void)stk;
+    nme= getVarConstant(mb, getArg(p,1)).val.sval;
+    fcn= getVarConstant(mb, getArg(p,2)).val.sval;
+#ifdef DEBUG_MAL_MACRO
+    printf("@1optimizer: %s.%s\n",nme,fcn);
+#endif
+    removeInstruction(mb,p);
+
+
+    s= findModule(mal_scope, putName(nme,strlen(nme)));
+    if (s == 0) s= mal_scope;
+    for(; s; s=s->outer)
+    if(strcmp(s->name,nme)== 0 && s->subscope){
+        j = getSubScope(fcn); 
+        for(t= s->subscope[j];t!=NULL;t=t->peer) 
+        if( t->def->errors == 0) {
+            if( getSignature(t)->token == FUNCTIONsymbol &&
+                idcmp(fcn, functionName(getSignature(t)) )==0
+                )
+                /* call macro expansion */
+                msg= @2processor(mb,t);
+                if( msg) return msg;
+        }
+    }
+    chkFlow(mb);
+	chkDeclarations(mb,TRUE);
+    return msg;
+}
+mal_export str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+    Module s;
+    Symbol t;
+    int j;
+    str fcn,msg=MAL_SUCCEED;
+
+    (void) stk; 
+    removeInstruction(mb,p);
+    fcn= getVarConstant(mb, getArg(p,1)).val.sval;
+    s= findModule(mal_scope, putName(fcn,strlen(fcn)));
+#ifdef DEBUG_MAL_MACRO
+    printf("@1optimizer: %s\n",fcn);
+#endif
+    if( s== 0)
+        return throwException(MALEXCEPTION,"optimizer.@1optimizer",
+            "module '%s' not found\n",fcn);
+    if( s->subscope){
+        j = getSubScope(fcn); 
+        for(t= s->subscope[j];t!=NULL;t=t->peer)
+        if( t->def->errors == 0) {
+            if( getSignature(t)->token == FUNCTIONsymbol )
+                /* call macro expansion */
+                @2processor(mb,t); 
+                if( msg) break;
+        }
+    }
+    chkFlow(mb);
+	chkDeclarations(mb,TRUE);
+    return msg;
+}
+mal_export str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+    Module s;
+    Symbol t;
+    int j;
+    str msg= MAL_SUCCEED;
+
+    removeInstruction(mb,p);
+#ifdef DEBUG_MAL_MACRO
+    printf("@1optimizer\n");
+#endif
+    for(s= mal_scope; s; s=s->outer)
+    if( s->subscope){
+        for(j=0;j<MAXSCOPE;j++)
+        if(s->subscope[j]){
+            for(t= s->subscope[j];t!=NULL;t=t->peer) 
+            if( t->def->errors == 0) {
+                if( getSignature(t)->token == FUNCTIONsymbol )
+                    /* call macro expansion */
+                    @2processor(mb,t);
+                    if( msg) break;
+            }
+        }
+    }
+    (void) stk; 
+    chkFlow(mb);
+	chkDeclarations(mb,TRUE);
+    return msg;
+}
+@c
+@:macroOptimizer(ME, MACRO)@
+@:macroOptimizer(MC, ORCAM)@

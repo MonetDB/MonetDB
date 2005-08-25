@@ -15,7 +15,7 @@ stdout of test 'tst106` in directory 'src/mal` itself:
 ## check in-compatible polmorphic types
 #
 #command f(a:any$1,b:any$2, c:any$1) :bat[:any$1, :any$2] 
-!ERROR: address of 'f' not found
+!ERROR: address of 'user.f' not found
 command user.f(a:any$1,b:any$2,c:any$1):bat[:any$1,:any$2] address f;	# 0  dynamic (f:bat[:any$1,:any$2])<-(a:any$1)(b:any$2)(c:any$1)
 #
 #b:= f(1,2,"help");

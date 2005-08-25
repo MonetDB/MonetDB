@@ -15,7 +15,7 @@ stdout of test 'tst115` in directory 'src/mal` itself:
 ## the next step is to trace the call of a mal function call
 #
 #command + (L:any$1,R:any$1):any$1 
-!ERROR: address of 'addIntInt' not found
+!ERROR: address of 'user.addIntInt' not found
 command user.+(L:any$1,R:any$1):any$1 address addIntInt;	# 0  dynamic (+:any$1)<-(L:any$1)(R:any$1)
 #
 #function doitOnce():int;

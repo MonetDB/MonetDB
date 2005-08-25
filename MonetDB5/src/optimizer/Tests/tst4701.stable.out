@@ -15,7 +15,7 @@ stdout of test 'tst4701` in directory 'src/optimizer` itself:
 ## after the routine tst903 is it can be linked
 #
 #command tst903()
-!ERROR: address of 'MCCAdmin_tst903' not found
+!ERROR: address of 'user.MCCAdmin_tst903' not found
 command user.tst903():void address MCCAdmin_tst903;	# 0  (tst903:void)
 #user.tst903();
 #

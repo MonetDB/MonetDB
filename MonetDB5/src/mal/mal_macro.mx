@@ -103,13 +103,6 @@ mal_export int malMatch(InstrPtr p1, InstrPtr p2);
 mal_export int malFcnMatch(MalBlkPtr m1, MalBlkPtr mb, int pc);
 mal_export str ORCAMprocessor(MalBlkPtr mb, Symbol t);
 mal_export str MACROprocessor(MalBlkPtr mb, Symbol t);
-mal_export str QOTMEoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTMEoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTMEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTMCoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTMCoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str QOTMCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str MCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, str mod, str fcn);
 #endif /* _MAL_MACRO_H_ */
 @-
 @c
@@ -119,102 +112,6 @@ mal_export str MCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, str mod, str
 @-
 The optimizer hooks are introduced first.
 They are refered to from the optimizer module.
-@= macroOptimizer
-str QOT@1optimizerSymbol( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Module s;
-    Symbol t;
-    int j;
-    str nme, fcn,msg=MAL_SUCCEED;
-
-    (void)stk;
-    nme= getVarConstant(mb, getArg(p,1)).val.sval;
-    fcn= getVarConstant(mb, getArg(p,2)).val.sval;
-#ifdef DEBUG_MAL_MACRO
-    printf("@1optimizer: %s.%s\n",nme,fcn);
-#endif
-    removeInstruction(mb,p);
-
-
-    s= findModule(mal_scope, putName(nme,strlen(nme)));
-    if (s == 0) s= mal_scope;
-    for(; s; s=s->outer)
-    if(strcmp(s->name,nme)== 0 && s->subscope){
-        j = getSubScope(fcn); 
-        for(t= s->subscope[j];t!=NULL;t=t->peer) 
-        if( t->def->errors == 0) {
-            if( getSignature(t)->token == FUNCTIONsymbol &&
-                idcmp(fcn, functionName(getSignature(t)) )==0
-                )
-                /* call macro expansion */
-                msg= @2processor(mb,t);
-                if( msg) return msg;
-        }
-    }
-    chkFlow(mb);
-	chkDeclarations(mb,TRUE);
-    return msg;
-}
-str QOT@1optimizerModule( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Module s;
-    Symbol t;
-    int j;
-    str fcn,msg=MAL_SUCCEED;
-
-    (void) stk; 
-    removeInstruction(mb,p);
-    fcn= getVarConstant(mb, getArg(p,1)).val.sval;
-    s= findModule(mal_scope, putName(fcn,strlen(fcn)));
-#ifdef DEBUG_MAL_MACRO
-    printf("@1optimizer: %s\n",fcn);
-#endif
-    if( s== 0)
-        return throwException(MALEXCEPTION,"optimizer.@1optimizer",
-            "module '%s' not found\n",fcn);
-    if( s->subscope){
-        j = getSubScope(fcn); 
-        for(t= s->subscope[j];t!=NULL;t=t->peer)
-        if( t->def->errors == 0) {
-            if( getSignature(t)->token == FUNCTIONsymbol )
-                /* call macro expansion */
-                @2processor(mb,t); 
-                if( msg) break;
-        }
-    }
-    chkFlow(mb);
-	chkDeclarations(mb,TRUE);
-    return msg;
-}
-str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
-    Module s;
-    Symbol t;
-    int j;
-    str msg= MAL_SUCCEED;
-
-    removeInstruction(mb,p);
-#ifdef DEBUG_MAL_MACRO
-    printf("@1optimizer\n");
-#endif
-    for(s= mal_scope; s; s=s->outer)
-    if( s->subscope){
-        for(j=0;j<MAXSCOPE;j++)
-        if(s->subscope[j]){
-            for(t= s->subscope[j];t!=NULL;t=t->peer) 
-            if( t->def->errors == 0) {
-                if( getSignature(t)->token == FUNCTIONsymbol )
-                    /* call macro expansion */
-                    @2processor(mb,t);
-                    if( msg) break;
-            }
-        }
-    }
-    (void) stk; 
-    chkFlow(mb);
-	chkDeclarations(mb,TRUE);
-    return msg;
-}
-@c
-@:macroOptimizer(ME, MACRO)@
-@:macroOptimizer(MC, ORCAM)@
 @c
 int
 malMatch(InstrPtr p1, InstrPtr p2)
@@ -554,7 +451,7 @@ ORCAMprocessor(MalBlkPtr mb, Symbol t)
 The optimizer call infrastructure
 @c
 str
-MCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, str mod, str fcn)
+MCoptimizerCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, str mod, str fcn)
 {
 	Module s;
 	Symbol t;

@@ -12,8 +12,8 @@ stdout of test 'tst150` in directory 'src/mal` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
-#command Admin.lookup(nme:str):bat[:str,:str] 
-!ERROR: address of 'CMDlookup' not found
+#command user.lookup(nme:str):bat[:str,:str] 
+!ERROR: address of 'user.CMDlookup' not found
 command user.lookup(nme:str):bat[:str,:str] address CMDlookup;	# 0  (lookup:bat[:str,:str])<-(nme:str)
 #function sample(nme:str, val:any):bit;
 #   b := lookup(nme); #find a bat

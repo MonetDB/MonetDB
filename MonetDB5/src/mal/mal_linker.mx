@@ -58,7 +58,7 @@ For the time being we assume that all commands are statically linked.
 #define RTLD_NOW_REPORT_ERROR   8
 #endif
 
-#define DEBUG_MAL_LINKER
+/* #define DEBUG_MAL_LINKER*/
 #define MONET64 1
 mal_export MALfcn getAddress(str modnme, str fcnname, int silent);
 mal_export char *MSP_locate_script(const char *mod_name);
@@ -107,10 +107,14 @@ getLocalObjectFile(str fcnname)
 
 	fullname = MSP_locate_module(fcnname);
 	if (fullname == NULL) {
+#ifdef DEBUG_MAL_LINKER
 		stream_printf(GDKout,"Name not resolved %s\n",fcnname);
+#endif
 		return 0;
 	}
-	printf("attempt to load function %s\n",fullname);
+#ifdef DEBUG_MAL_LINKER
+	printf("attempt to load function %s from %s\n",fcnname, fullname);
+#endif
 	handle = dlopen(fullname, mode);
 #ifdef DEBUG_MAL_LINKER
 	stream_printf(GDKout, "localObjectLoaded ? %s\n",(handle!=0?"yes":"no"));

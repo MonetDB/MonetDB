@@ -149,7 +149,7 @@ end main;	# 7
 [ 115@0,  "command",	  "profiler",	  "deactivate",			  "(name:str):void address CMDdeactivateProfiler;"								  ]
 [ 116@0,  "command",	  "profiler",	  "getTrace",			  "(e:str):bat[:int,:any] address CMDgetTrace;"									  ]
 [ 117@0,  "command",	  "profiler",	  "openStream",			  "(fnme:str):void address CMDsetProfilerStream;"								  ]
-[ 118@0,  "command",	  "profiler",	  "openStream",			  "():void address openProfilerStream;"										  ]
+[ 118@0,  "command",	  "profiler",	  "openStream",			  "():void address CMDopenProfilerStream;"									  ]
 [ 119@0,  "command",	  "profiler",	  "setOfflineProfiling",	  "():void address CMDsetOfflineProfiling;"									  ]
 [ 120@0,  "command",	  "profiler",	  "setOnlineProfiling",		  "():void address CMDsetOnlineProfiling;"									  ]
 [ 121@0,  "command",	  "profiler",	  "setCachedProfiling",		  "():void address CMDsetCachedProfiling;"									  ]

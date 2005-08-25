@@ -16,7 +16,7 @@ stdout of test 'tst104` in directory 'src/mal` itself:
 ## can be checked after bat module has been added
 #
 #command f(a:any$1, b:bat[:any$2,:any$1],c:any$2):any 
-!ERROR: address of 'dummy' not found
+!ERROR: address of 'user.dummy' not found
 command user.f(a:any$1,b:bat[:any$2,:any$1],c:any$2):any address dummy;	# 0  dynamic (f:any)<-(a:any$1)(b:bat[:any$2,:any$1])(c:any$2)
 #
 #b:= new(:str,:int);
