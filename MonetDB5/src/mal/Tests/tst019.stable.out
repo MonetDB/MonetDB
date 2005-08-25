@@ -18,8 +18,8 @@ stdout of test 'tst019` in directory 'src/mal` itself:
 #    return w;   # should produce a type error
 #end welcome;
 function user.welcome(lim:int):void;	# 0  (welcome:void)<-(lim:int)
-    i := 2;	# 1  (i:int)<-($3:int)
-    w := "hello";	# 2  (w:str)<-($5:str)
+    i := 2;	# 1  (i:int)<-(_3:int)
+    w := "hello";	# 2  (w:str)<-(_5:str)
     return w;	# 3  (w:str)
 end welcome;	# 4  
 !ERROR: RETURN type mismatch at type 11
@@ -31,8 +31,8 @@ end welcome;	# 4
 #   # should produce a type error
 #end welcome0;
 function user.welcome0(lim:int):str;	# 0  (welcome0:str)<-(lim:int)
-    i := 2;	# 1  (i:int)<-($3:int)
-    w := "hello";	# 2  (w:str)<-($5:str)
+    i := 2;	# 1  (i:int)<-(_3:int)
+    w := "hello";	# 2  (w:str)<-(_5:str)
     return (w,i);	# 3  (w:str)(i:int)
 end welcome0;	# 4  
 !ERROR: invalid return target
@@ -43,8 +43,8 @@ end welcome0;	# 4
 #    return w:="hello"; 
 #end welcome1;
 function user.welcome1(lim:int):str;	# 0  (welcome1:str)<-(lim:int)
-    i := 2;	# 1  (i:int)<-($3:int)
-    return w := "hello";	# 2  (w:str)<-($5:str)
+    i := 2;	# 1  (i:int)<-(_3:int)
+    return w := "hello";	# 2  (w:str)<-(_5:str)
 end welcome1;	# 3  
 #
 #function welcome2(lim:int):str;
@@ -53,8 +53,8 @@ end welcome1;	# 3
 #    return w;
 #end welcome2;
 function user.welcome2(lim:int):str;	# 0  (welcome2:str)<-(lim:int)
-    i := 2;	# 1  (i:int)<-($3:int)
-    w := "hello";	# 2  (w:str)<-($5:str)
+    i := 2;	# 1  (i:int)<-(_3:int)
+    w := "hello";	# 2  (w:str)<-(_5:str)
     return w;	# 3  (w:str)
 end welcome2;	# 4  
 #
@@ -63,8 +63,8 @@ end welcome2;	# 4
 #    return w:="hello"; #illegal return statement
 #end welcome3;
 function user.welcome3(lim:int) (w:str,i:int);	# 0  (w:str)(i:int)<-(lim:int)
-    i := 2;	# 1  (i:int)<-($4:int)
-    return w := "hello";	# 2  (w:str)<-($5:str)
+    i := 2;	# 1  (i:int)<-(_4:int)
+    return w := "hello";	# 2  (w:str)<-(_5:str)
 end welcome3;	# 3  
 !ERROR: invalid return target
 !
@@ -74,8 +74,8 @@ end welcome3;	# 3
 #    return (w,i):="hello"; #illegal return statement
 #end welcome4;
 function user.welcome4(lim:int) (w:str,i:int);	# 0  (w:str)(i:int)<-(lim:int)
-    i := 2;	# 1  (i:int)<-($4:int)
-    return (w,i):= "hello";	# 2  unknown (w:str)(i:int)<-($5:str)
+    i := 2;	# 1  (i:int)<-(_4:int)
+    return (w,i):= "hello";	# 2  unknown (w:str)(i:int)<-(_5:str)
 end welcome4;	# 3  
 !ERROR: Multiple assignment mismatch
 #
@@ -83,9 +83,9 @@ end welcome4;	# 3
 #    i:= 2;
 #    return (w,i):=("hello",2); 
 #end welcome5;
-function user.welcome5(lim:int) ($2:str,$3:int);	# 0  ($2:str)($3:int)<-(lim:int)
-    i := 2;	# 1  (i:int)<-($5:int)
-    return (w,i):= ("hello",2);	# 2  (w:str)(i:int)<-($7:str)($5:int)
+function user.welcome5(lim:int) (_2:str,_3:int);	# 0  (_2:str)(_3:int)<-(lim:int)
+    i := 2;	# 1  (i:int)<-(_5:int)
+    return (w,i):= ("hello",2);	# 2  (w:str)(i:int)<-(_7:str)(_5:int)
 end welcome5;	# 3  
 #
 #y:= user.welcome1(1);
@@ -97,15 +97,15 @@ end welcome5;	# 3
 #
 !ERROR: 'user.welcome2' undefined in user.main[9]
 function user.main():int;	# 0  (main:int)
-# should produce a type error 	# 1  ($2:str)
-# should produce a type error 	# 2  ($2:str)
-#illegal return statement 	# 3  ($5:str)
-#illegal return statement 	# 4  ($5:str)
-    y := user.welcome1(1);	# 5  (y:str)<-($8:int)
-    io.print(y);	# 6 IOprint_val ($9:int)<-(y:str)
-    y := user.welcome2(1);	# 7  (y:str)<-($8:int)
-    io.print(y);	# 8 IOprint_val ($10:int)<-(y:str)
-    (x,y):= user.welcome2(1);	# 9  unknown (x:any)(y:str)<-($8:int)
+# should produce a type error 	# 1  (_2:str)
+# should produce a type error 	# 2  (_2:str)
+#illegal return statement 	# 3  (_5:str)
+#illegal return statement 	# 4  (_5:str)
+    y := user.welcome1(1);	# 5  (y:str)<-(_8:int)
+    io.print(y);	# 6 IOprint_val (_9:int)<-(y:str)
+    y := user.welcome2(1);	# 7  (y:str)<-(_8:int)
+    io.print(y);	# 8 IOprint_val (_10:int)<-(y:str)
+    (x,y):= user.welcome2(1);	# 9  unknown (x:any)(y:str)<-(_8:int)
 end main;	# 10  
 
 # 07:58:38 >  

@@ -25,23 +25,28 @@ stdout of test 'tst2510` in directory 'src/mal` itself:
 ##exit MALexception;
 #end tryme;
 factory user.tryme():void;	# 0  (tryme:void)
-    bat.setWriteMode(b);	# 1 BKCsetWriteMode ($1:bat[:any,:any])<-(b:bat[:any_1,:any_2])
-barrier always := true;	# 2  (always:bit)<-($4:bit) jump 5
-    yield always;	# 3  (always:bit)
-    redo always;	# 4  (always:bit) jump 3
-exit always;	# 5  (always:bit)
-end tryme;	# 6  
-!ERROR: YIELD type mismatch at type 1
+    bat.setWriteMode(b);	# 1  unknown (_1:any)<-(b:any)
+    yield always;	# 2  (always:any)
+    redo always;	# 3  (always:any)
+exit always;	# 4  (always:any)
+end tryme;	# 5  
+!ERROR:     bat.setWriteMode(b:bat[:any$1,:any$2]);
+!                                      ^',' expected
+!ERROR: barrier always:= true;
+!      ^',' expected
+!ERROR: 'bat.setWriteMode' undefined in user.tryme[1]
+!ERROR: label 'always' not in guarded block in tryme[3]
+!ERROR: exit-label 'always' without begin-label in tryme[4]
 !ERROR: 'b' may not be used before being set in tryme[1]
 #tryme();    # shouldn;t hang when you forget the exception
 #
 function user.main():int;	# 0  (main:int)
-# A exception in a factory should terminate it  	# 1  ($2:str)
-#catch MALexception; 	# 2  ($4:str)
-#print("exception"); 	# 3  ($6:str)
-#exit MALexception; 	# 4  ($8:str)
-    user.tryme();	# 5  ($9:void)
-# shouldn;t hang when you forget the exception 	# 6  ($11:str)
+# A exception in a factory should terminate it  	# 1  (_2:str)
+#catch MALexception; 	# 2  (_4:str)
+#print("exception"); 	# 3  (_6:str)
+#exit MALexception; 	# 4  (_8:str)
+    user.tryme();	# 5  (_9:void)
+# shouldn;t hang when you forget the exception 	# 6  (_11:str)
 end main;	# 7  
 !ERROR: MALexception:factory.call:Factory contains errors
 #

@@ -25,12 +25,12 @@ stdout of test 'tst2010` in directory 'src/mal` itself:
 #exit	b;
 #end clkticks;
 function user.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
-    io.printf("#start clock \n");	# 1 IOprint_str ($2:int)<-($3:str)
-barrier b := calc.>(n,0);	# 2 CALCcompGTintint (b:bit)<-(n:int)($5:int) jump 7
-    io.printf("#tick\n");	# 3 IOprint_str ($6:int)<-($7:str)
-    alarm.sleep(2);	# 4 ALARMsleep ($8:void)<-($9:int)
-    n := calc.-(n,1);	# 5 CALCbinarySUBintint (n:int)<-(n:int)($10:int)
-    redo b := calc.>(n,0);	# 6 CALCcompGTintint (b:bit)<-(n:int)($5:int) jump 3
+    io.printf("#start clock \n");	# 1 IOprint_str (_2:int)<-(_3:str)
+barrier b := calc.>(n,0);	# 2 CALCcompGTintint (b:bit)<-(n:int)(_5:int) jump 7
+    io.printf("#tick\n");	# 3 IOprint_str (_6:int)<-(_7:str)
+    alarm.sleep(2);	# 4 ALARMsleep (_8:void)<-(_9:int)
+    n := calc.-(n,1);	# 5 CALCbinarySUBintint (n:int)<-(n:int)(_10:int)
+    redo b := calc.>(n,0);	# 6 CALCcompGTintint (b:bit)<-(n:int)(_5:int) jump 3
 exit b;	# 7  (b:bit)
 end clkticks;	# 8  
 #
@@ -46,19 +46,19 @@ end clkticks;	# 8
 #	#printf("child has finished\n");
 #
 function user.main():int;	# 0  (main:int)
-#The 2000 serie  is focussed on parallelism 	# 1  ($2:str)
-#we start with a non-parallel version 	# 2  ($4:str)
-thread hdl := 0;	# 3  (hdl:int)<-($6:int) jump 7
-# should not be assigned a value to get started 	# 4  ($8:str)
-    io.printf("#START THREAD \n");	# 5 IOprint_str ($9:int)<-($10:str)
-    io.printf("#About to exit child\n");	# 6 IOprint_str ($11:int)<-($12:str)
+#The 2000 serie  is focussed on parallelism 	# 1  (_2:str)
+#we start with a non-parallel version 	# 2  (_4:str)
+thread hdl := 0;	# 3  (hdl:int)<-(_6:int) jump 7
+# should not be assigned a value to get started 	# 4  (_8:str)
+    io.printf("#START THREAD \n");	# 5 IOprint_str (_9:int)<-(_10:str)
+    io.printf("#About to exit child\n");	# 6 IOprint_str (_11:int)<-(_12:str)
 exit hdl;	# 7  (hdl:int)
-    alarm.sleep(2);	# 8 ALARMsleep ($13:void)<-($14:int)
-    io.printf("#Wait for child to exit too\n");	# 9 IOprint_str ($15:int)<-($16:str)
-    alarm.sleep(5);	# 10 ALARMsleep ($17:void)<-($18:int)
-    io.printf("#Child should have died\n");	# 11 IOprint_str ($19:int)<-($20:str)
-#wait hdl; 	# 12  ($22:str)
-#io.printf("child has finished\n"); 	# 13  ($24:str)
+    alarm.sleep(2);	# 8 ALARMsleep (_13:void)<-(_14:int)
+    io.printf("#Wait for child to exit too\n");	# 9 IOprint_str (_15:int)<-(_16:str)
+    alarm.sleep(5);	# 10 ALARMsleep (_17:void)<-(_18:int)
+    io.printf("#Child should have died\n");	# 11 IOprint_str (_19:int)<-(_20:str)
+#wait hdl; 	# 12  (_22:str)
+#io.printf("child has finished\n"); 	# 13  (_24:str)
 end main;	# 14  
 #Wait for child to exit too
 #START THREAD 

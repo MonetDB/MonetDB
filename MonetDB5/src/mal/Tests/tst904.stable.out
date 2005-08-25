@@ -27,26 +27,26 @@ stdout of test 'tst904` in directory 'src/mal` itself:
 #print(xz);
 #
 function user.main():int;	# 0  (main:int)
-# the multiplex code blocks using CONSTANTS. 	# 1  ($2:str)
-    clients.setListing(15);	# 2 CLTsetListing ($3:int)<-($4:int)
-    b := bbp.new(:lng,:lng);	# 3 CMDBATnew (b:bat[:lng,:lng])<-($6:lng)($6:lng)
-    i := -1:lng;	# 4  (i:lng)<-($8:lng)
-barrier (v,i):= mal.newRange(0:lng);	# 5 RNGnewRange_lng (v:bit)(i:lng)<-($10:lng) jump 8
-    bat.insert(b,i,i);	# 6 BKCinsert_bun ($11:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 7 RNGnextElement_lng (v:bit)(i:lng)<-($12:lng)($13:lng) jump 6
+# the multiplex code blocks using CONSTANTS. 	# 1  (_2:str)
+    clients.setListing(15);	# 2 CLTsetListing (_3:int)<-(_4:int)
+    b := bbp.new(:lng,:lng);	# 3 CMDBATnew (b:bat[:lng,:lng])<-(_6:lng)(_6:lng)
+    i := -1:lng;	# 4  (i:lng)<-(_8:lng)
+barrier (v,i):= mal.newRange(0:lng);	# 5 RNGnewRange_lng (v:bit)(i:lng)<-(_10:lng) jump 8
+    bat.insert(b,i,i);	# 6 BKCinsert_bun (_11:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
+    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 7 RNGnextElement_lng (v:bit)(i:lng)<-(_12:lng)(_13:lng) jump 6
 exit (v,i);	# 8  (v:bit)(i:lng)
-    io.print(b);	# 9 IOprint_val ($14:int)<-(b:bat[:lng,:lng])
-    c := 1;	# 10  (c:int)<-($16:int)
-    $20 := bbp.new(:lng,:lng);	# 11 CMDBATnew ($20:bat[:lng,:lng])<-($21:lng)($21:lng)
-barrier ($23,$24,$25):= chopper.newIterator(b);	# 12 CHPbunIterator ($23:lng)($24:lng)($25:lng)<-(b:bat[:lng,:lng]) jump 18
-    $27 := calc.+($25,c);	# 13 CALCbinaryADDlngint ($27:lng)<-($25:lng)(c:int)
-    bat.insert($20,$24,$27);	# 14 BKCinsert_bun ($28:bat[:lng,:lng])<-($20:bat[:lng,:lng])($24:lng)($27:lng)
+    io.print(b);	# 9 IOprint_val (_14:int)<-(b:bat[:lng,:lng])
+    c := 1;	# 10  (c:int)<-(_16:int)
+    _20 := bbp.new(:lng,:lng);	# 11 CMDBATnew (_20:bat[:lng,:lng])<-(_21:lng)(_21:lng)
+barrier (_23,_24,_25):= chopper.newIterator(b);	# 12 CHPbunIterator (_23:lng)(_24:lng)(_25:lng)<-(b:bat[:lng,:lng]) jump 18
+    _27 := calc.+(_25,c);	# 13 CALCbinaryADDlngint (_27:lng)<-(_25:lng)(c:int)
+    bat.insert(_20,_24,_27);	# 14 BKCinsert_bun (_28:bat[:lng,:lng])<-(_20:bat[:lng,:lng])(_24:lng)(_27:lng)
 catch MALexception;	# 15  (MALexception:str) jump 16
 exit MALexception;	# 16  (MALexception:str)
-    redo ($23,$24,$25):= chopper.hasMoreElements(b);	# 17 CHPbunHasMoreElements ($23:lng)($24:lng)($25:lng)<-(b:bat[:lng,:lng]) jump 13
-exit ($23,$24,$25);	# 18  ($23:lng)($24:lng)($25:lng)
-    xz:bat[:lng,:lng]  := $20;	# 19  (xz:bat[:lng,:lng])<-($20:bat[:lng,:lng])
-    io.print(xz);	# 20 IOprint_val ($19:int)<-(xz:bat[:lng,:lng])
+    redo (_23,_24,_25):= chopper.hasMoreElements(b);	# 17 CHPbunHasMoreElements (_23:lng)(_24:lng)(_25:lng)<-(b:bat[:lng,:lng]) jump 13
+exit (_23,_24,_25);	# 18  (_23:lng)(_24:lng)(_25:lng)
+    xz:bat[:lng,:lng]  := _20;	# 19  (xz:bat[:lng,:lng])<-(_20:bat[:lng,:lng])
+    io.print(xz);	# 20 IOprint_val (_19:int)<-(xz:bat[:lng,:lng])
 end main;	# 21  
 #-----------------#
 # h	tmp_4	  # name

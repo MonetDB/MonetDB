@@ -26,17 +26,17 @@ stdout of test 'tst031` in directory 'src/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:void,:int);	# 1 CMDBATnew (b:bat[:void,:int])<-($2:void)($3:int)
-    bat.setSequenceBase(b,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:int])<-(b:bat[:void,:int])($5:oid)
-    bat.insert(b,nil,0);	# 3 BKCinsert_bun ($6:bat[:void,:int])<-(b:bat[:void,:int])($7:void)($8:int)
-    bat.insert(b,nil,1);	# 4 BKCinsert_bun ($9:bat[:void,:int])<-(b:bat[:void,:int])($7:void)($10:int)
-    k := 2@0;	# 5  (k:oid)<-($12:oid)
-    bat.insert(b,k,2);	# 6 BKCinsert_bun ($13:bat[:any,:int])<-(b:bat[:void,:int])(k:oid)($14:int)
-    io.print(b);	# 7 IOprint_val ($15:int)<-(b:bat[:void,:int])
-    bat.replace(b,k,3);	# 8 BKCreplace_bun ($16:bat[:void,:int])<-(b:bat[:void,:int])(k:oid)($17:int)
-    io.print(b);	# 9 IOprint_val ($18:int)<-(b:bat[:void,:int])
-    bat.delete(b,k);	# 10 BKCdelete ($19:bat[:any,:int])<-(b:bat[:void,:int])(k:oid)
-    io.print(b);	# 11 IOprint_val ($20:int)<-(b:bat[:void,:int])
+    b := bbp.new(:void,:int);	# 1 CMDBATnew (b:bat[:void,:int])<-(_2:void)(_3:int)
+    bat.setSequenceBase(b,0@0);	# 2 BKCsetSequenceBase (_4:bat[:void,:int])<-(b:bat[:void,:int])(_5:oid)
+    bat.insert(b,nil,0);	# 3 BKCinsert_bun (_6:bat[:void,:int])<-(b:bat[:void,:int])(_7:void)(_8:int)
+    bat.insert(b,nil,1);	# 4 BKCinsert_bun (_9:bat[:void,:int])<-(b:bat[:void,:int])(_7:void)(_10:int)
+    k := 2@0;	# 5  (k:oid)<-(_12:oid)
+    bat.insert(b,k,2);	# 6 BKCinsert_bun (_13:bat[:any,:int])<-(b:bat[:void,:int])(k:oid)(_14:int)
+    io.print(b);	# 7 IOprint_val (_15:int)<-(b:bat[:void,:int])
+    bat.replace(b,k,3);	# 8 BKCreplace_bun (_16:bat[:void,:int])<-(b:bat[:void,:int])(k:oid)(_17:int)
+    io.print(b);	# 9 IOprint_val (_18:int)<-(b:bat[:void,:int])
+    bat.delete(b,k);	# 10 BKCdelete (_19:bat[:any,:int])<-(b:bat[:void,:int])(k:oid)
+    io.print(b);	# 11 IOprint_val (_20:int)<-(b:bat[:void,:int])
 end main;	# 12  
 #-----------------#
 # h	tmp_4	  # name

@@ -15,6 +15,15 @@ stdout of test 'tst602` in directory 'src/mal` itself:
 ## Testing the box interfaces
 ## open de MIL support box and display its content
 #
+#include mil;
+!ERROR: command mil.sort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
+!                                   ^',' expected
+!ERROR: 
+!     ^',' expected
+!ERROR: command mil.insert(b:bat[:void,:any$2], h:oid, t:any$2) :bat[:oid,:any$2]
+!                                          ^']' expected
+!ERROR: #line 125 "/ufs/mk/monet5/src/modules/mil/mil_utils.mx"
+!       ^',' expected
 #mil.open();
 #barrier (v,nme):= mil.iterator();
 #	print(nme);
@@ -23,44 +32,16 @@ stdout of test 'tst602` in directory 'src/mal` itself:
 #mil.close();	# save the content on persistent store
 #
 function user.main():int;	# 0  (main:int)
-    mil.open();	# 1 MILopen ($31:void)
+    mil.open();	# 1 MILopen (_1:void)
 barrier (v,nme):= mil.iterator();	# 2 MILnewIterator (v:lng)(nme:str) jump 5
-    io.print(nme);	# 3 IOprint_val ($34:int)<-(nme:str)
+    io.print(nme);	# 3 IOprint_val (_4:int)<-(nme:str)
     redo (v,nme):= mil.iterator();	# 4 MILnewIterator (v:lng)(nme:str) jump 3
 exit v;	# 5  (v:lng)
-    mil.close();	# 6 MILclose ($35:void)
-# save the content on persistent store 	# 7  ($37:str)
+    mil.close();	# 6 MILclose (_5:void)
+# save the content on persistent store 	# 7  (_7:str)
 end main;	# 8  
-[ "EQ" ]
-[ "LT" ]
-[ "LE" ]
-[ "GT" ]
-[ "GE" ]
-[ "STORE_MEM" ]
-[ "STORE_MMAP" ]
-[ "STORE_COMPR" ]
-[ "BUF_NORMAL" ]
-[ "BUF_RANDOM" ]
-[ "BUF_SEQUENTIAL" ]
-[ "BUF_WILLNEED" ]
-[ "BUF_DONTNEED" ]
-[ "EBUSY" ]
-[ "BAT_READ" ]
-[ "BAT_APPEND" ]
-[ "BAT_WRITE" ]
-[ "M_E" ]
-[ "M_LOG2E" ]
-[ "M_LOG10E" ]
-[ "M_LN2" ]
-[ "M_LN10" ]
-[ "M_PI" ]
-[ "M_PI_2" ]
-[ "M_PI_4" ]
-[ "M_1_PI" ]
-[ "M_2_PI" ]
-[ "M_2_SQRTPI" ]
-[ "M_SQRT2" ]
-[ "M_SQRT1_2" ]
+!ERROR: MALexception:mil.iterator:box is not open
+#
 
 # 08:01:24 >  
 # 08:01:24 >  Done.

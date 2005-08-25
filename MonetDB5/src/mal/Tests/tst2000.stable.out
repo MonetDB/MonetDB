@@ -24,11 +24,11 @@ stdout of test 'tst2000` in directory 'src/mal` itself:
 #exit	b;
 #end clkticks;
 function user.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
-barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
-    io.printf("clock tick\n");	# 2 IOprint_str ($4:int)<-($5:str)
-    alarm.sleep(2);	# 3 ALARMsleep ($6:void)<-($7:int)
-    n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
-    redo b := calc.>(n,0);	# 5 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 2
+barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)(_3:int) jump 6
+    io.printf("clock tick\n");	# 2 IOprint_str (_4:int)<-(_5:str)
+    alarm.sleep(2);	# 3 ALARMsleep (_6:void)<-(_7:int)
+    n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)(_8:int)
+    redo b := calc.>(n,0);	# 5 CALCcompGTintint (b:bit)<-(n:int)(_3:int) jump 2
 exit b;	# 6  (b:bit)
 end clkticks;	# 7  
 #
@@ -38,12 +38,12 @@ end clkticks;	# 7
 #user.clkticks(2);
 #
 function user.main():int;	# 0  (main:int)
-#The 2000 serie  is focussed on parallelism 	# 1  ($2:str)
-#we start with a non-parallel version 	# 2  ($4:str)
-# trace all instructions executed with timing information 	# 3  ($6:str)
-    mdb.setTimer(true);	# 4 MDBsetTimer ($7:void)<-($8:bit)
-    mdb.setTrace(true);	# 5 MDBsetTrace ($9:void)<-($8:bit)
-    user.clkticks(2);	# 6  ($10:void)<-($11:int)
+#The 2000 serie  is focussed on parallelism 	# 1  (_2:str)
+#we start with a non-parallel version 	# 2  (_4:str)
+# trace all instructions executed with timing information 	# 3  (_6:str)
+    mdb.setTimer(true);	# 4 MDBsetTimer (_7:void)<-(_8:bit)
+    mdb.setTrace(true);	# 5 MDBsetTrace (_9:void)<-(_8:bit)
+    user.clkticks(2);	# 6  (_10:void)<-(_11:int)
 end main;	# 7  
 #     3 usec#    mdb.setTimer($8=true)
 #    mdb.setTrace($8=true)

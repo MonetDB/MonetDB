@@ -22,14 +22,14 @@ stdout of test 'tst056` in directory 'src/mal` itself:
 #print(ox1);
 #
 function user.main():int;	# 0  (main:int)
-    zxx := 0@0;	# 1  (zxx:oid)<-($2:oid)
-    io.print(zxx);	# 2 IOprint_val ($3:int)<-(zxx:oid)
-    o1x := 1@0;	# 3  (o1x:oid)<-($5:oid)
-    io.print(o1x);	# 4 IOprint_val ($6:int)<-(o1x:oid)
-    o11 := 1@1;	# 5  (o11:oid)<-($8:oid)
-    io.print(o11);	# 6 IOprint_val ($9:int)<-(o11:oid)
-    ox1 := 0@1;	# 7  (ox1:oid)<-($11:oid)
-    io.print(ox1);	# 8 IOprint_val ($12:int)<-(ox1:oid)
+    zxx := 0@0;	# 1  (zxx:oid)<-(_2:oid)
+    io.print(zxx);	# 2 IOprint_val (_3:int)<-(zxx:oid)
+    o1x := 1@0;	# 3  (o1x:oid)<-(_5:oid)
+    io.print(o1x);	# 4 IOprint_val (_6:int)<-(o1x:oid)
+    o11 := 1@1;	# 5  (o11:oid)<-(_8:oid)
+    io.print(o11);	# 6 IOprint_val (_9:int)<-(o11:oid)
+    ox1 := 0@1;	# 7  (ox1:oid)<-(_11:oid)
+    io.print(ox1);	# 8 IOprint_val (_12:int)<-(ox1:oid)
 end main;	# 9  
 [ 0@0 ]
 [ 1@0 ]

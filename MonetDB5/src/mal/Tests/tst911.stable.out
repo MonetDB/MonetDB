@@ -37,20 +37,20 @@ stdout of test 'tst911` in directory 'src/mal` itself:
 function user.choptest(b:bat[:void,:lng],size:lng,base:lng):void;	# 0  (choptest:void)<-(b:bat[:void,:lng])(size:lng)(base:lng)
     t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
 barrier (chk,c):= chopper.newChunkIterator(b,size);	# 2 CHPnewChunkIterator (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng) jump 5
-    t := algebra.select(c,256000:lng,266000:lng);	# 3 ALGselect (t:bat[:void,:lng])<-(c:bat[:void,:lng])($8:lng)($9:lng)
+    t := algebra.select(c,256000:lng,266000:lng);	# 3 ALGselect (t:bat[:void,:lng])<-(c:bat[:void,:lng])(_8:lng)(_9:lng)
     redo (chk,c):= chopper.hasMoreChunks(b,size);	# 4 CHPhasMoreChunks (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng) jump 3
 exit (chk,c);	# 5  (chk:lng)(c:bat[:void,:lng])
     t1 := alarm.usec();	# 6 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 7 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#chopped at %d",size);	# 8 IOprint_formatted_lng ($12:int)<-($13:str)(size:lng)
-    io.printf(" %d",d0);	# 9 IOprint_formatted_lng ($14:int)<-($15:str)(d0:lng)
+    io.printf("#chopped at %d",size);	# 8 IOprint_formatted_lng (_12:int)<-(_13:str)(size:lng)
+    io.printf(" %d",d0);	# 9 IOprint_formatted_lng (_14:int)<-(_15:str)(d0:lng)
     d0 := calc.-(d0,base);	# 10 CALCbinarySUBlnglng (d0:lng)<-(d0:lng)(base:lng)
-    io.printf(" %d ",d0);	# 11 IOprint_formatted_lng ($16:int)<-($17:str)(d0:lng)
-    i := calc./(1000000:lng,size);	# 12 CALCbinarycheckDIVlnglng (i:lng)<-($19:lng)(size:lng)
+    io.printf(" %d ",d0);	# 11 IOprint_formatted_lng (_16:int)<-(_17:str)(d0:lng)
+    i := calc./(1000000:lng,size);	# 12 CALCbinarycheckDIVlnglng (i:lng)<-(_19:lng)(size:lng)
     if := calc.flt(i);	# 13 CALClng2flt (if:flt)<-(i:lng)
     df := calc.flt(d0);	# 14 CALClng2flt (df:flt)<-(d0:lng)
     f := calc./(df,if);	# 15 CALCbinarycheckDIVfltflt (f:flt)<-(df:flt)(if:flt)
-    io.printf(" at %f usec\n",f);	# 16 IOprint_formatted_flt ($23:int)<-($24:str)(f:flt)
+    io.printf(" at %f usec\n",f);	# 16 IOprint_formatted_flt (_23:int)<-(_24:str)(f:flt)
 end choptest;	# 17  
 #
 #b:= new(:void,:lng);
@@ -75,26 +75,26 @@ end choptest;	# 17
 #choptest(b,100:lng,base);
 #
 function user.main():int;	# 0  (main:int)
-# analyse the overhead of chopping a table 	# 1  ($2:str)
-# the multiplex code blocks. 	# 2  ($4:str)
-    b := bbp.new(:void,:lng);	# 3 CMDBATnew (b:bat[:void,:lng])<-($6:void)($7:lng)
-barrier (go,i):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-($10:lng) jump 9
+# analyse the overhead of chopping a table 	# 1  (_2:str)
+# the multiplex code blocks. 	# 2  (_4:str)
+    b := bbp.new(:void,:lng);	# 3 CMDBATnew (b:bat[:void,:lng])<-(_6:void)(_7:lng)
+barrier (go,i):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-(_10:lng) jump 9
     k := mmath.rand();	# 5 MATHrandint (k:int)
     l := calc.lng(k);	# 6 CALCint2lng (l:lng)<-(k:int)
-    bat.insert(b,nil,l);	# 7 BKCinsert_bun ($13:bat[:void,:lng])<-(b:bat[:void,:lng])($14:void)(l:lng)
-    redo (go,i):= mal.nextElement(1:lng,1000000:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-($15:lng)($16:lng) jump 5
+    bat.insert(b,nil,l);	# 7 BKCinsert_bun (_13:bat[:void,:lng])<-(b:bat[:void,:lng])(_14:void)(l:lng)
+    redo (go,i):= mal.nextElement(1:lng,1000000:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-(_15:lng)(_16:lng) jump 5
 exit (go,i);	# 9  (go:bit)(i:lng)
     t0 := alarm.usec();	# 10 ALARMusec (t0:lng)
-barrier doit := true;	# 11  (doit:bit)<-($19:bit) jump 13
-    t := algebra.select(b,256000:lng,266000:lng);	# 12 ALGselect (t:bat[:void,:lng])<-(b:bat[:void,:lng])($21:lng)($22:lng)
+barrier doit := true;	# 11  (doit:bit)<-(_19:bit) jump 13
+    t := algebra.select(b,256000:lng,266000:lng);	# 12 ALGselect (t:bat[:void,:lng])<-(b:bat[:void,:lng])(_21:lng)(_22:lng)
 exit doit;	# 13  (doit:bit)
     t1 := alarm.usec();	# 14 ALARMusec (t1:lng)
     base := calc.-(t1,t0);	# 15 CALCbinarySUBlnglng (base:lng)<-(t1:lng)(t0:lng)
-    io.printf("#select direct %d usec\n",base);	# 16 IOprint_formatted_lng ($25:int)<-($26:str)(base:lng)
-    user.choptest(b,100000:lng,base);	# 17  ($27:void)<-(b:bat[:void,:lng])($28:lng)(base:lng)
-    user.choptest(b,10000:lng,base);	# 18  ($29:void)<-(b:bat[:void,:lng])($30:lng)(base:lng)
-    user.choptest(b,1000:lng,base);	# 19  ($31:void)<-(b:bat[:void,:lng])($32:lng)(base:lng)
-    user.choptest(b,100:lng,base);	# 20  ($33:void)<-(b:bat[:void,:lng])($34:lng)(base:lng)
+    io.printf("#select direct %d usec\n",base);	# 16 IOprint_formatted_lng (_25:int)<-(_26:str)(base:lng)
+    user.choptest(b,100000:lng,base);	# 17  (_27:void)<-(b:bat[:void,:lng])(_28:lng)(base:lng)
+    user.choptest(b,10000:lng,base);	# 18  (_29:void)<-(b:bat[:void,:lng])(_30:lng)(base:lng)
+    user.choptest(b,1000:lng,base);	# 19  (_31:void)<-(b:bat[:void,:lng])(_32:lng)(base:lng)
+    user.choptest(b,100:lng,base);	# 20  (_33:void)<-(b:bat[:void,:lng])(_34:lng)(base:lng)
 end main;	# 21  
 #select direct 23221 usec
 #chopped at 100000 23384 163  at 16.299999 usec

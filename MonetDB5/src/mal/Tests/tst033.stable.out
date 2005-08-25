@@ -24,19 +24,19 @@ stdout of test 'tst033` in directory 'src/mal` itself:
 #z:= betweenOO(b,0,2); print(z);
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($2:int)
-    bat.insert(b,0,0);	# 2 BKCinsert_bun ($3:bat[:int,:int])<-(b:bat[:int,:int])($4:int)($4:int)
-    bat.insert(b,1,1);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(b:bat[:int,:int])($6:int)($6:int)
-    bat.insert(b,2,2);	# 4 BKCinsert_bun ($7:bat[:int,:int])<-(b:bat[:int,:int])($8:int)($8:int)
-    bat.insert(b,3,3);	# 5 BKCinsert_bun ($9:bat[:int,:int])<-(b:bat[:int,:int])($10:int)($10:int)
-    z := algebra.select(b,0,2);	# 6 ALGselect (z:bat[:int,:int])<-(b:bat[:int,:int])($4:int)($8:int)
-    io.print(z);	# 7 IOprint_val ($12:int)<-(z:bat[:int,:int])
-    z := algebra.betweenCO(b,0,2);	# 8  (z:bat[:int,:int])<-(b:bat[:int,:int])($4:int)($8:int)
-    io.print(z);	# 9 IOprint_val ($13:int)<-(z:bat[:int,:int])
-    z := algebra.betweenOC(b,0,2);	# 10  (z:bat[:int,:int])<-(b:bat[:int,:int])($4:int)($8:int)
-    io.print(z);	# 11 IOprint_val ($14:int)<-(z:bat[:int,:int])
-    z := algebra.betweenOO(b,0,2);	# 12  (z:bat[:int,:int])<-(b:bat[:int,:int])($4:int)($8:int)
-    io.print(z);	# 13 IOprint_val ($15:int)<-(z:bat[:int,:int])
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
+    bat.insert(b,0,0);	# 2 BKCinsert_bun (_3:bat[:int,:int])<-(b:bat[:int,:int])(_4:int)(_4:int)
+    bat.insert(b,1,1);	# 3 BKCinsert_bun (_5:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_6:int)
+    bat.insert(b,2,2);	# 4 BKCinsert_bun (_7:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_8:int)
+    bat.insert(b,3,3);	# 5 BKCinsert_bun (_9:bat[:int,:int])<-(b:bat[:int,:int])(_10:int)(_10:int)
+    z := algebra.select(b,0,2);	# 6 ALGselect (z:bat[:int,:int])<-(b:bat[:int,:int])(_4:int)(_8:int)
+    io.print(z);	# 7 IOprint_val (_12:int)<-(z:bat[:int,:int])
+    z := algebra.betweenCO(b,0,2);	# 8  (z:bat[:int,:int])<-(b:bat[:int,:int])(_4:int)(_8:int)
+    io.print(z);	# 9 IOprint_val (_13:int)<-(z:bat[:int,:int])
+    z := algebra.betweenOC(b,0,2);	# 10  (z:bat[:int,:int])<-(b:bat[:int,:int])(_4:int)(_8:int)
+    io.print(z);	# 11 IOprint_val (_14:int)<-(z:bat[:int,:int])
+    z := algebra.betweenOO(b,0,2);	# 12  (z:bat[:int,:int])<-(b:bat[:int,:int])(_4:int)(_8:int)
+    io.print(z);	# 13 IOprint_val (_15:int)<-(z:bat[:int,:int])
 end main;	# 14  
 #-----------------#
 # h	tmp_5	  # name

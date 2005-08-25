@@ -18,26 +18,25 @@ stdout of test 'tst760` in directory 'src/mal` itself:
 #	k:= 1+c;
 #	print(k);
 #end test;
-function user.test(b:bat[:any,:any_2],c:any_2):void;	# 0  (test:void)<-(b:bat[:any,:any_2])(c:any_2)
-    k := calc.+(1,c);	# 1  (k:any)<-($4:int)(c:any_2)
-    io.print(k);	# 2 IOprint_val ($5:int)<-(k:any)
-end test;	# 3  
+function user.test(b:bat[:any,:any]):any;	# 0  dynamic (test:any)<-(b:bat[:any,:any])
+    ;	# 1  (_2:any)
+end test;	# 2  
+!ERROR: function test(b:bat[:any,:any$2],c:any$2);
+!                                    ^']' expected
+!ERROR: 	k:= 1+c;
+!	       ^',' expected
+!ERROR: 	io.print(k);
+!	     ^<identifier> expected
 #
 #c:=new(:int,:str);
 #test(c,"hello");
 #
-!ERROR: 'calc.+' undefined in user.test[1]
-!ERROR: Error in cloned function
-!ERROR: function user.test(b:bat[:any,:str],c:str):void;	# 0  (test:void)<-(b:bat[:any,:str])(c:str)
-!ERROR:     k := calc.+(1,c);	# 1  unknown (k:any)<-($4:int)(c:str)
-!ERROR:     io.print(k);	# 2 IOprint_val ($5:int)<-(k:any)
-!ERROR: end test;	# 3  
 !ERROR: 'user.test' undefined in user.main[4]
 function user.main():int;	# 0  (main:int)
-# Polymorphic function tests 	# 1  ($2:str)
-# Catching a dynamic error 	# 2  ($4:str)
-    c := bbp.new(:int,:str);	# 3 CMDBATnew (c:bat[:int,:str])<-($6:int)($7:str)
-    user.test(c,"hello");	# 4  unknown ($8:void)<-(c:bat[:int,:str])($9:str)
+# Polymorphic function tests 	# 1  (_2:str)
+# Catching a dynamic error 	# 2  (_4:str)
+    c := bbp.new(:int,:str);	# 3 CMDBATnew (c:bat[:int,:str])<-(_6:int)(_7:str)
+    user.test(c,"hello");	# 4  unknown (_8:any)<-(c:bat[:int,:str])(_9:str)
 end main;	# 5  
 
 # 08:01:30 >  

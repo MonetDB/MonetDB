@@ -22,12 +22,18 @@ stdout of test 'tst908` in directory 'src/mal` itself:
 #	reduce:= multiplex.tactics("/",b,div);
 #	print(reduce);
 #end perftst;
-function user.perftst(b:bat[:any_1,:any_2],div:any_2):void;	# 0  (perftst:void)<-(b:bat[:any_1,:any_2])(div:any_2)
-    io.print("perftst");	# 1 IOprint_val ($3:int)<-($4:str)
-    io.print(div);	# 2 IOprint_val ($5:int)<-(div:any_2)
-    reduce := batcalc./(b,div);	# 3 CMDbatDIVcst (reduce:bat[:any,:any])<-(b:bat[:any_1,:any_2])(div:any_2)
-    io.print(reduce);	# 4 IOprint_val ($7:int)<-(reduce:bat[:any,:any])
-end perftst;	# 5  
+function user.perftst(b:any):any;	# 0  dynamic (perftst:any)<-(b:any)
+    ;	# 1  (_2:any)
+    reduce := batcalc./(b,div);	# 2  (reduce:any)<-(b:any)(div:any)
+    io.print(reduce);	# 3 IOprint_val (_5:int)<-(reduce:any)
+end perftst;	# 4  
+!ERROR: function perftst( b:bat[:any$1,:any$2],div:any$2):void;
+!                                   ^',' expected
+!ERROR: 	io.print("perftst"); io.print(div);
+!	     ^',' expected
+!ERROR: 	io.print("perftst"); io.print(div);
+!	                           ^<identifier> expected
+!ERROR: 'div' may not be used before being set in perftst[2]
 #
 #
 #b:= new(:lng,:lng);
@@ -36,31 +42,16 @@ end perftst;	# 5
 #        redo (v,i):= nextElement(1:lng,10:lng);
 #exit (v,i);
 #
+!ERROR: 'user.perftst' undefined in user.main[7]
 function user.main():int;	# 0  (main:int)
-# the multiplex code blocks. 	# 1  ($2:str)
-    b := bbp.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-($4:lng)($4:lng)
-barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-($7:lng) jump 6
-    bat.insert(b,i,i);	# 4 BKCinsert_bun ($8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
-    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-($9:lng)($10:lng) jump 4
+# the multiplex code blocks. 	# 1  (_2:str)
+    b := bbp.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-(_4:lng)(_4:lng)
+barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_7:lng) jump 6
+    bat.insert(b,i,i);	# 4 BKCinsert_bun (_8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
+    redo (v,i):= mal.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_9:lng)(_10:lng) jump 4
 exit (v,i);	# 6  (v:bit)(i:lng)
-    user.perftst(b,1:lng);	# 7  ($11:void)<-(b:bat[:lng,:lng])($9:lng)
+    user.perftst(b,1:lng);	# 7  unknown (_11:any)<-(b:bat[:lng,:lng])(_9:lng)
 end main;	# 8  
-[ "perftst" ]
-[ 1 ]
-#-----------------#
-# h	tmp_5	  # name
-# lng	lng	  # type
-#-----------------#
-[ 0,	  0	  ]
-[ 1,	  1	  ]
-[ 2,	  2	  ]
-[ 3,	  3	  ]
-[ 4,	  4	  ]
-[ 5,	  5	  ]
-[ 6,	  6	  ]
-[ 7,	  7	  ]
-[ 8,	  8	  ]
-[ 9,	  9	  ]
 
 # 08:01:39 >  
 # 08:01:39 >  Done.

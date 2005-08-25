@@ -27,7 +27,7 @@ function user.main():int;	# 0  (main:int)
 # parallel syntax checks 	# 1  ($2:str)
 barrier xx;	# 2  (xx:any) jump 9
 thread b1;	# 3  (b1:any) jump 8
-    io.printf("#Entered thread\n");	# 4 IOprint_str ($5:int)<-($6:str)
+    io.printf("#Entered thread\n");	# 4 IOprint_str (_5:int)<-(_6:str)
     leave b1;	# 5  (b1:any) jump 8
     redo xx;	# 6  (xx:any) jump 3
 # not allowed 	# 7  ($8:str)

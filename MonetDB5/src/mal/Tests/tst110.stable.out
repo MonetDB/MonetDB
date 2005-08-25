@@ -24,15 +24,15 @@ stdout of test 'tst110` in directory 'src/mal` itself:
 #	k:= 3;
 #
 function user.main():int;	# 0  (main:int)
-# Simply skip the barred block 	# 1  ($2:str)
-# analyse the basic interpreter loop 	# 2  ($4:str)
-    i := 0;	# 3  (i:int)<-($6:int)
-    v := false;	# 4  (v:bit)<-($8:bit)
+# Simply skip the barred block 	# 1  (_2:str)
+# analyse the basic interpreter loop 	# 2  (_4:str)
+    i := 0;	# 3  (i:int)<-(_6:int)
+    v := false;	# 4  (v:bit)<-(_8:bit)
 barrier v := v;	# 5  (v:bit)<-(v:bit) jump 8
-    i := 1;	# 6  (i:int)<-($9:int)
-    j := 2;	# 7  (j:int)<-($11:int)
+    i := 1;	# 6  (i:int)<-(_9:int)
+    j := 2;	# 7  (j:int)<-(_11:int)
 exit v;	# 8  (v:bit)
-    k := 3;	# 9  (k:int)<-($13:int)
+    k := 3;	# 9  (k:int)<-(_13:int)
 end main;	# 10  
 
 # 07:58:59 >  

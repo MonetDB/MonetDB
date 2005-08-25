@@ -28,17 +28,17 @@ stdout of test 'tst655` in directory 'src/mal` itself:
 #tablet.display(b1,b2);
 #
 function user.main():int;	# 0  (main:int)
-# An extensive test for the new tablet layout 	# 1  ($2:str)
-#sent the output of a table to a file 	# 2  ($4:str)
-    b1 := bbp.new(:void,:int);	# 3 CMDBATnew (b1:bat[:void,:int])<-($6:void)($7:int)
-    bat.insert(b1,42);	# 4 BKCinsert_void_bun ($8:bat[:int,:any])<-(b1:bat[:void,:int])($9:int)
-    bat.insert(b1,49);	# 5 BKCinsert_void_bun ($10:bat[:int,:any])<-(b1:bat[:void,:int])($11:int)
-    b2 := bbp.new(:void,:str);	# 6 CMDBATnew (b2:bat[:void,:str])<-($6:void)($13:str)
-    bat.insert(b2,"hello world");	# 7 BKCinsert_void_bun ($14:bat[:str,:any])<-(b2:bat[:void,:str])($15:str)
-    bat.insert(b2,"goodbye world");	# 8 BKCinsert_void_bun ($16:bat[:str,:any])<-(b2:bat[:void,:str])($17:str)
-    tablet.setFormat(b1,b2);	# 9 TABsetFormat ($18:void)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
-    tablet.setProperties("name,type,dense,sorted,key,min,max");	# 10 TABsetProperties ($19:int)<-($20:str)
-    tablet.display(b1,b2);	# 11 TABdisplayTable ($21:int)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
+# An extensive test for the new tablet layout 	# 1  (_2:str)
+#sent the output of a table to a file 	# 2  (_4:str)
+    b1 := bbp.new(:void,:int);	# 3 CMDBATnew (b1:bat[:void,:int])<-(_6:void)(_7:int)
+    bat.insert(b1,42);	# 4 BKCinsert_void_bun (_8:bat[:int,:any])<-(b1:bat[:void,:int])(_9:int)
+    bat.insert(b1,49);	# 5 BKCinsert_void_bun (_10:bat[:int,:any])<-(b1:bat[:void,:int])(_11:int)
+    b2 := bbp.new(:void,:str);	# 6 CMDBATnew (b2:bat[:void,:str])<-(_6:void)(_13:str)
+    bat.insert(b2,"hello world");	# 7 BKCinsert_void_bun (_14:bat[:str,:any])<-(b2:bat[:void,:str])(_15:str)
+    bat.insert(b2,"goodbye world");	# 8 BKCinsert_void_bun (_16:bat[:str,:any])<-(b2:bat[:void,:str])(_17:str)
+    tablet.setFormat(b1,b2);	# 9 TABsetFormat (_18:void)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
+    tablet.setProperties("name,type,dense,sorted,key,min,max");	# 10 TABsetProperties (_19:int)<-(_20:str)
+    tablet.display(b1,b2);	# 11 TABdisplayTable (_21:int)<-(b1:bat[:void,:int])(b2:bat[:void,:str])
 end main;	# 12  
 #---------------------------------------#
 # tmp_4,	tmp_5			# name

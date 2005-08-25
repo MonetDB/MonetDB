@@ -30,12 +30,12 @@ stdout of test 'tst606` in directory 'src/mal` itself:
 #	const.deposit(STORE_COMPR);
 #end main;
 function constants.main():void;	# 0  (main:void)
-    STORE_MEM := 0;	# 1  (STORE_MEM:int)<-($2:int)
-    STORE_MMAP := 1;	# 2  (STORE_MMAP:int)<-($4:int)
-    STORE_COMPR := 2;	# 3  (STORE_COMPR:int)<-($6:int)
-    const.deposit("STORE_MEM",STORE_MEM);	# 4 CSTdeposit ($7:void)<-($8:str)(STORE_MEM:int)
-    const.deposit("STORE_MAP",STORE_MMAP);	# 5 CSTdeposit ($9:void)<-($10:str)(STORE_MMAP:int)
-    const.deposit("STORE_COMPR",STORE_COMPR);	# 6 CSTdeposit ($11:void)<-($12:str)(STORE_COMPR:int)
+    STORE_MEM := 0;	# 1  (STORE_MEM:int)<-(_2:int)
+    STORE_MMAP := 1;	# 2  (STORE_MMAP:int)<-(_4:int)
+    STORE_COMPR := 2;	# 3  (STORE_COMPR:int)<-(_6:int)
+    const.deposit("STORE_MEM",STORE_MEM);	# 4 CSTdeposit (_7:void)<-(_8:str)(STORE_MEM:int)
+    const.deposit("STORE_MAP",STORE_MMAP);	# 5 CSTdeposit (_9:void)<-(_10:str)(STORE_MMAP:int)
+    const.deposit("STORE_COMPR",STORE_COMPR);	# 6 CSTdeposit (_11:void)<-(_12:str)(STORE_COMPR:int)
 end main;	# 7  
 #
 ## take uses the 'root' versions.
@@ -44,26 +44,36 @@ end main;	# 7
 #	w:= take(v);
 #	return w;
 #end take;
-function constants.take(v:str):any_1;	# 0  dynamic (take:any_1)<-(v:str)
-    io.printf("looking for %s\n",v);	# 1 IOprint_formatted_str ($2:int)<-($3:str)(v:str)
-    w := constants.take(v);	# 2  (w:any)<-(v:str)
-    return w;	# 3  (w:any)
-end take;	# 4  
+function constants.take(v:str):any;	# 0  dynamic (take:any)<-(v:str)
+    w := constants.take(v);	# 1  (w:any)<-(v:str)
+    return w;	# 2  (w:any)
+end take;	# 3  
+!ERROR: function take(v:str):any$1;
+!                            	  ^';' expected
 #
 ## release is overloaded for testing only
 #function release(v:any):void;
 #	BoxException:= "releasing a constant is forbidden";
 #	raise BoxException;
 #end release;
-function constants.release(v:any_1):void;	# 0  (release:void)<-(v:any_1)
-    BoxException := "releasing a constant is forbidden";	# 1  (BoxException:str)<-($3:str)
-    raise BoxException;	# 2  (BoxException:str)
+function constants.release(v:any):any;	# 0  dynamic (release:any)<-(v:any)
+    ;	# 1  (_2:any)
+    raise BoxException;	# 2  (BoxException:any)
 end release;	# 3  
+!ERROR: function release(v:any$1):void;
+!                             ^',' expected
+!ERROR: 	BoxException:= "releasing a constant is forbidden";
+!	     ^<identifier> expected
 #
 ## accept the definition of a new constant
-#function deposit(v:any,name:str) 
-#
-#
+#function deposit(v:any$1,name:str) 
+!ERROR: function deposit(v:any$1,name:str) 
+!                             ^',' expected
+!ERROR: 
+!					^<identifier> expected
+function constants.deposit(v:any):any;	# 0  unknown (deposit:any)<-(v:any)
+    ;	# 1  unknown (_2:any)
+end deposit;	# 2  unknown 
 
 # 08:01:25 >  
 # 08:01:25 >  Done.

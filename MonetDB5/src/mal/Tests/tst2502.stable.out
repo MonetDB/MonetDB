@@ -25,9 +25,9 @@ stdout of test 'tst2502` in directory 'src/mal` itself:
 #end;
 function user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
     i := seed;	# 1  (i:int)<-(seed:int)
-barrier always := true;	# 2  (always:bit)<-($4:bit) jump 7
-    i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-($5:int)(i:int)
-    i := calc.%(i,32767);	# 4 CALCbinaryMODintint (i:int)<-(i:int)($6:int)
+barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 7
+    i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-(_5:int)(i:int)
+    i := calc.%(i,32767);	# 4 CALCbinaryMODintint (i:int)<-(i:int)(_6:int)
     yield i;	# 5  (i:int)
     redo always;	# 6  (always:bit) jump 3
 exit always;	# 7  (always:bit)
@@ -41,11 +41,11 @@ end random;	# 8
 #print(r2);
 #
 function user.main():int;	# 0  (main:int)
-# Yield commands may only appear in factories 	# 1  ($2:str)
-    r1 := user.random(0);	# 2  (r1:int)<-($4:int)
-    io.print(r1);	# 3 IOprint_val ($5:int)<-(r1:int)
-    r2 := user.random(0);	# 4  (r2:int)<-($4:int)
-    io.print(r2);	# 5 IOprint_val ($7:int)<-(r2:int)
+# Yield commands may only appear in factories 	# 1  (_2:str)
+    r1 := user.random(0);	# 2  (r1:int)<-(_4:int)
+    io.print(r1);	# 3 IOprint_val (_5:int)<-(r1:int)
+    r2 := user.random(0);	# 4  (r2:int)<-(_4:int)
+    io.print(r2);	# 5 IOprint_val (_7:int)<-(r2:int)
 end main;	# 6  
 !ERROR: SyntaxError:user.random[0]:'user.random' contains errors
 #

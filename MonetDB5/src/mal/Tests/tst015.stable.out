@@ -32,21 +32,21 @@ stdout of test 'tst015` in directory 'src/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-# Testing barriers with variables, constants and expressions 	# 1  ($2:str)
-    b := true;	# 2  (b:bit)<-($4:bit)
+# Testing barriers with variables, constants and expressions 	# 1  (_2:str)
+    b := true;	# 2  (b:bit)<-(_4:bit)
 barrier b;	# 3  (b:bit) jump 5
-    io.printf("1 Correctly entered barrier\n");	# 4 IOprint_str ($5:int)<-($6:str)
+    io.printf("1 Correctly entered barrier\n");	# 4 IOprint_str (_5:int)<-(_6:str)
 exit b;	# 5  (b:bit)
-    b := false;	# 6  (b:bit)<-($7:bit)
+    b := false;	# 6  (b:bit)<-(_7:bit)
 barrier b;	# 7  (b:bit) jump 9
-    io.printf("1 Incorrectly entered barrier\n");	# 8 IOprint_str ($8:int)<-($9:str)
+    io.printf("1 Incorrectly entered barrier\n");	# 8 IOprint_str (_8:int)<-(_9:str)
 exit b;	# 9  (b:bit)
-    i := 1;	# 10  (i:int)<-($11:int)
-barrier c := calc.==(i,1);	# 11 CALCcompEQintint (c:bit)<-(i:int)($11:int) jump 13
-    io.printf("2 Correctly entered barrier\n");	# 12 IOprint_str ($13:int)<-($14:str)
+    i := 1;	# 10  (i:int)<-(_11:int)
+barrier c := calc.==(i,1);	# 11 CALCcompEQintint (c:bit)<-(i:int)(_11:int) jump 13
+    io.printf("2 Correctly entered barrier\n");	# 12 IOprint_str (_13:int)<-(_14:str)
 exit c;	# 13  (c:bit)
-barrier c := calc.==(i,0);	# 14 CALCcompEQintint (c:bit)<-(i:int)($15:int) jump 16
-    io.printf("2 Incorrectly entered barrier\n");	# 15 IOprint_str ($16:int)<-($17:str)
+barrier c := calc.==(i,0);	# 14 CALCcompEQintint (c:bit)<-(i:int)(_15:int) jump 16
+    io.printf("2 Incorrectly entered barrier\n");	# 15 IOprint_str (_16:int)<-(_17:str)
 exit c;	# 16  (c:bit)
 end main;	# 17  
 1 Correctly entered barrier

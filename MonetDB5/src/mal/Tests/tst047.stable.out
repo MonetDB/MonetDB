@@ -29,19 +29,19 @@ stdout of test 'tst047` in directory 'src/mal` itself:
 #print(l1);
 #
 function user.main():int;	# 0  (main:int)
-#testing copying and counting reversals 	# 1  ($2:str)
-#to test reversal handling 	# 2  ($4:str)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($6:int)($6:int)
-    bat.insert(b,1,1);	# 4 BKCinsert_bun ($7:bat[:int,:int])<-(b:bat[:int,:int])($8:int)($8:int)
-    bat.insert(b,2,4);	# 5 BKCinsert_bun ($9:bat[:int,:int])<-(b:bat[:int,:int])($10:int)($11:int)
-    bat.insert(b,3,9);	# 6 BKCinsert_bun ($12:bat[:int,:int])<-(b:bat[:int,:int])($13:int)($14:int)
-    io.print(b);	# 7 IOprint_val ($15:int)<-(b:bat[:int,:int])
+#testing copying and counting reversals 	# 1  (_2:str)
+#to test reversal handling 	# 2  (_4:str)
+    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
+    bat.insert(b,1,1);	# 4 BKCinsert_bun (_7:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_8:int)
+    bat.insert(b,2,4);	# 5 BKCinsert_bun (_9:bat[:int,:int])<-(b:bat[:int,:int])(_10:int)(_11:int)
+    bat.insert(b,3,9);	# 6 BKCinsert_bun (_12:bat[:int,:int])<-(b:bat[:int,:int])(_13:int)(_14:int)
+    io.print(b);	# 7 IOprint_val (_15:int)<-(b:bat[:int,:int])
     br := bat.reverse(b);	# 8 BKCreverse (br:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(br);	# 9 IOprint_val ($17:int)<-(br:bat[:int,:int])
+    io.print(br);	# 9 IOprint_val (_17:int)<-(br:bat[:int,:int])
     l0 := algebra.copy(b);	# 10 ALGcopy (l0:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(l0);	# 11 IOprint_val ($19:int)<-(l0:bat[:int,:int])
+    io.print(l0);	# 11 IOprint_val (_19:int)<-(l0:bat[:int,:int])
     l1 := algebra.copy(br);	# 12 ALGcopy (l1:bat[:int,:int])<-(br:bat[:int,:int])
-    io.print(l1);	# 13 IOprint_val ($21:int)<-(l1:bat[:int,:int])
+    io.print(l1);	# 13 IOprint_val (_21:int)<-(l1:bat[:int,:int])
 end main;	# 14  
 #-----------------#
 # h	tmp_4	  # name

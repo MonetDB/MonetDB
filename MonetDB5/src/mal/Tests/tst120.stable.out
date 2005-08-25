@@ -40,14 +40,14 @@ MALexception:malInclude:could not open file: tst120a
 !ERROR: 'bottom.first' undefined in user.main[7]
 !ERROR: 'top.first' undefined in user.main[8]
 function user.main():int;	# 0  (main:int)
-#define 2 modules and check location of routines 	# 1  ($2:str)
-# lookup DBHOME/mal/tst120a.mal 	# 2  ($4:str)
-# does not do anything 	# 3  ($6:str)
-    a := bottom.second("hh");	# 4  unknown (a:any)<-($8:str)
-    b := top.first(1);	# 5  unknown (b:any)<-($10:int)
-    c := top.first(1:sht);	# 6  unknown (c:any)<-($12:sht)
-    d := bottom.first("hello world");	# 7  unknown (d:any)<-($14:str)
-    e := top.first(2:sht);	# 8  unknown (e:any)<-($16:sht)
+#define 2 modules and check location of routines 	# 1  (_2:str)
+# lookup DBHOME/mal/tst120a.mal 	# 2  (_4:str)
+# does not do anything 	# 3  (_6:str)
+    a := bottom.second("hh");	# 4  unknown (a:any)<-(_8:str)
+    b := top.first(1);	# 5  unknown (b:any)<-(_10:int)
+    c := top.first(1:sht);	# 6  unknown (c:any)<-(_12:sht)
+    d := bottom.first("hello world");	# 7  unknown (d:any)<-(_14:str)
+    e := top.first(2:sht);	# 8  unknown (e:any)<-(_16:sht)
 end main;	# 9  
 
 # 17:25:37 >  

@@ -20,10 +20,10 @@ stdout of test 'tst030` in directory 'src/mal` itself:
 #exit	w;
 #
 function user.main():int;	# 0  (main:int)
-# check testing for illegal assigments to control variables 	# 1  ($2:str)
-barrier w := calc.>(1,0);	# 2 CALCcompGTintint (w:bit)<-($4:int)($5:int) jump 5
-    w := false;	# 3  (w:bit)<-($6:bit)
-    io.print(w);	# 4 IOprint_val ($7:int)<-(w:bit)
+# check testing for illegal assigments to control variables 	# 1  (_2:str)
+barrier w := calc.>(1,0);	# 2 CALCcompGTintint (w:bit)<-(_4:int)(_5:int) jump 5
+    w := false;	# 3  (w:bit)<-(_6:bit)
+    io.print(w);	# 4 IOprint_val (_7:int)<-(w:bit)
 exit w;	# 5  (w:bit)
 end main;	# 6  
 [ false ]

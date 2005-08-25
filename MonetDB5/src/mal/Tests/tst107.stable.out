@@ -26,17 +26,17 @@ stdout of test 'tst107` in directory 'src/mal` itself:
 #	i:= 0;
 #
 function user.main():int;	# 0  (main:int)
-# analyse the basic interpreter loop 	# 1  ($2:str)
-    i := 0;	# 2  (i:int)<-($4:int)
-barrier v := true;	# 3  (v:bit)<-($6:bit) jump 6
+# analyse the basic interpreter loop 	# 1  (_2:str)
+    i := 0;	# 2  (i:int)<-(_4:int)
+barrier v := true;	# 3  (v:bit)<-(_6:bit) jump 6
     leave v;	# 4  (v:bit) jump 6
-    i := 1;	# 5  (i:int)<-($7:int)
+    i := 1;	# 5  (i:int)<-(_7:int)
 exit v;	# 6  (v:bit)
-barrier t := calc.<(i,3);	# 7 CALCcompLTintint (t:bit)<-(i:int)($9:int) jump 10
-    i := calc.+(i,1);	# 8 CALCbinaryADDintint (i:int)<-(i:int)($7:int)
-    redo t := calc.<(i,3);	# 9 CALCcompLTintint (t:bit)<-(i:int)($9:int) jump 8
+barrier t := calc.<(i,3);	# 7 CALCcompLTintint (t:bit)<-(i:int)(_9:int) jump 10
+    i := calc.+(i,1);	# 8 CALCbinaryADDintint (i:int)<-(i:int)(_7:int)
+    redo t := calc.<(i,3);	# 9 CALCcompLTintint (t:bit)<-(i:int)(_9:int) jump 8
 exit t;	# 10  (t:bit)
-    i := 0;	# 11  (i:int)<-($4:int)
+    i := 0;	# 11  (i:int)<-(_4:int)
 end main;	# 12  
 
 # 07:58:58 >  

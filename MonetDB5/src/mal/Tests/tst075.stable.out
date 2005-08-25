@@ -29,10 +29,10 @@ end swap;	# 4
 #print(y);
 #
 function user.main():int;	# 0  (main:int)
-# parsing operations with multi-assignments 	# 1  ($2:str)
-    (x,y):= user.swap("world","hello");	# 2  (x:str)(y:str)<-($5:str)($6:str)
-    io.print(x);	# 3 IOprint_val ($7:int)<-(x:str)
-    io.print(y);	# 4 IOprint_val ($8:int)<-(y:str)
+# parsing operations with multi-assignments 	# 1  (_2:str)
+    (x,y):= user.swap("world","hello");	# 2  (x:str)(y:str)<-(_5:str)(_6:str)
+    io.print(x);	# 3 IOprint_val (_7:int)<-(x:str)
+    io.print(y);	# 4 IOprint_val (_8:int)<-(y:str)
 end main;	# 5  
 [ "hello" ]
 [ "world" ]

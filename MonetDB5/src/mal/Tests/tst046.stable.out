@@ -30,18 +30,18 @@ stdout of test 'tst046` in directory 'src/mal` itself:
 #print(i);
 #
 function user.main():int;	# 0  (main:int)
-#testing flt/lng/int coercions 	# 1  ($2:str)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($4:int)
-    bat.insert(b,1,1);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(b:bat[:int,:int])($6:int)($6:int)
-    bat.insert(b,2,4);	# 4 BKCinsert_bun ($7:bat[:int,:int])<-(b:bat[:int,:int])($8:int)($9:int)
-    bat.insert(b,3,9);	# 5 BKCinsert_bun ($10:bat[:int,:int])<-(b:bat[:int,:int])($11:int)($12:int)
-    io.print(b);	# 6 IOprint_val ($13:int)<-(b:bat[:int,:int])
+#testing flt/lng/int coercions 	# 1  (_2:str)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
+    bat.insert(b,1,1);	# 3 BKCinsert_bun (_5:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_6:int)
+    bat.insert(b,2,4);	# 4 BKCinsert_bun (_7:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
+    bat.insert(b,3,9);	# 5 BKCinsert_bun (_10:bat[:int,:int])<-(b:bat[:int,:int])(_11:int)(_12:int)
+    io.print(b);	# 6 IOprint_val (_13:int)<-(b:bat[:int,:int])
     f := batcalc.flt(b);	# 7 CMDconvertint_flt (f:bat[:int,:flt])<-(b:bat[:int,:int])
-    io.print(f);	# 8 IOprint_val ($15:int)<-(f:bat[:int,:flt])
+    io.print(f);	# 8 IOprint_val (_15:int)<-(f:bat[:int,:flt])
     l := batcalc.lng(b);	# 9 CMDconvertint_lng (l:bat[:int,:lng])<-(b:bat[:int,:int])
-    io.print(l);	# 10 IOprint_val ($17:int)<-(l:bat[:int,:lng])
+    io.print(l);	# 10 IOprint_val (_17:int)<-(l:bat[:int,:lng])
     i := batcalc.int(f);	# 11 CMDconvertflt_int (i:bat[:int,:int])<-(f:bat[:int,:flt])
-    io.print(i);	# 12 IOprint_val ($19:int)<-(i:bat[:int,:int])
+    io.print(i);	# 12 IOprint_val (_19:int)<-(i:bat[:int,:int])
 end main;	# 13  
 #-----------------#
 # h	tmp_4	  # name

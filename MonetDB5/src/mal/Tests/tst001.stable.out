@@ -15,7 +15,7 @@ stdout of test 'tst001` in directory 'src/mal` itself:
 #printf("hello world\n");
 #
 function user.main():int;	# 0  (main:int)
-    io.printf("hello world\n");	# 1 IOprint_str ($1:int)<-($2:str)
+    io.printf("hello world\n");	# 1 IOprint_str (_1:int)<-(_2:str)
 end main;	# 2  
 hello world
 

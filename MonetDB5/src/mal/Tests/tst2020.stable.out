@@ -28,19 +28,19 @@ stdout of test 'tst2020` in directory 'src/mal` itself:
 #	printf("#end of program, wait for child\n");
 #
 function user.main():int;	# 0  (main:int)
-# simple parallel with control flow 	# 1  ($2:str)
-thread b1 := 0;	# 2  (b1:int)<-($4:int) jump 11
-    io.printf("#start thread\n");	# 3 IOprint_str ($5:int)<-($6:str)
+# simple parallel with control flow 	# 1  (_2:str)
+thread b1 := 0;	# 2  (b1:int)<-(_4:int) jump 11
+    io.printf("#start thread\n");	# 3 IOprint_str (_5:int)<-(_6:str)
 barrier yy;	# 4  (yy:any) jump 8
-    io.print("leave barrier");	# 5 IOprint_val ($8:int)<-($9:str)
+    io.print("leave barrier");	# 5 IOprint_val (_8:int)<-(_9:str)
     leave yy;	# 6  (yy:any) jump 8
     redo yy;	# 7  (yy:any) jump 5
 exit yy;	# 8  (yy:any)
-    io.printf("#finish thread\n");	# 9 IOprint_str ($10:int)<-($11:str)
-    io.printf("#finish thread2\n");	# 10 IOprint_str ($12:int)<-($13:str)
+    io.printf("#finish thread\n");	# 9 IOprint_str (_10:int)<-(_11:str)
+    io.printf("#finish thread2\n");	# 10 IOprint_str (_12:int)<-(_13:str)
 exit b1;	# 11  (b1:int)
-    alarm.sleep(5);	# 12 ALARMsleep ($14:void)<-($15:int)
-    io.printf("#end of program, wait for child\n");	# 13 IOprint_str ($16:int)<-($17:str)
+    alarm.sleep(5);	# 12 ALARMsleep (_14:void)<-(_15:int)
+    io.printf("#end of program, wait for child\n");	# 13 IOprint_str (_16:int)<-(_17:str)
 end main;	# 14  
 #start thread
 [ "leave barrier" ]

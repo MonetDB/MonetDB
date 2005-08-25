@@ -33,18 +33,18 @@ stdout of test 'tst050` in directory 'src/mal` itself:
 !ERROR: 'bbp.new' undefined in user.main[11]
 !ERROR: MALresolve:user.main[12]:type mismatch flt := str
 function user.main():int;	# 0  (main:int)
-# Variables names may be tagged with a type upfront. 	# 1  ($2:str)
-# They may be initialized with a lexical constant using 	# 2  ($4:str)
-# either their stored type syntax or with a string literal 	# 3  ($6:str)
-    s:str := "hello";	# 4  (s:str)<-($8:str)
-    i:sht := 1:sht;	# 5  (i:sht)<-($10:sht)
-    b:bit := true;	# 6  (b:bit)<-($12:bit)
-    z:bat[:int,:int] := bbp.new(:int,:int);	# 7 CMDBATnew (z:bat[:int,:int])<-($14:int)($14:int)
-# type resolver should complain on the rest 	# 8  ($16:str)
-    j:sht := 1:lng;	# 9  unknown (j:sht)<-($18:lng)
-    k:lng := 1:sht;	# 10  unknown (k:lng)<-($10:sht)
-    y:bat[:str,:int] := bbp.new(:int,:int);	# 11  unknown (y:bat[:str,:int])<-($14:int)($14:int)
-    f:flt := "wrong";	# 12  unknown (f:flt)<-($22:str)
+# Variables names may be tagged with a type upfront. 	# 1  (_2:str)
+# They may be initialized with a lexical constant using 	# 2  (_4:str)
+# either their stored type syntax or with a string literal 	# 3  (_6:str)
+    s:str  := "hello";	# 4  (s:str)<-(_8:str)
+    i:sht  := 1:sht;	# 5  (i:sht)<-(_10:sht)
+    b:bit  := true;	# 6  (b:bit)<-(_12:bit)
+    z:bat[:int,:int]  := bbp.new(:int,:int);	# 7 CMDBATnew (z:bat[:int,:int])<-(_14:int)(_14:int)
+# type resolver should complain on the rest 	# 8  (_16:str)
+    j:sht  := 1:lng;	# 9  unknown (j:sht)<-(_18:lng)
+    k:lng  := 1:sht;	# 10  unknown (k:lng)<-(_10:sht)
+    y:bat[:str,:int]  := bbp.new(:int,:int);	# 11  unknown (y:bat[:str,:int])<-(_14:int)(_14:int)
+    f:flt  := "wrong";	# 12  unknown (f:flt)<-(_22:str)
 end main;	# 13  
 
 # 07:58:46 >  

@@ -18,10 +18,10 @@ stdout of test 'tst072` in directory 'src/mal` itself:
 #print(d);
 #
 function user.main():int;	# 0  (main:int)
-# parsing operations with multi-assignments 	# 1  ($2:str)
-    (c,d):= ("hello","world");	# 2  (c:str)(d:str)<-($5:str)($6:str)
-    io.print(c);	# 3 IOprint_val ($7:int)<-(c:str)
-    io.print(d);	# 4 IOprint_val ($8:int)<-(d:str)
+# parsing operations with multi-assignments 	# 1  (_2:str)
+    (c,d):= ("hello","world");	# 2  (c:str)(d:str)<-(_5:str)(_6:str)
+    io.print(c);	# 3 IOprint_val (_7:int)<-(c:str)
+    io.print(d);	# 4 IOprint_val (_8:int)<-(d:str)
 end main;	# 5  
 [ "hello" ]
 [ "world" ]

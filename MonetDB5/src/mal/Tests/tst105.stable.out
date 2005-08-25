@@ -17,22 +17,18 @@ stdout of test 'tst105` in directory 'src/mal` itself:
 #
 #module bat2;
 #command new(h:any$1,t:any$2) :bat[:any$1, :any$2] 
-!ERROR: address of 'bat2.GDKbatnew' not found
-command bat2.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;	# 0  dynamic (new:bat[:any_1,:any_2])<-(h:any_1)(t:any_2)
 #
 #a:= bat2.new(:str,:int);
 #b:= bat2.new(:str,:int);
 #c:= new(:str,:int);
 #
-!ERROR: 'bat2.new' undefined in bat2.main[3]
-!ERROR: 'bat2.new' undefined in bat2.main[4]
-function user.main():int;	# 0  (main:int)
-# check propagation of type variables over bats 	# 1  ($2:str)
-# can be checked after bat module has been added 	# 2  ($4:str)
-    a := bat2.new(:str,:int);	# 3  unknown (a:bat[:str,:int])<-($6:str)($7:int)
-    b := bat2.new(:str,:int);	# 4  unknown (b:bat[:str,:int])<-($6:str)($7:int)
-    c := bbp.new(:str,:int);	# 5 CMDBATnew (c:bat[:str,:int])<-($6:str)($7:int)
-end main;	# 6  
+!ERROR: command new(h:any$1,t:any$2) :bat[:any$1, :any$2] 
+!                        ^',' expected
+command bat2.new(h:any):any;	# 0  unknown (new:any)<-(h:any)
+    a := bat2.new(:str,:int);	# 1  unknown (a:any)<-(_3:str)(_4:int)
+    b := bat2.new(:str,:int);	# 2  unknown (b:any)<-(_3:str)(_4:int)
+    c := bbp.new(:str,:int);	# 3  unknown (c:any)<-(_3:str)(_4:int)
+end new;	# 4  unknown 
 
 # 07:58:56 >  
 # 07:58:56 >  Done.

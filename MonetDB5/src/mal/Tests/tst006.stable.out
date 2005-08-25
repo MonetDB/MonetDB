@@ -22,12 +22,12 @@ stdout of test 'tst006` in directory 'src/mal` itself:
 #exit	l;
 #
 function user.main():int;	# 0  (main:int)
-    r := 0;	# 1  (r:int)<-($2:int)
-barrier l := calc.<(r,1);	# 2 CALCcompLTintint (l:bit)<-(r:int)($4:int) jump 8
-    io.print(l);	# 3 IOprint_val ($5:int)<-(l:bit)
-    io.print(r);	# 4 IOprint_val ($6:int)<-(r:int)
-    r := calc.+(r,1);	# 5 CALCbinaryADDintint (r:int)<-(r:int)($4:int)
-    l := false;	# 6  (l:bit)<-($7:bit)
+    r := 0;	# 1  (r:int)<-(_2:int)
+barrier l := calc.<(r,1);	# 2 CALCcompLTintint (l:bit)<-(r:int)(_4:int) jump 8
+    io.print(l);	# 3 IOprint_val (_5:int)<-(l:bit)
+    io.print(r);	# 4 IOprint_val (_6:int)<-(r:int)
+    r := calc.+(r,1);	# 5 CALCbinaryADDintint (r:int)<-(r:int)(_4:int)
+    l := false;	# 6  (l:bit)<-(_7:bit)
     redo l;	# 7  (l:bit) jump 3
 exit l;	# 8  (l:bit)
 end main;	# 9  

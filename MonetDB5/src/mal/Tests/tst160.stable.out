@@ -17,7 +17,7 @@ stdout of test 'tst160` in directory 'src/mal` itself:
 #    return l:= 0:ptr;
 #end l;
 function user.l():ptr;	# 0  (l:ptr)
-    return l := 0:ptr;	# 1  (l:ptr)<-($1:ptr)
+    return l := 0:ptr;	# 1  (l:ptr)<-(_1:ptr)
 end l;	# 2  
 #
 #z:= l();
@@ -26,7 +26,7 @@ end l;	# 2
 function user.main():int;	# 0  (main:int)
 #defining a ptr returning function 	# 1  ($2:str)
     z := user.l();	# 2  (z:ptr)
-    io.print(z);	# 3 IOprint_val ($4:int)<-(z:ptr)
+    io.print(z);	# 3 IOprint_val (_4:int)<-(z:ptr)
 end main;	# 4  
 [ 0 ]
 #

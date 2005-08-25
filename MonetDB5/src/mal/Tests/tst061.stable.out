@@ -29,19 +29,19 @@ stdout of test 'tst061` in directory 'src/mal` itself:
 #print(z);
 #
 function user.main():int;	# 0  (main:int)
-# type coercion and creation 	# 1  ($2:str)
-    o := calc.oid("999@0");	# 2 CALCstr2oid (o:oid)<-($4:str)
+# type coercion and creation 	# 1  (_2:str)
+    o := calc.oid("999@0");	# 2 CALCstr2oid (o:oid)<-(_4:str)
     os := calc.str(o);	# 3 CALCoid2str (os:str)<-(o:oid)
-    i := calc.sht(1);	# 4 CALCint2sht (i:sht)<-($7:int)
-    l := calc.lng(2);	# 5 CALCint2lng (l:lng)<-($9:int)
-    f := calc.flt(3.4);	# 6 CALCflt2flt (f:flt)<-($11:flt)
-    j := calc.sht("1");	# 7 CALCstr2sht (j:sht)<-($13:str)
-    d0 := calc.dbl(1.0);	# 8 CALCflt2dbl (d0:dbl)<-($15:flt)
-    d1 := calc.dbl(2.0);	# 9 CALCflt2dbl (d1:dbl)<-($17:flt)
-    z := calc.<(d0,2.0:dbl);	# 10 CALCcompLTdbldbl (z:bit)<-(d0:dbl)($19:dbl)
-    io.print(z);	# 11 IOprint_val ($20:int)<-(z:bit)
-    z := calc.<(d1,2.0:dbl);	# 12 CALCcompLTdbldbl (z:bit)<-(d1:dbl)($19:dbl)
-    io.print(z);	# 13 IOprint_val ($21:int)<-(z:bit)
+    i := calc.sht(1);	# 4 CALCint2sht (i:sht)<-(_7:int)
+    l := calc.lng(2);	# 5 CALCint2lng (l:lng)<-(_9:int)
+    f := calc.flt(3.4);	# 6 CALCflt2flt (f:flt)<-(_11:flt)
+    j := calc.sht("1");	# 7 CALCstr2sht (j:sht)<-(_13:str)
+    d0 := calc.dbl(1.0);	# 8 CALCflt2dbl (d0:dbl)<-(_15:flt)
+    d1 := calc.dbl(2.0);	# 9 CALCflt2dbl (d1:dbl)<-(_17:flt)
+    z := calc.<(d0,2.0:dbl);	# 10 CALCcompLTdbldbl (z:bit)<-(d0:dbl)(_19:dbl)
+    io.print(z);	# 11 IOprint_val (_20:int)<-(z:bit)
+    z := calc.<(d1,2.0:dbl);	# 12 CALCcompLTdbldbl (z:bit)<-(d1:dbl)(_19:dbl)
+    io.print(z);	# 13 IOprint_val (_21:int)<-(z:bit)
 end main;	# 14  
 [ true ]
 [ false ]

@@ -26,13 +26,13 @@ stdout of test 'tst016` in directory 'src/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-# handling basic strings 	# 1  ($2:str)
-    a := "Dit is een test\n";	# 2  (a:str)<-($4:str)
+# handling basic strings 	# 1  (_2:str)
+    a := "Dit is een test\n";	# 2  (a:str)<-(_4:str)
     b := blob.toblob(a);	# 3 BLOBtoblob (b:blob)<-(a:str)
     c := blob.tostring(b);	# 4 BLOBfromblob (c:str)<-(b:blob)
-    io.print(a);	# 5 IOprint_val ($7:int)<-(a:str)
-    io.print(b);	# 6 IOprint_val ($8:int)<-(b:blob)
-    io.print(c);	# 7 IOprint_val ($9:int)<-(c:str)
+    io.print(a);	# 5 IOprint_val (_7:int)<-(a:str)
+    io.print(b);	# 6 IOprint_val (_8:int)<-(b:blob)
+    io.print(c);	# 7 IOprint_val (_9:int)<-(c:str)
 end main;	# 8  
 [ "Dit is een test\\n" ]
 [ (18: 44 69 74 20 69 73 20 65 65 6E 20 74 65 73 74 5C 6E 00) ]

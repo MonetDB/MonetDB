@@ -15,29 +15,26 @@ stdout of test 'tst3030` in directory 'src/mal` itself:
 ##Parsing properties and keeping them around
 ## note the use of the first parameter to obtain property set
 #function newsemijoin(A:bat[:int,:any$1], 
-#end newsemijoin;
-function user.newsemijoin(A:bat[:int,:any_1],B:bat[:int,:any_2]):bat[:int,:any_1];	# 0  dynamic (newsemijoin:bat[:int,:any_1])<-(A:bat[:int,:any_1])(B:bat[:int,:any_2])
-end newsemijoin;	# 1  
-!ERROR: return missing
-#z:= bbp.new(:int{sorted=true},:int);
 #w:= bbp.new(:int{sequence=true},:int);
 #w:bat[:int,:int]:= bbp.new(:int,:int);
 #y:= algebra.sort(w:bat[:int,:int]{sorted=true,dense=true});
 #io.print(1);
 #y:int{sorted=true}:= algebra.sort(w);
 #
-!ERROR: 'algebra.sort' undefined in user.main[6]
-!ERROR: 'algebra.sort' undefined in user.main[8]
-function user.main():int;	# 0  (main:int)
-#Parsing properties and keeping them around 	# 1  ($2:str)
-# note the use of the first parameter to obtain property set 	# 2  ($4:str)
-    z := bbp.new(:int{sequence=true,sorted=true},:int{sequence=true,sorted=true});	# 3 CMDBATnew (z:bat[:int,:int])<-($6:int)($6:int)
-    w:bat[:int,:int]{dense=true,sorted=true}  := bbp.new(:int{sequence=true,sorted=true},:int{sequence=true,sorted=true});	# 4 CMDBATnew (w:bat[:int,:int])<-($6:int)($6:int)
-    w:bat[:int,:int]{dense=true,sorted=true}  := bbp.new(:int{sequence=true,sorted=true},:int{sequence=true,sorted=true});	# 5 CMDBATnew (w:bat[:int,:int])<-($6:int)($6:int)
+!ERROR: function newsemijoin(A:bat[:int,:any$1], 
+!                                          	^']' expected
+!ERROR: end newsemijoin;
+!       ^',' expected
+!ERROR: z:= bbp.new(:int{sorted=true},:int);
+!      ^<identifier> expected
+function user.newsemijoin(A:bat[:int,:any]):any;	# 0  unknown (newsemijoin:any)<-(A:bat[:int,:any])
+    ;	# 1  unknown (_2:any)
+    w:bat[:int,:int]{dense=true,sorted=true}  := bbp.new(:int{sequence=true},:int{sequence=true});	# 2  unknown (w:bat[:int,:int])<-(_4:int)(_4:int)
+    w:bat[:int,:int]{dense=true,sorted=true}  := bbp.new(:int{sequence=true},:int{sequence=true});	# 3  unknown (w:bat[:int,:int])<-(_4:int)(_4:int)
+    y:int{sorted=true}  := algebra.sort(w{dense=true,sorted=true});	# 4  unknown (y:int)<-(w:bat[:int,:int])
+    io.print(1);	# 5  unknown (_6:any)<-(_7:int)
     y:int{sorted=true}  := algebra.sort(w{dense=true,sorted=true});	# 6  unknown (y:int)<-(w:bat[:int,:int])
-    io.print(1);	# 7 IOprint_val ($9:int)<-($10:int)
-    y:int{sorted=true}  := algebra.sort(w{dense=true,sorted=true});	# 8  unknown (y:int)<-(w:bat[:int,:int])
-end main;	# 9  
+end newsemijoin;	# 7  unknown 
 
 # 08:01:16 >  
 # 08:01:16 >  Done.

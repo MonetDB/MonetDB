@@ -17,21 +17,29 @@ stdout of test 'tst103` in directory 'src/mal` itself:
 #function f(a:any$1, b:any$2):bat[:any$2,:any$1] ;
 #	return f:=bbp.new(:any$2,:any$1); 
 #end f;
-function user.f(a:any_1,b:any_2):bat[:any_2,:any_1];	# 0  dynamic (f:bat[:any_2,:any_1])<-(a:any_1)(b:any_2)
-    return f := bbp.new(:any_2,:any_1);	# 1 CMDBATnew (f:bat[:any_2,:any_1])<-($3:any_2)($4:any_1)
+function user.f(a:any):any;	# 0  dynamic (f:any)<-(a:any)
+    ;	# 1  (_2:any)
 end f;	# 2  
+!ERROR: function f(a:any$1, b:any$2):bat[:any$2,:any$1] ;
+!                       ^',' expected
+!ERROR: 	return f:=bbp.new(:any$2,:any$1); 
+!	     ^<identifier> expected
 #
 #a:= f(1,"hello");
 #b:= f(1,"world");
 #c:= f(1.0, -3);
 #d:= f(true,false);
 #
+!ERROR: 'user.f' undefined in user.main[2]
+!ERROR: 'user.f' undefined in user.main[3]
+!ERROR: 'user.f' undefined in user.main[4]
+!ERROR: 'user.f' undefined in user.main[5]
 function user.main():int;	# 0  (main:int)
-# check propagation of type variables over bats 	# 1  ($2:str)
-    a := user.f(1,"hello");	# 2  (a:bat[:str,:int])<-($4:int)($5:str)
-    b := user.f(1,"world");	# 3  (b:bat[:str,:int])<-($4:int)($7:str)
-    c := user.f(1.0,-3);	# 4  (c:bat[:int,:flt])<-($9:flt)($10:int)
-    d := user.f(true,false);	# 5  (d:bat[:bit,:bit])<-($12:bit)($13:bit)
+# check propagation of type variables over bats 	# 1  (_2:str)
+    a := user.f(1,"hello");	# 2  unknown (a:any)<-(_4:int)(_5:str)
+    b := user.f(1,"world");	# 3  unknown (b:any)<-(_4:int)(_7:str)
+    c := user.f(1.0,-3);	# 4  unknown (c:any)<-(_9:flt)(_10:int)
+    d := user.f(true,false);	# 5  unknown (d:any)<-(_12:bit)(_13:bit)
 end main;	# 6  
 
 # 07:58:55 >  

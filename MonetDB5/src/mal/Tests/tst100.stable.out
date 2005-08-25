@@ -21,12 +21,12 @@ stdout of test 'tst100` in directory 'src/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-# complex first test, can we gain access to the calculator function 	# 1  ($2:str)
-    a := calc.+(3,1);	# 2 CALCbinaryADDintint (a:int)<-($4:int)($5:int)
-    c := calc.+(7,8);	# 3 CALCbinaryADDintint (c:int)<-($7:int)($8:int)
-    b := calc.+(3.5,2.7);	# 4 CALCbinaryADDfltflt (b:flt)<-($10:flt)($11:flt)
-    s := "hello world";	# 5  (s:str)<-($13:str)
-    d := calc.+(3,1);	# 6 CALCbinaryADDintint (d:int)<-($4:int)($5:int)
+# complex first test, can we gain access to the calculator function 	# 1  (_2:str)
+    a := calc.+(3,1);	# 2 CALCbinaryADDintint (a:int)<-(_4:int)(_5:int)
+    c := calc.+(7,8);	# 3 CALCbinaryADDintint (c:int)<-(_7:int)(_8:int)
+    b := calc.+(3.5,2.7);	# 4 CALCbinaryADDfltflt (b:flt)<-(_10:flt)(_11:flt)
+    s := "hello world";	# 5  (s:str)<-(_13:str)
+    d := calc.+(3,1);	# 6 CALCbinaryADDintint (d:int)<-(_4:int)(_5:int)
 end main;	# 7  
 
 # 07:58:51 >  

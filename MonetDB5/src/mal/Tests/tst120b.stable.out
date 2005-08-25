@@ -15,12 +15,12 @@ stdout of test 'tst120b` in directory 'src/mal` itself:
 #module bottom;
 #function first(i:str):int; c:=1; return c; end first;
 function bottom.first(i:str):int;	# 0  (first:int)<-(i:str)
-    c := 1;	# 1  (c:int)<-($3:int)
+    c := 1;	# 1  (c:int)<-(_3:int)
     return c;	# 2  (c:int)
 end first;	# 3  
 #function second(i:str):int; return second:=1; end second;
 function bottom.second(i:str):int;	# 0  (second:int)<-(i:str)
-    return second := 1;	# 1  (second:int)<-($2:int)
+    return second := 1;	# 1  (second:int)<-(_2:int)
 end second;	# 2  
 #
 

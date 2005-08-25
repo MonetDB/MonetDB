@@ -20,11 +20,11 @@ stdout of test 'tst401` in directory 'src/mal` itself:
 #exit	(v1,i) ;
 #
 function user.main():int;	# 0  (main:int)
-# testing the simple iterators on builtin types 	# 1  ($2:str)
-barrier (v1,i):= mal.newRange(0.0:flt);	# 2 RNGnewRange_flt (v1:bit)(i:flt)<-($5:flt) jump 6
-    io.print(i);	# 3 IOprint_val ($6:int)<-(i:flt)
-    v := "do something";	# 4  (v:str)<-($8:str)
-    redo (v1,i):= mal.nextElement(1.3:flt,2.5:flt);	# 5 RNGnextElement_flt (v1:bit)(i:flt)<-($9:flt)($10:flt) jump 3
+# testing the simple iterators on builtin types 	# 1  (_2:str)
+barrier (v1,i):= mal.newRange(0.0:flt);	# 2 RNGnewRange_flt (v1:bit)(i:flt)<-(_5:flt) jump 6
+    io.print(i);	# 3 IOprint_val (_6:int)<-(i:flt)
+    v := "do something";	# 4  (v:str)<-(_8:str)
+    redo (v1,i):= mal.nextElement(1.3:flt,2.5:flt);	# 5 RNGnextElement_flt (v1:bit)(i:flt)<-(_9:flt)(_10:flt) jump 3
 exit (v1,i);	# 6  (v1:bit)(i:flt)
 end main;	# 7  
 [ 0 ]

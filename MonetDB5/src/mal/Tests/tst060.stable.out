@@ -25,16 +25,16 @@ stdout of test 'tst060` in directory 'src/mal` itself:
 #	print(s1);
 #
 function user.main():int;	# 0  (main:int)
-# garbage collection strins 	# 1  ($2:str)
-    s0 := "hello";	# 2  (s0:str)<-($4:str)
-    s0 := "world";	# 3  (s0:str)<-($5:str)
-    b1 := calc.==(s0,"world");	# 4 CALCcompEQstrstr (b1:bit)<-(s0:str)($5:str)
+# garbage collection strins 	# 1  (_2:str)
+    s0 := "hello";	# 2  (s0:str)<-(_4:str)
+    s0 := "world";	# 3  (s0:str)<-(_5:str)
+    b1 := calc.==(s0,"world");	# 4 CALCcompEQstrstr (b1:bit)<-(s0:str)(_5:str)
     s1 := s0;	# 5  (s1:str)<-(s0:str)
 barrier b1;	# 6  (b1:bit) jump 9
     s2 := s1;	# 7  (s2:str)<-(s1:str)
-    s1 := "bye";	# 8  (s1:str)<-($9:str)
+    s1 := "bye";	# 8  (s1:str)<-(_9:str)
 exit b1;	# 9  (b1:bit)
-    io.print(s1);	# 10 IOprint_val ($10:int)<-(s1:str)
+    io.print(s1);	# 10 IOprint_val (_10:int)<-(s1:str)
 end main;	# 11  
 [ "bye" ]
 

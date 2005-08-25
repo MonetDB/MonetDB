@@ -24,15 +24,15 @@ stdout of test 'tst037` in directory 'src/mal` itself:
 #print(b);
 #
 function user.main():int;	# 0  (main:int)
-# testing pattern matching against strings 	# 1  ($2:str)
-    b := pcre.match("Hello world","Hello");	# 2 PCREmatch (b:bit)<-($4:str)($5:str)
-    io.print(b);	# 3 IOprint_val ($6:int)<-(b:bit)
-    b := pcre.match("Hello world",".*lo.*");	# 4 PCREmatch (b:bit)<-($4:str)($7:str)
-    io.print(b);	# 5 IOprint_val ($8:int)<-(b:bit)
-    b := pcre.match("Hello world","^lo.*or");	# 6 PCREmatch (b:bit)<-($4:str)($9:str)
-    io.print(b);	# 7 IOprint_val ($10:int)<-(b:bit)
-    b := pcre.match("Hello world","[ABHW]");	# 8 PCREmatch (b:bit)<-($4:str)($11:str)
-    io.print(b);	# 9 IOprint_val ($12:int)<-(b:bit)
+# testing pattern matching against strings 	# 1  (_2:str)
+    b := pcre.match("Hello world","Hello");	# 2 PCREmatch (b:bit)<-(_4:str)(_5:str)
+    io.print(b);	# 3 IOprint_val (_6:int)<-(b:bit)
+    b := pcre.match("Hello world",".*lo.*");	# 4 PCREmatch (b:bit)<-(_4:str)(_7:str)
+    io.print(b);	# 5 IOprint_val (_8:int)<-(b:bit)
+    b := pcre.match("Hello world","^lo.*or");	# 6 PCREmatch (b:bit)<-(_4:str)(_9:str)
+    io.print(b);	# 7 IOprint_val (_10:int)<-(b:bit)
+    b := pcre.match("Hello world","[ABHW]");	# 8 PCREmatch (b:bit)<-(_4:str)(_11:str)
+    io.print(b);	# 9 IOprint_val (_12:int)<-(b:bit)
 end main;	# 10  
 [ true ]
 [ true ]

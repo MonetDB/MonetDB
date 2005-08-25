@@ -23,15 +23,15 @@ stdout of test 'tst1504` in directory 'src/mal` itself:
 #	print(y);
 #
 function user.main():int;	# 0  (main:int)
-    x := bbp.new(:oid,:chr);	# 1 CMDBATnew (x:bat[:oid,:chr])<-($2:oid)($3:chr)
-    de_a := bat.insert(x,1@0,'a');	# 2 BKCinsert_bun (de_a:bat[:oid,:chr])<-(x:bat[:oid,:chr])($5:oid)($6:chr)
-    ee_a := bat.insert(x,2@0,'a');	# 3 BKCinsert_bun (ee_a:bat[:oid,:chr])<-(x:bat[:oid,:chr])($8:oid)($6:chr)
-    y := bbp.new(:chr,:oid);	# 4 CMDBATnew (y:bat[:chr,:oid])<-($10:chr)($11:oid)
+    x := bbp.new(:oid,:chr);	# 1 CMDBATnew (x:bat[:oid,:chr])<-(_2:oid)(_3:chr)
+    de_a := bat.insert(x,1@0,'a');	# 2 BKCinsert_bun (de_a:bat[:oid,:chr])<-(x:bat[:oid,:chr])(_5:oid)(_6:chr)
+    ee_a := bat.insert(x,2@0,'a');	# 3 BKCinsert_bun (ee_a:bat[:oid,:chr])<-(x:bat[:oid,:chr])(_8:oid)(_6:chr)
+    y := bbp.new(:chr,:oid);	# 4 CMDBATnew (y:bat[:chr,:oid])<-(_10:chr)(_11:oid)
     xr := bat.reverse(x);	# 5 BKCreverse (xr:bat[:chr,:oid])<-(x:bat[:oid,:chr])
-    io.print(xr);	# 6 IOprint_val ($13:int)<-(xr:bat[:chr,:oid])
-    bat.insert(y,xr);	# 7 BKCinsert_bat ($14:bat[:chr,:oid])<-(y:bat[:chr,:oid])(xr:bat[:chr,:oid])
-    io.print("result?");	# 8 IOprint_val ($15:int)<-($16:str)
-    io.print(y);	# 9 IOprint_val ($17:int)<-(y:bat[:chr,:oid])
+    io.print(xr);	# 6 IOprint_val (_13:int)<-(xr:bat[:chr,:oid])
+    bat.insert(y,xr);	# 7 BKCinsert_bat (_14:bat[:chr,:oid])<-(y:bat[:chr,:oid])(xr:bat[:chr,:oid])
+    io.print("result?");	# 8 IOprint_val (_15:int)<-(_16:str)
+    io.print(y);	# 9 IOprint_val (_17:int)<-(y:bat[:chr,:oid])
 end main;	# 10  
 #-----------------#
 # t	tmp_4	  # name

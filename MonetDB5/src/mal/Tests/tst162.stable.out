@@ -18,7 +18,7 @@ stdout of test 'tst162` in directory 'src/mal` itself:
 #    return l:= 0:strtype;
 #end l;
 function strtype.l():strtype;	# 0  (l:strtype)
-    return l := 0:strtype;	# 1  (l:strtype)<-($1:strtype)
+    return l := 0:strtype;	# 1  (l:strtype)<-(_1:strtype)
 end l;	# 2  
 #
 #z:= l();
@@ -28,7 +28,7 @@ function user.main():int;	# 0  (main:int)
 # testing definition of new atom type based on ptr 	# 1  ($2:str)
 # this definition caused an error 	# 2  ($4:str)
     z := strtype.l();	# 3  (z:strtype)
-    io.print(z);	# 4 IOprint_val ($6:int)<-(z:strtype)
+    io.print(z);	# 4 IOprint_val (_6:int)<-(z:strtype)
 end main;	# 5  
 [ 0 ]
 #

@@ -89,18 +89,18 @@ barrier L := chopper.hasMoreElements(b);	# 10  unknown (L:any)<-(b:any) jump 14
     v := chopper.nextElement(b);	# 12  unknown (v:any)<-(b:any)
     redo L;	# 13  (L:any) jump 11
 exit L;	# 14  (L:any)
-#een do-while loop 	# 15  ($18:str)
-    entry := true;	# 16  (entry:bit)<-($20:bit)
+#een do-while loop 	# 15  (_18:str)
+    entry := true;	# 16  (entry:bit)<-(_20:bit)
 barrier M := entry_or_exittest;	# 17  (M:any)<-(entry_or_exittest:any) jump 21
-    entry := false;	# 18  (entry:bit)<-($23:bit)
-# rest 	# 19  ($25:str)
+    entry := false;	# 18  (entry:bit)<-(_23:bit)
+# rest 	# 19  (_25:str)
     redo M;	# 20  (M:any) jump 18
 exit M;	# 21  (M:any)
-#een for-loop  	# 22  ($27:str)
-    i := 1;	# 23  (i:int)<-($29:int)
-barrier N := calc.<(i,10);	# 24 CALCcompLTintint (N:bit)<-(i:int)($31:int) jump 28
-#body 	# 25  ($8:str)
-    i := calc.+(i,1);	# 26 CALCbinaryADDintint (i:int)<-(i:int)($29:int)
+#een for-loop  	# 22  (_27:str)
+    i := 1;	# 23  (i:int)<-(_29:int)
+barrier N := calc.<(i,10);	# 24 CALCcompLTintint (N:bit)<-(i:int)(_31:int) jump 28
+#body 	# 25  (_8:str)
+    i := calc.+(i,1);	# 26 CALCbinaryADDintint (i:int)<-(i:int)(_29:int)
     redo N;	# 27  (N:bit) jump 25
 exit N;	# 28  (N:bit)
 # de if-then en if-then-else constructies 	# 29  ($34:str)

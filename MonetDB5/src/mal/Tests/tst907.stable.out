@@ -17,7 +17,7 @@ stdout of test 'tst907` in directory 'src/mal` itself:
 #	return base;
 #end one;
 function user.one(base:int):int;	# 0  (one:int)<-(base:int)
-    io.print(base);	# 1 IOprint_val ($2:int)<-(base:int)
+    io.print(base);	# 1 IOprint_val (_2:int)<-(base:int)
     return base;	# 2  (base:int)
 end one;	# 3  
 #
@@ -26,7 +26,7 @@ end one;	# 3
 #	return base;
 #end three;
 function user.three(base:int,x:int,y:int):int;	# 0  (three:int)<-(base:int)(x:int)(y:int)
-    io.print(base);	# 1 IOprint_val ($4:int)<-(base:int)
+    io.print(base);	# 1 IOprint_val (_4:int)<-(base:int)
     return base;	# 2  (base:int)
 end three;	# 3  
 #function pow(base:int,raise:int):int;
@@ -59,42 +59,42 @@ end pow;	# 6
 #print(z);
 #
 function user.main():int;	# 0  (main:int)
-    k := user.one(1);	# 1  (k:int)<-($2:int)
-    l := user.three(1,2,3);	# 2  (l:int)<-($2:int)($4:int)($5:int)
-    p := user.pow(1,2);	# 3  (p:int)<-($2:int)($4:int)
-    b := bbp.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-($8:int)($8:int)
-    bat.insert(b,1,1);	# 5 BKCinsert_bun ($9:bat[:int,:int])<-(b:bat[:int,:int])($2:int)($2:int)
-    io.print("do multiplex three test");	# 6 IOprint_val ($10:int)<-($11:str)
-    $21 := bbp.new(:int,:int);	# 7 CMDBATnew ($21:bat[:int,:int])<-($22:int)($22:int)
-barrier ($24,$25,$26):= chopper.newIterator(b);	# 8 CHPbunIterator ($24:lng)($25:int)($26:int)<-(b:bat[:int,:int]) jump 14
-    $28 := user.three($26,2,3);	# 9  ($28:int)<-($26:int)($4:int)($5:int)
-    bat.insert($21,$25,$28);	# 10 BKCinsert_bun ($29:bat[:int,:int])<-($21:bat[:int,:int])($25:int)($28:int)
+    k := user.one(1);	# 1  (k:int)<-(_2:int)
+    l := user.three(1,2,3);	# 2  (l:int)<-(_2:int)(_4:int)(_5:int)
+    p := user.pow(1,2);	# 3  (p:int)<-(_2:int)(_4:int)
+    b := bbp.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-(_8:int)(_8:int)
+    bat.insert(b,1,1);	# 5 BKCinsert_bun (_9:bat[:int,:int])<-(b:bat[:int,:int])(_2:int)(_2:int)
+    io.print("do multiplex three test");	# 6 IOprint_val (_10:int)<-(_11:str)
+    _21 := bbp.new(:int,:int);	# 7 CMDBATnew (_21:bat[:int,:int])<-(_22:int)(_22:int)
+barrier (_24,_25,_26):= chopper.newIterator(b);	# 8 CHPbunIterator (_24:lng)(_25:int)(_26:int)<-(b:bat[:int,:int]) jump 14
+    _28 := user.three(_26,2,3);	# 9  (_28:int)<-(_26:int)(_4:int)(_5:int)
+    bat.insert(_21,_25,_28);	# 10 BKCinsert_bun (_29:bat[:int,:int])<-(_21:bat[:int,:int])(_25:int)(_28:int)
 catch MALexception;	# 11  (MALexception:str) jump 12
 exit MALexception;	# 12  (MALexception:str)
-    redo ($24,$25,$26):= chopper.hasMoreElements(b);	# 13 CHPbunHasMoreElements ($24:lng)($25:int)($26:int)<-(b:bat[:int,:int]) jump 9
-exit ($24,$25,$26);	# 14  ($24:lng)($25:int)($26:int)
-    z:bat[:int,:int]  := $21;	# 15  (z:bat[:int,:int])<-($21:bat[:int,:int])
-    io.print("do multiplex one test");	# 16 IOprint_val ($14:int)<-($15:str)
-    $34 := bbp.new(:int,:int);	# 17 CMDBATnew ($34:bat[:int,:int])<-($22:int)($22:int)
-barrier ($36,$37,$38):= chopper.newIterator(b);	# 18 CHPbunIterator ($36:lng)($37:int)($38:int)<-(b:bat[:int,:int]) jump 24
-    $40 := user.one($38);	# 19  ($40:int)<-($38:int)
-    bat.insert($34,$37,$40);	# 20 BKCinsert_bun ($41:bat[:int,:int])<-($34:bat[:int,:int])($37:int)($40:int)
+    redo (_24,_25,_26):= chopper.hasMoreElements(b);	# 13 CHPbunHasMoreElements (_24:lng)(_25:int)(_26:int)<-(b:bat[:int,:int]) jump 9
+exit (_24,_25,_26);	# 14  (_24:lng)(_25:int)(_26:int)
+    z:bat[:int,:int]  := _21;	# 15  (z:bat[:int,:int])<-(_21:bat[:int,:int])
+    io.print("do multiplex one test");	# 16 IOprint_val (_14:int)<-(_15:str)
+    _34 := bbp.new(:int,:int);	# 17 CMDBATnew (_34:bat[:int,:int])<-(_22:int)(_22:int)
+barrier (_36,_37,_38):= chopper.newIterator(b);	# 18 CHPbunIterator (_36:lng)(_37:int)(_38:int)<-(b:bat[:int,:int]) jump 24
+    _40 := user.one(_38);	# 19  (_40:int)<-(_38:int)
+    bat.insert(_34,_37,_40);	# 20 BKCinsert_bun (_41:bat[:int,:int])<-(_34:bat[:int,:int])(_37:int)(_40:int)
 catch MALexception;	# 21  (MALexception:str) jump 22
 exit MALexception;	# 22  (MALexception:str)
-    redo ($36,$37,$38):= chopper.hasMoreElements(b);	# 23 CHPbunHasMoreElements ($36:lng)($37:int)($38:int)<-(b:bat[:int,:int]) jump 19
-exit ($36,$37,$38);	# 24  ($36:lng)($37:int)($38:int)
-    z:bat[:int,:int]  := $34;	# 25  (z:bat[:int,:int])<-($34:bat[:int,:int])
-    io.print("do multiplex pow test");	# 26 IOprint_val ($17:int)<-($18:str)
-    $46 := bbp.new(:int,:int);	# 27 CMDBATnew ($46:bat[:int,:int])<-($22:int)($22:int)
-barrier ($48,$49,$50):= chopper.newIterator(b);	# 28 CHPbunIterator ($48:lng)($49:int)($50:int)<-(b:bat[:int,:int]) jump 34
-    $52 := user.pow($50,2);	# 29  ($52:int)<-($50:int)($4:int)
-    bat.insert($46,$49,$52);	# 30 BKCinsert_bun ($53:bat[:int,:int])<-($46:bat[:int,:int])($49:int)($52:int)
+    redo (_36,_37,_38):= chopper.hasMoreElements(b);	# 23 CHPbunHasMoreElements (_36:lng)(_37:int)(_38:int)<-(b:bat[:int,:int]) jump 19
+exit (_36,_37,_38);	# 24  (_36:lng)(_37:int)(_38:int)
+    z:bat[:int,:int]  := _34;	# 25  (z:bat[:int,:int])<-(_34:bat[:int,:int])
+    io.print("do multiplex pow test");	# 26 IOprint_val (_17:int)<-(_18:str)
+    _46 := bbp.new(:int,:int);	# 27 CMDBATnew (_46:bat[:int,:int])<-(_22:int)(_22:int)
+barrier (_48,_49,_50):= chopper.newIterator(b);	# 28 CHPbunIterator (_48:lng)(_49:int)(_50:int)<-(b:bat[:int,:int]) jump 34
+    _52 := user.pow(_50,2);	# 29  (_52:int)<-(_50:int)(_4:int)
+    bat.insert(_46,_49,_52);	# 30 BKCinsert_bun (_53:bat[:int,:int])<-(_46:bat[:int,:int])(_49:int)(_52:int)
 catch MALexception;	# 31  (MALexception:str) jump 32
 exit MALexception;	# 32  (MALexception:str)
-    redo ($48,$49,$50):= chopper.hasMoreElements(b);	# 33 CHPbunHasMoreElements ($48:lng)($49:int)($50:int)<-(b:bat[:int,:int]) jump 29
-exit ($48,$49,$50);	# 34  ($48:lng)($49:int)($50:int)
-    z:bat[:int,:int]  := $46;	# 35  (z:bat[:int,:int])<-($46:bat[:int,:int])
-    io.print(z);	# 36 IOprint_val ($20:int)<-(z:bat[:int,:int])
+    redo (_48,_49,_50):= chopper.hasMoreElements(b);	# 33 CHPbunHasMoreElements (_48:lng)(_49:int)(_50:int)<-(b:bat[:int,:int]) jump 29
+exit (_48,_49,_50);	# 34  (_48:lng)(_49:int)(_50:int)
+    z:bat[:int,:int]  := _46;	# 35  (z:bat[:int,:int])<-(_46:bat[:int,:int])
+    io.print(z);	# 36 IOprint_val (_20:int)<-(z:bat[:int,:int])
 end main;	# 37  
 [ 1 ]
 [ 1 ]

@@ -26,13 +26,13 @@ stdout of test 'tst2550` in directory 'src/mal` itself:
 #end;
 factory user.random(seed:int) (noes:bit,val:int);	# 0  (noes:bit)(val:int)<-(seed:int)
     i := seed;	# 1  (i:int)<-(seed:int)
-barrier L := true;	# 2  (L:bit)<-($6:bit) jump 7
-    i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-($7:int)(i:int)
-    i := calc.%(i,32767);	# 4 CALCbinaryMODintint (i:int)<-(i:int)($8:int)
-    yield (noes,val):= (true,i);	# 5  (noes:bit)(val:int)<-($6:bit)(i:int)
+barrier L := true;	# 2  (L:bit)<-(_6:bit) jump 7
+    i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-(_7:int)(i:int)
+    i := calc.%(i,32767);	# 4 CALCbinaryMODintint (i:int)<-(i:int)(_8:int)
+    yield (noes,val):= (true,i);	# 5  (noes:bit)(val:int)<-(_6:bit)(i:int)
     redo L;	# 6  (L:bit) jump 3
 exit L;	# 7  (L:bit)
-    return (noes,val):= (false,seed);	# 8  (noes:bit)(val:int)<-($9:bit)(seed:int)
+    return (noes,val):= (false,seed);	# 8  (noes:bit)(val:int)<-(_9:bit)(seed:int)
 end random;	# 9  
 #
 function user.main():int;	# 0  (main:int)

@@ -21,11 +21,11 @@ stdout of test 'tst710` in directory 'src/mal` itself:
 #exit	GDKerror;
 #
 function user.main():int;	# 0  (main:int)
-# testing ommission of target variable 	# 1  ($2:str)
-    i := 1;	# 2  (i:int)<-($4:int)
-    io.print(i);	# 3 IOprint_val ($5:int)<-(i:int)
+# testing ommission of target variable 	# 1  (_2:str)
+    i := 1;	# 2  (i:int)<-(_4:int)
+    io.print(i);	# 3 IOprint_val (_5:int)<-(i:int)
 catch GDKerror;	# 4  (GDKerror:any) jump 6
-    io.printf("GDKerror, do something\n");	# 5 IOprint_str ($7:int)<-($8:str)
+    io.printf("GDKerror, do something\n");	# 5 IOprint_str (_7:int)<-(_8:str)
 exit GDKerror;	# 6  (GDKerror:any)
 end main;	# 7  
 [ 1 ]

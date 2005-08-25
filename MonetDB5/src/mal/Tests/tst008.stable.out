@@ -19,9 +19,9 @@ stdout of test 'tst008` in directory 'src/mal` itself:
 !ERROR: io.printi;
 !                ^'(' expected
 function user.main():int;	# 0  unknown (main:int)
-    i := 32;	# 1  unknown (i:any)<-($2:int)
-    io.printi();	# 2  unknown ($3:any)
-    io.print(i);	# 3  unknown ($4:any)<-(i:any)
+    i := 32;	# 1  unknown (i:any)<-(_2:int)
+    io.printi();	# 2  unknown (_3:any)
+    io.print(i);	# 3  unknown (_4:any)<-(i:any)
 end main;	# 4  unknown 
 
 # 07:58:34 >  

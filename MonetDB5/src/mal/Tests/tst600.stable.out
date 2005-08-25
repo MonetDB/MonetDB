@@ -28,18 +28,18 @@ stdout of test 'tst600` in directory 'src/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-# checking box management 	# 1  ($2:str)
-    chest := box.open("chest");	# 2 BOXopen (chest:any)<-($4:str)
-    pi := 3.417;	# 3  (pi:flt)<-($6:flt)
-    box.deposit("chest","pi",pi);	# 4 BOXdeposit ($7:void)<-($4:str)($8:str)(pi:flt)
-    f:flt  := box.take("chest","pi");	# 5 BOXtake (f:flt)<-($4:str)($8:str)
-    io.print(f);	# 6 IOprint_val ($10:int)<-(f:flt)
-    f:flt  := calc.+(f,1.0:flt);	# 7 CALCbinaryADDfltflt (f:flt)<-(f:flt)($11:flt)
-    box.release("chest","pi",pi);	# 8 BOXrelease ($12:void)<-($4:str)($8:str)(pi:flt)
-    g:flt  := box.take("chest","pi");	# 9 BOXtake (g:flt)<-($4:str)($8:str)
-    io.print(g);	# 10 IOprint_val ($14:int)<-(g:flt)
-    box.discard("chest","pi");	# 11 BOXdiscard ($15:void)<-($4:str)($8:str)
-    box.close("chest");	# 12 BOXclose ($16:void)<-($4:str)
+# checking box management 	# 1  (_2:str)
+    chest := box.open("chest");	# 2 BOXopen (chest:any)<-(_4:str)
+    pi := 3.417;	# 3  (pi:flt)<-(_6:flt)
+    box.deposit("chest","pi",pi);	# 4 BOXdeposit (_7:void)<-(_4:str)(_8:str)(pi:flt)
+    f:flt  := box.take("chest","pi");	# 5 BOXtake (f:flt)<-(_4:str)(_8:str)
+    io.print(f);	# 6 IOprint_val (_10:int)<-(f:flt)
+    f:flt  := calc.+(f,1.0:flt);	# 7 CALCbinaryADDfltflt (f:flt)<-(f:flt)(_11:flt)
+    box.release("chest","pi",pi);	# 8 BOXrelease (_12:void)<-(_4:str)(_8:str)(pi:flt)
+    g:flt  := box.take("chest","pi");	# 9 BOXtake (g:flt)<-(_4:str)(_8:str)
+    io.print(g);	# 10 IOprint_val (_14:int)<-(g:flt)
+    box.discard("chest","pi");	# 11 BOXdiscard (_15:void)<-(_4:str)(_8:str)
+    box.close("chest");	# 12 BOXclose (_16:void)<-(_4:str)
 end main;	# 13  
 [ 3.41700006 ]
 [ 3.41700006 ]

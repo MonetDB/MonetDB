@@ -18,10 +18,10 @@ stdout of test 'tst302` in directory 'src/mal` itself:
 #	print("should not come here\n");
 #
 function user.main():int;	# 0  (main:int)
-#propagate INT exception 	# 1  ($2:str)
-# (you should be able to pass it upwards though) 	# 2  ($4:str)
-    raise IllegalAccess := 1234;	# 3  (IllegalAccess:int)<-($6:int)
-    io.print("should not come here\n");	# 4 IOprint_val ($7:int)<-($8:str)
+#propagate INT exception 	# 1  (_2:str)
+# (you should be able to pass it upwards though) 	# 2  (_4:str)
+    raise IllegalAccess := 1234;	# 3  (IllegalAccess:int)<-(_6:int)
+    io.print("should not come here\n");	# 4 IOprint_val (_7:int)<-(_8:str)
 end main;	# 5  
 !ERROR: IllegalAccess:user.main[3]:Exception raised
 !ERROR: IllegalAccess:user.main[5]:Exception not catched

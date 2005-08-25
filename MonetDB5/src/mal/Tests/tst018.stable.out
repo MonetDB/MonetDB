@@ -27,16 +27,16 @@ stdout of test 'tst018` in directory 'src/mal` itself:
 #print(s);
 #
 function user.main():int;	# 0  (main:int)
-# handling assignments of 'nil'; 	# 1  ($2:str)
-    i := 23;	# 2  (i:int)<-($4:int)
-    i := nil;	# 3  (i:int)<-($13:int)
-    io.print(i);	# 4 IOprint_val ($6:int)<-(i:int)
-    b := bbp.new(:int,:int);	# 5 CMDBATnew (b:bat[:int,:int])<-($8:int)($8:int)
-    b := nil;	# 6  (b:bat[:int,:int])<-($14:BAT)
-    io.print(b);	# 7 IOprint_val ($9:int)<-(b:bat[:int,:int])
-    s := "hello";	# 8  (s:str)<-($11:str)
-    s := nil;	# 9  (s:str)<-($15:str)
-    io.print(s);	# 10 IOprint_val ($12:int)<-(s:str)
+# handling assignments of 'nil'; 	# 1  (_2:str)
+    i := 23;	# 2  (i:int)<-(_4:int)
+    i := nil;	# 3  (i:int)<-(_13:int)
+    io.print(i);	# 4 IOprint_val (_6:int)<-(i:int)
+    b := bbp.new(:int,:int);	# 5 CMDBATnew (b:bat[:int,:int])<-(_8:int)(_8:int)
+    b := nil;	# 6  (b:bat[:int,:int])<-(_14:BAT)
+    io.print(b);	# 7 IOprint_val (_9:int)<-(b:bat[:int,:int])
+    s := "hello";	# 8  (s:str)<-(_11:str)
+    s := nil;	# 9  (s:str)<-(_15:str)
+    io.print(s);	# 10 IOprint_val (_12:int)<-(s:str)
 end main;	# 11  
 [ 0 ]
 [ "nil" ]

@@ -24,14 +24,14 @@ stdout of test 'tst1002` in directory 'src/mal` itself:
 #exit MALexception;
 #
 function user.main():int;	# 0  (main:int)
-# the first of a series of BBP test cases 	# 1  ($2:str)
-# the temporary bat produced in tst1000 should not exist anymore 	# 2  ($4:str)
-    bbp.open();	# 3 CMDbbpopen ($5:void)
-    c := bbp.take("myfirstbat");	# 4 CMDbbptake (c:bat[:any,:any])<-($7:str)
-    io.print(c);	# 5 IOprint_val ($8:int)<-(c:bat[:any,:any])
-    bbp.close();	# 6 CMDbbpclose ($9:void)
+# the first of a series of BBP test cases 	# 1  (_2:str)
+# the temporary bat produced in tst1000 should not exist anymore 	# 2  (_4:str)
+    bbp.open();	# 3 CMDbbpopen (_5:void)
+    c := bbp.take("myfirstbat");	# 4 CMDbbptake (c:bat[:any,:any])<-(_7:str)
+    io.print(c);	# 5 IOprint_val (_8:int)<-(c:bat[:any,:any])
+    bbp.close();	# 6 CMDbbpclose (_9:void)
 catch MALexception;	# 7  (MALexception:any) jump 9
-    io.print(MALexception);	# 8 IOprint_val ($11:int)<-(MALexception:any)
+    io.print(MALexception);	# 8 IOprint_val (_11:int)<-(MALexception:any)
 exit MALexception;	# 9  (MALexception:any)
 end main;	# 10  
 [ "MALexception:user.main[4]:bbp.take:failed to take 'myfirstbat' from box\n" ]

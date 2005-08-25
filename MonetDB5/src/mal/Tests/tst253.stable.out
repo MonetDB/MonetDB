@@ -24,19 +24,19 @@ stdout of test 'tst253` in directory 'src/mal` itself:
 #print(d);
 #
 function user.main():int;	# 0  (main:int)
-# testing void bats 	# 1  ($2:str)
-    b := bbp.new(:void,:str);	# 2 CMDBATnew (b:bat[:void,:str])<-($4:void)($5:str)
-    bat.insert(b,nil,"hello");	# 3 BKCinsert_bun ($6:bat[:void,:str])<-(b:bat[:void,:str])($7:void)($8:str)
-    bat.insert(b,nil,"world");	# 4 BKCinsert_bun ($9:bat[:void,:str])<-(b:bat[:void,:str])($7:void)($10:str)
-    io.print(b);	# 5 IOprint_val ($11:int)<-(b:bat[:void,:str])
-#materialize header 	# 6  ($13:str)
+# testing void bats 	# 1  (_2:str)
+    b := bbp.new(:void,:str);	# 2 CMDBATnew (b:bat[:void,:str])<-(_4:void)(_5:str)
+    bat.insert(b,nil,"hello");	# 3 BKCinsert_bun (_6:bat[:void,:str])<-(b:bat[:void,:str])(_7:void)(_8:str)
+    bat.insert(b,nil,"world");	# 4 BKCinsert_bun (_9:bat[:void,:str])<-(b:bat[:void,:str])(_7:void)(_10:str)
+    io.print(b);	# 5 IOprint_val (_11:int)<-(b:bat[:void,:str])
+#materialize header 	# 6  (_13:str)
     c := bat.reverse(b);	# 7 BKCreverse (c:bat[:str,:void])<-(b:bat[:void,:str])
-    io.print(c);	# 8 IOprint_val ($15:int)<-(c:bat[:str,:void])
+    io.print(c);	# 8 IOprint_val (_15:int)<-(c:bat[:str,:void])
     d := algebra.markT(c);	# 9 ALGtmark_default (d:bat[:str,:void])<-(c:bat[:str,:void])
-    io.print(d);	# 10 IOprint_val ($17:int)<-(d:bat[:str,:void])
-#perform header marking 	# 11  ($19:str)
+    io.print(d);	# 10 IOprint_val (_17:int)<-(d:bat[:str,:void])
+#perform header marking 	# 11  (_19:str)
     f := algebra.markH(b);	# 12 ALGmarkHead_default1 (f:bat[:void,:oid])<-(b:bat[:void,:str])
-    io.print(f);	# 13 IOprint_val ($21:int)<-(f:bat[:void,:oid])
+    io.print(f);	# 13 IOprint_val (_21:int)<-(f:bat[:void,:oid])
 end main;	# 14  
 #-------------------------#
 # h	tmp_4		  # name

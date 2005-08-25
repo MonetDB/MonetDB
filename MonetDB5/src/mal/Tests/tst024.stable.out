@@ -22,15 +22,15 @@ stdout of test 'tst024` in directory 'src/mal` itself:
 #
 !ERROR: '_3' overwrites i
 function user.main():int;	# 0  unknown (main:int)
-#detect illegal use of temporary variables 	# 1  unknown ($2:str)
-    i := 12;	# 2  unknown (i:any)<-($4:int)
-# internal location of i is 3 	# 3  unknown ($6:str)
-    55;	# 4  unknown ($2:str)<-($7:int)
-# acceptable 	# 5  unknown ($9:str)
-    _3 := 23;	# 6  unknown (_3:any)<-($11:int)
-# error, overwriting non-temp 	# 7  unknown ($13:str)
-    $5 := 23;	# 8  unknown ($5:any)<-($11:int)
-    io.print($5);	# 9  unknown ($14:any)<-($5:any)
+#detect illegal use of temporary variables 	# 1  unknown (_2:str)
+    i := 12;	# 2  unknown (i:any)<-(_4:int)
+# internal location of i is 3 	# 3  unknown (_6:str)
+    55;	# 4  unknown (_2:str)<-(_7:int)
+# acceptable 	# 5  unknown (_9:str)
+    _3 := 23;	# 6  unknown (_3:any)<-(_11:int)
+# error, overwriting non-temp 	# 7  unknown (_13:str)
+    _5 := 23;	# 8  unknown (_5:any)<-(_11:int)
+    io.print(_5);	# 9  unknown (_14:any)<-(_5:any)
 end main;	# 10  unknown 
 
 # 07:58:40 >  

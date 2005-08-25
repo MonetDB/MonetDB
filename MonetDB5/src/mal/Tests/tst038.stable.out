@@ -14,30 +14,24 @@ stdout of test 'tst038` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 ##test the capability to deal with unspecified bats.
 #function tst2(b:bat[:any$1,:any$2]);
-#	bat.insert(b,"hello",1);
-#end tst2;
-function user.tst2(b:bat[:any_1,:any_2]):void;	# 0  (tst2:void)<-(b:bat[:any_1,:any_2])
-    bat.insert(b,"hello",1);	# 1 BKCinsert_bun ($2:bat[:str,:int])<-(b:bat[:any_1,:any_2])($3:str)($4:int)
-end tst2;	# 2  
 #
 #b:=new(:int,:str);
 #
 ##The call to tst2 fails at runtime
 #tst2(b);
 #
-!ERROR: 'bat.insert' undefined in user.tst2[1]
-!ERROR: Error in cloned function
-!ERROR: function user.tst2(b:bat[:int,:str]):void;	# 0  (tst2:void)<-(b:bat[:int,:str])
-!ERROR:     bat.insert(b,"hello",1);	# 1  unknown ($2:bat[:str,:int])<-(b:bat[:int,:str])($3:str)($4:int)
-!ERROR: end tst2;	# 2  
-!ERROR: 'user.tst2' undefined in user.main[4]
-function user.main():int;	# 0  (main:int)
-#test the capability to deal with unspecified bats. 	# 1  ($2:str)
-    b := bbp.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-($4:int)($5:str)
-#The call to tst2 fails at runtime 	# 3  ($7:str)
-    user.tst2(b);	# 4  unknown ($8:void)<-(b:bat[:int,:str])
-    io.print("shouldn't come here\n");	# 5 IOprint_val ($9:int)<-($10:str)
-end main;	# 6  
+!ERROR: function tst2(b:bat[:any$1,:any$2]);
+!                               ^',' expected
+!ERROR: 	bat.insert(b,"hello",1);
+!	     ^',' expected
+!ERROR: end tst2;
+!      ^<identifier> expected
+function user.tst2(b:any):any;	# 0  unknown (tst2:any)<-(b:any)
+    ;	# 1  unknown (_2:any)
+    b := bbp.new(:int,:str);	# 2  unknown (b:any)<-(_3:int)(_4:str)
+    user.tst2(b);	# 3  unknown (_5:any)<-(b:any)
+    io.print("shouldn't come here\n");	# 4  unknown (_6:any)<-(_7:str)
+end tst2;	# 5  unknown 
 
 # 07:58:43 >  
 # 07:58:43 >  Done.

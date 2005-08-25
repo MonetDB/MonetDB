@@ -22,23 +22,23 @@ stdout of test 'tst850` in directory 'src/mal` itself:
 #	print(b);
 #
 function user.main():int;	# 0  (main:int)
-# The likeselect operation 	# 1  ($2:str)
-    t := bbp.new(:void,:str);	# 2 CMDBATnew (t:bat[:void,:str])<-($4:void)($5:str)
-    bat.setSequenceBase(t,0@0);	# 3 BKCsetSequenceBase ($6:bat[:void,:str])<-(t:bat[:void,:str])($7:oid)
-    bat.insert(t,nil,"hello world");	# 4 BKCinsert_bun ($8:bat[:void,:str])<-(t:bat[:void,:str])($9:void)($10:str)
-    bat.insert(t,nil,"sleep well");	# 5 BKCinsert_bun ($11:bat[:void,:str])<-(t:bat[:void,:str])($9:void)($12:str)
-    io.print(t);	# 6 IOprint_val ($13:int)<-(t:bat[:void,:str])
-    $19 := bbp.new(:void,:bit);	# 7 CMDBATnew ($19:bat[:void,:bit])<-($20:void)($21:bit)
-barrier ($23,$24,$25):= chopper.newIterator(t);	# 8 CHPbunIterator ($23:lng)($24:void)($25:str)<-(t:bat[:void,:str]) jump 14
-    $27 := str.startsWith($25,"");	# 9 STRPrefix ($27:bit)<-($25:str)($16:str)
-    bat.insert($19,$24,$27);	# 10 BKCinsert_bun ($28:bat[:void,:bit])<-($19:bat[:void,:bit])($24:void)($27:bit)
+# The likeselect operation 	# 1  (_2:str)
+    t := bbp.new(:void,:str);	# 2 CMDBATnew (t:bat[:void,:str])<-(_4:void)(_5:str)
+    bat.setSequenceBase(t,0@0);	# 3 BKCsetSequenceBase (_6:bat[:void,:str])<-(t:bat[:void,:str])(_7:oid)
+    bat.insert(t,nil,"hello world");	# 4 BKCinsert_bun (_8:bat[:void,:str])<-(t:bat[:void,:str])(_9:void)(_10:str)
+    bat.insert(t,nil,"sleep well");	# 5 BKCinsert_bun (_11:bat[:void,:str])<-(t:bat[:void,:str])(_9:void)(_12:str)
+    io.print(t);	# 6 IOprint_val (_13:int)<-(t:bat[:void,:str])
+    _19 := bbp.new(:void,:bit);	# 7 CMDBATnew (_19:bat[:void,:bit])<-(_20:void)(_21:bit)
+barrier (_23,_24,_25):= chopper.newIterator(t);	# 8 CHPbunIterator (_23:lng)(_24:void)(_25:str)<-(t:bat[:void,:str]) jump 14
+    _27 := str.startsWith(_25,"");	# 9 STRPrefix (_27:bit)<-(_25:str)(_16:str)
+    bat.insert(_19,_24,_27);	# 10 BKCinsert_bun (_28:bat[:void,:bit])<-(_19:bat[:void,:bit])(_24:void)(_27:bit)
 catch MALexception;	# 11  (MALexception:str) jump 12
 exit MALexception;	# 12  (MALexception:str)
-    redo ($23,$24,$25):= chopper.hasMoreElements(t);	# 13 CHPbunHasMoreElements ($23:lng)($24:void)($25:str)<-(t:bat[:void,:str]) jump 9
-exit ($23,$24,$25);	# 14  ($23:lng)($24:void)($25:str)
-    b:bat[:void,:bit]  := $19;	# 15  (b:bat[:void,:bit])<-($19:bat[:void,:bit])
-    bat.setSequenceBase(b,0@0);	# 16 BKCsetSequenceBase ($17:bat[:void,:bit])<-(b:bat[:void,:bit])($7:oid)
-    io.print(b);	# 17 IOprint_val ($18:int)<-(b:bat[:void,:bit])
+    redo (_23,_24,_25):= chopper.hasMoreElements(t);	# 13 CHPbunHasMoreElements (_23:lng)(_24:void)(_25:str)<-(t:bat[:void,:str]) jump 9
+exit (_23,_24,_25);	# 14  (_23:lng)(_24:void)(_25:str)
+    b:bat[:void,:bit]  := _19;	# 15  (b:bat[:void,:bit])<-(_19:bat[:void,:bit])
+    bat.setSequenceBase(b,0@0);	# 16 BKCsetSequenceBase (_17:bat[:void,:bit])<-(b:bat[:void,:bit])(_7:oid)
+    io.print(b);	# 17 IOprint_val (_18:int)<-(b:bat[:void,:bit])
 end main;	# 18  
 #-------------------------#
 # h	tmp_13		  # name

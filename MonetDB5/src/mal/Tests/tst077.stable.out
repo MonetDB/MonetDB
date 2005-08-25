@@ -18,10 +18,15 @@ stdout of test 'tst077` in directory 'src/mal` itself:
 #        return (a,x);
 #
 #end swap;
-function user.swap(x:bat[:any_1,:int],y:bat[:int,:int]) (a:str,b:bat[:any_1,:int]);	# 0  (a:str)(b:bat[:any_1,:int])<-(x:bat[:any_1,:int])(y:bat[:int,:int])
-    a := "done";	# 1  (a:str)<-($5:str)
-    return (a,x);	# 2  (a:str)(x:bat[:any_1,:int])
-end swap;	# 3  
+function user.swap(x:any):any;	# 0  dynamic (swap:any)<-(x:any)
+    ;	# 1  (_2:any)
+end swap;	# 2  
+!ERROR: function swap(x:bat[:any$1,:int],y:bat[:int,:int]) 
+!                               ^',' expected
+!ERROR:         a:="done"; 
+!      ^',' expected
+!ERROR:         a:="done"; 
+!                         ^<identifier> expected
 #
 #X:= new(:int,:int);
 #insert(X,1,1);
@@ -32,22 +37,17 @@ end swap;	# 3
 #print(y);
 #
 #
+!ERROR: 'user.swap' undefined in user.main[6]
 function user.main():int;	# 0  (main:int)
-# parsing operations with multi-assignments 	# 1  ($2:str)
-    X := bbp.new(:int,:int);	# 2 CMDBATnew (X:bat[:int,:int])<-($4:int)($4:int)
-    bat.insert(X,1,1);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(X:bat[:int,:int])($6:int)($6:int)
-    Y := bbp.new(:int,:int);	# 4 CMDBATnew (Y:bat[:int,:int])<-($8:int)($8:int)
-    bat.insert(Y,2,2);	# 5 BKCinsert_bun ($9:bat[:int,:int])<-(Y:bat[:int,:int])($10:int)($10:int)
-    (x,y):= user.swap(X,Y);	# 6  (x:str)(y:bat[:int,:int])<-(X:bat[:int,:int])(Y:bat[:int,:int])
-    io.print(x);	# 7 IOprint_val ($13:int)<-(x:str)
-    io.print(y);	# 8 IOprint_val ($14:int)<-(y:bat[:int,:int])
+# parsing operations with multi-assignments 	# 1  (_2:str)
+    X := bbp.new(:int,:int);	# 2 CMDBATnew (X:bat[:int,:int])<-(_4:int)(_4:int)
+    bat.insert(X,1,1);	# 3 BKCinsert_bun (_5:bat[:int,:int])<-(X:bat[:int,:int])(_6:int)(_6:int)
+    Y := bbp.new(:int,:int);	# 4 CMDBATnew (Y:bat[:int,:int])<-(_8:int)(_8:int)
+    bat.insert(Y,2,2);	# 5 BKCinsert_bun (_9:bat[:int,:int])<-(Y:bat[:int,:int])(_10:int)(_10:int)
+    (x,y):= user.swap(X,Y);	# 6  unknown (x:any)(y:any)<-(X:bat[:int,:int])(Y:bat[:int,:int])
+    io.print(x);	# 7 IOprint_val (_13:int)<-(x:any)
+    io.print(y);	# 8 IOprint_val (_14:int)<-(y:any)
 end main;	# 9  
-[ "done" ]
-#-----------------#
-# h	tmp_4	  # name
-# int	int	  # type
-#-----------------#
-[ 1,	  1	  ]
 
 # 07:58:51 >  
 # 07:58:51 >  Done.

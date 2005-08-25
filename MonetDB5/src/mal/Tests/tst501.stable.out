@@ -20,7 +20,7 @@ stdout of test 'tst501` in directory 'src/mal` itself:
 #	return i;
 #end simple;
 function user.simple(i:int):int;	# 0  (simple:int)<-(i:int)
-    i := calc.+(i,1);	# 1 CALCbinaryADDintint (i:int)<-(i:int)($2:int)
+    i := calc.+(i,1);	# 1 CALCbinaryADDintint (i:int)<-(i:int)(_2:int)
     return i;	# 2  (i:int)
 end simple;	# 3  
 #
@@ -28,9 +28,9 @@ end simple;	# 3
 #r:= simple(k);
 #
 function user.main():int;	# 0  (main:int)
-# simple test of a function call  	# 1  ($2:str)
-# performance variation, how expensive are 10K calls? 	# 2  ($4:str)
-    k := 0;	# 3  (k:int)<-($6:int)
+# simple test of a function call  	# 1  (_2:str)
+# performance variation, how expensive are 10K calls? 	# 2  (_4:str)
+    k := 0;	# 3  (k:int)<-(_6:int)
     r := user.simple(k);	# 4  (r:int)<-(k:int)
 end main;	# 5  
 

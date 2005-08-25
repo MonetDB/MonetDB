@@ -16,19 +16,23 @@ stdout of test 'tst101` in directory 'src/mal` itself:
 ## this should be sufficient to determine outcome
 #
 #function + (L:any$1, R:any$1):int ; return s :=1; end +;
-function user.+(L:any_1,R:any_1):int;	# 0  (+:int)<-(L:any_1)(R:any_1)
-    return s := 1;	# 1  (s:int)<-($4:int)
+function user.+(L:any):any;	# 0  dynamic (+:any)<-(L:any)
+    ;	# 1  (_2:any)
 end +;	# 2  
+!ERROR: function + (L:any$1, R:any$1):int ; return s :=1; end +;
+!                        ^',' expected
+!ERROR: function + (L:any$1, R:any$1):int ; return s :=1; end +;
+!                                          ^<identifier> expected
 #a:=3+1;
 #b:=3.5+2.7;
 #c:= 7+8;
 #
 function user.main():int;	# 0  (main:int)
-#define the generic addition operator 	# 1  ($2:str)
-# this should be sufficient to determine outcome 	# 2  ($4:str)
-    a := calc.+(3,1);	# 3 CALCbinaryADDintint (a:int)<-($6:int)($7:int)
-    b := calc.+(3.5,2.7);	# 4 CALCbinaryADDfltflt (b:flt)<-($9:flt)($10:flt)
-    c := calc.+(7,8);	# 5 CALCbinaryADDintint (c:int)<-($12:int)($13:int)
+#define the generic addition operator 	# 1  (_2:str)
+# this should be sufficient to determine outcome 	# 2  (_4:str)
+    a := calc.+(3,1);	# 3 CALCbinaryADDintint (a:int)<-(_6:int)(_7:int)
+    b := calc.+(3.5,2.7);	# 4 CALCbinaryADDfltflt (b:flt)<-(_9:flt)(_10:flt)
+    c := calc.+(7,8);	# 5 CALCbinaryADDintint (c:int)<-(_12:int)(_13:int)
 end main;	# 6  
 
 # 07:58:54 >  

@@ -30,18 +30,18 @@ stdout of test 'tst109` in directory 'src/mal` itself:
 !ERROR: label 't' not in guarded block in main[10]
 !ERROR: exit-label 't' without begin-label in main[11]
 function user.main():int;	# 0  (main:int)
-# Error, illegal block weaveing  	# 1  ($2:str)
-# analyse the basic interpreter loop 	# 2  ($4:str)
-    i := 0;	# 3  (i:int)<-($6:int)
-barrier v := 1;	# 4  (v:int)<-($8:int) jump 9
+# Error, illegal block weaveing  	# 1  (_2:str)
+# analyse the basic interpreter loop 	# 2  (_4:str)
+    i := 0;	# 3  (i:int)<-(_6:int)
+barrier v := 1;	# 4  (v:int)<-(_8:int) jump 9
     leave v;	# 5  (v:int) jump 9
-    i := 1;	# 6  (i:int)<-($8:int)
-barrier t := calc.<(i,3);	# 7 CALCcompLTintint (t:bit)<-(i:int)($10:int)
-    i := calc.+(i,1);	# 8 CALCbinaryADDintint (i:int)<-(i:int)($8:int)
+    i := 1;	# 6  (i:int)<-(_8:int)
+barrier t := calc.<(i,3);	# 7 CALCcompLTintint (t:bit)<-(i:int)(_10:int)
+    i := calc.+(i,1);	# 8 CALCbinaryADDintint (i:int)<-(i:int)(_8:int)
 exit v;	# 9  (v:int)
     redo t;	# 10  (t:bit)
 exit t;	# 11  (t:bit)
-    i := 0;	# 12  (i:int)<-($6:int)
+    i := 0;	# 12  (i:int)<-(_6:int)
 end main;	# 13  
 
 # 07:58:59 >  

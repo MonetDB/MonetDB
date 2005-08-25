@@ -22,14 +22,14 @@ stdout of test 'tst017` in directory 'src/mal` itself:
 #	print(b);
 #
 function user.main():int;	# 0  (main:int)
-# reference setting tables 	# 1  ($2:str)
-    b := bbp.new(nil:int,nil:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($4:int)
-    aa_a := bat.insert(b,1,2);	# 3 BKCinsert_bun (aa_a:bat[:int,:int])<-(b:bat[:int,:int])($6:int)($7:int)
-    ba_a := bat.insert(b,2,3);	# 4 BKCinsert_bun (ba_a:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($9:int)
+# reference setting tables 	# 1  (_2:str)
+    b := bbp.new(nil:int,nil:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
+    aa_a := bat.insert(b,1,2);	# 3 BKCinsert_bun (aa_a:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_7:int)
+    ba_a := bat.insert(b,2,3);	# 4 BKCinsert_bun (ba_a:bat[:int,:int])<-(b:bat[:int,:int])(_7:int)(_9:int)
     z := bbp.getLRefCount(b);	# 5 CMDgetBATlrefcnt (z:int)<-(b:bat[:int,:int])
-    io.print(z);	# 6 IOprint_val ($11:int)<-(z:int)
+    io.print(z);	# 6 IOprint_val (_11:int)<-(z:int)
     b := algebra.join(b,b);	# 7 ALGjoin (b:bat[:int,:int])<-(b:bat[:int,:int])(b:bat[:int,:int])
-    io.print(b);	# 8 IOprint_val ($12:int)<-(b:bat[:int,:int])
+    io.print(b);	# 8 IOprint_val (_12:int)<-(b:bat[:int,:int])
 end main;	# 9  
 [ 1 ]
 #-----------------#

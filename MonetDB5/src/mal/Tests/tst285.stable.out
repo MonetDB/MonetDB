@@ -23,14 +23,14 @@ stdout of test 'tst285` in directory 'src/mal` itself:
 #print(z2);
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:void,:str);	# 1 CMDBATnew (b:bat[:void,:str])<-($2:void)($3:str)
-    bat.setSequenceBase(b,0@0);	# 2 BKCsetSequenceBase ($4:bat[:void,:str])<-(b:bat[:void,:str])($5:oid)
-    bat.insert(b,nil,"hello");	# 3 BKCinsert_bun ($6:bat[:void,:str])<-(b:bat[:void,:str])($7:void)($8:str)
-    bat.insert(b,nil,"goodbye");	# 4 BKCinsert_bun ($9:bat[:void,:str])<-(b:bat[:void,:str])($7:void)($10:str)
-    z1 := batstr.match(b,"hel");	# 5 STRbatmatchCst (z1:bat[:void,:bit])<-(b:bat[:void,:str])($12:str)
-    io.print(z1);	# 6 IOprint_val ($13:int)<-(z1:bat[:void,:bit])
-    z2 := batstr.match(b,".*[ly].*");	# 7 STRbatmatchCst (z2:bat[:void,:bit])<-(b:bat[:void,:str])($15:str)
-    io.print(z2);	# 8 IOprint_val ($16:int)<-(z2:bat[:void,:bit])
+    b := bbp.new(:void,:str);	# 1 CMDBATnew (b:bat[:void,:str])<-(_2:void)(_3:str)
+    bat.setSequenceBase(b,0@0);	# 2 BKCsetSequenceBase (_4:bat[:void,:str])<-(b:bat[:void,:str])(_5:oid)
+    bat.insert(b,nil,"hello");	# 3 BKCinsert_bun (_6:bat[:void,:str])<-(b:bat[:void,:str])(_7:void)(_8:str)
+    bat.insert(b,nil,"goodbye");	# 4 BKCinsert_bun (_9:bat[:void,:str])<-(b:bat[:void,:str])(_7:void)(_10:str)
+    z1 := batstr.match(b,"hel");	# 5 STRbatmatchCst (z1:bat[:void,:bit])<-(b:bat[:void,:str])(_12:str)
+    io.print(z1);	# 6 IOprint_val (_13:int)<-(z1:bat[:void,:bit])
+    z2 := batstr.match(b,".*[ly].*");	# 7 STRbatmatchCst (z2:bat[:void,:bit])<-(b:bat[:void,:str])(_15:str)
+    io.print(z2);	# 8 IOprint_val (_16:int)<-(z2:bat[:void,:bit])
 end main;	# 9  
 #-----------------#
 # h	tmp_5	  # name

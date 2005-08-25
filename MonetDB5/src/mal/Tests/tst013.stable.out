@@ -29,16 +29,16 @@ stdout of test 'tst013` in directory 'src/mal` itself:
 #exit;
 #
 function user.main():int;	# 0  (main:int)
-# incomplete barrier blocks. Resolve them when unambigous 	# 1  ($2:str)
-barrier z := true;	# 2  (z:bit)<-($4:bit) jump 4
+# incomplete barrier blocks. Resolve them when unambigous 	# 1  (_2:str)
+barrier z := true;	# 2  (z:bit)<-(_4:bit) jump 4
     leave z;	# 3  (z:bit) jump 4
 exit z;	# 4  (z:bit)
-barrier i := 1;	# 5  (i:int)<-($8:int) jump 15
-    i := calc.+(i,1);	# 6 CALCbinaryADDintint (i:int)<-(i:int)($8:int)
-    io.print(i);	# 7 IOprint_val ($9:int)<-(i:int)
-barrier t := calc.>(i,3);	# 8 CALCcompGTintint (t:bit)<-(i:int)($11:int) jump 13
-# new envelop 	# 9  ($13:str)
-    io.print("leave loop");	# 10 IOprint_val ($14:int)<-($15:str)
+barrier i := 1;	# 5  (i:int)<-(_8:int) jump 15
+    i := calc.+(i,1);	# 6 CALCbinaryADDintint (i:int)<-(i:int)(_8:int)
+    io.print(i);	# 7 IOprint_val (_9:int)<-(i:int)
+barrier t := calc.>(i,3);	# 8 CALCcompGTintint (t:bit)<-(i:int)(_11:int) jump 13
+# new envelop 	# 9  (_13:str)
+    io.print("leave loop");	# 10 IOprint_val (_14:int)<-(_15:str)
     leave i;	# 11  (i:int) jump 15
 # leave outer envelop 	# 12  ($17:str)
 exit t;	# 13  (t:bit)

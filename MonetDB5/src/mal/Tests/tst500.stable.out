@@ -26,22 +26,22 @@ stdout of test 'tst500` in directory 'src/mal` itself:
 #	return r;
 #end simple;
 function user.simple(i:int,lim:int,s:str):flt;	# 0  (simple:flt)<-(i:int)(lim:int)(s:str)
-    io.printf("i=%d ",i);	# 1 IOprint_formatted_int ($4:int)<-($5:str)(i:int)
-    io.printf("lim=%d ",lim);	# 2 IOprint_formatted_int ($6:int)<-($7:str)(lim:int)
-    io.printf("str=%s\n",s);	# 3 IOprint_formatted_str ($8:int)<-($9:str)(s:str)
-    i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)($10:int)
+    io.printf("i=%d ",i);	# 1 IOprint_formatted_int (_4:int)<-(_5:str)(i:int)
+    io.printf("lim=%d ",lim);	# 2 IOprint_formatted_int (_6:int)<-(_7:str)(lim:int)
+    io.printf("str=%s\n",s);	# 3 IOprint_formatted_str (_8:int)<-(_9:str)(s:str)
+    i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)(_10:int)
 barrier v := calc.<(i,lim);	# 5 CALCcompLTintint (v:bit)<-(i:int)(lim:int) jump 7
     z := user.simple(i,lim,s);	# 6  (z:flt)<-(i:int)(lim:int)(s:str)
 exit v;	# 7  (v:bit)
-    r := 3.14:flt;	# 8  (r:flt)<-($14:flt)
+    r := 3.14:flt;	# 8  (r:flt)<-(_14:flt)
     return r;	# 9  (r:flt)
 end simple;	# 10  
 #
 #r:= simple(0,2,"hello");
 #
 function user.main():int;	# 0  (main:int)
-# recursive MAL calls  	# 1  ($2:str)
-    r := user.simple(0,2,"hello");	# 2  (r:flt)<-($4:int)($5:int)($6:str)
+# recursive MAL calls  	# 1  (_2:str)
+    r := user.simple(0,2,"hello");	# 2  (r:flt)<-(_4:int)(_5:int)(_6:str)
 end main;	# 3  
 i=0 lim=2 str=hello
 i=1 lim=2 str=hello

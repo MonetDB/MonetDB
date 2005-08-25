@@ -23,11 +23,11 @@ stdout of test 'tst2030` in directory 'src/mal` itself:
 #exit	b;
 #end clkticks;
 function user.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
-barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 6
-    io.printf("#clock tick %d\n",n);	# 2 IOprint_formatted_int ($4:int)<-($5:str)(n:int)
-    alarm.sleep(5);	# 3 ALARMsleep ($6:void)<-($7:int)
-    n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)($8:int)
-    redo b := calc.>(n,0);	# 5 CALCcompGTintint (b:bit)<-(n:int)($3:int) jump 2
+barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)(_3:int) jump 6
+    io.printf("#clock tick %d\n",n);	# 2 IOprint_formatted_int (_4:int)<-(_5:str)(n:int)
+    alarm.sleep(5);	# 3 ALARMsleep (_6:void)<-(_7:int)
+    n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)(_8:int)
+    redo b := calc.>(n,0);	# 5 CALCcompGTintint (b:bit)<-(n:int)(_3:int) jump 2
 exit b;	# 6  (b:bit)
 end clkticks;	# 7  
 #
@@ -38,13 +38,13 @@ end clkticks;	# 7
 #printf("#Wait for child to exit\n");
 #
 function user.main():int;	# 0  (main:int)
-#The 2000 serie  is focussed on parallelism 	# 1  ($2:str)
-thread hdl := 0;	# 2  (hdl:int)<-($4:int) jump 5
-# synchronize through a boolean 	# 3  ($6:str)
-    user.clkticks(2);	# 4  ($7:void)<-($8:int)
+#The 2000 serie  is focussed on parallelism 	# 1  (_2:str)
+thread hdl := 0;	# 2  (hdl:int)<-(_4:int) jump 5
+# synchronize through a boolean 	# 3  (_6:str)
+    user.clkticks(2);	# 4  (_7:void)<-(_8:int)
 exit hdl;	# 5  (hdl:int)
-    io.printf("#Main thread\n");	# 6 IOprint_str ($9:int)<-($10:str)
-    io.printf("#Wait for child to exit\n");	# 7 IOprint_str ($11:int)<-($12:str)
+    io.printf("#Main thread\n");	# 6 IOprint_str (_9:int)<-(_10:str)
+    io.printf("#Wait for child to exit\n");	# 7 IOprint_str (_11:int)<-(_12:str)
 end main;	# 8  
 #Main thread
 #Wait for child to exit

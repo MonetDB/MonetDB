@@ -24,9 +24,9 @@ stdout of test 'tst2501` in directory 'src/mal` itself:
 #end;
 factory user.random(seed:int):int;	# 0  (random:int)<-(seed:int)
     i := seed;	# 1  (i:int)<-(seed:int)
-barrier always := true;	# 2  (always:bit)<-($4:bit) jump 6
-    i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-($5:int)(i:int)
-    yield i := calc.%(i,32767);	# 4 CALCbinaryMODintint (i:int)<-(i:int)($6:int)
+barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 6
+    i := calc.*(125,i);	# 3 CALCbinaryMULintint (i:int)<-(_5:int)(i:int)
+    yield i := calc.%(i,32767);	# 4 CALCbinaryMODintint (i:int)<-(i:int)(_6:int)
     redo always;	# 5  (always:bit) jump 3
 exit always;	# 6  (always:bit)
 end random;	# 7  
@@ -37,11 +37,11 @@ end random;	# 7
 #print(r2);
 #
 function user.main():int;	# 0  (main:int)
-# The prototypical factory construct 	# 1  ($2:str)
-    r1 := user.random(1);	# 2  (r1:int)<-($4:int)
-    io.print(r1);	# 3 IOprint_val ($5:int)<-(r1:int)
-    r2 := user.random(1);	# 4  (r2:int)<-($4:int)
-    io.print(r2);	# 5 IOprint_val ($7:int)<-(r2:int)
+# The prototypical factory construct 	# 1  (_2:str)
+    r1 := user.random(1);	# 2  (r1:int)<-(_4:int)
+    io.print(r1);	# 3 IOprint_val (_5:int)<-(r1:int)
+    r2 := user.random(1);	# 4  (r2:int)<-(_4:int)
+    io.print(r2);	# 5 IOprint_val (_7:int)<-(r2:int)
 end main;	# 6  
 [ 125 ]
 [ 15625 ]

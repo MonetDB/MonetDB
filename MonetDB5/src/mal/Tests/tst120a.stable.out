@@ -15,7 +15,7 @@ stdout of test 'tst120a` in directory 'src/mal` itself:
 #module top;
 #function first(i:sht):sht; return first:= 0:sht; end first;
 function top.first(i:sht):sht;	# 0  (first:sht)<-(i:sht)
-    return first := 0:sht;	# 1  (first:sht)<-($2:sht)
+    return first := 0:sht;	# 1  (first:sht)<-(_2:sht)
 end first;	# 2  
 #
 

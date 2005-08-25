@@ -20,8 +20,8 @@ stdout of test 'tst304` in directory 'src/mal` itself:
 #	print("should have left function ");
 #end myException;
 function user.myException():void;	# 0  (myException:void)
-    raise IllegalAccess := "new exception\n";	# 1  (IllegalAccess:str)<-($2:str)
-    io.print("should have left function ");	# 2 IOprint_val ($3:int)<-($4:str)
+    raise IllegalAccess := "new exception\n";	# 1  (IllegalAccess:str)<-(_2:str)
+    io.print("should have left function ");	# 2 IOprint_val (_3:int)<-(_4:str)
 end myException;	# 3  
 #
 #	myException();
@@ -33,15 +33,15 @@ end myException;	# 3
 #	print("done");
 #
 function user.main():int;	# 0  (main:int)
-# Exceptions can be explicitly raised in a function 	# 1  ($2:str)
-# which requires the exception identifier to be defined. 	# 2  ($4:str)
-    user.myException();	# 3  ($5:void)
-    io.print("should not come here");	# 4 IOprint_val ($6:int)<-($7:str)
-#exception block; 	# 5  ($9:str)
+# Exceptions can be explicitly raised in a function 	# 1  (_2:str)
+# which requires the exception identifier to be defined. 	# 2  (_4:str)
+    user.myException();	# 3  (_5:void)
+    io.print("should not come here");	# 4 IOprint_val (_6:int)<-(_7:str)
+#exception block; 	# 5  (_9:str)
 catch IllegalAccess;	# 6  (IllegalAccess:any) jump 8
-    io.printf("catched IllegalAccess\n");	# 7 IOprint_str ($11:int)<-($12:str)
+    io.printf("catched IllegalAccess\n");	# 7 IOprint_str (_11:int)<-(_12:str)
 exit IllegalAccess;	# 8  (IllegalAccess:any)
-    io.print("done");	# 9 IOprint_val ($13:int)<-($14:str)
+    io.print("done");	# 9 IOprint_val (_13:int)<-(_14:str)
 end main;	# 10  
 catched IllegalAccess
 [ "done" ]
