@@ -6,18 +6,24 @@ goto end
 
 :skip
 
+setlocal
+
 set builddir=@MONETDB_BUILD@
 set srcdir=@MONETDB_SOURCE@
 
-set MOD_PATH=%builddir%\src\modules\plain\.libs;%builddir%\src\modules\contrib\.libs;%builddir%\src\modules\calibrator\.libs;%builddir%\src\mapi\.libs
+set MOD_PATH=%builddir%\src\applications\datacell\.libs;%builddir%\src\compiler\.libs;%builddir%\src\mil\.libs;%builddir%\src\modules\atoms\.libs;%builddir%\src\modules\kernel\.libs;%builddir%\src\modules\mal\.libs;%builddir%\src\modules\mil\.libs;%builddir%\src\optimizer\.libs;%builddir%\src\scheduler\.libs
 
-set PATH=%builddir%\src\testing;%builddir%\src\tools;%builddir%\src\mapi\clients\C;%builddir%\src\mapi\clients\python;%PATH%
-set PYTHONPATH=%builddir%\src\testing;%srcdir%\src\testing;%builddir%\src\common;%srcdir%\src\mapi\clients\python
-set PATH=%MOD_PATH%;%builddir%\src\common;%builddir%\src\gdk;%builddir%\src\mapi\clients\C;%builddir%\src\modules\plain\stream;%builddir%\src\monet;%PATH%
+set PATH=%builddir%\src\tools;%PATH%
+set PATH=%MOD_PATH%;%builddir%\src\mal;%PATH%
+
+set PYTHONPATH=@MONETDB_PREFIX@\share\MonetDB\python
 
 REM execute Mtest.py in the source directory
-cd %srcdir%
+pushd %srcdir%
 
-call python "%builddir%\src\testing\Mtest.py" "--monet_mod_path=%MOD_PATH%" "--config=%builddir%\conf\MonetDB5.conf" "--dbfarm=%builddir%\dbfarm" "--sql_logdir=%builddir%\log" "--TSTTRGBASE=%builddir%" %*
+call python "@MONETDB_PREFIX@\bin\Mtest.py" "--monet_mod_path=%MOD_PATH%" "--TSTSRCBASE=%srcdir%" "--TSTBLDBASE=%builddir%" "--TSTTRGBASE=%builddir%" "--dbfarm=%builddir%\dbfarm" %*
+
+popd
+endlocal
 
 :end

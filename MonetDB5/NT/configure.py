@@ -53,7 +53,7 @@ subs = [
     ('@libexecdir@',             r'${prefix}\libexec'),
     ('@Xlibexecdir@',            r'${prefix}\libexec'),
     ('@PACKAGE@',                r'MonetDB'),
-    ('@VERSION@',                r'4.9.3'),
+    ('@VERSION@',                r'4.99.19'),
     ('@DIRSEP@',                 '\\'),
     ('@PATHSEP@',                ';'),
     ('@prefix@',                 prefix),
@@ -62,6 +62,7 @@ subs = [
     ('@XMONETDB_BUILD@',         build),
     ('@MONETDB_SOURCE@',         source),
     ('@XMONETDB_SOURCE@',        source),
+    ('@MONETDB_PREFIX@',         os.getenv('MONETDB_PREFIX')),
     ('@NO_X_CFLAGS@',            ''),
     # for these, also see rules.msc
     ('@PHP_EXTENSIONDIR@',       r'lib\php4'),
