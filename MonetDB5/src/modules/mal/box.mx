@@ -85,6 +85,7 @@ mal_export str BOXiterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_exception.h"
 #include "mal_box.h"
 #include "mal_interpreter.h"
+#include "box.h"
 
 
 str

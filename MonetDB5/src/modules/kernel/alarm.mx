@@ -367,10 +367,8 @@ ALARMprelude()
 {
 #ifdef SIGALRM
 	(void) signal(SIGALRM, (void (*)()) CLKsignal);
-	return MAL_SUCCEED;
-#else
-	return throwMessage("alarm.prelude", "SIGALRM not set");
 #endif
+	return MAL_SUCCEED;
 }
 
 str

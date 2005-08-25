@@ -121,8 +121,6 @@ if( idcmp(@1,name) || pci->argc != 1)
 @c
 #include "mal_atom.h"
 #include "mal_namespace.h"
-#include "blob.h"
-#include "color.h"
 
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
