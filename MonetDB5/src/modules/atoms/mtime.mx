@@ -969,7 +969,7 @@ typedef struct {
 #define set_offset(z,i)	{ (z)->off1 = (((i)+4096)&8064) >> 7; (z)->off2 = ((i)+OFFSET_ZERO)&127; }
 
 @h
-tzone tzone_local;
+mal_export tzone tzone_local;
 
 
 mal_export void fromdate(int n, int *d, int *m, int *y);
@@ -1065,12 +1065,11 @@ mal_export str MTIMEcurrent_timestamp(timestamp *t);
 mal_export str MTIMEcurrent_date(date *d);
 mal_export str MTIMEcurrent_time(daytime *t);
 
-@h
-
-
 #endif /* _MONETTIME_H_ */
 @+ Defines
 @c
+tzone tzone_local;
+
 str MONTHS[13] = { NULL, "january", "february", "march", "april", "may", "june",
 	"july", "august", "september", "october", "november", "december"
 };
