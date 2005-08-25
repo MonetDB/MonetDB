@@ -364,7 +364,7 @@ command xor(left:bit, right:bit) :bit
 address CALCbinaryXORbit;
 command not(left:bit) :bit 
 address CALCunarybitNOT ;
-command ifthenelse(b:bit,t:any$1,tpe:any$1,f:any$1):any$1 
+command ifthenelse(b:bit,t:any_1,tpe:any_1,f:any_1):any_1 
 address CALCswitchbit;
 
 @+ Bitwise operations
@@ -415,11 +415,11 @@ Those accessible at the MAL command level are introduced below.
 @:convertCmd(ptr)@
 @:convertCmd(chr)@
 
-command bat(v:str):bat[:any$1,:any$2] 
+command bat(v:str):bat[:any_1,:any_2] 
 address CALCstr2bat;
-command str(v:bat[:any$1,:any$2]):str 
+command str(v:bat[:any_1,:any_2]):str 
 address CALCbat2str;
-command bat(v:void) :bat[:any$1,:any$2] 
+command bat(v:void) :bat[:any_1,:any_2] 
 address CALCnil2bat;
 
 command str(v:void) :str 
@@ -443,10 +443,10 @@ address lngSetoidImpl;
 command setoid(v:oid)
 address oidSetoidImpl;
 
-command getBATidentifier(b:bat[:any$1,:any$2]):bat
+command getBATidentifier(b:bat[:any_1,:any_2]):bat
 address CALCbat2batid
 comment "Coerce bat to BAT identifier";
-command getBAT(b:bat):bat[:any$1,:any$2]
+command getBAT(b:bat):bat[:any_1,:any_2]
 address CALCbatid2bat
 comment "Coerce bat to BAT identifier";
 

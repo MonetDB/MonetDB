@@ -54,7 +54,7 @@ and shift all elemenets with a factor s";
 #address ARRAYmultiply_int_int
 #comment "Calculate the array product";
 
-command product(b:bat[:void,:any$1],c:bat[:void,:any$2]):bat[:any$1,:any$2]
+command product(b:bat[:void,:any_1],c:bat[:void,:any_2]):bat[:any_1,:any_2]
 address ARRAYproduct
 comment "Produce an array product";
 
@@ -62,7 +62,7 @@ command project(b:bat[:void,:any],i:int):bat[:void,:int]
 address ARRAYproject
 comment "Fill an array representation with constants ";
 
-pattern print(a:bat[:any$1,:any],b:bat[:any$1,:int]...) :void 
+pattern print(a:bat[:any_1,:any],b:bat[:any_1,:int]...) :void 
 address ARRAYprint
 comment "Prints an array, using 1 value bat and N aligned index bats";
 

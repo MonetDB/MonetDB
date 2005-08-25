@@ -76,7 +76,7 @@ or the required size.
 	address CMD@1init_lng
 	comment "Initialize a void BAT with a tail constant";
 
-	command init(b:bat[:any$1,:any],v:@1):bat[:any$1,:@1]
+	command init(b:bat[:any_1,:any],v:@1):bat[:any_1,:@1]
 	address CMDbat@1init
 	comment "Initialize a BAT with a tail constant";
 @-
@@ -90,31 +90,31 @@ or the required size.
 	@:initGrp(bit)@
 @= calcGrp
 
-    command @1(b:bat[:any$1,:any$2], cst:any$2) :bat[:any$1,:any$2] 
+    command @1(b:bat[:any_1,:any_2], cst:any_2) :bat[:any_1,:any_2] 
     address CMDbat@3cst
     comment "(BAT,Constant) calculator function with new BAT result";
 
-    command @1(cst:any$2, b:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+    command @1(cst:any_2, b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
     address CMDcst@3bat
     comment "(BAT,Constant) calculator function with new BAT result";
 
-    command @1(a:bat[:any$1,:any$2], b:bat[:any$1,:any$2], cst:any$2)
-	:bat[:any$1,:any$2]
+    command @1(a:bat[:any_1,:any_2], b:bat[:any_1,:any_2], cst:any_2)
+	:bat[:any_1,:any_2]
     address CMDbataccum@3cst
     comment "(BAT,Constant) calculator function with accumulator BAT result";
 
-    command @1(a:bat[:any$1,:any$2], cst:any$2, b:bat[:any$1,:any$2])
-	:bat[:any$1,:any$2]
+    command @1(a:bat[:any_1,:any_2], cst:any_2, b:bat[:any_1,:any_2])
+	:bat[:any_1,:any_2]
     address CMDbataccum@3cst2
     comment "(BAT,Constant) calculator function with accumulator BAT result";
 
-    command @1(b:bat[:any$1,:any$2], c:bat[:any$1,:any$2])
-	        :bat[:any$1,:any$2] 
+    command @1(b:bat[:any_1,:any_2], c:bat[:any_1,:any_2])
+	        :bat[:any_1,:any_2] 
         address CMDbat@3
     comment "Binary BAT calculator function with new BAT result";
 
-    command @1(a:bat[:any$1,:any$2], b:bat[:any$1,:any$2], c:bat[:any$1,:any$2])
-	:bat[:any$1,:any$2]
+    command @1(a:bat[:any_1,:any_2], b:bat[:any_1,:any_2], c:bat[:any_1,:any_2])
+	:bat[:any_1,:any_2]
     address CMDbataccum@3
     comment "Binary BAT calculator function with accumulator BAT result";
 @{
@@ -141,30 +141,30 @@ but should limit modulo functions to integer-based types.
 @-
 @}
 @= unary
-    command -(b:bat[:any$1,:@1]):bat[:any$1,:@1] 
+    command -(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
     address CMDunaryMIN
     comment "Unary minus over the tail of the bat";
     
-    command --(b:bat[:any$1,:@1]):bat[:any$1,:@1] 
+    command --(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
     address CMDunaryMINMIN
     comment "Unary minus over the tail of the bat";
 
-    command ++(b:bat[:any$1,:@1]):bat[:any$1,:@1] 
+    command ++(b:bat[:any_1,:@1]):bat[:any_1,:@1] 
     address CMDunaryPLUSPLUS
     comment "Unary minus over the tail of the bat";
 
-    #command -(a:bat[:any$1,:@1],b:bat[:any$1,:@1])
-    #		:bat[:any$1,:@1] 
+    #command -(a:bat[:any_1,:@1],b:bat[:any_1,:@1])
+    #		:bat[:any_1,:@1] 
     #address CMDunaryAccumMIN 
     #comment "Unary - over the tail of the bat";
 
-    #command --(a:bat[:any$1,:@1],b:bat[:any$1,:@1])
-    #		:bat[:any$1,:@1] 
+    #command --(a:bat[:any_1,:@1],b:bat[:any_1,:@1])
+    #		:bat[:any_1,:@1] 
     #address CMDunaryAccumMINMIN 
     #comment "Unary -- over the tail of the bat";
     #
-    #command ++(a:bat[:any$1,:@1],b:bat[:any$1,:@1])
-    #		:bat[:any$1,:@1] 
+    #command ++(a:bat[:any_1,:@1],b:bat[:any_1,:@1])
+    #		:bat[:any_1,:@1] 
     #address CMDunaryAccumPLUSPLUS 
     #comment "Unary ++ over the tail of the bat";
 @{
@@ -179,14 +179,14 @@ but should limit modulo functions to integer-based types.
 @+ Comparison routines
 The command signatures are similar to those above, producing a bit result.
 @= comparison
-    command @1(b:bat[:any$1,:@2], c:bat[:any$1,:@2]) :bat[:any$1,:bit]
+    command @1(b:bat[:any_1,:@2], c:bat[:any_1,:@2]) :bat[:any_1,:bit]
     address CMDcmp@3;
-    command @1(a:bat[:any$1,:bit], b:bat[:any$1,:@2], c:bat[:any$1,:@2])
-	:bat[:any$1,:bit]
+    command @1(a:bat[:any_1,:bit], b:bat[:any_1,:@2], c:bat[:any_1,:@2])
+	:bat[:any_1,:bit]
     address CMDcmpaccum@3;
-    command @1(b:bat[:any$1,:@2],cst:@2) :bat[:any$1,:bit]
+    command @1(b:bat[:any_1,:@2],cst:@2) :bat[:any_1,:bit]
     address CMDcmp@3cst;
-    command @1(a:bat[:any$1,:bit], b:bat[:any$1,:@2],cst:@2) :bat[:any$1,:bit]
+    command @1(a:bat[:any_1,:bit], b:bat[:any_1,:@2],cst:@2) :bat[:any_1,:bit]
     address CMDcmpaccum@3cst;
 @{
 
@@ -213,45 +213,45 @@ The command signatures are similar to those above, producing a bit result.
 The command signature can mostly be borrowed from the arithmetic.
 
 @mal
-command not(b:bat[:any$1,:bit]):bat[:any$1,:bit] 
+command not(b:bat[:any_1,:bit]):bat[:any_1,:bit] 
 address CMDbitbatNOT
 comment "Return a new BAT with the negated tail";
 
-command not(a:bat[:any$1,:bit], b:bat[:any$1,:bit]):bat[:any$1,:bit] 
+command not(a:bat[:any_1,:bit], b:bat[:any_1,:bit]):bat[:any_1,:bit] 
 address CMDbitbataccumNOT
 comment "Return a BAT with the negated tail";
 
-command ifthenelse(b:bat[:any$1,:bit], e:any$2, t:bat[:any$1,:any$2])
-	:bat[:any$1,:any$2] 
+command ifthenelse(b:bat[:any_1,:bit], e:any_2, t:bat[:any_1,:any_2])
+	:bat[:any_1,:any_2] 
 address CMDifThenElseCst1
 comment "If-then-else operation to assemble a 
 	conditional result ";
 
-command ifthenelse(b:bat[:any$1,:bit], t:bat[:any$1,:any$2], e:any$2)
-	:bat[:any$1,:any$2] 
+command ifthenelse(b:bat[:any_1,:bit], t:bat[:any_1,:any_2], e:any_2)
+	:bat[:any_1,:any_2] 
 address CMDifThenElseCst2
 comment "If-then-else operation to assemble a conditional result ";
 
-command ifthen(b:bat[:any$1,:bit], t:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+command ifthen(b:bat[:any_1,:bit], t:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address CMDifThen
 comment "Ifthen operation to assemble a conditional result ";
 
-command ifthenelse(b:bat[:any$3,:bit], t:bat[:any$1,:any$2], 
-		e:bat[:any$1,:any$2]) :bat[:any$1,:any$2] 
+command ifthenelse(b:bat[:any_3,:bit], t:bat[:any_1,:any_2], 
+		e:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address CMDifThenElse
 comment "If-then-else operation to assemble a conditional result ";
 
 @-
 @= ifthenGrp
-command project(v:@1,b:bat[:any$2,:any$1]) :bat[:@1,:any$1] 
+command project(v:@1,b:bat[:any_2,:any_1]) :bat[:@1,:any_1] 
 address CMDprojecthead_@1
 comment "Fill the head with a constant, e.g. [0~b]";
 
-command ifthen(b:bat[:any$1,:bit], v:@1) :bat[:any$1,:@1] 
+command ifthen(b:bat[:any_1,:bit], v:@1) :bat[:any_1,:@1] 
 address CMDifThenCst_@1
 comment "Ifthen operation to assemble a conditional result ";
 
-command ifthenelse(b:bat[:any$1,:bit], v:@1,w:@1) :bat[:any$1,:@1] 
+command ifthenelse(b:bat[:any_1,:bit], v:@1,w:@1) :bat[:any_1,:@1] 
 address CMDifThenElseCst_@1
 comment "Ifthen operation to assemble a conditional result ";
 @{
@@ -273,7 +273,7 @@ Nevertheless, the implementation provided here are much faster compared
 to theVersion 4.3 implementation.
 
 @= coercion
-    command @2(b:bat[:any$1,:@1]):bat[:any$1,:@2] 
+    command @2(b:bat[:any_1,:@1]):bat[:any_1,:@2] 
     address CMDconvert@1_@2
     comment "Coerce an @1 tail to a bat with @2 tail.";
 @{
@@ -291,7 +291,7 @@ to theVersion 4.3 implementation.
 	@:coerceList(flt)@
 	@:coerceList(dbl)@
 
-command int(b:bat[:any$1,:str]):bat[:any$1,:int] 
+command int(b:bat[:any_1,:str]):bat[:any_1,:int] 
 address CMDconvertstr_int
 comment "Coerce an str tail to a bat with a int tail.";
 
@@ -301,7 +301,7 @@ comment "Identity mapping";
 
 @-
 @= coerce
-command @2(b:bat[:any$1,:@1]):bat[:any$1,:@2] 
+command @2(b:bat[:any_1,:@1]):bat[:any_1,:@2] 
 address CMDconvert@1_@2
 comment "Materialize the @1 into an @2";
 
@@ -323,12 +323,12 @@ The mmath functions are also overloaded to provide for
 the fast execution of expanded code blocks.
 The common set of math functions is supported.
 @= scienceFcn
-    command @1(x:bat[:any$1,:dbl])  :bat[:any$1,:dbl] 
+    command @1(x:bat[:any_1,:dbl])  :bat[:any_1,:dbl] 
     address CMDscience_@1;
     command @1(x:bat[:void,:dbl])  :bat[:void,:dbl] 
     address CMDsciencevoid_@1;
 @= scienceFcnBinary
-    command @1(x:bat[:any$1,:dbl],y:@2):bat[:any$1,:dbl] 
+    command @1(x:bat[:any_1,:dbl],y:@2):bat[:any_1,:dbl] 
     address CMDscience_@1;
 @{
 @-

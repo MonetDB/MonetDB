@@ -53,7 +53,7 @@ The exact specification of this protocol can be found in
 [ref:cvs:~fabian/repository:proefschrift/paper3] [(TODO)]
 
 A ResultSet requires all its associated BATs to be of equal
-length and :bat[:void,:any$1] typed, for this allows efficient
+length and :bat[:void,:any_1] typed, for this allows efficient
 serialisation.
 
 A new empty ResultSet can be obtained by calling the create()
@@ -115,7 +115,7 @@ properties.
 @mal
 atom resultset:int;
 
-command populateColumn(rs:resultset,col:int,b:bat[:void,:any$1]):resultset
+command populateColumn(rs:resultset,col:int,b:bat[:void,:any_1]):resultset
 address RSpopulateColumn
 comment "Add a BAT as column with a name to this ResultSet";
 command dePopulate(rs:resultset):resultset

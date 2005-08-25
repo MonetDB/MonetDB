@@ -50,8 +50,8 @@ pattern print(val:any,lst:any...):int
 address IOprint_val
 comment "Print a MAL value tuple .";
 
-pattern print(b1:bat[:any$1,:any], 
-		b2:bat[:any$1,:any]...):int 
+pattern print(b1:bat[:any_1,:any], 
+		b2:bat[:any_1,:any]...):int 
 address IOtable
 comment "BATs are printed with '#' for legend 
 	lines, and the BUNs on seperate lines 
@@ -62,12 +62,12 @@ comment "BATs are printed with '#' for legend
 	join, producing a multi attribute table.";
 
 pattern ftable( filep:stream, 
-		b1:bat[:any$1,:any],
-		b:bat[:any$1,:any]... ):int
+		b1:bat[:any_1,:any],
+		b:bat[:any_1,:any]... ):int
 address IOftable 
 comment "Print an n-ary table to a file.";
 
-pattern print(order:int,b:bat[:any$1,:any], b2:bat[:any$1,:any]...):int
+pattern print(order:int,b:bat[:any_1,:any], b2:bat[:any_1,:any]...):int
 address IOotable
 comment "The same as normal table print, but 
 	enforces to use the order of BAT 
@@ -78,12 +78,12 @@ address IOttable
 comment "Print an n-ary table. Like print,
 	but does not print oid column";
 
-pattern table(order:int, b1:bat[:any$1,:any], b2:bat[:any$1,:any]...):int 
+pattern table(order:int, b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int 
 address IOtotable
 comment "Print an n-ary table.";
 pattern ftable(fp:stream, order:int,
-	b1:bat[:any$1,:any], 
-	b:bat[:any$1,:any]...)
+	b1:bat[:any_1,:any], 
+	b:bat[:any_1,:any]...)
 address IOfotable 
 comment "Print an n-ary table to a file.";
 

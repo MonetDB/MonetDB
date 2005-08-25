@@ -29,13 +29,13 @@ a natural extension of the operations provided there.
 @mal
 
 @= join
-command algebra.@1join( left:bat[:any$1,:any$2], right:bat[:any$2,:any$3])
-	:bat[:any$1,:any$3] 
+command algebra.@1join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
+	:bat[:any_1,:any_3] 
 address AL2@1join
 comment "Hook directly into the '@1join' implementation of the join.";
 @= leftjoin
-command algebra.left@1join(left:bat[:any$1,:any$2], 
-			right:bat[:any$2,:any$3] ) :bat[:any$1,:any$3] 
+command algebra.left@1join(left:bat[:any_1,:any_2], 
+			right:bat[:any_2,:any_3] ) :bat[:any_1,:any_3] 
 address AL2@1join
 comment "Hook directly into the 'left@1join' implementation of the join.
 prefix 'left' means that left and right input are not swapped during 
@@ -54,24 +54,24 @@ not needed anymore :leftjoin()
 @:leftjoin(hash)@
 @:leftjoin(index)@
 
-command algebra.leftjoin(left:bat[:any$1,:any$2], 
-			right:bat[:any$2,:any$3] ) :bat[:any$1,:any$3] 
+command algebra.leftjoin(left:bat[:any_1,:any_2], 
+			right:bat[:any_2,:any_3] ) :bat[:any_1,:any_3] 
 address ALGjoin
 comment "Hook directly into the 'left@1join' implementation of the join.
 prefix 'left' means that left and right input are not swapped during 
 processing, and hence, the order of the left input's head in maintained 
 in the result.";
 
-command algebra.leftthetajoin(left:bat[:any$1,:any$2],
-			right:bat[:any$2,:any$3], mode:int ) :bat[:any$1,:any$3] 
+command algebra.leftthetajoin(left:bat[:any_1,:any_2],
+			right:bat[:any_2,:any_3], mode:int ) :bat[:any_1,:any_3] 
 address AL2leftthetajoin
 comment "Hook directly into the 'leftthetajoin' implementation of the join.
 prefix 'left' means that left and right input are not swapped during 
 processing, and hence, the order of the left input's head in maintained 
 in the result.";
 
-command algebra.nlthetajoin(left:bat[:any$1,:any$2],
-	right:bat[:any$2,:any$3], mode:int, estimate:lng) :bat[:any$1,:any$3] 
+command algebra.nlthetajoin(left:bat[:any_1,:any_2],
+	right:bat[:any_2,:any_3], mode:int, estimate:lng) :bat[:any_1,:any_3] 
 address AL2nlthetajoin
 comment "Hook directly into the 'nested-loop-thetajoin' implementation 
 	of the join. prefix 'left' means that left and right input are not 
@@ -83,27 +83,27 @@ for XQuery processing.";
 
 
 @= select
-command algebra.ord_@1select( b:bat[:any$1,:any$2], low:any$2,high:any$2 ) 
-		:bat[:any$1, @2] 
+command algebra.ord_@1select( b:bat[:any_1,:any_2], low:any_2,high:any_2 ) 
+		:bat[:any_1, @2] 
 address AL2ord_@1select
 comment "Like standard '@1select(b, low, high);', but preserves the 
 	order of the input BAT; (for the time being) this means, only 
 	the scan-based select algorithm is used.";
 
-command algebra.ord_@1select( b:bat[:any$1,:any$2], low:any$2, 
-		high:any$2,l_in:bit,h_in:bit) :bat[:any$1, @2] 
+command algebra.ord_@1select( b:bat[:any_1,:any_2], low:any_2, 
+		high:any_2,l_in:bit,h_in:bit) :bat[:any_1, @2] 
 address AL2ord_@1select_
 comment "Like standard '@1select(b, low, high, l_in, h_in);', but 
 		preserves the order of the input BAT (for the time being) 
 		this means, only the scan-based select algorithm is used.";
 
-command algebra.ord_@1select(b:bat[:any$1,:any$2], value:any$2) :bat[:any$1, @2] 
+command algebra.ord_@1select(b:bat[:any_1,:any_2], value:any_2) :bat[:any_1, @2] 
 address AL2ord_@1select1
 comment "Like standard '@1select(b, value)', but preserves the order of 
 	the input BAT; (for the time being) this means, only the scan-based 
 		select algorithm is used.";
 @mal
-@:select(,:any$2)@
+@:select(,:any_2)@
 @:select(u,:void)@
 
 

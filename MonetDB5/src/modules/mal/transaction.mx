@@ -53,12 +53,12 @@ comment "declare a BAT clean without
 	 flushing to disk.";
 @+ Delta status
 @mal
-command alpha(b:bat[:any$1,:any$2]) 
-		:bat[:any$1,:any$2] 
+command alpha(b:bat[:any_1,:any_2]) 
+		:bat[:any_1,:any_2] 
 address TRNtrans_alpha
 comment	"List insertions since last commit.";
-command delta(b:bat[:any$1,:any$2]) 
-		:bat[:any$1,:any$2] 
+command delta(b:bat[:any_1,:any_2]) 
+		:bat[:any_1,:any_2] 
 address TRNtrans_delta
 comment	"List deletions since last commit.";
 @{

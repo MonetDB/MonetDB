@@ -77,10 +77,10 @@ command raise(msg:str) :str
 address CMDraise
 comment "Raise an exception labeled 
 	with a specific message.";
-pattern assert(v:any$1,term:str):void
+pattern assert(v:any_1,term:str):void
 address CMDassertProperty
 comment "Check a property";
-pattern assert(v:any$1,pname:str,oper:str,val:any$2):void
+pattern assert(v:any_1,pname:str,oper:str,val:any_2):void
 address CMDassertProperty
 comment "Check a property";
 
@@ -93,7 +93,7 @@ to determine an easy way to exchange the parameter/return values.
 pattern call(s:str):void
 address CMDcallString
 comment "Evaluate a MAL string program";
-pattern call(s:bat[:any$1,:str]):void
+pattern call(s:bat[:any_1,:str]):void
 address CMDcallBAT
 comment "Evaluate a program stored in a BAT";
 command source(f:str):void

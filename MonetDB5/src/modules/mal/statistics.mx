@@ -50,13 +50,13 @@ comment "Close the statistics box ";
 pattern destroy():void
 address STATdestroy
 comment "Destroy the statistics box";
-pattern take(name:any$1):any$2
+pattern take(name:any_1):any_2
 address STATtake
 comment "Take a variable out of the statistics box";
 command deposit(name:str) :void
 address STATdepositStr
 comment "Enter a new BAT into the statistics box";
-command deposit(name:bat[:any$1,:any$2]) :void
+command deposit(name:bat[:any_1,:any_2]) :void
 address STATdeposit
 comment "Enter a new BAT into the statistics box";
 @-
@@ -71,16 +71,16 @@ comment "Release all variables in the box";
 pattern release(name:str) :void
 address STATreleaseStr
 comment "Release a single BAT from the  box";
-command release(name:bat[:any$1,:any$2]):void
+command release(name:bat[:any_1,:any_2]):void
 address STATrelease
 comment "Release a single BAT from the  box";
-pattern toString(name:any$1):str
+pattern toString(name:any_1):str
 address STATtoString
 comment "Get the string representation of an element in the box";
 pattern discard(name:str) :void
 address STATdiscard
 comment "Release a BAT by name from the box";
-command discard(name:bat[:any$1,:any$2]) :void
+command discard(name:bat[:any_1,:any_2]) :void
 address STATdiscard2
 comment "Release a BAT variable from the box";
 pattern newIterator()(:lng,:str)
@@ -159,7 +159,7 @@ command getMax(nme:str):lng
 address STATgetMax
 comment "Return latest stored maximum information";
 
-command getHistogram(nme:str):bat[:any$1,:any$2]
+command getHistogram(nme:str):bat[:any_1,:any_2]
 address STATgetHistogram
 comment "Return the latest histogram");
 

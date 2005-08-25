@@ -46,24 +46,24 @@ are interesting for time-series query processing. (See another module)
 @mal
 module chopper;
 
-command newChunkIterator(b:bat[:any$1,:any$2], size:lng)
-	(:lng,:bat[:any$1,:any$2])
+command newChunkIterator(b:bat[:any_1,:any_2], size:lng)
+	(:lng,:bat[:any_1,:any_2])
 address CHPnewChunkIterator
 comment " Create an iterator with fixed granule size.
 	  The result is a view.";
 
-command hasMoreChunks(b:bat[:any$1,:any$2], size:lng)
-	(:lng, :bat[:any$1,:any$2])
+command hasMoreChunks(b:bat[:any_1,:any_2], size:lng)
+	(:lng, :bat[:any_1,:any_2])
 address CHPhasMoreChunks
 comment "Produce the next chunk for processing.";
 
-pattern newIterator(b:bat[:any$1,:any$2])
-	(:lng, h:any$1, t:any$2)
+pattern newIterator(b:bat[:any_1,:any_2])
+	(:lng, h:any_1, t:any_2)
 address CHPbunIterator
 comment "Process the buns one by one.";
 
-pattern hasMoreElements(b:bat[:any$1,:any$2])
-	(:lng, h:any$1, t:any$2)
+pattern hasMoreElements(b:bat[:any_1,:any_2])
+	(:lng, h:any_1, t:any_2)
 address CHPbunHasMoreElements
 comment "Produce the next bun for processing.";
 
@@ -73,11 +73,11 @@ It point to the first bun in the chunk under consideration.
 It is often more effective due to use the iterator with automatic
 extraction of head and tail value; the overhead involved is much less.
 @mal
-pattern getHead(b:bat[:any$1,:any],i:lng):any$1 
+pattern getHead(b:bat[:any_1,:any],i:lng):any_1 
 address CHPgetHead
 comment "return the BUN head value using the cursor.";
 
-pattern getTail(b:bat[:any$2,:any$1],i:lng):any$1 
+pattern getTail(b:bat[:any_2,:any_1],i:lng):any_1 
 address CHPgetTail
 comment "return the BUN tail value using the cursor.";
 @-

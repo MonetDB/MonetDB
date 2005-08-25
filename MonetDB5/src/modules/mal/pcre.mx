@@ -53,11 +53,11 @@ command match(pat:pcre, s:str) :bit
 address PCREexec_wrap
 comment "match a pattern";
 
-command select(pat:str, strs:bat[:any$1,:str]) :bat[:any$1,:str] 
+command select(pat:str, strs:bat[:any_1,:str]) :bat[:any_1,:str] 
 address PCREselect
 comment "Select tuples based on the pattern";
 
-command uselect(pat:str, strs:bat[:any$1,:str]) :bat[:any$1,:void] 
+command uselect(pat:str, strs:bat[:any_1,:str]) :bat[:any_1,:void] 
 address PCREuselect
 comment "Select tuples based on the pattern, only returning the head";
 

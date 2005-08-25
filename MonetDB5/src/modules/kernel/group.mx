@@ -77,41 +77,41 @@ can be used as well; note for instance that histogram == @{count@}(b.reverse()).
 
 The Monet interface module specification is shown below.
 Ideally we should defined stronger type constraints, e.g.
-command group(attr:bat[@{void,oid@},:any$1]
+command group(attr:bat[@{void,oid@},:any_1]
 
 @mal
 module group;
 
-command group(b:bat[:any$1,:any$2], start:int, incr:int, grpsize:int)
-            :bat[:any$1,:int] 
+command group(b:bat[:any_1,:any_2], start:int, incr:int, grpsize:int)
+            :bat[:any_1,:int] 
 address GRPgroup0
 comment "Produces a new BAT with identical head column, and in the tail 
         column groups of equally valued integers within each group. 
         Parameters: a start group -value, -number increment, -size.";
 
-command group(attr:bat[:any$2,:any$1] )
-	(histo:bat[:any$1,:int], grp:bat[:any$2,:oid]) 
+command group(attr:bat[:any_2,:any_1] )
+	(histo:bat[:any_1,:int], grp:bat[:any_2,:oid]) 
 address GRPgroup;
 
-command group(attr:bat[:any$2,:any$1] )
-	(histo:bat[:any$1,:int], grp:bat[:any$2,:void]) 
+command group(attr:bat[:any_2,:any_1] )
+	(histo:bat[:any_1,:int], grp:bat[:any_2,:void]) 
 address GRPgroup;
 
-command group(attr:bat[:any$2,:any$1], N:int, rng:int)
-	(histo:bat[:any$1,:int],grp:bat[:any$2,:oid]) 
+command group(attr:bat[:any_2,:any_1], N:int, rng:int)
+	(histo:bat[:any_1,:int],grp:bat[:any_2,:oid]) 
 address GRPgroup_custom
 comment "Cross tabulation group initialization like GRPgroup, but with 
         user provided #bits in hashmask and #distinct values in range.";
 
-command group(ct:bat[:any$2,:any$3], attr:bat[:any$2,:any$1])
-	(histo:bat[:any$1,:oid],grp:bat[:any$2,:oid]) 
+command group(ct:bat[:any_2,:any_3], attr:bat[:any_2,:any_1])
+	(histo:bat[:any_1,:oid],grp:bat[:any_2,:oid]) 
 address GRPderive
 comment "Cross tabulation group extension step.  Returned head values are 
         identical as in 'ct'. Tail values are from the same domain and 
         indicate further refinement of the groups in 'ct', taking into 
         account also the tail-values in 'attr'.";
 
-command refine(b:bat[:any$2,:any$3], a:bat[:any$2,:any$1]) :bat[:any$2,:oid] 
+command refine(b:bat[:any_2,:any_3], a:bat[:any_2,:any_1]) :bat[:any_2,:oid] 
 address GRPrefine
 comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
         values of a second bat 'a' (where the heads of a and b match 1-1).
@@ -131,26 +131,26 @@ and the tail contains the group elements. This leads to the situation that
 most value-based operators work on the tail, while counting groups
 is focussed on the head.
 @= grpSignature
-command sum(b:bat[:any$2,:@1], e:bat[:any$2,:any$1]) :bat[:any$2,:@1] 
+command sum(b:bat[:any_2,:@1], e:bat[:any_2,:any_1]) :bat[:any_2,:@1] 
 address GRPsum_@1
 comment "grouped tail sum";
 
-command sum(b:bat[:any$2,:@1], size:int) :bat[:any$2,:@1] 
+command sum(b:bat[:any_2,:@1], size:int) :bat[:any_2,:@1] 
 address GRPwindowsum_@1
 comment "Tail sum of groups of a fixed size";
 
-command sum(b:bat[:any$2,:@1], size:int, shift:int) :bat[:any$2,:@1] 
+command sum(b:bat[:any_2,:@1], size:int, shift:int) :bat[:any_2,:@1] 
 address GRPslidingsum_@1
 comment "Tail sum of groups of a sliding window of fixed size";
 
-command avg(b:bat[:any$2,:@1], e:bat[:any$2,:any$1]) :bat[:any$2,:@1] 
+command avg(b:bat[:any_2,:@1], e:bat[:any_2,:any_1]) :bat[:any_2,:@1] 
 address GRPavg_@1
 comment "grouped tail average";
 
-#command min(b:bat[:any$2,:@1], size:int) :bat[:any$2,:@1] 
+#command min(b:bat[:any_2,:@1], size:int) :bat[:any_2,:@1] 
 #address GRPwindowmin@1
 #comment "Tail minimum of groups of a fixed size";
-#command max(b:bat[:any$2,:@1], size:int) :bat[:any$2,:@1] 
+#command max(b:bat[:any_2,:@1], size:int) :bat[:any_2,:@1] 
 #address GRPwindowmax@1
 #comment "Tail minimum of groups of a fixed size";
 @mal
@@ -160,17 +160,17 @@ comment "grouped tail average";
 	@:grpSignature(flt)@
 	@:grpSignature(dbl)@
 
-command min(b:bat[:any$2,:any$1], e:bat[:any$2,:any$3]) :bat[:any$2,:any$1] 
+command min(b:bat[:any_2,:any_1], e:bat[:any_2,:any_3]) :bat[:any_2,:any_1] 
 address GRPmin
 comment "grouped tail minimum";
-command max(b:bat[:any$2,:any$1], e:bat[:any$2,:any$3]) :bat[:any$2,:any$1] 
+command max(b:bat[:any_2,:any_1], e:bat[:any_2,:any_3]) :bat[:any_2,:any_1] 
 address GRPmax
 comment "grouped tail maximum";
 
-command count(b:bat[:any$2,:any$1], e:bat[:any$2,:any$3], nonils:bit) :bat[:any$2,:int] 
+command count(b:bat[:any_2,:any_1], e:bat[:any_2,:any_3], nonils:bit) :bat[:any_2,:int] 
 address GRPaggr_count
 comment "grouped count";
-command size(b:bat[:any$2,:bit], e:bat[:any$2,:any$1]) :bat[:any$2,:int] 
+command size(b:bat[:any_2,:bit], e:bat[:any_2,:any_1]) :bat[:any_2,:int] 
 address GRPsize
 comment "grouped count of true values";
 

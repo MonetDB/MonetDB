@@ -601,8 +601,8 @@ on big sizes of both the "smaller" and "larger" tables with hit rates such that 
 @mal
 module radix;
 
-command radix_cluster(b:bat[any$1,any$2], limits:str, perc:flt, radix1:int...) i
-	:bat[any$1,any$2] 
+command radix_cluster(b:bat[any_1,any_2], limits:str, perc:flt, radix1:int...) i
+	:bat[any_1,any_2] 
 address radix_cluster
 comment "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clusters. First pass uses 
  the last radix parameter, and so on backwards. Partial radix cluster (i.e. skipping lower 
@@ -618,7 +618,7 @@ comment "do N radix-cluster steps creating (radix1 * radix2 * ... * radixN) clus
  If you pass a non-empty but writable limits bat, it will be used as above for resume,
  and will also be overwritten with the new cluster boundaries";
 
-command radix_bits(b:bat[:any$1,:any$2]) :int 
+command radix_bits(b:bat[:any_1,:any_2]) :int 
 address radix_bits
 comment "return the number of bits on which 
 	the head column is radix clustered." ;
@@ -631,43 +631,43 @@ comment "return a histogram [radix-pattern,bucket-size] for the tail values of s
  command just detects consecutive chunks where (1) the tail values have the same specified
  radix-bits and (2) the head values are ascending";
 
-command radix_count2(b:bat[:any$1,:oid], shift:int, radix:int) :bat[:int,:int] 
+command radix_count2(b:bat[:any_1,:oid], shift:int, radix:int) :bat[:int,:int] 
 address radix_count2
 comment "generates a bat with in head the dense ascending sequence 0..((1 << radix) - 1), and in tail 
 the count of all tail value in b with these radix bits, ignoring the lowmost ones passed in shift";
 
-command radix_decluster(b:bat[:oid,:any$1], radix_cnt:bat[:int,:int], multiplier:int) :bat[:void,:any$1] 
+command radix_decluster(b:bat[:oid,:any_1], radix_cnt:bat[:int,:int], multiplier:int) :bat[:void,:any_1] 
 address radix_decluster
 comment "merge a (partially) radix-clustered dense collection of oids back to their original void
  position.  second bat *must* be result of b.radix_count(x,y). Third parameter is a multiplier
  that tells how many times the number of chunks the matching-window-size should be.";
 
-command radix_decluster2(b:bat[:any$2,:oid], a:bat[:any$2,:any$1],radix_cnt:bat[:int,:int], multiplier:int) :bat[:void,:any$1] 
+command radix_decluster2(b:bat[:any_2,:oid], a:bat[:any_2,:any_1],radix_cnt:bat[:int,:int], multiplier:int) :bat[:void,:any_1] 
 address radix_decluster2;
 
-command radix_decluster3(b:bat[:any$2,:oid],a:bat[:any$2,:any$1] , r:bat[:int,:int] , multiplier:int) :bat[:void,:any$1] 
+command radix_decluster3(b:bat[:any_2,:oid],a:bat[:any_2,:any_1] , r:bat[:int,:int] , multiplier:int) :bat[:void,:any_1] 
 address radix_decluster3;
 
-command radix_decluster4(b:bat[:any$2,:oid],a:bat[:any$2,:any$1],r:bat[:int,:int], multiplier:int) :bat[:void,:any$1] 
+command radix_decluster4(b:bat[:any_2,:oid],a:bat[:any_2,:any_1],r:bat[:int,:int], multiplier:int) :bat[:void,:any_1] 
 address radix_decluster4 ;
 
-command radix_join(l:bat[:any$1,:any$2],r:bat[:any$2,:any$3], radix:int, hitrate:int) :bat[:any$4,:any$5] 
+command radix_join(l:bat[:any_1,:any_2],r:bat[:any_2,:any_3], radix:int, hitrate:int) :bat[:any_4,:any_5] 
 address radix_join 
 comment "nested-loop join on radix clustered inputs";
 
-command phash_join(l:bat[:any$1,:any$2],r:bat[:any$2,:any$3], radix:int, hitrate:int, cutoff:bit) :bat[:any$4,:any$5] 
+command phash_join(l:bat[:any_1,:any_2],r:bat[:any_2,:any_3], radix:int, hitrate:int, cutoff:bit) :bat[:any_4,:any_5] 
 address phash_join
 comment "partitioned hash-join on radix clustered inputs";
 
-command jivejoin0(proj:bat[:oid,:oid], attr:bat[:void,:any$1],cnt:bat[:int,:int], shift:int, radix:int) :bat[:void,:any$1] 
+command jivejoin0(proj:bat[:oid,:oid], attr:bat[:void,:any_1],cnt:bat[:int,:int], shift:int, radix:int) :bat[:void,:any_1] 
 command jivejoin0
 address "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head";
 
-command jivejoin1(preallocated:bat[:void,:oid], proj:bat[:oid,:oid], attr:bat[:void,:any$1], cnt:bat[:int,:int], shift:int, radix:int) :bat[:void,:any$1] 
+command jivejoin1(preallocated:bat[:void,:oid], proj:bat[:oid,:oid], attr:bat[:void,:any_1], cnt:bat[:int,:int], shift:int, radix:int) :bat[:void,:any_1] 
 address jivejoin1
 comment "positional join with built-in NSM projection, and implicit 1-pass perfect knowledge radix-cluster on output according to proj head";
 
-command jivejoin2(proj:bat[:oid,:oid],attr:bat[:void,:any$1]) :bat[:void,:any$1] 
+command jivejoin2(proj:bat[:oid,:oid],attr:bat[:void,:any_1]) :bat[:void,:any_1] 
 address jivejoin2
 comment "positional join that creates a void head by inserting the join result positionally";
 

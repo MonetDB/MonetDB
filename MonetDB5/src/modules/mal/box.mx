@@ -29,7 +29,7 @@ to set-up the list of current users and to perform authorization.
 @mal
 module box;
 
-pattern open(nme:str):any$1
+pattern open(nme:str):any_1
 address BOXopen
 comment "Locate the box and open it ";
 pattern close(bname:str):void	
@@ -38,16 +38,16 @@ comment "Close the box ";
 pattern destroy(bname:str):void	
 address BOXdestroy
 comment "Destroy the box ";
-pattern take(bnme:str, vnme:str):any$1
+pattern take(bnme:str, vnme:str):any_1
 address BOXtake
 comment "Locates the typed value in the box";
-pattern deposit(bname:str,name:str,v:any$1):void 			
+pattern deposit(bname:str,name:str,v:any_1):void 			
 address BOXdeposit
 comment "Enter a new value into the box";
 pattern releaseAll(bname:str) :void 			
 address BOXreleaseAll
 comment "Release all objects for this client";
-pattern release(bname:str,nme:str,val:any$1):void 			
+pattern release(bname:str,nme:str,val:any_1):void 			
 address BOXrelease
 comment "Release the BAT from the client pool";
 pattern toString(bname:str,name:str) :str 			
