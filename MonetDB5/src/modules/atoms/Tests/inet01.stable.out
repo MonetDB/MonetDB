@@ -7,6 +7,8 @@ stdout of test 'inet01` in directory 'src/modules/atoms` itself:
 
 
 
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
@@ -52,32 +54,32 @@ stdout of test 'inet01` in directory 'src/modules/atoms` itself:
 #io.print(e);
 #
 function user.main():int;	# 0  (main:int)
-    i1 := inet.new("127.0.0.1");	# 1 INETnew (i1:inet)<-($2:str)
-    io.print(i1);	# 2 IOprint_val ($3:int)<-(i1:inet)
-    i2 := inet.new("192.168.0.0/24");	# 3 INETnew (i2:inet)<-($5:str)
-    io.print(i2);	# 4 IOprint_val ($6:int)<-(i2:inet)
-    i3 := inet.new("192.168/16");	# 5 INETnew (i3:inet)<-($8:str)
-    io.print(i3);	# 6 IOprint_val ($9:int)<-(i3:inet)
-    i4 := inet.new("192.168.0.3/24");	# 7 INETnew (i4:inet)<-($11:str)
-    io.print(i4);	# 8 IOprint_val ($12:int)<-(i4:inet)
-    i5 := inet.new("/0");	# 9 INETnew (i5:inet)<-($14:str)
-    io.print(i5);	# 10 IOprint_val ($15:int)<-(i5:inet)
-    i6 := inet.new("127/32");	# 11 INETnew (i6:inet)<-($17:str)
-    io.print(i6);	# 12 IOprint_val ($18:int)<-(i6:inet)
-    i7 := inet.new("127.0.0.0");	# 13 INETnew (i7:inet)<-($20:str)
-    io.print(i7);	# 14 IOprint_val ($21:int)<-(i7:inet)
+    i1 := inet.new("127.0.0.1");	# 1 INETnew (i1:inet)<-(_2:str)
+    io.print(i1);	# 2 IOprint_val (_3:int)<-(i1:inet)
+    i2 := inet.new("192.168.0.0/24");	# 3 INETnew (i2:inet)<-(_5:str)
+    io.print(i2);	# 4 IOprint_val (_6:int)<-(i2:inet)
+    i3 := inet.new("192.168/16");	# 5 INETnew (i3:inet)<-(_8:str)
+    io.print(i3);	# 6 IOprint_val (_9:int)<-(i3:inet)
+    i4 := inet.new("192.168.0.3/24");	# 7 INETnew (i4:inet)<-(_11:str)
+    io.print(i4);	# 8 IOprint_val (_12:int)<-(i4:inet)
+    i5 := inet.new("/0");	# 9 INETnew (i5:inet)<-(_14:str)
+    io.print(i5);	# 10 IOprint_val (_15:int)<-(i5:inet)
+    i6 := inet.new("127/32");	# 11 INETnew (i6:inet)<-(_17:str)
+    io.print(i6);	# 12 IOprint_val (_18:int)<-(i6:inet)
+    i7 := inet.new("127.0.0.0");	# 13 INETnew (i7:inet)<-(_20:str)
+    io.print(i7);	# 14 IOprint_val (_21:int)<-(i7:inet)
     e := inet.<(i2,i3);	# 15 INET_comp_LT (e:bit)<-(i2:inet)(i3:inet)
-    io.print(e);	# 16 IOprint_val ($23:int)<-(e:bit)
+    io.print(e);	# 16 IOprint_val (_23:int)<-(e:bit)
     e := inet.>(i2,i3);	# 17 INET_comp_GT (e:bit)<-(i2:inet)(i3:inet)
-    io.print(e);	# 18 IOprint_val ($24:int)<-(e:bit)
+    io.print(e);	# 18 IOprint_val (_24:int)<-(e:bit)
     e := inet.=(i6,i1);	# 19 INET_comp_EQ (e:bit)<-(i6:inet)(i1:inet)
-    io.print(e);	# 20 IOprint_val ($25:int)<-(e:bit)
+    io.print(e);	# 20 IOprint_val (_25:int)<-(e:bit)
     e := inet.=(i6,i7);	# 21 INET_comp_EQ (e:bit)<-(i6:inet)(i7:inet)
-    io.print(e);	# 22 IOprint_val ($26:int)<-(e:bit)
+    io.print(e);	# 22 IOprint_val (_26:int)<-(e:bit)
     e := inet.<<(i4,i3);	# 23 INET_comp_CW (e:bit)<-(i4:inet)(i3:inet)
-    io.print(e);	# 24 IOprint_val ($27:int)<-(e:bit)
+    io.print(e);	# 24 IOprint_val (_27:int)<-(e:bit)
     e := inet.>>=(i6,i7);	# 25 INET_comp_CSE (e:bit)<-(i6:inet)(i7:inet)
-    io.print(e);	# 26 IOprint_val ($28:int)<-(e:bit)
+    io.print(e);	# 26 IOprint_val (_28:int)<-(e:bit)
 end main;	# 27  
 [ 127.0.0.1 ]
 [ 192.168.0.0/24 ]

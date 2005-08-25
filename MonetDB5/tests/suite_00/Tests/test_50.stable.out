@@ -1,24 +1,19 @@
 stdout of test 'test_50` in directory 'tests/suite_00` itself:
 
-#> Mtest (20:57:28):	milS test_50 milS
-#> Mtest (20:57:28):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_50.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:test_50.milS
 
-# 10:14:27 >  
-# 10:14:27 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=45534 --set sql_port=55728 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_50.mal </dev/null
-# 10:14:27 >  
+# 00:12:29 >  
+# 00:12:29 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34380 --set sql_port=46008 --set xquery_port=58634 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_50.mal </dev/null
+# 00:12:29 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_suite_00
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## Monet Mil to Mal compiler
+#include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
 ##Predefined code segment
@@ -27,121 +22,118 @@ stdout of test 'test_50` in directory 'tests/suite_00` itself:
 ##A few guidelines to maximize usefullness.
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
-##include "mil_prelude";
+##use the "mil_schema" for additional support routines
 #	mil.line("setoid(oid(20000000));");
-#	aa_a := oid(20000000);
-#	ba_a := setoid(aa_a);
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
 #	mil.line("# Selfcontained test of delta operations\n");
-#	mil.line("module(\"trans\");");
 #	mil.line("var b:=new(int,int);");
-#	b := new(nil:int,nil:int);
+#	b := bbp.new(nil:int,nil:int);
 #	mil.line("var bi:=new(int,int);");
-#	bi := new(nil:int,nil:int);
+#	bi := bbp.new(nil:int,nil:int);
 #	mil.line("var bd:=new(int,int);");
-#	bd := new(nil:int,nil:int);
+#	bd := bbp.new(nil:int,nil:int);
 #	mil.line("insert(b,1,2);");
-#	ca_a := insert(b,1,2);
+#	ca_a := bat.insert(b,1,2);
 #	mil.line("insert(b,2,3);");
-#	da_a := insert(b,2,3);
+#	da_a := bat.insert(b,2,3);
 #	mil.line("bd:=b.delta();");
-#	bd := delta(b);
+#	bd := transaction.delta(b);
 #	mil.line("print(bd);");
-#	ea_a := print(bd);
+#	ea_a := io.print(bd);
 #	mil.line("var a:= b.alpha();");
-#	a := alpha(b);
+#	a := transaction.alpha(b);
 #	mil.line("a.print();");
-#	fa_a := print(a);
+#	fa_a := io.print(a);
 #	mil.line("#commit the changes and repeat the action\n");
-#	mil.line("clear(bd);");
-#	ga_a := clear(bd);
+#	ga_a := bat.delete(bd);
 #	mil.line("commit(b);");
-#	ha_a := commit(b);
+#	ha_a := transaction.commit(b);
 #	mil.line("b.alpha().print();");
-#	ia_a := alpha(b);
-#	ja_a := print(ia_a);
+#	ia_a := transaction.alpha(b);
+#	ja_a := io.print(ia_a);
 #	mil.line("insert(b,4,5);");
-#	ka_a := insert(b,4,5);
+#	ka_a := bat.insert(b,4,5);
 #	mil.line("delete(b,2,3);");
-#	la_a := delete(b,2,3);
+#	la_a := bat.delete(b,2,3);
 #	mil.line("print(b);");
-#	ma_a := print(b);
+#	ma_a := io.print(b);
 #	mil.line("bd:=b.delta();");
-#	bd := delta(b);
+#	bd := transaction.delta(b);
 #	mil.line("print(bd);");
-#	na_a := print(bd);
+#	na_a := io.print(bd);
 #	mil.line("a:= b.alpha();");
-#	a := alpha(b);
+#	a := transaction.alpha(b);
 #	mil.line("a.print();");
-#	oa_a := print(a);
+#	oa_a := io.print(a);
 #	mil.line("abort(b);");
-#	pa_a := abort(b);
+#	pa_a := transaction.abort(b);
 #	mil.line("print(b);");
-#	qa_a := print(b);
+#	qa_a := io.print(b);
 #	mil.line("quit();");
-#	ra_a := quit();
+#	ra_a := clients.quit();
 #
 function user.main():int;	# 0  (main:int)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  ($32:str)
-#Predefined code segment 	# 2  ($34:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  ($36:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  ($38:str)
-#A few guidelines to maximize usefullness. 	# 5  ($40:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  ($42:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  ($44:str)
-#use the "mil_schema" for additional support routines 	# 8  ($46:str)
-    mil.line("setoid(oid(20000000));");	# 9 MILline ($47:void)<-($48:str)
-    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-($50:int)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
+#Predefined code segment 	# 2  (_34:str)
+#The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 4  (_38:str)
+#A few guidelines to maximize usefullness. 	# 5  (_40:str)
+#- make the type of variables explicit, in particular 'nil' 	# 6  (_42:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_44:str)
+#use the "mil_schema" for additional support routines 	# 8  (_46:str)
+    mil.line("setoid(oid(20000000));");	# 9 MILline (_47:void)<-(_48:str)
+    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-(_50:int)
     ba_a := calc.setoid(aa_a);	# 11 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("# Selfcontained test of delta operations\n");	# 12 MILline ($52:void)<-($53:str)
-    mil.line("var b:=new(int,int);");	# 13 MILline ($54:void)<-($55:str)
-    b := bbp.new(nil:int,nil:int);	# 14 CMDBATnew (b:bat[:int,:int])<-($57:int)($57:int)
-    mil.line("var bi:=new(int,int);");	# 15 MILline ($58:void)<-($59:str)
-    bi := bbp.new(nil:int,nil:int);	# 16 CMDBATnew (bi:bat[:int,:int])<-($57:int)($57:int)
-    mil.line("var bd:=new(int,int);");	# 17 MILline ($61:void)<-($62:str)
-    bd := bbp.new(nil:int,nil:int);	# 18 CMDBATnew (bd:bat[:int,:int])<-($57:int)($57:int)
-    mil.line("insert(b,1,2);");	# 19 MILline ($64:void)<-($65:str)
-    ca_a := bat.insert(b,1,2);	# 20 BKCinsert_bun (ca_a:bat[:int,:int])<-(b:bat[:int,:int])($67:int)($68:int)
-    mil.line("insert(b,2,3);");	# 21 MILline ($69:void)<-($70:str)
-    da_a := bat.insert(b,2,3);	# 22 BKCinsert_bun (da_a:bat[:int,:int])<-(b:bat[:int,:int])($68:int)($72:int)
-    mil.line("bd:=b.delta();");	# 23 MILline ($73:void)<-($74:str)
+    mil.line("# Selfcontained test of delta operations\n");	# 12 MILline (_52:void)<-(_53:str)
+    mil.line("var b:=new(int,int);");	# 13 MILline (_54:void)<-(_55:str)
+    b := bbp.new(nil:int,nil:int);	# 14 CMDBATnew (b:bat[:int,:int])<-(_57:int)(_57:int)
+    mil.line("var bi:=new(int,int);");	# 15 MILline (_58:void)<-(_59:str)
+    bi := bbp.new(nil:int,nil:int);	# 16 CMDBATnew (bi:bat[:int,:int])<-(_57:int)(_57:int)
+    mil.line("var bd:=new(int,int);");	# 17 MILline (_61:void)<-(_62:str)
+    bd := bbp.new(nil:int,nil:int);	# 18 CMDBATnew (bd:bat[:int,:int])<-(_57:int)(_57:int)
+    mil.line("insert(b,1,2);");	# 19 MILline (_64:void)<-(_65:str)
+    ca_a := bat.insert(b,1,2);	# 20 BKCinsert_bun (ca_a:bat[:int,:int])<-(b:bat[:int,:int])(_67:int)(_68:int)
+    mil.line("insert(b,2,3);");	# 21 MILline (_69:void)<-(_70:str)
+    da_a := bat.insert(b,2,3);	# 22 BKCinsert_bun (da_a:bat[:int,:int])<-(b:bat[:int,:int])(_68:int)(_72:int)
+    mil.line("bd:=b.delta();");	# 23 MILline (_73:void)<-(_74:str)
     bd := transaction.delta(b);	# 24 TRNtrans_delta (bd:bat[:int,:int])<-(b:bat[:int,:int])
-    mil.line("print(bd);");	# 25 MILline ($75:void)<-($76:str)
+    mil.line("print(bd);");	# 25 MILline (_75:void)<-(_76:str)
     ea_a := io.print(bd);	# 26 IOprint_val (ea_a:int)<-(bd:bat[:int,:int])
-    mil.line("var a:= b.alpha();");	# 27 MILline ($78:void)<-($79:str)
+    mil.line("var a:= b.alpha();");	# 27 MILline (_78:void)<-(_79:str)
     a := transaction.alpha(b);	# 28 TRNtrans_alpha (a:bat[:int,:int])<-(b:bat[:int,:int])
-    mil.line("a.print();");	# 29 MILline ($81:void)<-($82:str)
+    mil.line("a.print();");	# 29 MILline (_81:void)<-(_82:str)
     fa_a := io.print(a);	# 30 IOprint_val (fa_a:int)<-(a:bat[:int,:int])
-    mil.line("#commit the changes and repeat the action\n");	# 31 MILline ($84:void)<-($85:str)
+    mil.line("#commit the changes and repeat the action\n");	# 31 MILline (_84:void)<-(_85:str)
     ga_a := bat.delete(bd);	# 32 BKCdelete_all (ga_a:bat[:int,:int])<-(bd:bat[:int,:int])
-    mil.line("commit(b);");	# 33 MILline ($87:void)<-($88:str)
+    mil.line("commit(b);");	# 33 MILline (_87:void)<-(_88:str)
     ha_a := transaction.commit(b);	# 34 TRNtrans_commit (ha_a:void)<-(b:bat[:int,:int])
-    mil.line("b.alpha().print();");	# 35 MILline ($90:void)<-($91:str)
+    mil.line("b.alpha().print();");	# 35 MILline (_90:void)<-(_91:str)
     ia_a := transaction.alpha(b);	# 36 TRNtrans_alpha (ia_a:bat[:int,:int])<-(b:bat[:int,:int])
     ja_a := io.print(ia_a);	# 37 IOprint_val (ja_a:int)<-(ia_a:bat[:int,:int])
-    mil.line("insert(b,4,5);");	# 38 MILline ($94:void)<-($95:str)
-    ka_a := bat.insert(b,4,5);	# 39 BKCinsert_bun (ka_a:bat[:int,:int])<-(b:bat[:int,:int])($97:int)($98:int)
-    mil.line("delete(b,2,3);");	# 40 MILline ($99:void)<-($100:str)
-    la_a := bat.delete(b,2,3);	# 41 BKCdelete_bun (la_a:bat[:int,:int])<-(b:bat[:int,:int])($102:int)($72:int)
-    mil.line("print(b);");	# 42 MILline ($103:void)<-($104:str)
+    mil.line("insert(b,4,5);");	# 38 MILline (_94:void)<-(_95:str)
+    ka_a := bat.insert(b,4,5);	# 39 BKCinsert_bun (ka_a:bat[:int,:int])<-(b:bat[:int,:int])(_97:int)(_98:int)
+    mil.line("delete(b,2,3);");	# 40 MILline (_99:void)<-(_100:str)
+    la_a := bat.delete(b,2,3);	# 41 BKCdelete_bun (la_a:bat[:int,:int])<-(b:bat[:int,:int])(_102:int)(_72:int)
+    mil.line("print(b);");	# 42 MILline (_103:void)<-(_104:str)
     ma_a := io.print(b);	# 43 IOprint_val (ma_a:int)<-(b:bat[:int,:int])
-    mil.line("bd:=b.delta();");	# 44 MILline ($106:void)<-($107:str)
+    mil.line("bd:=b.delta();");	# 44 MILline (_106:void)<-(_107:str)
     bd := transaction.delta(b);	# 45 TRNtrans_delta (bd:bat[:int,:int])<-(b:bat[:int,:int])
-    mil.line("print(bd);");	# 46 MILline ($108:void)<-($109:str)
+    mil.line("print(bd);");	# 46 MILline (_108:void)<-(_109:str)
     na_a := io.print(bd);	# 47 IOprint_val (na_a:int)<-(bd:bat[:int,:int])
-    mil.line("a:= b.alpha();");	# 48 MILline ($111:void)<-($112:str)
+    mil.line("a:= b.alpha();");	# 48 MILline (_111:void)<-(_112:str)
     a := transaction.alpha(b);	# 49 TRNtrans_alpha (a:bat[:int,:int])<-(b:bat[:int,:int])
-    mil.line("a.print();");	# 50 MILline ($113:void)<-($82:str)
+    mil.line("a.print();");	# 50 MILline (_113:void)<-(_82:str)
     oa_a := io.print(a);	# 51 IOprint_val (oa_a:int)<-(a:bat[:int,:int])
-    mil.line("abort(b);");	# 52 MILline ($115:void)<-($116:str)
+    mil.line("abort(b);");	# 52 MILline (_115:void)<-(_116:str)
     pa_a := transaction.abort(b);	# 53 TRNtrans_abort (pa_a:void)<-(b:bat[:int,:int])
-    mil.line("print(b);");	# 54 MILline ($118:void)<-($104:str)
+    mil.line("print(b);");	# 54 MILline (_118:void)<-(_104:str)
     qa_a := io.print(b);	# 55 IOprint_val (qa_a:int)<-(b:bat[:int,:int])
-    mil.line("quit();");	# 56 MILline ($120:void)<-($121:str)
+    mil.line("quit();");	# 56 MILline (_120:void)<-(_121:str)
     ra_a := clients.quit();	# 57 CLTquit (ra_a:void)
 end main;	# 58  
 #setoid(oid(20000000));
-## Selfcontained test of delta operations
-#module("trans");
+## Selfcontained test of delta operations\n
 #var b:=new(int,int);
 #var bi:=new(int,int);
 #var bd:=new(int,int);
@@ -150,59 +142,58 @@ end main;	# 58
 #bd:=b.delta();
 #print(bd);
 #-----------------#
-# BAT:	  tmp_26  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 #var a:= b.alpha();
 #a.print();
 #-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
 [ 2,	  3	  ]
-##commit the changes and repeat the action
-#clear(bd);
+##commit the changes and repeat the action\n
 #commit(b);
 #b.alpha().print();
 #-----------------#
-# h	tmp_8	  # name
+# h	t	  # name
 # int	int	  # type
 #-----------------#
 #insert(b,4,5);
 #delete(b,2,3);
 #print(b);
 #-----------------#
-# BAT:	  tmp_24  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
 [ 4,	  5	  ]
 #bd:=b.delta();
 #print(bd);
 #-----------------#
-# BAT:	  tmp_27  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 2,	  3	  ]
 #a:= b.alpha();
 #a.print();
 #-----------------#
-# BAT:	  tmp_26  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 4,	  5	  ]
 #abort(b);
 #print(b);
 #-----------------#
-# BAT:	  tmp_24  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 2,	  3	  ]
 [ 1,	  2	  ]
 #quit();
 
-# 17:08:50 >  
-# 17:08:50 >  Done.
-# 17:08:50 >  
+# 00:12:29 >  
+# 00:12:29 >  Done.
+# 00:12:29 >  
 

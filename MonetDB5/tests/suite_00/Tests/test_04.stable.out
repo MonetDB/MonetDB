@@ -1,113 +1,110 @@
 stdout of test 'test_04` in directory 'tests/suite_00` itself:
 
-#> Mtest (20:57:18):	milS test_04 milS
-#> Mtest (20:57:18):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_04.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:test_04.milS
 
+# 00:12:27 >  
+# 00:12:27 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34380 --set sql_port=46008 --set xquery_port=58634 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_04.mal </dev/null
+# 00:12:27 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_suite_00
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## Monet Mil to Mal compiler
+#include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
-## Predefined code segment
+##Predefined code segment
 ##The compiler can not guarantee an accurate compilation,
 ##because MIL unlike MAL is a dynamically typed language.
 ##A few guidelines to maximize usefullness.
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
 #	mil.line("setoid(oid(20000000));");
-#	aa_a := oid(20000000);
-#	ba_a := setoid(aa_a);
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
 #	mil.line("# test correctness of semijoin\n");
-#	mil.line("var b:= new(int,int);");
-#	b := new(:int,:int);
-#	mil.line("var c:= new(int,int);");
-#	c := new(:int,:int);
+#	b := bbp.new(nil:int,nil:int);
+#	mil.line("var c:= bbp.new(int,int);");
+#	c := bbp.new(nil:int,nil:int);
 #	mil.line("b.insert(0,0);");
-#	ca_a := insert(b,0,0);
+#	ca_a := bat.insert(b,0,0);
 #	mil.line("b.insert(1,1);");
-#	da_a := insert(b,1,1);
+#	da_a := bat.insert(b,1,1);
 #	mil.line("b.insert(1,2);");
-#	ea_a := insert(b,1,2);
+#	ea_a := bat.insert(b,1,2);
 #	mil.line("b.insert(1,3);");
-#	fa_a := insert(b,1,3);
+#	fa_a := bat.insert(b,1,3);
 #	mil.line("b.insert(1,4);");
-#	ga_a := insert(b,1,4);
+#	ga_a := bat.insert(b,1,4);
 #	mil.line("c.insert(1,5);");
-#	ha_a := insert(c,1,5);
+#	ha_a := bat.insert(c,1,5);
 #	mil.line("c.insert(1,4);");
-#	ia_a := insert(c,1,4);
+#	ia_a := bat.insert(c,1,4);
 #	mil.line("c.insert(2,2);");
-#	ja_a := insert(c,2,2);
+#	ja_a := bat.insert(c,2,2);
 #	mil.line("b.semijoin(c).print();");
-#	ka_a := semijoin(b,c);
-#	la_a := print(ka_a);
+#	ka_a := algebra.semijoin(b,c);
+#	la_a := io.print(ka_a);
 #	mil.line("c.semijoin(b).print();");
-#	ma_a := semijoin(c,b);
-#	na_a := print(ma_a);
+#	ma_a := algebra.semijoin(c,b);
+#	na_a := io.print(ma_a);
 #	mil.line("b.semijoin(b).print();");
-#	oa_a := semijoin(b,b);
-#	pa_a := print(oa_a);
+#	oa_a := algebra.semijoin(b,b);
+#	pa_a := io.print(oa_a);
 #	mil.line("quit();");
-#	qa_a := quit();
+#	qa_a := clients.quit();
 #
 function user.main():int;	# 0  (main:int)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  ($32:str)
-#Predefined code segment 	# 2  ($34:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  ($36:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  ($38:str)
-#A few guidelines to maximize usefullness. 	# 5  ($40:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  ($42:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  ($44:str)
-#use the "mil_schema" for additional support routines 	# 8  ($46:str)
-    mil.line("setoid(oid(20000000));");	# 9 MILline ($47:void)<-($48:str)
-    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-($50:int)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
+#Predefined code segment 	# 2  (_34:str)
+#The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 4  (_38:str)
+#A few guidelines to maximize usefullness. 	# 5  (_40:str)
+#- make the type of variables explicit, in particular 'nil' 	# 6  (_42:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_44:str)
+#use the "mil_schema" for additional support routines 	# 8  (_46:str)
+    mil.line("setoid(oid(20000000));");	# 9 MILline (_47:void)<-(_48:str)
+    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-(_50:int)
     ba_a := calc.setoid(aa_a);	# 11 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("# test correctness of semijoin\n");	# 12 MILline ($52:void)<-($53:str)
-    b := bbp.new(nil:int,nil:int);	# 13 CMDBATnew (b:bat[:int,:int])<-($55:int)($55:int)
-    mil.line("var c:= bbp.new(int,int);");	# 14 MILline ($56:void)<-($57:str)
-    c := bbp.new(nil:int,nil:int);	# 15 CMDBATnew (c:bat[:int,:int])<-($55:int)($55:int)
-    mil.line("b.insert(0,0);");	# 16 MILline ($59:void)<-($60:str)
-    ca_a := bat.insert(b,0,0);	# 17 BKCinsert_bun (ca_a:bat[:int,:int])<-(b:bat[:int,:int])($62:int)($62:int)
-    mil.line("b.insert(1,1);");	# 18 MILline ($63:void)<-($64:str)
-    da_a := bat.insert(b,1,1);	# 19 BKCinsert_bun (da_a:bat[:int,:int])<-(b:bat[:int,:int])($66:int)($66:int)
-    mil.line("b.insert(1,2);");	# 20 MILline ($67:void)<-($68:str)
-    ea_a := bat.insert(b,1,2);	# 21 BKCinsert_bun (ea_a:bat[:int,:int])<-(b:bat[:int,:int])($66:int)($70:int)
-    mil.line("b.insert(1,3);");	# 22 MILline ($71:void)<-($72:str)
-    fa_a := bat.insert(b,1,3);	# 23 BKCinsert_bun (fa_a:bat[:int,:int])<-(b:bat[:int,:int])($66:int)($74:int)
-    mil.line("b.insert(1,4);");	# 24 MILline ($75:void)<-($76:str)
-    ga_a := bat.insert(b,1,4);	# 25 BKCinsert_bun (ga_a:bat[:int,:int])<-(b:bat[:int,:int])($66:int)($78:int)
-    mil.line("c.insert(1,5);");	# 26 MILline ($79:void)<-($80:str)
-    ha_a := bat.insert(c,1,5);	# 27 BKCinsert_bun (ha_a:bat[:int,:int])<-(c:bat[:int,:int])($66:int)($82:int)
-    mil.line("c.insert(1,4);");	# 28 MILline ($83:void)<-($84:str)
-    ia_a := bat.insert(c,1,4);	# 29 BKCinsert_bun (ia_a:bat[:int,:int])<-(c:bat[:int,:int])($66:int)($78:int)
-    mil.line("c.insert(2,2);");	# 30 MILline ($86:void)<-($87:str)
-    ja_a := bat.insert(c,2,2);	# 31 BKCinsert_bun (ja_a:bat[:int,:int])<-(c:bat[:int,:int])($70:int)($70:int)
-    mil.line("b.semijoin(c).print();");	# 32 MILline ($89:void)<-($90:str)
+    mil.line("# test correctness of semijoin\n");	# 12 MILline (_52:void)<-(_53:str)
+    b := bbp.new(nil:int,nil:int);	# 13 CMDBATnew (b:bat[:int,:int])<-(_55:int)(_55:int)
+    mil.line("var c:= bbp.new(int,int);");	# 14 MILline (_56:void)<-(_57:str)
+    c := bbp.new(nil:int,nil:int);	# 15 CMDBATnew (c:bat[:int,:int])<-(_55:int)(_55:int)
+    mil.line("b.insert(0,0);");	# 16 MILline (_59:void)<-(_60:str)
+    ca_a := bat.insert(b,0,0);	# 17 BKCinsert_bun (ca_a:bat[:int,:int])<-(b:bat[:int,:int])(_62:int)(_62:int)
+    mil.line("b.insert(1,1);");	# 18 MILline (_63:void)<-(_64:str)
+    da_a := bat.insert(b,1,1);	# 19 BKCinsert_bun (da_a:bat[:int,:int])<-(b:bat[:int,:int])(_66:int)(_66:int)
+    mil.line("b.insert(1,2);");	# 20 MILline (_67:void)<-(_68:str)
+    ea_a := bat.insert(b,1,2);	# 21 BKCinsert_bun (ea_a:bat[:int,:int])<-(b:bat[:int,:int])(_66:int)(_70:int)
+    mil.line("b.insert(1,3);");	# 22 MILline (_71:void)<-(_72:str)
+    fa_a := bat.insert(b,1,3);	# 23 BKCinsert_bun (fa_a:bat[:int,:int])<-(b:bat[:int,:int])(_66:int)(_74:int)
+    mil.line("b.insert(1,4);");	# 24 MILline (_75:void)<-(_76:str)
+    ga_a := bat.insert(b,1,4);	# 25 BKCinsert_bun (ga_a:bat[:int,:int])<-(b:bat[:int,:int])(_66:int)(_78:int)
+    mil.line("c.insert(1,5);");	# 26 MILline (_79:void)<-(_80:str)
+    ha_a := bat.insert(c,1,5);	# 27 BKCinsert_bun (ha_a:bat[:int,:int])<-(c:bat[:int,:int])(_66:int)(_82:int)
+    mil.line("c.insert(1,4);");	# 28 MILline (_83:void)<-(_84:str)
+    ia_a := bat.insert(c,1,4);	# 29 BKCinsert_bun (ia_a:bat[:int,:int])<-(c:bat[:int,:int])(_66:int)(_78:int)
+    mil.line("c.insert(2,2);");	# 30 MILline (_86:void)<-(_87:str)
+    ja_a := bat.insert(c,2,2);	# 31 BKCinsert_bun (ja_a:bat[:int,:int])<-(c:bat[:int,:int])(_70:int)(_70:int)
+    mil.line("b.semijoin(c).print();");	# 32 MILline (_89:void)<-(_90:str)
     ka_a := algebra.semijoin(b,c);	# 33 ALGsemijoin (ka_a:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
     la_a := io.print(ka_a);	# 34 IOprint_val (la_a:int)<-(ka_a:bat[:int,:int])
-    mil.line("c.semijoin(b).print();");	# 35 MILline ($93:void)<-($94:str)
+    mil.line("c.semijoin(b).print();");	# 35 MILline (_93:void)<-(_94:str)
     ma_a := algebra.semijoin(c,b);	# 36 ALGsemijoin (ma_a:bat[:int,:int])<-(c:bat[:int,:int])(b:bat[:int,:int])
     na_a := io.print(ma_a);	# 37 IOprint_val (na_a:int)<-(ma_a:bat[:int,:int])
-    mil.line("b.semijoin(b).print();");	# 38 MILline ($97:void)<-($98:str)
+    mil.line("b.semijoin(b).print();");	# 38 MILline (_97:void)<-(_98:str)
     oa_a := algebra.semijoin(b,b);	# 39 ALGsemijoin (oa_a:bat[:int,:int])<-(b:bat[:int,:int])(b:bat[:int,:int])
     pa_a := io.print(oa_a);	# 40 IOprint_val (pa_a:int)<-(oa_a:bat[:int,:int])
-    mil.line("quit();");	# 41 MILline ($101:void)<-($102:str)
+    mil.line("quit();");	# 41 MILline (_101:void)<-(_102:str)
     qa_a := clients.quit();	# 42 CLTquit (qa_a:void)
 end main;	# 43  
 #setoid(oid(20000000));
-## test correctness of semijoin
-#var b:= new(int,int);
-#var c:= new(int,int);
+## test correctness of semijoin\n
+#var c:= bbp.new(int,int);
 #b.insert(0,0);
 #b.insert(1,1);
 #b.insert(1,2);
@@ -118,8 +115,8 @@ end main;	# 43
 #c.insert(2,2);
 #b.semijoin(c).print();
 #-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  1	  ]
 [ 1,	  2	  ]
@@ -127,23 +124,24 @@ end main;	# 43
 [ 1,	  4	  ]
 #c.semijoin(b).print();
 #-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  5	  ]
 [ 1,	  4	  ]
 #b.semijoin(b).print();
 #-----------------#
-# BAT:	  tmp_25  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 0,	  0	  ]
 [ 1,	  1	  ]
 [ 1,	  2	  ]
 [ 1,	  3	  ]
 [ 1,	  4	  ]
+#quit();
 
-# 09:25:08 >  
-# 09:25:08 >  Done.
-# 09:25:08 >  
+# 00:12:27 >  
+# 00:12:27 >  Done.
+# 00:12:27 >  
 

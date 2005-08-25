@@ -1,87 +1,88 @@
 stdout of test 'inspect00` in directory 'src/modules/mal` itself:
 
 
-# 18:11:25 >  
-# 18:11:25 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42980 --set sql_port=58957 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect00.mal </dev/null
-# 18:11:25 >  
+# 00:03:55 >  
+# 00:03:55 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect00.mal </dev/null
+# 00:03:55 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_mal
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## test analysis of stack frames
 #
 #function tst():void;
-#	i:= inspect.getStackDepth();
+#	i:= mdb.getStackDepth();
 #	io.printf("stack depth %d\n",i);
-#	t:= inspect.getStackTrace();
-#	print(t);
-#	b0:= inspect.getStackFrame(0);
-#	print(b0);
-#	b1:= inspect.getStackFrame(1);
-#	print(b1);
+#	t:= mdb.getStackTrace();
+#	io.print(t);
+#	b0:= mdb.getStackFrame(0);
+#	io.print(b0);
+#	b1:= mdb.getStackFrame(1);
+#	io.print(b1);
 #	# next one is illegal
-#	b1:= inspect.getStackFrame(2);
+#	b1:= mdb.getStackFrame(2);
 #end tst;
 function user.tst():void;	# 0  (tst:void)
     i := mdb.getStackDepth();	# 1 MDBStkDepth (i:int)
-    io.printf("stack depth %d\n",i);	# 2 IOprint_formatted_int ($2:int)<-($3:str)(i:int)
+    io.printf("stack depth %d\n",i);	# 2 IOprint_formatted_int (_2:int)<-(_3:str)(i:int)
     t := mdb.getStackTrace();	# 3 MDBStkTrace (t:bat[:void,:str])
-    io.print(t);	# 4 IOprint_val ($5:int)<-(t:bat[:void,:str])
-    b0 := mdb.getStackFrame(0);	# 5 MDBStkFrameN (b0:bat[:str,:str])<-($7:int)
-    io.print(b0);	# 6 IOprint_val ($8:int)<-(b0:bat[:str,:str])
-    b1 := mdb.getStackFrame(1);	# 7 MDBStkFrameN (b1:bat[:str,:str])<-($10:int)
-    io.print(b1);	# 8 IOprint_val ($11:int)<-(b1:bat[:str,:str])
-    b1 := mdb.getStackFrame(2);	# 9 MDBStkFrameN (b1:bat[:str,:str])<-($12:int)
+    io.print(t);	# 4 IOprint_val (_5:int)<-(t:bat[:void,:str])
+    b0 := mdb.getStackFrame(0);	# 5 MDBStkFrameN (b0:bat[:str,:str])<-(_7:int)
+    io.print(b0);	# 6 IOprint_val (_8:int)<-(b0:bat[:str,:str])
+    b1 := mdb.getStackFrame(1);	# 7 MDBStkFrameN (b1:bat[:str,:str])<-(_10:int)
+    io.print(b1);	# 8 IOprint_val (_11:int)<-(b1:bat[:str,:str])
+    b1 := mdb.getStackFrame(2);	# 9 MDBStkFrameN (b1:bat[:str,:str])<-(_12:int)
 end tst;	# 10  
 #
-#tst();
+#user.tst();
 #
 function user.main():int;	# 0  (main:int)
-# test analysis of stack frames 	# 1  ($2:str)
-# next one is illegal 	# 2  ($4:str)
-    user.tst();	# 3  ($5:void)
+# test analysis of stack frames 	# 1  (_2:str)
+# next one is illegal 	# 2  (_4:str)
+    user.tst();	# 3  (_5:void)
 end main;	# 4  
 stack depth 2
 #---------------------------------------------------------#
-# stk	trace						  # name
+# view	stk						  # name
 # int	str						  # type
 #---------------------------------------------------------#
 [ 0,	  "t := mdb.getStackTrace(); at #3 in tst"	  ]
-[ 1,	  "$5 := user.tst(); at #3 in main"		  ]
+[ 1,	  "_5 := user.tst(); at #3 in main"		  ]
 #-----------------------------------------#
-# stk	frame				  # name
+# view	stk				  # name
 # str	str				  # type
 #-----------------------------------------#
 [ "tst",  "0@0"				  ]
 [ "i",	  "2"				  ]
-[ "$2",	  "0"				  ]
-[ "$3",	  "\"stack depth %d\\\\n\""	  ]
+[ "_2",	  "0"				  ]
+[ "_3",	  "\"stack depth %d\\\\n\""	  ]
 [ "t",	  "<view_stk_trace>"		  ]
-[ "$5",	  "0"				  ]
+[ "_5",	  "0"				  ]
 [ "b0",	  "<view_stk_frame>"		  ]
-[ "$7",	  "0"				  ]
-[ "$8",	  "0"				  ]
+[ "_7",	  "0"				  ]
+[ "_8",	  "0"				  ]
 [ "b1",	  "nil"				  ]
-[ "$10",  "1"				  ]
-[ "$11",  "0"				  ]
-[ "$12",  "2"				  ]
+[ "_10",  "1"				  ]
+[ "_11",  "0"				  ]
+[ "_12",  "2"				  ]
 #-----------------#
-# stk	frame	  # name
+# view	stk	  # name
 # str	str	  # type
 #-----------------#
 [ "tst",  "0@0"	  ]
 [ "i",	  "0@0"	  ]
-[ "$2",	  "nil"	  ]
-[ "$3",	  "0@0"	  ]
+[ "_2",	  "nil"	  ]
+[ "_3",	  "0@0"	  ]
 [ "t",	  "nil"	  ]
-[ "$5",	  "0@0"	  ]
+[ "_5",	  "0@0"	  ]
 !ERROR: MALexception:inspect.stkFrame:illegal depth.
+#
 
-# 22:47:39 >  
-# 22:47:39 >  Done.
-# 22:47:39 >  
+# 00:03:55 >  
+# 00:03:55 >  Done.
+# 00:03:55 >  
 

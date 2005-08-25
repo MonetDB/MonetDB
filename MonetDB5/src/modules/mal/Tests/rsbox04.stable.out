@@ -1,23 +1,15 @@
 stdout of test 'rsbox04` in directory 'src/modules/mal` itself:
 
 
-# 21:29:28 >  
-# 21:29:28 >  Mtimeout -timeout 60 Mserver "--config=/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monet5/program/lib/MonetDB5" --set "gdk_dbfarm=/ufs/fabian/scratch/monet5/program/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monet5/program/var/MonetDB5/log" --set mapi_port=42633 --set sql_port=53903 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  rsbox04.mal </dev/null
-# 21:29:28 >  
-
-
-
-
-
-
-
-
+# 00:03:58 >  
+# 00:03:58 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  rsbox04.mal </dev/null
+# 00:03:58 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf
-# dbfarm:/ufs/fabian/scratch/monet5/program/var/MonetDB5/dbfarm
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ### Test generic ResultSet behaviour with all available types of BATs as
@@ -25,7 +17,7 @@ stdout of test 'rsbox04` in directory 'src/modules/mal` itself:
 #
 #include rsbox;
 #
-#rs := rsbox.create("multicolumn", 9, 1);
+#rs := rsbox.create(9, 't');
 #
 #b1 := bbp.new(:void, :bit);
 #bat.insert(b1, nil, 1:bit);
@@ -151,142 +143,142 @@ stdout of test 'rsbox04` in directory 'src/modules/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-    rs := rsbox.create(9,'t');	# 1 RSBcreate (rs:resultset)<-($2:int)($3:chr)
-    b1 := bbp.new(:void,:bit);	# 2 CMDBATnew (b1:bat[:void,:bit])<-($5:void)($6:bit)
-    bat.insert(b1,nil,1:bit);	# 3 BKCinsert_bun ($7:bat[:void,:bit])<-(b1:bat[:void,:bit])($8:void)($9:bit)
-    bat.insert(b1,nil,0:bit);	# 4 BKCinsert_bun ($10:bat[:void,:bit])<-(b1:bat[:void,:bit])($8:void)($11:bit)
-    bat.insert(b1,nil,0:bit);	# 5 BKCinsert_bun ($12:bat[:void,:bit])<-(b1:bat[:void,:bit])($8:void)($11:bit)
-    bat.insert(b1,nil,0:bit);	# 6 BKCinsert_bun ($13:bat[:void,:bit])<-(b1:bat[:void,:bit])($8:void)($11:bit)
-    bat.insert(b1,nil,nil:bit);	# 7 BKCinsert_bun ($14:bat[:void,:bit])<-(b1:bat[:void,:bit])($8:void)($15:bit)
-    bat.insert(b1,nil,1:bit);	# 8 BKCinsert_bun ($16:bat[:void,:bit])<-(b1:bat[:void,:bit])($8:void)($9:bit)
-    bat.insert(b1,nil,0:bit);	# 9 BKCinsert_bun ($17:bat[:void,:bit])<-(b1:bat[:void,:bit])($8:void)($11:bit)
-    bat.insert(b1,nil,1:bit);	# 10 BKCinsert_bun ($18:bat[:void,:bit])<-(b1:bat[:void,:bit])($8:void)($9:bit)
-    bat.insert(b1,nil,nil:bit);	# 11 BKCinsert_bun ($19:bat[:void,:bit])<-(b1:bat[:void,:bit])($8:void)($15:bit)
-    bat.insert(b1,nil,1:bit);	# 12 BKCinsert_bun ($20:bat[:void,:bit])<-(b1:bat[:void,:bit])($8:void)($9:bit)
-    b2 := bbp.new(:void,:chr);	# 13 CMDBATnew (b2:bat[:void,:chr])<-($22:void)($23:chr)
-    bat.insert(b2,nil,nil:chr);	# 14 BKCinsert_bun ($24:bat[:void,:chr])<-(b2:bat[:void,:chr])($8:void)($25:chr)
-    bat.insert(b2,nil,'a');	# 15 BKCinsert_bun ($26:bat[:void,:chr])<-(b2:bat[:void,:chr])($8:void)($27:chr)
-    bat.insert(b2,nil,'x');	# 16 BKCinsert_bun ($28:bat[:void,:chr])<-(b2:bat[:void,:chr])($8:void)($29:chr)
-    bat.insert(b2,nil,nil:chr);	# 17 BKCinsert_bun ($30:bat[:void,:chr])<-(b2:bat[:void,:chr])($8:void)($25:chr)
-    bat.insert(b2,nil,'a');	# 18 BKCinsert_bun ($31:bat[:void,:chr])<-(b2:bat[:void,:chr])($8:void)($27:chr)
-    bat.insert(b2,nil,'f');	# 19 BKCinsert_bun ($32:bat[:void,:chr])<-(b2:bat[:void,:chr])($8:void)($33:chr)
-    bat.insert(b2,nil,'r');	# 20 BKCinsert_bun ($34:bat[:void,:chr])<-(b2:bat[:void,:chr])($8:void)($35:chr)
-    bat.insert(b2,nil,'d');	# 21 BKCinsert_bun ($36:bat[:void,:chr])<-(b2:bat[:void,:chr])($8:void)($37:chr)
-    bat.insert(b2,nil,';');	# 22 BKCinsert_bun ($38:bat[:void,:chr])<-(b2:bat[:void,:chr])($8:void)($39:chr)
-    bat.insert(b2,nil,' ');	# 23 BKCinsert_bun ($40:bat[:void,:chr])<-(b2:bat[:void,:chr])($41:void)($42:chr)
-    b3 := bbp.new(:void,:str);	# 24 CMDBATnew (b3:bat[:void,:str])<-($44:void)($45:str)
-    bat.insert(b3,nil,"Daft Punk - Human After All");	# 25 BKCinsert_bun ($46:bat[:void,:str])<-(b3:bat[:void,:str])($41:void)($47:str)
-    bat.insert(b3,nil,"Spinvis - Spinvis");	# 26 BKCinsert_bun ($48:bat[:void,:str])<-(b3:bat[:void,:str])($41:void)($49:str)
-    bat.insert(b3,nil,"Within Temptation - The Silent Force");	# 27 BKCinsert_bun ($50:bat[:void,:str])<-(b3:bat[:void,:str])($41:void)($51:str)
-    bat.insert(b3,nil,"Anouk - Together Alone");	# 28 BKCinsert_bun ($52:bat[:void,:str])<-(b3:bat[:void,:str])($41:void)($53:str)
-    bat.insert(b3,nil,"Armiral Freebee - Admiral Freebee");	# 29 BKCinsert_bun ($54:bat[:void,:str])<-(b3:bat[:void,:str])($41:void)($55:str)
-    bat.insert(b3,nil,"Lais - Douce Victime");	# 30 BKCinsert_bun ($56:bat[:void,:str])<-(b3:bat[:void,:str])($41:void)($57:str)
-    bat.insert(b3,nil,nil:str);	# 31 BKCinsert_bun ($58:bat[:void,:str])<-(b3:bat[:void,:str])($41:void)($59:str)
-    bat.insert(b3,nil,"Hooverphonic - Sit Down and Listen To...");	# 32 BKCinsert_bun ($60:bat[:void,:str])<-(b3:bat[:void,:str])($41:void)($61:str)
-    bat.insert(b3,nil,"Osdorp Posse - Tegenstrijd");	# 33 BKCinsert_bun ($62:bat[:void,:str])<-(b3:bat[:void,:str])($41:void)($63:str)
-    bat.insert(b3,nil,"MC Wigger & DJ Wanna-B - Fuck Osdorp");	# 34 BKCinsert_bun ($64:bat[:void,:str])<-(b3:bat[:void,:str])($41:void)($65:str)
-    b4 := bbp.new(:void,:oid);	# 35 CMDBATnew (b4:bat[:void,:oid])<-($44:void)($67:oid)
-    bat.insert(b4,nil,2@0);	# 36 BKCinsert_bun ($68:bat[:void,:oid])<-(b4:bat[:void,:oid])($41:void)($69:oid)
-    bat.insert(b4,nil,nil:oid);	# 37 BKCinsert_bun ($70:bat[:void,:oid])<-(b4:bat[:void,:oid])($41:void)($71:oid)
-    bat.insert(b4,nil,4@0);	# 38 BKCinsert_bun ($72:bat[:void,:oid])<-(b4:bat[:void,:oid])($41:void)($73:oid)
-    bat.insert(b4,nil,9@0);	# 39 BKCinsert_bun ($74:bat[:void,:oid])<-(b4:bat[:void,:oid])($75:void)($76:oid)
-    bat.insert(b4,nil,6@0);	# 40 BKCinsert_bun ($77:bat[:void,:oid])<-(b4:bat[:void,:oid])($75:void)($78:oid)
-    bat.insert(b4,nil,102@0);	# 41 BKCinsert_bun ($79:bat[:void,:oid])<-(b4:bat[:void,:oid])($75:void)($80:oid)
-    bat.insert(b4,nil,nil:oid);	# 42 BKCinsert_bun ($81:bat[:void,:oid])<-(b4:bat[:void,:oid])($75:void)($71:oid)
-    bat.insert(b4,nil,28@0);	# 43 BKCinsert_bun ($82:bat[:void,:oid])<-(b4:bat[:void,:oid])($75:void)($83:oid)
-    bat.insert(b4,nil,4@0);	# 44 BKCinsert_bun ($84:bat[:void,:oid])<-(b4:bat[:void,:oid])($75:void)($73:oid)
-    bat.insert(b4,nil,1@0);	# 45 BKCinsert_bun ($85:bat[:void,:oid])<-(b4:bat[:void,:oid])($75:void)($86:oid)
-    b5 := bbp.new(:void,:sht);	# 46 CMDBATnew (b5:bat[:void,:sht])<-($88:void)($89:sht)
-    bat.insert(b5,nil,12:sht);	# 47 BKCinsert_bun ($90:bat[:void,:sht])<-(b5:bat[:void,:sht])($75:void)($91:sht)
-    bat.insert(b5,nil,0:sht);	# 48 BKCinsert_bun ($92:bat[:void,:sht])<-(b5:bat[:void,:sht])($75:void)($93:sht)
-    bat.insert(b5,nil,-73:sht);	# 49 BKCinsert_bun ($94:bat[:void,:sht])<-(b5:bat[:void,:sht])($75:void)($95:sht)
-    bat.insert(b5,nil,2:sht);	# 50 BKCinsert_bun ($96:bat[:void,:sht])<-(b5:bat[:void,:sht])($75:void)($97:sht)
-    bat.insert(b5,nil,9:sht);	# 51 BKCinsert_bun ($98:bat[:void,:sht])<-(b5:bat[:void,:sht])($75:void)($99:sht)
-    bat.insert(b5,nil,-23:sht);	# 52 BKCinsert_bun ($100:bat[:void,:sht])<-(b5:bat[:void,:sht])($75:void)($101:sht)
-    bat.insert(b5,nil,nil:sht);	# 53 BKCinsert_bun ($102:bat[:void,:sht])<-(b5:bat[:void,:sht])($75:void)($103:sht)
-    bat.insert(b5,nil,2:sht);	# 54 BKCinsert_bun ($104:bat[:void,:sht])<-(b5:bat[:void,:sht])($75:void)($97:sht)
-    bat.insert(b5,nil,94:sht);	# 55 BKCinsert_bun ($105:bat[:void,:sht])<-(b5:bat[:void,:sht])($75:void)($106:sht)
-    bat.insert(b5,nil,5:sht);	# 56 BKCinsert_bun ($107:bat[:void,:sht])<-(b5:bat[:void,:sht])($108:void)($109:sht)
-    b6 := bbp.new(:void,:int);	# 57 CMDBATnew (b6:bat[:void,:int])<-($111:void)($112:int)
-    bat.insert(b6,nil,2317:int);	# 58 BKCinsert_bun ($113:bat[:void,:int])<-(b6:bat[:void,:int])($108:void)($114:int)
-    bat.insert(b6,nil,283:int);	# 59 BKCinsert_bun ($115:bat[:void,:int])<-(b6:bat[:void,:int])($108:void)($116:int)
-    bat.insert(b6,nil,-329:int);	# 60 BKCinsert_bun ($117:bat[:void,:int])<-(b6:bat[:void,:int])($108:void)($118:int)
-    bat.insert(b6,nil,nil:int);	# 61 BKCinsert_bun ($119:bat[:void,:int])<-(b6:bat[:void,:int])($108:void)($120:int)
-    bat.insert(b6,nil,-72:int);	# 62 BKCinsert_bun ($121:bat[:void,:int])<-(b6:bat[:void,:int])($108:void)($122:int)
-    bat.insert(b6,nil,23:int);	# 63 BKCinsert_bun ($123:bat[:void,:int])<-(b6:bat[:void,:int])($108:void)($124:int)
-    bat.insert(b6,nil,9217:int);	# 64 BKCinsert_bun ($125:bat[:void,:int])<-(b6:bat[:void,:int])($108:void)($126:int)
-    bat.insert(b6,nil,1282:int);	# 65 BKCinsert_bun ($127:bat[:void,:int])<-(b6:bat[:void,:int])($108:void)($128:int)
-    bat.insert(b6,nil,-72:int);	# 66 BKCinsert_bun ($129:bat[:void,:int])<-(b6:bat[:void,:int])($108:void)($122:int)
-    bat.insert(b6,nil,28362:int);	# 67 BKCinsert_bun ($130:bat[:void,:int])<-(b6:bat[:void,:int])($108:void)($131:int)
-    b7 := bbp.new(:void,:lng);	# 68 CMDBATnew (b7:bat[:void,:lng])<-($111:void)($133:lng)
-    bat.insert(b7,nil,21783253:lng);	# 69 BKCinsert_bun ($134:bat[:void,:lng])<-(b7:bat[:void,:lng])($108:void)($135:lng)
-    bat.insert(b7,nil,-372867832:lng);	# 70 BKCinsert_bun ($136:bat[:void,:lng])<-(b7:bat[:void,:lng])($108:void)($137:lng)
-    bat.insert(b7,nil,372:lng);	# 71 BKCinsert_bun ($138:bat[:void,:lng])<-(b7:bat[:void,:lng])($108:void)($139:lng)
-    bat.insert(b7,nil,-1:lng);	# 72 BKCinsert_bun ($140:bat[:void,:lng])<-(b7:bat[:void,:lng])($141:void)($142:lng)
-    bat.insert(b7,nil,3732897923:lng);	# 73 BKCinsert_bun ($143:bat[:void,:lng])<-(b7:bat[:void,:lng])($141:void)($144:lng)
-    bat.insert(b7,nil,632:lng);	# 74 BKCinsert_bun ($145:bat[:void,:lng])<-(b7:bat[:void,:lng])($141:void)($146:lng)
-    bat.insert(b7,nil,389263267823:lng);	# 75 BKCinsert_bun ($147:bat[:void,:lng])<-(b7:bat[:void,:lng])($141:void)($148:lng)
-    bat.insert(b7,nil,-32782:lng);	# 76 BKCinsert_bun ($149:bat[:void,:lng])<-(b7:bat[:void,:lng])($141:void)($150:lng)
-    bat.insert(b7,nil,8329732:lng);	# 77 BKCinsert_bun ($151:bat[:void,:lng])<-(b7:bat[:void,:lng])($141:void)($152:lng)
-    bat.insert(b7,nil,nil:lng);	# 78 BKCinsert_bun ($153:bat[:void,:lng])<-(b7:bat[:void,:lng])($141:void)($154:lng)
-    b8 := bbp.new(:void,:flt);	# 79 CMDBATnew (b8:bat[:void,:flt])<-($156:void)($157:flt)
-    bat.insert(b8,nil,nil:flt);	# 80 BKCinsert_bun ($158:bat[:void,:flt])<-(b8:bat[:void,:flt])($141:void)($159:flt)
-    bat.insert(b8,nil,63.362:flt);	# 81 BKCinsert_bun ($160:bat[:void,:flt])<-(b8:bat[:void,:flt])($141:void)($161:flt)
-    bat.insert(b8,nil,725:flt);	# 82 BKCinsert_bun ($162:bat[:void,:flt])<-(b8:bat[:void,:flt])($141:void)($163:flt)
-    bat.insert(b8,nil,-21672.27:flt);	# 83 BKCinsert_bun ($164:bat[:void,:flt])<-(b8:bat[:void,:flt])($141:void)($165:flt)
-    bat.insert(b8,nil,272.000092:flt);	# 84 BKCinsert_bun ($166:bat[:void,:flt])<-(b8:bat[:void,:flt])($141:void)($167:flt)
-    bat.insert(b8,nil,-392.1:flt);	# 85 BKCinsert_bun ($168:bat[:void,:flt])<-(b8:bat[:void,:flt])($141:void)($169:flt)
-    bat.insert(b8,nil,821.82:flt);	# 86 BKCinsert_bun ($170:bat[:void,:flt])<-(b8:bat[:void,:flt])($141:void)($171:flt)
-    bat.insert(b8,nil,2.20371:flt);	# 87 BKCinsert_bun ($172:bat[:void,:flt])<-(b8:bat[:void,:flt])($141:void)($173:flt)
-    bat.insert(b8,nil,721.271:flt);	# 88 BKCinsert_bun ($174:bat[:void,:flt])<-(b8:bat[:void,:flt])($175:void)($176:flt)
-    bat.insert(b8,nil,nil:flt);	# 89 BKCinsert_bun ($177:bat[:void,:flt])<-(b8:bat[:void,:flt])($175:void)($159:flt)
-    b9 := bbp.new(:void,:dbl);	# 90 CMDBATnew (b9:bat[:void,:dbl])<-($179:void)($180:dbl)
-    bat.insert(b9,nil,83927632.38772:dbl);	# 91 BKCinsert_bun ($181:bat[:void,:dbl])<-(b9:bat[:void,:dbl])($175:void)($182:dbl)
-    bat.insert(b9,nil,nil:dbl);	# 92 BKCinsert_bun ($183:bat[:void,:dbl])<-(b9:bat[:void,:dbl])($175:void)($184:dbl)
-    bat.insert(b9,nil,-932720.32:dbl);	# 93 BKCinsert_bun ($185:bat[:void,:dbl])<-(b9:bat[:void,:dbl])($175:void)($186:dbl)
-    bat.insert(b9,nil,23.73:dbl);	# 94 BKCinsert_bun ($187:bat[:void,:dbl])<-(b9:bat[:void,:dbl])($175:void)($188:dbl)
-    bat.insert(b9,nil,32782.238:dbl);	# 95 BKCinsert_bun ($189:bat[:void,:dbl])<-(b9:bat[:void,:dbl])($175:void)($190:dbl)
-    bat.insert(b9,nil,32723.360001:dbl);	# 96 BKCinsert_bun ($191:bat[:void,:dbl])<-(b9:bat[:void,:dbl])($175:void)($192:dbl)
-    bat.insert(b9,nil,nil:dbl);	# 97 BKCinsert_bun ($193:bat[:void,:dbl])<-(b9:bat[:void,:dbl])($175:void)($184:dbl)
-    bat.insert(b9,nil,0.0000021:dbl);	# 98 BKCinsert_bun ($194:bat[:void,:dbl])<-(b9:bat[:void,:dbl])($175:void)($195:dbl)
-    bat.insert(b9,nil,4:dbl);	# 99 BKCinsert_bun ($196:bat[:void,:dbl])<-(b9:bat[:void,:dbl])($175:void)($197:dbl)
-    bat.insert(b9,nil,64.1:dbl);	# 100 BKCinsert_bun ($198:bat[:void,:dbl])<-(b9:bat[:void,:dbl])($175:void)($199:dbl)
-    resultset.populateColumn(rs,1,b1);	# 101 RSpopulateColumn ($200:resultset)<-(rs:resultset)($201:int)(b1:bat[:void,:bit])
-    resultset.populateColumn(rs,2,b2);	# 102 RSpopulateColumn ($202:resultset)<-(rs:resultset)($203:int)(b2:bat[:void,:chr])
-    resultset.populateColumn(rs,3,b3);	# 103 RSpopulateColumn ($204:resultset)<-(rs:resultset)($205:int)(b3:bat[:void,:str])
-    resultset.populateColumn(rs,4,b4);	# 104 RSpopulateColumn ($206:resultset)<-(rs:resultset)($207:int)(b4:bat[:void,:oid])
-    resultset.populateColumn(rs,5,b5);	# 105 RSpopulateColumn ($208:resultset)<-(rs:resultset)($209:int)(b5:bat[:void,:sht])
-    resultset.populateColumn(rs,6,b6);	# 106 RSpopulateColumn ($210:resultset)<-(rs:resultset)($211:int)(b6:bat[:void,:int])
-    resultset.populateColumn(rs,7,b7);	# 107 RSpopulateColumn ($212:resultset)<-(rs:resultset)($213:int)(b7:bat[:void,:lng])
-    resultset.populateColumn(rs,8,b8);	# 108 RSpopulateColumn ($214:resultset)<-(rs:resultset)($215:int)(b8:bat[:void,:flt])
-    resultset.populateColumn(rs,9,b9);	# 109 RSpopulateColumn ($216:resultset)<-(rs:resultset)($217:int)(b9:bat[:void,:dbl])
-    resultset.writeNextPart(rs);	# 110 RSwriteNextPart ($218:int)<-(rs:resultset)
-    rsbox.releaseAll();	# 111 RSBreleaseAll ($219:void)
+    rs := rsbox.create(9,'t');	# 1 RSBcreate (rs:resultset)<-(_2:int)(_3:chr)
+    b1 := bbp.new(:void,:bit);	# 2 CMDBATnew (b1:bat[:void,:bit])<-(_5:void)(_6:bit)
+    bat.insert(b1,nil,1:bit);	# 3 BKCinsert_bun (_7:bat[:void,:bit])<-(b1:bat[:void,:bit])(_8:void)(_9:bit)
+    bat.insert(b1,nil,0:bit);	# 4 BKCinsert_bun (_10:bat[:void,:bit])<-(b1:bat[:void,:bit])(_8:void)(_11:bit)
+    bat.insert(b1,nil,0:bit);	# 5 BKCinsert_bun (_12:bat[:void,:bit])<-(b1:bat[:void,:bit])(_8:void)(_11:bit)
+    bat.insert(b1,nil,0:bit);	# 6 BKCinsert_bun (_13:bat[:void,:bit])<-(b1:bat[:void,:bit])(_8:void)(_11:bit)
+    bat.insert(b1,nil,nil:bit);	# 7 BKCinsert_bun (_14:bat[:void,:bit])<-(b1:bat[:void,:bit])(_8:void)(_15:bit)
+    bat.insert(b1,nil,1:bit);	# 8 BKCinsert_bun (_16:bat[:void,:bit])<-(b1:bat[:void,:bit])(_8:void)(_9:bit)
+    bat.insert(b1,nil,0:bit);	# 9 BKCinsert_bun (_17:bat[:void,:bit])<-(b1:bat[:void,:bit])(_8:void)(_11:bit)
+    bat.insert(b1,nil,1:bit);	# 10 BKCinsert_bun (_18:bat[:void,:bit])<-(b1:bat[:void,:bit])(_8:void)(_9:bit)
+    bat.insert(b1,nil,nil:bit);	# 11 BKCinsert_bun (_19:bat[:void,:bit])<-(b1:bat[:void,:bit])(_8:void)(_15:bit)
+    bat.insert(b1,nil,1:bit);	# 12 BKCinsert_bun (_20:bat[:void,:bit])<-(b1:bat[:void,:bit])(_8:void)(_9:bit)
+    b2 := bbp.new(:void,:chr);	# 13 CMDBATnew (b2:bat[:void,:chr])<-(_22:void)(_23:chr)
+    bat.insert(b2,nil,nil:chr);	# 14 BKCinsert_bun (_24:bat[:void,:chr])<-(b2:bat[:void,:chr])(_8:void)(_25:chr)
+    bat.insert(b2,nil,'a');	# 15 BKCinsert_bun (_26:bat[:void,:chr])<-(b2:bat[:void,:chr])(_8:void)(_27:chr)
+    bat.insert(b2,nil,'x');	# 16 BKCinsert_bun (_28:bat[:void,:chr])<-(b2:bat[:void,:chr])(_8:void)(_29:chr)
+    bat.insert(b2,nil,nil:chr);	# 17 BKCinsert_bun (_30:bat[:void,:chr])<-(b2:bat[:void,:chr])(_8:void)(_25:chr)
+    bat.insert(b2,nil,'a');	# 18 BKCinsert_bun (_31:bat[:void,:chr])<-(b2:bat[:void,:chr])(_8:void)(_27:chr)
+    bat.insert(b2,nil,'f');	# 19 BKCinsert_bun (_32:bat[:void,:chr])<-(b2:bat[:void,:chr])(_8:void)(_33:chr)
+    bat.insert(b2,nil,'r');	# 20 BKCinsert_bun (_34:bat[:void,:chr])<-(b2:bat[:void,:chr])(_8:void)(_35:chr)
+    bat.insert(b2,nil,'d');	# 21 BKCinsert_bun (_36:bat[:void,:chr])<-(b2:bat[:void,:chr])(_8:void)(_37:chr)
+    bat.insert(b2,nil,';');	# 22 BKCinsert_bun (_38:bat[:void,:chr])<-(b2:bat[:void,:chr])(_8:void)(_39:chr)
+    bat.insert(b2,nil,' ');	# 23 BKCinsert_bun (_40:bat[:void,:chr])<-(b2:bat[:void,:chr])(_41:void)(_42:chr)
+    b3 := bbp.new(:void,:str);	# 24 CMDBATnew (b3:bat[:void,:str])<-(_44:void)(_45:str)
+    bat.insert(b3,nil,"Daft Punk - Human After All");	# 25 BKCinsert_bun (_46:bat[:void,:str])<-(b3:bat[:void,:str])(_41:void)(_47:str)
+    bat.insert(b3,nil,"Spinvis - Spinvis");	# 26 BKCinsert_bun (_48:bat[:void,:str])<-(b3:bat[:void,:str])(_41:void)(_49:str)
+    bat.insert(b3,nil,"Within Temptation - The Silent Force");	# 27 BKCinsert_bun (_50:bat[:void,:str])<-(b3:bat[:void,:str])(_41:void)(_51:str)
+    bat.insert(b3,nil,"Anouk - Together Alone");	# 28 BKCinsert_bun (_52:bat[:void,:str])<-(b3:bat[:void,:str])(_41:void)(_53:str)
+    bat.insert(b3,nil,"Armiral Freebee - Admiral Freebee");	# 29 BKCinsert_bun (_54:bat[:void,:str])<-(b3:bat[:void,:str])(_41:void)(_55:str)
+    bat.insert(b3,nil,"Lais - Douce Victime");	# 30 BKCinsert_bun (_56:bat[:void,:str])<-(b3:bat[:void,:str])(_41:void)(_57:str)
+    bat.insert(b3,nil,nil:str);	# 31 BKCinsert_bun (_58:bat[:void,:str])<-(b3:bat[:void,:str])(_41:void)(_59:str)
+    bat.insert(b3,nil,"Hooverphonic - Sit Down and Listen To...");	# 32 BKCinsert_bun (_60:bat[:void,:str])<-(b3:bat[:void,:str])(_41:void)(_61:str)
+    bat.insert(b3,nil,"Osdorp Posse - Tegenstrijd");	# 33 BKCinsert_bun (_62:bat[:void,:str])<-(b3:bat[:void,:str])(_41:void)(_63:str)
+    bat.insert(b3,nil,"MC Wigger & DJ Wanna-B - Fuck Osdorp");	# 34 BKCinsert_bun (_64:bat[:void,:str])<-(b3:bat[:void,:str])(_41:void)(_65:str)
+    b4 := bbp.new(:void,:oid);	# 35 CMDBATnew (b4:bat[:void,:oid])<-(_44:void)(_67:oid)
+    bat.insert(b4,nil,2@0);	# 36 BKCinsert_bun (_68:bat[:void,:oid])<-(b4:bat[:void,:oid])(_41:void)(_69:oid)
+    bat.insert(b4,nil,nil:oid);	# 37 BKCinsert_bun (_70:bat[:void,:oid])<-(b4:bat[:void,:oid])(_41:void)(_71:oid)
+    bat.insert(b4,nil,4@0);	# 38 BKCinsert_bun (_72:bat[:void,:oid])<-(b4:bat[:void,:oid])(_41:void)(_73:oid)
+    bat.insert(b4,nil,9@0);	# 39 BKCinsert_bun (_74:bat[:void,:oid])<-(b4:bat[:void,:oid])(_75:void)(_76:oid)
+    bat.insert(b4,nil,6@0);	# 40 BKCinsert_bun (_77:bat[:void,:oid])<-(b4:bat[:void,:oid])(_75:void)(_78:oid)
+    bat.insert(b4,nil,102@0);	# 41 BKCinsert_bun (_79:bat[:void,:oid])<-(b4:bat[:void,:oid])(_75:void)(_80:oid)
+    bat.insert(b4,nil,nil:oid);	# 42 BKCinsert_bun (_81:bat[:void,:oid])<-(b4:bat[:void,:oid])(_75:void)(_71:oid)
+    bat.insert(b4,nil,28@0);	# 43 BKCinsert_bun (_82:bat[:void,:oid])<-(b4:bat[:void,:oid])(_75:void)(_83:oid)
+    bat.insert(b4,nil,4@0);	# 44 BKCinsert_bun (_84:bat[:void,:oid])<-(b4:bat[:void,:oid])(_75:void)(_73:oid)
+    bat.insert(b4,nil,1@0);	# 45 BKCinsert_bun (_85:bat[:void,:oid])<-(b4:bat[:void,:oid])(_75:void)(_86:oid)
+    b5 := bbp.new(:void,:sht);	# 46 CMDBATnew (b5:bat[:void,:sht])<-(_88:void)(_89:sht)
+    bat.insert(b5,nil,12:sht);	# 47 BKCinsert_bun (_90:bat[:void,:sht])<-(b5:bat[:void,:sht])(_75:void)(_91:sht)
+    bat.insert(b5,nil,0:sht);	# 48 BKCinsert_bun (_92:bat[:void,:sht])<-(b5:bat[:void,:sht])(_75:void)(_93:sht)
+    bat.insert(b5,nil,-73:sht);	# 49 BKCinsert_bun (_94:bat[:void,:sht])<-(b5:bat[:void,:sht])(_75:void)(_95:sht)
+    bat.insert(b5,nil,2:sht);	# 50 BKCinsert_bun (_96:bat[:void,:sht])<-(b5:bat[:void,:sht])(_75:void)(_97:sht)
+    bat.insert(b5,nil,9:sht);	# 51 BKCinsert_bun (_98:bat[:void,:sht])<-(b5:bat[:void,:sht])(_75:void)(_99:sht)
+    bat.insert(b5,nil,-23:sht);	# 52 BKCinsert_bun (_100:bat[:void,:sht])<-(b5:bat[:void,:sht])(_75:void)(_101:sht)
+    bat.insert(b5,nil,nil:sht);	# 53 BKCinsert_bun (_102:bat[:void,:sht])<-(b5:bat[:void,:sht])(_75:void)(_103:sht)
+    bat.insert(b5,nil,2:sht);	# 54 BKCinsert_bun (_104:bat[:void,:sht])<-(b5:bat[:void,:sht])(_75:void)(_97:sht)
+    bat.insert(b5,nil,94:sht);	# 55 BKCinsert_bun (_105:bat[:void,:sht])<-(b5:bat[:void,:sht])(_75:void)(_106:sht)
+    bat.insert(b5,nil,5:sht);	# 56 BKCinsert_bun (_107:bat[:void,:sht])<-(b5:bat[:void,:sht])(_108:void)(_109:sht)
+    b6 := bbp.new(:void,:int);	# 57 CMDBATnew (b6:bat[:void,:int])<-(_111:void)(_112:int)
+    bat.insert(b6,nil,2317:int);	# 58 BKCinsert_bun (_113:bat[:void,:int])<-(b6:bat[:void,:int])(_108:void)(_114:int)
+    bat.insert(b6,nil,283:int);	# 59 BKCinsert_bun (_115:bat[:void,:int])<-(b6:bat[:void,:int])(_108:void)(_116:int)
+    bat.insert(b6,nil,-329:int);	# 60 BKCinsert_bun (_117:bat[:void,:int])<-(b6:bat[:void,:int])(_108:void)(_118:int)
+    bat.insert(b6,nil,nil:int);	# 61 BKCinsert_bun (_119:bat[:void,:int])<-(b6:bat[:void,:int])(_108:void)(_120:int)
+    bat.insert(b6,nil,-72:int);	# 62 BKCinsert_bun (_121:bat[:void,:int])<-(b6:bat[:void,:int])(_108:void)(_122:int)
+    bat.insert(b6,nil,23:int);	# 63 BKCinsert_bun (_123:bat[:void,:int])<-(b6:bat[:void,:int])(_108:void)(_124:int)
+    bat.insert(b6,nil,9217:int);	# 64 BKCinsert_bun (_125:bat[:void,:int])<-(b6:bat[:void,:int])(_108:void)(_126:int)
+    bat.insert(b6,nil,1282:int);	# 65 BKCinsert_bun (_127:bat[:void,:int])<-(b6:bat[:void,:int])(_108:void)(_128:int)
+    bat.insert(b6,nil,-72:int);	# 66 BKCinsert_bun (_129:bat[:void,:int])<-(b6:bat[:void,:int])(_108:void)(_122:int)
+    bat.insert(b6,nil,28362:int);	# 67 BKCinsert_bun (_130:bat[:void,:int])<-(b6:bat[:void,:int])(_108:void)(_131:int)
+    b7 := bbp.new(:void,:lng);	# 68 CMDBATnew (b7:bat[:void,:lng])<-(_111:void)(_133:lng)
+    bat.insert(b7,nil,21783253:lng);	# 69 BKCinsert_bun (_134:bat[:void,:lng])<-(b7:bat[:void,:lng])(_108:void)(_135:lng)
+    bat.insert(b7,nil,-372867832:lng);	# 70 BKCinsert_bun (_136:bat[:void,:lng])<-(b7:bat[:void,:lng])(_108:void)(_137:lng)
+    bat.insert(b7,nil,372:lng);	# 71 BKCinsert_bun (_138:bat[:void,:lng])<-(b7:bat[:void,:lng])(_108:void)(_139:lng)
+    bat.insert(b7,nil,-1:lng);	# 72 BKCinsert_bun (_140:bat[:void,:lng])<-(b7:bat[:void,:lng])(_141:void)(_142:lng)
+    bat.insert(b7,nil,3732897923:lng);	# 73 BKCinsert_bun (_143:bat[:void,:lng])<-(b7:bat[:void,:lng])(_141:void)(_144:lng)
+    bat.insert(b7,nil,632:lng);	# 74 BKCinsert_bun (_145:bat[:void,:lng])<-(b7:bat[:void,:lng])(_141:void)(_146:lng)
+    bat.insert(b7,nil,389263267823:lng);	# 75 BKCinsert_bun (_147:bat[:void,:lng])<-(b7:bat[:void,:lng])(_141:void)(_148:lng)
+    bat.insert(b7,nil,-32782:lng);	# 76 BKCinsert_bun (_149:bat[:void,:lng])<-(b7:bat[:void,:lng])(_141:void)(_150:lng)
+    bat.insert(b7,nil,8329732:lng);	# 77 BKCinsert_bun (_151:bat[:void,:lng])<-(b7:bat[:void,:lng])(_141:void)(_152:lng)
+    bat.insert(b7,nil,nil:lng);	# 78 BKCinsert_bun (_153:bat[:void,:lng])<-(b7:bat[:void,:lng])(_141:void)(_154:lng)
+    b8 := bbp.new(:void,:flt);	# 79 CMDBATnew (b8:bat[:void,:flt])<-(_156:void)(_157:flt)
+    bat.insert(b8,nil,nil:flt);	# 80 BKCinsert_bun (_158:bat[:void,:flt])<-(b8:bat[:void,:flt])(_141:void)(_159:flt)
+    bat.insert(b8,nil,63.362:flt);	# 81 BKCinsert_bun (_160:bat[:void,:flt])<-(b8:bat[:void,:flt])(_141:void)(_161:flt)
+    bat.insert(b8,nil,725:flt);	# 82 BKCinsert_bun (_162:bat[:void,:flt])<-(b8:bat[:void,:flt])(_141:void)(_163:flt)
+    bat.insert(b8,nil,-21672.27:flt);	# 83 BKCinsert_bun (_164:bat[:void,:flt])<-(b8:bat[:void,:flt])(_141:void)(_165:flt)
+    bat.insert(b8,nil,272.000092:flt);	# 84 BKCinsert_bun (_166:bat[:void,:flt])<-(b8:bat[:void,:flt])(_141:void)(_167:flt)
+    bat.insert(b8,nil,-392.1:flt);	# 85 BKCinsert_bun (_168:bat[:void,:flt])<-(b8:bat[:void,:flt])(_141:void)(_169:flt)
+    bat.insert(b8,nil,821.82:flt);	# 86 BKCinsert_bun (_170:bat[:void,:flt])<-(b8:bat[:void,:flt])(_141:void)(_171:flt)
+    bat.insert(b8,nil,2.20371:flt);	# 87 BKCinsert_bun (_172:bat[:void,:flt])<-(b8:bat[:void,:flt])(_141:void)(_173:flt)
+    bat.insert(b8,nil,721.271:flt);	# 88 BKCinsert_bun (_174:bat[:void,:flt])<-(b8:bat[:void,:flt])(_175:void)(_176:flt)
+    bat.insert(b8,nil,nil:flt);	# 89 BKCinsert_bun (_177:bat[:void,:flt])<-(b8:bat[:void,:flt])(_175:void)(_159:flt)
+    b9 := bbp.new(:void,:dbl);	# 90 CMDBATnew (b9:bat[:void,:dbl])<-(_179:void)(_180:dbl)
+    bat.insert(b9,nil,83927632.38772:dbl);	# 91 BKCinsert_bun (_181:bat[:void,:dbl])<-(b9:bat[:void,:dbl])(_175:void)(_182:dbl)
+    bat.insert(b9,nil,nil:dbl);	# 92 BKCinsert_bun (_183:bat[:void,:dbl])<-(b9:bat[:void,:dbl])(_175:void)(_184:dbl)
+    bat.insert(b9,nil,-932720.32:dbl);	# 93 BKCinsert_bun (_185:bat[:void,:dbl])<-(b9:bat[:void,:dbl])(_175:void)(_186:dbl)
+    bat.insert(b9,nil,23.73:dbl);	# 94 BKCinsert_bun (_187:bat[:void,:dbl])<-(b9:bat[:void,:dbl])(_175:void)(_188:dbl)
+    bat.insert(b9,nil,32782.238:dbl);	# 95 BKCinsert_bun (_189:bat[:void,:dbl])<-(b9:bat[:void,:dbl])(_175:void)(_190:dbl)
+    bat.insert(b9,nil,32723.360001:dbl);	# 96 BKCinsert_bun (_191:bat[:void,:dbl])<-(b9:bat[:void,:dbl])(_175:void)(_192:dbl)
+    bat.insert(b9,nil,nil:dbl);	# 97 BKCinsert_bun (_193:bat[:void,:dbl])<-(b9:bat[:void,:dbl])(_175:void)(_184:dbl)
+    bat.insert(b9,nil,0.0000021:dbl);	# 98 BKCinsert_bun (_194:bat[:void,:dbl])<-(b9:bat[:void,:dbl])(_175:void)(_195:dbl)
+    bat.insert(b9,nil,4:dbl);	# 99 BKCinsert_bun (_196:bat[:void,:dbl])<-(b9:bat[:void,:dbl])(_175:void)(_197:dbl)
+    bat.insert(b9,nil,64.1:dbl);	# 100 BKCinsert_bun (_198:bat[:void,:dbl])<-(b9:bat[:void,:dbl])(_175:void)(_199:dbl)
+    resultset.populateColumn(rs,1,b1);	# 101 RSpopulateColumn (_200:resultset)<-(rs:resultset)(_201:int)(b1:bat[:void,:bit])
+    resultset.populateColumn(rs,2,b2);	# 102 RSpopulateColumn (_202:resultset)<-(rs:resultset)(_203:int)(b2:bat[:void,:chr])
+    resultset.populateColumn(rs,3,b3);	# 103 RSpopulateColumn (_204:resultset)<-(rs:resultset)(_205:int)(b3:bat[:void,:str])
+    resultset.populateColumn(rs,4,b4);	# 104 RSpopulateColumn (_206:resultset)<-(rs:resultset)(_207:int)(b4:bat[:void,:oid])
+    resultset.populateColumn(rs,5,b5);	# 105 RSpopulateColumn (_208:resultset)<-(rs:resultset)(_209:int)(b5:bat[:void,:sht])
+    resultset.populateColumn(rs,6,b6);	# 106 RSpopulateColumn (_210:resultset)<-(rs:resultset)(_211:int)(b6:bat[:void,:int])
+    resultset.populateColumn(rs,7,b7);	# 107 RSpopulateColumn (_212:resultset)<-(rs:resultset)(_213:int)(b7:bat[:void,:lng])
+    resultset.populateColumn(rs,8,b8);	# 108 RSpopulateColumn (_214:resultset)<-(rs:resultset)(_215:int)(b8:bat[:void,:flt])
+    resultset.populateColumn(rs,9,b9);	# 109 RSpopulateColumn (_216:resultset)<-(rs:resultset)(_217:int)(b9:bat[:void,:dbl])
+    resultset.writeNextPart(rs);	# 110 RSwriteNextPart (_218:int)<-(rs:resultset)
+    rsbox.releaseAll();	# 111 RSBreleaseAll (_219:void)
 end main;	# 112  
 &t
-$id 1
-$columncount 9
-$tuplecount 10
-$ctype bcSosilfd
-%column column_1	column_2	column_3	column_4	column_5	column_6	column_7	column_8	column_9
-%table 								
-%schema 								
-%type boolean	char	varchar	oid	smallint	int	bigint	real	double
-%digits 								
-%scale 								
-%width 5	1	40	11	4	9	18	12	24
+$id	1
+$columncount	9
+$tuplecount	10
+$ctype	bcSosilfd
+%column	column_1	column_2	column_3	column_4	column_5	column_6	column_7	column_8	column_9
+%table									
+%schema									
+%type	boolean	char	varchar	oid	smallint	int	bigint	real	double
+%digits									
+%scale									
+%width	5	1	40	11	4	9	18	12	24
 [0	NULL	27:Daft Punk - Human After All	2	12	2317	21783253	NULL	8.392763e+07
-[0	a	17:Spinvis - Spinvis	NULL	0	283	-372867832	6.336200e+01	NULL
+[0	a	17:Spinvis - Spinvis	-2147483648	0	283	-372867832	6.336200e+01	NULL
 [0	x	36:Within Temptation - The Silent Force	4	-73	-329	372	7.250000e+02	-9.327203e+05
 [0	NULL	22:Anouk - Together Alone	9	2	NULL	-1	-2.167227e+04	2.373000e+01
 [1	a	33:Armiral Freebee - Admiral Freebee	6	9	-72	3732897923	2.720001e+02	3.278224e+04
 [0	f	20:Lais - Douce Victime	102	-23	23	632	-3.921000e+02	3.272336e+04
-[0	r	NULL	NULL	NULL	9217	389263267823	8.218200e+02	NULL
+[0	r	NULL	-2147483648	NULL	9217	389263267823	8.218200e+02	NULL
 [0	d	40:Hooverphonic - Sit Down and Listen To...	28	2	1282	-32782	2.203710e+00	2.100000e-06
 [1	;	26:Osdorp Posse - Tegenstrijd	4	94	-72	8329732	7.212710e+02	4.000000e+00
 [0	 	36:MC Wigger & DJ Wanna-B - Fuck Osdorp	1	5	28362	NULL	NULL	6.410000e+01
 
-# 21:29:28 >  
-# 21:29:28 >  Done.
-# 21:29:28 >  
+# 00:03:58 >  
+# 00:03:58 >  Done.
+# 00:03:58 >  
 

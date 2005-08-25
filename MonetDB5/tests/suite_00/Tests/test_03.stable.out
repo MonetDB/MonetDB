@@ -1,105 +1,101 @@
 stdout of test 'test_03` in directory 'tests/suite_00` itself:
 
-#> Mtest (20:57:16):	milS test_03 milS
-#> Mtest (20:57:16):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_03.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:test_03.milS
 
-# 09:52:05 >  
-# 09:52:05 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=49197 --set sql_port=55683 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_03.mal </dev/null
-# 09:52:05 >  
+# 00:12:27 >  
+# 00:12:27 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34380 --set sql_port=46008 --set xquery_port=58634 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_03.mal </dev/null
+# 00:12:27 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_suite_00
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## Monet Mil to Mal compiler
+#include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
-## Predefined code segment
+##Predefined code segment
 ##The compiler can not guarantee an accurate compilation,
 ##because MIL unlike MAL is a dynamically typed language.
 ##A few guidelines to maximize usefullness.
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
 #	mil.line("setoid(oid(20000000));");
-#	aa_a := oid(20000000);
-#	ba_a := setoid(aa_a);
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
 #	mil.line("#test basic functionality of the BAT library.\n");
 #	mil.line("#focussed on temporary reversal of roles.\n");
-#	mil.line("var b:= new(int,str);");
-#	b := new(:int,:str);
+#	mil.line("var b:= bbp.new(int,str);");
+#	b := bbp.new(nil:int,nil:str);
 #	mil.line("b.insert(1,\"15\");");
-#	ca_a := insert(b,1,"15");
+#	ca_a := bat.insert(b,1,"15");
 #	mil.line("b.print();");
-#	da_a := print(b);
+#	da_a := io.print(b);
 #	mil.line("b.reverse().print();");
-#	ea_a := reverse(b);
-#	fa_a := print(ea_a);
+#	ea_a := bat.reverse(b);
+#	fa_a := io.print(ea_a);
 #	mil.line("b.print();");
-#	ga_a := print(b);
+#	ga_a := io.print(b);
 #	mil.line("quit();");
-#	ha_a := quit();
+#	ha_a := clients.quit();
 #
 function user.main():int;	# 0  (main:int)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  ($32:str)
-#Predefined code segment 	# 2  ($34:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  ($36:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  ($38:str)
-#A few guidelines to maximize usefullness. 	# 5  ($40:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  ($42:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  ($44:str)
-#use the "mil_schema" for additional support routines 	# 8  ($46:str)
-    mil.line("setoid(oid(20000000));");	# 9 MILline ($47:void)<-($48:str)
-    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-($50:int)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
+#Predefined code segment 	# 2  (_34:str)
+#The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 4  (_38:str)
+#A few guidelines to maximize usefullness. 	# 5  (_40:str)
+#- make the type of variables explicit, in particular 'nil' 	# 6  (_42:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_44:str)
+#use the "mil_schema" for additional support routines 	# 8  (_46:str)
+    mil.line("setoid(oid(20000000));");	# 9 MILline (_47:void)<-(_48:str)
+    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-(_50:int)
     ba_a := calc.setoid(aa_a);	# 11 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("#test basic functionality of the BAT library.\n");	# 12 MILline ($52:void)<-($53:str)
-    mil.line("#focussed on temporary reversal of roles.\n");	# 13 MILline ($54:void)<-($55:str)
-    mil.line("var b:= bbp.new(int,str);");	# 14 MILline ($56:void)<-($57:str)
-    b := bbp.new(nil:int,nil:str);	# 15 CMDBATnew (b:bat[:int,:str])<-($59:int)($60:str)
-    mil.line("b.insert(1,\"15\");");	# 16 MILline ($61:void)<-($62:str)
-    ca_a := bat.insert(b,1,"15");	# 17 BKCinsert_bun (ca_a:bat[:int,:str])<-(b:bat[:int,:str])($64:int)($65:str)
-    mil.line("b.print();");	# 18 MILline ($66:void)<-($67:str)
+    mil.line("#test basic functionality of the BAT library.\n");	# 12 MILline (_52:void)<-(_53:str)
+    mil.line("#focussed on temporary reversal of roles.\n");	# 13 MILline (_54:void)<-(_55:str)
+    mil.line("var b:= bbp.new(int,str);");	# 14 MILline (_56:void)<-(_57:str)
+    b := bbp.new(nil:int,nil:str);	# 15 CMDBATnew (b:bat[:int,:str])<-(_59:int)(_60:str)
+    mil.line("b.insert(1,\"15\");");	# 16 MILline (_61:void)<-(_62:str)
+    ca_a := bat.insert(b,1,"15");	# 17 BKCinsert_bun (ca_a:bat[:int,:str])<-(b:bat[:int,:str])(_64:int)(_65:str)
+    mil.line("b.print();");	# 18 MILline (_66:void)<-(_67:str)
     da_a := io.print(b);	# 19 IOprint_val (da_a:int)<-(b:bat[:int,:str])
-    mil.line("b.reverse().print();");	# 20 MILline ($69:void)<-($70:str)
+    mil.line("b.reverse().print();");	# 20 MILline (_69:void)<-(_70:str)
     ea_a := bat.reverse(b);	# 21 BKCreverse (ea_a:bat[:str,:int])<-(b:bat[:int,:str])
     fa_a := io.print(ea_a);	# 22 IOprint_val (fa_a:int)<-(ea_a:bat[:str,:int])
-    mil.line("b.print();");	# 23 MILline ($73:void)<-($67:str)
+    mil.line("b.print();");	# 23 MILline (_73:void)<-(_67:str)
     ga_a := io.print(b);	# 24 IOprint_val (ga_a:int)<-(b:bat[:int,:str])
-    mil.line("quit();");	# 25 MILline ($75:void)<-($76:str)
+    mil.line("quit();");	# 25 MILline (_75:void)<-(_76:str)
     ha_a := clients.quit();	# 26 CLTquit (ha_a:void)
 end main;	# 27  
 #setoid(oid(20000000));
-##test basic functionality of the BAT library.
-##focussed on temporary reversal of roles.
-#var b:= new(int,str);
-#b.insert(1,"15");
+##test basic functionality of the BAT library.\n
+##focussed on temporary reversal of roles.\n
+#var b:= bbp.new(int,str);
+#b.insert(1,\"15\");
 #b.print();
 #-----------------#
-# BAT:	  tmp_24  #
-# (int)	  (str)	  #
+# h	t	  # name
+# int	str	  # type
 #-----------------#
 [ 1,	  "15"	  ]
 #b.reverse().print();
 #-----------------#
-# BAT:	  tmp_24  #
-# (str)	  (int)	  #
+# t	h	  # name
+# str	int	  # type
 #-----------------#
 [ "15",	  1	  ]
 #b.print();
 #-----------------#
-# BAT:	  tmp_24  #
-# (int)	  (str)	  #
+# h	t	  # name
+# int	str	  # type
 #-----------------#
 [ 1,	  "15"	  ]
 #quit();
 
-# 17:08:43 >  
-# 17:08:43 >  Done.
-# 17:08:43 >  
+# 00:12:27 >  
+# 00:12:27 >  Done.
+# 00:12:27 >  
 

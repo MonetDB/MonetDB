@@ -1,156 +1,152 @@
 stdout of test 'test_90` in directory 'tests/suite_00` itself:
 
-#> Mtest (20:57:35):	milS test_90 milS
-#> Mtest (20:57:35):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_90.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:test_90.milS
 
-# 09:25:24 >  
-# 09:25:24 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=41084 --set sql_port=56670 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_90.mal </dev/null
-# 09:25:24 >  
+# 00:12:29 >  
+# 00:12:29 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34380 --set sql_port=46008 --set xquery_port=58634 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_90.mal </dev/null
+# 00:12:29 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_suite_00
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## Monet Mil to Mal compiler
+#include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
-## Predefined code segment
+##Predefined code segment
 ##The compiler can not guarantee an accurate compilation,
 ##because MIL unlike MAL is a dynamically typed language.
 ##A few guidelines to maximize usefullness.
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
 #	mil.line("setoid(oid(20000000));");
-#	aa_a := oid(20000000);
-#	ba_a := setoid(aa_a);
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
 #	mil.line("#test mark and number primitives\n");
-#	mil.line("var b:= new(str,int);");
-#	b := new(:str,:int);
+#	mil.line("var b:= bbp.new(str,int);");
+#	b := bbp.new(nil:str,nil:int);
 #	mil.line("b.insert(\"the\",1);");
-#	ca_a := insert(b,"the",1);
+#	ca_a := bat.insert(b,"the",1);
 #	mil.line("b.insert(\"quick\",20);");
-#	da_a := insert(b,"quick",20);
+#	da_a := bat.insert(b,"quick",20);
 #	mil.line("b.insert(\"brown\",30);");
-#	ea_a := insert(b,"brown",30);
+#	ea_a := bat.insert(b,"brown",30);
 #	mil.line("b.insert(\"fox\",40);");
-#	fa_a := insert(b,"fox",40);
+#	fa_a := bat.insert(b,"fox",40);
 #	mil.line("b.insert(\"jumps\",50);");
-#	ga_a := insert(b,"jumps",50);
+#	ga_a := bat.insert(b,"jumps",50);
 #	mil.line("b.insert(\"over\",60);");
-#	ha_a := insert(b,"over",60);
+#	ha_a := bat.insert(b,"over",60);
 #	mil.line("b.insert(\"lazy\",70);");
-#	ia_a := insert(b,"lazy",70);
+#	ia_a := bat.insert(b,"lazy",70);
 #	mil.line("b.insert(\"dog\",80);");
-#	ja_a := insert(b,"dog",80);
+#	ja_a := bat.insert(b,"dog",80);
 #	mil.line("b.insert(str(nil),90);");
-#	ka_a := str(nil);
-#	la_a := insert(b,ka_a,90);
+#	ka_a := calc.str(nil);
+#	la_a := bat.insert(b,ka_a,90);
 #	mil.line("b.insert(\".\",100);");
-#	ma_a := insert(b,".",100);
+#	ma_a := bat.insert(b,".",100);
 #	mil.line("b.insert(\"\",int(nil));");
-#	na_a := int(nil);
-#	oa_a := insert(b,"",na_a);
+#	na_a := calc.int(nil);
+#	oa_a := bat.insert(b,"",na_a);
 #	mil.line("b.insert(str(nil),int(nil));");
-#	pa_a := str(nil);
-#	qa_a := int(nil);
-#	ra_a := insert(b,pa_a,qa_a);
+#	pa_a := calc.str(nil);
+#	qa_a := calc.int(nil);
+#	ra_a := bat.insert(b,pa_a,qa_a);
 #	mil.line("b.print();");
-#	sa_a := print(b);
+#	sa_a := io.print(b);
 #	mil.line("var c:= mark(b,oid(20000050));");
-#	ta_a := oid(20000050);
-#	c := mark(b,ta_a);
+#	ta_a := calc.oid(20000050);
+#	c := algebra.markT(b,ta_a);
 #	mil.line("print(c);");
-#	ua_a := print(c);
+#	ua_a := io.print(c);
 #	mil.line("var d:=number(b);");
-#	d := number(b);
+#	d := algebra.number(b);
 #	mil.line("print(d);");
-#	va_a := print(d);
+#	va_a := io.print(d);
 #	mil.line("quit();");
-#	wa_a := quit();
+#	wa_a := clients.quit();
 #
 function user.main():int;	# 0  (main:int)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  ($32:str)
-#Predefined code segment 	# 2  ($34:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  ($36:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  ($38:str)
-#A few guidelines to maximize usefullness. 	# 5  ($40:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  ($42:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  ($44:str)
-#use the "mil_schema" for additional support routines 	# 8  ($46:str)
-    mil.line("setoid(oid(20000000));");	# 9 MILline ($47:void)<-($48:str)
-    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-($50:int)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
+#Predefined code segment 	# 2  (_34:str)
+#The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 4  (_38:str)
+#A few guidelines to maximize usefullness. 	# 5  (_40:str)
+#- make the type of variables explicit, in particular 'nil' 	# 6  (_42:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_44:str)
+#use the "mil_schema" for additional support routines 	# 8  (_46:str)
+    mil.line("setoid(oid(20000000));");	# 9 MILline (_47:void)<-(_48:str)
+    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-(_50:int)
     ba_a := calc.setoid(aa_a);	# 11 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("#test mark and number primitives\n");	# 12 MILline ($52:void)<-($53:str)
-    mil.line("var b:= bbp.new(str,int);");	# 13 MILline ($54:void)<-($55:str)
-    b := bbp.new(nil:str,nil:int);	# 14 CMDBATnew (b:bat[:str,:int])<-($57:str)($58:int)
-    mil.line("b.insert(\"the\",1);");	# 15 MILline ($59:void)<-($60:str)
-    ca_a := bat.insert(b,"the",1);	# 16 BKCinsert_bun (ca_a:bat[:str,:int])<-(b:bat[:str,:int])($62:str)($63:int)
-    mil.line("b.insert(\"quick\",20);");	# 17 MILline ($64:void)<-($65:str)
-    da_a := bat.insert(b,"quick",20);	# 18 BKCinsert_bun (da_a:bat[:str,:int])<-(b:bat[:str,:int])($67:str)($68:int)
-    mil.line("b.insert(\"brown\",30);");	# 19 MILline ($69:void)<-($70:str)
-    ea_a := bat.insert(b,"brown",30);	# 20 BKCinsert_bun (ea_a:bat[:str,:int])<-(b:bat[:str,:int])($72:str)($73:int)
-    mil.line("b.insert(\"fox\",40);");	# 21 MILline ($74:void)<-($75:str)
-    fa_a := bat.insert(b,"fox",40);	# 22 BKCinsert_bun (fa_a:bat[:str,:int])<-(b:bat[:str,:int])($77:str)($78:int)
-    mil.line("b.insert(\"jumps\",50);");	# 23 MILline ($79:void)<-($80:str)
-    ga_a := bat.insert(b,"jumps",50);	# 24 BKCinsert_bun (ga_a:bat[:str,:int])<-(b:bat[:str,:int])($82:str)($83:int)
-    mil.line("b.insert(\"over\",60);");	# 25 MILline ($84:void)<-($85:str)
-    ha_a := bat.insert(b,"over",60);	# 26 BKCinsert_bun (ha_a:bat[:str,:int])<-(b:bat[:str,:int])($87:str)($88:int)
-    mil.line("b.insert(\"lazy\",70);");	# 27 MILline ($89:void)<-($90:str)
-    ia_a := bat.insert(b,"lazy",70);	# 28 BKCinsert_bun (ia_a:bat[:str,:int])<-(b:bat[:str,:int])($92:str)($93:int)
-    mil.line("b.insert(\"dog\",80);");	# 29 MILline ($94:void)<-($95:str)
-    ja_a := bat.insert(b,"dog",80);	# 30 BKCinsert_bun (ja_a:bat[:str,:int])<-(b:bat[:str,:int])($97:str)($98:int)
-    mil.line("b.insert(str(nil),90);");	# 31 MILline ($99:void)<-($100:str)
-    ka_a := calc.str(nil);	# 32 CALCnil2str (ka_a:str)<-($102:void)
-    la_a := bat.insert(b,ka_a,90);	# 33 BKCinsert_bun (la_a:bat[:str,:int])<-(b:bat[:str,:int])(ka_a:str)($104:int)
-    mil.line("b.insert(\".\",100);");	# 34 MILline ($105:void)<-($106:str)
-    ma_a := bat.insert(b,".",100);	# 35 BKCinsert_bun (ma_a:bat[:str,:int])<-(b:bat[:str,:int])($108:str)($109:int)
-    mil.line("b.insert(\"\",int(nil));");	# 36 MILline ($110:void)<-($111:str)
-    na_a := calc.int(nil);	# 37 CALCnil2int (na_a:int)<-($102:void)
-    oa_a := bat.insert(b,"",na_a);	# 38 BKCinsert_bun (oa_a:bat[:str,:int])<-(b:bat[:str,:int])($114:str)(na_a:int)
-    mil.line("b.insert(str(nil),int(nil));");	# 39 MILline ($115:void)<-($116:str)
-    pa_a := calc.str(nil);	# 40 CALCnil2str (pa_a:str)<-($102:void)
-    qa_a := calc.int(nil);	# 41 CALCnil2int (qa_a:int)<-($102:void)
+    mil.line("#test mark and number primitives\n");	# 12 MILline (_52:void)<-(_53:str)
+    mil.line("var b:= bbp.new(str,int);");	# 13 MILline (_54:void)<-(_55:str)
+    b := bbp.new(nil:str,nil:int);	# 14 CMDBATnew (b:bat[:str,:int])<-(_57:str)(_58:int)
+    mil.line("b.insert(\"the\",1);");	# 15 MILline (_59:void)<-(_60:str)
+    ca_a := bat.insert(b,"the",1);	# 16 BKCinsert_bun (ca_a:bat[:str,:int])<-(b:bat[:str,:int])(_62:str)(_63:int)
+    mil.line("b.insert(\"quick\",20);");	# 17 MILline (_64:void)<-(_65:str)
+    da_a := bat.insert(b,"quick",20);	# 18 BKCinsert_bun (da_a:bat[:str,:int])<-(b:bat[:str,:int])(_67:str)(_68:int)
+    mil.line("b.insert(\"brown\",30);");	# 19 MILline (_69:void)<-(_70:str)
+    ea_a := bat.insert(b,"brown",30);	# 20 BKCinsert_bun (ea_a:bat[:str,:int])<-(b:bat[:str,:int])(_72:str)(_73:int)
+    mil.line("b.insert(\"fox\",40);");	# 21 MILline (_74:void)<-(_75:str)
+    fa_a := bat.insert(b,"fox",40);	# 22 BKCinsert_bun (fa_a:bat[:str,:int])<-(b:bat[:str,:int])(_77:str)(_78:int)
+    mil.line("b.insert(\"jumps\",50);");	# 23 MILline (_79:void)<-(_80:str)
+    ga_a := bat.insert(b,"jumps",50);	# 24 BKCinsert_bun (ga_a:bat[:str,:int])<-(b:bat[:str,:int])(_82:str)(_83:int)
+    mil.line("b.insert(\"over\",60);");	# 25 MILline (_84:void)<-(_85:str)
+    ha_a := bat.insert(b,"over",60);	# 26 BKCinsert_bun (ha_a:bat[:str,:int])<-(b:bat[:str,:int])(_87:str)(_88:int)
+    mil.line("b.insert(\"lazy\",70);");	# 27 MILline (_89:void)<-(_90:str)
+    ia_a := bat.insert(b,"lazy",70);	# 28 BKCinsert_bun (ia_a:bat[:str,:int])<-(b:bat[:str,:int])(_92:str)(_93:int)
+    mil.line("b.insert(\"dog\",80);");	# 29 MILline (_94:void)<-(_95:str)
+    ja_a := bat.insert(b,"dog",80);	# 30 BKCinsert_bun (ja_a:bat[:str,:int])<-(b:bat[:str,:int])(_97:str)(_98:int)
+    mil.line("b.insert(str(nil),90);");	# 31 MILline (_99:void)<-(_100:str)
+    ka_a := calc.str(nil);	# 32 CALCnil2str (ka_a:str)<-(_102:void)
+    la_a := bat.insert(b,ka_a,90);	# 33 BKCinsert_bun (la_a:bat[:str,:int])<-(b:bat[:str,:int])(ka_a:str)(_104:int)
+    mil.line("b.insert(\".\",100);");	# 34 MILline (_105:void)<-(_106:str)
+    ma_a := bat.insert(b,".",100);	# 35 BKCinsert_bun (ma_a:bat[:str,:int])<-(b:bat[:str,:int])(_108:str)(_109:int)
+    mil.line("b.insert(\"\",int(nil));");	# 36 MILline (_110:void)<-(_111:str)
+    na_a := calc.int(nil);	# 37 CALCnil2int (na_a:int)<-(_102:void)
+    oa_a := bat.insert(b,"",na_a);	# 38 BKCinsert_bun (oa_a:bat[:str,:int])<-(b:bat[:str,:int])(_114:str)(na_a:int)
+    mil.line("b.insert(str(nil),int(nil));");	# 39 MILline (_115:void)<-(_116:str)
+    pa_a := calc.str(nil);	# 40 CALCnil2str (pa_a:str)<-(_102:void)
+    qa_a := calc.int(nil);	# 41 CALCnil2int (qa_a:int)<-(_102:void)
     ra_a := bat.insert(b,pa_a,qa_a);	# 42 BKCinsert_bun (ra_a:bat[:str,:int])<-(b:bat[:str,:int])(pa_a:str)(qa_a:int)
-    mil.line("b.print();");	# 43 MILline ($120:void)<-($121:str)
+    mil.line("b.print();");	# 43 MILline (_120:void)<-(_121:str)
     sa_a := io.print(b);	# 44 IOprint_val (sa_a:int)<-(b:bat[:str,:int])
-    mil.line("var c:= mark(b,oid(20000050));");	# 45 MILline ($123:void)<-($124:str)
-    ta_a := calc.oid(20000050);	# 46 CALCint2oid (ta_a:oid)<-($126:int)
+    mil.line("var c:= mark(b,oid(20000050));");	# 45 MILline (_123:void)<-(_124:str)
+    ta_a := calc.oid(20000050);	# 46 CALCint2oid (ta_a:oid)<-(_126:int)
     c := algebra.markT(b,ta_a);	# 47 ALGtmark (c:bat[:str,:void])<-(b:bat[:str,:int])(ta_a:oid)
-    mil.line("print(c);");	# 48 MILline ($128:void)<-($129:str)
+    mil.line("print(c);");	# 48 MILline (_128:void)<-(_129:str)
     ua_a := io.print(c);	# 49 IOprint_val (ua_a:int)<-(c:bat[:str,:void])
-    mil.line("var d:=number(b);");	# 50 MILline ($131:void)<-($132:str)
+    mil.line("var d:=number(b);");	# 50 MILline (_131:void)<-(_132:str)
     d := algebra.number(b);	# 51 ALGnumber (d:bat[:str,:int])<-(b:bat[:str,:int])
-    mil.line("print(d);");	# 52 MILline ($134:void)<-($135:str)
+    mil.line("print(d);");	# 52 MILline (_134:void)<-(_135:str)
     va_a := io.print(d);	# 53 IOprint_val (va_a:int)<-(d:bat[:str,:int])
-    mil.line("quit();");	# 54 MILline ($137:void)<-($138:str)
+    mil.line("quit();");	# 54 MILline (_137:void)<-(_138:str)
     wa_a := clients.quit();	# 55 CLTquit (wa_a:void)
 end main;	# 56  
 #setoid(oid(20000000));
-##test mark and number primitives
-#var b:= new(str,int);
-#b.insert("the",1);
-#b.insert("quick",20);
-#b.insert("brown",30);
-#b.insert("fox",40);
-#b.insert("jumps",50);
-#b.insert("over",60);
-#b.insert("lazy",70);
-#b.insert("dog",80);
+##test mark and number primitives\n
+#var b:= bbp.new(str,int);
+#b.insert(\"the\",1);
+#b.insert(\"quick\",20);
+#b.insert(\"brown\",30);
+#b.insert(\"fox\",40);
+#b.insert(\"jumps\",50);
+#b.insert(\"over\",60);
+#b.insert(\"lazy\",70);
+#b.insert(\"dog\",80);
 #b.insert(str(nil),90);
-#b.insert(".",100);
-#b.insert("",int(nil));
+#b.insert(\".\",100);
+#b.insert(\"\",int(nil));
 #b.insert(str(nil),int(nil));
 #b.print();
 #-------------------------#
-# BAT:		  tmp_24  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "the",	  1	  ]
 [ "quick",	  20	  ]
@@ -167,8 +163,8 @@ end main;	# 56
 #var c:= mark(b,oid(20000050));
 #print(c);
 #---------------------------------#
-# BAT:		  tmp_23	  #
-# (str)		  (void)	  #
+# h		t		  # name
+# str		void		  # type
 #---------------------------------#
 [ "the",	  20000050@0	  ]
 [ "quick",	  20000051@0	  ]
@@ -185,8 +181,8 @@ end main;	# 56
 #var d:=number(b);
 #print(d);
 #-------------------------#
-# BAT:		  tmp_25  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "the",	  0	  ]
 [ "quick",	  1	  ]
@@ -202,7 +198,7 @@ end main;	# 56
 [ nil,		  11	  ]
 #quit();
 
-# 17:08:54 >  
-# 17:08:54 >  Done.
-# 17:08:54 >  
+# 00:12:29 >  
+# 00:12:29 >  Done.
+# 00:12:29 >  
 

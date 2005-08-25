@@ -1,34 +1,22 @@
 stdout of test 'rsbox03` in directory 'src/modules/mal` itself:
 
 
-# 22:08:16 >  
-# 22:08:16 >  Mtimeout -timeout 60 Mserver "--config=/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monet5/program/lib/MonetDB5" --set "gdk_dbfarm=/ufs/fabian/scratch/monet5/program/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monet5/program/var/MonetDB5/log" --set mapi_port=45629 --set sql_port=57739 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  rsbox03.mal </dev/null
-# 22:08:16 >  
-
-
-
-
-
-
-
-
-
-
-
-
+# 00:03:58 >  
+# 00:03:58 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  rsbox03.mal </dev/null
+# 00:03:58 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf
-# dbfarm:/ufs/fabian/scratch/monet5/program/var/MonetDB5/dbfarm
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ### Test ResultSet unionability
 #
 #include rsbox;
 #
-#rs := rsbox.create("union", 1, 1);
+#rs := rsbox.create(1, 't');
 #
 #resultset.setProperty(rs, 1, "name", "the_column");
 #resultset.setProperty(rs, 1, "table", "the_table");
@@ -67,45 +55,45 @@ stdout of test 'rsbox03` in directory 'src/modules/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-    rs := rsbox.create(1,'t');	# 1 RSBcreate (rs:resultset)<-($2:int)($3:chr)
-    resultset.setProperty(rs,1,"name","the_column");	# 2 RSsetPropertyStr ($4:resultset)<-(rs:resultset)($2:int)($5:str)($6:str)
-    resultset.setProperty(rs,1,"table","the_table");	# 3 RSsetPropertyStr ($7:resultset)<-(rs:resultset)($2:int)($8:str)($9:str)
-    resultset.setProperty(rs,1,"schema","the_schema");	# 4 RSsetPropertyStr ($10:resultset)<-(rs:resultset)($2:int)($11:str)($12:str)
-    b1 := bbp.new(:void,:int);	# 5 CMDBATnew (b1:bat[:void,:int])<-($14:void)($15:int)
-    bat.insert(b1,nil,1);	# 6 BKCinsert_bun ($16:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($2:int)
-    bat.insert(b1,nil,2);	# 7 BKCinsert_bun ($18:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($19:int)
-    bat.insert(b1,nil,nil:int);	# 8 BKCinsert_bun ($20:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($21:int)
-    bat.insert(b1,nil,4);	# 9 BKCinsert_bun ($22:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($23:int)
-    bat.insert(b1,nil,6);	# 10 BKCinsert_bun ($24:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($25:int)
-    resultset.populateColumn(rs,1,b1);	# 11 RSpopulateColumn ($26:resultset)<-(rs:resultset)($2:int)(b1:bat[:void,:int])
-    resultset.addUnion(rs);	# 12 RSunion ($27:resultset)<-(rs:resultset)
-    b1 := bbp.new(:void,:int);	# 13 CMDBATnew (b1:bat[:void,:int])<-($28:void)($29:int)
-    bat.insert(b1,nil,7);	# 14 BKCinsert_bun ($30:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($31:int)
-    bat.insert(b1,nil,8);	# 15 BKCinsert_bun ($32:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($33:int)
-    resultset.populateColumn(rs,1,b1);	# 16 RSpopulateColumn ($34:resultset)<-(rs:resultset)($35:int)(b1:bat[:void,:int])
-    resultset.addUnion(rs);	# 17 RSunion ($36:resultset)<-(rs:resultset)
-    b1 := bbp.new(:void,:int);	# 18 CMDBATnew (b1:bat[:void,:int])<-($28:void)($37:int)
-    bat.insert(b1,nil,13);	# 19 BKCinsert_bun ($38:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($39:int)
-    bat.insert(b1,nil,23);	# 20 BKCinsert_bun ($40:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($41:int)
-    resultset.populateColumn(rs,1,b1);	# 21 RSpopulateColumn ($42:resultset)<-(rs:resultset)($35:int)(b1:bat[:void,:int])
-    resultset.writeNextPart(rs);	# 22 RSwriteNextPart ($43:int)<-(rs:resultset)
-    resultset.dePopulate(rs);	# 23 RSdePopulate ($44:resultset)<-(rs:resultset)
-    resultset.populateColumn(rs,1,b1);	# 24 RSpopulateColumn ($45:resultset)<-(rs:resultset)($35:int)(b1:bat[:void,:int])
-    resultset.writeNextPart(rs);	# 25 RSwriteNextPart ($46:int)<-(rs:resultset)
-    rsbox.release(rs);	# 26 RSBdelete ($47:void)<-(rs:resultset)
+    rs := rsbox.create(1,'t');	# 1 RSBcreate (rs:resultset)<-(_2:int)(_3:chr)
+    resultset.setProperty(rs,1,"name","the_column");	# 2 RSsetPropertyStr (_4:resultset)<-(rs:resultset)(_2:int)(_5:str)(_6:str)
+    resultset.setProperty(rs,1,"table","the_table");	# 3 RSsetPropertyStr (_7:resultset)<-(rs:resultset)(_2:int)(_8:str)(_9:str)
+    resultset.setProperty(rs,1,"schema","the_schema");	# 4 RSsetPropertyStr (_10:resultset)<-(rs:resultset)(_2:int)(_11:str)(_12:str)
+    b1 := bbp.new(:void,:int);	# 5 CMDBATnew (b1:bat[:void,:int])<-(_14:void)(_15:int)
+    bat.insert(b1,nil,1);	# 6 BKCinsert_bun (_16:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_2:int)
+    bat.insert(b1,nil,2);	# 7 BKCinsert_bun (_18:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_19:int)
+    bat.insert(b1,nil,nil:int);	# 8 BKCinsert_bun (_20:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_21:int)
+    bat.insert(b1,nil,4);	# 9 BKCinsert_bun (_22:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_23:int)
+    bat.insert(b1,nil,6);	# 10 BKCinsert_bun (_24:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_25:int)
+    resultset.populateColumn(rs,1,b1);	# 11 RSpopulateColumn (_26:resultset)<-(rs:resultset)(_2:int)(b1:bat[:void,:int])
+    resultset.addUnion(rs);	# 12 RSunion (_27:resultset)<-(rs:resultset)
+    b1 := bbp.new(:void,:int);	# 13 CMDBATnew (b1:bat[:void,:int])<-(_28:void)(_29:int)
+    bat.insert(b1,nil,7);	# 14 BKCinsert_bun (_30:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_31:int)
+    bat.insert(b1,nil,8);	# 15 BKCinsert_bun (_32:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_33:int)
+    resultset.populateColumn(rs,1,b1);	# 16 RSpopulateColumn (_34:resultset)<-(rs:resultset)(_35:int)(b1:bat[:void,:int])
+    resultset.addUnion(rs);	# 17 RSunion (_36:resultset)<-(rs:resultset)
+    b1 := bbp.new(:void,:int);	# 18 CMDBATnew (b1:bat[:void,:int])<-(_28:void)(_37:int)
+    bat.insert(b1,nil,13);	# 19 BKCinsert_bun (_38:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_39:int)
+    bat.insert(b1,nil,23);	# 20 BKCinsert_bun (_40:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_41:int)
+    resultset.populateColumn(rs,1,b1);	# 21 RSpopulateColumn (_42:resultset)<-(rs:resultset)(_35:int)(b1:bat[:void,:int])
+    resultset.writeNextPart(rs);	# 22 RSwriteNextPart (_43:int)<-(rs:resultset)
+    resultset.dePopulate(rs);	# 23 RSdePopulate (_44:resultset)<-(rs:resultset)
+    resultset.populateColumn(rs,1,b1);	# 24 RSpopulateColumn (_45:resultset)<-(rs:resultset)(_35:int)(b1:bat[:void,:int])
+    resultset.writeNextPart(rs);	# 25 RSwriteNextPart (_46:int)<-(rs:resultset)
+    rsbox.release(rs);	# 26 RSBdelete (_47:void)<-(rs:resultset)
 end main;	# 27  
 &t
-$id 1
-$columncount 1
-$tuplecount 9
-$ctype i
-%column the_column
-%table the_table
-%schema the_schema
-%type int
-%digits 
-%scale 
-%width 9
+$id	1
+$columncount	1
+$tuplecount	9
+$ctype	i
+%column	the_column
+%table	the_table
+%schema	the_schema
+%type	int
+%digits	
+%scale	
+%width	9
 [1
 [2
 [NULL
@@ -116,21 +104,21 @@ $ctype i
 [13
 [23
 &t
-$id 2
-$columncount 1
-$tuplecount 2
-$ctype i
-%column the_column
-%table the_table
-%schema the_schema
-%type int
-%digits 
-%scale 
-%width 1
+$id	2
+$columncount	1
+$tuplecount	2
+$ctype	i
+%column	the_column
+%table	the_table
+%schema	the_schema
+%type	int
+%digits	
+%scale	
+%width	1
 [13
 [23
 
-# 09:31:04 >  
-# 09:31:04 >  Done.
-# 09:31:04 >  
+# 00:03:58 >  
+# 00:03:58 >  Done.
+# 00:03:58 >  
 

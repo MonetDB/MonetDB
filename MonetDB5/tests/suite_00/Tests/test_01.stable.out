@@ -1,424 +1,420 @@
 stdout of test 'test_01` in directory 'tests/suite_00` itself:
 
 
-# 10:49:18 >  
-# 10:49:18 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=44706 --set sql_port=51874 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_01.mal </dev/null
-# 10:49:18 >  
+# 00:12:27 >  
+# 00:12:27 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34380 --set sql_port=46008 --set xquery_port=58634 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_01.mal </dev/null
+# 00:12:27 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_suite_00
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## Monet Mil to Mal compiler
-## Copyright (c) 2001-2004, CWI. All rights reserved.
+#include mil;
+## Copyright (c) 2001-2004, CWI.All rights reserved.
 #
-## Predefined code segment
+##Predefined code segment
 ##The compiler can not guarantee an accurate compilation,
 ##because MIL unlike MAL is a dynamically typed language.
 ##A few guidelines to maximize usefullness.
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
+##use the "mil_schema" for additional support routines
 #	mil.line("setoid(oid(20000000));");
-#	aa_a := oid(20000000);
-#	ba_a := setoid(aa_a);
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
 #	mil.line("#test basic functionality of the BAT library.\n");
 #	mil.line("#focussed on strings\n");
-#	mil.line("#it includes insertions,deletions,selections, and joins.\n");
-#	mil.line("var b:= new(str,int);");
-#	b := new(:str,:int);
+#	mil.line("#it includes bat.insertions,deletions,selections, and joins.\n");
+#	mil.line("var b:= bbp.new(str,int);");
+#	b := bbp.new(nil:str,nil:int);
 #	mil.line("b.insert(\"the\",1);");
-#	ca_a := insert(b,"the",1);
+#	ca_a := bat.insert(b,"the",1);
 #	mil.line("b.insert(\"quick\",2);");
-#	da_a := insert(b,"quick",2);
+#	da_a := bat.insert(b,"quick",2);
 #	mil.line("b.insert(\"brown\",3);");
-#	ea_a := insert(b,"brown",3);
+#	ea_a := bat.insert(b,"brown",3);
 #	mil.line("b.insert(\"fox\",4);");
-#	fa_a := insert(b,"fox",4);
+#	fa_a := bat.insert(b,"fox",4);
 #	mil.line("b.insert(\"jumps\",5);");
-#	ga_a := insert(b,"jumps",5);
+#	ga_a := bat.insert(b,"jumps",5);
 #	mil.line("b.insert(\"over\",6);");
-#	ha_a := insert(b,"over",6);
+#	ha_a := bat.insert(b,"over",6);
 #	mil.line("b.insert(\"lazy\",7);");
-#	ia_a := insert(b,"lazy",7);
+#	ia_a := bat.insert(b,"lazy",7);
 #	mil.line("b.insert(\"dog\",8);");
-#	ja_a := insert(b,"dog",8);
+#	ja_a := bat.insert(b,"dog",8);
 #	mil.line("b.insert(str(nil),9);");
-#	ka_a := str(nil);
-#	la_a := insert(b,ka_a,9);
+#	ka_a := calc.str(nil);
+#	la_a := bat.insert(b,ka_a,9);
 #	mil.line("b.insert(\".\",10);");
-#	ma_a := insert(b,".",10);
+#	ma_a := bat.insert(b,".",10);
 #	mil.line("b.insert(\"\",int(nil));");
-#	na_a := int(nil);
-#	oa_a := insert(b,"",na_a);
+#	na_a := calc.int(nil);
+#	oa_a := bat.insert(b,"",na_a);
 #	mil.line("b.insert(str(nil),int(nil));");
-#	pa_a := str(nil);
-#	qa_a := int(nil);
-#	ra_a := insert(b,pa_a,qa_a);
+#	pa_a := calc.str(nil);
+#	qa_a := calc.int(nil);
+#	ra_a := bat.insert(b,pa_a,qa_a);
 #	mil.line("b.print();");
-#	sa_a := print(b);
+#	sa_a := io.print(b);
 #	mil.line("# Testing simple retrievals\n");
-#	mil.line("b.find(\"the\").print();");
-#	ta_a := find(b,"the");
-#	ua_a := print(ta_a);
+#	ta_a := algebra.find(b,"the");
+#	ua_a := io.print(ta_a);
 #	mil.line("b.find(\"fox\").print();");
-#	va_a := find(b,"fox");
-#	wa_a := print(va_a);
+#	va_a := algebra.find(b,"fox");
+#	wa_a := io.print(va_a);
 #	mil.line("b.find(str(nil)).print();");
-#	xa_a := str(nil);
-#	ya_a := find(b,xa_a);
-#	ab_a := print(ya_a);
+#	xa_a := calc.str(nil);
+#	ya_a := algebra.find(b,xa_a);
+#	ab_a := io.print(ya_a);
 #	mil.line("# This should cause an error\n");
-#	mil.line("b.find(\"cat\").print();");
-##ignore	bb_a := find(b,"cat");
+##ignore	bb_a := algebra. find(b,"cat");
 ##ignore	cb_a := print(bb_a);
 #	mil.line("# Can we delete them and re-insert them later on\n");
-#	mil.line("b.delete(\"fox\",4);");
-#	db_a := delete(b,"fox",4);
+#	db_a := bat.delete(b,"fox",4);
 #	mil.line("b.delete(\"the\",1);");
-#	eb_a := delete(b,"the",1);
+#	eb_a := bat.delete(b,"the",1);
 #	mil.line("b.delete(\".\",10);");
-#	fb_a := delete(b,".",10);
+#	fb_a := bat.delete(b,".",10);
 #	mil.line("b.print();");
-#	gb_a := print(b);
+#	gb_a := io.print(b);
 #	mil.line("b.insert(\"fox\",4);");
-#	hb_a := insert(b,"fox",4);
+#	hb_a := bat.insert(b,"fox",4);
 #	mil.line("b.insert(\"the\",1);");
-#	ib_a := insert(b,"the",1);
+#	ib_a := bat.insert(b,"the",1);
 #	mil.line("b.insert(\".\",10);");
-#	jb_a := insert(b,".",10);
+#	jb_a := bat.insert(b,".",10);
 #	mil.line("b.count().print();");
-#	kb_a := count(b);
-#	lb_a := print(kb_a);
+#	kb_a := algebra.count(b);
+#	lb_a := io.print(kb_a);
 #	mil.line("# Lets cut out a few sections\n");
-#	mil.line("b.select(2,4).print();");
-#	mb_a := select(b,2,4);
-#	nb_a := print(mb_a);
+#	mb_a := algebra.select(b,2,4);
+#	nb_a := io.print(mb_a);
 #	mil.line("b.select(7,int(nil)).print();");
-#	ob_a := int(nil);
-#	pb_a := select(b,7,ob_a);
-#	qb_a := print(pb_a);
+#	ob_a := calc.int(nil);
+#	pb_a := algebra.select(b,7,ob_a);
+#	qb_a := io.print(pb_a);
 #	mil.line("b.select(int(nil),7).print();");
-#	rb_a := int(nil);
-#	sb_a := select(b,rb_a,7);
-#	tb_a := print(sb_a);
+#	rb_a := calc.int(nil);
+#	sb_a := algebra.select(b,rb_a,7);
+#	tb_a := io.print(sb_a);
 #	mil.line("b.select(int(nil),int(nil)).print();");
-#	ub_a := int(nil);
-#	vb_a := int(nil);
-#	wb_a := select(b,ub_a,vb_a);
-#	xb_a := print(wb_a);
+#	ub_a := calc.int(nil);
+#	vb_a := calc.int(nil);
+#	wb_a := algebra.select(b,ub_a,vb_a);
+#	xb_a := io.print(wb_a);
 #	mil.line("b.reverse().select(\"fox\",\"quick\").print();");
-#	yb_a := reverse(b);
-#	ac_a := select(yb_a,"fox","quick");
-#	bc_a := print(ac_a);
+#	yb_a := bat.reverse(b);
+#	ac_a := algebra.select(yb_a,"fox","quick");
+#	bc_a := io.print(ac_a);
 #	mil.line("b.reverse().select(\"fox\",str(nil)).print();");
-#	cc_a := str(nil);
-#	dc_a := reverse(b);
-#	ec_a := select(dc_a,"fox",cc_a);
-#	fc_a := print(ec_a);
+#	cc_a := calc.str(nil);
+#	dc_a := bat.reverse(b);
+#	ec_a := algebra.select(dc_a,"fox",cc_a);
+#	fc_a := io.print(ec_a);
 #	mil.line("b.reverse().select(str(nil),\"quick\").print();");
-#	gc_a := str(nil);
-#	hc_a := reverse(b);
-#	ic_a := select(hc_a,gc_a,"quick");
-#	jc_a := print(ic_a);
+#	gc_a := calc.str(nil);
+#	hc_a := bat.reverse(b);
+#	ic_a := algebra. select(hc_a,gc_a,"quick");
+#	jc_a := io.print(ic_a);
 #	mil.line("b.reverse().select(str(nil),str(nil)).print();");
-#	kc_a := str(nil);
-#	lc_a := str(nil);
-#	mc_a := reverse(b);
-#	nc_a := select(mc_a,kc_a,lc_a);
-#	oc_a := print(nc_a);
+#	kc_a := calc.str(nil);
+#	lc_a := calc.str(nil);
+#	mc_a := bat.reverse(b);
+#	nc_a := algebra.select(mc_a,kc_a,lc_a);
+#	oc_a := io.print(nc_a);
 #	mil.line("# A 2-dimensional cut\n");
-#	mil.line("var bn:=b.fragment(\"fox\",\"quick\",1,5);bn.print();");
-#	bn := fragment(b,"fox","quick",1,5);
-#	pc_a := print(bn);
+#	bn := algebra.fragment(b,"fox","quick",1,5);
+#	pc_a := io.print(bn);
 #	mil.line("b.fragment(\"fox\",str(nil),1,5).print();");
-#	qc_a := str(nil);
-#	rc_a := fragment(b,"fox",qc_a,1,5);
-#	sc_a := print(rc_a);
+#	qc_a := calc.str(nil);
+#	rc_a := algebra.fragment(b,"fox",qc_a,1,5);
+#	sc_a := io.print(rc_a);
 #	mil.line("b.fragment(str(nil),\"quick\",1,5).print();");
-#	tc_a := str(nil);
-#	uc_a := fragment(b,tc_a,"quick",1,5);
-#	vc_a := print(uc_a);
+#	tc_a := calc.str(nil);
+#	uc_a := algebra.fragment(b,tc_a,"quick",1,5);
+#	vc_a := io.print(uc_a);
 #	mil.line("b.fragment(str(nil),str(nil),1,5).print();");
-#	wc_a := str(nil);
-#	xc_a := str(nil);
-#	yc_a := fragment(b,wc_a,xc_a,1,5);
-#	ad_a := print(yc_a);
+#	wc_a := calc.str(nil);
+#	xc_a := calc.str(nil);
+#	yc_a := algebra.fragment(b,wc_a,xc_a,1,5);
+#	ad_a := io.print(yc_a);
 #	mil.line("b.fragment(\"fox\",\"quick\",1,int(nil)).print();");
-#	bd_a := int(nil);
-#	cd_a := fragment(b,"fox","quick",1,bd_a);
-#	dd_a := print(cd_a);
+#	bd_a := calc.int(nil);
+#	cd_a := algebra.fragment(b,"fox","quick",1,bd_a);
+#	dd_a := io.print(cd_a);
 #	mil.line("b.fragment(\"fox\",\"quick\",int(nil),5).print();");
-#	ed_a := int(nil);
-#	fd_a := fragment(b,"fox","quick",ed_a,5);
-#	gd_a := print(fd_a);
+#	ed_a := calc.int(nil);
+#	fd_a := algebra.fragment(b,"fox","quick",ed_a,5);
+#	gd_a := io.print(fd_a);
 #	mil.line("b.fragment(\"fox\",\"quick\",int(nil),int(nil)).print();");
-#	hd_a := int(nil);
-#	id_a := int(nil);
-#	jd_a := fragment(b,"fox","quick",hd_a,id_a);
-#	kd_a := print(jd_a);
+#	hd_a := calc.int(nil);
+#	id_a := calc.int(nil);
+#	jd_a := algebra.fragment(b,"fox","quick",hd_a,id_a);
+#	kd_a := io.print(jd_a);
 #	mil.line("b.fragment(\"fox\",str(nil),int(nil),int(nil)).print();");
-#	ld_a := str(nil);
-#	md_a := int(nil);
-#	nd_a := int(nil);
-#	od_a := fragment(b,"fox",ld_a,md_a,nd_a);
-#	pd_a := print(od_a);
+#	ld_a := calc.str(nil);
+#	md_a := calc.int(nil);
+#	nd_a := calc.int(nil);
+#	od_a := algebra.fragment(b,"fox",ld_a,md_a,nd_a);
+#	pd_a := io.print(od_a);
 #	mil.line("b.fragment(str(nil),\"f\",int(nil),int(nil)).print();");
-#	qd_a := str(nil);
-#	rd_a := int(nil);
-#	sd_a := int(nil);
-#	td_a := fragment(b,qd_a,"f",rd_a,sd_a);
-#	ud_a := print(td_a);
+#	qd_a := calc.str(nil);
+#	rd_a := calc.int(nil);
+#	sd_a := calc.int(nil);
+#	td_a := algebra.fragment(b,qd_a,"f",rd_a,sd_a);
+#	ud_a := io.print(td_a);
 #	mil.line("b.reverse().fragment(int(nil),int(nil),str(nil),\"f\").print();");
-#	vd_a := int(nil);
-#	wd_a := int(nil);
-#	xd_a := str(nil);
-#	yd_a := reverse(b);
-#	ae_a := fragment(yd_a,vd_a,wd_a,xd_a,"f");
-#	be_a := print(ae_a);
+#	vd_a := calc.int(nil);
+#	wd_a := calc.int(nil);
+#	xd_a := calc.str(nil);
+#	yd_a := bat.reverse(b);
+#	ae_a := algebra.fragment(yd_a,vd_a,wd_a,xd_a,"f");
+#	be_a := io.print(ae_a);
 #	mil.line("var b1:= b.join(bn.reverse());");
-#	ce_a := reverse(bn);
-#	b1 := join(b,ce_a);
+#	ce_a := bat.reverse(bn);
+#	b1 := algebra.join(b,ce_a);
 #	mil.line("b1.print();");
-#	de_a := print(b1);
+#	de_a := io.print(b1);
 #	mil.line("var b2:= b.semijoin(b1.reverse());");
-#	ee_a := reverse(b1);
-#	b2 := semijoin(b,ee_a);
+#	ee_a := bat.reverse(b1);
+#	b2 := algebra.semijoin(b,ee_a);
 #	mil.line("b2.print();");
-#	fe_a := print(b2);
+#	fe_a := io.print(b2);
 #	mil.line("# testing the like command\n");
-#	mil.line("b.reverse().like(\"ox\").print();");
-#	ge_a := reverse(b);
-#	he_a := like(ge_a,"ox");
-#	ie_a := print(he_a);
+#	ge_a := bat.reverse(b);
+#	he_a := algebra.like(ge_a,"ox");
+#	ie_a := io.print(he_a);
 #	mil.line("b.reverse().like(\"fo\").print();");
-#	je_a := reverse(b);
-#	ke_a := like(je_a,"fo");
-#	le_a := print(ke_a);
+#	je_a := bat.reverse(b);
+#	ke_a := algebra.like(je_a,"fo");
+#	le_a := io.print(ke_a);
 #	mil.line("b.reverse().like(\"fox\").print();");
-#	me_a := reverse(b);
-#	ne_a := like(me_a,"fox");
-#	oe_a := print(ne_a);
+#	me_a := bat.reverse(b);
+#	ne_a := algebra.like(me_a,"fox");
+#	oe_a := io.print(ne_a);
 #	mil.line("b.reverse().like(\" fox\").print();");
-#	pe_a := reverse(b);
-#	qe_a := like(pe_a," fox");
-#	re_a := print(qe_a);
+#	pe_a := bat.reverse(b);
+#	qe_a := algebra.like(pe_a," fox");
+#	re_a := io.print(qe_a);
 #	mil.line("quit();");
-#	se_a := quit();
+#	se_a := clients.quit();
 #
 function user.main():int;	# 0  (main:int)
-# Copyright (c) 2001-2004, CWI.All rights reserved. 	# 1  ($32:str)
-#Predefined code segment 	# 2  ($34:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  ($36:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  ($38:str)
-#A few guidelines to maximize usefullness. 	# 5  ($40:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  ($42:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  ($44:str)
-#use the "mil_schema" for additional support routines 	# 8  ($46:str)
-    mil.line("setoid(oid(20000000));");	# 9 MILline ($47:void)<-($48:str)
-    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-($50:int)
+# Copyright (c) 2001-2004, CWI.All rights reserved. 	# 1  (_32:str)
+#Predefined code segment 	# 2  (_34:str)
+#The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 4  (_38:str)
+#A few guidelines to maximize usefullness. 	# 5  (_40:str)
+#- make the type of variables explicit, in particular 'nil' 	# 6  (_42:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_44:str)
+#use the "mil_schema" for additional support routines 	# 8  (_46:str)
+    mil.line("setoid(oid(20000000));");	# 9 MILline (_47:void)<-(_48:str)
+    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-(_50:int)
     ba_a := calc.setoid(aa_a);	# 11 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("#test basic functionality of the BAT library.\n");	# 12 MILline ($52:void)<-($53:str)
-    mil.line("#focussed on strings\n");	# 13 MILline ($54:void)<-($55:str)
-    mil.line("#it includes bat.insertions,deletions,selections, and joins.\n");	# 14 MILline ($56:void)<-($57:str)
-    mil.line("var b:= bbp.new(str,int);");	# 15 MILline ($58:void)<-($59:str)
-    b := bbp.new(nil:str,nil:int);	# 16 CMDBATnew (b:bat[:str,:int])<-($61:str)($62:int)
-    mil.line("b.insert(\"the\",1);");	# 17 MILline ($63:void)<-($64:str)
-    ca_a := bat.insert(b,"the",1);	# 18 BKCinsert_bun (ca_a:bat[:str,:int])<-(b:bat[:str,:int])($66:str)($67:int)
-    mil.line("b.insert(\"quick\",2);");	# 19 MILline ($68:void)<-($69:str)
-    da_a := bat.insert(b,"quick",2);	# 20 BKCinsert_bun (da_a:bat[:str,:int])<-(b:bat[:str,:int])($71:str)($72:int)
-    mil.line("b.insert(\"brown\",3);");	# 21 MILline ($73:void)<-($74:str)
-    ea_a := bat.insert(b,"brown",3);	# 22 BKCinsert_bun (ea_a:bat[:str,:int])<-(b:bat[:str,:int])($76:str)($77:int)
-    mil.line("b.insert(\"fox\",4);");	# 23 MILline ($78:void)<-($79:str)
-    fa_a := bat.insert(b,"fox",4);	# 24 BKCinsert_bun (fa_a:bat[:str,:int])<-(b:bat[:str,:int])($81:str)($82:int)
-    mil.line("b.insert(\"jumps\",5);");	# 25 MILline ($83:void)<-($84:str)
-    ga_a := bat.insert(b,"jumps",5);	# 26 BKCinsert_bun (ga_a:bat[:str,:int])<-(b:bat[:str,:int])($86:str)($87:int)
-    mil.line("b.insert(\"over\",6);");	# 27 MILline ($88:void)<-($89:str)
-    ha_a := bat.insert(b,"over",6);	# 28 BKCinsert_bun (ha_a:bat[:str,:int])<-(b:bat[:str,:int])($91:str)($92:int)
-    mil.line("b.insert(\"lazy\",7);");	# 29 MILline ($93:void)<-($94:str)
-    ia_a := bat.insert(b,"lazy",7);	# 30 BKCinsert_bun (ia_a:bat[:str,:int])<-(b:bat[:str,:int])($96:str)($97:int)
-    mil.line("b.insert(\"dog\",8);");	# 31 MILline ($98:void)<-($99:str)
-    ja_a := bat.insert(b,"dog",8);	# 32 BKCinsert_bun (ja_a:bat[:str,:int])<-(b:bat[:str,:int])($101:str)($102:int)
-    mil.line("b.insert(str(nil),9);");	# 33 MILline ($103:void)<-($104:str)
-    ka_a := calc.str(nil);	# 34 CALCnil2str (ka_a:str)<-($106:void)
-    la_a := bat.insert(b,ka_a,9);	# 35 BKCinsert_bun (la_a:bat[:str,:int])<-(b:bat[:str,:int])(ka_a:str)($108:int)
-    mil.line("b.insert(\".\",10);");	# 36 MILline ($109:void)<-($110:str)
-    ma_a := bat.insert(b,".",10);	# 37 BKCinsert_bun (ma_a:bat[:str,:int])<-(b:bat[:str,:int])($112:str)($113:int)
-    mil.line("b.insert(\"\",int(nil));");	# 38 MILline ($114:void)<-($115:str)
-    na_a := calc.int(nil);	# 39 CALCnil2int (na_a:int)<-($106:void)
-    oa_a := bat.insert(b,"",na_a);	# 40 BKCinsert_bun (oa_a:bat[:str,:int])<-(b:bat[:str,:int])($118:str)(na_a:int)
-    mil.line("b.insert(str(nil),int(nil));");	# 41 MILline ($119:void)<-($120:str)
-    pa_a := calc.str(nil);	# 42 CALCnil2str (pa_a:str)<-($106:void)
-    qa_a := calc.int(nil);	# 43 CALCnil2int (qa_a:int)<-($106:void)
+    mil.line("#test basic functionality of the BAT library.\n");	# 12 MILline (_52:void)<-(_53:str)
+    mil.line("#focussed on strings\n");	# 13 MILline (_54:void)<-(_55:str)
+    mil.line("#it includes bat.insertions,deletions,selections, and joins.\n");	# 14 MILline (_56:void)<-(_57:str)
+    mil.line("var b:= bbp.new(str,int);");	# 15 MILline (_58:void)<-(_59:str)
+    b := bbp.new(nil:str,nil:int);	# 16 CMDBATnew (b:bat[:str,:int])<-(_61:str)(_62:int)
+    mil.line("b.insert(\"the\",1);");	# 17 MILline (_63:void)<-(_64:str)
+    ca_a := bat.insert(b,"the",1);	# 18 BKCinsert_bun (ca_a:bat[:str,:int])<-(b:bat[:str,:int])(_66:str)(_67:int)
+    mil.line("b.insert(\"quick\",2);");	# 19 MILline (_68:void)<-(_69:str)
+    da_a := bat.insert(b,"quick",2);	# 20 BKCinsert_bun (da_a:bat[:str,:int])<-(b:bat[:str,:int])(_71:str)(_72:int)
+    mil.line("b.insert(\"brown\",3);");	# 21 MILline (_73:void)<-(_74:str)
+    ea_a := bat.insert(b,"brown",3);	# 22 BKCinsert_bun (ea_a:bat[:str,:int])<-(b:bat[:str,:int])(_76:str)(_77:int)
+    mil.line("b.insert(\"fox\",4);");	# 23 MILline (_78:void)<-(_79:str)
+    fa_a := bat.insert(b,"fox",4);	# 24 BKCinsert_bun (fa_a:bat[:str,:int])<-(b:bat[:str,:int])(_81:str)(_82:int)
+    mil.line("b.insert(\"jumps\",5);");	# 25 MILline (_83:void)<-(_84:str)
+    ga_a := bat.insert(b,"jumps",5);	# 26 BKCinsert_bun (ga_a:bat[:str,:int])<-(b:bat[:str,:int])(_86:str)(_87:int)
+    mil.line("b.insert(\"over\",6);");	# 27 MILline (_88:void)<-(_89:str)
+    ha_a := bat.insert(b,"over",6);	# 28 BKCinsert_bun (ha_a:bat[:str,:int])<-(b:bat[:str,:int])(_91:str)(_92:int)
+    mil.line("b.insert(\"lazy\",7);");	# 29 MILline (_93:void)<-(_94:str)
+    ia_a := bat.insert(b,"lazy",7);	# 30 BKCinsert_bun (ia_a:bat[:str,:int])<-(b:bat[:str,:int])(_96:str)(_97:int)
+    mil.line("b.insert(\"dog\",8);");	# 31 MILline (_98:void)<-(_99:str)
+    ja_a := bat.insert(b,"dog",8);	# 32 BKCinsert_bun (ja_a:bat[:str,:int])<-(b:bat[:str,:int])(_101:str)(_102:int)
+    mil.line("b.insert(str(nil),9);");	# 33 MILline (_103:void)<-(_104:str)
+    ka_a := calc.str(nil);	# 34 CALCnil2str (ka_a:str)<-(_106:void)
+    la_a := bat.insert(b,ka_a,9);	# 35 BKCinsert_bun (la_a:bat[:str,:int])<-(b:bat[:str,:int])(ka_a:str)(_108:int)
+    mil.line("b.insert(\".\",10);");	# 36 MILline (_109:void)<-(_110:str)
+    ma_a := bat.insert(b,".",10);	# 37 BKCinsert_bun (ma_a:bat[:str,:int])<-(b:bat[:str,:int])(_112:str)(_113:int)
+    mil.line("b.insert(\"\",int(nil));");	# 38 MILline (_114:void)<-(_115:str)
+    na_a := calc.int(nil);	# 39 CALCnil2int (na_a:int)<-(_106:void)
+    oa_a := bat.insert(b,"",na_a);	# 40 BKCinsert_bun (oa_a:bat[:str,:int])<-(b:bat[:str,:int])(_118:str)(na_a:int)
+    mil.line("b.insert(str(nil),int(nil));");	# 41 MILline (_119:void)<-(_120:str)
+    pa_a := calc.str(nil);	# 42 CALCnil2str (pa_a:str)<-(_106:void)
+    qa_a := calc.int(nil);	# 43 CALCnil2int (qa_a:int)<-(_106:void)
     ra_a := bat.insert(b,pa_a,qa_a);	# 44 BKCinsert_bun (ra_a:bat[:str,:int])<-(b:bat[:str,:int])(pa_a:str)(qa_a:int)
-    mil.line("b.print();");	# 45 MILline ($124:void)<-($125:str)
+    mil.line("b.print();");	# 45 MILline (_124:void)<-(_125:str)
     sa_a := io.print(b);	# 46 IOprint_val (sa_a:int)<-(b:bat[:str,:int])
-    mil.line("# Testing simple retrievals\n");	# 47 MILline ($127:void)<-($128:str)
-    ta_a := algebra.find(b,"the");	# 48 ALGfind (ta_a:int)<-(b:bat[:str,:int])($130:str)
+    mil.line("# Testing simple retrievals\n");	# 47 MILline (_127:void)<-(_128:str)
+    ta_a := algebra.find(b,"the");	# 48 ALGfind (ta_a:int)<-(b:bat[:str,:int])(_130:str)
     ua_a := io.print(ta_a);	# 49 IOprint_val (ua_a:int)<-(ta_a:int)
-    mil.line("b.find(\"fox\").print();");	# 50 MILline ($132:void)<-($133:str)
-    va_a := algebra.find(b,"fox");	# 51 ALGfind (va_a:int)<-(b:bat[:str,:int])($135:str)
+    mil.line("b.find(\"fox\").print();");	# 50 MILline (_132:void)<-(_133:str)
+    va_a := algebra.find(b,"fox");	# 51 ALGfind (va_a:int)<-(b:bat[:str,:int])(_135:str)
     wa_a := io.print(va_a);	# 52 IOprint_val (wa_a:int)<-(va_a:int)
-    mil.line("b.find(str(nil)).print();");	# 53 MILline ($137:void)<-($138:str)
-    xa_a := calc.str(nil);	# 54 CALCnil2str (xa_a:str)<-($140:void)
+    mil.line("b.find(str(nil)).print();");	# 53 MILline (_137:void)<-(_138:str)
+    xa_a := calc.str(nil);	# 54 CALCnil2str (xa_a:str)<-(_140:void)
     ya_a := algebra.find(b,xa_a);	# 55 ALGfind (ya_a:int)<-(b:bat[:str,:int])(xa_a:str)
     ab_a := io.print(ya_a);	# 56 IOprint_val (ab_a:int)<-(ya_a:int)
-    mil.line("# This should cause an error\n");	# 57 MILline ($143:void)<-($144:str)
-#ignore	bb_a := algebra. find(b,"cat"); 	# 58  ($146:str)
-#ignore	cb_a := print(bb_a); 	# 59  ($148:str)
-    mil.line("# Can we delete them and re-insert them later on\n");	# 60 MILline ($149:void)<-($150:str)
-    db_a := bat.delete(b,"fox",4);	# 61 BKCdelete_bun (db_a:bat[:str,:int])<-(b:bat[:str,:int])($135:str)($152:int)
-    mil.line("b.delete(\"the\",1);");	# 62 MILline ($153:void)<-($154:str)
-    eb_a := bat.delete(b,"the",1);	# 63 BKCdelete_bun (eb_a:bat[:str,:int])<-(b:bat[:str,:int])($130:str)($156:int)
-    mil.line("b.delete(\".\",10);");	# 64 MILline ($157:void)<-($158:str)
-    fb_a := bat.delete(b,".",10);	# 65 BKCdelete_bun (fb_a:bat[:str,:int])<-(b:bat[:str,:int])($160:str)($161:int)
-    mil.line("b.print();");	# 66 MILline ($162:void)<-($163:str)
+    mil.line("# This should cause an error\n");	# 57 MILline (_143:void)<-(_144:str)
+#ignore	bb_a := algebra. find(b,"cat"); 	# 58  (_146:str)
+#ignore	cb_a := print(bb_a); 	# 59  (_148:str)
+    mil.line("# Can we delete them and re-insert them later on\n");	# 60 MILline (_149:void)<-(_150:str)
+    db_a := bat.delete(b,"fox",4);	# 61 BKCdelete_bun (db_a:bat[:str,:int])<-(b:bat[:str,:int])(_135:str)(_152:int)
+    mil.line("b.delete(\"the\",1);");	# 62 MILline (_153:void)<-(_154:str)
+    eb_a := bat.delete(b,"the",1);	# 63 BKCdelete_bun (eb_a:bat[:str,:int])<-(b:bat[:str,:int])(_130:str)(_156:int)
+    mil.line("b.delete(\".\",10);");	# 64 MILline (_157:void)<-(_158:str)
+    fb_a := bat.delete(b,".",10);	# 65 BKCdelete_bun (fb_a:bat[:str,:int])<-(b:bat[:str,:int])(_160:str)(_161:int)
+    mil.line("b.print();");	# 66 MILline (_162:void)<-(_163:str)
     gb_a := io.print(b);	# 67 IOprint_val (gb_a:int)<-(b:bat[:str,:int])
-    mil.line("b.insert(\"fox\",4);");	# 68 MILline ($165:void)<-($166:str)
-    hb_a := bat.insert(b,"fox",4);	# 69 BKCinsert_bun (hb_a:bat[:str,:int])<-(b:bat[:str,:int])($168:str)($152:int)
-    mil.line("b.insert(\"the\",1);");	# 70 MILline ($169:void)<-($170:str)
-    ib_a := bat.insert(b,"the",1);	# 71 BKCinsert_bun (ib_a:bat[:str,:int])<-(b:bat[:str,:int])($172:str)($156:int)
-    mil.line("b.insert(\".\",10);");	# 72 MILline ($173:void)<-($174:str)
-    jb_a := bat.insert(b,".",10);	# 73 BKCinsert_bun (jb_a:bat[:str,:int])<-(b:bat[:str,:int])($160:str)($161:int)
-    mil.line("b.count().print();");	# 74 MILline ($176:void)<-($177:str)
+    mil.line("b.insert(\"fox\",4);");	# 68 MILline (_165:void)<-(_166:str)
+    hb_a := bat.insert(b,"fox",4);	# 69 BKCinsert_bun (hb_a:bat[:str,:int])<-(b:bat[:str,:int])(_168:str)(_152:int)
+    mil.line("b.insert(\"the\",1);");	# 70 MILline (_169:void)<-(_170:str)
+    ib_a := bat.insert(b,"the",1);	# 71 BKCinsert_bun (ib_a:bat[:str,:int])<-(b:bat[:str,:int])(_172:str)(_156:int)
+    mil.line("b.insert(\".\",10);");	# 72 MILline (_173:void)<-(_174:str)
+    jb_a := bat.insert(b,".",10);	# 73 BKCinsert_bun (jb_a:bat[:str,:int])<-(b:bat[:str,:int])(_160:str)(_161:int)
+    mil.line("b.count().print();");	# 74 MILline (_176:void)<-(_177:str)
     kb_a := algebra.count(b);	# 75 ALGcount_bat (kb_a:lng)<-(b:bat[:str,:int])
     lb_a := io.print(kb_a);	# 76 IOprint_val (lb_a:int)<-(kb_a:lng)
-    mil.line("# Lets cut out a few sections\n");	# 77 MILline ($180:void)<-($181:str)
-    mb_a := algebra.select(b,2,4);	# 78 ALGselect (mb_a:bat[:str,:int])<-(b:bat[:str,:int])($183:int)($152:int)
+    mil.line("# Lets cut out a few sections\n");	# 77 MILline (_180:void)<-(_181:str)
+    mb_a := algebra.select(b,2,4);	# 78 ALGselect (mb_a:bat[:str,:int])<-(b:bat[:str,:int])(_183:int)(_152:int)
     nb_a := io.print(mb_a);	# 79 IOprint_val (nb_a:int)<-(mb_a:bat[:str,:int])
-    mil.line("b.select(7,int(nil)).print();");	# 80 MILline ($185:void)<-($186:str)
-    ob_a := calc.int(nil);	# 81 CALCnil2int (ob_a:int)<-($188:void)
-    pb_a := algebra.select(b,7,ob_a);	# 82 ALGselect (pb_a:bat[:str,:int])<-(b:bat[:str,:int])($190:int)(ob_a:int)
+    mil.line("b.select(7,int(nil)).print();");	# 80 MILline (_185:void)<-(_186:str)
+    ob_a := calc.int(nil);	# 81 CALCnil2int (ob_a:int)<-(_188:void)
+    pb_a := algebra.select(b,7,ob_a);	# 82 ALGselect (pb_a:bat[:str,:int])<-(b:bat[:str,:int])(_190:int)(ob_a:int)
     qb_a := io.print(pb_a);	# 83 IOprint_val (qb_a:int)<-(pb_a:bat[:str,:int])
-    mil.line("b.select(int(nil),7).print();");	# 84 MILline ($192:void)<-($193:str)
-    rb_a := calc.int(nil);	# 85 CALCnil2int (rb_a:int)<-($188:void)
-    sb_a := algebra.select(b,rb_a,7);	# 86 ALGselect (sb_a:bat[:str,:int])<-(b:bat[:str,:int])(rb_a:int)($190:int)
+    mil.line("b.select(int(nil),7).print();");	# 84 MILline (_192:void)<-(_193:str)
+    rb_a := calc.int(nil);	# 85 CALCnil2int (rb_a:int)<-(_188:void)
+    sb_a := algebra.select(b,rb_a,7);	# 86 ALGselect (sb_a:bat[:str,:int])<-(b:bat[:str,:int])(rb_a:int)(_190:int)
     tb_a := io.print(sb_a);	# 87 IOprint_val (tb_a:int)<-(sb_a:bat[:str,:int])
-    mil.line("b.select(int(nil),int(nil)).print();");	# 88 MILline ($197:void)<-($198:str)
-    ub_a := calc.int(nil);	# 89 CALCnil2int (ub_a:int)<-($188:void)
-    vb_a := calc.int(nil);	# 90 CALCnil2int (vb_a:int)<-($188:void)
+    mil.line("b.select(int(nil),int(nil)).print();");	# 88 MILline (_197:void)<-(_198:str)
+    ub_a := calc.int(nil);	# 89 CALCnil2int (ub_a:int)<-(_188:void)
+    vb_a := calc.int(nil);	# 90 CALCnil2int (vb_a:int)<-(_188:void)
     wb_a := algebra.select(b,ub_a,vb_a);	# 91 ALGselect (wb_a:bat[:str,:int])<-(b:bat[:str,:int])(ub_a:int)(vb_a:int)
     xb_a := io.print(wb_a);	# 92 IOprint_val (xb_a:int)<-(wb_a:bat[:str,:int])
-    mil.line("b.reverse().select(\"fox\",\"quick\").print();");	# 93 MILline ($203:void)<-($204:str)
+    mil.line("b.reverse().select(\"fox\",\"quick\").print();");	# 93 MILline (_203:void)<-(_204:str)
     yb_a := bat.reverse(b);	# 94 BKCreverse (yb_a:bat[:int,:str])<-(b:bat[:str,:int])
-    ac_a := algebra.select(yb_a,"fox","quick");	# 95 ALGselect (ac_a:bat[:int,:str])<-(yb_a:bat[:int,:str])($207:str)($208:str)
+    ac_a := algebra.select(yb_a,"fox","quick");	# 95 ALGselect (ac_a:bat[:int,:str])<-(yb_a:bat[:int,:str])(_207:str)(_208:str)
     bc_a := io.print(ac_a);	# 96 IOprint_val (bc_a:int)<-(ac_a:bat[:int,:str])
-    mil.line("b.reverse().select(\"fox\",str(nil)).print();");	# 97 MILline ($210:void)<-($211:str)
-    cc_a := calc.str(nil);	# 98 CALCnil2str (cc_a:str)<-($188:void)
+    mil.line("b.reverse().select(\"fox\",str(nil)).print();");	# 97 MILline (_210:void)<-(_211:str)
+    cc_a := calc.str(nil);	# 98 CALCnil2str (cc_a:str)<-(_188:void)
     dc_a := bat.reverse(b);	# 99 BKCreverse (dc_a:bat[:int,:str])<-(b:bat[:str,:int])
-    ec_a := algebra.select(dc_a,"fox",cc_a);	# 100 ALGselect (ec_a:bat[:int,:str])<-(dc_a:bat[:int,:str])($207:str)(cc_a:str)
+    ec_a := algebra.select(dc_a,"fox",cc_a);	# 100 ALGselect (ec_a:bat[:int,:str])<-(dc_a:bat[:int,:str])(_207:str)(cc_a:str)
     fc_a := io.print(ec_a);	# 101 IOprint_val (fc_a:int)<-(ec_a:bat[:int,:str])
-    mil.line("b.reverse().select(str(nil),\"quick\").print();");	# 102 MILline ($216:void)<-($217:str)
-    gc_a := calc.str(nil);	# 103 CALCnil2str (gc_a:str)<-($188:void)
+    mil.line("b.reverse().select(str(nil),\"quick\").print();");	# 102 MILline (_216:void)<-(_217:str)
+    gc_a := calc.str(nil);	# 103 CALCnil2str (gc_a:str)<-(_188:void)
     hc_a := bat.reverse(b);	# 104 BKCreverse (hc_a:bat[:int,:str])<-(b:bat[:str,:int])
-    ic_a := algebra.select(hc_a,gc_a,"quick");	# 105 ALGselect (ic_a:bat[:int,:str])<-(hc_a:bat[:int,:str])(gc_a:str)($208:str)
+    ic_a := algebra.select(hc_a,gc_a,"quick");	# 105 ALGselect (ic_a:bat[:int,:str])<-(hc_a:bat[:int,:str])(gc_a:str)(_208:str)
     jc_a := io.print(ic_a);	# 106 IOprint_val (jc_a:int)<-(ic_a:bat[:int,:str])
-    mil.line("b.reverse().select(str(nil),str(nil)).print();");	# 107 MILline ($222:void)<-($223:str)
-    kc_a := calc.str(nil);	# 108 CALCnil2str (kc_a:str)<-($225:void)
-    lc_a := calc.str(nil);	# 109 CALCnil2str (lc_a:str)<-($225:void)
+    mil.line("b.reverse().select(str(nil),str(nil)).print();");	# 107 MILline (_222:void)<-(_223:str)
+    kc_a := calc.str(nil);	# 108 CALCnil2str (kc_a:str)<-(_225:void)
+    lc_a := calc.str(nil);	# 109 CALCnil2str (lc_a:str)<-(_225:void)
     mc_a := bat.reverse(b);	# 110 BKCreverse (mc_a:bat[:int,:str])<-(b:bat[:str,:int])
     nc_a := algebra.select(mc_a,kc_a,lc_a);	# 111 ALGselect (nc_a:bat[:int,:str])<-(mc_a:bat[:int,:str])(kc_a:str)(lc_a:str)
     oc_a := io.print(nc_a);	# 112 IOprint_val (oc_a:int)<-(nc_a:bat[:int,:str])
-    mil.line("# A 2-dimensional cut\n");	# 113 MILline ($230:void)<-($231:str)
-    bn := algebra.fragment(b,"fox","quick",1,5);	# 114 ALGfragment (bn:bat[:str,:int])<-(b:bat[:str,:int])($207:str)($208:str)($233:int)($234:int)
+    mil.line("# A 2-dimensional cut\n");	# 113 MILline (_230:void)<-(_231:str)
+    bn := algebra.fragment(b,"fox","quick",1,5);	# 114 ALGfragment (bn:bat[:str,:int])<-(b:bat[:str,:int])(_207:str)(_208:str)(_233:int)(_234:int)
     pc_a := io.print(bn);	# 115 IOprint_val (pc_a:int)<-(bn:bat[:str,:int])
-    mil.line("b.fragment(\"fox\",str(nil),1,5).print();");	# 116 MILline ($236:void)<-($237:str)
-    qc_a := calc.str(nil);	# 117 CALCnil2str (qc_a:str)<-($225:void)
-    rc_a := algebra.fragment(b,"fox",qc_a,1,5);	# 118 ALGfragment (rc_a:bat[:str,:int])<-(b:bat[:str,:int])($240:str)(qc_a:str)($233:int)($234:int)
+    mil.line("b.fragment(\"fox\",str(nil),1,5).print();");	# 116 MILline (_236:void)<-(_237:str)
+    qc_a := calc.str(nil);	# 117 CALCnil2str (qc_a:str)<-(_225:void)
+    rc_a := algebra.fragment(b,"fox",qc_a,1,5);	# 118 ALGfragment (rc_a:bat[:str,:int])<-(b:bat[:str,:int])(_240:str)(qc_a:str)(_233:int)(_234:int)
     sc_a := io.print(rc_a);	# 119 IOprint_val (sc_a:int)<-(rc_a:bat[:str,:int])
-    mil.line("b.fragment(str(nil),\"quick\",1,5).print();");	# 120 MILline ($242:void)<-($243:str)
-    tc_a := calc.str(nil);	# 121 CALCnil2str (tc_a:str)<-($225:void)
-    uc_a := algebra.fragment(b,tc_a,"quick",1,5);	# 122 ALGfragment (uc_a:bat[:str,:int])<-(b:bat[:str,:int])(tc_a:str)($246:str)($233:int)($234:int)
+    mil.line("b.fragment(str(nil),\"quick\",1,5).print();");	# 120 MILline (_242:void)<-(_243:str)
+    tc_a := calc.str(nil);	# 121 CALCnil2str (tc_a:str)<-(_225:void)
+    uc_a := algebra.fragment(b,tc_a,"quick",1,5);	# 122 ALGfragment (uc_a:bat[:str,:int])<-(b:bat[:str,:int])(tc_a:str)(_246:str)(_233:int)(_234:int)
     vc_a := io.print(uc_a);	# 123 IOprint_val (vc_a:int)<-(uc_a:bat[:str,:int])
-    mil.line("b.fragment(str(nil),str(nil),1,5).print();");	# 124 MILline ($248:void)<-($249:str)
-    wc_a := calc.str(nil);	# 125 CALCnil2str (wc_a:str)<-($225:void)
-    xc_a := calc.str(nil);	# 126 CALCnil2str (xc_a:str)<-($225:void)
-    yc_a := algebra.fragment(b,wc_a,xc_a,1,5);	# 127 ALGfragment (yc_a:bat[:str,:int])<-(b:bat[:str,:int])(wc_a:str)(xc_a:str)($233:int)($234:int)
+    mil.line("b.fragment(str(nil),str(nil),1,5).print();");	# 124 MILline (_248:void)<-(_249:str)
+    wc_a := calc.str(nil);	# 125 CALCnil2str (wc_a:str)<-(_225:void)
+    xc_a := calc.str(nil);	# 126 CALCnil2str (xc_a:str)<-(_225:void)
+    yc_a := algebra.fragment(b,wc_a,xc_a,1,5);	# 127 ALGfragment (yc_a:bat[:str,:int])<-(b:bat[:str,:int])(wc_a:str)(xc_a:str)(_233:int)(_234:int)
     ad_a := io.print(yc_a);	# 128 IOprint_val (ad_a:int)<-(yc_a:bat[:str,:int])
-    mil.line("b.fragment(\"fox\",\"quick\",1,int(nil)).print();");	# 129 MILline ($254:void)<-($255:str)
-    bd_a := calc.int(nil);	# 130 CALCnil2int (bd_a:int)<-($225:void)
-    cd_a := algebra.fragment(b,"fox","quick",1,bd_a);	# 131 ALGfragment (cd_a:bat[:str,:int])<-(b:bat[:str,:int])($240:str)($246:str)($233:int)(bd_a:int)
+    mil.line("b.fragment(\"fox\",\"quick\",1,int(nil)).print();");	# 129 MILline (_254:void)<-(_255:str)
+    bd_a := calc.int(nil);	# 130 CALCnil2int (bd_a:int)<-(_225:void)
+    cd_a := algebra.fragment(b,"fox","quick",1,bd_a);	# 131 ALGfragment (cd_a:bat[:str,:int])<-(b:bat[:str,:int])(_240:str)(_246:str)(_233:int)(bd_a:int)
     dd_a := io.print(cd_a);	# 132 IOprint_val (dd_a:int)<-(cd_a:bat[:str,:int])
-    mil.line("b.fragment(\"fox\",\"quick\",int(nil),5).print();");	# 133 MILline ($259:void)<-($260:str)
-    ed_a := calc.int(nil);	# 134 CALCnil2int (ed_a:int)<-($262:void)
-    fd_a := algebra.fragment(b,"fox","quick",ed_a,5);	# 135 ALGfragment (fd_a:bat[:str,:int])<-(b:bat[:str,:int])($240:str)($246:str)(ed_a:int)($234:int)
+    mil.line("b.fragment(\"fox\",\"quick\",int(nil),5).print();");	# 133 MILline (_259:void)<-(_260:str)
+    ed_a := calc.int(nil);	# 134 CALCnil2int (ed_a:int)<-(_262:void)
+    fd_a := algebra.fragment(b,"fox","quick",ed_a,5);	# 135 ALGfragment (fd_a:bat[:str,:int])<-(b:bat[:str,:int])(_240:str)(_246:str)(ed_a:int)(_234:int)
     gd_a := io.print(fd_a);	# 136 IOprint_val (gd_a:int)<-(fd_a:bat[:str,:int])
-    mil.line("b.fragment(\"fox\",\"quick\",int(nil),int(nil)).print();");	# 137 MILline ($265:void)<-($266:str)
-    hd_a := calc.int(nil);	# 138 CALCnil2int (hd_a:int)<-($262:void)
-    id_a := calc.int(nil);	# 139 CALCnil2int (id_a:int)<-($262:void)
-    jd_a := algebra.fragment(b,"fox","quick",hd_a,id_a);	# 140 ALGfragment (jd_a:bat[:str,:int])<-(b:bat[:str,:int])($240:str)($246:str)(hd_a:int)(id_a:int)
+    mil.line("b.fragment(\"fox\",\"quick\",int(nil),int(nil)).print();");	# 137 MILline (_265:void)<-(_266:str)
+    hd_a := calc.int(nil);	# 138 CALCnil2int (hd_a:int)<-(_262:void)
+    id_a := calc.int(nil);	# 139 CALCnil2int (id_a:int)<-(_262:void)
+    jd_a := algebra.fragment(b,"fox","quick",hd_a,id_a);	# 140 ALGfragment (jd_a:bat[:str,:int])<-(b:bat[:str,:int])(_240:str)(_246:str)(hd_a:int)(id_a:int)
     kd_a := io.print(jd_a);	# 141 IOprint_val (kd_a:int)<-(jd_a:bat[:str,:int])
-    mil.line("b.fragment(\"fox\",str(nil),int(nil),int(nil)).print();");	# 142 MILline ($271:void)<-($272:str)
-    ld_a := calc.str(nil);	# 143 CALCnil2str (ld_a:str)<-($262:void)
-    md_a := calc.int(nil);	# 144 CALCnil2int (md_a:int)<-($262:void)
-    nd_a := calc.int(nil);	# 145 CALCnil2int (nd_a:int)<-($262:void)
-    od_a := algebra.fragment(b,"fox",ld_a,md_a,nd_a);	# 146 ALGfragment (od_a:bat[:str,:int])<-(b:bat[:str,:int])($277:str)(ld_a:str)(md_a:int)(nd_a:int)
+    mil.line("b.fragment(\"fox\",str(nil),int(nil),int(nil)).print();");	# 142 MILline (_271:void)<-(_272:str)
+    ld_a := calc.str(nil);	# 143 CALCnil2str (ld_a:str)<-(_262:void)
+    md_a := calc.int(nil);	# 144 CALCnil2int (md_a:int)<-(_262:void)
+    nd_a := calc.int(nil);	# 145 CALCnil2int (nd_a:int)<-(_262:void)
+    od_a := algebra.fragment(b,"fox",ld_a,md_a,nd_a);	# 146 ALGfragment (od_a:bat[:str,:int])<-(b:bat[:str,:int])(_277:str)(ld_a:str)(md_a:int)(nd_a:int)
     pd_a := io.print(od_a);	# 147 IOprint_val (pd_a:int)<-(od_a:bat[:str,:int])
-    mil.line("b.fragment(str(nil),\"f\",int(nil),int(nil)).print();");	# 148 MILline ($279:void)<-($280:str)
-    qd_a := calc.str(nil);	# 149 CALCnil2str (qd_a:str)<-($262:void)
-    rd_a := calc.int(nil);	# 150 CALCnil2int (rd_a:int)<-($262:void)
-    sd_a := calc.int(nil);	# 151 CALCnil2int (sd_a:int)<-($262:void)
-    td_a := algebra.fragment(b,qd_a,"f",rd_a,sd_a);	# 152 ALGfragment (td_a:bat[:str,:int])<-(b:bat[:str,:int])(qd_a:str)($285:str)(rd_a:int)(sd_a:int)
+    mil.line("b.fragment(str(nil),\"f\",int(nil),int(nil)).print();");	# 148 MILline (_279:void)<-(_280:str)
+    qd_a := calc.str(nil);	# 149 CALCnil2str (qd_a:str)<-(_262:void)
+    rd_a := calc.int(nil);	# 150 CALCnil2int (rd_a:int)<-(_262:void)
+    sd_a := calc.int(nil);	# 151 CALCnil2int (sd_a:int)<-(_262:void)
+    td_a := algebra.fragment(b,qd_a,"f",rd_a,sd_a);	# 152 ALGfragment (td_a:bat[:str,:int])<-(b:bat[:str,:int])(qd_a:str)(_285:str)(rd_a:int)(sd_a:int)
     ud_a := io.print(td_a);	# 153 IOprint_val (ud_a:int)<-(td_a:bat[:str,:int])
-    mil.line("b.reverse().fragment(int(nil),int(nil),str(nil),\"f\").print();");	# 154 MILline ($287:void)<-($288:str)
-    vd_a := calc.int(nil);	# 155 CALCnil2int (vd_a:int)<-($262:void)
-    wd_a := calc.int(nil);	# 156 CALCnil2int (wd_a:int)<-($262:void)
-    xd_a := calc.str(nil);	# 157 CALCnil2str (xd_a:str)<-($262:void)
+    mil.line("b.reverse().fragment(int(nil),int(nil),str(nil),\"f\").print();");	# 154 MILline (_287:void)<-(_288:str)
+    vd_a := calc.int(nil);	# 155 CALCnil2int (vd_a:int)<-(_262:void)
+    wd_a := calc.int(nil);	# 156 CALCnil2int (wd_a:int)<-(_262:void)
+    xd_a := calc.str(nil);	# 157 CALCnil2str (xd_a:str)<-(_262:void)
     yd_a := bat.reverse(b);	# 158 BKCreverse (yd_a:bat[:int,:str])<-(b:bat[:str,:int])
-    ae_a := algebra.fragment(yd_a,vd_a,wd_a,xd_a,"f");	# 159 ALGfragment (ae_a:bat[:int,:str])<-(yd_a:bat[:int,:str])(vd_a:int)(wd_a:int)(xd_a:str)($285:str)
+    ae_a := algebra.fragment(yd_a,vd_a,wd_a,xd_a,"f");	# 159 ALGfragment (ae_a:bat[:int,:str])<-(yd_a:bat[:int,:str])(vd_a:int)(wd_a:int)(xd_a:str)(_285:str)
     be_a := io.print(ae_a);	# 160 IOprint_val (be_a:int)<-(ae_a:bat[:int,:str])
-    mil.line("var b1:= b.join(bn.reverse());");	# 161 MILline ($295:void)<-($296:str)
+    mil.line("var b1:= b.join(bn.reverse());");	# 161 MILline (_295:void)<-(_296:str)
     ce_a := bat.reverse(bn);	# 162 BKCreverse (ce_a:bat[:int,:str])<-(bn:bat[:str,:int])
     b1 := algebra.join(b,ce_a);	# 163 ALGjoin (b1:bat[:str,:str])<-(b:bat[:str,:int])(ce_a:bat[:int,:str])
-    mil.line("b1.print();");	# 164 MILline ($299:void)<-($300:str)
+    mil.line("b1.print();");	# 164 MILline (_299:void)<-(_300:str)
     de_a := io.print(b1);	# 165 IOprint_val (de_a:int)<-(b1:bat[:str,:str])
-    mil.line("var b2:= b.semijoin(b1.reverse());");	# 166 MILline ($302:void)<-($303:str)
+    mil.line("var b2:= b.semijoin(b1.reverse());");	# 166 MILline (_302:void)<-(_303:str)
     ee_a := bat.reverse(b1);	# 167 BKCreverse (ee_a:bat[:str,:str])<-(b1:bat[:str,:str])
     b2 := algebra.semijoin(b,ee_a);	# 168 ALGsemijoin (b2:bat[:str,:int])<-(b:bat[:str,:int])(ee_a:bat[:str,:str])
-    mil.line("b2.print();");	# 169 MILline ($306:void)<-($307:str)
+    mil.line("b2.print();");	# 169 MILline (_306:void)<-(_307:str)
     fe_a := io.print(b2);	# 170 IOprint_val (fe_a:int)<-(b2:bat[:str,:int])
-    mil.line("# testing the like command\n");	# 171 MILline ($309:void)<-($310:str)
+    mil.line("# testing the like command\n");	# 171 MILline (_309:void)<-(_310:str)
     ge_a := bat.reverse(b);	# 172 BKCreverse (ge_a:bat[:int,:str])<-(b:bat[:str,:int])
-    he_a := algebra.like(ge_a,"ox");	# 173 ALGlike (he_a:bat[:int,:str])<-(ge_a:bat[:int,:str])($313:str)
+    he_a := algebra.like(ge_a,"ox");	# 173 ALGlike (he_a:bat[:int,:str])<-(ge_a:bat[:int,:str])(_313:str)
     ie_a := io.print(he_a);	# 174 IOprint_val (ie_a:int)<-(he_a:bat[:int,:str])
-    mil.line("b.reverse().like(\"fo\").print();");	# 175 MILline ($315:void)<-($316:str)
+    mil.line("b.reverse().like(\"fo\").print();");	# 175 MILline (_315:void)<-(_316:str)
     je_a := bat.reverse(b);	# 176 BKCreverse (je_a:bat[:int,:str])<-(b:bat[:str,:int])
-    ke_a := algebra.like(je_a,"fo");	# 177 ALGlike (ke_a:bat[:int,:str])<-(je_a:bat[:int,:str])($319:str)
+    ke_a := algebra.like(je_a,"fo");	# 177 ALGlike (ke_a:bat[:int,:str])<-(je_a:bat[:int,:str])(_319:str)
     le_a := io.print(ke_a);	# 178 IOprint_val (le_a:int)<-(ke_a:bat[:int,:str])
-    mil.line("b.reverse().like(\"fox\").print();");	# 179 MILline ($321:void)<-($322:str)
+    mil.line("b.reverse().like(\"fox\").print();");	# 179 MILline (_321:void)<-(_322:str)
     me_a := bat.reverse(b);	# 180 BKCreverse (me_a:bat[:int,:str])<-(b:bat[:str,:int])
-    ne_a := algebra.like(me_a,"fox");	# 181 ALGlike (ne_a:bat[:int,:str])<-(me_a:bat[:int,:str])($325:str)
+    ne_a := algebra.like(me_a,"fox");	# 181 ALGlike (ne_a:bat[:int,:str])<-(me_a:bat[:int,:str])(_325:str)
     oe_a := io.print(ne_a);	# 182 IOprint_val (oe_a:int)<-(ne_a:bat[:int,:str])
-    mil.line("b.reverse().like(\" fox\").print();");	# 183 MILline ($327:void)<-($328:str)
+    mil.line("b.reverse().like(\" fox\").print();");	# 183 MILline (_327:void)<-(_328:str)
     pe_a := bat.reverse(b);	# 184 BKCreverse (pe_a:bat[:int,:str])<-(b:bat[:str,:int])
-    qe_a := algebra.like(pe_a," fox");	# 185 ALGlike (qe_a:bat[:int,:str])<-(pe_a:bat[:int,:str])($331:str)
+    qe_a := algebra.like(pe_a," fox");	# 185 ALGlike (qe_a:bat[:int,:str])<-(pe_a:bat[:int,:str])(_331:str)
     re_a := io.print(qe_a);	# 186 IOprint_val (re_a:int)<-(qe_a:bat[:int,:str])
-    mil.line("quit();");	# 187 MILline ($333:void)<-($334:str)
+    mil.line("quit();");	# 187 MILline (_333:void)<-(_334:str)
     se_a := clients.quit();	# 188 CLTquit (se_a:void)
 end main;	# 189  
 #setoid(oid(20000000));
-##test basic functionality of the BAT library.
-##focussed on strings
-##it includes insertions,deletions,selections, and joins.
-#var b:= new(str,int);
-#b.insert("the",1);
-#b.insert("quick",2);
-#b.insert("brown",3);
-#b.insert("fox",4);
-#b.insert("jumps",5);
-#b.insert("over",6);
-#b.insert("lazy",7);
-#b.insert("dog",8);
+##test basic functionality of the BAT library.\n
+##focussed on strings\n
+##it includes bat.insertions,deletions,selections, and joins.\n
+#var b:= bbp.new(str,int);
+#b.insert(\"the\",1);
+#b.insert(\"quick\",2);
+#b.insert(\"brown\",3);
+#b.insert(\"fox\",4);
+#b.insert(\"jumps\",5);
+#b.insert(\"over\",6);
+#b.insert(\"lazy\",7);
+#b.insert(\"dog\",8);
 #b.insert(str(nil),9);
-#b.insert(".",10);
-#b.insert("",int(nil));
+#b.insert(\".\",10);
+#b.insert(\"\",int(nil));
 #b.insert(str(nil),int(nil));
 #b.print();
 #-------------------------#
-# BAT:		  tmp_26  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "the",	  1	  ]
 [ "quick",	  2	  ]
@@ -432,23 +428,20 @@ end main;	# 189
 [ ".",		  10	  ]
 [ "",		  nil	  ]
 [ nil,		  nil	  ]
-## Testing simple retrievals
-#b.find("the").print();
+## Testing simple retrievals\n
 [ 1 ]
-#b.find("fox").print();
+#b.find(\"fox\").print();
 [ 4 ]
 #b.find(str(nil)).print();
 [ nil ]
-## This should cause an error
-#b.find("cat").print();
-## Can we delete them and re-insert them later on
-#b.delete("fox",4);
-#b.delete("the",1);
-#b.delete(".",10);
+## This should cause an error\n
+## Can we delete them and re-insert them later on\n
+#b.delete(\"the\",1);
+#b.delete(\".\",10);
 #b.print();
 #-------------------------#
-# BAT:		  tmp_26  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "",		  nil	  ]
 [ "quick",	  2	  ]
@@ -459,24 +452,23 @@ end main;	# 189
 [ "lazy",	  7	  ]
 [ "dog",	  8	  ]
 [ nil,		  9	  ]
-#b.insert("fox",4);
-#b.insert("the",1);
-#b.insert(".",10);
+#b.insert(\"fox\",4);
+#b.insert(\"the\",1);
+#b.insert(\".\",10);
 #b.count().print();
 [ 12 ]
-## Lets cut out a few sections
-#b.select(2,4).print();
+## Lets cut out a few sections\n
 #-------------------------#
-# BAT:		  tmp_25  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "brown",	  3	  ]
 [ "fox",	  4	  ]
 #b.select(7,int(nil)).print();
 #-----------------#
-# BAT:	  tmp_25  #
-# (str)	  (int)	  #
+# h	t	  # name
+# str	int	  # type
 #-----------------#
 [ "lazy", 7	  ]
 [ "dog",  8	  ]
@@ -484,8 +476,8 @@ end main;	# 189
 [ ".",	  10	  ]
 #b.select(int(nil),7).print();
 #-------------------------#
-# BAT:		  tmp_25  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "brown",	  3	  ]
@@ -496,8 +488,8 @@ end main;	# 189
 [ "the",	  1	  ]
 #b.select(int(nil),int(nil)).print();
 #-------------------------#
-# BAT:		  tmp_25  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "brown",	  3	  ]
@@ -509,20 +501,20 @@ end main;	# 189
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
 [ ".",		  10	  ]
-#b.reverse().select("fox","quick").print();
+#b.reverse().select(\"fox\",\"quick\").print();
 #-------------------------#
-# BAT:	  tmp_25	  #
-# (int)	  (str)		  #
+# h	t		  # name
+# int	str		  # type
 #-------------------------#
 [ 2,	  "quick"	  ]
 [ 5,	  "jumps"	  ]
 [ 6,	  "over"	  ]
 [ 7,	  "lazy"	  ]
 [ 4,	  "fox"		  ]
-#b.reverse().select("fox",str(nil)).print();
+#b.reverse().select(\"fox\",str(nil)).print();
 #-------------------------#
-# BAT:	  tmp_25	  #
-# (int)	  (str)		  #
+# h	t		  # name
+# int	str		  # type
 #-------------------------#
 [ 2,	  "quick"	  ]
 [ 5,	  "jumps"	  ]
@@ -530,10 +522,10 @@ end main;	# 189
 [ 7,	  "lazy"	  ]
 [ 4,	  "fox"		  ]
 [ 1,	  "the"		  ]
-#b.reverse().select(str(nil),"quick").print();
+#b.reverse().select(str(nil),\"quick\").print();
 #-------------------------#
-# BAT:	  tmp_25	  #
-# (int)	  (str)		  #
+# h	t		  # name
+# int	str		  # type
 #-------------------------#
 [ nil,	  ""		  ]
 [ 2,	  "quick"	  ]
@@ -546,8 +538,8 @@ end main;	# 189
 [ 10,	  "."		  ]
 #b.reverse().select(str(nil),str(nil)).print();
 #-------------------------#
-# BAT:	  tmp_25	  #
-# (int)	  (str)		  #
+# h	t		  # name
+# int	str		  # type
 #-------------------------#
 [ nil,	  ""		  ]
 [ 2,	  "quick"	  ]
@@ -559,28 +551,27 @@ end main;	# 189
 [ 4,	  "fox"		  ]
 [ 1,	  "the"		  ]
 [ 10,	  "."		  ]
-## A 2-dimensional cut
-#var bn:=b.fragment("fox","quick",1,5);bn.print();
+## A 2-dimensional cut\n
 #-------------------------#
-# BAT:		  tmp_25  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
-#b.fragment("fox",str(nil),1,5).print();
+#b.fragment(\"fox\",str(nil),1,5).print();
 #-------------------------#
-# BAT:		  tmp_27  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
-#b.fragment(str(nil),"quick",1,5).print();
+#b.fragment(str(nil),\"quick\",1,5).print();
 #-------------------------#
-# BAT:		  tmp_27  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "brown",	  3	  ]
@@ -588,46 +579,46 @@ end main;	# 189
 [ "fox",	  4	  ]
 #b.fragment(str(nil),str(nil),1,5).print();
 #-------------------------#
-# BAT:		  tmp_27  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "brown",	  3	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
-#b.fragment("fox","quick",1,int(nil)).print();
+#b.fragment(\"fox\",\"quick\",1,int(nil)).print();
 #-------------------------#
-# BAT:		  tmp_27  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "quick",	  2	  ]
-[ "jumps",	  5	  ]
-[ "over",	  6	  ]
-[ "lazy",	  7	  ]
-[ "fox",	  4	  ]
-#b.fragment("fox","quick",int(nil),5).print();
-#-------------------------#
-# BAT:		  tmp_27  #
-# (str)		  (int)	  #
-#-------------------------#
-[ "quick",	  2	  ]
-[ "jumps",	  5	  ]
-[ "fox",	  4	  ]
-#b.fragment("fox","quick",int(nil),int(nil)).print();
-#-------------------------#
-# BAT:		  tmp_27  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "over",	  6	  ]
 [ "lazy",	  7	  ]
 [ "fox",	  4	  ]
-#b.fragment("fox",str(nil),int(nil),int(nil)).print();
+#b.fragment(\"fox\",\"quick\",int(nil),5).print();
 #-------------------------#
-# BAT:		  tmp_27  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
+#-------------------------#
+[ "quick",	  2	  ]
+[ "jumps",	  5	  ]
+[ "fox",	  4	  ]
+#b.fragment(\"fox\",\"quick\",int(nil),int(nil)).print();
+#-------------------------#
+# h		t	  # name
+# str		int	  # type
+#-------------------------#
+[ "quick",	  2	  ]
+[ "jumps",	  5	  ]
+[ "over",	  6	  ]
+[ "lazy",	  7	  ]
+[ "fox",	  4	  ]
+#b.fragment(\"fox\",str(nil),int(nil),int(nil)).print();
+#-------------------------#
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
@@ -635,10 +626,10 @@ end main;	# 189
 [ "lazy",	  7	  ]
 [ "fox",	  4	  ]
 [ "the",	  1	  ]
-#b.fragment(str(nil),"f",int(nil),int(nil)).print();
+#b.fragment(str(nil),\"f\",int(nil),int(nil)).print();
 #-------------------------#
-# BAT:		  tmp_27  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "",		  nil	  ]
 [ "brown",	  3	  ]
@@ -646,10 +637,10 @@ end main;	# 189
 [ "dog",	  8	  ]
 [ nil,		  9	  ]
 [ ".",		  10	  ]
-#b.reverse().fragment(int(nil),int(nil),str(nil),"f").print();
+#b.reverse().fragment(int(nil),int(nil),str(nil),\"f\").print();
 #-------------------------#
-# BAT:	  tmp_27	  #
-# (int)	  (str)		  #
+# h	t		  # name
+# int	str		  # type
 #-------------------------#
 [ nil,	  ""		  ]
 [ 3,	  "brown"	  ]
@@ -660,8 +651,8 @@ end main;	# 189
 #var b1:= b.join(bn.reverse());
 #b1.print();
 #---------------------------------#
-# BAT:		  tmp_27	  #
-# (str)		  (str)		  #
+# h		t		  # name
+# str		str		  # type
 #---------------------------------#
 [ "quick",	  "quick"	  ]
 [ "jumps",	  "jumps"	  ]
@@ -669,39 +660,38 @@ end main;	# 189
 #var b2:= b.semijoin(b1.reverse());
 #b2.print();
 #-------------------------#
-# BAT:		  tmp_25  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "quick",	  2	  ]
 [ "jumps",	  5	  ]
 [ "fox",	  4	  ]
-## testing the like command
-#b.reverse().like("ox").print();
+## testing the like command\n
 #-----------------#
-# BAT:	  tmp_27  #
-# (int)	  (str)	  #
-#-----------------#
-[ 4,	  "fox"	  ]
-#b.reverse().like("fo").print();
-#-----------------#
-# BAT:	  tmp_27  #
-# (int)	  (str)	  #
+# h	t	  # name
+# int	str	  # type
 #-----------------#
 [ 4,	  "fox"	  ]
-#b.reverse().like("fox").print();
+#b.reverse().like(\"fo\").print();
 #-----------------#
-# BAT:	  tmp_27  #
-# (int)	  (str)	  #
+# h	t	  # name
+# int	str	  # type
 #-----------------#
 [ 4,	  "fox"	  ]
-#b.reverse().like(" fox").print();
+#b.reverse().like(\"fox\").print();
 #-----------------#
-# BAT:	  tmp_27  #
-# (int)	  (str)	  #
+# h	t	  # name
+# int	str	  # type
+#-----------------#
+[ 4,	  "fox"	  ]
+#b.reverse().like(\" fox\").print();
+#-----------------#
+# h	t	  # name
+# int	str	  # type
 #-----------------#
 #quit();
 
-# 13:36:16 >  
-# 13:36:16 >  Done.
-# 13:36:16 >  
+# 00:12:27 >  
+# 00:12:27 >  Done.
+# 00:12:27 >  
 

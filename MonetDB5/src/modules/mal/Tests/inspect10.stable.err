@@ -1,66 +1,68 @@
 stderr of test 'inspect10` in directory 'src/modules/mal` itself:
 
 
-# 20:27:04 >  
-# 20:27:04 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=41729 --set sql_port=54220 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect10.mal </dev/null
-# 20:27:04 >  
+# 00:03:56 >  
+# 00:03:56 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect10.mal </dev/null
+# 00:03:56 >  
 
+#warning: trace option not yet supported
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
-# builtin opt 	gdk_version = 4.4.1
-# builtin opt 	monet_pid = 16041
-# builtin opt 	prefix = /home/mk/opensource/MonetDB/Linux
+# builtin opt 	gdk_version = 4.9.3
+# builtin opt 	monet_pid = 13859
+# builtin opt 	prefix = /ufs/mk/opensource/MonetDB/Linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
-# builtin opt 	gdk_mem_bigsize = 33554432
-# builtin opt 	gdk_vm_minsize = 134217728
+# builtin opt 	gdk_mem_bigsize = 137438953472
+# builtin opt 	gdk_vm_minsize = 137438953472
 # builtin opt 	gdk_alloc_map = yes
 # builtin opt 	monet_admin = adm
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
-# builtin opt 	monet_nostalgic = no
-# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
 # builtin opt 	monet_daemon = yes
 # builtin opt 	host = localhost
 # builtin opt 	mapi_port = 50000
 # builtin opt 	mapi_noheaders = no
 # builtin opt 	mapi_debug = 0
+# builtin opt 	mapi_clients = 2
 # builtin opt 	sql_port = 45123
 # builtin opt 	sql_debug = 0
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = sys
 # builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /home/mk/monet5/Linux
+# config opt 	prefix = /ufs/mk/monet5/Linux
 # config opt 	config = ${prefix}/etc/MonetDB5.conf
-# config opt 	prefix = /home/mk/monet5/Linux
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB5/dbfarm
 # config opt 	gdk_dbname = demo
 # config opt 	gdk_debug = 0
+# config opt 	gdk_embedded = no
 # config opt 	gdk_version = 4.99.19
 # config opt 	monet_admin = adm
-# config opt 	monet_prompt = monet>
 # config opt 	monet_welcome = yes
 # config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB5
 # config opt 	monet_daemon = no
-# config opt 	mal_bootstrap = ${prefix}/lib/MonetDB5/mal_init.mal
+# config opt 	mal_init = ${prefix}/etc/MonetDB5/mal/mal_init.mal
 # config opt 	mal_debug = yes
 # config opt 	mal_details = 14
 # config opt 	mal_listing = 15
+# config opt 	sql_prompt = sql>
 # config opt 	sql_logdir = ${prefix}/var/MonetDB5/log
-# cmdline opt 	config = /home/mk/monet5/Linux/etc/MonetDB5.conf
+# cmdline opt 	config = /ufs/mk/monet5/src/mal/Tests/All.conf
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB
-# cmdline opt 	gdk_dbfarm = /home/mk/monet5/Linux/var/MonetDB5/dbfarm
-# cmdline opt 	sql_logdir = /home/mk/monet5/Linux/var/MonetDB5/log
-# cmdline opt 	mapi_port = 41729
-# cmdline opt 	sql_port = 54220
+# cmdline opt 	monet_mod_path = /ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB
+# cmdline opt 	gdk_dbfarm = /ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# cmdline opt 	sql_logdir = /ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log
+# cmdline opt 	mapi_port = 33330
+# cmdline opt 	sql_port = 49911
+# cmdline opt 	xquery_port = 56575
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_modules_mal
 
-# 20:27:04 >  
-# 20:27:04 >  Done.
-# 20:27:04 >  
+# 00:03:56 >  
+# 00:03:56 >  Done.
+# 00:03:56 >  
 

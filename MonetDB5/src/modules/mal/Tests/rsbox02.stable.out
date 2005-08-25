@@ -1,40 +1,22 @@
 stdout of test 'rsbox02` in directory 'src/modules/mal` itself:
 
 
-# 12:00:24 >  
-# 12:00:24 >  Mtimeout -timeout 60 Mserver "--config=/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet5/program/lib/MonetDB5" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet5/program/var/MonetDB5/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet5/program/var/MonetDB5/log" --set mapi_port=40341 --set sql_port=52747 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  rsbox02.mal </dev/null
-# 12:00:24 >  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# 00:03:58 >  
+# 00:03:58 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  rsbox02.mal </dev/null
+# 00:03:58 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/fabian/scratch/monet5/program/etc/MonetDB5.conf
-# dbfarm:/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet5/program/var/MonetDB5/dbfarm
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_mal
 # Visit http://monetdb.cwi.nl/ for further information.
+### Test ResultSet reusability using hetrogenous typed BATs
+#
 #include rsbox;
 #
-#rs := rsbox.create("reuse", 1, 3);
+#rs := rsbox.create(1, 't');
 #
 #resultset.setProperty(rs, 1, "name", "the_column");
 #resultset.setProperty(rs, 1, "table", "table1");
@@ -47,7 +29,6 @@ stdout of test 'rsbox02` in directory 'src/modules/mal` itself:
 #bat.insert(b1, nil, 4);
 #bat.insert(b1, nil, 6);
 #
-#resultset.dePopulate(rs);
 #resultset.populateColumn(rs, 1, b1);
 #
 #resultset.writeNextPart(rs);
@@ -71,62 +52,62 @@ stdout of test 'rsbox02` in directory 'src/modules/mal` itself:
 #rsbox.release(rs);
 #
 function user.main():int;	# 0  (main:int)
-    rs := rsbox.create(1,'t');	# 1 RSBcreate (rs:resultset)<-($2:int)($3:chr)
-    resultset.setProperty(rs,1,"name","the_column");	# 2 RSsetPropertyStr ($4:resultset)<-(rs:resultset)($2:int)($5:str)($6:str)
-    resultset.setProperty(rs,1,"table","table1");	# 3 RSsetPropertyStr ($7:resultset)<-(rs:resultset)($2:int)($8:str)($9:str)
-    resultset.setProperty(rs,1,"schema","sys");	# 4 RSsetPropertyStr ($10:resultset)<-(rs:resultset)($2:int)($11:str)($12:str)
-    b1 := bbp.new(:void,:int);	# 5 CMDBATnew (b1:bat[:void,:int])<-($14:void)($15:int)
-    bat.insert(b1,nil,1);	# 6 BKCinsert_bun ($16:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($2:int)
-    bat.insert(b1,nil,2);	# 7 BKCinsert_bun ($18:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($19:int)
-    bat.insert(b1,nil,nil:int);	# 8 BKCinsert_bun ($20:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($21:int)
-    bat.insert(b1,nil,4);	# 9 BKCinsert_bun ($22:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($23:int)
-    bat.insert(b1,nil,6);	# 10 BKCinsert_bun ($24:bat[:void,:int])<-(b1:bat[:void,:int])($17:void)($25:int)
-    resultset.populateColumn(rs,1,b1);	# 11 RSpopulateColumn ($26:resultset)<-(rs:resultset)($2:int)(b1:bat[:void,:int])
-    resultset.writeNextPart(rs);	# 12 RSwriteNextPart ($27:int)<-(rs:resultset)
-    b2 := bbp.new(:void,:str);	# 13 CMDBATnew (b2:bat[:void,:str])<-($29:void)($30:str)
-    bat.insert(b2,nil,"Daft Punk - Human After All");	# 14 BKCinsert_bun ($31:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($32:str)
-    bat.insert(b2,nil,"Spinvis - Spinvis");	# 15 BKCinsert_bun ($33:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($34:str)
-    bat.insert(b2,nil,"Within Temptation - The Silent Force");	# 16 BKCinsert_bun ($35:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($36:str)
-    bat.insert(b2,nil,"Anouk - Together Alone");	# 17 BKCinsert_bun ($37:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($38:str)
-    bat.insert(b2,nil,"Armiral Freebee - Admiral Freebee");	# 18 BKCinsert_bun ($39:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($40:str)
-    bat.insert(b2,nil,"Lais - Douce Victime");	# 19 BKCinsert_bun ($41:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($42:str)
-    bat.insert(b2,nil,"Hooverphonic - Sit Down and Listen To...");	# 20 BKCinsert_bun ($43:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($44:str)
-    bat.insert(b2,nil,"Osdorp Posse - Tegenstrijd");	# 21 BKCinsert_bun ($45:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($46:str)
-    bat.insert(b2,nil,"MC Wigger & DJ Wanna-B - Fuck Osdorp");	# 22 BKCinsert_bun ($47:bat[:void,:str])<-(b2:bat[:void,:str])($17:void)($48:str)
-    resultset.dePopulate(rs);	# 23 RSdePopulate ($49:resultset)<-(rs:resultset)
-    resultset.populateColumn(rs,1,b2);	# 24 RSpopulateColumn ($50:resultset)<-(rs:resultset)($51:int)(b2:bat[:void,:str])
-    resultset.writeNextPart(rs);	# 25 RSwriteNextPart ($52:int)<-(rs:resultset)
-    rsbox.release(rs);	# 26 RSBdelete ($53:void)<-(rs:resultset)
+    rs := rsbox.create(1,'t');	# 1 RSBcreate (rs:resultset)<-(_2:int)(_3:chr)
+    resultset.setProperty(rs,1,"name","the_column");	# 2 RSsetPropertyStr (_4:resultset)<-(rs:resultset)(_2:int)(_5:str)(_6:str)
+    resultset.setProperty(rs,1,"table","table1");	# 3 RSsetPropertyStr (_7:resultset)<-(rs:resultset)(_2:int)(_8:str)(_9:str)
+    resultset.setProperty(rs,1,"schema","sys");	# 4 RSsetPropertyStr (_10:resultset)<-(rs:resultset)(_2:int)(_11:str)(_12:str)
+    b1 := bbp.new(:void,:int);	# 5 CMDBATnew (b1:bat[:void,:int])<-(_14:void)(_15:int)
+    bat.insert(b1,nil,1);	# 6 BKCinsert_bun (_16:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_2:int)
+    bat.insert(b1,nil,2);	# 7 BKCinsert_bun (_18:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_19:int)
+    bat.insert(b1,nil,nil:int);	# 8 BKCinsert_bun (_20:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_21:int)
+    bat.insert(b1,nil,4);	# 9 BKCinsert_bun (_22:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_23:int)
+    bat.insert(b1,nil,6);	# 10 BKCinsert_bun (_24:bat[:void,:int])<-(b1:bat[:void,:int])(_17:void)(_25:int)
+    resultset.populateColumn(rs,1,b1);	# 11 RSpopulateColumn (_26:resultset)<-(rs:resultset)(_2:int)(b1:bat[:void,:int])
+    resultset.writeNextPart(rs);	# 12 RSwriteNextPart (_27:int)<-(rs:resultset)
+    b2 := bbp.new(:void,:str);	# 13 CMDBATnew (b2:bat[:void,:str])<-(_29:void)(_30:str)
+    bat.insert(b2,nil,"Daft Punk - Human After All");	# 14 BKCinsert_bun (_31:bat[:void,:str])<-(b2:bat[:void,:str])(_17:void)(_32:str)
+    bat.insert(b2,nil,"Spinvis - Spinvis");	# 15 BKCinsert_bun (_33:bat[:void,:str])<-(b2:bat[:void,:str])(_17:void)(_34:str)
+    bat.insert(b2,nil,"Within Temptation - The Silent Force");	# 16 BKCinsert_bun (_35:bat[:void,:str])<-(b2:bat[:void,:str])(_17:void)(_36:str)
+    bat.insert(b2,nil,"Anouk - Together Alone");	# 17 BKCinsert_bun (_37:bat[:void,:str])<-(b2:bat[:void,:str])(_17:void)(_38:str)
+    bat.insert(b2,nil,"Armiral Freebee - Admiral Freebee");	# 18 BKCinsert_bun (_39:bat[:void,:str])<-(b2:bat[:void,:str])(_17:void)(_40:str)
+    bat.insert(b2,nil,"Lais - Douce Victime");	# 19 BKCinsert_bun (_41:bat[:void,:str])<-(b2:bat[:void,:str])(_17:void)(_42:str)
+    bat.insert(b2,nil,"Hooverphonic - Sit Down and Listen To...");	# 20 BKCinsert_bun (_43:bat[:void,:str])<-(b2:bat[:void,:str])(_17:void)(_44:str)
+    bat.insert(b2,nil,"Osdorp Posse - Tegenstrijd");	# 21 BKCinsert_bun (_45:bat[:void,:str])<-(b2:bat[:void,:str])(_17:void)(_46:str)
+    bat.insert(b2,nil,"MC Wigger & DJ Wanna-B - Fuck Osdorp");	# 22 BKCinsert_bun (_47:bat[:void,:str])<-(b2:bat[:void,:str])(_17:void)(_48:str)
+    resultset.dePopulate(rs);	# 23 RSdePopulate (_49:resultset)<-(rs:resultset)
+    resultset.populateColumn(rs,1,b2);	# 24 RSpopulateColumn (_50:resultset)<-(rs:resultset)(_51:int)(b2:bat[:void,:str])
+    resultset.writeNextPart(rs);	# 25 RSwriteNextPart (_52:int)<-(rs:resultset)
+    rsbox.release(rs);	# 26 RSBdelete (_53:void)<-(rs:resultset)
 end main;	# 27  
 &t
-$id 1
-$columncount 1
-$tuplecount 5
-$ctype i
-%column the_column
-%table table1
-%schema sys
-%type int
-%digits 
-%scale 
-%width 9
+$id	1
+$columncount	1
+$tuplecount	5
+$ctype	i
+%column	the_column
+%table	table1
+%schema	sys
+%type	int
+%digits	
+%scale	
+%width	9
 [1
 [2
 [NULL
 [4
 [6
 &t
-$id 2
-$columncount 1
-$tuplecount 9
-$ctype S
-%column the_column
-%table table1
-%schema sys
-%type varchar
-%digits 
-%scale 
-%width 40
+$id	2
+$columncount	1
+$tuplecount	9
+$ctype	S
+%column	the_column
+%table	table1
+%schema	sys
+%type	varchar
+%digits	
+%scale	
+%width	40
 [27:Daft Punk - Human After All
 [17:Spinvis - Spinvis
 [36:Within Temptation - The Silent Force
@@ -137,7 +118,7 @@ $ctype S
 [26:Osdorp Posse - Tegenstrijd
 [36:MC Wigger & DJ Wanna-B - Fuck Osdorp
 
-# 09:30:45 >  
-# 09:30:45 >  Done.
-# 09:30:45 >  
+# 00:03:58 >  
+# 00:03:58 >  Done.
+# 00:03:58 >  
 

@@ -47,10 +47,10 @@ comment "Close the MIL constant box ";
 pattern mil.destroy():void
 address MILdestroy
 comment "Destroy the MIL box";
-pattern mil.take(name:str):any 
+pattern mil.take(name:str):any_1
 address MILtake
 comment "Locate and take the typed value";
-pattern mil.deposit(name:str,val:any) :void 		
+pattern mil.deposit(name:str,val:any_1) :void 		
 address MILdeposit
 comment "Enter a new value into the box";
 
@@ -88,15 +88,15 @@ will be cases not accounted for.
 If MIL is intended, the compiler writer/user should explicitly
 use the mil module denotation.
 @mal
-command mil.sort( b:bat[:any$1,:any$2]) :bat[:any$1,:any$2]
+command mil.sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
 
 @mal
-command mil.insert(b:bat[:any$1,:any$2], h:any$1, t:any$2) :bat[:any$1,:any$2]
+command mil.insert(b:bat[:any_1,:any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
 address MILinsert_bun
 comment "Insert one BUN[h,t] in a BAT.";
-command mil.insert(b:bat[:void,:any$2], h:oid, t:any$2) :bat[:oid,:any$2]
+command mil.insert(b:bat[:void,:any_2], h:oid, t:any_2) :bat[:oid,:any_2]
 address MILinsert_bun;
 @-
 Compatibility code wrappers

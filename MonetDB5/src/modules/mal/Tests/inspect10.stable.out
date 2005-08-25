@@ -1,51 +1,51 @@
 stdout of test 'inspect10` in directory 'src/modules/mal` itself:
 
 
-# 20:27:04 >  
-# 20:27:04 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=41729 --set sql_port=54220 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect10.mal </dev/null
-# 20:27:04 >  
+# 00:03:56 >  
+# 00:03:56 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  inspect10.mal </dev/null
+# 00:03:56 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_mal
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ##self inspection of the code base
-#function dummy(i:int):str;
-#	print(i);
-#	b:= inspect.getDefinition();
-#	print(b);
-#	inspect.showFunction();
+#function dummy(i:int);
+#	io.print(i);
+#	b:= mdb.getDefinition();
+#	io.print(b);
+#	mdb.showFunction();
 #end dummy;
 function user.dummy(i:int):void;	# 0  (dummy:void)<-(i:int)
-    io.print(i);	# 1 IOprint_val ($2:int)<-(i:int)
+    io.print(i);	# 1 IOprint_val (_2:int)<-(i:int)
     b := mdb.getDefinition();	# 2 MDBcodeDump (b:bat[:void,:str])
-    io.print(b);	# 3 IOprint_val ($4:int)<-(b:bat[:void,:str])
-    mdb.showFunction();	# 4  unknown ($5:any)
+    io.print(b);	# 3 IOprint_val (_4:int)<-(b:bat[:void,:str])
+    mdb.showFunction();	# 4  unknown (_5:any)
 end dummy;	# 5  
 !ERROR: 'mdb.showFunction' undefined in user.dummy[4]
 #
-#dummy(1);
+#user.dummy(1);
 #
-#printf("get function properties\n");
-#l:= inspect.getSignature("Admin","dummy");
-#print(l);
+#io.printf("get function properties\n");
+#l:= inspect.getSignature("user","dummy");
+#io.print(l);
 #
-#inspect.showFunction("Admin","dummy");
+#mdb.showFunction("user","dummy");
 #
 !ERROR: 'mdb.showFunction' undefined in user.main[6]
 function user.main():int;	# 0  (main:int)
-#self inspection of the code base 	# 1  ($2:str)
-    user.dummy(1);	# 2  ($3:void)<-($4:int)
-    io.printf("get function properties\n");	# 3 IOprint_str ($5:int)<-($6:str)
-    l := inspect.getSignature("user","dummy");	# 4 INSPECTgetSignature (l:bat[:str,:str])<-($8:str)($9:str)
-    io.print(l);	# 5 IOprint_val ($10:int)<-(l:bat[:str,:str])
-    mdb.showFunction("user","dummy");	# 6  unknown ($11:any)<-($8:str)($9:str)
+#self inspection of the code base 	# 1  (_2:str)
+    user.dummy(1);	# 2  (_3:void)<-(_4:int)
+    io.printf("get function properties\n");	# 3 IOprint_str (_5:int)<-(_6:str)
+    l := inspect.getSignature("user","dummy");	# 4 INSPECTgetSignature (l:bat[:str,:str])<-(_8:str)(_9:str)
+    io.print(l);	# 5 IOprint_val (_10:int)<-(l:bat[:str,:str])
+    mdb.showFunction("user","dummy");	# 6  unknown (_11:any)<-(_8:str)(_9:str)
 end main;	# 7  
 
-# 22:47:40 >  
-# 22:47:40 >  Done.
-# 22:47:40 >  
+# 00:03:56 >  
+# 00:03:56 >  Done.
+# 00:03:56 >  
 

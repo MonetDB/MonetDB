@@ -1,86 +1,86 @@
 stdout of test 'crackers02` in directory 'src/modules/mal` itself:
 
 
-# 20:35:03 >  
-# 20:35:03 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=45409 --set sql_port=55183 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  crackers02.mal </dev/null
-# 20:35:03 >  
+# 00:03:54 >  
+# 00:03:54 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  crackers02.mal </dev/null
+# 00:03:54 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_mal
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## Testing the cracker implementation
-#b:= new(:int,:int);
-#insert(b,10,100);
-#insert(b,1,2);
-#insert(b,6,36);
-#insert(b,5,25);
-#insert(b,2,4);
-#insert(b,3,9);
-#insert(b,7,49);
-#insert(b,8,64);
-#insert(b,4,16);
-#insert(b,9,81);
-#print(b);
+#b:= bbp.new(:int,:int);
+#bat.insert(b,10,100);
+#bat.insert(b,1,2);
+#bat.insert(b,6,36);
+#bat.insert(b,5,25);
+#bat.insert(b,2,4);
+#bat.insert(b,3,9);
+#bat.insert(b,7,49);
+#bat.insert(b,8,64);
+#bat.insert(b,4,16);
+#bat.insert(b,9,81);
+#io.print(b);
 #
 #crackers.new(b);
 #z:= crackers.crack(b,9,25);
-#print(z);
+#io.print(z);
 #crackers.info(b);
-#print(b);
+#io.print(b);
 #
 #y:= crackers.crack(b,80,195);
-#print(z);
+#io.print(z);
 #crackers.info(b);
-#print(b);
+#io.print(b);
 #
 #y:= crackers.crack(b,2,2);
-#print(z);
+#io.print(z);
 #crackers.info(b);
-#print(b);
+#io.print(b);
 #
 #y:= crackers.crack(b,20,99);
-#print(z);
+#io.print(z);
 #crackers.info(b);
-#print(b);
+#io.print(b);
 #
 function user.main():int;	# 0  (main:int)
-# Testing the cracker implementation 	# 1  ($2:str)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($4:int)
-    bat.insert(b,10,100);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(b:bat[:int,:int])($6:int)($7:int)
-    bat.insert(b,1,2);	# 4 BKCinsert_bun ($8:bat[:int,:int])<-(b:bat[:int,:int])($9:int)($10:int)
-    bat.insert(b,6,36);	# 5 BKCinsert_bun ($11:bat[:int,:int])<-(b:bat[:int,:int])($12:int)($13:int)
-    bat.insert(b,5,25);	# 6 BKCinsert_bun ($14:bat[:int,:int])<-(b:bat[:int,:int])($15:int)($16:int)
-    bat.insert(b,2,4);	# 7 BKCinsert_bun ($17:bat[:int,:int])<-(b:bat[:int,:int])($10:int)($18:int)
-    bat.insert(b,3,9);	# 8 BKCinsert_bun ($19:bat[:int,:int])<-(b:bat[:int,:int])($20:int)($21:int)
-    bat.insert(b,7,49);	# 9 BKCinsert_bun ($22:bat[:int,:int])<-(b:bat[:int,:int])($23:int)($24:int)
-    bat.insert(b,8,64);	# 10 BKCinsert_bun ($25:bat[:int,:int])<-(b:bat[:int,:int])($26:int)($27:int)
-    bat.insert(b,4,16);	# 11 BKCinsert_bun ($28:bat[:int,:int])<-(b:bat[:int,:int])($18:int)($29:int)
-    bat.insert(b,9,81);	# 12 BKCinsert_bun ($30:bat[:int,:int])<-(b:bat[:int,:int])($21:int)($31:int)
-    io.print(b);	# 13 IOprint_val ($32:int)<-(b:bat[:int,:int])
-    crackers.new(b);	# 14 CRKnew ($33:void)<-(b:bat[:int,:int])
-    z := crackers.crack(b,9,25);	# 15 CRKcrackRange (z:int)<-(b:bat[:int,:int])($21:int)($16:int)
-    io.print(z);	# 16 IOprint_val ($35:int)<-(z:int)
-    crackers.info(b);	# 17 CRKinfo ($36:void)<-(b:bat[:int,:int])
-    io.print(b);	# 18 IOprint_val ($37:int)<-(b:bat[:int,:int])
-    y := crackers.crack(b,80,195);	# 19 CRKcrackRange (y:int)<-(b:bat[:int,:int])($39:int)($40:int)
-    io.print(z);	# 20 IOprint_val ($41:int)<-(z:int)
-    crackers.info(b);	# 21 CRKinfo ($42:void)<-(b:bat[:int,:int])
-    io.print(b);	# 22 IOprint_val ($43:int)<-(b:bat[:int,:int])
-    y := crackers.crack(b,2,2);	# 23 CRKcrackRange (y:int)<-(b:bat[:int,:int])($44:int)($44:int)
-    io.print(z);	# 24 IOprint_val ($45:int)<-(z:int)
-    crackers.info(b);	# 25 CRKinfo ($46:void)<-(b:bat[:int,:int])
-    io.print(b);	# 26 IOprint_val ($47:int)<-(b:bat[:int,:int])
-    y := crackers.crack(b,20,99);	# 27 CRKcrackRange (y:int)<-(b:bat[:int,:int])($48:int)($49:int)
-    io.print(z);	# 28 IOprint_val ($50:int)<-(z:int)
-    crackers.info(b);	# 29 CRKinfo ($51:void)<-(b:bat[:int,:int])
-    io.print(b);	# 30 IOprint_val ($52:int)<-(b:bat[:int,:int])
+# Testing the cracker implementation 	# 1  (_2:str)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
+    bat.insert(b,10,100);	# 3 BKCinsert_bun (_5:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_7:int)
+    bat.insert(b,1,2);	# 4 BKCinsert_bun (_8:bat[:int,:int])<-(b:bat[:int,:int])(_9:int)(_10:int)
+    bat.insert(b,6,36);	# 5 BKCinsert_bun (_11:bat[:int,:int])<-(b:bat[:int,:int])(_12:int)(_13:int)
+    bat.insert(b,5,25);	# 6 BKCinsert_bun (_14:bat[:int,:int])<-(b:bat[:int,:int])(_15:int)(_16:int)
+    bat.insert(b,2,4);	# 7 BKCinsert_bun (_17:bat[:int,:int])<-(b:bat[:int,:int])(_10:int)(_18:int)
+    bat.insert(b,3,9);	# 8 BKCinsert_bun (_19:bat[:int,:int])<-(b:bat[:int,:int])(_20:int)(_21:int)
+    bat.insert(b,7,49);	# 9 BKCinsert_bun (_22:bat[:int,:int])<-(b:bat[:int,:int])(_23:int)(_24:int)
+    bat.insert(b,8,64);	# 10 BKCinsert_bun (_25:bat[:int,:int])<-(b:bat[:int,:int])(_26:int)(_27:int)
+    bat.insert(b,4,16);	# 11 BKCinsert_bun (_28:bat[:int,:int])<-(b:bat[:int,:int])(_18:int)(_29:int)
+    bat.insert(b,9,81);	# 12 BKCinsert_bun (_30:bat[:int,:int])<-(b:bat[:int,:int])(_21:int)(_31:int)
+    io.print(b);	# 13 IOprint_val (_32:int)<-(b:bat[:int,:int])
+    crackers.new(b);	# 14 CRKnew (_33:void)<-(b:bat[:int,:int])
+    z := crackers.crack(b,9,25);	# 15 CRKcrackRange (z:int)<-(b:bat[:int,:int])(_21:int)(_16:int)
+    io.print(z);	# 16 IOprint_val (_35:int)<-(z:int)
+    crackers.info(b);	# 17 CRKinfo (_36:void)<-(b:bat[:int,:int])
+    io.print(b);	# 18 IOprint_val (_37:int)<-(b:bat[:int,:int])
+    y := crackers.crack(b,80,195);	# 19 CRKcrackRange (y:int)<-(b:bat[:int,:int])(_39:int)(_40:int)
+    io.print(z);	# 20 IOprint_val (_41:int)<-(z:int)
+    crackers.info(b);	# 21 CRKinfo (_42:void)<-(b:bat[:int,:int])
+    io.print(b);	# 22 IOprint_val (_43:int)<-(b:bat[:int,:int])
+    y := crackers.crack(b,2,2);	# 23 CRKcrackRange (y:int)<-(b:bat[:int,:int])(_44:int)(_44:int)
+    io.print(z);	# 24 IOprint_val (_45:int)<-(z:int)
+    crackers.info(b);	# 25 CRKinfo (_46:void)<-(b:bat[:int,:int])
+    io.print(b);	# 26 IOprint_val (_47:int)<-(b:bat[:int,:int])
+    y := crackers.crack(b,20,99);	# 27 CRKcrackRange (y:int)<-(b:bat[:int,:int])(_48:int)(_49:int)
+    io.print(z);	# 28 IOprint_val (_50:int)<-(z:int)
+    crackers.info(b);	# 29 CRKinfo (_51:void)<-(b:bat[:int,:int])
+    io.print(b);	# 30 IOprint_val (_52:int)<-(b:bat[:int,:int])
 end main;	# 31  
 #-----------------#
-# h	tmp_4	  # name
+# h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 10,	  100	  ]
@@ -100,7 +100,7 @@ end main;	# 31
  [   2  13, L, 0 9, 25, 2, 4, -1, -1, -1 ]
  [   3  13, L, 0 26, 2147483647, 5, 9, -1, -1, -1 ]
  #-----------------#
-# h	tmp_4	  # name
+# h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
@@ -122,7 +122,7 @@ end main;	# 31
  [   4  13, L, 3 26, 79, 5, 7, -1, -1, -1 ]
  [   5  13, L, 3 80, 2147483647, 8, 9, -1, -1, -1 ]
  #-----------------#
-# h	tmp_4	  # name
+# h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
@@ -146,7 +146,7 @@ end main;	# 31
  [   6  13, L, 1 -2147483648, 2, 0, 0, -1, -1, -1 ]
  [   7  13, L, 1 3, 8, 1, 1, -1, -1, -1 ]
  #-----------------#
-# h	tmp_4	  # name
+# h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
@@ -174,7 +174,7 @@ end main;	# 31
  [  10  13, L, 5 80, 99, 8, 8, -1, -1, -1 ]
  [  11  13, L, 5 100, 2147483647, 9, 9, -1, -1, -1 ]
  #-----------------#
-# h	tmp_4	  # name
+# h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
@@ -188,7 +188,7 @@ end main;	# 31
 [ 9,	  81	  ]
 [ 10,	  100	  ]
 
-# 22:47:35 >  
-# 22:47:35 >  Done.
-# 22:47:35 >  
+# 00:03:54 >  
+# 00:03:54 >  Done.
+# 00:03:54 >  
 

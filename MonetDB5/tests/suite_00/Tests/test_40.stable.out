@@ -1,24 +1,19 @@
 stdout of test 'test_40` in directory 'tests/suite_00` itself:
 
-#> Mtest (21:55:06):	milS test_40 milS
-#> Mtest (21:55:06):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_40.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:test_40.milS
 
-# 10:14:27 >  
-# 10:14:27 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=45534 --set sql_port=55728 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_40.mal </dev/null
-# 10:14:27 >  
+# 00:12:28 >  
+# 00:12:28 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34380 --set sql_port=46008 --set xquery_port=58634 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_40.mal </dev/null
+# 00:12:28 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_suite_00
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## Monet Mil to Mal compiler
+#include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
 ##Predefined code segment
@@ -27,156 +22,150 @@ stdout of test 'test_40` in directory 'tests/suite_00` itself:
 ##A few guidelines to maximize usefullness.
 ##- make the type of variables explicit, in particular 'nil'
 ##- upon advice of M2m to remap identifiers, change it in your program directly
-##include "mil_prelude";
+##use the "mil_schema" for additional support routines
 #	mil.line("setoid(oid(20000000));");
-#	aa_a := oid(20000000);
-#	ba_a := setoid(aa_a);
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
 #	mil.line("# Some applications may wish to directly access the buns\n");
-#	mil.line("# i.e. they use a BAT like an array.");
 #	mil.line("# i.e. they use a BAT like an array.\n");
-#	mil.line("var b:= new(int,int);");
-#	b := new(nil:int,nil:int);
+#	b := bbp.new(nil:int,nil:int);
 #	mil.line("b.rename(\"b\");");
 #	ca_a := bat.setName(b,"b");
 #	mil.line("b.insert(1,15);");
-#	da_a := insert(b,1,15);
+#	da_a := bat.insert(b,1,15);
 #	mil.line("b.insert(2,4);");
-#	ea_a := insert(b,2,4);
+#	ea_a := bat.insert(b,2,4);
 #	mil.line("b.insert(3,int(nil));");
-#	fa_a := int(nil);
-#	ga_a := insert(b,3,fa_a);
+#	fa_a := calc.int(nil);
+#	ga_a := bat.insert(b,3,fa_a);
 #	mil.line("b.insert(4,16);");
-#	ha_a := insert(b,4,16);
+#	ha_a := bat.insert(b,4,16);
 #	mil.line("b.insert(5,25);");
-#	ia_a := insert(b,5,25);
+#	ia_a := bat.insert(b,5,25);
 #	mil.line("b.insert(6,36);");
-#	ja_a := insert(b,6,36);
+#	ja_a := bat.insert(b,6,36);
 #	mil.line("b.insert(7,49);");
-#	ka_a := insert(b,7,49);
+#	ka_a := bat.insert(b,7,49);
 #	mil.line("b.insert(8,64);");
-#	la_a := insert(b,8,64);
+#	la_a := bat.insert(b,8,64);
 #	mil.line("b.insert(9,int(nil));");
-#	ma_a := int(nil);
-#	na_a := insert(b,9,ma_a);
+#	ma_a := calc.int(nil);
+#	na_a := bat.insert(b,9,ma_a);
 #	mil.line("b.insert(int(nil),int(nil));");
-#	oa_a := int(nil);
-#	pa_a := int(nil);
-#	qa_a := insert(b,oa_a,pa_a);
+#	oa_a := calc.int(nil);
+#	pa_a := calc.int(nil);
+#	qa_a := bat.insert(b,oa_a,pa_a);
 #	mil.line("b.insert(int(nil),81);");
-#	ra_a := int(nil);
-#	sa_a := insert(b,ra_a,81);
+#	ra_a := calc.int(nil);
+#	sa_a := bat.insert(b,ra_a,81);
 #	mil.line("#b.rename(\"b\");\n");
-#	mil.line("");
 #	mil.line("b.save();");
 #	ta_a := bat.save(b);
 #	mil.line("load(\"b\");");
 #	ua_a := bat.load("b");
 #	mil.line("b.position(4).print();");
-#	va_a := position(b,4);
-#	wa_a := print(va_a);
+#	va_a := algebra.position(b,4);
+#	wa_a := io.print(va_a);
 #	mil.line("b.fetch(5).print();");
-#	xa_a := fetch(b,5);
-#	ya_a := print(xa_a);
+#	xa_a := algebra.fetch(b,5);
+#	ya_a := io.print(xa_a);
 #	mil.line("b.fetch(8).print();");
-#	ab_a := fetch(b,8);
-#	bb_a := print(ab_a);
+#	ab_a := algebra.fetch(b,8);
+#	bb_a := io.print(ab_a);
 #	mil.line("b.slice(5,8).print();");
-#	cb_a := slice(b,5,8);
-#	db_a := print(cb_a);
+#	cb_a := algebra.slice(b,5,8);
+#	db_a := io.print(cb_a);
 #	mil.line("# errors\n");
-#	mil.line("b.position(111).print();");
-#	eb_a := position(b,111);
-#	fb_a := print(eb_a);
+#	eb_a := algebra.position(b,111);
+#	fb_a := io.print(eb_a);
 #	mil.line("b.fetch(-1).print();");
-#	gb_a := fetch(b,-1);
-#	hb_a := print(gb_a);
+#	gb_a := algebra.fetch(b,-1);
+#	hb_a := io.print(gb_a);
 #	mil.line("b.slice(8,5).print();");
-#	ib_a := slice(b,8,5);
-#	jb_a := print(ib_a);
+#	ib_a := algebra.slice(b,8,5);
+#	jb_a := io.print(ib_a);
 #	mil.line("quit();");
-#	kb_a := quit();
+#	kb_a := clients.quit();
 ##Identifer 'rename' mapped to 'bat.setName'
 #
 function user.main():int;	# 0  (main:int)
-# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  ($32:str)
-#Predefined code segment 	# 2  ($34:str)
-#The compiler can not guarantee an accurate compilation, 	# 3  ($36:str)
-#because MIL unlike MAL is a dynamically typed language. 	# 4  ($38:str)
-#A few guidelines to maximize usefullness. 	# 5  ($40:str)
-#- make the type of variables explicit, in particular 'nil' 	# 6  ($42:str)
-#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  ($44:str)
-#use the "mil_schema" for additional support routines 	# 8  ($46:str)
-    mil.line("setoid(oid(20000000));");	# 9 MILline ($47:void)<-($48:str)
-    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-($50:int)
+# Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
+#Predefined code segment 	# 2  (_34:str)
+#The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)
+#because MIL unlike MAL is a dynamically typed language. 	# 4  (_38:str)
+#A few guidelines to maximize usefullness. 	# 5  (_40:str)
+#- make the type of variables explicit, in particular 'nil' 	# 6  (_42:str)
+#- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_44:str)
+#use the "mil_schema" for additional support routines 	# 8  (_46:str)
+    mil.line("setoid(oid(20000000));");	# 9 MILline (_47:void)<-(_48:str)
+    aa_a := calc.oid(20000000);	# 10 CALCint2oid (aa_a:oid)<-(_50:int)
     ba_a := calc.setoid(aa_a);	# 11 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
-    mil.line("# Some applications may wish to directly access the buns\n");	# 12 MILline ($52:void)<-($53:str)
-    mil.line("# i.e. they use a BAT like an array.\n");	# 13 MILline ($54:void)<-($55:str)
-    b := bbp.new(nil:int,nil:int);	# 14 CMDBATnew (b:bat[:int,:int])<-($57:int)($57:int)
-    mil.line("b.rename(\"b\");");	# 15 MILline ($58:void)<-($59:str)
-    ca_a := bat.setName(b,"b");	# 16 BKCsetName (ca_a:bat[:int,:int])<-(b:bat[:int,:int])($61:str)
-    mil.line("b.insert(1,15);");	# 17 MILline ($62:void)<-($63:str)
-    da_a := bat.insert(b,1,15);	# 18 BKCinsert_bun (da_a:bat[:int,:int])<-(b:bat[:int,:int])($65:int)($66:int)
-    mil.line("b.insert(2,4);");	# 19 MILline ($67:void)<-($68:str)
-    ea_a := bat.insert(b,2,4);	# 20 BKCinsert_bun (ea_a:bat[:int,:int])<-(b:bat[:int,:int])($70:int)($71:int)
-    mil.line("b.insert(3,int(nil));");	# 21 MILline ($72:void)<-($73:str)
-    fa_a := calc.int(nil);	# 22 CALCnil2int (fa_a:int)<-($75:void)
-    ga_a := bat.insert(b,3,fa_a);	# 23 BKCinsert_bun (ga_a:bat[:int,:int])<-(b:bat[:int,:int])($77:int)(fa_a:int)
-    mil.line("b.insert(4,16);");	# 24 MILline ($78:void)<-($79:str)
-    ha_a := bat.insert(b,4,16);	# 25 BKCinsert_bun (ha_a:bat[:int,:int])<-(b:bat[:int,:int])($71:int)($81:int)
-    mil.line("b.insert(5,25);");	# 26 MILline ($82:void)<-($83:str)
-    ia_a := bat.insert(b,5,25);	# 27 BKCinsert_bun (ia_a:bat[:int,:int])<-(b:bat[:int,:int])($85:int)($86:int)
-    mil.line("b.insert(6,36);");	# 28 MILline ($87:void)<-($88:str)
-    ja_a := bat.insert(b,6,36);	# 29 BKCinsert_bun (ja_a:bat[:int,:int])<-(b:bat[:int,:int])($90:int)($91:int)
-    mil.line("b.insert(7,49);");	# 30 MILline ($92:void)<-($93:str)
-    ka_a := bat.insert(b,7,49);	# 31 BKCinsert_bun (ka_a:bat[:int,:int])<-(b:bat[:int,:int])($95:int)($96:int)
-    mil.line("b.insert(8,64);");	# 32 MILline ($97:void)<-($98:str)
-    la_a := bat.insert(b,8,64);	# 33 BKCinsert_bun (la_a:bat[:int,:int])<-(b:bat[:int,:int])($100:int)($101:int)
-    mil.line("b.insert(9,int(nil));");	# 34 MILline ($102:void)<-($103:str)
-    ma_a := calc.int(nil);	# 35 CALCnil2int (ma_a:int)<-($75:void)
-    na_a := bat.insert(b,9,ma_a);	# 36 BKCinsert_bun (na_a:bat[:int,:int])<-(b:bat[:int,:int])($106:int)(ma_a:int)
-    mil.line("b.insert(int(nil),int(nil));");	# 37 MILline ($107:void)<-($108:str)
-    oa_a := calc.int(nil);	# 38 CALCnil2int (oa_a:int)<-($110:void)
-    pa_a := calc.int(nil);	# 39 CALCnil2int (pa_a:int)<-($110:void)
+    mil.line("# Some applications may wish to directly access the buns\n");	# 12 MILline (_52:void)<-(_53:str)
+    mil.line("# i.e. they use a BAT like an array.\n");	# 13 MILline (_54:void)<-(_55:str)
+    b := bbp.new(nil:int,nil:int);	# 14 CMDBATnew (b:bat[:int,:int])<-(_57:int)(_57:int)
+    mil.line("b.rename(\"b\");");	# 15 MILline (_58:void)<-(_59:str)
+    ca_a := bat.setName(b,"b");	# 16 BKCsetName (ca_a:bat[:int,:int])<-(b:bat[:int,:int])(_61:str)
+    mil.line("b.insert(1,15);");	# 17 MILline (_62:void)<-(_63:str)
+    da_a := bat.insert(b,1,15);	# 18 BKCinsert_bun (da_a:bat[:int,:int])<-(b:bat[:int,:int])(_65:int)(_66:int)
+    mil.line("b.insert(2,4);");	# 19 MILline (_67:void)<-(_68:str)
+    ea_a := bat.insert(b,2,4);	# 20 BKCinsert_bun (ea_a:bat[:int,:int])<-(b:bat[:int,:int])(_70:int)(_71:int)
+    mil.line("b.insert(3,int(nil));");	# 21 MILline (_72:void)<-(_73:str)
+    fa_a := calc.int(nil);	# 22 CALCnil2int (fa_a:int)<-(_75:void)
+    ga_a := bat.insert(b,3,fa_a);	# 23 BKCinsert_bun (ga_a:bat[:int,:int])<-(b:bat[:int,:int])(_77:int)(fa_a:int)
+    mil.line("b.insert(4,16);");	# 24 MILline (_78:void)<-(_79:str)
+    ha_a := bat.insert(b,4,16);	# 25 BKCinsert_bun (ha_a:bat[:int,:int])<-(b:bat[:int,:int])(_71:int)(_81:int)
+    mil.line("b.insert(5,25);");	# 26 MILline (_82:void)<-(_83:str)
+    ia_a := bat.insert(b,5,25);	# 27 BKCinsert_bun (ia_a:bat[:int,:int])<-(b:bat[:int,:int])(_85:int)(_86:int)
+    mil.line("b.insert(6,36);");	# 28 MILline (_87:void)<-(_88:str)
+    ja_a := bat.insert(b,6,36);	# 29 BKCinsert_bun (ja_a:bat[:int,:int])<-(b:bat[:int,:int])(_90:int)(_91:int)
+    mil.line("b.insert(7,49);");	# 30 MILline (_92:void)<-(_93:str)
+    ka_a := bat.insert(b,7,49);	# 31 BKCinsert_bun (ka_a:bat[:int,:int])<-(b:bat[:int,:int])(_95:int)(_96:int)
+    mil.line("b.insert(8,64);");	# 32 MILline (_97:void)<-(_98:str)
+    la_a := bat.insert(b,8,64);	# 33 BKCinsert_bun (la_a:bat[:int,:int])<-(b:bat[:int,:int])(_100:int)(_101:int)
+    mil.line("b.insert(9,int(nil));");	# 34 MILline (_102:void)<-(_103:str)
+    ma_a := calc.int(nil);	# 35 CALCnil2int (ma_a:int)<-(_75:void)
+    na_a := bat.insert(b,9,ma_a);	# 36 BKCinsert_bun (na_a:bat[:int,:int])<-(b:bat[:int,:int])(_106:int)(ma_a:int)
+    mil.line("b.insert(int(nil),int(nil));");	# 37 MILline (_107:void)<-(_108:str)
+    oa_a := calc.int(nil);	# 38 CALCnil2int (oa_a:int)<-(_110:void)
+    pa_a := calc.int(nil);	# 39 CALCnil2int (pa_a:int)<-(_110:void)
     qa_a := bat.insert(b,oa_a,pa_a);	# 40 BKCinsert_bun (qa_a:bat[:int,:int])<-(b:bat[:int,:int])(oa_a:int)(pa_a:int)
-    mil.line("b.insert(int(nil),81);");	# 41 MILline ($113:void)<-($114:str)
-    ra_a := calc.int(nil);	# 42 CALCnil2int (ra_a:int)<-($110:void)
-    sa_a := bat.insert(b,ra_a,81);	# 43 BKCinsert_bun (sa_a:bat[:int,:int])<-(b:bat[:int,:int])(ra_a:int)($117:int)
-    mil.line("#b.rename(\"b\");\n");	# 44 MILline ($118:void)<-($119:str)
-    mil.line("b.save();");	# 45 MILline ($120:void)<-($121:str)
+    mil.line("b.insert(int(nil),81);");	# 41 MILline (_113:void)<-(_114:str)
+    ra_a := calc.int(nil);	# 42 CALCnil2int (ra_a:int)<-(_110:void)
+    sa_a := bat.insert(b,ra_a,81);	# 43 BKCinsert_bun (sa_a:bat[:int,:int])<-(b:bat[:int,:int])(ra_a:int)(_117:int)
+    mil.line("#b.rename(\"b\");\n");	# 44 MILline (_118:void)<-(_119:str)
+    mil.line("b.save();");	# 45 MILline (_120:void)<-(_121:str)
     ta_a := bat.save(b);	# 46 BKCsave2 (ta_a:bat[:int,:int])<-(b:bat[:int,:int])
-    mil.line("load(\"b\");");	# 47 MILline ($123:void)<-($124:str)
-    ua_a := bat.load("b");	# 48 BKCload (ua_a:bat[:any,:any])<-($126:str)
-    mil.line("b.position(4).print();");	# 49 MILline ($127:void)<-($128:str)
-    va_a := algebra.position(b,4);	# 50 ALGposition (va_a:int)<-(b:bat[:int,:int])($130:int)
+    mil.line("load(\"b\");");	# 47 MILline (_123:void)<-(_124:str)
+    ua_a := bat.load("b");	# 48 BKCload (ua_a:bat[:any,:any])<-(_126:str)
+    mil.line("b.position(4).print();");	# 49 MILline (_127:void)<-(_128:str)
+    va_a := algebra.position(b,4);	# 50 ALGposition (va_a:int)<-(b:bat[:int,:int])(_130:int)
     wa_a := io.print(va_a);	# 51 IOprint_val (wa_a:int)<-(va_a:int)
-    mil.line("b.fetch(5).print();");	# 52 MILline ($132:void)<-($133:str)
-    xa_a := algebra.fetch(b,5);	# 53 ALGfetchint (xa_a:int)<-(b:bat[:int,:int])($135:int)
+    mil.line("b.fetch(5).print();");	# 52 MILline (_132:void)<-(_133:str)
+    xa_a := algebra.fetch(b,5);	# 53 ALGfetchint (xa_a:int)<-(b:bat[:int,:int])(_135:int)
     ya_a := io.print(xa_a);	# 54 IOprint_val (ya_a:int)<-(xa_a:int)
-    mil.line("b.fetch(8).print();");	# 55 MILline ($137:void)<-($138:str)
-    ab_a := algebra.fetch(b,8);	# 56 ALGfetchint (ab_a:int)<-(b:bat[:int,:int])($140:int)
+    mil.line("b.fetch(8).print();");	# 55 MILline (_137:void)<-(_138:str)
+    ab_a := algebra.fetch(b,8);	# 56 ALGfetchint (ab_a:int)<-(b:bat[:int,:int])(_140:int)
     bb_a := io.print(ab_a);	# 57 IOprint_val (bb_a:int)<-(ab_a:int)
-    mil.line("b.slice(5,8).print();");	# 58 MILline ($142:void)<-($143:str)
-    cb_a := algebra.slice(b,5,8);	# 59 ALGslice (cb_a:bat[:int,:int])<-(b:bat[:int,:int])($135:int)($140:int)
+    mil.line("b.slice(5,8).print();");	# 58 MILline (_142:void)<-(_143:str)
+    cb_a := algebra.slice(b,5,8);	# 59 ALGslice (cb_a:bat[:int,:int])<-(b:bat[:int,:int])(_135:int)(_140:int)
     db_a := io.print(cb_a);	# 60 IOprint_val (db_a:int)<-(cb_a:bat[:int,:int])
-    mil.line("# errors\n");	# 61 MILline ($146:void)<-($147:str)
-    eb_a := algebra.position(b,111);	# 62 ALGposition (eb_a:int)<-(b:bat[:int,:int])($149:int)
+    mil.line("# errors\n");	# 61 MILline (_146:void)<-(_147:str)
+    eb_a := algebra.position(b,111);	# 62 ALGposition (eb_a:int)<-(b:bat[:int,:int])(_149:int)
     fb_a := io.print(eb_a);	# 63 IOprint_val (fb_a:int)<-(eb_a:int)
-    mil.line("b.fetch(-1).print();");	# 64 MILline ($151:void)<-($152:str)
-    gb_a := algebra.fetch(b,-1);	# 65 ALGfetchint (gb_a:int)<-(b:bat[:int,:int])($154:int)
+    mil.line("b.fetch(-1).print();");	# 64 MILline (_151:void)<-(_152:str)
+    gb_a := algebra.fetch(b,-1);	# 65 ALGfetchint (gb_a:int)<-(b:bat[:int,:int])(_154:int)
     hb_a := io.print(gb_a);	# 66 IOprint_val (hb_a:int)<-(gb_a:int)
-    mil.line("b.slice(8,5).print();");	# 67 MILline ($156:void)<-($157:str)
-    ib_a := algebra.slice(b,8,5);	# 68 ALGslice (ib_a:bat[:int,:int])<-(b:bat[:int,:int])($140:int)($135:int)
+    mil.line("b.slice(8,5).print();");	# 67 MILline (_156:void)<-(_157:str)
+    ib_a := algebra.slice(b,8,5);	# 68 ALGslice (ib_a:bat[:int,:int])<-(b:bat[:int,:int])(_140:int)(_135:int)
     jb_a := io.print(ib_a);	# 69 IOprint_val (jb_a:int)<-(ib_a:bat[:int,:int])
-    mil.line("quit();");	# 70 MILline ($160:void)<-($161:str)
+    mil.line("quit();");	# 70 MILline (_160:void)<-(_161:str)
     kb_a := clients.quit();	# 71 CLTquit (kb_a:void)
-#Identifer 'rename' mapped to 'bat.setName' 	# 72  ($164:str)
+#Identifer 'rename' mapped to 'bat.setName' 	# 72  (_164:str)
 end main;	# 73  
 #setoid(oid(20000000));
-## Some applications may wish to directly access the buns
-## i.e. they use a BAT like an array.
-## i.e. they use a BAT like an array.
-#var b:= new(int,int);
-#b.rename("b");
+## Some applications may wish to directly access the buns\n
+## i.e. they use a BAT like an array.\n
+#b.rename(\"b\");
 #b.insert(1,15);
 #b.insert(2,4);
 #b.insert(3,int(nil));
@@ -188,10 +177,9 @@ end main;	# 73
 #b.insert(9,int(nil));
 #b.insert(int(nil),int(nil));
 #b.insert(int(nil),81);
-##b.rename("b");
-#
+##b.rename(\"b\");\n
 #b.save();
-#load("b");
+#load(\"b\");
 #b.position(4).print();
 [ 3 ]
 #b.fetch(5).print();
@@ -200,22 +188,21 @@ end main;	# 73
 [ nil ]
 #b.slice(5,8).print();
 #-----------------#
-# BAT:	  tmp_23  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 6,	  36	  ]
 [ 7,	  49	  ]
 [ 8,	  64	  ]
 [ 9,	  nil	  ]
-## errors
-#b.position(111).print();
+## errors\n
 [ 0 ]
 #b.fetch(-1).print();
-
 !ERROR: CMDposition: item not found
 !ERROR: MALexception:algebra.fetch: idx out of range
+#
 
-# 22:47:59 >  
-# 22:47:59 >  Done.
-# 22:47:59 >  
+# 00:12:28 >  
+# 00:12:28 >  Done.
+# 00:12:28 >  
 

@@ -1,31 +1,31 @@
 stdout of test 'bpt05` in directory 'src/modules/mal` itself:
 
 
-# 13:27:04 >  
-# 13:27:04 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=41769 --set sql_port=53304 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  bpt05.mal </dev/null
-# 13:27:04 >  
+# 00:03:57 >  
+# 00:03:57 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  bpt05.mal </dev/null
+# 00:03:57 >  
 
-# Monet Database Server V4.7.1
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # config:/ufs/mk/monet5/src/mal/Tests/All.conf
 # dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ##testing the BAT partition table with fixed capacity
-#a1:= new(:void,:int);
-#setSequenceBase(a1,0@0);
+#a1:= bbp.new(:void,:int);
+#bat.setSequenceBase(a1,0@0);
 #
 #partitions.deposit(a1);
 #partitions.setCapacity(a1,3);
 #
-#barrier (go,i):= newRange(0);
+#barrier (go,i):= mal.newRange(0);
 #	partitions.insert(a1,i);
-#	redo (go,i):= nextElement(1,10);
+#	redo (go,i):= mal.nextElement(1,10);
 #exit (go,i);
 #partitions.dump();
 #barrier (k,b):= partitions.newIterator(a1);
-#	print(b);
+#	io.print(b);
 #	redo (k,b):= partitions.hasMoreElements(a1);
 #exit (k,b);
 #
@@ -33,23 +33,22 @@ stdout of test 'bpt05` in directory 'src/modules/mal` itself:
 #
 #
 #
-
 function user.main():int;	# 0  (main:int)
-#testing the BAT partition table with fixed capacity 	# 1  ($2:str)
-    a1 := bbp.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-($4:void)($5:int)
-    bat.setSequenceBase(a1,0@0);	# 3 BKCsetSequenceBase ($6:bat[:void,:int])<-(a1:bat[:void,:int])($7:oid)
-    partitions.deposit(a1);	# 4 BPTdeposit ($8:void)<-(a1:bat[:void,:int])
-    partitions.setCapacity(a1,3);	# 5 BPTsetCapacity ($9:void)<-(a1:bat[:void,:int])($10:int)
-barrier (go,i):= mal.newRange(0);	# 6 RNGnewRange_int (go:bit)(i:int)<-($13:int) jump 9
-    partitions.insert(a1,i);	# 7 BPTinsert_void_bun ($14:bat[:void,:int])<-(a1:bat[:void,:int])(i:int)
-    redo (go,i):= mal.nextElement(1,10);	# 8 RNGnextElement_int (go:bit)(i:int)<-($15:int)($16:int) jump 7
+#testing the BAT partition table with fixed capacity 	# 1  (_2:str)
+    a1 := bbp.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-(_4:void)(_5:int)
+    bat.setSequenceBase(a1,0@0);	# 3 BKCsetSequenceBase (_6:bat[:void,:int])<-(a1:bat[:void,:int])(_7:oid)
+    partitions.deposit(a1);	# 4 BPTdeposit (_8:void)<-(a1:bat[:void,:int])
+    partitions.setCapacity(a1,3);	# 5 BPTsetCapacity (_9:void)<-(a1:bat[:void,:int])(_10:int)
+barrier (go,i):= mal.newRange(0);	# 6 RNGnewRange_int (go:bit)(i:int)<-(_13:int) jump 9
+    partitions.insert(a1,i);	# 7 BPTinsert_void_bun (_14:bat[:void,:int])<-(a1:bat[:void,:int])(i:int)
+    redo (go,i):= mal.nextElement(1,10);	# 8 RNGnextElement_int (go:bit)(i:int)<-(_15:int)(_16:int) jump 7
 exit (go,i);	# 9  (go:bit)(i:int)
-    partitions.dump();	# 10 BPTdump ($17:void)
+    partitions.dump();	# 10 BPTdump (_17:void)
 barrier (k,b):= partitions.newIterator(a1);	# 11 BPTnewIterator (k:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 14
-    io.print(b);	# 12 IOprint_val ($20:int)<-(b:bat[:void,:int])
+    io.print(b);	# 12 IOprint_val (_20:int)<-(b:bat[:void,:int])
     redo (k,b):= partitions.hasMoreElements(a1);	# 13 BPThasMoreElements (k:int)(b:bat[:void,:int])<-(a1:bat[:void,:int]) jump 12
 exit (k,b);	# 14  (k:int)(b:bat[:void,:int])
-# add it 	# 15  ($22:str)
+# add it 	# 15  (_22:str)
 end main;	# 16  
 ptop=4 plimit=1024
 [0] bid=13 pid=13 f=0, l=3 prv=-1 nxt=1 cap=3
@@ -57,33 +56,33 @@ ptop=4 plimit=1024
 [2] bid=13 pid=15 f=6, l=9 prv=-1 nxt=3 cap=3
 [3] bid=13 pid=16 f=9, l=10 prv=-1 nxt=-1 cap=3
 #-----------------#
-# h	tmp_13	  # name
+# h	t	  # name
 # void	int	  # type
 #-----------------#
 [ 0@0,	  0	  ]
 [ 1@0,	  1	  ]
 [ 2@0,	  2	  ]
 #-----------------#
-# h	tmp_14	  # name
+# h	t	  # name
 # void	int	  # type
 #-----------------#
 [ 3@0,	  3	  ]
 [ 4@0,	  4	  ]
 [ 5@0,	  5	  ]
 #-----------------#
-# h	tmp_15	  # name
+# h	t	  # name
 # void	int	  # type
 #-----------------#
 [ 6@0,	  6	  ]
 [ 7@0,	  7	  ]
 [ 8@0,	  8	  ]
 #-----------------#
-# h	tmp_16	  # name
+# h	t	  # name
 # void	int	  # type
 #-----------------#
 [ 9@0,	  9	  ]
 
-# 13:27:04 >  
-# 13:27:04 >  Done.
-# 13:27:04 >  
+# 00:03:57 >  
+# 00:03:57 >  Done.
+# 00:03:57 >  
 

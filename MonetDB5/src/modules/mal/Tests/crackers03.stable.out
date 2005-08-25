@@ -1,92 +1,92 @@
 stdout of test 'crackers03` in directory 'src/modules/mal` itself:
 
 
-# 20:35:03 >  
-# 20:35:03 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=45409 --set sql_port=55183 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  crackers03.mal </dev/null
-# 20:35:03 >  
+# 00:03:54 >  
+# 00:03:54 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33330 --set sql_port=49911 --set xquery_port=56575 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  crackers03.mal </dev/null
+# 00:03:54 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_modules_mal
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## Testing the cracker implementation
-#b:= new(:int,:int);
-#insert(b,10,100);
-#insert(b,1,2);
-#insert(b,6,36);
-#insert(b,5,25);
-#insert(b,2,4);
-#insert(b,3,9);
-#insert(b,7,49);
-#insert(b,8,64);
-#insert(b,4,16);
-#insert(b,9,81);
+#b:= bbp.new(:int,:int);
+#bat.insert(b,10,100);
+#bat.insert(b,1,2);
+#bat.insert(b,6,36);
+#bat.insert(b,5,25);
+#bat.insert(b,2,4);
+#bat.insert(b,3,9);
+#bat.insert(b,7,49);
+#bat.insert(b,8,64);
+#bat.insert(b,4,16);
+#bat.insert(b,9,81);
 #
 #crackers.new(b);
 #crackers.crack(b,9,25);
 ##y:= crackers.crack(b,80,195);
 ##y:= crackers.crack(b,2,2);
 ##y:= crackers.crack(b,20,99);
-#print(b);
+#io.print(b);
 #crackers.info(b);
 #
 ## testing creation of the portions
-#print("Get the first piece");
+#io.print("Get the first piece");
 #(i,view):= crackers.newIterator(b);
-#print(view);
-#print(i);
+#io.print(view);
+#io.print(i);
 #(i,view) := crackers.hasMoreElements(b);
-#print(view);
-#print(i);
+#io.print(view);
+#io.print(i);
 #(i,view) := crackers.hasMoreElements(b);
-#print(view);
-#print(i);
+#io.print(view);
+#io.print(i);
 ##next one doesn;t exist anymore
 ##i:= crackers.nextPiece(b,cidx,view,i);
 ##print(view);
 #crackers.drop(b);
 #
 function user.main():int;	# 0  (main:int)
-# Testing the cracker implementation 	# 1  ($2:str)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($4:int)
-    bat.insert(b,10,100);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(b:bat[:int,:int])($6:int)($7:int)
-    bat.insert(b,1,2);	# 4 BKCinsert_bun ($8:bat[:int,:int])<-(b:bat[:int,:int])($9:int)($10:int)
-    bat.insert(b,6,36);	# 5 BKCinsert_bun ($11:bat[:int,:int])<-(b:bat[:int,:int])($12:int)($13:int)
-    bat.insert(b,5,25);	# 6 BKCinsert_bun ($14:bat[:int,:int])<-(b:bat[:int,:int])($15:int)($16:int)
-    bat.insert(b,2,4);	# 7 BKCinsert_bun ($17:bat[:int,:int])<-(b:bat[:int,:int])($10:int)($18:int)
-    bat.insert(b,3,9);	# 8 BKCinsert_bun ($19:bat[:int,:int])<-(b:bat[:int,:int])($20:int)($21:int)
-    bat.insert(b,7,49);	# 9 BKCinsert_bun ($22:bat[:int,:int])<-(b:bat[:int,:int])($23:int)($24:int)
-    bat.insert(b,8,64);	# 10 BKCinsert_bun ($25:bat[:int,:int])<-(b:bat[:int,:int])($26:int)($27:int)
-    bat.insert(b,4,16);	# 11 BKCinsert_bun ($28:bat[:int,:int])<-(b:bat[:int,:int])($18:int)($29:int)
-    bat.insert(b,9,81);	# 12 BKCinsert_bun ($30:bat[:int,:int])<-(b:bat[:int,:int])($21:int)($31:int)
-    crackers.new(b);	# 13 CRKnew ($32:void)<-(b:bat[:int,:int])
-    crackers.crack(b,9,25);	# 14 CRKcrackRange ($33:int)<-(b:bat[:int,:int])($21:int)($16:int)
-#y:= crackers.crack(b,80,195); 	# 15  ($35:str)
-#y:= crackers.crack(b,2,2); 	# 16  ($37:str)
-#y:= crackers.crack(b,20,99); 	# 17  ($39:str)
-    io.print(b);	# 18 IOprint_val ($40:int)<-(b:bat[:int,:int])
-    crackers.info(b);	# 19 CRKinfo ($41:void)<-(b:bat[:int,:int])
-# testing creation of the portions 	# 20  ($43:str)
-    io.print("Get the first piece");	# 21 IOprint_val ($44:int)<-($45:str)
+# Testing the cracker implementation 	# 1  (_2:str)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
+    bat.insert(b,10,100);	# 3 BKCinsert_bun (_5:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_7:int)
+    bat.insert(b,1,2);	# 4 BKCinsert_bun (_8:bat[:int,:int])<-(b:bat[:int,:int])(_9:int)(_10:int)
+    bat.insert(b,6,36);	# 5 BKCinsert_bun (_11:bat[:int,:int])<-(b:bat[:int,:int])(_12:int)(_13:int)
+    bat.insert(b,5,25);	# 6 BKCinsert_bun (_14:bat[:int,:int])<-(b:bat[:int,:int])(_15:int)(_16:int)
+    bat.insert(b,2,4);	# 7 BKCinsert_bun (_17:bat[:int,:int])<-(b:bat[:int,:int])(_10:int)(_18:int)
+    bat.insert(b,3,9);	# 8 BKCinsert_bun (_19:bat[:int,:int])<-(b:bat[:int,:int])(_20:int)(_21:int)
+    bat.insert(b,7,49);	# 9 BKCinsert_bun (_22:bat[:int,:int])<-(b:bat[:int,:int])(_23:int)(_24:int)
+    bat.insert(b,8,64);	# 10 BKCinsert_bun (_25:bat[:int,:int])<-(b:bat[:int,:int])(_26:int)(_27:int)
+    bat.insert(b,4,16);	# 11 BKCinsert_bun (_28:bat[:int,:int])<-(b:bat[:int,:int])(_18:int)(_29:int)
+    bat.insert(b,9,81);	# 12 BKCinsert_bun (_30:bat[:int,:int])<-(b:bat[:int,:int])(_21:int)(_31:int)
+    crackers.new(b);	# 13 CRKnew (_32:void)<-(b:bat[:int,:int])
+    crackers.crack(b,9,25);	# 14 CRKcrackRange (_33:int)<-(b:bat[:int,:int])(_21:int)(_16:int)
+#y:= crackers.crack(b,80,195); 	# 15  (_35:str)
+#y:= crackers.crack(b,2,2); 	# 16  (_37:str)
+#y:= crackers.crack(b,20,99); 	# 17  (_39:str)
+    io.print(b);	# 18 IOprint_val (_40:int)<-(b:bat[:int,:int])
+    crackers.info(b);	# 19 CRKinfo (_41:void)<-(b:bat[:int,:int])
+# testing creation of the portions 	# 20  (_43:str)
+    io.print("Get the first piece");	# 21 IOprint_val (_44:int)<-(_45:str)
     (i,view):= crackers.newIterator(b);	# 22 CRKnewIterator (i:lng)(view:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(view);	# 23 IOprint_val ($48:int)<-(view:bat[:int,:int])
-    io.print(i);	# 24 IOprint_val ($49:int)<-(i:lng)
+    io.print(view);	# 23 IOprint_val (_48:int)<-(view:bat[:int,:int])
+    io.print(i);	# 24 IOprint_val (_49:int)<-(i:lng)
     (i,view):= crackers.hasMoreElements(b);	# 25 CRKhasMoreElements (i:lng)(view:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(view);	# 26 IOprint_val ($50:int)<-(view:bat[:int,:int])
-    io.print(i);	# 27 IOprint_val ($51:int)<-(i:lng)
+    io.print(view);	# 26 IOprint_val (_50:int)<-(view:bat[:int,:int])
+    io.print(i);	# 27 IOprint_val (_51:int)<-(i:lng)
     (i,view):= crackers.hasMoreElements(b);	# 28 CRKhasMoreElements (i:lng)(view:bat[:int,:int])<-(b:bat[:int,:int])
-    io.print(view);	# 29 IOprint_val ($52:int)<-(view:bat[:int,:int])
-    io.print(i);	# 30 IOprint_val ($53:int)<-(i:lng)
-#next one doesn;t exist anymore 	# 31  ($55:str)
-#i:= crackers.nextPiece(b,cidx,view,i); 	# 32  ($57:str)
-#print(view); 	# 33  ($59:str)
-    crackers.drop(b);	# 34 CRKdropPiece ($60:void)<-(b:bat[:int,:int])
+    io.print(view);	# 29 IOprint_val (_52:int)<-(view:bat[:int,:int])
+    io.print(i);	# 30 IOprint_val (_53:int)<-(i:lng)
+#next one doesn;t exist anymore 	# 31  (_55:str)
+#i:= crackers.nextPiece(b,cidx,view,i); 	# 32  (_57:str)
+#print(view); 	# 33  (_59:str)
+    crackers.drop(b);	# 34 CRKdropPiece (_60:void)<-(b:bat[:int,:int])
 end main;	# 35  
 #-----------------#
-# h	tmp_4	  # name
+# h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
@@ -106,14 +106,14 @@ end main;	# 35
  [   3  13, L, 0 26, 2147483647, 5, 9, -1, -1, -1 ]
  [ "Get the first piece" ]
 #-----------------#
-# h	tmp_5	  # name
+# h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 1,	  2	  ]
 [ 2,	  4	  ]
 [ 2 ]
 #-----------------#
-# h	tmp_5	  # name
+# h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 3,	  9	  ]
@@ -121,7 +121,7 @@ end main;	# 35
 [ 4,	  16	  ]
 [ 3 ]
 #-----------------#
-# h	tmp_5	  # name
+# h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 6,	  36	  ]
@@ -131,7 +131,7 @@ end main;	# 35
 [ 9,	  81	  ]
 [ 4 ]
 
-# 22:47:36 >  
-# 22:47:36 >  Done.
-# 22:47:36 >  
+# 00:03:54 >  
+# 00:03:54 >  Done.
+# 00:03:54 >  
 
