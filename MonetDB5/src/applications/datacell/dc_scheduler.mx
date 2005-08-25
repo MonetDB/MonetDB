@@ -82,8 +82,6 @@ comment "Show the status of the datacell schedulers";
 #include "dc_receptor.h"
 #include "dc_emitter.h"
 
-extern str DCnaiveScheduler(int *ret, int *tries, int *delay);
-
 #define MAXBUF 1024
 mal_export str DCschedulerLog(int *ret, str *expr);
 mal_export str DCstartScheduler(int *ret, int *delay);

@@ -117,24 +117,24 @@ atoms_export size_t blobsize(size_t nitems);
 
 #ifdef _MSC_VER
 #ifndef LIBBLOB
-#define atoms_export extern __declspec(dllimport)
+#define blob_export extern __declspec(dllimport)
 #else
-#define atoms_export extern __declspec(dllexport)
+#define blob_export extern __declspec(dllexport)
 #endif
 #else
-#define atoms_export extern
+#define blob_export extern
 #endif
 
-atoms_export int BLOBtostr(str *tostr, int *l, blob **pin);
-atoms_export int BLOBfromstr(char *instr, int *l, blob **val);
-atoms_export int BLOBnequal(blob *l, blob *r);
-atoms_export hash_t BLOBhash(blob *b);
-atoms_export blob * BLOBnull();
-atoms_export void BLOBconvert(blob *b, int direction);
-atoms_export var_t BLOBput(Heap *h, var_t *bun, blob *val);
-atoms_export void BLOBdel(Heap *h, var_t *index);
-atoms_export int BLOBlength(blob *p);
-atoms_export void BLOBheap(Heap *heap, size_t capacity);
+blob_export int BLOBtostr(str *tostr, int *l, blob **pin);
+blob_export int BLOBfromstr(char *instr, int *l, blob **val);
+blob_export int BLOBnequal(blob *l, blob *r);
+blob_export hash_t BLOBhash(blob *b);
+blob_export blob * BLOBnull();
+blob_export void BLOBconvert(blob *b, int direction);
+blob_export var_t BLOBput(Heap *h, var_t *bun, blob *val);
+blob_export void BLOBdel(Heap *h, var_t *index);
+blob_export int BLOBlength(blob *p);
+blob_export void BLOBheap(Heap *heap, size_t capacity);
 
 size_t
 blobsize(size_t nitems)
