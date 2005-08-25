@@ -462,44 +462,44 @@ command year(d:date) :int
 address MTIMEdate_extract_year 
 comment "extracts year from date (nonzero 
 	value between -5867411 and +5867411).";
-command year(d:bat[:any$1,:date]):bat[:any$1,:int]
+command year(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_year_bulk;
 
 command month(d:date) :int 
 address MTIMEdate_extract_month 
 comment "extracts month from date";
-command month(d:bat[:any$1,:date]):bat[:any$1,:int]
+command month(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_month_bulk;
 
 command day(d:date) :int 
 address MTIMEdate_extract_day 
 comment "extracts day from date ";
-command day(d:bat[:any$1,:date]):bat[:any$1,:int]
+command day(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_day_bulk;
 
 # daytime
 command hours(h:daytime) :int 
 address MTIMEdaytime_extract_hours 
 comment "extracts hour from daytime";
-command hours(d:bat[:any$1,:date]):bat[:any$1,:int]
+command hours(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdaytime_extract_hours_bulk;
 
 command minutes(d:daytime) :int 
 address MTIMEdaytime_extract_minutes 
 comment "extracts minutes from daytime";
-command minutes(d:bat[:any$1,:date]):bat[:any$1,:int]
+command minutes(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdaytime_extract_minutes_bulk;
 
 command seconds(d:daytime) :int 
 address MTIMEdaytime_extract_seconds 
 comment "extracts seconds from daytime";
-command seconds(d:bat[:any$1,:date]):bat[:any$1,:int]
+command seconds(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdaytime_extract_seconds_bulk;
 
 command milliseconds(d:daytime) :int 
 address MTIMEdaytime_extract_milliseconds 
 comment "extracts milliseconds from daytime";
-command milliseconds(d:bat[:any$1,:date]):bat[:any$1,:int]
+command milliseconds(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdaytime_extract_milliseconds_bulk;
 
 # timestamp
