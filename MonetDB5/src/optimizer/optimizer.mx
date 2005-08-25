@@ -169,8 +169,8 @@ routines, i.e. those not covered by the current backend.
 The most important one is the multi-path join, which should
 be optimized to reduce a potential exploding size/
 @mal
-pattern algebra.joinPath(b:bat[:any$1,:any$2], 
-        aliasRemoval:bat[:any$2,:any$3]...):bat[:any$1,:any$3]
+pattern algebra.joinPath(b:bat[:any_1,:any_2], 
+        aliasRemoval:bat[:any_2,:any_3]...):bat[:any_1,:any_3]
 address QOTjoinPath
 comment "Evaluate a join path.";
 
