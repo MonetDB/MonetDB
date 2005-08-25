@@ -1376,39 +1376,39 @@ RSwriteBlock(int *retval, int *handle, lng *upper, lng *lower)
 			switch (col->bat->ttype) {
 				case TYPE_bit:
 					@:MX-writeNull(*(unsigned char *) p == bit_nil)@
-						bt = stream_printf(s, "%d", (*(unsigned char *) p ? 1 : 0));
+					bt = stream_printf(s, "%d", (*(unsigned char *) p ? 1 : 0));
 					break;
 				case TYPE_chr:
 					@:MX-writeNull(*(char *) p == chr_nil)@
-						bt = stream_printf(s, "%c", *(char *) p);
+					bt = stream_printf(s, "%c", *(char *) p);
 					break;
 				case TYPE_str:
 					@:MX-writeNull(strNil(p))@
-						bt = stream_printf(s, "%d:%s", strlen(p), p);
+					bt = stream_printf(s, "%d:%s", strlen(p), p);
 					break;
 				case TYPE_oid:
 					@:MX-writeNull(*(size_t *) p == oid_nil)@
-						bt = stream_printf(s, "%d", *(size_t *) p);
+					bt = stream_printf(s, "%d", *(size_t *) p);
 					break;
 				case TYPE_sht:
 					@:MX-writeNull(*(sht *) p == sht_nil)@
-						bt = stream_printf(s, "%hd", *(sht *) p);
+					bt = stream_printf(s, "%hd", *(sht *) p);
 					break;
 				case TYPE_int:
 					@:MX-writeNull(*(int *) p == int_nil)@
-						bt = stream_printf(s, "%d", *(int *) p);
+					bt = stream_printf(s, "%d", *(int *) p);
 					break;
 				case TYPE_lng:
 					@:MX-writeNull(*(lng *) p == lng_nil)@
-						bt = stream_printf(s, LLFMT, *(lng *) p);
+					bt = stream_printf(s, LLFMT, *(lng *) p);
 					break;
 				case TYPE_flt:
 					@:MX-writeNull(*(flt *) p == flt_nil)@
-						bt = stream_printf(s, "%e", *(flt *) p);
+					bt = stream_printf(s, "%e", *(flt *) p);
 					break;
 				case TYPE_dbl:
 					@:MX-writeNull(*(dbl *) p == dbl_nil)@
-						bt = stream_printf(s, "%e", *(dbl *) p);
+					bt = stream_printf(s, "%e", *(dbl *) p);
 					break;
 				case TYPE_ptr:	/* C pointer! */
 				case TYPE_bat:	/* BAT id: index in BBPcache */
