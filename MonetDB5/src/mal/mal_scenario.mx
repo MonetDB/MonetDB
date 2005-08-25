@@ -263,7 +263,7 @@ getFreeScenario()
 @-
 @= initScen
 if( @1->@2){
-    if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress(@1->@2,1);
+    if( @1->@2Cmd == 0) @1->@2Cmd = (MALfcn)getAddress(@3,@1->@2,1);
 }
 @-
 A scenario is initialized only once per session. 
@@ -283,7 +283,7 @@ initScenario(Client c, Scenario s)
 		/* prepare for conclicts */
 		mal_set_lock(mal_contextLock, "Scenario");
 		if( s->initSystemCmd == 0)
-			s->initSystemCmd = (MALfcn) getAddress(s->initSystem, 0);
+			s->initSystemCmd = (MALfcn) getAddress(s->language, s->initSystem, 0);
 		if (s->initSystemCmd) {
 			msg = (*s->initSystemCmd) (c);
 		}
@@ -291,14 +291,14 @@ initScenario(Client c, Scenario s)
 	}
 	if (msg)
 		return msg;
-	@:initScen(s, exitSystem)@
-	@:initScen(s, initClient)@
-	@:initScen(s, exitClient)@
-	@:initScen(s, reader)@
-	@:initScen(s, parser)@
-	@:initScen(s, optimizer)@
-	@:initScen(s, tactics)@
-	@:initScen(s, engine)@
+	@:initScen(s, exitSystem,s->language)@
+	@:initScen(s, initClient,s->language)@
+	@:initScen(s, exitClient,s->language)@
+	@:initScen(s, reader,s->language)@
+	@:initScen(s, parser,s->language)@
+	@:initScen(s, optimizer,s->language)@
+	@:initScen(s, tactics,s->language)@
+	@:initScen(s, engine,s->language)@
 	fillScenario(c, s);
 
 	return MAL_SUCCEED;
