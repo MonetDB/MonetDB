@@ -126,9 +126,6 @@ for f in ['monet.gif', 'mel.gif']:
     copyfile(os.path.join(srcdir, 'doc', f),
              os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', d, f))
 
-runMx(os.path.join(srcdir, 'src', 'mel'), 'mel',
-      os.path.join(dstdir, 'doc', 'MonetDB', 'TechDocs', 'Core', 'mel'), '-tool')
-
 for f in ['bat.png', 'bat1.png', 'bat2.png']:
     copyfile(os.path.join(srcdir, 'src', 'gdk', f),
              os.path.join(tmpdir, f))
