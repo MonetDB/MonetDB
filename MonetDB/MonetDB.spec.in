@@ -234,11 +234,7 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/monetdb-config*
 %{prefix}/share/%{name}/conf/monet.m4 
 
-%{prefix}/bin/mel
 %{prefix}/bin/calibrator
-%{prefix}/bin/Mx 
-%{prefix}/bin/prefixMxFile 
-%{prefix}/bin/idxmx 
 
 %{prefix}/share/%{name}/Mprofile-commands.lst 
 %{prefix}/share/%{name}/quit.mil 
@@ -253,7 +249,6 @@ rm -fr $RPM_BUILD_ROOT
 %{prefix}/bin/Mtimeout*
 %{prefix}/bin/MkillUsers*
 
-%{prefix}/lib/autogen/* 
 %{prefix}/lib/pkgconfig/MonetDB.pc
 
 %{prefix}/include/%{name}/*.h
