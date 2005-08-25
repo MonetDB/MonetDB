@@ -105,10 +105,6 @@ comment "Merge the instructions stored in the
 @h
 #ifndef _LANGUAGE_H
 #define _LANGUAGE_H
-#endif /* _LANGUAGE_H */
-@c
-
-#include "language.h"
 #include "mal.h"
 #include "mal_assert.h"
 #include "mal_module.h"
@@ -116,6 +112,19 @@ comment "Merge the instructions stored in the
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
+
+mal_export str CMDraise(str *ret, str *msg);
+mal_export str CMDassertProperty(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDevalFile(int *ret, str *fnme);
+mal_export str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDincludeFile(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDdebug(int *ret, int *flg);
+mal_export str CMDsetCwd(str *ret, str *fnme);
+#endif /* _LANGUAGE_H */
+@c
+
+#include "language.h"
 
 str
 CMDraise(str *ret, str *msg)

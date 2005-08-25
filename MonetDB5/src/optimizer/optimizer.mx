@@ -198,8 +198,10 @@ optimizer.prelude();
 #include "mal_namespace.h"
 #include "mal_peephole.h"
 #include "mal_singleton.h"
+#include "mal_multiplex.h"
 #include "mal_emptyset.h"
 #include "mal_costmodel.h"
+#include "mal_macro.h"
 #include "mal_reduce.h"
 
 extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -71,15 +71,27 @@ comment "POSIX pattern matching against a string";
 #include "mal.h"
 #include "mal_exception.h"
 
+
 #ifndef HAVE_LIBPCRE
 
 #define pcre str
+mal_export str PCREcompile_wrap(pcre ** res, str *pattern);
+mal_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
+mal_export str PCREselect(int *res, str *pattern, int *bid);
+mal_export str PCREmatch(bit *ret, str *val, str *pat);
 mal_export str PCREfromstr(str instr, int *l, pcre ** val);
 mal_export str PCREcompile_wrap(pcre ** res, str *pattern);
 mal_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
 mal_export str PCREselect(int *res, str *pattern, int *bid);
 mal_export str PCREmatch(bit *ret, str *val, str *pat);
-
+mal_export int pcre_tostr(str *tostr, int *l, pcre * p);
+mal_export int pcre_fromstr(str instr, int *l, pcre ** val);
+mal_export int pcre_nequal(pcre * l, pcre * r);
+mal_export hash_t pcre_hash(pcre * b);
+mal_export pcre * pcre_null(void);
+mal_export void pcre_del(Heap *h, var_t *index);
+mal_export int pcre_length(pcre * p);
+mal_export void pcre_heap(Heap *heap, size_t capacity);
 
 int
 pcre_compile_wrap(pcre ** res, str pattern)
@@ -138,11 +150,23 @@ pcre_match(bit *ret, str *val, str *pat)
 #include <regex.h>
 #include <pcre.h>
 
+mal_export str PCREcompile_wrap(pcre ** res, str *pattern);
+mal_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
+mal_export str PCREselect(int *res, str *pattern, int *bid);
+mal_export str PCREmatch(bit *ret, str *val, str *pat);
 mal_export str PCREfromstr(str instr, int *l, pcre ** val);
 mal_export str PCREcompile_wrap(pcre ** res, str *pattern);
 mal_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
 mal_export str PCREselect(int *res, str *pattern, int *bid);
 mal_export str PCREmatch(bit *ret, str *val, str *pat);
+mal_export int pcre_tostr(str *tostr, int *l, pcre * p);
+mal_export int pcre_fromstr(str instr, int *l, pcre ** val);
+mal_export int pcre_nequal(pcre * l, pcre * r);
+mal_export hash_t pcre_hash(pcre * b);
+mal_export pcre * pcre_null(void);
+mal_export void pcre_del(Heap *h, var_t *index);
+mal_export int pcre_length(pcre * p);
+mal_export void pcre_heap(Heap *heap, size_t capacity);
 
 #define m2p(p) (pcre*)(((sht*)p)+1)
 #define p2m(p) (pcre*)(((sht*)p)-1)

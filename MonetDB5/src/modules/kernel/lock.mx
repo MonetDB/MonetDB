@@ -95,6 +95,7 @@ destroy_lock(monet_lock *l)
 The old code base is wrapped to ease update propagation.
 @c
 #include "mal.h"
+mal_export int lockToStr(char **dst, int *len, ptr *src);
 int
 lockToStr(char **dst, int *len, ptr *src)
 {

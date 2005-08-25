@@ -1,24 +1,19 @@
 stdout of test 'test_70` in directory 'tests/suite_00` itself:
 
-#> Mtest (20:57:33):	milS test_70 milS
-#> Mtest (20:57:33):	Mtimeout -timeout 600 Mserver -modulesilent -yaccsilent -d8 -db tests_suite_00 -single test_70.milS
-# Monet Database Server V4.2
-# Copyright (c) 1993-1999, CWI & SION. All rights reserved.
-# compiled for i686-pc-linux-gnu/32bit.
-#script:test_70.milS
 
-# 10:37:51 >  
-# 10:37:51 >  Mtimeout -timeout 60 Mserver "--config=/home/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/home/mk/monet5/Linux/lib/MonetDB5:/home/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/home/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/home/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=41613 --set sql_port=56531 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_70.mal </dev/null
-# 10:37:51 >  
+# 23:54:08 >  
+# 23:54:08 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34545 --set sql_port=41013 --set xquery_port=57822 --set monet_prompt= --trace --dbname=mTests_tests_suite_00  test_70.mal </dev/null
+# 23:54:08 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit; dynamically linked.
-# config:/home/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/home/mk/monet5/Linux/var/MonetDB5/dbfarm
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_tests_suite_00
-# Visit http://monetdb.cwi.nl for further information.
+# Visit http://monetdb.cwi.nl/ for further information.
 ## Monet Mil to Mal compiler
+#include mil;
 ## Copyright (c) 2001-2004, CWI. All rights reserved.
 #
 ##Predefined code segment
@@ -29,95 +24,83 @@ stdout of test 'test_70` in directory 'tests/suite_00` itself:
 ##- upon advice of M2m to remap identifiers, change it in your program directly
 ##use the "mil_schema" for additional support routines
 #	mil.line("setoid(oid(20000000));");
-#	aa_a := oid(20000000);
-#	ba_a := setoid(aa_a);
+#	aa_a := calc.oid(20000000);
+#	ba_a := calc.setoid(aa_a);
 #	mil.line("#This collection of examples is geared at the support\n");
 #	mil.line("#of the data mining tool\n");
-#	mil.line("var b:= new(int,int);");
-#	b := new(nil:int,nil:int);
+#	mil.line("var b:= bbp.new(int,int);");
+#	b := bbp.new(nil:int,nil:int);
 #	mil.line("b.insert(1,15);");
-#	ca_a := insert(b,1,15);
+#	ca_a := bat.insert(b,1,15);
 #	mil.line("b.insert(2,15);");
-#	da_a := insert(b,2,15);
+#	da_a := bat.insert(b,2,15);
 #	mil.line("b.sum().print();");
-#	ea_a := sum(b);
-#	fa_a := print(ea_a);
+#	ea_a := algebra.sum(b);
+#	fa_a := io.print(ea_a);
 #	mil.line("b.insert(3,int(nil));");
-#	ga_a := int(nil);
-#	ha_a := insert(b,3,ga_a);
+#	ga_a := calc.int(nil);
+#	ha_a := bat.insert(b,3,ga_a);
 #	mil.line("b.sum().print();");
-#	ia_a := sum(b);
-#	ja_a := print(ia_a);
+#	ia_a := algebra.sum(b);
+#	ja_a := io.print(ia_a);
 #	mil.line("b.insert(4,15);");
-#	ka_a := insert(b,4,15);
+#	ka_a := bat.insert(b,4,15);
 #	mil.line("b.insert(5,25);");
-#	la_a := insert(b,5,25);
+#	la_a := bat.insert(b,5,25);
 #	mil.line("b.insert(6,36);");
-#	ma_a := insert(b,6,36);
+#	ma_a := bat.insert(b,6,36);
 #	mil.line("b.insert(7,49);");
-#	na_a := insert(b,7,49);
+#	na_a := bat.insert(b,7,49);
 #	mil.line("b.insert(8,64);");
-#	oa_a := insert(b,8,64);
+#	oa_a := bat.insert(b,8,64);
 #	mil.line("b.insert(9,int(nil));");
-#	pa_a := int(nil);
-#	qa_a := insert(b,9,pa_a);
+#	pa_a := calc.int(nil);
+#	qa_a := bat.insert(b,9,pa_a);
 #	mil.line("var t:= b.histogram();");
-#	t := histogram(b);
+#	t := algebra.histogram(b);
 #	mil.line("t.print();");
-#	ra_a := print(t);
+#	ra_a := io.print(t);
 #	mil.line("commit();");
-#	sa_a := commit();
-#	mil.line("var s:= new(int,str);");
-#	s := new(nil:int,nil:str);
+#	sa_a := transaction.commit();
+#	mil.line("var s:= bbp.new(int,str);");
+#	s := bbp.new(nil:int,nil:str);
 #	mil.line("insert(s,1,\"hello\");");
-#	ta_a := insert(s,1,"hello");
+#	ta_a := bat.insert(s,1,"hello");
 #	mil.line("insert(s,2,\"hello\");");
-#	ua_a := insert(s,2,"hello");
+#	ua_a := bat.insert(s,2,"hello");
 #	mil.line("insert(s,3,\"hello\");");
-#	va_a := insert(s,3,"hello");
+#	va_a := bat.insert(s,3,"hello");
 #	mil.line("insert(s,4,\"dello\");");
-#	wa_a := insert(s,4,"dello");
+#	wa_a := bat.insert(s,4,"dello");
 #	mil.line("insert(s,5,\"eello\");");
-#	xa_a := insert(s,5,"eello");
+#	xa_a := bat.insert(s,5,"eello");
 #	mil.line("insert(s,6,\"fello\");");
-#	ya_a := insert(s,6,"fello");
+#	ya_a := bat.insert(s,6,"fello");
 #	mil.line("insert(s,7,\"fello\");");
-#	ab_a := insert(s,7,"fello");
+#	ab_a := bat.insert(s,7,"fello");
 #	mil.line("insert(s,8,\"fello\");");
-#	bb_a := insert(s,8,"fello");
+#	bb_a := bat.insert(s,8,"fello");
 #	mil.line("var t2:= s.histogram();");
-#	t2 := histogram(s);
+#	t2 := algebra.histogram(s);
 #	mil.line("t2.print();");
-#	cb_a := print(t2);
+#	cb_a := io.print(t2);
 #	mil.line("#It requires a few additional routines\n");
-#	c := new(nil:int,nil:int);
+#	c := bbp.new(nil:int,nil:int);
 #	mil.line("c.insert(1,15);");
-#	db_a := insert(c,1,15);
+#	db_a := bat.insert(c,1,15);
 #	mil.line("c.insert(2,15);");
-#	eb_a := insert(c,2,15);
+#	eb_a := bat.insert(c,2,15);
 #	mil.line("c.insert(3,int(nil));");
-#	fb_a := int(nil);
-#	gb_a := insert(c,3,fb_a);
+#	fb_a := calc.int(nil);
+#	gb_a := bat.insert(c,3,fb_a);
 #	mil.line("c.insert(4,0);");
-#	hb_a := insert(c,4,0);
+#	hb_a := bat.insert(c,4,0);
 #	mil.line("c.insert(5,30);");
-#	ib_a := insert(c,5,30);
+#	ib_a := bat.insert(c,5,30);
 #	mil.line("c.print();");
-#	jb_a := print(c);
-#	mil.line("var d:= [<](b,c);");
-#	d := multiplex.tactics("<",b,c);
-#	mil.line("d.print();");
-#	kb_a := print(d);
-#	mil.line("d:= [<](c,b);");
-#	d := multiplex.tactics("<",c,b);
-#	mil.line("d.print();");
-#	lb_a := print(d);
-#	mil.line("d:= [>](c,b);");
-#	d := multiplex.tactics(">",c,b);
-#	mil.line("d.print();");
-#	mb_a := print(d);
+#	jb_a := io.print(c);
 #	mil.line("quit();");
-#	nb_a := quit();
+#	nb_a := clients.quit();
 #
 function user.main():int;	# 0  (main:int)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  ($32:str)
@@ -208,9 +191,9 @@ function user.main():int;	# 0  (main:int)
     nb_a := clients.quit();	# 86 CLTquit (nb_a:void)
 end main;	# 87  
 #setoid(oid(20000000));
-##This collection of examples is geared at the support
-##of the data mining tool
-#var b:= new(int,int);
+##This collection of examples is geared at the support\n
+##of the data mining tool\n
+#var b:= bbp.new(int,int);
 #b.insert(1,15);
 #b.insert(2,15);
 #b.sum().print();
@@ -227,8 +210,8 @@ end main;	# 87
 #var t:= b.histogram();
 #t.print();
 #-----------------#
-# BAT:	  tmp_23  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 15,	  3	  ]
 [ nil,	  2	  ]
@@ -237,26 +220,26 @@ end main;	# 87
 [ 49,	  1	  ]
 [ 64,	  1	  ]
 #commit();
-#var s:= new(int,str);
-#insert(s,1,"hello");
-#insert(s,2,"hello");
-#insert(s,3,"hello");
-#insert(s,4,"dello");
-#insert(s,5,"eello");
-#insert(s,6,"fello");
-#insert(s,7,"fello");
-#insert(s,8,"fello");
+#var s:= bbp.new(int,str);
+#insert(s,1,\"hello\");
+#insert(s,2,\"hello\");
+#insert(s,3,\"hello\");
+#insert(s,4,\"dello\");
+#insert(s,5,\"eello\");
+#insert(s,6,\"fello\");
+#insert(s,7,\"fello\");
+#insert(s,8,\"fello\");
 #var t2:= s.histogram();
 #t2.print();
 #-------------------------#
-# BAT:		  tmp_26  #
-# (str)		  (int)	  #
+# h		t	  # name
+# str		int	  # type
 #-------------------------#
 [ "hello",	  3	  ]
 [ "dello",	  1	  ]
 [ "eello",	  1	  ]
 [ "fello",	  3	  ]
-##It requires a few additional routines
+##It requires a few additional routines\n
 #c.insert(1,15);
 #c.insert(2,15);
 #c.insert(3,int(nil));
@@ -264,8 +247,8 @@ end main;	# 87
 #c.insert(5,30);
 #c.print();
 #-----------------#
-# BAT:	  tmp_23  #
-# (int)	  (int)	  #
+# h	t	  # name
+# int	int	  # type
 #-----------------#
 [ 1,	  15	  ]
 [ 2,	  15	  ]
@@ -274,7 +257,7 @@ end main;	# 87
 [ 5,	  30	  ]
 #quit();
 
-# 15:37:28 >  
-# 15:37:28 >  Done.
-# 15:37:28 >  
+# 23:54:08 >  
+# 23:54:08 >  Done.
+# 23:54:08 >  
 

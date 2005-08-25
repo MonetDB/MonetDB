@@ -1765,6 +1765,7 @@ bunins_failed:
 	BBPunfix(ib->batCacheid);
 	return MAL_SUCCEED;
 }
+mal_export str CMDprojecthead_@1(int *ret,ptr *val, int *iid);
 str CMDprojecthead_@1(int *ret,ptr *val, int *iid){
 	BAT *ib, *bn;
 	int xx;

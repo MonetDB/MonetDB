@@ -654,6 +654,7 @@ mal_export char *BKCinsert_void_bun(int *r, int *bid, ptr t);
 mal_export char *BKCinsert_bun(int *r, int *bid, ptr h, ptr t);
 mal_export char *BKCdelete(int *r, int *bid, ptr h);
 mal_export char *BKCdelete_bat(int *r, int *bid, int *bnid);
+mal_export char *BKCdelete_bun(int *r, int *bid, ptr h, ptr t);
 mal_export char *BKCdestroy(signed char *r, int *bid);
 mal_export char *BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid);
 mal_export char * BKCbat_append_val_wrap(int *r, int *bid, ptr u);

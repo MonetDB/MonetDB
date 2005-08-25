@@ -263,7 +263,7 @@ mal_export str CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mal_export str CMDBATderivedByName(int *ret, str *nme);
 mal_export str CMDBATnewint(MalBlkPtr m, MalStkPtr s, InstrPtr p);
 mal_export str CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDBBPprojectNil(int *ret, int *bid);
 mal_export str CMDbbpGetObjects(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbpNames(int *ret);
 mal_export str CMDbbpName(str *ret, int *bid);

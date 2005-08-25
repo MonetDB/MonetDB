@@ -199,7 +199,9 @@ mal_export str IOprint_oid(int *ret, ptr fmt, oid *s);
 mal_export str IOprint_formatted_bit(int *ret, ptr fmt, bit *s);
 mal_export str IOexport(int *ret, int *bid, str *fnme);
 mal_export str IOimport(int *ret, int *bid, str *fnme);
-
+mal_export str io_stdin(stream **ret);
+mal_export str io_stdout(stream **ret);
+mal_export str io_stderr(stream **ret);
 @+ Printing
 The print commands are implemented as single instruction rules,
 because they need access to the calling context.

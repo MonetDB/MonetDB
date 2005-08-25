@@ -15,13 +15,6 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@' 
-@' Contributor(s):
-@' 		Martin Kersten <Martin.Kersten@cwi.nl>
-@' 		Peter Boncz <Peter.Boncz@cwi.nl>
-@' 		Niels Nes <Niels.Nes@cwi.nl>
-@' 		Stefan Manegold  <Stefan.Manegold@cwi.nl>
-
 @f mapi
 @a N.J. Nes P. Boncz, S. Mullender
 @v 1.1
@@ -127,6 +120,24 @@ address mapi_epilogue;
 #define MAPISSLPORT		40000
 #define MAPIMAXUSERS 		5
 
+mal_export str MAPIlistenThread(int *Sock);
+mal_export str MAPIlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd);
+mal_export bat * mapi_prelude(void);
+mal_export void mapi_epilogue(void);
+mal_export str MAPIlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd);
+mal_export str MAPIlisten_default(int *ret);
+mal_export str MAPIlisten2(int *ret, int *port, int *maxusers);
+mal_export str MAPIlisten3(int *ret, int *port, int *maxusers, str *cmd);
+mal_export str MAPIlisten_port(int *ret, int *pid);
+mal_export str MAPIstop(int *ret, int *id);
+mal_export str MAPIstopClient(int *ret, str *nme);
+mal_export str MAPIsuspendClient(int *ret, int *skey, int *timeout);
+mal_export str MAPIresumeClient(int *ret, int *skey);
+mal_export str MAPItrace2(int *ret, str *nme, int *flg);
+mal_export str MAPItrace(int *res, int *flg);
+mal_export str MAPIsuspend(int *res, int *skey, int *timeout);
+mal_export str MAPIresume(int *res, int *skey);
+
 #endif /* MAPI_H */
 @c
 #include "mapi.h"
@@ -164,7 +175,6 @@ address mapi_epilogue;
 static char *threadcommand;
 static int usock = -1;
 
-mal_export str MAPIlistenThread(int *Sock);
 str
 MAPIlistenThread(int *Sock)
 {
@@ -308,7 +318,6 @@ MAPIlistenThread(int *Sock)
 	return throwMessage("mapi.listen", msg);
 }
 
-mal_export str MAPIlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd);
 str
 MAPIlisten(int *Port, str *Usockfile, int *Maxusers, str *Cmd)
 {
@@ -525,7 +534,6 @@ mapi_epilogue(void)
 #endif /* HAVE_OPENSSL */
 }
 
-mal_export str MAPIlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd);
 str
 MAPIlistenSSL(int *Port, int *Maxusers, str keyfile, str certfile, str cmd)
 {
@@ -797,7 +805,6 @@ stream_read_until(str *res, stream *S, str stop)
 @- Wrappers
 The Monet Version 5 wrappers are collected here
 @c
-mal_export str MAPIlisten_default(int *ret);
 str
 MAPIlisten_default(int *ret)
 {
@@ -808,7 +815,6 @@ MAPIlisten_default(int *ret)
 	return MAPIlisten(&port, 0, &maxusers, 0);
 }
 
-mal_export str MAPIlisten2(int *ret, int *port, int *maxusers);
 str
 MAPIlisten2(int *ret, int *port, int *maxusers)
 {
@@ -816,7 +822,6 @@ MAPIlisten2(int *ret, int *port, int *maxusers)
 	return MAPIlisten(port, 0, maxusers, 0);
 }
 
-mal_export str MAPIlisten3(int *ret, int *port, int *maxusers, str *cmd);
 str
 MAPIlisten3(int *ret, int *port, int *maxusers, str *cmd)
 {
@@ -824,7 +829,6 @@ MAPIlisten3(int *ret, int *port, int *maxusers, str *cmd)
 	return MAPIlisten(port, 0, maxusers, cmd);
 }
 
-mal_export str MAPIlisten_port(int *ret, int *pid);
 str
 MAPIlisten_port(int *ret, int *pid)
 {
@@ -839,7 +843,6 @@ MAPIlisten_port(int *ret, int *pid)
 An internet connection may be terminated from the server console.
 And killing the administrator this way is prohibited.
 @c
-mal_export str MAPIstop(int *ret, int *id);
 str
 MAPIstop(int *ret, int *id)
 {
@@ -847,7 +850,6 @@ MAPIstop(int *ret, int *id)
 	return stopClientIndex(getClient(), *id);
 }
 
-mal_export str MAPIstopClient(int *ret, str *nme);
 str
 MAPIstopClient(int *ret, str *nme)
 {
@@ -855,7 +857,6 @@ MAPIstopClient(int *ret, str *nme)
 	return stopClient(getClient(), *nme);
 }
 
-mal_export str MAPIsuspendClient(int *ret, int *skey, int *timeout);
 str
 MAPIsuspendClient(int *ret, int *skey, int *timeout)
 {
@@ -863,7 +864,6 @@ MAPIsuspendClient(int *ret, int *skey, int *timeout)
 	return suspendClient(getClient(), *skey, *timeout);
 }
 
-mal_export str MAPIresumeClient(int *ret, int *skey);
 str
 MAPIresumeClient(int *ret, int *skey)
 {
@@ -877,7 +877,6 @@ side. At least as far as it concerns requests received.
 The kernel supports this 'spying' behavior with a file descriptor
 field in the client record.
 @c
-mal_export str MAPItrace2(int *ret, str *nme, int *flg);
 str
 MAPItrace2(int *ret, str *nme, int *flg)
 {
@@ -886,7 +885,6 @@ MAPItrace2(int *ret, str *nme, int *flg)
 	return MAL_SUCCEED;
 }
 
-mal_export str MAPItrace(int *res, int *flg);
 str
 MAPItrace(int *res, int *flg)
 {
@@ -895,7 +893,6 @@ MAPItrace(int *res, int *flg)
 	return MAL_SUCCEED;
 }
 
-mal_export str MAPIsuspend(int *res, int *skey, int *timeout);
 str
 MAPIsuspend(int *res, int *skey, int *timeout)
 {
@@ -905,7 +902,6 @@ MAPIsuspend(int *res, int *skey, int *timeout)
 	return MAL_SUCCEED;
 }
 
-mal_export str MAPIresume(int *res, int *skey);
 str
 MAPIresume(int *res, int *skey)
 {

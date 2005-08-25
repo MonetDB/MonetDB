@@ -169,6 +169,7 @@ str.STRprelude();
 #include "mal.h"
 #include "ctype.h"
 
+mal_export bat *strPrelude(void);
 mal_export str STRtostr(str *res, str *src);
 mal_export str STRConcat(str *res, str *val1, str *val2);
 mal_export str STRLength(int *res, str *arg1);

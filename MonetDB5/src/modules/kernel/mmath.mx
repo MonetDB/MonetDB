@@ -444,6 +444,9 @@ math_unary_FINITE(bit *res, dbl *a)
 Wrapping around the M4 code base
 @c
 #include "mal.h"
+mal_export int math_unary_FINITE(bit *res, dbl *a);
+mal_export int math_unary_ISNAN(bit *res, dbl *a);
+mal_export int math_unary_ISINF(int *res, dbl *a);
 @-
 @= unopbaseM5
 mal_export str MATHunary@1@3(@3 *res , @3 *a );
