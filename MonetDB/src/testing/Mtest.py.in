@@ -1995,6 +1995,11 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
+if os.name == "nt":
+    devnull = 'C:nul'
+else:
+    devnull = '/dev/null'
+
 def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MkillUsers, ME) :
     quiet = env['QUIET']
     ATJOB2 = ""
@@ -2101,7 +2106,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             for f in d:
                 if test.match(f):
                     if CALL == "mal":
-                        RunIt(cmd+f+" </dev/null", "", ClntOutFile, ClntErrFile)
+                        RunIt("%s%s < %s" % (cmd, f, devnull), "", ClntOutFile, ClntErrFile)
                     elif env['VERSION'] >= 49900:
                         RunIt(cmd+" --dbinit=\"include mil_scenario; mil();\" "+f+" </dev/null", "", ClntOutFile, ClntErrFile)
                     else:
@@ -2304,7 +2309,7 @@ def CheckExec(cmd) :
     for p in os.environ['PATH'].split(os.pathsep):
         x = isexecutable(os.path.join(p,cmd))
         if x[0]:
-            return os.path.join(p,cmd+x[1])
+            return '"%s"' % os.path.join(p,cmd+x[1])
     return ""
 ### CheckExec(cmd) #
 
