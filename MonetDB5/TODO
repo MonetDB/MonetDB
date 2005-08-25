@@ -5,6 +5,7 @@ Pathfinder support
   not well covered by the type system.  (tst800)
 
 - add intelligent help (partial matching signatures)
+- use name completion to ease construction of MAL instructions.
 - module should make exceptions thrown explicit
 
 - DD: factor out the error handling to prepare for internationalization
@@ -23,8 +24,6 @@ facilitate flow analysis
 - introduce inplace algebraic variants
 
 MIL 5
-property management checked extended met hasnil? nonil?
-enum is replaced by encode/decode and rest by user
 - reduce the symbol table during chkFlow as well to save
 on stack initialization and garbage collection cost
 
@@ -42,6 +41,7 @@ MAL language issues
 action.
 - Modules should make the expections being thrown explicit
 - Expand the property management infrastructure. tst3K serie
+- make all polymorphic types explicit.
 
 - a hard bug appears in the following case
   via MapiClient Tapestry_1M-2
@@ -77,6 +77,7 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20050825 Windows port works
 20050728 reference counting is still not ok, see tst220
 20050723 the user defined variable types are retained
 20050720 turn properties into simple terms (e.g. cnt<1)
