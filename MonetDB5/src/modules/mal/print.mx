@@ -602,8 +602,8 @@ IOprint_formatted_lng(int *ret, str *format, lng *val)
 				newformat[i] = 0;
 				stream_printf(fd, newformat, "nil");
 			} else {
-				newformat[i++] = 'd';
-				newformat[i] = 0;
+				char *f= LLFMT;
+				strcpy(newformat+i,f+1);
 				stream_printf(fd, newformat, *val);
 			}
 		} else
