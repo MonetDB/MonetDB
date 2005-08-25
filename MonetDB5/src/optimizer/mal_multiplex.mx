@@ -84,32 +84,6 @@ a valid program.
 
 extern str OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-str
-OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	InstrPtr *old, p;
-	int i, limit;
-	lng clk = GDKusec();
-
-	(void) stk;
-	(void) pci;
-	old = mb->stmt;
-
-	limit = mb->stop;
-	newMalBlkStmt(mb, mb->stop);
-	for (i = 0; i < limit; i++) {
-		p = old[i];
-		if (moduleId(p) == putName("optimizer", 9) && functionId(p) == putName("multiplex", 9)) {
-			OPTexpandMultiplex(mb, stk, p);
-			freeInstruction(p);
-		} else
-			pushInstruction(mb, p);
-	}
-	GDKfree(old);
-	optimizerCheck(mb, "optimizer.multiplex", 1, GDKusec() - clk);
-	return MAL_SUCCEED;
-}
-
 @-
 The generic solution to the multiplex operators is to translate
 them to a MAL loop. 

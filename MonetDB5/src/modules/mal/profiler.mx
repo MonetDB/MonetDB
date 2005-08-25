@@ -86,7 +86,7 @@ command openStream(fnme:str)
 address CMDsetProfilerStream
 comment "Send the log events to a file ";
 command closeStream():void 
-address closeProfilerStream
+address CMDcloseProfilerStream
 comment "Stop sending the event records";
 
 command setAll():void

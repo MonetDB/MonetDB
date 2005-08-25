@@ -219,6 +219,7 @@ mal_export str QOTshowFlowGraph(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str QOTshowPlan(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export size_t QOTjoinEstimate(BAT *l, BAT *r);
 mal_export str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @
 Upon loading the module it should inspect the scenario table
@@ -260,6 +261,7 @@ MAL functions can be optimized explicitly using the routines below.
 Beware, the function names should be known as literalstrings, because
 you may not know the runtime situation.
 @= QOTC
+mal_export str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str	modnme;
 	str	fcnnme;
@@ -295,6 +297,7 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	removeInstruction(mb, p);
 	return MAL_SUCCEED;
 }
+mal_export str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	setLifespan(mb);
 	@1optimizer(mb, stk, pci);
@@ -582,3 +585,30 @@ str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @c
 @:macroOptimizer(ME, MACRO)@
 @:macroOptimizer(MC, ORCAM)@
+
+str
+OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+
+	InstrPtr *old, p;
+	int i, limit;
+	lng clk = GDKusec();
+
+	(void) stk;
+	(void) pci;
+	old = mb->stmt;
+
+	limit = mb->stop;
+	newMalBlkStmt(mb, mb->stop);
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		if (moduleId(p) == putName("optimizer", 9) && functionId(p) == putName("multiplex", 9)) {
+			OPTexpandMultiplex(mb, stk, p);
+			freeInstruction(p);
+		} else
+			pushInstruction(mb, p);
+	}
+	GDKfree(old);
+	optimizerCheck(mb, "optimizer.multiplex", 1, GDKusec() - clk);
+	return MAL_SUCCEED;
+}

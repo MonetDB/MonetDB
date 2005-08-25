@@ -1073,6 +1073,7 @@ mal_export int timestamp_tostr(str *buf, int *len, timestamp *val);
 mal_export int tzone_fromstr(str buf, int *len, tzone **d);
 mal_export int tzone_tostr(str *buf, int *len, tzone *z);
 mal_export int rule_fromstr(str buf, int *len, rule **d);
+mal_export int rule_tostr(str *buf, int *len, rule *r);
 mal_export int tzone_fromstr(str buf, int *len, tzone **d);
 
 #endif /* _MONETTIME_H_ */
