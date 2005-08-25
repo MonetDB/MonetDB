@@ -135,6 +135,15 @@ blob_export var_t BLOBput(Heap *h, var_t *bun, blob *val);
 blob_export void BLOBdel(Heap *h, var_t *index);
 blob_export int BLOBlength(blob *p);
 blob_export void BLOBheap(Heap *heap, size_t capacity);
+blob_export str SQLBLOBfromstr(blob **val, int *l, str *s);
+blob_export str SQLBLOBtostr(str *retval, int *l, blob **b);
+blob_export str BLOBtoblob(blob **retval, str *s);
+blob_export str BLOBfromblob(str *retval, blob **b);
+blob_export str BLOBfromidx(str *retval, blob **binp, int *index);
+blob_export str BLOBeoln(char *src, char *end);
+blob_export int BLOBfromstr(char *instr, int *l, blob **val);
+blob_export int BLOBnitems(int *ret, blob *b);
+blob_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
 
 size_t
 blobsize(size_t nitems)

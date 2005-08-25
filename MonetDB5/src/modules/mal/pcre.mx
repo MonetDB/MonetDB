@@ -92,6 +92,8 @@ mal_export pcre * pcre_null(void);
 mal_export void pcre_del(Heap *h, var_t *index);
 mal_export int pcre_length(pcre * p);
 mal_export void pcre_heap(Heap *heap, size_t capacity);
+mal_export str PCREuselect(int *res, str *pattern, int *bid);
+mal_export var_t pcre_put(Heap *h, var_t *bun, pcre * val);
 
 int
 pcre_compile_wrap(pcre ** res, str pattern)

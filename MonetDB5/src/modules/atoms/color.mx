@@ -145,6 +145,10 @@ mal_export str CLRcb(int *g, color *c);
 mal_export str CLRhsv(color *c, flt *h, flt *s, flt *v);
 mal_export str CLRrgb(color *rgb, int *r, int *g, int *b);
 mal_export str CLRycc(color *c, int *y, int *cr, int *cb);
+mal_export int color_fromstr(char *colorStr, int *len, color **c);
+mal_export int color_tostr(char **colorStr, int *len, color *c);
+mal_export str CLRprintf(int *ret, color *c);
+mal_export str CLRprintf2(int *ret, str *form, color *c);
 
 #define color_nil ((color)int_nil)
 #endif

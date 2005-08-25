@@ -171,20 +171,20 @@ typedef struct mallinfo Mallinfo;
 
 mal_export str activateCounter(str name);
 mal_export str deactivateCounter(str name);
-mal_export str openProfilerStream();
-mal_export str closeProfilerStream();
+mal_export str openProfilerStream(void);
+mal_export str closeProfilerStream(void);
 
 mal_export void profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str setLogFile(Module cntxt, str fname);
 mal_export str setStartPoint(Module cntxt, str mod, str fcn);
 mal_export str setEndPoint(Module cntxt, str mod, str fcn);
-mal_export void setCachedProfiling();
-mal_export void setOnlineProfiling();
-mal_export void setOfflineProfiling();
+mal_export void setCachedProfiling(void);
+mal_export void setOnlineProfiling(void);
+mal_export void setOfflineProfiling(void);
 
-mal_export int profilerAvailable();
-mal_export str startProfiling();
-mal_export str stopProfiling();
+mal_export int profilerAvailable(void);
+mal_export str startProfiling(void);
+mal_export str stopProfiling(void);
 
 mal_export int instrFilter(InstrPtr pci, str mod, str fcn);
 mal_export void setFilter(Module cntxt, str mod, str fcn);
@@ -195,9 +195,9 @@ mal_export void resetProfiler(stream *fdout);
 
 mal_export int malProfileMode;
 
-mal_export void startTrace();
-mal_export void stopTrace();
-mal_export void clearTrace();
+mal_export void startTrace(void);
+mal_export void stopTrace(void);
+mal_export void clearTrace(void);
 mal_export BAT *getTrace(str ev);
 
 #define DEBUG_MAL_PROFILER
@@ -234,13 +234,13 @@ static int onlineProfiling = TRUE;
 static int offlineProfiling = FALSE;
 static int cachedProfiling = FALSE;
 int
-profilerAvailable()
+profilerAvailable(void)
 {
 	return 1;
 }
 #else
 int
-profilerAvailable()
+profilerAvailable(void)
 {
 	return 0;
 }
@@ -356,7 +356,7 @@ produce a correct tuple format for the front-end.
 #ifdef MALprofiler
 
 void
-onlineProfilerHeader()
+onlineProfilerHeader(void)
 {
 	@:getEventStream()@	/* profilerEvent -> void */
 	log0("# ");
@@ -892,7 +892,7 @@ setLogFile(Module cntxt, str fname)
 }
 
 str
-openProfilerStream()
+openProfilerStream(void)
 {
 	Client c = getClient();
 
@@ -903,7 +903,7 @@ openProfilerStream()
 }
 
 str
-closeProfilerStream()
+closeProfilerStream(void)
 {
 	Client c = getClient();
 
@@ -954,7 +954,7 @@ should wait for the next instruction the stream
 is initiated. This is controlled by a delay-switch
 @c
 str
-startProfiling()
+startProfiling(void)
 {
 	if (eventstream != NULL) {
 		malProfileMode = TRUE;
@@ -964,7 +964,7 @@ startProfiling()
 }
 
 str
-stopProfiling()
+stopProfiling(void)
 {
 	stream_flush(eventstream);
 	malProfileMode = FALSE;
@@ -1133,7 +1133,7 @@ TRACEcreate(str hnme, str tnme, int ht, int tt)
 }
 
 void
-initTrace()
+initTrace(void)
 {
 	if (TRACE_init)
 		return;		/* already initialized */
@@ -1148,7 +1148,7 @@ initTrace()
 }
 
 void
-startTrace()
+startTrace(void)
 {
 	initTrace();
 	malProfileMode = TRUE;
@@ -1156,7 +1156,7 @@ startTrace()
 }
 
 void
-stopTrace()
+stopTrace(void)
 {
 	initTrace();
 	malProfileMode = FALSE;
@@ -1164,7 +1164,7 @@ stopTrace()
 }
 
 void
-setCachedProfiling()
+setCachedProfiling(void)
 {
 	onlineProfiling = FALSE;
 	offlineProfiling = FALSE;
@@ -1172,7 +1172,7 @@ setCachedProfiling()
 }
 
 void
-setOnlineProfiling()
+setOnlineProfiling(void)
 {
 	onlineProfiling = TRUE;
 	offlineProfiling = FALSE;
@@ -1180,7 +1180,7 @@ setOnlineProfiling()
 }
 
 void
-setOfflineProfiling()
+setOfflineProfiling(void)
 {
 	onlineProfiling = FALSE;
 	offlineProfiling = TRUE;
@@ -1188,7 +1188,7 @@ setOfflineProfiling()
 }
 
 void
-clearTrace()
+clearTrace(void)
 {
 	initTrace();
 	/* drop all trace tables */

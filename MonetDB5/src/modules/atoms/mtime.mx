@@ -1064,6 +1064,16 @@ mal_export str MTIMEruleDef2(rule *ret, int *m, str *dnme, int *w, int *mint);
 mal_export str MTIMEcurrent_timestamp(timestamp *t);
 mal_export str MTIMEcurrent_date(date *d);
 mal_export str MTIMEcurrent_time(daytime *t);
+mal_export int date_fromstr(str buf, int *len, date **d);
+mal_export int date_tostr(str *buf, int *len, date *val);
+mal_export int daytime_fromstr(str buf, int *len, daytime **ret);
+mal_export int daytime_tostr(str *buf, int *len, daytime *val);
+mal_export int timestamp_fromstr(str buf, int *len, timestamp **ret);
+mal_export int timestamp_tostr(str *buf, int *len, timestamp *val);
+mal_export int tzone_fromstr(str buf, int *len, tzone **d);
+mal_export int tzone_tostr(str *buf, int *len, tzone *z);
+mal_export int rule_fromstr(str buf, int *len, rule **d);
+mal_export int tzone_fromstr(str buf, int *len, tzone **d);
 
 #endif /* _MONETTIME_H_ */
 @+ Defines

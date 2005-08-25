@@ -80,7 +80,7 @@ address CMDdeactivateProfiler
 comment "Deactivate the counter";
 
 command openStream():void 
-address openProfilerStream
+address openProfilerStream1
 comment "Sent the events to output stream";
 command openStream(fnme:str)
 address CMDsetProfilerStream
@@ -200,6 +200,7 @@ mal_export str CMDgetTrace(int *res, str *ev);
 mal_export str CMDsetCachedProfiling(int *ret);
 mal_export str CMDsetOnlineProfiling(int *ret);
 mal_export str CMDsetOfflineProfiling(int *ret);
+mal_export str openProfilerStream1(int *res);
 
 #define checkProfiler(X) \
 	if( ! profilerAvailable()) \
@@ -242,6 +243,13 @@ CMDsetAllProfiler(int *res)
 
 	(void) res;		/* fool compiler */
 	return CMDsetFilterProfiler(res, &x, &y);
+}
+
+str
+openProfilerStream1(int *res)
+{
+	(void) res;
+	return openProfilerStream();
 }
 
 str

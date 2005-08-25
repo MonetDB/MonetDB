@@ -12,7 +12,7 @@ lib_mal = {
 	mal_client.mx mal_profiler.mx mal_scenario.mx mal_factory.mx \
 	mal_namespace.mx mal_properties.mx \
 	mal_syntax.mx mal_macro.mx \
-	mal_builder.mx mal_assert.mx mal_readline.mx
+	mal_builder.mx mal_assert.mx mal_readline.mx mal_atom.mx
 
 	HEADERS = h 
 	SCRIPTS = mal
