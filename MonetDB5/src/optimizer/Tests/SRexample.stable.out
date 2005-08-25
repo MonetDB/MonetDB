@@ -1,13 +1,13 @@
 stdout of test 'SRexample` in directory 'src/optimizer` itself:
 
 
-# 11:06:44 >  
-# 11:06:44 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=30442 --set sql_port=45189 --set xquery_port=58220 --set monet_prompt= --trace --dbname=mTests_src_optimizer  SRexample.mal </dev/null
-# 11:06:44 >  
+# 23:53:04 >  
+# 23:53:04 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  SRexample.mal </dev/null
+# 23:53:04 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # config:/ufs/mk/monet5/src/mal/Tests/All.conf
 # dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_optimizer
@@ -21,18 +21,18 @@ stdout of test 'SRexample` in directory 'src/optimizer` itself:
 #	io.print(i);
 #exit go;
 #optimizer.strengthReduction();
-#mdb.showFunction();
+#mdb.list();
 #
 function user.main():int;	# 0  (main:int)
-# simple strength reduction 	# 1  ($2:str)
-    j := "hello world";	# 2  (j:str)<-($4:str)
-    i := 23;	# 3  (i:int)<-($8:int)
-barrier go := true;	# 4  (go:bit)<-($6:bit) jump 8
-    j := "not moved";	# 5  (j:str)<-($9:str)
+# simple strength reduction 	# 1  (_2:str)
+    j := "hello world";	# 2  (j:str)<-(_4:str)
+    i := 23;	# 3  (i:int)<-(_8:int)
+barrier go := true;	# 4  (go:bit)<-(_6:bit) jump 8
+    j := "not moved";	# 5  (j:str)<-(_9:str)
     k := j;	# 6  (k:str)<-(j:str)
-    io.print(i);	# 7 IOprint_val ($11:int)<-(i:int)
+    io.print(i);	# 7 IOprint_val (_11:int)<-(i:int)
 exit go;	# 8  (go:bit)
-    mdb.list();	# 9 MDBlist ($13:void)
+    mdb.list();	# 9 MDBlist (_13:void)
 end main;	# 10  
 [ 23 ]
 function user.main():int;
@@ -47,7 +47,7 @@ exit go;
     mdb.list();
 end main;
 
-# 11:06:45 >  
-# 11:06:45 >  Done.
-# 11:06:45 >  
+# 23:53:04 >  
+# 23:53:04 >  Done.
+# 23:53:04 >  
 

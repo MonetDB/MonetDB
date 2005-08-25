@@ -1,43 +1,45 @@
 stdout of test 'tst4015` in directory 'src/optimizer` itself:
 
 
-# 08:01:45 >  
-# 08:01:45 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4015.mal </dev/null
-# 08:01:45 >  
+# 23:52:52 >  
+# 23:52:52 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4015.mal </dev/null
+# 23:52:52 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information.
 ## testing repeatative reverse optimalisation
-#r:= new(:int,:int);
-#insert(r,5,1);
-#s:= reverse(r);
-#k:=23;
-#t:= reverse(s);
-#print(t);
-#debugOptimizers();
-#RRoptimizer();
+#r:= bbp.new(:int,:int);
+#bat.insert(r,5:int,1:int);
+#o:= 0:oid;
+#rr:= bat.reverse(r);
+#z:= algebra.markT(rr,o);
+#s:= bat.reverse(r);
+#t:= bat.reverse(s);
+#k:=23:int;
+#io.print(t);
+#optimizer.peephole();
 #
 function user.main():int;	# 0  (main:int)
-# testing repeatative reverse optimalisation 	# 1  ($2:str)
-    r := bbp.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-($4:int)($4:int)
-    bat.insert(r,5:int,1:int);	# 3 BKCinsert_bun ($5:bat[:int,:int])<-(r:bat[:int,:int])($6:int)($7:int)
+# testing repeatative reverse optimalisation 	# 1  (_2:str)
+    r := bbp.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-(_4:int)(_4:int)
+    bat.insert(r,5:int,1:int);	# 3 BKCinsert_bun (_5:bat[:int,:int])<-(r:bat[:int,:int])(_6:int)(_7:int)
     rr := bat.reverse(r);	# 4 BKCreverse (rr:bat[:int,:int])<-(r:bat[:int,:int])
-    z := algebra.markT(rr,0:oid);	# 5 ALGtmark (z:bat[:int,:void])<-(rr:bat[:int,:int])($9:oid)
-    k := 23:int;	# 6  (k:int)<-($15:int)
-    io.print(r);	# 7 IOprint_val ($16:int)<-(r:bat[:int,:int])
+    z := algebra.markT(rr,0:oid);	# 5 ALGtmark (z:bat[:int,:void])<-(rr:bat[:int,:int])(_9:oid)
+    k := 23:int;	# 6  (k:int)<-(_15:int)
+    io.print(r);	# 7 IOprint_val (_16:int)<-(r:bat[:int,:int])
 end main;	# 8  
 #-----------------#
-# h	tmp_4	  # name
+# h	t	  # name
 # int	int	  # type
 #-----------------#
 [ 5,	  1	  ]
 
-# 08:01:45 >  
-# 08:01:45 >  Done.
-# 08:01:45 >  
+# 23:52:52 >  
+# 23:52:52 >  Done.
+# 23:52:52 >  
 

@@ -1,13 +1,13 @@
 stdout of test 'tst4003` in directory 'src/optimizer` itself:
 
 
-# 11:08:28 >  
-# 11:08:28 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=44745 --set sql_port=56225 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4003.mal </dev/null
-# 11:08:28 >  
+# 23:52:51 >  
+# 23:52:51 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4003.mal </dev/null
+# 23:52:51 >  
 
-# Monet Database Server V4.7.1
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # config:/ufs/mk/monet5/src/mal/Tests/All.conf
 # dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_optimizer
@@ -16,24 +16,24 @@ stdout of test 'tst4003` in directory 'src/optimizer` itself:
 ## common subexpression evaluation
 #optimizer.setDebug();
 #optimizer.commonExpressionRemoval();
-#b:= new(:str,:str);
-#c:= new(:str,:str);       # identical until insert takes place
-#d:= select(b,"hello","world");
-#e:= select(b,"hello","world");    # mapped onto one instruction
+#b:= bbp.new(:str,:str);
+#c:= bbp.new(:str,:str);       # identical until insert takes place
+#d:= algebra.select(b,"hello","world");
+#e:= algebra.select(b,"hello","world");    # mapped onto one instruction
 #
 #
 function user.main():int;	# 0  (main:int)
-# The 4000 series deals with strategic optimizer constructs 	# 1  ($2:str)
-# common subexpression evaluation 	# 2  ($4:str)
-    b := bbp.new(:str,:str);	# 3 CMDBATnew (b:bat[:str,:str])<-($8:str)($8:str)
-    c := bbp.new(:str,:str);	# 4 CMDBATnew (c:bat[:str,:str])<-($8:str)($8:str)
-# identical until insert takes place 	# 5  ($11:str)
-    d := algebra.select(b,"hello","world");	# 6 ALGselect (d:bat[:str,:str])<-(b:bat[:str,:str])($13:str)($14:str)
+# The 4000 series deals with strategic optimizer constructs 	# 1  (_2:str)
+# common subexpression evaluation 	# 2  (_4:str)
+    b := bbp.new(:str,:str);	# 3 CMDBATnew (b:bat[:str,:str])<-(_8:str)(_8:str)
+    c := bbp.new(:str,:str);	# 4 CMDBATnew (c:bat[:str,:str])<-(_8:str)(_8:str)
+# identical until insert takes place 	# 5  (_11:str)
+    d := algebra.select(b,"hello","world");	# 6 ALGselect (d:bat[:str,:str])<-(b:bat[:str,:str])(_13:str)(_14:str)
     e := d;	# 7 ALGselect (e:bat[:str,:str])<-(d:bat[:str,:str])
-# mapped onto one instruction 	# 8  ($17:str)
+# mapped onto one instruction 	# 8  (_17:str)
 end main;	# 9  
 
-# 11:08:28 >  
-# 11:08:28 >  Done.
-# 11:08:28 >  
+# 23:52:51 >  
+# 23:52:51 >  Done.
+# 23:52:51 >  
 

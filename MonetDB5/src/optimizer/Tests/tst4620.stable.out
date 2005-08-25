@@ -1,80 +1,84 @@
 stdout of test 'tst4620` in directory 'src/optimizer` itself:
 
 
-# 08:01:51 >  
-# 08:01:51 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4620.mal </dev/null
-# 08:01:51 >  
+# 23:52:53 >  
+# 23:52:53 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4620.mal </dev/null
+# 23:52:53 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information.
 ##some join operations
 #function algebra.joinPath( a:bat[:any$1,:any$2],
-#    z:= join(a,b);
-#    zz:= join(z,c);
 #    return zz;
 #end joinPath;
-function algebra.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];	# 0  dynamic (joinPath:bat[:any_1,:any_4])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])(c:bat[:any_3,:any_4])
-    z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:any,:any])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])
-    zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any_3,:any_4])
-    return zz;	# 3  (zz:bat[:any,:any])
-end joinPath;	# 4  
+function algebra.joinPath(a:any):any;	# 0  dynamic (joinPath:any)<-(a:any)
+    ;	# 1  (_2:any)
+    return zz;	# 2  (zz:any)
+end joinPath;	# 3  
+!ERROR: function algebra.joinPath( a:bat[:any$1,:any$2],
+!                                            ^',' expected
+!ERROR:     z:= algebra.join(a,b);
+!      ^',' expected
+!ERROR:     zz:= algebra.join(z,c);
+!      ^<identifier> expected
 #
-#b:= new(:int,:int);
-#barrier (k,v):= newRange(0:int);
-#        insert(b,v,v);
-#        redo (k,v):= nextElement(1:int,100:int);
+#b:= bbp.new(:int,:int);
+#barrier (k,v):= mal.newRange(0:int);
+#        bat.insert(b,v,v);
+#        redo (k,v):= mal.nextElement(1:int,100:int);
 #exit (k,v);
 #
+#i:= algebra.count(b);
+#io.print(i);
 #
-#i:= count(b);
-#print(i);
+#c:= algebra.select(b,0:int,9:int);
+#i:= algebra.count(c);
+#io.print(i);
+#d:= algebra.select(b,0:int,49:int);
+#i:= algebra.count(d);
+#io.print(i);
 #
-#c:= select(b,0:int,9:int);
-#i:= count(c);
-#print(i);
-#d:= select(b,0:int,49:int);
-#i:= count(d);
-#print(i);
-#
-#optimizer.MCoptimizer("algebra","joinPath");
+#optimizer.macroContraction("algebra","joinPath");
 ##to be detected by join inversion
-#z:= join(b,c);
-#zz:= join(z,d);
-#i:= count(zz);
-#print(i);
-#showFunction();
-#
+#z:= algebra.join(b,c);
+#zz:= algebra.join(z,d);
+#i:= algebra.count(zz);
+#io.print(i);
+#mdb.list();
 #
 function user.main():int;	# 0  (main:int)
-#some join operations 	# 1  ($2:str)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-($4:int)($4:int)
-barrier (k,v):= mal.newRange(0:int);	# 3 RNGnewRange_int (k:bit)(v:int)<-($7:int) jump 6
-    bat.insert(b,v,v);	# 4 BKCinsert_bun ($8:bat[:int,:int])<-(b:bat[:int,:int])(v:int)(v:int)
-    redo (k,v):= mal.nextElement(1:int,100:int);	# 5 RNGnextElement_int (k:bit)(v:int)<-($9:int)($10:int) jump 4
+#some join operations 	# 1  (_2:str)
+    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
+barrier (k,v):= mal.newRange(0:int);	# 3 RNGnewRange_int (k:bit)(v:int)<-(_7:int) jump 6
+    bat.insert(b,v,v);	# 4 BKCinsert_bun (_8:bat[:int,:int])<-(b:bat[:int,:int])(v:int)(v:int)
+    redo (k,v):= mal.nextElement(1:int,100:int);	# 5 RNGnextElement_int (k:bit)(v:int)<-(_9:int)(_10:int) jump 4
 exit (k,v);	# 6  (k:bit)(v:int)
     i := algebra.count(b);	# 7 ALGcount_bat (i:lng)<-(b:bat[:int,:int])
-    io.print(i);	# 8 IOprint_val ($12:int)<-(i:lng)
-    c := algebra.select(b,0:int,9:int);	# 9 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($14:int)
+    io.print(i);	# 8 IOprint_val (_12:int)<-(i:lng)
+    c := algebra.select(b,0:int,9:int);	# 9 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_7:int)(_14:int)
     i := algebra.count(c);	# 10 ALGcount_bat (i:lng)<-(c:bat[:int,:int])
-    io.print(i);	# 11 IOprint_val ($15:int)<-(i:lng)
-    d := algebra.select(b,0:int,49:int);	# 12 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])($7:int)($17:int)
+    io.print(i);	# 11 IOprint_val (_15:int)<-(i:lng)
+    d := algebra.select(b,0:int,49:int);	# 12 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])(_7:int)(_17:int)
     i := algebra.count(d);	# 13 ALGcount_bat (i:lng)<-(d:bat[:int,:int])
-    io.print(i);	# 14 IOprint_val ($18:int)<-(i:lng)
-#to be detected by join inversion 	# 15  ($23:str)
-    zz := algebra.joinPath(b,c,d);	# 16  (zz:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])(d:bat[:int,:int])
-    i := algebra.count(zz);	# 17 ALGcount_bat (i:lng)<-(zz:bat[:int,:int])
-    io.print(i);	# 18 IOprint_val ($26:int)<-(i:lng)
-    mdb.list();	# 19 MDBlist ($27:void)
+    io.print(i);	# 14 IOprint_val (_18:int)<-(i:lng)
+#to be detected by join inversion 	# 15  (_23:str)
+    z := algebra.join(b,c);	# 16 ALGjoin (z:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
+    zz := algebra.join(z,d);	# 17 ALGjoin (zz:bat[:int,:int])<-(z:bat[:int,:int])(d:bat[:int,:int])
+    i := algebra.count(zz);	# 18 ALGcount_bat (i:lng)<-(zz:bat[:int,:int])
+    io.print(i);	# 19 IOprint_val (_26:int)<-(i:lng)
+    mdb.list();	# 20 MDBlist (_27:void)
+end main;	# 21  
 [ 100 ]
 [ 10 ]
 [ 50 ]
 [ 10 ]
 function user.main():int;
+#some join operations 
     b := bbp.new(:int,:int);
 barrier (k,v):= mal.newRange(0:int);
     bat.insert(b,v,v);
@@ -88,12 +92,15 @@ exit (k,v);
     d := algebra.select(b,0:int,49:int);
     i := algebra.count(d);
     io.print(i);
-    zz := algebra.joinPath(b,c,d);
+#to be detected by join inversion 
+    z := algebra.join(b,c);
+    zz := algebra.join(z,d);
     i := algebra.count(zz);
     io.print(i);
     mdb.list();
+end main;
 
-# 08:01:51 >  
-# 08:01:51 >  Done.
-# 08:01:51 >  
+# 23:52:53 >  
+# 23:52:53 >  Done.
+# 23:52:53 >  
 

@@ -1,60 +1,60 @@
 stdout of test 'tst4001` in directory 'src/optimizer` itself:
 
 
-# 08:01:43 >  
-# 08:01:43 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4001.mal </dev/null
-# 08:01:43 >  
+# 23:52:51 >  
+# 23:52:51 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4001.mal </dev/null
+# 23:52:51 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information.
 ##tesing the optimizers
 #
-##debugOptimizers();
+##setDebug();
 #function qry(i:dbl):dbl;
 #   i:= 1.0:dbl;
-#   z:= sin(i);
+#   z:= mmath.sin(i);
 #   j:= 1.0:dbl;
-#   k:= sin(j);
-#   l:= k+1.0:dbl;
+#   k:= mmath.sin(j);
+#   l:= k+i;
 #   return z;
 #end qry;
 function user.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
-    i := 1.0:dbl;	# 1  (i:dbl)<-($2:dbl)
+    i := 1.0:dbl;	# 1  (i:dbl)<-(_2:dbl)
     z := mmath.sin(i);	# 2 MATHunary_SINdbl (z:dbl)<-(i:dbl)
-    j := 1.0:dbl;	# 3  (j:dbl)<-($2:dbl)
+    j := 1.0:dbl;	# 3  (j:dbl)<-(_2:dbl)
     k := mmath.sin(j);	# 4 MATHunary_SINdbl (k:dbl)<-(j:dbl)
     l := calc.+(k,i);	# 5 CALCbinaryADDdbldbl (l:dbl)<-(k:dbl)(i:dbl)
     return z;	# 6  (z:dbl)
 end qry;	# 7  
 #t0:= alarm.usec();
-#CXoptimizer(Admin,qry);
-#ARoptimizer(Admin,qry);
+#optimizer.aliasRemoval("user","qry");
+#optimizer.commonExpressionRemoval("user","qry");
 #t1:= alarm.usec();
-#t2:= t1-t2;
-##print(t2);
-#print("execute");
-#z:=qry(0.0:dbl);
-#print(z);
-#print("done");
-#showFunction(Admin,qry);
+#t2:= t1-t0;
+#io.print("execute");
+#z:= user.qry(0.0:dbl);
+#io.print(z);
+#io.print("done");
+#mdb.list("user","qry");
+#mdb.list("user","main");
 #
 function user.main():int;	# 0  (main:int)
-#tesing the optimizers 	# 1  ($2:str)
-#setDebug(); 	# 2  ($4:str)
+#tesing the optimizers 	# 1  (_2:str)
+#setDebug(); 	# 2  (_4:str)
     t0 := alarm.usec();	# 3 ALARMusec (t0:lng)
     t1 := alarm.usec();	# 4 ALARMusec (t1:lng)
     t2 := calc.-(t1,t0);	# 5 CALCbinarySUBlnglng (t2:lng)<-(t1:lng)(t0:lng)
-    io.print("execute");	# 6 IOprint_val ($12:int)<-($13:str)
-    z := user.qry(0.0:dbl);	# 7  (z:dbl)<-($15:dbl)
-    io.print(z);	# 8 IOprint_val ($16:int)<-(z:dbl)
-    io.print("done");	# 9 IOprint_val ($17:int)<-($18:str)
-    mdb.list("user","qry");	# 10 MDBlist3 ($19:void)<-($7:str)($8:str)
-    mdb.list("user","main");	# 11 MDBlist3 ($20:void)<-($7:str)($21:str)
+    io.print("execute");	# 6 IOprint_val (_12:int)<-(_13:str)
+    z := user.qry(0.0:dbl);	# 7  (z:dbl)<-(_15:dbl)
+    io.print(z);	# 8 IOprint_val (_16:int)<-(z:dbl)
+    io.print("done");	# 9 IOprint_val (_17:int)<-(_18:str)
+    mdb.list("user","qry");	# 10 MDBlist3 (_19:void)<-(_7:str)(_8:str)
+    mdb.list("user","main");	# 11 MDBlist3 (_20:void)<-(_7:str)(_21:str)
 end main;	# 12  
 [ "execute" ]
 [ 0.8414709848078965 ]
@@ -65,6 +65,8 @@ function user.qry(i:dbl):dbl;
     return z;
 end qry;
 function user.main():int;
+#tesing the optimizers 
+#setDebug(); 
     t0 := alarm.usec();
     t1 := alarm.usec();
     t2 := calc.-(t1,t0);
@@ -75,9 +77,8 @@ function user.main():int;
     mdb.list("user","qry");
     mdb.list("user","main");
 end main;
-#
 
-# 08:01:43 >  
-# 08:01:43 >  Done.
-# 08:01:43 >  
+# 23:52:51 >  
+# 23:52:51 >  Done.
+# 23:52:51 >  
 

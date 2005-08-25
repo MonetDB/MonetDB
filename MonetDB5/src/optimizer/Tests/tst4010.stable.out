@@ -1,43 +1,43 @@
 stdout of test 'tst4010` in directory 'src/optimizer` itself:
 
 
-# 08:01:44 >  
-# 08:01:44 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4010.mal </dev/null
-# 08:01:44 >  
+# 23:52:52 >  
+# 23:52:52 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4010.mal </dev/null
+# 23:52:52 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information.
 ## testing the library for unsafe instructions
 ## bat C can still be shared with B
-#debugOptimizers();
-#CXoptimizer();
-#ARoptimizer();
-#b:= new(:int,:int);
-#c:= new(:int,:int);
-#insert(b,1,1);
+#optimizer.setDebug();
+#optimizer.commonExpressionRemoval();
+#optimizer.aliasRemoval();
+#b:= bbp.new(:int,:int);
+#c:= bbp.new(:int,:int);
+#bat.insert(b,1,1);
 #
 ## in this case D should be left alone
-#d:= new(:int,:int);
-#insert(d,2,2);
+#d:= bbp.new(:int,:int);
+#bat.insert(d,2,2);
 #
 #
 function user.main():int;	# 0  (main:int)
-# testing the library for unsafe instructions 	# 1  ($2:str)
-# bat C can still be shared with B 	# 2  ($4:str)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($9:int)($9:int)
-    c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-($9:int)($9:int)
-    bat.insert(b,1,1);	# 5 BKCinsert_bun ($11:bat[:int,:int])<-(b:bat[:int,:int])($12:int)($12:int)
-# in this case D should be left alone 	# 6  ($14:str)
-    d := bbp.new(:int,:int);	# 7 CMDBATnew (d:bat[:int,:int])<-($16:int)($16:int)
-    bat.insert(d,2,2);	# 8 BKCinsert_bun ($17:bat[:int,:int])<-(d:bat[:int,:int])($18:int)($18:int)
+# testing the library for unsafe instructions 	# 1  (_2:str)
+# bat C can still be shared with B 	# 2  (_4:str)
+    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_9:int)(_9:int)
+    c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_9:int)(_9:int)
+    bat.insert(b,1,1);	# 5 BKCinsert_bun (_11:bat[:int,:int])<-(b:bat[:int,:int])(_12:int)(_12:int)
+# in this case D should be left alone 	# 6  (_14:str)
+    d := bbp.new(:int,:int);	# 7 CMDBATnew (d:bat[:int,:int])<-(_16:int)(_16:int)
+    bat.insert(d,2,2);	# 8 BKCinsert_bun (_17:bat[:int,:int])<-(d:bat[:int,:int])(_18:int)(_18:int)
 end main;	# 9  
 
-# 08:01:45 >  
-# 08:01:45 >  Done.
-# 08:01:45 >  
+# 23:52:52 >  
+# 23:52:52 >  Done.
+# 23:52:52 >  
 

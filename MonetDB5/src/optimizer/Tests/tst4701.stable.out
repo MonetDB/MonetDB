@@ -1,13 +1,13 @@
 stdout of test 'tst4701` in directory 'src/optimizer` itself:
 
 
-# 11:08:36 >  
-# 11:08:36 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=44745 --set sql_port=56225 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4701.mal </dev/null
-# 11:08:36 >  
+# 23:52:59 >  
+# 23:52:59 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4701.mal </dev/null
+# 23:52:59 >  
 
-# Monet Database Server V4.7.1
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # config:/ufs/mk/monet5/src/mal/Tests/All.conf
 # dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_optimizer
@@ -21,11 +21,11 @@ command user.tst903():void address MCCAdmin_tst903;	# 0  (tst903:void)
 #
 !ERROR: 'user.tst903' undefined in user.main[2]
 function user.main():int;	# 0  (main:int)
-# after the routine tst903 is it can be linked 	# 1  ($2:str)
-    user.tst903();	# 2  unknown ($3:void)
+# after the routine tst903 is it can be linked 	# 1  (_2:str)
+    user.tst903();	# 2  unknown (_3:void)
 end main;	# 3  
 
-# 11:08:36 >  
-# 11:08:36 >  Done.
-# 11:08:36 >  
+# 23:52:59 >  
+# 23:52:59 >  Done.
+# 23:52:59 >  
 

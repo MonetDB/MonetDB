@@ -1,16 +1,16 @@
 stdout of test 'tst4800` in directory 'src/optimizer` itself:
 
 
-# 21:46:44 >  
-# 21:46:44 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=47702 --set sql_port=53059 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4800.mal </dev/null
-# 21:46:44 >  
+# 23:53:00 >  
+# 23:53:00 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4800.mal </dev/null
+# 23:53:00 >  
 
-# Monet Database Server V4.7.0
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # config:/ufs/mk/monet5/src/mal/Tests/All.conf
 # dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
+# dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information.
 ## testing the optimization of the pocket calculator
 #function f3():void;
@@ -19,21 +19,21 @@ stdout of test 'tst4800` in directory 'src/optimizer` itself:
 #        t2 := array.grid(64,64,64,0);
 #        t4:=batcalc.*(64,t3);
 #        t5:= batcalc.+(t2,t4);
-#        t6 := oid(t5);
+#        t6 := batcalc.oid(t5);
 #        t7 := algebra.join(t6,t1);
 #        t8:bat[:void,:int] := bbp.bind("B_bat");
 #        t9 := array.grid(4096,64,1,0);
 #        t10 := array.grid(1,64,4096,0);
 #        t11 := batcalc.*(64,t10);
 #        t12 := batcalc.+(t9,t11);
-#        t13 := oid(t12);
+#        t13 := batcalc.oid(t12);
 #        t14 := algebra.join(t13,t8);
 #        t15 := batcalc.*(t7,t14);
 #        t16 := array.grid(64,64,64,0);
 #        t17 := array.grid(1,64,4096,0);
 #        t18 := batcalc.*(64,t17);
 #        t19 := batcalc.+(t16,t18);
-#        t20 := oid(t19);
+#        t20 := batcalc.oid(t19);
 #        t21 := array.grid(1,4096,1,0);
 #        t22 := aggrX3.sum(t15,t20,t21);
 #        top := t22;
@@ -43,40 +43,40 @@ stdout of test 'tst4800` in directory 'src/optimizer` itself:
 ##       io.table(bat_0,bat_1,top);
 #end f3;
 function user.f3():void;	# 0  (f3:void)
-    t1:bat[:void,:int]  := bbp.bind("A_bat");	# 1 CMDbbpbind (t1:bat[:void,:int])<-($2:str)
-    t3 := array.grid(4096,64,1,0);	# 2 ARRAYgrid (t3:bat[:void,:int])<-($4:int)($5:int)($6:int)($7:int)
-    t2 := array.grid(64,64,64,0);	# 3 ARRAYgrid (t2:bat[:void,:int])<-($5:int)($5:int)($5:int)($7:int)
-    t4 := batcalc.*(64,t3);	# 4 CMDcstMULbat (t4:bat[:void,:int])<-($5:int)(t3:bat[:void,:int])
+    t1:bat[:void,:int]  := bbp.bind("A_bat");	# 1 CMDbbpbind (t1:bat[:void,:int])<-(_2:str)
+    t3 := array.grid(4096,64,1,0);	# 2 ARRAYgrid (t3:bat[:void,:int])<-(_4:int)(_5:int)(_6:int)(_7:int)
+    t2 := array.grid(64,64,64,0);	# 3 ARRAYgrid (t2:bat[:void,:int])<-(_5:int)(_5:int)(_5:int)(_7:int)
+    t4 := batcalc.*(64,t3);	# 4 CMDcstMULbat (t4:bat[:void,:int])<-(_5:int)(t3:bat[:void,:int])
     t5 := batcalc.+(t2,t4);	# 5 CMDbatADD (t5:bat[:void,:int])<-(t2:bat[:void,:int])(t4:bat[:void,:int])
     t6 := batcalc.oid(t5);	# 6 CMDconvertvoid_int_oid (t6:bat[:void,:oid])<-(t5:bat[:void,:int])
     t7 := algebra.join(t6,t1);	# 7 ALGjoin (t7:bat[:void,:int])<-(t6:bat[:void,:oid])(t1:bat[:void,:int])
-    t8:bat[:void,:int]  := bbp.bind("B_bat");	# 8 CMDbbpbind (t8:bat[:void,:int])<-($14:str)
-    t9 := array.grid(4096,64,1,0);	# 9 ARRAYgrid (t9:bat[:void,:int])<-($4:int)($5:int)($6:int)($7:int)
-    t10 := array.grid(1,64,4096,0);	# 10 ARRAYgrid (t10:bat[:void,:int])<-($6:int)($5:int)($4:int)($7:int)
-    t11 := batcalc.*(64,t10);	# 11 CMDcstMULbat (t11:bat[:void,:int])<-($5:int)(t10:bat[:void,:int])
+    t8:bat[:void,:int]  := bbp.bind("B_bat");	# 8 CMDbbpbind (t8:bat[:void,:int])<-(_14:str)
+    t9 := array.grid(4096,64,1,0);	# 9 ARRAYgrid (t9:bat[:void,:int])<-(_4:int)(_5:int)(_6:int)(_7:int)
+    t10 := array.grid(1,64,4096,0);	# 10 ARRAYgrid (t10:bat[:void,:int])<-(_6:int)(_5:int)(_4:int)(_7:int)
+    t11 := batcalc.*(64,t10);	# 11 CMDcstMULbat (t11:bat[:void,:int])<-(_5:int)(t10:bat[:void,:int])
     t12 := batcalc.+(t9,t11);	# 12 CMDbatADD (t12:bat[:void,:int])<-(t9:bat[:void,:int])(t11:bat[:void,:int])
     t13 := batcalc.oid(t12);	# 13 CMDconvertvoid_int_oid (t13:bat[:void,:oid])<-(t12:bat[:void,:int])
     t14 := algebra.join(t13,t8);	# 14 ALGjoin (t14:bat[:void,:int])<-(t13:bat[:void,:oid])(t8:bat[:void,:int])
     t15 := batcalc.*(t7,t14);	# 15 CMDbatMUL (t15:bat[:void,:int])<-(t7:bat[:void,:int])(t14:bat[:void,:int])
-    t16 := array.grid(64,64,64,0);	# 16 ARRAYgrid (t16:bat[:void,:int])<-($5:int)($5:int)($5:int)($7:int)
-    t17 := array.grid(1,64,4096,0);	# 17 ARRAYgrid (t17:bat[:void,:int])<-($6:int)($5:int)($4:int)($7:int)
-    t18 := batcalc.*(64,t17);	# 18 CMDcstMULbat (t18:bat[:void,:int])<-($5:int)(t17:bat[:void,:int])
+    t16 := array.grid(64,64,64,0);	# 16 ARRAYgrid (t16:bat[:void,:int])<-(_5:int)(_5:int)(_5:int)(_7:int)
+    t17 := array.grid(1,64,4096,0);	# 17 ARRAYgrid (t17:bat[:void,:int])<-(_6:int)(_5:int)(_4:int)(_7:int)
+    t18 := batcalc.*(64,t17);	# 18 CMDcstMULbat (t18:bat[:void,:int])<-(_5:int)(t17:bat[:void,:int])
     t19 := batcalc.+(t16,t18);	# 19 CMDbatADD (t19:bat[:void,:int])<-(t16:bat[:void,:int])(t18:bat[:void,:int])
     t20 := batcalc.oid(t19);	# 20 CMDconvertvoid_int_oid (t20:bat[:void,:oid])<-(t19:bat[:void,:int])
-    t21 := array.grid(1,4096,1,0);	# 21 ARRAYgrid (t21:bat[:void,:int])<-($6:int)($4:int)($6:int)($7:int)
+    t21 := array.grid(1,4096,1,0);	# 21 ARRAYgrid (t21:bat[:void,:int])<-(_6:int)(_4:int)(_6:int)(_7:int)
     t22 := aggrX3.sum(t15,t20,t21);	# 22 AX3aggrX3_sum3_int_lng (t22:bat[:void,:lng])<-(t15:bat[:void,:int])(t20:bat[:void,:oid])(t21:bat[:void,:int])
     top := t22;	# 23  (top:bat[:void,:lng])<-(t22:bat[:void,:lng])
-    bat_0 := array.grid(64,64,1,0);	# 24 ARRAYgrid (bat_0:bat[:void,:int])<-($5:int)($5:int)($6:int)($7:int)
-    bat_1 := array.grid(1,64,64,0);	# 25 ARRAYgrid (bat_1:bat[:void,:int])<-($6:int)($5:int)($5:int)($7:int)
-    io.table(bat_0,bat_1,top);	# 26 IOttable ($32:int)<-(bat_0:bat[:void,:int])(bat_1:bat[:void,:int])(top:bat[:void,:lng])
+    bat_0 := array.grid(64,64,1,0);	# 24 ARRAYgrid (bat_0:bat[:void,:int])<-(_5:int)(_5:int)(_6:int)(_7:int)
+    bat_1 := array.grid(1,64,64,0);	# 25 ARRAYgrid (bat_1:bat[:void,:int])<-(_6:int)(_5:int)(_5:int)(_7:int)
+    io.table(bat_0,bat_1,top);	# 26 IOttable (_32:int)<-(bat_0:bat[:void,:int])(bat_1:bat[:void,:int])(top:bat[:void,:lng])
 end f3;	# 27  
-#	optimizer.ORoptimizer(Admin,f3);
-#	showFunction(Admin,f3);
+#	optimizer.expressionAccumulation("user","f3");
+#	mdb.list("user","f3");
 #
 function user.main():int;	# 0  (main:int)
-# testing the optimization of the pocket calculator 	# 1  ($2:str)
-#       io.table(bat_0,bat_1,top); 	# 2  ($4:str)
-    mdb.list("user","f3");	# 3 MDBlist3 ($8:void)<-($6:str)($7:str)
+# testing the optimization of the pocket calculator 	# 1  (_2:str)
+#       io.table(bat_0,bat_1,top); 	# 2  (_4:str)
+    mdb.list("user","f3");	# 3 MDBlist3 (_8:void)<-(_6:str)(_7:str)
 end main;	# 4  
 function user.f3():void;
     t1:bat[:void,:int]  := bbp.bind("A_bat");
@@ -107,7 +107,7 @@ function user.f3():void;
     io.table(bat_0,bat_1,top);
 end f3;
 
-# 21:46:44 >  
-# 21:46:44 >  Done.
-# 21:46:44 >  
+# 23:53:00 >  
+# 23:53:00 >  Done.
+# 23:53:00 >  
 

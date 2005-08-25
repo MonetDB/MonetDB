@@ -1,29 +1,28 @@
 stdout of test 'tst4000` in directory 'src/optimizer` itself:
 
 
-# 08:01:43 >  
-# 08:01:43 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4000.mal </dev/null
-# 08:01:43 >  
+# 23:52:51 >  
+# 23:52:51 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4000.mal </dev/null
+# 23:52:51 >  
 
 !WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
 !WARNING: BBPdir: initializing BBP.
-# Monet Database Server V4.7.1
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information.
 ## The 4000 series deals with strategic optimizer constructs
 ## common subexpression evaluation
-#optimizer.debugOptimizers();
-#optimizer.CXoptimizer();
-#optimizer.ARoptimizer();
-#optimizer.DCoptimizer();
-#b:= new(:int,:int);
-#c:= new(:int,:int);       # identical until insert takes place
-#d:= select(b,0,100);
-#e:= select(b,0,100);    # mapped onto one instruction
+#optimizer.setDebug();
+#optimizer.commonExpressionRemoval();
+#optimizer.aliasRemoval();
+#b:= bbp.new(:int,:int);
+#c:= bbp.new(:int,:int);       # identical until insert takes place
+#d:= algebra.select(b,0,100);
+#e:= algebra.select(b,0,100);    # mapped onto one instruction
 #k1:= 24;
 #k2:= 27;
 #l:= k1+k2;
@@ -32,21 +31,21 @@ stdout of test 'tst4000` in directory 'src/optimizer` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-# The 4000 series deals with strategic optimizer constructs 	# 1  ($2:str)
-# common subexpression evaluation 	# 2  ($4:str)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-($9:int)($9:int)
-    c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-($9:int)($9:int)
-# identical until insert takes place 	# 5  ($12:str)
-    d := algebra.select(b,0,100);	# 6 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])($14:int)($15:int)
+# The 4000 series deals with strategic optimizer constructs 	# 1  (_2:str)
+# common subexpression evaluation 	# 2  (_4:str)
+    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_9:int)(_9:int)
+    c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_9:int)(_9:int)
+# identical until insert takes place 	# 5  (_12:str)
+    d := algebra.select(b,0,100);	# 6 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])(_14:int)(_15:int)
     e := d;	# 7 ALGselect (e:bat[:int,:int])<-(d:bat[:int,:int])
-# mapped onto one instruction 	# 8  ($18:str)
-    l := calc.+(24,27);	# 9 CALCbinaryADDintint (l:int)<-($20:int)($22:int)
-# mapped to l 	# 10  ($26:str)
-    l3 := calc.+(l,24);	# 11 CALCbinaryADDintint (l3:int)<-(l:int)($20:int)
-# replace the alias 	# 12  ($29:str)
+# mapped onto one instruction 	# 8  (_18:str)
+    l := calc.+(24,27);	# 9 CALCbinaryADDintint (l:int)<-(_20:int)(_22:int)
+# mapped to l 	# 10  (_26:str)
+    l3 := calc.+(l,24);	# 11 CALCbinaryADDintint (l3:int)<-(l:int)(_20:int)
+# replace the alias 	# 12  (_29:str)
 end main;	# 13  
 
-# 08:01:43 >  
-# 08:01:43 >  Done.
-# 08:01:43 >  
+# 23:52:51 >  
+# 23:52:51 >  Done.
+# 23:52:51 >  
 

@@ -1,16 +1,16 @@
 stdout of test 'tst4500` in directory 'src/optimizer` itself:
 
 
-# 08:01:48 >  
-# 08:01:48 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4500.mal </dev/null
-# 08:01:48 >  
+# 23:52:52 >  
+# 23:52:52 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4500.mal </dev/null
+# 23:52:52 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information.
 ## Beware this is not the correct TPC-1, but a merely a test
 #optimizer.setDebug();
@@ -19,303 +19,220 @@ stdout of test 'tst4500` in directory 'src/optimizer` itself:
 #optimizer.deadCodeRemoval();
 ##don;t depend on SQL library
 #function user.bind(s:str,t:str,c:str,i:int):bat[:any$1,:any$2];
-#end bind;
-function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];	# 0  dynamic (bind:bat[:any_1,:any_2])<-(s:str)(t:str)(c:str)(i:int)
-end bind;	# 1  
-!ERROR: return missing
-##s14 := user.bind("sys",  "lineitem", "l_shipdate"); #lineitem
 #	myc:= bbp.bind("myc");
-#	s14:bat[:void,:date] := sql.bind("sys","lineitem","l_shipdate",0);
+#	s14:bat[:void,:date] := user.bind("sys","lineitem","l_shipdate",0);
 ##s16 := date("1998-12-01");
-#	s16 := date("1998-12-01");
+#	s16 := mtime.date("1998-12-01");
 ##s17 := 7776000;
 #	s17 := 7776000;
 ##s15 := date_sub_sec_interval(s16,s17);
 ##s13 := s14.uselect(date(nil), s15);
 #	zz:= nil:str;
-#	aa_a := date(zz);
-#	s13 := uselect(s14,aa_a,aa_a);
+#	aa_a := mtime.date(zz);
+#	s13 := algebra.uselect(s14,aa_a,aa_a);
 ##s12 := s13.reverse();
-#	s12 := reverse(s13,);
+#	s12 := bat.reverse(s13,);
 ##s11 := s12.reverse().mark(oid(0)).reverse();# lineitem
-#	ba_a := oid(0);
-#	ca_a := reverse(s12,);
-#	da_a := mark(ca_a,ba_a);
-#	s11 := reverse(da_a,);
-##s18 := sql.bind("sys",  "lineitem", "l_returnflag"); #lineitem
-#	s18:bat[:void,:chr] := sql.bind("sys","lineitem","l_returnflag",0);
+#	ba_a := calc.oid(0);
+#	ca_a := bat.reverse(s12,);
+#	da_a := algebra.markT(ca_a,ba_a);
+#	s11 := bat.reverse(da_a,);
+##s18 := user.bind("sys",  "lineitem", "l_returnflag"); #lineitem
+#	s18:bat[:void,:chr] := user.bind("sys","lineitem","l_returnflag",0);
 ##s10 := s11.join(s18);
-#	s10 := join(s11,s18);
+#	s10 := algebra.join(s11,s18);
 ##s9 := s10.group();
-#	s9 := group(s10,);
-##s20 := sql.bind("sys",  "lineitem", "l_linestatus"); #lineitem
-#	s20:bat[:void,:chr] := sql.bind("sys","lineitem","l_linestatus",0);
+#	(h,s9) := group.group(s10);
+##s20 := user.bind("sys",  "lineitem", "l_linestatus"); #lineitem
+#	s20:bat[:void,:chr] := user.bind("sys","lineitem","l_linestatus",0);
 ##s19 := s11.join(s20);
-#	s19 := join(s11,s20);
+#	s19 := algebra.join(s11,s20);
 ##s8 := s9.group(s19);
-#	s8 := group(s9,s19);
+#	(h2,s8) := group.group(s9,s19);
 ##s7 := s8.tunique().mirror();
-#	ea_a := tunique(s8,);
-#	s7 := mirror(ea_a,);
+#	ea_a := algebra.tunique(s8,);
+#	s7 := bat.mirror(ea_a,);
 ##s6 := s7.join(s11);
-#	s6 := join(s7,s11);
+#	s6 := algebra.join(s7,s11);
 ##s5 := s6.join(s18);
-#	s5 := join(s6,s18);
-##s4 := s5.reverse().sort().reverse();
-#	fa_a := reverse(s5,);
-#	ga_a := sort(fa_a,);
-#	s4 := reverse(ga_a,);
+#	s5 := algebra.join(s6,s18);
+##s4 := s5.reverse().sortH().reverse();
+#	fa_a := bat.reverse(s5,);
+#	ga_a := algebra.sortH(fa_a,);
+#	s4 := bat.reverse(ga_a,);
 ##s22 := s7.join(s11);
-#	s22 := join(s7,s11);
+#	s22 := algebra.join(s7,s11);
 ##s21 := s22.join(s20);
-#	s21 := join(s22,s20);
+#	s21 := algebra.join(s22,s20);
 ##s3 := s4.CTrefine(s21);
-#	s3 := refine(s4,s21);
+#	s3 := group.refine(s4,s21);
 ##s25 := s11.join(s18);
-#	s25 := join(s11,s18);
+#	s25 := algebra.join(s11,s18);
 ##s24 := s7.join(s25);
-#	s24 := join(s7,s25);
+#	s24 := algebra.join(s7,s25);
 ##s27 := s11.join(s20);
-#	s27 := join(s11,s20);
+#	s27 := algebra.join(s11,s20);
 ##s26 := s7.join(s27);
-#	s26 := join(s7,s27);
-##s31 := sql.bind("sys",  "lineitem", "l_quantity"); #lineitem
-#	s31:bat[:void,:int] := sql.bind("sys","lineitem","l_quantity",0);
+#	s26 := algebra.join(s7,s27);
+##s31 := user.bind("sys",  "lineitem", "l_quantity"); #lineitem
+#	s31:bat[:void,:int] := user.bind("sys","lineitem","l_quantity",0);
 ##s30 := s11.join(s31);
-#	s30 := join(s11,s31);
+#	s30 := algebra.join(s11,s31);
 ##s29 := {sum}(s30, s8, s7);
 #	s29 := group.sum(s30,s8);
-##s35 := sql.bind("sys",  "lineitem", "l_extendedprice"); #lineitem
-#	s35:bat[:void,:int] := sql.bind("sys","lineitem","l_extendedprice",0);
+##s35 := user.bind("sys",  "lineitem", "l_extendedprice"); #lineitem
+#	s35:bat[:void,:int] := user.bind("sys","lineitem","l_extendedprice",0);
 ##s34 := s11.join(s35);
-#	s34 := join(s11,s35);
+#	s34 := algebra.join(s11,s35);
 ##s33 := {sum}(s34, s8, s7);
 #	s33 := group.sum(s34,s8);
 ##s39 := s11.join(s35);
-#	s39 := join(s11,s35);
+#	s39 := algebra.join(s11,s35);
 ##s42 := 1;
 #	s42 := 1;
 ##s41 := flt(s42);
-#	s41 := flt(s42);
-##s44 := sql.bind("sys",  "lineitem", "l_discount"); #lineitem
-#	s44:bat[:void,:int] := sql.bind("sys","lineitem","l_discount",0);
+#	s41 := calc.flt(s42);
+##s44 := user.bind("sys",  "lineitem", "l_discount"); #lineitem
+#	s44:bat[:void,:int] := user.bind("sys","lineitem","l_discount",0);
 ##s43 := s11.join(s44);
-#	s43 := join(s11,s44);
+#	s43 := algebra.join(s11,s44);
 ##s45 := [s43 ~ s41];
-#	ha_a:= zipper(s43,s41);
+#	ha_a:= batcalc.init(s43,s41);
 #	s45 := ha_a;
 ##s40 := [-](s45,s43);
-#	s40 := multiplex.tactics("-",s45,s43);
+#	s40 := batcalc.-(s45,s43);
 ##s38 := [*](s39,s40);
-#	s38 := multiplex.tactics("*",s39,s40);
+#	s38 := batcalc.*(s39,s40);
 ##s37 := {sum}(s38, s8, s7);
 #	s37 := group.sum(s38,s8);
 ##s50 := s11.join(s35);
-#	s50 := join(s11,s35);
+#	s50 := algebra.join(s11,s35);
 ##s53 := 1;
 #	s53 := 1;
 ##s52 := flt(s53);
-#	s52 := flt(s53);
+#	s52 := calc.flt(s53);
 ##s54 := s11.join(s44);
-#	s54 := join(s11,s44);
+#	s54 := algebra.join(s11,s44);
 ##s55 := [s54 ~ s52];
-#	ia_a:= zipper(s54,s52);
+#	ia_a:= batcalc.init(s54,s52);
 #	s55 := ia_a;
 ##s51 := [-](s55,s54);
-#	s51 := multiplex.tactics("-",s55,s54);
+#	s51 := batcalc.-(s55,s54);
 ##s49 := [*](s50,s51);
-#	s49 := multiplex.tactics("*",s50,s51);
+#	s49 := batcalc.*(s50,s51);
 ##s58 := 1;
 #	s58 := 1;
 ##s57 := flt(s58);
-#	s57 := flt(s58);
-##s60 := sql.bind("sys",  "lineitem", "l_tax"); #lineitem
-#	s60:bat[:void,:int] := sql.bind("sys","lineitem","l_tax",0);
+#	s57 := calc.flt(s58);
+##s60 := user.bind("sys",  "lineitem", "l_tax"); #lineitem
+#	s60:bat[:void,:int] := user.bind("sys","lineitem","l_tax",0);
 ##s59 := s11.join(s60);
-#	s59 := join(s11,s60);
+#	s59 := algebra.join(s11,s60);
 ##s61 := [s59 ~ s57];
-#	ja_a:= zipper(s59,s57);
+#	ja_a:= batcalc.init(s59,s57);
 #	s61 := ja_a;
 ##s56 := [+](s61,s59);
-#	s56 := multiplex.tactics("+",s61,s59);
+#	s56 := batcalc.+(s61,s59);
 ##s48 := [*](s49,s56);
-#	s48 := multiplex.tactics("*",s49,s56);
+#	s48 := batcalc.*(s49,s56);
 ##s47 := {sum}(s48, s8, s7);
 #	s47 := group.sum(s48,s8);
 ##s64 := s11.join(s31);
-#	s64 := join(s11,s31);
+#	s64 := algebra.join(s11,s31);
 ##s63 := {avg}(s64, s8, s7);
 #	s63 := group.avg(s64,s8);
 ##s67 := s11.join(s35);
-#	s67 := join(s11,s35);
+#	s67 := algebra.join(s11,s35);
 ##s66 := {avg}(s67, s8, s7);
 #	s66 := group.avg(s67,s8);
 ##s70 := s11.join(s44);
-#	s70 := join(s11,s44);
+#	s70 := algebra.join(s11,s44);
 ##s69 := {avg}(s70, s8, s7);
 #	s69 := group.avg(s70,s8);
 ##s72 := {count}(s8, s8, s7);
 ##	s72 := group.count(s8,s8);
-#print(s64,s67,s66,s70,s69);
+#io.print(s64,s67,s66,s70,s69);
 #
-!ERROR: 'user.bind' undefined in user.main[9]
-!ERROR: MALresolve:user.main[27]:type mismatch bat[:void,:chr] := bat[:void,:date]
-!ERROR: 'user.bind' undefined in user.main[27]
-!ERROR: MALresolve:user.main[64]:type mismatch bat[:void,:int] := bat[:void,:chr]
-!ERROR: MALresolve:user.main[64]:type mismatch bat[:void,:int] := bat[:void,:date]
-!ERROR: 'user.bind' undefined in user.main[64]
-!ERROR: 'batcalc.-' undefined in user.main[89]
-!ERROR: 'batcalc.*' undefined in user.main[91]
-!ERROR: 'group.sum' undefined in user.main[93]
-!ERROR: 'batcalc.-' undefined in user.main[106]
-!ERROR: 'batcalc.*' undefined in user.main[108]
-!ERROR: 'batcalc.+' undefined in user.main[121]
-!ERROR: 'batcalc.*' undefined in user.main[123]
-!ERROR: 'group.sum' undefined in user.main[125]
-function user.main():int;	# 0  (main:int)
-# Beware this is not the correct TPC-1, but a merely a test 	# 1  ($2:str)
-    optimizer.setDebug();	# 2 QOTdebugOptimizers ($3:void)
-    optimizer.commonExpressionRemoval();	# 3 QOTCXoptimizer ($4:str)
-    optimizer.aliasRemoval();	# 4 QOTARoptimizer ($5:str)
-    optimizer.deadCodeRemoval();	# 5 QOTDCoptimizer ($6:str)
-#don;t depend on SQL library 	# 6  ($8:str)
-#s14 := user.bind("sys",  "lineitem", "l_shipdate"); #lineitem 	# 7  ($10:str)
-    myc := bbp.bind("myc");	# 8 CMDbbpbind (myc:bat[:any,:any])<-($12:str)
-    s14:bat[:void,:date]  := user.bind("sys","lineitem","l_shipdate",0);	# 9  unknown (s14:bat[:void,:date])<-($14:str)($15:str)($16:str)($17:int)
-#s16 := date("1998-12-01"); 	# 10  ($19:str)
-    s16 := mtime.date("1998-12-01");	# 11 MTIMEdate_fromstr (s16:date)<-($21:str)
-#s17 := 7776000; 	# 12  ($23:str)
-    s17 := 7776000;	# 13  (s17:int)<-($25:int)
-#s15 := date_sub_sec_interval(s16,s17); 	# 14  ($27:str)
-#s13 := s14.uselect(date(nil), s15); 	# 15  ($29:str)
-    zz := nil:str;	# 16  (zz:str)<-($31:str)
-    aa_a := mtime.date(zz);	# 17 MTIMEdate_fromstr (aa_a:date)<-(zz:str)
-    s13 := algebra.uselect(s14,aa_a,aa_a);	# 18 ALGuselect (s13:bat[:void,:void])<-(s14:bat[:void,:date])(aa_a:date)(aa_a:date)
-#s12 := s13.reverse(); 	# 19  ($35:str)
-    s12 := bat.reverse(s13);	# 20 BKCreverse (s12:bat[:void,:void])<-(s13:bat[:void,:void])
-#s11 := s12.reverse().mark(oid(0)).reverse();# lineitem 	# 21  ($38:str)
-    ba_a := calc.oid(0);	# 22 CALCint2oid (ba_a:oid)<-($17:int)
-    ca_a := bat.reverse(s12);	# 23 BKCreverse (ca_a:bat[:void,:void])<-(s12:bat[:void,:void])
-    da_a := algebra.markT(ca_a,ba_a);	# 24 ALGtmark (da_a:bat[:oid,:void])<-(ca_a:bat[:void,:void])(ba_a:oid)
-    s11 := bat.reverse(da_a);	# 25 BKCreverse (s11:bat[:void,:oid])<-(da_a:bat[:oid,:void])
-#s18 := user.bind("sys",  "lineitem", "l_returnflag"); #lineitem 	# 26  ($44:str)
-    s18:bat[:void,:chr]  := user.bind("sys","lineitem","l_returnflag",0);	# 27  unknown (s18:bat[:void,:chr])<-($14:str)($15:str)($46:str)($17:int)
-#s10 := s11.join(s18); 	# 28  ($48:str)
-    s10 := algebra.join(s11,s18);	# 29 ALGjoin (s10:bat[:void,:chr])<-(s11:bat[:void,:oid])(s18:bat[:void,:chr])
-#s9 := s10.group(); 	# 30  ($51:str)
-    (h,s9):= group.group(s10);	# 31 GRPgroup (h:bat[:chr,:int])(s9:bat[:void,:void])<-(s10:bat[:void,:chr])
-#s20 := user.bind("sys",  "lineitem", "l_linestatus"); #lineitem 	# 32  ($55:str)
-    s20:bat[:void,:chr]  := user.bind("sys","lineitem","l_linestatus",0);	# 33  (s20:bat[:void,:chr])<-($57:str)($58:str)($59:str)($60:int)
-#s19 := s11.join(s20); 	# 34  ($62:str)
-    s19 := algebra.join(s11,s20);	# 35 ALGjoin (s19:bat[:void,:chr])<-(s11:bat[:void,:oid])(s20:bat[:void,:chr])
-#s8 := s9.group(s19); 	# 36  ($65:str)
-    (h2,s8):= group.group(s9,s19);	# 37 GRPderive (h2:bat[:chr,:oid])(s8:bat[:void,:oid])<-(s9:bat[:void,:void])(s19:bat[:void,:chr])
-#s7 := s8.tunique().mirror(); 	# 38  ($69:str)
-    ea_a := algebra.tunique(s8);	# 39 ALGtunique (ea_a:bat[:void,:oid])<-(s8:bat[:void,:oid])
-    s7 := bat.mirror(ea_a);	# 40 BKCmirror (s7:bat[:void,:void])<-(ea_a:bat[:void,:oid])
-#s6 := s7.join(s11); 	# 41  ($73:str)
-    s6 := algebra.join(s7,s11);	# 42 ALGjoin (s6:bat[:void,:oid])<-(s7:bat[:void,:void])(s11:bat[:void,:oid])
-#s5 := s6.join(s18); 	# 43  ($76:str)
-    s5 := algebra.join(s6,s18);	# 44 ALGjoin (s5:bat[:void,:chr])<-(s6:bat[:void,:oid])(s18:bat[:void,:chr])
-#s4 := s5.reverse().sortH().reverse(); 	# 45  ($79:str)
-    fa_a := bat.reverse(s5);	# 46 BKCreverse (fa_a:bat[:chr,:void])<-(s5:bat[:void,:chr])
-    ga_a := algebra.sortH(fa_a);	# 47 ALGhsort (ga_a:bat[:chr,:void])<-(fa_a:bat[:chr,:void])
-    s4 := bat.reverse(ga_a);	# 48 BKCreverse (s4:bat[:void,:chr])<-(ga_a:bat[:chr,:void])
-#s22 := s7.join(s11); 	# 49  ($84:str)
-    s22 := algebra.join(s7,s11);	# 50 ALGjoin (s22:bat[:void,:oid])<-(s7:bat[:void,:void])(s11:bat[:void,:oid])
-#s21 := s22.join(s20); 	# 51  ($87:str)
-    s21 := algebra.join(s22,s20);	# 52 ALGjoin (s21:bat[:void,:chr])<-(s22:bat[:void,:oid])(s20:bat[:void,:chr])
-#s3 := s4.CTrefine(s21); 	# 53  ($90:str)
-    s3 := group.refine(s4,s21);	# 54 GRPrefine (s3:bat[:void,:oid])<-(s4:bat[:void,:chr])(s21:bat[:void,:chr])
-#s25 := s11.join(s18); 	# 55  ($93:str)
-    s25 := algebra.join(s11,s18);	# 56 ALGjoin (s25:bat[:void,:chr])<-(s11:bat[:void,:oid])(s18:bat[:void,:chr])
-#s24 := s7.join(s25); 	# 57  ($96:str)
-    s24 := algebra.join(s7,s25);	# 58 ALGjoin (s24:bat[:void,:chr])<-(s7:bat[:void,:void])(s25:bat[:void,:chr])
-#s27 := s11.join(s20); 	# 59  ($99:str)
-    s27 := algebra.join(s11,s20);	# 60 ALGjoin (s27:bat[:void,:chr])<-(s11:bat[:void,:oid])(s20:bat[:void,:chr])
-#s26 := s7.join(s27); 	# 61  ($102:str)
-    s26 := algebra.join(s7,s27);	# 62 ALGjoin (s26:bat[:void,:chr])<-(s7:bat[:void,:void])(s27:bat[:void,:chr])
-#s31 := user.bind("sys",  "lineitem", "l_quantity"); #lineitem 	# 63  ($105:str)
-    s31:bat[:void,:int]  := user.bind("sys","lineitem","l_quantity",0);	# 64  unknown (s31:bat[:void,:int])<-($107:str)($108:str)($109:str)($110:int)
-#s30 := s11.join(s31); 	# 65  ($112:str)
-    s30 := algebra.join(s11,s31);	# 66 ALGjoin (s30:bat[:void,:int])<-(s11:bat[:void,:oid])(s31:bat[:void,:int])
-#s29 := {sum}(s30, s8, s7); 	# 67  ($115:str)
-    s29 := group.sum(s30,s8);	# 68 GRPsum_int (s29:bat[:void,:int])<-(s30:bat[:void,:int])(s8:bat[:void,:oid])
-#s35 := user.bind("sys",  "lineitem", "l_extendedprice"); #lineitem 	# 69  ($118:str)
-    s35:bat[:void,:int]  := user.bind("sys","lineitem","l_extendedprice",0);	# 70  (s35:bat[:void,:int])<-($107:str)($108:str)($120:str)($110:int)
-#s34 := s11.join(s35); 	# 71  ($122:str)
-    s34 := algebra.join(s11,s35);	# 72 ALGjoin (s34:bat[:void,:int])<-(s11:bat[:void,:oid])(s35:bat[:void,:int])
-#s33 := {sum}(s34, s8, s7); 	# 73  ($125:str)
-    s33 := group.sum(s34,s8);	# 74 GRPsum_int (s33:bat[:void,:int])<-(s34:bat[:void,:int])(s8:bat[:void,:oid])
-#s39 := s11.join(s35); 	# 75  ($128:str)
-    s39 := algebra.join(s11,s35);	# 76 ALGjoin (s39:bat[:void,:int])<-(s11:bat[:void,:oid])(s35:bat[:void,:int])
-#s42 := 1; 	# 77  ($131:str)
-    s42 := 1;	# 78  (s42:int)<-($133:int)
-#s41 := flt(s42); 	# 79  ($135:str)
-    s41 := calc.flt(s42);	# 80 CALCint2flt (s41:flt)<-(s42:int)
-#s44 := user.bind("sys",  "lineitem", "l_discount"); #lineitem 	# 81  ($138:str)
-    s44:bat[:void,:int]  := user.bind("sys","lineitem","l_discount",0);	# 82  (s44:bat[:void,:int])<-($140:str)($141:str)($142:str)($143:int)
-#s43 := s11.join(s44); 	# 83  ($145:str)
-    s43 := algebra.join(s11,s44);	# 84 ALGjoin (s43:bat[:void,:int])<-(s11:bat[:void,:oid])(s44:bat[:void,:int])
-#s45 := [s43 ~ s41]; 	# 85  ($148:str)
-    ha_a := batcalc.init(s43,s41);	# 86 CMDbatfltinit (ha_a:bat[:void,:flt])<-(s43:bat[:void,:int])(s41:flt)
-    s45 := ha_a;	# 87  (s45:bat[:void,:flt])<-(ha_a:bat[:void,:flt])
-#s40 := [-](s45,s43); 	# 88  ($152:str)
-    s40 := batcalc.-(s45,s43);	# 89  unknown (s40:any)<-(s45:bat[:void,:flt])(s43:bat[:void,:int])
-#s38 := [*](s39,s40); 	# 90  ($155:str)
-    s38 := batcalc.*(s39,s40);	# 91  unknown (s38:any)<-(s39:bat[:void,:int])(s40:any)
-#s37 := {sum}(s38, s8, s7); 	# 92  ($158:str)
-    s37 := group.sum(s38,s8);	# 93  unknown (s37:any)<-(s38:any)(s8:bat[:void,:oid])
-#s50 := s11.join(s35); 	# 94  ($161:str)
-    s50 := algebra.join(s11,s35);	# 95 ALGjoin (s50:bat[:void,:int])<-(s11:bat[:void,:oid])(s35:bat[:void,:int])
-#s53 := 1; 	# 96  ($164:str)
-    s53 := 1;	# 97  (s53:int)<-($166:int)
-#s52 := flt(s53); 	# 98  ($168:str)
-    s52 := calc.flt(s53);	# 99 CALCint2flt (s52:flt)<-(s53:int)
-#s54 := s11.join(s44); 	# 100  ($171:str)
-    s54 := algebra.join(s11,s44);	# 101 ALGjoin (s54:bat[:void,:int])<-(s11:bat[:void,:oid])(s44:bat[:void,:int])
-#s55 := [s54 ~ s52]; 	# 102  ($174:str)
-    ia_a := batcalc.init(s54,s52);	# 103 CMDbatfltinit (ia_a:bat[:void,:flt])<-(s54:bat[:void,:int])(s52:flt)
-    s55 := ia_a;	# 104  (s55:bat[:void,:flt])<-(ia_a:bat[:void,:flt])
-#s51 := [-](s55,s54); 	# 105  ($178:str)
-    s51 := batcalc.-(s55,s54);	# 106  unknown (s51:any)<-(s55:bat[:void,:flt])(s54:bat[:void,:int])
-#s49 := [*](s50,s51); 	# 107  ($181:str)
-    s49 := batcalc.*(s50,s51);	# 108  unknown (s49:any)<-(s50:bat[:void,:int])(s51:any)
-#s58 := 1; 	# 109  ($184:str)
-    s58 := 1;	# 110  (s58:int)<-($166:int)
-#s57 := flt(s58); 	# 111  ($187:str)
-    s57 := calc.flt(s58);	# 112 CALCint2flt (s57:flt)<-(s58:int)
-#s60 := user.bind("sys",  "lineitem", "l_tax"); #lineitem 	# 113  ($190:str)
-    s60:bat[:void,:int]  := user.bind("sys","lineitem","l_tax",0);	# 114  (s60:bat[:void,:int])<-($192:str)($193:str)($194:str)($195:int)
-#s59 := s11.join(s60); 	# 115  ($197:str)
-    s59 := algebra.join(s11,s60);	# 116 ALGjoin (s59:bat[:void,:int])<-(s11:bat[:void,:oid])(s60:bat[:void,:int])
-#s61 := [s59 ~ s57]; 	# 117  ($200:str)
-    ja_a := batcalc.init(s59,s57);	# 118 CMDbatfltinit (ja_a:bat[:void,:flt])<-(s59:bat[:void,:int])(s57:flt)
-    s61 := ja_a;	# 119  (s61:bat[:void,:flt])<-(ja_a:bat[:void,:flt])
-#s56 := [+](s61,s59); 	# 120  ($204:str)
-    s56 := batcalc.+(s61,s59);	# 121  unknown (s56:any)<-(s61:bat[:void,:flt])(s59:bat[:void,:int])
-#s48 := [*](s49,s56); 	# 122  ($207:str)
-    s48 := batcalc.*(s49,s56);	# 123  unknown (s48:any)<-(s49:any)(s56:any)
-#s47 := {sum}(s48, s8, s7); 	# 124  ($210:str)
-    s47 := group.sum(s48,s8);	# 125  unknown (s47:any)<-(s48:any)(s8:bat[:void,:oid])
-#s64 := s11.join(s31); 	# 126  ($213:str)
-    s64 := algebra.join(s11,s31);	# 127 ALGjoin (s64:bat[:void,:int])<-(s11:bat[:void,:oid])(s31:bat[:void,:int])
-#s63 := {avg}(s64, s8, s7); 	# 128  ($216:str)
-    s63 := group.avg(s64,s8);	# 129 GRPavg_int (s63:bat[:void,:int])<-(s64:bat[:void,:int])(s8:bat[:void,:oid])
-#s67 := s11.join(s35); 	# 130  ($219:str)
-    s67 := algebra.join(s11,s35);	# 131 ALGjoin (s67:bat[:void,:int])<-(s11:bat[:void,:oid])(s35:bat[:void,:int])
-#s66 := {avg}(s67, s8, s7); 	# 132  ($222:str)
-    s66 := group.avg(s67,s8);	# 133 GRPavg_int (s66:bat[:void,:int])<-(s67:bat[:void,:int])(s8:bat[:void,:oid])
-#s70 := s11.join(s44); 	# 134  ($225:str)
-    s70 := algebra.join(s11,s44);	# 135 ALGjoin (s70:bat[:void,:int])<-(s11:bat[:void,:oid])(s44:bat[:void,:int])
-#s69 := {avg}(s70, s8, s7); 	# 136  ($228:str)
-    s69 := group.avg(s70,s8);	# 137 GRPavg_int (s69:bat[:void,:int])<-(s70:bat[:void,:int])(s8:bat[:void,:oid])
-#s72 := {count}(s8, s8, s7); 	# 138  ($231:str)
-#	s72 := group.count(s8,s8); 	# 139  ($233:str)
-    io.print(s64,s67,s66,s70,s69);	# 140 IOtable ($234:int)<-(s64:bat[:void,:int])(s67:bat[:void,:int])(s66:bat[:void,:int])(s70:bat[:void,:int])(s69:bat[:void,:int])
-end main;	# 141  
+!ERROR: function user.bind(s:str,t:str,c:str,i:int):bat[:any$1,:any$2];
+!                                                           ^',' expected
+!ERROR: end bind;
+!       ^';' expected
+function user.bind(s:str,t:str,c:str,i:int):any;	# 0  unknown (bind:any)<-(s:str)(t:str)(c:str)(i:int)
+    myc := bbp.bind("myc");	# 1  unknown (myc:any)<-(_6:str)
+    s14:bat[:void,:date]  := user.bind("sys","lineitem","l_shipdate",0);	# 2  unknown (s14:bat[:void,:date])<-(_8:str)(_9:str)(_10:str)(_11:int)
+    s16 := mtime.date("1998-12-01");	# 3  unknown (s16:any)<-(_13:str)
+    s17 := 7776000;	# 4  unknown (s17:any)<-(_15:int)
+    zz := nil:str;	# 5  unknown (zz:any)<-(_17:str)
+    aa_a := mtime.date(zz);	# 6  unknown (aa_a:any)<-(zz:any)
+    s13 := algebra.uselect(s14,aa_a,aa_a);	# 7  unknown (s13:any)<-(s14:bat[:void,:date])(aa_a:any)(aa_a:any)
+    s12 := bat.reverse(s13);	# 8  unknown (s12:any)<-(s13:any)
+    ba_a := calc.oid(0);	# 9  unknown (ba_a:any)<-(_11:int)
+    ca_a := bat.reverse(s12);	# 10  unknown (ca_a:any)<-(s12:any)
+    da_a := algebra.markT(ca_a,ba_a);	# 11  unknown (da_a:any)<-(ca_a:any)(ba_a:any)
+    s11 := bat.reverse(da_a);	# 12  unknown (s11:any)<-(da_a:any)
+    s18:bat[:void,:chr]  := user.bind("sys","lineitem","l_returnflag",0);	# 13  unknown (s18:bat[:void,:chr])<-(_8:str)(_9:str)(_26:str)(_11:int)
+    s10 := algebra.join(s11,s18);	# 14  unknown (s10:any)<-(s11:any)(s18:bat[:void,:chr])
+    (h,s9):= group.group(s10);	# 15  unknown (h:any)(s9:any)<-(s10:any)
+    s20:bat[:void,:chr]  := user.bind("sys","lineitem","l_linestatus",0);	# 16  unknown (s20:bat[:void,:chr])<-(_8:str)(_9:str)(_31:str)(_11:int)
+    s19 := algebra.join(s11,s20);	# 17  unknown (s19:any)<-(s11:any)(s20:bat[:void,:chr])
+    (h2,s8):= group.group(s9,s19);	# 18  unknown (h2:any)(s8:any)<-(s9:any)(s19:any)
+    ea_a := algebra.tunique(s8);	# 19  unknown (ea_a:any)<-(s8:any)
+    s7 := bat.mirror(ea_a);	# 20  unknown (s7:any)<-(ea_a:any)
+    s6 := algebra.join(s7,s11);	# 21  unknown (s6:any)<-(s7:any)(s11:any)
+    s5 := algebra.join(s6,s18);	# 22  unknown (s5:any)<-(s6:any)(s18:bat[:void,:chr])
+    fa_a := bat.reverse(s5);	# 23  unknown (fa_a:any)<-(s5:any)
+    ga_a := algebra.sortH(fa_a);	# 24  unknown (ga_a:any)<-(fa_a:any)
+    s4 := bat.reverse(ga_a);	# 25  unknown (s4:any)<-(ga_a:any)
+    s22 := algebra.join(s7,s11);	# 26  unknown (s22:any)<-(s7:any)(s11:any)
+    s21 := algebra.join(s22,s20);	# 27  unknown (s21:any)<-(s22:any)(s20:bat[:void,:chr])
+    s3 := group.refine(s4,s21);	# 28  unknown (s3:any)<-(s4:any)(s21:any)
+    s25 := algebra.join(s11,s18);	# 29  unknown (s25:any)<-(s11:any)(s18:bat[:void,:chr])
+    s24 := algebra.join(s7,s25);	# 30  unknown (s24:any)<-(s7:any)(s25:any)
+    s27 := algebra.join(s11,s20);	# 31  unknown (s27:any)<-(s11:any)(s20:bat[:void,:chr])
+    s26 := algebra.join(s7,s27);	# 32  unknown (s26:any)<-(s7:any)(s27:any)
+    s31:bat[:void,:int]  := user.bind("sys","lineitem","l_quantity",0);	# 33  unknown (s31:bat[:void,:int])<-(_50:str)(_51:str)(_52:str)(_53:int)
+    s30 := algebra.join(s11,s31);	# 34  unknown (s30:any)<-(s11:any)(s31:bat[:void,:int])
+    s29 := group.sum(s30,s8);	# 35  unknown (s29:any)<-(s30:any)(s8:any)
+    s35:bat[:void,:int]  := user.bind("sys","lineitem","l_extendedprice",0);	# 36  unknown (s35:bat[:void,:int])<-(_50:str)(_51:str)(_57:str)(_53:int)
+    s34 := algebra.join(s11,s35);	# 37  unknown (s34:any)<-(s11:any)(s35:bat[:void,:int])
+    s33 := group.sum(s34,s8);	# 38  unknown (s33:any)<-(s34:any)(s8:any)
+    s39 := algebra.join(s11,s35);	# 39  unknown (s39:any)<-(s11:any)(s35:bat[:void,:int])
+    s42 := 1;	# 40  unknown (s42:any)<-(_62:int)
+    s41 := calc.flt(s42);	# 41  unknown (s41:any)<-(s42:any)
+    s44:bat[:void,:int]  := user.bind("sys","lineitem","l_discount",0);	# 42  unknown (s44:bat[:void,:int])<-(_50:str)(_51:str)(_65:str)(_53:int)
+    s43 := algebra.join(s11,s44);	# 43  unknown (s43:any)<-(s11:any)(s44:bat[:void,:int])
+    ha_a := batcalc.init(s43,s41);	# 44  unknown (ha_a:any)<-(s43:any)(s41:any)
+    s45 := ha_a;	# 45  unknown (s45:any)<-(ha_a:any)
+    s40 := batcalc.-(s45,s43);	# 46  unknown (s40:any)<-(s45:any)(s43:any)
+    s38 := batcalc.*(s39,s40);	# 47  unknown (s38:any)<-(s39:any)(s40:any)
+    s37 := group.sum(s38,s8);	# 48  unknown (s37:any)<-(s38:any)(s8:any)
+    s50 := algebra.join(s11,s35);	# 49  unknown (s50:any)<-(s11:any)(s35:bat[:void,:int])
+    s53 := 1;	# 50  unknown (s53:any)<-(_62:int)
+    s52 := calc.flt(s53);	# 51  unknown (s52:any)<-(s53:any)
+    s54 := algebra.join(s11,s44);	# 52  unknown (s54:any)<-(s11:any)(s44:bat[:void,:int])
+    ia_a := batcalc.init(s54,s52);	# 53  unknown (ia_a:any)<-(s54:any)(s52:any)
+    s55 := ia_a;	# 54  unknown (s55:any)<-(ia_a:any)
+    s51 := batcalc.-(s55,s54);	# 55  unknown (s51:any)<-(s55:any)(s54:any)
+    s49 := batcalc.*(s50,s51);	# 56  unknown (s49:any)<-(s50:any)(s51:any)
+    s58 := 1;	# 57  unknown (s58:any)<-(_62:int)
+    s57 := calc.flt(s58);	# 58  unknown (s57:any)<-(s58:any)
+    s60:bat[:void,:int]  := user.bind("sys","lineitem","l_tax",0);	# 59  unknown (s60:bat[:void,:int])<-(_83:str)(_84:str)(_85:str)(_86:int)
+    s59 := algebra.join(s11,s60);	# 60  unknown (s59:any)<-(s11:any)(s60:bat[:void,:int])
+    ja_a := batcalc.init(s59,s57);	# 61  unknown (ja_a:any)<-(s59:any)(s57:any)
+    s61 := ja_a;	# 62  unknown (s61:any)<-(ja_a:any)
+    s56 := batcalc.+(s61,s59);	# 63  unknown (s56:any)<-(s61:any)(s59:any)
+    s48 := batcalc.*(s49,s56);	# 64  unknown (s48:any)<-(s49:any)(s56:any)
+    s47 := group.sum(s48,s8);	# 65  unknown (s47:any)<-(s48:any)(s8:any)
+    s64 := algebra.join(s11,s31);	# 66  unknown (s64:any)<-(s11:any)(s31:bat[:void,:int])
+    s63 := group.avg(s64,s8);	# 67  unknown (s63:any)<-(s64:any)(s8:any)
+    s67 := algebra.join(s11,s35);	# 68  unknown (s67:any)<-(s11:any)(s35:bat[:void,:int])
+    s66 := group.avg(s67,s8);	# 69  unknown (s66:any)<-(s67:any)(s8:any)
+    s70 := algebra.join(s11,s44);	# 70  unknown (s70:any)<-(s11:any)(s44:bat[:void,:int])
+    s69 := group.avg(s70,s8);	# 71  unknown (s69:any)<-(s70:any)(s8:any)
+    io.print(s64,s67,s66,s70,s69);	# 72  unknown (_99:any)<-(s64:any)(s67:any)(s66:any)(s70:any)(s69:any)
+end bind;	# 73  unknown 
 
-# 08:01:48 >  
-# 08:01:48 >  Done.
-# 08:01:48 >  
+# 23:52:52 >  
+# 23:52:52 >  Done.
+# 23:52:52 >  
 

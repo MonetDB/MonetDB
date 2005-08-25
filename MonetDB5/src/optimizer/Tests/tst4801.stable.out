@@ -1,38 +1,38 @@
 stdout of test 'tst4801` in directory 'src/optimizer` itself:
 
 
-# 21:42:18 >  
-# 21:42:18 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=48801 --set sql_port=54589 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4801.mal </dev/null
-# 21:42:18 >  
+# 23:53:01 >  
+# 23:53:01 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4801.mal </dev/null
+# 23:53:01 >  
 
-# Monet Database Server V4.7.0
+# Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # config:/ufs/mk/monet5/src/mal/Tests/All.conf
 # dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
+# dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information.
 #function f3():void;
-#barrier (go,i1) := newRange(1:int);
+#barrier (go,i1) := mal.newRange(1:int);
 #	t28 := array.grid(1,500,1,0);
 #	t36 := array.grid(500,500,1,0);
-#	redo (go,i1) := nextElement(1:int,500:int);
+#	redo (go,i1) := mal.nextElement(1:int,500:int);
 #exit (go,i1);
 #end f3;
 function user.f3():void;	# 0  (f3:void)
-barrier (go,i1):= mal.newRange(1:int);	# 1 RNGnewRange_int (go:bit)(i1:int)<-($3:int) jump 5
-    t28 := array.grid(1:int,500:int,1:int,0);	# 2 ARRAYgrid (t28:bat[:void,:int])<-($3:int)($5:int)($3:int)($6:int)
-    t36 := array.grid(500:int,500:int,1:int,0);	# 3 ARRAYgrid (t36:bat[:void,:int])<-($5:int)($5:int)($3:int)($6:int)
-    redo (go,i1):= mal.nextElement(1:int,500:int);	# 4 RNGnextElement_int (go:bit)(i1:int)<-($3:int)($5:int) jump 2
+barrier (go,i1):= mal.newRange(1:int);	# 1 RNGnewRange_int (go:bit)(i1:int)<-(_3:int) jump 5
+    t28 := array.grid(1:int,500:int,1:int,0);	# 2 ARRAYgrid (t28:bat[:void,:int])<-(_3:int)(_5:int)(_3:int)(_6:int)
+    t36 := array.grid(500:int,500:int,1:int,0);	# 3 ARRAYgrid (t36:bat[:void,:int])<-(_5:int)(_5:int)(_3:int)(_6:int)
+    redo (go,i1):= mal.nextElement(1:int,500:int);	# 4 RNGnextElement_int (go:bit)(i1:int)<-(_3:int)(_5:int) jump 2
 exit (go,i1);	# 5  (go:bit)(i1:int)
 end f3;	# 6  
-#	optimizer.expressionAccumulation("Admin","f3");
-#	optimizer.strengthReduction("Admin","f3");
-#	showFunction("Admin","f3");
+#	#optimizer.expressionAccumulation("user","f3");
+#	optimizer.strengthReduction("user","f3");
+#	mdb.list("user","f3");
 #
 function user.main():int;	# 0  (main:int)
-#optimizer.expressionAccumulation("user","f3"); 	# 1  ($2:str)
-    mdb.list("user","f3");	# 2 MDBlist3 ($6:void)<-($4:str)($5:str)
+#optimizer.expressionAccumulation("user","f3"); 	# 1  (_2:str)
+    mdb.list("user","f3");	# 2 MDBlist3 (_6:void)<-(_4:str)(_5:str)
 end main;	# 3  
 function user.f3():void;
     t28 := array.grid(1:int,500:int,1:int,0);
@@ -42,7 +42,7 @@ barrier (go,i1):= mal.newRange(1:int);
 exit (go,i1);
 end f3;
 
-# 21:42:18 >  
-# 21:42:18 >  Done.
-# 21:42:18 >  
+# 23:53:01 >  
+# 23:53:01 >  Done.
+# 23:53:01 >  
 

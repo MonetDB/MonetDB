@@ -1,13 +1,13 @@
 stdout of test 'STexample` in directory 'src/optimizer` itself:
 
 
-# 21:57:48 >  
-# 21:57:48 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=32307 --set sql_port=48912 --set xquery_port=56997 --set monet_prompt= --trace --dbname=mTests_src_optimizer  STexample.mal </dev/null
-# 21:57:48 >  
+# 23:53:04 >  
+# 23:53:04 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  STexample.mal </dev/null
+# 23:53:04 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # config:/ufs/mk/monet5/src/mal/Tests/All.conf
 # dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_optimizer
@@ -19,17 +19,17 @@ stdout of test 'STexample` in directory 'src/optimizer` itself:
 #d:= algebra.markH(c);
 #io.print(d);
 #optimizer.singleton();
-#mdb.showFunction();
+#mdb.list();
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-($2:int)($2:int)
-    bat.insert(b,1,2);	# 2 BKCinsert_bun ($3:bat[:int,:int])<-(b:bat[:int,:int])($4:int)($5:int)
-#many more inserts 	# 3  ($7:str)
-    c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])($9:int)($10:int)
-    ($15,$16):= bbp.unpack(c{singleton});	# 5 CMDbatunpack ($15:int)($16:int)<-(c:bat[:int,:int])
-    d := bbp.pack(nil,$15);	# 6 CMDbatpack (d:bat[:void,:int])<-($18:void)($15:int)
-    io.print(d);	# 7 IOprint_val ($12:int)<-(d:bat[:void,:int])
-    mdb.list();	# 8 MDBlist ($14:void)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
+    bat.insert(b,1,2);	# 2 BKCinsert_bun (_3:bat[:int,:int])<-(b:bat[:int,:int])(_4:int)(_5:int)
+#many more inserts 	# 3  (_7:str)
+    c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_9:int)(_10:int)
+    (_15,_16):= bbp.unpack(c{singleton});	# 5 CMDbatunpack (_15:int)(_16:int)<-(c:bat[:int,:int])
+    d := bbp.pack(nil,_15);	# 6 CMDbatpack (d:bat[:void,:int])<-(_18:void)(_15:int)
+    io.print(d);	# 7 IOprint_val (_12:int)<-(d:bat[:void,:int])
+    mdb.list();	# 8 MDBlist (_14:void)
 end main;	# 9  
 #-----------------#
 # h	t	  # name
@@ -41,13 +41,13 @@ function user.main():int;
     bat.insert(b,1,2);
 #many more inserts 
     c{singleton} := algebra.select(b,0,4);
-    ($15,$16):= bbp.unpack(c{singleton});
-    d := bbp.pack(nil,$15);
+    (_15,_16):= bbp.unpack(c{singleton});
+    d := bbp.pack(nil,_15);
     io.print(d);
     mdb.list();
 end main;
 
-# 21:57:48 >  
-# 21:57:48 >  Done.
-# 21:57:48 >  
+# 23:53:04 >  
+# 23:53:04 >  Done.
+# 23:53:04 >  
 

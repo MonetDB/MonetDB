@@ -1,57 +1,57 @@
 stdout of test 'tst4602` in directory 'src/optimizer` itself:
 
 
-# 08:01:49 >  
-# 08:01:49 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/Linux/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/monet5/Linux/var/MonetDB5/log" --set mapi_port=42158 --set sql_port=55708 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst4602.mal </dev/null
-# 08:01:49 >  
+# 23:52:53 >  
+# 23:52:53 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  tst4602.mal </dev/null
+# 23:52:53 >  
 
 # Monet Database Server V4.99.19
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/Linux/etc/MonetDB5.conf
-# dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
-# dbname:mTests_src_mal
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information.
 ## the first test for macro expansions and inversions
 ## error handling
 #function welcome(lim:int):int;
 #    i:= 0;
 #barrier j:= i<lim;
-#    print("Welcome");
+#    io.print("Welcome");
 #    i:= i+1;
 #    redo j:= i<lim;
 #    return i;
 #exit j;
 #end welcome;
 function user.welcome(lim:int):int;	# 0  (welcome:int)<-(lim:int)
-    i := 0;	# 1  (i:int)<-($3:int)
+    i := 0;	# 1  (i:int)<-(_3:int)
 barrier j := calc.<(i,lim);	# 2 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 7
-    io.print("Welcome");	# 3 IOprint_val ($5:int)<-($6:str)
-    i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)($7:int)
+    io.print("Welcome");	# 3 IOprint_val (_5:int)<-(_6:str)
+    i := calc.+(i,1);	# 4 CALCbinaryADDintint (i:int)<-(i:int)(_7:int)
     redo j := calc.<(i,lim);	# 5 CALCcompLTintint (j:bit)<-(i:int)(lim:int) jump 3
     return i;	# 6  (i:int)
 exit j;	# 7  (j:bit)
 end welcome;	# 8  
 #
-#optimizer.MEoptimizer("Admin","welcome");
+#optimizer.macroExpansion("user","welcome");
 #
-#print("test expansion");
-#a:=welcome(2);
-#showFunction();
+#io.print("test expansion");
+#a:= user.welcome(2);
+#mdb.list();
 #
 !ERROR: MALexception:optimizer.MACROvalidate:RETURN statement is not the last one
 #
 !ERROR: SYNTAX ERROR: instructions after END end main;
 function user.main():int;	# 0  (main:int)
-# the first test for macro expansions and inversions 	# 1  ($2:str)
-# error handling 	# 2  ($4:str)
-    io.print("test expansion");	# 3 IOprint_val ($8:int)<-($9:str)
-    a := user.welcome(2);	# 4  (a:int)<-($11:int)
-    mdb.list();	# 5 MDBlist ($12:void)
+# the first test for macro expansions and inversions 	# 1  (_2:str)
+# error handling 	# 2  (_4:str)
+    io.print("test expansion");	# 3 IOprint_val (_8:int)<-(_9:str)
+    a := user.welcome(2);	# 4  (a:int)<-(_11:int)
+    mdb.list();	# 5 MDBlist (_12:void)
 end main;	# 6  
 end main;	# 7  
 
-# 08:01:50 >  
-# 08:01:50 >  Done.
-# 08:01:50 >  
+# 23:52:53 >  
+# 23:52:53 >  Done.
+# 23:52:53 >  
 
