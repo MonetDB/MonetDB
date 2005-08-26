@@ -5,6 +5,6 @@ include mil;
 mil.open();
 barrier (v,nme):= mil.iterator();
 	io.print(nme);
-	redo (v,nme):=mil.iterator();
+	redo (v,nme):=mil.hasMoreElements();
 exit v;
 mil.close();	# save the content on persistent store
