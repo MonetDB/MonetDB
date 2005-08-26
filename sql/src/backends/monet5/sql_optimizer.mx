@@ -199,7 +199,7 @@ optimizeQueryInCache(Client c)
 @-
 Reduce the program before other optimizations take place
 @c
-	MCoptimizer(c->curprg->def, 0, 0, "algebra", "joinPath");
+	MCoptimizerCommand(c->curprg->def, 0, 0, "algebra", "joinPath");
 	ARoptimizer(c->curprg->def, 0, 0);
 	CXoptimizer(c->curprg->def, 0, 0);
 	ORoptimizer(c->curprg->def, 0, 0);

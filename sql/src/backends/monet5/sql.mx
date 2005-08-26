@@ -52,7 +52,7 @@ comment "Execute a single sql statement";
 command header(i:int) 
 address SQLheader
 comment "Generate a table header for an SQL frontend";
-command column(i:any, v:str,t:str,digits:int,scale:int) 
+command column(i:any_1, v:str,t:str,digits:int,scale:int) 
 address SQLcolumnsingle;
 command column(b:bat, v:str,t:str,digits:int,scale:int) 
 address SQLcolumn
@@ -156,11 +156,11 @@ address mvc_import_table_wrap
 comment "Import a table from stream s with the 
 	given tuple and seperators (sep/rsep)";
 
-pattern hash( v:any$1, sh:int ) :int 
+pattern hash( v:any_1, sh:int ) :int 
 address hash_wrap 
 comment "calculate a hash value and shift left";
 
-command hash( b:bat[:void,:any$1], sh:int ) :bat[:void,:int]
+command hash( b:bat[:void,:any_1], sh:int ) :bat[:void,:int]
 address bathash_wrap 
 comment "calculate a hash value and shift left";
 
@@ -301,6 +301,7 @@ include mil_algebra_procs;
 #include "sql_qc.h"
 #include "sql_env.h"
 
+#define debugPlan() (be->mvc->debug || (be->mvc->mode == m_debug ))
 #define explainPlan() (be->mvc->explain && \
 		strcmp(be->mvc->explain, "plan") == 0)
 #define explainPerformance() (be->mvc->explain && \

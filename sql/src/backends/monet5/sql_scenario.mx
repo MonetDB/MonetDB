@@ -55,11 +55,13 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_optimizer.h"
 #include "sql_cache.h"
 #include "sql_env.h"
-#include "io.h"
+#include "print.h"
 #include "mal_parser.h"
 #include <bat/res_table.h>
 #include "mal_namespace.h"
 #include "mal_debugger.h"
+#include "bat.h"
+/* extern str BKCsetRole(int *r, int *bid, str *hname, str *tname);*/
 
 static void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit);
 
@@ -412,6 +414,7 @@ stream, but only when no unresolved 'nxt' character is visible.
 In combination with SQLparser this ensures that all statements
 are handled one by one.
 @c
+#define _SQL_READER_DEBUG
 str
 SQLreader(Client c)
 {
@@ -574,15 +577,16 @@ SQLparser(Client c)
 	prot oldmode;
 
 	oldstate = *c->curprg->def;
-#ifdef _SQL_PARSER_DEBUG
-	stream_printf(GDKout, "#SQL compilation \n");
-#endif
-	SQLsetDebugger(c, TRUE);
 	be = ((backend *) c->state[PARSER]);
 	if (be == 0) {
 		GDKerror("SQL state descriptor missing\n");
 		return throwMessage("SQLparser", "State decriptor missing\n");
 	}
+#ifdef _SQL_PARSER_DEBUG
+	stream_printf(GDKout, "#SQL compilation \n");
+	printf("debugger? %d %d\n", debugPlan(), be->mvc->mode);
+#endif
+	SQLsetDebugger(c, debugPlan());
 	m = be->mvc;
 
 	assert(m);
@@ -692,7 +696,8 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 In the final phase we add any debugging control
 @c
 	/* turn off debugger */
-	SQLsetDebugger(c, FALSE);
+	if( debugPlan())
+		SQLsetDebugger(c, FALSE);
 
 	if (explainPerformance()) {
 		be->qry = sql_escape(QUERY(m->scanner));
@@ -851,7 +856,6 @@ SQLheader(int *ret, int *i)
 	return MAL_SUCCEED;
 }
 
-extern str BKCsetRole(int *r, int *bid, str *hname, str *tname);
 
 str
 SQLcolumn(int *ret, int *bid, str *v, str *t, int *digits, int *scale)
