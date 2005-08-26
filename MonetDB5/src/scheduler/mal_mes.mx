@@ -235,6 +235,9 @@ This will be collected at the start of the scheduler call
 and is available as global information.
 
 @c
+mal_export str meo_loop_optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name);
+
 str
 meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name)
 {
