@@ -61,7 +61,6 @@ we update its context descriptor to denote an SQL scenario.
 #include "mal_namespace.h"
 #include "mal_debugger.h"
 #include "bat.h"
-/* extern str BKCsetRole(int *r, int *bid, str *hname, str *tname);*/
 
 static void pushCatchDefault(MalBlkPtr mb, str nme, int autocommit);
 
@@ -414,7 +413,6 @@ stream, but only when no unresolved 'nxt' character is visible.
 In combination with SQLparser this ensures that all statements
 are handled one by one.
 @c
-#define _SQL_READER_DEBUG
 str
 SQLreader(Client c)
 {
