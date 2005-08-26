@@ -1952,7 +1952,8 @@ bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 	c->tabs = 1 + (c->width) / 8;
 	t->rowwidth += 8 * c->tabs;
 	*k = c->width;
-	BBPunfix(c->bval->batCacheid);
+	if (c->bval)
+		BBPunfix(c->bval->batCacheid);
 	return NULL;
 }
 

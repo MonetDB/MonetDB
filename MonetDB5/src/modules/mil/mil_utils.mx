@@ -103,6 +103,29 @@ Compatibility code wrappers
 @c
 #include "mal.h"
 #include "bat.h"
+#include "mil_utils.h"
+#include "mal_utils.h"
+#include "streams.h"
+
+#include "mal.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+
+mal_export str MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MILinsert_bun(int *r, int *bid, ptr h, ptr t);
+mal_export str MILinsert_void_bun(int *r, int *bid, ptr t);
 
 str
 MILinsert_void_bun(int *r, int *bid, ptr t)
@@ -208,13 +231,6 @@ The content of this box my only be changed by the Administrator.
 	insertToBox(box,@1,msg);
 	GDKfree(msg);
 @c
-#include "mil_utils.h"
-#include "mal_utils.h"
-#include "streams.h"
-
-#include "mal.h"
-#include "mal_client.h"
-#include "mal_interpreter.h"
 
 int
 isAuthorized(str nme)

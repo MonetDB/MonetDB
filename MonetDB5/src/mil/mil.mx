@@ -88,6 +88,11 @@ many variables are introduced, such that trimming the scope list is easy.
 
 /* #define _MIL_SCENARIO_DEBUG*/
 
+mil_export str MILline(int *ret, str *msg);
+mil_export str CMDMILcompileOnly(int *ret);
+mil_export str CMDMILcompile(int *ret, str *fname);
+mil_export str CMDMILsession(str *ret);
+
 str
 MILinit(Client cntxt)
 {
