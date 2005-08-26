@@ -67,10 +67,10 @@ comment "Get the string representation
 pattern mil.discard(name:str) :void 		
 address MILdiscard
 comment "Release the const from the box";
-pattern mil.iterator() (:lng,:str)
+command mil.iterator() (:lng,:str)
 address MILnewIterator
 comment "Locate next element in the box";
-pattern mil.hasMoreElements()(:lng,:str)
+command mil.hasMoreElements()(:lng,:str)
 address MILhasMoreElements
 comment "Locate next element in the box";
 
@@ -111,6 +111,8 @@ Compatibility code wrappers
 #include "mal_client.h"
 #include "mal_interpreter.h"
 
+#ifdef _MIL_UTILS_H
+#define _MIL_UTILS_H
 mal_export str MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MILhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MILnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -126,6 +128,7 @@ mal_export str MILopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MILprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str MILinsert_bun(int *r, int *bid, ptr h, ptr t);
 mal_export str MILinsert_void_bun(int *r, int *bid, ptr t);
+#endif
 
 str
 MILinsert_void_bun(int *r, int *bid, ptr t)
@@ -306,7 +309,6 @@ to a named box.
 	box= findBox("mil");
 	if( box ==0) 
 	return throwMessage("mil.@1","box is not open");
-	(void) mb;
 @-
 @c
 str
@@ -315,6 +317,7 @@ MILdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str name;
 	ValPtr v;
 	Box box;
+	(void) mb;
 
 	@:authorize(@1)@
 	@:OpenBox(deposit)@
@@ -425,32 +428,29 @@ MILtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-MILnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MILnewIterator(lng *cursor, str *v)
 {
 	Box box;
-	lng *cursor;
-	ValPtr v;
 
-	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
-	cursor = (lng *) getArgValue(stk, pci, 0);
-	v = &stk->stk[pci->argv[1]];
-	nextBoxElement(box, cursor, v);
+	*cursor = 0;
+	*v= getBoxName(box,*cursor);
+	*cursor = 1;
 	return MAL_SUCCEED;
 }
 
 str
-MILhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+MILhasMoreElements(lng *cursor, str *v)
 {
 	Box box;
-	lng *cursor;
-	ValPtr v;
 
-	(void) mb;		/* fool compiler */
 	@:OpenBox(iterator)@
-	cursor = (lng *) getArgValue(stk, pci, 0);
-	v = &stk->stk[pci->argv[1]];
-	nextBoxElement(box, cursor, v);
+	if( *cursor >= box->sym->vtop){
+		*cursor = -1;
+		return MAL_SUCCEED;
+	}
+	*v= getBoxName(box,*cursor);
+	*cursor = *cursor + 1;
 	return MAL_SUCCEED;
 }
 
