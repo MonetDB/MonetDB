@@ -369,8 +369,8 @@ readConsole(Client cntxt){
 	if( buf) {
 		int len= strlen(buf);
 		if( len >= cntxt->fdin->len) {
-			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+2);
-			cntxt->fdin->len = len+2;
+			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+1);
+			cntxt->fdin->len = len;
 		} 
 		strcpy(cntxt->fdin->buf, buf);
 		cntxt->fdin->pos = 0;
