@@ -103,6 +103,7 @@ mal_export int malMatch(InstrPtr p1, InstrPtr p2);
 mal_export int malFcnMatch(MalBlkPtr m1, MalBlkPtr mb, int pc);
 mal_export str ORCAMprocessor(MalBlkPtr mb, Symbol t);
 mal_export str MACROprocessor(MalBlkPtr mb, Symbol t);
+mal_export str MCoptimizerCommand(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, str mod, str fcn);
 #endif /* _MAL_MACRO_H_ */
 @-
 @c
