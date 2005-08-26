@@ -1241,6 +1241,132 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 }
 @
 
+
+@- update primitives
+@mil
+
+PROC delete_nodes_prepare (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat] ws) : BAT[bat,bat] {
+    var res := bat(nil);
+    
+    if ( isnil(seqbase(item)) or isnil(seqbase(kind)) ) {
+        ERROR("delete_nodes: heads of item & kind must not be NIL!");
+        return res;
+    }
+    if ( (count(item) != count(kind)) or (seqbase(item) != seqbase(kind)) ) {
+        ERROR("delete_nodes: heads of item & kind must be aligned!");
+        return res;
+    }
+    if (count(item) = 0) {
+        res := new(bat,bat,0).access(BAT_READ);
+    } else {
+        var bit30 := 1<<30;
+        var order :=  3; # input & output of location step is sorted on item
+        var cols  := 14; # number of PRE_* columns and *NID* indices to be updated: 
+                         # PRE_{SIZE,LEVEL,KIND,PROP,FRAG,NID}, NID_PRE, KND_{NID_[0-4],PROP_{0,3}}
+        var frag  := kind.get_fragment();
+            kind  := nil;
+        var uFrag := frag.tunique().sort();
+        var res   := new(bat, bat, cols * count(uFrag));
+	uFrag@batloop () {
+	    var theFrag  := $h;
+            var frags    := frag.ord_uselect(theFrag).mark(nil).reverse();
+            if (count(frags) > 0) {
+                var pre_size := ws.fetch(PRE_SIZE).fetch(theFrag);
+                var cands    := pre_size.ord_uselect(0,int(nil)).reverse().chk_order();
+                if (count(cands) > 0) {
+                    var items    := frags.leftfetchjoin(item).reverse().sort().reverse().mark(0@0);
+                        frags    := nil;
+                    var iters    := items.project(0@0); # we don't care about iters, here
+                    var descs    := descendant_or_self (iters, items, theFrag, ws, order, cands);
+                        cands    := nil;
+                        iters    := nil;
+                        items    := nil;
+                    var pre_     := descs.reverse().mark(nil).chk_order();
+                        descs    := nil;
+
+                    # FIXME/TODO:
+                    # implement a C function that generates the PRE_SIZE replace BAT with "optimized/maximized/consecutive holes"
+                        res      := res.insert(ws.fetch(PRE_SIZE ).fetch(theFrag), 
+                                               pre_.mirror().leftfetchjoin(pre_size).[+](bit30).[+](bit30));
+                        pre_size := nil;
+                    var pre_chr  := pre_.[chr]();
+                        res      := res.insert(ws.fetch(PRE_LEVEL).fetch(theFrag), pre_chr);
+                        res      := res.insert(ws.fetch(PRE_KIND ).fetch(theFrag), pre_chr);
+                        pre_chr  := nil;
+                        res      := res.insert(ws.fetch(PRE_PROP ).fetch(theFrag), pre_);
+                        res      := res.insert(ws.fetch(PRE_FRAG ).fetch(theFrag), pre_);
+                        res      := res.insert(ws.fetch(PRE_NID  ).fetch(theFrag), pre_);
+                    var pre_nid  := ws.fetch(PRE_NID).fetch(theFrag);
+                    var nid_     := pre_.reverse().leftfetchjoin(pre_nid).reverse().sort();
+                        pre_     := nil;
+                        pre_nid  := nil;
+                        res      := res.insert(ws.fetch(NID_PRE  ).fetch(theFrag), nid_);
+                    
+                    var knd := ELEMENT;
+                    while ( knd <= DOCUMENT ) {
+                        var knd_nid := ws.fetch(KND_NID.find(knd)).fetch(theFrag);
+                        var knd_    := knd_nid.leftjoin(nid_);
+                        if (count(knd_) > 0) {
+                            res     := res.insert(knd_nid, knd_);
+                        }
+                        if ( (knd = ELEMENT) or (knd = PI) ) {
+                            var knd_prop := ws.fetch(KND_PROP.find(knd)).fetch(theFrag);
+                                knd_     := knd_prop.leftjoin(nid_);
+                            if (count(knd_) > 0) {
+                                res      := res.insert(knd_prop, knd_);
+                            }
+                        }
+                        knd :+= chr(1);
+                    }
+                }
+            }
+        }
+        res := res.access(BAT_READ);
+    }
+    return res;
+}
+ADDHELP("delete_nodes_prepare", "manegold", "Aug 26 2005",
+"PARAMETERS:\n\
+ BAT[void,oid] item (pre-order values of nodes that are to be deleted)\n\
+ BAT[void,oid] kind (encoded fragment of nodes that are to be deleted)\n\
+ BAT[void,bat] ws (working set)\n\
+RESULT:\n\
+ BAT[bat,bat] BAT of BAT-pairs ('dst','src')\n\
+DESCRIPITON:\n\
+ Given a list of nodes (item) to be deleted and their fragment (encoded in kind),\n\
+ delete_nodes_prepare() finds all decendants of the nodes that have to be deleted,\n\
+ and returns a BAT of BAT-pairs ('dst','src'), where\n\
+ 'dst' is the (persistent) BAT that has to be updated, and\n\
+ 'src' contains the new values.\n\
+ (We don't care about iters, here.)",
+"pf_support");
+
+PROC delete_nodes_execute (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat] ws) : void {
+    var res := delete_nodes_prepare(item, kind, ws);
+    
+    if (not(isnil(res))) {
+        #if (commit_update_log(res)) { # FIXME/TODO #
+            var dst := res.mark(0@0);
+            var src := res.reverse().mark(0@0).reverse();
+            [replace](dst, src, TRUE);
+        #}
+    }
+}
+ADDHELP("delete_nodes_execute", "manegold", "Aug 26 2005",
+"PARAMETERS:\n\
+ BAT[void,oid] item (pre-order values of nodes that are to be deleted)\n\
+ BAT[void,oid] kind (encoded fragment of nodes that are to be deleted)\n\
+ BAT[void,bat] ws (working set)\n\
+DESCRIPITON:\n\
+ Given a list of nodes (item) to be deleted and their fragment (encoded in kind),\n\
+ delete_nodes_execute() calls delete_nodes_prepare()\n\
+ to calculate all BATs that have to be updates and their new values.\n\
+ The updates are then first committed to the log\n\
+ before they are applied to the BATs.\n\
+ (We don't care about iters, here.)",
+"pf_support");
+
+
 @* Module Implementation
 @h
 #ifndef PF_SUPPORT_H
