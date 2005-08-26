@@ -1246,7 +1246,7 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
 @mil
 
 PROC delete_nodes_prepare (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat] ws) : BAT[bat,bat] {
-    var res := bat(nil);
+    var res := nil;
     
     if ( isnil(seqbase(item)) or isnil(seqbase(kind)) ) {
         ERROR("delete_nodes: heads of item & kind must not be NIL!");
@@ -1261,12 +1261,12 @@ PROC delete_nodes_prepare (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat]
     } else {
         var bit30 := 1<<30;
         var order :=  3; # input & output of location step is sorted on item
-        var cols  := 14; # number of PRE_* columns and *NID* indices to be updated: 
-                         # PRE_{SIZE,LEVEL,KIND,PROP,FRAG,NID}, NID_PRE, KND_{NID_[0-4],PROP_{0,3}}
+        var cols  := 13; # number of PRE_* columns and *NID* indices to be updated: 
+                         # PRE_{SIZE,LEVEL,KIND,PROP,NID}, NID_PRE, KND_{NID_[0-4],PROP_{0,3}}
         var frag  := kind.get_fragment();
             kind  := nil;
         var uFrag := frag.tunique().sort();
-        var res   := new(bat, bat, cols * count(uFrag));
+            res   := new(bat, bat, cols * count(uFrag));
 	uFrag@batloop () {
 	    var theFrag  := $h;
             var frags    := frag.ord_uselect(theFrag).mark(nil).reverse();
@@ -1274,7 +1274,7 @@ PROC delete_nodes_prepare (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat]
                 var pre_size := ws.fetch(PRE_SIZE).fetch(theFrag);
                 var cands    := pre_size.ord_uselect(0,int(nil)).reverse().chk_order();
                 if (count(cands) > 0) {
-                    var items    := frags.leftfetchjoin(item).reverse().sort().reverse().mark(0@0);
+                    var items    := frags.leftfetchjoin(item).reverse().sort().mark(0@0).reverse();
                         frags    := nil;
                     var iters    := items.project(0@0); # we don't care about iters, here
                     var descs    := descendant_or_self (iters, items, theFrag, ws, order, cands);
@@ -1294,7 +1294,6 @@ PROC delete_nodes_prepare (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat]
                         res      := res.insert(ws.fetch(PRE_KIND ).fetch(theFrag), pre_chr);
                         pre_chr  := nil;
                         res      := res.insert(ws.fetch(PRE_PROP ).fetch(theFrag), pre_);
-                        res      := res.insert(ws.fetch(PRE_FRAG ).fetch(theFrag), pre_);
                         res      := res.insert(ws.fetch(PRE_NID  ).fetch(theFrag), pre_);
                     var pre_nid  := ws.fetch(PRE_NID).fetch(theFrag);
                     var nid_     := pre_.reverse().leftfetchjoin(pre_nid).reverse().sort();
@@ -1346,7 +1345,7 @@ PROC delete_nodes_execute (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat]
     
     if (not(isnil(res))) {
         #if (commit_update_log(res)) { # FIXME/TODO #
-            var dst := res.mark(0@0);
+            var dst := res.mark(0@0).reverse();
             var src := res.reverse().mark(0@0).reverse();
             [replace](dst, src, TRUE);
         #}
