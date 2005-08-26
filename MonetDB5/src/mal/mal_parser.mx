@@ -507,8 +507,11 @@ typeAlias(Client cntxt, int tpe)
 {
 	int t;
 
-	if (currChar(cntxt) != TMPMARKER || tpe !=TYPE_any)
+	if (currChar(cntxt) != TMPMARKER || tpe !=TYPE_any){
+		/* if( tpe == TYPE_any && currChar(cntxt)!='.' )
+			parseError(cntxt, "[1-9] or '...' expected\n"); */
 		return -1;
+	}
 	nextChar(cntxt);
 	if (!isdigit((int) currChar(cntxt))) {
 		parseError(cntxt, "[1-9] expected\n");
