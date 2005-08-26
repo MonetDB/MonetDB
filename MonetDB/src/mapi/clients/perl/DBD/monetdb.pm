@@ -5,7 +5,7 @@ use sigtrap;
 use DBI();
 use MapiLib();
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 our $drh = undef;
 
 require DBD::monetdb::GetInfo;
