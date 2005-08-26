@@ -254,29 +254,44 @@ EXCEPT when (child-T == void)
 @:@1_ws(HEIGHT,        22, int, void, void, nil)@
 @:@1_ws(QN_PREFIX_URI, 23, bat, void,  str, PRE_BASE)@
 @:@1_ws(QN_LOC_URI,    24, bat, void,  str, PRE_BASE)@
-@:@1_ws(PROP_NID_0,    25, bat,  oid,  oid, nil)@
-@:@1_ws(KIND_NID_1,    26, bat, void,  oid, nil)@
-@:@1_ws(KIND_NID_2,    27, bat, void,  oid, nil)@
-@:@1_ws(PROP_NID_3,    28, bat,  oid,  oid, nil)@
-@:@1_ws(KIND_NID_4,    29, bat, void,  oid, nil)@
-@:@1_ws(NID_PRE,       30, bat, void,  oid, PRE_BASE)@
-@:@1_ws(PRE_NID,       31, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_0,     25, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_PROP_0,    26, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_1,     27, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_2,     28, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_3,     29, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_PROP_3,    30, bat, void,  oid, PRE_BASE)@
+@:@1_ws(KND_NID_4,     31, bat, void,  oid, PRE_BASE)@
+@:@1_ws(NID_PRE,       32, bat, void,  oid, PRE_BASE)@
+@:@1_ws(PRE_NID,       33, bat, void,  oid, PRE_BASE)@
 
 @= c_decl_ws
 #define @1 @2
 @h
 @:ws(c_decl)@
-#define WS_SIZE 32  /* should be last */
+#define WS_SIZE 34  /* should be last */
 
 @= mil_decl_ws
 const @1 := @2;
 @mil
 @:ws(mil_decl)@
-const WS_SIZE  := 32; # WS_SIZE should be last
-const PROP_NID := PROP_NID_0;
-const KIND_NID := PROP_NID;
-const KIND_NID_0 := PROP_NID_0;
-const KIND_NID_3 := PROP_NID_3;
+const WS_SIZE  := 34; # WS_SIZE should be last
+const KND_NID  := new(chr,int,5);
+const KND_PROP := new(chr,int,2);
+{
+    var knd := ELEMENT;
+    var idx := KND_NID_0;
+    while ( knd <= DOCUMENT ) {
+        KND_NID.insert(knd,idx);
+        idx :+= 1;
+        if ( (knd = ELEMENT) or (knd = PI) ) {
+            KND_PROP.insert(knd,idx);
+            idx :+= 1;
+        }
+        knd :+= chr(1);
+    }
+}
+KND_NID .access(BAT_READ);
+KND_PROP.access(BAT_READ);
 
 var doc_query; # bat[oid,int] active working-sets (queries) that use a particular document 
 var doc_sema;  # bat[oid,sema] used by delete_doc to wait until all doc users have gone
@@ -501,15 +516,22 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     # create our indices
     var knd := ELEMENT;
     while ( knd <= DOCUMENT ) {
-        var the_name := str(chr(48 + knd));
-        var the_bat := docBAT.find("pre_kind").ord_uselect(knd).reverse().leftfetchjoin(pre_nid).chk_order();
-        if ( (knd = ELEMENT) or (knd = PI) ) {
-            the_name := "prop_nid_" + the_name;
-            the_bat := the_bat.reverse().mirror().leftfetchjoin(nid_pre).leftfetchjoin(docBAT.find("pre_prop")).reverse().leftfetchjoin(pre_nid).chk_order();
-        } else {
-            the_name := "kind_nid_" + the_name;
+        var knd_no  := str(chr(48 + knd));
+        var knd_pre := docBAT.find("pre_kind").ord_uselect(knd).mark(PRE_BASE).reverse().chk_order();
+        var knd_nid := knd_pre.leftfetchjoin(pre_nid).chk_order();
+        if ((htype(knd_nid) != 0) or (head(knd_nid) != "void")) {
+            ERROR("pathfinder.mx: shred_doc_impl(): htype(knd_nid) = %d, head(knd_nid) = %s !\n",
+                  htype(knd_nid), head(knd_nid));
         }
-        docBAT.insert(the_name,the_bat);
+        docBAT.insert("knd_nid_" + knd_no, knd_nid);
+        if ( (knd = ELEMENT) or (knd = PI) ) {
+            var knd_prop := knd_pre.leftfetchjoin(docBAT.find("pre_prop")).chk_order();
+            if ((htype(knd_prop) != 0) or (head(knd_prop) != "void")) {
+                ERROR("pathfinder.mx: shred_doc_impl(): htype(knd_prop) = %d, head(knd_prop) = %s !\n",
+                      htype(knd_prop), head(knd_prop));
+            }
+            docBAT.insert("knd_prop_" + knd_no, knd_prop);
+        }
         knd :+= chr(1);
     }
 
