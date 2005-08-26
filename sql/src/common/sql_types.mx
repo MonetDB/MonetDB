@@ -208,7 +208,6 @@ int sql_type_convert (int from, int to)
 int is_commutative(char *fnm)
 {
 	if (strcmp("sql_add", fnm) == 0 ||
-	    strcmp("sql_sub", fnm) == 0 ||
 	    strcmp("sql_mul", fnm) == 0)
 	    	return 1;
 	return 0;
