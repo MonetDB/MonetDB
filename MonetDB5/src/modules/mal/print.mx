@@ -145,10 +145,9 @@ comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
 @* Implementation Code
 
 @h
-#ifndef _IO_H_
-#define _IO_H_
+#ifndef _PRINT_H_
+#define _PRINT_H_
 
-#include <stdio.h>
 #include <stdarg.h>
 #include "blob.h"
 #include "mal.h"
@@ -164,12 +163,7 @@ typedef FILE *fstream;
 #define fileCheck(fp) if (!fp) \
 	return throwMessage( "io.@1","Incorrect file pointer");
 
-
-#endif /* _IO_H_ */
-
-@c
 #include <mal_config.h>
-#include "print.h"
 
 mal_export str IOprint_tables(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str IOtableAll(stream *f, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
@@ -202,6 +196,9 @@ mal_export str IOimport(int *ret, int *bid, str *fnme);
 mal_export str io_stdin(stream **ret);
 mal_export str io_stdout(stream **ret);
 mal_export str io_stderr(stream **ret);
+
+#endif /* _PRINT_H_ */
+
 @+ Printing
 The print commands are implemented as single instruction rules,
 because they need access to the calling context.
@@ -214,6 +211,8 @@ Beware, the types of the objects to be printed should be
 obtained from the stack, because the symbol table may actually
 allow for any type to be assigned.
 @c
+#include "print.h"
+
 str
 io_stdin(stream **ret)
 {
