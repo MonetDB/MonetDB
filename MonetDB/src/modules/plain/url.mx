@@ -17,6 +17,7 @@
 @f url
 @t The URL module
 @a M. Kersten
+@a Y. Zhang
 @v 1.1
 @* The URL module
 The URL module contains a collection of commands to manipulate
@@ -135,7 +136,8 @@ url_getAnchor(str *retval,	/* put string: pointer to char here. */
 	return GDK_SUCCEED;
 }
 
-/* COMMAND "getBasename": Extract the last file name of the URL
+/* COMMAND "getBasename": Extract the base of the last file name of the URL,
+ *                        thus, excluding the file extension.
  * SIGNATURE: getBasename(str) : str; */
 int
 url_getBasename(str *retval, url t)
@@ -167,9 +169,13 @@ url_getContent(str *retval,	/* put string: pointer to char here. */
 	       url Str1		/* string: pointer to char. */
     )
 {
-	(void) Str1;
-	*retval = 0;
-	return GDK_FAIL;
+    /* TODO: getContent should not return a string */
+    if (!Str1) {
+        return GDK_FAIL;
+    } else {
+        strcpy(*retval, "functions not implemented");
+        return GDK_SUCCEED;
+    }
 }
 
 /* COMMAND "getContext": Extract the path context from the URL
@@ -181,17 +187,24 @@ url_getContext(str *retval, url Str1)
 
 	if (Str1 == 0)
 		return GDK_FAIL;
-	s = strchr(Str1, '/');
+
+    s = strstr(Str1, "://");
+    if (s)
+        s +=3;
+    else
+        s = Str1;
+
+	s = strchr(s, '/');
 	if (s == 0) {
 		d = GDKmalloc(strlen(str_nil) + 1);
 		if (d)
 			strcpy(d, str_nil);
 	} else {
-		int i = s - Str1 + 1;
+		int i = strlen(Str1) - (s - Str1) + 1;
 
-		d = GDKmalloc(i + 1);
+		d = GDKmalloc(i);
 		if (d)
-			strncpy(d, s, i);
+			strcpy(d, s);
 	}
 	*retval = d;
 	return GDK_SUCCEED;
@@ -615,6 +628,11 @@ url_isaURL(bit *retval,		/* put return atom here. */
 	(void) retval;
 	if (Str1 == 0)
 		return GDK_FAIL;
+
+    if (strlen(Str1) == 0)
+        *retval = FALSE;
+    else
+        *retval = TRUE;
 	return GDK_SUCCEED;
 }
 
@@ -657,7 +675,7 @@ url_new4(str *retval,		/* put string: pointer to char here. */
 	if (strlen(File) + strlen(Server) + strlen(Protocol) > 1000)
 		s = str_nil;
 	else
-		sprintf("%s://%s:%d/%s", Protocol, Server, Port, File);
+		sprintf(buf, "%s://%s:%d/%s", Protocol, Server, *Port, File);
 	d = GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
