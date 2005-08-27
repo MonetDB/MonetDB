@@ -716,7 +716,7 @@ IOexport(int *ret, int *bid, str *fnme)
 	}
 	if (s == NULL || stream_errnr(s)) {
 		*ret = FALSE;
-		return throwException(MALEXCEPTION, "bat.export", "could not open %s", *fnme);
+		return throwMessage("bat.export", "could not open file");
 	}
 	BATprintf(s, b);
 	stream_close(s);
@@ -753,7 +753,7 @@ Open the file. Memory map it to minimize buffering problems.
 @c
 	if (fp == NULL) {
 		BBPunfix(b->batCacheid);
-		return throwException(MALEXCEPTION, "bat.import", "could not open file %s", fnme);
+		return throwMessage("bat.import", "could not open file");
 	} else {
 		int fn;
 		struct stat st;
@@ -825,10 +825,11 @@ Parse the line, and insert a BUN.
 		for (;*p && *p != @2; p++);
 		if (*p) for (p++; *p && GDKisspace(*p); p++);
 		if (*p == 0) {
+			char msg[BUFSIZ];
 			*ret = FALSE;
 			BBPunfix(b->batCacheid);
-			return throwException(MALEXCEPTION, "bat.import",
-				"error in %s",buf);
+			snprintf(msg,BUFSIZ,"error in input %s",buf);
+			return throwMessage( "bat.import", msg);
 		}
 		p += @1(p, @3, @4);
 @c

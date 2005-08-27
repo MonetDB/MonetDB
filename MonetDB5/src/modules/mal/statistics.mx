@@ -580,7 +580,7 @@ STATdepositStr(int *ret, str *nme)
 	val.val.bval = idx;
 	val.vtype = TYPE_bat;
 	if (depositBox(box, *nme, &val))
-		return throwException(MALEXCEPTION, "statistics.deposit", "failed to deposit '%s' into box", *nme);
+		return throwMessage("statistics.deposit", "failed to deposit object  into box");
 	bnme = BATgetId(b);
 	return STATenroll(ret, &bnme);
 }
@@ -614,7 +614,7 @@ STATtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgName(mb, pci, 1);
 	v = &stk->stk[getArg(pci, 0)];
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
-		return throwException(MALEXCEPTION, "statistics.take", "failed to take '%s' from box", name);
+		return throwMessage("statistics.take", "failed to take object from box");
 	return MAL_SUCCEED;
 }
 
@@ -644,7 +644,7 @@ STATreleaseStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("release");
 	name = (str) getArgName(mb, pci, 1);
 	if (releaseBox(box, name))
-		return throwException(MALEXCEPTION, "statistics.release", "failed to release '%s' from box", name);
+		return throwMessage("statistics.release", "failed to release object from box");
 	return MAL_SUCCEED;
 }
 
@@ -711,7 +711,7 @@ STATtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = (str) getArgValue(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
-		return throwException(MALEXCEPTION, "statistics.toString", "failed to take '%s' from box", nme);
+		return throwMessage("statistics.toString", "failed to take object from box");
 
 	v = &box->val->stk[i];
 	if (v->vtype == TYPE_str)

@@ -360,12 +360,12 @@ CMDbbpdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	OpenBox("deposit");
 	name = (str) getArgValue(stk, pci, 1);
-	if (isIdentifier(name))
+	if (isIdentifier(name) < 0 )
 		return throwMessage("bbp.deposit", "identifier expected");
 	v = &stk->stk[getArg(pci, 2)];
 	flg = findVariable(box->sym, name) >= 0;
 	if (depositBox(box, name, v))
-		return throwException(MALEXCEPTION, "bbp.deposit", "failed to deposit '%s' into box", name);
+		return throwMessage("bbp.deposit", "failed to deposit into box");
 	if (!flg)
 		BBPincref(v->val.bval, TRUE);
 	return MAL_SUCCEED;
@@ -381,12 +381,10 @@ CMDbbpbindDefinition(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("bind");
 	name = (str) getArgValue(stk, pci, 1);
 	loc = (str) getArgValue(stk, pci, 2);
-	if (isIdentifier(name))
-		return throwMessage("bbp.bind", "identifier expected");
-	if (isIdentifier(name))
+	if (isIdentifier(name) < 0)
 		return throwMessage("bbp.bind", "identifier expected");
 	if (bindBAT(box, name, loc))
-		return throwException(MALEXCEPTION, "bbp.bind", "failed to bind '%s' ", name);
+		return throwMessage("bbp.bind", "failed to bind name ");
 	return MAL_SUCCEED;
 }
 
@@ -402,7 +400,7 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 	lhs = &stk->stk[getArg(pci, 0)];
 	name = (str) getArgValue(stk, pci, 1);
-	if (isIdentifier(name))
+	if (isIdentifier(name) < 0)
 		return throwMessage("bbp.bind", "identifier expected");
 	box = findBox("bbp");
 	if (box && (i = findVariable(box->sym, name)) >= 0) {
@@ -420,12 +418,12 @@ CMDbbpbind(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	i = BBPindex(name);
 	if (i == 0)
-		return throwException(MALEXCEPTION, "bbp.bind", "failed to locate '%s' in box", name);
+		return throwMessage("bbp.bind", "failed to locate object in box");
 	/* make sure you load the descriptors and heaps */
 	b = (BAT *) BATdescriptor(i);
 	if (b == 0)
 		/* Simple ignore the binding if you can;t find the bat */
-		return throwException(MALEXCEPTION, "bbp.bind", "failed to find '%s' in box", name);
+		return throwMessage("bbp.bind", "failed to find object in box");
 
 	BBPincref(b->batCacheid, TRUE);
 	BBPunfix(i);
@@ -463,7 +461,7 @@ CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;		/* fool compiler */
 	OpenBox("take");
 	name = (str) getArgValue(stk, pci, 1);
-	if (isIdentifier(name))
+	if (isIdentifier(name)< 0)
 		return throwMessage("bbp.take", "identifier expected");
 	v = &stk->stk[getArg(pci, 0)];
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0))) {
@@ -475,7 +473,7 @@ CMDbbptake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v->val.ival = bid;
 			BBPincref(bid, TRUE);
 		} else
-			return throwException(MALEXCEPTION, "bbp.take", "failed to take '%s' from box", name);
+			return throwMessage("bbp.take", "failed to take object from box");
 	}
 	/* make a private copy for this client session */
 	/* use the cheapest copy method */
@@ -620,7 +618,7 @@ CMDbbpdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	OpenBox("discard");
 	name = (str) getArgValue(stk, pci, 1);
 	if (discardBox(box, name))
-		return throwException(MALEXCEPTION, "bbp.discard", "failed to discard '%s' ", name);
+		return throwMessage("bbp.discard", "failed to discard object ");
 	/*printf("bbp.discard not yet fully implemented\n"); */
 	return MAL_SUCCEED;
 }
@@ -638,7 +636,7 @@ CMDbbptoStr(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = (str) getArgValue(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
-		return throwException(MALEXCEPTION, "bbp.toString", "failed to take value '%s' from box", nme);
+		return throwMessage("bbp.toString", "failed to take value from box");
 	v = &box->val->stk[i];
 	garbageElement(&stk->stk[getArg(pci, 0)]);
 	if (VALconvert(TYPE_str, v) == ILLEGALVALUE)

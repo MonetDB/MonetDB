@@ -147,7 +147,7 @@ BOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 2);
 	v = &stk->stk[getArg(pci, 3)];
 	if (depositBox(box, name, v))
-		return throwException(MALEXCEPTION, "box.deposit", "failed to deposit '%s' into box", name);
+		return throwMessage("box.deposit", "failed to deposit into box");
 	return MAL_SUCCEED;
 }
 
@@ -162,7 +162,7 @@ BOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 2);
 	v = &stk->stk[getArg(pci, 0)];
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
-		return throwException(MALEXCEPTION, "box.take", "failed to take '%s' from box", name);
+		return throwMessage("box.take", "failed to take object from box");
 	(void) mb;
 	return MAL_SUCCEED;
 }
@@ -202,7 +202,7 @@ BOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 2);
 	if (discardBox(box, name))
-		return throwException(MALEXCEPTION, "box.discard", "failed to discard '%s' from box '%s'", name, box->name);
+		return throwMessage("box.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
 }
 

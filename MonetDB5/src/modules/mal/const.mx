@@ -222,7 +222,7 @@ CSTdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 1);
 	v = &stk->stk[getArg(pci, 2)];
 	if (depositBox(box, name, v))
-		return throwException(MALEXCEPTION, "const.deposit", "failed to deposit '%s' into box", name);
+		return throwMessage("const.deposit", "failed to deposit into box");
 	(void) mb;
 	return MAL_SUCCEED;
 }
@@ -238,7 +238,7 @@ CSTtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	name = (str) getArgValue(stk, pci, 1);
 	v = &stk->stk[getArg(pci, 0)];
 	if (takeBox(box, name, v, (int) getArgType(mb, pci, 0)))
-		return throwException(MALEXCEPTION, "const.take", "failed to take '%s' from box", name);
+		return throwMessage("const.take", "failed to take object from box");
 	(void) mb;
 	return MAL_SUCCEED;
 }
@@ -254,7 +254,7 @@ CSTrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(release)@
 	name = (str) getArgValue(stk, pci, 1);
 	if (releaseBox(box, name))
-		return throwException(MALEXCEPTION, "const.release", "failed to release '%s' from box", name);
+		return throwMessage("const.release", "failed to release object from box");
 	return MAL_SUCCEED;
 }
 
@@ -281,7 +281,7 @@ CSTdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(discard)@
 	name = (str) getArgValue(stk, pci, 1);
 	if (discardBox(box, name) == 0)
-		return throwException(MALEXCEPTION, "const.discard", "failed to discard '%s' from box", name);
+		return throwMessage("const.discard", "failed to discard object from box");
 	return MAL_SUCCEED;
 }
 
@@ -298,7 +298,7 @@ CSTtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nme = (str) getArgValue(stk, pci, 1);
 	i = findVariable(box->sym, nme);
 	if (i < 0)
-		return throwException(MALEXCEPTION, "const.toString", "failed to take '%s' from box", nme);
+		return throwMessage("const.toString", "failed to take object from box");
 
 	v = &box->val->stk[i];
 	if (v->vtype == TYPE_str)

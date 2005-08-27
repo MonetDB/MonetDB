@@ -51,6 +51,10 @@ pattern setTrace(b:bit):void
 address MDBsetTrace
 comment "Turn on/off tracing of current routine";
 
+pattern setCatch(b:bit):void
+address MDBsetCatch
+comment "Turn on/off catching exceptions";
+
 pattern setTimer(b:bit):void
 address MDBsetTimer
 comment "Turn on/off performance timer for debugger";
@@ -163,6 +167,7 @@ mdb_export str MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBinspect(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mdb_export str MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBsetTimer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mdb_export str MDBgetExceptionVariable(str *ret, str *msg);
 mdb_export str MDBgetExceptionReason(str *ret, str *msg);
@@ -250,25 +255,13 @@ MDBtraceFlag(Client cntxt, MalStkPtr stk, int b)
 {
 	if (b) {
 		cntxt->timer = GDKusec();
-		stk->cmd = 'T';
-		cntxt->itrace = 'T';
+		stk->cmd = b;
+		cntxt->itrace = b;
 	} else {
 		cntxt->timer = 0;
 		stk->cmd = 0;
 		cntxt->itrace = 0;
 	}
-}
-str
-MDBtrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	Client cntxt = getClient();
-
-	cntxt->timer = GDKusec();
-	stk->cmd = 'T';
-	cntxt->itrace = 'T';
-	(void) mb;
-	(void) p;
-	return MAL_SUCCEED;
 }
 
 str
@@ -278,7 +271,22 @@ MDBsetTrace(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	(void) mb;		/* still unused */
 	b = *(chr *) getArgReference(stk, p, 1);
-	MDBtraceFlag(getClient(), stk, b);
+	MDBtraceFlag(getClient(), stk, (int) 'T');
+	return MAL_SUCCEED;
+}
+
+str
+MDBsetCatch(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int b;
+	Client cntxt= getClient();
+
+	(void) mb;		/* still unused */
+	b = *(chr *) getArgReference(stk, p, 1);
+	if (b)
+		stk->cmd = cntxt->itrace = (int) 'C';
+	else 
+		stk->cmd = cntxt->itrace = 0;
 	return MAL_SUCCEED;
 }
 
