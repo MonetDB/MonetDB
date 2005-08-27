@@ -87,6 +87,7 @@ mal_export void     dumpManualHeader(stream *f);
 mal_export void     dumpManualFooter(stream *f);
 mal_export void     showModuleStatistics(stream *f,Module s); /* used in src/mal/mal_debugger.c */
 mal_export char **getHelp(Module m, str pat);
+mal_export char **getHelpMatch(char *pat);
 
 #define getSubScope(N)  (*(N))
 
@@ -592,7 +593,7 @@ char **getHelp(Module m, str pat)
 	Symbol s;
 	int len1 = 0,len2 = 0;
 	char *t, **msg, buf[BUFSIZ];
-	int top=0, i,j, sig = 0, doc = 0;
+	int top=0, i,j,k, sig = 0, doc = 0;
 
 #ifdef MAL_SCOPE_DEBUG 
 	printf("showHelp: %s",pat);
@@ -647,8 +648,8 @@ char **getHelp(Module m, str pat)
 			modnme,fcnnme,len2, (doc?"doc":""), (sig?"sig":""));
 #endif
 	for(i=0; i< MAXSCOPE; i++)
-	for(j=0; j< MAXSCOPE; j++){
-		m= scopeJump[i][j];
+	for(k=0; k< MAXSCOPE; k++){
+		m= scopeJump[i][k];
 		while( m){
 		if( strncmp(modnme,m->name,len1) ) {
 			m= m->sibling;
@@ -698,6 +699,56 @@ char **getHelp(Module m, str pat)
 		}
 		m= m->sibling;
 	}
+	}
+	return msg;
+}
+@-
+The second primitive of relevance is to find documentation matching
+a keyword. Since we can not assume pcre to be everywhere, we keep
+it simple.
+@c
+char **getHelpMatch(char *pat){
+	char **msg, buf[BUFSIZ];
+	Module m;
+	Symbol s;
+	int top = 0, i,j,k;
+
+	msg= (char **) GDKmalloc( 2000 * sizeof(str));
+	msg[top]=0;
+
+	for(i=0; i< MAXSCOPE; i++)
+	for(k=0; k< MAXSCOPE; k++){
+		m= scopeJump[i][k];
+		while( m){
+			for(j=0;j<MAXSCOPE;j++)
+			if( m->subscope[j])
+				for(s= m->subscope[j]; s; s= s->peer)
+				if( strstr(m->name,pat) || strstr(s->name,pat) ||
+					(s->def->help && strstr(s->def->help,pat))) {
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
+					buf[0]='#';
+					if( s->def->help) {
+						char *v,*w;
+						v= strchr(buf,0);
+						*v++ = '\n';
+						*v++ = '#';
+						for( w= s->def->help; *w && v <buf+BUFSIZ-1; w++)
+						if( *w == '\n'){
+							*v++ = '\n';
+							*v++ = '#';
+							if( isspace((int) *w)) {
+								for(; *w && isspace((int) *w); w++);
+								w--;
+							}
+						} else *v++ = *w;
+						*v = 0;
+					}
+					msg[top++] = GDKstrdup(buf);
+					msg[top] = 0;
+					if( top == 1999) return msg;
+				}
+			m= m->sibling;
+		}
 	}
 	return msg;
 }
