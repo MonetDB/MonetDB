@@ -303,6 +303,7 @@ The code base supports multiple property sets.
 Not used right now.
 @h
 #include "mal.h"
+#include "mal_namespace.h"
 
 #define MAXPROPLIST 3
 
@@ -392,10 +393,11 @@ fndProperty(PropertySet ps, str nme)
 
 	if (ps == NULL)
 		return NULL;
+	nme= getName(nme,strlen(nme));
 	for (i = 0; i < MAXPROPLIST; i++) {
 		pr = ps->prop[i];
 		while (pr) {
-			if (idcmp(pr->nme, nme) == 0)
+			if (pr->nme== nme)
 				return pr;
 			pr = pr->nxt;
 		}
@@ -411,10 +413,11 @@ fndPropertyIndexed(PropertySet ps, int first, int last, str nme)
 
 	if (ps == NULL)
 		return NULL;
+	nme= getName(nme,strlen(nme));
 	for (i = first; i < last; i++) {
 		pr = ps->prop[i];
 		while (pr) {
-			if (idcmp(pr->nme, nme) == 0)
+			if (pr->nme== nme)
 				return pr;
 			pr = pr->nxt;
 		}
@@ -435,11 +438,11 @@ setPropertyIndexed(PropertySet ps, int idx, str nme, str op, int tpe, ptr val)
 		pr = (Property) GDKmalloc(sizeof(struct PROPrecord));
 		pr->nxt = ps->prop[idx];
 		ps->prop[idx] = pr;
-		pr->nme = GDKstrdup(nme);
+		pr->nme = putName(nme,strlen(nme));
 	}
 	if (val)
 		VALset(&pr->val, tpe, val);
-	pr->operator= GDKstrdup(op);
+	pr->operator= putName(op,strlen(op));
 	return pr;
 }
 
