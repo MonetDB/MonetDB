@@ -100,6 +100,44 @@ function user.main():int;	# 0  (main:int)
 #someone(1,2); 	# 38  (_75:str)
 #b:= new(void,int); 	# 39  (_77:str)
 end main;	# 40  
+#-----------------------#
+# _4,	_5		# name
+#-----------------------#
+[ 2,	"strong"	]
+#-----------------------#
+#-------------------------------#
+# _4,	_5,		_7	# name
+#-------------------------------#
+[ 2,	"strong",	true	]
+#-------------------------------#
+#-----------------------#
+# first,	last	# name
+#-----------------------#
+[ 1,		2	]
+#-----------------------#
+#---------------------------------------#
+# tmp_15,	tmp_16			# name
+# int,		str			# type
+# false,	false			# dense
+# true,		false			# sorted
+# true,		false			# key
+# 42,					# min
+# 49,					# max
+#---------------------------------------#
+[ 42,		"hello world"		]
+[ 49,		"goodbye world"		]
+#---------------------------------------#
+#---------------------------------------#
+# tmp_15,	tmp_16			# name
+#---------------------------------------#
+[  4.2,		"hello world"		]
+[  4.9,		"goodbye world"		]
+[  nil,		unknown			]
+#---------------------------------------#
+<rowset><row><age> 4.2</age>	<title>"hello world"</title>		</row>
+<row><age> 4.9</age>	<title>"goodbye world"</title>		</row>
+<row><age> nil</age>	<title>unknown</title>			</row>
+</rowset>
 
 # 08:01:27 >  
 # 08:01:27 >  Done.
