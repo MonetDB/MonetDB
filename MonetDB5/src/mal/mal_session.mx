@@ -473,7 +473,7 @@ MALengine(Client c)
 			c->glb = reallocGlobalStack(c->glb, prg->def->vsize);
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk = prg->def;
-		c->glb->cmd = c->itrace ? 'n' : 0;
+		c->glb->cmd = (c->itrace && c->itrace != 'C') ? 'n' : 0;
 	}
 
 	if (c->listing)

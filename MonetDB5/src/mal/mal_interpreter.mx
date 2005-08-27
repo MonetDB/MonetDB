@@ -392,7 +392,7 @@ MALrestart:
     while(stkpc < mb->stop && stkpc != task->stoppc ){
         pci = getInstrPtr(mb,stkpc);
         if( stk->cmd  ) {
-            mdbStep(cntxt,mb,stk,stkpc);
+			mdbStep(cntxt,mb,stk,stkpc);
             if( stk->cmd == 'x') goto MALevalExit;
             if( stk->cmd == 'r') {
                 stk->cmd = 'n';
@@ -919,6 +919,10 @@ The return value should be set to pass the error automatically upon
 reaching end of function block.
 @-
 @= skipToCatch
+	if( stk->cmd == 'C') {
+		stk->cmd = 'n';
+		mdbStep(cntxt,mb,stk,stkpc);
+	}
     /* skip to catch block or end */
     for( ; stkpc<mb->stop; stkpc++){
     InstrPtr l= getInstrPtr(mb,stkpc);
@@ -1139,7 +1143,7 @@ if( cntxt->timer){
     lng n= GDKusec();
     lng l= n - cntxt->timer;
     total += l;
-    if( stk->cmd != 'T')
+    if( stk->cmd != 'T' && stk->cmd != 'C')
         stream_printf(cntxt->fdout,"#%6d usec",l);
 #ifdef HAVE_SYS_RESOURCE_H
     if( cntxt->resource.ru_minflt > 0){

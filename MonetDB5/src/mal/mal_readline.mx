@@ -76,6 +76,7 @@ mal_export int readConsole(Client cntxt);
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "mal_readline.h"
+#include "mal_debugger.h"
 
 void init_readline(void);
 void deinit_readline(void);
@@ -103,7 +104,36 @@ static const char *mal_commands[] = {
 	"MODULE",
 	"RAISE",
 	"REDO",
-	0,
+	0
+};
+static const char *mdb_commands[] = {
+	"atoms",
+	"break",
+	"call",
+	"continue",
+	"delete",
+	"down",
+	"exit",
+	"finish",
+	"help",
+	"info",
+	"io",
+	"list",
+	"List",
+	"next",
+	"module",
+	"modules",
+	"optimizer",
+	"print",
+	"quit",
+	"run",
+	"step",
+	"trace",
+	"timer",
+	"up",
+	"var",
+	"where",
+	0
 };
 static int malcommandlimit = 15;
 
@@ -139,8 +169,14 @@ mal_command_generator(const char *text, int state)
 		msg = 0;
 	}
 
-	if( len == 0 ) return NULL;
 
+	if( mdbSession() ){
+		while ( (name = mdb_commands[index++]) ){
+				if( @:tst(name,text,len)@ ) 
+					return strdup(name);
+		}
+		return NULL;
+	}
 	while (index < malcommandlimit && (name = mal_commands[index++])) {
 			if( @:tst(name,text,len)@ ) 
 				return strdup(name);
