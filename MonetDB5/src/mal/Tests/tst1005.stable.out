@@ -68,7 +68,7 @@ exit MALexception;	# 16  (MALexception:any)
 #exit MALexception; 	# 25  (_38:str)
 #io.print("done"); 	# 26  (_40:str)
 end main;	# 27  
-[ "MALexception:user.main[7]:bbp.bind:failed to locate 'myfirstbat' in box\n" ]
+[ "MALexception:user.main[7]:bbp.bind:failed to locate object in box\n" ]
 [ "v" ]
 [ "nil" ]
 [ "getObjects" ]

@@ -46,7 +46,7 @@ function user.main():int;	# 0  (main:int)
 # k:= "whatever"; {k.blah:=true;k.freeze:=true;} 	# 15  (_28:str)
 # n:= bbp.new(int,int);{n.cost:=12;} 	# 16  (_30:str)
 end main;	# 17  
-!ERROR: MALexception:bbp.take:failed to take 'person_name' from box
+!ERROR: MALexception:bbp.take:failed to take object from box
 #
 
 # 08:01:13 >  

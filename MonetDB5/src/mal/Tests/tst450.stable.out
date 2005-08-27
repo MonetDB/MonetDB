@@ -34,8 +34,8 @@ function user.main():int;	# 0  (main:int)
     io.print(m1r);	# 8 IOprint_val (_9:int)<-(m1r:bat[:void,:str])
     stmt := inspect.getDefinition("algebra","select");	# 9 INSPECTgetDefinition (stmt:bat[:int,:str])<-(_11:str)(_12:str)
     sig := inspect.getSignature("algebra","select");	# 10 INSPECTgetSignature (sig:bat[:str,:str])<-(_11:str)(_12:str)
-    n := manual.help("algebra","insert");	# 11 MANUALhelp2 (n:bat[:int,:str])<-(_11:str)(_15:str)
-    io.print(n);	# 12 IOprint_val (_16:int)<-(n:bat[:int,:str])
+    n := manual.help("algebra","insert");	# 11 MANUALhelp2 (n:bat[:str,:str])<-(_11:str)(_15:str)
+    io.print(n);	# 12 IOprint_val (_16:int)<-(n:bat[:str,:str])
     d := inspect.getDefinition("inspect","dir");	# 13 INSPECTgetDefinition (d:bat[:int,:str])<-(_18:str)(_19:str)
     io.print(d);	# 14 IOprint_val (_20:int)<-(d:bat[:int,:str])
 end main;	# 15  
@@ -123,8 +123,8 @@ end main;	# 15
 [ 1891@0, "lock"	  ]
 [ 1897@0, "unix"	  ]
 [ 1899@0, "mdb"		  ]
-[ 1918@0, "crackers"	  ]
-[ 1931@0, "thread"	  ]
+[ 1919@0, "crackers"	  ]
+[ 1932@0, "thread"	  ]
 #-------------------------#
 # help	Comment		  # name
 # str	str		  # type
