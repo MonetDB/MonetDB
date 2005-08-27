@@ -1,6 +1,3 @@
-- better handle the any,any_<N> and any... cases.
-- bring property names also into the namespace.
-
 Pathfinder support
 - it heavily relies on BAT admininistration, which is currently
   not well covered by the type system.  (tst800)
@@ -27,6 +24,7 @@ MIL 4 'loss' in M5
 
 MAL language issues
 - make all polymorphic types explicit.
+- better handle the any,any_<N> and any... cases.
 - BATs entered into a box should become persistent? (tst1004,1005,1014)
 - use a process buffer pool to avoid expensive client starts.
 - implement an (Box) authorization scheme
@@ -53,6 +51,7 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20050827 bring property names also into the namespace.
 20050827 rethink the before/after structure for garabage collection
   and handle it explicitly in the interpreter.
 	The before/after feature is disabled.
