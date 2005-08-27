@@ -192,6 +192,8 @@ Table of contents
 
 @node MapiClient and Interfaces, MonetDB Assembler Language, XQuery, TOC
 @chapter MapiClient and Interfaces
+@section Console Interface
+@include mal_readline.bdy.texi
 @section MapiClient
 @section Application Programming Interfaces
 Give a brief introduction to Mapi, JDBC, ODBC,Perl....

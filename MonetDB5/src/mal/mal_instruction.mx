@@ -297,7 +297,7 @@ The beforeCall is activated just before you enter a routine and
 can be used to initialize the stack frame, perform debugging, etc.etc.
 The afterCall is activated after a successful return and can be
 used to finalize the administration.
-
+[Not used anymore]
 @h
 #ifndef _MAL_INSTR_H
 #define _MAL_INSTR_H

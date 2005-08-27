@@ -1,27 +1,20 @@
+- better handle the any,any_<N> and any... cases.
 - bring property names also into the namespace.
 
 Pathfinder support
 - it heavily relies on BAT admininistration, which is currently
   not well covered by the type system.  (tst800)
 
-- add intelligent help (partial matching signatures)
-- use name completion to ease construction of MAL instructions.
-- module should make exceptions thrown explicit
-
 - DD: factor out the error handling to prepare for internationalization
 - DD: strong need for partitioned tables.
-- DD: mapping BATs to external sources
+- DD: mapping BATs to external file sources
 - we limit BAT* operation as much as possible to :void headed versions
-- a generic map() operation is added to the interpreter
-  questionable, should be done by front-ends and optimizers
 - all signatures should make in/out role of parameters explicit to
 facilitate flow analysis
 - BBP should become a fully serialized module, encapsulation with a single lock
 (this calls for check for IO triggered activities inside BBP)
 - All BATs should be considered private unless otherwise marked (add BATshared())
 - we need a small size BAT/HEAP cache to significantly reduce cost for small queries.
-- use a trashcan to reduce the cost of garbage collecting large bats
-- introduce inplace algebraic variants
 
 MIL 5
 - reduce the symbol table during chkFlow as well to save
@@ -29,31 +22,14 @@ on stack initialization and garbage collection cost
 
 MIL 4 'loss' in M5
 - M2mal is only meant to enable transition between systems.
-- generic [m] is depreciated and replaced by map+BAT* modules
 - naming conventions get/set properties
 - [ht]operation convention or operation[ht]_[ht]
 
 MAL language issues
-- rethink the before/after structure for garabage collection
-  and handle it explicitly in the interpreter.
-- look into the nested (referenced) bat issues
-- check all routines for proper match return type and actual
-action.
-- Modules should make the expections being thrown explicit
-- Expand the property management infrastructure. tst3K serie
 - make all polymorphic types explicit.
-
-- a hard bug appears in the following case
-  via MapiClient Tapestry_1M-2
-  2nd time MapiClient tapestry_attr1 has disappeared
-  Works when called directly against server
-  and works when GDB is applied
 - BATs entered into a box should become persistent? (tst1004,1005,1014)
-
 - use a process buffer pool to avoid expensive client starts.
-
-- implement the Box authorization scheme
-- keep the list of profile filters in server and update after each resolve call
+- implement an (Box) authorization scheme
 
 Implementation
 - BAT calc module only works for aligned BATs. This is less
@@ -68,8 +44,8 @@ API issues
 - Multi-client (concurrent) access has not been tested yet
 
 V4 issues
-- overlay V4 database with V5 session
-- The group and radix modules should be brought in line with V4
+- overlay V4 database with V5 session should be tested
+- The radix modules should be brought in line with V4
 - Several of the MIL scripts associated with the modules have not
   been converted yet. Reliance on scripts should be minimal
 
@@ -77,19 +53,36 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20050827 rethink the before/after structure for garabage collection
+  and handle it explicitly in the interpreter.
+	The before/after feature is disabled.
+20050827 name completion and online help significantly improved
+20050827 module should make exceptions thrown explicit
+	they only throw MALEXCEPTIONs
+	added a trigger towards the debugger when an exception occurs.
+20050827 add intelligent help (partial matching signatures)
+20050827 use name completion to ease construction of MAL instructions.
+	look at module.mx to search/dump module information
 20050825 Windows port works
+20050825 the signature types have become more strict
 20050728 reference counting is still not ok, see tst220
 20050723 the user defined variable types are retained
 20050720 turn properties into simple terms (e.g. cnt<1)
 20050619 The role of multiplex is reconsidered, because it is 
-an efficient implementation of a macro at language level.
-It has new become an optimizer. Where appropriate the 
-fast bat* operations should be used.
+	an efficient implementation of a macro at language level.
+	It has new become an optimizer. Where appropriate the 
+	fast bat* operations should be used.
 20050616 preparing a new mil parser as a scenario
 20050613 keep also the comments in the MAL program
 20050608 handle tst081, type resolution
 20050608 solve the wrong behavior of include files (datacell)
 20050605 realized the first version of the empty set optimizer
+200505-- keep the list of profile filters in server and 
+		update after each resolve call
+		The filtered events can now also be kept in bats
+200505-- Dropped in favor of optimizer control
+   a generic map() operation is added to the interpreter
+  questionable, should be done by front-ends and optimizers
 20050418 look at exception handling. Make the call trace more explicit in terms
  of location.
 20050416 reduced the cost of parsing
@@ -108,6 +101,7 @@ a few from the code base.
 
 20050225 added statistics catalog at MAL layer only.
 Test proper declaration of variables to avoid uninitalized variabless
+200502--  introduce inplace algebraic variants, checked against RAM example
 20041220 Split inpection module into mdb+inspect
 20041216 A function may carry an address, to enable JIT
 20041216 The replace/insert operations for bats arguments should set the 
