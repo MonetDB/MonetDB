@@ -97,7 +97,7 @@ command help(k:str):bat[:str,:str]
 address MANUALhelp
 comment "Search the commentary strings for one matching the keyword";
 
-command help(mod:str,fcn:str) :bat[:int,:str] 
+command help(mod:str,fcn:str) :bat[:str,:str] 
 address MANUALhelp2
 comment "Collect the comments for a given function pattern";
 @- Manual construction
@@ -664,31 +664,35 @@ MANUALcreate0(int *ret)
 }
 
 str
-MANUALhelp(int *ret, str *mod)
+MANUALhelp(int *ret, str *pat)
 {
-	Client cntxt = getClient();
-	Module m;
-	Symbol s;
-	str msg;
+	char **msg;
 	int i;
-	BAT *b = BATnew(TYPE_str, TYPE_str, 256);
+	char *t;
+	BAT *b = BATnew(TYPE_str, TYPE_str, 1000);
 
 	if (b == 0)
 		return throwMessage("manual.help", "failed to create BAT");
-	return throwMessage("manual.help", "Search by keyword not yet available");
-
-	m = findModule(cntxt->nspace, *mod);
-	if (m)
-		for (i = 0; i < 256; i++) {
-			s = m->subscope[i];
-			while (s != NULL) {
-				msg = s->def->help;
-				if (msg) {
-					BUNins(b, s->name, msg);
-				}
-				s = s->peer;
+	msg= getHelpMatch(*pat);
+	for( i=0; msg[i]; i++){
+		t= strstr(msg[i],"address");
+		if( t) {
+			t[-1]= 0;
+			BUNins(b, msg[i]+1, t);
+		} else {
+			t= strrchr(msg[i],')');
+			if( t) {
+				t[1]= 0;
+				BUNins(b, msg[i]+1, t+2);
+			} else {
+				str h="<unknown>";
+				BUNins(b, &h, msg[i]+1);
 			}
 		}
+		GDKfree(msg[i]);
+	}
+	GDKfree(msg);
+
 	@:Pseudo(help,Comment)@
 	return MAL_SUCCEED;
 }
