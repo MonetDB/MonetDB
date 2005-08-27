@@ -48,6 +48,8 @@ Care should be taken not to generate many unique function names.
 #include "mal_box.h"
 #include "mal_xml.h"
 
+/* #define MAL_SCOPE_DEBUG  */
+
 #define MAXSCOPE 256
 
 typedef struct SCOPEDEF {
@@ -84,6 +86,7 @@ mal_export void     dumpManual(stream *f, Module v, int recursive);
 mal_export void     dumpManualHeader(stream *f);
 mal_export void     dumpManualFooter(stream *f);
 mal_export void     showModuleStatistics(stream *f,Module s); /* used in src/mal/mal_debugger.c */
+mal_export char **getHelp(Module m, str pat);
 
 #define getSubScope(N)  (*(N))
 
@@ -570,5 +573,132 @@ void showModuleStatistics(stream *f,Module s){
 	stream_printf(f,"%20s%5s%5s\n","module","#sig","avg chk");
 	for(i=0;i<256;i++) cnt[i]=0;
 	showModuleStat(f,s,cnt);
+}
+@-
+Some primitives to aid online help
+@c
+int tstDuplicate(char **msg, char *s){
+	int i,len;
+	len= strlen(s);
+	for(i=0; msg[i]; i++)
+		if( strncmp(s, msg[i], MIN(len,strlen(msg[i]))) == 0) 
+			return 1; 
+	return 0;
+}
+char **getHelp(Module m, str pat)
+{
+	str modnme, fcnnme = 0;
+	Module m1;
+	Symbol s;
+	int len1 = 0,len2 = 0;
+	char *t, **msg, buf[BUFSIZ];
+	int top=0, i,j, sig = 0, doc = 0;
+
+#ifdef MAL_SCOPE_DEBUG 
+	printf("showHelp: %s",pat);
+#endif
+	msg= (char **) GDKmalloc( 1000 * sizeof(str));
+	msg[top]=0;
+
+	t = strchr(pat,')');
+	if( t) { doc++; *t=0; }
+	t= strchr(pat,'(');
+	if( t) { sig++; *t=0; }
+	modnme= pat;
+	if( (fcnnme = strchr(pat,'.')) ){
+		*fcnnme++ = 0;
+	}
+	t = modnme;
+	while((isalpha(*t) || *t == '_') && *t) t++;
+	if(t) *t = 0;
+	t = fcnnme;
+	while(t && (isalpha(*t) || *t == '_') && *t) t++;
+	if(t) *t = 0;
+
+	if( fcnnme){
+		len2 = strlen(fcnnme);
+	}
+	len1 = strlen(modnme);
+
+	/* display module information if there is no function */
+	if( fcnnme == NULL){
+		for(i=0; i< MAXSCOPE; i++)
+		for(j=0; j< MAXSCOPE; j++){
+			m= scopeJump[i][j];
+			while(m != NULL){
+				if( strncmp(modnme,m->name,len1) ==0  || *modnme=='*'){
+					msg[top++] = GDKstrdup(m->name);
+					msg[top] =0;
+					if( top == 999) return msg;
+				}
+				m= m->sibling;
+			}
+		}
+		return msg;
+	}
+
+	/* display module.function */
+	m1 = findModule(m,modnme);
+	if( m1 == 0  && *modnme != '*') return msg;
+	if( m1 ) m = m1;
+	
+#ifdef MAL_SCOPE_DEBUG 
+	printf("showHelp: %s %s [%d] %s %s\n",
+			modnme,fcnnme,len2, (doc?"doc":""), (sig?"sig":""));
+#endif
+	for(i=0; i< MAXSCOPE; i++)
+	for(j=0; j< MAXSCOPE; j++){
+		m= scopeJump[i][j];
+		while( m){
+		if( strncmp(modnme,m->name,len1) ) {
+			m= m->sibling;
+			continue;
+		}
+		for(j=0;j<MAXSCOPE;j++)
+		if( m->subscope[j])
+			for(s= m->subscope[j]; s; s= s->peer){
+			if( strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*'){
+				if( doc) {
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
+					buf[0]='#';
+					if( s->def->help) {
+						char *v,*w;
+						v= strchr(buf,0);
+						*v++ = '\n';
+						*v++ = '#';
+						for( w= s->def->help; *w && v <buf+BUFSIZ-1; w++)
+						if( *w == '\n'){
+							*v++ = '\n';
+							*v++ = '#';
+							if( isspace((int) *w)) {
+								for(; *w && isspace((int) *w); w++);
+								w--;
+							}
+						} else *v++ = *w;
+						*v = 0;
+					}
+					if( tstDuplicate(msg,buf) ) continue;
+				} else if( sig || strcmp(fcnnme,s->name)==0 ) {
+					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
+					buf[0]='#';
+					t= strrchr(buf,')');
+					if( t) *(t+1)= 0;
+				} else  {
+					snprintf(buf,BUFSIZ,"%s.%s", 
+						((*modnme=='*' || *modnme==0)? m->name:modnme),s->name);
+					if( tstDuplicate(msg,buf) ) continue;
+				}
+#ifdef MAL_SCOPE_DEBUG 
+				printf("%s",buf);
+#endif
+				msg[top++] = GDKstrdup(buf);
+				msg[top] = 0;
+				if( top ==999) return msg;
+			}
+		}
+		m= m->sibling;
+	}
+	}
+	return msg;
 }
 @}
