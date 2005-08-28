@@ -3084,15 +3084,12 @@ shttpd_get_var(struct conn *c, const char *var)
 }
 
 /*
- * Returns the whole message-body of a HTTP POST request
+ * Returns everything contained in the connection's "query" buffer
  */
 const char *
-shttpd_get_post_msg(struct conn *c)
+shttpd_get_msg(struct conn *c)
 {
-    if (c->http_method != HTTP_POST)
-        return NULL;
-    else
-        return c->query;
+    return c->query;
 }
 
 static void

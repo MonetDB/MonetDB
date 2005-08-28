@@ -695,6 +695,8 @@ PFns_resolve (PFpnode_t *root)
     ns_add (PFns_xs);
     ns_add (PFns_xsi);
     ns_add (PFns_pf);
+    ns_add (PFns_xdt);
+    ns_add (PFns_local);
     ns_add (PFns_wild);
 
     /* bring the function and operator NS into scope
