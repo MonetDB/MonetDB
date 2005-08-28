@@ -4,7 +4,7 @@ no.016
 #DOES_NOT_TERMINATE?no.027
 no.031
 #DOES_NOT_TERMINATE?no.035
-no.037
+#no.037
 no.050
 no.051
 no.062
@@ -37,7 +37,7 @@ no.163
 #no.164 uses cluster module
 no.165
 #no.166 hidden module call
-no.168
+#no.168
 no.169
 no.171
 #no.172 non-supported feature
