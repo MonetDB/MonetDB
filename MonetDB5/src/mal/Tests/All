@@ -26,7 +26,7 @@ tst030
 tst031
 tst033
 tst035
-tst037
+HAVE_PCRE?tst037
 tst038
 tst039
 tst040
