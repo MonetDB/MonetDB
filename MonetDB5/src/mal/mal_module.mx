@@ -582,7 +582,7 @@ int tstDuplicate(char **msg, char *s){
 	int i,len;
 	len= strlen(s);
 	for(i=0; msg[i]; i++)
-		if( strncmp(s, msg[i], MIN(len,strlen(msg[i]))) == 0) 
+		if( strncmp(s, msg[i], MAX(len,strlen(msg[i]))) == 0) 
 			return 1; 
 	return 0;
 }
