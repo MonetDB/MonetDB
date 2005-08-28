@@ -610,10 +610,10 @@ char **getHelp(Module m, str pat)
 		*fcnnme++ = 0;
 	}
 	t = modnme;
-	while((isalpha(*t) || *t == '_') && *t) t++;
+	while((isalpha((int) *t) || *t == '_') && *t) t++;
 	if(t) *t = 0;
 	t = fcnnme;
-	while(t && (isalpha(*t) || *t == '_') && *t) t++;
+	while(t && (isalpha((int) *t) || *t == '_') && *t) t++;
 	if(t) *t = 0;
 
 	if( fcnnme){

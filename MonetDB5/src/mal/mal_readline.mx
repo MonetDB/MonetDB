@@ -46,7 +46,7 @@ The module and function names can be replaced by the
 wildcard charector '*'.
 
 If your platform supports the @code{readline} library, then
-this functionality is also partly available as part of 
+this functionality is also partly available thru
 name completion. It displays the possible modules
 and their functions, but doesn't show the signature and
 help. It can be retrieved by inserting '?' in front
