@@ -123,7 +123,7 @@ tst270
 tst272
 tst277
 tst280
-tst285
+HAVE_PCRE?tst285
 tst300
 tst3000
 tst301
@@ -174,7 +174,7 @@ tst908
 
 tst911
 tst912
-tst960
+HAVE_PCRE?tst960
 #
 # no stable output available (yet?)
 #
