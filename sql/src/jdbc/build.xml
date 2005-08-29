@@ -280,7 +280,7 @@ All Rights Reserved.
   <!-- Build the documentation -->
   <target name="doc_jdbc" depends="compile_jdbc">
     <javadoc
-      destdir="${docdir}"
+      destdir="${docdir}/jdbc"
       author="true"
       version="true"
       use="true"
@@ -295,7 +295,7 @@ All Rights Reserved.
   <target name="doc_xmldb" depends="compile_xmldb,jar_jdbc">
     <javadoc
       classpath="${libdir}/xmldb.jar:${jardir}/MonetDB_JDBC.jar"
-      destdir="${docdir}"
+      destdir="${docdir}/xmldb"
       author="true"
       version="true"
       use="true"
@@ -309,7 +309,7 @@ All Rights Reserved.
 
   <target name="doc_mcl" depends="compile_mcl">
     <javadoc
-      destdir="${docdir}"
+      destdir="${docdir}/mcl"
       author="true"
       version="true"
       use="true"
