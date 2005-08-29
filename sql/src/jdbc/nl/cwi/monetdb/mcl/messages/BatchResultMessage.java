@@ -22,15 +22,15 @@ import java.util.*;
 import nl.cwi.monetdb.mcl.*;
 
 /**
- * An ExecutePreparedMessage is a server received message, sent by the
+ * An BatchResultMessage is a server received message, sent by the
  * client as a response to a PrepareResultMessage that identifies which
  * unknown values represented by '?' characters are to be filled in.
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
-public class ExecutePreparedMessage extends MCLVariableMessage {
+public class BatchResultMessage extends MCLVariableMessage {
 	/** The character that identifies this message */
-	public static final char identifier = 'x';
+	public static final char identifier = 'b';
 
 	private final static MCLSentence startOfMessageSentence;
 
@@ -44,58 +44,35 @@ public class ExecutePreparedMessage extends MCLVariableMessage {
 	}
 
 	// these represent the internal values of this Message
-	private String id;
-	private int columncount;
 	private int tuplecount;
-	private String ctype;
 
 	/**
-	 * Constructs an empty ExecutePreparedMessage.  The sentences need
+	 * Constructs an empty BatchResultMessage.  The sentences need
 	 * to be added using the addSentence() method.  This constructor is
 	 * suitable when reconstructing messages from a stream.
 	 */
-	public ExecutePreparedMessage() {
+	public BatchResultMessage() {
 		// nothing has to be done here
-		sentences = new MCLSentence[4];
+		sentences = new MCLSentence[1];
 		variableSentences = new ArrayList();
 	}
 
 	/**
-	 * Constructs a filled ExecutePreparedMessage.  All required header
+	 * Constructs a filled BatchResultMessage.  All required header
 	 * information is supplied and stored in this
-	 * ExecutePreparedMessage.  To add the data, the method
-	 * addQuerySentence() should be used.
+	 * BatchResultMessage.  To add the data, the method
+	 * addDataSentence() should be used.
 	 *
-	 * @param id the identifier of the prepare query
-	 * @param columncount the number of attributes available per column
-	 * @param tuplecount the number of columns in this prepared query
-	 * @param ctype the column type C-value what to expect
+	 * @param tuplecount the number of columns in this batch result
 	 * @throws MCLException if one of the arguments is null or zero
 	 */
-	public ExecutePreparedMessage(
-			String id,
-			int columncount,
-			int tuplecount,
-			String ctype
-	) throws MCLException {
-		if (id == null) throw
-			new MCLException("id may not be null");
-		if (columncount == 0) throw
-			new MCLException("columncount may not be zero");
+	public BatchResultMessage(int tuplecount) throws MCLException {
 		if (tuplecount == 0) throw
 			new MCLException("tuplecount may not be zero");
-		if (ctype == null) throw
-			new MCLException("ctype may not be null");
 		
-		sentences = new MCLSentence[4];
-		this.id = id;
-		this.columncount = columncount;
+		sentences = new MCLSentence[1];
 		this.tuplecount = tuplecount;
-		this.ctype = ctype;
-		sentences[0] = new MCLSentence(MCLSentence.MCLMETADATA, "id", id);
-		sentences[1] = new MCLSentence(MCLSentence.MCLMETADATA, "columncount", "" + columncount);
-		sentences[2] = new MCLSentence(MCLSentence.MCLMETADATA, "tuplecount", "" + tuplecount);
-		sentences[3] = new MCLSentence(MCLSentence.MCLMETADATA, "ctype", ctype);
+		sentences[0] = new MCLSentence(MCLSentence.MCLMETADATA, "tuplecount", "" + tuplecount);
 		variableSentences = new ArrayList(this.tuplecount);
 	}
 
@@ -142,32 +119,19 @@ public class ExecutePreparedMessage extends MCLVariableMessage {
 				if (value == null) throw
 					new MCLException("Illegal sentence (no value): " + in.getString());
 				
-				if ("id".equals(prop)) {
-					id = value;
-					sentences[0] = in;
-				} else if ("columncount".equals(prop)) {
-					try {
-						columncount = Integer.parseInt(value);
-					} catch (NumberFormatException e) {
-						throw new MCLException("columncount (" + value + ") is not a parsable number");
-					}
-					sentences[1] = in;
-				} else if ("tuplecount".equals(prop)) {
+				if ("tuplecount".equals(prop)) {
 					try {
 						tuplecount = Integer.parseInt(value);
 					} catch (NumberFormatException e) {
 						throw new MCLException("tuplecount (" + value + ") is not a parsable number");
 					}
-					sentences[2] = in;
-				} else if ("ctype".equals(prop)) {
-					ctype = value;
-					sentences[3] = in;
+					sentences[0] = in;
 				} else {
 					throw new MCLException("Unsupported property: " + prop);
 				}
 			break;
-			case MCLSentence.QUERY:
-				addQuerySentence(in);
+			case MCLSentence.DATA:
+				addDataSentence(in);
 			break;
 			default:
 				throw new MCLException("Sentence type not allowed for this message: " + (char)in.getType());
@@ -185,10 +149,10 @@ public class ExecutePreparedMessage extends MCLVariableMessage {
 	 * @throws MCLException if the input parameter is null or incorrect,
 	 * or if there are already tuplecount number of sentences as data.
 	 */
-	public void addQuerySentence(MCLSentence data) throws MCLException {
+	public void addDataSentence(MCLSentence data) throws MCLException {
 		if (data == null) throw
 			new MCLException("sentence should not be null");
-		if (data.getType() != MCLSentence.QUERY) throw
+		if (data.getType() != MCLSentence.DATA) throw
 			new MCLException("data sentence should have data line type");
 		// the data from the Sentence should never be null, but
 		// who knows...
@@ -206,38 +170,11 @@ public class ExecutePreparedMessage extends MCLVariableMessage {
 	// values inside the message
 
 	/**
-	 * Retrieves the id contained in this Message object.
-	 *
-	 * @return the id
-	 */
-	public String getId() {
-		return(id);
-	}
-
-	/**
-	 * Retrieves the column count contained in this Message object.
-	 *
-	 * @return the column count
-	 */
-	public int getColumnCount() {
-		return(columncount);
-	}
-
-	/**
 	 * Retrieves the tuple count contained in this Message object.
 	 *
 	 * @return the tuple count
 	 */
 	public int getTupleCount() {
 		return(tuplecount);
-	}
-
-	/**
-	 * Retrieves the C-type contained in this Message object.
-	 *
-	 * @return the C-type
-	 */
-	public String getCType() {
-		return(ctype);
 	}
 }
