@@ -21,6 +21,14 @@ package nl.cwi.monetdb.mcl.messages;
 import java.io.*;
 import nl.cwi.monetdb.mcl.*;
 
+/**
+ * An MCLSentence is a 'row' in an MCLMessage.  This class represents
+ * such 'row' and includes all the constants that designate the various
+ * types of MCLSentences distinguished.  The various constructors and
+ * methods of this class allow for easy dealing with MCLSentences.
+ *
+ * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
+ */
 public class MCLSentence {
 	private final int type;
 	private final byte[] data;
