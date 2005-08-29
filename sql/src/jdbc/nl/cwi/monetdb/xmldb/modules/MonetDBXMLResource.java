@@ -98,7 +98,7 @@ public class MonetDBXMLResource implements XMLResource {
 	 * is anonymous.  The Resource will be anonymous if it is obtained
 	 * as the result of a query.
 	 *
-	 * @returns the id for the Resource or null if no id exists.
+	 * @return the id for the Resource or null if no id exists.
 	 * @throws XMLDBException with expected error codes.<br />
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific errors that
 	 *  occur.

@@ -139,8 +139,6 @@ public class MonetDBResourceSet implements ResourceSet {
 	 * Removes the Resource located at index from the set.  The first
 	 * Resource is located at index position 1.
 	 *
-	 * @return removes the Resource located at index from the set.
-	 *
 	 * @throws XMLDBException with expected error codes.<br />
 	 *  ErrorCodes.VENDOR_ERROR for any vendor specific erros that
 	 *  occur.
