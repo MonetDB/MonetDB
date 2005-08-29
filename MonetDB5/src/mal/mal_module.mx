@@ -579,7 +579,8 @@ void showModuleStatistics(stream *f,Module s){
 Some primitives to aid online help
 @c
 int tstDuplicate(char **msg, char *s){
-	int i,len;
+	int i;
+	size_t len;
 	len= strlen(s);
 	for(i=0; msg[i]; i++)
 		if( strncmp(s, msg[i], MAX(len,strlen(msg[i]))) == 0) 
