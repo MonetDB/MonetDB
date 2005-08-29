@@ -22,15 +22,15 @@ import java.util.*;
 import nl.cwi.monetdb.mcl.*;
 
 /**
- * A SuccessMessage is a server originated message, that indicates the
- * requested operation was completed successfully.  There can optionally
- * be some extra information stored as info in this MCLMessage.
+ * An ErrorMessage is a server originated message, that indicates the
+ * requested operation has failed.  Some extra information on the error
+ * can be stored as info in this MCLMessage.
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
-public class SuccessMessage extends MCLVariableMessage {
+public class ErrorMessage extends MCLVariableMessage {
 	/** The character that identifies this message */
-	public static final char identifier = 'v';
+	public static final char identifier = '!';
 
 	private final static MCLSentence startOfMessageSentence;
 	
@@ -44,24 +44,24 @@ public class SuccessMessage extends MCLVariableMessage {
 	}
 
 	/**
-	 * Constructs an empty SuccessMessage.  The sentences need to be
+	 * Constructs an empty ErrorMessage.  The sentences need to be
 	 * added using the addSentence() method.  This constructor is
 	 * suitable when reconstructing messages from a stream.
 	 */
-	public SuccessMessage() {
+	public ErrorMessage() {
 		// nothing has to be done here
 		sentences = new MCLSentence[0];
 		variableSentences = new ArrayList();
 	}
 
 	/**
-	 * Constructs a filled SuccessMessage.  All required information
-	 * is supplied and stored in this SuccessMessage.
+	 * Constructs a filled ErrorMessage.  All required information
+	 * is supplied and stored in this ErrorMessage.
 	 *
 	 * @param message the data MIME type of the data
 	 * @throws MCLException if the message is null
 	 */
-	public SuccessMessage(String message) throws MCLException {
+	public ErrorMessage(String message) throws MCLException {
 		if (message == null) throw
 			new MCLException("message may not be null");
 		
