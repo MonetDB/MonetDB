@@ -121,7 +121,7 @@ public class MCLSentence {
 	 *
 	 * @param type an int representing the type of this sentence
 	 * @param property a property name
-	 * @param value the property values
+	 * @param values the property values
 	 */
 	public MCLSentence(int type, String property, Object[] values) throws MCLException {
 		if (property == null || values == null) throw
@@ -151,7 +151,7 @@ public class MCLSentence {
 	 *
 	 * @param type an int representing the type of this sentence
 	 * @param property a property name
-	 * @param value the property values
+	 * @param values the property values
 	 */
 	public MCLSentence(int type, String property, int[] values) throws MCLException {
 		if (property == null || values == null) throw

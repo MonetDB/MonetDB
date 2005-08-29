@@ -124,7 +124,7 @@ public class HeaderMessage extends MCLMessage {
 	/**
 	 * Sets the table header if not yet set.
 	 *
-	 * @param columns an array of Strings representing the table names
+	 * @param tables an array of Strings representing the table names
 	 * @throws MCLException if the columncount header is not yet set,
 	 * the number of Strings in the array doesn't match the columncount,
 	 * or the table header is already set.
@@ -144,7 +144,7 @@ public class HeaderMessage extends MCLMessage {
 	/**
 	 * Sets the schema header if not yet set.
 	 *
-	 * @param columns an array of Strings representing the schema names
+	 * @param schemas an array of Strings representing the schema names
 	 * @throws MCLException if the columncount header is not yet set,
 	 * the number of Strings in the array doesn't match the columncount,
 	 * or the schema header is already set.
@@ -164,7 +164,7 @@ public class HeaderMessage extends MCLMessage {
 	/**
 	 * Sets the type header if not yet set.
 	 *
-	 * @param columns an array of Strings representing the schema names
+	 * @param types an array of Strings representing the schema names
 	 * @throws MCLException if the columncount header is not yet set,
 	 * the number of Strings in the array doesn't match the columncount,
 	 * or the schema header is already set.
@@ -184,7 +184,7 @@ public class HeaderMessage extends MCLMessage {
 	/**
 	 * Sets the digits header if not yet set.
 	 *
-	 * @param columns an array of Strings representing the schema names
+	 * @param digits an array of Strings representing the schema names
 	 * @throws MCLException if the columncount header is not yet set,
 	 * the number of Strings in the array doesn't match the columncount,
 	 * or the schema header is already set.
@@ -204,7 +204,7 @@ public class HeaderMessage extends MCLMessage {
 	/**
 	 * Sets the scale header if not yet set.
 	 *
-	 * @param columns an array of Strings representing the schema names
+	 * @param scales an array of Strings representing the schema names
 	 * @throws MCLException if the columncount header is not yet set,
 	 * the number of Strings in the array doesn't match the columncount,
 	 * or the schema header is already set.
@@ -224,7 +224,7 @@ public class HeaderMessage extends MCLMessage {
 	/**
 	 * Sets the width header if not yet set.
 	 *
-	 * @param columns an array of Strings representing the schema names
+	 * @param widths an array of Strings representing the schema names
 	 * @throws MCLException if the columncount header is not yet set,
 	 * the number of Strings in the array doesn't match the columncount,
 	 * or the schema header is already set.

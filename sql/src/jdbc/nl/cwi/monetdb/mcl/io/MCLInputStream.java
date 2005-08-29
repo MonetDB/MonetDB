@@ -103,8 +103,6 @@ public class MCLInputStream {
 	 * in sync (for instance when calling sync() twice) is a no-op, and
 	 * does not affect the stream in any way.
 	 *
-	 * @return all errors found when looking for the prompt as a String,
-	 * or null if no errors were found. 
 	 * @throws MCLException if syncing failed
 	 */
 	public void sync() throws MCLException {
