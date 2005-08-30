@@ -612,6 +612,13 @@ proc minutes(timestamp t) : int { return minutes(daytime(t)); }
 proc seconds(timestamp t) : int { return seconds(daytime(t)); }
 proc milliseconds(timestamp t) : int { return milliseconds(daytime(t)); }
 
+proc year(int months) : int { return months/12; }
+proc month(int months) : int { return months%12; }
+proc day(lng secs) : int { return secs/86400; }
+proc hours(lng secs) : int { return (secs%86400)/3600; }
+proc minutes(lng secs) : int { return (secs%3600)/60; }
+proc seconds(lng secs) : int { return (secs%60); }
+
 # temporary(?) HACK to distinguish type-signatures of
 # date_sub_sec_interval & date_add_sec_interval (now: date,lng) from those of
 # date_sub_month_interval & addmonth (date,int),
