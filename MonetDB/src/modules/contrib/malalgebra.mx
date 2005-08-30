@@ -34,7 +34,7 @@ Too many bugs.
                     BAT[any::1,any::3] = CMDleft@1join;
   "Hook directly into the 'left@1join' implementation of the join.
    prefix 'left' means that left and right input are not swapped during processing,
-   and hence, the order of the left input's head in maintained in the result."
+   and hence, the order of the left input's head is maintained in the result."
 @m
 @:join(fetch)@
 @:join(merge)@
@@ -48,13 +48,13 @@ Too many bugs.
                     BAT[any::1,any::3] = CMDleftthetajoin;
   "Hook directly into the 'leftthetajoin' implementation of the join.
    prefix 'left' means that left and right input are not swapped during processing,
-   and hence, the order of the left input's head in maintained in the result."
+   and hence, the order of the left input's head is maintained in the result."
 
   .COMMAND nlthetajoin ( BAT[any::1,any::2] left, BAT[any::2,any::3] right, int mode, lng estimate) :
                     BAT[any::1,any::3] = CMDnlthetajoin;
   "Hook directly into the 'nested-loop-thetajoin' implementation of the join.
    prefix 'left' means that left and right input are not swapped during processing,
-   and hence, the order of the left input's head in maintained in the result.
+   and hence, the order of the left input's head is maintained in the result.
    Also, for each left tuple, all matching right tuples will appear in their order
    of appearrance in the right BAT. This property is handy for XQuery processing."
 
