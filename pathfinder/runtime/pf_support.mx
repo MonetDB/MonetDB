@@ -21,8 +21,8 @@
 @t MIL primitives to support the XQuery front-end "Pathfinder"
 
 @* Introduction
-This modules provides new MIL primitives to support the XQuery
-implementation on to of MonetDB within the "Pathfinder" project.
+This module provides new MIL primitives to support the XQuery
+implementation on top of MonetDB within the "Pathfinder" project.
 @
 @* Module Definition 
 @m

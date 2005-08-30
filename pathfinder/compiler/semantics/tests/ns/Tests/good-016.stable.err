@@ -1,0 +1,12 @@
+stderr of test 'good-015` in directory 'compiler/semantics/tests/ns` itself:
+
+
+# 14:31:09 >  
+# 14:31:09 >  Mtimeout -timeout 60 ./good-015 good-015 
+# 14:31:09 >  
+
+
+# 14:31:09 >  
+# 14:31:09 >  Done.
+# 14:31:09 >  
+

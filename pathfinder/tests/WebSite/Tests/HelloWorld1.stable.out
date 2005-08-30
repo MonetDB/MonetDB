@@ -1,0 +1,32 @@
+stdout of test 'HelloWorld1` in directory 'tests/WebSite` itself:
+
+
+# 15:54:02 >  
+# 15:54:02 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./var/MonetDB/log" --set mapi_port=31407 --set sql_port=42015 --set xquery_port=52191 --set monet_prompt= --trace "--dbname=mTests_tests_WebSite" --dbinit="module(pathfinder); pfstart();" ; echo ; echo Over..
+# 15:54:02 >  
+
+# Monet Database Server V4.8.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:54:02 >  
+# 15:54:02 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=52191 HelloWorld1.xq
+# 15:54:02 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+<example>Hello World</example>
+</XQueryResult>
+
+# 15:54:02 >  
+# 15:54:02 >  Done.
+# 15:54:02 >  
+
