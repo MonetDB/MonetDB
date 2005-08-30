@@ -29,7 +29,7 @@ import nl.cwi.monetdb.mcl.*;
  */
 public class PrepareResultMessage extends MCLMessage {
 	/** The character that identifies this message */
-	public static final char identifier = 'p';
+	public static final char identifier = 'P';
 
 	private final static MCLSentence startOfMessageSentence;
 	

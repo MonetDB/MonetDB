@@ -30,7 +30,7 @@ import nl.cwi.monetdb.mcl.*;
  */
 public class BatchResultMessage extends MCLVariableMessage {
 	/** The character that identifies this message */
-	public static final char identifier = 'b';
+	public static final char identifier = 'B';
 
 	private final static MCLSentence startOfMessageSentence;
 

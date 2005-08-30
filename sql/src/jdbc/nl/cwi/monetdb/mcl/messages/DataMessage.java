@@ -29,7 +29,7 @@ import nl.cwi.monetdb.mcl.*;
  */
 public class DataMessage extends MCLVariableMessage {
 	/** The character that identifies this message */
-	public static final char identifier = 't';
+	public static final char identifier = 'd';
 
 	private final static MCLSentence startOfMessageSentence;
 	

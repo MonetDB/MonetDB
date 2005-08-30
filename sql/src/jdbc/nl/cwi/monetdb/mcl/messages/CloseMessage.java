@@ -29,7 +29,7 @@ import nl.cwi.monetdb.mcl.*;
  */
 public class CloseMessage extends MCLMessage {
 	/** The character that identifies this message */
-	public static final char identifier = 'C';
+	public static final char identifier = 'c';
 
 	private final static MCLSentence startOfMessageSentence;
 	

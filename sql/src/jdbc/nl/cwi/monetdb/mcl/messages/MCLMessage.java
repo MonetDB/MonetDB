@@ -32,7 +32,7 @@ import nl.cwi.monetdb.mcl.io.*;
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
-abstract class MCLMessage {
+public abstract class MCLMessage {
 	protected final static MCLSentence promptSentence;
 	protected final static MCLSentence morePromptSentence;
 

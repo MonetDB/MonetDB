@@ -32,7 +32,7 @@ import nl.cwi.monetdb.mcl.*;
  */
 public class ChallengeResponseMessage extends MCLMessage {
 	/** The character that identifies this message */
-	public static final char identifier = 'R';
+	public static final char identifier = 'a';
 
 	private final static MCLSentence startOfMessageSentence;
 	

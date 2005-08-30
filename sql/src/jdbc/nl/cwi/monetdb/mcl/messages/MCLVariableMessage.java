@@ -34,7 +34,7 @@ import nl.cwi.monetdb.mcl.io.*;
  *
  * @author Fabian Groffen <Fabian.Groffen>
  */
-abstract class MCLVariableMessage extends MCLMessage {
+public abstract class MCLVariableMessage extends MCLMessage {
 	protected List variableSentences;
 	
 	/**
