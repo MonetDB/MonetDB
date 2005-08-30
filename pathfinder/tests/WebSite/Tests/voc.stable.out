@@ -1,0 +1,26 @@
+stdout of test 'voc` in directory 'tests/WebSite` itself:
+
+
+# 16:53:22 >  
+# 16:53:22 >  Mtimeout -timeout 60 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./var/MonetDB/log" --set mapi_port=38606 --set sql_port=46425 --set xquery_port=52385 --set monet_prompt= --trace --dbname=mTests_tests_WebSite  < voc.milS
+# 16:53:22 >  
+
+# Monet Database Server V4.8.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+module("pathfinder");
+module("unix");
+
+var TSTSRCDIR := getenv("TSTSRCDIR");
+
+shred_doc(TSTSRCDIR + "/" + "voc.xml", "voc.xml");
+# Shredded XML doc("voc.xml"), total time after commit=0.823s
+
+commit();
+quit();
+
+# 16:53:23 >  
+# 16:53:23 >  Done.
+# 16:53:23 >  
+
