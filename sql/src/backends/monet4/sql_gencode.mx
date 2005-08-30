@@ -780,15 +780,24 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_convert:{
+			char *convert = s->op4.typeval->type->base.name;
 			/* convert types and make sure they are rounded up correctly */
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			size_t buflen = strlen(s->op4.funcval->func->imp) + 64;
 
 			buf = NEW_ARRAY(char, buflen + 1);
+
+			if (s->op4.typeval->type->eclass == EC_INTERVAL) {
+				if (s->op4.typeval->type->localtype == TYPE_int)
+					convert = "month_interval";
+				else
+					convert = "second_interval";
+			}
+
 			if (s->op1.stval->nrcols) {
-				len = snprintf(buf, buflen, "var s%d := [%s](", -s->nr, s->op4.typeval->type->base.name);
+				len = snprintf(buf, buflen, "var s%d := [%s](", -s->nr, convert);
 			} else {
-				len = snprintf(buf, buflen, "var s%d := %s(", -s->nr, s->op4.typeval->type->base.name);
+				len = snprintf(buf, buflen, "var s%d := %s(", -s->nr, convert);
 			}
 
 			if (s->op3.typeval->type->eclass == EC_DEC) 
@@ -796,7 +805,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 	
 			len += snprintf(buf+len, buflen-len, "s%d", l);
 
-			if (s->op4.typeval->type->eclass == EC_DEC) 
+			if (s->op4.typeval->type->eclass == EC_DEC ||
+			    s->op4.typeval->type->eclass == EC_INTERVAL) 
 				len += snprintf(buf+len, buflen-len, ", %d, %d", s->op4.typeval->digits, s->op4.typeval->scale);
 			len += snprintf(buf+len, buflen-len, ");\n");
 			assert(len <= buflen);

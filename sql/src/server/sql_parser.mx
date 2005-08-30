@@ -2431,9 +2431,9 @@ interval_type:
 			YYABORT;
 	  	} else {
 			if (tpe == 0){
-				$$ = sql_bind_subtype("month_interval", 0, 0);
+				$$ = sql_bind_subtype("month_interval", ek, sk);
 			} else {
-				$$ = sql_bind_subtype("sec_interval", 0, 0);
+				$$ = sql_bind_subtype("sec_interval", ek, sk);
 			}
 	  	}
 	}
@@ -2601,23 +2601,31 @@ literal:
  ;
 
 interval_expression:
-   INTERVAL opt_sign string interval_qualifier
-		{ mvc *m = (mvc*)parm;
-	  	  int i,tpe;
-	  	  if ( (tpe = parse_interval( m, $2, $3, $4, &i)) < 0 ){
+   INTERVAL opt_sign string interval_qualifier { 
+		sql_subtype *t;
+		int sk, ek, tpe;
+		mvc *m = (mvc*)parm;
+	  	lng i = 0;
+
+		$$ = NULL;
+	  	if ( (tpe = parse_interval_qualifier( m, $4, &sk, &ek )) < 0){
+			yyerror("incorrect interval");
+			YYABORT;
+	  	} else {
+			if (tpe == 0){
+				t = sql_bind_subtype("month_interval", ek, sk);
+			} else {
+				t = sql_bind_subtype("sec_interval", ek, sk);
+			}
+	  	}
+	  	if ( (tpe = parse_interval( m, $2, $3, sk, ek, &i)) < 0 ){
 			yyerror("incorrect interval");
 			$$ = NULL;
 			YYABORT;
-	  	  } else {
-			sql_subtype *t = NULL;
-			if (tpe == 0){
-				t = sql_bind_subtype("month_interval", 0, 0);
-			} else {
-				t = sql_bind_subtype("sec_interval", 0, 0);
-			}
-	  		$$ = _newAtomNode( atom_int(t,i));
-	  	  }
-		}
+	  	} else {
+	  		$$ = _newAtomNode( atom_int(t, i));
+	  	}
+	}
 
 	/* miscellaneous */
  ;

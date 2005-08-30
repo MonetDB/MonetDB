@@ -270,6 +270,7 @@ atom2sql(atom *a)
 		return _strdup("false");
 	case EC_CHAR:
 	case EC_STRING:
+	case EC_INTERVAL:
 		assert (a->data.vtype == TYPE_str);
 		if (a->data.val.sval)
 			sprintf(buf, "'%s'", a->data.val.sval);

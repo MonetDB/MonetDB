@@ -35,7 +35,7 @@ easy to find something akin you intend to enter.
 #include <sql_catalog.h>
 #include <stream.h>
 
-#define EC_MAX 		12
+#define EC_MAX 		13
 #define EC_ANY	 	0
 #define EC_TABLE 	1
 #define EC_BIT 		2
@@ -44,17 +44,18 @@ easy to find something akin you intend to enter.
 #define EC_BLOB		5
 
 #define EC_NUM 		6
-#define EC_DEC 		7
-#define EC_FLT 		8
-#define EC_NUMBER(e)	(e==EC_NUM||e==EC_DEC||e==EC_FLT)
+#define EC_INTERVAL 	7
+#define EC_DEC 		8
+#define EC_FLT 		9
+#define EC_NUMBER(e)	(e==EC_NUM||e==EC_INTERVAL||e==EC_DEC||e==EC_FLT)
 
-#define EC_TIME		9
-#define EC_DATE		10
-#define EC_TIMESTAMP	11
+#define EC_TIME		10
+#define EC_DATE		11
+#define EC_TIMESTAMP	12
 #define EC_TEMP(e)	(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP)
 
 #define EC_FIXED(e)	(e==EC_BIT||e==EC_CHAR||\
-			 e==EC_NUM||e==EC_DEC||EC_TEMP(e))
+			 e==EC_NUM||e==EC_INTERVAL||e==EC_DEC||EC_TEMP(e))
 
 extern list *aliases;
 extern list *types;
@@ -185,18 +186,19 @@ int bits2digits(int bits)
 
 static int convert_matrix[EC_MAX][EC_MAX] = {
 
-/* EC_ANY */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_TABLE */	{ 0, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
-/* EC_BIT */	{ 0, 0, 2, 1, 1, 0, 1, 1, 0, 0, 0, 0 },
-/* EC_CHAR */	{ 1, 1, 1, 2, 1, 0, 1, 1, 1, 1, 1, 1 },
-/* EC_STRING */	{ 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1 },
-/* EC_BLOB */	{ 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0 },
-/* EC_NUM */	{ 0, 0, 0, 1, 1, 0, 2, 1, 1, 0, 1, 0 },
-/* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 2, 2, 1, 0, 0, 0 },
-/* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 2, 2, 2, 0, 0, 0 },
-/* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 2, 0, 0 },
-/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 2, 0 },
-/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 2, 2 }
+/* EC_ANY */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_TABLE */	{ 0, 2, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_BIT */	{ 0, 0, 2, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0 },
+/* EC_CHAR */	{ 1, 1, 1, 2, 1, 0, 1, 1, 1, 1, 1, 1, 1 },
+/* EC_STRING */	{ 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1 },
+/* EC_BLOB */	{ 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_NUM */	{ 0, 0, 0, 1, 1, 0, 2, 2, 1, 1, 0, 1, 0 },
+/* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 2, 0, 1, 0, 1, 0, 0 },
+/* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 2, 2, 2, 1, 0, 0, 0 },
+/* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 2, 2, 2, 2, 0, 0, 0 },
+/* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 2, 0, 0 },
+/* EC_DATE */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 2, 0 },
+/* EC_TSTAMP */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 2, 2 }
 };
 
 int sql_type_convert (int from, int to) 
@@ -1119,8 +1121,8 @@ sqltypeinit()
 
 
 	dates = t;
-	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 32, 0, 2, EC_NUM, "int");
-	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 64, 0, 2, EC_NUM, "lng");
+	MONINT = *t++ = sql_create_type("MONTH_INTERVAL", 32, 0, 2, EC_INTERVAL, "int");
+	SECINT = *t++ = sql_create_type("SEC_INTERVAL", 64, 0, 2, EC_INTERVAL, "lng");
 	TME = *t++ = sql_create_type("TIME", 0, 0, 0, EC_TIME, "daytime");
 	TMETZ = *t++ = sql_create_type("TIMETZ", 0, SCALE_FIX, 0, EC_TIME, "daytime");
 	DTE = *t++ = sql_create_type("DATE", 0, 0, 0, EC_DATE, "date");
@@ -1293,12 +1295,20 @@ sqltypeinit()
 	sql_create_func("hour", "hours", TME, NULL, INT, SCALE_FIX);
 	sql_create_func("minute", "minutes", TME, NULL, INT, SCALE_FIX);
 	sql_create_func("second", "seconds", TME, NULL, INT, SCALE_FIX);
+
 	sql_create_func("year", "year", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func("month", "month", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func("day", "day", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func("hour", "hours", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func("minute", "minutes", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func("second", "seconds", TMESTAMP, NULL, INT, SCALE_FIX);
+
+	sql_create_func("year", "year", MONINT, NULL, INT, SCALE_FIX);
+	sql_create_func("month", "month", MONINT, NULL, INT, SCALE_FIX);
+	sql_create_func("day", "day", SECINT, NULL, INT, SCALE_FIX);
+	sql_create_func("hour", "hours", SECINT, NULL, INT, SCALE_FIX);
+	sql_create_func("minute", "minutes", SECINT, NULL, INT, SCALE_FIX);
+	sql_create_func("second", "seconds", SECINT, NULL, INT, SCALE_FIX);
 
 	sql_create_func("dayofyear", "dayofyear", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func("weekofyear", "weekofyear", DTE, NULL, INT, SCALE_FIX);

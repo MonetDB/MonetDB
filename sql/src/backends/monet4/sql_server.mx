@@ -199,6 +199,10 @@ stream.
 @:mel_cast2(dbl,int)@
 @:mel_cast2(dbl,lng)@
 
+ .COMMAND month_interval( str v, int ek, int sk ) : int = month_interval; "cast string to a month_interval and check for overflow"
+
+ .COMMAND second_interval( str v, int ek, int sk ) : lng = second_interval; "cast string to a month_interval and check for overflow"
+
 .END sql_server;
 
 @-
@@ -227,6 +231,7 @@ handles and returns proper error messages upon failure.
 #include "sql_session.h"
 #include <sql_decimal.h>
 #include <sql_string.h>
+#include <sql_datetime.h>
 #include <sql_env.h>
 #include <algebra.h>
 #include <bat/bat_store.h>
@@ -995,6 +1000,21 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 @:numcastdown(sht,int)@
 @:numcastdown(sht,lng)@
 @:numcastdown(int,lng)@
+
+int month_interval( int *ret, str s, int *ek, int *sk ){
+	lng res;
+
+	if (interval_from_str( s, *sk, *ek, &res ) < 0)
+		return GDK_FAIL;
+	*ret = res;
+	return GDK_SUCCEED;
+}
+int second_interval( lng *res, str s, int *ek, int *sk ){
+
+	if (interval_from_str( s, *sk, *ek, res ) < 0)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
 
 @-
 An SQL session needs a minimal set of modules, shown below.

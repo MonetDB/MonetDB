@@ -26,7 +26,7 @@
 #include "sql_symbol.h"
 
 typedef enum inttype {
-	iyear,
+	iyear = 1,
 	imonth,
 	iday,
 	ihour,
@@ -35,18 +35,23 @@ typedef enum inttype {
 } itype;
 
 int parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek);
-
 /* returns 0 for month intervals, 
  *         1 for sec intervals, 
  * 	   in both cases sk/ek contain the start and end qualifiers 
  *         <0 for errors */
-int parse_interval(mvc *sql, int sign, char *str, struct dlist *pers, int *val);
 
+int parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, lng *i);
+/* returns 0 for month intervals and value in val, 
+ *         1 for sec intervals and value in val, 
+ *         <0 for errors */
+
+int interval_from_str(char *str, int sk, int ek, lng *val);
 /* returns 0 for month intervals and value in val, 
  *         1 for sec intervals and value in val, 
  *         <0 for errors */
 
 char *datetime_field(itype field);
+/* returns the datetime_field string representation */
 
 #endif /*_SQL_DATETIME_H_*/
 
@@ -86,13 +91,13 @@ parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek)
 }
 
 int
-parse_interval_intern(mvc *sql, int sign, char *str, int sk, int ek, int *i)
+parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, lng *i)
 {
 	char *n = NULL;
-	int val = 0;
+	lng val = 0;
 	char sep = ':';
 	int type;
-	int mul;
+	lng mul;
 
 	if (*str == '-') {
 		sign *= -1; 
@@ -120,7 +125,8 @@ parse_interval_intern(mvc *sql, int sign, char *str, int sk, int ek, int *i)
 		break;
 
 	default:
-		snprintf(sql->errstr, ERRSIZE, _("Internal error: parse_interval_internal: bad value for sk (%d)\n"), sk);
+		if (sql)
+			snprintf(sql->errstr, ERRSIZE, _("Internal error: parse_interval: bad value for sk (%d)\n"), sk);
 		return -1;
 	}
 
@@ -129,27 +135,22 @@ parse_interval_intern(mvc *sql, int sign, char *str, int sk, int ek, int *i)
 	*i += val;
 	if (ek != sk) {
 		if (*n != sep) {
-			snprintf(sql->errstr, ERRSIZE, _("Interval field seperator \'%c\' missing\n"), sep);
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Interval field seperator \'%c\' missing\n"), sep);
 			return -1;
 		}
-		return parse_interval_intern(sql, sign, n + 1, sk + 1, ek, i);
+		return parse_interval(sql, sign, n + 1, sk + 1, ek, i);
 	} else {
 		return type;
 	}
 }
 
-int
-parse_interval(mvc *sql, int sign, char *str, struct dlist *pers, int *val)
+int interval_from_str(char *str, int sk, int ek, lng *val)
 {
-
-	int sk = iyear, ek = isec;
-
-	if (parse_interval_qualifier(sql, pers, &sk, &ek) < 0)
-		return -1;
-
 	*val = 0;
-	return parse_interval_intern(sql, sign, str, sk, ek, val);
+	return parse_interval(NULL, 1, str, sk, ek, val);
 }
+
 
 
 char *
