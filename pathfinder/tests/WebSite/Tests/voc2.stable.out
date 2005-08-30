@@ -1,0 +1,32 @@
+stdout of test 'voc2` in directory 'tests/WebSite` itself:
+
+
+# 15:54:16 >  
+# 15:54:16 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./var/MonetDB/log" --set mapi_port=31407 --set sql_port=42015 --set xquery_port=52191 --set monet_prompt= --trace "--dbname=mTests_tests_WebSite" --dbinit="module(pathfinder); pfstart();" ; echo ; echo Over..
+# 15:54:16 >  
+
+# Monet Database Server V4.8.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:54:16 >  
+# 15:54:16 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=52191 voc2.xq
+# 15:54:16 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+<voyage>1601-01-28, </voyage><voyage>1601-04-23, Texel</voyage><voyage>1601-11-29, Atjeh</voyage><voyage>1602-08-25, Bantam</voyage><voyage>1603-12-18, Wielingen</voyage><voyage>1606-02-06, Bantam</voyage><voyage>1607-12-21, Wielingen</voyage><voyage>1609-05-24, Bantam</voyage><voyage>1612-01-02, Wielingen</voyage><voyage>1613-04-04, Wielingen</voyage><voyage>1616-12-13, Bantam</voyage><voyage>1618-12-28, Wielingen</voyage><voyage>1632-04-18, Wielingen</voyage><voyage>1634-12-30, Batavia</voyage><voyage>1636-05-04, Wielingen</voyage><voyage>1636-12-29, Batavia</voyage><voyage>1638-01-14, Wielingen</voyage><voyage>1639-01-13, Batavia</voyage><voyage>1640-01-20, Wielingen</voyage><voyage>1643-05-22, Wielingen</voyage><voyage>1644-12-24, Batavia</voyage><voyage>1646-05-09, Wielingen</voyage><voyage>1646-12-22, Batavia</voyage><voyage>1648-03-13, Goeree</voyage><voyage>1650-04-02, Maas</voyage><voyage>1650-12-11, Batavia</voyage><voyage>1652-04-23, Goeree</voyage><voyage>1708-10-18, Goeree</voyage><voyage>1709-04-21, The Cape</voyage><voyage>1718-12-31, Rammekens</voyage><voyage>1746-01-10, Rammekens</voyage><voyage>1746-12-19, Batavia</voyage><voyage>1748-05-27, Rammekens</voyage><voyage>l3-12-1641, Batavia</voyage>
+</XQueryResult>
+
+# 15:54:17 >  
+# 15:54:17 >  Done.
+# 15:54:17 >  
+

@@ -1040,9 +1040,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
             {	/* PI */
                 str target, data;
                 CHKVP(target = idxTVinWSorFRGN(ctx,vFRAG,PROP_TGT,prop));
-                target = (str)vp;
                 CHKVP(data = idxTVinWSorFRGN(ctx,vFRAG,PROP_INS,prop));
-                data   = (str)vp;
                 if (!handle_processingInstruction(ctx,target,data))
                     return 0;
                 break;
