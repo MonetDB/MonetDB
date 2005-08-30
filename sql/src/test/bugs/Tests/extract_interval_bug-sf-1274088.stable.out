@@ -1,0 +1,65 @@
+stdout of test 'extract_interval_bug-sf-1274088` in directory 'src/test/bugs` itself:
+
+
+# 14:35:39 >  
+# 14:35:39 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=30151 --set sql_port=48273 --set xquery_port=50516 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 14:35:39 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+# semantic binary algebra
+# semantic binary algebra
+# semantic binary algebra
+# semantic binary algebra
+# semantic binary algebra
+quit();
+
+Over..
+
+# 14:35:40 >  
+# 14:35:40 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=48273  < extract_interval_bug-sf-1274088.sql
+# 14:35:40 >  
+
+# 3 # querytype
+#  # table_name
+# year_single_value # name
+# int # type
+# 10 # length
+# 1 # tuplecount
+# 1 # id
+[ 1	]
+# 3 # querytype
+#  # table_name
+# day_single_value # name
+# int # type
+# 10 # length
+# 1 # tuplecount
+# 2 # id
+[ 1	]
+# 3 # querytype
+#  # table_name
+# day_single_value # name
+# int # type
+# 10 # length
+# 1 # tuplecount
+# 3 # id
+[ 1	]
+# 3 # querytype
+#  # table_name
+# hour_single_value # name
+# int # type
+# 10 # length
+# 1 # tuplecount
+# 4 # id
+[ 1	]
+
+# 14:35:41 >  
+# 14:35:41 >  Done.
+# 14:35:41 >  
+
