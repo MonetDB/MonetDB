@@ -1,0 +1,38 @@
+stdout of test 'interval_parse_bug-sf-1263967` in directory 'src/test/bugs` itself:
+
+
+# 14:01:35 >  
+# 14:01:35 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=31252 --set sql_port=46852 --set xquery_port=51410 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 14:01:35 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+# semantic binary algebra
+# semantic binary algebra
+quit();
+
+Over..
+
+# 14:01:36 >  
+# 14:01:36 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46852  < interval_parse_bug-sf-1263967.sql
+# 14:01:36 >  
+
+# 3 # querytype
+#  # table_name
+# single_value # name
+# month_interval # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
+[ -14	]
+
+# 14:01:36 >  
+# 14:01:36 >  Done.
+# 14:01:36 >  
+
