@@ -42,3 +42,6 @@ unique-bug-sf-1043512
 drop_foreignkey_selfreferencing
 HAVE_JAVA?except-union-intersect-bug-sf-1146079
 selectlist_subquery-sf-1208599
+interval_convert_bugs-sf-1274077-1274085
+interval_data_commutative_add_bug-sf-1263928
+interval_parse_bug-sf-1263967
