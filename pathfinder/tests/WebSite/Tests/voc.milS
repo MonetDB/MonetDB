@@ -1,0 +1,8 @@
+module("pathfinder");
+module("unix");
+
+var TSTSRCDIR := getenv("TSTSRCDIR");
+
+shred_doc(TSTSRCDIR + "/" + "voc.xml", "voc.xml");
+
+commit();

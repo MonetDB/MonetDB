@@ -1,0 +1,32 @@
+stdout of test 'slashdot` in directory 'tests/WebSite` itself:
+
+
+# 15:54:10 >  
+# 15:54:10 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d..PREFIX./var/MonetDB/log" --set mapi_port=31407 --set sql_port=42015 --set xquery_port=52191 --set monet_prompt= --trace "--dbname=mTests_tests_WebSite" --dbinit="module(pathfinder); pfstart();" ; echo ; echo Over..
+# 15:54:10 >  
+
+# Monet Database Server V4.8.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:54:10 >  
+# 15:54:10 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=52191 slashdot.xq
+# 15:54:10 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+<html><body><h1>Slashdot.org News</h1><ol><li><a href="http://rss.slashdot.org/Slashdot/slashdot?m=253">Apple To Unveil iPod Cellphone Next Week?</a></li><li><a href="http://rss.slashdot.org/Slashdot/slashdot?m=252">Nanotech Coating Prevents Fogging</a></li><li><a href="http://rss.slashdot.org/Slashdot/slashdot?m=251">Creative Zens Ship with Worms</a></li><li><a href="http://rss.slashdot.org/Slashdot/slashdot?m=250">Libraries Use DRM to Expire Audiobooks</a></li><li><a href="http://rss.slashdot.org/Slashdot/slashdot?m=249">New Material Harder Than Diamond</a></li><li><a href="http://rss.slashdot.org/Slashdot/slashdot?m=248">Flash EULA Doesn't Fit the Times</a></li><li><a href="http://rss.slashdot.org/Slashdot/slashdot?m=247">Hashing Out the Next Step in Biometric Security</a></li><li><a href="http://rss.slashdot.org/Slashdot/slashdot?m=246">WinFS Beta 1 Released Early</a></li><li><a href="http://rss.slashdot.org/Slashdot/slashdot?m=245">Andrew Orlowski Answers Mail on Creative Commons</a></li><li><a href="http://rss.slashdot.org/Slashdot/slashdot?m=244">Accused Zotob Worm Author Says Money Was Motive</a></li></ol></body></html>
+</XQueryResult>
+
+# 15:54:12 >  
+# 15:54:12 >  Done.
+# 15:54:12 >  
+
