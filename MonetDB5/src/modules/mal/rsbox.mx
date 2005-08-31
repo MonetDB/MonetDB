@@ -1387,7 +1387,7 @@ RSwriteBlock(int *retval, int *handle, lng *upper, lng *lower)
 					bt = stream_printf(s, "%d:%s", strlen(p), p);
 					break;
 				case TYPE_oid:
-					@:MX-writeNull(*(size_t *) p == oid_nil)@
+					@:MX-writeNull(*(oid *) p == oid_nil)@
 					bt = stream_printf(s, "%d", *(size_t *) p);
 					break;
 				case TYPE_sht:
