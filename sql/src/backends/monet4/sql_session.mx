@@ -354,7 +354,7 @@ sql_symbol2stmt(mvc *c)
 		} else 
 			s = rel_bin(c, r);
 	}  else {
-		printf("# semantic binary algebra\n");
+		/*printf("# semantic binary algebra\n");*/
 		s = semantic(c, c->sym);
 	}
 
