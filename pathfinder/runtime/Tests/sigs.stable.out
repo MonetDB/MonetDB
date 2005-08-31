@@ -11,7 +11,6 @@ stdout of test 'sigs` in directory 'runtime` itself:
 var mods := new(void,str);
 mods.insert(nil,"pf_support");
 mods.insert(nil,"pathfinder");
-mods.insert(nil,"pf_httpd");
 
 mods@batloop(){
 	printf("module '%s'\n",$t);
@@ -63,6 +62,7 @@ module 'pf_support'
 [ "scj_desc(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"			  ]
 [ "scj_descorself(BAT[void,int], BAT[oid,any], int, int) : BAT[oid,void]"		  ]
 [ "shred2bats(str, str) : BAT[oid,BAT]"													  ]
+[ "shred2bats(str, str, str) : BAT[oid,BAT]"												  ]
 [ "string_join(BAT[oid,str], BAT[oid,str]) : BAT[oid,str]"										  ]
 module 'pathfinder'
 #-------------------------------------------------#
@@ -83,19 +83,7 @@ module 'pathfinder'
 [ "xmldb_print() : void"			  ]
 [ "xquery(str) : str"				  ]
 [ "xquery(str, str) : str"														  ]
-[ "xquery_remote(str) : str"					  ]
-[ "xquery_remote(str, int, str, str) : str"			  ]
-[ "xquery_remote(str, str) : str"				  ]
-[ "xquery_remote(str, str, str) : str"				  ]
 [ "xquery_server(Stream in, Stream out) : void "											  ]
-module 'pf_httpd'
-#---------------------------------#
-# signature			  # name
-# str				  # type
-#---------------------------------#
-[ "httpd_start(int) : void"	  ]
-[ "pf_httpd_start() : void"	  ]
-[ "pf_httpd_start(int) : void"	  ]
 
 quit();
 
