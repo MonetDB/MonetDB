@@ -7735,6 +7735,57 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 cur_level, cur_level);
         return NORMAL;
     }
+    else if (!PFqname_eq(fnQname,
+                         PFqname (PFns_fn,"subsequence")))
+    {
+        /* get offset */
+        translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        saveResult_ (f, ++counter, DBL);
+
+        if (fun->arity == 3) {
+                /* get length */
+                translate2MIL (f, VALUES, cur_level, counter, RRL(args));
+                saveResult_ (f, ++counter, DBL);
+        }
+        /* get main table */
+        rc = translate2MIL (f, rc, cur_level, counter, L(args));
+
+        if (fun->arity == 3) {
+                milprintf(f,
+                        "{ # translate fn:subsequence(item*,double,double) as item*\n"
+                        "var sel;\n\n"
+                        "# select:  offset <= pos < offset+length (sort,mark,reverse all views)\n"
+                        "{ var offset := item_dbl_%03d.reverse().sort().mark(1@0).reverse();\n"
+                        "  var length := item_dbl_%03d.reverse().sort().mark(1@0).reverse();\n"
+                        "  var hi := iter.leftfetchjoin([oid]([+](offset,length)));\n"
+                        "  var lo := iter.leftfetchjoin([oid](offset));\n"
+                        "  sel := [:and=]([>=](pos,lo).access(BAT_WRITE), [<](pos,hi));\n}\n", 
+                        counter, counter-1, counter-1);
+        } else {
+                milprintf(f, 
+                        "{ # translate fn:subsequence(item*,double*) as item*\n\n"
+                        "var sel;\n\n"
+                        "# select:  pos >= offset (sort,mark,reverse all views)\n"
+                        "{ var offset := item_dbl_%03d.reverse().sort().mark(1@0).reverse();\n"
+                        "  sel := [>=](pos, iter.leftfetchjoin(offset));\n}\n", counter);
+        }
+        milprintf(f, 
+                "# carry through the selection on the table\n"
+                "sel := sel.ord_uselect(true).mark(0@0).reverse();\n"
+                "iter := sel.leftfetchjoin(iter);\n"
+                "kind := sel.leftfetchjoin(kind);\n"
+                "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "item%s := sel.leftfetchjoin(item%s);\n", kind_str(code), kind_str(code));
+
+        if (fun->arity == 3) {
+                milprintf(f, "} # end of translate fn:subsequence(item*,double,double) as item*\n");
+                deleteResult_ (f, counter--, DBL);
+        } else {
+                milprintf(f, "} # end of translate fn:subsequence(item*,double) as item*\n");
+        }
+        deleteResult_ (f, counter, DBL);
+        return rc;
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"not")))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
