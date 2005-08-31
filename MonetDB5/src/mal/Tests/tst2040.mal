@@ -7,14 +7,14 @@
 	i:= 0;
 
 thread 	producer;	
-	io.printf("Created producer thread\n");
+	#io.printf("Created producer thread\n");
 barrier pBody:=true;
 barrier pWait;		# bussy loop to await for consumer 
-	io.printf("producer: sleep\n");
+	#io.printf("producer: sleep\n");
 	alarm.sleep(1);
 	redo pWait;
 exit 	pWait;
-	io.printf("produce an element\n");
+	#io.printf("produce an element\n");
 	pWait:= true;
 	cWait:= false;
 barrier b:= i==0;
@@ -22,18 +22,18 @@ barrier b:= i==0;
 exit	b;
 	redo pBody;
 exit	pBody;
-	io.printf("Finished producer\n");
+	#io.printf("Finished producer\n");
 exit	producer;
 
 thread consumer;
-	io.printf("Created consumer thread\n");
+	#io.printf("Created consumer thread\n");
 barrier cBody:=true;
 barrier cWait;	
-	io.printf("consumer: sleep\n");
+	#io.printf("consumer: sleep\n");
 	alarm.sleep(1);
 	redo cWait;
 exit 	cWait;
-	io.printf("consume element %d\n",i);
+	#io.printf("consume element %d\n",i);
 barrier b:= i==0;
 	leave consumer;
 exit	b;
@@ -42,7 +42,7 @@ exit	b;
 	pWait:= false;
 	redo cBody;
 exit	cBody;
-	io.printf("Finished consumer\n");
+	#io.printf("Finished consumer\n");
 exit 	consumer;
 
 	i:= 2;
