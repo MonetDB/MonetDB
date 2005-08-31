@@ -33,7 +33,6 @@
 @a Jens Teubner
 @a Stefan Manegold
 @a Peter Boncz 
-@a Ying Zhang
 
 @t Runtime Support for the Pathfinder XQuery Compiler
 
@@ -47,14 +46,9 @@
  "read xquery from stream, and print on a stream."
 
 .COMMAND xquery(str, str) : str = CMDxquery;
- "xquery execution.\
- usage:  var result := xquery(\"xml\", str); printf(result);\
+ "xquery execution.
+ usage:  var result := xquery(\"xml\", str); printf(result);
  or:  printf(xquery(\"xml\", str));"
-
-.COMMAND xquery_remote(str location, int port, str query, str params) : str = CMDxquery_remote;
- "send a xquery <query> together with the <params> to \"<location>:<port>\"\
- and let it execute at the remote host.\
- Usage: xquery_remote(<hostname>, <portnr>, <query>, <params>)"
 
 .PRELUDE = pathfinder_prelude;
 .EPILOGUE = pathfinder_epilogue;
@@ -101,32 +95,6 @@ PROC xquery(str query) : str {
 ADDHELP("xquery", "boncz", "Juli 2005",
         "shortcut for 'xquery(\"xml\", str query) : str'",
         "pathfinder");
-
-PROC xquery_remote(str location, str query, str params) : str {
-    return xquery_remote(location, 8080, query, params);
-}
-ADDHELP("xquery_remote", "zhang", "August 2005",
-        "DESCRIPTION:\n\
-        Usage: xquery_remote(<host>, <query>, <parameters>)\n\
-        Send <query> with the <parameters> to \"<host>:8080\" to let it execute",
-        "pathfinder");
-
-PROC xquery_remote(str location, str query) : str {
-    return xquery_remote(location, 8080, query, "");
-}
-ADDHELP("xquery_remote", "zhang", "August 2005",
-        "Usage: xquery_remote(<host>, <query>)\n\
-        Send <query> with no parameters to \"<host>:8080\" to let it execute",
-        "pathfinder");
-
-PROC xquery_remote(str query) : str {
-    return xquery_remote("localhost", 8080, query, "");
-}
-ADDHELP("xquery_remote", "zhang", "August 2005",
-        "Usage: xquery_remote(<query>)\n\
-        Send <query> with no parameters to \"localhost:8080\" to let it execute",
-        "pathfinder");
-
 
 #############################################
 # User-level document management functions:
@@ -904,7 +872,9 @@ exec_xquery(char *mode, char* xquery) {
     char *mapi = strstr(mode, "mapi")?"=":"";
 
     if (debug) {
-        stream_printf(GDKout, "%s#xquery######################################################\n", mapi);
+        stream_printf(GDKout,
+                "%s#xquery######################################################\n",
+                mapi);
         stream_write(GDKout, xquery, strlen(xquery), 1);
     }
     MT_set_lock(pf_compiler_lock, "CMDxquery");
@@ -931,7 +901,9 @@ exec_xquery(char *mode, char* xquery) {
     MT_unset_lock(pf_compiler_lock, "CMDxquery");
 
     if (debug) {
-        stream_printf(GDKout, "%s#mil#########################################################\n", mapi);
+        stream_printf(GDKout,
+                "%s#mil#########################################################\n",
+                mapi);
         if (prologue) stream_write(GDKout, prologue, strlen(prologue), 1);
         else stream_printf(GDKout, "%s#null prologue\n", mapi);
         if (query) stream_write(GDKout, query, strlen(query), 1);
@@ -941,25 +913,35 @@ exec_xquery(char *mode, char* xquery) {
     }
     if (err) {
         if (debug) {
-            stream_printf(GDKout, "%s#err#########################################################\n", mapi);
+            stream_printf(GDKout,
+                    "%s#err#########################################################\n",
+                    mapi);
         }
         stream_write(GDKout, err, len, 1);
     }
     if (prologue && query && epilogue) {
         if (debug) {
-            stream_printf(GDKout, "%s#exec prologue...############################################\n", mapi);
+            stream_printf(GDKout, 
+                    "%s#exec prologue...############################################\n",
+                    mapi);
         }
         if (monet_exec(prologue) >= 0) {
             if (debug) {
-                stream_printf(GDKout, "%s#exec query...###############################################\n", mapi);
+                stream_printf(GDKout, 
+                        "%s#exec query...###############################################\n",
+                        mapi);
             }
             if (monet_exec(query) >= 0) {
                 if (debug) {
-                    stream_printf(GDKout, "%s#exec epilogue...############################################\n", mapi);
+                    stream_printf(GDKout, 
+                            "%s#exec epilogue...############################################\n",
+                            mapi);
                 }
                 if (monet_exec(epilogue) >= 0) {
                     if (debug) {
-                        stream_printf(GDKout, "%s#ok##########################################################\n", mapi);
+                        stream_printf(GDKout, 
+                            "%s#ok##########################################################\n", 
+                            mapi);
                     }
                     ret = GDK_SUCCEED;
                 }
@@ -967,7 +949,9 @@ exec_xquery(char *mode, char* xquery) {
         }
     }
     if (debug && ret != GDK_SUCCEED) {
-        stream_printf(GDKout, "%s#execution failed############################################\n", mapi);
+        stream_printf(GDKout, 
+                "%s#execution failed############################################\n", 
+                mapi);
     }
     /* what comes out of PF is alloced differently */
     if (prologue) free(prologue);
@@ -1126,194 +1110,6 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
     stream_flush(out);
     closeClient(client, 0); 	
     return ret;
-}
-
-#ifdef _WIN32 		        /* Windows specific */
-    #pragma comment(lib, "ws2_32")
-    #include <winsock.h>
-    #define snprintf _snprintf
-#else				        /* UNIX specific */
-    #include <sys/types.h>	/* used by socket */
-    #include <sys/socket.h>
-    #include <unistd.h>
-    #include <netinet/in.h> /* hton and ntoh */
-    #include <arpa/inet.h>  /* dotted IP addr to and from 32-bits int */
-    #include <netdb.h>		/* convert domain names into IP addr */
-    #include <errno.h>
-    #include <ctype.h>
-#endif				        /* _WIN32 */
-
-/* Create a HTTP client socket.
- * Returns the socket if succeeded, -1 otherwise.
- */
-int
-setup_connection(str location, int port)
-{
-    int addr, sock, err=-1;
-    struct sockaddr_in sockaddr;
-    struct hostent *resolv = NULL;
-
-    errno = 0;
-    if (isdigit((int)location[0])) {
-        if ((addr = inet_addr(location)) < 0) {
-            GDKerror("setup_connection: invalid IP addressi \"%s\": %s\n",
-                     location, errno ? strerror(errno) : "");
-            return err;
-        }
-    } else {
-        if (!(resolv = gethostbyname(location))) {
-            GDKerror("setup_connection: invalid location \"%s\": %s\n",
-                     location, errno ? strerror(errno) : "");
-            return err;
-        }
-        addr = ((struct in_addr *)resolv->h_addr_list[0])->s_addr;
-    }
-
-    sockaddr.sin_family = AF_INET;
-    sockaddr.sin_port   = htons(port);
-    sockaddr.sin_addr.s_addr = addr;
-    memset(&(sockaddr.sin_zero), '\0', 8);
-
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        GDKerror("setup_connection: failed to create socket\n");
-        return err;
-    }
-    if (connect(sock, (struct sockaddr *) &sockaddr, sizeof(sockaddr)) < 0) {
-        GDKerror("setup_connection: failed to setup connection\n");
-        close(sock);
-        return err;
-    }
-    return sock;
-}
-
-/*
- * send xquery to a remote host to be executed
- * store results locally
- */
-int
-CMDxquery_remote(str *res, str location, int *port, str query, str params)
-{
-#define MIN_RESPONSE_SIZE 19
-
-    int i, n, len, ret, sock;
-    int bufsize, csize, hsize = 1024;
-    stream *rstream, *wstream;
-    char *strptr, *content = NULL, *buf = NULL;
-    const char *func = "xquery_remote"; /* Currently we only have one function */
-
-    (void) params; /* not used yet */
-
-    if (location[(len=strlen(location))-1] == '/')
-        location[len-1] = '\0'; /* remove last '/' if any */
-
-    if ((sock = setup_connection(location, *port)) < 0)
-        return GDK_FAIL;
-
-    n = 4096 + strlen(query); /* 4k for static content, should be enough */
-    csize = BUFSIZ > n ? BUFSIZ : n;
-    if (!(content = GDKmalloc(csize))) {
-        GDKerror("xquery_remote: not enough memory");
-        close(sock);
-        return GDK_FAIL;
-    }
-
-    bufsize = hsize + csize;
-    if (!(buf = GDKmalloc(bufsize))) {
-        GDKerror("xquery_remote: not enough memory\n");
-        GDKfree(content); close(sock);
-        return GDK_FAIL;
-    }
-
-    len = snprintf(content, csize, "%s\n%s\n%s",
-            "<?xml version='1.0' ?>\n"
-            "<env:Envelope xmlnl:env=\"http://www.w3.org/2003/05/soap-envelope\">\n"
-            "<env:Header>\n"
-            "<r:remotequeryrequest\n"
-            "    env:encodingStyle=\"http://example.com/encoding\"\n"
-            "    env:mustUnderstand=\"true\" />\n"
-            "</env:Header>\n"
-            "<env:Body>\n"
-            "<query>",
-            query,
-            "</query>\n"
-            "</env:Body>\n"
-            "</env:Envelope>\n");
-
-    wstream = socket_wastream(sock, "http_write");
-    n = snprintf(buf, bufsize,
-            "POST /%s HTTP1.1\r\n"
-            "Host: %s\r\n"
-            "Accept: text/html, text/xml, application/soap+xml\r\n"
-            "Accept-Language: en-uk en-us\r\n"
-            "Content-Type: text/html; charset=\"utf-8\"\r\n"
-            "Content-Length: %d\r\n\r\n"
-            "%s",
-            func, location,
-            len,
-            content);
-    GDKfree(content);
-
-    if ( (ret = stream_write(wstream, buf, 1, n)) != n) {
-        GDKerror("xquery_remote: failed to send request, only %d of %d bytes sent\n", ret, n);
-        GDKfree(buf); stream_close(wstream);
-        return GDK_FAIL;
-    }
-
-    /***
-     * Receive all response data
-     */
-    rstream = socket_rastream(sock, "http_read");
-    n = 0;
-    while ((ret = stream_read(rstream, buf+n, 1, bufsize-n)) > 0) {
-        n += ret;
-        buf[n] = '\0';
-        assert(n <= bufsize);
-        if (n == bufsize){
-            bufsize *= 2;
-            buf = (char *)GDKrealloc(buf, bufsize);
-        }
-    }
-    stream_close(wstream); stream_close(rstream);
-
-    /* TODO: check if the received message body indead has the same length
-     *       as specified in the Content-Length included in the response
-     *       message.
-     */
-    if (ret < 0 || n < MIN_RESPONSE_SIZE || strstr(buf, "\r\n\r\n") == NULL){	
-        GDKerror("xquery_remote: failed to get response\n");
-        GDKfree(buf); 
-        return GDK_FAIL;
-    }
-
-    bufsize = n +1;
-    buf = (char *)GDKrealloc(buf, bufsize); /* release unused memory */
-    strptr = strchr(buf, ' '); strptr++; /* find the first whitespace */
-    if (strptr[0] != '2' || strptr[1] != '0' || strptr[2] != '0'){
-        /* Find the end of the first HTTP header line 
-         * and print the HTTP error code + message */
-        i = 0;
-        while (strptr[i] != '\r') i++;
-        strptr[i] = '\0';
-        GDKerror("xquery_remote: error occured while execute query remotely.\n");
-        GDKerror("%s\n\n", strptr);
-
-        /* Print the SOAP fault message */
-        strptr = strstr(strptr+1, "\r\n\r\n"); strptr += 4;
-        GDKerror("%s\n", strptr);
-        GDKfree(buf);
-        return GDK_FAIL;
-    }
-
-    /* Copy the response SOAP message to results buffer */
-    strptr = strstr(strptr, "\r\n\r\n");
-    strptr += 4;
-    len = buf + bufsize - strptr;
-    content = GDKmalloc(len);
-    memcpy(content, strptr, len);
-    GDKfree(buf);
-    *res = content;
-
-    return GDK_SUCCEED;
 }
 
 bat *
