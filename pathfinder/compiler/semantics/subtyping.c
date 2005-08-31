@@ -1970,7 +1970,8 @@ PFty_data_on (PFty_t t)
  *  - is2ns (t1+)     = is2ns (t1)+
  *  - is2ns (named n) = none
  *  - is2ns (t)       = text()         if t <: atomic
- *  - is2ns (t)       = t              else
+ *  - is2ns (t)       = t              if t <: node
+ *  - is2ns (t)       = node           otherwise
  */
 PFty_t
 PFty_is2ns (PFty_t t)
@@ -2009,8 +2010,16 @@ PFty_is2ns (PFty_t t)
         default:
             if (PFty_subtype (t, PFty_atomic ()))
                 return PFty_text();
-            else
+            else if (PFty_subtype (t, PFty_xs_anyNode ()))
                 return t;
+            else
+                /*
+                 * We've broken up the input type as much as possible.
+                 * Still, the type is neither a subtype of `atom', nor
+                 * of `node' (probably we ended up with `item'). So we
+                 * fall back to the most general case and return `node'.
+                 */
+                return PFty_xs_anyNode ();
     }
 }
 
