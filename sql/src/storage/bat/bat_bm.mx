@@ -595,7 +595,8 @@ _bm_new_bat(bm *bm, oid lbid, oid bid)
 void
 bm_new_bat(bm *bm, oid lbid, BAT *b)
 {
-	assert(!b->batRestricted);
+	if (b->batRestricted) 
+		BATsetaccess(b, BAT_WRITE);
 	_bm_new_bat(bm, lbid, (oid) b->batCacheid);
 }
 

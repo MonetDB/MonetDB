@@ -2358,6 +2358,12 @@ rollforward_changeset_updates(sql_trans *tr, changeset * fs, changeset * ts, sql
 				if (tbn && fb->wtime && fb->flag == TR_OLD) {
 					sql_base *tb = tbn->data;
 
+					/* update timestamps */
+					if (fb->rtime > tb->rtime)
+						tb->rtime = fb->rtime;
+					if (fb->wtime > tb->wtime)
+						tb->wtime = fb->wtime;
+
 					ok = rollforward_updates(tr, fb, tb);
 				}
 			}
@@ -2861,6 +2867,9 @@ rollforward_trans(sql_trans *tr)
 					       (rfcfunc) &rollforward_create_module,
 					       (rfdfunc) NULL,
 					       (dupfunc) &module_dup);
+
+	if (tr->parent && tr->wtime > tr->parent->wtime)
+		tr->parent->wtime = tr->wtime;
 
 	if (ok == SQL_OK)
 		ok = rollforward_changeset_updates(tr, &tr->schemas, &tr->parent->schemas, (sql_base *) tr->parent, (rfufunc) &rollforward_update_schema, (rfcfunc) &rollforward_create_schema, (rfdfunc) &rollforward_drop_schema, (dupfunc) &schema_dup);
