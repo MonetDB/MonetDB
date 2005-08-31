@@ -13,7 +13,6 @@ stdout of test '01-22` in directory 'src/benchmarks/tpch` itself:
 printf("\nReady.\n");
 
 Ready.
-
 quit();
 
 Over..
