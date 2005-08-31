@@ -48,7 +48,7 @@
 #define	HTPASSWD	".htpasswd"	/* Per-directory passwords file */
 #define	EXPIRE_TIME	30		/* Expiration time, seconds */
 #ifndef IO_MAX
-#define	IO_MAX		32768		/* Max request size */
+#define	IO_MAX		(1024*1024)    /* Max request size */
 #endif /* IO_MAX */
 #define	METHOD_MAX	15		/* Max HTTP method and protocol size */
 #define	USER_MAX	64		/* Remote user name maxsize */
@@ -2496,13 +2496,13 @@ decide(struct conn *c)
 	if ((p = isregistered(c->uri)) != NULL) {
 		c->userurl = p;
 		c->io = do_embedded;
-	} else
+	}
 #endif /* EMBEDDED*/
-	
-	if (strstr(path, HTPASSWD)) {
+    else if (strstr(path, HTPASSWD)) {
 		senderr(c, 403, "Forbidden","", "Permission Denied");
+	}
 #ifdef WITH_PUT_AND_DELETE
-	} else if (c->http_method == HTTP_PUT) {
+    else if (c->http_method == HTTP_PUT) {
 		int	rc;
 		if ((rc = put_dir(path)) == 0) {
 			senderr(c, 200, "OK","","");
@@ -2527,8 +2527,9 @@ decide(struct conn *c)
 			senderr(c, 200, "OK", "", "");
 		else
 			senderr(c, 500, "Error", "", "%s", strerror(errno));
+	}
 #endif /* WITH_PUT_AND_DELETE */
-	} else if (mystat(path, &c->st) != 0) {
+    else if (mystat(path, &c->st) != 0) {
 		senderr(c, 404, "Not Found","", "Not Found");
 	} else if (S_ISDIR(c->st.st_mode) && path[strlen(path) - 1] != '/') {
 		(void) snprintf(buf, sizeof(buf), "Location: %s/", c->uri);
@@ -3086,7 +3087,7 @@ shttpd_get_var(struct conn *c, const char *var)
 /*
  * Returns everything contained in the connection's "query" buffer
  */
-const char *
+char *
 shttpd_get_msg(struct conn *c)
 {
     return c->query;
