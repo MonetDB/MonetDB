@@ -33,8 +33,13 @@ implementation on top of MonetDB within the "Pathfinder" project.
 
 @- XML shredder (shredder.mx)
 @m
-.COMMAND shred2bats(str location, str opt) : BAT[oid, bat] = CMDshred2bats;
- "C implementation of the document shredder"
+.COMMAND shred2bats(str location, str buffer, str opt) : BAT[oid, bat] = CMDshred2bats;
+"PARAMETERS:
+location - if this parameter contains some value, the document locates at this location is shredded. The content of the seconde parameter \"buffer\", if any, is discarded.
+buffer - if the first parameter \"location\" doesn't contain any value, this parameter should point to a character array, which will then be shredded.
+opt - options
+DESCRIPTION:
+C implementation of the document shredder"
 
 @- XML print functions (serialize.mx)
 @m
@@ -267,6 +272,14 @@ module(aggrX3);
 module(malalgebra);
 module(mmath);
 module(xtables);
+
+PROC shred2bats(str location, str opt) : bat[oid, bat]
+{
+    return shred2bats(location, "", opt);
+}
+ADDHELP("shred2bats", "zhang", "Aug 31 2005",
+	"Shortcut of shred2bats(location, \"\", opt)\n",
+	"pf_support");
 
 PROC get_type (bat[void,int] kind, int type_) : bat[oid,void]
 {
