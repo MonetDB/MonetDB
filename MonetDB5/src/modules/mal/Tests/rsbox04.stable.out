@@ -268,12 +268,12 @@ $ctype	bcSosilfd
 %scale									
 %width	5	1	40	11	4	9	18	12	24
 [0	NULL	27:Daft Punk - Human After All	2	12	2317	21783253	NULL	8.392763e+07
-[0	a	17:Spinvis - Spinvis	-2147483648	0	283	-372867832	6.336200e+01	NULL
+[0	a	17:Spinvis - Spinvis	NULL	0	283	-372867832	6.336200e+01	NULL
 [0	x	36:Within Temptation - The Silent Force	4	-73	-329	372	7.250000e+02	-9.327203e+05
 [0	NULL	22:Anouk - Together Alone	9	2	NULL	-1	-2.167227e+04	2.373000e+01
 [1	a	33:Armiral Freebee - Admiral Freebee	6	9	-72	3732897923	2.720001e+02	3.278224e+04
 [0	f	20:Lais - Douce Victime	102	-23	23	632	-3.921000e+02	3.272336e+04
-[0	r	NULL	-2147483648	NULL	9217	389263267823	8.218200e+02	NULL
+[0	r	NULL	NULL	NULL	9217	389263267823	8.218200e+02	NULL
 [0	d	40:Hooverphonic - Sit Down and Listen To...	28	2	1282	-32782	2.203710e+00	2.100000e-06
 [1	;	26:Osdorp Posse - Tegenstrijd	4	94	-72	8329732	7.212710e+02	4.000000e+00
 [0	 	36:MC Wigger & DJ Wanna-B - Fuck Osdorp	1	5	28362	NULL	NULL	6.410000e+01
