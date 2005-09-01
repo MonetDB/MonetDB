@@ -63,3 +63,5 @@ java_Test_Rmetadata = {
 	DIR = pkgdatadir/Tests
 	SOURCES = Test_Rmetadata.java
 }
+
+EXTRA_DIST_DIR = Tests

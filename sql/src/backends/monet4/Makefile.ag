@@ -31,3 +31,5 @@ scripts_mil = {
 	DIR = libdir/MonetDB
 	SOURCES = sql_server.mx 
 }
+
+EXTRA_DIST_DIR = Tests
