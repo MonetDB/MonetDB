@@ -33,9 +33,6 @@ AC_SUBST(CONFIG_H)
 
 dnl Check for Monet
 AM_MONETDB_COMPILER()
-if test "x$have_c99" != xyes; then
-	AC_MSG_ERROR([Pathfinder requires a C99 compliant C compiler, but your C compiler does not seem to be C99 compliant.])
-fi
 AM_MONETDB_TOOLS()
 AM_MONETDB_OPTIONS()
 AM_MONETDB_LIBS()
