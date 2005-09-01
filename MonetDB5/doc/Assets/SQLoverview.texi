@@ -285,43 +285,42 @@ the global structure is easy to explain.
 #    sql_cache.sql1();
 #end main;
 #factory sql_cache.sql1():any;
-#    $1{count=0} := sql.bind("sys","ptables","id",0);
-#    $6{count=0} := sql.bind_dbat("sys","ptables",0);
-#    $14{count=0} := sql.bind("sys","ttables","id",0);
-#    $16{count=0} := sql.bind_dbat("sys","ttables",0);
+#    _1{count=0} := sql.bind("sys","ptables","id",0);
+#    _6{count=0} := sql.bind_dbat("sys","ptables",0);
+#    _14{count=0} := sql.bind("sys","ttables","id",0);
+#    _16{count=0} := sql.bind_dbat("sys","ttables",0);
 #barrier always := true;
-#    $7 := bat.reverse($6{count=0});
-#    $8 := algebra.kdiff($1{count=0},$7);
-#    $11 := algebra.markT($8,0@0);
-#    $12 := bat.reverse($11);
-#    $13 := algebra.join($12,$1{count=0});
-#    $17 := bat.reverse($16{count=0});
-#    $18 := algebra.kdiff($14{count=0},$17);
-#    $20 := algebra.markT($18,0@0);
-#    $21 := bat.reverse($20);
-#    $22 := algebra.join($21,$14{count=0});
-#    $23 := bat.append($13,$22);
-#    $25 := algebra.markT($23,0@0);
-#    $26 := bat.reverse($25);
-#    $27 := algebra.join($26,$23);
-#    $29 := algebra.markT($27,0@0);
-#    $30 := bat.reverse($29);
-#    $31 := algebra.join($30,$27);
-#    $32 := algebra.count($31);
-#    sql.column($32,"count_id","int",32,0);
-#    sql.output(0,$32);
+#    _7 := bat.reverse(_6{count=0});
+#    _8 := algebra.kdiff(_1{count=0},_7);
+#    _11 := algebra.markT(_8,0@0);
+#    _12 := bat.reverse(_11);
+#    _13 := algebra.join(_12,_1{count=0});
+#    _17 := bat.reverse(_16{count=0});
+#    _18 := algebra.kdiff(_14{count=0},_17);
+#    _20 := algebra.markT(_18,0@0);
+#    _21 := bat.reverse(_20);
+#    _22 := algebra.join(_21,_14{count=0});
+#    _23 := bat.append(_13,_22);
+#    _25 := algebra.markT(_23,0@0);
+#    _26 := bat.reverse(_25);
+#    _27 := algebra.join(_26,_23);
+#    _29 := algebra.markT(_27,0@0);
+#    _30 := bat.reverse(_29);
+#    _31 := algebra.join(_30,_27);
+#    _32 := algebra.count(_31);
+#    sql.column(_32,"count_id","int",32,0);
+#    sql.output(0,_32);
 #    yield always;
 #    redo always;
 #exit always;
 #end sql1;
 @end verbatim
 
-The SQL compiler keeps a limited cache of queries and before MAL code is
-produced. Each query is looked up in the cache based on an expression pattern 
+The SQL compiler keeps a limited cache of queries.
+Each query is looked up in this cache based on an expression pattern 
 match where the constants may take on different values.
 If it doesn;t exist, the query is converted into 
-a @emph{factory} code block and stored in the
-module @code{sqlcache}. 
+a @emph{factory} code block and stored in the module @code{sqlcache}. 
 It consists of a prelude section, which locates
 the tables of interest in the SQL catalogs.
 The block between @code{barrier} and @code{yield} is the actual code
@@ -404,25 +403,25 @@ statement}. It is best illustrated with a short example.
 First, create in MonetDB the BATs of interest. Only void-BATs are allowed
 and the user should guarantee that they are aligned.
 @example
-var a:=new(void,int);
-var b:=new(void,str);
-a.seqbase(oid(0));
-b.seqbase(oid(0));
-a.persists(true);
-b.persists(true);
-a.rename("age");
-b.rename("name");
+a:=bbp.new(:void,:int);
+b:=bbp.new(:void,:str);
+bat.setSequenceBase(a);
+bat.setSequenceBase(b);
+bat.setPersistent(a);
+bat.setPersistent(b);
+bat.setName(a,"age");
+bat.setName(b,"name");
 @end example
 These BATs can be filled with attribute values, but make sure
 that all BATs are given an equal number of tuples.
 To conclude, commit the database to disk, whereafter the BATs
 become available to SQL, once you restart Mserver/SQL.
 @example
-a.insert(oid(nil), 32);
-b.insert(oid(nil), "John");
-a.insert(oid(nil), 31);
-b.insert(oid(nil), "Mary");
-commit();
+bat.insert(a,nil, 32);
+bat.insert(b,nil, "John");
+bat.insert(a,nil, 31);
+bat.insert(b,nil, "Mary");
+bbp.commit();
 @end example
 The BATs are made visible for read-only access using the a column
 specification. As it normally expects identifiers, we have to use
@@ -441,7 +440,7 @@ A precise timeline can not be given. It depends too much on the
 available resources and urgency.
 
 Our current assessment of the features planned for upcoming releases,
- in order of priority, are:
+in order of priority, are:
 @itemize
 @item
 Text retrieval support.
@@ -450,13 +449,13 @@ Stored SQL procedures.
 @item
 Support for multi-media objects.
 @item
-General constraint enforcement.
+General column and table constraint enforcement.
 @item
 Internationalization of the character sets.
 @item
-Triggers.
-@item
 Full outer-join queries.
+@item
+Triggers.
 @end itemize
 
 @subsection Features that won;t make it.
@@ -470,5 +469,6 @@ on the iterator model deployed in other engines. A simulation of the
 cursor based scheme would be utterly expensive from a performance
 point of view.
 @item
-Multi-level isolation levels.
+Multi-level transaction isolation levels. Coarse grain isolation is
+provided using table level locks.
 @end itemize
