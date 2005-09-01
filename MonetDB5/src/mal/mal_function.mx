@@ -521,9 +521,9 @@ concrete types.
 
 An example of a parameterised function is shown below:
 @example
-function helloWorld(msg:any$1):any$1;
+function helloWorld(msg:any_1):any_1;
     io.print(msg);
-    return msg;
+return msg;
 @end example
 The type variables ensure that the return type equals the
 argument type. Type variables can be used at any place
@@ -555,10 +555,10 @@ with the function @code{bat.bat()}. It does not fully specify the result type.
 The @code{io.print()} pattern applies to any BAT argument list, 
 provided they match on the head column type.
 @example
-command bat.bat(ht:int, tt:int) :bat[:any,:any]
+command bat.new(ht:int, tt:int) :bat[:any_1,:any_2]
 address BKCnewBat;
 
-pattern io.print(b1:bat[:any$1,:any], b2:bat[:any$1,:any]...):int
+pattern io.print(b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int
 address IOtable;
 @end example
 
@@ -575,7 +575,7 @@ are handled by the underlying code fragments.
 void replaceTypeVar(MalBlkPtr mb, InstrPtr p, int v, malType t){
 	int j,i,x,y;
 #ifdef DEBUG_MAL_FCN
-	stream_printf(GDKout,"replace type $%d by type %s\n",v,
+	stream_printf(GDKout,"replace type _%d by type %s\n",v,
 		getTypeName(t));
 #endif
 	for(j=0; j<mb->stop; j++){

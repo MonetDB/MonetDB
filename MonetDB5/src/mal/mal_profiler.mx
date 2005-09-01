@@ -90,10 +90,10 @@ the following content. The ticks are measured in micro-seconds.
 
 @verbatim
 # time, ticks,  stmt,   # name
-[ "15:17:56",   12,      "$27 := bat.insert(<tmp_15>,1,15);",    ]
-[ "15:17:56",   2,       "$30 := bat.insert(<tmp_15>,2,4);",     ]
-[ "15:17:56",   2,       "$33 := bat.insert(<tmp_15>,3,9);",     ]
-[ "15:17:56",   245,     "$36 := io.print(<tmp_15>);",   ]
+[ "15:17:56",   12,      "_27 := bat.insert(<tmp_15>,1,15);",    ]
+[ "15:17:56",   2,       "_30 := bat.insert(<tmp_15>,2,4);",     ]
+[ "15:17:56",   2,       "_33 := bat.insert(<tmp_15>,3,9);",     ]
+[ "15:17:56",   245,     "_36 := io.print(<tmp_15>);",   ]
 @end verbatim
 The XML-formatted output is produced by encapsulation
 of a code block with the pair @code{profiler.setOfflineProfiling()}.

@@ -102,7 +102,7 @@ function user.main():int;
 end main;
 mdb>L
 function user.main():int;       # 0  (main:int)
-    mdb.start();        # 1 MDBstart ($1:void)
+    mdb.start();        # 1 MDBstart (_1:void)
 end main;       # 2
 @end example
 The user module is the default place for function defined at
@@ -160,14 +160,14 @@ mdb>v
 Stack size=32 top=11
 [0] test        = nil:str
 [1] i   = 4:int
-[2] $2  = 0:int   unused
-[3] $3  = 2:int  constant
+[2] _2  = 0:int   unused
+[3] _3  = 2:int  constant
 [4] b   = <tmp_1226>:bat[:int,:int]   count=1 lrefs=1 refs=0
-[5] $5  = 0:int   type variable
-[6] $6  = nil:bat[:int,:int]   unused
-[7] $7  = 1:int  constant
-[8] $8  = 0:int   unused
-[9] $9  = "ok":str  constant
+[5] _5  = 0:int   type variable
+[6] _6  = nil:bat[:int,:int]   unused
+[7] _7  = 1:int  constant
+[8] _8  = 0:int   unused
+[9] _9  = "ok":str  constant
 @end example
 The variables marked 'unused' have been introduced as temporary variables,
 but which are not referenced in the remainder of the program.
@@ -229,19 +229,19 @@ the test case.
 >	return test:= "ok";
 >end test;
 >user.test(1);
-!    mdb.setTrace($3=true)
+!    mdb.setTrace(_3=true)
 [ 1 ]
 !    io.print(i=1)
-!    i := calc.*(i=2, $5=2)
-!    b := bbp.new($7=0, $8=0)
-!    bat.insert(b=<tmp_1226>, $10=1, i=2)
+!    i := calc.*(i=2, _5=2)
+!    b := bbp.new(_7=0, _8=0)
+!    bat.insert(b=<tmp_1226>, _10=1, i=2)
 #-----------------#
 # h     t         # name
 # int   int       # type
 #-----------------#
 [ 1,      2       ]
 !    io.print(b=<tmp_1226>)
-#   261 usec!    user.test($2=1)
+#   261 usec!    user.test(_2=1)
 >
 @end example
 
@@ -265,19 +265,19 @@ tool @emph{valgrind} may be of help.
 >	return test:= "ok";
 >end test;
 >user.test(1);
-#     6 usec!    mdb.setTimer($3=true)
+#     6 usec!    mdb.setTimer(_3=true)
 [ 1 ]
 #    43 usec!    io.print(i=1)
-#     5 usec!    i := calc.*(i=2, $5=2)
-#    24 usec!    b := bbp.new($7=0, $8=0)
-#    10 usec!    bat.insert(b=<tmp_1226>, $10=1, i=2)
+#     5 usec!    i := calc.*(i=2, _5=2)
+#    24 usec!    b := bbp.new(_7=0, _8=0)
+#    10 usec!    bat.insert(b=<tmp_1226>, _10=1, i=2)
 #-----------------#
 # h     t         # name
 # int   int       # type
 #-----------------#
 [ 1,      2       ]
 #   172 usec!    io.print(b=<tmp_1226>)
-#   261 usec!    user.test($2=1)
+#   261 usec!    user.test(_2=1)
 @end example
 
 It is also possible to activate the debugger from within a program 

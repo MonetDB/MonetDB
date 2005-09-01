@@ -1106,7 +1106,7 @@ In this case, an optimizer can group them by underlying type and this way
 reduce the symbol table size significantly.
 
 MAL variables are internally represented by their index into
-the variable stack. Their default textual representation is '$'<digits>.
+the variable stack. Their default textual representation is '_'<digits>.
 Temporary names  are recognized by the parser and an error is
 produced if it does not satisfy this condition.
 
