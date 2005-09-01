@@ -188,7 +188,7 @@ public abstract class MCLMessage {
 	 * necessary to validate it against the Message type.  If a sentence
 	 * is not valid, an MCLException is thrown.
 	 * 
-	 * @param in an MCLSentence object
+	 * @param sentence an MCLSentence object
 	 * @throws MCLException if the given sentence is not considered to
 	 * be valid
 	 */
@@ -205,7 +205,9 @@ public abstract class MCLMessage {
 	 * @throws MCLException if the data read from the stream is invalid
 	 * or reading from the stream failed
 	 */
-	public static MCLMessage readFromStream(MCLInputStream in) throws MCLException {
+	public static MCLMessage readFromStream(MCLInputStream in)
+		throws MCLException
+	{
 		// read till prompt and feed to addSentence implementation
 		// function
 		MCLSentence sentence = in.readSentence();
