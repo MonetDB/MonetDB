@@ -7747,7 +7747,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 saveResult_ (f, counter+1, DBL);
         }
         /* get main table */
-        rc = translate2MIL (f, rc, cur_level, ++counter, L(args));
+        rc = translate2MIL (f, code, cur_level, ++counter, L(args));
                
         milprintf(f, 
                 "{ # translate fn:subsequence\n"
