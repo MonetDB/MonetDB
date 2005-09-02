@@ -343,6 +343,7 @@ typedef struct VARRECORD{
 	short	inout;  /* in-out argument to function */
     short   cleanup;/* remove upon function return */
     short   beginLifespan, endLifespan, updLifespan; /* for optimizers */
+	size_t	length; /* of the literal string */
     str     literal;/* initial value string */
     PropertySet props; /* private list of (name,value) pairs */
     ValRecord value;
@@ -973,8 +974,6 @@ defined. This way we safe GDKmalloc/GDKfree.
 int findVariableLength(MalBlkPtr mb, str name, int len){
     int i;
     int j;
-    @:chkTemporary@
-    if( name == NULL || len == 0) return -1;
     for(i= mb->vtop-1; i>=0; i--) 
     if( !isTmpVar(mb,i)){
         str s = getVarName(mb,i);
@@ -982,6 +981,8 @@ int findVariableLength(MalBlkPtr mb, str name, int len){
         if( name[j]!=s[j]) break;
         if(j==len && s[j]==0) return i;
     }
+	/* most variables are not temporary */
+    @:chkTemporary@
     return -1;
 }
 @-
@@ -1252,8 +1253,8 @@ int fndConstant(MalBlkPtr mb, str val, int len){
     for(i= mb->vtop-1; i>=k;i--){
         VarPtr v= getVar(mb,i);
         if( v->literal && 
-            strncmp(v->literal,val,len)==0 &&
-			v->literal[len]==0 ) 
+			v->length == len &&
+            strncmp(v->literal,val,len)==0 )
 				return i;
     }
 	return -1;
@@ -1277,6 +1278,7 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
     }
     idx= k = newTmpVariable(mb,type);
     getVarLiteral(mb,k)= val;
+	getVar(mb,k)->length = strlen(val);
     isConstant(mb,k) = 1;
 	setFixed(mb,k);
     setVarUsed(mb,k,FALSE);

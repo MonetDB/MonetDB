@@ -161,8 +161,6 @@ initParser()
 	case ':': 
 		opCharacter[i]=1; 
 	}
-	idCharacter['_']=1;
-	idCharacter2['_']=1;
 	idCharacter[TMPMARKER]=1;
 	idCharacter2[TMPMARKER]=1;
 }
@@ -382,27 +380,33 @@ int cstLength(Client cntxt, int *type)
 	str s = CURRENT(cntxt);
 
 	*type = TYPE_int;
-	if (*s == '-') {
+	switch(*s){
+	case '-':
 		i++;
 		s++;
-	}
-	if( *s == '0' && (s[1] == 'x' || s[1] == 'X')){
+	case '0':
+	if( (s[1] == 'x' || s[1] == 'X')){
 		/* deal with hex */
 		hex= TRUE;
 		i+=2;
 		s+=2;
 	}
-	if( !isdigit(*s) && !hex) {
-		if (*s != '.') 
-			goto parseTFN;
-	} 
-	while (isdigit((int)*s) || (hex && isalpha((int)*s)) ) {
-		if( hex  && !((tolower(*s) >= 'a' && tolower(*s) <= 'f') 
-			|| isdigit(*s)) ) return i;
-		i++;
-		s++;
-	}
+	case '1': case '2': case '3': case '4': case '5':
+	case '6': case '7': case '8': case '9':
+	if( hex)
+		while (isdigit((int)*s) || isalpha((int)*s) ) {
+			if( !((tolower(*s) >= 'a' && tolower(*s) <= 'f') 
+				|| isdigit(*s)) ) return i;
+			i++;
+			s++;
+		}
+	else
+		while (isdigit((int)*s) ) {
+			i++;
+			s++;
+		}
 	if( hex) return i;
+	case '.':
 	if (*s == '.' && isdigit(*(s+1)) ) {
 		i++;
 		s++;
@@ -447,21 +451,26 @@ int cstLength(Client cntxt, int *type)
 		s++;
 	}
 	return i;
-parseTFN:
-	if( *s=='f' && strncmp(s,"false",5)==0 && !isalnum((int)*(s+5)) &&
+	case 'f':
+	if( strncmp(s,"false",5)==0 && !isalnum((int)*(s+5)) &&
 			*(s+5)!= '_'){
 		*type = TYPE_bit;
 		return 5;
 	}
-	if( *s== 't' && strncmp(s,"true",4)==0 && !isalnum((int)*(s+4)) &&
+	return 0;
+	case 't':
+	if( strncmp(s,"true",4)==0 && !isalnum((int)*(s+4)) &&
 			*(s+4)!= '_'){
 		*type = TYPE_bit;
 		return 4;
 	}
-	if( *s== 'n' && strncmp(s,"nil",3)==0 && !isalnum((int)*(s+3)) &&
+	return 0;
+	case 'n':
+	if( strncmp(s,"nil",3)==0 && !isalnum((int)*(s+3)) &&
 			*(s+3)!= '_'){
 		*type = TYPE_void;
 		return 3;
+	}
 	}
 	return 0;
 }
