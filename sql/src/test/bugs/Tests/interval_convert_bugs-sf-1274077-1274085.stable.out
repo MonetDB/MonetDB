@@ -34,6 +34,22 @@ Over..
 # 1 # tuplecount
 # 1 # id
 [ 14	]
+# 3 # querytype
+#  # table_name
+# single_value # name
+# month_interval # type
+# 0 # length
+# 1 # tuplecount
+# 2 # id
+[ 12	]
+# 3 # querytype
+#  # table_name
+# single_value # name
+# sec_interval # type
+# 0 # length
+# 1 # tuplecount
+# 3 # id
+[ 86400	]
 
 # 14:19:19 >  
 # 14:19:19 >  Done.
