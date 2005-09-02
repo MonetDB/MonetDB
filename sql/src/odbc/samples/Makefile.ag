@@ -22,3 +22,5 @@ BINS = {
 	SOURCES = odbcsample1.c
 	LIBS = ../driver/libMonetODBC
 }
+
+EXTRA_DIST_DIR = Tests

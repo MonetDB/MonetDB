@@ -15,3 +15,5 @@
 # All Rights Reserved.
 
 SUBDIRS = include common storage server backends odbc HAVE_JAVA?jdbc LINK_STATIC?tools
+
+EXTRA_DIST_DIR = Tests test benchmarks
