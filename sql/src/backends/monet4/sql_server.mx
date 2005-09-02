@@ -199,9 +199,16 @@ stream.
 @:mel_cast2(dbl,int)@
 @:mel_cast2(dbl,lng)@
 
- .COMMAND month_interval( str v, int ek, int sk ) : int = month_interval; "cast string to a month_interval and check for overflow"
+@= mel_interval
+ .COMMAND month_interval( @1 v, int ek, int sk ) : int = month_interval_@1; "cast @1 to a month_interval and check for overflow"
 
- .COMMAND second_interval( str v, int ek, int sk ) : lng = second_interval; "cast string to a month_interval and check for overflow"
+ .COMMAND second_interval( @1 v, int ek, int sk ) : lng = second_interval_@1; "cast @1 to a month_interval and check for overflow"
+@m
+
+@:mel_interval(str)@
+@:mel_interval(sht)@
+@:mel_interval(int)@
+@:mel_interval(lng)@
 
 .END sql_server;
 
@@ -1001,7 +1008,7 @@ int @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 @:numcastdown(sht,lng)@
 @:numcastdown(int,lng)@
 
-int month_interval( int *ret, str s, int *ek, int *sk ){
+int month_interval_str( int *ret, str s, int *ek, int *sk ){
 	lng res;
 
 	if (interval_from_str( s, *sk, *ek, &res ) < 0)
@@ -1009,12 +1016,53 @@ int month_interval( int *ret, str s, int *ek, int *sk ){
 	*ret = res;
 	return GDK_SUCCEED;
 }
-int second_interval( lng *res, str s, int *ek, int *sk ){
+int second_interval_str( lng *res, str s, int *ek, int *sk ){
 
 	if (interval_from_str( s, *sk, *ek, res ) < 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
+
+@= c_interval
+int month_interval_@1( int *ret, @1 *s, int *ek, int *sk ){
+	int r = (int)*s;
+
+	(void)ek;
+	switch(*sk) {
+	case iyear: 	
+		r *= 12;
+	case imonth:
+		break;
+	default:
+		return GDK_FAIL;
+	}
+	*ret = r;
+	return GDK_SUCCEED;
+}
+int second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
+	lng r = *s;
+
+	(void)ek;
+	switch(*sk) {
+	case iday: 	
+		r *= 24;
+	case ihour:
+		r *= 60;
+	case imin:
+		r *= 60;
+	case isec:
+		break;
+	default:
+		return GDK_FAIL;
+	}
+	*res = r;
+	return GDK_SUCCEED;
+}
+@c
+
+@:c_interval(sht)@
+@:c_interval(int)@
+@:c_interval(lng)@
 
 @-
 An SQL session needs a minimal set of modules, shown below.

@@ -806,7 +806,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			len += snprintf(buf+len, buflen-len, "s%d", l);
 
 			if (s->op4.typeval->type->eclass == EC_DEC ||
-			    s->op4.typeval->type->eclass == EC_INTERVAL) 
+			    s->op4.typeval->type->eclass == EC_INTERVAL)
 				len += snprintf(buf+len, buflen-len, ", %d, %d", s->op4.typeval->digits, s->op4.typeval->scale);
 			len += snprintf(buf+len, buflen-len, ");\n");
 			assert(len <= buflen);
