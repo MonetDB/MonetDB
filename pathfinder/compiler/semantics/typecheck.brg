@@ -1068,11 +1068,12 @@ specific (PFfun_t *fn, PFcnode_t *args)
                 (PFty_quantifier (TY(L(args))) (PFty_data_on (PFty_defn (TY(L(args)))))));
     }
 
-    /* Typing rules for #pf:item-sequence-to-node-sequence() are described by the
-     * special judgment `is2ns', implemented in PFty_is2ns(), which reduces atomic
-     * types to text()
+    /* Typing rules for #pf:item-sequence-to-node-sequence() are described
+     * by the * special judgment `is2ns', implemented in PFty_is2ns(),
+     * which reduces atomic types to text().
      */
-    if ((! PFqname_eq (fn->qname, PFqname (PFns_pf, "item-sequence-to-node-sequence")))) {
+    if ((! PFqname_eq (fn->qname,
+                       PFqname (PFns_pf, "item-sequence-to-node-sequence")))) {
         assert (args->kind == c_arg && R(args)->kind == c_nil);
         return *PFty_simplify ((PFty_is2ns (PFty_defn (TY(L(args))))));
     }

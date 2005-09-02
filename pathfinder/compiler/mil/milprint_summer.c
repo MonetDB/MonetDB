@@ -7766,6 +7766,59 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 cur_level, cur_level);
         return NORMAL;
     }
+    else if (!PFqname_eq(fnQname,
+                         PFqname (PFns_fn,"subsequence")))
+    {
+        /* get offset */
+        translate2MIL (f, VALUES, cur_level, counter, RL(args));
+        saveResult_ (f, ++counter, DBL);
+
+        if (fun->arity == 3) { /* get length */
+                translate2MIL (f, VALUES, cur_level, counter, RRL(args));
+                saveResult_ (f, counter+1, DBL);
+        }
+        /* get main table */
+        rc = translate2MIL (f, code, cur_level, ++counter, L(args));
+               
+        milprintf(f, 
+                "{ # translate fn:subsequence\n"
+                "if (loop%03u.count() = 1) {\n"
+                "    var lo := item_dbl_%03d.fetch(0) - dbl(1);\n"
+                "    var hi := INT_MAX;\n", cur_level, counter-1);
+        if (fun->arity == 3)
+                milprintf(f, "    hi := int(lo + item_dbl_%03d.fetch(0)) - 1;\n", counter);
+
+        milprintf(f, "\n" 
+                "    # select a slice\n"
+                "    iter := iter.slice(int(lo),hi);\n"
+                "    kind := kind.slice(int(lo),hi);\n"
+                "    item%s := item%s.slice(int(lo), hi);\n"
+                "    pos := kind.mark(1@0);\n"
+                "} else {\n"
+                "    var offset := item_dbl_%03d.reverse().mark(1@0).reverse();\n"
+                "    var sel := [>=](pos, iter.leftfetchjoin([oid](offset)));\n",
+                        kind_str(code), kind_str(code), counter-1);
+        if (fun->arity == 3)
+                milprintf(f,
+                        "    offset := [+](offset, item_dbl_%03d.reverse().mark(1@0).reverse());\n"
+                        "    sel := [and](sel, [<](pos, iter.leftfetchjoin([oid](offset))));\n", counter);
+
+        milprintf(f, "\n" 
+                "    # carry through the selection on the table\n"
+                "    sel := sel.ord_uselect(true).mark(0@0).reverse();\n"
+                "    iter := sel.leftfetchjoin(iter);\n"
+                "    kind := sel.leftfetchjoin(kind);\n"
+                "    item%s := sel.leftfetchjoin(item%s);\n" 
+                "    pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "}\n", kind_str(code), kind_str(code));
+
+        if (fun->arity == 3)
+                deleteResult_ (f, counter, DBL);
+        deleteResult_ (f, --counter, DBL);
+
+        milprintf(f, "} # end of translate fn:subsequence\n");
+        return rc;
+    }
     else if (!PFqname_eq(fnQname,PFqname (PFns_fn,"not")))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
@@ -10319,30 +10372,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "\ntime_print := time();\n"
             "time_exec := time_print - time_exec;\n\n");
 
-    switch( status->genType ) {
-     case PF_GEN_XML:
-      milprintf(f, "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break;
-     case PF_GEN_XML_MAPI:
-      milprintf(f, "print_result(\"xml-mapi\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break;
-     case PF_GEN_XML_SEQ_MAPI:
-      milprintf(f, "print_result(\"xml-seq-mapi\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break; 
-     case PF_GEN_DM:
-      milprintf(f, "print_result(\"dm\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break;
-     case PF_GEN_DM_MAPI:
-      milprintf(f, "print_result(\"dm-mapi\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break;
-     case PF_GEN_SAX:
-      milprintf(f, "print_result(\"sax\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break;
-     case PF_GEN_NONE:
-      break;
-     default:
-      milprintf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* expected!\n");
-    }
+    milprintf(f, "print_result(\"%s\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n", status->genType);
     if (status->timing) {
         tm = PFtimer_stop(tm);
         milprintf(f, 

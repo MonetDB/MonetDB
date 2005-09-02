@@ -912,14 +912,6 @@
     .alg = PFbui_op_numeric_modulo_dbl }                                 \
                                                                          \
                                                                          \
-, /* pf:item-sequence-to-node-sequence (elem*) as elem* */               \
-  { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",              \
-    .arity = 1, .par_ty = { PFty_star (                                  \
-                                PFty_elem (                              \
-                                    wild,                                \
-                                    PFty_star (PFty_xs_anyNode ()))) },  \
-    .ret_ty = PFty_star ( PFty_elem (wild,                               \
-                                     PFty_star (PFty_xs_anyNode ()))) }  \
 , /* pf:item-sequence-to-node-sequence (item*) as node* */               \
   { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",              \
     .arity = 1, .par_ty = { PFty_star (PFty_item ())},                   \
@@ -1117,15 +1109,40 @@
                                 PFty_choice (PFty_xs_anyElement (),      \
                                              PFty_xs_anyAttribute ()))}, \
     .ret_ty = PFty_xs_boolean () }                                       \
+, /* fn:subsequence(node*, double) as node* */                           \
+  { .ns = PFns_fn, .loc = "subsequence",                                 \
+    .arity = 2, .par_ty = { PFty_star (PFty_node ()),                    \
+                            PFty_double () },                            \
+    .ret_ty = PFty_star (PFty_node ()) }                                 \
+, /* fn:subsequence(node*, double, double) as node* */                   \
+  { .ns = PFns_fn, .loc = "subsequence",                                 \
+    .arity = 3, .par_ty = { PFty_star (PFty_node ()),                    \
+                            PFty_double (),                              \
+                            PFty_double () },                            \
+    .ret_ty = PFty_star (PFty_node ()) }                                 \
+                                                                         \
+, { .loc = 0 }                                                           \
+, /* fn:subsequence(item*, double) as item* */                           \
+  { .ns = PFns_fn, .loc = "subsequence",                                 \
+    .arity = 2, .par_ty = { PFty_star (PFty_item ()),                    \
+                            PFty_double () },                            \
+    .ret_ty = PFty_star (PFty_item ()) }                                 \
+, /* fn:subsequence(item*, double, double) as item* */                   \
+  { .ns = PFns_fn, .loc = "subsequence",                                 \
+    .arity = 3, .par_ty = { PFty_star (PFty_item ()),                    \
+                            PFty_double (),                              \
+                            PFty_double () },                            \
+    .ret_ty = PFty_star (PFty_item ()) }                                 \
                                                                          \
 , { .loc = 0 }                                                           \
 }
 
+/**
+ * Load XQuery built-in function signatures into function environment.
+ */
 void
 PFfun_xquery_fo ()
 {
-    PFqname_t wild = { .ns = PFns_wild, .loc = 0 };
-
     struct {  
         PFns_t ns;
         char *loc;                                 
