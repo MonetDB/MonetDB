@@ -10341,30 +10341,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "\ntime_print := time();\n"
             "time_exec := time_print - time_exec;\n\n");
 
-    switch( status->genType ) {
-     case PF_GEN_XML:
-      milprintf(f, "print_result(\"xml\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break;
-     case PF_GEN_XML_MAPI:
-      milprintf(f, "print_result(\"xml-mapi\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break;
-     case PF_GEN_XML_SEQ_MAPI:
-      milprintf(f, "print_result(\"xml-seq-mapi\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break; 
-     case PF_GEN_DM:
-      milprintf(f, "print_result(\"dm\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break;
-     case PF_GEN_DM_MAPI:
-      milprintf(f, "print_result(\"dm-mapi\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break;
-     case PF_GEN_SAX:
-      milprintf(f, "print_result(\"sax\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n");
-      break;
-     case PF_GEN_NONE:
-      break;
-     default:
-      milprintf(f, "** ERROR: PFprintMILtemp(): PF_GEN_* expected!\n");
-    }
+    milprintf(f, "print_result(\"%s\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n", status->genType);
     if (status->timing) {
         tm = PFtimer_stop(tm);
         milprintf(f, 
