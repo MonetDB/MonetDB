@@ -22,6 +22,8 @@
 #		Niels Nes <Niels.Nes@cwi.nl>
 #		Stefan Manegold  <Stefan.Manegold@cwi.nl>
 
+EXTRA_DIST_DIR = Tests
+
 MTSAFE
 INCLUDES = $(MONETDB_INCS)
 
