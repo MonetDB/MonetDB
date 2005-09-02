@@ -37,4 +37,4 @@ lib_semantics = {
 		xquery_fo.c 
 }
 
-#EXTRA_DIST = 
+EXTRA_DIST_DIR = tests

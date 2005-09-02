@@ -33,4 +33,4 @@ lib_core = {
 		coreopt.brg
 }
 
-#EXTRA_DIST = 
+EXTRA_DIST_DIR = tests
