@@ -1117,6 +1117,19 @@
                                 PFty_choice (PFty_xs_anyElement (),      \
                                              PFty_xs_anyAttribute ()))}, \
     .ret_ty = PFty_xs_boolean () }                                       \
+, /* fn:subsequence(node*, double) as node* */                           \
+  { .ns = PFns_fn, .loc = "subsequence",                                 \
+    .arity = 2, .par_ty = { PFty_star (PFty_node ()),                    \
+                            PFty_double () },                            \
+    .ret_ty = PFty_star (PFty_node ()) }                                 \
+, /* fn:subsequence(node*, double, double) as node* */                   \
+  { .ns = PFns_fn, .loc = "subsequence",                                 \
+    .arity = 3, .par_ty = { PFty_star (PFty_node ()),                    \
+                            PFty_double (),                              \
+                            PFty_double () },                            \
+    .ret_ty = PFty_star (PFty_node ()) }                                 \
+                                                                         \
+, { .loc = 0 }                                                           \
 , /* fn:subsequence(item*, double) as item* */                           \
   { .ns = PFns_fn, .loc = "subsequence",                                 \
     .arity = 2, .par_ty = { PFty_star (PFty_item ()),                    \
