@@ -20,6 +20,8 @@
 # 2000-2005 University of Konstanz.  All Rights Reserved.
 #
 
+EXTRA_DIST_DIR = Tests
+
 INCLUDES = $(MONETDB_INCS) $(LIBXML2_CFLAGS) ../compiler/include
 PF_LIBS = $(LIBXML2_LDADD) $(LIBXML2_LIBS) $(DL_LIBS)
 

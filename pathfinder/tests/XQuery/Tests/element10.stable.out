@@ -1,0 +1,32 @@
+stdout of test 'element10` in directory 'tests/XQuery` itself:
+
+
+# 14:56:17 >  
+# 14:56:17 >  Mtimeout -timeout 180 Mserver "--config=/opt/MonetDB_4-8/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/teubner/pf/untouched/runtime/.libs:/opt/MonetDB_4-8/lib/MonetDB" --set "gdk_dbfarm=/home/teubner/pf/untouched/dbfarm" --set "sql_logdir=/home/teubner/pf/untouched/log" --set mapi_port=32539 --set sql_port=49262 --set xquery_port=51984 --set monet_prompt= --trace "--dbname=mTests_tests_XQuery" --dbinit="module(pathfinder); pfstart();" ; echo ; echo Over..
+# 14:56:17 >  
+
+# Monet Database Server V4.8.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-pc-linux-gnu/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 14:56:17 >  
+# 14:56:17 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=51984 element10.xq
+# 14:56:17 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+<foo>42</foo>
+</XQueryResult>
+
+# 14:56:18 >  
+# 14:56:18 >  Done.
+# 14:56:18 >  
+

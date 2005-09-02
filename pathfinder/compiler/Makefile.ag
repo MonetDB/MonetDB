@@ -17,6 +17,8 @@
 
 SUBDIRS = schema debug mem parser semantics core algebra mil include
 
+EXTRA_DIST_DIR = Tests
+
 INCLUDES = include $(MONETDB_INCS) 
 
 lib_compiler1 = {
