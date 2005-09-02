@@ -68,6 +68,9 @@ comment "Load a particular bat from disk and make a private copy";
 pattern deposit(name:str,v:bat[:any_1,:any_2]) :void 			
 address CMDbbpdeposit
 comment "Enter a new bat into the bbp box.";
+pattern commit():void 	
+address CMDbbpReleasA
+comment "Commit updates for this client";
 pattern releaseAll():void 	
 address CMDbbpReleasA
 comment "Commit updates for this client";
