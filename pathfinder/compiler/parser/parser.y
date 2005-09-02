@@ -916,6 +916,7 @@ EnclosedExpr              : "{" Expr "}" { $$ = $2; }
 
 /* [27] */
 QueryBody                 : Expr { $$ = $1; }
+                          | /* empty */ { $$ = leaf (p_empty_seq, @$); }
                           ;
 
 /* [28] */
