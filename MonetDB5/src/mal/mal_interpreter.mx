@@ -22,8 +22,8 @@ The MAL interpreter always works in the context of a single user session,
 which provides for storage access to global variables and modules.
 
 Runtime storage for variables are allocated on the stack of the
-interpreter thread. ( physical stack is often limited in size)
-This calls for safeguarding their value and garbage collection before returning.
+interpreter thread. The physical stack is often limited in size,
+which calls for safeguarding their value and garbage collection before returning.
 A malicious procedure or implementation will lead to memory leakage.
 
 A system command (linked C-routine) may be interested in extending the
@@ -664,7 +664,7 @@ CMDcall initiates calling a linked function, passing pointers
 to the parameters and result variable, i.e.  f(ptr a0,..., ptr aN)
 The function returns a MAL-SUCCEED upon success and a pointer
 to an exception string upon failure.
-Failure leads to raiseing an exception in the interpreter loop,
+Failure leads to raise-ing an exception in the interpreter loop,
 by either looking up the relevant exception message in the module
 administration or construction of a standard string.
 Upon successfull return, we update the ValRecord with length indications.
@@ -674,21 +674,12 @@ receives requests for execution through a event-pool.
 [details later]
 
 The PATcall initiates a call which contains the MAL context.
-i.e. f(MalBlkPtr mb, MalStkPtr stk, int argc, int argv[])
+i.e. f(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 The blk provides access to the code definitions. It is primarilly
 used by routines intended to manipulate the code base itself, such
 as the optimizers. The Mal stack frame pointer provides access
 to the values maintained. The arguments passed are offsets
 into the stack frame rather than pointers to the actual value.
-
-The argument list and their location on the runtime stack frame
-are determined at compile time.
-
-All dynamically linked routines are called with references to their
-parameter values. They are assembled below by inspecting the argument list.
-For rules and procedures we pass the original
-MIL context and it is up to c-body implementation to access the 
-parameter values and leave the result in a proper place.
 
 BAT parameters require some care. Ideally, a BAT should not be kept
 around long. This would mean that each time we access a BAT it has to be
@@ -697,10 +688,10 @@ This degrades performance significantly.
 After the parameters are fixed, we can safely free the destination
 variable and re-initialize it to nil;
 
+@{
 The policy implemented here is to make pin/unpin decisions part of
 the bind(namespace, batname, mode) operation. [todo]
 
-@{
 @= safeTarget
     if( needsCleanup(pci) ){ 
 		for(i=0; i<pci->retc; i++) {

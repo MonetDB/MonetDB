@@ -1615,7 +1615,6 @@ void setVarProperty(MalBlkPtr mb, int i, str name,str op,  int tpe, ptr val){
 		mb->var[i]->props = newPropertySet();
 	setProperty(mb->var[i]->props,name,op,tpe,val);
 }
-@}
 @+ Reverse programming
 Since MAL programs can be created on the fly by linked-in query
 compilers, or transformed by optimizers, it becomes
@@ -1626,7 +1625,6 @@ No guarantee is given to produce the exact input for a reversed
 MAL program, except that the output can be fed back for 
 interpretation. Provided, the code did not produce an error.
 
-@{
 The hiddenInstruction operator assumes a sufficiently large block
 to leave information on the signature behind.
 @c

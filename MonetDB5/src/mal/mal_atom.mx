@@ -22,7 +22,7 @@ spectrum of database kernels and application needs.
 The type administration keeps track of their properties and
 provides access to the underlying implementations.
 
-The MonetDB Assembler Language recognizes the definition of a new
+MAL recognizes the definition of a new
 atom type by replacing the @code{module} keyword with @code{atom}.
 Atoms definitions require special care, because their definition and 
 properties should be communicated with the GDK kernel library.

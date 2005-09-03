@@ -550,15 +550,16 @@ on the MAL runtime stack. The @code{pattern} command is passed pointers
 to the MAL definitin, the runtime stack, and the instruction itself.
 It can be used to analyse the types of the arguments directly.
 
-For example, the definitions below link the kernel routine @code{BKCnewBat}
-with the function @code{bat.bat()}. It does not fully specify the result type.
+For example, the definitions below link the kernel routine @code{BKCinsert_bun}
+with the function @code{bat.insert()}. 
+It does not fully specify the result type.
 The @code{io.print()} pattern applies to any BAT argument list, 
 provided they match on the head column type.
 @example
-command bat.new(ht:int, tt:int) :bat[:any_1,:any_2]
-address BKCnewBat;
+command bat.insert(b:bat[:any_1,:any_2], ht:any_1, tt:any_2) :bat[:any_1,:any_2]
+address BKCinsert_bun;
 
-pattern io.print(b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int
+pattern io.print(b1:bat[:any_1,:any]...):int
 address IOtable;
 @end example
 

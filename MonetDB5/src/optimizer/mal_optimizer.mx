@@ -37,7 +37,7 @@ but can also be ran at runtime for query fragments.
 * What optimizers to consider?::
 * Optimization Dependencies::
 * Optimizer Building Blocks::
-* Optimizer Framework::
+* Query Optimizer Framework::
 @end menu
 * Optimizer toolkit::
 @end menu
@@ -381,7 +381,7 @@ them in a preferred order of deployment.
 @end multitable
 @-
 Alias removal can be applied after each other optimization step.
-@node Optimizer Building Blocks, Optimizer Framework, Optimization Dependencies, Optimizer landscape
+@node Optimizer Building Blocks, Query Optimizer Framework, Optimization Dependencies, Optimizer landscape
 @+ Optimizer building blocks
 
 Some instructions are independent of the execution context. In particular,
@@ -489,7 +489,7 @@ opt_export int hasSideEffects(InstrPtr p, int strict);
 
 @}
 @-
-@node Optimizer Framework, Optimizer toolkit, Optimizer Building Blocks, Optimizer landscape
+@node Query Optimizer Framework, Optimizer toolkit, Optimizer Building Blocks, Optimizer landscape
 @+ Optimizer framework
 The large number of query transformers calls for a flexible scheme for
 the deploy them. The approach taken is to make all optimizers visible
@@ -1037,7 +1037,7 @@ This can be used to re-order the plan without concern on impact of the outcome.
 It suffice to respect the flow graph.
 [unclear as what we need]
 
-@node Optimizer toolkit, Alias Removal, Optimizer Framework , Optimizer landscape
+@node Optimizer toolkit, Alias Removal, Query Optimizer Framework , Optimizer landscape
 
 @* The Optimizer Toolkit
 In this section we introduce the collection of MAL optimizers 
@@ -1062,6 +1062,7 @@ Such limitations on the implementation are indicated where appropriate.
 * Strength Reduction::
 * Costmodels::
 * Variable Stack Reduction::
+* Query Execution Plans::
 @end menu
 
 @node Alias Removal, Dead Code Removal, Optimizer toolkit, Optimizer toolkit

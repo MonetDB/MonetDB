@@ -27,7 +27,7 @@ so we cannot escape it altogether.
 
 Consider the small illustrative MAL program:
 @example
-function sample(nme:str, val:any):bit;
+function sample(nme:str, val:any_1):bit;
    c := 2 * 3;
    b := bbp.bind(nme);  #find a BAT
    h := algebra.select(b,val,val);
@@ -40,7 +40,6 @@ end sample;
 The function definition is polymorphic typed on the 2nd argument,
 it becomes a concrete type upon invocation. The system could attempt
 a type check, but quickly runs into assumptions that generally do not hold.
-
 The first assignment can be type checked during parsing
 and a symbolic optimizer could even evaluate the expression once. 
 Looking up a BAT in the buffer pool leads to

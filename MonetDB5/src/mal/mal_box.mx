@@ -159,7 +159,7 @@ function m():void;
     box.open("client_name");
     box.deposit("client_name","pi",3.417:flt);
     f:flt := box.take("client_name","pi");
-    print(t);
+    io.print(t);
     box.close("client_name");
 end function;
 @end example
@@ -190,7 +190,7 @@ and 2) how to deal with variables that can take 'any' type.
 It is illustrated as follows:
 @example
 f:= mil.take("GT");
-print(f);
+io.print(f);
 @end example
 When executed in the context of a function, the answer will be
 simple [ 1 ]. The variable type need not be defined, because
