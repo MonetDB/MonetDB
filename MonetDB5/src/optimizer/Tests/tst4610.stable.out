@@ -17,16 +17,11 @@ stdout of test 'tst4610` in directory 'src/optimizer` itself:
 #function joinPath( a:bat[:any$1,:any$2],
 #    return zz;
 #end joinPath;
-function user.joinPath(a:any):any;	# 0  dynamic (joinPath:any)<-(a:any)
-    ;	# 1  (_2:any)
-    return zz;	# 2  (zz:any)
-end joinPath;	# 3  
-!ERROR: function joinPath( a:bat[:any$1,:any$2],
-!                                    ^',' expected
-!ERROR:     z:= algebra.join(a,b);
-!      ^',' expected
-!ERROR:     zz:= algebra.join(z,c);
-!      ^<identifier> expected
+function user.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];	# 0  dynamic (joinPath:bat[:any_1,:any_4])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])(c:bat[:any_3,:any_4])
+    z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:any,:any])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])
+    zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any_3,:any_4])
+    return zz;	# 3  (zz:bat[:any,:any])
+end joinPath;	# 4  
 #
 #optimizer.macroContraction("user","joinPath");
 #
@@ -44,21 +39,17 @@ function user.main():int;	# 0  (main:int)
     a := bbp.new(:int,:int);	# 2 CMDBATnew (a:bat[:int,:int])<-(_7:int)(_7:int)
     b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_7:int)(_7:int)
     c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_7:int)(_7:int)
-    g := algebra.join(a,b);	# 5 ALGjoin (g:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])
-    h := algebra.join(g,c);	# 6 ALGjoin (h:bat[:int,:int])<-(g:bat[:int,:int])(c:bat[:int,:int])
-    r := algebra.joinPath(a,b,c);	# 7 QOTjoinPath (r:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
-    mdb.list();	# 8 MDBlist (_13:void)
-end main;	# 9  
+    h := user.joinPath(a,b,c);	# 5  (h:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
+    r := algebra.joinPath(a,b,c);	# 6 QOTjoinPath (r:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
+    mdb.list();	# 7 MDBlist (_13:void)
 function user.main():int;
 # the first test for macro expansions and inversions 
     a := bbp.new(:int,:int);
     b := bbp.new(:int,:int);
     c := bbp.new(:int,:int);
-    g := algebra.join(a,b);
-    h := algebra.join(g,c);
+    h := user.joinPath(a,b,c);
     r := algebra.joinPath(a,b,c);
     mdb.list();
-end main;
 
 # 23:52:53 >  
 # 23:52:53 >  Done.

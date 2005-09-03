@@ -1,11 +1,11 @@
 # the first test for macro expansions and inversions
 
-function algebra.joinPath( a:bat[:any$1,:any$2],
-                b:bat[:any$2,:any$3],
-                c:bat[:any$3,:any$4]):bat[:any$1,:any$4];
+function algebra.joinPath( a:bat[:any_1,:any_2],
+                b:bat[:any_2,:any_3],
+                c:bat[:any_3,:any_4]):bat[:any_1,:any_4];
     z:= algebra.join(a,b);
     zz:= algebra.join(z,c);
-    a:= zz;
+	return zz;
 end joinPath;
 
 optimizer.macroContraction("algebra","joinPath");

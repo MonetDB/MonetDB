@@ -2,11 +2,15 @@
 # the basis for further optimizer tests
 
 #don;t depend on SQL library
-function user.bind(s:str,t:str,c:str,i:int):bat[:any$1,:any$2];
+function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];
+	return bbp.new(:any_1,:any_2);
 end bind;
-function user.column(b:bat[:void,:any$1],s:str,t:str,i:int,j:int):void;
+function user.bind_dbat(s:str,t:str,i:int):bat[:any_1,:any_2];
+    return bbp.new(:any_1,:any_2);
+end bind_dbat;
+function user.column(b:bat[:void,:any_1],s:str,t:str,i:int,j:int):void;
 end column;
-factory qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):any;
+factory qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):void;
     V6:bat[:void,:date] := user.bind("sys","lineitem","l_shipdate",0);
     V11:bat[:void,:oid] := user.bind_dbat("sys","lineitem",0);
     V22:bat[:void,:bit] := user.bind("sys","lineitem","l_returnflag",0);

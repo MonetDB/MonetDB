@@ -36,22 +36,21 @@ stdout of test 'part00` in directory 'src/optimizer` itself:
 #
 #function qry(a:bat[:void,:any$1]);
 #end qry;
-function user.qry(a:bat[:void,:any]):any;	# 0  dynamic (qry:any)<-(a:bat[:void,:any])
-    ;	# 1  (_2:any)
-end qry;	# 2  
-!ERROR: function qry(a:bat[:void,:any$1]);
-!                                   	^']' expected
-!ERROR: 	io.print("hello");
-!	       ^',' expected
-!ERROR: 	io.print(a);
-!	     ^<identifier> expected
+function user.qry(a:bat[:void,:any_1]):void;	# 0  (qry:void)<-(a:bat[:void,:any_1])
+    io.print("hello");	# 1 IOprint_val (_2:int)<-(_3:str)
+    io.print(a);	# 2 IOprint_val (_4:int)<-(a:bat[:void,:any_1])
+end qry;	# 3  
 #
 #optimizer.partitionedQuery("user","qry");
 #mdb.list("user","qry");
 #io.print("run experiment");
 #user.qry(a1);
 #
-!ERROR: 'user.qry' undefined in user.main[22]
+start first=1 last=2 
+replace first=2 last=2 
+variable replacement 'a' instructions 2-2  lifespan 2-2
+first=6 last=6 
+first=7 last=6 
 function user.main():int;	# 0  (main:int)
 #testing the partition optimizer 	# 1  (_2:str)
     a1 := bbp.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-(_4:void)(_5:int)
@@ -71,11 +70,65 @@ exit (go,i);	# 13  (go:bit)(i:int)
     partitions.deposit(a1,a2);	# 16 BPTdeposit2 (_26:void)<-(a1:bat[:void,:int])(a2:bat[:void,:int])
     partitions.deposit(a1,a3);	# 17 BPTdeposit2 (_27:void)<-(a1:bat[:void,:int])(a3:bat[:void,:int])
     partitions.dump();	# 18 BPTdump (_28:void)
-    optimizer.partitionedQuery("user","qry");	# 19 QOTBPToptimizerCALL (_29:str)<-(_30:str)(_31:str)
-    mdb.list("user","qry");	# 20 MDBlist3 (_32:void)<-(_30:str)(_31:str)
-    io.print("run experiment");	# 21 IOprint_val (_33:int)<-(_34:str)
-    user.qry(a1);	# 22  unknown (_35:any)<-(a1:bat[:void,:int])
-end main;	# 23  
+    mdb.list("user","qry");	# 19 MDBlist3 (_32:void)<-(_30:str)(_31:str)
+    io.print("run experiment");	# 20 IOprint_val (_33:int)<-(_34:str)
+    user.qry(a1);	# 21  (_35:void)<-(a1:bat[:void,:int])
+end main;	# 22  
+ptop=3 plimit=1024
+[0] bid=13 pid=13 f=0, l=10 prv=-1 nxt=1 cap=-1
+[1] bid=13 pid=14 f=10, l=20 prv=0 nxt=2 cap=-1
+[2] bid=13 pid=15 f=20, l=30 prv=1 nxt=-1 cap=-1
+function user.qry(a:bat[:void,:int]):void;
+    io.print("hello");
+barrier (_5,_6):= partitions.newIterator(a);
+    io.print(_6);
+    redo (_5,_6):= partitions.hasMoreElements(a);
+exit (_5,_6);
+end qry;
+[ "run experiment" ]
+[ "hello" ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 0@0,	  0	  ]
+[ 1@0,	  1	  ]
+[ 2@0,	  2	  ]
+[ 3@0,	  3	  ]
+[ 4@0,	  4	  ]
+[ 5@0,	  5	  ]
+[ 6@0,	  6	  ]
+[ 7@0,	  7	  ]
+[ 8@0,	  8	  ]
+[ 9@0,	  9	  ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 10@0,	  0	  ]
+[ 11@0,	  1	  ]
+[ 12@0,	  2	  ]
+[ 13@0,	  3	  ]
+[ 14@0,	  4	  ]
+[ 15@0,	  5	  ]
+[ 16@0,	  6	  ]
+[ 17@0,	  7	  ]
+[ 18@0,	  8	  ]
+[ 19@0,	  9	  ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 20@0,	  0	  ]
+[ 21@0,	  1	  ]
+[ 22@0,	  2	  ]
+[ 23@0,	  3	  ]
+[ 24@0,	  4	  ]
+[ 25@0,	  5	  ]
+[ 26@0,	  6	  ]
+[ 27@0,	  7	  ]
+[ 28@0,	  8	  ]
+[ 29@0,	  9	  ]
 
 # 23:53:02 >  
 # 23:53:02 >  Done.

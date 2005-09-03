@@ -16,16 +16,11 @@ stdout of test 'tst4620` in directory 'src/optimizer` itself:
 #function algebra.joinPath( a:bat[:any$1,:any$2],
 #    return zz;
 #end joinPath;
-function algebra.joinPath(a:any):any;	# 0  dynamic (joinPath:any)<-(a:any)
-    ;	# 1  (_2:any)
-    return zz;	# 2  (zz:any)
-end joinPath;	# 3  
-!ERROR: function algebra.joinPath( a:bat[:any$1,:any$2],
-!                                            ^',' expected
-!ERROR:     z:= algebra.join(a,b);
-!      ^',' expected
-!ERROR:     zz:= algebra.join(z,c);
-!      ^<identifier> expected
+function algebra.joinPath(a:bat[:any_1,:any_2],b:bat[:any_2,:any_3],c:bat[:any_3,:any_4]):bat[:any_1,:any_4];	# 0  dynamic (joinPath:bat[:any_1,:any_4])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])(c:bat[:any_3,:any_4])
+    z := algebra.join(a,b);	# 1 ALGjoin (z:bat[:any,:any])<-(a:bat[:any_1,:any_2])(b:bat[:any_2,:any_3])
+    zz := algebra.join(z,c);	# 2 ALGjoin (zz:bat[:any,:any])<-(z:bat[:any,:any])(c:bat[:any_3,:any_4])
+    return zz;	# 3  (zz:bat[:any,:any])
+end joinPath;	# 4  
 #
 #b:= bbp.new(:int,:int);
 #barrier (k,v):= mal.newRange(0:int);
@@ -67,12 +62,10 @@ exit (k,v);	# 6  (k:bit)(v:int)
     i := algebra.count(d);	# 13 ALGcount_bat (i:lng)<-(d:bat[:int,:int])
     io.print(i);	# 14 IOprint_val (_18:int)<-(i:lng)
 #to be detected by join inversion 	# 15  (_23:str)
-    z := algebra.join(b,c);	# 16 ALGjoin (z:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])
-    zz := algebra.join(z,d);	# 17 ALGjoin (zz:bat[:int,:int])<-(z:bat[:int,:int])(d:bat[:int,:int])
-    i := algebra.count(zz);	# 18 ALGcount_bat (i:lng)<-(zz:bat[:int,:int])
-    io.print(i);	# 19 IOprint_val (_26:int)<-(i:lng)
-    mdb.list();	# 20 MDBlist (_27:void)
-end main;	# 21  
+    zz := algebra.joinPath(b,c,d);	# 16  (zz:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])(d:bat[:int,:int])
+    i := algebra.count(zz);	# 17 ALGcount_bat (i:lng)<-(zz:bat[:int,:int])
+    io.print(i);	# 18 IOprint_val (_26:int)<-(i:lng)
+    mdb.list();	# 19 MDBlist (_27:void)
 [ 100 ]
 [ 10 ]
 [ 50 ]
@@ -93,12 +86,10 @@ exit (k,v);
     i := algebra.count(d);
     io.print(i);
 #to be detected by join inversion 
-    z := algebra.join(b,c);
-    zz := algebra.join(z,d);
+    zz := algebra.joinPath(b,c,d);
     i := algebra.count(zz);
     io.print(i);
     mdb.list();
-end main;
 
 # 23:52:53 >  
 # 23:52:53 >  Done.

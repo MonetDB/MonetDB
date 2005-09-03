@@ -14,16 +14,23 @@ stdout of test 'tst4640` in directory 'src/optimizer` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 ## TPCH Q1 non-optimized
 ##don;t depend on SQL library
-#function user.bind(s:str,t:str,c:str,i:int):bat[:any$1,:any$2];
+#function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];
+#	return bbp.new(:any_1,:any_2);
+#end bind;
+function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];	# 0  dynamic (bind:bat[:any_1,:any_2])<-(s:str)(t:str)(c:str)(i:int)
+    return bbp.new(:any_1,:any_2);	# 1 CMDBATnew (_5:bat[:any,:any])<-(_6:any_1)(_7:any_2)
+end bind;	# 2  
+#function user.bind_dbat(s:str,t:str,i:int):bat[:any_1,:any_2];
+#	return bbp.new(:any_1,:any_2);
+#end bind_dbat;
+function user.bind_dbat(s:str,t:str,i:int):bat[:any_1,:any_2];	# 0  dynamic (bind_dbat:bat[:any_1,:any_2])<-(s:str)(t:str)(i:int)
+    return bbp.new(:any_1,:any_2);	# 1 CMDBATnew (_4:bat[:any,:any])<-(_5:any_1)(_6:any_2)
+end bind_dbat;	# 2  
+#function user.column(b:bat[:void,:any_1],s:str,t:str,i:int,j:int):void;
 #end column;
-function user.bind(s:str,t:str,c:str,i:int):any;	# 0  dynamic (bind:any)<-(s:str)(t:str)(c:str)(i:int)
-end bind;	# 1  
-!ERROR: function user.bind(s:str,t:str,c:str,i:int):bat[:any$1,:any$2];
-!                                                           ^',' expected
-!ERROR: end bind;
-!       ^';' expected
-!ERROR: end column;
-!           ^non matching end label, overruled
+function user.column(b:bat[:void,:any_1],s:str,t:str,i:int,j:int):void;	# 0  (column:void)<-(b:bat[:void,:any_1])(s:str)(t:str)(i:int)(j:int)
+end column;	# 1  
+#function qry1();
 #    V3 := sql.bind("sys","lineitem","l_shipdate",0);
 #    V8 := sql.bind_dbat("sys","lineitem",0);
 #    V9 := bat.reverse(V8);
@@ -135,337 +142,1082 @@ end bind;	# 1
 #    sql.column(V132,"count_order","int",0,0);
 #    sql.output(V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);
 #end qry1;
-function user.main():int;	# 0  (main:int)
-# TPCH Q1 non-optimized 	# 1  (_2:str)
-#don;t depend on SQL library 	# 2  (_4:str)
-    V3 := sql.bind("sys","lineitem","l_shipdate",0);	# 3  unknown (V3:any)<-(_6:str)(_7:str)(_8:str)(_9:int)
-    V8 := sql.bind_dbat("sys","lineitem",0);	# 4  unknown (V8:any)<-(_6:str)(_7:str)(_9:int)
-    V9 := bat.reverse(V8);	# 5  unknown (V9:any)<-(V8:any)
-    V10 := algebra.kdiff(V3,V9);	# 6  unknown (V10:any)<-(V3:any)(V9:any)
-    V14 := algebra.uselect(V10,nil,nil);	# 7  unknown (V14:any)<-(V10:any)(_14:void)(_14:void)
-    V17 := algebra.tmark(V14,0@0);	# 8  unknown (V17:any)<-(V14:any)(_16:oid)
-    V18 := bat.reverse(V17);	# 9  unknown (V18:any)<-(V17:any)
-    V19 := sql.bind("sys","lineitem","l_returnflag",0);	# 10  (V19:any)<-(_6:str)(_7:str)(_19:str)(_9:int)
-    V21 := sql.bind_dbat("sys","lineitem",0);	# 11  unknown (V21:any)<-(_6:str)(_7:str)(_9:int)
-    V22 := bat.reverse(V21);	# 12  unknown (V22:any)<-(V21:any)
-    V23 := algebra.kdiff(V19,V22);	# 13  unknown (V23:any)<-(V19:any)(V22:any)
-    V24 := algebra.join(V18,V23);	# 14  unknown (V24:any)<-(V18:any)(V23:any)
-    V25 := group.group(V24);	# 15  unknown (V25:any)<-(V24:any)
-    V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 16  (V26:any)<-(_6:str)(_7:str)(_26:str)(_9:int)
-    V28 := sql.bind_dbat("sys","lineitem",0);	# 17  unknown (V28:any)<-(_6:str)(_7:str)(_9:int)
-    V29 := bat.reverse(V28);	# 18  unknown (V29:any)<-(V28:any)
-    V30 := algebra.kdiff(V26,V29);	# 19  unknown (V30:any)<-(V26:any)(V29:any)
-    V31 := algebra.join(V18,V30);	# 20  unknown (V31:any)<-(V18:any)(V30:any)
-    V32 := group.group(V25,V31);	# 21  unknown (V32:any)<-(V25:any)(V31:any)
-    V33 := algebra.tunique(V32);	# 22  unknown (V33:any)<-(V32:any)
-    V34 := bat.mirror(V33);	# 23  unknown (V34:any)<-(V33:any)
-    V35 := sql.bind_dbat("sys","lineitem",0);	# 24  unknown (V35:any)<-(_6:str)(_7:str)(_9:int)
-    V36 := bat.reverse(V35);	# 25  unknown (V36:any)<-(V35:any)
-    V37 := algebra.kdiff(V19,V36);	# 26  unknown (V37:any)<-(V19:any)(V36:any)
-    V38 := algebra.join(V18,V37);	# 27  unknown (V38:any)<-(V18:any)(V37:any)
-    V39 := algebra.join(V34,V38);	# 28  unknown (V39:any)<-(V34:any)(V38:any)
-    V40 := algebra.tsort(V39);	# 29  unknown (V40:any)<-(V39:any)
-    V41 := sql.bind_dbat("sys","lineitem",0);	# 30  unknown (V41:any)<-(_41:str)(_42:str)(_43:int)
-    V45 := bat.reverse(V41);	# 31  unknown (V45:any)<-(V41:any)
-    V46 := algebra.kdiff(V26,V45);	# 32  unknown (V46:any)<-(V26:any)(V45:any)
-    V47 := algebra.join(V18,V46);	# 33  unknown (V47:any)<-(V18:any)(V46:any)
-    V48 := algebra.join(V34,V47);	# 34  unknown (V48:any)<-(V34:any)(V47:any)
-    V49 := group.refine(V40,V48);	# 35  unknown (V49:any)<-(V40:any)(V48:any)
-    V50 := sql.bind("sys","lineitem","l_quantity",0);	# 36  (V50:any)<-(_41:str)(_42:str)(_50:str)(_43:int)
-    V52 := sql.bind_dbat("sys","lineitem",0);	# 37  unknown (V52:any)<-(_41:str)(_42:str)(_43:int)
-    V53 := bat.reverse(V52);	# 38  unknown (V53:any)<-(V52:any)
-    V54 := algebra.kdiff(V50,V53);	# 39  unknown (V54:any)<-(V50:any)(V53:any)
-    V55 := algebra.join(V18,V54);	# 40  unknown (V55:any)<-(V18:any)(V54:any)
-    V56 := aggrX3.sum(V55,V32,V34);	# 41  unknown (V56:any)<-(V55:any)(V32:any)(V34:any)
-    V57 := sql.bind("sys","lineitem","l_extendedprice",0);	# 42  (V57:any)<-(_41:str)(_42:str)(_57:str)(_43:int)
-    V59 := sql.bind_dbat("sys","lineitem",0);	# 43  unknown (V59:any)<-(_41:str)(_42:str)(_43:int)
-    V60 := bat.reverse(V59);	# 44  unknown (V60:any)<-(V59:any)
-    V61 := algebra.kdiff(V57,V60);	# 45  unknown (V61:any)<-(V57:any)(V60:any)
-    V62 := algebra.join(V18,V61);	# 46  unknown (V62:any)<-(V18:any)(V61:any)
-    V63 := aggrX3.sum(V62,V32,V34);	# 47  unknown (V63:any)<-(V62:any)(V32:any)(V34:any)
-    V64 := sql.bind_dbat("sys","lineitem",0);	# 48  unknown (V64:any)<-(_41:str)(_42:str)(_43:int)
-    V65 := bat.reverse(V64);	# 49  unknown (V65:any)<-(V64:any)
-    V66 := algebra.kdiff(V57,V65);	# 50  unknown (V66:any)<-(V57:any)(V65:any)
-    V67 := algebra.join(V18,V66);	# 51  unknown (V67:any)<-(V18:any)(V66:any)
-    V69 := calc.lng(1);	# 52 CALCint2lng (V69:lng)<-(_68:int)
-    V71 := calc.*(V69,100);	# 53 CALCbinaryMULlngint (V71:lng)<-(V69:lng)(_70:int)
-    V72 := sql.bind("sys","lineitem","l_discount",0);	# 54  (V72:any)<-(_41:str)(_42:str)(_72:str)(_43:int)
-    V74 := sql.bind_dbat("sys","lineitem",0);	# 55  unknown (V74:any)<-(_74:str)(_75:str)(_76:int)
-    V78 := bat.reverse(V74);	# 56  unknown (V78:any)<-(V74:any)
-    V79 := algebra.kdiff(V72,V78);	# 57  unknown (V79:any)<-(V72:any)(V78:any)
-    V80 := algebra.join(V18,V79);	# 58  unknown (V80:any)<-(V18:any)(V79:any)
-    V81 := optimizer.multiplex("calc.-",V71,V80);	# 59 OPTmultiplex (V81:any)<-(_81:str)(V71:lng)(V80:any)
-    V83 := batcalc.*(V67,V81);	# 60  unknown (V83:any)<-(V67:any)(V81:any)
-    V85 := aggrX3.sum(V83,V32,V34);	# 61  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
-    V86 := sql.bind_dbat("sys","lineitem",0);	# 62  unknown (V86:any)<-(_74:str)(_75:str)(_76:int)
-    V87 := bat.reverse(V86);	# 63  unknown (V87:any)<-(V86:any)
-    V88 := algebra.kdiff(V57,V87);	# 64  unknown (V88:any)<-(V57:any)(V87:any)
-    V89 := algebra.join(V18,V88);	# 65  unknown (V89:any)<-(V18:any)(V88:any)
-    V90 := calc.lng(1);	# 66 CALCint2lng (V90:lng)<-(_68:int)
-    V91 := calc.*(V90,100);	# 67 CALCbinaryMULlngint (V91:lng)<-(V90:lng)(_70:int)
-    V92 := sql.bind_dbat("sys","lineitem",0);	# 68  unknown (V92:any)<-(_74:str)(_75:str)(_76:int)
-    V93 := bat.reverse(V92);	# 69  unknown (V93:any)<-(V92:any)
-    V94 := algebra.kdiff(V72,V93);	# 70  unknown (V94:any)<-(V72:any)(V93:any)
-    V95 := algebra.join(V18,V94);	# 71  unknown (V95:any)<-(V18:any)(V94:any)
-    V96 := optimizer.multiplex("calc.-",V91,V95);	# 72 OPTmultiplex (V96:any)<-(_81:str)(V91:lng)(V95:any)
-    V97 := batcalc.*(V89,V96);	# 73  unknown (V97:any)<-(V89:any)(V96:any)
-    V98 := calc.lng(1);	# 74 CALCint2lng (V98:lng)<-(_68:int)
-    V99 := calc.*(V98,100);	# 75 CALCbinaryMULlngint (V99:lng)<-(V98:lng)(_70:int)
-    V100 := sql.bind("sys","lineitem","l_tax",0);	# 76  (V100:any)<-(_74:str)(_75:str)(_99:str)(_76:int)
-    V102 := sql.bind_dbat("sys","lineitem",0);	# 77  unknown (V102:any)<-(_74:str)(_75:str)(_76:int)
-    V103 := bat.reverse(V102);	# 78  unknown (V103:any)<-(V102:any)
-    V104 := algebra.kdiff(V100,V103);	# 79  unknown (V104:any)<-(V100:any)(V103:any)
-    V105 := algebra.join(V18,V104);	# 80  unknown (V105:any)<-(V18:any)(V104:any)
-    V106 := optimizer.multiplex("calc.+",V99,V105);	# 81 OPTmultiplex (V106:any)<-(_105:str)(V99:lng)(V105:any)
-    V108 := batcalc.*(V97,V106);	# 82  unknown (V108:any)<-(V97:any)(V106:any)
-    V109 := aggrX3.sum(V108,V32,V34);	# 83  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
-    V110 := sql.bind_dbat("sys","lineitem",0);	# 84  unknown (V110:any)<-(_109:str)(_110:str)(_111:int)
-    V114 := bat.reverse(V110);	# 85  unknown (V114:any)<-(V110:any)
-    V115 := algebra.kdiff(V50,V114);	# 86  unknown (V115:any)<-(V50:any)(V114:any)
-    V116 := algebra.join(V18,V115);	# 87  unknown (V116:any)<-(V18:any)(V115:any)
-    V117 := aggrX3.avg(V116,V32,V34);	# 88  unknown (V117:any)<-(V116:any)(V32:any)(V34:any)
-    V118 := sql.bind_dbat("sys","lineitem",0);	# 89  unknown (V118:any)<-(_109:str)(_110:str)(_111:int)
-    V119 := bat.reverse(V118);	# 90  unknown (V119:any)<-(V118:any)
-    V120 := algebra.kdiff(V57,V119);	# 91  unknown (V120:any)<-(V57:any)(V119:any)
-    V121 := algebra.join(V18,V120);	# 92  unknown (V121:any)<-(V18:any)(V120:any)
-    V122 := aggrX3.avg(V121,V32,V34);	# 93  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
-    V124 := optimizer.multiplex("calc.round",V122,100);	# 94 OPTmultiplex (V124:any)<-(_122:str)(V122:any)(_123:int)
-    V126 := sql.bind_dbat("sys","lineitem",0);	# 95  unknown (V126:any)<-(_109:str)(_110:str)(_111:int)
-    V127 := bat.reverse(V126);	# 96  unknown (V127:any)<-(V126:any)
-    V128 := algebra.kdiff(V72,V127);	# 97  unknown (V128:any)<-(V72:any)(V127:any)
-    V129 := algebra.join(V18,V128);	# 98  unknown (V129:any)<-(V18:any)(V128:any)
-    V130 := aggrX3.avg(V129,V32,V34);	# 99  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
-    V131 := optimizer.multiplex("calc.round",V130,100);	# 100 OPTmultiplex (V131:any)<-(_122:str)(V130:any)(_123:int)
-    V132 := aggrX3.count(V32,V32,V34);	# 101  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
-    sql.column(V39,"l_returnflag","varchar",1,0);	# 102  unknown (_131:any)<-(V39:any)(_132:str)(_133:str)(_134:int)(_111:int)
-    sql.column(V48,"l_linestatus","varchar",1,0);	# 103  unknown (_135:any)<-(V48:any)(_136:str)(_133:str)(_134:int)(_111:int)
-    sql.column(V56,"sum_qty","bigint",0,0);	# 104  unknown (_137:any)<-(V56:any)(_138:str)(_139:str)(_111:int)(_111:int)
-    sql.column(V63,"sum_base_price","decimal",19,2);	# 105  unknown (_140:any)<-(V63:any)(_141:str)(_142:str)(_143:int)(_144:int)
-    sql.column(V85,"sum_disc_price","decimal",19,4);	# 106  unknown (_145:any)<-(V85:any)(_146:str)(_142:str)(_143:int)(_147:int)
-    sql.column(V109,"sum_charge","decimal",19,6);	# 107  unknown (_148:any)<-(V109:any)(_149:str)(_142:str)(_143:int)(_150:int)
-    sql.column(V117,"avg_qty","double",53,0);	# 108  unknown (_151:any)<-(V117:any)(_152:str)(_153:str)(_154:int)(_155:int)
-    sql.column(V124,"avg_price","double",53,0);	# 109  unknown (_156:any)<-(V124:any)(_157:str)(_153:str)(_154:int)(_155:int)
-    sql.column(V131,"avg_disc","double",53,0);	# 110  unknown (_158:any)<-(V131:any)(_159:str)(_153:str)(_154:int)(_155:int)
-    sql.column(V132,"count_order","int",0,0);	# 111  unknown (_160:any)<-(V132:any)(_161:str)(_162:str)(_155:int)(_155:int)
-    sql.output(V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);	# 112  unknown (_163:any)<-(V49:any)(V39:any)(V48:any)(V56:any)(V63:any)(V85:any)(V109:any)(V117:any)(V124:any)(V131:any)(V132:any)
-end main;	# 113  
-!ERROR: end qry1;
-!           ^non matching end label, overruled
-!ERROR: 'sql.bind' undefined in user.main[3]
-!ERROR: 'sql.bind_dbat' undefined in user.main[4]
-!ERROR: 'bat.reverse' undefined in user.main[5]
-!ERROR: 'algebra.kdiff' undefined in user.main[6]
-!ERROR: 'algebra.uselect' undefined in user.main[7]
-!ERROR: 'algebra.tmark' undefined in user.main[8]
-!ERROR: 'bat.reverse' undefined in user.main[9]
-!ERROR: 'sql.bind_dbat' undefined in user.main[11]
-!ERROR: 'bat.reverse' undefined in user.main[12]
-!ERROR: 'algebra.kdiff' undefined in user.main[13]
-!ERROR: 'algebra.join' undefined in user.main[14]
-!ERROR: 'group.group' undefined in user.main[15]
-!ERROR: 'sql.bind_dbat' undefined in user.main[17]
-!ERROR: 'bat.reverse' undefined in user.main[18]
-!ERROR: 'algebra.kdiff' undefined in user.main[19]
-!ERROR: 'algebra.join' undefined in user.main[20]
-!ERROR: 'group.group' undefined in user.main[21]
-!ERROR: 'algebra.tunique' undefined in user.main[22]
-!ERROR: 'bat.mirror' undefined in user.main[23]
-!ERROR: 'sql.bind_dbat' undefined in user.main[24]
-!ERROR: 'bat.reverse' undefined in user.main[25]
-!ERROR: 'algebra.kdiff' undefined in user.main[26]
-!ERROR: 'algebra.join' undefined in user.main[27]
-!ERROR: 'algebra.join' undefined in user.main[28]
-!ERROR: 'algebra.tsort' undefined in user.main[29]
-!ERROR: 'sql.bind_dbat' undefined in user.main[30]
-!ERROR: 'bat.reverse' undefined in user.main[31]
-!ERROR: 'algebra.kdiff' undefined in user.main[32]
-!ERROR: 'algebra.join' undefined in user.main[33]
-!ERROR: 'algebra.join' undefined in user.main[34]
-!ERROR: 'group.refine' undefined in user.main[35]
-!ERROR: 'sql.bind_dbat' undefined in user.main[37]
-!ERROR: 'bat.reverse' undefined in user.main[38]
-!ERROR: 'algebra.kdiff' undefined in user.main[39]
-!ERROR: 'algebra.join' undefined in user.main[40]
-!ERROR: 'aggrX3.sum' undefined in user.main[41]
-!ERROR: 'sql.bind_dbat' undefined in user.main[43]
-!ERROR: 'bat.reverse' undefined in user.main[44]
-!ERROR: 'algebra.kdiff' undefined in user.main[45]
-!ERROR: 'algebra.join' undefined in user.main[46]
-!ERROR: 'aggrX3.sum' undefined in user.main[47]
-!ERROR: 'sql.bind_dbat' undefined in user.main[48]
-!ERROR: 'bat.reverse' undefined in user.main[49]
-!ERROR: 'algebra.kdiff' undefined in user.main[50]
-!ERROR: 'algebra.join' undefined in user.main[51]
-!ERROR: 'sql.bind_dbat' undefined in user.main[55]
-!ERROR: 'bat.reverse' undefined in user.main[56]
-!ERROR: 'algebra.kdiff' undefined in user.main[57]
-!ERROR: 'algebra.join' undefined in user.main[58]
-!ERROR: 'batcalc.*' undefined in user.main[60]
-!ERROR: 'aggrX3.sum' undefined in user.main[61]
-!ERROR: 'sql.bind_dbat' undefined in user.main[62]
-!ERROR: 'bat.reverse' undefined in user.main[63]
-!ERROR: 'algebra.kdiff' undefined in user.main[64]
-!ERROR: 'algebra.join' undefined in user.main[65]
-!ERROR: 'sql.bind_dbat' undefined in user.main[68]
-!ERROR: 'bat.reverse' undefined in user.main[69]
-!ERROR: 'algebra.kdiff' undefined in user.main[70]
-!ERROR: 'algebra.join' undefined in user.main[71]
-!ERROR: 'batcalc.*' undefined in user.main[73]
-!ERROR: 'sql.bind_dbat' undefined in user.main[77]
-!ERROR: 'bat.reverse' undefined in user.main[78]
-!ERROR: 'algebra.kdiff' undefined in user.main[79]
-!ERROR: 'algebra.join' undefined in user.main[80]
-!ERROR: 'batcalc.*' undefined in user.main[82]
-!ERROR: 'aggrX3.sum' undefined in user.main[83]
-!ERROR: 'sql.bind_dbat' undefined in user.main[84]
-!ERROR: 'bat.reverse' undefined in user.main[85]
-!ERROR: 'algebra.kdiff' undefined in user.main[86]
-!ERROR: 'algebra.join' undefined in user.main[87]
-!ERROR: 'aggrX3.avg' undefined in user.main[88]
-!ERROR: 'sql.bind_dbat' undefined in user.main[89]
-!ERROR: 'bat.reverse' undefined in user.main[90]
-!ERROR: 'algebra.kdiff' undefined in user.main[91]
-!ERROR: 'algebra.join' undefined in user.main[92]
-!ERROR: 'aggrX3.avg' undefined in user.main[93]
-!ERROR: 'sql.bind_dbat' undefined in user.main[95]
-!ERROR: 'bat.reverse' undefined in user.main[96]
-!ERROR: 'algebra.kdiff' undefined in user.main[97]
-!ERROR: 'algebra.join' undefined in user.main[98]
-!ERROR: 'aggrX3.avg' undefined in user.main[99]
-!ERROR: 'aggrX3.count' undefined in user.main[101]
-!ERROR: 'sql.column' undefined in user.main[102]
-!ERROR: 'sql.column' undefined in user.main[103]
-!ERROR: 'sql.column' undefined in user.main[104]
-!ERROR: 'sql.column' undefined in user.main[105]
-!ERROR: 'sql.column' undefined in user.main[106]
-!ERROR: 'sql.column' undefined in user.main[107]
-!ERROR: 'sql.column' undefined in user.main[108]
-!ERROR: 'sql.column' undefined in user.main[109]
-!ERROR: 'sql.column' undefined in user.main[110]
-!ERROR: 'sql.column' undefined in user.main[111]
-!ERROR: 'sql.output' undefined in user.main[112]
+function user.qry1():void;	# 0  (qry1:void)
+    V3 := sql.bind("sys","lineitem","l_shipdate",0);	# 1  (V3:bat[:any,:any])<-(_2:str)(_3:str)(_4:str)(_5:int)
+    V8 := sql.bind_dbat("sys","lineitem",0);	# 2  (V8:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V9 := bat.reverse(V8);	# 3 BKCreverse (V9:bat[:any,:any])<-(V8:bat[:any,:any])
+    V10 := algebra.kdiff(V3,V9);	# 4 ALGkdiff (V10:bat[:oid,:any])<-(V3:bat[:any,:any])(V9:bat[:any,:any])
+    V14 := algebra.uselect(V10,nil,nil);	# 5 ALGuselect (V14:bat[:oid,:void])<-(V10:bat[:oid,:any])(_10:void)(_10:void)
+    V17 := algebra.tmark(V14,0@0);	# 6  unknown (V17:any)<-(V14:bat[:oid,:void])(_12:oid)
+    V18 := bat.reverse(V17);	# 7  unknown (V18:any)<-(V17:any)
+    V19 := sql.bind("sys","lineitem","l_returnflag",0);	# 8  (V19:bat[:any,:any])<-(_2:str)(_3:str)(_15:str)(_5:int)
+    V21 := sql.bind_dbat("sys","lineitem",0);	# 9  (V21:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V22 := bat.reverse(V21);	# 10 BKCreverse (V22:bat[:any,:any])<-(V21:bat[:any,:any])
+    V23 := algebra.kdiff(V19,V22);	# 11 ALGkdiff (V23:bat[:oid,:any])<-(V19:bat[:any,:any])(V22:bat[:any,:any])
+    V24 := algebra.join(V18,V23);	# 12  unknown (V24:any)<-(V18:any)(V23:bat[:oid,:any])
+    V25 := group.group(V24);	# 13  unknown (V25:any)<-(V24:any)
+    V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 14  (V26:bat[:any,:any])<-(_2:str)(_3:str)(_22:str)(_5:int)
+    V28 := sql.bind_dbat("sys","lineitem",0);	# 15  (V28:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V29 := bat.reverse(V28);	# 16 BKCreverse (V29:bat[:any,:any])<-(V28:bat[:any,:any])
+    V30 := algebra.kdiff(V26,V29);	# 17 ALGkdiff (V30:bat[:oid,:any])<-(V26:bat[:any,:any])(V29:bat[:any,:any])
+    V31 := algebra.join(V18,V30);	# 18  unknown (V31:any)<-(V18:any)(V30:bat[:oid,:any])
+    V32 := group.group(V25,V31);	# 19  unknown (V32:any)<-(V25:any)(V31:any)
+    V33 := algebra.tunique(V32);	# 20  unknown (V33:any)<-(V32:any)
+    V34 := bat.mirror(V33);	# 21  unknown (V34:any)<-(V33:any)
+    V35 := sql.bind_dbat("sys","lineitem",0);	# 22  (V35:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V36 := bat.reverse(V35);	# 23 BKCreverse (V36:bat[:any,:any])<-(V35:bat[:any,:any])
+    V37 := algebra.kdiff(V19,V36);	# 24 ALGkdiff (V37:bat[:oid,:any])<-(V19:bat[:any,:any])(V36:bat[:any,:any])
+    V38 := algebra.join(V18,V37);	# 25  unknown (V38:any)<-(V18:any)(V37:bat[:oid,:any])
+    V39 := algebra.join(V34,V38);	# 26  unknown (V39:any)<-(V34:any)(V38:any)
+    V40 := algebra.tsort(V39);	# 27  unknown (V40:any)<-(V39:any)
+    V41 := sql.bind_dbat("sys","lineitem",0);	# 28  (V41:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V45 := bat.reverse(V41);	# 29 BKCreverse (V45:bat[:any,:any])<-(V41:bat[:any,:any])
+    V46 := algebra.kdiff(V26,V45);	# 30 ALGkdiff (V46:bat[:oid,:any])<-(V26:bat[:any,:any])(V45:bat[:any,:any])
+    V47 := algebra.join(V18,V46);	# 31  unknown (V47:any)<-(V18:any)(V46:bat[:oid,:any])
+    V48 := algebra.join(V34,V47);	# 32  unknown (V48:any)<-(V34:any)(V47:any)
+    V49 := group.refine(V40,V48);	# 33  unknown (V49:any)<-(V40:any)(V48:any)
+    V50 := sql.bind("sys","lineitem","l_quantity",0);	# 34  (V50:bat[:any,:any])<-(_37:str)(_38:str)(_46:str)(_39:int)
+    V52 := sql.bind_dbat("sys","lineitem",0);	# 35  (V52:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V53 := bat.reverse(V52);	# 36 BKCreverse (V53:bat[:any,:any])<-(V52:bat[:any,:any])
+    V54 := algebra.kdiff(V50,V53);	# 37 ALGkdiff (V54:bat[:oid,:any])<-(V50:bat[:any,:any])(V53:bat[:any,:any])
+    V55 := algebra.join(V18,V54);	# 38  unknown (V55:any)<-(V18:any)(V54:bat[:oid,:any])
+    V56 := aggrX3.sum(V55,V32,V34);	# 39  unknown (V56:any)<-(V55:any)(V32:any)(V34:any)
+    V57 := sql.bind("sys","lineitem","l_extendedprice",0);	# 40  (V57:bat[:any,:any])<-(_37:str)(_38:str)(_53:str)(_39:int)
+    V59 := sql.bind_dbat("sys","lineitem",0);	# 41  (V59:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V60 := bat.reverse(V59);	# 42 BKCreverse (V60:bat[:any,:any])<-(V59:bat[:any,:any])
+    V61 := algebra.kdiff(V57,V60);	# 43 ALGkdiff (V61:bat[:oid,:any])<-(V57:bat[:any,:any])(V60:bat[:any,:any])
+    V62 := algebra.join(V18,V61);	# 44  unknown (V62:any)<-(V18:any)(V61:bat[:oid,:any])
+    V63 := aggrX3.sum(V62,V32,V34);	# 45  unknown (V63:any)<-(V62:any)(V32:any)(V34:any)
+    V64 := sql.bind_dbat("sys","lineitem",0);	# 46  (V64:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V65 := bat.reverse(V64);	# 47 BKCreverse (V65:bat[:any,:any])<-(V64:bat[:any,:any])
+    V66 := algebra.kdiff(V57,V65);	# 48 ALGkdiff (V66:bat[:oid,:any])<-(V57:bat[:any,:any])(V65:bat[:any,:any])
+    V67 := algebra.join(V18,V66);	# 49  unknown (V67:any)<-(V18:any)(V66:bat[:oid,:any])
+    V69 := calc.lng(1);	# 50 CALCint2lng (V69:lng)<-(_64:int)
+    V71 := calc.*(V69,100);	# 51 CALCbinaryMULlngint (V71:lng)<-(V69:lng)(_66:int)
+    V72 := sql.bind("sys","lineitem","l_discount",0);	# 52  (V72:bat[:any,:any])<-(_37:str)(_38:str)(_68:str)(_39:int)
+    V74 := sql.bind_dbat("sys","lineitem",0);	# 53  (V74:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V78 := bat.reverse(V74);	# 54 BKCreverse (V78:bat[:any,:any])<-(V74:bat[:any,:any])
+    V79 := algebra.kdiff(V72,V78);	# 55 ALGkdiff (V79:bat[:oid,:any])<-(V72:bat[:any,:any])(V78:bat[:any,:any])
+    V80 := algebra.join(V18,V79);	# 56  unknown (V80:any)<-(V18:any)(V79:bat[:oid,:any])
+    V81 := optimizer.multiplex("calc.-",V71,V80);	# 57 OPTmultiplex (V81:any)<-(_77:str)(V71:lng)(V80:any)
+    V83 := batcalc.*(V67,V81);	# 58  unknown (V83:any)<-(V67:any)(V81:any)
+    V85 := aggrX3.sum(V83,V32,V34);	# 59  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
+    V86 := sql.bind_dbat("sys","lineitem",0);	# 60  (V86:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V87 := bat.reverse(V86);	# 61 BKCreverse (V87:bat[:any,:any])<-(V86:bat[:any,:any])
+    V88 := algebra.kdiff(V57,V87);	# 62 ALGkdiff (V88:bat[:oid,:any])<-(V57:bat[:any,:any])(V87:bat[:any,:any])
+    V89 := algebra.join(V18,V88);	# 63  unknown (V89:any)<-(V18:any)(V88:bat[:oid,:any])
+    V90 := calc.lng(1);	# 64 CALCint2lng (V90:lng)<-(_64:int)
+    V91 := calc.*(V90,100);	# 65 CALCbinaryMULlngint (V91:lng)<-(V90:lng)(_66:int)
+    V92 := sql.bind_dbat("sys","lineitem",0);	# 66  (V92:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V93 := bat.reverse(V92);	# 67 BKCreverse (V93:bat[:any,:any])<-(V92:bat[:any,:any])
+    V94 := algebra.kdiff(V72,V93);	# 68 ALGkdiff (V94:bat[:oid,:any])<-(V72:bat[:any,:any])(V93:bat[:any,:any])
+    V95 := algebra.join(V18,V94);	# 69  unknown (V95:any)<-(V18:any)(V94:bat[:oid,:any])
+    V96 := optimizer.multiplex("calc.-",V91,V95);	# 70 OPTmultiplex (V96:any)<-(_77:str)(V91:lng)(V95:any)
+    V97 := batcalc.*(V89,V96);	# 71  unknown (V97:any)<-(V89:any)(V96:any)
+    V98 := calc.lng(1);	# 72 CALCint2lng (V98:lng)<-(_64:int)
+    V99 := calc.*(V98,100);	# 73 CALCbinaryMULlngint (V99:lng)<-(V98:lng)(_66:int)
+    V100 := sql.bind("sys","lineitem","l_tax",0);	# 74  (V100:bat[:any,:any])<-(_70:str)(_71:str)(_95:str)(_72:int)
+    V102 := sql.bind_dbat("sys","lineitem",0);	# 75  (V102:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V103 := bat.reverse(V102);	# 76 BKCreverse (V103:bat[:any,:any])<-(V102:bat[:any,:any])
+    V104 := algebra.kdiff(V100,V103);	# 77 ALGkdiff (V104:bat[:oid,:any])<-(V100:bat[:any,:any])(V103:bat[:any,:any])
+    V105 := algebra.join(V18,V104);	# 78  unknown (V105:any)<-(V18:any)(V104:bat[:oid,:any])
+    V106 := optimizer.multiplex("calc.+",V99,V105);	# 79 OPTmultiplex (V106:any)<-(_101:str)(V99:lng)(V105:any)
+    V108 := batcalc.*(V97,V106);	# 80  unknown (V108:any)<-(V97:any)(V106:any)
+    V109 := aggrX3.sum(V108,V32,V34);	# 81  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
+    V110 := sql.bind_dbat("sys","lineitem",0);	# 82  (V110:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V114 := bat.reverse(V110);	# 83 BKCreverse (V114:bat[:any,:any])<-(V110:bat[:any,:any])
+    V115 := algebra.kdiff(V50,V114);	# 84 ALGkdiff (V115:bat[:oid,:any])<-(V50:bat[:any,:any])(V114:bat[:any,:any])
+    V116 := algebra.join(V18,V115);	# 85  unknown (V116:any)<-(V18:any)(V115:bat[:oid,:any])
+    V117 := aggrX3.avg(V116,V32,V34);	# 86  unknown (V117:any)<-(V116:any)(V32:any)(V34:any)
+    V118 := sql.bind_dbat("sys","lineitem",0);	# 87  (V118:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V119 := bat.reverse(V118);	# 88 BKCreverse (V119:bat[:any,:any])<-(V118:bat[:any,:any])
+    V120 := algebra.kdiff(V57,V119);	# 89 ALGkdiff (V120:bat[:oid,:any])<-(V57:bat[:any,:any])(V119:bat[:any,:any])
+    V121 := algebra.join(V18,V120);	# 90  unknown (V121:any)<-(V18:any)(V120:bat[:oid,:any])
+    V122 := aggrX3.avg(V121,V32,V34);	# 91  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
+    V124 := optimizer.multiplex("calc.round",V122,100);	# 92 OPTmultiplex (V124:any)<-(_118:str)(V122:any)(_119:int)
+    V126 := sql.bind_dbat("sys","lineitem",0);	# 93  (V126:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V127 := bat.reverse(V126);	# 94 BKCreverse (V127:bat[:any,:any])<-(V126:bat[:any,:any])
+    V128 := algebra.kdiff(V72,V127);	# 95 ALGkdiff (V128:bat[:oid,:any])<-(V72:bat[:any,:any])(V127:bat[:any,:any])
+    V129 := algebra.join(V18,V128);	# 96  unknown (V129:any)<-(V18:any)(V128:bat[:oid,:any])
+    V130 := aggrX3.avg(V129,V32,V34);	# 97  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
+    V131 := optimizer.multiplex("calc.round",V130,100);	# 98 OPTmultiplex (V131:any)<-(_118:str)(V130:any)(_119:int)
+    V132 := aggrX3.count(V32,V32,V34);	# 99  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
+    sql.column(V39,"l_returnflag","varchar",1,0);	# 100  unknown (_127:any)<-(V39:any)(_128:str)(_129:str)(_130:int)(_107:int)
+    sql.column(V48,"l_linestatus","varchar",1,0);	# 101  unknown (_131:any)<-(V48:any)(_132:str)(_129:str)(_130:int)(_107:int)
+    sql.column(V56,"sum_qty","bigint",0,0);	# 102  unknown (_133:any)<-(V56:any)(_134:str)(_135:str)(_107:int)(_107:int)
+    sql.column(V63,"sum_base_price","decimal",19,2);	# 103  unknown (_136:any)<-(V63:any)(_137:str)(_138:str)(_139:int)(_140:int)
+    sql.column(V85,"sum_disc_price","decimal",19,4);	# 104  unknown (_141:any)<-(V85:any)(_142:str)(_138:str)(_139:int)(_143:int)
+    sql.column(V109,"sum_charge","decimal",19,6);	# 105  unknown (_144:any)<-(V109:any)(_145:str)(_138:str)(_139:int)(_146:int)
+    sql.column(V117,"avg_qty","double",53,0);	# 106  unknown (_147:any)<-(V117:any)(_148:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V124,"avg_price","double",53,0);	# 107  unknown (_152:any)<-(V124:any)(_153:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V131,"avg_disc","double",53,0);	# 108  unknown (_154:any)<-(V131:any)(_155:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V132,"count_order","int",0,0);	# 109  unknown (_156:any)<-(V132:any)(_157:str)(_158:str)(_151:int)(_151:int)
+    sql.output(V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);	# 110  unknown (_159:any)<-(V49:any)(V39:any)(V48:any)(V56:any)(V63:any)(V85:any)(V109:any)(V117:any)(V124:any)(V131:any)(V132:any)
+end qry1;	# 111  
+!ERROR: 'algebra.tmark' undefined in user.qry1[6]
+!ERROR: 'bat.reverse' undefined in user.qry1[7]
+!ERROR: 'algebra.join' undefined in user.qry1[12]
+!ERROR: 'group.group' undefined in user.qry1[13]
+!ERROR: 'algebra.join' undefined in user.qry1[18]
+!ERROR: 'group.group' undefined in user.qry1[19]
+!ERROR: 'algebra.tunique' undefined in user.qry1[20]
+!ERROR: 'bat.mirror' undefined in user.qry1[21]
+!ERROR: 'algebra.join' undefined in user.qry1[25]
+!ERROR: 'algebra.join' undefined in user.qry1[26]
+!ERROR: 'algebra.tsort' undefined in user.qry1[27]
+!ERROR: 'algebra.join' undefined in user.qry1[31]
+!ERROR: 'algebra.join' undefined in user.qry1[32]
+!ERROR: 'group.refine' undefined in user.qry1[33]
+!ERROR: 'algebra.join' undefined in user.qry1[38]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[39]
+!ERROR: 'algebra.join' undefined in user.qry1[44]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[45]
+!ERROR: 'algebra.join' undefined in user.qry1[49]
+!ERROR: 'algebra.join' undefined in user.qry1[56]
+!ERROR: 'batcalc.*' undefined in user.qry1[58]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[59]
+!ERROR: 'algebra.join' undefined in user.qry1[63]
+!ERROR: 'algebra.join' undefined in user.qry1[69]
+!ERROR: 'batcalc.*' undefined in user.qry1[71]
+!ERROR: 'algebra.join' undefined in user.qry1[78]
+!ERROR: 'batcalc.*' undefined in user.qry1[80]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[81]
+!ERROR: 'algebra.join' undefined in user.qry1[85]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[86]
+!ERROR: 'algebra.join' undefined in user.qry1[90]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[91]
+!ERROR: 'algebra.join' undefined in user.qry1[96]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[97]
+!ERROR: 'aggrX3.count' undefined in user.qry1[99]
+!ERROR: 'sql.column' undefined in user.qry1[100]
+!ERROR: 'sql.column' undefined in user.qry1[101]
+!ERROR: 'sql.column' undefined in user.qry1[102]
+!ERROR: 'sql.column' undefined in user.qry1[103]
+!ERROR: 'sql.column' undefined in user.qry1[104]
+!ERROR: 'sql.column' undefined in user.qry1[105]
+!ERROR: 'sql.column' undefined in user.qry1[106]
+!ERROR: 'sql.column' undefined in user.qry1[107]
+!ERROR: 'sql.column' undefined in user.qry1[108]
+!ERROR: 'sql.column' undefined in user.qry1[109]
+!ERROR: 'sql.output' undefined in user.qry1[110]
+#
+#optimizer.setDebug();
 #optimizer.aliasRemoval("user","qry1");
 #optimizer.garbageCollector("user","qry1");
 #mdb.list("user","qry1");
 #
+!ERROR: 'algebra.tmark' undefined in user.qry1[6]
+!ERROR: 'bat.reverse' undefined in user.qry1[7]
+!ERROR: 'algebra.join' undefined in user.qry1[12]
+!ERROR: 'group.group' undefined in user.qry1[13]
+!ERROR: 'algebra.join' undefined in user.qry1[18]
+!ERROR: 'group.group' undefined in user.qry1[19]
+!ERROR: 'algebra.tunique' undefined in user.qry1[20]
+!ERROR: 'bat.mirror' undefined in user.qry1[21]
+!ERROR: 'algebra.join' undefined in user.qry1[25]
+!ERROR: 'algebra.join' undefined in user.qry1[26]
+!ERROR: 'algebra.tsort' undefined in user.qry1[27]
+!ERROR: 'algebra.join' undefined in user.qry1[31]
+!ERROR: 'algebra.join' undefined in user.qry1[32]
+!ERROR: 'group.refine' undefined in user.qry1[33]
+!ERROR: 'algebra.join' undefined in user.qry1[38]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[39]
+!ERROR: 'algebra.join' undefined in user.qry1[44]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[45]
+!ERROR: 'algebra.join' undefined in user.qry1[49]
+!ERROR: 'algebra.join' undefined in user.qry1[56]
+!ERROR: 'batcalc.*' undefined in user.qry1[58]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[59]
+!ERROR: 'algebra.join' undefined in user.qry1[63]
+!ERROR: 'algebra.join' undefined in user.qry1[69]
+!ERROR: 'batcalc.*' undefined in user.qry1[71]
+!ERROR: 'algebra.join' undefined in user.qry1[78]
+!ERROR: 'batcalc.*' undefined in user.qry1[80]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[81]
+!ERROR: 'algebra.join' undefined in user.qry1[85]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[86]
+!ERROR: 'algebra.join' undefined in user.qry1[90]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[91]
+!ERROR: 'algebra.join' undefined in user.qry1[96]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[97]
+!ERROR: 'aggrX3.count' undefined in user.qry1[99]
+!ERROR: 'sql.column' undefined in user.qry1[100]
+!ERROR: 'sql.column' undefined in user.qry1[101]
+!ERROR: 'sql.column' undefined in user.qry1[102]
+!ERROR: 'sql.column' undefined in user.qry1[103]
+!ERROR: 'sql.column' undefined in user.qry1[104]
+!ERROR: 'sql.column' undefined in user.qry1[105]
+!ERROR: 'sql.column' undefined in user.qry1[106]
+!ERROR: 'sql.column' undefined in user.qry1[107]
+!ERROR: 'sql.column' undefined in user.qry1[108]
+!ERROR: 'sql.column' undefined in user.qry1[109]
+!ERROR: 'sql.output' undefined in user.qry1[110]
+Optimizer aliasRemoval failed
+function user.qry1():void;	# 0  (qry1:void)
+    V3 := sql.bind("sys","lineitem","l_shipdate",0);	# 1  (V3:bat[:any,:any])<-(_2:str)(_3:str)(_4:str)(_5:int)
+    V8 := sql.bind_dbat("sys","lineitem",0);	# 2  (V8:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V9 := bat.reverse(V8);	# 3 BKCreverse (V9:bat[:any,:any])<-(V8:bat[:any,:any])
+    V10 := algebra.kdiff(V3,V9);	# 4 ALGkdiff (V10:bat[:oid,:any])<-(V3:bat[:any,:any])(V9:bat[:any,:any])
+    V14 := algebra.uselect(V10,nil,nil);	# 5 ALGuselect (V14:bat[:oid,:void])<-(V10:bat[:oid,:any])(_10:void)(_10:void)
+    V17 := algebra.tmark(V14,0@0);	# 6  unknown (V17:any)<-(V14:bat[:oid,:void])(_12:oid)
+    V18 := bat.reverse(V17);	# 7  unknown (V18:any)<-(V17:any)
+    V19 := sql.bind("sys","lineitem","l_returnflag",0);	# 8  (V19:bat[:any,:any])<-(_2:str)(_3:str)(_15:str)(_5:int)
+    V21 := sql.bind_dbat("sys","lineitem",0);	# 9  (V21:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V22 := bat.reverse(V21);	# 10 BKCreverse (V22:bat[:any,:any])<-(V21:bat[:any,:any])
+    V23 := algebra.kdiff(V19,V22);	# 11 ALGkdiff (V23:bat[:oid,:any])<-(V19:bat[:any,:any])(V22:bat[:any,:any])
+    V24 := algebra.join(V18,V23);	# 12  unknown (V24:any)<-(V18:any)(V23:bat[:oid,:any])
+    V25 := group.group(V24);	# 13  unknown (V25:any)<-(V24:any)
+    V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 14  (V26:bat[:any,:any])<-(_2:str)(_3:str)(_22:str)(_5:int)
+    V28 := sql.bind_dbat("sys","lineitem",0);	# 15  (V28:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V29 := bat.reverse(V28);	# 16 BKCreverse (V29:bat[:any,:any])<-(V28:bat[:any,:any])
+    V30 := algebra.kdiff(V26,V29);	# 17 ALGkdiff (V30:bat[:oid,:any])<-(V26:bat[:any,:any])(V29:bat[:any,:any])
+    V31 := algebra.join(V18,V30);	# 18  unknown (V31:any)<-(V18:any)(V30:bat[:oid,:any])
+    V32 := group.group(V25,V31);	# 19  unknown (V32:any)<-(V25:any)(V31:any)
+    V33 := algebra.tunique(V32);	# 20  unknown (V33:any)<-(V32:any)
+    V34 := bat.mirror(V33);	# 21  unknown (V34:any)<-(V33:any)
+    V35 := sql.bind_dbat("sys","lineitem",0);	# 22  (V35:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V36 := bat.reverse(V35);	# 23 BKCreverse (V36:bat[:any,:any])<-(V35:bat[:any,:any])
+    V37 := algebra.kdiff(V19,V36);	# 24 ALGkdiff (V37:bat[:oid,:any])<-(V19:bat[:any,:any])(V36:bat[:any,:any])
+    V38 := algebra.join(V18,V37);	# 25  unknown (V38:any)<-(V18:any)(V37:bat[:oid,:any])
+    V39 := algebra.join(V34,V38);	# 26  unknown (V39:any)<-(V34:any)(V38:any)
+    V40 := algebra.tsort(V39);	# 27  unknown (V40:any)<-(V39:any)
+    V41 := sql.bind_dbat("sys","lineitem",0);	# 28  (V41:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V45 := bat.reverse(V41);	# 29 BKCreverse (V45:bat[:any,:any])<-(V41:bat[:any,:any])
+    V46 := algebra.kdiff(V26,V45);	# 30 ALGkdiff (V46:bat[:oid,:any])<-(V26:bat[:any,:any])(V45:bat[:any,:any])
+    V47 := algebra.join(V18,V46);	# 31  unknown (V47:any)<-(V18:any)(V46:bat[:oid,:any])
+    V48 := algebra.join(V34,V47);	# 32  unknown (V48:any)<-(V34:any)(V47:any)
+    V49 := group.refine(V40,V48);	# 33  unknown (V49:any)<-(V40:any)(V48:any)
+    V50 := sql.bind("sys","lineitem","l_quantity",0);	# 34  (V50:bat[:any,:any])<-(_37:str)(_38:str)(_46:str)(_39:int)
+    V52 := sql.bind_dbat("sys","lineitem",0);	# 35  (V52:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V53 := bat.reverse(V52);	# 36 BKCreverse (V53:bat[:any,:any])<-(V52:bat[:any,:any])
+    V54 := algebra.kdiff(V50,V53);	# 37 ALGkdiff (V54:bat[:oid,:any])<-(V50:bat[:any,:any])(V53:bat[:any,:any])
+    V55 := algebra.join(V18,V54);	# 38  unknown (V55:any)<-(V18:any)(V54:bat[:oid,:any])
+    V56 := aggrX3.sum(V55,V32,V34);	# 39  unknown (V56:any)<-(V55:any)(V32:any)(V34:any)
+    V57 := sql.bind("sys","lineitem","l_extendedprice",0);	# 40  (V57:bat[:any,:any])<-(_37:str)(_38:str)(_53:str)(_39:int)
+    V59 := sql.bind_dbat("sys","lineitem",0);	# 41  (V59:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V60 := bat.reverse(V59);	# 42 BKCreverse (V60:bat[:any,:any])<-(V59:bat[:any,:any])
+    V61 := algebra.kdiff(V57,V60);	# 43 ALGkdiff (V61:bat[:oid,:any])<-(V57:bat[:any,:any])(V60:bat[:any,:any])
+    V62 := algebra.join(V18,V61);	# 44  unknown (V62:any)<-(V18:any)(V61:bat[:oid,:any])
+    V63 := aggrX3.sum(V62,V32,V34);	# 45  unknown (V63:any)<-(V62:any)(V32:any)(V34:any)
+    V64 := sql.bind_dbat("sys","lineitem",0);	# 46  (V64:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V65 := bat.reverse(V64);	# 47 BKCreverse (V65:bat[:any,:any])<-(V64:bat[:any,:any])
+    V66 := algebra.kdiff(V57,V65);	# 48 ALGkdiff (V66:bat[:oid,:any])<-(V57:bat[:any,:any])(V65:bat[:any,:any])
+    V67 := algebra.join(V18,V66);	# 49  unknown (V67:any)<-(V18:any)(V66:bat[:oid,:any])
+    V69 := calc.lng(1);	# 50 CALCint2lng (V69:lng)<-(_64:int)
+    V71 := calc.*(V69,100);	# 51 CALCbinaryMULlngint (V71:lng)<-(V69:lng)(_66:int)
+    V72 := sql.bind("sys","lineitem","l_discount",0);	# 52  (V72:bat[:any,:any])<-(_37:str)(_38:str)(_68:str)(_39:int)
+    V74 := sql.bind_dbat("sys","lineitem",0);	# 53  (V74:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V78 := bat.reverse(V74);	# 54 BKCreverse (V78:bat[:any,:any])<-(V74:bat[:any,:any])
+    V79 := algebra.kdiff(V72,V78);	# 55 ALGkdiff (V79:bat[:oid,:any])<-(V72:bat[:any,:any])(V78:bat[:any,:any])
+    V80 := algebra.join(V18,V79);	# 56  unknown (V80:any)<-(V18:any)(V79:bat[:oid,:any])
+    V81 := optimizer.multiplex("calc.-",V71,V80);	# 57 OPTmultiplex (V81:any)<-(_77:str)(V71:lng)(V80:any)
+    V83 := batcalc.*(V67,V81);	# 58  unknown (V83:any)<-(V67:any)(V81:any)
+    V85 := aggrX3.sum(V83,V32,V34);	# 59  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
+    V86 := sql.bind_dbat("sys","lineitem",0);	# 60  (V86:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V87 := bat.reverse(V86);	# 61 BKCreverse (V87:bat[:any,:any])<-(V86:bat[:any,:any])
+    V88 := algebra.kdiff(V57,V87);	# 62 ALGkdiff (V88:bat[:oid,:any])<-(V57:bat[:any,:any])(V87:bat[:any,:any])
+    V89 := algebra.join(V18,V88);	# 63  unknown (V89:any)<-(V18:any)(V88:bat[:oid,:any])
+    V90 := calc.lng(1);	# 64 CALCint2lng (V90:lng)<-(_64:int)
+    V91 := calc.*(V90,100);	# 65 CALCbinaryMULlngint (V91:lng)<-(V90:lng)(_66:int)
+    V92 := sql.bind_dbat("sys","lineitem",0);	# 66  (V92:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V93 := bat.reverse(V92);	# 67 BKCreverse (V93:bat[:any,:any])<-(V92:bat[:any,:any])
+    V94 := algebra.kdiff(V72,V93);	# 68 ALGkdiff (V94:bat[:oid,:any])<-(V72:bat[:any,:any])(V93:bat[:any,:any])
+    V95 := algebra.join(V18,V94);	# 69  unknown (V95:any)<-(V18:any)(V94:bat[:oid,:any])
+    V96 := optimizer.multiplex("calc.-",V91,V95);	# 70 OPTmultiplex (V96:any)<-(_77:str)(V91:lng)(V95:any)
+    V97 := batcalc.*(V89,V96);	# 71  unknown (V97:any)<-(V89:any)(V96:any)
+    V98 := calc.lng(1);	# 72 CALCint2lng (V98:lng)<-(_64:int)
+    V99 := calc.*(V98,100);	# 73 CALCbinaryMULlngint (V99:lng)<-(V98:lng)(_66:int)
+    V100 := sql.bind("sys","lineitem","l_tax",0);	# 74  (V100:bat[:any,:any])<-(_70:str)(_71:str)(_95:str)(_72:int)
+    V102 := sql.bind_dbat("sys","lineitem",0);	# 75  (V102:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V103 := bat.reverse(V102);	# 76 BKCreverse (V103:bat[:any,:any])<-(V102:bat[:any,:any])
+    V104 := algebra.kdiff(V100,V103);	# 77 ALGkdiff (V104:bat[:oid,:any])<-(V100:bat[:any,:any])(V103:bat[:any,:any])
+    V105 := algebra.join(V18,V104);	# 78  unknown (V105:any)<-(V18:any)(V104:bat[:oid,:any])
+    V106 := optimizer.multiplex("calc.+",V99,V105);	# 79 OPTmultiplex (V106:any)<-(_101:str)(V99:lng)(V105:any)
+    V108 := batcalc.*(V97,V106);	# 80  unknown (V108:any)<-(V97:any)(V106:any)
+    V109 := aggrX3.sum(V108,V32,V34);	# 81  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
+    V110 := sql.bind_dbat("sys","lineitem",0);	# 82  (V110:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V114 := bat.reverse(V110);	# 83 BKCreverse (V114:bat[:any,:any])<-(V110:bat[:any,:any])
+    V115 := algebra.kdiff(V50,V114);	# 84 ALGkdiff (V115:bat[:oid,:any])<-(V50:bat[:any,:any])(V114:bat[:any,:any])
+    V116 := algebra.join(V18,V115);	# 85  unknown (V116:any)<-(V18:any)(V115:bat[:oid,:any])
+    V117 := aggrX3.avg(V116,V32,V34);	# 86  unknown (V117:any)<-(V116:any)(V32:any)(V34:any)
+    V118 := sql.bind_dbat("sys","lineitem",0);	# 87  (V118:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V119 := bat.reverse(V118);	# 88 BKCreverse (V119:bat[:any,:any])<-(V118:bat[:any,:any])
+    V120 := algebra.kdiff(V57,V119);	# 89 ALGkdiff (V120:bat[:oid,:any])<-(V57:bat[:any,:any])(V119:bat[:any,:any])
+    V121 := algebra.join(V18,V120);	# 90  unknown (V121:any)<-(V18:any)(V120:bat[:oid,:any])
+    V122 := aggrX3.avg(V121,V32,V34);	# 91  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
+    V124 := optimizer.multiplex("calc.round",V122,100);	# 92 OPTmultiplex (V124:any)<-(_118:str)(V122:any)(_119:int)
+    V126 := sql.bind_dbat("sys","lineitem",0);	# 93  (V126:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V127 := bat.reverse(V126);	# 94 BKCreverse (V127:bat[:any,:any])<-(V126:bat[:any,:any])
+    V128 := algebra.kdiff(V72,V127);	# 95 ALGkdiff (V128:bat[:oid,:any])<-(V72:bat[:any,:any])(V127:bat[:any,:any])
+    V129 := algebra.join(V18,V128);	# 96  unknown (V129:any)<-(V18:any)(V128:bat[:oid,:any])
+    V130 := aggrX3.avg(V129,V32,V34);	# 97  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
+    V131 := optimizer.multiplex("calc.round",V130,100);	# 98 OPTmultiplex (V131:any)<-(_118:str)(V130:any)(_119:int)
+    V132 := aggrX3.count(V32,V32,V34);	# 99  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
+    sql.column(V39,"l_returnflag","varchar",1,0);	# 100  unknown (_127:any)<-(V39:any)(_128:str)(_129:str)(_130:int)(_107:int)
+    sql.column(V48,"l_linestatus","varchar",1,0);	# 101  unknown (_131:any)<-(V48:any)(_132:str)(_129:str)(_130:int)(_107:int)
+    sql.column(V56,"sum_qty","bigint",0,0);	# 102  unknown (_133:any)<-(V56:any)(_134:str)(_135:str)(_107:int)(_107:int)
+    sql.column(V63,"sum_base_price","decimal",19,2);	# 103  unknown (_136:any)<-(V63:any)(_137:str)(_138:str)(_139:int)(_140:int)
+    sql.column(V85,"sum_disc_price","decimal",19,4);	# 104  unknown (_141:any)<-(V85:any)(_142:str)(_138:str)(_139:int)(_143:int)
+    sql.column(V109,"sum_charge","decimal",19,6);	# 105  unknown (_144:any)<-(V109:any)(_145:str)(_138:str)(_139:int)(_146:int)
+    sql.column(V117,"avg_qty","double",53,0);	# 106  unknown (_147:any)<-(V117:any)(_148:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V124,"avg_price","double",53,0);	# 107  unknown (_152:any)<-(V124:any)(_153:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V131,"avg_disc","double",53,0);	# 108  unknown (_154:any)<-(V131:any)(_155:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V132,"count_order","int",0,0);	# 109  unknown (_156:any)<-(V132:any)(_157:str)(_158:str)(_151:int)(_151:int)
+    sql.output(V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);	# 110  unknown (_159:any)<-(V49:any)(V39:any)(V48:any)(V56:any)(V63:any)(V85:any)(V109:any)(V117:any)(V124:any)(V131:any)(V132:any)
+end qry1;	# 111  
+!ERROR: 'algebra.tmark' undefined in user.qry1[6]
+!ERROR: 'bat.reverse' undefined in user.qry1[7]
+!ERROR: 'algebra.join' undefined in user.qry1[12]
+!ERROR: 'group.group' undefined in user.qry1[13]
+!ERROR: 'algebra.join' undefined in user.qry1[18]
+!ERROR: 'group.group' undefined in user.qry1[19]
+!ERROR: 'algebra.tunique' undefined in user.qry1[20]
+!ERROR: 'bat.mirror' undefined in user.qry1[21]
+!ERROR: 'algebra.join' undefined in user.qry1[25]
+!ERROR: 'algebra.join' undefined in user.qry1[26]
+!ERROR: 'algebra.tsort' undefined in user.qry1[27]
+!ERROR: 'algebra.join' undefined in user.qry1[31]
+!ERROR: 'algebra.join' undefined in user.qry1[32]
+!ERROR: 'group.refine' undefined in user.qry1[33]
+!ERROR: 'algebra.join' undefined in user.qry1[38]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[39]
+!ERROR: 'algebra.join' undefined in user.qry1[44]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[45]
+!ERROR: 'algebra.join' undefined in user.qry1[49]
+!ERROR: 'algebra.join' undefined in user.qry1[56]
+!ERROR: 'batcalc.*' undefined in user.qry1[58]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[59]
+!ERROR: 'algebra.join' undefined in user.qry1[63]
+!ERROR: 'algebra.join' undefined in user.qry1[69]
+!ERROR: 'batcalc.*' undefined in user.qry1[71]
+!ERROR: 'algebra.join' undefined in user.qry1[78]
+!ERROR: 'batcalc.*' undefined in user.qry1[80]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[81]
+!ERROR: 'algebra.join' undefined in user.qry1[85]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[86]
+!ERROR: 'algebra.join' undefined in user.qry1[90]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[91]
+!ERROR: 'algebra.join' undefined in user.qry1[96]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[97]
+!ERROR: 'aggrX3.count' undefined in user.qry1[99]
+!ERROR: 'sql.column' undefined in user.qry1[100]
+!ERROR: 'sql.column' undefined in user.qry1[101]
+!ERROR: 'sql.column' undefined in user.qry1[102]
+!ERROR: 'sql.column' undefined in user.qry1[103]
+!ERROR: 'sql.column' undefined in user.qry1[104]
+!ERROR: 'sql.column' undefined in user.qry1[105]
+!ERROR: 'sql.column' undefined in user.qry1[106]
+!ERROR: 'sql.column' undefined in user.qry1[107]
+!ERROR: 'sql.column' undefined in user.qry1[108]
+!ERROR: 'sql.column' undefined in user.qry1[109]
+!ERROR: 'sql.output' undefined in user.qry1[110]
+Optimizer aliasRemoval optimizer failed
+function user.qry1():void;	# 0  (qry1:void)
+    V3 := sql.bind("sys","lineitem","l_shipdate",0);	# 1  (V3:bat[:any,:any])<-(_2:str)(_3:str)(_4:str)(_5:int)
+    V8 := sql.bind_dbat("sys","lineitem",0);	# 2  (V8:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V9 := bat.reverse(V8);	# 3 BKCreverse (V9:bat[:any,:any])<-(V8:bat[:any,:any])
+    V10 := algebra.kdiff(V3,V9);	# 4 ALGkdiff (V10:bat[:oid,:any])<-(V3:bat[:any,:any])(V9:bat[:any,:any])
+    V14 := algebra.uselect(V10,nil,nil);	# 5 ALGuselect (V14:bat[:oid,:void])<-(V10:bat[:oid,:any])(_10:void)(_10:void)
+    V17 := algebra.tmark(V14,0@0);	# 6  unknown (V17:any)<-(V14:bat[:oid,:void])(_12:oid)
+    V18 := bat.reverse(V17);	# 7  unknown (V18:any)<-(V17:any)
+    V19 := sql.bind("sys","lineitem","l_returnflag",0);	# 8  (V19:bat[:any,:any])<-(_2:str)(_3:str)(_15:str)(_5:int)
+    V21 := sql.bind_dbat("sys","lineitem",0);	# 9  (V21:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V22 := bat.reverse(V21);	# 10 BKCreverse (V22:bat[:any,:any])<-(V21:bat[:any,:any])
+    V23 := algebra.kdiff(V19,V22);	# 11 ALGkdiff (V23:bat[:oid,:any])<-(V19:bat[:any,:any])(V22:bat[:any,:any])
+    V24 := algebra.join(V18,V23);	# 12  unknown (V24:any)<-(V18:any)(V23:bat[:oid,:any])
+    V25 := group.group(V24);	# 13  unknown (V25:any)<-(V24:any)
+    V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 14  (V26:bat[:any,:any])<-(_2:str)(_3:str)(_22:str)(_5:int)
+    V28 := sql.bind_dbat("sys","lineitem",0);	# 15  (V28:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V29 := bat.reverse(V28);	# 16 BKCreverse (V29:bat[:any,:any])<-(V28:bat[:any,:any])
+    V30 := algebra.kdiff(V26,V29);	# 17 ALGkdiff (V30:bat[:oid,:any])<-(V26:bat[:any,:any])(V29:bat[:any,:any])
+    V31 := algebra.join(V18,V30);	# 18  unknown (V31:any)<-(V18:any)(V30:bat[:oid,:any])
+    V32 := group.group(V25,V31);	# 19  unknown (V32:any)<-(V25:any)(V31:any)
+    V33 := algebra.tunique(V32);	# 20  unknown (V33:any)<-(V32:any)
+    V34 := bat.mirror(V33);	# 21  unknown (V34:any)<-(V33:any)
+    V35 := sql.bind_dbat("sys","lineitem",0);	# 22  (V35:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V36 := bat.reverse(V35);	# 23 BKCreverse (V36:bat[:any,:any])<-(V35:bat[:any,:any])
+    V37 := algebra.kdiff(V19,V36);	# 24 ALGkdiff (V37:bat[:oid,:any])<-(V19:bat[:any,:any])(V36:bat[:any,:any])
+    V38 := algebra.join(V18,V37);	# 25  unknown (V38:any)<-(V18:any)(V37:bat[:oid,:any])
+    V39 := algebra.join(V34,V38);	# 26  unknown (V39:any)<-(V34:any)(V38:any)
+    V40 := algebra.tsort(V39);	# 27  unknown (V40:any)<-(V39:any)
+    V41 := sql.bind_dbat("sys","lineitem",0);	# 28  (V41:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V45 := bat.reverse(V41);	# 29 BKCreverse (V45:bat[:any,:any])<-(V41:bat[:any,:any])
+    V46 := algebra.kdiff(V26,V45);	# 30 ALGkdiff (V46:bat[:oid,:any])<-(V26:bat[:any,:any])(V45:bat[:any,:any])
+    V47 := algebra.join(V18,V46);	# 31  unknown (V47:any)<-(V18:any)(V46:bat[:oid,:any])
+    V48 := algebra.join(V34,V47);	# 32  unknown (V48:any)<-(V34:any)(V47:any)
+    V49 := group.refine(V40,V48);	# 33  unknown (V49:any)<-(V40:any)(V48:any)
+    V50 := sql.bind("sys","lineitem","l_quantity",0);	# 34  (V50:bat[:any,:any])<-(_37:str)(_38:str)(_46:str)(_39:int)
+    V52 := sql.bind_dbat("sys","lineitem",0);	# 35  (V52:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V53 := bat.reverse(V52);	# 36 BKCreverse (V53:bat[:any,:any])<-(V52:bat[:any,:any])
+    V54 := algebra.kdiff(V50,V53);	# 37 ALGkdiff (V54:bat[:oid,:any])<-(V50:bat[:any,:any])(V53:bat[:any,:any])
+    V55 := algebra.join(V18,V54);	# 38  unknown (V55:any)<-(V18:any)(V54:bat[:oid,:any])
+    V56 := aggrX3.sum(V55,V32,V34);	# 39  unknown (V56:any)<-(V55:any)(V32:any)(V34:any)
+    V57 := sql.bind("sys","lineitem","l_extendedprice",0);	# 40  (V57:bat[:any,:any])<-(_37:str)(_38:str)(_53:str)(_39:int)
+    V59 := sql.bind_dbat("sys","lineitem",0);	# 41  (V59:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V60 := bat.reverse(V59);	# 42 BKCreverse (V60:bat[:any,:any])<-(V59:bat[:any,:any])
+    V61 := algebra.kdiff(V57,V60);	# 43 ALGkdiff (V61:bat[:oid,:any])<-(V57:bat[:any,:any])(V60:bat[:any,:any])
+    V62 := algebra.join(V18,V61);	# 44  unknown (V62:any)<-(V18:any)(V61:bat[:oid,:any])
+    V63 := aggrX3.sum(V62,V32,V34);	# 45  unknown (V63:any)<-(V62:any)(V32:any)(V34:any)
+    V64 := sql.bind_dbat("sys","lineitem",0);	# 46  (V64:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V65 := bat.reverse(V64);	# 47 BKCreverse (V65:bat[:any,:any])<-(V64:bat[:any,:any])
+    V66 := algebra.kdiff(V57,V65);	# 48 ALGkdiff (V66:bat[:oid,:any])<-(V57:bat[:any,:any])(V65:bat[:any,:any])
+    V67 := algebra.join(V18,V66);	# 49  unknown (V67:any)<-(V18:any)(V66:bat[:oid,:any])
+    V69 := calc.lng(1);	# 50 CALCint2lng (V69:lng)<-(_64:int)
+    V71 := calc.*(V69,100);	# 51 CALCbinaryMULlngint (V71:lng)<-(V69:lng)(_66:int)
+    V72 := sql.bind("sys","lineitem","l_discount",0);	# 52  (V72:bat[:any,:any])<-(_37:str)(_38:str)(_68:str)(_39:int)
+    V74 := sql.bind_dbat("sys","lineitem",0);	# 53  (V74:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V78 := bat.reverse(V74);	# 54 BKCreverse (V78:bat[:any,:any])<-(V74:bat[:any,:any])
+    V79 := algebra.kdiff(V72,V78);	# 55 ALGkdiff (V79:bat[:oid,:any])<-(V72:bat[:any,:any])(V78:bat[:any,:any])
+    V80 := algebra.join(V18,V79);	# 56  unknown (V80:any)<-(V18:any)(V79:bat[:oid,:any])
+    V81 := optimizer.multiplex("calc.-",V71,V80);	# 57 OPTmultiplex (V81:any)<-(_77:str)(V71:lng)(V80:any)
+    V83 := batcalc.*(V67,V81);	# 58  unknown (V83:any)<-(V67:any)(V81:any)
+    V85 := aggrX3.sum(V83,V32,V34);	# 59  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
+    V86 := sql.bind_dbat("sys","lineitem",0);	# 60  (V86:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V87 := bat.reverse(V86);	# 61 BKCreverse (V87:bat[:any,:any])<-(V86:bat[:any,:any])
+    V88 := algebra.kdiff(V57,V87);	# 62 ALGkdiff (V88:bat[:oid,:any])<-(V57:bat[:any,:any])(V87:bat[:any,:any])
+    V89 := algebra.join(V18,V88);	# 63  unknown (V89:any)<-(V18:any)(V88:bat[:oid,:any])
+    V90 := calc.lng(1);	# 64 CALCint2lng (V90:lng)<-(_64:int)
+    V91 := calc.*(V90,100);	# 65 CALCbinaryMULlngint (V91:lng)<-(V90:lng)(_66:int)
+    V92 := sql.bind_dbat("sys","lineitem",0);	# 66  (V92:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V93 := bat.reverse(V92);	# 67 BKCreverse (V93:bat[:any,:any])<-(V92:bat[:any,:any])
+    V94 := algebra.kdiff(V72,V93);	# 68 ALGkdiff (V94:bat[:oid,:any])<-(V72:bat[:any,:any])(V93:bat[:any,:any])
+    V95 := algebra.join(V18,V94);	# 69  unknown (V95:any)<-(V18:any)(V94:bat[:oid,:any])
+    V96 := optimizer.multiplex("calc.-",V91,V95);	# 70 OPTmultiplex (V96:any)<-(_77:str)(V91:lng)(V95:any)
+    V97 := batcalc.*(V89,V96);	# 71  unknown (V97:any)<-(V89:any)(V96:any)
+    V98 := calc.lng(1);	# 72 CALCint2lng (V98:lng)<-(_64:int)
+    V99 := calc.*(V98,100);	# 73 CALCbinaryMULlngint (V99:lng)<-(V98:lng)(_66:int)
+    V100 := sql.bind("sys","lineitem","l_tax",0);	# 74  (V100:bat[:any,:any])<-(_70:str)(_71:str)(_95:str)(_72:int)
+    V102 := sql.bind_dbat("sys","lineitem",0);	# 75  (V102:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V103 := bat.reverse(V102);	# 76 BKCreverse (V103:bat[:any,:any])<-(V102:bat[:any,:any])
+    V104 := algebra.kdiff(V100,V103);	# 77 ALGkdiff (V104:bat[:oid,:any])<-(V100:bat[:any,:any])(V103:bat[:any,:any])
+    V105 := algebra.join(V18,V104);	# 78  unknown (V105:any)<-(V18:any)(V104:bat[:oid,:any])
+    V106 := optimizer.multiplex("calc.+",V99,V105);	# 79 OPTmultiplex (V106:any)<-(_101:str)(V99:lng)(V105:any)
+    V108 := batcalc.*(V97,V106);	# 80  unknown (V108:any)<-(V97:any)(V106:any)
+    V109 := aggrX3.sum(V108,V32,V34);	# 81  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
+    V110 := sql.bind_dbat("sys","lineitem",0);	# 82  (V110:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V114 := bat.reverse(V110);	# 83 BKCreverse (V114:bat[:any,:any])<-(V110:bat[:any,:any])
+    V115 := algebra.kdiff(V50,V114);	# 84 ALGkdiff (V115:bat[:oid,:any])<-(V50:bat[:any,:any])(V114:bat[:any,:any])
+    V116 := algebra.join(V18,V115);	# 85  unknown (V116:any)<-(V18:any)(V115:bat[:oid,:any])
+    V117 := aggrX3.avg(V116,V32,V34);	# 86  unknown (V117:any)<-(V116:any)(V32:any)(V34:any)
+    V118 := sql.bind_dbat("sys","lineitem",0);	# 87  (V118:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V119 := bat.reverse(V118);	# 88 BKCreverse (V119:bat[:any,:any])<-(V118:bat[:any,:any])
+    V120 := algebra.kdiff(V57,V119);	# 89 ALGkdiff (V120:bat[:oid,:any])<-(V57:bat[:any,:any])(V119:bat[:any,:any])
+    V121 := algebra.join(V18,V120);	# 90  unknown (V121:any)<-(V18:any)(V120:bat[:oid,:any])
+    V122 := aggrX3.avg(V121,V32,V34);	# 91  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
+    V124 := optimizer.multiplex("calc.round",V122,100);	# 92 OPTmultiplex (V124:any)<-(_118:str)(V122:any)(_119:int)
+    V126 := sql.bind_dbat("sys","lineitem",0);	# 93  (V126:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V127 := bat.reverse(V126);	# 94 BKCreverse (V127:bat[:any,:any])<-(V126:bat[:any,:any])
+    V128 := algebra.kdiff(V72,V127);	# 95 ALGkdiff (V128:bat[:oid,:any])<-(V72:bat[:any,:any])(V127:bat[:any,:any])
+    V129 := algebra.join(V18,V128);	# 96  unknown (V129:any)<-(V18:any)(V128:bat[:oid,:any])
+    V130 := aggrX3.avg(V129,V32,V34);	# 97  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
+    V131 := optimizer.multiplex("calc.round",V130,100);	# 98 OPTmultiplex (V131:any)<-(_118:str)(V130:any)(_119:int)
+    V132 := aggrX3.count(V32,V32,V34);	# 99  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
+    sql.column(V39,"l_returnflag","varchar",1,0);	# 100  unknown (_127:any)<-(V39:any)(_128:str)(_129:str)(_130:int)(_107:int)
+    sql.column(V48,"l_linestatus","varchar",1,0);	# 101  unknown (_131:any)<-(V48:any)(_132:str)(_129:str)(_130:int)(_107:int)
+    sql.column(V56,"sum_qty","bigint",0,0);	# 102  unknown (_133:any)<-(V56:any)(_134:str)(_135:str)(_107:int)(_107:int)
+    sql.column(V63,"sum_base_price","decimal",19,2);	# 103  unknown (_136:any)<-(V63:any)(_137:str)(_138:str)(_139:int)(_140:int)
+    sql.column(V85,"sum_disc_price","decimal",19,4);	# 104  unknown (_141:any)<-(V85:any)(_142:str)(_138:str)(_139:int)(_143:int)
+    sql.column(V109,"sum_charge","decimal",19,6);	# 105  unknown (_144:any)<-(V109:any)(_145:str)(_138:str)(_139:int)(_146:int)
+    sql.column(V117,"avg_qty","double",53,0);	# 106  unknown (_147:any)<-(V117:any)(_148:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V124,"avg_price","double",53,0);	# 107  unknown (_152:any)<-(V124:any)(_153:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V131,"avg_disc","double",53,0);	# 108  unknown (_154:any)<-(V131:any)(_155:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V132,"count_order","int",0,0);	# 109  unknown (_156:any)<-(V132:any)(_157:str)(_158:str)(_151:int)(_151:int)
+    sql.output(V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);	# 110  unknown (_159:any)<-(V49:any)(V39:any)(V48:any)(V56:any)(V63:any)(V85:any)(V109:any)(V117:any)(V124:any)(V131:any)(V132:any)
+end qry1;	# 111  
+!ERROR: 'algebra.tmark' undefined in user.qry1[10]
+!ERROR: 'bat.reverse' undefined in user.qry1[12]
+!ERROR: 'algebra.join' undefined in user.qry1[19]
+!ERROR: 'group.group' undefined in user.qry1[21]
+!ERROR: 'algebra.join' undefined in user.qry1[28]
+!ERROR: 'group.group' undefined in user.qry1[30]
+!ERROR: 'algebra.tunique' undefined in user.qry1[31]
+!ERROR: 'bat.mirror' undefined in user.qry1[32]
+!ERROR: 'algebra.join' undefined in user.qry1[39]
+!ERROR: 'algebra.join' undefined in user.qry1[41]
+!ERROR: 'algebra.tsort' undefined in user.qry1[42]
+!ERROR: 'algebra.join' undefined in user.qry1[49]
+!ERROR: 'algebra.join' undefined in user.qry1[51]
+!ERROR: 'group.refine' undefined in user.qry1[52]
+!ERROR: 'algebra.join' undefined in user.qry1[59]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[61]
+!ERROR: 'algebra.join' undefined in user.qry1[68]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[70]
+!ERROR: 'algebra.join' undefined in user.qry1[76]
+!ERROR: 'algebra.join' undefined in user.qry1[86]
+!ERROR: 'batcalc.*' undefined in user.qry1[89]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[90]
+!ERROR: 'algebra.join' undefined in user.qry1[96]
+!ERROR: 'algebra.join' undefined in user.qry1[105]
+!ERROR: 'batcalc.*' undefined in user.qry1[108]
+!ERROR: 'algebra.join' undefined in user.qry1[118]
+!ERROR: 'batcalc.*' undefined in user.qry1[121]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[122]
+!ERROR: 'algebra.join' undefined in user.qry1[129]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[131]
+!ERROR: 'algebra.join' undefined in user.qry1[138]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[140]
+!ERROR: 'algebra.join' undefined in user.qry1[148]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[150]
+!ERROR: 'aggrX3.count' undefined in user.qry1[152]
+!ERROR: 'sql.column' undefined in user.qry1[153]
+!ERROR: 'sql.column' undefined in user.qry1[154]
+!ERROR: 'sql.column' undefined in user.qry1[155]
+!ERROR: 'sql.column' undefined in user.qry1[156]
+!ERROR: 'sql.column' undefined in user.qry1[157]
+!ERROR: 'sql.column' undefined in user.qry1[158]
+!ERROR: 'sql.column' undefined in user.qry1[159]
+!ERROR: 'sql.column' undefined in user.qry1[160]
+!ERROR: 'sql.column' undefined in user.qry1[161]
+!ERROR: 'sql.column' undefined in user.qry1[162]
+!ERROR: 'sql.output' undefined in user.qry1[163]
+Optimizer garbageCollector failed
+function user.qry1():void;	# 0  (qry1:void)
+    V3 := sql.bind("sys","lineitem","l_shipdate",0);	# 1  (V3:bat[:any,:any])<-(_2:str)(_3:str)(_4:str)(_5:int)
+    V8 := sql.bind_dbat("sys","lineitem",0);	# 2  (V8:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V9 := bat.reverse(V8);	# 3 BKCreverse (V9:bat[:any,:any])<-(V8:bat[:any,:any])
+    bbp.garbage(V8);	# 4 CMDbbpgarbage (_160:void)<-(V8:bat[:any,:any])
+    V10 := algebra.kdiff(V3,V9);	# 5 ALGkdiff (V10:bat[:oid,:any])<-(V3:bat[:any,:any])(V9:bat[:any,:any])
+    bbp.garbage(V3);	# 6 CMDbbpgarbage (_161:void)<-(V3:bat[:any,:any])
+    bbp.garbage(V9);	# 7 CMDbbpgarbage (_162:void)<-(V9:bat[:any,:any])
+    V14 := algebra.uselect(V10,nil,nil);	# 8 ALGuselect (V14:bat[:oid,:void])<-(V10:bat[:oid,:any])(_10:void)(_10:void)
+    bbp.garbage(V10);	# 9 CMDbbpgarbage (_163:void)<-(V10:bat[:oid,:any])
+    V17 := algebra.tmark(V14,0@0);	# 10  unknown (V17:any)<-(V14:bat[:oid,:void])(_12:oid)
+    bbp.garbage(V14);	# 11 CMDbbpgarbage (_164:void)<-(V14:bat[:oid,:void])
+    V18 := bat.reverse(V17);	# 12  unknown (V18:any)<-(V17:any)
+    V19 := sql.bind("sys","lineitem","l_returnflag",0);	# 13  (V19:bat[:any,:any])<-(_2:str)(_3:str)(_15:str)(_5:int)
+    V21 := sql.bind_dbat("sys","lineitem",0);	# 14  (V21:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V22 := bat.reverse(V21);	# 15 BKCreverse (V22:bat[:any,:any])<-(V21:bat[:any,:any])
+    bbp.garbage(V21);	# 16 CMDbbpgarbage (_165:void)<-(V21:bat[:any,:any])
+    V23 := algebra.kdiff(V19,V22);	# 17 ALGkdiff (V23:bat[:oid,:any])<-(V19:bat[:any,:any])(V22:bat[:any,:any])
+    bbp.garbage(V22);	# 18 CMDbbpgarbage (_166:void)<-(V22:bat[:any,:any])
+    V24 := algebra.join(V18,V23);	# 19  unknown (V24:any)<-(V18:any)(V23:bat[:oid,:any])
+    bbp.garbage(V23);	# 20 CMDbbpgarbage (_167:void)<-(V23:bat[:oid,:any])
+    V25 := group.group(V24);	# 21  unknown (V25:any)<-(V24:any)
+    V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 22  (V26:bat[:any,:any])<-(_2:str)(_3:str)(_22:str)(_5:int)
+    V28 := sql.bind_dbat("sys","lineitem",0);	# 23  (V28:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V29 := bat.reverse(V28);	# 24 BKCreverse (V29:bat[:any,:any])<-(V28:bat[:any,:any])
+    bbp.garbage(V28);	# 25 CMDbbpgarbage (_168:void)<-(V28:bat[:any,:any])
+    V30 := algebra.kdiff(V26,V29);	# 26 ALGkdiff (V30:bat[:oid,:any])<-(V26:bat[:any,:any])(V29:bat[:any,:any])
+    bbp.garbage(V29);	# 27 CMDbbpgarbage (_169:void)<-(V29:bat[:any,:any])
+    V31 := algebra.join(V18,V30);	# 28  unknown (V31:any)<-(V18:any)(V30:bat[:oid,:any])
+    bbp.garbage(V30);	# 29 CMDbbpgarbage (_170:void)<-(V30:bat[:oid,:any])
+    V32 := group.group(V25,V31);	# 30  unknown (V32:any)<-(V25:any)(V31:any)
+    V33 := algebra.tunique(V32);	# 31  unknown (V33:any)<-(V32:any)
+    V34 := bat.mirror(V33);	# 32  unknown (V34:any)<-(V33:any)
+    V35 := sql.bind_dbat("sys","lineitem",0);	# 33  (V35:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V36 := bat.reverse(V35);	# 34 BKCreverse (V36:bat[:any,:any])<-(V35:bat[:any,:any])
+    bbp.garbage(V35);	# 35 CMDbbpgarbage (_171:void)<-(V35:bat[:any,:any])
+    V37 := algebra.kdiff(V19,V36);	# 36 ALGkdiff (V37:bat[:oid,:any])<-(V19:bat[:any,:any])(V36:bat[:any,:any])
+    bbp.garbage(V19);	# 37 CMDbbpgarbage (_172:void)<-(V19:bat[:any,:any])
+    bbp.garbage(V36);	# 38 CMDbbpgarbage (_173:void)<-(V36:bat[:any,:any])
+    V38 := algebra.join(V18,V37);	# 39  unknown (V38:any)<-(V18:any)(V37:bat[:oid,:any])
+    bbp.garbage(V37);	# 40 CMDbbpgarbage (_174:void)<-(V37:bat[:oid,:any])
+    V39 := algebra.join(V34,V38);	# 41  unknown (V39:any)<-(V34:any)(V38:any)
+    V40 := algebra.tsort(V39);	# 42  unknown (V40:any)<-(V39:any)
+    V41 := sql.bind_dbat("sys","lineitem",0);	# 43  (V41:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V45 := bat.reverse(V41);	# 44 BKCreverse (V45:bat[:any,:any])<-(V41:bat[:any,:any])
+    bbp.garbage(V41);	# 45 CMDbbpgarbage (_175:void)<-(V41:bat[:any,:any])
+    V46 := algebra.kdiff(V26,V45);	# 46 ALGkdiff (V46:bat[:oid,:any])<-(V26:bat[:any,:any])(V45:bat[:any,:any])
+    bbp.garbage(V26);	# 47 CMDbbpgarbage (_176:void)<-(V26:bat[:any,:any])
+    bbp.garbage(V45);	# 48 CMDbbpgarbage (_177:void)<-(V45:bat[:any,:any])
+    V47 := algebra.join(V18,V46);	# 49  unknown (V47:any)<-(V18:any)(V46:bat[:oid,:any])
+    bbp.garbage(V46);	# 50 CMDbbpgarbage (_178:void)<-(V46:bat[:oid,:any])
+    V48 := algebra.join(V34,V47);	# 51  unknown (V48:any)<-(V34:any)(V47:any)
+    V49 := group.refine(V40,V48);	# 52  unknown (V49:any)<-(V40:any)(V48:any)
+    V50 := sql.bind("sys","lineitem","l_quantity",0);	# 53  (V50:bat[:any,:any])<-(_37:str)(_38:str)(_46:str)(_39:int)
+    V52 := sql.bind_dbat("sys","lineitem",0);	# 54  (V52:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V53 := bat.reverse(V52);	# 55 BKCreverse (V53:bat[:any,:any])<-(V52:bat[:any,:any])
+    bbp.garbage(V52);	# 56 CMDbbpgarbage (_179:void)<-(V52:bat[:any,:any])
+    V54 := algebra.kdiff(V50,V53);	# 57 ALGkdiff (V54:bat[:oid,:any])<-(V50:bat[:any,:any])(V53:bat[:any,:any])
+    bbp.garbage(V53);	# 58 CMDbbpgarbage (_180:void)<-(V53:bat[:any,:any])
+    V55 := algebra.join(V18,V54);	# 59  unknown (V55:any)<-(V18:any)(V54:bat[:oid,:any])
+    bbp.garbage(V54);	# 60 CMDbbpgarbage (_181:void)<-(V54:bat[:oid,:any])
+    V56 := aggrX3.sum(V55,V32,V34);	# 61  unknown (V56:any)<-(V55:any)(V32:any)(V34:any)
+    V57 := sql.bind("sys","lineitem","l_extendedprice",0);	# 62  (V57:bat[:any,:any])<-(_37:str)(_38:str)(_53:str)(_39:int)
+    V59 := sql.bind_dbat("sys","lineitem",0);	# 63  (V59:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V60 := bat.reverse(V59);	# 64 BKCreverse (V60:bat[:any,:any])<-(V59:bat[:any,:any])
+    bbp.garbage(V59);	# 65 CMDbbpgarbage (_182:void)<-(V59:bat[:any,:any])
+    V61 := algebra.kdiff(V57,V60);	# 66 ALGkdiff (V61:bat[:oid,:any])<-(V57:bat[:any,:any])(V60:bat[:any,:any])
+    bbp.garbage(V60);	# 67 CMDbbpgarbage (_183:void)<-(V60:bat[:any,:any])
+    V62 := algebra.join(V18,V61);	# 68  unknown (V62:any)<-(V18:any)(V61:bat[:oid,:any])
+    bbp.garbage(V61);	# 69 CMDbbpgarbage (_184:void)<-(V61:bat[:oid,:any])
+    V63 := aggrX3.sum(V62,V32,V34);	# 70  unknown (V63:any)<-(V62:any)(V32:any)(V34:any)
+    V64 := sql.bind_dbat("sys","lineitem",0);	# 71  (V64:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V65 := bat.reverse(V64);	# 72 BKCreverse (V65:bat[:any,:any])<-(V64:bat[:any,:any])
+    bbp.garbage(V64);	# 73 CMDbbpgarbage (_185:void)<-(V64:bat[:any,:any])
+    V66 := algebra.kdiff(V57,V65);	# 74 ALGkdiff (V66:bat[:oid,:any])<-(V57:bat[:any,:any])(V65:bat[:any,:any])
+    bbp.garbage(V65);	# 75 CMDbbpgarbage (_186:void)<-(V65:bat[:any,:any])
+    V67 := algebra.join(V18,V66);	# 76  unknown (V67:any)<-(V18:any)(V66:bat[:oid,:any])
+    bbp.garbage(V66);	# 77 CMDbbpgarbage (_187:void)<-(V66:bat[:oid,:any])
+    V69 := calc.lng(1);	# 78 CALCint2lng (V69:lng)<-(_64:int)
+    V71 := calc.*(V69,100);	# 79 CALCbinaryMULlngint (V71:lng)<-(V69:lng)(_66:int)
+    V72 := sql.bind("sys","lineitem","l_discount",0);	# 80  (V72:bat[:any,:any])<-(_37:str)(_38:str)(_68:str)(_39:int)
+    V74 := sql.bind_dbat("sys","lineitem",0);	# 81  (V74:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V78 := bat.reverse(V74);	# 82 BKCreverse (V78:bat[:any,:any])<-(V74:bat[:any,:any])
+    bbp.garbage(V74);	# 83 CMDbbpgarbage (_188:void)<-(V74:bat[:any,:any])
+    V79 := algebra.kdiff(V72,V78);	# 84 ALGkdiff (V79:bat[:oid,:any])<-(V72:bat[:any,:any])(V78:bat[:any,:any])
+    bbp.garbage(V78);	# 85 CMDbbpgarbage (_189:void)<-(V78:bat[:any,:any])
+    V80 := algebra.join(V18,V79);	# 86  unknown (V80:any)<-(V18:any)(V79:bat[:oid,:any])
+    bbp.garbage(V79);	# 87 CMDbbpgarbage (_190:void)<-(V79:bat[:oid,:any])
+    V81 := optimizer.multiplex("calc.-",V71,V80);	# 88 OPTmultiplex (V81:any)<-(_77:str)(V71:lng)(V80:any)
+    V83 := batcalc.*(V67,V81);	# 89  unknown (V83:any)<-(V67:any)(V81:any)
+    V85 := aggrX3.sum(V83,V32,V34);	# 90  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
+    V86 := sql.bind_dbat("sys","lineitem",0);	# 91  (V86:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V87 := bat.reverse(V86);	# 92 BKCreverse (V87:bat[:any,:any])<-(V86:bat[:any,:any])
+    bbp.garbage(V86);	# 93 CMDbbpgarbage (_191:void)<-(V86:bat[:any,:any])
+    V88 := algebra.kdiff(V57,V87);	# 94 ALGkdiff (V88:bat[:oid,:any])<-(V57:bat[:any,:any])(V87:bat[:any,:any])
+    bbp.garbage(V87);	# 95 CMDbbpgarbage (_192:void)<-(V87:bat[:any,:any])
+    V89 := algebra.join(V18,V88);	# 96  unknown (V89:any)<-(V18:any)(V88:bat[:oid,:any])
+    bbp.garbage(V88);	# 97 CMDbbpgarbage (_193:void)<-(V88:bat[:oid,:any])
+    V90 := calc.lng(1);	# 98 CALCint2lng (V90:lng)<-(_64:int)
+    V91 := calc.*(V90,100);	# 99 CALCbinaryMULlngint (V91:lng)<-(V90:lng)(_66:int)
+    V92 := sql.bind_dbat("sys","lineitem",0);	# 100  (V92:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V93 := bat.reverse(V92);	# 101 BKCreverse (V93:bat[:any,:any])<-(V92:bat[:any,:any])
+    bbp.garbage(V92);	# 102 CMDbbpgarbage (_194:void)<-(V92:bat[:any,:any])
+    V94 := algebra.kdiff(V72,V93);	# 103 ALGkdiff (V94:bat[:oid,:any])<-(V72:bat[:any,:any])(V93:bat[:any,:any])
+    bbp.garbage(V93);	# 104 CMDbbpgarbage (_195:void)<-(V93:bat[:any,:any])
+    V95 := algebra.join(V18,V94);	# 105  unknown (V95:any)<-(V18:any)(V94:bat[:oid,:any])
+    bbp.garbage(V94);	# 106 CMDbbpgarbage (_196:void)<-(V94:bat[:oid,:any])
+    V96 := optimizer.multiplex("calc.-",V91,V95);	# 107 OPTmultiplex (V96:any)<-(_77:str)(V91:lng)(V95:any)
+    V97 := batcalc.*(V89,V96);	# 108  unknown (V97:any)<-(V89:any)(V96:any)
+    V98 := calc.lng(1);	# 109 CALCint2lng (V98:lng)<-(_64:int)
+    V99 := calc.*(V98,100);	# 110 CALCbinaryMULlngint (V99:lng)<-(V98:lng)(_66:int)
+    V100 := sql.bind("sys","lineitem","l_tax",0);	# 111  (V100:bat[:any,:any])<-(_70:str)(_71:str)(_95:str)(_72:int)
+    V102 := sql.bind_dbat("sys","lineitem",0);	# 112  (V102:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V103 := bat.reverse(V102);	# 113 BKCreverse (V103:bat[:any,:any])<-(V102:bat[:any,:any])
+    bbp.garbage(V102);	# 114 CMDbbpgarbage (_197:void)<-(V102:bat[:any,:any])
+    V104 := algebra.kdiff(V100,V103);	# 115 ALGkdiff (V104:bat[:oid,:any])<-(V100:bat[:any,:any])(V103:bat[:any,:any])
+    bbp.garbage(V100);	# 116 CMDbbpgarbage (_198:void)<-(V100:bat[:any,:any])
+    bbp.garbage(V103);	# 117 CMDbbpgarbage (_199:void)<-(V103:bat[:any,:any])
+    V105 := algebra.join(V18,V104);	# 118  unknown (V105:any)<-(V18:any)(V104:bat[:oid,:any])
+    bbp.garbage(V104);	# 119 CMDbbpgarbage (_200:void)<-(V104:bat[:oid,:any])
+    V106 := optimizer.multiplex("calc.+",V99,V105);	# 120 OPTmultiplex (V106:any)<-(_101:str)(V99:lng)(V105:any)
+    V108 := batcalc.*(V97,V106);	# 121  unknown (V108:any)<-(V97:any)(V106:any)
+    V109 := aggrX3.sum(V108,V32,V34);	# 122  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
+    V110 := sql.bind_dbat("sys","lineitem",0);	# 123  (V110:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V114 := bat.reverse(V110);	# 124 BKCreverse (V114:bat[:any,:any])<-(V110:bat[:any,:any])
+    bbp.garbage(V110);	# 125 CMDbbpgarbage (_201:void)<-(V110:bat[:any,:any])
+    V115 := algebra.kdiff(V50,V114);	# 126 ALGkdiff (V115:bat[:oid,:any])<-(V50:bat[:any,:any])(V114:bat[:any,:any])
+    bbp.garbage(V50);	# 127 CMDbbpgarbage (_202:void)<-(V50:bat[:any,:any])
+    bbp.garbage(V114);	# 128 CMDbbpgarbage (_203:void)<-(V114:bat[:any,:any])
+    V116 := algebra.join(V18,V115);	# 129  unknown (V116:any)<-(V18:any)(V115:bat[:oid,:any])
+    bbp.garbage(V115);	# 130 CMDbbpgarbage (_204:void)<-(V115:bat[:oid,:any])
+    V117 := aggrX3.avg(V116,V32,V34);	# 131  unknown (V117:any)<-(V116:any)(V32:any)(V34:any)
+    V118 := sql.bind_dbat("sys","lineitem",0);	# 132  (V118:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V119 := bat.reverse(V118);	# 133 BKCreverse (V119:bat[:any,:any])<-(V118:bat[:any,:any])
+    bbp.garbage(V118);	# 134 CMDbbpgarbage (_205:void)<-(V118:bat[:any,:any])
+    V120 := algebra.kdiff(V57,V119);	# 135 ALGkdiff (V120:bat[:oid,:any])<-(V57:bat[:any,:any])(V119:bat[:any,:any])
+    bbp.garbage(V57);	# 136 CMDbbpgarbage (_206:void)<-(V57:bat[:any,:any])
+    bbp.garbage(V119);	# 137 CMDbbpgarbage (_207:void)<-(V119:bat[:any,:any])
+    V121 := algebra.join(V18,V120);	# 138  unknown (V121:any)<-(V18:any)(V120:bat[:oid,:any])
+    bbp.garbage(V120);	# 139 CMDbbpgarbage (_208:void)<-(V120:bat[:oid,:any])
+    V122 := aggrX3.avg(V121,V32,V34);	# 140  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
+    V124 := optimizer.multiplex("calc.round",V122,100);	# 141 OPTmultiplex (V124:any)<-(_118:str)(V122:any)(_119:int)
+    V126 := sql.bind_dbat("sys","lineitem",0);	# 142  (V126:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V127 := bat.reverse(V126);	# 143 BKCreverse (V127:bat[:any,:any])<-(V126:bat[:any,:any])
+    bbp.garbage(V126);	# 144 CMDbbpgarbage (_209:void)<-(V126:bat[:any,:any])
+    V128 := algebra.kdiff(V72,V127);	# 145 ALGkdiff (V128:bat[:oid,:any])<-(V72:bat[:any,:any])(V127:bat[:any,:any])
+    bbp.garbage(V72);	# 146 CMDbbpgarbage (_210:void)<-(V72:bat[:any,:any])
+    bbp.garbage(V127);	# 147 CMDbbpgarbage (_211:void)<-(V127:bat[:any,:any])
+    V129 := algebra.join(V18,V128);	# 148  unknown (V129:any)<-(V18:any)(V128:bat[:oid,:any])
+    bbp.garbage(V128);	# 149 CMDbbpgarbage (_212:void)<-(V128:bat[:oid,:any])
+    V130 := aggrX3.avg(V129,V32,V34);	# 150  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
+    V131 := optimizer.multiplex("calc.round",V130,100);	# 151 OPTmultiplex (V131:any)<-(_118:str)(V130:any)(_119:int)
+    V132 := aggrX3.count(V32,V32,V34);	# 152  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
+    sql.column(V39,"l_returnflag","varchar",1,0);	# 153  unknown (_127:any)<-(V39:any)(_128:str)(_129:str)(_130:int)(_107:int)
+    sql.column(V48,"l_linestatus","varchar",1,0);	# 154  unknown (_131:any)<-(V48:any)(_132:str)(_129:str)(_130:int)(_107:int)
+    sql.column(V56,"sum_qty","bigint",0,0);	# 155  unknown (_133:any)<-(V56:any)(_134:str)(_135:str)(_107:int)(_107:int)
+    sql.column(V63,"sum_base_price","decimal",19,2);	# 156  unknown (_136:any)<-(V63:any)(_137:str)(_138:str)(_139:int)(_140:int)
+    sql.column(V85,"sum_disc_price","decimal",19,4);	# 157  unknown (_141:any)<-(V85:any)(_142:str)(_138:str)(_139:int)(_143:int)
+    sql.column(V109,"sum_charge","decimal",19,6);	# 158  unknown (_144:any)<-(V109:any)(_145:str)(_138:str)(_139:int)(_146:int)
+    sql.column(V117,"avg_qty","double",53,0);	# 159  unknown (_147:any)<-(V117:any)(_148:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V124,"avg_price","double",53,0);	# 160  unknown (_152:any)<-(V124:any)(_153:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V131,"avg_disc","double",53,0);	# 161  unknown (_154:any)<-(V131:any)(_155:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V132,"count_order","int",0,0);	# 162  unknown (_156:any)<-(V132:any)(_157:str)(_158:str)(_151:int)(_151:int)
+    sql.output(V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);	# 163  unknown (_159:any)<-(V49:any)(V39:any)(V48:any)(V56:any)(V63:any)(V85:any)(V109:any)(V117:any)(V124:any)(V131:any)(V132:any)
+end qry1;	# 164  
+!ERROR: 'algebra.tmark' undefined in user.qry1[10]
+!ERROR: 'bat.reverse' undefined in user.qry1[12]
+!ERROR: 'algebra.join' undefined in user.qry1[19]
+!ERROR: 'group.group' undefined in user.qry1[21]
+!ERROR: 'algebra.join' undefined in user.qry1[28]
+!ERROR: 'group.group' undefined in user.qry1[30]
+!ERROR: 'algebra.tunique' undefined in user.qry1[31]
+!ERROR: 'bat.mirror' undefined in user.qry1[32]
+!ERROR: 'algebra.join' undefined in user.qry1[39]
+!ERROR: 'algebra.join' undefined in user.qry1[41]
+!ERROR: 'algebra.tsort' undefined in user.qry1[42]
+!ERROR: 'algebra.join' undefined in user.qry1[49]
+!ERROR: 'algebra.join' undefined in user.qry1[51]
+!ERROR: 'group.refine' undefined in user.qry1[52]
+!ERROR: 'algebra.join' undefined in user.qry1[59]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[61]
+!ERROR: 'algebra.join' undefined in user.qry1[68]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[70]
+!ERROR: 'algebra.join' undefined in user.qry1[76]
+!ERROR: 'algebra.join' undefined in user.qry1[86]
+!ERROR: 'batcalc.*' undefined in user.qry1[89]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[90]
+!ERROR: 'algebra.join' undefined in user.qry1[96]
+!ERROR: 'algebra.join' undefined in user.qry1[105]
+!ERROR: 'batcalc.*' undefined in user.qry1[108]
+!ERROR: 'algebra.join' undefined in user.qry1[118]
+!ERROR: 'batcalc.*' undefined in user.qry1[121]
+!ERROR: 'aggrX3.sum' undefined in user.qry1[122]
+!ERROR: 'algebra.join' undefined in user.qry1[129]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[131]
+!ERROR: 'algebra.join' undefined in user.qry1[138]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[140]
+!ERROR: 'algebra.join' undefined in user.qry1[148]
+!ERROR: 'aggrX3.avg' undefined in user.qry1[150]
+!ERROR: 'aggrX3.count' undefined in user.qry1[152]
+!ERROR: 'sql.column' undefined in user.qry1[153]
+!ERROR: 'sql.column' undefined in user.qry1[154]
+!ERROR: 'sql.column' undefined in user.qry1[155]
+!ERROR: 'sql.column' undefined in user.qry1[156]
+!ERROR: 'sql.column' undefined in user.qry1[157]
+!ERROR: 'sql.column' undefined in user.qry1[158]
+!ERROR: 'sql.column' undefined in user.qry1[159]
+!ERROR: 'sql.column' undefined in user.qry1[160]
+!ERROR: 'sql.column' undefined in user.qry1[161]
+!ERROR: 'sql.column' undefined in user.qry1[162]
+!ERROR: 'sql.output' undefined in user.qry1[163]
+Optimizer garbageCollector optimizer failed
+function user.qry1():void;	# 0  (qry1:void)
+    V3 := sql.bind("sys","lineitem","l_shipdate",0);	# 1  (V3:bat[:any,:any])<-(_2:str)(_3:str)(_4:str)(_5:int)
+    V8 := sql.bind_dbat("sys","lineitem",0);	# 2  (V8:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V9 := bat.reverse(V8);	# 3 BKCreverse (V9:bat[:any,:any])<-(V8:bat[:any,:any])
+    bbp.garbage(V8);	# 4 CMDbbpgarbage (_160:void)<-(V8:bat[:any,:any])
+    V10 := algebra.kdiff(V3,V9);	# 5 ALGkdiff (V10:bat[:oid,:any])<-(V3:bat[:any,:any])(V9:bat[:any,:any])
+    bbp.garbage(V3);	# 6 CMDbbpgarbage (_161:void)<-(V3:bat[:any,:any])
+    bbp.garbage(V9);	# 7 CMDbbpgarbage (_162:void)<-(V9:bat[:any,:any])
+    V14 := algebra.uselect(V10,nil,nil);	# 8 ALGuselect (V14:bat[:oid,:void])<-(V10:bat[:oid,:any])(_10:void)(_10:void)
+    bbp.garbage(V10);	# 9 CMDbbpgarbage (_163:void)<-(V10:bat[:oid,:any])
+    V17 := algebra.tmark(V14,0@0);	# 10  unknown (V17:any)<-(V14:bat[:oid,:void])(_12:oid)
+    bbp.garbage(V14);	# 11 CMDbbpgarbage (_164:void)<-(V14:bat[:oid,:void])
+    V18 := bat.reverse(V17);	# 12  unknown (V18:any)<-(V17:any)
+    V19 := sql.bind("sys","lineitem","l_returnflag",0);	# 13  (V19:bat[:any,:any])<-(_2:str)(_3:str)(_15:str)(_5:int)
+    V21 := sql.bind_dbat("sys","lineitem",0);	# 14  (V21:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V22 := bat.reverse(V21);	# 15 BKCreverse (V22:bat[:any,:any])<-(V21:bat[:any,:any])
+    bbp.garbage(V21);	# 16 CMDbbpgarbage (_165:void)<-(V21:bat[:any,:any])
+    V23 := algebra.kdiff(V19,V22);	# 17 ALGkdiff (V23:bat[:oid,:any])<-(V19:bat[:any,:any])(V22:bat[:any,:any])
+    bbp.garbage(V22);	# 18 CMDbbpgarbage (_166:void)<-(V22:bat[:any,:any])
+    V24 := algebra.join(V18,V23);	# 19  unknown (V24:any)<-(V18:any)(V23:bat[:oid,:any])
+    bbp.garbage(V23);	# 20 CMDbbpgarbage (_167:void)<-(V23:bat[:oid,:any])
+    V25 := group.group(V24);	# 21  unknown (V25:any)<-(V24:any)
+    V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 22  (V26:bat[:any,:any])<-(_2:str)(_3:str)(_22:str)(_5:int)
+    V28 := sql.bind_dbat("sys","lineitem",0);	# 23  (V28:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V29 := bat.reverse(V28);	# 24 BKCreverse (V29:bat[:any,:any])<-(V28:bat[:any,:any])
+    bbp.garbage(V28);	# 25 CMDbbpgarbage (_168:void)<-(V28:bat[:any,:any])
+    V30 := algebra.kdiff(V26,V29);	# 26 ALGkdiff (V30:bat[:oid,:any])<-(V26:bat[:any,:any])(V29:bat[:any,:any])
+    bbp.garbage(V29);	# 27 CMDbbpgarbage (_169:void)<-(V29:bat[:any,:any])
+    V31 := algebra.join(V18,V30);	# 28  unknown (V31:any)<-(V18:any)(V30:bat[:oid,:any])
+    bbp.garbage(V30);	# 29 CMDbbpgarbage (_170:void)<-(V30:bat[:oid,:any])
+    V32 := group.group(V25,V31);	# 30  unknown (V32:any)<-(V25:any)(V31:any)
+    V33 := algebra.tunique(V32);	# 31  unknown (V33:any)<-(V32:any)
+    V34 := bat.mirror(V33);	# 32  unknown (V34:any)<-(V33:any)
+    V35 := sql.bind_dbat("sys","lineitem",0);	# 33  (V35:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
+    V36 := bat.reverse(V35);	# 34 BKCreverse (V36:bat[:any,:any])<-(V35:bat[:any,:any])
+    bbp.garbage(V35);	# 35 CMDbbpgarbage (_171:void)<-(V35:bat[:any,:any])
+    V37 := algebra.kdiff(V19,V36);	# 36 ALGkdiff (V37:bat[:oid,:any])<-(V19:bat[:any,:any])(V36:bat[:any,:any])
+    bbp.garbage(V19);	# 37 CMDbbpgarbage (_172:void)<-(V19:bat[:any,:any])
+    bbp.garbage(V36);	# 38 CMDbbpgarbage (_173:void)<-(V36:bat[:any,:any])
+    V38 := algebra.join(V18,V37);	# 39  unknown (V38:any)<-(V18:any)(V37:bat[:oid,:any])
+    bbp.garbage(V37);	# 40 CMDbbpgarbage (_174:void)<-(V37:bat[:oid,:any])
+    V39 := algebra.join(V34,V38);	# 41  unknown (V39:any)<-(V34:any)(V38:any)
+    V40 := algebra.tsort(V39);	# 42  unknown (V40:any)<-(V39:any)
+    V41 := sql.bind_dbat("sys","lineitem",0);	# 43  (V41:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V45 := bat.reverse(V41);	# 44 BKCreverse (V45:bat[:any,:any])<-(V41:bat[:any,:any])
+    bbp.garbage(V41);	# 45 CMDbbpgarbage (_175:void)<-(V41:bat[:any,:any])
+    V46 := algebra.kdiff(V26,V45);	# 46 ALGkdiff (V46:bat[:oid,:any])<-(V26:bat[:any,:any])(V45:bat[:any,:any])
+    bbp.garbage(V26);	# 47 CMDbbpgarbage (_176:void)<-(V26:bat[:any,:any])
+    bbp.garbage(V45);	# 48 CMDbbpgarbage (_177:void)<-(V45:bat[:any,:any])
+    V47 := algebra.join(V18,V46);	# 49  unknown (V47:any)<-(V18:any)(V46:bat[:oid,:any])
+    bbp.garbage(V46);	# 50 CMDbbpgarbage (_178:void)<-(V46:bat[:oid,:any])
+    V48 := algebra.join(V34,V47);	# 51  unknown (V48:any)<-(V34:any)(V47:any)
+    V49 := group.refine(V40,V48);	# 52  unknown (V49:any)<-(V40:any)(V48:any)
+    V50 := sql.bind("sys","lineitem","l_quantity",0);	# 53  (V50:bat[:any,:any])<-(_37:str)(_38:str)(_46:str)(_39:int)
+    V52 := sql.bind_dbat("sys","lineitem",0);	# 54  (V52:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V53 := bat.reverse(V52);	# 55 BKCreverse (V53:bat[:any,:any])<-(V52:bat[:any,:any])
+    bbp.garbage(V52);	# 56 CMDbbpgarbage (_179:void)<-(V52:bat[:any,:any])
+    V54 := algebra.kdiff(V50,V53);	# 57 ALGkdiff (V54:bat[:oid,:any])<-(V50:bat[:any,:any])(V53:bat[:any,:any])
+    bbp.garbage(V53);	# 58 CMDbbpgarbage (_180:void)<-(V53:bat[:any,:any])
+    V55 := algebra.join(V18,V54);	# 59  unknown (V55:any)<-(V18:any)(V54:bat[:oid,:any])
+    bbp.garbage(V54);	# 60 CMDbbpgarbage (_181:void)<-(V54:bat[:oid,:any])
+    V56 := aggrX3.sum(V55,V32,V34);	# 61  unknown (V56:any)<-(V55:any)(V32:any)(V34:any)
+    V57 := sql.bind("sys","lineitem","l_extendedprice",0);	# 62  (V57:bat[:any,:any])<-(_37:str)(_38:str)(_53:str)(_39:int)
+    V59 := sql.bind_dbat("sys","lineitem",0);	# 63  (V59:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V60 := bat.reverse(V59);	# 64 BKCreverse (V60:bat[:any,:any])<-(V59:bat[:any,:any])
+    bbp.garbage(V59);	# 65 CMDbbpgarbage (_182:void)<-(V59:bat[:any,:any])
+    V61 := algebra.kdiff(V57,V60);	# 66 ALGkdiff (V61:bat[:oid,:any])<-(V57:bat[:any,:any])(V60:bat[:any,:any])
+    bbp.garbage(V60);	# 67 CMDbbpgarbage (_183:void)<-(V60:bat[:any,:any])
+    V62 := algebra.join(V18,V61);	# 68  unknown (V62:any)<-(V18:any)(V61:bat[:oid,:any])
+    bbp.garbage(V61);	# 69 CMDbbpgarbage (_184:void)<-(V61:bat[:oid,:any])
+    V63 := aggrX3.sum(V62,V32,V34);	# 70  unknown (V63:any)<-(V62:any)(V32:any)(V34:any)
+    V64 := sql.bind_dbat("sys","lineitem",0);	# 71  (V64:bat[:any,:any])<-(_37:str)(_38:str)(_39:int)
+    V65 := bat.reverse(V64);	# 72 BKCreverse (V65:bat[:any,:any])<-(V64:bat[:any,:any])
+    bbp.garbage(V64);	# 73 CMDbbpgarbage (_185:void)<-(V64:bat[:any,:any])
+    V66 := algebra.kdiff(V57,V65);	# 74 ALGkdiff (V66:bat[:oid,:any])<-(V57:bat[:any,:any])(V65:bat[:any,:any])
+    bbp.garbage(V65);	# 75 CMDbbpgarbage (_186:void)<-(V65:bat[:any,:any])
+    V67 := algebra.join(V18,V66);	# 76  unknown (V67:any)<-(V18:any)(V66:bat[:oid,:any])
+    bbp.garbage(V66);	# 77 CMDbbpgarbage (_187:void)<-(V66:bat[:oid,:any])
+    V69 := calc.lng(1);	# 78 CALCint2lng (V69:lng)<-(_64:int)
+    V71 := calc.*(V69,100);	# 79 CALCbinaryMULlngint (V71:lng)<-(V69:lng)(_66:int)
+    V72 := sql.bind("sys","lineitem","l_discount",0);	# 80  (V72:bat[:any,:any])<-(_37:str)(_38:str)(_68:str)(_39:int)
+    V74 := sql.bind_dbat("sys","lineitem",0);	# 81  (V74:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V78 := bat.reverse(V74);	# 82 BKCreverse (V78:bat[:any,:any])<-(V74:bat[:any,:any])
+    bbp.garbage(V74);	# 83 CMDbbpgarbage (_188:void)<-(V74:bat[:any,:any])
+    V79 := algebra.kdiff(V72,V78);	# 84 ALGkdiff (V79:bat[:oid,:any])<-(V72:bat[:any,:any])(V78:bat[:any,:any])
+    bbp.garbage(V78);	# 85 CMDbbpgarbage (_189:void)<-(V78:bat[:any,:any])
+    V80 := algebra.join(V18,V79);	# 86  unknown (V80:any)<-(V18:any)(V79:bat[:oid,:any])
+    bbp.garbage(V79);	# 87 CMDbbpgarbage (_190:void)<-(V79:bat[:oid,:any])
+    V81 := optimizer.multiplex("calc.-",V71,V80);	# 88 OPTmultiplex (V81:any)<-(_77:str)(V71:lng)(V80:any)
+    V83 := batcalc.*(V67,V81);	# 89  unknown (V83:any)<-(V67:any)(V81:any)
+    V85 := aggrX3.sum(V83,V32,V34);	# 90  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
+    V86 := sql.bind_dbat("sys","lineitem",0);	# 91  (V86:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V87 := bat.reverse(V86);	# 92 BKCreverse (V87:bat[:any,:any])<-(V86:bat[:any,:any])
+    bbp.garbage(V86);	# 93 CMDbbpgarbage (_191:void)<-(V86:bat[:any,:any])
+    V88 := algebra.kdiff(V57,V87);	# 94 ALGkdiff (V88:bat[:oid,:any])<-(V57:bat[:any,:any])(V87:bat[:any,:any])
+    bbp.garbage(V87);	# 95 CMDbbpgarbage (_192:void)<-(V87:bat[:any,:any])
+    V89 := algebra.join(V18,V88);	# 96  unknown (V89:any)<-(V18:any)(V88:bat[:oid,:any])
+    bbp.garbage(V88);	# 97 CMDbbpgarbage (_193:void)<-(V88:bat[:oid,:any])
+    V90 := calc.lng(1);	# 98 CALCint2lng (V90:lng)<-(_64:int)
+    V91 := calc.*(V90,100);	# 99 CALCbinaryMULlngint (V91:lng)<-(V90:lng)(_66:int)
+    V92 := sql.bind_dbat("sys","lineitem",0);	# 100  (V92:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V93 := bat.reverse(V92);	# 101 BKCreverse (V93:bat[:any,:any])<-(V92:bat[:any,:any])
+    bbp.garbage(V92);	# 102 CMDbbpgarbage (_194:void)<-(V92:bat[:any,:any])
+    V94 := algebra.kdiff(V72,V93);	# 103 ALGkdiff (V94:bat[:oid,:any])<-(V72:bat[:any,:any])(V93:bat[:any,:any])
+    bbp.garbage(V93);	# 104 CMDbbpgarbage (_195:void)<-(V93:bat[:any,:any])
+    V95 := algebra.join(V18,V94);	# 105  unknown (V95:any)<-(V18:any)(V94:bat[:oid,:any])
+    bbp.garbage(V94);	# 106 CMDbbpgarbage (_196:void)<-(V94:bat[:oid,:any])
+    V96 := optimizer.multiplex("calc.-",V91,V95);	# 107 OPTmultiplex (V96:any)<-(_77:str)(V91:lng)(V95:any)
+    V97 := batcalc.*(V89,V96);	# 108  unknown (V97:any)<-(V89:any)(V96:any)
+    V98 := calc.lng(1);	# 109 CALCint2lng (V98:lng)<-(_64:int)
+    V99 := calc.*(V98,100);	# 110 CALCbinaryMULlngint (V99:lng)<-(V98:lng)(_66:int)
+    V100 := sql.bind("sys","lineitem","l_tax",0);	# 111  (V100:bat[:any,:any])<-(_70:str)(_71:str)(_95:str)(_72:int)
+    V102 := sql.bind_dbat("sys","lineitem",0);	# 112  (V102:bat[:any,:any])<-(_70:str)(_71:str)(_72:int)
+    V103 := bat.reverse(V102);	# 113 BKCreverse (V103:bat[:any,:any])<-(V102:bat[:any,:any])
+    bbp.garbage(V102);	# 114 CMDbbpgarbage (_197:void)<-(V102:bat[:any,:any])
+    V104 := algebra.kdiff(V100,V103);	# 115 ALGkdiff (V104:bat[:oid,:any])<-(V100:bat[:any,:any])(V103:bat[:any,:any])
+    bbp.garbage(V100);	# 116 CMDbbpgarbage (_198:void)<-(V100:bat[:any,:any])
+    bbp.garbage(V103);	# 117 CMDbbpgarbage (_199:void)<-(V103:bat[:any,:any])
+    V105 := algebra.join(V18,V104);	# 118  unknown (V105:any)<-(V18:any)(V104:bat[:oid,:any])
+    bbp.garbage(V104);	# 119 CMDbbpgarbage (_200:void)<-(V104:bat[:oid,:any])
+    V106 := optimizer.multiplex("calc.+",V99,V105);	# 120 OPTmultiplex (V106:any)<-(_101:str)(V99:lng)(V105:any)
+    V108 := batcalc.*(V97,V106);	# 121  unknown (V108:any)<-(V97:any)(V106:any)
+    V109 := aggrX3.sum(V108,V32,V34);	# 122  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
+    V110 := sql.bind_dbat("sys","lineitem",0);	# 123  (V110:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V114 := bat.reverse(V110);	# 124 BKCreverse (V114:bat[:any,:any])<-(V110:bat[:any,:any])
+    bbp.garbage(V110);	# 125 CMDbbpgarbage (_201:void)<-(V110:bat[:any,:any])
+    V115 := algebra.kdiff(V50,V114);	# 126 ALGkdiff (V115:bat[:oid,:any])<-(V50:bat[:any,:any])(V114:bat[:any,:any])
+    bbp.garbage(V50);	# 127 CMDbbpgarbage (_202:void)<-(V50:bat[:any,:any])
+    bbp.garbage(V114);	# 128 CMDbbpgarbage (_203:void)<-(V114:bat[:any,:any])
+    V116 := algebra.join(V18,V115);	# 129  unknown (V116:any)<-(V18:any)(V115:bat[:oid,:any])
+    bbp.garbage(V115);	# 130 CMDbbpgarbage (_204:void)<-(V115:bat[:oid,:any])
+    V117 := aggrX3.avg(V116,V32,V34);	# 131  unknown (V117:any)<-(V116:any)(V32:any)(V34:any)
+    V118 := sql.bind_dbat("sys","lineitem",0);	# 132  (V118:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V119 := bat.reverse(V118);	# 133 BKCreverse (V119:bat[:any,:any])<-(V118:bat[:any,:any])
+    bbp.garbage(V118);	# 134 CMDbbpgarbage (_205:void)<-(V118:bat[:any,:any])
+    V120 := algebra.kdiff(V57,V119);	# 135 ALGkdiff (V120:bat[:oid,:any])<-(V57:bat[:any,:any])(V119:bat[:any,:any])
+    bbp.garbage(V57);	# 136 CMDbbpgarbage (_206:void)<-(V57:bat[:any,:any])
+    bbp.garbage(V119);	# 137 CMDbbpgarbage (_207:void)<-(V119:bat[:any,:any])
+    V121 := algebra.join(V18,V120);	# 138  unknown (V121:any)<-(V18:any)(V120:bat[:oid,:any])
+    bbp.garbage(V120);	# 139 CMDbbpgarbage (_208:void)<-(V120:bat[:oid,:any])
+    V122 := aggrX3.avg(V121,V32,V34);	# 140  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
+    V124 := optimizer.multiplex("calc.round",V122,100);	# 141 OPTmultiplex (V124:any)<-(_118:str)(V122:any)(_119:int)
+    V126 := sql.bind_dbat("sys","lineitem",0);	# 142  (V126:bat[:any,:any])<-(_105:str)(_106:str)(_107:int)
+    V127 := bat.reverse(V126);	# 143 BKCreverse (V127:bat[:any,:any])<-(V126:bat[:any,:any])
+    bbp.garbage(V126);	# 144 CMDbbpgarbage (_209:void)<-(V126:bat[:any,:any])
+    V128 := algebra.kdiff(V72,V127);	# 145 ALGkdiff (V128:bat[:oid,:any])<-(V72:bat[:any,:any])(V127:bat[:any,:any])
+    bbp.garbage(V72);	# 146 CMDbbpgarbage (_210:void)<-(V72:bat[:any,:any])
+    bbp.garbage(V127);	# 147 CMDbbpgarbage (_211:void)<-(V127:bat[:any,:any])
+    V129 := algebra.join(V18,V128);	# 148  unknown (V129:any)<-(V18:any)(V128:bat[:oid,:any])
+    bbp.garbage(V128);	# 149 CMDbbpgarbage (_212:void)<-(V128:bat[:oid,:any])
+    V130 := aggrX3.avg(V129,V32,V34);	# 150  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
+    V131 := optimizer.multiplex("calc.round",V130,100);	# 151 OPTmultiplex (V131:any)<-(_118:str)(V130:any)(_119:int)
+    V132 := aggrX3.count(V32,V32,V34);	# 152  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
+    sql.column(V39,"l_returnflag","varchar",1,0);	# 153  unknown (_127:any)<-(V39:any)(_128:str)(_129:str)(_130:int)(_107:int)
+    sql.column(V48,"l_linestatus","varchar",1,0);	# 154  unknown (_131:any)<-(V48:any)(_132:str)(_129:str)(_130:int)(_107:int)
+    sql.column(V56,"sum_qty","bigint",0,0);	# 155  unknown (_133:any)<-(V56:any)(_134:str)(_135:str)(_107:int)(_107:int)
+    sql.column(V63,"sum_base_price","decimal",19,2);	# 156  unknown (_136:any)<-(V63:any)(_137:str)(_138:str)(_139:int)(_140:int)
+    sql.column(V85,"sum_disc_price","decimal",19,4);	# 157  unknown (_141:any)<-(V85:any)(_142:str)(_138:str)(_139:int)(_143:int)
+    sql.column(V109,"sum_charge","decimal",19,6);	# 158  unknown (_144:any)<-(V109:any)(_145:str)(_138:str)(_139:int)(_146:int)
+    sql.column(V117,"avg_qty","double",53,0);	# 159  unknown (_147:any)<-(V117:any)(_148:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V124,"avg_price","double",53,0);	# 160  unknown (_152:any)<-(V124:any)(_153:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V131,"avg_disc","double",53,0);	# 161  unknown (_154:any)<-(V131:any)(_155:str)(_149:str)(_150:int)(_151:int)
+    sql.column(V132,"count_order","int",0,0);	# 162  unknown (_156:any)<-(V132:any)(_157:str)(_158:str)(_151:int)(_151:int)
+    sql.output(V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);	# 163  unknown (_159:any)<-(V49:any)(V39:any)(V48:any)(V56:any)(V63:any)(V85:any)(V109:any)(V117:any)(V124:any)(V131:any)(V132:any)
+end qry1;	# 164  
 function user.main():int;	# 0  (main:int)
 # TPCH Q1 non-optimized 	# 1  (_2:str)
 #don;t depend on SQL library 	# 2  (_4:str)
-    V3 := sql.bind("sys","lineitem","l_shipdate",0);	# 3  unknown (V3:any)<-(_6:str)(_7:str)(_8:str)(_9:int)
-    V8 := sql.bind_dbat("sys","lineitem",0);	# 4  unknown (V8:any)<-(_6:str)(_7:str)(_9:int)
-    V9 := bat.reverse(V8);	# 5  unknown (V9:any)<-(V8:any)
-    V10 := algebra.kdiff(V3,V9);	# 6  unknown (V10:any)<-(V3:any)(V9:any)
-    V14 := algebra.uselect(V10,nil,nil);	# 7  unknown (V14:any)<-(V10:any)(_14:void)(_14:void)
-    V17 := algebra.tmark(V14,0@0);	# 8  unknown (V17:any)<-(V14:any)(_16:oid)
-    V18 := bat.reverse(V17);	# 9  unknown (V18:any)<-(V17:any)
-    V19 := sql.bind("sys","lineitem","l_returnflag",0);	# 10  (V19:any)<-(_6:str)(_7:str)(_19:str)(_9:int)
-    V21 := sql.bind_dbat("sys","lineitem",0);	# 11  unknown (V21:any)<-(_6:str)(_7:str)(_9:int)
-    V22 := bat.reverse(V21);	# 12  unknown (V22:any)<-(V21:any)
-    V23 := algebra.kdiff(V19,V22);	# 13  unknown (V23:any)<-(V19:any)(V22:any)
-    V24 := algebra.join(V18,V23);	# 14  unknown (V24:any)<-(V18:any)(V23:any)
-    V25 := group.group(V24);	# 15  unknown (V25:any)<-(V24:any)
-    V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 16  (V26:any)<-(_6:str)(_7:str)(_26:str)(_9:int)
-    V28 := sql.bind_dbat("sys","lineitem",0);	# 17  unknown (V28:any)<-(_6:str)(_7:str)(_9:int)
-    V29 := bat.reverse(V28);	# 18  unknown (V29:any)<-(V28:any)
-    V30 := algebra.kdiff(V26,V29);	# 19  unknown (V30:any)<-(V26:any)(V29:any)
-    V31 := algebra.join(V18,V30);	# 20  unknown (V31:any)<-(V18:any)(V30:any)
-    V32 := group.group(V25,V31);	# 21  unknown (V32:any)<-(V25:any)(V31:any)
-    V33 := algebra.tunique(V32);	# 22  unknown (V33:any)<-(V32:any)
-    V34 := bat.mirror(V33);	# 23  unknown (V34:any)<-(V33:any)
-    V35 := sql.bind_dbat("sys","lineitem",0);	# 24  unknown (V35:any)<-(_6:str)(_7:str)(_9:int)
-    V36 := bat.reverse(V35);	# 25  unknown (V36:any)<-(V35:any)
-    V37 := algebra.kdiff(V19,V36);	# 26  unknown (V37:any)<-(V19:any)(V36:any)
-    V38 := algebra.join(V18,V37);	# 27  unknown (V38:any)<-(V18:any)(V37:any)
-    V39 := algebra.join(V34,V38);	# 28  unknown (V39:any)<-(V34:any)(V38:any)
-    V40 := algebra.tsort(V39);	# 29  unknown (V40:any)<-(V39:any)
-    V41 := sql.bind_dbat("sys","lineitem",0);	# 30  unknown (V41:any)<-(_41:str)(_42:str)(_43:int)
-    V45 := bat.reverse(V41);	# 31  unknown (V45:any)<-(V41:any)
-    V46 := algebra.kdiff(V26,V45);	# 32  unknown (V46:any)<-(V26:any)(V45:any)
-    V47 := algebra.join(V18,V46);	# 33  unknown (V47:any)<-(V18:any)(V46:any)
-    V48 := algebra.join(V34,V47);	# 34  unknown (V48:any)<-(V34:any)(V47:any)
-    V49 := group.refine(V40,V48);	# 35  unknown (V49:any)<-(V40:any)(V48:any)
-    V50 := sql.bind("sys","lineitem","l_quantity",0);	# 36  (V50:any)<-(_41:str)(_42:str)(_50:str)(_43:int)
-    V52 := sql.bind_dbat("sys","lineitem",0);	# 37  unknown (V52:any)<-(_41:str)(_42:str)(_43:int)
-    V53 := bat.reverse(V52);	# 38  unknown (V53:any)<-(V52:any)
-    V54 := algebra.kdiff(V50,V53);	# 39  unknown (V54:any)<-(V50:any)(V53:any)
-    V55 := algebra.join(V18,V54);	# 40  unknown (V55:any)<-(V18:any)(V54:any)
-    V56 := aggrX3.sum(V55,V32,V34);	# 41  unknown (V56:any)<-(V55:any)(V32:any)(V34:any)
-    V57 := sql.bind("sys","lineitem","l_extendedprice",0);	# 42  (V57:any)<-(_41:str)(_42:str)(_57:str)(_43:int)
-    V59 := sql.bind_dbat("sys","lineitem",0);	# 43  unknown (V59:any)<-(_41:str)(_42:str)(_43:int)
-    V60 := bat.reverse(V59);	# 44  unknown (V60:any)<-(V59:any)
-    V61 := algebra.kdiff(V57,V60);	# 45  unknown (V61:any)<-(V57:any)(V60:any)
-    V62 := algebra.join(V18,V61);	# 46  unknown (V62:any)<-(V18:any)(V61:any)
-    V63 := aggrX3.sum(V62,V32,V34);	# 47  unknown (V63:any)<-(V62:any)(V32:any)(V34:any)
-    V64 := sql.bind_dbat("sys","lineitem",0);	# 48  unknown (V64:any)<-(_41:str)(_42:str)(_43:int)
-    V65 := bat.reverse(V64);	# 49  unknown (V65:any)<-(V64:any)
-    V66 := algebra.kdiff(V57,V65);	# 50  unknown (V66:any)<-(V57:any)(V65:any)
-    V67 := algebra.join(V18,V66);	# 51  unknown (V67:any)<-(V18:any)(V66:any)
-    V69 := calc.lng(1);	# 52 CALCint2lng (V69:lng)<-(_68:int)
-    V71 := calc.*(V69,100);	# 53 CALCbinaryMULlngint (V71:lng)<-(V69:lng)(_70:int)
-    V72 := sql.bind("sys","lineitem","l_discount",0);	# 54  (V72:any)<-(_41:str)(_42:str)(_72:str)(_43:int)
-    V74 := sql.bind_dbat("sys","lineitem",0);	# 55  unknown (V74:any)<-(_74:str)(_75:str)(_76:int)
-    V78 := bat.reverse(V74);	# 56  unknown (V78:any)<-(V74:any)
-    V79 := algebra.kdiff(V72,V78);	# 57  unknown (V79:any)<-(V72:any)(V78:any)
-    V80 := algebra.join(V18,V79);	# 58  unknown (V80:any)<-(V18:any)(V79:any)
-    V81 := optimizer.multiplex("calc.-",V71,V80);	# 59 OPTmultiplex (V81:any)<-(_81:str)(V71:lng)(V80:any)
-    V83 := batcalc.*(V67,V81);	# 60  unknown (V83:any)<-(V67:any)(V81:any)
-    V85 := aggrX3.sum(V83,V32,V34);	# 61  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
-    V86 := sql.bind_dbat("sys","lineitem",0);	# 62  unknown (V86:any)<-(_74:str)(_75:str)(_76:int)
-    V87 := bat.reverse(V86);	# 63  unknown (V87:any)<-(V86:any)
-    V88 := algebra.kdiff(V57,V87);	# 64  unknown (V88:any)<-(V57:any)(V87:any)
-    V89 := algebra.join(V18,V88);	# 65  unknown (V89:any)<-(V18:any)(V88:any)
-    V90 := calc.lng(1);	# 66 CALCint2lng (V90:lng)<-(_68:int)
-    V91 := calc.*(V90,100);	# 67 CALCbinaryMULlngint (V91:lng)<-(V90:lng)(_70:int)
-    V92 := sql.bind_dbat("sys","lineitem",0);	# 68  unknown (V92:any)<-(_74:str)(_75:str)(_76:int)
-    V93 := bat.reverse(V92);	# 69  unknown (V93:any)<-(V92:any)
-    V94 := algebra.kdiff(V72,V93);	# 70  unknown (V94:any)<-(V72:any)(V93:any)
-    V95 := algebra.join(V18,V94);	# 71  unknown (V95:any)<-(V18:any)(V94:any)
-    V96 := optimizer.multiplex("calc.-",V91,V95);	# 72 OPTmultiplex (V96:any)<-(_81:str)(V91:lng)(V95:any)
-    V97 := batcalc.*(V89,V96);	# 73  unknown (V97:any)<-(V89:any)(V96:any)
-    V98 := calc.lng(1);	# 74 CALCint2lng (V98:lng)<-(_68:int)
-    V99 := calc.*(V98,100);	# 75 CALCbinaryMULlngint (V99:lng)<-(V98:lng)(_70:int)
-    V100 := sql.bind("sys","lineitem","l_tax",0);	# 76  (V100:any)<-(_74:str)(_75:str)(_99:str)(_76:int)
-    V102 := sql.bind_dbat("sys","lineitem",0);	# 77  unknown (V102:any)<-(_74:str)(_75:str)(_76:int)
-    V103 := bat.reverse(V102);	# 78  unknown (V103:any)<-(V102:any)
-    V104 := algebra.kdiff(V100,V103);	# 79  unknown (V104:any)<-(V100:any)(V103:any)
-    V105 := algebra.join(V18,V104);	# 80  unknown (V105:any)<-(V18:any)(V104:any)
-    V106 := optimizer.multiplex("calc.+",V99,V105);	# 81 OPTmultiplex (V106:any)<-(_105:str)(V99:lng)(V105:any)
-    V108 := batcalc.*(V97,V106);	# 82  unknown (V108:any)<-(V97:any)(V106:any)
-    V109 := aggrX3.sum(V108,V32,V34);	# 83  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
-    V110 := sql.bind_dbat("sys","lineitem",0);	# 84  unknown (V110:any)<-(_109:str)(_110:str)(_111:int)
-    V114 := bat.reverse(V110);	# 85  unknown (V114:any)<-(V110:any)
-    V115 := algebra.kdiff(V50,V114);	# 86  unknown (V115:any)<-(V50:any)(V114:any)
-    V116 := algebra.join(V18,V115);	# 87  unknown (V116:any)<-(V18:any)(V115:any)
-    V117 := aggrX3.avg(V116,V32,V34);	# 88  unknown (V117:any)<-(V116:any)(V32:any)(V34:any)
-    V118 := sql.bind_dbat("sys","lineitem",0);	# 89  unknown (V118:any)<-(_109:str)(_110:str)(_111:int)
-    V119 := bat.reverse(V118);	# 90  unknown (V119:any)<-(V118:any)
-    V120 := algebra.kdiff(V57,V119);	# 91  unknown (V120:any)<-(V57:any)(V119:any)
-    V121 := algebra.join(V18,V120);	# 92  unknown (V121:any)<-(V18:any)(V120:any)
-    V122 := aggrX3.avg(V121,V32,V34);	# 93  unknown (V122:any)<-(V121:any)(V32:any)(V34:any)
-    V124 := optimizer.multiplex("calc.round",V122,100);	# 94 OPTmultiplex (V124:any)<-(_122:str)(V122:any)(_123:int)
-    V126 := sql.bind_dbat("sys","lineitem",0);	# 95  unknown (V126:any)<-(_109:str)(_110:str)(_111:int)
-    V127 := bat.reverse(V126);	# 96  unknown (V127:any)<-(V126:any)
-    V128 := algebra.kdiff(V72,V127);	# 97  unknown (V128:any)<-(V72:any)(V127:any)
-    V129 := algebra.join(V18,V128);	# 98  unknown (V129:any)<-(V18:any)(V128:any)
-    V130 := aggrX3.avg(V129,V32,V34);	# 99  unknown (V130:any)<-(V129:any)(V32:any)(V34:any)
-    V131 := optimizer.multiplex("calc.round",V130,100);	# 100 OPTmultiplex (V131:any)<-(_122:str)(V130:any)(_123:int)
-    V132 := aggrX3.count(V32,V32,V34);	# 101  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
-    sql.column(V39,"l_returnflag","varchar",1,0);	# 102  unknown (_131:any)<-(V39:any)(_132:str)(_133:str)(_134:int)(_111:int)
-    sql.column(V48,"l_linestatus","varchar",1,0);	# 103  unknown (_135:any)<-(V48:any)(_136:str)(_133:str)(_134:int)(_111:int)
-    sql.column(V56,"sum_qty","bigint",0,0);	# 104  unknown (_137:any)<-(V56:any)(_138:str)(_139:str)(_111:int)(_111:int)
-    sql.column(V63,"sum_base_price","decimal",19,2);	# 105  unknown (_140:any)<-(V63:any)(_141:str)(_142:str)(_143:int)(_144:int)
-    sql.column(V85,"sum_disc_price","decimal",19,4);	# 106  unknown (_145:any)<-(V85:any)(_146:str)(_142:str)(_143:int)(_147:int)
-    sql.column(V109,"sum_charge","decimal",19,6);	# 107  unknown (_148:any)<-(V109:any)(_149:str)(_142:str)(_143:int)(_150:int)
-    sql.column(V117,"avg_qty","double",53,0);	# 108  unknown (_151:any)<-(V117:any)(_152:str)(_153:str)(_154:int)(_155:int)
-    sql.column(V124,"avg_price","double",53,0);	# 109  unknown (_156:any)<-(V124:any)(_157:str)(_153:str)(_154:int)(_155:int)
-    sql.column(V131,"avg_disc","double",53,0);	# 110  unknown (_158:any)<-(V131:any)(_159:str)(_153:str)(_154:int)(_155:int)
-    sql.column(V132,"count_order","int",0,0);	# 111  unknown (_160:any)<-(V132:any)(_161:str)(_162:str)(_155:int)(_155:int)
-    sql.output(V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);	# 112  unknown (_163:any)<-(V49:any)(V39:any)(V48:any)(V56:any)(V63:any)(V85:any)(V109:any)(V117:any)(V124:any)(V131:any)(V132:any)
-end main;	# 113  
-    optimizer.aliasRemoval("user","qry1");	# 114  unknown (_164:any)<-(_165:str)(_166:str)
-    optimizer.garbageCollector("user","qry1");	# 115  unknown (_167:any)<-(_165:str)(_166:str)
-    mdb.list("user","qry1");	# 116  unknown (_168:any)<-(_165:str)(_166:str)
-end main;	# 117  unknown 
+    mdb.list("user","qry1");	# 3 MDBlist3 (_10:void)<-(_7:str)(_8:str)
+end main;	# 4  
+function user.qry1():void;
+    V3 := sql.bind("sys","lineitem","l_shipdate",0);
+    V8 := sql.bind_dbat("sys","lineitem",0);
+    V9 := bat.reverse(V8);
+    bbp.garbage(V8);
+    V10 := algebra.kdiff(V3,V9);
+    bbp.garbage(V3);
+    bbp.garbage(V9);
+    V14 := algebra.uselect(V10,nil,nil);
+    bbp.garbage(V10);
+    V17 := algebra.tmark(V14,0@0);
+    bbp.garbage(V14);
+    V18 := bat.reverse(V17);
+    V19 := sql.bind("sys","lineitem","l_returnflag",0);
+    V21 := sql.bind_dbat("sys","lineitem",0);
+    V22 := bat.reverse(V21);
+    bbp.garbage(V21);
+    V23 := algebra.kdiff(V19,V22);
+    bbp.garbage(V22);
+    V24 := algebra.join(V18,V23);
+    bbp.garbage(V23);
+    V25 := group.group(V24);
+    V26 := sql.bind("sys","lineitem","l_linestatus",0);
+    V28 := sql.bind_dbat("sys","lineitem",0);
+    V29 := bat.reverse(V28);
+    bbp.garbage(V28);
+    V30 := algebra.kdiff(V26,V29);
+    bbp.garbage(V29);
+    V31 := algebra.join(V18,V30);
+    bbp.garbage(V30);
+    V32 := group.group(V25,V31);
+    V33 := algebra.tunique(V32);
+    V34 := bat.mirror(V33);
+    V35 := sql.bind_dbat("sys","lineitem",0);
+    V36 := bat.reverse(V35);
+    bbp.garbage(V35);
+    V37 := algebra.kdiff(V19,V36);
+    bbp.garbage(V19);
+    bbp.garbage(V36);
+    V38 := algebra.join(V18,V37);
+    bbp.garbage(V37);
+    V39 := algebra.join(V34,V38);
+    V40 := algebra.tsort(V39);
+    V41 := sql.bind_dbat("sys","lineitem",0);
+    V45 := bat.reverse(V41);
+    bbp.garbage(V41);
+    V46 := algebra.kdiff(V26,V45);
+    bbp.garbage(V26);
+    bbp.garbage(V45);
+    V47 := algebra.join(V18,V46);
+    bbp.garbage(V46);
+    V48 := algebra.join(V34,V47);
+    V49 := group.refine(V40,V48);
+    V50 := sql.bind("sys","lineitem","l_quantity",0);
+    V52 := sql.bind_dbat("sys","lineitem",0);
+    V53 := bat.reverse(V52);
+    bbp.garbage(V52);
+    V54 := algebra.kdiff(V50,V53);
+    bbp.garbage(V53);
+    V55 := algebra.join(V18,V54);
+    bbp.garbage(V54);
+    V56 := aggrX3.sum(V55,V32,V34);
+    V57 := sql.bind("sys","lineitem","l_extendedprice",0);
+    V59 := sql.bind_dbat("sys","lineitem",0);
+    V60 := bat.reverse(V59);
+    bbp.garbage(V59);
+    V61 := algebra.kdiff(V57,V60);
+    bbp.garbage(V60);
+    V62 := algebra.join(V18,V61);
+    bbp.garbage(V61);
+    V63 := aggrX3.sum(V62,V32,V34);
+    V64 := sql.bind_dbat("sys","lineitem",0);
+    V65 := bat.reverse(V64);
+    bbp.garbage(V64);
+    V66 := algebra.kdiff(V57,V65);
+    bbp.garbage(V65);
+    V67 := algebra.join(V18,V66);
+    bbp.garbage(V66);
+    V69 := calc.lng(1);
+    V71 := calc.*(V69,100);
+    V72 := sql.bind("sys","lineitem","l_discount",0);
+    V74 := sql.bind_dbat("sys","lineitem",0);
+    V78 := bat.reverse(V74);
+    bbp.garbage(V74);
+    V79 := algebra.kdiff(V72,V78);
+    bbp.garbage(V78);
+    V80 := algebra.join(V18,V79);
+    bbp.garbage(V79);
+    V81 := optimizer.multiplex("calc.-",V71,V80);
+    V83 := batcalc.*(V67,V81);
+    V85 := aggrX3.sum(V83,V32,V34);
+    V86 := sql.bind_dbat("sys","lineitem",0);
+    V87 := bat.reverse(V86);
+    bbp.garbage(V86);
+    V88 := algebra.kdiff(V57,V87);
+    bbp.garbage(V87);
+    V89 := algebra.join(V18,V88);
+    bbp.garbage(V88);
+    V90 := calc.lng(1);
+    V91 := calc.*(V90,100);
+    V92 := sql.bind_dbat("sys","lineitem",0);
+    V93 := bat.reverse(V92);
+    bbp.garbage(V92);
+    V94 := algebra.kdiff(V72,V93);
+    bbp.garbage(V93);
+    V95 := algebra.join(V18,V94);
+    bbp.garbage(V94);
+    V96 := optimizer.multiplex("calc.-",V91,V95);
+    V97 := batcalc.*(V89,V96);
+    V98 := calc.lng(1);
+    V99 := calc.*(V98,100);
+    V100 := sql.bind("sys","lineitem","l_tax",0);
+    V102 := sql.bind_dbat("sys","lineitem",0);
+    V103 := bat.reverse(V102);
+    bbp.garbage(V102);
+    V104 := algebra.kdiff(V100,V103);
+    bbp.garbage(V100);
+    bbp.garbage(V103);
+    V105 := algebra.join(V18,V104);
+    bbp.garbage(V104);
+    V106 := optimizer.multiplex("calc.+",V99,V105);
+    V108 := batcalc.*(V97,V106);
+    V109 := aggrX3.sum(V108,V32,V34);
+    V110 := sql.bind_dbat("sys","lineitem",0);
+    V114 := bat.reverse(V110);
+    bbp.garbage(V110);
+    V115 := algebra.kdiff(V50,V114);
+    bbp.garbage(V50);
+    bbp.garbage(V114);
+    V116 := algebra.join(V18,V115);
+    bbp.garbage(V115);
+    V117 := aggrX3.avg(V116,V32,V34);
+    V118 := sql.bind_dbat("sys","lineitem",0);
+    V119 := bat.reverse(V118);
+    bbp.garbage(V118);
+    V120 := algebra.kdiff(V57,V119);
+    bbp.garbage(V57);
+    bbp.garbage(V119);
+    V121 := algebra.join(V18,V120);
+    bbp.garbage(V120);
+    V122 := aggrX3.avg(V121,V32,V34);
+    V124 := optimizer.multiplex("calc.round",V122,100);
+    V126 := sql.bind_dbat("sys","lineitem",0);
+    V127 := bat.reverse(V126);
+    bbp.garbage(V126);
+    V128 := algebra.kdiff(V72,V127);
+    bbp.garbage(V72);
+    bbp.garbage(V127);
+    V129 := algebra.join(V18,V128);
+    bbp.garbage(V128);
+    V130 := aggrX3.avg(V129,V32,V34);
+    V131 := optimizer.multiplex("calc.round",V130,100);
+    V132 := aggrX3.count(V32,V32,V34);
+    sql.column(V39,"l_returnflag","varchar",1,0);
+    sql.column(V48,"l_linestatus","varchar",1,0);
+    sql.column(V56,"sum_qty","bigint",0,0);
+    sql.column(V63,"sum_base_price","decimal",19,2);
+    sql.column(V85,"sum_disc_price","decimal",19,4);
+    sql.column(V109,"sum_charge","decimal",19,6);
+    sql.column(V117,"avg_qty","double",53,0);
+    sql.column(V124,"avg_price","double",53,0);
+    sql.column(V131,"avg_disc","double",53,0);
+    sql.column(V132,"count_order","int",0,0);
+    sql.output(V49,V39,V48,V56,V63,V85,V109,V117,V124,V131,V132);
+end qry1;
 
 # 23:52:56 >  
 # 23:52:56 >  Done.

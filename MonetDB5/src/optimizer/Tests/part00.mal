@@ -20,7 +20,7 @@ partitions.deposit(a1,a2);
 partitions.deposit(a1,a3);
 partitions.dump();
 
-function qry(a:bat[:void,:any$1]);
+function qry(a:bat[:void,:any_1]);
 	io.print("hello");
 	io.print(a);
 end qry;
