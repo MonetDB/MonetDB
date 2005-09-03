@@ -339,21 +339,52 @@ cache directly, e.g @code{explain;} or @code{explain sqlcache} or @code{explain 
 @node DEBUG Statement, Optimizer Control, EXPLAIN Statement, SQL
 @subsection DEBUG Statement
 
-The default execution engine for SQL statements is 
-the MAL interpreter, which comes with a debugger (See @ref{The MAL Debugger})
+The SQL statements are translated into MAL programs, which
+are optimized and stored away in an @code{sql_cache} module.
+The default execution engine is the MAL interpreter,
+which comes with a powerful debugger.
 It provides a simple mechanism to trace the execution, hunting
 for possible errors and performance bottlenecks.
 
 The example below, illustrates how you can easily obtain a quick 
-overview of the cost components of the query.
-@example
-> debug select count(*) from tables;
-#mdb>timer
-...
-@end example
-Using the MAL debugger it is also possible to inspect
-the content of the intermediate results. See @ref{Runtime Inspection} for
-examples.
+overview of the cost components of the query using the timer
+flag and @code{continuation} command for the debugger.
+@verbatim
+#mdb #    sql_cache.sql2();
+mdb>timer
+mdb>c
+#    19 usec#    _1{count=0} := sql.bind(_2="sys", _3="ptables", _4="id", _5=0)
+#     3 usec#    _6{count=0} := sql.bind_dbat(_2="sys", _3="ptables", _5=0)
+#     3 usec#    _14{count=0} := sql.bind(_2="sys", _15="ttables", _4="id", _5=0)
+#     1 usec#    _16{count=0} := sql.bind_dbat(_2="sys", _15="ttables", _5=0)
+#     2 usec#    _7 := bat.reverse(_6=<tmp_340>)
+#    19 usec#    _8 := algebra.kdiff(_1=<tmp_476>, _7=<~tmp_340>)
+#     5 usec#    _11 := algebra.markT(_8=<tmp_267>, _10=0@0)
+#     1 usec#    _12 := bat.reverse(_11=<tmp_272>)
+#    23 usec#    _13 := algebra.join(_12=<~tmp_272>, _1=<tmp_476>)
+#     0 usec#    _17 := bat.reverse(_16=<tmp_26>)
+#     4 usec#    _18 := algebra.kdiff(_14=<tmp_154>, _17=<~tmp_26>)
+#     3 usec#    _20 := algebra.markT(_18=<tmp_273>, _10=0@0)
+#     1 usec#    _21 := bat.reverse(_20=<tmp_275>)
+#     4 usec#    _22 := algebra.join(_21=<~tmp_275>, _14=<tmp_154>)
+#     3 usec#    _23 := bat.append(_13=<tmp_274>, _22=<tmp_276>)
+#     8 usec#    _25 := algebra.markT(_23=<tmp_274>, _10=0@0)
+#     1 usec#    _26 := bat.reverse(_25=<tmp_300>)
+#     8 usec#    _27 := algebra.join(_26=<~tmp_300>, _23=<tmp_274>)
+#     3 usec#    _29 := algebra.markT(_27=<tmp_301>, _10=0@0)
+#     1 usec#    _30 := bat.reverse(_29=<tmp_277>)
+#    12 usec#    _31 := algebra.join(_30=<~tmp_277>, _27=<tmp_301>)
+#     1 usec#    _32 := algebra.count(_31=<tmp_304>)
+#     1 usec#    sql.column(_32=23, _34="count_id", _35="int", _36=32, _5=0)
+[ 23 ]
+#    18 usec#    sql.output(_38=0, _32=23)
+#     2 usec#    sql_cache.sql2()
+>
+@end verbatim
+The MAL debugger comes with a plethora of options,
+including a method to inspect the intermediates
+produced by the optimizers.
+See @ref{Runtime Inspection} for more  examples.
 
 @node Optimizer Control, Overlaying the BAT storage, DEBUG Statement,  SQL
 @section Optimizer Control
