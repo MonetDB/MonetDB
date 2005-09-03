@@ -266,7 +266,7 @@ pattern display(v:bat[:any_1,:any]...):int
 address TABdisplayTable
 comment "Display a formatted table";
 
-pattern page(b:bat[:any,:any]...):int 
+pattern page(b:bat[:any_1,:any]...):int 
 address TABpage
 comment "Display all pages at once without header";
 pattern header(b:any...):int 

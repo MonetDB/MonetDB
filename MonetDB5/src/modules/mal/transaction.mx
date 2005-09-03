@@ -41,24 +41,22 @@ comment "global abort on all BATs";
 
 @+ BAT specific transaction management
 @mal
-pattern commit(c:bat[:any,:any]...) 
+pattern commit(c:any...) 
 address TRNtrans_commit
 comment "commit changes in certain BATs.";
-pattern abort(c:bat[:any,:any]...) 
+pattern abort(c:any...) 
 address TRNtrans_abort
 comment "abort changes in certain BATs.";
-pattern clean(c:bat[:any,:any]...) 
+pattern clean(c:any...) 
 address TRNtrans_clean
 comment "declare a BAT clean without 
 	 flushing to disk.";
 @+ Delta status
 @mal
-command alpha(b:bat[:any_1,:any_2]) 
-		:bat[:any_1,:any_2] 
+command alpha(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address TRNtrans_alpha
 comment	"List insertions since last commit.";
-command delta(b:bat[:any_1,:any_2]) 
-		:bat[:any_1,:any_2] 
+command delta(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address TRNtrans_delta
 comment	"List deletions since last commit.";
 @{

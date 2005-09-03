@@ -56,10 +56,10 @@ comment "Close the constant box ";
 pattern destroy():void
 address CSTdestroy
 comment "Destroy the box";
-pattern take(name:str):any 
+pattern take(name:str):any_1 
 address CSTtake
 comment "Take a variable out of the box";
-pattern deposit(name:str,val:any) :void 		
+pattern deposit(name:str,val:any_1) :void 		
 address CSTdeposit
 comment "Enter a new variable into the box";
 
@@ -69,13 +69,13 @@ comment "Release all variables in the box";
 pattern release(name:str) :void 		
 address CSTrelease
 comment "Release a new constant value";
-pattern release(name:any):void 
+pattern release(name:any_1):void 
 address CSTrelease
 comment "Release a new constant value";
-pattern toString(name:any):str 
+pattern toString(name:any_1):str 
 address CSTtoString
 comment "Get the string representation of an element in the box";
-pattern discard(name:any) :void 		
+pattern discard(name:any_1) :void 		
 address CSTdiscard
 comment "Release the const from the box";
 pattern newIterator()(:lng,:str)

@@ -46,12 +46,11 @@ command stdout():stream
 address io_stdout
 comment "return the output stream for the database client";
 
-pattern print(val:any,lst:any...):int 
+pattern print(val:any_1,lst:any...):int 
 address IOprint_val
 comment "Print a MAL value tuple .";
 
-pattern print(b1:bat[:any_1,:any], 
-		b2:bat[:any_1,:any]...):int 
+pattern print(b1:bat[:any_1,:any]...):int 
 address IOtable
 comment "BATs are printed with '#' for legend 
 	lines, and the BUNs on seperate lines 
@@ -61,9 +60,7 @@ comment "BATs are printed with '#' for legend
 	print() performs an implicit natural 
 	join, producing a multi attribute table.";
 
-pattern ftable( filep:stream, 
-		b1:bat[:any_1,:any],
-		b:bat[:any_1,:any]... ):int
+pattern ftable( filep:stream, b1:bat[:any_1,:any], b:bat[:any_1,:any]... ):int
 address IOftable 
 comment "Print an n-ary table to a file.";
 
@@ -73,28 +70,28 @@ comment "The same as normal table print, but
 	enforces to use the order of BAT 
 	number [1..argc] to do the printing.";
 
-pattern table(b1:bat[:any,:any], b2:bat[:any,:any]...):int 
+pattern table(b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int 
 address IOttable
-comment "Print an n-ary table. Like print,
-	but does not print oid column";
+comment "Print an n-ary table. Like print, but does not print oid column";
 
 pattern table(order:int, b1:bat[:any_1,:any], b2:bat[:any_1,:any]...):int 
 address IOtotable
 comment "Print an n-ary table.";
-pattern ftable(fp:stream, order:int,
-	b1:bat[:any_1,:any], 
-	b:bat[:any_1,:any]...)
+pattern ftable(fp:stream, order:int, b1:bat[:any_1,:any], b:bat[:any_1,:any]...)
 address IOfotable 
 comment "Print an n-ary table to a file.";
 
-pattern print(val:any):int 
+pattern print(val:any_1):int 
+address IOprint_val
+comment "Print a MAL value tuple .";
+pattern print(val:bat[:any_1,:any_2]):int 
 address IOprint_val
 comment "Print a MAL value tuple .";
 
-pattern prompt(val:any):int 
+pattern prompt(val:any_1):int 
 address IOprompt_val
 comment "Print a MAL value without brackets.";
-pattern printft(val:any):int 
+pattern printft(val:any_1):int 
 address IOprint_ft
 comment "Select default format ";
 
@@ -129,12 +126,12 @@ functions are efficient but work only for binary tables. For printing
 ASCII n-ary tables you can use the @#print@(bat1,bat2,..) command
 from the system.mx module.
 @mal
-command export(b:bat[:any,:any], filepath:str):bit  
+command export(b:bat[:any_1,:any_2], filepath:str):bit  
 address IOexport
 comment "Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
  is put into the .../dbfarm/$DB directory. Success of failure is indicated.";
 
-command import(b:bat[:any,:any], filepath:str) :bit 
+command import(b:bat[:any_1,:any_2], filepath:str) :bit 
 address IOimport
 comment "Import a BAT from an ASCII dump. The new tuples are *inserted* into the
  parameter BAT. You have to create it! Its signature must match the dump,
