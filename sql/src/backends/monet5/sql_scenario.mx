@@ -520,14 +520,11 @@ A future version may analyze the parameter settings in more detail.
 @c
 
 void
-SQLsetDebugger(Client c, int onoff)
+SQLsetDebugger(Client c, mvc *m, int onoff)
 {
 	InstrPtr q;
-	mvc *m;
 
-	m = ((mvc *) c->state[OPTIMIZE]);
-
-	if (m == 0 || m->debug == 0)
+	if (m == 0 || m->mode != m_debug)
 		return;
 	c->itrace='n';
 	q = newInstruction(ASSIGNsymbol);
@@ -584,8 +581,12 @@ SQLparser(Client c)
 	stream_printf(GDKout, "#SQL compilation \n");
 	printf("debugger? %d %d\n", debugPlan(), be->mvc->mode);
 #endif
-	SQLsetDebugger(c, debugPlan());
 	m = be->mvc;
+	/* tricky, because we haven't started the parser yet */
+	if( strncmp(CURRENT(c),"debug",5)==0) {
+		m->mode = m_debug;
+		SQLsetDebugger(c, m, TRUE);
+	}
 
 	assert(m);
 	/* be->language = 'S';	expect SQL text first */
@@ -695,7 +696,7 @@ In the final phase we add any debugging control
 @c
 	/* turn off debugger */
 	if( debugPlan())
-		SQLsetDebugger(c, FALSE);
+		SQLsetDebugger(c, m, FALSE);
 
 	if (explainPerformance()) {
 		be->qry = sql_escape(QUERY(m->scanner));
