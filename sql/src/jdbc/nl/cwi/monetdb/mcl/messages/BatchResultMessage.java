@@ -63,17 +63,22 @@ public class BatchResultMessage extends MCLVariableMessage {
 	 * BatchResultMessage.  To add the data, the method
 	 * addDataSentence() should be used.
 	 *
-	 * @param tuplecount the number of columns in this batch result
+	 * @param values the values to store in this BatchResultMessage
 	 * @throws MCLException if one of the arguments is null or zero
 	 */
-	public BatchResultMessage(int tuplecount) throws MCLException {
+	public BatchResultMessage(int[] values) throws MCLException {
 		if (tuplecount == 0) throw
 			new MCLException("tuplecount may not be zero");
 		
 		sentences = new MCLSentence[1];
-		this.tuplecount = tuplecount;
+		tuplecount = values.length;
 		sentences[0] = new MCLSentence(MCLSentence.MCLMETADATA, "tuplecount", "" + tuplecount);
-		variableSentences = new ArrayList(this.tuplecount);
+		variableSentences = new ArrayList(tuplecount);
+		for (int i = 0; i < tuplecount; i++) {
+			addDataSentence(
+					new MCLSentence(MCLSentence.DATA, "" + values[i])
+			);
+		}
 	}
 
 	/**

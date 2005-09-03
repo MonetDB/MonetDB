@@ -58,7 +58,7 @@ public class ErrorMessage extends MCLVariableMessage {
 	 * Constructs a filled ErrorMessage.  All required information
 	 * is supplied and stored in this ErrorMessage.
 	 *
-	 * @param message the data MIME type of the data
+	 * @param message the extra error info string
 	 * @throws MCLException if the message is null
 	 */
 	public ErrorMessage(String message) throws MCLException {

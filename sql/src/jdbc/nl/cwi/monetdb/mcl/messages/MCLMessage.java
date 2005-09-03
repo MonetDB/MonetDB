@@ -64,7 +64,7 @@ public abstract class MCLMessage {
 		MCLSentence sentence;
 		String ret = getName() + ":\n";
 
-		ret += getSomSentence().toString();
+		ret += getSomSentence().toString() + "\n";
 		while (it.hasNext()) {
 			sentence = (MCLSentence)(it.next());
 			if (sentence == null)
@@ -87,7 +87,7 @@ public abstract class MCLMessage {
 	 */
 	public String getName() {
 		String name = this.getClass().getName();
-		return(name.substring(name.lastIndexOf(".")));
+		return(name.substring(name.lastIndexOf(".") + 1));
 	}
 
 	/**
@@ -200,7 +200,7 @@ public abstract class MCLMessage {
 	 * read or an error occurs.  All sentences read are passed on to the
 	 * addSentence() method which checks them for validity.
 	 *
-	 * @param in the InputStream to write from
+	 * @param in the InputStream to read from
 	 * @return an MCLMessage as read from the stream
 	 * @throws MCLException if the data read from the stream is invalid
 	 * or reading from the stream failed

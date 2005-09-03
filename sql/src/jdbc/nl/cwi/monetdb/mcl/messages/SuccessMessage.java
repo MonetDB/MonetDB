@@ -58,7 +58,7 @@ public class SuccessMessage extends MCLVariableMessage {
 	 * Constructs a filled SuccessMessage.  All required information
 	 * is supplied and stored in this SuccessMessage.
 	 *
-	 * @param message the data MIME type of the data
+	 * @param message the extra info string
 	 * @throws MCLException if the message is null
 	 */
 	public SuccessMessage(String message) throws MCLException {

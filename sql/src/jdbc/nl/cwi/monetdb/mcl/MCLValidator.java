@@ -24,43 +24,44 @@ import nl.cwi.monetdb.mcl.messages.*;
 /**
  * The Validator class within MCL is the class that actually checks the
  * validity of the flow of MCLMessages.  Where MCLMessages check the
- * validity on the level of MCLSentences, the Validator checks the
- * MCLMessages.  The Validator checks that MCLMessages are sent and
+ * validity on the level of MCLSentences, the MCLValidator checks the
+ * MCLMessages.  The MCLValidator checks that MCLMessages are sent and
  * received in the right order, while the Manager offers services such
  * as under the hood support for receiving result sets in fragments.
  * <br /><br />
- * This Validator is implemented as a parser which checks the validity
- * of an MCLMessage based on the previous MCLMessage seen.  Hence, it
- * cannot easily suggest or tell what it would like to see, but this is
- * not important for the Validator.
+ * This MCLValidator is implemented as a parser which checks the
+ * validity of an MCLMessage based on the previous MCLMessage seen.
+ * Hence, it cannot easily suggest or tell what it would like to see,
+ * but this is not important for the MCLValidator.
  * <br /><br />
  * This class is thread safe.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  */
-public class Validator {
+public class MCLValidator {
 	private int state;
 
 	/**
-	 * Constructs a Validator having an initial state that expects a new
-	 * MCL connection to be set up.  Hence, the only MCLMessage accepted
-	 * will be the ChallengeMessage.  If this is undesired behaviour,
-	 * consider using the Validator(int state) constructor.
+	 * Constructs an MCLValidator having an initial state that expects a
+	 * new MCL connection to be set up.  Hence, the only MCLMessage
+	 * accepted will be the ChallengeMessage.  If this is undesired
+	 * behaviour, consider using the MCLValidator(int state)
+	 * constructor.
 	 *
-	 * @see #Validator(int state)
+	 * @see #MCLValidator(int state)
 	 */
-	public Validator() {
+	public MCLValidator() {
 		state = 0;	// means initial state, i.e. we expect a login
 	}
 
 	/**
-	 * Constructs a Validator that is put in the specified state.  This
-	 * allows to 'jump into' a MCLConnection, or just skip the initial
-	 * login procedure, for example.
+	 * Constructs an MCLValidator that is put in the specified state.
+	 * This allows to 'jump into' a MCLConnection, or just skip the
+	 * initial login procedure, for example.
 	 *
 	 * @param state the initial state to assume
 	 */
-	public Validator(int state) {
+	public MCLValidator(int state) {
 		// note: no guarantees on validity of the state here!
 		this.state = state;
 	}
