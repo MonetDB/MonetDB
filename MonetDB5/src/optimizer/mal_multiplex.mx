@@ -26,7 +26,7 @@ easily apply any scalar function to elements in a containers.
 Any operator @code{cmd} came with its multiplex variant [@code{cmd}].
 Given the signature @code{cmd(T1,..,Tn) : Tr}, it could be
 applied also as
-@code{[CMD](bat[:any$1,:T1],...,bat[any$1,Tn]) :bat[any$1,Tr]}.
+@code{[CMD](bat[:any_1,:T1],...,bat[any_1,Tn]) :bat[any_1,Tr]}.
 
 The semantics of the multiplex is to perform the
 natural join on all bat-valued parameters, and to execute the 
@@ -46,15 +46,15 @@ explicitly. The result of the optimizer is:
 @verbatim
     b := bbp.new(:int,:int);
     bat.insert(b,1,1);
-    $8 := bbp.new(:int,:int);
-barrier ($11,$12,$13):= chopper.newIterator(b);
-    $15 := calc.+($13,1);
-    bat.insert($8,$12,$15);
+    _8 := bbp.new(:int,:int);
+barrier (_11,_12,_13):= chopper.newIterator(b);
+    _15 := calc.+(_13,1);
+    bat.insert(_8,_12,_15);
 catch MALexception;
 exit MALexception;
-    redo ($11,$12,$13):= chopper.hasMoreElements(b);
-exit ($11,$12,$13);
-    c := $8;
+    redo (_11,_12,_13):= chopper.hasMoreElements(b);
+exit (_11,_12,_13);
+    c := _8;
 @end verbatim
 
 @-

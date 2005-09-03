@@ -28,7 +28,7 @@ avoiding work using semantic knowledge.
 
 The operation @code{optimizer.partitionedQuery} deals with 
 a large fragment of the problem space. It assumes that the partitioned BATs
-are all of type @code{:bat[:void,:any]}. 
+are all of type @code{:bat[:void,:any_1]}. 
 Each partition is responsible for a dense range.
 This means we can use the minimum and maximum @code{oid} as a
 range constraint in optimizations decisions.
@@ -64,18 +64,18 @@ partitions.deposit(a1);
 partitions.deposit(a1,a2);
 partitions.deposit(a1,a3);
 
-function qry(a:bat[:void,:any]);
+function qry(a:bat[:void,:any_1]);
         io.print(a);
 end qry;
 optimizer.partitionedQuery("user","qry");
 @end verbatim
 The query is transformed into the following version.
 @verbatim
-function user.qry(a:bat[:void,:any]):void;
-barrier ($5,$6):= partitions.newIterator(a);
-    io.print($6);
-    redo ($5,$6):= partitions.hasMoreElements(a);
-exit ($5,$6);
+function user.qry(a:bat[:void,:any_1]):void;
+barrier (_5,_6):= partitions.newIterator(a);
+    io.print(_6);
+    redo (_5,_6):= partitions.hasMoreElements(a);
+exit (_5,_6);
 end qry;
 @end verbatim
 @{

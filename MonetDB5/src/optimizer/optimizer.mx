@@ -44,7 +44,7 @@ comment "Optimize a specific operation";
 
 pattern commonExpressionRemoval():str 
 address QOTCXoptimizer;
-pattern commonExpressionRemoval(mod:any, fcn:any):str 
+pattern commonExpressionRemoval(mod:any_1, fcn:any_2):str 
 address QOTCXoptimizerCALL
 comment "Common subexpression optimizer";
 
