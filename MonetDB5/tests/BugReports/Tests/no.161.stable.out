@@ -103,20 +103,13 @@ end test_inner;	# 4
 #	mil.line("   test_inner(in);");
 #	ga_a := test_inner(in);
 #end test_outer;
-function user.test_outer(in:any):any;	# 0  dynamic (test_outer:any)<-(in:any)
-    ;	# 1  (_2:any)
-    ;	# 2  (_3:any)
-    ea_a := calc.str(in);	# 3  (ea_a:any)<-(in:any)
-    fa_a := io.printf("test_outer.in: %s\n",ea_a);	# 4  (fa_a:any)<-(_6:str)(ea_a:any)
-    mil.line("   test_inner(in);");	# 5 MILline (_7:void)<-(_8:str)
-    ga_a := user.test_inner(in);	# 6  (ga_a:any)<-(in:any)
-end test_outer;	# 7  
-!ERROR: function test_outer(in:any$1):void;
-!                                 ^',' expected
-!ERROR: 	mil.line("   printf(\"test_outer.in: %s\\n\",str(in));");
-!	     ^<identifier> expected
-!ERROR: 	mil.line("   printf(\"test_outer.in: %s\\n\",str(in));");
-!	                                                          	  ^<identifier> expected
+function user.test_outer(in:any_1):void;	# 0  (test_outer:void)<-(in:any_1)
+    mil.line("   printf(\"test_outer.in: %s\\n\",str(in));");	# 1 MILline (_2:void)<-(_3:str)
+    ea_a := calc.str(in);	# 2  (ea_a:any)<-(in:any_1)
+    fa_a := io.printf("test_outer.in: %s\n",ea_a);	# 3  (fa_a:any)<-(_6:str)(ea_a:any)
+    mil.line("   test_inner(in);");	# 4 MILline (_7:void)<-(_8:str)
+    ga_a := user.test_inner(in);	# 5  (ga_a:any)<-(in:any_1)
+end test_outer;	# 6  
 #	mil.line("test_outer(\"chr\");");
 #	ha_a := test_outer("chr");
 #	mil.line("test_outer(\"chr\");");
@@ -124,8 +117,6 @@ end test_outer;	# 7
 #	mil.line("quit();");
 #	ja_a := quit();
 #  
-!ERROR: 'user.test_outer' undefined in user.main[57]
-!ERROR: 'user.test_outer' undefined in user.main[59]
 function user.main():int;	# 0  (main:int)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
 #Predefined code segment 	# 2  (_34:str)
@@ -183,12 +174,70 @@ function user.main():int;	# 0  (main:int)
     mil.line("PROC test_inner(any in) : void {");	# 54 MILline (_130:void)<-(_131:str)
     mil.line("PROC test_outer(any in) : void {");	# 55 MILline (_132:void)<-(_133:str)
     mil.line("test_outer(\"chr\");");	# 56 MILline (_134:void)<-(_135:str)
-    ha_a := user.test_outer("chr");	# 57  unknown (ha_a:any)<-(_137:str)
+    ha_a := user.test_outer("chr");	# 57  (ha_a:void)<-(_137:str)
     mil.line("test_outer(\"chr\");");	# 58 MILline (_138:void)<-(_135:str)
-    ia_a := user.test_outer("chr");	# 59  unknown (ia_a:any)<-(_137:str)
+    ia_a := user.test_outer("chr");	# 59  (ia_a:void)<-(_137:str)
     mil.line("quit();");	# 60 MILline (_140:void)<-(_141:str)
     ja_a := clients.quit();	# 61 CLTquit (ja_a:void)
 end main;	# 62  
+## >Number:         161\n
+## >Category:       Mserver\n
+## >Synopsis:       tostr problem when str module is loaded\n
+## >Confidential:   no\n
+## >Severity:       critical\n
+## >Priority:       high\n
+## >Responsible:    boncz (Peter Boncz)\n
+## >State:          open\n
+## >Class:          sw-bug\n
+## >Submitter-Id:   unknown\n
+## >Arrival-Date:   Wed Jul 15 15:24:01 1998\n
+## >Originator:     windhouw@cwi.nl\n
+## >Organization:\n
+## CWI\n
+## >Release:        980101\n
+## >Environment:\n
+## \n
+## >Description:\n
+## In the following script the string becomes different\n
+## in the inner procedure (when the str module is loaded):\n
+## \n
+## Script\n
+## 8<-----\n
+## PROC test_inner(any in) : void {\n
+##    printf(\"test_inner.in: %s\\n\",str(in));\n
+## }\n
+##  \n
+## PROC test_outer(any in) : void {\n
+##    printf(\"test_outer.in: %s\\n\",str(in));\n
+##    test_inner(in);\n
+## }\n
+## 8<-----\n
+## Output\n
+## 8<-----\n
+## >test_outer(\"chr\");\n
+## test_outer.in: chr\n
+## test_inner.in: chr\n
+## >module(str);\n
+## >test_outer(\"chr\");\n
+## test_outer.in: chr\n
+## test_inner.in: test_inner.in: %s\n
+## 8<----\n
+#setoid(oid(20000000));
+#PROC test_inner(any in) : void {
+#PROC test_outer(any in) : void {
+#test_outer(\"chr\");
+#   printf(\"test_outer.in: %s\\n\",str(in));
+test_outer.in: chr
+#   test_inner(in);
+#   printf(\"test_inner.in: %s\\n\",str(in));
+test_inner.in: chr
+#test_outer(\"chr\");
+#   printf(\"test_outer.in: %s\\n\",str(in));
+test_outer.in: chr
+#   test_inner(in);
+#   printf(\"test_inner.in: %s\\n\",str(in));
+test_inner.in: chr
+#quit();
 
 # 21:16:01 >  
 # 21:16:01 >  Done.

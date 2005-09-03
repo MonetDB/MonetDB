@@ -114,7 +114,7 @@ include mil;
 	aa_a := calc.oid(20000000);
 	ba_a := calc.setoid(aa_a);
 	mil.line("");
-function tst(b:bat[:any$1,:int]):bat[:any$2,:any$3];
+function tst(b:bat[:any_1,:int]):bat[:any_1,:int];
 	mil.line("");
 	i := 0;
 	mil.line("  i := 0;");

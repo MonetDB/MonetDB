@@ -55,34 +55,27 @@ stdout of test 'no.163` in directory 'tests/BugReports` itself:
 #	mil.line("");
 #	return ea_a :=b;
 #end tst;
-function user.tst(b:any):any;	# 0  dynamic (tst:any)<-(b:any)
-    ;	# 1  (_2:any)
-    mil.line("  i := 0;");	# 2 MILline (_3:void)<-(_4:str)
-barrier ca_a := true;	# 3  (ca_a:bit)<-(_6:bit) jump 12
-barrier da_a := calc.<(i,2);	# 4  (da_a:any)<-(i:any)(_9:int) jump 11
-    mil.line("  while (i < 2) {");	# 5 MILline (_10:void)<-(_11:str)
-    b := batcalc.+(b,1);	# 6  (b:any)<-(b:any)(_12:int)
-    mil.line("    b := [+](b, 1);");	# 7 MILline (_13:void)<-(_14:str)
-    i := calc.+(i,1);	# 8  (i:any)<-(i:any)(_12:int)
-    mil.line("    i := i + 1;");	# 9 MILline (_15:void)<-(_16:str)
-    redo ca_a;	# 10  (ca_a:bit) jump 4
-exit da_a;	# 11  (da_a:any)
-exit ca_a;	# 12  (ca_a:bit)
-    mil.line("");	# 13 MILline (_17:void)<-(_18:str)
-    return ea_a := b;	# 14  (ea_a:any)<-(b:any)
-end tst;	# 15  
-!ERROR: function tst(b:bat[:any$1,:int]):bat[:any$2,:any$3];
-!                              ^',' expected
-!ERROR: 	mil.line("");
-!	     ^',' expected
-!ERROR: 	i := 0;
-!	     ^<identifier> expected
-!ERROR: 'i' may not be used before being set in tst[4]
-!ERROR: 'i' may not be used before being set in tst[8]
+function user.tst(b:bat[:any_1,:int]):bat[:any_1,:int];	# 0  dynamic (tst:bat[:any_1,:int])<-(b:bat[:any_1,:int])
+    mil.line("");	# 1 MILline (_2:void)<-(_3:str)
+    i := 0;	# 2  (i:int)<-(_5:int)
+    mil.line("  i := 0;");	# 3 MILline (_6:void)<-(_7:str)
+barrier ca_a := true;	# 4  (ca_a:bit)<-(_9:bit) jump 13
+barrier da_a := calc.<(i,2);	# 5 CALCcompLTintint (da_a:bit)<-(i:int)(_11:int) jump 12
+    mil.line("  while (i < 2) {");	# 6 MILline (_12:void)<-(_13:str)
+    b := batcalc.+(b,1);	# 7 CMDbatADDcst (b:bat[:any_1,:int])<-(b:bat[:any_1,:int])(_14:int)
+    mil.line("    b := [+](b, 1);");	# 8 MILline (_15:void)<-(_16:str)
+    i := calc.+(i,1);	# 9 CALCbinaryADDintint (i:int)<-(i:int)(_14:int)
+    mil.line("    i := i + 1;");	# 10 MILline (_17:void)<-(_18:str)
+    redo ca_a;	# 11  (ca_a:bit) jump 5
+exit da_a;	# 12  (da_a:bit)
+exit ca_a;	# 13  (ca_a:bit)
+    mil.line("");	# 14 MILline (_19:void)<-(_3:str)
+    return ea_a := b;	# 15  (ea_a:bat[:any_1,:int])<-(b:bat[:any_1,:int])
+end tst;	# 16  
 #	mil.line("");
-#	b1 := new(nil:int,nil:int);
-#	mil.line("var b1 := new(int, int);");
-#	fa_a := insert(b1,0,0);
+#	b1 := bbp.new(nil:int,nil:int);
+#	mil.line("var b1 := bbp.new(int, int);");
+#	fa_a := bat.insert(b1,0,0);
 #	mil.line("b1.insert(0, 0);");
 #	ga_a := insert(b1,0,1);
 #	mil.line("");
@@ -92,7 +85,6 @@ end tst;	# 15
 #	mil.line("");
 #	ia_a := quit();
 #
-!ERROR: 'user.tst' undefined in user.main[121]
 function user.main():int;	# 0  (main:int)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
 #Predefined code segment 	# 2  (_34:str)
@@ -214,12 +206,136 @@ function user.main():int;	# 0  (main:int)
     mil.line("b1.insert(0, 0);");	# 118 MILline (_243:void)<-(_244:str)
     ga_a := bat.insert(b1,0,1);	# 119 BKCinsert_bun (ga_a:bat[:int,:int])<-(b1:bat[:int,:int])(_242:int)(_246:int)
     mil.line("");	# 120 MILline (_247:void)<-(_231:str)
-    bn := user.tst(b1);	# 121  unknown (bn:any)<-(b1:bat[:int,:int])
+    bn := user.tst(b1);	# 121  (bn:bat[:int,:int])<-(b1:bat[:int,:int])
     mil.line("var bn := tst(b1);  ");	# 122 MILline (_249:void)<-(_250:str)
-    ha_a := io.print(bn);	# 123 IOprint_val (ha_a:int)<-(bn:any)
+    ha_a := io.print(bn);	# 123 IOprint_val (ha_a:int)<-(bn:bat[:int,:int])
     mil.line("");	# 124 MILline (_252:void)<-(_231:str)
     ia_a := clients.quit();	# 125 CLTquit (ia_a:void)
 end main;	# 126  
+## >Number:         163\n
+## >Category:       MIL\n
+## >Synopsis:       multi[lex bug\n
+## >Confidential:   no\n
+## >Severity:       serious\n
+## >Priority:       medium\n
+## >Responsible:    boncz (Peter Boncz)\n
+## >State:          open\n
+## >Class:          sw-bug\n
+## >Submitter-Id:   unknown\n
+## >Arrival-Date:   Mon Jul 20 09:56:02 1998\n
+## >Originator:     manegold@cwi.nl\n
+## >Organization:\n
+## >Release:        980101\n
+## >Environment:\n
+## any\n
+## >Description:\n
+## Tim Ruhl (DDi) reported this bug:\n
+## \n
+## The following script fails with \"GDKmalloc called with size 0\".\n
+## (cf. output below)\n
+## \n
+## -8<-----\n
+## \n
+## proc tst(BAT[any, int] b) : bat\n
+## {  \n
+##   var i;\n
+## \n
+##   i := 0;\n
+##   while (i < 2) {\n
+##     b := [+](b, 1);\n
+##     i := i + 1;\n
+##   }\n
+## \n
+##   return b;\n
+## }\n
+## \n
+## b1 := bbp.new(int, int);\n
+## b1.insert(0, 0);\n
+## b1.insert(0, 1);\n
+## \n
+## bn := tst(b1);\n
+## bn.print;\n
+## \n
+## quit;\n
+## \n
+## -8<-----\n
+## \n
+## # Monet Database Server V4.0 (IRIX5.3/32bit) of Fri Jul 17 21:30:49 MET DST 1998\n
+## # Copyright (c) 1993-1998, CWI & SION. All rights reserved.\n
+## #script:../tim.mil\n
+## \n
+## loaded;\n
+## #---------------------------------#\n
+## # module        | usage_count     #\n
+## #---------------------------------#\n
+## [ \"kernel\",       1               ]\n
+## [ \"arith\",        1               ]\n
+## [ \"bat\",          1               ]\n
+## [ \"algebra\",      1               ]\n
+## [ \"sys\",          1               ]\n
+## [ \"trans\",        1               ]\n
+## \n
+## Try: modules;                - for other modules.\n
+##      ls;                     - for persistent bat listing.\n
+##      sigs(\"<module>\")        - for available commands per module.\n
+##      help(\"<command>\")       - for help one-liner for a command.\n
+## \n
+## #You are system administrator (adm)!\n
+##  \n
+## proc tst(BAT[any, int] b) : bat\n
+## {\n
+##   var i;\n
+## \n
+##   i := 0;\n
+##   while (i < 2) {\n
+##     b := [+](b, 1);\n
+##     i := i + 1;\n
+##   }\n
+## \n
+##   return b;\n
+## }\n
+## \n
+## b1 := bbp.new(int, int);\n
+## b1.insert(0, 0);\n
+## b1.insert(0, 1);\n
+## \n
+## bn := tst(b1);\n
+## GDKmalloc called with size 0\n
+## \n
+## -8<-----\n
+## \n
+## As Tim sais, it has probably to do with rewriting the\n
+## MIL parse tree after the first iteration of the while loop.\n
+## \n
+## ========\n
+## \n
+## As I just noticed, similar (the same\?) bugs have already been\n
+## reported in bug reports #117 & #156.\n
+## \n
+##\t\tStefan\n
+#
+#
+#
+#var b1 := bbp.new(int, int);
+#b1.insert(0, 0);
+#
+#
+#  i := 0;
+#  while (i < 2) {
+#    b := [+](b, 1);
+#    i := i + 1;
+#  while (i < 2) {
+#    b := [+](b, 1);
+#    i := i + 1;
+#
+#var bn := tst(b1);  
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 0,	  2	  ]
+[ 0,	  3	  ]
+#
 
 # 14:17:57 >  
 # 14:17:57 >  Done.

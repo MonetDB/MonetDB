@@ -100,29 +100,23 @@ stdout of test 'no.051` in directory 'tests/BugReports` itself:
 #	mil.line("        return a;");
 #	return ea_a :=a;
 #end create;
-function user.create(b:any):any;	# 0  dynamic (create:any)<-(b:any)
-    ;	# 1  (_2:any)
-    a := bbp.new(nil:oid,nil:flt);	# 2 CMDBATnew (a:bat[:oid,:flt])<-(_4:oid)(_5:flt)
-    mil.line("        b@batloop(){");	# 3 MILline (_6:void)<-(_7:str)
-barrier (aa_a,aa_aH,aa_aT):= chopper.newIterator(b);	# 4  (aa_a:any)(aa_aH:any)(aa_aT:any)<-(b:any) jump 13
-    mil.line("                if (a.count() = 0)");	# 5 MILline (_11:void)<-(_12:str)
+function user.create(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (create:bat[:any_1,:any_2])<-(b:bat[:any_1,:any_2])
+    mil.line("        var a := new (oid,flt);");	# 1 MILline (_2:void)<-(_3:str)
+    a := bbp.new(nil:oid,nil:flt);	# 2 CMDBATnew (a:bat[:oid,:flt])<-(_5:oid)(_6:flt)
+    mil.line("        b@batloop(){");	# 3 MILline (_7:void)<-(_8:str)
+barrier (aa_a,aa_aH,aa_aT):= chopper.newIterator(b);	# 4 CHPbunIterator (aa_a:lng)(aa_aH:any)(aa_aT:any)<-(b:bat[:any_1,:any_2]) jump 13
+    mil.line("                if (a.count() = 0)");	# 5 MILline (_12:void)<-(_13:str)
     ba_a := algebra.count(a);	# 6 ALGcount_bat (ba_a:lng)<-(a:bat[:oid,:flt])
-barrier ca_a := calc.==(ba_a,0);	# 7 CALCcompEQlngint (ca_a:bit)<-(ba_a:lng)(_15:int) jump 11
-    mil.line("                        return a;");	# 8 MILline (_16:void)<-(_17:str)
+barrier ca_a := calc.==(ba_a,0);	# 7 CALCcompEQlngint (ca_a:bit)<-(ba_a:lng)(_16:int) jump 11
+    mil.line("                        return a;");	# 8 MILline (_17:void)<-(_18:str)
     return da_a := a;	# 9  (da_a:bat[:oid,:flt])<-(a:bat[:oid,:flt])
-    mil.line("        }");	# 10 MILline (_19:void)<-(_20:str)
+    mil.line("        }");	# 10 MILline (_20:void)<-(_21:str)
 exit ca_a;	# 11  (ca_a:bit)
-    redo (aa_a,aa_aH,aa_aT):= chopper.hasMoreElements(b);	# 12  (aa_a:any)(aa_aH:any)(aa_aT:any)<-(b:any) jump 5
-exit (aa_a,aa_aH,aa_aT);	# 13  (aa_a:any)(aa_aH:any)(aa_aT:any)
-    mil.line("        return a;");	# 14 MILline (_21:void)<-(_22:str)
+    redo (aa_a,aa_aH,aa_aT):= chopper.hasMoreElements(b);	# 12 CHPbunHasMoreElements (aa_a:lng)(aa_aH:any)(aa_aT:any)<-(b:bat[:any_1,:any_2]) jump 5
+exit (aa_a,aa_aH,aa_aT);	# 13  (aa_a:lng)(aa_aH:any)(aa_aT:any)
+    mil.line("        return a;");	# 14 MILline (_22:void)<-(_23:str)
     return ea_a := a;	# 15  (ea_a:bat[:oid,:flt])<-(a:bat[:oid,:flt])
 end create;	# 16  
-!ERROR: function create(b:bat[:any$1,:any$2]):bat[:any$1,:any$2];
-!                                 ^',' expected
-!ERROR: 	mil.line("        var a := new (oid,flt);");
-!	     ^',' expected
-!ERROR: 	mil.line("        var a := new (oid,flt);");
-!	                                             	  ^<identifier> expected
 #	mil.line("var b := new (oid,flt);");
 #	b := new(nil:oid,nil:flt);
 #	mil.line("b.insert(oid(1),flt(2));");
@@ -143,8 +137,6 @@ end create;	# 16
 #	mil.line("quit();");
 #	na_a := quit();
 #
-!ERROR: 'user.create' undefined in user.main[55]
-!ERROR: 'algebra.semijoin' undefined in user.main[61]
 function user.main():int;	# 0  (main:int)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
 #Predefined code segment 	# 2  (_34:str)
@@ -200,17 +192,84 @@ function user.main():int;	# 0  (main:int)
     mil.line("b.print();");	# 52 MILline (_133:void)<-(_134:str)
     ia_a := io.print(b);	# 53 IOprint_val (ia_a:int)<-(b:bat[:oid,:flt])
     mil.line("var c := create(b);");	# 54 MILline (_136:void)<-(_137:str)
-    c := user.create(b);	# 55  unknown (c:any)<-(b:bat[:oid,:flt])
+    c := user.create(b);	# 55  (c:bat[:oid,:flt])<-(b:bat[:oid,:flt])
     mil.line("b.print();");	# 56 MILline (_139:void)<-(_134:str)
     ja_a := io.print(b);	# 57 IOprint_val (ja_a:int)<-(b:bat[:oid,:flt])
     mil.line("c.print();");	# 58 MILline (_141:void)<-(_142:str)
-    ka_a := io.print(c);	# 59 IOprint_val (ka_a:int)<-(c:any)
+    ka_a := io.print(c);	# 59 IOprint_val (ka_a:int)<-(c:bat[:oid,:flt])
     mil.line("b.semijoin(c).print();");	# 60 MILline (_144:void)<-(_145:str)
-    la_a := algebra.semijoin(b,c);	# 61  unknown (la_a:any)<-(b:bat[:oid,:flt])(c:any)
-    ma_a := io.print(la_a);	# 62 IOprint_val (ma_a:int)<-(la_a:any)
+    la_a := algebra.semijoin(b,c);	# 61 ALGsemijoin (la_a:bat[:oid,:flt])<-(b:bat[:oid,:flt])(c:bat[:oid,:flt])
+    ma_a := io.print(la_a);	# 62 IOprint_val (ma_a:int)<-(la_a:bat[:oid,:flt])
     mil.line("quit();");	# 63 MILline (_148:void)<-(_149:str)
     na_a := clients.quit();	# 64 CLTquit (na_a:void)
 end main;	# 65  
+## >Number:         51\n
+## >Category:       MIL\n
+## >Synopsis:       returns from within a batloop\n
+## >Confidential:   no\n
+## >Severity:       serious\n
+## >Priority:       medium\n
+## >Responsible:    boncz\n
+## >State:          closed\n
+## >Class:          sw-bug\n
+## >Submitter-Id:   unknown\n
+## >Arrival-Date:   Wed Oct 15 13:50:27 1997\n
+## >Originator:     niels\n
+## >Organization:\n
+## >Release:        971007\n
+## >Environment:\n
+## SOLARIS 2.5.1\n
+## >Description:\n
+## When a bat is returned from with a batloop the return value\n
+## is incorrect. \n
+## proc create(b) : bat {\n
+##         var a := new (oid,flt);\n
+##         b@batloop(){\n
+##                 if (a.count = 0)\n
+##                         return a;\n
+##         }\n
+##         return a;\n
+## }\n
+## \n
+## b := new (oid,flt);\n
+## b.insert(oid(1),flt(2));\n
+## var c := create(b);\n
+## b.semijoin(c).print;\n
+## #output\n
+## !WARNING: BATdescriptor: range error\n
+## !ERROR: interpret command/proc: 2nd param: invalid BAT.\n
+## [ nil ]\n
+#proc create(bat b) : bat {
+#var b := new (oid,flt);
+#b.insert(oid(1),flt(2));
+#b.print();
+#-----------------#
+# h	t	  # name
+# oid	flt	  # type
+#-----------------#
+[ 1@0,	  2	  ]
+#var c := create(b);
+#        var a := new (oid,flt);
+#        b@batloop(){
+#                if (a.count() = 0)
+#                        return a;
+#b.print();
+#-----------------#
+# h	t	  # name
+# oid	flt	  # type
+#-----------------#
+[ 1@0,	  2	  ]
+#c.print();
+#-----------------#
+# h	t	  # name
+# oid	flt	  # type
+#-----------------#
+#b.semijoin(c).print();
+#-----------------#
+# h	t	  # name
+# oid	flt	  # type
+#-----------------#
+#quit();
 
 # 20:07:04 >  
 # 20:07:04 >  Done.

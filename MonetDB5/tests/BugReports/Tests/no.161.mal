@@ -61,7 +61,7 @@ function test_inner(in:str):void;
 	da_a := io.printf("test_inner.in: %s\n",ca_a);
 end test_inner;
 	mil.line("PROC test_outer(any in) : void {");
-function test_outer(in:any$1):void;
+function test_outer(in:any_1):void;
 	mil.line("   printf(\"test_outer.in: %s\\n\",str(in));");
 	ea_a := calc.str(in);
 	fa_a := io.printf("test_outer.in: %s\n",ea_a);

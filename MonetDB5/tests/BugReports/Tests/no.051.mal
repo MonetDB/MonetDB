@@ -46,7 +46,7 @@ include mil;
 	mil.line("# !ERROR: interpret command/proc: 2nd param: invalid BAT.\n");
 	mil.line("# [ nil ]\n");
 	mil.line("proc create(bat b) : bat {");
-function create(b:bat[:any$1,:any$2]):bat[:any$1,:any$2];
+function create(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];
 	mil.line("        var a := new (oid,flt);");
 	a := bbp.new(nil:oid,nil:flt);
 	mil.line("        b@batloop(){");
