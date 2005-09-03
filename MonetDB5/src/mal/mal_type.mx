@@ -59,6 +59,7 @@ typedef int malType;
 #define setAnyHeadIndex(X,I) X |= ((I & 017)<<22);
 #define setAnyTailIndex(X,I) X |= ((I & 017)<<18);
 #define isAnyExpression(X) ((X) >> 17)
+#define isPolymorphic(X) (((X) >> 17) || (X)== TYPE_any)
 #define isPolyType(X) (isAnyExpression(X) && (getHeadIndex(X)>0 ||getTailIndex(X)>0))
 
 #define getHeadIndex(X)  (((X)>>22) & 017)

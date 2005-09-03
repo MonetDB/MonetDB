@@ -94,7 +94,7 @@ It would often require a rewrite of several other statements as well.
 #ifndef _MAL_MACRO_H_
 #define _MAL_MACRO_H_
 
-/* #define DEBUG_MAL_MACRO */
+/* #define DEBUG_MAL_MACRO*/
 
 #include "mal.h"
 #include "mal_client.h"

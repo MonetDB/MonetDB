@@ -302,7 +302,7 @@ void chkFlow(MalBlkPtr mb)
 			    if(ps->typechk == TYPE_RESOLVED)
 			    for(i=0;i<p->retc; i++){
                     setVarUsed(mb,getArg(p,i),TRUE);
-                    if( resolveType(getArgType(mb,ps,i), getArgType(mb,p,i)) == -1){
+                    if( getArgType(mb,ps,i) != getArgType(mb,p,i) ){
                         GDKerror("%s type mismatch at type %d\n",
                             (p->barrier==RETURNsymbol?"RETURN":"YIELD"),
 			                                getArgType(mb,p,i));
@@ -670,19 +670,14 @@ printFunction(GDKout, new->def, LIST_MAL_ALL);
 		int t = getArgType(mb,p,i);
 
 		if( isaBatType(t) ){
-			int head,tail;
-			head = getHeadType(t);
-			tail = getTailType(t);
-			if( isPolymorphic(getHeadType(v)) )
-                replaceTypeVar(new->def, pp, getHeadIndex(v), head);
-			if( isPolymorphic(getTailType(v)) )
-                replaceTypeVar(new->def, pp, getTailIndex(v), tail);
+			if( getHeadIndex(v) )
+                replaceTypeVar(new->def, pp, getHeadIndex(v), getHeadType(t));
+			if( getTailIndex(v) )
+                replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
 		} else
 		if( isaColType(t) ){
-			int tail;
-			tail = getTailType(t);
-			if( isPolymorphic(getTailType(v)) )
-			replaceTypeVar(new->def, pp, getTailIndex(v), tail);
+			if( getTailIndex(v) )
+				replaceTypeVar(new->def, pp, getTailIndex(v), getTailType(t));
 		} else
 			replaceTypeVar(new->def, pp, getTailIndex(v), t);
 	} 
