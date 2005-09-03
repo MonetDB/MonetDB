@@ -122,7 +122,7 @@ Table of contents
 * What optimizers to consider?::
 * Optimization Dependencies::
 * Optimizer Building Blocks::
-* Optimizer Framework::
+* Query Optimizer Framework::
 @end menu
 
 * Optimizer toolkit::
@@ -142,6 +142,7 @@ Table of contents
 * Strength Reduction::
 * Costmodels::
 * Variable Stack Reduction::
+* Query Execution Plans::
 @end menu
 * Program Debugging::
 @menu
@@ -243,8 +244,10 @@ Give a brief introduction to Mapi, JDBC, ODBC,Perl....
 @include mal_strengthReduction.bdy.texi
 @include mal_costmodel.bdy.texi
 @include mal_reduce.bdy.texi
+@node Query Execution Plans, Program Debugging, Variable Stack Reduction,  Optimizer toolkit
+@include mal_qep.bdy.texi
 
-@node Program Debugging, The MAL Debugger, Variable Stack Reduction, TOC
+@node Program Debugging, The MAL Debugger, Query Execution Plans, TOC
 @include mal_debugger.bdy.texi
 
 @node Execution Profiling, Event Filtering, Runtime Inspection, TOC

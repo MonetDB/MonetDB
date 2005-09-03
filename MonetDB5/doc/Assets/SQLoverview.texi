@@ -350,7 +350,10 @@ The example below, illustrates how you can easily obtain a quick
 overview of the cost components of the query using the timer
 flag and @code{continuation} command for the debugger.
 @verbatim
-#mdb #    sql_cache.sql2();
+>debug select * from tables;
+#mdb #    mdb.start();
+mdb>n
+#mdb #    sql_cache.sql0();
 mdb>timer
 mdb>c
 #    19 usec#    _1{count=0} := sql.bind(_2="sys", _3="ptables", _4="id", _5=0)
