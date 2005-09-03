@@ -14,7 +14,9 @@ stdout of test 'tst115` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 ## the next step is to trace the call of a mal function call
 #
-#command + (L:any$1,R:any$1):any$1 
+#command + (L:any_1,R:any_1):any_1 
+!ERROR: address of 'user.addIntInt' not found
+command user.+(L:any_1,R:any_1):any_1 address addIntInt;	# 0  dynamic (+:any_1)<-(L:any_1)(R:any_1)
 #
 #function doitOnce():int;
 #	z:= 12;
@@ -24,8 +26,6 @@ function user.doitOnce():int;	# 0  (doitOnce:int)
     z := 12;	# 1  (z:int)<-(_2:int)
     return z;	# 2  (z:int)
 end doitOnce;	# 3  
-!ERROR: command + (L:any$1,R:any$1):any$1 
-!                       ^',' expected
 #
 #function doitTwice(i:int):int;
 #	j:= 2;
@@ -48,14 +48,16 @@ end doitTwice;	# 5
 #c:= 3;
 #d:= doitTwice("wrong");
 #
-command user.+(L:any):any;	# 0  unknown (+:any)<-(L:any)
-    a := 1;	# 1  unknown (a:any)<-(_3:int)
-    b := user.doitOnce();	# 2  unknown (b:any)
-    c := 2;	# 3  unknown (c:any)<-(_6:int)
-    d := user.doitTwice(3);	# 4  unknown (d:any)<-(_8:int)
-    c := 3;	# 5  unknown (c:any)<-(_8:int)
-    d := user.doitTwice("wrong");	# 6  unknown (d:any)<-(_9:str)
-end +;	# 7  unknown 
+!ERROR: 'user.doitTwice' undefined in user.main[7]
+function user.main():int;	# 0  (main:int)
+# the next step is to trace the call of a mal function call 	# 1  (_2:str)
+    a := 1;	# 2  (a:int)<-(_4:int)
+    b := user.doitOnce();	# 3  (b:int)
+    c := 2;	# 4  (c:int)<-(_7:int)
+    d := user.doitTwice(3);	# 5  (d:int)<-(_9:int)
+    c := 3;	# 6  (c:int)<-(_9:int)
+    d := user.doitTwice("wrong");	# 7  unknown (d:int)<-(_10:str)
+end main;	# 8  
 
 # 07:59:00 >  
 # 07:59:00 >  Done.

@@ -78,7 +78,7 @@ function user.main():int;	# 0  (main:int)
 # A collection of forloops, which should not execute 	# 1  ($2:str)
 barrier H := batoperatie;	# 2  (H:any)<-(batoperatie:any) jump 6
     Tail := algebra.fetch(b,H);	# 3  unknown (Tail:any)<-(b:any)(H:any)
-#body 	# 4  ($8:str)
+#body 	# 4  (_8:str)
     redo H;	# 5  (H:any) jump 3
 exit H;	# 6  (H:any)
 # de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot 	# 7  ($10:str)
@@ -111,7 +111,7 @@ barrier FTE := booleanexpr;	# 33  (FTE:any)<-(booleanexpr:any) jump 35
 # thenpart 	# 34  ($38:str)
 exit FTE;	# 35  (FTE:any)
 barrier FS := batcalc.not(FTE);	# 36  unknown (FS:any)<-(FTE:any) jump 38
-#elsepart 	# 37  ($43:str)
+#elsepart 	# 37  (_43:str)
 exit FS;	# 38  (FS:any)
 end main;	# 39  
 

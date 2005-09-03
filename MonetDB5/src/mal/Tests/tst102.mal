@@ -1,5 +1,5 @@
 # the calls are wrong, they violate the type constraint
-command + (L:any$1, R:any$1):any$1 
+command + (L:any_1, R:any_1):any_1 
 address addIntInt
 comment "unknown function";
 

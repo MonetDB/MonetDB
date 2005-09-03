@@ -15,14 +15,10 @@ stdout of test 'tst101` in directory 'src/mal` itself:
 ##define the generic addition operator
 ## this should be sufficient to determine outcome
 #
-#function + (L:any$1, R:any$1):int ; return s :=1; end +;
-function user.+(L:any):any;	# 0  dynamic (+:any)<-(L:any)
-    ;	# 1  (_2:any)
+#function + (L:any_1, R:any_1):int ; return s :=1; end +;
+function user.+(L:any_1,R:any_1):int;	# 0  (+:int)<-(L:any_1)(R:any_1)
+    return s := 1;	# 1  (s:int)<-(_4:int)
 end +;	# 2  
-!ERROR: function + (L:any$1, R:any$1):int ; return s :=1; end +;
-!                        ^',' expected
-!ERROR: function + (L:any$1, R:any$1):int ; return s :=1; end +;
-!                                          ^<identifier> expected
 #a:=3+1;
 #b:=3.5+2.7;
 #c:= 7+8;

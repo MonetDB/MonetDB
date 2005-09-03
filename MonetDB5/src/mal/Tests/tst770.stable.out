@@ -12,31 +12,25 @@ stdout of test 'tst770` in directory 'src/mal` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
-#function test(b:bat[:any$1,:any$2],c:any$2):void;
-#function test(b:bat[:any$1,:any$2],c:any$1):void;
-#function test(b:bat[:any$1,:any$2]):void;
+#function test(b:bat[:any_1,:any_2],c:any_2):void;
+#        reduce := batcalc./(b,c); 
+#end test;
+function user.test(b:bat[:any_1,:any_2],c:any_2):void;	# 0  (test:void)<-(b:bat[:any_1,:any_2])(c:any_2)
+    reduce := batcalc./(b,c);	# 1 CMDbatDIVcst (reduce:bat[:any,:any])<-(b:bat[:any_1,:any_2])(c:any_2)
+end test;	# 2  
+#function test(b:bat[:any_1,:any_2],c:any_1):void;
+#        reduce := batcalc./(b,c); 
+#end test;
+function user.test(b:bat[:any_1,:any_2],c:any_1):void;	# 0  (test:void)<-(b:bat[:any_1,:any_2])(c:any_1)
+    reduce := batcalc./(b,c);	# 1 CMDbatDIVcst (reduce:bat[:any,:any])<-(b:bat[:any_1,:any_2])(c:any_1)
+end test;	# 2  
+#function test(b:bat[:any_1,:any_2]):void;
+#        reduce := batcalc./(b,1); 
+#end test;
+function user.test(b:bat[:any_1,:any_2]):void;	# 0  (test:void)<-(b:bat[:any_1,:any_2])
+    reduce := batcalc./(b,1);	# 1 CMDbatDIVcst (reduce:bat[:any,:int])<-(b:bat[:any_1,:any_2])(_3:int)
+end test;	# 2  
 #
-!ERROR: function test(b:bat[:any$1,:any$2],c:any$2):void;
-!                               ^',' expected
-!ERROR:         reduce := batcalc./(b,c); 
-!      ^',' expected
-!ERROR:         reduce := batcalc./(b,c); 
-!                                        ^<identifier> expected
-!ERROR: function test(b:bat[:any$1,:any$2],c:any$1):void;
-!                               ^',' expected
-!ERROR:         reduce := batcalc./(b,c); 
-!      ^',' expected
-!ERROR:         reduce := batcalc./(b,c); 
-!                                        ^<identifier> expected
-!ERROR: function test(b:bat[:any$1,:any$2]):void;
-!                               ^',' expected
-!ERROR:         reduce := batcalc./(b,1); 
-!      ^',' expected
-!ERROR:         reduce := batcalc./(b,1); 
-!                                        ^<identifier> expected
-function user.test(b:any):any;	# 0  unknown (test:any)<-(b:any)
-    ;	# 1  unknown (_2:any)
-end test;	# 2  unknown 
 
 # 08:01:31 >  
 # 08:01:31 >  Done.

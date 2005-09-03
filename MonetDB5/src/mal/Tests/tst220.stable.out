@@ -23,19 +23,14 @@ stdout of test 'tst220` in directory 'src/mal` itself:
 #
 #	return bb;
 #end steal; 
-function user.steal(bb:any):any;	# 0  dynamic (steal:any)<-(bb:any)
-    ;	# 1  (_2:any)
-    loc := bb;	# 2  (loc:any)<-(bb:any)
-    i := bbp.getLRefCount(bb);	# 3  (i:any)<-(bb:any)
-    io.printf("local in function refcount =%d[2,3]\n",i);	# 4  (_5:any)<-(_6:str)(i:any)
-    return bb;	# 5  (bb:any)
-end steal;	# 6  
-!ERROR: function steal(bb:bat[:any$1,:any$2]) :bat[:any$1,:any$2];
-!                                 ^',' expected
-!ERROR: 	i:= bbp.getLRefCount(bb);
-!	     ^',' expected
-!ERROR: 	io.printf("enter function refcount =%d[2,3]\n",i);
-!	     ^<identifier> expected
+function user.steal(bb:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (steal:bat[:any_1,:any_2])<-(bb:bat[:any_1,:any_2])
+    i := bbp.getLRefCount(bb);	# 1 CMDgetBATlrefcnt (i:int)<-(bb:bat[:any_1,:any_2])
+    io.printf("enter function refcount =%d[2,3]\n",i);	# 2 IOprint_formatted_int (_3:int)<-(_4:str)(i:int)
+    loc := bb;	# 3  (loc:bat[:any_1,:any_2])<-(bb:bat[:any_1,:any_2])
+    i := bbp.getLRefCount(bb);	# 4 CMDgetBATlrefcnt (i:int)<-(bb:bat[:any_1,:any_2])
+    io.printf("local in function refcount =%d[2,3]\n",i);	# 5 IOprint_formatted_int (_6:int)<-(_7:str)(i:int)
+    return bb;	# 6  (bb:bat[:any_1,:any_2])
+end steal;	# 7  
 #
 #function createone():bat[:int,:str];
 #	b:= bbp.new(:int,:str);
@@ -94,8 +89,6 @@ end createone;	# 3
 #	zn:= bbp.getNames();
 #	print(zn,z,zl);
 #
-!ERROR: 'user.steal' undefined in user.main[35]
-!ERROR: 'user.steal' undefined in user.main[39]
 function user.main():int;	# 0  (main:int)
 # a test checking BAT reference counting under various situations 	# 1  (_2:str)
     b := bbp.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-(_4:int)(_5:str)
@@ -131,11 +124,11 @@ function user.main():int;	# 0  (main:int)
     i := bbp.getLRefCount(b);	# 32 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("after 5rd assignment refcount =%d[1]\n",i);	# 33 IOprint_formatted_int (_40:int)<-(_41:str)(i:int)
     io.printf("call function\n");	# 34 IOprint_str (_42:int)<-(_43:str)
-    d := user.steal(b);	# 35  unknown (d:any)<-(b:bat[:int,:str])
+    d := user.steal(b);	# 35  (d:bat[:int,:str])<-(b:bat[:int,:str])
     i := bbp.getLRefCount(b);	# 36 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("return from function refcount =%d[2]\n",i);	# 37 IOprint_formatted_int (_45:int)<-(_46:str)(i:int)
     io.printf("check self replacement, overrule refcount!\n");	# 38 IOprint_str (_47:int)<-(_48:str)
-    b := user.steal(b);	# 39  unknown (b:bat[:int,:str])<-(b:bat[:int,:str])
+    b := user.steal(b);	# 39  (b:bat[:int,:str])<-(b:bat[:int,:str])
     i := bbp.getLRefCount(b);	# 40 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("return from function refcount =%d[2]\n",i);	# 41 IOprint_formatted_int (_49:int)<-(_46:str)(i:int)
     z := bbp.getRefCount();	# 42 CMDbbpRefCount (z:bat[:int,:int])
@@ -143,6 +136,50 @@ function user.main():int;	# 0  (main:int)
     zn := bbp.getNames();	# 44 CMDbbpNames (zn:bat[:int,:str])
     io.print(zn,z,zl);	# 45 IOtable (_53:int)<-(zn:bat[:int,:str])(z:bat[:int,:int])(zl:bat[:int,:int])
 end main;	# 46  
+refcount =1[1]
+#-------------------------#
+# h	t		  # name
+# int	str		  # type
+#-------------------------#
+[ 1,	  "bat B"	  ]
+refcount =1[1]
+after assignment refcount =1[1]
+after 2nd assignment refcount =2[2]
+after 3rd assignment refcount =1[1]
+assignment refcount =1[1]
+#-----------------#
+# h	t	  # name
+# int	str	  # type
+#-----------------#
+after 4rd assignment refcount =1[1]
+after 5rd assignment refcount =1[1]
+call function
+enter function refcount =2[2,3]
+local in function refcount =2[2,3]
+return from function refcount =2[2]
+check self replacement, overrule refcount!
+enter function refcount =3[2,3]
+local in function refcount =3[2,3]
+return from function refcount =2[2]
+#---------------------------------------------------------#
+# bbp	name			refcnt	lrefcnt		  # name
+# int	str			int	int		  # type
+#---------------------------------------------------------#
+[ 1,	  "monet_environment",	  1,	  0		  ]
+[ 2,	  "monet_unicode_case",	  1,	  0		  ]
+[ 3,	  "timezones",		  1,	  0		  ]
+[ 4,	  "stat_id_inuse",	  1,	  1		  ]
+[ 5,	  "stat_id_nme",	  1,	  1		  ]
+[ 6,	  "stat_id_expire",	  1,	  1		  ]
+[ 7,	  "stat_id_stamp",	  1,	  1		  ]
+[ 8,	  "stat_id_count",	  1,	  1		  ]
+[ 9,	  "stat_id_size",	  1,	  1		  ]
+[ 10,	  "stat_id_min_lng",	  1,	  1		  ]
+[ 11,	  "stat_id_max_lng",	  1,	  1		  ]
+[ 12,	  "stat_id_histogram",	  1,	  1		  ]
+[ 13,	  "tmp_15",		  0,	  2		  ]
+[ 14,	  "tmp_16",		  0,	  1		  ]
+[ 15,	  "tmp_17",		  0,	  1		  ]
 
 # 08:01:01 >  
 # 08:01:01 >  Done.

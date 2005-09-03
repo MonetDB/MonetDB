@@ -1,5 +1,5 @@
 #test the capability to deal with unspecified bats.
-function tst2(b:bat[:any$1,:any$2]);
+function tst2(b:bat[:any_1,:any_2]);
 	bat.insert(b,"hello",1);
 end tst2;
 

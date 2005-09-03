@@ -1,4 +1,4 @@
-function test(s:str, b:bat[:any$1,:any$2]...);
+function test(s:str, b:bat[:any_1,:any_2]...);
 	io.print(s);
 end test;
 b:= bbp.new(:int,:int);

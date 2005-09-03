@@ -1,6 +1,6 @@
 # the next step is to trace the call of a mal function call
 
-command + (L:any$1,R:any$1):any$1 
+command + (L:any_1,R:any_1):any_1 
 address addIntInt; 
 
 function doitOnce():int;

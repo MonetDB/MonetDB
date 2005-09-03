@@ -1,7 +1,7 @@
 # check propagation of type variables over bats
 # can be checked after bat module has been added
 
-command f(a:any$1, b:bat[:any$2,:any$1],c:any$2):any 
+command f(a:any_1, b:bat[:any_2,:any_1],c:any_2):any_3
 address dummy;
 
 b:= bbp.new(:str,:int);

@@ -67,52 +67,91 @@ end refs;	# 5
 #print("BAT was removed from the box");
 #exit MALexception;
 #
-!ERROR: t:bat[:any$1,:any$2]:= bbp.bind("tasks");
-!                 ^',' expected
-!ERROR: io.print(t);
-!      ^';' expected
-!ERROR: t:bat[:any$1,:any$2]:= bbp.bind("tasks");
-!                 ^',' expected
-!ERROR: user.refs();
-!      ^';' expected
-!ERROR: z:bat[:any$1,:any$2]:= bbp.bind("tasks");
-!                 ^',' expected
-!ERROR: io.print(z);
-!      ^';' expected
-function user.main():int;	# 0  unknown (main:int)
-#this test is used to monitor reference count setting 	# 1  unknown (_2:str)
-#create a persistent bat and destroy it in the next session 	# 2  unknown (_4:str)
-    b := bbp.new(:int,:int);	# 3  unknown (b:any)<-(_6:int)(_6:int)
-#refs(); 	# 4  unknown (_8:str)
-    bat.insert(b,23,32);	# 5  unknown (_9:any)<-(b:any)(_10:int)(_11:int)
-#refs(); 	# 6  unknown (_8:str)
-    bat.setName(b,"tasks");	# 7  unknown (_13:any)<-(b:any)(_14:str)
-#refs(); 	# 8  unknown (_8:str)
-    bat.setPersistent(b);	# 9  unknown (_16:any)<-(b:any)
-#refs(); 	# 10  unknown (_8:str)
-# it is committed  	# 11  unknown (_19:str)
-    io.print("open box");	# 12  unknown (_20:any)<-(_21:str)
-    bbp.open();	# 13  unknown (_22:any)
-    user.refs();	# 14  unknown (_23:any)
-    t;	# 15  unknown (t:any)
-    user.refs();	# 16  unknown (_25:any)
-    io.print(t);	# 17  unknown (_26:any)<-(t:any)
-catch MALexception;	# 18  unknown (MALexception:any)
-    io.print("BAT was released");	# 19  unknown (_28:any)<-(_29:str)
-exit MALexception;	# 20  unknown (MALexception:any)
-# the bat is still visible, because the destroy only 	# 21  unknown (_31:str)
-# marks it for deletion at the end of session or 	# 22  unknown (_33:str)
-# when the reference counters drop to zero 	# 23  unknown (_35:str)
-    t;	# 24  unknown (t:any)
-    user.refs();	# 25  unknown (_36:any)
-    io.print(t);	# 26  unknown (_37:any)<-(t:any)
-catch MALexception;	# 27  unknown (MALexception:any)
-    io.print("BAT was destroyed");	# 28  unknown (_38:any)<-(_39:str)
-exit MALexception;	# 29  unknown (MALexception:any)
-    z;	# 30  unknown (z:any)
-    io.print("BAT was removed from the box");	# 31  unknown (_41:any)<-(_42:str)
-exit MALexception;	# 32  unknown (MALexception:any)
-end main;	# 33  unknown 
+function user.main():int;	# 0  (main:int)
+#this test is used to monitor reference count setting 	# 1  (_2:str)
+#create a persistent bat and destroy it in the next session 	# 2  (_4:str)
+    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
+#refs(); 	# 4  (_8:str)
+    bat.insert(b,23,32);	# 5 BKCinsert_bun (_9:bat[:int,:int])<-(b:bat[:int,:int])(_10:int)(_11:int)
+#refs(); 	# 6  (_8:str)
+    bat.setName(b,"tasks");	# 7 BKCsetName (_13:bat[:int,:int])<-(b:bat[:int,:int])(_14:str)
+#refs(); 	# 8  (_8:str)
+    bat.setPersistent(b);	# 9 BKCsetPersistent (_16:bat[:int,:int])<-(b:bat[:int,:int])
+#refs(); 	# 10  (_8:str)
+# it is committed  	# 11  (_19:str)
+    io.print("open box");	# 12 IOprint_val (_20:int)<-(_21:str)
+    bbp.open();	# 13 CMDbbpopen (_22:void)
+    user.refs();	# 14  (_23:void)
+    t:bat[:any,:any]  := bbp.bind("tasks");	# 15 CMDbbpbind (t:bat[:any,:any])<-(_14:str)
+    io.print(t);	# 16 IOprint_val (_25:int)<-(t:bat[:any,:any])
+    bbp.release(t);	# 17 CMDbbpreleaseBAT (_26:void)<-(t:bat[:any,:any])
+    user.refs();	# 18  (_27:void)
+    io.print(t);	# 19 IOprint_val (_28:int)<-(t:bat[:any,:any])
+catch MALexception;	# 20  (MALexception:any) jump 22
+    io.print("BAT was released");	# 21 IOprint_val (_30:int)<-(_31:str)
+exit MALexception;	# 22  (MALexception:any)
+# the bat is still visible, because the destroy only 	# 23  (_33:str)
+# marks it for deletion at the end of session or 	# 24  (_35:str)
+# when the reference counters drop to zero 	# 25  (_37:str)
+    t:bat[:any,:any]  := bbp.bind("tasks");	# 26 CMDbbpbind (t:bat[:any,:any])<-(_14:str)
+    user.refs();	# 27  (_38:void)
+# to really remove, we get rid of the current 	# 28  (_40:str)
+# references as well 	# 29  (_42:str)
+    bbp.destroy(t,true);	# 30 CMDbbpdestroyBAT (_43:void)<-(t:bat[:any,:any])(_44:bit)
+    user.refs();	# 31  (_45:void)
+    io.print(t);	# 32 IOprint_val (_46:int)<-(t:bat[:any,:any])
+catch MALexception;	# 33  (MALexception:any) jump 35
+    io.print("BAT was destroyed");	# 34 IOprint_val (_47:int)<-(_48:str)
+exit MALexception;	# 35  (MALexception:any)
+    z:bat[:any,:any]  := bbp.bind("tasks");	# 36 CMDbbpbind (z:bat[:any,:any])<-(_50:str)
+    io.print(z);	# 37 IOprint_val (_51:int)<-(z:bat[:any,:any])
+#it is not in the box anymore either 	# 38  (_53:str)
+catch MALexception;	# 39  (MALexception:any) jump 41
+    io.print("BAT was removed from the box");	# 40 IOprint_val (_54:int)<-(_55:str)
+exit MALexception;	# 41  (MALexception:any)
+end main;	# 42  
+[ "open box" ]
+#---------------------------------------------------------#
+# bbp	name			refcnt	lrefcnt		  # name
+# int	str			int	int		  # type
+#---------------------------------------------------------#
+[ 1,	  "monet_environment",	  1,	  0		  ]
+[ 2,	  "monet_unicode_case",	  1,	  0		  ]
+[ 3,	  "timezones",		  1,	  0		  ]
+[ 4,	  "stat_id_inuse",	  1,	  1		  ]
+[ 5,	  "stat_id_nme",	  1,	  1		  ]
+[ 6,	  "stat_id_expire",	  1,	  1		  ]
+[ 7,	  "stat_id_stamp",	  1,	  1		  ]
+[ 8,	  "stat_id_count",	  1,	  1		  ]
+[ 9,	  "stat_id_size",	  1,	  1		  ]
+[ 10,	  "stat_id_min_lng",	  1,	  1		  ]
+[ 11,	  "stat_id_max_lng",	  1,	  1		  ]
+[ 12,	  "stat_id_histogram",	  1,	  1		  ]
+[ 13,	  "tasks",		  0,	  2		  ]
+#-----------------#
+# h	t	  # name
+# int	int	  # type
+#-----------------#
+[ 23,	  32	  ]
+#---------------------------------------------------------#
+# bbp	name			refcnt	lrefcnt		  # name
+# int	str			int	int		  # type
+#---------------------------------------------------------#
+[ 1,	  "monet_environment",	  1,	  0		  ]
+[ 2,	  "monet_unicode_case",	  1,	  0		  ]
+[ 3,	  "timezones",		  1,	  0		  ]
+[ 4,	  "stat_id_inuse",	  1,	  1		  ]
+[ 5,	  "stat_id_nme",	  1,	  1		  ]
+[ 6,	  "stat_id_expire",	  1,	  1		  ]
+[ 7,	  "stat_id_stamp",	  1,	  1		  ]
+[ 8,	  "stat_id_count",	  1,	  1		  ]
+[ 9,	  "stat_id_size",	  1,	  1		  ]
+[ 10,	  "stat_id_min_lng",	  1,	  1		  ]
+[ 11,	  "stat_id_max_lng",	  1,	  1		  ]
+[ 12,	  "stat_id_histogram",	  1,	  1		  ]
+[ "nil" ]
+[ "BAT was destroyed" ]
+[ "BAT was removed from the box" ]
 
 # 08:01:26 >  
 # 08:01:26 >  Done.

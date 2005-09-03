@@ -44,36 +44,26 @@ end main;	# 7
 #	w:= take(v);
 #	return w;
 #end take;
-function constants.take(v:str):any;	# 0  dynamic (take:any)<-(v:str)
-    w := constants.take(v);	# 1  (w:any)<-(v:str)
-    return w;	# 2  (w:any)
-end take;	# 3  
-!ERROR: function take(v:str):any$1;
-!                            	  ^';' expected
+function constants.take(v:str):any_1;	# 0  dynamic (take:any_1)<-(v:str)
+    io.printf("looking for %s\n",v);	# 1 IOprint_formatted_str (_2:int)<-(_3:str)(v:str)
+    w := constants.take(v);	# 2  (w:any)<-(v:str)
+    return w;	# 3  (w:any)
+end take;	# 4  
 #
 ## release is overloaded for testing only
 #function release(v:any):void;
 #	BoxException:= "releasing a constant is forbidden";
 #	raise BoxException;
 #end release;
-function constants.release(v:any):any;	# 0  dynamic (release:any)<-(v:any)
-    ;	# 1  (_2:any)
-    raise BoxException;	# 2  (BoxException:any)
+function constants.release(v:any_1):void;	# 0  (release:void)<-(v:any_1)
+    BoxException := "releasing a constant is forbidden";	# 1  (BoxException:str)<-(_3:str)
+    raise BoxException;	# 2  (BoxException:str)
 end release;	# 3  
-!ERROR: function release(v:any$1):void;
-!                             ^',' expected
-!ERROR: 	BoxException:= "releasing a constant is forbidden";
-!	     ^<identifier> expected
 #
 ## accept the definition of a new constant
-#function deposit(v:any$1,name:str) 
-!ERROR: function deposit(v:any$1,name:str) 
-!                             ^',' expected
-!ERROR: 
-!					^<identifier> expected
-function constants.deposit(v:any):any;	# 0  unknown (deposit:any)<-(v:any)
-    ;	# 1  unknown (_2:any)
-end deposit;	# 2  unknown 
+#function deposit(v:any_1,name:str) 
+#
+#
 
 # 08:01:25 >  
 # 08:01:25 >  Done.

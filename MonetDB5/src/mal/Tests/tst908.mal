@@ -1,6 +1,6 @@
 # the multiplex code blocks.
 
-function perftst( b:bat[:any$1,:any$2],div:any$2):void;
+function perftst( b:bat[:any_1,:any_2],div:any_2):void;
 	io.print("perftst"); io.print(div);
 	reduce:= batcalc./(b,div);
 	io.print(reduce);

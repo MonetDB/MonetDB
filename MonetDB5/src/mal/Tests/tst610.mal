@@ -19,7 +19,7 @@ bat.setPersistent(b);
 io.print("open box");
 bbp.open();
 user.refs();
-t:bat[:any$1,:any$2]:= bbp.bind("tasks");
+t:bat[:any_1,:any_2]:= bbp.bind("tasks");
 io.print(t);
 bbp.release(t);
 user.refs();
@@ -30,7 +30,7 @@ exit MALexception;
 # the bat is still visible, because the destroy only
 # marks it for deletion at the end of session or
 # when the reference counters drop to zero
-t:bat[:any$1,:any$2]:= bbp.bind("tasks");
+t:bat[:any_1,:any_2]:= bbp.bind("tasks");
 user.refs();
 # to really remove, we get rid of the current
 # references as well
@@ -40,7 +40,7 @@ io.print(t);
 catch MALexception;
 io.print("BAT was destroyed");
 exit MALexception;
-z:bat[:any$1,:any$2]:= bbp.bind("tasks");
+z:bat[:any_1,:any_2]:= bbp.bind("tasks");
 io.print(z);
 #it is not in the box anymore either
 catch MALexception;

@@ -12,23 +12,22 @@ stdout of test 'tst027` in directory 'src/mal` itself:
 # dbfarm:/ufs/mk/monet5/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
-#function test(s:str, b:bat[:any$1,:any$2]...);
+#function test(s:str, b:bat[:any_1,:any_2]...);
+#	io.print(s);
+#end test;
+function user.test(s:str,b:bat[:any_1,:any_2]...):void;	# 0  (test:void)<-(s:str)(b:bat[:any_1,:any_2])
+    io.print(s);	# 1 IOprint_val (_3:int)<-(s:str)
+end test;	# 2  
 #b:= bbp.new(:int,:int);
 #c:= bbp.new(:int,:int);
 #user.test("hello",b,c);
 #
-!ERROR: function test(s:str, b:bat[:any$1,:any$2]...);
-!                                      ^',' expected
-!ERROR: 	io.print(s);
-!	     ^',' expected
-!ERROR: end test;
-!      ^<identifier> expected
-function user.test(s:str,b:any):any;	# 0  unknown (test:any)<-(s:str)(b:any)
-    ;	# 1  unknown (_3:any)
-    b := bbp.new(:int,:int);	# 2  unknown (b:any)<-(_4:int)(_4:int)
-    c := bbp.new(:int,:int);	# 3  unknown (c:any)<-(_4:int)(_4:int)
-    user.test("hello",b,c);	# 4  unknown (_6:any)<-(_7:str)(b:any)(c:any)
-end test;	# 5  unknown 
+!ERROR: 'user.test' undefined in user.main[3]
+function user.main():int;	# 0  (main:int)
+    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
+    c := bbp.new(:int,:int);	# 2 CMDBATnew (c:bat[:int,:int])<-(_2:int)(_2:int)
+    user.test("hello",b,c);	# 3  unknown (_4:any)<-(_5:str)(b:bat[:int,:int])(c:bat[:int,:int])
+end main;	# 4  
 
 # 07:58:40 >  
 # 07:58:40 >  Done.

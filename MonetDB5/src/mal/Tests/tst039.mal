@@ -1,6 +1,6 @@
 # complex analysis
 
-function sample(nme:str, val:any$1):bit;
+function sample(nme:str, val:any_1):bit;
    c := 2*3;
    b := bbp.bind(nme);  #find a BAT
    h := algebra.select(b,val,val);

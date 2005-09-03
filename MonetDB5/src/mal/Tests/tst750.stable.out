@@ -18,26 +18,21 @@ stdout of test 'tst750` in directory 'src/mal` itself:
 #	k:= 1+c;
 #	print(k);
 #end test;
-function user.test(b:any):any;	# 0  dynamic (test:any)<-(b:any)
-    ;	# 1  (_2:any)
-end test;	# 2  
-!ERROR: function test(b:bat[:any$1,:any$2],c:any$2);
-!                               ^',' expected
-!ERROR: 	k:= 1+c;
-!	     ^',' expected
-!ERROR: 	io.print(k);
-!	     ^<identifier> expected
+function user.test(b:bat[:any_1,:any_2],c:any_2):void;	# 0  (test:void)<-(b:bat[:any_1,:any_2])(c:any_2)
+    k := calc.+(1,c);	# 1  (k:any)<-(_4:int)(c:any_2)
+    io.print(k);	# 2 IOprint_val (_5:int)<-(k:any)
+end test;	# 3  
 #
 #b:=new(:int,:int);
 #test(b,2);
 #
-!ERROR: 'user.test' undefined in user.main[4]
 function user.main():int;	# 0  (main:int)
 # Polymorphic function tests 	# 1  (_2:str)
 # Cloning two versions of a single function 	# 2  (_4:str)
     b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
-    user.test(b,2);	# 4  unknown (_7:any)<-(b:bat[:int,:int])(_8:int)
+    user.test(b,2);	# 4  (_7:void)<-(b:bat[:int,:int])(_8:int)
 end main;	# 5  
+[ 3 ]
 
 # 08:01:29 >  
 # 08:01:29 >  Done.

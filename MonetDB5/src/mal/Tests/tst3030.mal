@@ -1,7 +1,7 @@
 #Parsing properties and keeping them around
 # note the use of the first parameter to obtain property set
-function newsemijoin(A:bat[:int,:any$1], 
-		B:bat[:int,:any$2]) :bat[:int,:any$1];
+function newsemijoin(A:bat[:int,:any_1], 
+		B:bat[:int,:any_2]) :bat[:int,:any_1];
 end newsemijoin;
 z:= bbp.new(:int{sorted=true},:int);
 w:= bbp.new(:int{sequence=true},:int);

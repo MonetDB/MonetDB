@@ -15,15 +15,16 @@ stdout of test 'tst105a` in directory 'src/mal` itself:
 ## check classification of functions in the proper module
 #
 #module bat;
-#command new(h:any$1,t:any$2):bat[:any$1,:any$2]
+#command new(h:any_1,t:any_2):bat[:any_1,:any_2]
+!ERROR: address of 'bat.GDKbatnew' not found
+command bat.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;	# 0  dynamic (new:bat[:any_1,:any_2])<-(h:any_1)(t:any_2)
 #
 #b:= bbp.new(:str,:int);
 #
-!ERROR: command new(h:any$1,t:any$2):bat[:any$1,:any$2]
-!                        ^',' expected
-command bat.new(h:any):any;	# 0  unknown (new:any)<-(h:any)
-    b := bbp.new(:str,:int);	# 1  unknown (b:any)<-(_3:str)(_4:int)
-end new;	# 2  unknown 
+function user.main():int;	# 0  (main:int)
+# check classification of functions in the proper module 	# 1  (_2:str)
+    b := bbp.new(:str,:int);	# 2 CMDBATnew (b:bat[:str,:int])<-(_4:str)(_5:int)
+end main;	# 3  
 
 # 07:58:57 >  
 # 07:58:57 >  Done.

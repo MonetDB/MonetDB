@@ -1,6 +1,6 @@
 command user.lookup(nme:str):bat[:str,:str] 
 address CMDlookup; 
-function sample(nme:str, val:any$1):bit;
+function sample(nme:str, val:any_1):bit;
    b := user.lookup(nme); #find a bat
    h := algebra.select(b,val,val);
    t := algebra.count(h);

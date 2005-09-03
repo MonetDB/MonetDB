@@ -15,17 +15,20 @@ stdout of test 'tst104` in directory 'src/mal` itself:
 ## check propagation of type variables over bats
 ## can be checked after bat module has been added
 #
-#command f(a:any$1, b:bat[:any$2,:any$1],c:any$2):any 
+#command f(a:any_1, b:bat[:any_2,:any_1],c:any_2):any_3
+!ERROR: address of 'user.dummy' not found
+command user.f(a:any_1,b:bat[:any_2,:any_1],c:any_2):any_3 address dummy;	# 0  dynamic (f:any_3)<-(a:any_1)(b:bat[:any_2,:any_1])(c:any_2)
 #
 #b:= new(:str,:int);
 #a:= f(1,b,"hello");
 #
-!ERROR: command f(a:any$1, b:bat[:any$2,:any$1],c:any$2):any 
-!                      ^',' expected
-command user.f(a:any):any;	# 0  unknown (f:any)<-(a:any)
-    b := bbp.new(:str,:int);	# 1  unknown (b:any)<-(_3:str)(_4:int)
-    a := user.f(1,b,"hello");	# 2  unknown (a:any)<-(_5:int)(b:any)(_6:str)
-end f;	# 3  unknown 
+!ERROR: 'user.f' undefined in user.main[4]
+function user.main():int;	# 0  (main:int)
+# check propagation of type variables over bats 	# 1  (_2:str)
+# can be checked after bat module has been added 	# 2  (_4:str)
+    b := bbp.new(:str,:int);	# 3 CMDBATnew (b:bat[:str,:int])<-(_6:str)(_7:int)
+    a := user.f(1,b,"hello");	# 4  unknown (a:any)<-(_9:int)(b:bat[:str,:int])(_10:str)
+end main;	# 5  
 
 # 07:58:56 >  
 # 07:58:56 >  Done.

@@ -14,17 +14,20 @@ stdout of test 'tst106` in directory 'src/mal` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 ## check in-compatible polmorphic types
 #
-#command f(a:any$1,b:any$2, c:any$1) :bat[:any$1, :any$2] 
+#command f(a:any_1,b:any_2, c:any_1) :bat[:any_1, :any_2] 
+!ERROR: address of 'user.f' not found
+command user.f(a:any_1,b:any_2,c:any_1):bat[:any_1,:any_2] address f;	# 0  dynamic (f:bat[:any_1,:any_2])<-(a:any_1)(b:any_2)(c:any_1)
 #
 #b:= f(1,2,"help");
 #a:= f(1,2,1);
 #
-!ERROR: command f(a:any$1,b:any$2, c:any$1) :bat[:any$1, :any$2] 
-!                      ^',' expected
-command user.f(a:any):any;	# 0  unknown (f:any)<-(a:any)
-    b := user.f(1,2,"help");	# 1  unknown (b:any)<-(_3:int)(_4:int)(_5:str)
-    a := user.f(1,2,1);	# 2  unknown (a:any)<-(_3:int)(_4:int)(_3:int)
-end f;	# 3  unknown 
+!ERROR: 'user.f' undefined in user.main[2]
+!ERROR: 'user.f' undefined in user.main[3]
+function user.main():int;	# 0  (main:int)
+# check in-compatible polmorphic types 	# 1  (_2:str)
+    b := user.f(1,2,"help");	# 2  unknown (b:any)<-(_4:int)(_5:int)(_6:str)
+    a := user.f(1,2,1);	# 3  unknown (a:bat[:int,:int])<-(_4:int)(_5:int)(_4:int)
+end main;	# 4  
 
 # 07:58:57 >  
 # 07:58:57 >  Done.

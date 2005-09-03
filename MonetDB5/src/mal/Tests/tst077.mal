@@ -1,6 +1,6 @@
 # parsing operations with multi-assignments
-function swap(x:bat[:any$1,:int],y:bat[:int,:int]) 
-	(a:str,b:bat[:any$1,:int]);
+function swap(x:bat[:any_1,:int],y:bat[:int,:int]) 
+	(a:str,b:bat[:any_1,:int]);
         a:="done"; 
         return (a,x);
 end swap;
