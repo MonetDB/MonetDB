@@ -1707,7 +1707,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
     PropertySet ps =0;
 
     t=s;
-    sprintf(t,"%s%s ",(flg?"":"!"),fcnClass(p));
+    sprintf(t,"%s%s ",(flg?"":"#"),fcnClass(p));
 
     advance(t);
     if( moduleId(p)) sprintf(t,"%s.",moduleName(p));

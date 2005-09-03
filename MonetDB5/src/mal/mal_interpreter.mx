@@ -209,7 +209,7 @@ being called.
         stk = env;
         if( mb != stk->blk) 
             GDKerror("runMAL:misalignment of symbols\n");
-        if( mb->vsize > stk->stksize) {
+        if( mb->vtop > stk->stksize) {
             GDKerror("stack too small");
         }
         pci= pcicaller;
