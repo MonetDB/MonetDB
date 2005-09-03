@@ -95,10 +95,14 @@ public class HeaderMessage extends MCLMessage {
 		this.columncount = columncount;
 		this.tuplecount = tuplecount;
 		this.ctype = ctype;
-		sentences[0] = new MCLSentence('$', "id", id);
-		sentences[1] = new MCLSentence('$', "columncount", "" + columncount);
-		sentences[2] = new MCLSentence('$', "tuplecount", "" + tuplecount);
-		sentences[3] = new MCLSentence('$', "ctype", ctype);
+		sentences[0] = new MCLSentence(
+				MCLSentence.MCLMETADATA, "id", id);
+		sentences[1] = new MCLSentence(
+				MCLSentence.MCLMETADATA, "columncount", "" + columncount);
+		sentences[2] = new MCLSentence(
+				MCLSentence.MCLMETADATA, "tuplecount", "" + tuplecount);
+		sentences[3] = new MCLSentence(
+				MCLSentence.MCLMETADATA, "ctype", ctype);
 	}
 
 	/**
