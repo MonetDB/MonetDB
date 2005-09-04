@@ -698,9 +698,8 @@ addValues (opt_t *f,
            char *varname,
            char *result_var)
 {
-    milprintf(f, "var ins_vals := %s.reverse().mark(nil).reverse();\n", varname);
-    milprintf(f, "%s := %s.seqbase(nil).insert(ins_vals).seqbase(0@0);\n", t_co.table, t_co.table);
-    milprintf(f, "ins_vals := nil_%s;\n", t_co.mil_type);
+    milprintf(f, "{\n  var ins_vals := %s.reverse().mark(nil).reverse();\n", varname);
+    milprintf(f, "  %s := %s.seqbase(nil).insert(ins_vals).seqbase(0@0);\n}\n", t_co.table, t_co.table);
     /* get the offsets of the values */
     milprintf(f, "%s := %s.leftjoin(%s.reverse());\n", 
             result_var, varname, t_co.table);
@@ -1277,14 +1276,13 @@ translateVar (opt_t *f, int cur_level, PFvar_t *v)
  * @param level the actual level of the for-scope
  */
 static void
-append (opt_t *f, char *name, int level, char *type_)
+append (opt_t *f, char *name, int level)
 {
     milprintf(f, "{ # append (%s, level)\n", name);
     milprintf(f, "var seqb := oid(v_%s%03u.count());\n",name, level);
     milprintf(f, "var temp_%s := %s.reverse().mark(seqb).reverse();\n", name, name);
     milprintf(f, "seqb := nil;\n");
     milprintf(f, "v_%s%03u := v_%s%03u.insert(temp_%s);\n", name, level, name, level, name);
-    milprintf(f, "temp_%s := nil_%s;\n", name, type_);
     milprintf(f, "} # append (%s, level)\n", name);
 }
 
@@ -1305,11 +1303,11 @@ insertVar (opt_t *f, int cur_level, int vid)
             "var vid := iter.project(%i@0);\n",
             vid);
 
-    append (f, "vid", cur_level, "oid");
-    append (f, "iter", cur_level, "oid");
-    append (f, "pos", cur_level, "oid"); 
-    append (f, "item", cur_level, "oid");
-    append (f, "kind", cur_level, "int");
+    append (f, "vid", cur_level);
+    append (f, "iter", cur_level);
+    append (f, "pos", cur_level); 
+    append (f, "item", cur_level);
+    append (f, "kind", cur_level);
 
     milprintf(f, "vid := nil;\n");
     /*
@@ -3452,13 +3450,10 @@ evaluateCastBlock (opt_t *f, type_co ori, char *cast, char *target_type)
     milprintf(f,
             "var res_mu := merged_union(_oid, oid_oid, _val, part_val);\n"
             "oid_oid := nil;\n"
-            "part_%s := nil_%s;\n"
-            "part_val := nil_%s;\n"
             "_oid := res_mu.fetch(0);\n"
             "_val := res_mu.fetch(1);\n"
             "res_mu := nil;\n"
-            "}\n",
-            ori.mil_type, ori.mil_type, target_type);
+            "}\n");
 }
 
 /**
@@ -3487,15 +3482,13 @@ evaluateCast (opt_t *f,
                 "var cast_val := item%s.%s;\n", kind_str(rc), cast);
     else if (ori.kind != BOOL)
         milprintf(f,
-                "var ori_val := item.leftfetchjoin(%s);\n"
-                "var cast_val := ori_val.%s;\n"
-                "ori_val := nil_%s;\n",
-                ori.table, cast, ori.mil_type);
+                "var cast_val := item.leftfetchjoin(%s).%s;\n",
+                ori.table, cast);
     else
         milprintf(f, "var cast_val := item.%s;\n", cast);
 
     milprintf(f,
-            "if (cast_val.exist(%s(nil)))\n"
+            "if (cast_val.reverse().exist(%s(nil)))\n"
             "{    ERROR (\"err:FORG0001: could not cast value from %s to %s.\"); }\n",
             target.mil_type, ori.name, target.name);
 
@@ -3507,10 +3500,10 @@ evaluateCast (opt_t *f,
         milprintf(f, "item%s := cast_val;\n", item_ext);
 
         milprintf(f,
-                "cast_val := nil_%s;\n"
+                "cast_val := nil;\n"
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
                 "kind := kind.project(%s);\n",
-                target.mil_type, item_ext, item_ext, target.mil_cast);
+                item_ext, item_ext, target.mil_cast);
 }
 
 /**
@@ -3573,7 +3566,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, u_A_container(), "[int]()", "int");
 
         milprintf(f,
-                "if (_val.exist(int(nil)))\n"
+                "if (_val.reverse().exist(int(nil)))\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to integer.\"); }\n");
  
         if (rcode != NORMAL)
@@ -3647,7 +3640,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, u_A_container(), "[dbl]()", "dbl");
  
         milprintf(f,
-                "if (_val.exist(dbl(nil)))\n"
+                "if (_val.reverse().exist(dbl(nil)))\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to decimal.\"); }\n");
  
         if (rcode != NORMAL)
@@ -3721,7 +3714,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, u_A_container(), "[dbl]()", "dbl");
  
         milprintf(f,
-                "if (_val.exist(dbl(nil))) != 0)\n"
+                "if (_val.reverse().exist(dbl(nil))) != 0)\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to double.\"); }\n");
  
         if (rcode != NORMAL)
@@ -3801,7 +3794,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, u_A_container(), "[str]()", "str");
  
         milprintf(f,
-                "if (_val.exist(str(nil))) != 0)\n"
+                "if (_val.reverse().exist(str(nil))) != 0)\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to string.\"); }\n");
  
         if (rcode != NORMAL)
@@ -3860,7 +3853,7 @@ translateCast2BOOL (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, u_A_container(), "[!=](\"\")", "bit");
  
         milprintf(f,
-                "if (_val.exist(bit(nil)))\n"
+                "if (_val.reverse().exist(bit(nil)))\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to boolean.\"); }\n");
  
         milprintf(f,
@@ -3993,7 +3986,7 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
 
     if (div)
         milprintf(f, 
-                "if (val_snd.exist(%s))\n"
+                "if (val_snd.reverse().exist(%s))\n"
                 "{   ERROR (\"err:FOAR0001: division by 0 is forbidden.\"); }\n",
                 div);
     milprintf(f, "val_fst := val_fst.[%s](val_snd);\n", operator);
@@ -4005,8 +3998,6 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
 
     milprintf(f, "item%s := item%s.reverse().mark(0@0).reverse();\n",
             item_ext, item_ext);
-    milprintf(f, "val_fst := nil_%s;\n", t_co.mil_type);
-    milprintf(f, "val_snd := nil_%s;\n", t_co.mil_type);
     milprintf(f, "} # end of '%s' calculation\n", operator);
 }
 
@@ -4057,7 +4048,7 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
 
     if (div)
         milprintf(f, 
-                "if (val_snd.exist(%s))\n"
+                "if (val_snd.reverse().exist(%s))\n"
                 "{   ERROR (\"err:FOAR0001: division by 0 is forbidden.\") };\n",
                 div);
     /* item%03u is the older (first) argument and has to be the first operand
@@ -4074,8 +4065,6 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
 
     milprintf(f, "item%s := item%s.reverse().mark(0@0).reverse();\n",
             item_ext, item_ext);
-    milprintf(f, "val_fst := nil_%s;\n", t_co.mil_type);
-    milprintf(f, "val_snd := nil_%s;\n", t_co.mil_type);
     milprintf(f, "} # end of '%s' calculation with optional type\n", operator);
 }
 
@@ -4202,8 +4191,6 @@ evaluateComp (opt_t *f, int rc1, int rc2,
         milprintf(f, "var val_fst := item%03u;\n", counter);
     }
     milprintf(f, "var val_bool := val_fst.[%s](val_snd);\n", operator);
-    milprintf(f, "val_fst := nil_%s;\n", t_co.mil_type);
-    milprintf(f, "val_snd := nil_%s;\n", t_co.mil_type);
     milprintf(f, "item := val_bool.[oid]();\n");
     milprintf(f, "val_bool := nil;\n");
     milprintf(f, "kind := kind.project(BOOL);\n");
@@ -4261,8 +4248,6 @@ evaluateCompOpt (opt_t *f, int rc1, int rc2,
         milprintf(f, "var val_fst := item%03u;\n", counter);
     }
     milprintf(f, "var val_bool := val_fst.[%s](val_snd);\n", operator);
-    milprintf(f, "val_fst := nil_%s;\n", t_co.mil_type);
-    milprintf(f, "val_snd := nil_%s;\n", t_co.mil_type);
     milprintf(f,
             "iter := val_bool.mark(0@0).reverse();\n"
              "pos := iter.project(1@0);\n"
@@ -5248,10 +5233,8 @@ fn_abs (opt_t *f, int code, int rc, char *op)
 
     item_ext = (code)?item_ext:"";
     milprintf(f,
-            "res := nil_%s;\n"
             "item%s := item%s.reverse().mark(0@0).reverse();\n"
             "} # end of fn:%s\n",
-            t_co.mil_type,
             item_ext, item_ext,
             op);
 
@@ -5967,7 +5950,7 @@ eval_join_helper (opt_t *f, int code, int number,
         milprintf(f,
                 "join_item%i := join_item_str.[%s]();\n"
                 "}\n"
-                "if (join_item%i.exist(%s(nil)))\n"
+                "if (join_item%i.reverse().exist(%s(nil)))\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to %s.\"); }\n",
                 number, container.mil_type,
                 number, container.mil_type,
@@ -7269,7 +7252,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         /* nil as NaN value doesn't work out, because nil disappears in joins */
         milprintf(f,
-                "if (cast_val.exist(dbl(nil)))\n"
+                "if (cast_val.reverse().exist(dbl(nil)))\n"
                 "{    ERROR (\"We do not support the value NaN.\"); }\n");
 
         if (!code)
@@ -7444,7 +7427,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var res_mu := merged_union(iter%03u, difference, "
                                            "item%s%03u, zeros);\n"
                 "difference := nil;\n"
-                "zeros := nil_%s;\n"
                 "item_result := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
                 "} "
@@ -7459,7 +7441,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 item_ext,
                 counter,
                 item_ext, counter,
-                t_co.mil_type,
                 item_ext, counter,
                 cur_level,
                 t_co.mil_cast);
