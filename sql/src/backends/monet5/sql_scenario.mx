@@ -582,11 +582,6 @@ SQLparser(Client c)
 	printf("debugger? %d %d\n", debugPlan(), be->mvc->mode);
 #endif
 	m = be->mvc;
-	/* tricky, because we haven't started the parser yet */
-	if( strncmp(CURRENT(c),"debug",5)==0) {
-		m->mode = m_debug;
-		SQLsetDebugger(c, m, TRUE);
-	}
 
 	assert(m);
 	/* be->language = 'S';	expect SQL text first */
@@ -654,6 +649,7 @@ We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
 Now is the time to also perform the semantic analysis, optimize and produce code.
 @c
+	SQLsetDebugger(c, m, m->mode == m_debug);
 	if (err == 0 && (!(be->q = qc_match(m->qc, m->sym, m->args, m->scanner.key)))) {
 		stmt *s = sql_symbol2stmt(m);
 
