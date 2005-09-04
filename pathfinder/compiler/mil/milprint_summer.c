@@ -2204,7 +2204,7 @@ loop_liftedSCJ (opt_t *f,
 static void
 translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
 {
-    char *axis, *ns, *loc;
+    char *axis, *ns, *loc, *kind = "ELEM";
     PFty_t in_ty;
 
     milprintf(f, 
@@ -2238,6 +2238,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
             break;
         case c_attribute:
             axis = "attribute";
+            kind = "ATTR";
             break;
         case c_child:
             axis = "child";
@@ -2385,15 +2386,13 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
                 "item := res_scj.fetch(1);\n"
                 "kind := res_scj.fetch(2);\n"
                 "if (is_fake_project(kind)) {\n"
-                "    kind := iter.project(kind.fetch(0));\n"
-                "}\n"
-               );
+                "    kind := iter.project(kind.fetch(0).set_kind(%s));\n"
+                "} else {\n"
+                "    kind := kind.set_kind(%s);\n"
+                "}\n", kind, kind);
+    } else {
+        milprintf(f, "kind := kind.set_kind(%s);\n", kind);
     }
-
-    if (!strcmp (axis, "attribute"))
-            milprintf(f, "kind := kind.set_kind(ATTR);\n");
-    else
-            milprintf(f, "kind := kind.set_kind(ELEM);\n");
 
     milprintf(f,
             "res_scj := nil;\n"
@@ -4639,7 +4638,10 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "var iter_item := pruned_input.leftfetchjoin(item_str).chk_order();\n"
                 "item_str := nil;\n");
     if (!tv)
-        milprintf(f,"iter_item := iter_item.string_join(iter_item.reverse().tuniqueALT().project(\"\"));\n");
+        milprintf(f,
+                " { var item_unq := iter_item.reverse().tuniqueALT();\n"
+                "   if (item_unq.count() != iter_item.count())\n"
+                "     iter_item := iter_item.string_join(item_unq.project(\"\"));\n}\n");
 
     milprintf(f,
                 "pruned_input := nil;\n"
@@ -4724,7 +4726,10 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                     "iter := nil;\n"
                     "item_str := nil;\n");
     if (!tv)
-        milprintf(f,  "iter_item := iter_item.string_join(iter_item.reverse().tuniqueALT().project(\"\"));\n");
+        milprintf(f,  
+                " { var item_unq := iter_item.reverse().tuniqueALT();\n"
+                "   if (item_unq.count() != iter_item.count())\n"
+                "     iter_item := iter_item.string_join(item_unq.project(\"\"));\n}\n");
 
     milprintf(f,
                     "iter := iter_item.mark(0@0).reverse();\n"
