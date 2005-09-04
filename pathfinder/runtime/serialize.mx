@@ -194,7 +194,8 @@ typedef struct {
                              * data-model mode, eg. look like GALAX */
     int     saxMode;        /* true if printing a Sax-O-Phone stream */
     int     mapiMode;       /* for DM or XML mode that should go on a MapiClient stream */
-    int     printMode;
+    int     norootMode;     /* do not generate <XQueryResult> root node */
+    int     printMode;      /* documentation please???? */
     char*   dmSeparator;    /* seperation char in DM mode */
     BAT*    ws;             /* working set BAT */
     int     curFRAG;        /* current fragment used by working set */
@@ -315,25 +316,29 @@ static int switchWsContext(XqueryCtx* ctx, int wsID) {
 static int createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
     int i;
 
-    ctx->dmMode = ctx->mapiMode = ctx->printMode = 0;
+    ctx->dmMode = ctx->mapiMode = ctx->printMode = ctx->norootMode = 0;
     ctx->saxMode = 1;
     xmlNsInit( &ctx->nsTop );
 
-    if ( strcmp(mode,"dm")==0 ) {
-        ctx->saxMode = 0;
-        ctx->dmMode = 1;
-    } else if ( strcmp(mode,"dm-mapi")==0 ) {
-        ctx->saxMode = 0;
-        ctx->dmMode = ctx->mapiMode = 1;
-    } else if ( strcmp(mode,"xml")==0 ) {
-        ctx->saxMode = 0;
-    } else if (strcmp(mode, "xml-seq-mapi") == 0) {
-        ctx->saxMode = 0;
-        ctx->dmMode = 1;
-        ctx->printMode = 1;
-    } else if ( strcmp(mode,"xml-mapi")==0 ) {
-        ctx->saxMode = 0;
-        ctx->mapiMode = 1;
+    /* choose a mode: {dm,xml,sax} */ 
+    if ( strstr(mode,"dm")) {
+        ctx->dmMode = 1; ctx->saxMode = 0;
+    } else if (strstr(mode,"xml")) {
+        ctx->dmMode = ctx->saxMode = 0;
+    }
+    /* we may omit the synthetic root element */ 
+    if (strstr(mode,"noroot")) {
+        ctx->norootMode = 1;
+    }
+    if (!ctx->saxMode) {
+        /* add mapi = characters at the start of each line */
+        if (strstr(mode,"mapi")) {
+                ctx->mapiMode = 1;
+        }
+        /* add something that was not documented by the person who added this mode */
+        if (strstr(mode, "seq")) {
+                ctx->printMode = 1;
+        }
     }
     ctx->dmSeparator =
         (ctx->mapiMode ? ",\n=" : (ctx->printMode ? ",\\n" : ",\n"));
@@ -1216,12 +1221,14 @@ static int  seqHeadStart(
         stream_printf(GDKout,"# %d\t# tuplecount\n", BATcount(item));
         stream_printf(GDKout,"# %d\t# id\n", id_sequence_counter++);
     } else if (!ctx->dmMode) { /* dmMode has no header */
-        if (ctx->mapiMode) {
-            stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
-        } else if ( !ctx->saxMode ) {
-            stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+        if (!ctx->norootMode) {
+            if (ctx->mapiMode) {
+                stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
+            } else if ( !ctx->saxMode ) {
+                stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+            }
+            handle_startElement(ctx, NULL, XQRESTAG);
         }
-        handle_startElement(ctx, NULL, XQRESTAG);
         ctx->nAttrOnLine = 0;
     }
     return 1;
@@ -1242,15 +1249,19 @@ static int seqHeadEnd(XqueryCtx* ctx) {
  */
 static int  seqEnd(XqueryCtx* ctx) {
     if ( ctx->saxMode ) {
-        handle_endElement(ctx, NULL, XQRESTAG, 0 /* not empty*/);
+        if (!ctx->norootMode) {
+            handle_endElement(ctx, NULL, XQRESTAG, 0 /* not empty*/);
+        }
     } else if (ctx->printMode) {
         /* do nothing! */
     } else if (ctx->dmMode) {
         stream_printf(GDKout, "\n");
     } else if (ctx->mapiMode) {
-        stream_printf(GDKout,"\n=</%s>\n", XQRESTAG);
+        stream_write(GDKout,"\n=", 2, 1);
+        if (!ctx->norootMode) stream_printf(GDKout,"</%s>\n", XQRESTAG);
     } else {
-        stream_printf(GDKout,"\n</%s>\n", XQRESTAG);
+        stream_write(GDKout,"\n", 1, 1);
+        if (!ctx->norootMode) stream_printf(GDKout, "</%s>\n", XQRESTAG);
     }
     return 1;
 }
