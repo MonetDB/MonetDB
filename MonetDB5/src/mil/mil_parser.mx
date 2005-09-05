@@ -534,10 +534,10 @@ parseMILfunctioncall(Client cntxt, MalBlkPtr currBlk, str nme)
 	if (*nme == '[' || *nme == '{') {
 		nme[strlen(nme) - 1] = 0;
 		if (*nme == '[') {
-			setModuleId(currInstr, putName("optimizer", 9));
+			setModuleId(currInstr, putName("mil", 9));
 			setFunctionId(currInstr, putName("multiplex", 9));
 		} else {
-			setModuleId(currInstr, putName("optimizer", 9));
+			setModuleId(currInstr, putName("mil", 9));
 			setFunctionId(currInstr, putName("group", 5));
 		}
 		pushStr(currBlk, currInstr, nme + 1);
