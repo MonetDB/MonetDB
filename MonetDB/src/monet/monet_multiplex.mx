@@ -197,6 +197,7 @@ interpret_multiplex(str s, int argc, ValPtr argv, ValPtr res, YYSTREE t, Cntxt s
 	int one_unique = FALSE;
 	int all_unique = TRUE;
 	int all_sorted = TRUE;
+	int any_dense = FALSE;
 	size_t max_size = 0;
 	size_t min_size = REALLY_REALLY_BIG;
 	char name[128];
@@ -218,6 +219,7 @@ operator are a special case.
 			BAT *b = BBPdescriptor(argv[i].val.bval);
 			size_t sz = BATcount(b);
 
+			any_dense |= BAThdense(b);
 			if (min_size == REALLY_REALLY_BIG) {
 				all_synced = b;
 				tpe = BAThtype(b);
@@ -241,7 +243,7 @@ operator are a special case.
 				all_sorted = FALSE;
 			}
 			if (all_synced && !ALIGNsynced(all_synced, b)) {
-				all_synced = FALSE;
+				all_synced = NULL;
 			}
 			nbats++;
 		} else {
@@ -262,6 +264,8 @@ Optimizations only work on 1-1 matching of oids.
 			all_sorted = FALSE;
 		}
 	}
+	if (all_synced && any_dense)
+		tpe = TYPE_void;
 @-
 Optimization: the merge multiplex operation does a merge scan. This
 is very efficient in the bulk case, but if you are doing very sparse
@@ -458,18 +462,37 @@ Set up type and length info for the values that will come out of BAT params.
 
 	desc.f[0] = multiplex_fcn(tpe);
 	desc.c[0] = &desc.id;
-	wrap =
-	    (RowFcn) (recursive_bats
-		      ? ((proc ? (ATOMextern(desc.id.vtype) ? multiplex_bat_proc_extern_tpechk : multiplex_bat_proc_intern_tpechk) : (ret > 0)
-			  ? (ATOMextern(ret) ? (ATOMextern(desc.id.vtype) ? multiplex_bat_fcn_extern_extern : multiplex_bat_fcn_intern_extern) : (ATOMextern(desc.id.vtype) ? multiplex_bat_fcn_extern_intern : multiplex_bat_fcn_intern_intern))
-			  : (ATOMextern(desc.id.vtype) ? multiplex_bat_fcn_extern_tpechk : multiplex_bat_fcn_intern_tpechk))) : ((proc ? (ATOMextern(desc.id.vtype) ? multiplex_bat_proc_extern_tpechk : multiplex_bat_proc_intern_tpechk) : (ret >
-																													      0)
-																  ? (ATOMextern(ret) ? (ATOMextern(desc.id.vtype) ? multiplex_fcn_extern_extern : multiplex_fcn_intern_extern)
-																     : (ATOMextern(desc.id.vtype) ? multiplex_fcn_extern_intern : multiplex_fcn_intern_intern)) : (ATOMextern(desc.id.
-																													      vtype) ?
-																												   multiplex_fcn_extern_tpechk
-																												   :
-																												   multiplex_fcn_intern_tpechk))));
+	wrap = (RowFcn) (recursive_bats ?
+			 (proc ?
+			  (ATOMextern(desc.id.vtype) ?
+			   multiplex_bat_proc_extern_tpechk :
+			   multiplex_bat_proc_intern_tpechk) :
+			  (ret > 0 ?
+			   (ATOMextern(ret) ?
+			    (ATOMextern(desc.id.vtype) ?
+			     multiplex_bat_fcn_extern_extern :
+			     multiplex_bat_fcn_intern_extern) :
+			    (ATOMextern(desc.id.vtype) ?
+			     multiplex_bat_fcn_extern_intern :
+			     multiplex_bat_fcn_intern_intern)) :
+			   (ATOMextern(desc.id.vtype) ?
+			    multiplex_bat_fcn_extern_tpechk :
+			    multiplex_bat_fcn_intern_tpechk))) :
+			 (proc ?
+			  (ATOMextern(desc.id.vtype) ?
+			   multiplex_bat_proc_extern_tpechk :
+			   multiplex_bat_proc_intern_tpechk) :
+			  (ret > 0 ?
+			   (ATOMextern(ret) ?
+			    (ATOMextern(desc.id.vtype) ?
+			     multiplex_fcn_extern_extern :
+			     multiplex_fcn_intern_extern) :
+			    (ATOMextern(desc.id.vtype) ?
+			     multiplex_fcn_extern_intern :
+			     multiplex_fcn_intern_intern)) :
+			   (ATOMextern(desc.id. vtype) ?
+			    multiplex_fcn_extern_tpechk :
+			    multiplex_fcn_intern_tpechk))));
 	desc.need_unfix = (!proc && !desc.notall);
 	if (ret > 0) {
 		desc.b = BATnew(desc.id.vtype, ret, desc.cap + 3);
