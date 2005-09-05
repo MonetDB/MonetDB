@@ -193,7 +193,7 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_STRING */	{ 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1 },
 /* EC_BLOB */	{ 0, 0, 0, 0, 1, 2, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_NUM */	{ 0, 0, 0, 1, 1, 0, 2, 2, 1, 1, 0, 1, 0 },
-/* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 2, 0, 1, 0, 1, 0, 0 },
+/* EC_INTERVAL*/{ 0, 0, 0, 1, 1, 0, 2, 0, 0, 0, 1, 0, 0 },
 /* EC_DEC */	{ 0, 0, 0, 1, 1, 0, 2, 2, 2, 1, 0, 0, 0 },
 /* EC_FLT */	{ 0, 0, 0, 1, 1, 0, 2, 2, 2, 2, 0, 0, 0 },
 /* EC_TIME */	{ 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 2, 0, 0 },
@@ -1199,8 +1199,8 @@ sqltypeinit()
 		sql_create_func("not", "not", *t, NULL, *t, SCALE_FIX);
 	}
 
-	/* all numericals including the temporal intervals */
-	for (t = numerical; *t != DTE; t++) {
+	/* all numericals */
+	for (t = numerical; t < dates; t++) {
 		sql_subtype *lt = sql_bind_localtype((*t)->base.name);
 
 		sql_create_func("sql_sub", "-", *t, *t, *t, SCALE_FIX);
@@ -1221,6 +1221,15 @@ sqltypeinit()
 		/* scale fixing for all numbers */
 		sql_create_func("scale_up", "*", *t, lt->type, *t, SCALE_NONE);
 		sql_create_func("scale_down", "round", *t, lt->type, *t, SCALE_NONE);
+		/* numeric function on INTERVALS */
+		sql_create_func("sql_sub", "-", MONINT, *t, MONINT, SCALE_FIX);
+		sql_create_func("sql_add", "+", MONINT, *t, MONINT, SCALE_FIX);
+		sql_create_func("sql_mul", "*", MONINT, *t, MONINT, SCALE_ADD);
+		sql_create_func("sql_div", "/", MONINT, *t, MONINT, SCALE_SUB);
+		sql_create_func("sql_sub", "-", SECINT, *t, SECINT, SCALE_FIX);
+		sql_create_func("sql_add", "+", SECINT, *t, SECINT, SCALE_FIX);
+		sql_create_func("sql_mul", "*", SECINT, *t, SECINT, SCALE_ADD);
+		sql_create_func("sql_div", "/", SECINT, *t, SECINT, SCALE_SUB);
 	}
 	for (t = decimals, t++; t != floats; t++) {
 		sql_type **u;
