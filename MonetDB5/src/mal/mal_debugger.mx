@@ -95,7 +95,7 @@ A more detailed listing shows the binding to the C-routine
 and the result of type resolution.
 @example
 >mdb.start();
-#mdb !end main;
+#end main;
 mdb>l
 function user.main():int;
     mdb.start();
@@ -114,17 +114,17 @@ The function signatures become visible using the module and optionally
 the function name.
 @example
 mdb>m alarm
-!command alarm.alarm(secs:int,action:str):void address ALARMsetalarm;
-!command alarm.ctime():str address ALARMctime;
-!command alarm.epilogue():void address ALARMepilogue;
-!command alarm.epoch():int address ALARMepoch;
-!command alarm.prelude():void address ALARMprelude;
-!command alarm.sleep(secs:int):void address ALARMsleep;
-!command alarm.time():int address ALARMtime;
-!command alarm.timers():bat[:str,:str] address ALARMtimers;
-!command alarm.usec():lng address ALARMusec;
+#command alarm.alarm(secs:int,action:str):void address ALARMsetalarm;
+#command alarm.ctime():str address ALARMctime;
+#command alarm.epilogue():void address ALARMepilogue;
+#command alarm.epoch():int address ALARMepoch;
+#command alarm.prelude():void address ALARMprelude;
+#command alarm.sleep(secs:int):void address ALARMsleep;
+#command alarm.time():int address ALARMtime;
+#command alarm.timers():bat[:str,:str] address ALARMtimers;
+#command alarm.usec():lng address ALARMusec;
 mdb>m alarm.sleep
-!command alarm.sleep(secs:int):void address ALARMsleep;
+#command alarm.sleep(secs:int):void address ALARMsleep;
 mdb>
 @end example
 The debugger mode is left with a <return>.
@@ -134,14 +134,14 @@ the execution using the 'next' ('n') or 'step' ('s) commands,
 as shown below.
 @example
 >user.test(1);
-#mdb !    user.test(1);
+#    user.test(1);
 mdb>n
-#mdb !    io.print(i);
+#    io.print(i);
 mdb>
 [ 1 ]
-#mdb !    i := calc.*(i,2);
+#    i := calc.*(i,2);
 mdb>
-#mdb !    b := bbp.new(:int,:int);
+#    b := bbp.new(:int,:int);
 mdb>
 @end example
 The last instruction show is ready to be executed, which means
@@ -152,22 +152,21 @@ the variable on the stack frame, its name, its value and type.
 The complete stack frame becomes visible with 'values' ('v')
 command:
 @example
-#mdb !    bat.insert(b,1,i);
+#    bat.insert(b,1,i);
 mdb>
-#mdb !    io.print(b);
+#    io.print(b);
 mdb>v
-#mdb  test
-Stack size=32 top=11
-[0] test        = nil:str
-[1] i   = 4:int
-[2] _2  = 0:int   unused
-[3] _3  = 2:int  constant
-[4] b   = <tmp_1226>:bat[:int,:int]   count=1 lrefs=1 refs=0
-[5] _5  = 0:int   type variable
-[6] _6  = nil:bat[:int,:int]   unused
-[7] _7  = 1:int  constant
-[8] _8  = 0:int   unused
-[9] _9  = "ok":str  constant
+#Stack for 'test' size=32 top=11
+#[0] test        = nil:str
+#[1] i   = 4:int
+#[2] _2  = 0:int   unused
+#[3] _3  = 2:int  constant
+#[4] b   = <tmp_1226>:bat[:int,:int]   count=1 lrefs=1 refs=0
+#[5] _5  = 0:int   type variable
+#[6] _6  = nil:bat[:int,:int]   unused
+#[7] _7  = 1:int  constant
+#[8] _8  = 0:int   unused
+#[9] _9  = "ok":str  constant
 @end example
 The variables marked 'unused' have been introduced as temporary variables,
 but which are not referenced in the remainder of the program.
@@ -190,18 +189,18 @@ because the breakpoint can only be set within a visibile program
 context. Setting arbitrary breakpoints is on the feature request list.
 @example
 >mdb.start();
-#mdb !end main;
+#end main;
 mdb>
 >user.test(1);
-#mdb !    user.test(1);
+#    user.test(1);
 mdb>b i
 breakpoint on 'i' not set
 mdb>n
-#mdb !    io.print(i);
+#    io.print(i);
 mdb>break i
 mdb>c
 [ 1 ]
-#mdb !    i := calc.*(i,2);
+#    i := calc.*(i,2);
 mdb>
 @end example
 
@@ -229,18 +228,18 @@ the test case.
 >	return test:= "ok";
 >end test;
 >user.test(1);
-!    mdb.setTrace(_3=true)
+#    mdb.setTrace(_3=true)
 [ 1 ]
-!    io.print(i=1)
-!    i := calc.*(i=2, _5=2)
-!    b := bbp.new(_7=0, _8=0)
-!    bat.insert(b=<tmp_1226>, _10=1, i=2)
+#    io.print(i=1)
+#    i := calc.*(i=2, _5=2)
+#    b := bbp.new(_7=0, _8=0)
+#    bat.insert(b=<tmp_1226>, _10=1, i=2)
 #-----------------#
 # h     t         # name
 # int   int       # type
 #-----------------#
 [ 1,      2       ]
-!    io.print(b=<tmp_1226>)
+#    io.print(b=<tmp_1226>)
 #   261 usec!    user.test(_2=1)
 >
 @end example
@@ -265,19 +264,19 @@ tool @emph{valgrind} may be of help.
 >	return test:= "ok";
 >end test;
 >user.test(1);
-#     6 usec!    mdb.setTimer(_3=true)
+#     6 usec#    mdb.setTimer(_3=true)
 [ 1 ]
-#    43 usec!    io.print(i=1)
-#     5 usec!    i := calc.*(i=2, _5=2)
-#    24 usec!    b := bbp.new(_7=0, _8=0)
-#    10 usec!    bat.insert(b=<tmp_1226>, _10=1, i=2)
+#    43 usec#    io.print(i=1)
+#     5 usec#    i := calc.*(i=2, _5=2)
+#    24 usec#    b := bbp.new(_7=0, _8=0)
+#    10 usec#    bat.insert(b=<tmp_1226>, _10=1, i=2)
 #-----------------#
 # h     t         # name
 # int   int       # type
 #-----------------#
 [ 1,      2       ]
-#   172 usec!    io.print(b=<tmp_1226>)
-#   261 usec!    user.test(_2=1)
+#   172 usec#    io.print(b=<tmp_1226>)
+#   261 usec#    user.test(_2=1)
 @end example
 
 It is also possible to activate the debugger from within a program 
@@ -607,10 +606,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 	char *oldprompt = cntxt->prompt;
 	int oldpromptlength = cntxt->promptlength;
 
-	if (p != NULL) {
-		stream_printf(out, "#mdb ");
+	if (p != NULL) 
 		printInstruction(out, mb, p, listing);
-	}
 	if (cntxt == mal_clients) {
 		cntxt->prompt = "mdb>";
 		cntxt->promptlength = 4;
@@ -1073,9 +1070,9 @@ printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
 {
 	int i = 0;
 
-	stream_printf(f, "#mdb  %s\n", getInstrPtr(mb, 0)->fcnname);
 	if (s) {
-		stream_printf(f, "Stack size=%d top=%d\n", s->stksize, s->stktop);
+		stream_printf(f, "#Stack '%s' size=%d top=%d\n",
+				getInstrPtr(mb, 0)->fcnname, s->stksize, s->stktop);
 		for (; i < mb->vtop; i++)
 			printStackElm(f, mb, getVar(mb, i), s->stk + i, i, 0, 0);
 	} else
@@ -1126,7 +1123,7 @@ printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, size_t cnt
 		nme = nmebuf;
 	} else
 		nme = n->name;
-	stream_printf(f, "[%d] %s\t= ", index, nme);
+	stream_printf(f, "#[%d] %s\t= ", index, nme);
 	if (n->type == TYPE_void)
 		stream_printf(f, "nil");
 	else if (v)

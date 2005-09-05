@@ -1837,7 +1837,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
     else { 
 		s[0]='#';
 		if( p->typechk == TYPE_UNKNOWN) {
-			s[1]='?';
+			s[1]='!';	/* error */
 			s[2]= 0;
 			t= s+2;
 		} else {
