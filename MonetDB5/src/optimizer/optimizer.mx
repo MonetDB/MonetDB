@@ -61,9 +61,9 @@ address QOTDCoptimizerCALL
 comment "Dead code optimizer";
 
 pattern expressionAccumulation():str 
-address QOTORoptimizer;
+address QOTAEoptimizer;
 pattern expressionAccumulation(mod:str, fcn:str):str 
-address QOTORoptimizerCALL
+address QOTAEoptimizerCALL
 comment "Replace calculations with accumulator model";
 
 pattern strengthReduction():str 
@@ -310,7 +310,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @:QOTC(HR, "heuristics")@
 @:QOTC(GC, "garbageCollector")@
 @:QOTC(BPT, "partitionedQuery")@
-@:QOTC(OR, "expressionAccumulation")@
+@:QOTC(AE, "expressionAccumulation")@
 @:QOTC(FT, "factorize")@
 @:QOTC(SR, "strengthReduction")@
 @:QOTC(ES, "emptySet")@

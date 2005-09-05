@@ -268,7 +268,7 @@ work needed.
 Approach: inspect the flowgraph for each iterator and move instructions around.
 Impact: low
 
-@emph{Operator Reduction (ORoptimizer)}
+@emph{Accumulator Evaliations (AEoptimizer)}
 Goal: to replace operators with cheaper ones.
 Rationale: based on the actual state of the computation and the richness of
 the supporting libraries there may exists alternative routes to solve a query.
@@ -355,7 +355,7 @@ them in a preferred order of deployment.
 @item group D:
 @tab    Code Parallizer (CPoptimizer)
 @item 
-@tab    Operator Reduction (ORoptimizer)
+@tab    Accumulator Evaliations (AEoptimizer)
 @item 
 @tab    Result Cacher (RCoptimizer)
 @item
@@ -469,7 +469,7 @@ opt_export str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-opt_export str ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str AEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str RXemptyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1423,7 +1423,7 @@ modules.
 @{
 @c
 int
-ORvalidSource(MalBlkPtr mb, int v, int pc, int stop)
+AEvalidSource(MalBlkPtr mb, int v, int pc, int stop)
 {
 	InstrPtr p;
 	int i, j;
@@ -1463,7 +1463,7 @@ ORvalidSource(MalBlkPtr mb, int v, int pc, int stop)
 }
 
 void
-ORcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
+AEcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
 {
 	int t, a, b;
 
@@ -1512,7 +1512,7 @@ ORcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
 	}
 }
 str
-ORoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+AEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, a, b, depth;
 	InstrPtr p;
@@ -1542,7 +1542,7 @@ at the end of the optimization attempt.
 		if (moduleId(p) == NULL)
 			continue;
 		if (strcmp(moduleId(p), "calc") == 0) {
-			ORcoercionOptimizer(mb, i, p);
+			AEcoercionOptimizer(mb, i, p);
 			continue;
 		}
 		if (strcmp(moduleId(p), "batcalc"))
@@ -1556,14 +1556,14 @@ at the end of the optimization attempt.
 
 #ifdef DEBUG_MAL_OPTIMIZER
 			stream_printf(GDKout, "Found binary OR candidate \n");
-			stream_printf(GDKout, "pc=%d valid=%d \n", i, ORvalidSource(mb, a, i, v->beginLifespan));
+			stream_printf(GDKout, "pc=%d valid=%d \n", i, AEvalidSource(mb, a, i, v->beginLifespan));
 			stream_printf(GDKout, "target %d %d-%d\n", b, getVar(mb, b)->beginLifespan, getVar(mb, b)->endLifespan);
 			stream_printf(GDKout, "arg 1 %d %d-%d\n", a, v->beginLifespan, v->endLifespan);
 			stream_printf(GDKout, "arg 2 %d %d-%d\n", getArg(p, 2), getVar(mb, getArg(p, 2))->beginLifespan, getVar(mb, getArg(p, 2))->endLifespan);
 			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
 			if (isaBatType(v->type) && (v->endLifespan == i || a == b) && v->depth <= depth) {
-				if (ORvalidSource(mb, a, i, v->beginLifespan) || a == b) {
+				if (AEvalidSource(mb, a, i, v->beginLifespan) || a == b) {
 					pushArgument(mb, p, a);
 					for (j = p->argc - 1; j > p->retc; j--)
 						p->argv[j] = p->argv[j - 1];
@@ -1583,7 +1583,7 @@ at the end of the optimization attempt.
 			/* continue with binary version */
 			v = getVar(mb, a = getArg(p, 2));
 			if (isaBatType(v->type) && (v->endLifespan == i || a == b) && v->depth <= depth) {
-				if (ORvalidSource(mb, a, i, v->beginLifespan) || a == b) {
+				if (AEvalidSource(mb, a, i, v->beginLifespan) || a == b) {
 					pushArgument(mb, p, a);
 					for (j = p->argc - 1; j > p->retc; j--)
 						p->argv[j] = p->argv[j - 1];
@@ -1608,7 +1608,7 @@ at the end of the optimization attempt.
 			b = getArg(p, 0);
 
 			if (isaBatType(v->type) && (v->endLifespan == i || a == b) && v->depth <= depth) {
-				if (ORvalidSource(mb, a, i, v->beginLifespan) || a == b) {
+				if (AEvalidSource(mb, a, i, v->beginLifespan) || a == b) {
 #ifdef DEBUG_MAL_OPTIMIZER
 					stream_printf(GDKout, "Found unary OR candidate\n");
 					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
@@ -1630,11 +1630,11 @@ at the end of the optimization attempt.
 	}
 	if (errlen)
 		strncpy(cntxt->errbuf, olderr, errlen);
-	/* remove the ORoptimizer request */
+	/* remove the AEoptimizer request */
 	optimizerCheck(mb, "expressionAccumulation", actions, GDKusec() - clk);
 	if (mb->errors) {
 		showErrors();
-		return throwMessage("ORoptimizer", "Optimization raised errors");
+		return throwMessage("AEoptimizer", "Optimization raised errors");
 	}
 	return MAL_SUCCEED;
 }

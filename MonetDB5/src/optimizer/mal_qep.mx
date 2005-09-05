@@ -1,0 +1,223 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f mal_qep
+@a M. Kersten
+@+ Query Execution Plans
+A commonly used data structure to represent and manipulate
+a query is a tree (or graph). Its nodes represent the
+operators and the leaves the operands. 
+Such a view comes in handy when you have to re-organize
+whole sections of code or to built-up an optimized plan
+bottom up, e.g. using a memo structure.
+
+Any valid MAL routine can be overlayed with a tree (graph)
+view based on the flow dependencies, but not all MAL programs
+can be derived from a simple tree. For example, the code snippet
+@example
+function query();
+a:= algebra.select(T1,1,3);
+b:= algebra.select(T2,1,3);
+c:= algebra.select(T3,0,5);
+d:= algebra.select(T4,0,5);
+e:= algebra.join(a,c);
+f:= algebra.join(b,d);
+h:= algebra.join(e,f);
+end query;
+@end example
+when interpreted as a linear sequence can not be represented
+unless the execution order itself becomes operator node itself. 
+
+The MAL optimizer toolkit provides functions to
+overlay the body of any MAL block with a tree (graph)
+structure and to linearize them back into a MAL block.
+The linearization order is determined by a recursive
+descend tree walk and the anchor points in the source program.
+For example, the code snippet above would
+be translated using the routine @code{qep.treewalk}
+into the sequence
+@example
+function query();
+a:= algebra.select(T1,1,3);
+b:= algebra.select(T2,1,3);
+e:= algebra.join(a,c);
+c:= algebra.select(T3,0,5);
+d:= algebra.select(T4,0,5);
+f:= algebra.join(b,d);
+h:= algebra.join(e,f);
+end query;
+@end example
+However, since we haven't added or changed the original
+MAL program, the routine @code{qep.propagate} produces
+the orginial program, where the linear order has
+priority. If, however, we had entered new instructions
+into the tree, they would have been placed in close proximity
+of the other tree nodes.
+
+Special care is given to the flow-of-control blocks, because
+to produce a query plan section that can not easily be moved
+around.
+[give dot examples]
+@{
+@mal
+pattern optimizer.dumpQEP()
+address QEPtreedump
+comment "Produce an indented tree visualisation";
+
+@h
+#ifndef _MAL_QEP_
+#define _MAL_QEP_
+#include "mal.h"
+#include "mal_optimizer.h"
+
+#define DEBUG_MAL_QEP     /* show partial result */
+typedef struct QEPrecord {
+	MalBlkPtr mb;
+	InstrPtr p;
+	int plimit, climit;		/* capacities */
+	struct QEPrecord **parents;	/* at least one link to parent */
+	struct QEPrecord **children;
+} *QEP;
+
+#define MAXPARENT 4
+#define MAXCHILD 8
+
+opt_export str QEPtreedump(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+#endif /* _MAL_QEP_ */
+@c
+#include "mal_qep.h"
+
+QEP
+QEPnew(int p, int c){
+	QEP qep;
+	qep = (QEP) GDKmalloc( sizeof(QEP*));
+	qep->mb= NULL;
+	qep->p = NULL;
+	qep->plimit = p;
+	qep->parents = (QEP*) GDKmalloc( sizeof(QEP) * p);
+	qep->climit = c;
+	qep->children = (QEP *) GDKmalloc( sizeof(QEP) * c);
+	memset((char*) qep->children,0, sizeof(QEP) * c);
+	memset((char*) qep->parents,0, sizeof(QEP) * p);
+	return qep;
+}
+QEP
+QEPexpandChildren(QEP qep, int extra){
+	QEP q;
+	/*extend node */
+	q = (QEP) GDKrealloc( (char*) qep, sizeof(QEP) * qep->climit + extra);
+	q->climit = qep->climit + extra;
+	memset((char*) (q->children + qep->climit * sizeof(QEP)),
+			0, sizeof(QEP)*extra);
+	return q;
+}
+QEP
+QEPfree(QEP qep){
+	GDKfree(qep->children);
+	GDKfree(qep->parents);
+	GDKfree(qep);
+	return NULL;
+}
+@-
+Extract a child from the qep, to be inserted somewhere else
+@c
+QEP
+QEPdelete(QEP qep, int pos){
+	int i;
+	QEP q= NULL;
+
+	for(i=0; i<qep->climit && qep->children[i]; i++){
+		if(pos-- == 0) q = qep->children[i];
+		if( pos <0 ) qep->children[i]= qep->children[i+1];
+		if( i< qep->climit-1) q->children[i]= NULL;
+	}
+	return q;
+}
+QEP
+QEPappend(QEP qep, QEP child){
+	int i;
+	for( i=0; i< qep->climit-1; i++)
+		if( qep->children[i] == NULL)
+			break;
+	if( qep->children[i]!= NULL )
+		qep= QEPexpandChildren(qep,MAXCHILD);
+	qep->children[i]= child;
+	child->parents[0]= qep;
+	return qep;
+}
+QEP
+QEPinsert(QEP qep, int pos, QEP child){
+	int i;
+	QEP q= NULL, qn; 
+	for( i=0; i< qep->climit; i++){
+		if( pos-- == 0){
+			q= qep->children[i];
+			qep->children[i]= child;
+			child->parents[0] =qep;
+		}
+		if( pos < 0 && i<qep->climit-1){
+			qn= qep->children[i+1];
+			qep->children[i+1] = q;
+			q= qn;
+		}
+	}
+	if( q != NULL)
+		qep = QEPappend(qep,q);
+	return qep;
+}
+
+@-
+The user can insert a new operation between the other nodes.
+@c
+QEP 
+QEPnewNode(QEP qep, int pos, MalBlkPtr mb, InstrPtr p)
+{
+	QEP q;
+	q= QEPnew(MAXPARENT,MAXCHILD);
+	q->mb =mb;
+	q->p = p;
+	if( qep == NULL) return q;
+	QEPinsert(qep,pos,q);
+	return qep;
+}
+@-
+It may be handy to dump the graph for inspection
+or to prepare for the dot program.
+@c
+void
+QEPdump(stream *f, QEP qep, int indent){
+	int i;
+	for(i=0;i<indent; i++) stream_printf(f," ");
+	printInstruction(f,qep->mb,qep->p,0);
+	for(i=0; i< qep->climit; i++)
+		QEPdump(f,qep->children[i], indent+4);
+}
+void
+QEPdot(QEP qep){
+	(void) qep;
+}
+str
+QEPtreedump(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	QEP qep;
+	(void) stk;
+	(void) p;
+
+	qep= QEPnewNode(NULL,0,mb,mb->stmt[0]);
+	QEPdump(getClient()->fdout,qep,0);
+	return MAL_SUCCEED;
+}
+@}
