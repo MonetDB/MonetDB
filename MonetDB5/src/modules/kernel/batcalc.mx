@@ -283,6 +283,7 @@ to theVersion 4.3 implementation.
 	@:coercion(@1,flt)@
 	@:coercion(@1,sht)@
 	@:coercion(@1,int)@
+	@:coercion(@1,oid)@
 	@:coercion(@1,lng)@
 @mal
 	@:coerceList(sht)@
@@ -299,6 +300,15 @@ command oid(b:bat[:oid,:oid]):bat[:oid,:oid]
 address CMDconvertOIDclass
 comment "Identity mapping";
 
+command int(b:bat[:any_1,:oid]):bat[:any_1,:int] 
+address CMDconvertoid_int
+comment "Coerce an oid tail to a bat with int tail.";
+command lng(b:bat[:any_1,:oid]):bat[:any_1,:lng] 
+address CMDconvertlng_int
+comment "Coerce an oid tail to a bat with lng tail.";
+command sht(b:bat[:any_1,:oid]):bat[:any_1,:sht] 
+address CMDconvertsht_int
+comment "Coerce an oid tail to a bat with sht tail.";
 @-
 @= coerce
 command @2(b:bat[:any_1,:@1]):bat[:any_1,:@2] 
@@ -1407,6 +1417,7 @@ The lengthly list of coercions options could have been generated.
 @:Idempotent(str)@
 @:Idempotent(chr)@
 
+@:General(sht,oid)@
 @:General(sht,int)@
 @:Enlarge(sht,int)@
 @:General(sht,lng)@
@@ -1417,6 +1428,7 @@ The lengthly list of coercions options could have been generated.
 @:Enlarge(sht,dbl)@
 
 @:General(int,sht)@
+@:General(int,oid)@
 @:General(int,lng)@
 @:Enlarge(int,lng)@
 @:General(int,flt)@
@@ -1424,8 +1436,13 @@ The lengthly list of coercions options could have been generated.
 @:General(int,dbl)@
 @:Enlarge(int,dbl)@
 
+@:General(oid,sht)@
+@:General(oid,int)@
+@:General(oid,lng)@
+
 @:General(lng,sht)@
 @:General(lng,int)@
+@:General(lng,oid)@
 @:General(lng,flt)@
 @:Enlarge(lng,flt)@
 @:General(lng,dbl)@
@@ -1434,6 +1451,7 @@ The lengthly list of coercions options could have been generated.
 @:General(flt,sht)@
 @:General(flt,int)@
 @:General(flt,lng)@
+@:General(flt,oid)@
 @:General(flt,dbl)@
 @:Enlarge(flt,dbl)@
 
@@ -1442,8 +1460,8 @@ The lengthly list of coercions options could have been generated.
 @:General(dbl,lng)@
 @:General(dbl,flt)@
 @:Enlarge(dbl,flt)@
+@:General(dbl,oid)@
 
-@:General(int,oid)@
 mal_export str CMDconvertstr_int(int *ret, int *bid);
 str
 CMDconvertstr_int(int *ret, int *bid)
