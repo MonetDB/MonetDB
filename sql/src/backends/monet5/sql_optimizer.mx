@@ -202,7 +202,7 @@ Reduce the program before other optimizations take place
 	MCoptimizerCommand(c->curprg->def, 0, 0, "algebra", "joinPath");
 	ARoptimizer(c->curprg->def, 0, 0);
 	CXoptimizer(c->curprg->def, 0, 0);
-	ORoptimizer(c->curprg->def, 0, 0);
+	AEoptimizer(c->curprg->def, 0, 0);
 	s = findMALSymbol(getName("algebra",7),getName("joinPath",8));
 	if(s) ORCAMprocessor(c->curprg->def,s);
 	/* AMoptimizer(c->curprg->def, 0,0); */

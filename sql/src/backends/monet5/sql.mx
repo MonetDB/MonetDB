@@ -206,9 +206,15 @@ comment "cast to @1";
 @:mal_fcast(dbl)@
 
 @mal
+command str( v:bit) :str 
+address SQLbit_2_str
+comment "Idempotent cast of strings";
+command str( v:str) :str 
+address SQLstr_2_str
+comment "Idempotent cast of strings";
 @+ todo
 command str( v:any_1, digits:int ) :str 
-address str_cast
+address SQLstr_cast
 comment "cast to string and check for overflow";
 
 @= mal_cast_2dec
@@ -927,15 +933,35 @@ str_2_@1( @1 *res, str *val )
 		GDKfree(p);
 	return MAL_SUCCEED;
 }
+str
+SQL@1_2_str( str *res, @1 *val )
+{
+	char *p = NULL;
+	int len = 0;
+	@2( &p, &len, val);
+	*res = p;
+	return MAL_SUCCEED;
+}
 @c
-@:cast(sht)@
-@:cast(int)@
-@:cast(lng)@
-@:cast(flt)@
-@:cast(dbl)@
+@:cast(bit,bitToStr)@
+@:cast(oid,OIDtoStr)@
+@:cast(sht,shtToStr)@
+@:cast(int,intToStr)@
+@:cast(lng,lngToStr)@
+@:cast(flt,fltToStr)@
+@:cast(dbl,dblToStr)@
 
 str
-str_cast(str *res, ptr v, int tpe, int *len)
+SQLstr_2_str( str *res, str *val )
+{
+	if( *val == str_nil) 
+		*res= str_nil;
+	else
+		*res =  GDKstrdup(*val);
+	return MAL_SUCCEED;
+}
+str
+SQLstr_cast(str *res, ptr v, int tpe, int *len)
 {
 	int sz = *len + 1;
 	char *r = GDKmalloc(sz);
