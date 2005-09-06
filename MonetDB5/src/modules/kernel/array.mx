@@ -50,7 +50,7 @@ address ARRAYgridBAT_@1
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elemenets with a factor s";
 
-@m
+@mal
 @:grid_mdefs(int)@
 @:grid_mdefs(lng)@
 
