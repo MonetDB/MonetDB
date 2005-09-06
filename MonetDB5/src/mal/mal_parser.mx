@@ -419,8 +419,10 @@ int cstLength(Client cntxt, int *type)
 	if (*s == 'e' || *s == 'E') {
 		i++;
 		s++;
-		if (*s == '-' || *s == '+')
+		if (*s == '-' || *s == '+'){
+			i++;
 			s++;
+		}
 		*type = TYPE_dbl;
 		while (isdigit(*s)) {
 			i++;
