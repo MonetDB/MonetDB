@@ -164,11 +164,18 @@ address OPTmultiplex
 comment "Compiler for multiplexed instructions.";
 
 @-
+The query execution graph primitives.
+@mal
+pattern dumpQEP()
+address QEPtreedump
+comment "Produce an indented tree visualisation";
+@-
 The remainder of this file contains dynamic optimization
 routines, i.e. those not covered by the current backend.
 The most important one is the multi-path join, which should
 be optimized to reduce a potential exploding size/
 @mal
+
 pattern algebra.joinPath(b:bat[:any_1,:any_2], 
         aliasRemoval:bat[:any_2,:any_3]...):bat[:any_1,:any_3]
 address QOTjoinPath

@@ -25,42 +25,48 @@ Such a view comes in handy when you have to re-organize
 whole sections of code or to built-up an optimized plan
 bottom up, e.g. using a memo structure.
 
-Any valid MAL routine can be overlayed with a tree (graph)
-view based on the flow dependencies, but not all MAL programs
-can be derived from a simple tree. For example, the code snippet
-@example
-function query();
-a:= algebra.select(T1,1,3);
-b:= algebra.select(T2,1,3);
-c:= algebra.select(T3,0,5);
-d:= algebra.select(T4,0,5);
-e:= algebra.join(a,c);
-f:= algebra.join(b,d);
-h:= algebra.join(e,f);
-end query;
-@end example
-when interpreted as a linear sequence can not be represented
-unless the execution order itself becomes operator node itself. 
-
 The MAL optimizer toolkit provides functions to
 overlay the body of any MAL block with a tree (graph)
 structure and to linearize them back into a MAL block.
 The linearization order is determined by a recursive
-descend tree walk and the anchor points in the source program.
-For example, the code snippet above would
-be translated using the routine @code{qep.treewalk}
-into the sequence
+descend tree walk from the anchor points in the source program.
+
+To illustrate, consider the code block:
 @example
-function query();
+#T1:= bbp.new(:int,:int);
+#T2:= bbp.new(:int,:int);
+#T3:= bbp.new(:int,:int);
+#T4:= bbp.new(:int,:int);
 a:= algebra.select(T1,1,3);
 b:= algebra.select(T2,1,3);
-e:= algebra.join(a,c);
 c:= algebra.select(T3,0,5);
 d:= algebra.select(T4,0,5);
+e:= algebra.join(a,c);
 f:= algebra.join(b,d);
 h:= algebra.join(e,f);
-end query;
+optimizer.dumpQEP();
 @end example
+which produces an indented structure of the query plan.
+@example
+h := algebra.join(e,f);
+    e := algebra.join(a,c);
+        a := algebra.select(T1,1,3);
+            T1 := bbp.new(:int,:int);
+        c := algebra.select(T3,0,5);
+            T3 := bbp.new(:int,:int);
+    f := algebra.join(b,d);
+        b := algebra.select(T2,1,3);
+            T2 := bbp.new(:int,:int);
+        d := algebra.select(T4,0,5);
+            T4 := bbp.new(:int,:int);
+@end example
+
+Any valid MAL routine can be overlayed with a tree (graph)
+view based on the flow dependencies, but not all MAL programs
+can be derived from a simple tree. For example, the code snippet
+above when interpreted as a linear sequence can not be represented
+unless the execution order itself becomes an operator node itself. 
+
 However, since we haven't added or changed the original
 MAL program, the routine @code{qep.propagate} produces
 the orginial program, where the linear order has
@@ -73,10 +79,6 @@ to produce a query plan section that can not easily be moved
 around.
 [give dot examples]
 @{
-@mal
-pattern optimizer.dumpQEP()
-address QEPtreedump
-comment "Produce an indented tree visualisation";
 
 @h
 #ifndef _MAL_QEP_
@@ -101,29 +103,44 @@ opt_export str QEPtreedump(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 @c
 #include "mal_qep.h"
 
+extern void QEPdump(stream *f, QEP qep, int indent);
+
 QEP
 QEPnew(int p, int c){
 	QEP qep;
-	qep = (QEP) GDKmalloc( sizeof(QEP*));
+	qep = (QEP) GDKmalloc( sizeof(struct QEPrecord));
 	qep->mb= NULL;
 	qep->p = NULL;
 	qep->plimit = p;
-	qep->parents = (QEP*) GDKmalloc( sizeof(QEP) * p);
+	if( p ){
+		qep->parents = (QEP*) GDKmalloc( sizeof(QEP) * p);
+		memset((char*) qep->parents,0, sizeof(QEP) * p);
+	}
 	qep->climit = c;
-	qep->children = (QEP *) GDKmalloc( sizeof(QEP) * c);
-	memset((char*) qep->children,0, sizeof(QEP) * c);
-	memset((char*) qep->parents,0, sizeof(QEP) * p);
+	if( c){
+		qep->children = (QEP *) GDKmalloc( sizeof(QEP) * c);
+		memset((char*) qep->children,0, sizeof(QEP) * c);
+	}
 	return qep;
 }
 QEP
-QEPexpandChildren(QEP qep, int extra){
+QEPnewNode(MalBlkPtr mb,InstrPtr p){
 	QEP q;
-	/*extend node */
-	q = (QEP) GDKrealloc( (char*) qep, sizeof(QEP) * qep->climit + extra);
-	q->climit = qep->climit + extra;
-	memset((char*) (q->children + qep->climit * sizeof(QEP)),
-			0, sizeof(QEP)*extra);
+	q= QEPnew(p->retc,p->argc-p->retc);
+	q->mb= mb;
+	q->p = p;
 	return q;
+}
+QEP
+QEPexpandChildren(QEP qep, int extra){
+	int i;
+	/*extend node */
+	qep->children = (QEP*) GDKrealloc( (char*) qep->children, 
+				sizeof(QEP) * (qep->climit + extra));
+	for(i=qep->climit;i <qep->climit + extra; i++)
+		qep->children[i]=0;
+	qep->climit = qep->climit + extra;
+	return qep;
 }
 QEP
 QEPfree(QEP qep){
@@ -153,10 +170,11 @@ QEPappend(QEP qep, QEP child){
 	for( i=0; i< qep->climit-1; i++)
 		if( qep->children[i] == NULL)
 			break;
-	if( qep->children[i]!= NULL )
+	if(qep->climit== 0 || qep->children[i]!= NULL )
 		qep= QEPexpandChildren(qep,MAXCHILD);
 	qep->children[i]= child;
-	child->parents[0]= qep;
+	if( child) 
+		child->parents[0]= qep;
 	return qep;
 }
 QEP
@@ -179,20 +197,78 @@ QEPinsert(QEP qep, int pos, QEP child){
 		qep = QEPappend(qep,q);
 	return qep;
 }
-
 @-
-The user can insert a new operation between the other nodes.
+The core of the work is focused on building the tree using a flow analysis. 
+Building the tree means that we should not allow the same variable can not be used twice.
 @c
-QEP 
-QEPnewNode(QEP qep, int pos, MalBlkPtr mb, InstrPtr p)
-{
-	QEP q;
-	q= QEPnew(MAXPARENT,MAXCHILD);
-	q->mb =mb;
-	q->p = p;
-	if( qep == NULL) return q;
-	QEPinsert(qep,pos,q);
-	return qep;
+#define USEDNODE 2
+#define TOPNODE 3
+
+QEP
+QEPbuilt(MalBlkPtr mb){
+	QEP qroot= NULL, q= NULL, *vq;
+	InstrPtr p;
+	int top= 0, i, k, *status, vstk[BUFSIZ];
+
+	vq= (QEP*) GDKmalloc( mb->vtop * sizeof(QEP));
+	status= (int*) GDKmalloc( mb->vtop * sizeof(int));
+	for(i=0; i<mb->vtop; i++) {
+		status[i]= 0;
+		vq[i] = 0;
+	}
+
+	for(i=1; i< mb->stop-1; i++){
+		p= getInstrPtr(mb,i);
+		q= QEPnewNode(mb,p);
+		for( k=p->retc; k<p->argc; k++) 
+		if( ! isConstant(mb, getArg(p,k)) ){
+			status[getArg(p,k)]= USEDNODE;
+			QEPappend(q, vq[getArg(p,k)]);
+		}
+		for( k=0; k<p->retc; k++) {
+			if( top ) {
+				QEPappend(vq[vstk[top-1]],q);
+			}
+			vq[getArg(p,k)] = q;
+			status[getArg(p,k)]= TOPNODE;
+		}
+
+		if( p->barrier){
+			switch( p->barrier){
+			case CATCHsymbol:
+			case BARRIERsymbol:
+				if( top == BUFSIZ) goto finalizeQEP;
+				vstk[top]= getArg(p,0);
+				top++;
+				break;
+			case EXITsymbol:
+				if(top) top--;
+				break;
+			}
+		} 
+	}
+@-
+We may end up with multiple variables not yet bound to a QEP.
+@c
+	k=0;
+	for( i=0; i< mb->vtop; i++)
+	if( status[i] == TOPNODE){
+		if( qroot == NULL)
+			qroot= vq[i];
+		else
+		if( k== 1){
+			q= QEPnew(MAXPARENT,MAXCHILD);
+			QEPappend(q,qroot);
+			QEPappend(q,vq[i]);
+			qroot= q;
+		} else
+			QEPappend(qroot,vq[i]);
+		k++;
+	}
+finalizeQEP:
+	GDKfree(vq);
+	GDKfree(status);
+	return qroot;
 }
 @-
 It may be handy to dump the graph for inspection
@@ -200,11 +276,18 @@ or to prepare for the dot program.
 @c
 void
 QEPdump(stream *f, QEP qep, int indent){
-	int i;
-	for(i=0;i<indent; i++) stream_printf(f," ");
-	printInstruction(f,qep->mb,qep->p,0);
+	int i,inc = 0;
+	str s;
+	if( qep->p){
+		for(i=0;i<indent; i++) stream_printf(f," ");
+		s= instruction2str(qep->mb,qep->p,0);
+		stream_printf(f,"%s\n",s+1);
+		GDKfree(s);
+		inc = 4;
+	}
 	for(i=0; i< qep->climit; i++)
-		QEPdump(f,qep->children[i], indent+4);
+	if( qep->children[i])
+		QEPdump(f,qep->children[i], indent+ inc);
 }
 void
 QEPdot(QEP qep){
@@ -216,8 +299,9 @@ QEPtreedump(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	(void) stk;
 	(void) p;
 
-	qep= QEPnewNode(NULL,0,mb,mb->stmt[0]);
-	QEPdump(getClient()->fdout,qep,0);
+	removeInstruction(mb,p);
+	qep= QEPbuilt(mb);
+	QEPdump(GDKout,qep,0);
 	return MAL_SUCCEED;
 }
 @}
