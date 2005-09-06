@@ -1,0 +1,12 @@
+T1:= bbp.new(:int,:int);
+T2:= bbp.new(:int,:int);
+T3:= bbp.new(:int,:int);
+T4:= bbp.new(:int,:int);
+a:= algebra.select(T1,1,3);
+b:= algebra.select(T2,1,3);
+c:= algebra.select(T3,0,5);
+d:= algebra.select(T4,0,5);
+e:= algebra.join(a,c);
+f:= algebra.join(b,d);
+h:= algebra.join(e,f);
+optimizer.dumpQEP();
