@@ -31,24 +31,28 @@ The optimization is captured in a contraction macro.
 
 @mal
 module array;
-
-command grid(i:int,j:int,k:int,l:int) :bat[:void,:int] 
-address ARRAYgrid
+@= grid_mdefs
+command grid(i:@1,j:@1,k:@1,l:@1) :bat[:void,:@1] 
+address ARRAYgrid_@1
 comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)";
 
-command grid(i:int,j:int,k:int,l:int,s:int) :bat[:void,:int] 
-address ARRAYgridShift
+command grid(i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:void,:@1] 
+address ARRAYgridShift_@1
 comment  "Generates an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elements with a factor s";
 
-command grid(b:bat[:void,:int],i:int,j:int,k:int,l:int) :bat[:void,:int] 
-address ARRAYgridBAT
+command grid(b:bat[:void,:@1],i:@1,j:@1,k:@1,l:@1) :bat[:void,:@1] 
+address ARRAYgridBAT_@1
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)";
 
-command grid(b:bat[:void,:int],i:int,j:int,k:int,l:int,s:int) :bat[:void,:int] 
-address ARRAYgridBAT
+command grid(b:bat[:void,:@1],i:@1,j:@1,k:@1,l:@1,s:@1) :bat[:void,:@1] 
+address ARRAYgridBAT_@1
 comment  "Fills an index BAT, (grpcount,grpsize,clustersize,offset)
 and shift all elemenets with a factor s";
+
+@m
+@:grid_mdefs(int)@
+@:grid_mdefs(lng)@
 
 #command *(b:bat[:void,:int],c:bat[:void,:int]):bat[:void,:int]
 #address ARRAYmultiply_int_int
@@ -78,13 +82,17 @@ comment "Prints an array, using 1 value bat and N aligned index bats";
 #include <gdk.h>
 #include <algebra.h>		/* to include BATmin and BATmax */
 
-#define new_int_bat(b,s) {(b)=BATnew(TYPE_void,TYPE_int,(s)); \
-                          if(b) BATseqbase((b),0);                  }
-#define add_ints(b,n)    {(b)->batBuns->free+=(n)*sizeof(int);\
-			  (b)->batCount+=n;	              \
-                          BATkey(BATmirror((b)),0);           \
-                          (b)->tsorted = 0;                   }
-#define get_int_ptr(b)   ((int*)(BUNfirst((b))))
+@= grid_hdefs
+#define new_@1_bat(b,s) {(b)=BATnew(TYPE_void,TYPE_@1,(s)); \
+                         BATseqbase((b),0);                 }
+#define add_@1s(b,n)    {(b)->batBuns->free+=(n)*sizeof(@1);\
+                         (b)->batCount+=n;                  \
+                         BATkey(BATmirror((b)),0);          \
+                         (b)->tsorted = 0;                  }
+#define get_@1_ptr(b)   ((@1*)(BUNfirst((b))))
+@h
+@:grid_hdefs(int)@
+@:grid_hdefs(lng)@
 
 /* The maximum number of dimensions that the print-function can handle... */
 #define MAX_ARRAY_DIM 16
@@ -98,34 +106,32 @@ comment "Prints an array, using 1 value bat and N aligned index bats";
 #include <math.h>
 #include <time.h>
 
-mal_export str ARRAYgrid(int *ret, int *groups, int *groupsize, int *clustersize
-, int *offset);
-mal_export str ARRAYgridShift(int *ret, int *groups, int *groupsize, int *clustersize, int *offset, int *shift);
-mal_export str ARRAYgridBAT(int *ret, int *bid, int *groups, int *groupsize, int
- *clustersize, int *offset);
-mal_export str ARRAYgridBATshift(int *ret, int *bid, int *groups, int *groupsize
-, int *clustersize, int *offset, int *shift);
+/*----------------------------------------------------------------------------*/
+
 mal_export str ARRAYproduct(int *ret, int *bid, int *rid);
 mal_export str ARRAYproject(int *ret, int *bid, int *cst);
 mal_export str ARRAYprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
-/*----------------------------------------------------------------------------*/
+@= grid_impl
+mal_export str ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
+mal_export str ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
+mal_export str ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset);
+mal_export str ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift);
 
 int
-fillgrid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset, int *shift)
+fillgrid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
 {
-	register int *ptr;
-	int i = *groups;
-	int n = *groupsize + *offset;
-	int r = *clustersize;
-	int o = *offset;
-	int s = *shift;
+	register @1 *ptr;
+	@1 i = *groups;
+	@1 n = *groupsize + *offset;
+	@1 r = *clustersize;
+	@1 o = *offset;
+	@1 s = *shift;
 
 #ifdef EXCESSIVE_DEBUGGING
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	ptr = get_int_ptr(*out);
+	ptr = get_@1_ptr(*out);
 
 	while (i-- > 0) {
 		register int ni = o;
@@ -147,255 +153,59 @@ fillgrid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset, 
 }
 
 int
-grid(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset)
+grid_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 {
-	int i = *groups;
-	int n = *groupsize + *offset;
-	int r = *clustersize;
-	int o = *offset;
-	int s = 1;
+	@1 i = *groups;
+	@1 n = *groupsize + *offset;
+	@1 r = *clustersize;
+	@1 o = *offset;
+	@1 s = 1;
 
 #ifdef EXCESSIVE_DEBUGGING
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	new_int_bat(*out, (i * (n - o) * r));
+	new_@1_bat(*out, (i * (n - o) * r));
 	if (*out == 0)
 		return GDK_FAIL;
-	add_ints(*out, (i * (n - o) * r));
-	return fillgrid(out, groups, groupsize, clustersize, offset, &s);
+	add_@1s(*out, (i * (n - o) * r));
+	return fillgrid_@1(out, groups, groupsize, clustersize, offset, &s);
 }
 
 int
-gridShift(BAT **out, int *groups, int *groupsize, int *clustersize, int *offset, int *shift)
+gridShift_@1(BAT **out, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
 {
-	int i = *groups;
-	int n = *groupsize + *offset;
-	int r = *clustersize;
-	int o = *offset;
+	@1 i = *groups;
+	@1 n = *groupsize + *offset;
+	@1 r = *clustersize;
+	@1 o = *offset;
 
 #ifdef EXCESSIVE_DEBUGGING
 	fprintf(stderr, "[grid] (%d,%d,%d,%d)", i, n, r, o);
 #endif
 
-	new_int_bat(*out, (i * (n - o) * r));
+	new_@1_bat(*out, (i * (n - o) * r));
 	if (*out == 0)
 		return GDK_FAIL;
-	add_ints(*out, (i * (n - o) * r));
-	return fillgrid(out, groups, groupsize, clustersize, offset, shift);
+	add_@1s(*out, (i * (n - o) * r));
+	return fillgrid_@1(out, groups, groupsize, clustersize, offset, shift);
 }
 
-/*---------------------------------------------------------------------------*/
-/*
-   memory-hungry function;
-   it internally builds the index to be able to print the array in-order.
-*/
+@c
+@:grid_impl(int)@
+@:grid_impl(lng)@
 
-int
-print_array(BAT *val, ...)
-{
-	va_list ap;
-	BAT *tmp, *batptr[MAX_ARRAY_DIM];
-	int *minvector;
-	int *idxvector;
-	int *maxvector;
-	int *lenvector;
-	oid *arrayindex;
-	int i, dims;
-	size_t j, c;
-	stream *st = GDKout;
-	int type_id = BATttype(val);
-
-	va_start(ap, val);
-	dims = 0;
-	while ((tmp = va_arg(ap, BAT *)) != NULL) {
-		if (dims == MAX_ARRAY_DIM) {
-			GDKerror("print_array: Error, too high dimensionality.\n");
-			goto exit_err_none;
-		}
-		batptr[dims++] = tmp;
-	}
-	if (dims == 0) {
-		GDKerror("print_array: Error, no index bats provided.\n");
-		goto exit_err_none;
-	}
-	va_end(ap);
-
-#ifdef EXCESSIVE_DEBUGGING
-	fprintf(stderr, "[PRINT_ARRAY] Dims = %d\n", dims);
-#endif
-
-	minvector = GDKmalloc(sizeof(ptr) * dims);
-	idxvector = GDKmalloc(sizeof(int) * dims);
-	maxvector = GDKmalloc(sizeof(ptr) * dims);
-	lenvector = GDKmalloc(sizeof(ptr) * dims);
-
-	c = 1;
-	j = BATcount(val);
-	for (i = 0; i < dims; i++) {
-		if (BATttype(batptr[i]) != TYPE_int) {
-			GDKerror("print_array: Index %d error, not int type\n", i);
-			goto exit_err_part;
-		}
-		if (BATcount(batptr[i]) != j) {
-			GDKerror("print_array: Index %d error, count doesn't match\n", i);
-			goto exit_err_part;
-		}
-
-		BATmin(batptr[i], &(minvector[i]));
-		BATmax(batptr[i], &(maxvector[i]));
-		lenvector[i] = maxvector[i] - minvector[i] + 1;
-		c *= lenvector[i];
-#ifdef EXCESSIVE_DEBUGGING
-		fprintf(stderr, "[PRINT_ARRAY] Axis %d = %d..%d\n", i, minvector[i], maxvector[i]);
-#endif
-	}
-
-	if (c != j) {
-		GDKerror("print_array: array size does not match array count\n");
-		goto exit_err_part;
-	}
-	arrayindex = GDKmalloc(sizeof(oid) * c);
-
-	/* Iterate over the first index BAT.              */
-	/* And fetch additional indices (for a given oid) */
-	/* building the full M-D structure (of oid's).    */
-	{
-		register BUN p, q;
-
-		p = BUNfirst(batptr[0]);
-		q = BUNlast(batptr[0]);
-		while (p < q) {
-			register oid *o = (oid *) BUNhead(batptr[0], p);
-			register int offset;
-
-			offset = *((int *) BUNtail(batptr[0], p)) - minvector[0];
-			for (i = 1; i < dims; i++) {
-				register BUN p = BUNfnd(batptr[i], o);
-
-				if (p == NULL) {
-					GDKerror("print_array: Index %d missing for oid %d.\n", i, *o);
-					goto exit_err_full;
-				}
-				offset = (offset * lenvector[i]) + ((*((int *) p)) - minvector[i]);
-			}
-			arrayindex[offset] = *o;
-			p = BUNnext(batptr[0], p);
-		}
-	}
-
-	/* Iterate over all valid indices             */
-	/* (note: normalized to [0..l-1] ranges !)    */
-	/* And print the values within the 'correct'  */
-	/* bracket structure...                       */
-#ifdef EXCESSIVE_DEBUGGING
-	fprintf(stderr, "[PRINT_ARRAY] ");
-#endif
-	for (i = 0; i < dims; i++)
-		idxvector[i] = 0;
-	while (idxvector[dims - 1] < lenvector[dims - 1]) {
-		int offset;
-
-		for (i = 0; i < dims; i++) {
-			if (idxvector[i] != 0) {
-#ifdef EXCESSIVE_DEBUGGING
-				fprintf(stderr, ",");
-#endif
-				stream_printf(st, ",");
-				break;
-			}
-		}
-		i = 0;
-		while (idxvector[i] == 0 && i < dims) {
-#ifdef EXCESSIVE_DEBUGGING
-			fprintf(stderr, "[");
-#endif
-			stream_printf(st, "[");
-			i++;
-		}
-		for (offset = idxvector[0], i = 1; i < dims; i++) {
-			offset = (offset * lenvector[i]) + idxvector[i];
-		}
-		{
-			register BUN p = BUNfnd(val, &arrayindex[offset]);
-
-			if (p == NULL) {
-				GDKerror("print_array: Value missing for oid %d.\n", arrayindex[offset]);
-				goto exit_err_full;
-			}
-#ifdef EXCESSIVE_DEBUGGING
-			fprintf(stderr, "%d\@0", arrayindex[offset]);
-#endif
-			ATOMprint(type_id, BUNtail(val, p), st);
-			if (stream_errnr(st))
-				goto exit_err_full;
-		}
-		i = 0;
-		while ((++idxvector[i]) == lenvector[i] && i < dims) {
-#ifdef EXCESSIVE_DEBUGGING
-			fprintf(stderr, "]");
-#endif
-			stream_printf(st, "]");
-			if (i < dims - 1) {
-				idxvector[i] = 0;
-				i++;
-			}
-		}
-	}
-#ifdef EXCESSIVE_DEBUGGING
-	fprintf(stderr, "\n");
-#endif
-	stream_printf(st, "\n");
-
-	/* Exit strategies... */
-	GDKfree(arrayindex);
-	GDKfree(maxvector);
-	GDKfree(idxvector);
-	GDKfree(minvector);
-	GDKfree(lenvector);
-	return GDK_SUCCEED;
-
-      exit_err_full:
-	GDKfree(arrayindex);
-      exit_err_part:
-	GDKfree(maxvector);
-	GDKfree(idxvector);
-	GDKfree(minvector);
-	GDKfree(lenvector);
-      exit_err_none:
-	return GDK_FAIL;
-}
-
-/*============================================================================*/
-@mil
-
-PROC cons(int n,any::1 v) : bat[void,any::1] {
-    return project(grid(1,n,1,0),v);
-}
-ADDHELP("cons", "A.R. van Ballegooij", "Sep 20 2003",
-"generates a bat with a constant column", "array");
-
-PROC concat(bat[oid,any::1] a,bat[oid,any::1] b,int o) : bat[oid,any::1] {
-    return access(insert(access(copy(a),BAT_WRITE),
-                  reverse([oid]([+]([int](reverse(b)),o))))
-          ,BAT_READ);
-}
-ADDHELP("concat", "A.R. van Ballegooij", "Sep 20 2003",
-"Adds 'offset' two second arrays indexes and merges tables", "array");
-
-if (mod() = "main"){
-	print("Array module loaded...");
-}
 @+
 The M5 wrapper code
 @c
 #include "mal.h"
+@= grid_wrapper_impl
 str
-ARRAYgrid(int *ret, int *groups, int *groupsize, int *clustersize, int *offset)
+ARRAYgrid_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 {
 	BAT *bn;
 
-	if (grid(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
+	if (grid_@1(&bn, groups, groupsize, clustersize, offset) == GDK_FAIL)
 		return throwMessage("array.grid", "Failed to create the grid\n");
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
@@ -403,11 +213,11 @@ ARRAYgrid(int *ret, int *groups, int *groupsize, int *clustersize, int *offset)
 }
 
 str
-ARRAYgridShift(int *ret, int *groups, int *groupsize, int *clustersize, int *offset, int *shift)
+ARRAYgridShift_@1(@1 *ret, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
 {
 	BAT *bn;
 
-	if (gridShift(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
+	if (gridShift_@1(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
 		return throwMessage("array.grid", "Failed to create the grid\n");
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
@@ -415,16 +225,16 @@ ARRAYgridShift(int *ret, int *groups, int *groupsize, int *clustersize, int *off
 }
 
 str
-ARRAYgridBAT(int *ret, int *bid, int *groups, int *groupsize, int *clustersize, int *offset)
+ARRAYgridBAT_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset)
 {
 	BAT *bn;
-	int shift = 1;
+	@1 shift = 1;
 
 	if ((bn = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("array.grid", "Cannot access descriptor");
 	}
 
-	if (fillgrid(&bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
+	if (fillgrid_@1(&bn, groups, groupsize, clustersize, offset, &shift) == GDK_FAIL)
 		return throwMessage("array.grid", "Failed to create the grid\n");
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
@@ -432,19 +242,22 @@ ARRAYgridBAT(int *ret, int *bid, int *groups, int *groupsize, int *clustersize, 
 }
 
 str
-ARRAYgridBATshift(int *ret, int *bid, int *groups, int *groupsize, int *clustersize, int *offset, int *shift)
+ARRAYgridBATshift_@1(@1 *ret, @1 *bid, @1 *groups, @1 *groupsize, @1 *clustersize, @1 *offset, @1 *shift)
 {
 	BAT *bn;
 
 	if ((bn = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("array.grid", "Cannot access descriptor");
 	}
-	if (fillgrid(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
+	if (fillgrid_@1(&bn, groups, groupsize, clustersize, offset, shift) == GDK_FAIL)
 		return throwMessage("array.grid", "Failed to create the grid\n");
 	BBPincref(*ret = bn->batCacheid, TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
+@c
+@:grid_wrapper_impl(int)@
+@:grid_wrapper_impl(lng)@
 
 @-
 @= arraymultiply
@@ -550,4 +363,208 @@ ARRAYprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	return throwMessage("array.print", "not supported yet\n");
+}
+
+
+
+/*---------------------------------------------------------------------------*/
+/*
+   memory-hungry function;
+   it internally builds the index to be able to print the array in-order.
+*/
+
+int
+print_array(BAT *val, ...)
+{
+  va_list ap;
+  BAT *tmp, *batptr[MAX_ARRAY_DIM];
+  int *minvector;
+  int *idxvector;
+  int *maxvector;
+  int *lenvector;
+  oid *arrayindex;
+  int i, dims;
+  size_t j, c;
+  stream *st = GDKout;
+  int type_id = BATttype(val);
+
+  va_start(ap, val);
+  dims = 0;
+  while ((tmp = va_arg(ap, BAT *)) != NULL) {
+    if (dims == MAX_ARRAY_DIM) {
+      GDKerror("print_array: Error, too high dimensionality.\n");
+      goto exit_err_none;
+    }
+    batptr[dims++] = tmp;
+  }
+  if (dims == 0) {
+    GDKerror("print_array: Error, no index bats provided.\n");
+    goto exit_err_none;
+  }
+  va_end(ap);
+
+#ifdef EXCESSIVE_DEBUGGING
+  fprintf(stderr, "[PRINT_ARRAY] Dims = %d\n", dims);
+#endif
+
+  minvector = GDKmalloc(sizeof(ptr) * dims);
+  idxvector = GDKmalloc(sizeof(int) * dims);
+  maxvector = GDKmalloc(sizeof(ptr) * dims);
+  lenvector = GDKmalloc(sizeof(ptr) * dims);
+
+  c = 1;
+  j = BATcount(val);
+  for (i = 0; i < dims; i++) {
+    if (BATttype(batptr[i]) != TYPE_int) {
+      GDKerror("print_array: Index %d error, not int type\n", i);
+      goto exit_err_part;
+    }
+    if (BATcount(batptr[i]) != j) {
+      GDKerror("print_array: Index %d error, count doesn't match\n", i);
+      goto exit_err_part;
+    }
+
+    BATmin(batptr[i], &(minvector[i]));
+    BATmax(batptr[i], &(maxvector[i]));
+    lenvector[i] = maxvector[i] - minvector[i] + 1;
+    c *= lenvector[i];
+#ifdef EXCESSIVE_DEBUGGING
+    fprintf(stderr, "[PRINT_ARRAY] Axis %d = %d..%d\n", i, minvector[i], maxvector[i]);
+#endif
+  }
+
+  if (c != j) {
+    GDKerror("print_array: array size does not match array count\n");
+    goto exit_err_part;
+  }
+  arrayindex = GDKmalloc(sizeof(oid) * c);
+
+  /* Iterate over the first index BAT.              */
+  /* And fetch additional indices (for a given oid) */
+  /* building the full M-D structure (of oid's).    */
+  {
+    register BUN p, q;
+
+    p = BUNfirst(batptr[0]);
+    q = BUNlast(batptr[0]);
+    while (p < q) {
+      register oid *o = (oid *) BUNhead(batptr[0], p);
+      register int offset;
+
+      offset = *((int *) BUNtail(batptr[0], p)) - minvector[0];
+      for (i = 1; i < dims; i++) {
+        register BUN p = BUNfnd(batptr[i], o);
+
+        if (p == NULL) {
+          GDKerror("print_array: Index %d missing for oid %d.\n", i, *o);
+          goto exit_err_full;
+        }
+        offset = (offset * lenvector[i]) + ((*((int *) p)) - minvector[i]);
+      }
+      arrayindex[offset] = *o;
+      p = BUNnext(batptr[0], p);
+    }
+  }
+
+  /* Iterate over all valid indices             */
+  /* (note: normalized to [0..l-1] ranges !)    */
+  /* And print the values within the 'correct'  */
+  /* bracket structure...                       */
+#ifdef EXCESSIVE_DEBUGGING
+  fprintf(stderr, "[PRINT_ARRAY] ");
+#endif
+  for (i = 0; i < dims; i++)
+    idxvector[i] = 0;
+  while (idxvector[dims - 1] < lenvector[dims - 1]) {
+    int offset;
+
+    for (i = 0; i < dims; i++) {
+      if (idxvector[i] != 0) {
+#ifdef EXCESSIVE_DEBUGGING
+        fprintf(stderr, ",");
+#endif
+        stream_printf(st, ",");
+        break;
+      }
+    }
+    i = 0;
+    while (idxvector[i] == 0 && i < dims) {
+#ifdef EXCESSIVE_DEBUGGING
+      fprintf(stderr, "[");
+#endif
+      stream_printf(st, "[");
+      i++;
+    }
+    for (offset = idxvector[0], i = 1; i < dims; i++) {
+      offset = (offset * lenvector[i]) + idxvector[i];
+    }
+    {
+      register BUN p = BUNfnd(val, &arrayindex[offset]);
+
+      if (p == NULL) {
+        GDKerror("print_array: Value missing for oid %d.\n", arrayindex[offset]);
+        goto exit_err_full;
+      }
+#ifdef EXCESSIVE_DEBUGGING
+      fprintf(stderr, "%d\@0", arrayindex[offset]);
+#endif
+      ATOMprint(type_id, BUNtail(val, p), st);
+      if (stream_errnr(st))
+        goto exit_err_full;
+    }
+    i = 0;
+    while ((++idxvector[i]) == lenvector[i] && i < dims) {
+#ifdef EXCESSIVE_DEBUGGING
+      fprintf(stderr, "]");
+#endif
+      stream_printf(st, "]");
+      if (i < dims - 1) {
+        idxvector[i] = 0;
+        i++;
+      }
+    }
+  }
+#ifdef EXCESSIVE_DEBUGGING
+  fprintf(stderr, "\n");
+#endif
+  stream_printf(st, "\n");
+
+  /* Exit strategies... */
+  GDKfree(arrayindex);
+  GDKfree(maxvector);
+  GDKfree(idxvector);
+  GDKfree(minvector);
+  GDKfree(lenvector);
+  return GDK_SUCCEED;
+
+      exit_err_full:
+  GDKfree(arrayindex);
+      exit_err_part:
+  GDKfree(maxvector);
+  GDKfree(idxvector);
+  GDKfree(minvector);
+  GDKfree(lenvector);
+      exit_err_none:
+  return GDK_FAIL;
+}
+
+/*============================================================================*/
+@mil
+
+PROC cons(int n,any::1 v) : bat[void,any::1] {
+    return project(grid(1,n,1,0),v);
+}
+ADDHELP("cons", "A.R. van Ballegooij", "Sep 20 2003",
+"generates a bat with a constant column", "array");
+
+PROC concat(bat[oid,any::1] a,bat[oid,any::1] b,int o) : bat[oid,any::1] {
+    return access(insert(access(copy(a),BAT_WRITE),
+                  reverse([oid]([+]([int](reverse(b)),o))))
+          ,BAT_READ);
+}
+ADDHELP("concat", "A.R. van Ballegooij", "Sep 20 2003",
+"Adds 'offset' two second arrays indexes and merges tables", "array");
+
+if (mod() = "main"){
+  print("Array module loaded...");
 }
