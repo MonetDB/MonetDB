@@ -2033,6 +2033,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
     elif os.path.isfile(os.path.join(env['TSTSRCDIR'],"All.conf")):
         LOCAL_CONF = ' "--config=%s"' % os.path.join(env['TSTSRCDIR'],"All.conf")
 
+    if env['VERSION'] >= 49900:
+        PRINTF = "io.printf"
+    else:
+        PRINTF = "printf"
+
+
     ServerReady = True
     if SERVER in ["MAPI", "SQL", "XQUERY"]:
         SrvrOutFile = TST+".server.out"
@@ -2057,7 +2063,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr = '%s --dbinit="module(mapi); mapi_start();"' % Srvr
         if SERVER == "SQL":
             if env['VERSION'] >= 49900:
-                Srvr = '%s --dbinit="include sql; listen(%s:int);"' % (Srvr, env['SQLPORT'])
+                Srvr = '%s --dbinit="include sql; mapi.listen(%s:int);"' % (Srvr, env['SQLPORT'])
             else:
                 Srvr = '%s --dbinit="module(sql_server); sql_server_start();"' % Srvr
         if SERVER == "XQUERY":
@@ -2070,7 +2076,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             Srvr = Srvr+' ; echo ; '
         Srvr = Srvr+'echo Over..'
 
-        pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, '\nprintf("\\nReady.\\n");\n', SrvrOut, SrvrErr)
+        pSrvrIn, pSrvrOut, pSrvrErr = LaunchIt(Srvr, '\n%s("\\nReady.\\n");\n' % PRINTF, SrvrOut, SrvrErr)
         ln="dummy"
         while 0 < len(ln) and ln[:6] not in ['Ready.','Over..']:
             ln=pSrvrOut.readline()
@@ -2191,7 +2197,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             try:
                 pSrvrIn.write(EPILOGUE.read())
                 pSrvrIn.flush()
-                pSrvrIn.write(';\nprintf("\\nDone..\\n");\n')
+                pSrvrIn.write(';\n%s("\\nDone..\\n");\n' % PRINTF)
                 pSrvrIn.flush()
             except IOError, (IOerrNo, IOerrStr):
                 EpiFailed = EpiFailed+"\n! Executing "+TST+".epilogue failed with #"+str(IOerrNo)+": '"+IOerrStr+"'. !"
