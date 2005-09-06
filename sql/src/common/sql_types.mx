@@ -1200,7 +1200,7 @@ sqltypeinit()
 	}
 
 	/* all numericals */
-	for (t = numerical; t < dates; t++) {
+	for (t = numerical; *t != TME; t++) {
 		sql_subtype *lt = sql_bind_localtype((*t)->base.name);
 
 		sql_create_func("sql_sub", "-", *t, *t, *t, SCALE_FIX);
@@ -1222,14 +1222,16 @@ sqltypeinit()
 		sql_create_func("scale_up", "*", *t, lt->type, *t, SCALE_NONE);
 		sql_create_func("scale_down", "round", *t, lt->type, *t, SCALE_NONE);
 		/* numeric function on INTERVALS */
-		sql_create_func("sql_sub", "-", MONINT, *t, MONINT, SCALE_FIX);
-		sql_create_func("sql_add", "+", MONINT, *t, MONINT, SCALE_FIX);
-		sql_create_func("sql_mul", "*", MONINT, *t, MONINT, SCALE_ADD);
-		sql_create_func("sql_div", "/", MONINT, *t, MONINT, SCALE_SUB);
-		sql_create_func("sql_sub", "-", SECINT, *t, SECINT, SCALE_FIX);
-		sql_create_func("sql_add", "+", SECINT, *t, SECINT, SCALE_FIX);
-		sql_create_func("sql_mul", "*", SECINT, *t, SECINT, SCALE_ADD);
-		sql_create_func("sql_div", "/", SECINT, *t, SECINT, SCALE_SUB);
+		if (*t != MONINT && *t != SECINT){
+			sql_create_func("sql_sub", "-", MONINT, *t, MONINT, SCALE_FIX);
+			sql_create_func("sql_add", "+", MONINT, *t, MONINT, SCALE_FIX);
+			sql_create_func("sql_mul", "*", MONINT, *t, MONINT, SCALE_ADD);
+			sql_create_func("sql_div", "/", MONINT, *t, MONINT, SCALE_SUB);
+			sql_create_func("sql_sub", "-", SECINT, *t, SECINT, SCALE_FIX);
+			sql_create_func("sql_add", "+", SECINT, *t, SECINT, SCALE_FIX);
+			sql_create_func("sql_mul", "*", SECINT, *t, SECINT, SCALE_ADD);
+			sql_create_func("sql_div", "/", SECINT, *t, SECINT, SCALE_SUB);
+		}
 	}
 	for (t = decimals, t++; t != floats; t++) {
 		sql_type **u;
