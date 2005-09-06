@@ -1,7 +1,0 @@
-r{count=100} := bbp.new(:void,:int);
-s{count=1000}:= bbp.new(:void,:int);
-rs:= algebra.select(s,1,1);
-rr:= bat.reverse(r);
-j:= algebra.join(rs,rr);
-optimizer.costEstimation();
-mdb.list();
