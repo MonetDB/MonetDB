@@ -156,7 +156,7 @@ start_sql_server(void *arg)
 	in = ((stream **) arg)[0];
 	out = ((stream **) arg)[1];
 	free(arg);
-	snprintf(buf, sizeof(buf), "SQLclient(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
+	snprintf(buf, sizeof(buf), "sqlclient(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
 	monet_exec("module(sql_server);");
 	monet_exec("mvc_init(int(monet_environment.find(\"sql_debug\")));");
 	monet_exec(buf);
