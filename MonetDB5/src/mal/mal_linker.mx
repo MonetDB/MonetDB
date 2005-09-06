@@ -282,22 +282,18 @@ Use the search path provided in the configuration file
 #ifdef RTLD_MEMBER
 	mode |= RTLD_MEMBER;
 #endif
-	if (fullname) {
-		handle = dlopen(fullname, mode);
+	if (fullname == NULL) 
+		return 0;
+	handle = dlopen(fullname, mode);
 #ifdef DEBUG_MAL_LINKER2
-		stream_printf(GDKout, "load[%d]:%s %s:%s\n", lastmodule, modulename, fullname, 
-			handle == NULL? (handle == NULL ? errbuf : "failed") : "succeeded");
+	stream_printf(GDKout, "load[%d]:%s %s:%s\n", lastmodule, modulename, fullname, 
+		handle == NULL? (handle == NULL ? errbuf : "failed") : "succeeded");
 #endif
-		if ( handle == NULL && (errmsg= dlerror()) ) {
-			snprintf(errbuf, 1024, "%s: loader error %s", modulename, errmsg);
-			GDKfree(fullname);
-			return (str) throwException("loaderException", 
-						"loadModuleLibrary", errbuf);
-		}
-	} else {
-		GDKerror("Failed to bind module '%s' to library\n", modulename);
+	if ( handle == NULL && (errmsg= dlerror()) ) {
+		snprintf(errbuf, 1024, "%s: loader error %s", modulename, errmsg);
+		GDKfree(fullname);
 		return (str) throwException("loaderException", 
-						"loadModuleLibrary", modulename);
+					"loadModuleLibrary", errbuf);
 	}
 
 	mal_set_lock(mal_contextLock, "loadModule");
