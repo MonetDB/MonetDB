@@ -114,7 +114,14 @@ char* xmlNsFind(XmlNsFrame** top, char* prefix) {
     XmlNsFrame* fp = (*top);
 
     while( fp ) {
-        if ( strcmp(prefix,fp->prefix) == 0) {
+        if (prefix == NULL) {
+            if (fp->prefix == NULL) {
+#ifdef DEBUGNS
+                stream_printf(GDKout,"+NS:xmlNsFind(NULL)=NULL)\n");
+#endif
+                return fp->uri;
+            }
+        } else if (fp->prefix != NULL && strcmp(prefix,fp->prefix) == 0) {
 #ifdef DEBUGNS
             stream_printf(GDKout,"+NS:xmlNsFind(\"%s\")=\"%s\")\n",prefix,fp->uri);
 #endif
@@ -132,7 +139,8 @@ XmlNsFrame* xmlNsPush(XmlNsFrame** top, char* prefix, char* uri) {
 #ifdef DEBUGNS
         stream_printf(GDKout,"+NS:xmlNsPush(\"%s\",\"%s\")\n",prefix,uri);
 #endif
-        if ( !( fp->prefix = strdup(prefix)) ) return NULL;
+        fp->prefix = NULL;
+        if ( prefix && !( fp->prefix = strdup(prefix)) ) return NULL;
         if ( !(fp->uri    = strdup(uri)) ) return NULL;
         /* */
         fp ->next  = NULL;
@@ -426,7 +434,7 @@ static int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix, int top) {
         prefix = NULL;
     else
         prefix = par_prefix;
-    if ( prefix && uri ) {
+    if ( uri ) {
         char* currentURI = xmlNsFind(&ctx->nsTop,prefix);
 
         if ( !(currentURI && (strcmp(currentURI,uri) == 0)) ) {
@@ -658,34 +666,51 @@ static int handle_endDocument(XqueryCtx* ctx) {
             return 0;
         if (ctx->saxMode ) {
             if ( SAXOPHONE ) {
-                if ( !emit(" attribute",loc,0) )
-                    return 0;
-                if ( prefix && *prefix )
-                    if ( !emit(" attribute prefix",prefix,0) )
+                 if ( loc && *loc) {
+                     if (!emit(" attribute",loc,0) )
                         return 0;
+                     if ( prefix && *prefix )
+                         if ( !emit(" attribute prefix",prefix,0) )
+                             return 0;
+                 } else if (prefix && *prefix) {
+                     /* default namespace */
+                     if (!emit(" attribute",prefix,0) )
+                         return 0;
+                 }
                 if ( !emit(" attribute value",value,0) )
                     return 0;
             } else {
                 stream_printf(GDKout,"<A %s=\"%s\"\n",loc,value);
             }
         } else if (ctx->printMode) {
-            if ( prefix && *prefix ) {
+            if ( prefix && *prefix && loc && *loc ) {
                 stream_printf(GDKout," %s:%s=\\\"%s\\\"",prefix,loc,value);
+             } else if (prefix && *prefix) {
+                 /* default namespace */
+                 stream_printf(GDKout," %s=\\\"%s\\\"",prefix,value);
             } else {
                 stream_printf(GDKout," %s=\\\"%s\\\"",loc,value);
             }
         } else if (ctx->dmMode && top) { /* dmMode */
-            if ( prefix && *prefix ) {
-                if ( strcmp(prefix,"xmlns")==0 )
-                    stream_printf(GDKout,"attribute %s:%s { %s }%s",prefix,loc,value,ctx->dmSeparator);
-                else
+             if ( prefix && *prefix ) {
+                 if ( strcmp(prefix,"xmlns")==0 ) {
+                     if (loc && *loc) {
+                         stream_printf(GDKout,"attribute %s:%s { %s }%s",prefix,loc,value,ctx->dmSeparator);
+                     } else {
+                         /* default namespace */
+                         stream_printf(GDKout,"attribute %s { %s }%s",prefix,value,ctx->dmSeparator);
+                     }
+                 } else
                     stream_printf(GDKout,"attribute %s:%s { %s }",prefix,loc,value);
             } else {
                 stream_printf(GDKout,"attribute %s { %s }",loc,value);
             }
         } else { /* xmlMode */
-            if ( prefix && *prefix ) {
+            if ( prefix && *prefix && loc && *loc ) {
                 stream_printf(GDKout," %s:%s=",prefix,loc);
+             } else if ( prefix && *prefix ) {
+                 /* default namespace */
+                 stream_printf(GDKout," %s=",prefix);
             } else {
                 stream_printf(GDKout," %s=",loc);
             }
