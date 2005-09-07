@@ -112,7 +112,7 @@ Monet_init(opt *set, int setlen)
 	}
 	GDKfree(n);
 
-	if ((p = GDKgetenv("gdk_debug")) != NULL)
+	if ((p = GDKgetenv("gdk_debug")) != NULL) 
 		GDKdebug = strtol(p, NULL, 10);
 
 	if ((p = GDKgetenv("gdk_mem_bigsize")) != NULL)

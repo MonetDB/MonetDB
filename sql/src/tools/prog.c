@@ -73,7 +73,7 @@ main(int argc, char **av)
 	char *prog = *av;
 	opt *set = NULL;
 	int setlen = 0, time = 0;
-	long t0;
+	long t0 = 0;
 	Mapi mid;
 	MapiHdl hdl;
 	char *line;
@@ -138,6 +138,8 @@ main(int argc, char **av)
 			usage(prog);
 		}
 	}
+	if (!(setlen = mo_system_config(&set, setlen)))
+		usage(prog);
 
 	mid = embedded_sql(set, setlen);
 	while ((line = fgets(buf, BUFSIZ, stdin)) != NULL) {
