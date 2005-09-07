@@ -1,0 +1,58 @@
+stdout of test 'tst044` in directory 'src/mal` itself:
+
+
+# 16:38:20 >  
+# 16:38:20 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33878 --set sql_port=44403 --set xquery_port=50458 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst044.mal </dev/null
+# 16:38:20 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
+##testing floating point numbers;
+#
+#a:= 3.145:flt;	io.print(a);
+#a:= -3.145:flt; io.print(a);
+#a:= 0.345e1:flt; io.print(a);
+#a:= 3.415e-1:flt; io.print(a);
+#
+#b:= 3.145:dbl;	io.print(b);
+#b:= -3.145:dbl; io.print(b);
+#b:= 0.345e1:dbl; io.print(b);
+#b:= 3.415e-1:dbl; io.print(b);
+#
+function user.main():int;	# 0  (main:int)
+#testing floating point numbers; 	# 1  (_2:str)
+    a := 3.145:flt;	# 2  (a:flt)<-(_4:flt)
+    io.print(a);	# 3 IOprint_val (_5:int)<-(a:flt)
+    a := -3.145:flt;	# 4  (a:flt)<-(_6:flt)
+    io.print(a);	# 5 IOprint_val (_7:int)<-(a:flt)
+    a := 0.345e1:flt;	# 6  (a:flt)<-(_8:flt)
+    io.print(a);	# 7 IOprint_val (_9:int)<-(a:flt)
+    a := 3.415e-1:flt;	# 8  (a:flt)<-(_10:flt)
+    io.print(a);	# 9 IOprint_val (_11:int)<-(a:flt)
+    b := 3.145:dbl;	# 10  (b:dbl)<-(_13:dbl)
+    io.print(b);	# 11 IOprint_val (_14:int)<-(b:dbl)
+    b := -3.145:dbl;	# 12  (b:dbl)<-(_15:dbl)
+    io.print(b);	# 13 IOprint_val (_16:int)<-(b:dbl)
+    b := 0.345e1:dbl;	# 14  (b:dbl)<-(_17:dbl)
+    io.print(b);	# 15 IOprint_val (_18:int)<-(b:dbl)
+    b := 3.415e-1:dbl;	# 16  (b:dbl)<-(_19:dbl)
+    io.print(b);	# 17 IOprint_val (_20:int)<-(b:dbl)
+end main;	# 18  
+[ 3.14499998 ]
+[ -3.14499998 ]
+[ 3.45000005 ]
+[ 0.341500014 ]
+[ 3.145 ]
+[ -3.145 ]
+[ 3.4500000000000002 ]
+[ 0.34150000000000003 ]
+
+# 16:38:20 >  
+# 16:38:20 >  Done.
+# 16:38:20 >  
+
