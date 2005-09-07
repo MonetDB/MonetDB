@@ -1269,10 +1269,10 @@ insE_impl(int *res, str Str1, int *clk, struct tms *t, struct rusage *ru, struct
 		return GDK_FAIL;
 	}
 	i = *(int *) BUNtloc(Mprof_interval_bat, p);
-	BUNreplace(Mprof_Ecpu_bat, &i, t);
-	BUNreplace(Mprof_Eio_bat, &i, ru);
-	BUNreplace(Mprof_Emem_bat, &i, m);
-	BUNreplace(Mprof_Eclk_bat, &i, clk);
+	BUNreplace(Mprof_Ecpu_bat, &i, t, 0);
+	BUNreplace(Mprof_Eio_bat, &i, ru, 0);
+	BUNreplace(Mprof_Emem_bat, &i, m, 0);
+	BUNreplace(Mprof_Eclk_bat, &i, clk, 0);
 	*res = i;
 	return GDK_SUCCEED;
 }

@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 678 ]
+[ 680 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 678 ]
+[ 680 ]
 
 var All:=0;
 
@@ -568,8 +568,8 @@ Module: "arith"
 
 Module: "bat"
 
-[ 62 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 64 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -623,7 +623,9 @@ Module: "bat"
 [ "ordered_rev",  "COMMAND:   ",  "ordered_rev(BAT[any,any]) : bit",							  "Returns whether a BAT is ordered on head or not."																																																							  ]
 [ "persists",	  "COMMAND:   ",  "persists(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",				  "Make the BAT persistent (mode = TRUE), transient (mode = FALSE).\n or session (mode = bit(nil)). Returns the BAT itself."																																														  ]
 [ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "Perform replace for all BUNs of the second BAT into the first.\n Returns the modified BAT."																																																		  ]
+[ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], BAT[any::1,any::2], bit) : BAT[any::1,any::2]",			  "Perform replace for all BUNs of the second BAT into the first.\n Returns the modified BAT."																																																																	  ]
 [ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], any::1, any::2) : BAT[any::1,any::2]",				  "Replace the tail value of one BUN that has some head value.\n Returns the modified BAT."																										  ]
+[ "replace",	  "COMMAND:   ",  "replace(BAT[any::1,any::2], any::1, any::2, bit) : BAT[any::1,any::2]",			  "Replace the tail value of one BUN that has some head value.\n Returns the modified BAT."																																																																	  ]
 [ "reverse",	  "COMMAND:   ",  "reverse(BAT[any::1,any::2]) : BAT[any::2,any::1]",					  "Returns the reverse view of a BAT (head is tail and tail is head).\n BEWARE:  no copying is involved; input and output refer to the same object!"																																											  ]
 [ "revert",	  "COMMAND:   ",  "revert(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Puts all BUNs in a BAT in reverse order. Returns b."																																																							  ]
 [ "roles",	  "COMMAND:   ",  "roles(BAT[any::1,any::2], str, str) : BAT[any::1,any::2]",				  "Give a logical name to the columns of a BAT.\n Returns the BAT itself."																																																				  ]
@@ -814,7 +816,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 678 ]
+[ 680 ]
 
 quit();
 

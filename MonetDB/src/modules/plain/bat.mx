@@ -87,6 +87,16 @@ can be found in this module.
 "Perform replace for all BUNs of the second BAT into the first.
  Returns the modified BAT."
 
+.COMMAND replace(BAT[any::1, any::2], any::1 h, any::2 t, bit force)
+				: BAT[any::1,any::2] = CMDreplace_bun_force;
+"Replace the tail value of one BUN that has some head value.
+ Returns the modified BAT."
+
+.COMMAND replace(BAT[any::1, any::2], BAT[any::1,any::2], bit force)
+				: BAT[any::1,any::2] = CMDreplace_bat_force;
+"Perform replace for all BUNs of the second BAT into the first.
+ Returns the modified BAT."
+
 .COMMAND delete(BAT[any::1, any::2], any::1 h, any::2 t)
 				: BAT[any::1,any::2] = CMDdelete_bun;
 "Delete one specific BUN.
@@ -679,7 +689,7 @@ CMDinsert_bat(BAT **r, BAT *b, BAT *s)
 int
 CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t)
 {
-	if (BUNreplace(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@) == NULL)
+	if (BUNreplace(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@, 0) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -688,7 +698,25 @@ CMDreplace_bun(BAT **r, BAT *b, ptr h, ptr t)
 int
 CMDreplace_bat(BAT **r, BAT *b, BAT *s)
 {
-	if (BATreplace(*r = b, s) == NULL)
+	if (BATreplace(*r = b, s, 0) == NULL)
+		return GDK_FAIL;
+	BBPfix(b->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+CMDreplace_bun_force(BAT **r, BAT *b, ptr h, ptr t, bit *force)
+{
+	if (BUNreplace(*r = b, @:batconvert(b,h)@, @:batconvert(b,t)@, *force) == NULL)
+		return GDK_FAIL;
+	BBPfix(b->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+CMDreplace_bat_force(BAT **r, BAT *b, BAT *s, bit *force)
+{
+	if (BATreplace(*r = b, s, *force) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
 	return GDK_SUCCEED;
@@ -785,7 +813,7 @@ void_inplace(BAT *b, oid id, ptr val)
 
 	assert(p >= b->batInserted);	/* we don't want delete/ins */
 	assert(!b->batRestricted);
-	if (!BUNinplace(b, p, (ptr) &id, val))
+	if (!BUNinplace(b, p, (ptr) &id, val, 0))
 		 res = GDK_FAIL;
 
 	b->batInserted = oldInserted;
