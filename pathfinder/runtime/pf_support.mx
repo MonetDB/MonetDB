@@ -1287,7 +1287,11 @@ static BAT *BATmark_grp( BAT *b, BAT *g )
 	ERRORcheck((g->ttype!=TYPE_oid),
 	           "BATmark_grp: tail of BAT g must be oid.\n");
 
-	tsdk = ((BATcount(g) == 1) || (BATcount(b) == 0));
+	if (BATcount(g) == 1) {
+		return BATmark(b, *(oid*)BUNtloc(g, BUNfirst(g)));
+	}
+
+	tsdk = (BATcount(b) == 0);
 	gc = batcopy(g, g->htype, g->ttype, TRUE);
 	if (gc == NULL) return NULL;
 	bn = BATnew(b->htype, TYPE_oid, BATcount(b));
