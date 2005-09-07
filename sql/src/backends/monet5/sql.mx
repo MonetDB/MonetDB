@@ -32,7 +32,7 @@ command start():void
 address SQLsession
 comment "Switch to processing SQL statements";
 
-command init()
+command init():void
 address SQLinitEnvironment
 comment "Initialize the environment for MAL";
 
@@ -49,12 +49,12 @@ command eval(cmd:str):str
 address SQLstatement
 comment "Execute a single sql statement";
 
-command header(i:int) 
+command header(i:int) :void
 address SQLheader
 comment "Generate a table header for an SQL frontend";
-command column(i:any_1, v:str,t:str,digits:int,scale:int) 
+command column(i:any_1, v:str,t:str,digits:int,scale:int) :void
 address SQLcolumnsingle;
-command column(b:bat[:any_1,:any_2], v:str,t:str,digits:int,scale:int) 
+command column(b:bat[:any_1,:any_2], v:str,t:str,digits:int,scale:int) :void
 address SQLcolumn
 comment "Rename a table column";
 
@@ -69,9 +69,9 @@ command assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
 
-pattern output(order:int, a:any...)
+pattern output(order:int, a:any...):void
 address SQLoutput;
-pattern output(order:int,r:bat[:any_1,:any]...)
+pattern output(order:int,r:bat[:any_1,:any]...):void
 address SQLoutputBats
 comment "Overloading of the core print routines to obtain proper layout";
 
@@ -159,7 +159,11 @@ command hash( b:bat[:void,:any_1], sh:int ) :bat[:void,:int]
 address bathash_wrap 
 comment "calculate a hash value and shift left";
 
-@-
+@- SQL functions
+The SQL functions are all recognized by their module name.
+For some we need to provide a new implementation, others
+merely require a different address binding.
+
 The aggregate operations work on doubles by default.
 This calls for casting values around in the process.
 @= mal_round
@@ -184,8 +188,8 @@ comment "round off the value v to nearests multiple of r";
 
 @= mal_cast
 command @1( v:str ) :@1 
-address str_2_@1
-comment "cast to @1 and check for overflow";
+address CALCstr2@1
+comment "Cast to @1";
 command @1( v:str, digits:int ) :@1 
 address str_2num_@1
 comment "cast to @1 and check for overflow";
@@ -199,7 +203,7 @@ comment "cast to dec(@1) and check for overflow";
 
 @= mal_fcast
 command @1( v:str ) :@1 
-address str_2_@1
+address CALCstr2@1
 comment "cast to @1";
 @mal
 @:mal_fcast(flt)@
@@ -207,10 +211,10 @@ comment "cast to @1";
 
 @mal
 command str( v:bit) :str 
-address SQLbit_2_str
+address CALCbit2str
 comment "Idempotent cast of strings";
 command str( v:str) :str 
-address SQLstr_2_str
+address CALCstr2str
 comment "Idempotent cast of strings";
 @+ todo
 command str( v:any_1, digits:int ) :str 

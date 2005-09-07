@@ -425,6 +425,7 @@ SQLreader(Client c)
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout, "#SQLparser: start reading SQL block\n");
+	stream_flush(GDKout);
 #endif
 	if (!be || c->mode <= FINISHING)
 		return throwMessage("SQLreader", "end of SQL input\n");
@@ -439,6 +440,7 @@ Continue processing any left-over input from the previous round.
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout, "#pos %d len %d\n", in->pos, in->len);
+	stream_flush(GDKout);
 #endif
 	if (in->pos >= in->len) {
 		ssize_t rd;
@@ -476,6 +478,7 @@ Continue processing any left-over input from the previous round.
 		if (go && (rd = bstream_next(in)) <= 0) {
 #ifdef _SQL_READER_DEBUG
 			stream_printf(GDKout, "#rd %d  language %d eof %d\n", rd, language, in->eof);
+			stream_flush(GDKout);
 #endif
 			if (be->language == 'D' && in->eof == 0) {
 				return 0;
@@ -485,7 +488,7 @@ Continue processing any left-over input from the previous round.
 				   (this time with prompt) */
 				SQLreader(c);
 			} else if (rd == 0 && in->eof == 0) {
-				return 0;
+				SQLreader(c);
 			} else {
 				go = FALSE;
 			}
