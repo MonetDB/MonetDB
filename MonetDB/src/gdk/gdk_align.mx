@@ -332,11 +332,11 @@ BATmaterialize(BAT *b, size_t size)
 		ALGODEBUG THRprintf(GDKout, "BATmaterialize(%d," SZFMT ");\n", (int) b->batCacheid, size);
 
 		if (BAThdense(b) && ht == TYPE_void) {
-			vid ++;
+			vid |= 1;
 			ht = TYPE_oid;
 		}
 		if (BATtdense(b) && tt == TYPE_void) {
-			vid += 2;
+			vid |= 2;
 			tt = TYPE_oid;
 		}
 		if (vid == 0) {	/* no voids */
@@ -405,9 +405,9 @@ BATmaterialize(BAT *b, size_t size)
 		bm->thash = b->hhash;
 
 		/* set the correct dense info */
-		if (vid == 1) 	
+		if (vid & 1) 	
 			b->hdense = TRUE;
-		if (vid == 2) 	
+		if (vid & 2) 	
 			b->tdense = TRUE;
 		if (vid == 1) {
 			oid h = b->hseqbase;
@@ -416,6 +416,9 @@ BATmaterialize(BAT *b, size_t size)
 			if (!b->tvarsized) {
 				for (; p < q; p += bunwidth, h++, r += newbw)
 					bunfastins_nocheck(b, r, (ptr) &h, p + tlc, newbw);
+			} else if (tt == TYPE_void) {
+				for (; p < q; p += bunwidth, h++, r += newbw)
+					bunfastins_nocheck(b, r, (ptr) &h, NULL, newbw);
 			} else {
 				char *tbase = th->base;
 
@@ -429,6 +432,9 @@ BATmaterialize(BAT *b, size_t size)
 			if (!b->hvarsized) {
 				for (; p < q; p += bunwidth, t++, r += newbw)
 					bunfastins_nocheck(b, r, p + hlc, (ptr) &t, newbw);
+			} else if (ht == TYPE_void) {
+				for (; p < q; p += bunwidth, t++, r += newbw)
+					bunfastins_nocheck(b, r, NULL, (ptr) &t, newbw);
 			} else {
 				char *hbase = hh->base;
 

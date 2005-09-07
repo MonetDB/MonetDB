@@ -680,11 +680,15 @@ Null values should have been obtained at a higher level.
 This code assumes that new elements are appended to the BUN list.
 @c
 @= void_insertbun
-	if ((@1) && b->@1type == TYPE_void && *(oid*) @1 != oid_nil &&
-	    *(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b)))) {
-	      b = BATmaterialize(b, (size_t) ((double)BATcount(b)*1.2));
-	      if (b == NULL)
-		      return b;
+	if ((@1) && b->@1type == TYPE_void && *(oid*) @1 != oid_nil && b->@1seqbase != oid_nil) {
+		if (BATcount(b) == 0) {
+			b->@1seqbase = *(oid*) @1;
+			bm->@2seqbase = *(oid*) @1;
+		} else if (*(oid*) @1 != (b->@1seqbase + BUNgetpos(b, BUNlast(b)))) {
+		 	b = BATmaterialize(b, (size_t) ((double)BATcount(b)*1.2));
+			if (b == NULL)
+				return b;
+		}
 	}
 @c
 BAT *
@@ -697,8 +701,8 @@ BUNins(BAT *b, ptr h, ptr t)
 	BATcheck(h, "BUNins: head value is nil\n");
 	bm = BBP_cache(-b->batCacheid);
 
-	@:void_insertbun(h)@
-	@:void_insertbun(t)@
+	@:void_insertbun(h,t)@
+	@:void_insertbun(t,h)@
 
 	if (b->batSet && BUNlocate(b, h, t)) {
 		return b;

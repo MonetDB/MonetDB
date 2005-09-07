@@ -378,6 +378,43 @@ v3.info().find("hseqbase").print();
 v3.info().find("hdense").print();
 [ "0" ]
 
+var x := new(void,void);
+x.seqbase(0@0);
+x.insert(nil, 12@0);
+x.print();
+#-----------------#
+# h	t	  # name
+# void	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+
+var e := new(void,int);
+e.seqbase(10@0);
+var n := new(void,int);
+n.seqbase(20@0);
+n.insert(nil, 20);
+e.insert(n);
+e.print();
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 20@0,	  20	  ]
+
+var y := new(void,int);
+y.insert(nil,0);
+y.seqbase(20@0);
+var z := new(void,int);
+z.seqbase(10@0);
+z.key(true);
+z.insert(y);
+z.print();
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ 20@0,	  0	  ]
+
 quit();
 
 # 16:29:54 >  
