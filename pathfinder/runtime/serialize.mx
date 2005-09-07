@@ -418,11 +418,11 @@ static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str va
 static int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix, int top) {
     char *uri, *prefix;
 
-    if ( strcmp(par_uri,str_nil) == 0 || strcmp(par_uri,"") == 0 )
+    if ( strcmp(par_uri,str_nil) == 0 || *par_uri == 0 )
         uri = NULL;
     else
         uri = par_uri;
-    if ( strcmp(par_prefix,str_nil) == 0 || strcmp(par_prefix,"") == 0 )
+    if ( strcmp(par_prefix,str_nil) == 0 || *par_prefix == 0 )
         prefix = NULL;
     else
         prefix = par_prefix;
@@ -660,7 +660,7 @@ static int handle_endDocument(XqueryCtx* ctx) {
             if ( SAXOPHONE ) {
                 if ( !emit(" attribute",loc,0) )
                     return 0;
-                if ( prefix && (strlen(prefix)>0) )
+                if ( prefix && *prefix )
                     if ( !emit(" attribute prefix",prefix,0) )
                         return 0;
                 if ( !emit(" attribute value",value,0) )
@@ -669,13 +669,13 @@ static int handle_endDocument(XqueryCtx* ctx) {
                 stream_printf(GDKout,"<A %s=\"%s\"\n",loc,value);
             }
         } else if (ctx->printMode) {
-            if ( prefix && strlen(prefix)>0 ) {
+            if ( prefix && *prefix ) {
                 stream_printf(GDKout," %s:%s=\\\"%s\\\"",prefix,loc,value);
             } else {
                 stream_printf(GDKout," %s=\\\"%s\\\"",loc,value);
             }
         } else if (ctx->dmMode && top) { /* dmMode */
-            if ( prefix && strlen(prefix)>0 ) {
+            if ( prefix && *prefix ) {
                 if ( strcmp(prefix,"xmlns")==0 )
                     stream_printf(GDKout,"attribute %s:%s { %s }%s",prefix,loc,value,ctx->dmSeparator);
                 else
@@ -684,7 +684,7 @@ static int handle_endDocument(XqueryCtx* ctx) {
                 stream_printf(GDKout,"attribute %s { %s }",loc,value);
             }
         } else { /* xmlMode */
-            if ( prefix && strlen(prefix)>0 ) {
+            if ( prefix && *prefix ) {
                 stream_printf(GDKout," %s:%s=",prefix,loc);
             } else {
                 stream_printf(GDKout," %s=",loc);
@@ -719,7 +719,7 @@ static int handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) 
         if ( SAXOPHONE ) {
             if ( !emit("startElement",NULL,0) )
                 return 0;
-            if ( ns && (strlen(ns)>0) )
+            if ( ns && *ns )
                 if ( !emit(" prefix",ns,0) )
                     return 0;
             if ( !emit(" localname",name,0) )
@@ -728,7 +728,7 @@ static int handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) 
             stream_printf(GDKout,"<s %s\n",name);
         }
     } else { /* xmlMode */
-        if ( ns && strlen(ns)>0 ) {
+        if ( ns && *ns ) {
             stream_printf(GDKout,"<%s:%s",ns,name);
         } else {
             stream_printf(GDKout,"<%s",name);
@@ -745,7 +745,7 @@ static int handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
         if ( SAXOPHONE ) {
             if ( !emit("endElement",NULL,0) )
                 return 0;
-            if ( ns && (strlen(ns)>0) )
+            if ( ns && *ns )
                 if ( !emit(" prefix",ns,0) )
                     return 0;
             if ( !emit(" localname",name,0) )
@@ -755,7 +755,7 @@ static int handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
         }
     } else { /* xmlMode */
         if ( !emptyNode ) {
-            if ( ns && strlen(ns)>0 ) {
+            if ( ns && *ns ) {
                 stream_printf(GDKout,"</%s:%s>",ns,name);
             } else {
                 stream_printf(GDKout,"</%s>",name);
@@ -1072,7 +1072,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
  */
 static int xquery_endtag_print(XqueryCtx* ctx, oid pre) {
     while( moreTags(ctx) && ((pre==ALLTAGS)||(pre > topSF(ctx)->pre)) ) { /*?? */
-        if ( strlen(topName(ctx)) > 0 )
+        if ( *topName(ctx) )
             if ( !handle_endElement(ctx,topNs(ctx),topName(ctx),topSF(ctx)->empty))
                 return 0;
         popTag(ctx);
