@@ -31,11 +31,13 @@ a known location.
 #include "mal_exception.h"
 #include "mal_client.h"
 #include "mal_session.h"
+#include "mal_utils.h"
 
 mal_export void slash_2_dir_sep(str fname);
 mal_export void malInclude(Client c, str name, str libname, int listing);
 mal_export stream *malOpenSource(str fname);
 mal_export str malLoadScript(str name, bstream **fdin);
+mal_export void compileString(Client c, str s);
 mal_export void callString(Client c, str s, int listing);
 #endif /*  _MAL_IMPORT_H */
 @-
@@ -224,6 +226,53 @@ stack frame. Life becomes a little complicated when the script contains
 a definition.
 @c
 void
+compileString(Client c, str s){
+	bstream *oldfdin = c->fdin;
+	int oldyycur = c->yycur;
+	int oldlisting = c->listing;
+	int oldmode = c->mode;
+	int oldblkmode = c->blkmode;
+	str oldprompt = c->prompt;
+	ClientInput *oldbak = c->bak;
+	Module oldnspace = c->nspace;
+	Symbol oldprg = c->curprg;
+	MalStkPtr oldglb = c->glb;
+	int len = strlen(s);
+	buffer *b;
+	str msg = MAL_SUCCEED;
+	str qry;
+
+	c->yycur = 0;
+	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
+	c->promptlength = strlen(c->prompt);
+	c->listing = 0;
+	c->bak = NULL;
+	c->fdin = NULL;
+
+	b = (buffer *) GDKmalloc(sizeof(buffer));
+	if (s[len - 1] != '\n') {
+		char *n = GDKmalloc(len + 1 + 1);
+
+		strncpy(n, s, len);
+		n[len] = '\n';
+		n[len + 1] = 0;
+		s = n;
+		len++;
+	}
+	unquote(qry = GDKstrdup(s));
+	buffer_init(b, qry, len);
+	pushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "");
+	initClientPrg(c, "main");	/* create new context */
+	@:runPhase(READER,restoreClient1)@
+	@:runPhase(PARSER,restoreClient1)@
+	/* restore IO channel */
+	@:restoreClient1()@
+	c->listing = oldlisting;
+	@:restoreClient2()@
+	GDKfree(qry);
+}
+
+void
 callString(Client c, str s, int listing)
 {
 	bstream *oldfdin = c->fdin;
@@ -238,7 +287,7 @@ callString(Client c, str s, int listing)
 	MalStkPtr oldglb = c->glb;
 	int len = strlen(s);
 	buffer *b;
-	str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED,qry;
 
 	c->yycur = 0;
 	c->prompt = GDKstrdup("");	/* do not produce visible prompts */
@@ -257,7 +306,8 @@ callString(Client c, str s, int listing)
 		s = n;
 		len++;
 	}
-	buffer_init(b, s, len);
+	unquote(qry = GDKstrdup(s));
+	buffer_init(b, qry, len);
 	pushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "");
 	initClientPrg(c, "main");	/* create new context */
 	@:runPhase(READER,restoreClient1)@
@@ -268,6 +318,7 @@ callString(Client c, str s, int listing)
 	@:runPhase(SCHEDULER,restoreClient2)@
 	@:runPhase(ENGINE,restoreClient2)@
 	@:restoreClient2()@
+	GDKfree(qry);
 }
 
 @}
