@@ -24,9 +24,9 @@ stdout of test 'GCexample` in directory 'src/optimizer` itself:
 #
 function user.main():int;	# 0  (main:int)
     t1 := bbp.new(:void,:int);	# 1 CMDBATnew (t1:bat[:void,:int])<-(_2:void)(_3:int)
-    t2 := array.grid(132000,8,1,0);	# 2 ARRAYgrid (t2:bat[:void,:int])<-(_5:int)(_6:int)(_7:int)(_8:int)
-    t3 := array.grid(1,100,10560,0);	# 3 ARRAYgrid (t3:bat[:void,:int])<-(_7:int)(_10:int)(_11:int)(_8:int)
-    t4 := array.grid(1,100,10560,0,8);	# 4 ARRAYgridShift (t4:bat[:void,:int])<-(_7:int)(_10:int)(_11:int)(_8:int)(_6:int)
+    t2 := array.grid(132000,8,1,0);	# 2 ARRAYgrid_int (t2:bat[:void,:int])<-(_5:int)(_6:int)(_7:int)(_8:int)
+    t3 := array.grid(1,100,10560,0);	# 3 ARRAYgrid_int (t3:bat[:void,:int])<-(_7:int)(_10:int)(_11:int)(_8:int)
+    t4 := array.grid(1,100,10560,0,8);	# 4 ARRAYgridShift_int (t4:bat[:void,:int])<-(_7:int)(_10:int)(_11:int)(_8:int)(_6:int)
     t5 := batcalc.+(t2,t4);	# 5 CMDbatADD (t5:bat[:void,:int])<-(t2:bat[:void,:int])(t4:bat[:void,:int])
     bbp.garbage(t2);	# 6 CMDbbpgarbage (_18:void)<-(t2:bat[:void,:int])
     bbp.garbage(t4);	# 7 CMDbbpgarbage (_19:void)<-(t4:bat[:void,:int])

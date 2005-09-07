@@ -21,8 +21,8 @@ stdout of test 'tst4801` in directory 'src/optimizer` itself:
 #end f3;
 function user.f3():void;	# 0  (f3:void)
 barrier (go,i1):= mal.newRange(1:int);	# 1 RNGnewRange_int (go:bit)(i1:int)<-(_3:int) jump 5
-    t28 := array.grid(1:int,500:int,1:int,0);	# 2 ARRAYgrid (t28:bat[:void,:int])<-(_3:int)(_5:int)(_3:int)(_6:int)
-    t36 := array.grid(500:int,500:int,1:int,0);	# 3 ARRAYgrid (t36:bat[:void,:int])<-(_5:int)(_5:int)(_3:int)(_6:int)
+    t28 := array.grid(1:int,500:int,1:int,0);	# 2 ARRAYgrid_int (t28:bat[:void,:int])<-(_3:int)(_5:int)(_3:int)(_6:int)
+    t36 := array.grid(500:int,500:int,1:int,0);	# 3 ARRAYgrid_int (t36:bat[:void,:int])<-(_5:int)(_5:int)(_3:int)(_6:int)
     redo (go,i1):= mal.nextElement(1:int,500:int);	# 4 RNGnextElement_int (go:bit)(i1:int)<-(_3:int)(_5:int) jump 2
 exit (go,i1);	# 5  (go:bit)(i1:int)
 end f3;	# 6  
