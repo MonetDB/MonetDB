@@ -714,7 +714,7 @@ str CMDbat@1init(int *ret, int *l, @1 *cst) {
     if( (left= BATdescriptor(*l)) == NULL ){
         return throwMessage("batcalc.@1", "Cannot access descriptor");
     }
-	dst= BATnew(TYPE_void, left->ttype, BATcount(left));
+	dst= BATnew(TYPE_void, TYPE_@1, BATcount(left));
 	if( dst == NULL){
 		BBPunfix(left->batCacheid);
 		return throwMessage("batcalc.@1", "no space available ");
