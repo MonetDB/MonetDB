@@ -301,7 +301,7 @@ PROC get_fragment (bat[void,int] kind) : bat[void,oid]
         return kind.[>>](6).[oid]();
 }
 
-PROC set_kind (oid frag, int type_) : bat[void,int]
+PROC set_kind (oid frag, int type_) : int
 {
         return frag.int().<<(6).or(type_);
 }
