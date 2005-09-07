@@ -35,6 +35,8 @@ between 25-50%.
 #ifndef _EMBEDDEDCLIENT_H_
 #define _EMBEDDEDCLIENT_H_
 
+#include "monet_options.h"
+
 #ifdef _MSC_VER
 #ifndef LIBEMBEDDEDCLIENT
 #define embeddedclient_export extern __declspec(dllimport)
@@ -48,7 +50,7 @@ between 25-50%.
 #include <streams.h>
 #include <Mapi.h>
 
-embeddedclient_export Mapi embedded_sql(void);
+embeddedclient_export Mapi embedded_sql(opt *set, int len);
 
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c
@@ -132,6 +134,9 @@ Monet_init(opt *set, int setlen)
 	return monet_init();
 }
 
+static opt *embedded_set = NULL;
+static int embedded_len = 0;
+
 static void *
 start_sql_server(void *arg)
 {
@@ -140,16 +145,17 @@ start_sql_server(void *arg)
 	char buf[128];
 
 	if (!initialized) {
-		opt *set = NULL;
-		int setlen = 0;
 		Client c;
 
 /* 		monet_singlethreaded = 1; */
-		setlen = mo_builtin_settings(&set);
-		setlen = mo_system_config(&set, setlen);
-		c = Monet_init(set, setlen);
-		mo_free_options(set, setlen);
+		if (embedded_set == NULL) {
+			int len = mo_builtin_settings(&embedded_set);
+			embedded_len = mo_system_config(&embedded_set, len);
+		}
+		c = Monet_init(embedded_set, embedded_len);
+		mo_free_options(embedded_set, embedded_len);
 		static_module_init();
+		THRnew(MT_getpid(), "Interpreter");
 		initialized = 1;
 	}
 
@@ -164,12 +170,16 @@ start_sql_server(void *arg)
 }
 
 Mapi
-embedded_sql(void)
+embedded_sql(opt *set, int len)
 {
 	Mapi mid;
 	pthread_t sqlthread;
 	stream **server;
 
+	if (set) {
+		embedded_set = set;
+		embedded_len = len;
+	}
 	server = mapi_embedded_init(&mid);
 
 	pthread_create(&sqlthread, NULL, start_sql_server, (void *) server);
