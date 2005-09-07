@@ -90,6 +90,10 @@ It is typically used to initialize a context, therefore we need
 to provide the runtime context. For the call variants we have
 to determine an easy way to exchange the parameter/return values.
 @mal
+command register(m:str,f:str,code:str):void
+address CMDregisterFunction
+comment"Compile the code string and register it as a MAL function";
+
 pattern call(s:str):void
 address CMDcallString
 comment "Evaluate a MAL string program";
@@ -115,6 +119,7 @@ comment "Merge the instructions stored in the
 
 mal_export str CMDraise(str *ret, str *msg);
 mal_export str CMDassertProperty(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str CMDregisterFunction(int *ret, str *m, str *f, str *code);
 mal_export str CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDevalFile(int *ret, str *fnme);
 mal_export str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -176,6 +181,18 @@ CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+str 
+CMDregisterFunction(int *ret, str *m, str *f, str *code){
+	Client c;
+	(void) m;
+	(void) f;
+	c= getClient();
+	compileString(c,*code);
+	stream_printf(GDKout,"REGISTER FUNCITON\n");
+	printFunction(c->fdout, c->curprg->def,0);
+	*ret = 0;
+	return MAL_SUCCEED;
+}
 str
 CMDevalFile(int *ret, str *fnme)
 {
