@@ -74,6 +74,7 @@
 #define LLL(p) L(L(L(p)))
 
 #define RRRL(p) L(R(R(R(p))))
+#define RRRRL(p) L(R(R(R(R(p)))))
 
 static void milprintf(opt_t *o, const char *format, ...)
 {
@@ -7866,6 +7867,404 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "# ignored fn:unordered\n");
         return translate2MIL (f, code, cur_level, counter, L(args));
     }
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"delete")))
+    {
+        milprintf(f, "# fn:delete\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        milprintf(f,
+                  "var frags := kind.get_fragment();\n"
+                  /* reverse sort item so that we delete the last node
+                     first, so that holes can be merged */
+                  "item.sort_rev()@batloop() {\n"
+                  "  var frag := frags.fetch($h);\n"
+                  "  var pre_size := ws.fetch(PRE_SIZE).fetch(frag);\n"
+                  "  var size := pre_size.fetch($t);\n"
+                  "  if (not(isnil(size)) and size >= 0) {\n"
+                  "    var nsize := pre_size.fetch(int($t) + size + 1);\n"
+                  "    if (isnil(nsize)) {\n"
+                  "      nsize := 1;\n"
+                  "    } else if (nsize < 0) {\n"
+                  /*     nsize = (nsize & ~(1 << 31)) + 1 */
+                  "      nsize := (nsize + INT_MAX) + 2;\n"
+                  "    } else {\n"
+                  "      nsize := 0;\n"
+                  "    }\n"
+                  "    var start := int($t) + int(pre_size.seqbase());\n"
+                  /*                   ((size + nsize) | 1 << 31) */
+                  "    var new_size := (((size+nsize)-1)-INT_MAX).[-](pre_size.slice(start, start + size).number());\n"
+                  "    pre_size.replace(new_size, true);\n"
+                  "    var oidlist := new_size.mark(nil);\n"
+                  "    var chrlist := oidlist.[chr]();\n"
+                  "    ws.fetch(PRE_PROP).fetch(frag).replace(oidlist, true);\n"
+                  /*"    var start := int($t) + int(ws.fetch(PRE_NID).fetch(frag).seqbase());\n"*/
+                  "    var nidlist := ws.fetch(PRE_NID).fetch(frag).slice(start, start + size).reverse().mark(nil);\n"
+                  "    var knd_nid_0 := ws.fetch(KND_NID_0).fetch(frag);\n"
+                  "    var kndlist := knd_nid_0.join(nidlist);\n"
+                  "    knd_nid_0.replace(kndlist, true);\n"
+                  "    ws.fetch(KND_PROP_0).fetch(frag).replace(kndlist, true);\n"
+                  "    kndlist := nil_oid_oid; knd_nid_0 := nil_oid_oid;\n"
+                  "    var knd_nid_1 := ws.fetch(KND_NID_1).fetch(frag);\n"
+                  "    knd_nid_1.replace(knd_nid_1.join(nidlist), true);\n"
+                  "    knd_nid_1 := nil_oid_oid;\n"
+                  "    var knd_nid_2 := ws.fetch(KND_NID_2).fetch(frag);\n"
+                  "    knd_nid_2.replace(knd_nid_2.join(nidlist), true);\n"
+                  "    knd_nid_2 := nil_oid_oid;\n"
+                  "    var knd_nid_3 := ws.fetch(KND_NID_3).fetch(frag);\n"
+                  "    var kndlist := knd_nid_3.join(nidlist);\n"
+                  "    knd_nid_3.replace(kndlist, true);\n"
+                  "    ws.fetch(KND_PROP_3).fetch(frag).replace(kndlist, true);\n"
+                  "    kndlist := nil_oid_oid; knd_nid_3 := nil_oid_oid;\n"
+                  "    ws.fetch(NID_PRE).fetch(frag).replace(nidlist, true);\n"
+                  "    nidlist := nil_oid_oid;\n"
+                  "    ws.fetch(PRE_NID).fetch(frag).replace(oidlist, true);\n"
+                  "    oidlist := nil_oid_oid;\n"
+                  "    ws.fetch(PRE_KIND).fetch(frag).replace(chrlist, true);\n"
+                  "    ws.fetch(PRE_LEVEL).fetch(frag).replace(chrlist, true);\n"
+                  "    chrlist := nil_oid_chr;\n"
+                  "  }\n"
+                  "}\n");
+        return NORMAL;
+    }        
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"insert-first")))
+    {
+        milprintf(f, "# ignored fn:insert-first\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        milprintf(f, "print(iter%03u.col_name(\"iter\"),pos%03u.col_name(\"pos\"),item%03u.col_name(\"item\"),kind%03u.col_name(\"kind\"));\n", counter, counter, counter, counter);
+        milprintf(f, "print(iter.col_name(\"iter\"),pos.col_name(\"pos\"),item.col_name(\"item\"),kind.col_name(\"kind\"));\n");
+        milprintf(f, "printf(\"int values\\n\");\n");
+        milprintf(f, "print(int_values);\n");
+        milprintf(f, "printf(\"dbl values\\n\");\n");
+        milprintf(f, "print(dbl_values);\n");
+        milprintf(f, "printf(\"dec values\\n\");\n");
+        milprintf(f, "print(dec_values);\n");
+        milprintf(f, "printf(\"str values\\n\");\n");
+        milprintf(f, "print(str_values);\n");
+        deleteResult (f, counter);
+        return NORMAL;
+    }        
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"insert-last")))
+    {
+        milprintf(f, "# ignored fn:insert-last\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        milprintf(f, "print(iter%03u.col_name(\"iter\"),pos%03u.col_name(\"pos\"),item%03u.col_name(\"item\"),kind%03u.col_name(\"kind\"));\n", counter, counter, counter, counter);
+        milprintf(f, "print(iter.col_name(\"iter\"),pos.col_name(\"pos\"),item.col_name(\"item\"),kind.col_name(\"kind\"));\n");
+        milprintf(f, "printf(\"int values\\n\");\n");
+        milprintf(f, "print(int_values);\n");
+        milprintf(f, "printf(\"dbl values\\n\");\n");
+        milprintf(f, "print(dbl_values);\n");
+        milprintf(f, "printf(\"dec values\\n\");\n");
+        milprintf(f, "print(dec_values);\n");
+        milprintf(f, "printf(\"str values\\n\");\n");
+        milprintf(f, "print(str_values);\n");
+        deleteResult (f, counter);
+        return NORMAL;
+    }        
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"insert-before")))
+    {
+        milprintf(f, "# ignored fn:insert-before\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        milprintf(f, "print(iter%03u.col_name(\"iter\"),pos%03u.col_name(\"pos\"),item%03u.col_name(\"item\"),kind%03u.col_name(\"kind\"));\n", counter, counter, counter, counter);
+        milprintf(f, "print(iter.col_name(\"iter\"),pos.col_name(\"pos\"),item.col_name(\"item\"),kind.col_name(\"kind\"));\n");
+        milprintf(f, "printf(\"int values\\n\");\n");
+        milprintf(f, "print(int_values);\n");
+        milprintf(f, "printf(\"dbl values\\n\");\n");
+        milprintf(f, "print(dbl_values);\n");
+        milprintf(f, "printf(\"dec values\\n\");\n");
+        milprintf(f, "print(dec_values);\n");
+        milprintf(f, "printf(\"str values\\n\");\n");
+        milprintf(f, "print(str_values);\n");
+        deleteResult (f, counter);
+        return NORMAL;
+    }        
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"insert-after")))
+    {
+        milprintf(f, "# ignored fn:insert-after\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        milprintf(f, "print(iter%03u.col_name(\"iter\"),pos%03u.col_name(\"pos\"),item%03u.col_name(\"item\"),kind%03u.col_name(\"kind\"));\n", counter, counter, counter, counter);
+        milprintf(f, "print(iter.col_name(\"iter\"),pos.col_name(\"pos\"),item.col_name(\"item\"),kind.col_name(\"kind\"));\n");
+        milprintf(f, "printf(\"int values\\n\");\n");
+        milprintf(f, "print(int_values);\n");
+        milprintf(f, "printf(\"dbl values\\n\");\n");
+        milprintf(f, "print(dbl_values);\n");
+        milprintf(f, "printf(\"dec values\\n\");\n");
+        milprintf(f, "print(dec_values);\n");
+        milprintf(f, "printf(\"str values\\n\");\n");
+        milprintf(f, "print(str_values);\n");
+        deleteResult (f, counter);
+        return NORMAL;
+    }        
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"set-attr")))
+    {
+        milprintf(f, "# fn:set-attr\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
+        if (fun->arity == 3) {
+            counter += 2;
+            milprintf(f,
+                      "var prefix := \"\";\n"
+                      "var uri := \"\";\n");
+        } else {
+            counter++;
+            saveResult (f, counter);
+            translate2MIL (f, NORMAL, cur_level, counter, RRRL(args));
+            counter++;
+            saveResult (f, counter);
+            translate2MIL (f, NORMAL, cur_level, counter, RRRRL(args));
+        }
+        milprintf(f,
+                  "var frags := kind%03u.get_fragment();\n"
+                  "item%03u@batloop() {\n"
+                  "  var frag := frags.fetch($h);\n"
+                  "  var node := item%03u.fetch($h);\n"
+                  "  if (ws.fetch(PRE_KIND).fetch(frag).fetch(node) != ELEMENT) { ERROR (\"function fn:set-attr expects a element node.\"); }\n"
+                  "  var nid := ws.fetch(PRE_NID).fetch(frag).fetch(node);\n"
+                  "  var loc := str_values.fetch(item%03u.fetch($h));\n",
+                  counter - 3, counter - 3, counter - 3, counter - 2);
+        if (fun->arity == 5) {
+            milprintf(f,
+                      "  var prefix := str_values.fetch(item%03u.fetch($h));\n"
+                      "  if (isnil(prefix)) prefix := \"\";\n"
+                      "  var uri := str_values.fetch(item%03u.fetch($h));\n"
+                      "  if (isnil(uri)) uri := \"\";\n",
+                      counter - 1, counter);
+        }
+        milprintf(f,
+                  "  var loc_uri := loc + \"\\001\" + uri;\n"
+                  "  var value := str_values.fetch(item.fetch($h));\n"
+                  "  # [oid,nil] list of prefixes used by loc_uri\n"
+                  "  var loc_uri_list := ws.fetch(QN_LOC_URI).fetch(frag).ord_uselect(loc_uri);\n"
+                  "  # [oid,nil] list of QN names with correct prefix as well (should be 0 or 1)\n"
+                  "  var qn_list := loc_uri_list.mirror().fetchjoin(ws.fetch(QN_PREFIX).fetch(frag)).uselect(prefix);\n"
+                  "  # [oid,nil] list of ATTR indexes for current node\n"
+                  "  var attr_list := ws.fetch(ATTR_OWN).fetch(frag).uselect(nid);\n"
+                  "  var tmp := attr_list.mirror().fetchjoin(ws.fetch(ATTR_QN).fetch(frag));\n"
+                  "  # [oid,nil] list of attributes for current node with correct FQ name\n"
+                  "  var attr_node_list := tmp.join(qn_list);\n"
+                  "  # check that there aren't already attributes with the same local name\n"
+                  "  # and same namespace but a different prefix on this node\n"
+                  "  if (attr_node_list.count() != tmp.join(loc_uri_list).count()) {\n"
+                  "    ERROR(\"duplicate attribute with differing prefixes.\");\n"
+                  "  }\n"
+                  "  # if name isn't known yet, create an entry for it\n"
+                  "  if (qn_list.count() = 0) {\n"
+                  "    # attribute name doesn't exist\n"
+                  "    loc_uri_list := nil;\n"
+                  "    qn_list := nil;\n"
+                  "    ws.fetch(QN_LOC).fetch(frag).access(BAT_APPEND).insert(nil, loc).access(BAT_READ);\n"
+                  "    ws.fetch(QN_PREFIX).fetch(frag).access(BAT_APPEND).insert(nil, prefix).access(BAT_READ);\n"
+                  "    ws.fetch(QN_URI).fetch(frag).access(BAT_APPEND).insert(nil, uri).access(BAT_READ);\n"
+                  "    ws.fetch(QN_LOC_URI).fetch(frag).access(BAT_APPEND).insert(nil, loc_uri).access(BAT_READ);\n"
+                  "    ws.fetch(QN_PREFIX_URI).fetch(frag).access(BAT_APPEND).insert(nil, prefix + \"\\001\" + uri).access(BAT_READ);\n"
+                  "    loc_uri_list := ws.fetch(QN_LOC_URI).fetch(frag).uselect(loc_uri).mirror().fetchjoin(ws.fetch(QN_PREFIX).fetch(frag));\n"
+                  "    qn_list := loc_uri_list.uselect(prefix);\n"
+                  "  }\n"
+                  "  # find value in property table\n"
+                  "  var prop_val := ws.fetch(PROP_VAL).fetch(frag);\n"
+                  "  var prop := prop_val.uselect(value);\n"
+                  "  if (prop.count() = 0) {\n"
+                  "    # value not found, insert it\n"
+                  "    prop := nil;\n"
+                  "    prop_val.access(BAT_APPEND).insert(nil, value).access(BAT_READ);\n"
+                  "    prop := prop_val.uselect(value);\n"
+                  "  }\n"
+                  "  # just the OID of the value\n"
+                  "  var propID := prop.reverse().fetch(0);\n"
+                  "  if (attr_node_list.count() = 1) {\n"
+                  "    # attribute already exists on node, just replace ATTR_PROP\n"
+                  "    ws.fetch(ATTR_PROP).fetch(frag).replace(attr_node_list.mirror().fetch(0), propID, true);\n"
+                  "  } else {\n"
+                  "    # attribute name exists, but not on the node\n"
+                  "    ws.fetch(ATTR_OWN).fetch(frag).access(BAT_APPEND).insert(nil, nid).access(BAT_READ);\n"
+                  "    ws.fetch(ATTR_QN).fetch(frag).access(BAT_APPEND).insert(nil, qn_list.mirror().fetch(0)).access(BAT_READ);\n"
+                  "    ws.fetch(ATTR_PROP).fetch(frag).access(BAT_APPEND).insert(nil, propID).access(BAT_READ);\n"
+                  "  }\n"
+                  "}\n");
+        if (fun->arity == 5) {
+            deleteResult (f, counter);
+            deleteResult (f, counter - 1);
+        }
+        deleteResult (f, counter - 2);
+        deleteResult (f, counter - 3);
+        return NORMAL;
+    }        
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"unset-attr")))
+    {
+        milprintf(f, "# fn:unset-attr\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        if (fun->arity == 2) {
+            counter += 2;
+            milprintf(f,
+                      "var prefix := \"\";\n"
+                      "var uri := \"\";\n");
+        } else {
+            counter++;
+            saveResult(f, counter);
+            translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
+            counter++;
+            saveResult(f, counter);
+            translate2MIL (f, NORMAL, cur_level, counter, RRRL(args));
+        }
+        milprintf(f,
+                  "var frags := kind%03u.get_fragment();\n"
+                  "item%03u@batloop() {\n"
+                  "  var frag := frags.fetch($h);\n"
+                  "  var node := item%03u.fetch($h);\n"
+                  "  if (ws.fetch(PRE_KIND).fetch(frag).fetch(node) != ELEMENT) { ERROR (\"function fn:set-attr expects a element node.\"); }\n"
+                  "  var nid := ws.fetch(PRE_NID).fetch(frag).fetch(node);\n",
+                  counter - 2, counter - 2, counter - 2);
+        if (fun->arity == 2) {
+            milprintf(f,
+                      "  var loc := str_values.fetch(item.fetch($h));\n");
+        } else {
+            milprintf(f,
+                      "  var loc := str_values.fetch(item%03u.fetch($h));\n"
+                      "  var prefix := str_values.fetch(item%03u.fetch($h));\n"
+                      "  if (isnil(prefix)) prefix := \"\";\n"
+                      "  var uri := str_values.fetch(item.fetch($h));\n"
+                      "  if (isnil(uri)) uri := \"\";\n",
+                      counter - 1, counter);
+        }
+        milprintf(f,
+                  "  var loc_uri := loc + \"\\001\" + uri;\n"
+                  "  # [oid,nil] list of prefixes used by loc_uri\n"
+                  "  var loc_uri_list := ws.fetch(QN_LOC_URI).fetch(frag).ord_uselect(loc_uri);\n"
+                  "  # [oid,nil] list of QN names with correct prefix as well (should be 0 or 1)\n"
+                  "  var qn_list := loc_uri_list.mirror().fetchjoin(ws.fetch(QN_PREFIX).fetch(frag)).uselect(prefix);\n"
+                  "  # [oid,nil] list of ATTR indexes for current node\n"
+                  "  var attr_list := ws.fetch(ATTR_OWN).fetch(frag).uselect(nid);\n"
+                  "  var tmp := attr_list.mirror().fetchjoin(ws.fetch(ATTR_QN).fetch(frag));\n"
+                  "  # [oid,nil] list of attributes for current node with correct FQ name\n"
+                  "  var attr_node_list := tmp.join(qn_list);\n"
+                  "  # check that there aren't already attributes with the same local name\n"
+                  "  # and same namespace but a different prefix on this node\n"
+                  "  if (attr_node_list.count() != tmp.join(loc_uri_list).count()) {\n"
+                  "    ERROR(\"duplicate attribute with differing prefixes.\");\n"
+                  "  }\n"
+                  "  # if name isn't known yet, create an entry for it\n"
+                  "  if (qn_list.count() > 0) {\n"
+                  "    if (attr_node_list.count() = 1) {\n"
+                  "      ws.fetch(ATTR_PROP).fetch(frag).replace(attr_node_list.mirror().fetch(0), oid(nil), true);\n"
+                  "      ws.fetch(ATTR_OWN).fetch(frag).replace(attr_node_list.mirror().fetch(0), oid(nil), true);\n"
+                  "      ws.fetch(ATTR_QN).fetch(frag).replace(attr_node_list.mirror().fetch(0), oid(nil), true);\n"
+                  "    }\n"
+                  "  }\n"
+                  "}\n");
+        if (fun->arity == 4) {
+            deleteResult (f, counter);
+            deleteResult (f, counter - 1);
+        }
+        deleteResult (f, counter - 2);
+        return NORMAL;
+    }        
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"set-text")))
+    {
+        milprintf(f, "# fn:set-text\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        milprintf(f,
+                  "var frags := kind%03u.get_fragment();\n"
+                  "item@batloop() {\n"
+                  "  var frag := frags.fetch($h);\n"
+                  "  var node := item%03u.fetch($h);\n"
+                  "  if (ws.fetch(PRE_KIND).fetch(frag).fetch(node) != TEXT) { ERROR (\"function fn:set-text expects a text node.\"); }\n"
+                  "  var prop_text := ws.fetch(PROP_TEXT).fetch(frag);\n"
+                  "  var text := str_values.fetch($t);\n"
+                  "  var textID := prop_text.uselect(text);\n"
+                  "  if (textID.count() = 0) {\n"
+                  "    textID := nil;\n"
+                  "    prop_text.access(BAT_APPEND).insert(nil, text).access(BAT_READ);\n"
+                  "    textID := prop_text.uselect(text);\n"
+                  "  }\n"
+                  "  textID := textID.reverse().fetch(0);\n"
+                  "  ws.fetch(PRE_PROP).fetch(frag).replace(node, textID, true);\n"
+                  "}\n",
+                  counter, counter);
+        deleteResult (f, counter);
+        return NORMAL;
+    }        
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"set-comment")))
+    {
+        milprintf(f, "# fn:set-comment\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        milprintf(f,
+                  "var frags := kind%03u.get_fragment();\n"
+                  "item@batloop() {\n"
+                  "  var frag := frags.fetch($h);\n"
+                  "  var node := item%03u.fetch($h);\n"
+                  "  if (ws.fetch(PRE_KIND).fetch(frag).fetch(node) != COMMENT) { ERROR (\"function fn:set-comment expects a comment node.\"); }\n"
+                  "  var prop_com := ws.fetch(PROP_COM).fetch(frag);\n"
+                  "  var comment := str_values.fetch($t);\n"
+                  "  var commentID := prop_com.uselect(comment);\n"
+                  "  if (commentID.count() = 0) {\n"
+                  "    commentID := nil;\n"
+                  "    prop_com.access(BAT_APPEND);\n"
+                  "    prop_com.insert(nil, comment);\n"
+                  "    prop_com.access(BAT_READ);\n"
+                  "    commentID := prop_com.uselect(comment);\n"
+                  "  }\n"
+                  "  commentID := commentID.reverse().fetch(0);\n"
+                  "  ws.fetch(PRE_PROP).fetch(frag).replace(node, commentID, true);\n"
+                  "}\n",
+                  counter, counter);
+        deleteResult (f, counter);
+        return NORMAL;
+    }        
+    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"set-pi")))
+    {
+        milprintf(f, "# fn:set-pi\n");
+        translate2MIL (f, NORMAL, cur_level, counter, L(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
+        counter++;
+        saveResult (f, counter);
+        translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
+        milprintf(f,
+                  "var frags := kind%03u.get_fragment();\n"
+                  "item@batloop() {\n"
+                  "  var frag := frags.fetch($h);\n"
+                  "  var node := item%03u.fetch($h);\n"
+                  "  if (ws.fetch(PRE_KIND).fetch(frag).fetch(node) != PI) { ERROR (\"function fn:set-pi expects a processing instruction node.\"); }\n"
+                  "  var prop_ins := ws.fetch(PROP_INS).fetch(frag);\n"
+                  "  var prop_tgt := ws.fetch(PROP_TGT).fetch(frag);\n"
+                  "  var ins := str_values.fetch($t);\n"
+                  "  var tgt := str_values.fetch(item%03u.fetch($h));\n"
+                  /* always insert since bats must stay synchronized */
+                  "  prop_ins.access(BAT_APPEND).insert(nil, ins).access(BAT_READ);\n"
+                  "  var insID := prop_ins.uselect(ins).reverse().fetch(0);\n"
+                  "  prop_tgt.access(BAT_APPEND).insert(nil, tgt).access(BAT_READ);\n"
+                  "  ws.fetch(PRE_PROP).fetch(frag).replace(node, insID, true);\n"
+                  "}\n",
+                  counter-1, counter-1, counter);
+        deleteResult (f, counter);
+        deleteResult (f, counter - 1);
+        return NORMAL;
+    }        
     else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"error")))
     {
         if (fun->arity == 0)
