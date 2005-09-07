@@ -579,12 +579,19 @@ echo " ${what}_CONFIGURE=${WHAT_CONFIGURE}"
 eval "alias configure_${wh_t}='${WHAT_CONFIGURE}'"
 eval "alias configure_${wh_t}"
 if [ "${what}" != "BUILDTOOLS" ] ; then
-	eval "alias Mtest_${wh_t}='Mtest.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}'"
+	MTEST_WHAT="Mtest.py ${mtest_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} ${mtest_modpath}"
+	echo " MTEST_${what}=${MTEST_WHAT}"
+	eval "MTEST_${what}='${MTEST_WHAT}'; export MTEST_${what}"
+	eval "alias Mtest_${wh_t}='${MTEST_WHAT}'"
 	eval "alias Mtest_${wh_t}"
 	if [ "${what}" = "SQL"  -a  "${MONET5_PREFIX}" ] ; then
-		eval "alias Mtest_${wh_t}5='Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/lib/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb-config --modpath`'"
+		MTEST_WHAT="Mtest.py ${monet5_config} --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX} --monet_mod_path=${WHAT_PREFIX}/lib/${pkgdir}5:`${MONET5_PREFIX}/bin/monetdb-config --modpath`"
+		echo " MTEST_${what}5=${MTEST_WHAT}"
+		eval "MTEST_${what}5='${MTEST_WHAT}'; export MTEST_${what}5"
+		eval "alias Mtest_${wh_t}5='${MTEST_WHAT}'"
 		eval "alias Mtest_${wh_t}5"
 	fi
+	MTEST_WHAT='' ; unset MTEST_WHAT
 	eval "alias Mapprove_${wh_t}='Mapprove.py --TSTSRCBASE=${base} --TSTBLDBASE=${WHAT_BUILD} --TSTTRGBASE=${WHAT_PREFIX}'"
 	eval "alias Mapprove_${wh_t}"
 fi
