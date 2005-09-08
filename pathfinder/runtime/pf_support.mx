@@ -991,8 +991,11 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var pre_prop := ws.fetch(PROP_PRE + int(ELEMENT)).fetch(theFrag).reverse();
 		if (count(qn_nsloc) = 1) {
 			cands := pre_prop.ord_uselect(qn_nsloc.reverse().fetch(0)).reverse();
+                        if ( not(ordered(reverse(cands))) ) {
+                                printf("= nsloc_pre(1): cands not ordered on tail.\n");
+                        }
 		} else {
-			cands := pre_prop.leftjoin(qn_nsloc).reverse();
+			cands := pre_prop.leftjoin(qn_nsloc).sort().reverse();
 		}
 		pre_prop := nil;
 		qn_nsloc := nil;
@@ -1009,9 +1012,15 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    X_frag   := nil;
 		var _X       := X_nsloc.ord_uselect(loc+str('\1')+ns).reverse();
 		    X_nsloc  := nil;
-		cands := _X.leftfetchjoin(X_pre);
+		cands := _X.leftfetchjoin(X_pre); #.reverse().sort().reverse()
+                if ( not(ordered(reverse(cands))) ) {
+                        printf("= nsloc_pre(3): cands not ordered on tail.\n");
+                }
 	}
 	cands := cands.chk_order();
+        if ( not(ordered(reverse(cands))) ) {
+                printf("= nsloc_pre(4): cands not ordered on tail.\n");
+        }
 	@:shrink_code@
  }
 @
@@ -1036,8 +1045,11 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		var pre_prop := ws.fetch(PROP_PRE + int(@5)).fetch(theFrag).reverse();
 		if (count(@1_@2) = 1) {
 			cands := pre_prop.ord_uselect(@1_@2.reverse().fetch(0)).reverse();
+                        if ( not(ordered(reverse(cands))) ) {
+                                printf("= ns_loc_pre(1): cands not ordered on tail.\n");
+                        }
 		} else {
-			cands := pre_prop.leftjoin(@1_@2).reverse();
+			cands := pre_prop.leftjoin(@1_@2).sort().reverse();
 		}
 		pre_prop := nil;
 		@1_@2 := nil;
@@ -1054,9 +1066,15 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    X_frag   := nil;
 		var _X       := X_@2.ord_uselect(@2).reverse();
 		    X_@2     := nil;
-		cands := _X.leftfetchjoin(X_pre);
+		cands := _X.leftfetchjoin(X_pre); #.reverse().sort().reverse()
+                if ( not(ordered(reverse(cands))) ) {
+                        printf("= ns_loc_pre(3): cands not ordered on tail.\n");
+                }
 	}
 	cands := cands.chk_order();
+        if ( not(ordered(reverse(cands))) ) {
+                printf("= ns_loc_pre(4): cands not ordered on tail.\n");
+        }
 	@:shrink_code@
  }
 @

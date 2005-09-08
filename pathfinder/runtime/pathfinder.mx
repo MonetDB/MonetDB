@@ -468,12 +468,28 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
     }
 
     var knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + ELEMENT))).reverse().mirror();
-    docBAT.insert("prop_pre" + "_" + str(chr(48 + ELEMENT)),
-                  knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order());
+    var prop_pre_bat := knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order();
+    if (not(ordered(prop_pre_bat))) {
+        var _prop := prop_pre_bat.mark(0@0).reverse();
+        var _pre  := prop_pre_bat.reverse().mark(0@0).reverse();
+        var ord := _prop.reverse().sort().reverse();
+            ord := ord.CTrefine(_pre).mark(nil);
+        prop_pre_bat := prop_pre_bat.fetch(ord);
+        prop_pre_bat := prop_pre_bat.chk_order();
+    }
+    docBAT.insert("prop_pre" + "_" + str(chr(48 + ELEMENT)), prop_pre_bat);
 
     knd_pre_bat := docBAT.find("kind_pre" + "_" + str(chr(48 + PI))).reverse().mirror();
-    docBAT.insert("prop_pre" + "_" + str(chr(48 + PI)),
-                  knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order());
+    prop_pre_bat := knd_pre_bat.leftfetchjoin(docBAT.find("pre_prop")).reverse().chk_order();
+    if (not(ordered(prop_pre_bat))) {
+        var _prop := prop_pre_bat.mark(0@0).reverse();
+        var _pre  := prop_pre_bat.reverse().mark(0@0).reverse();
+        var ord := _prop.reverse().sort().reverse();
+            ord := ord.CTrefine(_pre).mark(nil);
+        prop_pre_bat := prop_pre_bat.fetch(ord);
+        prop_pre_bat := prop_pre_bat.chk_order();
+    }
+    docBAT.insert("prop_pre" + "_" + str(chr(48 + PI)), prop_pre_bat);
 
     height := shredRES.fetch(PRE_LEVEL).max().int() + 1;
 
