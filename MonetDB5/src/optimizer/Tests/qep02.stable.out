@@ -1,0 +1,45 @@
+stdout of test 'qep02` in directory 'src/optimizer` itself:
+
+
+# 18:42:45 >  
+# 18:42:45 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=32834 --set sql_port=44108 --set xquery_port=52561 --set monet_prompt= --trace --dbname=mTests_src_optimizer  qep02.mal </dev/null
+# 18:42:45 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information.
+#b:= true;
+#T1:= bbp.new(:int,:int);
+#T3:= bbp.new(:int,:int);
+#barrier b;
+#	a:= algebra.select(T1,1,3);
+#	c:= algebra.select(T3,0,5);
+#	e:= algebra.join(a,c);
+#exit b;
+#optimizer.dumpQEP();
+#
+exit b;
+    e := algebra.join(a,c);
+        a := algebra.select(T1,1,3);
+            T1 := bbp.new(:int,:int);
+        c := algebra.select(T3,0,5);
+            T3 := bbp.new(:int,:int);
+function user.main():int;	# 0  (main:int)
+    b := true;	# 1  (b:bit)<-(_2:bit)
+    T1 := bbp.new(:int,:int);	# 2 CMDBATnew (T1:bat[:int,:int])<-(_4:int)(_4:int)
+    T3 := bbp.new(:int,:int);	# 3 CMDBATnew (T3:bat[:int,:int])<-(_4:int)(_4:int)
+barrier b;	# 4  (b:bit) jump 8
+    a := algebra.select(T1,1,3);	# 5 ALGselect (a:bat[:int,:int])<-(T1:bat[:int,:int])(_7:int)(_8:int)
+    c := algebra.select(T3,0,5);	# 6 ALGselect (c:bat[:int,:int])<-(T3:bat[:int,:int])(_10:int)(_11:int)
+    e := algebra.join(a,c);	# 7 ALGjoin (e:bat[:int,:int])<-(a:bat[:int,:int])(c:bat[:int,:int])
+exit b;	# 8  (b:bit)
+end main;	# 9  
+
+# 18:42:45 >  
+# 18:42:45 >  Done.
+# 18:42:45 >  
+
