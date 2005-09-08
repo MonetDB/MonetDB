@@ -94,81 +94,87 @@ function user.main():int;	# 0  (main:int)
     ba_a := calc.setoid(aa_a);	# 11 CALCsetoidInc (ba_a:oid)<-(aa_a:oid)
     mil.line("# escape sequences\n");	# 12 MILline (_52:void)<-(_53:str)
     mil.line("# first some basics, escaped characters are normalized\n");	# 13 MILline (_54:void)<-(_55:str)
-    mil.line("print(\"got single quote \\' .\");\t# remove superfluous escapes");	# 14 MILline (_56:void)<-(_57:str)
-    ca_a := io.print("got single quote \' .");	# 15 IOprint_val (ca_a:int)<-(_59:str)
+    mil.line("print(\"got single quote ' .\");\t# remove superfluous escapes");	# 14 MILline (_56:void)<-(_57:str)
+    ca_a := io.print("got single quote ' .");	# 15 IOprint_val (ca_a:int)<-(_59:str)
     mil.line("# remove superfluous escapes\n");	# 16 MILline (_60:void)<-(_61:str)
     da_a := io.print("got single quote ' without escape");	# 17 IOprint_val (da_a:int)<-(_63:str)
-    mil.line("print(\"got tab \\t and single newline \\n .\");");	# 18 MILline (_64:void)<-(_65:str)
+    mil.line("print(\"got tab \t and single newline \n .\");");	# 18 MILline (_64:void)<-(_65:str)
     ea_a := io.print("got tab \t and single newline \n .");	# 19 IOprint_val (ea_a:int)<-(_67:str)
-    mil.line("print(\"problem signalled before \\\\\\\"\");");	# 20 MILline (_68:void)<-(_69:str)
+    mil.line("print(\"problem signalled before \\\"\");");	# 20 MILline (_68:void)<-(_69:str)
     fa_a := io.print("problem signalled before \\\"");	# 21 IOprint_val (fa_a:int)<-(_71:str)
-    mil.line("var t0:= \"got single quote \\' .\";\tt0.print();");	# 22 MILline (_72:void)<-(_73:str)
-    t0 := "got single quote \' .";	# 23  (t0:str)<-(_59:str)
+    mil.line("var t0:= \"got single quote ' .\";\tt0.print();");	# 22 MILline (_72:void)<-(_73:str)
+    t0 := "got single quote ' .";	# 23  (t0:str)<-(_59:str)
     ga_a := io.print(t0);	# 24 IOprint_val (ga_a:int)<-(t0:str)
     mil.line("var t1:= \"got single quote ' without escape\";\tt1.print();");	# 25 MILline (_76:void)<-(_77:str)
     t1 := "got single quote ' without escape";	# 26  (t1:str)<-(_63:str)
     ha_a := io.print(t1);	# 27 IOprint_val (ha_a:int)<-(t1:str)
-    mil.line("var t2:= \"got tab \\t and single newline \\n .\"; t2.print();");	# 28 MILline (_80:void)<-(_81:str)
+    mil.line("var t2:= \"got tab \t and single newline \n .\"; t2.print();");	# 28 MILline (_80:void)<-(_81:str)
     t2 := "got tab \t and single newline \n .";	# 29  (t2:str)<-(_67:str)
     ia_a := io.print(t2);	# 30 IOprint_val (ia_a:int)<-(t2:str)
-    mil.line("var t3:= \"problem signalled before \\\\\\\"\"; t3.print();");	# 31 MILline (_84:void)<-(_85:str)
+    mil.line("var t3:= \"problem signalled before \\\"\"; t3.print();");	# 31 MILline (_84:void)<-(_85:str)
     t3 := "problem signalled before \\\"";	# 32  (t3:str)<-(_71:str)
     ja_a := io.print(t3);	# 33 IOprint_val (ja_a:int)<-(t3:str)
     mil.line("# character constants\n");	# 34 MILline (_88:void)<-(_89:str)
-    c0 := "\n";	# 35  (c0:str)<-(_91:str)
+    c0 := "\\n";	# 35  (c0:str)<-(_91:str)
     ka_a := io.print(c0);	# 36 IOprint_val (ka_a:int)<-(c0:str)
-    mil.line("var c1:= \"\\'\"; c1.print();");	# 37 MILline (_93:void)<-(_94:str)
-    c1 := "\'";	# 38  (c1:str)<-(_96:str)
+    mil.line("var c1:= \"'\"; c1.print();");	# 37 MILline (_93:void)<-(_94:str)
+    c1 := "'";	# 38  (c1:str)<-(_96:str)
     la_a := io.print(c1);	# 39 IOprint_val (la_a:int)<-(c1:str)
-    mil.line("var c2:= \"\\\\\"; c2.print();");	# 40 MILline (_98:void)<-(_99:str)
+    mil.line("var c2:= \"\\\"; c2.print();");	# 40 MILline (_98:void)<-(_99:str)
     c2 := "\\";	# 41  (c2:str)<-(_101:str)
     ma_a := io.print(c2);	# 42 IOprint_val (ma_a:int)<-(c2:str)
     mil.line("var s:=new(int,str,100);");	# 43 MILline (_103:void)<-(_104:str)
     s := bbp.new(nil:int,nil:str,100);	# 44 CMDBATnewint (s:bat[:int,:str])<-(_106:int)(_107:str)(_108:int)
-    mil.line("s.insert(2,\" single quote \\' got it\");");	# 45 MILline (_109:void)<-(_110:str)
-    na_a := bat.insert(s,2," single quote \' got it");	# 46 BKCinsert_bun (na_a:bat[:int,:str])<-(s:bat[:int,:str])(_112:int)(_113:str)
-    mil.line("s.insert(4,\" backslash  \\\\ \");");	# 47 MILline (_114:void)<-(_115:str)
-    oa_a := bat.insert(s,4," backslash  \\ ");	# 48 BKCinsert_bun (oa_a:bat[:int,:str])<-(s:bat[:int,:str])(_117:int)(_118:str)
+    mil.line("s.insert(2,\" single quote ' got it\");");	# 45 MILline (_109:void)<-(_110:str)
+    na_a := bat.insert(s,2," single quote ' got it");	# 46 BKCinsert_bun (na_a:bat[:int,:str])<-(s:bat[:int,:str])(_112:int)(_113:str)
+    mil.line("s.insert(4,\" backslash  \\ \");");	# 47 MILline (_114:void)<-(_115:str)
+    oa_a := bat.insert(s,4," backslash   ");	# 48 BKCinsert_bun (oa_a:bat[:int,:str])<-(s:bat[:int,:str])(_117:int)(_118:str)
     mil.line("s.insert(3,\" single quote ' \");");	# 49 MILline (_119:void)<-(_120:str)
     pa_a := bat.insert(s,3," single quote ' ");	# 50 BKCinsert_bun (pa_a:bat[:int,:str])<-(s:bat[:int,:str])(_122:int)(_123:str)
     mil.line("s.print();");	# 51 MILline (_124:void)<-(_125:str)
     qa_a := io.print(s);	# 52 IOprint_val (qa_a:int)<-(s:bat[:int,:str])
     mil.line("# Monet printf should behave as in C\n");	# 53 MILline (_127:void)<-(_128:str)
-    ra_a := io.printf("got single quote \' .\n");	# 54 IOprint_str (ra_a:int)<-(_130:str)
+    ra_a := io.printf("got single quote ' .\n");	# 54 IOprint_str (ra_a:int)<-(_130:str)
     mil.line("# remove superfluous escapes\n");	# 55 MILline (_131:void)<-(_132:str)
     sa_a := io.printf("got single quote ' without escape\n");	# 56 IOprint_str (sa_a:int)<-(_134:str)
-    mil.line("printf(\"got tab \\t and newline \\n .\\n\");");	# 57 MILline (_135:void)<-(_136:str)
+    mil.line("printf(\"got tab \t and newline \n .\n\");");	# 57 MILline (_135:void)<-(_136:str)
     ta_a := io.printf("got tab \t and newline \n .\n");	# 58 IOprint_str (ta_a:int)<-(_138:str)
-    mil.line("printf(\"problem signalled before \\\\\\\"\\n\");");	# 59 MILline (_139:void)<-(_140:str)
+    mil.line("printf(\"problem signalled before \\\"\n\");");	# 59 MILline (_139:void)<-(_140:str)
     ua_a := io.printf("problem signalled before \\\"\n");	# 60 IOprint_str (ua_a:int)<-(_142:str)
     mil.line("quit();");	# 61 MILline (_143:void)<-(_144:str)
     va_a := clients.quit();	# 62 CLTquit (va_a:void)
 end main;	# 63  
 #setoid(oid(20000000));
-## escape sequences\n
-## first some basics, escaped characters are normalized\n
-#print(\"got single quote \\' .\");\t# remove superfluous escapes
-[ "got single quote \\' ." ]
-## remove superfluous escapes\n
+## escape sequences
+
+## first some basics, escaped characters are normalized
+
+#print("got single quote ' .");	# remove superfluous escapes
+[ "got single quote ' ." ]
+## remove superfluous escapes
+
 [ "got single quote ' without escape" ]
-#print(\"got tab \\t and single newline \\n .\");
-[ "got tab \\t and single newline \\n ." ]
-#print(\"problem signalled before \\\\\\\"\");
-[ "problem signalled before \\\\\\\"" ]
-#var t0:= \"got single quote \\' .\";\tt0.print();
-[ "got single quote \\' ." ]
-#var t1:= \"got single quote ' without escape\";\tt1.print();
+#print("got tab 	 and single newline 
+ .");
+[ "got tab \t and single newline \n ." ]
+#print("problem signalled before \"");
+[ "problem signalled before \\\"" ]
+#var t0:= "got single quote ' .";	t0.print();
+[ "got single quote ' ." ]
+#var t1:= "got single quote ' without escape";	t1.print();
 [ "got single quote ' without escape" ]
-#var t2:= \"got tab \\t and single newline \\n .\"; t2.print();
-[ "got tab \\t and single newline \\n ." ]
-#var t3:= \"problem signalled before \\\\\\\"\"; t3.print();
-[ "problem signalled before \\\\\\\"" ]
-## character constants\n
+#var t2:= "got tab 	 and single newline 
+ ."; t2.print();
+[ "got tab \t and single newline \n ." ]
+#var t3:= "problem signalled before \""; t3.print();
+[ "problem signalled before \\\"" ]
+## character constants
+
 [ "\\n" ]
-#var c1:= \"\\'\"; c1.print();
-[ "\\'" ]
-#var c2:= \"\\\\\"; c2.print();
-[ "\\\\" ]
+#var c1:= "'"; c1.print();
+[ "'" ]
+#var c2:= "\"; c2.print();
+[ "\\" ]
 #var s:=new(int,str,100);
 #s.insert(2,\" single quote \\' got it\");
 #s.insert(4,\" backslash  \\\\ \");
@@ -178,18 +184,23 @@ end main;	# 63
 # h	t				  # name
 # int	str				  # type
 #-----------------------------------------#
-[ 2,	  " single quote \\' got it"	  ]
-[ 4,	  " backslash  \\\\ "		  ]
+[ 2,	  " single quote ' got it"	  ]
+[ 4,	  " backslash   "		  ]
 [ 3,	  " single quote ' "		  ]
-## Monet printf should behave as in C\n
-got single quote \' .
-## remove superfluous escapes\n
+## Monet printf should behave as in C
+
+got single quote ' .
+## remove superfluous escapes
+
 got single quote ' without escape
-#printf(\"got tab \\t and newline \\n .\\n\");
+#printf("got tab 	 and newline 
+ .
+");
 got tab 	 and newline 
  .
-#printf(\"problem signalled before \\\\\\\"\\n\");
-problem signalled before \\"
+#printf("problem signalled before \"
+");
+problem signalled before \"
 #quit();
 
 # 00:12:30 >  

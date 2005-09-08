@@ -1,3 +1,26 @@
+AGENDA FOR MonetDB Version 5.02 release Jan 2006
+- target: MonetDB Version 5 with SQL and APIs
+- Overall documentation at a reasonable stage
+- Migration documentation
+- SQL test set needs work
+- APIs should be tested
+- Database pool for web-applications
+- Mguardian to watch over server
+- GDK should switch to private-bats unless stated otherwise.
+
+AGENDA FOR MonetDB Version 5.04 release Apr 2006
+- Target: benefit from compression and scale out
+- AMDB column store available 
+- Distributed processing by remote MAL execution
+
+AGENDA FOR MonetDB Version 5.06 release Jun 2006
+- Target: XQuery
+- XQuery port finished
+
+MapiClient:
+- propagate the '?' command to the server
+- merge word completion semantics with the back-end
+
 Pathfinder support
 - it heavily relies on BAT admininistration, which is currently
   not well covered by the type system.  (tst800)
@@ -23,8 +46,6 @@ MIL 4 'loss' in M5
 - [ht]operation convention or operation[ht]_[ht]
 
 MAL language issues
-- make all polymorphic types explicit.
-- better handle the any,any_<N> and any... cases.
 - BATs entered into a box should become persistent? (tst1004,1005,1014)
 - use a process buffer pool to avoid expensive client starts.
 - implement an (Box) authorization scheme
@@ -51,6 +72,9 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20050902 stricter type analysis
+	make all polymorphic types explicit
+	better handle the any,any_<N> and any... cases.
 20050827 bring property names also into the namespace.
 20050827 rethink the before/after structure for garabage collection
   and handle it explicitly in the interpreter.

@@ -341,21 +341,22 @@ cache directly, e.g @code{explain;} or @code{explain sqlcache} or @code{explain 
 
 The SQL statements are translated into MAL programs, which
 are optimized and stored away in an @code{sql_cache} module.
-The default execution engine is the MAL interpreter,
-which comes with a powerful debugger.
+The generated code can be debugged with the MAL debugger.
 It provides a simple mechanism to trace the execution, hunting
-for possible errors and performance bottlenecks.
+for possible errors and detect performance bottlenecks
+(@ref{Runtime Inspection}).
 
 The example below, illustrates how you can easily obtain a quick 
-overview of the cost components of the query using the timer
+overview of the cost components of the query using the debugger timer
 flag and @code{continuation} command for the debugger.
+
 @verbatim
 >debug select * from tables;
 #mdb #    mdb.start();
-mdb>n
+mdb>next
 #mdb #    sql_cache.sql0();
 mdb>timer
-mdb>c
+mdb>continue
 #    19 usec#    _1{count=0} := sql.bind(_2="sys", _3="ptables", _4="id", _5=0)
 #     3 usec#    _6{count=0} := sql.bind_dbat(_2="sys", _3="ptables", _5=0)
 #     3 usec#    _14{count=0} := sql.bind(_2="sys", _15="ttables", _4="id", _5=0)
@@ -384,10 +385,6 @@ mdb>c
 #     2 usec#    sql_cache.sql2()
 >
 @end verbatim
-The MAL debugger comes with a plethora of options,
-including a method to inspect the intermediates
-produced by the optimizers.
-See @ref{Runtime Inspection} for more  examples.
 
 @node Optimizer Control, Overlaying the BAT storage, DEBUG Statement,  SQL
 @section Optimizer Control
