@@ -158,7 +158,7 @@ stream_open_@1(Stream *S, str filename)
 	if ((s = open_@1( filename )) == NULL || stream_errnr(s)) {
 		if (s)
 			stream_destroy(s);
-		GDKerror("stream_open: could not open file %s\n", filename);
+		GDKerror("stream_open: could not open file '%s'\n", filename);
 		return GDK_FAIL;
 	} else {
 		*(stream**)S = s;
