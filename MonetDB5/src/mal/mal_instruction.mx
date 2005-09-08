@@ -1950,7 +1950,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
                      sprintf(t,"nil" );
                 else{
 					char *def2;
-					def2= quote(def,strlen(def));
+					def2= mal_quote(def,strlen(def));
 					sprintf(t,"\"%s\"", def2);
 					GDKfree(def2);
 				}

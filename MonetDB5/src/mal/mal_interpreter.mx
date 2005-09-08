@@ -454,7 +454,7 @@ of by limiting the depth of a function calls.
 @-
 @= safeguardStack
 /* Expensive? 70 msec for 1M calls another solution is needed.*/
-    if (stk->stkdepth > (size_t) 100 * 1024 && THRhighwater()) {
+    if (stk->stkdepth > (size_t) 50 * 1024 && THRhighwater()) {
         GDKerror("interpret: running out of "
          "physical stack space!\n");
     return raiseException(mb,0,"Interpreter","Stack overflow");

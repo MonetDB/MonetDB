@@ -259,7 +259,7 @@ compileString(Symbol *fcn, Client c, str s){
 		s = n;
 		len++;
 	}
-	unquote(qry = GDKstrdup(s));
+	mal_unquote(qry = GDKstrdup(s));
 	buffer_init(b, qry, len);
 	pushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "");
 	initClientPrg(c, "main");	/* create new context */
@@ -322,7 +322,7 @@ callString(Client c, str s, int listing)
 		s = n;
 		len++;
 	}
-	unquote(qry = GDKstrdup(s));
+	mal_unquote(qry = GDKstrdup(s));
 	buffer_init(b, qry, len);
 	pushClientInput(c, bstream_create(buffer_rastream(b, "callString"), b->len), listing, "");
 	initClientPrg(c, "main");	/* create new context */

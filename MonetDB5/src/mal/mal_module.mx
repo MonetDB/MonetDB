@@ -664,27 +664,28 @@ char **getHelp(Module m, str pat)
 			if( strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*'){
 				if( doc) {
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
-					buf[0]='#';
+					buf[0]=' ';
 					if( s->def->help) {
 						char *v,*w;
 						v= strchr(buf,0);
 						*v++ = '\n';
-						*v++ = '#';
+						*v++ = ' ';
 						for( w= s->def->help; *w && v <buf+BUFSIZ-1; w++)
 						if( *w == '\n'){
 							*v++ = '\n';
-							*v++ = '#';
+							*v++ = ' ';
 							if( isspace((int) *w)) {
 								for(; *w && isspace((int) *w); w++);
 								w--;
 							}
 						} else *v++ = *w;
+						*v++ = '\n';
 						*v = 0;
 					}
 					if( tstDuplicate(msg,buf) ) continue;
 				} else if( sig || strcmp(fcnnme,s->name)==0 ) {
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
-					buf[0]='#';
+					buf[0]=' ';
 					t= strstr(buf,"address");
 					if( t) *t= 0;
 				} else  {

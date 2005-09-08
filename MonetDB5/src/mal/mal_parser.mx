@@ -305,7 +305,7 @@ str strCopy(Client cntxt, int length){
 		GDKfatal("FATAL:strCopy:");
 	memcpy(s, CURRENT(cntxt) + 1, (size_t) (length - 2) );
 	s[length-2] = 0;
-	unquote(s);
+	mal_unquote(s);
 	advance(cntxt,length);
 	return s;
 }

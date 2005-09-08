@@ -26,8 +26,8 @@ require marshalling.
 #define MAL_UTILS_H
 #include "mal.h"
 
-mal_export str quote(const char *msg, int size);
-mal_export void unquote(char *msg);
+mal_export str mal_quote(const char *msg, int size);
+mal_export void mal_unquote(char *msg);
 
 #endif /* MAL_UTILS_H */
 @-
@@ -40,7 +40,7 @@ of the unquoted part section.
 
 #define PLACEHOLDER '?'
 void
-unquote(char *msg)
+mal_unquote(char *msg)
 {
 	char *p = msg, *s;
 
@@ -93,7 +93,7 @@ unquote(char *msg)
 }
 
 char *
-quote(const char *msg, int size)
+mal_quote(const char *msg, int size)
 {
 	char *s = GDKmalloc(strlen(msg) * 2 + 1);	/* we absolutely don't need more than this (until we start producing octal escapes */
 	char *t = s;
@@ -120,10 +120,6 @@ quote(const char *msg, int size)
 		case '\\':
 			*t++ = '\\';
 			*t++ = '\\';
-			break;
-		case '\0':
-			*t++ = '\\';
-			*t++ = '0';
 			break;
 		default:
 			*t++ = *msg;
