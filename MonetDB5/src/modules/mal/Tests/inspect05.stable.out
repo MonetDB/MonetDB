@@ -179,7 +179,7 @@ end main;	# 7
 [ 145@0,  "command",	  "mal",	  "newRange",		  "(v:int) (_2:bit,_3:int) address RNGnewRange_int;"								  ]
 [ 146@0,  "command",	  "mal",	  "newRange",		  "(v:sht) (_2:bit,_3:sht) address RNGnewRange_sht;"								  ]
 [ 147@0,  "command",	  "mal",	  "newRange",		  "(v:oid) (_2:bit,_3:oid) address RNGnewRange_oid;"								  ]
-[ 148@0,  "command",	  "mal",	  "register",		  "(m:str,f:str,code:str):void address CMDregisterFunction;"									  ]
+[ 148@0,  "command",	  "mal",	  "register",		  "(m:str,f:str,code:str,help:str):void address CMDregisterFunction;"								  ]
 [ 149@0,  "command",	  "mal",	  "raise",		  "(msg:str):str address CMDraise;"												  ]
 [ 150@0,  "command",	  "mal",	  "source",		  "(f:str):void address CMDevalFile;"												  ]
 [ 151@0,  "command",	  "inspect",	  "getAtomSizes",	  "():bat[:int,:int] address INSPECTatom_sizes;"										  ]
