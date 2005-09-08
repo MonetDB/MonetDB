@@ -462,7 +462,7 @@ MILline(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;		/* fool compiler */
 	nme = (str) getArgValue(stk, pci, 1);
-	unquote(nme);
+	mal_unquote(nme);
 	len = strlen(nme);
 	stream_printf(GDKout, "#%s%s", nme, (nme[len - 1] == '\n' ? "" : "\n"));
 	stream_flush(GDKout);
