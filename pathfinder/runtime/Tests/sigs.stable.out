@@ -44,6 +44,7 @@ module 'pf_support'
 [ "ll_descendant(BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[oid,oid], int, bit, bit, oid, oid) : BAT[oid,oid]"			  ]
 [ "ll_descendant_or_self(BAT[void,oid], BAT[void,oid], BAT[void,int], BAT[oid,oid], int, bit, bit, oid, oid) : BAT[oid,oid]"		  ]
 [ "ll_tokenize(BAT[void,str], BAT[void,str]) : BAT[oid,str]"										  ]
+[ "mark_grp(BAT[any::1,oid], BAT[oid,any], oid) : BAT[any::1,oid]"									  ]
 [ "mark_grp(BAT[any::1,oid], BAT[oid,oid]) : BAT[any::1,oid]"										  ]
 [ "merged_union(BAT[oid,any::1], BAT[oid,any::1], ..BAT[oid,any]..) : BAT[void,BAT]"							  ]
 [ "mposjoin(BAT[oid,oid], BAT[oid,oid], BAT[oid,BAT]) : BAT[void,any]"									  ]

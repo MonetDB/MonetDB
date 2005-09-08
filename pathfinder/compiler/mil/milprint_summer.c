@@ -1038,7 +1038,7 @@ translateSeq_ (opt_t *f, int i, int rcode)
             "item%s := merged_result.fetch(1);\n"
             "kind := merged_result.fetch(2);\n"
             "merged_result := nil;\n"
-            "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             "} # end of translateSeq (counter)\n"
             "}\n",
             item_ext);
@@ -1334,7 +1334,7 @@ createEnumeration (opt_t *f, int cur_level)
     milprintf(f,
             "{ # createEnumeration ()\n"
             /* the head of item has to be void */
-            "var ints_cE := outer%03u.mark_grp(outer%03u.tunique().project(1@0)).[int]();\n",
+            "var ints_cE := outer%03u.mark_grp(outer%03u.tunique().mark(nil), 1@0).[int]();\n",
             cur_level, cur_level);
     addValues (f, int_container(), "ints_cE", "item");
     milprintf(f,
@@ -1534,7 +1534,7 @@ mapBack (opt_t *f, int cur_level)
             cur_level);
     milprintf(f,
             "oid_oidMap := nil;\n"
-            "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             "# item := item;\n"
             "# kind := kind;\n"
             "} # end of mapBack ()\n"
@@ -2383,7 +2383,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         /* res_scj = iter|item bat */
         milprintf(f,
                 "iter := res_scj.fetch(0);\n"
-                "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
                 "item := res_scj.fetch(1);\n"
                 "kind := res_scj.fetch(2);\n"
                 "if (is_fake_project(kind)) {\n"
@@ -4748,7 +4748,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
             "res_mu := nil;\n"
             "}\n"
             "input_iter := nil;\n"
-            "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             "kind := iter.project(%s);\n"
             "} # end of typed-value\n",
             item_ext, item_ext,
@@ -4804,7 +4804,7 @@ fn_data (opt_t *f)
             "item := res_mu.fetch(2);\n"
             "kind := res_mu.fetch(3);\n"
             "res_mu := nil;\n"
-            "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             );
 }
 
@@ -4954,7 +4954,7 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "iter := res_mu_is2ns.fetch(0).leftfetchjoin(iter%03u);\n"
             "item := res_mu_is2ns.fetch(1);\n"
             "kind := res_mu_is2ns.fetch(2);\n"
-            "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             "res_mu_is2ns := nil;\n"
             "} # end of item-sequence-to-node-sequence\n",
             counter, counter, counter, counter, counter, counter);
@@ -5272,7 +5272,7 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
                 "sorting := sorting.CTrefine(item%03u);\n"
                 "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
                 "iter := sorting.leftfetchjoin(iter%03u);\n"
-                "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
                 "item := sorting.leftfetchjoin(item%03u);\n"
                 "kind := sorting.leftfetchjoin(kind%03u);\n"
                 "sorting := nil;\n",
@@ -5315,7 +5315,7 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
                                ".mark(0@0)"
                                ".reverse();\n"
             "iter := %s_res.leftfetchjoin(iter%03u);\n"
-            "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             "item := %s_res.leftfetchjoin(item%03u);\n"
             "kind := %s_res.leftfetchjoin(kind%03u);\n"
             "%s_res := nil;\n"
@@ -5406,7 +5406,7 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
             "sorting := sorting.CTrefine(item);\n"
             "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
             "iter := sorting.leftfetchjoin(iter);\n"
-            "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             "item := sorting.leftfetchjoin(item);\n"
             "kind := sorting.leftfetchjoin(kind);\n"
             "sorting := nil;\n"
@@ -6668,7 +6668,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "sorting := sorting.mark(0@0).reverse();\n"
                 */
                 "iter := sorting.leftfetchjoin(iter);\n"
-                "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
                 "item := sorting.leftfetchjoin(item);\n"
                 "kind := sorting.leftfetchjoin(kind);\n"
                 "sorting := nil;\n"
@@ -6834,7 +6834,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var sorting := CTgroup(iter).CTmap().CTgroup(item).CTmap().CTgroup(kind);\n"
                 "sorting := sorting.CTextend().mark(0@0).reverse();\n"
                 "iter := sorting.leftfetchjoin(iter);\n"
-                "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
                 "item := sorting.leftfetchjoin(item);\n"
                 "kind := sorting.leftfetchjoin(kind);\n"
                 "sorting := nil;\n"
@@ -7297,7 +7297,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "res := nil;\n"
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
                 "kind := iter.project(INT);\n"
                 "} # end of op:to (integer, integer)\n ",
                 item_ext, item_ext);
@@ -7720,7 +7720,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    iter := sel.leftfetchjoin(iter);\n"
                 "    kind := sel.leftfetchjoin(kind);\n"
                 "    item%s := sel.leftfetchjoin(item%s);\n" 
-                "    pos := iter.mark_grp(iter.tunique().project(1@0));\n"
+                "    pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
                 "}\n", kind_str(code), kind_str(code));
 
         if (fun->arity == 3)
