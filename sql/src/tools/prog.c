@@ -59,6 +59,8 @@ usage(char *prog)
 	fprintf(stderr, "Usage: %s [ options ] [ script+ ]                   \n", prog);
 	fprintf(stderr, "Options are:                                        \n");
 	fprintf(stderr, " -c <config_file>    | --config=<config_file>       \n");
+	fprintf(stderr, " -d<debug_level>     | --debug=<debug_level>        \n");
+	fprintf(stderr, " -t                  | --time                       \n");
 	fprintf(stderr, "                       --dbname=<database_name>     \n");
 	fprintf(stderr, "                       --dbfarm=<database_directory>\n");
 	fprintf(stderr, " -s <option>=<value> | --set <option>=<value>       \n");
@@ -72,7 +74,7 @@ main(int argc, char **av)
 {
 	char *prog = *av;
 	opt *set = NULL;
-	int setlen = 0, time = 0;
+	int setlen = 0, time = 0, debug = 0;
 	long t0 = 0;
 	Mapi mid;
 	MapiHdl hdl;
@@ -83,6 +85,7 @@ main(int argc, char **av)
 		{"config", 1, 0, 'c'},
 		{"dbname", 1, 0, 0},
 		{"dbfarm", 1, 0, 0},
+		{"debug", 2, 0, 'd'},
 		{"time", 0, 0, 't'},
 		{"set", 1, 0, 's'},
 		{"help", 0, 0, '?'},
@@ -95,7 +98,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:?s:t",
+		int c = getopt_long(argc, av, "c:d::?s:t",
 				    long_options, &option_index);
 
 		if (c == -1)
@@ -119,6 +122,12 @@ main(int argc, char **av)
 		case 'c':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
 			break;
+		case 'd':
+			debug = 1;
+			if (optarg) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", optarg);
+			}
+			break;
 		case 's':{
 			/* should add option to a list */
 			char *tmp = strchr(optarg, '=');
@@ -138,8 +147,6 @@ main(int argc, char **av)
 			usage(prog);
 		}
 	}
-	if (!(setlen = mo_system_config(&set, setlen)))
-		usage(prog);
 
 	mid = embedded_sql(set, setlen);
 	while ((line = fgets(buf, BUFSIZ, stdin)) != NULL) {
