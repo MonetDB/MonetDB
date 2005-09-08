@@ -72,14 +72,14 @@ usage(char *prog)
 int
 main(int argc, char **av)
 {
+	int curlen = 0, maxlen = BUFSIZ*8;
 	char *prog = *av;
 	opt *set = NULL;
 	int setlen = 0, time = 0, debug = 0;
 	long t0 = 0;
 	Mapi mid;
 	MapiHdl hdl;
-	char *line;
-	char buf[BUFSIZ];
+	char *buf, *line;
 
 	static struct option long_options[] = {
 		{"config", 1, 0, 'c'},
@@ -149,19 +149,28 @@ main(int argc, char **av)
 	}
 
 	mid = embedded_mil(set, setlen);
-	while ((line = fgets(buf, BUFSIZ, stdin)) != NULL) {
-		if (time)
-			t0 = gettime();
-		hdl = mapi_query(mid, line);
-		do {
-			if (mapi_result_error(hdl) != NULL)
-				mapi_explain_result(hdl, stderr);
-			while ((line = mapi_fetch_line(hdl)) != NULL)
-				printf("%s\n", line);
-		} while (mapi_next_result(hdl) == 1);
-		mapi_close_handle(hdl);
-		if (time)
-			printf("Timer: %ld (usec)\n", gettime()-t0);
+
+	buf = GDKmalloc(maxlen);
+	while ((line = fgets(buf+curlen, 1024, stdin)) != NULL) {
+		int n = strlen(line);
+            	curlen += n;
+            	if (curlen > (maxlen+1024)) {
+               		maxlen += BUFSIZ;
+               		buf = GDKrealloc(buf, maxlen + 1);
+            	}
 	}
+	if (time)
+		t0 = gettime();
+	hdl = mapi_query(mid, buf);
+	do {
+		if (mapi_result_error(hdl) != NULL)
+			mapi_explain_result(hdl, stderr);
+		while ((line = mapi_fetch_line(hdl)) != NULL)
+			printf("%s\n", line);
+	} while (mapi_next_result(hdl) == 1);
+	mapi_close_handle(hdl);
+	if (time)
+		printf("Timer: %ld (usec)\n", gettime()-t0);
+	GDKfree(buf);
 	return 0;
 }
