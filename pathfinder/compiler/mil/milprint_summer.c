@@ -1479,36 +1479,37 @@ expand (opt_t *f, int cur_level)
 static void
 join (opt_t *f, int cur_level)
 {
-    milprintf(f, "{ # join ()\n");
+    milprintf(f, "# join ()\n");
+    milprintf(f, "var cnt := count(v_iter%03u)*2;\n", cur_level);
     milprintf(f, "v_iter%03u := v_iter%03u.reverse().mark(0@0).reverse();\n",
             cur_level, cur_level);
     milprintf(f, "var new_v_iter := v_iter%03u;\n", cur_level);
-    milprintf(f, "v_iter%03u := bat(void,oid,count(new_v_iter)*2)"
+    milprintf(f, "v_iter%03u := bat(void,oid,cnt)"
                                 ".seqbase(0@0).access(BAT_APPEND).insert(new_v_iter);\n", cur_level);
     milprintf(f, "new_v_iter := nil;\n");
 
     milprintf(f, "var new_v_vid := oidNew_expOid.leftjoin(v_vid%03u);\n", cur_level-1);
-    milprintf(f, "v_vid%03u := bat(void,oid,count(new_v_vid)*2)"
+    milprintf(f, "v_vid%03u := bat(void,oid,cnt)"
                                 ".seqbase(0@0).access(BAT_APPEND).insert(new_v_vid);\n", cur_level);
     milprintf(f, "new_v_vid := nil;\n");
 
     milprintf(f, "var new_v_pos := oidNew_expOid.leftjoin(v_pos%03u);\n", cur_level-1);
-    milprintf(f, "v_pos%03u := bat(void,oid,count(new_v_pos)*2)"
+    milprintf(f, "v_pos%03u := bat(void,oid,cnt)"
                                 ".seqbase(0@0).access(BAT_APPEND).insert(new_v_pos);\n", cur_level);
     milprintf(f, "new_v_pos := nil;\n");
 
     milprintf(f, "var new_v_item := oidNew_expOid.leftjoin(v_item%03u);\n", cur_level-1);
-    milprintf(f, "v_item%03u := bat(void,oid,count(new_v_item)*2)"
+    milprintf(f, "v_item%03u := bat(void,oid,cnt)"
                                 ".seqbase(0@0).access(BAT_APPEND).insert(new_v_item);\n", cur_level);
     milprintf(f, "new_v_item := nil;\n");
 
     milprintf(f, "var new_v_kind := oidNew_expOid.leftjoin(v_kind%03u);\n", cur_level-1);
-    milprintf(f, "v_kind%03u := bat(void,int,count(new_v_kind)*2)"
+    milprintf(f, "v_kind%03u := bat(void,int,cnt)"
                                 ".seqbase(0@0).access(BAT_APPEND).insert(new_v_kind);\n", cur_level);
     milprintf(f, "new_v_kind := nil;\n");
 
     milprintf(f, "oidNew_expOid := nil;\n");
-    milprintf(f, "} # end of join ()\n");
+    milprintf(f, "# end of join ()\n");
 }
 
 /**
@@ -1686,8 +1687,7 @@ translateIfThen (opt_t *f, int code, int cur_level, int counter,
     /* get rc and apply it to the empty result
        to get the same item variable */
     rc = translate2MIL (f, code, cur_level, counter, c);
-    milprintf(f, "} ");
-    milprintf(f, "else\n{\n");
+    milprintf(f, "} else {\n");
     translateEmpty_ (f, rc);
     milprintf(f, "}\n");
 
@@ -1739,10 +1739,11 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter,
     milprintf(f,
             "var selected := item%03u.ord_uselect(1@0);\n"
             "var skip := 0;\n"
-            "if (selected.count() = item%03u.count()) "
-            "{ skip := 2; } "
-            "else { if (selected.count() = 0) "
-            "{ skip := 1; }}\n",
+            "if (selected.count() = item%03u.count()) {\n"
+            " skip := 2; \n"
+            "} else if (selected.count() = 0) {\n"
+            " skip := 1; \n"
+            "}\n",
             bool_res, bool_res);
     /* if at compile time one argument is already known to
        be empty don't do the other */
@@ -2473,10 +2474,10 @@ castQName (opt_t *f, int rc)
             "prop_name := nil;\n"
             /* oid_prop now contains the items with property ids
                which were before strings */
-            "if (counted_qn = 0)\n"
+            "if (counted_qn = 0) {\n"
             /* the only possible input kind is string -> oid_oid=void|void */
-            "{    item := oid_prop.reverse().mark(0@0).reverse(); } "
-            "else {\n"
+            "    item := oid_prop.reverse().mark(0@0).reverse();\n"
+            "} else {\n"
             /* qnames and newly generated qnames are merged 
                (first 2 parameters are the oids for the sorting) */
             "    var res_mu := merged_union"
@@ -2583,8 +2584,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "      ERROR (\"err:XQDY0025: attribute names are not unique "
                 "in constructed element '%%s'.\",\n"
                 "             item%03u.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS)).fetch(0));\n"
-                "   }\n"
-                "   else {\n"
+                "   } else {\n"
                 "      ERROR (\"err:XQDY0025: attribute names are not unique "
                 "in constructed element.\");\n"
                 "   }\n"
@@ -2888,17 +2888,14 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "  var knd := ELEMENT;\n"
                 "  while ( knd <= DOCUMENT ) {\n"
                 "    var kind_root := root_kind.ord_uselect(knd).reverse().chk_order();\n"
-                "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS);\n"
-                "    kind_pre.insert(kind_root);\n"
+                "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS).insert(kind_root);\n"
                 "    if ( knd = ELEMENT ) {\n"
                 "      var prop_root := kind_root.reverse().mirror().leftfetchjoin(root_prop).reverse().chk_order();\n"
-                "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS);\n"
-                "      prop_pre.insert(prop_root);\n"
+                "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS).insert(prop_root);\n"
                 "    }\n"
                 "    if ( knd = PI ) {\n"
                 "      var prop_root := kind_root.reverse().mirror().leftfetchjoin(root_prop).reverse().chk_order();\n"
-                "      var prop_pre := ws.fetch(PROP_PRE + 1).fetch(WS);\n"
-                "      prop_pre.insert(prop_root);\n"
+                "      var prop_pre := ws.fetch(PROP_PRE + 1).fetch(WS).insert(prop_root);\n"
                 "    }\n"
                 "    knd :+= chr(1);\n"
                 "  }\n"
@@ -3020,8 +3017,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "      ERROR (\"err:XQDY0025: attribute names are not unique "
                 "in constructed element '%%s'.\",\n"
                 "             item%03u.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS)).fetch(0));\n"
-                "   }\n"
-                "   else {\n"
+                "   } else {\n"
                 "      ERROR (\"err:XQDY0025: attribute names are not unique "
                 "in constructed element.\");\n"
                 "   }\n"
@@ -3108,17 +3104,14 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "  var knd := ELEMENT;\n"
             "  while ( knd <= DOCUMENT ) {\n"
             "    var kind__elem := _elem_kind.ord_uselect(knd).reverse().chk_order();\n"
-            "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS);\n"
-            "    kind_pre.insert(kind__elem);\n"
+            "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS).insert(kind__elem);\n"
             "    if ( knd = ELEMENT ) {\n"
             "      var prop__elem := kind__elem.reverse().mirror().leftfetchjoin(_elem_prop).reverse().chk_order();\n"
-            "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS);\n"
-            "      prop_pre.insert(prop__elem);\n"
+            "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS).insert(prop__elem);\n"
             "    }\n"
             "    if ( knd = PI ) {\n"
             "      var prop__elem := kind__elem.reverse().mirror().leftfetchjoin(_elem_prop).reverse().chk_order();\n"
-            "      var prop_pre := ws.fetch(PROP_PRE + 1).fetch(WS);\n"
-            "      prop_pre.insert(prop__elem);\n"
+            "      var prop_pre := ws.fetch(PROP_PRE + 1).fetch(WS).insert(prop__elem);\n"
             "    }\n"
             "    knd :+= chr(1);\n"
             "  }\n"
@@ -3316,7 +3309,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
             "unq_str := str_unq.mark(seqb).reverse();\n"
             "str_unq := nil;\n"
             "seqb := nil;\n"
-            "ws_prop_text.insert(unq_str);\n"
+            "ws_prop_text := ws_prop_text.insert(unq_str);\n"
             "unq_str := nil;\n"
             /* get the property values of the strings; */
             /* we invest in sorting ws_prop_text &  X_strings/item%s on the TYPE_str join columns */
@@ -3357,8 +3350,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));\n"
                 "{\n"
                 "  var kind_pre_ := newPre_prop.mark(nil).reverse().chk_order();\n"
-                "  var kind_pre := ws.fetch(KIND_PRE + int(TEXT)).fetch(WS);\n"
-                "  kind_pre.insert(kind_pre_);\n"
+                "  var kind_pre := ws.fetch(KIND_PRE + int(TEXT)).fetch(WS).insert(kind_pre_);\n"
                 "}\n"
                 "newPre_prop := nil;\n"
                 "item := item%s.mark(seqb);\n"
@@ -3713,7 +3705,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, u_A_container(), "[dbl]()", "dbl");
  
         milprintf(f,
-                "if (_val.reverse().exist(dbl(nil))) != 0)\n"
+                "if (_val.reverse().exist(dbl(nil)))\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to double.\"); }\n");
  
         if (rcode != NORMAL)
@@ -3793,7 +3785,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         evaluateCastBlock (f, u_A_container(), "[str]()", "str");
  
         milprintf(f,
-                "if (_val.reverse().exist(str(nil))) != 0)\n"
+                "if (_val.reverse().exist(str(nil)))\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to string.\"); }\n");
  
         if (rcode != NORMAL)
@@ -4357,7 +4349,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
     if (PFty_subtype (input_type, PFty_star(PFty_integer ())))
     {
         milprintf(f,
-                "trues.access(BAT_WRITE);\n"
+                "trues := trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
                 "var test_item := test.leftfetchjoin(item%s);\n"
@@ -4367,16 +4359,16 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "var test_falses := test_int.ord_uselect(0);\n"
                 "test_int := nil;\n"
                 "var falses := test_falses.project(false);\n"
-                "trues.replace(falses);\n"
+                "trues := trues.replace(falses);\n"
                 "test_falses := nil;\n"
                 "falses := nil;\n"
-                "trues.access(BAT_READ);\n",
+                "trues := trues.access(BAT_READ);\n",
                 kind_str(rc), (rc)?"":val_join(INT));
     }
     else if (PFty_subtype (input_type, PFty_star(PFty_double ())))
     {
         milprintf(f,
-                "trues.access(BAT_WRITE);\n"
+                "trues := trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
                 "var test_item := test.leftfetchjoin(item%s);\n"
@@ -4387,15 +4379,15 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "test_dbl := nil;\n"
                 "var falses := test_falses.project(false);\n"
                 "test_falses := nil;\n"
-                "trues.replace(falses);\n"
+                "trues := trues.replace(falses);\n"
                 "falses := nil;\n"
-                "trues.access(BAT_READ);\n",
+                "trues := trues.access(BAT_READ);\n",
                 kind_str(rc), (rc)?"":val_join(DBL));
     }
     else if (PFty_subtype (input_type, PFty_star(PFty_decimal ())))
     {
         milprintf(f,
-                "trues.access(BAT_WRITE);\n"
+                "trues := trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
                 "var test_item := test.leftfetchjoin(item%s);\n"
@@ -4406,16 +4398,16 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "test_dec := nil;\n"
                 "var falses := test_falses.project(false);\n"
                 "test_falses := nil;\n"
-                "trues.replace(falses);\n"
+                "trues := trues.replace(falses);\n"
                 "falses := nil;\n"
-                "trues.access(BAT_READ);\n",
+                "trues := trues.access(BAT_READ);\n",
                 kind_str(rc), (rc)?"":val_join(DEC));
     }
     else if (PFty_subtype (input_type, PFty_star(PFty_string ())) ||
              PFty_subtype (input_type, PFty_star(PFty_untypedAtomic ())))
     {
         milprintf(f,
-                "trues.access(BAT_WRITE);\n"
+                "trues := trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
                 "var test_item := test.leftfetchjoin(item%s);\n"
@@ -4426,16 +4418,16 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "test_str_ := nil;\n"
                 "var falses := test_falses.project(false);\n"
                 "test_falses := nil;\n"
-                "trues.replace(falses);\n"
+                "trues := trues.replace(falses);\n"
                 "falses := nil;\n"
-                "trues.access(BAT_READ);\n",
+                "trues := trues.access(BAT_READ);\n",
                 kind_str(rc), (rc)?"":val_join(STR));
     }
     else if (PFty_subtype (input_type, PFty_star(PFty_boolean ())))
     {
         /* this branch never occurs, because it gets optimized away :) */
         milprintf(f,
-                "trues.access(BAT_WRITE);\n"
+                "trues := trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
                 "var test_item := test.leftfetchjoin(item);\n"
@@ -4444,9 +4436,9 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "test_item := nil;\n"
                 "var falses := test_falses.project(false);\n"
                 "test_falses := nil;\n"
-                "trues.replace(falses);\n"
+                "trues := trues.replace(falses);\n"
                 "falses := nil;\n"
-                "trues.access(BAT_READ);\n");
+                "trues := trues.access(BAT_READ);\n");
     }
     else if (PFty_subtype (input_type, PFty_star(PFty_atomic ())))
     {
@@ -4456,7 +4448,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
 
         /* FIXME: rewrite stuff two use only one column instead of oid|oid */
         milprintf(f,
-                "trues.access(BAT_WRITE);\n"
+                "trues := trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "iter := iter.reverse();\n"
                 "item := iter.leftfetchjoin(item);\n"
@@ -4510,19 +4502,19 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "dec_test := nil;\n"
                 "dbl_test := nil;\n"
                 "bool_test := nil;\n"
-                "trues.replace(str_falses);\n"
-                "trues.replace(u_A_falses);\n"
-                "trues.replace(int_falses);\n"
-                "trues.replace(dec_falses);\n"
-                "trues.replace(dbl_falses);\n"
-                "trues.replace(bool_falses);\n"
+                "trues := trues.replace(str_falses);\n"
+                "trues := trues.replace(u_A_falses);\n"
+                "trues := trues.replace(int_falses);\n"
+                "trues := trues.replace(dec_falses);\n"
+                "trues := trues.replace(dbl_falses);\n"
+                "trues := trues.replace(bool_falses);\n"
                 "str_falses := nil;\n"
                 "u_A_falses := nil;\n"
                 "int_falses := nil;\n"
                 "dec_falses := nil;\n"
                 "dbl_falses := nil;\n"
                 "bool_falses := nil;\n"
-                "trues.access(BAT_READ);\n");
+                "trues := trues.access(BAT_READ);\n");
     }
     milprintf(f,
             "iter := iter_count.mark(0@0).reverse();\n"
@@ -4647,9 +4639,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "pruned_input := nil;\n"
                 "iter := iter_item.mark(0@0).reverse();\n"
                 "item_str := iter_item.reverse().mark(0@0).reverse();\n"
-            "} "
-            "else\n"
-            "{\n"
+            "} else {\n"
                 "var kind_attr := kind.get_type(ATTR);\n"
                 /* only attributes */
                 "if (kind_attr.count() = kind.count())\n"
@@ -4661,9 +4651,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                                          "ws.fetch(PROP_VAL));\n"
                     "item := nil;\n"
                     "frag := nil;\n"
-                "} "
-                "else\n"
-                "{\n"
+                "} else {\n"
                     /* handles attributes and elements */
                     /* get attribute string values */
                     "kind_attr := kind_attr.mark(0@0).reverse();\n"
@@ -5292,8 +5280,7 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
     }
 
     milprintf(f,
-            "} else\n"
-            "{ # %s\n"
+            "} else { # %s\n"
             "var min := min (kind%03u.min(), kind.min());\n"
             "var max := max (kind%03u.max(), kind.max());\n"
             "var diff := max - min;\n"
@@ -5608,8 +5595,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "difference := nil;\n"
                 "strings := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
-                "} "
-                "else {\n"
+                "} else {\n"
                 "strings := item%s%03u;\n"
                 "}\n",
                 xqfunc, opt_arity ? ", string" : "",
@@ -5628,8 +5614,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "difference := nil;\n"
                 "patterns := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
-                "} "
-                "else {\n"
+                "} else {\n"
                 "patterns := item%s%03u;\n"
                 "}\n"
                 "# replace empty sequences with empty strings\n"
@@ -5651,8 +5636,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "difference := nil;\n"
                 "replacements := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
-                "} "
-                "else {\n"
+                "} else {\n"
                 "replacements := item%s%03u;\n"
                 "}\n",
                 counter, cur_level, 
@@ -5673,8 +5657,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "difference := nil;\n"
                 "flagss := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
-                "} "
-                "else {\n"
+                "} else {\n"
                 "flagss := item%s;\n"
                 "}\n",
                 cur_level,
@@ -6747,13 +6730,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                                       "ws.fetch(WS_FRAG).reverse().mirror(), "
                                       "GE).{max}();\n"
                 "item := item.reverse().mark(0@0).reverse();\n"
-                "}\n"
                 /* retrieve only document nodes */
-                "else { if (transient_nodes.count() = 0) {\n"
+                "} else { if (transient_nodes.count() = 0) {\n"
                 "item := item.project(0@0);\n"
-                "}\n"
                 /* retrieve transient and document nodes */
-                "else {\n"
+                "} else {\n"
                 "var t_item := transient_nodes.leftfetchjoin(item);\n"
                 "var t_iter := transient_nodes.leftfetchjoin(iter);\n"
                 "t_item := leftthetajoin(t_item, "
@@ -6996,8 +6977,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "difference := nil;\n"
                 "strings := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
-                "} "
-                "else {\n"
+                "} else {\n"
                 "strings := item%s%03u;\n"
                 "}\n",
                 counter, cur_level, 
@@ -7015,8 +6995,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "difference := nil;\n"
                 "search_strs := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
-                "} "
-                "else {\n"
+                "} else {\n"
                 "search_strs := item%s;\n"
                 "}\n",
                 cur_level,
@@ -7434,8 +7413,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "difference := nil;\n"
                 "item_result := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
-                "} "
-                "else {\n"
+                "} else {\n"
                 "item_result := item%s%03u;\n"
                 "}\n"
                 "iter := loop%03u;\n"
@@ -8308,22 +8286,22 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             {
                 milprintf(f,
                         /* generate a max value */
-                        "order.access(BAT_APPEND);\n"
+                        "order := order.access(BAT_APPEND);\n"
                         "order := order.insert(loop%03u.reverse()"
                                               ".kdiff(iter.reverse())"
                                               ".project(max(order)+1));\n"
-                        "order.access(BAT_READ);\n",
+                        "order := order.access(BAT_READ);\n",
                         cur_level);
             }
             else
             {
                 milprintf(f,
                         /* generate a min value */
-                        "order.access(BAT_APPEND);\n"
+                        "order := order.access(BAT_APPEND);\n"
                         "order := order.insert(loop%03u.reverse()"
                                               ".kdiff(iter.reverse())"
                                               ".project(cast(nil,ttype(order))));\n"
-                        "order.access(BAT_READ);\n",
+                        "order := order.access(BAT_READ);\n",
                         cur_level);
             }
             milprintf(f,
@@ -10249,7 +10227,6 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
                     PFarray (sizeof (var_info *)),
                     PFarray (sizeof (var_info *)),
                     0);
-
     milprintf(f,
             "# MODULE DECLARATIONS\n"
             "module(\"pathfinder\");\n"
@@ -10277,8 +10254,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "  var var_usage := bat(oid,oid);\n"); /* [vid, fid] */
     get_var_usage (f, c, way, counter);
     milprintf(f,
-            "  var_usage := var_usage.unique().reverse();\n"
-            "  var_usage.access(BAT_READ);\n"
+            "  var_usage := var_usage.unique().reverse().access(BAT_READ);\n"
             "  vu_fid := var_usage.mark(1000@0).reverse();\n"
             "  vu_vid := var_usage.reverse().mark(1000@0).reverse();\n"
             "  var_usage := nil;\n"

@@ -51,17 +51,50 @@
  */
 opt_name_t name_if, name_else;
 
-/* opt_append(): append stmt either to preamble (proc,module) or normal (MIL query) buf 
+
+#define APPEND_INIT(o,sec,dst,end)						\
+	{ if (o->buf[sec] == NULL) return;					\
+	  dst = o->buf[sec] + o->off[sec]; 					\
+	  end = o->buf[sec] + o->len[sec] - 2; }
+#define APPEND_PUTC(o,sec,c,dst,end)						\
+	{ if (dst >= end) { 							\
+		o->off[sec] = dst - o->buf[sec];				\
+		o->len[sec] += (o->len[sec]<1024)?1024:o->len[sec];		\
+		o->buf[sec] = (char*) PF_REALLOC(o->buf[sec], o->len[sec]);	\
+		APPEND_INIT(o,sec,dst,end);					\
+	  } *dst++ = c; }
+
+/* opt_append(): append stmt (with proper indenting) to the active section (prologue,query,epilogue) 
  */
-static void opt_append(opt_t* o, char* stmt, int sec) {
-	int len = strlen(stmt);
-	if (o->off[sec] + len >= o->len[sec]) {
-		o->len[sec] += o->len[sec] + len+1;
-		o->buf[sec] = (char*) PF_REALLOC(o->buf[sec], o->len[sec]);
+static void opt_append(opt_t* o, char* src, int newline, int sec, int scope) {
+	char *dst, *end;
+	APPEND_INIT(o,sec,dst,end);
+	if ((dst > o->buf[sec]) & (dst[-1] != '\n') & newline) 
+		APPEND_PUTC(o,sec,'\n',dst,end);
+	while(*src) {
+		int nocomment = 1;
+		if (scope >= 0) {
+			int i; /* indent */
+			/* skip whitespace at start of line */
+			while((*src == ' ') | (*src == '\t') | (*src =='\n')) src++;
+			if (*src == '}') scope--;
+			for(i=0; *src && i<scope; i++) 
+				APPEND_PUTC(o,sec,' ',dst,end);
+		} 
+		while(*src) { /* write out one line */
+			char c = *src++;
+			nocomment &= (c == '#'); 
+			APPEND_PUTC(o,sec,c,dst,end);
+			if (nocomment & ((c == '{') | (c == '}'))) { 
+				APPEND_PUTC(o,sec,'\n',dst,end);
+			} else if (c != '\n') continue;
+			break;
+		}
 	}
-	memcpy(o->buf[sec] + o->off[sec], stmt, len+1);
-	o->off[sec] += len;
+	o->off[sec] = dst - o->buf[sec];
+	*dst = 0;
 }
+
 
 /* opt_findvar(): find a variable on the stack 
  */ 
@@ -102,13 +135,24 @@ static int opt_setname(char *p, opt_name_t *name) {
 /* opt_elim(): can a MIL statement be pruned? If so; do by commenting out 
  */
 static void opt_elim(opt_t* o, unsigned int stmt) {
-	if (o->stmts[stmt].used == 0 && o->stmts[stmt].inactive && o->curvar+1 < OPT_VARS) { 
+	unsigned int assigns_to = o->stmts[stmt].assigns_to;
+	if ((assigns_to < 32768) & (o->stmts[stmt].used == 0) & o->stmts[stmt].inactive & (o->curvar+1 < OPT_VARS)) { 
 		char *p = o->stmts[stmt].mil;
+
+		o->stmts[stmt].assigns_to |= 32768; /* this ensures we kill the statement only once */
+
+		/* decrease the use count of the var declaration statement */
+		if ((o->stmts[stmt].assigns_nr > 0) & 
+	 	    (o->stmts[assigns_to].stmt_nr == o->stmts[stmt].assigns_nr))
+		{
+			o->stmts[assigns_to].used--;
+		}
 
 		if (!o->stmts[stmt].nilassign) {
 			/* eliminate dead code (comment out ) */
 			if (p[0] == ':' && p[1] == '=') {
 				*p++ = ';'; /* special case: "var x := y" =>  "var x ;" */
+				*p++ = '\n'; 
 			} 
 			*p = 0;
 			o->stmts[stmt].delchar = 0;
@@ -117,8 +161,7 @@ static void opt_elim(opt_t* o, unsigned int stmt) {
 		while(o->stmts[stmt].refs > 0) {
 			int i = --(o->stmts[stmt].refs);
 			if (o->stmts[o->stmts[stmt].refstmt[i]].stmt_nr <= stmt) {
-				if (o->stmts[o->stmts[stmt].refstmt[i]].used < 65535)
-					o->stmts[o->stmts[stmt].refstmt[i]].used--;
+				o->stmts[o->stmts[stmt].refstmt[i]].used--;
 				opt_elim(o, o->stmts[stmt].refstmt[i]);
 			}
 		}
@@ -137,6 +180,19 @@ static void opt_elimvar(opt_t *o, unsigned int varnr) {
 		}
 		o->vars[varnr].lastset[i] = OPT_STMTS;
 	}
+	/* try to shrink the lastset list and setlo/sethi referring to it */
+	for(i=o->vars[varnr].setmax; i>0; i--)
+		if (o->vars[varnr].lastset[i-1] != OPT_STMTS) break;
+	if (i < o->vars[varnr].setmax) {
+		o->vars[varnr].setmax = i;
+		for(i=0; i<=cond; i++) {
+			if (o->vars[varnr].setlo[i] >= o->vars[varnr].setmax) {
+				o->vars[varnr].setlo[i] = o->vars[varnr].sethi[i] = 0;
+			} else if (o->vars[varnr].sethi[i] > o->vars[varnr].setmax) {
+				o->vars[varnr].sethi[i] = o->vars[varnr].setmax;
+			}
+		}
+	}
 }
 
 /* opt_endscope(): when exiting a scope; destroy all varables defined in it 
@@ -151,16 +207,26 @@ static void opt_endscope(opt_t* o, unsigned int scope) {
  */
 static void opt_purgestmt(opt_t* o, unsigned int stmt) {
 	if (o->stmts[stmt].mil) { 
+		char delchar = o->stmts[stmt].delchar;
 		char *p = o->stmts[stmt].mil;
 		if (p) {
+				
 			if (*p && *p != ':' && *p != ';') {
-				opt_append(o, p, o->stmts[stmt].sec);
+				/* usage check: kill vardefs that were never used (and their nil-assigns) */
+				int assigns_to = o->stmts[stmt].assigns_to&32767;
+				if ((o->stmts[stmt].assigns_nr > 0) &
+				    (o->stmts[assigns_to].stmt_nr == o->stmts[stmt].assigns_nr) &
+                                    (o->stmts[assigns_to].used == 0)) return;
+
+				opt_append(o, o->stmts[stmt].mil, 0, o->stmts[stmt].sec, o->stmts[stmt].scope);
 			}
-			if (o->stmts[stmt].delchar) {
-				char buf[2]; 
-				buf[0] = o->stmts[stmt].delchar; 
-				buf[1] = 0;
-				opt_append(o, buf, o->stmts[stmt].sec);
+			if (delchar) {
+				int eos = (delchar == ';');
+				char buf[3]; 
+				buf[0] = delchar;
+				buf[1] = '\n';
+				buf[2] = 0;
+				opt_append(o, buf, !eos, o->stmts[stmt].sec, eos?-1:o->stmts[stmt].scope);
 			}
 		}
 		o->stmts[stmt].mil = NULL;
@@ -175,18 +241,17 @@ static void opt_assign(opt_t *o, opt_name_t *name, unsigned int curstmt) {
 	int i = opt_findvar(o, name);
 	/* we may only prune if the variable being overwritten comes from a unconditional scope */
 	if (i >= 0) {
+		unsigned int def_stmt = o->vars[i].def_stmt;
 		unsigned int cond = OPT_COND(o);
 		opt_elimvar(o, i); /* variable is overwritten; try to eliminate previous assignment */
 
 		/* in this conditional scope, make curstmt the only valid assignment */
-		if (o->vars[i].setlo[cond] == 0) {
+		if (o->vars[i].sethi[cond] == 0) {
 			o->vars[i].setlo[cond] = o->vars[i].setmax;
-		} else {
-			o->vars[i].setmax = o->vars[i].setlo[cond];
 		}
 		if (o->vars[i].setmax == OPT_REFS) {
 			/* overflow; keep this statement no matter what */
-			o->stmts[curstmt].used = 65535;
+			o->stmts[curstmt].used = 1<<31;
 			o->vars[i].setlo[cond] = o->vars[i].sethi[cond] = 0;
 		} else {
 			o->vars[i].lastset[o->vars[i].setmax] = curstmt;
@@ -194,6 +259,13 @@ static void opt_assign(opt_t *o, opt_name_t *name, unsigned int curstmt) {
 			o->vars[i].sethi[cond] = ++(o->vars[i].setmax);
 		}
 		o->vars[i].always |= (1 << cond);
+
+		/* increase the use count of the var declaration statement */	
+		if (o->stmts[def_stmt].stmt_nr == o->vars[i].def_stmt_nr) {
+			o->stmts[curstmt].assigns_to = def_stmt;
+			o->stmts[curstmt].assigns_nr = o->stmts[def_stmt].stmt_nr;
+			o->stmts[def_stmt].used++;
+		}
 	}
 }
 
@@ -212,8 +284,7 @@ static void opt_usevar(opt_t *o, unsigned int var_nr, unsigned int stmt_nr) {
 			    o->vars[var_nr].stmt_nr[i] == o->stmts[o->vars[var_nr].lastset[i]].stmt_nr)
 			{
 				int ref_nr = o->stmts[stmt_nr].refs;
-				if (o->stmts[o->vars[var_nr].lastset[i]].used < 65535) 
-					o->stmts[o->vars[var_nr].lastset[i]].used++;
+				o->stmts[o->vars[var_nr].lastset[i]].used++;
 				if (ref_nr+1 < OPT_REFS) {
 					o->stmts[stmt_nr].refstmt[ref_nr] = o->vars[var_nr].lastset[i];
 					o->stmts[stmt_nr].refs++;
@@ -252,27 +323,30 @@ static void opt_end_if(opt_t *o) {
 /* opt_end_else(): close an if-then-else-block (do conditional variable assignment bookkeeping)
  */
 static void opt_end_else(opt_t *o) {
-	unsigned int i, cond = OPT_COND(o), cond_if = (cond+2)&(~1), cond_else = cond_if+1;
+	unsigned int i, j, k, cond = OPT_COND(o), cond_if = (cond+2)&(~1), cond_else = cond_if+1;
 	for(i=0; i<o->curvar; i++) {
-		if (o->vars[i].sethi[cond_else]) {
-			if ((o->vars[i].always & (1<<cond_if)) && (o->vars[i].always & (1<<cond_else))) {
-				/* undo effects of opt_end_if first */
-				o->vars[i].sethi[cond] = o->vars[i].setlo[cond_if];
-
-				/* variable was always overwritten in both child branches => elim */
-				o->vars[i].always |= (1<< cond);
-				opt_elimvar(o, i); 
-
-				/* live range of last assigments are union of if- and else-branch */
-				o->vars[i].setlo[cond] = o->vars[i].setlo[cond_if];
-				o->vars[i].sethi[cond] = o->vars[i].sethi[cond_else];
-			} else {
-				/* live range of last assigments are union of parent and else-branch */
-				if (o->vars[i].sethi[cond] == 0) {
-					o->vars[i].setlo[cond] = o->vars[i].setlo[cond_else];
-				}
-				o->vars[i].sethi[cond] = o->vars[i].sethi[cond_else];
+		if ((o->vars[i].always & (1<<cond_if)) && (o->vars[i].always & (1<<cond_else))) {
+			/* variable was always overwritten in both child branches => elim */
+			o->vars[i].always |= (1<< cond);
+			o->vars[i].setmax = o->vars[i].setlo[cond_if];
+			opt_elimvar(o, i); 
+			k = o->vars[i].setlo[cond] = o->vars[i].setmax;
+			for(j=o->vars[i].setlo[cond_if]; j<o->vars[i].sethi[cond_if]; j++, k++) {		
+				o->vars[i].lastset[k] = o->vars[i].lastset[j];
+				o->vars[i].stmt_nr[k] = o->vars[i].stmt_nr[j];
 			}
+			for(j=o->vars[i].setlo[cond_else]; j<o->vars[i].sethi[cond_else]; j++, k++) {		
+				o->vars[i].lastset[k] = o->vars[i].lastset[j];
+				o->vars[i].stmt_nr[k] = o->vars[i].stmt_nr[j];
+			}
+			o->vars[i].sethi[cond] = o->vars[i].setmax = k;
+		} else if (o->vars[i].sethi[cond_if] || o->vars[i].sethi[cond_else]) {
+			/* live range of last assigments are union of parent, if- and else-branch */
+			if (o->vars[i].sethi[cond] == 0)
+				o->vars[i].setlo[cond] = o->vars[i].sethi[cond_if]?
+						o->vars[i].setlo[cond_if]:o->vars[i].setlo[cond_else];
+			o->vars[i].sethi[cond] = o->vars[i].sethi[cond_else]?
+					o->vars[i].sethi[cond_else]:o->vars[i].sethi[cond_if];
 		}
 	}
 }
@@ -281,25 +355,36 @@ static void opt_end_else(opt_t *o) {
  */
 opt_t *opt_open(int optimize) {
 	opt_t *o = (opt_t*) PF_MALLOC(sizeof(opt_t));
-	memset(o, 0, sizeof(opt_t));
-	o->optimize = optimize;
-	opt_setname("if", &name_if);
-	opt_setname("else", &name_else);
-	o->buf[0] = (char*) PF_MALLOC(o->len[0] = 1024);
-	o->buf[1] = (char*) PF_MALLOC(o->len[1] = 2048*1024);
-	o->buf[2] = (char*) PF_MALLOC(o->len[2] = 1024);
+	if (o) {
+		memset(o, 0, sizeof(opt_t));
+		o->optimize = optimize;
+		opt_setname("if", &name_if);
+		opt_setname("else", &name_else);
+		o->buf[OPT_SEC_PROLOGUE] = (char*) PF_MALLOC(o->len[OPT_SEC_PROLOGUE] = 1024);
+		o->buf[OPT_SEC_QUERY] = (char*) PF_MALLOC(o->len[OPT_SEC_QUERY] = 2048*1024);
+		o->buf[OPT_SEC_EPILOGUE] = (char*) PF_MALLOC(o->len[OPT_SEC_EPILOGUE] = 1024);
+		if (o->buf[OPT_SEC_PROLOGUE]) o->buf[OPT_SEC_PROLOGUE][0] = 0;
+		if (o->buf[OPT_SEC_QUERY]) o->buf[OPT_SEC_QUERY][0] = 0;
+		if (o->buf[OPT_SEC_EPILOGUE]) o->buf[OPT_SEC_EPILOGUE][0] = 0;
+	}
  	return o;
 }
 
 /* opt_close(): flush all output stmts; and clean up
  */
 void opt_close(opt_t *o, char** prologue, char** query, char** epilogue) {
-	int i; 
+	unsigned int i = 0; 
 	opt_endscope(o, 0); /* destroy all variables (and elim dead code) */
 
 	/* push all stmts out of the buffer */
-	for(i=0; i<OPT_STMTS; i++) {
-		opt_purgestmt(o, (i + o->curstmt) % OPT_STMTS);
+	if (o->stmts[OPT_STMTS-1].stmt_nr) {
+		for(i=0; i<OPT_STMTS; i++) { /* buffer full: round-robin */
+			opt_purgestmt(o, (i + o->curstmt) % OPT_STMTS);
+		}
+	} else {
+		for(i=0; i<o->curstmt; i++) {
+			opt_purgestmt(o, i);
+		}
 	}
 	/* return the three buffers */
 	*prologue = o->buf[OPT_SEC_PROLOGUE];
@@ -308,67 +393,84 @@ void opt_close(opt_t *o, char** prologue, char** query, char** epilogue) {
 	PF_FREE(o);
 }
 
+#define opt_whitespace(c) (((c) == ' ') | ((c) == '\t') | ((c) == '\n') | ((c) == '#'))
+/* opt_skip(): skip over whitespace and comments
+ */
+char* opt_skip(char*p) {
+	int skip = -1;
+	do {
+    		if (p[++skip] == 0) break;
+    		if (p[skip] == '#')  { /*skip comment until end of line */
+			while(p[++skip] != '\n') if (p[skip] == 0) return p+skip;
+		}
+	} while (opt_whitespace(p[skip]));
+	return p+skip;
+}
+
 /* opt_mil(): accept a chunk of unoptimized MIL.
  */
-void opt_mil(opt_t *o, char* milbuf) {
+int opt_mil(opt_t *o, char* milbuf) {
 	opt_name_t name, assign;
 	char *p = milbuf;
 
+	if (o == NULL) {
+		return -1;
+	}
 	if (o->optimize == 0) {
-		opt_append(o, milbuf, o->sec);
-		return;
+		opt_append(o, milbuf, 0, o->sec, -1);
+		return 0;
 	} 
 	name.prefix[0] = 0;
 	assign.prefix[0] = 0;
-	while(*p) {
+  	while((p = opt_skip(p))[0]) {
 		/* add a new yet unused stmt (MIL statement) */
-		unsigned int inc, curstmt = o->curstmt % OPT_STMTS;
+		unsigned int curstmt = o->curstmt % OPT_STMTS;
 		unsigned int var_statement = 0;
 		opt_purgestmt(o, curstmt); /* make room if necessary */
 		o->stmts[curstmt].mil = p;
 		o->stmts[curstmt].used = 0;
+		o->stmts[curstmt].scope = o->scope;
 		o->stmts[curstmt].inactive = 0;
 		o->stmts[curstmt].refs = 0;
 		o->stmts[curstmt].delchar = 0;
-		o->stmts[curstmt].stmt_nr = o->curstmt;
+		o->stmts[curstmt].stmt_nr = ++(o->curstmt);
 		o->stmts[curstmt].sec = o->sec;
-		o->curstmt++;
+		o->stmts[curstmt].assigns_to = 0;
+		o->stmts[curstmt].assigns_nr = 0;
 
 		/* extract the next statement from the MIL block, 
 		 * .. detecting var decls, assignments, open/close blocks and var usage 
 		 */
-		for(; *p && *p != ';'; p += inc) {
-			inc = 1;
-			if (p[0]  == '#') { /* ignore comment stmts */
-				while(p[inc] && p[inc] != '\n') inc++;
-			} else if (p[0] == '"' || p[0] == '\'') { /* skip strings as they may contain ';' chars */
-				int quote = p[0], escape = 0;
-				while(p[inc]) {
+		while(*p && *p != ';') {
+			p = opt_skip(p); /* skip whitespace & comment */
+			if ((p[0] == '"') | (p[0] == '\'')) { /* skip strings as they may contain ';' chars */
+				int quote = *p++, escape = 0;
+				while(*p) {
 					if (escape) {
 					    escape = 0;
-					} else if (p[inc] == '\\') {
+					} else if (*p == '\\') {
 					    escape = 1;
 					}
-					if (p[inc++] == quote && !escape) break;
+					if ((*p++ == quote) & !escape) break;
 				}
 			} else if (p[0] == ':' && p[1] == '=') { /* a mil assignment; delay registration to statement end */
 				if (assign.prefix[0] == 0) {
 					assign = name; 
 					if (var_statement) break; /* break up var x := y; so we can cut off := y */
 				}
-				inc = 2;
-				while((p[inc] == ' ') | (p[inc] == '\t') | (p[inc] == '\n')) inc++;
-				if ((p[inc] == 'n') && (p[inc+1] == 'i') && (p[inc+2] == 'l')) {
+				p = opt_skip(p+2); /* skip whitespace & comment */
+				if ((p[0] == 'n') && (p[1] == 'i') && (p[2] == 'l')) {
 					o->stmts[curstmt].nilassign = 1; /* nil assignments should never be pruned! */
+					p += 3;
 				}
-			} else if (p[0]  == '{') {
+			} else if (p[0] == '{') {
 				int j = 1;
-				while((p[j] >= 'a' && p[j] <= 'z') || (p[j] >= 'A' && p[j] <= 'Z') || p[j] == '_') j++; 
+				while(((p[j] >= 'a') & (p[j] <= 'z')) | ((p[j] >= 'A') & (p[j] <= 'Z')) | (p[j] == '_')) j++; 
 				if (p[j] == '}') {
-					inc = j+1; continue; /* detect aggregates */
+					p += j+1; continue; /* detect aggregates */
 				}
 				o->scope++;
-				if ((o->if_statement || o->else_statement) && o->condlevel+1 < OPT_CONDS) {
+				if ((o->if_statement | o->else_statement) & (o->condlevel+1 < OPT_CONDS)) {
 					o->condscopes[o->condlevel++] = o->scope;
 					o->condifelse[o->condlevel] = o->else_statement;
 					opt_start_cond(o, OPT_COND(o));
@@ -376,43 +478,52 @@ void opt_mil(opt_t *o, char* milbuf) {
 				}
 				break; /* blocks are separate statements */
 			} else if (p[0]  == '}') {
+				char *q = opt_skip(p+1); /* peek over whitespace & comment */
 				opt_endscope(o, o->scope); /* destroy local variables */
 				o->scope--;
 				if (o->condlevel > 0 && o->condscopes[o->condlevel-1] == o->scope+1) {
 					if (o->condifelse[o->condlevel--]) {
 						opt_end_else(o); /* if-then-else block was closed */
-					} else {
-						opt_end_if(o); /* if-then block was closed */
+					} else if ((q[0] != 'e') || (q[1] != 'l') || 
+					           (q[2] != 's') || (q[3] != 'e') || !opt_whitespace(q[4]))
+					{
+						opt_end_if(o); /* if-then block was closed (and no else opened) */
 					}
 				}
 				break; /* blocks are separate statements */
 			} else if (((p[0] == 'v') | (p[0] == 'V')) && 
 				   ((p[1] == 'a') | (p[1] == 'A')) && 
-				   ((p[2] == 'r') | (p[2] == 'R')) && 
-				   ((p[3] == ' ') | (p[3] == '\t') | (p[3] == '\n'))) 
+				   ((p[2] == 'r') | (p[2] == 'R')) && opt_whitespace(p[3]))
 			{
 				var_statement = 1;
-				inc = 4;
-				while((p[inc] == ' ') | (p[inc] == '\t') | (p[inc] == '\n')) inc++;
-				inc += opt_setname(p+inc, &name);
+				p = opt_skip(p+3); /* skip whitespace & comment */
+				p += opt_setname(p, &name);
 
 				if (o->curvar+1 < OPT_VARS) {
 					/* put a new variable on the stack */
 					memset(o->vars+o->curvar, 0, sizeof(opt_var_t));
 					o->vars[o->curvar].name = name;
 					o->vars[o->curvar].scope = o->scope;  
+					o->vars[o->curvar].def_stmt = curstmt;
+					o->vars[o->curvar].def_stmt_nr = o->curstmt;
 					o->curvar++;
+
+					/* mark the var_statement as assigning to itself (allows usage check later)*/
+					o->stmts[curstmt].assigns_to = curstmt;
+					o->stmts[curstmt].assigns_nr = o->curstmt;
 				}
 			} else if ((p[0] == '_') | ((p[0] >= 'a') & (p[0] <= 'z')) | ((p[0] >= 'A') & (p[0] <= 'Z'))) { 
-				inc = opt_setname(p + (p[0] == '{'), &name);
+				p += opt_setname(p, &name);
 				o->if_statement |= (name.prefix[0] == name_if.prefix[0]);
 				o->else_statement |= (name.prefix[0] == name_else.prefix[0]);
-				while((p[inc] == ' ') | (p[inc] == '\t') | (p[inc] == '\n')) inc++;
-				if ((p[inc] != '(') & (p[inc] != ':')) {
+				p = opt_skip(p); /* skip comment stmts */
+				if ((*p != '(') & (*p != ':')) {
 					/* detect use of a mil variable */
 					int i = opt_findvar(o, &name); 
 					if (i >= 0) opt_usevar(o, i, curstmt);
 				}
+			} else if (p[0]) {
+				p++; /* character without special meaning for us */
 			}
 		}
 		if (!var_statement) {
@@ -426,4 +537,7 @@ void opt_mil(opt_t *o, char* milbuf) {
 			*p++ = 0; 
 		}
 	}
+	return (o->buf[OPT_SEC_PROLOGUE] == NULL) | 
+	       (o->buf[OPT_SEC_QUERY] == NULL) |
+	       (o->buf[OPT_SEC_EPILOGUE] == NULL);
 }
