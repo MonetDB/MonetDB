@@ -595,6 +595,7 @@ char **getHelp(Module m, str pat)
 	int len1 = 0,len2 = 0;
 	char *t, **msg, buf[BUFSIZ];
 	int top=0, i,j,k, sig = 0, doc = 0;
+	int dot;
 
 #ifdef MAL_SCOPE_DEBUG 
 	printf("showHelp: %s",pat);
@@ -602,6 +603,7 @@ char **getHelp(Module m, str pat)
 	msg= (char **) GDKmalloc( 1000 * sizeof(str));
 	msg[top]=0;
 
+	dot= strchr(pat,'.') != 0;
 	t = strchr(pat,')');
 	if( t) { doc++; *t=0; }
 	t= strchr(pat,'(');
@@ -693,8 +695,10 @@ char **getHelp(Module m, str pat)
 #ifdef MAL_SCOPE_DEBUG 
 				printf("%s",buf);
 #endif
-				msg[top++] = GDKstrdup(buf);
-				msg[top] = 0;
+				if( (dot && strlen(m->name)==len1) || dot == 0 ){
+					msg[top++] = GDKstrdup(buf);
+					msg[top] = 0;
+				}
 				if( top ==999) return msg;
 			}
 		}
