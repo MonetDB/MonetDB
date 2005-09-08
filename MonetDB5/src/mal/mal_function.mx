@@ -54,7 +54,7 @@ be geared towards fast execution and to ease symbolic debugging.
 /* #define DEBUG_CLONE */
 
 mal_export Symbol   newFunction(str nme,int kind);
-mal_export void     renameFunction(str old,str modnme, str new);
+mal_export void     renameFunction(str oldmod, str oldfcn,str modnme, str new);
 mal_export void	    clearFcn(MalBlkPtr m);
 mal_export int      getPC(MalBlkPtr mb, InstrPtr p);
 
@@ -123,22 +123,26 @@ Symbol  getFunctionSymbol(Module scope, InstrPtr p){
 @-
 Remame all incarnations of a function.
 @c
-void renameFunction(str old, str modnme, str name){
+void renameFunction(str oldmod, str oldfcn, str modnme, str name){
     Module root,scope;
     Symbol s,prev;
     InstrPtr p;
     root= scope= getClient()->nspace;
     while( scope != NULL){
-        s= scope->subscope[(int)(*old)];
+		if( oldmod && strcmp(oldmod, scope->name) ){
+			scope= scope->outer;
+			continue;
+		}
+        s= scope->subscope[(int)(*oldfcn)];
         prev= NULL;
         while(s != NULL){
-            if( idcmp(s->name,old) == 0) break;
+            if( idcmp(s->name,oldfcn) == 0) break;
             prev= s;
             s= s->skip;
         }
         if( s) {
             if( prev == 0){
-                scope->subscope[(int)(*old)]= s->skip;
+                scope->subscope[(int)(*oldfcn)]= s->skip;
             } else {
                 prev->peer= s->skip;
             }

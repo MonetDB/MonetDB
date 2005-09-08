@@ -86,6 +86,7 @@ request and each time we encounter EOL.
 #include "mal_interpreter.h"    /* for showErrors() */
 #include "mal_instruction.h"    /* for pushEndInstruction(), findVariableLength() */
 #include "mal_namespace.h"
+#include "mal_utils.h"
 
 #define FATALINPUT MAXERRORS+1
 #define NL(X) ((X)=='\n' || (X)=='\r')

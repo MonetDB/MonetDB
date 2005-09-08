@@ -37,7 +37,7 @@ mal_export void slash_2_dir_sep(str fname);
 mal_export void malInclude(Client c, str name, str libname, int listing);
 mal_export stream *malOpenSource(str fname);
 mal_export str malLoadScript(str name, bstream **fdin);
-mal_export void compileString(Client c, str s);
+mal_export str compileString(Symbol *fcn, Client c, str s);
 mal_export void callString(Client c, str s, int listing);
 #endif /*  _MAL_IMPORT_H */
 @-
@@ -225,8 +225,8 @@ phase. This is performed in the context of an a priori defined
 stack frame. Life becomes a little complicated when the script contains
 a definition.
 @c
-void
-compileString(Client c, str s){
+str
+compileString(Symbol *fcn, Client c, str s){
 	bstream *oldfdin = c->fdin;
 	int oldyycur = c->yycur;
 	int oldlisting = c->listing;
@@ -263,13 +263,29 @@ compileString(Client c, str s){
 	buffer_init(b, qry, len);
 	pushClientInput(c, bstream_create(buffer_rastream(b, "compileString"), b->len), 0, "");
 	initClientPrg(c, "main");	/* create new context */
-	@:runPhase(READER,restoreClient1)@
-	@:runPhase(PARSER,restoreClient1)@
+	/* runPhase(READER,restoreClient1) */
+    if(msg== MAL_SUCCEED && c->phase[READER] && 
+		(msg= (str) (*c->phase[READER])(c)) ){
+		@:restoreClient1()@
+		return msg;
+    }
+	/* runPhase(PARSER,restoreClient1) */
+    if(msg== MAL_SUCCEED && c->phase[PARSER] && 
+		(msg= (str) (*c->phase[PARSER])(c)) ){
+		/* error occurred  and ignored */
+		/* stream_printf(GDKout,"%s",msg);*/
+		@:restoreClient1()@
+		return msg;
+    }
+	*fcn= c->curprg;
 	/* restore IO channel */
 	@:restoreClient1()@
 	c->listing = oldlisting;
-	@:restoreClient2()@
+    c->glb = oldglb;
+    c->nspace = oldnspace;
+    c->curprg = oldprg;
 	GDKfree(qry);
+	return MAL_SUCCEED;
 }
 
 void
