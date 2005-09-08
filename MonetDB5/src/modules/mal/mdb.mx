@@ -440,7 +440,7 @@ MDBlist3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	s = findMALSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
-		GDKerror("@1:Could not find %s.%s\n", modnme, fcnnme);
+		GDKerror("mdb.list:Could not find %s.%s\n", modnme, fcnnme);
 	else
 		printFunction(c->fdout, s->def, LIST_INPUT);
 	(void) mb;		/* fool compiler */
@@ -468,7 +468,7 @@ MDBlist3Detail(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	s = findMALSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
-		GDKerror("@1:Could not find %s.%s\n", modnme, fcnnme);
+		GDKerror("mdb.list:Could not find %s.%s\n", modnme, fcnnme);
 	else
 		printFunction(c->fdout, s->def, LIST_MAL_ALL);
 	(void) mb;		/* fool compiler */
@@ -496,7 +496,7 @@ MDBvar3(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	s = findMALSymbol(putName(modnme, strlen(modnme)), putName(fcnnme, strlen(fcnnme)));
 	if (s == NULL)
-		GDKerror("@1:Could not find %s.%s\n", modnme, fcnnme);
+		GDKerror("mdb.var:Could not find %s.%s\n", modnme, fcnnme);
 	else
 		printStack(c->fdout, s->def, (s->def == mb ? stk : 0));
 	(void) mb;

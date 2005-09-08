@@ -90,7 +90,7 @@ It is typically used to initialize a context, therefore we need
 to provide the runtime context. For the call variants we have
 to determine an easy way to exchange the parameter/return values.
 @mal
-command register(m:str,f:str,code:str):void
+command register(m:str,f:str,code:str,help:str):void
 address CMDregisterFunction
 comment"Compile the code string and register it as a MAL function";
 
@@ -119,7 +119,7 @@ comment "Merge the instructions stored in the
 
 mal_export str CMDraise(str *ret, str *msg);
 mal_export str CMDassertProperty(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str CMDregisterFunction(int *ret, str *m, str *f, str *code);
+mal_export str CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help);
 mal_export str CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDevalFile(int *ret, str *fnme);
 mal_export str CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -159,39 +159,42 @@ identifier and argument value)
 str
 CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str src;
-	str buf = 0;
-	int len = 0;
 	str *s;
 
 	(void) mb;		/* fool compiler */
 	s = (str *) getArgReference(stk, pci, 1);
 	if (strlen(*s) == 0)
 		return MAL_SUCCEED;
-	src = (str) GDKmalloc(len = strlen(*s) + 3);
-	/* GDK_atom routine requires enclosing quotes */
-	strcpy(src, "\"");
-	strcat(src, *s);
-	strcat(src, "\"");
-	strFromStr(src, &len, &buf);
-
-	callString(getClient(), buf, FALSE);
-	GDKfree(src);
-	GDKfree(buf);
+	callString(getClient(), *s, FALSE);
 	return MAL_SUCCEED;
 }
 
 str 
-CMDregisterFunction(int *ret, str *m, str *f, str *code){
+CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help){
 	Client c;
-	(void) m;
-	(void) f;
+	Symbol sym= NULL;
+	MalBlkPtr mb;
+	InstrPtr sig;
+	str msg;
+	(void) m; (void) f;
+
 	c= getClient();
-	compileString(c,*code);
-	stream_printf(GDKout,"REGISTER FUNCITON\n");
-	printFunction(c->fdout, c->curprg->def,0);
+	msg= compileString(&sym, c,*code);
+	if( sym) {
+		stream_printf(GDKout,"REGISTER FUNCTIOn %s.%s\n",
+			moduleId(sym->def->stmt[0]), functionId(sym->def->stmt[0]));
+		mb= sym->def;
+		if( help)
+			mb->help= GDKstrdup(*help);
+		printFunction(c->fdout, mb,0);
+		sig= getSignature(sym);
+/*
+		renameFunction( moduleId(sig), functionId(sig), 
+			putName(*m, strlen(*m)), putName(*f,strlen(*f)));
+*/
+	}
 	*ret = 0;
-	return MAL_SUCCEED;
+	return msg;
 }
 str
 CMDevalFile(int *ret, str *fnme)
@@ -218,7 +221,10 @@ CMDevalFile(int *ret, str *fnme)
 
 	return MAL_SUCCEED;
 }
-
+@-
+Calling a BAT is simply translated into a concatenation of
+all the unquoted strings and then passing it to the callEval.
+@c
 str
 CMDcallBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
