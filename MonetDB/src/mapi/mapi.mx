@@ -34,6 +34,9 @@ This module contains a simple interface for network connections.
 	.COMMAND stream_until(Stream S,str stop) : str = stream_read_until;
 		"read a string from <S> until the <stop> word"
 
+	.BUILTIN milclient(stream in, stream out) : void = client; 
+		"mapi-client" 
+
 	.PRELUDE = mapi_prelude;
 	.EPILOGUE = mapi_epilogue;
 
@@ -969,6 +972,151 @@ stream_read_until(str *res, Stream *S, str stop)
 	}
 	return GDK_SUCCEED;
 }
+
+int
+client(Cntxt stk, YYSTREE lt, ValPtr res)
+{
+	ssize_t i = 0;
+	char buf[BUFSIZ + 1];
+	char *user, *passwd, *challenge;
+	int blocked = 0;
+
+	stream **In, **Out;
+	stream *in, *out;
+	bstream *rs;
+
+	Client client;
+
+	CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
+	/* get the streams from the argument list */
+	if (lt->cnt != 2) {
+		closeClient(client, 0);
+		return handle_argerror(res, lt->cnt, 2);
+	}
+	@:builtin_operand(0,TYPE_Stream,In)@
+	in = *In;
+	@:builtin_operand(1,TYPE_Stream,Out)@
+	out = *Out;
+	if (in == 0) {
+		GDKsyserror("client:stream-r problems\n");
+		closeClient(client, 0);
+		return GDK_FAIL;
+	}
+	if (out == 0) {
+		GDKsyserror("client:stream-w problems\n");
+		closeClient(client, 0);
+		return GDK_FAIL;
+	}
+
+	/* send challenge string, currently empty (disabled) */
+	challenge = "::mserver_mil:4\n";
+
+	snprintf(buf, 100, "%2u%s", (unsigned int)strlen(challenge), challenge);
+	stream_write(out, buf, strlen(buf), 1);
+
+	/* get user name */
+	user = buf;
+	for (i = 0; i < BUFSIZ; i++, user++) {
+		if (stream_read(in, user, 1, 1) < 0) {
+			closeClient(client, 0);
+			return GDK_FAIL;
+		}
+		if (*user== '\n')
+			break;
+	}
+	*user = 0;
+	user = buf;
+	passwd = strrchr(user, ':');
+	if (passwd && strncmp(passwd, ":blocked", 8) == 0) {
+		blocked = 1;
+		*passwd = 0;
+	}
+	passwd = strrchr(user, ':');
+	if (passwd) {
+		/* skip :'server string' only used for M5 */
+		*passwd = 0;
+	}
+
+	passwd = strchr(user, ':');
+	if (passwd) {
+		*passwd = 0;
+		passwd++;
+		user = GDKstrdup(buf);
+		passwd = GDKstrdup(passwd);
+	} else {
+		closeClient(client, 0);
+		return GDK_FAIL;
+	}
+
+	if (blocked) {
+		in = block_stream(stream_rstream(in));
+		out = block_stream(stream_wstream(out));
+
+		monetSetChannel(THRget(THRgettid()), in, out);
+	}
+
+	if (out == 0) {
+		GDKsyserror("client:stream-w problems\n");
+		GDKfree(user);
+		GDKfree(passwd);
+		closeClient(client, 0);
+		return GDK_FAIL;
+	}
+
+	rs = bstream_create(in, isa_block_stream(in) ? (128 * BLOCK) : 0);
+	/* TODO create a context here */
+	GDKfree(user);
+	GDKfree(passwd);
+
+	/* read all */
+	{ 
+	int go = 1;
+
+	rs->eof = 1;            /* force prompt on first iteration */
+	while(go) {
+		ValRecord v;
+		int err = 0;
+
+		/* skip whitespace */
+		while (rs->pos < rs->len && (isspace((int) (rs->buf[rs->pos])) || rs->buf[rs->pos] == ';'))
+		rs->pos++;
+
+               	if (rs->pos >= rs->len) {
+                	ssize_t rd;
+                
+                       	assert(rs->pos == rs->len);
+
+                       	if (rs->eof || !isa_block_stream(rs->s)) {
+				if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) != 1 || stream_flush(out)) {
+                                	go = FALSE;
+                                       	break;
+                               	}
+                               	rs->eof = 0;
+                       	}
+                       	if ((rd = bstream_next(rs)) <= 0) {
+                        	if (rd == 0 && rs->eof) {
+                               		/* we hadn't seen the EOF before, 
+						so just try again
+                                       		(this time with prompt) */
+                                        continue;
+                                }
+                                go = FALSE;
+                                break;
+                        }
+		}
+		v.vtype = TYPE_void;
+
+		err = interpret_str(stk, rs->buf+rs->pos, &v);
+		rs->pos = rs->len;
+	}
+	}
+
+	/* destroy context */
+	bstream_destroy(rs);
+	closeClient(client, 0); 	
+	return GDK_SUCCEED;
+}
+
 
 @}
 @- daemon initialization

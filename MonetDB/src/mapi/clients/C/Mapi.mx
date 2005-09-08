@@ -921,7 +921,7 @@ mapi_export MapiMsg mapi_destroy(Mapi mid);
 mapi_export MapiMsg mapi_start_talking(Mapi mid);
 mapi_export Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang);
 mapi_export Mapi mapi_connect_ssl(const char *host, int port, const char *username, const char *password, const char *lang);
-mapi_export stream **mapi_embedded_init(Mapi *midp);
+mapi_export stream **mapi_embedded_init(Mapi *midp, char *lang);
 mapi_export MapiMsg mapi_disconnect(Mapi mid);
 mapi_export MapiMsg mapi_reconnect(Mapi mid);
 mapi_export MapiMsg mapi_ping(Mapi mid);
@@ -2176,12 +2176,12 @@ mapi_connect_ssl(const char *host, int port, const char *username, const char *p
 }
 
 stream **
-mapi_embedded_init(Mapi *midp)
+mapi_embedded_init(Mapi *midp, char *lang)
 {
 	Mapi mid;
 	stream **streams;
 
-	mid = mapi_mapi(NULL, -1, "monetdb", "monetdb", "sql");
+	mid = mapi_mapi(NULL, -1, "monetdb", "monetdb", lang);
 	if (mid == NULL)
 		return NULL;
 	streams = malloc(2 * sizeof(*streams));
