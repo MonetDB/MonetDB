@@ -168,8 +168,6 @@ mal_command_generator(const char *text, int state)
 		}
 		msg = 0;
 	}
-
-
 	if( mdbSession() ){
 		while ( (name = mdb_commands[index++]) ){
 				if( @:tst(name,text,len)@ ) 
