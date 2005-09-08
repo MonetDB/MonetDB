@@ -59,7 +59,7 @@ stack depth 2
 [ "tst",  "0@0"				  ]
 [ "i",	  "2"				  ]
 [ "_2",	  "0"				  ]
-[ "_3",	  "\"stack depth %d\\\\n\""	  ]
+[ "_3",	  "\"stack depth %d\\n\""	  ]
 [ "t",	  "<view_stk_trace>"		  ]
 [ "_5",	  "0"				  ]
 [ "b0",	  "<view_stk_frame>"		  ]
