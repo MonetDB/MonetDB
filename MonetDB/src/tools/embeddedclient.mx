@@ -1,0 +1,189 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f embeddedclient
+@a K.S. Mullender
+@* Embedded MonetDB
+The purpose of this Embedded MonetDB is to illustrate how the
+code base can be easily linked with a stand-alone application.
+The current implementation uses a minimalistic approach, i.e.
+using the Mapi prototol to communicate between application thread
+and the database kernel.
+This communication is not optimized for speed. 
+
+An area that has undergone some tweaking for performance improvement
+are the large number of lock calls needed in the GDK kernel to safely run
+multiple clients against the database. 
+For direct linkage to an application we suggest to use the monet_embedded
+option, which allows just one mapi connection to be set up. This allows
+for removal of all lock calls in the kernel. This improves performance
+between 25-50%.
+@h
+#ifndef _EMBEDDEDCLIENT_H_
+#define _EMBEDDEDCLIENT_H_
+
+#include "monet_options.h"
+
+#ifdef _MSC_VER
+#ifndef LIBEMBEDDEDCLIENT
+#define embeddedclient_export extern __declspec(dllimport)
+#else
+#define embeddedclient_export extern __declspec(dllexport)
+#endif
+#else
+#define embeddedclient_export extern
+#endif
+
+#include <streams.h>
+#include <Mapi.h>
+
+embeddedclient_export Mapi embedded_mil(opt *set, int len);
+
+#endif /* _EMBEDDEDCLIENT_H_ */
+@c
+#include "monet.h"
+#include "monet_options.h"
+#include "initmodules.h"
+#include "Mapi.h"
+#include <pthread.h>
+
+static Client
+Monet_init(opt *set, int setlen)
+{
+	char *p;
+	opt *n = (opt *) GDKmalloc(setlen * sizeof(opt));
+	int i, j, nlen = 0;
+
+	char dbfarm[BUFSIZ];
+	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
+	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
+	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
+
+	if (n == NULL || dbname == NULL || dbfarmval == NULL || alloc_map == NULL) {
+		if (n != NULL)
+			GDKfree(n);
+		return NULL;
+	}
+
+	strncpy(dbfarm, dbfarmval, sizeof(dbfarm));
+	mo_substitute(set, setlen, dbfarm);
+
+	/* determine Monet's kernel settings. */
+	if (!GDKinit(dbname, dbfarm, strcasecmp(alloc_map, "yes") == 0)) {
+		GDKfree(n);
+		return NULL;
+	}
+
+	for (i = 0; i < setlen; i++) {
+		int done = 0;
+
+		for (j = 0; j < nlen; j++) {
+			if (strcmp(n[j].name, set[i].name) == 0) {
+				if (n[j].kind < set[i].kind)
+					n[j] = set[i];
+				done = 1;
+				break;
+			}
+		}
+		if (!done) {
+			n[nlen] = set[i];
+			nlen++;
+		}
+	}
+	for (i = 0; i < nlen; i++) {
+		char value[BUFSIZ];
+
+		strncpy(value, n[i].value, BUFSIZ);
+		mo_substitute(n, nlen, value);
+		GDKsetenv(n[i].name, value);
+	}
+	GDKfree(n);
+
+	if ((p = GDKgetenv("gdk_debug")) != NULL) 
+		GDKdebug = strtol(p, NULL, 10);
+
+	if ((p = GDKgetenv("gdk_mem_bigsize")) != NULL)
+		GDK_mem_bigsize = strtol(p, NULL, 10);
+	if ((p = GDKgetenv("gdk_vm_minsize")) != NULL)
+		GDK_vm_minsize = strtol(p, NULL, 10);
+	if (GDKgetenv_isyes("gdk_embedded")) {
+		GDKembedded = 1;
+	}
+
+	if (GDKgetenv_isyes("monet_daemon"))
+		monet_daemon = 1;
+	if (GDKgetenv_isyes("monet_embedded")) {
+		monet_daemon = 1;
+		GDKembedded = 1;
+	}
+
+
+	return monet_init();
+}
+
+static opt *embedded_set = NULL;
+static int embedded_len = 0;
+
+static void *
+start_mil_server(void *arg)
+{
+	static int initialized = 0;
+	stream *in, *out;
+	char buf[128];
+
+	if (!initialized) {
+		Client c;
+
+/* 		monet_singlethreaded = 1; */
+		if (embedded_set == NULL) {
+			int len = mo_builtin_settings(&embedded_set);
+			embedded_len = mo_system_config(&embedded_set, len);
+		}
+		c = Monet_init(embedded_set, embedded_len);
+		mo_free_options(embedded_set, embedded_len);
+		static_module_init();
+		THRnew(MT_getpid(), "Interpreter");
+		initialized = 1;
+	}
+
+	in = ((stream **) arg)[0];
+	out = ((stream **) arg)[1];
+	free(arg);
+	snprintf(buf, sizeof(buf), "milclient(Stream(\"" PTRFMT "\"), Stream(\"" PTRFMT "\"));", PTRFMTCAST in, PTRFMTCAST out);
+	monet_exec("module(mapi);");
+	monet_exec(buf);
+	return NULL;
+}
+
+Mapi
+embedded_mil(opt *set, int len)
+{
+	Mapi mid;
+	pthread_t milthread;
+	stream **server;
+
+	if (set) {
+		embedded_set = set;
+		embedded_len = len;
+	}
+	server = mapi_embedded_init(&mid,"mil");
+
+	pthread_create(&milthread, NULL, start_mil_server, (void *) server);
+
+	mapi_start_talking(mid);
+
+	return mid;
+}

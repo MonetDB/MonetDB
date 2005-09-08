@@ -82,7 +82,10 @@ BATins(BAT *b, BAT *n)
 		oid t = *(oid *) BUNhead(b, BUNlast(b) - BUNsize(b));
 		oid h = *(oid *) BUNhead(n, BUNfirst(n));
 
-		if ((t + 1) != h || !BAThdense(n)) {
+		if (BATcount(b) == 0 && (BATcount(n) == 1 || BAThdense(n))) {
+			b->hseqbase = h;
+			BATmirror(b)->tseqbase = h;
+		} else if ((t + 1) != h || !BAThdense(n)) {
 			b = BATmaterialize(b, BATcount(b) + BATcount(n));
 			if (b == NULL)
 				return NULL;
@@ -184,7 +187,7 @@ BATins(BAT *b, BAT *n)
 			size_t i = BUNindex(b, BUNlast(b));
 
 			BATloopFast(n, p, q, xx) {
-				ptr v = BUNhloc(n, p);
+				ptr v = BUNhead(n, p);
 
 				bunfastins_nocheck(b, r, v, BUNtail(n, p), yy);
 				HASHins_int(b->hhash, (hash_t) i, v);

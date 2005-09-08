@@ -677,7 +677,7 @@ The specifics for variable-size atoms are discussed in
 You are strongly urged to read the 
 @[<a href="../gdk/index.html#mod_1_5_1">ATOM</a>@ and
 @[<a href="../gdk/index.html#mod_1_3_2">HEAP</a>@ sections 
-of the GDK Document and the @[<a href="../../../monet-compiled/share/MonetDB/docs/gdk/gdk_atoms.html">gdk\_atoms</a>@ 
+of the GDK Document and the @[<a href="../gdk_atoms/index.html">gdk\_atoms</a>@ 
 file first.
 
 We will use the fictitious  user-defined atoms called {\small\tt point} 
@@ -977,11 +977,11 @@ an integer offset into that heap.
 Fixed- and variable-size atoms are essentially treated in
 the same way. MonetDB just requires them to consist of contiguous
 range of memory. You can use the 
-@[<a href="../../../monet-compiled/share/MonetDB/docs/gdk/gdk_atoms.html#mod_1_2_3">ATOMlen(tpe,val) : int</a>@
+@[<a href="../gdk_atoms/index.html#mod_1_2_3">ATOMlen(tpe,val) : int</a>@
 macro to inquire for the length of the region. For fixed-size
 atoms, this will always yield the same value, that can be
 statically looked up with the 
-@[<a href="../../../monet-compiled/share/MonetDB/docs/gdk/gdk_atoms.html#mod_1_2_2">ATOMsize(tpe): int</a>@
+@[<a href="../../../gdk_atoms/index.html#mod_1_2_2">ATOMsize(tpe): int</a>@
 macro as well.
 
 The following example MEL definition:

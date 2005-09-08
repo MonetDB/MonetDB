@@ -168,6 +168,64 @@ rev_select(b,">=",3.4).print();
 [ 2,	  2.20000005	  ]
 [ 3,	  3.29999995	  ]
 
+var b:=new(oid,oid);
+b.insert(0@0,0@0);
+b.insert(10@0,10@0);
+b.info().find("hsorted").print();
+[ "65" ]
+b.info().find("tsorted").print();
+[ "65" ]
+b.info().find("hkey").print();
+[ "1" ]
+b.info().find("tkey").print();
+[ "1" ]
+var m:=b.merge();
+m.info().find("hsorted").print();
+[ "65" ]
+m.info().find("tsorted").print();
+[ "65" ]
+m.info().find("hkey").print();
+[ "1" ]
+m.info().find("tkey").print();
+[ "0" ]
+var s:=m.split();
+s.info().find("hsorted").print();
+[ "65" ]
+s.info().find("tsorted").print();
+[ "0" ]
+s.info().find("hkey").print();
+[ "0" ]
+s.info().find("tkey").print();
+[ "0" ]
+
+b.insert(5@0,0@0);
+b.info().find("hsorted").print();
+[ "0" ]
+b.info().find("tsorted").print();
+[ "0" ]
+b.info().find("hkey").print();
+[ "0" ]
+b.info().find("tkey").print();
+[ "0" ]
+var m:=b.merge();
+m.info().find("hsorted").print();
+[ "0" ]
+m.info().find("tsorted").print();
+[ "65" ]
+m.info().find("hkey").print();
+[ "0" ]
+m.info().find("tkey").print();
+[ "0" ]
+var s:=m.split();
+s.info().find("hsorted").print();
+[ "0" ]
+s.info().find("tsorted").print();
+[ "0" ]
+s.info().find("hkey").print();
+[ "0" ]
+s.info().find("tkey").print();
+[ "0" ]
+
 quit();
 
 # 17:05:09 >  
