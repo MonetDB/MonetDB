@@ -180,7 +180,7 @@ embedded_sql(opt *set, int len)
 		embedded_set = set;
 		embedded_len = len;
 	}
-	server = mapi_embedded_init(&mid);
+	server = mapi_embedded_init(&mid,"sql");
 
 	pthread_create(&sqlthread, NULL, start_sql_server, (void *) server);
 
