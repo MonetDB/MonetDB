@@ -36,4 +36,38 @@ neg_select(b,"grth",3.4).print();
 neg_select(b,"between",3.4,5.5).print();
 rev_select(b,">=",3.4).print();
 
+var b:=new(oid,oid);
+b.insert(0@0,0@0);
+b.insert(10@0,10@0);
+b.info().find("hsorted").print();
+b.info().find("tsorted").print();
+b.info().find("hkey").print();
+b.info().find("tkey").print();
+var m:=b.merge();
+m.info().find("hsorted").print();
+m.info().find("tsorted").print();
+m.info().find("hkey").print();
+m.info().find("tkey").print();
+var s:=m.split();
+s.info().find("hsorted").print();
+s.info().find("tsorted").print();
+s.info().find("hkey").print();
+s.info().find("tkey").print();
+
+b.insert(5@0,0@0);
+b.info().find("hsorted").print();
+b.info().find("tsorted").print();
+b.info().find("hkey").print();
+b.info().find("tkey").print();
+var m:=b.merge();
+m.info().find("hsorted").print();
+m.info().find("tsorted").print();
+m.info().find("hkey").print();
+m.info().find("tkey").print();
+var s:=m.split();
+s.info().find("hsorted").print();
+s.info().find("tsorted").print();
+s.info().find("hkey").print();
+s.info().find("tkey").print();
+
 quit();
