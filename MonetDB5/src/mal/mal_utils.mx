@@ -95,7 +95,7 @@ unquote(char *msg)
 char *
 quote(const char *msg, int size)
 {
-	char *s = malloc(strlen(msg) * 2 + 1);	/* we absolutely don't need more than this (until we start producing octal escapes */
+	char *s = GDKmalloc(strlen(msg) * 2 + 1);	/* we absolutely don't need more than this (until we start producing octal escapes */
 	char *t = s;
 
 	/* the condition is tricky: if initially size < 0, we must
@@ -116,10 +116,6 @@ quote(const char *msg, int size)
 		case '\t':
 			*t++ = '\\';
 			*t++ = 't';
-			break;
-		case PLACEHOLDER:
-			*t++ = '\\';
-			*t++ = PLACEHOLDER;
 			break;
 		case '\\':
 			*t++ = '\\';

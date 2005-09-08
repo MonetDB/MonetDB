@@ -557,6 +557,7 @@ mal_export void batAfterCall(ValPtr v,ValPtr bak);
 @c
 #include "mal_instruction.h"
 #include "mal_function.h"   /* for getPC() */
+#include "mal_utils.h"
 
 #if HAVE_STRTOLL && !HAVE_DECL_STRTOLL
 extern long long strtoll(const char *, char **, int);
@@ -1947,7 +1948,12 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
             if( getArgType(mb,p,i)== TYPE_str)
                 if( strcmp(def,str_nil)==0)
                      sprintf(t,"nil" );
-                else sprintf(t,"\"%s\"", def);
+                else{
+					char *def2;
+					def2= quote(def,strlen(def));
+					sprintf(t,"\"%s\"", def2);
+					GDKfree(def2);
+				}
             else
             if( getArgType(mb,p,i)== TYPE_chr){
                 if( strcmp(def,"nil")== 0)
