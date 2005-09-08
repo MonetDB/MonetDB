@@ -34,7 +34,7 @@ stdout of test 'ID.914159` in directory 'tests/BugsViaSourgeforce` itself:
 #	aa_a := print(unknown);
 #end crash;
 function user.crash():void;	# 0  (crash:void)
-    mil.line("\tprint($t);");	# 1 MILline (_1:void)<-(_2:str)
+    mil.line("\\tprint($t);\n");	# 1 MILline (_1:void)<-(_2:str)
     unknown := mil.take("unknown");	# 2 MILtake (unknown:any)<-(_4:str)
     aa_a := io.print(unknown);	# 3 IOprint_val (aa_a:int)<-(unknown:any)
 end crash;	# 4  
@@ -51,11 +51,9 @@ function user.main():int;	# 0  (main:int)
 #- upon advice of M2m to remap identifiers, change it in your program directly 	# 7  (_44:str)
 #use the "mil_schema" for additional support routines 	# 8  (_46:str)
     mil.line("PROC crash() : void");	# 9 MILline (_47:void)<-(_48:str)
-#ERROR: no iterator 'T' on stack 	# 10  (_50:str)
-#ERROR: no iterator 'T' on stack 	# 11  (_50:str)
-    mil.line("crash();");	# 12 MILline (_52:void)<-(_53:str)
-    ba_a := user.crash();	# 13  (ba_a:void)
-end main;	# 14  
+    mil.line("crash();");	# 10 MILline (_49:void)<-(_50:str)
+    ba_a := user.crash();	# 11  (ba_a:void)
+end main;	# 12  
 #PROC crash() : void
 #crash();
 #\tprint($t);

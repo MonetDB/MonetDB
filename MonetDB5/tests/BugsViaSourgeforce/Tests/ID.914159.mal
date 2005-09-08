@@ -12,10 +12,7 @@ include mil;
 	mil.line("PROC crash() : void");
 function crash():void;
 
-#ERROR: no iterator 'T' on stack
-
-#ERROR: no iterator 'T' on stack
-	mil.line("\tprint($t);");
+	mil.line("\tprint($t);\n");
 	unknown:= mil.take("unknown");
 	aa_a := io.print(unknown);
 end crash;
