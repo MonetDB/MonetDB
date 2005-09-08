@@ -34,10 +34,9 @@ function user.main():int;	# 0  (main:int)
     io.print(b);	# 6 IOprint_val (_8:int)<-(b:blob)
     io.print(c);	# 7 IOprint_val (_9:int)<-(c:str)
 end main;	# 8  
-[ "Dit is een test\\n" ]
-[ (18: 44 69 74 20 69 73 20 65 65 6E 20 74 65 73 74 5C 6E 00) ]
-[ "Dit is een test\\n" ]
-#
+[ "Dit is een test\n" ]
+[ (17: 44 69 74 20 69 73 20 65 65 6E 20 74 65 73 74 0A 00) ]
+[ "Dit is een test\n" ]
 
 # 20:08:53 >  
 # 20:08:53 >  Done.

@@ -46,7 +46,7 @@ function user.main():int;	# 0  (main:int)
     i := stream.readInt(fp);	# 14 stream_readIntwrap (i:int)<-(fp:stream)
     io.print(i);	# 15 IOprint_val (_16:int)<-(i:int)
 end main;	# 16  
-[ "Dit is een test\\n" ]
+[ "Dit is een test\n" ]
 [ 1234 ]
 
 # 07:59:00 >  
