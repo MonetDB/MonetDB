@@ -145,6 +145,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %files server
 %defattr(-,monetdb,monetdb) 
+%{prefix}/bin/Mbeddedsql
+%{prefix}/lib/libembeddedsql.*
 %{prefix}/lib/MonetDB/lib_sql_server*
 %{prefix}/lib/MonetDB/*.mil
 
