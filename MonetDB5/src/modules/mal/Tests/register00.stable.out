@@ -1,0 +1,33 @@
+stdout of test 'register00` in directory 'src/modules/mal` itself:
+
+
+# 23:05:10 >  
+# 23:05:10 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33240 --set sql_port=48733 --set xquery_port=59206 --set monet_prompt= --trace --dbname=mTests_src_modules_mal  register00.mal </dev/null
+# 23:05:10 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_modules_mal
+# Visit http://monetdb.cwi.nl/ for further information.
+##see if we can register functions
+#
+#mal.register("user","mytest","io.print(\"hello world\");","first test");
+#mdb.list("user","mytest");
+#
+function user.main():int;	# 0  (main:int)
+#see if we can register functions 	# 1  (_2:str)
+    mal.register("user","mytest","io.print(\"hello world\");","first test");	# 2 CMDregisterFunction (_3:void)<-(_4:str)(_5:str)(_6:str)(_7:str)
+    mdb.list("user","mytest");	# 3 MDBlist3 (_8:void)<-(_4:str)(_5:str)
+end main;	# 4  
+REGISTER FUNCTIOn user.main
+#function user.main():int;
+#    io.print("hello world");
+#end main;
+
+# 23:05:10 >  
+# 23:05:10 >  Done.
+# 23:05:10 >  
+
