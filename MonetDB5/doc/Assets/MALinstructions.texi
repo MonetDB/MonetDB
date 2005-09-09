@@ -77,32 +77,6 @@ using the MAL commandline interface (See tobedone).
 @end multitable
 
 @verbatim
-alarm.alarm     alarm.epoch     alarm.time
-alarm.ctime     alarm.prelude   alarm.timers
-alarm.epilogue  alarm.sleep     alarm.usec
-
-algebra.bandjoin      algebra.join          algebra.selectHead
-algebra.between       algebra.joinPath      algebra.semijoin
-algebra.betweenCO     algebra.kdiff         algebra.sintersect
-algebra.betweenOC     algebra.kintersect    algebra.slice
-algebra.betweenOO     algebra.kunion        algebra.sort
-algebra.card          algebra.kunique       algebra.sortHT
-algebra.copy          algebra.like          algebra.sortT
-algebra.count         algebra.markH         algebra.sortTH
-algebra.count_no_nil  algebra.markT         algebra.split
-algebra.cross         algebra.max           algebra.sum
-algebra.diff          algebra.merge         algebra.sunion
-algebra.exist         algebra.mergejoin     algebra.sunique
-algebra.fetch         algebra.min           algebra.thetajoin
-algebra.fetchjoin     algebra.number        algebra.topN
-algebra.find          algebra.outerjoin     algebra.tunique
-algebra.fragment      algebra.position      algebra.uhashsplit
-algebra.hashjoin      algebra.product       algebra.union
-algebra.hashsplit     algebra.project       algebra.unique
-algebra.histogram     algebra.sample        algebra.uselect
-algebra.indexjoin     algebra.sdiff
-algebra.intersect     algebra.select
-
 array.grid     array.print    array.product  array.project
 
 bat.append           bat.insert           bat.setAccess
