@@ -2417,7 +2417,7 @@ castQName (opt_t *f, int rc)
     milprintf(f,
             "{ # castQName ()\n"
             "var qnames := kind.get_type(QNAME);\n"
-            "var counted_items := item.count();\n"
+            "var counted_items := kind.count();\n"
             "var counted_qn := qnames.count();\n"
             "if (counted_items != counted_qn)\n"
             "{\n"
@@ -2888,14 +2888,14 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "  var knd := ELEMENT;\n"
                 "  while ( knd <= DOCUMENT ) {\n"
                 "    var kind_root := root_kind.ord_uselect(knd).reverse().chk_order();\n"
-                "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS).insert(kind_root);\n"
+                "    ws.fetch(KIND_PRE + int(knd)).fetch(WS).insert(kind_root);\n"
                 "    if ( knd = ELEMENT ) {\n"
                 "      var prop_root := kind_root.reverse().mirror().leftfetchjoin(root_prop).reverse().chk_order();\n"
-                "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS).insert(prop_root);\n"
+                "      ws.fetch(PROP_PRE + int(knd)).fetch(WS).insert(prop_root);\n"
                 "    }\n"
                 "    if ( knd = PI ) {\n"
                 "      var prop_root := kind_root.reverse().mirror().leftfetchjoin(root_prop).reverse().chk_order();\n"
-                "      var prop_pre := ws.fetch(PROP_PRE + 1).fetch(WS).insert(prop_root);\n"
+                "      ws.fetch(PROP_PRE + 1).fetch(WS).insert(prop_root);\n"
                 "    }\n"
                 "    knd :+= chr(1);\n"
                 "  }\n"
@@ -3104,14 +3104,14 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             "  var knd := ELEMENT;\n"
             "  while ( knd <= DOCUMENT ) {\n"
             "    var kind__elem := _elem_kind.ord_uselect(knd).reverse().chk_order();\n"
-            "    var kind_pre := ws.fetch(KIND_PRE + int(knd)).fetch(WS).insert(kind__elem);\n"
+            "    ws.fetch(KIND_PRE + int(knd)).fetch(WS).insert(kind__elem);\n"
             "    if ( knd = ELEMENT ) {\n"
             "      var prop__elem := kind__elem.reverse().mirror().leftfetchjoin(_elem_prop).reverse().chk_order();\n"
-            "      var prop_pre := ws.fetch(PROP_PRE + int(knd)).fetch(WS).insert(prop__elem);\n"
+            "      ws.fetch(PROP_PRE + int(knd)).fetch(WS).insert(prop__elem);\n"
             "    }\n"
             "    if ( knd = PI ) {\n"
             "      var prop__elem := kind__elem.reverse().mirror().leftfetchjoin(_elem_prop).reverse().chk_order();\n"
-            "      var prop_pre := ws.fetch(PROP_PRE + 1).fetch(WS).insert(prop__elem);\n"
+            "      ws.fetch(PROP_PRE + 1).fetch(WS).insert(prop__elem);\n"
             "    }\n"
             "    knd :+= chr(1);\n"
             "  }\n"
@@ -3226,7 +3226,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
             "unq_str := str_unq.mark(seqb).reverse();\n"
             "str_unq := nil;\n"
             "seqb := nil;\n"
-            "ws_prop_val.insert(unq_str);\n"
+            "ws_prop_val := ws_prop_val.insert(unq_str);\n"
             "unq_str := nil;\n"
             /* get the property values of the strings */
             "var strings := item%s;\n"
@@ -3350,7 +3350,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));\n"
                 "{\n"
                 "  var kind_pre_ := newPre_prop.mark(nil).reverse().chk_order();\n"
-                "  var kind_pre := ws.fetch(KIND_PRE + int(TEXT)).fetch(WS).insert(kind_pre_);\n"
+                "  ws.fetch(KIND_PRE + int(TEXT)).fetch(WS).insert(kind_pre_);\n"
                 "}\n"
                 "newPre_prop := nil;\n"
                 "item := item%s.mark(seqb);\n"
@@ -4183,7 +4183,6 @@ evaluateComp (opt_t *f, int rc1, int rc2,
     }
     milprintf(f, "var val_bool := val_fst.[%s](val_snd);\n", operator);
     milprintf(f, "item := val_bool.[oid]();\n");
-    milprintf(f, "val_bool := nil;\n");
     milprintf(f, "kind := kind.project(BOOL);\n");
     milprintf(f, "} # end of '%s' comparison\n", operator);
 }
@@ -4243,7 +4242,6 @@ evaluateCompOpt (opt_t *f, int rc1, int rc2,
             "iter := val_bool.mark(0@0).reverse();\n"
              "pos := iter.project(1@0);\n"
              "item := val_bool.[oid]();\n"
-             "val_bool := nil;\n"
              "item := item.reverse().mark(0@0).reverse();\n"
              "kind := iter.project(BOOL);\n"
              "} # end of '%s' comparison with optional type\n",
@@ -7410,9 +7408,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                                        ".leftfetchjoin(item%s);\n"
                 "var res_mu := merged_union(iter%03u, difference, "
                                            "item%s%03u, zeros);\n"
-                "difference := nil;\n"
                 "item_result := res_mu.fetch(1);\n"
-                "res_mu := nil;\n"
                 "} else {\n"
                 "item_result := item%s%03u;\n"
                 "}\n"
@@ -9887,7 +9883,7 @@ update_expansion (opt_t *f, PFcnode_t *c,  PFarray_t *way)
          && *(int *) PFarray_at (way, m) > var->base; m--)
     {
         milprintf(f,
-                "var_usage.insert(%i@0,%i@0);\n",
+                "var_usage := var_usage.insert(%i@0,%i@0);\n",
                 var->vid,
                 *(int *) PFarray_at (way, m));
     }
