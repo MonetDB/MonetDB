@@ -218,9 +218,11 @@ rm -fr $RPM_BUILD_ROOT
 %files server
 %defattr(-,monetdb,monetdb) 
 %{prefix}/bin/Mserver 
+%{prefix}/bin/Mbeddedmil 
 
 %{prefix}/lib/libbat.*
 %{prefix}/lib/libmonet.*
+%{prefix}/lib/libembeddedmil.*
 %{prefix}/lib/%{name}/*.so* 
 %{prefix}/lib/%{name}/*.la* 
 %{prefix}/lib/%{name}/*.mil* 
