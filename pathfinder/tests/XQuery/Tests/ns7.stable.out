@@ -23,7 +23,7 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-<a/>
+<a xmlns="http://create.another/default/element/namespace"/>
 </XQueryResult>
 
 # 10:04:26 >  
