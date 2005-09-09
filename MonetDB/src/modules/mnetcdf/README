@@ -7,3 +7,10 @@ automake system.
 
 Here, "secondary" refers to the fact that --- though (once) being considered
 useful --- these modules not necessarily maintained with high priority.
+
+
+NOTES FOR COMPILATION
+- The NetCDF library is not installed by default in most systems, 
+  download it and compile it in your system.
+  It only compiles to a static library
+- Use the -fPIC flag when compiling the NetCDF library

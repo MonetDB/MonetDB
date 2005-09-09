@@ -85,6 +85,7 @@ EXTRA_DIST = static_modules.mx
 #monetdb-config.mx.in monetdb-config.bat.in
 
 lib_initmodules = {
+	NOINST
 	SOURCES = initmodules.mx
 }
 
