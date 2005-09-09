@@ -300,9 +300,9 @@ Then retrieve variable specific information.
 
 	sprintf(buf, "%d", var_dims);
 	BUNins(*out, "dimensions", buf);
-	sprintf(buf, "%d", shape[0]);
+	sprintf(buf, "%Zd", shape[0]);
 	for (i = 1; i < var_dims; i++) {
-		sprintf(&buf[strlen(buf)], ",%d", shape[i]);
+		sprintf(&buf[strlen(buf)], ",%Zd", shape[i]);
 	}
 	BUNins(*out, "shape", buf);
 	sprintf(buf, SZFMT, size);
@@ -320,7 +320,7 @@ Then retrieve variable specific information.
 		ASSERT_STATUS_out;
 		switch (xtype) {
 		case NC_BYTE:{
-			char b;
+			signed char b;
 
 			nc_status = nc_get_att_schar(*ncid, varid, att_name, &b);
 			sprintf(buf, "%d", (int) b);
@@ -395,7 +395,7 @@ byte, char, short, int, float, and, double.
 void
 check_nil_schr(int ncid, int varid, char *p, long size)
 {
-	char fill_value;
+	signed char fill_value;
 	int nc_status;
 	long i;
 
@@ -578,7 +578,7 @@ Then retrieve variable specific information.
 
 	switch (xtype) {
 	case NC_BYTE:
-		nc_status = nc_get_var_schar(*ncid, varid, (char *) p);
+		nc_status = nc_get_var_schar(*ncid, varid, (signed char *) p);
 		break;
 	case NC_CHAR:
 		GDKerror("String arrays not yet implemented");
@@ -756,7 +756,7 @@ just produce an array of bat pointers.
 
 	switch (xtype) {
 	case NC_BYTE:
-		nc_status = nc_put_att_schar(*ncid, varid, "_FillValue", NC_BYTE, 1, &chr_nil);
+		nc_status = nc_put_att_schar(*ncid, varid, "_FillValue", NC_BYTE, 1, (signed char *)&chr_nil);
 		break;
 	case NC_SHORT:
 		nc_status = nc_put_att_short(*ncid, varid, "_FillValue", NC_SHORT, 1, &sht_nil);
@@ -803,7 +803,7 @@ just produce an array of bat pointers.
 			}
 			switch (xtype) {
 			case NC_BYTE:
-				nc_status = nc_put_var1_schar(*ncid, varid, idxvector, (char *) BUNtail(data, p));
+				nc_status = nc_put_var1_schar(*ncid, varid, idxvector, (signed char *) BUNtail(data, p));
 				break;
 			case NC_SHORT:
 				nc_status = nc_put_var1_short(*ncid, varid, idxvector, (short *) BUNtail(data, p));
@@ -926,7 +926,7 @@ just produce an array of bat pointers.
 
 	switch (xtype) {
 	case NC_BYTE:
-		nc_status = nc_put_att_schar(*ncid, varid, "_FillValue", NC_BYTE, 1, &chr_nil);
+		nc_status = nc_put_att_schar(*ncid, varid, "_FillValue", NC_BYTE, 1, (signed char *)&chr_nil);
 		break;
 	case NC_SHORT:
 		nc_status = nc_put_att_short(*ncid, varid, "_FillValue", NC_SHORT, 1, &sht_nil);
@@ -952,7 +952,7 @@ just produce an array of bat pointers.
 	p = (void *) BUNfirst(data);
 	switch (xtype) {
 	case NC_BYTE:
-		nc_status = nc_put_var_schar(*ncid, varid, (char *) p);
+		nc_status = nc_put_var_schar(*ncid, varid, (signed char *) p);
 		break;
 	case NC_SHORT:
 		nc_status = nc_put_var_short(*ncid, varid, (short *) p);
