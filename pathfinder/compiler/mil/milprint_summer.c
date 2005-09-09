@@ -2383,14 +2383,12 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         /* res_scj = iter|item bat */
         milprintf(f,
                 "iter := res_scj.fetch(0);\n"
-                "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
                 "item := res_scj.fetch(1);\n"
-                "kind := res_scj.fetch(2);\n"
-                "if (is_fake_project(kind)) {\n"
-                "    kind := iter.project(kind.fetch(0).set_kind(%s));\n"
-                "} else {\n"
-                "    kind := kind.set_kind(%s);\n"
-                "}\n", kind, kind);
+                "pos  := item.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+                "iter := de_fake_project(iter, item);\n"
+                "kind := res_scj.fetch(2).set_kind(%s);\n"
+                "kind := de_fake_project(kind, item);\n"
+                ,kind);
     } else {
         milprintf(f, "kind := kind.set_kind(%s);\n", kind);
     }

@@ -503,9 +503,20 @@ PROC fake_project (any::1 c) : bat[void,any::1]
     	return new(void,type(c),1).seqbase(nil).insert(nil,c).access(BAT_READ);
 }
 
-PROC is_fake_project (bat[oid,any::1] b) : bit
+PROC is_fake_project (bat[void,any::1] b) : bit
 {
 	return and(count(b) = 1, isnil(seqbase(b)));
+}
+
+PROC de_fake_project (bat[void,any::1] p, bat[void,oid] b) : bat[void,any::1]
+{
+	if (not(is_fake_project(p))) {
+		return p;
+	}
+	if (is_fake_project(b)) {
+		ERROR("de_fake_project: second argument must not be a 'fake_project'!\n");
+	}
+	return b.project(p.fetch(0));
 }
 
 @= fake_fetch
@@ -521,7 +532,7 @@ PROC fake_fetch (bat[void,any::1] b, @1 p) : any::1
 @:fake_fetch(int)@
 @:fake_fetch(oid)@
 
-PROC fake_leftfetchjoin (bat[oid,oid] l, bat[oid,any::3] r) : bat[oid,any::3]
+PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,any::3] r) : bat[oid,any::3]
 {
 	if (is_fake_project(r)) {
 		return r;
@@ -1188,6 +1199,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
         result_part_item := nil;
         result_part_frag := nil;
 
+        # FIXME: make merged_union more fake_project capable!
+        result_iter := de_fake_project(result_iter, result_item);
+
         var res_mu;
 	uniqueFrag.slice(1,uniqueFrag.count() - 1)@batloop () {
 	    theFrag := $h;
@@ -1196,6 +1210,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
             result_part_item := result_part_frag.leftfetchjoin(item);
 
             @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
+
+            # FIXME: make merged_union more fake_project capable!
+            result_part_iter := de_fake_project(result_part_iter, result_part_item);
 
             res_mu := merged_union(result_iter, result_part_iter,
 				   result_item, result_part_item,
