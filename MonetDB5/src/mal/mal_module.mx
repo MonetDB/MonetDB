@@ -83,6 +83,8 @@ mal_export int      displayModule(stream *f, Module v, str fcn,int listing);
 mal_export void     showModules(stream *f, Module v);
 mal_export void     debugModule(stream *f, Module v, str nme);
 mal_export void     dumpManual(stream *f, Module v, int recursive);
+mal_export void dumpManualHelp(stream *f, Module s, int recursive);
+mal_export void     dumpManualOverview(stream *f, Module v, int recursive);
 mal_export void     dumpManualHeader(stream *f);
 mal_export void     dumpManualFooter(stream *f);
 mal_export void     showModuleStatistics(stream *f,Module s); /* used in src/mal/mal_debugger.c */
@@ -475,6 +477,11 @@ void dumpManualFooter(stream *f){
 int cmpModName(Module *f, Module *l){
 	return strcmp((*f)->name, (*l)->name);
 }
+int cmpFcnName(InstrPtr f, InstrPtr l){
+	if(functionId(f) && functionId(l))
+		return strcmp(functionId(f), functionId(l));
+	return 0;
+}
 void dumpManual(stream *f, Module s, int recursive){
 	int j;
 	Symbol t;
@@ -538,6 +545,119 @@ void dumpManual(stream *f, Module s, int recursive){
 	stream_printf(f,"</%smodule>\n", (s->isAtomModule?"atom":""));
 	endtag=0;
 	}
+}
+@-
+The manual overview merely lists the mod.function names
+in texi format for inclusion in the documetation.
+@c
+void dumpManualOverview(stream *f, Module s, int recursive){
+	int j,z,tab;
+	Symbol t;
+	InstrPtr sig;
+	Module list[256]; int k, top=0, ftop, fnd;
+	InstrPtr fcn[5000];
+
+
+	if(s==NULL || f==NULL){
+		return;
+	}
+	list[top++]=s;
+	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
+
+	if(top>1) qsort(list, top, sizeof(Module), 
+		(int(*)(const void *, const void *))cmpModName);
+
+	stream_printf(f,"@multitable @columnfractions .24 .24 .24 .24\n");
+	for(k=0;k<top;k++){
+		s= list[k];
+		ftop = 0;
+		if( s->subscope)
+		for(j=0;j<MAXSCOPE;j++)
+		if(s->subscope[j]){
+			for(t= s->subscope[j];t!=NULL;t=t->peer) {
+				sig= getSignature(t);
+				fnd = 0;
+				for(z=0; z<ftop; z++)
+				if( strcmp(functionId(fcn[z]),functionId(sig))==0){
+					fnd++;
+					break;
+				}
+				if( fnd == 0 && ftop<5000)
+					fcn[ftop++] = sig;
+			}
+		}
+		for(j=0; j<ftop; j++)
+		for(z=j+1; z<ftop; z++)
+		if( strcmp(functionId(fcn[j]),functionId(fcn[z]))  >0) {
+			 sig= fcn[j]; fcn[j]=fcn[z]; fcn[z]= sig;
+		}
+		tab = 0;
+		for(z=0; z<ftop; z++){
+			stream_printf(f,"@" "%s\n%s.%s\n",
+				(tab == 0?"item":"tab"),
+				moduleId(fcn[z]), functionId(fcn[z]));
+			tab= (tab +1) % 4;
+		}
+	}
+	stream_printf(f,"@end multitable\n");
+}
+@-
+The manual help overview merely lists the mod.function names
+together with the help oneliner in texi format for inclusion in the documentation.
+@c
+void dumpManualHelp(stream *f, Module s, int recursive){
+	int j,z;
+	Symbol t;
+	InstrPtr sig;
+	Module list[256]; int k, ftop, fnd,top=0;
+	InstrPtr fcn[5000];
+	str hlp[5000],msg;
+
+
+	if(s==NULL || f==NULL){
+		return;
+	}
+	list[top++]=s;
+	while(s->outer && recursive){ list[top++]= s->outer;s=s->outer;}
+
+	if(top>1) qsort(list, top, sizeof(Module), 
+		(int(*)(const void *, const void *))cmpModName);
+
+	stream_printf(f,"@multitable @columnfractions .2 .8 \n");
+	for(k=0;k<top;k++){
+		s= list[k];
+		ftop = 0;
+		if( s->subscope)
+		for(j=0;j<MAXSCOPE;j++)
+		if(s->subscope[j]){
+			for(t= s->subscope[j];t!=NULL;t=t->peer) {
+				sig= getSignature(t);
+				fnd = 0;
+				for(z=0; z<ftop; z++)
+				if( strcmp(functionId(fcn[z]),functionId(sig))==0){
+					fnd++;
+					break;
+				}
+				if( fnd == 0 && ftop<5000){
+					hlp[ftop]= t->def->help;
+					fcn[ftop++] = sig;
+				}
+			}
+		}
+		for(j=0; j<ftop; j++)
+		for(z=j+1; z<ftop; z++)
+		if( strcmp(functionId(fcn[j]),functionId(fcn[z]))  >0) {
+			msg= hlp[j]; hlp[j]=hlp[z]; hlp[z]= msg;
+			 sig= fcn[j]; fcn[j]=fcn[z]; fcn[z]= sig;
+		}
+		for(z=0; z<ftop; z++){
+			stream_printf(f,"@" "item %s.%s\n",
+				moduleId(fcn[z]), functionId(fcn[z]));
+			if( hlp[z] )
+				stream_printf(f,"@" "tab %s\n", hlp[z]);
+		}
+	}
+	stream_printf(f,"@end multitable\n");
 }
 @-
 Summarize the type resolution table.

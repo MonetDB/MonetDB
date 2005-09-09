@@ -2,335 +2,1530 @@ The table below gives a condensed overview of the operations
 defined in each of the modules. Further details can be obtained
 using the MAL commandline interface (See tobedone).
 
-@multitable @columnfractions .33 .33 .33
-@item alarm.alarm
-@tab alarm.epoch
-@tab alarm.time
-@item alarm.ctime
-@tab alarm.prelude
-@tab alarm.timers
-@item alarm.epilogue
-@tab alarm.sleep
-@tab alarm.usec
-@item 
-@item algebra.bandjoin
-@tab algebra.join
-@tab algebra.selectHead
-@item algebra.between
-@tab algebra.joinPath
-@tab algebra.semijoin
-@item algebra.betweenCO
-@tab algebra.kdiff
-@tab algebra.sintersect
-@item algebra.betweenOC
-@tab algebra.kintersect
-@tab algebra.slice
-@item algebra.betweenOO
-@tab algebra.kunion
-@tab algebra.sort
-@item algebra.card
-@tab algebra.kunique
-@tab algebra.sortHT
-@item algebra.copy
-@tab algebra.like
-@tab algebra.sortT
-@item algebra.count
-@tab algebra.markH
-@tab algebra.sortTH
-@item algebra.count_no_nil
-@tab algebra.markT
-@tab algebra.split
-@item algebra.cross
-@tab algebra.max
-@tab algebra.sum
-@item algebra.diff
-@tab algebra.merge
-@tab algebra.sunion
-@item algebra.exist
-@tab algebra.mergejoin
-@tab algebra.sunique
-@item algebra.fetch
-@tab algebra.min
-@tab algebra.thetajoin
-@item algebra.fetchjoin
-@tab algebra.number
-@tab algebra.topN
-@item algebra.find
-@tab algebra.outerjoin
-@tab algebra.tunique
-@item algebra.fragment
-@tab algebra.position
-@tab algebra.uhashsplit
-@item algebra.hashjoin
-@tab algebra.product
-@tab algebra.union
-@item algebra.hashsplit
-@tab algebra.project
-@tab algebra.unique
-@item algebra.histogram
-@tab algebra.sample
-@tab algebra.uselect
-@item algebra.indexjoin
-@tab algebra.sdiff
-@item algebra.intersect
-@tab algebra.select
+@multitable @columnfractions .24 .24 .24 .24
+@item
+aggrX3.avg
+@tab
+aggrX3.count
+@tab
+aggrX3.max
+@tab
+aggrX3.min
+@item
+aggrX3.prod
+@tab
+aggrX3.size
+@tab
+aggrX3.sum
+@item
+alarm.alarm
+@tab
+alarm.ctime
+@tab
+alarm.epilogue
+@tab
+alarm.epoch
+@item
+alarm.prelude
+@tab
+alarm.sleep
+@tab
+alarm.time
+@tab
+alarm.timers
+@item
+alarm.usec
+@item
+algebra.bandjoin
+@tab
+algebra.between
+@tab
+algebra.betweenCO
+@tab
+algebra.betweenOC
+@item
+algebra.betweenOO
+@tab
+algebra.card
+@tab
+algebra.copy
+@tab
+algebra.count
+@item
+algebra.count_no_nil
+@tab
+algebra.cross
+@tab
+algebra.diff
+@tab
+algebra.exist
+@item
+algebra.fetch
+@tab
+algebra.fetchjoin
+@tab
+algebra.find
+@tab
+algebra.fragment
+@item
+algebra.hashjoin
+@tab
+algebra.hashsplit
+@tab
+algebra.histogram
+@tab
+algebra.indexjoin
+@item
+algebra.intersect
+@tab
+algebra.join
+@tab
+algebra.joinPath
+@tab
+algebra.kdiff
+@item
+algebra.kintersect
+@tab
+algebra.kunion
+@tab
+algebra.kunique
+@tab
+algebra.like
+@item
+algebra.markH
+@tab
+algebra.markT
+@tab
+algebra.max
+@tab
+algebra.merge
+@item
+algebra.mergejoin
+@tab
+algebra.min
+@tab
+algebra.number
+@tab
+algebra.outerjoin
+@item
+algebra.position
+@tab
+algebra.product
+@tab
+algebra.project
+@tab
+algebra.sample
+@item
+algebra.sdiff
+@tab
+algebra.select
+@tab
+algebra.selectHead
+@tab
+algebra.semijoin
+@item
+algebra.sintersect
+@tab
+algebra.slice
+@tab
+algebra.sort
+@tab
+algebra.sortHT
+@item
+algebra.sortT
+@tab
+algebra.sortTH
+@tab
+algebra.split
+@tab
+algebra.sum
+@item
+algebra.sunion
+@tab
+algebra.sunique
+@tab
+algebra.thetajoin
+@tab
+algebra.topN
+@item
+algebra.tunique
+@tab
+algebra.uhashsplit
+@tab
+algebra.union
+@tab
+algebra.unique
+@item
+algebra.uselect
+@item
+array.grid
+@tab
+array.print
+@tab
+array.product
+@tab
+array.project
+@item
+bat.append
+@tab
+bat.delete
+@tab
+bat.deleteBuns
+@tab
+bat.getAccess
+@item
+bat.getAlpha
+@tab
+bat.getBatSize
+@tab
+bat.getCapacity
+@tab
+bat.getDelta
+@item
+bat.getHeadType
+@tab
+bat.getHeat
+@tab
+bat.getName
+@tab
+bat.getRole
+@item
+bat.getSequenceBase
+@tab
+bat.getTailType
+@tab
+bat.hasAppendMode
+@tab
+bat.hasReadMode
+@item
+bat.hasWriteMode
+@tab
+bat.info
+@tab
+bat.insert
+@tab
+bat.isCached
+@item
+bat.isPersistent
+@tab
+bat.isSorted
+@tab
+bat.isSortedReverse
+@tab
+bat.isSynced
+@item
+bat.isTransient
+@tab
+bat.isaKey
+@tab
+bat.isaSet
+@tab
+bat.load
+@item
+bat.madvise
+@tab
+bat.mirror
+@tab
+bat.mmap
+@tab
+bat.new
+@item
+bat.pack
+@tab
+bat.replace
+@tab
+bat.reverse
+@tab
+bat.revert
+@item
+bat.save
+@tab
+bat.setAccess
+@tab
+bat.setAppendMode
+@tab
+bat.setCold
+@item
+bat.setColumn
+@tab
+bat.setGarbage
+@tab
+bat.setHash
+@tab
+bat.setHot
+@item
+bat.setKey
+@tab
+bat.setName
+@tab
+bat.setPersistent
+@tab
+bat.setReadMode
+@item
+bat.setRole
+@tab
+bat.setSequenceBase
+@tab
+bat.setSet
+@tab
+bat.setSorted
+@item
+bat.setTransient
+@tab
+bat.setWriteMode
+@tab
+bat.unload
+@tab
+bat.unpack
+@item
+batcalc.!=
+@tab
+batcalc.%
+@tab
+batcalc.*
+@tab
+batcalc.+
+@item
+batcalc.++
+@tab
+batcalc.-
+@tab
+batcalc.--
+@tab
+batcalc./
+@item
+batcalc.<
+@tab
+batcalc.<=
+@tab
+batcalc.==
+@tab
+batcalc.>
+@item
+batcalc.>=
+@tab
+batcalc.and
+@tab
+batcalc.dbl
+@tab
+batcalc.flt
+@item
+batcalc.ifthen
+@tab
+batcalc.ifthenelse
+@tab
+batcalc.init
+@tab
+batcalc.int
+@item
+batcalc.lng
+@tab
+batcalc.not
+@tab
+batcalc.oid
+@tab
+batcalc.or
+@item
+batcalc.project
+@tab
+batcalc.sht
+@tab
+batcalc.xor
+@item
+batcolor.blue
+@tab
+batcolor.cb
+@tab
+batcolor.color
+@tab
+batcolor.cr
+@item
+batcolor.green
+@tab
+batcolor.hsv
+@tab
+batcolor.hue
+@tab
+batcolor.luminance
+@item
+batcolor.red
+@tab
+batcolor.rgb
+@tab
+batcolor.saturation
+@tab
+batcolor.str
+@item
+batcolor.value
+@item
+batmath.acos
+@tab
+batmath.asin
+@tab
+batmath.atan
+@tab
+batmath.atan2
+@item
+batmath.ceil
+@tab
+batmath.cos
+@tab
+batmath.cosh
+@tab
+batmath.exp
+@item
+batmath.fabs
+@tab
+batmath.floor
+@tab
+batmath.fmod
+@tab
+batmath.log
+@item
+batmath.log10
+@tab
+batmath.pow
+@tab
+batmath.sin
+@tab
+batmath.sinh
+@item
+batmath.sqrt
+@tab
+batmath.tan
+@tab
+batmath.tanh
+@item
+batstr.+
+@tab
+batstr.==
+@tab
+batstr.bytes
+@tab
+batstr.chrAt
+@item
+batstr.endsWith
+@tab
+batstr.length
+@tab
+batstr.ltrim
+@tab
+batstr.match
+@item
+batstr.r_search
+@tab
+batstr.rtrim
+@tab
+batstr.search
+@tab
+batstr.startsWith
+@item
+batstr.str
+@tab
+batstr.string
+@tab
+batstr.substitute
+@tab
+batstr.toLower
+@item
+batstr.toUpper
+@tab
+batstr.trim
+@tab
+batstr.unicodeAt
+@item
+bbp.bind
+@tab
+bbp.close
+@tab
+bbp.commit
+@tab
+bbp.deposit
+@item
+bbp.destroy
+@tab
+bbp.discard
+@tab
+bbp.getCount
+@tab
+bbp.getDirty
+@item
+bbp.getHeadType
+@tab
+bbp.getHeat
+@tab
+bbp.getKind
+@tab
+bbp.getLRefCount
+@item
+bbp.getLocation
+@tab
+bbp.getName
+@tab
+bbp.getNames
+@tab
+bbp.getObjects
+@item
+bbp.getRNames
+@tab
+bbp.getRefCount
+@tab
+bbp.getStatus
+@tab
+bbp.getTailType
+@item
+bbp.iterator
+@tab
+bbp.open
+@tab
+bbp.prelude
+@tab
+bbp.release
+@item
+bbp.releaseAll
+@tab
+bbp.take
+@tab
+bbp.toString
+@item
+blob.#convert
+@tab
+blob.#del
+@tab
+blob.#fromstr
+@tab
+blob.#hash
+@item
+blob.#heap
+@tab
+blob.#length
+@tab
+blob.#nequal
+@tab
+blob.#put
+@item
+blob.#tostr
+@tab
+blob.nitems
+@tab
+blob.null
+@tab
+blob.toblob
+@item
+blob.tostring
+@item
+box.close
+@tab
+box.deposit
+@tab
+box.destroy
+@tab
+box.discard
+@item
+box.getBoxNames
+@tab
+box.iterator
+@tab
+box.open
+@tab
+box.release
+@item
+box.releaseAll
+@tab
+box.take
+@tab
+box.toString
+@item
+bstream.create
+@tab
+bstream.destroy
+@tab
+bstream.read
+@item
+calc.!=
+@tab
+calc.%
+@tab
+calc.*
+@tab
+calc.+
+@item
+calc.-
+@tab
+calc./
+@tab
+calc.<
+@tab
+calc.<<
+@item
+calc.<=
+@tab
+calc.==
+@tab
+calc.>
+@tab
+calc.>=
+@item
+calc.>>
+@tab
+calc.abs
+@tab
+calc.and
+@tab
+calc.bat
+@item
+calc.between
+@tab
+calc.bit
+@tab
+calc.chr
+@tab
+calc.dbl
+@item
+calc.flt
+@tab
+calc.getBAT
+@tab
+calc.getBATidentifier
+@tab
+calc.ifthenelse
+@item
+calc.int
+@tab
+calc.inv
+@tab
+calc.isnil
+@tab
+calc.isnotnil
+@item
+calc.lng
+@tab
+calc.max
+@tab
+calc.min
+@tab
+calc.newoid
+@item
+calc.not
+@tab
+calc.oid
+@tab
+calc.or
+@tab
+calc.ptr
+@item
+calc.setoid
+@tab
+calc.sht
+@tab
+calc.str
+@tab
+calc.void
+@item
+calc.xor
+@item
+chopper.getHead
+@tab
+chopper.getTail
+@tab
+chopper.hasMoreChunks
+@tab
+chopper.hasMoreElements
+@item
+chopper.newChunkIterator
+@tab
+chopper.newIterator
+@item
+clients.clearDebug
+@tab
+clients.getId
+@tab
+clients.getInfo
+@tab
+clients.getLogins
+@item
+clients.getScenario
+@tab
+clients.getUsers
+@tab
+clients.quit
+@tab
+clients.setDebug
+@item
+clients.setHistory
+@tab
+clients.setListing
+@tab
+clients.setScenario
+@item
+color.#fromstr
+@tab
+color.#tostr
+@tab
+color.blue
+@tab
+color.cb
+@item
+color.color
+@tab
+color.cr
+@tab
+color.green
+@tab
+color.hsv
+@item
+color.hue
+@tab
+color.luminance
+@tab
+color.print
+@tab
+color.printf
+@item
+color.red
+@tab
+color.rgb
+@tab
+color.saturation
+@tab
+color.str
+@item
+color.value
+@tab
+color.ycc
+@item
+const.close
+@tab
+const.deposit
+@tab
+const.destroy
+@tab
+const.discard
+@item
+const.hasMoreElements
+@tab
+const.newIterator
+@tab
+const.open
+@tab
+const.prelude
+@item
+const.release
+@tab
+const.releaseAll
+@tab
+const.take
+@tab
+const.toString
+@item
+crackers.crack
+@tab
+crackers.drop
+@tab
+crackers.dropView
+@tab
+crackers.getPiece
+@item
+crackers.hasMoreElements
+@tab
+crackers.info
+@tab
+crackers.new
+@tab
+crackers.newIterator
+@item
+crackers.select
+@tab
+crackers.selectPieces
+@item
+date.!=
+@tab
+date.#fromstr
+@tab
+date.#tostr
+@tab
+date.<
+@item
+date.<=
+@tab
+date.=
+@tab
+date.>
+@tab
+date.>=
+@item
+date.isnil
+@item
+daytime.!=
+@tab
+daytime.#fromstr
+@tab
+daytime.#tostr
+@tab
+daytime.<
+@item
+daytime.<=
+@tab
+daytime.=
+@tab
+daytime.>
+@tab
+daytime.>=
+@item
+daytime.isnil
+@item
+factory.getCaller
+@tab
+factory.getLocations
+@tab
+factory.getOwners
+@tab
+factory.getPlants
+@item
+factory.getTimeStampIn
+@tab
+factory.getTimeStampOut
+@tab
+factory.setLocation
+@tab
+factory.shutdown
+@item
+group.avg
+@tab
+group.count
+@tab
+group.group
+@tab
+group.max
+@item
+group.min
+@tab
+group.prelude
+@tab
+group.refine
+@tab
+group.size
+@item
+group.sum
+@item
+inspect.getAtomNames
+@tab
+inspect.getAtomSizes
+@tab
+inspect.getAtomSuperNames
+@tab
+inspect.getDefinition
+@item
+inspect.getFunction
+@tab
+inspect.getKind
+@tab
+inspect.getModule
+@tab
+inspect.getSignature
+@item
+inspect.getType
+@tab
+inspect.getTypeName
+@item
+io.export
+@tab
+io.ftable
+@tab
+io.import
+@tab
+io.print
+@item
+io.printf
+@tab
+io.printft
+@tab
+io.prompt
+@tab
+io.stderr
+@item
+io.stdin
+@tab
+io.stdout
+@tab
+io.table
+@item
+lock.create
+@tab
+lock.destroy
+@tab
+lock.set
+@tab
+lock.tostr
+@item
+lock.try
+@tab
+lock.unset
+@item
+mal.assert
+@tab
+mal.call
+@tab
+mal.newRange
+@tab
+mal.nextElement
+@item
+mal.raise
+@tab
+mal.register
+@tab
+mal.source
+@item
+manual.create
+@tab
+manual.createHelp
+@tab
+manual.createOverview
+@tab
+manual.help
+@item
+mapi.epilogue
+@tab
+mapi.listen
+@tab
+mapi.listen_ssl
+@tab
+mapi.prelude
+@item
+mapi.resume
+@tab
+mapi.stop
+@tab
+mapi.suspend
+@tab
+mapi.trace
+@item
+mdb.List
+@tab
+mdb.getDefinition
+@tab
+mdb.getExceptionContext
+@tab
+mdb.getExceptionReason
+@item
+mdb.getExceptionVariable
+@tab
+mdb.getStackDepth
+@tab
+mdb.getStackFrame
+@tab
+mdb.getStackTrace
+@item
+mdb.inspect
+@tab
+mdb.list
+@tab
+mdb.setCatch
+@tab
+mdb.setTimer
+@item
+mdb.setTrace
+@tab
+mdb.start
+@tab
+mdb.stop
+@tab
+mdb.var
+@item
+mmath.acos
+@tab
+mmath.asin
+@tab
+mmath.atan
+@tab
+mmath.atan2
+@item
+mmath.ceil
+@tab
+mmath.cos
+@tab
+mmath.cosh
+@tab
+mmath.exp
+@item
+mmath.fabs
+@tab
+mmath.finite
+@tab
+mmath.floor
+@tab
+mmath.fmod
+@item
+mmath.isinf
+@tab
+mmath.isnan
+@tab
+mmath.log
+@tab
+mmath.log10
+@item
+mmath.pow
+@tab
+mmath.rand
+@tab
+mmath.round
+@tab
+mmath.sin
+@item
+mmath.sinh
+@tab
+mmath.sqrt
+@tab
+mmath.srand
+@tab
+mmath.tan
+@item
+mmath.tanh
+@item
+mtime.add
+@tab
+mtime.adddays
+@tab
+mtime.addmonths
+@tab
+mtime.addyears
+@item
+mtime.compute
+@tab
+mtime.current_date
+@tab
+mtime.current_time
+@tab
+mtime.current_timestamp
+@item
+mtime.date
+@tab
+mtime.date_add_month_interval
+@tab
+mtime.date_add_sec_interval
+@tab
+mtime.date_sub_sec_interval
+@item
+mtime.day
+@tab
+mtime.dayname
+@tab
+mtime.daynum
+@tab
+mtime.dayofweek
+@item
+mtime.dayofyear
+@tab
+mtime.daytime
+@tab
+mtime.diff
+@tab
+mtime.dst
+@item
+mtime.end_dst
+@tab
+mtime.hours
+@tab
+mtime.milliseconds
+@tab
+mtime.minutes
+@item
+mtime.month
+@tab
+mtime.monthname
+@tab
+mtime.monthnum
+@tab
+mtime.msecs
+@item
+mtime.olddate
+@tab
+mtime.oldduration
+@tab
+mtime.prelude
+@tab
+mtime.rule
+@item
+mtime.seconds
+@tab
+mtime.start_dst
+@tab
+mtime.time_synonyms
+@tab
+mtime.timestamp
+@item
+mtime.timezone
+@tab
+mtime.tzone
+@tab
+mtime.tzone_local
+@tab
+mtime.weekday
+@item
+mtime.weekofyear
+@tab
+mtime.year
+@item
+optimizer.aliasRemoval
+@tab
+optimizer.clrDebug
+@tab
+optimizer.commonExpressionRemoval
+@tab
+optimizer.costEstimation
+@item
+optimizer.deadCodeRemoval
+@tab
+optimizer.dumpQEP
+@tab
+optimizer.emptySet
+@tab
+optimizer.expressionAccumulation
+@item
+optimizer.factorize
+@tab
+optimizer.garbageCollector
+@tab
+optimizer.macroContraction
+@tab
+optimizer.macroExpansion
+@item
+optimizer.multiplex
+@tab
+optimizer.optimize
+@tab
+optimizer.partitionedQuery
+@tab
+optimizer.peephole
+@item
+optimizer.prelude
+@tab
+optimizer.reduce
+@tab
+optimizer.setDebug
+@tab
+optimizer.showFlowGraph
+@item
+optimizer.showPlan
+@tab
+optimizer.singleton
+@tab
+optimizer.strengthReduction
+@item
+partitions.close
+@tab
+partitions.compress
+@tab
+partitions.delete
+@tab
+partitions.deposit
+@item
+partitions.destroy
+@tab
+partitions.discard
+@tab
+partitions.dump
+@tab
+partitions.getLastPartition
+@item
+partitions.getRange
+@tab
+partitions.hasMoreElements
+@tab
+partitions.insert
+@tab
+partitions.newIterator
+@item
+partitions.open
+@tab
+partitions.prelude
+@tab
+partitions.release
+@tab
+partitions.releaseAll
+@item
+partitions.setCapacity
+@tab
+partitions.take
+@tab
+partitions.toString
+@item
+pcre.#del
+@tab
+pcre.#fromstr
+@tab
+pcre.#hash
+@tab
+pcre.#heap
+@item
+pcre.#length
+@tab
+pcre.#nequal
+@tab
+pcre.#put
+@tab
+pcre.#tostr
+@item
+pcre.compile
+@tab
+pcre.match
+@tab
+pcre.null
+@tab
+pcre.select
+@item
+pcre.uselect
+@item
+profiler.activate
+@tab
+profiler.clearTrace
+@tab
+profiler.closeStream
+@tab
+profiler.clrFilter
+@item
+profiler.deactivate
+@tab
+profiler.dumpTrace
+@tab
+profiler.getTrace
+@tab
+profiler.openStream
+@item
+profiler.setAll
+@tab
+profiler.setCachedProfiling
+@tab
+profiler.setEndPoint
+@tab
+profiler.setFilter
+@item
+profiler.setNone
+@tab
+profiler.setOfflineProfiling
+@tab
+profiler.setOnlineProfiling
+@tab
+profiler.setStartPoint
+@item
+profiler.start
+@tab
+profiler.startTrace
+@tab
+profiler.stop
+@tab
+profiler.stopTrace
+@item
+rule.#fromstr
+@tab
+rule.#tostr
+@tab
+rule.define
+@item
+sema.create
+@tab
+sema.destroy
+@tab
+sema.down
+@tab
+sema.up
+@item
+sqlblob.#fromstr
+@tab
+sqlblob.#tostr
+@item
+statistics.close
+@tab
+statistics.deposit
+@tab
+statistics.destroy
+@tab
+statistics.discard
+@item
+statistics.dump
+@tab
+statistics.forceUpdate
+@tab
+statistics.getCount
+@tab
+statistics.getHistogram
+@item
+statistics.getHotset
+@tab
+statistics.getMax
+@tab
+statistics.getMin
+@tab
+statistics.getObjects
+@item
+statistics.getSize
+@tab
+statistics.hasMoreElements
+@tab
+statistics.newIterator
+@tab
+statistics.open
+@item
+statistics.prelude
+@tab
+statistics.release
+@tab
+statistics.releaseAll
+@tab
+statistics.take
+@item
+statistics.toString
+@tab
+statistics.update
+@item
+status.cpuStatistics
+@tab
+status.gdkEnv
+@tab
+status.gdkThread
+@tab
+status.ioStatistics
+@item
+status.memStatistics
+@tab
+status.memUsage
+@tab
+status.mem_cursize
+@tab
+status.mem_maxsize
+@item
+status.vmUsage
+@tab
+status.vm_cursize
+@tab
+status.vm_maxsize
+@item
+str.+
+@tab
+str.STRprelude
+@tab
+str.chrAt
+@tab
+str.codeset
+@item
+str.endsWith
+@tab
+str.iconv
+@tab
+str.length
+@tab
+str.ltrim
+@item
+str.nbytes
+@tab
+str.r_search
+@tab
+str.rtrim
+@tab
+str.search
+@item
+str.startsWith
+@tab
+str.str
+@tab
+str.string
+@tab
+str.substitute
+@item
+str.toLower
+@tab
+str.toUpper
+@tab
+str.trim
+@tab
+str.unicode
+@item
+str.unicodeAt
+@item
+stream.blocked
+@tab
+stream.close
+@tab
+stream.flush
+@tab
+stream.openRead
+@item
+stream.openReadBytes
+@tab
+stream.openWrite
+@tab
+stream.openWriteBytes
+@tab
+stream.readInt
+@item
+stream.readStr
+@tab
+stream.socketRead
+@tab
+stream.socketReadBytes
+@tab
+stream.socketWrite
+@item
+stream.socketWriteBytes
+@tab
+stream.writeInt
+@tab
+stream.writeStr
+@item
+tablet.display
+@tab
+tablet.dump
+@tab
+tablet.finish
+@tab
+tablet.firstPage
+@item
+tablet.getPage
+@tab
+tablet.getPageCnt
+@tab
+tablet.header
+@tab
+tablet.input
+@item
+tablet.lastPage
+@tab
+tablet.load
+@tab
+tablet.nextPage
+@tab
+tablet.output
+@item
+tablet.page
+@tab
+tablet.prevPage
+@tab
+tablet.setColumn
+@tab
+tablet.setColumnBracket
+@item
+tablet.setColumnDecimal
+@tab
+tablet.setColumnName
+@tab
+tablet.setColumnNull
+@tab
+tablet.setColumnPosition
+@item
+tablet.setColumnWidth
+@tab
+tablet.setDelimiter
+@tab
+tablet.setFormat
+@tab
+tablet.setPivot
+@item
+tablet.setProperties
+@tab
+tablet.setRowBracket
+@tab
+tablet.setStream
+@tab
+tablet.setTableBracket
+@item
+thread.exec
+@tab
+thread.isDead
+@tab
+thread.kill
+@tab
+thread.suspend
+@item
+thread.terminate
+@tab
+thread.wait
+@item
+timestamp.!=
+@tab
+timestamp.#fromstr
+@tab
+timestamp.#tostr
+@tab
+timestamp.<
+@item
+timestamp.<=
+@tab
+timestamp.=
+@tab
+timestamp.>
+@tab
+timestamp.>=
+@item
+timestamp.epoch
+@tab
+timestamp.isnil
+@tab
+timestamp.unix_epoch
+@item
+transaction.abort
+@tab
+transaction.alpha
+@tab
+transaction.clean
+@tab
+transaction.commit
+@item
+transaction.delta
+@tab
+transaction.sync
+@item
+tzone.#fromstr
+@tab
+tzone.#tostr
+@tab
+tzone.str
+@tab
+tzone.timestamp
+@item
+unix.getenv
+@tab
+unix.setenv
+@item
+url.#fromstr
+@tab
+url.#tostr
+@tab
+url.getAnchor
+@tab
+url.getBasename
+@item
+url.getContent
+@tab
+url.getContext
+@tab
+url.getDirectory
+@tab
+url.getDomain
+@item
+url.getExtension
+@tab
+url.getFile
+@tab
+url.getHost
+@tab
+url.getPort
+@item
+url.getProtocol
+@tab
+url.getQuery
+@tab
+url.getQueryArg
+@tab
+url.getRobotURL
+@item
+url.getUser
+@tab
+url.isaURL
+@tab
+url.newurl
+@tab
+url.url
+@item
+user.main
 @end multitable
 
-@verbatim
-array.grid     array.print    array.product  array.project
-
-bat.append           bat.insert           bat.setAccess
-bat.delete           bat.isCached         bat.setAppendMode
-bat.deleteBuns       bat.isPersistent     bat.setCold
-bat.setGarbage       bat.isSorted         bat.setColumn
-bat.getAccess        bat.isSortedReverse  bat.setHash
-bat.getAlpha         bat.isSynced         bat.setHot
-bat.getBatSize       bat.isTransient      bat.setKey
-bat.getCapacity      bat.isaKey           bat.setName
-bat.getDelta         bat.isaSet           bat.setPersistent
-bat.getHeadType      bat.load             bat.setReadMode
-bat.getHeat          bat.madvise          bat.setRole
-bat.getName          bat.mirror           bat.setSequenceBase
-bat.getRole          bat.mmap             bat.setSet
-bat.getSequenceBase  bat.new              bat.setSorted
-bat.getTailType      bat.pack             bat.setTransient
-bat.hasAppendMode    bat.replace          bat.setWriteMode
-bat.hasReadMode      bat.reverse          bat.unload
-bat.hasWriteMode     bat.revert           bat.unpack
-bat.info             bat.save
-
-batcalc.!=          batcalc.<=          batcalc.init
-batcalc.%           batcalc.==          batcalc.int
-batcalc.*           batcalc.>           batcalc.lng
-batcalc.+           batcalc.>=          batcalc.not
-batcalc.++          batcalc.and         batcalc.oid
-batcalc.-           batcalc.dbl         batcalc.or
-batcalc.--          batcalc.flt         batcalc.project
-batcalc./           batcalc.ifthen      batcalc.sht
-batcalc.<           batcalc.ifthenelse  batcalc.xor
-
-batcolor.blue        batcolor.hsv         batcolor.saturation
-batcolor.cb          batcolor.hue         batcolor.str
-batcolor.color       batcolor.luminance   batcolor.value
-batcolor.cr          batcolor.red
-batcolor.green       batcolor.rgb
-
-batmath.acos   batmath.ceil   batmath.fabs   batmath.log10  batmath.sqrt
-batmath.asin   batmath.cos    batmath.floor  batmath.pow    batmath.tan
-batmath.atan   batmath.cosh   batmath.fmod   batmath.sin    batmath.tanh
-batmath.atan2  batmath.exp    batmath.log    batmath.sinh
-
-batstr.+           batstr.length      batstr.search      batstr.toLower
-batstr.==          batstr.ltrim       batstr.startsWith  batstr.toUpper
-batstr.bytes       batstr.match       batstr.str         batstr.trim
-batstr.chrAt       batstr.r_search    batstr.string      batstr.unicodeAt
-batstr.endsWith    batstr.rtrim       batstr.substitute
-
-bbp.bind          bbp.getDirty      bbp.getNames      bbp.open
-bbp.close         bbp.getHeadType   bbp.getObjects    bbp.prelude
-bbp.commit        bbp.getHeat       bbp.getRNames     bbp.release
-bbp.deposit       bbp.getKind       bbp.getRefCount   bbp.releaseAll
-bbp.destroy       bbp.getLRefCount  bbp.getStatus     bbp.take
-bbp.discard       bbp.getLocation   bbp.getTailType   bbp.toString
-bbp.getCount      bbp.getName       bbp.iterator
-
-blob.convert   blob.hash      blob.nequal    blob.put       blob.tostring
-blob.del       blob.heap      blob.nitems    blob.toblob
-blob.fromstr   blob.length    blob.null      blob.tostr
-
-box.close        box.discard      box.open         box.take
-box.deposit      box.getBoxNames  box.release      box.toString
-box.destroy      box.iterator     box.releaseAll
-
-bstream.create   bstream.destroy  bstream.read
-
-calc.!=                calc.and               calc.lng
-calc.%                 calc.bat               calc.max
-calc.*                 calc.between           calc.min
-calc.+                 calc.bit               calc.newoid
-calc.-                 calc.chr               calc.not
-calc./                 calc.dbl               calc.oid
-calc.<                 calc.flt               calc.or
-calc.<<                calc.getBAT            calc.ptr
-calc.<=                calc.getBATidentifier  calc.setoid
-calc.==                calc.ifthenelse        calc.sht
-calc.>                 calc.int               calc.str
-calc.>=                calc.inv               calc.void
-calc.>>                calc.isnil             calc.xor
-calc.abs               calc.isnotnil
-
-chopper.getHead           chopper.hasMoreChunks     chopper.newChunkIterator
-chopper.getTail           chopper.hasMoreElements   chopper.newIterator
-
-clients.clearDebug   clients.getScenario  clients.setHistory
-clients.getId        clients.getUsers     clients.setListing
-clients.getInfo      clients.quit         clients.setScenario
-clients.getLogins    clients.setDebug
-
-color.blue        color.green       color.printf      color.tostr
-color.cb          color.hsv         color.red         color.value
-color.color       color.hue         color.rgb         color.ycc
-color.cr          color.luminance   color.saturation
-color.fromstr     color.print       color.str
-
-const.close            const.hasMoreElements  const.release
-const.deposit          const.newIterator      const.releaseAll
-const.destroy          const.open             const.take
-const.discard          const.prelude          const.toString
-
-crackers.crack            crackers.hasMoreElements  crackers.select
-crackers.drop             crackers.info             crackers.selectPieces
-crackers.dropView         crackers.new
-crackers.getPiece         crackers.newIterator
-
-date.!=       date.<=       date.>        date.fromstr  date.tostr
-date.<        date.=        date.>=       date.isnil
-
-daytime.!=       daytime.=        daytime.fromstr
-daytime.<        daytime.>        daytime.isnil
-daytime.<=       daytime.>=       daytime.tostr
-
-factory.getCaller        factory.getPlants        factory.setLocation
-factory.getLocations     factory.getTimeStampIn   factory.shutdown
-factory.getOwners        factory.getTimeStampOut
-
-group.avg      group.group    group.min      group.refine   group.sum
-group.count    group.max      group.prelude  group.size
-
-inspect.get
-
-io.export   io.import   io.printf   io.prompt   io.stdin    io.table
-io.ftable   io.print    io.printft  io.stderr   io.stdout
-
-lock.create   lock.set      lock.try
-lock.destroy  lock.tostr    lock.unset
-
-mal.assert       mal.newRange     mal.raise        mal.source
-mal.call         mal.nextElement  mal.register
-
-manual.create  manual.help
-
-mapi.epilogue    mapi.listen_ssl  mapi.resume      mapi.suspend
-mapi.listen      mapi.prelude     mapi.stop        mapi.trace
-
-mdb.List                  mdb.getStackFrame         mdb.setTrace
-mdb.getDefinition         mdb.getStackTrace         mdb.start
-mdb.getExceptionContext   mdb.inspect               mdb.stop
-mdb.getExceptionReason    mdb.list                  mdb.var
-mdb.getExceptionVariable  mdb.setCatch
-mdb.getStackDepth         mdb.setTimer
-
-mmath.acos    mmath.cos     mmath.floor   mmath.log10   mmath.sinh
-mmath.asin    mmath.cosh    mmath.fmod    mmath.pow     mmath.sqrt
-mmath.atan    mmath.exp     mmath.isinf   mmath.rand    mmath.srand
-mmath.atan2   mmath.fabs    mmath.isnan   mmath.round   mmath.tan
-mmath.ceil    mmath.finite  mmath.log     mmath.sin     mmath.tanh
-
-optimizer.aliasRemoval             optimizer.multiplex
-optimizer.clrDebug                 optimizer.optimize
-optimizer.commonExpressionRemoval  optimizer.partitionedQuery
-optimizer.costEstimation           optimizer.peephole
-optimizer.deadCodeRemoval          optimizer.prelude
-optimizer.dumpQEP                  optimizer.reduce
-optimizer.emptySet                 optimizer.setDebug
-optimizer.expressionAccumulation   optimizer.showFlowGraph
-optimizer.factorize                optimizer.showPlan
-optimizer.garbageCollector         optimizer.singleton
-optimizer.macroContraction         optimizer.strengthReduction
-optimizer.macroExpansion
-
-partitions.close             partitions.insert
-partitions.compress          partitions.newIterator
-partitions.delete            partitions.open
-partitions.deposit           partitions.prelude
-partitions.destroy           partitions.release
-partitions.discard           partitions.releaseAll
-partitions.dump              partitions.setCapacity
-partitions.getLastPartition  partitions.take
-partitions.getRange          partitions.toString
-partitions.hasMoreElements
-
-pcre.compile  pcre.hash     pcre.match    pcre.put      pcre.uselect
-pcre.del      pcre.heap     pcre.nequal   pcre.select
-pcre.fromstr  pcre.length   pcre.null     pcre.tostr
-
-profiler.activate             profiler.setEndPoint
-profiler.clearTrace           profiler.setFilter
-profiler.closeStream          profiler.setNone
-profiler.clrFilter            profiler.setOfflineProfiling
-profiler.deactivate           profiler.setOnlineProfiling
-profiler.dumpTrace            profiler.setStartPoint
-profiler.getTrace             profiler.start
-profiler.openStream           profiler.startTrace
-profiler.setAll               profiler.stop
-profiler.setCachedProfiling   profiler.stopTrace
-
-rule.define   rule.fromstr  rule.tostr
-
-sema.create   sema.destroy  sema.down     sema.up
-
-sqlblob.fromstr  sqlblob.tostr
-
-statistics.close            statistics.getObjects
-statistics.deposit          statistics.getSize
-statistics.destroy          statistics.hasMoreElements
-statistics.discard          statistics.newIterator
-statistics.dump             statistics.open
-statistics.forceUpdate      statistics.prelude
-statistics.getCount         statistics.release
-statistics.getHistogram     statistics.releaseAll
-statistics.getHotset        statistics.take
-statistics.getMax           statistics.toString
-statistics.getMin           statistics.update
-
-status.cpuStatistics  status.memStatistics  status.vmUsage
-status.gdkEnv         status.memUsage       status.vm_cursize
-status.gdkThread      status.mem_cursize    status.vm_maxsize
-status.ioStatistics   status.mem_maxsize
-
-str.+           str.length      str.startsWith  str.trim
-str.STRprelude  str.ltrim       str.str         str.unicode
-str.chrAt       str.nbytes      str.string      str.unicodeAt
-str.codeset     str.r_search    str.substitute
-str.endsWith    str.rtrim       str.toLower
-str.iconv       str.search      str.toUpper
-
-stream.blocked           stream.openWrite         stream.socketReadBytes
-stream.close             stream.openWriteBytes    stream.socketWrite
-stream.flush             stream.readInt           stream.socketWriteBytes
-stream.openRead          stream.readStr           stream.writeInt
-stream.openReadBytes     stream.socketRead        stream.writeStr
-
-tablet.display            tablet.nextPage           tablet.setColumnWidth
-tablet.dump               tablet.output             tablet.setDelimiter
-tablet.finish             tablet.page               tablet.setFormat
-tablet.firstPage          tablet.prevPage           tablet.setPivot
-tablet.getPage            tablet.setColumn          tablet.setProperties
-tablet.getPageCnt         tablet.setColumnBracket   tablet.setRowBracket
-tablet.header             tablet.setColumnDecimal   tablet.setStream
-tablet.input              tablet.setColumnName      tablet.setTableBracket
-tablet.lastPage           tablet.setColumnNull
-tablet.load               tablet.setColumnPosition
-
-thread.exec       thread.kill       thread.terminate
-thread.isDead     thread.suspend    thread.wait
-
-timestamp.!=          timestamp.>           timestamp.isnil
-timestamp.<           timestamp.>=          timestamp.tostr
-timestamp.<=          timestamp.epoch       timestamp.unix_epoch
-timestamp.=           timestamp.fromstr
-
-transaction.abort   transaction.clean   transaction.delta
-transaction.alpha   transaction.commit  transaction.sync
-
-tzone.fromstr    tzone.str        tzone.timestamp  tzone.tostr
-
-unix.getenv  unix.setenv
-
-url.fromstr       url.getDirectory  url.getPort       url.getUser
-url.getAnchor     url.getDomain     url.getProtocol   url.isaURL
-url.getBasename   url.getExtension  url.getQuery      url.newurl
-url.getContent    url.getFile       url.getQueryArg   url.tostr
-url.getContext    url.getHost       url.getRobotURL   url.url
-
-@end verbatim

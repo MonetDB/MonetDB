@@ -119,6 +119,12 @@ comment "Generate a synopsis of a module";
 command create()
 address MANUALcreate0
 comment "Produces a XML-formatted manual over all modules loaded.";
+command createOverview()
+address MANUALcreateOverview
+comment "Produces an overview of all functions grouped by module.";
+command createHelp()
+address MANUALcreateHelp
+comment "Produces a manual with help lines grouped by module.";
 @-
 @{
 @+ Implementation
@@ -660,6 +666,20 @@ MANUALcreate0(int *ret)
 	dumpManualHeader(GDKout);
 	dumpManual(GDKout, getClient()->nspace, 1);
 	dumpManualFooter(GDKout);
+	return MAL_SUCCEED;
+}
+str
+MANUALcreateOverview(int *ret)
+{
+	(void) ret;		/* fool compiler */
+	dumpManualOverview(GDKout, getClient()->nspace, 1);
+	return MAL_SUCCEED;
+}
+str
+MANUALcreateHelp(int *ret)
+{
+	(void) ret;		/* fool compiler */
+	dumpManualHelp(GDKout, getClient()->nspace, 1);
 	return MAL_SUCCEED;
 }
 

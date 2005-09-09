@@ -261,6 +261,9 @@ This is the place to describe Membedded, distribution stuff...
 @node Appendices, , Advanced Topics, TOC
 @appendix MAL Instruction Overview
 @include Assets/MALinstructions.texi
+
+@appendix MAL Instruction Help
+@include Assets/MALhelp.texi
 @ifnottex
 @include mal_syntax.bdy.texi
 @end ifnottex
