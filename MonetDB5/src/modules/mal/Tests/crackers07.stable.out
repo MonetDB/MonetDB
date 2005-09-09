@@ -51,7 +51,7 @@ stdout of test 'crackers07` in directory 'src/modules/mal` itself:
 function user.main():int;	# 0  (main:int)
 # Testing the cracker implementation 	# 1  (_2:str)
 # perform ordinary selection 	# 2  (_4:str)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
+    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
     bat.insert(b,10,100);	# 4 BKCinsert_bun (_7:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
     bat.insert(b,1,2);	# 5 BKCinsert_bun (_10:bat[:int,:int])<-(b:bat[:int,:int])(_11:int)(_12:int)
     bat.insert(b,6,36);	# 6 BKCinsert_bun (_13:bat[:int,:int])<-(b:bat[:int,:int])(_14:int)(_15:int)

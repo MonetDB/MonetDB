@@ -4,5 +4,5 @@
 command f(a:any_1, b:bat[:any_2,:any_1],c:any_2):any_3
 address dummy;
 
-b:= bbp.new(:str,:int);
+b:= bat.new(:str,:int);
 a:= user.f(1,b,"hello");

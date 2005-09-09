@@ -37,7 +37,7 @@ end steal;	# 7
 #	return b;
 #end createone;
 function user.createone():bat[:int,:str];	# 0  (createone:bat[:int,:str])
-    b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-(_2:int)(_3:str)
+    b := bat.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-(_2:int)(_3:str)
     return b;	# 2  (b:bat[:int,:str])
 end createone;	# 3  
 #
@@ -91,7 +91,7 @@ end createone;	# 3
 #
 function user.main():int;	# 0  (main:int)
 # a test checking BAT reference counting under various situations 	# 1  (_2:str)
-    b := bbp.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-(_4:int)(_5:str)
+    b := bat.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-(_4:int)(_5:str)
     i := bbp.getLRefCount(b);	# 3 CMDgetBATlrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("refcount =%d[1]\n",i);	# 4 IOprint_formatted_int (_7:int)<-(_8:str)(i:int)
     bat.insert(b,1,"bat B");	# 5 BKCinsert_bun (_9:bat[:int,:str])<-(b:bat[:int,:str])(_10:int)(_11:str)

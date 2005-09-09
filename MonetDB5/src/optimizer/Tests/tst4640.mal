@@ -1,10 +1,10 @@
 # TPCH Q1 non-optimized
 #don;t depend on SQL library
 function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];
-	return bbp.new(:any_1,:any_2);
+	return bat.new(:any_1,:any_2);
 end bind;
 function user.bind_dbat(s:str,t:str,i:int):bat[:any_1,:any_2];
-	return bbp.new(:any_1,:any_2);
+	return bat.new(:any_1,:any_2);
 end bind_dbat;
 function user.column(b:bat[:void,:any_1],s:str,t:str,i:int,j:int):void;
 end column;

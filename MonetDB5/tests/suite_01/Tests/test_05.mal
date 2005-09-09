@@ -44,7 +44,7 @@ include mil;
 	c2 := "\\";
 	ma_a := io.print(c2);
 	mil.line("var s:=new(int,str,100);");
-	s := bbp.new(nil:int,nil:str,100);
+	s := bat.new(nil:int,nil:str,100);
 	mil.line("s.insert(2,\" single quote ' got it\");");
 	na_a := bat.insert(s,2," single quote ' got it");
 	mil.line("s.insert(4,\" backslash  \\ \");");

@@ -22,10 +22,6 @@ lib_optimizer = {
 	LDFLAGS = -lm
 }
 
-#doc_ml = {
-#	DIR = pkgdatadir/docs/mal
-#	SOURCES = \
-
 scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = optimizer.mx 

@@ -1,6 +1,6 @@
 #Code factorization
 function test(s:str):lng;
-	b:= bbp.new(:int,:str);
+	b:= bat.new(:int,:str);
 	bat.insert(b,1,"hello");
 	z:= algebra.select(b,s,s);
 	i:= algebra.count(z);

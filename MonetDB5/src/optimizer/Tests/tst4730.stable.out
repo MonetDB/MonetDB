@@ -20,13 +20,13 @@ stdout of test 'tst4730` in directory 'src/optimizer` itself:
 #	return bbp.new(:any_1,:any_2);
 #end bind;
 function user.bind(s:str,t:str,c:str,i:int):bat[:any_1,:any_2];	# 0  dynamic (bind:bat[:any_1,:any_2])<-(s:str)(t:str)(c:str)(i:int)
-    return bbp.new(:any_1,:any_2);	# 1 CMDBATnew (_5:bat[:any,:any])<-(_6:any_1)(_7:any_2)
+    return bat.new(:any_1,:any_2);	# 1 CMDBATnew (_5:bat[:any,:any])<-(_6:any_1)(_7:any_2)
 end bind;	# 2  
 #function user.bind_dbat(s:str,t:str,i:int):bat[:any_1,:any_2];
 #    return bbp.new(:any_1,:any_2);
 #end bind_dbat;
 function user.bind_dbat(s:str,t:str,i:int):bat[:any_1,:any_2];	# 0  dynamic (bind_dbat:bat[:any_1,:any_2])<-(s:str)(t:str)(i:int)
-    return bbp.new(:any_1,:any_2);	# 1 CMDBATnew (_4:bat[:any,:any])<-(_5:any_1)(_6:any_2)
+    return bat.new(:any_1,:any_2);	# 1 CMDBATnew (_4:bat[:any,:any])<-(_5:any_1)(_6:any_2)
 end bind_dbat;	# 2  
 #function user.column(b:bat[:void,:any_1],s:str,t:str,i:int,j:int):void;
 #end column;

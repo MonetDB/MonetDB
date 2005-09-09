@@ -1,5 +1,5 @@
 # testing repeatative reverse optimalisation
-r:bat[:int,:int]:= bbp.new(:int,:int);
+r:bat[:int,:int]:= bat.new(:int,:int);
 o:= calc.oid(0@0);
 z:= algebra.markT(r,o);
 rr:= bat.reverse(z);

@@ -7,7 +7,7 @@ function perftst( b:bat[:any_1,:any_2],div:any_2):void;
 end perftst;
 
 
-b:= bbp.new(:lng,:lng);
+b:= bat.new(:lng,:lng);
 barrier (v,i):= mal.newRange(0:lng);
         bat.insert(b,i,i);
         redo (v,i):= mal.nextElement(1:lng,10:lng);

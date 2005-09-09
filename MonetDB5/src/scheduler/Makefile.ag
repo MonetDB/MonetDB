@@ -18,9 +18,6 @@ LIBS = {
                 $(SOCKET_LIBS) $(Z_LIBS) $(BZ_LIBS) \
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
-#doc_ml = {
-#	DIR = pkgdatadir/docs/mal
-#	SOURCES = \
 
 scripts_mal = {
 	DIR = pkglibdir

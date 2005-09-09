@@ -65,7 +65,7 @@ function f1(s:str):void;
 	t81 := array.grid(1,1056000,1,0);
 	t82 := aggrX3.sum(t72,t80,t81);
 	t83 := batcalc.*(t41,t82);
-	t84 := batcalc.exp(t83);
+	t84 := batmath.exp(t83);
 	t85 := batcalc.*(t40,t84);
 	t86 := batcalc.*(t7,t85);
 	#t87 := array.grid(100,1320,8,0); will save 30% by reuse
@@ -75,7 +75,7 @@ function f1(s:str):void;
 	t91 := batcalc.oid(t90);
 	t92 := array.grid(1,132000,1,0);
 	t93 := aggrX3.sum(t86,t91,t92);
-	t94 := batcalc.log(t93);
+	t94 := batmath.log(t93);
 	t95 := array.grid(1,100,1320,0);
 	t96 := batcalc.oid(t95);
 	t97 := array.grid(1,100,1,0);

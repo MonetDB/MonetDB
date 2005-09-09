@@ -38,7 +38,7 @@ include mil;
 	mil.line("# [ 1@0,    100     ]\n");
 	mil.line("# [ 2@0,    1000    ]\n");
 	mil.line("var a := new (oid,int);");
-	a := bbp.new(nil:oid,nil:int);
+	a := bat.new(nil:oid,nil:int);
 	mil.line("a.insert( calc.oid(1), 100 );");
 	aa_a := calc.oid(1);
 	ba_a := bat.insert(a,aa_a,100);

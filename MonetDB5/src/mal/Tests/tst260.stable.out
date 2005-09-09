@@ -34,7 +34,7 @@ stdout of test 'tst260` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 # TopN queryies 	# 1  (_2:str)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
+    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
     err := bat.insert(b,1,15);	# 3 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_7:int)
     err := bat.insert(b,2,4);	# 4 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
     n0 := calc.int(nil);	# 5 CALCnil2int (n0:int)<-(_11:void)

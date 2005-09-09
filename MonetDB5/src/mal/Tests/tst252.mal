@@ -1,6 +1,6 @@
 #Testing a loop over string bats
 
-b:= bbp.new(:str,:str);
+b:= bat.new(:str,:str);
 bat.insert(b,"one","red");
 bat.insert(b,"two","green");
 io.print(b);

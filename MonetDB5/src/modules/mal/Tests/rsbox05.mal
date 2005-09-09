@@ -3,7 +3,7 @@
 
 include rsbox;
 
-b := bbp.new(:void, :date);
+b := bat.new(:void, :date);
 bat.insert(b, nil, "1999-05-02":date);
 
 rs := rsbox.create(1, 't');

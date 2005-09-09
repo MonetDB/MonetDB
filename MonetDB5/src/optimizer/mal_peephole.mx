@@ -65,7 +65,7 @@ As in all cases we should ensure that the intermediates dropped are not
 used for other purposes as well.
 
 @verbatim
-    r:bat[:int,:int]:= bbp.new(:int,:int);
+    r:bat[:int,:int]:= bat.new(:int,:int);
     o:= calc.oid(0@0);
     z:= algebra.markT(r,o);
     rr:= bat.reverse(z);
@@ -76,7 +76,7 @@ used for other purposes as well.
 @end verbatim
 which is translated by the peephole optimizer into:
 @verbatim
-    r:bat[:int,:int] := bbp.new(:int,:int);
+    r:bat[:int,:int] := bat.new(:int,:int);
     rr := algebra.markH(r);
     io.print(r);
 @end verbatim

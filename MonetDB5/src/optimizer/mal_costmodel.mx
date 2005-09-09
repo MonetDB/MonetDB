@@ -36,8 +36,8 @@ uselect, kdiff,cross@}
 The estimated size is left behind as property @code{RMcost},
 to avoid overwriting information produced by the front-end compiler.
 @verbatim
-    r{count=100} := bbp.new(:void,:int);
-    s{count=1000}:= bbp.new(:void,:int);
+    r{count=100} := bat.new(:void,:int);
+    s{count=1000}:= bat.new(:void,:int);
     rs:= algebra.select(s,1,1);
     rr:= bat.reverse(r);
     j:= algebra.join(rs,rr);
@@ -45,8 +45,8 @@ to avoid overwriting information produced by the front-end compiler.
 @end verbatim
 changes the properties of the instructions as follows:
 @verbatim
-    r{RMcost=100,count=100} := bbp.new(:void,:int);
-    s{RMcost=1000,count=1000} := bbp.new(:void,:int);
+    r{RMcost=100,count=100} := bat.new(:void,:int);
+    s{RMcost=1000,count=1000} := bat.new(:void,:int);
     rs{RMcost=500} := algebra.select(s{RMcost=1000,count=1000},1,1);
     rr{RMcost=100} := bat.reverse(r{RMcost=100,count=100});
     j{RMcost=100} := algebra.join(rs{RMcost=500},rr{RMcost=100});

@@ -37,7 +37,7 @@ function user.main():int;	# 0  (main:int)
 # Polymorphic function tests 	# 1  (_2:str)
 # Catching a pervasive error a.s.a.p. 	# 2  (_4:str)
 # The function may not be cloned and a secondary error is generated 	# 3  (_6:str)
-    c := bbp.new(:int,:str);	# 4 CMDBATnew (c:bat[:int,:str])<-(_8:int)(_9:str)
+    c := bat.new(:int,:str);	# 4 CMDBATnew (c:bat[:int,:str])<-(_8:int)(_9:str)
     user.test(c,"hello");	# 5  unknown (_10:any)<-(c:bat[:int,:str])(_11:str)
 end main;	# 6  
 

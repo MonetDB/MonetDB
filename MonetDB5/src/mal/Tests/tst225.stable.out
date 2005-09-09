@@ -24,13 +24,13 @@ stdout of test 'tst225` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 #testing reference counting inliners 	# 1  (_2:str)
-    a := bbp.new(:int,:int);	# 2 CMDBATnew (a:bat[:int,:int])<-(_4:int)(_4:int)
+    a := bat.new(:int,:int);	# 2 CMDBATnew (a:bat[:int,:int])<-(_4:int)(_4:int)
     bat.insert(a,1,1);	# 3 BKCinsert_bun (_5:bat[:int,:int])<-(a:bat[:int,:int])(_6:int)(_6:int)
     b := algebra.copy(a);	# 4 ALGcopy (b:bat[:int,:int])<-(a:bat[:int,:int])
     z := batcalc.+(a,a,b);	# 5 CMDbataccumADD (z:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(b:bat[:int,:int])
     io.print(a);	# 6 IOprint_val (_9:int)<-(a:bat[:int,:int])
-    bbp.garbage(b);	# 7 CMDbbpgarbage (_10:void)<-(b:bat[:int,:int])
-    bbp.garbage(a);	# 8 CMDbbpgarbage (_11:void)<-(a:bat[:int,:int])
+    bat.setGarbage(b);	# 7 CMDbbpgarbage (_10:void)<-(b:bat[:int,:int])
+    bat.setGarbage(a);	# 8 CMDbbpgarbage (_11:void)<-(a:bat[:int,:int])
     z := batcalc.+(a,a,b);	# 9 CMDbataccumADD (z:bat[:int,:int])<-(a:bat[:int,:int])(a:bat[:int,:int])(b:bat[:int,:int])
 end main;	# 10  
 #-----------------#

@@ -1,6 +1,6 @@
 # the multiplex code blocks using CONSTANTS.
 clients.setListing(15);
-b:= bbp.new(:lng,:lng);
+b:= bat.new(:lng,:lng);
 i:= -1:lng;
 barrier (v,i):= mal.newRange(0:lng);
 	bat.insert(b,i,i);

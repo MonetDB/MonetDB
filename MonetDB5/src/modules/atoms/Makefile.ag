@@ -28,10 +28,6 @@ lib__str = {
 }
 
 
-#doc_atoms = {
-#	DIR = pkgdatadir/docs/modules/atoms
-#	SOURCES = str.mx blob.mx url.mx mtime.mx
-#}
 scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = str.mx blob.mx url.mx mtime.mx streams.mx inet.mx color.mx

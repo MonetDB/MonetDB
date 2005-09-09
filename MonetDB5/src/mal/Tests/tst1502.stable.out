@@ -59,7 +59,7 @@ stdout of test 'tst1502` in directory 'src/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-    x := bbp.new(:oid,:chr);	# 1 CMDBATnew (x:bat[:oid,:chr])<-(_2:oid)(_3:chr)
+    x := bat.new(:oid,:chr);	# 1 CMDBATnew (x:bat[:oid,:chr])<-(_2:oid)(_3:chr)
     bat.insert(x,1@0,'a');	# 2 BKCinsert_bun (_4:bat[:oid,:chr])<-(x:bat[:oid,:chr])(_5:oid)(_6:chr)
     bat.insert(x,2@0,'a');	# 3 BKCinsert_bun (_7:bat[:oid,:chr])<-(x:bat[:oid,:chr])(_8:oid)(_6:chr)
     bat.insert(x,3@0,'b');	# 4 BKCinsert_bun (_9:bat[:oid,:chr])<-(x:bat[:oid,:chr])(_10:oid)(_11:chr)
@@ -68,7 +68,7 @@ function user.main():int;	# 0  (main:int)
     bat.insert(x,6@0,'b');	# 7 BKCinsert_bun (_16:bat[:oid,:chr])<-(x:bat[:oid,:chr])(_17:oid)(_11:chr)
     bat.insert(x,7@0,'c');	# 8 BKCinsert_bun (_18:bat[:oid,:chr])<-(x:bat[:oid,:chr])(_19:oid)(_20:chr)
     bat.insert(x,8@0,'c');	# 9 BKCinsert_bun (_21:bat[:oid,:chr])<-(x:bat[:oid,:chr])(_22:oid)(_20:chr)
-    y := bbp.new(:oid,:dbl);	# 10 CMDBATnew (y:bat[:oid,:dbl])<-(_24:oid)(_25:dbl)
+    y := bat.new(:oid,:dbl);	# 10 CMDBATnew (y:bat[:oid,:dbl])<-(_24:oid)(_25:dbl)
     le_a := calc.dbl(1.0);	# 11 CALCflt2dbl (le_a:dbl)<-(_27:flt)
     bat.insert(y,1@0,le_a);	# 12 BKCinsert_bun (_28:bat[:oid,:dbl])<-(y:bat[:oid,:dbl])(_5:oid)(le_a:dbl)
     ne_a := calc.dbl(2.0);	# 13 CALCflt2dbl (ne_a:dbl)<-(_30:flt)
@@ -85,7 +85,7 @@ function user.main():int;	# 0  (main:int)
     bat.insert(y,7@0,xe_a);	# 24 BKCinsert_bun (_42:bat[:oid,:dbl])<-(y:bat[:oid,:dbl])(_19:oid)(xe_a:dbl)
     af_a := calc.dbl(1.0);	# 25 CALCflt2dbl (af_a:dbl)<-(_27:flt)
     bat.insert(y,8@0,af_a);	# 26 BKCinsert_bun (_44:bat[:oid,:dbl])<-(y:bat[:oid,:dbl])(_22:oid)(af_a:dbl)
-    z := bbp.new(:oid,:str);	# 27 CMDBATnew (z:bat[:oid,:str])<-(_24:oid)(_46:str)
+    z := bat.new(:oid,:str);	# 27 CMDBATnew (z:bat[:oid,:str])<-(_24:oid)(_46:str)
     bat.insert(z,1@0,"c");	# 28 BKCinsert_bun (_47:bat[:oid,:str])<-(z:bat[:oid,:str])(_48:oid)(_49:str)
     bat.insert(z,2@0,"a");	# 29 BKCinsert_bun (_50:bat[:oid,:str])<-(z:bat[:oid,:str])(_51:oid)(_52:str)
     bat.insert(z,3@0,"b");	# 30 BKCinsert_bun (_53:bat[:oid,:str])<-(z:bat[:oid,:str])(_54:oid)(_55:str)
@@ -94,15 +94,15 @@ function user.main():int;	# 0  (main:int)
     hf_a := bat.insert(z,6@0,"a");	# 33 BKCinsert_bun (hf_a:bat[:oid,:str])<-(z:bat[:oid,:str])(_61:oid)(_52:str)
     bat.insert(z,7@0,"c");	# 34 BKCinsert_bun (_62:bat[:oid,:str])<-(z:bat[:oid,:str])(_63:oid)(_49:str)
     bat.insert(z,8@0,"a");	# 35 BKCinsert_bun (_64:bat[:oid,:str])<-(z:bat[:oid,:str])(_65:oid)(_52:str)
-    io.print("sortH x");	# 36 IOprint_val (_66:int)<-(_67:str)
-    xs := algebra.sortH(x);	# 37 ALGhsort (xs:bat[:oid,:chr])<-(x:bat[:oid,:chr])
+    io.print("sort x");	# 36 IOprint_val (_66:int)<-(_67:str)
+    xs := algebra.sort(x);	# 37 ALGhsort (xs:bat[:oid,:chr])<-(x:bat[:oid,:chr])
     io.print(xs);	# 38 IOprint_val (_69:int)<-(xs:bat[:oid,:chr])
     io.print("hsort xrev");	# 39 IOprint_val (_70:int)<-(_71:str)
     xrev := bat.reverse(x);	# 40 BKCreverse (xrev:bat[:chr,:oid])<-(x:bat[:oid,:chr])
-    xsrev := algebra.sortH(xrev);	# 41 ALGhsort (xsrev:bat[:chr,:oid])<-(xrev:bat[:chr,:oid])
+    xsrev := algebra.sort(xrev);	# 41 ALGhsort (xsrev:bat[:chr,:oid])<-(xrev:bat[:chr,:oid])
     io.print(xsrev);	# 42 IOprint_val (_74:int)<-(xsrev:bat[:chr,:oid])
 end main;	# 43  
-[ "sortH x" ]
+[ "sort x" ]
 #-----------------#
 # h	tmp_7	  # name
 # void	chr	  # type

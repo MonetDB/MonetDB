@@ -3,7 +3,7 @@ function tst2(b:bat[:any_1,:any_2]);
 	bat.insert(b,"hello",1);
 end tst2;
 
-b:= bbp.new(:int,:str);
+b:= bat.new(:int,:str);
 
 #The call to tst2 fails at runtime
 user.tst2(b);

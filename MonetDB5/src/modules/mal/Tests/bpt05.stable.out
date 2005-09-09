@@ -35,7 +35,7 @@ stdout of test 'bpt05` in directory 'src/modules/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 #testing the BAT partition table with fixed capacity 	# 1  (_2:str)
-    a1 := bbp.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-(_4:void)(_5:int)
+    a1 := bat.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(a1,0@0);	# 3 BKCsetSequenceBase (_6:bat[:void,:int])<-(a1:bat[:void,:int])(_7:oid)
     partitions.deposit(a1);	# 4 BPTdeposit (_8:void)<-(a1:bat[:void,:int])
     partitions.setCapacity(a1,3);	# 5 BPTsetCapacity (_9:void)<-(a1:bat[:void,:int])(_10:int)

@@ -1,6 +1,6 @@
 # the multiplex code blocks.
 
-b:= bbp.new(:lng,:lng);
+b:= bat.new(:lng,:lng);
 barrier (v,i):= mal.newRange(0:lng);
 	bat.insert(b,i,i);
 	redo (v,i):= mal.nextElement(1:lng,10:lng);

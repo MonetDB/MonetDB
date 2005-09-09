@@ -23,7 +23,7 @@ stdout of test 'tst017` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 # reference setting tables 	# 1  (_2:str)
-    b := bbp.new(nil:int,nil:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
+    b := bat.new(nil:int,nil:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
     aa_a := bat.insert(b,1,2);	# 3 BKCinsert_bun (aa_a:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_7:int)
     ba_a := bat.insert(b,2,3);	# 4 BKCinsert_bun (ba_a:bat[:int,:int])<-(b:bat[:int,:int])(_7:int)(_9:int)
     z := bbp.getLRefCount(b);	# 5 CMDgetBATlrefcnt (z:int)<-(b:bat[:int,:int])

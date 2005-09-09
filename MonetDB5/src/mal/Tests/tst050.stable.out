@@ -30,7 +30,7 @@ stdout of test 'tst050` in directory 'src/mal` itself:
 !ERROR: MALresolve:user.main[9]:type mismatch sht := lng
 !ERROR: MALresolve:user.main[10]:type mismatch lng := sht
 !ERROR: MALresolve:user.main[11]:type mismatch bat[:str,:int] := bat[:int,:int]
-!ERROR: 'bbp.new' undefined in user.main[11]
+!ERROR: 'bat.new' undefined in user.main[11]
 !ERROR: MALresolve:user.main[12]:type mismatch flt := str
 function user.main():int;	# 0  (main:int)
 # Variables names may be tagged with a type upfront. 	# 1  (_2:str)
@@ -39,11 +39,11 @@ function user.main():int;	# 0  (main:int)
     s:str  := "hello";	# 4  (s:str)<-(_8:str)
     i:sht  := 1:sht;	# 5  (i:sht)<-(_10:sht)
     b:bit  := true;	# 6  (b:bit)<-(_12:bit)
-    z:bat[:int,:int]  := bbp.new(:int,:int);	# 7 CMDBATnew (z:bat[:int,:int])<-(_14:int)(_14:int)
+    z:bat[:int,:int]  := bat.new(:int,:int);	# 7 CMDBATnew (z:bat[:int,:int])<-(_14:int)(_14:int)
 # type resolver should complain on the rest 	# 8  (_16:str)
     j:sht  := 1:lng;	# 9  unknown (j:sht)<-(_18:lng)
     k:lng  := 1:sht;	# 10  unknown (k:lng)<-(_10:sht)
-    y:bat[:str,:int]  := bbp.new(:int,:int);	# 11  unknown (y:bat[:str,:int])<-(_14:int)(_14:int)
+    y:bat[:str,:int]  := bat.new(:int,:int);	# 11  unknown (y:bat[:str,:int])<-(_14:int)(_14:int)
     f:flt  := "wrong";	# 12  unknown (f:flt)<-(_22:str)
 end main;	# 13  
 

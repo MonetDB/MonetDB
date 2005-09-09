@@ -37,16 +37,16 @@ All but one argument may be replaced by a scalar value.
 The generic solution to the multiplex operators is to translate
 them to a MAL loop. A snippet of its behaviour:
 @verbatim
-    b:= bbp.new(:int,:int);
+    b:= bat.new(:int,:int);
     bat.insert(b,1,1);
     c:bat[:int,:int]:= optimizer.multiplex("calc.+",b,1);
 @end verbatim
 The current implementation requires the target type to be mentioned
 explicitly. The result of the optimizer is:
 @verbatim
-    b := bbp.new(:int,:int);
+    b := bat.new(:int,:int);
     bat.insert(b,1,1);
-    _8 := bbp.new(:int,:int);
+    _8 := bat.new(:int,:int);
 barrier (_11,_12,_13):= chopper.newIterator(b);
     _15 := calc.+(_13,1);
     bat.insert(_8,_12,_15);
@@ -91,7 +91,7 @@ The call optimizer.multiplex(CMD,A1,...An) introduces the following code
 structure:
 
 @verbatim
-	resB:= bbp.new(A1);
+	resB:= bat.new(A1);
 barrier (mloop,h,t):= chopper.newIterator(A1);
 	$1:= bat.find(A1,h);
 	$2:= A2;	# in case of constant?
@@ -151,7 +151,7 @@ because in the end we issue a recursive function call that should
 find the actual arguments at the proper place of the callee.
 @c
 	/* resB := new(refBat) */
-	q = newFcnCall(mb, "bbp", "new");
+	q = newFcnCall(mb, "bat", "new");
 	resB = getArg(q, 0);
 	if (isAnyExpression(getArgType(mb, pci, 0)))
 		msg = throwMessage("optimizer.multiplex", "Target type is missing");

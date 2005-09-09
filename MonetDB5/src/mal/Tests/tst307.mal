@@ -1,6 +1,6 @@
 #testing exceptions raised in the kernel
 
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 z:= algebra.find(b,0);
 io.print("should not come here anymore");
 catch MALexception;

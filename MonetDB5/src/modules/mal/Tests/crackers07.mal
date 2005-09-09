@@ -1,6 +1,6 @@
 # Testing the cracker implementation
 # perform ordinary selection
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 bat.insert(b,10,100);
 bat.insert(b,1,2);
 bat.insert(b,6,36);

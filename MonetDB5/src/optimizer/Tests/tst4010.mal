@@ -3,11 +3,11 @@
 optimizer.setDebug();
 optimizer.commonExpressionRemoval();
 optimizer.aliasRemoval();
-b:= bbp.new(:int,:int);
-c:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
+c:= bat.new(:int,:int);
 bat.insert(b,1,1);
 
 # in this case D should be left alone
-d:= bbp.new(:int,:int);
+d:= bat.new(:int,:int);
 bat.insert(d,2,2);
 

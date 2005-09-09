@@ -46,7 +46,7 @@ end pow;	# 4
 #end tst;   
 function user.tst(A2:bat[:void,:int],A3:bat[:void,:int]):bat[:void,:int];	# 0  (tst:bat[:void,:int])<-(A2:bat[:void,:int])(A3:bat[:void,:int])
     io.print(A2);	# 1 IOprint_val (_3:int)<-(A2:bat[:void,:int])
-    resB := bbp.new(:void,:int);	# 2 CMDBATnew (resB:bat[:void,:int])<-(_5:void)(_6:int)
+    resB := bat.new(:void,:int);	# 2 CMDBATnew (resB:bat[:void,:int])<-(_5:void)(_6:int)
     bat.setSequenceBase(resB,0@0);	# 3 BKCsetSequenceBase (_7:bat[:void,:int])<-(resB:bat[:void,:int])(_8:oid)
     lim := algebra.count(A2);	# 4 ALGcount_bat (lim:lng)<-(A2:bat[:void,:int])
     io.printf("count %d\n",lim);	# 5 IOprint_formatted_lng (_10:int)<-(_11:str)(lim:lng)
@@ -79,7 +79,7 @@ end tst;	# 20
 #
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:void,:int);	# 1 CMDBATnew (b:bat[:void,:int])<-(_2:void)(_3:int)
+    b := bat.new(:void,:int);	# 1 CMDBATnew (b:bat[:void,:int])<-(_2:void)(_3:int)
     bat.setSequenceBase(b,0@0);	# 2 BKCsetSequenceBase (_4:bat[:void,:int])<-(b:bat[:void,:int])(_5:oid)
     bat.insert(b,nil,1);	# 3 BKCinsert_bun (_6:bat[:void,:int])<-(b:bat[:void,:int])(_7:void)(_8:int)
     bat.insert(b,nil,2);	# 4 BKCinsert_bun (_9:bat[:void,:int])<-(b:bat[:void,:int])(_7:void)(_10:int)

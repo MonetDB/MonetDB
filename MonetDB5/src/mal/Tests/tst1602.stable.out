@@ -108,7 +108,7 @@ stdout of test 'tst1602` in directory 'src/mal` itself:
 #
 #
 function user.main():int;	# 0  (main:int)
-    int_1M := bbp.new(:void,:lng,1000000);	# 1 CMDBATnew (int_1M:bat[:void,:lng])<-(_2:void)(_3:lng)(_4:int)
+    int_1M := bat.new(:void,:lng,1000000);	# 1 CMDBATnew (int_1M:bat[:void,:lng])<-(_2:void)(_3:lng)(_4:int)
     bat.setSequenceBase(int_1M,0@0);	# 2 BKCsetSequenceBase (_5:bat[:void,:lng])<-(int_1M:bat[:void,:lng])(_6:oid)
     i := 1000000:lng;	# 3  (i:lng)<-(_8:lng)
 barrier sj_a := true;	# 4  (sj_a:bit)<-(_10:bit) jump 12
@@ -152,7 +152,7 @@ exit sj_a;	# 12  (sj_a:bit)
     x := alarm.time();	# 42 ALARMtime (x:int)
     yg_a := calc.-(x,t);	# 43 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
     ah_a := io.printf("%d ms\n",yg_a);	# 44 IOprint_formatted_int (ah_a:int)<-(_27:str)(yg_a:int)
-    M2 := bbp.new(:lng,:lng,1000000);	# 45 CMDBATnewint (M2:bat[:lng,:lng])<-(_29:lng)(_29:lng)(_4:int)
+    M2 := bat.new(:lng,:lng,1000000);	# 45 CMDBATnewint (M2:bat[:lng,:lng])<-(_29:lng)(_29:lng)(_4:int)
     i := 1000000:lng;	# 46  (i:lng)<-(_8:lng)
 barrier sj_b := true;	# 47  (sj_b:bit)<-(_10:bit) jump 55
     i := calc.-(i,1);	# 48 CALCbinarySUBlngint (i:lng)<-(i:lng)(_11:int)

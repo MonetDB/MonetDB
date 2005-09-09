@@ -13,7 +13,7 @@ include mil;
 	aa_a := calc.oid(20000000);
 	ba_a := calc.setoid(aa_a);
 	mil.line("#test sampling\n");
-	b := bbp.new(nil:int,nil:int);
+	b := bat.new(nil:int,nil:int);
 	mil.line("b.insert(1,15);");
 	ca_a := bat.insert(b,1,15);
 	mil.line("b.insert(2,4);");

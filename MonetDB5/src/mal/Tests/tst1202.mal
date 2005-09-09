@@ -9,7 +9,7 @@
 	tzone_09:= mtime.tzone(0);
 	pc_a := calc.*(23,60);
 	qc_a := calc.+(pc_a,59);
-	tzone_bat:= bbp.new(:oid,:tzone);
+	tzone_bat:= bat.new(:oid,:tzone);
 	i8:= 8@0;	# don;t use 08@0
 	io.print(i8);	# don;t use 09@0
 	i9:= 9@0;

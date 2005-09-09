@@ -5,9 +5,9 @@ function swap(x:bat[:any_1,:int],y:bat[:int,:int])
         return (a,x);
 end swap;
 
-X:= bbp.new(:int,:int);
+X:= bat.new(:int,:int);
 bat.insert(X,1,1);
-Y:= bbp.new(:int,:int);
+Y:= bat.new(:int,:int);
 bat.insert(Y,2,2);
 (x,y):= user.swap(X,Y);
 io.print(x);

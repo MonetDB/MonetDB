@@ -92,16 +92,6 @@ lib__statistics = {
                 $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS)
 }
 
-#doc_mal = {
-#	DIR = pkgdatadir/docs/modules/mal
-#	SOURCES = \
-#		mal_init.mx language.mx box.mx \
-#		profiler.mx const.mx bbp.mx print.mx \
-#		inspect.mx crackers.mx \
-#		chopper.mx thread.mx clients.mx \
-#		factory.mx mdb.mx 
-#}
-
 scripts_mal = {
 	DIR = pkglibdir
 	SOURCES = language.mx mal_init.mx box.mx bbp.mx \

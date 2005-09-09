@@ -102,7 +102,7 @@ stdout of test 'no.051` in directory 'tests/BugReports` itself:
 #end create;
 function user.create(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (create:bat[:any_1,:any_2])<-(b:bat[:any_1,:any_2])
     mil.line("        var a := new (oid,flt);");	# 1 MILline (_2:void)<-(_3:str)
-    a := bbp.new(nil:oid,nil:flt);	# 2 CMDBATnew (a:bat[:oid,:flt])<-(_5:oid)(_6:flt)
+    a := bat.new(nil:oid,nil:flt);	# 2 CMDBATnew (a:bat[:oid,:flt])<-(_5:oid)(_6:flt)
     mil.line("        b@batloop(){");	# 3 MILline (_7:void)<-(_8:str)
 barrier (aa_a,aa_aH,aa_aT):= chopper.newIterator(b);	# 4 CHPbunIterator (aa_a:lng)(aa_aH:any)(aa_aT:any)<-(b:bat[:any_1,:any_2]) jump 13
     mil.line("                if (a.count() = 0)");	# 5 MILline (_12:void)<-(_13:str)
@@ -184,7 +184,7 @@ function user.main():int;	# 0  (main:int)
     mil.line("# [ nil ]\n");	# 44 MILline (_117:void)<-(_118:str)
     mil.line("proc create(bat b) : bat {");	# 45 MILline (_119:void)<-(_120:str)
     mil.line("var b := new (oid,flt);");	# 46 MILline (_121:void)<-(_122:str)
-    b := bbp.new(nil:oid,nil:flt);	# 47 CMDBATnew (b:bat[:oid,:flt])<-(_124:oid)(_125:flt)
+    b := bat.new(nil:oid,nil:flt);	# 47 CMDBATnew (b:bat[:oid,:flt])<-(_124:oid)(_125:flt)
     mil.line("b.insert(oid(1),flt(2));");	# 48 MILline (_126:void)<-(_127:str)
     fa_a := calc.oid(1);	# 49 CALCint2oid (fa_a:oid)<-(_129:int)
     ga_a := calc.flt(2);	# 50 CALCint2flt (ga_a:flt)<-(_131:int)

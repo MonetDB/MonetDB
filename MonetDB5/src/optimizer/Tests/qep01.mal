@@ -1,7 +1,7 @@
-T1:= bbp.new(:int,:int);
-T2:= bbp.new(:int,:int);
-T3:= bbp.new(:int,:int);
-T4:= bbp.new(:int,:int);
+T1:= bat.new(:int,:int);
+T2:= bat.new(:int,:int);
+T3:= bat.new(:int,:int);
+T4:= bat.new(:int,:int);
 a:= algebra.select(T1,1,3);
 b:= algebra.select(T2,1,3);
 c:= algebra.select(T3,0,5);

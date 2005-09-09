@@ -3,9 +3,9 @@
 function newsemijoin(A:bat[:int,:any_1], 
 		B:bat[:int,:any_2]) :bat[:int,:any_1];
 end newsemijoin;
-z:= bbp.new(:int{sorted=true},:int);
-w:= bbp.new(:int{sequence=true},:int);
-w:bat[:int,:int]:= bbp.new(:int,:int);
+z:= bat.new(:int{sorted=true},:int);
+w:= bat.new(:int{sequence=true},:int);
+w:bat[:int,:int]:= bat.new(:int,:int);
 y:= algebra.sort(w:bat[:int,:int]{sorted=true,dense=true});
 io.print(1);
 y:int{sorted=true}:= algebra.sort(w);

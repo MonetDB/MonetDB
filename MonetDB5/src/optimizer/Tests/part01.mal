@@ -1,16 +1,16 @@
 #testing the partition optimizer
 
-a1:= bbp.new(:void,:int);
+a1:= bat.new(:void,:int);
 bat.setSequenceBase(a1,0@0);
-a2:= bbp.new(:void,:int);
+a2:= bat.new(:void,:int);
 bat.setSequenceBase(a2,10@0);
-a3:= bbp.new(:void,:int);
+a3:= bat.new(:void,:int);
 bat.setSequenceBase(a3,20@0);
-b1:= bbp.new(:void,:int);
+b1:= bat.new(:void,:int);
 bat.setSequenceBase(b1,0@0);
-b2:= bbp.new(:void,:int);
+b2:= bat.new(:void,:int);
 bat.setSequenceBase(b2,10@0);
-b3:= bbp.new(:void,:int);
+b3:= bat.new(:void,:int);
 bat.setSequenceBase(b3,20@0);
 
 barrier (go,i):= mal.newRange(0);

@@ -1,4 +1,4 @@
-b:= bbp.new(:void,:str);
+b:= bat.new(:void,:str);
 bat.setSequenceBase(b,0@0);
 bat.insert(b,nil,"hello");
 bat.insert(b,nil,"goodbye");

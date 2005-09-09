@@ -1,6 +1,6 @@
 #Access BATs 
 
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 bat.insert(b,1,2);
 bat.setName(b,"mybat");
 c:= bbp.bind("mybat");

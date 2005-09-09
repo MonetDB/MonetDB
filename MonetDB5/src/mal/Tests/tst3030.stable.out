@@ -26,14 +26,16 @@ end newsemijoin;	# 1
 #io.print(1);
 #y:int{sorted=true}:= algebra.sort(w);
 #
+!ERROR: MALresolve:user.main[6]:type mismatch int := bat[:int,:int]
 !ERROR: 'algebra.sort' undefined in user.main[6]
+!ERROR: MALresolve:user.main[8]:type mismatch int := bat[:int,:int]
 !ERROR: 'algebra.sort' undefined in user.main[8]
 function user.main():int;	# 0  (main:int)
 #Parsing properties and keeping them around 	# 1  (_2:str)
 # note the use of the first parameter to obtain property set 	# 2  (_4:str)
-    z := bbp.new(:int{sequence=true,sorted=true},:int{sequence=true,sorted=true});	# 3 CMDBATnew (z:bat[:int,:int])<-(_6:int)(_6:int)
-    w:bat[:int,:int]{dense=true,sorted=true}  := bbp.new(:int{sequence=true,sorted=true},:int{sequence=true,sorted=true});	# 4 CMDBATnew (w:bat[:int,:int])<-(_6:int)(_6:int)
-    w:bat[:int,:int]{dense=true,sorted=true}  := bbp.new(:int{sequence=true,sorted=true},:int{sequence=true,sorted=true});	# 5 CMDBATnew (w:bat[:int,:int])<-(_6:int)(_6:int)
+    z := bat.new(:int{sequence=true,sorted=true},:int{sequence=true,sorted=true});	# 3 CMDBATnew (z:bat[:int,:int])<-(_6:int)(_6:int)
+    w:bat[:int,:int]{dense=true,sorted=true}  := bat.new(:int{sequence=true,sorted=true},:int{sequence=true,sorted=true});	# 4 CMDBATnew (w:bat[:int,:int])<-(_6:int)(_6:int)
+    w:bat[:int,:int]{dense=true,sorted=true}  := bat.new(:int{sequence=true,sorted=true},:int{sequence=true,sorted=true});	# 5 CMDBATnew (w:bat[:int,:int])<-(_6:int)(_6:int)
     y:int{sorted=true}  := algebra.sort(w{dense=true,sorted=true});	# 6  unknown (y:int)<-(w:bat[:int,:int])
     io.print(1);	# 7 IOprint_val (_9:int)<-(_10:int)
     y:int{sorted=true}  := algebra.sort(w{dense=true,sorted=true});	# 8  unknown (y:int)<-(w:bat[:int,:int])

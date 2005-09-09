@@ -1,4 +1,4 @@
-	x := bbp.new(:oid,:chr);
+	x := bat.new(:oid,:chr);
 	de_a := bat.insert(x,1@0,'a');
 	ee_a := bat.insert(x,2@0,'a');
 	fe_a := bat.insert(x,3@0,'b');
@@ -8,7 +8,7 @@
 	je_a := bat.insert(x,7@0,'c');
 	ke_a := bat.insert(x,8@0,'c');
 
-	y := bbp.new(:oid,:dbl);
+	y := bat.new(:oid,:dbl);
 	le_a := calc.dbl(1.0);
 	me_a := bat.insert(y,1@0,le_a);
 	ne_a := calc.dbl(2.0);
@@ -26,7 +26,7 @@
 	af_a := calc.dbl(1.0);
 	bf_a := bat.insert(y,8@0,af_a);
 
-	z := bbp.new(:oid,:str);
+	z := bat.new(:oid,:str);
 	cf_a := bat.insert(z,1@0,"c");
 	df_a := bat.insert(z,2@0,"a");
 	ef_a := bat.insert(z,3@0,"b");

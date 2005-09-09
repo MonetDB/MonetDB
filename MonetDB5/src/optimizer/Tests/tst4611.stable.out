@@ -35,16 +35,16 @@ end joinPath;	# 4
 #
 function user.main():int;	# 0  (main:int)
 # the first test for macro expansions and inversions 	# 1  (_2:str)
-    a := bbp.new(:int,:int);	# 2 CMDBATnew (a:bat[:int,:int])<-(_7:int)(_7:int)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_7:int)(_7:int)
-    c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_7:int)(_7:int)
+    a := bat.new(:int,:int);	# 2 CMDBATnew (a:bat[:int,:int])<-(_7:int)(_7:int)
+    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_7:int)(_7:int)
+    c := bat.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_7:int)(_7:int)
     h := algebra.joinPath(a,b,c);	# 5  (h:bat[:int,:int])<-(a:bat[:int,:int])(b:bat[:int,:int])(c:bat[:int,:int])
     mdb.list();	# 6 MDBlist (_12:void)
 function user.main():int;
 # the first test for macro expansions and inversions 
-    a := bbp.new(:int,:int);
-    b := bbp.new(:int,:int);
-    c := bbp.new(:int,:int);
+    a := bat.new(:int,:int);
+    b := bat.new(:int,:int);
+    c := bat.new(:int,:int);
     h := algebra.joinPath(a,b,c);
     mdb.list();
 

@@ -23,7 +23,7 @@ stdout of test 'tst307` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 #testing exceptions raised in the kernel 	# 1  (_2:str)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
+    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
     z := algebra.find(b,0);	# 3 ALGfind (z:int)<-(b:bat[:int,:int])(_6:int)
     io.print("should not come here anymore");	# 4 IOprint_val (_7:int)<-(_8:str)
 catch MALexception;	# 5  (MALexception:any) jump 7

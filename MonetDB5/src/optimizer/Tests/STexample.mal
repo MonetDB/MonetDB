@@ -1,4 +1,4 @@
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 bat.insert(b,1,2);
 #many more inserts
 c{singleton}:= algebra.select(b,0,4);

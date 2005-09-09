@@ -2,7 +2,7 @@
 # make sure you can bind to a BAT through the box
 
 bbp.open();
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 bat.insert(b,1,2);
 bat.setName(b,"myfirstlocalbat");
 c:= bbp.bind("myfirstbat");

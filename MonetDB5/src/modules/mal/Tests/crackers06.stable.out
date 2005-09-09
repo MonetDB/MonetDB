@@ -40,7 +40,7 @@ stdout of test 'crackers06` in directory 'src/modules/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 # Testing the cracker implementation 	# 1  (_2:str)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
+    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
     bat.insert(b,10,100);	# 3 BKCinsert_bun (_5:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_7:int)
     bat.insert(b,1,2);	# 4 BKCinsert_bun (_8:bat[:int,:int])<-(b:bat[:int,:int])(_9:int)(_10:int)
     bat.insert(b,6,36);	# 5 BKCinsert_bun (_11:bat[:int,:int])<-(b:bat[:int,:int])(_12:int)(_13:int)

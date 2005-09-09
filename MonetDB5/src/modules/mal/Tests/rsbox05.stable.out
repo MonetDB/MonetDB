@@ -26,7 +26,7 @@ stdout of test 'rsbox05` in directory 'src/modules/mal` itself:
 #writeNextPart(rs);
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:void,:date);	# 1 CMDBATnew (b:bat[:void,:date])<-(_2:void)(_3:date)
+    b := bat.new(:void,:date);	# 1 CMDBATnew (b:bat[:void,:date])<-(_2:void)(_3:date)
     bat.insert(b,nil,1999-05-02);	# 2 BKCinsert_bun (_4:bat[:void,:date])<-(b:bat[:void,:date])(_5:void)(_6:date)
     rs := rsbox.create(1,'t');	# 3 RSBcreate (rs:resultset)<-(_8:int)(_9:chr)
     resultset.populateColumn(rs,1,b);	# 4 RSpopulateColumn (_10:resultset)<-(rs:resultset)(_8:int)(b:bat[:void,:date])

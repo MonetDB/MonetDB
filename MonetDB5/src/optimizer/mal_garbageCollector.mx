@@ -34,29 +34,29 @@ BATs that are at their end of life to make room for new ones.
 It is typically called as one of the last optimizer steps.
 A snippet of a the effect of the garbage collector:
 @verbatim
-    t1 := bbp.new(:void,:int);
+    t1 := bat.new(:void,:int);
     t2 := array.grid(132000,8,1,0);
     t3 := array.grid(1,100,10560,0);
     t4 := array.grid(1,100,10560,0,8);
     t5 := batcalc.+(t2,t4);
     t6 := batcalc.oid(t5);
     t7 := algebra.join(t6,t1);
-    optimizer.garbageCollector();
+    optimizer.setGarbageCollector();
 @end verbatim
 is translated into the following code block:
 @verbatim
-    t1 := bbp.new(:void,:int);
+    t1 := bat.new(:void,:int);
     t2 := array.grid(132000,8,1,0);
     t3 := array.grid(1,100,10560,0);
     t4 := array.grid(1,100,10560,0,8);
     t5 := batcalc.+(t2,t4);
-    bbp.garbage(t2);
-    bbp.garbage(t4);
+    bat.setGarbage(t2);
+    bat.setGarbage(t4);
     t6 := batcalc.oid(t5);
-    bbp.garbage(t5);
+    bat.setGarbage(t5);
     t7 := algebra.join(t6,t1);
-    bbp.garbage(t6);
-    bbp.garbage(t1);
+    bat.setGarbage(t6);
+    bat.setGarbage(t1);
 @end verbatim
 
 The current algorithm is straight forward. After each instruction
@@ -95,8 +95,8 @@ opt_export str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 @= releaseBAT
 	q= newInstruction(ASSIGNsymbol);
-	setModuleId(q,putName("bbp",3));
-	setFunctionId(q,putName("garbage",7));
+	setModuleId(q,putName("bat",3));
+	setFunctionId(q,putName("setGarbage",10));
 	pushArgument(mb,q,getArg(p,j));
 	pushInstruction(mb,q);
 	typeChecker(s,mb,q,TRUE);

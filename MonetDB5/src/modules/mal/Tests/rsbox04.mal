@@ -5,7 +5,7 @@ include rsbox;
 
 rs := rsbox.create(9, 't');
 
-b1 := bbp.new(:void, :bit);
+b1 := bat.new(:void, :bit);
 bat.insert(b1, nil, 1:bit);
 bat.insert(b1, nil, 0:bit);
 bat.insert(b1, nil, 0:bit);
@@ -17,7 +17,7 @@ bat.insert(b1, nil, 1:bit);
 bat.insert(b1, nil, nil:bit);
 bat.insert(b1, nil, 1:bit);
 
-b2 := bbp.new(:void, :chr);
+b2 := bat.new(:void, :chr);
 bat.insert(b2, nil, nil:chr);
 bat.insert(b2, nil, 'a');
 bat.insert(b2, nil, 'x');
@@ -29,7 +29,7 @@ bat.insert(b2, nil, 'd');
 bat.insert(b2, nil, ';');
 bat.insert(b2, nil, ' ');
 
-b3 := bbp.new(:void, :str);
+b3 := bat.new(:void, :str);
 bat.insert(b3, nil, "Daft Punk - Human After All");
 bat.insert(b3, nil, "Spinvis - Spinvis");
 bat.insert(b3, nil, "Within Temptation - The Silent Force");
@@ -41,7 +41,7 @@ bat.insert(b3, nil, "Hooverphonic - Sit Down and Listen To...");
 bat.insert(b3, nil, "Osdorp Posse - Tegenstrijd");
 bat.insert(b3, nil, "MC Wigger & DJ Wanna-B - Fuck Osdorp");
 
-b4 := bbp.new(:void, :oid);
+b4 := bat.new(:void, :oid);
 bat.insert(b4, nil, 2@0);
 bat.insert(b4, nil, nil:oid);
 bat.insert(b4, nil, 4@0);
@@ -53,7 +53,7 @@ bat.insert(b4, nil, 28@0);
 bat.insert(b4, nil, 4@0);
 bat.insert(b4, nil, 1@0);
 
-b5 := bbp.new(:void, :sht);
+b5 := bat.new(:void, :sht);
 bat.insert(b5, nil, 12:sht);
 bat.insert(b5, nil, 0:sht);
 bat.insert(b5, nil, -73:sht);
@@ -65,7 +65,7 @@ bat.insert(b5, nil, 2:sht);
 bat.insert(b5, nil, 94:sht);
 bat.insert(b5, nil, 5:sht);
 
-b6 := bbp.new(:void, :int);
+b6 := bat.new(:void, :int);
 bat.insert(b6, nil, 2317:int);
 bat.insert(b6, nil, 283:int);
 bat.insert(b6, nil, -329:int);
@@ -77,7 +77,7 @@ bat.insert(b6, nil, 1282:int);
 bat.insert(b6, nil, -72:int);
 bat.insert(b6, nil, 28362:int);
 
-b7 := bbp.new(:void, :lng);
+b7 := bat.new(:void, :lng);
 bat.insert(b7, nil, 21783253:lng);
 bat.insert(b7, nil, -372867832:lng);
 bat.insert(b7, nil, 372:lng);
@@ -89,7 +89,7 @@ bat.insert(b7, nil, -32782:lng);
 bat.insert(b7, nil, 8329732:lng);
 bat.insert(b7, nil, nil:lng);
 
-b8 := bbp.new(:void, :flt);
+b8 := bat.new(:void, :flt);
 bat.insert(b8, nil, nil:flt);
 bat.insert(b8, nil, 63.362:flt);
 bat.insert(b8, nil, 725:flt);
@@ -101,7 +101,7 @@ bat.insert(b8, nil, 2.20371:flt);
 bat.insert(b8, nil, 721.271:flt);
 bat.insert(b8, nil, nil:flt);
 
-b9 := bbp.new(:void, :dbl);
+b9 := bat.new(:void, :dbl);
 bat.insert(b9, nil, 83927632.38772:dbl);
 bat.insert(b9, nil, nil:dbl);
 bat.insert(b9, nil, -932720.32:dbl);

@@ -1,7 +1,7 @@
 #some join operations
 
 #mdb.start();
-b:= bbp.new(:lng,:lng);
+b:= bat.new(:lng,:lng);
 barrier (k,v):= mal.newRange(0:lng);
         bat.insert(b,v,v);
         redo (k,v):= mal.nextElement(1:lng,100:lng);

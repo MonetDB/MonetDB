@@ -1,5 +1,5 @@
 # reference setting tables
-	b := bbp.new(nil:int,nil:int);
+	b := bat.new(nil:int,nil:int);
 	aa_a := bat.insert(b,1,2);
 	ba_a := bat.insert(b,2,3);
 	z := bbp.getLRefCount(b);

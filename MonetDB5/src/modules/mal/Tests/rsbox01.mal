@@ -8,7 +8,7 @@ resultset.setProperty(rs, 1, "name", "the_column");
 resultset.setProperty(rs, 1, "table", "table1");
 resultset.setProperty(rs, 1, "schema", "sys");
 
-b1 := bbp.new(:void, :str);
+b1 := bat.new(:void, :str);
 bat.insert(b1, nil, "test1");
 bat.insert(b1, nil, "test2");
 bat.insert(b1, nil, nil:str);
@@ -20,7 +20,7 @@ resultset.populateColumn(rs, 1, b1);
 resultset.writeNextPart(rs);
 
 
-b1 := bbp.new(:void, :str);
+b1 := bat.new(:void, :str);
 bat.insert(b1, nil, "Daft Punk - Human After All");
 bat.insert(b1, nil, "Spinvis - Spinvis");
 bat.insert(b1, nil, "Within Temptation - The Silent Force");

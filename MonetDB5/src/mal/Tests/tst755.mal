@@ -6,5 +6,5 @@ function test(b:bat[:any$1,:any$2],c:any$2);
 	io.print(k);
 end test;
 
-c:= bbp.new(:int,:str);
+c:= bat.new(:int,:str);
 user.test(c,"hello");

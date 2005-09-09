@@ -1,4 +1,4 @@
-	int_1M:= bbp.new(:void,:lng,1000000);
+	int_1M:= bat.new(:void,:lng,1000000);
 	bat.setSequenceBase(int_1M,0@0);
 
 	i:= 1000000:lng;
@@ -50,7 +50,7 @@ exit	sj_a;
         yg_a := calc.-(x,t);
         ah_a := io.printf("%d ms\n",yg_a);
 
-	M2:= bbp.new(:lng,:lng,1000000);
+	M2:= bat.new(:lng,:lng,1000000);
 	i:= 1000000:lng;
 barrier	sj_b:= true;
 	i:= i-1;

@@ -1,6 +1,6 @@
 # testing void bats
 
-b:= bbp.new(:void,:str);
+b:= bat.new(:void,:str);
 bat.insert(b,nil,"hello");
 bat.insert(b,nil,"world");
 io.print(b);

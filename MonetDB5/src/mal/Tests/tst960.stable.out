@@ -53,7 +53,7 @@ stdout of test 'tst960` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 # the chunk mechanism 	# 1  (_2:str)
-    S := bbp.new(:void,:str);	# 2 CMDBATnew (S:bat[:void,:str])<-(_4:void)(_5:str)
+    S := bat.new(:void,:str);	# 2 CMDBATnew (S:bat[:void,:str])<-(_4:void)(_5:str)
     bat.setSequenceBase(S,0:oid);	# 3 BKCsetSequenceBase (_6:bat[:void,:str])<-(S:bat[:void,:str])(_7:oid)
     bat.insert(S,nil,"hello");	# 4 BKCinsert_bun (_8:bat[:void,:str])<-(S:bat[:void,:str])(_9:void)(_10:str)
     bat.insert(S,nil,"brave");	# 5 BKCinsert_bun (_11:bat[:void,:str])<-(S:bat[:void,:str])(_9:void)(_12:str)

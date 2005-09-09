@@ -16,7 +16,7 @@ include mil;
 	mil.line("#focussed on integers\n");
 	mil.line("#it includes bat.insertions,deletions,selections, and algebra.joins.\n");
 	mil.line("var b:= new(int,int);");
-	b := bbp.new(nil:int,nil:int);
+	b := bat.new(nil:int,nil:int);
 	mil.line("#b.roles(\"head\",\"tail\"); roles was removed from the kernel ops\n");
 	ca_a := io.printf("#~BeginVariableOutput~#\n");
 	da_a := bat.info(b);

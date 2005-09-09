@@ -1,5 +1,5 @@
 # testing void to oid coercion
- z1:= bbp.new(:void,:int);
+ z1:= bat.new(:void,:int);
 bat.setSequenceBase(z1,0@0);
  bat.insert(z1,nil,0);
  bat.insert(z1,nil,1);

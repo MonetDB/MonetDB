@@ -62,6 +62,7 @@ include array;
 include mapi;
 
 # the hardwired multiplex extensions
+include batmath;
 include batcalc;
 include batstr;
 include batcolor;
@@ -89,5 +90,4 @@ include partitions;	# beware for overloading
 In practice, we have to introduce different startup for each
 client group or database.
 @c
-
 @-

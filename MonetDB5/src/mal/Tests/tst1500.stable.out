@@ -28,7 +28,7 @@ stdout of test 'tst1500` in directory 'src/mal` itself:
 #print("hb1 becomes"); print(hb1);
 #
 function user.main():int;	# 0  (main:int)
-    x := bbp.new(:oid,:chr);	# 1 CMDBATnew (x:bat[:oid,:chr])<-(_2:oid)(_3:chr)
+    x := bat.new(:oid,:chr);	# 1 CMDBATnew (x:bat[:oid,:chr])<-(_2:oid)(_3:chr)
     de_a := bat.insert(x,1@0,'a');	# 2 BKCinsert_bun (de_a:bat[:oid,:chr])<-(x:bat[:oid,:chr])(_5:oid)(_6:chr)
     ee_a := bat.insert(x,2@0,'a');	# 3 BKCinsert_bun (ee_a:bat[:oid,:chr])<-(x:bat[:oid,:chr])(_8:oid)(_6:chr)
     fe_a := bat.insert(x,3@0,'b');	# 4 BKCinsert_bun (fe_a:bat[:oid,:chr])<-(x:bat[:oid,:chr])(_10:oid)(_11:chr)

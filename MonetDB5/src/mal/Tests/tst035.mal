@@ -4,7 +4,7 @@ z:= "hello world"; io.print(z);
 z:=z; io.print(z);
 io.print("done");
 
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 i:=  bbp.getLRefCount(b); io.print(i);
 b:=b;
 i:=  bbp.getLRefCount(b); io.print(i);

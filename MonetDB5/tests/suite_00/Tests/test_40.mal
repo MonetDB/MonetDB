@@ -14,7 +14,7 @@ include mil;
 	ba_a := calc.setoid(aa_a);
 	mil.line("# Some applications may wish to directly access the buns\n");
 	mil.line("# i.e. they use a BAT like an array.\n");
-	b := bbp.new(nil:int,nil:int);
+	b := bat.new(nil:int,nil:int);
 	mil.line("b.rename(\"b\");");
 	ca_a := bat.setName(b,"b");
 	mil.line("b.insert(1,15);");

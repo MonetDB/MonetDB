@@ -11,11 +11,11 @@ function steal(bb:bat[:any_1,:any_2]) :bat[:any_1,:any_2];
 end steal; 
 
 function createone():bat[:int,:str];
-	b:= bbp.new(:int,:str);
+	b:= bat.new(:int,:str);
 	return b;
 end createone;
 
-	b:= bbp.new(:int,:str);
+	b:= bat.new(:int,:str);
 	i:= bbp.getLRefCount(b);
 	io.printf("refcount =%d[1]\n",i);	
 

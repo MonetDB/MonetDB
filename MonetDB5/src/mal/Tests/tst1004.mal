@@ -2,7 +2,7 @@
 
 io.print("Start test");
 bbp.open();
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 bat.insert(b,1,2);
 bbp.deposit("myfirstbat",b);
 c:= bbp.take("myfirstbat");

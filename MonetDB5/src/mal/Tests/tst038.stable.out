@@ -33,7 +33,7 @@ end tst2;	# 2
 !ERROR: 'user.tst2' undefined in user.main[4]
 function user.main():int;	# 0  (main:int)
 #test the capability to deal with unspecified bats. 	# 1  (_2:str)
-    b := bbp.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-(_4:int)(_5:str)
+    b := bat.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-(_4:int)(_5:str)
 #The call to tst2 fails at runtime 	# 3  (_7:str)
     user.tst2(b);	# 4  unknown (_8:void)<-(b:bat[:int,:str])
     io.print("shouldn't come here\n");	# 5 IOprint_val (_9:int)<-(_10:str)

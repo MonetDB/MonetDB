@@ -1,8 +1,8 @@
 # The 4000 series deals with strategic optimizer constructs
 # common subexpression evaluation
 optimizer.commonExpressionRemoval();
-b:= bbp.new(:int,:int);
-c:= bbp.new(:int,:int);       
+b:= bat.new(:int,:int);
+c:= bat.new(:int,:int);       
 d:= algebra.select(b,0,100);
 e:= algebra.select(b,0,100);    
 k1:= 24;

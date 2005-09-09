@@ -5,10 +5,10 @@
 s:str := "hello";
 i:sht := 1:sht;
 b:bit   := true;
-z:bat[:int,:int]:= bbp.new(:int,:int);
+z:bat[:int,:int]:= bat.new(:int,:int);
 
 # type resolver should complain on the rest
 j:sht := 1:lng;
 k:lng := 1:sht;
-y:bat[:str,:int]:= bbp.new(:int,:int);
+y:bat[:str,:int]:= bat.new(:int,:int);
 f:flt := "wrong";

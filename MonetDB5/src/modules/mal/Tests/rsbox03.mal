@@ -8,7 +8,7 @@ resultset.setProperty(rs, 1, "name", "the_column");
 resultset.setProperty(rs, 1, "table", "the_table");
 resultset.setProperty(rs, 1, "schema", "the_schema");
 
-b1 := bbp.new(:void, :int);
+b1 := bat.new(:void, :int);
 bat.insert(b1, nil, 1);
 bat.insert(b1, nil, 2);
 bat.insert(b1, nil, nil:int);
@@ -18,14 +18,14 @@ bat.insert(b1, nil, 6);
 resultset.populateColumn(rs, 1, b1);
 resultset.addUnion(rs);
 
-b1 := bbp.new(:void, :int);
+b1 := bat.new(:void, :int);
 bat.insert(b1, nil, 7);
 bat.insert(b1, nil, 8);
 
 resultset.populateColumn(rs, 1, b1);
 resultset.addUnion(rs);
 
-b1 := bbp.new(:void, :int);
+b1 := bat.new(:void, :int);
 bat.insert(b1, nil, 13);
 bat.insert(b1, nil, 23);
 

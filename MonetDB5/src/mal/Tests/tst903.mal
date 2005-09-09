@@ -1,7 +1,7 @@
 # the multiplex code blocks.
 
 t0:= alarm.usec();
-b:= bbp.new(:void,:lng);
+b:= bat.new(:void,:lng);
 barrier (go,i):= mal.newRange(0:lng);
 	k:= mmath.rand();
 	l:= calc.lng(k);
@@ -99,10 +99,10 @@ cnt:= algebra.count(z9);
 io.printf(" count %d\n",cnt);
 t0:= alarm.usec();
 sr:= bat.reverse(b);
-s:= algebra.sortH(sr);
+s:= algebra.sort(sr);
 t1:= alarm.usec();
 d0:= t1-t0;
-io.printf("#tail sortH %d",d0);
+io.printf("#tail sort %d",d0);
 cnt:= algebra.count(s);
 io.printf(" count %d\n",cnt);
 cnt:= algebra.count(z9);

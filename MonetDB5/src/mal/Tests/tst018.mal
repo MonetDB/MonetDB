@@ -4,7 +4,7 @@ i:= 23;
 i:= nil;
 io.print(i);
 
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 b:= nil;
 io.print(b);
 

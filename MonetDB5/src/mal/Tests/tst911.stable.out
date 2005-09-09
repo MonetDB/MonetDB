@@ -77,7 +77,7 @@ end choptest;	# 17
 function user.main():int;	# 0  (main:int)
 # analyse the overhead of chopping a table 	# 1  (_2:str)
 # the multiplex code blocks. 	# 2  (_4:str)
-    b := bbp.new(:void,:lng);	# 3 CMDBATnew (b:bat[:void,:lng])<-(_6:void)(_7:lng)
+    b := bat.new(:void,:lng);	# 3 CMDBATnew (b:bat[:void,:lng])<-(_6:void)(_7:lng)
 barrier (go,i):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-(_10:lng) jump 9
     k := mmath.rand();	# 5 MATHrandint (k:int)
     l := calc.lng(k);	# 6 CALCint2lng (l:lng)<-(k:int)

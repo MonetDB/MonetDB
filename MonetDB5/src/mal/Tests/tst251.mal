@@ -2,7 +2,7 @@
 # The first and foremost BAT operations
 
 # String iterator stuff
-c:= bbp.new(:int,:str);
+c:= bat.new(:int,:str);
 bat.insert(c,1,"hello");
 bat.insert(c,2,"brave");
 bat.insert(c,3,"world");

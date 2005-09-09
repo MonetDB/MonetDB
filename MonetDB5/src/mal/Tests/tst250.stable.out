@@ -38,7 +38,7 @@ stdout of test 'tst250` in directory 'src/mal` itself:
 function user.main():int;	# 0  (main:int)
 # The series tst2?? is a patched version of suite_00 	# 1  (_2:str)
 # The first and foremost BAT operations 	# 2  (_4:str)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
+    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)
     err := bat.insert(b,1,15);	# 4 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(_8:int)(_9:int)
     err := bat.insert(b,2,4);	# 5 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(_10:int)(_11:int)
     n0 := calc.int(nil);	# 6 CALCnil2int (n0:int)<-(_13:void)

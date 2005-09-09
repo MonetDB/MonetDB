@@ -22,12 +22,12 @@ stdout of test 'STexample` in directory 'src/optimizer` itself:
 #mdb.list();
 #
 function user.main():int;	# 0  (main:int)
-    b := bbp.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
+    b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
     bat.insert(b,1,2);	# 2 BKCinsert_bun (_3:bat[:int,:int])<-(b:bat[:int,:int])(_4:int)(_5:int)
 #many more inserts 	# 3  (_7:str)
     c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_9:int)(_10:int)
-    (_15,_16):= bbp.unpack(c{singleton});	# 5 CMDbatunpack (_15:int)(_16:int)<-(c:bat[:int,:int])
-    d := bbp.pack(nil,_15);	# 6 CMDbatpack (d:bat[:void,:int])<-(_18:void)(_15:int)
+    (_15,_16):= bat.unpack(c{singleton});	# 5 CMDbatunpack (_15:int)(_16:int)<-(c:bat[:int,:int])
+    d := bat.pack(nil,_15);	# 6 CMDbatpack (d:bat[:void,:int])<-(_18:void)(_15:int)
     io.print(d);	# 7 IOprint_val (_12:int)<-(d:bat[:void,:int])
     mdb.list();	# 8 MDBlist (_14:void)
 end main;	# 9  
@@ -37,12 +37,12 @@ end main;	# 9
 #-----------------#
 [ nil,	  1	  ]
 function user.main():int;
-    b := bbp.new(:int,:int);
+    b := bat.new(:int,:int);
     bat.insert(b,1,2);
 #many more inserts 
     c{singleton} := algebra.select(b,0,4);
-    (_15,_16):= bbp.unpack(c{singleton});
-    d := bbp.pack(nil,_15);
+    (_15,_16):= bat.unpack(c{singleton});
+    d := bat.pack(nil,_15);
     io.print(d);
     mdb.list();
 end main;

@@ -188,7 +188,7 @@ address ALGcopy
 comment "Returns physical copy of a BAT.";
 @- Sorted copy
 @mal
-command sortH( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
 command sortT( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
@@ -600,7 +600,7 @@ aggregate functions using a macro.
 command sum (b:bat[:any_1,:@1] ) :@2 
 address ALGsum_@1_@2
 comment "Gives the sum of all tail values";
-command prod(b:bat[:any_1,:@1] ) :@2 
+command product(b:bat[:any_1,:@1] ) :@2 
 address ALGprod_@1_@2
 comment "Gives the product of all tail values";
 @mal

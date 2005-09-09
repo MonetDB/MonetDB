@@ -42,7 +42,7 @@ stdout of test 'tst1012` in directory 'src/mal` itself:
 function user.main():int;	# 0  (main:int)
 # the first of a series of BBP test cases 	# 1  (_2:str)
     bbp.open();	# 2 CMDbbpopen (_3:void)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_5:int)(_5:int)
+    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_5:int)(_5:int)
     bat.insert(b,1,2);	# 4 BKCinsert_bun (_6:bat[:int,:int])<-(b:bat[:int,:int])(_7:int)(_8:int)
     bbp.deposit("mysecondbat",b);	# 5 CMDbbpdeposit (_9:void)<-(_10:str)(b:bat[:int,:int])
     c := bbp.take("mysecondbat");	# 6 CMDbbptake (c:bat[:any,:any])<-(_10:str)

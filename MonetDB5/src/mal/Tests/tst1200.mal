@@ -36,8 +36,8 @@
 	rule_feb:= mtime.rule("first fRiDaY on or after february 30@01:15");
 #var rule_feb := mtime.rule("first fRiDaY on or after february 30@01:15");
 # 
-	rule_bat:= bbp.new(:str,:rule,10);
-#var rule_bat := bbp.new(str,rule,10);
+	rule_bat:= bat.new(:str,:rule,10);
+#var rule_bat := bat.new(str,rule,10);
 	bat.insert(rule_bat,"jan",rule_jan);
 	bat.insert(rule_bat,"feb",rule_feb);
 	bat.insert(rule_bat,"mar",rule_mar);
@@ -173,8 +173,8 @@ io.print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
 #var tzone_15 := mtime.tzone(24*60, rule_apr, rule_nov);
 #
 #
-	tzone_bat:= bbp.new(:oid,:tzone);
-#var tzone_bat := bbp.new(oid,tzone);
+	tzone_bat:= bat.new(:oid,:tzone);
+#var tzone_bat := bat.new(oid,tzone);
 	bat.insert(tzone_bat,0@0,tzone_00);
 	bat.insert(tzone_bat,1@0,tzone_01);
 	bat.insert(tzone_bat,2@0,tzone_02);
@@ -268,8 +268,8 @@ io.print("print(kd_a,md_a,od_a)");
 	date_20:= mtime.date("1999-sept-31");
 #var date_20 := date("1999-sept-31");
 #
-	date_bat:= bbp.new(:oid,:date);
-#var date_bat := bbp.new(oid,date);
+	date_bat:= bat.new(:oid,:date);
+#var date_bat := bat.new(oid,date);
 	bat.insert(date_bat,0@0,date_00);
 	bat.insert(date_bat,1@0,date_01);
 	bat.insert(date_bat,2@0,date_02);
@@ -346,8 +346,8 @@ io.print("print(kd_a,md_a,od_a)");
 #      [diff](date_addmonths, date_bat).bat.setColumn("diff"));
 #
 ## test dayofweek and weeknumber using more than two years as consecutive days
-	date_seq:= bbp.new(:int,:date);
-#var date_seq := bbp.new(int, date);
+	date_seq:= bat.new(:int,:date);
+#var date_seq := bat.new(int, date);
 	i:= -375;
 #var i := -375;
 barrier	lf_a:= true;
@@ -428,8 +428,8 @@ io.print("date_seq,sf_a,vf_a,ag_a,cg_a");
 	daytime_19:= mtime.daytime("nil");
 #var daytime_19 := mtime.daytime("nil");
 #
-	daytime_bat:= bbp.new(:oid,:daytime);
-#var daytime_bat := bbp.new(oid,daytime);
+	daytime_bat:= bat.new(:oid,:daytime);
+#var daytime_bat := bat.new(oid,daytime);
 	bat.insert(daytime_bat,0@0,daytime_00);
 	bat.insert(daytime_bat,1@0,daytime_01);
 	bat.insert(daytime_bat,2@0,daytime_02);

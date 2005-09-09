@@ -124,7 +124,7 @@ stdout of test 'tst4700` in directory 'src/optimizer` itself:
 #end tst903;
 function user.tst903():void;	# 0  (tst903:void)
     t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
-    b := bbp.new(:void,:lng);	# 2 CMDBATnew (b:bat[:void,:lng])<-(_3:void)(_4:lng)
+    b := bat.new(:void,:lng);	# 2 CMDBATnew (b:bat[:void,:lng])<-(_3:void)(_4:lng)
 barrier (go,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (go:bit)(i:lng)<-(_7:lng) jump 8
     k := mmath.rand();	# 4 MATHrandint (k:int)
     l := calc.lng(k);	# 5 CALCint2lng (l:lng)<-(k:int)
@@ -219,12 +219,11 @@ exit (go,i);	# 8  (go:bit)(i:lng)
     io.printf(" count %d\n",cnt);	# 94 IOprint_formatted_lng (_70:int)<-(_66:str)(cnt:lng)
     t0 := alarm.usec();	# 95 ALARMusec (t0:lng)
     sr := bat.reverse(b);	# 96 BKCreverse (sr:bat[:lng,:void])<-(b:bat[:void,:lng])
-    s := algebra.sort(sr);	# 97  unknown (s:any)<-(sr:bat[:lng,:void])
+    s := algebra.sort(sr);	# 97 ALGhsort (s:bat[:lng,:void])<-(sr:bat[:lng,:void])
     t1 := alarm.usec();	# 98 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 99 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     io.printf("#tail sort %d",d0);	# 100 IOprint_formatted_lng (_73:int)<-(_74:str)(d0:lng)
 end tst903;	# 101  
-!ERROR: 'algebra.sort' undefined in user.tst903[97]
 #
 #Mcc.compile("user","tst903");
 #

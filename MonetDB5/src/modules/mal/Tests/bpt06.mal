@@ -1,9 +1,9 @@
 #testing deletions from a BAT partition table
-a1:= bbp.new(:void,:int);
+a1:= bat.new(:void,:int);
 bat.setSequenceBase(a1,0@0);
-a2:= bbp.new(:void,:int);
+a2:= bat.new(:void,:int);
 bat.setSequenceBase(a2,10@0);
-a3:= bbp.new(:void,:int);
+a3:= bat.new(:void,:int);
 bat.setSequenceBase(a3,20@0);
 
 barrier (go,i):= mal.newRange(0);

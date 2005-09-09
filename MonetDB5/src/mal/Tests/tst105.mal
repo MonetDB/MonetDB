@@ -7,4 +7,4 @@ address GDKbatnew;
 
 a:= bat2.new(:str,:int);
 b:= bat2.new(:str,:int);
-c:= bbp.new(:str,:int);
+c:= bat.new(:str,:int);

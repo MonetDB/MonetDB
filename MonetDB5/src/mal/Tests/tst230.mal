@@ -1,5 +1,5 @@
 # a test checking BAT reference counting under various situations
-	b:= bbp.new(:int,:str);
+	b:= bat.new(:int,:str);
 	i:= bbp.getRefCount(b);
 	io.printf("refcount =%d\n",i);
 	j:= bbp.getLRefCount(b);

@@ -1,6 +1,6 @@
 #testing flt/lng/int coercions
 
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 bat.insert(b,1,1);
 bat.insert(b,2,4);
 bat.insert(b,3,9);

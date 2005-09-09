@@ -21,7 +21,7 @@ stdout of test 'FTexample` in directory 'src/optimizer` itself:
 #	return i;
 #end test;
 function user.test(s:str):lng;	# 0  (test:lng)<-(s:str)
-    b := bbp.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-(_3:int)(_4:str)
+    b := bat.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-(_3:int)(_4:str)
     bat.insert(b,1,"hello");	# 2 BKCinsert_bun (_5:bat[:int,:str])<-(b:bat[:int,:str])(_6:int)(_7:str)
     z := algebra.select(b,s,s);	# 3 ALGselect (z:bat[:int,:str])<-(b:bat[:int,:str])(s:str)(s:str)
     i := algebra.count(z);	# 4 ALGcount_bat (i:lng)<-(z:bat[:int,:str])
@@ -35,7 +35,7 @@ function user.main():int;	# 0  (main:int)
     mdb.list("user","test");	# 2 MDBlist3 (_6:void)<-(_4:str)(_5:str)
 end main;	# 3  
 factory user.test(s:str):lng;
-    b := bbp.new(:int,:str);
+    b := bat.new(:int,:str);
     bat.insert(b,1,"hello");
 barrier always := true;
     z := algebra.select(b,s,s);

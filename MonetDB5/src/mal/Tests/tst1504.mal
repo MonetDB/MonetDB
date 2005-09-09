@@ -1,7 +1,7 @@
-	x := bbp.new(:oid,:chr);
+	x := bat.new(:oid,:chr);
 	de_a := bat.insert(x,1@0,'a');
 	ee_a := bat.insert(x,2@0,'a');
-	y:= bbp.new(:chr,:oid);
+	y:= bat.new(:chr,:oid);
 	xr:= bat.reverse(x);
 	io.print(xr);
 	bat.insert(y,xr);

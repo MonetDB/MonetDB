@@ -24,14 +24,14 @@ stdout of test 'qep00` in directory 'src/optimizer` itself:
 # demonstrate the QEP construction 
     J1 := algebra.join(E1,R2);
         E1 := algebra.select(R,1,3);
-            R := bbp.new(:void,:int);
+            R := bat.new(:void,:int);
         R2 := bat.reverse(E2);
             E2 := algebra.select(S,4,9);
-                S := bbp.new(:void,:int);
+                S := bat.new(:void,:int);
 function user.main():int;	# 0  (main:int)
 # demonstrate the QEP construction 	# 1  (_2:str)
-    R := bbp.new(:void,:int);	# 2 CMDBATnew (R:bat[:void,:int])<-(_4:void)(_5:int)
-    S := bbp.new(:void,:int);	# 3 CMDBATnew (S:bat[:void,:int])<-(_4:void)(_5:int)
+    R := bat.new(:void,:int);	# 2 CMDBATnew (R:bat[:void,:int])<-(_4:void)(_5:int)
+    S := bat.new(:void,:int);	# 3 CMDBATnew (S:bat[:void,:int])<-(_4:void)(_5:int)
     E1 := algebra.select(R,1,3);	# 4 ALGselect (E1:bat[:void,:int])<-(R:bat[:void,:int])(_8:int)(_9:int)
     E2 := algebra.select(S,4,9);	# 5 ALGselect (E2:bat[:void,:int])<-(S:bat[:void,:int])(_11:int)(_12:int)
     R2 := bat.reverse(E2);	# 6 BKCreverse (R2:bat[:int,:void])<-(E2:bat[:void,:int])

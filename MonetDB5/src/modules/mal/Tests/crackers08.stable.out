@@ -133,7 +133,7 @@ stdout of test 'crackers08` in directory 'src/modules/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 # determine basic costs for cracking a larger table. 	# 1  (_2:str)
-    b := bbp.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
+    b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
     l := 0:int;	# 3  (l:int)<-(_6:int)
 barrier (v,i):= mal.newRange(0:int);	# 4 RNGnewRange_int (v:bit)(i:int)<-(_6:int) jump 9
     bat.insert(b,l,l);	# 5 BKCinsert_bun (_9:bat[:int,:int])<-(b:bat[:int,:int])(l:int)(l:int)

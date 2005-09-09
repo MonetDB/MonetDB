@@ -2,8 +2,8 @@
 # common subexpression evaluation
 optimizer.setDebug();
 optimizer.commonExpressionRemoval();
-b:= bbp.new(:str,:str);
-c:= bbp.new(:str,:str);       # identical until insert takes place
+b:= bat.new(:str,:str);
+c:= bat.new(:str,:str);       # identical until insert takes place
 d:= algebra.select(b,"hello","world");
 e:= algebra.select(b,"hello","world");    # mapped onto one instruction
 

@@ -1,5 +1,5 @@
 # Grouped sums
-b:= bbp.new(:void,:int);
+b:= bat.new(:void,:int);
 bat.setSequenceBase(b,0:oid);
 bat.insert(b,1);
 bat.insert(b,2);

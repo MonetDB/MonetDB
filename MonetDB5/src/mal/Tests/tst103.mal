@@ -1,7 +1,7 @@
 # check propagation of type variables over bats
 
 function f(a:any_1, b:any_2):bat[:any_2,:any_1] ;
-	return f:=bbp.new(:any_2,:any_1); 
+	return f:=bat.new(:any_2,:any_1); 
 end f;
 
 a:= user.f(1,"hello");

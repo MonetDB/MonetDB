@@ -1,11 +1,11 @@
-a := bbp.new(:oid,:int);
+a := bat.new(:oid,:int);
 bat.insert(a, 0@0, 0);
 bat.insert(a, 1@0, 1);
 bat.insert(a, 2@0, 2);
 
 io.print(a);
 
-b := bbp.new(:oid,:flt);
+b := bat.new(:oid,:flt);
 bat.insert(b, 0@0, 0.3);
 bat.insert(b, 1@0, 1.4);
 bat.insert(b, 2@0, 2.5);

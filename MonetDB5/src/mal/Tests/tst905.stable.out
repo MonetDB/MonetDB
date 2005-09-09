@@ -26,13 +26,13 @@ stdout of test 'tst905` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 # the multiplex code blocks. 	# 1  (_2:str)
-    b := bbp.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-(_4:lng)(_4:lng)
+    b := bat.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-(_4:lng)(_4:lng)
 barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_7:lng) jump 6
     bat.insert(b,i,i);	# 4 BKCinsert_bun (_8:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
     redo (v,i):= mal.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_9:lng)(_10:lng) jump 4
 exit (v,i);	# 6  (v:bit)(i:lng)
     c := algebra.copy(b);	# 7 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
-    _15 := bbp.new(:lng,:lng);	# 8 CMDBATnew (_15:bat[:lng,:lng])<-(_16:lng)(_16:lng)
+    _15 := bat.new(:lng,:lng);	# 8 CMDBATnew (_15:bat[:lng,:lng])<-(_16:lng)(_16:lng)
 barrier (_18,_19,_20):= chopper.newIterator(b);	# 9 CHPbunIterator (_18:lng)(_19:lng)(_20:lng)<-(b:bat[:lng,:lng]) jump 16
     _22 := algebra.find(c,_19);	# 10 ALGfind (_22:lng)<-(c:bat[:lng,:lng])(_19:lng)
     _24 := calc.+(_20,_22);	# 11 CALCbinaryADDlnglng (_24:lng)<-(_20:lng)(_22:lng)

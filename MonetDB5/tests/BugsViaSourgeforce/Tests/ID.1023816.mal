@@ -10,7 +10,7 @@ include mil;
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
 	mil.line("var x:=new(void,int);");
-	x := bbp.new(:void,:int);
+	x := bat.new(:void,:int);
 	mil.line("x.insert(void(nil),2);");
 	aa_a := calc.void(nil);
 	ba_a := bat.insert(x,aa_a,2);

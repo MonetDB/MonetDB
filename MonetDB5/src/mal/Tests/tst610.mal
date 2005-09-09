@@ -7,7 +7,7 @@ function refs():void;
     io.print(g,gr,gl);
 end refs;
 
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 #refs();
 bat.insert(b,23,32);
 #refs();

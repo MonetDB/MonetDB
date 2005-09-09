@@ -2,7 +2,7 @@
 # The first and foremost BAT operations
 
 n0:= 0;
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 err := bat.insert(b,1,15);
 err := bat.insert(b,2,4);
 err := bat.insert(b,4,16);

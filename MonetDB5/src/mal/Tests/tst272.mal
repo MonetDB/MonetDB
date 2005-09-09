@@ -7,7 +7,7 @@ profiler.setFilter("*","insert");
 
 o:= calc.oid(20000000);
 calc.setoid(o);
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 #test basic functionality of the BAT library.
 #focussed on integers
 #it includes insertions,deletions,selections, and joins.

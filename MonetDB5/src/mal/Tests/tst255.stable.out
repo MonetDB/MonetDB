@@ -24,7 +24,7 @@ stdout of test 'tst255` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 # testing void to oid coercion 	# 1  (_2:str)
-    z1 := bbp.new(:void,:int);	# 2 CMDBATnew (z1:bat[:void,:int])<-(_4:void)(_5:int)
+    z1 := bat.new(:void,:int);	# 2 CMDBATnew (z1:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(z1,0@0);	# 3 BKCsetSequenceBase (_6:bat[:void,:int])<-(z1:bat[:void,:int])(_7:oid)
     bat.insert(z1,nil,0);	# 4 BKCinsert_bun (_8:bat[:void,:int])<-(z1:bat[:void,:int])(_9:void)(_10:int)
     bat.insert(z1,nil,1);	# 5 BKCinsert_bun (_11:bat[:void,:int])<-(z1:bat[:void,:int])(_9:void)(_12:int)

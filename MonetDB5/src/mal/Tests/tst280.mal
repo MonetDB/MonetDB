@@ -5,7 +5,7 @@ function pow(i:int,j:int):int;
 end pow;
 function tst(A2:bat[:void,:int],A3:bat[:void,:int]):bat[:void,:int]; 
 	io.print(A2);
-	resB := bbp.new(:void,:int); 
+	resB := bat.new(:void,:int); 
 	bat.setSequenceBase(resB,0@0);
 	lim:= algebra.count(A2);
 	io.printf("count %d\n",lim);
@@ -25,7 +25,7 @@ exit    (mloop,m) ;
         return resB;    
 end tst;   
 
-	b := bbp.new(:void,:int);
+	b := bat.new(:void,:int);
 	bat.setSequenceBase(b,0@0);
 	bat.insert(b,nil,1);
 	bat.insert(b,nil,2);

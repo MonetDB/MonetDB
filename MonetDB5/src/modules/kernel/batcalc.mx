@@ -328,46 +328,6 @@ comment "Materialize the oid into an oid";
 
 @-
 @}
-@+ Scientific routines
-The mmath functions are also overloaded to provide for
-the fast execution of expanded code blocks.
-The common set of math functions is supported.
-@= scienceFcn
-    command @1(x:bat[:any_1,:dbl])  :bat[:any_1,:dbl] 
-    address CMDscience_@1;
-    command @1(x:bat[:void,:dbl])  :bat[:void,:dbl] 
-    address CMDsciencevoid_@1;
-@= scienceFcnBinary
-    command @1(x:bat[:any_1,:dbl],y:@2):bat[:any_1,:dbl] 
-    address CMDscience_@1;
-@{
-@-
-@mal
-	@:scienceFcn(asin)@
-	@:scienceFcn(acos)@
-	@:scienceFcn(atan)@
-	@:scienceFcn(cos)@
-	@:scienceFcn(sin)@
-	@:scienceFcn(tan)@
-	@:scienceFcn(cosh)@
-	@:scienceFcn(sinh)@
-	@:scienceFcn(tanh)@
-	@:scienceFcn(exp)@
-	@:scienceFcn(log)@
-	@:scienceFcn(log10)@
-	@:scienceFcn(sqrt)@
-	@:scienceFcn(ceil)@
-	@:scienceFcn(fabs)@
-	@:scienceFcn(floor)@
-@-
-	round is not binary...
-	@:scienceFcnBinary(round,int)@
-@mal
-	@:scienceFcnBinary(fmod,dbl)@
-	@:scienceFcnBinary(atan2,dbl)@
-	@:scienceFcnBinary(pow,dbl)@
-@-
-@}
 @{
 @- Implementation
 @h
@@ -446,8 +406,6 @@ implementation for shifted window arithmetic as well.
 @= tstBat
 if( bn== NULL) {*ret= 0; 
 	return throwMessage("batcalc.@1", "can not create bat");}
-@-
-@c
 @-
 The code block below heavily uses the MX code expansion involved,
 but in essence the structure is relatively simple.
@@ -1567,114 +1525,6 @@ CMDconvertvoid_int_oid(int *ret, int *bid)
 	return MAL_SUCCEED;
 #endif
 
-}
-
-@- Implementations of scientific functions
-@c
-@:scienceFcnImpl(asin)@
-@:scienceFcnImpl(acos)@
-@:scienceFcnImpl(atan)@
-@:scienceFcnImpl(cos)@
-@:scienceFcnImpl(sin)@
-@:scienceFcnImpl(tan)@
-@:scienceFcnImpl(cosh)@
-@:scienceFcnImpl(sinh)@
-@:scienceFcnImpl(tanh)@
-@:scienceFcnImpl(exp)@
-@:scienceFcnImpl(log)@
-@:scienceFcnImpl(log10)@
-@:scienceFcnImpl(sqrt)@
-@:scienceFcnImpl(ceil)@
-@:scienceFcnImpl(fabs)@
-@:scienceFcnImpl(floor)@
-@-
-	round is not binary...
-	@:scienceBinaryImpl(round,int)@
-@c
-@:scienceBinaryImpl(fmod,dbl)@
-@:scienceBinaryImpl(atan2,dbl)@
-@:scienceBinaryImpl(pow,dbl)@
-
-@-
-@= scienceFcnImpl
-mal_export str CMDscience_@1(int *ret, int *bid);
-str CMDscience_@1(int *ret, int *bid){
-	BAT *b,*bn;
-	int xx;
-	BUN p,q;
-
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
-
-	bn= newBATresult(b, TYPE_dbl);
-	@:tstBat(CMDscience_@1)@
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b,p);
-		dbl t = *(dbl*) BUNtail(b,p);
-		dbl x= t== dbl_nil? dbl_nil:@1(t);
-		bunfastins(bn, h, &x);
-	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
-	BBPunfix(*ret);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-/* You don;t have to materialize the oids.
-This is taken care upon access */
-mal_export str CMDsciencevoid_@1(int *ret, int *bid);
-str CMDsciencevoid_@1(int *ret, int *bid){
-	BAT *b,*bn;
-	int xx;
-	BUN p,q;
-	oid o;
-
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
-
-	bn= BATnew(TYPE_oid,b->ttype, BATcount(b));
-	@:tstBat(CMDsciencevoid_@1)@
-	o= b->hseqbase;
-
-	BATloopFast(b, p, q, xx) {
-		dbl t = *(dbl*) BUNtail(b,p);
-		dbl x= t== dbl_nil? dbl_nil:@1(t);
-		bunfastins(bn, &o, &x);
-		o++;
-	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
-	BBPunfix(*ret);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-@= scienceBinaryImpl
-mal_export str CMDscience_@1(int *ret, int *bid, @2 *d);
-str CMDscience_@1(int *ret, int *bid, @2 *d){
-	BAT *b,*bn;
-	int xx;
-	BUN p,q;
-
-    if( (b= BATdescriptor(*bid)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
-
-	bn= newBATresult(b, TYPE_dbl);
-	@:tstBat(CMDscience_@1)@
-
-	BATloopFast(b, p, q, xx) {
-		ptr h = BUNhead(b,p);
-		dbl t = *(dbl*) BUNtail(b,p);
-		dbl x= t== dbl_nil? dbl_nil:@1(t, *d);
-		bunfastins(bn, h, &x);
-	}
-bunins_failed:
-	BBPincref( *ret= bn->batCacheid,TRUE);
-	BBPunfix(*ret);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
 }
 @- IfThenElse
 The conditional multiplex operations .

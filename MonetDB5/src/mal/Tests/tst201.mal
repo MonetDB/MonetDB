@@ -10,7 +10,7 @@
 ##focussed on strings
 ##it includes bat.insertions,deletions,selections, and joins.
 #
-	v2:= bbp.new(:str,:int);
+	v2:= bat.new(:str,:int);
 	b := v2;
 #b:= new(str,int);
 	v3:= bat.insert(b,"the",1);

@@ -35,7 +35,7 @@ end test;	# 2
 function user.main():int;	# 0  (main:int)
 # Polymorphic function tests 	# 1  (_2:str)
 # Catching a dynamic error 	# 2  (_4:str)
-    c := bbp.new(:int,:str);	# 3 CMDBATnew (c:bat[:int,:str])<-(_6:int)(_7:str)
+    c := bat.new(:int,:str);	# 3 CMDBATnew (c:bat[:int,:str])<-(_6:int)(_7:str)
     user.test(c,"hello");	# 4  unknown (_8:any)<-(c:bat[:int,:str])(_9:str)
 end main;	# 5  
 

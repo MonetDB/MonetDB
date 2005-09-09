@@ -1,5 +1,5 @@
 # determine basic costs for cracking a larger table.
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 l:= 0;
 barrier (v,i):= mal.newRange(0:int);
         bat.insert(b,l,l);

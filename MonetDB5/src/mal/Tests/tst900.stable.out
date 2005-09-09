@@ -24,7 +24,7 @@ stdout of test 'tst900` in directory 'src/mal` itself:
 !            	^operator expected
 function user.main():int;	# 0  unknown (main:int)
 # the multiplex code blocks. Testing syntax errors 	# 1  unknown (_2:str)
-    b := bbp.new(:lng,:lng);	# 2  unknown (b:any)<-(_4:lng)(_4:lng)
+    b := bat.new(:lng,:lng);	# 2  unknown (b:any)<-(_4:lng)(_4:lng)
     x := multiplex.+(b,b);	# 3  unknown (x:any)<-(b:any)(b:any)
     d;	# 4  unknown (d:any)
 # parser bug 	# 5  unknown ($9:str)

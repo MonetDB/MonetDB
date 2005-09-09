@@ -1,9 +1,9 @@
 # testing pack/unpack of bats
 i:= 1;
 j:= 2;
-b:= bbp.pack(i,j);
+b:= bat.pack(i,j);
 io.print(b);
 
-(g,h):= bbp.unpack(b);
+(g,h):= bat.unpack(b);
 io.print(g);
 io.print(h);

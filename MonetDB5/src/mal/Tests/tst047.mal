@@ -1,7 +1,7 @@
 #testing copying and counting reversals
 #to test reversal handling
 
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 bat.insert(b,1,1);
 bat.insert(b,2,4);
 bat.insert(b,3,9);

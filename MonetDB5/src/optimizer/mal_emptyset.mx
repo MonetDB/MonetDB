@@ -35,16 +35,16 @@ to arrive at a smaller and therefore faster evaluation.
 For example, consider the following MAL test 
 @example
 @verbatim
-    V1 := bbp.new(:void,:int);
-    V7 := bbp.new(:void,:int);
-    V10{empty} := bbp.new(:int,:void);
+    V1 := bat.new(:void,:int);
+    V7 := bat.new(:void,:int);
+    V10{empty} := bat.new(:int,:void);
     V11 := bat.reverse(V10);
     V12 := algebra.kdiff(V7,V11);
     V16 := algebra.markH(V12);
     V17 := algebra.join(V16,V7);
     bat.append(V1,V17);
-    V19 := bbp.new(:void,:int);
-    V22 := bbp.new(:void,:int);
+    V19 := bat.new(:void,:int);
+    V22 := bat.new(:void,:int);
     V23 := algebra.join(V16,V22);
     bat.append(V19,V23);
     V25 := algebra.count(V17);
@@ -54,13 +54,13 @@ For example, consider the following MAL test
 Calling the optimizer optimize.emptySet("user","test") replaces this program
 by the following code snippet.
 @example
-     V1 := bbp.new(:void,:int);
-     V7 := bbp.new(:void,:int);
+     V1 := bat.new(:void,:int);
+     V7 := bat.new(:void,:int);
      V16 := algebra.markH(V7);
      V17 := algebra.join(V16,V7);
      bat.append(V1,V17);
-     V19 := bbp.new(:void,:int);
-     V22 := bbp.new(:void,:int);
+     V19 := bat.new(:void,:int);
+     V22 := bat.new(:void,:int);
      V23 := algebra.join(V16,V22);
      bat.append(V19,V23);
 @end example

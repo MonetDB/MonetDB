@@ -40,7 +40,7 @@ function dir(s:str):void;
 	user.dir(tn);
 end dir;
 io.print("start test");
-b:=bbp.new(:int,:int);
+b:=bat.new(:int,:int);
 bat.setName(b,"simplemind");
 
 z:= bbp.getNames();

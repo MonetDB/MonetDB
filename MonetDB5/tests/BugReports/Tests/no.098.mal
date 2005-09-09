@@ -46,7 +46,7 @@ include mil;
 	aa_a := calc.oid(20000000);
 	ba_a := setoid(aa_a);
 	mil.line("var b:=new(oid,oid);");
-	b := bbp.new(nil:oid,nil:oid);
+	b := bat.new(nil:oid,nil:oid);
 	mil.line("b.insert(oid(1),oid(2));");
 	ca_a := calc.oid(1);
 	da_a := calc.oid(2);

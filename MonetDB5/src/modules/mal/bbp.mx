@@ -20,17 +20,19 @@
 @a M.L.Kersten, P. Boncz
 @* BAT Buffer Pool
 The BBP module implements a box interface over the BAT buffer pool.
-Furthermore, it provides some functionality for bats in the context
-of the Mal interpreter. The kernel does not know anything about
-the runtime context.
+It is primarilly meant to ease inspection of the BAT collection managed
+by the server.
+
+Since the kernel library itself does not know anything about the runtime
+context, we define the pattern-based versions here as well.
 
 The two predominant approaches to use bbp is to access the BBP
-with either @emph{ bind} or {\sc take}. The former merely maps the BAT name
+with either @emph{ bind} or @emph{take}. The former merely maps the BAT name
 to the object in the bat buffer pool. In Monet 4 this binding
 was implicit in the name resolution scheme.
 No guarantees are given on stability and isolation.
 
-A more controlled scheme is to @emph{ deposit}, {\sc take}, {\sc release}
+A more controlled scheme is to @emph{ deposit}, @emph{take}, @emph{release}
 and @emph{ discard} elements.
 Any BAT B created can be brought under this scheme with the name N.
 The association N->B is only maintained in the box administration
@@ -45,11 +47,9 @@ The default location of the BAT storage is .../dbfarm/bat, which maps
 to a directory on the local file system. 
 
 @+ The Box Interface
-The bbp module implements the box 
-abstraction over the Bat buffer pool. It should 
-(future) provide an adequate transaction 
-and version support.  It provides a collection 
-of views to inspect the buffer pool status.;
+The bbp module implements the box abstraction over the Bat buffer pool. It should 
+(future) provide an adequate transaction and version support. It provides 
+a collection of views to inspect the buffer pool status.;
 @mal
 module bbp;
 
@@ -64,7 +64,7 @@ address CMDbbpdestroy
 comment "Destroy the box";
 pattern take(name:str) :bat[:any_1,:any_2] 
 address CMDbbptake
-comment "Load a particular bat from disk and make a private copy";
+comment "Load a particular bat";
 pattern deposit(name:str,v:bat[:any_1,:any_2]) :void 			
 address CMDbbpdeposit
 comment "Enter a new bat into the bbp box.";
@@ -93,7 +93,7 @@ pattern discard(name:str):void
 address CMDbbpdiscard
 comment "Remove the BAT from the box";
 
-pattern garbage(b:bat[:any_1,:any_2]):void
+pattern bat.setGarbage(b:bat[:any_1,:any_2]):void
 address CMDbbpgarbage
 comment "Designate a BAT as garbage";
 
@@ -124,32 +124,32 @@ A pattern block may be required to make the proper translation to
 the BAT library. In particular when the type information is needed
 to steer the process. This means the code can not belong to the
 kernel module, because MAL context knowledge is forbidden there.
+The signatures are, however, moved into the proper place.
 
 @mal
-pattern new(ht:any_1, tt:any_2, b:bat[:any_3,:any_4]) :bat[:any_1,:any_2] 	
+pattern bat.new(ht:any_1, tt:any_2, b:bat[:any_3,:any_4]) :bat[:any_1,:any_2] 	
 address CMDBATclone
 comment "Creates a new empty transient BAT by cloning another";
-pattern new(ht:any_1, tt:any_2) :bat[:any_1,:any_2] 	
+pattern bat.new(ht:any_1, tt:any_2) :bat[:any_1,:any_2] 	
 address CMDBATnew
 comment "Creates a new empty transient BAT,
 	with head- and tail-types as indicated.";
-pattern new(ht:any_1, tt:any_2, size:int) :bat[:any_1,:any_2] 	
+pattern bat.new(ht:any_1, tt:any_2, size:int) :bat[:any_1,:any_2] 	
 address CMDBATnewint
 comment "Creates a new BAT with sufficient space.";
-pattern new(ht:any_1, tt:any_2, size:lng) :bat[:any_1,:any_2] 	
+pattern bat.new(ht:any_1, tt:any_2, size:lng) :bat[:any_1,:any_2] 	
 address CMDBATnew
 comment "Creates a new BAT and allocate space.";
-pattern new(ht:void, tt:any_2, size:int) :bat[:void,:any_2] 	
+pattern bat.new(ht:void, tt:any_2, size:int) :bat[:void,:any_2] 	
 address CMDBATnew;
-pattern new(ht:void, tt:any_2, size:lng) :bat[:void,:any_2] 	
+pattern bat.new(ht:void, tt:any_2, size:lng) :bat[:void,:any_2] 	
 address CMDBATnew;
 
-pattern new(b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 	
+pattern bat.new(b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 	
 address CMDBATnewDerived;
-pattern new(b:bat[:any_1,:any_2], size:lng) :bat[:any_1,:any_2] 	
+pattern bat.new(b:bat[:any_1,:any_2], size:lng) :bat[:any_1,:any_2] 	
 address CMDBATnewDerived;
-
-command new(nme:str):bat[:any_1,:any_2]
+command bat.new(nme:str):bat[:any_1,:any_2]
 address CMDBATderivedByName
 comment "Localize a bat by name and produce a variant";
 @- Singleton Set management
@@ -157,24 +157,25 @@ Singleton sets are ideally not represented by BATs, but they
 nevertheless emerge as the result of an operation.
 They can be packed/unpacked easily.
 @mal
-pattern unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
+pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
 address CMDbatunpack
 comment "Extract the first tuple from a bat";
-pattern pack(h:any_1,t:any_2):bat[:any_1,:any_2]
+pattern bat.pack(h:any_1,t:any_2):bat[:any_1,:any_2]
 address CMDbatpack
 comment "Pack a pair into a BAT";
 
 @+ Algebraic operators
-Those that rely on knowledge of the runtime environment
+There are also a few algebraic operators that have to be defined here/
+They rely on knowledge of the runtime environment
 @mal
-command project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]	
+command algebra.project(b:bat[:any_1,:any_2]) :bat[:any_1,:void]	
 address CMDBBPprojectNil
 comment "Extract the head of a BAT.";
 
-pattern project( b:bat[:any_1,:any_3], val:any_2) :bat[:any_1,:any_2] 	
+pattern algebra.project( b:bat[:any_1,:any_3], val:any_2) :bat[:any_1,:any_2] 	
 address CMDBBPproject
 comment "Fill the tail column with a constant.";
-pattern project(b:bat[:any_1,:any_3], val:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+pattern algebra.project(b:bat[:any_1,:any_3], val:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address CMDBBPproject
 comment "Fill the tail column with a constant.";
                                                                                 
@@ -200,28 +201,28 @@ address CMDbbpName
 comment "Map a BAT into its internal name";
 command getCount() :bat[:int,:lng] 	
 address CMDbbpCount
-comment "Map a BAT into its cardinality";
+comment "Create a BAT with the cardinalities of all known BATs";
 command getRefCount() :bat[:int,:int] 	
 address CMDbbpRefCount
-comment "Map a BAT into its (hard) reference count";
+comment "Create a BAT with the (hard) reference counts";
 command getLRefCount() :bat[:int,:int] 	
 address CMDbbpLRefCount
-comment "Map a BAT into its logical reference count";
+comment "Create a BAT with the logical reference counts";
 command getLocation() :bat[:int,:str] 	
 address CMDbbpLocation
-comment "Map a BAT into its disk location";
+comment "Create a BAT with their disk locations";
 command getHeat() :bat[:int,:int] 	
 address CMDbbpHeat
-comment "Map a BAT into its heat";
+comment "Create a BAT with the heat values";
 command getDirty() :bat[:int,:str] 	
 address CMDbbpDirty
-comment "Map a BAT into its dirty/ diffs/clean status";
+comment "Create a BAT with the dirty/ diffs/clean status";
 command getStatus() :bat[:int,:str] 	
 address CMDbbpStatus
-comment "Map a BAT into disk/load status";
+comment "Create a BAT with the disk/load status";
 command getKind():bat[:int,:str] 
 address CMDbbpKind
-comment "Map a BAT into its persistency status";
+comment "Create a BAT with the persistency status";
 command getRefCount(b:bat[:any_1,:any_2]) :int
 address CMDgetBATrefcnt
 comment "Utility for debugging MAL interpreter";
@@ -608,7 +609,7 @@ CMDbbpReleasA(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	releaseAllBox(box);
 	/* merge the updates with the master copies */
 	/* printf("bbp.releaseAll not yet fully implemented\n"); */
-	return MAL_SUCCEED;
+	return throwMessage("bbp.commit","Not yet available");
 }
 
 str

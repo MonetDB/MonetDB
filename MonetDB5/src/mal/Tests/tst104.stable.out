@@ -26,7 +26,7 @@ command user.f(a:any_1,b:bat[:any_2,:any_1],c:any_2):any_3 address dummy;	# 0  d
 function user.main():int;	# 0  (main:int)
 # check propagation of type variables over bats 	# 1  (_2:str)
 # can be checked after bat module has been added 	# 2  (_4:str)
-    b := bbp.new(:str,:int);	# 3 CMDBATnew (b:bat[:str,:int])<-(_6:str)(_7:int)
+    b := bat.new(:str,:int);	# 3 CMDBATnew (b:bat[:str,:int])<-(_6:str)(_7:int)
     a := user.f(1,b,"hello");	# 4  unknown (a:any)<-(_9:int)(b:bat[:str,:int])(_10:str)
 end main;	# 5  
 

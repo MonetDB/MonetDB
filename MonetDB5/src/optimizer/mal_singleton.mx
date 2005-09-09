@@ -33,7 +33,7 @@ A non-optimizable instruction leads to
 a construction of a new table with the single instance.
 
 @verbatim
-    b:= bbp.new(:int,:int);
+    b:= bat.new(:int,:int);
     bat.insert(b,1,2);
     c{singleton}:= algebra.select(b,0,4);
     d:= algebra.markH(c);
@@ -42,11 +42,11 @@ a construction of a new table with the single instance.
 @end verbatim
 is translated by into the code block
 @verbatim
-    b := bbp.new(:int,:int);
+    b := bat.new(:int,:int);
     bat.insert(b,1,2);
     c{singleton} := algebra.select(b,0,4);
-    ($15,$16):= bbp.unpack(c{singleton});
-    d := bbp.pack(nil,$16);
+    ($15,$16):= bat.unpack(c{singleton});
+    d := bat.pack(nil,$16);
     io.print(d);
 @end verbatim
 @{
@@ -85,7 +85,7 @@ STrebuildSet(MalBlkPtr mb, int sidx, int hidx, int tidx)
 	InstrPtr p;
 	int tpe;
 
-	p = newStmt(mb, putName("bbp", 3), putName("new", 3));
+	p = newStmt(mb, putName("bat", 3), putName("new", 3));
 	p->argv[0] = sidx;
 	tpe = getVarType(mb, hidx);
 	if (tpe == TYPE_oid)
@@ -137,7 +137,7 @@ STunpack(MalBlkPtr mb, int varid, STtuple * tuples)
 	if (tuples[varid].packed == 0)
 		return;
 
-	p = newFcnCall(mb, putName("bbp", 3), putName("unpack", 6));
+	p = newFcnCall(mb, putName("bat", 3), putName("unpack", 6));
 	getArg(p, 0) = tuples[varid].hidx;
 	setArgument(mb, p, 1, tuples[varid].tidx);
 	p->retc++;
@@ -150,7 +150,7 @@ STpack(MalBlkPtr mb, int varid, STtuple * tuples)
 {
 	InstrPtr p = 0;
 
-	p = newFcnCall(mb, putName("bbp", 3), putName("pack", 6));
+	p = newFcnCall(mb, putName("bat", 3), putName("pack", 6));
 	getArg(p, 0) = tuples[varid].vidx;
 	p->retc = 1;
 	p->argc = 1;

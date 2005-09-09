@@ -258,7 +258,9 @@ Give a brief introduction to Mapi, JDBC, ODBC,Perl....
 @node Advanced Topics , Appendices, MonetDB BAT Kernel , TOC
 This is the place to describe Membedded, distribution stuff...
 
-@node Appendices,, Advanced Topics, TOC
+@node Appendices, , Advanced Topics, TOC
+@appendix MAL Instruction Overview
+@include Assets/MALinstructions.texi
 @ifnottex
 @include mal_syntax.bdy.texi
 @end ifnottex

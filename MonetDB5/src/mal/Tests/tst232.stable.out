@@ -36,7 +36,7 @@ stdout of test 'tst232` in directory 'src/mal` itself:
 function user.main():int;	# 0  (main:int)
 # a test checking BAT reference counting under various situations 	# 1  (_2:str)
     bbp.open();	# 2 CMDbbpopen (_3:void)
-    b := bbp.new(:int,:str);	# 3 CMDBATnew (b:bat[:int,:str])<-(_5:int)(_6:str)
+    b := bat.new(:int,:str);	# 3 CMDBATnew (b:bat[:int,:str])<-(_5:int)(_6:str)
     i := bbp.getRefCount(b);	# 4 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])
     io.printf("refcount =%d\n",i);	# 5 IOprint_formatted_int (_8:int)<-(_9:str)(i:int)
     j := bbp.getLRefCount(b);	# 6 CMDgetBATlrefcnt (j:int)<-(b:bat[:int,:str])

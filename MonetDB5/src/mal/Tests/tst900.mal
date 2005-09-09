@@ -1,6 +1,6 @@
 # the multiplex code blocks. Testing syntax errors
 
-b:= bbp.new(:lng,:lng);
+b:= bat.new(:lng,:lng);
 x:= multiplex.+(b,b);
 d:= [+](b,c) ;;# parser bug
 a:= b [+] b;

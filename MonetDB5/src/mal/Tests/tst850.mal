@@ -1,6 +1,6 @@
 # The likeselect operation
 
-	t:= bbp.new(:void,:str);
+	t:= bat.new(:void,:str);
 	bat.setSequenceBase(t, 0@0);
 	bat.insert(t,nil,"hello world");
 	bat.insert(t,nil,"sleep well");

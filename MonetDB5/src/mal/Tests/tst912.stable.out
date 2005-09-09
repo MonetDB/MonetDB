@@ -101,7 +101,7 @@ function user.main():int;	# 0  (main:int)
 # analyse the overhead of chopping a table 	# 1  (_2:str)
 # the multiplex code blocks. 	# 2  (_4:str)
 # change in bb to crash 	# 3  (_6:str)
-    b := bbp.new(:void,:lng);	# 4 CMDBATnew (b:bat[:void,:lng])<-(_8:void)(_9:lng)
+    b := bat.new(:void,:lng);	# 4 CMDBATnew (b:bat[:void,:lng])<-(_8:void)(_9:lng)
 barrier (go,i):= mal.newRange(0:lng);	# 5 RNGnewRange_lng (go:bit)(i:lng)<-(_12:lng) jump 10
     k := mmath.rand();	# 6 MATHrandint (k:int)
     l := calc.lng(k);	# 7 CALCint2lng (l:lng)<-(k:int)

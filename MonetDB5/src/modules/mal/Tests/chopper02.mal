@@ -1,4 +1,4 @@
-	t:= bbp.new(:int, :url);
+	t:= bat.new(:int, :url);
 	cb_a := url.url("http://www.cwi.nl");
 	db_a := bat.insert(t,1,cb_a);
 	eb_a := url.url("http://www.cwi.nl/~monet");
@@ -13,7 +13,7 @@
 	nb_a := bat.insert(t,6,mb_a);
 	qb_a := io.print("build a table finished");
 	io.print(t);
-	rb:= bbp.new(:int,:url);
+	rb:= bat.new(:int,:url);
 	io.print("start loop");
 barrier (mloop:lng,h:int,B2:url) := chopper.newIterator(t);        
 	io.print(h);

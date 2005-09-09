@@ -23,7 +23,7 @@ include mil;
 	mil.line("# The \"varval\"-function apparently contains a bug\n");
 	mil.line("# regarding reference counting. See example below:\n");
 	mil.line("");
-	bar := bbp.new(nil:int,nil:int);
+	bar := bat.new(nil:int,nil:int);
 	mil.line("var bar:=new(int,int);");
 	aa_a := user.varval("bar");
 	ba_a := io.print(aa_a);

@@ -1,5 +1,5 @@
 # testing subsumption optimalisation
-r:= bbp.new(:int,:int);
+r:= bat.new(:int,:int);
 bat.insert(r,5,1);
 bat.insert(r,6,2);
 bat.insert(r,7,3);

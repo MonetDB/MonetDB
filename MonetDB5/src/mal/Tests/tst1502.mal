@@ -1,4 +1,4 @@
-	x := bbp.new(:oid,:chr);
+	x := bat.new(:oid,:chr);
 	bat.insert(x,1@0,'a');
 	bat.insert(x,2@0,'a');
 	bat.insert(x,3@0,'b');
@@ -8,7 +8,7 @@
 	bat.insert(x,7@0,'c');
 	bat.insert(x,8@0,'c');
 
-	y := bbp.new(:oid,:dbl);
+	y := bat.new(:oid,:dbl);
 	le_a := calc.dbl(1.0);
 	bat.insert(y,1@0,le_a);
 	ne_a := calc.dbl(2.0);
@@ -26,7 +26,7 @@
 	af_a := calc.dbl(1.0);
 	bat.insert(y,8@0,af_a);
 
-	z := bbp.new(:oid,:str);
+	z := bat.new(:oid,:str);
 	bat.insert(z,1@0,"c");
 	bat.insert(z,2@0,"a");
 	bat.insert(z,3@0,"b");
@@ -35,11 +35,11 @@
 	hf_a := bat.insert(z,6@0,"a");
 	bat.insert(z,7@0,"c");
 	bat.insert(z,8@0,"a");
-	io.print("sortH x"); 
-	xs:=algebra.sortH(x); 
+	io.print("sort x"); 
+	xs:=algebra.sort(x); 
 	io.print(xs);
 	io.print("hsort xrev"); 
 	xrev:=bat.reverse(x);
-	xsrev:= algebra.sortH(xrev); 
+	xsrev:= algebra.sort(xrev); 
 	io.print(xsrev);
 

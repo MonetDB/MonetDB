@@ -9,7 +9,7 @@ include mil;
 #- make the type of variables explicit, in particular 'nil'
 #- upon advice of M2m to remap identifiers, change it in your program directly
 #use the "mil_schema" for additional support routines
-	t := bbp.new(nil:oid,nil:str);
+	t := bat.new(nil:oid,nil:str);
 	aa_a := calc.oid(0);
 	ba_a := bat.insert(t,aa_a,"a");
 	ca_a := calc.oid(1);
@@ -28,7 +28,7 @@ include mil;
 	pa_a := bat.insert(t,oa_a,"h");
 	qa_a := algebra.markT(t,nil:oid);
 	ra_a := io.print(t);
-	t2 := bbp.new(nil:void,nil:str);
+	t2 := bat.new(nil:void,nil:str);
 	sa_a := calc.oid(0);
 	ta_a := bat.setSequenceBase(t2,sa_a);
 	ua_a := calc.oid(0);

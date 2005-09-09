@@ -30,8 +30,8 @@ stdout of test 'CXexample` in directory 'src/optimizer` itself:
 function user.main():int;	# 0  (main:int)
 # The 4000 series deals with strategic optimizer constructs 	# 1  (_2:str)
 # common subexpression evaluation 	# 2  (_4:str)
-    b := bbp.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_7:int)(_7:int)
-    c := bbp.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_7:int)(_7:int)
+    b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_7:int)(_7:int)
+    c := bat.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_7:int)(_7:int)
     d := algebra.select(b,0,100);	# 5 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])(_10:int)(_11:int)
     e := d;	# 6 ALGselect (e:bat[:int,:int])<-(d:bat[:int,:int])
     k1 := 24;	# 7  (k1:int)<-(_14:int)
@@ -43,8 +43,8 @@ end main;	# 12
 function user.main():int;
 # The 4000 series deals with strategic optimizer constructs 
 # common subexpression evaluation 
-    b := bbp.new(:int,:int);
-    c := bbp.new(:int,:int);
+    b := bat.new(:int,:int);
+    c := bat.new(:int,:int);
     d := algebra.select(b,0,100);
     e := d;
     k1 := 24;

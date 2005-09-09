@@ -10,9 +10,9 @@ end joinPath;
 
 optimizer.macroContraction("user","joinPath");
 
-a:= bbp.new(:int,:int);
-b:= bbp.new(:int,:int);
-c:= bbp.new(:int,:int);
+a:= bat.new(:int,:int);
+b:= bat.new(:int,:int);
+c:= bat.new(:int,:int);
 g:= algebra.join(a,b);
 h:= algebra.join(g,c);
 

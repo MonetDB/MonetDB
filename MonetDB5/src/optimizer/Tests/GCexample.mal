@@ -1,4 +1,4 @@
-    t1 := bbp.new(:void,:int);
+    t1 := bat.new(:void,:int);
     t2 := array.grid(132000,8,1,0);
     t3 := array.grid(1,100,10560,0);
     t4 := array.grid(1,100,10560,0,8);

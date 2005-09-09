@@ -1,6 +1,6 @@
 # the chunk mechanism
 
-S:= bbp.new(:void,:str);
+S:= bat.new(:void,:str);
 bat.setSequenceBase(S,0:oid);
 bat.insert(S,nil,"hello");
 bat.insert(S,nil,"brave");

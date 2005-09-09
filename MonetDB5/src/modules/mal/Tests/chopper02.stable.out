@@ -38,7 +38,7 @@ stdout of test 'chopper02` in directory 'src/modules/mal` itself:
 #	io.print(rb);
 #
 function user.main():int;	# 0  (main:int)
-    t := bbp.new(:int,:url);	# 1 CMDBATnew (t:bat[:int,:url])<-(_2:int)(_3:url)
+    t := bat.new(:int,:url);	# 1 CMDBATnew (t:bat[:int,:url])<-(_2:int)(_3:url)
     cb_a := url.url("http://www.cwi.nl");	# 2 URLnew (cb_a:url)<-(_5:str)
     db_a := bat.insert(t,1,cb_a);	# 3 BKCinsert_bun (db_a:bat[:int,:url])<-(t:bat[:int,:url])(_7:int)(cb_a:url)
     eb_a := url.url("http://www.cwi.nl/~monet");	# 4 URLnew (eb_a:url)<-(_9:str)
@@ -53,7 +53,7 @@ function user.main():int;	# 0  (main:int)
     nb_a := bat.insert(t,6,mb_a);	# 13 BKCinsert_bun (nb_a:bat[:int,:url])<-(t:bat[:int,:url])(_27:int)(mb_a:url)
     qb_a := io.print("build a table finished");	# 14 IOprint_val (qb_a:int)<-(_29:str)
     io.print(t);	# 15 IOprint_val (_30:int)<-(t:bat[:int,:url])
-    rb := bbp.new(:int,:url);	# 16 CMDBATnew (rb:bat[:int,:url])<-(_32:int)(_3:url)
+    rb := bat.new(:int,:url);	# 16 CMDBATnew (rb:bat[:int,:url])<-(_32:int)(_3:url)
     io.print("start loop");	# 17 IOprint_val (_33:int)<-(_34:str)
 barrier (mloop:lng ,h:int ,B2:url ):= chopper.newIterator(t);	# 18 CHPbunIterator (mloop:lng)(h:int)(B2:url)<-(t:bat[:int,:url]) jump 23
     io.print(h);	# 19 IOprint_val (_38:int)<-(h:int)

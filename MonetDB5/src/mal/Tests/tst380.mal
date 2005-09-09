@@ -54,7 +54,7 @@ function dir(s:str):void;
 	io.print(tn);
 	user.dir(tn);
 end dir;
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 bat.setName(b,"simplemind");
 
 z:= bbp.getNames();

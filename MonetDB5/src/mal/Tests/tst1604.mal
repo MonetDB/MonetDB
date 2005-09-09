@@ -1,6 +1,6 @@
 # handling of correct header printing
 
-t:= bbp.new(:int,:str);
+t:= bat.new(:int,:str);
 bat.setColumn(t,"first");
-u:= bbp.new(:int,:str);
+u:= bat.new(:int,:str);
 io.print(t,u);

@@ -1,5 +1,5 @@
 # testing repeatative reverse optimalisation
-r:= bbp.new(:int,:int);
+r:= bat.new(:int,:int);
 bat.insert(r,5:int,1:int);
 o:= 0:oid;
 rr:= bat.reverse(r);

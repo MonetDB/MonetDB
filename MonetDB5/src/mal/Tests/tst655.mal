@@ -1,9 +1,9 @@
 # An extensive test for the new tablet layout
 #sent the output of a table to a file
-b1:= bbp.new(:void,:int);
+b1:= bat.new(:void,:int);
 bat.insert(b1,42);
 bat.insert(b1,49);
-b2:= bbp.new(:void,:str);
+b2:= bat.new(:void,:str);
 bat.insert(b2,"hello world");
 bat.insert(b2,"goodbye world");
 

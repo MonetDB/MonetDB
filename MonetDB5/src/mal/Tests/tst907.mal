@@ -18,7 +18,7 @@ k:= user.one(1);
 l:= user.three(1,2,3);
 p:= user.pow(1,2);
 
-b:= bbp.new(:int,:int);
+b:= bat.new(:int,:int);
 bat.insert(b,1,1);
 
 io.print("do multiplex three test");

@@ -53,11 +53,11 @@ first=6 last=6
 first=7 last=6 
 function user.main():int;	# 0  (main:int)
 #testing the partition optimizer 	# 1  (_2:str)
-    a1 := bbp.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-(_4:void)(_5:int)
+    a1 := bat.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(a1,0@0);	# 3 BKCsetSequenceBase (_6:bat[:void,:int])<-(a1:bat[:void,:int])(_7:oid)
-    a2 := bbp.new(:void,:int);	# 4 CMDBATnew (a2:bat[:void,:int])<-(_4:void)(_5:int)
+    a2 := bat.new(:void,:int);	# 4 CMDBATnew (a2:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(a2,10@0);	# 5 BKCsetSequenceBase (_9:bat[:void,:int])<-(a2:bat[:void,:int])(_10:oid)
-    a3 := bbp.new(:void,:int);	# 6 CMDBATnew (a3:bat[:void,:int])<-(_4:void)(_5:int)
+    a3 := bat.new(:void,:int);	# 6 CMDBATnew (a3:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(a3,20@0);	# 7 BKCsetSequenceBase (_12:bat[:void,:int])<-(a3:bat[:void,:int])(_13:oid)
 barrier (go,i):= mal.newRange(0);	# 8 RNGnewRange_int (go:bit)(i:int)<-(_16:int) jump 13
     bat.insert(a1,nil,i);	# 9 BKCinsert_bun (_17:bat[:void,:int])<-(a1:bat[:void,:int])(_18:void)(i:int)

@@ -256,10 +256,10 @@ Optimizer garbageCollector failed
 function user.f1():void;	# 0  (f1:void)
     t1 := array.grid(500,500,1,0);	# 1 ARRAYgrid_int (t1:bat[:void,:int])<-(_2:int)(_2:int)(_3:int)(_4:int)
     top := t1;	# 2  (top:bat[:void,:int])<-(t1:bat[:void,:int])
-    bbp.garbage(t1);	# 3 CMDbbpgarbage (_11:void)<-(t1:bat[:void,:int])
+    bat.setGarbage(t1);	# 3 CMDbbpgarbage (_11:void)<-(t1:bat[:void,:int])
     bat.setName(top,"A_bat");	# 4 BKCsetName (_6:bat[:void,:int])<-(top:bat[:void,:int])(_7:str)
     bat.persists(top,true);	# 5  unknown (_8:any)<-(top:bat[:void,:int])(_9:bit)
-    bbp.garbage(top);	# 6 CMDbbpgarbage (_12:void)<-(top:bat[:void,:int])
+    bat.setGarbage(top);	# 6 CMDbbpgarbage (_12:void)<-(top:bat[:void,:int])
     transaction.commit();	# 7 TRNglobal_commit (_10:void)
 end f1;	# 8  
 !ERROR: 'bat.persists' undefined in user.f1[5]
@@ -267,10 +267,10 @@ Optimizer garbageCollector optimizer failed
 function user.f1():void;	# 0  (f1:void)
     t1 := array.grid(500,500,1,0);	# 1 ARRAYgrid_int (t1:bat[:void,:int])<-(_2:int)(_2:int)(_3:int)(_4:int)
     top := t1;	# 2  (top:bat[:void,:int])<-(t1:bat[:void,:int])
-    bbp.garbage(t1);	# 3 CMDbbpgarbage (_11:void)<-(t1:bat[:void,:int])
+    bat.setGarbage(t1);	# 3 CMDbbpgarbage (_11:void)<-(t1:bat[:void,:int])
     bat.setName(top,"A_bat");	# 4 BKCsetName (_6:bat[:void,:int])<-(top:bat[:void,:int])(_7:str)
     bat.persists(top,true);	# 5  unknown (_8:any)<-(top:bat[:void,:int])(_9:bit)
-    bbp.garbage(top);	# 6 CMDbbpgarbage (_12:void)<-(top:bat[:void,:int])
+    bat.setGarbage(top);	# 6 CMDbbpgarbage (_12:void)<-(top:bat[:void,:int])
     transaction.commit();	# 7 TRNglobal_commit (_10:void)
 end f1;	# 8  
 !ERROR: 'bat.persists' undefined in user.f2[10]
@@ -310,20 +310,20 @@ function user.f2():void;	# 0  (f2:void)
     t2 := array.grid(1,500,500,0);	# 2 ARRAYgrid_int (t2:bat[:void,:int])<-(_4:int)(_5:int)(_5:int)(_6:int)
     t3 := array.grid(500,500,1,0);	# 3 ARRAYgrid_int (t3:bat[:void,:int])<-(_5:int)(_5:int)(_4:int)(_6:int)
     t4 := batcalc.*(500,t3);	# 4 CMDcstMULbat (t4:bat[:void,:int])<-(_5:int)(t3:bat[:void,:int])
-    bbp.garbage(t3);	# 5 CMDbbpgarbage (_18:void)<-(t3:bat[:void,:int])
+    bat.setGarbage(t3);	# 5 CMDbbpgarbage (_18:void)<-(t3:bat[:void,:int])
     t5 := batcalc.+(t2,t4);	# 6 CMDbatADD (t5:bat[:void,:int])<-(t2:bat[:void,:int])(t4:bat[:void,:int])
-    bbp.garbage(t2);	# 7 CMDbbpgarbage (_19:void)<-(t2:bat[:void,:int])
-    bbp.garbage(t4);	# 8 CMDbbpgarbage (_20:void)<-(t4:bat[:void,:int])
+    bat.setGarbage(t2);	# 7 CMDbbpgarbage (_19:void)<-(t2:bat[:void,:int])
+    bat.setGarbage(t4);	# 8 CMDbbpgarbage (_20:void)<-(t4:bat[:void,:int])
     t6 := batcalc.oid(t5);	# 9 CMDconvertvoid_int_oid (t6:bat[:void,:oid])<-(t5:bat[:void,:int])
-    bbp.garbage(t5);	# 10 CMDbbpgarbage (_21:void)<-(t5:bat[:void,:int])
+    bat.setGarbage(t5);	# 10 CMDbbpgarbage (_21:void)<-(t5:bat[:void,:int])
     t7 := algebra.join(t6,t1);	# 11 ALGjoin (t7:bat[:void,:int])<-(t6:bat[:void,:oid])(t1:bat[:void,:int])
-    bbp.garbage(t6);	# 12 CMDbbpgarbage (_22:void)<-(t6:bat[:void,:oid])
-    bbp.garbage(t1);	# 13 CMDbbpgarbage (_23:void)<-(t1:bat[:void,:int])
+    bat.setGarbage(t6);	# 12 CMDbbpgarbage (_22:void)<-(t6:bat[:void,:oid])
+    bat.setGarbage(t1);	# 13 CMDbbpgarbage (_23:void)<-(t1:bat[:void,:int])
     top := t7;	# 14  (top:bat[:void,:int])<-(t7:bat[:void,:int])
-    bbp.garbage(t7);	# 15 CMDbbpgarbage (_24:void)<-(t7:bat[:void,:int])
+    bat.setGarbage(t7);	# 15 CMDbbpgarbage (_24:void)<-(t7:bat[:void,:int])
     bat.setName(top,"B_bat");	# 16 BKCsetName (_13:bat[:void,:int])<-(top:bat[:void,:int])(_14:str)
     bat.persists(top,true);	# 17  unknown (_15:any)<-(top:bat[:void,:int])(_16:bit)
-    bbp.garbage(top);	# 18 CMDbbpgarbage (_25:void)<-(top:bat[:void,:int])
+    bat.setGarbage(top);	# 18 CMDbbpgarbage (_25:void)<-(top:bat[:void,:int])
     transaction.commit();	# 19 TRNglobal_commit (_17:void)
 end f2;	# 20  
 !ERROR: 'bat.persists' undefined in user.f2[17]
@@ -333,20 +333,20 @@ function user.f2():void;	# 0  (f2:void)
     t2 := array.grid(1,500,500,0);	# 2 ARRAYgrid_int (t2:bat[:void,:int])<-(_4:int)(_5:int)(_5:int)(_6:int)
     t3 := array.grid(500,500,1,0);	# 3 ARRAYgrid_int (t3:bat[:void,:int])<-(_5:int)(_5:int)(_4:int)(_6:int)
     t4 := batcalc.*(500,t3);	# 4 CMDcstMULbat (t4:bat[:void,:int])<-(_5:int)(t3:bat[:void,:int])
-    bbp.garbage(t3);	# 5 CMDbbpgarbage (_18:void)<-(t3:bat[:void,:int])
+    bat.setGarbage(t3);	# 5 CMDbbpgarbage (_18:void)<-(t3:bat[:void,:int])
     t5 := batcalc.+(t2,t4);	# 6 CMDbatADD (t5:bat[:void,:int])<-(t2:bat[:void,:int])(t4:bat[:void,:int])
-    bbp.garbage(t2);	# 7 CMDbbpgarbage (_19:void)<-(t2:bat[:void,:int])
-    bbp.garbage(t4);	# 8 CMDbbpgarbage (_20:void)<-(t4:bat[:void,:int])
+    bat.setGarbage(t2);	# 7 CMDbbpgarbage (_19:void)<-(t2:bat[:void,:int])
+    bat.setGarbage(t4);	# 8 CMDbbpgarbage (_20:void)<-(t4:bat[:void,:int])
     t6 := batcalc.oid(t5);	# 9 CMDconvertvoid_int_oid (t6:bat[:void,:oid])<-(t5:bat[:void,:int])
-    bbp.garbage(t5);	# 10 CMDbbpgarbage (_21:void)<-(t5:bat[:void,:int])
+    bat.setGarbage(t5);	# 10 CMDbbpgarbage (_21:void)<-(t5:bat[:void,:int])
     t7 := algebra.join(t6,t1);	# 11 ALGjoin (t7:bat[:void,:int])<-(t6:bat[:void,:oid])(t1:bat[:void,:int])
-    bbp.garbage(t6);	# 12 CMDbbpgarbage (_22:void)<-(t6:bat[:void,:oid])
-    bbp.garbage(t1);	# 13 CMDbbpgarbage (_23:void)<-(t1:bat[:void,:int])
+    bat.setGarbage(t6);	# 12 CMDbbpgarbage (_22:void)<-(t6:bat[:void,:oid])
+    bat.setGarbage(t1);	# 13 CMDbbpgarbage (_23:void)<-(t1:bat[:void,:int])
     top := t7;	# 14  (top:bat[:void,:int])<-(t7:bat[:void,:int])
-    bbp.garbage(t7);	# 15 CMDbbpgarbage (_24:void)<-(t7:bat[:void,:int])
+    bat.setGarbage(t7);	# 15 CMDbbpgarbage (_24:void)<-(t7:bat[:void,:int])
     bat.setName(top,"B_bat");	# 16 BKCsetName (_13:bat[:void,:int])<-(top:bat[:void,:int])(_14:str)
     bat.persists(top,true);	# 17  unknown (_15:any)<-(top:bat[:void,:int])(_16:bit)
-    bbp.garbage(top);	# 18 CMDbbpgarbage (_25:void)<-(top:bat[:void,:int])
+    bat.setGarbage(top);	# 18 CMDbbpgarbage (_25:void)<-(top:bat[:void,:int])
     transaction.commit();	# 19 TRNglobal_commit (_17:void)
 end f2;	# 20  
 !ERROR: 'bat.persists' undefined in user.f3[48]
@@ -644,58 +644,58 @@ function user.f3():void;	# 0  (f3:void)
     t6 := batcalc.init(t3,i1);	# 4 CMDbatintinit (t6:bat[:void,:int])<-(t3:bat[:void,:int])(i1:int)
     t7 := batcalc.*(500,t6);	# 5 CMDcstMULbat (t7:bat[:void,:int])<-(_7:int)(t6:bat[:void,:int])
     t8 := batcalc.+(t3,t7);	# 6 CMDbatADD (t8:bat[:void,:int])<-(t3:bat[:void,:int])(t7:bat[:void,:int])
-    bbp.garbage(t7);	# 7 CMDbbpgarbage (_60:void)<-(t7:bat[:void,:int])
+    bat.setGarbage(t7);	# 7 CMDbbpgarbage (_60:void)<-(t7:bat[:void,:int])
     t9 := batcalc.oid(t8);	# 8 CMDconvertvoid_int_oid (t9:bat[:void,:oid])<-(t8:bat[:void,:int])
-    bbp.garbage(t8);	# 9 CMDbbpgarbage (_61:void)<-(t8:bat[:void,:int])
+    bat.setGarbage(t8);	# 9 CMDbbpgarbage (_61:void)<-(t8:bat[:void,:int])
     t10 := algebra.join(t9,t2);	# 10 ALGjoin (t10:bat[:void,:int])<-(t9:bat[:void,:oid])(t2:bat[:void,:int])
-    bbp.garbage(t9);	# 11 CMDbbpgarbage (_62:void)<-(t9:bat[:void,:oid])
+    bat.setGarbage(t9);	# 11 CMDbbpgarbage (_62:void)<-(t9:bat[:void,:oid])
     t11 := array.grid(500,500,1:int,0);	# 12 ARRAYgrid_int (t11:bat[:void,:int])<-(_7:int)(_7:int)(_6:int)(_2:int)
     t12 := batcalc.oid(t11);	# 13 CMDconvertvoid_int_oid (t12:bat[:void,:oid])<-(t11:bat[:void,:int])
-    bbp.garbage(t11);	# 14 CMDbbpgarbage (_63:void)<-(t11:bat[:void,:int])
+    bat.setGarbage(t11);	# 14 CMDbbpgarbage (_63:void)<-(t11:bat[:void,:int])
     t13 := algebra.join(t12,t10);	# 15 ALGjoin (t13:bat[:void,:int])<-(t12:bat[:void,:oid])(t10:bat[:void,:int])
-    bbp.garbage(t10);	# 16 CMDbbpgarbage (_64:void)<-(t10:bat[:void,:int])
+    bat.setGarbage(t10);	# 16 CMDbbpgarbage (_64:void)<-(t10:bat[:void,:int])
     t14:bat[:void,:int]  := bbp.bind("A_bat");	# 17 CMDbbpbind (t14:bat[:void,:int])<-(_18:str)
     t19 := batcalc.*(500,t3);	# 18 CMDcstMULbat (t19:bat[:void,:int])<-(_7:int)(t3:bat[:void,:int])
     t20 := batcalc.+(t6,t19);	# 19 CMDbatADD (t20:bat[:void,:int])<-(t6:bat[:void,:int])(t19:bat[:void,:int])
-    bbp.garbage(t6);	# 20 CMDbbpgarbage (_65:void)<-(t6:bat[:void,:int])
+    bat.setGarbage(t6);	# 20 CMDbbpgarbage (_65:void)<-(t6:bat[:void,:int])
     t21 := batcalc.oid(t20);	# 21 CMDconvertvoid_int_oid (t21:bat[:void,:oid])<-(t20:bat[:void,:int])
-    bbp.garbage(t20);	# 22 CMDbbpgarbage (_66:void)<-(t20:bat[:void,:int])
+    bat.setGarbage(t20);	# 22 CMDbbpgarbage (_66:void)<-(t20:bat[:void,:int])
     t22 := algebra.join(t21,t14);	# 23 ALGjoin (t22:bat[:void,:int])<-(t21:bat[:void,:oid])(t14:bat[:void,:int])
-    bbp.garbage(t21);	# 24 CMDbbpgarbage (_67:void)<-(t21:bat[:void,:oid])
+    bat.setGarbage(t21);	# 24 CMDbbpgarbage (_67:void)<-(t21:bat[:void,:oid])
     t23 := array.grid(1:int,500,500,0);	# 25 ARRAYgrid_int (t23:bat[:void,:int])<-(_6:int)(_7:int)(_7:int)(_2:int)
     t24 := batcalc.oid(t23);	# 26 CMDconvertvoid_int_oid (t24:bat[:void,:oid])<-(t23:bat[:void,:int])
-    bbp.garbage(t23);	# 27 CMDbbpgarbage (_68:void)<-(t23:bat[:void,:int])
+    bat.setGarbage(t23);	# 27 CMDbbpgarbage (_68:void)<-(t23:bat[:void,:int])
     t25 := algebra.join(t24,t22);	# 28 ALGjoin (t25:bat[:void,:int])<-(t24:bat[:void,:oid])(t22:bat[:void,:int])
-    bbp.garbage(t22);	# 29 CMDbbpgarbage (_69:void)<-(t22:bat[:void,:int])
+    bat.setGarbage(t22);	# 29 CMDbbpgarbage (_69:void)<-(t22:bat[:void,:int])
     t26 := batcalc.*(t13,t25);	# 30 CMDbatMUL (t26:bat[:void,:int])<-(t13:bat[:void,:int])(t25:bat[:void,:int])
-    bbp.garbage(t13);	# 31 CMDbbpgarbage (_70:void)<-(t13:bat[:void,:int])
-    bbp.garbage(t25);	# 32 CMDbbpgarbage (_71:void)<-(t25:bat[:void,:int])
+    bat.setGarbage(t13);	# 31 CMDbbpgarbage (_70:void)<-(t13:bat[:void,:int])
+    bat.setGarbage(t25);	# 32 CMDbbpgarbage (_71:void)<-(t25:bat[:void,:int])
     a_i1 := t26;	# 33  (a_i1:bat[:void,:int])<-(t26:bat[:void,:int])
-    bbp.garbage(t26);	# 34 CMDbbpgarbage (_72:void)<-(t26:bat[:void,:int])
+    bat.setGarbage(t26);	# 34 CMDbbpgarbage (_72:void)<-(t26:bat[:void,:int])
 barrier (go,i1):= mal.newRange(1:int);	# 35 RNGnewRange_int (go:bit)(i1:int)<-(_6:int) jump 60
     t31 := batcalc.init(t3,i1);	# 36 CMDbatintinit (t31:bat[:void,:int])<-(t3:bat[:void,:int])(i1:int)
     t32 := batcalc.*(500,t31);	# 37 CMDcstMULbat (t32:bat[:void,:int])<-(_7:int)(t31:bat[:void,:int])
     t33 := batcalc.+(t3,t32);	# 38 CMDbatADD (t33:bat[:void,:int])<-(t3:bat[:void,:int])(t32:bat[:void,:int])
-    bbp.garbage(t32);	# 39 CMDbbpgarbage (_73:void)<-(t32:bat[:void,:int])
+    bat.setGarbage(t32);	# 39 CMDbbpgarbage (_73:void)<-(t32:bat[:void,:int])
     t34 := batcalc.oid(t33);	# 40 CMDconvertvoid_int_oid (t34:bat[:void,:oid])<-(t33:bat[:void,:int])
-    bbp.garbage(t33);	# 41 CMDbbpgarbage (_74:void)<-(t33:bat[:void,:int])
+    bat.setGarbage(t33);	# 41 CMDbbpgarbage (_74:void)<-(t33:bat[:void,:int])
     t35 := algebra.join(t34,t2);	# 42 ALGjoin (t35:bat[:void,:int])<-(t34:bat[:void,:oid])(t2:bat[:void,:int])
-    bbp.garbage(t34);	# 43 CMDbbpgarbage (_75:void)<-(t34:bat[:void,:oid])
+    bat.setGarbage(t34);	# 43 CMDbbpgarbage (_75:void)<-(t34:bat[:void,:oid])
     t38 := algebra.join(t12,t35);	# 44 ALGjoin (t38:bat[:void,:int])<-(t12:bat[:void,:oid])(t35:bat[:void,:int])
-    bbp.garbage(t35);	# 45 CMDbbpgarbage (_76:void)<-(t35:bat[:void,:int])
+    bat.setGarbage(t35);	# 45 CMDbbpgarbage (_76:void)<-(t35:bat[:void,:int])
     t45 := batcalc.+(t31,t19);	# 46 CMDbatADD (t45:bat[:void,:int])<-(t31:bat[:void,:int])(t19:bat[:void,:int])
-    bbp.garbage(t31);	# 47 CMDbbpgarbage (_77:void)<-(t31:bat[:void,:int])
+    bat.setGarbage(t31);	# 47 CMDbbpgarbage (_77:void)<-(t31:bat[:void,:int])
     t46 := batcalc.oid(t45);	# 48 CMDconvertvoid_int_oid (t46:bat[:void,:oid])<-(t45:bat[:void,:int])
-    bbp.garbage(t45);	# 49 CMDbbpgarbage (_78:void)<-(t45:bat[:void,:int])
+    bat.setGarbage(t45);	# 49 CMDbbpgarbage (_78:void)<-(t45:bat[:void,:int])
     t47 := algebra.join(t46,t14);	# 50 ALGjoin (t47:bat[:void,:int])<-(t46:bat[:void,:oid])(t14:bat[:void,:int])
-    bbp.garbage(t46);	# 51 CMDbbpgarbage (_79:void)<-(t46:bat[:void,:oid])
+    bat.setGarbage(t46);	# 51 CMDbbpgarbage (_79:void)<-(t46:bat[:void,:oid])
     t50 := algebra.join(t24,t47);	# 52 ALGjoin (t50:bat[:void,:int])<-(t24:bat[:void,:oid])(t47:bat[:void,:int])
-    bbp.garbage(t47);	# 53 CMDbbpgarbage (_80:void)<-(t47:bat[:void,:int])
+    bat.setGarbage(t47);	# 53 CMDbbpgarbage (_80:void)<-(t47:bat[:void,:int])
     t51 := batcalc.*(t38,t50);	# 54 CMDbatMUL (t51:bat[:void,:int])<-(t38:bat[:void,:int])(t50:bat[:void,:int])
-    bbp.garbage(t38);	# 55 CMDbbpgarbage (_81:void)<-(t38:bat[:void,:int])
-    bbp.garbage(t50);	# 56 CMDbbpgarbage (_82:void)<-(t50:bat[:void,:int])
+    bat.setGarbage(t38);	# 55 CMDbbpgarbage (_81:void)<-(t38:bat[:void,:int])
+    bat.setGarbage(t50);	# 56 CMDbbpgarbage (_82:void)<-(t50:bat[:void,:int])
     a_i1 := batcalc.+(a_i1,a_i1,t51);	# 57 CMDbataccumADD (a_i1:bat[:void,:int])<-(a_i1:bat[:void,:int])(a_i1:bat[:void,:int])(t51:bat[:void,:int])
-    bbp.garbage(t51);	# 58 CMDbbpgarbage (_83:void)<-(t51:bat[:void,:int])
+    bat.setGarbage(t51);	# 58 CMDbbpgarbage (_83:void)<-(t51:bat[:void,:int])
     redo (go,i1):= mal.nextElement(1:int,3:int);	# 59 RNGnextElement_int (go:bit)(i1:int)<-(_48:int)(_52:int) jump 36
 exit (go,i1);	# 60  (go:bit)(i1:int)
     t52 := a_i1;	# 61  (t52:bat[:void,:int])<-(a_i1:bat[:void,:int])
@@ -713,58 +713,58 @@ function user.f3():void;	# 0  (f3:void)
     t6 := batcalc.init(t3,i1);	# 4 CMDbatintinit (t6:bat[:void,:int])<-(t3:bat[:void,:int])(i1:int)
     t7 := batcalc.*(500,t6);	# 5 CMDcstMULbat (t7:bat[:void,:int])<-(_7:int)(t6:bat[:void,:int])
     t8 := batcalc.+(t3,t7);	# 6 CMDbatADD (t8:bat[:void,:int])<-(t3:bat[:void,:int])(t7:bat[:void,:int])
-    bbp.garbage(t7);	# 7 CMDbbpgarbage (_60:void)<-(t7:bat[:void,:int])
+    bat.setGarbage(t7);	# 7 CMDbbpgarbage (_60:void)<-(t7:bat[:void,:int])
     t9 := batcalc.oid(t8);	# 8 CMDconvertvoid_int_oid (t9:bat[:void,:oid])<-(t8:bat[:void,:int])
-    bbp.garbage(t8);	# 9 CMDbbpgarbage (_61:void)<-(t8:bat[:void,:int])
+    bat.setGarbage(t8);	# 9 CMDbbpgarbage (_61:void)<-(t8:bat[:void,:int])
     t10 := algebra.join(t9,t2);	# 10 ALGjoin (t10:bat[:void,:int])<-(t9:bat[:void,:oid])(t2:bat[:void,:int])
-    bbp.garbage(t9);	# 11 CMDbbpgarbage (_62:void)<-(t9:bat[:void,:oid])
+    bat.setGarbage(t9);	# 11 CMDbbpgarbage (_62:void)<-(t9:bat[:void,:oid])
     t11 := array.grid(500,500,1:int,0);	# 12 ARRAYgrid_int (t11:bat[:void,:int])<-(_7:int)(_7:int)(_6:int)(_2:int)
     t12 := batcalc.oid(t11);	# 13 CMDconvertvoid_int_oid (t12:bat[:void,:oid])<-(t11:bat[:void,:int])
-    bbp.garbage(t11);	# 14 CMDbbpgarbage (_63:void)<-(t11:bat[:void,:int])
+    bat.setGarbage(t11);	# 14 CMDbbpgarbage (_63:void)<-(t11:bat[:void,:int])
     t13 := algebra.join(t12,t10);	# 15 ALGjoin (t13:bat[:void,:int])<-(t12:bat[:void,:oid])(t10:bat[:void,:int])
-    bbp.garbage(t10);	# 16 CMDbbpgarbage (_64:void)<-(t10:bat[:void,:int])
+    bat.setGarbage(t10);	# 16 CMDbbpgarbage (_64:void)<-(t10:bat[:void,:int])
     t14:bat[:void,:int]  := bbp.bind("A_bat");	# 17 CMDbbpbind (t14:bat[:void,:int])<-(_18:str)
     t19 := batcalc.*(500,t3);	# 18 CMDcstMULbat (t19:bat[:void,:int])<-(_7:int)(t3:bat[:void,:int])
     t20 := batcalc.+(t6,t19);	# 19 CMDbatADD (t20:bat[:void,:int])<-(t6:bat[:void,:int])(t19:bat[:void,:int])
-    bbp.garbage(t6);	# 20 CMDbbpgarbage (_65:void)<-(t6:bat[:void,:int])
+    bat.setGarbage(t6);	# 20 CMDbbpgarbage (_65:void)<-(t6:bat[:void,:int])
     t21 := batcalc.oid(t20);	# 21 CMDconvertvoid_int_oid (t21:bat[:void,:oid])<-(t20:bat[:void,:int])
-    bbp.garbage(t20);	# 22 CMDbbpgarbage (_66:void)<-(t20:bat[:void,:int])
+    bat.setGarbage(t20);	# 22 CMDbbpgarbage (_66:void)<-(t20:bat[:void,:int])
     t22 := algebra.join(t21,t14);	# 23 ALGjoin (t22:bat[:void,:int])<-(t21:bat[:void,:oid])(t14:bat[:void,:int])
-    bbp.garbage(t21);	# 24 CMDbbpgarbage (_67:void)<-(t21:bat[:void,:oid])
+    bat.setGarbage(t21);	# 24 CMDbbpgarbage (_67:void)<-(t21:bat[:void,:oid])
     t23 := array.grid(1:int,500,500,0);	# 25 ARRAYgrid_int (t23:bat[:void,:int])<-(_6:int)(_7:int)(_7:int)(_2:int)
     t24 := batcalc.oid(t23);	# 26 CMDconvertvoid_int_oid (t24:bat[:void,:oid])<-(t23:bat[:void,:int])
-    bbp.garbage(t23);	# 27 CMDbbpgarbage (_68:void)<-(t23:bat[:void,:int])
+    bat.setGarbage(t23);	# 27 CMDbbpgarbage (_68:void)<-(t23:bat[:void,:int])
     t25 := algebra.join(t24,t22);	# 28 ALGjoin (t25:bat[:void,:int])<-(t24:bat[:void,:oid])(t22:bat[:void,:int])
-    bbp.garbage(t22);	# 29 CMDbbpgarbage (_69:void)<-(t22:bat[:void,:int])
+    bat.setGarbage(t22);	# 29 CMDbbpgarbage (_69:void)<-(t22:bat[:void,:int])
     t26 := batcalc.*(t13,t25);	# 30 CMDbatMUL (t26:bat[:void,:int])<-(t13:bat[:void,:int])(t25:bat[:void,:int])
-    bbp.garbage(t13);	# 31 CMDbbpgarbage (_70:void)<-(t13:bat[:void,:int])
-    bbp.garbage(t25);	# 32 CMDbbpgarbage (_71:void)<-(t25:bat[:void,:int])
+    bat.setGarbage(t13);	# 31 CMDbbpgarbage (_70:void)<-(t13:bat[:void,:int])
+    bat.setGarbage(t25);	# 32 CMDbbpgarbage (_71:void)<-(t25:bat[:void,:int])
     a_i1 := t26;	# 33  (a_i1:bat[:void,:int])<-(t26:bat[:void,:int])
-    bbp.garbage(t26);	# 34 CMDbbpgarbage (_72:void)<-(t26:bat[:void,:int])
+    bat.setGarbage(t26);	# 34 CMDbbpgarbage (_72:void)<-(t26:bat[:void,:int])
 barrier (go,i1):= mal.newRange(1:int);	# 35 RNGnewRange_int (go:bit)(i1:int)<-(_6:int) jump 60
     t31 := batcalc.init(t3,i1);	# 36 CMDbatintinit (t31:bat[:void,:int])<-(t3:bat[:void,:int])(i1:int)
     t32 := batcalc.*(500,t31);	# 37 CMDcstMULbat (t32:bat[:void,:int])<-(_7:int)(t31:bat[:void,:int])
     t33 := batcalc.+(t3,t32);	# 38 CMDbatADD (t33:bat[:void,:int])<-(t3:bat[:void,:int])(t32:bat[:void,:int])
-    bbp.garbage(t32);	# 39 CMDbbpgarbage (_73:void)<-(t32:bat[:void,:int])
+    bat.setGarbage(t32);	# 39 CMDbbpgarbage (_73:void)<-(t32:bat[:void,:int])
     t34 := batcalc.oid(t33);	# 40 CMDconvertvoid_int_oid (t34:bat[:void,:oid])<-(t33:bat[:void,:int])
-    bbp.garbage(t33);	# 41 CMDbbpgarbage (_74:void)<-(t33:bat[:void,:int])
+    bat.setGarbage(t33);	# 41 CMDbbpgarbage (_74:void)<-(t33:bat[:void,:int])
     t35 := algebra.join(t34,t2);	# 42 ALGjoin (t35:bat[:void,:int])<-(t34:bat[:void,:oid])(t2:bat[:void,:int])
-    bbp.garbage(t34);	# 43 CMDbbpgarbage (_75:void)<-(t34:bat[:void,:oid])
+    bat.setGarbage(t34);	# 43 CMDbbpgarbage (_75:void)<-(t34:bat[:void,:oid])
     t38 := algebra.join(t12,t35);	# 44 ALGjoin (t38:bat[:void,:int])<-(t12:bat[:void,:oid])(t35:bat[:void,:int])
-    bbp.garbage(t35);	# 45 CMDbbpgarbage (_76:void)<-(t35:bat[:void,:int])
+    bat.setGarbage(t35);	# 45 CMDbbpgarbage (_76:void)<-(t35:bat[:void,:int])
     t45 := batcalc.+(t31,t19);	# 46 CMDbatADD (t45:bat[:void,:int])<-(t31:bat[:void,:int])(t19:bat[:void,:int])
-    bbp.garbage(t31);	# 47 CMDbbpgarbage (_77:void)<-(t31:bat[:void,:int])
+    bat.setGarbage(t31);	# 47 CMDbbpgarbage (_77:void)<-(t31:bat[:void,:int])
     t46 := batcalc.oid(t45);	# 48 CMDconvertvoid_int_oid (t46:bat[:void,:oid])<-(t45:bat[:void,:int])
-    bbp.garbage(t45);	# 49 CMDbbpgarbage (_78:void)<-(t45:bat[:void,:int])
+    bat.setGarbage(t45);	# 49 CMDbbpgarbage (_78:void)<-(t45:bat[:void,:int])
     t47 := algebra.join(t46,t14);	# 50 ALGjoin (t47:bat[:void,:int])<-(t46:bat[:void,:oid])(t14:bat[:void,:int])
-    bbp.garbage(t46);	# 51 CMDbbpgarbage (_79:void)<-(t46:bat[:void,:oid])
+    bat.setGarbage(t46);	# 51 CMDbbpgarbage (_79:void)<-(t46:bat[:void,:oid])
     t50 := algebra.join(t24,t47);	# 52 ALGjoin (t50:bat[:void,:int])<-(t24:bat[:void,:oid])(t47:bat[:void,:int])
-    bbp.garbage(t47);	# 53 CMDbbpgarbage (_80:void)<-(t47:bat[:void,:int])
+    bat.setGarbage(t47);	# 53 CMDbbpgarbage (_80:void)<-(t47:bat[:void,:int])
     t51 := batcalc.*(t38,t50);	# 54 CMDbatMUL (t51:bat[:void,:int])<-(t38:bat[:void,:int])(t50:bat[:void,:int])
-    bbp.garbage(t38);	# 55 CMDbbpgarbage (_81:void)<-(t38:bat[:void,:int])
-    bbp.garbage(t50);	# 56 CMDbbpgarbage (_82:void)<-(t50:bat[:void,:int])
+    bat.setGarbage(t38);	# 55 CMDbbpgarbage (_81:void)<-(t38:bat[:void,:int])
+    bat.setGarbage(t50);	# 56 CMDbbpgarbage (_82:void)<-(t50:bat[:void,:int])
     a_i1 := batcalc.+(a_i1,a_i1,t51);	# 57 CMDbataccumADD (a_i1:bat[:void,:int])<-(a_i1:bat[:void,:int])(a_i1:bat[:void,:int])(t51:bat[:void,:int])
-    bbp.garbage(t51);	# 58 CMDbbpgarbage (_83:void)<-(t51:bat[:void,:int])
+    bat.setGarbage(t51);	# 58 CMDbbpgarbage (_83:void)<-(t51:bat[:void,:int])
     redo (go,i1):= mal.nextElement(1:int,3:int);	# 59 RNGnextElement_int (go:bit)(i1:int)<-(_48:int)(_52:int) jump 36
 exit (go,i1);	# 60  (go:bit)(i1:int)
     t52 := a_i1;	# 61  (t52:bat[:void,:int])<-(a_i1:bat[:void,:int])
@@ -792,7 +792,7 @@ Optimizer garbageCollector failed
 function user.f4():void;	# 0  (f4:void)
     SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:bat[:any,:any])<-(_2:str)
     bat.persists(SIM_bat,false);	# 2  unknown (_3:any)<-(SIM_bat:bat[:any,:any])(_4:bit)
-    bbp.garbage(SIM_bat);	# 3 CMDbbpgarbage (_6:void)<-(SIM_bat:bat[:any,:any])
+    bat.setGarbage(SIM_bat);	# 3 CMDbbpgarbage (_6:void)<-(SIM_bat:bat[:any,:any])
     transaction.commit();	# 4 TRNglobal_commit (_5:void)
 end f4;	# 5  
 !ERROR: 'bat.persists' undefined in user.f4[2]
@@ -800,7 +800,7 @@ Optimizer garbageCollector optimizer failed
 function user.f4():void;	# 0  (f4:void)
     SIM_bat := bbp.bind("SIM_bat");	# 1 CMDbbpbind (SIM_bat:bat[:any,:any])<-(_2:str)
     bat.persists(SIM_bat,false);	# 2  unknown (_3:any)<-(SIM_bat:bat[:any,:any])(_4:bit)
-    bbp.garbage(SIM_bat);	# 3 CMDbbpgarbage (_6:void)<-(SIM_bat:bat[:any,:any])
+    bat.setGarbage(SIM_bat);	# 3 CMDbbpgarbage (_6:void)<-(SIM_bat:bat[:any,:any])
     transaction.commit();	# 4 TRNglobal_commit (_5:void)
 end f4;	# 5  
 !ERROR: 'bat.persists' undefined in user.f5[2]
@@ -822,7 +822,7 @@ Optimizer garbageCollector failed
 function user.f5():void;	# 0  (f5:void)
     B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:bat[:any,:any])<-(_2:str)
     bat.persists(B_bat,false);	# 2  unknown (_3:any)<-(B_bat:bat[:any,:any])(_4:bit)
-    bbp.garbage(B_bat);	# 3 CMDbbpgarbage (_6:void)<-(B_bat:bat[:any,:any])
+    bat.setGarbage(B_bat);	# 3 CMDbbpgarbage (_6:void)<-(B_bat:bat[:any,:any])
     transaction.commit();	# 4 TRNglobal_commit (_5:void)
 end f5;	# 5  
 !ERROR: 'bat.persists' undefined in user.f5[2]
@@ -830,7 +830,7 @@ Optimizer garbageCollector optimizer failed
 function user.f5():void;	# 0  (f5:void)
     B_bat := bbp.bind("B_bat");	# 1 CMDbbpbind (B_bat:bat[:any,:any])<-(_2:str)
     bat.persists(B_bat,false);	# 2  unknown (_3:any)<-(B_bat:bat[:any,:any])(_4:bit)
-    bbp.garbage(B_bat);	# 3 CMDbbpgarbage (_6:void)<-(B_bat:bat[:any,:any])
+    bat.setGarbage(B_bat);	# 3 CMDbbpgarbage (_6:void)<-(B_bat:bat[:any,:any])
     transaction.commit();	# 4 TRNglobal_commit (_5:void)
 end f5;	# 5  
 !ERROR: 'bat.persists' undefined in user.f6[2]
@@ -852,7 +852,7 @@ Optimizer garbageCollector failed
 function user.f6():void;	# 0  (f6:void)
     A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:bat[:any,:any])<-(_2:str)
     bat.persists(A_bat,false);	# 2  unknown (_3:any)<-(A_bat:bat[:any,:any])(_4:bit)
-    bbp.garbage(A_bat);	# 3 CMDbbpgarbage (_6:void)<-(A_bat:bat[:any,:any])
+    bat.setGarbage(A_bat);	# 3 CMDbbpgarbage (_6:void)<-(A_bat:bat[:any,:any])
     transaction.commit();	# 4 TRNglobal_commit (_5:void)
 end f6;	# 5  
 !ERROR: 'bat.persists' undefined in user.f6[2]
@@ -860,7 +860,7 @@ Optimizer garbageCollector optimizer failed
 function user.f6():void;	# 0  (f6:void)
     A_bat := bbp.bind("A_bat");	# 1 CMDbbpbind (A_bat:bat[:any,:any])<-(_2:str)
     bat.persists(A_bat,false);	# 2  unknown (_3:any)<-(A_bat:bat[:any,:any])(_4:bit)
-    bbp.garbage(A_bat);	# 3 CMDbbpgarbage (_6:void)<-(A_bat:bat[:any,:any])
+    bat.setGarbage(A_bat);	# 3 CMDbbpgarbage (_6:void)<-(A_bat:bat[:any,:any])
     transaction.commit();	# 4 TRNglobal_commit (_5:void)
 end f6;	# 5  
 function user.main():int;	# 0  (main:int)
@@ -889,58 +889,58 @@ function user.f3():void;
     t6 := batcalc.init(t3,i1);
     t7 := batcalc.*(500,t6);
     t8 := batcalc.+(t3,t7);
-    bbp.garbage(t7);
+    bat.setGarbage(t7);
     t9 := batcalc.oid(t8);
-    bbp.garbage(t8);
+    bat.setGarbage(t8);
     t10 := algebra.join(t9,t2);
-    bbp.garbage(t9);
+    bat.setGarbage(t9);
     t11 := array.grid(500,500,1:int,0);
     t12 := batcalc.oid(t11);
-    bbp.garbage(t11);
+    bat.setGarbage(t11);
     t13 := algebra.join(t12,t10);
-    bbp.garbage(t10);
+    bat.setGarbage(t10);
     t14:bat[:void,:int]  := bbp.bind("A_bat");
     t19 := batcalc.*(500,t3);
     t20 := batcalc.+(t6,t19);
-    bbp.garbage(t6);
+    bat.setGarbage(t6);
     t21 := batcalc.oid(t20);
-    bbp.garbage(t20);
+    bat.setGarbage(t20);
     t22 := algebra.join(t21,t14);
-    bbp.garbage(t21);
+    bat.setGarbage(t21);
     t23 := array.grid(1:int,500,500,0);
     t24 := batcalc.oid(t23);
-    bbp.garbage(t23);
+    bat.setGarbage(t23);
     t25 := algebra.join(t24,t22);
-    bbp.garbage(t22);
+    bat.setGarbage(t22);
     t26 := batcalc.*(t13,t25);
-    bbp.garbage(t13);
-    bbp.garbage(t25);
+    bat.setGarbage(t13);
+    bat.setGarbage(t25);
     a_i1 := t26;
-    bbp.garbage(t26);
+    bat.setGarbage(t26);
 barrier (go,i1):= mal.newRange(1:int);
     t31 := batcalc.init(t3,i1);
     t32 := batcalc.*(500,t31);
     t33 := batcalc.+(t3,t32);
-    bbp.garbage(t32);
+    bat.setGarbage(t32);
     t34 := batcalc.oid(t33);
-    bbp.garbage(t33);
+    bat.setGarbage(t33);
     t35 := algebra.join(t34,t2);
-    bbp.garbage(t34);
+    bat.setGarbage(t34);
     t38 := algebra.join(t12,t35);
-    bbp.garbage(t35);
+    bat.setGarbage(t35);
     t45 := batcalc.+(t31,t19);
-    bbp.garbage(t31);
+    bat.setGarbage(t31);
     t46 := batcalc.oid(t45);
-    bbp.garbage(t45);
+    bat.setGarbage(t45);
     t47 := algebra.join(t46,t14);
-    bbp.garbage(t46);
+    bat.setGarbage(t46);
     t50 := algebra.join(t24,t47);
-    bbp.garbage(t47);
+    bat.setGarbage(t47);
     t51 := batcalc.*(t38,t50);
-    bbp.garbage(t38);
-    bbp.garbage(t50);
+    bat.setGarbage(t38);
+    bat.setGarbage(t50);
     a_i1 := batcalc.+(a_i1,a_i1,t51);
-    bbp.garbage(t51);
+    bat.setGarbage(t51);
     redo (go,i1):= mal.nextElement(1:int,3:int);
 exit (go,i1);
     t52 := a_i1;

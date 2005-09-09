@@ -18,7 +18,7 @@ stdout of test 'tst103` in directory 'src/mal` itself:
 #	return f:=bbp.new(:any$2,:any$1); 
 #end f;
 function user.f(a:any_1,b:any_2):bat[:any_2,:any_1];	# 0  dynamic (f:bat[:any_2,:any_1])<-(a:any_1)(b:any_2)
-    return f := bbp.new(:any_2,:any_1);	# 1 CMDBATnew (f:bat[:any_2,:any_1])<-(_3:any_2)(_4:any_1)
+    return f := bat.new(:any_2,:any_1);	# 1 CMDBATnew (f:bat[:any_2,:any_1])<-(_3:any_2)(_4:any_1)
 end f;	# 2  
 #
 #a:= f(1,"hello");

@@ -49,18 +49,18 @@ The code speaks for itself
 
 module bat;
 
-command bat(ht:int, tt:int) :bat[:any_1,:any_2] 
-address BKCnewBat
-comment "Creates a new empty transient BAT with head- and tail-types 
-        as indicated.";
-
-command bat(ht:int, tt:int, size:int) :bat[:any_1,:any_2] 
-address BKCnewBATint
-comment "Creates a new empty BAT, allocating 'size' elements.";
-
-command bat(ht:int, tt:int, size:lng) :bat[:any_1,:any_2] 
-address BKCnewBATlng
-comment "Creates a new empty BAT, allocating 'size' elements.";
+#command bat(ht:int, tt:int) :bat[:any_1,:any_2] 
+#address BKCnewBat
+#comment "Creates a new empty transient BAT with head- and tail-types 
+#        as indicated.";
+#
+#command bat(ht:int, tt:int, size:int) :bat[:any_1,:any_2] 
+#address BKCnewBATint
+#comment "Creates a new empty BAT, allocating 'size' elements.";
+#
+#command bat(ht:int, tt:int, size:lng) :bat[:any_1,:any_2] 
+#address BKCnewBATlng
+#comment "Creates a new empty BAT, allocating 'size' elements.";
 
 command reverse(b:bat[:any_1,:any_2]) :bat[:any_2,:any_1] 
 address BKCreverse
@@ -72,15 +72,15 @@ command mirror(b:bat[:any_1,:any]) :bat[:any_1,:any_1]
 address BKCmirror
 comment "Returns the head-mirror image of a BAT (two head columns).";
 
-command convert(b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
-address BKCconvert
-comment "Convert the contents of a BAT from little-endian to big-endian 
-        and vice versa. THIS command SHOULD NOT BE USED FROM MAL!
-	DANGEROUS! DEBUGGING PURPOSES ONLY!";
+#command convert(b:bat[:any_1,:any_2] ) :bat[:any_1,:any_2] 
+#address BKCconvert
+#comment "Convert the contents of a BAT from little-endian to big-endian 
+#        and vice versa. THIS command SHOULD NOT BE USED FROM MAL!
+#	DANGEROUS! DEBUGGING PURPOSES ONLY!";
 
-command order(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-address BKCorder
-comment "Sorts the BAT itself, in place. ";
+#command sort(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+#address BKCsort
+#comment "Sorts the BAT itself on the head, in place. ";
 
 command revert(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address BKCrevert
@@ -200,8 +200,8 @@ comment "Try to change the update access priviliges
 	BATs are updatable by default. On making a BAT read-only, 
         all subsequent updates fail with an error message.Returns 
         the BAT itself.";
-command access( b:bat[:any_1,:any_2], mode:int) :bat[:any_1,:any_2]
-address BKCaccess;
+#command access( b:bat[:any_1,:any_2], mode:int) :bat[:any_1,:any_2]
+#address BKCaccess;
 
 command setAppendMode( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BKCsetAppendMode
@@ -215,7 +215,7 @@ command setWriteMode( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 address BKCsetWriteMode
 comment "Change access privilige of BAT to read and write";
 
-command getAccess( b:bat[:any_1,:any_2]):chr 
+command getAccess( b:bat[:any_1,:any_2]):str 
 address BKCgetAccess
 comment "return the access mode attached to this BAT as a character.";
 
@@ -249,7 +249,7 @@ address BKCsetSequenceBaseNil;
 
 command setSorted(b:bat[:any_1,:any_2]) :bit 
 address BKCsetSorted
-comment "Assure BAT is ordered on head.";
+comment "Assure BAT is ordered on the head.";
 
 command isSorted(b:bat[:any_1,:any_2]) :bit 
 address BKCisSorted
@@ -450,7 +450,7 @@ comment "Save a BAT to storage, if it was loaded and dirty.
 
 command load(name:str) :bat[:any_1,:any_2] 
 address BKCload
-comment "Load a particylar bat from disk";
+comment "Load a particular BAT from disk";
 
 command unload(name:str) :bit 
 address BKCunload
@@ -461,24 +461,18 @@ command isCached(b:bat[:any_1,:any_2]):bit
 address BKCisCached
 comment "Bat is stored in main memory.";
 
-command setHot(name:str) :void 
-address BKChot
-comment "Makes a BAT very hot for the BBP. The chance of being chosen for 
-        swapout is small, afterwards.  Returns the BAT itself.";
-
-command heat(name:str) :lng 
+command getHeat(b:bat[:any_1,:any_2]) :lng 
 address BKCheat
 comment "Return the current BBP heat (LRU stamp)";
 
-command setCold(nme:str) :void 
-address BKCcold
-comment "Makes a BAT very cold for the BBP. The chance of being choses 
-        for swapout is big, afterwards.  Returns the BAT itself.";
-
 command setCold(b:bat[:any_1,:any_1]) :void 
-address BKCcoldBAT;
+address BKCcoldBAT
+comment "Makes a BAT very cold for the BBP. The chance of being choses 
+        for swapout is big, afterwards.";
 command setHot(b:bat[:any_1,:any_2]) :void 
-address BKChotBAT;
+address BKChotBAT
+comment "Makes a BAT very hot for the BBP. The chance of being chosen for 
+        swapout is small, afterwards.";
 
 @- Heap Specific Commands
 BATs are stored in memory in a number of Heap objects. A heap is nothing
@@ -664,8 +658,8 @@ mal_export str BKCreverse(int *ret, int *bid);
 mal_export str BKCmirror(int *ret, int *bid);
 mal_export str BKCconvert(int *ret, int *bid);
 mal_export str BKCrevert(int *ret, int *bid);
-mal_export str BKCorder(int *ret, int *bid);
-mal_export str BKCorder_rev(int *ret, int *bid);
+mal_export str BKCsort(int *ret, int *bid);
+mal_export str BKCsort_rev(int *ret, int *bid);
 mal_export str BKCinsert_bat(int *r, int *bid, int *sid);
 mal_export str BKCreplace_bun(int *r, int *bid, ptr h, ptr t);
 mal_export str BKCreplace_bat(int *r, int *bid, int *sid);
@@ -696,7 +690,7 @@ mal_export str BKCsetTransient(int *r, int *bid);
 mal_export str BKCisTransient(bit *res, int *bid);
 mal_export str BKCaccess(int *res, int *bid, int *m);
 mal_export str BKCsetAccess(int *res, int *bid, str *param);
-mal_export str BKCgetAccess(char *res, int *bid);
+mal_export str BKCgetAccess(str *res, int *bid);
 mal_export str BKCinfo(int *retval, int *bid);
 mal_export str BKCbatsize(int *tot, int *bid);
 mal_export str BKCbatsize_str(int *tot, str batname);
@@ -1578,7 +1572,7 @@ BKCrevert(int *ret, int *bid)
 }
 
 str
-BKCorder(int *ret, int *bid)
+BKCsort(int *ret, int *bid)
 {
 	BAT *b, *bn = NULL;
 
@@ -1597,7 +1591,7 @@ BKCorder(int *ret, int *bid)
 }
 
 str
-BKCorder_rev(int *ret, int *bid)
+BKCsort_rev(int *ret, int *bid)
 {
 	BAT *b, *bn = NULL;
 
@@ -2488,7 +2482,7 @@ BKCsetAccess(int *res, int *bid, str *param)
 }
 
 str
-BKCgetAccess(char *res, int *bid)
+BKCgetAccess(str *res, int *bid)
 {
 	BAT *b;
 
@@ -2497,13 +2491,13 @@ BKCgetAccess(char *res, int *bid)
 	}
 	switch (BATgetaccess(b)) {
 	case 1:
-		*res = 'r';
+		*res = GDKstrdup("read");
 		break;
 	case 2:
-		*res = 'a';
+		*res = GDKstrdup("append");
 		break;
 	case 0:
-		*res = 'w';
+		*res = GDKstrdup("write");
 		break;
 	}
 	BBPunfix(b->batCacheid);

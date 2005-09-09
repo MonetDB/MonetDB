@@ -35,7 +35,7 @@ stdout of test 'tst265` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 # Grouped sums 	# 1  (_2:str)
-    b := bbp.new(:void,:int);	# 2 CMDBATnew (b:bat[:void,:int])<-(_4:void)(_5:int)
+    b := bat.new(:void,:int);	# 2 CMDBATnew (b:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(b,0:oid);	# 3 BKCsetSequenceBase (_6:bat[:void,:int])<-(b:bat[:void,:int])(_7:oid)
     bat.insert(b,1);	# 4 BKCinsert_void_bun (_8:bat[:int,:any])<-(b:bat[:void,:int])(_9:int)
     bat.insert(b,2);	# 5 BKCinsert_void_bun (_10:bat[:int,:any])<-(b:bat[:void,:int])(_11:int)

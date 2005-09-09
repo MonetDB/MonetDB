@@ -1,4 +1,4 @@
-	y := bbp.new(:oid,:dbl);
+	y := bat.new(:oid,:dbl);
 	le_a := calc.dbl(1.0);
 	me_a := bat.insert(y,1@0,le_a);
 	ne_a := calc.dbl(2.0);
@@ -22,13 +22,13 @@ c:= algebra.count(z);
 io.print("count");
 io.print(c);
 
-	x:= bbp.new(:oid,:bit);
+	x:= bat.new(:oid,:bit);
 	bat.insert(x,1@0,true);
 	bat.insert(x,2@0,false);
 	bat.insert(x,3@0,true);
 	bat.insert(x,4@0,false);
 	io.print(x);
-	A:= bbp.new(:oid,:bit);
+	A:= bat.new(:oid,:bit);
 	bat.insert(A,1@0,true);
 	bat.insert(A,2@0,true);
 	bat.insert(A,3@0,false);

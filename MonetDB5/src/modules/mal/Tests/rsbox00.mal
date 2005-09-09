@@ -14,12 +14,12 @@ resultset.setProperty(rs, 2, "width", 1);
 resultset.setProperty(rs, 2, "table", "table2");
 resultset.setProperty(rs, 2, "schema", "sys");
 
-b1 := bbp.new(:void, :str);
+b1 := bat.new(:void, :str);
 bat.insert(b1, nil, "test1");
 bat.insert(b1, nil, "test2");
 bat.insert(b1, nil, nil:str);
 
-b2 := bbp.new(:void, :int);
+b2 := bat.new(:void, :int);
 bat.insert(b2, nil, 2);
 bat.insert(b2, nil, nil:int);
 bat.insert(b2, nil, 5);
