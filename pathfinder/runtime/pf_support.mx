@@ -82,13 +82,22 @@ and the head values from the batlist"
 @- new algebraic primitives
 @m
 .COMMAND mark_grp( BAT[any::1,oid] b , BAT[oid,oid] g)
-		: BAT[any::1,OID] = CMDmark_grp; 
+		: BAT[any::1,OID] = CMDmark_grp_1; 
 "\"grouped mark\": Produces a new BAT with per group a locally unique dense
  ascending sequense of OIDs in the tail. The tail of the first BAT (b)
  identifies the group that each BUN of b belongs to. The second BAT (g)
  represents the group extend, i.e., the head is the unique list of group IDs
  from b's tail. The tail of g gives for each group the base value for the new
  OID sequence."
+
+.COMMAND mark_grp( BAT[any::1,oid] b , BAT[oid,any] g, oid s)
+		: BAT[any::1,OID] = CMDmark_grp_2; 
+"\"grouped mark\": Produces a new BAT with per group a locally unique dense
+ ascending sequense of OIDs in the tail. The tail of the first BAT (b)
+ identifies the group that each BUN of b belongs to. The second BAT (g)
+ represents the group extend, i.e., the head is the unique list of group IDs
+ from b's tail. The third argument (s) gives the base value for the new
+ OID sequence of each group."
 
 .COMMAND merged_union( BAT[oid,any::1] left, BAT[oid,any::1] right, ..BAT[oid,any].. )
 		: BAT[void,BAT] = CMDmerged_union;
@@ -318,6 +327,11 @@ PROC get_fragment (bat[void,int] kind) : bat[void,oid]
         return kind.[>>](6).[oid]();
 }
 
+PROC set_kind (oid frag, int type_) : int
+{
+        return frag.int().<<(6).or(type_);
+}
+
 PROC set_kind (bat[void,oid] frag, int type_) : bat[void,int]
 {
         return frag.[int]().[<<](6).[or](type_);
@@ -506,9 +520,20 @@ PROC fake_project (any::1 c) : bat[void,any::1]
     	return new(void,type(c),1).seqbase(nil).insert(nil,c).access(BAT_READ);
 }
 
-PROC is_fake_project (bat[oid,any::1] b) : bit
+PROC is_fake_project (bat[void,any::1] b) : bit
 {
 	return and(count(b) = 1, isnil(seqbase(b)));
+}
+
+PROC de_fake_project (bat[void,any::1] p, bat[void,oid] b) : bat[void,any::1]
+{
+	if (not(is_fake_project(p))) {
+		return p;
+	}
+	if (is_fake_project(b)) {
+		ERROR("de_fake_project: second argument must not be a 'fake_project'!\n");
+	}
+	return b.project(p.fetch(0));
 }
 
 @= fake_fetch
@@ -524,7 +549,7 @@ PROC fake_fetch (bat[void,any::1] b, @1 p) : any::1
 @:fake_fetch(int)@
 @:fake_fetch(oid)@
 
-PROC fake_leftfetchjoin (bat[oid,oid] l, bat[oid,any::3] r) : bat[oid,any::3]
+PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,any::3] r) : bat[oid,any::3]
 {
 	if (is_fake_project(r)) {
 		return r;
@@ -1079,9 +1104,15 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    X_frag   := nil;
 		var _X       := X_nsloc.ord_uselect(loc+str('\1')+ns).reverse();
 		    X_nsloc  := nil;
-		cands := _X.leftfetchjoin(X_pre);
+		cands := _X.leftfetchjoin(X_pre); #.reverse().sort().reverse()
+                if ( not(ordered(reverse(cands))) ) {
+                        printf("= nsloc_pre(3): cands not ordered on tail.\n");
+                }
 	}
 	cands := cands.chk_order();
+        if ( not(ordered(reverse(cands))) ) {
+                printf("= nsloc_pre(4): cands not ordered on tail.\n");
+        }
 	@:shrink_code@
  }
 @
@@ -1132,9 +1163,15 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 		    X_frag   := nil;
 		var _X       := X_@2.ord_uselect(@2).reverse();
 		    X_@2     := nil;
-		cands := _X.leftfetchjoin(X_pre);
+		cands := _X.leftfetchjoin(X_pre); #.reverse().sort().reverse()
+                if ( not(ordered(reverse(cands))) ) {
+                        printf("= ns_loc_pre(3): cands not ordered on tail.\n");
+                }
 	}
 	cands := cands.chk_order();
+        if ( not(ordered(reverse(cands))) ) {
+                printf("= ns_loc_pre(4): cands not ordered on tail.\n");
+        }
 	@:shrink_code@
  }
 @
@@ -1239,6 +1276,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
         result_part_item := nil;
         result_part_frag := nil;
 
+        # FIXME: make merged_union more fake_project capable!
+        result_iter := de_fake_project(result_iter, result_item);
+
         var res_mu;
 	uniqueFrag.slice(1,uniqueFrag.count() - 1)@batloop () {
 	    theFrag := $h;
@@ -1247,6 +1287,9 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
             result_part_item := result_part_frag.leftfetchjoin(item);
 
             @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
+
+            # FIXME: make merged_union more fake_project capable!
+            result_part_iter := de_fake_project(result_part_iter, result_part_item);
 
             res_mu := merged_union(result_iter, result_part_iter,
 				   result_item, result_part_item,
@@ -1414,8 +1457,10 @@ DESCRIPITON:\n\
 #include <math.h> /* needed for round_up */
 #if SIZEOF_OID == SIZEOF_INT
 #define oidoid_bunfastins(b,h,t) intint_bunfastins(b,h,t);
+#define oidoid_bunfastins_nocheck_noinc(b,p,h,t) intint_bunfastins_nocheck_noinc(b,p,h,t);
 #else
 #define oidoid_bunfastins(b,h,t) lnglng_bunfastins(b,h,t);
+#define oidoid_bunfastins_nocheck_noinc(b,p,h,t) lnglng_bunfastins_nocheck_noinc(b,p,h,t);
 #endif
 
 int CMDdelete_nodes_prepare_pre_size( BAT** ret, BAT *pre_size, BAT *pre_ )
@@ -1531,9 +1576,33 @@ static bit is_fake_project (BAT* b)
 	}
 }
 
+@= mark_grp_init
+	BUN w;
+
+	BUNfnd@1(w, g, (ptr)&v);
+	if (w) {
+		n = *(oid*) BUNtloc(g, w);
+	} else {
+		n = oid_nil;
+	}
+@
+@= mark_grp_loop4
+	oid u = oid_nil;
+	oid n = oid_nil;
+	BATloopFast(b, p, q, xx) {
+		oid v = *(oid*)BUNt@2(b, p);
+
+		if (v != u) {
+			@3
+			u = v;
+		} else if (n != oid_nil) {
+			n++;
+		}
+		anyoid_bunfastins_nocheck_noinc(bn, r, BUNh@1(b, p), &n);
+		r += yy; 
+	}
+@
 @= mark_grp_loop3
-{	BUN p, q;
-	int xx;
 	BATloopFast(b, p, q, xx) {
 		oid n = oid_nil;
 		BUN w;
@@ -1546,90 +1615,154 @@ static bit is_fake_project (BAT* b)
 				n = (*m)++;
 			}
 		}
-		if (n == oid_nil) {
-			tsdk = 0;
-		}
-		bunfastins_nocheck(bn, r, BUNh@1(b, p), &n, yy); 
+		anyoid_bunfastins_nocheck_noinc(bn, r, BUNh@1(b, p), &n);
 		r += yy; 
 	}
-}
+@
 @= mark_grp_loop2
-	if (gc->htype==TYPE_void) {
-		@:mark_grp_loop3(@1,@2,VOID)@
+	if (gc) {
+		if (BAThdense(gc)) {
+			@:mark_grp_loop3(@1,@2,VOID)@
+		} else {
+			@:mark_grp_loop3(@1,@2,OID)@
+		}
 	} else {
-		@:mark_grp_loop3(@1,@2,OID)@
+		if (s) {
+			@:mark_grp_loop4(@1,@2,n = *s;,s);
+		} else {
+			if (BAThdense(g)) {
+				@:mark_grp_loop4(@1,@2,@:mark_grp_init(VOID)@,VOID);
+			} else {
+				@:mark_grp_loop4(@1,@2,@:mark_grp_init(OID)@,OID);
+			}
+		}
 	}
+@
 @= mark_grp_loop1
 	if (b->ttype==TYPE_void) {
 		@:mark_grp_loop2(@1,var)@
 	} else {
 		@:mark_grp_loop2(@1,loc)@
 	}
+@
 @= mark_grp_loop
-{	BUN r = BUNfirst(bn);
-	int yy = BUNsize(bn);
+{	BUN p, q, r = BUNfirst(bn);
+	int xx, yy = BUNsize(bn);
 	if (b->hvarsized) {
 		@:mark_grp_loop1(var)@
 	} else {
 		@:mark_grp_loop1(loc)@
 	}
+	bn->batBuns->free = r - bn->batBuns->base;
+	BATsetcount(bn, BATcount(b));
 }
-
+@
 @c
-static BAT *BATmark_grp( BAT *b, BAT *g )
+static BAT *BATmark_grp( BAT *b, BAT *g, oid *s )
 {
-        BAT *bn, *gc;
-	int tsdk;
+        BAT *bn, *gc = NULL;
+        bit trivprop = FALSE;
  
         BATcheck(b, "BATmark_grp");
         BATcheck(g, "BATmark_grp");
 	ERRORcheck((b->ttype!=TYPE_void) && (b->ttype!=TYPE_oid),
 	           "BATmark_grp: tail of BAT b must be oid.\n");
 	ERRORcheck((g->htype!=TYPE_void) && (g->htype!=TYPE_oid),
-	           "ERRORcheck: head of BAT g must be oid.\n");
-	ERRORcheck((g->ttype!=TYPE_oid),
+	           "BATmark_grp: head of BAT g must be oid.\n");
+	ERRORcheck((b->ttype==TYPE_void) && (b->tseqbase==oid_nil),
+	           "BATmark_grp: tail of BAT b must not be nil.\n");
+	ERRORcheck((g->htype==TYPE_void) && (g->hseqbase==oid_nil),
+	           "BATmark_grp: head of BAT g must not be nil.\n");
+	ERRORcheck(s && (*s == oid_nil),
+	           "BATmark_grp: base oid s must not be nil.\n");
+	ERRORcheck(!s && (g->ttype!=TYPE_oid),
 	           "BATmark_grp: tail of BAT g must be oid.\n");
 
-	tsdk = ((BATcount(g) == 1) || (BATcount(b) == 0));
-	gc = batcopy(g, g->htype, g->ttype, TRUE);
-	if (gc == NULL) return NULL;
+	if (BATcount(b) == 0 || BATcount(g) == 1) {
+		if (s) {
+			return BATmark(b, *s);
+		} else {
+			return BATmark(b, *(oid*)BUNtloc(g, BUNfirst(g)));
+		}
+	}
+
+	if (!BATtordered(b)) {
+		if (s) {
+			BUN p, q, r;
+			int xx, yy;
+			if (BAThdense(g)) {
+				gc = BATnew(TYPE_void, TYPE_oid, BATcount(g));
+				if (gc == NULL) return NULL;
+				r = BUNfirst(gc);
+				yy = BUNsize(gc);
+				BATloopFast(g, p, q, xx) {
+					voidoid_bunfastins_nocheck_noinc(gc, r, NULL, s); 
+					r += yy; 
+				}
+			} else {
+				gc = BATnew(TYPE_oid,  TYPE_oid, BATcount(g));
+				if (gc == NULL) return NULL;
+				r = BUNfirst(gc);
+				yy = BUNsize(gc);
+				BATloopFast(g, p, q, xx) {
+					oidoid_bunfastins_nocheck_noinc(gc, r, BUNhloc(g, p), s); 
+					r += yy; 
+				}
+			}
+			gc->batBuns->free = r - gc->batBuns->base;
+			BATsetcount(gc, BATcount(g));
+			gc->hdense = BAThdense(g);
+			if (BAThdense(gc)) {
+				BATseqbase(gc, g->hseqbase);
+				gc->hsorted = GDK_SORTED;
+			} else {
+				gc->hsorted = BAThordered(g);
+			}
+			BATkey(gc, TRUE);
+		} else {
+			gc = batcopy(g, g->htype, g->ttype, TRUE);
+			if (gc == NULL) return NULL;
+		}
+	}
 	bn = BATnew(b->htype, TYPE_oid, BATcount(b));
 	if (bn == NULL) {
-		BBPreclaim(gc);
+		if (gc) BBPreclaim(gc);
 		return NULL;
 	}
 
 	@:mark_grp_loop@
 
+	trivprop = (BATcount(bn) < 2);
 	ALIGNsetH(bn,b);
-	bn->hsorted = BAThordered(b);
-	bn->hdense = BAThdense(b);
+	bn->hsorted = (trivprop ? GDK_SORTED : BAThordered(b));
+	bn->hdense = (trivprop ? TRUE : BAThdense(b));
 	if (BAThdense(bn)) {
 		BATseqbase(bn, b->hseqbase);
 	}
 	BATkey(bn, (b->hkey!=0));
-	bn->tsorted = (tsdk?GDK_SORTED:0);
-	bn->tdense = tsdk;
+	bn->tsorted = (trivprop ? GDK_SORTED : FALSE);
+	bn->tdense = (trivprop ? TRUE : FALSE);
 	if (BATtdense(bn)) {
-		if (BATcount(bn) == 0) {
-			BATseqbase(BATmirror(bn), (oid)0);
-		} else {
-			BATseqbase(BATmirror(bn), *(oid*)BUNtloc(bn,BUNfirst(bn)));
-		}
+		BATseqbase(BATmirror(bn), *(oid*)BUNtloc(bn, BUNfirst(bn)));
 	}
-	BATkey(BATmirror(bn), tsdk);
+	BATkey(BATmirror(bn), FALSE);
 
-	BBPreclaim(gc);
+	if (gc) BBPreclaim(gc);
         return bn;
 bunins_failed:
-	BBPreclaim(gc);
+	if (gc) BBPreclaim(gc);
 	BBPreclaim(bn);
 	return NULL;
 }
 
-int CMDmark_grp( BAT** res, BAT *b, BAT *g )
+int CMDmark_grp_1( BAT** res, BAT *b, BAT *g )
 {
-	return (*res=BATmark_grp(b, g))?GDK_SUCCEED:GDK_FAIL;
+	return (*res=BATmark_grp(b, g, NULL))?GDK_SUCCEED:GDK_FAIL;
+}
+
+int CMDmark_grp_2( BAT** res, BAT *b, BAT *g, oid *s)
+{
+	return (*res=BATmark_grp(b, g, s))?GDK_SUCCEED:GDK_FAIL;
 }
 
 

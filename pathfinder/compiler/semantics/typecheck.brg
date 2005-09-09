@@ -1020,10 +1020,32 @@ overload (PFqname_t qn, PFcnode_t *args)
         args = args->child[1];
     } while (args->kind != c_nil);
 
-    PFoops (OOPS_TYPECHECK, 
+    PFinfo (OOPS_TYPECHECK, 
             "no variant of function %s accepts the given argument type(s)%s",
             PFqname_str (qn),
             (char *) PFarray_at (args_str, 0));
+
+    PFinfo (OOPS_TYPECHECK, "maybe you meant:");
+
+    for (unsigned int i = 0; i < PFarray_last (fns); i++) {
+
+        fn       = *(PFfun_t **) PFarray_at (fns, i);
+        args_str = PFarray (sizeof (char));
+
+        PFarray_printf (args_str, "%s (", PFqname_str (fn->qname));
+
+        for (unsigned int j = 0; j < fn->arity; j++) {
+            PFarray_printf (args_str, "%s%s",
+                    j ? ", " : "", PFty_str (fn->par_ty[j]));
+        }
+
+        PFarray_printf (args_str, ") as %s", PFty_str (fn->ret_ty));
+
+        PFinfo (OOPS_TYPECHECK, "  %s", (char *) PFarray_at (args_str, 0));
+    }
+
+    PFoops (OOPS_TYPECHECK,
+            "illegal arguments for function %s", PFqname_str (qn));
 
     /* just to pacify picky compilers; never reached due to "exit" in PFoops */
     return 0;
@@ -1069,13 +1091,39 @@ specific (PFfun_t *fn, PFcnode_t *args)
     }
 
     /* Typing rules for #pf:item-sequence-to-node-sequence() are described
-     * by the * special judgment `is2ns', implemented in PFty_is2ns(),
+     * by the special judgment `is2ns', implemented in PFty_is2ns(),
      * which reduces atomic types to text().
      */
     if ((! PFqname_eq (fn->qname,
                        PFqname (PFns_pf, "item-sequence-to-node-sequence")))) {
         assert (args->kind == c_arg && R(args)->kind == c_nil);
         return *PFty_simplify ((PFty_is2ns (PFty_defn (TY(L(args))))));
+    }
+
+    /* specific typing rules for fn:subsequence() */
+    if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "subsequence"))) {
+
+        assert (args->kind == c_arg);
+
+        /*
+         * The W3C Formal Semantics demands a special treatment of the
+         * case
+         *    fn:subsequence (Expr, Num, 1)
+         * (Use quantifier `?' if last argument is literal 1.)
+         *
+         * However, we won't see any literal constants here, as they
+         * have been wrapped into fn:data() and others.  We just ignore
+         * that W3C rule.  (Current draft is buggy with that respect
+         * anyway.  No one knows, how those rules will look like in
+         * upcoming drafts...)
+         */
+
+        /* use occurrence indicator `?' if expr contains at most one item */
+        if (PFty_subtype (TY(L(args)), PFty_opt (PFty_item ())))
+            return *PFty_simplify (PFty_opt (PFty_prime (TY(L(args)))));
+        /* otherwise we cannot do more than `*' */
+        else
+            return *PFty_simplify (PFty_star (PFty_prime (TY(L(args)))));
     }
 
     if (! PFqname_eq (fn->qname, PFqname (PFns_fn, "exactly-one"))) {

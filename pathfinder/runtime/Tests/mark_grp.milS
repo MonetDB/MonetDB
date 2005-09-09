@@ -14,3 +14,7 @@ print(b);
 var c:=mark_grp(a,b);
 print(c);
 
+
+c:=mark_grp(a,b.mark(nil),oid(1));
+print(c);
+

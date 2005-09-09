@@ -113,7 +113,7 @@ ADDHELP("xquery", "boncz", "Juli 2005",
 # - pre_size    : BAT[oid,int]  pre-value of node / and its descendant size,
 # - pre_level   : BAT[oid,chr]  pre-value of node / and its level,
 # - pre_prop    : BAT[oid,oid]  pre-value of node / and property ID,
-# - pre_kind    : BAT[oid,chr]  pre-value of node / and property ID,
+# - pre_kind    : BAT[oid,chr]  pre-value of node / and node kind,
 #
 # - qn_ns        : BAT[oid,str]  property ID / and name space (elements and attributes),
 # - qn_loc       : BAT[oid,str]  property ID / and local name (elements and attributes),

@@ -1,0 +1,463 @@
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
+@'
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
+@'
+@' The Original Code is the MonetDB Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f Mserver
+@a M.L. Kersten, P. Boncz, Niels Nes
+@v 4.1
+@* The Monet Server
+@T
+The {\tt Mserver} is the Monet server. The database administrator starts
+and stops it. (S)he can type on the console, which is started on the
+standard input/output.
+
+@+ Manual Page
+@T
+The Mserver is a multi-threaded program. There is one system thread, and for
+each user (system administrator included) there is one worker thread.
+As a default, the Mserver also starts the network listener thread,
+on the port number specified in the parameter file.
+
+@- Usage
+@T
+\begin{verbatim}
+Mserver { [ --dbname <db-name> ] 
+	  [ --dbfarm <dbfarm> ]
+          [ --dbinit <stmt> ]
+          [ -c|--config <config-file> ] 
+          [ -d<value>|--debug=value ]
+          [ -s|--set [option=value] ] set option can be given multiple times
+                                    to override verious options
+        } [ <mil-script> ]
+\end{verbatim}
+
+Since the console has no command-line history nor file name completion,
+you are {\bf recommended} to use the 
+@[<a href="../MapiClient/index.html">MapiClient</a>@ program for interactive sessions
+instead.
+
+The options have the following meaning:
+\begin{description}
+\item[{\tt --dbname $<$db-name$>$ }]
+	open the database {\em db-name}.
+\item[{\tt --config $<$config-file$>$ }]
+	where to find the environment settings
+\end{description}
+
+@{
+@+ Implementation
+@h
+#ifndef _MONET_GLOBAL_H_
+#define _MONET_GLOBAL_H_
+
+#include "monet.h"
+#include "yytree.h"
+
+#endif /* _MONET_GLOBAL_H_ */
+@c
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "Mserver.h"
+
+#ifdef _CRTDBG_MAP_ALLOC
+/* Windows only:
+   our definition of new and delete clashes with the one if
+   _CRTDBG_MAP_ALLOC is defined.
+*/
+#undef _CRTDBG_MAP_ALLOC
+#endif
+
+#include "monet_context.h"
+#include "monet_interpreter.h"
+#include "monet_parse.h"
+#include "monet_queue.h"
+#include "monet_client.h"
+#include "monet_process.h"
+#include "monet_options.h"
+#include "initmodules.h"
+#include <locale.h>
+#ifdef __cplusplus
+}
+#ifdef HAVE_NEW
+#include <new>
+#endif
+void *operator
+new(size_t size)
+#ifdef HAVE_NEW
+throw(std::bad_alloc)
+#endif
+{
+	void *ptr = GDKmalloc(size);
+
+	return (ptr);
+}
+void operator
+delete(void *ptr)
+#ifdef HAVE_NEW
+throw()
+#endif
+{
+	GDKfree(ptr);
+}
+
+#if defined(__GNUC__) && defined(__cplusplus)
+void *operator  new[] (size_t size)
+#ifdef HAVE_NEW
+throw(std::bad_alloc)
+#endif
+{
+	void *ptr = GDKmalloc(size);
+
+	return (ptr);
+}
+void operator  delete[] (void *ptr)
+#ifdef HAVE_NEW
+throw()
+#endif
+{
+	GDKfree(ptr);
+}
+#endif
+#endif /* __cplusplus */
+
+
+@-
+The architecture is setup to handle multiple streams of requests.
+The first thread started represents the server. It reads from standard input
+and writes to standard input. This is also a way to recognize the server
+actions. 
+To start the server in the background one should use the argument -background.
+This closes standard input. Direct execution in the background may cause
+the server to hang in stdio for input from the terminal.
+@ 
+@ 
+The server thread started remains in existence until all other threads die.
+The server is stopped by cntrl-D or the quit command.
+@
+
+@-
+Brain-damaged Sun engineers decided to use malloc for allocating an enormous
+buffer of 20 bytes in the sunos2.5.5.X thread library, making the tunable 
+malloc library totally unusable, since it requires you to do advice before any 
+use of malloc().  We hack around it, by using realloc(0,size) in 
+gdk/gdk_utils.mx and wrapping malloc in the below dummy function:
+@c
+#ifdef HAVE_MALLOPT
+static int malloc_init = 1;
+#endif
+@c
+#if defined(_MSC_VER) && defined(__cplusplus)
+#include <eh.h>
+void
+Mserver_abort()
+{
+	fprintf(stderr, "\n! Mserver_abort() was called by terminate(). !\n");
+	fflush(stderr);
+	MT_global_exit(1);
+}
+#endif
+@c
+void
+usage(char *prog, int debug, opt *set, int setlen)
+{
+	fprintf(stderr, "Usage: %s [ options ] [ script+ ]                   \n", prog);
+	fprintf(stderr, "Options are:                                        \n");
+	fprintf(stderr, " -c <config_file>    | --config=<config_file>       \n");
+	fprintf(stderr, "                       --dbname=<database_name>     \n");
+	fprintf(stderr, "                       --dbfarm=<database_directory>\n");
+	fprintf(stderr, "                       --dbinit=<MIL_statement>     \n");
+	fprintf(stderr, " -d<debug_level>     | --debug=<debug_level>        \n");
+	fprintf(stderr, " -s <option>=<value> | --set <option>=<value>       \n");
+	fprintf(stderr, " -?                  | --help                       \n");
+	if (debug)
+		mo_print_options(set, setlen);
+	exit(-1);
+}
+
+static str
+absolute_path(str s)
+{
+	if (!MT_path_absolute(s)) {
+		str ret = (str) GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
+
+		sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
+		return ret;
+	}
+	return GDKstrdup(s);
+}
+
+static Client
+Monet_init(opt *set, int setlen)
+{
+	char *p;
+	opt *n = (opt *) GDKmalloc(setlen * sizeof(opt));
+	int i, j, nlen = 0;
+
+	char dbfarm[BUFSIZ];
+	char *dbname = mo_find_option(set, setlen, "gdk_dbname");
+	char *dbfarmval = mo_find_option(set, setlen, "gdk_dbfarm");
+	char *alloc_map = mo_find_option(set, setlen, "gdk_alloc_map");
+
+	if (!n || !dbname || !dbfarmval || !alloc_map) {
+		if (n)
+			GDKfree(n);
+		return NULL;
+	}
+
+	strcpy(dbfarm, dbfarmval);
+	mo_substitute(set, setlen, dbfarm);
+
+	if ((p = mo_find_option(set, setlen, "gdk_debug")))
+		GDKdebug = strtol(p, NULL, 10);
+
+	/* determine Monet's kernel settings. */
+	if (!GDKinit(dbname, dbfarm, strcasecmp(alloc_map, "yes") == 0)) {
+		GDKfree(n);
+		return NULL;
+	}
+
+	for (i = 0; i < setlen; i++) {
+		int done = 0;
+
+		for (j = 0; j < nlen; j++) {
+			if (strcmp(n[j].name, set[i].name) == 0) {
+				if (n[j].kind < set[i].kind) {
+					n[j] = set[i];
+				}
+				done = 1;
+				break;
+			}
+		}
+		if (!done) {
+			n[nlen] = set[i];
+			nlen++;
+		}
+	}
+	for (i = 0; i < nlen; i++) {
+		char value[BUFSIZ];
+
+		strncpy(value, n[i].value, BUFSIZ);
+		mo_substitute(n, nlen, value);
+		GDKsetenv(n[i].name, value);
+	}
+	GDKfree(n);
+
+
+	if ((p = GDKgetenv("gdk_mem_bigsize"))) {
+		GDK_mem_bigsize = strtol(p, NULL, 10);
+		if (GDK_mem_bigsize > GDK_mem_maxsize)
+			GDK_mem_bigsize = GDK_mem_maxsize/2;
+	}
+	if ((p = GDKgetenv("gdk_vm_minsize"))) {
+		GDK_vm_minsize = strtol(p, NULL, 10);
+		if (GDK_vm_minsize > GDK_mem_maxsize)
+			GDK_vm_minsize = GDK_mem_maxsize/2;
+	}
+	if (GDKgetenv_isyes("gdk_embedded")) {
+		GDKembedded = 1;
+		monet_daemon = 1;
+	}
+
+	if (GDKgetenv_isyes("monet_daemon")) {
+		monet_daemon = 1;
+#ifdef HAVE_SETSID
+		setsid();
+#endif
+	}
+
+	return monet_init();
+}
+
+@c
+int
+main(int argc, char **av)
+{
+	Client c;
+	char *prog = *av;
+	opt *set = NULL;
+	int idx = 0, debug = 0, setlen = 0, status = 1;
+
+	static struct option long_options[] = {
+		{"config", 1, 0, 'c'},
+		{"dbname", 1, 0, 0},
+		{"dbfarm", 1, 0, 0},
+		{"dbinit", 1, 0, 0},
+		{"debug", 2, 0, 'd'},
+		{"help", 0, 0, '?'},
+		{"nostalgic", 0, 0, 0},
+		{"set", 1, 0, 's'},
+		{"trace", 0, 0, 0},
+		{0, 0, 0, 0}
+	};
+
+@-
+We give malloc advice here. Main goal: prevent fragmentation.
+We do this by declaring everything below 2K as 'small'. These
+values will be drawn from a fixed pools of 400K.
+A grain size of 128 bytes is used to keep overhead low.
+
+We do this by declaring everything below 2K as 'small'. These
+values will be drawn from a fixed pools of 400K.
+A grain size of 128 bytes is used to keep overhead low.
+Trivial remark: for dynamically linked executables the mallopt
+capabilities depend on the malloc implementation used at run time.
+@= mallopt
+	if (malloc_init) {
+/* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
+/* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
+	    if (mallopt(M_MXFAST, 192)) {
+		fprintf(stderr, "monet: mallopt(M_MXFAST,192) fails.\n");
+	    }
+#ifdef M_BLKSZ
+	    if (mallopt(M_BLKSZ, 8*1024)) {
+		fprintf(stderr, "monet: mallopt(M_BLKSZ,8*1024) fails.\n");
+	    }
+#endif
+	}
+	malloc_init=0;
+@
+@c
+#if defined(_MSC_VER) && defined(__cplusplus)
+	set_terminate(Mserver_abort);
+#endif
+@c
+	if (setlocale(LC_CTYPE, "") == NULL) {
+		GDKfatal("cannot set locale\n");
+	}
+#ifdef HAVE_MALLOPT
+	@:mallopt@
+#endif
+
+	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
+		perror("pwd");
+		GDKfatal("Monet_init: could not determine current directory\n");
+	}
+
+	if (!(setlen = mo_builtin_settings(&set)))
+		usage(prog, debug, set, setlen);
+
+	monet_script = (str *) GDKmalloc(sizeof(str) * (argc - optind + 5));
+	monet_script[idx] = NULL;
+
+	for (;;) {
+		int option_index = 0;
+
+		int c = getopt_long(argc, av, "c:d::?s:",
+				    long_options, &option_index);
+
+		if (c == -1)
+			break;
+
+		switch (c) {
+		case 0:
+			if (strcmp(long_options[option_index].name, "dbname") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbname", optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "dbfarm") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbfarm", optarg);
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "dbinit") == 0) {
+				if (monet_dbinit)
+					fprintf(stderr, "!ERROR: --dbinit set twice," " last one takes precedence\n");
+				monet_dbinit = optarg;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "trace") == 0) {
+				monet_listing = 1;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "nostalgic") == 0) {
+				monet_nostalgic = 1;
+				break;
+			}
+			usage(prog, debug, set, setlen);
+			break;
+		case 'c':
+			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
+			break;
+		case 'd':
+			debug = 1;
+			if (optarg) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", optarg);
+			}
+			break;
+		case 's':{
+			/* should add option to a list */
+			char *tmp = strchr(optarg, '=');
+
+			if (tmp) {
+				*tmp = '\0';
+				setlen = mo_add_option(&set, setlen, opt_cmdline, optarg, tmp + 1);
+			} else {
+				fprintf(stderr, "!ERROR: wrong format %s\n", optarg);
+			}
+		}
+			break;
+		case '?':
+			usage(prog, debug, set, setlen);
+		default:
+			fprintf(stderr, "!ERROR: getopt returned character code 0%o ??\n", c);
+			usage(prog, debug, set, setlen);
+		}
+	}
+
+	if (!(setlen = mo_system_config(&set, setlen)))
+		usage(prog,debug, set, setlen);
+
+	while (optind < argc) {
+		monet_script[idx] = absolute_path(av[optind]);
+		monet_script[idx + 1] = NULL;
+		optind++;
+		idx++;
+	}
+
+	if (debug)
+		mo_print_options(set, setlen);
+
+	setlen = mo_add_option(&set, setlen, opt_builtin, "monet_cwd", monet_cwd);
+	c = Monet_init(set, setlen);
+	mo_free_options(set, setlen);
+
+	if (!c)
+		usage(prog,debug, set, setlen);
+
+	monet_hello(NULL);
+	static_module_init();
+@-
+Execute scripts.
+	if (monet_script ) printf("#script:%s\n",monet_script);
+@c
+@- 
+thread management.
+@c
+	THRnew(MT_getpid(), "Interpreter");
+	scheduleClient(c);
+	monetInterpreter((void *) &status);
+@-
+At the end of a multi-threaded session we should wait
+for all processes to terminate properly.
+@c
+@-
+Peter: for the time being avoid difficult things like dropping everything 
+@c
+	monet_exit(0);
+	MT_global_exit(0);
+	return 0;
+}				/* main */
+
+@}

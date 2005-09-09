@@ -114,7 +114,14 @@ char* xmlNsFind(XmlNsFrame** top, char* prefix) {
     XmlNsFrame* fp = (*top);
 
     while( fp ) {
-        if ( strcmp(prefix,fp->prefix) == 0) {
+        if (prefix == NULL) {
+            if (fp->prefix == NULL) {
+#ifdef DEBUGNS
+                stream_printf(GDKout,"+NS:xmlNsFind(NULL)=NULL)\n");
+#endif
+                return fp->uri;
+            }
+        } else if (fp->prefix != NULL && strcmp(prefix,fp->prefix) == 0) {
 #ifdef DEBUGNS
             stream_printf(GDKout,"+NS:xmlNsFind(\"%s\")=\"%s\")\n",prefix,fp->uri);
 #endif
@@ -132,7 +139,8 @@ XmlNsFrame* xmlNsPush(XmlNsFrame** top, char* prefix, char* uri) {
 #ifdef DEBUGNS
         stream_printf(GDKout,"+NS:xmlNsPush(\"%s\",\"%s\")\n",prefix,uri);
 #endif
-        if ( !( fp->prefix = strdup(prefix)) ) return NULL;
+        fp->prefix = NULL;
+        if ( prefix && !( fp->prefix = strdup(prefix)) ) return NULL;
         if ( !(fp->uri    = strdup(uri)) ) return NULL;
         /* */
         fp ->next  = NULL;
@@ -194,7 +202,8 @@ typedef struct {
                              * data-model mode, eg. look like GALAX */
     int     saxMode;        /* true if printing a Sax-O-Phone stream */
     int     mapiMode;       /* for DM or XML mode that should go on a MapiClient stream */
-    int     printMode;
+    int     norootMode;     /* do not generate <XQueryResult> root node */
+    int     printMode;      /* documentation please???? */
     char*   dmSeparator;    /* seperation char in DM mode */
     BAT*    ws;             /* working set BAT */
     int     curFRAG;        /* current fragment used by working set */
@@ -319,25 +328,29 @@ static int switchWsContext(XqueryCtx* ctx, int wsID) {
 static int createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
     int i;
 
-    ctx->dmMode = ctx->mapiMode = ctx->printMode = 0;
+    ctx->dmMode = ctx->mapiMode = ctx->printMode = ctx->norootMode = 0;
     ctx->saxMode = 1;
     xmlNsInit( &ctx->nsTop );
 
-    if ( strcmp(mode,"dm")==0 ) {
-        ctx->saxMode = 0;
-        ctx->dmMode = 1;
-    } else if ( strcmp(mode,"dm-mapi")==0 ) {
-        ctx->saxMode = 0;
-        ctx->dmMode = ctx->mapiMode = 1;
-    } else if ( strcmp(mode,"xml")==0 ) {
-        ctx->saxMode = 0;
-    } else if (strcmp(mode, "xml-seq-mapi") == 0) {
-        ctx->saxMode = 0;
-        ctx->dmMode = 1;
-        ctx->printMode = 1;
-    } else if ( strcmp(mode,"xml-mapi")==0 ) {
-        ctx->saxMode = 0;
-        ctx->mapiMode = 1;
+    /* choose a mode: {dm,xml,sax} */ 
+    if ( strstr(mode,"dm")) {
+        ctx->dmMode = 1; ctx->saxMode = 0;
+    } else if (strstr(mode,"xml")) {
+        ctx->dmMode = ctx->saxMode = 0;
+    }
+    /* we may omit the synthetic root element */ 
+    if (strstr(mode,"noroot")) {
+        ctx->norootMode = 1;
+    }
+    if (!ctx->saxMode) {
+        /* add mapi = characters at the start of each line */
+        if (strstr(mode,"mapi")) {
+                ctx->mapiMode = 1;
+        }
+        /* add something that was not documented by the person who added this mode */
+        if (strstr(mode, "seq")) {
+                ctx->printMode = 1;
+        }
     }
     ctx->dmSeparator =
         (ctx->mapiMode ? ",\n=" : (ctx->printMode ? ",\\n" : ",\n"));
@@ -417,15 +430,15 @@ static int handle_attribute(XqueryCtx* ctx, str uri, str prefix, str loc, str va
 static int checkNsChange(XqueryCtx* ctx, str par_uri, str par_prefix, int top) {
     char *uri, *prefix;
 
-    if ( strcmp(par_uri,str_nil) == 0 || strcmp(par_uri,"") == 0 )
+    if ( strcmp(par_uri,str_nil) == 0 || *par_uri == 0 )
         uri = NULL;
     else
         uri = par_uri;
-    if ( strcmp(par_prefix,str_nil) == 0 || strcmp(par_prefix,"") == 0 )
+    if ( strcmp(par_prefix,str_nil) == 0 || *par_prefix == 0 )
         prefix = NULL;
     else
         prefix = par_prefix;
-    if ( prefix && uri ) {
+    if ( uri ) {
         char* currentURI = xmlNsFind(&ctx->nsTop,prefix);
 
         if ( !(currentURI && (strcmp(currentURI,uri) == 0)) ) {
@@ -657,34 +670,51 @@ static int handle_endDocument(XqueryCtx* ctx) {
             return 0;
         if (ctx->saxMode ) {
             if ( SAXOPHONE ) {
-                if ( !emit(" attribute",loc,0) )
-                    return 0;
-                if ( prefix && (strlen(prefix)>0) )
-                    if ( !emit(" attribute prefix",prefix,0) )
+                 if ( loc && *loc) {
+                     if (!emit(" attribute",loc,0) )
                         return 0;
+                     if ( prefix && *prefix )
+                         if ( !emit(" attribute prefix",prefix,0) )
+                             return 0;
+                 } else if (prefix && *prefix) {
+                     /* default namespace */
+                     if (!emit(" attribute",prefix,0) )
+                         return 0;
+                 }
                 if ( !emit(" attribute value",value,0) )
                     return 0;
             } else {
                 stream_printf(GDKout,"<A %s=\"%s\"\n",loc,value);
             }
         } else if (ctx->printMode) {
-            if ( prefix && strlen(prefix)>0 ) {
+            if ( prefix && *prefix && loc && *loc ) {
                 stream_printf(GDKout," %s:%s=\\\"%s\\\"",prefix,loc,value);
+             } else if (prefix && *prefix) {
+                 /* default namespace */
+                 stream_printf(GDKout," %s=\\\"%s\\\"",prefix,value);
             } else {
                 stream_printf(GDKout," %s=\\\"%s\\\"",loc,value);
             }
         } else if (ctx->dmMode && top) { /* dmMode */
-            if ( prefix && strlen(prefix)>0 ) {
-                if ( strcmp(prefix,"xmlns")==0 )
-                    stream_printf(GDKout,"attribute %s:%s { %s }%s",prefix,loc,value,ctx->dmSeparator);
-                else
+             if ( prefix && *prefix ) {
+                 if ( strcmp(prefix,"xmlns")==0 ) {
+                     if (loc && *loc) {
+                         stream_printf(GDKout,"attribute %s:%s { %s }%s",prefix,loc,value,ctx->dmSeparator);
+                     } else {
+                         /* default namespace */
+                         stream_printf(GDKout,"attribute %s { %s }%s",prefix,value,ctx->dmSeparator);
+                     }
+                 } else
                     stream_printf(GDKout,"attribute %s:%s { %s }",prefix,loc,value);
             } else {
                 stream_printf(GDKout,"attribute %s { %s }",loc,value);
             }
         } else { /* xmlMode */
-            if ( prefix && strlen(prefix)>0 ) {
+            if ( prefix && *prefix && loc && *loc ) {
                 stream_printf(GDKout," %s:%s=",prefix,loc);
+             } else if ( prefix && *prefix ) {
+                 /* default namespace */
+                 stream_printf(GDKout," %s=",prefix);
             } else {
                 stream_printf(GDKout," %s=",loc);
             }
@@ -718,7 +748,7 @@ static int handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) 
         if ( SAXOPHONE ) {
             if ( !emit("startElement",NULL,0) )
                 return 0;
-            if ( ns && (strlen(ns)>0) )
+            if ( ns && *ns )
                 if ( !emit(" prefix",ns,0) )
                     return 0;
             if ( !emit(" localname",name,0) )
@@ -727,7 +757,7 @@ static int handle_startElement(XqueryCtx* ctx, str ns, str name /*,str *atts*/) 
             stream_printf(GDKout,"<s %s\n",name);
         }
     } else { /* xmlMode */
-        if ( ns && strlen(ns)>0 ) {
+        if ( ns && *ns ) {
             stream_printf(GDKout,"<%s:%s",ns,name);
         } else {
             stream_printf(GDKout,"<%s",name);
@@ -744,7 +774,7 @@ static int handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
         if ( SAXOPHONE ) {
             if ( !emit("endElement",NULL,0) )
                 return 0;
-            if ( ns && (strlen(ns)>0) )
+            if ( ns && *ns )
                 if ( !emit(" prefix",ns,0) )
                     return 0;
             if ( !emit(" localname",name,0) )
@@ -754,7 +784,7 @@ static int handle_endElement(XqueryCtx* ctx, str ns, str name, int emptyNode) {
         }
     } else { /* xmlMode */
         if ( !emptyNode ) {
-            if ( ns && strlen(ns)>0 ) {
+            if ( ns && *ns ) {
                 stream_printf(GDKout,"</%s:%s>",ns,name);
             } else {
                 stream_printf(GDKout,"</%s>",name);
@@ -1083,7 +1113,7 @@ static int xquery_node_print(XqueryCtx* ctx, oid pre, BAT* pre_frag, int top) {
  */
 static int xquery_endtag_print(XqueryCtx* ctx, oid pre) {
     while( moreTags(ctx) && ((pre==ALLTAGS)||(pre > topSF(ctx)->pre)) ) { /*?? */
-        if ( strlen(topName(ctx)) > 0 )
+        if ( *topName(ctx) )
             if ( !handle_endElement(ctx,topNs(ctx),topName(ctx),topSF(ctx)->empty))
                 return 0;
         popTag(ctx);
@@ -1234,12 +1264,14 @@ static int  seqHeadStart(
         stream_printf(GDKout,"# %d\t# tuplecount\n", BATcount(item));
         stream_printf(GDKout,"# %d\t# id\n", id_sequence_counter++);
     } else if (!ctx->dmMode) { /* dmMode has no header */
-        if (ctx->mapiMode) {
-            stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
-        } else if ( !ctx->saxMode ) {
-            stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+        if (!ctx->norootMode) {
+            if (ctx->mapiMode) {
+                stream_printf(GDKout,"=<?xml version=\"1.0\" encoding=\"utf-8\"?>\n=");
+            } else if ( !ctx->saxMode ) {
+                stream_printf(GDKout,"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+            }
+            handle_startElement(ctx, NULL, XQRESTAG);
         }
-        handle_startElement(ctx, NULL, XQRESTAG);
         ctx->nAttrOnLine = 0;
     }
     return 1;
@@ -1260,15 +1292,19 @@ static int seqHeadEnd(XqueryCtx* ctx) {
  */
 static int  seqEnd(XqueryCtx* ctx) {
     if ( ctx->saxMode ) {
-        handle_endElement(ctx, NULL, XQRESTAG, 0 /* not empty*/);
+        if (!ctx->norootMode) {
+            handle_endElement(ctx, NULL, XQRESTAG, 0 /* not empty*/);
+        }
     } else if (ctx->printMode) {
         /* do nothing! */
     } else if (ctx->dmMode) {
         stream_printf(GDKout, "\n");
     } else if (ctx->mapiMode) {
-        stream_printf(GDKout,"\n=</%s>\n", XQRESTAG);
+        stream_write(GDKout,"\n=", 2, 1);
+        if (!ctx->norootMode) stream_printf(GDKout,"</%s>\n", XQRESTAG);
     } else {
-        stream_printf(GDKout,"\n</%s>\n", XQRESTAG);
+        stream_write(GDKout,"\n", 1, 1);
+        if (!ctx->norootMode) stream_printf(GDKout, "</%s>\n", XQRESTAG);
     }
     return 1;
 }

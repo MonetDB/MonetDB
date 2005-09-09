@@ -41,22 +41,30 @@
 
 #define OPT_STMTS 32767 /* <65535 if first-use further out than this amount of stamements, dead codes survises anyhow */
 #define OPT_VARS 1024 /* don't try dead code elimintation above this amount of live variables */
-#define OPT_REFS 64 /* keep track of usage dependencies; may omit some, which results in surviving dead code */
+#define OPT_REFS 63 /* keep track of usage dependencies; may omit some, which results in surviving dead code */
 #define OPT_CONDS 32  /* maximum if-nesting */
 
 #define OPT_SEC_PROLOGUE 0
 #define OPT_SEC_QUERY 1
 #define OPT_SEC_EPILOGUE 2
 
+/* the statatement buffer is circular and will be flushed if full, thus an entry (array index) 
+ * does not correspond directly to the MIL line number (stmt_nr). As statements may have been 
+ * flushed away, apart from the index in the o->stmts[] buffer, one needs the original stmt_nr  
+ * as a *verifier* to check whether what is in the statment buffer is what you were referring to.
+ */
 typedef struct {
         char *mil; /* buffered line of MIL */
         unsigned int stmt_nr:30,sec:2; /* absolute statement number in MIL input */
-        unsigned int used:16,inactive:1,delchar:7,nilassign:1,refs:7; 
+        unsigned int scope:16,inactive:1,delchar:7,nilassign:1,refs:7; 
+        unsigned int used;
         /* used:      becomes true if this variable was used */ 
         /* inactive:  set if we have tried to eliminate this statement already */
 	/* delchar:   we separate statements by substituting a ';' char (or \n for comments) */
         /* nilassign: special treatment: nil assignments for early memory reduction are never pruned */
         /* refs:      number of variable references found */
+        unsigned int assigns_nr; /* stmt_nr verifier for assigns_to */
+        unsigned short assigns_to; /* variable this statement assigns to (0 if none) */
         unsigned short refstmt[OPT_REFS]; /* variable references found on this stmt */
 } opt_stmt_t;
 
@@ -79,12 +87,13 @@ typedef struct {
     /* a set of statements that last assigned to it
      * (may be multiple due to if-then-else) */
     unsigned short lastset[OPT_REFS]; 
-    unsigned int stmt_nr[OPT_REFS]; 
+    unsigned int stmt_nr[OPT_REFS]; /* verifiers for lastset */
+    unsigned int def_stmt_nr;     /* verifier for def_stmt */
+    unsigned short def_stmt;      /* statment in which var was defined */
     unsigned char setmax;      /* last occupied position  in lastset/stmt_nr */
 
-
     /* range alive references in lastset/stmt_nr for a certain 'cond' */
-    unsigned char always; /* bitmask: var always assigned in cond (bitpos)? */
+    unsigned int  always; /* bitmask: var always assigned in cond (bitpos)? */
     unsigned char setlo[OPT_CONDS+OPT_CONDS];
     unsigned char sethi[OPT_CONDS+OPT_CONDS];
 } opt_var_t;
@@ -97,11 +106,12 @@ typedef struct {
 #define OPT_COND(o) ((o)->condlevel + (o)->condlevel + (o)->condifelse[(o)->condlevel])
 
 typedef struct {
+    unsigned int optimize; /* if zero, don't optimize at all */ 
+
     unsigned int curstmt;  /* number of detected MIL statements so far */
     unsigned int scope;    /* current scope depth */
     unsigned int curvar;   /* length of variable stack */
     unsigned int iflevel;  /* how many conditionals have we passed? */
-    unsigned int optimize; 
 
     unsigned char if_statement; 
     unsigned char else_statement;
@@ -110,21 +120,19 @@ typedef struct {
                                               (<OPT_CONDS) */
     unsigned short condscopes[OPT_CONDS];  /* scopes where each conditional
                                               block starts */
-    unsigned char condifelse[OPT_CONDS];   /* scopes where each conditional
-                                              block starts */
+    unsigned char condifelse[OPT_CONDS];   /* 0=if,  1==else */
 
-    opt_stmt_t stmts[OPT_STMTS];   /* line buffer */
+    opt_stmt_t stmts[OPT_STMTS];   /* circular MIL statement buffer */
     opt_var_t vars[OPT_VARS];      /* variable stack */
-    char *buf[3];
-    size_t off[3], len[3];
-    int sec;
-    FILE *fp; 
+    char *buf[3]; /* 3 output sections (prologue,query,epilogue) */
+    size_t off[3], len[3]; /* current pointer and length of each section */
+    int sec; /* active section (OPT_SEC_PROLOGUE, OPT_SEC_QUERY, OPT_SEC_EPILOGUE) */
 } opt_t; /* should take ~1.5MB of RAM resources */
 
 #define opt_output(o,x) ((o)->sec = x)
 
 opt_t *opt_open(int optimize);
 void opt_close(opt_t *o, char** prologue, char** query, char** epilogue);
-void opt_mil(opt_t *o, char* milbuf);
+int opt_mil(opt_t *o, char* milbuf);
 
 /* vim:set shiftwidth=4 expandtab: */

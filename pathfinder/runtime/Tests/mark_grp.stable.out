@@ -34,9 +34,15 @@ print(b);
 [ 0@0,	  1@0	  ]
 
 var c:=mark_grp(a,b);
+print(c);
+#-----------------#
+# h	tmp_31	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  1@0	  ]
+[ 1@0,	  2@0	  ]
 
-
-
+c:=mark_grp(a,b.mark(nil),oid(1));
 print(c);
 #-----------------#
 # h	tmp_31	  # name
