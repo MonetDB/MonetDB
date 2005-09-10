@@ -186,27 +186,29 @@ public class HeaderMessage extends MCLMessage {
 	}
 
 	/**
-	 * Sets the digits header if not yet set.
+	 * Sets the digits header if not yet set.  A value of -1 means that
+	 * the header value should not be set.
 	 *
 	 * @param digits an array of Strings representing the schema names
 	 * @throws MCLException if the columncount header is not yet set,
-	 * the number of Strings in the array doesn't match the columncount,
+	 * the number of ints in the array doesn't match the columncount,
 	 * or the schema header is already set.
 	 */
 	public void addDigits(int[] digits) throws MCLException {
 		if (columncount == 0) throw
 			new MCLException("columncount header not yet set");
 		if (digits.length != columncount) throw
-			new MCLException("There should be " + columncount + " columns, only " + digits.length + " found");
+			new MCLException("There should be " + columncount + " columns, " + digits.length + " found");
 		if (sentences[8] != null) throw
 			new MCLException("digits header already set");
 
 		this.digits = digits;
-		sentences[8] = new MCLSentence(MCLSentence.METADATA, "digits", digits);
+		sentences[8] = new MCLSentence(MCLSentence.METADATA, "digits", digits, true);
 	}
 
 	/**
-	 * Sets the scale header if not yet set.
+	 * Sets the scale header if not yet set.  A value of -1 means that
+	 * the header value should not be set.
 	 *
 	 * @param scales an array of Strings representing the schema names
 	 * @throws MCLException if the columncount header is not yet set,
@@ -222,11 +224,12 @@ public class HeaderMessage extends MCLMessage {
 			new MCLException("scale header already set");
 
 		scale = scales;
-		sentences[9] = new MCLSentence(MCLSentence.METADATA, "scale", scales);
+		sentences[9] = new MCLSentence(MCLSentence.METADATA, "scale", scales, true);
 	}
 
 	/**
-	 * Sets the width header if not yet set.
+	 * Sets the width header if not yet set.  A value of -1 means that
+	 * the header value should not be set.
 	 *
 	 * @param widths an array of Strings representing the schema names
 	 * @throws MCLException if the columncount header is not yet set,
@@ -242,7 +245,7 @@ public class HeaderMessage extends MCLMessage {
 			new MCLException("width header already set");
 
 		width = widths;
-		sentences[10] = new MCLSentence(MCLSentence.METADATA, "width", widths);
+		sentences[10] = new MCLSentence(MCLSentence.METADATA, "width", widths, true);
 	}
 
 	/**
