@@ -72,14 +72,15 @@ usage(char *prog)
 int
 main(int argc, char **av)
 {
+	int curlen = 0, maxlen = BUFSIZ*8;
 	char *prog = *av;
 	opt *set = NULL;
 	int setlen = 0, time = 0, debug = 0;
 	long t0 = 0;
 	Mapi mid;
 	MapiHdl hdl;
-	char *line;
-	char buf[BUFSIZ];
+	char *buf, *line;
+	FILE *fp = NULL;
 
 	static struct option long_options[] = {
 		{"config", 1, 0, 'c'},
@@ -149,10 +150,34 @@ main(int argc, char **av)
 	}
 
 	mid = embedded_sql(set, setlen);
-	while ((line = fgets(buf, BUFSIZ, stdin)) != NULL) {
+
+	/* now for each file given on the command line (or stdin) 
+	   read the query and execute it
+	 */
+	buf = GDKmalloc(maxlen);
+	if (optind == argc)
+		fp = stdin;
+	while (optind < argc || fp) {
+		if (!fp && (fp=fopen(av[optind],"r")) == NULL){
+			fprintf(stderr,"could no open file %s\n", av[optind]);
+		}
+		while ((line = fgets(buf+curlen, 1024, fp)) != NULL) {
+			int n = strlen(line);
+            		curlen += n;
+            		if (curlen > (maxlen+1024)) {
+               			maxlen += BUFSIZ;
+               			buf = GDKrealloc(buf, maxlen + 1);
+            		}
+		}
+		if (fp != stdin) {
+			fclose(fp);
+		}
+		fp = NULL;
+		optind++;
+		curlen = 0;
 		if (time)
 			t0 = gettime();
-		hdl = mapi_query(mid, line);
+		hdl = mapi_query(mid, buf);
 		do {
 			if (mapi_result_error(hdl) != NULL)
 				mapi_explain_result(hdl, stderr);
@@ -163,5 +188,6 @@ main(int argc, char **av)
 		if (time)
 			printf("Timer: %ld (usec)\n", gettime()-t0);
 	}
+	GDKfree(buf);
 	return 0;
 }
