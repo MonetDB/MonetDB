@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED Sept 4, 2005
+@set UPDATED Sept 9, 2005
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual
@@ -160,6 +160,11 @@ Table of contents
 * MonetDB BAT Kernel ::
 * Advanced Topics::
 * Appendices::
+@menu
+* MAL Syntax ::
+* MAL Instruction Overview::
+* MAL Instruction Help::
+@end menu
 @end menu
 
 @end ifnottex
@@ -258,14 +263,25 @@ Give a brief introduction to Mapi, JDBC, ODBC,Perl....
 @node Advanced Topics , Appendices, MonetDB BAT Kernel , TOC
 This is the place to describe Membedded, distribution stuff...
 
-@node Appendices, , Advanced Topics, TOC
-@appendix MAL Instruction Overview
-@include Assets/MALinstructions.texi
+@node Appendices, MAL Syntax , Advanced Topics, TOC
+@menu
+* MAL Syntax ::
+* MAL Instruction Overview:: 
+* MAL Instruction Help:: 
+@end menu
 
-@appendix MAL Instruction Help
-@include Assets/MALhelp.texi
+@node MAL Syntax, MAL Instruction Overview, Appendices, Appendices
 @ifnottex
 @include mal_syntax.bdy.texi
 @end ifnottex
+
+@node MAL Instruction Overview, MAL Instruction Help, MAL Syntax, Appendices
+@appendix MAL Instruction Overview
+@include Assets/MALinstructions.texi
+
+@node MAL Instruction Help, , MAL Instruction Overview, Appendices
+@appendix MAL Instruction Help
+@include Assets/MALhelp.texi
+
 @appendix Conversion of MIL programs
 @bye
