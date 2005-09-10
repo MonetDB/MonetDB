@@ -33,24 +33,24 @@ public class MCLSentence {
 	private final int type;
 	private final byte[] data;
 
-	/** Indicates the end of a message (sequence). */
+	/** Indicates the end of a message (sequence): ".". */
 	public final static int PROMPT          = '.';
 	/** Indicates the end of a message (sequence), expecting more query
-	 * input. */
+	 * input: ",". */
 	public final static int MOREPROMPT      = ',';
-	/** Indicates the start of a new message. */
+	/** Indicates the start of a new message: "&amp;". */
 	public final static int STARTOFMESSAGE  = '&';
-	/** Metadata for the MCL layer. */
+	/** Metadata for the MCL layer: "$". */
 	public final static int MCLMETADATA     = '$';
-	/** Indicates client/server roles are switched. */
+	/** Indicates client/server roles are switched: "^". */
 	public final static int SWITCHROLES     = '^';
-	/** Metadata. */
+	/** Metadata: "%". */
 	public final static int METADATA        = '%';
-	/** Response data. */
+	/** Response data: "[". */
 	public final static int DATA            = '[';
-	/** Query data. */
+	/** Query data: "]". */
 	public final static int QUERY           = ']';
-	/** Additional info, comments or messages. */
+	/** Additional info, comments or messages: "#". */
 	public final static int INFO            = '#';
 
 
@@ -160,8 +160,14 @@ public class MCLSentence {
 	 * @param type an int representing the type of this sentence
 	 * @param property a property name
 	 * @param values the property values
+	 * @param withAbsent true if -1 should be treated as an absent value
 	 */
-	public MCLSentence(int type, String property, int[] values) throws MCLException {
+	public MCLSentence(
+			int type,
+			String property,
+			int[] values,
+			boolean withAbsent
+	) throws MCLException {
 		if (property == null || values == null) throw
 			new MCLException("property or values may not be null");
 		if (values.length == 0) throw
@@ -174,7 +180,7 @@ public class MCLSentence {
 		try {
 			String tmp = property;
 			for (int i = 0; i < values.length; i++)
-				tmp += "\t" + values[i];
+				tmp += "\t" + (withAbsent && values[i] == -1 ? "" : "" + values[i]);
 			this.data = tmp.getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			// this should not happen actually
