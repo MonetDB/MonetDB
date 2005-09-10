@@ -3,9 +3,9 @@
 
 function choptest(b:bat[:void,:lng], size:lng, base:lng);
     t0:= alarm.usec();
-    barrier (chk,c):= chopper.newChunkIterator(b,size);
+    barrier (chk,c):= chop.newChunkIterator(b,size);
         t:= algebra.select(c, 256000:lng,266000:lng);
-        redo (chk,c):= chopper.hasMoreChunks(b,size);
+        redo (chk,c):= chop.hasMoreChunks(b,size);
     exit (chk,c);
     t1:= alarm.usec();
     d0:= t1-t0;

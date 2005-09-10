@@ -25,31 +25,29 @@ Lexical tokens are illustrated in small capitals.
 
 @multitable @columnfractions .15 .8 @verb @verb
 @item program		
-@tab : ( definition [helpinfo] ';' | statement ';' ) *
+@tab : moduleStmt [helpinfo] |includeStmt
+@item
+@tab | ( definition [helpinfo] ';' | statement ';' ) *
 @item definition	
-@tab : moduleStmt | includeStmt | commandStmt
-@item
-@tab | patternStmt | functionStmt | factoryStmt | includeStmt
+@tab : commandStmt | patternStmt | functionStmt | factoryStmt 
 @item moduleStmt	
-@tab : @code{ atom} ident [':'ident]  [ exceptions]
+@tab : @code{ ATOM} ident [':'ident]  
 @item
-@tab |  @code{ module} ident [ exceptions]
-@item exceptions
-@tab @code{throws} ident [',' ident]*
+@tab |  @code{ MODULE} ident 
 @item commandStmt	
-@tab : @code{ command } header 
+@tab : @code{ COMMAND } header 
 @item
 @item patternStmt	
-@code{pattern } header
+@code{PATTERN } header
 @item functionStmt	
-@tab : @code{ function } header statement* @code{ end } identifier
+@tab : @code{ FUNCTION } header statement* @code{ end } identifier
 @item factoryStmt	
-@tab : @code{ factory } header statement* @code{ end } identifier
+@tab : @code{ FACTORY } header statement* @code{ end } identifier
 @item includeStmt	
-@tab : @code{ include} identifier 
-|  @code{ include} string_literal
+@tab : @code{ INCLUDE} identifier 
+|  @code{ INCLUDE} string_literal
 @item helpinfo	
-@tab : @code{ comment} string_literal 
+@tab : @code{ COMMENT} string_literal 
 @item header		
 @tab : hdrName '(' params ')' result 
 @code{ [address ]} 
@@ -63,11 +61,11 @@ Lexical tokens are illustrated in small capitals.
 @tab : identifier typeName [ props ]
 @item typeName	
 @tab : scalarType | collectionType 
-| ':' @code{ any} [digit] 
+| ':' @code{ ANY} ['_' digit] 
 @item scalarType	
 @tab : ':' @code{ identifier} 
 @item collectionType	
-@tab : ':' @code{ bat} ['[' colType ',' colType ']'] 
+@tab : ':' @code{ BAT} ['[' colType ',' colType ']'] 
 @item colType		
 @tab : scalarType | anyType 
 @item props	
@@ -77,8 +75,8 @@ Lexical tokens are illustrated in small capitals.
 @item statement	
 @tab : [tag] varlist [':=' expr ] props
 @item tag     	
-@tab |  @code{ return} | @code{ barrier} | @code{ catch}
-|  @code{ leave} | @code{ redo} | @code{raise} 
+@tab |  @code{ RETURN} | @code{ BARRIER} | @code{ CATCH}
+|  @code{ LEAVE} | @code{ REDO} | @code{RAISE} 
 @item varlist		
 @tab : variable 
 |  '(' variable [',' variable ] * ')' 

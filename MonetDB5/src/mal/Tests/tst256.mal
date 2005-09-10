@@ -16,5 +16,5 @@ mx:= algebra.max(b);
 io.print(mx);
 mi:= algebra.min(b);
 io.print(mi);
-cr:= algebra.card(b);
+cr:= algebra.cardinality(b);
 io.print(cr);

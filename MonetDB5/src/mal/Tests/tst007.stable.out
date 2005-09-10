@@ -62,9 +62,9 @@ stdout of test 'tst007` in directory 'src/mal` itself:
 #
 #
 !ERROR: 'algebra.fetch' undefined in user.main[3]
-!ERROR: 'chopper.hasMoreElements' undefined in user.main[10]
-!ERROR: 'chopper.head' undefined in user.main[11]
-!ERROR: 'chopper.nextElement' undefined in user.main[12]
+!ERROR: 'chop.hasMoreElements' undefined in user.main[10]
+!ERROR: 'chop.head' undefined in user.main[11]
+!ERROR: 'chop.nextElement' undefined in user.main[12]
 !ERROR: 'batcalc.not' undefined in user.main[36]
 !ERROR: 'batoperatie' may not be used before being set in main[2]
 !ERROR: 'b' may not be used before being set in main[3]
@@ -81,12 +81,12 @@ barrier H := batoperatie;	# 2  (H:any)<-(batoperatie:any) jump 6
 #body 	# 4  (_8:str)
     redo H;	# 5  (H:any) jump 3
 exit H;	# 6  (H:any)
-# de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot 	# 7  ($10:str)
-# 'randen' van het blok. (redo L, leave L) 	# 8  ($12:str)
-# een while loop 	# 9  ($14:str)
-barrier L := chopper.hasMoreElements(b);	# 10  unknown (L:any)<-(b:any) jump 14
-    H := chopper.head(b);	# 11  unknown (H:any)<-(b:any)
-    v := chopper.nextElement(b);	# 12  unknown (v:any)<-(b:any)
+# de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot 	# 7  (_10:str)
+# 'randen' van het blok. (redo L, leave L) 	# 8  (_12:str)
+# een while loop 	# 9  (_14:str)
+barrier L := chop.hasMoreElements(b);	# 10  unknown (L:any)<-(b:any) jump 14
+    H := chop.head(b);	# 11  unknown (H:any)<-(b:any)
+    v := chop.nextElement(b);	# 12  unknown (v:any)<-(b:any)
     redo L;	# 13  (L:any) jump 11
 exit L;	# 14  (L:any)
 #een do-while loop 	# 15  (_18:str)

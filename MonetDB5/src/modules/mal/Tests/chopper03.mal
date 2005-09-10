@@ -19,9 +19,9 @@
 	rb:= bat.new(:int,:url);
 	io.print("start loop");
 	c := 3:lng;
-barrier (mloop,chunk) := chopper.newChunkIterator(t,c);
+barrier (mloop,chunk) := chop.newChunkIterator(t,c);
 	io.print("next chunk");
 	io.print(chunk);
-	redo (mloop,chunk) := chopper.hasMoreChunks(t,3:lng);
+	redo (mloop,chunk) := chop.hasMoreChunks(t,3:lng);
 exit mloop;
 

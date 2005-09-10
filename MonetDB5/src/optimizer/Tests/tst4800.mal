@@ -21,7 +21,7 @@ function f3():void;
         t19 := batcalc.+(t16,t18);
         t20 := batcalc.oid(t19);
         t21 := array.grid(1,4096,1,0);
-        t22 := aggrX3.sum(t15,t20,t21);
+        t22 := aggr.sum(t15,t20,t21);
         top := t22;
         bat_0 := array.grid(64,64,1,0);
         bat_1 := array.grid(1,64,64,0);

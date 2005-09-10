@@ -52,10 +52,10 @@ function user.main():int;	# 0  (main:int)
     err := bat.insert(b,n0,n0);	# 14 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)(n0:int)
     err := bat.insert(b,n0,81);	# 15 BKCinsert_bun (err:bat[:int,:int])<-(b:bat[:int,:int])(n0:int)(_25:int)
     io.print(b);	# 16 IOprint_val (_26:int)<-(b:bat[:int,:int])
-barrier (v,h,t):= chopper.newIterator(b);	# 17 CHPbunIterator (v:lng)(h:int)(t:int)<-(b:bat[:int,:int]) jump 21
+barrier (v,h,t):= chop.newIterator(b);	# 17 CHPbunIterator (v:lng)(h:int)(t:int)<-(b:bat[:int,:int]) jump 21
     io.printf("%d,",h);	# 18 IOprint_formatted_int (_30:int)<-(_31:str)(h:int)
     io.printf("%d\n",t);	# 19 IOprint_formatted_int (_32:int)<-(_33:str)(t:int)
-    redo (v,h,t):= chopper.hasMoreElements(b);	# 20 CHPbunHasMoreElements (v:lng)(h:int)(t:int)<-(b:bat[:int,:int]) jump 18
+    redo (v,h,t):= chop.hasMoreElements(b);	# 20 CHPbunHasMoreElements (v:lng)(h:int)(t:int)<-(b:bat[:int,:int]) jump 18
 exit v;	# 21  (v:lng)
 end main;	# 22  
 #-----------------#

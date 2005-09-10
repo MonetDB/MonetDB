@@ -367,12 +367,12 @@ command delete(b:bat[:any_1, :any_2]) :bat[:any_1,:any_2]
 address BKCdelete_all
 comment "Delete all BUNs in a BAT.";
 
-command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any]) :bat[:any_1,:any_2] 
-address BKCdelete_bat
-comment "Delete from the first BAT all BUNs with a head value that 
-        is in the second.";
+#command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any]) :bat[:any_1,:any_2] 
+#address BKCdelete_bat
+#comment "Delete from the first BAT all BUNs with a head value that 
+        #is in the second.";
 
-command deleteBuns(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address BKCdelete_bat_bun
 comment "Delete from the first BAT all BUNs with a corresponding BUN 
         in the second.";
@@ -505,7 +505,7 @@ For more technical information on BATs, we refer to the
 @[<a href="http://www.cwi.nl/~monet/www/scw/gdk/470_pseudo.html">GDK</a>@
 documentation.
 @mal
-command mmap(b:bat[:any_1,:any_2], buns_mode:int, hheap_mode:int, 
+command setMemoryMap(b:bat[:any_1,:any_2], buns_mode:int, hheap_mode:int, 
 		theap_mode:int) :bit 
 address BKCmmap
 comment "For each individual heap, you can change the allocation mode 
@@ -514,11 +514,11 @@ comment "For each individual heap, you can change the allocation mode
 	will cause a BAT save (this has to happen before the heap can 
         be mapped into virtual memory). These modes are persistent. ";
 
-command mmap(b:bat[:any_1,:any_2], mode:int):bit 
+command setMemoryMap(b:bat[:any_1,:any_2], mode:int):bit 
 address BKCmmap2
 comment "Alias for mmap(b,mode,mode,mode, mode,mode)";
 
-command madvise(b:bat[:any_1,:any_2], buns_mode:int, hheap_mode:int, 
+command setMemoryAdvise(b:bat[:any_1,:any_2], buns_mode:int, hheap_mode:int, 
 		theap_mode:int) :bit 
 address BKCmadvise
 comment "Modern Operating Systems allow users to influence the buffer 
@@ -533,7 +533,7 @@ comment "Modern Operating Systems allow users to influence the buffer
 	These buffer management modes are not persistent. 
 	Returns the BAT operated upon.";
 
-command madvise(b:bat[:any_1,:any_2], mode:int):bit 
+command setMemoryAdvise(b:bat[:any_1,:any_2], mode:int):bit 
 address BKCmadvise2
 comment "alias for madvise(b,mode,mode,mode, mode,mode)";
 

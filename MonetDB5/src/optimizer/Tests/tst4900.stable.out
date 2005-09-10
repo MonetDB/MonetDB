@@ -125,7 +125,7 @@ function user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t25 := algebra.join(t24,t16);	# 25 ALGjoin (t25:bat[:void,:dbl])<-(t24:bat[:void,:oid])(t16:bat[:void,:dbl])
     t30 := batcalc.oid(t21);	# 26 CMDconvertvoid_int_oid (t30:bat[:void,:oid])<-(t21:bat[:void,:int])
     t31 := array.grid(1,800,1,0);	# 27 ARRAYgrid_int (t31:bat[:void,:int])<-(_44:int)(_31:int)(_44:int)(_45:int)
-    t32 := aggrX3.prod(t25,t30,t31);	# 28 AX3aggrX3_prod3_dbl_dbl (t32:bat[:void,:dbl])<-(t25:bat[:void,:dbl])(t30:bat[:void,:oid])(t31:bat[:void,:int])
+    t32 := aggr.product(t25,t30,t31);	# 28 AX3aggrX3_prod3_dbl_dbl (t32:bat[:void,:dbl])<-(t25:bat[:void,:dbl])(t30:bat[:void,:oid])(t31:bat[:void,:int])
     t33 := batcalc.*(t15,t32);	# 29 CMDcstMULbat (t33:bat[:void,:dbl])<-(t15:dbl)(t32:bat[:void,:dbl])
     t34 := batcalc./(t8,t33);	# 30 CMDcstDIVbat (t34:bat[:void,:dbl])<-(t8:dbl)(t33:bat[:void,:dbl])
     t40 := algebra.join(t6,t34);	# 31 ALGjoin (t40:bat[:void,:dbl])<-(t6:bat[:void,:oid])(t34:bat[:void,:dbl])
@@ -156,7 +156,7 @@ function user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t79 := batcalc.+(t51,t78);	# 56 CMDbatADD (t79:bat[:void,:int])<-(t51:bat[:void,:int])(t78:bat[:void,:int])
     t80 := batcalc.oid(t79);	# 57 CMDconvertvoid_int_oid (t80:bat[:void,:oid])<-(t79:bat[:void,:int])
     t81 := array.grid(1,1056000,1,0);	# 58 ARRAYgrid_int (t81:bat[:void,:int])<-(_86:int)(_87:int)(_86:int)(_88:int)
-    t82 := aggrX3.sum(t72,t80,t81);	# 59 AX3aggrX3_sum3_dbl_dbl (t82:bat[:void,:dbl])<-(t72:bat[:void,:dbl])(t80:bat[:void,:oid])(t81:bat[:void,:int])
+    t82 := aggr.sum(t72,t80,t81);	# 59 AX3aggrX3_sum3_dbl_dbl (t82:bat[:void,:dbl])<-(t72:bat[:void,:dbl])(t80:bat[:void,:oid])(t81:bat[:void,:int])
     t83 := batcalc.*(t41,t82);	# 60 CMDcstMULbat (t83:bat[:void,:dbl])<-(t41:dbl)(t82:bat[:void,:dbl])
     t84 := batmath.exp(t83);	# 61 CMDsciencevoid_exp (t84:bat[:void,:dbl])<-(t83:bat[:void,:dbl])
     t85 := batcalc.*(t40,t84);	# 62 CMDbatMUL (t85:bat[:void,:dbl])<-(t40:bat[:void,:dbl])(t84:bat[:void,:dbl])
@@ -166,12 +166,12 @@ function user.f1(s:str):void;	# 0  (f1:void)<-(s:str)
     t90 := batcalc.+(t87,t89);	# 66 CMDbatADD (t90:bat[:void,:int])<-(t87:bat[:void,:int])(t89:bat[:void,:int])
     t91 := batcalc.oid(t90);	# 67 CMDconvertvoid_int_oid (t91:bat[:void,:oid])<-(t90:bat[:void,:int])
     t92 := array.grid(1,132000,1,0);	# 68 ARRAYgrid_int (t92:bat[:void,:int])<-(_86:int)(_101:int)(_86:int)(_88:int)
-    t93 := aggrX3.sum(t86,t91,t92);	# 69 AX3aggrX3_sum3_dbl_dbl (t93:bat[:void,:dbl])<-(t86:bat[:void,:dbl])(t91:bat[:void,:oid])(t92:bat[:void,:int])
+    t93 := aggr.sum(t86,t91,t92);	# 69 AX3aggrX3_sum3_dbl_dbl (t93:bat[:void,:dbl])<-(t86:bat[:void,:dbl])(t91:bat[:void,:oid])(t92:bat[:void,:int])
     t94 := batmath.log(t93);	# 70 CMDsciencevoid_log (t94:bat[:void,:dbl])<-(t93:bat[:void,:dbl])
     t95 := array.grid(1,100,1320,0);	# 71 ARRAYgrid_int (t95:bat[:void,:int])<-(_86:int)(_95:int)(_96:int)(_88:int)
     t96 := batcalc.oid(t95);	# 72 CMDconvertvoid_int_oid (t96:bat[:void,:oid])<-(t95:bat[:void,:int])
     t97 := array.grid(1,100,1,0);	# 73 ARRAYgrid_int (t97:bat[:void,:int])<-(_86:int)(_95:int)(_86:int)(_88:int)
-    t98 := aggrX3.sum(t94,t96,t97);	# 74 AX3aggrX3_sum3_dbl_dbl (t98:bat[:void,:dbl])<-(t94:bat[:void,:dbl])(t96:bat[:void,:oid])(t97:bat[:void,:int])
+    t98 := aggr.sum(t94,t96,t97);	# 74 AX3aggrX3_sum3_dbl_dbl (t98:bat[:void,:dbl])<-(t94:bat[:void,:dbl])(t96:bat[:void,:oid])(t97:bat[:void,:int])
     top := t98;	# 75  (top:bat[:void,:dbl])<-(t98:bat[:void,:dbl])
     io.table(t97,top);	# 76 IOttable (_109:int)<-(t97:bat[:void,:int])(top:bat[:void,:dbl])
 end f1;	# 77  
@@ -231,7 +231,7 @@ factory user.f1(s:str):void;
     t30 := batcalc.oid(t21);
     bat.setGarbage(t21);
     t31 := array.grid(1,800,1,0);
-    t32 := aggrX3.prod(t25,t30,t31);
+    t32 := aggr.product(t25,t30,t31);
     bat.setGarbage(t25);
     bat.setGarbage(t30);
     bat.setGarbage(t31);
@@ -315,7 +315,7 @@ barrier always := true;
     bat.setGarbage(t59);
     t72 := batcalc./(t61,t71);
     bat.setGarbage(t61);
-    t82 := aggrX3.sum(t72,t80,t81);
+    t82 := aggr.sum(t72,t80,t81);
     bat.setGarbage(t72);
     t83 := batcalc.*(t41,t82);
     bat.setGarbage(t82);
@@ -325,11 +325,11 @@ barrier always := true;
     bat.setGarbage(t84);
     t86 := batcalc.*(t7,t85);
     bat.setGarbage(t85);
-    t93 := aggrX3.sum(t86,t91,t92);
+    t93 := aggr.sum(t86,t91,t92);
     bat.setGarbage(t86);
     t94 := batmath.log(t93);
     bat.setGarbage(t93);
-    t98 := aggrX3.sum(t94,t96,t97);
+    t98 := aggr.sum(t94,t96,t97);
     bat.setGarbage(t94);
     top := t98;
     bat.setGarbage(t98);

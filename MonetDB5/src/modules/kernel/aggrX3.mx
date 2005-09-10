@@ -41,23 +41,23 @@ added to the 'group' module. This can be achieved by setting
 the module.
 
 @mal
-module aggrX3;
+module aggr;
 
 @= sum_avg_signatures
 command sum(b:bat[:void,:@1],e:bat[:void,:any_1]) :bat[:void,:@1] 
 address AX3aggrX3_sum_@1_@1
-comment "grouped tail sum on @1";
+comment "Sum over a grouped tail of @1";
 
 command prod(b:bat[:void,:@1], e:bat[:void,:any_1]) :bat[:void,:@1] 
 address AX3aggrX3_prod_@1_@1
-comment "grouped tail product on @1";
+comment "Product over a grouped tail of @1";
 
 command sum(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@1] 
 address AX3aggrX3_sum3_@1_@1
-comment "grouped tail sum on @1";
+comment "Sum over a grouped tail sum of @1";
 command sum(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@1] 
 address AX3aggrX3_sum3_@1_@1
-comment "grouped tail sum on @1";
+comment "Sum over a indexed grouped of tail values ";
 
 
 command avg(b:bat[:void,:@1], e:bat[:void,:any_1]) :bat[:void,:@1] 
@@ -94,13 +94,13 @@ command sum(b:bat[:void,:@1],g:bat[:void,:oid],e:bat[:void,:any_1]):bat[:void,:@
 address AX3aggrX3_sum3_@1_@2
 comment "grouped tail sum on @1";
 
-command prod(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@2] 
+command product(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@2] 
 address AX3aggrX3_prod3_@1_@2
 comment "grouped tail sum on @1";
-command prod(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@2] 
+command product(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@2] 
 address AX3aggrX3_prod3_@1_@2
 comment "grouped tail sum on @1";
-command prod(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@2] 
+command product(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@2] 
 address AX3aggrX3_prod3_@1_@2
 comment "grouped tail sum on @1";
 @mal

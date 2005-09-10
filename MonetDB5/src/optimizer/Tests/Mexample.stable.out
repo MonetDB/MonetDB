@@ -21,12 +21,12 @@ function user.main():int;	# 0  (main:int)
     b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
     bat.insert(b,1,1);	# 2 BKCinsert_bun (_3:bat[:int,:int])<-(b:bat[:int,:int])(_4:int)(_4:int)
     _8 := bat.new(:int,:int);	# 3 CMDBATnew (_8:bat[:int,:int])<-(_9:int)(_9:int)
-barrier (_11,_12,_13):= chopper.newIterator(b);	# 4 CHPbunIterator (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 10
+barrier (_11,_12,_13):= chop.newIterator(b);	# 4 CHPbunIterator (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 10
     _15 := calc.+(_13,1);	# 5 CALCbinaryADDintint (_15:int)<-(_13:int)(_4:int)
     bat.insert(_8,_12,_15);	# 6 BKCinsert_bun (_16:bat[:int,:int])<-(_8:bat[:int,:int])(_12:int)(_15:int)
 catch MALexception;	# 7  (MALexception:str) jump 8
 exit MALexception;	# 8  (MALexception:str)
-    redo (_11,_12,_13):= chopper.hasMoreElements(b);	# 9 CHPbunHasMoreElements (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 5
+    redo (_11,_12,_13):= chop.hasMoreElements(b);	# 9 CHPbunHasMoreElements (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 5
 exit (_11,_12,_13);	# 10  (_11:lng)(_12:int)(_13:int)
     c:bat[:int,:int]  := _8;	# 11  (c:bat[:int,:int])<-(_8:bat[:int,:int])
     mdb.list();	# 12 MDBlist (_7:void)
@@ -35,12 +35,12 @@ function user.main():int;
     b := bat.new(:int,:int);
     bat.insert(b,1,1);
     _8 := bat.new(:int,:int);
-barrier (_11,_12,_13):= chopper.newIterator(b);
+barrier (_11,_12,_13):= chop.newIterator(b);
     _15 := calc.+(_13,1);
     bat.insert(_8,_12,_15);
 catch MALexception;
 exit MALexception;
-    redo (_11,_12,_13):= chopper.hasMoreElements(b);
+    redo (_11,_12,_13):= chop.hasMoreElements(b);
 exit (_11,_12,_13);
     c:bat[:int,:int]  := _8;
     mdb.list();

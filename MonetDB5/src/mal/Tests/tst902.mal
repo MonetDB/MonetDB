@@ -9,12 +9,12 @@ exit (k,v);
 c:= algebra.copy(b);
 
 d:= bat.new(:lng,:lng);
-barrier (w,h,t):= chopper.newIterator(b);
+barrier (w,h,t):= chop.newIterator(b);
 	B1:= algebra.find(b,h);
 	B2:= algebra.find(c,h);
 	t:= B1+B2;
 	bat.insert(d,h,t);
-	redo (w,h,t):= chopper.hasMoreElements(b);
+	redo (w,h,t):= chop.hasMoreElements(b);
 catch 	GDKerror;
 exit	GDKerror;
 exit w;

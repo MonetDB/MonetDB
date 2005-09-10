@@ -776,7 +776,7 @@ parseInclude(Client cntxt)
 		modnme= putName(nxt,x);
 		advance(cntxt,x);
 	} else
-		return parseError(cntxt,"<module path> expected\n");
+		return parseError(cntxt,"<module name> expected\n");
 
 	if (currChar(cntxt) != ';') {
 		parseError(cntxt,"';' expected\n");

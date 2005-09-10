@@ -27,11 +27,11 @@ stdout of test 'tst912` in directory 'src/mal` itself:
 #    return (bb,c):= (false,c);
 #end getChunk;
 factory user.getChunk(b:bat[:void,:lng],size:lng) (bb:bit,c:bat[:void,:lng]);	# 0  (bb:bit)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
-    (chk,c):= chopper.newChunkIterator(b,size);	# 1 CHPnewChunkIterator (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
+    (chk,c):= chop.newChunkIterator(b,size);	# 1 CHPnewChunkIterator (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
     bf := true;	# 2  (bf:bit)<-(_7:bit)
 barrier allways := calc.>(chk,0);	# 3 CALCcompGTlngint (allways:bit)<-(chk:lng)(_9:int) jump 7
     yield (bb,c):= (true,c);	# 4  (bb:bit)(c:bat[:void,:lng])<-(_7:bit)(c:bat[:void,:lng])
-    (chk,c):= chopper.hasMoreChunks(b,size);	# 5 CHPhasMoreChunks (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
+    (chk,c):= chop.hasMoreChunks(b,size);	# 5 CHPhasMoreChunks (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng)
     redo allways := calc.>(chk,0);	# 6 CALCcompGTlngint (allways:bit)<-(chk:lng)(_9:int) jump 4
 exit allways;	# 7  (allways:bit)
     io.printf("#factory done\n");	# 8 IOprint_str (_10:int)<-(_11:str)

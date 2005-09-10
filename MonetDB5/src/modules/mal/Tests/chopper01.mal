@@ -18,8 +18,8 @@
 
 	rb:= bat.new(:int,:url);
 	io.print("start loop");
-barrier (mloop:lng,h:int,B2:url) := chopper.newIterator(t);
+barrier (mloop:lng,h:int,B2:url) := chop.newIterator(t);
 	io.print(B2);
-	redo (mloop:lng,h:int,B2:url) := chopper.hasMoreElements(t);
+	redo (mloop:lng,h:int,B2:url) := chop.hasMoreElements(t);
 exit mloop;
 

@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@f chopper
+@f chop
 @v 2.0
 @a M.L.Kersten
 @* BAT chopper
@@ -44,7 +44,7 @@ are interesting for time-series query processing. (See another module)
 @+ BAT iterator
 
 @mal
-module chopper;
+module chop;
 
 command newChunkIterator(b:bat[:any_1,:any_2], size:lng)
 	(:lng,:bat[:any_1,:any_2])
@@ -111,12 +111,12 @@ CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule)
 	size_t cnt, first;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chopper.newChunkIterator", "Cannot access descriptor");
+		return throwMessage("chop.newChunkIterator", "Cannot access descriptor");
 	}
 	if (*vid) {
 		if ((view = BATdescriptor(*vid)) == NULL) {
 			BBPunfix(b->batCacheid);
-			return throwMessage("chopper.newChunkIterator", "Cannot access 'vid' descriptor");
+			return throwMessage("chop.newChunkIterator", "Cannot access 'vid' descriptor");
 		}
 		/* it has the correct type, but does it also
 		   refer to the same BAT */
@@ -148,11 +148,11 @@ CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule)
 	size_t i;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chopper.newChunkMoreElements", "Cannot access descriptor");
+		return throwMessage("chop.newChunkMoreElements", "Cannot access descriptor");
 	}
 	if ((view = BATdescriptor(*vid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		return throwMessage("chopper.newChunkMoreElements", "Cannot access 'vid' descriptor");
+		return throwMessage("chop.newChunkMoreElements", "Cannot access 'vid' descriptor");
 	}
 	i = (size_t) (*res + BATcount(view));
 	if (i >= BUNindex(b, BUNlast(b))) {
@@ -195,7 +195,7 @@ CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = (int *) getArgReference(stk, pci, 3);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chopper.newChunkMoreElements", "Cannot access 'bid' descriptor");
+		return throwMessage("chop.newChunkMoreElements", "Cannot access 'bid' descriptor");
 	}
 
 	if (BATcount(b) == 0) {
@@ -230,7 +230,7 @@ CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = (bat *) getArgReference(stk, pci, 3);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chopper.newChunkMoreElements", "Cannot access 'bid' descriptor");
+		return throwMessage("chop.newChunkMoreElements", "Cannot access 'bid' descriptor");
 	}
 
 	yy = *cursor + 1;
@@ -272,7 +272,7 @@ CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	head = &stk->stk[pci->argv[0]];
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chopper.getHead", "Cannot access 'bid' descriptor");
+		return throwMessage("chop.getHead", "Cannot access 'bid' descriptor");
 	}
 	limit = BUNindex(b, BUNlast(b));
 	if (*cursor < 0 || *cursor >= limit) {
@@ -302,7 +302,7 @@ CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tail = &stk->stk[pci->argv[0]];
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("chopper.getTail", "Cannot access 'bid' descriptor");
+		return throwMessage("chop.getTail", "Cannot access 'bid' descriptor");
 	}
 	limit = BUNindex(b, BUNlast(b));
 	if (*cursor < 0 || *cursor >= limit) {

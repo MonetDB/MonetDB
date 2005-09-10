@@ -38,12 +38,12 @@ exit (v,i);	# 8  (v:bit)(i:lng)
     io.print(b);	# 9 IOprint_val (_14:int)<-(b:bat[:lng,:lng])
     c := 1;	# 10  (c:int)<-(_16:int)
     _20 := bat.new(:lng,:lng);	# 11 CMDBATnew (_20:bat[:lng,:lng])<-(_21:lng)(_21:lng)
-barrier (_23,_24,_25):= chopper.newIterator(b);	# 12 CHPbunIterator (_23:lng)(_24:lng)(_25:lng)<-(b:bat[:lng,:lng]) jump 18
+barrier (_23,_24,_25):= chop.newIterator(b);	# 12 CHPbunIterator (_23:lng)(_24:lng)(_25:lng)<-(b:bat[:lng,:lng]) jump 18
     _27 := calc.+(_25,c);	# 13 CALCbinaryADDlngint (_27:lng)<-(_25:lng)(c:int)
     bat.insert(_20,_24,_27);	# 14 BKCinsert_bun (_28:bat[:lng,:lng])<-(_20:bat[:lng,:lng])(_24:lng)(_27:lng)
 catch MALexception;	# 15  (MALexception:str) jump 16
 exit MALexception;	# 16  (MALexception:str)
-    redo (_23,_24,_25):= chopper.hasMoreElements(b);	# 17 CHPbunHasMoreElements (_23:lng)(_24:lng)(_25:lng)<-(b:bat[:lng,:lng]) jump 13
+    redo (_23,_24,_25):= chop.hasMoreElements(b);	# 17 CHPbunHasMoreElements (_23:lng)(_24:lng)(_25:lng)<-(b:bat[:lng,:lng]) jump 13
 exit (_23,_24,_25);	# 18  (_23:lng)(_24:lng)(_25:lng)
     xz:bat[:lng,:lng]  := _20;	# 19  (xz:bat[:lng,:lng])<-(_20:bat[:lng,:lng])
     io.print(xz);	# 20 IOprint_val (_19:int)<-(xz:bat[:lng,:lng])

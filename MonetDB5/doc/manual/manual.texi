@@ -5,7 +5,7 @@
 
 @c environment
 @set VERSION 5.0
-@set UPDATED Sept 9, 2005
+@set UPDATED Sept 10, 2005
 
 @copying
      This file documents the MonetDB Version @value{VERSION} Reference Manual

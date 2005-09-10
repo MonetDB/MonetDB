@@ -9,9 +9,9 @@ exit	H;
 # de andere loops zijn eenvoudig. 'goto' is altijd beperkt tot
 # 'randen' van het blok. (redo L, leave L)
 # een while loop
-barrier L := chopper.hasMoreElements(b);
-	H:= chopper.head(b);
-	v:= chopper.nextElement(b);
+barrier L := chop.hasMoreElements(b);
+	H:= chop.head(b);
+	v:= chop.nextElement(b);
 redo	L;
 exit	L;
 	

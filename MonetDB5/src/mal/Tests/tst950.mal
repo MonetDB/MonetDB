@@ -25,11 +25,11 @@ exit (go,i);
 #	t0:= t1;
 
 	chksize:= size/10;
-barrier (b1,rf):= chopper.newChunkIterator(R,chksize);
-barrier (b2,sf):= chopper.newChunkIterator(S,chksize);
+barrier (b1,rf):= chop.newChunkIterator(R,chksize);
+barrier (b2,sf):= chop.newChunkIterator(S,chksize);
     pi:= algebra.cartesianproduct(rf,sf);
-redo (b2,sf):= chopper.hasMoreChunks(S,chksize);
-redo (b1,rf):= chopper.hasMoreChunks(R,chksize);
+redo (b2,sf):= chop.hasMoreChunks(S,chksize);
+redo (b1,rf):= chop.hasMoreChunks(R,chksize);
 exit b2;
 exit b1;
 	t1:= alarm.usec();

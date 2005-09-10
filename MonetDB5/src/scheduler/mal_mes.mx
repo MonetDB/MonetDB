@@ -63,16 +63,16 @@ is not affected.
 	r:= select(R, 0, 100000);
 	s:= select(S, 0, 200000);
 	t:= select(s, 0,30);
-barrier (b1,rf):= chopper.newChunkIterator(r,1024);
-barrier (b2,sf):= chopper.newChunkIterator(s,1024);
+barrier (b1,rf):= chop.newChunkIterator(r,1024);
+barrier (b2,sf):= chop.newChunkIterator(s,1024);
 	p:= prod(rf,sf);
 	u:= f("something");
 	w:= +(p,4);
 	v:= sum(w);
 barrier z:= count(p);
 	...
-redo (b2,sf):= chopper.hasMoreChunks(s,1024);
-redo (b1,rf):= chopper.hasMoreChunks(r,1024);
+redo (b2,sf):= chop.hasMoreChunks(s,1024);
+redo (b1,rf):= chop.hasMoreChunks(r,1024);
 exit b2;
 exit b1;
 @end example
@@ -121,13 +121,13 @@ above is to transform it to.
 	t:= select(s, 0,30);
 	u:= f("something");
 	w:= bat(p);
-barrier (b1,rf):= chopper.newChunkIterator(r,1024);
-barrier (b2,sf):= chopper.newChunkIterator(s,1024);
+barrier (b1,rf):= chop.newChunkIterator(r,1024);
+barrier (b2,sf):= chop.newChunkIterator(s,1024);
 	p:= prod(rf,sf);
 	wi:= +(p,4);
 	insert(w,wi)
-redo (b2,sf):= chopper.hasMoreChunks(s,1024);
-redo (b1,rf):= chopper.hasMoreChunks(r,1024);
+redo (b2,sf):= chop.hasMoreChunks(s,1024);
+redo (b1,rf):= chop.hasMoreChunks(r,1024);
 exit b2;
 exit b1;
 	v:= sum(w);
@@ -145,14 +145,14 @@ The leads to
 	u:= f("something");
 	w:= bat(p);
 	v:= 0;
-barrier (b1,rf):= chopper.newChunkIterator(r,1024);
-barrier (b2,sf):= chopper.newChunkIterator(s,1024);
+barrier (b1,rf):= chop.newChunkIterator(r,1024);
+barrier (b2,sf):= chop.newChunkIterator(s,1024);
 	p:= prod(rf,sf);
 	wi:= +(p,4);
 	vc:= sum(wi);
 	v:= v+vc;
-redo (b2,sf):= chopper.hasMoreChunks(s,1024);
-redo (b1,rf):= chopper.hasMoreChunks(r,1024);
+redo (b2,sf):= chop.hasMoreChunks(s,1024);
+redo (b1,rf):= chop.hasMoreChunks(r,1024);
 exit b2;
 exit b1;
 barrier z:= count(p);
@@ -274,7 +274,7 @@ meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name)
 		l = newTmpVariable(mb, getVarType(mb, p->argv[1]));
 		rb = newTmpVariable(mb, TYPE_bit);
 		r = newTmpVariable(mb, getVarType(mb, p->argv[2]));
-		ql = newFcnCall(mb, GDKstrdup("chopper"), GDKstrdup("newIterator"));
+		ql = newFcnCall(mb, GDKstrdup("chop"), GDKstrdup("newIterator"));
 		ql->argv[0] = lb;
 		ql->argv[1] = l;
 		ql->retc = 2;
@@ -282,7 +282,7 @@ meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name)
 		ql->argc = 3;
 
 		ql->barrier = BARRIERsymbol;
-		qr = newFcnCall(mb, GDKstrdup("chopper"), GDKstrdup("newIterator"));
+		qr = newFcnCall(mb, GDKstrdup("chop"), GDKstrdup("newIterator"));
 		qr->argv[0] = rb;
 		qr->argv[1] = r;
 		qr->retc = 2;
@@ -293,13 +293,13 @@ meo_loop_optimizerImpl(MalBlkPtr mb, MALfcn f, str name)
 		/* and the intelligence should come here */
 
 		/* redo part */
-		qr = newFcnCall(mb, GDKstrdup("chopper"), GDKstrdup("hasMoreElements"));
+		qr = newFcnCall(mb, GDKstrdup("chop"), GDKstrdup("hasMoreElements"));
 		qr->argv[0] = rb;
 		qr->argv[1] = r;
 		qr->retc = 2;
 		qr->argc = 3;
 		qr->barrier = REDOsymbol;
-		ql = newFcnCall(mb, GDKstrdup("chopper"), GDKstrdup("hasMoreElements"));
+		ql = newFcnCall(mb, GDKstrdup("chop"), GDKstrdup("hasMoreElements"));
 		ql->argv[0] = lb;
 		ql->argv[1] = l;
 		ql->retc = 2;

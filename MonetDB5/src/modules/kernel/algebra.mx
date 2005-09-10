@@ -363,7 +363,7 @@ The core of every relational engine.
 The join collection provided by the GDK kernel.
 Note that joins over void columns are handled as if they are oids.
 @mal
-command cross(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
+command outercrossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
 	:bat[:any_1,:any_4]
 address ALGcross
 comment "Returns the cross product";
@@ -556,16 +556,7 @@ comment "Return the number of elements currently
 @mal
 command histogram ( b:bat[:any_1,:any_2]) :bat[:any_2,:int] 
 address ALGhistogram
-comment "Produce a BAT containing the histogram of the tail values.  
-        bat.histogram() @= {count}(bat.reverse)";
-
-@-
-command out of order right now. Should become an optimization pattern
-group.count -> histogram(bat.reverse)
-command {count} ( b:bat[:any_2,:any]) :bat[:any_2,int] 
-address ALGhistogram_rev
-comment "Count the number of groups.
- It has fast implementation: histogram(bat.reverse)";
+comment "Produce a BAT containing the histogram over the tail values.";
 
 @- Default Min and Max
 Implementations a generic Min and Max routines get declared first. The
@@ -573,10 +564,9 @@ Implementations a generic Min and Max routines get declared first. The
 The type-specific routines defined later are faster, and will
 override these any implementations.
 @mal
-command card ( b:bat[:any_1,:any_2] ) :lng 
+command cardinality( b:bat[:any_1,:any_2] ) :lng 
 address ALGcard
-comment "Return the cardinality of the BAT 
-	tail values.";
+comment "Return the cardinality of the BAT tail values.";
 @- 
 Implementations a generic Min and Max routines get declared first. The
 @emph{ min()} and @emph{ max()} routines below catch any tail-type.
@@ -587,11 +577,11 @@ override these any implementations.
 @mal
 command min(b:bat[:any_1,:any_2]):any_2 
 address ALGminany
-comment "Give the lowest tail value.  Error on empty BATs.";
+comment "Return the lowest tail value or nil.";
 
 command max(b:bat[:any_1,:any_2]):any_2 
 address ALGmaxany
-comment "Give the highest tail value. Error on empty BATs.";
+comment "Return the highest tail value or nil.";
 @+ Type-Specific Sum, Prod, Max and Min
 For X in @{ sht,int,flt,dbl,lng @},  we generate the
 aggregate functions using a macro.

@@ -4,10 +4,10 @@ b:= bat.new(:str,:str);
 bat.insert(b,"one","red");
 bat.insert(b,"two","green");
 io.print(b);
-barrier (v,h,t):= chopper.newIterator(b);
+barrier (v,h,t):= chop.newIterator(b);
 	io.printf("[ %s,",h);
 	io.printf("%s]\n",t);
-	redo (v,h,t):= chopper.hasMoreElements(b);
+	redo (v,h,t):= chop.hasMoreElements(b);
 exit v;
 
 

@@ -36,9 +36,9 @@ stdout of test 'tst911` in directory 'src/mal` itself:
 #end choptest;
 function user.choptest(b:bat[:void,:lng],size:lng,base:lng):void;	# 0  (choptest:void)<-(b:bat[:void,:lng])(size:lng)(base:lng)
     t0 := alarm.usec();	# 1 ALARMusec (t0:lng)
-barrier (chk,c):= chopper.newChunkIterator(b,size);	# 2 CHPnewChunkIterator (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng) jump 5
+barrier (chk,c):= chop.newChunkIterator(b,size);	# 2 CHPnewChunkIterator (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng) jump 5
     t := algebra.select(c,256000:lng,266000:lng);	# 3 ALGselect (t:bat[:void,:lng])<-(c:bat[:void,:lng])(_8:lng)(_9:lng)
-    redo (chk,c):= chopper.hasMoreChunks(b,size);	# 4 CHPhasMoreChunks (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng) jump 3
+    redo (chk,c):= chop.hasMoreChunks(b,size);	# 4 CHPhasMoreChunks (chk:lng)(c:bat[:void,:lng])<-(b:bat[:void,:lng])(size:lng) jump 3
 exit (chk,c);	# 5  (chk:lng)(c:bat[:void,:lng])
     t1 := alarm.usec();	# 6 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 7 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)

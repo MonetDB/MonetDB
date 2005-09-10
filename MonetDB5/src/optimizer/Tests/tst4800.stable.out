@@ -64,7 +64,7 @@ function user.f3():void;	# 0  (f3:void)
     t19 := batcalc.+(t16,t18);	# 19 CMDbatADD (t19:bat[:void,:int])<-(t16:bat[:void,:int])(t18:bat[:void,:int])
     t20 := batcalc.oid(t19);	# 20 CMDconvertvoid_int_oid (t20:bat[:void,:oid])<-(t19:bat[:void,:int])
     t21 := array.grid(1,4096,1,0);	# 21 ARRAYgrid_int (t21:bat[:void,:int])<-(_6:int)(_4:int)(_6:int)(_7:int)
-    t22 := aggrX3.sum(t15,t20,t21);	# 22 AX3aggrX3_sum3_int_lng (t22:bat[:void,:lng])<-(t15:bat[:void,:int])(t20:bat[:void,:oid])(t21:bat[:void,:int])
+    t22 := aggr.sum(t15,t20,t21);	# 22 AX3aggrX3_sum3_int_lng (t22:bat[:void,:lng])<-(t15:bat[:void,:int])(t20:bat[:void,:oid])(t21:bat[:void,:int])
     top := t22;	# 23  (top:bat[:void,:lng])<-(t22:bat[:void,:lng])
     bat_0 := array.grid(64,64,1,0);	# 24 ARRAYgrid_int (bat_0:bat[:void,:int])<-(_5:int)(_5:int)(_6:int)(_7:int)
     bat_1 := array.grid(1,64,64,0);	# 25 ARRAYgrid_int (bat_1:bat[:void,:int])<-(_6:int)(_5:int)(_5:int)(_7:int)
@@ -100,7 +100,7 @@ function user.f3():void;
     t19 := batcalc.+(t16,t18);
     t20 := batcalc.oid(t19);
     t21 := array.grid(1,4096,1,0);
-    t22 := aggrX3.sum(t15,t20,t21);
+    t22 := aggr.sum(t15,t20,t21);
     top := t22;
     bat_0 := array.grid(64,64,1,0);
     bat_1 := array.grid(1,64,64,0);

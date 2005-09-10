@@ -50,7 +50,7 @@ function user.main():int;	# 0  (main:int)
     io.print(mx);	# 15 IOprint_val (_26:int)<-(mx:int)
     mi := algebra.min(b);	# 16 ALGmin_int (mi:int)<-(b:bat[:int,:int])
     io.print(mi);	# 17 IOprint_val (_28:int)<-(mi:int)
-    cr := algebra.card(b);	# 18 ALGcard (cr:lng)<-(b:bat[:int,:int])
+    cr := algebra.cardinality(b);	# 18 ALGcard (cr:lng)<-(b:bat[:int,:int])
     io.print(cr);	# 19 IOprint_val (_30:int)<-(cr:lng)
 end main;	# 20  
 #-----------------#
