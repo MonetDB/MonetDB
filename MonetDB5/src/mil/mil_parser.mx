@@ -18,7 +18,7 @@
 @f mil_parser
 @a M. L. Kersten
 @v 3.0
-@+ MIL compiler
+@+ MIL compilation
 MonetDB comes with its programming language called MIL
 (Monet Interface Language). A large collection of MIL programs exists,
 which ideally should run without problems on the MonetDB version 5 Kernel.
@@ -32,30 +32,44 @@ against the modules being loaded and variables known within the prevaling
 scope.
 This was necessary to resolve their context dependent interpretation.
 
-In MonetDB 4.4 a cleanup of MIL has already taken place which strikes
+In MonetDB Version 4 a cleanup of MIL has already taken place which strikes
 a balance between forcing users to migrate to MAL and
 to continue using their MIL code base. 
 It is realized with a minimalistic compiler, which produces
 MAL code for a large fragment of the MIL language. 
-There is no information on the runtime status. 
+There is, however, no information on the runtime status. 
 In particular, it means there is no knowledge on pre-existing 
 variables, type names, procedures, etc..
 
-With a little care most MIL programs can be compiled
-and run against the new kernel. 
+With a little care many MIL programs can be compiled
+and run against the new kernel.
 The MonetDB test suites and predefined MIL proc's
 have been used to define the language boundary to be supported.
 
 In writing MIL code, the following rules should be kept obeyed:
 @itemize
-\begin{verbatim}
 @item 
 do not change the type of variables within their scope.
 @item 
 do not use type identifiers as ordinary variables
 @item 
-make the type of a 'nil' value explicity, e.g.  nil -> int(nil).
+properly type a new variable when it is initialized with nil,
+e.g.  nil:int
 @end itemize
+
+Consider the following old MIL program stored in the file @emph{my.mil}
+@verbatim
+proc hello(str s):void { s.print(); }
+@end verbatim
+The migration step involves loading the @code{mil} module,
+whereafter the file can be compiled.
+@example
+>include mil;
+>mil.compile("my.mil");
+function hello(s:str):void;
+    _3 := io.print(s);
+end hello;
+@end example
 @{
 @+ Implementation notes
 The MIL parser is a recursive-descend implementation.
@@ -67,10 +81,39 @@ silently replace them with a type identifier. Likewise, an procedure
 identifier mapping table is used to ease migration to the new setting.
 
 @}
-@-
+@+ Conversion Pitfalls
+In this section we summarize the pitfalls and limitations encountered
+in using the MIL to MAL compiler.
+
+@strong{Name spaces}.
+The naming of functions has undergone a clean up action. Part of this
+name re-casting is dealt with in a transparent way for the user.
+
+@strong{Multiplex operations}.
+One of the old key features dropped is the generic multiplex operation.
+Although this language construct was dealt with rather efficiently
+in the MIL interpreter, we have opted for a more mundane approach.
+The multiplex operations were mostly used in the context of
+arithmetic expressions and coercions over BATs. In particular,
+those that have a @code{:void} head.
+
+These operations are now directly supported by C implementations
+in the modules @code{batcalc, batstr, batmath, batcolor}.
+The generic case is still available in the form of a optimizer
+request, i.e. @code{optimizer.multiplex(S,A1,...,An)}@
+The first argument should be a string literal that denotes
+the element operation over the remaining arguments.
+The optimzier bakes an interator block to produce the required result.
+
+Beware, in the older version the semantics of the multiplex
+was based on join semantics over the head of the argument BATs.
+This has been dropped as well.
+
+@strong{Signature changes}.
 Aside from syntax restrictions imposed, several command
 signatures and command names have been changed.
-They have to translated partly by hand.
+They have to translated partly by hand or the MIL program
+should be prepared for a proper translation.
 
 For example, the BAT update routines do not return
 their target variable. This means you can not cascade a series
@@ -85,6 +128,7 @@ should be split into multiple steps as follows:
  b.insert(0,1); b.insert(1,2);
 @end example
 
+@strong{Runtime dependencies}.
 A major rewrite of the MIL program is required when
 it inspects the runtime environment. See the bbp and inspection modules
 for information on the operations available.

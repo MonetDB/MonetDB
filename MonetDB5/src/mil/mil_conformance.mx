@@ -1,9 +1,7 @@
 @t Conformance
 @a M Kersten
-@+ MIL version 4 conformance
-@T
-
-The MIL-2-MAL compiler converts identifiers to their M5 equivalent.
+@+ Conversion Pitfalls
+@{
 Since there may be conflicts with user defined identifiers,
 we produce a warning listing at the end of each program with
 the identifier mappings used.
@@ -19,7 +17,6 @@ Note that not all identifiers can be mapped automatically.
 In particuler the following list indicates those requireing
 interventions of the users.
 
-@{
 Version 4.3		Version 5.		Comments
 
 			bbpBATrefcnt(bat)
@@ -103,14 +100,13 @@ struct {
 	"ttype", "bat", "getTailType", 0}, {
 	"memory", "status", "memStatistics", 0}, {
 	"mark", "algebra", "markT", 0}, {
-	"sort", "algebra", "sortH", 0}, {
 	"bandjoin", "algebra", "bandjoin", 0}, {
 	"card", "algebra", "card", 0}, {
 	"cross", "algebra", "cross", 0}, {
 	"copy", "algebra", "copy", 0}, {
 	"count", "algebra", "count", 0}, {
 	"count_no_nil", "algebra", "count_no_nil", 0}, {
-	"diff", "algebra", "diff", 0}, {
+	"diff", "algebra", "difference", 0}, {
 	"exist", "algebra", "exist", 0}, {
 	"fetch", "algebra", "fetch", 0}, {
 	"fetchjoin", "algebra", "fetchjoin", 0}, {
@@ -137,7 +133,7 @@ struct {
 	"prod", "algebra", "prod", 0}, {
 	"rangesplit", "algebra", "rangesplit", 0}, {
 	"sample", "algebra", "sample", 0}, {
-	"sdiff", "algebra", "sdiff", 0}, {
+	"sdiff", "algebra", "sdifference", 0}, {
 	"select", "algebra", "select", 0}, {
 	"semijoin", "algebra", "semijoin", 0}, {
 	"sintersect", "algebra", "sintersect", 0}, {
