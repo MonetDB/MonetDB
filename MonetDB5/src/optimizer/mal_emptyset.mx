@@ -39,7 +39,7 @@ For example, consider the following MAL test
     V7 := bat.new(:void,:int);
     V10{empty} := bat.new(:int,:void);
     V11 := bat.reverse(V10);
-    V12 := algebra.kdiff(V7,V11);
+    V12 := algebra.kdifference(V7,V11);
     V16 := algebra.markH(V12);
     V17 := algebra.join(V16,V7);
     bat.append(V1,V17);
@@ -192,7 +192,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 						/* result is empty */
 						if (getVar(mb, getArg(p, 0))->updLifespan == 1)
 							empty[getArg(p, 0)] = 1;
-					} else if (getName("diff", 4) == functionId(p) || getName("kdiff", 5) == functionId(p) || getName("semijoin", 8) == functionId(p)) {
+					} else if (getName("diff", 4) == functionId(p) || getName("kdifference", 11) == functionId(p) || getName("semijoin", 8) == functionId(p)) {
 						if (getVar(mb, getArg(p, 0))->updLifespan == 1) {
 							/* always empty */
 							setModuleId(p, NULL);

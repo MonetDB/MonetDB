@@ -25,34 +25,28 @@ Lexical tokens are illustrated in small capitals.
 
 @multitable @columnfractions .15 .8 @verb @verb
 @item program		
-@tab : moduleStmt [helpinfo] |includeStmt
+@tab : (statement ';') *
+@item statement
+@tab : moduleStmt [helpinfo] | definition [helpinfo]
 @item
-@tab | ( definition [helpinfo] ';' | statement ';' ) *
-@item definition	
-@tab : commandStmt | patternStmt | functionStmt | factoryStmt 
+@tab | includeStmt | stmt 
 @item moduleStmt	
-@tab : @code{ ATOM} ident [':'ident]  
-@item
-@tab |  @code{ MODULE} ident 
-@item commandStmt	
-@tab : @code{ COMMAND } header 
-@item
-@item patternStmt	
-@code{PATTERN } header
-@item functionStmt	
-@tab : @code{ FUNCTION } header statement* @code{ end } identifier
-@item factoryStmt	
-@tab : @code{ FACTORY } header statement* @code{ end } identifier
+@tab :  @code{ MODULE} ident | @code{ ATOM} ident [':'ident]  
 @item includeStmt	
 @tab : @code{ INCLUDE} identifier 
 |  @code{ INCLUDE} string_literal
+@item definition	
+@tab : @code{ COMMAND } header @code{ ADDRESS } identifier
+@item
+@tab | @code{PATTERN } header @code{ADDRESS}  identifier
+@item
+@tab |  @code{ FUNCTION } header statement* @code{ END } identifier
+@item
+@tab |  @code{ FACTORY } header statement* @code{ END } identifier
 @item helpinfo	
 @tab : @code{ COMMENT} string_literal 
 @item header		
-@tab : hdrName '(' params ')' result 
-@code{ [address ]} 
-@item hdrName		
-@tab : [ moduleId '.'] identifier 
+@tab : [ moduelName '.'] name '(' params ')' result 
 @item result		
 @tab : paramType | '(' params ')'
 @item params		
@@ -69,11 +63,13 @@ Lexical tokens are illustrated in small capitals.
 @item colType		
 @tab : scalarType | anyType 
 @item props	
-@tab : @verb{ ['{' property [ ',' property]* '}'] }
+@tab : @verb{ '{' property [ ',' property]* '}' }
 @item property	
-@tab : identifier 
-@item statement	
-@tab : [tag] varlist [':=' expr ] props
+@tab : identifier [ compare literal]
+@item compare
+@tab : '=' | '<' | '<=' | '>' | '>=' | '!='
+@item stmt	
+@tab : [tag] varlist [':=' expr ] 
 @item tag     	
 @tab |  @code{ RETURN} | @code{ BARRIER} | @code{ CATCH}
 |  @code{ LEAVE} | @code{ REDO} | @code{RAISE} 
@@ -81,11 +77,15 @@ Lexical tokens are illustrated in small capitals.
 @tab : variable 
 |  '(' variable [',' variable ] * ')' 
 @item variable	
-@tab : identifier props 
+@tab : identifier [ props ]
 @item expr    	
 @tab : fcncall | [factor  operator] factor 
 @item factor  	
 @tab :  @code{ literal_constant} | @code{ nil} | var 
+@item fcncall
+@tab : moduleName '.' name '(' [args] ')'
+@item args
+@tab : factor [',' factor]*
 @end multitable
 
 @-

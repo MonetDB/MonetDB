@@ -46,13 +46,13 @@ are interesting for time-series query processing. (See another module)
 @mal
 module chop;
 
-command newChunkIterator(b:bat[:any_1,:any_2], size:lng)
+command newIterator(b:bat[:any_1,:any_2], size:lng)
 	(:lng,:bat[:any_1,:any_2])
 address CHPnewChunkIterator
-comment " Create an iterator with fixed granule size.
+comment "Create an iterator with fixed granule size.
 	  The result is a view.";
 
-command hasMoreChunks(b:bat[:any_1,:any_2], size:lng)
+command hasMoreElements(b:bat[:any_1,:any_2], size:lng)
 	(:lng, :bat[:any_1,:any_2])
 address CHPhasMoreChunks
 comment "Produce the next chunk for processing.";
@@ -316,6 +316,5 @@ CHPgetTail(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
-
 @-
 @}

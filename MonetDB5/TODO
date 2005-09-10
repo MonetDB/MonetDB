@@ -72,6 +72,7 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20050910 Added appendix generators and cleaned up naming
 20050902 stricter type analysis
 	make all polymorphic types explicit
 	better handle the any,any_<N> and any... cases.

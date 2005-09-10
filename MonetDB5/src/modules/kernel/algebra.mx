@@ -132,15 +132,15 @@ comment "Select all BUNs of a BAT with a certain
 @-
 The second group uses the head to perform the range selection.
 @mal
-command selectHead(b:bat[:any_1,:any_2], low:any_1, high:any_1) 
+command selectH(b:bat[:any_1,:any_2], low:any_1, high:any_1) 
             :bat[:any_1,:any_2] 
 address ALGselectHead;
 
-command selectHead(b:bat[:any_1,:any_2], low:any_1, 
+command selectH(b:bat[:any_1,:any_2], low:any_1, 
 	high:any_1, li:bit, hi:bit) :bat[:any_1,:any_2] 
 address ALGselectInclusiveHead;
 
-command selectHead(b:bat[:any_1,:any_2],value:any_1) :bat[:any_1,:any_2] 
+command selectH(b:bat[:any_1,:any_2],value:any_1) :bat[:any_1,:any_2] 
 address ALGselect1Head;
 
 @-
@@ -217,7 +217,7 @@ s-@emph{operand} series, that look at the whole BUN.
 produces a copy of the bat, with double elimination
 @item [s,k,t]union(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 bat union.
-@item [s,k,t]diff(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+@item [s,k,t]difference(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 bat difference.
 @item [s,k,t]intersection(bat[:any_1,:any_2],bat[:any_1,:any_2]) :bat[:any_1,:any_2]
 bat intersection.
@@ -227,7 +227,7 @@ ordered, a merge-algorithm is used. Otherwise, hash-indices are produced
 on demand for the hash-based algorithms.@*
 The [k,s]intersect(l,r) operations result in all BUNs of @emph{l} that
 are also in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.@*
-The [k,s]diff(l,r) operations result in all BUNs of @emph{l} that are
+The [k,s]difference(l,r) operations result in all BUNs of @emph{l} that are
 not in @emph{r}. They do not do double-elimination over the @emph{l} BUNs.@*
 The [k,s]union(l,r) operations result in all BUNs of l that are 
 not in @emph{r}, plus all BUNs of @emph{r}. They do not do double-elimination
@@ -306,31 +306,31 @@ comment "Returns the intersection taken over only the *head* columns of two BATs
 	or: 'kunique(kintersect(left,right))'.";
 @- Bun-differing elements
 @mal
-command diff( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] ) 
+command difference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] ) 
 		:bat[:any_1,:any_2] 
 address ALGsdiff;
-command sdiff( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] ) 
+command sdifference( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2] ) 
 		:bat[:any_1,:any_2] 
 address ALGsdiff
 comment "Returns the difference taken over *both* columns of two BATs. 
         Results in all BUNs of 'left' that are *not* in 'right'. 
         Does *not* do double-elimination over the 'left' BUNs. 
         If you want this, use:
-	     'sdiff(left.sunique,right.sunique)' 
-	or: 'sdiff(left,right).sunique'.";
+	     'sdifference(left.sunique,right.sunique)' 
+	or: 'sdifference(left,right).sunique'.";
 @- Head-differing elements
 @mal
-command kdiff ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
+command kdifference ( left:bat[:any_1,:any_2], right:bat[:any_1,:any] ) 
 		:bat[:any_1,:any_2] 
 address ALGkdiff
 comment "Returns the difference taken over only the *head* columns of two BATs. 
         Results in all BUNs of 'left' that are *not* in 'right'. 
         It does *not* do double-elimination over the 'left' BUNs. 
         If you want this, use:
-	 'kdiff(left.kunique,right.kunique)' 
-	or: 'kdiff(left,right).kunique'.";
+	 'kdifference(left.kunique,right.kunique)' 
+	or: 'kdifference(left,right).kunique'.";
 
-command kdiff ( left:bat[:void,:any_2], right:bat[:oid,:any] ) 
+command kdifference ( left:bat[:void,:any_2], right:bat[:oid,:any] ) 
 		:bat[:oid,:any_2] 
 address ALGkdiff ;
 @- Unions on bun

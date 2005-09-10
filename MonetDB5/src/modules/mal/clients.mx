@@ -35,11 +35,7 @@ comment "Turn on/off echo of MAL instructions:
 
 command setDebug(flg:int):void
 address CLTsetDebug
-comment "Set the flag in the debugging bitset.
-	See configuration file and documentation";
-command clearDebug(flg:int):void
-address CLTclearDebug
-comment "Clear the flag in the debugging bitset";
+comment "Set the debugging bitset. See configuration file and documentation";
 
 #command setPassword(s:str)
 #address CLTsetPassword
@@ -58,8 +54,7 @@ comment "Pseudo bat of client login time";
 
 command getId():int
 address CLTgetClientId
-comment "return a number that unique represents
-  	the current client";
+comment "return a number that unique represents the current client";
 command getInfo( ):bat[:int,:str] 
 address CLTInfo
 comment "Pseudo bat with client attributes";

@@ -1710,6 +1710,7 @@ str fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg ){
 
     advance(t);
     if( moduleId(p)) sprintf(t,"%s.",moduleName(p));
+	else sprintf(t,"user.");
     advance(t);
     sprintf(t,"%s(",functionName(p));
     for(i=p->retc;i<p->argc;i++){ @:showParam(argc)@ }

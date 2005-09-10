@@ -32,7 +32,7 @@ The @code{optimizer.costEstimation()} works its way through a
 MAL program in search for
 relational operators and estimates their result size. 
 The operations taken into account are @{reverse, select, join, mark,
-uselect, kdiff,cross@}
+uselect, kdifference,cross@}
 The estimated size is left behind as property @code{RMcost},
 to avoid overwriting information produced by the front-end compiler.
 @verbatim
@@ -134,7 +134,7 @@ RMcalculator(MalBlkPtr mb)
 		if (moduleId(p) && idcmp(moduleName(p), "algebra") == 0) {
 			if (functionId(p) && idcmp(functionName(p), "mark") == 0) {
 				@:newCost(1, *c1)@
-			} else if (functionId(p) && idcmp(functionName(p), "kdiff") == 0) {
+			} else if (functionId(p) && idcmp(functionName(p), "kdifference") == 0) {
 				@:newCost2(1, 2, *c1 - *c2 < 0 ? 0 : *c1 - *c2)@
 			} else if (functionId(p) && idcmp(functionName(p), "join") == 0) {
 				@:newCost2(1, 2, *c1 < *c2 ? *c1 : *c2)@

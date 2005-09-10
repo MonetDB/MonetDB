@@ -551,7 +551,7 @@ The manual overview merely lists the mod.function names
 in texi format for inclusion in the documetation.
 @c
 void dumpManualOverview(stream *f, Module s, int recursive){
-	int j,z,tab;
+	int j,z,rows;
 	Symbol t;
 	InstrPtr sig;
 	Module list[256]; int k, top=0, ftop, fnd;
@@ -593,20 +593,20 @@ void dumpManualOverview(stream *f, Module s, int recursive){
 			 sig= fcn[j]; fcn[j]=fcn[z]; fcn[z]= sig;
 		}
 		stream_printf(f,"@" "item\n");
-		tab = ftop/4;
-		for(z=0; z<=tab; z++){
-			if( z <ftop)
+		rows = ftop/4;
+		rows += (ftop %4) ?1:0;
+		for(z=0; z<rows; z++){
 			stream_printf(f,"@" "item\n%s.%s\n",
 				moduleId(fcn[z]), functionId(fcn[z]));
-			if( tab >0 && z+tab +1 <ftop)
+			if( z+rows <ftop)
 			stream_printf(f,"@" "tab\n%s.%s\n",
-				moduleId(fcn[z+tab+1]), functionId(fcn[z+tab+1]));
-			if(tab >0 &&  z+tab*2+2 <ftop)
+				moduleId(fcn[z+rows]), functionId(fcn[z+rows]));
+			if(z+rows*2 <ftop)
 			stream_printf(f,"@" "tab\n%s.%s\n",
-				moduleId(fcn[z+tab*2+2]), functionId(fcn[z+tab*2+2]));
-			if(tab >0 &&  z+tab*3+3 <ftop)
+				moduleId(fcn[z+rows*2]), functionId(fcn[z+rows*2]));
+			if(z+rows*3 <ftop)
 			stream_printf(f,"@" "tab\n%s.%s\n",
-				moduleId(fcn[z+tab*3+3]), functionId(fcn[z+tab*3+3]));
+				moduleId(fcn[z+rows*3]), functionId(fcn[z+rows*3]));
 		}
 	}
 	stream_printf(f,"@end multitable\n");
@@ -646,6 +646,8 @@ void dumpManualHelp(stream *f, Module s, int recursive){
 				fnd= *functionId(sig) == '#';
 				for(z=0; z<ftop; z++)
 				if( strcmp(functionId(fcn[z]),functionId(sig))==0){
+					if( hlp[z] == 0)
+						hlp[z]= t->def->help;
 					fnd++;
 					break;
 				}

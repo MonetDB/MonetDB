@@ -51,7 +51,7 @@ function dir(b:bat[:int,:str]):void;
 	fa_a := bat.setColumn(lrefcnt,"lrefcnt");
 	ga_a := bat.setColumn(b,"name");
 	ha_a := bat.reverse(b);
-	ia_a := algebra.sortH(ha_a);
+	ia_a := algebra.sort(ha_a);
 	ja_a := bat.reverse(ia_a);
 	ka_a := algebra.semijoin(ht,b);
 	la_a := algebra.semijoin(tt,b);

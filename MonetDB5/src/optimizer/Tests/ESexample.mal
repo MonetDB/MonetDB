@@ -3,7 +3,7 @@ function test():void;
 	V7 := bat.new(:void,:int);
 	V10{empty} := bat.new(:int,:void);
 	V11 := bat.reverse(V10);    
-	V12 := algebra.kdiff(V7,V11);       
+	V12 := algebra.kdifference(V7,V11);       
 	V16 := algebra.markH(V12);  
 	V17 := algebra.join(V16,V7);        
 	bat.append(V1,V17); 

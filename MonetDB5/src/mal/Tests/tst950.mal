@@ -3,8 +3,8 @@
 t0:= alarm.usec();
 size:= 1024:lng;
 size:= 16* size;
-R:= bbp.new(:int,:void);
-S:= bbp.new(:void,:int);
+R:= bat.new(:int,:void);
+S:= bat.new(:void,:int);
 barrier (go,i):= mal.newRange(0:lng);
 	l:= calc.int(i);
 	bat.insert(R,l,nil);
@@ -25,11 +25,11 @@ exit (go,i);
 #	t0:= t1;
 
 	chksize:= size/10;
-barrier (b1,rf):= chop.newChunkIterator(R,chksize);
-barrier (b2,sf):= chop.newChunkIterator(S,chksize);
+barrier (b1,rf):= chop.newIterator(R,chksize);
+barrier (b2,sf):= chop.newIterator(S,chksize);
     pi:= algebra.cartesianproduct(rf,sf);
-redo (b2,sf):= chop.hasMoreChunks(S,chksize);
-redo (b1,rf):= chop.hasMoreChunks(R,chksize);
+redo (b2,sf):= chop.hasMoreElements(S,chksize);
+redo (b1,rf):= chop.hasMoreElements(R,chksize);
 exit b2;
 exit b1;
 	t1:= alarm.usec();

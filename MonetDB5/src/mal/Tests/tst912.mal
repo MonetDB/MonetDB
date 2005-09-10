@@ -2,11 +2,11 @@
 # the multiplex code blocks.
 
 factory getChunk(b:bat[:void,:lng], size:lng)(bb:bit,c:bat[:void,:lng]);
-    (chk,c):= chop.newChunkIterator(b,size);
+    (chk,c):= chop.newIterator(b,size);
     bf:= true; # change in bb to crash
 barrier allways:= chk>0;
     yield (bb,c):= (true,c);
-    (chk,c):= chop.hasMoreChunks(b,size);
+    (chk,c):= chop.hasMoreElements(b,size);
     redo allways:= chk>0;
 exit allways;
     io.printf("#factory done\n");
