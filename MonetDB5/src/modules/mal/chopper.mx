@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@f chop
+@f chopper
 @v 2.0
 @a M.L.Kersten
 @* BAT chopper
