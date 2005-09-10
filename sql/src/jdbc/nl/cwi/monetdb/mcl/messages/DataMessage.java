@@ -60,12 +60,9 @@ public class DataMessage extends MCLVariableMessage {
 	 * is supplied and stored in this DataMessage.
 	 *
 	 * @param rowcount the number of rows in this result
-	 * @throws MCLException if the id or ctype string is null, or
-	 * columncount is zero
+	 * @throws MCLException if the rowcount is zero
 	 */
-	public DataMessage(
-			int rowcount
-	) throws MCLException {
+	public DataMessage(int rowcount) throws MCLException {
 		if (rowcount == 0) throw
 			new MCLException("A data set with no rows makes no sense");
 
