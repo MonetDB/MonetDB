@@ -268,6 +268,7 @@ This is the place to describe Membedded, distribution stuff...
 * MAL Syntax ::
 * MAL Instruction Overview:: 
 * MAL Instruction Help:: 
+* Conversion of MIL Programs::
 @end menu
 
 @node MAL Syntax, MAL Instruction Overview, Appendices, Appendices
@@ -279,9 +280,11 @@ This is the place to describe Membedded, distribution stuff...
 @appendix MAL Instruction Overview
 @include Assets/MALinstructions.texi
 
-@node MAL Instruction Help, , MAL Instruction Overview, Appendices
+@node MAL Instruction Help, Conversion of MIL Programs , MAL Instruction Overview, Appendices
 @appendix MAL Instruction Help
 @include Assets/MALhelp.texi
 
+@node Conversion of MIL Programs, , MAL Instruction Help, Appendices
 @appendix Conversion of MIL programs
+@include mil_parser.bdy.texi
 @bye

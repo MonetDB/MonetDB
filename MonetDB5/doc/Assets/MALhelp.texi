@@ -1,0 +1,1654 @@
+The table below summarizes the first commentary line encountered in
+the system associated with a MAL operation.
+
+@multitable @columnfractions .2 .8 
+@item
+@item aggr.avg
+@tab grouped tail average on flt
+@item aggr.count
+@tab grouped count
+@item aggr.max
+@tab grouped tail maximum
+@item aggr.min
+@tab grouped tail minimum
+@item aggr.prod
+@tab Product over a grouped tail of flt
+@item aggr.product
+@tab grouped tail sum on lng
+@item aggr.size
+@tab grouped count of true values
+@item aggr.sum
+@tab Sum over a indexed grouped of tail values 
+@item
+@item alarm.alarm
+@tab execute action in X secs
+@item alarm.ctime
+@tab current time as a string
+@item alarm.epilogue
+@tab Finalize alarm module
+@item alarm.epoch
+@tab current time as unix epoch
+@item alarm.prelude
+@tab Initialize alarm module
+@item alarm.sleep
+@tab sleep X secs
+@item alarm.time
+@tab time in millisecs
+@item alarm.timers
+@tab give a list of all active timers
+@item alarm.usec
+@tab return cpu microseconds info
+@item
+@item algebra.bandjoin
+@tab This is a join() for which the predicate is that two BUNs match 
+        if the left-tail value is within the range [right-head - minus, 
+        right-head + plus]. Works only for the builtin numerical types, 
+        and their derivates.
+@item algebra.between
+@item algebra.betweenCO
+@item algebra.betweenOC
+@item algebra.betweenOO
+@item algebra.cardinality
+@tab Return the cardinality of the BAT tail values.
+@item algebra.copy
+@tab Returns physical copy of a BAT.
+@item algebra.count
+@tab Return the number of elements currently in a BAT ignores 
+        BUNs with nil-tail iff ignore_nils==TRUE.
+@item algebra.count_no_nil
+@tab Return the number of elements currently 
+	in a BAT ignoring BUNs with nil-tail
+@item algebra.difference
+@item algebra.exist
+@tab Returns true when 'h,t' occurs as a bun in b.
+@item algebra.fetch
+@tab Returns a positional selection of b by the oid 
+        head values of s
+@item algebra.fetchjoin
+@tab Hook directly into the fetch implementation of the join.
+@item algebra.find
+@tab Returns the tail value 't' for which some [h,t] BUN 
+        exists in b.  If no such BUN exists, an error occurs.
+@item algebra.fragment
+@tab Select both on head and tail range.
+@item algebra.hashjoin
+@tab Hook directly into the hash implementation of the join.
+@item algebra.hashsplit
+@tab Split a BAT on tail column according (hash-value MOD buckets). 
+        Returns a recursive BAT, containing the fragments in the tail, 
+        their bucket number in the head.
+@item algebra.histogram
+@tab Produce a BAT containing the histogram over the tail values.
+@item algebra.indexjoin
+@tab Hook directly into the index implementation of the join.
+@item algebra.intersect
+@item algebra.join
+@tab Returns all BUNs, consisting of a head-value from 'left' and 
+        a tail-value from 'right' for which there are BUNs in 'left' 
+        and 'right' with equal tail- resp. head-value (i.e. the join
+	columns are projected out).
+@item algebra.joinPath
+@tab Evaluate a join path.
+@item algebra.kdiff
+@tab Returns the difference taken over only the *head* columns of two BATs. 
+        Results in all BUNs of 'left' that are *not* in 'right'. 
+        It does *not* do double-elimination over the 'left' BUNs. 
+        If you want this, use:
+	 'kdifference(left.kunique,right.kunique)' 
+	or: 'kdifference(left,right).kunique'.
+@item algebra.kintersect
+@tab Returns the intersection taken over only the *head* columns of two BATs. 
+	Results in all BUNs of 'left' that are also in 'right'. 
+        Does *not* do double- elimination over the 'left' BUNs.
+		If you want this, use: 'kintersect(kunique(left),kunique(right))' 
+	or: 'kunique(kintersect(left,right))'.
+@item algebra.kunion
+@tab Returns the union of two BATs; looking at head-columns only. 
+        Results in all BUNs of 'left' that are  not in 'right', plus 
+	all BUNs of 'right'.  *no* double-elimination is done. 
+        If you want this, do:
+	'kunion(left.kunique,right.kunique)' 
+	or: 'sunion(left,right).kunique'.
+@item algebra.kunique
+@tab Select unique tuples from the input BAT.  Double elimination is 
+        done only looking at the head column. The result is a BAT with
+		property hkeyed() == true.
+@item algebra.like
+@tab Selects all elements that have 'substr' as in the tail.
+@item algebra.markH
+@tab Produces a new BAT with fresh unique dense sequense of OIDs in 
+        the head that starts at base (i.e. [base,..base+b.count()-1] ).
+@item algebra.markT
+@tab Produces a BAT with fresh unique OIDs in the tail starting at 0.
+@item algebra.max
+@tab Give the highest tail value.
+@item algebra.merge
+@tab Merge head and tail into a single value
+@item algebra.mergejoin
+@tab Hook directly into the merge implementation of the join.
+@item algebra.min
+@tab Give the lowest tail value. 
+@item algebra.number
+@tab Produces a new BAT with identical head column, and consecutively 
+        increasing integers (start at 0) in the tail column.
+@item algebra.outercrossproduct
+@tab Returns the cross product
+@item algebra.outerjoin
+@tab Returns all the result of a join, plus the BUNS formed NIL in 
+        the tail and the head-values of 'outer' whose tail-value does 
+        not match an head-value in 'inner'.
+@item algebra.position
+@tab Returns the position of the value pair It returns an 
+        error if 'val' does not exist.
+@item algebra.product
+@tab Gives the product of all tail values
+@item algebra.project
+@tab Fill the tail column with a constant.
+@item algebra.sample
+@tab Produce a random selection of size 'num' from the input BAT.
+@item algebra.sdifference
+@tab Returns the difference taken over *both* columns of two BATs. 
+        Results in all BUNs of 'left' that are *not* in 'right'. 
+        Does *not* do double-elimination over the 'left' BUNs. 
+        If you want this, use:
+	     'sdifference(left.sunique,right.sunique)' 
+	or: 'sdifference(left,right).sunique'.
+@item algebra.select
+@tab Select all BUNs of a BAT with a certain 
+	tail value. Selection on NIL is also 
+	possible (it should be properly casted, 
+	e.g.:int(nil)).
+@item algebra.selectH
+@item algebra.semijoin
+@tab Patch to enable semijoin over void/oid columns
+@item algebra.sintersect
+@tab Returns the intersection taken over *both* columns of two BATs. 
+        Results in all BUNs of 'left' that are also in 'right'. Does *not* 
+        do double-elimination over the 'left' BUNs, If you want this, use:
+	 'sintersect(sunique(left),sunique(right))' 
+	or: 'sunique(sintersect(left,right))'.
+@item algebra.slice
+@tab Return the slice with the BUNs at position x till y.
+@item algebra.sort
+@tab Returns a BAT copy sorted on the head column.
+@item algebra.sortHT
+@tab Returns a lexicographically sorted copy.
+@item algebra.sortT
+@tab Returns a BAT copy sorted on the tail column.
+@item algebra.sortTH
+@tab Returns a reverse lexicographically sorted copy.
+@item algebra.split
+@tab Split head into two values
+@item algebra.sum
+@tab Gives the sum of all tail values
+@item algebra.sunion
+@tab Returns the union of two BATs; looking at both columns of both BATs.
+        Results in all BUNs of 'left' that are  not in 'right', plus all 
+        BUNs of 'right'.  *no* double-elimination is done. 
+        If you want this, do:
+	 'sunion(left.sunique,right.sunique)' 
+	or: 'sunion(left,right).sunique'.
+@item algebra.sunique
+@tab Select unique tuples from the input BAT. Double elimination is 
+        done over BUNs as a whole (head and tail).  Result is a BAT 
+	with real set() semantics.
+@item algebra.thetajoin
+@tab Theta join on for 'mode' in ( LE, LT, EQ, GT, GE ).  JOIN_EQ is 
+        just the same as join(). All other options do merge algorithms. 
+        Either using the fact that they are ordered() already (left on tail, 
+	right on head), or by using/creating binary search trees on the 
+        join columns. 
+@item algebra.topN
+@tab Trim all but the top N tuples.
+@item algebra.tunique
+@tab Select unique tuples from the input BAT. Double elimination is 
+        done over the BUNs tail. The result is a BAT with property
+		tkeyd()== true
+@item algebra.uhashsplit
+@tab Same as hashsplit, but only collect the head values in the fragments
+@item algebra.union
+@item algebra.unique
+@item algebra.uselect
+@tab Value select, but returning only the 
+	head values. SEE ALSO:select(bat,val)
+@item
+@item array.grid
+@tab Fills an index BAT, (grpcount,grpsize,clustersize,offset)
+and shift all elemenets with a factor s
+@item array.print
+@tab Prints an array, using 1 value bat and N aligned index bats
+@item array.product
+@tab Produce an array product
+@item array.project
+@tab Fill an array representation with constants 
+@item
+@item bat.append
+@tab Special case append for empty bats, works around impossible 
+        void,void case
+@item bat.delete
+@tab Delete from the first BAT all BUNs with a corresponding BUN 
+        in the second.
+@item bat.getAccess
+@tab return the access mode attached to this BAT as a character.
+@item bat.getAlpha
+@tab Obtain the list of BUNs added
+@item bat.getBatSize
+@tab A version of BATsize that does not require loading the BAT.
+@item bat.getCapacity
+@tab Returns the current allocation size (in max number of elements) of a BAT.
+@item bat.getDelta
+@tab Obtain the list of BUNs deleted
+@item bat.getHeadType
+@tab Returns the type of the head column of a BAT, as an integer type number.
+@item bat.getHeat
+@tab Return the current BBP heat (LRU stamp)
+@item bat.getName
+@tab Gives back the logical name of a BAT.
+@item bat.getRole
+@tab Returns the rolename of the head column of a BAT.
+@item bat.getSequenceBase
+@tab Get the sequence base for the void column of a BAT.
+@item bat.getTailType
+@tab Returns the type of the tail column of a BAT, as an integer type number.
+@item bat.hasAppendMode
+@tab return true if to this BAT is append only.
+@item bat.hasReadMode
+@tab return true if to this BAT is read only.
+@item bat.hasWriteMode
+@tab return true if to this BAT is read and write.
+@item bat.info
+@tab Produce a BAT containing info about a BAT in [attribute,value] format. 
+        It contains all properties of the BAT record. See the BAT documentation 
+        in GDK for more information.
+@item bat.insert
+@tab Insert a value in a 'void' bat
+@item bat.isCached
+@tab Bat is stored in main memory.
+@item bat.isPersistent
+@item bat.isSorted
+@tab Returns whether a BAT is ordered on head or not.
+@item bat.isSortedReverse
+@tab Returns whether a BAT is ordered on head or not.
+@item bat.isSynced
+@tab Tests whether two BATs are synced or not. 
+@item bat.isTransient
+@item bat.isaKey
+@tab return whether the head column of a BAT is unique (key).
+@item bat.isaSet
+@tab return whether the BAT mode is set to unique.
+@item bat.load
+@tab Load a particular BAT from disk
+@item bat.mirror
+@tab Returns the head-mirror image of a BAT (two head columns).
+@item bat.new
+@tab Localize a bat by name and produce a variant
+@item bat.pack
+@tab Pack a pair into a BAT
+@item bat.replace
+@tab inplace replace values on the given locations
+@item bat.reverse
+@tab Returns the reverse view of a BAT (head is tail and tail is head).
+        BEWARE  no copying is involved; input and output refer to the 
+        same object!
+@item bat.revert
+@tab Puts all BUNs in a BAT in reverse order.  (Belongs to the 
+        BAT sequence module)
+@item bat.save
+@tab Save a BAT to storage, if it was loaded and dirty.  
+        Returns whether IO was necessary.  Please realize that 
+	calling this function violates the atomic commit protocol!!
+@item bat.setAccess
+@tab Try to change the update access priviliges 
+	to this BAT. Mode:
+	 r[ead-only]      - allow only read access.
+	 a[append-only]   - allow reads and update.
+	 w[riteable]      - allow all operations.
+	BATs are updatable by default. On making a BAT read-only, 
+        all subsequent updates fail with an error message.Returns 
+        the BAT itself.
+@item bat.setAppendMode
+@tab Change access privilige of BAT to append only
+@item bat.setCold
+@tab Makes a BAT very cold for the BBP. The chance of being choses 
+        for swapout is big, afterwards.
+@item bat.setColumn
+@tab Give both columns of a BAT a new name.
+@item bat.setGarbage
+@tab Designate a BAT as garbage
+@item bat.setHash
+@item bat.setHot
+@tab Makes a BAT very hot for the BBP. The chance of being chosen for 
+        swapout is small, afterwards.
+@item bat.setKey
+@tab Sets the 'key' property of the head column to 'mode'. In 'key' mode, 
+        the kernel will silently block insertions that cause a duplicate 
+        entries in the head column. KNOWN BUG:when 'key' is set to TRUE, this 
+	function does not automatically eliminate duplicates. 
+        Use b := b.kunique;
+@item bat.setMemoryAdvise
+@tab alias for madvise(b,mode,mode,mode, mode,mode)
+@item bat.setMemoryMap
+@tab Alias for mmap(b,mode,mode,mode, mode,mode)
+@item bat.setName
+@tab Give a logical name to a BAT. 
+@item bat.setPersistent
+@tab Make the BAT persistent.  Returns boolean which indicates 
+        if the BAT administration has indeed changed.
+@item bat.setReadMode
+@tab Change access privilige of BAT to read only
+@item bat.setRole
+@tab Give a logical name to the columns of a BAT.
+@item bat.setSequenceBase
+@tab Set the sequence base for the void column of a BAT.
+@item bat.setSet
+@tab Sets the 'set' property on this BAT to 'mode'. In 'set' mode, 
+        the kernel will silently block insertions that cause a duplicate 
+        BUN [head,tail] entries in the BAT.  KNOWN BUG:when 'set' is set 
+        to TRUE, this function does not automatically eliminate duplicates. 
+        Use b := b.sunique; Returns the BAT itself.
+@item bat.setSorted
+@tab Assure BAT is ordered on the head.
+@item bat.setTransient
+@tab Make the BAT transient.  Returns 
+	boolean which indicates if the
+BAT administration has indeed changed.
+@item bat.setWriteMode
+@tab Change access privilige of BAT to read and write
+@item bat.unload
+@tab Swapout a BAT to disk. Transient BATs can also be swapped out.     
+        Returns whether the unload indeed happened. 
+@item bat.unpack
+@tab Extract the first tuple from a bat
+@item
+@item batcalc.!=
+@item batcalc.%
+@tab Binary BAT calculator function with accumulator BAT result
+@item batcalc.*
+@tab Binary BAT calculator function with accumulator BAT result
+@item batcalc.+
+@tab Binary BAT calculator function with accumulator BAT result
+@item batcalc.++
+@tab Unary minus over the tail of the bat
+@item batcalc.-
+@tab Unary minus over the tail of the bat
+@item batcalc.--
+@tab Unary minus over the tail of the bat
+@item batcalc./
+@tab Binary BAT calculator function with accumulator BAT result
+@item batcalc.<
+@item batcalc.<=
+@item batcalc.==
+@item batcalc.>
+@item batcalc.>=
+@item batcalc.and
+@item batcalc.dbl
+@tab Coerce an dbl tail to a bat with dbl tail.
+@item batcalc.flt
+@tab Coerce an dbl tail to a bat with flt tail.
+@item batcalc.ifthen
+@tab Ifthen operation to assemble a conditional result 
+@item batcalc.ifthenelse
+@tab Ifthen operation to assemble a conditional result 
+@item batcalc.init
+@tab Initialize a BAT with a tail constant
+@item batcalc.int
+@tab Coerce an oid tail to a bat with int tail.
+@item batcalc.lng
+@tab Coerce an oid tail to a bat with lng tail.
+@item batcalc.not
+@tab Return a BAT with the negated tail
+@item batcalc.oid
+@tab Materialize the oid into an oid
+@item batcalc.or
+@item batcalc.project
+@tab Fill the head with a constant, e.g. [0~b]
+@item batcalc.sht
+@tab Coerce an oid tail to a bat with sht tail.
+@item batcalc.xor
+@tab Binary BAT calculator function with accumulator BAT result
+@item
+@item batcolor.blue
+@tab Extracts blue component from a color atom
+@item batcolor.cb
+@tab Extracts Cb(blue color) component from a color atom
+@item batcolor.color
+@tab Converts string to color
+@item batcolor.cr
+@tab Extracts Cr(red color) component from a color atom
+@item batcolor.green
+@tab Extracts green component from a color atom
+@item batcolor.hsv
+@tab Converts an HSV triplets to a color atom
+@item batcolor.hue
+@tab Extracts hue component from a color atom
+@item batcolor.luminance
+@tab Extracts Y(luminance) component from a color atom
+@item batcolor.red
+@tab Extracts red component from a color atom
+@item batcolor.rgb
+@tab Converts an RGB triplets to a color atom
+@item batcolor.saturation
+@tab Extracts saturation component from a color atom
+@item batcolor.str
+@tab Identity mapping for string bats
+@item batcolor.value
+@tab Extracts value component from a color atom
+@item
+@item batmath.acos
+@item batmath.asin
+@item batmath.atan
+@item batmath.atan2
+@item batmath.ceil
+@item batmath.cos
+@item batmath.cosh
+@item batmath.exp
+@item batmath.fabs
+@item batmath.floor
+@item batmath.fmod
+@item batmath.log
+@item batmath.log10
+@item batmath.pow
+@item batmath.sin
+@item batmath.sinh
+@item batmath.sqrt
+@item batmath.tan
+@item batmath.tanh
+@item
+@item batstr.+
+@tab Concatenate a string to a bat of strings.
+@item batstr.==
+@tab Equate a bat of strings against a singleton
+@item batstr.bytes
+@tab Return the string length in bytes.
+@item batstr.chrAt
+@tab String array lookup operation.
+@item batstr.endsWith
+@tab Suffix check.
+@item batstr.length
+@tab Return the length of a string.
+@item batstr.ltrim
+@tab Strip whitespaces from start of a string.
+@item batstr.match
+@tab POSIX pattern matching against a string BAT
+@item batstr.r_search
+@tab Reverse search for a substring. Returns position, -1 if not found.
+@item batstr.rtrim
+@tab Strip whitespaces from end of a string.
+@item batstr.search
+@tab Search for a substring. Returns position, -1 if not found.
+@item batstr.startsWith
+@tab Prefix check.
+@item batstr.str
+@tab Identity mapping for string bats
+@item batstr.string
+@tab Return substring s[offset..offset+count] of a string s[0..n]
+@item batstr.substitute
+@tab Substitute first occurrence of 'src' by
+	'dst'.  Iff repeated = true this is
+	repeated while 'src' can be found in the
+	result string. In order to prevent
+	recursion and result strings of unlimited
+	size, repeating is only done iff src is
+	not a substring of dst.
+@item batstr.toLower
+@tab Convert a string to lower case.
+@item batstr.toUpper
+@tab Convert a string to upper case.
+@item batstr.trim
+@tab Strip whitespaces around a string.
+@item batstr.unicodeAt
+@tab get a unicode character (as an int) from a string position.
+@item
+@item bbp.bind
+@tab Locate the BAT using its BBP index
+@item bbp.close
+@tab Close the bbp box.
+@item bbp.commit
+@tab Commit updates for this client
+@item bbp.deposit
+@tab Enter a new bat into the bbp box.
+@item bbp.destroy
+@tab Schedule a BAT for removal at session end or immediately
+@item bbp.discard
+@tab Remove the BAT from the box
+@item bbp.getCount
+@tab Create a BAT with the cardinalities of all known BATs
+@item bbp.getDirty
+@tab Create a BAT with the dirty/ diffs/clean status
+@item bbp.getHeadType
+@tab Map a BAT into its head type
+@item bbp.getHeat
+@tab Create a BAT with the heat values
+@item bbp.getKind
+@tab Create a BAT with the persistency status
+@item bbp.getLRefCount
+@tab Utility for debugging MAL interpreter
+@item bbp.getLocation
+@tab Create a BAT with their disk locations
+@item bbp.getName
+@tab Map a BAT into its internal name
+@item bbp.getNames
+@tab Map BAT into its bbp name
+@item bbp.getObjects
+@tab View of the box content.
+@item bbp.getRNames
+@tab Map a BAT into its bbp physical name
+@item bbp.getRefCount
+@tab Utility for debugging MAL interpreter
+@item bbp.getStatus
+@tab Create a BAT with the disk/load status
+@item bbp.getTailType
+@tab Map a BAT into its tail type
+@item bbp.iterator
+@tab Locates the next element in the box
+@item bbp.open
+@tab Locate the bbp box and open it.
+@item bbp.prelude
+@tab Initialize the bbp box
+@item bbp.release
+@tab Remove the BAT from further consideration
+@item bbp.releaseAll
+@tab Commit updates for this client
+@item bbp.take
+@tab Load a particular bat
+@item bbp.toString
+@tab Get the string representation of an element in the box
+@item
+@item blob.nitems
+@tab  get the number of bytes in this blob.
+@item blob.null
+@item blob.toblob
+@tab store a string as a blob.
+@item blob.tostring
+@tab get the bytes from blob as a string,
+	 starting at byte 'index' till the first 
+	0 byte or the end of the blob.
+@item
+@item box.close
+@tab Close the box 
+@item box.deposit
+@tab Enter a new value into the box
+@item box.destroy
+@tab Destroy the box 
+@item box.discard
+@tab Release the BAT from the client pool
+@item box.getBoxNames
+@tab Retrieve the names of all boxes
+@item box.iterator
+@tab Locates the next element in the box
+@item box.open
+@tab Locate the box and open it 
+@item box.release
+@tab Release the BAT from the client pool
+@item box.releaseAll
+@tab Release all objects for this client
+@item box.take
+@tab Locates the typed value in the box
+@item box.toString
+@tab Get the string representation of 
+	the i-th element in the box
+@item
+@item bstream.create
+@tab create a buffered stream
+@item bstream.destroy
+@tab destroy bstream
+@item bstream.read
+@tab read at least size bytes into the buffer of s
+@item
+@item calc.!=
+@item calc.%
+@item calc.*
+@item calc.+
+@tab Concatenate two strings
+@item calc.-
+@tab negative value
+@item calc./
+@item calc.<
+@item calc.<<
+@item calc.<=
+@item calc.==
+@item calc.>
+@item calc.>=
+@item calc.>>
+@item calc.abs
+@tab absolute value
+@item calc.and
+@item calc.bat
+@item calc.between
+@item calc.bit
+@tab coercion dbl to bit
+@item calc.chr
+@tab coercion lng to chr
+@item calc.dbl
+@tab coercion lng to dbl
+@item calc.flt
+@tab coercion lng to flt
+@item calc.getBAT
+@tab Coerce bat to BAT identifier
+@item calc.getBATidentifier
+@tab Coerce bat to BAT identifier
+@item calc.ifthenelse
+@item calc.int
+@tab coercion dbl to int
+@item calc.inv
+@tab inverse value (1/x)
+@item calc.isnil
+@tab is a value nil?
+@item calc.isnotnil
+@tab is a value not equal to nil?
+@item calc.lng
+@tab coercion dbl to lng
+@item calc.max
+@item calc.min
+@item calc.newoid
+@tab Reserves a range of consecutive unique OIDs; returns the lowest 
+        in range.  equivalent to newoid(0,incr)
+@item calc.not
+@item calc.oid
+@tab coercion int to oid
+@item calc.or
+@item calc.ptr
+@tab coercion lng to ptr
+@item calc.setoid
+@tab Equivalent to setoid(1:oid).
+@item calc.sht
+@tab coercion dbl to sht
+@item calc.str
+@tab coercion dbl to str
+@item calc.void
+@item calc.xor
+@item
+@item chop.getHead
+@tab return the BUN head value using the cursor.
+@item chop.getTail
+@tab return the BUN tail value using the cursor.
+@item chop.hasMoreChunks
+@tab Produce the next chunk for processing.
+@item chop.hasMoreElements
+@tab Produce the next bun for processing.
+@item chop.newChunkIterator
+@tab  Create an iterator with fixed granule size.
+	  The result is a view.
+@item chop.newIterator
+@tab Process the buns one by one.
+@item
+@item clients.clearDebug
+@tab Clear the flag in the debugging bitset
+@item clients.getId
+@tab return a number that unique represents
+  	the current client
+@item clients.getInfo
+@tab Pseudo bat with client attributes
+@item clients.getLogins
+@tab Pseudo bat of client login time
+@item clients.getScenario
+@tab Retrieve current scenario name
+@item clients.getUsers
+@tab Pseudo bat of users logged in
+@item clients.quit
+@tab Terminate the session for this client
+@item clients.setDebug
+@tab Set the flag in the debugging bitset.
+	See configuration file and documentation
+@item clients.setHistory
+@tab Designate console history file
+@item clients.setListing
+@tab Turn on/off echo of MAL instructions:
+	2 - show mal instruction,
+	4 - show type resolutoin, 
+	8 - show binding information
+@item clients.setScenario
+@tab Switch to other scenario handler, return previous one
+@item
+@item color.blue
+@tab Extracts blue component from a color atom
+@item color.cb
+@tab Extracts Cb(blue color) component from a color atom
+@item color.color
+@tab Converts string to color
+@item color.cr
+@tab Extracts Cr(red color) component from a color atom
+@item color.green
+@tab Extracts green component from a color atom
+@item color.hsv
+@tab Converts an HSV triplets to a color atom
+@item color.hue
+@tab Extracts hue component from a color atom
+@item color.luminance
+@tab Extracts Y(luminance) component from a color atom
+@item color.print
+@item color.printf
+@item color.red
+@tab Extracts red component from a color atom
+@item color.rgb
+@tab Converts an RGB triplets to a color atom
+@item color.saturation
+@tab Extracts saturation component from a color atom
+@item color.str
+@tab Converts color to string 
+@item color.value
+@tab Extracts value component from a color atom
+@item color.ycc
+@tab Converts an YCC triplets to a color atom
+@item
+@item const.close
+@tab Close the constant box 
+@item const.deposit
+@tab Enter a new variable into the box
+@item const.destroy
+@tab Destroy the box
+@item const.discard
+@tab Release the const from the box
+@item const.hasMoreElements
+@tab Locate next element in the box
+@item const.newIterator
+@tab Locate next element in the box
+@item const.open
+@tab Locate and open the constant box
+@item const.prelude
+@tab Initialize the const box
+@item const.release
+@tab Release a new constant value
+@item const.releaseAll
+@tab Release all variables in the box
+@item const.take
+@tab Take a variable out of the box
+@item const.toString
+@tab Get the string representation of an element in the box
+@item
+@item crackers.crack
+@tab Break the partitions into smaller pieces
+	using a join over the tail
+@item crackers.drop
+@tab Garbage collect the piece representation
+@item crackers.dropView
+@tab Garbage collect the piece representation.
+	Should be a side-effect of dropping the bat!
+@item crackers.getPiece
+@tab Retrieve a piece of a cracked BAT into a known BAT view.
+@item crackers.hasMoreElements
+@tab Retrieve the next piece of a cracked
+	BAT by adjusting the BAT view descriptor.
+	It returns the next valid piece id.
+	A value zero means 'end-of-sequence'
+@item crackers.info
+@tab Print the cracker index administration
+@item crackers.new
+@tab Create the index tables for a cracked
+	table. Set the minimum granularity
+@item crackers.newIterator
+@tab Retrieve the first piece of a cracked
+	BAT as a BAT view and also return the
+	identity of the next piece.
+@item crackers.select
+@tab Retrieve the subset using a cracker
+	index producing preferably a BATview.
+@item crackers.selectPieces
+@tab Retrieve identities of all pieces that qualify the selection criterion.
+@item
+@item date.!=
+@tab Equality of two dates
+@item date.<
+@tab Equality of two dates
+@item date.<=
+@tab Equality of two dates
+@item date.=
+@tab Equality of two dates
+@item date.>
+@tab Equality of two dates
+@item date.>=
+@tab Equality of two dates
+@item date.isnil
+@tab Nil test for date value
+@item
+@item daytime.!=
+@tab Equality of two daytimes
+@item daytime.<
+@tab Equality of two daytimes
+@item daytime.<=
+@tab Equality of two daytimes
+@item daytime.=
+@tab Equality of two daytimes
+@item daytime.>
+@tab Equality of two daytimes
+@item daytime.>=
+@tab Equality of two daytimes
+@item daytime.isnil
+@tab Nil test for daytime value
+@item
+@item factory.getCaller
+@tab Retrieve the unique identity
+        of the factory caller
+@item factory.getLocations
+@tab Retrieve the location of all
+        known plants
+@item factory.getOwners
+@tab Retrieve the factory owners table
+@item factory.getPlants
+@tab Retrieve the factory plant description
+        for all operational factories
+@item factory.getTimeStampIn
+@tab Retrieve the time stamp it was
+        received by the factory
+@item factory.getTimeStampOut
+@tab Retrieve the time stamp the answer
+        was returned to the client
+@item factory.setLocation
+@tab Set the location of the plant
+        manager.
+@item factory.shutdown
+@tab Close a factory
+@item
+@item group.avg
+@tab grouped tail average
+@item group.count
+@tab grouped count
+@item group.group
+@tab Cross tabulation group extension step.  Returned head values are 
+        identical as in 'ct'. Tail values are from the same domain and 
+        indicate further refinement of the groups in 'ct', taking into 
+        account also the tail-values in 'attr'.
+@item group.max
+@tab grouped tail maximum
+@item group.min
+@tab grouped tail minimum
+@item group.prelude
+@item group.refine
+@tab refine the ordering of a tail-ordered BAT by sub-ordering on the 
+        values of a second bat 'a' (where the heads of a and b match 1-1).
+        The effect of this is similar to (hash-based) GRPderive, with the 
+        distinction that the group ids respect the ordering of the group 
+        values.
+@item group.size
+@tab grouped count of true values
+@item group.sum
+@tab Tail sum of groups of a sliding window of fixed size
+@item
+@item inspect.getAtomNames
+@tab Collect a BAT with the atom names
+@item inspect.getAtomSizes
+@tab Collect a BAT with the atom sizes
+@item inspect.getAtomSuperNames
+@tab Collect a BAT with the atom names
+@item inspect.getDefinition
+@tab Returns a string representation 
+	of a specific function
+@item inspect.getFunction
+@tab Obtain the function name
+@item inspect.getKind
+@tab Obtain the instruction kind
+@item inspect.getModule
+@tab Obtain the function name
+@item inspect.getSignature
+@tab Returns the function signature(s)
+@item inspect.getType
+@tab Return the type of a variable (expression)
+@item inspect.getTypeName
+@item
+@item io.export
+@tab Export a BAT as ASCII to a file. If the 'filepath' is not absolute, it
+ is put into the .../dbfarm/$DB directory. Success of failure is indicated.
+@item io.ftable
+@tab Print an n-ary table to a file.
+@item io.import
+@tab Import a BAT from an ASCII dump. The new tuples are *inserted* into the
+ parameter BAT. You have to create it! Its signature must match the dump,
+ else parsing errors will occur and FALSE is returned.
+@item io.print
+@tab Print a MAL value tuple .
+@item io.printf
+@item io.printft
+@tab Select default format 
+@item io.prompt
+@tab Print a MAL value without brackets.
+@item io.stderr
+@tab return the error stream for the database console
+@item io.stdin
+@tab return the input stream to the database client
+@item io.stdout
+@tab return the output stream for the database client
+@item io.table
+@tab Print an n-ary table.
+@item
+@item lock.create
+@tab Create an unset lock
+@item lock.destroy
+@tab Destroy a lock
+@item lock.set
+@tab Try to set a lock; if set, 
+	block till it is freed
+@item lock.tostr
+@tab Overloaded atom function
+@item lock.try
+@tab Try a lock, if free set it, 
+	if not return EBUSY
+@item lock.unset
+@tab Unset a lock
+@item
+@item mal.assert
+@tab Check a property
+@item mal.call
+@tab Evaluate a program stored in a BAT
+@item mal.newRange
+@tab This routine introduces an iterator
+	over a scalar domain.
+@item mal.nextElement
+@tab Advances the iterator with a fixed value
+	until it becomes >= last.
+@item mal.raise
+@tab Raise an exception labeled 
+	with a specific message.
+@item mal.register
+@tab Compile the code string and register it as a MAL function
+@item mal.source
+@tab Merge the instructions stored in the 
+	file with the current program
+@item
+@item manual.create
+@tab Produces a XML-formatted manual over all modules loaded.
+@item manual.createHelp
+@tab Produces a manual with help lines grouped by module.
+@item manual.createOverview
+@tab Produces an overview of all functions grouped by module.
+@item manual.help
+@tab Collect the comments for a given function pattern
+@item
+@item mapi.epilogue
+@item mapi.listen
+@tab Start the Mapi listener on <port> for <maxusers>. 
+	For a new client connection MAL procedure <cmd>(Stream s_in, Stream s_out)
+	is called.If no <cmd> is specified a new client thread is forked.
+@item mapi.listen_ssl
+@tab Start the Mapi listener on <port> for <maxusers> using SSL. 
+	<keyfile> and <certfile> give the path names for files with the 
+	server key and certificates in PEM format. For a new client connection 
+	MAL procedure <cmd>(Stream s_in, Stream s_out) is called.
+	If no <cmd> is specified a new client thread is forked.
+@item mapi.prelude
+@item mapi.resume
+@tab Resume the interaction with a specific client thread
+@item mapi.stop
+@tab Terminate all sessions of by a client
+@item mapi.suspend
+@tab Suspend a client interactiont using a
+         user-supplied session key.  The session
+         is broken when the timer (in seconds)
+         for the reconnect expires.
+@item mapi.trace
+@tab Trace (on/off) receipt of messages for all users
+@item
+@item mdb.List
+@tab Dump the routine M.F on standard out.
+@item mdb.getDefinition
+@tab Returns a string representation of the current function 
+	with typing information attached
+@item mdb.getExceptionContext
+@tab extract the context string from the exception message
+@item mdb.getExceptionReason
+@tab extract the reason from the exception message
+@item mdb.getExceptionVariable
+@tab extract the variable name from the exception message
+@item mdb.getStackDepth
+@tab Return the depth of the calling stack.
+@item mdb.getStackFrame
+@tab Collect variable binding of current (n-th) stack frame.
+@item mdb.getStackTrace
+@item mdb.inspect
+@tab Run the debugger on a specific function
+@item mdb.list
+@tab Dump the routine M.F on standard out.
+@item mdb.setCatch
+@tab Turn on/off catching exceptions
+@item mdb.setTimer
+@tab Turn on/off performance timer for debugger
+@item mdb.setTrace
+@tab Turn on/off tracing of current routine
+@item mdb.start
+@tab Start interactive debugger
+@item mdb.stop
+@tab Stop the interactive debugger
+@item mdb.var
+@tab Dump the symboltable of routine M.F on standard out.
+@item
+@item mmath.acos
+@tab The acos(x) function calculates the arc cosine of x, that is the 
+	value whose cosine is x. The value is returned in radians and is 
+	mathematically defined to be between 0 and PI (inclusive).
+@item mmath.asin
+@tab The asin(x) function calculates the arc sine of x, that is the value 
+	whose sine is x. The value is returned in radians and is mathematically 
+	defined to be between -PI/20 and -PI/2 (inclusive).
+@item mmath.atan
+@tab The atan(x) function calculates the arc tangent of x, that is the value 
+	whose tangent is x. The value is returned in radians and is mathematically 
+	defined to be between -PI/2 and PI/2 (inclusive).
+@item mmath.atan2
+@tab The atan2(x,y) function calculates the arc tangent of the two 
+        variables x and y.  It is similar to calculating the arc
+	tangent of y / x, except that the signs of both arguments are 
+        used to determine the quadrant of the result.  The value is 
+	returned in radians and is mathematically defined to be between 
+        -PI/2 and PI/2 (inclusive).
+@item mmath.ceil
+@tab The ceil(x) function rounds x upwards to the nearest integer.
+@item mmath.cos
+@tab The cos(x) function returns the cosine of x, where x is given in 
+        radians. The return value is between -1 and 1.
+@item mmath.cosh
+@tab The cosh() function  returns the hyperbolic cosine of x, which is 
+	defined mathematically as (exp(x) + exp(-x)) / 2.
+@item mmath.exp
+@tab The exp(x) function returns the value of e (the base of 
+        natural logarithms) raised to the power of x.
+@item mmath.fabs
+@tab The fabs(x) function  returns  the  absolute value of the 
+        floating-point number x.
+@item mmath.finite
+@tab The finite(x) function returns true if x is neither infinite 
+        nor a 'not-a-number' (NaN) value, and false otherwise.
+@item mmath.floor
+@tab The floor(x) function rounds x downwards to the nearest integer.
+@item mmath.fmod
+@tab The fmod(x,y) function computes the remainder of dividing x by y.
+	The return value is x - n * y, where n is the quotient of x / y,
+	rounded towards zero to an integer.
+@item mmath.isinf
+@tab The isinf(x) function returns -1 if x represents negative 
+        infinity, 1 if x represents positive infinity, and 0 otherwise.
+@item mmath.isnan
+@tab The isnan(x) function returns true if x is 'not-a-number' 
+        (NaN), and false otherwise.
+@item mmath.log
+@tab The log(x) function returns the natural logarithm of x.
+@item mmath.log10
+@tab The log10(x) function returns the base-10 logarithm of x.
+@item mmath.pow
+@tab The pow(x,y) function  returns the value of x raised to the power of y.
+@item mmath.rand
+@tab return a random number
+@item mmath.round
+@tab The round(n, m) returns n rounded to m places to the right 
+        of the decimal point; if m is omitted, to 0 places. m can be 
+	negative to round off digits left of the decimal point. 
+        m must be an integer.
+@item mmath.sin
+@tab The sin(x) function returns the cosine of x, where x is given in 
+        radians. The return value is between -1 and 1.
+@item mmath.sinh
+@tab The sinh() function  returns  the  hyperbolic sine of x, which 
+        is defined mathematically as (exp(x) - exp(-x)) / 2.
+@item mmath.sqrt
+@tab The sqrt(x) function returns the non-negative square root of x.
+@item mmath.srand
+@tab initialize the rand() function with a seed
+@item mmath.tan
+@tab The tan(x) function returns the tangent of x,
+        where x is given in radians
+@item mmath.tanh
+@tab The tanh() function returns the hyperbolic tangent of x, which is 
+	defined mathematically as sinh(x) / cosh(x).
+@item
+@item mtime.add
+@tab returns the timestamp that comes 'msecs' 
+	(possibly negative) after 'value'.
+@item mtime.adddays
+@tab returns the date after a number 
+	of days (possibly negative).
+@item mtime.addmonths
+@tab returns the date after a number of 
+	months (possibly negative).
+@item mtime.addyears
+@tab returns the date after a number 
+	of years (possibly negative).
+@item mtime.compute
+@tab compute the date from a rule in a given year
+@item mtime.current_date
+@item mtime.current_time
+@item mtime.current_timestamp
+@item mtime.date
+@tab extracts date from timestamp in a 
+	specific timezone.
+@item mtime.date_add_month_interval
+@tab Add months to a date
+@item mtime.date_add_sec_interval
+@tab Add seconds to a date
+@item mtime.date_sub_sec_interval
+@tab Subtract seconds from a date
+@item mtime.day
+@tab extract day from rule.
+@item mtime.dayname
+@tab Returns day name from a number 
+	between [1-7], str(nil) otherwise.
+@item mtime.daynum
+@tab Returns number of day [1-7] from a 
+	string or nil if does not match any.
+@item mtime.dayofweek
+@tab Returns the current day of the week 
+	where 1=sunday, .., 7=saturday
+@item mtime.dayofyear
+@tab Returns N where d is the Nth day 
+	of the year (january 1 returns 1)
+@item mtime.daytime
+@tab default time with zeroed components
+@item mtime.diff
+@tab returns the number of milliseconds 
+	between 'val1' and 'val2'.
+@item mtime.dst
+@tab return whether DST holds in the 
+	timezone at a certain point of time.
+@item mtime.end_dst
+@tab extract rule that determines 
+	end of DST from tzone.
+@item mtime.hours
+@tab extracts hour from daytime
+@item mtime.milliseconds
+@tab extracts milliseconds from daytime
+@item mtime.minutes
+@tab extract minutes from rule.
+@item mtime.month
+@tab extract month from rule.
+@item mtime.monthname
+@tab Returns month name from a number 
+	between [1-12], str(nil) otherwise.
+@item mtime.monthnum
+@tab Returns month number [1-12] from a string
+	 or nil if does not match any.
+@item mtime.msecs
+@tab convert date components to milliseconds
+@item mtime.olddate
+@tab create a date from the old instant 
+	format.
+@item mtime.oldduration
+@tab parse the old duration format and 
+	return an (estimated) number of days.
+@item mtime.prelude
+@item mtime.rule
+@tab create a DST start/end date rule.
+@item mtime.seconds
+@tab extracts seconds from daytime
+@item mtime.start_dst
+@tab extract rule that determines 
+	start of DST from tzone.
+@item mtime.time_synonyms
+@tab Allow synonyms for the parse format of 
+	date/timestamp.
+@item mtime.timestamp
+@tab creates a timestamp from (d,dt) parameters (in the local timezone).
+@item mtime.timezone
+@tab Test and set the timezone.
+@item mtime.tzone
+@tab create a tzone as an hour difference 
+	from GMT and a DST.
+@item mtime.tzone_local
+@tab get the local tzone; which is used for printing timestamps
+@item mtime.weekday
+@tab extract weekday from rule.
+@item mtime.weekofyear
+@tab Returns the week number in the year.
+@item mtime.year
+@tab extracts year from date (nonzero 
+	value between -5867411 and +5867411).
+@item
+@item optimizer.aliasRemoval
+@tab Alias removal optimizer
+@item optimizer.clrDebug
+@item optimizer.commonExpressionRemoval
+@tab Common subexpression optimizer
+@item optimizer.costEstimation
+@tab Estimate the cost of a relational expression
+@item optimizer.deadCodeRemoval
+@tab Dead code optimizer
+@item optimizer.dumpQEP
+@tab Produce an indented tree visualisation
+@item optimizer.emptySet
+@tab Move constant expressions out of the blocks
+@item optimizer.expressionAccumulation
+@tab Replace calculations with accumulator model
+@item optimizer.factorize
+@tab Turn function into a factory
+@item optimizer.garbageCollector
+@tab Garbage collector optimizer
+@item optimizer.macroContraction
+@tab Inliner of a specific function
+@item optimizer.macroExpansion
+@tab Inliner of a specific function
+@item optimizer.multiplex
+@tab Compiler for multiplexed instructions.
+@item optimizer.optimize
+@tab Optimize a specific operation
+@item optimizer.partitionedQuery
+@tab Experiment with partitioned databases
+@item optimizer.peephole
+@tab Perform local rewrites
+@item optimizer.prelude
+@tab Initialize the optimizer
+@item optimizer.reduce
+@tab Estimate the cost of a relational expression
+@item optimizer.setDebug
+@item optimizer.showFlowGraph
+@tab Dump the data flow of the function 
+	M.F in a format recognizable by the 
+	command 'dot' on the file s
+@item optimizer.showPlan
+@tab Illustrate the plan derived so far
+@item optimizer.singleton
+@tab Perform singleton optimization
+@item optimizer.strengthReduction
+@tab Move constant expressions out of the loop
+@item
+@item partitions.close
+@tab Save and close the partition box 
+@item partitions.compress
+@tab Compress the group to remove oid holes
+@item partitions.delete
+@tab Delete a BAT from the partition
+@item partitions.deposit
+@tab Enter a new BAT into the partition box
+@item partitions.destroy
+@tab Destroy the partition box
+@item partitions.discard
+@tab Release a BAT variable from the box
+@item partitions.dump
+@item partitions.getLastPartition
+@tab Obtain the last partition for update
+@item partitions.getRange
+@tab Obtain the oid range for a partition
+@item partitions.hasMoreElements
+@tab Localize the next partition for processing.
+@item partitions.insert
+@tab Add a BAT as a partition to the end of the list.
+@item partitions.newIterator
+@tab Create an iterator over the BAT partitions.
+@item partitions.open
+@tab Locate and open the partition box
+@item partitions.prelude
+@item partitions.release
+@tab Release a single BAT with its partitions from the  box
+@item partitions.releaseAll
+@tab Release all partitions in the box
+@item partitions.setCapacity
+@tab Limit the content of all remaining BATs
+@item partitions.take
+@tab Take a partition from the box
+@item partitions.toString
+@tab Get the string representation of an element in the box
+@item
+@item pcre.compile
+@tab compile a pattern
+@item pcre.match
+@tab POSIX pattern matching against a string
+@item pcre.null
+@item pcre.select
+@tab Select tuples based on the pattern
+@item pcre.uselect
+@tab Select tuples based on the pattern, only returning the head
+@item
+@item profiler.activate
+@tab Make the specified counter active.
+@item profiler.clearTrace
+@tab Clear the profiler tables
+@item profiler.closeStream
+@tab Stop sending the event records
+@item profiler.clrFilter
+@tab Clear the performance trace bit 
+	of the selected functions.
+@item profiler.deactivate
+@tab Deactivate the counter
+@item profiler.dumpTrace
+@tab List the events collected
+@item profiler.getTrace
+@tab Get the trace details of a specific event
+@item profiler.openStream
+@tab Send the log events to a file 
+@item profiler.setAll
+@tab Short cut for setFilter(*,*).
+@item profiler.setCachedProfiling
+@tab use cached events rather then online
+@item profiler.setEndPoint
+@tab End performance tracing after mod.fcn
+@item profiler.setFilter
+@tab Generate an event record for all 
+	function calls that satisfy the regular 
+	expression mod.fcn. A wildcard (*) can 
+	be used as name to identify all
+@item profiler.setNone
+@tab Short cut for clrFilter(*,*).
+@item profiler.setOfflineProfiling
+@tab Sent events over stream
+@item profiler.setOnlineProfiling
+@tab Sent events over stream
+@item profiler.setStartPoint
+@tab Start performance tracing at mod.fcn
+@item profiler.start
+@tab Start performance tracing
+@item profiler.startTrace
+@tab Prepare for online tracing using the profile filter
+@item profiler.stop
+@tab Stop performance tracing
+@item profiler.stopTrace
+@tab Stop online tracing
+@item
+@item rule.define
+@tab Introduce a synomym timezone rule.
+@item
+@item sema.create
+@tab Create an unset sema, with an initial value
+@item sema.destroy
+@tab Destroy a semaphore
+@item sema.down
+@tab Decrement the semaphpore if >0; else block
+@item sema.up
+@tab Increment the semaphore
+@item
+@item
+@item statistics.close
+@tab Close the statistics box 
+@item statistics.deposit
+@tab Enter a new BAT into the statistics box
+@item statistics.destroy
+@tab Destroy the statistics box
+@item statistics.discard
+@tab Release a BAT variable from the box
+@item statistics.dump
+@tab Display the statistics table
+@item statistics.forceUpdate
+@tab Bring the statistics up to date for one BAT
+@item statistics.getCount
+@tab Return latest stored count information
+@item statistics.getHistogram
+@tab Return the latest histogram
+@item statistics.getHotset
+@tab Return a table with BAT names that have been touched
+since the start of the session
+@item statistics.getMax
+@tab Return latest stored maximum information
+@item statistics.getMin
+@tab Return latest stored minimum information
+@item statistics.getObjects
+@tab Return a table with BAT names managed
+@item statistics.getSize
+@tab Return latest stored count information
+@item statistics.hasMoreElements
+@tab Locate next element in the box
+@item statistics.newIterator
+@tab Locate next element in the box
+@item statistics.open
+@tab Locate and open the statistics box
+@item statistics.prelude
+@tab Initialize the statistics package
+@item statistics.release
+@tab Release a single BAT from the  box
+@item statistics.releaseAll
+@tab Release all variables in the box
+@item statistics.take
+@tab Take a variable out of the statistics box
+@item statistics.toString
+@tab Get the string representation of an element in the box
+@item statistics.update
+@tab Check for stale information
+@item
+@item status.cpuStatistics
+@tab Global cpu usage information
+@item status.gdkEnv
+@tab Pseudo bat to map thread to name
+@item status.gdkThread
+@tab Pseudo bat to map thread to name
+@item status.ioStatistics
+@tab Global IO activity information
+@item status.memStatistics
+@tab Global memory usage information
+@item status.memUsage
+@tab Get a split-up of how much memory 
+	 blocks are in use.
+@item status.mem_cursize
+@tab the amount of physical swapspace in KB that is currently in use
+@item status.mem_maxsize
+@tab set the maximum usable amount of physical swapspace in KB
+@item status.vmUsage
+@tab Get a split-up of how much virtual 
+	 memory blocks are in use.
+@item status.vm_cursize
+@tab the amount of logical VM space in KB that is currently in use
+@item status.vm_maxsize
+@tab set the maximum usable amount of physical swapspace in KB
+@item
+@item str.+
+@tab Concatenate two strings.
+@item str.STRprelude
+@item str.chrAt
+@tab String array lookup operation.
+@item str.codeset
+@tab Return the locale's codeset
+@item str.endsWith
+@tab Suffix check.
+@item str.iconv
+@tab String codeset conversion
+@item str.length
+@tab Return the length of a string.
+@item str.ltrim
+@tab Strip whitespaces from start of a string.
+@item str.nbytes
+@tab Return the string length in bytes.
+@item str.r_search
+@tab Reverse search for a char. Returns 
+	 position, -1 if not found.
+@item str.rtrim
+@tab Strip whitespaces from end of a string.
+@item str.search
+@tab Search for a character. Returns 
+	 position, -1 if not found.
+@item str.startsWith
+@tab Prefix check.
+@item str.str
+@tab Noop routine.
+@item str.string
+@tab Return substring s[offset..offset+count] 
+	of a string s[0..n]
+@item str.substitute
+@tab Substitute first occurrence of 'src' by 
+	'dst'.  Iff repeated = true this is 
+	repeated while 'src' can be found in the 
+	result string. In order to prevent 
+	recursion and result strings of unlimited 
+	size, repeating is only done iff src is 
+	not a substring of dst.
+@item str.toLower
+@tab Convert a string to lower case.
+@item str.toUpper
+@tab Convert a string to upper case.
+@item str.trim
+@tab Strip whitespaces around a string.
+@item str.unicode
+@tab convert a unicode to a character.
+@item str.unicodeAt
+@tab get a unicode character 
+	(as an int) from a string position.
+@item
+@item stream.blocked
+@tab open a block based stream
+@item stream.close
+@tab close and destroy the stream s
+@item stream.flush
+@tab flush the stream
+@item stream.openRead
+@tab convert an ascii stream to binary
+@item stream.openReadBytes
+@tab open a file stream for reading
+@item stream.openWrite
+@tab convert an ascii stream to binary
+@item stream.openWriteBytes
+@tab open a file stream for writing
+@item stream.readInt
+@tab read integer data from the stream
+@item stream.readStr
+@tab read string data from the stream
+@item stream.socketRead
+@tab open ascii socket stream for reading
+@item stream.socketReadBytes
+@tab open a socket stream for reading
+@item stream.socketWrite
+@tab open ascii socket stream for writing
+@item stream.socketWriteBytes
+@tab open a socket stream for writing
+@item stream.writeInt
+@tab write data on the stream
+@item stream.writeStr
+@tab write data on the stream
+@item
+@item tablet.display
+@tab Display a formatted table
+@item tablet.dump
+@tab Print all pages with header to a stream
+@item tablet.finish
+@tab Free the storage space of the report descriptor
+@item tablet.firstPage
+@tab Produce the first page of output
+@item tablet.getPage
+@tab Produce the i-th page of output
+@item tablet.getPageCnt
+@tab Return the size in number of pages
+@item tablet.header
+@tab Display the minimal header for the table
+@item tablet.input
+@tab Load a bat using specific format.
+@item tablet.lastPage
+@tab Produce the last page of output
+@item tablet.load
+@tab Load a bat using specific format.
+@item tablet.nextPage
+@tab Produce the next page of output
+@item tablet.output
+@tab Send the bat to an output stream.
+@item tablet.page
+@tab Display all pages at once without header
+@item tablet.prevPage
+@tab Produce the prev page of output
+@item tablet.setColumn
+@tab Bind i-th output column to a variable
+@item tablet.setColumnBracket
+@tab Format the brackets around a field
+@item tablet.setColumnDecimal
+@tab Set the scale and precision for numeric values
+@item tablet.setColumnName
+@tab Set the display name for a given column
+@item tablet.setColumnNull
+@tab Set the display format for a null value for a given column
+@item tablet.setColumnPosition
+@tab Set the character position to use for this field when loading according to 
+	fixed (punch-card) layout.
+@item tablet.setColumnWidth
+@tab Set the maximal display witdh for a given column. All values exceeding 
+	the length are simple shortened without any notice.
+@item tablet.setDelimiter
+@tab Set the column separator.
+@item tablet.setFormat
+@tab Initialize a new reporting structure.
+@item tablet.setPivot
+@tab The pivot bat identifies the tuples of interest. The only requirement 
+        is that all keys mentioned in the pivot tail exist in all BAT parameters 
+        of the print comment. The pivot also provides control over the order 
+        in which the tuples are produced.
+@item tablet.setProperties
+@tab Define the set of properties
+@item tablet.setRowBracket
+@tab Format the brackets around a row
+@item tablet.setStream
+@tab Redirect the output to a stream.
+@item tablet.setTableBracket
+@tab Format the brackets around a table
+@item
+@item thread.exec
+@tab Run a function independently
+@item thread.isDead
+@tab Check availability of a child thread
+@item thread.kill
+@tab Kill a specific thread
+@item thread.suspend
+@tab suspend a processing thread
+@item thread.terminate
+@tab Attempt a soft kill of a thread
+@item thread.wait
+@tab Wait for all threads to be finished
+@item
+@item timestamp.!=
+@tab Equality of two timestamps
+@item timestamp.<
+@tab Equality of two timestamps
+@item timestamp.<=
+@tab Equality of two timestamps
+@item timestamp.=
+@tab Equality of two timestamps
+@item timestamp.>
+@tab Equality of two timestamps
+@item timestamp.>=
+@tab Equality of two timestamps
+@item timestamp.epoch
+@tab unix-time (epoch) support: seconds since epoch
+@item timestamp.isnil
+@tab Nil test for timestamp value
+@item timestamp.unix_epoch
+@tab The Unix epoch time (00:00:00 UTC on January 1, 1970)
+@item
+@item transaction.abort
+@tab abort changes in certain BATs.
+@item transaction.alpha
+@tab List insertions since last commit.
+@item transaction.clean
+@tab declare a BAT clean without 
+	 flushing to disk.
+@item transaction.commit
+@tab commit changes in certain BATs.
+@item transaction.delta
+@tab List deletions since last commit.
+@item transaction.sync
+@tab save all persistent BATs
+@item
+@item tzone.str
+@item tzone.timestamp
+@tab Utility function to create a timestamp from a number of seconds since the Unix epoch
+@item
+@item unix.getenv
+@tab Get the environment variable string.
+@item unix.setenv
+@tab Set the environment variable string.
+@item
+@item url.getAnchor
+@tab Extract the URL anchor (reference)
+@item url.getBasename
+@tab Extract the URL base file name
+@item url.getContent
+@tab Get the URL resource in a local file
+@item url.getContext
+@tab Get the path context of a URL 
+@item url.getDirectory
+@tab Extract directory names from the URL
+@item url.getDomain
+@tab Extract Internet domain from the URL
+@item url.getExtension
+@tab Extract the file extension of the URL
+@item url.getFile
+@tab Extract the last file name of the URL
+@item url.getHost
+@tab Extract the server name from the URL
+@item url.getPort
+@tab Extract the port id from the URL
+@item url.getProtocol
+@tab Extract the protocol from the URL
+@item url.getQuery
+@tab Extract the query string from the URL
+@item url.getQueryArg
+@tab Extract argument mappings from the URL
+@item url.getRobotURL
+@tab Extract the location of the robot 
+	control file
+@item url.getUser
+@tab Extract the user identity from the URL
+@item url.isaURL
+@tab Check conformity of the URL syntax
+@item url.newurl
+@tab Construct URL from protocol, host,and file
+@item url.url
+@tab Create an URL from a string literal
+@item
+@item user.main
+@end multitable
