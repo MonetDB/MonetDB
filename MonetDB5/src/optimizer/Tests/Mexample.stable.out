@@ -19,11 +19,11 @@ stdout of test 'Mexample` in directory 'src/optimizer` itself:
 #
 function user.main():int;	# 0  (main:int)
     b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
-    bat.insert(b,1,1);	# 2 BKCinsert_bun (_3:void)<-(b:bat[:int,:int])(_4:int)(_4:int)
+    bat.insert(b,1,1);	# 2 BKCinsert_bun_int_int (_3:void)<-(b:bat[:int,:int])(_4:int)(_4:int)
     _8 := bat.new(:int,:int);	# 3 CMDBATnew (_8:bat[:int,:int])<-(_9:int)(_9:int)
 barrier (_11,_12,_13):= chop.newIterator(b);	# 4 CHPbunIterator (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 10
     _15 := calc.+(_13,1);	# 5 CALCbinaryADDintint (_15:int)<-(_13:int)(_4:int)
-    bat.insert(_8,_12,_15);	# 6 BKCinsert_bun (_16:void)<-(_8:bat[:int,:int])(_12:int)(_15:int)
+    bat.insert(_8,_12,_15);	# 6 BKCinsert_bun_int_int (_16:void)<-(_8:bat[:int,:int])(_12:int)(_15:int)
 catch MALexception;	# 7  (MALexception:str) jump 8
 exit MALexception;	# 8  (MALexception:str)
     redo (_11,_12,_13):= chop.hasMoreElements(b);	# 9 CHPbunHasMoreElements (_11:lng)(_12:int)(_13:int)<-(b:bat[:int,:int]) jump 5

@@ -31,10 +31,10 @@ function user.main():int;	# 0  (main:int)
 # bat C can still be shared with B 	# 2  (_4:str)
     b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_9:int)(_9:int)
     c := bat.new(:int,:int);	# 4 CMDBATnew (c:bat[:int,:int])<-(_9:int)(_9:int)
-    bat.insert(b,1,1);	# 5 BKCinsert_bun (_11:void)<-(b:bat[:int,:int])(_12:int)(_12:int)
+    bat.insert(b,1,1);	# 5 BKCinsert_bun_int_int (_11:void)<-(b:bat[:int,:int])(_12:int)(_12:int)
 # in this case D should be left alone 	# 6  (_14:str)
     d := bat.new(:int,:int);	# 7 CMDBATnew (d:bat[:int,:int])<-(_16:int)(_16:int)
-    bat.insert(d,2,2);	# 8 BKCinsert_bun (_17:void)<-(d:bat[:int,:int])(_18:int)(_18:int)
+    bat.insert(d,2,2);	# 8 BKCinsert_bun_int_int (_17:void)<-(d:bat[:int,:int])(_18:int)(_18:int)
 end main;	# 9  
 
 # 23:52:52 >  

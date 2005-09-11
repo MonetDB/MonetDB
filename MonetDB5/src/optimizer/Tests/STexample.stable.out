@@ -23,7 +23,7 @@ stdout of test 'STexample` in directory 'src/optimizer` itself:
 #
 function user.main():int;	# 0  (main:int)
     b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
-    bat.insert(b,1,2);	# 2 BKCinsert_bun (_3:void)<-(b:bat[:int,:int])(_4:int)(_5:int)
+    bat.insert(b,1,2);	# 2 BKCinsert_bun_int_int (_3:void)<-(b:bat[:int,:int])(_4:int)(_5:int)
 #many more inserts 	# 3  (_7:str)
     c{singleton} := algebra.select(b,0,4);	# 4 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_9:int)(_10:int)
     (_15,_16):= bat.unpack(c{singleton});	# 5 CMDbatunpack (_15:int)(_16:int)<-(c:bat[:int,:int])

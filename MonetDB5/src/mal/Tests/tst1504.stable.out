@@ -24,8 +24,8 @@ stdout of test 'tst1504` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
     x := bat.new(:oid,:chr);	# 1 CMDBATnew (x:bat[:oid,:chr])<-(_2:oid)(_3:chr)
-    de_a := bat.insert(x,1@0,'a');	# 2 BKCinsert_bun (de_a:void)<-(x:bat[:oid,:chr])(_5:oid)(_6:chr)
-    ee_a := bat.insert(x,2@0,'a');	# 3 BKCinsert_bun (ee_a:void)<-(x:bat[:oid,:chr])(_8:oid)(_6:chr)
+    de_a := bat.insert(x,1@0,'a');	# 2 BKCinsert_bun_oid_any (de_a:void)<-(x:bat[:oid,:chr])(_5:oid)(_6:chr)
+    ee_a := bat.insert(x,2@0,'a');	# 3 BKCinsert_bun_oid_any (ee_a:void)<-(x:bat[:oid,:chr])(_8:oid)(_6:chr)
     y := bat.new(:chr,:oid);	# 4 CMDBATnew (y:bat[:chr,:oid])<-(_10:chr)(_11:oid)
     xr := bat.reverse(x);	# 5 BKCreverse (xr:bat[:chr,:oid])<-(x:bat[:oid,:chr])
     io.print(xr);	# 6 IOprint_val (_13:int)<-(xr:bat[:chr,:oid])

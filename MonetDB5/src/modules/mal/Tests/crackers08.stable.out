@@ -136,7 +136,7 @@ function user.main():int;	# 0  (main:int)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
     l := 0:int;	# 3  (l:int)<-(_6:int)
 barrier (v,i):= mal.newRange(0:int);	# 4 RNGnewRange_int (v:bit)(i:int)<-(_6:int) jump 9
-    bat.insert(b,l,l);	# 5 BKCinsert_bun (_9:void)<-(b:bat[:int,:int])(l:int)(l:int)
+    bat.insert(b,l,l);	# 5 BKCinsert_bun_int_int (_9:void)<-(b:bat[:int,:int])(l:int)(l:int)
     l := calc.+(l,1:int);	# 6 CALCbinaryADDintint (l:int)<-(l:int)(_10:int)
     l := calc.*(i,i);	# 7 CALCbinaryMULintint (l:int)<-(i:int)(i:int)
     redo (v,i):= mal.nextElement(1:int,1000000:int);	# 8 RNGnextElement_int (v:bit)(i:int)<-(_10:int)(_11:int) jump 5

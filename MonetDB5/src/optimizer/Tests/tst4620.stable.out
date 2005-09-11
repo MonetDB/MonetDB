@@ -50,7 +50,7 @@ function user.main():int;	# 0  (main:int)
 #some join operations 	# 1  (_2:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
 barrier (k,v):= mal.newRange(0:int);	# 3 RNGnewRange_int (k:bit)(v:int)<-(_7:int) jump 6
-    bat.insert(b,v,v);	# 4 BKCinsert_bun (_8:void)<-(b:bat[:int,:int])(v:int)(v:int)
+    bat.insert(b,v,v);	# 4 BKCinsert_bun_int_int (_8:void)<-(b:bat[:int,:int])(v:int)(v:int)
     redo (k,v):= mal.nextElement(1:int,100:int);	# 5 RNGnextElement_int (k:bit)(v:int)<-(_9:int)(_10:int) jump 4
 exit (k,v);	# 6  (k:bit)(v:int)
     i := algebra.count(b);	# 7 ALGcount_bat (i:lng)<-(b:bat[:int,:int])
