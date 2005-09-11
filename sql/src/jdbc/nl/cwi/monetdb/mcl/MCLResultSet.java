@@ -38,20 +38,30 @@ public class MCLResultSet {
 	private List columns;
 	private String id;
 
-	private static idcnt = 0;
+	private static int idcnt = 0;
 	
 	/**
 	 * Creates a new MCLResultSet that is in intially empty.  An empty
 	 * MCLResultSet is not valid when being supplied to an MCLServer.
-	 * This constructor is synchronised to avoid race conditions when
-	 * determining its id from idcnt.
 	 */
-	public synchronized MCLResultSet() {
+	public MCLResultSet() {
 		isValid = false;
 		columns = new ArrayList();
-		id = "rs" + idcnt++;
+		// we can't generate the id inline if we want to be thread safe
+		id = generateId();
 	}
 
+	/**
+	 * Retrieves the next id for an MCLResultSet.  This method is
+	 * synchronised to avoid race conditions when determining its id
+	 * from idcnt.
+	 *
+	 * @return the next id
+	 */
+	private synchronized String generateId() {
+		return("rs" + idcnt++);
+	}
+	
 	/**
 	 * Adds the given Object array as column to this MCLResultSet.
 	 *
@@ -182,39 +192,41 @@ public class MCLResultSet {
 			new MCLException("stop index either too small or too large (0 < " + stop + " <= " + dataSize + ")");
 
 		DataMessage ret = new DataMessage(stop - start);
-		String tmpS[] = new String[columns.size()];
+		StringBuffer tmpS = new StringBuffer(columns.size() * 20);
 		for ( ; start < stop; start++) {
 			for (int i = 0; i < columns.size(); i++) {
 				Column col = (Column)(columns.get(i));
 				switch (col.ctype) {
 					case 'B':
-						tmpS[i] = ((Boolean)(col.data[i])).booleanValue() ? "1" : "0";
+						tmpS.append(((Boolean)(col.data[i])).booleanValue() ? '1' : '0');
 					break;
 					case 'c':
-						tmpS[i] = "" + ((Character)(col.data[i])).charValue();
+						tmpS.append(((Character)(col.data[i])).charValue());
 					break;
 					case 'S':
-						tmpS[i] = col.data[i].toString().length() + ":" + col.data[i].toString();
-					break;				}
+						tmpS.append(col.data[i].toString().length());
+						tmpS.append(':');
+						tmpS.append(col.data[i]);
+					break;
 					case 'o':
 						// not known (yet?)
-						tmpS[i] = "";
+						tmpS.append("");
 					break;
 					case 'b':
 					case 's':
 					case 'i':
-						tmpS[i] = "" + ((Number)(col.data[i])).intValue();
+						tmpS.append(((Number)(col.data[i])).intValue());
 					break;
 					case 'l':
-						tmpS[i] = "" + ((Number)(col.data[i])).longValue();
+						tmpS.append(((Number)(col.data[i])).longValue());
 					break;
 					case 'f':
 					case 'd':
-						tmpS[i] = col.data[i].toString();
+						tmpS.append(col.data[i]);
 					break;
 					case 'L':
 						// not (yet?) supported
-						tmpS[i] = "";
+						tmpS.append("");
 					break;
 					case 'T':
 					{
@@ -222,10 +234,10 @@ public class MCLResultSet {
 						Calendar cal = Calendar.getInstance();
 						cal.setTime((java.util.Date)(col.data[i]));
 						int zone = -(cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET)) / (60 * 1000);
-						tmpS[i] = prefixZero(milis / 1000, 10) +
-							prefixZero(millis % 1000 * 10, 7) +
-							(zone < 0 ? "-" : "+") +
-							prefixZero(zone < 0 ? -zone : zone, 5);
+						tmpS.append(prefixZero(millis / 1000, 10));
+						tmpS.append(prefixZero(millis % 1000 * 10, 7));
+						tmpS.append(zone < 0 ? '-' : '+');
+						tmpS.append(prefixZero(zone < 0 ? -zone : zone, 5));
 					}
 					break;
 					case 't':
@@ -234,28 +246,33 @@ public class MCLResultSet {
 						Calendar cal = Calendar.getInstance();
 						cal.setTime((java.sql.Time)(col.data[i]));
 						int zone = -(cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET)) / (60 * 1000);
-						tmpS[i] = prefixZero(milis / 1000, 5) +
-							(zone < 0 ? "-" : "+") +
-							prefixZero(zone < 0 ? -zone : zone, 5);
+						tmpS.append(prefixZero(millis / 1000, 5));
+						tmpS.append(zone < 0 ? '-' : '+');
+						tmpS.append(prefixZero(zone < 0 ? -zone : zone, 5));
 					}
 					break;
 					case 'D':
 					{
 						long millis = ((java.sql.Date)(col.data[i])).getTime();
-						tmpS[i] = prefixZero(milis / 1000, 10);
+						tmpS.append(prefixZero(millis / 1000, 10));
 					}
 					break;
 					case 'u':
 					{
 						String clazz = col.data[i].getClass().getName();
 						clazz = clazz.substring(clazz.lastIndexOf(".") + 1);
-						tmpS[i] = clazz + ":" +
-							col.data[i].toString().length() + ":" +
-							col.data[i].toString();
+						tmpS.append(clazz);
+						tmpS.append(':');
+						tmpS.append(col.data[i].toString().length());
+						tmpS.append(':');
+						tmpS.append(col.data[i]);
 					}
 					break;
+				}
+				if (i < columns.size() - 1) tmpS.append('\t');
 			}
-			red.addSentence(new MCLSentence(MCLSentence.DATA, tmpS));
+			ret.addSentence(new MCLSentence(MCLSentence.DATA, tmpS.toString()));
+			tmpS.delete(0, tmpS.length());
 		}
 
 		return(ret);
