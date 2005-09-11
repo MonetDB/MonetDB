@@ -144,12 +144,14 @@ Table of contents
 * Variable Stack Reduction::
 * Query Execution Plans::
 @end menu
+
 * Program Debugging::
 @menu
 * The MAL Debugger::
 * Handling Breakpoints::
 * Runtime Inspection::
 @end menu
+
 * Execution Profiling::
 @menu
 * Event Filtering ::
@@ -160,11 +162,14 @@ Table of contents
 * MonetDB BAT Kernel ::
 * Advanced Topics::
 * Appendices::
+@iftex
 @menu
 * MAL Syntax ::
+* Conversion of MIL Programs ::
 * MAL Instruction Overview::
 * MAL Instruction Help::
 @end menu
+@end iftex
 @end menu
 
 @end ifnottex
@@ -266,25 +271,26 @@ This is the place to describe Membedded, distribution stuff...
 @node Appendices, MAL Syntax , Advanced Topics, TOC
 @menu
 * MAL Syntax ::
+* Conversion of MIL Programs::
 * MAL Instruction Overview:: 
 * MAL Instruction Help:: 
-* Conversion of MIL Programs::
 @end menu
 
-@node MAL Syntax, MAL Instruction Overview, Appendices, Appendices
+@node MAL Syntax, Conversion of MIL Programs, Appendices, Appendices
 @ifnottex
 @include mal_syntax.bdy.texi
 @end ifnottex
 
-@node MAL Instruction Overview, MAL Instruction Help, MAL Syntax, Appendices
+@node Conversion of MIL Programs, MAL Instruction Overview , MAL Syntax, Appendices
+@appendix Conversion of MIL programs
+@include mil_parser.bdy.texi
+
+@node MAL Instruction Overview, MAL Instruction Help, Conversion of MIL Programs, Appendices
 @appendix MAL Instruction Overview
 @include Assets/MALinstructions.texi
 
-@node MAL Instruction Help, Conversion of MIL Programs , MAL Instruction Overview, Appendices
+@node MAL Instruction Help, , MAL Instruction Overview, Appendices
 @appendix MAL Instruction Help
 @include Assets/MALhelp.texi
 
-@node Conversion of MIL Programs, , MAL Instruction Help, Appendices
-@appendix Conversion of MIL programs
-@include mil_parser.bdy.texi
 @bye
