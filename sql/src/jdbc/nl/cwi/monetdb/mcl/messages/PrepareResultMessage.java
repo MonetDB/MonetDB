@@ -176,7 +176,8 @@ public class PrepareResultMessage extends MCLMessage {
 	}
 
 	/**
-	 * Sets the digits header if not yet set.
+	 * Sets the digits header if not yet set.  A value of -1 means the
+	 * value is absent.
 	 *
 	 * @param digits an array of Strings representing the schema names
 	 * @throws MCLException if the columncount header is not yet set,
@@ -192,11 +193,12 @@ public class PrepareResultMessage extends MCLMessage {
 			new MCLException("digits header already set");
 
 		this.digits = digits;
-		sentences[7] = new MCLSentence(MCLSentence.METADATA, "digits", digits);
+		sentences[7] = new MCLSentence(MCLSentence.METADATA, "digits", digits, true);
 	}
 
 	/**
-	 * Sets the scale header if not yet set.
+	 * Sets the scale header if not yet set.  A value of -1 means the
+	 * value is absent.
 	 *
 	 * @param scales an array of Strings representing the schema names
 	 * @throws MCLException if the columncount header is not yet set,
@@ -212,7 +214,7 @@ public class PrepareResultMessage extends MCLMessage {
 			new MCLException("scale header already set");
 
 		scale = scales;
-		sentences[8] = new MCLSentence(MCLSentence.METADATA, "scale", scales);
+		sentences[8] = new MCLSentence(MCLSentence.METADATA, "scale", scales, true);
 	}
 
 	/**
