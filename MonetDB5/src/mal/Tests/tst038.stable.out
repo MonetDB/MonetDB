@@ -17,7 +17,7 @@ stdout of test 'tst038` in directory 'src/mal` itself:
 #	bat.insert(b,"hello",1);
 #end tst2;
 function user.tst2(b:bat[:any_1,:any_2]):void;	# 0  (tst2:void)<-(b:bat[:any_1,:any_2])
-    bat.insert(b,"hello",1);	# 1 BKCinsert_bun (_2:bat[:str,:int])<-(b:bat[:any_1,:any_2])(_3:str)(_4:int)
+    bat.insert(b,"hello",1);	# 1 BKCinsert_bun (_2:void)<-(b:bat[:any_1,:any_2])(_3:str)(_4:int)
 end tst2;	# 2  
 #
 #b:=new(:int,:str);
@@ -28,7 +28,7 @@ end tst2;	# 2
 !ERROR: 'bat.insert' undefined in user.tst2[1]
 !ERROR: Error in cloned function
 !ERROR: function user.tst2(b:bat[:int,:str]):void;	# 0  (tst2:void)<-(b:bat[:int,:str])
-!ERROR:     bat.insert(b,"hello",1);	# 1  unknown (_2:bat[:str,:int])<-(b:bat[:int,:str])(_3:str)(_4:int)
+!ERROR:     bat.insert(b,"hello",1);	# 1  unknown (_2:void)<-(b:bat[:int,:str])(_3:str)(_4:int)
 !ERROR: end tst2;	# 2  
 !ERROR: 'user.tst2' undefined in user.main[4]
 function user.main():int;	# 0  (main:int)

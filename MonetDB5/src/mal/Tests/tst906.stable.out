@@ -43,7 +43,7 @@ function user.main():int;	# 0  (main:int)
 # check detection of the underlying fast implementations 	# 2  (_4:str)
     b := bat.new(:lng,:lng);	# 3 CMDBATnew (b:bat[:lng,:lng])<-(_6:lng)(_6:lng)
 barrier (v,i):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (v:bit)(i:lng)<-(_9:lng) jump 7
-    bat.insert(b,i,i);	# 5 BKCinsert_bun (_10:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
+    bat.insert(b,i,i);	# 5 BKCinsert_bun (_10:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
     redo (v,i):= mal.nextElement(1:lng,10:lng);	# 6 RNGnextElement_lng (v:bit)(i:lng)<-(_11:lng)(_12:lng) jump 5
 exit (v,i);	# 7  (v:bit)(i:lng)
     c := algebra.copy(b);	# 8 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])

@@ -105,7 +105,7 @@ function user.main():int;	# 0  (main:int)
 barrier (go,i):= mal.newRange(0:lng);	# 5 RNGnewRange_lng (go:bit)(i:lng)<-(_12:lng) jump 10
     k := mmath.rand();	# 6 MATHrandint (k:int)
     l := calc.lng(k);	# 7 CALCint2lng (l:lng)<-(k:int)
-    bat.insert(b,nil,l);	# 8 BKCinsert_bun (_15:bat[:void,:lng])<-(b:bat[:void,:lng])(_16:void)(l:lng)
+    bat.insert(b,nil,l);	# 8 BKCinsert_bun (_15:void)<-(b:bat[:void,:lng])(_16:void)(l:lng)
     redo (go,i):= mal.nextElement(1:lng,1000000:lng);	# 9 RNGnextElement_lng (go:bit)(i:lng)<-(_17:lng)(_18:lng) jump 6
 exit (go,i);	# 10  (go:bit)(i:lng)
     t0 := alarm.usec();	# 11 ALARMusec (t0:lng)

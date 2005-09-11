@@ -128,7 +128,7 @@ function user.tst903():void;	# 0  (tst903:void)
 barrier (go,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (go:bit)(i:lng)<-(_7:lng) jump 8
     k := mmath.rand();	# 4 MATHrandint (k:int)
     l := calc.lng(k);	# 5 CALCint2lng (l:lng)<-(k:int)
-    bat.insert(b,nil,l);	# 6 BKCinsert_bun (_10:bat[:void,:lng])<-(b:bat[:void,:lng])(_11:void)(l:lng)
+    bat.insert(b,nil,l);	# 6 BKCinsert_bun (_10:void)<-(b:bat[:void,:lng])(_11:void)(l:lng)
     redo (go,i):= mal.nextElement(1:lng,1000000:lng);	# 7 RNGnextElement_lng (go:bit)(i:lng)<-(_12:lng)(_13:lng) jump 4
 exit (go,i);	# 8  (go:bit)(i:lng)
     t1 := alarm.usec();	# 9 ALARMusec (t1:lng)

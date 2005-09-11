@@ -25,13 +25,13 @@ function user.main():int;	# 0  (main:int)
 # The likeselect operation 	# 1  (_2:str)
     t := bat.new(:void,:str);	# 2 CMDBATnew (t:bat[:void,:str])<-(_4:void)(_5:str)
     bat.setSequenceBase(t,0@0);	# 3 BKCsetSequenceBase (_6:bat[:void,:str])<-(t:bat[:void,:str])(_7:oid)
-    bat.insert(t,nil,"hello world");	# 4 BKCinsert_bun (_8:bat[:void,:str])<-(t:bat[:void,:str])(_9:void)(_10:str)
-    bat.insert(t,nil,"sleep well");	# 5 BKCinsert_bun (_11:bat[:void,:str])<-(t:bat[:void,:str])(_9:void)(_12:str)
+    bat.insert(t,nil,"hello world");	# 4 BKCinsert_bun (_8:void)<-(t:bat[:void,:str])(_9:void)(_10:str)
+    bat.insert(t,nil,"sleep well");	# 5 BKCinsert_bun (_11:void)<-(t:bat[:void,:str])(_9:void)(_12:str)
     io.print(t);	# 6 IOprint_val (_13:int)<-(t:bat[:void,:str])
     _19 := bat.new(:void,:bit);	# 7 CMDBATnew (_19:bat[:void,:bit])<-(_20:void)(_21:bit)
 barrier (_23,_24,_25):= chop.newIterator(t);	# 8 CHPbunIterator (_23:lng)(_24:void)(_25:str)<-(t:bat[:void,:str]) jump 14
     _27 := str.startsWith(_25,"");	# 9 STRPrefix (_27:bit)<-(_25:str)(_16:str)
-    bat.insert(_19,_24,_27);	# 10 BKCinsert_bun (_28:bat[:void,:bit])<-(_19:bat[:void,:bit])(_24:void)(_27:bit)
+    bat.insert(_19,_24,_27);	# 10 BKCinsert_bun (_28:void)<-(_19:bat[:void,:bit])(_24:void)(_27:bit)
 catch MALexception;	# 11  (MALexception:str) jump 12
 exit MALexception;	# 12  (MALexception:str)
     redo (_23,_24,_25):= chop.hasMoreElements(t);	# 13 CHPbunHasMoreElements (_23:lng)(_24:void)(_25:str)<-(t:bat[:void,:str]) jump 9

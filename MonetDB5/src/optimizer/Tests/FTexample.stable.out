@@ -22,7 +22,7 @@ stdout of test 'FTexample` in directory 'src/optimizer` itself:
 #end test;
 function user.test(s:str):lng;	# 0  (test:lng)<-(s:str)
     b := bat.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-(_3:int)(_4:str)
-    bat.insert(b,1,"hello");	# 2 BKCinsert_bun (_5:bat[:int,:str])<-(b:bat[:int,:str])(_6:int)(_7:str)
+    bat.insert(b,1,"hello");	# 2 BKCinsert_bun (_5:void)<-(b:bat[:int,:str])(_6:int)(_7:str)
     z := algebra.select(b,s,s);	# 3 ALGselect (z:bat[:int,:str])<-(b:bat[:int,:str])(s:str)(s:str)
     i := algebra.count(z);	# 4 ALGcount_bat (i:lng)<-(z:bat[:int,:str])
     return i;	# 5  (i:lng)

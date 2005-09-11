@@ -25,7 +25,7 @@ stdout of test 'tst1000` in directory 'src/mal` itself:
 function user.main():int;	# 0  (main:int)
 #Access BATs  	# 1  (_2:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
-    bat.insert(b,1,2);	# 3 BKCinsert_bun (_5:bat[:int,:int])<-(b:bat[:int,:int])(_6:int)(_7:int)
+    bat.insert(b,1,2);	# 3 BKCinsert_bun (_5:void)<-(b:bat[:int,:int])(_6:int)(_7:int)
     bat.setName(b,"mybat");	# 4 BKCsetName (_8:bat[:int,:int])<-(b:bat[:int,:int])(_9:str)
     c := bbp.bind("mybat");	# 5 CMDbbpbind (c:bat[:any,:any])<-(_9:str)
     io.print(c);	# 6 IOprint_val (_11:int)<-(c:bat[:any,:any])

@@ -1,5 +1,5 @@
 # testing the function resolution on builtin type
-	b:= bbp.new(int,int);
+	b:= bat.new(int,int);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);

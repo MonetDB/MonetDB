@@ -116,7 +116,7 @@ barrier sj_a := true;	# 4  (sj_a:bit)<-(_10:bit) jump 12
     uj_a := i;	# 6  (uj_a:lng)<-(i:lng)
     vj_a := calc.>=(uj_a,0);	# 7 CALCcompGElngint (vj_a:bit)<-(uj_a:lng)(_14:int)
 barrier tj_a := vj_a;	# 8  (tj_a:bit)<-(vj_a:bit) jump 11
-    xj_a := bat.insert(int_1M,nil,i);	# 9 BKCinsert_bun (xj_a:bat[:void,:lng])<-(int_1M:bat[:void,:lng])(_17:void)(i:lng)
+    xj_a := bat.insert(int_1M,nil,i);	# 9 BKCinsert_bun (xj_a:void)<-(int_1M:bat[:void,:lng])(_17:void)(i:lng)
     redo sj_a;	# 10  (sj_a:bit) jump 5
 exit tj_a;	# 11  (tj_a:bit)
 exit sj_a;	# 12  (sj_a:bit)
@@ -159,7 +159,7 @@ barrier sj_b := true;	# 47  (sj_b:bit)<-(_10:bit) jump 55
     uj_b := i;	# 49  (uj_b:lng)<-(i:lng)
     vj_b := calc.>=(uj_b,0);	# 50 CALCcompGElngint (vj_b:bit)<-(uj_b:lng)(_14:int)
 barrier tj_b := vj_b;	# 51  (tj_b:bit)<-(vj_b:bit) jump 54
-    xj_b := bat.insert(M2,i,i);	# 52 BKCinsert_bun (xj_b:bat[:lng,:lng])<-(M2:bat[:lng,:lng])(i:lng)(i:lng)
+    xj_b := bat.insert(M2,i,i);	# 52 BKCinsert_bun (xj_b:void)<-(M2:bat[:lng,:lng])(i:lng)(i:lng)
     redo sj_b;	# 53  (sj_b:bit) jump 48
 exit tj_b;	# 54  (tj_b:bit)
 exit sj_b;	# 55  (sj_b:bit)

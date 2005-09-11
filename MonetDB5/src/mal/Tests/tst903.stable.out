@@ -135,7 +135,7 @@ function user.main():int;	# 0  (main:int)
 barrier (go,i):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (go:bit)(i:lng)<-(_9:lng) jump 9
     k := mmath.rand();	# 5 MATHrandint (k:int)
     l := calc.lng(k);	# 6 CALCint2lng (l:lng)<-(k:int)
-    bat.insert(b,nil,l);	# 7 BKCinsert_bun (_12:bat[:void,:lng])<-(b:bat[:void,:lng])(_13:void)(l:lng)
+    bat.insert(b,nil,l);	# 7 BKCinsert_bun (_12:void)<-(b:bat[:void,:lng])(_13:void)(l:lng)
     redo (go,i):= mal.nextElement(1:lng,1000000:lng);	# 8 RNGnextElement_lng (go:bit)(i:lng)<-(_14:lng)(_15:lng) jump 5
 exit (go,i);	# 9  (go:bit)(i:lng)
     t1 := alarm.usec();	# 10 ALARMusec (t1:lng)
@@ -241,7 +241,7 @@ exit (go,i);	# 9  (go:bit)(i:lng)
 barrier (_94,_95,_96):= chop.newIterator(b);	# 110 CHPbunIterator (_94:lng)(_95:void)(_96:lng)<-(b:bat[:void,:lng]) jump 117
     _98 := algebra.find(c,_95);	# 111 ALGfind (_98:lng)<-(c:bat[:void,:lng])(_95:void)
     _100 := calc.+(_96,_98);	# 112 CALCbinaryADDlnglng (_100:lng)<-(_96:lng)(_98:lng)
-    bat.insert(_90,_95,_100);	# 113 BKCinsert_bun (_101:bat[:void,:lng])<-(_90:bat[:void,:lng])(_95:void)(_100:lng)
+    bat.insert(_90,_95,_100);	# 113 BKCinsert_bun (_101:void)<-(_90:bat[:void,:lng])(_95:void)(_100:lng)
 catch MALexception;	# 114  (MALexception:str) jump 115
 exit MALexception;	# 115  (MALexception:str)
     redo (_94,_95,_96):= chop.hasMoreElements(b);	# 116 CHPbunHasMoreElements (_94:lng)(_95:void)(_96:lng)<-(b:bat[:void,:lng]) jump 111

@@ -32,7 +32,7 @@ function user.main():int;	# 0  (main:int)
     b := bat.new(:lng,:lng);	# 3 CMDBATnew (b:bat[:lng,:lng])<-(_6:lng)(_6:lng)
     i := -1:lng;	# 4  (i:lng)<-(_8:lng)
 barrier (v,i):= mal.newRange(0:lng);	# 5 RNGnewRange_lng (v:bit)(i:lng)<-(_10:lng) jump 8
-    bat.insert(b,i,i);	# 6 BKCinsert_bun (_11:bat[:lng,:lng])<-(b:bat[:lng,:lng])(i:lng)(i:lng)
+    bat.insert(b,i,i);	# 6 BKCinsert_bun (_11:void)<-(b:bat[:lng,:lng])(i:lng)(i:lng)
     redo (v,i):= mal.nextElement(1:lng,10:lng);	# 7 RNGnextElement_lng (v:bit)(i:lng)<-(_12:lng)(_13:lng) jump 6
 exit (v,i);	# 8  (v:bit)(i:lng)
     io.print(b);	# 9 IOprint_val (_14:int)<-(b:bat[:lng,:lng])
@@ -40,7 +40,7 @@ exit (v,i);	# 8  (v:bit)(i:lng)
     _20 := bat.new(:lng,:lng);	# 11 CMDBATnew (_20:bat[:lng,:lng])<-(_21:lng)(_21:lng)
 barrier (_23,_24,_25):= chop.newIterator(b);	# 12 CHPbunIterator (_23:lng)(_24:lng)(_25:lng)<-(b:bat[:lng,:lng]) jump 18
     _27 := calc.+(_25,c);	# 13 CALCbinaryADDlngint (_27:lng)<-(_25:lng)(c:int)
-    bat.insert(_20,_24,_27);	# 14 BKCinsert_bun (_28:bat[:lng,:lng])<-(_20:bat[:lng,:lng])(_24:lng)(_27:lng)
+    bat.insert(_20,_24,_27);	# 14 BKCinsert_bun (_28:void)<-(_20:bat[:lng,:lng])(_24:lng)(_27:lng)
 catch MALexception;	# 15  (MALexception:str) jump 16
 exit MALexception;	# 16  (MALexception:str)
     redo (_23,_24,_25):= chop.hasMoreElements(b);	# 17 CHPbunHasMoreElements (_23:lng)(_24:lng)(_25:lng)<-(b:bat[:lng,:lng]) jump 13

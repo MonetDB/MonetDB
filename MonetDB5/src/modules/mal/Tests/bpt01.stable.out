@@ -47,9 +47,9 @@ function user.main():int;	# 0  (main:int)
     a3 := bat.new(:void,:int);	# 6 CMDBATnew (a3:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(a3,20@0);	# 7 BKCsetSequenceBase (_12:bat[:void,:int])<-(a3:bat[:void,:int])(_13:oid)
 barrier (go,i):= mal.newRange(0);	# 8 RNGnewRange_int (go:bit)(i:int)<-(_16:int) jump 13
-    bat.insert(a1,nil,i);	# 9 BKCinsert_bun (_17:bat[:void,:int])<-(a1:bat[:void,:int])(_18:void)(i:int)
-    bat.insert(a2,nil,i);	# 10 BKCinsert_bun (_19:bat[:void,:int])<-(a2:bat[:void,:int])(_18:void)(i:int)
-    bat.insert(a3,nil,i);	# 11 BKCinsert_bun (_20:bat[:void,:int])<-(a3:bat[:void,:int])(_18:void)(i:int)
+    bat.insert(a1,nil,i);	# 9 BKCinsert_bun (_17:void)<-(a1:bat[:void,:int])(_18:void)(i:int)
+    bat.insert(a2,nil,i);	# 10 BKCinsert_bun (_19:void)<-(a2:bat[:void,:int])(_18:void)(i:int)
+    bat.insert(a3,nil,i);	# 11 BKCinsert_bun (_20:void)<-(a3:bat[:void,:int])(_18:void)(i:int)
     redo (go,i):= mal.nextElement(1,10);	# 12 RNGnextElement_int (go:bit)(i:int)<-(_21:int)(_22:int) jump 9
 exit (go,i);	# 13  (go:bit)(i:int)
 # add it 	# 14  (_24:str)

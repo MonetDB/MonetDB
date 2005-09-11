@@ -58,7 +58,7 @@ barrier (mloop,m):= mal.newRange(0:lng);	# 7 RNGnewRange_lng (mloop:bit)(m:lng)<
     B3 := algebra.fetch(A3,m);	# 11 ALGfetch (B3:int)<-(A3:bat[:void,:int])(m:lng)
     io.printf("B3 value %d\n",B3);	# 12 IOprint_formatted_int (_22:int)<-(_23:str)(B3:int)
     cr := user.pow(B2,B3);	# 13  (cr:int)<-(B2:int)(B3:int)
-    bat.insert(resB,nil,cr);	# 14 BKCinsert_bun (_25:bat[:void,:int])<-(resB:bat[:void,:int])(_26:void)(cr:int)
+    bat.insert(resB,nil,cr);	# 14 BKCinsert_bun (_25:void)<-(resB:bat[:void,:int])(_26:void)(cr:int)
     redo (mloop,m):= mal.nextElement(1:lng,l);	# 15 RNGnextElement_lng (mloop:bit)(m:lng)<-(_27:lng)(l:lng) jump 8
 catch MALexception;	# 16  (MALexception:any) jump 17
 exit MALexception;	# 17  (MALexception:any)
@@ -81,8 +81,8 @@ end tst;	# 20
 function user.main():int;	# 0  (main:int)
     b := bat.new(:void,:int);	# 1 CMDBATnew (b:bat[:void,:int])<-(_2:void)(_3:int)
     bat.setSequenceBase(b,0@0);	# 2 BKCsetSequenceBase (_4:bat[:void,:int])<-(b:bat[:void,:int])(_5:oid)
-    bat.insert(b,nil,1);	# 3 BKCinsert_bun (_6:bat[:void,:int])<-(b:bat[:void,:int])(_7:void)(_8:int)
-    bat.insert(b,nil,2);	# 4 BKCinsert_bun (_9:bat[:void,:int])<-(b:bat[:void,:int])(_7:void)(_10:int)
+    bat.insert(b,nil,1);	# 3 BKCinsert_bun (_6:void)<-(b:bat[:void,:int])(_7:void)(_8:int)
+    bat.insert(b,nil,2);	# 4 BKCinsert_bun (_9:void)<-(b:bat[:void,:int])(_7:void)(_10:int)
     e := algebra.fetch(b,1:lng);	# 5 ALGfetch (e:int)<-(b:bat[:void,:int])(_12:lng)
     io.print(e);	# 6 IOprint_val (_13:int)<-(e:int)
     io.print(b);	# 7 IOprint_val (_14:int)<-(b:bat[:void,:int])
