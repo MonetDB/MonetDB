@@ -1,0 +1,198 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f batmath
+@a M.L. Kersten
+@* BAT math calculator
+
+@{
+@= tstBat
+if( bn== NULL) {*ret= 0;
+    return throwMessage("batcalc.@1", "can not create bat");}
+
+@+ Scientific routines
+The mmath functions are also overloaded to provide for
+the fast execution of expanded code blocks.
+The common set of math functions is supported.
+@= scienceFcn
+    command @1(x:bat[:any_1,:dbl])  :bat[:any_1,:dbl] 
+    address CMDscience_@1;
+    command @1(x:bat[:void,:dbl])  :bat[:void,:dbl] 
+    address CMDsciencevoid_@1;
+@= scienceFcnBinary
+    command @1(x:bat[:any_1,:dbl],y:@2):bat[:any_1,:dbl] 
+    address CMDscience_@1;
+@-
+@mal
+module batmath;
+	@:scienceFcn(asin)@
+	@:scienceFcn(acos)@
+	@:scienceFcn(atan)@
+	@:scienceFcn(cos)@
+	@:scienceFcn(sin)@
+	@:scienceFcn(tan)@
+	@:scienceFcn(cosh)@
+	@:scienceFcn(sinh)@
+	@:scienceFcn(tanh)@
+	@:scienceFcn(exp)@
+	@:scienceFcn(log)@
+	@:scienceFcn(log10)@
+	@:scienceFcn(sqrt)@
+	@:scienceFcn(ceil)@
+	@:scienceFcn(fabs)@
+	@:scienceFcn(floor)@
+@-
+	round is not binary...
+	@:scienceFcnBinary(round,int)@
+@mal
+	@:scienceFcnBinary(fmod,dbl)@
+	@:scienceFcnBinary(atan2,dbl)@
+	@:scienceFcnBinary(pow,dbl)@
+@- Implementation
+@h
+#ifdef _BATMATH_H
+#define _BATMATH_H
+#define NULLTST
+
+#endif  /* _BATMATH_H */
+@- Implementations of scientific functions
+@c
+#include "gdk.h"
+#include "math.h"
+#include "mal_exception.h"
+#include "batmath.h"
+
+BAT *
+BATMATHresult(BAT *b, int tpe)
+{
+    BAT *bn;
+
+    if (BAThvoid(b)) {
+        bn = BATnew(TYPE_void, tpe, BATcount(b));
+        BATseqbase(bn, b->hseqbase);
+    } else
+        bn = BATnew(b->htype, tpe, BATcount(b));
+    return bn;
+}
+
+@-
+@= scienceFcnImpl
+mal_export str CMDscience_@1(int *ret, int *bid);
+str CMDscience_@1(int *ret, int *bid){
+	BAT *b,*bn;
+	int xx;
+	BUN p,q;
+
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+
+	bn= BATMATHresult(b, TYPE_dbl);
+	@:tstBat(CMDscience_@1)@
+	BATloopFast(b, p, q, xx) {
+		ptr h = BUNhead(b,p);
+		dbl t = *(dbl*) BUNtail(b,p);
+		dbl x= t== dbl_nil? dbl_nil:@1(t);
+		bunfastins(bn, h, &x);
+	}
+bunins_failed:
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+/* You don;t have to materialize the oids.
+This is taken care upon access */
+mal_export str CMDsciencevoid_@1(int *ret, int *bid);
+str CMDsciencevoid_@1(int *ret, int *bid){
+	BAT *b,*bn;
+	int xx;
+	BUN p,q;
+	oid o;
+
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+
+	bn= BATnew(TYPE_oid,b->ttype, BATcount(b));
+	@:tstBat(CMDsciencevoid_@1)@
+	o= b->hseqbase;
+
+	BATloopFast(b, p, q, xx) {
+		dbl t = *(dbl*) BUNtail(b,p);
+		dbl x= t== dbl_nil? dbl_nil:@1(t);
+		bunfastins(bn, &o, &x);
+		o++;
+	}
+bunins_failed:
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+@= scienceBinaryImpl
+mal_export str CMDscience_@1(int *ret, int *bid, @2 *d);
+str CMDscience_@1(int *ret, int *bid, @2 *d){
+	BAT *b,*bn;
+	int xx;
+	BUN p,q;
+
+    if( (b= BATdescriptor(*bid)) == NULL ){
+        return throwMessage("batcalc.@1", "Cannot access descriptor");
+    }
+
+	bn= BATMATHresult(b, TYPE_dbl);
+	@:tstBat(CMDscience_@1)@
+
+	BATloopFast(b, p, q, xx) {
+		ptr h = BUNhead(b,p);
+		dbl t = *(dbl*) BUNtail(b,p);
+		dbl x= t== dbl_nil? dbl_nil:@1(t, *d);
+		bunfastins(bn, h, &x);
+	}
+bunins_failed:
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(*ret);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+@c
+@:scienceFcnImpl(asin)@
+@:scienceFcnImpl(acos)@
+@:scienceFcnImpl(atan)@
+@:scienceFcnImpl(cos)@
+@:scienceFcnImpl(sin)@
+@:scienceFcnImpl(tan)@
+@:scienceFcnImpl(cosh)@
+@:scienceFcnImpl(sinh)@
+@:scienceFcnImpl(tanh)@
+@:scienceFcnImpl(exp)@
+@:scienceFcnImpl(log)@
+@:scienceFcnImpl(log10)@
+@:scienceFcnImpl(sqrt)@
+@:scienceFcnImpl(ceil)@
+@:scienceFcnImpl(fabs)@
+@:scienceFcnImpl(floor)@
+@-
+	round is not binary...
+	@:scienceBinaryImpl(round,int)@
+@c
+@:scienceBinaryImpl(fmod,dbl)@
+@:scienceBinaryImpl(atan2,dbl)@
+@:scienceBinaryImpl(pow,dbl)@
+
+@}
