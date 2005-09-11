@@ -36,14 +36,20 @@ import java.lang.reflect.Array; // for dealing with the anonymous columns
 public class MCLResultSet {
 	private boolean isValid;
 	private List columns;
+	private String id;
+
+	private static idcnt = 0;
 	
 	/**
 	 * Creates a new MCLResultSet that is in intially empty.  An empty
 	 * MCLResultSet is not valid when being supplied to an MCLServer.
+	 * This constructor is synchronised to avoid race conditions when
+	 * determining its id from idcnt.
 	 */
-	public MCLResultSet() {
+	public synchronized MCLResultSet() {
 		isValid = false;
 		columns = new ArrayList();
+		id = "rs" + idcnt++;
 	}
 
 	/**
@@ -89,16 +95,33 @@ public class MCLResultSet {
 	}
 
 	/**
+	 * Returns whether this MCLResultSet is valid.
+	 *
+	 * @return true if this MCLResultset is valid, false otherwise
+	 */
+	public boolean isValid() {
+		return(isValid);
+	}
+
+	/**
+	 * Returns the id for this MCLResultSet.
+	 *
+	 * @return the id
+	 */
+	public String getId() {
+		return(id);
+	}
+
+	/**
 	 * Retrieves the metadata contained in this MCLResultSet as
 	 * HeaderMessage.  If this MCLResultSet is not valid, an
 	 * MCLException is thrown.
 	 *
-	 * @param id the id to use in the HeaderMessage
 	 * @return a HeaderMessage populated with the metadata stored in
 	 *         this MCLResultSet
 	 * @throws MCLException if this MCLResultSet is not (yet) valid
 	 */
-	public HeaderMessage getHeaderMessage(String id) throws MCLException {
+	public HeaderMessage getHeaderMessage() throws MCLException {
 		if (!isValid) throw
 			new MCLException("MCLResultSet should be valid");
 
