@@ -266,73 +266,73 @@ comment "A version of BATsize that does not require loading the BAT.";
 Update commands come in many disguises.  Note that we don;t return
 the BAT id, but merely a success/failure code.
 @mal
-command insert(b:bat[:any_1,:oid], src:bat[:any_1,:void]) :bat[:any_1,:any_2] 
+command insert(b:bat[:any_1,:oid], src:bat[:any_1,:void]) :void
 address BKCinsert_bat
 comment "Insert all BUNs of the second BAT into the first. This case 
         should be removed, because it is a hack for SQL";
 
-command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2]):bat[:any_1,:any_2] 
+command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2]):void
 address BKCinsert_bat
 comment "Insert all BUNs of the second BAT into the first.";
 
-command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2) :bat[:any_1,:any_2] 
+command insert(b:bat[:any_1,:any_2], h:any_1, t:any_2) :void
 address BKCinsert_bun
 comment "Insert one BUN[h,t] in a BAT.";
-command insert(b:bat[:void,:any_2], h:oid, t:any_2) :bat[:any_1,:any_2] 
+command insert(b:bat[:void,:any_2], h:oid, t:any_2) :void
 address BKCinsert_bun;
 
-command insert(b:bat[:void,:any_1], v:any_1):bat[:any_1,:any_2] 
+command insert(b:bat[:void,:any_1], v:any_1):void
 address BKCinsert_void_bun
 comment "Insert a value in a 'void' bat";
 
-command insert(b:bat[:any_1,:bat], v:any_1, z:bat[:any_3,:any_4]):bat[:any_1,:bat] 
+command insert(b:bat[:any_1,:bat], v:any_1, z:bat[:any_3,:any_4]):void
 address BKCinsert_bun;
-command insert(b:bat[:void,:bat], z:bat[:any_1,:any_2]):bat[:void,:bat] 
+command insert(b:bat[:void,:bat], z:bat[:any_1,:any_2]):void
 address BKCinsert_void_bun
 comment "Insert a value in a 'void' bat";
 
-command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+command replace(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :void
 address BKCreplace_bat
 comment "Perform replace for all BUNs of the second BAT into the first.";
 
-command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2) :bat[:any_1,:any_2]
+command replace(b:bat[:any_1, :any_2], h:any_1, t:any_2) :void
 address BKCreplace_bun
 comment "Replace the tail value of one BUN that has some head value.";
-command replace(b:bat[:void, :any_2], h:oid, t:any_2) :bat[:void,:any_2]
+command replace(b:bat[:void, :any_2], h:oid, t:any_2) :void
 address BKCreplace_bun;
 
 # The SQL append/replace commands
 
-command append( i:bat[:oid,:any_1], u:bat[:oid,:any_1]) :bat[:oid,:any_1]
+command append( i:bat[:oid,:any_1], u:bat[:oid,:any_1]) :void
 address BKCoid_bat_append_oid_bat_wrap
 comment "append the content of u to i (renumbers u-oids' to unique numbers)";
 
-command append(i:bat[:oid,:any_1], u:any_1):bat[:oid,:any_1]
+command append(i:bat[:oid,:any_1], u:any_1):void
 address BKCoid_bat_append_val_wrap
 comment "append the value u to i";
 
-command append( i:bat[:void,:any_1], u:bat[:void,:any_1] ) :bat[:void,:any_1]
+command append( i:bat[:void,:any_1], u:bat[:void,:any_1] ) :void
 address BKCbat_append_void_bat_wrap
 comment "append the content of u to i";
 
-command append( i:bat[:void,:any_1], u:any_1) :bat[:void,:any_1]
+command append( i:bat[:void,:any_1], u:any_1) :void
 address BKCbat_append_val_wrap
 comment "append the value u to i";
 
-command append( i:bat[:void,:oid], u:bat[:oid,:void]) :bat[:void,:oid]
+command append( i:bat[:void,:oid], u:bat[:oid,:void]) :void
 address BKCbat_append_oid_bat_wrap
 comment "append the content of u to i";
 
-command append( i:bat[:void,:any_1], u:bat[:oid,:any_1]) :bat[:void,:any_1]
+command append( i:bat[:void,:any_1], u:bat[:oid,:any_1]) :void
 address BKCbat_append_oid_bat_wrap
 comment "append the content of u to i";
 
-command append(i:bat[:oid,:void], u:bat[:oid,:void]) :bat[:oid,:void]
+command append(i:bat[:oid,:void], u:bat[:oid,:void]) :void
 address BKCbat_append_oidvoid_bat_wrap
 comment "Special case append for empty bats, works around impossible 
         void,void case";
 
-command replace( o:bat[:void,:any_1], d:bat[:oid,:any_1]) :bat[:void,:any_1]
+command replace( o:bat[:void,:any_1], d:bat[:oid,:any_1]) :void
 address BKCbat_replace_oid_bat_wrap
 comment "inplace replace values on the given locations";
 
@@ -350,29 +350,29 @@ Therefore it is moved to the bbp module
 #address BKCdestroy_bat
 #comment "Schedule bat for removal upon session 
 
-command delete(b:bat[:any_1, :any_2], h:any_1, t:any_2) :bat[:any_1,:any_2] 
+command delete(b:bat[:any_1, :any_2], h:any_1, t:any_2) :void
 address BKCdelete_bun
 comment "Delete one specific BUN.";
 
-command delete(b:bat[:void, :any_2], h:oid, t:any_2) :bat[:any_1,:any_2] 
+command delete(b:bat[:void, :any_2], h:oid, t:any_2) :void
 address BKCdelete_bun;
 
-command delete(b:bat[:any_1, :any_2], h:any_1) :bat[:any_1,:any_2] 
+command delete(b:bat[:any_1, :any_2], h:any_1) :void
 address BKCdelete
 comment "Delete all BUNs with a certain head value.";
-command delete(b:bat[:void, :any_2], h:oid) :bat[:any_1,:any_2] 
+command delete(b:bat[:void, :any_2], h:oid) :void
 address BKCdelete;
 
-command delete(b:bat[:any_1, :any_2]) :bat[:any_1,:any_2] 
+command delete(b:bat[:any_1, :any_2]) :void
 address BKCdelete_all
 comment "Delete all BUNs in a BAT.";
 
-#command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any]) :bat[:any_1,:any_2] 
+#command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any]) :void
 #address BKCdelete_bat
 #comment "Delete from the first BAT all BUNs with a head value that 
         #is in the second.";
 
-command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+command delete(b:bat[:any_1, :any_2], src:bat[:any_1,:any_2]) :void
 address BKCdelete_bat_bun
 comment "Delete from the first BAT all BUNs with a corresponding BUN 
         in the second.";
@@ -1635,7 +1635,9 @@ BKCinsert_void_bun(int *r, int *bid, ptr t)
 	@:derefStr(b,t,t)@
 	BUNins(b, (ptr) &h, @:batconvert(b,t)@
 	    );
+	/*
 	BBPincref(*r = b->batCacheid, TRUE);
+	*/
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1644,6 +1646,7 @@ char *
 BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 {
 	BAT *b;
+	(void) r;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.insert", "Cannot access descriptor");
@@ -1651,7 +1654,7 @@ BKCinsert_bun(int *r, int *bid, ptr h, ptr t)
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	BUNins(b, @:batconvert(b,h)@, @:batconvert(b,t)@);
-	BBPincref(*r = b->batCacheid, TRUE);
+	/* BBPincref(*r = b->batCacheid, TRUE);*/
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1673,7 +1676,7 @@ BKCinsert_bat(int *r, int *bid, int *sid)
 	CMDinsert_bat(&bn, b, s);
 	BBPunfix(b->batCacheid);
 	BBPunfix(s->batCacheid);
-	BBPincref(bn->batCacheid, TRUE);
+/*	BBPincref(bn->batCacheid, TRUE); */
 	BBPunfix(bn->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1690,7 +1693,7 @@ BKCreplace_bun(int *r, int *bid, ptr h, ptr t)
 	@:derefStr(b,h,h)@
 	@:derefStr(b,t,t)@
 	CMDreplace_bun(&bn, b, h, t);
-	BBPincref(*r = bn->batCacheid, TRUE);
+/*	BBPincref(*r = bn->batCacheid, TRUE); */
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1709,7 +1712,7 @@ BKCreplace_bat(int *r, int *bid, int *sid)
 		return throwMessage("bat.replace", "Cannot access descriptor");
 	}
 	if (CMDreplace_bat(&bn, b, s) == GDK_SUCCEED) {
-		BBPincref(bn->batCacheid, TRUE);
+/*		BBPincref(bn->batCacheid, TRUE); */
 		BBPunfix(bn->batCacheid);
 		BBPunfix(b->batCacheid);
 		BBPunfix(s->batCacheid);
@@ -1735,7 +1738,7 @@ BKCdelete_bun(int *r, int *bid, ptr h, ptr t)
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPincref(*r = b->batCacheid, TRUE);
+/*	BBPincref(*r = b->batCacheid, TRUE); */
 	BBPunfix(b->batCacheid);
 	return throwMessage("bat.delete_buns", "GDKerror");
 }
@@ -1754,7 +1757,7 @@ BKCdelete(int *r, int *bid, ptr h)
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPincref(*r = b->batCacheid, TRUE);
+/*	BBPincref(*r = b->batCacheid, TRUE); */
 	BBPunfix(b->batCacheid);
 	return throwMessage("bat.delete", "GDKerror");
 }
@@ -1772,7 +1775,7 @@ BKCdelete_all(int *r, int *bid)
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPincref(*r = b->batCacheid, TRUE);
+/*	BBPincref(*r = b->batCacheid, TRUE); */
 	BBPunfix(b->batCacheid);
 	return throwMessage("bat.delete", "GDKerror");
 }
@@ -1795,7 +1798,7 @@ BKCdelete_bat_bun(int *r, int *bid, int *sid)
 		BBPunfix(s->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPincref(*r = b->batCacheid, TRUE);
+/*	BBPincref(*r = b->batCacheid, TRUE); */
 	BBPunfix(b->batCacheid);
 	BBPunfix(s->batCacheid);
 	return throwMessage("bat.delete_bat_buns", "GDKerror");
@@ -1819,7 +1822,7 @@ BKCdelete_bat(int *r, int *bid, int *sid)
 		BBPunfix(s->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPincref(*r = b->batCacheid, TRUE);
+/*	BBPincref(*r = b->batCacheid, TRUE); */
 	BBPunfix(b->batCacheid);
 	BBPunfix(s->batCacheid);
 	return throwMessage("bat.delete_bats", "GDKerror");
@@ -1996,9 +1999,11 @@ BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid)
 	}
 	i = BATsetaccess(i, 0);
 	void_append_bat(i, u);
+/*
 	*r = i->batCacheid;
 	BBPincref(i->batCacheid, TRUE);
 	BBPunfix(i->batCacheid);
+*/
 	BBPunfix(u->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2018,9 +2023,11 @@ BKCbat_append_oid_bat_wrap(int *r, int *bid, int *uid)
 	}
 	i = BATsetaccess(i, 0);
 	void_insert_bat(i, u);
+/*
 	*r = i->batCacheid;
 	BBPincref(i->batCacheid, TRUE);
 	BBPunfix(i->batCacheid);
+*/
 	BBPunfix(u->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2040,9 +2047,11 @@ BKCbat_append_oidvoid_bat_wrap(int *r, int *bid, int *uid)
 	}
 	i = BATsetaccess(i, 0);
 	void_insert_bat(i, u);
+/*
 	*r = i->batCacheid;
 	BBPincref(i->batCacheid, TRUE);
 	BBPunfix(i->batCacheid);
+*/
 	BBPunfix(u->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2075,7 +2084,7 @@ BKCoid_bat_append_oid_bat_wrap(int *res, int *bid, int *uid)
 	oid o;
 	BAT *i, *u;
 
-	(void) r;
+	(void) res;
 	if ((i = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.append", "Cannot access descriptor");
 	}
@@ -2094,9 +2103,11 @@ BKCoid_bat_append_oid_bat_wrap(int *res, int *bid, int *uid)
 
 		BUNins(i, &h, BUNtail(u, r));
 	}
+/*
 	*res = i->batCacheid;
 	BBPincref(i->batCacheid, TRUE);
 	BBPunfix(i->batCacheid);
+*/
 	BBPunfix(u->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2121,9 +2132,11 @@ BKCoid_bat_append_val_wrap(int *r, int *bid, ptr u)
 	o++;
 	@:derefStr(i,t,u)@
 	BUNins(i, (ptr) &o, u);
+/*
 	*r = i->batCacheid;
 	BBPincref(i->batCacheid, TRUE);
 	BBPunfix(i->batCacheid);
+*/
 	return MAL_SUCCEED;
 }
 
@@ -2142,9 +2155,11 @@ BKCbat_append_val_wrap(int *r, int *bid, ptr u)
 	@:derefStr(i,t,u)@
 	i = BATsetaccess(i, 0);
 	BUNins(i, (ptr) &h, u);
+/*
 	*r = i->batCacheid;
 	BBPincref(i->batCacheid, TRUE);
 	BBPunfix(i->batCacheid);
+*/
 	return MAL_SUCCEED;
 }
 
@@ -2163,9 +2178,11 @@ BKCbat_replace_oid_bat_wrap(int *r, int *bod, int *did)
 	}
 	o = BATsetaccess(o, 0);
 	void_replace_bat(o, d);
+/*
 	*r = o->batCacheid;
 	BBPincref(o->batCacheid, TRUE);
 	BBPunfix(o->batCacheid);
+*/
 	BBPunfix(d->batCacheid);
 	return MAL_SUCCEED;
 }
