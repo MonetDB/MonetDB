@@ -809,6 +809,10 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           cast (SequenceType, CoreExpr) */
         case 49:
+            if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_atomic ())))
+                PFoops (OOPS_TYPECHECK,
+                        "casting is only allowed to an atomic type");
+
             TY(p) = TY(L(p));
             break;
 
@@ -1069,7 +1073,7 @@ specific (PFfun_t *fn, PFcnode_t *args)
     }
 
     /* Typing rules for #pf:item-sequence-to-node-sequence() are described
-     * by the * special judgment `is2ns', implemented in PFty_is2ns(),
+     * by the special judgment `is2ns', implemented in PFty_is2ns(),
      * which reduces atomic types to text().
      */
     if ((! PFqname_eq (fn->qname,
