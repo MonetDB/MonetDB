@@ -295,16 +295,14 @@ at once. This may cause problems when the net string length is zero.
 @c
 str strCopy(Client cntxt, int length){
 	str s;
-	int i= length-1;
+	int i;
 
-	if( i-2 <sizeof(short)) 
-		i = sizeof(short);
+	i = length<4 ? 4: length;
 	s = GDKmalloc(i);
-	*(short*)s = 0;
+	memset(s,0,i);
 	if (s == 0) 
 		GDKfatal("FATAL:strCopy:");
 	memcpy(s, CURRENT(cntxt) + 1, (size_t) (length - 2) );
-	s[length-2] = 0;
 	mal_unquote(s);
 	advance(cntxt,length);
 	return s;

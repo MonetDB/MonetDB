@@ -68,6 +68,7 @@ mal_export void unloadModuleLibraries();
 mal_export void initLibraries();
 mal_export int isPreloaded(str nme);
 mal_export int isLoaded(str modulename);
+mal_export char * locate_file(const char *basename, const char *ext);
 #endif
 @}
 @-
@@ -378,7 +379,7 @@ initLibraries()
 The plausible locations of the modules can be designated by
 an environment variable. 
 @c
-static char *
+char *
 locate_file(const char *basename, const char *ext)
 {
 	char *mod_path = GDKgetenv("monet_mod_path");

@@ -234,6 +234,8 @@ void chkFlow(MalBlkPtr mb)
 			if( getVarType(mb,v) != TYPE_bit && 
 			    getVarType(mb,v)!= TYPE_any &&
 			    getVarType(mb,v) != TYPE_sht && 
+			    getVarType(mb,v)!= TYPE_oid && 
+			    getVarType(mb,v)!= TYPE_chr && 
 			    getVarType(mb,v)!= TYPE_lng && 
 			    getVarType(mb,v) != TYPE_int &&
 			    getVarType(mb,v) != TYPE_str ){
@@ -445,6 +447,10 @@ void chkDeclarations(MalBlkPtr mb,int reset){
         getVarDepth(mb,p->argv[k])= 0;
     }
 	/* and the function name as well */
+	if( functionName(p) == NULL){
+		GDKerror("Function name missing in signature\n");
+		return;
+	}
 	k= findVariable(mb,functionName(p));
 	getVarScope(mb,k) = 1;
 	getVarDepth(mb,k) = 1;
