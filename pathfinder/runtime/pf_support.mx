@@ -1252,9 +1252,6 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
         result_part_item := nil;
         result_part_frag := nil;
 
-        # FIXME: make merged_union more fake_project capable!
-        result_iter := de_fake_project(result_iter, result_item);
-
         var res_mu;
 	uniqueFrag.slice(1,uniqueFrag.count() - 1)@batloop () {
 	    theFrag := $h;
@@ -1263,9 +1260,6 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
             result_part_item := result_part_frag.leftfetchjoin(item);
 
             @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
-
-            # FIXME: make merged_union more fake_project capable!
-            result_part_iter := de_fake_project(result_part_iter, result_part_item);
 
             res_mu := merged_union(result_iter, result_part_iter,
 				   result_item, result_part_item,
@@ -1520,9 +1514,10 @@ int CMDmark_grp_2( BAT** res, BAT *b, BAT *g, oid *s)
 int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 {
 	BAT *b[MAXPARAMS], *bn[MAXPARAMS>>1], *BN;
-	BUN cur[MAXPARAMS], lst[MAXPARAMS], dst[MAXPARAMS>>1], DST;
+	BUN cur[MAXPARAMS], dst[MAXPARAMS>>1], DST;
 	int bs[MAXPARAMS], bns[MAXPARAMS>>1], BS;
-	int nbats = 2, npairs = 1, i, j, k, any;
+	size_t idx[MAXPARAMS], cnt[MAXPARAMS];
+	int nbats = 2, npairs = 1, i, j, k, any, b0 = -1, b1 = -1;
 	bit concat = FALSE;
 	chr *w = NULL;
 	size_t sze = 0, h = 0;
@@ -1554,8 +1549,14 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	for (i=0; i<nbats; i+=2) {
 		bit ci, cj;
 		j = i+1;
-		ci = (i==0 || !is_fake_project(b[i]));
-		cj = (j==1 || !is_fake_project(b[j]));
+		ci = !is_fake_project(b[i]);
+		cj = !is_fake_project(b[j]);
+		if (ci && b0 < 0) {
+			b0 = i;
+		}
+		if (cj && b1 < 0) {
+			b1 = j;
+		}
 		if (ci && !BAThdense(b[i])) {
 			GDKerror("merged_union: BAT %d must have a dense head.\n", i+1);
 			return GDK_FAIL;
@@ -1568,27 +1569,35 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 			GDKerror("merged_union: BATs %d & %d must have the same tail types.\n", i+1, j+1);
 			return GDK_FAIL;
 		}
-		if (ci && b[i]->hseqbase != b[0]->hseqbase) {
-			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT 1.\n", i+1);
+		if (ci && b0 >= 0 && b[i]->hseqbase != b[b0]->hseqbase) {
+			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT %d.\n", i+1, b0+1);
 			return GDK_FAIL;
 		}
-		if (cj && b[j]->hseqbase != b[1]->hseqbase) {
-			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT 2.\n", j+1);
+		if (cj && b1 >= 0 && b[j]->hseqbase != b[b1]->hseqbase) {
+			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT %d.\n", j+1, b1+1);
 			return GDK_FAIL;
 		}
-		if (ci && BATcount(b[i]) != BATcount(b[0])) {
-			GDKerror("merged_union: BAT %d must have the same size as BAT 1.\n", i+1);
+		if (ci && b0 >= 0 && BATcount(b[i]) != BATcount(b[b0])) {
+			GDKerror("merged_union: BAT %d must have the same size as BAT %d.\n", i+1, b0+1);
 			return GDK_FAIL;
 		}
-		if (cj && BATcount(b[j]) != BATcount(b[1])) {
-			GDKerror("merged_union: BAT %d must have the same size as BAT 2.\n", j+1);
+		if (cj && b1 >= 0 && BATcount(b[j]) != BATcount(b[b1])) {
+			GDKerror("merged_union: BAT %d must have the same size as BAT %d.\n", j+1, b1+1);
 			return GDK_FAIL;
 		}
+	}
+	if (b0 < 0) {
+		GDKerror("merged_union: at least one of the 'odd' BATs must be materialized, i.e., no 'fake_project'.\n");
+		return GDK_FAIL;
+	}
+	if (b1 < 0) {
+		GDKerror("merged_union: at least one of the 'even' BATs must be materialized, i.e., no 'fake_project'.\n");
+		return GDK_FAIL;
 	}
 
 	/* create result BATs */
 
-	sze = BATcount(b[0]) + BATcount(b[1]);
+	sze = BATcount(b[b0]) + BATcount(b[b1]);
 	BN = BATnew(TYPE_void, TYPE_bat, npairs);
 	if (BN == NULL) {
 		GDKerror("merged_union: BATnew(TYPE_void, TYPE_bat, %d) failed.\n", npairs);
@@ -1627,7 +1636,12 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 			bs[i] = BUNsize(b[i]);
 		}
 		cur[i] = BUNfirst(b[i]);
-		lst[i] = BUNlast(b[i]);
+		idx[i] = 0;
+		if (i&1) {
+			cnt[i] = BATcount(b[b1]);
+		} else {
+			cnt[i] = BATcount(b[b0]);
+		}
 	}
 @= merged_union_0
 	/*  @1: ATOMstorage(b[@3]->ttype) (chr, sht, int, flt, lng, dbl, any=b[@3]->ttype)
@@ -1639,8 +1653,9 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	 */
 	/* copy tails from BAT @3 to the results; 
 	   for each BUN, remember in w, whether it came from BAT 0 or BAT 1 */
-	while ((cur[@3] < lst[@3]) && (@4)) {
+	while ((idx[@3] < cnt[@3]) && (@4)) {
 		void@1_bunfastins_nocheck_noinc(bn[0],dst[0],0,BUN@2(b[@3],cur[@3]));
+		idx[@3]++;
 		cur[@3] += bs[@3];
 		dst[0] += bns[0];
 		w[h++] = (chr)@3;
@@ -1656,12 +1671,12 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	concat = (BATcount(b[0])==0 || BATcount(b[1])==0);
 	if (!concat) {
 		concat = ( BATtordered(b[0])&BATtordered(b[1])&1 && \
-		           @4_LE(BUN@2(b[0],lst[0]-BUNsize(b[0])),BUN@3(b[1],cur[1]),@1) );
+		           @4_LE(BUN@2(b[0],BUNlast(b[0])-BUNsize(b[0])),BUN@3(b[1],cur[1]),@1) );
 	}
 	if (!concat) {
-		while ((cur[0] < lst[0]) && (cur[1] < lst[1])) {
+		while ((idx[0] < cnt[0]) && (idx[1] < cnt[1])) {
 			@:merged_union_0(@1,@2,0,@4_LE(BUN@2(b[0],cur[0]),BUN@3(b[1],cur[1]),@1))@
-			if (cur[0] < lst[0]) {
+			if (idx[0] < cnt[0]) {
 				@:merged_union_0(@1,@3,1,@4_GT(BUN@2(b[0],cur[0]),BUN@3(b[1],cur[1]),@1))@
 			}
 		}
@@ -1685,6 +1700,7 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	for (h=0; h<sze; h++) {
 		j = i + (int)w[h];
 		void@1_bunfastins_nocheck_noinc(bn[k],dst[k],0,BUN@2(b[j],cur[j]));
+		idx[j]++;
 		cur[j] += bs[j];
 		dst[k] += bns[k];
 	}
@@ -1696,7 +1712,7 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	break;
 @c
 	/* merge-union the first two BATs */
-/* HACK(?): compare [v]oid (unsigned) at int/lng (signed) to get nil's first... */
+/* HACK(?): compare [v]oid (unsigned) as int/lng (signed) to get nil's first... */
 #if SIZEOF_OID == SIZEOF_INT
 	if (b[0]->ttype==TYPE_void && b[1]->ttype==TYPE_void) {
 		@:merged_union_1(int,tvar,tvar,simple)@
