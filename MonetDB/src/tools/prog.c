@@ -155,6 +155,10 @@ main(int argc, char **av)
 	   read the query and execute it
 	 */
 	buf = GDKmalloc(maxlen);
+	if (buf == NULL) {
+		fprintf(stderr, "Cannot allocate memory for query buffer\n");
+		return -1;
+	}
 	if (optind == argc)
 		fp = stdin;
 	while (optind < argc || fp) {
@@ -164,9 +168,13 @@ main(int argc, char **av)
 		while ((line = fgets(buf+curlen, 1024, fp)) != NULL) {
 			int n = strlen(line);
             		curlen += n;
-            		if (curlen > (maxlen+1024)) {
-               			maxlen += BUFSIZ;
+            		if (curlen+1024 > maxlen) {
+               			maxlen += 8*BUFSIZ;
                			buf = GDKrealloc(buf, maxlen + 1);
+				if (buf == NULL) {
+					fprintf(stderr, "Cannot allocate memory for query buffer\n");
+					return -1;
+				}
             		}
 		}
 		if (fp != stdin) {
