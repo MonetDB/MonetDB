@@ -835,7 +835,12 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
             var res := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).mark(nil).reverse();
             res := res.chk_order();
             res_item.insert(res);
-            res_iter.insert(res.project($h));
+            var l := count(res);
+            if (l <= $t) {
+                res_iter.insert(iter.slice(offset, offset + l - 1).reverse().mark(nil).reverse());
+            } else {
+                res_iter.insert(res.project($h));
+            }
             offset := offset + $t;
         }
         res_iter := res_iter.seqbase(0@0).access(BAT_READ).chk_order();
