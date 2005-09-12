@@ -1,0 +1,525 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f urlbox
+@a Martin Kersten
+@v 0.1
+@* URL box
+This module implements the flattened tree model for URLs.
+It is targeted at the GGLETICK student project
+@mal
+module urlbox
+comment "The URL box provides fast access to
+a large collection of url strings based on a
+vertical fragmented representation.";
+
+pattern open():void
+address URLBOXopen
+comment "Locate and open the URL box";
+pattern close():void
+address URLBOXclose
+comment "Close the URL box ";
+pattern destroy():void
+address URLBOXdestroy
+comment "Destroy the URL box";
+pattern take(u:str):oid
+address URLBOXtake
+comment "Get a handle for the URL";
+pattern deposit(u:str) :void 		
+address URLBOXdeposit
+comment "Enter a new url into the box";
+command depositFile(fnme:str):void
+address URLBOXdepositFile;
+
+pattern releaseAll():void 
+address URLBOXreleaseAll
+comment "Release all elements from the box";
+pattern release(u:str) :void 		
+address URLBOXrelease
+comment "Release a single URL value";
+pattern release(u:int) :void 		
+address URLBOXreleaseOid
+comment "Release a single URL value";
+
+pattern toString(u:int):str 
+address URLBOXtoString
+comment "Get the string representation of an element in the box";
+
+pattern discard(name:str) :void 		
+address URLBOXdiscard
+comment "Remove the URL from the box";
+pattern discard(name:int) :void 		
+address URLBOXdiscardOid
+comment "Remove the URL from the box";
+pattern discard() :void 		
+address URLBOXdiscardAll
+comment "Remove all URLs from the box";
+
+pattern newIterator()(:int,:str)
+address URLBOXnewIterator
+comment "Locate next element in the box";
+pattern hasMoreElements()(:int,:str)
+address URLBOXhasMoreElements
+comment "Locate next element in the box";
+
+command getLevel(i:int):bat[:int,:str]
+address URLBOXgetLevel;
+
+command getNames():bat[:int,:str]
+address URLBOXgetNames;
+command getCount():bat[:int,:lng]
+address URLBOXgetCount;
+command getCardinality():bat[:int,:lng]
+address URLBOXgetCardinality;
+@{
+pattern prelude():void 
+address URLBOXprelude
+comment "Initialize the URL box";
+
+urlbox.prelude();
+@-
+@+ Implementation
+@h
+#ifndef _ITERATOR_H
+#define _ITERATOR_H
+#include "mal.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+
+mal_export str URLBOXprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXreleaseOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXdiscardOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXdiscardAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str URLBOXhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+#endif /* _ITERATOR_H */
+
+@- Module initializaton
+The content of this box my only be changed by the Administrator.
+@= authorize
+	if( !isAuthorized("user") && !isAuthorized("Admin"))
+		return throwMessage("urlBox.@1","unauthorized access to 'urlBox' box");
+@c
+#include "urlbox.h"
+
+#define MAXURLDEPTH 50
+static int urlDepth = 0;
+static BAT *urlBAT[MAXURLDEPTH];
+
+int
+isAuthorized(str nme)
+{
+	Client c;
+
+	if (nme == 0)
+		return 1;
+	c = getClient();
+	return idcmp(c->user, nme) == 0;
+}
+
+str
+URLBOXprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Box box;
+	int depth;
+
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	@:authorize(prelude)@
+	box = openBox("urlbox");
+	if (box == 0)
+		return throwMessage("urlbox.prelude", "failed to open box");
+	/* if the box was already filled we can skip initialization */
+	for(depth=0; depth<MAXDEPTH; depth++) {
+		urlBAT[depth]=0;
+	}
+	urlDepth= 0;
+	return MAL_SUCCEED;
+}
+
+@- Operator implementation
+@c
+str
+URLBOXopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	@:authorize(open)@
+	if (openBox("urlbox") != 0)
+		return MAL_SUCCEED;
+	return throwMessage("urlbox.open", "failed to open box");
+}
+
+str
+URLBOXclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	@:authorize(close)@
+	if (closeBox("urlbox", TRUE) == 0)
+		return MAL_SUCCEED;
+	return throwMessage("urlbox.close", "failed to close box");
+}
+
+str
+URLBOXdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Box box;
+
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	@:OpenBox(destroy)@
+	destroyBox("urlbox");
+	return MAL_SUCCEED;
+}
+
+@-
+Access to a box calls for resolving the first parameter
+to a named box.
+@= OpenBox
+	@:authorize(@1)@
+	box= findBox("urlbox");
+	if( box ==0) 
+	return throwMessage("urlbox.@1","box is not open");
+@-
+The real work starts here. We have to insert an URL.
+@c
+int
+URLBOXchop(str url, str *parts){
+	char *s, *t;
+	int depth=0;
+
+	s= url;
+	while( *s){
+		t= s+1;
+		while(*t && *t!= '/') t++;
+		if( *t ){
+			*t= 0;
+		} else break;
+		parts[depth++]= s;
+		for( t++; *t && *t== '/'; t++) ;
+		s= t;
+	}
+	return depth;
+}
+str
+URLBOXinsert(char *tuple){
+	str parts[MAXURLDEPTH];
+	int i=0,depth;
+	BAT *b;
+	ptr p;
+	int idx= 0,prv=0;
+    char buf[128];
+
+	depth= URLBOXchop(tuple, parts);
+	if( depth > urlDepth || urlBAT[0]== NULL){
+		for(i=0; i<depth; i++){
+			/* make new bat */
+			snprintf(buf, 128, "urlbox_%d", i);
+			b = BATdescriptor(BBPindex(buf));
+			if (b){
+				urlBAT[i] = b;
+				continue;
+			}
+
+			b = BATnew(TYPE_int, TYPE_str, 1024);
+			if (b == NULL)
+				GDKfatal("urlbox.create: could not allocate.");
+
+			BATkey(b,TRUE);
+			BBPrename(b->batCacheid, buf);
+			BATmode(b, PERSISTENT);
+			BATcommit(b);
+			urlBAT[i] = b;
+		}
+		urlDepth= depth;
+	}
+@-
+Find the common prefix first
+@c
+	p= BUNfnd(BATmirror(urlBAT[0]),parts[0]);
+	if( p ) 
+		for( i=1; i<depth; i++){
+			/* printf("search [%d]:%s\n",i,parts[i]);*/
+			p= BUNfnd(BATmirror(urlBAT[i]),parts[i]);
+			if( p == 0) break;
+			prv= *(int*) p;
+		}
+	else i = 0;
+@-
+Insert the remainder as a new url string
+@c
+	for( ; i<depth; i++){
+		/* printf("update [%d]:%s\n",i,parts[i]);*/
+		idx= (int) BATcount(urlBAT[i]);
+		BUNins(urlBAT[i], (ptr) &prv, parts[i]);
+		prv=idx;
+	}
+	return MAL_SUCCEED;
+}
+str
+URLBOXdepositFile(int *r, str *fnme){
+
+	(void) r; (void) fnme;
+	return throwMessage("urlbox.depositFile","NYI");
+}
+str
+URLBOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str url;
+	Box box;
+	char tuple[2048];
+
+	(void) mb;
+	@:OpenBox(deposit)@
+	url = (str) getArgValue(stk, pci, 1);
+	if( strlen(url) <2048)
+		strcpy(tuple,url);
+	else return throwMessage("urlbox.deposit","url too long");
+	return URLBOXinsert(url);
+}
+
+str
+URLBOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str url, parts[MAXURLDEPTH];
+	Box box;
+	int depth;
+
+	@:OpenBox(take)@
+	url = (str) getArgValue(stk, pci, 1);
+	url = GDKstrdup(url);
+	depth= URLBOXchop(url, parts);
+	GDKfree(url);
+	(void) mb;
+	return MAL_SUCCEED;
+}
+
+str
+URLBOXrelease(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str name;
+	Box box;
+
+	(void) mb;		/* fool compiler */
+
+	@:OpenBox(release)@
+	name = (str) getArgValue(stk, pci, 1);
+	if (releaseBox(box, name))
+		return throwMessage("urlbox.release", "failed to release object from box");
+	return MAL_SUCCEED;
+}
+str
+URLBOXreleaseOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str name;
+	Box box;
+
+	(void) mb;		/* fool compiler */
+
+	@:OpenBox(release)@
+	name = (str) getArgValue(stk, pci, 1);
+	if (releaseBox(box, name))
+		return throwMessage("urlbox.release", "failed to release object from box");
+	return MAL_SUCCEED;
+}
+
+str
+URLBOXreleaseAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Box box;
+
+	(void) mb;
+	(void) stk;
+	(void) pci;		/* fool compiler */
+	@:OpenBox(release)@
+	releaseAllBox(box);
+	return MAL_SUCCEED;
+}
+
+str
+URLBOXdiscard(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str name;
+	Box box;
+
+	(void) mb;		/* fool compiler */
+	@:OpenBox(discard)@
+	name = (str) getArgValue(stk, pci, 1);
+	if (discardBox(box, name) == 0)
+		return throwMessage("urlbox.discard", "failed to discard object from box");
+	return MAL_SUCCEED;
+}
+str
+URLBOXdiscardOid(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str name;
+	Box box;
+
+	(void) mb;		/* fool compiler */
+	@:OpenBox(discard)@
+	name = (str) getArgValue(stk, pci, 1);
+	if (discardBox(box, name) == 0)
+		return throwMessage("urlbox.discard", "failed to discard object from box");
+	return MAL_SUCCEED;
+}
+str
+URLBOXdiscardAll(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str name;
+	Box box;
+
+	(void) mb;		/* fool compiler */
+	@:OpenBox(discard)@
+	name = (str) getArgValue(stk, pci, 1);
+	if (discardBox(box, name) == 0)
+		return throwMessage("urlbox.discard", "failed to discard object from box");
+	return MAL_SUCCEED;
+}
+
+str
+URLBOXtoString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Box box;
+	int i, len = 0;
+	ValPtr v;
+	str nme, s = 0;
+
+	(void) mb;		/* fool compiler */
+	@:OpenBox(toString)@
+	nme = (str) getArgValue(stk, pci, 1);
+	i = findVariable(box->sym, nme);
+	if (i < 0)
+		return throwMessage("urlbox.toString", "failed to take object from box");
+
+	v = &box->val->stk[i];
+	if (v->vtype == TYPE_str)
+		s = v->val.sval;
+	else
+		(*BATatoms[v->vtype].atomToStr) (&s, &len, v);
+	if (s == NULL)
+		return throwMessage("urlbox.toString", "illegal value");
+	VALset(&stk->stk[getArg(pci, 0)], TYPE_str, s);
+	return MAL_SUCCEED;
+}
+
+str
+URLBOXnewIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Box box;
+	lng *cursor;
+	ValPtr v;
+
+	(void) mb;		/* fool compiler */
+	@:OpenBox(iterator)@
+	cursor = (lng *) getArgValue(stk, pci, 0);
+	v = &stk->stk[getArg(pci, 1)];
+	nextBoxElement(box, cursor, v);
+	return MAL_SUCCEED;
+}
+
+str
+URLBOXhasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	Box box;
+	lng *cursor;
+	ValPtr v;
+
+	(void) mb;		/* fool compiler */
+	@:OpenBox(iterator)@
+	cursor = (lng *) getArgValue(stk, pci, 0);
+	v = &stk->stk[getArg(pci, 1)];
+	nextBoxElement(box, cursor, v);
+	return MAL_SUCCEED;
+}
+
+str
+URLBOXgetLevel(int *r, int *level){
+	if( *level < 0 || *level >= urlDepth)
+		return throwMessage("urlbox.getLevel","Illegal level");
+	*r = urlBAT[*level]->batCacheid;
+	BBPincref(*r,TRUE);
+	return MAL_SUCCEED;
+}
+
+str
+URLBOXgetNames(int *r){
+	BAT *b;
+	int i;
+	b= BATnew(TYPE_int,TYPE_str, urlDepth+1);
+	if( b== NULL)
+		return throwMessage("urlbox.getNames","Could not create table");
+	for(i=0; i<urlDepth; i++){
+		BUNins(b,&i, BBPname(urlBAT[i]->batCacheid));
+	}
+	*r = b->batCacheid;
+	BBPincref(*r,TRUE);
+	BBPunfix(*r);
+	return MAL_SUCCEED;
+}
+str
+URLBOXgetCount(int *r){
+	BAT *b;
+	int i;
+	lng cnt;
+
+	b= BATnew(TYPE_int,TYPE_lng, urlDepth+1);
+	if( b== NULL)
+		return throwMessage("urlbox.getNames","Could not create table");
+	for(i=0; i<urlDepth; i++){
+		cnt = (lng) BATcount(urlBAT[i]);
+		BUNins(b,&i, &cnt);
+	}
+	*r = b->batCacheid;
+	BBPincref(*r,TRUE);
+	BBPunfix(*r);
+	return MAL_SUCCEED;
+}
+str
+URLBOXgetCardinality(int *r){
+	BAT *b, *bn;
+	int i;
+	lng cnt;
+
+	b= BATnew(TYPE_int,TYPE_lng, urlDepth+1);
+	if( b== NULL)
+		return throwMessage("urlbox.getNames","Could not create table");
+	for(i=0; i<urlDepth; i++){
+		bn = (BAT *) BATkunique(BATmirror(urlBAT[i]));
+		cnt = (lng) BATcount(bn);
+		BBPunfix(bn->batCacheid);
+		BUNins(b,&i, &cnt);
+	}
+	*r = b->batCacheid;
+	BBPincref(*r,TRUE);
+	BBPunfix(*r);
+	return MAL_SUCCEED;
+}
+@}

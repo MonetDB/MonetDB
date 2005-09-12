@@ -14,7 +14,7 @@ LIBS = {
 		inspect.mx crackers.mx \
 		thread.mx clients.mx \
 		factory.mx mdb.mx  \
-		rsbox.mx
+		rsbox.mx urlbox.mx
 		#datacell.mx 
 
 	HEADERS = h 
@@ -99,7 +99,7 @@ scripts_mal = {
 		inspect.mx crackers.mx print.mal \
 		chopper.mx thread.mx clients.mx \
 		factory.mx mdb.mx pcre.mx  tablet.mx \
-		rsbox.mx statistics.mx transaction.mx partitions.mx
+		rsbox.mx urlbox.mx statistics.mx transaction.mx partitions.mx
 	#datacell.mx 
 }
 
