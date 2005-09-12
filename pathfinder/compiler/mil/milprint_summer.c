@@ -883,7 +883,7 @@ map2NODE_interface (opt_t *f)
             /* res_ec is the iter|dn table resulting from the scj */
 
             /* create subtree copies for all bats except content_level */
-            "_elem_iter  := res_iter.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
+            "_elem_iter  := res_iter.leftfetchjoin(oid_oid).de_fake_leftfetchjoin(iter,res_item).chk_order();\n"
             "_elem_size  := mposjoin(res_item, res_frag, ws.fetch(PRE_SIZE));\n"
             "_elem_kind  := mposjoin(res_item, res_frag, ws.fetch(PRE_KIND));\n"
             "_elem_prop  := mposjoin(res_item, res_frag, ws.fetch(PRE_PROP));\n"
@@ -891,8 +891,8 @@ map2NODE_interface (opt_t *f)
 
             /* change the level of the subtree copies */
             /* get the level of the content root nodes */
-            "var temp_ec_item := res_iter.leftfetchjoin(node_items);\n"
-            "var temp_ec_frag := res_iter.leftfetchjoin(node_frags);\n"
+            "var temp_ec_item := res_iter.de_fake_leftfetchjoin(node_items,res_item);\n"
+            "var temp_ec_frag := res_iter.de_fake_leftfetchjoin(node_frags,res_item);\n"
             "nodes := res_item.mark(0@0);\n"
             "var root_level := mposjoin(temp_ec_item, "
                                        "temp_ec_frag, "
@@ -2633,7 +2633,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "res_scj := nil;\n"
                 /* res_ec is the iter|dn table resulting from the scj */
                 /* create content_iter as sorting argument for the merged union */
-                "var content_iter := res_iter.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
+                "var content_iter := res_iter.leftfetchjoin(oid_oid).de_fake_leftfetchjoin(iter,res_item).chk_order();\n"
     
                 /* create subtree copies for all bats except content_level */
                 "var content_size := mposjoin(res_item, res_frag, "
@@ -2652,8 +2652,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
     
                 /* change the level of the subtree copies */
                 /* get the level of the content root nodes */
-                "var temp_ec_item := res_iter.leftfetchjoin(node_items);\n"
-                "var temp_ec_frag := res_iter.leftfetchjoin(node_frags);\n"
+                "var temp_ec_item := res_iter.de_fake_leftfetchjoin(node_items,res_item);\n"
+                "var temp_ec_frag := res_iter.de_fake_leftfetchjoin(node_frags,res_item);\n"
                 "nodes := res_item.mark(0@0);\n"
                 "var contentRoot_level := mposjoin(temp_ec_item, "
                                                   "temp_ec_frag, "
@@ -4544,7 +4544,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "item := nil;\n"
                 "frag := nil;\n"
                 /* for the result of the scj join with the string values */
-                "var iter_item := iter.reverse().leftfetchjoin(item_str).chk_order();\n"
+                "var iter_item := iter.reverse().de_fake_leftfetchjoin(item_str).chk_order();\n"
                 "item_str := nil;\n");
     if (!tv)
         milprintf(f,
@@ -4603,7 +4603,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                     "item := nil;\n"
                     "frag := nil;\n"
                     /* for the result of the scj join with the string values */
-                    "var iter_item := iter.reverse().leftfetchjoin(item_str);\n"
+                    "var iter_item := iter.reverse().de_fake_leftfetchjoin(item_str);\n"
                     "iter := iter_item.mark(0@0).reverse();\n"
                     "item_str := iter_item.reverse().mark(0@0).reverse();\n"
                     /* merge strings from element and attribute */

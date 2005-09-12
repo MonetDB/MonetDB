@@ -508,15 +508,15 @@ PROC is_fake_project (bat[void,any::1] b) : bit
 	return and(count(b) = 1, isnil(seqbase(b)));
 }
 
-PROC de_fake_project (bat[void,any::1] p, bat[void,oid] b) : bat[void,any::1]
+PROC de_fake_project (bat[void,any::1] b, bat[void,oid] x) : bat[void,any::1]
 {
-	if (not(is_fake_project(p))) {
-		return p;
+	if (not(is_fake_project(b))) {
+		return b;
 	}
-	if (is_fake_project(b)) {
+	if (is_fake_project(x)) {
 		ERROR("de_fake_project: second argument must not be a 'fake_project'!\n");
 	}
-	return b.project(p.fetch(0));
+	return x.project(b.fetch(0));
 }
 
 @= fake_fetch
@@ -532,13 +532,43 @@ PROC fake_fetch (bat[void,any::1] b, @1 p) : any::1
 @:fake_fetch(int)@
 @:fake_fetch(oid)@
 
-PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,any::3] r) : bat[oid,any::3]
+PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,any::2] r) : bat[oid,any::2]
 {
+	if (is_fake_project(l)) {
+		ERROR("fake_leftfetchjoin: first argument must not be a 'fake_project'!\n");
+	}
 	if (is_fake_project(r)) {
 		return r;
 	} else {
 		return leftfetchjoin(l,r);
 	}
+}
+
+PROC de_fake_leftfetchjoin (bat[void,oid] l, bat[void,any::2] r, bat[void,oid] x) : bat[void,any::2]
+{
+	if (is_fake_project(r)) {
+		ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
+	}
+	if (not(is_fake_project(l))) {
+		return leftfetchjoin(l,r);
+	}
+	if (is_fake_project(x)) {
+		ERROR("de_fake_leftfetchjoin: third argument must not be a 'fake_project'!\n");
+	}
+	var c := r.find(l.fetch(0));
+	return x.project(c);
+}
+
+PROC de_fake_leftfetchjoin (bat[oid,void] l, bat[void,any::2] r) : bat[oid,any::2]
+{
+	if (is_fake_project(r)) {
+		ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
+	}
+	if (not(is_fake_project(reverse(l)))) {
+		return leftfetchjoin(l,r);
+	}
+	var c := l.reverse().fetch(0);
+	return r.reverse().project(c).reverse();
 }
 
 
@@ -603,10 +633,10 @@ PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,any::3] r) : bat[oid,any::3]
 	var fst := item.fetch(@2);
 	var lst := oid(int(fst) + pre_size.fetch(fst));
         fst := oid(int(fst) + skip_self);
-	var item_descs := cands.ord_select(fst,lst).reverse();
+	var item_descs := cands.ord_select(fst,lst).reverse().chk_order();
 @
 @= wrap
-PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int order, BAT[oid,oid] cands) : BAT[oid,oid] 
+PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int order, BAT[oid,oid] cands) : BAT[void,bat] 
 {
 	var result := nil;
 	var one_iter := FALSE;
@@ -640,8 +670,10 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 
 	# trivial cases	
 	if ( (count(item) = 0) or (count(cands) = 0) or (count(pre_size) = 0) ) {
-		result := bat(oid,oid,0).access(BAT_READ);
-		result := result.chk_order();
+		result := new(void,bat,2).seqbase(0@0)
+		          .insert(nil,bat(void,oid,0).seqbase(0@0).access(BAT_READ))
+		          .insert(nil,bat(void,oid,0).seqbase(0@0).access(BAT_READ))
+		          .access(BAT_READ);
 		return result;
 	}
 	
@@ -654,8 +686,10 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 			# "descendant" / "descendant_or_self"
 			# =>  result is a simple slice of cands
 			@:descs_per_item(@1,0)@
-			result := item_descs.project(iter.fetch(0)).reverse();
-			result := result.chk_order();
+			result := new(void,bat,2).seqbase(0@0)
+			          .insert(nil,fake_project(iter.fetch(0)))
+			          .insert(nil,item_descs.mark(0@0).reverse())
+			          .access(BAT_READ);
 			return result;
 		}
 		# =>  we don't need to sort neither input nor output
@@ -695,29 +729,37 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 
 	# the actual location step
 	if ( isnil(result) ) {
-		result := ll_@1 (iter, item, pre_size, cands,
+		var res := ll_@1 (iter, item, pre_size, cands,
 		                   height, one_iter, one_item, 
 		                   min_iter, max_iter);
+		result := new(void,bat,2).seqbase(0@0)
+		          .insert(nil,res.mark(0@0).reverse())
+		          .insert(nil,res.reverse().mark(0@0).reverse())
+		          .access(BAT_READ);
 	}
 	
 	# post-sort output
-	if ( (and(order,2) = 2) and not(ordered(reverse(result))) ) {
-		iter := result.mark(0@0).reverse();
-		item := result.reverse().mark(0@0).reverse();
+	if ( (and(order,2) = 2) and not(ordered(reverse(result.fetch(1)))) ) {
+		iter := result.fetch(0);
+		item := result.fetch(1);
 		var ord := item.reverse().sort().reverse();
-		    ord := ord.CTrefine(iter).mark(nil);
-		result := result.fetch(ord);
-		result := result.chk_order();
+		    ord := ord.CTrefine(iter).mark(0@0).reverse();
+		result := new(void,bat,2).seqbase(0@0)
+		          .insert(nil,ord.leftfetchjoin(iter).chk_order())
+		          .insert(nil,ord.leftfetchjoin(item).chk_order())
+		          .access(BAT_READ);
 	}
 	
 	# post-sort output
-	if ( (and(order,2) = 0) and not(ordered(result)) ) {
-		iter := result.mark(0@0).reverse();
-		item := result.reverse().mark(0@0).reverse();
+	if ( (and(order,2) = 0) and not(ordered(reverse(result.fetch(0)))) ) {
+		iter := result.fetch(0);
+		item := result.fetch(1);
 		var ord := iter.reverse().sort().reverse();
-		    ord := ord.CTrefine(item).mark(nil);
-		result := result.fetch(ord);
-		result := result.chk_order();
+		    ord := ord.CTrefine(item).mark(0@0).reverse();
+		result := new(void,bat,2).seqbase(0@0)
+		          .insert(nil,ord.leftfetchjoin(iter).chk_order())
+		          .insert(nil,ord.leftfetchjoin(item).chk_order())
+		          .access(BAT_READ);
 	}
 	
 	return result;
@@ -762,7 +804,7 @@ doc_pre,
 @
 
 @= step
-PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int order) : BAT[oid,oid]
+PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int order) : BAT[void,bat]
 {
     # "order" is not (yet?) used, here.
 
@@ -772,26 +814,37 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
 
     var unq := {count}(iter.reverse(), iter.tunique());
 
-    var result := bat(oid,oid);
     var offset := 0;
     var ctx_slice;
 
     @6
 
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
+    var res_iter, res_item;
+    if (count(unq) = 1) {
+        res_iter := fake_project(unq.reverse().fetch(0));
+	ctx_slice := ctx.reverse().mark(nil);
 	ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
-        result.insert(@3
-                              (@5,
-                               ctx_slice,
-			       @7
-                               heights,
-                               pre_sizes.count())
-	              .project($h).reverse());
-        offset := offset + $t;
+        res_item := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).mark(0@0).reverse();
+        res_item := res_item.chk_order();
+    } else {
+        res_iter := bat(void,oid);
+        res_item := bat(void,oid);
+        unq@batloop () {
+            ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
+            ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
+            var res := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).mark(nil).reverse();
+            res := res.chk_order();
+            res_item.insert(res);
+            res_iter.insert(res.project($h));
+            offset := offset + $t;
+        }
+        res_iter := res_iter.seqbase(0@0).access(BAT_READ).chk_order();
+        res_item := res_item.seqbase(0@0).access(BAT_READ).chk_order();
     }
-    return result.access(BAT_READ);
-#    return @2(Tpre_size, ctx, Theight, Tpre_size.count());
+    return new(void,bat,2).seqbase(0@0)
+           .insert(nil,res_iter)
+           .insert(nil,res_item)
+           .access(BAT_READ);
 }
 ADDHELP("@1", "tsheyar", "Sep 2004",
 "PARAMETERS:\n\
@@ -968,7 +1021,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
  }
 @
 @= mapping_code
-	result_part_iter := tmp_res.leftfetchjoin(result_part_iter);
+	result_part_iter := tmp_res.fake_leftfetchjoin(result_part_iter);
 	result_part_item := tmp_res.leftfetchjoin(result_part_item);
 	tmp_res := nil;
 @
@@ -1138,8 +1191,8 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	@4
 
         var result := @1 (result_part_iter, result_part_item, theFrag, ws, order @3);
-	result_part_iter := result.mark(0@0).reverse();
-	result_part_item := result.reverse().mark(0@0).reverse();
+	result_part_iter := result.fetch(0);
+	result_part_item := result.fetch(1);
         result_part_frag := fake_project(theFrag);
 	cands := nil;
 
