@@ -2683,7 +2683,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	len = BATcount(ws_item);
 	cnt = BATcount(pre);
 	base = pre->hseqbase;
-	fake_frag = ((BATcount(frag) == 1) && (frag->hseqbase == oid_nil));
+	fake_frag = is_fake_project(frag);
 	
 	if (fake_frag) {
 		ERRORcheck(!BAThdense(pre) || !BAThdense(ws_item), 
