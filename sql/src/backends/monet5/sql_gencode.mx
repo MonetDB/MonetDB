@@ -413,6 +413,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLprelude@
 			snprintf(buf, 256, "bind%s", type);
 			q = newStmt(mb, "sql", buf);
+			getVar(mb,getArg(q,0))->isudftype= 1;
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			q = pushStr(mb, q, s->op1.cval->t->s->base.name);
 			q = pushStr(mb, q, s->op1.cval->t->base.name);
@@ -433,6 +434,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			q = newStmt(mb, "sql", "bind_dbat");
+			getVar(mb,getArg(q,0))->isudftype= 1;
 			setVarType(mb,getArg(q,0),newBatType(TYPE_void,TYPE_oid));
 
 			q = pushStr(mb, q, s->op1.tval->s->base.name);
