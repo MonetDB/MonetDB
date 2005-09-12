@@ -89,13 +89,13 @@ The original code is retained, because it makes it
 easier to later re-use part of the catalog code in a separately.
 @mal
 
-command createCatalog( debug:int ) :void 
-address mvc_create_wrap
-comment "Create multi version catalog";
+#command createCatalog( debug:int ) :void 
+#address mvc_create_wrap
+#comment "Create multi version catalog";
 
-command destroyCatalog() 
-address mvc_destroy_wrap
-comment "Destroy multi version catalog";
+#command destroyCatalog() 
+#address mvc_destroy_wrap
+#comment "Destroy multi version catalog";
 
 command update_var( varname:str ):void
 address mvc_update_var_wrap
@@ -151,13 +151,13 @@ address mvc_import_table_wrap
 comment "Import a table from stream s with the 
 	given tuple and seperators (sep/rsep)";
 
-pattern hash( v:any_1, sh:int ) :int 
-address hash_wrap 
-comment "calculate a hash value and shift left";
+#pattern hash( v:any_1, sh:int ) :int 
+#address hash_wrap 
+#comment "calculate a hash value and shift left";
 
-command hash( b:bat[:void,:any_1], sh:int ) :bat[:void,:int]
-address bathash_wrap 
-comment "calculate a hash value and shift left";
+#command hash( b:bat[:void,:any_1], sh:int ) :bat[:void,:int]
+#address bathash_wrap 
+#comment "calculate a hash value and shift left";
 
 @- SQL functions
 The SQL functions are all recognized by their module name.
@@ -190,6 +190,9 @@ comment "round off the value v to nearests multiple of r";
 command @1( v:str ) :@1 
 address CALCstr2@1
 comment "Cast to @1";
+command str( v:@1 ) :str
+address CALC@12str
+comment "Cast @1 to str";
 command @1( v:str, digits:int ) :@1 
 address str_2num_@1
 comment "cast to @1 and check for overflow";
