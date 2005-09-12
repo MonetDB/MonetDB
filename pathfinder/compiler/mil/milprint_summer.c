@@ -892,7 +892,7 @@ map2NODE_interface (opt_t *f)
             /* change the level of the subtree copies */
             /* get the level of the content root nodes */
             "var temp_ec_item := res_iter.de_fake_leftfetchjoin(node_items,res_item);\n"
-            "var temp_ec_frag := res_iter.de_fake_leftfetchjoin(node_frags,res_item);\n"
+            "var temp_ec_frag := res_iter.leftfetchjoin(node_frags);\n"
             "nodes := res_item.mark(0@0);\n"
             "var root_level := mposjoin(temp_ec_item, "
                                        "temp_ec_frag, "
@@ -2633,7 +2633,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "res_scj := nil;\n"
                 /* res_ec is the iter|dn table resulting from the scj */
                 /* create content_iter as sorting argument for the merged union */
-                "var content_iter := res_iter.leftfetchjoin(oid_oid).de_fake_leftfetchjoin(iter,res_item).chk_order();\n"
+                "var content_iter := res_iter.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
     
                 /* create subtree copies for all bats except content_level */
                 "var content_size := mposjoin(res_item, res_frag, "
@@ -2653,7 +2653,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 /* change the level of the subtree copies */
                 /* get the level of the content root nodes */
                 "var temp_ec_item := res_iter.de_fake_leftfetchjoin(node_items,res_item);\n"
-                "var temp_ec_frag := res_iter.de_fake_leftfetchjoin(node_frags,res_item);\n"
+                "var temp_ec_frag := res_iter.leftfetchjoin(node_frags);\n"
                 "nodes := res_item.mark(0@0);\n"
                 "var contentRoot_level := mposjoin(temp_ec_item, "
                                                   "temp_ec_frag, "
