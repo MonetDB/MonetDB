@@ -387,7 +387,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int ht = TYPE_void;
 			int tt = s->op4.typeval->type->localtype;
 
-			q = newStmt(mb, "bbp", "new");
+			q = newStmt(mb, "bat", "new");
 			setVarType(mb, getArg(q, 0), newBatType(ht, tt));
 			q = pushNilType(mb, q, ht);
 			q = pushNilType(mb, q, tt);
@@ -470,7 +470,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_const:{
-			dump_2(sql, mb, s, "bbp", "project");
+			dump_2(sql, mb, s, "algebra", "project");
 		}
 			break;
 		case st_mark:{
@@ -597,7 +597,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
 					k = getDestVar(q);
-					q = newStmt(mb, "algebra", " kdiff");
+					q = newStmt(mb, "algebra", " kdifference");
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, k);
 					break;
@@ -613,7 +613,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
 					k = getDestVar(q);
-					q = newStmt(mb, "algebra", "kdiff");
+					q = newStmt(mb, "algebra", "kdifference");
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, k);
 					break;
@@ -695,9 +695,9 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		case st_diff:{
 			/* use sql.kdiff only when you intend to its optimizer
-			dump_2(sql, mb, s, "sql", "kdiff");
+			dump_2(sql, mb, s, "sql", "kdifference");
 			*/
-			dump_2(sql, mb, s, "algebra", "kdiff");
+			dump_2(sql, mb, s, "algebra", "kdifference");
 		}
 			break;
 		case st_union:{
@@ -802,7 +802,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushInt(mb, q, 0);
 				z = getDestVar(q);
 
-				q = newStmt(mb, "bbp", "project");
+				q = newStmt(mb, "algebra", "project");
 				q = pushArgument(mb, q, r);
 				q = pushArgument(mb, q, z);
 				r = getDestVar(q);
@@ -811,7 +811,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, r);
 				r = getDestVar(q);
 
-				q = newStmt(mb, "bbp", "project");
+				q = newStmt(mb, "algebra", "project");
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, z);
 				l = getDestVar(q);
@@ -1083,7 +1083,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt(mb, "bat", "append");
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
-			s->nr = getDestVar(q);
+			s->nr = l;
 			@:SQLpostlude@
 		} break;
 		case st_replace:{
@@ -1094,7 +1094,7 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = newStmt(mb, "bat", "replace");
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
-			s->nr = getDestVar(q);
+			s->nr = l;
 			@:SQLpostlude@
 		} break;
 		case st_table_clear:{

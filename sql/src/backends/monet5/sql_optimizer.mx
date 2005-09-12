@@ -437,7 +437,7 @@ the second operand. In many situations it is empty, there are no
 deleted tuples to consider. The effect is that we do not have
 to reduce the table to elements that are still valid.
 
-Beware, the SQL code may contain several kdiff statements.
+Beware, the SQL code may contain several kdifference statements.
 One for each base table touched. They should all be split,
 which leads to an explosion in the plan sizes
 @c
@@ -450,7 +450,7 @@ void SQLkdiffOptimizer(Client c){
 	long clk= GDKusec();
 
 #ifdef _SQL_OPTIMIZER_DEBUG
-	printf("START kdiff optimizer\n");
+	printf("START kdifference optimizer\n");
 	printFunction(GDKout,c->curprg->def,LIST_MAL_ALL);
 #endif
 	while(foundit) {
@@ -464,7 +464,7 @@ void SQLkdiffOptimizer(Client c){
 		for(i=0;i<limit; i++){
 			p= old[i];
 			if( moduleId(p) && strcmp(moduleName(p),"sql")==0 &&
-			    strcmp(functionName(p),"kdiff")==0){
+			    strcmp(functionName(p),"kdifference")==0){
 				total++;
 				foundit++;
 @-
@@ -503,11 +503,11 @@ exit	doit;
 				q->argc=3;
 				pushInstruction(mb,q);
 @-
-We have to perform the expensive kdiff anyway
+We have to perform the expensive kdifference anyway
 @c
 				q= newInstruction(ASSIGNsymbol);
 				setModuleId(q,putName("algebra",7));
-				setFunctionId(q,putName("kdiff",5));
+				setFunctionId(q,putName("kdifference",5));
 				q->argv[0]= p->argv[0];
 				q->retc=1;
 				pushArgument(mb,q,p->argv[1]);
@@ -521,7 +521,7 @@ We have to perform the expensive kdiff anyway
 /* just handle the first */
 					pushInstruction(mb,q);
 					if( moduleId(q) && strcmp(moduleName(q),"sql")==0 &&
-						strcmp(functionName(q),"kdiff")==0){
+						strcmp(functionName(q),"kdifference")==0){
 						setModuleId(q,putName("algebra",7));
 					}
 				}
@@ -549,7 +549,7 @@ track of them.
 				q->argc=3;
 				pushInstruction(mb,q);
 @-
-Now we don;t have to perform the expensive kdiff 
+Now we don;t have to perform the expensive kdifference 
 @c
 				map= (int*) GDKmalloc(2 * sizeof(int)*mb->vtop);
 				map[0]= getArg(p,0);
@@ -561,7 +561,7 @@ Now we don;t have to perform the expensive kdiff
 					q= copyInstruction(old[i]);
 /* just handle the first */
 					if( moduleId(q) && strcmp(moduleName(q),"sql")==0 &&
-						strcmp(functionName(q),"kdiff")==0){
+						strcmp(functionName(q),"kdifference")==0){
 						setModuleId(q,putName("algebra",7));
 					}
 					for(k=0;k<q->argc; k++)

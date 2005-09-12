@@ -223,12 +223,15 @@ comment "cast to string and check for overflow";
 
 @= mal_cast_2dec
 command @1( v:@2) :@1 
-address @2_2_@1
-comment "cast @1 to @1 and check for overflow";
+address CALC@22@1
+comment "cast @2 to @1";
 command @1( v:@2, digits:int, scale:int ) :@1 
 address @2_num2dec_@1
 comment "cast number to decimal(@1) and check for overflow";
 @mal
+@:mal_cast_2dec(sht,sht)@
+@:mal_cast_2dec(int,sht)@
+@:mal_cast_2dec(lng,sht)@
 @:mal_cast_2dec(sht,flt)@
 @:mal_cast_2dec(int,flt)@
 @:mal_cast_2dec(lng,flt)@
