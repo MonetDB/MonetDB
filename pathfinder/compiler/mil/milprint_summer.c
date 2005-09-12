@@ -877,30 +877,13 @@ map2NODE_interface (opt_t *f)
 
             "iter_input := nil;\n"
             /* variables for the result of the scj */
-            "var pruned_input := res_scj.fetch(0);\n"
-            /* pruned_input comes as ctx|iter */
-            "var ctx_dn_item := res_scj.fetch(1);\n"
-            "var ctx_dn_frag := res_scj.fetch(2);\n"
+            "var res_iter := res_scj.fetch(0);\n"
+            "var res_item := res_scj.fetch(1);\n"
+            "var res_frag := res_scj.fetch(2);\n"
             /* res_ec is the iter|dn table resulting from the scj */
-            "var res_item := pruned_input.reverse().leftjoin(ctx_dn_item);\n"
-            /* create content_iter as sorting argument for the merged union */
-            "var res_void := res_item.mark(0@0).reverse();\n"
-            "var res_iter := res_void.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
-            "res_void := nil;\n"
-            /* only the dn_items and dn_frags from the joined result are needed
-               in the following (getting the values for content_size, 
-               content_prop, ...) and the input for a mposjoin has to be void */
-            "res_item := res_item.reverse().mark(0@0).reverse();\n"
-            "var res_frag;\n"
-            "if (is_fake_project(ctx_dn_frag)) {\n"
-            "    res_frag := ctx_dn_frag;\n"
-            "} else {\n"
-            "    res_frag := pruned_input.reverse().leftjoin(ctx_dn_frag);\n"
-            "    res_frag := res_frag.reverse().mark(0@0).reverse();\n"
-            "}\n"
 
             /* create subtree copies for all bats except content_level */
-            "_elem_iter  := res_iter;\n"
+            "_elem_iter  := res_iter.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
             "_elem_size  := mposjoin(res_item, res_frag, ws.fetch(PRE_SIZE));\n"
             "_elem_kind  := mposjoin(res_item, res_frag, ws.fetch(PRE_KIND));\n"
             "_elem_prop  := mposjoin(res_item, res_frag, ws.fetch(PRE_PROP));\n"
@@ -908,30 +891,16 @@ map2NODE_interface (opt_t *f)
 
             /* change the level of the subtree copies */
             /* get the level of the content root nodes */
-            /* - unique is needed, if pruned_input has more than once an ctx value
-               - join with iter between pruned_input and item is not needed, because
-               in this case pruned_input has the void column as iter value */
-            "nodes := pruned_input.kunique();\n" /* creates unique ctx-node list */
-            "var temp_ec_item := nodes.reverse().mark(0@0).reverse();\n"
-            "temp_ec_item := temp_ec_item.leftfetchjoin(node_items);\n"
-            "var temp_ec_frag := nodes.reverse().mark(0@0).reverse();\n"
-            "temp_ec_frag := temp_ec_frag.leftfetchjoin(node_frags);\n"
-            "nodes := nodes.mark(0@0);\n"
+            "var temp_ec_item := res_iter.leftfetchjoin(node_items);\n"
+            "var temp_ec_frag := res_iter.leftfetchjoin(node_frags);\n"
+            "nodes := res_item.mark(0@0);\n"
             "var root_level := mposjoin(temp_ec_item, "
                                        "temp_ec_frag, "
                                        "ws.fetch(PRE_LEVEL));\n"
             "root_level := nodes.leftfetchjoin(root_level);\n"
-            "temp_ec_item := nil;\n"
-            "temp_ec_frag := nil;\n"
-            "nodes := nil;\n"
 
-            "temp_ec_item := ctx_dn_item.reverse().mark(0@0).reverse();\n"
-            "if (is_fake_project(ctx_dn_frag)) {\n"
-            "    temp_ec_frag := ctx_dn_frag;\n"
-            "} else {\n"
-            "    temp_ec_frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
-            "}\n"
-            "nodes := ctx_dn_item.mark(0@0);\n"
+            "temp_ec_item := res_item;\n"
+            "temp_ec_frag := res_frag;\n"
             "var content_level := mposjoin(temp_ec_item, temp_ec_frag, "
                                           "ws.fetch(PRE_LEVEL));\n"
             "content_level := nodes.leftfetchjoin(content_level);\n"
@@ -940,7 +909,6 @@ map2NODE_interface (opt_t *f)
             /* join is made after the multiplex, because the level has to be
                change only once for each dn-node. With the join the multiplex
                is automatically expanded */
-            "content_level := pruned_input.reverse().leftjoin(content_level);\n"
             "content_level := content_level.reverse().mark(0@0).reverse();\n"
 
             "_elem_level := content_level;\n"
@@ -960,7 +928,7 @@ map2NODE_interface (opt_t *f)
             "_attr_prop := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_PROP));\n"
             "_attr_frag := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_FRAG));\n"
             "_attr_own  := temp_attr.mark(0@0).reverse();\n"
-            "_attr_iter := _attr_own.leftfetchjoin(res_iter);\n"
+            "_attr_iter := _attr_own.leftfetchjoin(_elem_iter);\n"
             "temp_attr := nil;\n"
             "oid_attr := nil;\n"
             "oid_frag := nil;\n"
@@ -2659,28 +2627,13 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
     
                 "iter_input := nil;\n"
                 /* variables for the result of the scj */
-                "var pruned_input := res_scj.fetch(0);\n"
-                /* pruned_input comes as ctx|iter */
-                "var ctx_dn_item := res_scj.fetch(1);\n"
-                "var ctx_dn_frag := res_scj.fetch(2);\n"
+                "var res_iter := res_scj.fetch(0);\n"
+                "var res_item := res_scj.fetch(1);\n"
+                "var res_frag := res_scj.fetch(2);\n"
                 "res_scj := nil;\n"
                 /* res_ec is the iter|dn table resulting from the scj */
-                "var res_item := pruned_input.reverse().leftjoin(ctx_dn_item);\n"
                 /* create content_iter as sorting argument for the merged union */
-                "var content_void := res_item.mark(0@0).reverse();\n"
-                "var content_iter := content_void.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
-                "content_void := nil;\n"
-                /* only the dn_items and dn_frags from the joined result are needed
-                   in the following (getting the values for content_size, 
-                   content_prop, ...) and the input for a mposjoin has to be void */
-                "res_item := res_item.reverse().mark(0@0).reverse();\n"
-                "var res_frag;\n"
-                "if (is_fake_project(ctx_dn_frag)) {\n"
-                "    res_frag := ctx_dn_frag;\n"
-                "} else {\n"
-                "    res_frag := pruned_input.reverse().leftjoin(ctx_dn_frag);\n"
-                "    res_frag := res_frag.reverse().mark(0@0).reverse();\n"
-                "}\n"
+                "var content_iter := res_iter.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
     
                 /* create subtree copies for all bats except content_level */
                 "var content_size := mposjoin(res_item, res_frag, "
@@ -2697,35 +2650,18 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
      /* attr */ /* as well as content_frag_pre */
      /* attr */ "var content_frag_pre := res_frag;\n"
     
-                "res_item := nil;\n"
-                "res_frag := nil;\n"
-    
                 /* change the level of the subtree copies */
                 /* get the level of the content root nodes */
-                /* - unique is needed, if pruned_input has more than once an ctx value
-                   - join with iter between pruned_input and item is not needed, because
-                   in this case pruned_input has the void column as iter value */
-                "nodes := pruned_input.kunique();\n" /* creates unique ctx-node list */
-                "var temp_ec_item := nodes.reverse().mark(0@0).reverse();\n"
-                "temp_ec_item := temp_ec_item.leftfetchjoin(node_items);\n"
-                "var temp_ec_frag := nodes.reverse().mark(0@0).reverse();\n"
-                "temp_ec_frag := temp_ec_frag.leftfetchjoin(node_frags);\n"
-                "nodes := nodes.mark(0@0);\n"
+                "var temp_ec_item := res_iter.leftfetchjoin(node_items);\n"
+                "var temp_ec_frag := res_iter.leftfetchjoin(node_frags);\n"
+                "nodes := res_item.mark(0@0);\n"
                 "var contentRoot_level := mposjoin(temp_ec_item, "
                                                   "temp_ec_frag, "
                                                   "ws.fetch(PRE_LEVEL));\n"
                 "contentRoot_level := nodes.leftfetchjoin(contentRoot_level);\n"
-                "temp_ec_item := nil;\n"
-                "temp_ec_frag := nil;\n"
-                "nodes := nil;\n"
     
-                "temp_ec_item := ctx_dn_item.reverse().mark(0@0).reverse();\n"
-                "if (is_fake_project(ctx_dn_frag)) {\n"
-                "    temp_ec_frag := ctx_dn_frag;\n"
-                "} else {\n"
-                "    temp_ec_frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
-                "}\n"
-                "nodes := ctx_dn_item.mark(0@0);\n"
+                "temp_ec_item := res_item;\n"
+                "temp_ec_frag := res_frag;\n"
                 "var content_level := mposjoin(temp_ec_item, temp_ec_frag, "
                                               "ws.fetch(PRE_LEVEL));\n"
                 "content_level := nodes.leftfetchjoin(content_level);\n"
@@ -2735,7 +2671,6 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 /* join is made after the multiplex, because the level has to be
                    change only once for each dn-node. With the join the multiplex
                    is automatically expanded */
-                "content_level := pruned_input.reverse().leftjoin(content_level);\n"
                 "content_level := content_level.reverse().mark(0@0).reverse();\n"
     
                 /* printing output for debugging purposes */
@@ -4597,25 +4532,11 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "var res_scj := "
                 "loop_lifted_descendant_or_self_step_with_kind_test"
                 "(iter, item, frag, ws, 0, TEXT);\n"
-                "iter := nil;\n"
-                "item := nil;\n"
-                "frag := nil;\n"
                 /* variables for the result of the scj */
-                "var pruned_input := res_scj.fetch(0);\n"
-                /* pruned_input comes as ctx|iter */
-                "var ctx_dn_item := res_scj.fetch(1);\n"
-                "var ctx_dn_frag := res_scj.fetch(2);\n"
+                "iter := res_scj.fetch(0);\n"
+                "item := res_scj.fetch(1);\n"
+                "frag := res_scj.fetch(2);\n"
                 "res_scj := nil;\n"
-                /* combine pruned_input and ctx|dn */
-                "pruned_input := pruned_input.reverse().leftjoin(ctx_dn_item.mark(0@0));\n"
-                "item := ctx_dn_item.reverse().mark(0@0).reverse();\n"
-                "if (is_fake_project(ctx_dn_frag)) {\n"
-                "    frag := ctx_dn_frag;\n"
-                "} else {\n"
-                "    frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
-                "}\n"
-                "ctx_dn_item := nil;\n"
-                "ctx_dn_frag := nil;\n"
                 /* get the string values of the text nodes */
                 "item_str := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
                                      "mposjoin(item, frag, ws.fetch(PRE_FRAG)), "
@@ -4623,7 +4544,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "item := nil;\n"
                 "frag := nil;\n"
                 /* for the result of the scj join with the string values */
-                "var iter_item := pruned_input.leftfetchjoin(item_str).chk_order();\n"
+                "var iter_item := iter.reverse().leftfetchjoin(item_str).chk_order();\n"
                 "item_str := nil;\n");
     if (!tv)
         milprintf(f,
@@ -4632,7 +4553,6 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "     iter_item := iter_item.string_join(item_unq.project(\"\"));\n}\n");
 
     milprintf(f,
-                "pruned_input := nil;\n"
                 "iter := iter_item.mark(0@0).reverse();\n"
                 "item_str := iter_item.reverse().mark(0@0).reverse();\n"
             "} else {\n"
@@ -4671,25 +4591,11 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                     "var res_scj := "
                     "loop_lifted_descendant_or_self_step_with_kind_test"
                     "(iter, item, frag, ws, 0, TEXT);\n"
-                    "iter := nil;\n"
-                    "item := nil;\n"
-                    "frag := nil;\n"
                     /* variables for the result of the scj */
-                    "var pruned_input := res_scj.fetch(0);\n"
-                    /* pruned_input comes as ctx|iter */
-                    "var ctx_dn_item := res_scj.fetch(1);\n"
-                    "var ctx_dn_frag := res_scj.fetch(2);\n"
+                    "iter := res_scj.fetch(0);\n"
+                    "item := res_scj.fetch(1);\n"
+                    "frag := res_scj.fetch(2);\n"
                     "res_scj := nil;\n"
-                    /* combine pruned_input and ctx|dn */
-                    "pruned_input := pruned_input.reverse().leftjoin(ctx_dn_item.mark(0@0));\n"
-                    "item := ctx_dn_item.reverse().mark(0@0).reverse();\n"
-                    "if (is_fake_project(ctx_dn_frag)) {\n"
-                    "    frag := ctx_dn_frag;\n"
-                    "} else {\n"
-                    "    frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
-                    "}\n"
-                    "ctx_dn_item := nil;\n"
-                    "ctx_dn_frag := nil;\n"
                     /* get the string values of the text nodes */
                     "item_str := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
                                          "mposjoin(item, frag, ws.fetch(PRE_FRAG)), "
@@ -4697,8 +4603,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                     "item := nil;\n"
                     "frag := nil;\n"
                     /* for the result of the scj join with the string values */
-                    "var iter_item := pruned_input.leftfetchjoin(item_str);\n"
-                    "pruned_input := nil;\n"
+                    "var iter_item := iter.reverse().leftfetchjoin(item_str);\n"
                     "iter := iter_item.mark(0@0).reverse();\n"
                     "item_str := iter_item.reverse().mark(0@0).reverse();\n"
                     /* merge strings from element and attribute */
