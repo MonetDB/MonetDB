@@ -455,12 +455,13 @@ Continue processing any left-over input from the previous round.
 			c->yycur = 0;
 		}
 		if (in->eof || !isa_block_stream(in->s)) {
-			language = 0;
+			language = (be->console) ? 'S' : 0;
 
 			/* auto_commit on end of statement */
 			if (m->auto_commit && m->trans) {
 				if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id >100)) {
-					if (m->qc) qc_destroy(m->qc);
+					if (m->qc) 
+						qc_destroy(m->qc);
 					m->qc = qc_create();
 				}
 				if (mvc_commit(m, 0, NULL) < 0) {
