@@ -1147,12 +1147,12 @@ char hierarchy[ty_types][ty_types] = {
                                               t   e
                                               y   d n i d     b 
                                               p a A u n e d s o 
-                          e n                 e t t m t c o t o 
+                            e n               e t t m t c o t o 
                           n m a             i d o o e e i u r l n e a   t   c
                           o p m             t A m m r g m b i e o l t d x   o
                           n t e             e n i i i e a l n a d e t o e p m
                           e y d ? + * , | & m y c c c r l e g n e m r c t i m*/
-     [ty_none   ]      ={ 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1 }
+     [ty_none   ]      ={ 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
     ,[ty_empty  ]      ={ 0,1,_,_,_,_,_,_,_,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
     ,[ty_named  ]      ={ _,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_ }
     ,[ty_opt    ]      ={ 0,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_ }
