@@ -201,9 +201,11 @@ typedef struct {
     int     dmMode;         /* Data model flag, true if printing in
                              * data-model mode, eg. look like GALAX */
     int     saxMode;        /* true if printing a Sax-O-Phone stream */
-    int     mapiMode;       /* for DM or XML mode that should go on a MapiClient stream */
+    int     mapiMode;       /* for DM or XML mode that should go on a
+                               MapiClient stream */
     int     norootMode;     /* do not generate <XQueryResult> root node */
-    int     printMode;      /* documentation please???? */
+    int     printMode;      /* true if printing SQL-ish/MCL-ish output,
+                               is used by JDBC/XML:DB at the moment */
     char*   dmSeparator;    /* seperation char in DM mode */
     BAT*    ws;             /* working set BAT */
     int     curFRAG;        /* current fragment used by working set */
@@ -341,11 +343,11 @@ static int createWsContext(XqueryCtx* ctx, BAT* ws, int wsID, str mode) {
     if (!ctx->saxMode) {
         /* add mapi = characters at the start of each line */
         if (strstr(mode,"mapi")) {
-                ctx->mapiMode = 1;
+            ctx->mapiMode = 1;
         }
-        /* add something that was not documented by the person who added this mode */
+        /* go into SQL-ish/MCL-ish mode */
         if (strstr(mode, "seq")) {
-                ctx->printMode = 1;
+            ctx->dmMode = ctx->printMode = 1;
         }
     }
     ctx->dmSeparator =
@@ -816,7 +818,7 @@ static int handle_characters(XqueryCtx* ctx, str ch, str top) {
             stream_printf(GDKout,"%s\n",ch); /* ESCAPE !! */
         }
     } else { /* xmlMode */
-        if ( ctx->printMode ) {
+        if ( ctx->printMode ) { /* SQL-ish/MCL-ish mode */
             if ( ctx->dmMode && top )
                 stream_printf(GDKout,"%s {\\\"", top);
 
@@ -883,7 +885,8 @@ static int handle_comment(XqueryCtx* ctx, str comm) {
 }
 
 /**
- * Output generation handler. Handles equivalent of * SAX processingInstruction() event.
+ * Output generation handler. Handles equivalent of * SAX
+ * processingInstruction() event.
  */
 static int handle_processingInstruction(XqueryCtx* ctx, str target, str data) {
     if (ctx->saxMode ) {
@@ -1228,13 +1231,10 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
 #define ATTR  34
 
 /**
- * Handle the start() of an XQUERY/Pathfinder result sequence
+ * Handle the start() of an XQUERY/Pathfinder result sequence.
  */
 static int id_sequence_counter = 0;
-static int  seqHeadStart(
-        XqueryCtx* ctx,
-        BAT* item)
-{
+static int seqHeadStart(XqueryCtx* ctx, BAT* item) {
     if (ctx->printMode) {
         /* write SQL-ish header */
         stream_printf(GDKout,"#-\n");
@@ -1278,7 +1278,7 @@ static int  seqEnd(XqueryCtx* ctx) {
             handle_endElement(ctx, NULL, XQRESTAG, 0 /* not empty*/);
         }
     } else if (ctx->printMode) {
-        /* do nothing! */
+        /* do nothing! SQL-ish/MCL-ish output has no footer */
     } else if (ctx->dmMode) {
         stream_printf(GDKout, "\n");
     } else if (ctx->mapiMode) {
@@ -1365,7 +1365,7 @@ static int  seqEmitDbl(XqueryCtx* ctx, dbl dv) {
 static int  seqEmitStr(XqueryCtx* ctx, str sv) {
     if ( ctx->saxMode ) {
         return handle_characters(ctx,sv,"text");
-    } else if ( ctx->printMode ) {
+    } else if ( ctx->printMode ) { /* SQL-ish/MCL-ish mode */
         ctx->nAttrOnLine++;
         stream_printf(GDKout,"\\\"");
         emit_escaped(sv, ctx->saxMode, 0 /*ALL*/);
@@ -1446,6 +1446,7 @@ int xquery_print_result_main(
         CHKVP( vp = idxTV(ctx,"kind",kind,pre) );
         int cmbn_frag_kind = *(int*)vp;
         if (ctx->printMode) {
+            /* SQL-ish mode: write start of tuple and open string */
             stream_printf(GDKout, "[ \"");
         } else if ( cnt++ && ctx->dmMode  ) {
             /* should print a separator here */
@@ -1532,6 +1533,7 @@ int xquery_print_result_main(
                 return GDK_FAIL;
         }
         if (ctx->printMode) {
+            /* SQL-ish mode: write end of string and end of tuple */
             stream_printf(GDKout,"\"\t]\n");
         }
     }
