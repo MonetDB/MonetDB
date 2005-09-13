@@ -1377,19 +1377,29 @@ shred_comment (void *xmlCtx, const xmlChar *c)
 
 static void 
 print_error(void *ctx, const char *msg, ...) {
+    /* IMPORTANT this function may be called multiple times for one error
+     * message so it is not possible to use GDKerror() here.
+     * Instead, we "mis-use" the ctx pointer to remember whether a newline
+     * has occured in the error message, and thus be able to prefix each
+     * (line of an) error message with GDKERROR ("!Error: "), which is
+     * required to properly get the error message trough the MAPI
+     * protokol...
+     */
     va_list args;
-    (void)ctx;
-
+    int *print_error_newline = (int*)ctx;
     int len = 0;
     char buf[PFSHRED_BUFLEN];
 
-    /* IMPORTANT this function may be called multiple times for one error
-     * message so it is not possible to use GDKerror() here */
+    if (*print_error_newline) {
+        len += snprintf(buf+len, PFSHRED_BUFLEN-len-1, GDKERROR);
+    }
+
     va_start(args, msg);
     /* vfprintf((FILE *)xmlGenericErrorContext, msg, args); ORIGINAL libxml2 */
     len += vsnprintf(buf+len, PFSHRED_BUFLEN-len-1, msg, args);
     va_end(args);
 
+    *print_error_newline = (strchr(buf, (int)'\n') != NULL);
     stream_printf(GDKerr,buf);
 }
 
@@ -1553,6 +1563,7 @@ xmlSAXHandler shredder = {
 static int 
 mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
 {
+    int print_error_newline = TRUE;
     int wellFormed = 0;
     xmlParserCtxtPtr xmlCtx;
 
@@ -1574,7 +1585,7 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
     shredCtx->err= 0;
 
     /* reset libxml2 error handling */
-    xmlSetGenericErrorFunc (NULL, print_error);
+    xmlSetGenericErrorFunc ((void*)&print_error_newline, print_error);
 
     /* parse XML input (receive SAX events) */
     if ( strlen(location) == 0 ) {
