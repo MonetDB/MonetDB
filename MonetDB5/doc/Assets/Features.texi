@@ -113,7 +113,7 @@ execution of OLTP transactions.
 MonetDB has not been designed with a strong focus on
 security. The major precautions have been taken, but are incomplete
 when access to the hosting machine is granted or when direct access
-is granted to the MonetDB Interface Programming Language features.
+is granted to the MonetDB programming language features.
 @c which language??
 The system should preferably be deployed in a sand-boxed environment
 where remote access is encapsulated in a dedicated application framework.

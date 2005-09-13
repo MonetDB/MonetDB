@@ -23,9 +23,15 @@ A more detailed account on the experiences can be found in REF.
 Immediately after the PRISMA project was termed dead, the basis
 for a new database kernel based on the BATs was laid.
 The original target was to better support scientific databases
-with their archaic file structures.
+with their archaic file structures. 
 
 @strong{The Data Distilleries Era [1996-2003]}
+The datamining projects running as of 1993 called for better
+database support. It culminated in the spin-off
+Data Distilleries, which based their analytical customer
+relationship suite on the power provided by the early MonetDB
+implementations. In the years following, many technical innovations
+were paired with strong industrial maturing of the software base.
 
 @strong{The Open-Source Challenge [2003-now]}
 Moving into the open-source field required a large number of
@@ -38,15 +44,26 @@ and the release of the XQuery front-end in 2005.
 
 @strong{The Road Ahead: MonetDB Version 5, X100, Armada}
 Several projects are underway to carve out new versions of
-the MonetDB family. Extensions and renovation of the kernel
-is tackled in the X100 project, which aims to provide 
+the MonetDB family. This reference manual describes the
+in-s and out-s of MonetDB Version 5, a multi-year activity
+to clean up the software backbone and better support for
+simple database requests.
+
+Extensions and renovation of the kernel are tackled in
+the AMDB project, which provides high-volume access to
+columns stored in compressed form. A separate volcano-style
+interpreter is developed in the X100 project, which aims to provide 
 performance in I/O-dominant and streaming settings using
 vectorized processing and Just-In-Time (de)compression.
 
-The scene of distributed database is (again) addressed, but not
-using the traditional centralized administration focus. Instead
+The scene of distributed database is (again) addressed in the Armada project,
+but not using the traditional centralized administration focus. Instead
 the Armada project seeks the frontiers of autonomous database systems, which
 still provide a coherent functional view to its users.
-In its approach it challenges many dogmas in database technology, such
-as the perspective on global consistency, the role of the client in
+In its approach it challenges many dogmas in distributed database technology,
+such as the perspective on global consistency, the role of the client in
 managing the distributed world, and the way resources are spread.
+
+The MonetDB software framework provides a rich setting to pursue
+these allees of database research. We hope that many may benefit from
+our investments, both research and business wise.
