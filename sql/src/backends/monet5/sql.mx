@@ -126,7 +126,7 @@ command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:in
 address mvc_result_column_wrap
 comment "Add the colunm to the table query result";
 
-command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:any_1 ) :void
+pattern rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:any_1 ) :void
 address mvc_result_value_wrap
 comment "Add the value to the row query result";
 
@@ -719,14 +719,24 @@ mvc_result_column_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *di
 }
 
 str
-mvc_result_value_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, ptr p, int mtype)
+/*mvc_result_value_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, ptr p, int mtype)*/
+mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+        int *ret  = (int *) getArgReference(stk, pci, 0);
+        int *rs   = (int *) getArgReference(stk, pci, 1);
+        str *tn   = (str *) getArgReference(stk, pci, 2);
+        str *cn   = (str *) getArgReference(stk, pci, 3);
+        str *type = (str *) getArgReference(stk, pci, 4);
+        int *digits = (int *) getArgReference(stk, pci, 5);
+        int *scale = (int *) getArgReference(stk, pci, 6);
+	ptr p =  (ptr) getArgReference(stk, pci, 7);
+	int mtype = getArgType(mb, pci, 7);
 	mvc *c;
 
 	(void)ret;
 	(void)rs;
 	@:getContext(c)@
-	if (mvc_result_value(c, *tn, *name, *type, *digits, *scale, p, mtype))
+	if (mvc_result_value(c, *tn, *cn, *type, *digits, *scale, p, mtype))
 		return throwMessage("sql.rsColumn", "failed");
 	return NULL;
 }
