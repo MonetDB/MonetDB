@@ -1376,14 +1376,21 @@ shred_comment (void *xmlCtx, const xmlChar *c)
 }
 
 static void 
-print_error (void *ctx, const char *msg, ...)
-{
-    va_list msgs;
-    (void) ctx;
+print_error(void *ctx, const char *msg, ...) {
+    va_list args;
+    (void)ctx;
 
-    va_start (msgs, msg);
-    GDKerror(msg,  msgs);
-    va_end (msgs);
+    int len = 0;
+    char buf[PFSHRED_BUFLEN];
+
+    /* IMPORTANT this function may be called multiple times for one error
+     * message so it is not possible to use GDKerror() here */
+    va_start(args, msg);
+    /* vfprintf((FILE *)xmlGenericErrorContext, msg, args); ORIGINAL libxml2 */
+    len += vsnprintf(buf+len, PFSHRED_BUFLEN-len-1, msg, args);
+    va_end(args);
+
+    stream_printf(GDKerr,buf);
 }
 
 /** 
@@ -1578,7 +1585,7 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
         }
     } else if ( !isURL(location) ) {
         if ( !(xmlCtx = xmlCreateFileParserCtxt (location)) ) {
-            GDKerror("shred:mainSHREDDER: xmlCreateFileParserCtxt(\"%s\") failed\n",location); 
+            GDKerror("shred:mainSHREDDER: xmlCreateFileParserCtxt(\"%s\") failed\n",location);
             return -1;
         }
     } else {
