@@ -1,24 +1,27 @@
 @node The History of MonetDB, , When not to consider MonetDB, TOC
 @subsection A Brief History of MonetDB
-@strong{A Dark Ages [1979-2002]}
+@strong{The Dark Ages [1979-2002]}
 The development of the MonetDB software family goes back as far as the
 early eighties when the first relational kernel, called Troll, was delivered to
 a larger audience. It was spread over ca 1000 sites world-wide and became part
 of a software case-tool until the beginning of the nineties.
+@c not very comprehensive (what? until the beginning of the 90s?)
 None of the code of this system has survived, but several ideas and
 experiences on how to obtain a fast kernel by simplification and
-explicit materialization found their origin at that time frame.
+explicit materialization found their origin during this period.
 
 The second part of the eighties was spent on building the first
-distributed main-memory datase system in the context of the
-national project PRISMA. A fully functional system over 100
-processors and a wealthy 1Gb of main memory showed the road
-to develop database technologie from a different perspective.
+distributed main-memory database system in the context of the
+@c main-memory vs. main memory ?? should do a grep on both
+@c throughout the documentation and make the spelling consistent
+national project PRISMA. A fully functional system of 100
+processors and a wealthy 1GB of main memory showed the road
+to develop database technology from a different perspective.
 A more detailed account on the experiences can be found in REF.
 
 @strong{The Early Days [1993-1995]}
 Immediately after the PRISMA project was termed dead, the basis
-of a new database kernel based on the BATs was layed.
+for a new database kernel based on the BATs was laid.
 The original target was to better support scientific databases
 with their archaic file structures.
 
@@ -27,7 +30,7 @@ with their archaic file structures.
 @strong{The Open-Source Challenge [2003-now]}
 Moving into the open-source field required a large number of
 extensions to the code base. It became utmost important to
-support a descent implementation of the SQL99 standard,
+support a decent implementation of the SQL99 standard,
 the bulk of application programming interfaces.
 
 The culprit of this activity was the first official release in 2004
@@ -36,14 +39,14 @@ and the release of the XQuery front-end in 2005.
 @strong{The Road Ahead: MonetDB Version 5, X100, Armada}
 Several projects are underway to carve out new versions of
 the MonetDB family. Extensions and renovation of the kernel
-is tackled in the X100 project, which aims to provide utmost
-performance in IO-dominant and streaming settings using
-vectorized processing and JIT (de)compression.
+is tackled in the X100 project, which aims to provide 
+performance in I/O-dominant and streaming settings using
+vectorized processing and Just-In-Time (de)compression.
 
 The scene of distributed database is (again) addressed, but not
 using the traditional centralized administration focus. Instead
 the Armada project seeks the frontiers of autonomous database systems, which
 still provide a coherent functional view to its users.
-In its approach is challenges many dogmas in database technology, such
+In its approach it challenges many dogmas in database technology, such
 as the perspective on global consistency, the role of the client in
 managing the distributed world, and the way resources are spread.

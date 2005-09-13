@@ -23,7 +23,7 @@ the property of their respective owners.
 much like the underlying source code base. This may lead to 
 incomplete and inconsistencies descriptions,
 for which we apologize in advance. You can help improving the manual
-using the user commentary system included in the web-site.
+using the user commentary system included in the website.
 @menu
 * Intended audience::
 * Features and Limitations::
@@ -52,20 +52,20 @@ it should be possible to create your first MonetDB/SQL application
 without much difficulty.
 
 Users interested in building applications on top of the MonetDB
-product suite are advised to read the @ref{Download and Installation} and @ref{SQL} sections.
+product suite are advised to read @ref{Download and Installation} and @ref{SQL}.
 
 The bulk of the MonetDB reference manual deals with the techniques
 available in the back-end for the expert user. Judicious use
 of the programming interfaces and database kernel modules for
 domain specific tasks lead to high-performance solutions. 
 The grand challenge for the MonetDB development team
-is to assemble a sufficient and orthogonal
-set of partial solutions. 
+is to assemble a sufficient and orthogonal set of partial solutions. 
 Feedback on the current set is highly
 appreciated, especially before you embark on a complex programming
 project. If the envisioned functionality is generally applicable it makes
 sense to contribute it to the community.
 
 The preferred channel to share your comments is through the
+@c share your comments: share your thoughts, post your comments??
 MonetDB mailing list http://XYZ held at SourceForge.
 

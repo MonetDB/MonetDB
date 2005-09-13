@@ -1,10 +1,10 @@
 Using MonetDB for experimentation and application development
-requires installation of the back-end server Mserver, a front-end compiler SQL
-or XQuery, the APIs, and a (graphical) user interface.
+requires installation of the back-end server Mserver, a front-end compiler for 
+SQL or XQuery, the APIs, and a (graphical) user interface.
 These components are packaged conveniently for several platforms in
 the @url{"http://sourceforge.net/project/showfiles.php?group_id=56967",download} section at SourceForge.
 
-Most people prefer a version 'officially' declared as stable, which
+Most people prefer a version `officially' declared as stable. Stable
 means that special care has been taken to assure that all errors reported
 during the nightly builds have been solved on the platforms of interest.
 Major bug fixes are also applied to the latest stable version, while functional
@@ -15,9 +15,9 @@ the tutorial section. It illustrates a small, but concrete application
 scenario geared at querying a historical database with trading trips of the
 world-famous East-Indian Trading Corp (1602-1795).
 
-If you run into errors during the installation, please have a look at the
+If you encounter errors during the installation, please have a look at the
 @url{"http://monetdb.cwi.nl/GetGoing/Trouble/FAQ/index.html",FAQ}
-for common errors and some advice how to proceed.
+for common errors and some advice on how to proceed.
 
 @menu
 * Binary Distributions::Intended for end-users.

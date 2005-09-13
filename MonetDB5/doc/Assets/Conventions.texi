@@ -1,14 +1,14 @@
 @node Manual Generation, Conventions and notation, Intended audience,About this manual
 @section Manual Generation
-The MonetDB code base is large collection of files, scattered
+The MonetDB code base is a large collection of files, scattered
 over the system modules. Each source file is written in a
 literal programming style, which physically binds documentation with 
 the relevant code sections. The utility program Mx, 
 distributed with the source code, processes these
 files marked *.mx to extract the code sections for system
 compilation or to prepare for a pretty printed listing.
-The reference manual is based the *.mx files prepared 
-for @emph{Texinfo} processing. 
+The reference manual is based on the *.mx files which have been
+prepared for @emph{Texinfo} processing. 
 Individual components are extracted by
 @example
 Mx -i -B -H1 <filename>.mx
@@ -25,7 +25,7 @@ A printable version of an *.mx file can be produced using the commands:
 Mx  <filename>.mx
 latex <filename>.tex
 @end example
-The result, however, still includes the unexpanded tex info macros.
+The result, however, still includes the unexpanded Texinfo macros.
 
 @menu
 * Intended audience::
@@ -58,25 +58,28 @@ The interaction with textual interfaces uses the default
 prompt-setting of the underlying operating system. 
 
 Keywords in the MonetDB interface languages are key sensitive;
-SQL keyword are not case insensitive. No distinction is made
+SQL keywords are not case insensitive. No distinction is made
+@c SQL keywords are case sensitive (yes or no)??
 in this manual.
 
 ?BNF conventions
 
 @section Additional Resources
 Although this reference manual aims to be complete, it depends on
-addition resources for a full understanding of the MonetDB product family.
+additional resources for a full understanding of the MonetDB product family.
+@c are the additional resources meant to clarify the reference manual,
+@c or the product family?
 The primary source for additional information is the MonetDB website,
 http://monetdb.cwi.nl, and the code base itself.
 Information on the background of its architecture can be found in the
 library of scientific publications.
 
-This reference manual relies on documentation on the basics of its
+This reference manual relies on documentation of the basics of its
 query languages SQL, XQuery, its application interfaces, PHP, Perl,
-PHP, and its middleware support, JDBC and ODBC, given elsewhere.
-Examples are used to illustrate their behavior in the context of
+Pyhton, and its middleware support, JDBC and ODBC, given elsewhere.
+Examples are used to illustrate their behaviour in the context of
 MonetDB only.
-The resource locations identified below may in times proof valuable.
+The resource locations identified below may at times proof valuable.
 
 @multitable {example}{and the remainder is long}
 @item Perl DBI
