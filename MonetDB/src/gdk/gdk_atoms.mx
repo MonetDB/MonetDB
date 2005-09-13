@@ -63,6 +63,8 @@ we use the following #defines for comparing atoms:
 #define lngStrlen	48
 #define fltStrlen	48
 #define dblStrlen	96
+
+#define ATOMstorage(T)  BATatoms[T].storage
 @- 
 The system comes with the traditional atomic types: int (4 bytes), bool(1 
 byte) and str (variable). In addition, we support the notion of an OID 
@@ -587,13 +589,16 @@ ATOMname(int t)
 	return (t >= 0 && t < GDKatomcnt && BATatoms[t].name) ? BATatoms[t].name : "null";
 }
 
+/* Obsolete, we do not use the storage inheritance scheme
 int
 ATOMstorage(int t)
 {
+	return BATatoms[t].storage;
 	while (t != BATatoms[t].storage)
 		t = BATatoms[t].storage;
 	return t;
 }
+*/
 
 int
 ATOMisdescendant(int tpe, int parent)
