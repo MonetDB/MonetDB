@@ -147,8 +147,10 @@ to allow inspection.
 		return;
 	}
 (void)be;
+/*
 //	if (be->mvc->factory)
 //		optimizeQueryInCache(c);
+*/
 }
 
 @-
