@@ -207,12 +207,12 @@ dumping is tablet.SQLdump(stream,delim1,delim2);
 
 The load operation is for bulk loading a table, each column will be loaded
 into its own bat. The arguments are void-aligned bats describing the
-input, ie the name of the column, the tuple separator and the type.  
+input, ie the name of the column, the tuple separator and the type.
 The nr argument can be -1 (The input (datafile) is read until the end)
 or a maximum.
 
 The dump operation is for dumping a set of bats, which are aligned.
-Again with void-aligned arguments, with name (currently not used), 
+Again with void-aligned arguments, with name (currently not used),
 tuple separator (the last is the record separator) and bat to be dumped. 
 With the nr argument the dump can be limited (-1 for unlimited).
 
@@ -221,11 +221,11 @@ gives the order. For each element in the order bat the values in the bats are
 searched, if all are found they are output in the datafile, with the given
 separators.
 
-The scripts from the LOAD part are all there too for backward compatibility
+The scripts from the tablet.mil file are all there too for backward compatibility
 with the old Mload format files. 
 
 The load_format loads the format file, since the old format file was
-in a table format it can be loaded with the load command. 
+in a table format it can be loaded with the load command.
 
 The result from load_format can be used with load_data to load the data
 into a set of new bats.
@@ -233,7 +233,7 @@ into a set of new bats.
 These bats can be made persistent with the make_persistent script or
 merge with existing bats with the merge_data script.
 
-The dump_format scripts dump a format file for a given set of 
+The dump_format scripts dump a format file for a given set of
 to be dumped bats. These bats can be dumped with dump_data.
 @mal
 # the major tablet shuffling routines
@@ -1083,16 +1083,26 @@ static
 check_BATs(Tablet * as)
 {
 	Column *fmt = as->format;
-	size_t i;
-	size_t cnt = BATcount(fmt[0].bval);
-	oid base = fmt[0].bval->hseqbase;
+	size_t i = 0;
+	size_t cnt;
+	oid base;
 
-	if (!BAThdense(fmt[0].bval))
+	if (fmt[i].bval == NULL)
+		i++;
+	cnt = BATcount(fmt[i].bval);
+	base = fmt[i].bval->hseqbase;
+
+	if (!BAThdense(fmt[i].bval) || as->nr != cnt )
 		return oid_nil;
 
 	for (i = 0; i < as->nr_attrs; i++) {
-		BAT *b = fmt[i].bval;
-		int offset = BUNindex(b, BUNfirst(b)) + as->offset;
+		BAT *b;
+		int offset;
+
+		b = fmt[i].bval;
+		if (b == NULL)
+			continue;
+		offset = BUNindex(b, BUNfirst(b)) + as->offset;
 
 		if (BATcount(b) != cnt || b->hseqbase != base)
 			return oid_nil;
@@ -1107,9 +1117,16 @@ TABLETcreate_bats(Tablet * as)
 {
 	Column *fmt = as->format;
 	size_t i;
+	size_t nr = 0; 
 
+	if (as->nr != ~(size_t)0)
+		nr = as->nr;
 	for (i = 0; i < as->nr_attrs; i++) {
-		fmt[i].bval = void_bat_create(fmt[i].adt, as->nr);
+		fmt[i].bval = void_bat_create(fmt[i].adt, nr);
+		if (!fmt[i].bval) {
+			GDKerror("ASCIIcreate_bats: Failed to create bat of size %d\n", as->nr);
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -1124,6 +1141,7 @@ TABLETcollect_bats(Tablet * as)
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		BUNins(bats, (ptr) fmt[i].name, (ptr) &fmt[i].bval->batCacheid);
+		BATsetaccess(fmt[i].bval, BAT_READ);
 		if (cnt != BATcount(fmt[i].bval)) {
 			GDKerror("Error: counts are not equal\n");
 			return NULL;
@@ -1250,7 +1268,7 @@ insert_line(Tablet * as, char *line)
 		s = line;
 		while (*line) {
 			if (*line == *(fmt[i].sep) && strncmp(fmt[i].sep, line, fmt[i].seplen) == 0) {
-				e = line;	/*strstr( line, fmt[i].sep ); */
+				e = line;
 				break;
 			} else if (first && (*line == '\"' || *line == '\'')
 				   && *(line - 1) != '\\') {
@@ -1261,7 +1279,7 @@ insert_line(Tablet * as, char *line)
 					return -1;
 				first = 0;
 			} else {
-				if (first && !isspace((int) *line))
+				if (first && !isspace((int) (*line)))
 					first = 0;
 				line++;
 			}
