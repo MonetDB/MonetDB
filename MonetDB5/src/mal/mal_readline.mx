@@ -424,9 +424,11 @@ readConsole(Client cntxt){
 	buf= getConsoleInput(cntxt->prompt, 0, 1);
 	if( buf) {
 		int len= strlen(buf);
-		if( len >= cntxt->fdin->len) {
+		if( len >= cntxt->fdin->size) {
+			/* extremly dirty inplace buffer overwriting */
 			cntxt->fdin->buf= realloc(cntxt->fdin->buf, len+1);
 			cntxt->fdin->len = len;
+			cntxt->fdin->size = len;
 		} 
 		strcpy(cntxt->fdin->buf, buf);
 		cntxt->fdin->pos = 0;

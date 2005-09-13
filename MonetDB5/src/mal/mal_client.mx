@@ -400,7 +400,7 @@ Client initClient(str nme, str passwd, bstream *fin, stream *fout){
     c->blkmode = 0;
 
     c->fdin = fin? fin : bstream_create(GDKin,0);
-	c->console= c->fdin;
+    c->console = c->fdin;
     c->yycur = 0;
     c->bak = NULL;
 
