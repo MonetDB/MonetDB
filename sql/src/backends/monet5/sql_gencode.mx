@@ -373,11 +373,11 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			setVarInitialized(mb, s->nr);
 		} break;
 		case st_update_var:{
-			dump_1(sql, mb, s, "sql", "update_var");
+			dump_1(sql, mb, s, "sql", "setVariable");
 		}
 			break;
 		case st_seq_next:{
-			dump_1(sql, mb, s, "sql", "next_value");
+			dump_1(sql, mb, s, "sql", "nextVariable");
 		}
 			break;
 		case st_temp:{

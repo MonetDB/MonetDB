@@ -31,11 +31,10 @@ catalog management (?) and query processing (?)
 [Make complete list of MAL instructions used in the compilation]
 alarm.usec
 algebra.count
-algebra.ds_link
 algebra.join
 algebra.kunique
 algebra.likeselect
-algebra.tmark
+algebra.markT
 algebra.outerjoin
 algebra.semijoin
 algebra.sintersect
@@ -74,7 +73,7 @@ sql.columnBind
 sql.eval
 sql.output
 sql.print
-sql.update_var
+sql.setVariable
 str.codeset
 stream.close
 stream.openRead
@@ -115,6 +114,7 @@ addQueryToCache(Client c)
 {
 	Module cache;
 	backend *be = ((backend *) c->state[PARSER]);
+/*	str optimizers;*/
 
 	cache = findModule(c->nspace, putName("sql_cache",9));
 	if (cache == 0) {
@@ -146,10 +146,13 @@ to allow inspection.
 			runMALDebugger(c->curprg);
 		return;
 	}
-(void)be;
-/*
-//	if (be->mvc->factory)
-//		optimizeQueryInCache(c);
+	(void)be;
+/* TURN OFF OPTIMIZATION UNTIL IT WORKS WITHOUT
+	optimizers = sql_get_var(be->mvc,"optimizer");
+	if( optimizers)
+		stream_printf(c->fdout,"optimizer=%s\n",optimizers);
+	if (be->mvc->factory)
+		optimizeQueryInCache(c);
 */
 }
 
@@ -201,13 +204,16 @@ optimizeQueryInCache(Client c)
 	SQLmarkTOptimizer(c);
 @-
 Reduce the program before other optimizations take place
+The number of optimizer calls is reduced to get things work first
 @c
 	MCoptimizerCommand(c->curprg->def, 0, 0, "algebra", "joinPath");
 	ARoptimizer(c->curprg->def, 0, 0);
 	CXoptimizer(c->curprg->def, 0, 0);
 	AEoptimizer(c->curprg->def, 0, 0);
+/*
 	s = findMALSymbol(getName("algebra",7),getName("joinPath",8));
 	if(s) ORCAMprocessor(c->curprg->def,s);
+*/
 	/* AMoptimizer(c->curprg->def, 0,0); */
 	/*SQLsetAccessMode(c); done in libraries now */
 

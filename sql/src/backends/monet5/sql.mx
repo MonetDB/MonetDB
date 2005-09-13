@@ -75,7 +75,7 @@ The original code is retained, because it makes it
 easier to later re-use part of the catalog code in a separately.
 @mal
 
-command update_var( varname:str ):void
+command setVariable( varname:str ):void
 address mvc_update_var_wrap
 comment "Update a session variable";
 
