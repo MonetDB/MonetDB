@@ -335,8 +335,7 @@ explain_cmd(mvc *c, char *cmd, stream *out)
 	t_id = mvc_result_table(c, 1, b);
 	mvc_result_column(c, "", "statement", "varchar", -1, -1, b);
 	BBPunfix(b->batCacheid);
-	return(mvc_export_result(c, out, t_id) ||
-		mvc_export_table(c, out, t_id, 0, c->reply_size));
+	return(mvc_export_result(c, out, t_id));
 }
 
 stmt *
@@ -718,7 +717,8 @@ handle_error(mvc *m, stream *out, int pstatus)
 	}
 	/* reset error buffers */
 	m->errstr[0] = 0;
-	buf[0] = 0;
+	if (buf)
+		buf[0] = 0;
 	return go;
 }
 
@@ -833,7 +833,7 @@ query string with "M".
 			n = sscanf(in->buf + in->pos, "export %d %d %d", &id, &off, &len);
 
 			if (n == 2 || n == 3) {
-				mvc_export_table(m, out, id, off, n == 3 ? len : m->reply_size);
+				mvc_export_chunk(m, out, id, off, n == 3 ? len : m->reply_size);
 
 				in->pos = in->len;	/* HACK: should use parsed lenght */
 				continue;

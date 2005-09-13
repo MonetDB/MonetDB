@@ -117,9 +117,6 @@ stream.
 	.COMMAND mvc_export_result(mvc m, Stream s, int result_id) =
 		mvc_export_result_wrap; "export a result to stream s"
 
-	.COMMAND mvc_export_table(mvc m, Stream s, int result_id, int offset, int nr ) =
-		mvc_export_table_wrap; "export a result to stream s"
-
 	.COMMAND mvc_import_table( mvc c, Bstream s, str tname, 
 					str sep, str rsep, int nr) : 
 		BAT[str,BAT] = mvc_import_table_wrap; 
@@ -498,29 +495,20 @@ mvc_result_value_wrap(mvc *M, str tn, str name, str type, int *digits, int *scal
 }
 
 int
-mvc_export_result_wrap(mvc *M, Stream *S, int *res_id)
-{
-	if (mvc_export_result(*(mvc **) M, *(stream **) S, *res_id))
-		return GDK_FAIL;
-
-	return GDK_SUCCEED;
-}
-
-int
-mvc_export_table_wrap(mvc *M, Stream *S, int *res_id, int *offset, int *nr)
-{
-	if (mvc_export_table(*(mvc **) M, *(stream **) S, *res_id, *offset, *nr))
-		return GDK_FAIL;
-
-	return GDK_SUCCEED;
-}
-
-int
 mvc_import_table_wrap(BAT **res, mvc *c, Bstream *s, str tname, str sep, str rsep, int *sz)
 {
 	*res = mvc_import_table(*(mvc **) c, *(bstream **) s, tname, sep, rsep, *sz);
 	if (*res == NULL)
 		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
+int
+mvc_export_result_wrap(mvc *M, Stream *S, int *res_id)
+{
+	if (mvc_export_result(*(mvc **) M, *(stream **) S, *res_id))
+		return GDK_FAIL;
+
 	return GDK_SUCCEED;
 }
 

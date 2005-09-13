@@ -871,28 +871,34 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			char *ops;
 			node *n;
 			size_t buflen;
+			int cnt = list_length(s->op1.stval->op1.lval);
 
 			backend_dumpstmt_(s->op1.stval, nr, sql);	/* dump operands */
 			write_head(sql, -s->nr);
 			if (s->nrcols) {
 				stmt *h;
 
-				buflen = 0;
-				for (n = s->op1.stval->op1.lval->h, h = n->data; n; n = n->next) {
-					stmt *op = n->data;
-
-					if (op->nrcols > h->nrcols)
-						h = op;
-					buflen += 20;
+				buflen = 1;
+				if (cnt) {
+					for (n = s->op1.stval->op1.lval->h, h = n->data; n; n = n->next) {
+						stmt *op = n->data;
+	
+						if (op->nrcols > h->nrcols)
+							h = op;
+						buflen += 20;
+					}
 				}
 
 				ops = NEW_ARRAY(char, buflen);
+				ops[0] = 0;
 
-				for (n = s->op1.stval->op1.lval->h; n; n = n->next) {
-					stmt *op = n->data;
-					int n = op->nr;
-
-					opslen += snprintf(ops + opslen, buflen - opslen, "%cs%d", (opslen) ? ',' : ' ', n);
+				if (cnt) {
+					for (n = s->op1.stval->op1.lval->h; n; n = n->next) {
+						stmt *op = n->data;
+						int n = op->nr;
+	
+						opslen += snprintf(ops + opslen, buflen - opslen, "%cs%d", (opslen) ? ',' : ' ', n);
+					}
 				}
 				buflen = strlen(s->op4.funcval->func->imp) + opslen + 64;
 				buf = NEW_ARRAY(char, buflen + 1);
@@ -900,16 +906,21 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				len = snprintf(buf, buflen, "var s%d := [%s](%s);\n", -s->nr, s->op4.funcval->func->imp, ops);
 				assert(len <= buflen);
 			} else {
-				buflen = 0;
-				for (n = s->op1.stval->op1.lval->h; n; n = n->next)
-					buflen += 20;
+				buflen = 1;
+				if (cnt) 
+					for (n = s->op1.stval->op1.lval->h; n; n = n->next)
+						buflen += 20;
+				
 				ops = NEW_ARRAY(char, buflen);
+				ops[0] = 0;
 
-				for (n = s->op1.stval->op1.lval->h; n; n = n->next) {
-					stmt *op = n->data;
-					int n = op->nr;
+				if (cnt) {
+					for (n = s->op1.stval->op1.lval->h; n; n = n->next) {
+						stmt *op = n->data;
+						int n = op->nr;
 
-					opslen += snprintf(ops + opslen, buflen - opslen, "%cs%d", (opslen) ? ',' : ' ', n);
+						opslen += snprintf(ops + opslen, buflen - opslen, "%cs%d", (opslen) ? ',' : ' ', n);
+					}
 				}
 				buflen = strlen(s->op4.funcval->func->imp) + opslen + 64;
 				buf = NEW_ARRAY(char, buflen + 1);
@@ -1148,18 +1159,18 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				write_part(sql, buf, len);
 				len = 0;
 				for (; n; n = n->next) {
-					stmt *r = n->data;
-					char *tname = table_name(r);
+					stmt *c = n->data;
+					char *tname = table_name(c);
 					char *tn = (tname) ? tname : "";
-					char *cn = column_name(r);
+					char *cn = column_name(c);
 					size_t sl;
 
-					sl = strlen(tn) + strlen(cn) + strlen(tail_type(r)->type->sqlname);
+					sl = strlen(tn) + strlen(cn) + strlen(tail_type(c)->type->sqlname);
 					if (buflen - len < 128 + sl) {
 						buflen += BUFSIZ + sl;
 						buf = RENEW_ARRAY(char, buf, buflen);
 					}
-					len = snprintf(buf, buflen, "mvc_result_column(myc, \"%s\", \"%s\", \"%s\", %d, %d, s%d);\n", tn, cn, tail_type(r)->type->sqlname, tail_type(r)->digits, tail_type(r)->scale, r->nr);
+					len = snprintf(buf, buflen, "mvc_result_column(myc, \"%s\", \"%s\", \"%s\", %d, %d, s%d);\n", tn, cn, tail_type(c)->type->sqlname, tail_type(c)->digits, tail_type(c)->scale, c->nr);
 					assert(len <= buflen);
 					_DELETE(cn);
 					if (tname)
@@ -1174,8 +1185,9 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				}
 				len = snprintf(buf, buflen, "mvc_export_result(myc, Output, s%d);\n", -s->nr);
 				assert(len <= buflen);
-				/* send first part (or all) */
+				/* send first part (or all) 
 				len += snprintf(buf + len, buflen - len, "mvc_export_table(myc, Output, s%d, 0, %d);\n", -s->nr, sql->mvc->reply_size);
+*/
 
 				assert(len <= buflen);
 				write_command(sql, buf);

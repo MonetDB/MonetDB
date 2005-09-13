@@ -28,7 +28,7 @@
 
 extern int mvc_export_default(mvc *m, stream *s);
 extern int mvc_export_result(mvc *c, stream *s, int res_id);
-extern int mvc_export_table(mvc *c, stream *s, int res_id, unsigned int offset, unsigned int nr);
+extern int mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr);
 extern BAT *mvc_import_table(mvc *c, bstream *s, char *tname, char *sep, char *rsep, int nr);
 extern int mvc_result_table(mvc *m, int nr_cols, BAT *order);
 
@@ -61,7 +61,8 @@ extern int mvc_result_value(mvc *m, char *tn, char *name, char *typename, int di
 		return 4;
 	}
 		
-	if (v<0) v = -v;
+	if (v<0)
+		v = -v;
 
 	buf[cur--] = 0;
 	if (scale){
@@ -245,7 +246,7 @@ bat_max_length(BAT *b)
 		}
 		s++;
 		for( i = 0; *s && i < t->scale; i++, s++) {
-			if (*s < '0' || *s > '9' ) {
+			if (*s < '0' || *s > '9') {
 				GDKerror("decimal wrong format (%s)", p);
 				return NULL;
 			}
@@ -281,6 +282,30 @@ dec_frstr(void *extra, int type, char *s, char *e, char quote)
 		GDKwarning("Decimal cannot be parsed from %s\n", ATOMname(type));
 	}
 	return NULL;
+}
+
+static char *
+coerce(char *s)
+{
+	char *n = GDKmalloc(strlen(s) + 1);
+	char *t = n;
+
+	for (; *s; s++)
+		switch (*s) {
+		case '\\':
+			s++;
+			if (*s == 'n')
+				*t++ = '\n';
+			else if (*s == 't')
+				*t++ = '\t';
+			else if (*s == '\\')
+				*t++ = '\\';
+			else
+		default:
+				*t++ = *s;
+		}
+	*t = 0;
+	return n;
 }
 
 ptr *
@@ -324,6 +349,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 		return (*BATatoms[type].atomToStr) (buf, len, a);
 	}
 }
+
 
 BAT *
 mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz)
@@ -387,9 +413,9 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 }
 
 @-
-mvc_export_result dumps the sql header information
-It should be produced in Monet format to enable mapi
-to work with it.
+mvc_export_result dumps the sql header information and the 
+first part (reply_size) of the result set. It should be produced in Monet format to 
+enable mapi to work with it.
 @c
 int
 mvc_export_default(mvc *m, stream *s)
@@ -406,6 +432,165 @@ mvc_export_default(mvc *m, stream *s)
 			ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
 	}
 	return (ok) ? 0 : -1;
+}
+
+static int
+mvc_export_row(mvc *m, stream *s, res_table *t)
+{
+	char *sep = ",\t";
+	char *rsep = "\t]\n";
+
+	int i, ok = 1;
+
+	m->type = Q_RESULT;
+	if (!s)
+		return 0;
+
+	ok = (stream_write(s, "[ ", strlen("[ "), 1) == 1);
+	for (i = 0; i < t->nr_cols && ok; i++) {
+		res_col *c = t->cols + i;
+
+		if (i != 0) {
+			ok = (stream_write(s, sep, strlen(sep), 1) == 1);
+			if (!ok)
+				break;
+		}
+
+		if (c->type->type->eclass == EC_DEC) {
+			char *buf = NULL;
+			int len = 0;
+			int l = dec_tostr((void *) (ptrdiff_t) c->type->scale, &buf, &len,
+					  c->mtype, c->p);
+
+			ok = (stream_write(s, buf, l, 1) == 1);
+			_DELETE(buf);
+		} else if (c->type->type->eclass == EC_TIME && strcmp(c->type->type->sqlname, "timetz") == 0) {
+			char *buf = NULL;
+			int len = 0;
+			int l = sql_time_tostr((void *) m, &buf, &len,
+					       c->mtype, c->p);
+
+			ok = (stream_write(s, buf, l, 1) == 1);
+			_DELETE(buf);
+		} else if (c->type->type->eclass == EC_TIMESTAMP && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
+			char *buf = NULL;
+			int len = 0;
+			int l = sql_timestamp_tostr((void *) m, &buf, &len,
+						    c->mtype, c->p);
+
+			ok = (stream_write(s, buf, l, 1) == 1);
+			_DELETE(buf);
+		} else if (!c->p || ATOMcmp(c->mtype, ATOMnilptr(c->mtype), c->p) == 0) {
+			ok = (stream_write(s, "NULL", sizeof("NULL") - 1, 1) == 1);
+		} else {
+			char *buf = NULL;
+			int len = 0;
+			int l = (*BATatoms[c->mtype].atomToStr) (&buf, &len, c->p);
+
+			ok = (stream_write(s, buf, l, 1) == 1);
+			_DELETE(buf);
+		}
+	}
+	m->results = res_tables_remove(m->results, t);
+	if (ok)
+		ok = (stream_write(s, rsep, strlen(rsep), 1) == 1);
+	return (ok) ? 0 : -1;
+}
+
+static int
+mvc_export_table(mvc *m, stream *s, res_table *t, unsigned int offset, unsigned int nr)
+{
+	char *sep = ",\t";
+	char *rsep = "\t]\n";
+
+	ascii as;
+	ascii_io *fmt;
+	ssize_t i;
+	size_t cnt;
+	int clean = 0;
+	BAT *order = NULL;
+
+	if (!t)
+		return -1;
+	if (!s)
+		return 0;
+
+	if (!t->order)
+		return mvc_export_row(m, s, t);
+
+	m->type = Q_RESULT;
+	order = BATdescriptor(t->order);
+	cnt = nr;
+	if (cnt == 0) {
+		cnt = BATcount(order);
+		clean = 1;
+	}
+	if (offset >= BATcount(order))
+		cnt = 0;
+	if (offset + cnt > BATcount(order)) {
+		cnt = BATcount(order) - offset;
+		clean = 1;
+	}
+
+	if (cnt == 0) {
+		if (clean || !BATcount(order)) {
+			BBPunfix(order->batCacheid);
+			m->results = res_tables_remove(m->results, t);
+		}
+		if (stream_errnr(s))
+			return -1;
+		return 0;
+	}
+	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
+	as.nr = cnt;
+	as.offset = offset;
+	fmt = as.format = (ascii_io *) GDKmalloc(sizeof(ascii_io) * (as.nr_attrs + 1));
+
+	memset(fmt, 0, (as.nr_attrs + 1) * sizeof(ascii_io));
+
+	fmt[0].c = NULL;
+	fmt[0].sep = _strdup("[ ");
+	fmt[0].seplen = (int) strlen(fmt[0].sep);
+
+	for (i = 1; i <= t->nr_cols; i++) {
+		res_col *c = t->cols + (i - 1);
+
+		if (!c->b)
+			break;
+
+		fmt[i].c = BATdescriptor(c->b);
+		fmt[i].name = NULL;
+		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? _strdup(sep) : _strdup(rsep);
+		fmt[i].seplen = (int) strlen(fmt[i].sep);
+		fmt[i].type = ATOMname(fmt[i].c->ttype);
+		fmt[i].adt = fmt[i].c->ttype;
+		fmt[i].tostr = &_ASCIIadt_toStr;
+		fmt[i].frstr = &_ASCIIadt_frStr;
+		fmt[i].extra = NULL;
+		if (c->type->type->eclass == EC_DEC) {
+			fmt[i].tostr = &dec_tostr;
+			fmt[i].frstr = &dec_frstr;
+			fmt[i].extra = (void *) (ptrdiff_t) c->type->scale;
+		} else if (c->type->type->eclass == EC_TIMESTAMP && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
+			fmt[i].tostr = &sql_timestamp_tostr;
+			fmt[i].frstr = NULL;
+			fmt[i].extra = m;
+		} else if (c->type->type->eclass == EC_TIME && strcmp(c->type->type->sqlname, "timetz") == 0) {
+			fmt[i].tostr = &sql_time_tostr;
+			fmt[i].frstr = NULL;
+			fmt[i].extra = m;
+		}
+	}
+	if (i == t->nr_cols + 1) {
+		ASCIIoutput_file(&as, order, s);
+	}
+	BBPunfix(order->batCacheid);
+	ASCIIdestroy_format(&as);
+	if (clean)
+		m->results = res_tables_remove(m->results, t);
+	if (stream_errnr(s))
+		return -1;
+	return 0;
 }
 
 int
@@ -426,7 +611,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 
 	/* skip headers for affected row counts */
 	if (ok && (t->query_type == Q_UPDATE || t->query_type == Q_TRANS))
-		return 0;
+		return mvc_export_table(m, s, t, 0, m->reply_size);
 
 	if (!ok)
 		return -1;
@@ -568,168 +753,18 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	if (ok)
 		ok = (stream_write(s, " # id\n", 6, 1) == 1);
 
-	return (ok) ? 0 : -1;
-}
-
-static int
-mvc_export_row(mvc *m, stream *s, res_table *t)
-{
-	char *sep = ",\t";
-	char *rsep = "\t]\n";
-
-	int i, ok = 1;
-
-	m->type = Q_RESULT;
-	if (!s)
-		return 0;
-
-	ok = (stream_write(s, "[ ", strlen("[ "), 1) == 1);
-	for (i = 0; i < t->nr_cols && ok; i++) {
-		res_col *c = t->cols + i;
-
-		if (i != 0) {
-			ok = (stream_write(s, sep, strlen(sep), 1) == 1);
-			if (!ok)
-				break;
-		}
-
-		if (c->type->type->eclass == EC_DEC) {
-			char *buf = NULL;
-			int len = 0;
-			int l = dec_tostr((void *) (ptrdiff_t) c->type->scale, &buf, &len,
-					  c->mtype, c->p);
-
-			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
-		} else if (c->type->type->eclass == EC_TIME && strcmp(c->type->type->sqlname, "timetz") == 0) {
-			char *buf = NULL;
-			int len = 0;
-			int l = sql_time_tostr((void *) m, &buf, &len,
-					       c->mtype, c->p);
-
-			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
-		} else if (c->type->type->eclass == EC_TIMESTAMP && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
-			char *buf = NULL;
-			int len = 0;
-			int l = sql_timestamp_tostr((void *) m, &buf, &len,
-						    c->mtype, c->p);
-
-			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
-		} else if (!c->p || ATOMcmp(c->mtype, ATOMnilptr(c->mtype), c->p) == 0) {
-			ok = (stream_write(s, "NULL", sizeof("NULL") - 1, 1) == 1);
-		} else {
-			char *buf = NULL;
-			int len = 0;
-			int l = (*BATatoms[c->mtype].atomToStr) (&buf, &len, c->p);
-
-			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
-		}
-	}
-	m->results = res_tables_remove(m->results, t);
 	if (ok)
-		ok = (stream_write(s, rsep, strlen(rsep), 1) == 1);
+		return mvc_export_table(m, s, t, 0, m->reply_size);
 	return (ok) ? 0 : -1;
 }
 
 int
-mvc_export_table(mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr)
+mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr)
 {
-	char *sep = ",\t";
-	char *rsep = "\t]\n";
-
-	ascii as;
-	ascii_io *fmt;
 	res_table *t = res_tables_find(m->results, res_id);
-	ssize_t i;
-	size_t cnt;
-	int clean = 0;
-	BAT *order = NULL;
-
-	if (!t)
-		return -1;
-	if (!s)
-		return 0;
-
-	if (!t->order)
-		return mvc_export_row(m, s, t);
-
-	m->type = Q_RESULT;
-	order = BATdescriptor(t->order);
-	cnt = nr;
-	if (cnt == 0) {
-		cnt = BATcount(order);
-		clean = 1;
-	}
-	if (offset >= BATcount(order))
-		cnt = 0;
-	if (offset + cnt > BATcount(order)) {
-		cnt = BATcount(order) - offset;
-		clean = 1;
-	}
-
-	if (cnt == 0) {
-		if (clean || !BATcount(order)) {
-			BBPunfix(order->batCacheid);
-			m->results = res_tables_remove(m->results, t);
-		}
-		if (stream_errnr(s))
-			return -1;
-		return 0;
-	}
-	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
-	as.nr = cnt;
-	as.offset = offset;
-	fmt = as.format = (ascii_io *) GDKmalloc(sizeof(ascii_io) * (as.nr_attrs + 1));
-
-	memset(fmt, 0, (as.nr_attrs + 1) * sizeof(ascii_io));
-
-	fmt[0].c = NULL;
-	fmt[0].sep = _strdup("[ ");
-	fmt[0].seplen = (int) strlen(fmt[0].sep);
-
-	for (i = 1; i <= t->nr_cols; i++) {
-		res_col *c = t->cols + (i - 1);
-
-		if (!c->b)
-			break;
-
-		fmt[i].c = BATdescriptor(c->b);
-		fmt[i].name = NULL;
-		fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? _strdup(sep) : _strdup(rsep);
-		fmt[i].seplen = (int) strlen(fmt[i].sep);
-		fmt[i].type = ATOMname(fmt[i].c->ttype);
-		fmt[i].adt = fmt[i].c->ttype;
-		fmt[i].tostr = &_ASCIIadt_toStr;
-		fmt[i].frstr = &_ASCIIadt_frStr;
-		fmt[i].extra = NULL;
-		if (c->type->type->eclass == EC_DEC) {
-			fmt[i].tostr = &dec_tostr;
-			fmt[i].frstr = &dec_frstr;
-			fmt[i].extra = (void *) (ptrdiff_t) c->type->scale;
-		} else if (c->type->type->eclass == EC_TIMESTAMP && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
-			fmt[i].tostr = &sql_timestamp_tostr;
-			fmt[i].frstr = NULL;
-			fmt[i].extra = m;
-		} else if (c->type->type->eclass == EC_TIME && strcmp(c->type->type->sqlname, "timetz") == 0) {
-			fmt[i].tostr = &sql_time_tostr;
-			fmt[i].frstr = NULL;
-			fmt[i].extra = m;
-		}
-	}
-	if (i == t->nr_cols + 1) {
-		ASCIIoutput_file(&as, order, s);
-	}
-	BBPunfix(order->batCacheid);
-	ASCIIdestroy_format(&as);
-	if (clean)
-		m->results = res_tables_remove(m->results, t);
-	if (stream_errnr(s))
-		return -1;
-	return 0;
+	return mvc_export_table(m, s, t, offset, nr);
 }
+
 
 int
 mvc_result_table(mvc *m, int nr_cols, BAT *order)
