@@ -222,23 +222,21 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 {
 	node *n;
 	InstrPtr q;
-	int old;
-
 
 	for (n = l->h; n; n = n->next) {
-		char *name;
+		stmt *c = n->data;
+		char *tname = table_name(c);
+		char *tn = (tname) ? tname : "";
+		char *cn = column_name(c);
 
-		s = n->data;
-		old = s->nr;	/* s is mis-used in next macro */
-		name = column_name(s);
-
-		q = newStmt(mb, "sql", "column");
-		q = pushArgument(mb, q, old);
-		q = pushStr(mb, q, name);
-		q = pushStr(mb, q, tail_type(s)->type->sqlname);
-		q = pushInt(mb, q, tail_type(s)->digits);
-		q = pushInt(mb, q, tail_type(s)->scale);
-		s->nr = old;
+		q = newStmt(mb, "sql", "rsColumn");
+		q = pushArgument(mb, q, s->nr);
+		q = pushStr(mb, q, tn);
+		q = pushStr(mb, q, cn);
+		q = pushStr(mb, q, tail_type(c)->type->sqlname);
+		q = pushInt(mb, q, tail_type(c)->digits);
+		q = pushInt(mb, q, tail_type(c)->scale);
+		q = pushArgument(mb, q, c->nr);
 	}
 }
 
@@ -1223,7 +1221,6 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_output:{
 			stmt *order = NULL;
-			int flg = 0;
 			stmt *lst = s->op1.stval;
 
 			backend_dumpstmt(sql, mb, lst);
@@ -1231,10 +1228,11 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			if (lst->type == st_ordered) {
 				order = lst->op1.stval;
 				lst = lst->op2.stval;
-				flg = 1;
 			}
 			if (lst->type == st_list) {
 				list *l = lst->op1.lval;
+				int cnt = list_length(l);
+				InstrPtr k;
 
 				n = l->h;
 				if (n) {
@@ -1242,20 +1240,14 @@ backend_dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						order = n->data;
 					}
 				}
-				/* first rename the columns for better output */
+				k = newStmt(mb, "sql", "resultSet");
+				s->nr = getDestVar(k);
+				k = pushInt(mb, k, cnt);
+				k = pushArgument(mb, k, order->nr);
 				dump_header(mb, s, l);
-				q = newStmt(mb, "sql", "output");
-				/* with or without order */
-				q = pushInt(mb, q, flg);
-				if (flg) {
-					q = pushArgument(mb, q, order->nr);
-				}
-
-				for (; n; n = n->next) {
-					stmt *r = n->data;
-
-					q = pushArgument(mb, q, r->nr);
-				}
+				
+				q = newStmt(mb, "sql", "exportResult");
+				q = pushArgument(mb, q, s->nr);
 			} else {
 				q = newStmt(mb, "sql", "print");
 				q = pushStr(mb, q, "not a valid output list\n");

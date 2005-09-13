@@ -49,15 +49,6 @@ command eval(cmd:str):str
 address SQLstatement
 comment "Execute a single sql statement";
 
-command header(i:int) :void
-address SQLheader
-comment "Generate a table header for an SQL frontend";
-command column(i:any_1, v:str,t:str,digits:int,scale:int) :void
-address SQLcolumnsingle;
-command column(b:bat[:any_1,:any_2], v:str,t:str,digits:int,scale:int) :void
-address SQLcolumn
-comment "Rename a table column";
-
 command assert(b:bit,msg:str):void
 address SQLassert
 comment "Generate an exception when b==true";
@@ -65,15 +56,10 @@ comment "Generate an exception when b==true";
 command assert(b:int,msg:str):void
 address SQLassertInt
 comment "Generate an exception when b!=0";
+
 command assert(b:lng,msg:str):void
 address SQLassertLng
 comment "Generate an exception when b!=0";
-
-pattern output(order:int, a:any...):void
-address SQLoutput;
-pattern output(order:int,r:bat[:any_1,:any]...):void
-address SQLoutputBats
-comment "Overloading of the core print routines to obtain proper layout";
 
 @- The SQL multi-version catalog
 This module also contains the definitions for managing an SQL database schema in
@@ -88,14 +74,6 @@ prepended by the 'sql.' module name.
 The original code is retained, because it makes it
 easier to later re-use part of the catalog code in a separately.
 @mal
-
-#command createCatalog( debug:int ) :void 
-#address mvc_create_wrap
-#comment "Create multi version catalog";
-
-#command destroyCatalog() 
-#address mvc_destroy_wrap
-#comment "Destroy multi version catalog";
 
 command update_var( varname:str ):void
 address mvc_update_var_wrap
@@ -132,18 +110,25 @@ comment "Bind the column bat into the focus ";
 The Monet 5 code generator uses several SQL specific wrapper functions.
 They are not present in V4
 @mal
-command exportTable(s:stream, res_id:int, 
-		offset:int, nr:int ) 
-address mvc_export_table_wrap
-comment "Export a table (in order) to stream s 
-	with the given tuple and record 
-	seperators (sep/rsep)";
+command resultSet( nr_cols:int, order:any_1 ) :int 
+address mvc_result_row_wrap
+comment "Prepare a row result set"; 
 
-command exportResult(s:stream, res_id:int ) 
+command resultSet( nr_cols:int, order:bat[:oid,:any_1] ) :int 
+address mvc_result_table_wrap
+comment "Prepare a table result set"; 
+
+command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:any ) :void
+address mvc_result_value_wrap
+comment "Add the value to the row query result";
+
+command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:oid,:any] ) :void
+address mvc_result_column_wrap
+comment "Add the colunm to the table query result";
+
+command exportResult(res_id:int ) :void
 address mvc_export_result_wrap
-comment "Export a table (in order) to stream s 
-	with the given tuple and record 
-	seperators (sep/rsep)";
+comment "Export a result (in order) to stream s"; 
 
 command importTable( s:stream, tname:str, 
 	sep:str, rsep:str, nr:int) :bat[:str,:bat] 
@@ -501,30 +486,6 @@ Failure to find the state descriptor aborts the session.
 @c
 
 str
-mvc_create_wrap(int *ret, int *debug)
-{
-	mvc *res = mvc_create(*debug, 0, NULL, GDKout);
-
-	(void) ret;
-	@:setContext(res,mvc)@
-
-	return MAL_SUCCEED;
-}
-
-str
-mvc_destroy_wrap(int *ret)
-{
-	mvc *m;
-
-	(void) ret;
-	@:getContext(m)@
-	mvc_destroy(m);
-	@:setContext(NULL,mvc)@
-
-	return MAL_SUCCEED;
-}
-
-str
 mvc_update_var_wrap(int *ret, str *varname)
 {
 	mvc *m;
@@ -708,6 +669,78 @@ mvc_clear_table_wrap(lng *res, str sname, str tname)
 	return MAL_SUCCEED;
 }
 
+static int
+mvc_result_row(mvc *m, int nr_cols)
+{
+	m->results = res_table_create(m->trans, m->result_id++, nr_cols, m->type, m->results);
+	return m->results->id;
+}
+
+str
+mvc_result_row_wrap(int *res_id, int *nr_cols)
+{
+	mvc *c;
+
+	@:getContext(c)@
+	*res_id = mvc_result_row(c, *nr_cols); 
+	if (*res_id < 0)
+		return throwMessage("sql.resultSet", "failed");
+	return NULL;
+}
+
+str
+mvc_result_table_wrap(int *res_id, int *nr_cols, BAT *order)
+{
+	mvc *c;
+
+	@:getContext(c)@
+	*res_id = mvc_result_table(c, *nr_cols, order);
+	if (*res_id < 0)
+		return throwMessage("sql.resultSet", "failed");
+	return NULL;
+}
+
+str
+mvc_result_column_wrap(int *ret, int *rs, str tn, str name, str type, int *digits, int *scale, BAT *b)
+{
+	mvc *c;
+
+	(void)ret;
+	(void)rs;
+	@:getContext(c)@
+	if (mvc_result_column(c, tn, name, type, *digits, *scale, b))
+		return throwMessage("sql.rsColumn", "failed");
+	return NULL;
+}
+
+str
+mvc_result_value_wrap(int *ret, int *rs, str tn, str name, str type, int *digits, int *scale, ptr p, int mtype)
+{
+	mvc *c;
+
+	(void)ret;
+	(void)rs;
+	@:getContext(c)@
+	if (mvc_result_value(c, tn, name, type, *digits, *scale, p, mtype))
+		return throwMessage("sql.rsColumn", "failed");
+	return NULL;
+}
+
+str
+mvc_export_result_wrap(int *ret, int *res_id)
+{
+	mvc *c;
+	backend *b;
+
+	(void)ret;
+	@:getContext(c)@
+	@:getBackend(b)@
+	if (mvc_export_result(c, b->out, *res_id)) {
+		return throwMessage("sql.exportResult", "failed");
+	}
+	return NULL;
+}
+
 str
 mvc_import_table_wrap(int *res, stream **s, str *tname, str *sep, str *rsep, int *sz)
 {
@@ -721,30 +754,6 @@ mvc_import_table_wrap(int *res, stream **s, str *tname, str *sep, str *rsep, int
 		return throwMessage("sql.importTable", "failed");
 	*res = b->batCacheid;
 	return MAL_SUCCEED;
-}
-
-str
-mvc_export_result_wrap(stream *s, int *res_id)
-{
-	mvc *c;
-
-	@:getContext(c)@
-	if (mvc_export_result(c, *(stream **) s, *res_id)) {
-		return throwMessage("sql.exportResult", "failed");
-	}
-	return NULL;
-}
-
-str
-mvc_export_table_wrap(stream *s, int *res_id, int *offset, int *nr)
-{
-	mvc *c;
-
-	@:getContext(c)@
-	if (mvc_export_table(c, *(stream **) s, *res_id, *offset, *nr)) {
-		return throwMessage("sql.exportTable", "failed");
-	}
-	return NULL;
 }
 
 str

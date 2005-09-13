@@ -29,7 +29,7 @@ phase of the scenario.
 #define _SQL_SCENARIO_H_
 #include "sql.h"
 
-/* #define _SQL_SCENARIO_DEBUG */
+#define _SQL_SCENARIO_DEBUG 
 /* #define _SQL_READER_DEBUG */
 /* #define _SQL_PARSER_DEBUG  */
 
@@ -221,11 +221,12 @@ SQLinitClient(Client c)
 {
 	str msg;
 
-	if (c->yycur) {
-		c->fdin->pos += c->yycur;
+	//if (c->yycur) {
+		//if (c->fdin->len) 
+			//c->fdin->pos += c->yycur;
 		c->yycur = 0;
-		c->fdin->buf[c->fdin->pos] = 0;
-	}
+		//c->fdin->buf[c->fdin->pos] = 0;
+	//}
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#SQLinitClient\n");
 #endif
@@ -445,8 +446,6 @@ Continue processing any left-over input from the previous round.
 	if (in->pos >= in->len) {
 		ssize_t rd;
 
-		assert(in->pos == in->len);
-
 		if (c->bak) {
 			popClientInput(c);
 			in = c->fdin;
@@ -612,7 +611,7 @@ SQLparser(Client c)
 		n = sscanf(in->buf + in->pos, "export %d %d %d", &id, &off, &len);
 
 		if (n == 2 || n == 3) {
-			mvc_export_table(m, out, id, off, n == 3 ? len : m->reply_size);
+			mvc_export_chunk(m, out, id, off, n == 3 ? len : m->reply_size);
 
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
@@ -712,6 +711,7 @@ query block.
 	if (err == 0) {
 		pushCatchDefault(c->curprg->def, "sqlerror", m->auto_commit);
 		pushEndInstruction(c->curprg->def);
+
 		chkProgram(c->nspace, c->curprg->def);
 		if (c->curprg->def->errors) {
 			showErrors();
@@ -840,67 +840,6 @@ Then the SQL history table is just a view over a few basic bats.
 	}
 
 	return msg;
-}
-
-@-
-The SQL front-end required some IO utilities, that may go beyond the
-primitives available in the io.mx module.
-@c
-str
-SQLheader(int *ret, int *i)
-{
-	/*return throwMessage("SQLheader","Not yet defined\n"); */
-	(void) ret;
-	(void) i;		/* unused */
-	return MAL_SUCCEED;
-}
-
-
-str
-SQLcolumn(int *ret, int *bid, str *v, str *t, int *digits, int *scale)
-{
-	(void) digits;
-	(void) scale;		/* unused */
-	BKCsetRole(ret, bid, t, v);
-	return MAL_SUCCEED;
-}
-
-str
-SQLcolumnsingle(int *ret, int *cnr, str *v, str *t, int *digits, int *scale)
-{
-	(void) ret;
-	(void) cnr;
-	(void) v;
-	(void) t;
-	(void) digits;
-	(void) scale;
-	/* do nothing for the time being, later, package it as a table */
-	return MAL_SUCCEED;
-}
-
-str
-SQLoutput(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int i;
-
-	/* remember to skip the extra 'order' argument */
-	if (p->argc == 3)
-		IOprintBoth(mb, stk, p, 2, "[ ", " ]\n",TRUE);
-	else {
-		IOprintBoth(mb, stk, p, 2, "[ ", 0,TRUE);
-		for (i = 3; i < p->argc - 2; i++)
-			IOprintBoth(mb, stk, p, i, ", ", 0,TRUE);
-		IOprintBoth(mb, stk, p, i, ", ", "]\n",TRUE);
-	}
-	return MAL_SUCCEED;
-}
-
-str
-SQLoutputBats(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int order = *(int*) getArgReference(stk,p,1);
-	IOtableAll(GDKout,mb,stk,p,2,order,FALSE,FALSE);
-	return MAL_SUCCEED;
 }
 
 @-
