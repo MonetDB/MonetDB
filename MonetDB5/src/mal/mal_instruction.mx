@@ -1265,13 +1265,13 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
     str s;
     ValPtr vr;
     int tonil= FALSE;
+    int len = strlen(val);
 
     k= mb->vtop - MAL_VAR_WINDOW;
     if( k<0) k=0;
     for(i= mb->vtop-1; i>=k;i--){
         VarPtr v= getVar(mb,i);
-        if( v->literal && 
-			v->type == type &&
+        if( v->literal && v->type == type && v->length == len &&
             idcmp(v->literal,val)==0 ) {
             GDKfree(val);
             return i;
@@ -1279,9 +1279,9 @@ int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
     }
     idx= k = newTmpVariable(mb,type);
     getVarLiteral(mb,k)= val;
-	getVar(mb,k)->length = strlen(val);
+    getVar(mb,k)->length = len;
     isConstant(mb,k) = 1;
-	setFixed(mb,k);
+    setFixed(mb,k);
     setVarUsed(mb,k,FALSE);
     isVarInitialized(mb,k) = FALSE;
     vr = &getVarConstant(mb,k);
