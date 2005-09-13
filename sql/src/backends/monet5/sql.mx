@@ -110,21 +110,25 @@ comment "Bind the column bat into the focus ";
 The Monet 5 code generator uses several SQL specific wrapper functions.
 They are not present in V4
 @mal
-command resultSet( nr_cols:int, order:any_1 ) :int 
-address mvc_result_row_wrap
-comment "Prepare a row result set"; 
+command resultSet( nr_cols:int, order:bat[:void,:any_1] ) :int 
+address mvc_result_table_wrap
+comment "Prepare a table result set"; 
 
 command resultSet( nr_cols:int, order:bat[:oid,:any_1] ) :int 
 address mvc_result_table_wrap
 comment "Prepare a table result set"; 
 
-command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:any ) :void
-address mvc_result_value_wrap
-comment "Add the value to the row query result";
+command resultSet( nr_cols:int, order:any_1 ) :int 
+address mvc_result_row_wrap
+comment "Prepare a row result set"; 
 
-command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:oid,:any] ) :void
+command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:oid,:any_1] ) :void
 address mvc_result_column_wrap
 comment "Add the colunm to the table query result";
+
+command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, val:any_1 ) :void
+address mvc_result_value_wrap
+comment "Add the value to the row query result";
 
 command exportResult(res_id:int ) :void
 address mvc_export_result_wrap
