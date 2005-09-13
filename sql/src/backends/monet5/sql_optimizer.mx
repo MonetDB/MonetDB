@@ -146,8 +146,9 @@ to allow inspection.
 			runMALDebugger(c->curprg);
 		return;
 	}
-	if (be->mvc->factory)
-		optimizeQueryInCache(c);
+(void)be;
+//	if (be->mvc->factory)
+//		optimizeQueryInCache(c);
 }
 
 @-
