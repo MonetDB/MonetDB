@@ -1382,8 +1382,8 @@ print_error(void *ctx, const char *msg, ...) {
      * Instead, we "mis-use" the ctx pointer to remember whether a newline
      * has occured in the error message, and thus be able to prefix each
      * (line of an) error message with GDKERROR ("!Error: "), which is
-     * required to properly get the error message trough the MAPI
-     * protokol...
+     * required to properly get the error message through the MAPI
+     * protocol...
      */
     va_list args;
     int *print_error_newline = (int*)ctx;
