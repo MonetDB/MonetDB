@@ -247,23 +247,24 @@ SQL programmer for inclusion in his queries. [TODO, a little more
 flexibilty would mean a lot]
 
 The variables and their type definition are assembled in a system table
-called 'sessions'. A snippet of its content is shown below:
+called 'sessions'. Its default content is shown below:
 @example
 >select * from sessions;
-#-----------------------------------------------------------------#
-# t                     t               t               t         # name
-# str                   str             str             int       # type
-#-----------------------------------------------------------------#
-[ "debug",                "0",            "int",          0       ]
-[ "reply_size",           "-1",           "int",          0       ]
-[ "explain",              "",             "varchar",      0       ]
-[ "auto_commit",          "false",        "boolean",      0       ]
-[ "current_schema",       "sys",          "varchar",      1       ]
-[ "current_user",         "monetdb",      "varchar",      1       ]
-[ "current_role",         "monetdb",      "varchar",      0       ]
-[ "current_timezone",     "0",            "sec_interval", 0       ]
-[ "cache",                "true",         "boolean",      0       ]
-[ "factory",              "true",         "boolean",      0       ]
+#---------------------------------------------------------------------#
+# t                     t                   t               t         # name
+# str                   str                 str             int       # type
+#---------------------------------------------------------------------#
+[ "debug",                "0",                "int",          0       ]
+[ "reply_size",           "-1",               "int",          0       ]
+[ "explain",              "",                 "varchar",      0       ]
+[ "auto_commit",          "false",            "boolean",      0       ]
+[ "current_schema",       "sys",              "varchar",      1       ]
+[ "current_user",         "monetdb",          "varchar",      1       ]
+[ "current_role",         "monetdb",          "varchar",      0       ]
+[ "current_timezone",     "0",                "sec_interval", 0       ]
+[ "cache",                "true",             "boolean",      0       ]
+[ "factory",              "true",             "boolean",      0       ]
+[ "optimizer",            "sql.optimizer();", "varchar",      0       ]
 @end example
 
 @node EXPLAIN Statement, DEBUG Statement, SET Statement, SQL
