@@ -1231,7 +1231,10 @@ str CALC@22@1(@1 *res, @2 *a)
 mal_export str CALC@22@1(@1 *res, @2 *a);
 str CALC@22@1(@1 *res, @2 *a)
 {
-	*res= (@1) *a;
+	if (*a == @2_nil)
+		*res= @1_nil;
+	else
+		*res= (@1) *a;
 	return MAL_SUCCEED;
 }
 @-
