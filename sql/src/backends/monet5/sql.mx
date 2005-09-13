@@ -138,6 +138,10 @@ command exportResult(res_id:int ) :void
 address mvc_export_result_wrap
 comment "Export a result (in order) to stream s"; 
 
+command exportResult() :void
+address mvc_export_default_wrap
+comment "Export result of schema queries"; 
+
 command importTable( s:stream, tname:str, 
 	sep:str, rsep:str, nr:int) :bat[:str,:bat] 
 address mvc_import_table_wrap
@@ -756,6 +760,20 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:getContext(c)@
 	if (mvc_result_value(c, *tn, *cn, *type, *digits, *scale, p, mtype))
 		return throwMessage("sql.rsColumn", "failed");
+	return NULL;
+}
+
+str
+mvc_export_default_wrap()
+{
+	mvc *c;
+	backend *b;
+
+	@:getContext(c)@
+	@:getBackend(b)@
+	if (mvc_export_default(c, b->out)) {
+		return throwMessage("sql.exportResult", "failed");
+	}
 	return NULL;
 }
 
