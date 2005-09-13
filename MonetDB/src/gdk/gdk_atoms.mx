@@ -64,7 +64,6 @@ we use the following #defines for comparing atoms:
 #define fltStrlen	48
 #define dblStrlen	96
 
-#define ATOMstorage(T)  BATatoms[T].storage
 @- 
 The system comes with the traditional atomic types: int (4 bytes), bool(1 
 byte) and str (variable). In addition, we support the notion of an OID 
@@ -504,7 +503,6 @@ ATOMproperty(str id, str property, GDKfcn arg)
 		int tpe = (int) (ssize_t) arg;
 
 		BATatoms[t] = BATatoms[tpe];	/* copy from example */
-		BATatoms[t].storage = tpe;
 		strcpy(BATatoms[t].name, id);	/* restore name */
 	} else if (strcmp("fromstr", property) == 0) {
 		BATatoms[t].atomFromStr = (int (*)(char *, int *, void **)) arg;
@@ -588,17 +586,6 @@ ATOMname(int t)
 {
 	return (t >= 0 && t < GDKatomcnt && BATatoms[t].name) ? BATatoms[t].name : "null";
 }
-
-/* Obsolete, we do not use the storage inheritance scheme
-int
-ATOMstorage(int t)
-{
-	return BATatoms[t].storage;
-	while (t != BATatoms[t].storage)
-		t = BATatoms[t].storage;
-	return t;
-}
-*/
 
 int
 ATOMisdescendant(int tpe, int parent)
@@ -770,6 +757,7 @@ from the sets of operations on the father type.
 @{
 @h
 /* use "do ... while(0)" so that lhs can safely be used in if statements */
+#define ATOMstorage(t)		BATatoms[t].storage
 #define ATOMsize(t)		BATatoms[t].size
 #define ATOMalign(t)		BATatoms[t].align
 #define ATOMfromstr(t,s,l,src)	BATatoms[t].atomFromStr(src,l,s)
