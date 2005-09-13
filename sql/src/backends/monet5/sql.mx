@@ -122,6 +122,10 @@ command resultSet( nr_cols:int, order:any_1 ) :int
 address mvc_result_row_wrap
 comment "Prepare a row result set"; 
 
+command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:void,:any_1] ) :void
+address mvc_result_column_wrap
+comment "Add the colunm to the table query result";
+
 command rsColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int, col:bat[:oid,:any_1] ) :void
 address mvc_result_column_wrap
 comment "Add the colunm to the table query result";
@@ -694,27 +698,41 @@ mvc_result_row_wrap(int *res_id, int *nr_cols, int *o)
 }
 
 str
-mvc_result_table_wrap(int *res_id, int *nr_cols, BAT *order)
+mvc_result_table_wrap(int *res_id, int *nr_cols, bat *order_bid)
 {
+	str res = NULL;
 	mvc *c;
+	BAT *order;
+
+        if( (order = BATdescriptor(*order_bid)) == NULL ){
+                return throwMessage("sql.resultSet", "Cannot access descriptor");
+        }
 
 	@:getContext(c)@
 	*res_id = mvc_result_table(c, *nr_cols, order);
 	if (*res_id < 0)
-		return throwMessage("sql.resultSet", "failed");
+		res = throwMessage("sql.resultSet", "failed");
+	BBPunfix(order->batCacheid);
 	return NULL;
 }
 
 str
-mvc_result_column_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, BAT *b)
+mvc_result_column_wrap(int *ret, int *rs, str *tn, str *name, str *type, int *digits, int *scale, bat *bid)
 {
+	str res = NULL;
 	mvc *c;
+	BAT *b;
+
+        if( (b = BATdescriptor(*bid)) == NULL ){
+                return throwMessage("sql.rsColumn", "Cannot access descriptor");
+        }
 
 	(void)ret;
 	(void)rs;
 	@:getContext(c)@
-	if (mvc_result_column(c, *tn, *name, *type, *digits, *scale, b))
-		return throwMessage("sql.rsColumn", "failed");
+	if (mvc_result_column(c, *tn, *name, *type, *digits, *scale, b)) 
+		res = throwMessage("sql.rsColumn", "failed");
+	BBPunfix(b->batCacheid);
 	return NULL;
 }
 
