@@ -2352,7 +2352,11 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         milprintf(f,
                 "iter := res_scj.fetch(0);\n"
                 "item := res_scj.fetch(1);\n"
-                "pos  := item.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+                "if (is_fake_project(iter)) {\n"
+                "    pos  := item.mark(1@0);\n"
+                "} else {\n"
+                "    pos  := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+                "}\n"
                 "iter := de_fake_project(iter, item);\n"
                 "kind := res_scj.fetch(2).set_kind(%s);\n"
                 "kind := de_fake_project(kind, item);\n"
