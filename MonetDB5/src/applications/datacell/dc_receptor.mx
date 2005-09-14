@@ -422,14 +422,15 @@ This way, a pump query can step in and collect the events
 received.
 @c
 ptr *
-singleRecognition(void *extra, int type, char *s)
+singleRecognition(void *extra, int type, char *s, char *e, char quote)
 {
+	(void) e; (void) quote;
 	DCpump p = (DCpump) extra;
 	ptr i;
 	oid o = oid_nil;
 	timestamp ts;
 
-	i = TABLETadt_frStr(extra, type, s);
+	i = TABLETadt_frStr(extra, type, s,s,0);
 	/* insert a time stamp */
 	MTIMEcurrent_timestamp(&ts);
 	BUNins(p->private[0], &o, &ts);
@@ -437,14 +438,16 @@ singleRecognition(void *extra, int type, char *s)
 }
 
 ptr *
-startRecognition(void *extra, int type, char *s)
+startRecognition(void *extra, int type, char *s,char *e, char quote)
 {
-	return TABLETadt_frStr(extra, type, s);
+	(void)e; (void)quote;
+	return TABLETadt_frStr(extra, type, s,s,0);
 }
 
 ptr *
-endRecognition(void *extra, int type, char *s)
+endRecognition(void *extra, int type, char *s,char *e, char quote)
 {
+	(void) e; (void) quote;
 	DCpump p = (DCpump) extra;
 	timestamp ts;
 	oid o = oid_nil;
@@ -452,7 +455,7 @@ endRecognition(void *extra, int type, char *s)
 	/* insert a time stamp */
 	MTIMEcurrent_timestamp(&ts);
 	BUNins(p->private[0], &o, &ts);
-	return TABLETadt_frStr(extra, type, s);
+	return TABLETadt_frStr(extra, type, s,s,0);
 }
 
 str
@@ -516,7 +519,7 @@ is interrupted with each stream_flush from the sensorSource.
 		bs->eof = 0;
 
 		as.nr = ~(size_t) 0;
-		res = TABLETload_file(&as, bs);
+		res = TABLETload_file(&as, bs,NULL);
 
 #ifdef DEBUG_DC_RECEPTOR
 		stream_printf(GDKerr, "#load %d events\n", res);
