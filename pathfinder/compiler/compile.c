@@ -332,7 +332,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("Logical algebra tree generation:\t %s", PFtimer_str (tm));
+        PFlog ("logical algebra tree generation:\t %s", PFtimer_str (tm));
 
     STOP_POINT(13);
 
@@ -344,7 +344,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("Logical algebra tree rewrite/optimization:\t %s",
+        PFlog ("logical algebra tree rewrite/optimization:\t %s",
                PFtimer_str (tm));
 
     STOP_POINT(14);
@@ -357,11 +357,11 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 subexelim:
     tm = PFtimer_start ();
 
-    laroot = PFcse_eliminate (laroot);
+    laroot = PFla_cse (laroot);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("Common subexpression elimination in logical algebra tree:\t %s",
+        PFlog ("common subexpression elimination in logical algebra tree:\t %s",
                PFtimer_str (tm));
 
     STOP_POINT(15);
@@ -372,7 +372,7 @@ subexelim:
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("Compilation to physical algebra:\t %s", PFtimer_str (tm));
+        PFlog ("compilation to physical algebra:\t %s", PFtimer_str (tm));
 
     STOP_POINT(16);
 

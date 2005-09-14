@@ -33,7 +33,7 @@
 #include "logical.h"
 
 /* Recursively search the algebra tree for common subexpressions */
-PFla_op_t * PFcse_eliminate (PFla_op_t *n);
+PFla_op_t * PFla_cse (PFla_op_t *n);
 
 #endif /* ALGEBRA_CSE_H */
 
