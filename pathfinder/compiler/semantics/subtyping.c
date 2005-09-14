@@ -1147,7 +1147,7 @@ char hierarchy[ty_types][ty_types] = {
                                               t   e
                                               y   d n i d     b 
                                               p a A u n e d s o 
-                          e n                 e t t m t c o t o 
+                            e n               e t t m t c o t o 
                           n m a             i d o o e e i u r l n e a   t   c
                           o p m             t A m m r g m b i e o l t d x   o
                           n t e             e n i i i e a l n a d e t o e p m
