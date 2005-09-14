@@ -251,7 +251,7 @@ and are terminated by a null to speedup comparison
 INLINE int
 idcmp(str n, str m)
 {
-	if (*(short *) n == *(short *) m)
+	if (* n == * m)
 		return strcmp(n, m);
 	return -1;
 }
