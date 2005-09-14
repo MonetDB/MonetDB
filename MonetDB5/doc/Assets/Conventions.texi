@@ -83,11 +83,11 @@ The resource locations identified below may at times proof valuable.
 
 @multitable {example}{and the remainder is long}
 @item Perl DBI
-@tab @url{http://www.perl.org,http://www.perl.org}
+@tab @url{http://www.perl.org/,http://www.perl.org/}
 @item PHP5
-@tab @url{http://www.php.net,http://www.php.net}
+@tab @url{http://www.php.net/,http://www.php.net/}
 @item Python
-@tab @url{http://www.python.org,http://www.python.org}
+@tab @url{http://www.python.org/,http://www.python.org/}
 @item XQuery
 @tab @url{http://wwww.w3c.org/TR/xquery/,http://wwww.w3c.org/TR/xquery/}
 @end multitable
