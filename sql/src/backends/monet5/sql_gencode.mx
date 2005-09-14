@@ -753,43 +753,43 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				@:SQLpostlude@
 				break;
 			case cmp_notequal:
-				q = newStmt(mb, "algebra", jt);
+				q = newStmt(mb, "algebra", "thetajoin");
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
-				q = pushStr(mb, q, "!=");
+				q = pushInt(mb, q, 0); /* is wrong */
 				@:SQLpostlude@
 				break;
 			case cmp_lt:
-				q = newStmt(mb, "algebra", jt);
+				q = newStmt(mb, "algebra", "thetajoin");
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
-				q = pushStr(mb, q, "<");
+				q = pushInt(mb, q, -1);
 				@:SQLpostlude@
 				break;
 			case cmp_lte:
-				q = newStmt(mb, "algebra", jt);
+				q = newStmt(mb, "algebra", "thetajoin");
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
-				q = pushStr(mb, q, "<=");
+				q = pushInt(mb, q, -2);
 				@:SQLpostlude@
 				break;
 			case cmp_gt:
-				q = newStmt(mb, "algebra", jt);
+				q = newStmt(mb, "algebra", "thetajoin");
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
-				q = pushStr(mb, q, ">");
+				q = pushInt(mb, q, 1);
 				@:SQLpostlude@
 				break;
 			case cmp_gte:
-				q = newStmt(mb, "algebra", jt);
+				q = newStmt(mb, "algebra", "thetajoin");
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
-				q = pushStr(mb, q, ">=");
+				q = pushInt(mb, q, 2);
 				@:SQLpostlude@
 				break;
 			case cmp_all:	/* aka cross table */
