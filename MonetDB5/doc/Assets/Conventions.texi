@@ -70,9 +70,9 @@ additional resources for a full understanding of the MonetDB product family.
 @c are the additional resources meant to clarify the reference manual,
 @c or the product family?
 The primary source for additional information is the MonetDB website,
-http://monetdb.cwi.nl, and the code base itself.
-Information on the background of its architecture can be found in the
-library of scientific publications.
+@url{http://monetdb.cwi.nl/,http://monetdb.cwi.nl/}, and the code base
+itself.  Information on the background of its architecture can be found
+in the library of scientific publications.
 
 This reference manual relies on documentation of the basics of its
 query languages SQL, XQuery, its application interfaces, PHP, Perl,
@@ -89,5 +89,5 @@ The resource locations identified below may at times proof valuable.
 @item Python
 @tab @url{http://www.python.org,http://www.python.org}
 @item XQuery
-@tab @url{http://wwww.w3c.org/TR/xquery,http://wwww.w3c.org/TR/xquery}
+@tab @url{http://wwww.w3c.org/TR/xquery/,http://wwww.w3c.org/TR/xquery/}
 @end multitable
