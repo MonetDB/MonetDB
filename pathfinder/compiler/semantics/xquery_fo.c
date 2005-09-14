@@ -54,8 +54,6 @@
  */
 #define XQUERY_FO_MAX_ARITY 5
 
-#define PFty_stmt PFty_none
-
 /**
  * List all XQuery built-in functions here.
  *
