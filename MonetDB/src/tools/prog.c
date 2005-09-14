@@ -75,7 +75,7 @@ main(int argc, char **av)
 	int curlen = 0, maxlen = BUFSIZ*8;
 	char *prog = *av;
 	opt *set = NULL;
-	int setlen = 0, time = 0, debug = 0;
+	int setlen = 0, time = 0;
 	long t0 = 0;
 	Mapi mid;
 	MapiHdl hdl;
@@ -124,7 +124,6 @@ main(int argc, char **av)
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
 			break;
 		case 'd':
-			debug = 1;
 			if (optarg) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_debug", optarg);
 			}
