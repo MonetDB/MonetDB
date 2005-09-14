@@ -149,10 +149,10 @@ void renameFunction(str oldmod, str oldfcn, str modnme, str name){
             while(s){
                 prev= s->peer; 
                 s->peer= NULL;
-                s->name= putName(name,strlen(name));
+                s->name= GDKstrdup(name);
                 p= getInstrPtr(s->def,0);
                 setModuleId(p,putName(modnme,strlen(modnme)));
-                setFunctionId(p,s->name);
+                setFunctionId(p,putName(name,strlen(name)));
                 insertSymbol(root,s);
                 s= prev;
             }
