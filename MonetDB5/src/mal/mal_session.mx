@@ -124,6 +124,7 @@ initClientPrg(Client cntxt, str nme)
 	setVarType(mb, findVariable(mb, nme), TYPE_int);
 	insertSymbol(cntxt->nspace, cntxt->curprg);
 	cntxt->glb = 0;
+	assert(cntxt->curprg->def != NULL);
 }
 
 @}

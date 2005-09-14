@@ -655,7 +655,6 @@ killClient(Client c)
 		MT_Id pid = victim->pid;
 
 		GDKwarning("killClient:forcing client to stop ...\n");
-
 		/* the process may hang upon gaining access to the file descriptors */ 
 		c->mode = FINISHING;
 		(void) stream_flush(c->fdout);

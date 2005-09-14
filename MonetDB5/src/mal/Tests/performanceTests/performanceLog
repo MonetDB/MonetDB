@@ -666,3 +666,19 @@ tst400e		 0.382/0.365/0.016	1M incr fcn     1.787/1.777/0.010   4.7
 
 tst901a		 0.462/0.431/0.031	[+] call    2.474/2.430/0.044   5.3
 tst901b		 1.865/1.776/0.059	[+] call    7.309/7.244/0.064   3.9
+======================== 13 sep 2005 ===================
+Setup on Gio version 4.9 kernel 
+The compilation mode for both V5 is CFLAGS=-O2 
+command: time Mserver -c perf.conf TST </dev/null >/dev/null
+		gio( load 0)		 
+		MonetDB 5				MonetDB 4.9.3
+base		 0.048/0.036/0.012			0.033/0.024/0.009   0.7
+tst400a		 0.114/0.098/0.016	1M loop	 	0.870/0.859/0.011   8.3
+tst400a2	 0.165/0.149/0.016	1M loop inc		
+tst400bHuge	 0.252/0.218/0.031	100k count (io) 1.115/0.963/0.152   5.0
+tst400cHuge	 0.304/0.251/0.047	100k insert(io)	1.693/1.466/0.217   5.5
+tst400d		 0.310/0.282/0.022	1M insert tuple 2.519/2.503/0.015   6.1
+tst400e		 0.399/0.374/0.018	1M incr fcn     1.787/1.777/0.010   4.7
+
+tst901a		 0.473/0.324/0.042	[+] call    2.474/2.430/0.044   5.3
+tst901b		 1.702/1.615/0.054	[+] call    7.309/7.244/0.064   3.9
