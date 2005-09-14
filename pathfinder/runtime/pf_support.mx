@@ -519,6 +519,12 @@ PROC de_fake_project (bat[void,any::1] b, bat[void,oid] x) : bat[void,any::1]
 	return x.project(b.fetch(0));
 }
 
+PROC mark_pos(bat[void,oid] iter, bat[void,any] extent) : bat[void,oid] 
+{
+	if (is_fake_project(iter)) return extent.mark(1@0);
+	return iter.mark_grp(iter.tunique().mark(nil),1@0);
+}
+
 @= fake_fetch
 PROC fake_fetch (bat[void,any::1] b, @1 p) : any::1
 {

@@ -75,29 +75,6 @@
 
 #define RRRL(p) L(R(R(R(p))))
 
-static void milprintf(opt_t *o, const char *format, ...)
-{
-        int j, i = strlen(format) + 80;
-        char *milbuf = PFmalloc(i);
-        va_list ap;
-
-        /* take in a block of MIL statements */
-        va_start(ap, format);
-        j = vsnprintf(milbuf, i, format, ap);
-        va_end (ap);
-        while (j < 0 || j > i) {
-                if (j > 0)      /* C99 */
-                        i = j + 1;
-                else            /* old C */
-                        i *= 2;
-                milbuf = PFrealloc(i, milbuf);
-                va_start(ap, format);
-                j = vsnprintf(milbuf, i, format, ap);
-                va_end (ap);
-        } 
-        opt_mil(o, milbuf);
-}
-
 /**
  * mps_error calls PFoops with more text, since something is wrong
  * in the translation, if this message appears.
@@ -2352,11 +2329,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         milprintf(f,
                 "iter := res_scj.fetch(0);\n"
                 "item := res_scj.fetch(1);\n"
-                "if (is_fake_project(iter)) {\n"
-                "    pos  := item.mark(1@0);\n"
-                "} else {\n"
-                "    pos  := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
-                "}\n"
+                "pos  := iter.mark_pos(item);\n"
                 "iter := de_fake_project(iter, item);\n"
                 "kind := res_scj.fetch(2).set_kind(%s);\n"
                 "kind := de_fake_project(kind, item);\n"
@@ -3225,11 +3198,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
     if (rc != NORMAL)
     {
         milprintf(f,
-             /* because tunique() is to slow on strings we do stupid things */
-             /* "var unq_str := item%s.tunique().mark(0@0).reverse();\n" */
-                "var unq_str := bat(str,void).key(true)"
-                                            ".insert(item%s.reverse().mark(nil))"
-                                            ".mark(0@0).reverse().access(BAT_READ);\n",
+                "var unq_str := item%s.tuniqueALT().mark(0@0).reverse();\n",
                 item_ext);
     }
     else
@@ -6477,15 +6446,15 @@ translateUDF (opt_t *f, int cur_level, int counter,
     /* call the proc */
     milprintf(f,
             "var proc_res := fn_%x_%i (loop%03u, outer%03u, order_%03u, inner%03u, "
-            "fun_vid%03u, fun_iter%03u, fun_pos%03u, fun_item%03u, fun_kind%03u); # fn:%s\n",
+            "fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); # fn:%s\n",
             fun, fun->arity,
             cur_level, cur_level, cur_level, cur_level,
-            counter, counter, counter, counter, counter, fun->qname.loc);
+            counter, counter, counter, counter, fun->qname.loc);
     milprintf(f,
             "iter := proc_res.fetch(0);\n"
-            "pos := proc_res.fetch(1);\n"
-            "item := proc_res.fetch(2);\n"
-            "kind := proc_res.fetch(3);\n"
+            "item := proc_res.fetch(1);\n"
+            "kind := proc_res.fetch(2);\n"
+            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             "proc_res := nil;\n"
             "fun_vid%03u := nil;\n"
             "fun_iter%03u := nil;\n"
@@ -8232,19 +8201,19 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                                "bat[void,oid] inner000, "
                                "bat[void,oid] v_vid000, "
                                "bat[void,oid] v_iter000, "
-                               "bat[void,oid] v_pos000, "
                                "bat[void,oid] v_item000, "
                                "bat[void,int] v_kind000) : bat[void,bat] { # fn:%s\n"
                     "v_vid000 := v_vid000.access(BAT_WRITE);\n"
                     "v_iter000 := v_iter000.access(BAT_WRITE);\n"
                     "v_pos000 := v_pos000.access(BAT_WRITE);\n"
                     "v_item000 := v_item000.access(BAT_WRITE);\n"
-                    "v_kind000 := v_kind000.access(BAT_WRITE);\n",
+                    "v_kind000 := v_kind000.access(BAT_WRITE);\n"
+                    "var v_pos000 := v_iter000.mark_grp(v_iter000.tunique().mark(nil), 1@0);\n",
                     c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
-                    "return bat(void,bat,4).insert(nil,iter).insert(nil,pos).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
+                    "return bat(void,bat,4).insert(nil,iter).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
                     "} # end of PROC fn_%x_%i (fn:%s)\n",
                     c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
   	    opt_output(f, OPT_SEC_EPILOGUE);
@@ -10147,7 +10116,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
 
     /* define working set and all other MIL context (global vars for the query) */
     opt_output(f, OPT_SEC_QUERY);
-    milprintf(f, "\n\n# MAIN MIL QUERY\n\n{\n var err, ws := int(nil);\n err := CATCH({");
+    milprintf(f, "\n\n# MAIN MIL QUERY\n\n{\n var ws := int(nil);\n var err := CATCH({");
     init (f);
 
     /* get_var_usage appends information to the core nodes and creates a 

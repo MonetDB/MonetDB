@@ -25,6 +25,7 @@
  */
 
 #include <stdio.h>
+#include <stdarg.h>
 
 /* ----------------------------------------------------------------------------
  * dead MIL code eliminator (one-day hack by Peter Boncz) 
@@ -54,17 +55,18 @@
  * as a *verifier* to check whether what is in the statment buffer is what you were referring to.
  */
 typedef struct {
-        char *mil; /* buffered line of MIL */
+        char *ptr, *mil; /* buffered line of MIL */
         unsigned int stmt_nr:30,sec:2; /* absolute statement number in MIL input */
-        unsigned int scope:16,inactive:1,delchar:7,nilassign:1,refs:7; 
+        unsigned int deleted:1,scope:15,inactive:1,delchar:7,nilassign:1,refs:7; 
         unsigned int used;
         /* used:      becomes true if this variable was used */ 
         /* inactive:  set if we have tried to eliminate this statement already */
 	/* delchar:   we separate statements by substituting a ';' char (or \n for comments) */
         /* nilassign: special treatment: nil assignments for early memory reduction are never pruned */
         /* refs:      number of variable references found */
-        unsigned int assigns_nr; /* stmt_nr verifier for assigns_to */
-        unsigned short assigns_to; /* variable this statement assigns to (0 if none) */
+        unsigned short moved[2]; /* conditional statements to which we tried to move this statement */
+        unsigned int assigns_nr; /* stmt_nr verifier for assigns_to (0 if none) */
+        unsigned short assigns_to; /* statement that declares variable this statement assigns to */
         unsigned short refstmt[OPT_REFS]; /* variable references found on this stmt */
 } opt_stmt_t;
 
@@ -103,7 +105,8 @@ typedef struct {
  * 0 = root, 1 = unused, 2 = first iflevel 3= first elselevel,
  * 4 = second iflevel, etc 
  */
-#define OPT_COND(o) ((o)->condlevel + (o)->condlevel + (o)->condifelse[(o)->condlevel])
+#define OPT_COND_LEVEL(o,l) ((l) + (l) + (o)->condifelse[(l)])
+#define OPT_COND(o)         OPT_COND_LEVEL(o,(o)->condlevel)
 
 typedef struct {
     unsigned int optimize; /* if zero, don't optimize at all */ 
@@ -122,6 +125,14 @@ typedef struct {
                                               block starts */
     unsigned char condifelse[OPT_CONDS];   /* 0=if,  1==else */
 
+    /* movable statement administration */
+    unsigned int movstmt_nr[OPT_STMTS]; 
+    unsigned short movstmt[OPT_STMTS]; 
+    unsigned short movmax;
+    unsigned short movnr[OPT_CONDS+OPT_CONDS];
+    unsigned short movlo[OPT_CONDS+OPT_CONDS];
+    unsigned short movhi[OPT_CONDS+OPT_CONDS];
+
     opt_stmt_t stmts[OPT_STMTS];   /* circular MIL statement buffer */
     opt_var_t vars[OPT_VARS];      /* variable stack */
     char *buf[3]; /* 3 output sections (prologue,query,epilogue) */
@@ -133,6 +144,6 @@ typedef struct {
 
 opt_t *opt_open(int optimize);
 void opt_close(opt_t *o, char** prologue, char** query, char** epilogue);
-int opt_mil(opt_t *o, char* milbuf);
+int milprintf(opt_t *o, const char *format, ...);
 
 /* vim:set shiftwidth=4 expandtab: */
