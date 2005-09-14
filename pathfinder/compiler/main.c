@@ -377,7 +377,7 @@
  * (torsten.grust@in.tum.de) and Jens Teubner
  * (jens.teubner@in.tum.de), who have moved to the
  * <a href='http://www-db.in.tum.de/'>Database Systems Group</a> at the
- * <a href='http://www.tum.de'>Technische Universit&auml;t M&auml;nchen</a>.
+ * <a href='http://www.tum.de'>Technische Universit&auml;t M&uuml;nchen</a>.
  * Several students from U Konstanz have been involved in this
  * project, namely
  * 
