@@ -326,7 +326,7 @@ SQLcompile(str *ret, str *expr, int *flag)
 System has been prepared to parse it and generate code
 @c
 	if ((err = sqlparse(m)) ){
-		if( m->debug)
+		if( m->mode == m_debug)
 			runMALDebugger(c->curprg);
 		err = mvc_status(m);
 		sqlcleanup(m, err);
@@ -632,7 +632,9 @@ SQLparser(Client c)
 
 	m->mode = m_normal;
 
-	if ((err = sqlparse(m)) ||
+	if ((err = sqlparse(m)) && m->debug)
+			runMALDebugger(c->curprg);
+	if( err ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err)
@@ -714,12 +716,12 @@ query block.
 
 		chkProgram(c->nspace, c->curprg->def);
 		if (c->curprg->def->errors) {
+			if( m->mode == m_debug)
+				runMALDebugger(c->curprg);
 			showErrors();
 			/* restore the state */
 			if (c->listing || explainPlan())
 				printFunction(c->fdout, c->curprg->def, c->listing);
-			if( m->debug)
-				runMALDebugger(c->curprg);
 			resetInstructions(c->curprg->def, oldstate.stop);
 			resetVariables(c->curprg->def, c->glb, oldstate.vtop);
 			c->curprg->def->errors = 0;
