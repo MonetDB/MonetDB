@@ -483,11 +483,9 @@ Continue processing any left-over input from the previous round.
 			if (be->language == 'D' && in->eof == 0) {
 				return 0;
 			}
-			if (rd == 0 && language != 0 && in->eof) {
+			if (rd == 0 && language != 0 && in->eof && !be->console) {
 				/* we hadn't seen the EOF before, so just try again
 				   (this time with prompt) */
-				SQLreader(c);
-			} else if (rd == 0 && in->eof == 0) {
 				SQLreader(c);
 			} else {
 				go = FALSE;

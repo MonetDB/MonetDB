@@ -352,8 +352,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			return s->nr;	/* stmt already handled */
 
 		switch (s->type) {
-		case st_none:
-			break;
+		case st_none: {
+			q = newAssignment(mb);
+			s->nr = getDestVar(q);
+			q = pushInt(mb, q, 1);
+			setVarInitialized(mb, s->nr);
+		}	break;
 		case st_sql:{
 			int o1 = _dumpstmt(sql, mb, s->op1.stval);
 
@@ -831,49 +835,68 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		}
 		case st_group:{
-			dump_1(sql, mb, s, "group", "group");
-		}
-			break;
-		case st_group_ext:{
-			int k, l = _dumpstmt(sql, mb, s->op1.stval);
+			char ext[BUFSIZ];
+			int o1 = _dumpstmt(sql, mb, s->op1.stval);
 
 			@:SQLprelude@
-			q = newStmt(mb, "algebra", "tunique");
-			q = pushArgument(mb, q, l);
-			k = getDestVar(q);
+			q = newStmt(mb, "group", "new");
+			snprintf( ext, BUFSIZ, "ext%d", getDestVar(q));
+        		q = pushReturn(mb, q, newVariable(mb, _strdup(ext), TYPE_any));
+			setVarInitialized(mb, getArg(q, 1));
+
+			q = pushArgument(mb, q, o1);
+			s->nr = getDestVar(q);
+			@:SQLpostlude@
+		} 	break;
+		case st_group_ext:{
+			char ext[BUFSIZ];
+			int e = -1, g = _dumpstmt(sql, mb, s->op1.stval);
+
+			snprintf( ext, BUFSIZ, "ext%d", g);
+			e = findVariable(mb, ext);
+			assert(e >= 0);
+
+			@:SQLprelude@
 			q = newStmt(mb, "bat", "mirror");
-			q = pushArgument(mb, q, k);
+			q = pushArgument(mb, q, e);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 		} break;
 		case st_derive:{
-			dump_2(sql, mb, s, "group", "group");
-		}
-			break;
+			char ext[BUFSIZ];
+			int g = _dumpstmt(sql, mb, s->op1.stval);
+			int l = _dumpstmt(sql, mb, s->op2.stval);
+
+			@:SQLprelude@
+			q = newStmt(mb, "group", "new");
+			snprintf( ext, BUFSIZ, "ext%d", getDestVar(q));
+        		q = pushReturn(mb, q, newVariable(mb, _strdup(ext), TYPE_any));
+			setVarInitialized(mb, getArg(q, 1));
+			q = pushArgument(mb, q, g);
+			q = pushArgument(mb, q, l);
+			s->nr = getDestVar(q);
+			@:SQLpostlude@
+		} 	break;
 		case st_unique:{
-			int k, l = _dumpstmt(sql, mb, s->op1.stval);
+			int l = _dumpstmt(sql, mb, s->op1.stval);
 
 			@:SQLprelude@
 			if (s->op2.stval) {
-				int k2, g = _dumpstmt(sql, mb, s->op2.stval);
+				char ext[BUFSIZ];
+				int e, g = _dumpstmt(sql, mb, s->op2.stval);
 
-				q = newStmt(mb, "group", "group");
-				q = pushArgument(mb, q, g);
-				q = pushArgument(mb, q, l);
-				k = getDestVar(q);
-
-				q = newStmt(mb, "algebra", "tunique");
-				q = pushArgument(mb, q, k);
-				k2 = getDestVar(q);
-
+				snprintf( ext, BUFSIZ, "ext%d", g);
+				e = findVariable(mb, ext);
 				q = newStmt(mb, "bat", "mirror");
-				q = pushArgument(mb, q, k2);
-				k2 = getDestVar(q);
+				q = pushArgument(mb, q, e);
 
+				g = getDestVar(q);
 				q = newStmt(mb, "algebra", "semijoin");
 				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, k2);
+				q = pushArgument(mb, q, g);
 			} else {
+				int k;
+
 				q = newStmt(mb, "bat", "reverse");
 				q = pushArgument(mb, q, l);
 				k = getDestVar(q);
@@ -1295,20 +1318,13 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	InstrPtr curInstr = 0;
-
-	int i = 0;
 	char fnme[BUFSIZ];
-	node *n;
 
 	/* later we could use the id directly (as its unique) and
 	   just create a InstrPtr using newInstruction */
-	i = snprintf(fnme, BUFSIZ, "sql%d", id);
-
-	(void) i;		/* pacify compilers */
+	snprintf(fnme, BUFSIZ, "sql%d", id);
 
 	c->backup = c->curprg;
-
-	(void) id;
 
 	/* later we change this to a factory ? */
 	c->curprg = newFunction(putName(fnme,strlen(fnme)), FUNCTIONsymbol);
@@ -1320,6 +1336,7 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 	if (be->mvc->args) {
 		int argc = 0;
 		char arg[32];
+		node *n;
 
 		for (n = be->mvc->args->h; n; n = n->next, argc++) {
 			atom *a = n->data;
