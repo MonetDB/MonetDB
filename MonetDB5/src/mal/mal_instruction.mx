@@ -580,10 +580,19 @@ Symbol newSymbol(str nme, int kind){
     return cur;
 }
 void freeSymbol(Symbol s){
-        if(s==NULL) return;
-        if( s->name) { GDKfree(s->name); s->name = NULL;}
-        if( s->def) { freeMalBlk(s->def);s->def = NULL;}
-        GDKfree(s);
+	/* The name is a pointer into the namespace and may not be freed
+	str nme;
+	if( s->name) { 
+		if( (nme=getName(s->name,strlen(s->name))) && nme== s->name ){
+			printf("illegal free of symbol name %s\n", s->name);
+			assert(0);
+		} else
+			GDKfree(s->name); s->name = NULL;
+	}
+	*/
+	if(s==NULL) return;
+	if( s->def) { freeMalBlk(s->def);s->def = NULL;}
+	GDKfree(s);
 }
 void freeSymbolList(Symbol s){
     Symbol t= s;
@@ -1208,6 +1217,12 @@ void freeVariable(MalBlkPtr mb, int varid){
 
     v= getVar(mb,varid);
 	if( v== 0 ) return;
+	/* code for hunting illegal frees
+	if(v->name && (nme=getName(v->name,strlen(v->name))) && nme == v->name ) {
+		printf("illegal free variable  of %s\n", v->name);
+		assert(0);
+	}
+	*/
     if( v->name) GDKfree(v->name); v->name = 0;
     if( v->literal) GDKfree(v->literal); v->literal= 0;
     if( v->isaconstant) VALclear(&v->value);

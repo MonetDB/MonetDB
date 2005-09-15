@@ -54,7 +54,7 @@ too expensive. An alternative would be to use a BAT to handle the collection.
 @c
 #include "mal_type.h"
 #include "mal_namespace.h"
-#define MAXIDENTIFIERS 1024
+#define MAXIDENTIFIERS 2048
 
 typedef struct NAMESPACE{
 	int  size;  /* amount of space available */
@@ -66,6 +66,10 @@ typedef struct NAMESPACE{
 } Namespace;
 
 static Namespace namespace;
+#ifdef _BACKUP_
+/* code to aid hunting for illegal frees on the namespace */
+static Namespace backup;
+#endif
 
 static void expandNamespace(int incr){
     str *nme;
@@ -92,6 +96,21 @@ static void expandNamespace(int incr){
     GDKfree(namespace.nme); namespace.nme= nme;
     GDKfree(namespace.link); namespace.link= link;
 
+#ifdef _BACKUP_
+    nme= (str *) GDKmalloc(sizeof(str *) * backup.nmetop+incr);
+    link= (int *) GDKmalloc(sizeof(int) * backup.nmetop+incr);
+    hit = (int *) GDKmalloc(sizeof(int) * backup.nmetop+incr);
+    memcpy(nme, backup.nme, sizeof(str *) * backup.nmetop);
+    memcpy(link, backup.link, sizeof(int) * backup.nmetop);
+    memcpy(hit, backup.hit, sizeof(int) * backup.nmetop);
+
+    backup.size += incr;
+    backup.nmetop+= incr;
+	backup.totalhit= 0;
+    GDKfree(backup.nme); backup.nme= nme;
+    GDKfree(backup.link); backup.link= link;
+#endif
+
 }
 void initNamespace() {
     namespace.nme= (str *) GDKmalloc(sizeof(str *) * MAXIDENTIFIERS);
@@ -101,12 +120,40 @@ void initNamespace() {
     namespace.hit= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
     namespace.size = MAXIDENTIFIERS;
     namespace.nmetop= 256; /* hash overflow */
+
+#ifdef _BACKUP_
+    backup.nme= (str *) GDKmalloc(sizeof(str *) * MAXIDENTIFIERS);
+    memset((char*) backup.nme, 0, sizeof(str *) * MAXIDENTIFIERS);
+    backup.link= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
+    memset((char*) backup.link, 0, sizeof(int) * MAXIDENTIFIERS);
+    backup.hit= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
+    backup.size = MAXIDENTIFIERS;
+    backup.nmetop= 256; /* hash overflow */
+#endif
 }
 void finishNamespace() {
     GDKfree(namespace.nme);
     GDKfree(namespace.link);
     GDKfree(namespace.hit);
+#ifdef _BACKUP_
+    GDKfree(backup.nme);
+    GDKfree(backup.link);
+    GDKfree(backup.hit);
+#endif
 }
+
+#ifdef _BACKUP_
+void chkName(int l){
+	int i;
+	if( namespace.nme[l] && strcmp(namespace.nme[l],backup.nme[l])!=0){
+		printf("error in namespace %d\n",l);
+		printf("backup %s\n",backup.nme[l]);
+		for( i=0; i< strlen(backup.nme[l]); i++)
+		printf("[%d] %d '%c'\n",i, namespace.nme[l][i], namespace.nme[l][i]);
+
+	}
+}
+#endif
 @-
 Before a name is being stored we should check for its occurrence first.
 The administration is initialized incrementally.
@@ -121,6 +168,9 @@ str getName(str nme, int len)
 	buf[len]=0;
     
     for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){
+#ifdef _BACKUP_
+		chkName(l);
+#endif
         if(strcmp(buf,namespace.nme[l])==0) {
             namespace.hit[l]++;
 			namespace.totalhit++;
@@ -145,7 +195,11 @@ str putName(str nme, int len)
 	str s;
 
     for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){
-        if( strncmp(nme,namespace.nme[l],len) == 0 &&
+#ifdef _BACKUP_
+		chkName(l);
+#endif
+        if( strlen(namespace.nme[l]) == len &&
+			strncmp(nme,namespace.nme[l],len) == 0 &&
 			namespace.nme[l][len] == 0) {
             namespace.hit[l]++;
 			namespace.totalhit++;
@@ -156,6 +210,13 @@ str putName(str nme, int len)
 				namespace.nme[k]=s;
 				i= namespace.hit[l]; namespace.hit[l]=namespace.hit[k];
 				namespace.hit[k]= i;
+
+#ifdef _BACKUP_
+				s= backup.nme[l]; backup.nme[l]= backup.nme[k];
+				backup.nme[k]=s;
+				i= backup.hit[l]; backup.hit[l]=backup.hit[k];
+				backup.hit[k]= i;
+#endif
 				mal_unset_lock(mal_contextLock,"putName");
 				l=k;
 			}
@@ -179,6 +240,15 @@ str putName(str nme, int len)
 		namespace.link[l]= top;
     namespace.hit[top]= 0;
     namespace.nmetop++;
+
+#ifdef _BACKUP_
+	top= backup.nme[l]== 0? l: backup.nmetop;
+	backup.nme[top]= GDKstrdup(buf);
+    backup.link[top]= backup.link[l];
+	if( top == backup.nmetop)
+		backup.link[l]= top;
+    backup.nmetop++;
+#endif
 	mal_unset_lock(mal_contextLock,"putName");
 	return namespace.nme[top];
 }
