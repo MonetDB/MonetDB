@@ -1029,6 +1029,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	case 'n':
 		p = getInstrPtr(mb, pc);
 		mdbCommand(cntxt, mb, stk, p, pc);
+		break;
 	case 'C':
 		mdbSessionActive= 0; /* for name completion */
 	}

@@ -721,10 +721,12 @@ using the target type.
 		if( lhs != TYPE_void && lhs != TYPE_any){
 			p->argv[i]= newConstant(mb,
 				(isaBatType(lhs)?TYPE_bat:lhs), GDKstrdup("nil"),TRUE);
-		} else {
+		} else 
+		if( lhs != TYPE_void && lhs != TYPE_any) {
+
 			typeMismatch(mb,p,lhs,rhs,silent);
 			return;
-		}
+		} 
 
         if( !isFixed(mb,getArg(p,k))) {
             setVarType(mb,getArg(p,k),rhs);
