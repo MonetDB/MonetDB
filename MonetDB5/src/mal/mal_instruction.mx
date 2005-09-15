@@ -503,6 +503,7 @@ mal_export int      findVariableLength(MalBlkPtr mb, str name,int len);
 mal_export malType  getType(MalBlkPtr mb, str nme);
 mal_export str      getVarName(MalBlkPtr mb, int i);
 mal_export int      newVariable(MalBlkPtr mb, str name,malType type);
+mal_export void     renameVariable(MalBlkPtr mb, int i, str name);
 mal_export void     copyVariable(MalBlkPtr dst,MalBlkPtr src, VarPtr v);
 mal_export void     removeVariable(MalBlkPtr mb, int varid);
 mal_export int      newTmpVariable(MalBlkPtr mb, malType type);
@@ -1111,6 +1112,11 @@ int newVariable(MalBlkPtr mb, str name, malType type){
     mb->vtop++;
     return n;
 } 
+void      
+renameVariable(MalBlkPtr mb, int id, str name){
+	assert(id >=0 && id<mb->vtop);
+	getVar(mb,id)->name= name;
+}
 @+ MAL variables
 Temporary target variable act as sinks in the data flow graph.
 In this case, an optimizer can group them by underlying type and this way
