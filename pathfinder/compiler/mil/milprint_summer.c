@@ -10079,7 +10079,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
  * @param f the Stream the MIL code is printed to
  * @param c the root of the core tree
  */
-char*
+int
 PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char** query, char** epilogue)
 {
     PFarray_t *way, *counter;
@@ -10176,8 +10176,11 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "drop(\"malalgebra\");\n"
             "drop(\"mmath\");\n");
 
-    opt_close(f, prologue, query, epilogue);
-    return NULL;
+    if (opt_close(f, prologue, query, epilogue)) {
+        PFoops (OOPS_FATAL, "Out-of-memory while generating MIL.\n");
+        return -1;
+    }
+    return 0;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -78,22 +78,29 @@ static int opt_findvar(opt_t* o, opt_name_t *name) {
 
 /* ----------------------------------------------------------------------------
  * string matching defines and helpers
- * - opt_skip():        skip over whitespace and (optionally) MIL comments
- * - opt_match_space(): check if next character is whitespace 
- * - opt_match_var():   efficiently check if next token is "var"
- * - opt_match_else():  efficiently check if next token is "else"
+ * - opt_skip():         skip over whitespace and (optionally) MIL comments
+ * - opt_match_space():  check if next character is whitespace, or (optionally) '#' 
+ * - opt_match_letter(): is next character a letter, underscore, or (optionally) a digit
+ * - opt_match_nil():    efficiently check if next token is "nil"
+ * - opt_match_var():    efficiently check if next token is "var"
+ * - opt_match_else():   efficiently check if next token is "else"
  * ----------------------------------------------------------------------------
  */
-#define opt_match_space(c) 	(((c) == ' ') | ((c) == '\t') | ((c) == '\n') | ((c) == '#'))
+#define opt_match_space(c,b) 	(((c) == ' ') | ((c) == '\t') | ((c) == '\n') | ((b) & ((c) == '#')))
+#define opt_match_letter(c,b)   ((((c) >= 'a') & ((c) <= 'z')) | ((c) == '_') |\
+                                 (((c) >= 'A') & ((c) <= 'Z')) | ((b) & ((c) >= '0') & ((c) <= '9')))
+#define opt_match_nil(p)	(((p[0] == 'n') | (p[0] == 'N')) &&\
+				 ((p[1] == 'i') | (p[1] == 'I')) &&\
+				 ((p[2] == 'l') | (p[2] == 'L')))
 #define opt_match_var(p)	(((p[0] == 'v') | (p[0] == 'V')) &&\
 				 ((p[1] == 'a') | (p[1] == 'A')) &&\
 				 ((p[2] == 'r') | (p[2] == 'R')) &&\
-				 ((p[3] == 0) | opt_match_space(p[3])))
+				 ((p[3] == 0) | opt_match_space(p[3],1)))
 #define opt_match_else(p)	(((p[0] == 'e') | (p[0] == 'E')) &&\
 				 ((p[1] == 'l') | (p[1] == 'L')) &&\
 				 ((p[2] == 's') | (p[2] == 'S')) &&\
 				 ((p[3] == 'e') | (p[3] == 'E')) &&\
-				 ((p[4] == 0) | (p[4] == '{') | opt_match_space(p[4])))
+				 ((p[4] == 0) | (p[4] == '{') | opt_match_space(p[4],1)))
 
 /* opt_skip(): skip over whitespace and comments
  */
@@ -106,7 +113,7 @@ char* opt_skip(char* p, int skip_comment) {
 			/*skip comment until end of line */
 			while(p[++skip] != '\n') if (p[skip] == 0) return p+skip;
 		}
-	} while (opt_match_space(p[skip]));
+	} while (opt_match_space(p[skip],1));
 	return p+skip;
 }
 
@@ -252,7 +259,7 @@ static int opt_move_useful(opt_t *o, unsigned int stmt) {
 		return o->stmts[stmt].deleted; /* not moved; just check status */ 
 
         /* statement was moved sensibly iff in some conditional this caused its elimination */
-	if (opt_move_useful(o, o->stmts[stmt].moved[0]) || 
+	if (opt_move_useful(o, o->stmts[stmt].moved[0]) | 
 	    opt_move_useful(o, o->stmts[stmt].moved[1])) return 1;
 
 	/* moving did not eliminate any work (only makes MIL script longer): undo */
@@ -286,25 +293,33 @@ static int opt_move_useful(opt_t *o, unsigned int stmt) {
 static void opt_printmil(opt_t* o, char* src, int sec, int scope) {
 	char *dst, *end;
 	APPEND_INIT(o,sec,dst,end);
-	if (scope >= 0) /* skip whitespace at start of line */
-		while((*src == ' ') | (*src == '\t') | (*src =='\n')) src++;
 	while(*src) {
-		int i, c = 0, nocomment = (scope >= 0);
-		if (scope >= 0) { /* indent */
-			if (*src == '}') scope--;
-			if (*src == '{') APPEND_PUTC(o,sec,'\n',dst,end); 
-			for(i=0; i<scope; i++) 
-				APPEND_PUTC(o,sec,' ',dst,end); 
-			if (*src == '{') scope++;
-		} 
-		while(*src && c != '\n') { /* write out one line */
-			c = *src++;
-			nocomment &= (c != '#'); 
-			APPEND_PUTC(o,sec,c,dst,end);
-			if (nocomment && src[0] == '{' && src[1] == 0) break;
+		int i, ignore_nl = (scope >= 0);
+		if (ignore_nl) { 
+			/* replace whitespace at start by proper indents */
+			while(opt_match_space(*src,0)) src++;
+			if (opt_match_else(src) | 
+			   (*src == '#' && (dst == o->buf[sec] || dst[-1] != '\n'))) 
+			{
+				APPEND_PUTC(o,sec,' ',dst,end);
+			} else if (*src) {
+				if (*src == '}') scope--;
+				APPEND_PUTC(o,sec,'\n',dst,end);
+				for(i=0; i<scope; i++) 
+					APPEND_PUTC(o,sec,' ',dst,end); 
+			}
 		}
-		if (nocomment & ((c == '{') | (c == '}') | (c == ';')))
-			APPEND_PUTC(o,sec,'\n',dst,end);
+		while(*src) { /* write out one line */
+			int c = *src;
+			ignore_nl &= (c != '#'); 
+			if (ignore_nl & (c == '\n')) c = ' ';
+			APPEND_PUTC(o,sec,c,dst,end);
+			if (*src++ == '\n') {
+				if (!ignore_nl) break;
+				/* ignore newline and subsequent whitespace */ 
+				while(opt_match_space(*src,0)) src++;
+			}
+		}
 	}
 	o->off[sec] = dst - o->buf[sec]; *dst = 0;
 }
@@ -328,38 +343,40 @@ static int opt_emit_check_vardecl(opt_t *o, unsigned int stmt) {
 	    (o->stmts[assigns_to].stmt_nr == o->stmts[stmt].assigns_nr) &
              (o->stmts[assigns_to].used == 0)) 
 	{
-		o->stmts[stmt].deleted = 1;
+		o->stmts[stmt].deleted = 1; 
+		o->stmts[stmt].nilassign = 0; 
 	}
-	return o->stmts[stmt].deleted;
+	return o->stmts[stmt].deleted & !o->stmts[stmt].nilassign;
 }
 
 /* opt_emit_killempty(): after dead-code elimination, we remove sequential blocks that have become empty.
  */
 static int opt_emit_check_emptyblock(opt_t *o, unsigned int stmt) {
-	unsigned int stmt_nr = o->stmts[stmt].stmt_nr;
 	unsigned int until = stmt;
-
-	/* check if we have an ampty block in front of us */
-	if (o->stmts[stmt].delchar != '{') return 0;
-	while(1) {
+	if (o->stmts[stmt].delchar != '{') return 0; /* should match block start */
+	do {
 		if (++until == OPT_STMTS) until = 0;
-		if (o->stmts[until].stmt_nr != ++stmt_nr) return 0;
-		if (o->stmts[until].delchar == '}') break;
-		if (!opt_emit_check_vardecl(o, until)) return 0;
-	}
-	/* advance to the statement after the to-be-deleted block */
-	if (++until == OPT_STMTS) until = 0;
-	if (o->stmts[until].stmt_nr != ++stmt_nr) return 0;
 
-	/* nothing goes if it is an else branch (that cannot be deleted itself) */
-	if (opt_match_else(o->stmts[until].mil) && opt_emit_check_emptyblock(o,until) == 0) 
+		if (((o->stmts[until].mil[0] != '#') | 
+		     o->stmts[until].assigns_nr | o->stmts[until].refs)  /* not a no-op */
+		   && !o->stmts[until].nilassign  /* not 'X := nil' */
+		   && !opt_emit_check_vardecl(o, until)) /* not deleted */
+		{
+			return 0; /* this statement matters: block non-empty */
+		}
+	} while (o->stmts[until].delchar != '}');
+
+	/* nothing goes if next stmt is an else branch (that cannot be deleted itself) */
+	if (++until == OPT_STMTS) until = 0;
+	if (opt_match_else(o->stmts[until].mil) && !opt_emit_check_emptyblock(o,until)) 
 		return 0;
 
-	/* delete the statements */
+	/* OK, delete the statements */
 	do {
 		o->stmts[stmt].deleted = 1; 
+		o->stmts[stmt].nilassign = 0; 
 		if (++stmt == OPT_STMTS) stmt = 0;
-	} while (stmt < until);
+	} while (stmt != until);
 	return 1;
 }
 
@@ -371,17 +388,17 @@ static void opt_emit(opt_t* o, unsigned int stmt) {
 	if (	/* statements cut off from variable declarations were already printed */
 		((p != NULL) && ((*p != ':') & (*p != ';'))) 
 	&&
-		/* check if moves were actually useful; if not, undo them */
-		(opt_move_useful(o, stmt) == 0) 
+		/* if stmt was moved, check whether that was actually useful; if not, undo move */
+	        ((o->stmts[stmt].moved[0] | o->stmts[stmt].moved[1]) == 0 || !opt_move_useful(o, stmt)) 
 	&&
-		/* kill variable declerations that are now unused */
-		(opt_emit_check_vardecl(o, stmt) == 0)
+		/* kill variable declarations that are now unused (and their nilassigns) */
+	        (!opt_emit_check_vardecl(o, stmt))
 	&&
-		/* post-optimization: delete empty blocks */
-		(o->stmts[stmt].scope == 0 || opt_emit_check_emptyblock(o, stmt) == 0))
+		/* post-optimization: delete empty blocks (don't try in root scope) */
+		(o->stmts[stmt].scope == 0 || !opt_emit_check_emptyblock(o, stmt)))
 	{
 		/* emit the statement (temporarily put delchar back) */
-		char bak, *p = o->stmts[stmt].mil;
+		char bak = 0, *p = o->stmts[stmt].mil;
 		while(*p) p++;
 		p[0] = o->stmts[stmt].delchar;
 		if (p[0]) { bak = p[1]; p[1] = 0; }
@@ -408,15 +425,15 @@ static void opt_emit(opt_t* o, unsigned int stmt) {
  *
  * Special care is taken for the analysis of if-then-else blocks. The rationale is 
  * that we really want to know whether a variable is always set in *both*
- * conditional branches. Only allows us to try to dead-code eliminate the previous
+ * conditional branches. Only this allows us to try to dead-code eliminate the previous
  * assignments (before the branch).
  *
  * - opt_start_cond(): open conditional block (do conditional variable assignment bookkeeping)
  * - opt_end_if():     close an if-then-block (do conditional variable assignment bookkeeping)
  * - opt_end_else():   close an if-then-else-block (do conditional variable assignment bookkeeping)
  *
- * We need a *stack* data structure with a two entries (even=if, odd=else) for each level
- * of depth of conditional statements. The current stack position is given by OPT_COND(o). 
+ * We need a *stack* data structure with two entries (even=if, odd=else) for each level
+ * of depth of conditional branches. The current stack position is given by OPT_COND(o). 
  * Such a stack is used both for the variable "last-set" administration in each variable record, 
  * as well as for the "moveable statements" list. 
  * ----------------------------------------------------------------------------
@@ -438,8 +455,8 @@ static void opt_elim(opt_t* o, unsigned int stmt, int kill_nilassign) {
 			o->stmts[assigns_to].used--;
 		}
 
-		if (kill_nilassign || !o->stmts[stmt].nilassign) {
-			/* eliminate dead code (comment out ) */
+		if (kill_nilassign | !o->stmts[stmt].nilassign) {
+			/* eliminate dead code */
 			if (p[0] == ':' && p[1] == '=') {
 				*p++ = 0; /* special case: "var x := y" =>  "var x ;" */
 			} 
@@ -595,6 +612,7 @@ static void opt_end_if(opt_t *o) {
 			o->vars[i].sethi[cond] = o->vars[i].sethi[cond_if];
 		}
 	}
+	opt_move_clear(o); /* deactivate the list of moveable statements for the parent context */ 
 }
 
 /* opt_end_else(): close an if-then-else-block (do conditional variable assignment bookkeeping)
@@ -632,20 +650,17 @@ static void opt_end_else(opt_t *o) {
 /* opt_mil(): accept a chunk of unoptimized MIL.
  */
 static int opt_mil(opt_t *o, char* milbuf) {
-	unsigned int stmt, inject_cond, var_statement, new_statement=1, curstmt=o->curstmt;
+	unsigned int curstmt, stmt, inject_cond=1, var_statement=0, new_statement=1;
 	opt_name_t name, assign;
 	char *p = milbuf;
 
-	if (o == NULL) {
-		return -1;
-	}
+	if ((o == NULL) | (milbuf == NULL)) return -1;
+	name.prefix[0] = assign.prefix[0] = 0;
+	curstmt = stmt = o->curstmt;
+
 	if (o->optimize == 0) {
-		opt_printmil(o, milbuf, o->sec, -1);
-		return 0;
-	} 
-	name.prefix[0] = 0;
-	assign.prefix[0] = 0;
-  	while((p = opt_skip(p, 0))[0]) {
+		opt_printmil(o, milbuf, o->sec, -1); /* just echo it */
+	} else while((p = opt_skip(p, 0))[0]) {
 		if (new_statement) {
 			/* add a new yet unused stmt (MIL statement) */
 			if  (o->stmts[stmt = o->curstmt % OPT_STMTS].mil)
@@ -679,13 +694,13 @@ static int opt_mil(opt_t *o, char* milbuf) {
 					if (var_statement) break; /* break up var x := y; so we can cut off := y */
 				}
 				p = opt_skip(p+2, 1); /* skip whitespace & comment */
-				if ((p[0] == 'n') && (p[1] == 'i') && (p[2] == 'l')) {
+				if (opt_match_nil(p)) {
 					o->stmts[stmt].nilassign = 1; /* nil assignments should never be pruned! */
 					p += 3;
 				}
 			} else if (p[0] == '{') {
 				int j = 1;
-				while(((p[j] >= 'a') & (p[j] <= 'z')) | ((p[j] >= 'A') & (p[j] <= 'Z')) | (p[j] == '_')) j++; 
+				while(opt_match_letter(p[j],j>1)) j++; 
 				if ((j > 1) & (p[j] == '}')) {
 					p += j+1; continue; /* detect aggregates */
 				}
@@ -740,7 +755,7 @@ static int opt_mil(opt_t *o, char* milbuf) {
 					o->stmts[stmt].assigns_to = stmt;
 					o->stmts[stmt].assigns_nr = o->curstmt;
 				}
-			} else if ((p[0] == '_') | ((p[0] >= 'a') & (p[0] <= 'z')) | ((p[0] >= 'A') & (p[0] <= 'Z'))) { 
+			} else if (opt_match_letter(p[0],0)) {
 				p += opt_setname(p, &name);
 				o->if_statement |= (name.prefix[0] == name_if.prefix[0]);
 				o->else_statement |= (name.prefix[0] == name_else.prefix[0]);
@@ -800,7 +815,7 @@ static int opt_mil(opt_t *o, char* milbuf) {
  * - epilogue (the main part)
  *
  * milprintf() limitations:
- * - don't declare more than one variable in a line "var x := 1, y;", if any but the last is assigned to.
+ * - don't declare more than one variable in a line "var x := 1, y;"
  * - don't generate MIL statements with multiple (i.e. inline) assignments "x := (y := 1) + 1;"
  * - else blocks should be opened in the *same* milprintf() call where the if- statement was closed!
  * - for better pruning: use assignment notation for update statements "x := x.insert(y);"
@@ -858,8 +873,9 @@ int milprintf(opt_t *o, const char *format, ...)
 
 /* opt_close(): flush all output stmts; and clean up
  */
-void opt_close(opt_t *o, char** prologue, char** query, char** epilogue) {
+int opt_close(opt_t *o, char** prologue, char** query, char** epilogue) {
 	unsigned int i = 0; 
+	if (o == NULL) return -1;
 	opt_endscope(o, 0); /* destroy all variables (and elim dead code) */
 
 	/* push all stmts out of the buffer */
@@ -874,7 +890,15 @@ void opt_close(opt_t *o, char** prologue, char** query, char** epilogue) {
 	}
 	/* return the three buffers */
 	*prologue = o->buf[OPT_SEC_PROLOGUE];
-	*query = o->buf[OPT_SEC_QUERY];
+	*query    = o->buf[OPT_SEC_QUERY];
 	*epilogue = o->buf[OPT_SEC_EPILOGUE];
 	EXTERN_FREE(o);
+	if (*prologue == NULL || *query == NULL || *epilogue == NULL) {
+		if (*prologue) EXTERN_FREE(*prologue);
+		if (*query)    EXTERN_FREE(*query);
+		if (*epilogue) EXTERN_FREE(*epilogue);
+		*prologue = *query = *epilogue = NULL;
+		return -1;
+	}
+	return 0;
 }

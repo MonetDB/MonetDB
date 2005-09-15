@@ -143,7 +143,7 @@ typedef struct {
 #define opt_output(o,x) ((o)->sec = x)
 
 opt_t *opt_open(int optimize);
-void opt_close(opt_t *o, char** prologue, char** query, char** epilogue);
+int opt_close(opt_t *o, char** prologue, char** query, char** epilogue);
 int milprintf(opt_t *o, const char *format, ...);
 
 /* vim:set shiftwidth=4 expandtab: */
