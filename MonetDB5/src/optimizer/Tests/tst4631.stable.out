@@ -144,13 +144,13 @@ function user.qry1():void;	# 0  (qry1:void)
     V22 := bat.reverse(V21);	# 11 BKCreverse (V22:bat[:oid,:void])<-(V21:bat[:void,:oid])
     V23 := algebra.kdifference(V19,V22);	# 12 ALGkdiff (V23:bat[:oid,:bit])<-(V19:bat[:void,:bit])(V22:bat[:oid,:void])
     V24 := algebra.join(V18,V23);	# 13 ALGjoin (V24:bat[:void,:bit])<-(V18:bat[:void,:oid])(V23:bat[:oid,:bit])
-    V25 := group.group(V24);	# 14  unknown (V25:any)<-(V24:bat[:void,:bit])
+    V25 := group.new(V24);	# 14  unknown (V25:any)<-(V24:bat[:void,:bit])
     V26:bat[:void,:bit]  := user.bind("sys","lineitem","l_linestatus",0);	# 15  (V26:bat[:void,:bit])<-(_2:str)(_3:str)(_23:str)(_5:int)
     V28:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 16  (V28:bat[:void,:oid])<-(_2:str)(_3:str)(_5:int)
     V29 := bat.reverse(V28);	# 17 BKCreverse (V29:bat[:oid,:void])<-(V28:bat[:void,:oid])
     V30 := algebra.kdifference(V26,V29);	# 18 ALGkdiff (V30:bat[:oid,:bit])<-(V26:bat[:void,:bit])(V29:bat[:oid,:void])
     V31 := algebra.join(V18,V30);	# 19 ALGjoin (V31:bat[:void,:bit])<-(V18:bat[:void,:oid])(V30:bat[:oid,:bit])
-    V32 := group.group(V25,V31);	# 20  unknown (V32:any)<-(V25:any)(V31:bat[:void,:bit])
+    V32 := group.new(V25,V31);	# 20  unknown (V32:any)<-(V25:any)(V31:bat[:void,:bit])
     V33 := algebra.tunique(V32);	# 21  unknown (V33:any)<-(V32:any)
     V34 := bat.mirror(V33);	# 22  unknown (V34:any)<-(V33:any)
     V35:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 23  (V35:bat[:void,:oid])<-(_2:str)(_3:str)(_5:int)
@@ -232,8 +232,8 @@ function user.qry1():void;	# 0  (qry1:void)
     V131 := optimizer.multiplex("calc.round",V130,100);	# 99 OPTmultiplex (V131:any)<-(_119:str)(V130:any)(_120:int)
     V132 := aggrX3.count(V32,V32,V34);	# 100  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
 end qry1;	# 101  
-!ERROR: 'group.group' undefined in user.qry1[14]
-!ERROR: 'group.group' undefined in user.qry1[20]
+!ERROR: 'group.new' undefined in user.qry1[14]
+!ERROR: 'group.new' undefined in user.qry1[20]
 !ERROR: 'algebra.tunique' undefined in user.qry1[21]
 !ERROR: 'bat.mirror' undefined in user.qry1[22]
 !ERROR: 'algebra.join' undefined in user.qry1[27]
@@ -257,8 +257,8 @@ end qry1;	# 101
 #optimizer.commonExpressionRemoval("user","qry1");
 #mdb.list("user","qry1");
 #
-!ERROR: 'group.group' undefined in user.qry1[14]
-!ERROR: 'group.group' undefined in user.qry1[20]
+!ERROR: 'group.new' undefined in user.qry1[14]
+!ERROR: 'group.new' undefined in user.qry1[20]
 !ERROR: 'algebra.tunique' undefined in user.qry1[21]
 !ERROR: 'bat.mirror' undefined in user.qry1[22]
 !ERROR: 'algebra.join' undefined in user.qry1[27]
@@ -291,13 +291,13 @@ function user.qry1():void;	# 0  (qry1:void)
     V22 := bat.reverse(V21);	# 11 BKCreverse (V22:bat[:oid,:void])<-(V21:bat[:void,:oid])
     V23 := algebra.kdifference(V19,V22);	# 12 ALGkdiff (V23:bat[:oid,:bit])<-(V19:bat[:void,:bit])(V22:bat[:oid,:void])
     V24 := algebra.join(V18,V23);	# 13 ALGjoin (V24:bat[:void,:bit])<-(V18:bat[:void,:oid])(V23:bat[:oid,:bit])
-    V25 := group.group(V24);	# 14  unknown (V25:any)<-(V24:bat[:void,:bit])
+    V25 := group.new(V24);	# 14  unknown (V25:any)<-(V24:bat[:void,:bit])
     V26:bat[:void,:bit]  := user.bind("sys","lineitem","l_linestatus",0);	# 15  (V26:bat[:void,:bit])<-(_2:str)(_3:str)(_23:str)(_5:int)
     V28:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 16  (V28:bat[:void,:oid])<-(_2:str)(_3:str)(_5:int)
     V29 := bat.reverse(V28);	# 17 BKCreverse (V29:bat[:oid,:void])<-(V28:bat[:void,:oid])
     V30 := algebra.kdifference(V26,V29);	# 18 ALGkdiff (V30:bat[:oid,:bit])<-(V26:bat[:void,:bit])(V29:bat[:oid,:void])
     V31 := algebra.join(V18,V30);	# 19 ALGjoin (V31:bat[:void,:bit])<-(V18:bat[:void,:oid])(V30:bat[:oid,:bit])
-    V32 := group.group(V25,V31);	# 20  unknown (V32:any)<-(V25:any)(V31:bat[:void,:bit])
+    V32 := group.new(V25,V31);	# 20  unknown (V32:any)<-(V25:any)(V31:bat[:void,:bit])
     V33 := algebra.tunique(V32);	# 21  unknown (V33:any)<-(V32:any)
     V34 := bat.mirror(V33);	# 22  unknown (V34:any)<-(V33:any)
     V35:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 23  (V35:bat[:void,:oid])<-(_2:str)(_3:str)(_5:int)
@@ -379,8 +379,8 @@ function user.qry1():void;	# 0  (qry1:void)
     V131 := optimizer.multiplex("calc.round",V130,100);	# 99 OPTmultiplex (V131:any)<-(_119:str)(V130:any)(_120:int)
     V132 := aggrX3.count(V32,V32,V34);	# 100  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
 end qry1;	# 101  
-!ERROR: 'group.group' undefined in user.qry1[14]
-!ERROR: 'group.group' undefined in user.qry1[20]
+!ERROR: 'group.new' undefined in user.qry1[14]
+!ERROR: 'group.new' undefined in user.qry1[20]
 !ERROR: 'algebra.tunique' undefined in user.qry1[21]
 !ERROR: 'bat.mirror' undefined in user.qry1[22]
 !ERROR: 'algebra.join' undefined in user.qry1[27]
@@ -413,13 +413,13 @@ function user.qry1():void;	# 0  (qry1:void)
     V22 := bat.reverse(V21);	# 11 BKCreverse (V22:bat[:oid,:void])<-(V21:bat[:void,:oid])
     V23 := algebra.kdifference(V19,V22);	# 12 ALGkdiff (V23:bat[:oid,:bit])<-(V19:bat[:void,:bit])(V22:bat[:oid,:void])
     V24 := algebra.join(V18,V23);	# 13 ALGjoin (V24:bat[:void,:bit])<-(V18:bat[:void,:oid])(V23:bat[:oid,:bit])
-    V25 := group.group(V24);	# 14  unknown (V25:any)<-(V24:bat[:void,:bit])
+    V25 := group.new(V24);	# 14  unknown (V25:any)<-(V24:bat[:void,:bit])
     V26:bat[:void,:bit]  := user.bind("sys","lineitem","l_linestatus",0);	# 15  (V26:bat[:void,:bit])<-(_2:str)(_3:str)(_23:str)(_5:int)
     V28:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 16  (V28:bat[:void,:oid])<-(_2:str)(_3:str)(_5:int)
     V29 := bat.reverse(V28);	# 17 BKCreverse (V29:bat[:oid,:void])<-(V28:bat[:void,:oid])
     V30 := algebra.kdifference(V26,V29);	# 18 ALGkdiff (V30:bat[:oid,:bit])<-(V26:bat[:void,:bit])(V29:bat[:oid,:void])
     V31 := algebra.join(V18,V30);	# 19 ALGjoin (V31:bat[:void,:bit])<-(V18:bat[:void,:oid])(V30:bat[:oid,:bit])
-    V32 := group.group(V25,V31);	# 20  unknown (V32:any)<-(V25:any)(V31:bat[:void,:bit])
+    V32 := group.new(V25,V31);	# 20  unknown (V32:any)<-(V25:any)(V31:bat[:void,:bit])
     V33 := algebra.tunique(V32);	# 21  unknown (V33:any)<-(V32:any)
     V34 := bat.mirror(V33);	# 22  unknown (V34:any)<-(V33:any)
     V35:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 23  (V35:bat[:void,:oid])<-(_2:str)(_3:str)(_5:int)
@@ -501,8 +501,8 @@ function user.qry1():void;	# 0  (qry1:void)
     V131 := optimizer.multiplex("calc.round",V130,100);	# 99 OPTmultiplex (V131:any)<-(_119:str)(V130:any)(_120:int)
     V132 := aggrX3.count(V32,V32,V34);	# 100  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
 end qry1;	# 101  
-!ERROR: 'group.group' undefined in user.qry1[12]
-!ERROR: 'group.group' undefined in user.qry1[16]
+!ERROR: 'group.new' undefined in user.qry1[12]
+!ERROR: 'group.new' undefined in user.qry1[16]
 !ERROR: 'algebra.tunique' undefined in user.qry1[17]
 !ERROR: 'bat.mirror' undefined in user.qry1[18]
 !ERROR: 'algebra.join' undefined in user.qry1[19]
@@ -532,11 +532,11 @@ function user.qry1():void;	# 0  (qry1:void)
     V19:bat[:void,:bit]  := user.bind("sys","lineitem","l_returnflag",0);	# 9  (V19:bat[:void,:bit])<-(_2:str)(_3:str)(_16:str)(_5:int)
     V23 := algebra.kdifference(V19,V9);	# 10 ALGkdiff (V23:bat[:oid,:bit])<-(V19:bat[:void,:bit])(V9:bat[:oid,:void])
     V24 := algebra.join(V18,V23);	# 11 ALGjoin (V24:bat[:void,:bit])<-(V18:bat[:void,:oid])(V23:bat[:oid,:bit])
-    V25 := group.group(V24);	# 12  unknown (V25:any)<-(V24:bat[:void,:bit])
+    V25 := group.new(V24);	# 12  unknown (V25:any)<-(V24:bat[:void,:bit])
     V26:bat[:void,:bit]  := user.bind("sys","lineitem","l_linestatus",0);	# 13  (V26:bat[:void,:bit])<-(_2:str)(_3:str)(_23:str)(_5:int)
     V30 := algebra.kdifference(V26,V9);	# 14 ALGkdiff (V30:bat[:oid,:bit])<-(V26:bat[:void,:bit])(V9:bat[:oid,:void])
     V31 := algebra.join(V18,V30);	# 15 ALGjoin (V31:bat[:void,:bit])<-(V18:bat[:void,:oid])(V30:bat[:oid,:bit])
-    V32 := group.group(V25,V31);	# 16  unknown (V32:any)<-(V25:any)(V31:bat[:void,:bit])
+    V32 := group.new(V25,V31);	# 16  unknown (V32:any)<-(V25:any)(V31:bat[:void,:bit])
     V33 := algebra.tunique(V32);	# 17  unknown (V33:any)<-(V32:any)
     V34 := bat.mirror(V33);	# 18  unknown (V34:any)<-(V33:any)
     V39 := algebra.join(V34,V24);	# 19  unknown (V39:any)<-(V34:any)(V24:bat[:void,:bit])
@@ -572,8 +572,8 @@ function user.qry1():void;	# 0  (qry1:void)
     V131 := optimizer.multiplex("calc.round",V130,100);	# 49 OPTmultiplex (V131:any)<-(_119:str)(V130:any)(_120:int)
     V132 := aggrX3.count(V32,V32,V34);	# 50  unknown (V132:any)<-(V32:any)(V32:any)(V34:any)
 end qry1;	# 51  
-!ERROR: 'group.group' undefined in user.qry1[12]
-!ERROR: 'group.group' undefined in user.qry1[16]
+!ERROR: 'group.new' undefined in user.qry1[12]
+!ERROR: 'group.new' undefined in user.qry1[16]
 !ERROR: 'algebra.tunique' undefined in user.qry1[17]
 !ERROR: 'bat.mirror' undefined in user.qry1[18]
 !ERROR: 'algebra.join' undefined in user.qry1[19]
@@ -603,11 +603,11 @@ function user.qry1():void;	# 0  (qry1:void)
     V19:bat[:void,:bit]  := user.bind("sys","lineitem","l_returnflag",0);	# 9  (V19:bat[:void,:bit])<-(_2:str)(_3:str)(_16:str)(_5:int)
     V23 := algebra.kdifference(V19,V9);	# 10 ALGkdiff (V23:bat[:oid,:bit])<-(V19:bat[:void,:bit])(V9:bat[:oid,:void])
     V24 := algebra.join(V18,V23);	# 11 ALGjoin (V24:bat[:void,:bit])<-(V18:bat[:void,:oid])(V23:bat[:oid,:bit])
-    V25 := group.group(V24);	# 12  unknown (V25:any)<-(V24:bat[:void,:bit])
+    V25 := group.new(V24);	# 12  unknown (V25:any)<-(V24:bat[:void,:bit])
     V26:bat[:void,:bit]  := user.bind("sys","lineitem","l_linestatus",0);	# 13  (V26:bat[:void,:bit])<-(_2:str)(_3:str)(_23:str)(_5:int)
     V30 := algebra.kdifference(V26,V9);	# 14 ALGkdiff (V30:bat[:oid,:bit])<-(V26:bat[:void,:bit])(V9:bat[:oid,:void])
     V31 := algebra.join(V18,V30);	# 15 ALGjoin (V31:bat[:void,:bit])<-(V18:bat[:void,:oid])(V30:bat[:oid,:bit])
-    V32 := group.group(V25,V31);	# 16  unknown (V32:any)<-(V25:any)(V31:bat[:void,:bit])
+    V32 := group.new(V25,V31);	# 16  unknown (V32:any)<-(V25:any)(V31:bat[:void,:bit])
     V33 := algebra.tunique(V32);	# 17  unknown (V33:any)<-(V32:any)
     V34 := bat.mirror(V33);	# 18  unknown (V34:any)<-(V33:any)
     V39 := algebra.join(V34,V24);	# 19  unknown (V39:any)<-(V34:any)(V24:bat[:void,:bit])
@@ -660,11 +660,11 @@ function user.qry1():void;
     V19:bat[:void,:bit]  := user.bind("sys","lineitem","l_returnflag",0);
     V23 := algebra.kdifference(V19,V9);
     V24 := algebra.join(V18,V23);
-    V25 := group.group(V24);
+    V25 := group.new(V24);
     V26:bat[:void,:bit]  := user.bind("sys","lineitem","l_linestatus",0);
     V30 := algebra.kdifference(V26,V9);
     V31 := algebra.join(V18,V30);
-    V32 := group.group(V25,V31);
+    V32 := group.new(V25,V31);
     V33 := algebra.tunique(V32);
     V34 := bat.mirror(V33);
     V39 := algebra.join(V34,V24);

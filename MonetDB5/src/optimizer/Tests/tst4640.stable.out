@@ -155,13 +155,13 @@ function user.qry1():void;	# 0  (qry1:void)
     V22 := bat.reverse(V21);	# 10 BKCreverse (V22:bat[:any,:any])<-(V21:bat[:any,:any])
     V23 := algebra.kdifference(V19,V22);	# 11 ALGkdiff (V23:bat[:oid,:any])<-(V19:bat[:any,:any])(V22:bat[:any,:any])
     V24 := algebra.join(V18,V23);	# 12  unknown (V24:any)<-(V18:any)(V23:bat[:oid,:any])
-    V25 := group.group(V24);	# 13  unknown (V25:any)<-(V24:any)
+    V25 := group.new(V24);	# 13  unknown (V25:any)<-(V24:any)
     V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 14  (V26:bat[:any,:any])<-(_2:str)(_3:str)(_22:str)(_5:int)
     V28 := sql.bind_dbat("sys","lineitem",0);	# 15  (V28:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
     V29 := bat.reverse(V28);	# 16 BKCreverse (V29:bat[:any,:any])<-(V28:bat[:any,:any])
     V30 := algebra.kdifference(V26,V29);	# 17 ALGkdiff (V30:bat[:oid,:any])<-(V26:bat[:any,:any])(V29:bat[:any,:any])
     V31 := algebra.join(V18,V30);	# 18  unknown (V31:any)<-(V18:any)(V30:bat[:oid,:any])
-    V32 := group.group(V25,V31);	# 19  unknown (V32:any)<-(V25:any)(V31:any)
+    V32 := group.new(V25,V31);	# 19  unknown (V32:any)<-(V25:any)(V31:any)
     V33 := algebra.tunique(V32);	# 20  unknown (V33:any)<-(V32:any)
     V34 := bat.mirror(V33);	# 21  unknown (V34:any)<-(V33:any)
     V35 := sql.bind_dbat("sys","lineitem",0);	# 22  (V35:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
@@ -257,9 +257,9 @@ end qry1;	# 111
 !ERROR: 'algebra.tmark' undefined in user.qry1[6]
 !ERROR: 'bat.reverse' undefined in user.qry1[7]
 !ERROR: 'algebra.join' undefined in user.qry1[12]
-!ERROR: 'group.group' undefined in user.qry1[13]
+!ERROR: 'group.new' undefined in user.qry1[13]
 !ERROR: 'algebra.join' undefined in user.qry1[18]
-!ERROR: 'group.group' undefined in user.qry1[19]
+!ERROR: 'group.new' undefined in user.qry1[19]
 !ERROR: 'algebra.tunique' undefined in user.qry1[20]
 !ERROR: 'bat.mirror' undefined in user.qry1[21]
 !ERROR: 'algebra.join' undefined in user.qry1[25]
@@ -309,9 +309,9 @@ end qry1;	# 111
 !ERROR: 'algebra.tmark' undefined in user.qry1[6]
 !ERROR: 'bat.reverse' undefined in user.qry1[7]
 !ERROR: 'algebra.join' undefined in user.qry1[12]
-!ERROR: 'group.group' undefined in user.qry1[13]
+!ERROR: 'group.new' undefined in user.qry1[13]
 !ERROR: 'algebra.join' undefined in user.qry1[18]
-!ERROR: 'group.group' undefined in user.qry1[19]
+!ERROR: 'group.new' undefined in user.qry1[19]
 !ERROR: 'algebra.tunique' undefined in user.qry1[20]
 !ERROR: 'bat.mirror' undefined in user.qry1[21]
 !ERROR: 'algebra.join' undefined in user.qry1[25]
@@ -366,13 +366,13 @@ function user.qry1():void;	# 0  (qry1:void)
     V22 := bat.reverse(V21);	# 10 BKCreverse (V22:bat[:any,:any])<-(V21:bat[:any,:any])
     V23 := algebra.kdifference(V19,V22);	# 11 ALGkdiff (V23:bat[:oid,:any])<-(V19:bat[:any,:any])(V22:bat[:any,:any])
     V24 := algebra.join(V18,V23);	# 12  unknown (V24:any)<-(V18:any)(V23:bat[:oid,:any])
-    V25 := group.group(V24);	# 13  unknown (V25:any)<-(V24:any)
+    V25 := group.new(V24);	# 13  unknown (V25:any)<-(V24:any)
     V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 14  (V26:bat[:any,:any])<-(_2:str)(_3:str)(_22:str)(_5:int)
     V28 := sql.bind_dbat("sys","lineitem",0);	# 15  (V28:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
     V29 := bat.reverse(V28);	# 16 BKCreverse (V29:bat[:any,:any])<-(V28:bat[:any,:any])
     V30 := algebra.kdifference(V26,V29);	# 17 ALGkdiff (V30:bat[:oid,:any])<-(V26:bat[:any,:any])(V29:bat[:any,:any])
     V31 := algebra.join(V18,V30);	# 18  unknown (V31:any)<-(V18:any)(V30:bat[:oid,:any])
-    V32 := group.group(V25,V31);	# 19  unknown (V32:any)<-(V25:any)(V31:any)
+    V32 := group.new(V25,V31);	# 19  unknown (V32:any)<-(V25:any)(V31:any)
     V33 := algebra.tunique(V32);	# 20  unknown (V33:any)<-(V32:any)
     V34 := bat.mirror(V33);	# 21  unknown (V34:any)<-(V33:any)
     V35 := sql.bind_dbat("sys","lineitem",0);	# 22  (V35:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
@@ -468,9 +468,9 @@ end qry1;	# 111
 !ERROR: 'algebra.tmark' undefined in user.qry1[6]
 !ERROR: 'bat.reverse' undefined in user.qry1[7]
 !ERROR: 'algebra.join' undefined in user.qry1[12]
-!ERROR: 'group.group' undefined in user.qry1[13]
+!ERROR: 'group.new' undefined in user.qry1[13]
 !ERROR: 'algebra.join' undefined in user.qry1[18]
-!ERROR: 'group.group' undefined in user.qry1[19]
+!ERROR: 'group.new' undefined in user.qry1[19]
 !ERROR: 'algebra.tunique' undefined in user.qry1[20]
 !ERROR: 'bat.mirror' undefined in user.qry1[21]
 !ERROR: 'algebra.join' undefined in user.qry1[25]
@@ -525,13 +525,13 @@ function user.qry1():void;	# 0  (qry1:void)
     V22 := bat.reverse(V21);	# 10 BKCreverse (V22:bat[:any,:any])<-(V21:bat[:any,:any])
     V23 := algebra.kdifference(V19,V22);	# 11 ALGkdiff (V23:bat[:oid,:any])<-(V19:bat[:any,:any])(V22:bat[:any,:any])
     V24 := algebra.join(V18,V23);	# 12  unknown (V24:any)<-(V18:any)(V23:bat[:oid,:any])
-    V25 := group.group(V24);	# 13  unknown (V25:any)<-(V24:any)
+    V25 := group.new(V24);	# 13  unknown (V25:any)<-(V24:any)
     V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 14  (V26:bat[:any,:any])<-(_2:str)(_3:str)(_22:str)(_5:int)
     V28 := sql.bind_dbat("sys","lineitem",0);	# 15  (V28:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
     V29 := bat.reverse(V28);	# 16 BKCreverse (V29:bat[:any,:any])<-(V28:bat[:any,:any])
     V30 := algebra.kdifference(V26,V29);	# 17 ALGkdiff (V30:bat[:oid,:any])<-(V26:bat[:any,:any])(V29:bat[:any,:any])
     V31 := algebra.join(V18,V30);	# 18  unknown (V31:any)<-(V18:any)(V30:bat[:oid,:any])
-    V32 := group.group(V25,V31);	# 19  unknown (V32:any)<-(V25:any)(V31:any)
+    V32 := group.new(V25,V31);	# 19  unknown (V32:any)<-(V25:any)(V31:any)
     V33 := algebra.tunique(V32);	# 20  unknown (V33:any)<-(V32:any)
     V34 := bat.mirror(V33);	# 21  unknown (V34:any)<-(V33:any)
     V35 := sql.bind_dbat("sys","lineitem",0);	# 22  (V35:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
@@ -627,9 +627,9 @@ end qry1;	# 111
 !ERROR: 'algebra.tmark' undefined in user.qry1[10]
 !ERROR: 'bat.reverse' undefined in user.qry1[12]
 !ERROR: 'algebra.join' undefined in user.qry1[19]
-!ERROR: 'group.group' undefined in user.qry1[21]
+!ERROR: 'group.new' undefined in user.qry1[21]
 !ERROR: 'algebra.join' undefined in user.qry1[28]
-!ERROR: 'group.group' undefined in user.qry1[30]
+!ERROR: 'group.new' undefined in user.qry1[30]
 !ERROR: 'algebra.tunique' undefined in user.qry1[31]
 !ERROR: 'bat.mirror' undefined in user.qry1[32]
 !ERROR: 'algebra.join' undefined in user.qry1[39]
@@ -692,7 +692,7 @@ function user.qry1():void;	# 0  (qry1:void)
     bat.setGarbage(V22);	# 18 CMDbbpgarbage (_166:void)<-(V22:bat[:any,:any])
     V24 := algebra.join(V18,V23);	# 19  unknown (V24:any)<-(V18:any)(V23:bat[:oid,:any])
     bat.setGarbage(V23);	# 20 CMDbbpgarbage (_167:void)<-(V23:bat[:oid,:any])
-    V25 := group.group(V24);	# 21  unknown (V25:any)<-(V24:any)
+    V25 := group.new(V24);	# 21  unknown (V25:any)<-(V24:any)
     V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 22  (V26:bat[:any,:any])<-(_2:str)(_3:str)(_22:str)(_5:int)
     V28 := sql.bind_dbat("sys","lineitem",0);	# 23  (V28:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
     V29 := bat.reverse(V28);	# 24 BKCreverse (V29:bat[:any,:any])<-(V28:bat[:any,:any])
@@ -701,7 +701,7 @@ function user.qry1():void;	# 0  (qry1:void)
     bat.setGarbage(V29);	# 27 CMDbbpgarbage (_169:void)<-(V29:bat[:any,:any])
     V31 := algebra.join(V18,V30);	# 28  unknown (V31:any)<-(V18:any)(V30:bat[:oid,:any])
     bat.setGarbage(V30);	# 29 CMDbbpgarbage (_170:void)<-(V30:bat[:oid,:any])
-    V32 := group.group(V25,V31);	# 30  unknown (V32:any)<-(V25:any)(V31:any)
+    V32 := group.new(V25,V31);	# 30  unknown (V32:any)<-(V25:any)(V31:any)
     V33 := algebra.tunique(V32);	# 31  unknown (V33:any)<-(V32:any)
     V34 := bat.mirror(V33);	# 32  unknown (V34:any)<-(V33:any)
     V35 := sql.bind_dbat("sys","lineitem",0);	# 33  (V35:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
@@ -839,9 +839,9 @@ end qry1;	# 164
 !ERROR: 'algebra.tmark' undefined in user.qry1[10]
 !ERROR: 'bat.reverse' undefined in user.qry1[12]
 !ERROR: 'algebra.join' undefined in user.qry1[19]
-!ERROR: 'group.group' undefined in user.qry1[21]
+!ERROR: 'group.new' undefined in user.qry1[21]
 !ERROR: 'algebra.join' undefined in user.qry1[28]
-!ERROR: 'group.group' undefined in user.qry1[30]
+!ERROR: 'group.new' undefined in user.qry1[30]
 !ERROR: 'algebra.tunique' undefined in user.qry1[31]
 !ERROR: 'bat.mirror' undefined in user.qry1[32]
 !ERROR: 'algebra.join' undefined in user.qry1[39]
@@ -904,7 +904,7 @@ function user.qry1():void;	# 0  (qry1:void)
     bat.setGarbage(V22);	# 18 CMDbbpgarbage (_166:void)<-(V22:bat[:any,:any])
     V24 := algebra.join(V18,V23);	# 19  unknown (V24:any)<-(V18:any)(V23:bat[:oid,:any])
     bat.setGarbage(V23);	# 20 CMDbbpgarbage (_167:void)<-(V23:bat[:oid,:any])
-    V25 := group.group(V24);	# 21  unknown (V25:any)<-(V24:any)
+    V25 := group.new(V24);	# 21  unknown (V25:any)<-(V24:any)
     V26 := sql.bind("sys","lineitem","l_linestatus",0);	# 22  (V26:bat[:any,:any])<-(_2:str)(_3:str)(_22:str)(_5:int)
     V28 := sql.bind_dbat("sys","lineitem",0);	# 23  (V28:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
     V29 := bat.reverse(V28);	# 24 BKCreverse (V29:bat[:any,:any])<-(V28:bat[:any,:any])
@@ -913,7 +913,7 @@ function user.qry1():void;	# 0  (qry1:void)
     bat.setGarbage(V29);	# 27 CMDbbpgarbage (_169:void)<-(V29:bat[:any,:any])
     V31 := algebra.join(V18,V30);	# 28  unknown (V31:any)<-(V18:any)(V30:bat[:oid,:any])
     bat.setGarbage(V30);	# 29 CMDbbpgarbage (_170:void)<-(V30:bat[:oid,:any])
-    V32 := group.group(V25,V31);	# 30  unknown (V32:any)<-(V25:any)(V31:any)
+    V32 := group.new(V25,V31);	# 30  unknown (V32:any)<-(V25:any)(V31:any)
     V33 := algebra.tunique(V32);	# 31  unknown (V33:any)<-(V32:any)
     V34 := bat.mirror(V33);	# 32  unknown (V34:any)<-(V33:any)
     V35 := sql.bind_dbat("sys","lineitem",0);	# 33  (V35:bat[:any,:any])<-(_2:str)(_3:str)(_5:int)
@@ -1074,7 +1074,7 @@ function user.qry1():void;
     bat.setGarbage(V22);
     V24 := algebra.join(V18,V23);
     bat.setGarbage(V23);
-    V25 := group.group(V24);
+    V25 := group.new(V24);
     V26 := sql.bind("sys","lineitem","l_linestatus",0);
     V28 := sql.bind_dbat("sys","lineitem",0);
     V29 := bat.reverse(V28);
@@ -1083,7 +1083,7 @@ function user.qry1():void;
     bat.setGarbage(V29);
     V31 := algebra.join(V18,V30);
     bat.setGarbage(V30);
-    V32 := group.group(V25,V31);
+    V32 := group.new(V25,V31);
     V33 := algebra.tunique(V32);
     V34 := bat.mirror(V33);
     V35 := sql.bind_dbat("sys","lineitem",0);

@@ -40,11 +40,11 @@ function user.main():int;	# 0  (main:int)
     io.print("group x");	# 10 IOprint_val (_23:int)<-(_24:str)
     io.print(x);	# 11 IOprint_val (_25:int)<-(x:bat[:oid,:chr])
 #b1 := group.new(x); 	# 12  (_27:str)
-    (hb1,b1):= group.new(x);	# 13 GRPgroup (hb1:bat[:chr,:int])(b1:bat[:oid,:void])<-(x:bat[:oid,:chr])
+    (hb1,b1):= group.new(x);	# 13 GRPgroup (hb1:bat[:oid,:int])(b1:bat[:oid,:oid])<-(x:bat[:oid,:chr])
     io.print("b1 becomes");	# 14 IOprint_val (_30:int)<-(_31:str)
-    io.print(b1);	# 15 IOprint_val (_32:int)<-(b1:bat[:oid,:void])
+    io.print(b1);	# 15 IOprint_val (_32:int)<-(b1:bat[:oid,:oid])
     io.print("hb1 becomes");	# 16 IOprint_val (_33:int)<-(_34:str)
-    io.print(hb1);	# 17 IOprint_val (_35:int)<-(hb1:bat[:chr,:int])
+    io.print(hb1);	# 17 IOprint_val (_35:int)<-(hb1:bat[:oid,:int])
 end main;	# 18  
 [ "group x" ]
 #-----------------#

@@ -125,10 +125,10 @@ barrier always := true;	# 9  (always:bit)<-(_25:bit) jump 72
     V21 := bat.reverse(V20);	# 16 BKCreverse (V21:bat[:void,:oid])<-(V20:bat[:oid,:void])
     V26 := algebra.kdifference(V22,V12);	# 17 ALGkdiff (V26:bat[:oid,:bit])<-(V22:bat[:void,:bit])(V12:bat[:oid,:void])
     V27 := algebra.join(V21,V26);	# 18 ALGjoin (V27:bat[:void,:bit])<-(V21:bat[:void,:oid])(V26:bat[:oid,:bit])
-    (h,V28):= group.group(V27);	# 19 GRPgroup (h:bat[:bit,:int])(V28:bat[:void,:void])<-(V27:bat[:void,:bit])
+    (h,V28):= group.new(V27);	# 19 GRPgroup (h:bat[:void,:int])(V28:bat[:void,:oid])<-(V27:bat[:void,:bit])
     V33 := algebra.kdifference(V29,V12);	# 20 ALGkdiff (V33:bat[:oid,:bit])<-(V29:bat[:void,:bit])(V12:bat[:oid,:void])
     V34 := algebra.join(V21,V33);	# 21 ALGjoin (V34:bat[:void,:bit])<-(V21:bat[:void,:oid])(V33:bat[:oid,:bit])
-    V35 := group.group(V28,V34);	# 22  unknown (V35:any)<-(V28:bat[:void,:void])(V34:bat[:void,:bit])
+    V35 := group.new(V28,V34);	# 22  unknown (V35:any)<-(V28:bat[:void,:oid])(V34:bat[:void,:bit])
     V36 := algebra.tunique(V35);	# 23  unknown (V36:any)<-(V35:any)
     V37 := bat.mirror(V36);	# 24  unknown (V37:any)<-(V36:any)
     V42 := algebra.join(V37,V27);	# 25  unknown (V42:any)<-(V37:any)(V27:bat[:void,:bit])
@@ -180,7 +180,7 @@ barrier always := true;	# 9  (always:bit)<-(_25:bit) jump 72
     redo always;	# 71  (always:bit) jump 10
 exit always;	# 72  (always:bit)
 end qry1;	# 73  
-!ERROR: 'group.group' undefined in user.qry1[22]
+!ERROR: 'group.new' undefined in user.qry1[22]
 !ERROR: 'algebra.tunique' undefined in user.qry1[23]
 !ERROR: 'bat.mirror' undefined in user.qry1[24]
 !ERROR: 'algebra.join' undefined in user.qry1[25]
@@ -215,7 +215,7 @@ end qry1;	# 73
 #mdb.list("user","qry1");
 #
 !ERROR: YIELD type mismatch at type 1
-!ERROR: 'group.group' undefined in user.qry1[22]
+!ERROR: 'group.new' undefined in user.qry1[22]
 !ERROR: 'algebra.tunique' undefined in user.qry1[23]
 !ERROR: 'bat.mirror' undefined in user.qry1[24]
 !ERROR: 'algebra.join' undefined in user.qry1[25]
@@ -264,10 +264,10 @@ barrier always := true;	# 9  (always:bit)<-(_25:bit) jump 72
     V21 := bat.reverse(V20);	# 16 BKCreverse (V21:bat[:void,:oid])<-(V20:bat[:oid,:void])
     V26 := algebra.kdifference(V22,V12);	# 17 ALGkdiff (V26:bat[:oid,:bit])<-(V22:bat[:void,:bit])(V12:bat[:oid,:void])
     V27 := algebra.join(V21,V26);	# 18 ALGjoin (V27:bat[:void,:bit])<-(V21:bat[:void,:oid])(V26:bat[:oid,:bit])
-    (h,V28):= group.group(V27);	# 19 GRPgroup (h:bat[:bit,:int])(V28:bat[:void,:void])<-(V27:bat[:void,:bit])
+    (h,V28):= group.new(V27);	# 19 GRPgroup (h:bat[:void,:int])(V28:bat[:void,:oid])<-(V27:bat[:void,:bit])
     V33 := algebra.kdifference(V29,V12);	# 20 ALGkdiff (V33:bat[:oid,:bit])<-(V29:bat[:void,:bit])(V12:bat[:oid,:void])
     V34 := algebra.join(V21,V33);	# 21 ALGjoin (V34:bat[:void,:bit])<-(V21:bat[:void,:oid])(V33:bat[:oid,:bit])
-    V35 := group.group(V28,V34);	# 22  unknown (V35:any)<-(V28:bat[:void,:void])(V34:bat[:void,:bit])
+    V35 := group.new(V28,V34);	# 22  unknown (V35:any)<-(V28:bat[:void,:oid])(V34:bat[:void,:bit])
     V36 := algebra.tunique(V35);	# 23  unknown (V36:any)<-(V35:any)
     V37 := bat.mirror(V36);	# 24  unknown (V37:any)<-(V36:any)
     V42 := algebra.join(V37,V27);	# 25  unknown (V42:any)<-(V37:any)(V27:bat[:void,:bit])
@@ -320,7 +320,7 @@ barrier always := true;	# 9  (always:bit)<-(_25:bit) jump 72
 exit always;	# 72  (always:bit)
 end qry1;	# 73  
 !ERROR: YIELD type mismatch at type 1
-!ERROR: 'group.group' undefined in user.qry1[22]
+!ERROR: 'group.new' undefined in user.qry1[22]
 !ERROR: 'algebra.tunique' undefined in user.qry1[23]
 !ERROR: 'bat.mirror' undefined in user.qry1[24]
 !ERROR: 'algebra.join' undefined in user.qry1[25]
@@ -369,10 +369,10 @@ barrier always := true;	# 9  (always:bit)<-(_25:bit) jump 72
     V21 := bat.reverse(V20);	# 16 BKCreverse (V21:bat[:void,:oid])<-(V20:bat[:oid,:void])
     V26 := algebra.kdifference(V22,V12);	# 17 ALGkdiff (V26:bat[:oid,:bit])<-(V22:bat[:void,:bit])(V12:bat[:oid,:void])
     V27 := algebra.join(V21,V26);	# 18 ALGjoin (V27:bat[:void,:bit])<-(V21:bat[:void,:oid])(V26:bat[:oid,:bit])
-    (h,V28):= group.group(V27);	# 19 GRPgroup (h:bat[:bit,:int])(V28:bat[:void,:void])<-(V27:bat[:void,:bit])
+    (h,V28):= group.new(V27);	# 19 GRPgroup (h:bat[:void,:int])(V28:bat[:void,:oid])<-(V27:bat[:void,:bit])
     V33 := algebra.kdifference(V29,V12);	# 20 ALGkdiff (V33:bat[:oid,:bit])<-(V29:bat[:void,:bit])(V12:bat[:oid,:void])
     V34 := algebra.join(V21,V33);	# 21 ALGjoin (V34:bat[:void,:bit])<-(V21:bat[:void,:oid])(V33:bat[:oid,:bit])
-    V35 := group.group(V28,V34);	# 22  unknown (V35:any)<-(V28:bat[:void,:void])(V34:bat[:void,:bit])
+    V35 := group.new(V28,V34);	# 22  unknown (V35:any)<-(V28:bat[:void,:oid])(V34:bat[:void,:bit])
     V36 := algebra.tunique(V35);	# 23  unknown (V36:any)<-(V35:any)
     V37 := bat.mirror(V36);	# 24  unknown (V37:any)<-(V36:any)
     V42 := algebra.join(V37,V27);	# 25  unknown (V42:any)<-(V37:any)(V27:bat[:void,:bit])
@@ -449,10 +449,10 @@ barrier always := true;
     V21 := bat.reverse(V20);
     V26 := algebra.kdifference(V22,V12);
     V27 := algebra.join(V21,V26);
-    (h,V28):= group.group(V27);
+    (h,V28):= group.new(V27);
     V33 := algebra.kdifference(V29,V12);
     V34 := algebra.join(V21,V33);
-    V35 := group.group(V28,V34);
+    V35 := group.new(V28,V34);
     V36 := algebra.tunique(V35);
     V37 := bat.mirror(V36);
     V42 := algebra.join(V37,V27);

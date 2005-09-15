@@ -1381,7 +1381,9 @@ mal_export str CALCstr2str(str *ret, str *val);
 str
 CALCstr2str(str *ret, str *val)
 {
-	*ret = GDKstrdup(*val);
+	if(*val) 
+		*ret = GDKstrdup(*val);
+	else *ret = 0;
 	return MAL_SUCCEED;
 }
 

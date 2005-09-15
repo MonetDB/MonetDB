@@ -31,13 +31,13 @@ end bind;
 #s10 := s11.join(s18);
 	s10 := algebra.join(s11,s18);
 #s9 := s10.group();
-	(h,s9) := group.group(s10);
+	(h,s9) := group.new(s10);
 #s20 := user.bind("sys",  "lineitem", "l_linestatus"); #lineitem
 	s20:bat[:void,:chr] := user.bind("sys","lineitem","l_linestatus",0);
 #s19 := s11.join(s20);
 	s19 := algebra.join(s11,s20);
 #s8 := s9.group(s19);
-	(h2,s8) := group.group(s9,s19);
+	(h2,s8) := group.derive(s9,s19);
 #s7 := s8.tunique().mirror();
 	ea_a := algebra.tunique(s8,);
 	s7 := bat.mirror(ea_a,);
