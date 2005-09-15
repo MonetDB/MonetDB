@@ -1867,6 +1867,165 @@ To do that r should be unique. To that end, doubles may sometimes be eliminated 
 }
 
 @}
+@+ AntiJoin
+This operation computes the cross product of two BATs, returning only the
+head-value from the 'left' operand and then tail-value from the 'right'
+provided the tail-head pair do not (!) match.
+@{
+@= antijoin2
+BAT*
+antijoin_@1_@2(BAT *bn, BAT *l, BAT *r)
+{
+	BUN l_cur, l_end, r_cur, r_end, dst;
+	int l_sz, r_sz, bn_sz;
+	int (*cmp) (ptr, ptr) = BATatoms[l->ttype].atomCmp;
+	ptr nil = ATOMnilptr(l->ttype);
+
+
+	bn_sz = BUNsize(bn);
+	dst = BUNfirst(bn);
+
+	ALGODEBUG THRprintf(GDKout, "BATantijoin: antijoin_@1_@2();\n");
+	BATloopFast(l, l_cur, l_end, l_sz) {
+		ptr v = (ptr) BUNtail(l, l_cur);
+		BATloopFast(r, r_cur, r_end, r_sz) {
+			ptr w = (ptr) BUNhead(r, r_cur);
+			int c = (*cmp) (v, w);
+			if ((*cmp) (v, nil) != 0 && (*cmp) (w, nil) != 0 && c != 0 ) {
+				@:bunfastins_nocheck_(@1,@2)@
+				dst += bn_sz;
+			}
+		}
+	}
+	bn->batBuns->free = dst - bn->batBuns->base;
+	BATsetcount(bn,bn->batBuns->free/bn_sz);
+	return bn;
+
+bunins_failed:
+	BBPreclaim(bn);
+	return NULL;
+}
+@= antijoin1
+	@:antijoin2(@1,chr)@
+	@:antijoin2(@1,sht)@
+	@:antijoin2(@1,int)@
+	@:antijoin2(@1,lng)@
+	@:antijoin2(@1,VATOM)@
+	@:antijoin2(@1,LATOM)@
+@c
+@:antijoin1(chr)@
+@:antijoin1(sht)@
+@:antijoin1(int)@
+@:antijoin1(lng)@
+
+@:antijoin1(VATOM)@
+@:antijoin1(LATOM)@
+@c
+
+@= antijoin_switch_rtt
+{
+	int rtt = r->ttype;
+	int rts = ATOMstorage(rtt);
+
+	if (rts == TYPE_chr) {
+		bn = antijoin_@1_chr(bn,l,r);
+	} else if (rts == TYPE_sht) {
+		bn = antijoin_@1_sht(bn,l,r);
+	} else if (rtt != TYPE_bat &&
+		   (rts == TYPE_int || rts == TYPE_flt
+#if SIZEOF_OID == SIZEOF_INT
+		    || rts == TYPE_oid
+#endif
+		   )) {
+		/* ensure use of ATOMput for TYPE_bat */
+		bn = antijoin_@1_int(bn,l,r);
+	} else if (rts == TYPE_lng || rts == TYPE_dbl
+#if SIZEOF_OID == SIZEOF_LNG
+		   || ATOMstorage(lht) == TYPE_oid
+#endif
+) {
+		bn = antijoin_@1_lng(bn,l,r);
+	} else if (r->tvarsized) {
+		bn = antijoin_@1_VATOM(bn,l,r);
+	} else {
+		bn = antijoin_@1_LATOM(bn,l,r);
+	}
+}
+@c
+@= antijoin_switch_lht
+{
+	int lht = l->htype;
+	int lhs = ATOMstorage(lht);
+
+	if (lhs == TYPE_chr) {
+		@:antijoin_switch_rtt(chr)@
+	} else if (lhs == TYPE_sht) {
+		@:antijoin_switch_rtt(sht)@
+	} else if (lht != TYPE_bat &&
+		   (lhs == TYPE_int || lhs == TYPE_flt
+#if SIZEOF_OID == SIZEOF_INT
+		    || lhs == TYPE_oid
+#endif
+		   )) {
+		/* ensure use of ATOMput for TYPE_bat */
+		@:antijoin_switch_rtt(int)@
+	} else if (lhs == TYPE_lng || lhs == TYPE_dbl
+#if SIZEOF_OID == SIZEOF_LNG
+		   || lhs == TYPE_oid
+#endif
+		   ) {
+		@:antijoin_switch_rtt(lng)@
+	} else if (l->hvarsized) {
+		@:antijoin_switch_rtt(VATOM)@
+	} else {
+		@:antijoin_switch_rtt(LATOM)@
+	}
+}
+@c
+BAT *
+BATantijoin(BAT *l, BAT *r)
+{
+	BAT *bn;
+	size_t lc, rc, sz;
+
+	ERRORcheck(l == NULL, "BATantijoin: invalid left operand");
+	ERRORcheck(r == NULL, "BATantijoin: invalid right operand");
+	lc = BATcount(l);
+	rc = BATcount(r);
+	sz = lc * rc;
+
+	if (sz > 0) {
+		/* try to keep void columns where possible */
+		if (rc == 1)
+			return BATconst(l, BATttype(r), BUNtail(r, BUNfirst(r)));
+		if (lc == 1)
+			return BATmirror(BATconst(BATmirror(r), BAThtype(l), BUNhead(l, BUNfirst(l))));
+	}
+
+	bn = BATnew(BAThtype(l), BATttype(r), sz);
+	if (bn == NULL) {
+		return bn;
+	}
+	if (sz == 0)
+		return bn;
+
+	BATmmap_pin(r);
+	@:antijoin_switch_lht@
+	BATmmap_unpin(r);
+
+	if (bn) {
+		bn->hsorted = l->hsorted;
+		bn->tsorted = (lc == 1 ? r->tsorted : FALSE);
+		bn->hdense = (rc == 1 ? l->hdense : FALSE);
+		bn->tdense = (lc == 1 ? r->tdense : FALSE);
+		BATkey(bn, (rc == 1 ? l->hkey : FALSE));
+		BATkey(BATmirror(bn), (lc == 1 ? r->tkey : FALSE));
+		if (!bn->batDirty)
+			bn->batDirty = TRUE;
+	}
+
+	return bn;
+}
 
 @+ Cross Product
 This operation computes the cross product of two BATs, returning only the
