@@ -1,0 +1,15 @@
+# a bug detected while porting SQL
+#(_26:any)<-(_24:bat[:void,:int])(_17:bat[:void,:oid])(_18:bat[:void,:void])
+b1:= bat.new(:void,:int);
+b2:= bat.new(:void,:oid);
+b3:= bat.new(:void,:void);
+
+z:= aggr.sum(b1,b2,b3);
+
+function f(x:bat[:void,:int],y:bat[:void,:oid],z:bat[:void,:any_1]):bat[:void,:int];
+return f:= bat.new(:void,:int);
+end f;
+command f2(x:bat[:void,:int],y:bat[:void,:oid],z:bat[:void,:any_1]):bat[:void,:int]
+address AX3aggrX3_sum3_int_int;
+
+user.f2(b1,b2,b3);
