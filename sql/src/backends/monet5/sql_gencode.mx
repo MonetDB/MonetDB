@@ -835,17 +835,26 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		}
 		case st_group:{
-			char ext[BUFSIZ];
-			int o1 = _dumpstmt(sql, mb, s->op1.stval);
+			char nme[BUFSIZ];
+			int ext, grp, o1 = _dumpstmt(sql, mb, s->op1.stval);
 
 			@:SQLprelude@
 			q = newStmt(mb, "group", "new");
-			snprintf( ext, BUFSIZ, "ext%d", getDestVar(q));
-        		q = pushReturn(mb, q, newVariable(mb, _strdup(ext), TYPE_any));
+			ext = getDestVar(q);
+			snprintf( nme, BUFSIZ, "grp%d", getDestVar(q));
+        		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
 			setVarInitialized(mb, getArg(q, 1));
-
+			grp = getArg(q, 1);
 			q = pushArgument(mb, q, o1);
+
+			q = newAssignment(mb);
+			q = pushArgument(mb, q, grp);
 			s->nr = getDestVar(q);
+			setVarInitialized(mb, s->nr);
+			
+			snprintf( nme, BUFSIZ, "ext%d", s->nr);
+			renameVariable(mb, ext, _strdup(nme));
+
 			@:SQLpostlude@
 		} 	break;
 		case st_group_ext:{
@@ -863,18 +872,29 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			@:SQLpostlude@
 		} break;
 		case st_derive:{
-			char ext[BUFSIZ];
+			char nme[BUFSIZ];
+			int ext, grp;
 			int g = _dumpstmt(sql, mb, s->op1.stval);
 			int l = _dumpstmt(sql, mb, s->op2.stval);
 
 			@:SQLprelude@
 			q = newStmt(mb, "group", "new");
-			snprintf( ext, BUFSIZ, "ext%d", getDestVar(q));
-        		q = pushReturn(mb, q, newVariable(mb, _strdup(ext), TYPE_any));
+			ext = getDestVar(q);
+			snprintf( nme, BUFSIZ, "grp%d", getDestVar(q));
+        		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
 			setVarInitialized(mb, getArg(q, 1));
+			grp = getArg(q, 1);
 			q = pushArgument(mb, q, g);
 			q = pushArgument(mb, q, l);
+
+			q = newAssignment(mb);
+			q = pushArgument(mb, q, grp);
 			s->nr = getDestVar(q);
+			setVarInitialized(mb, s->nr);
+
+			snprintf( nme, BUFSIZ, "ext%d", s->nr);
+			renameVariable(mb, ext, _strdup(nme));
+
 			@:SQLpostlude@
 		} 	break;
 		case st_unique:{
