@@ -71,7 +71,7 @@ comment "Returns the reverse view of a BAT (head is tail and tail is head).
 command mirror(b:bat[:any_1,:any]) :bat[:any_1,:any_1] 
 address BKCmirror
 comment "Returns the head-mirror image of a BAT (two head columns).";
-command mirror(b:bat[:void,:any]) :bat[:any_1,:oid] 
+command mirror(b:bat[:void,:any]) :bat[:void,:void] 
 address BKCmirror
 comment "Returns the head-mirror image of a BAT (two head columns).";
 

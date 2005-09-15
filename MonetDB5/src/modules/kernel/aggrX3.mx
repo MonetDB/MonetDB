@@ -52,7 +52,7 @@ command prod(b:bat[:void,:@1], e:bat[:void,:any_1]) :bat[:void,:@1]
 address AX3aggrX3_prod_@1_@1
 comment "Product over a grouped tail of @1";
 
-command sum(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@1] 
+command sum(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:oid,:any_1]):bat[:void,:@1] 
 address AX3aggrX3_sum3_@1_@1
 comment "Sum over a grouped tail sum of @1";
 command sum(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@1] 
@@ -64,7 +64,7 @@ command avg(b:bat[:void,:@1], e:bat[:void,:any_1]) :bat[:void,:@1]
 address AX3aggrX3_avg_@1
 comment "grouped tail average on @1";
 
-command avg(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@1] 
+command avg(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:oid,:any_1]):bat[:void,:@1] 
 address AX3aggrX3_avg3_@1
 comment "grouped tail average on @1";
 command avg(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@1] 
@@ -72,32 +72,18 @@ address AX3aggrX3_avg3_@1
 comment "grouped tail average on @1";
 
 @= sum_avg_signatures2
-command sum(b:bat[:void,:@1], e:bat[:void,:any_1]) :bat[:void,:@1] 
-address AX3aggrX3_sum_@1_@1
-comment "grouped tail sum on @1";
-
-command sum(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@1] 
-address AX3aggrX3_sum3_@1_@1
-comment "grouped tail sum on @1";
-command sum(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@1] 
-address AX3aggrX3_sum3_@1_@1
-comment "grouped tail sum on @1";
-
 command sum(b:bat[:void,:@1], e:bat[:void,:any_1]) :bat[:void,:@2] 
 address AX3aggrX3_sum_@1_@2
 comment "grouped tail sum on @1";
 
-command sum(b:bat[:void,:@1],g:bat[:void,:oid],e:bat[:void,:any_1]):bat[:void,:@2]
+command sum(b:bat[:void,:@1],g:bat[:void,:oid],e:bat[:oid,:any_1]):bat[:void,:@2]
 address AX3aggrX3_sum3_@1_@2
 comment "grouped tail sum on @1";
 command sum(b:bat[:void,:@1],g:bat[:void,:oid],e:bat[:void,:any_1]):bat[:void,:@2]
 address AX3aggrX3_sum3_@1_@2
 comment "grouped tail sum on @1";
 
-command product(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@2] 
-address AX3aggrX3_prod3_@1_@2
-comment "grouped tail sum on @1";
-command product(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@2] 
+command product(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:oid,:any_1]):bat[:void,:@2] 
 address AX3aggrX3_prod3_@1_@2
 comment "grouped tail sum on @1";
 command product(b:bat[:void,:@1], g:bat[:void,:oid], e:bat[:void,:any_1]):bat[:void,:@2] 
@@ -106,14 +92,15 @@ comment "grouped tail sum on @1";
 @mal
 @:sum_avg_signatures(sht)@
 @:sum_avg_signatures(int)@
-@:sum_avg_signatures(dbl)@
 @:sum_avg_signatures(lng)@
+@:sum_avg_signatures(flt)@
+@:sum_avg_signatures(dbl)@
+
 @:sum_avg_signatures2(flt,dbl)@
 @:sum_avg_signatures2(dbl,dbl)@
 @:sum_avg_signatures2(sht,int)@
 @:sum_avg_signatures2(int,lng)@
 @:sum_avg_signatures2(lng,lng)@
-@:sum_avg_signatures(flt)@
 
 command min(b:bat[:void,:any_1], e:bat[:void,:any_2]) :bat[:void,:any_1] 
 address AX3aggrX3_min
@@ -123,9 +110,18 @@ command max(b:bat[:void,:any_1], e:bat[:void,:any_2]) :bat[:void,:any_1]
 address AX3aggrX3_max
 comment "grouped tail maximum";
 
+command min(b:bat[:void,:any_1],g:bat[:void,:oid],e:bat[:oid,:any_2]):bat[:void,:any_1]
+address AX3aggrX3_min3
+comment "grouped tail minimum";
+
 command min(b:bat[:void,:any_1],g:bat[:void,:oid],e:bat[:void,:any_2]):bat[:void,:any_1]
 address AX3aggrX3_min3
 comment "grouped tail minimum";
+
+command max(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:oid,:any_2]) 
+            :bat[:void,:any_1] 
+address AX3aggrX3_max3
+comment "grouped tail maximum";
 
 command max(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:void,:any_2]) 
             :bat[:void,:any_1] 
@@ -136,14 +132,25 @@ command count(b:bat[:void,:any_1], e:bat[:void,:any_2]) :bat[:void,:int]
 address AX3aggrX3_count
 comment "grouped count";
 
+command count(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:oid,:any_2], 
+	    nonils:bit) :bat[:void,:int] 
+address AX3aggrX3_count3
+comment "grouped count";
+
 command count(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:void,:any_2], 
 	    nonils:bit) :bat[:void,:int] 
 address AX3aggrX3_count3
 comment "grouped count";
 
+
+command count(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:oid,:any_2]):bat[:void,:int] 
+address AX3aggrX3_count3Nils
+comment "grouped count";
+
 command count(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:void,:any_2]):bat[:void,:int] 
 address AX3aggrX3_count3Nils
 comment "grouped count";
+
 
 command size(b:bat[:void,:bit], e:bat[:void,:any_1]) :bat[:void,:int] 
 address AX3aggrX3_size
