@@ -534,7 +534,7 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 	moduleId(q) = putName("mdb",3);
 	if( onoff)
 		functionId(q) = putName("start",5);
-	else functionId(q) = putName("stop",5);
+	else functionId(q) = putName("stop",4);
 	pushInstruction(c->curprg->def, q);
 }
 
