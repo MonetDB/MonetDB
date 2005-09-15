@@ -17,7 +17,7 @@ exit (go,i);
 	t0:= t1;
 
 #	z:= algebra.cartesianproduct(R,S);
-#	size:= algebra.count(z);
+#	size:= aggr.count(z);
 #	t1:= alarm.usec();
 #	d0:= t1-t0;
 #	io.printf("#cartesianproduct size %d\n",size);

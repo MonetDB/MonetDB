@@ -78,7 +78,7 @@ include mil;
 	lb_a := calc.flt(nil);
 	mb_a := bat.insert(b,lb_a,81.2);
 	mil.line("b.count().print();");
-	nb_a := algebra.count(b);
+	nb_a := aggr.count(b);
 	ob_a := io.print(nb_a);
 	mil.line("# Lets cut out a few sections\n");
 	pb_a := algebra.select(b,25.6,64.5);

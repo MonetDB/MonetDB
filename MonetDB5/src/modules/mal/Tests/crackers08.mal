@@ -8,9 +8,9 @@ barrier (v,i):= mal.newRange(0:int);
         redo (v,i):= mal.nextElement(1:int,1000000:int);
 exit (v,i);
 #setReadMode(b);
-mx:= algebra.max(b);
+mx:= aggr.max(b);
 io.printf("max %d",mx);
-mi:= algebra.min(b);
+mi:= aggr.min(b);
 io.printf(" min %d\n",mi);
 t0:= alarm.usec();
 c:= algebra.copy(b);
@@ -67,12 +67,12 @@ io.printf("#crack %d\n",d0);
 
 # Compare cracker with ordinary selection
 t0:= alarm.usec();
-i:= algebra.max(b);
+i:= aggr.max(b);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#max %d\n",d0);
 t0:= alarm.usec();
-i:= algebra.min(b);
+i:= aggr.min(b);
 t1:= alarm.usec();
 d0:= t1-t0;
 io.printf("#min %d\n",d0);

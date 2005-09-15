@@ -26,7 +26,7 @@ command user.lookup(nme:str):bat[:str,:str] address CMDlookup;	# 0  (lookup:bat[
 function user.sample(nme:str,val:any_1):bit;	# 0  (sample:bit)<-(nme:str)(val:any_1)
     b := user.lookup(nme);	# 1  (b:bat[:str,:str])<-(nme:str)
     h := algebra.select(b,val,val);	# 2  (h:any)<-(b:bat[:str,:str])(val:any_1)(val:any_1)
-    t := algebra.count(h);	# 3  (t:any)<-(h:any)
+    t := aggr.count(h);	# 3  (t:any)<-(h:any)
     x := io.print(t);	# 4 IOprint_val (x:int)<-(t:any)
     y := io.print(val);	# 5 IOprint_val (y:int)<-(val:any_1)
     return sample := true;	# 6  (sample:bit)<-(_8:bit)

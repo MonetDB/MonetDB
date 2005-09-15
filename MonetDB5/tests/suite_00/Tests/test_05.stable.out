@@ -92,7 +92,7 @@ stdout of test 'test_05` in directory 'tests/suite_00` itself:
 #	lb_a := calc.flt(nil);
 #	mb_a := bat.insert(b,lb_a,81.2);
 #	mil.line("b.count().print();");
-#	nb_a := algebra.count(b);
+#	nb_a := aggr.count(b);
 #	ob_a := io.print(nb_a);
 #	mil.line("# Lets cut out a few sections\n");
 #	pb_a := algebra.select(b,25.6,64.5);
@@ -228,7 +228,7 @@ function user.main():int;	# 0  (main:int)
     lb_a := calc.flt(nil);	# 75 CALCnil2flt (lb_a:flt)<-(_157:void)
     mb_a := bat.insert(b,lb_a,81.2);	# 76 BKCinsert_bun (mb_a:void)<-(b:bat[:flt,:flt])(lb_a:flt)(_159:flt)
     mil.line("b.count().print();");	# 77 MILline (_175:void)<-(_176:str)
-    nb_a := algebra.count(b);	# 78 ALGcount_bat (nb_a:lng)<-(b:bat[:flt,:flt])
+    nb_a := aggr.count(b);	# 78 ALGcount_bat (nb_a:lng)<-(b:bat[:flt,:flt])
     ob_a := io.print(nb_a);	# 79 IOprint_val (ob_a:int)<-(nb_a:lng)
     mil.line("# Lets cut out a few sections\n");	# 80 MILline (_179:void)<-(_180:str)
     pb_a := algebra.select(b,25.6,64.5);	# 81 ALGselect (pb_a:bat[:flt,:flt])<-(b:bat[:flt,:flt])(_182:flt)(_183:flt)

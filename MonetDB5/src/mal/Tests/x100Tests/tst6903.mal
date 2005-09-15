@@ -25,7 +25,7 @@ c:= copy(b);
 t1:= alarm.usec();
 d0:= t1-t0;
 printf("copy %d",d0);
-cnt:= algebra.count(c);
+cnt:= aggr.count(c);
 printf(" count %d\n",cnt);
 t0:= alarm.usec();
 cst:= uint(25L);

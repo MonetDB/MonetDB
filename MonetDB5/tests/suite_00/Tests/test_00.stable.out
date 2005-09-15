@@ -97,7 +97,7 @@ stdout of test 'test_00` in directory 'tests/suite_00` itself:
 #	mil.line("b.insert(1,15);");
 #	pb_a := bat.insert(b,1,15);
 #	mil.line("b.count().print();");
-#	qb_a := algebra.count(b);
+#	qb_a := aggr.count(b);
 #	rb_a := io.print(qb_a);
 #	mil.line("b.print();");
 #	sb_a := io.print(b);
@@ -244,7 +244,7 @@ function user.main():int;	# 0  (main:int)
     mil.line("b.insert(1,15);");	# 78 MILline (_175:void)<-(_176:str)
     pb_a := bat.insert(b,1,15);	# 79 BKCinsert_bun_int_int (pb_a:void)<-(b:bat[:int,:int])(_178:int)(_157:int)
     mil.line("b.count().print();");	# 80 MILline (_179:void)<-(_180:str)
-    qb_a := algebra.count(b);	# 81 ALGcount_bat (qb_a:lng)<-(b:bat[:int,:int])
+    qb_a := aggr.count(b);	# 81 ALGcount_bat (qb_a:lng)<-(b:bat[:int,:int])
     rb_a := io.print(qb_a);	# 82 IOprint_val (rb_a:int)<-(qb_a:lng)
     mil.line("b.print();");	# 83 MILline (_183:void)<-(_165:str)
     sb_a := io.print(b);	# 84 IOprint_val (sb_a:int)<-(b:bat[:int,:int])

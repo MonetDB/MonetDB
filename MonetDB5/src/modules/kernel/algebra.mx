@@ -540,6 +540,8 @@ These operations examine a BAT, and compute some simple aggregate result
 over it.
 @- BAT size
 @mal
+module aggr;
+
 command count( b:bat[:any_1,:any] ) :lng 
 address ALGcount_bat
 comment "Return the current size (in number of elements) in a BAT.";
@@ -621,6 +623,7 @@ address ALG@1_@2 comment @3;
 @+ Exented selection predicates
 For SQL convenience we provide a serie of interval selectors.
 @mal
+module algebra;
 # Extend select to the cases where we can ignore nils altogether
 function between(b:bat[:any_1,:any_2], l:any_2, h:any_2) 
 		:bat[:any_1,:any_2];
@@ -2264,7 +2267,7 @@ ALGcount_bat(lng *result, int *bid)
 	size_t cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.count", "Cannot access descriptor");
+		return throwMessage("aggr.count", "Cannot access descriptor");
 	}
 	cnt = BATcount(b);
 	*result = cnt;
@@ -2280,7 +2283,7 @@ ALGcount_nil(lng *result, int *bid, bit *ignore_nils)
 	size_t cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("algebra.count", "Cannot access descriptor");
+		return throwMessage("aggr.count", "Cannot access descriptor");
 	}
 	if (*ignore_nils)
 		cnt = BATcount_no_nil(b);

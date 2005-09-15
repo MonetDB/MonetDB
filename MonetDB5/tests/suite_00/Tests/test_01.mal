@@ -75,7 +75,7 @@ include mil;
 	mil.line("b.insert(\".\",10);");
 	jb_a := bat.insert(b,".",10);
 	mil.line("b.count().print();");
-	kb_a := algebra.count(b);
+	kb_a := aggr.count(b);
 	lb_a := io.print(kb_a);
 	mil.line("# Lets cut out a few sections\n");
 	mb_a := algebra.select(b,2,4);

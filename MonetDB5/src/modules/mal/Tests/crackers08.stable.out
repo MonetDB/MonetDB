@@ -22,9 +22,9 @@ stdout of test 'crackers08` in directory 'src/modules/mal` itself:
 #        redo (v,i):= mal.nextElement(1:int,1000000:int);
 #exit (v,i);
 ##setReadMode(b);
-#mx:= algebra.max(b);
+#mx:= aggr.max(b);
 #io.printf("max %d",mx);
-#mi:= algebra.min(b);
+#mi:= aggr.min(b);
 #io.printf(" min %d\n",mi);
 #t0:= alarm.usec();
 #c:= algebra.copy(b);
@@ -81,12 +81,12 @@ stdout of test 'crackers08` in directory 'src/modules/mal` itself:
 #
 ## Compare cracker with ordinary selection
 #t0:= alarm.usec();
-#i:= algebra.max(b);
+#i:= aggr.max(b);
 #t1:= alarm.usec();
 #d0:= t1-t0;
 #io.printf("#max %d\n",d0);
 #t0:= alarm.usec();
-#i:= algebra.min(b);
+#i:= aggr.min(b);
 #t1:= alarm.usec();
 #d0:= t1-t0;
 #io.printf("#min %d\n",d0);
@@ -142,9 +142,9 @@ barrier (v,i):= mal.newRange(0:int);	# 4 RNGnewRange_int (v:bit)(i:int)<-(_6:int
     redo (v,i):= mal.nextElement(1:int,1000000:int);	# 8 RNGnextElement_int (v:bit)(i:int)<-(_10:int)(_11:int) jump 5
 exit (v,i);	# 9  (v:bit)(i:int)
 #setReadMode(b); 	# 10  (_13:str)
-    mx := algebra.max(b);	# 11 ALGmax_int (mx:int)<-(b:bat[:int,:int])
+    mx := aggr.max(b);	# 11 ALGmax_int (mx:int)<-(b:bat[:int,:int])
     io.printf("max %d",mx);	# 12 IOprint_formatted_int (_15:int)<-(_16:str)(mx:int)
-    mi := algebra.min(b);	# 13 ALGmin_int (mi:int)<-(b:bat[:int,:int])
+    mi := aggr.min(b);	# 13 ALGmin_int (mi:int)<-(b:bat[:int,:int])
     io.printf(" min %d\n",mi);	# 14 IOprint_formatted_int (_18:int)<-(_19:str)(mi:int)
     t0 := alarm.usec();	# 15 ALARMusec (t0:lng)
     c := algebra.copy(b);	# 16 ALGcopy (c:bat[:int,:int])<-(b:bat[:int,:int])
@@ -195,12 +195,12 @@ exit (v,i);	# 9  (v:bit)(i:int)
     io.printf("#crack %d\n",d0);	# 61 IOprint_formatted_lng (_51:int)<-(_39:str)(d0:lng)
 # Compare cracker with ordinary selection 	# 62  (_53:str)
     t0 := alarm.usec();	# 63 ALARMusec (t0:lng)
-    i := algebra.max(b);	# 64 ALGmax_int (i:int)<-(b:bat[:int,:int])
+    i := aggr.max(b);	# 64 ALGmax_int (i:int)<-(b:bat[:int,:int])
     t1 := alarm.usec();	# 65 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 66 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     io.printf("#max %d\n",d0);	# 67 IOprint_formatted_lng (_54:int)<-(_55:str)(d0:lng)
     t0 := alarm.usec();	# 68 ALARMusec (t0:lng)
-    i := algebra.min(b);	# 69 ALGmin_int (i:int)<-(b:bat[:int,:int])
+    i := aggr.min(b);	# 69 ALGmin_int (i:int)<-(b:bat[:int,:int])
     t1 := alarm.usec();	# 70 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 71 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
     io.printf("#min %d\n",d0);	# 72 IOprint_formatted_lng (_56:int)<-(_57:str)(d0:lng)

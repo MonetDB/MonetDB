@@ -35,13 +35,13 @@ stdout of test 'test_70` in directory 'tests/suite_00` itself:
 #	mil.line("b.insert(2,15);");
 #	da_a := bat.insert(b,2,15);
 #	mil.line("b.sum().print();");
-#	ea_a := algebra.sum(b);
+#	ea_a := aggr.sum(b);
 #	fa_a := io.print(ea_a);
 #	mil.line("b.insert(3,int(nil));");
 #	ga_a := calc.int(nil);
 #	ha_a := bat.insert(b,3,ga_a);
 #	mil.line("b.sum().print();");
-#	ia_a := algebra.sum(b);
+#	ia_a := aggr.sum(b);
 #	ja_a := io.print(ia_a);
 #	mil.line("b.insert(4,15);");
 #	ka_a := bat.insert(b,4,15);
@@ -57,7 +57,7 @@ stdout of test 'test_70` in directory 'tests/suite_00` itself:
 #	pa_a := calc.int(nil);
 #	qa_a := bat.insert(b,9,pa_a);
 #	mil.line("var t:= b.histogram();");
-#	t := algebra.histogram(b);
+#	t := aggr.histogram(b);
 #	mil.line("t.print();");
 #	ra_a := io.print(t);
 #	mil.line("commit();");
@@ -81,7 +81,7 @@ stdout of test 'test_70` in directory 'tests/suite_00` itself:
 #	mil.line("insert(s,8,\"fello\");");
 #	bb_a := bat.insert(s,8,"fello");
 #	mil.line("var t2:= s.histogram();");
-#	t2 := algebra.histogram(s);
+#	t2 := aggr.histogram(s);
 #	mil.line("t2.print();");
 #	cb_a := io.print(t2);
 #	mil.line("#It requires a few additional routines\n");
@@ -123,13 +123,13 @@ function user.main():int;	# 0  (main:int)
     mil.line("b.insert(2,15);");	# 18 MILline (_65:void)<-(_66:str)
     da_a := bat.insert(b,2,15);	# 19 BKCinsert_bun_int_int (da_a:void)<-(b:bat[:int,:int])(_68:int)(_64:int)
     mil.line("b.sum().print();");	# 20 MILline (_69:void)<-(_70:str)
-    ea_a := algebra.sum(b);	# 21 ALGsum_int_lng (ea_a:lng)<-(b:bat[:int,:int])
+    ea_a := aggr.sum(b);	# 21 ALGsum_int_lng (ea_a:lng)<-(b:bat[:int,:int])
     fa_a := io.print(ea_a);	# 22 IOprint_val (fa_a:int)<-(ea_a:lng)
     mil.line("b.insert(3,int(nil));");	# 23 MILline (_73:void)<-(_74:str)
     ga_a := calc.int(nil);	# 24 CALCnil2int (ga_a:int)<-(_76:void)
     ha_a := bat.insert(b,3,ga_a);	# 25 BKCinsert_bun_int_int (ha_a:void)<-(b:bat[:int,:int])(_78:int)(ga_a:int)
     mil.line("b.sum().print();");	# 26 MILline (_79:void)<-(_70:str)
-    ia_a := algebra.sum(b);	# 27 ALGsum_int_lng (ia_a:lng)<-(b:bat[:int,:int])
+    ia_a := aggr.sum(b);	# 27 ALGsum_int_lng (ia_a:lng)<-(b:bat[:int,:int])
     ja_a := io.print(ia_a);	# 28 IOprint_val (ja_a:int)<-(ia_a:lng)
     mil.line("b.insert(4,15);");	# 29 MILline (_82:void)<-(_83:str)
     ka_a := bat.insert(b,4,15);	# 30 BKCinsert_bun_int_int (ka_a:void)<-(b:bat[:int,:int])(_85:int)(_64:int)
@@ -145,7 +145,7 @@ function user.main():int;	# 0  (main:int)
     pa_a := calc.int(nil);	# 40 CALCnil2int (pa_a:int)<-(_109:void)
     qa_a := bat.insert(b,9,pa_a);	# 41 BKCinsert_bun_int_int (qa_a:void)<-(b:bat[:int,:int])(_111:int)(pa_a:int)
     mil.line("var t:= b.histogram();");	# 42 MILline (_112:void)<-(_113:str)
-    t := algebra.histogram(b);	# 43 ALGhistogram (t:bat[:int,:int])<-(b:bat[:int,:int])
+    t := aggr.histogram(b);	# 43 ALGhistogram (t:bat[:int,:int])<-(b:bat[:int,:int])
     mil.line("t.print();");	# 44 MILline (_115:void)<-(_116:str)
     ra_a := io.print(t);	# 45 IOprint_val (ra_a:int)<-(t:bat[:int,:int])
     mil.line("commit();");	# 46 MILline (_118:void)<-(_119:str)
@@ -169,7 +169,7 @@ function user.main():int;	# 0  (main:int)
     mil.line("insert(s,8,\"fello\");");	# 64 MILline (_158:void)<-(_159:str)
     bb_a := bat.insert(s,8,"fello");	# 65 BKCinsert_bun (bb_a:void)<-(s:bat[:int,:str])(_161:int)(_153:str)
     mil.line("var t2:= s.histogram();");	# 66 MILline (_162:void)<-(_163:str)
-    t2 := algebra.histogram(s);	# 67 ALGhistogram (t2:bat[:str,:int])<-(s:bat[:int,:str])
+    t2 := aggr.histogram(s);	# 67 ALGhistogram (t2:bat[:str,:int])<-(s:bat[:int,:str])
     mil.line("t2.print();");	# 68 MILline (_165:void)<-(_166:str)
     cb_a := io.print(t2);	# 69 IOprint_val (cb_a:int)<-(t2:bat[:str,:int])
     mil.line("#It requires a few additional routines\n");	# 70 MILline (_168:void)<-(_169:str)

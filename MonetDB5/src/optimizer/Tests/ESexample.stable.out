@@ -25,7 +25,7 @@ stdout of test 'ESexample` in directory 'src/optimizer` itself:
 #	V22 := bbp.new(:void,:int);
 #	V23 := algebra.join(V16,V22);       
 #	bat.append(V19,V23);        
-#	V25 := algebra.count(V17);  
+#	V25 := aggr.count(V17);  
 #end test;
 function user.test():void;	# 0  (test:void)
     V1 := bat.new(:void,:int);	# 1 CMDBATnew (V1:bat[:void,:int])<-(_2:void)(_3:int)
@@ -40,7 +40,7 @@ function user.test():void;	# 0  (test:void)
     V22 := bat.new(:void,:int);	# 10 CMDBATnew (V22:bat[:void,:int])<-(_2:void)(_3:int)
     V23 := algebra.join(V16,V22);	# 11 ALGjoin (V23:bat[:void,:int])<-(V16:bat[:void,:oid])(V22:bat[:void,:int])
     bat.append(V19,V23);	# 12 BKCbat_append_void_bat_wrap (_14:void)<-(V19:bat[:void,:int])(V23:bat[:void,:int])
-    V25 := algebra.count(V17);	# 13 ALGcount_bat (V25:lng)<-(V17:bat[:void,:int])
+    V25 := aggr.count(V17);	# 13 ALGcount_bat (V25:lng)<-(V17:bat[:void,:int])
 end test;	# 14  
 #
 ##optimizer.setProperty("user","test","V10","empty",1);
@@ -64,7 +64,7 @@ function user.test():void;	# 0  (test:void)
     V22 := bat.new(:void,:int);	# 10 CMDBATnew (V22:bat[:void,:int])<-(_2:void)(_3:int)
     V23 := algebra.join(V16,V22);	# 11 ALGjoin (V23:bat[:void,:int])<-(V16:bat[:void,:oid])(V22:bat[:void,:int])
     bat.append(V19,V23);	# 12 BKCbat_append_void_bat_wrap (_14:void)<-(V19:bat[:void,:int])(V23:bat[:void,:int])
-    V25 := algebra.count(V17);	# 13 ALGcount_bat (V25:lng)<-(V17:bat[:void,:int])
+    V25 := aggr.count(V17);	# 13 ALGcount_bat (V25:lng)<-(V17:bat[:void,:int])
 end test;	# 14  
 FINAL STAGE errors=0
 function user.test():void;	# 0  (test:void)

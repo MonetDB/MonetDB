@@ -5,5 +5,5 @@ barrier (v,i):= mal.newRange(0:lng);
 	z:= bat.insert(b,1,1);
 	redo (v,i):= mal.nextElement(1:lng,1000000:lng);
 exit	(v,i);
-	c:= algebra.count(b);
+	c:= aggr.count(b);
 	io.print(c);

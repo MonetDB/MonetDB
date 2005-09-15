@@ -45,7 +45,7 @@ algebra.bandjoin
 @tab
 algebra.hashsplit
 @tab
-algebra.min
+aggr.min
 @tab
 algebra.sortT
 @item
@@ -97,7 +97,7 @@ algebra.project
 @tab
 algebra.thetajoin
 @item
-algebra.count
+aggr.count
 @tab
 algebra.kintersect
 @tab
@@ -105,7 +105,7 @@ algebra.sample
 @tab
 algebra.topN
 @item
-algebra.count_no_nil
+aggr.count_no_nil
 @tab
 algebra.kunion
 @tab
@@ -147,7 +147,7 @@ algebra.uselect
 @item
 algebra.find
 @tab
-algebra.max
+aggr.max
 @tab
 algebra.slice
 @item

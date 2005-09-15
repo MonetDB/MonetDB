@@ -13,20 +13,20 @@ barrier (k,v):= mal.newRange(0:int);
         redo (k,v):= mal.nextElement(1:int,100:int);
 exit (k,v);
 
-i:= algebra.count(b);
+i:= aggr.count(b);
 io.print(i);
 
 c:= algebra.select(b,0:int,9:int);
-i:= algebra.count(c);
+i:= aggr.count(c);
 io.print(i);
 d:= algebra.select(b,0:int,49:int);
-i:= algebra.count(d);
+i:= aggr.count(d);
 io.print(i);
 
 optimizer.macroContraction("algebra","joinPath");
 #to be detected by join inversion
 z:= algebra.join(b,c);
 zz:= algebra.join(z,d);
-i:= algebra.count(zz);
+i:= aggr.count(zz);
 io.print(i);
 mdb.list();

@@ -3,7 +3,7 @@ address CMDlookup;
 function sample(nme:str, val:any_1):bit;
    b := user.lookup(nme); #find a bat
    h := algebra.select(b,val,val);
-   t := algebra.count(h);
+   t := aggr.count(h);
    x := io.print(t);
    y := io.print(val);
    return sample:=true;

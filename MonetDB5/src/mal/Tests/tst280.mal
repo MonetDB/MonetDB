@@ -7,7 +7,7 @@ function tst(A2:bat[:void,:int],A3:bat[:void,:int]):bat[:void,:int];
 	io.print(A2);
 	resB := bat.new(:void,:int); 
 	bat.setSequenceBase(resB,0@0);
-	lim:= algebra.count(A2);
+	lim:= aggr.count(A2);
 	io.printf("count %d\n",lim);
 	l:= calc.lng(lim);
 barrier (mloop,m):=mal.newRange(0:lng);

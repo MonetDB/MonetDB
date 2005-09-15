@@ -11,7 +11,7 @@ function test():void;
 	V22 := bat.new(:void,:int);
 	V23 := algebra.join(V16,V22);       
 	bat.append(V19,V23);        
-	V25 := algebra.count(V17);  
+	V25 := aggr.count(V17);  
 end test;
 
 #optimizer.setProperty("user","test","V10","empty",1);

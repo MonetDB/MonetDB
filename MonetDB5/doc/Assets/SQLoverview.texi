@@ -308,7 +308,7 @@ the global structure is easy to explain.
 #    _29 := algebra.markT(_27,0@0);
 #    _30 := bat.reverse(_29);
 #    _31 := algebra.join(_30,_27);
-#    _32 := algebra.count(_31);
+#    _32 := aggr.count(_31);
 #    sql.column(_32,"count_id","int",32,0);
 #    sql.output(0,_32);
 #    yield always;
@@ -379,7 +379,7 @@ mdb>continue
 #     3 usec#    _29 := algebra.markT(_27=<tmp_301>, _10=0@0)
 #     1 usec#    _30 := bat.reverse(_29=<tmp_277>)
 #    12 usec#    _31 := algebra.join(_30=<~tmp_277>, _27=<tmp_301>)
-#     1 usec#    _32 := algebra.count(_31=<tmp_304>)
+#     1 usec#    _32 := aggr.count(_31=<tmp_304>)
 #     1 usec#    sql.column(_32=23, _34="count_id", _35="int", _36=32, _5=0)
 [ 23 ]
 #    18 usec#    sql.output(_38=0, _32=23)

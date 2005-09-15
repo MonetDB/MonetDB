@@ -28,21 +28,21 @@ end joinPath;	# 4
 #        redo (k,v):= mal.nextElement(1:int,100:int);
 #exit (k,v);
 #
-#i:= algebra.count(b);
+#i:= aggr.count(b);
 #io.print(i);
 #
 #c:= algebra.select(b,0:int,9:int);
-#i:= algebra.count(c);
+#i:= aggr.count(c);
 #io.print(i);
 #d:= algebra.select(b,0:int,49:int);
-#i:= algebra.count(d);
+#i:= aggr.count(d);
 #io.print(i);
 #
 #optimizer.macroContraction("algebra","joinPath");
 ##to be detected by join inversion
 #z:= algebra.join(b,c);
 #zz:= algebra.join(z,d);
-#i:= algebra.count(zz);
+#i:= aggr.count(zz);
 #io.print(i);
 #mdb.list();
 #
@@ -53,17 +53,17 @@ barrier (k,v):= mal.newRange(0:int);	# 3 RNGnewRange_int (k:bit)(v:int)<-(_7:int
     bat.insert(b,v,v);	# 4 BKCinsert_bun_int_int (_8:void)<-(b:bat[:int,:int])(v:int)(v:int)
     redo (k,v):= mal.nextElement(1:int,100:int);	# 5 RNGnextElement_int (k:bit)(v:int)<-(_9:int)(_10:int) jump 4
 exit (k,v);	# 6  (k:bit)(v:int)
-    i := algebra.count(b);	# 7 ALGcount_bat (i:lng)<-(b:bat[:int,:int])
+    i := aggr.count(b);	# 7 ALGcount_bat (i:lng)<-(b:bat[:int,:int])
     io.print(i);	# 8 IOprint_val (_12:int)<-(i:lng)
     c := algebra.select(b,0:int,9:int);	# 9 ALGselect (c:bat[:int,:int])<-(b:bat[:int,:int])(_7:int)(_14:int)
-    i := algebra.count(c);	# 10 ALGcount_bat (i:lng)<-(c:bat[:int,:int])
+    i := aggr.count(c);	# 10 ALGcount_bat (i:lng)<-(c:bat[:int,:int])
     io.print(i);	# 11 IOprint_val (_15:int)<-(i:lng)
     d := algebra.select(b,0:int,49:int);	# 12 ALGselect (d:bat[:int,:int])<-(b:bat[:int,:int])(_7:int)(_17:int)
-    i := algebra.count(d);	# 13 ALGcount_bat (i:lng)<-(d:bat[:int,:int])
+    i := aggr.count(d);	# 13 ALGcount_bat (i:lng)<-(d:bat[:int,:int])
     io.print(i);	# 14 IOprint_val (_18:int)<-(i:lng)
 #to be detected by join inversion 	# 15  (_23:str)
     zz := algebra.joinPath(b,c,d);	# 16  (zz:bat[:int,:int])<-(b:bat[:int,:int])(c:bat[:int,:int])(d:bat[:int,:int])
-    i := algebra.count(zz);	# 17 ALGcount_bat (i:lng)<-(zz:bat[:int,:int])
+    i := aggr.count(zz);	# 17 ALGcount_bat (i:lng)<-(zz:bat[:int,:int])
     io.print(i);	# 18 IOprint_val (_26:int)<-(i:lng)
     mdb.list();	# 19 MDBlist (_27:void)
 [ 100 ]
@@ -77,17 +77,17 @@ barrier (k,v):= mal.newRange(0:int);
     bat.insert(b,v,v);
     redo (k,v):= mal.nextElement(1:int,100:int);
 exit (k,v);
-    i := algebra.count(b);
+    i := aggr.count(b);
     io.print(i);
     c := algebra.select(b,0:int,9:int);
-    i := algebra.count(c);
+    i := aggr.count(c);
     io.print(i);
     d := algebra.select(b,0:int,49:int);
-    i := algebra.count(d);
+    i := aggr.count(d);
     io.print(i);
 #to be detected by join inversion 
     zz := algebra.joinPath(b,c,d);
-    i := algebra.count(zz);
+    i := aggr.count(zz);
     io.print(i);
     mdb.list();
 

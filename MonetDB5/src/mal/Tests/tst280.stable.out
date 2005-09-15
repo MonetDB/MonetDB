@@ -48,7 +48,7 @@ function user.tst(A2:bat[:void,:int],A3:bat[:void,:int]):bat[:void,:int];	# 0  (
     io.print(A2);	# 1 IOprint_val (_3:int)<-(A2:bat[:void,:int])
     resB := bat.new(:void,:int);	# 2 CMDBATnew (resB:bat[:void,:int])<-(_5:void)(_6:int)
     bat.setSequenceBase(resB,0@0);	# 3 BKCsetSequenceBase (_7:bat[:void,:int])<-(resB:bat[:void,:int])(_8:oid)
-    lim := algebra.count(A2);	# 4 ALGcount_bat (lim:lng)<-(A2:bat[:void,:int])
+    lim := aggr.count(A2);	# 4 ALGcount_bat (lim:lng)<-(A2:bat[:void,:int])
     io.printf("count %d\n",lim);	# 5 IOprint_formatted_lng (_10:int)<-(_11:str)(lim:lng)
     l := calc.lng(lim);	# 6 CALClng2lng (l:lng)<-(lim:lng)
 barrier (mloop,m):= mal.newRange(0:lng);	# 7 RNGnewRange_lng (mloop:bit)(m:lng)<-(_15:lng) jump 18

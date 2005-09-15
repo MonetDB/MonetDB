@@ -7,23 +7,23 @@ barrier (k,v):= mal.newRange(0:lng);
         redo (k,v):= mal.nextElement(1:lng,100:lng);
 exit (k,v);
 
-i:= algebra.count(b);
+i:= aggr.count(b);
 io.print(i);
 
 c:= algebra.select(b,0:lng,9:lng);
-i:= algebra.count(c);
+i:= aggr.count(c);
 io.print(i);
 d:= algebra.select(b,0:lng,49:lng);
-i:= algebra.count(d);
+i:= aggr.count(d);
 io.print(i);
 
 zz:= algebra.joinPath(b,c,d);
-i:= algebra.count(zz);
+i:= aggr.count(zz);
 io.print(i);
 
 #to be detected by join inversion
 #z:= joinPath(b,c);
 #zz:= joinPath(zz,d);
-#i:= algebra.count(z);
+#i:= aggr.count(z);
 #io.print(i);
 

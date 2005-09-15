@@ -89,7 +89,7 @@ stdout of test 'test_01` in directory 'tests/suite_00` itself:
 #	mil.line("b.insert(\".\",10);");
 #	jb_a := bat.insert(b,".",10);
 #	mil.line("b.count().print();");
-#	kb_a := algebra.count(b);
+#	kb_a := aggr.count(b);
 #	lb_a := io.print(kb_a);
 #	mil.line("# Lets cut out a few sections\n");
 #	mb_a := algebra.select(b,2,4);
@@ -279,7 +279,7 @@ function user.main():int;	# 0  (main:int)
     mil.line("b.insert(\".\",10);");	# 72 MILline (_173:void)<-(_174:str)
     jb_a := bat.insert(b,".",10);	# 73 BKCinsert_bun (jb_a:void)<-(b:bat[:str,:int])(_160:str)(_161:int)
     mil.line("b.count().print();");	# 74 MILline (_176:void)<-(_177:str)
-    kb_a := algebra.count(b);	# 75 ALGcount_bat (kb_a:lng)<-(b:bat[:str,:int])
+    kb_a := aggr.count(b);	# 75 ALGcount_bat (kb_a:lng)<-(b:bat[:str,:int])
     lb_a := io.print(kb_a);	# 76 IOprint_val (lb_a:int)<-(kb_a:lng)
     mil.line("# Lets cut out a few sections\n");	# 77 MILline (_180:void)<-(_181:str)
     mb_a := algebra.select(b,2,4);	# 78 ALGselect (mb_a:bat[:str,:int])<-(b:bat[:str,:int])(_183:int)(_152:int)

@@ -31,7 +31,7 @@ function sample(nme:str, val:any_1):bit;
    c := 2 * 3;
    b := bbp.bind(nme);  #find a BAT
    h := algebra.select(b,val,val);
-   t := algebra.count(h);
+   t := aggr.count(h);
    x := io.print(t);
    y := io.print(val);
 end sample;

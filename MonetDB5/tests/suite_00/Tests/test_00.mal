@@ -81,7 +81,7 @@ include mil;
 	mil.line("b.insert(1,15);");
 	pb_a := bat.insert(b,1,15);
 	mil.line("b.count().print();");
-	qb_a := algebra.count(b);
+	qb_a := aggr.count(b);
 	rb_a := io.print(qb_a);
 	mil.line("b.print();");
 	sb_a := io.print(b);

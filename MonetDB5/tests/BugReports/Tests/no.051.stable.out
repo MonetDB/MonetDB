@@ -106,7 +106,7 @@ function user.create(b:bat[:any_1,:any_2]):bat[:any_1,:any_2];	# 0  dynamic (cre
     mil.line("        b@batloop(){");	# 3 MILline (_7:void)<-(_8:str)
 barrier (aa_a,aa_aH,aa_aT):= chop.newIterator(b);	# 4 CHPbunIterator (aa_a:lng)(aa_aH:any)(aa_aT:any)<-(b:bat[:any_1,:any_2]) jump 13
     mil.line("                if (a.count() = 0)");	# 5 MILline (_12:void)<-(_13:str)
-    ba_a := algebra.count(a);	# 6 ALGcount_bat (ba_a:lng)<-(a:bat[:oid,:flt])
+    ba_a := aggr.count(a);	# 6 ALGcount_bat (ba_a:lng)<-(a:bat[:oid,:flt])
 barrier ca_a := calc.==(ba_a,0);	# 7 CALCcompEQlngint (ca_a:bit)<-(ba_a:lng)(_16:int) jump 11
     mil.line("                        return a;");	# 8 MILline (_17:void)<-(_18:str)
     return da_a := a;	# 9  (da_a:bat[:oid,:flt])<-(a:bat[:oid,:flt])

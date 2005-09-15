@@ -104,7 +104,7 @@ function Admin.s(low:int,high:int):void;	# 0  (s:void)<-(low:int)(high:int)
     xa_a := new("tenk1_unique1");	# 4  unknown (xa_a:bat[:any,:int])<-($9:str)
     t := algebra.select(xa_a,low,high);	# 5 ALGselect (t:bat[:any,:int])<-(xa_a:bat[:any,:int])(low:int)(high:int)
     mil.line("        t.count().print();");	# 6 MILline ($11:void)<-($12:str)
-    ya_a := algebra.count(t);	# 7 ALGcount_bat (ya_a:lng)<-(t:bat[:any,:int])
+    ya_a := aggr.count(t);	# 7 ALGcount_bat (ya_a:lng)<-(t:bat[:any,:int])
     ab_a := io.print(ya_a);	# 8 IOprint_val (ab_a:int)<-(ya_a:lng)
 end s;	# 9  
 !ERROR: 'vars' undefined in Admin.s[2]

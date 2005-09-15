@@ -80,7 +80,7 @@ exit  MALexception;
 #b.insert("the",1);
 	v35:= bat.insert(b,".",10);
 #b.insert(".",10);
-	v36:= algebra.count(b);
+	v36:= aggr.count(b);
 	v37:= io.print(v36);
 #b.count.print;
 #

@@ -11,5 +11,5 @@ io.print(m);
 m:= statistics.getMin("timezones");
 io.print(m);
 h:= statistics.getHistogram("timezones");
-hc:= algebra.count(h);
+hc:= aggr.count(h);
 io.print(hc);

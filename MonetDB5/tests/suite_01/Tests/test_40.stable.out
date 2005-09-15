@@ -64,7 +64,7 @@ stdout of test 'test_40` in directory 'tests/suite_01` itself:
 #	mil.line("b.delete();");
 #	ua_a := bat.delete(b);
 #	mil.line("b.count().print();");
-#	va_a := algebra.count(b);
+#	va_a := aggr.count(b);
 #	wa_a := io.print(va_a);
 #	mil.line("b.import(\"monet2\");");
 #	xa_a := io.import(b,"monet2");
@@ -106,7 +106,7 @@ stdout of test 'test_40` in directory 'tests/suite_01` itself:
 #	mil.line("cb.delete();");
 #	sb_a := bat.delete(cb);
 #	mil.line("cb.count().print();");
-#	tb_a := algebra.count(cb);
+#	tb_a := aggr.count(cb);
 #	ub_a := io.print(tb_a);
 #	mil.line("cb.import(\"monet1\");");
 #	vb_a := io.import(cb,"monet1");
@@ -167,7 +167,7 @@ function user.main():int;	# 0  (main:int)
     mil.line("b.delete();");	# 47 MILline (_127:void)<-(_128:str)
     ua_a := bat.delete(b);	# 48 BKCdelete_all (ua_a:void)<-(b:bat[:str,:int])
     mil.line("b.count().print();");	# 49 MILline (_130:void)<-(_131:str)
-    va_a := algebra.count(b);	# 50 ALGcount_bat (va_a:lng)<-(b:bat[:str,:int])
+    va_a := aggr.count(b);	# 50 ALGcount_bat (va_a:lng)<-(b:bat[:str,:int])
     wa_a := io.print(va_a);	# 51 IOprint_val (wa_a:int)<-(va_a:lng)
     mil.line("b.import(\"monet2\");");	# 52 MILline (_134:void)<-(_135:str)
     xa_a := io.import(b,"monet2");	# 53 IOimport (xa_a:bit)<-(b:bat[:str,:int])(_126:str)
@@ -209,7 +209,7 @@ function user.main():int;	# 0  (main:int)
     mil.line("cb.delete();");	# 89 MILline (_206:void)<-(_207:str)
     sb_a := bat.delete(cb);	# 90 BKCdelete_all (sb_a:void)<-(cb:bat[:int,:int])
     mil.line("cb.count().print();");	# 91 MILline (_209:void)<-(_210:str)
-    tb_a := algebra.count(cb);	# 92 ALGcount_bat (tb_a:lng)<-(cb:bat[:int,:int])
+    tb_a := aggr.count(cb);	# 92 ALGcount_bat (tb_a:lng)<-(cb:bat[:int,:int])
     ub_a := io.print(tb_a);	# 93 IOprint_val (ub_a:int)<-(tb_a:lng)
     mil.line("cb.import(\"monet1\");");	# 94 MILline (_213:void)<-(_214:str)
     vb_a := io.import(cb,"monet1");	# 95 IOimport (vb_a:bit)<-(cb:bat[:int,:int])(_205:str)

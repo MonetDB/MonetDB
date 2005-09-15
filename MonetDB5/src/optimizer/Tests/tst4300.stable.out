@@ -21,24 +21,24 @@ stdout of test 'tst4300` in directory 'src/optimizer` itself:
 #        redo (k,v):= mal.nextElement(1:lng,100:lng);
 #exit (k,v);
 #
-#i:= algebra.count(b);
+#i:= aggr.count(b);
 #io.print(i);
 #
 #c:= algebra.select(b,0:lng,9:lng);
-#i:= algebra.count(c);
+#i:= aggr.count(c);
 #io.print(i);
 #d:= algebra.select(b,0:lng,49:lng);
-#i:= algebra.count(d);
+#i:= aggr.count(d);
 #io.print(i);
 #
 #zz:= algebra.joinPath(b,c,d);
-#i:= algebra.count(zz);
+#i:= aggr.count(zz);
 #io.print(i);
 #
 ##to be detected by join inversion
 ##z:= joinPath(b,c);
 ##zz:= joinPath(zz,d);
-##i:= algebra.count(z);
+##i:= aggr.count(z);
 ##io.print(i);
 #
 #
@@ -50,21 +50,21 @@ barrier (k,v):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (k:bit)(v:lng)<-(_9:lng
     bat.insert(b,v,v);	# 5 BKCinsert_bun (_10:void)<-(b:bat[:lng,:lng])(v:lng)(v:lng)
     redo (k,v):= mal.nextElement(1:lng,100:lng);	# 6 RNGnextElement_lng (k:bit)(v:lng)<-(_11:lng)(_12:lng) jump 5
 exit (k,v);	# 7  (k:bit)(v:lng)
-    i := algebra.count(b);	# 8 ALGcount_bat (i:lng)<-(b:bat[:lng,:lng])
+    i := aggr.count(b);	# 8 ALGcount_bat (i:lng)<-(b:bat[:lng,:lng])
     io.print(i);	# 9 IOprint_val (_14:int)<-(i:lng)
     c := algebra.select(b,0:lng,9:lng);	# 10 ALGselect (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])(_9:lng)(_16:lng)
-    i := algebra.count(c);	# 11 ALGcount_bat (i:lng)<-(c:bat[:lng,:lng])
+    i := aggr.count(c);	# 11 ALGcount_bat (i:lng)<-(c:bat[:lng,:lng])
     io.print(i);	# 12 IOprint_val (_17:int)<-(i:lng)
     d := algebra.select(b,0:lng,49:lng);	# 13 ALGselect (d:bat[:lng,:lng])<-(b:bat[:lng,:lng])(_9:lng)(_19:lng)
-    i := algebra.count(d);	# 14 ALGcount_bat (i:lng)<-(d:bat[:lng,:lng])
+    i := aggr.count(d);	# 14 ALGcount_bat (i:lng)<-(d:bat[:lng,:lng])
     io.print(i);	# 15 IOprint_val (_20:int)<-(i:lng)
     zz := algebra.joinPath(b,c,d);	# 16 QOTjoinPath (zz:bat[:lng,:lng])<-(b:bat[:lng,:lng])(c:bat[:lng,:lng])(d:bat[:lng,:lng])
-    i := algebra.count(zz);	# 17 ALGcount_bat (i:lng)<-(zz:bat[:lng,:lng])
+    i := aggr.count(zz);	# 17 ALGcount_bat (i:lng)<-(zz:bat[:lng,:lng])
     io.print(i);	# 18 IOprint_val (_22:int)<-(i:lng)
 #to be detected by join inversion 	# 19  (_24:str)
 #z:= joinPath(b,c); 	# 20  (_26:str)
 #zz:= joinPath(zz,d); 	# 21  (_28:str)
-#i:= algebra.count(z); 	# 22  (_30:str)
+#i:= aggr.count(z); 	# 22  (_30:str)
 #io.print(i); 	# 23  (_32:str)
 end main;	# 24  
 [ 100 ]

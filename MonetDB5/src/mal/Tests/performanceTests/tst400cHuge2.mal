@@ -100000,5 +100000,5 @@
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
 	i:= bat.insert(b,1,1);
-	z:= algebra.count(b);
+	z:= aggr.count(b);
 	z2:= io.print(z);

@@ -31,7 +31,7 @@ end createone;
 
 	#re-use a bat variable
 	b3:= b;			
-	cnt:= algebra.count(b3); # forced use
+	cnt:= aggr.count(b3); # forced use
 	i:= bbp.getLRefCount(b);
 	io.printf("after 2nd assignment refcount =%d[2]\n",i);
 

@@ -53,7 +53,7 @@ include mil;
 	mil.line("a.insert(3,4);");
 	ea_a := bat.insert(a,3,4);
 	mil.line("a.seqbase(newoid(a.count()));");
-	fa_a := algebra.count(a);
+	fa_a := aggr.count(a);
 	ga_a := newoid(fa_a);
 	ha_a := bat.setSequenceBase(a,ga_a);
 	mil.line("[oid](a.mark(nil)).print();");

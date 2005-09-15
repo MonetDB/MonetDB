@@ -52,10 +52,10 @@ the system associated with a MAL operation.
 @tab Return the cardinality of the BAT tail values.
 @item algebra.copy
 @tab Returns physical copy of a BAT.
-@item algebra.count
+@item aggr.count
 @tab Return the number of elements currently in a BAT ignores 
         BUNs with nil-tail iff ignore_nils==TRUE.
-@item algebra.count_no_nil
+@item aggr.count_no_nil
 @tab Return the number of elements currently 
 	in a BAT ignoring BUNs with nil-tail
 @item algebra.difference
@@ -120,13 +120,13 @@ the system associated with a MAL operation.
         the head that starts at base (i.e. [base,..base+b.count()-1] ).
 @item algebra.markT
 @tab Produces a BAT with fresh unique OIDs in the tail starting at 0.
-@item algebra.max
+@item aggr.max
 @tab Give the highest tail value.
 @item algebra.merge
 @tab Merge head and tail into a single value
 @item algebra.mergejoin
 @tab Hook directly into the merge implementation of the join.
-@item algebra.min
+@item aggr.min
 @tab Give the lowest tail value. 
 @item algebra.number
 @tab Produces a new BAT with identical head column, and consecutively 

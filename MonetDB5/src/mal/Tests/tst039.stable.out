@@ -27,7 +27,7 @@ function user.sample(nme:str,val:any_1):bit;	# 0  (sample:bit)<-(nme:str)(val:an
     c := calc.*(2,3);	# 1 CALCbinaryMULintint (c:int)<-(_4:int)(_5:int)
     b := bbp.bind(nme);	# 2 CMDbbpbind (b:bat[:any,:any])<-(nme:str)
     h := algebra.select(b,val,val);	# 3 ALGselect (h:bat[:any,:any])<-(b:bat[:any,:any])(val:any_1)(val:any_1)
-    t := algebra.count(h);	# 4 ALGcount_bat (t:lng)<-(h:bat[:any,:any])
+    t := aggr.count(h);	# 4 ALGcount_bat (t:lng)<-(h:bat[:any,:any])
     x := io.print(t);	# 5 IOprint_val (x:int)<-(t:lng)
     y := io.print(val);	# 6 IOprint_val (y:int)<-(val:any_1)
     return sample := true;	# 7  (sample:bit)<-(_11:bit)
