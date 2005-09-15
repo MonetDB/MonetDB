@@ -8,7 +8,7 @@
 	je_a := bat.insert(x,7@0,'c');
 	ke_a := bat.insert(x,8@0,'c');
 	io.print("group x"); io.print(x);
-	#b1 := group.group(x);
-	(hb1,b1) := group.group(x);
+	#b1 := group.new(x);
+	(hb1,b1) := group.new(x);
 io.print("b1 becomes"); io.print(b1);
 io.print("hb1 becomes"); io.print(hb1);
