@@ -451,10 +451,16 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 		GDKerror("Function name missing in signature\n");
 		return;
 	}
-	k= findVariable(mb,functionName(p));
+	nme= functionName(p);
+	k= findVariable(mb,nme);
+	if (k < 0) {
+                GDKerror("Variable '%s' unknown\n", nme);
+		mb->errors++;
+		return;
+	}
+		
 	getVarScope(mb,k) = 1;
 	getVarDepth(mb,k) = 1;
-	nme= functionName(p);
 	/* printFunction(GDKout,mb, LIST_MAL_ALL);*/
 
 	for(pc=0;pc<mb->stop; pc++){

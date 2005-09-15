@@ -1112,11 +1112,19 @@ int newVariable(MalBlkPtr mb, str name, malType type){
     mb->vtop++;
     return n;
 } 
+
 void      
-renameVariable(MalBlkPtr mb, int id, str name){
+renameVariable(MalBlkPtr mb, int id, str name)
+{
+	VarPtr v;
 	assert(id >=0 && id<mb->vtop);
-	getVar(mb,id)->name= name;
+	v = getVar(mb,id);
+	if (v->name)
+		GDKfree(v->name);
+	v->name = name;
+	v->tmpindex = 0;
 }
+
 @+ MAL variables
 Temporary target variable act as sinks in the data flow graph.
 In this case, an optimizer can group them by underlying type and this way
