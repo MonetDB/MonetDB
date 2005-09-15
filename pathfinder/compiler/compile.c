@@ -485,10 +485,10 @@ subexelim:
 char*
 pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue)
 {
-        char *res = NULL;
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
         long tm = PFtimer_start ();
+        int res;
 
         *prologue = NULL;
         *query = NULL;
