@@ -90,11 +90,11 @@ comment "Produces a new BAT with identical head column, and in the tail
         Parameters: a start group -value, -number increment, -size.";
 
 command new(attr:bat[:any_2,:any_1] )
-	(histo:bat[:any_1,:int], grp:bat[:any_2,:oid]) 
+	(histo:bat[:any_1,:int], grp:bat[:any_2,:void]) 
 address GRPgroup;
 
 command new(attr:bat[:any_2,:any_1] )
-	(histo:bat[:any_1,:int], grp:bat[:any_2,:void]) 
+	(histo:bat[:any_1,:int], grp:bat[:any_2,:oid]) 
 address GRPgroup;
 
 command new(attr:bat[:any_2,:any_1], N:int, rng:int)
