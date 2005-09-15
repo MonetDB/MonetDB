@@ -424,6 +424,19 @@ address ALGouterjoin
 comment "Returns all the result of a join, plus the BUNS formed NIL in 
         the tail and the head-values of 'outer' whose tail-value does 
         not match an head-value in 'inner'.";
+command outerjoin( outer:bat[:any_1,:oid], inner:bat[:void,:any_3]) 
+		:bat[:any_1,:any_3] 
+address ALGouterjoin
+comment "Returns all the result of a join, plus the BUNS formed NIL in 
+        the tail and the head-values of 'outer' whose tail-value does 
+        not match an head-value in 'inner'.";
+command outerjoin( outer:bat[:any_1,:void], inner:bat[:oid,:any_3]) 
+		:bat[:any_1,:any_3] 
+address ALGouterjoin
+comment "Returns all the result of a join, plus the BUNS formed NIL in 
+        the tail and the head-values of 'outer' whose tail-value does 
+        not match an head-value in 'inner'.";
+
 command outerjoin( outer:bat[:any_1,:any_2], inner:bat[:any_2,:any_3],
 		estimate:lng) :bat[:any_1,:any_3] 
 address ALGouterjoinestimate;
