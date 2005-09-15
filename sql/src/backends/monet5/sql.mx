@@ -216,6 +216,16 @@ comment "Idempotent cast of strings";
 command str( v:str) :str 
 address CALCstr2str
 comment "Idempotent cast of strings";
+
+command int( v:bit) :str 
+address CALCbit2int
+comment "Cast bit to int ";
+command sht( v:bit) :str 
+address CALCbit2sht
+comment "Cast bit to sht ";
+command lng( v:bit) :str 
+address CALCbit2lng
+comment "Cast bit to lng ";
 @+ todo
 command str( v:any_1, digits:int ) :str 
 address SQLstr_cast
