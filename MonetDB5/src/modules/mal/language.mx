@@ -174,7 +174,9 @@ CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help){
 	Client c;
 	Symbol sym= NULL;
 	MalBlkPtr mb;
+/*
 	InstrPtr sig;
+*/
 	str msg;
 	(void) m; (void) f;
 

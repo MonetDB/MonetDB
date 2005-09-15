@@ -85,6 +85,8 @@ command getCount():bat[:int,:lng]
 address URLBOXgetCount;
 command getCardinality():bat[:int,:lng]
 address URLBOXgetCardinality;
+command getSize():bat[:int,:lng]
+address URLBOXgetSize;
 @{
 pattern prelude():void 
 address URLBOXprelude
@@ -124,6 +126,7 @@ The content of this box my only be changed by the Administrator.
 		return throwMessage("urlBox.@1","unauthorized access to 'urlBox' box");
 @c
 #include "urlbox.h"
+#include "mal_linker.h"
 
 #define MAXURLDEPTH 50
 static int urlDepth = 0;
@@ -154,7 +157,7 @@ URLBOXprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (box == 0)
 		return throwMessage("urlbox.prelude", "failed to open box");
 	/* if the box was already filled we can skip initialization */
-	for(depth=0; depth<MAXDEPTH; depth++) {
+	for(depth=0; depth<MAXURLDEPTH; depth++) {
 		urlBAT[depth]=0;
 	}
 	urlDepth= 0;
@@ -217,14 +220,14 @@ URLBOXchop(str url, str *parts){
 	int depth=0;
 
 	s= url;
-	while( *s){
+	while( *s && *s != '\n'){
 		t= s+1;
-		while(*t && *t!= '/') t++;
+		while(*t && *t !='\n' && *t!= '/') t++;
 		if( *t ){
 			*t= 0;
 		} else break;
 		parts[depth++]= s;
-		for( t++; *t && *t== '/'; t++) ;
+		for( t++; *t && (*t == '\n' || *t== '/'); t++) ;
 		s= t;
 	}
 	return depth;
@@ -239,8 +242,9 @@ URLBOXinsert(char *tuple){
     char buf[128];
 
 	depth= URLBOXchop(tuple, parts);
+	if( depth == 0) return MAL_SUCCEED;
 	if( depth > urlDepth || urlBAT[0]== NULL){
-		for(i=0; i<depth; i++){
+		for(i=0; i<=depth; i++){
 			/* make new bat */
 			snprintf(buf, 128, "urlbox_%d", i);
 			b = BATdescriptor(BBPindex(buf));
@@ -284,11 +288,55 @@ Insert the remainder as a new url string
 	}
 	return MAL_SUCCEED;
 }
+#define SIZE 1*1024*1024
+
 str
 URLBOXdepositFile(int *r, str *fnme){
 
-	(void) r; (void) fnme;
-	return throwMessage("urlbox.depositFile","NYI");
+	stream *fs;
+	bstream *bs;
+	char *s,*t;
+	int len=0;
+	char buf[PATHLENGTH];
+	Client c= getClient();
+
+	(void) r; 
+	if( **fnme == '/')
+		snprintf(buf,PATHLENGTH,"%s",*fnme);
+	else snprintf(buf,PATHLENGTH,"%s/%s",c->cwd,*fnme);
+	/* later, handle directory separator */
+	fs= open_rastream(buf);
+	if( fs == NULL || stream_errnr(fs) ) 
+		return throwMessage("urlbox.deposit","File not accessible");
+	bs= bstream_create(fs,SIZE);
+	if( bs == NULL) 
+		return throwMessage("urlbox.deposit","Buffered file not available");
+	while( bstream_read(bs,bs->size-(bs->len-bs->pos)) != 0 &&
+		!stream_errnr(bs->s) ){
+		s= bs->buf;
+		for( t=s; *t ; ){
+			while(t < bs->buf+bs->len && *t && *t != '\n') t++;
+			if(t== bs->buf+bs->len || *t != '\n'){
+				/* read next block if possible after shift  */
+				len = t-s;
+				memcpy(bs->buf, s, len);
+				bs->len = len;
+				bs->pos = 0;
+				break;
+			}
+			/* found a string to be processed */
+			*t = 0;
+			URLBOXinsert(s);
+			*t= '\n';
+			s= t+1;
+			t= s;
+		}
+	}
+
+	bstream_destroy(bs);
+	stream_close(fs);
+	stream_destroy(fs);
+	return MAL_SUCCEED;
 }
 str
 URLBOXdeposit(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -516,6 +564,45 @@ URLBOXgetCardinality(int *r){
 		cnt = (lng) BATcount(bn);
 		BBPunfix(bn->batCacheid);
 		BUNins(b,&i, &cnt);
+	}
+	*r = b->batCacheid;
+	BBPincref(*r,TRUE);
+	BBPunfix(*r);
+	return MAL_SUCCEED;
+}
+
+/* #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))*/
+#define ROUND_UP(x,y) (x)
+
+str
+URLBOXgetSize(int *r){
+	BAT *b, *bn;
+	int i;
+	lng tot;
+    size_t size;
+
+	b= BATnew(TYPE_int,TYPE_lng, urlDepth+1);
+	if( b== NULL)
+		return throwMessage("urlbox.getNames","Could not create table");
+	for(i=0; i<urlDepth; i++){
+		bn= urlBAT[i];
+		size = ROUND_UP(sizeof(BATstore), blksize);
+		if (!VIEWparent(bn)) {
+			size_t cnt = BATcapacity(bn);
+
+			size += ROUND_UP(bn->batBuns->size, blksize);
+			if (b->hheap)
+				size += ROUND_UP(bn->hheap->size, blksize);
+			if (b->theap)
+				size += ROUND_UP(bn->theap->size, blksize);
+			if (bn->hhash)
+				size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
+			if (bn->thash)
+				size += ROUND_UP(sizeof(hash_t) * cnt, blksize);
+		}
+		tot = size;
+		BBPunfix(bn->batCacheid);
+		BUNins(b,&i, &tot);
 	}
 	*r = b->batCacheid;
 	BBPincref(*r,TRUE);
