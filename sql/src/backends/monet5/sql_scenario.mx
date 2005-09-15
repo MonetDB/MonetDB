@@ -326,6 +326,8 @@ SQLcompile(str *ret, str *expr, int *flag)
 System has been prepared to parse it and generate code
 @c
 	if ((err = sqlparse(m)) ){
+		if( m->debug)
+			runMALDebugger(c->curprg);
 		err = mvc_status(m);
 		sqlcleanup(m, err);
 		*m->errstr = 0;
