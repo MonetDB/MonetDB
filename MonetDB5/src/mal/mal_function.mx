@@ -454,7 +454,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	nme= functionName(p);
 	k= findVariable(mb,nme);
 	if (k < 0) {
-                GDKerror("Variable '%s' unknown\n", nme);
+		GDKerror("Variable '%s' unknown\n", nme);
 		mb->errors++;
 		return;
 	}
