@@ -1031,8 +1031,16 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 		mdbCommand(cntxt, mb, stk, p, pc);
 	case 'C':
 		mdbSessionActive= 0; /* for name completion */
-		return;
 	}
+	if( mb->errors) {
+		MalStkPtr su;
+
+		/* return from this debugger */
+		for (su = stk; su; su = su->up)
+			su->cmd = 0;
+		stk->cmd = 'x';	/* will force a graceful termination */
+	}
+	if( mdbSessionActive== 0) return;
 	showErrors();
 	if (cntxt->timer)
 		cntxt->timer = GDKusec();
@@ -1050,7 +1058,6 @@ runMALDebugger(Symbol s)
 {
 	Client c = getClient();
 
-	printf("call debugger\n");
 	c->itrace = 'n';
 	runMAL(c, s->def, 1, 0, 0, 0);
 	return MAL_SUCCEED;

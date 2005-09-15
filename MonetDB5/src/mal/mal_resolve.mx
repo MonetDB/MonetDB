@@ -86,6 +86,7 @@ resolved, it is marked TYPE_DYNAMIC otherwise.
 #define MAXTYPEVAR  10
 
 mal_export void chkProgram(Module s, MalBlkPtr mb);
+mal_export void chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
 mal_export void chkTypes(Module s, MalBlkPtr mb);
 mal_export void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int silent);
 mal_export InstrPtr dynamicTypeChecker(Module scope,MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -842,6 +843,14 @@ void chkTypes(Module s, MalBlkPtr mb){
 		} else
 		if( p->typechk== TYPE_RESOLVED) chk++;
 	}
+}
+@-
+Type checking an individual instruction is dangerous,
+because it ignores data flow and declarations issues.
+It is only to be used in isolated cases.
+@c
+void chkInstruction(Module s, MalBlkPtr mb, InstrPtr p){
+	typeChecker(s,mb,p, FALSE);
 }
 void chkProgram(Module s, MalBlkPtr mb)
 {

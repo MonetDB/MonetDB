@@ -394,10 +394,6 @@ MALrestart:
         if( stk->cmd  ) {
 			mdbStep(cntxt,mb,stk,stkpc);
             if( stk->cmd == 'x') goto MALevalExit;
-            if( stk->cmd == 'r') {
-                stk->cmd = 'n';
-                goto MALrestart;
-            }
         }
 
         @:MALinterpret@
@@ -913,6 +909,7 @@ reaching end of function block.
 	if( stk->cmd == 'C') {
 		stk->cmd = 'n';
 		mdbStep(cntxt,mb,stk,stkpc);
+		if( stk->cmd == 'x') goto MALevalExit;
 	}
     /* skip to catch block or end */
     for( ; stkpc<mb->stop; stkpc++){
@@ -1160,7 +1157,8 @@ if( ret != MAL_SUCCEED ) {
         stream_printf(cntxt->fdout,"!ERROR: %s\n",ret);
 		stk->cmd='n';
 		mdbStep(cntxt,mb,stk,stkpc);
-		if( stk->cmd == 'q') goto MALevalExit;
+		if( stk->cmd == 'x' ) goto MALevalExit;
+		if( stk->cmd == 'q' ) goto MALevalExit;
 		if( stk->cmd == 'r') {
 			stk->cmd = 'n';
 			goto MALrestart;
