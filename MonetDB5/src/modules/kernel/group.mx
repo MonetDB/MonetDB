@@ -82,28 +82,28 @@ command group(attr:bat[@{void,oid@},:any_1]
 @mal
 module group;
 
-command group(b:bat[:any_1,:any_2], start:int, incr:int, grpsize:int)
+command new(b:bat[:any_1,:any_2], start:int, incr:int, grpsize:int)
             :bat[:any_1,:int] 
 address GRPgroup0
 comment "Produces a new BAT with identical head column, and in the tail 
         column groups of equally valued integers within each group. 
         Parameters: a start group -value, -number increment, -size.";
 
-command group(attr:bat[:any_2,:any_1] )
+command new(attr:bat[:any_2,:any_1] )
 	(histo:bat[:any_1,:int], grp:bat[:any_2,:oid]) 
 address GRPgroup;
 
-command group(attr:bat[:any_2,:any_1] )
+command new(attr:bat[:any_2,:any_1] )
 	(histo:bat[:any_1,:int], grp:bat[:any_2,:void]) 
 address GRPgroup;
 
-command group(attr:bat[:any_2,:any_1], N:int, rng:int)
+command new(attr:bat[:any_2,:any_1], N:int, rng:int)
 	(histo:bat[:any_1,:int],grp:bat[:any_2,:oid]) 
 address GRPgroup_custom
 comment "Cross tabulation group initialization like GRPgroup, but with 
         user provided #bits in hashmask and #distinct values in range.";
 
-command group(ct:bat[:any_2,:any_3], attr:bat[:any_2,:any_1])
+command derive(ct:bat[:any_2,:any_3], attr:bat[:any_2,:any_1])
 	(histo:bat[:any_1,:oid],grp:bat[:any_2,:oid]) 
 address GRPderive
 comment "Cross tabulation group extension step.  Returned head values are 

@@ -189,8 +189,8 @@ CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help){
 		if( help)
 			mb->help= GDKstrdup(*help);
 		printFunction(c->fdout, mb,0);
-		sig= getSignature(sym);
 /*
+		sig= getSignature(sym);
 		renameFunction( moduleId(sig), functionId(sig), 
 			putName(*m, strlen(*m)), putName(*f,strlen(*f)));
 */

@@ -1959,6 +1959,12 @@ ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)
 		BBPunfix(left->batCacheid);
 		return throwMessage("algebra.thetajoin", "Cannot access descriptor");
 	}
+	if( *opc == -3 ){
+		/* The NE case is not supported in the kernel */
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
+		return throwMessage("algebra.thetajoin", "theta <> not yet supported");
+	} 
 	CMDthetajoin(&bn, left, right, opc, estimate);
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
