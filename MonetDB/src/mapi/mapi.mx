@@ -1105,7 +1105,7 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
 		}
 		v.vtype = TYPE_void;
 
-		err = interpret_str(stk, rs->buf+rs->pos, &v);
+		(void) interpret_str(stk, rs->buf+rs->pos, &v);
 		rs->pos = rs->len;
 	}
 	}
