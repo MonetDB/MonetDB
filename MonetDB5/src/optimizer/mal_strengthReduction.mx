@@ -92,6 +92,7 @@ int isNewSource(InstrPtr p) {
 	if( mp == getName("batcalc",7)) return 1;
 	if( mp == getName("str",3)) return 1;
 	if( mp == getName("batstr",6)) return 1;
+	if( mp == getName("array",5)) return 1;
 	if( mp == getName("url",3)) return 1;
 	if( mp == getName("daytime",7)) return 1;
 	if( mp == getName("day",3)) return 1;
