@@ -221,18 +221,13 @@ SQLinitClient(Client c)
 {
 	str msg;
 
-	//if (c->yycur) {
-		//if (c->fdin->len) 
-			//c->fdin->pos += c->yycur;
-		c->yycur = 0;
-		//c->fdin->buf[c->fdin->pos] = 0;
-	//}
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#SQLinitClient\n");
 #endif
 
-	msg= SQLinitAdmin(c);
+	msg = SQLinitAdmin(c);
 
+	c->yycur = 0;		/* make sure we don't reuse the used input */
 	c->fdin->eof = 1;	/* force prompt on first iteration */
 	return msg;
 }
@@ -458,7 +453,9 @@ Continue processing any left-over input from the previous round.
 		if (in->eof || !isa_block_stream(in->s)) {
 			language = (be->console) ? 'S' : 0;
 
-			/* auto_commit on end of statement */
+			/* The rulls of auto_commit require us to finish 
+			   and start a transaction on the start of a new 
+			   statement */
 			if (m->auto_commit && m->trans) {
 				if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id >100)) {
 					if (m->qc) 
@@ -467,8 +464,8 @@ Continue processing any left-over input from the previous round.
 				}
 				if (mvc_commit(m, 0, NULL) < 0) {
 					/*
-					   go = handle_error(m, c->fdout, pstatus);
-					 */
+				 	go = handle_error(m, c->fdout, pstatus);
+					*/
 				}
 			}
 
@@ -587,7 +584,6 @@ SQLparser(Client c)
 	m = be->mvc;
 
 	assert(m);
-	/* be->language = 'S';	expect SQL text first */
 
 	m->type = Q_PARSE;
 
@@ -632,8 +628,13 @@ SQLparser(Client c)
 
 	m->mode = m_normal;
 
+        /* sqlparse needs sql allocator to be available.  It can be NULL at
+         * this point if this is a recursive call. */
+        if (!m->sa)
+                m->sa = sa_create();
+
 	if ((err = sqlparse(m)) && m->debug)
-			runMALDebugger(c->curprg);
+		runMALDebugger(c->curprg);
 	if( err ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {

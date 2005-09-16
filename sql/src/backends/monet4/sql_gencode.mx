@@ -24,12 +24,21 @@
 
 #include "sql_server.h"
 #include "sql_session.h"
+#include "sql_symbol.h"
 #include "sql_statement.h"
 #include "sql_backend.h"
 #include "sql_scope.h"
+#include "sql_qc.h"
 
 sql_server_export int backend_dumpstmt(stmt *s, int *nr, backend *sql);
 sql_server_export void backend_dumpproc(backend *be, int id, stmt *s);
+sql_server_export int backend_call(backend *be, cq *q, list *args);
+sql_server_export int backend_fastpath(backend *be, cq *q, list *args);
+sql_server_export int backend_dump(backend *be, stmt *s);
+sql_server_export int backend_explain(backend *be, stmt *s, stream *out);
+sql_server_export int backend_exec_prepared_stmt( backend *be, cq *q );
+
+sql_server_export void monet4_freecode(backend_code code, backend_stack stk, int nr);
 
 #endif /*_SQL_GENCODE_H_*/
 
@@ -37,6 +46,7 @@ sql_server_export void backend_dumpproc(backend *be, int id, stmt *s);
 #include <sql_gencode.h>
 #include <sql_env.h>
 #include <string.h>
+#include <sql_result.h>
 
 sql_server_export int backend_dumpstmt_(stmt *s, int *nr, backend *sql);
 
@@ -1229,9 +1239,10 @@ int
 backend_dumpstmt(stmt *s, int *nr, backend *sql)
 {
 	int ret = 0;
+	mvc *c = sql->mvc;
 
 	stream_write(sql->out, "{\n", 2, 1);
-	if (mvc_debug_on(sql->mvc, 2 + 1024 + 2048)) {
+	if (mvc_debug_on(c, 2 + 1024 + 2048)) {
 		char *t0 = "var t00 := time();\n";
 		int l = strlen(t0);
 
@@ -1239,13 +1250,18 @@ backend_dumpstmt(stmt *s, int *nr, backend *sql)
 	}
 	ret = backend_dumpstmt_(s, nr, sql);
 	backend_dec_nr2(s);
-	if (mvc_debug_on(sql->mvc, 2 + 1024 + 2048)) {
+	if (mvc_debug_on(c, 2 + 1024 + 2048)) {
 		char dbg[BUFSIZ];
 		int l = snprintf(dbg, BUFSIZ,
 				 "var t11 := time(); printf(\"# wall-clock: %%d ms\\n\", t11 - t00);\n");
 
 		assert(l < BUFSIZ);
 		stream_write(sql->out, dbg, 1, l);
+	}
+
+	if (c->cache && c->type != Q_RESULT && c->type != Q_UPDATE) {
+		char *msg = "mvc_export_default(myc, Output);\n";
+		stream_write(sql->out, msg, strlen(msg), 1);
 	}
 	stream_write(sql->out, "}\n", 2, 1);
 	return ret;
@@ -1282,4 +1298,258 @@ backend_dumpproc(backend *be, int id, stmt *s)
 	stream_write(be->out, buf, i, 1);
 
 	backend_dumpstmt(s, &nr, be);
+}
+
+Cntxt
+backend_newstack(Cntxt stk)
+{
+	Cntxt procstk;
+
+	procstk = CNTXTnew(stk);
+	CNTXTuse(procstk);
+	monet_cntxt[procstk].reuse = TRUE;
+
+	return procstk;
+}
+
+static YYSTREE
+milnode(int tok, int tpe, ptr valp)
+{
+	YYSTREE res = Myynode(tok, tpe);
+
+	VALset(&res->yyval, tpe, valp);
+	return res;
+}
+
+static YYSTREE
+milnode2(int tok, ValPtr valp)
+{
+	YYSTREE res = Myynode(tok, valp->vtype);
+
+	res->yyval = *valp;
+	res->dealloc = 0;
+	return res;
+}
+
+static YYSTREE
+monet4_interpret(Cntxt procstk, char *name, list *args, int *err)
+{
+	YYSTREE callnode;
+	YYSTREE argtree;
+	ValRecord v;
+
+	v.vtype = TYPE_void;
+	callnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name));
+	argtree = Myynode(0, 0);
+	if (args) {
+		node *n;
+
+		for (n = args->h; n; n = n->next) {
+			atom *a = n->data;
+			YYSTREE arg;
+
+			if (atom_null(a)) {
+				if (a->data.vtype == TYPE_str && a->data.val.sval == NULL) {
+					a->data.val.sval = GDKstrdup(str_nil);
+				}
+			}
+			arg = milnode2(TOK_CONSTANT, &a->data);
+			argtree = Myyexpand(argtree, arg);
+		}
+	}
+	Myyexpand(callnode, argtree);
+	Myyexpand(callnode, Myynode(0, TYPE_int));
+	*err = interpret(procstk, callnode, &v);
+
+	return callnode;
+}
+
+
+int backend_call( backend *be, cq *q, list *args) 
+{
+	int err = 0;
+	char buf[BUFSIZ];
+	Cntxt procstk = backend_newstack(be->mvc->stk);
+	YYSTREE callnode;
+
+	snprintf(buf, BUFSIZ, "sql%d", q->id);
+
+	be->mvc->type = q->type;
+	callnode = monet4_interpret(procstk, buf, args, &err);
+
+	if (!err) {
+		q->code = (backend_code) callnode;
+		q->stk = (backend_stack) (ptrdiff_t) procstk;
+	} else {
+		be->mvc->status = err;
+		monet4_freecode(callnode, (backend_stack) (ptrdiff_t) procstk, q->id);
+
+		backend_freestack((backend_stack) (ptrdiff_t) procstk);
+		qc_delete(be->mvc->qc, q);
+	}
+	return err;
+}
+
+int
+backend_fastpath(backend *be, cq *q, list *args)
+{
+	Cntxt procstk = (Cntxt) ((ptrdiff_t)q->stk);
+	YYSTREE callnode = (YYSTREE)q->code;
+	ValRecord v;
+	node *n;
+
+	be->mvc->type = q->type;
+	v.vtype = TYPE_void;
+	if (args) {
+		int i;
+
+		ValPtr argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
+
+		for (i = 1, n = args->h; n; i++, n = n->next) {
+			atom *a = n->data;
+
+			if (atom_null(a)) {
+				int t = argv[i].vtype;
+
+				if (a->data.vtype != t) {
+					a->data.vtype = t;
+					if (ATOMstorage(t) < TYPE_str) {
+						ptr p = ATOMnilptr(t);
+
+						VALset(&a->data, t, p);
+					} else {
+						a->data.val.pval = NULL;
+					}
+				}
+			}
+			argv[i] = a->data;
+		}
+	}
+	return interpret(procstk, callnode->yysons[1]->yysons[0], &v);
+}
+
+static int
+backend_parse(Cntxt stack, char *cmd)
+{
+	int err = 0;
+
+	if (cmd) {
+		ValRecord v;
+
+		v.vtype = TYPE_void;
+
+		err = interpret_str(stack, cmd, &v);
+	}
+	return err;
+}
+
+void
+monet4_parse(backend_stack stack, char *cmd)
+{
+	backend_parse((Cntxt) stack, cmd);
+}
+
+
+int backend_dump(backend *be, stmt *s)
+{
+	int err = 0;
+	mvc *c = be->mvc;
+	char *cmd = NULL;
+
+	if (!c->cache) {
+		int nr = 1;
+
+		backend_dumpstmt(s, &nr, be);
+	} else {
+		backend_dumpproc(be, c->qc->id, s);
+	}
+	cmd = buffer_get_buf(be->outbuf);
+	stream_flush(be->out);
+
+	err = backend_parse(c->stk, cmd);
+
+	/* beware to use free instead of _DELETE
+	 * as the stream library is built without
+	 * libbat i.e. it cannot use gdkmalloc */
+	free(cmd);
+	return err;
+}
+
+int
+backend_explain(backend *be, stmt *s, stream *out)
+{
+	mvc *c = be->mvc;
+	int t_id, nr = 1;
+	BAT *b;
+	char *cmd = NULL;
+
+	if (!out) return 0;
+
+	/* insert mil statements into a bat */
+	if (c->args) {
+		int i = 0;
+		node *n;
+
+		for (n = c->args->h; n; n = n->next, i++) {
+			int len;
+			atom *a = n->data;
+			char buf[BUFSIZ];
+
+			stream_write(be->out, "var ", 4, 1);
+			len = snprintf(buf, BUFSIZ, "A%d", i);
+			stream_write(be->out, buf, len, 1);
+			stream_write(be->out, " := ", 4, 1);
+			atom_dump(a, be->out);
+			stream_write(be->out, ";\n", 2, 1);
+		}
+	}
+
+	backend_dumpstmt_(s, &nr, be);
+	cmd = buffer_get_buf(be->outbuf);
+	stream_flush(be->out);
+
+	/* discard the type of the original query (update, schema, etc)
+	 * and set it to 'table', since we return a resultset here */
+	c->type = Q_TABLE;
+
+	strSplit(&b, cmd, "\n");
+	/* beware to use free instead of _DELETE
+ 	 * as the stream library is built without
+ 	 * libbat i.e. it cannot use gdkmalloc */
+	free(cmd);
+	BATseqbase(b, 0);
+	t_id = mvc_result_table(c, 1, b);
+	mvc_result_column(c, "", "statement", "varchar", -1, -1, b);
+	BBPunfix(b->batCacheid);
+	return(mvc_export_result(c, out, t_id));
+}
+
+int
+backend_exec_prepared_stmt( backend *be, cq *q )
+{
+	mvc *c = be->mvc;
+	node *a, *p;
+	int argc, parc; 
+
+	argc = c->args?list_length(c->args):0;
+	parc = q->params?list_length(q->params):0;
+
+	if (argc != parc) {
+		sql_error(c, 0002, "wrong number of arguments for prepared statement\n");
+		return -1;
+	} else if (c->args) {
+		for (a = c->args->h, p = q->params->h; a && p; a = a->next, p = p->next) {
+			atom *arg = a->data;
+			sql_subtype *pt = p->data;
+
+			if (!atom_cast(arg, pt)) {
+					char buf[BUFSIZ];
+
+				snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
+				sql_error(c, 003, buf);
+				return -1;
+			}
+		}
+	}
+	return 0;
 }

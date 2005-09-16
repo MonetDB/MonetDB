@@ -44,8 +44,6 @@ typedef struct backend {
 
 extern int sqlclient(Cntxt stk, YYSTREE lt, ValPtr res);
 
-extern void monet4_freestack(backend_stack stk);
-extern void monet4_freecode(backend_code code, backend_stack stk, int nr);
 extern void monet4_parse(backend_stack stk, char *code);
 
 extern int sqlstatement(char *cmd, Cntxt stk);
@@ -56,7 +54,7 @@ extern int mvc_sql(mvc *c, str query);
 #include "sql_session.h"
 #include "sql_server.h"
 #include "sql_result.h"
-#include "sql_gencode.h"	/* for backend_dumpproc() */
+#include "sql_gencode.h"	/* for backend_dump() */
 #include <sql_semantic.h>
 #include <rel_semantic.h>
 #include <rel_bin.h>
@@ -108,189 +106,6 @@ backend_destroy(backend *b)
 	_DELETE(b);
 }
 
-static YYSTREE
-milnode(int tok, int tpe, ptr valp)
-{
-	YYSTREE res = Myynode(tok, tpe);
-
-	VALset(&res->yyval, tpe, valp);
-	return res;
-}
-
-static YYSTREE
-milnode2(int tok, ValPtr valp)
-{
-	YYSTREE res = Myynode(tok, valp->vtype);
-
-	res->yyval = *valp;
-	res->dealloc = 0;
-	return res;
-}
-
-static int
-backend_parse(Cntxt stack, char *cmd)
-{
-	int err = 0;
-
-	if (cmd) {
-		ValRecord v;
-
-		v.vtype = TYPE_void;
-
-		err = interpret_str(stack, cmd, &v);
-	}
-	return err;
-}
-
-void
-monet4_parse(backend_stack stack, char *cmd)
-{
-	backend_parse((Cntxt) stack, cmd);
-}
-
-
-Cntxt
-backend_newstack(Cntxt stk)
-{
-	Cntxt procstk;
-
-	procstk = CNTXTnew(stk);
-	CNTXTuse(procstk);
-	monet_cntxt[procstk].reuse = TRUE;
-
-	return procstk;
-}
-
-void
-monet4_freestack(backend_stack stk)
-{
-	Cntxt procstk = (Cntxt) (ptrdiff_t) stk;
-
-	monet_cntxt[procstk].reuse = FALSE;
-	CNTXTclear(procstk);
-	CNTXTfree1(procstk);
-	CNTXTdelete(procstk);
-}
-
-static void
-reset_arg_tree(YYSTREE args)
-{
-	while (args) {
-		unsigned i;
-
-		for (i = 0; i < args->cnt; i++) {
-			if (args->yysons[i])
-				reset_arg_tree(args->yysons[i]);
-
-		}
-		args->yyval.vtype = TYPE_void;
-		args->yyval.len = 0;
-
-		args = args->overflow;
-	}
-}
-
-void
-monet4_freecode(backend_code code, backend_stack stk, int nr)
-{
-	YYSTREE callnode = (YYSTREE) code;
-
-	if (code) {
-		Client client;
-		char name[BUFSIZ];
-		int i;
-		int l = callnode->yysons[1]->cnt;
-		ValPtr argv;
-
-		/* clear default arguments */
-		reset_arg_tree(callnode->yysons[0]);
-
-		/* clear fastpath arguments */
-		if (callnode->yysons[1]) {
-			argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
-			for (i = 1; i < l; i++) {
-				argv[i].vtype = TYPE_void;
-				argv[i].len = 0;
-			}
-		}
-
-		/* cleanup proc */
-		Myyfree(callnode);
-
-		snprintf(name, BUFSIZ, "sql%d", nr);
-		CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
-		TBL_delproc(client, name);
-	}
-}
-
-YYSTREE
-monet4_interpret(Cntxt procstk, char *name, list *args, int *err)
-{
-	YYSTREE callnode;
-	YYSTREE argtree;
-	ValRecord v;
-
-	v.vtype = TYPE_void;
-	callnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name));
-	argtree = Myynode(0, 0);
-	if (args) {
-		node *n;
-
-		for (n = args->h; n; n = n->next) {
-			atom *a = n->data;
-			YYSTREE arg;
-
-			if (atom_null(a)) {
-				if (a->data.vtype == TYPE_str && a->data.val.sval == NULL) {
-					a->data.val.sval = GDKstrdup(str_nil);
-				}
-			}
-			arg = milnode2(TOK_CONSTANT, &a->data);
-			argtree = Myyexpand(argtree, arg);
-		}
-	}
-	Myyexpand(callnode, argtree);
-	Myyexpand(callnode, Myynode(0, TYPE_int));
-	*err = interpret(procstk, callnode, &v);
-
-	return callnode;
-}
-
-int
-backend_fastpath(Cntxt procstk, YYSTREE callnode, list *args)
-{
-	ValRecord v;
-	node *n;
-
-	v.vtype = TYPE_void;
-	if (args) {
-		int i;
-
-		ValPtr argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
-
-		for (i = 1, n = args->h; n; i++, n = n->next) {
-			atom *a = n->data;
-
-			if (atom_null(a)) {
-				int t = argv[i].vtype;
-
-				if (a->data.vtype != t) {
-					a->data.vtype = t;
-					if (ATOMstorage(t) < TYPE_str) {
-						ptr p = ATOMnilptr(t);
-
-						VALset(&a->data, t, p);
-					} else {
-						a->data.val.pval = NULL;
-					}
-				}
-			}
-			argv[i] = a->data;
-		}
-	}
-	return interpret(procstk, callnode->yysons[1]->yysons[0], &v);
-}
-
 static int
 error(stream *out, char *str)
 {
@@ -316,26 +131,6 @@ error(stream *out, char *str)
 			 return -1;
 	}
 	return 0;
-}
-
-int
-explain_cmd(mvc *c, char *cmd, stream *out)
-{
-	int t_id;
-	BAT *b;
-
-	if (!out) return 0;
-
-	/* discard the type of the original query (update, schema, etc)
-	 * and set it to 'table', since we return a resultset here */
-	c->type = Q_TABLE;
-
-	strSplit(&b, cmd, "\n");
-	BATseqbase(b, 0);
-	t_id = mvc_result_table(c, 1, b);
-	mvc_result_column(c, "", "statement", "varchar", -1, -1, b);
-	BBPunfix(b->batCacheid);
-	return(mvc_export_result(c, out, t_id));
 }
 
 stmt *
@@ -459,39 +254,50 @@ output_prepare(stream *out, mvc *c, cq *q)
 	return 0;
 }
 
+void backend_profile( backend *be, char *query, lng parse, lng optimize, lng exec, lng total )
+{
+	mvc *c = be->mvc;
+	int mode = c->mode;
+	char *e = c->explain;
+
+	char buf[BUFSIZ];
+
+	/* TODO use sql_prepare/execute */
+	snprintf(buf, BUFSIZ, "insert into sys.history "
+		 "values(now,'%s',%lld,%lld,%lld,%lld,USER);\n",
+		 query, parse, optimize, exec, total);
+	_DELETE(query);
+
+	/* switch of explain to prevent recursion */
+	c->mode = m_normal;
+	c->explain = NULL;
+	(void) mvc_sql(c, buf);
+	c->mode = mode;
+	c->explain = e;
+}
+
 int
 sqlexecute(backend *be, stream *out)
 {
 	char *query = NULL;
-	lng T0 = 0, Tparse = 0, Tmil = 0, Texec = 0, T1 = 0;
+	lng T0 = 0, Tparse = 0, Tmil = 0, Texec = 0;
 	mvc *c = be->mvc;
 	int err = 0;
 	cq *q = NULL;
 
 	c->type = Q_PARSE;
-
 	if (!c->trans)
 		mvc_trans(c);
-
-	if (c->explain) {
-		if (strcmp(c->explain, "plan") == 0)
-			c->mode = m_explain;
-		else if (strcmp(c->explain, "profile") == 0)
-			c->mode = m_profile;
-	}
+	if (!c->sa)
+		c->sa = sa_create();
 
 	if (c->mode == m_profile)
 		T0 = GDKusec();
 
-	/* sqlparse needs sql allocator to be available.  It can be NULL at
-	 * this point if this is a recursive call. */
-	if (!c->sa)
-		c->sa = sa_create();
-
 	if ((err = sqlparse(c)) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(c) && c->type != Q_TRANS) || !c->sym) {
-		if (!err)
+		if (!err) /* old or parse errors */
 			err = mvc_status(c);
 		return sqlcleanup(c, err);
 	}
@@ -499,98 +305,39 @@ sqlexecute(backend *be, stream *out)
 	if (c->mode == m_profile)
 		Tparse = GDKusec();
 
-	if (c->mode == m_explain && c->sym->token == SQL_SET)
+	if ((c->mode == m_explain || c->mode == m_profile) && 
+	    c->sym->token == SQL_SET)
 		c->mode = m_normal;
 
 	if (c->mode == m_execute) {
-		node *a, *p;
-		int argc, parc, id = c->sym->data.lval->h->data.ival;
-
-		q = qc_find(c->qc, id);
+		q = qc_find(c->qc, c->sym->data.lval->h->data.ival);
 		if (!q) {
-			error(out, "no prepared statement with the given id\n");
 			err = -1;
-			return sqlcleanup(c, err);
-		}
-		argc = c->args?list_length(c->args):0;
-		parc = q->params?list_length(q->params):0;
-		if (argc != parc) {
-			error(out, "wrong number of arguments for prepared statement\n");
-			err = -1;
-			return sqlcleanup(c, err);
+			sql_error(c, 2, "no prepared statement with the given id\n");
 		} else {
-			if (c->args)
-				for (a = c->args->h, p = q->params->h; a && p; a = a->next, p = p->next) {
-					atom *arg = a->data;
-					sql_subtype *pt = p->data;
-
-					if (!atom_cast(arg, pt)) {
-						char buf[BUFSIZ];
-
-						snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
-						error(out, buf);
-						err = -1;
-						return sqlcleanup(c, err);
-					}
-				}
+			err = backend_exec_prepared_stmt( be, q );
 		}
-	} else if (c->mode == m_explain || !c->cache || !(q = qc_match(c->qc, c->sym, c->args, c->scanner.key))) {
-		char *cmd = NULL;
+		if (err)
+			return sqlcleanup(c, err);
+	} else if (c->mode == m_explain || !c->cache || 
+	           !(q = qc_match(c->qc, c->sym, c->args, c->scanner.key))) {
 		stmt *s = sql_symbol2stmt(c);
 
-		if (!s && (err = mvc_status(c)))
+		if (!s && (err = mvc_status(c))) /* semantic errors */
 			return sqlcleanup(c, err);
 		assert(s);
-
 		if (c->mode == m_explain) {
-			/* insert mil statements into a bat */
-			if (c->args) {
-				int i = 0;
-				node *n;
-
-				for (n = c->args->h; n; n = n->next, i++) {
-					int len;
-					atom *a = n->data;
-					char buf[BUFSIZ];
-
-					stream_write(be->out, "var ", 4, 1);
-					len = snprintf(buf, BUFSIZ, "A%d", i);
-					stream_write(be->out, buf, len, 1);
-					stream_write(be->out, " := ", 4, 1);
-					atom_dump(a, be->out);
-					stream_write(be->out, ";\n", 2, 1);
-				}
-			}
-		}
-
-		if (c->mode == m_explain || !c->cache) {
-			int nr = 1;
-
-			backend_dumpstmt(s, &nr, be);
+			err = backend_explain(be, s, out);
 		} else {
-			backend_dumpproc(be, c->qc->id, s);
-		}
-		cmd = buffer_get_buf(be->outbuf);
-		stream_flush(be->out);
-		stmt_destroy(s);
-
-		if (c->mode == m_explain) {
-			err = explain_cmd(c, cmd, out);
-		} else {
-			err = backend_parse(c->stk, cmd);
-			if (c->cache) {
-				q = qc_insert(c->qc, c->sa, c->sym, c->args, c->scanner.key, c->type, GDKstrdup(cmd));
+			err = backend_dump(be, s);
+			if (!err && c->cache) {
+				q = qc_insert(c->qc, c->sa, c->sym, c->args, c->scanner.key, c->type, NULL);
 
 				c->sa = NULL;
 				c->sym = NULL;
 			}
 		}
-
-		/* beware to use free instead of _DELETE
-		 * as the stream library is built without
-		 * libbat i.e. it cannot use gdkmalloc */
-		free(cmd);
-
+		stmt_destroy(s);
 		if (err)
 			return sqlcleanup(c, err);
 	}
@@ -603,33 +350,11 @@ sqlexecute(backend *be, stream *out)
 	scanner_query_processed(&(c->scanner));
 
 	if (q && c->mode == m_prepare) {
-		if ((err = output_prepare(out, c, q))) {
-			return sqlcleanup(c, err);
-		}
+		err = output_prepare(out, c, q);
 	} else if (q && !q->code) {
-		/* TODO change to backend_call(c, name, c->args, &err); */
-		char buf[BUFSIZ];
-		Cntxt procstk = backend_newstack(c->stk);
-		YYSTREE callnode;
-
-		snprintf(buf, BUFSIZ, "sql%d", q->id);
-
-		c->type = q->type;
-		callnode = monet4_interpret(procstk, buf, c->args, &err);
-
-		if (!err) {
-			q->code = (backend_code) callnode;
-			q->stk = (backend_stack) (ptrdiff_t) procstk;
-		} else {
-			c->status = err;
-			monet4_freecode(callnode, (backend_stack) (ptrdiff_t) procstk, q->id);
-
-			backend_freestack((backend_stack) (ptrdiff_t) procstk);
-			qc_delete(c->qc, q);
-		}
+		err = backend_call(be, q, c->args); 
 	} else if (q) {
-		c->type = q->type;
-		err = backend_fastpath((Cntxt) (ptrdiff_t) q->stk, (YYSTREE) q->code, c->args);
+		err = backend_fastpath(be, q, c->args);
 	}
 	if (c->mode == m_profile)
 		Texec = GDKusec();
@@ -644,32 +369,14 @@ sqlexecute(backend *be, stream *out)
 		c->qc = qc_create();
 	}
 
-	if (c->mode == m_profile) {
-		int mode = c->mode;
-		char *e = c->explain;
-		char buf[BUFSIZ];
-
-		T1 = GDKusec();
-		/* TODO use sql_prepare/execute */
-		snprintf(buf, BUFSIZ, "insert into sys.history "
-			 "values(now,'%s',%lld,%lld,%lld,%lld,USER);\n",
-			 query, Tparse - T0, Tmil - Tparse, Texec - Tmil, T1 - T0);
-		_DELETE(query);
-		/* switch of explain to prevent recursion */
-		c->mode = m_normal;
-		c->explain = NULL;
-		(void) mvc_sql(c, buf);
-		c->mode = mode;
-		c->explain = e;
-	}
-
+	if (!err && c->mode == m_profile) 
+		backend_profile( be, query, Tparse - T0, Tmil - Tparse, Texec - Tmil, T0 - GDKusec());
+/*
 	if (!err && c->mode != m_explain) {
-		if (mvc_status(c) < 0) {
-			error(out, "Error in result");
-		} else if (c->cache && c->type != Q_RESULT && c->type != Q_UPDATE && !(q && c->mode == m_prepare)) {
-			err = mvc_export_default(c, out);
-		}
+		if (mvc_status(c) < 0) 
+			sql_error(c, 01, "Error in result");
 	}
+*/
 	return sqlcleanup(c, err);
 }
 

@@ -117,6 +117,9 @@ stream.
 	.COMMAND mvc_export_result(mvc m, Stream s, int result_id) =
 		mvc_export_result_wrap; "export a result to stream s"
 
+	.COMMAND mvc_export_default(mvc m, Stream s) =
+		mvc_export_default_wrap; "export a default result to stream s"
+
 	.COMMAND mvc_import_table( mvc c, Bstream s, str tname, 
 					str sep, str rsep, int nr) : 
 		BAT[str,BAT] = mvc_import_table_wrap; 
@@ -261,6 +264,68 @@ builtin_operand(Cntxt stk, YYSTREE lt, int arg_nr, ptr *Res, int type, ValPtr re
 		return handle_paramerror(res, arg_nr, res->vtype, type);
 	}
 	return 0;
+}
+
+void
+monet4_freestack(backend_stack stk)
+{
+	Cntxt procstk = (Cntxt) (ptrdiff_t) stk;
+
+	monet_cntxt[procstk].reuse = FALSE;
+	CNTXTclear(procstk);
+	CNTXTfree1(procstk);
+	CNTXTdelete(procstk);
+}
+
+static void
+reset_arg_tree(YYSTREE args)
+{
+	while (args) {
+		unsigned i;
+
+		for (i = 0; i < args->cnt; i++) {
+			if (args->yysons[i])
+				reset_arg_tree(args->yysons[i]);
+
+		}
+		args->yyval.vtype = TYPE_void;
+		args->yyval.len = 0;
+
+		args = args->overflow;
+	}
+}
+
+void
+monet4_freecode(backend_code code, backend_stack stk, int nr)
+{
+	YYSTREE callnode = (YYSTREE) code;
+
+	if (code) {
+		Client client;
+		char name[BUFSIZ];
+		int i;
+		int l = callnode->yysons[1]->cnt;
+		ValPtr argv;
+
+		/* clear default arguments */
+		reset_arg_tree(callnode->yysons[0]);
+
+		/* clear fastpath arguments */
+		if (callnode->yysons[1]) {
+			argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
+			for (i = 1; i < l; i++) {
+				argv[i].vtype = TYPE_void;
+				argv[i].len = 0;
+			}
+		}
+
+		/* cleanup proc */
+		Myyfree(callnode);
+
+		snprintf(name, BUFSIZ, "sql%d", nr);
+		CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
+		TBL_delproc(client, name);
+	}
 }
 
 @-
@@ -507,6 +572,15 @@ int
 mvc_export_result_wrap(mvc *M, Stream *S, int *res_id)
 {
 	if (mvc_export_result(*(mvc **) M, *(stream **) S, *res_id))
+		return GDK_FAIL;
+
+	return GDK_SUCCEED;
+}
+
+int
+mvc_export_default_wrap(mvc *M, Stream *S)
+{
+	if (mvc_export_default(*(mvc **) M, *(stream **) S))
 		return GDK_FAIL;
 
 	return GDK_SUCCEED;
