@@ -1075,7 +1075,6 @@ client(Cntxt stk, YYSTREE lt, ValPtr res)
 	rs->eof = 1;            /* force prompt on first iteration */
 	while(go) {
 		ValRecord v;
-		int err = 0;
 
 		/* skip whitespace */
 		while (rs->pos < rs->len && (isspace((int) (rs->buf[rs->pos])) || rs->buf[rs->pos] == ';'))

@@ -292,6 +292,7 @@ The constants defined in limit.h are defined using autoloaded mil code.
 	const @1_MAX   := get@1_MAX();
 	const @1_MIN   := get@1_MIN();
 @
+	const OID_MAX  := ifthenelse(isnil(oid(LNG_MAX)), oid(INT_MAX), oid(LNG_MAX)); 
 
 @{
 @* Implementation
