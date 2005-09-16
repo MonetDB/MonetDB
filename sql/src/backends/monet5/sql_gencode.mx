@@ -1068,20 +1068,42 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_aggr:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
+			char *aggrfunc = _strdup(s->op4.aggrval->aggr->imp);
+			char *c;
+			int restype = s->op4.aggrval->aggr->res->type->localtype;
+			int output_type_needed = 0;
+			
+			/* some aggr functions require bigger outputs types */
+			if (s->op4.aggrval->aggr->res->type->localtype > 
+			    tail_type(s->op1.stval)->type->localtype ) {
+				/* Cut off the type information.
+			   	It should be handled by the type resolver
+			 	*/
+				c = strchr(aggrfunc, '_');
+				if (c) {
+					output_type_needed = 1;
+					*c = 0;
+				}
+			}
 
 			@:SQLprelude@
 			if (s->op3.gval) {
 				int g = _dumpstmt(sql, mb, s->op2.stval);
 				int e = _dumpstmt(sql, mb, s->op3.stval);
 
-				q = newStmt(mb, "aggr", s->op4.aggrval->aggr->imp);
+				q = newStmt(mb, "aggr", aggrfunc);
+				if (output_type_needed)
+					setVarType(mb, getArg(q, 0), newBatType(TYPE_void,restype));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, e);
 			} else {
-				q = newStmt(mb, "aggr", s->op4.aggrval->aggr->imp);
+				q = newStmt(mb, "aggr", aggrfunc);
+				if (output_type_needed)
+					setVarType(mb, getArg(q, 0), restype);
 				q = pushArgument(mb, q, l);
 			}
+			_DELETE(aggrfunc);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 		}
