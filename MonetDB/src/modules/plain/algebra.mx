@@ -293,6 +293,12 @@ for all BUNs in the cross product of 'left' and 'right'."
 a tail-value from 'right' for which there are BUNs in 'left'
 and 'right' with equal tail- resp. head-value (i.e. the join
 columns are projected out)."
+
+.COMMAND antijoin ( BAT[any::1,any::2] left, BAT[any::2,any::4] right) :
+			       BAT[any::1,any::4] = CMDantijoin;
+"Returns head-value from 'left' and tail-value from 'right'
+for all BUNs in the cross product of 'left' and 'right' that
+do not satisfy the equality on remaining columns."
 @- Outer Join
 @m
 .COMMAND outerjoin ( BAT[any::1,any::2] outer, BAT[any::2,any::3] inner, lng estimate) :
@@ -1702,6 +1708,7 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:unary(sunique,BATsunique)@
 @:binary(semijoin,BATsemijoin)@
 @:binary(cross,BATcross)@
+@:binary(antijoin,BATantijoin)@
 @:binaryestimate(join,BATjoin)@
 @:binaryestimate(outerjoin,BATouterjoin)@
 @:binary(sunion,BATsunion)@
