@@ -787,7 +787,9 @@ The routines below assumes that the caller knows what type
 is large enough to prevent overflow.
 
 @= sum_implementation
-int CMDsum_@1_@2(@2* res, BAT *b) {
+int
+CMDsum_@1_@2(@2* res, BAT *b)
+{
 	BUN p,q;
 	int xx;
 	@2 result=@3;
@@ -796,7 +798,8 @@ int CMDsum_@1_@2(@2* res, BAT *b) {
 	BATloopFast(b, p, q, xx) {
 		@1 *value = (@1*) BUNtloc(b, p);
 		if (*value == @1_nil) {
-			result = @2_nil; break;
+			result = @2_nil;
+			break;
 		} else {
 			result += *value;
 		}
@@ -811,7 +814,9 @@ The routines below assumes that the caller knows what type
 is large enough to prevent overflow.
 
 @= prod_implementation
-int CMDprod_@1_@2(@2* res, BAT *b) {
+int
+CMDprod_@1_@2(@2* res, BAT *b)
+{
 	BUN p,q;
 	int xx;
 	@2 result=@3;
@@ -820,7 +825,8 @@ int CMDprod_@1_@2(@2* res, BAT *b) {
 	BATloopFast(b, p, q, xx) {
 		@1 *value = (@1*) BUNtloc(b, p);
 		if (*value == @1_nil) {
-			result = @2_nil; break;
+			result = @2_nil;
+			break;
 		} else {
 			result *= *value;
 		}
@@ -836,47 +842,52 @@ the user. They are not maintained continuously, because we expect
 them to be used sparsely.
 
 @= aggregate_implementation
-int CMDmin_@1(@1* result, BAT *b) {
+int
+CMDmin_@1(@1* result, BAT *b)
+{
 	return BATmin(b, result)?GDK_SUCCEED:GDK_FAIL;
 }
-int CMDmax_@1(@1* result, BAT *b) {
+int
+CMDmax_@1(@1* result, BAT *b)
+{
 	return BATmax(b, result)?GDK_SUCCEED:GDK_FAIL;
 }
 @= atomaggr
-    if (s > 0 && !(BATtordered(b)&1)) {
-	char* nil = BATatoms[t].atomNull;
-	BUN p,q;
-	int xx;
-        BATloopFast(b, p, q, xx) {
-            x = (ptr) BUNt@2(b, p);
-            if (@3_CMP(x, nil, @4) == 0) {
-                v = nil; break;
-            }
-            if (@3_@5(x, v, @4)) {
-                v = x; 
-            }
-        }	
-    }
-    if (aggr) {
+	if (s > 0 && !(BATtordered(b)&1)) {
+		char* nil = BATatoms[t].atomNull;
+		BUN p,q;
+		int xx;
+		BATloopFast(b, p, q, xx) {
+			x = (ptr) BUNt@2(b, p);
+			if (@3_CMP(x, nil, @4) == 0) {
+				v = nil;
+				break;
+			}
+			if (@3_@5(x, v, @4)) {
+				v = x;
+			}
+		}
+	}
+	if (aggr) {
        memcpy(aggr, x=v, ATOMsize(t));
-    } else {
+	} else {
        /* alloc new space and copy the atom into it */
        s = ATOMlen(t, v);
        memcpy(x = (ptr) GDKmalloc(s), v, s);
-   } 
+   }
 @= voidaggr
-    if (aggr) {
-        *(oid *) aggr = *(oid *) (x=v);
-    } else {
-        /* alloc new space and copy the atom into it */
-        memcpy(x = (ptr) GDKmalloc(sizeof(oid)), v, s);
-    } 
+	if (aggr) {
+		*(oid *) aggr = *(oid *) (x=v);
+	} else {
+		/* alloc new space and copy the atom into it */
+		memcpy(x = (ptr) GDKmalloc(sizeof(oid)), v, s);
+	}
 @= aggrmin
-    v = (s == 0)?ATOMnilptr(t):BUNtail(b, BUNfirst(b));
-    @:@5aggr(@1,@2,@3,@4,LT)@
+	v = (s == 0)?ATOMnilptr(t):BUNtail(b, BUNfirst(b));
+	@:@5aggr(@1,@2,@3,@4,LT)@
 @= aggrmax
-    v = (s == 0)?ATOMnilptr(t):BUNtail(b, BUNlast(b)-BUNsize(b));
-    @:@5aggr(@1,@2,@3,@4,GT)@
+	v = (s == 0)?ATOMnilptr(t):BUNtail(b, BUNlast(b)-BUNsize(b));
+	@:@5aggr(@1,@2,@3,@4,GT)@
 
 @c
 
@@ -936,6 +947,11 @@ CMDmaxany(ptr result, BAT *b)
 	return GDK_FAIL;
 }
 
+@* Command Implementations in C
+This module contains just a wrapper implementations; since all described
+operations are part of the GDK kernel.
+
+@c
 int
 CMDselect1(BAT **result, BAT *b, ptr value)
 {
@@ -1056,6 +1072,7 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:unary(sunique,BATsunique)@
 @:binary(semijoin,BATsemijoin)@
 @:binary(cross,BATcross)@
+@:binary(antijoin,BATantijoin)@
 @:binaryestimate(join,BATjoin)@
 @:binaryestimate(outerjoin,BATouterjoin)@
 @:binary(sunion,BATsunion)@
@@ -1067,12 +1084,12 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:binaryint(sample,BATsample)@
 
 int
-CMDcount_nil(size_t * result, BAT *b, bit *ignore_nils)
+CMDcount_nil(int *result, BAT *b, bit *ignore_nils)
 {
 	if (*ignore_nils)
-		*result = BATcount_no_nil(b);
+		*result = (int) BATcount_no_nil(b);
 	else
-		*result = BATcount(b);
+		*result = (int) BATcount(b);
 	return GDK_SUCCEED;
 }
 
@@ -1081,6 +1098,40 @@ CMDgroup(BAT **result, BAT *b, int *start, int *incr, int *grpsize)
 {
 	return (*result = BATgroup(b, *start, *incr, *grpsize)) ? GDK_SUCCEED : GDK_FAIL;
 }
+
+int
+CMDgen_group(BAT **result, BAT *b )
+{
+	BUN u, v;
+	int xx;
+	int htpe = (b->htype == TYPE_void)?TYPE_oid:b->htype;
+	BAT *r = BATnew(htpe, TYPE_void, BATcount(b)*2);
+
+	if (b->hvarsized) {
+		BATloopFast(b, u, v, xx) {
+		    int i, sz = *(int*)BUNtloc(b, u);
+		    for(i = 0; i < sz; i++) {
+			if (BUNfastins(r, BUNhvar(b, u), NULL) == NULL) {
+				BBPreclaim(r);
+				return GDK_FAIL;
+			}
+		    }
+		}
+	} else {
+		BATloopFast(b, u, v, xx) {
+		    int i, sz = *(int*)BUNtloc(b, u);
+		    for(i = 0; i < sz; i++) {
+			if (BUNfastins(r, BUNhloc(b, u), NULL) == NULL) {
+				BBPreclaim(r);
+				return GDK_FAIL;
+			}
+		    }
+		}
+	}
+	*result = r;
+	return GDK_SUCCEED;
+}
+
 
 int
 CMDproject(BAT **res, BAT *b, ptr p, int t)
@@ -1266,7 +1317,7 @@ doCMDfetch(ptr ret, BAT *b, size_t i)
 	} else {
 		int _s = ATOMsize(ATOMtype(b->ttype));
 		if (ATOMvarsized(b->ttype)) {
-			memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtloc(b, @1), _s);
+			memcpy(*(ptr*) ret=GDKmalloc(_s), BUNtvar(b, @1), _s);
 		} else if (b->ttype == TYPE_bat) {
 			bat bid = *(bat*) BUNtloc(b, @1);
 			*(BAT**) ret = BATdescriptor(bid);
@@ -1348,8 +1399,8 @@ CMDr@1_summary(BAT **ret, BAT* b, int *quantiles)
 
 	if (bn == NULL)
 		return GDK_FAIL;
-	bn->hsorted = 1 @3 0;
-	bn->tsorted = 1;
+	bn->hsorted = (1 @3 0 ? GDK_SORTED : FALSE);
+	bn->tsorted = GDK_SORTED;
 
 	if (cnt > 0) {
 		ssize_t yy = 0, bunwidth = 0 @5 BUNsize(b);
@@ -1373,7 +1424,7 @@ CMDr@1_summary(BAT **ret, BAT* b, int *quantiles)
 	if ((BAThordered(bn)&1) == 0)
 		bn = BATrevert(bn);
 	if (bn) {
-		bn->hsorted = 1;
+		bn->hsorted = GDK_SORTED;
 		return GDK_SUCCEED;
 	}
 bunins_failed:
@@ -1385,7 +1436,7 @@ int
 CMDr@1_@2(oid* ret, BAT *b, ptr v)
 {
 	if ((BAThordered(b)&1) == 0) {
-		GDKerror("CMDr@1_@2: %s should be sorted on head\n", BBP_logical(b->batCacheid));
+		GDKerror("CMDr@1_@2: %s should be sorted on head\n", BATgetId(b));
 		return GDK_FAIL;
 	} else if (BATcount(b) > 0) {
 		BUN p = NULL;
@@ -1442,7 +1493,7 @@ CMDfind_@2(oid *ret, BAT *b, ptr v)
 	ssize_t idx = (ssize_t) oid_nil;
 
 	if ((BAThordered(b)&1) == 0) {
-		GDKerror("CMDfind_@2: %s should be sorted on head\n", BBP_logical(b->batCacheid));
+		GDKerror("CMDfind_@2: %s should be sorted on head\n", BATgetId(b));
 		return GDK_FAIL;
 	} else if (BATcount(b) > 0) {
 		BUN p = NULL;
@@ -1483,7 +1534,7 @@ CMDfind_@2(oid *ret, BAT *b, ptr v)
 }
 @c
 @:find_bounds(min,higher,<,last,-)@
-@:find_bounds(max,lower,>,first,+,if (idx && (p >= BUNlast(b) || ATOMcmp(b->htype, v, BUNhead(b, p)))) idx--)@
+@:find_bounds(max,lower,>,first,+,if (idx && (p >= BUNlast(b) || ATOMcmp(b->htype, v, BUNhead(b, p)))) idx--) @
 
 int
 CMDmerge(BAT **ret, BAT *b)
@@ -1501,9 +1552,13 @@ CMDmerge(BAT **ret, BAT *b)
 		*r++ = (((lng) hp) << 32) + tp;
 	}
 	bn->batBuns->free = (BUN) r - bn->batBuns->base;
-	BATsetcount(bn, bn->batBuns->free / BUNsize(bn));
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;
+
+	bn->hsorted = ( BAThordered(b)&1 && (BATtordered(b)&1 || BAThkey(b))) 
+		? GDK_SORTED : FALSE ;
+	BATkey(bn, BAThkey(b) || BATtkey(b)) ;
 
 	return GDK_SUCCEED;
 }
@@ -1523,9 +1578,10 @@ CMDsplit(BAT **ret, BAT *b)
 		bunfastins(bn, &hp, &tp);
 	}
 
-	bn->hsorted = b->hsorted;
+	bn->hsorted = BAThordered(b)&1 ? GDK_SORTED : FALSE ;
+	bn->tsorted = FALSE ;
 	return GDK_SUCCEED;
-      bunins_failed:
+bunins_failed:
 	BBPreclaim(bn);
 	return GDK_FAIL;
 }
