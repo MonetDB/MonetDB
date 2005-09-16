@@ -761,6 +761,8 @@ CMDnew(BAT **ret, int *ht, int *tt, int *cap)
 	if (*cap < 0)
 		*cap = 0;
 	*ret = BATnew(*ht, *tt, (size_t) * cap);
+	if (*ret)
+		(*ret)->batDirty |= 2;
 	return (*ret) ? GDK_SUCCEED : GDK_FAIL;
 }
 
@@ -900,11 +902,201 @@ CMDdelete_bat_bun(BAT **r, BAT *b, BAT *s)
 }
 
 int
-CMDdelete_bat(BAT **r, BAT *b, BAT *s)
+CMDdelete_bat_head(BAT **r, BAT *b, BAT *s)
 {
 	if (BATdelHead(*r = b, s) == NULL)
 		return GDK_FAIL;
 	BBPfix(b->batCacheid);
+	return GDK_SUCCEED;
+}
+
+
+@-
+The next collection of operators fill a hole in the MonetDB kernel libraries.
+It provide handy operations on void-BATs.
+@c
+size_t
+void_append_bat(BAT *b, BAT *u)
+{
+	size_t sz = BUNsize(u);
+	size_t old = u->hseqbase;
+	size_t sbase = b->hseqbase + BATcount(b);
+
+	BATseqbase(u, sbase);
+	BATins(b, u);
+	BATseqbase(u, old);
+	return sz;
+}
+
+size_t
+void_insert_bat(BAT *b, BAT *u)
+{
+	size_t nr = 0;
+	BUN r, s;
+	oid nil = oid_nil;
+
+	BATloop(u, r, s) {
+		BUNins(b, (ptr) &nil, BUNtail(u, r));
+		nr++;
+	}
+	return nr;
+}
+
+int
+void_inplace(BAT *b, oid id, ptr val)
+{
+	int res = GDK_SUCCEED;
+	BUN p = NULL;
+	BUN oldInserted = b->batInserted;
+
+	assert(b->htype == TYPE_void);
+	assert(b->hseqbase != oid_nil);
+	assert(BATcount(b) > (id -b->hseqbase));
+
+	b->batInserted = NULL;
+	BUNfndVOID(p, b, (ptr) &id);
+
+	assert(p >= b->batInserted);	/* we don't want delete/ins */
+	assert(!b->batRestricted);
+	if (!BUNinplace(b, p, (ptr) &id, val))
+		 res = GDK_FAIL;
+
+	b->batInserted = oldInserted;
+	return res;
+}
+
+int
+bat_inplace(BAT **res, BAT *b, oid *id, ptr val )
+{
+	int ret = void_inplace(b,*id,val);
+	*res = b;
+	BBPfix(b->batCacheid);
+	return ret;
+}
+ 
+ssize_t
+void_replace_bat(BAT *b, BAT *u)
+{
+	size_t nr = 0;
+	BUN r, s;
+
+	BATloop(u, r, s) {
+		oid updid = *(oid *) BUNhead(u, r);
+		ptr val = BUNtail(u, r);
+
+		if (void_inplace(b, updid, val) == GDK_FAIL)
+			return -1;
+		nr++;
+	}
+	return nr;
+}
+
+int
+bat_append_void_bat_wrap(BAT **res, BAT *i, BAT *u)
+{
+	*res = i;
+	void_append_bat(i, u);
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+bat_append_oid_bat_wrap(BAT **res, BAT *i, BAT *u)
+{
+	*res = i;
+	void_insert_bat(i, u);
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+bat_append_oidvoid_bat_wrap(BAT **res, BAT *i, BAT *u)
+{
+	/*(void)u; fake usage to fool compilers in case assertions are disabled
+	   assert (!BATcount(i));
+	 */
+	*res = i;
+	void_insert_bat(i, u);
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+static oid
+oid_max(BAT *i)
+{
+	oid o = 0;
+
+	if (BATcount(i))
+		o = *(oid *) BUNhead(i, BUNlast(i) - BUNsize(i));
+	if (!BAThordered(i)) {
+		BUN r, s;
+		int d;
+
+		BATloopFast(i, r, s, d) {
+			oid v = *(oid *) BUNhead(i, r);
+
+			if (v > o)
+				o = v;
+		}
+	}
+	return o;
+}
+
+int
+oid_bat_append_oid_bat_wrap(BAT **res, BAT *i, BAT *u)
+{
+	BUN r, s;
+	oid o;
+
+	assert(i->htype == TYPE_oid && (BATcount(u) == 0 || u->htype == TYPE_oid || u->htype == TYPE_void));
+
+	o = oid_max(i);
+	o++;
+	BATloop(u, r, s) {
+		oid h = *(oid *) BUNhead(u, r) + o;
+
+		BUNins(i, &h, BUNtail(u, r));
+	}
+	*res = i;
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+oid_bat_append_val_wrap(BAT **res, BAT *i, ptr t)
+{
+	oid o;
+
+	assert(i->htype == TYPE_oid);
+	o = oid_max(i);
+	o++;
+	*res = i;
+	BUNins(i, (ptr) &o, @:batconvert(i,t)@
+	    );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+
+int
+bat_append_val_wrap(BAT **res, BAT *i, ptr t)
+{
+	oid h = i->hseqbase + BATcount(i);
+
+	*res = i;
+	BUNins(i, (ptr) &h, @:batconvert(i,t)@
+	    );
+	BBPfix(i->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
+bat_replace_oid_bat_wrap(BAT **res, BAT *o, BAT *d)
+{
+	*res = o;
+	if (void_replace_bat(o, d) < 0)
+		return GDK_FAIL;
+	BBPfix(o->batCacheid);
 	return GDK_SUCCEED;
 }
 
@@ -1008,7 +1200,7 @@ CMDordered_rev(bit *result, BAT *input)
 int
 CMDgetkey(bit *ret, BAT *b)
 {
-	/* we must take care of the special case of a nil column (TYPE_void,seqbase=nil) 
+	/* we must take care of the special case of a nil column (TYPE_void,seqbase=nil)
 	 * such nil columns never set hkey (and BUNins will never invalidate it if set) yet
 	 * a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
 	 */
@@ -1032,7 +1224,7 @@ CMDpersists(BAT **r, BAT *input, bit *param)
 }
 
 int
-CMDdestroy(bit *res, str input)
+CMDdestroy(bit *res, str input )
 {
 	int bid = BBPindex(input);
 
@@ -1040,7 +1232,7 @@ CMDdestroy(bit *res, str input)
 	if (bid) {
 		BBPfix(bid);
 		if (BBPindex(input) == bid) {
-			BAT *b = BBPquickdesc(ABS(bid), FALSE);
+			BAT *b = (BAT*)BBPgetdesc(ABS(bid));
 
 			BATmode(b, TRANSIENT);
 			*res = TRUE;
@@ -1106,9 +1298,6 @@ HASHinfo(BAT *bn, Hash *h, str s)
 	size_t largetot = 0;
 	char buf[32];
 
-	if (!h)
-		return;
-
 	BUNins(bn, pre(s, "type"), ATOMname(h->type));
 	BUNins(bn, pre(s, "mask"), local_utoa(h->mask));
 	BUNins(bn, pre(s, "lim"), local_utoa(h->lim));
@@ -1117,7 +1306,7 @@ HASHinfo(BAT *bn, Hash *h, str s)
 		cnt[i] = 0;
 	}
 	for (i = 0; i <= h->mask; i++) {
-		if (h->hash[i] == 0) {
+		if (h->hash[i] == HASH_MAX) {
 			cnt[0]++;
 		} else if (h->hash[i] > h->lim) {
 			GDKerror("HASHinfo: hash consistency problem %d\n", i);
@@ -1144,7 +1333,6 @@ infoHeap(BAT *bn, Heap *hp, str nme)
 
 	if (!hp)
 		return;
-
 	while (*nme)
 		*p++ = *nme++;
 	strcpy(p, "free");
@@ -1228,6 +1416,11 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "hloc", local_itoa(b->hloc));
 	BUNins(bn, "hvarsized", local_itoa(b->hvarsized));
 	BUNins(bn, "halign", local_utoa(b->halign));
+	BUNins(bn, "hnosorted", local_utoa(b->H->nosorted));
+	BUNins(bn, "hnosorted_rev", local_utoa(b->H->nosorted_rev));
+	BUNins(bn, "hnodense", local_utoa(b->H->nodense));
+	BUNins(bn, "hnokey[0]", local_utoa(b->H->nokey[0]));
+	BUNins(bn, "hnokey[1]", local_utoa(b->H->nokey[1]));
 
 	BUNins(bn, "tident", b->tident);
 	BUNins(bn, "tdense", local_itoa(BATtdense(b)));
@@ -1237,9 +1430,15 @@ CMDinfo(BAT **retval, BAT *b)
 	BUNins(bn, "tloc", local_itoa(b->tloc));
 	BUNins(bn, "tvarsized", local_itoa(b->tvarsized));
 	BUNins(bn, "talign", local_utoa(b->talign));
+	BUNins(bn, "tnosorted", local_utoa(b->T->nosorted));
+	BUNins(bn, "tnosorted_rev", local_utoa(b->T->nosorted_rev));
+	BUNins(bn, "tnodense", local_utoa(b->T->nodense));
+	BUNins(bn, "tnokey[0]", local_utoa(b->T->nokey[0]));
+	BUNins(bn, "tnokey[1]", local_utoa(b->T->nokey[1]));
 
 	BUNins(bn, "batInserted", local_utoa(BUNindex(b, b->batInserted)));
 	BUNins(bn, "batDeleted", local_utoa(BUNindex(b, b->batDeleted)));
+	BUNins(bn, "batFirst", local_utoa(BUNindex(b, b->batFirst)));
 	BUNins(bn, "top", local_utoa(BUNindex(b, (BUN) ((char *) Bunbase(b) + b->batBuns->free))));
 	BUNins(bn, "batStamp", local_itoa(b->batStamp));
 	BUNins(bn, "lastUsed", local_itoa(BBP_lastused(b->batCacheid)));
@@ -1251,10 +1450,10 @@ CMDinfo(BAT **retval, BAT *b)
 	infoHeap(bn, b->batBuns, "batBuns.");
 
 	BUNins(bn, "hheapdirty", b->hheapdirty ? "dirty" : "clean");
-	infoHeap(bn, b->hheap, "hheap->");
+	infoHeap(bn, b->hheap, "hheap.");
 
 	BUNins(bn, "theapdirty", b->theapdirty ? "dirty" : "clean");
-	infoHeap(bn, b->theap, "theap->");
+	infoHeap(bn, b->theap, "theap.");
 
 	/* dump index information */
 	if (b->hhash) {
@@ -1263,14 +1462,13 @@ CMDinfo(BAT **retval, BAT *b)
 	if (b->thash) {
 		HASHinfo(bn, b->thash, "thash->");
 	}
-
 	return GDK_SUCCEED;
 }
 
 #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
 int
-CMDbatsize(int *tot, BAT *b)
+CMDbatsize(lng *tot, BAT *b)
 {
 	size_t blksize = MT_pagesize();
 	size_t size = ROUND_UP(sizeof(BATstore), blksize);
@@ -1293,13 +1491,13 @@ CMDbatsize(int *tot, BAT *b)
 }
 
 int
-CMDbatsize_str(int *tot, str batname)
+CMDbatsize_str(lng *tot, str batname)
 {
 	bat bid = BBPindex(batname);
 	BAT *b = bid ? (BAT *) BBPgetdesc(bid) : NULL;
 
 	if (b == NULL) {
-		GDKerror("CMDbatsize(%s): no such bat.\n", batname);
+		GDKerror("CMDbatsize_str: %s no such bat.\n", batname);
 		return GDK_FAIL;
 	}
 	return CMDbatsize(tot, b);
@@ -1325,10 +1523,28 @@ CMDroles(BAT **r, BAT *b, str hname, str tname)
 }
 
 int
+CMDcol_name(BAT **r, BAT *b, str tname)
+{
+	BATcol_name(*r = b, tname);
+	BBPfix(b->batCacheid);
+	return GDK_SUCCEED;
+}
+
+int
 CMDrename(bit *retval, BAT *b, str s)
 {
-	int ret = BATname(b, s);
+	int ret;
+	int c;
+	char *t = s;
 
+	for ( ; (c = *t) != 0; t++) {
+		if (c != '_' && !GDKisalnum(c)) {
+			GDKerror("CMDrename: identifier expected: %s\n", s);
+			return GDK_FAIL;
+		}
+	}
+
+	ret = BATname(b, s);
 	*retval = FALSE;
 	if (ret == 1) {
 		GDKerror("CMDrename: identifier expected: %s\n", s);
@@ -1419,12 +1635,15 @@ CMDsave(bit *res, str input)
 
 
 @= change_heap
-{	if (@2) {
+{
+	if (@2) {
 		int mode = (@2)->storage;
 
-		if (mode == STORE_MMAP && (@2)->filename == NULL) 
-			mode = STORE_MEM;  
-		if ((@2)->base == NULL || *@1 == int_nil || *@1 == mode) {
+		if (mode == STORE_MMAP && (@2)->filename == NULL)
+			mode = STORE_MEM;
+		if (mode == STORE_PRIV)
+			mode = STORE_MMAP;
+		if (*@1 == int_nil || *@1 == mode) {
 			*@1 = -1;
 		}
 	}
@@ -1447,7 +1666,7 @@ int
 CMDmadvise(BAT **r, BAT *b, int *bns, int *hhp, int *thp)
 {
 	BBPfix(b->batCacheid);
-	return BATmadvise(*r = b, (*bns == int_nil) ? -1 : *bns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp);
+	return BATmadvise(*r = b, (*bns == int_nil) ? -1 : *bns, (*hhp == int_nil) ? -1 : *hhp, (*thp == int_nil) ? -1 : *thp) ? GDK_FAIL : GDK_SUCCEED;
 }
 
 /* ITERATIONS ARE DEFINED ELSEWHERE */
@@ -1873,7 +2092,7 @@ BKCdelete_bat(int *r, int *bid, int *sid)
 		BBPunfix(b->batCacheid);
 		return throwMessage("bat.delete", "Cannot access descriptor");
 	}
-	if (CMDdelete_bat(&bn, b, s) == GDK_SUCCEED) {
+	if (CMDdelete_bat_head(&bn, b, s) == GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(s->batCacheid);
 		return MAL_SUCCEED;
@@ -1922,25 +2141,6 @@ BKCdestroy(signed char *r, int *bid)
 }
 
 /* The SQL frontend uses void-head bats */
-void
-void_inplace(BAT *b, oid id, ptr val)
-{
-	BUN p = NULL;
-	BUN oldInserted = b->batInserted;
-
-	assert(b->htype == TYPE_void);
-	assert(b->hseqbase != oid_nil);
-	assert(BATcount(b) > (id -b->hseqbase));
-
-	b->batInserted = NULL;
-	BUNfndVOID(p, b, (ptr) &id);
-
-	assert(p >= b->batInserted);	/* we don't want delete/ins */
-	(void) BUNinplace(b, p, (ptr) &id, val);
-
-	b->batInserted = oldInserted;
-}
-
 size_t
 void_delete_bat(BAT *b, BAT *d, int delta)
 {
@@ -1994,50 +2194,6 @@ void_replace_delta(BAT *b, BAT *u)
 		nr++;
 	}
 	return nr;
-}
-
-size_t
-void_replace_bat(BAT *b, BAT *u)
-{
-	size_t nr = 0;
-	BUN r, s;
-
-	BATloop(u, r, s) {
-		oid updid = *(oid *) BUNhead(u, r);
-		ptr val = BUNtail(u, r);
-
-		void_inplace(b, updid, val);
-		nr++;
-	}
-	return nr;
-}
-
-
-size_t
-void_insert_bat(BAT *b, BAT *u)
-{
-	size_t nr = 0;
-	BUN r, s;
-	oid nil = oid_nil;
-
-	BATloop(u, r, s) {
-		BUNins(b, (ptr) &nil, BUNtail(u, r));
-		nr++;
-	}
-	return nr;
-}
-
-size_t
-void_append_bat(BAT *b, BAT *u)
-{
-	size_t sz = BUNsize(u);
-	size_t old = u->hseqbase;
-	size_t sbase = b->hseqbase + BATcount(b);
-
-	BATseqbase(u, sbase);
-	BATins(b, u);
-	BATseqbase(u, old);
-	return sz;
 }
 
 char *
@@ -2101,27 +2257,6 @@ BKCbat_append_oidvoid_bat_wrap(int *r, int *bid, int *uid)
 	BBPunfix(i->batCacheid);
 	BBPunfix(u->batCacheid);
 	return MAL_SUCCEED;
-}
-
-static oid
-oid_max(BAT *i)
-{
-	oid o = 0;
-
-	if (BATcount(i))
-		o = *(oid *) BUNhead(i, BUNlast(i) - BUNsize(i));
-	if (!BAThordered(i)) {
-		BUN r, s;
-		int d;
-
-		BATloopFast(i, r, s, d) {
-			oid v = *(oid *) BUNhead(i, r);
-
-			if (v > o)
-				o = v;
-		}
-	}
-	return o;
 }
 
 str
