@@ -359,7 +359,6 @@ URLBOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str url, parts[MAXURLDEPTH];
 	Box box;
-	int depth;
 
 	@:OpenBox(take)@
 	url = (str) getArgValue(stk, pci, 1);
