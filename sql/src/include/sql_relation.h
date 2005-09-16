@@ -32,11 +32,16 @@ typedef enum expression_type {
 	e_cmp,
 	e_func,
 	e_aggr,
-	e_unique,
 	e_convert,
 } expression_type;
 
+#define CARD_ATOM 1
+#define CARD_AGGR 2
+#define CARD_MULTI 3
+
 typedef struct expression {
+	sql_ref ref;
+
 	char *name;
 	void *l;
 	void *r;
@@ -45,8 +50,9 @@ typedef struct expression {
 	int  flag;
 	char card;	/* card 
 				(0 truth value!)
-				(1 atoms (some aggr too))) 
-				(2 ie unknown)
+				(1 atoms) 
+				(2 aggr)
+				(3 multi value)
 			*/
 } sql_exp;
  
@@ -56,13 +62,18 @@ typedef enum operator_type {
 	op_project,
 	op_select,
 	op_join,
+	op_left,
+	op_right,
+	op_full,
 	op_union,
 	op_inter,
-	op_diff,
+	op_except,
 	op_groupby,
 	op_orderby,
 	op_topn
 } operator_type;
+
+#define is_join(op) (op == op_join || op == op_left)
 
 typedef struct relation {
 	char *name;   
@@ -71,7 +82,7 @@ typedef struct relation {
 	operator_type op;	
 	list *exps; 
 	int nrcols;	/* nr of cols */	
-	int card;	/* 0, 1 (row), 2 unkown */
+	int card;	/* 0, 1 (row), 2 aggr, 3 */
 } sql_rel;
 
 #endif /* SQL_RELATION_H */
