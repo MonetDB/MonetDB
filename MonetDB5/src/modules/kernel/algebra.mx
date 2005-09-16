@@ -2196,6 +2196,7 @@ str ALG@1(int *result, int* bid, int *param) {
 @:ALGunary(kunique)@
 @:ALGunary(sunique)@
 @:ALGbinary(cross)@
+@:ALGbinary(antijoin)@
 @:ALGbinaryestimate(join)@
 @:ALGbinaryestimate(outerjoin)@
 @:ALGbinary(semijoin)@

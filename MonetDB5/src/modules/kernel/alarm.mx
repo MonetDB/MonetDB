@@ -282,11 +282,10 @@ CMDtimers(BAT **retval)
 #ifdef HAVE_CTIME_R
 		ctime_r(&t, buf);
 #else
-		ctime(&t);
+		strncpy(buf, ctime(&t), sizeof(buf));
 #endif
 #endif
-		if (buf)
-			BUNins(*retval, buf, timer[k].action ? timer[k].action : "barrier");
+		BUNins(*retval, buf, timer[k].action ? timer[k].action : "barrier");
 	}
 	return GDK_SUCCEED;
 }
@@ -297,16 +296,16 @@ CMDctime(str *retval)
 	time_t t = time(0);
 
 #ifdef HAVE_CTIME_R3
-	char buf[128];
+	char buf[26];
 
-	*retval = GDKstrdup((char *) ctime_r(&t, buf, 26));
+	*retval = GDKstrdup(ctime_r(&t, buf, sizeof(buf)));
 #else
 #ifdef HAVE_CTIME_R
-	char buf[128];
+	char buf[26];
 
-	*retval = GDKstrdup((char *) ctime_r(&t, buf));
+	*retval = GDKstrdup(ctime_r(&t, buf));
 #else
-	*retval = GDKstrdup((char *) ctime(&t));
+	*retval = GDKstrdup(ctime(&t));
 #endif
 #endif
 	return GDK_SUCCEED;
