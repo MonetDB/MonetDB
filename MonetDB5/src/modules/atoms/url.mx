@@ -198,7 +198,8 @@ url_getAnchor(str *retval,	/* put string: pointer to char here. */
 	return GDK_SUCCEED;
 }
 
-/* COMMAND "getBasename": Extract the last file name of the URL
+/* COMMAND "getBasename": Extract the base of the last file name of the URL,
+ *                        thus, excluding the file extension.
  * SIGNATURE: getBasename(str) : str; */
 int
 url_getBasename(str *retval, url t)
@@ -230,9 +231,13 @@ url_getContent(str *retval,	/* put string: pointer to char here. */
 	       url Str1		/* string: pointer to char. */
     )
 {
-	(void) Str1;
-	*retval = 0;
-	return GDK_FAIL;
+    /* TODO: getContent should not return a string */
+    if (!Str1) {
+        return GDK_FAIL;
+    } else {
+        strcpy(*retval, "functions not implemented");
+        return GDK_SUCCEED;
+    }
 }
 
 /* COMMAND "getContext": Extract the path context from the URL
@@ -244,17 +249,24 @@ url_getContext(str *retval, url Str1)
 
 	if (Str1 == 0)
 		return GDK_FAIL;
-	s = strchr(Str1, '/');
+
+    s = strstr(Str1, "://");
+    if (s)
+        s +=3;
+    else
+        s = Str1;
+
+	s = strchr(s, '/');
 	if (s == 0) {
 		d = GDKmalloc(strlen(str_nil) + 1);
 		if (d)
 			strcpy(d, str_nil);
 	} else {
-		int i = s - Str1 + 1;
+		int i = strlen(Str1) - (s - Str1) + 1;
 
-		d = GDKmalloc(i + 1);
+		d = GDKmalloc(i);
 		if (d)
-			strncpy(d, s, i);
+			strcpy(d, s);
 	}
 	*retval = d;
 	return GDK_SUCCEED;
@@ -262,9 +274,8 @@ url_getContext(str *retval, url Str1)
 
 /* COMMAND "getDirectory": Extract the directory names from the URL
  * SIGNATURE: getDirectory(str) : bat[int,str]; */
-/*
 int
-url_getDirectory(BAT **retval,	
+url_getDirectory(BAT **retval,	/* put pointer to BAT[int,str] record here. */
 		 url t)
 {
 	static char buf[1024];
@@ -311,7 +322,6 @@ url_getDirectory(BAT **retval,
 	@:Pseudo(dir,name)@
 	return GDK_SUCCEED;
 }
-*/
 
 /* COMMAND "getDomain": Extract the Internet domain from the URL
  * SIGNATURE: getDomain(str) : str; */
@@ -546,7 +556,6 @@ url_getQuery(str *retval, url Str1)
 
 /* COMMAND "getQueryArg": Extract the argument mappings from the URL query
  * SIGNATURE: getQueryArg(str) : bat[str,str]; */
-/*
 int
 url_getQueryArg(BAT **retval, url t)
 {
@@ -579,7 +588,6 @@ url_getQueryArg(BAT **retval, url t)
 	@:Pseudo(dir,name)@
 	return GDK_SUCCEED;
 }
-*/
 
 /* COMMAND "getRobotURL": Extract the location of the robot control file
  * SIGNATURE: getRobotURL(str) : str; */
@@ -682,6 +690,11 @@ url_isaURL(bit *retval,		/* put return atom here. */
 	(void) retval;
 	if (Str1 == 0)
 		return GDK_FAIL;
+
+    if (strlen(Str1) == 0)
+        *retval = FALSE;
+    else
+        *retval = TRUE;
 	return GDK_SUCCEED;
 }
 
@@ -724,7 +737,7 @@ url_new4(str *retval,		/* put string: pointer to char here. */
 	if (strlen(File) + strlen(Server) + strlen(Protocol) > 1000)
 		s = str_nil;
 	else
-		sprintf("%s://%s:%d/%s", Protocol, Server, Port, File);
+		sprintf(buf, "%s://%s:%d/%s", Protocol, Server, *Port, File);
 	d = GDKmalloc(strlen(s) + 1);
 	if (d)
 		strcpy(d, s);
