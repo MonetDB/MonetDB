@@ -406,6 +406,7 @@ sqlcleanup(mvc *c, int err)
 	if (c->sa) 
 		sa_destroy(c->sa);
 	c->sa = sa_create();
+	c->status = err;
 	scanner_query_processed(&(c->scanner));
 	return err;
 }
@@ -458,12 +459,6 @@ output_prepare(stream *out, mvc *c, cq *q)
 	return 0;
 }
 
-enum ex_t {
-	ex_none,
-	ex_plan,
-	ex_profile
-};
-
 int
 sqlexecute(backend *be, stream *out)
 {
@@ -471,7 +466,6 @@ sqlexecute(backend *be, stream *out)
 	lng T0 = 0, Tparse = 0, Tmil = 0, Texec = 0, T1 = 0;
 	mvc *c = be->mvc;
 	int err = 0;
-	enum ex_t explain = ex_none;
 	cq *q = NULL;
 
 	c->type = Q_PARSE;
@@ -481,12 +475,12 @@ sqlexecute(backend *be, stream *out)
 
 	if (c->explain) {
 		if (strcmp(c->explain, "plan") == 0)
-			explain = ex_plan;
+			c->mode = m_explain;
 		else if (strcmp(c->explain, "profile") == 0)
-			explain = ex_profile;
+			c->mode = m_profile;
 	}
 
-	if (explain == ex_profile)
+	if (c->mode == m_profile)
 		T0 = GDKusec();
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
@@ -502,16 +496,11 @@ sqlexecute(backend *be, stream *out)
 		return sqlcleanup(c, err);
 	}
 
-	if (c->mode == m_explain)
-		explain = ex_plan;
 	if (c->mode == m_profile)
-		explain = ex_profile;
-
-	if (explain == ex_profile)
 		Tparse = GDKusec();
 
-	if (explain == ex_plan && c->sym->token == SQL_SET)
-		explain = ex_none;
+	if (c->mode == m_explain && c->sym->token == SQL_SET)
+		c->mode = m_normal;
 
 	if (c->mode == m_execute) {
 		node *a, *p;
@@ -521,7 +510,6 @@ sqlexecute(backend *be, stream *out)
 		if (!q) {
 			error(out, "no prepared statement with the given id\n");
 			err = -1;
-			c->status = err;
 			return sqlcleanup(c, err);
 		}
 		argc = c->args?list_length(c->args):0;
@@ -529,7 +517,6 @@ sqlexecute(backend *be, stream *out)
 		if (argc != parc) {
 			error(out, "wrong number of arguments for prepared statement\n");
 			err = -1;
-			c->status = err;
 			return sqlcleanup(c, err);
 		} else {
 			if (c->args)
@@ -543,12 +530,11 @@ sqlexecute(backend *be, stream *out)
 						snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
 						error(out, buf);
 						err = -1;
-						c->status = err;
 						return sqlcleanup(c, err);
 					}
 				}
 		}
-	} else if (explain == ex_plan || !c->cache || !(q = qc_match(c->qc, c->sym, c->args, c->scanner.key))) {
+	} else if (c->mode == m_explain || !c->cache || !(q = qc_match(c->qc, c->sym, c->args, c->scanner.key))) {
 		char *cmd = NULL;
 		stmt *s = sql_symbol2stmt(c);
 
@@ -556,7 +542,7 @@ sqlexecute(backend *be, stream *out)
 			return sqlcleanup(c, err);
 		assert(s);
 
-		if (explain == ex_plan) {
+		if (c->mode == m_explain) {
 			/* insert mil statements into a bat */
 			if (c->args) {
 				int i = 0;
@@ -577,7 +563,7 @@ sqlexecute(backend *be, stream *out)
 			}
 		}
 
-		if (explain == ex_plan || !c->cache) {
+		if (c->mode == m_explain || !c->cache) {
 			int nr = 1;
 
 			backend_dumpstmt(s, &nr, be);
@@ -588,7 +574,7 @@ sqlexecute(backend *be, stream *out)
 		stream_flush(be->out);
 		stmt_destroy(s);
 
-		if (explain == ex_plan) {
+		if (c->mode == m_explain) {
 			err = explain_cmd(c, cmd, out);
 		} else {
 			err = backend_parse(c->stk, cmd);
@@ -609,7 +595,7 @@ sqlexecute(backend *be, stream *out)
 			return sqlcleanup(c, err);
 	}
 
-	if (explain == ex_profile) {
+	if (c->mode == m_profile) {
 		query = sql_escape(QUERY(c->scanner));
 		Tmil = GDKusec();
 	}
@@ -645,7 +631,7 @@ sqlexecute(backend *be, stream *out)
 		c->type = q->type;
 		err = backend_fastpath((Cntxt) (ptrdiff_t) q->stk, (YYSTREE) q->code, c->args);
 	}
-	if (explain == ex_profile)
+	if (c->mode == m_profile)
 		Texec = GDKusec();
 
 	/*
@@ -658,7 +644,8 @@ sqlexecute(backend *be, stream *out)
 		c->qc = qc_create();
 	}
 
-	if (explain == ex_profile) {
+	if (c->mode == m_profile) {
+		int mode = c->mode;
 		char *e = c->explain;
 		char buf[BUFSIZ];
 
@@ -669,12 +656,14 @@ sqlexecute(backend *be, stream *out)
 			 query, Tparse - T0, Tmil - Tparse, Texec - Tmil, T1 - T0);
 		_DELETE(query);
 		/* switch of explain to prevent recursion */
+		c->mode = m_normal;
 		c->explain = NULL;
 		(void) mvc_sql(c, buf);
+		c->mode = mode;
 		c->explain = e;
 	}
 
-	if (!err && explain != ex_plan) {
+	if (!err && c->mode != m_explain) {
 		if (mvc_status(c) < 0) {
 			error(out, "Error in result");
 		} else if (c->cache && c->type != Q_RESULT && c->type != Q_UPDATE && !(q && c->mode == m_prepare)) {
@@ -776,7 +765,9 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console)
 							qc_destroy(m->qc);
 						m->qc = qc_create();
 					}
-					if (mvc_commit(m, 0, NULL) < 0) {
+					if (mvc_status(m) < 0) {
+						mvc_rollback(m, 0, NULL);
+					} else if (mvc_commit(m, 0, NULL) < 0) {
 						go = handle_error(m, out, pstatus);
 						if (!go)
 							break;
@@ -862,15 +853,17 @@ query string with "M".
 		err = sqlexecute(sql, out);
 		m->scanner.mode = oldmode;
 
-		if (err) {	/* output error */
-			if (m->auto_commit && m->trans) {
 				/* rollback and skip rest */
+/*
+			if (m->auto_commit && m->trans) {
 				mvc_rollback(m, 0, NULL);
 				in->pos = in->len;
 				if (m->qc)
 					qc_destroy(m->qc);
 				m->qc = qc_create();
 			}
+*/
+		if (err) {	/* output error */
 			go = handle_error(m, out, pstatus);
 		}
 	}
