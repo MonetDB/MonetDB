@@ -53,6 +53,8 @@ because execution of a statement outside the guarded block
 consumes processing resources which may have been prohibited by
 the block condition.
 
+For example, it doesn't make sense to move creation of objects
+outside the barrier.
 @{
 @h
 #ifndef _MAL_STRENGTHREDUCTION_
@@ -84,7 +86,23 @@ SRoverwritten(InstrPtr p, int varid)
 			return 1;
 	return 0;
 }
-
+int isNewSource(InstrPtr p) {
+	str mp= moduleId(p);
+	if( mp == getName("calc",4)) return 1;
+	if( mp == getName("batcalc",7)) return 1;
+	if( mp == getName("str",3)) return 1;
+	if( mp == getName("batstr",6)) return 1;
+	if( mp == getName("url",3)) return 1;
+	if( mp == getName("daytime",7)) return 1;
+	if( mp == getName("day",3)) return 1;
+	if( mp == getName("date",4)) return 1;
+	if( mp == getName("time",4)) return 1;
+	if( mp == getName("tzone",5)) return 1;
+	if( mp == getName("color",4)) return 1;
+	if( mp == getName("batcolor",8)) return 1;
+	if( mp == getName("blob",4)) return 1;
+	return 0;
+}
 str
 SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -137,9 +155,13 @@ SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto noreduction;
 @-
 Only variables introduced in the block can be moved out.
+Moreover, they should be result of a calculation, e.g.
+type modules and the batcalc, batstr, batcolor
 @c
+		if( !isNewSource(p) ) goto noreduction;
+
 		for (k = 0; k < p->retc; k++)
-			if (getVar(mb, getArg(p, k))->beginLifespan != i) {
+			if (getVar(mb, getArg(p, k))->beginLifespan != i ){
 				se = i;
 #ifdef DEBUG_MAL_STRENGTHREDUCTION
 				stream_printf(GDKout, "variable may not be moved out %d\n", getArg(p, k));
@@ -165,7 +187,8 @@ Search the end of the block
 Make sure the variables are not used outside the block
 @c
 		for (k = 0; k < p->retc; k++)
-			if (!isConstant(mb, getArg(p, k)) && getVar(mb, getArg(p, k))->endLifespan >= j) {
+			if (!isConstant(mb, getArg(p, k)) && 
+				getVar(mb, getArg(p, k))->endLifespan >= j) {
 				se = j;
 #ifdef DEBUG_MAL_STRENGTHREDUCTION
 				stream_printf(GDKout, "variable may not be used out %d\n", getArg(p, k));
@@ -197,12 +220,12 @@ none of the target variables is assigned a new value.
 					break;	/* exit the block */
 			}
 
-	      noreduction:
+  noreduction:
 #ifdef DEBUG_MAL_STRENGTHREDUCTION
 		stream_printf(GDKout, "move %d to stack %s\n", i, (se ? "within" : "before"));
 		printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
-		if (se == 0 && !hasSideEffects(p, TRUE))
+		if (se == 0 && !hasSideEffects(p, TRUE) && isNewSource(p))
 			before[bk++] = p;
 		else
 			within[ik++] = p;
