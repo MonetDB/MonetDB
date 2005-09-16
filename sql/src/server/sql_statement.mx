@@ -1558,23 +1558,26 @@ stmt *
 stmt_Nop(stmt *ops, sql_subfunc *op)
 {
 	node *n;
-	stmt *o, *s = stmt_create(st_Nop);
+	stmt *o = NULL, *s = stmt_create(st_Nop);
 
 	s->op1.stval = ops;
 	assert(op);
 	s->op4.funcval = op;
-	for (n = ops->op1.lval->h, o = n->data; n; n = n->next) {
-		stmt *c = n->data;
-
-		if (o->nrcols < c->nrcols)
-			o = c;
+	if (list_length(ops->op1.lval)) {
+		for (n = ops->op1.lval->h, o = n->data; n; n = n->next) {
+			stmt *c = n->data;
+	
+			if (o->nrcols < c->nrcols)
+				o = c;
+		}
 	}
 
-	s->h = stmt_dup(o->h);
-	s->nrcols = o->nrcols;
-	s->key = o->key;
-	s->aggr = o->aggr;
-
+	if (o) {
+		s->h = stmt_dup(o->h);
+		s->nrcols = o->nrcols;
+		s->key = o->key;
+		s->aggr = o->aggr;
+	}
 	return s;
 }
 
@@ -1820,8 +1823,11 @@ stmt_list_nrcols(list *l)
 static char *
 func_name(char *n1, char *n2)
 {
-	int l1 = strlen(n1);
-	int l2 = strlen(n2);
+	int l1 = strlen(n1), l2; 
+
+	if (!n2)
+		return _strdup(n1);
+	l2 = strlen(n2);
 
 	if (l2 > 16) {		/* only support short names */
 		char *ns = NEW_ARRAY(char, l2 + 1);
@@ -1886,7 +1892,7 @@ column_name(stmt *st)
 		char *cn = column_name(st->op1.stval);
 		char *r = func_name(st->op4.funcval->func->base.name, cn);
 
-		_DELETE(cn);
+		if (cn) _DELETE(cn);
 		return r;
 	}
 	case st_aggr:
@@ -1894,7 +1900,7 @@ column_name(stmt *st)
 		char *cn = column_name(st->op1.stval);
 		char *r = func_name(st->op4.aggrval->aggr->base.name, cn);
 
-		_DELETE(cn);
+		if (cn) _DELETE(cn);
 		return r;
 	}
 	case st_alias:
@@ -1913,8 +1919,7 @@ column_name(stmt *st)
 	case st_list:
 		if (list_length(st->op1.lval))
 			return column_name(st->op1.lval->h->data);
-		/* whats the name of an empty list ? */
-		assert(0);
+		return NULL;
 	default:
 		fprintf(stderr, "missing column name %d: %s\n", st->type, st_type2string(st->type));
 		return NULL;

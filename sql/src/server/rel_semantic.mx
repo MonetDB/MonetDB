@@ -29,6 +29,7 @@
 #include <stdarg.h>
 
 extern sql_rel *rel_semantic(mvc *sql, symbol *sym);
+extern sql_rel * rel_parse(mvc *m, char *query);
 
 #endif /*_REL_SEMANTIC_H_*/
 
@@ -43,6 +44,63 @@ extern sql_rel *rel_semantic(mvc *sql, symbol *sym);
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+
+sql_rel *
+rel_parse(mvc *m, char *query)
+{
+	mvc o = *m;
+	sql_rel *rel;
+	buffer *b;
+	char *n;
+	int len = strlen(query);
+
+	m->qc = NULL;
+
+	m->cache = 0;
+
+	b = (buffer*)GDKmalloc(sizeof(buffer));
+	n = GDKmalloc(len + 1 + 1);
+	strncpy(n, query, len);
+	query = n;
+	query[len] = '\n';
+	query[len+1] = 0;
+	len++;
+	buffer_init(b, query, len);
+	scanner_init( &m->scanner, 
+		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
+		NULL);
+	m->scanner.mode = LINE_1; 
+	bstream_next(m->scanner.rs);
+
+	m->params = NULL;
+	m->args = NULL;
+	m->sym = NULL;
+	m->errstr[0] = '\0';
+	m->status = 0;
+	/* via views we give access to protected objects */
+	m->user_id = USER_MONETDB;
+
+	(void) sqlparse(m);	/* blindly ignore errors */
+	rel = rel_semantic(m, m->sym);
+
+	GDKfree(query);
+	GDKfree(b);
+	bstream_destroy(m->scanner.rs);
+
+	m->sym = NULL;
+	if (m->status || m->errstr[0]) {
+		int status = m->status;
+		char errstr[ERRSIZE];
+
+		strcpy(errstr, m->errstr);
+		*m = o;
+		m->status = status;
+		strcpy(m->errstr, errstr);
+	} else {
+		*m = o;
+	}
+	return rel;
+}
 
 sql_rel * 
 rel_semantic(mvc *sql, symbol *s)

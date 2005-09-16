@@ -1938,7 +1938,8 @@ sql_compare(mvc *sql, stmt *ls, stmt *rs, char *compare_op, int f)
 	/* predicate case ? */
 	if (f == sql_sel || (ls->nrcols <= 0 && rs->nrcols <= 0)) {
 		return sql_binop_(sql, NULL, compare_op, ls, rs);
-	} else if (ls->nrcols > 0 && rs->nrcols > 0) {
+	}
+	if (ls->nrcols > 0 && rs->nrcols > 0) {
 		join = 1;
 	}
 	if (compare_op[0] == '=') {
@@ -2749,8 +2750,8 @@ query_groupby_outers(mvc *sql, scope *scp, stmt *subset)
 /*
    select column_1, column_2 from x order by column_1, column_2;
 
-   As SQL-3 drop support for order by number (column position in result table)
-   so we also do not support it. Unfortunately SQL-3 added new crap,
+   As SQL-3 dropped support for order by number (column position in result 
+   table) so we also do not support it. Unfortunately SQL-3 added new crap,
    order by 'expression', where expression should match a result column 
    expression. We also do not support this (just use as bla and order by bla!).
    SQL-3 supports ordering on columns not in the result table, but again we
@@ -3231,7 +3232,7 @@ sql_select(mvc *sql, scope *scp, SelectNode *sn, int toplevel)
 
 			if (n) {
 				stmt *limit = stmt_limit(stmt_dup(n->data), offset, sn->limit, 0);
-				list_append(l, stmt_dup(limit));
+				list_append(l, limit);
 				for ( n = n->next; n; n = n->next)
 					list_append(l, stmt_semijoin(stmt_dup(n->data), stmt_dup(limit)));
 			}

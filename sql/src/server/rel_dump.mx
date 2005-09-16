@@ -86,13 +86,17 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 		exp_print(sql, e->r, depth, 0, 0);
 	 	break;
 	case e_atom: {
-		atom *a = e->l;
-		char *s = atom2string(a);
-		if (a->tpe->type->localtype == TYPE_str)
-			printf("'%s'", s);
-		else
-			printf("%s", s);
-		_DELETE(s);
+		if (e->l) {
+			atom *a = e->l;
+			char *s = atom2string(a);
+			if (a->tpe->type->localtype == TYPE_str)
+				printf("'%s'", s);
+			else
+				printf("%s", s);
+			_DELETE(s);
+		} else {
+			printf("A%d", e->flag);
+		}
 	} 	break;
 	case e_func: {
 		sql_subfunc *f = e->f;
@@ -102,6 +106,8 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 	case e_aggr: {
 		sql_subaggr *a = e->f;
 		printf("'%s' ", a->aggr->base.name );
+		if (e->flag)
+			printf("unique ");
 		exps_print( sql, e->l, depth, alias);
 	} 	break;
 	case e_relation: 
@@ -159,17 +165,26 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 		}
 		break;
 	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
 	case op_union: 
 	case op_inter: 
-	case op_diff: 
+	case op_except: 
 		r = "join";
-		if (rel->op == op_union)
+		if (rel->op == op_left)
+			r = "left outer join";
+		if (rel->op == op_right)
+			r = "right outer join";
+		if (rel->op == op_full)
+			r = "full outer join";
+		else if (rel->op == op_union)
 			r = "union";
 		else if (rel->op == op_inter)
 			r = "intersect";
-		else if (rel->op == op_diff)
-			r = "minus";
-		else if (!rel->exps)
+		else if (rel->op == op_except)
+			r = "except";
+		else if (!rel->exps && rel->op == op_join)
 			r = "crossproduct";
 		print_indent(sql, depth);
 		printf("%s (", r);
@@ -186,6 +201,8 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 	case op_orderby: 
 	case op_topn: 
 		r = "project";
+		if (rel->op == op_project && rel->r)
+			r = "distinct";
 		if (rel->op == op_select)
 			r = "select";
 		if (rel->op == op_groupby)
@@ -201,7 +218,10 @@ rel_print(mvc *sql, sql_rel *rel, int depth)
 			print_indent(sql, depth);
 			printf(")");
 		}
-		exps_print(sql, rel->exps, depth, (rel->op == op_project));
+		exps_print(sql, rel->exps, depth, 1);
+		if (rel->r && rel->op == op_groupby) { /* group by aggrs */
+			exps_print(sql, rel->r, depth, 1);
+		}
 		if (rel->name)
 			printf(" as %s", rel->name);
 		break;

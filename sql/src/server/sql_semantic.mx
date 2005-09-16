@@ -424,6 +424,7 @@ sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs)
 			sql_subtype *nlt = sql_create_subtype(t->type, 
 				f->res->digits, lt->scale);
 			ls = check_types( sql, nlt, ls, type_equal);
+			sql_subtype_destroy(nlt);
 		}
 		sql_subtype_destroy(f->res);
 		f->res = t;
@@ -578,7 +579,6 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 	        stmt_destroy(s);
                 return sql_error(sql, 02, "statement has no type information");
 	}
-
 
 	/* first try cheap internal (inplace) convertions ! */
 	s = inplace_convert(sql, ct, s);

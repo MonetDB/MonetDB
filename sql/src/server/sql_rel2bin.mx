@@ -905,6 +905,25 @@ rel2bin(mvc *c, stmt *s)
 			os->rewritten = stmt_dup(ns);
 			os->optimized = ns->optimized = 2;
 			return ns;
+		} else
+		if (s->flag != 0 /* topn, ie limit and orderby */ &&
+		    j->type == st_join && 
+		  ((j->flag == cmp_equal && 
+		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) || 
+		    j->flag == cmp_all)) {
+			stmt *l = stmt_dup(j->op1.stval);
+			stmt *r = stmt_dup(j->op2.stval);
+
+			r = stmt_limit(r, 
+			      s->op2.stval->op1.aval->data.val.ival,
+			      s->op3.stval->op1.aval->data.val.ival,
+			      s->flag);
+			s = stmt_join(l, r, cmp_equal); 
+			ns = rel2bin(c, s);
+			stmt_destroy(s);
+			os->rewritten = stmt_dup(ns);
+			os->optimized = ns->optimized = 2;
+			return ns;
 		}
 		/* try to push the limit through the order */
 		if (j->type == st_order) {
