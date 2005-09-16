@@ -65,6 +65,23 @@ command match(s:str, pat:str):bit
 address PCREmatch
 comment "POSIX pattern matching against a string";
 
+command replace(origin:str,pat:str,repl:str,flags:str):str
+address PCREreplace_wrap
+comment "Replace _all_ matches of \"pattern\" in \"origin_str\" with
+       \"replacement\".\n\
+     Parameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n
+       'e': if present, an empty string is considered to be a valid match
+       'i': if present, the match operates in case-insensitive mode. Otherwise, in\n
+            case-sensitive mode.\n\
+     'm': if present, the match operates in multi-line mode.\n
+       's': if present, the match operates in \"dot-all\"
+       The specifications of the flags can be found in \"man pcreapi\"\n
+       The flag letters may be repeated.\n
+       No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\n
+       Returns the replaced string, or if no matches found, the original string.";
+
+command replace(orig:bat[:any_1,:str],pat:str,repl:str,flag:str):bat[:any_1,:str]
+address PCREreplace_bat_wrap;
 @+ Implementation
 
 @c
@@ -75,6 +92,8 @@ comment "POSIX pattern matching against a string";
 #ifndef HAVE_LIBPCRE
 
 #define pcre str
+mal_export str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
+mal_export str PCREreplace_bat_wrap(int *res, int *or, str *pat, str *repl, str *flags);
 mal_export str PCREcompile_wrap(pcre ** res, str *pattern);
 mal_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
 mal_export str PCREselect(int *res, str *pattern, int *bid);
@@ -128,6 +147,236 @@ pcre_uselect(BAT **res, str pattern, BAT *strs)
 	return GDK_FAIL;
 }
 
+#define MAX_NR_CAPTURES  1024 /* Maximal number of captured substrings in one original string */
+
+int
+pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
+{
+	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
+	pcre *pcre_code = NULL;
+	pcre_extra *extra;
+	str tmpres;
+	int i, j, k, len, errpos = 0, offset = 0;
+	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
+	int *ovector, ovecsize;
+	int len_origin_str = strlen(origin_str);
+	int len_replacement = strlen(replacement);
+	int capture_offsets[MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
+	
+	for (i = 0; i < (int)strlen(flags); i++) {
+		if (flags[i] == 'e') {
+			exec_options -= PCRE_NOTEMPTY;
+			stream_printf(GDKout, "exec_options %d, PCRE_NOTEMPTY %d\n",
+					exec_options, PCRE_NOTEMPTY);
+		} else if (flags[i] == 'i') {
+			compile_options |= PCRE_CASELESS;
+		} else if (flags[i] == 'm') {
+			compile_options |= PCRE_MULTILINE;
+		} else if (flags[i] == 's') {
+			compile_options |= PCRE_DOTALL;
+		} else if (flags[i] == 'x') {
+			compile_options |= PCRE_EXTENDED;
+		} else {
+			GDKerror("pcre_replace: \"flags\" contains invalid character '%c'\n", flags[i]);
+			return GDK_FAIL;
+		}
+	}
+
+	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
+		GDKerror("pcre_replace: pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
+		return GDK_FAIL;
+	}
+
+	/* Since the compiled pattern is going to be used several times, it is
+	 * worth spending more time analyzing it in order to speed up the time
+	 * taken for matching.
+	 */
+	extra = pcre_study(pcre_code, 0, &err_p2);
+	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
+	ovecsize = (i + 1) * 3;
+	if ((ovector = (int *) GDKmalloc(sizeof(int) * ovecsize)) == NULL) {
+		GDKerror("pcre_replace: not enough memory\n");
+		my_pcre_free(pcre_code);
+		return GDK_FAIL;
+	}
+	
+	i = 0;
+	do {
+		j = pcre_exec(pcre_code, extra, origin_str, len_origin_str, 
+						offset, exec_options, ovector, ovecsize);
+		if (j > 0){
+			capture_offsets[i] = ovector[0];
+			capture_offsets[i+1] = ovector[1];
+			ncaptures++;
+			i += 2;
+			len_del += (ovector[1] - ovector[0]);
+			offset = ovector[1];
+		}
+	} while((j > 0) && (offset < len_origin_str) && (ncaptures < MAX_NR_CAPTURES));
+	
+	if (ncaptures > 0){
+		tmpres = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
+		if (!tmpres) {
+			GDKerror("pcre_replace: not enough memory\n");
+			my_pcre_free(pcre_code);
+			GDKfree(ovector);
+			return GDK_FAIL;
+		}
+
+		j = k = 0;
+
+		/* possibly copy the substring before the first captured substring */
+		strncpy(tmpres, origin_str, capture_offsets[j]); 
+		k = capture_offsets[j];
+		j++;
+
+		for (i = 0; i < ncaptures - 1; i++) {
+			strncpy(tmpres+k, replacement, len_replacement);
+			k += len_replacement;
+			/* copy the substring between two captured substrings */
+			len = capture_offsets[j+1] - capture_offsets[j];
+			strncpy(tmpres+k, origin_str+capture_offsets[j], len);
+			k += len;
+			j += 2;
+		}
+
+		/* replace the last captured substring */
+		strncpy(tmpres+k, replacement, len_replacement);
+		k += len_replacement;
+		/* possibly copy the substring after the last captured substring */
+		len = len_origin_str - capture_offsets[j];
+		strncpy(tmpres+k, origin_str+capture_offsets[j], len);
+		k += len;
+		tmpres[k] = '\0';
+	} else { /* no captured substrings, return the original string*/
+		tmpres = GDKstrdup(origin_str);
+	}
+
+	my_pcre_free(pcre_code);
+	GDKfree(ovector);
+	*res = tmpres;
+	return GDK_SUCCEED;
+}
+
+int
+pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str flags)
+{
+	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
+	int i, j, k, len, errpos = 0, offset = 0;
+	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
+	pcre *pcre_code = NULL;
+	pcre_extra *extra;
+	BAT *tmpbat;
+	BUN p, q;
+	int *ovector, ovecsize;
+	int len_origin_str, len_replacement = strlen(replacement);
+	int capture_offsets[MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
+	str origin_str, replaced_str;
+
+	for (i = 0; i < (int)strlen(flags); i++) {
+		if (flags[i] == 'e') {
+			exec_options |= (~PCRE_NOTEMPTY);
+		} else if (flags[i] == 'i') {
+			compile_options |= PCRE_CASELESS;
+		} else if (flags[i] == 'm') {
+			compile_options |= PCRE_MULTILINE;
+		} else if (flags[i] == 's') {
+			compile_options |= PCRE_DOTALL;
+		} else if (flags[i] == 'x') {
+			compile_options |= PCRE_EXTENDED;
+		} else {
+			GDKerror("pcre_replace_bat: \"flags\" contains invalid character '%c'\n", flags[i]);
+			return GDK_FAIL;
+		}
+	}
+
+	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
+		GDKerror("pcre_replace_bat: pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
+		return GDK_FAIL;
+	}
+
+	/* Since the compiled pattern is ging to be used several times, it is worth spending 
+	 * more time analyzing it in order to speed up the time taken for matching.
+	 */
+	extra = pcre_study(pcre_code, 0, &err_p2);
+	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
+	ovecsize = (i + 1) * 3;
+	if ((ovector = (int *) GDKzalloc(sizeof(int) * ovecsize)) == NULL) {
+		GDKerror("pcre_replace_bat: not enough memory\n");
+		my_pcre_free(pcre_code);
+		return GDK_FAIL;
+	}
+	
+	tmpbat = BATnew(origin_strs->htype, TYPE_str, BATcount(origin_strs));
+	BATloop(origin_strs, p, q) {
+		origin_str = BUNtail(origin_strs, p);
+		len_origin_str = strlen(origin_str);
+		i = ncaptures = len_del = offset = 0;
+		do {
+			j = pcre_exec(pcre_code, extra, origin_str, len_origin_str, offset,
+					exec_options, ovector, ovecsize);
+			if (j > 0){
+				capture_offsets[i] = ovector[0];
+				capture_offsets[i+1] = ovector[1];
+				ncaptures++;
+				i += 2;
+				len_del += (ovector[1] - ovector[0]);
+				offset = ovector[1];
+			}
+		} while((j > 0) && (offset < len_origin_str) && (ncaptures < MAX_NR_CAPTURES));
+	
+		if (ncaptures > 0){
+			replaced_str = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
+			if (!replaced_str) {
+				GDKerror("pcre_replace_bat: not enough memory\n");
+				my_pcre_free(pcre_code);
+				GDKfree(ovector);
+				return GDK_FAIL;
+			}
+
+			j = k = 0;
+
+			/* copy eventually the substring before the first captured
+			 * substring */
+			strncpy(replaced_str, origin_str, capture_offsets[j]); 
+			k = capture_offsets[j];
+			j++;
+
+			for (i = 0; i < ncaptures - 1; i++) {
+				strncpy(replaced_str+k, replacement, len_replacement);
+				k += len_replacement;
+				/* copy the substring between two captured substrings */
+				len = capture_offsets[j+1] - capture_offsets[j];
+				strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
+				k += len;
+				j += 2;
+			}
+
+			/* replace the last captured substring */
+			strncpy(replaced_str+k, replacement, len_replacement);
+			k += len_replacement;
+			/* copy eventually the substring after the last captured substring */
+			len = len_origin_str - capture_offsets[j];
+			strncpy(replaced_str+k, origin_str+capture_offsets[j], len);
+			k += len;
+			replaced_str[k] = '\0';
+			BUNins(tmpbat, BUNhead(origin_strs, p), replaced_str);
+			GDKfree(replaced_str);
+		} else { /* no captured substrings, copy the original string into new bat */
+			BUNins(tmpbat, BUNhead(origin_strs, p), origin_str);
+		}
+	}
+
+	my_pcre_free(pcre_code);
+	GDKfree(ovector);
+	if (origin_strs->htype == TYPE_void) {
+		*res = BATseqbase(tmpbat, origin_strs->hseqbase);
+	} else {
+		*res = tmpbat;
+	}
+	return GDK_SUCCEED;
+}
+
 bat *
 pcre_init(void)
 {
@@ -152,6 +401,8 @@ pcre_match(bit *ret, str *val, str *pat)
 #include <regex.h>
 #include <pcre.h>
 
+mal_export str PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags);
+mal_export str PCREreplace_bat_wrap(int *res, int *or, str *pat, str *repl, str *flags);
 mal_export str PCREcompile_wrap(pcre ** res, str *pattern);
 mal_export str PCREexec_wrap(bit *res, pcre * pattern, str *s);
 mal_export str PCREselect(int *res, str *pattern, int *bid);
@@ -217,6 +468,30 @@ pcre_exec_wrap(bit *res, pcre * pattern, str s)
 	return GDK_SUCCEED;
 }
 
+
+int
+pcre_replace(str *res, str origin_str, str pattern, str replacement, str flags)
+{
+	(void) res;
+	(void) origin_str;
+	(void) pattern;
+	(void) replacement;
+	(void) flags;
+	GDKerror("pcre_replace() not available as required version of libpcre was not found by configure.\n");
+	return GDK_FAIL;
+}
+
+int
+pcre_replace_bat(BAT **res, BAT *origin_strs, str pattern, str replacement, str flags)
+{
+	(void) res;
+	(void) origin_strs;
+	(void) pattern;
+	(void) replacement;
+	(void) flags;
+	GDKerror("pcre_replace_bat() not available as required version of libpcre was not found by configure.\n");
+	return GDK_FAIL;
+}
 
 bat *
 pcre_init(void)
@@ -328,6 +603,26 @@ PCREfromstr(str instr, int *l, pcre ** val)
 	(void) l;
 	(void) val;
 	return NULL;
+}
+
+str
+PCREreplace_wrap(str *res, str *or, str *pat, str *repl, str *flags){
+	pcre_replace(res,*or,*pat,*repl,*flags);
+	return MAL_SUCCEED;
+}
+
+str
+PCREreplace_bat_wrap(int *res, int *bid, str *pat, str *repl, str *flags){
+	BAT *b,*bn = NULL;
+	if ((b = BATdescriptor(*bid)) == NULL)
+		return throwMessage("pcre.replace", "Cannot access descriptor");
+
+	pcre_replace_bat(&bn,b,*pat,*repl,*flags);
+	*res= bn->batCacheid;
+	BBPincref(*res,TRUE);
+	BBPunfix(*res);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 str
