@@ -274,6 +274,16 @@ address BKCinsert_bat
 comment "Insert all BUNs of the second BAT into the first. This case 
         should be removed, because it is a hack for SQL";
 
+command insert(b:bat[:void,:any_2], src:bat[:oid,:any_2]) :void
+address BKCinsert_bat
+comment "Insert all BUNs of the second BAT into the first. This case 
+        should be removed, because it is a hack for SQL";
+
+command insert(b:bat[:oid,:any_2], src:bat[:void,:any_2]) :void
+address BKCinsert_bat
+comment "Insert all BUNs of the second BAT into the first. This case 
+        should be removed, because it is a hack for SQL";
+
 command insert(b:bat[:any_1,:any_2], src:bat[:any_1,:any_2]):void
 address BKCinsert_bat
 comment "Insert all BUNs of the second BAT into the first.";
