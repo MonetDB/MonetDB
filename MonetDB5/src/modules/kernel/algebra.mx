@@ -367,7 +367,12 @@ command outercrossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
 	:bat[:any_1,:any_4]
 address ALGcross
 comment "Returns the cross product";
-	
+
+command antijoin(left:bat[:any_1,:any_2], right:bat[:any_2,:any_4])
+	:bat[:any_1,:any_4]
+address ALGantijoin
+comment "Returns the antijoin";
+
 command join( left:bat[:any_1,:any_2], right:bat[:any_2,:any_3])
 		:bat[:any_1,:any_3] 
 address ALGjoin
