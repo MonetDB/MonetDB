@@ -1323,14 +1323,23 @@ strConcat(str *res, str s, ptr val, int t)
 	str valstr = NULL;
 	size_t l1;
 	int l2 = 0;
+	char buf[7], *p = buf;
 
 	RETURN_NIL_IF(strNil(s) || ATOMcmp(t, val, ATOMnilptr(t)) == 0, TYPE_str);
 	if (t <= 0)
 		return GDK_FAIL;
 	l1 = strlen(s);
 	if (t != TYPE_str) {
-		BATatoms[t].atomToStr(&valstr, &l2, val);
-		val = (ptr) valstr;
+		if (t == TYPE_chr) {
+			/* put value in int to avoid warning from compiler */
+			l2 = * (char *) val;
+			@:UTF8_PUTCHAR(l2,p)@
+			l2 = p - buf;
+			val = (ptr) buf;
+		} else {
+			BATatoms[t].atomToStr(&valstr, &l2, val);
+			val = (ptr) valstr;
+		}
 	} else {
 		l2 = strlen((str) val);
 	}
@@ -1663,7 +1672,7 @@ strStrip(str *res, str s)
 		start++;
 
 	/* Remove the trailing spaces.  Make sure not to pass the start */
-	/* pointer in case a string only contains spaces.               */
+	/* pointer in case a string only contains spaces.		*/
 	s = start + strlen(start);
 	while (s > start && GDKisspace(*(s - 1)))
 		s--;
@@ -1730,33 +1739,138 @@ strSubstitute(str *res, str s, str src, str dst, bit *g)
 }
 
 int
+strTranslate(str *res, str src, str mapstr, str transtr)
+{
+	unsigned char *s;
+	unsigned char *dst;
+	int *map, *tran;
+	int c, n, m, i;
+
+	/* if any of the inputs is nil, return nil */
+	if (strNil(src) || strNil(mapstr) || strNil(transtr)) {
+		* (ptr *) res = (ptr) ATOMnil(TYPE_str);
+		return GDK_SUCCEED;
+	}
+	/* quick check: empty string in, empty string out;
+	   quick check: empty mapstr, return src unchanged */
+	if (*src == 0 || *mapstr == 0) {
+		*res = GDKstrdup(src);
+		return GDK_SUCCEED;
+	}
+	/* convert mapstr and transtr to arrays of Unicode code points */
+	n = 0;
+	map = GDKmalloc(strlen(mapstr) * sizeof(int));
+	s = (unsigned char *) mapstr;
+	for (;;) {
+		@:UTF8_GETCHAR(c,s)@
+		if (c == int_nil) {
+			GDKfree(map);
+			* (ptr *) res = (ptr) ATOMnil(TYPE_str);
+			return GDK_SUCCEED;
+		}
+		if (!c)
+			break;
+		map[n++] = c;
+	}
+	m = 0;
+	tran = GDKmalloc(strlen(transtr) * sizeof(int));
+	s = (unsigned char *) transtr;
+	for (;;) {
+		@:UTF8_GETCHAR(c,s)@
+		if (c == int_nil) {
+			GDKfree(map);
+			GDKfree(tran);
+			* (ptr *) res = (ptr) ATOMnil(TYPE_str);
+			return GDK_SUCCEED;
+		}
+		if (!c)
+			break;
+		tran[m++] = c;
+	}
+	/* now do the translations */
+	dst = (unsigned char *) GDKmalloc(strlen(src) * 6 + 1); /* more than enough */
+	*res = (char *) dst;
+	s = (unsigned char *) src;
+	for (;;) {
+		@:UTF8_GETCHAR(c,s)@
+		if (c == int_nil) {
+			GDKfree(map);
+			GDKfree(tran);
+			GDKfree(*res);
+			* (ptr *) res = (ptr) ATOMnil(TYPE_str);
+			return GDK_SUCCEED;
+		}
+		if (!c)
+			break;
+		for (i = 0; i < n; i++)
+			if (map[i] == c) {
+				if (i < m) {
+					@:UTF8_PUTCHAR(tran[i],dst)@
+				}
+				break;
+			}
+		if (i == n) {
+			/* not found */
+			@:UTF8_PUTCHAR(c,dst)@
+		}
+	}
+	*dst = 0;
+	GDKfree(map);
+	GDKfree(tran);
+	*res = GDKrealloc(*res, strlen(*res) + 1);
+	return GDK_SUCCEED;
+}
+
+int
 strSplit(BAT **Res, str s, str sep)
 {
 	size_t seplen = strlen(sep);
-	char *d = GDKstrdup(s);
+	char *d = GDKstrdup(s), *x = d;
 	BAT *res = BATnew(TYPE_void, TYPE_str, BUFSIZ);
 	oid n = oid_nil;
 
+	if (sep[0] == '\0') {
+		return GDK_FAIL;
+	}
 	if (res == NULL)
 		return GDK_FAIL;
-	while (d) {
-		char *e = strstr(d, sep);
 
-		if (!e)
-			break;
-
-		*e = 0;
-		BUNins(res, (ptr) &n, d);
-		d = e + seplen;
+	if (seplen) {
+		while (d) {
+			char *e = strstr(d, sep);
+	
+			if (!e)
+				break;
+	
+			*e = 0;
+			BUNins(res, (ptr) &n, d);
+			d = e + seplen;
+		}
 	}
 
 	if (d && *d)
 		BUNins(res, (ptr) &n, d);
 
+	if (x)
+		GDKfree(x);
 	*Res = res;
 	return GDK_SUCCEED;
 }
 
+int
+chrSplit(BAT **Res, str s)
+{
+	char * d = s;
+	oid n = oid_nil;
+	BAT *res = BATnew(TYPE_void, TYPE_chr, strlen(s));
+	BATseqbase(res,(oid) 0);
+	if (res == NULL)
+		return GDK_FAIL;
+	while (*d) 
+		BUNins(res, (ptr) &n, (ptr) d++);
+	*Res = res;
+	return GDK_SUCCEED;
+}
 @
 @- Wrappers
 Here you find the wrappers around the version 4 library code
