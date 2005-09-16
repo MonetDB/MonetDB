@@ -1,0 +1,23 @@
+#bug from Roberto to check carefull strength reduction
+function f():void;  
+  i:=0;             
+  barrier go:=true; 	
+    # remove from disk
+    a:bat[:void,:dbl] := bbp.bind("P_bat");
+    bat.setPersistent(a,false);
+    transaction.commit();
+    
+    # alter the values
+    a := batcalc.+(a,1.0LL);
+    
+    # store it to disk with the same name
+    bat.setName(a, "P_bat");
+    bat.setPersistent(a,true);
+    transaction.commit();
+    redo go := calc.<(i,2);       
+  exit go;                        
+end f;                            
+
+
+optimizer.strengthReduction("user", "f");
+mdb.list("user", "f");
