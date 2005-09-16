@@ -363,7 +363,7 @@ URLBOXtake(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	@:OpenBox(take)@
 	url = (str) getArgValue(stk, pci, 1);
 	url = GDKstrdup(url);
-	depth= URLBOXchop(url, parts);
+	URLBOXchop(url, parts);
 	GDKfree(url);
 	(void) mb;
 	return MAL_SUCCEED;
