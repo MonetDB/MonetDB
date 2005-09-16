@@ -1,4 +1,3 @@
-
 create table t1(id int, val int);
 create table t2(id int, val int);
 

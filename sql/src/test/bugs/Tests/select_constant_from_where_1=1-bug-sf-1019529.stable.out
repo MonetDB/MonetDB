@@ -146,6 +146,14 @@ Over..
 # 1,	 # tuplecount
 # 9,	 # id
 [ 1,	0	]
+# 3 # querytype
+# ,	 # table_name
+# single_value,	count # name
+# smallint,	int # type
+# 6,	10 # length
+# 1,	 # tuplecount
+# 10,	 # id
+[ 1,	0	]
 # 7 # querytype
 
 # 13:31:39 >  

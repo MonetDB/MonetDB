@@ -319,6 +319,12 @@ sql_update_var(mvc *m, char *name)
 			GDKwarning("Session variable explain can only be set to 'plan', 'performance' or to the empty string\n");
 			return GDK_FAIL;
 		}
+		if (m->explain) {
+			if (strcmp(m->explain, "plan") == 0)
+				m->mode = m_explain;
+			else if (strcmp(m->explain, "performance") == 0)
+				m->mode = m_profile;
+		}
 	} else if (strcmp(name, "cache") == 0) {
 		m->cache = sql_get_bit_var(m, "cache");
 	} else if (strcmp(name, "factory") == 0) {
@@ -468,6 +474,7 @@ env(mvc * sql, symbol * s)
 
 	switch (s->token) {
 	case SQL_SET:
+		sql->type = Q_UPDATE;
 		return sql_set_var(sql, s);
 	case SQL_DECLARE:
 		return sql_declare_var(sql, s);
