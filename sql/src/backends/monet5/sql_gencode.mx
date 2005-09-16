@@ -757,7 +757,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				@:SQLpostlude@
 				break;
 			case cmp_notequal:
-				q = newStmt(mb, "algebra", "thetajoin");
+				q = newStmt(mb, "algebra", "antijoin");
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
@@ -939,7 +939,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* Lookup the sql convert function, there is no need
 			 * to for single value vs bat, this is handled by the 
 			 * mal function resolution */
-			q = newStmt(mb, "sql", s->op4.typeval->type->base.name);
+			if (s->op3.typeval->type->eclass == EC_DEC ||
+			    s->op4.typeval->type->eclass == EC_DEC ||
+			    s->nrcols == 0) {
+				q = newStmt(mb, "sql", s->op4.typeval->type->base.name);
+			} else {
+				q = newStmt(mb, "batcalc", s->op4.typeval->type->base.name);
+			}
 
 			if (s->op3.typeval->type->eclass == EC_DEC) 
 				/* scale of the current decimal */
@@ -1062,26 +1068,18 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		} break;
 		case st_aggr:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
-			char *c;
-
-			/* Cut off the type information.
-			   It should be handled by the type resolver
-			 */
-			c = strchr(s->op4.aggrval->aggr->imp, '_');
-			if (c)
-				*c = 0;
 
 			@:SQLprelude@
 			if (s->op3.gval) {
 				int g = _dumpstmt(sql, mb, s->op2.stval);
 				int e = _dumpstmt(sql, mb, s->op3.stval);
 
-				q = newStmt(mb, "group", s->op4.aggrval->aggr->imp);
+				q = newStmt(mb, "aggr", s->op4.aggrval->aggr->imp);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, g);
 				q = pushArgument(mb, q, e);
 			} else {
-				q = newStmt(mb, "algebra", s->op4.aggrval->aggr->imp);
+				q = newStmt(mb, "aggr", s->op4.aggrval->aggr->imp);
 				q = pushArgument(mb, q, l);
 			}
 			s->nr = getDestVar(q);
