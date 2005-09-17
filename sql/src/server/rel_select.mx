@@ -982,8 +982,8 @@ scale2value(int scale)
 static sql_exp *
 exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 {
-	(void) sql;		/* Stefan: unused!? */
 	sql_subtype *et = exp_subtype(e);
+	(void) sql;		/* Stefan: unused!? */
 
 	if (ct->type->scale == SCALE_FIX && et->type->scale == SCALE_FIX) {
 		int scale_diff = ((int) ct->scale - (int) et->scale);
