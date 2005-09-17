@@ -51,28 +51,28 @@ function user.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
     bm := bat.mirror(brev);	# 3 BKCmirror (bm:bat[:str,:str])<-(brev:bat[:str,:int])
     h := bbp.getHeadType();	# 4 CMDbbpHeadType (h:bat[:int,:str])
     bHead := algebra.join(brev,h);	# 5 ALGjoin (bHead:bat[:str,:str])<-(brev:bat[:str,:int])(h:bat[:int,:str])
-    bat.setColumn(bHead,"htype");	# 6 BKCsetColumn (_7:bat[:str,:str])<-(bHead:bat[:str,:str])(_8:str)
+    bat.setColumn(bHead,"htype");	# 6 BKCsetColumn (_7:void)<-(bHead:bat[:str,:str])(_8:str)
     h := bbp.getTailType();	# 7 CMDbbpTailType (h:bat[:int,:str])
     bTail := algebra.join(brev,h);	# 8 ALGjoin (bTail:bat[:str,:str])<-(brev:bat[:str,:int])(h:bat[:int,:str])
-    bat.setColumn(bTail,"ttype");	# 9 BKCsetColumn (_10:bat[:str,:str])<-(bTail:bat[:str,:str])(_11:str)
+    bat.setColumn(bTail,"ttype");	# 9 BKCsetColumn (_10:void)<-(bTail:bat[:str,:str])(_11:str)
     bcount := bbp.getCount();	# 10 CMDbbpCount (bcount:bat[:int,:lng])
     bCount := algebra.join(brev,bcount);	# 11 ALGjoin (bCount:bat[:str,:lng])<-(brev:bat[:str,:int])(bcount:bat[:int,:lng])
-    bat.setColumn(bCount,"count");	# 12 BKCsetColumn (_14:bat[:str,:lng])<-(bCount:bat[:str,:lng])(_15:str)
+    bat.setColumn(bCount,"count");	# 12 BKCsetColumn (_14:void)<-(bCount:bat[:str,:lng])(_15:str)
     bheat := bbp.getHeat();	# 13 CMDbbpHeat (bheat:bat[:int,:int])
     bHeat := algebra.join(brev,bheat);	# 14 ALGjoin (bHeat:bat[:str,:int])<-(brev:bat[:str,:int])(bheat:bat[:int,:int])
-    bat.setColumn(bHeat,"heat");	# 15 BKCsetColumn (_18:bat[:str,:int])<-(bHeat:bat[:str,:int])(_19:str)
+    bat.setColumn(bHeat,"heat");	# 15 BKCsetColumn (_18:void)<-(bHeat:bat[:str,:int])(_19:str)
     bdirty := bbp.getDirty();	# 16 CMDbbpDirty (bdirty:bat[:int,:str])
     bDirty := algebra.join(brev,bdirty);	# 17 ALGjoin (bDirty:bat[:str,:str])<-(brev:bat[:str,:int])(bdirty:bat[:int,:str])
-    bat.setColumn(bDirty,"dirty");	# 18 BKCsetColumn (_22:bat[:str,:str])<-(bDirty:bat[:str,:str])(_23:str)
+    bat.setColumn(bDirty,"dirty");	# 18 BKCsetColumn (_22:void)<-(bDirty:bat[:str,:str])(_23:str)
     bstatus := bbp.getDirty();	# 19 CMDbbpDirty (bstatus:bat[:int,:str])
     bStatus := algebra.join(brev,bstatus);	# 20 ALGjoin (bStatus:bat[:str,:str])<-(brev:bat[:str,:int])(bstatus:bat[:int,:str])
-    bat.setColumn(bStatus,"status");	# 21 BKCsetColumn (_26:bat[:str,:str])<-(bStatus:bat[:str,:str])(_27:str)
+    bat.setColumn(bStatus,"status");	# 21 BKCsetColumn (_26:void)<-(bStatus:bat[:str,:str])(_27:str)
     bkind := bbp.getKind();	# 22 CMDbbpKind (bkind:bat[:int,:str])
     bKind := algebra.join(brev,bkind);	# 23 ALGjoin (bKind:bat[:str,:str])<-(brev:bat[:str,:int])(bkind:bat[:int,:str])
-    bat.setColumn(bKind,"kind");	# 24 BKCsetColumn (_30:bat[:str,:str])<-(bKind:bat[:str,:str])(_31:str)
+    bat.setColumn(bKind,"kind");	# 24 BKCsetColumn (_30:void)<-(bKind:bat[:str,:str])(_31:str)
     bref := bbp.getRefCount();	# 25 CMDbbpRefCount (bref:bat[:int,:int])
     bRef := algebra.join(brev,bref);	# 26 ALGjoin (bRef:bat[:str,:int])<-(brev:bat[:str,:int])(bref:bat[:int,:int])
-    bat.setColumn(bRef,"refcnt");	# 27 BKCsetColumn (_34:bat[:str,:int])<-(bRef:bat[:str,:int])(_35:str)
+    bat.setColumn(bRef,"refcnt");	# 27 BKCsetColumn (_34:void)<-(bRef:bat[:str,:int])(_35:str)
     io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef);	# 28 IOttable (_36:int)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:str,:str])(bTail:bat[:str,:str])(bCount:bat[:str,:lng])(bHeat:bat[:str,:int])(bDirty:bat[:str,:str])(bStatus:bat[:str,:str])(bKind:bat[:str,:str])(bRef:bat[:str,:int])
 end dir;	# 29  
 #
@@ -105,7 +105,7 @@ function user.main():int;	# 0  (main:int)
 #it uses the dynamic type analysis scheme 	# 2  (_4:str)
     io.print("start test");	# 3 IOprint_val (_5:int)<-(_6:str)
     b := bat.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-(_8:int)(_8:int)
-    bat.setName(b,"simplemind");	# 5 BKCsetName (_9:bat[:int,:int])<-(b:bat[:int,:int])(_10:str)
+    bat.setName(b,"simplemind");	# 5 BKCsetName (_9:void)<-(b:bat[:int,:int])(_10:str)
     z := bbp.getNames();	# 6 CMDbbpNames (z:bat[:int,:str])
     user.dir(z);	# 7  (_12:void)<-(z:bat[:int,:str])
     user.dir("simple");	# 8  (_13:void)<-(_14:str)
@@ -138,7 +138,7 @@ end main;	# 9
 # h	t		htype	ttype	count	heat	dirty		status		kind		refcnt	  # name
 # int	str		str	str	lng	int	str		str		str		int	  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 13,	  "simplemind",	  "int",  "int",  0,	  248,	  "dirty",	  "dirty",	  "transient",	  0	  ]
+[ 13,	  "simplemind",	  "int",  "int",  0,	  237,	  "dirty",	  "dirty",	  "transient",	  0	  ]
 
 # 08:33:58 >  
 # 08:33:58 >  Done.

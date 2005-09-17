@@ -197,7 +197,7 @@ io.print("rule_bat,sb_a,wb_a,yb_a,dc_a,fc_a,jc_a");
 #tzone_bat.bat.insert(12@0, tzone_12).insert(13@0, tzone_13).insert(15@0, tzone_15);
 #
 ## test the operations on tzones
-	id_a := bat.setName(tzone_bat,"tzone");
+	bat.setName(tzone_bat,"tzone");
 #io.print(tzone_bat);
 #io.print("start error");
 	#x:= getRefCount(tzone_bat);
@@ -506,7 +506,7 @@ io.print("daytime_bat,bh_a,dh_a,fh_a,hh_a");
 	io.print(timezones);
 	sh_a:tzone := algebra.find(timezones,"Wake Island");
 	th_a:bat[:oid,:date] := optimizer.multiplex("mtime.date",timestamp_bat,sh_a);
-	uh_a:bat[:oid,:date] := bat.setColumn(th_a,"Wake Island");
+	bat.setColumn(th_a,"Wake Island");
 #      [date](timestamp_bat,algebra.find(timezones,"Wake Island")).bat.setColumn("Wake Island"),
 	vh_a:tzone := algebra.find(timezones,"Wake Island");
 	wh_a:bat[:oid,:daytime] := optimizer.multiplex("mtime.daytime",timestamp_bat,vh_a);

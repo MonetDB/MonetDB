@@ -1,5 +1,5 @@
 #this test is used to monitor reference count setting
-#create a persistent bat and destroy it in the next session
+#create a persistent bat and destroy it in test 612
 function refs():void;
     g:=bbp.getNames();
     gr:=bbp.getRefCount();
@@ -13,7 +13,7 @@ bat.insert(b,23,32);
 #refs();
 bat.setName(b,"tasks");
 #refs();
-bat.setPersistent(b);
+bat.setPersistent(b,true);
 #refs();
 # it is committed 
 io.print("open box");

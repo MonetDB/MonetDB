@@ -26,7 +26,7 @@ stdout of test 'tst380` in directory 'src/mal` itself:
 function user.get(br:bat[:any_1,:any_2],nme:str,title:str):bat[:any_3,:any_4];	# 0  dynamic (get:bat[:any_3,:any_4])<-(br:bat[:any_1,:any_2])(nme:str)(title:str)
     b:bat[:int,:str]  := bbp.nme();	# 1  (b:bat[:int,:str])
     z := algebra.join(br,b);	# 2 ALGjoin (z:bat[:any,:str])<-(br:bat[:any_1,:any_2])(b:bat[:int,:str])
-    bat.setColumn(z,title);	# 3 BKCsetColumn (_6:bat[:any,:str])<-(z:bat[:any,:str])(title:str)
+    bat.setColumn(z,title);	# 3 BKCsetColumn (_6:void)<-(z:bat[:any,:str])(title:str)
     return z;	# 4  (z:bat[:any,:str])
 end get;	# 5  
 ## Note the type of the variables will be fixed during the first call
@@ -74,28 +74,28 @@ function user.dir(b:bat[:int,:str]):void;	# 0  (dir:void)<-(b:bat[:int,:str])
     bm := bat.mirror(brev);	# 3 BKCmirror (bm:bat[:str,:str])<-(brev:bat[:str,:int])
     b1:bat[:int,:str]  := bbp.getHeadType();	# 4 CMDbbpHeadType (b1:bat[:int,:str])
     bHead := algebra.join(brev,b1);	# 5 ALGjoin (bHead:bat[:str,:str])<-(brev:bat[:str,:int])(b1:bat[:int,:str])
-    bat.setColumn(bHead,"htype");	# 6 BKCsetColumn (_7:bat[:str,:str])<-(bHead:bat[:str,:str])(_8:str)
+    bat.setColumn(bHead,"htype");	# 6 BKCsetColumn (_7:void)<-(bHead:bat[:str,:str])(_8:str)
     b2:bat[:int,:str]  := bbp.getTailType();	# 7 CMDbbpTailType (b2:bat[:int,:str])
     bTail := algebra.join(brev,b2);	# 8 ALGjoin (bTail:bat[:str,:str])<-(brev:bat[:str,:int])(b2:bat[:int,:str])
-    bat.setColumn(bTail,"ttype");	# 9 BKCsetColumn (_11:bat[:str,:str])<-(bTail:bat[:str,:str])(_12:str)
+    bat.setColumn(bTail,"ttype");	# 9 BKCsetColumn (_11:void)<-(bTail:bat[:str,:str])(_12:str)
     b8:bat[:int,:lng]  := bbp.getCount();	# 10 CMDbbpCount (b8:bat[:int,:lng])
     bCount := algebra.join(brev,b8);	# 11 ALGjoin (bCount:bat[:str,:lng])<-(brev:bat[:str,:int])(b8:bat[:int,:lng])
-    bat.setColumn(bCount,"count");	# 12 BKCsetColumn (_15:bat[:str,:lng])<-(bCount:bat[:str,:lng])(_16:str)
+    bat.setColumn(bCount,"count");	# 12 BKCsetColumn (_15:void)<-(bCount:bat[:str,:lng])(_16:str)
     b7:bat[:int,:int]  := bbp.getHeat();	# 13 CMDbbpHeat (b7:bat[:int,:int])
     bHeat := algebra.join(brev,b7);	# 14 ALGjoin (bHeat:bat[:str,:int])<-(brev:bat[:str,:int])(b7:bat[:int,:int])
-    bat.setColumn(bHeat,"heat");	# 15 BKCsetColumn (_19:bat[:str,:int])<-(bHeat:bat[:str,:int])(_20:str)
+    bat.setColumn(bHeat,"heat");	# 15 BKCsetColumn (_19:void)<-(bHeat:bat[:str,:int])(_20:str)
     b3:bat[:int,:str]  := bbp.getDirty();	# 16 CMDbbpDirty (b3:bat[:int,:str])
     bDirty := algebra.join(brev,b3);	# 17 ALGjoin (bDirty:bat[:str,:str])<-(brev:bat[:str,:int])(b3:bat[:int,:str])
-    bat.setColumn(bDirty,"dirty");	# 18 BKCsetColumn (_23:bat[:str,:str])<-(bDirty:bat[:str,:str])(_24:str)
+    bat.setColumn(bDirty,"dirty");	# 18 BKCsetColumn (_23:void)<-(bDirty:bat[:str,:str])(_24:str)
     b4:bat[:int,:str]  := bbp.getStatus();	# 19 CMDbbpStatus (b4:bat[:int,:str])
     bStatus := algebra.join(brev,b4);	# 20 ALGjoin (bStatus:bat[:str,:str])<-(brev:bat[:str,:int])(b4:bat[:int,:str])
-    bat.setColumn(bStatus,"status");	# 21 BKCsetColumn (_27:bat[:str,:str])<-(bStatus:bat[:str,:str])(_28:str)
+    bat.setColumn(bStatus,"status");	# 21 BKCsetColumn (_27:void)<-(bStatus:bat[:str,:str])(_28:str)
     b5:bat[:int,:str]  := bbp.getKind();	# 22 CMDbbpKind (b5:bat[:int,:str])
     bKind := algebra.join(brev,b5);	# 23 ALGjoin (bKind:bat[:str,:str])<-(brev:bat[:str,:int])(b5:bat[:int,:str])
-    bat.setColumn(bKind,"kind");	# 24 BKCsetColumn (_31:bat[:str,:str])<-(bKind:bat[:str,:str])(_32:str)
+    bat.setColumn(bKind,"kind");	# 24 BKCsetColumn (_31:void)<-(bKind:bat[:str,:str])(_32:str)
     b6:bat[:int,:int]  := bbp.getRefCount();	# 25 CMDbbpRefCount (b6:bat[:int,:int])
     bRef := algebra.join(brev,b6);	# 26 ALGjoin (bRef:bat[:str,:int])<-(brev:bat[:str,:int])(b6:bat[:int,:int])
-    bat.setColumn(bRef,"refCount");	# 27 BKCsetColumn (_35:bat[:str,:int])<-(bRef:bat[:str,:int])(_36:str)
+    bat.setColumn(bRef,"refCount");	# 27 BKCsetColumn (_35:void)<-(bRef:bat[:str,:int])(_36:str)
     io.table(brev,bm,bHead,bTail,bCount,bHeat,bDirty,bStatus,bKind,bRef);	# 28 IOttable (_37:int)<-(brev:bat[:str,:int])(bm:bat[:str,:str])(bHead:bat[:str,:str])(bTail:bat[:str,:str])(bCount:bat[:str,:lng])(bHeat:bat[:str,:int])(bDirty:bat[:str,:str])(bStatus:bat[:str,:str])(bKind:bat[:str,:str])(bRef:bat[:str,:int])
 end dir;	# 29  
 #
@@ -128,7 +128,7 @@ function user.main():int;	# 0  (main:int)
 # type error when the type variable numbers are ignored 	# 3  (_6:str)
 # Note the type of the variables will be fixed during the first call 	# 4  (_8:str)
     b := bat.new(:int,:int);	# 5 CMDBATnew (b:bat[:int,:int])<-(_10:int)(_10:int)
-    bat.setName(b,"simplemind");	# 6 BKCsetName (_11:bat[:int,:int])<-(b:bat[:int,:int])(_12:str)
+    bat.setName(b,"simplemind");	# 6 BKCsetName (_11:void)<-(b:bat[:int,:int])(_12:str)
     z := bbp.getNames();	# 7 CMDbbpNames (z:bat[:int,:str])
     io.print("Get first directory");	# 8 IOprint_val (_14:int)<-(_15:str)
     user.dir(z);	# 9  (_16:void)<-(z:bat[:int,:str])
@@ -163,7 +163,7 @@ end main;	# 12
 # h	t		htype	ttype	count	heat	dirty		status	kind		refCount		  # name
 # int	str		str	str	lng	int	str		str	str		int		  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 13,	  "simplemind",	  "int",  "int",  0,	  249,	  "dirty",	  "load", "transient",	  0		  ]
+[ 13,	  "simplemind",	  "int",  "int",  0,	  238,	  "dirty",	  "load", "transient",	  0		  ]
 
 # 08:33:58 >  
 # 08:33:58 >  Done.

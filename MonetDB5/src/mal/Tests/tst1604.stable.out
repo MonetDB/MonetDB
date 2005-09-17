@@ -22,7 +22,7 @@ stdout of test 'tst1604` in directory 'src/mal` itself:
 function user.main():int;	# 0  (main:int)
 # handling of correct header printing 	# 1  (_2:str)
     t := bat.new(:int,:str);	# 2 CMDBATnew (t:bat[:int,:str])<-(_4:int)(_5:str)
-    bat.setColumn(t,"first");	# 3 BKCsetColumn (_6:bat[:int,:str])<-(t:bat[:int,:str])(_7:str)
+    bat.setColumn(t,"first");	# 3 BKCsetColumn (_6:void)<-(t:bat[:int,:str])(_7:str)
     u := bat.new(:int,:str);	# 4 CMDBATnew (u:bat[:int,:str])<-(_4:int)(_9:str)
     io.print(t,u);	# 5 IOtable (_10:int)<-(t:bat[:int,:str])(u:bat[:int,:str])
 end main;	# 6  
