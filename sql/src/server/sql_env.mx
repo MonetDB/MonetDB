@@ -409,6 +409,9 @@ sql_session(mvc *m)
 		table_insert(tr, s, "factory", "true", "boolean", &rw, NULL);
 	else
 		table_insert(tr, s, "factory", "false", "boolean", &rw, NULL);
+/* Actually 'factory' and 'cache' are optimizer decisions too
+	table_insert(tr, s, "optimizer", "sql.optimizer();", "varchar", &rw, NULL);
+*/
 	return 0;
 }
 
