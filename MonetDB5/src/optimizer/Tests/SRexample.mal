@@ -5,6 +5,17 @@ barrier go:=true;
 	j:= "not moved";
 	k:= j;
 	io.print(i);
+	redo go:= false;
 exit go;
+	z:= j;
+# This shows it should not work for blocks in general
+	r:= "hello world";
+barrier go:=true;
+	s:=23;
+	r:= "not moved";
+	k:= r;
+	io.print(s);
+exit go;
+	z:= r;
 optimizer.strengthReduction();
 mdb.list();
