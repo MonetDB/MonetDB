@@ -150,7 +150,7 @@ STpack(MalBlkPtr mb, int varid, STtuple * tuples)
 {
 	InstrPtr p = 0;
 
-	p = newFcnCall(mb, putName("bat", 3), putName("pack", 6));
+	p = newFcnCall(mb, putName("bat", 3), putName("pack", 4));
 	getArg(p, 0) = tuples[varid].vidx;
 	p->retc = 1;
 	p->argc = 1;
