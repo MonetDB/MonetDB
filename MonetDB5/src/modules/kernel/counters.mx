@@ -79,11 +79,11 @@ address CNTRScounter2str
 comment "Store the retrieved results in a str";
 
 command nativeEvents() :bat[:int,:str] 
-address CNTRSnative_events
+address CNTRSnativeEvents
 comment "All available events";
 
 command unifiedEvents() :bat[:int,:str] 
-address CNTRSunified_events
+address CNTRSunifiedEvents
 comment "All unified event names";
 
 command eventNumber(s:str):int
@@ -95,7 +95,7 @@ address CNTRSeventName
 comment "Return the name of an event ";
 
 command init() 
-address CNTRSinit_counters
+address CNTRSinit
 comment "Initialize counters module (to be used on initial load, only)";
 
 counters.init();
@@ -3210,6 +3210,8 @@ CNTRScounter2bat(int *bid, int *idx){
 	BAT *bn=NULL;
 	if( *idx <0 || *idx>= 32)
 		return throwMessage("counters.bat","Counter handle out of range");
+	if (cntrs[*idx].status != 2) 
+		return throwMessage("counters.bat","Counter not yet stopped ");
 	counter2bat(&bn, cntrs + *idx);
 	if( bn == NULL)
 		return throwMessage("counters.bat","Could not create object");
