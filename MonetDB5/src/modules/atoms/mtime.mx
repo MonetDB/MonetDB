@@ -684,195 +684,6 @@ address MTIMEprelude;
 
 mtime.prelude();
 
-@+ Test Script
-
-The below tests try to be exhaustive in trying all time functionality.
-@mil
-module(monettime,alarm);
-
-# test the various ways to create rules
-var rule_jan := rule("1st MON from start of JAN@01:15");
-var rule_mar := rule("first WEDNE on or after march 10@01:15");
-var rule_apr := rule("last THU on or before aPr 1@01:15");
-var rule_may := rule("MAY 26@01:15");
-var rule_jun := rule("2nd TUE from end of june@01:15");
-var rule_jul := rule(7,1,1,75);
-var rule_aug := rule(8,-1,1,75);
-var rule_sep := rule(9,-10,3,75);
-var rule_oct := rule(10,31,0,75);
-var rule_nov := rule(11,-10,-4,75);
-# nil rules
-var rule_dec := rule(12,-31,0,75);
-var rule_feb := rule("first fRiDaY on or after february 30@01:15");
- 
-var rule_bat := new(str,rule,10);
-rule_bat.insert("jan",rule_jan).insert("feb",rule_feb).insert("mar",rule_mar).insert("apr",rule_apr);
-rule_bat.insert("may",rule_may).insert("jun",rule_jun).insert("jul",rule_jul).insert("aug",rule_aug);
-rule_bat.insert("sep",rule_sep).insert("oct",rule_oct).insert("nov",rule_nov).insert("dec",rule_dec);
-
-# test the operations on rules
-print(rule_bat.col_name("rule"),
-      [month](rule_bat).col_name("month"),
-      [weekday](rule_bat).col_name("weekday"),
-      [day](rule_bat).col_name("day"),
-      [minutes](rule_bat).col_name("minutes"));
-
-print(rule_bat.col_name("rule"),
-      [compute](rule_bat, 2001).col_name("2001"),
-      [dayname]([dayofweek]([compute](rule_bat, 2001))).col_name("2001"),
-      [compute](rule_bat, 1999).col_name("1999"),
-      [dayname]([dayofweek]([compute](rule_bat, 1999))).col_name("1999"),
-      [compute](rule_bat, 1992).col_name("1992"),
-      [dayname]([dayofweek]([compute](rule_bat, 1992))).col_name("1992"));
-
-print(rule_bat.col_name("rule"),
-      [compute](rule_bat, 1572).col_name("1572"),
-      [dayname]([dayofweek]([compute](rule_bat, 1572))).col_name("1572"),
-      [compute](rule_bat, 1).col_name("1"),
-      [dayname]([dayofweek]([compute](rule_bat, 1))).col_name("1"),
-      [compute](rule_bat, -2000).col_name("-2000"),
-      [dayname]([dayofweek]([compute](rule_bat, -2000))).col_name("-2000"));
-
-@- tzone
-@mil
-# test the various ways to create tzones, using some of the above created rules
-var tzone_00 := tzone("GMT");
-var tzone_01 := tzone("GMT+01:00");
-var tzone_02 := tzone("GMT+0100");
-var tzone_03 := tzone(60, rule_oct, rule_mar);
-var tzone_04 := tzone(0, rule_jan, rule_aug);
-var tzone_05 := tzone(-97, rule_oct, rule_apr);
-var tzone_06 := tzone(-97, rule_may, rule_sep);
-var tzone_07 := tzone(23*60, rule_apr, rule_nov);
-var tzone_08 := tzone((-23*59) - 59);
-var tzone_09 := tzone(0);
-var tzone_10 := tzone(-60);
-var tzone_11 := tzone((23*60)+59);
-var tzone_12 := tzone(60);
-# nil tzones
-var tzone_13 := tzone(60, rule_feb, rule_dec);
-var tzone_15 := tzone(24*60, rule_apr, rule_nov);
-
-
-var tzone_bat := new(oid,tzone);
-tzone_bat.insert(00@0, tzone_00).insert(01@0, tzone_01).insert(02@0, tzone_02);
-tzone_bat.insert(03@0, tzone_03).insert(04@0, tzone_04).insert(05@0, tzone_05);
-tzone_bat.insert(06@0, tzone_06).insert(07@0, tzone_07).insert(08@0, tzone_08);
-tzone_bat.insert(09@0, tzone_09).insert(10@0, tzone_10).insert(11@0, tzone_11);
-tzone_bat.insert(12@0, tzone_12).insert(13@0, tzone_13).insert(15@0, tzone_15);
-
-# test the operations on tzones
-print(tzone_bat.col_name("tzone"));
-print([minutes](tzone_bat).col_name("minutes"),
-      [start_dst](tzone_bat).col_name("start_dst"),
-      [end_dst](tzone_bat).col_name("end_dst"));
-
-@- date
-@mil
-# test the various ways to create dates
-var date_00 := date(2000,01,01);
-var date_01 := date("5000-JAN-01");
-var date_02 := date("1968-FEBR-29");
-var date_03 := date("1-MARCH-01");
-var date_04 := date("-5867411-JAN-1");
-var date_05 := date("-768/octobe/01");
-var date_06 := date("5000\\novembe\\01");
-var date_07 := date("-1999/jun/01");
-var date_08 := date("2000-jul-14");
-var date_09 := date("1999-sept-01");
-var date_10 := date("1998-decemBeR-01");
-var date_11 := date("1953 may                01");
-var date_12 := date("5867411-DEC-31");
-# nil dates
-var date_13 := date(1996,13,1);
-var date_14 := date("999999999999999999999-01-01");
-var date_15 := date("1999-JANUARI-01");
-var date_16 := date("1999-FEBR-29");
-var date_17 := date("-1-DECEMBER-0");
-var date_18 := date("5000\novembe\31");
-var date_19 := date("nil");
-var date_20 := date("1999-sept-31");
-
-var date_bat := new(oid,date);
-date_bat.insert(00@0, date_00).insert(01@0, date_01).insert(02@0, date_02);
-date_bat.insert(03@0, date_03).insert(04@0, date_04).insert(05@0, date_05);
-date_bat.insert(06@0, date_06).insert(07@0, date_07).insert(08@0, date_08);
-date_bat.insert(09@0, date_09).insert(10@0, date_10).insert(11@0, date_11);
-date_bat.insert(12@0, date_12).insert(13@0, date_13).insert(14@0, date_14);
-date_bat.insert(15@0, date_15).insert(16@0, date_16).insert(17@0, date_17);
-date_bat.insert(18@0, date_18).insert(19@0, date_19).insert(20@0, date_20);
-
-# test the operations on dates
-print(date_bat.col_name("date"),
-      [year](date_bat).col_name("year"),
-      [day](date_bat).col_name("day"),
-      [monthname]([month](date_bat)).col_name("monthname"),
-      [monthnum]([monthname]([month](date_bat))).col_name("monthnum"));
-
-var date_addyears := [addyears](date_bat, -100);
-var date_addmonths := [addmonths](date_bat, 1);
-
-print(date_bat.col_name("date"),
-      date_addyears.col_name("min100y"),
-      [diff](date_addyears, date_bat).col_name("diff"));
-
-print(date_bat.col_name("date"),
-      date_addmonths.col_name("plus1m"),
-      [diff](date_addmonths, date_bat).col_name("diff"));
-
-# test dayofweek and weeknumber using more than two years as consecutive days
-var date_seq := new(int, date);
-var i := -375;
-while ((i :+= 1) < 375) {
-	date_seq.insert(i,adddays(date_00,i));
-}
-print(date_seq.col_name("date"),
-      [weekofyear](date_seq).col_name("weekofyear"),
-      [dayname]([dayofweek](date_seq)).col_name("dayofweek"),
-      [daynum]([dayname]([dayofweek](date_seq))).col_name("num"),
-      [dayofyear](date_seq).col_name("dayofyear"));
-
-@- daytime
-@mil
-# test the various ways top create daytimes
-var daytime_00 := daytime(23,59,59,999);
-var daytime_01 := daytime("23:59");
-var daytime_02 := daytime("00:00");
-var daytime_03 := daytime("23:59:59");
-var daytime_04 := daytime("00:00:00.000");
-var daytime_05 := daytime("00:00:00");
-var daytime_06 := daytime("00:00:00:001");
-var daytime_07 := daytime("03:49:02.999");
-var daytime_08 := daytime("20:48:42:999");
-var daytime_09 := daytime("17:53:38:999");
-var daytime_10 := daytime("13:15:34:999");
-var daytime_11 := daytime("07:34:27.999");
-var daytime_12 := daytime("23:59:59:999");
-var daytime_13 := daytime("01:00:03.999");
-var daytime_14 := daytime("23:59:59.999");
-# nil daytimes
-var daytime_15 := daytime(24,59,59,999);
-var daytime_16 := daytime(23,60,59,999);
-var daytime_17 := daytime(23,59,60,999);
-var daytime_18 := daytime(23,59,60,1000);
-var daytime_19 := daytime("nil");
-
-var daytime_bat := new(oid,daytime);
-daytime_bat.insert(00@0, daytime_00).insert(01@0, daytime_01).insert(02@0, daytime_02);
-daytime_bat.insert(03@0, daytime_03).insert(04@0, daytime_04).insert(05@0, daytime_05);
-daytime_bat.insert(06@0, daytime_06).insert(07@0, daytime_07).insert(08@0, daytime_08);
-daytime_bat.insert(09@0, daytime_09).insert(10@0, daytime_10).insert(11@0, daytime_11);
-daytime_bat.insert(12@0, daytime_12).insert(13@0, daytime_13).insert(14@0, daytime_14);
-daytime_bat.insert(15@0, daytime_15).insert(16@0, daytime_16).insert(17@0, daytime_17);
-daytime_bat.insert(18@0, daytime_18).insert(19@0, daytime_19);
-
-print(daytime_bat.col_name("daytime"),
-      [hours](daytime_bat).col_name("hours"),
-      [minutes](daytime_bat).col_name("minutes"),
-      [seconds](daytime_bat).col_name("seconds"),
-      [milliseconds](daytime_bat).col_name("milliseconds"));
-
-@- timestamp
 @* Implementation
 
 @+ Atoms
@@ -912,7 +723,6 @@ Daytime values are also stored as the number of milliseconds that passed since
 the start of the day (i.e. midnight).
 @h
 typedef int daytime;
-
 #define daytime_nil ((daytime) int_nil)
 
 @- timestamp
@@ -941,7 +751,6 @@ typedef union {
 	} s;
 	int asint;		/* the same, seen as single value */
 } rule;
-
 @c
 #define get_rule(r)	((r).s.weekday | ((r).s.day<<6) | ((r).s.minutes<<10) | ((r).s.month<<21))
 #define set_rule(r,i) { (r).s.weekday = (i)&15;\
@@ -962,12 +771,12 @@ typedef struct {
 	unsigned int dst:1, off1:6, dst_start:25;
 	unsigned int off2:7, dst_end:25;
 } tzone;
-
 @c
 /* as the offset field got split in two, we need macros to get and set them */
 #define get_offset(z)	(((int) (((z)->off1 << 7) + (z)->off2)) - OFFSET_ZERO)
 #define set_offset(z,i)	{ (z)->off1 = (((i)+4096)&8064) >> 7; (z)->off2 = ((i)+OFFSET_ZERO)&127; }
 
+tzone tzone_local;
 @h
 mal_export tzone tzone_local;
 
@@ -1079,8 +888,6 @@ mal_export int tzone_fromstr(str buf, int *len, tzone **d);
 #endif /* _MONETTIME_H_ */
 @+ Defines
 @c
-tzone tzone_local;
-
 str MONTHS[13] = { NULL, "january", "february", "march", "april", "may", "june",
 	"july", "august", "september", "october", "november", "december"
 };
@@ -2266,7 +2073,7 @@ daytime_add(daytime *ret, daytime *v, lng *msec)
 	if (*v == daytime_nil) {
 		*ret = int_nil;
 	} else {
-		*ret = (daytime) (*v + *msec / 1000);
+		*ret = *v + (daytime) (*msec / 1000);
 	}
 	return GDK_SUCCEED;
 }
