@@ -246,6 +246,9 @@ comment "If-then-else operation to assemble a conditional result ";
 command project(v:@1,b:bat[:any_2,:any_1]) :bat[:@1,:any_1] 
 address CMDprojecthead_@1
 comment "Fill the head with a constant, e.g. [0~b]";
+command project(b:bat[:any_2,:any_1],v:@1) :bat[:any_2,:@1] 
+address CMDprojecttail_@1
+comment "Fill the tail with a constant, e.g. [0~b]";
 
 command ifthen(b:bat[:any_1,:bit], v:@1) :bat[:any_1,:@1] 
 address CMDifThenCst_@1
@@ -1643,11 +1646,32 @@ str CMDprojecthead_@1(int *ret,ptr *val, int *iid){
         return throwMessage("batcalc.project", "Cannot access descriptor");
     }
 
-	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
+	bn= BATnew(TYPE_@1,BAThtype(ib),BATcount(ib));
 	@:tstBat(fillhead_@1)@
 	BATloopFast(ib, p, q, xx) {
 		ptr v = BUNtail(ib,p);
 		bunfastins(bn, val,v);
+	}
+bunins_failed:
+	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(ib->batCacheid);
+	return MAL_SUCCEED;
+}
+mal_export str CMDprojecttail_@1(int *ret,int *iid, ptr *val);
+str CMDprojecttail_@1(int *ret,int *iid, ptr *val){
+	BAT *ib, *bn;
+	int xx;
+	BUN p,q;
+
+    if( (ib= BATdescriptor(*iid)) == NULL ){
+        return throwMessage("batcalc.project", "Cannot access descriptor");
+    }
+
+	bn= BATnew(BAThtype(ib),TYPE_@1,BATcount(ib));
+	@:tstBat(filltail_@1)@
+	BATloopFast(ib, p, q, xx) {
+		ptr v = BUNhead(ib,p);
+		bunfastins(bn,v, val);
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
