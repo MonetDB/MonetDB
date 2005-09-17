@@ -612,8 +612,8 @@ Module: "logger"
 
 Module: "mapi"
 
-[ 30 ]
-[ 30 ]
+[ 31 ]
+[ 31 ]
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature									help																																								  # name
 # str			str		str										str																																								  # type
@@ -645,6 +645,7 @@ Module: "mapi"
 [ "mapi_start",		  "PROC:      ",  "mapi_start() : void",							  "not available"																																						  ]
 [ "mapi_start",		  "PROC:      ",  "mapi_start(bit) : void",							  "not available"																																						  ]
 [ "mapi_stream_read",	  "PROC:      ",  "mapi_stream_read(Stream) : str",						  "Read a string from <S> until a '1' character."																																		  ]
+[ "milclient",		  "BUILTIN:   ",  "milclient(stream in, stream out) : void ",					  "mapi-client"																																												  ]
 [ "stream_line",	  "PROC:      ",  "stream_line(Stream) : str",							  "Read a string from <S> until a newline."																																			  ]
 [ "stream_strip",	  "PROC:      ",  "stream_strip(Stream, str) : str",						  "Read a string from <S> until the <stop> word.\nThe <stop> word is stripped from the result string."																												  ]
 [ "stream_until",	  "COMMAND:   ",  "stream_until(Stream, str) : str",						  "read a string from <S> until the <stop> word"																																		  ]

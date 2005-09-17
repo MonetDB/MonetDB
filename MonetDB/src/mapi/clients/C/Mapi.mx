@@ -2035,35 +2035,35 @@ mapi_start_talking(Mapi mid)
 		*protover++ = '\0';
 
 		errbuf[0] = 0;
-		switch (mid->languageId) {
-		case LANG_MIL:
-			if (strcmp(server, "mserver_mil") != 0) {
-				snprintf(errbuf, BLOCK, "MIL language chosen, but server reports %s", server);
-				close_connection(mid);
-				return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
-			}
-			break;
-		case LANG_MAL:
-			if (strcmp(server, "mserver_mal") != 0) {
+		if (strcmp(server, "mserver_mal") != 0) {
+			/* MonetDB 4 supports a single language per mapi port */
+			switch (mid->languageId) {
+			case LANG_MIL:
+				if (strcmp(server, "mserver_mil") != 0) {
+					snprintf(errbuf, BLOCK, "MIL language chosen, but server reports %s", server);
+					close_connection(mid);
+					return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
+				}
+				break;
+			case LANG_MAL:
 				snprintf(errbuf, BLOCK, "MAL language chosen, but server reports %s", server);
 				close_connection(mid);
 				return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
+			case LANG_SQL:
+				if (strcmp(server, "mserver_sql") != 0) {
+					snprintf(errbuf, BLOCK, "SQL language chosen, but server reports %s", server);
+					close_connection(mid);
+					return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
+				}
+				break;
+			case LANG_XQUERY:
+				if (strcmp(server, "mserver_xquery") != 0) {
+					snprintf(errbuf, BLOCK, "XQuery language chosen, but server reports %s", server);
+					close_connection(mid);
+					return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
+				}
+				break;
 			}
-			break;
-		case LANG_SQL:
-			if (strcmp(server, "mserver_sql") != 0) {
-				snprintf(errbuf, BLOCK, "SQL language chosen, but server reports %s", server);
-				close_connection(mid);
-				return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
-			}
-			break;
-		case LANG_XQUERY:
-			if (strcmp(server, "mserver_xquery") != 0) {
-				snprintf(errbuf, BLOCK, "XQuery language chosen, but server reports %s", server);
-				close_connection(mid);
-				return mapi_setError(mid, errbuf, "mapi_start_talking", MERROR);
-			}
-			break;
 		}
 		/* just don't do anything with the challenge */
 	}

@@ -1,0 +1,17 @@
+setoid(oid(20000000));
+# testing merge semijoin
+var c:= new(int,int);
+insert(c,1,1);
+insert(c,2,2);
+insert(c,3,4);
+insert(c,5,int(nil));
+c.print();
+var d:= new(int,int);
+insert(d,1,1);
+insert(d,4,3);
+insert(d,int(nil),5);
+d.print();
+var z:=c.antijoin(d);
+z.print();
+
+quit();

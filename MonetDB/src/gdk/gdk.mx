@@ -1959,7 +1959,6 @@ gdk_export int GDKatomcnt;
 gdk_export void ATOMdelete(int id);
 gdk_export void ATOMproperty(char *nme, char *property, GDKfcn fcn);
 gdk_export int ATOMindex(char *nme);
-gdk_export int ATOMstorage(int id);
 gdk_export int ATOMisdescendant(int id, int parentid);
 gdk_export int ATOMdump(void);
 
@@ -3046,6 +3045,7 @@ gdk_export BAT *BATsemijoin(BAT *l, BAT *r);
 gdk_export BAT *BATmergejoin(BAT *l, BAT *r, size_t estimate);
 gdk_export BAT *BATleftmergejoin(BAT *l, BAT *r, size_t estimate);
 gdk_export BAT *BATjoin(BAT *l, BAT *r, size_t estimate);
+gdk_export BAT *BATantijoin(BAT *l, BAT *r);
 gdk_export BAT *BATleftjoin(BAT *l, BAT *r, size_t estimate);
 gdk_export BAT *BATouterjoin(BAT *l, BAT *r, size_t estimate);
 gdk_export BAT *BATcross(BAT *l, BAT *r);

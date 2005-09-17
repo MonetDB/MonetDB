@@ -300,9 +300,9 @@ Then retrieve variable specific information.
 
 	sprintf(buf, "%d", var_dims);
 	BUNins(*out, "dimensions", buf);
-	sprintf(buf, "%Zd", shape[0]);
+	sprintf(buf, SZFMT, shape[0]);
 	for (i = 1; i < var_dims; i++) {
-		sprintf(&buf[strlen(buf)], ",%Zd", shape[i]);
+		sprintf(&buf[strlen(buf)], "," SZFMT, shape[i]);
 	}
 	BUNins(*out, "shape", buf);
 	sprintf(buf, SZFMT, size);
