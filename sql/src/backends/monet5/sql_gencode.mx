@@ -49,6 +49,7 @@ A dummy module is needed to load properly.
 
 sql_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
 sql_export void backend_dumpproc(backend *be, Client c, int id, stmt *s);
+sql_export void backend_callinline(backend *be, Client c, stmt *s, list *args);
 sql_export void backend_call(backend *be, Client c, int id, list *args);
 
 #define _SQL_GENCODE_DEBUG
@@ -1351,6 +1352,45 @@ int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 	}
 	return nr;
 }
+/* Niels, how to get the proper arguments in place?
+void
+backend_callinline(backend *be, Client c, stmt *s, list *args)
+{
+	MalBlkPtr curBlk = 0;
+	Symbol curPrg = 0;
+	InstrPtr curInstr = 0;
+	int varid,argc=0;
+	char arg[32];
+
+	curPrg = c->curprg;
+	curBlk = curPrg->def;
+	curInstr = getInstrPtr(curBlk, 0);
+
+	if (args) {
+		node *n;
+		curInstr = newAssignment(curBlk);
+
+		for (n = args->h; n; n = n->next) {
+			atom *a = n->data;
+			int type = a->tpe->type->localtype;
+			snprintf(arg, 32, "A%d", argc);
+			varid = newVariable(curBlk, _strdup(arg), type);
+			setReturnArgument(curInstr,varid);
+			setVarType(curBlk, varid, type);
+
+			if (atom_null(a)) {
+				sql_subtype *t = a->data;
+				curInstr = pushNilType(curBlk, curInstr, t->type->localtype);
+			} else {
+				int _t = constantAtom(be, curBlk, a);
+				curInstr = pushArgument(curBlk, curInstr, _t);
+			}
+			pushInstruction(curBlk,curInstr);
+		}
+	}
+	backend_dumpstmt(be, curBlk, s);
+}
+*/
 
 void
 backend_dumpproc(backend *be, Client c, int id, stmt *s)

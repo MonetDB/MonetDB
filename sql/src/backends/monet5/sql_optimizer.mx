@@ -91,7 +91,6 @@ sql_export void addQueryToCache(Client c);
 sql_export void optimizeQueryInCache(Client c);
 sql_export str SQLoptimizer(Client c);
 sql_export void SQLsetAccessMode(Client c);
-sql_export void SQLmarkTOptimizer(Client c);
 
 #endif /* _SQL_OPTIMIZER_H_ */
 
@@ -151,13 +150,17 @@ to allow inspection.
 	optimizers = sql_get_var(be->mvc,"optimizer");
 	if( optimizers)
 		stream_printf(c->fdout,"optimizer=%s\n",optimizers);
-	if (be->mvc->factory)
+	if( strcmp(optimizers,"sql.optimizer();")==0 )
 		optimizeQueryInCache(c);
 */
 }
 
 @-
-The first step towards an SQL optimizer.
+The default SQL optimizer performs a limited set of operations
+that are known to be (reasonably) stable and effective.
+Finegrained control over the optimizer steps is available thru
+setting the corresponding SQL variable.
+
 This version simply runs through the MAL script and re-orders the instructions
 into catalog operations, query graph, and result preparation.
 This distinction is used to turn the function into a factory, which would
@@ -201,21 +204,13 @@ optimizeQueryInCache(Client c)
 #endif
 	resetOptimizerDebugger();
 	optimizerDebug(c->curprg->def,"Parser output",1,0);
-	SQLmarkTOptimizer(c);
 @-
 Reduce the program before other optimizations take place
 The number of optimizer calls is reduced to get things work first
 @c
-	MCoptimizerCommand(c->curprg->def, 0, 0, "algebra", "joinPath");
 	ARoptimizer(c->curprg->def, 0, 0);
 	CXoptimizer(c->curprg->def, 0, 0);
 	AEoptimizer(c->curprg->def, 0, 0);
-/*
-	s = findMALSymbol(getName("algebra",7),getName("joinPath",8));
-	if(s) ORCAMprocessor(c->curprg->def,s);
-*/
-	/* AMoptimizer(c->curprg->def, 0,0); */
-	/*SQLsetAccessMode(c); done in libraries now */
 
 	mb = c->curprg->def;
 	if (mb->stop <= TOSMALL)
@@ -395,52 +390,7 @@ the cache when the underlying table is changed.
 }
 
 @-
-The code produced by the SQL front-end only sets the access mode
-when a BAT will become updated. In all other cases, it relies
-on the M4 policy that intermediate results are considered
-readonly. Readonly mode often improves processing speed.
-
-To compensate for this behaviour, a final pass is made 
-to inject the access modes in all places relevant.
-In this case, we start with the mark operations, which
-will be faster when the operand is read only.
-Likewise, an append or insert requires write access.
-@= setAccess
-	if (p->fcnname && strcmp(p->fcnname,@1)==0) {
-		q = newInstruction(ASSIGNsymbol);
-		q->modname = putName("bat",3);
-		q->fcnname = putName(@2,strlen(@2));
-		q->argv[0] = newTmpVariable(mb,TYPE_any);
-		q->argv[1] = p->argv[1];
-		q->argc = 2;
-		ns[k++] = q;
-	}
-@c
-void
-SQLsetAccessMode(Client c)
-{
-	MalBlkPtr mb;
-	InstrPtr *ns, p, q;
-	int k, i;
-
-	mb = c->curprg->def;
-	ns = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * mb->stop * 2);
-	k = 0;
-	for (i = 0; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
-		@:setAccess("mark","setReadMode")@
-		@:setAccess("append","setWriteMode")@
-		@:setAccess("insert","setWriteMode")@
-		@:setAccess("replace","setWriteMode")@
-		ns[k++] = p;
-	}
-	mb->ssize = 2 * mb->stop;
-	mb->stop = k;
-	GDKfree(mb->stmt);
-	mb->stmt = ns;
-}
-@-
-The SQLkdiffOptimizer searches this important operator and splits
+The SQLkdiffSplitter searches this important operator and splits
 the dataflow graph into two sections with a switch on the size of
 the second operand. In many situations it is empty, there are no
 deleted tuples to consider. The effect is that we do not have
@@ -450,7 +400,7 @@ Beware, the SQL code may contain several kdifference statements.
 One for each base table touched. They should all be split,
 which leads to an explosion in the plan sizes
 @c
-void SQLkdiffOptimizer(Client c){
+void SQLkdiffSplitter(Client c){
 	MalBlkPtr mb;
 	int limit,i,k,l,foundit=1,total=0, zero,cnt,lab;
 	InstrPtr *old;
@@ -612,20 +562,4 @@ The code is wrong, we should not try it more than once
 #endif
 	}
 }
-@- markT ->markH
-More peephole optimizations. M5 contains more primitives to play with.
-They are looked for here.
-The sequence [markT,reverse] is replaced by markH.
-Beware, we assume that the base is set to 0@0.
-The sequence [group,tunique] is turning into a multi-assignment group
-@c
-void
-SQLmarkTOptimizer(Client c){
-	MalBlkPtr mb;
-
-	mb= c->curprg->def;
-	setLifespan(mb);
-	/* PHoptimizer(mb,NULL,NULL); still erroneous */
-}
-
 @}

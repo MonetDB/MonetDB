@@ -667,9 +667,16 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 			goto finalize;
 		}
 		assert(s);
-		/* generate MAL code */
-		if (!m->cache) {
+		/* generate and call the MAL code */
+		if (!m->cache ){
 			backend_dumpstmt(be, c->curprg->def, s);
+			if (be->q)
+				backend_call(be, c, be->q->id, m->args);
+/* Niels 
+		} else
+		if( (msg= sql_get_var(m,"optimizer"))== NULL || *msg == 0) {
+			backend_callinline(be, c, s, m->args);
+*/
 		} else {
 			/* generate a factory instantiation */
 			backend_dumpproc(be, c, m->qc->id, s);
@@ -684,14 +691,14 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 			be->q->code = (backend_code) c->curprg;
 			m->sa = NULL;
 			m->sym = NULL;
+			if (be->q)
+				backend_call(be, c, be->q->id, m->args);
 		}
 	}
 #ifdef _SQL_PARSER_DEBUG
 	else
 		stream_printf(GDKout, "#parse result %d\n", err);
 #endif
-	if (be->q)
-		backend_call(be, c, be->q->id, m->args);
 
 @-
 In the final phase we add any debugging control
