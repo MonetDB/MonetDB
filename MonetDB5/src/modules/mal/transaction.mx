@@ -31,26 +31,25 @@ module transaction;
 
 command sync() 
 address TRNglobal_sync
-comment "save all persistent BATs";
+comment "Save all persistent BATs";
 command commit() 
 address TRNglobal_commit
-comment "global commit on all BATs";
+comment "Global commit on all BATs";
 command abort() 
 address TRNglobal_abort
-comment "global abort on all BATs";
+comment "Global abort on all BATs";
 
 @+ BAT specific transaction management
 @mal
 pattern commit(c:any...) 
 address TRNtrans_commit
-comment "commit changes in certain BATs.";
+comment "Commit changes in certain BATs.";
 pattern abort(c:any...) 
 address TRNtrans_abort
-comment "abort changes in certain BATs.";
+comment "Abort changes in certain BATs.";
 pattern clean(c:any...) 
 address TRNtrans_clean
-comment "declare a BAT clean without 
-	 flushing to disk.";
+comment "Declare a BAT clean without flushing to disk.";
 @+ Delta status
 @mal
 command alpha(b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
