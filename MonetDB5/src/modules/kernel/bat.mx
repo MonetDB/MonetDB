@@ -707,7 +707,7 @@ mal_export str BKCsetSorted(bit *res, int *bid);
 mal_export str BKCisSorted(bit *res, int *bid);
 mal_export str BKCisSortedReverse(bit *res, int *bid);
 mal_export str BKCgetKey(bit *ret, int *bid);
-mal_export str BKCpersists(int *r, int *bid, int *flg);
+mal_export str BKCpersists(int *r, int *bid, bit *flg);
 mal_export str BKCsetPersistent(int *r, int *bid);
 mal_export str BKCisPersistent(bit *res, int *bid);
 mal_export str BKCsetTransient(int *r, int *bid);
@@ -2534,18 +2534,15 @@ BKCgetKey(bit *ret, int *bid)
 }
 
 str
-BKCpersists(int *r, int *bid, int *flg)
+BKCpersists(int *r, int *bid, bit *flg)
 {
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.setPersistence", "Cannot access descriptor");
 	}
+	CMDpersists(&b, b, flg);
 	BBPincref(*r = b->batCacheid, TRUE);
-	if (*flg)
-		BBPincref(b->batCacheid, TRUE);
-	else
-		BBPdecref(b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2553,15 +2550,8 @@ BKCpersists(int *r, int *bid, int *flg)
 str
 BKCsetPersistent(int *r, int *bid)
 {
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		return throwMessage("bat.setPersistence", "Cannot access descriptor");
-	}
-	BATmode(b, PERSISTENT);
-	BBPincref(*r = b->batCacheid, TRUE);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+	bit flag= TRUE;
+	return BKCpersists(r,bid, &flag);
 }
 
 str
