@@ -387,12 +387,9 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 				}
 				continue;
 			case '?':
-				if( !isspace( (int) line[1]) ) {
-					char **msg = getHelp(getClient()->nspace,line+1);
-					int i;
-					for(i=0; msg[i]; i++)
-						printf("%s\n",msg[i]);
-				} else
+				if( !isspace( (int) line[1]) )
+					showHelp( getClient()->nspace,line+1, getClient()->fdout);
+				else
 					showCommands();
 				line= NULL;
 				continue;

@@ -90,6 +90,7 @@ mal_export void     dumpManualFooter(stream *f);
 mal_export void     showModuleStatistics(stream *f,Module s); /* used in src/mal/mal_debugger.c */
 mal_export char **getHelp(Module m, str pat);
 mal_export char **getHelpMatch(char *pat);
+mal_export void showHelp(Module m, str txt,stream *fs);
 
 #define getSubScope(N)  (*(N))
 
@@ -728,7 +729,7 @@ char **getHelp(Module m, str pat)
 	Symbol s;
 	int len1 = 0,len2 = 0;
 	char *t, **msg, buf[BUFSIZ];
-	int top=0, i,j,k, sig = 0, doc = 0;
+	int top=0, i,j,k, sig = 0, doc = 0, match=0;
 	int dot;
 
 #ifdef MAL_SCOPE_DEBUG 
@@ -738,6 +739,7 @@ char **getHelp(Module m, str pat)
 	msg[top]=0;
 
 	dot= strchr(pat,'.') != 0;
+	match= strchr(pat,'(')!= 0;
 	t = strchr(pat,')');
 	if( t) { doc++; *t=0; }
 	t= strchr(pat,'(');
@@ -795,7 +797,8 @@ char **getHelp(Module m, str pat)
 		for(j=0;j<MAXSCOPE;j++)
 		if( m->subscope[j])
 			for(s= m->subscope[j]; s; s= s->peer){
-			if( strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*'){
+			if( (strncmp(fcnnme,s->name,len2)==0 || *fcnnme=='*') &&
+				(match==0 || strlen(s->name)==len2) ){
 				if( doc) {
 					fcnDefinition(s->def,s->def->stmt[0],buf,FALSE);
 					buf[0]=' ';
@@ -841,6 +844,13 @@ char **getHelp(Module m, str pat)
 	}
 	}
 	return msg;
+}
+void
+showHelp(Module m, str txt, stream *fs){
+	int i;
+	char **msg = getHelp(m,txt);
+	for(i=0; msg[i]; i++)
+		stream_printf(fs,"%s\n",msg[i]);
 }
 @-
 The second primitive of relevance is to find documentation matching

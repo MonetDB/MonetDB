@@ -230,7 +230,6 @@ mal_export void     freeClient  (Client c);
 mal_export int		countClients();
 mal_export void     appendInput(Client c, str msg);
 mal_export int      readClient  (Client c);
-mal_export int 		readConsole(Client cntxt);
 mal_export void     setClientTrace(Client c, int flag);
 mal_export str      stopClient(Client c, str nme);
 mal_export str      stopClientIndex(Client c, int id);
@@ -909,6 +908,12 @@ int readClient(Client c){
 		}
 		GDKfree(nme);
 		pushClientInput(c, fdin, c->listing, c->prompt);
+		in->pos= in->len;
+		return readClient(c);
+	} else 
+	if( *CURRENT(c) == '?'){
+		showHelp(c->nspace, CURRENT(c)+1, c->fdout);
+		in->pos= in->len;
 		return readClient(c);
 	} else {
 #ifdef MAL_CLIENT_DEBUG
