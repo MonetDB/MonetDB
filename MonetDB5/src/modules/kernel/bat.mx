@@ -421,7 +421,7 @@ Note, we should move old-fashioned mil operator definitions
 into a separate module.
 
 @mal
-command setName ( b:bat[:any_1,:any_2] , s:str) :bat[:any_1,:any_2]
+command setName ( b:bat[:any_1,:any_2] , s:str) :void
 address BKCsetName
 comment "Give a logical name to a BAT. ";
 
@@ -429,21 +429,21 @@ command getName ( b:bat[:any_1,:any_2]) :str
 address BKCgetBBPname
 comment "Gives back the logical name of a BAT.";
 
-command setRole( b:bat[:any_1,:any_2], h:str, t:str) :bat[:any_1,:any_2]
+command setRole( b:bat[:any_1,:any_2], h:str, t:str) :void
 address BKCsetRole
 comment "Give a logical name to the columns of a BAT.";
 
-command setColumn( b:bat[:any_1,:any_2], t:str) :bat[:any_1,:any_2]
+command setColumn( b:bat[:any_1,:any_2], t:str) :void
 address BKCsetColumn
 comment "Give a logical name to the tail column of a BAT.";
-command setColumn( b:bat[:any_1,:any_2], h:str, t:str) :bat[:any_1,:any_2]
+command setColumn( b:bat[:any_1,:any_2], h:str, t:str) :void
 address BKCsetColumns
 comment "Give both columns of a BAT a new name.";
 
 
 command isTransient( b:bat[:any_1,:any_2]) :bit 
 address BKCisTransient;
-command setTransient( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+command setTransient( b:bat[:any_1,:any_2]) :void
 address BKCsetTransient
 comment "Make the BAT transient.  Returns 
 	boolean which indicates if the
@@ -451,15 +451,15 @@ BAT administration has indeed changed.";
 
 command isPersistent( b:bat[:any_1,:any_2]) :bit 
 address BKCisPersistent;
-command setPersistent( b:bat[:any_1,:any_2],f:bit) :bat[:any_1,:any_2] 
+command setPersistent( b:bat[:any_1,:any_2],f:bit) :void
 address BKCpersists
 comment "Backward compatibility";
-command setPersistent( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+command setPersistent( b:bat[:any_1,:any_2]) :void
 address BKCsetPersistent
 comment "Make the BAT persistent.  Returns boolean which indicates 
         if the BAT administration has indeed changed.";
 
-command save(nme:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+command save(nme:bat[:any_1,:any_2]) :void
 address BKCsave2;
 
 command save(nme:str) :bit 
@@ -2542,8 +2542,9 @@ BKCpersists(int *r, int *bid, bit *flg)
 		return throwMessage("bat.setPersistence", "Cannot access descriptor");
 	}
 	CMDpersists(&b, b, flg);
-	BBPincref(*r = b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
+	BBPunfix(b->batCacheid);
+	*r = 0;
 	return MAL_SUCCEED;
 }
 
@@ -2576,7 +2577,7 @@ BKCsetTransient(int *r, int *bid)
 		return throwMessage("bat.setTransient", "Cannot access descriptor");
 	}
 	BATmode(b, TRANSIENT);
-	BBPincref(*r = b->batCacheid, TRUE);
+	*r = 0;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -2777,8 +2778,8 @@ BKCsetRole(int *r, int *bid, char **hname, char **tname)
 	if (*tname == 0)
 		return throwMessage("bat.setRole", "tail name missing");
 	BATroles(b, *hname, *tname);
-	BBPincref(*r = b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
+	*r = 0;
 	return MAL_SUCCEED;
 }
 
@@ -2793,8 +2794,8 @@ BKCsetColumn(int *r, int *bid, str *tname)
 	if (*tname == 0)
 		return throwMessage("bat.setColumn", "column name missing");
 	BATroles(b, b->hident, *tname);
-	BBPincref(*r = b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
+	*r =0;
 	return MAL_SUCCEED;
 }
 
@@ -2807,9 +2808,9 @@ BKCsetColumns(int *r, int *bid, str *hname, str *tname)
 		return throwMessage("bat.setColumns", "Cannot access descriptor");
 	}
 	BATroles(b, *hname, *tname);
-	BBPincref(*r = b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
 	BBPunfix(b->batCacheid);
+	*r =0;
 	return MAL_SUCCEED;
 }
 
@@ -2824,8 +2825,8 @@ BKCsetName(int *r, int *bid, str *s)
 		return throwMessage("bat.setName", "Cannot access descriptor");
 	}
 	CMDrename(rp, b, *s);
-	BBPincref(*r = b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
+	*r = 0;
 	return MAL_SUCCEED;
 }
 
@@ -2950,8 +2951,8 @@ BKCsave2(int *r, int *bid)
 
 	if (b && BATdirty(b))
 		BBPsave(b);
-	BBPincref(*r = b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
+	*r = 0;
 	return MAL_SUCCEED;
 }
 
@@ -3074,4 +3075,5 @@ BKCgetSequenceBase(oid *r, int *bid)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
 @}

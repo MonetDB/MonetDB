@@ -1152,12 +1152,14 @@ str CALCunarycheck@3@1(@3 *res , @3 *a ) {
 #ifdef DEBUG
 	printf( "CALCunary@3@1\n");
 #endif
-   if (*a == 0 || *a == @3_nil) {
-	*res = @3_nil;
-   } else {
-   	*res = @2 (*a);
-   }
-   return(MAL_SUCCEED);
+	if (*a == 0 ){
+		return throwMessage("calc.@3", "Illegal reference");
+	} else if ( *a == @3_nil) {
+		*res = @3_nil;
+	} else {
+		*res = @2 (*a);
+	}
+	return(MAL_SUCCEED);
 }
 @
 

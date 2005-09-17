@@ -251,7 +251,7 @@ hashing.
 #define match_hash(b,p,r) BUNfndOID(r,b,p); if (r == NULL) continue;
 
 #define declare_atom int any = b->ttype; hash_t (*hashfcn)(ptr) = BATatoms[any].atomHash;
-#define declare_simple		/* any and hash would otherwise give unused variable warning */
+#define declare_simple	/* any and hash would otherwise give unused variable warning */
 
 #define htype_sync(b) BAThdense(b)?TYPE_void:TYPE_oid
 #define htype_hash(b) TYPE_oid
@@ -314,7 +314,7 @@ typedef struct {
 		map = BATnew(TYPE_mapentry, tailtype(b,TRUE), @3);	\
 		hash = (hash_t*) alloca((int)(sizeof(hash_t)*((mask=@2)+1))); \
 		for (xx=0; xx<=@2; xx++) {				\
-			hash[xx] = HASH_MAX;					\
+			hash[xx] = HASH_MAX;				\
 		}							\
 	}								\
 	entry.cnt = 1;							\
@@ -374,10 +374,10 @@ is given by the user, or 1023 otherwise, and the derived result
 size is $4 \cdot 2^n$.
 @end table
 
-Further research should point out whether fitting a simple statistical 
-model (possibly a simple mixture model) can help choose these parameters 
+Further research should point out whether fitting a simple statistical
+model (possibly a simple mixture model) can help choose these parameters
 automatically; the current idea is that the user (which could be a
-domain-specific extension of the higher-level language) knows the 
+domain-specific extension of the higher-level language) knows the
 properties of the data, especially for IR in which the standard grouping
 settings differ significantly from the original datamining application.
 @c
@@ -487,7 +487,7 @@ int
 CTgroup(BAT **retval,		/* put pointer to BAT[oid,oid] record here. */
 	BAT **hbat,		/* put histogram BAT here */
 	BAT *b			/* pointer to BAT[oid,oid] record. */
-    )
+)
 {
 	@:CTgroupbody(STANDARD)@
 }
@@ -498,7 +498,7 @@ CTgroup_custom(BAT **retval,	/* put pointer to BAT[oid,oid] record here. */
 	       BAT *b,		/* pointer to BAT[oid,oid] record. */
 	       int *N,		/* number of bits for hashmask */
 	       int *rng		/* expected number of entries in map */
-    )
+)
 {
 	@:CTgroupbody(CUSTOM)@
 }
@@ -740,7 +740,7 @@ int
 CThistosum(BAT **retval,	/* put pointer to BAT[oid,int] record here. */
 	   BAT *b,		/* pointer to BAT[oid,oid] record. */
 	   BAT *c		/* pointer to BAT[oid,int] record. */
-    )
+)
 {
 	BAT *res = BATnew(TYPE_oid, TYPE_int, BATcount(b));
 	BUN p, q, qb;
@@ -805,7 +805,7 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 
 	/* insert all values in the hash table, and in bn with count zero */
 	r = BUNfirst(bn);
-	yy = 1;
+	yy = 0;
 	BATloopFast(dom, p, q, xx) {
 		oid v = *(oid *) BUNhloc(dom, p);
 		hash_t c = v & mask;
@@ -818,11 +818,11 @@ CTsubhisto(BAT **ret, BAT *sel, BAT *grp, BAT *dom)
 		yy++;
 	}
 	bn->batBuns->free = (char *) r - (char *) Bunbase(bn);
-	BATsetcount(bn, bn->batBuns->free / BUNsize(bn));
+	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 	bn->tsorted = 0;
 	bn->htype = BATmirror(bn)->ttype = TYPE_oid;
 	/* assert(offsetof(idxentry_t,hcur) == 0);
-	   ALIGNsetH(bn, dom); */
+	ALIGNsetH(bn, dom); */
 
 	/* add the counts for this selection using the hash table */
 	zz = BUNsize(sel);
@@ -879,7 +879,7 @@ sort_flush(struct refine *buf, size_t size, int tpe, BUN base, oid *dst, oid *id
 		val = base + buf->off;
 		if ((*cmp) (cur, val)) {
 			cur = val;
-			id ++;
+			id++;
 		}
 		*dst++ = buf->o;
 		*dst++ = id;
@@ -1024,7 +1024,7 @@ refine(BAT **res, BAT *b, BAT *a, int rv)
 		if (a_void)
 			GDKfree(base);
 		bn->batBuns->free = ((BUN) dst) - bn->batBuns->base;
-		BATsetcount(bn, bn->batBuns->free / BUNsize(bn));
+		BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 		bn->tsorted = GDK_SORTED;
 	}
 	*res = bn;
