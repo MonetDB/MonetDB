@@ -83,11 +83,12 @@ include profiler;
 include statistics;
 include optimizer;
 include chopper;
-include logger;
+#include logger;
 include transaction;
 include partitions;	# beware for overloading
 @-
 In practice, we have to introduce different startup for each
 client group or database.
 @c
+
 @-
