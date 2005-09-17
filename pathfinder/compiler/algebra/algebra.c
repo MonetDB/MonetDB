@@ -176,7 +176,7 @@
  *   .
  *   Derived properties may also be helpful for later processing. And
  *   so will the physical algebra planner consider that information,
- *   plus it will transfer the information also to the phyiscal plans.
+ *   plus it will transfer the information also to the physical plans.
  *   .
  * - Eliminate any literal empty tables, as well as some other minor
  *   tree rewrites. This happens in algopt.brg, which is supposed to
@@ -267,7 +267,7 @@
  * There's one issue where we need to be careful during planning: Our
  * logical algebra DAG does not only share subexpressions for performance
  * reasons. Furthermore, we expect shared node constructors to be
- * evaluated exactly one to guarantee correct node identity semantics.
+ * evaluated exactly once to guarantee correct node identity semantics.
  *
  * In general, we might find more than one plan for a node constructor
  * node. If two different parents of such a node constructor now picked

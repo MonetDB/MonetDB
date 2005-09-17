@@ -76,29 +76,6 @@
 #define RRRL(p) L(R(R(R(p))))
 #define RRRRL(p) L(R(R(R(R(p)))))
 
-static void milprintf(opt_t *o, const char *format, ...)
-{
-        int j, i = strlen(format) + 80;
-        char *milbuf = PFmalloc(i);
-        va_list ap;
-
-        /* take in a block of MIL statements */
-        va_start(ap, format);
-        j = vsnprintf(milbuf, i, format, ap);
-        va_end (ap);
-        while (j < 0 || j > i) {
-                if (j > 0)      /* C99 */
-                        i = j + 1;
-                else            /* old C */
-                        i *= 2;
-                milbuf = PFrealloc(i, milbuf);
-                va_start(ap, format);
-                j = vsnprintf(milbuf, i, format, ap);
-                va_end (ap);
-        } 
-        opt_mil(o, milbuf);
-}
-
 /**
  * mps_error calls PFoops with more text, since something is wrong
  * in the translation, if this message appears.
@@ -878,30 +855,13 @@ map2NODE_interface (opt_t *f)
 
             "iter_input := nil;\n"
             /* variables for the result of the scj */
-            "var pruned_input := res_scj.fetch(0);\n"
-            /* pruned_input comes as ctx|iter */
-            "var ctx_dn_item := res_scj.fetch(1);\n"
-            "var ctx_dn_frag := res_scj.fetch(2);\n"
+            "var res_iter := res_scj.fetch(0);\n"
+            "var res_item := res_scj.fetch(1);\n"
+            "var res_frag := res_scj.fetch(2);\n"
             /* res_ec is the iter|dn table resulting from the scj */
-            "var res_item := pruned_input.reverse().leftjoin(ctx_dn_item);\n"
-            /* create content_iter as sorting argument for the merged union */
-            "var res_void := res_item.mark(0@0).reverse();\n"
-            "var res_iter := res_void.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
-            "res_void := nil;\n"
-            /* only the dn_items and dn_frags from the joined result are needed
-               in the following (getting the values for content_size, 
-               content_prop, ...) and the input for a mposjoin has to be void */
-            "res_item := res_item.reverse().mark(0@0).reverse();\n"
-            "var res_frag;\n"
-            "if (is_fake_project(ctx_dn_frag)) {\n"
-            "    res_frag := ctx_dn_frag;\n"
-            "} else {\n"
-            "    res_frag := pruned_input.reverse().leftjoin(ctx_dn_frag);\n"
-            "    res_frag := res_frag.reverse().mark(0@0).reverse();\n"
-            "}\n"
 
             /* create subtree copies for all bats except content_level */
-            "_elem_iter  := res_iter;\n"
+            "_elem_iter  := res_iter.leftfetchjoin(oid_oid).de_fake_leftfetchjoin(iter,res_item).chk_order();\n"
             "_elem_size  := mposjoin(res_item, res_frag, ws.fetch(PRE_SIZE));\n"
             "_elem_size  := correct_sizes(res_iter, res_item, _elem_size);\n"
             "_elem_kind  := mposjoin(res_item, res_frag, ws.fetch(PRE_KIND));\n"
@@ -910,30 +870,16 @@ map2NODE_interface (opt_t *f)
 
             /* change the level of the subtree copies */
             /* get the level of the content root nodes */
-            /* - unique is needed, if pruned_input has more than once an ctx value
-               - join with iter between pruned_input and item is not needed, because
-               in this case pruned_input has the void column as iter value */
-            "nodes := pruned_input.kunique();\n" /* creates unique ctx-node list */
-            "var temp_ec_item := nodes.reverse().mark(0@0).reverse();\n"
-            "temp_ec_item := temp_ec_item.leftfetchjoin(node_items);\n"
-            "var temp_ec_frag := nodes.reverse().mark(0@0).reverse();\n"
-            "temp_ec_frag := temp_ec_frag.leftfetchjoin(node_frags);\n"
-            "nodes := nodes.mark(0@0);\n"
+            "var temp_ec_item := res_iter.de_fake_leftfetchjoin(node_items,res_item);\n"
+            "var temp_ec_frag := res_iter.leftfetchjoin(node_frags);\n"
+            "nodes := res_item.mark(0@0);\n"
             "var root_level := mposjoin(temp_ec_item, "
                                        "temp_ec_frag, "
                                        "ws.fetch(PRE_LEVEL));\n"
             "root_level := nodes.leftfetchjoin(root_level);\n"
-            "temp_ec_item := nil;\n"
-            "temp_ec_frag := nil;\n"
-            "nodes := nil;\n"
 
-            "temp_ec_item := ctx_dn_item.reverse().mark(0@0).reverse();\n"
-            "if (is_fake_project(ctx_dn_frag)) {\n"
-            "    temp_ec_frag := ctx_dn_frag;\n"
-            "} else {\n"
-            "    temp_ec_frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
-            "}\n"
-            "nodes := ctx_dn_item.mark(0@0);\n"
+            "temp_ec_item := res_item;\n"
+            "temp_ec_frag := res_frag;\n"
             "var content_level := mposjoin(temp_ec_item, temp_ec_frag, "
                                           "ws.fetch(PRE_LEVEL));\n"
             "content_level := nodes.leftfetchjoin(content_level);\n"
@@ -942,7 +888,6 @@ map2NODE_interface (opt_t *f)
             /* join is made after the multiplex, because the level has to be
                change only once for each dn-node. With the join the multiplex
                is automatically expanded */
-            "content_level := pruned_input.reverse().leftjoin(content_level);\n"
             "content_level := content_level.reverse().mark(0@0).reverse();\n"
 
             "_elem_level := content_level;\n"
@@ -962,7 +907,7 @@ map2NODE_interface (opt_t *f)
             "_attr_prop := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_PROP));\n"
             "_attr_frag := mposjoin(oid_attr, oid_frag, ws.fetch(ATTR_FRAG));\n"
             "_attr_own  := temp_attr.mark(0@0).reverse();\n"
-            "_attr_iter := _attr_own.leftfetchjoin(res_iter);\n"
+            "_attr_iter := _attr_own.leftfetchjoin(_elem_iter);\n"
             "temp_attr := nil;\n"
             "oid_attr := nil;\n"
             "oid_frag := nil;\n"
@@ -2386,7 +2331,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         milprintf(f,
                 "iter := res_scj.fetch(0);\n"
                 "item := res_scj.fetch(1);\n"
-                "pos  := item.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+                "pos  := iter.mark_pos(item);\n"
                 "iter := de_fake_project(iter, item);\n"
                 "kind := res_scj.fetch(2).set_kind(%s);\n"
                 "kind := de_fake_project(kind, item);\n"
@@ -2661,29 +2606,14 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
     
                 "iter_input := nil;\n"
                 /* variables for the result of the scj */
-                "var pruned_input := res_scj.fetch(0);\n"
-                /* pruned_input comes as ctx|iter */
-                "var ctx_dn_item := res_scj.fetch(1);\n"
-                "var ctx_dn_frag := res_scj.fetch(2);\n"
+                "var res_iter := res_scj.fetch(0);\n"
+                "var res_item := res_scj.fetch(1);\n"
+                "var res_frag := res_scj.fetch(2);\n"
                 "res_scj := nil;\n"
                 /* res_ec is the iter|dn table resulting from the scj */
-                "var res_item := pruned_input.reverse().leftjoin(ctx_dn_item);\n"
                 /* create content_iter as sorting argument for the merged union */
-                "var content_void := res_item.mark(0@0).reverse();\n"
-                "var content_iter := content_void.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
-                "content_void := nil;\n"
-                /* only the dn_items and dn_frags from the joined result are needed
-                   in the following (getting the values for content_size, 
-                   content_prop, ...) and the input for a mposjoin has to be void */
-                "res_item := res_item.reverse().mark(0@0).reverse();\n"
-                "var res_frag;\n"
-                "if (is_fake_project(ctx_dn_frag)) {\n"
-                "    res_frag := ctx_dn_frag;\n"
-                "} else {\n"
-                "    res_frag := pruned_input.reverse().leftjoin(ctx_dn_frag);\n"
-                "    res_frag := res_frag.reverse().mark(0@0).reverse();\n"
-                "}\n"
-
+                "var content_iter := res_iter.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
+    
                 /* create subtree copies for all bats except content_level */
                 "var content_size := mposjoin(res_item, res_frag, "
                                              "ws.fetch(PRE_SIZE));\n"
@@ -2710,35 +2640,18 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
      /* attr */ /* as well as content_frag_pre */
      /* attr */ "var content_frag_pre := res_frag;\n"
     
-                "res_item := nil;\n"
-                "res_frag := nil;\n"
-    
                 /* change the level of the subtree copies */
                 /* get the level of the content root nodes */
-                /* - unique is needed, if pruned_input has more than once an ctx value
-                   - join with iter between pruned_input and item is not needed, because
-                   in this case pruned_input has the void column as iter value */
-                "nodes := pruned_input.kunique();\n" /* creates unique ctx-node list */
-                "var temp_ec_item := nodes.reverse().mark(0@0).reverse();\n"
-                "temp_ec_item := temp_ec_item.leftfetchjoin(node_items);\n"
-                "var temp_ec_frag := nodes.reverse().mark(0@0).reverse();\n"
-                "temp_ec_frag := temp_ec_frag.leftfetchjoin(node_frags);\n"
-                "nodes := nodes.mark(0@0);\n"
+                "var temp_ec_item := res_iter.de_fake_leftfetchjoin(node_items,res_item);\n"
+                "var temp_ec_frag := res_iter.leftfetchjoin(node_frags);\n"
+                "nodes := res_item.mark(0@0);\n"
                 "var contentRoot_level := mposjoin(temp_ec_item, "
                                                   "temp_ec_frag, "
                                                   "ws.fetch(PRE_LEVEL));\n"
                 "contentRoot_level := nodes.leftfetchjoin(contentRoot_level);\n"
-                "temp_ec_item := nil;\n"
-                "temp_ec_frag := nil;\n"
-                "nodes := nil;\n"
     
-                "temp_ec_item := ctx_dn_item.reverse().mark(0@0).reverse();\n"
-                "if (is_fake_project(ctx_dn_frag)) {\n"
-                "    temp_ec_frag := ctx_dn_frag;\n"
-                "} else {\n"
-                "    temp_ec_frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
-                "}\n"
-                "nodes := ctx_dn_item.mark(0@0);\n"
+                "temp_ec_item := res_item;\n"
+                "temp_ec_frag := res_frag;\n"
                 "var content_level := mposjoin(temp_ec_item, temp_ec_frag, "
                                               "ws.fetch(PRE_LEVEL));\n"
                 "content_level := nodes.leftfetchjoin(content_level);\n"
@@ -2748,7 +2661,6 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 /* join is made after the multiplex, because the level has to be
                    change only once for each dn-node. With the join the multiplex
                    is automatically expanded */
-                "content_level := pruned_input.reverse().leftjoin(content_level);\n"
                 "content_level := content_level.reverse().mark(0@0).reverse();\n"
     
                 /* printing output for debugging purposes */
@@ -3320,11 +3232,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
     if (rc != NORMAL)
     {
         milprintf(f,
-             /* because tunique() is to slow on strings we do stupid things */
-             /* "var unq_str := item%s.tunique().mark(0@0).reverse();\n" */
-                "var unq_str := bat(str,void).key(true)"
-                                            ".insert(item%s.reverse().mark(nil))"
-                                            ".mark(0@0).reverse().access(BAT_READ);\n",
+                "var unq_str := item%s.tuniqueALT().mark(0@0).reverse();\n",
                 item_ext);
     }
     else
@@ -4635,25 +4543,11 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "var res_scj := "
                 "loop_lifted_descendant_or_self_step_with_kind_test"
                 "(iter, item, frag, ws, 0, TEXT);\n"
-                "iter := nil;\n"
-                "item := nil;\n"
-                "frag := nil;\n"
                 /* variables for the result of the scj */
-                "var pruned_input := res_scj.fetch(0);\n"
-                /* pruned_input comes as ctx|iter */
-                "var ctx_dn_item := res_scj.fetch(1);\n"
-                "var ctx_dn_frag := res_scj.fetch(2);\n"
+                "iter := res_scj.fetch(0);\n"
+                "item := res_scj.fetch(1);\n"
+                "frag := res_scj.fetch(2);\n"
                 "res_scj := nil;\n"
-                /* combine pruned_input and ctx|dn */
-                "pruned_input := pruned_input.reverse().leftjoin(ctx_dn_item.mark(0@0));\n"
-                "item := ctx_dn_item.reverse().mark(0@0).reverse();\n"
-                "if (is_fake_project(ctx_dn_frag)) {\n"
-                "    frag := ctx_dn_frag;\n"
-                "} else {\n"
-                "    frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
-                "}\n"
-                "ctx_dn_item := nil;\n"
-                "ctx_dn_frag := nil;\n"
                 /* get the string values of the text nodes */
                 "item_str := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
                                      "mposjoin(item, frag, ws.fetch(PRE_FRAG)), "
@@ -4661,7 +4555,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "item := nil;\n"
                 "frag := nil;\n"
                 /* for the result of the scj join with the string values */
-                "var iter_item := pruned_input.leftfetchjoin(item_str).chk_order();\n"
+                "var iter_item := iter.reverse().de_fake_leftfetchjoin(item_str).chk_order();\n"
                 "item_str := nil;\n");
     if (!tv)
         milprintf(f,
@@ -4670,7 +4564,6 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "     iter_item := iter_item.string_join(item_unq.project(\"\"));\n}\n");
 
     milprintf(f,
-                "pruned_input := nil;\n"
                 "iter := iter_item.mark(0@0).reverse();\n"
                 "item_str := iter_item.reverse().mark(0@0).reverse();\n"
             "} else {\n"
@@ -4709,25 +4602,11 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                     "var res_scj := "
                     "loop_lifted_descendant_or_self_step_with_kind_test"
                     "(iter, item, frag, ws, 0, TEXT);\n"
-                    "iter := nil;\n"
-                    "item := nil;\n"
-                    "frag := nil;\n"
                     /* variables for the result of the scj */
-                    "var pruned_input := res_scj.fetch(0);\n"
-                    /* pruned_input comes as ctx|iter */
-                    "var ctx_dn_item := res_scj.fetch(1);\n"
-                    "var ctx_dn_frag := res_scj.fetch(2);\n"
+                    "iter := res_scj.fetch(0);\n"
+                    "item := res_scj.fetch(1);\n"
+                    "frag := res_scj.fetch(2);\n"
                     "res_scj := nil;\n"
-                    /* combine pruned_input and ctx|dn */
-                    "pruned_input := pruned_input.reverse().leftjoin(ctx_dn_item.mark(0@0));\n"
-                    "item := ctx_dn_item.reverse().mark(0@0).reverse();\n"
-                    "if (is_fake_project(ctx_dn_frag)) {\n"
-                    "    frag := ctx_dn_frag;\n"
-                    "} else {\n"
-                    "    frag := ctx_dn_frag.reverse().mark(0@0).reverse();\n"
-                    "}\n"
-                    "ctx_dn_item := nil;\n"
-                    "ctx_dn_frag := nil;\n"
                     /* get the string values of the text nodes */
                     "item_str := mposjoin(mposjoin(item, frag, ws.fetch(PRE_PROP)), "
                                          "mposjoin(item, frag, ws.fetch(PRE_FRAG)), "
@@ -4735,8 +4614,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                     "item := nil;\n"
                     "frag := nil;\n"
                     /* for the result of the scj join with the string values */
-                    "var iter_item := pruned_input.leftfetchjoin(item_str);\n"
-                    "pruned_input := nil;\n"
+                    "var iter_item := iter.reverse().de_fake_leftfetchjoin(item_str);\n"
                     "iter := iter_item.mark(0@0).reverse();\n"
                     "item_str := iter_item.reverse().mark(0@0).reverse();\n"
                     /* merge strings from element and attribute */
@@ -6607,15 +6485,15 @@ translateUDF (opt_t *f, int cur_level, int counter,
     /* call the proc */
     milprintf(f,
             "var proc_res := fn_%x_%i (loop%03u, outer%03u, order_%03u, inner%03u, "
-            "fun_vid%03u, fun_iter%03u, fun_pos%03u, fun_item%03u, fun_kind%03u); # fn:%s\n",
+            "fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); # fn:%s\n",
             fun, fun->arity,
             cur_level, cur_level, cur_level, cur_level,
-            counter, counter, counter, counter, counter, fun->qname.loc);
+            counter, counter, counter, counter, fun->qname.loc);
     milprintf(f,
             "iter := proc_res.fetch(0);\n"
-            "pos := proc_res.fetch(1);\n"
-            "item := proc_res.fetch(2);\n"
-            "kind := proc_res.fetch(3);\n"
+            "item := proc_res.fetch(1);\n"
+            "kind := proc_res.fetch(2);\n"
+            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             "proc_res := nil;\n"
             "fun_vid%03u := nil;\n"
             "fun_iter%03u := nil;\n"
@@ -6680,14 +6558,45 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
                 "{ # translate pf:distinct-doc-order (node*) as node*\n"
-                /* FIXME: are attribute nodes automatically filtered? */
-                "if (kind.count() != kind.get_type(ELEM).count()) "
-                "{ ERROR (\"cannot handle attributes in function pf:distinct-doc-order.\"); }\n"
+                "var sorting;\n"
+                "if (kind.count() = kind.get_type(ELEM).count()) {\n"
                 /* delete duplicates */
-                "var sorting := iter.reverse().sort().reverse();\n"
+                "sorting := iter.reverse().sort().reverse();\n"
                 "sorting := sorting.CTrefine(kind);\n"
                 "sorting := sorting.CTrefine(item);\n"
                 "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
+                "} else { # cope also with attributes and sort them according to their owner\n"
+                "var elements := kind.get_type(ELEM).mirror();\n"
+                "var elem_iters := elements.leftfetchjoin(iter);\n"
+                "var elem_items := elements.leftfetchjoin(item);\n"
+                "var elem_frags := elements.leftfetchjoin(kind.get_fragment());\n"
+                "var elem_attrs := elements.project(nil);\n"
+                "var attributes := kind.get_type(ATTR).mirror();\n"
+                "var attr_iters := attributes.leftfetchjoin(iter);\n"
+                "var attr_attrs := attributes.leftfetchjoin(item);\n"
+                "var attr_frags := attributes.leftfetchjoin(kind.get_fragment());\n"
+                "var attr_key := attributes.mark(0@0).reverse();\n"
+                "var temp_attr := attr_attrs.reverse().mark(0@0).reverse();\n"
+                "var temp_frag := attr_frags.reverse().mark(0@0).reverse();\n"
+                "var attr_items := attr_key.reverse().leftfetchjoin("
+                    "mposjoin(temp_attr, temp_frag, ws.fetch(ATTR_OWN)));\n"
+                "attr_key := nil;\n"
+                "temp_attr := nil;\n"
+                "temp_frag := nil;\n"
+                "sorting := elem_iters.union(attr_iters).reverse().sort().reverse();\n"
+                "elem_iters := nil;\n"
+                "attr_iters := nil;\n"
+                "sorting := sorting.CTrefine(elem_frags.union(attr_frags));\n"
+                "elem_frags := nil;\n"
+                "attr_frags := nil;\n"
+                "sorting := sorting.CTrefine(elem_items.union(attr_items));\n"
+                "elem_items := nil;\n"
+                "attr_items := nil;\n"
+                "sorting := sorting.CTrefine(elem_attrs.union(attr_attrs));\n"
+                "elem_attrs := nil;\n"
+                "attr_attrs := nil;\n"
+                "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
+                "}\n"
                 /*
                 "var temp_ddo := CTgroup(iter).CTmap().CTgroup(kind).CTmap().CTgroup(item);\n"
                 "temp_ddo := temp_ddo.CTextend().mark(0@0).reverse();\n"
@@ -6746,7 +6655,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var attr_item := attr.leftfetchjoin(item);\n"
                 "var attr_iter := attr.leftfetchjoin(iter);\n"
                 "attr := nil;\n"
-                "var attr_pre := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_PRE));\n"
+                "var attr_pre := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_OWN));\n"
                 "attr_item := nil;\n"
                 "attr_frag := nil;\n"
                 "var elem := kind.get_type(ELEM).mark(0@0).reverse();\n"
@@ -8760,19 +8669,19 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                                "bat[void,oid] inner000, "
                                "bat[void,oid] v_vid000, "
                                "bat[void,oid] v_iter000, "
-                               "bat[void,oid] v_pos000, "
                                "bat[void,oid] v_item000, "
                                "bat[void,int] v_kind000) : bat[void,bat] { # fn:%s\n"
                     "v_vid000 := v_vid000.access(BAT_WRITE);\n"
                     "v_iter000 := v_iter000.access(BAT_WRITE);\n"
                     "v_pos000 := v_pos000.access(BAT_WRITE);\n"
                     "v_item000 := v_item000.access(BAT_WRITE);\n"
-                    "v_kind000 := v_kind000.access(BAT_WRITE);\n",
+                    "v_kind000 := v_kind000.access(BAT_WRITE);\n"
+                    "var v_pos000 := v_iter000.mark_grp(v_iter000.tunique().mark(nil), 1@0);\n",
                     c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
-                    "return bat(void,bat,4).insert(nil,iter).insert(nil,pos).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
+                    "return bat(void,bat,4).insert(nil,iter).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
                     "} # end of PROC fn_%x_%i (fn:%s)\n",
                     c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
   	    opt_output(f, OPT_SEC_EPILOGUE);
@@ -9209,7 +9118,8 @@ simplifyCoreTree (PFcnode_t *c)
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
             }
-            else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"string")) && 
+            else if ((!PFqname_eq(fun->qname,PFqname (PFns_fn,"string")) ||
+                      !PFqname_eq(fun->qname,PFqname (PFns_fn,"string-join"))) &&
                      PFty_subtype(DL(c)->type, PFty_string ()))
             {
                 /* don't use function - omit apply and arg node */
@@ -9287,6 +9197,12 @@ simplifyCoreTree (PFcnode_t *c)
                 /* don't use function - either because we only have at most
                    one node per iteration or we use scj and therefore don't need
                    to remove duplicates and sort the result */
+                *c = *(DL(c));
+            }
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
+                     DL(c)->kind == c_apply &&
+                     !PFqname_eq((DL(c))->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order")))
+            {
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_op, "union")))
@@ -9659,6 +9575,7 @@ create_join_function (PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested,
     c = PFcore_arg(fst_for,c);
     c = PFcore_wire1 (c_apply, c);
     c->sem.fun = join;
+    TY(c) = TY(result);
     return c;
 }
 
@@ -10638,7 +10555,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
  * @param f the Stream the MIL code is printed to
  * @param c the root of the core tree
  */
-char*
+int
 PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char** query, char** epilogue)
 {
     PFarray_t *way, *counter;
@@ -10675,7 +10592,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
 
     /* define working set and all other MIL context (global vars for the query) */
     opt_output(f, OPT_SEC_QUERY);
-    milprintf(f, "\n\n# MAIN MIL QUERY\n\n{\n var err, ws := int(nil);\n err := CATCH({");
+    milprintf(f, "\n\n# MAIN MIL QUERY\n\n{\n var ws := int(nil);\n var err := CATCH({");
     init (f);
 
     /* get_var_usage appends information to the core nodes and creates a 
@@ -10735,8 +10652,11 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "drop(\"malalgebra\");\n"
             "drop(\"mmath\");\n");
 
-    opt_close(f, prologue, query, epilogue);
-    return NULL;
+    if (opt_close(f, prologue, query, epilogue)) {
+        PFoops (OOPS_FATAL, "Out-of-memory while generating MIL.\n");
+        return -1;
+    }
+    return 0;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

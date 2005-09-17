@@ -1254,6 +1254,40 @@ reduce (PFcnode_t * p, int goalnt)
             A(p) = A(L(p));
             break;
 
+        /* CoreExpr:           cast (seqtype, CoreExpr) */
+        case 46:
+        {
+            PFty_t              t;
+            PFalg_simple_type_t algty;
+
+            t = PFty_prime (PFty_defn (L(p)->sem.type));
+
+            /*
+             * Unfortunately, we only know how to cast atomic types
+             * into (exactly) one of our builtin atomic types. We
+             * cannot sensibly cast, e.g., into subtypes thereof.
+             */
+            if (PFty_equality (t, PFty_xs_string ()))
+                algty = aat_str;
+            else if (PFty_equality (t, PFty_xs_integer ()))
+                algty = aat_int;
+            else if (PFty_equality (t, PFty_xs_decimal ()))
+                algty = aat_dec;
+            else if (PFty_equality (t, PFty_xs_double ()))
+                algty = aat_dbl;
+            else if (PFty_equality (t, PFty_xs_boolean ()))
+                algty = aat_bln;
+            else
+                PFoops (OOPS_FATAL,
+                        "don't know the algebra equivalent of type %s",
+                        PFty_str (L(p)->sem.type));
+
+            A(p) = (struct PFla_pair_t) {
+                .rel  = cast (A(R(p)).rel, "item", algty),
+                .frag = A(R(p)).frag };
+
+        } break;
+
         /* Atom:               var */
         case 47:
         {

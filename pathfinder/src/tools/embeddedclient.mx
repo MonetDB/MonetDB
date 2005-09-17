@@ -145,14 +145,12 @@ start_xq_server(void *arg)
 	char buf[128];
 
 	if (!initialized) {
-		Client c;
-
 /* 		monet_singlethreaded = 1; */
 		if (embedded_set == NULL) {
 			int len = mo_builtin_settings(&embedded_set);
 			embedded_len = mo_system_config(&embedded_set, len);
 		}
-		c = Monet_init(embedded_set, embedded_len);
+		Monet_init(embedded_set, embedded_len);
 		mo_free_options(embedded_set, embedded_len);
 		static_module_init();
 		THRnew(MT_getpid(), "Interpreter");

@@ -311,12 +311,11 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->summer_branch) {
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
-        PFprintMILtemp (croot, status, tm_first, &prologue, &query, &epilogue);
-        if (prologue && query && epilogue) {
-                fputs(prologue, pfout);
-                fputs(query, pfout);
-                /* epilogue is not necessary for standalone scripts */ 
-        }
+        if (PFprintMILtemp (croot, status, tm_first, &prologue, &query, &epilogue))
+            goto failure;
+        fputs(prologue, pfout);
+        fputs(query, pfout);
+        /* epilogue is not necessary for standalone scripts */ 
         tm = PFtimer_stop (tm);
         if (status->timing)
             PFlog ("MIL code output:\t %s", PFtimer_str (tm));
@@ -332,7 +331,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("Logical algebra tree generation:\t %s", PFtimer_str (tm));
+        PFlog ("logical algebra tree generation:\t %s", PFtimer_str (tm));
 
     STOP_POINT(13);
 
@@ -344,7 +343,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("Logical algebra tree rewrite/optimization:\t %s",
+        PFlog ("logical algebra tree rewrite/optimization:\t %s",
                PFtimer_str (tm));
 
     STOP_POINT(14);
@@ -357,11 +356,11 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 subexelim:
     tm = PFtimer_start ();
 
-    laroot = PFcse_eliminate (laroot);
+    laroot = PFla_cse (laroot);
 
     tm = PFtimer_stop (tm);
     if (status->timing)
-        PFlog ("Common subexpression elimination in logical algebra tree:\t %s",
+        PFlog ("common subexpression elimination in logical algebra tree:\t %s",
                PFtimer_str (tm));
 
     STOP_POINT(15);
@@ -372,7 +371,7 @@ subexelim:
     tm = PFtimer_stop (tm);
 
     if (status->timing)
-        PFlog ("Compilation to physical algebra:\t %s", PFtimer_str (tm));
+        PFlog ("compilation to physical algebra:\t %s", PFtimer_str (tm));
 
     STOP_POINT(16);
 
@@ -486,10 +485,10 @@ subexelim:
 char*
 pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue)
 {
-        char *res = NULL;
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
         long tm = PFtimer_start ();
+        int res;
 
         *prologue = NULL;
         *query = NULL;
@@ -530,8 +529,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
     	croot = PFcoreopt (croot);
         res = PFprintMILtemp (croot, &PFstate, tm, prologue, query, epilogue);
         pa_destroy(pf_alloc);
-        return res ? res : *PFerrbuf ? PFerrbuf : NULL;
-
+        return res ? PFerrbuf : NULL;
 }
 
 #if HAVE_SIGNAL_H

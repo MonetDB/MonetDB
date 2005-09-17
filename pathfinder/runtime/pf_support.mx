@@ -525,15 +525,21 @@ PROC is_fake_project (bat[void,any::1] b) : bit
 	return and(count(b) = 1, isnil(seqbase(b)));
 }
 
-PROC de_fake_project (bat[void,any::1] p, bat[void,oid] b) : bat[void,any::1]
+PROC de_fake_project (bat[void,any::1] b, bat[void,oid] x) : bat[void,any::1]
 {
-	if (not(is_fake_project(p))) {
-		return p;
+	if (not(is_fake_project(b))) {
+		return b;
 	}
-	if (is_fake_project(b)) {
+	if (is_fake_project(x)) {
 		ERROR("de_fake_project: second argument must not be a 'fake_project'!\n");
 	}
-	return b.project(p.fetch(0));
+	return x.project(b.fetch(0));
+}
+
+PROC mark_pos(bat[void,oid] iter, bat[void,any] extent) : bat[void,oid] 
+{
+	if (is_fake_project(iter)) return extent.mark(1@0);
+	return iter.mark_grp(iter.tunique().mark(nil),1@0);
 }
 
 @= fake_fetch
@@ -549,13 +555,43 @@ PROC fake_fetch (bat[void,any::1] b, @1 p) : any::1
 @:fake_fetch(int)@
 @:fake_fetch(oid)@
 
-PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,any::3] r) : bat[oid,any::3]
+PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,any::2] r) : bat[oid,any::2]
 {
+	if (is_fake_project(l)) {
+		ERROR("fake_leftfetchjoin: first argument must not be a 'fake_project'!\n");
+	}
 	if (is_fake_project(r)) {
 		return r;
 	} else {
 		return leftfetchjoin(l,r);
 	}
+}
+
+PROC de_fake_leftfetchjoin (bat[void,oid] l, bat[void,any::2] r, bat[void,oid] x) : bat[void,any::2]
+{
+	if (is_fake_project(r)) {
+		ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
+	}
+	if (not(is_fake_project(l))) {
+		return leftfetchjoin(l,r);
+	}
+	if (is_fake_project(x)) {
+		ERROR("de_fake_leftfetchjoin: third argument must not be a 'fake_project'!\n");
+	}
+	var c := r.find(l.fetch(0));
+	return x.project(c);
+}
+
+PROC de_fake_leftfetchjoin (bat[oid,void] l, bat[void,any::2] r) : bat[oid,any::2]
+{
+	if (is_fake_project(r)) {
+		ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
+	}
+	if (not(is_fake_project(reverse(l)))) {
+		return leftfetchjoin(l,r);
+	}
+	var c := l.reverse().fetch(0);
+	return r.reverse().project(c).reverse();
 }
 
 
@@ -628,10 +664,10 @@ PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,any::3] r) : bat[oid,any::3]
 		lst := oid(int(fst) + sze);
         	fst := oid(int(fst) + skip_self);
         }
-	var item_descs := cands.ord_select(fst,lst).reverse();
+	var item_descs := cands.ord_select(fst,lst).reverse().chk_order();
 @
 @= wrap
-PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int order, BAT[oid,oid] cands) : BAT[oid,oid] 
+PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int order, BAT[oid,oid] cands) : BAT[void,bat] 
 {
 	var result := nil;
 	var one_iter := FALSE;
@@ -665,8 +701,10 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 
 	# trivial cases	
 	if ( (count(item) = 0) or (count(cands) = 0) or (count(pre_size) = 0) ) {
-		result := bat(oid,oid,0).access(BAT_READ);
-		result := result.chk_order();
+		result := new(void,bat,2).seqbase(0@0)
+		          .insert(nil,bat(void,oid,0).seqbase(0@0).access(BAT_READ))
+		          .insert(nil,bat(void,oid,0).seqbase(0@0).access(BAT_READ))
+		          .access(BAT_READ);
 		return result;
 	}
 	
@@ -679,8 +717,10 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 			# "descendant" / "descendant_or_self"
 			# =>  result is a simple slice of cands
 			@:descs_per_item(@1,0)@
-			result := item_descs.project(iter.fetch(0)).reverse();
-			result := result.chk_order();
+			result := new(void,bat,2).seqbase(0@0)
+			          .insert(nil,fake_project(iter.fetch(0)))
+			          .insert(nil,item_descs.mark(0@0).reverse())
+			          .access(BAT_READ);
 			return result;
 		}
 		# =>  we don't need to sort neither input nor output
@@ -720,29 +760,37 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 
 	# the actual location step
 	if ( isnil(result) ) {
-		result := ll_@1 (iter, item, pre_size, cands,
+		var res := ll_@1 (iter, item, pre_size, cands,
 		                   height, one_iter, one_item, 
 		                   min_iter, max_iter);
+		result := new(void,bat,2).seqbase(0@0)
+		          .insert(nil,res.mark(0@0).reverse())
+		          .insert(nil,res.reverse().mark(0@0).reverse())
+		          .access(BAT_READ);
 	}
 	
 	# post-sort output
-	if ( (and(order,2) = 2) and not(ordered(reverse(result))) ) {
-		iter := result.mark(0@0).reverse();
-		item := result.reverse().mark(0@0).reverse();
+	if ( (and(order,2) = 2) and not(ordered(reverse(result.fetch(1)))) ) {
+		iter := result.fetch(0);
+		item := result.fetch(1);
 		var ord := item.reverse().sort().reverse();
-		    ord := ord.CTrefine(iter).mark(nil);
-		result := result.fetch(ord);
-		result := result.chk_order();
+		    ord := ord.CTrefine(iter).mark(0@0).reverse();
+		result := new(void,bat,2).seqbase(0@0)
+		          .insert(nil,ord.leftfetchjoin(iter).chk_order())
+		          .insert(nil,ord.leftfetchjoin(item).chk_order())
+		          .access(BAT_READ);
 	}
 	
 	# post-sort output
-	if ( (and(order,2) = 0) and not(ordered(result)) ) {
-		iter := result.mark(0@0).reverse();
-		item := result.reverse().mark(0@0).reverse();
+	if ( (and(order,2) = 0) and not(ordered(reverse(result.fetch(0)))) ) {
+		iter := result.fetch(0);
+		item := result.fetch(1);
 		var ord := iter.reverse().sort().reverse();
-		    ord := ord.CTrefine(item).mark(nil);
-		result := result.fetch(ord);
-		result := result.chk_order();
+		    ord := ord.CTrefine(item).mark(0@0).reverse();
+		result := new(void,bat,2).seqbase(0@0)
+		          .insert(nil,ord.leftfetchjoin(iter).chk_order())
+		          .insert(nil,ord.leftfetchjoin(item).chk_order())
+		          .access(BAT_READ);
 	}
 	
 	return result;
@@ -787,7 +835,7 @@ doc_pre,
 @
 
 @= step
-PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int order) : BAT[oid,oid]
+PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int order) : BAT[void,bat]
 {
     # "order" is not (yet?) used, here.
 
@@ -797,26 +845,42 @@ PROC @1(BAT[void,oid] iter, BAT[void,oid] ctx, oid frag, BAT[void,bat] ws, int o
 
     var unq := {count}(iter.reverse(), iter.tunique());
 
-    var result := bat(oid,oid);
     var offset := 0;
     var ctx_slice;
 
     @6
 
-    unq@batloop () {
-	ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
+    var res_iter, res_item;
+    if (count(unq) = 1) {
+        res_iter := fake_project(unq.reverse().fetch(0));
+	ctx_slice := ctx.reverse().mark(nil);
 	ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
-        result.insert(@3
-                              (@5,
-                               ctx_slice,
-			       @7
-                               heights,
-                               pre_sizes.count())
-	              .project($h).reverse());
-        offset := offset + $t;
+        res_item := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).mark(0@0).reverse();
+        res_item := res_item.chk_order();
+    } else {
+        res_iter := bat(void,oid);
+        res_item := bat(void,oid);
+        unq@batloop () {
+            ctx_slice := ctx.slice(offset, offset + $t - 1).reverse().mark(nil);
+            ctx_slice := ctx_slice.chk_order(); # have to check because step expects it sorted
+            var res := @3( @5, ctx_slice, @7 heights, pre_sizes.count()).mark(nil).reverse();
+            res := res.chk_order();
+            res_item.insert(res);
+            var l := count(res);
+            if (l <= $t) {
+                res_iter.insert(iter.slice(offset, offset + l - 1).reverse().mark(nil).reverse());
+            } else {
+                res_iter.insert(res.project($h));
+            }
+            offset := offset + $t;
+        }
+        res_iter := res_iter.seqbase(0@0).access(BAT_READ).chk_order();
+        res_item := res_item.seqbase(0@0).access(BAT_READ).chk_order();
     }
-    return result.access(BAT_READ);
-#    return @2(Tpre_size, ctx, Theight, Tpre_size.count());
+    return new(void,bat,2).seqbase(0@0)
+           .insert(nil,res_iter)
+           .insert(nil,res_item)
+           .access(BAT_READ);
 }
 ADDHELP("@1", "tsheyar", "Sep 2004",
 "PARAMETERS:\n\
@@ -1028,7 +1092,7 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
  }
 @
 @= mapping_code
-	result_part_iter := tmp_res.leftfetchjoin(result_part_iter);
+	result_part_iter := tmp_res.fake_leftfetchjoin(result_part_iter);
 	result_part_item := tmp_res.leftfetchjoin(result_part_item);
 	tmp_res := nil;
 @
@@ -1215,8 +1279,8 @@ returns all nodes on the @2 axis of the ctx-nodes duplicate free for each group.
 	@4
 
         var result := @1 (result_part_iter, result_part_item, theFrag, ws, order @3);
-	result_part_iter := result.mark(0@0).reverse();
-	result_part_item := result.reverse().mark(0@0).reverse();
+	result_part_iter := result.fetch(0);
+	result_part_item := result.fetch(1);
         result_part_frag := fake_project(theFrag);
 	cands := nil;
 
@@ -1276,9 +1340,6 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
         result_part_item := nil;
         result_part_frag := nil;
 
-        # FIXME: make merged_union more fake_project capable!
-        result_iter := de_fake_project(result_iter, result_item);
-
         var res_mu;
 	uniqueFrag.slice(1,uniqueFrag.count() - 1)@batloop () {
 	    theFrag := $h;
@@ -1287,9 +1348,6 @@ proc loop_lifted_@1_step@2 (bat[void, oid] iter, bat[void, oid] item, bat[void, 
             result_part_item := result_part_frag.leftfetchjoin(item);
 
             @:loop_lifted_scj_per_frag(@1,@5,@6,@7)@
-
-            # FIXME: make merged_union more fake_project capable!
-            result_part_iter := de_fake_project(result_part_iter, result_part_item);
 
             res_mu := merged_union(result_iter, result_part_iter,
 				   result_item, result_part_item,
@@ -1769,9 +1827,10 @@ int CMDmark_grp_2( BAT** res, BAT *b, BAT *g, oid *s)
 int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 {
 	BAT *b[MAXPARAMS], *bn[MAXPARAMS>>1], *BN;
-	BUN cur[MAXPARAMS], lst[MAXPARAMS], dst[MAXPARAMS>>1], DST;
+	BUN cur[MAXPARAMS], dst[MAXPARAMS>>1], DST;
 	int bs[MAXPARAMS], bns[MAXPARAMS>>1], BS;
-	int nbats = 2, npairs = 1, i, j, k, any;
+	size_t idx[MAXPARAMS], cnt[MAXPARAMS];
+	int nbats = 2, npairs = 1, i, j, k, any, b0 = -1, b1 = -1;
 	bit concat = FALSE;
 	chr *w = NULL;
 	size_t sze = 0, h = 0;
@@ -1803,8 +1862,14 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	for (i=0; i<nbats; i+=2) {
 		bit ci, cj;
 		j = i+1;
-		ci = (i==0 || !is_fake_project(b[i]));
-		cj = (j==1 || !is_fake_project(b[j]));
+		ci = !is_fake_project(b[i]);
+		cj = !is_fake_project(b[j]);
+		if (ci && b0 < 0) {
+			b0 = i;
+		}
+		if (cj && b1 < 0) {
+			b1 = j;
+		}
 		if (ci && !BAThdense(b[i])) {
 			GDKerror("merged_union: BAT %d must have a dense head.\n", i+1);
 			return GDK_FAIL;
@@ -1817,27 +1882,35 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 			GDKerror("merged_union: BATs %d & %d must have the same tail types.\n", i+1, j+1);
 			return GDK_FAIL;
 		}
-		if (ci && b[i]->hseqbase != b[0]->hseqbase) {
-			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT 1.\n", i+1);
+		if (ci && b0 >= 0 && b[i]->hseqbase != b[b0]->hseqbase) {
+			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT %d.\n", i+1, b0+1);
 			return GDK_FAIL;
 		}
-		if (cj && b[j]->hseqbase != b[1]->hseqbase) {
-			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT 2.\n", j+1);
+		if (cj && b1 >= 0 && b[j]->hseqbase != b[b1]->hseqbase) {
+			GDKerror("merged_union: BAT %d must have the same hseqbase as BAT %d.\n", j+1, b1+1);
 			return GDK_FAIL;
 		}
-		if (ci && BATcount(b[i]) != BATcount(b[0])) {
-			GDKerror("merged_union: BAT %d must have the same size as BAT 1.\n", i+1);
+		if (ci && b0 >= 0 && BATcount(b[i]) != BATcount(b[b0])) {
+			GDKerror("merged_union: BAT %d must have the same size as BAT %d.\n", i+1, b0+1);
 			return GDK_FAIL;
 		}
-		if (cj && BATcount(b[j]) != BATcount(b[1])) {
-			GDKerror("merged_union: BAT %d must have the same size as BAT 2.\n", j+1);
+		if (cj && b1 >= 0 && BATcount(b[j]) != BATcount(b[b1])) {
+			GDKerror("merged_union: BAT %d must have the same size as BAT %d.\n", j+1, b1+1);
 			return GDK_FAIL;
 		}
+	}
+	if (b0 < 0) {
+		GDKerror("merged_union: at least one of the 'odd' BATs must be materialized, i.e., no 'fake_project'.\n");
+		return GDK_FAIL;
+	}
+	if (b1 < 0) {
+		GDKerror("merged_union: at least one of the 'even' BATs must be materialized, i.e., no 'fake_project'.\n");
+		return GDK_FAIL;
 	}
 
 	/* create result BATs */
 
-	sze = BATcount(b[0]) + BATcount(b[1]);
+	sze = BATcount(b[b0]) + BATcount(b[b1]);
 	BN = BATnew(TYPE_void, TYPE_bat, npairs);
 	if (BN == NULL) {
 		GDKerror("merged_union: BATnew(TYPE_void, TYPE_bat, %d) failed.\n", npairs);
@@ -1876,7 +1949,12 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 			bs[i] = BUNsize(b[i]);
 		}
 		cur[i] = BUNfirst(b[i]);
-		lst[i] = BUNlast(b[i]);
+		idx[i] = 0;
+		if (i&1) {
+			cnt[i] = BATcount(b[b1]);
+		} else {
+			cnt[i] = BATcount(b[b0]);
+		}
 	}
 @= merged_union_0
 	/*  @1: ATOMstorage(b[@3]->ttype) (chr, sht, int, flt, lng, dbl, any=b[@3]->ttype)
@@ -1888,8 +1966,9 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	 */
 	/* copy tails from BAT @3 to the results; 
 	   for each BUN, remember in w, whether it came from BAT 0 or BAT 1 */
-	while ((cur[@3] < lst[@3]) && (@4)) {
+	while ((idx[@3] < cnt[@3]) && (@4)) {
 		void@1_bunfastins_nocheck_noinc(bn[0],dst[0],0,BUN@2(b[@3],cur[@3]));
+		idx[@3]++;
 		cur[@3] += bs[@3];
 		dst[0] += bns[0];
 		w[h++] = (chr)@3;
@@ -1905,12 +1984,12 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	concat = (BATcount(b[0])==0 || BATcount(b[1])==0);
 	if (!concat) {
 		concat = ( BATtordered(b[0])&BATtordered(b[1])&1 && \
-		           @4_LE(BUN@2(b[0],lst[0]-BUNsize(b[0])),BUN@3(b[1],cur[1]),@1) );
+		           @4_LE(BUN@2(b[0],BUNlast(b[0])-BUNsize(b[0])),BUN@3(b[1],cur[1]),@1) );
 	}
 	if (!concat) {
-		while ((cur[0] < lst[0]) && (cur[1] < lst[1])) {
+		while ((idx[0] < cnt[0]) && (idx[1] < cnt[1])) {
 			@:merged_union_0(@1,@2,0,@4_LE(BUN@2(b[0],cur[0]),BUN@3(b[1],cur[1]),@1))@
-			if (cur[0] < lst[0]) {
+			if (idx[0] < cnt[0]) {
 				@:merged_union_0(@1,@3,1,@4_GT(BUN@2(b[0],cur[0]),BUN@3(b[1],cur[1]),@1))@
 			}
 		}
@@ -1934,6 +2013,7 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	for (h=0; h<sze; h++) {
 		j = i + (int)w[h];
 		void@1_bunfastins_nocheck_noinc(bn[k],dst[k],0,BUN@2(b[j],cur[j]));
+		idx[j]++;
 		cur[j] += bs[j];
 		dst[k] += bns[k];
 	}
@@ -1945,7 +2025,7 @@ int CMDmerged_union( BAT** res, BAT *L, BAT *R, ... )
 	break;
 @c
 	/* merge-union the first two BATs */
-/* HACK(?): compare [v]oid (unsigned) at int/lng (signed) to get nil's first... */
+/* HACK(?): compare [v]oid (unsigned) as int/lng (signed) to get nil's first... */
 #if SIZEOF_OID == SIZEOF_INT
 	if (b[0]->ttype==TYPE_void && b[1]->ttype==TYPE_void) {
 		@:merged_union_1(int,tvar,tvar,simple)@
@@ -2911,7 +2991,7 @@ int CMDmvaljoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	len = BATcount(ws_item);
 	cnt = BATcount(pre);
 	base = pre->hseqbase;
-	fake_frag = ((BATcount(frag) == 1) && (frag->hseqbase == oid_nil));
+	fake_frag = is_fake_project(frag);
 	
 	if (fake_frag) {
 		ERRORcheck(!BAThdense(pre) || !BAThdense(ws_item), 

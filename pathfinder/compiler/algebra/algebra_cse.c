@@ -1,7 +1,7 @@
 /**
  * @file
  *
- * Declarations for common subexpression elimination
+ * Common subexpression elimination on the logical algebra.
  *
  *
  * Copyright Notice:
@@ -30,80 +30,25 @@
 /* always include pathfinder.h first! */
 #include "pathfinder.h"
 
+#include "oops.h"
 #include "algebra_cse.h"
 #include "array.h"
+
+/* compare types in staircase join operator nodes */
 #include "subtyping.h"
-#include "oops.h"
 
-#include <string.h>
 #include <assert.h>
-#include <stdio.h>
-
-
-static PFarray_t *subexps = NULL;
-
-static PFla_op_t * eliminate_subexp (PFla_op_t *new);
-static PFla_op_t * find_subexp (PFla_op_t *new);
-
-static PFla_op_t * find_lit_tbl (PFla_op_t *new);
-static PFla_op_t * find_empty_tbl (PFla_op_t *new);
-static PFla_op_t * find_doc_tbl (PFla_op_t *new);
-static PFla_op_t * find_disjunion (PFla_op_t *new);
-static PFla_op_t * find_intersect (PFla_op_t *new);
-static PFla_op_t * find_cross (PFla_op_t *new);
-static PFla_op_t * find_difference (PFla_op_t *new);
-static PFla_op_t * find_eqjoin (PFla_op_t *new);
-static PFla_op_t * find_scjoin (PFla_op_t *new);
-static PFla_op_t * find_select (PFla_op_t *new);
-static PFla_op_t * find_type (PFla_op_t *new);
-static PFla_op_t * find_cast (PFla_op_t *new);
-static PFla_op_t * find_project (PFla_op_t *new);
-static PFla_op_t * find_rownum (PFla_op_t *new);
-static PFla_op_t * find_binary (PFla_op_t *new);
-static PFla_op_t * find_unary (PFla_op_t *new);
-static PFla_op_t * find_sum (PFla_op_t *new);
-static PFla_op_t * find_count (PFla_op_t *new);
-static PFla_op_t * find_distinct (PFla_op_t *new);
-static PFla_op_t * find_strconcat (PFla_op_t *new);
-static PFla_op_t * find_merge_adjacent (PFla_op_t *new);
-static PFla_op_t * find_roots (PFla_op_t *new);
-static PFla_op_t * find_fragment (PFla_op_t *new);
-static PFla_op_t * find_frag_union (PFla_op_t *new);
-static PFla_op_t * find_empty_frag (PFla_op_t *new);
-
-static bool tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b);
-
-
-PFla_op_t *
-PFcse_eliminate (PFla_op_t *n)
-{
-    /* initialize subexpression array */
-    subexps = PFarray (sizeof (PFla_op_t *));
-
-    /* initiate subexpression elimination */
-    return eliminate_subexp (n);
-}
-
+/* strcmp() */
+#include <string.h>
 
 /**
- * Recursively traverses the algebra tree and searches it bottom-up
- * for common subexpressions. If we find an expression identical
- * to @ new in the array of existing expressions, we return
- * the old one. Otherwise, @ new itself is used.
+ * Subexpressions that we already saw.
+ *
+ * This is an array of arrays.  We create a separate for each algebra
+ * node kind that we encounter.  This speeds up lookups when we search
+ * for an existing algebra node.
  */
-PFla_op_t *
-eliminate_subexp (PFla_op_t *new)
-{
-    int i;
-
-    /* recursively call subexpression elimination on all children of 'n' */
-    for (i = 0; i < PFLA_OP_MAXCHILD && new->child[i] !=NULL; i++)
-        new->child[i] = eliminate_subexp (new->child[i]);
-
-    /* check if this node (n) was already built */
-    return find_subexp (new);
-}
-
+static PFarray_t *subexps;
 
 /**
  * Test the equality of two literal table tuples.
@@ -177,1065 +122,109 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
     return (i == a.count);
 }
 
-
 /**
- * Check whether table @ new already exists in the array of
- * existing operators. It must have the same schema and the
- * same tuples as a table already in the array.
- */
-PFla_op_t *
-find_lit_tbl (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-    unsigned int j;
-
-    assert (new);
-
-    /* search for table in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /* see if we have the same number of arguments */
-            if (new->schema.count != old->schema.count)
-                continue;
-
-            /* see if attribute names match old schema */
-            for (j = 0; j < new->schema.count; j++)
-                if (strcmp(new->schema.items[j].name,
-                           old->schema.items[j].name))
-                    break;
-            if (j != new->schema.count)
-                continue;
-
-            /* test if number of tuples matches */
-            if (new->sem.lit_tbl.count != old->sem.lit_tbl.count)
-                continue;
-
-            /* test if tuples match */
-            for (j = 0; j < new->sem.lit_tbl.count; j++)
-                if (!tuple_eq (new->sem.lit_tbl.tuples[j],
-                               old->sem.lit_tbl.tuples[j]))
-                    break;
-
-            if (j != new->sem.lit_tbl.count)
-                continue;
-
-            /*
-             * if we came until here, old and new table must be equal;
-             * return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the table is a new operator, so add it to the array of
-     * existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether table @ new already exists in the array of
- * existing operators. It must have the same schema as a table
- * already in the array.
- */
-PFla_op_t *
-find_empty_tbl (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-    unsigned int j;
-
-    assert (new);
-
-    /* search for table in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /* see if we have the same number of arguments */
-            if (new->schema.count != old->schema.count)
-                continue;
-
-            /* see if attribute names match old schema */
-            for (j = 0; j < new->schema.count; j++)
-                if (strcmp(new->schema.items[j].name,
-                           old->schema.items[j].name))
-                    break;
-            if (j != new->schema.count)
-                continue;
-
-            /*
-             * if we came until here, old and new table must be equal;
-             * return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the table is a new operator, so add it to the array of
-     * existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-
-/**
- * Search the arry of existing expressions for a representation of the
- * document table. This table can only exist once, so it suffices to
- * search for operators of kind 'document table'.
- */
-PFla_op_t *
-find_doc_tbl (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for document table in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if ((old->kind != la_doc_tbl)
-            || (old->child[0] != new->child[0])
-            || (old->child[1] != new->child[1]))
-            continue;
-
-        return old;
-    }
-
-    /*
-     * the table is a new operator, so add it to the array of
-     * existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * In case of a disjoint union operator, we just have to make sure
- * that @ new has the same two children as a union operator in the
- * array of existing operators.
- */
-PFla_op_t *
-find_disjunion (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /*
-     * search for disjoint union operator in the array of existing
-     * operators
-     */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same child nodes: the order
-             * of the operands (child[0] and child[1]) does not matter,
-             * i.e we try both combinations; the schema of both nodes
-             * is guaranteed to be equal; as for the node kind, we only
-             * have to make sure that both node kinds match; the calling
-             * routine makes sure that only union nodes can arrive here
-             */
-            if (!((new->child[0] == old->child[0]
-                      && new->child[1] == old->child[1])
-                || (new->child[0] == old->child[1]
-                      && new->child[1] == old->child[0])))
-                continue;
-
-        return old;
-        }
-    }
-
-    /* 
-     * the union is a new operator, so add it to the array of existing
-     * subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Intersection expressions look the same as disjoint union
- * operators. We check, if @ new has the same child nodes as
- * another existing expression.
- */
-static PFla_op_t * find_intersect (PFla_op_t *new)
-{
-    return find_disjunion (new);
-}
-
-
-/**
- * Cross product expressions look the same as disjoint union
- * operators. We check, if @ new has the same child nodes as
- * another existing expression.
- */
-static PFla_op_t * find_cross (PFla_op_t *new)
-{
-    return find_disjunion (new);
-}
-
-
-/**
- * Check whether difference operator @ new already exists in
- * the array of existing expressions. It must have the same
- * child nodes and order of child nodes as the node from the
- * array.
- */
-PFla_op_t *
-find_difference (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /*
-     * search for difference operator in the array of existing
-     * operators
-     */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same child nodes: in contrast
-             * to union and cross product operators, the order of the
-             * child operands of a difference operator does matter
-             */
-            if (new->child[0] != old->child[0]
-             || new->child[1] != old->child[1])
-                continue;
-
-            return old;
-        }
-    }
-
-    /*
-     * the difference is a new operator, so add it to the array
-     * of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether equi-join operator @ new already exists in
- * the array of existing expressions. The equivalent must
- * have the same children and join attributes.
- */
-PFla_op_t *
-find_eqjoin (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /*
-     * search for equi-join operator in the array of existing
-     * operators
-     */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same children and join
-             * attributes
-             */
-            if (new->child[0] != old->child[0]
-             || new->child[1] != old->child[1]
-	     || strcmp (new->sem.eqjoin.att1, old->sem.eqjoin.att1)
-	     || strcmp (new->sem.eqjoin.att2, old->sem.eqjoin.att2))
-                continue;
-
-            /*
-             * if we came until here, old and new join must be equal;
-             * return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the equi-join is a new operator, so add it to the array
-     * of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether staircase operator @ new already exists in
- * the array of existing expressions. The equivalent must
- * have the same children and represent the same location step
- * and kind test.
- */
-PFla_op_t *
-find_scjoin (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /*
-     * search for staircase join operator in the array of existing
-     * operators
-     */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same children, same location
-             * step, and kind test
-             */
-            if (new->child[0] != old->child[0]
-             || new->child[1] != old->child[1]
-             /* FIXME
-             || new->sem.scjoin.test != old->sem.scjoin.test
-             */
-             || new->sem.scjoin.axis != old->sem.scjoin.axis
-             /* FIXME
-             || (old->sem.scjoin.test == la_name
-                 &&  PFqname_eq(new->sem.scjoin.str.qname,
-                                old->sem.scjoin.str.qname))
-             || (old->sem.scjoin.test == la_pi_tar
-                 && strcmp(new->sem.scjoin.str.target,
-                           old->sem.scjoin.str.target))
-             */
-                           )
-                continue;
-
-            /*
-             * if we came until here, old and new join must be equal;
-             * return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the equi-join is a new operator, so add it to the array
-     * of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Search the array of existing expressions for a selection that
- * retrieves all rows where the value of a certain column is not
- * 0. An equivalent operator must have the same child node and
- * selection attribute.
- */
-PFla_op_t *
-find_select (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for selection operator in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same child and selection
-             * attribute
-             */
-            if (new->child[0] != old->child[0]
-                || strcmp (new->sem.select.att, old->sem.select.att))
-                continue;
-
-            /*
-             * if we came until here, old and new selection must be equal;
-             * return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the selection is a new operator, so add it to the array
-     * of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-/**
- * Search the array of existing expressions for a type test that
- * compares the type of a certain column and stores the result of
- * the comparison in a new column. An equivalent operator must
- * have the same child node, the same typed and result attribute,
- * and the same requested type.
- */
-PFla_op_t *
-find_type (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for type test operator in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same child, typed attribute,
-             * result attribute, and requested type
-             */
-            if (new->child[0] != old->child[0]
-                || strcmp (new->sem.type.att, old->sem.type.att)
-                || strcmp (new->sem.type.res, old->sem.type.res)
-                || new->sem.type.ty != old->sem.type.ty)
-                continue;
-
-            /*
-             * if we came until here, old and new type test must be equal;
-             * return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the type test is a new operator, so add it to the array
-     * of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Search the array of existing expressions for a type cast that
- * casts a certain column to a new type. An equivalent operator must
- * have the same child node, the same typed attribute, and the same
- * requested type.
- */
-PFla_op_t *
-find_cast (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for type cast operator in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same child, typed attribute,
-             * and requested type
-             */
-            if (new->child[0] != old->child[0]
-                || strcmp (new->sem.cast.att, old->sem.cast.att)
-                || new->sem.cast.ty != old->sem.cast.ty)
-                continue;
-            
-            /*
-             * if we came until here, old and new type cast must be equal;
-             * return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the type cast is a new operator, so add it to the array
-     * of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether projection operator @ new already exists in
- * the array of existing expressions. It must have the same
- * child node, attribute number, and projection list as its
- * equivalent operator.
- */
-PFla_op_t *
-find_project (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for projection operator in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t    *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-        unsigned int  j;
-
-        if (new->kind == old->kind) {
-
-            /* see if the old node has the same child */
-            if (new->child[0] != old->child[0])
-                continue;
-
-            /* does the old node have the same number of attributes? */
-            if (new->sem.proj.count != old->sem.proj.count)
-                continue;
-
-            /* see if the projection lists match */
-            for (j = 0; j < new->sem.proj.count; j++)
-                if (strcmp (new->sem.proj.items[j].new,
-                            old->sem.proj.items[j].new)
-                 || strcmp (new->sem.proj.items[j].old,
-                            old->sem.proj.items[j].old))
-                    break;
-
-            if (j != new->sem.proj.count)
-                continue;
-
-            /*
-             * if we came until here, old and new projection must be equal;
-             * return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the projection is a new operator, so add it to the array
-     * of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether row-numbering operator @ new already exists in
- * the array of existing expressions. It must have the same
- * child node, row-numbering attribute, partitioning attribute,
- * and sort-by list.
- */
-PFla_op_t *
-find_rownum (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for row-numbering operator in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t    *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-        unsigned int  j;
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same child and row-numbering
-             * attribute
-             */
-            if (new->child[0] != old->child[0]
-                || strcmp (new->sem.rownum.attname, old->sem.rownum.attname))
-                continue;
-
-            /* see if both nodes have the same partitioning attribute */
-            if ((new->sem.rownum.part == NULL
-                    && old->sem.rownum.part != NULL)
-                || (new->sem.rownum.part != NULL
-                    && old->sem.rownum.part == NULL)
-                || (new->sem.rownum.part && old->sem.rownum.part
-                    && strcmp (new->sem.rownum.part, old->sem.rownum.part)))
-                continue;
-
-            /* does the old node have the same number of sort attributes? */
-            if (new->sem.rownum.sortby.count != old->sem.rownum.sortby.count)
-                continue;
-
-            /* see if the sortby lists match */
-            for (j = 0; j < new->sem.rownum.sortby.count; j++)
-                if (strcmp (new->sem.rownum.sortby.atts[j],
-                            old->sem.rownum.sortby.atts[j]))
-                    break;
-
-            if (j != new->sem.rownum.sortby.count)
-                continue;
-
-            /*
-             * if we came until here, old and new projection must be equal;
-             * return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the projection is a new operator, so add it to the array
-     * of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether binary expression @ new already exists in
- * the array of existing expressions. It must have the same
- * child nodes, operand attributes, and result attribute.
- */
-PFla_op_t *
-find_binary (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for binary expression in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same child, operand
-             * attributes, and result attribute
-             */
-            if (new->child[0] != old->child[0]
-             || strcmp (new->sem.binary.att1, old->sem.binary.att1)
-             || strcmp (new->sem.binary.att2, old->sem.binary.att2)
-             || strcmp (new->sem.binary.res, old->sem.binary.res))
-                continue;
-            
-            /*
-             * if we came until here, old and new binary expression
-             * must be equal; return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the binary expression is a new operator, so add it to
-     * the array of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether unary expression @ new already exists in
- * the array of existing expressions. It must have the same
- * child nodes, operand attribute, and result attribute.
- */
-PFla_op_t *
-find_unary (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for unary expression in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same child, operand
-             * attribute, and result attribute
-             */
-            if (new->child[0] != old->child[0]
-             || strcmp (new->sem.unary.att, old->sem.unary.att)
-             || strcmp (new->sem.unary.res, old->sem.unary.res))
-                continue;
-            
-            /*
-             * if we came until here, old and new unary expression
-             * must be equal; return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the unary expression is a new operator, so add it to
-     * the array of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether the sum expression @ new already exists in
- * the array of existing expressions. It must have the same
- * child node, summed-up attribute, result attribute and list
- * of partitioning attributes.
- */
-static PFla_op_t * find_sum (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for sum expression in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-             * see if the old node has the same child, summed-up
-             * attribute and result attribute
-             */
-            if (new->child[0] != old->child[0]
-             || strcmp (new->sem.sum.att, old->sem.sum.att)
-             || strcmp (new->sem.sum.res, old->sem.sum.res)
-             || strcmp (new->sem.sum.part, old->sem.sum.part))
-                continue;
-            
-            /*
-             * if we came until here, old and new sum expression
-             * must be equal; return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the sum expression is a new operator, so add it to
-     * the array of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether the count expression @ new already exists in
- * the array of existing expressions. It must have the same
- * child node, result attribute and list of partitioning attributes.
- */
-static PFla_op_t * find_count (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for count expression in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /*
-	     * see if the old node has the same child, same partitioning
-	     * attribute and same result attribute
-	     */
-            if (new->child[0] != old->child[0]
-             || strcmp (new->sem.count.res, old->sem.count.res)
-             || strcmp (new->sem.count.part, old->sem.count.part))
-                continue;
-           
-            /*
-             * if we came until here, old and new row count expression
-             * must be equal; return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the row count expression is a new operator, so add it to
-     * the array of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether the duplicate elimination expression @ new
- * already exists in the array of existing expressions. It must
- * have the same child node.
- */
-static PFla_op_t * find_distinct (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for distinct expression in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind == old->kind) {
-
-            /* see if the old node has the same child */
-            if (new->child[0] != old->child[0])
-                continue;
-            
-            /*
-             * if we came until here, old and new distinct expression
-             * must be equal; return the existing one
-             */
-            return old;
-        }
-    }
-
-    /*
-     * the distinct expression is a new operator, so add it to
-     * the array of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether the strconcat expression @ new already exists
- * in the array of existing expressions. It must have the same child
- * node.
- */
-static PFla_op_t * find_strconcat (PFla_op_t *new)
-{
-    return find_distinct (new);
-}
-
-
-/**
- * Check whether the merge_adjacent expression @ new already exists
- * in the array of existing expressions. It must have the same child
- * nodes and the same order of child nodes, just like a difference
- * expression.
- */
-static PFla_op_t * find_merge_adjacent (PFla_op_t *new)
-{
-    return find_difference (new);
-}
-
-
-/**
- * See if we already saw a boolean grouping expression
- * (`seqty1' or `all') like @a new during CSE.
- */
-static PFla_op_t *
-find_boolean_grouping (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for distinct expression in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (new->kind != old->kind)
-            continue;
-
-        if (new->child[0] != old->child[0])
-            continue;
-
-        if (strcmp (new->sem.blngroup.res, old->sem.blngroup.res)
-            || strcmp (new->sem.blngroup.att, old->sem.blngroup.att)
-            || strcmp (new->sem.blngroup.part, old->sem.blngroup.part))
-            continue;
-
-        /*
-         * if we came until here, old and new grouping expression
-         * must be equal; return the existing one
-         */
-        return old;
-    }
-
-    /*
-     * the grouping expression is a new operator, so add it to
-     * the array of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
- * Check whether the roots expression @ new already exists in the
- * array of existing expressions. It must have the same child node.
- * We can use find_distinct () for this pupose, it offers the
- * required functionality.
- */
-static PFla_op_t * find_roots (PFla_op_t *new)
-{
-    return find_distinct (new);
-}
-
-
-/**
- * Check whether the fragment expression @ new already exists in the
- * array of existing expressions. It must have the same child node.
- * We can use find_distinct () for this pupose, it offers the
- * required functionality.
- */
-static PFla_op_t * find_fragment (PFla_op_t *new)
-{
-    return find_distinct (new);
-}
-
-
-/**
- * In case of a fragment union operator, we just have to make sure
- * that @ new has the same two children as any other union operator
- * in the array of existing operators.
- * The find_disjunion () routine offers the required functionality.
- */
-static PFla_op_t * find_frag_union (PFla_op_t *new)
-{
-    return find_disjunion (new);
-}
-
-
-/**
- * Check whether an empty fragment has already been created. If so,
- * return the existing one.
- */
-static PFla_op_t * find_empty_frag (PFla_op_t *new)
-{
-    unsigned int subex_idx;
-
-    assert (new);
-
-    /* search for empty fragment in the array of existing operators */
-    for (subex_idx = 0; subex_idx < PFarray_last (subexps); subex_idx++) {
-
-        PFla_op_t *old = *((PFla_op_t **) PFarray_at (subexps, subex_idx));
-
-        if (old->kind != la_empty_frag)
-            continue;
-
-        return old;
-    }
-
-    /*
-     * the empty fragment has not yet been created, so add it to the
-     * array of existing subexpressions
-     */
-    *((PFla_op_t **) PFarray_add (subexps)) = new;
-
-    return new;
-}
-
-
-/**
+ * Test if two subexpressions are equal:
  *
+ *  - both nodes must have the same kind,
+ *  - both nodes must have the identical children (in terms of C
+ *    pointers), and
+ *  - if the nodes carry additional semantic content, the content
+ *    of both nodes must match.
  */
-PFla_op_t *
-find_subexp (PFla_op_t *new)
+static bool
+subexp_eq (PFla_op_t *a, PFla_op_t *b)
 {
-    switch (new->kind)
-    {
+    /* shortcut for the trivial case */
+    if (a == b)
+        return true;
+
+    /* see if node kind is identical */
+    if (a->kind != b->kind)
+        return false;
+
+    /* both nodes must have identical children */
+    if (! (a->child[0] == b->child[0] && a->child[1] == b->child[1]))
+        return false;
+
+    /* now look at semantic content */
+    switch (a->kind) {
+
         case la_lit_tbl:
-            return find_lit_tbl (new);
 
-        case la_empty_tbl:
-            return find_empty_tbl (new);
+            if (a->schema.count != b->schema.count)
+                return false;
 
-        case la_doc_tbl:
-            return find_doc_tbl (new);
+            for (unsigned int i = 0; i < a->schema.count; i++)
+                if (strcmp (a->schema.items[i].name, b->schema.items[i].name))
+                    return false;
 
-        case la_disjunion:
-            return find_disjunion (new);
+            if (a->sem.lit_tbl.count != b->sem.lit_tbl.count)
+                return false;
 
-        case la_intersect:
-            return find_intersect (new);
+            for (unsigned int i = 0; i < a->sem.lit_tbl.count; i++)
+                if (!tuple_eq (a->sem.lit_tbl.tuples[i],
+                               b->sem.lit_tbl.tuples[i]))
+                    return false;
 
-        case la_cross:
-            return find_cross (new);
-
-        case la_difference:
-            return find_difference (new);
+            return true;
+            break;
 
         case la_eqjoin:
-            return find_eqjoin (new);
+            return (!strcmp (a->sem.eqjoin.att1, b->sem.eqjoin.att1)
+                    && !strcmp (a->sem.eqjoin.att2, b->sem.eqjoin.att2));
+            break;
 
         case la_scjoin:
-            return find_scjoin (new);
+            return (a->sem.scjoin.axis == b->sem.scjoin.axis
+                    && PFty_subtype (a->sem.scjoin.ty, b->sem.scjoin.ty)
+                    && PFty_subtype (b->sem.scjoin.ty, a->sem.scjoin.ty));
+            break;
 
         case la_select:
-            return find_select (new);
+            return !strcmp (a->sem.select.att, b->sem.select.att);
+            break;
 
         case la_type:
-            return find_type (new);
+            return (!strcmp (a->sem.type.att, b->sem.type.att)
+                    && !strcmp (a->sem.type.res, b->sem.type.res)
+                    && a->sem.type.ty == b->sem.type.ty);
+            break;
 
         case la_cast:
-            return find_cast (new);
+            return (!strcmp (a->sem.cast.att, b->sem.cast.att)
+                    && a->sem.cast.ty == b->sem.cast.ty);
+            break;
 
         case la_project:
-            return find_project (new);
+            if (a->sem.proj.count != b->sem.proj.count)
+                return false;
+
+            for (unsigned int i = 0; i < a->sem.proj.count; i++)
+                if (strcmp (a->sem.proj.items[i].new,
+                            b->sem.proj.items[i].new)
+                    || strcmp (a->sem.proj.items[i].old,
+                               b->sem.proj.items[i].old))
+                    return false;
+
+            return true;
+            break;
 
         case la_rownum:
-            return find_rownum (new);
+            if (strcmp (a->sem.rownum.attname, b->sem.rownum.attname))
+                return false;
 
-        case la_serialize:
-            return new;
+            /* either both rownums are partitioned or none */
+            if ((a->sem.rownum.part && !b->sem.rownum.part)
+                    || (!a->sem.rownum.part && b->sem.rownum.part))
+                return false;
+
+            /* partitioning attribute must be equal (if available) */
+            if (a->sem.rownum.part)
+                if (strcmp (a->sem.rownum.part, b->sem.rownum.part))
+                    return false;
+
+            return true;
+            break;
 
         case la_num_add:
         case la_num_subtract:
@@ -1246,25 +235,52 @@ find_subexp (PFla_op_t *new)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-            return find_binary (new);
+            return (!strcmp (a->sem.binary.att1, b->sem.binary.att1)
+                    && !strcmp (a->sem.binary.att2, b->sem.binary.att2)
+                    && !strcmp (a->sem.binary.res, b->sem.binary.res));
+            break;
 
         case la_num_neg:
         case la_bool_not:
-	    return find_unary (new);
+            return (!strcmp (a->sem.unary.att, b->sem.unary.att)
+                    && !strcmp (a->sem.unary.res, b->sem.unary.res));
+            break;
 
         case la_sum:
-	    return find_sum (new);
+            if (strcmp (a->sem.sum.att, b->sem.sum.att)
+                || strcmp (a->sem.sum.res, b->sem.sum.res))
+                return false;
+
+            /* either both aggregates are partitioned or none */
+            if ((a->sem.sum.part && !b->sem.sum.part)
+                    || (!a->sem.sum.part && b->sem.sum.part))
+                return false;
+
+            /* partitioning attribute must be equal (if available) */
+            if (a->sem.sum.part)
+                if (strcmp (a->sem.sum.part, b->sem.sum.part))
+                    return false;
+
+            return true;
+            break;
 
         case la_count:
-	    return find_count (new);
+            if (strcmp (a->sem.count.res, b->sem.count.res))
+                return false;
 
-        case la_distinct:
-	    return find_distinct (new);
+            /* either both aggregates are partitioned or none */
+            if ((a->sem.count.part && !b->sem.count.part)
+                    || (!a->sem.count.part && b->sem.count.part))
+                return false;
 
-	/* no common subexpression elimination performed here, since, even
-	 * if two element constructors are identical, they create two
-	 * separate instances of the element(s)
-	 */
+            /* partitioning attribute must be equal (if available) */
+            if (a->sem.count.part)
+                if (strcmp (a->sem.count.part, b->sem.count.part))
+                    return false;
+
+            return true;
+            break;
+
         case la_element:
         case la_element_tag:
         case la_attribute:
@@ -1272,42 +288,101 @@ find_subexp (PFla_op_t *new)
         case la_docnode:
         case la_comment:
         case la_processi:
-	    return new;
-
-        case la_concat:
-	    return find_strconcat (new);
-
-        case la_merge_adjacent:
-	    return find_merge_adjacent (new);
+            /*
+             * No common subexpression elimination performed here, since,
+             * even if two node constructors are identical, they create
+             * two separate instances of the node(s).
+             */
+            return false;
 
         case la_seqty1:
         case la_all:
-            return find_boolean_grouping (new);
-
-        case la_roots:
-	    return find_roots (new);
-
-        case la_fragment:
-	    return find_fragment (new);
-
-        case la_frag_union:
-	    return find_frag_union (new);
-
-        case la_empty_frag:
-	    return find_empty_frag (new);
-
-        case la_dummy:
-            PFoops (OOPS_FATAL, "illegal node in algebra expression tree");
+            return (!strcmp (a->sem.blngroup.res, b->sem.blngroup.res)
+                    && !strcmp (a->sem.blngroup.att, b->sem.blngroup.att)
+                    && !strcmp (a->sem.blngroup.part, b->sem.blngroup.part));
             break;
 
-        /* pacify picky compilers: */
+        case la_empty_tbl:
+        case la_disjunion:
+        case la_intersect:
+        case la_difference:
+        case la_cross:
+        case la_distinct:
+        case la_concat:
+        case la_merge_adjacent:
         case la_string_val:
-            PFoops (OOPS_FATAL, "case 'aop_string_val' not handled in switch(new->kind) in function find_subexp() in compiler/algebra/algebra_cse.c");
-            assert(0); /* we should never come here! */
+        case la_serialize:
+        case la_roots:
+        case la_fragment:
+        case la_frag_union:
+        case la_empty_frag:
+        case la_doc_tbl:
+            return true;
+            break;
+
+        case la_dummy:
+            assert (!"should not encounter a `dummy' node here!");
+            return true;
             break;
     }
 
-    return new;
+    /* pacify compilers */
+    assert (!"should never be reached");
+    return true;
+}
+
+/**
+ * Worker for PFla_cse().
+ */
+static PFla_op_t *
+la_cse (PFla_op_t *n)
+{
+    PFarray_t *a;
+
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        n->child[i] = la_cse (n->child[i]);
+
+    /*
+     * Fetch the subexpressions for this node kind that we
+     * encountered so far (we maintain one array for each
+     * node type).  If we have not yet seen any subexpressions
+     * of that kind, we will have to initialize the respective
+     * array first.
+     */
+    a = *(PFarray_t **) PFarray_at (subexps, n->kind);
+
+    if (!a)
+        *(PFarray_t **) PFarray_at (subexps, n->kind)
+            = a = PFarray (sizeof (PFla_op_t *));
+
+    /* see if we already saw that subexpression */
+    for (unsigned int i = 0; i < PFarray_last (a); i++)
+        if (subexp_eq (n, *(PFla_op_t **) PFarray_at (a, i)))
+            return *(PFla_op_t **) PFarray_at (a, i);
+
+    /* if not, add it to the list */
+    *(PFla_op_t **) PFarray_add (a) = n;
+
+    return n;
+}
+
+/**
+ * Eliminate common subexpressions in logical algebra tree and
+ * convert the expression @em tree into a @em DAG.  (Actually,
+ * the input often is already a tree due to the way it was built
+ * in core2alg.brg.  This function will detect @em any common
+ * subexpression, though.)
+ *
+ * @param n logical algebra tree
+ * @return the equivalent of @a n, with common subexpressions
+ *         translated into @em sharing in a DAG.
+ */
+PFla_op_t *
+PFla_cse (PFla_op_t *n)
+{
+    subexps = PFarray (sizeof (PFarray_t *));
+
+    return la_cse (n);
 }
 
 /* vim:set shiftwidth=4 expandtab: */

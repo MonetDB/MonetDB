@@ -35,7 +35,7 @@
 
 #include "core.h"
 
-char* PFprintMILtemp (PFcnode_t *, PFstate_t *, long tm, char** prologue, char** query, char** epilogue);
+int PFprintMILtemp (PFcnode_t *, PFstate_t *, long tm, char** prologue, char** query, char** epilogue);
 
 #endif    /* MILPRINT_H */
 
