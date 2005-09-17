@@ -1,0 +1,74 @@
+stderr of test 'ID.1286005-1` in directory 'tests/BugsViaSourgeforce` itself:
+
+
+# 01:35:06 >  
+# 01:35:06 >  Mtimeout -timeout 180 Mserver "--config=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/lib/MonetDB:/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/lib/bin" --set "gdk_dbfarm=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/var/MonetDB/log" --set mapi_port=37317 --set sql_port=40365 --set xquery_port=51165 --set monet_prompt= --trace "--dbname=mTests_tests_BugsViaSourgeforce" --dbinit="module(pathfinder); pfstart();" ; echo ; echo Over..
+# 01:35:06 >  
+
+# builtin opt 	config = ${prefix}/etc/MonetDB.conf
+# builtin opt 	gdk_arch = 32biti686-redhat-linux-gnu
+# builtin opt 	gdk_version = 4.8.0_rc1
+# builtin opt 	monet_pid = 13989
+# builtin opt 	prefix = /var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_
+# builtin opt 	exec_prefix = ${prefix}
+# builtin opt 	gdk_dbname = tst
+# builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
+# builtin opt 	gdk_debug = 8
+# builtin opt 	gdk_mem_bigsize = 33554432
+# builtin opt 	gdk_vm_minsize = 134217728
+# builtin opt 	gdk_alloc_map = yes
+# builtin opt 	monet_admin = adm
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_welcome = yes
+# builtin opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
+# builtin opt 	monet_daemon = yes
+# builtin opt 	host = localhost
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_noheaders = no
+# builtin opt 	mapi_debug = 0
+# builtin opt 	mapi_clients = 2
+# builtin opt 	sql_port = 45123
+# builtin opt 	sql_debug = 0
+# builtin opt 	sql_user = monetdb
+# builtin opt 	sql_schema = sys
+# builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	prefix = /var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_
+# config opt 	exec_prefix = ${prefix}
+# config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
+# config opt 	gdk_dbname = demo
+# config opt 	gdk_alloc_map = no
+# config opt 	gdk_embedded = no
+# config opt 	gdk_debug = 0
+# config opt 	monet_admin = adm
+# config opt 	monet_prompt = MonetDB>
+# config opt 	monet_welcome = yes
+# config opt 	monet_mod_path = ${exec_prefix}/lib/MonetDB:${exec_prefix}/lib/bin
+# config opt 	monet_daemon = no
+# config opt 	mapi_port = 50000
+# config opt 	mapi_debug = 0
+# config opt 	sql_port = 45123
+# config opt 	sql_debug = 0
+# config opt 	sql_logdir = ${prefix}/var/MonetDB/log
+# config opt 	xquery_port = 45789
+# config opt 	xquery_output = dm
+# config opt 	xquery_cacheMB = 100
+# cmdline opt 	config = /var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/etc/MonetDB.conf
+# cmdline opt 	gdk_debug = 10
+# cmdline opt 	monet_mod_path = /var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/lib/MonetDB:/var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/lib/bin
+# cmdline opt 	gdk_dbfarm = /var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/var/MonetDB/dbfarm
+# cmdline opt 	sql_logdir = /var/tmp/_Stable_PREFIX__GNU_32_d_--enable-debug_/var/MonetDB/log
+# cmdline opt 	mapi_port = 37317
+# cmdline opt 	sql_port = 40365
+# cmdline opt 	xquery_port = 51165
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbname = mTests_tests_BugsViaSourgeforce
+
+# 01:35:07 >  
+# 01:35:07 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=51165 ID.1210173-2.xq
+# 01:35:07 >  
+
+
+# 01:35:07 >  
+# 01:35:07 >  Done.
+# 01:35:07 >  
+
