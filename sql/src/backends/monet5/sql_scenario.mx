@@ -357,6 +357,7 @@ We don;t search the cache for a previous incarnation.
 		backend_dumpstmt(sql, blk, s);
 		pushEndInstruction(blk);
 #ifdef _SQL_COMPILE
+		chkProgram(c->nspace, blk);
 		printFunction(c->fdout, blk, c->listing);
 #endif
 		insertSymbol(c->nspace, prg);
