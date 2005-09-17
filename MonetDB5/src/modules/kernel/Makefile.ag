@@ -56,7 +56,7 @@ LIBS = {
 	SOURCES = \
 		calc.mx bat.mx algebra.mx status.mx unix.mx \
 		mapi.mx mmath.mx lock.mx sema.mx alarm.mx  \
-		batcalc.mx batmath.mx aggrX3.mx
+		batcalc.mx batmath.mx aggrX3.mx counters.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal mil ""
