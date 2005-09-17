@@ -168,9 +168,33 @@ rev_select(b,">=",3.4).print();
 [ 2,	  2.20000005	  ]
 [ 3,	  3.29999995	  ]
 
+# To check the property propagation properly,
+# we need to explicitely control property checking,
+# independently of what Mserver / Mtest.py sets;
+# hence, we ran the same tests twice, 
+# first with property checking locally disabled, and 
+# then  with property checking locally enabled.
+
+var dbgmsk := debugmask();
+
+# Disable property checking:
+debugmask(and(dbgmsk,xor(INT_MAX,8+2)));
+
+# run tests
 var b:=new(oid,oid);
 b.insert(0@0,0@0);
 b.insert(10@0,10@0);
+b.print();
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 10@0,	  10@0	  ]
+b.info().find("hdense").print();
+[ "0" ]
+b.info().find("tdense").print();
+[ "0" ]
 b.info().find("hsorted").print();
 [ "65" ]
 b.info().find("tsorted").print();
@@ -180,6 +204,17 @@ b.info().find("hkey").print();
 b.info().find("tkey").print();
 [ "1" ]
 var m:=b.merge();
+m.print();
+#-------------------------#
+# h		t	  # name
+# lng		void	  # type
+#-------------------------#
+[ 0,		  nil	  ]
+[ 42949672970,	  nil	  ]
+m.info().find("hdense").print();
+[ "0" ]
+m.info().find("tdense").print();
+[ "0" ]
 m.info().find("hsorted").print();
 [ "65" ]
 m.info().find("tsorted").print();
@@ -189,6 +224,17 @@ m.info().find("hkey").print();
 m.info().find("tkey").print();
 [ "0" ]
 var s:=m.split();
+s.print();
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 10@0,	  10@0	  ]
+s.info().find("hdense").print();
+[ "0" ]
+s.info().find("tdense").print();
+[ "0" ]
 s.info().find("hsorted").print();
 [ "65" ]
 s.info().find("tsorted").print();
@@ -199,6 +245,18 @@ s.info().find("tkey").print();
 [ "0" ]
 
 b.insert(5@0,0@0);
+b.print();
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 10@0,	  10@0	  ]
+[ 5@0,	  0@0	  ]
+b.info().find("hdense").print();
+[ "0" ]
+b.info().find("tdense").print();
+[ "0" ]
 b.info().find("hsorted").print();
 [ "0" ]
 b.info().find("tsorted").print();
@@ -208,6 +266,18 @@ b.info().find("hkey").print();
 b.info().find("tkey").print();
 [ "0" ]
 var m:=b.merge();
+m.print();
+#-------------------------#
+# h		t	  # name
+# lng		void	  # type
+#-------------------------#
+[ 0,		  nil	  ]
+[ 42949672970,	  nil	  ]
+[ 21474836480,	  nil	  ]
+m.info().find("hdense").print();
+[ "0" ]
+m.info().find("tdense").print();
+[ "0" ]
 m.info().find("hsorted").print();
 [ "0" ]
 m.info().find("tsorted").print();
@@ -217,6 +287,18 @@ m.info().find("hkey").print();
 m.info().find("tkey").print();
 [ "0" ]
 var s:=m.split();
+s.print();
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 10@0,	  10@0	  ]
+[ 5@0,	  0@0	  ]
+s.info().find("hdense").print();
+[ "0" ]
+s.info().find("tdense").print();
+[ "0" ]
 s.info().find("hsorted").print();
 [ "0" ]
 s.info().find("tsorted").print();
@@ -224,6 +306,137 @@ s.info().find("tsorted").print();
 s.info().find("hkey").print();
 [ "0" ]
 s.info().find("tkey").print();
+[ "0" ]
+
+ # Enable property checking:
+ debugmask(or(dbgmsk,8+2));
+
+ # run tests
+ var b:=new(oid,oid);
+ b.insert(0@0,0@0);
+ b.insert(10@0,10@0);
+ b.print();
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 10@0,	  10@0	  ]
+ b.info().find("hdense").print();
+[ "0" ]
+ b.info().find("tdense").print();
+[ "0" ]
+ b.info().find("hsorted").print();
+[ "65" ]
+ b.info().find("tsorted").print();
+[ "65" ]
+ b.info().find("hkey").print();
+[ "1" ]
+ b.info().find("tkey").print();
+[ "1" ]
+ var m:=b.merge();
+ m.print();
+#-------------------------#
+# h		t	  # name
+# lng		void	  # type
+#-------------------------#
+[ 0,		  nil	  ]
+[ 42949672970,	  nil	  ]
+ m.info().find("hdense").print();
+[ "0" ]
+ m.info().find("tdense").print();
+[ "0" ]
+ m.info().find("hsorted").print();
+[ "65" ]
+ m.info().find("tsorted").print();
+[ "65" ]
+ m.info().find("hkey").print();
+[ "1" ]
+ m.info().find("tkey").print();
+[ "0" ]
+ var s:=m.split();
+ s.print();
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 10@0,	  10@0	  ]
+ s.info().find("hdense").print();
+[ "0" ]
+ s.info().find("tdense").print();
+[ "0" ]
+ s.info().find("hsorted").print();
+[ "65" ]
+ s.info().find("tsorted").print();
+[ "65" ]
+ s.info().find("hkey").print();
+[ "1" ]
+ s.info().find("tkey").print();
+[ "1" ]
+
+ b.insert(5@0,0@0);
+ b.print();
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 10@0,	  10@0	  ]
+[ 5@0,	  0@0	  ]
+ b.info().find("hdense").print();
+[ "0" ]
+ b.info().find("tdense").print();
+[ "0" ]
+ b.info().find("hsorted").print();
+[ "0" ]
+ b.info().find("tsorted").print();
+[ "0" ]
+ b.info().find("hkey").print();
+[ "1" ]
+ b.info().find("tkey").print();
+[ "0" ]
+ var m:=b.merge();
+ m.print();
+#-------------------------#
+# h		t	  # name
+# lng		void	  # type
+#-------------------------#
+[ 0,		  nil	  ]
+[ 42949672970,	  nil	  ]
+[ 21474836480,	  nil	  ]
+ m.info().find("hdense").print();
+[ "0" ]
+ m.info().find("tdense").print();
+[ "0" ]
+ m.info().find("hsorted").print();
+[ "0" ]
+ m.info().find("tsorted").print();
+[ "65" ]
+ m.info().find("hkey").print();
+[ "1" ]
+ m.info().find("tkey").print();
+[ "0" ]
+ var s:=m.split();
+ s.print();
+#-----------------#
+# h	t	  # name
+# oid	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+[ 10@0,	  10@0	  ]
+[ 5@0,	  0@0	  ]
+ s.info().find("hdense").print();
+[ "0" ]
+ s.info().find("tdense").print();
+[ "0" ]
+ s.info().find("hsorted").print();
+[ "0" ]
+ s.info().find("tsorted").print();
+[ "0" ]
+ s.info().find("hkey").print();
+[ "1" ]
+ s.info().find("tkey").print();
 [ "0" ]
 
 quit();
