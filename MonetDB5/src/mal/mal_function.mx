@@ -65,6 +65,9 @@ mal_export Symbol   getFunctionSymbol(Module scope, InstrPtr p);
 mal_export void chkFlow(MalBlkPtr mb);
 mal_export void chkDeclarations(MalBlkPtr mb,int reset);
 mal_export int getBarrierEnvelop(MalBlkPtr mb);
+mal_export int isLoopBarrier(MalBlkPtr mb, int pc);
+mal_export int getBlockExit(MalBlkPtr mb,int pc);
+mal_export int getBlockBegin(MalBlkPtr mb,int pc);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, int listing);
 
@@ -407,6 +410,68 @@ int getBarrierEnvelop(MalBlkPtr mb){
 		if( blockStart(p) ) return p->argv[0];
 	}
 	return newTmpVariable(mb,TYPE_any);
+}
+
+@-
+Optimizers may be interested in the characteristic of the
+barrier blocks for making a decision.
+@c
+int
+isLoopBarrier(MalBlkPtr mb, int pc){
+	InstrPtr p;
+	int varid;
+	p= getInstrPtr(mb,pc);
+	if( p->barrier != BARRIERsymbol)
+		return 0;
+	varid= getArg(p,0);
+	for(pc++; pc< mb->stop; pc++){
+		p= getInstrPtr(mb,pc);
+		if( p->barrier == REDOsymbol && getArg(p,0)== varid)
+			return 1;
+		if( p->barrier == EXITsymbol && getArg(p,0)== varid)
+			break;
+	}
+	return 0;
+}
+@-
+Searching the beginning or end of an instruction block.
+@c
+int
+getBlockBegin(MalBlkPtr mb,int pc){
+	InstrPtr p;
+	int varid=0,i;
+
+	for(i= pc; i< mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		if( p->barrier == EXITsymbol ){
+			varid= getArg(p,0);
+			break;
+		}
+	}
+	if( i==mb->stop) return 0;
+
+	for(; pc> 0; pc--){
+		p= getInstrPtr(mb,pc);
+		if( (p->barrier == BARRIERsymbol || p->barrier == CATCHsymbol) &&
+		    getArg(p,0)== varid)
+			return pc;
+	}
+	return 0;
+}
+int
+getBlockExit(MalBlkPtr mb,int pc){
+	InstrPtr p;
+	int varid;
+	p= getInstrPtr(mb,pc);
+	if( p->barrier != BARRIERsymbol && p->barrier != CATCHsymbol)
+		return 0;
+	varid= getArg(p,0);
+	for(pc++; pc< mb->stop; pc++){
+		p= getInstrPtr(mb,pc);
+		if( p->barrier == EXITsymbol && getArg(p,0)== varid)
+			return pc;
+	}
+	return 0;
 }
 @- Variable declaration
 Variables are implicitly declared upon first use.
