@@ -6519,14 +6519,45 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
                 "{ # translate pf:distinct-doc-order (node*) as node*\n"
-                /* FIXME: are attribute nodes automatically filtered? */
-                "if (kind.count() != kind.get_type(ELEM).count()) "
-                "{ ERROR (\"cannot handle attributes in function pf:distinct-doc-order.\"); }\n"
+                "var sorting;\n"
+                "if (kind.count() = kind.get_type(ELEM).count()) {\n"
                 /* delete duplicates */
-                "var sorting := iter.reverse().sort().reverse();\n"
+                "sorting := iter.reverse().sort().reverse();\n"
                 "sorting := sorting.CTrefine(kind);\n"
                 "sorting := sorting.CTrefine(item);\n"
                 "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
+                "} else { # cope also with attributes and sort them according to their owner\n"
+                "var elements := kind.get_type(ELEM).mirror();\n"
+                "var elem_iters := elements.leftfetchjoin(iter);\n"
+                "var elem_items := elements.leftfetchjoin(item);\n"
+                "var elem_frags := elements.leftfetchjoin(kind.get_fragment());\n"
+                "var elem_attrs := elements.project(nil);\n"
+                "var attributes := kind.get_type(ATTR).mirror();\n"
+                "var attr_iters := attributes.leftfetchjoin(iter);\n"
+                "var attr_attrs := attributes.leftfetchjoin(item);\n"
+                "var attr_frags := attributes.leftfetchjoin(kind.get_fragment());\n"
+                "var attr_key := attributes.mark(0@0).reverse();\n"
+                "var temp_attr := attr_attrs.reverse().mark(0@0).reverse();\n"
+                "var temp_frag := attr_frags.reverse().mark(0@0).reverse();\n"
+                "var attr_items := attr_key.reverse().leftfetchjoin("
+                    "mposjoin(temp_attr, temp_frag, ws.fetch(ATTR_OWN)));\n"
+                "attr_key := nil;\n"
+                "temp_attr := nil;\n"
+                "temp_frag := nil;\n"
+                "sorting := elem_iters.union(attr_iters).reverse().sort().reverse();\n"
+                "elem_iters := nil;\n"
+                "attr_iters := nil;\n"
+                "sorting := sorting.CTrefine(elem_frags.union(attr_frags));\n"
+                "elem_frags := nil;\n"
+                "attr_frags := nil;\n"
+                "sorting := sorting.CTrefine(elem_items.union(attr_items));\n"
+                "elem_items := nil;\n"
+                "attr_items := nil;\n"
+                "sorting := sorting.CTrefine(elem_attrs.union(attr_attrs));\n"
+                "elem_attrs := nil;\n"
+                "attr_attrs := nil;\n"
+                "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
+                "}\n"
                 /*
                 "var temp_ddo := CTgroup(iter).CTmap().CTgroup(kind).CTmap().CTgroup(item);\n"
                 "temp_ddo := temp_ddo.CTextend().mark(0@0).reverse();\n"
@@ -6585,7 +6616,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var attr_item := attr.leftfetchjoin(item);\n"
                 "var attr_iter := attr.leftfetchjoin(iter);\n"
                 "attr := nil;\n"
-                "var attr_pre := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_PRE));\n"
+                "var attr_pre := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_OWN));\n"
                 "attr_item := nil;\n"
                 "attr_frag := nil;\n"
                 "var elem := kind.get_type(ELEM).mark(0@0).reverse();\n"
@@ -8650,7 +8681,8 @@ simplifyCoreTree (PFcnode_t *c)
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
             }
-            else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"string")) && 
+            else if ((!PFqname_eq(fun->qname,PFqname (PFns_fn,"string")) ||
+                      !PFqname_eq(fun->qname,PFqname (PFns_fn,"string-join"))) &&
                      PFty_subtype(DL(c)->type, PFty_string ()))
             {
                 /* don't use function - omit apply and arg node */
@@ -8728,6 +8760,12 @@ simplifyCoreTree (PFcnode_t *c)
                 /* don't use function - either because we only have at most
                    one node per iteration or we use scj and therefore don't need
                    to remove duplicates and sort the result */
+                *c = *(DL(c));
+            }
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
+                     DL(c)->kind == c_apply &&
+                     !PFqname_eq((DL(c))->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order")))
+            {
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_op, "union")))
@@ -9100,6 +9138,7 @@ create_join_function (PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested,
     c = PFcore_arg(fst_for,c);
     c = PFcore_wire1 (c_apply, c);
     c->sem.fun = join;
+    TY(c) = TY(result);
     return c;
 }
 

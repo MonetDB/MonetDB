@@ -809,6 +809,10 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           cast (SequenceType, CoreExpr) */
         case 49:
+            if (!PFty_subtype (TY(L(p)), PFty_opt (PFty_atomic ())))
+                PFoops (OOPS_TYPECHECK,
+                        "casting is only allowed to an atomic type");
+
             TY(p) = TY(L(p));
             break;
 
