@@ -743,6 +743,8 @@ mal_export str BKCsetHash(bit *ret, int *bid, bit *prop);
 mal_export str BKCsetSequenceBase(int *r, int *bid, oid *o);
 mal_export str BKCsetSequenceBaseNil(int *r, int *bid, oid *o);
 mal_export str BKCgetSequenceBase(oid *r, int *bid);
+
+mal_export ssize_t void_replace_bat(BAT *b, BAT *u);
 #endif /*_BAT_H_*/
 
 @c
