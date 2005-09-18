@@ -312,23 +312,21 @@ comment "Coerce an oid tail to a bat with lng tail.";
 command sht(b:bat[:any_1,:oid]):bat[:any_1,:sht] 
 address CMDconvertsht_int
 comment "Coerce an oid tail to a bat with sht tail.";
-@-
-@= coerce
-command @2(b:bat[:any_1,:@1]):bat[:any_1,:@2] 
-address CMDconvert@1_@2
-comment "Materialize the @1 into an @2";
 
-command @2(b:bat[:void,:@1]):bat[:void,:@2] 
-address CMDconvertvoid_@1_@2
-comment "Materialize the @1 into an @2";
+command oid(b:bat[:any_1,:int]):bat[:any_1,:oid] 
+address CMDconvertint_oid
+comment "Materialize the int into an oid";
 
-@mal
-	@:coerce(int,oid)@
+command oid(b:bat[:void,:int]):bat[:void,:oid] 
+address CMDconvertvoid_int_oid
+comment "Materialize the int into an oid";
 
 command oid(b:bat[:void,:oid]):bat[:void,:oid] 
 address CMDconvertvoid_oid_oid
 comment "Materialize the oid into an oid";
 
+command str(b:bat[:any_1,:str]):bat[:any_1,:str]
+address CMDconvertstr_str;
 @-
 @}
 @{
