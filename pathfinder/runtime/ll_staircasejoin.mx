@@ -747,7 +747,7 @@ BATprint(cand_bat);
         stack[stack_top++] = new_stack_item;
         onstack_set(iter_idx);
         if (self) {
-            if (!cand_bat || pre == cnd) {
+            if (pre == cnd) {
                 oid iter = min_iter + iter_idx;
                 bunfastins(res, &iter, &pre);
             }
@@ -788,6 +788,8 @@ BATprint(cand_bat);
             } else {
                 cnd = GDK_oid_max;
             }
+        } else {
+            cnd = pre;
         }
 @c
 
@@ -817,8 +819,11 @@ BATprint(cand_bat);
             } else {
                 /* successively finish all active scopes
                    that do not contain the next ctx node */
-                while (stack_top && stack[stack_top-1].eocs < ctx) {
+                while (stack_top && stack[stack_top-1].eocs <= ctx) {
                     @:finish_scope_descendant@
+                }
+                if (ctx <= stack[stack_top-1].eocs) {
+                    @:inner_loop_descendant(ctx)@
                 }
             }
         }

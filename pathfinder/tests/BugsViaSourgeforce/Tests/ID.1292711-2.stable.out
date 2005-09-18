@@ -1,4 +1,4 @@
-stdout of test 'ID.1286005-1` in directory 'tests/BugsViaSourgeforce` itself:
+stdout of test 'ID.1292711-2` in directory 'tests/BugsViaSourgeforce` itself:
 
 
 # 01:35:06 >  
@@ -23,7 +23,7 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-"aap" 2 aap2
+<y><a><a><a><a/><a/></a><a><a/><a/></a></a><a><a><a/><a/></a><a><a/><a/></a></a></a><a><a><a/><a/></a><a><a/><a/></a></a><a><a/><a/></a><a/><a/><a><a/><a/></a><a/><a/><a><a><a/><a/></a><a><a/><a/></a></a><a><a/><a/></a><a/><a/><a><a/><a/></a><a/><a/></y>
 </XQueryResult>
 
 # 01:35:07 >  
