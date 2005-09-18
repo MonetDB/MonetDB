@@ -1146,7 +1146,7 @@ if( cntxt->timer){
         cntxt->resource= ru;
     }
 #endif
-    printTraceCall(cntxt,mb,stk,pci);
+    printTraceCall(cntxt,mb,stk,stkpc);
     cntxt->timer= GDKusec();
 }
 

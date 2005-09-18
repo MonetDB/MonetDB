@@ -109,6 +109,7 @@ static const char *mal_commands[] = {
 static const char *mdb_commands[] = {
 	"atoms",
 	"break",
+	"breakpoints",
 	"call",
 	"continue",
 	"delete",

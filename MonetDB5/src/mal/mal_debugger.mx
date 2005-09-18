@@ -179,21 +179,20 @@ A sample of the BAT content can be printed passing tuple indices, e.g.
 @+ Handling Breakpoints
 A powerful mechanism for debugging a program is to set breakpoints
 during the debugging session.
-In MAL they are designated by the <operator> or <variable> name.
+The breakpoints are designated by a target variable name,
+a [module.]operator name, or a MAL line number (#<number>).
 As soon as the variable recieves a new value  or the operation
 is called the debugger is activated.
 
 The snippet below illustrates the reaction to set a break point
-on assignment to variable 'i'. The current implementation is limited,
-because the breakpoint can only be set within a visibile program
-context. Setting arbitrary breakpoints is on the feature request list.
+on assignment to variable 'i'. 
 @example
 >mdb.start();
 #end main;
 mdb>
 >user.test(1);
 #    user.test(1);
-mdb>b i
+mdb>break i
 breakpoint on 'i' not set
 mdb>n
 #    io.print(i);
@@ -203,6 +202,10 @@ mdb>c
 #    i := calc.*(i,2);
 mdb>
 @end example
+
+The breakpoints remain in effect over multiple function calls.
+They can be removed with the @code{delete} statement.
+A list of all remaining breakpoints is obtained with @code{breakpoints}.
 
 The interpreter can be instructed to call the debugger as soon as an exception
 is raised. Simply add the instruction @code{mdb.setCatch(true)}.
@@ -319,14 +322,17 @@ It should be possible to turn off the feature at compile time.
 mal_export int MDBdelay;	/* do not immediately react */
 typedef struct {
 	MalBlkPtr brkBlock[MAXBREAKS];
-	int brkVar[MAXBREAKS];
-	char brkCmd[MAXBREAKS];
-	str brkVarName[MAXBREAKS];
-	int brkTop;
+	int		brkPc[MAXBREAKS];
+	int		brkVar[MAXBREAKS];
+	str		brkMod[MAXBREAKS];
+	str		brkFcn[MAXBREAKS];
+	char	brkCmd[MAXBREAKS];
+	str		brkRequest[MAXBREAKS];
+	int		brkTop;
 } mdbStateRecord, *mdbState;
 
-mal_export void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name, char cmd);
-mal_export void mdbClrBreakpointName(Client cntxt, str name);
+mal_export void mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, int pc, char cmd);
+mal_export void mdbClrBreakRequest(Client cntxt, str name);
 mal_export void mdbShowBreakpoints(Client cntxt);
 mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc);
 mal_export int mdbSession();
@@ -336,8 +342,8 @@ mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int i
 mal_export void printBATelm(stream *f, int i, size_t cnt, size_t first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
-mal_export void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra);
+mal_export void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
+mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc);
 
 mal_export str runMALDebugger(Symbol s);
 mal_export void printBBPinfo(stream *out);
@@ -376,63 +382,114 @@ and much less expensive as reserving debugger space in each instruction.
 mdbStateRecord mdbTable[MAL_MAXCLIENTS];
 
 char
-isBreakpoint(Client cntxt, InstrPtr p)
+isBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 {
 	int i, j;
 
 	for (i = 0; i < mdbTable[cntxt->idx].brkTop; i++) {
-		if (functionId(p) && strcmp(functionName(p), mdbTable[cntxt->idx].brkVarName[i]) == 0)
+		if( mdbTable[cntxt->idx].brkBlock[i] != mb) 
+			continue;
+		if( mdbTable[cntxt->idx].brkPc[i] == pc )
 			return mdbTable[cntxt->idx].brkCmd[i];
+
+		if( mdbTable[cntxt->idx].brkMod[i] && moduleId(p) &&
+		    mdbTable[cntxt->idx].brkFcn[i] && functionId(p) &&
+			strcmp(mdbTable[cntxt->idx].brkMod[i], moduleId(p))==0 &&
+			strcmp(mdbTable[cntxt->idx].brkFcn[i], functionId(p))==0)
+			return mdbTable[cntxt->idx].brkCmd[i];
+
+		if( mdbTable[cntxt->idx].brkVar[i] >= 0 )
 		for (j = 0; j < p->retc; j++)
-			if (p->argv[j] == mdbTable[cntxt->idx].brkVar[i])
+			if (mdbTable[cntxt->idx].brkVar[i] == getArg(p,j))
 				return mdbTable[cntxt->idx].brkCmd[i];
 	}
 	return 0;
 }
 
 @-
-Break points can be set on assignment to a specific variable
-or specific operation.
+Break points can be set on assignment to a specific variable,
+specific operation, or a instruction line
 @c
 void
-mdbSetBreakpointName(Client cntxt, MalBlkPtr mb, str name, char cmd)
+mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 {
-	int i, j, cnt = 0;
-	InstrPtr p;
+	int i;
+	str modnme, fcnnme;
+	mdbState mdb = mdbTable + cntxt->idx;
+	Symbol sym;
 
-	for (i = 0; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
-		if (functionId(p) && strcmp(functionName(p), name) == 0) {
-			mdbSetBreakpoint(cntxt, mb, p, name, cmd);
-			cnt++;
-			continue;
+	/* set breakpoint on specific line */
+	if( *request == '#' ){
+		i= atoi(request+1);
+		if( i<0 || i>= mb->stop)
+			stream_printf(cntxt->fdout, "breakpoint on #%d (<%d) not set\n", 
+				i, mb->stop);
+		else  {
+			mdb->brkBlock[mdb->brkTop] = mb;
+			mdb->brkPc[mdb->brkTop] = i;
+			mdb->brkVar[mdb->brkTop] = -1;
+			mdb->brkMod[mdb->brkTop] = 0;
+			mdb->brkFcn[mdb->brkTop] = 0;
+			mdb->brkRequest[mdb->brkTop] = GDKstrdup(request);
+			mdb->brkCmd[mdb->brkTop] = cmd;
+			if (mdb->brkTop + 1 < MAXBREAKS)
+				mdb->brkTop++;
 		}
-		for (j = 0; j < p->retc; j++)
-			if (strcmp(getArgName(mb, p, j), name) == 0) {
-				mdbSetBreakpoint(cntxt, mb, p, name, cmd);
-				cnt++;
-				continue;
-			}
+		return;
 	}
-	if (cnt == 0)
-		stream_printf(cntxt->fdout, "breakpoint on '%s' not set\n", name);
+
+	/* check for a [module.]function request */
+	fcnnme= strchr(request,'.');
+	if( fcnnme){
+		modnme= request;
+		*fcnnme= 0;
+		fcnnme++;
+		sym= findMALSymbol(modnme,fcnnme);
+		mdb->brkBlock[mdb->brkTop] = sym? sym->def: mb;
+		mdb->brkPc[mdb->brkTop] = -1;
+		mdb->brkVar[mdb->brkTop] = -1;
+		mdb->brkMod[mdb->brkTop] = putName(modnme,strlen(modnme));
+		mdb->brkFcn[mdb->brkTop] = putName(fcnnme,strlen(fcnnme));
+		fcnnme--; *fcnnme= '.';
+		mdb->brkRequest[mdb->brkTop] = GDKstrdup(request);
+		mdb->brkCmd[mdb->brkTop] = cmd;
+		if (mdb->brkTop + 1 < MAXBREAKS)
+			mdb->brkTop++;
+		return;
+	} 
+	/* the final step is to break on a variable */
+	i= findVariable(mb,request);
+	if( i< 0)
+		stream_printf(cntxt->fdout, "breakpoint on %s not set\n", request);
+	else {
+		mdb->brkBlock[mdb->brkTop] = mb;
+		mdb->brkPc[mdb->brkTop] = -1;
+		mdb->brkVar[mdb->brkTop] = i;
+		mdb->brkMod[mdb->brkTop] = 0;
+		mdb->brkFcn[mdb->brkTop] = 0;
+		mdb->brkRequest[mdb->brkTop] = GDKstrdup(request);
+		mdb->brkCmd[mdb->brkTop] = cmd;
+		if (mdb->brkTop + 1 < MAXBREAKS)
+			mdb->brkTop++;
+	}
 }
 
 @-
 A breakpoint should be set once for each combination
 @c
 void
-mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, str name, char cmd)
+mdbSetBreakpoint(Client cntxt, MalBlkPtr mb, int pc, char cmd)
 {
 	mdbState mdb = mdbTable + cntxt->idx;
-	int i;
+	char buf[20];
 
-	for (i = 0; i < mdb->brkTop; i++)
-		if (mdb->brkBlock[i] == mb && strcmp(mdb->brkVarName[i], name) == 0)
-			return;
+	snprintf(buf,20,"#%d",pc);
 	mdb->brkBlock[mdb->brkTop] = mb;
-	mdb->brkVar[mdb->brkTop] = getDestVar(p);
-	mdb->brkVarName[mdb->brkTop] = GDKstrdup(name);
+	mdb->brkPc[mdb->brkTop] = pc;
+	mdb->brkVar[mdb->brkTop] = -1;
+	mdb->brkMod[mdb->brkTop] = 0;
+	mdb->brkFcn[mdb->brkTop] = 0;
+	mdb->brkRequest[mdb->brkTop] = GDKstrdup(buf);
 	mdb->brkCmd[mdb->brkTop] = cmd;
 	if (mdb->brkTop + 1 < MAXBREAKS)
 		mdb->brkTop++;
@@ -445,25 +502,28 @@ mdbShowBreakpoints(Client cntxt)
 	mdbState mdb = mdbTable + cntxt->idx;
 
 	for (i = 0; i < mdb->brkTop; i++)
-		stream_printf(cntxt->fdout, "breakpoint on '%s' with id %d\n", mdb->brkVarName[i], mdb->brkVar[i]);
+		stream_printf(cntxt->fdout, "breakpoint on '%s'\n", mdb->brkRequest[i]);
 }
 
 void
-mdbClrBreakpoint(Client cntxt, InstrPtr p)
+mdbClrBreakpoint(Client cntxt, int pc)
 {
 	int i, j = 0;
 	mdbState mdb = mdbTable + cntxt->idx;
 
 	for (i = 0; i < mdb->brkTop; i++) {
-		mdb->brkVar[j] = mdb->brkVar[i];
-		mdb->brkVarName[j] = mdb->brkVarName[i];
-		mdb->brkCmd[j] = mdb->brkCmd[i];
 		mdb->brkBlock[j] = mdb->brkBlock[i];
-		if (mdb->brkVar[i] != getDestVar(p))
+		mdb->brkPc[j] = mdb->brkPc[i];
+		mdb->brkVar[j] = mdb->brkVar[i];
+		mdb->brkMod[j] = mdb->brkMod[i];
+		mdb->brkFcn[j] = mdb->brkFcn[i];
+		mdb->brkRequest[j] = mdb->brkRequest[i];
+		mdb->brkCmd[j] = mdb->brkCmd[i];
+		if (mdb->brkPc[i] != pc)
 			j++;
 		else {
-			GDKfree(mdb->brkVarName[i]);
-			mdb->brkVarName[i] = 0;
+			GDKfree(mdb->brkRequest[i]);
+			mdb->brkRequest[i] = 0;
 		}
 
 	}
@@ -471,21 +531,24 @@ mdbClrBreakpoint(Client cntxt, InstrPtr p)
 }
 
 void
-mdbClrBreakpointName(Client cntxt, str name)
+mdbClrBreakRequest(Client cntxt, str request)
 {
 	int i, j = 0;
 	mdbState mdb = mdbTable + cntxt->idx;
 
-	for (i = 0; i < mdb->brkTop; i++) {
-		mdb->brkVar[j] = mdb->brkVar[i];
-		mdb->brkVarName[j] = mdb->brkVarName[i];
-		mdb->brkCmd[j] = mdb->brkCmd[i];
+	for (i=0; i < mdb->brkTop; i++) {
 		mdb->brkBlock[j] = mdb->brkBlock[i];
-		if (strcmp(mdb->brkVarName[i], name))
+		mdb->brkPc[j] = mdb->brkPc[i];
+		mdb->brkVar[j] = mdb->brkVar[i];
+		mdb->brkMod[j] = mdb->brkMod[i];
+		mdb->brkFcn[j] = mdb->brkFcn[i];
+		mdb->brkRequest[j] = mdb->brkRequest[i];
+		mdb->brkCmd[j] = mdb->brkCmd[i];
+		if (strcmp(mdb->brkRequest[i], request))
 			j++;
 		else {
-			GDKfree(mdb->brkVarName[i]);
-			mdb->brkVarName[i] = 0;
+			GDKfree(mdb->brkRequest[i]);
+			mdb->brkRequest[i] = 0;
 		}
 	}
 	mdb->brkTop = j;
@@ -493,71 +556,18 @@ mdbClrBreakpointName(Client cntxt, str name)
 
 @-
 The instruction call stack is the most common command.
-Prepare a string for an instruction call. The flag indicates
-a need for position information as well.
+Prepare a string for an instruction call. 
+We rely on the buffersize of instruction2str.
 @c
 str
-call2str(MalBlkPtr mb, MalStkPtr stk, int pc, int extra)
+call2str(MalBlkPtr mb, MalStkPtr stk, int pc)
 {
-	InstrPtr p;
-	char target[BLOCK], buf[BLOCK];
-	int l, k;
-
-	p = getInstrPtr(mb, pc);
-	if (p != NULL) {
-		target[0] = 0;
-		fillTarget(mb, p, target);
-		if (moduleId(p) && functionId(p)) {
-			snprintf(buf, BLOCK, "%s%s.%s(", target, moduleName(p), functionName(p));
-			for (k = p->retc; k < p->argc; k++) {
-				str msg = 0;
-				ValPtr v = &stk->stk[getArg(p, k)];
-
-				ATOMformat(v->vtype, VALptr(v), &msg);
-				l = strlen(buf);
-				snprintf(buf + l, BLOCK - l, "%s", msg);
-				GDKfree(msg);
-				if (k < p->argc - 1) {
-					l = strlen(buf);
-					snprintf(buf + l, BLOCK - l, ",");
-				}
-			}
-			l = strlen(buf);
-			snprintf(buf + l, BLOCK - l, ");");
-		} else {
-			strcpy(buf, instruction2str(mb, p, FALSE));
-			strcpy(buf, target);
-		}
-	}
-	if (extra) {
-		p = getInstrPtr(mb, 0);
-		l = strlen(buf);
-		snprintf(buf + l, BLOCK - l, " at #%d in %s", pc, functionName(p));
-	}
-	return GDKstrdup(buf);
-}
-
-void
-printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
-{
-	str msg;
-
-	msg = call2str(mb, stk, pc, TRUE);
-	stream_printf(cntxt->fdout, "%s\n", msg);
-	GDKfree(msg);
-}
-
-@-
-Beware, the printTraceCall is a rather expensive routine and obscures
-the actual timing. We therefore compensate the global timing maintained
-@c
-void
-printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-{
-	int k;
-	str msg;
+	int k,len;
+	str msg,w;
 	str s;
+	InstrPtr p;
 
+	p= getInstrPtr(mb,pc);
 	msg = instruction2str(mb, p, FALSE);
 	s = strchr(msg, '(');
 	if (p->retc > 1 && s) {
@@ -566,22 +576,48 @@ printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s) {
 		s++;
 		*s = 0;
-		stream_printf(cntxt->fdout, "%s", msg);
+		len = strlen(msg);
 		for (k = p->retc; k < p->argc; k++) {
 			VarPtr v = getVar(mb, getArg(p, k));
 			ValPtr val = &stk->stk[getArg(p, k)];
 
 			if (v->tmpindex == 0)
-				stream_printf(cntxt->fdout, "%s=", v->name);
+				sprintf(msg+len, "%s=", v->name);
 			else
-				stream_printf(cntxt->fdout, "%c%d=", TMPMARKER, v->tmpindex);
-			ATOMprint(val->vtype, VALptr(val), cntxt->fdout);
+				sprintf(msg+len, "%c%d=", TMPMARKER, v->tmpindex);
+			w = 0;
+			ATOMformat(val->vtype, VALptr(val), &w);
+			strcat(msg,w);
+			GDKfree(w);
 			if (k < p->argc - 1)
-				stream_printf(cntxt->fdout, ", ");
+				strcat(msg,", ");
 		}
-		stream_printf(cntxt->fdout, ")\n");
-	} else
-		stream_printf(cntxt->fdout, "%s\n", msg);
+		strcat(msg,")");
+	} 
+	return msg;
+}
+
+void
+printCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+{
+	str msg;
+	msg = call2str(mb, stk, pc);
+	stream_printf(cntxt->fdout, "%s at %s.%s[%d]\n", msg, 
+		moduleId(getInstrPtr(mb,0)),
+		functionId(getInstrPtr(mb,0)),pc);
+	GDKfree(msg);
+}
+
+@-
+Beware, the printTraceCall is a rather expensive routine and obscures
+the actual timing. We therefore compensate the global timing maintained
+@c
+void
+printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
+{
+	str msg;
+	msg= call2str(mb,stk,pc);
+	stream_printf(cntxt->fdout, "%s\n", msg);
 	GDKfree(msg);
 }
 
@@ -601,7 +637,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 {
 	int m = 1;
 	char *b, *c;
-	bstream *oldin;
 	stream *out = cntxt->fdout;
 	int listing = cntxt->listing;
 	char *oldprompt = cntxt->prompt;
@@ -613,13 +648,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		cntxt->prompt = "mdb>";
 		cntxt->promptlength = 4;
 	}
-	oldin = cntxt->fdin;
-/*
-	cntxt->fdin = getConsole(cntxt);
-	cntxt->fdin->pos += cntxt->yycur;
-	cntxt->yycur = 0;
-	cntxt->fdin->buf[cntxt->fdin->pos] = 0;
-*/
 	do {
 		if (cntxt->phase[READER]) {
 			if ((*cntxt->phase[READER]) (cntxt)) {
@@ -671,7 +699,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		case 'x':
 				if (!(getInstrPtr(mb, 0)->token == FACcall)) {
 					stk->cmd = 'x';
-					cntxt->fdin = oldin;
 					cntxt->prompt = oldprompt;
 					cntxt->promptlength = oldpromptlength;
 				}
@@ -688,7 +715,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			cntxt->itrace = 0;
 			cntxt->timer = 0;
 			/* MDBstatus(0); */
-			cntxt->fdin = oldin;
 			cntxt->prompt = oldprompt;
 			cntxt->promptlength = oldpromptlength;
 			return;
@@ -808,7 +834,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			break;
 		}
 		case 'b':
-			if (strcmp(b, "bbp") == 0) {
+			if (strncmp(b, "bbp",3) == 0) {
 				int i;
 
 				for (i = 1; i < BBPsize; i++)
@@ -818,7 +844,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 					}
 				continue;
 			}
-			if (strcmp(b, "breakpoints") == 0) {
+			if (strncmp(b, "breakpoints",11) == 0) {
 				mdbShowBreakpoints(cntxt);
 				continue;
 			}
@@ -828,9 +854,10 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				skipWord(cntxt, b);
 				if (*b && !isspace((int) *b))
 					/* set breakpoints by name */
-					mdbSetBreakpointName(cntxt, mb, b, 's');
+					mdbSetBreakRequest(cntxt, mb, b, 's');
 				else
-					mdbSetBreakpoint(cntxt, mb, p, getArgName(mb, p, 0), 's');
+					/* set breakpoint at current instruction */
+					mdbSetBreakpoint(cntxt, mb, pc, 's');
 				continue;
 			}
 			continue;
@@ -844,9 +871,9 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			skipWord(cntxt, b);
 			/* get rid of break point */
 			if (*b && !isspace((int) *b)) {
-				mdbClrBreakpointName(cntxt, b);
+				mdbClrBreakRequest(cntxt, b);
 			} else {
-				mdbClrBreakpoint(cntxt, p);
+				mdbClrBreakpoint(cntxt, pc);
 			}
 			continue;
 		case 'i':
@@ -928,7 +955,6 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 
 			for (w = stk; w != NULL; w = w->up) {
 				mw = w->blk;
-				stream_printf(out, "#mdb ");
 				printCall(cntxt, mw, w, pci);
 				if (w->up)
 					pci = w->up->pcup;
@@ -1007,7 +1033,6 @@ signatures satisfying the pattern.
 			mdbHelp(out);
 		}
 	} while (m);
-	cntxt->fdin = oldin;
 	cntxt->prompt = oldprompt;
 	cntxt->promptlength = oldpromptlength;
 }
@@ -1025,7 +1050,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	switch (stk->cmd) {
 	case 'c':
 		p = getInstrPtr(mb, pc);
-		if (isBreakpoint(cntxt, p))
+		if (isBreakpoint(cntxt,mb, p, pc))
 			mdbCommand(cntxt, mb, stk, p, pc);
 		break;
 	case 's':

@@ -479,7 +479,7 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
-		stmt = call2str(mb, stk, getPC(mb, pci), FALSE);
+		stmt = call2str(mb, stk, getPC(mb, pci));
 		c = stmt;
 
 		while (c && *c && isspace((int) *c))
@@ -1289,12 +1289,13 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
-		stmt = call2str(mb, stk, getPC(mb, pci), FALSE);
+		stmt = call2str(mb, stk, getPC(mb, pci));
 		c = stmt;
 
 		while (c && *c && (isspace((int) *c) || *c == '!'))
 			c++;
 		BUNins(TRACE_id_stmt, &evnt, c);
+		GDKfree(stmt);
 	}
 /* The remainder requires their own BATs
 #ifdef HAVE_TIMES
