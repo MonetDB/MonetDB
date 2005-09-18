@@ -401,16 +401,18 @@ str
 MDBStkTrace(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	BAT *b = BATnew(TYPE_int, TYPE_str, 256);
-	str msg;
+	str msg,t;
 	int *ret = (int *) getArgReference(s, p, 0);
 	int k = 0;
 
-	msg = call2str(s->blk, s, getPC(m, p), 1);
+	msg = call2str(s->blk, s, getPC(m, p));
 	BUNins(b, &k, msg);
 	GDKfree(msg);
 	for (s = s->up, k++; s != NULL; s = s->up, k++) {
-		msg = call2str(s->blk, s, s->pcup, 1);
-		BUNins(b, &k, msg);
+		msg = call2str(s->blk, s, s->pcup);
+		t= msg+1;
+		while(*t && isspace((int) *t) ) t++;
+		BUNins(b, &k, t);
 		GDKfree(msg);
 	}
 	@:Pseudo(view,stk,trace)@
