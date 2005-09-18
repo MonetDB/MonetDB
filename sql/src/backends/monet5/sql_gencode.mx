@@ -298,6 +298,8 @@ dump_multiplex(MalBlkPtr mb, char *name, int o1, int o2, int type)
 	case '<': case '>': case '=': case '!':
 		if( *(name+1) && *(name+1)=='=') match++; else
 		if( *(name+1) == 0) match++;
+		type= TYPE_bit;
+		match= 1;
 	}
 	if( match ){
 		if (type == TYPE_str)
@@ -878,11 +880,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op2.stval);
 
 			@:SQLprelude@
-			q = newStmt(mb, "group", "new");
+			q = newStmt(mb, "group", "derive");
 			ext = getDestVar(q);
 			snprintf( nme, BUFSIZ, "grp%d", getDestVar(q));
         		q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
 			setVarInitialized(mb, getArg(q, 1));
+			setVarInitialized(mb, getArg(q, 0));
 			grp = getArg(q, 1);
 			q = pushArgument(mb, q, g);
 			q = pushArgument(mb, q, l);
