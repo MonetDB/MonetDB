@@ -762,7 +762,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
-				q = pushInt(mb, q, 0); /* is wrong */
 				@:SQLpostlude@
 				break;
 			case cmp_lt:
