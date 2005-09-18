@@ -343,8 +343,7 @@ static int opt_emit_check_vardecl(opt_t *o, unsigned int stmt) {
 	    (o->stmts[assigns_to].stmt_nr == o->stmts[stmt].assigns_nr) &
              (o->stmts[assigns_to].used == 0)) 
 	{
-		o->stmts[stmt].deleted = 1; 
-		o->stmts[stmt].nilassign = 0; 
+		return 1;
 	}
 	return o->stmts[stmt].deleted & !o->stmts[stmt].nilassign;
 }
@@ -358,7 +357,8 @@ static int opt_emit_check_emptyblock(opt_t *o, unsigned int stmt) {
 		if (++until == OPT_STMTS) until = 0;
 
 		if (((o->stmts[until].mil[0] != '#') | 
-		     o->stmts[until].assigns_nr | o->stmts[until].refs)  /* not a no-op */
+		     o->stmts[until].assigns_nr | o->stmts[until].refs) /* not a no-op */
+		   && o->stmts[until].mil[0]  /* non-empty statement */
 		   && !o->stmts[until].nilassign  /* not 'X := nil' */
 		   && !opt_emit_check_vardecl(o, until)) /* not deleted */
 		{
