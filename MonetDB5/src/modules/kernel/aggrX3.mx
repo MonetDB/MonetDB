@@ -137,10 +137,14 @@ command count(b:bat[:oid,:any_1], e:bat[:oid,:any_2], ignorenils:bit)
 	:bat[:oid,:int] 
 address AX3aggrX3_count;
 
+command count(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:void,:any_2], 
+	    nonils:bit) :bat[:void,:int] 
+address AX3aggrX3_count3;
 command count(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:oid,:any_2], 
 	    nonils:bit) :bat[:void,:int] 
 address AX3aggrX3_count3
 comment "grouped count";
+
 command count(b:bat[:void,:any_1], g:bat[:void,:oid], e:bat[:void,:any_2], 
 	    nonils:bit) :bat[:void,:int] 
 address AX3aggrX3_count3;
