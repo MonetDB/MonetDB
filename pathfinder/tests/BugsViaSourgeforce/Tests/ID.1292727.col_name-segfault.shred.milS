@@ -1,0 +1,8 @@
+module("pathfinder");
+module("unix");
+
+var TSTSRCDIR := getenv("TSTSRCBASE") + "/tests/XMark/Tests";
+
+shred_doc(TSTSRCDIR + "/" + "auctionG.xml", "auctionG.xml");
+
+commit();
