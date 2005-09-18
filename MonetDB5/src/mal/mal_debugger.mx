@@ -642,8 +642,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 	char *oldprompt = cntxt->prompt;
 	int oldpromptlength = cntxt->promptlength;
 
-	if (p != NULL) 
+	if (p != NULL) {
+		if (cntxt != mal_clients) 
+			/* help MapiClients with fake prompt */
+			stream_printf(out,"mdb>");
 		printInstruction(out, mb, p, listing);
+	}
 	if (cntxt == mal_clients) {
 		cntxt->prompt = "mdb>";
 		cntxt->promptlength = 4;
