@@ -321,8 +321,13 @@ SQLcompile(str *ret, str *expr, int *flag)
 System has been prepared to parse it and generate code
 @c
 	if ((err = sqlparse(m)) ){
-		if( m->mode == m_debug)
+		if( m->mode == m_debug){
+			/* switch to differnt language mode */
+			char oldlang= sql->language;
+			sql->language= 'D';
 			runMALDebugger(c->curprg);
+			sql->language= oldlang;
+		}
 		err = mvc_status(m);
 		sqlcleanup(m, err);
 		*m->errstr = 0;
@@ -411,6 +416,13 @@ The SQL reader collects a (sequence) of statements from the input
 stream, but only when no unresolved 'nxt' character is visible.
 In combination with SQLparser this ensures that all statements
 are handled one by one.
+
+The SQLreader is called from two places: the SQL parser and
+the MAL debugger.
+The former only occurs during the parsing phase and the
+second only during exection.
+This means we can safely change the language setting for
+the duration of these calls.
 @c
 str
 SQLreader(Client c)
@@ -629,13 +641,18 @@ SQLparser(Client c)
 
 	m->mode = m_normal;
 
-        /* sqlparse needs sql allocator to be available.  It can be NULL at
-         * this point if this is a recursive call. */
-        if (!m->sa)
-                m->sa = sa_create();
+	/* sqlparse needs sql allocator to be available.  It can be NULL at
+	 * this point if this is a recursive call. */
+	if (!m->sa)
+			m->sa = sa_create();
 
-	if ((err = sqlparse(m)) && m->debug)
+	if ((err = sqlparse(m)) && m->debug){
+		/* switch to differnt language mode */
+		char oldlang= be->language;
+		be->language= 'D';
 		runMALDebugger(c->curprg);
+		be->language= oldlang;
+	}
 	if( err ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
@@ -671,8 +688,6 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		/* generate and call the MAL code */
 		if (!m->cache ){
 			backend_dumpstmt(be, c->curprg->def, s);
-			if (be->q)
-				backend_call(be, c, be->q->id, m->args);
 /* Niels 
 		} else
 		if( (msg= sql_get_var(m,"optimizer"))== NULL || *msg == 0) {
@@ -692,14 +707,14 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 			be->q->code = (backend_code) c->curprg;
 			m->sa = NULL;
 			m->sym = NULL;
-			if (be->q)
-				backend_call(be, c, be->q->id, m->args);
-		}
+		} 
 	}
 #ifdef _SQL_PARSER_DEBUG
 	else
 		stream_printf(GDKout, "#parse result %d\n", err);
 #endif
+	if (be->q)
+		backend_call(be, c, be->q->id, m->args);
 
 @-
 In the final phase we add any debugging control
@@ -725,8 +740,13 @@ query block.
 
 		chkProgram(c->nspace, c->curprg->def);
 		if (c->curprg->def->errors) {
-			if( m->mode == m_debug)
+			if( m->mode == m_debug){
+				/* switch to differnt language mode */
+				char oldlang= be->language;
+				be->language= 'D';
 				runMALDebugger(c->curprg);
+				be->language= oldlang;
+			}
 			showErrors();
 			/* restore the state */
 			if (c->listing || explainPlan())
@@ -764,6 +784,7 @@ SQLengine(Client c)
 	str msg = MAL_SUCCEED;
 	MalStkPtr oldglb = c->glb;
 	backend *be = ((backend *) c->state[PARSER]);
+	char oldlang= be->language;
 	mvc *m = be->mvc;
 	lng T0 = GDKusec();
 
@@ -790,7 +811,9 @@ cached routine, which may be hidden . For now we take a shortcut.
 		c->curprg->def->errors = -1; /* don;t execute */
 	} 
 	c->glb = 0;
+	be->language= 'D';
 	msg = MALengine(c);
+	be->language= oldlang;
 @-
 Any error encountered during execution should block further processing
 unless auto_commit has been set.
