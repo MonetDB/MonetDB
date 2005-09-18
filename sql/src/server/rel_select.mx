@@ -2072,13 +2072,11 @@ static sql_rel *
 join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int all)
 {
 	int found = 0;
-	/* list *res;*/
 	list *exps = rel_projections( t1, NULL);
 	node *n;
 
 	if (!exps)
 		return NULL;
- 	/* res = create_stmt_list(); side effects? */
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *lc = n->data;
 		sql_exp *rc = rel_bind_column(t2, lc->name);
