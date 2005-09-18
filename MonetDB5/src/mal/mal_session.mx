@@ -56,6 +56,7 @@ mal_export void resetVariables(MalBlkPtr mb, MalStkPtr glb, int start);
 #include "mal_linker.h"		/* for initLibraries() */
 #include "mal_parser.h"		/* for parseMAL() */
 #include "mal_namespace.h"
+#include "mal_readline.h"
 
 int
 malBootstrap()
