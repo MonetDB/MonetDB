@@ -353,6 +353,7 @@ mal_export str debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 Before the interpreter is allowed to proceed we give control
 to the user to alter the trace/debugger options.
 @c
+#include "mal_readline.h"
 #include "mal_debugger.h"
 #include "mal_atom.h"		/* for showAtoms() */
 #include "mal_interpreter.h"	/* for getArgReference() */
@@ -613,10 +614,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 		cntxt->promptlength = 4;
 	}
 	oldin = cntxt->fdin;
+/*
 	cntxt->fdin = getConsole(cntxt);
 	cntxt->fdin->pos += cntxt->yycur;
 	cntxt->yycur = 0;
 	cntxt->fdin->buf[cntxt->fdin->pos] = 0;
+*/
 	do {
 		if (cntxt->phase[READER]) {
 			if ((*cntxt->phase[READER]) (cntxt)) {
