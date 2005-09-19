@@ -351,10 +351,12 @@ static int opt_emit_check_vardecl(opt_t *o, unsigned int stmt) {
 /* opt_emit_killempty(): after dead-code elimination, we remove sequential blocks that have become empty.
  */
 static int opt_emit_check_emptyblock(opt_t *o, unsigned int stmt) {
-	unsigned int until = stmt;
+	unsigned int scope = o->stmts[stmt].scope+1, until = stmt;
 	if (o->stmts[stmt].delchar != '{') return 0; /* should match block start */
-	do {
+	while(1) {
 		if (++until == OPT_STMTS) until = 0;
+		if ((o->stmts[until].delchar == '}') & 
+                    (o->stmts[until].scope == scope)) break;
 
 		if (((o->stmts[until].mil[0] != '#') | 
 		     o->stmts[until].assigns_nr | o->stmts[until].refs) /* not a no-op */
@@ -364,8 +366,7 @@ static int opt_emit_check_emptyblock(opt_t *o, unsigned int stmt) {
 		{
 			return 0; /* this statement matters: block non-empty */
 		}
-	} while (o->stmts[until].delchar != '}');
-
+	} 
 	/* nothing goes if next stmt is an else branch (that cannot be deleted itself) */
 	if (++until == OPT_STMTS) until = 0;
 	if (opt_match_else(o->stmts[until].mil) && !opt_emit_check_emptyblock(o,until)) 
