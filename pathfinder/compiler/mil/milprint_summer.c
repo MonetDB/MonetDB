@@ -444,6 +444,7 @@ init (opt_t *f)
             "var empty_kind_bat := bat(void,int,0).seqbase(0@0).access(BAT_READ);\n"
 
              /* variables for (intermediate) results */
+            "var ipik;\n"
             "var iter;\n"
             "var pos;\n"
             "var item;\n"
@@ -504,12 +505,14 @@ saveResult_ (opt_t *f, int counter, int rcode)
     char *item_ext = kind_str(rcode); /* item_ext = "" */
 
     milprintf(f, "{ # saveResult%i () : int\n", counter);
+    milprintf(f, "var ipik%03u := ipik;\n", counter);
     milprintf(f, "var iter%03u := iter;\n", counter);
     milprintf(f, "var pos%03u := pos;\n", counter);
     milprintf(f, "var item%s%03u := item%s;\n", 
               item_ext, counter, item_ext);
     milprintf(f, "var kind%03u := kind;\n", counter);
     milprintf(f,
+            "ipik := nil;\n"
             "iter := nil;\n"
             "pos := nil;\n"
             "item%s := nil;\n"
@@ -599,6 +602,7 @@ deleteResult_ (opt_t *f, int counter, int rcode)
     char *item_ext = kind_str(rcode); /* item_ext = "" */
 
     milprintf(f, "# deleteResult%i ()\n", counter);
+    milprintf(f, "ipik%03u := nil;\n", counter);
     milprintf(f, "iter%03u := nil;\n", counter);
     milprintf(f, "pos%03u := nil;\n", counter);
     milprintf(f, "item%s%03u := nil;\n", item_ext, counter);
@@ -675,7 +679,8 @@ addValues (opt_t *f,
            char *varname,
            char *result_var)
 {
-    milprintf(f, "{\n  var ins_vals := %s.reverse().mark(nil).reverse();\n", varname);
+    milprintf(f, "{\n  %s := %s.de_NO_project(ipik);\n", varname, varname);
+    milprintf(f, "  var ins_vals := %s.reverse().mark(nil).reverse();\n", varname);
     milprintf(f, "  %s := %s.seqbase(nil).insert(ins_vals).seqbase(0@0);\n}\n", t_co.table, t_co.table);
     /* get the offsets of the values */
     milprintf(f, "%s := %s.leftjoin(%s.reverse());\n", 
@@ -695,12 +700,13 @@ add_empty_strings (opt_t *f, int rc, int cur_level)
     char *item_ext = kind_str(rc);
     milprintf(f,
             /* test qname and add "" for each empty item */
-            "if (iter.count() != loop%03u.count())\n"
+            "if (ipik.count() != loop%03u.count())\n"
             "{ # add empty strings\n"
+            "iter := fake_project(iter);\n"
             "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
             "difference := difference.mark(0@0).reverse();\n"
-            "var res_mu := merged_union(iter.chk_order(), difference.chk_order(), item%s, "
-                                       "fake_project(%s));\n"
+            "var res_mu := merged_union(iter.chk_order(), difference.chk_order(), "
+                                       "fake_project(item%s), fake_project(%s));\n"
             "difference := nil;\n"
             "item%s := res_mu.fetch(1);\n"
             "res_mu := nil;\n"
@@ -725,6 +731,7 @@ translateEmpty_ (opt_t *f, int rcode)
 
     milprintf(f,
             "# translateEmpty ()\n"
+            "ipik := empty_bat;\n"
             "iter := empty_bat;\n"
             "pos := empty_bat;\n"
             "item%s := empty%s_bat;\n"
@@ -821,8 +828,9 @@ map2NODE_interface (opt_t *f)
             /* there can be only nodes and attributes */
 
             /* create the attribute root entries */
+            "kind := kind.de_NO_project(ipik);\n"
             "var attr := kind.get_type(ATTR).mark(0@0).reverse();\n"
-            "var attr_iter := attr.leftfetchjoin(iter);\n"
+            "var attr_iter := attr.de_fake_leftfetchjoin(iter);\n"
             "var attr_item := attr.leftfetchjoin(item);\n"
             "var attr_frag := attr.leftfetchjoin(kind).get_fragment();\n"
             "attr := nil;\n"
@@ -941,9 +949,10 @@ translateConst (opt_t *f, int cur_level, char *kind)
     milprintf(f,
             "# translateConst (kind)\n"
             "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-            "pos := iter.project(1@0);\n"
-            "item := iter.project(itemID);\n"
-            "kind := iter.project(%s);\n",
+            "ipik := iter;\n"
+            "pos := ipik.NO_project(1@0);\n"
+            "item := ipik.NO_project(itemID);\n"
+            "kind := ipik.NO_project(%s);\n",
             cur_level, kind);
 }
 
@@ -963,26 +972,28 @@ translateSeq_ (opt_t *f, int i, int rcode)
     /* pruning of the two cases where one of
        the intermediate results is empty */
     milprintf(f,
-            "if (iter.count() = 0) {\n"
+            "if (ipik.count() = 0) {\n"
+            "        ipik := ipik%03u;\n"
             "        iter := iter%03u;\n"
             "        pos := pos%03u;\n"
             "        item%s := item%s%03u;\n"
             "        kind := kind%03u;\n",
-            i, i, item_ext, item_ext, i, i);
+            i, i, i, item_ext, item_ext, i, i);
     milprintf(f, 
-            "} else { if (iter%03u.count() != 0)\n",
+            "} else { if (ipik%03u.count() != 0)\n",
             i);
     milprintf(f,
             "{ # translateSeq (counter)\n"
             /* FIXME: tests if input is sorted is needed because of merged union*/
             "var merged_result := merged_union "
-            "(iter%03u.chk_order(), iter.chk_order(), item%s%03u, item%s, kind%03u, kind);\n",
+            "(fake_project(iter%03u).chk_order(), fake_project(iter).chk_order(), fake_project(item%s%03u), fake_project(item%s), fake_project(kind%03u), fake_project(kind));\n",
             i, item_ext, i, item_ext, i);
     milprintf(f,
             "iter := merged_result.fetch(0);\n"
             "item%s := merged_result.fetch(1);\n"
             "kind := merged_result.fetch(2);\n"
             "merged_result := nil;\n"
+            "ipik := iter;\n"
             "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             "} # end of translateSeq (counter)\n"
             "}\n",
@@ -1207,6 +1218,7 @@ translateVar (opt_t *f, int cur_level, PFvar_t *v)
     milprintf(f, "pos := vid.leftfetchjoin(v_pos%03u);\n", cur_level);
     milprintf(f, "item := vid.leftfetchjoin(v_item%03u);\n", cur_level);
     milprintf(f, "kind := vid.leftfetchjoin(v_kind%03u);\n", cur_level);
+    milprintf(f, "ipik := iter;\n");
     milprintf(f, "vid := nil;\n");
     milprintf(f, "} # end of translateVar (%s)\n", PFqname_str(v->qname));
 }
@@ -1225,6 +1237,7 @@ append (opt_t *f, char *name, int level)
 {
     milprintf(f, "{ # append (%s, level)\n", name);
     milprintf(f, "var seqb := oid(v_%s%03u.count());\n",name, level);
+    milprintf(f, "%s := %s.de_NO_project(ipik);\n", name, name);
     milprintf(f, "var temp_%s := %s.reverse().mark(seqb).reverse();\n", name, name);
     milprintf(f, "seqb := nil;\n");
     milprintf(f, "v_%s%03u := v_%s%03u.insert(temp_%s);\n", name, level, name, level, name);
@@ -1245,7 +1258,7 @@ insertVar (opt_t *f, int cur_level, int vid)
 {
     milprintf(f,
             "{ # insertVar (vid)\n"
-            "var vid := iter.project(%i@0);\n",
+            "var vid := ipik.project(%i@0);\n",
             vid);
 
     append (f, "vid", cur_level);
@@ -1286,9 +1299,10 @@ createEnumeration (opt_t *f, int cur_level)
             "item := item.reverse().mark(0@0).reverse();\n"
             "ints_cE := nil;\n"
             "iter := inner%03u.reverse().mark(0@0).reverse();\n"
-            "pos := iter.project(1@0);\n"
+            "ipik := iter;\n"
+            "pos := ipik.NO_project(1@0);\n"
             /* change kind information to int */
-            "kind := iter.project(INT);\n"
+            "kind := ipik.NO_project(INT);\n"
             "} # end of createEnumeration ()\n",
             cur_level);
 }
@@ -1305,11 +1319,12 @@ project (opt_t *f, int cur_level)
     /* create a new loop / outer|inner relation
        and adjust iter, pos from for loop binding */
     milprintf(f, "# project ()\n");
+    milprintf(f, "iter := iter.de_NO_project(ipik);\n");
     milprintf(f, "var outer%03u := iter;\n", cur_level);
     milprintf(f, "var order_%03u := iter;\n", cur_level);
     milprintf(f, "iter := iter.mark(1@0);\n");
     milprintf(f, "var inner%03u := iter;\n", cur_level);
-    milprintf(f, "pos := iter.project(1@0);\n");
+    milprintf(f, "pos := iter.NO_project(1@0);\n");
     milprintf(f, "var loop%03u := inner%03u;\n", cur_level, cur_level);
 
     /* create a new set of variables, which contain
@@ -1482,6 +1497,7 @@ mapBack (opt_t *f, int cur_level)
             "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             "# item := item;\n"
             "# kind := kind;\n"
+            "# ipik := ipik;\n"
             "} # end of mapBack ()\n"
            );
 }
@@ -1682,6 +1698,7 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter,
          do the whole stuff
     */
     milprintf(f,
+            "item%03u := item%03u.de_NO_project(ipik%03u);\n"
             "var selected := item%03u.ord_uselect(1@0);\n"
             "var skip := 0;\n"
             "if (selected.count() = item%03u.count()) {\n"
@@ -1689,6 +1706,7 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter,
             "} else if (selected.count() = 0) {\n"
             " skip := 1; \n"
             "}\n",
+            bool_res, bool_res, bool_res,
             bool_res, bool_res);
     /* if at compile time one argument is already known to
        be empty don't do the other */
@@ -1794,8 +1812,9 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
                 "item := loop%03u.outerjoin(unique_iter.project(false)).[isnil]().[oid]();\n"
                 "unique_iter := nil;\n"
                 "iter := loop%03u;\n"
-                "pos := iter.project(1@0);\n"
-                "kind := item.project(BOOL);\n"
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "kind := ipik.NO_project(BOOL);\n"
                 "} # end of typeswitch\n",
                 cur_level, cur_level);
         return;
@@ -1855,8 +1874,9 @@ translateTypeswitch (opt_t *f, int cur_level, PFty_t input_type, PFty_t seq_type
     milprintf(f,
             "matching_iters := nil;\n"
             "iter := loop%03u;\n"
-            "pos := iter.project(1@0);\n"
-            "kind := item.project(BOOL);\n"
+            "ipik := iter;\n"
+            "pos := ipik.NO_project(1@0);\n"
+            "kind := ipik.NO_project(BOOL);\n"
             "} # end of typeswitch\n",
             cur_level);
 }
@@ -1895,6 +1915,7 @@ loop_liftedSCJ (opt_t *f,
             /* as long as ddo is used instead of only
                sorting the duplicate elimination is not needed */
             /*
+            "iter := iter.de_NO_project(ipik);\n"
             "var sorting := iter.reverse().sort().reverse();\n"
             "sorting := sorting.CTrefine(kind);\n"
             "sorting := sorting.CTrefine(item);\n"
@@ -1916,11 +1937,11 @@ loop_liftedSCJ (opt_t *f,
             "unq := nil;\n"
             */
             /* get the attribute ids from the pre values */
-            "var temp1 := mvaljoin (oid_item, oid_frag, ws.fetch(ATTR_OWN));\n"
+            "var temp1 := mvaljoin (oid_item, fake_project(oid_frag), ws.fetch(ATTR_OWN));\n"
             "oid_item := nil;\n"
-            "oid_frag := temp1.mark(0@0).reverse().leftfetchjoin(oid_frag);\n"
+            "oid_frag := temp1.mark(0@0).reverse().fake_leftfetchjoin(oid_frag);\n"
             "var oid_attr := temp1.reverse().mark(0@0).reverse();\n"
-            "oid_iter := temp1.mark(0@0).reverse().leftfetchjoin(oid_iter);\n"
+            "oid_iter := temp1.mark(0@0).reverse().fake_leftfetchjoin(oid_iter);\n"
             "temp1 := nil;\n"
             "var temp1_str; # only needed for name test\n"
            );
@@ -1937,8 +1958,8 @@ loop_liftedSCJ (opt_t *f,
             milprintf(f,
                     "temp1 := temp1.mark(0@0).reverse();\n"
                     "oid_attr := temp1.leftfetchjoin(oid_attr);\n"
-                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
-                    "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
+                    "oid_frag := temp1.fake_leftfetchjoin(oid_frag);\n"
+                    "oid_iter := temp1.fake_leftfetchjoin(oid_iter);\n"
                     "temp1 := nil;\n");
         }
         if (loc)
@@ -1953,19 +1974,34 @@ loop_liftedSCJ (opt_t *f,
             milprintf(f,
                     "temp1 := temp1.mark(0@0).reverse();\n"
                     "oid_attr := temp1.leftfetchjoin(oid_attr);\n"
-                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
-                    "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
+                    "oid_frag := temp1.fake_leftfetchjoin(oid_frag);\n"
+                    "oid_iter := temp1.fake_leftfetchjoin(oid_iter);\n"
                     "temp1 := nil;\n");
         }
 
         /* add '.reverse().mark(0@0).reverse()' to be sure that the head of 
            the results is void */
         milprintf(f,
-                "iter := oid_iter.reverse().mark(0@0).reverse();\n"
+                "if (is_fake_project(oid_iter)) {\n"
+                "    iter := oid_iter;\n"
+                "} else {\n"
+                "    iter := oid_iter.reverse().mark(0@0).reverse();\n"
+                "    ipik := iter;\n"
+                "}\n"
                 "oid_iter := nil;\n"
-                "item := oid_attr.reverse().mark(0@0).reverse();\n"
+                "if (is_fake_project(oid_attr)) {\n"
+                "    item := oid_attr;\n"
+                "} else {\n"
+                "    item := oid_attr.reverse().mark(0@0).reverse();\n"
+                "    ipik := item;\n"
+                "}\n"
                 "oid_attr := nil;\n"
-                "kind := oid_frag.reverse().mark(0@0).reverse();\n"
+                "if (is_fake_project(oid_frag)) {\n"
+                "    kind := oid_frag;\n"
+                "} else {\n"
+                "    kind := oid_frag.reverse().mark(0@0).reverse();\n"
+                "    ipik := kind;\n"
+                "}\n"
                 "oid_frag := nil;\n"
                 "} # end of attribute axis\n");
     }
@@ -1982,6 +2018,7 @@ loop_liftedSCJ (opt_t *f,
             /* as long as ddo is used instead of only
                sorting the duplicate elimination is not needed */
             /*
+            "iter := iter.de_NO_project(ipik);\n"
             "var sorting := iter.reverse().sort().reverse();\n"
             "sorting := sorting.CTrefine(kind);\n"
             "sorting := sorting.CTrefine(item);\n"
@@ -2007,9 +2044,9 @@ loop_liftedSCJ (opt_t *f,
         if (kind)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(%s))).mark(0@0).reverse();\n"
-                    "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
+                    "var temp1 := mvaljoin(oid_item, fake_project(oid_frag), ws.fetch(KIND_PRE + int(%s))).mark(0@0).reverse();\n"
+                    "oid_iter := temp1.fake_leftfetchjoin(oid_iter);\n"
+                    "oid_frag := temp1.fake_leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n",
                     kind);
@@ -2017,9 +2054,9 @@ loop_liftedSCJ (opt_t *f,
         else if (ns && loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
-                    "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
+                    "var temp1 := mvaljoin(oid_item, fake_project(oid_frag), ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
+                    "oid_iter := temp1.fake_leftfetchjoin(oid_iter);\n"
+                    "oid_frag := temp1.fake_leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n");
             milprintf(f,
@@ -2028,8 +2065,8 @@ loop_liftedSCJ (opt_t *f,
                                              "ws.fetch(QN_LOC_URI));\n"
                     "temp1 := temp_str.ord_uselect(\"%s\"+str('\\1')+\"%s\").mark(0@0).reverse();\n"
                     "temp_str := nil;\n"
-                    "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
+                    "oid_iter := temp1.fake_leftfetchjoin(oid_iter);\n"
+                    "oid_frag := temp1.fake_leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n",
                     loc,ns);
@@ -2037,9 +2074,9 @@ loop_liftedSCJ (opt_t *f,
         else if (loc)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
-                    "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
+                    "var temp1 := mvaljoin(oid_item, fake_project(oid_frag), ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
+                    "oid_iter := temp1.fake_leftfetchjoin(oid_iter);\n"
+                    "oid_frag := temp1.fake_leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n");
             milprintf(f,
@@ -2048,8 +2085,8 @@ loop_liftedSCJ (opt_t *f,
                                              "ws.fetch(QN_LOC));\n"
                     "temp1 := temp_str.ord_uselect(\"%s\").mark(0@0).reverse();\n"
                     "temp_str := nil;\n"
-                    "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
+                    "oid_iter := temp1.fake_leftfetchjoin(oid_iter);\n"
+                    "oid_frag := temp1.fake_leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n",
                     loc);
@@ -2057,9 +2094,9 @@ loop_liftedSCJ (opt_t *f,
         else if (ns)
         {
             milprintf(f,
-                    "var temp1 := mvaljoin(oid_item, oid_frag, ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
-                    "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
+                    "var temp1 := mvaljoin(oid_item, fake_project(oid_frag), ws.fetch(KIND_PRE + int(ELEMENT))).mark(0@0).reverse();\n"
+                    "oid_iter := temp1.fake_leftfetchjoin(oid_iter);\n"
+                    "oid_frag := temp1.fake_leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n");
             milprintf(f,
@@ -2068,8 +2105,8 @@ loop_liftedSCJ (opt_t *f,
                                              "ws.fetch(QN_URI));\n"
                     "temp1 := temp_str.ord_uselect(\"%s\").mark(0@0).reverse();\n"
                     "temp_str := nil;\n"
-                    "oid_iter := temp1.leftfetchjoin(oid_iter);\n"
-                    "oid_frag := temp1.leftfetchjoin(oid_frag);\n"
+                    "oid_iter := temp1.fake_leftfetchjoin(oid_iter);\n"
+                    "oid_frag := temp1.fake_leftfetchjoin(oid_frag);\n"
                     "oid_item := temp1.leftfetchjoin(oid_item);\n"
                     "temp1 := nil;\n",
                     ns);
@@ -2082,6 +2119,7 @@ loop_liftedSCJ (opt_t *f,
                 "oid_item := nil;\n"
                 "kind := oid_frag.reverse().mark(0@0).reverse();\n"
                 "oid_frag := nil;\n"
+                "ipik := iter;\n"
                 "} # end of self axis\n");
     }
     else
@@ -2093,46 +2131,48 @@ loop_liftedSCJ (opt_t *f,
            3 = input and output in item|iter order */
         int item_order = ((rev_out)?2:0) + ((rev_in)?1:0);
         
+        milprintf(f,"iter := iter.de_NO_project(ipik);\n");
+        milprintf(f,"item := item.de_NO_project(ipik);\n");
         if (kind && loc)
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_target_test"
-                    "(iter, item, kind.get_fragment(), ws, %i, \"%s\");\n",
+                    "(iter, item, fake_project(kind.get_fragment()), ws, %i, \"%s\");\n",
                     axis, item_order, loc);
         }
         else if (kind)
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_kind_test"
-                    "(iter, item, kind.get_fragment(), ws, %i, %s);\n",
+                    "(iter, item, fake_project(kind.get_fragment()), ws, %i, %s);\n",
                     axis, item_order, kind);
         }
         else if (ns && loc)
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_nsloc_test"
-                    "(iter, item, kind.get_fragment(), ws, %i, \"%s\", \"%s\");\n",
+                    "(iter, item, fake_project(kind.get_fragment()), ws, %i, \"%s\", \"%s\");\n",
                     axis, item_order, ns, loc);
         }
         else if (loc)
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_loc_test"
-                    "(iter, item, kind.get_fragment(), ws, %i, \"%s\");\n",
+                    "(iter, item, fake_project(kind.get_fragment()), ws, %i, \"%s\");\n",
                     axis, item_order, loc);
         }
         else if (ns)
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step_with_ns_test"
-                    "(iter, item, kind.get_fragment(), ws, %i, \"%s\");\n", 
+                    "(iter, item, fake_project(kind.get_fragment()), ws, %i, \"%s\");\n", 
                     axis, item_order, ns);
         }
         else
         {
             milprintf(f,
                     "res_scj := loop_lifted_%s_step"
-                    "(iter, item, kind.get_fragment(), ws, %i);\n", 
+                    "(iter, item, fake_project(kind.get_fragment()), ws, %i);\n", 
                     axis, item_order);
         }
     }
@@ -2162,15 +2202,16 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
             /* this shouldn't be necessary because
                distinct-doc-order makes sure that only nodes
                are used for a path step
+            "kind := kind.de_NO_project(ipik);\n"
             "var sel_ls := kind.get_type(ELEM);\n"
             "if (sel_ls.count() != kind.count())\n"
             "{    ERROR(\"location step only allows "
                  "nodes as input parameter\"); }\n"
-            "sel_ls := sel_ls.mark(0@0).reverse();\n"
-            "item := sel_ls.leftfetchjoin(item);\n"
-            "iter := sel_ls.leftfetchjoin(iter);\n"
-            "kind := sel_ls.leftfetchjoin(kind);\n"
+            "ipik := sel_ls.mark(0@0).reverse();\n"
             "sel_ls := nil;\n"
+            "item := ipik.leftfetchjoin(item);\n"
+            "iter := ipik.leftfetchjoin(iter);\n"
+            "kind := ipik.leftfetchjoin(kind);\n"
             */
            );
 
@@ -2286,6 +2327,7 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         if (strcmp (axis, "attribute"))
         {
             milprintf(f,
+                    "ipik := empty_bat;\n"
                     "iter := empty_bat;\n"
                     "pos := empty_bat;\n"
                     "item := empty_bat;\n"
@@ -2329,10 +2371,15 @@ translateLocsteps (opt_t *f, int rev_in, int rev_out, PFcnode_t *c)
         milprintf(f,
                 "iter := res_scj.fetch(0);\n"
                 "item := res_scj.fetch(1);\n"
-                "pos  := iter.mark_pos(item);\n"
-                "iter := de_fake_project(iter, item);\n"
+                "ipik := item;\n"
+                "if (is_fake_project(iter)) {\n"
+                "    pos  := ipik.mark(1@0);\n"
+                "} else {\n"
+                "    pos  := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+                "}\n"
+                "iter := de_fake_project(iter, ipik);\n"
                 "kind := res_scj.fetch(2).set_kind(%s);\n"
-                "kind := de_fake_project(kind, item);\n"
+                "kind := de_fake_project(kind, ipik);\n"
                 ,kind);
     } else {
         milprintf(f, "kind := kind.set_kind(%s);\n", kind);
@@ -2359,6 +2406,7 @@ castQName (opt_t *f, int rc)
 
     milprintf(f,
             "{ # castQName ()\n"
+            "kind := kind.de_NO_project(ipik);\n"
             "var qnames := kind.get_type(QNAME);\n"
             "var counted_items := kind.count();\n"
             "var counted_qn := qnames.count();\n"
@@ -2372,7 +2420,7 @@ castQName (opt_t *f, int rc)
 
             "var oid_oid := strings.mark(0@0).reverse();\n"
             "strings := nil;\n"
-            "var oid_item := oid_oid.leftfetchjoin(item%s);\n"
+            "var oid_item := oid_oid.de_fake_leftfetchjoin(item%s);\n"
             /* get all the unique strings */
             "strings := oid_item.tuniqueALT().mark(0@0).reverse();\n"
             "var oid_str := strings%s;\n"
@@ -2436,7 +2484,8 @@ castQName (opt_t *f, int rc)
             "qnames := nil;\n"
             "counted_qn := nil;\n"
 
-            "kind := item.project(QNAME);\n"
+            "kind := item.NO_project(QNAME);\n"
+            /* "ipik := item;\n" */
             "}\n"
             "} # end of castQName ()\n",
             (rc)?"":val_join(STR));
@@ -2471,8 +2520,10 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "var root_level := fake_project(chr(0));\n"
                 "var root_kind  := fake_project(ELEMENT);\n"
                 "var root_frag  := fake_project(WS);\n"
-                "var root_prop  := iter%03u.reverse().leftfetchjoin(item%03u);\n"
-                "root_prop  := root_prop.reverse().mark(0@0).reverse();\n",
+                "var root_prop  := iter%03u.reverse().fake_leftfetchjoin(item%03u);\n"
+                "if (not(is_fake_project(root_prop))) {\n"
+                "    root_prop  := root_prop.reverse().mark(0@0).reverse();\n"
+                "}\n",
                 i, i, i);
     
         milprintf(f,
@@ -2523,6 +2574,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 /* test uniqueness */
                 "if (unq_attrs.count() != _r_attr_iter.count())\n"
                 "{\n"
+                "   item%03u := item%03u.de_NO_project(ipik%03u);\n"
                 "   if (item%03u.count() > 0) {\n"
                 "      ERROR (\"err:XQDY0025: attribute names are not unique "
                 "in constructed element '%%s'.\",\n"
@@ -2562,7 +2614,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "_r_attr_frag := empty_bat;\n"
                 "attr_own := nil;\n"
                 "} # end of create attribute root entries\n",
-                i, i, i);
+                i, i, i, i, i, i);
     }
     else
     {
@@ -2576,15 +2628,17 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
     
      /* attr */ "var preNew_preOld;\n"
      /* attr */ "var preNew_frag;\n"
+     /* attr */ "kind := kind.de_NO_project(ipik);\n"
      /* attr */ "var attr := kind.get_type(ATTR).mark(0@0).reverse();\n"
-     /* attr */ "var attr_iter := attr.leftfetchjoin(iter);\n"
-     /* attr */ "var attr_item := attr.leftfetchjoin(item);\n"
+     /* attr */ "var attr_iter := attr.de_fake_leftfetchjoin(iter);\n"
+     /* attr */ "var attr_item := attr.de_fake_leftfetchjoin(item);\n"
      /* attr */ "var attr_frag := attr.leftfetchjoin(kind).get_fragment();\n"
      /* attr */ "attr := nil;\n"
     
                 /* there can be only nodes and attributes - everything else
                    should cause an error */
     
+                "kind := kind.de_NO_project(ipik);\n"
                 "var nodes := kind.get_type(ELEM);\n"
                 /* if no nodes are found we jump right to the end and only
                    have to execute the stuff for the root construction */
@@ -2592,7 +2646,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
         
                 "var oid_oid := nodes.mark(0@0).reverse();\n"
                 "nodes := nil;\n"
-                "var node_items := oid_oid.leftfetchjoin(item);\n"
+                "var node_items := oid_oid.de_fake_leftfetchjoin(item);\n"
                 "var node_frags := oid_oid.leftfetchjoin(kind).get_fragment();\n"
                 /* set iter to a distinct list and therefore don't
                    prune any node */
@@ -2610,7 +2664,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "res_scj := nil;\n"
                 /* res_ec is the iter|dn table resulting from the scj */
                 /* create content_iter as sorting argument for the merged union */
-                "var content_iter := res_iter.leftfetchjoin(oid_oid).leftfetchjoin(iter).chk_order();\n"
+                "var content_iter := res_iter.leftfetchjoin(oid_oid).fake_leftfetchjoin(iter).chk_order();\n"
     
                 /* create subtree copies for all bats except content_level */
                 "var content_size := mposjoin(res_item, res_frag, "
@@ -2672,7 +2726,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "contentRoot_size := nil;\n"
                 "size_oid := size_oid.leftfetchjoin(oid_oid);\n"
                 "oid_oid := nil;\n"
-                "var size_iter := size_oid.leftfetchjoin(iter);\n"
+                "var size_iter := size_oid.de_fake_leftfetchjoin(iter);\n"
                 "size_oid := nil;\n"
                 "var iter_size := size_iter.reverse();\n"
                 "size_iter := nil;\n"
@@ -2687,7 +2741,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "root_level := fake_project(chr(0));\n"
                 "root_size := iter_size;\n"
                 "root_kind := fake_project(ELEMENT);\n"
-                "root_prop := iter%03u.reverse().leftfetchjoin(item%03u);\n"
+                "root_prop := iter%03u.reverse().de_fake_leftfetchjoin(item%03u);\n"
                 "root_frag := fake_project(WS);\n",
                 i, i);
     
@@ -2754,6 +2808,7 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "} else { # if (nodes.count() != 0) ...\n"
                );
     
+        milprintf(f, "item%03u := item%03u.de_NO_project(ipik%03u);\n", i, i, i);
         milprintf(f, "root_level := item%03u.project(chr(0));\n", i);
         milprintf(f, "root_size := item%03u.project(0);\n", i);
         milprintf(f, "root_kind := item%03u.project(ELEMENT);\n", i);
@@ -2845,9 +2900,10 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                    unless there is a thinking error */
         milprintf(f,
                 "iter := iter%03u;\n"
-                "pos := roots.mark(1@0);\n"
                 "item := roots;\n"
-                "kind := roots.project(ELEM);\n",
+                "ipik := item;\n"
+                "pos := ipik.mark(1@0);\n"
+                "kind := ipik.NO_project(ELEM);\n",
                 i);
     
      /* attr */ /* attr translation */
@@ -3058,9 +3114,10 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
             /* should contain for each iter exactly 1 root element
                unless there is a thinking error */
             "iter := iter%03u;\n"
-            "pos := roots.mark(1@0);\n"
             "item := roots;\n"
-            "kind := roots.project(ELEM);\n"
+            "ipik := item;\n"
+            "pos := ipik.mark(1@0);\n"
+            "kind := ipik.NO_project(ELEM);\n"
 
             "{ # add attribute subtree copies to WS\n"
             "var seqb := oid(ws.fetch(ATTR_QN).fetch(WS).count());\n"
@@ -3112,7 +3169,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
             "{\n"
             "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
             "difference := difference.mark(0@0).reverse();\n"
-            "var res_mu := merged_union(iter, difference, item%s, "
+            "var res_mu := merged_union(iter, difference, fake_project(item%s), "
                                        "fake_project(%s));\n"
             "difference := nil;\n"
             "item%s := res_mu.fetch(1);\n"
@@ -3127,6 +3184,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
             "var ws_prop_val := ws.fetch(PROP_VAL).fetch(WS);\n"
             /* add strings to PROP_VAL table (but keep the tail of PROP_VAL
                unique) */
+            "item%s := item%s.de_NO_project(ipik);\n"
             "var unq := item%s.tuniqueALT().mark(0@0).reverse();\n"
             "var unq_str := unq%s;\n"
             "unq := nil;\n"
@@ -3142,6 +3200,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
             "var strings := item%s;\n"
             "var attr_oid := strings.leftjoin(ws_prop_val.reverse());\n"
             "strings := nil;\n",
+            item_ext, item_ext,
             item_ext, str_values,
             (rc)?item_ext:val_join(STR));
     if (rcode != NORMAL)
@@ -3150,12 +3209,12 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
         milprintf(f,
                 "attr_oid := attr_oid.reverse().mark(0@0).reverse();\n"
                 "_r_attr_iter := iter%03u;\n"
-                "_r_attr_qn   := item%03u;\n"
+                "_r_attr_qn   := item%03u.de_NO_project(ipik%03u);\n"
                 "_r_attr_prop := attr_oid;\n"
                 "_r_attr_frag := attr_oid.project(WS);\n"
                 "attr_oid := nil;\n"
                 "} # end of loop_liftedAttrConstr (int i)\n",
-                i, i);
+                i, i, i);
     }
     else
     {
@@ -3165,6 +3224,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
                 /* add the new attribute properties */
                 "ws.fetch(ATTR_PROP).fetch(WS).insert(attr_oid);\n"
                 "attr_oid := nil;\n"
+                "item%03u := item%03u.de_NO_project(ipik%03u);\n"
                 "var qn := item%03u.reverse().mark(seqb).reverse();\n"
                 "ws.fetch(ATTR_QN).fetch(WS).insert(qn);\n"
                 "ws.fetch(ATTR_FRAG).fetch(WS).insert(qn.project(WS));\n"
@@ -3175,9 +3235,10 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
                 "pos := pos%03u;\n"
                 "item := iter%03u.mark(seqb);\n"
                 "seqb := nil;\n"
-                "kind := kind%03u.project(ATTR);\n"
+                "kind := kind%03u.NO_project(ATTR);\n"
+                "ipik := ipik%03u;\n"
                 "} # end of loop_liftedAttrConstr (int i)\n",
-                i, i, i, i, i);
+                i, i, i, i, i, i, i, i, i);
     }
 }
 
@@ -3198,7 +3259,11 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
     if (rc != NORMAL)
     {
         milprintf(f,
-                "var unq_str := item%s.tuniqueALT().mark(0@0).reverse();\n",
+             /* because tunique() is to slow on strings we do stupid things */
+             /* "var unq_str := item%s.tunique().mark(0@0).reverse();\n" */
+                "var unq_str := bat(str,void).key(true)"
+                                            ".insert(fake_project(item%s).reverse().mark(nil))"
+                                            ".mark(0@0).reverse().access(BAT_READ);\n",
                 item_ext);
     }
     else
@@ -3221,6 +3286,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
             /* we invest in sorting ws_prop_text &  X_strings/item%s on the TYPE_str join columns */
             /* as the mergejoin proved to be faster and more robust with large BATs than a hashjoin */
             "var ws_text_prop := ws_prop_text.reverse().sort();\n"
+            "item%s := item%s.de_NO_project(ipik);\n"
             "var X_item := item%s.mark(0@0).reverse();\n"
             "var X_strings := item%s.reverse().mark(0@0).sort().reverse();\n"
             "var X_prop := X_strings.leftjoin(ws_text_prop);\n"
@@ -3229,6 +3295,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
             "var newPre_prop := X_item.reverse().leftjoin(X_prop);\n"
             "X_item := nil;\n"
             "X_prop := nil;\n",
+            (rc)?item_ext:val_join(STR), (rc)?item_ext:val_join(STR),
             (rc)?item_ext:val_join(STR), (rc)?item_ext:val_join(STR));
 
     if (rcode != NORMAL)
@@ -3261,7 +3328,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
                 "newPre_prop := nil;\n"
                 "item := item%s.mark(seqb);\n"
                 "seqb := nil;\n"
-                "kind := kind.project(ELEM);\n"
+                "kind := kind.NO_project(ELEM);\n"
                 "} # end of adding new strings to text node content and create new nodes\n"
        
                 /* adding the new constructed roots to the WS_FRAG bat of the
@@ -3319,7 +3386,7 @@ evaluateCastBlock (opt_t *f, type_co ori, char *cast, char *target_type)
             "var part_kind := kind.ord_uselect(%s);\n"
             "var oid_oid := part_kind.mark(0@0).reverse();\n"
             "part_kind := nil;\n"
-            "var part_item := oid_oid.leftfetchjoin(item);\n",
+            "var part_item := oid_oid.de_fake_leftfetchjoin(item);\n",
             ori.mil_cast);
     if (ori.kind != BOOL)
         milprintf(f,
@@ -3376,13 +3443,13 @@ evaluateCast (opt_t *f,
 
     if (rc != NORMAL)
         milprintf(f,
-                "var cast_val := item%s.%s;\n", kind_str(rc), cast);
+                "var cast_val := fake_project(item%s).%s;\n", kind_str(rc), cast);
     else if (ori.kind != BOOL)
         milprintf(f,
                 "var cast_val := item.leftfetchjoin(%s).%s;\n",
                 ori.table, cast);
     else
-        milprintf(f, "var cast_val := item.%s;\n", cast);
+        milprintf(f, "var cast_val := fake_project(item).%s;\n", cast);
 
     milprintf(f,
             "if (cast_val.reverse().exist(%s(nil)))\n"
@@ -3390,17 +3457,19 @@ evaluateCast (opt_t *f,
             target.mil_type, ori.name, target.name);
 
     if (target.kind == BOOL)
-        milprintf(f, "item := cast_val.[oid]();\n");
+        milprintf(f, "item := de_fake_project(cast_val.[oid](), ipik);\n");
     else if (rcode == NORMAL)
         addValues (f, target, "cast_val", "item");
     else
-        milprintf(f, "item%s := cast_val;\n", item_ext);
+        milprintf(f, "item%s := de_fake_project(cast_val, ipik);\n", item_ext);
 
         milprintf(f,
                 "cast_val := nil;\n"
-                "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "kind := kind.project(%s);\n",
-                item_ext, item_ext, target.mil_cast);
+                "if (type(item%s) = 4) {\n"
+                "    item%s := item%s.reverse().mark(0@0).reverse();\n"
+                "}\n"
+                "kind := kind.NO_project(%s);\n",
+                item_ext, item_ext, item_ext, target.mil_cast);
 }
 
 /**
@@ -3452,7 +3521,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
         milprintf(f,
                 "var _oid := kind.ord_uselect(INT);\n"
                 "_oid := _oid.mark(0@0).reverse();\n"
-                "var part_item := _oid.leftfetchjoin(item);\n"
+                "var part_item := _oid.de_fake_leftfetchjoin(item);\n"
                 "var _val := part_item.leftfetchjoin(int_values);\n"
                 "part_item := nil;\n");
  
@@ -3472,7 +3541,7 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
             addValues(f, int_container(), "_val", "item");
         milprintf(f,
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "kind := _oid.project(INT);\n",
+                "kind := _oid.NO_project(INT);\n",
                 item_ext, item_ext);
     }
 }
@@ -3524,9 +3593,10 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
                        kind_container(rc).name);
 
         milprintf(f,
+                "kind := kind.de_NO_project(ipik);\n"
                 "var _oid := kind.ord_uselect(DEC);\n"
                 "_oid := _oid.mark(0@0).reverse();\n"
-                "var part_item := _oid.leftfetchjoin(item);\n"
+                "var part_item := _oid.de_fake_leftfetchjoin(item);\n"
                 "var _val := part_item.leftfetchjoin(dec_values);\n"
                 "part_item := nil;\n");
  
@@ -3546,7 +3616,7 @@ translateCast2DEC (opt_t *f, int rcode, int rc, PFty_t input_type)
             addValues(f, dec_container(), "_val", "item");
         milprintf(f,
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "kind := _oid.project(DEC);\n",
+                "kind := _oid.NO_project(DEC);\n",
                 item_ext, item_ext);
     }
 }
@@ -3600,7 +3670,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
         milprintf(f,
                 "var _oid := kind.ord_uselect(DBL);\n"
                 "_oid := _oid.mark(0@0).reverse();\n"
-                "var part_item := _oid.leftfetchjoin(item);\n"
+                "var part_item := _oid.de_fake_leftfetchjoin(item);\n"
                 "var _val := part_item.leftfetchjoin(dbl_values);\n"
                 "part_item := nil;\n");
  
@@ -3620,7 +3690,7 @@ translateCast2DBL (opt_t *f, int rcode, int rc, PFty_t input_type)
             addValues(f, dbl_container(), "_val", "item");
         milprintf(f,
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "kind := _oid.project(DBL);\n",
+                "kind := _oid.NO_project(DBL);\n",
                 item_ext, item_ext);
     }
 }
@@ -3665,9 +3735,9 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         }
 
         if (TY_EQ (input_type, PFty_string ()) && rcode == U_A)
-            milprintf(f, "kind := kind.project(U_A);\n");
+            milprintf(f, "kind := kind.NO_project(U_A);\n");
         else if (TY_EQ (input_type, PFty_untypedAtomic ()) && rcode == STR)
-            milprintf(f, "kind := kind.project(STR);\n");
+            milprintf(f, "kind := kind.NO_project(STR);\n");
     }
     else if (TY_EQ (input_type, PFty_boolean ()))
         evaluateCast (f, rcode, rc, bool_container(), cast_container, "[str]()");
@@ -3680,7 +3750,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
         milprintf(f,
                 "var _oid := kind.ord_uselect(STR);\n"
                 "_oid := _oid.mark(0@0).reverse();\n"
-                "var part_item := _oid.leftfetchjoin(item);\n"
+                "var part_item := _oid.de_fake_leftfetchjoin(item);\n"
                 "var _val := part_item.leftfetchjoin(str_values);\n"
                 "part_item := nil;\n");
  
@@ -3701,7 +3771,7 @@ translateCast2STR (opt_t *f, int rcode, int rc, PFty_t input_type)
 
         milprintf(f,
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "kind := _oid.project(%s);\n",
+                "kind := _oid.NO_project(%s);\n",
                 item_ext, item_ext, (rcode == STR)?"STR":"U_A");
     }
 }
@@ -3739,7 +3809,7 @@ translateCast2BOOL (opt_t *f, int rcode, int rc, PFty_t input_type)
         milprintf(f,
                 "var _oid := kind.ord_uselect(BOOL);\n"
                 "_oid := _oid.mark(0@0).reverse();\n"
-                "var part_item := _oid.leftfetchjoin(item);\n"
+                "var part_item := _oid.de_fake_leftfetchjoin(item);\n"
                 "var _val := part_item.[bit]();\n"
                 "part_item := nil;\n");
  
@@ -3755,7 +3825,7 @@ translateCast2BOOL (opt_t *f, int rcode, int rc, PFty_t input_type)
  
         milprintf(f,
                 "item := _val.[oid]();\n"
-                "kind := _oid.project(BOOL);\n");
+                "kind := _oid.NO_project(BOOL);\n");
     }
 }
 
@@ -3871,30 +3941,41 @@ evaluateOp (opt_t *f, int rcode, int rc1, int rc2,
     if (rc2 != NORMAL)
         milprintf(f, "var val_snd := item%s;\n", kind_str(rc2));
     else
-        milprintf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
+        milprintf(f, "var val_snd := item.fake_leftfetchjoin(%s);\n", t_co.table);
     /* item%03u is the older (first) argument and has to be the first operand
        for the evaluation */
     /* get the values for the first argument */
     if (rc1 != NORMAL)
         milprintf(f, "var val_fst := item%s%03u;\n", kind_str(rc1), counter);
     else
-        milprintf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n",
+        milprintf(f, "var val_fst := item%03u.fake_leftfetchjoin(%s);\n",
                 counter, t_co.table);
 
     if (div)
         milprintf(f, 
-                "if (val_snd.reverse().exist(%s))\n"
-                "{   ERROR (\"err:FOAR0001: division by 0 is forbidden.\"); }\n",
-                div);
-    milprintf(f, "val_fst := val_fst.[%s](val_snd);\n", operator);
+                "if (type(val_snd) = 4) {\n"
+                "    if (val_snd.reverse().exist(%s))\n"
+                "    {   ERROR (\"err:FOAR0001: division by 0 is forbidden.\"); }\n"
+                "} else {\n"
+                "    if (val_snd = %s)\n"
+                "    {   ERROR (\"err:FOAR0001: division by 0 is forbidden.\"); }\n"
+                "}\n",
+                div, div);
+    milprintf(f, "if (or( type(val_fst) = 4 , type(val_snd) = 4 )) {\n");
+    milprintf(f, "    val_fst := val_fst.[%s](val_snd);\n", operator);
+    milprintf(f, "} else {\n");
+    milprintf(f, "    val_fst := val_fst.%s(val_snd);\n", operator);
+    milprintf(f, "}\n");
 
     if (rcode != NORMAL) /* return `real' values */
         milprintf(f, "item%s := val_fst;\n", item_ext);
     else /* return references to values */
         addValues(f, t_co, "val_fst", "item");
 
-    milprintf(f, "item%s := item%s.reverse().mark(0@0).reverse();\n",
-            item_ext, item_ext);
+    milprintf(f, "if (type(item%s) = 4) {\n"
+                 "    item%s := item%s.reverse().mark(0@0).reverse();\n"
+                 "}\n",
+            item_ext, item_ext, item_ext);
     milprintf(f, "} # end of '%s' calculation\n", operator);
 }
 
@@ -3925,35 +4006,41 @@ evaluateOpOpt (opt_t *f, int rcode, int rc1, int rc2,
     milprintf(f, "{ # '%s' calculation with optional type\n", operator);
     /* get values for the second argument */
     if (rc2 != NORMAL)
-        milprintf(f, "var val_snd := iter.reverse().leftfetchjoin(item%s);\n",
+        milprintf(f, "var val_snd := iter.reverse().de_fake_leftfetchjoin(item%s);\n",
                 kind_str(rc2));
     else
         milprintf(f, 
-                "var val_snd := item.leftfetchjoin(%s);\n"
+                "var val_snd := item.fake_leftfetchjoin(%s);\n"
                 "val_snd := iter.reverse().leftfetchjoin(val_snd);\n",
                 t_co.table);
     /* get the values for the first argument */
     if (rc1 != NORMAL)
-        milprintf(f, "var val_fst := iter%03u.reverse().leftfetchjoin(item%s%03u);\n",
+        milprintf(f, "var val_fst := iter%03u.reverse().de_fake_leftfetchjoin(item%s%03u);\n",
                 counter, kind_str(rc1), counter);
     else
         milprintf(f,
-                "var val_fst := item%03u.leftfetchjoin(%s);\n"
+                "var val_fst := item%03u.fake_leftfetchjoin(%s);\n"
                 "val_fst := iter%03u.reverse().leftfetchjoin(val_fst);\n",
                 counter, t_co.table,
                 counter);
 
     if (div)
         milprintf(f, 
-                "if (val_snd.reverse().exist(%s))\n"
-                "{   ERROR (\"err:FOAR0001: division by 0 is forbidden.\") };\n",
-                div);
+                "if (type(val_snd) = 4) {\n"
+                "    if (val_snd.reverse().exist(%s))\n"
+                "    {   ERROR (\"err:FOAR0001: division by 0 is forbidden.\"); }\n"
+                "} else {\n"
+                "    if (val_snd = %s)\n"
+                "    {   ERROR (\"err:FOAR0001: division by 0 is forbidden.\"); }\n"
+                "}\n",
+                div, div);
     /* item%03u is the older (first) argument and has to be the first operand
        for the evaluation */
     milprintf(f, "val_fst := val_fst.[%s](val_snd);\n", operator);
     milprintf(f, "iter := val_fst.mark(0@0).reverse();\n");
-    milprintf(f, "pos := iter.project(1@0);\n");
-    milprintf(f, "kind := iter.project(%s);\n", kind);
+    milprintf(f, "ipik := iter;\n");
+    milprintf(f, "pos := ipik.NO_project(1@0);\n");
+    milprintf(f, "kind := ipik.NO_project(%s);\n", kind);
 
     if (rcode != NORMAL) /* return `real' values */
         milprintf(f, "item%s := val_fst;\n", item_ext);
@@ -4070,14 +4157,14 @@ evaluateComp (opt_t *f, int rc1, int rc2,
         if (rc2 != NORMAL)
             milprintf(f, "var val_snd := item%s;\n", kind_str(rc2));
         else
-            milprintf(f, "var val_snd := item.leftfetchjoin(%s);\n", t_co.table);
+            milprintf(f, "var val_snd := item.fake_leftfetchjoin(%s);\n", t_co.table);
         /* item%03u is the older (first) argument and has to be
            the first operand for the evaluation */
         if (rc1 != NORMAL)
             milprintf(f, "var val_fst := item%s%03u;\n", 
                     kind_str(rc1), counter);
         else
-            milprintf(f, "var val_fst := item%03u.leftfetchjoin(%s);\n",
+            milprintf(f, "var val_fst := item%03u.fake_leftfetchjoin(%s);\n",
                     counter, t_co.table);
     }
     else
@@ -4087,9 +4174,14 @@ evaluateComp (opt_t *f, int rc1, int rc2,
            the first operand for the evaluation */
         milprintf(f, "var val_fst := item%03u;\n", counter);
     }
-    milprintf(f, "var val_bool := val_fst.[%s](val_snd);\n", operator);
-    milprintf(f, "item := val_bool.[oid]();\n");
-    milprintf(f, "kind := kind.project(BOOL);\n");
+    milprintf(f, "if (or( type(val_fst) = 4 , type(val_snd) = 4 )) {\n");
+    milprintf(f, "    var val_bool := val_fst.[%s](val_snd);\n", operator);
+    milprintf(f, "    item := val_bool.[oid]();\n");
+    milprintf(f, "} else {\n");
+    milprintf(f, "    var val_bool := val_fst.%s(val_snd);\n", operator);
+    milprintf(f, "    item := val_bool.oid();\n");
+    milprintf(f, "}\n");
+    milprintf(f, "kind := kind.NO_project(BOOL);\n");
     milprintf(f, "} # end of '%s' comparison\n", operator);
 }
 
@@ -4115,11 +4207,11 @@ evaluateCompOpt (opt_t *f, int rc1, int rc2,
     {
         if (rc2 != NORMAL)
             milprintf(f,
-                    "var val_snd := iter.reverse().leftfetchjoin(item%s);\n",
+                    "var val_snd := iter.reverse().de_fake_leftfetchjoin(item%s);\n",
                     kind_str(rc2));
         else
             milprintf(f,
-                    "var val_snd := item.leftfetchjoin(%s);\n"
+                    "var val_snd := item.fake_leftfetchjoin(%s);\n"
                     "val_snd := iter.reverse().leftfetchjoin(val_snd);\n",
                     t_co.table);
         /* item%03u is the older (first) argument and has to be
@@ -4127,11 +4219,11 @@ evaluateCompOpt (opt_t *f, int rc1, int rc2,
         if (rc1 != NORMAL)
             milprintf(f,
                     "var val_fst := iter%03u.reverse()"
-                                           ".leftfetchjoin(item%s%03u);\n",
+                                           ".de_fake_leftfetchjoin(item%s%03u);\n",
                     counter, kind_str(rc1), counter);
         else
             milprintf(f,
-                    "var val_fst := item%03u.leftfetchjoin(%s);\n"
+                    "var val_fst := item%03u.fake_leftfetchjoin(%s);\n"
                     "val_fst := iter%03u.reverse().leftfetchjoin(val_fst);\n",
                     counter, t_co.table,
                     counter);
@@ -4145,11 +4237,12 @@ evaluateCompOpt (opt_t *f, int rc1, int rc2,
     }
     milprintf(f, "var val_bool := val_fst.[%s](val_snd);\n", operator);
     milprintf(f,
-            "iter := val_bool.mark(0@0).reverse();\n"
-             "pos := iter.project(1@0);\n"
-             "item := val_bool.[oid]();\n"
-             "item := item.reverse().mark(0@0).reverse();\n"
-             "kind := iter.project(BOOL);\n"
+             "iter := val_bool.mark(0@0).reverse();\n"
+             "ipik := iter;\n"
+             "item := val_bool.reverse().mark(0@0).reverse();\n"
+             "item := item.[oid]();\n"
+             "pos := ipik.NO_project(1@0);\n"
+             "kind := ipik.NO_project(BOOL);\n"
              "} # end of '%s' comparison with optional type\n",
              operator);
 }
@@ -4256,7 +4349,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "trues := trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
-                "var test_item := test.leftfetchjoin(item%s);\n"
+                "var test_item := test.de_fake_leftfetchjoin(item%s);\n"
                 "test := nil;\n"
                 "var test_int := test_item%s;\n"
                 "test_item := nil;\n"
@@ -4275,7 +4368,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "trues := trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
-                "var test_item := test.leftfetchjoin(item%s);\n"
+                "var test_item := test.de_fake_leftfetchjoin(item%s);\n"
                 "test := nil;\n"
                 "var test_dbl := test_item%s;\n"
                 "test_item := nil;\n"
@@ -4294,7 +4387,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "trues := trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
-                "var test_item := test.leftfetchjoin(item%s);\n"
+                "var test_item := test.de_fake_leftfetchjoin(item%s);\n"
                 "test := nil;\n"
                 "var test_dec := test_item%s;\n"
                 "test_item := nil;\n"
@@ -4314,7 +4407,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "trues := trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
-                "var test_item := test.leftfetchjoin(item%s);\n"
+                "var test_item := test.de_fake_leftfetchjoin(item%s);\n"
                 "test := nil;\n"
                 "var test_str_ := test_item%s;\n"
                 "test_item := nil;\n"
@@ -4334,7 +4427,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "trues := trues.access(BAT_WRITE);\n"
                 "var test := iter_count.ord_uselect(1).mirror();\n"
                 "test := test.leftjoin(iter.reverse());\n"
-                "var test_item := test.leftfetchjoin(item);\n"
+                "var test_item := test.de_fake_leftfetchjoin(item);\n"
                 "test := nil;\n"
                 "var test_falses := test_item.ord_uselect(0@0);\n"
                 "test_item := nil;\n"
@@ -4422,9 +4515,10 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
     }
     milprintf(f,
             "iter := iter_count.mark(0@0).reverse();\n"
+            "ipik := iter;\n"
             "iter_count := nil;\n"
-            "pos := iter.project(1@0);\n"
-            "kind := iter.project(BOOL);\n"
+            "pos := ipik.NO_project(1@0);\n"
+            "kind := ipik.NO_project(BOOL);\n"
             "item := trues.[oid]().reverse().mark(0@0).reverse();\n"
             "trues := nil;\n"
             "} # end of translate fn:boolean (item*) as boolean\n");
@@ -4451,8 +4545,9 @@ combine_strings (opt_t *f, int code, int rc)
             "iter_item := nil;\n"
             "iter_str := iter_str.string_join(iter.tunique().project(\" \"));\n"
             "iter := iter_str.mark(0@0).reverse();\n"
-            "pos := iter.mark(1@0);\n"
-            "kind := iter.project(U_A);\n",
+            "ipik := iter;\n"
+            "pos := ipik.mark(1@0);\n"
+            "kind := ipik.NO_project(U_A);\n",
             item_ext, (rc)?"":val_join(U_A));
     if (code)
         milprintf(f, "item%s := iter_str;\n", item_ext);
@@ -4494,6 +4589,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
             /* save input iters to return empty string for rows
                which had no text content */
             "var input_iter := iter;\n"
+            "kind := kind.de_NO_project(ipik);\n"
             "var kind_elem := kind.get_type(ELEM);\n"
             "var item_str;\n"
             /* only elements */
@@ -4529,6 +4625,7 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
                 "iter := iter_item.mark(0@0).reverse();\n"
                 "item_str := iter_item.reverse().mark(0@0).reverse();\n"
             "} else {\n"
+                "kind := kind.de_NO_project(ipik);\n"
                 "var kind_attr := kind.get_type(ATTR);\n"
                 /* only attributes */
                 "if (kind_attr.count() = kind.count())\n"
@@ -4615,15 +4712,16 @@ typed_value (opt_t *f, int code, char *kind, bool tv)
             "{\n"
             "var difference := input_iter.reverse().kdiff(iter.reverse());\n"
             "difference := difference.mark(0@0).reverse();\n"
-            "var res_mu := merged_union(iter, difference, item%s, "
+            "var res_mu := merged_union(iter, difference, fake_project(item%s), "
                                        "fake_project(%s));\n"
             "iter := res_mu.fetch(0);\n"
             "item%s := res_mu.fetch(1);\n"
             "res_mu := nil;\n"
             "}\n"
             "input_iter := nil;\n"
+            "ipik := iter;\n"
             "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
-            "kind := iter.project(%s);\n"
+            "kind := ipik.NO_project(%s);\n"
             "} # end of typed-value\n",
             item_ext, item_ext,
             item_ext,
@@ -4644,20 +4742,22 @@ fn_data (opt_t *f)
 {
     milprintf(f,
             /* split atomic from node types */
+            "kind := kind.de_NO_project(ipik);\n"
             "var atomic := kind.get_type_atomic();\n"
             "atomic := atomic.mark(0@0).reverse();\n"
             "var iter_atomic := atomic.leftfetchjoin(iter);\n"
             "var pos_atomic := atomic.leftfetchjoin(pos);\n"
-            "var item_atomic := atomic.leftfetchjoin(item);\n"
-            "var kind_atomic := atomic.leftfetchjoin(kind);\n"
+            "var item_atomic := atomic.fake_leftfetchjoin(item);\n"
+            "var kind_atomic := atomic.fake_leftfetchjoin(kind);\n"
 
             "var node := kind.get_type_node();\n"
             "node := node.mark(0@0).reverse();\n"
             "var iter_node := node.leftfetchjoin(iter);\n"
             "iter := node.mirror();\n"
+            "ipik := iter;\n"
             "pos := node.leftfetchjoin(pos);\n"
-            "item := node.leftfetchjoin(item);\n"
-            "kind := node.leftfetchjoin(kind);\n");
+            "item := node.fake_leftfetchjoin(item);\n"
+            "kind := node.fake_leftfetchjoin(kind);\n");
     typed_value (f, NORMAL, "U_A", false);
     milprintf(f,
             /* every input row of typed-value gives back exactly
@@ -4665,7 +4765,7 @@ fn_data (opt_t *f)
             "var res_mu := merged_union (node, atomic, "
                                         "iter_node, iter_atomic, "
                                         "item, item_atomic, "
-                                        "kind, kind_atomic);\n"
+                                        "fake_project(kind), kind_atomic);\n"
             "node := nil;\n"
             "atomic := nil;\n"
             "iter_node := nil;\n"
@@ -4679,6 +4779,7 @@ fn_data (opt_t *f)
             "kind := res_mu.fetch(3);\n"
             "res_mu := nil;\n"
             "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+            "ipik := iter;\n"
             );
 }
 
@@ -4706,6 +4807,7 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "{ # item-sequence-to-node-sequence\n"
             "var nodes_order;\n"
             "{\n"
+            "ipik := ipik%03u;\n"
             "iter := iter%03u;\n"
             "pos := pos%03u;\n"
             "item := item%03u;\n"
@@ -4713,12 +4815,13 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
 	/* we have to split the attribute nodes from all other nodes */
 
             /* get all text-nodes */
+            "kind := kind.de_NO_project(ipik);\n"
             "var elem := kind.get_type(ELEM);\n"
             "elem := elem.mark(0@0).reverse();\n"
             "var kind_elem := elem.leftfetchjoin(kind);\n"
             "var frag_elem := kind_elem.get_fragment();\n"
             "kind_elem := nil;\n"
-            "var item_elem := elem.leftfetchjoin(item);\n"
+            "var item_elem := elem.de_fake_leftfetchjoin(item);\n"
             "var kind_node := mposjoin (item_elem, frag_elem, ws.fetch(PRE_KIND));\n"
             "var text := kind_node.ord_uselect(TEXT).mark(0@0).reverse();\n"
             "var item_text := text.leftfetchjoin(item_elem);\n"
@@ -4764,17 +4867,19 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "res_mu_is2ns := nil;\n"
 
             /* get all the atomic values and cast them to string */
+            "kind := kind.de_NO_project(ipik);\n"
             "var atomic := kind.get_type_atomic();\n"
             "atomic := atomic.mark(0@0).reverse();\n"
             "iter := atomic.mirror();\n"
+            "ipik := iter;\n"
             "pos := atomic.leftfetchjoin(pos);\n"
-            "item := atomic.leftfetchjoin(item);\n"
+            "item := atomic.fake_leftfetchjoin(item);\n"
             "kind := atomic.leftfetchjoin(kind);\n",
-            counter, counter, counter, counter);
+            counter, counter, counter, counter, counter);
     translateCast2STR (f, STR, NORMAL, input_type);
     milprintf(f,
             "res_mu_is2ns := merged_union (input_order, atomic, "
-                                          "input_str, item%s, "
+                                          "input_str, fake_project(item%s), "
                                           /* 3@0 is string constant for combine_text_string */
                                           "input_const, fake_project(3@0));\n"
             "atomic := nil;\n"
@@ -4803,21 +4908,23 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
        At least some copying of strings could be avoided :) */
     milprintf(f,
             "iter := result_order;\n"
-            "pos := result_order.mark(1@0);\n"
             "result_order := nil;\n"
+            "ipik := iter;\n"
+            "pos := ipik.mark(1@0);\n"
             "item%s := result_str;\n"
             "result_str := nil;\n"
-            "kind := iter.project(STR);\n"
+            "kind := ipik.NO_project(STR);\n"
             "}\n",
             kind_str(STR));
     loop_liftedTextConstr (f, NORMAL, STR); 
     milprintf(f,
             "var res_mu_is2ns := merged_union (iter, nodes_order, "
-                                              "item, nodes_order.leftfetchjoin(item%03u), "
-                                              "kind, nodes_order.leftfetchjoin(kind%03u));\n"
+                                              "item, nodes_order.fake_leftfetchjoin(item%03u), "
+                                              "fake_project(kind), nodes_order.fake_leftfetchjoin(kind%03u));\n"
             "nodes_order := nil;\n"
+            "kind%03u := kind%03u.de_NO_project(ipik%03u);\n"
             "var attr := kind%03u.get_type(ATTR).mark(0@0).reverse();\n"
-            "var item_attr := attr.leftfetchjoin(item%03u);\n"
+            "var item_attr := attr.fake_leftfetchjoin(item%03u);\n"
             "var kind_attr := attr.leftfetchjoin(kind%03u);\n"
             "res_mu_is2ns := merged_union (res_mu_is2ns.fetch(0), attr, "
                                           "res_mu_is2ns.fetch(1), item_attr, "
@@ -4830,7 +4937,9 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "kind := res_mu_is2ns.fetch(2);\n"
             "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
             "res_mu_is2ns := nil;\n"
+            "ipik := item;\n"
             "} # end of item-sequence-to-node-sequence\n",
+            counter, counter, counter,
             counter, counter, counter, counter, counter, counter);
     deleteResult (f, counter);
 }
@@ -4904,11 +5013,12 @@ is2ns_node (opt_t *f, int counter)
        text-node table and has a different handling in the element construction.
        At least some copying of strings could be avoided :) */
             "iter := result_order;\n"
-            "pos := result_order.mark(1@0);\n"
             "result_order := nil;\n"
+            "ipik := iter;\n"
+            "pos := ipik.mark(1@0);\n"
             "item%s := result_str;\n"
             "result_str := nil;\n"
-            "kind := iter.project(STR);\n"
+            "kind := ipik.NO_project(STR);\n"
             "}\n",
             counter, counter, counter, counter, counter, counter,
             kind_str(STR));
@@ -4992,8 +5102,9 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
         add_empty_strings (f, rcode, cur_level);
         milprintf(f,
                 "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(STR);\n",
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "kind := ipik.NO_project(STR);\n",
                 cur_level);
 
         return rcode;
@@ -5014,8 +5125,9 @@ fn_string(opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
     add_empty_strings (f, rcode, cur_level);
     milprintf(f,
         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-        "pos := iter.project(1@0);\n"
-        "kind := iter.project(STR);\n",
+        "ipik := iter;\n"
+        "pos := ipik.NO_project(1@0);\n"
+        "kind := ipik.NO_project(STR);\n",
         cur_level);
 
     return rcode;
@@ -5042,11 +5154,12 @@ translateAggregates (opt_t *f, int code, int rc,
     type_co t_co = kind_container(rcode);
 
     milprintf(f,
-            "if (iter.count() != 0) { # fn:%s\n"
-            "var iter_aggr := iter.reverse().leftfetchjoin(item%s).{%s}();\n"
+            "if (ipik.count() != 0) { # fn:%s\n"
+            "var iter_aggr := fake_project(iter).reverse().de_fake_leftfetchjoin(item%s).{%s}();\n"
             "iter := iter_aggr.mark(0@0).reverse();\n"
-            "pos := iter.project(1@0);\n"
-            "kind := iter.project(%s);\n",
+            "ipik := iter;\n"
+            "pos := ipik.NO_project(1@0);\n"
+            "kind := ipik.NO_project(%s);\n",
             op,
             (rc)?kind_str(rc):val_join(ic), op,
             t_co.mil_cast);
@@ -5088,8 +5201,8 @@ fn_abs (opt_t *f, int code, int rc, char *op)
     type_co t_co = kind_container(rc);
 
     milprintf(f,
-            "if (iter.count() != 0) { # fn:%s\n"
-            "var res := item%s%s.[%s]()%s;\n",
+            "if (ipik.count() != 0) { # fn:%s\n"
+            "var res := de_fake_project(fake_project(item%s)%s.[%s]()%s, ipik);\n",
             op,
             item_ext, cast_dbl, op, cast_int);
 
@@ -5130,26 +5243,26 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
     if (!strcmp(op,"intersect"))
     {
         milprintf(f, 
-                "if (or (iter.count() = 0,\n"
-                "        iter%03u.count() = 0)) {\n",
+                "if (or (ipik.count() = 0,\n"
+                "        ipik%03u.count() = 0)) {\n",
                 counter);
         translateEmpty(f);
     }
     else
     {
-        milprintf(f, "if (iter%03u.count() = 0) {\n", counter);
+        milprintf(f, "if (ipik%03u.count() = 0) {\n", counter);
         translateEmpty(f);
         milprintf(f, 
-                "} else { if (iter.count() = 0) {\n"
+                "} else { if (ipik.count() = 0) {\n"
                 "var sorting := iter%03u.reverse().sort().reverse();\n"
                 "sorting := sorting.CTrefine(kind%03u);\n"
                 "sorting := sorting.CTrefine(item%03u);\n"
-                "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
-                "iter := sorting.leftfetchjoin(iter%03u);\n"
+                "ipik := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
+                "sorting := nil;\n"
+                "iter := ipik.leftfetchjoin(iter%03u);\n"
                 "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
-                "item := sorting.leftfetchjoin(item%03u);\n"
-                "kind := sorting.leftfetchjoin(kind%03u);\n"
-                "sorting := nil;\n",
+                "item := ipik.leftfetchjoin(item%03u);\n"
+                "kind := ipik.leftfetchjoin(kind%03u);\n",
                 counter, counter, counter, counter, counter, counter);
     }
 
@@ -5159,6 +5272,7 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
             "var max := max (kind%03u.max(), kind.max());\n"
             "var diff := max - min;\n"
             "var list1 := iter%03u.[lng]();\n"
+            "iter := iter.de_NO_project(ipik);\n"
             "var list2 := iter.[lng]();\n"
             "if (diff > 0)\n"
             "{\n"
@@ -5181,26 +5295,24 @@ translateIntersect (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c
             "    list1 := list1.[<<](shift).[or](item%03u.[lng]().[-](min));\n"
             "    list2 := list2.[<<](shift).[or](item.[lng]().[-](min));\n"
             "}\n"
-            "var %s_res := list1.reverse()"
+            "ipik := list1.reverse()"
                                ".k%s(list2.reverse())"
                                ".kunique()"
                                ".sort()"
                                ".reverse()"
                                ".mark(0@0)"
                                ".reverse();\n"
-            "iter := %s_res.leftfetchjoin(iter%03u);\n"
+            "iter := ipik.leftfetchjoin(iter%03u);\n"
             "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
-            "item := %s_res.leftfetchjoin(item%03u);\n"
-            "kind := %s_res.leftfetchjoin(kind%03u);\n"
-            "%s_res := nil;\n"
+            "item := ipik.leftfetchjoin(item%03u);\n"
+            "kind := ipik.leftfetchjoin(kind%03u);\n"
             "} # end of %s\n",
             op, 
             counter, counter, counter, counter, counter, counter, counter,
-            op, op,
-            op, counter,
-            op, counter,
-            op, counter,
             op,
+            counter,
+            counter,
+            counter,
             op);
 
     if (strcmp(op,"intersect"))
@@ -5238,7 +5350,7 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
 
     milprintf(f,
             "if (iter%03u.count() != 0) { # fn:id%s\n"
-            "var strings := item%s%03u;\n"
+            "var strings := item%s%03u.de_NO_project(ipik%03u);\n"
             "var frag := kind.get_fragment();\n"
             "strings := strings.[normSpace]();\n"
             "strings := strings.ll_tokenize(strings.project(\" \"));\n"
@@ -5275,18 +5387,19 @@ fn_id (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
             "item := nodes.reverse().mark(0@0).reverse();\n"
             "nodes := nil;\n"
             /* delete duplicates */
+            "iter := iter.de_NO_project(ipik);\n"
             "var sorting := iter.reverse().sort().reverse();\n"
             "sorting := sorting.CTrefine(kind);\n"
             "sorting := sorting.CTrefine(item);\n"
-            "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
-            "iter := sorting.leftfetchjoin(iter);\n"
-            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
-            "item := sorting.leftfetchjoin(item);\n"
-            "kind := sorting.leftfetchjoin(kind);\n"
+            "ipik := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
             "sorting := nil;\n"
+            "iter := ipik.leftfetchjoin(iter);\n"
+            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+            "item := ipik.leftfetchjoin(item);\n"
+            "kind := ipik.fake_leftfetchjoin(kind);\n"
             "} else {\n",
             counter, op,
-            item_ext, counter,
+            item_ext, counter, counter,
             counter,
             idref, idref, idref);
 
@@ -5352,8 +5465,9 @@ return_str_funs (opt_t *f, int code, int cur_level, char *fn_name)
             "res := nil;\n"
             "item%s := item%s.reverse().mark(0@0).reverse();\n"
             "iter := loop%03u;\n"
-            "pos := iter.project(1@0);\n"
-            "kind := iter.project(STR);\n"
+            "ipik := iter;\n"
+            "pos := ipik.NO_project(1@0);\n"
+            "kind := ipik.NO_project(STR);\n"
             "} # end of %s\n",
             item_ext, item_ext,
             cur_level,
@@ -5382,8 +5496,9 @@ fn_starts_with (opt_t *f, char *op, int cur_level, int counter, PFcnode_t *c)
             "var search_str := item%s;\n"
             "item := [%sWith](strings, search_str).[oid]();\n"
             "iter := loop%03u;\n"
-            "pos := iter.project(1@0);\n"
-            "kind := iter.project(BOOL);\n"
+            "ipik := iter;\n"
+            "pos := ipik.NO_project(1@0);\n"
+            "kind := ipik.NO_project(BOOL);\n"
             "} # end of fn:%s-with\n",
             op, 
             item_ext, counter,
@@ -5464,32 +5579,32 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, "
+                "var res_mu := merged_union(iter%03u.chk_order(), difference, fake_project(item%s%03u), "
                                            "fake_project(\"\"));\n"
                 "difference := nil;\n"
                 "strings := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
                 "} else {\n"
-                "strings := item%s%03u;\n"
+                "strings := item%s%03u.de_NO_project(ipik%03u);\n"
                 "}\n",
                 xqfunc, opt_arity ? ", string" : "",
                 counter-2, cur_level, 
                 cur_level, counter-2,
                 counter-2, item_ext, counter-2,
-                item_ext, counter-2);
+                item_ext, counter-2, counter-2);
     milprintf(f,
                 "var patterns;\n"
                 "if (iter%03u.count() != loop%03u.count())\n"
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, "
+                "var res_mu := merged_union(iter%03u.chk_order(), difference, fake_project(item%s%03u), "
                                            "fake_project(\"\"));\n"
                 "difference := nil;\n"
                 "patterns := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
                 "} else {\n"
-                "patterns := item%s%03u;\n"
+                "patterns := item%s%03u.de_NO_project(ipik%03u);\n"
                 "}\n"
                 "# replace empty sequences with empty strings\n"
                 "strings := outerjoin(patterns.mirror(), strings);\n"
@@ -5497,7 +5612,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 counter-1, cur_level, 
                 cur_level, counter-1,
                 counter-1, item_ext, counter-1,
-                item_ext, counter-1);
+                item_ext, counter-1, counter-1);
 
     milprintf(f,
                 "var replacements;\n"
@@ -5505,7 +5620,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, "
+                "var res_mu := merged_union(iter%03u.chk_order(), difference, fake_project(item%s%03u), "
                                            "fake_project(\"\"));\n"
                 "difference := nil;\n"
                 "replacements := res_mu.fetch(1);\n"
@@ -5526,7 +5641,7 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter, difference, item%s, "
+                "var res_mu := merged_union(iter, difference, fake_project(item%s), "
                 "fake_project(\"\"));\n"
                 "difference := nil;\n"
                 "flagss := res_mu.fetch(1);\n"
@@ -5548,8 +5663,9 @@ fn_replace_translate (opt_t *f, int code, int cur_level, int counter,
             "patterns := nil;\n"
             "replacements := nil;\n"
             "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-            "pos := iter.project(1@0);\n"
-            "kind := iter.project(STR);\n",
+            "ipik := iter;\n"
+            "pos := ipik.NO_project(1@0);\n"
+            "kind := ipik.NO_project(STR);\n",
             cur_level);
 
     char buf[128];
@@ -5605,30 +5721,68 @@ fn_substring (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "{ # fn:substring\n"
                 /* calculates the offset of the start characters */
-                "var start := item%s%03u.[round_up]().[int]().[-](1);\n"
+                "var start;\n"
+                "if (type(item%s%03u) = 4) {\n"
+                "    start := item%s%03u.[round_up]().[int]().[-](1);\n"
+                "} else {\n"
+                "    start := item%s%03u.round_up().int().-(1);\n"
+                "}\n"
                 /* calculates the offset of the end characters */
-                "var end := start.[+](item%s.[round_up]().[int]());\n"
+                "var end;\n"
+                "if (type(item%s) = 4) {\n"
+                "    end := item%s.[round_up]().[int]();\n"
+                "} else {\n"
+                "    end := item%s.round_up().int();\n"
+                "}\n"
+                "if (or( type(start) = 4 , type(end) = 4 )) {\n"
+                "    end := start.[+](end);\n"
+                "} else {\n"
+                "    end := start.+(end);\n"
+                "}\n"
                 /* start from an positive character */
-                "start := start.[max](0);\n"
+                "if (type(start) = 4) {\n"
+                "    start := start.[max](0);\n"
+                "} else {\n"
+                "    start := start.max(0);\n"
+                "}\n"
                 /* replaces the end offset by the length of the substring */
-                "end := end.[-](start);\n"
+                "if (or( type(start) = 4 , type(end) = 4 )) {\n"
+                "   end := end.[-](start);\n"
+                "} else {\n"
+                "   end := end.-(start);\n"
+                "}\n"
                 /* calculates the substring */
-                "var res := [string](item%s%03u, start, end);\n"
+                "var res;\n"
+                "if (or(or( type(start) = 4 , type(end) = 4 ), type(item%s%03u) = 4 )) {\n"
+                "    res := [string](item%s%03u, start, end);\n"
+                "} else {\n"
+                "    res := string(item%s%03u, start, end);\n"
+                "}\n"
                 "start := nil;\n"
                 "end := nil;\n",
-                dbl_ext, counter,
-                dbl_ext,
-                item_ext, str_counter);
+                dbl_ext, counter, dbl_ext, counter, dbl_ext, counter,
+                dbl_ext, dbl_ext, dbl_ext,
+                item_ext, str_counter, item_ext, str_counter, item_ext, str_counter);
     }
     else
     {
         milprintf(f,
                 "{ # fn:substring\n"
-                "var start := item%s%03u.[round_up]().[int]();\n"
-                "var res := [substring](item%s%03u, start);\n"
-                "start := nil;\n",
-                dbl_ext, counter,
-                item_ext, str_counter);
+                "var res;\n"
+                "if (type(item%s%03u) = 4) {\n"
+                "    var start := item%s%03u.[round_up]().[int]();\n"
+                "    res := [substring](item%s%03u, start);\n"
+                "} else {\n"
+                "    var start := item%s%03u.round_up().int();\n"
+                "    if (type(item%s%03u) = 4) {\n"
+                "        res := [substring](item%s%03u, start);\n"
+                "    } else {\n"
+                "        res := substring(item%s%03u, start);\n"
+                "    }\n"
+                "}\n",
+                dbl_ext, counter, dbl_ext, counter, item_ext, str_counter,
+                dbl_ext, counter, 
+                item_ext, str_counter, item_ext, str_counter, item_ext, str_counter);
     }
 
     if (code)
@@ -5639,9 +5793,10 @@ fn_substring (opt_t *f, int code, int cur_level, int counter,
     item_ext = (code)?item_ext:"";
     milprintf(f,
             "iter := loop%03u;\n"
+            "ipik := iter;\n"
             "item%s := item%s.reverse().mark(0@0).reverse();\n"
-            "pos := iter.project(1@0);\n"
-            "kind := iter.project(STR);\n"
+            "pos := ipik.NO_project(1@0);\n"
+            "kind := ipik.NO_project(STR);\n"
             "} # end of fn:substring\n",
             cur_level,
             item_ext, item_ext);
@@ -5669,6 +5824,7 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
     milprintf(f,
             "{ # fn:%s\n"
             /* looks up the element nodes */
+            "kind := kind.de_NO_project(ipik);\n"
             "var map := kind.get_type(ELEM).mark(0@0).reverse();\n"
             "var elem := map.leftfetchjoin(item);\n"
             "var elem_frag := map.leftfetchjoin(kind.get_fragment());\n"
@@ -5754,8 +5910,9 @@ fn_name (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c, char *nam
     add_empty_strings (f, (code)?STR:NORMAL, cur_level);
     milprintf(f,
             "iter := loop%03u;\n"
-            "pos := iter.project(1@0);\n"
-            "kind := iter.project(STR);\n"
+            "ipik := iter;\n"
+            "pos := ipik.NO_project(1@0);\n"
+            "kind := ipik.NO_project(STR);\n"
             "} # end of fn:%s\n",
             cur_level,
             name);
@@ -5811,10 +5968,12 @@ eval_join_helper (opt_t *f, int code, int number,
         }
         milprintf(f,
                 "join_item%i := join_item_str.[%s]();\n"
+                "join_item%i := join_item%i.de_NO_project(ipik%03u);\n"
                 "}\n"
                 "if (join_item%i.reverse().exist(%s(nil)))\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to %s.\"); }\n",
                 number, container.mil_type,
+                number, number, res,
                 number, container.mil_type,
                 container.name);
     }
@@ -5941,27 +6100,30 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     snd_var = counter;
     milprintf(f,
             "{ # evaluate_join\n"
+            "var ipik%03u;\n"
             "var iter%03u;\n"
             "var pos%03u;\n"
             "var item%03u;\n"
             "var kind%03u;\n",
-            snd_var, snd_var, snd_var, snd_var);
+            snd_var, snd_var, snd_var, snd_var, snd_var);
     counter++;
     fst_res = counter;
     milprintf(f,
+            "var ipik%03u;\n"
             "var iter%03u;\n"
             "var pos%03u;\n"
             "var item%03u;\n"
             "var kind%03u;\n",
-            fst_res, fst_res, fst_res, fst_res);
+            fst_res, fst_res, fst_res, fst_res, fst_res);
     counter++;
     snd_res = counter;
     milprintf(f,
+            "var ipik%03u;\n"
             "var iter%03u;\n"
             "var pos%03u;\n"
             "var item%03u;\n"
             "var kind%03u;\n",
-            snd_res, snd_res, snd_res, snd_res);
+            snd_res, snd_res, snd_res, snd_res, snd_res);
 
     /* create new backup scope */
     milprintf(f,
@@ -5982,11 +6144,13 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     {
         rc1 = translate2MIL (f, VALUES, cur_level, counter, fst);
         milprintf(f,
+                "ipik%03u := ipik;\n"
                 "iter%03u := iter;\n"
                 "pos%03u  := pos ;\n"
                 "item%03u := item%s;\n" /* we need to use `item' because
                                            it was declared before */
                 "kind%03u := kind;\n",
+                fst_res, 
                 fst_res, 
                 fst_res, 
                 fst_res, kind_str(rc1),
@@ -6042,11 +6206,13 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 cur_level, 0, cur_level, 0);
         rc1 = translate2MIL (f, VALUES, cur_level, counter, fst);
         milprintf(f,
+                "ipik%03u := ipik;\n"
                 "iter%03u := iter;\n"
                 "pos%03u  := pos ;\n"
                 "item%03u := item%s;\n" /* we need to use `item' because
                                            it was declared before */
                 "kind%03u := kind;\n",
+                fst_res, 
                 fst_res, 
                 fst_res, 
                 fst_res, kind_str(rc1),
@@ -6096,11 +6262,12 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     project (f, cur_level);
 
     milprintf(f,
+            "ipik%03u := ipik;\n"
             "iter%03u := iter;\n"
             "pos%03u  := pos ;\n"
             "item%03u := item;\n"
             "kind%03u := kind;\n",
-            snd_var, snd_var, snd_var, snd_var);
+            snd_var, snd_var, snd_var, snd_var, snd_var);
 
     milprintf(f, "var expOid;\n");
     getExpanded (f, cur_level, snd->sem.num);
@@ -6126,11 +6293,13 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
 
     rc2 = translate2MIL (f, VALUES, cur_level, counter, R(snd));
     milprintf(f,
+            "ipik%03u := ipik;\n"
             "iter%03u := iter;\n"
             "pos%03u  := pos ;\n"
             "item%03u := item%s;\n" /* we need to use `item' because
                                            it was declared before */
             "kind%03u := kind;\n",
+            snd_res, 
             snd_res, 
             snd_res, 
             snd_res, kind_str(rc2),
@@ -6200,9 +6369,11 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     /* adds the iter column to the join input to avoid mapping after join 
        (relation probably is bigger afterwards) */
     milprintf(f,
+            "join_item1 := join_item1.de_NO_project(ipik%03u);\n"
             "join_item1 := join_item1.reverse().leftfetchjoin(iter%03u).reverse();\n"
+            "join_item2 := join_item2.de_NO_project(ipik%03u);\n"
             "join_item2 := join_item2.reverse().leftfetchjoin(iter%03u).reverse();\n",
-            fst_res, snd_res);
+            fst_res, fst_res, snd_res, snd_res);
 
 
     /* pushdown stuff */
@@ -6297,10 +6468,11 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
             milprintf(f,
                     "# could also be pushed below theta-join, if order_snd wasn't needed for kind (below) ...\n"
                     "item := order_snd.leftfetchjoin(item%03u);\n"
+                    "ipik := item;\n"
                     "iter := fst_iter;\n"
-                    "pos := item.project(1@0);\n"
+                    "pos := ipik.NO_project(1@0);\n"
                     "# could also be pushed below theta-join, if order_snd wasn't needed for item (above) ...\n"
-                    "kind := order_snd.leftfetchjoin(kind%03u);\n",
+                    "kind := order_snd.fake_leftfetchjoin(kind%03u);\n",
                     snd_var, snd_var);
             milprintf(f, "} # end of evaluate_join\n");
             return NORMAL;
@@ -6331,10 +6503,11 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         milprintf(f,
                 "# could also be pushed below theta-join, if order_snd wasn't needed for kind (below) ...\n"
                 "item := order_snd.leftfetchjoin(item%03u);\n"
-                "iter := item.mark(1@0);\n"
-                "pos := item.project(1@0);\n"
+                "ipik := item;\n"
+                "iter := ipik.mark(1@0);\n"
+                "pos := ipik.NO_project(1@0);\n"
                 "# could also be pushed below theta-join, if order_snd wasn't needed for item (above) ...\n"
-                "kind := order_snd.leftfetchjoin(kind%03u);\n",
+                "kind := order_snd.fake_leftfetchjoin(kind%03u);\n",
                 snd_var, snd_var);
         insertVar (f, cur_level, LLL(snd)->sem.var->vid);
     }
@@ -6342,9 +6515,10 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     {
         addValues (f, int_container(), "snd_iter.[int]()", "item");
         milprintf(f,
-                "iter := item.mark(1@0);\n"
-                "pos := item.project(1@0);\n"
-                "kind := item.project(INT);\n");
+                "ipik := item;\n"
+                "iter := ipik.mark(1@0);\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "kind := ipik.NO_project(INT);\n");
         insertVar (f, cur_level, LLR(snd)->sem.var->vid);
     }
 
@@ -6380,10 +6554,9 @@ translateUDF (opt_t *f, int cur_level, int counter,
             "{ # UDF - function call\n"
             "var fun_vid%03u := bat(void,oid).seqbase(nil);\n"
             "var fun_iter%03u := bat(void,oid).seqbase(nil);\n"
-            "var fun_pos%03u := bat(void,oid).seqbase(nil);\n"
             "var fun_item%03u := bat(void,oid).seqbase(nil);\n"
             "var fun_kind%03u := bat(void,int).seqbase(nil);\n",
-            counter, counter, counter, counter, counter);
+            counter, counter, counter, counter);
 
     i = 0;
     while ((args->kind != c_nil) && (fun->params[i]))
@@ -6391,16 +6564,16 @@ translateUDF (opt_t *f, int cur_level, int counter,
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
                 "# add arg in UDF function call\n"
+                "item := item.de_NO_project(ipik);\n"
                 "fun_vid%03u := fun_vid%03u.insert(iter.project(%i@0));\n"
                 "fun_iter%03u := fun_iter%03u.insert(iter.reverse().mark(nil).reverse());\n"
-                "fun_pos%03u := fun_pos%03u.insert(pos.reverse().mark(nil).reverse());\n"
                 "fun_item%03u := fun_item%03u.insert(item.reverse().mark(nil).reverse());\n"
+                "kind := kind.de_NO_project(ipik);\n"
                 "fun_kind%03u := fun_kind%03u.insert(kind.reverse().mark(nil).reverse());\n"
                 "# end of add arg in UDF function call\n",
                 counter, counter, fun->params[i]->vid, 
                 counter, counter, 
                 counter, counter,
-                counter, counter, 
                 counter, counter);
         args = R(args);
         i++;
@@ -6417,32 +6590,31 @@ translateUDF (opt_t *f, int cur_level, int counter,
     milprintf(f,
             "var vid := expOid.leftfetchjoin(v_vid%03u);\n"
             "iter    := expOid.leftfetchjoin(v_iter%03u);\n"
-            "pos     := expOid.leftfetchjoin(v_pos%03u);\n"
             "item    := expOid.leftfetchjoin(v_item%03u);\n"
             "kind    := expOid.leftfetchjoin(v_kind%03u);\n"
+            "ipik    := iter;\n"
             "fun_vid%03u := fun_vid%03u.insert(vid.reverse().mark(nil).reverse());\n"
             "fun_iter%03u := fun_iter%03u.insert(iter.reverse().mark(nil).reverse());\n"
-            "fun_pos%03u := fun_pos%03u.insert(pos.reverse().mark(nil).reverse());\n"
             "fun_item%03u := fun_item%03u.insert(item.reverse().mark(nil).reverse());\n"
             "fun_kind%03u := fun_kind%03u.insert(kind.reverse().mark(nil).reverse());\n"
             "expOid := nil;\n"
             "vid := nil;\n"
+            "ipik := nil;\n"
             "iter := nil;\n"
             "pos := nil;\n"
             "item := nil;\n"
             "kind := nil;\n",
-            cur_level, cur_level, cur_level, cur_level, cur_level,
-            counter, counter, counter, counter, counter,
-            counter, counter, counter, counter, counter);
+            cur_level, cur_level, cur_level, cur_level,
+            counter, counter, counter, counter,
+            counter, counter, counter, counter);
 
     milprintf(f,
             "fun_vid%03u := fun_vid%03u.reverse().mark(0@0).reverse();\n"
             "fun_iter%03u := fun_iter%03u.reverse().mark(0@0).reverse();\n"
-            "fun_pos%03u := fun_pos%03u.reverse().mark(0@0).reverse();\n"
             "fun_item%03u := fun_item%03u.reverse().mark(0@0).reverse();\n"
             "fun_kind%03u := fun_kind%03u.reverse().mark(0@0).reverse();\n",
-            counter, counter, counter, counter, counter,
-            counter, counter, counter, counter, counter);
+            counter, counter, counter, counter,
+            counter, counter, counter, counter);
     /* call the proc */
     milprintf(f,
             "var proc_res := fn_%x_%i (loop%03u, outer%03u, order_%03u, inner%03u, "
@@ -6454,15 +6626,30 @@ translateUDF (opt_t *f, int cur_level, int counter,
             "iter := proc_res.fetch(0);\n"
             "item := proc_res.fetch(1);\n"
             "kind := proc_res.fetch(2);\n"
-            "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+            "if (not(is_fake_project(iter))) {\n"
+            "    ipik := iter;\n"
+            "    pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+            "} else {\n"
+            "    if (not(is_fake_project(item))) {\n"
+            "        ipik := item;\n"
+            "    } else {\n" 
+            "        ipik := kind;\n"
+            "        if (is_fake_project(kind))\n"
+            "            ERROR(\"translateUDF: fn_%x_%i: not all of iter|item|kind must be 'fake_projects'!\\n\");\n"
+            "    }\n"
+            "    pos := ipik.mark(1@0);\n"
+            "}\n"
             "proc_res := nil;\n"
             "fun_vid%03u := nil;\n"
             "fun_iter%03u := nil;\n"
-            "fun_pos%03u := nil;\n"
             "fun_item%03u := nil;\n"
             "fun_kind%03u := nil;\n"
+            "iter := de_fake_project(iter, ipik);\n"
+            "item := de_fake_project(item, ipik);\n"
+            "kind := de_fake_project(kind, ipik);\n"
             "} # end of UDF - function call\n",
-            counter, counter, counter, counter, counter);
+            fun, fun->arity,
+            counter, counter, counter, counter);
 }
 
 /**
@@ -6492,6 +6679,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         /* expects strings otherwise something stupid happens */
         milprintf(f,
                 "{ # translate fn:doc (string?) as document?\n"
+                "item%s := item%s.de_NO_project(ipik);\n"
                 "var docs := item%s.tuniqueALT().mark(0@0).reverse();\n"
                 "var doc_str := docs%s;\n"
                 "docs := nil;\n"
@@ -6507,8 +6695,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "frag := frag.reverse().mark(0@0).reverse();\n"
                 "kind := set_kind(frag, ELEM);\n"
                 "frag := nil;\n"
-                "item := kind.project(0@0);\n"
+                "item := kind.NO_project(0@0);\n"
                 "} # end of translate fn:doc (string?) as document?\n",
+                item_ext, item_ext,
                 item_ext, 
                 (rc)?"":val_join(STR),
                 (rc)?item_ext:val_join(STR));
@@ -6519,64 +6708,36 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
                 "{ # translate pf:distinct-doc-order (node*) as node*\n"
-                "var sorting;\n"
-                "if (kind.count() = kind.get_type(ELEM).count()) {\n"
+                /* FIXME: are attribute nodes automatically filtered? */
+                "kind := kind.de_NO_project(ipik);\n"
+                "if (kind.count() != kind.get_type(ELEM).count()) "
+                "{ ERROR (\"cannot handle attributes in function pf:distinct-doc-order.\"); }\n"
                 /* delete duplicates */
-                "sorting := iter.reverse().sort().reverse();\n"
+                "iter := iter.de_NO_project(ipik);\n"
+                "var sorting := iter.reverse().sort().reverse();\n"
                 "sorting := sorting.CTrefine(kind);\n"
                 "sorting := sorting.CTrefine(item);\n"
-                "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
-                "} else { # cope also with attributes and sort them according to their owner\n"
-                "var elements := kind.get_type(ELEM).mirror();\n"
-                "var elem_iters := elements.leftfetchjoin(iter);\n"
-                "var elem_items := elements.leftfetchjoin(item);\n"
-                "var elem_frags := elements.leftfetchjoin(kind.get_fragment());\n"
-                "var elem_attrs := elements.project(nil);\n"
-                "var attributes := kind.get_type(ATTR).mirror();\n"
-                "var attr_iters := attributes.leftfetchjoin(iter);\n"
-                "var attr_attrs := attributes.leftfetchjoin(item);\n"
-                "var attr_frags := attributes.leftfetchjoin(kind.get_fragment());\n"
-                "var attr_key := attributes.mark(0@0).reverse();\n"
-                "var temp_attr := attr_attrs.reverse().mark(0@0).reverse();\n"
-                "var temp_frag := attr_frags.reverse().mark(0@0).reverse();\n"
-                "var attr_items := attr_key.reverse().leftfetchjoin("
-                    "mposjoin(temp_attr, temp_frag, ws.fetch(ATTR_OWN)));\n"
-                "attr_key := nil;\n"
-                "temp_attr := nil;\n"
-                "temp_frag := nil;\n"
-                "sorting := elem_iters.union(attr_iters).reverse().sort().reverse();\n"
-                "elem_iters := nil;\n"
-                "attr_iters := nil;\n"
-                "sorting := sorting.CTrefine(elem_frags.union(attr_frags));\n"
-                "elem_frags := nil;\n"
-                "attr_frags := nil;\n"
-                "sorting := sorting.CTrefine(elem_items.union(attr_items));\n"
-                "elem_items := nil;\n"
-                "attr_items := nil;\n"
-                "sorting := sorting.CTrefine(elem_attrs.union(attr_attrs));\n"
-                "elem_attrs := nil;\n"
-                "attr_attrs := nil;\n"
-                "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
-                "}\n"
+                "ipik := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
                 /*
                 "var temp_ddo := CTgroup(iter).CTmap().CTgroup(kind).CTmap().CTgroup(item);\n"
-                "temp_ddo := temp_ddo.CTextend().mark(0@0).reverse();\n"
-                
-                "iter := temp_ddo.leftfetchjoin(iter);\n"
-                "item := temp_ddo.leftfetchjoin(item);\n"
-                "kind := temp_ddo.leftfetchjoin(kind);\n"
+                "ipik := temp_ddo.CTextend().mark(0@0).reverse();\n"
                 "temp_ddo := nil;\n"
+                
+                "iter := ipik.leftfetchjoin(iter);\n"
+                "item := ipik.leftfetchjoin(item);\n"
+                "kind := ipik.leftfetchjoin(kind);\n"
                 / * sort by iter, frag, pre * /
+                "iter := iter.de_NO_project(ipik);\n"
                 "var sorting := iter.reverse().sort().reverse();\n"
                 "sorting := sorting.CTrefine(kind);"
                 "sorting := sorting.CTrefine(item);"
-                "sorting := sorting.mark(0@0).reverse();\n"
+                "ipik := sorting.mark(0@0).reverse();\n"
                 */
-                "iter := sorting.leftfetchjoin(iter);\n"
-                "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
-                "item := sorting.leftfetchjoin(item);\n"
-                "kind := sorting.leftfetchjoin(kind);\n"
                 "sorting := nil;\n"
+                "iter := ipik.leftfetchjoin(iter);\n"
+                "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+                "item := ipik.leftfetchjoin(item);\n"
+                "kind := ipik.fake_leftfetchjoin(kind);\n"
                 "} # end of translate pf:distinct-doc-order (node*) as node*\n"
                );
         return NORMAL;
@@ -6610,13 +6771,14 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # fn:root ()\n"
                 "var frag := kind.get_fragment();\n"
                 /* get pre values for attributes */
+                "kind := kind.de_NO_project(ipik);\n"
                 "var attr := kind.get_type(ATTR).mark(0@0).reverse();\n"
                 "if (attr.count() != 0) {\n"
                 "var attr_frag := attr.leftfetchjoin(frag);\n"
                 "var attr_item := attr.leftfetchjoin(item);\n"
                 "var attr_iter := attr.leftfetchjoin(iter);\n"
                 "attr := nil;\n"
-                "var attr_pre := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_OWN));\n"
+                "var attr_pre := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_PRE));\n"
                 "attr_item := nil;\n"
                 "attr_frag := nil;\n"
                 "var elem := kind.get_type(ELEM).mark(0@0).reverse();\n"
@@ -6637,7 +6799,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "item := item.reverse().mark(0@0).reverse();\n"
                 /* retrieve only document nodes */
                 "} else { if (transient_nodes.count() = 0) {\n"
-                "item := item.project(0@0);\n"
+                "item := item.NO_project(0@0);\n"
                 /* retrieve transient and document nodes */
                 "} else {\n"
                 "var t_item := transient_nodes.leftfetchjoin(item);\n"
@@ -6655,7 +6817,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                                            "fake_project(0@0), t_item, "
                                            "d_kind, fake_project(ELEM));\n"
                 "iter := res_mu.fetch(0);\n"
-                "pos := iter.project(0);\n"
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(0);\n"
                 "item := res_mu.fetch(1);\n"
                 "kind := res_mu.fetch(2);\n"
                 "res_mu := nil;\n"
@@ -6667,7 +6830,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     {
         rc = translate2MIL (f, code, cur_level, counter, L(args));
         milprintf(f,
-                "if (iter.tunique().count() != loop%03u.count()) "
+                "if (fake_project(iter).tunique().count() != loop%03u.count()) "
                 "{ ERROR (\"err:FORG0005: function fn:exactly-one expects "
                 "exactly one value.\"); }\n",
                 cur_level);
@@ -6737,23 +6900,24 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # translate fn:distinct-values (atomic*) as atomic*\n"
                 /*
                 "var sorting := CTgroup(iter).CTmap().CTgroup(item).CTmap().CTgroup(kind);\n"
-                "sorting := sorting.CTextend().mark(0@0).reverse();\n"
-                "iter := sorting.leftfetchjoin(iter);\n"
-                "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
-                "item := sorting.leftfetchjoin(item);\n"
-                "kind := sorting.leftfetchjoin(kind);\n"
+                "ipik := sorting.CTextend().mark(0@0).reverse();\n"
                 "sorting := nil;\n"
+                "iter := ipik.leftfetchjoin(iter);\n"
+                "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
+                "item := ipik.leftfetchjoin(item);\n"
+                "kind := ipik.fake_leftfetchjoin(kind);\n"
                 */
                 /* delete duplicates */
+                "iter := iter.de_NO_project(ipik);\n"
                 "var sorting := iter.reverse().sort().reverse();\n"
                 "sorting := sorting.CTrefine(kind);\n"
                 "sorting := sorting.CTrefine(item%s);\n"
-                "sorting := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
-                "iter := sorting.leftfetchjoin(iter);\n"
-                "pos := iter.mark(1@0);\n"
-                "item%s := sorting.leftfetchjoin(item%s);\n"
-                "kind := sorting.leftfetchjoin(kind);\n"
+                "ipik := sorting.reverse().{min}().reverse().mark(0@0).reverse();\n"
                 "sorting := nil;\n"
+                "iter := ipik.leftfetchjoin(iter);\n"
+                "pos := iter.mark(1@0);\n"
+                "item%s := ipik.leftfetchjoin(item%s);\n"
+                "kind := ipik.fake_leftfetchjoin(kind);\n"
                 "} # end of translate fn:distinct-values (atomic*) as atomic*\n",
                 item_ext, item_ext, item_ext);
         return rc;
@@ -6822,9 +6986,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "{ # string-join (string*, string)\n "
                 "var iter_item_str := iter%03u.reverse()"
-                                             ".leftfetchjoin(item%s%03u)"
+                                             ".de_fake_leftfetchjoin(item%s%03u)"
                                              ".chk_order();\n"
-                "var iter_sep_str := iter.reverse().leftfetchjoin(item%s);\n"
+                "var iter_sep_str := iter.reverse().de_fake_leftfetchjoin(item%s);\n"
                 "iter_item_str := string_join(iter_item_str, iter_sep_str);\n"
                 "iter_sep_str := nil;\n"
                 "iter := iter_item_str.mark(0@0).reverse();\n"
@@ -6843,8 +7007,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "iter_item_str := nil;\n"
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(STR);\n"
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "kind := ipik.NO_project(STR);\n"
                 "} # end of string-join (string*, string)\n ",
                 item_ext, item_ext);
         deleteResult_ (f, counter, STR);
@@ -6877,7 +7042,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter%03u.chk_order(), difference, item%s%03u, "
+                "var res_mu := merged_union(iter%03u.chk_order(), difference, fake_project(item%s%03u), "
                                            "fake_project(\"\"));\n"
                 "difference := nil;\n"
                 "strings := res_mu.fetch(1);\n"
@@ -6895,7 +7060,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter, difference, item%s, "
+                "var res_mu := merged_union(iter, difference, fake_project(item%s), "
                                            "fake_project(\"\"));\n"
                 "difference := nil;\n"
                 "search_strs := res_mu.fetch(1);\n"
@@ -6912,8 +7077,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "strings := nil;\n"
                 "search_strs := nil;\n"
                 "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(BOOL);\n"
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "kind := ipik.NO_project(BOOL);\n"
                 "} # end of fn:contains (string?, string?) as boolean\n",
                 cur_level);
         deleteResult_ (f, counter, STR);
@@ -6942,8 +7108,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         milprintf(f,
                 "{ # concat (string, string)\n "
-                "var fst_iter_str := iter%03u.reverse().leftfetchjoin(item%s%03u);\n"
-                "var snd_iter_str := iter.reverse().leftfetchjoin(item%s);\n"
+                "var fst_iter_str := iter%03u.reverse().de_fake_leftfetchjoin(item%s%03u);\n"
+                "var snd_iter_str := iter.reverse().de_fake_leftfetchjoin(item%s);\n"
                 "fst_iter_str := fst_iter_str[+](snd_iter_str);\n"
                 "snd_iter_str := nil;\n"
                 "iter := fst_iter_str.mark(0@0).reverse();\n"
@@ -6961,8 +7127,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                 "fst_iter_str := nil;\n"
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(STR);\n"
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "kind := ipik.NO_project(STR);\n"
                 "} # end of concat (string, string)\n ",
                 item_ext, item_ext);
         deleteResult_ (f, counter, STR);
@@ -7014,14 +7181,36 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         counter = prep_str_funs(f, cur_level, counter, args);
         milprintf(f,
                 "{ # fn:substring-after\n"
-                "var res := [string](item%s%03u, "
-                                    "[+]([length](item%s), "
-                                        "[locate](item%s, "
-                                                 "item%s%03u).[-](1)));\n",
+                "var length_item%s;\n"
+                "if (type(item%s) = 4) {\n"
+                "    length_item%s := [length](item%s);\n"
+                "} else {\n"
+                "    length_item%s := length(item%s);\n"
+                "}\n"
+                "var res;\n"
+                "if (or( type(item%s%03u) = 4 , type(item%s) = 4 )) {\n"
+                "    res := [string](item%s%03u, "
+                                        "[+](length_item%s, "
+                                            "[locate](item%s, "
+                                                     "item%s%03u).[-](1)));\n"
+                "} else {\n"
+                "    res := string(item%s%03u, "
+                                        "+(length_item%s, "
+                                            "locate(item%s, "
+                                                     "item%s%03u).-(1)));\n"
+                "}\n"
+                "length_item%s := nil;\n",
+                item_ext, item_ext, item_ext, item_ext, item_ext, item_ext,
+                item_ext, counter, item_ext,
                 item_ext, counter,
                 item_ext,
                 item_ext,
-                item_ext, counter);
+                item_ext, counter,
+                item_ext, counter,
+                item_ext,
+                item_ext,
+                item_ext, counter,
+                item_ext);
                 
         return_str_funs (f, code, cur_level, "fn:substring-after");
         deleteResult_ (f, counter, STR);
@@ -7101,8 +7290,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "res := nil;\n"
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
                 "iter := loop%03u;\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(INT);\n"
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "kind := ipik.NO_project(INT);\n"
                 "} # end of fn:string-length\n",
                 item_ext_int, item_ext_int,
                 cur_level);
@@ -7117,20 +7307,20 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         /* cast to dbl is inlined nil represents NaN value */
         if (rc != NORMAL)
             milprintf(f,
-                    "var cast_val := item%s.[dbl]();\n", kind_str(rc));
+                    "var cast_val := fake_project(item%s).[dbl]();\n", kind_str(rc));
         else if (PFty_subtype (TY(L(args)), PFty_boolean ()))
             milprintf(f,
-                    "var cast_val := item.[dbl]();\n");
+                    "var cast_val := fake_project(item).[dbl]();\n");
         else
             milprintf(f,
-                    "var cast_val := item%s.[dbl]();\n", kind_str(get_kind(TY(L(args)))));
+                    "var cast_val := fake_project(item%s).[dbl]();\n", kind_str(get_kind(TY(L(args)))));
 
         milprintf(f,
                 "if (iter.count() != loop%03u.count())\n"
                 "{\n"
                 "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
-                "var res_mu := merged_union(iter, difference, cast_val, "
+                "var res_mu := merged_union(iter, difference, fake_project(cast_val), "
                                            "fake_project(dbl(nil)));\n"
                 "difference := nil;\n"
                 "cast_val := res_mu.fetch(1);\n"
@@ -7147,15 +7337,18 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         if (!code)
             addValues (f, dbl_container(), "cast_val", "item");
         else
-            milprintf(f, "item%s := cast_val;\n", item_ext);
+            milprintf(f, "item%s := de_fake_project(cast_val, ipik);\n", item_ext);
 
         milprintf(f,
                 "cast_val := nil;\n"
                 "iter := loop%03u;\n"
-                "pos := iter.project(1@0);\n"
-                "item%s := item%s.reverse().mark(0@0).reverse();\n"
-                "kind := iter.project(DBL);\n",
-                cur_level, item_ext, item_ext);
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "if (type(item%s) = 4) {\n"
+                "    item%s := item%s.reverse().mark(0@0).reverse();\n"
+                "}\n"
+                "kind := ipik.NO_project(DBL);\n",
+                cur_level, item_ext, item_ext, item_ext);
 
         return (code)?DBL:NORMAL;
     }
@@ -7203,7 +7396,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "res := nil;\n"
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
                 "pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
-                "kind := iter.project(INT);\n"
+                "ipik := iter;\n"
+                "kind := ipik.NO_project(INT);\n"
                 "} # end of op:to (integer, integer)\n ",
                 item_ext, item_ext);
         deleteResult_ (f, counter, INT);
@@ -7220,6 +7414,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* counts for all iters the number of items */
                 /* uses the actual loop, to collect the iters, which are translated 
                    into empty sequences */
+                "iter := iter.de_NO_project(ipik);\n"
                 "var iter_count := {count}(iter.reverse(),loop%03u.reverse());\n"
                 "iter_count := iter_count.reverse().mark(0@0).reverse();\n",
                 cur_level);
@@ -7233,8 +7428,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "item%s := item%s.reverse().mark(0@0).reverse();\n"
                 "iter_count := nil;\n"
                 "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(INT);\n"
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "kind := ipik.NO_project(INT);\n"
                 "} # end of translate fn:count (item*) as integer\n",
                 item_ext, item_ext, cur_level);
 
@@ -7284,7 +7480,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                     "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                     "difference := difference.mark(0@0).reverse();\n"
                     "var res_mu := merged_union(iter, difference, "
-                                               "item%s, fake_project(%s(0)));\n"
+                                               "fake_project(item%s), fake_project(%s(0)));\n"
                     "difference := nil;\n"
                     "iter := loop%03u;\n"
                     "item%s := res_mu.fetch(1);\n"
@@ -7300,7 +7496,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         {
             milprintf(f, 
                     "iter := loop%03u;\n"
-                    "item%s := iter.project(%s(0));\n",
+                    "item%s := iter.NO_project(%s(0));\n",
                     cur_level,
                     item_ext, t_co.mil_type);
         }
@@ -7312,16 +7508,17 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var difference := loop%03u.reverse().kdiff(iter%03u.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
                 "var zeros := difference.leftfetchjoin(iter.reverse())"
-                                       ".leftfetchjoin(item%s);\n"
+                                       ".fake_leftfetchjoin(item%s);\n"
                 "var res_mu := merged_union(iter%03u, difference, "
-                                           "item%s%03u, zeros);\n"
+                                           "fake_project(item%s%03u), zeros);\n"
                 "item_result := res_mu.fetch(1);\n"
                 "} else {\n"
                 "item_result := item%s%03u;\n"
                 "}\n"
                 "iter := loop%03u;\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(%s);\n",
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "kind := ipik.NO_project(%s);\n",
                 counter, cur_level, 
                 cur_level, counter,
                 item_ext,
@@ -7457,18 +7654,40 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* FIXME: in theory this should work (in practise it also
                           does with some examples), but it is assumed,
                           that the iter columns are dense and aligned */
-                "var frag_before := kind%03u.[<](kind);\n"
-                "var frag_equal := kind%03u.[=](kind);\n"
-                "var pre_before := item%03u.[<](item);\n"
-                "var node_before := frag_before[or](frag_equal[and](pre_before));\n"
+                "var _mpx_ := FALSE;\n"
+                "var frag_before;\n"
+                "var frag_equal;\n"
+                "var pre_before;\n"
+                "var node_before;\n"
+                "if (or( type(kind%03u) = 4 , type(kind) = 4 )) {\n"
+                "    frag_before := kind%03u.[<](kind);\n"
+                "    frag_equal := kind%03u.[=](kind);\n"
+                "    _mpx_ := TRUE;\n"
+                "} else {\n"
+                "    frag_before := kind%03u.<(kind);\n"
+                "    frag_equal := kind%03u.=(kind);\n"
+                "}\n"
+                "if (or( type(item%03u) = 4 , type(item) = 4 )) {\n"
+                "    pre_before := item%03u.[<](item);\n"
+                "    _mpx_ := TRUE;\n"
+                "} else {\n"
+                "    pre_before := item%03u.<(item);\n"
+                "}\n"
+                "if (_mpx_) {\n"
+                "    node_before := frag_before.[or](frag_equal.[and](pre_before));\n"
+                "    item := node_before.[oid]().reverse().mark(0@0).reverse();\n"
+                "} else {\n"
+                "    node_before := frag_before.or(frag_equal.and(pre_before));\n"
+                "    item := node_before.oid();\n"
+                "}\n"
                 "frag_before := nil;\n"
                 "frag_equal := nil;\n"
                 "pre_before := nil;\n"
-                "item := node_before.[oid]().reverse().mark(0@0).reverse();\n"
                 "node_before := nil;\n"
-                "kind := item.project(BOOL);\n"
+                "kind := item.NO_project(BOOL);\n"
                 "} # end of translate op:node-before (node, node) as boolean\n",
-                counter, counter, counter);
+                counter, counter, counter,
+                counter, counter, counter, counter, counter);
         deleteResult (f, counter);
         return NORMAL;
     }
@@ -7492,7 +7711,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "pre_after := nil;\n"
                 "item := node_after.[oid]().reverse().mark(0@0).reverse();\n"
                 "node_after := nil;\n"
-                "kind := item.project(BOOL);\n"
+                "kind := item.NO_project(BOOL);\n"
                 "} # end of translate op:node-after (node, node) as boolean\n",
                 counter, counter, counter);
         deleteResult (f, counter);
@@ -7516,7 +7735,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "pre_equal := nil;\n"
                 "item := node_equal.[oid]().reverse().mark(0@0).reverse();\n"
                 "node_equal := nil;\n"
-                "kind := item.project(BOOL);\n"
+                "kind := item.NO_project(BOOL);\n"
                 "} # end of translate op:is-same-node (node, node) as boolean\n",
                 counter, counter);
         deleteResult (f, counter);
@@ -7557,8 +7776,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "item := iter_bool.reverse().mark(0@0).reverse();\n"
                 "iter_bool := nil;\n"
                 "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(BOOL);\n"
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "kind := ipik.NO_project(BOOL);\n"
                 "} # end of translate fn:empty (item*) as boolean\n",
                 cur_level, cur_level);
         return NORMAL;
@@ -7574,8 +7794,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "item := iter_bool.reverse().mark(0@0).reverse();\n"
                 "iter_bool := nil;\n"
                 "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                "pos := iter.project(1@0);\n"
-                "kind := iter.project(BOOL);\n"
+                "ipik := iter;\n"
+                "pos := ipik.NO_project(1@0);\n"
+                "kind := ipik.NO_project(BOOL);\n"
                 "} # end of translate fn:exists (item*) as boolean\n",
                 cur_level, cur_level);
         return NORMAL;
@@ -7607,10 +7828,20 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    iter := iter.slice(int(lo),hi);\n"
                 "    kind := kind.slice(int(lo),hi);\n"
                 "    item%s := item%s.slice(int(lo), hi);\n"
-                "    pos := iter.mark(1@0);\n"
+                "    if (type(iter) = 4) {\n"
+                "        ipik := iter;\n"
+                "    } else { if (type(kind) = 4) {\n"
+                "        ipik := kind;\n"
+                "    } else { if (type(item%s) = 4) {\n"
+                "        ipik := item%s;\n"
+                "    } else {\n"
+                "        ERROR(\"translateFunction: subsequence: not all of iter|item|kind must be constants!\\n\");\n"
+                "    }}}\n"
+                "    pos := ipik.mark(1@0);\n"
                 "} else {\n"
                 "    var offset := item_dbl_%03d.reverse().mark(1@0).reverse();\n"
                 "    var sel := [>=](pos, iter.leftfetchjoin([oid](offset)));\n",
+                        kind_str(code), kind_str(code), 
                         kind_str(code), kind_str(code), counter-1);
         if (fun->arity == 3)
                 milprintf(f,
@@ -7619,10 +7850,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 
         milprintf(f, "\n" 
                 "    # carry through the selection on the table\n"
-                "    sel := sel.ord_uselect(true).mark(0@0).reverse();\n"
-                "    iter := sel.leftfetchjoin(iter);\n"
-                "    kind := sel.leftfetchjoin(kind);\n"
-                "    item%s := sel.leftfetchjoin(item%s);\n" 
+                "    ipik := sel.ord_uselect(true).mark(0@0).reverse();\n"
+                "    iter := ipik.leftfetchjoin(iter);\n"
+                "    kind := ipik.leftfetchjoin(kind);\n"
+                "    item%s := ipik.leftfetchjoin(item%s);\n" 
                 "    pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
                 "}\n", kind_str(code), kind_str(code));
 
@@ -7702,7 +7933,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var difference := loop%03u.reverse().kdiff(iter.reverse());\n"
                 "difference := difference.mark(0@0).reverse();\n"
                 "var res_mu := merged_union(iter, difference, "
-                                           "item%s, fake_project(\"err:FOER0000\"));\n"
+                                           "fake_project(item%s), fake_project(\"err:FOER0000\"));\n"
                 "difference := nil;\n"
                 "item%s := res_mu.fetch(1);\n"
                 "res_mu := nil;\n"
@@ -7800,9 +8031,10 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = STR;
                 milprintf(f,
                         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                        "pos := iter.project(1@0);\n"
-                        "item%s := iter.project(\"%s\");\n"
-                        "kind := iter.project(STR);\n",
+                        "ipik := iter;\n"
+                        "pos := ipik.NO_project(1@0);\n"
+                        "item%s := ipik.NO_project(\"%s\");\n"
+                        "kind := ipik.NO_project(STR);\n",
                         cur_level, kind_str(rc), 
                         PFesc_string (c->sem.str));
             }
@@ -7830,9 +8062,10 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = INT;
                 milprintf(f,
                         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                        "pos := iter.project(1@0);\n"
-                        "item%s := iter.project(%u);\n"
-                        "kind := iter.project(INT);\n",
+                        "ipik := iter;\n"
+                        "pos := ipik.NO_project(1@0);\n"
+                        "item%s := ipik.NO_project(%u);\n"
+                        "kind := ipik.NO_project(INT);\n",
                         cur_level, kind_str(rc), 
                         c->sem.num);
             }
@@ -7859,9 +8092,10 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = DEC;
                 milprintf(f,
                         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                        "pos := iter.project(1@0);\n"
-                        "item%s := iter.project(dbl(%gLL));\n"
-                        "kind := iter.project(DEC);\n",
+                        "ipik := iter;\n"
+                        "pos := ipik.NO_project(1@0);\n"
+                        "item%s := ipik.NO_project(dbl(%gLL));\n"
+                        "kind := ipik.NO_project(DEC);\n",
                         cur_level, kind_str(rc), 
                         c->sem.dec);
             }
@@ -7888,9 +8122,10 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 rc = DBL;
                 milprintf(f,
                         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
-                        "pos := iter.project(1@0);\n"
-                        "item%s := iter.project(dbl(%gLL));\n"
-                        "kind := iter.project(DBL);\n",
+                        "ipik := iter;\n"
+                        "pos := ipik.NO_project(1@0);\n"
+                        "item%s := ipik.NO_project(dbl(%gLL));\n"
+                        "kind := ipik.NO_project(DBL);\n",
                         cur_level, kind_str(rc), 
                         c->sem.dbl);
             }
@@ -7953,7 +8188,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             translate2MIL (f, NORMAL, cur_level, counter, LR(c));
             /* not allowed to overwrite iter,pos,item */
             cur_level++;
-            milprintf(f, "if (iter.count() != 0)\n");
+            milprintf(f, "if (ipik.count() != 0)\n");
             milprintf(f, "{  # for-translation\n");
             project (f, cur_level);
 
@@ -8159,12 +8394,12 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                     /* as long as we have no complete stable sort we need
                        to refine with pos */
                     "sorting := sorting.CTrefine(pos);\n"
-                    "sorting := sorting.mark(0@0).reverse();\n"
-                    "iter := sorting.leftfetchjoin(iter);\n"
-                    "pos := sorting.leftfetchjoin(pos);\n"
-                    "item%s := sorting.leftfetchjoin(item%s);\n"
-                    "kind := sorting.leftfetchjoin(kind);\n"
+                    "ipik := sorting.mark(0@0).reverse();\n"
                     "sorting := nil;\n"
+                    "iter := ipik.leftfetchjoin(iter);\n"
+                    "pos := ipik.leftfetchjoin(pos);\n"
+                    "item%s := ipik.leftfetchjoin(item%s);\n"
+                    "kind := ipik.fake_leftfetchjoin(kind);\n"
                     "} # end of order_by\n",
                     counter, counter, cur_level,
                     counter, counter,
@@ -8234,17 +8469,17 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                                "bat[void,oid] v_iter000, "
                                "bat[void,oid] v_item000, "
                                "bat[void,int] v_kind000) : bat[void,bat] { # fn:%s\n"
+                    "var v_pos000 := v_iter000.mark_grp(v_iter000.tunique().mark(nil), 1@0);\n"
+                    "v_pos000 := v_pos000.access(BAT_WRITE);\n"
                     "v_vid000 := v_vid000.access(BAT_WRITE);\n"
                     "v_iter000 := v_iter000.access(BAT_WRITE);\n"
-                    "v_pos000 := v_pos000.access(BAT_WRITE);\n"
                     "v_item000 := v_item000.access(BAT_WRITE);\n"
-                    "v_kind000 := v_kind000.access(BAT_WRITE);\n"
-                    "var v_pos000 := v_iter000.mark_grp(v_iter000.tunique().mark(nil), 1@0);\n",
+                    "v_kind000 := v_kind000.access(BAT_WRITE);\n",
                     c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
-                    "return bat(void,bat,4).insert(nil,iter).insert(nil,item).insert(nil,kind).access(BAT_READ);\n"
+                    "return bat(void,bat,4).insert(nil,fake_project(iter)).insert(nil,fake_project(item)).insert(nil,fake_project(kind)).access(BAT_READ);\n"
                     "} # end of PROC fn_%x_%i (fn:%s)\n",
                     c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
   	    opt_output(f, OPT_SEC_EPILOGUE);
@@ -8681,8 +8916,7 @@ simplifyCoreTree (PFcnode_t *c)
                 /* don't use function - omit apply and arg node */
                 *c = *(DL(c));
             }
-            else if ((!PFqname_eq(fun->qname,PFqname (PFns_fn,"string")) ||
-                      !PFqname_eq(fun->qname,PFqname (PFns_fn,"string-join"))) &&
+            else if (!PFqname_eq(fun->qname,PFqname (PFns_fn,"string")) && 
                      PFty_subtype(DL(c)->type, PFty_string ()))
             {
                 /* don't use function - omit apply and arg node */
@@ -8760,12 +8994,6 @@ simplifyCoreTree (PFcnode_t *c)
                 /* don't use function - either because we only have at most
                    one node per iteration or we use scj and therefore don't need
                    to remove duplicates and sort the result */
-                *c = *(DL(c));
-            }
-            else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
-                     DL(c)->kind == c_apply &&
-                     !PFqname_eq((DL(c))->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order")))
-            {
                 *c = *(DL(c));
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_op, "union")))
@@ -9138,7 +9366,6 @@ create_join_function (PFcnode_t *fst_for, PFcnode_t *fst_cast, int fst_nested,
     c = PFcore_arg(fst_for,c);
     c = PFcore_wire1 (c_apply, c);
     c->sem.fun = join;
-    TY(c) = TY(result);
     return c;
 }
 
@@ -10192,7 +10419,8 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "\ntime_print := time();\n"
             "time_exec := time_print - time_exec;\n\n");
 
-    milprintf(f, "print_result(\"%s\",ws,item,kind,int_values,dbl_values,dec_values,str_values);\n", status->genType);
+    milprintf(f, "item := item.de_NO_project(ipik);\n");
+    milprintf(f, "print_result(\"%s\",ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n", status->genType);
     if (status->timing) {
         tm = PFtimer_stop(tm);
         milprintf(f, 

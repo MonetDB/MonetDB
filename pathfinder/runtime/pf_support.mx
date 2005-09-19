@@ -305,6 +305,11 @@ PROC get_type_atomic (bat[void,int] kind) : bat[oid,void]
         return kind.ord_uselect(int(nil), ATOMIC);
 }
 
+PROC get_fragment (int kind) : oid
+{
+        return kind.>>(6).oid();
+}
+
 PROC get_fragment (bat[void,int] kind) : bat[void,oid]
 {
         return kind.[>>](6).[oid]();
@@ -494,21 +499,65 @@ proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
 }
 @mil
 
-
-PROC fake_project (any::1 c) : bat[void,any::1]
+PROC min (int i) : int
 {
-	if (type(c) = 0) {
-		ERROR("fake_project: argument must not be void; please cast nil properly!\n");
-	}
-    	return new(void,type(c),1).seqbase(nil).insert(nil,c).access(BAT_READ);
+	return i;
 }
 
-PROC is_fake_project (bat[void,any::1] b) : bit
+PROC max (int i) : int
 {
-	return and(count(b) = 1, isnil(seqbase(b)));
+	return i;
 }
 
-PROC de_fake_project (bat[void,any::1] b, bat[void,oid] x) : bat[void,any::1]
+PROC [-] (int l, int r) : int
+{
+	return l - r;
+}
+
+PROC [lng] (int i) : lng
+{
+	return lng(i);
+}
+
+PROC fetch(dbl b, int p) : dbl
+{
+	return b;
+}
+
+PROC slice(oid b, int l, int h) : oid
+{
+	return b;
+}
+
+PROC slice(int b, int l, int h) : int
+{
+	return b;
+}
+
+@:fake(oid)@
+@:fake(chr)@
+@:fake(int)@
+@:fake(dbl)@
+@:fake(str)@
+
+@= fake
+
+PROC fake_project (@1 c) : bat[void,@1]
+{
+    	return new(void,@1,1).seqbase(nil).insert(nil,c).access(BAT_READ);
+}
+
+PROC fake_project (bat[void,@1] b) : bat[void,@1]
+{
+    	return b;
+}
+
+PROC is_fake_project (bat[oid,@1] b) : bit
+{
+	return and( and( count(b) = 1, isnil(seqbase(b)) ), htype(b) = 0 );
+}
+
+PROC de_fake_project (bat[void,@1] b, bat[void,oid] x) : @1	#bat[void,@1]
 {
 	if (not(is_fake_project(b))) {
 		return b;
@@ -516,33 +565,43 @@ PROC de_fake_project (bat[void,any::1] b, bat[void,oid] x) : bat[void,any::1]
 	if (is_fake_project(x)) {
 		ERROR("de_fake_project: second argument must not be a 'fake_project'!\n");
 	}
+	return b.fetch(0);	#x.project(b.fetch(0));
+}
+
+PROC NO_project (bat[void,any] b, @1 c) : @1	#bat[void,@1]
+{
+	return c;	#b.project(c);
+}
+
+PROC NO_project (@1 z, @1 c) : @1
+{
+	return c;
+}
+
+PROC de_NO_project (bat[oid,@1] b, bat[void,oid] x) : bat[void,@1]
+{
+	if (not(is_fake_project(b))) {
+		return b;
+	}
+	if (is_fake_project(x)) {
+		ERROR("de_NO_project: second argument must not be a 'fake_project'!\n");
+	}
 	return x.project(b.fetch(0));
 }
 
-PROC mark_pos(bat[void,oid] iter, bat[void,any] extent) : bat[void,oid] 
+PROC de_NO_project (@1 c, bat[void,oid] x) : bat[void,@1]
 {
-	if (is_fake_project(iter)) return extent.mark(1@0);
-	return iter.mark_grp(iter.tunique().mark(nil),1@0);
+	if (is_fake_project(x)) {
+		ERROR("de_NO_project: second argument must not be a 'fake_project'!\n");
+	}
+	return x.project(c);
 }
 
-@= fake_fetch
-PROC fake_fetch (bat[void,any::1] b, @1 p) : any::1
+PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,@1] r) : bat[oid,@1]
 {
-	if (is_fake_project(b)) {
-		return b.fetch(0);
-	} else {
-		return b.fetch(p);
-	}
-}
-@mil
-@:fake_fetch(int)@
-@:fake_fetch(oid)@
-
-PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,any::2] r) : bat[oid,any::2]
-{
-	if (is_fake_project(l)) {
-		ERROR("fake_leftfetchjoin: first argument must not be a 'fake_project'!\n");
-	}
+#	if (is_fake_project(l)) {
+#		ERROR("fake_leftfetchjoin: first argument must not be a 'fake_project'!\n");
+#	}
 	if (is_fake_project(r)) {
 		return r;
 	} else {
@@ -550,7 +609,20 @@ PROC fake_leftfetchjoin (bat[oid,oid] l, bat[void,any::2] r) : bat[oid,any::2]
 	}
 }
 
-PROC de_fake_leftfetchjoin (bat[void,oid] l, bat[void,any::2] r, bat[void,oid] x) : bat[void,any::2]
+PROC fake_leftfetchjoin (bat[oid,oid] l, @1 c) : bat[oid,@1]
+{
+	return fake_project(c);
+}
+
+PROC fake_leftfetchjoin (oid c, bat[void,@1] r) : @1
+{
+	if (is_fake_project(r)) {
+		ERROR("fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
+	}
+	return r.find(c);
+}
+
+PROC de_fake_leftfetchjoin (bat[void,oid] l, bat[void,@1] r, bat[void,oid] x) : bat[void,@1]
 {
 	if (is_fake_project(r)) {
 		ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
@@ -565,18 +637,94 @@ PROC de_fake_leftfetchjoin (bat[void,oid] l, bat[void,any::2] r, bat[void,oid] x
 	return x.project(c);
 }
 
-PROC de_fake_leftfetchjoin (bat[oid,void] l, bat[void,any::2] r) : bat[oid,any::2]
+PROC de_fake_leftfetchjoin (bat[void,oid] l, @1 c, bat[void,oid] x) : bat[void,@1]
 {
-	if (is_fake_project(r)) {
-		ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
+	if (not(is_fake_project(l))) {
+		return l.project(c);
 	}
-	if (not(is_fake_project(reverse(l)))) {
-		return leftfetchjoin(l,r);
+	if (is_fake_project(x)) {
+		ERROR("de_fake_leftfetchjoin: third argument must not be a 'fake_project'!\n");
 	}
-	var c := l.reverse().fetch(0);
-	return r.reverse().project(c).reverse();
+	return x.project(c);
 }
 
+PROC de_fake_leftfetchjoin (bat[oid,oid] l, bat[void,@1] r) : bat[oid,@1]
+{
+	if (is_fake_project(reverse(l))) {
+		if (is_fake_project(r)) {
+			ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
+		}
+		var c := l.reverse().fetch(0);
+		return r.reverse().project(c).reverse();
+	}
+	if (is_fake_project(l)) {
+		if (is_fake_project(r)) {
+			ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
+		}
+		return leftfetchjoin(l,r);
+	}
+	if (is_fake_project(r)) {
+		var c := r.fetch(0);
+		return l.project(c);
+	}
+	return leftfetchjoin(l,r);
+}
+
+PROC de_fake_leftfetchjoin (bat[int,oid] l, bat[void,@1] r) : bat[int,@1]
+{
+	if (is_fake_project(reverse(l))) {
+		if (is_fake_project(r)) {
+			ERROR("de_fake_leftfetchjoin: second argument must not be a 'fake_project'!\n");
+		}
+		var c := l.reverse().fetch(0);
+		return r.reverse().project(c).reverse();
+	}
+	if (is_fake_project(r)) {
+		var c := r.fetch(0);
+		return l.project(c);
+	}
+	return leftfetchjoin(l,r);
+}
+
+PROC de_fake_leftfetchjoin (bat[oid,oid] l, @1 c) : bat[oid,@1]
+{
+	if (is_fake_project(l)) {
+		ERROR("de_fake_leftfetchjoin: first argument must not be a 'fake_project'!\n");
+	}
+	if (is_fake_project(reverse(l))) {
+		ERROR("de_fake_leftfetchjoin: first argument must not be a (reversed) 'fake_project'!\n");
+	}
+	return l.project(c);
+}
+
+PROC de_fake_leftfetchjoin (bat[int,oid] l, @1 c) : bat[int,@1]
+{
+	if (is_fake_project(reverse(l))) {
+		ERROR("de_fake_leftfetchjoin: first argument must not be a (reversed) 'fake_project'!\n");
+	}
+	return l.project(c);
+}
+
+PROC CTrefine(bat[void,oid] b, @1 c) : bat[void,oid]
+{
+	return b;
+}
+
+@:fake_fetch(@1,int)@
+@:fake_fetch(@1,oid)@
+
+@
+@= fake_fetch
+PROC fake_fetch (bat[void,@1] b, @2 p) : @1
+{
+	if (is_fake_project(b)) {
+		return b.fetch(0);
+	} else {
+		return b.fetch(p);
+	}
+}
+
+@mil
 
 @- loop-lifted staircase join
 @mil
@@ -2453,8 +2601,10 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	fake_frag = is_fake_project(frag);
 	
 	if (fake_frag) {
-		ERRORcheck(!BAThdense(pre) || !BAThdense(ws_item), 
-			"mposjoin: input BATs pre & ws_item must have a dense head.\n");
+		ERRORcheck(!BAThdense(pre), 
+			"mposjoin: input BAT pre must have a dense head.\n");
+		ERRORcheck(!BAThdense(ws_item), 
+			"mposjoin: input BAT ws_item must have a dense head.\n");
 	} else {
 		ERRORcheck(!BAThdense(pre) || !BAThdense(frag) || !BAThdense(ws_item), 
 			"mposjoin: all input BATs (pre, frag, ws_item) must have a dense head.\n");
@@ -2469,11 +2619,12 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	BBPunfix(the_frag_bat->batCacheid);
 	the_frag_bat = NULL;
 
-	ii = 0;
-	
 	if (cnt==0) {
 		@:mpos_res_empty@
 	}
+
+	ii = 0;
+	
 	if (fake_frag) {
 		oid the_frag_id = *(oid*)BUNtail(frag, BUNfirst(frag));
 		len = 1;
