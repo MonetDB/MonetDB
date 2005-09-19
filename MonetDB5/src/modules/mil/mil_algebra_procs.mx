@@ -300,9 +300,6 @@ exit	nf_a;
 	rf_a := calc.dbl(cnt);
 	return sf_a := calc./(qf_a,rf_a);
 end avg;
-function count_no_nil(b:bat[:any_1,:any_2]):lng;
-	return tf_a :=aggr.count(b,true);
-end count_no_nil;
 @- Original code
 @mil
 
