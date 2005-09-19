@@ -67,5 +67,5 @@ sense to contribute it to the community.
 
 The preferred channel to share your comments is through the
 @c share your comments: share your thoughts, post your comments??
-@url{mailto:monetdb-users@lists.sourceforge.net,MonetDB mailing list}
+@url{mailto:monetdb-users@@lists.sourceforge.net,MonetDB mailing list}
 held at SourceForge.

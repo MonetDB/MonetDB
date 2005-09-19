@@ -262,8 +262,6 @@ called 'sessions'. Its default content is shown below:
 [ "current_user",         "monetdb",          "varchar",      1       ]
 [ "current_role",         "monetdb",          "varchar",      0       ]
 [ "current_timezone",     "0",                "sec_interval", 0       ]
-[ "cache",                "true",             "boolean",      0       ]
-[ "factory",              "true",             "boolean",      0       ]
 [ "optimizer",            "sql.optimizer();", "varchar",      0       ]
 @end example
 
