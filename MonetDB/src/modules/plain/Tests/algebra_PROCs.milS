@@ -36,38 +36,125 @@ neg_select(b,"grth",3.4).print();
 neg_select(b,"between",3.4,5.5).print();
 rev_select(b,">=",3.4).print();
 
+# To check the property propagation properly,
+# we need to explicitely control property checking,
+# independently of what Mserver / Mtest.py sets;
+# hence, we ran the same tests twice, 
+# first with property checking locally disabled, and 
+# then  with property checking locally enabled.
+
+var dbgmsk := debugmask();
+
+# Disable property checking:
+debugmask(and(dbgmsk,xor(INT_MAX,8+2)));
+
+# run tests
 var b:=new(oid,oid);
 b.insert(0@0,0@0);
 b.insert(10@0,10@0);
+b.print();
+b.info().find("hdense").print();
+b.info().find("tdense").print();
 b.info().find("hsorted").print();
 b.info().find("tsorted").print();
 b.info().find("hkey").print();
 b.info().find("tkey").print();
 var m:=b.merge();
+m.print();
+m.info().find("hdense").print();
+m.info().find("tdense").print();
 m.info().find("hsorted").print();
 m.info().find("tsorted").print();
 m.info().find("hkey").print();
 m.info().find("tkey").print();
 var s:=m.split();
+s.print();
+s.info().find("hdense").print();
+s.info().find("tdense").print();
 s.info().find("hsorted").print();
 s.info().find("tsorted").print();
 s.info().find("hkey").print();
 s.info().find("tkey").print();
 
 b.insert(5@0,0@0);
+b.print();
+b.info().find("hdense").print();
+b.info().find("tdense").print();
 b.info().find("hsorted").print();
 b.info().find("tsorted").print();
 b.info().find("hkey").print();
 b.info().find("tkey").print();
 var m:=b.merge();
+m.print();
+m.info().find("hdense").print();
+m.info().find("tdense").print();
 m.info().find("hsorted").print();
 m.info().find("tsorted").print();
 m.info().find("hkey").print();
 m.info().find("tkey").print();
 var s:=m.split();
+s.print();
+s.info().find("hdense").print();
+s.info().find("tdense").print();
 s.info().find("hsorted").print();
 s.info().find("tsorted").print();
 s.info().find("hkey").print();
 s.info().find("tkey").print();
+
+ # Enable property checking:
+ debugmask(or(dbgmsk,8+2));
+
+ # run tests
+ var b:=new(oid,oid);
+ b.insert(0@0,0@0);
+ b.insert(10@0,10@0);
+ b.print();
+ b.info().find("hdense").print();
+ b.info().find("tdense").print();
+ b.info().find("hsorted").print();
+ b.info().find("tsorted").print();
+ b.info().find("hkey").print();
+ b.info().find("tkey").print();
+ var m:=b.merge();
+ m.print();
+ m.info().find("hdense").print();
+ m.info().find("tdense").print();
+ m.info().find("hsorted").print();
+ m.info().find("tsorted").print();
+ m.info().find("hkey").print();
+ m.info().find("tkey").print();
+ var s:=m.split();
+ s.print();
+ s.info().find("hdense").print();
+ s.info().find("tdense").print();
+ s.info().find("hsorted").print();
+ s.info().find("tsorted").print();
+ s.info().find("hkey").print();
+ s.info().find("tkey").print();
+
+ b.insert(5@0,0@0);
+ b.print();
+ b.info().find("hdense").print();
+ b.info().find("tdense").print();
+ b.info().find("hsorted").print();
+ b.info().find("tsorted").print();
+ b.info().find("hkey").print();
+ b.info().find("tkey").print();
+ var m:=b.merge();
+ m.print();
+ m.info().find("hdense").print();
+ m.info().find("tdense").print();
+ m.info().find("hsorted").print();
+ m.info().find("tsorted").print();
+ m.info().find("hkey").print();
+ m.info().find("tkey").print();
+ var s:=m.split();
+ s.print();
+ s.info().find("hdense").print();
+ s.info().find("tdense").print();
+ s.info().find("hsorted").print();
+ s.info().find("tsorted").print();
+ s.info().find("hkey").print();
+ s.info().find("tkey").print();
 
 quit();
