@@ -1433,7 +1433,7 @@ def RunTest(env, TST, BusyPorts, COND) :
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on WindowsNT.")
     elif sys.platform == "cygwin"  and  url(TSTDIR)+"/"+TST in NotOnCYG:
         elem = SkipTest(env, TST, EXT, "as it currently crashes/hangs on CYGWIN.")
-    elif EXT[:4] == ".mil" and env['VERSION'] >= 49900:
+    elif ( EXT[:4] == ".mil" or SERVER == "MAPI" ) and env['VERSION'] >= 49900:
         elem = SkipTest(env, TST, EXT, "as Monet5 does not support MIL.")
     elif EXT == ".milC" and  not env['exe']['Mapi_Client'][0]:
         elem = SkipTest(env, TST, EXT, "as "+env['MAPICLIENT'].split(None, 1)[0]+" is not available.")
