@@ -1903,7 +1903,6 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 	@:derefStr(b,t,low);@
 	@:derefStr(b,t,high);@
 	CMDuselect(&bn, b, low, high);
-	BBPunfix(b->batCacheid);
 	if (bn) {
 		bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
@@ -1911,6 +1910,7 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
+	BBPunfix(b->batCacheid);
 	return throwMessage("algebra.uselect", "GDKerror");
 }
 
