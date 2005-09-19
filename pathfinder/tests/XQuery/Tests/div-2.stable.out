@@ -1,4 +1,4 @@
-stdout of test 'mod` in directory 'tests/XQuery` itself:
+stdout of test 'div-2` in directory 'tests/XQuery` itself:
 
 
 # 23:33:58 >  
@@ -23,7 +23,10 @@ Over..
 
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
-7 1 0 0.900000 3.000000
+3.333333
+-3.000000
+3.750000
+20.500000
 </XQueryResult>
 
 # 23:33:59 >  
