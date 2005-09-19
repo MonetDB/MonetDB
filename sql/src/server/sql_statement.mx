@@ -1677,6 +1677,7 @@ tail_type(stmt *st)
 	case st_column:
 	case st_pivot:
 	case st_group:
+	case st_derive:
 	case st_group_ext:
 	case st_mark:
 	case st_gen_group:
