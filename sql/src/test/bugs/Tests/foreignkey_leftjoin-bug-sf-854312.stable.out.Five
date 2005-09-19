@@ -1,0 +1,48 @@
+stdout of test 'foreignkey_leftjoin-bug-sf-854312` in directory 'src/test/bugs` itself:
+
+
+# 13:20:35 >  
+# 13:20:35 >  Mtimeout -timeout 180 Mserver "--config=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/lib/MonetDB" --set "gdk_dbfarm=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/dbfarm" --set "sql_logdir=/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/program/var/MonetDB/log" --set mapi_port=42732 --set sql_port=53464 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" "/net/pictor.ins.cwi.nl/export/scratch1/fabian/monet-current/sql/build/src/backends/monet4/sql_server.mil" ; echo ; echo Over..
+# 13:20:35 >  
+
+# Monet Database Server V4.5.0
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+#Ready to accept connections on koala.ins.cwi.nl:44411
+
+Ready.
+
+Over..
+
+# 13:20:35 >  
+# 13:20:35 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=pictor --port=53464  < foreignkey_leftjoin-bug-sf-854312.sql
+# 13:20:35 >  
+
+# 6 # querytype
+# 6 # querytype
+# 7 # querytype
+# 3 # querytype
+# a,	a,	a,	a,	b,	b,	b,	b,	b,	b # table_name
+# var1,	var2,	var3,	var4,	r_id,	id,	var1,	var2,	var3,	var4 # name
+# char,	varchar,	bigint,	varchar,	int,	char,	bigint,	bigint,	varchar,	char # type
+# 0,	0,	20,	0,	11,	0,	20,	20,	0,	0 # length
+# 0,	,	,	,	,	,	,	,	,	 # tuplecount
+# 1,	,	,	,	,	,	,	,	,	 # id
+# 7 # querytype
+# 3 # querytype
+# a,	a,	a,	a,	b,	b,	b,	b,	b,	b # table_name
+# var1,	var2,	var3,	var4,	r_id,	id,	var1,	var2,	var3,	var4 # name
+# char,	varchar,	bigint,	varchar,	int,	char,	bigint,	bigint,	varchar,	char # type
+# 0,	0,	20,	0,	11,	0,	20,	20,	0,	0 # length
+# 0,	,	,	,	,	,	,	,	,	 # tuplecount
+# 2,	,	,	,	,	,	,	,	,	 # id
+# 7 # querytype
+# 6 # querytype
+# 6 # querytype
+# 7 # querytype
+
+# 13:20:36 >  
+# 13:20:36 >  Done.
+# 13:20:36 >  
+

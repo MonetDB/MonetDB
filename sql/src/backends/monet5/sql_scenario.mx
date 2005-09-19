@@ -441,10 +441,10 @@ error(stream *out, char *str)
 #define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
 
 int
-handle_error(mvc *m, stream *out, int pstatus, char *errmsg)
+handle_error(mvc *m, stream *out, int pstatus)
 {
 	int go = 1;
-	char *buf = errmsg;
+	char *buf = GDKerrbuf;
 
 	/* transaction already broken */
 	if (m->type != Q_TRANS && pstatus < 0) {
@@ -535,7 +535,7 @@ Continue processing any left-over input from the previous round.
 				if (mvc_status(m) < 0) {
 					mvc_rollback(m, 0, NULL);
 				} else if (mvc_commit(m, 0, NULL) < 0) {
-				 	go = handle_error(m, c->fdout, 0, NULL);
+				 	go = handle_error(m, c->fdout, 0);
 				}
 			}
 
@@ -710,7 +710,7 @@ SQLparser(Client c)
 		if (!err)
 			err = mvc_status(m);
 		msg = throwMessage("SQLparser", m->errstr);
-		handle_error(m, c->fdout, pstatus, NULL);
+		handle_error(m, c->fdout, pstatus);
 		sqlcleanup(m, err);
 		goto finalize;
 	}
@@ -725,7 +725,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 
 		if (!s && (err = mvc_status(m))) {
 			msg = throwMessage("SQLparser", m->errstr);
-			handle_error(m, c->fdout, pstatus, NULL);
+			handle_error(m, c->fdout, pstatus);
 			sqlcleanup(m, err);
 			goto finalize;
 		}
@@ -870,6 +870,8 @@ environment.
         if (!c->listing)
             printFunction(c->fdout, c->curprg->def, c->listing);
         showErrors();
+	if (msg) 
+		m->status = -10;
     }
     resetInstructions(c->curprg->def, 1);
     resetVariables(c->curprg->def, 0, 0);

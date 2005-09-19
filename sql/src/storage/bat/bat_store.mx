@@ -1033,9 +1033,9 @@ load_trans(struct bm *bm, backend_stack stk)
 	t->level = ISO_SERIALIZABLE;
 	t->parent = NULL;
 	t->module = NULL;
-	t->bm = bm;
-
+	t->schema = NULL;
 	t->stk = stk;
+	t->bm = bm;
 
 	cs_init(&t->schemas, (fdestroy) &schema_destroy);
 	cs_init(&t->modules, (fdestroy) &module_destroy);
@@ -2281,11 +2281,14 @@ trans_dup(backend_stack stk, sql_trans *ot, char *newname)
 	node *n;
 	sql_trans *t = NEW(sql_trans);
 
+	t->name = NULL;
 	t->wtime = t->rtime = 0;
 	t->stime = timestamp ();
 
 	t->level = ot->level;
 	t->parent = ot;
+	t->module = NULL;
+	t->schema = NULL;
 	t->stk = stk;
 
 	cs_init(&t->modules, (fdestroy) &module_destroy);

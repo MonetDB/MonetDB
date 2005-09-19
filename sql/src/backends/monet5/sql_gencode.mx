@@ -139,6 +139,15 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *val)
 }
 
 static InstrPtr
+pushStrVal(MalBlkPtr mb, InstrPtr q, char *val)
+{
+	int _t = newConstant(mb, TYPE_str, val, TRUE);
+
+	return pushArgument(mb, q, _t);
+}
+
+
+static InstrPtr
 pushBit(MalBlkPtr mb, InstrPtr q, const char *val)
 {
 	int _t = newConstant(mb, TYPE_bit, _strdup(val), TRUE);
@@ -248,13 +257,24 @@ Some utility routines to generate code
 The equality operator in MAL is '==' instead of '='.
 @c
 str
+convertCalcOperator(str op)
+{
+	char buf[128];
+
+	if (strcmp(op, "=") == 0)
+		return _strdup("calc.==");
+	buf[0] = 0;
+	strcat(buf,"calc.");
+	strcat(buf,op);
+	return _strdup(buf);
+}
+
+str
 convertOperator(str op)
 {
-	static char buf[128]="calc.";
 	if (strcmp(op, "=") == 0)
-		return "calc.==";
-	strcat(buf,op);
-	return buf;
+		return "==";
+	return op;
 }
 
 void
@@ -286,7 +306,7 @@ dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 }
 
 InstrPtr
-dump_multiplex(MalBlkPtr mb, char *name, int o1, int o2, int type)
+dump_multiplex(MalBlkPtr mb, char *name /* should be eaten */, int o1, int o2, int type)
 {
 	InstrPtr q;
 	int match=0;
@@ -308,10 +328,11 @@ dump_multiplex(MalBlkPtr mb, char *name, int o1, int o2, int type)
 			q = newStmt(mb, "batcalc", name);
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
+		_DELETE(name);
 	} else {
 		q = newStmt(mb, "optimizer","multiplex");
 		setVarType(mb,getArg(q,0), newBatType(TYPE_void,type));
-		q = pushStr(mb, q, name);
+		q = pushStrVal(mb, q, name);
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
 	}
@@ -585,7 +606,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				default:
 					GDKerror("Unknown operator");
 				}
-				q= dump_multiplex(mb,convertOperator(op),l,r,tail_type(s->op2.stval)->type->localtype);
+				q= dump_multiplex(mb,convertCalcOperator(op),l,r,tail_type(s->op2.stval)->type->localtype);
 				s->nr = getDestVar(q);
 				k = getDestVar(q);
 				q = newStmt(mb, "algebra", "uselect");
@@ -991,7 +1012,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = newStmt(mb, "optimizer","multiplex");
 					setVarType(mb,getArg(q,0), newBatType(TYPE_void,a->type->localtype));
 					s->nr = getDestVar(q);
-					q = pushStr(mb, q, convertOperator(s->op4.funcval->func->imp));
+					q = pushStrVal(mb, q, convertCalcOperator(s->op4.funcval->func->imp));
 					q = pushArgument(mb, q, l);
 				}
 			} else {
@@ -1008,10 +1029,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->op1.stval->nrcols || s->op2.stval->nrcols) {
-				q= dump_multiplex(mb,convertOperator(s->op4.funcval->func->imp),l,r,tail_type(s->op1.stval)->type->localtype);
+				q= dump_multiplex(mb,convertCalcOperator(s->op4.funcval->func->imp),l,r,tail_type(s->op1.stval)->type->localtype);
 				s->nr = getDestVar(q);
 			} else {
-				q = newStmt(mb, "calc", s->op4.funcval->func->imp);
+				q = newStmt(mb, "calc", convertOperator(s->op4.funcval->func->imp));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 			}
@@ -1053,7 +1074,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = newStmt(mb, "optimizer","multiplex");
 				setVarType(mb,getArg(q,0), 
 					newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
-				q = pushStr(mb, q, convertOperator(s->op4.funcval->func->imp));
+				q = pushStrVal(mb, q, convertCalcOperator(s->op4.funcval->func->imp));
 				for (i = 0; i < opslen; i++) {
 					q = pushArgument(mb, q, ops[i]);
 				}
