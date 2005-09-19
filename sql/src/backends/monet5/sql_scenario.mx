@@ -857,16 +857,27 @@ cached routine, which may be hidden . For now we take a shortcut.
 	} 
 	c->glb = 0;
 	be->language= 'D';
-	msg = MALengine(c);
+@-
+The code below is copied from MALengine, which handles execution
+in the context of a user global environment. We have a private
+environment.
+	/* msg = MALengine(c);*/
+@c
+
+	msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+    if (msg) {
+        GDKerror(msg);
+        if (!c->listing)
+            printFunction(c->fdout, c->curprg->def, c->listing);
+        showErrors();
+    }
+    resetInstructions(c->curprg->def, 1);
+    resetVariables(c->curprg->def, 0, 0);
 	be->language= oldlang;
 @-
 Any error encountered during execution should block further processing
 unless auto_commit has been set.
 @c
-	if (c->curprg->def->errors) {
-		stream_printf(c->fdout, "#Execution produced errors");
-		sql_error(m, 1, "Execution produced errors");
-	}
 	c->glb = oldglb;
 	if (explainPerformance()) {
 		str ret;
