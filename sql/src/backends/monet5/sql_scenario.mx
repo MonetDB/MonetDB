@@ -709,9 +709,9 @@ SQLparser(Client c)
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err)
 			err = mvc_status(m);
+		msg = throwMessage("SQLparser", m->errstr);
 		handle_error(m, c->fdout, pstatus, NULL);
 		sqlcleanup(m, err);
-		msg = throwMessage("SQLparser", "Parser errors\n");
 		goto finalize;
 	}
 @-
@@ -724,9 +724,9 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		stmt *s = sql_symbol2stmt(m);
 
 		if (!s && (err = mvc_status(m))) {
+			msg = throwMessage("SQLparser", m->errstr);
 			handle_error(m, c->fdout, pstatus, NULL);
 			sqlcleanup(m, err);
-			msg = throwMessage("SQLparser", "Semantic errors\n");
 			goto finalize;
 		}
 		assert(s);
