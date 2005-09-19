@@ -775,10 +775,8 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				int g = backend_dumpstmt_(s->op2.stval, nr, sql);
 
 				len += snprintf(buf + len, BUFSIZ - len,
-						/*"var s%dg := s%d.CTunique(s%d);\n", -s->nr, g, l); */
 						"var s%dg := s%d.CTgroup(s%d);\n", -s->nr, g, l);
 				len += snprintf(buf + len, BUFSIZ - len, "var s%de := s%dg.extend().mirror();\n", -s->nr, -s->nr);
-				/*"var s%de := s%dg.reverse().kunique().mirror();\n", -s->nr, -s->nr); */
 				len += snprintf(buf + len, BUFSIZ - len, "var s%d := s%d.semijoin(s%de);\n", -s->nr, l, -s->nr);
 			} else {
 				len += snprintf(buf + len, BUFSIZ - len, "var s%d := s%d.reverse().kunique().reverse();\n", -s->nr, l);

@@ -925,18 +925,25 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->op2.stval) {
-				char ext[BUFSIZ];
+				char nme[BUFSIZ];
 				int e, g = _dumpstmt(sql, mb, s->op2.stval);
 
-				snprintf( ext, BUFSIZ, "ext%d", g);
-				e = findVariable(mb, ext);
+				q = newStmt(mb, "group", "derive");
+				e = getDestVar(q);
+				snprintf( nme, BUFSIZ, "grp%d", getDestVar(q));
+        			q = pushReturn(mb, q, newVariable(mb, _strdup(nme), TYPE_any));
+				setVarInitialized(mb, getArg(q, 1));
+				setVarInitialized(mb, getArg(q, 0));
+				q = pushArgument(mb, q, g);
+				q = pushArgument(mb, q, l);
+
 				q = newStmt(mb, "bat", "mirror");
 				q = pushArgument(mb, q, e);
+				e = getDestVar(q);
 
-				g = getDestVar(q);
 				q = newStmt(mb, "algebra", "semijoin");
 				q = pushArgument(mb, q, l);
-				q = pushArgument(mb, q, g);
+				q = pushArgument(mb, q, e);
 			} else {
 				int k;
 
