@@ -7,6 +7,8 @@ AGENDA FOR MonetDB Version 5.02 release Jan 2006
 - Database pool for web-applications
 - Mguardian to watch over server
 - GDK should switch to private-bats unless stated otherwise.
+  ATOMcmp should not walk the storage field, this should be
+  made explicit if needed.
 
 AGENDA FOR MonetDB Version 5.04 release Apr 2006
 - Target: benefit from compression and scale out
@@ -64,7 +66,6 @@ API issues
 
 V4 issues
 - overlay V4 database with V5 session should be tested
-- The radix modules should be brought in line with V4
 - Several of the MIL scripts associated with the modules have not
   been converted yet. Reliance on scripts should be minimal
 
@@ -72,6 +73,7 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20050917 Rollforward of M4 finished. counters module added.
 20050910 Added appendix generators and cleaned up naming
 20050902 stricter type analysis
 	make all polymorphic types explicit
