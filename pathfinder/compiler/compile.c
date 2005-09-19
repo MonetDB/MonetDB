@@ -488,7 +488,6 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
         long tm = PFtimer_start ();
-        int res;
 
         *prologue = NULL;
         *query = NULL;
@@ -527,9 +526,9 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
-        res = PFprintMILtemp (croot, &PFstate, tm, prologue, query, epilogue);
+        (void)  PFprintMILtemp (croot, &PFstate, tm, prologue, query, epilogue);
         pa_destroy(pf_alloc);
-        return res ? PFerrbuf : NULL;
+        return (*PFerrbuf) ? PFerrbuf : NULL;
 }
 
 #if HAVE_SIGNAL_H
