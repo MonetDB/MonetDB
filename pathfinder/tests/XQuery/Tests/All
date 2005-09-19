@@ -135,6 +135,7 @@ mod
 mult
 idiv
 div
+div-2
 comp1
 comp2
 comp3
