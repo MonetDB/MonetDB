@@ -314,6 +314,7 @@ mvc_trans(mvc *m)
 		}
 	}
 	store_unlock();
+	m->status = 0;
 	return res;
 }
 

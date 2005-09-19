@@ -411,6 +411,59 @@ SQLstatement(str *ret, str *cmd)
 	return MAL_SUCCEED;
 }
 
+static int
+error(stream *out, char *str)
+{
+	char *p;
+
+	if (!out)
+		out = GDKerr;
+
+	if (stream_errnr(out))
+		return -1;
+	while ((p = strchr(str, '\n')) != NULL) {
+		p++;		/* include newline */
+		if (*str !='!' && stream_write(out, "!", 1, 1) != 1)
+			return -1;
+		if (stream_write(out, str, p - str, 1) != 1)
+			 return -1;
+		str = p;
+	}
+	if (str &&*str) {
+		if (*str !='!' && stream_write(out, "!", 1, 1) != 1)
+			return -1;
+		if (stream_write(out, str, strlen(str), 1) != 1 || stream_write(out, "\n", 1, 1) != 1)
+			 return -1;
+	}
+	return 0;
+}
+
+#define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
+
+int
+handle_error(mvc *m, stream *out, int pstatus, char *errmsg)
+{
+	int go = 1;
+	char *buf = errmsg;
+
+	/* transaction already broken */
+	if (m->type != Q_TRANS && pstatus < 0) {
+		if (stream_write(out, TRANS_ABORTED, sizeof(TRANS_ABORTED) - 1, 1) != 1) {
+			go = !go;
+		}
+	} else {
+		if (error(out, m->errstr) < 0 || (buf && buf[0] && error(out, buf) < 0)) {
+			go = !go;
+		}
+	}
+	/* reset error buffers */
+	m->errstr[0] = 0;
+	if (buf)
+		buf[0] = 0;
+	return go;
+}
+
+
 @-
 The SQL reader collects a (sequence) of statements from the input
 stream, but only when no unresolved 'nxt' character is visible.
@@ -453,6 +506,10 @@ Continue processing any left-over input from the previous round.
 	stream_printf(GDKout, "#pos %d len %d\n", in->pos, in->len);
 	stream_flush(GDKout);
 #endif
+	/* skip whitespace */
+	while (in->pos < in->len && (isspace((int) (in->buf[in->pos])) || in->buf[in->pos] == ';'))
+		in->pos++;
+
 	if (in->pos >= in->len) {
 		ssize_t rd;
 
@@ -475,10 +532,10 @@ Continue processing any left-over input from the previous round.
 						qc_destroy(m->qc);
 					m->qc = qc_create();
 				}
-				if (mvc_commit(m, 0, NULL) < 0) {
-					/*
-				 	go = handle_error(m, c->fdout, pstatus);
-					*/
+				if (mvc_status(m) < 0) {
+					mvc_rollback(m, 0, NULL);
+				} else if (mvc_commit(m, 0, NULL) < 0) {
+				 	go = handle_error(m, c->fdout, 0, NULL);
 				}
 			}
 
@@ -568,8 +625,6 @@ The core part of the SQL interface, parse the query and
 prepare the intermediate code.
 @c
 
-#define TRANS_ABORTED "!current transaction is aborted (please ROLLBACK)\n"
-
 str
 SQLparser(Client c)
 {
@@ -599,12 +654,14 @@ SQLparser(Client c)
 	assert(m);
 
 	m->type = Q_PARSE;
-
-	if (!m->trans)
+	if (!m->trans) 
 		mvc_trans(m);
+	pstatus = m->status;
 
-	if (explainPerformance())
-		T0 = GDKusec();
+	/* sqlparse needs sql allocator to be available.  It can be NULL at
+	 * this point if this is a recursive call. */
+	if (!m->sa)
+		m->sa = sa_create();
 
 	oldmode = m->scanner.mode;
 	if (be->language == 's') {
@@ -636,18 +693,12 @@ SQLparser(Client c)
 		return throwMessage("SQLparser", "Unrecognized X command\n");
 	}
 
-	if (m->trans)
-		pstatus = m->status;
+	if (explainPerformance())
+		T0 = GDKusec();
 
 	m->mode = m_normal;
-
-	/* sqlparse needs sql allocator to be available.  It can be NULL at
-	 * this point if this is a recursive call. */
-	if (!m->sa)
-			m->sa = sa_create();
-
 	if ((err = sqlparse(m)) && m->debug){
-		/* switch to differnt language mode */
+		/* switch to different language mode */
 		char oldlang= be->language;
 		be->language= 'D';
 		runMALDebugger(c->curprg);
@@ -658,12 +709,7 @@ SQLparser(Client c)
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err)
 			err = mvc_status(m);
-		if (m->type != Q_TRANS && pstatus < 0) {
-			stream_write(c->fdout, TRANS_ABORTED, sizeof(TRANS_ABORTED) - 1, 1);
-		} else {
-			stream_printf(c->fdout, "#%s\n", m->errstr);
-		}
-		*m->errstr = 0;
+		handle_error(m, c->fdout, pstatus, NULL);
 		sqlcleanup(m, err);
 		msg = throwMessage("SQLparser", "Parser errors\n");
 		goto finalize;
@@ -678,8 +724,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		stmt *s = sql_symbol2stmt(m);
 
 		if (!s && (err = mvc_status(m))) {
-			stream_printf(c->fdout, "#%s\n", m->errstr);
-			*m->errstr = 0;
+			handle_error(m, c->fdout, pstatus, NULL);
 			sqlcleanup(m, err);
 			msg = throwMessage("SQLparser", "Semantic errors\n");
 			goto finalize;
@@ -819,7 +864,7 @@ Any error encountered during execution should block further processing
 unless auto_commit has been set.
 @c
 	if (c->curprg->def->errors) {
-		stream_printf(GDKout, "#Execution produced errors");
+		stream_printf(c->fdout, "#Execution produced errors");
 		sql_error(m, 1, "Execution produced errors");
 	}
 	c->glb = oldglb;

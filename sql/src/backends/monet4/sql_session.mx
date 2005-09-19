@@ -203,6 +203,18 @@ sqlcleanup(mvc *c, int err)
 	c->sa = sa_create();
 	c->status = err;
 	scanner_query_processed(&(c->scanner));
+
+	/*
+	 * clear query cache after Transaction boundaries (commit/rollback)
+	 * and on schema changes
+	 */
+	if (c->cache && 
+	   (c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id >100)) {
+		if (c->qc)
+			qc_destroy(c->qc);
+		c->qc = qc_create();
+	}
+
 	return err;
 }
 
@@ -279,9 +291,9 @@ void backend_profile( backend *be, char *query, lng parse, lng optimize, lng exe
 int
 sqlexecute(backend *be, stream *out)
 {
-	char *query = NULL;
-	lng T0 = 0, Tparse = 0, Tmil = 0, Texec = 0;
 	mvc *c = be->mvc;
+	char *query = NULL;
+	lng T0 = 0, Tparse = 0, Tmil = 0;
 	int err = 0;
 	cq *q = NULL;
 
@@ -304,7 +316,6 @@ sqlexecute(backend *be, stream *out)
 
 	if (c->mode == m_profile)
 		Tparse = GDKusec();
-
 	if ((c->mode == m_explain || c->mode == m_profile) && 
 	    c->sym->token == SQL_SET)
 		c->mode = m_normal;
@@ -356,27 +367,10 @@ sqlexecute(backend *be, stream *out)
 	} else if (q) {
 		err = backend_fastpath(be, q, c->args);
 	}
-	if (c->mode == m_profile)
-		Texec = GDKusec();
-
-	/*
-	 * clear query cache after Transaction boundaries (commit/rollback)
-	 * and on schema changes
-	 */
-	if (c->cache && (c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id >100)) {
-		if (c->qc)
-			qc_destroy(c->qc);
-		c->qc = qc_create();
+	if (!err && c->mode == m_profile) {
+		lng T = GDKusec();
+		backend_profile(be, query, Tparse-T0, Tmil-Tparse, T-Tmil,T0-T);
 	}
-
-	if (!err && c->mode == m_profile) 
-		backend_profile( be, query, Tparse - T0, Tmil - Tparse, Texec - Tmil, T0 - GDKusec());
-/*
-	if (!err && c->mode != m_explain) {
-		if (mvc_status(c) < 0) 
-			sql_error(c, 01, "Error in result");
-	}
-*/
 	return sqlcleanup(c, err);
 }
 
@@ -551,28 +545,11 @@ query string with "M".
 		if (m->trans)
 			pstatus = m->status;
 
-		/* no transaction, reset status */
-		if (!m->trans)
-			m->status = 0;
-
 		m->mode = m_normal;
-
 		err = sqlexecute(sql, out);
 		m->scanner.mode = oldmode;
-
-				/* rollback and skip rest */
-/*
-			if (m->auto_commit && m->trans) {
-				mvc_rollback(m, 0, NULL);
-				in->pos = in->len;
-				if (m->qc)
-					qc_destroy(m->qc);
-				m->qc = qc_create();
-			}
-*/
-		if (err) {	/* output error */
+		if (err) /* output error */
 			go = handle_error(m, out, pstatus);
-		}
 	}
 
 	_DELETE(errbuf);
