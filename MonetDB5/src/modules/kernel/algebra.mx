@@ -560,15 +560,15 @@ over it.
 @mal
 module aggr;
 
-command count( b:bat[:any_1,:any] ) :lng 
+command count( b:bat[:any_1,:any] ) :int 
 address ALGcount_bat
 comment "Return the current size (in number of elements) in a BAT.";
-command count ( b:bat[:any_1,:any], ignore_nils:bit ) :lng 
+command count ( b:bat[:any_1,:any], ignore_nils:bit ) :int 
 address ALGcount_nil
 comment "Return the number of elements currently in a BAT ignores 
         BUNs with nil-tail iff ignore_nils==TRUE.";
 
-command count_no_nil ( b:bat[:any_1,:any_2]) :lng 
+command count_no_nil ( b:bat[:any_1,:any_2]) :int
 address ALGcount_no_nil
 comment "Return the number of elements currently 
 	in a BAT ignoring BUNs with nil-tail";
@@ -2334,9 +2334,9 @@ ALGthsort(int *result, int *lid)
 	return throwMessage("algebra.htsort", "GDKerror");
 }
 
-mal_export str ALGcount_bat(lng *result, int *bid);
+mal_export str ALGcount_bat(int *result, int *bid);
 str
-ALGcount_bat(lng *result, int *bid)
+ALGcount_bat(int *result, int *bid)
 {
 	BAT *b;
 	size_t cnt;
@@ -2344,15 +2344,15 @@ ALGcount_bat(lng *result, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("aggr.count", "Cannot access descriptor");
 	}
-	cnt = BATcount(b);
+	cnt = (int)  BATcount(b);
 	*result = cnt;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGcount_nil(lng *result, int *bid, bit *ignore_nils);
+mal_export str ALGcount_nil(int *result, int *bid, bit *ignore_nils);
 str
-ALGcount_nil(lng *result, int *bid, bit *ignore_nils)
+ALGcount_nil(int *result, int *bid, bit *ignore_nils)
 {
 	BAT *b;
 	size_t cnt;
@@ -2364,14 +2364,14 @@ ALGcount_nil(lng *result, int *bid, bit *ignore_nils)
 		cnt = BATcount_no_nil(b);
 	else
 		cnt = BATcount(b);
-	*result = cnt;
+	*result = (int) cnt;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
-mal_export str ALGcount_no_nil(lng *result, int *bid);
+mal_export str ALGcount_no_nil(int *result, int *bid);
 str
-ALGcount_no_nil(lng *result, int *bid)
+ALGcount_no_nil(int *result, int *bid)
 {
 	bit ignore_nils = 1;
 
