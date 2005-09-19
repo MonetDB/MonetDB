@@ -2148,6 +2148,13 @@ CMDmerge(BAT **ret, BAT *b)
 	if (!bn->batDirty)
 		bn->batDirty = TRUE;
 
+	bn->hsorted = ( BAThordered(b)&1 && (BATtordered(b)&1 || BAThkey(b))) 
+		? GDK_SORTED : FALSE ;
+	bn->tsorted = FALSE ;
+	bn->tdense = FALSE ;
+	BATkey(bn, BAThkey(b) || BATtkey(b)) ;
+	BATkey(BATmirror(bn), FALSE) ;
+
 	return GDK_SUCCEED;
 }
 
@@ -2166,9 +2173,15 @@ CMDsplit(BAT **ret, BAT *b)
 		bunfastins(bn, &hp, &tp);
 	}
 
-	bn->hsorted = b->hsorted;
+	bn->hsorted = BAThordered(b)&1 ? GDK_SORTED : FALSE ;
+	bn->tsorted = FALSE ;
+	bn->hdense = FALSE ;
+	bn->tdense = FALSE ;
+	BATkey(bn, FALSE) ;
+	BATkey(BATmirror(bn), FALSE) ;
+
 	return GDK_SUCCEED;
-      bunins_failed:
+bunins_failed:
 	BBPreclaim(bn);
 	return GDK_FAIL;
 }
