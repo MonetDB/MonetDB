@@ -473,7 +473,6 @@ public class JdbcClient {
 				for (int i = 0; i < tables.size(); i++) {
 					// dump the table
 					Table t = (Table)(tables.get(i));
-					changeSchema(t, stmt);
 					doDump(out, hasXMLDump, t, dbmd, stmt);
 				}
 			}
@@ -1208,6 +1207,7 @@ public class JdbcClient {
 	throws SQLException	{
 
 		if (!xml) {
+			changeSchema(table, stmt);
 			createTable(
 				out,
 				dbmd,
@@ -1222,17 +1222,22 @@ public class JdbcClient {
 			);
 			out.println();
 		} else {
+			// TODO: add xsd schema prior to dumping the data
+			// TODO: wrap in schema tag
 			if (table.getType().equals("VIEW")) {
 				out.println("<!-- unable to represent VIEW " + table.getFqnameQ() + " -->");
 			} else {
 				ResultSet rs = stmt.executeQuery("SELECT * FROM " + table.getFqnameQ());
 				ResultSetMetaData rsmd = rs.getMetaData();
-				out.println("<table name=\"" + table.getFqname()+ "\">");
+				out.println("<" + table.getName() + ">");
 				String data;
 				while (rs.next()) {
 					out.println("  <row>");
 					for (int i = 1; i <= rsmd.getColumnCount(); i++) {
 						data = rs.getString(i);
+						// This is the "absent" method (of completely
+						// hiding the tag if null.  TODO: add "nil"
+						// method that writes <tag xsi:nil="true" />
 						if (data != null) {
 							out.print("    ");
 							out.print("<" + rsmd.getColumnLabel(i));
@@ -1246,7 +1251,7 @@ public class JdbcClient {
 					}
 					out.println("  </row>");
 				}
-				out.println("</table>");
+				out.println("</" + table.getName() + ">");
 			}
 		}
 	}
