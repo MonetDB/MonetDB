@@ -36,7 +36,7 @@ barrier go := true;	# 2  (go:bit)<-(_4:bit) jump 11
     a:bat[:void,:dbl]  := bbp.bind("P_bat");	# 3 CMDbbpbind (a:bat[:void,:dbl])<-(_6:str)
     bat.setPersistent(a,false);	# 4 BKCpersists (_7:void)<-(a:bat[:void,:dbl])(_8:bit)
     transaction.commit();	# 5 TRNglobal_commit (_9:void)
-    a:bat[:void,:dbl]  := batcalc.+(a,1.0LL);	# 6 CMDbatADDcst (a:bat[:void,:dbl])<-(a:bat[:void,:dbl])(_10:dbl)
+    a:bat[:void,:dbl]  := batcalc.+(a,1.0LL);	# 6 CMDbatADDcst_dbl_dbl_dbl (a:bat[:void,:dbl])<-(a:bat[:void,:dbl])(_10:dbl)
     bat.setName(a,"P_bat");	# 7 BKCsetName (_11:void)<-(a:bat[:void,:dbl])(_6:str)
     bat.setPersistent(a,true);	# 8 BKCpersists (_12:void)<-(a:bat[:void,:dbl])(_4:bit)
     transaction.commit();	# 9 TRNglobal_commit (_13:void)

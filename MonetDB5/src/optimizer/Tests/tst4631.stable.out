@@ -189,8 +189,8 @@ function user.qry1():void;	# 0  (qry1:void)
     V79 := algebra.kdifference(V72,V78);	# 56 ALGkdiff (V79:bat[:oid,:flt])<-(V72:bat[:void,:flt])(V78:bat[:oid,:void])
     V80 := algebra.join(V18,V79);	# 57 ALGjoin (V80:bat[:void,:flt])<-(V18:bat[:void,:oid])(V79:bat[:oid,:flt])
     V81 := optimizer.multiplex("calc.-",V71,V80);	# 58 OPTmultiplex (V81:any)<-(_78:str)(V71:lng)(V80:bat[:void,:flt])
-    V83 := batcalc.*(V67,V81);	# 59  unknown (V83:any)<-(V67:bat[:void,:flt])(V81:any)
-    V85 := aggrX3.sum(V83,V32,V34);	# 60  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
+    V83 := batcalc.*(V67,V81);	# 59 CMDbatMULcst_flt_flt_flt (V83:bat[:void,:flt])<-(V67:bat[:void,:flt])(V81:any)
+    V85 := aggrX3.sum(V83,V32,V34);	# 60  unknown (V85:any)<-(V83:bat[:void,:flt])(V32:any)(V34:any)
     V86:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 61  (V86:bat[:void,:oid])<-(_71:str)(_72:str)(_73:int)
     V87 := bat.reverse(V86);	# 62 BKCreverse (V87:bat[:oid,:void])<-(V86:bat[:void,:oid])
     V88 := algebra.kdifference(V57,V87);	# 63 ALGkdiff (V88:bat[:oid,:flt])<-(V57:bat[:void,:flt])(V87:bat[:oid,:void])
@@ -202,7 +202,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V94 := algebra.kdifference(V72,V93);	# 69 ALGkdiff (V94:bat[:oid,:flt])<-(V72:bat[:void,:flt])(V93:bat[:oid,:void])
     V95 := algebra.join(V18,V94);	# 70 ALGjoin (V95:bat[:void,:flt])<-(V18:bat[:void,:oid])(V94:bat[:oid,:flt])
     V96 := optimizer.multiplex("calc.-",V91,V95);	# 71 OPTmultiplex (V96:any)<-(_78:str)(V91:lng)(V95:bat[:void,:flt])
-    V97 := batcalc.*(V89,V96);	# 72  unknown (V97:any)<-(V89:bat[:void,:flt])(V96:any)
+    V97 := batcalc.*(V89,V96);	# 72 CMDbatMULcst_flt_flt_flt (V97:bat[:void,:flt])<-(V89:bat[:void,:flt])(V96:any)
     V98 := calc.lng(1);	# 73 CALCint2lng (V98:lng)<-(_65:int)
     V99 := calc.*(V98,100);	# 74 CALCbinaryMULlngint (V99:lng)<-(V98:lng)(_67:int)
     V100:bat[:void,:flt]  := user.bind("sys","lineitem","l_tax",0);	# 75  (V100:bat[:void,:flt])<-(_71:str)(_72:str)(_96:str)(_73:int)
@@ -211,8 +211,8 @@ function user.qry1():void;	# 0  (qry1:void)
     V104 := algebra.kdifference(V100,V103);	# 78 ALGkdiff (V104:bat[:oid,:flt])<-(V100:bat[:void,:flt])(V103:bat[:oid,:void])
     V105 := algebra.join(V18,V104);	# 79 ALGjoin (V105:bat[:void,:flt])<-(V18:bat[:void,:oid])(V104:bat[:oid,:flt])
     V106 := optimizer.multiplex("calc.+",V99,V105);	# 80 OPTmultiplex (V106:any)<-(_102:str)(V99:lng)(V105:bat[:void,:flt])
-    V108 := batcalc.*(V97,V106);	# 81  unknown (V108:any)<-(V97:any)(V106:any)
-    V109 := aggrX3.sum(V108,V32,V34);	# 82  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
+    V108 := batcalc.*(V97,V106);	# 81 CMDbatMULcst_flt_flt_flt (V108:bat[:void,:flt])<-(V97:bat[:void,:flt])(V106:any)
+    V109 := aggrX3.sum(V108,V32,V34);	# 82  unknown (V109:any)<-(V108:bat[:void,:flt])(V32:any)(V34:any)
     V110:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 83  (V110:bat[:void,:oid])<-(_106:str)(_107:str)(_108:int)
     V114 := bat.reverse(V110);	# 84 BKCreverse (V114:bat[:oid,:void])<-(V110:bat[:void,:oid])
     V115 := algebra.kdifference(V50,V114);	# 85 ALGkdiff (V115:bat[:oid,:int])<-(V50:bat[:void,:int])(V114:bat[:oid,:void])
@@ -242,10 +242,7 @@ end qry1;	# 101
 !ERROR: 'group.refine' undefined in user.qry1[34]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[40]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[46]
-!ERROR: 'batcalc.*' undefined in user.qry1[59]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[60]
-!ERROR: 'batcalc.*' undefined in user.qry1[72]
-!ERROR: 'batcalc.*' undefined in user.qry1[81]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[82]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[87]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[92]
@@ -267,10 +264,7 @@ end qry1;	# 101
 !ERROR: 'group.refine' undefined in user.qry1[34]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[40]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[46]
-!ERROR: 'batcalc.*' undefined in user.qry1[59]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[60]
-!ERROR: 'batcalc.*' undefined in user.qry1[72]
-!ERROR: 'batcalc.*' undefined in user.qry1[81]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[82]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[87]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[92]
@@ -336,8 +330,8 @@ function user.qry1():void;	# 0  (qry1:void)
     V79 := algebra.kdifference(V72,V78);	# 56 ALGkdiff (V79:bat[:oid,:flt])<-(V72:bat[:void,:flt])(V78:bat[:oid,:void])
     V80 := algebra.join(V18,V79);	# 57 ALGjoin (V80:bat[:void,:flt])<-(V18:bat[:void,:oid])(V79:bat[:oid,:flt])
     V81 := optimizer.multiplex("calc.-",V71,V80);	# 58 OPTmultiplex (V81:any)<-(_78:str)(V71:lng)(V80:bat[:void,:flt])
-    V83 := batcalc.*(V67,V81);	# 59  unknown (V83:any)<-(V67:bat[:void,:flt])(V81:any)
-    V85 := aggrX3.sum(V83,V32,V34);	# 60  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
+    V83 := batcalc.*(V67,V81);	# 59 CMDbatMULcst_flt_flt_flt (V83:bat[:void,:flt])<-(V67:bat[:void,:flt])(V81:any)
+    V85 := aggrX3.sum(V83,V32,V34);	# 60  unknown (V85:any)<-(V83:bat[:void,:flt])(V32:any)(V34:any)
     V86:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 61  (V86:bat[:void,:oid])<-(_71:str)(_72:str)(_73:int)
     V87 := bat.reverse(V86);	# 62 BKCreverse (V87:bat[:oid,:void])<-(V86:bat[:void,:oid])
     V88 := algebra.kdifference(V57,V87);	# 63 ALGkdiff (V88:bat[:oid,:flt])<-(V57:bat[:void,:flt])(V87:bat[:oid,:void])
@@ -349,7 +343,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V94 := algebra.kdifference(V72,V93);	# 69 ALGkdiff (V94:bat[:oid,:flt])<-(V72:bat[:void,:flt])(V93:bat[:oid,:void])
     V95 := algebra.join(V18,V94);	# 70 ALGjoin (V95:bat[:void,:flt])<-(V18:bat[:void,:oid])(V94:bat[:oid,:flt])
     V96 := optimizer.multiplex("calc.-",V91,V95);	# 71 OPTmultiplex (V96:any)<-(_78:str)(V91:lng)(V95:bat[:void,:flt])
-    V97 := batcalc.*(V89,V96);	# 72  unknown (V97:any)<-(V89:bat[:void,:flt])(V96:any)
+    V97 := batcalc.*(V89,V96);	# 72 CMDbatMULcst_flt_flt_flt (V97:bat[:void,:flt])<-(V89:bat[:void,:flt])(V96:any)
     V98 := calc.lng(1);	# 73 CALCint2lng (V98:lng)<-(_65:int)
     V99 := calc.*(V98,100);	# 74 CALCbinaryMULlngint (V99:lng)<-(V98:lng)(_67:int)
     V100:bat[:void,:flt]  := user.bind("sys","lineitem","l_tax",0);	# 75  (V100:bat[:void,:flt])<-(_71:str)(_72:str)(_96:str)(_73:int)
@@ -358,8 +352,8 @@ function user.qry1():void;	# 0  (qry1:void)
     V104 := algebra.kdifference(V100,V103);	# 78 ALGkdiff (V104:bat[:oid,:flt])<-(V100:bat[:void,:flt])(V103:bat[:oid,:void])
     V105 := algebra.join(V18,V104);	# 79 ALGjoin (V105:bat[:void,:flt])<-(V18:bat[:void,:oid])(V104:bat[:oid,:flt])
     V106 := optimizer.multiplex("calc.+",V99,V105);	# 80 OPTmultiplex (V106:any)<-(_102:str)(V99:lng)(V105:bat[:void,:flt])
-    V108 := batcalc.*(V97,V106);	# 81  unknown (V108:any)<-(V97:any)(V106:any)
-    V109 := aggrX3.sum(V108,V32,V34);	# 82  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
+    V108 := batcalc.*(V97,V106);	# 81 CMDbatMULcst_flt_flt_flt (V108:bat[:void,:flt])<-(V97:bat[:void,:flt])(V106:any)
+    V109 := aggrX3.sum(V108,V32,V34);	# 82  unknown (V109:any)<-(V108:bat[:void,:flt])(V32:any)(V34:any)
     V110:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 83  (V110:bat[:void,:oid])<-(_106:str)(_107:str)(_108:int)
     V114 := bat.reverse(V110);	# 84 BKCreverse (V114:bat[:oid,:void])<-(V110:bat[:void,:oid])
     V115 := algebra.kdifference(V50,V114);	# 85 ALGkdiff (V115:bat[:oid,:int])<-(V50:bat[:void,:int])(V114:bat[:oid,:void])
@@ -389,10 +383,7 @@ end qry1;	# 101
 !ERROR: 'group.refine' undefined in user.qry1[34]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[40]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[46]
-!ERROR: 'batcalc.*' undefined in user.qry1[59]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[60]
-!ERROR: 'batcalc.*' undefined in user.qry1[72]
-!ERROR: 'batcalc.*' undefined in user.qry1[81]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[82]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[87]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[92]
@@ -458,8 +449,8 @@ function user.qry1():void;	# 0  (qry1:void)
     V79 := algebra.kdifference(V72,V78);	# 56 ALGkdiff (V79:bat[:oid,:flt])<-(V72:bat[:void,:flt])(V78:bat[:oid,:void])
     V80 := algebra.join(V18,V79);	# 57 ALGjoin (V80:bat[:void,:flt])<-(V18:bat[:void,:oid])(V79:bat[:oid,:flt])
     V81 := optimizer.multiplex("calc.-",V71,V80);	# 58 OPTmultiplex (V81:any)<-(_78:str)(V71:lng)(V80:bat[:void,:flt])
-    V83 := batcalc.*(V67,V81);	# 59  unknown (V83:any)<-(V67:bat[:void,:flt])(V81:any)
-    V85 := aggrX3.sum(V83,V32,V34);	# 60  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
+    V83 := batcalc.*(V67,V81);	# 59 CMDbatMULcst_flt_flt_flt (V83:bat[:void,:flt])<-(V67:bat[:void,:flt])(V81:any)
+    V85 := aggrX3.sum(V83,V32,V34);	# 60  unknown (V85:any)<-(V83:bat[:void,:flt])(V32:any)(V34:any)
     V86:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 61  (V86:bat[:void,:oid])<-(_71:str)(_72:str)(_73:int)
     V87 := bat.reverse(V86);	# 62 BKCreverse (V87:bat[:oid,:void])<-(V86:bat[:void,:oid])
     V88 := algebra.kdifference(V57,V87);	# 63 ALGkdiff (V88:bat[:oid,:flt])<-(V57:bat[:void,:flt])(V87:bat[:oid,:void])
@@ -471,7 +462,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V94 := algebra.kdifference(V72,V93);	# 69 ALGkdiff (V94:bat[:oid,:flt])<-(V72:bat[:void,:flt])(V93:bat[:oid,:void])
     V95 := algebra.join(V18,V94);	# 70 ALGjoin (V95:bat[:void,:flt])<-(V18:bat[:void,:oid])(V94:bat[:oid,:flt])
     V96 := optimizer.multiplex("calc.-",V91,V95);	# 71 OPTmultiplex (V96:any)<-(_78:str)(V91:lng)(V95:bat[:void,:flt])
-    V97 := batcalc.*(V89,V96);	# 72  unknown (V97:any)<-(V89:bat[:void,:flt])(V96:any)
+    V97 := batcalc.*(V89,V96);	# 72 CMDbatMULcst_flt_flt_flt (V97:bat[:void,:flt])<-(V89:bat[:void,:flt])(V96:any)
     V98 := calc.lng(1);	# 73 CALCint2lng (V98:lng)<-(_65:int)
     V99 := calc.*(V98,100);	# 74 CALCbinaryMULlngint (V99:lng)<-(V98:lng)(_67:int)
     V100:bat[:void,:flt]  := user.bind("sys","lineitem","l_tax",0);	# 75  (V100:bat[:void,:flt])<-(_71:str)(_72:str)(_96:str)(_73:int)
@@ -480,8 +471,8 @@ function user.qry1():void;	# 0  (qry1:void)
     V104 := algebra.kdifference(V100,V103);	# 78 ALGkdiff (V104:bat[:oid,:flt])<-(V100:bat[:void,:flt])(V103:bat[:oid,:void])
     V105 := algebra.join(V18,V104);	# 79 ALGjoin (V105:bat[:void,:flt])<-(V18:bat[:void,:oid])(V104:bat[:oid,:flt])
     V106 := optimizer.multiplex("calc.+",V99,V105);	# 80 OPTmultiplex (V106:any)<-(_102:str)(V99:lng)(V105:bat[:void,:flt])
-    V108 := batcalc.*(V97,V106);	# 81  unknown (V108:any)<-(V97:any)(V106:any)
-    V109 := aggrX3.sum(V108,V32,V34);	# 82  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
+    V108 := batcalc.*(V97,V106);	# 81 CMDbatMULcst_flt_flt_flt (V108:bat[:void,:flt])<-(V97:bat[:void,:flt])(V106:any)
+    V109 := aggrX3.sum(V108,V32,V34);	# 82  unknown (V109:any)<-(V108:bat[:void,:flt])(V32:any)(V34:any)
     V110:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 83  (V110:bat[:void,:oid])<-(_106:str)(_107:str)(_108:int)
     V114 := bat.reverse(V110);	# 84 BKCreverse (V114:bat[:oid,:void])<-(V110:bat[:void,:oid])
     V115 := algebra.kdifference(V50,V114);	# 85 ALGkdiff (V115:bat[:oid,:int])<-(V50:bat[:void,:int])(V114:bat[:oid,:void])
@@ -511,9 +502,7 @@ end qry1;	# 101
 !ERROR: 'group.refine' undefined in user.qry1[22]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[26]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[30]
-!ERROR: 'batcalc.*' undefined in user.qry1[37]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[38]
-!ERROR: 'batcalc.*' undefined in user.qry1[43]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[44]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[45]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[46]
@@ -557,14 +546,14 @@ function user.qry1():void;	# 0  (qry1:void)
     V79 := algebra.kdifference(V72,V9);	# 34 ALGkdiff (V79:bat[:oid,:flt])<-(V72:bat[:void,:flt])(V9:bat[:oid,:void])
     V80 := algebra.join(V18,V79);	# 35 ALGjoin (V80:bat[:void,:flt])<-(V18:bat[:void,:oid])(V79:bat[:oid,:flt])
     V81 := optimizer.multiplex("calc.-",V71,V80);	# 36 OPTmultiplex (V81:any)<-(_78:str)(V71:lng)(V80:bat[:void,:flt])
-    V83 := batcalc.*(V62,V81);	# 37  unknown (V83:any)<-(V62:bat[:void,:flt])(V81:any)
-    V85 := aggrX3.sum(V83,V32,V34);	# 38  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
+    V83 := batcalc.*(V62,V81);	# 37 CMDbatMULcst_flt_flt_flt (V83:bat[:void,:flt])<-(V62:bat[:void,:flt])(V81:any)
+    V85 := aggrX3.sum(V83,V32,V34);	# 38  unknown (V85:any)<-(V83:bat[:void,:flt])(V32:any)(V34:any)
     V100:bat[:void,:flt]  := user.bind("sys","lineitem","l_tax",0);	# 39  (V100:bat[:void,:flt])<-(_71:str)(_72:str)(_96:str)(_73:int)
     V104 := algebra.kdifference(V100,V9);	# 40 ALGkdiff (V104:bat[:oid,:flt])<-(V100:bat[:void,:flt])(V9:bat[:oid,:void])
     V105 := algebra.join(V18,V104);	# 41 ALGjoin (V105:bat[:void,:flt])<-(V18:bat[:void,:oid])(V104:bat[:oid,:flt])
     V106 := optimizer.multiplex("calc.+",V71,V105);	# 42 OPTmultiplex (V106:any)<-(_102:str)(V71:lng)(V105:bat[:void,:flt])
-    V108 := batcalc.*(V83,V106);	# 43  unknown (V108:any)<-(V83:any)(V106:any)
-    V109 := aggrX3.sum(V108,V32,V34);	# 44  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
+    V108 := batcalc.*(V83,V106);	# 43 CMDbatMULcst_flt_flt_flt (V108:bat[:void,:flt])<-(V83:bat[:void,:flt])(V106:any)
+    V109 := aggrX3.sum(V108,V32,V34);	# 44  unknown (V109:any)<-(V108:bat[:void,:flt])(V32:any)(V34:any)
     V117 := aggrX3.avg(V55,V32,V34);	# 45  unknown (V117:any)<-(V55:bat[:void,:int])(V32:any)(V34:any)
     V122 := aggrX3.avg(V62,V32,V34);	# 46  unknown (V122:any)<-(V62:bat[:void,:flt])(V32:any)(V34:any)
     V124 := optimizer.multiplex("calc.round",V122,100);	# 47 OPTmultiplex (V124:any)<-(_119:str)(V122:any)(_120:int)
@@ -582,9 +571,7 @@ end qry1;	# 51
 !ERROR: 'group.refine' undefined in user.qry1[22]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[26]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[30]
-!ERROR: 'batcalc.*' undefined in user.qry1[37]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[38]
-!ERROR: 'batcalc.*' undefined in user.qry1[43]
 !ERROR: 'aggrX3.sum' undefined in user.qry1[44]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[45]
 !ERROR: 'aggrX3.avg' undefined in user.qry1[46]
@@ -628,14 +615,14 @@ function user.qry1():void;	# 0  (qry1:void)
     V79 := algebra.kdifference(V72,V9);	# 34 ALGkdiff (V79:bat[:oid,:flt])<-(V72:bat[:void,:flt])(V9:bat[:oid,:void])
     V80 := algebra.join(V18,V79);	# 35 ALGjoin (V80:bat[:void,:flt])<-(V18:bat[:void,:oid])(V79:bat[:oid,:flt])
     V81 := optimizer.multiplex("calc.-",V71,V80);	# 36 OPTmultiplex (V81:any)<-(_78:str)(V71:lng)(V80:bat[:void,:flt])
-    V83 := batcalc.*(V62,V81);	# 37  unknown (V83:any)<-(V62:bat[:void,:flt])(V81:any)
-    V85 := aggrX3.sum(V83,V32,V34);	# 38  unknown (V85:any)<-(V83:any)(V32:any)(V34:any)
+    V83 := batcalc.*(V62,V81);	# 37 CMDbatMULcst_flt_flt_flt (V83:bat[:void,:flt])<-(V62:bat[:void,:flt])(V81:any)
+    V85 := aggrX3.sum(V83,V32,V34);	# 38  unknown (V85:any)<-(V83:bat[:void,:flt])(V32:any)(V34:any)
     V100:bat[:void,:flt]  := user.bind("sys","lineitem","l_tax",0);	# 39  (V100:bat[:void,:flt])<-(_71:str)(_72:str)(_96:str)(_73:int)
     V104 := algebra.kdifference(V100,V9);	# 40 ALGkdiff (V104:bat[:oid,:flt])<-(V100:bat[:void,:flt])(V9:bat[:oid,:void])
     V105 := algebra.join(V18,V104);	# 41 ALGjoin (V105:bat[:void,:flt])<-(V18:bat[:void,:oid])(V104:bat[:oid,:flt])
     V106 := optimizer.multiplex("calc.+",V71,V105);	# 42 OPTmultiplex (V106:any)<-(_102:str)(V71:lng)(V105:bat[:void,:flt])
-    V108 := batcalc.*(V83,V106);	# 43  unknown (V108:any)<-(V83:any)(V106:any)
-    V109 := aggrX3.sum(V108,V32,V34);	# 44  unknown (V109:any)<-(V108:any)(V32:any)(V34:any)
+    V108 := batcalc.*(V83,V106);	# 43 CMDbatMULcst_flt_flt_flt (V108:bat[:void,:flt])<-(V83:bat[:void,:flt])(V106:any)
+    V109 := aggrX3.sum(V108,V32,V34);	# 44  unknown (V109:any)<-(V108:bat[:void,:flt])(V32:any)(V34:any)
     V117 := aggrX3.avg(V55,V32,V34);	# 45  unknown (V117:any)<-(V55:bat[:void,:int])(V32:any)(V34:any)
     V122 := aggrX3.avg(V62,V32,V34);	# 46  unknown (V122:any)<-(V62:bat[:void,:flt])(V32:any)(V34:any)
     V124 := optimizer.multiplex("calc.round",V122,100);	# 47 OPTmultiplex (V124:any)<-(_119:str)(V122:any)(_120:int)

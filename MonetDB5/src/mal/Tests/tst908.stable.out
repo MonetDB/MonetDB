@@ -25,8 +25,8 @@ stdout of test 'tst908` in directory 'src/mal` itself:
 function user.perftst(b:bat[:any_1,:any_2],div:any_2):void;	# 0  (perftst:void)<-(b:bat[:any_1,:any_2])(div:any_2)
     io.print("perftst");	# 1 IOprint_val (_3:int)<-(_4:str)
     io.print(div);	# 2 IOprint_val (_5:int)<-(div:any_2)
-    reduce := batcalc./(b,div);	# 3 CMDbatDIVcst (reduce:bat[:any,:any])<-(b:bat[:any_1,:any_2])(div:any_2)
-    io.print(reduce);	# 4 IOprint_val (_7:int)<-(reduce:bat[:any,:any])
+    reduce := batcalc./(b,div);	# 3  (reduce:any)<-(b:bat[:any_1,:any_2])(div:any_2)
+    io.print(reduce);	# 4 IOprint_val (_7:int)<-(reduce:any)
 end perftst;	# 5  
 #
 #
