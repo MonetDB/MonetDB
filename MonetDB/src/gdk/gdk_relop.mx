@@ -1300,41 +1300,108 @@ BATleftthetajoin(BAT *l, BAT *r, int op, size_t estimate)
 }
 
 /* nested loop join; finally MonetDB can enjoy the virtues of this algorithm as well! */
+@= nlthetajoin_16
+	@:nlthetajoin_4(@1,0)@ @:nlthetajoin_4(@1,4)@ @:nlthetajoin_4(@1,8)@ @:nlthetajoin_4(@1,12)@
+@= nlthetajoin_4
+	@:nlthetajoin_1(@1,@2)@ @:nlthetajoin_1(@1,@2+1)@ @:nlthetajoin_1(@1,@2+2)@ @:nlthetajoin_1(@1,@2+3)@
+@= nlthetajoin_1
+	cur->l = i; cur->r = j+@2; cur += (la[i] @1 ra[j+@2]);
+@= nlthetajoin_impl
+static int nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r) {
+	dst_t *cur = (dst_t*) (bn->batBuns->base + bn->batBuns->free);
+	dst_t *lim = (dst_t*) (bn->batBuns->base + bn->batBuns->size);
+	oid llo = l->hseqbase, lhi = llo + BATcount(l);
+	oid rlo = r->tseqbase, rhi = rlo + BATcount(r);
+	@1 *la = ((@1*) BUNfirst(l)) - llo;
+	@1 *ra = ((@1*) BUNfirst(r)) - rlo;
+	oid i, j;
+	for(i=llo; i<lhi; i++) {
+		if (la[i] == @1_nil) continue;
+		for(j=rlo; j+16 < rhi; j+=16) {
+			if (cur+16 >= lim) {
+				bn->batBuns->free = ((BUN) cur) - bn->batBuns->base;
+				if (BATextend(bn, 16 + BATcount(bn) * (((dbl) (lhi-rlo))/(i+1-rlo)))) return 1;
+				cur = (dst_t*) (bn->batBuns->base + bn->batBuns->free);
+				lim = (dst_t*) (bn->batBuns->base + bn->batBuns->size);
+			}
+			@:nlthetajoin_16(@3)@
+		}
+		cur->l = i; 
+		for(; j<rhi; j++) {
+			@:nlthetajoin_1(@3,0)@
+		}
+	}
+	bn->batBuns->free = ((BUN) cur) - bn->batBuns->base;
+	return 0;
+}
+@= nlthetajoin_call
+	case TYPE_@1: if (nlthetajoin_@2_@1(bn,l,r)) goto bunins_failed; break;
+@= nlthetajoin_tpe
+#ifndef NOEXPAND_CHR
+	@:nlthetajoin_@1(chr,@2,@3)@
+#endif
+#ifndef NOEXPAND_SHT
+	@:nlthetajoin_@1(sht,@2,@3)@
+#endif
+#ifndef NOEXPAND_INT
+	@:nlthetajoin_@1(int,@2,@3)@
+#endif
+#ifndef NOEXPAND_LNG
+	@:nlthetajoin_@1(lng,@2,@3)@
+#endif
+#ifndef NOEXPAND_FLT
+	@:nlthetajoin_@1(flt,@2,@3)@
+#endif
+#ifndef NOEXPAND_DBL
+	@:nlthetajoin_@1(dbl,@2,@3)@
+#endif
+@c
+typedef struct { oid l,r; } dst_t;
+@:nlthetajoin_tpe(impl,gt,>)@
+@:nlthetajoin_tpe(impl,ge,>=)@
+@:nlthetajoin_tpe(impl,lt,<)@
+@:nlthetajoin_tpe(impl,le,<=)@
 BAT *
-BATnlthetajoin(BAT *l, BAT *r, int op, size_t estimate)
-{
-	BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), estimate);
-	int (*cmp) (ptr, ptr) = BATatoms[l->ttype].atomCmp;
-	ptr nil = ATOMnilptr(l->ttype);
-	int rx, lx, lo = 0, hi = 0;
-	BUN rp, rq, lp, lq;
+BATnlthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
+	int optimize = (BUNsize(l) == ATOMsize(l->ttype) && BUNsize(r) == ATOMsize(r->htype) && l->tvarsized == 0 && r->hvarsized == 0);
+	BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), estimate+16);
+	int lo = 0, hi = 0;
+
+	if (bn == NULL) return NULL;
 
 	if (op == JOIN_GT) {
 		lo = 1;
 		hi = GDK_int_max;
+		if (optimize) switch(ATOMstorage(l->ttype)) { @:nlthetajoin_tpe(call,gt)@ default: optimize=0; }
 	} else if (op == JOIN_GE) {
 		lo = 0;
 		hi = GDK_int_max;
+		if (optimize) switch(ATOMstorage(l->ttype)) { @:nlthetajoin_tpe(call,ge)@ default: optimize=0; }
 	} else if (op == JOIN_LT) {
 		lo = GDK_int_min;
 		hi = -1;
+		if (optimize) switch(ATOMstorage(l->ttype)) { @:nlthetajoin_tpe(call,lt)@ default: optimize=0; }
 	} else if (op == JOIN_LE) {
 		lo = GDK_int_min;
 		hi = 0;
+		if (optimize) switch(ATOMstorage(l->ttype)) { @:nlthetajoin_tpe(call,le)@ default: optimize=0; }
 	}
-	/* we are not going to optimize this by type; not worth it! */
-	BATloopFast(l, lp, lq, lx) {
-		ptr v = (ptr) BUNtail(l, lp);
-
-		if ((*cmp) (v, nil) == 0) {
-			continue;
-		}
-		BATloopFast(r, rp, rq, rx) {
-			ptr w = (ptr) BUNhead(r, rp);
-			int c = (*cmp) (v, w);
-
-			if ((c >= lo) & (c <= hi)) {
-				bunfastins(bn, BUNhead(l, lp), BUNtail(r, rp));
+	if (!optimize) {
+		int lx, rx, (*cmp) (ptr, ptr) = BATatoms[l->ttype].atomCmp;
+		ptr nil = ATOMnilptr(l->ttype);
+		BUN rp, rq, lp, lq;
+		BATloopFast(l, lp, lq, lx) {
+			ptr v = (ptr) BUNtail(l, lp);
+			if ((*cmp) (v, nil) == 0) {
+				continue;
+			}
+			BATloopFast(r, rp, rq, rx) {
+				ptr w = (ptr) BUNhead(r, rp);
+				int c = (*cmp) (v, w);
+	
+				if ((c >= lo) & (c <= hi)) {
+					bunfastins(bn, BUNhead(l, lp), BUNtail(r, rp));
+				}
 			}
 		}
 	}
