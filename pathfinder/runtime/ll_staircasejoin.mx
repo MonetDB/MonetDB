@@ -471,6 +471,8 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
     int stack_top = 0, ctx_bunsize = 0, iter_bunsize = 0, *size = 0;
     oid pre = 0, ctx = 0, cur_ctx = 0;
     BUN cur_bun = 0, iter_bun = 0, ctx_bun = 0, ctx_last = 0;
+    BUN cand_cur = cand_bat?BUNtloc(cand_bat,BUNfirst(cand_bat)):NULL;
+    BUN cand_lst = cand_bat?BUNtloc(cand_bat,BUNlast (cand_bat)):NULL;
 
     /* not used, here; keep compilers happy */
     (void)min_iter;
@@ -572,28 +574,31 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
             for (;              pre <= lst_pre; pre += size[pre] + 1) {
                 @:inner_loop_child_body@
             }
-            for (; pre <= @1; pre += size[pre] + 1) {};
         } else {
-            oid fst_ctx = pre, lst_ctx = @1;
-            int bs_cand_bat = BUNsize(cand_bat);
-            BUN fst_pre = BUNtloc(cand_bat, SORTfndfirst_oid(cand_bat, &fst_ctx));
-            BUN lst_pre = BUNtloc(cand_bat, SORTfndlast_oid (cand_bat, &lst_ctx)) - bs_cand_bat;
-            for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += size[pre] + 1) {};
-            for (; pre <= @1 && pre <= *(oid*)lst_pre; pre += size[pre] + 1) {
-                while (*(oid*)fst_pre < pre && fst_pre < lst_pre) {
-                    fst_pre += bs_cand_bat;
+            if (cand_cur < cand_lst) {
+                BUN fst_pre = cand_cur;
+                oid lst_pre = MIN(@1, *(oid*)(cand_lst - BUNsize(cand_bat)));
+
+                for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += size[pre] + 1) {};
+                for (;              pre <=        lst_pre; pre += size[pre] + 1) {
+                    /* poor man's binary search / exploiting forward scan */
+                    while (fst_pre+4096 < cand_lst && *(oid*) (fst_pre+4096) < pre)
+                        fst_pre += 4096;
+                    while (fst_pre+256 < cand_lst && *(oid*) (fst_pre+256) < pre)
+                        fst_pre += 256;
+                    while (fst_pre+16 < cand_lst && *(oid*) (fst_pre+16) < pre)
+                        fst_pre += 16;
+                    while (fst_pre < cand_lst && *(oid*)fst_pre < pre)
+                        fst_pre += BUNsize(cand_bat);
+                    if (fst_pre < cand_lst && *(oid*)fst_pre == pre) {
+                            @:inner_loop_child_body@
+                            fst_pre += BUNsize(cand_bat);
+                    }
                 }
-/*
-            for (; pre <= @1 && pre <= *(oid*)lst_pre && fst_pre <= lst_pre; pre += size[pre] + 1, fst_pre += bs_cand_bat) {
-                for (;            pre < *(oid*)fst_pre &&     pre < @1     ;     pre += size[pre] + 1) {};
-                for (; *(oid*)fst_pre <            pre && fst_pre < lst_pre; fst_pre += bs_cand_bat     ) {};
-*/
-                if (*(oid*)fst_pre == pre) {
-                    @:inner_loop_child_body@
-                }
+                cand_cur = fst_pre;
             }
-            for (; pre <= @1; pre += size[pre] + 1) {};
         }
+        for (; pre <= @1; pre += size[pre] + 1) {};
     } else {
         for (; pre <= @1; pre += size[pre] + 1) {
             @:inner_loop_child_body@
