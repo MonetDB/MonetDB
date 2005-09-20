@@ -61,7 +61,9 @@ module batcalc;
 @+ Basic arithmetic
 The first group of functions provide abstractions over the
 binary operators +,/,-,*, and %. Both on (BAT,BAT) and (BAT,CST)
-operands. BAT initialization takes a reference void bat,
+operands. We also support the type enlargement and auto coercions,
+because they avoid expensive BAT copying.
+BAT initialization takes a reference void bat,
 or the required size.
 @= initGrp
 	command init(bsize:sht,v:@1):bat[:void,:@1]
@@ -90,54 +92,62 @@ or the required size.
 	@:initGrp(bit)@
 @= calcGrp
 
-    command @1(b:bat[:any_1,:any_2], cst:any_2) :bat[:any_1,:any_2] 
-    address CMDbat@3cst
-    comment "(BAT,Constant) calculator function with new BAT result";
-
-    command @1(cst:any_2, b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
-    address CMDcst@3bat
-    comment "(BAT,Constant) calculator function with new BAT result";
-
-    command @1(a:bat[:any_1,:any_2], b:bat[:any_1,:any_2], cst:any_2)
-	:bat[:any_1,:any_2]
-    address CMDbataccum@3cst
-    comment "(BAT,Constant) calculator function with accumulator BAT result";
-
-    command @1(a:bat[:any_1,:any_2], cst:any_2, b:bat[:any_1,:any_2])
-	:bat[:any_1,:any_2]
-    address CMDbataccum@3cst2
-    comment "(BAT,Constant) calculator function with accumulator BAT result";
-
-    command @1(b:bat[:any_1,:any_2], c:bat[:any_1,:any_2])
-	        :bat[:any_1,:any_2] 
-        address CMDbat@3
-    comment "Binary BAT calculator function with new BAT result";
-
-    command @1(a:bat[:any_1,:any_2], b:bat[:any_1,:any_2], c:bat[:any_1,:any_2])
-	:bat[:any_1,:any_2]
-    address CMDbataccum@3
+    command @1(a:bat[:any_1,:@4], b:bat[:any_1,:@5], c:bat[:any_1,:@2]):void
+    address CMDbataccum@3_@2_@4_@5
     comment "Binary BAT calculator function with accumulator BAT result";
+
+    command @1(a:bat[:any_1,:@4], cst:@4, b:bat[:any_1,:@5]):void
+    address CMDbataccum@3cst2_@2_@4_@5
+    comment "(BAT,Constant) calculator function with accumulator BAT result";
+
+    command @1(a:bat[:any_1,:@4], b:bat[:any_1,:@4], cst:@5) :void
+    address CMDbataccum@3cst_@2_@4_@5
+    comment "(BAT,Constant) calculator function with accumulator BAT result";
+
+    command @1(b:bat[:any_1,:@4], cst:@5) :bat[:any_1,:@2] 
+    address CMDbat@3cst_@2_@4_@5;
+
+    command @1(cst:@4, b:bat[:any_1,:@5]) :bat[:any_1,:@2] 
+    address CMDcst@3bat_@2_@4_@5;
+
+    command @1(b:bat[:any_1,:@4], c:bat[:any_1,:@5]) :bat[:any_1,:@2] 
+	address CMDbat@3_@2_@4_@5
+    comment "Binary BAT calculator function with new BAT result";
 @{
-@-
-@= calculations
-	@:calcGrp(@1,lng,@2)@
 @-
 We need instantiations for the accumulator code,
 but should limit modulo functions to integer-based types.
+The calc group contains the operator, the desired result typ, its
+C qualifier and the operands
 @mal
-	@:calcGrp(%,oid,MOD)@
-	@:calcGrp(%,sht,MOD)@
-	@:calcGrp(%,int,MOD)@
-	@:calcGrp(%,lng,MOD)@
-	@:calcGrp(xor,oid,XOR)@
-	@:calcGrp(xor,sht,XOR)@
-	@:calcGrp(xor,int,XOR)@
-	@:calcGrp(xor,lng,XOR)@
-@mal
-	@:calculations(/,DIV)@
-	@:calculations(*,MUL)@
-	@:calculations(-,MIN)@
-	@:calculations(+,ADD)@
+	@:calcGrp(%,oid,MOD,oid,oid)@
+	@:calcGrp(%,sht,MOD,sht,sht)@
+	@:calcGrp(%,int,MOD,int,int)@
+	@:calcGrp(%,lng,MOD,lng,lng)@
+	@:calcGrp(xor,oid,XOR,oid,oid)@
+	@:calcGrp(xor,sht,XOR,sht,sht)@
+	@:calcGrp(xor,int,XOR,int,int)@
+	@:calcGrp(xor,lng,XOR,lng,lng)@
+	@:calcGrp(/,sht,DIV,sht,sht)@
+	@:calcGrp(*,sht,MUL,sht,sht)@
+	@:calcGrp(-,sht,SUB,sht,sht)@
+	@:calcGrp(+,sht,ADD,sht,sht)@
+	@:calcGrp(/,int,DIV,int,int)@
+	@:calcGrp(*,int,MUL,int,int)@
+	@:calcGrp(-,int,SUB,int,int)@
+	@:calcGrp(+,int,ADD,int,int)@
+	@:calcGrp(/,lng,DIV,lng,lng)@
+	@:calcGrp(*,lng,MUL,lng,lng)@
+	@:calcGrp(-,lng,SUB,lng,lng)@
+	@:calcGrp(+,lng,ADD,lng,lng)@
+	@:calcGrp(+,flt,ADD,flt,flt)@
+	@:calcGrp(/,flt,DIV,flt,flt)@
+	@:calcGrp(*,flt,MUL,flt,flt)@
+	@:calcGrp(-,flt,SUB,flt,flt)@
+	@:calcGrp(+,dbl,ADD,dbl,dbl)@
+	@:calcGrp(/,dbl,DIV,dbl,dbl)@
+	@:calcGrp(*,dbl,MUL,dbl,dbl)@
+	@:calcGrp(-,dbl,SUB,dbl,dbl)@
 @-
 @}
 @= unary
@@ -349,11 +359,11 @@ fixed-sized types.
 	while( p1 < hend ){
 		/* this code is better as x?nil:y  */
 #ifdef NULLTST
-		if(*(@1 *)p2 == @1_nil || *(@1*)p3 == @1_nil)
+		if(*(@3 *)p2 == @3_nil || *(@4*)p3 == @4_nil)
 			*(@1*)p1= @1_nil;
 		else 
 #endif
-			*(@1*)p1= * (@1*) p2 @2 *(@1 *) p3;
+			*(@1*)p1= (@1) (* (@3*) p2 @2 *(@4 *) p3);
 		p1= (ptr)( ((char*)p1) + s1);
 		p2= (ptr)( ((char*)p2) + s2);
 		p3= (ptr)( ((char*)p3) + s3);
@@ -362,11 +372,11 @@ fixed-sized types.
 	while( p1 < hend ){
 		/* this code is better as x?nil:y  */
 #ifdef NULLTST
-		if(*(@1 *)p2 == @1_nil || *(@1*)p3 == @1_nil || *(@1*)p3== 0)
+		if(*(@3 *)p2 == @3_nil || *(@4*)p3 == @4_nil || *(@4*)p3== 0)
 			*(@1*)p1= @1_nil;
 		else 
 #endif
-			*(@1*)p1= * (@1*) p2 @2 *(@1 *) p3;
+			*(@1*)p1= (@1)(* (@3*) p2 @2 *(@4 *) p3);
 		p1= (ptr)( ((char*)p1) + s1);
 		p2= (ptr)( ((char*)p2) + s2);
 		p3= (ptr)( ((char*)p3) + s3);
@@ -414,8 +424,7 @@ The BAT loops to cover the cases for arithmetic are
 collected in bataccum<operator>. Initialization of the
 two primary command structures are dealt with in the CMD* alternatives.
 The similar code base is produced for dealing with a constant argument. 
-@= arithmeticImpl
-str bataccum@1(BAT *dst, BAT *left, BAT *right)
+@= loopImpl
 {	int s1,s2,s3;
 	ptr p1,p2,p3, hend;
 
@@ -423,33 +432,38 @@ str bataccum@1(BAT *dst, BAT *left, BAT *right)
 	@:batinit(2,left)@
 	@:batinit(3,right)@
 	hend = (str) BUNlast(dst);
-	if( strcmp("@1","DIV")==0)
-		switch(BATttype(dst)){
-		case TYPE_flt: @:accumDIV(flt,@2)@ break;
-		case TYPE_dbl: @:accumDIV(dbl,@2)@ break;
-		case TYPE_oid: @:accumDIV(oid,@2)@ break;
-		case TYPE_sht: @:accumDIV(sht,@2)@ break;
-		case TYPE_int: @:accumDIV(int,@2)@ break;
-		case TYPE_lng: @:accumDIV(lng,@2)@ break;
-		default: throwMessage("batcalc.@1", "unexpected type");
+	if( '@1' == '/'){ 
+		while( p1 < hend ){
+			/* this code is better as x?nil:y  */
+#ifdef NULLTST
+			if(*(@4 *)p2 == @4_nil || *(@5*)p3 == @5_nil || *(@5*)p3== 0)
+				*(@3*)p1= @3_nil;
+			else 
+#endif
+				*(@3*)p1= (@3)(* (@4*) p2 / *(@5 *) p3);
+			p1= (ptr)( ((char*)p1) + s1);
+			p2= (ptr)( ((char*)p2) + s2);
+			p3= (ptr)( ((char*)p3) + s3);
 		}
-	else
-		switch(BATttype(dst)){
-		case TYPE_flt: @:accum(flt,@2)@ break;
-		case TYPE_dbl: @:accum(dbl,@2)@ break;
-		case TYPE_oid: @:accum(oid,@2)@ break;
-		case TYPE_sht: @:accum(sht,@2)@ break;
-		case TYPE_int: @:accum(int,@2)@ break;
-		case TYPE_lng: @:accum(lng,@2)@ break;
-		default: throwMessage("batcalc.@1", "unexpected type");
+	} else {
+		while( p1 < hend ){
+			/* this code is better as x?nil:y  */
+#ifdef NULLTST
+			if(*(@4 *)p2 == @4_nil || *(@5*)p3 == @5_nil)
+				*(@3*)p1= @3_nil;
+			else 
+#endif
+				*(@3*)p1= (@3) (* (@4*) p2 @1 *(@5 *) p3);
+			p1= (ptr)( ((char*)p1) + s1);
+			p2= (ptr)( ((char*)p2) + s2);
+			p3= (ptr)( ((char*)p3) + s3);
 		}
-	return MAL_SUCCEED;
+	}
 }
-
-mal_export str CMDbat@1(int *ret, int *l, int *r);
-str CMDbat@1(int *ret, int *l, int *r)
+@= arithmeticImpl
+mal_export str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r);
+str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
-	str msg;
 
     if( (left= BATdescriptor(*l)) == NULL ){
         return throwMessage("batcalc.@1", "Cannot access descriptor");
@@ -458,8 +472,7 @@ str CMDbat@1(int *ret, int *l, int *r)
 		BBPunfix(left->batCacheid);
         return throwMessage("batcalc.@1", "Cannot access descriptor");
     }
-
-	@:chkSize(left,right,CMDbat@1)@
+	@:chkSize(left,right,CMDbat@2)@
 
 	dst= BATcopy(left);
 	if( dst == NULL){
@@ -467,21 +480,17 @@ str CMDbat@1(int *ret, int *l, int *r)
 		BBPunfix(right->batCacheid);
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
-	msg= bataccum@1(dst,left,right);
+	@:loopImpl(@1,@2,@3,@4,@5)@
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
-	if(msg){
-		return msg;
-	}
 	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(*ret);
 	return MAL_SUCCEED;
 }
 
-mal_export str CMDbataccum@1(int *ret, int *d, int *l, int *r);
-str CMDbataccum@1(int *ret, int *d, int *l, int *r)
+mal_export str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r);
+str CMDbataccum@2_@3_@4_@5(int *ret, int *d, int *l, int *r)
 {	BAT *dst, *left, *right;
-	str msg;
 	(void) ret;
 
     if( (dst= BATdescriptor(*d)) == NULL ){
@@ -497,19 +506,19 @@ str CMDbataccum@1(int *ret, int *d, int *l, int *r)
         return throwMessage("batcalc.@1", "Cannot access descriptor");
     }
 
-	@:chkSize(dst,left,CMDbataccum@1)@
-	@:chkSize(dst,right,CMDbataccum@1)@
+	@:chkSize(dst,left,CMDbataccum@2)@
+	@:chkSize(dst,right,CMDbataccum@2)@
 
-	msg= bataccum@1(dst,left,right);
+	@:loopImpl(@1,@2,@3,@4,@5)@
 	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
-	return msg;
+	return MAL_SUCCEED;
 }
 
-mal_export str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst);
-str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
+mal_export str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
+str CMDbataccum@2cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
 	int s1,s2;
 	ptr p1,p2, hend;
@@ -522,38 +531,23 @@ str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 		BBPunfix(dst->batCacheid);
         return throwMessage("batcalc.@1", "Cannot access descriptor");
     }
-	@:chkSize(dst,left,CMDbataccum@1)@
+	@:chkSize(dst,left,CMDbataccum@2)@
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
 	hend = (str) BUNlast(dst);
 
-	if( strcmp("@1","DIV")==0)
-		switch(BATttype(left)){
-		case TYPE_flt: @:accumCstDIV(flt,@2)@ break;
-		case TYPE_dbl: @:accumCstDIV(dbl,@2)@ break;
-		case TYPE_oid: @:accumCstDIV(oid,@2)@ break;
-		case TYPE_sht: @:accumCstDIV(sht,@2)@ break;
-		case TYPE_int: @:accumCstDIV(int,@2)@ break;
-		case TYPE_lng: @:accumCstDIV(lng,@2)@ break;
-		default: return throwMessage("batcalc.@1", "unexpected type");
-		}
-	else
-		switch(BATttype(left)){
-		case TYPE_flt: @:accumCst(flt,@2)@ break;
-		case TYPE_dbl: @:accumCst(dbl,@2)@ break;
-		case TYPE_oid: @:accumCst(oid,@2)@ break;
-		case TYPE_sht: @:accumCst(sht,@2)@ break;
-		case TYPE_int: @:accumCst(int,@2)@ break;
-		case TYPE_lng: @:accumCst(lng,@2)@ break;
-		default: return throwMessage("batcalc.@1", "unexpected type");
-		}
+	if( '@1'== '/') {
+		@:accumCstDIV(@3,@1,@4,@5)@ 
+	} else {
+		@:accumCst(@3,@1,@4,@5)@ 
+	}
 	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
 }
-mal_export str CMDbataccum@1cst2(int *ret, int *r, void *cst, int *l);
-str CMDbataccum@1cst2(int *ret, int *r, void *cst, int *l)
+mal_export str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
+str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 {	BAT *dst, *left;
 	int s1,s2;
 	ptr p1,p2, hend;
@@ -566,39 +560,24 @@ str CMDbataccum@1cst2(int *ret, int *r, void *cst, int *l)
 		BBPunfix(dst->batCacheid);
         return throwMessage("batcalc.@1", "Cannot access descriptor");
     }
-	@:chkSize(dst,left,CMDbataccum@1)@
+	@:chkSize(dst,left,CMDbataccum@2)@
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
 	hend = (str) BUNlast(dst);
 
-	if( strcmp("@1","DIV")==0)
-		switch(BATttype(left)){
-		case TYPE_flt: @:accumCstDIV(flt,@2)@ break;
-		case TYPE_dbl: @:accumCstDIV(dbl,@2)@ break;
-		case TYPE_oid: @:accumCstDIV(oid,@2)@ break;
-		case TYPE_sht: @:accumCstDIV(sht,@2)@ break;
-		case TYPE_int: @:accumCstDIV(int,@2)@ break;
-		case TYPE_lng: @:accumCstDIV(lng,@2)@ break;
-		default: return throwMessage("batcalc.@1", "unexpected type");
-		}
-	else
-		switch(BATttype(left)){
-		case TYPE_flt: @:accumCst(flt,@2)@ break;
-		case TYPE_dbl: @:accumCst(dbl,@2)@ break;
-		case TYPE_oid: @:accumCst(oid,@2)@ break;
-		case TYPE_sht: @:accumCst(sht,@2)@ break;
-		case TYPE_int: @:accumCst(int,@2)@ break;
-		case TYPE_lng: @:accumCst(lng,@2)@ break;
-		default: return throwMessage("batcalc.@1", "unexpected type");
-		}
+	if( '@1'== '/') {
+		@:accumCstDIV(@3,@1,@4,@5)@ 
+	} else {
+		@:accumCst(@3,@1,@4,@5)@ 
+	}
 	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
 }
 
-mal_export str CMDbat@1cst(int *ret, int *l, void *cst);
-str CMDbat@1cst(int *ret, int *l, void *cst)
+mal_export str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst);
+str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
 	int d;
 	str msg;
@@ -612,7 +591,7 @@ str CMDbat@1cst(int *ret, int *l, void *cst)
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
 	d= dst->batCacheid;
-	msg= CMDbataccum@1cst(ret, &d,l,cst);
+	msg= CMDbataccum@2cst_@3_@4_@5(ret, &d,l,cst);
 	BBPunfix(left->batCacheid);
 	if( msg){
 		BBPdecref(d,TRUE);
@@ -621,8 +600,8 @@ str CMDbat@1cst(int *ret, int *l, void *cst)
 	BBPunfix(d);
 	return MAL_SUCCEED;
 }
-mal_export str CMDcst@1bat(int *ret, void *cst, int *l);
-str CMDcst@1bat(int *ret, void *cst, int *l)
+mal_export str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l);
+str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 {	BAT *dst, *left;
 	int d;
 	str msg;
@@ -636,7 +615,7 @@ str CMDcst@1bat(int *ret, void *cst, int *l)
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
 	d= dst->batCacheid;
-	msg= CMDbataccum@1cst2(ret, &d,cst,l);
+	msg= CMDbataccum@2cst2_@3_@4_@5(ret, &d,cst,l);
 	BBPunfix(left->batCacheid);
 	if( msg){
 		BBPdecref(d,TRUE);
@@ -734,10 +713,19 @@ str CMD@1init_sht(int *ret, sht *size, @1 *cst){
 @:initImpl(flt)@
 @:initImpl(bit)@
 
-@:arithmeticImpl(DIV,/)@
-@:arithmeticImpl(MUL,*)@
-@:arithmeticImpl(MIN,-)@
-@:arithmeticImpl(ADD,+)@
+@= arithGrpImpl
+@:arithmeticImpl(@1,@2,flt,flt,flt)@
+@:arithmeticImpl(@1,@2,dbl,dbl,dbl)@
+@:arithmeticImpl(@1,@2,oid,oid,oid)@
+@:arithmeticImpl(@1,@2,sht,sht,sht)@
+@:arithmeticImpl(@1,@2,lng,lng,lng)@
+@:arithmeticImpl(@1,@2,int,int,int)@
+
+@c
+@:arithGrpImpl(/,DIV)@
+@:arithGrpImpl(*,MUL)@
+@:arithGrpImpl(-,SUB)@
+@:arithGrpImpl(+,ADD)@
 
 @-  Modulo arithmetic
 The Modulo function doesn;t work on all types. Therefore we 
@@ -745,8 +733,8 @@ define here the necessary implementations separately by copying
 the arithmeticImpl block and removing elements not required.
 @c
 @= numeric_funcs
-mal_export str bataccum@1(BAT *dst, BAT *left, BAT *right);
-str bataccum@1(BAT *dst, BAT *left, BAT *right)
+mal_export str bataccum@1_@3_@4_@5(BAT *dst, BAT *left, BAT *right);
+str bataccum@1_@3_@4_@5(BAT *dst, BAT *left, BAT *right)
 {	int s1,s2,s3;
 	ptr p1,p2,p3, hend;
 
@@ -755,17 +743,17 @@ str bataccum@1(BAT *dst, BAT *left, BAT *right)
 	@:batinit(3,right)@
 	hend = (str) BUNlast(dst);
 	switch(BATttype(dst)){
-	case TYPE_oid: @:accum(oid,@2)@ break;
-	case TYPE_sht: @:accum(sht,@2)@ break;
-	case TYPE_int: @:accum(int,@2)@ break;
-	case TYPE_lng: @:accum(lng,@2)@ break;
+	case TYPE_oid: @:accum(oid,@2,oid,oid)@ break;
+	case TYPE_sht: @:accum(sht,@2,sht,sht)@ break;
+	case TYPE_int: @:accum(int,@2,int,int)@ break;
+	case TYPE_lng: @:accum(lng,@2,lng,lng)@ break;
 	default: return throwMessage("batcalc.@1", "unexpected type");
 	}
 	return MAL_SUCCEED;
 }
 
-mal_export str CMDbat@1(int *ret, int *l, int *r);
-str CMDbat@1(int *ret, int *l, int *r)
+mal_export str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r);
+str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
 {	BAT *dst, *left, *right;
 	str msg;
 
@@ -784,15 +772,15 @@ str CMDbat@1(int *ret, int *l, int *r)
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
 	BBPincref(*ret = dst->batCacheid,TRUE);
-	msg= bataccum@1(dst,left,right);
+	msg= bataccum@1_@3_@4_@5(dst,left,right);
 	BBPunfix(*ret);
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	return msg;
 }
 
-mal_export str CMDbataccum@1(int *ret, int *d, int *l, int *r);
-str CMDbataccum@1(int *ret, int *d, int *l, int *r)
+mal_export str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r);
+str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r)
 {	BAT *dst, *left, *right;
 	str msg;
 
@@ -813,14 +801,14 @@ str CMDbataccum@1(int *ret, int *d, int *l, int *r)
 	@:chkSize(dst,right,CMDbataccum@1)@
 
 	*ret = dst->batCacheid;
-	msg= bataccum@1(dst,left,right);
+	msg= bataccum@1_@3_@4_@5(dst,left,right);
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	return msg;
 }
-mal_export str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst);
-str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
+mal_export str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst);
+str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 {	BAT *dst, *left;
 	int s1,s2;
 	ptr p1,p2, hend;
@@ -839,10 +827,10 @@ str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 	hend = (str) BUNlast(dst);
 
 	switch(BATttype(left)){
-	case TYPE_oid: @:accumCst(oid,@2)@ break;
-	case TYPE_sht: @:accumCst(sht,@2)@ break;
-	case TYPE_int: @:accumCst(int,@2)@ break;
-	case TYPE_lng: @:accumCst(lng,@2)@ break;
+	case TYPE_oid: @:accumCst(oid,@2,oid,oid)@ break;
+	case TYPE_sht: @:accumCst(sht,@2,sht,sht)@ break;
+	case TYPE_int: @:accumCst(int,@2,int,int)@ break;
+	case TYPE_lng: @:accumCst(lng,@2,lng,lng)@ break;
 	default : return throwMessage("batcalc.@1", "unexpected type");
 	}
 	BBPunfix(dst->batCacheid);
@@ -850,8 +838,8 @@ str CMDbataccum@1cst(int *ret, int *r, int *l, void *cst)
 	return MAL_SUCCEED;
 }
 
-mal_export str CMDbataccum@1cst2(int *ret, int *r, void *cst, int *l);
-str CMDbataccum@1cst2(int *ret, int *r, void *cst, int *l)
+mal_export str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l);
+str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 {	BAT *dst, *left;
 	int s1,s2;
 	ptr p1,p2, hend;
@@ -870,18 +858,18 @@ str CMDbataccum@1cst2(int *ret, int *r, void *cst, int *l)
 	hend = (str) BUNlast(dst);
 
 	switch(BATttype(left)){
-	case TYPE_oid: @:accumCst(oid,@2)@ break;
-	case TYPE_sht: @:accumCst(sht,@2)@ break;
-	case TYPE_int: @:accumCst(int,@2)@ break;
-	case TYPE_lng: @:accumCst(lng,@2)@ break;
+	case TYPE_oid: @:accumCst(oid,@2,oid,oid)@ break;
+	case TYPE_sht: @:accumCst(sht,@2,sht,sht)@ break;
+	case TYPE_int: @:accumCst(int,@2,int,int)@ break;
+	case TYPE_lng: @:accumCst(lng,@2,lng,lng)@ break;
 	default : return throwMessage("batcalc.@1", "unexpected type");
 	}
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
 }
-mal_export str CMDbat@1cst(int *ret, int *l, void *cst);
-str CMDbat@1cst(int *ret, int *l, void *cst)
+mal_export str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst);
+str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
 	str msg;
 
@@ -894,13 +882,13 @@ str CMDbat@1cst(int *ret, int *l, void *cst)
 		return throwMessage("batcalc.@1", "no copy available");
 	}
 	BBPincref(*ret = dst->batCacheid,TRUE);
-	msg= CMDbataccum@1cst(ret, &dst->batCacheid,l,cst);
+	msg= CMDbataccum@1cst_@3_@4_@5(ret, &dst->batCacheid,l,cst);
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	return msg;
 }
-mal_export str CMDcst@1bat(int *ret,void *cst, int *l);
-str CMDcst@1bat(int *ret,void *cst, int *l)
+mal_export str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l);
+str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 {	BAT *dst, *left;
 	str msg;
 
@@ -913,14 +901,20 @@ str CMDcst@1bat(int *ret,void *cst, int *l)
 		return throwMessage("batcalc.@1", "no copy available");
 	}
 	BBPincref(*ret = dst->batCacheid,TRUE);
-	msg= CMDbataccum@1cst2(ret, &dst->batCacheid,cst,l);
+	msg= CMDbataccum@1cst2_@3_@4_@5(ret, &dst->batCacheid,cst,l);
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	return msg;
 }
 @c
-@:numeric_funcs(MOD,%)@
-@:numeric_funcs(XOR,^)@
+@:numeric_funcs(MOD,%,oid,oid,oid)@
+@:numeric_funcs(MOD,%,int,int,int)@
+@:numeric_funcs(MOD,%,lng,lng,lng)@
+@:numeric_funcs(MOD,%,sht,sht,sht)@
+@:numeric_funcs(XOR,^,oid,oid,oid)@
+@:numeric_funcs(XOR,^,int,int,int)@
+@:numeric_funcs(XOR,^,lng,lng,lng)@
+@:numeric_funcs(XOR,^,sht,sht,sht)@
 
 @- Implementation of unary operations
 @= accumUnary
@@ -1884,27 +1878,5 @@ Emloop:;
 	BBPunfix(A2->batCacheid);
 	BBPunfix(A3->batCacheid);
 	return rB;
-}
-
-str CMD000(int *ret, int *l, int *r){
-	BAT *left, *right, *bn;
-	lng t0,t1;
-printf("calling CMD000\n");
-	if( BBPcheck(*l,"CMD000")==0) return GDK_FAIL;
-	left= (BAT*) BBPgetdesc(*l);
-	if( left== NULL){ *ret= 0; return GDK_FAIL; }
-        if( *l <0){ /* BAT reverse */ left = BATmirror(left); }
-
-	if( BBPcheck(*r,"CMD000")==0) return GDK_FAIL;
-	right= (BAT*) BBPgetdesc(*r);
-	if( right== NULL){ *ret= 0; return GDK_FAIL; }
-        if( *r <0){ /* BAT reverse */ right = BATmirror(right); }
-	
-printf("name %s %s\n", BATgetId(left), BATgetId(right));
-	t0= GDKusec();
-	cmd000(left,right);
-	t1= GDKusec();
-	printf("execution time for CMD000 %d\n",t1-t0);
-	return MAL_SUCCEED;
 }
 @}
