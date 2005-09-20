@@ -472,7 +472,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
     oid pre = 0, ctx = 0, cur_ctx = 0;
     BUN cur_bun = 0, iter_bun = 0, ctx_bun = 0, ctx_last = 0;
     BUN cand_cur = cand_bat?BUNtloc(cand_bat,BUNfirst(cand_bat)):NULL;
-    BUN cand_lst = cand_bat?BUNtloc(cand_bat,BUNlast (cand_bat)):NULL;
+    BUN cand_lst = cand_bat?BUNtloc(cand_bat,BUNlast(cand_bat)-BUNsize(cand_bat)):NULL;
 
     /* not used, here; keep compilers happy */
     (void)min_iter;
@@ -520,7 +520,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
        starting from the ctx (on the top of the stack) until
        the next ctx node (or the end of the stack top
        ctx node scope) is reached */
-    while (ctx_bun < ctx_last) {
+    while (ctx_bun < ctx_last && cand_cur <= cand_lst) {
         /* if the stack is empty the next ctx node
            has to be pushed on the stack 
            and the next ctx node is called*/
@@ -575,22 +575,22 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
                 @:inner_loop_child_body@
             }
         } else {
-            if (cand_cur < cand_lst) {
+            if (cand_cur <= cand_lst) {
                 BUN fst_pre = cand_cur;
-                oid lst_pre = MIN(@1, *(oid*)(cand_lst - BUNsize(cand_bat)));
+                oid lst_pre = MIN(@1, *(oid*)cand_lst);
 
                 for (; pre <= @1 && pre <  *(oid*)fst_pre; pre += size[pre] + 1) {};
                 for (;              pre <=        lst_pre; pre += size[pre] + 1) {
                     /* poor man's binary search / exploiting forward scan */
-                    while (fst_pre+4096 < cand_lst && *(oid*) (fst_pre+4096) < pre)
+                    while (fst_pre+4096 <= cand_lst && *(oid*) (fst_pre+4096) < pre)
                         fst_pre += 4096;
-                    while (fst_pre+256 < cand_lst && *(oid*) (fst_pre+256) < pre)
+                    while (fst_pre+256 <= cand_lst && *(oid*) (fst_pre+256) < pre)
                         fst_pre += 256;
-                    while (fst_pre+16 < cand_lst && *(oid*) (fst_pre+16) < pre)
+                    while (fst_pre+16 <= cand_lst && *(oid*) (fst_pre+16) < pre)
                         fst_pre += 16;
-                    while (fst_pre < cand_lst && *(oid*)fst_pre < pre)
+                    while (fst_pre <= cand_lst && *(oid*)fst_pre < pre)
                         fst_pre += BUNsize(cand_bat);
-                    if (fst_pre < cand_lst && *(oid*)fst_pre == pre) {
+                    if (fst_pre <= cand_lst && *(oid*)fst_pre == pre) {
                             @:inner_loop_child_body@
                             fst_pre += BUNsize(cand_bat);
                     }
@@ -665,7 +665,7 @@ ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *c
     oid *iters_on_stack = 0;
     int stack_size = 0, onstack_size = 0, iters_on_stack_size = 0, j = 0;
     int stack_top = 0, ctx_bunsize = 0, iter_bunsize = 0, *size = 0, bs_cnd = 0;
-    oid pre = 0, ctx = 0, iter_idx = 0, cnd = 0, lst_cnd = 0;
+    oid pre = 0, ctx = 0, iter_idx = 0, cnd = 0, lst_cnd = GDK_oid_max;
     BUN iter_bun = 0, ctx_bun = 0, ctx_last = 0, cnd_bun = 0;
     oid num_iters = (max_iter - min_iter) + 1, i;
     int OST_bytes = sizeof(OST);
@@ -797,7 +797,7 @@ BATprint(cand_bat);
        starting from the ctx (on the top of the stack) until
        the next ctx node (or the end of the stack top
        ctx node scope) is reached */
-    while (ctx_bun < ctx_last) {
+    while (ctx_bun < ctx_last && cnd <= lst_cnd) {
         oid cur_ctx = ctx;
         /* scan over all iters for the current ctx node;
            only a new (non-active) iters have to be added
