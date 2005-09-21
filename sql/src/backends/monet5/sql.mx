@@ -148,12 +148,12 @@ address mvc_import_table_wrap
 comment "Import a table from stream s with the 
 	given tuple and seperators (sep/rsep)";
 
-#pattern hash( v:any_1, sh:int ) :int 
-#address hash_wrap 
-#comment "calculate a hash value and shift left";
+pattern hash( v:any_1, sh:int ) :int 
+address hash_wrap 
+comment "calculate a hash value and shift left";
 
 #command hash( b:bat[:void,:any_1], sh:int ) :bat[:void,:int]
-#address bathash_wrap 
+#address hash_wrap 
 #comment "calculate a hash value and shift left";
 
 @- SQL functions

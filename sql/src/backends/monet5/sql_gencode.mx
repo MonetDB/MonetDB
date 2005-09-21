@@ -261,12 +261,22 @@ convertCalcOperator(str op)
 {
 	char buf[128];
 
+	if (strcmp(op, "hash") == 0)
+		return _strdup("sql.hash");
 	if (strcmp(op, "=") == 0)
 		return _strdup("calc.==");
 	buf[0] = 0;
 	strcat(buf,"calc.");
 	strcat(buf,op);
 	return _strdup(buf);
+}
+
+str
+find_unop_module(str op)
+{
+	if (strcmp(op, "hash") == 0)
+		return "sql";
+	return "calc";
 }
 
 str
@@ -1022,7 +1032,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, l);
 				}
 			} else {
-				q = newStmt(mb, "calc", s->op4.funcval->func->imp);
+				char *mod;
+				mod = find_unop_module(s->op4.funcval->func->imp);
+				q = newStmt(mb, mod, s->op4.funcval->func->imp);
 				q = pushArgument(mb, q, l);
 			}
 			s->nr = getDestVar(q);
@@ -1038,7 +1050,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q= dump_multiplex(mb,convertOperator(s->op4.funcval->func->imp),l,r,tail_type(s->op1.stval)->type->localtype);
 				s->nr = getDestVar(q);
 			} else {
-				q = newStmt(mb, "calc", convertOperator(s->op4.funcval->func->imp));
+				char *mod;
+				mod = find_unop_module(s->op4.funcval->func->imp);
+				q = newStmt(mb, mod, convertOperator(s->op4.funcval->func->imp));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 			}
