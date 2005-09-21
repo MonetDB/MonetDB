@@ -1300,38 +1300,63 @@ BATleftthetajoin(BAT *l, BAT *r, int op, size_t estimate)
 }
 
 /* nested loop join; finally MonetDB can enjoy the virtues of this algorithm as well! */
-@= nlthetajoin_16
-	@:nlthetajoin_4(@1,0)@ @:nlthetajoin_4(@1,4)@ @:nlthetajoin_4(@1,8)@ @:nlthetajoin_4(@1,12)@
-@= nlthetajoin_4
-	@:nlthetajoin_1(@1,@2)@ @:nlthetajoin_1(@1,@2+1)@ @:nlthetajoin_1(@1,@2+2)@ @:nlthetajoin_1(@1,@2+3)@
-@= nlthetajoin_1
-	cur->l = i; cur->r = j+@2; cur += (la[i] @1 ra[j+@2]);
+@= nlthetajoin_unroll8
+	@:nlthetajoin_@2(@1)@ ri += rsz; @:nlthetajoin_@2(@1)@ ri += rsz;
+	@:nlthetajoin_@2(@1)@ ri += rsz; @:nlthetajoin_@2(@1)@ ri += rsz;
+	@:nlthetajoin_@2(@1)@ ri += rsz; @:nlthetajoin_@2(@1)@ ri += rsz;
+	@:nlthetajoin_@2(@1)@ ri += rsz; @:nlthetajoin_@2(@1)@ ri += rsz;
+@= nlthetajoin_void
+	{ cur->r = off++; cur += (v @1 ra[ri]); } 
+@= nlthetajoin_oid
+	{ cur->r = *(oid*) (((BUN)(ra+ri))+off); cur += (v @1 ra[ri]); }
 @= nlthetajoin_impl
 static int nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r) {
 	dst_t *cur = (dst_t*) (bn->batBuns->base + bn->batBuns->free);
 	dst_t *lim = (dst_t*) (bn->batBuns->base + bn->batBuns->size);
-	oid llo = l->hseqbase, lhi = llo + BATcount(l);
-	oid rlo = r->tseqbase, rhi = rlo + BATcount(r);
-	@1 *la = ((@1*) BUNfirst(l)) - llo;
-	@1 *ra = ((@1*) BUNfirst(r)) - rlo;
-	oid i, j;
-	for(i=llo; i<lhi; i++) {
-		if (la[i] == @1_nil) continue;
-		for(j=rlo; j+16 < rhi; j+=16) {
-			if (cur+16 >= lim) {
+	size_t li=0, lsz = BUNsize(l)/sizeof(@1), lhi = BATcount(l)*lsz;
+	size_t ri=0, rsz = BUNsize(r)/sizeof(@1), rhi = (MAX(8,BATcount(r))-8)*rsz;
+	@1 *la = (@1*) BUNtloc(l,BUNfirst(l));
+	@1 *ra = (@1*) BUNhloc(r,BUNfirst(r));
+
+	for(ri=li=0; li<lhi; li+=lsz, ri=0) {
+		ssize_t off = (r->ttype == TYPE_void)?((ssize_t) r->tseqbase):r->tloc - r->hloc;
+		ssize_t len = cur - (dst_t*) bn->batBuns->base;
+		@1 v = la[li];
+		oid o;
+		if (v == @1_nil) continue;
+
+		/* unroll 8 times, factor out cur->l and memory underflow checking */
+		while(1) {
+			if (cur+8 >= lim) {
 				bn->batBuns->free = ((BUN) cur) - bn->batBuns->base;
-				if (BATextend(bn, 16 + BATcount(bn) * (((dbl) (lhi-rlo))/(i+1-rlo)))) return 1;
+				BATsetcount(bn,bn->batBuns->free/BUNsize(bn));
+				if (BATextend(bn, 8 + BATcount(bn) * (((dbl) lhi)/(li+1))) == NULL) return 1;
 				cur = (dst_t*) (bn->batBuns->base + bn->batBuns->free);
 				lim = (dst_t*) (bn->batBuns->base + bn->batBuns->size);
 			}
-			@:nlthetajoin_16(@3)@
+			if (ri >= rhi) break;
+			if (r->ttype == TYPE_void) {
+				@:nlthetajoin_unroll8(@3,void)@
+			} else {
+				@:nlthetajoin_unroll8(@3,oid)@
+			}
 		}
-		cur->l = i; 
-		for(; j<rhi; j++) {
-			@:nlthetajoin_1(@3,0)@
+		/* do rest in more expensive loop */
+		if (r->ttype == TYPE_void) {
+			size_t cnt = BATcount(r)*rsz;
+			for(; ri < cnt; ri+=rsz) @:nlthetajoin_void(@3)@
+		} else {
+			size_t cnt = BATcount(r)*rsz;
+			for(; ri < cnt; ri+=rsz) @:nlthetajoin_oid(@3)@
 		}
+
+		/* fill in the left oids for the generated result tuples */
+ 		o = *(oid*) BUNtail(l, ((BUN)(la+li))-l->tloc);
+		len -= cur - (dst_t*) bn->batBuns->base;
+		while(len < 0) cur[len++].l = o;
 	}
 	bn->batBuns->free = ((BUN) cur) - bn->batBuns->base;
+	BATsetcount(bn,bn->batBuns->free/BUNsize(bn));
 	return 0;
 }
 @= nlthetajoin_call
@@ -1363,8 +1388,8 @@ typedef struct { oid l,r; } dst_t;
 @:nlthetajoin_tpe(impl,le,<=)@
 BAT *
 BATnlthetajoin(BAT *l, BAT *r, int op, size_t estimate) {
-	int optimize = (BUNsize(l) == ATOMsize(l->ttype) && BUNsize(r) == ATOMsize(r->htype) && l->tvarsized == 0 && r->hvarsized == 0);
-	BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), estimate+16);
+	int optimize = (l->htype == TYPE_oid || BAThdense(l)) && (r->ttype == TYPE_oid || BATtdense(r));
+	BAT *bn = BATnew(ATOMtype(l->htype), ATOMtype(r->ttype), estimate+128);
 	int lo = 0, hi = 0;
 
 	if (bn == NULL) return NULL;
