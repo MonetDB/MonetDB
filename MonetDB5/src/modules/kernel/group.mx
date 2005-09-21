@@ -1098,8 +1098,7 @@ GRPgroup(int *rethisto, int *retbid, int *bid)
 	@:chkHeader(b,GRPgroup)@
 	CTgroup(&bn, &histo, b);
 	*rethisto = histo ? histo->batCacheid : 0;
-	BBPincref(*retbid = bn->batCacheid, TRUE);
-	BBPunfix(*retbid);
+	*retbid = bn->batCacheid;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1116,8 +1115,7 @@ GRPgroup_custom(int *rethisto, int *retbid, int *bid, int *N, int *rng)
 	@:chkHeader(b,GRPgroup)@
 	CTgroup_custom(&bn, &histo, b, N, rng);
 	*rethisto = histo ? histo->batCacheid : 0;
-	BBPincref(*retbid = bn->batCacheid, TRUE);
-	BBPunfix(*retbid);
+	*retbid = bn->batCacheid;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1141,6 +1139,11 @@ GRPderive(int *hid, int *mid, int *ctid, int *bid)
 	CTderive(&bn, &histo, ct, b);
 	*mid = bn->batCacheid;
 	*hid = histo->batCacheid;
+	if( *hid){
+		BBPincref(*hid,TRUE);
+		BBPunfix(*hid);
+	}
+	BBPincref(*mid,TRUE);
 	BBPunfix(b->batCacheid);
 	BBPunfix(ct->batCacheid);
 	return MAL_SUCCEED;
