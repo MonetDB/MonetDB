@@ -137,20 +137,24 @@ C qualifier and the operands
 	@:calcGrp(/,lng,DIV,lng,int)@
 	@:calcGrp(/,lng,DIV,int,lng)@
 	@:calcGrp(/,lng,DIV,int,int)@
+	@:calcGrp(/,int,DIV,int,int)@
 
 	@:calcGrp(*,lng,MUL,lng,lng)@
 	@:calcGrp(*,lng,MUL,lng,int)@
 	@:calcGrp(*,lng,MUL,int,lng)@
+	@:calcGrp(*,lng,MUL,int,int)@
 	@:calcGrp(*,int,MUL,int,int)@
 
 	@:calcGrp(-,lng,SUB,lng,lng)@
 	@:calcGrp(-,lng,SUB,lng,int)@
 	@:calcGrp(-,lng,SUB,int,lng)@
+	@:calcGrp(-,lng,SUB,int,int)@
 	@:calcGrp(-,int,SUB,int,int)@
 
 	@:calcGrp(+,lng,ADD,lng,lng)@
 	@:calcGrp(+,lng,ADD,lng,int)@
 	@:calcGrp(+,lng,ADD,int,lng)@
+	@:calcGrp(+,lng,ADD,int,int)@
 	@:calcGrp(+,int,ADD,int,int)@
 
 	@:calcGrp(+,flt,ADD,flt,flt)@
@@ -212,7 +216,7 @@ The command signatures are similar to those above, producing a bit result.
     address CMDcmp@3cst;
     command @1(a:bat[:any_1,:bit], b:bat[:any_1,:@2],cst:@2) :bat[:any_1,:bit]
     address CMDcmpaccum@3cst;
-@{
+
 
 @= compareGrp
 	@:comparison(<,@1,LT)@
