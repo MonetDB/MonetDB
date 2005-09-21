@@ -96,11 +96,11 @@ const int PF_SOFTWARE_PREFETCH = 128;
 @= ll_head
 static int
 ll_@1 (	BAT **res, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
-	int height, oid min_iter, oid max_iter, bit self);
+	int height, oid min_iter, oid max_iter, bit no_iter_order, bit self);
 int
 PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
 	 int *_height, bit *_one_iter, bit *_one_ctx,
-	 oid *_min_iter, oid *_max_iter)
+	 oid *_min_iter, oid *_max_iter, bit *_no_iter_order)
 {
     /* --------------------------- declarations ---------------------------- */
 
@@ -110,6 +110,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
     bit one_ctx  = *_one_ctx;
     oid min_iter = *_min_iter;
     oid max_iter = *_max_iter;
+    bit no_iter_order = *_no_iter_order;
     bit self = FALSE;
     bit trivial_cases = TRUE;
     BAT *res = NULL;
@@ -372,7 +373,7 @@ PFll_@1 (BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat
         }
 
         if (ll_@1(&res, iter_bat, ctx_bat, pre_size, cand_bat, 
-                  height, min_iter, max_iter, self) == GDK_FAIL )
+                  height, min_iter, max_iter, no_iter_order, self) == GDK_FAIL )
         {
             @:ll_return(GDK_FAIL)@
         }
@@ -464,7 +465,7 @@ struct stack_item_C {
 
 static int
 ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
-             int height, oid min_iter, oid max_iter, bit self)
+             int height, oid min_iter, oid max_iter, bit no_iter_order, bit self)
 {
     BAT *res = *result;
     si_C *stack = 0;
@@ -477,6 +478,7 @@ ll_child ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_b
     /* not used, here; keep compilers happy */
     (void)min_iter;
     (void)max_iter;
+    (void)no_iter_order;
     (void)self;
 
     /* stack for context set nodes will never grow over height of doc. tree */
@@ -656,7 +658,7 @@ struct stack_item_D {
 
 static int
 ll_descendant ( BAT **result, BAT *iter_bat, BAT *ctx_bat, BAT *pre_size, BAT *cand_bat,
-                  int height, oid min_iter, oid max_iter, bit self)
+                  int height, oid min_iter, oid max_iter, bit no_iter_order, bit self)
 {
     BAT *res = *result;
     int bs_res = BUNsize(res);
@@ -762,7 +764,7 @@ BATprint(cand_bat);
     for (j = 0 ; j < stack_top ; j++) {
         iters_on_stack[j] = stack[j].iter_idx + min_iter;
     }
-    if (stack_top > 1) {
+    if (!no_iter_order && stack_top > 1) {
         qsort((void *) iters_on_stack, stack_top, sizeof(oid),
 #if SIZEOF_SIZE_T == SIZEOF_INT
               (int (*)(const void *, const void *)) intCmp

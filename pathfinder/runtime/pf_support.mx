@@ -234,7 +234,8 @@ axis step evaluation on the @2 axis from the given context."
                    BAT[oid,oid] cands,
                    int height,
                    bit one_iter, bit one_ctx,
-                   oid min_iter, oid max_iter): BAT[oid,oid] = PFll_@1;
+                   oid min_iter, oid max_iter,
+                   bit no_iter_order): BAT[oid,oid] = PFll_@1;
 "PARAMETERS:
 BAT[void,oid] iter (grouping relation; sorted on tail within each ctx group)
 BAT[void,oid] ctx (context set; sorted on tail)
@@ -244,6 +245,8 @@ int           height (height of the document)
 bit           one_iter (only one iter?)
 bit           one_ctx  (only one ctx node, i.e., the same for all iters?)
 oid           min_iter,max_iter (smallest and largest iter id)
+bit           no_iter_order (descendant & descendant_or_self, only: 
+               result will be ordered on item, but not sub-ordered on iter)
 DESCRIPITON:
 returns all nodes on the @1 axis of the ctx-nodes duplicate free for each group."
 @m
@@ -885,7 +888,7 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 	if ( isnil(result) ) {
 		var res := ll_@1 (iter, item, pre_size, cands,
 		                   height, one_iter, one_item, 
-		                   min_iter, max_iter);
+		                   min_iter, max_iter, (and(order,2) = 0));
 		result := new(void,bat,2).seqbase(0@0)
 		          .insert(nil,res.mark(0@0).reverse())
 		          .insert(nil,res.reverse().mark(0@0).reverse())
