@@ -133,29 +133,64 @@ C qualifier and the operands
 	@:calcGrp(-,sht,SUB,sht,sht)@
 	@:calcGrp(+,sht,ADD,sht,sht)@
 
-	@:calcGrp(/,lng,DIV,lng,lng)@
+	@:calcGrp(/,lng,DIV,int,sht)@
+	@:calcGrp(/,lng,DIV,sht,int)@
+	@:calcGrp(/,lng,DIV,lng,sht)@
+	@:calcGrp(/,lng,DIV,sht,lng)@
+	@:calcGrp(/,lng,DIV,sht,sht)@
 	@:calcGrp(/,lng,DIV,lng,int)@
 	@:calcGrp(/,lng,DIV,int,lng)@
 	@:calcGrp(/,lng,DIV,int,int)@
+	@:calcGrp(/,lng,DIV,lng,lng)@
 	@:calcGrp(/,int,DIV,int,int)@
 
-	@:calcGrp(*,lng,MUL,lng,lng)@
+	@:calcGrp(*,lng,MUL,int,sht)@
+	@:calcGrp(*,lng,MUL,sht,int)@
+	@:calcGrp(*,lng,MUL,lng,sht)@
+	@:calcGrp(*,lng,MUL,sht,lng)@
+	@:calcGrp(*,lng,MUL,sht,sht)@
 	@:calcGrp(*,lng,MUL,lng,int)@
 	@:calcGrp(*,lng,MUL,int,lng)@
 	@:calcGrp(*,lng,MUL,int,int)@
+	@:calcGrp(*,lng,MUL,lng,lng)@
 	@:calcGrp(*,int,MUL,int,int)@
 
+	@:calcGrp(-,lng,SUB,int,sht)@
+	@:calcGrp(-,lng,SUB,sht,int)@
+	@:calcGrp(-,lng,SUB,lng,sht)@
+	@:calcGrp(-,lng,SUB,sht,lng)@
 	@:calcGrp(-,lng,SUB,lng,lng)@
 	@:calcGrp(-,lng,SUB,lng,int)@
 	@:calcGrp(-,lng,SUB,int,lng)@
 	@:calcGrp(-,lng,SUB,int,int)@
+	@:calcGrp(-,lng,SUB,lng,lng)@
 	@:calcGrp(-,int,SUB,int,int)@
 
-	@:calcGrp(+,lng,ADD,lng,lng)@
+	@:calcGrp(+,lng,ADD,int,sht)@
+	@:calcGrp(+,lng,ADD,sht,int)@
+	@:calcGrp(+,lng,ADD,lng,sht)@
+	@:calcGrp(+,lng,ADD,sht,lng)@
 	@:calcGrp(+,lng,ADD,lng,int)@
 	@:calcGrp(+,lng,ADD,int,lng)@
 	@:calcGrp(+,lng,ADD,int,int)@
+	@:calcGrp(+,lng,ADD,lng,lng)@
 	@:calcGrp(+,int,ADD,int,int)@
+
+	@:calcGrp(/,int,ADD,sht,sht)@
+	@:calcGrp(/,int,ADD,int,sht)@
+	@:calcGrp(/,int,ADD,sht,int)@
+
+	@:calcGrp(*,int,ADD,sht,sht)@
+	@:calcGrp(*,int,ADD,int,sht)@
+	@:calcGrp(*,int,ADD,sht,int)@
+
+	@:calcGrp(-,int,ADD,sht,sht)@
+	@:calcGrp(-,int,ADD,int,sht)@
+	@:calcGrp(-,int,ADD,sht,int)@
+
+	@:calcGrp(+,int,ADD,sht,sht)@
+	@:calcGrp(+,int,ADD,int,sht)@
+	@:calcGrp(+,int,ADD,sht,int)@
 
 	@:calcGrp(+,flt,ADD,flt,flt)@
 	@:calcGrp(/,flt,DIV,flt,flt)@
@@ -735,8 +770,18 @@ str CMD@1init_sht(int *ret, sht *size, @1 *cst){
 @:arithmeticImpl(@1,@2,flt,flt,flt)@
 @:arithmeticImpl(@1,@2,dbl,dbl,dbl)@
 @:arithmeticImpl(@1,@2,oid,oid,oid)@
+
 @:arithmeticImpl(@1,@2,sht,sht,sht)@
+@:arithmeticImpl(@1,@2,int,int,sht)@
+@:arithmeticImpl(@1,@2,int,sht,int)@
+@:arithmeticImpl(@1,@2,int,sht,sht)@
+
 @:arithmeticImpl(@1,@2,lng,lng,lng)@
+@:arithmeticImpl(@1,@2,lng,sht,lng)@
+@:arithmeticImpl(@1,@2,lng,lng,sht)@
+@:arithmeticImpl(@1,@2,lng,sht,sht)@
+@:arithmeticImpl(@1,@2,lng,sht,int)@
+@:arithmeticImpl(@1,@2,lng,int,sht)@
 @:arithmeticImpl(@1,@2,lng,int,lng)@
 @:arithmeticImpl(@1,@2,lng,lng,int)@
 @:arithmeticImpl(@1,@2,lng,int,int)@
