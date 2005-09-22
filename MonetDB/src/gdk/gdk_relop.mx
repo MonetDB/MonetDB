@@ -1325,7 +1325,7 @@ static int nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r) {
 		oid o;
 		if (v == @1_nil) continue;
 
-		/* unroll 8 times, factor out cur->l and memory underflow checking */
+		/* unroll 8 times, factor out cur->l and memory re-allocation checking */
 		while(1) {
 			if (cur+8 >= lim) {
 				bn->batBuns->free = ((BUN) cur) - bn->batBuns->base;
@@ -1351,7 +1351,7 @@ static int nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r) {
 		}
 
 		/* fill in the left oids for the generated result tuples */
- 		o = *(oid*) BUNtail(l, ((BUN)(la+li))-l->tloc);
+ 		o = *(oid*) BUNhead(l, ((BUN)(la+li))-l->tloc);
 		len -= cur - (dst_t*) bn->batBuns->base;
 		while(len < 0) cur[len++].l = o;
 	}
