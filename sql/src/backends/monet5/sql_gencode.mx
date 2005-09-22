@@ -272,6 +272,19 @@ convertCalcOperator(str op)
 }
 
 str
+op_fullname(str mod, str op)
+{
+	char buf[128];
+
+	buf[0] = 0;
+	strcat(buf,mod);
+	strcat(buf,".");
+	strcat(buf,op);
+	return _strdup(buf);
+}
+
+
+str
 find_unop_module(str op)
 {
 	if (strcmp(op, "hash") == 0)
@@ -979,10 +992,16 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			/* Lookup the sql convert function, there is no need
 			 * to for single value vs bat, this is handled by the 
 			 * mal function resolution */
-			if (s->op3.typeval->type->eclass == EC_DEC ||
-			    s->op4.typeval->type->eclass == EC_DEC ||
+			if (s->op4.typeval->type->eclass == EC_DEC ||
 			    s->nrcols == 0) {
 				q = newStmt(mb, "sql", s->op4.typeval->type->base.name);
+			} else if (s->nrcols > 0 && s->op3.typeval->type->eclass == EC_DEC) {
+				char *n = s->op4.typeval->type->base.name;
+				int type = s->op4.typeval->type->localtype;
+
+				q = newStmt(mb, "optimizer","multiplex");
+				setVarType(mb,getArg(q,0), newBatType(TYPE_void,type));
+				q = pushStrVal(mb, q, op_fullname("sql",n));
 			} else {
 				q = newStmt(mb, "batcalc", s->op4.typeval->type->base.name);
 			}
