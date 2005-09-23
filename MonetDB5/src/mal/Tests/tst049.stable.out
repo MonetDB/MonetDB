@@ -1,0 +1,321 @@
+stdout of test 'tst049` in directory 'src/mal` itself:
+
+
+# 09:04:59 >  
+# 09:04:59 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=37375 --set sql_port=44387 --set xquery_port=52599 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst049.mal < /dev/null
+# 09:04:59 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
+#b:= bat.new(:int,:str);
+#bat.insert(b,1,"");
+#bat.insert(b,2,"t");
+#bat.insert(b,3,"ts");
+#bat.insert(b,4,"tsz");
+#bat.insert(b,5,"a math assignment");
+#bat.insert(b,6,"pathfined is fun!");
+#bat.insert(b,7,"123123123");
+#bat.insert(b,8,"123123456123");
+#bat.insert(b,9,"199993456123");
+#bat.insert(b,10,"123456123456");
+#bat.insert(b,11,"123454321");
+#io.print(b);
+#
+#i:= str.like("hello","hello");
+#io.print(i);
+#i:= str.like("hello","hell");
+#io.print(i);
+#i:= str.like("hello","h_llo");
+#io.print(i);
+#i:= str.like("hello","%llo");
+#io.print(i);
+#i:= str.like("hello","%___");
+#io.print(i);
+#i:= str.like("hello","hxllo");
+#io.print(i);
+#
+#i:= str.like("tr","t_");
+#io.print(i);
+#i:= str.like("trx","t_");
+#io.print(i);
+#
+#z:= batstr.like(b,"t_");
+#io.print(z);
+#z:= batstr.like(b,"%math%");
+#io.print(z);
+#z:= batstr.like(b,"%m_th_a%t");
+#io.print(z);
+#z:= batstr.like(b,"%at%_!");
+#io.print(z);
+#
+#z:= batstr.like(b,"1%");
+#io.print(z);
+#z:= batstr.like(b,"3%");
+#io.print(z);
+#z:= batstr.like(b,"%1");
+#io.print(z);
+#z:= batstr.like(b,"%3");
+#io.print(z);
+#
+#z:= batstr.like(b,"%1%");
+#io.print(z);
+#z:= batstr.like(b,"%12%");
+#io.print(z);
+#z:= batstr.like(b,"%13%");
+#io.print(z);
+#z:= batstr.like(b,"%454%");
+#io.print(z);
+#
+#z:= batstr.like(b,"%2%2%");
+#io.print(z);
+#z:= batstr.like(b,"_2_3%123");
+#io.print(z);
+#z:= batstr.like(b,"_123%3");
+#io.print(z);
+#z:= batstr.like(b,"%1_3456%");
+#io.print(z);
+#z:= batstr.like(b,"_3456%");
+#io.print(z);
+#z:= batstr.like(b,"%23");
+#io.print(z);
+#z:= batstr.like(b,"%","?");
+#io.print(z);
+#z:= batstr.like(b,"?%","?");
+#io.print(z);
+#z:= batstr.like(b,".%",".");
+#io.print(z);
+#
+function user.main():int;	# 0  (main:int)
+    b := bat.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-(_2:int)(_3:str)
+    bat.insert(b,1,"");	# 2 BKCinsert_bun (_4:void)<-(b:bat[:int,:str])(_5:int)(_6:str)
+    bat.insert(b,2,"t");	# 3 BKCinsert_bun (_7:void)<-(b:bat[:int,:str])(_8:int)(_9:str)
+    bat.insert(b,3,"ts");	# 4 BKCinsert_bun (_10:void)<-(b:bat[:int,:str])(_11:int)(_12:str)
+    bat.insert(b,4,"tsz");	# 5 BKCinsert_bun (_13:void)<-(b:bat[:int,:str])(_14:int)(_15:str)
+    bat.insert(b,5,"a math assignment");	# 6 BKCinsert_bun (_16:void)<-(b:bat[:int,:str])(_17:int)(_18:str)
+    bat.insert(b,6,"pathfined is fun!");	# 7 BKCinsert_bun (_19:void)<-(b:bat[:int,:str])(_20:int)(_21:str)
+    bat.insert(b,7,"123123123");	# 8 BKCinsert_bun (_22:void)<-(b:bat[:int,:str])(_23:int)(_24:str)
+    bat.insert(b,8,"123123456123");	# 9 BKCinsert_bun (_25:void)<-(b:bat[:int,:str])(_26:int)(_27:str)
+    bat.insert(b,9,"199993456123");	# 10 BKCinsert_bun (_28:void)<-(b:bat[:int,:str])(_29:int)(_30:str)
+    bat.insert(b,10,"123456123456");	# 11 BKCinsert_bun (_31:void)<-(b:bat[:int,:str])(_32:int)(_33:str)
+    bat.insert(b,11,"123454321");	# 12 BKCinsert_bun (_34:void)<-(b:bat[:int,:str])(_35:int)(_36:str)
+    io.print(b);	# 13 IOprint_val (_37:int)<-(b:bat[:int,:str])
+    i := str.like("hello","hello");	# 14 STRlikewrap2 (i:bit)<-(_39:str)(_39:str)
+    io.print(i);	# 15 IOprint_val (_40:int)<-(i:bit)
+    i := str.like("hello","hell");	# 16 STRlikewrap2 (i:bit)<-(_39:str)(_41:str)
+    io.print(i);	# 17 IOprint_val (_42:int)<-(i:bit)
+    i := str.like("hello","h_llo");	# 18 STRlikewrap2 (i:bit)<-(_39:str)(_43:str)
+    io.print(i);	# 19 IOprint_val (_44:int)<-(i:bit)
+    i := str.like("hello","%llo");	# 20 STRlikewrap2 (i:bit)<-(_39:str)(_45:str)
+    io.print(i);	# 21 IOprint_val (_46:int)<-(i:bit)
+    i := str.like("hello","%___");	# 22 STRlikewrap2 (i:bit)<-(_39:str)(_47:str)
+    io.print(i);	# 23 IOprint_val (_48:int)<-(i:bit)
+    i := str.like("hello","hxllo");	# 24 STRlikewrap2 (i:bit)<-(_39:str)(_49:str)
+    io.print(i);	# 25 IOprint_val (_50:int)<-(i:bit)
+    i := str.like("tr","t_");	# 26 STRlikewrap2 (i:bit)<-(_51:str)(_52:str)
+    io.print(i);	# 27 IOprint_val (_53:int)<-(i:bit)
+    i := str.like("trx","t_");	# 28 STRlikewrap2 (i:bit)<-(_54:str)(_52:str)
+    io.print(i);	# 29 IOprint_val (_55:int)<-(i:bit)
+    z := batstr.like(b,"t_");	# 30 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_52:str)
+    io.print(z);	# 31 IOprint_val (_57:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%math%");	# 32 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_58:str)
+    io.print(z);	# 33 IOprint_val (_59:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%m_th_a%t");	# 34 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_60:str)
+    io.print(z);	# 35 IOprint_val (_61:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%at%_!");	# 36 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_62:str)
+    io.print(z);	# 37 IOprint_val (_63:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"1%");	# 38 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_64:str)
+    io.print(z);	# 39 IOprint_val (_65:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"3%");	# 40 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_66:str)
+    io.print(z);	# 41 IOprint_val (_67:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%1");	# 42 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_68:str)
+    io.print(z);	# 43 IOprint_val (_69:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%3");	# 44 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_70:str)
+    io.print(z);	# 45 IOprint_val (_71:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%1%");	# 46 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_72:str)
+    io.print(z);	# 47 IOprint_val (_73:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%12%");	# 48 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_74:str)
+    io.print(z);	# 49 IOprint_val (_75:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%13%");	# 50 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_76:str)
+    io.print(z);	# 51 IOprint_val (_77:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%454%");	# 52 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_78:str)
+    io.print(z);	# 53 IOprint_val (_79:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%2%2%");	# 54 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_80:str)
+    io.print(z);	# 55 IOprint_val (_81:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"_2_3%123");	# 56 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_82:str)
+    io.print(z);	# 57 IOprint_val (_83:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"_123%3");	# 58 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_84:str)
+    io.print(z);	# 59 IOprint_val (_85:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%1_3456%");	# 60 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_86:str)
+    io.print(z);	# 61 IOprint_val (_87:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"_3456%");	# 62 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_88:str)
+    io.print(z);	# 63 IOprint_val (_89:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%23");	# 64 STRbatlike2 (z:bat[:int,:void])<-(b:bat[:int,:str])(_90:str)
+    io.print(z);	# 65 IOprint_val (_91:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"%","?");	# 66 STRbatlike (z:bat[:int,:void])<-(b:bat[:int,:str])(_92:str)(_93:str)
+    io.print(z);	# 67 IOprint_val (_94:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,"?%","?");	# 68 STRbatlike (z:bat[:int,:void])<-(b:bat[:int,:str])(_95:str)(_93:str)
+    io.print(z);	# 69 IOprint_val (_96:int)<-(z:bat[:int,:void])
+    z := batstr.like(b,".%",".");	# 70 STRbatlike (z:bat[:int,:void])<-(b:bat[:int,:str])(_97:str)(_98:str)
+    io.print(z);	# 71 IOprint_val (_99:int)<-(z:bat[:int,:void])
+end main;	# 72  
+#---------------------------------#
+# h	t			  # name
+# int	str			  # type
+#---------------------------------#
+[ 1,	  ""			  ]
+[ 2,	  "t"			  ]
+[ 3,	  "ts"			  ]
+[ 4,	  "tsz"			  ]
+[ 5,	  "a math assignment"	  ]
+[ 6,	  "pathfined is fun!"	  ]
+[ 7,	  "123123123"		  ]
+[ 8,	  "123123456123"	  ]
+[ 9,	  "199993456123"	  ]
+[ 10,	  "123456123456"	  ]
+[ 11,	  "123454321"		  ]
+[ true ]
+[ false ]
+[ true ]
+[ true ]
+[ true ]
+[ false ]
+[ true ]
+[ false ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 3,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 5,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 5,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 6,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 7,	  nil	  ]
+[ 8,	  nil	  ]
+[ 9,	  nil	  ]
+[ 10,	  nil	  ]
+[ 11,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 11,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 7,	  nil	  ]
+[ 8,	  nil	  ]
+[ 9,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 7,	  nil	  ]
+[ 8,	  nil	  ]
+[ 9,	  nil	  ]
+[ 10,	  nil	  ]
+[ 11,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 7,	  nil	  ]
+[ 8,	  nil	  ]
+[ 9,	  nil	  ]
+[ 10,	  nil	  ]
+[ 11,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 11,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 7,	  nil	  ]
+[ 8,	  nil	  ]
+[ 10,	  nil	  ]
+[ 11,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 8,	  nil	  ]
+[ 10,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 7,	  nil	  ]
+[ 8,	  nil	  ]
+[ 9,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 1,	  nil	  ]
+[ 2,	  nil	  ]
+[ 3,	  nil	  ]
+[ 4,	  nil	  ]
+[ 5,	  nil	  ]
+[ 6,	  nil	  ]
+[ 7,	  nil	  ]
+[ 8,	  nil	  ]
+[ 9,	  nil	  ]
+[ 10,	  nil	  ]
+[ 11,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+
+# 09:04:59 >  
+# 09:04:59 >  Done.
+# 09:04:59 >  
+
