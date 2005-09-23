@@ -75,3 +75,6 @@ z:= batstr.like(b,"?%","?");
 io.print(z);
 z:= batstr.like(b,".%",".");
 io.print(z);
+
+z:= batstr.like(b,"tt","t");
+io.print(z);
