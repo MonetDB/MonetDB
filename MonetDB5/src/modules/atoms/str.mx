@@ -1910,8 +1910,11 @@ STRlike(str s, str pat, str esc){
 
 	t= s;
 	for( p= pat; *p && *t; p++){
-		if(esc && *p == *esc) p++;
-		else
+		if(esc && *p == *esc) {
+			p++;
+			if( *p != *t) return FALSE;
+			t++;
+		} else
 		if( *p == '_') t++;
 		else
 		if( *p == '%'){
