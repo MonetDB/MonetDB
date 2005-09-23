@@ -170,6 +170,7 @@ comment "round off the value v to nearests multiple of r";
 command round( v:@1, r:dbl ) :@1 
 address @1_dbl_round_wrap
 comment "round off the value v to nearests multiple of r";
+
 @mal
 
 @:mal_round(sht)@
@@ -182,6 +183,8 @@ comment "round off the value v to nearests multiple of r";
 command round( v:dbl, r:dbl ) :dbl 
 address dbl_round_wrap
 comment "round off the value v to nearests multiple of r";
+
+module calc;
 
 @= mal_cast
 command @1( v:str ) :@1 
@@ -217,12 +220,12 @@ command str( v:str) :str
 address CALCstr2str
 comment "Idempotent cast of strings";
 
-command int( v:bit) :int 
-address CALCbit2int
-comment "Cast bit to int ";
 command sht( v:bit) :sht 
 address CALCbit2sht
 comment "Cast bit to sht ";
+command int( v:bit) :int 
+address CALCbit2int
+comment "Cast bit to int ";
 command lng( v:bit) :lng 
 address CALCbit2lng
 comment "Cast bit to lng ";
@@ -239,13 +242,6 @@ command @1( v:@2, digits:int, scale:int ) :@1
 address @2_num2dec_@1
 comment "cast number to decimal(@1) and check for overflow";
 @mal
-@:mal_cast_2dec(sht,oid)@
-@:mal_cast_2dec(sht,sht)@
-@:mal_cast_2dec(int,sht)@
-@:mal_cast_2dec(int,oid)@
-@:mal_cast_2dec(lng,sht)@
-@:mal_cast_2dec(lng,oid)@
-@:mal_cast_2dec(lng,int)@
 @:mal_cast_2dec(sht,flt)@
 @:mal_cast_2dec(int,flt)@
 @:mal_cast_2dec(lng,flt)@
@@ -281,6 +277,22 @@ comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @:mal_cast2(dbl,sht)@
 @:mal_cast2(dbl,int)@
 @:mal_cast2(dbl,lng)@
+
+@= mal_interval
+command month_interval( v:@1, ek:int, sk:int ) :int
+address month_interval_@1
+comment "cast @1 to a month_interval and check for overflow";
+
+command second_interval( v:@1, ek:int, sk:int ) :lng
+address second_interval_@1
+comment "cast @1 to a month_interval and check for overflow";
+@m
+
+@:mal_interval(str)@
+@:mal_interval(sht)@
+@:mal_interval(int)@
+@:mal_interval(lng)@
+
 @-
 Include the sql_cache functionality
 @mal
@@ -386,6 +398,7 @@ First introduce the routines to be called by the front-end.
 #include "sql_gencode.h"
 #include "bat/bat_store.h"
 #include "bat/res_table.h"
+#include <sql_datetime.h>
 
 backend *
 backend_create(int trace, mvc *m, Client c)
@@ -1396,3 +1409,64 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 @:numcastdown(sht,int)@
 @:numcastdown(sht,lng)@
 @:numcastdown(int,lng)@
+
+static str 
+month_interval_str( int *ret, str *s, int *ek, int *sk ){
+	lng res;
+
+	if (interval_from_str( *s, *sk, *ek, &res ) < 0)
+		return throwException(MALEXCEPTION,"calc.month_interval",
+			"wrong format (%s)\n", *s);
+	*ret = res;
+	return NULL;
+}
+static str 
+second_interval_str( lng *res, str *s, int *ek, int *sk ){
+
+	if (interval_from_str( *s, *sk, *ek, res ) < 0)
+		return throwException(MALEXCEPTION,"calc.second_interval",
+			"wrong format (%s)\n", *s);
+	return NULL;
+}
+
+@= c_interval
+int month_interval_@1( int *ret, @1 *s, int *ek, int *sk ){
+	int r = (int)*s;
+
+	(void)ek;
+	switch(*sk) {
+	case iyear: 	
+		r *= 12;
+	case imonth:
+		break;
+	default:
+		return GDK_FAIL;
+	}
+	*ret = r;
+	return GDK_SUCCEED;
+}
+int second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
+	lng r = *s;
+
+	(void)ek;
+	switch(*sk) {
+	case iday: 	
+		r *= 24;
+	case ihour:
+		r *= 60;
+	case imin:
+		r *= 60;
+	case isec:
+		break;
+	default:
+		return GDK_FAIL;
+	}
+	*res = r;
+	return GDK_SUCCEED;
+}
+@c
+
+@:c_interval(sht)@
+@:c_interval(int)@
+@:c_interval(lng)@
+
