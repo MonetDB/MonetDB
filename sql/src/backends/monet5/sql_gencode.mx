@@ -617,7 +617,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				default:
 					GDKerror("Unknown operator");
 				}
-				q= dump_multiplex(mb,convertOperator(op),l,r,tail_type(s->op2.stval)->type->localtype);
+				q= dump_multiplex(mb,convertOperator(op),l,r,TYPE_bit);
 				s->nr = getDestVar(q);
 				k = getDestVar(q);
 				q = newStmt(mb, "algebra", "uselect");
@@ -1056,7 +1056,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->op1.stval->nrcols || s->op2.stval->nrcols) {
-				q= dump_multiplex(mb,convertOperator(s->op4.funcval->func->imp),l,r,tail_type(s->op1.stval)->type->localtype);
+				q= dump_multiplex(mb,convertOperator(s->op4.funcval->func->imp),l,r,s->op4.funcval->func->res->type->localtype);
 				s->nr = getDestVar(q);
 			} else {
 				char *mod;
