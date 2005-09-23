@@ -77,12 +77,21 @@ command raise(msg:str) :str
 address CMDraise
 comment "Raise an exception labeled 
 	with a specific message.";
-pattern assert(v:any_1,term:str):void
-address CMDassertProperty
-comment "Check a property";
+command assert(v:bit,term:str):void
+address MALassertBit;
+command assert(v:sht,term:str):void
+address MALassertSht;
+command assert(v:int,term:str):void
+address MALassertInt;
+command assert(v:lng,term:str):void
+address MALassertLng;
+command assert(v:str,term:str):void
+address MALassertStr;
+command assert(v:oid,term:str):void
+address MALassertOid;
 pattern assert(v:any_1,pname:str,oper:str,val:any_2):void
-address CMDassertProperty
-comment "Check a property";
+address MALassertTriple
+comment "Assertion test";
 
 @+ Macro expansion
 Running a script stored in a file is interpreted as
@@ -118,7 +127,12 @@ comment "Merge the instructions stored in the
 #include "mal_interpreter.h"
 
 mal_export str CMDraise(str *ret, str *msg);
-mal_export str CMDassertProperty(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export str MALassertBit(int *ret, bit *val, str *msg);
+mal_export str MALassertStr(int *ret, str *val, str *msg);
+mal_export str MALassertOid(int *ret, oid *val, str *msg);
+mal_export str MALassertSht(int *ret, sht *val, str *msg);
+mal_export str MALassertInt(int *ret, int *val, str *msg);
+mal_export str MALassertLng(int *ret, lng *val, str *msg);
 mal_export str CMDregisterFunction(int *ret, str *m, str *f, str *code, str *help);
 mal_export str CMDcallString(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDevalFile(int *ret, str *fnme);
@@ -139,9 +153,54 @@ CMDraise(str *ret, str *msg)
 }
 
 str
-CMDassertProperty(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return MALassert(mb,stk,pci);
+MALassertBit(int *ret, bit *val, str *msg){
+	(void) ret;
+	if( *val == 0 || *val == bit_nil)
+		return throwMessage("mal.assert",msg);
+	return MAL_SUCCEED;
+}
+str
+MALassertInt(int *ret, int *val, str *msg){
+	(void) ret;
+	if( *val == 0 || *val == int_nil)
+		return throwMessage("mal.assert",msg);
+	return MAL_SUCCEED;
+}
+str
+MALassertLng(int *ret, lng *val, str *msg){
+	(void) ret;
+	if( *val == 0 || *val == lng_nil)
+		return throwMessage("mal.assert",msg);
+	return MAL_SUCCEED;
+}
+str
+MALassertSht(int *ret, sht *val, str *msg){
+	(void) ret;
+	if( *val == 0 || *val == sht_nil)
+		return throwMessage("mal.assert",msg);
+	return MAL_SUCCEED;
+}
+str
+MALassertOid(int *ret, oid *val, str *msg){
+	(void) ret;
+	if( *val == oid_nil)
+		return throwMessage("mal.assert",msg);
+	return MAL_SUCCEED;
+}
+str
+MALassertStr(int *ret, str *val, str *msg){
+	(void) ret;
+	if( *val == str_nil)
+		return throwMessage("mal.assert",msg);
+	return MAL_SUCCEED;
+}
+
+str
+MALassertTriple(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	(void) mb;
+	(void) stk;
+	(void) p;
+	return throwMessage("mal.assert","Command not yet available");
 }
 
 @}
