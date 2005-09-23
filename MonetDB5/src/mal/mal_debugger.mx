@@ -338,9 +338,9 @@ mal_export void mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 mal_export int mdbSession();
 mal_export void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export void mdbHelp(stream *f);
-mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, size_t cnt, int first);
+mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, size_t cnt, int first, int lifespan);
 mal_export void printBATelm(stream *f, int i, size_t cnt, size_t first);
-mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s);
+mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s, int lifespan);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
 mal_export void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc);
@@ -792,11 +792,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				stk->cmd = 0;
 			}
 			break;
-		case 'v':{	/* show the symbol table and bindings */
+		case 'v':	/* show the symbol table and bindings */
+		case 'V':{
 			str modname, fcnname;
 			Module fsym;
 			Symbol fs;
-			int i;
+			int i, lifespan = *b== 'V';
 
 			skipWord(cntxt, b);
 			if (*b != 0) {
@@ -811,7 +812,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 					for (i = 0; i < MAXSCOPE; i++) {
 						fs = fsym->subscope[i];
 						while (fs != NULL) {
-							printStack(out, fs->def, 0);
+							printStack(out, fs->def, 0, lifespan);
 							fs = fs->peer;
 						}
 					}
@@ -829,12 +830,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 					fs = fsym->subscope[i];
 					while (fs != NULL) {
 						if (strcmp(fs->name, fcnname) == 0)
-							printStack(out, fs->def, 0);
+							printStack(out, fs->def, 0,lifespan);
 						fs = fs->peer;
 					}
 				}
 			} else
-				printStack(out, mb, stk);
+				printStack(out, mb, stk,lifespan);
 			break;
 		}
 		case 'b':
@@ -937,7 +938,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 					stream_printf(out, "%s Symbol not found\n", "#mdb ");
 				continue;
 			}
-			printStackElm(out, mb, getVar(mb, i), stk->stk + i, i, size, first);
+			printStackElm(out, mb, getVar(mb, i), stk->stk + i, i, size, first,0);
 			continue;
 		}
 		case 'S':
@@ -1107,7 +1108,7 @@ The routine  can also be used to inspect the symbol table of
 arbitrary functions.
 @c
 void
-printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
+printStack(stream *f, MalBlkPtr mb, MalStkPtr s,int lifespan)
 {
 	int i = 0;
 
@@ -1115,10 +1116,10 @@ printStack(stream *f, MalBlkPtr mb, MalStkPtr s)
 		stream_printf(f, "#Stack '%s' size=%d top=%d\n",
 				getInstrPtr(mb, 0)->fcnname, s->stksize, s->stktop);
 		for (; i < mb->vtop; i++)
-			printStackElm(f, mb, getVar(mb, i), s->stk + i, i, 0, 0);
+			printStackElm(f, mb, getVar(mb, i), s->stk + i, i, 0, 0,lifespan);
 	} else
 		for (; i < mb->vtop; i++)
-			printStackElm(f, mb, getVar(mb, i), 0, i, 0, 0);
+			printStackElm(f, mb, getVar(mb, i), 0, i, 0, 0,lifespan);
 }
 
 void
@@ -1153,7 +1154,7 @@ printBATelm(stream *f, int i, size_t cnt, size_t first)
 }
 
 void
-printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, size_t cnt, int first)
+printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, size_t cnt, int first, int lifespan)
 {
 	str nme, nmeOnStk;
 	char nmebuf[PATHLENGTH];
@@ -1164,7 +1165,10 @@ printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int index, size_t cnt
 		nme = nmebuf;
 	} else
 		nme = n->name;
-	stream_printf(f, "#[%d] %s\t= ", index, nme);
+	if( lifespan)
+		stream_printf(f, "#[%d,%d:%d] %s\t= ", index, 
+			n->beginLifespan, n->endLifespan,nme);
+	else stream_printf(f, "#[%d] %s\t= ", index, nme);
 	if (n->type == TYPE_void)
 		stream_printf(f, "nil");
 	else if (v)
@@ -1421,7 +1425,7 @@ debugOptimizers(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define MAXSTEPS 128
+#define MAXSTEPS 64
 struct {
 	str title;
 	int actions;
@@ -1433,12 +1437,19 @@ static int optTop;
 void
 optimizerDebug(MalBlkPtr mb, str name, int actions, lng usec)
 {
-	Client c = getClient();
-
-	if (!c->itrace)
-		return;
-	if (optTop + 1 == MAXSTEPS)
-		return;
+	if (optTop + 1 == MAXSTEPS){
+		/* drop oldest */
+		int i;
+		GDKfree(optimizerHistory[0].title);
+		freeMalBlk(optimizerHistory[0].mb);
+		for(i=0;i<optTop; i++){
+		optimizerHistory[i].title = optimizerHistory[i+1].title;
+		optimizerHistory[i].actions = optimizerHistory[i+1].actions;
+		optimizerHistory[i].usec = optimizerHistory[i+1].usec;
+		optimizerHistory[i].mb = optimizerHistory[i+1].mb;
+		}
+		optTop--;
+	}
 	optimizerHistory[optTop].title = GDKstrdup(name);
 	optimizerHistory[optTop].actions = actions;
 	optimizerHistory[optTop].usec = usec;
@@ -1476,7 +1487,12 @@ showOptimizerHistory()
 	stream *fd = GDKout;
 
 	for (i = 0; i < optTop; i++)
-		stream_printf(fd, "[%d] %s \tactions=%2d time " LLFMT " usec\n", i, optimizerHistory[i].title, optimizerHistory[i].actions, optimizerHistory[i].usec);
+		stream_printf(fd, "[%d] %s  %s.%s\tactions=%2d time " LLFMT " usec\n",
+			i, optimizerHistory[i].title,
+			moduleId(getInstrPtr(optimizerHistory[i].mb,0)),
+			functionId(getInstrPtr(optimizerHistory[i].mb,0)),
+			optimizerHistory[i].actions, 
+			optimizerHistory[i].usec);
 }
 
 @}

@@ -46,6 +46,7 @@ mal_export str MALparser(Client c);
 mal_export str MALengine(Client c);
 mal_export void resetInstructions(MalBlkPtr mb, int start);
 mal_export void resetVariables(MalBlkPtr mb, MalStkPtr glb, int start);
+mal_export int MALcommentsOnly(MalBlkPtr mb);
 
 #endif /*  _MAL_SESSION_H */
 

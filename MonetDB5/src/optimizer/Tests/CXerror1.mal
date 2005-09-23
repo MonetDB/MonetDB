@@ -1,0 +1,25 @@
+#provided by roberto
+function user.f1();
+  # create bat
+  xxx := bat.new(:void, :dbl);
+  bat.setName(xxx,"xxx");
+  bat.setPersistent(xxx,true);
+  transaction.commit();
+  
+  # check existance
+  xxx_1 := bbp.getNames();
+  xxx_2 := bat.reverse(xxx_1);
+  xxx_3 := algebra.exist(xxx_2,"xxx");
+  
+  # if it exists, print it
+  barrier ifb := xxx_3;
+    a := bbp.bind("xxx");
+    io.print(a);
+  exit ifb;
+  
+  # remove it
+  b := bbp.bind("xxx");        ## here, it becomes b := a;
+  bat.setPersistent(b,false);  ## but a might be not defined
+  transaction.commit();
+end f1;
+optimizer.commonExpressionRemoval("user", "f1");
