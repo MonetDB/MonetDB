@@ -9,11 +9,9 @@ stdout of test 'unique-bug-sf-1043512` in directory 'src/test/bugs` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+#Ready to accept connections on gio.ins.cwi.nl:44002
 
 Ready.
-quit();
 
 Over..
 
