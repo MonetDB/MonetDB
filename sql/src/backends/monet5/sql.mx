@@ -279,14 +279,14 @@ comment "cast decimal(@2) to decimal(@1) and check for overflow";
 @:mal_cast2(dbl,lng)@
 
 @= mal_interval
-command month_interval( v:@1, ek:int, sk:int ) :int
+command calc.month_interval( v:@1, ek:int, sk:int ) :int
 address month_interval_@1
 comment "cast @1 to a month_interval and check for overflow";
 
-command second_interval( v:@1, ek:int, sk:int ) :lng
+command calc.second_interval( v:@1, ek:int, sk:int ) :lng
 address second_interval_@1
 comment "cast @1 to a month_interval and check for overflow";
-@m
+@mal
 
 @:mal_interval(str)@
 @:mal_interval(sht)@
@@ -297,7 +297,7 @@ comment "cast @1 to a month_interval and check for overflow";
 Include the sql_cache functionality
 @mal
 include sql_cache;
-include mil_algebra_procs;
+#include mil_algebra_procs;
 
 @h
 #ifndef _SQL_H
@@ -1410,7 +1410,7 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 @:numcastdown(sht,lng)@
 @:numcastdown(int,lng)@
 
-static str 
+str 
 month_interval_str( int *ret, str *s, int *ek, int *sk ){
 	lng res;
 
@@ -1420,7 +1420,7 @@ month_interval_str( int *ret, str *s, int *ek, int *sk ){
 	*ret = res;
 	return NULL;
 }
-static str 
+str 
 second_interval_str( lng *res, str *s, int *ek, int *sk ){
 
 	if (interval_from_str( *s, *sk, *ek, res ) < 0)
@@ -1465,8 +1465,6 @@ int second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 	return GDK_SUCCEED;
 }
 @c
-
 @:c_interval(sht)@
 @:c_interval(int)@
 @:c_interval(lng)@
-

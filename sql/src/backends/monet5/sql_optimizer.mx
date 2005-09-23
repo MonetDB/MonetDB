@@ -102,11 +102,12 @@ type checked and optimized.
 #include "mal_optimizer.h"
 #include "mal_peephole.h"
 #include "mal_debugger.h"
+#include "mal_namespace.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
 #include "sql_gencode.h"
-#include "mal_namespace.h"
+#include "optimizer.h"
 
 void
 addQueryToCache(Client c)
@@ -152,7 +153,8 @@ to allow inspection.
 		stream_printf(c->fdout,"optimizer=%s\n",optimizers);
 	if( strcmp(optimizers,"sql.optimizer();")==0 )
 		optimizeQueryInCache(c);
-*/
+	but we need multiplex expansion */
+	OPTmultiplex(c->curprg->def,0,0);
 }
 
 @-
