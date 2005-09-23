@@ -155,6 +155,13 @@ comment "Substitute first occurrence of 'src' by
 	size, repeating is only done iff src is 
 	not a substring of dst.";
 
+command like(s:str,pat:str):bit
+address STRlikewrap2
+comment "SQL pattern match function";
+command like(s:str,pat:str,esc:str):bit
+address STRlikewrap
+comment "SQL pattern match function";
+
 command STRprelude()
 address strPrelude;
 
@@ -217,6 +224,8 @@ mal_export int strChrAt(chr *res, str val, int *at);
 mal_export int codeset(str *res);
 mal_export int strIconv(str *res, str org, str f, str t);
 mal_export int strSubstitute(str *res, str s, str src, str dst, bit *g);
+mal_export str STRfindUnescapedOccurrence(str b, str c, str esc);
+mal_export int STRlike(str s, str pat, str esc);
 #endif /* __string_H__ */
 @}
 
@@ -1874,8 +1883,71 @@ chrSplit(BAT **Res, str s)
 @
 @- Wrappers
 Here you find the wrappers around the version 4 library code
+It also contains the direct implementation of the string
+matching support routines.
 @c
 #include "mal_exception.h"
+
+str
+STRfindUnescapedOccurrence(str b, str c, str esc){
+	str t;
+
+	t= strstr(b,c);
+	while( t){
+		/* check for escaped version */
+		if( t>b && *esc == *(t-1) ) {
+			t= strstr(t+1,c);
+		} else return t;
+	}
+	return 0;
+}
+@-
+The SQL like function return a boolean
+@c
+int
+STRlike(str s, str pat, str esc){
+	str t,p;
+
+	t= s;
+	for( p= pat; *p && *t; p++){
+		if(esc && *p == *esc) p++;
+		else
+		if( *p == '_') t++;
+		else
+		if( *p == '%'){
+			p++;
+			while(*p == '%') p++;
+			if( *p == 0) return TRUE; /* tail is acceptable */
+			for(; *p && *t; t++)
+				if( STRlike(t,p,esc))
+					return TRUE;
+			if( *p == 0 && *t == 0) return TRUE;
+			return FALSE;
+		} else
+		if( *p == *t) t++;
+		else return FALSE;
+	}
+	if( *p == '%' && *(p+1)==0) return TRUE;
+	return *t == 0 && *p == 0;
+}
+
+str
+STRfindOccurrence(str *ret, str *s, str *pat, str *esc){
+	*ret = STRfindUnescapedOccurrence(*s,*pat,*esc);
+	if( *ret) *ret= GDKstrdup(*ret);
+	return MAL_SUCCEED;
+}
+
+str
+STRlikewrap(bit *ret, str *s, str *pat, str *esc){
+	*ret = STRlike(*s,*pat,*esc);
+	return MAL_SUCCEED;
+}
+str
+STRlikewrap2(bit *ret, str *s, str *pat){
+	*ret = STRlike(*s,*pat,0);
+	return MAL_SUCCEED;
+}
 
 str
 STRtostr(str *res, str *src)
