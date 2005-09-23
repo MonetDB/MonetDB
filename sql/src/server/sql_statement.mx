@@ -213,7 +213,7 @@ extern stmt *stmt_ptable(stmt *p);
 extern stmt *stmt_pivot(stmt *s, stmt *ptable);
 extern stmt *stmt_groupby(stmt *p, list *cols);
 
-extern stmt *stmt_find(stmt *b, stmt *v);
+extern stmt *stmt_find(stmt *b, stmt *v, sql_column *c);
 extern stmt *stmt_bulkinsert(stmt *t, char *sep, char *rsep, stmt *file, int nr);
 
 extern stmt *stmt_append(stmt *c, stmt *values);
@@ -1273,12 +1273,13 @@ stmt_union(stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_find(stmt *b, stmt *v)
+stmt_find(stmt *b, stmt *v, sql_column *c)
 {
 	stmt *s = stmt_create(st_find);
 
 	s->op1.stval = b;
 	s->op2.stval = v;
+	s->op4.cval = c;
 	s->nrcols = 1;
 	s->key = 0;
 	s->h = stmt_dup(b->h);

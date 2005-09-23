@@ -958,7 +958,7 @@ sql_bulkinsert(mvc *sql, sql_table *t, char *tsep, char *rsep, char *filename, i
 	for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 		sql_column *c = n->data;
 
-		inserts[i] = stmt_append(stmt_cbat(c, stmt_dup(tv->s), cs_size(&c->t->keys) ? UPD : INS, st_bat), stmt_find(stmt_dup(bats), stmt_atom_string(_strdup(c->base.name))));
+		inserts[i] = stmt_append(stmt_cbat(c, stmt_dup(tv->s), cs_size(&c->t->keys) ? UPD : INS, st_bat), stmt_find(stmt_dup(bats), stmt_atom_string(_strdup(c->base.name)), c));
 	}
 	stmt_destroy(bats);
 	res = sql_insert(sql, t, inserts, len, 1);

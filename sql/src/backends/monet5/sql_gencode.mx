@@ -1279,12 +1279,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			q = newStmt(mb, "sql", "columnBind");
-			setVarType(mb,getArg(q,0), 
-				newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
+			/* adjust destination type */
+			setVarType(mb,getArg(q,0), newBatType(
+				TYPE_void,s->op4.cval->type->type->localtype));
 			q = pushArgument(mb, q, o1);
 			q = pushArgument(mb, q, o2);
 			s->nr = getDestVar(q);
-			/* adjust destination type !! */
 			@:SQLpostlude@
 		} break;
 		case st_bulkinsert:{
@@ -1304,7 +1304,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushStr(mb, q, "UTF-8");
 				q = pushArgument(mb, q, codeset);
 
-				/* TODO use a bstream */
 				q = newStmt(mb, "stream", "openRead");
 				q = pushArgument(mb, q, file);
 				file = getDestVar(q);
