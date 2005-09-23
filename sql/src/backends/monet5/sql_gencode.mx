@@ -316,11 +316,10 @@ dump_2(backend *sql, MalBlkPtr mb, stmt *s, char *mod, char *name)
 }
 
 InstrPtr
-dump_multiplex(MalBlkPtr mb, char *name /* should be eaten */, int o1, int o2, int type)
+dump_multiplex(MalBlkPtr mb, char *name /* should be eaten */, int o1, int o2, int type, int rtype)
 {
 	InstrPtr q;
 	int match=0;
-	int rtype= type;
 
 	switch (*name){
 	case '+': case '-': case '*': case '/': case '%':
@@ -329,7 +328,6 @@ dump_multiplex(MalBlkPtr mb, char *name /* should be eaten */, int o1, int o2, i
 	case '<': case '>': case '=': case '!':
 		if( *(name+1) && *(name+1)=='=') match++; else
 		if( *(name+1) == 0) match++;
-		rtype= TYPE_bit;
 		match= 1;
 	}
 	if( match ){
@@ -342,7 +340,7 @@ dump_multiplex(MalBlkPtr mb, char *name /* should be eaten */, int o1, int o2, i
 		q = pushArgument(mb, q, o2);
 	} else {
 		q = newStmt(mb, "optimizer","multiplex");
-		setVarType(mb,getArg(q,0), newBatType(TYPE_void,type));
+		setVarType(mb,getArg(q,0), newBatType(TYPE_void,rtype));
 		q = pushStrVal(mb, q, convertCalcOperator(name));
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
@@ -617,7 +615,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				default:
 					GDKerror("Unknown operator");
 				}
-				q= dump_multiplex(mb,convertOperator(op),l,r,TYPE_bit);
+				q= dump_multiplex(mb,convertOperator(op),l,r,tail_type(s->op2.stval)->type->localtype, TYPE_bit);
 				s->nr = getDestVar(q);
 				k = getDestVar(q);
 				q = newStmt(mb, "algebra", "uselect");
@@ -1060,7 +1058,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->op1.stval->nrcols || s->op2.stval->nrcols) {
-				q= dump_multiplex(mb,convertOperator(s->op4.funcval->func->imp),l,r,s->op4.funcval->func->res->type->localtype);
+				q= dump_multiplex(mb,convertOperator(s->op4.funcval->func->imp),l,r,tail_type(s->op2.stval)->type->localtype, s->op4.funcval->func->res->type->localtype);
 				s->nr = getDestVar(q);
 			} else {
 				char *mod;
