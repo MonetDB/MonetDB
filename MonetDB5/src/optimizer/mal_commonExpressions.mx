@@ -97,7 +97,7 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng clk = GDKusec();
 
 	(void) stk;
-
+	setLifespan(mb);
 	for (i = 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);
 		if (p->retc != p->argc)
@@ -109,7 +109,13 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				printf(" :%d %d %d \n", !isUpdated(mb, i), !hasCommonResults(p, q), !hasSideEffects(p, TRUE));
 
 #endif
-				if (hasSameSignature(p, q) && hasSameArguments(mb, p, q) && !isUpdated(mb, i) && !hasCommonResults(p, q) && !hasSideEffects(p, TRUE)) {
+				if (hasSameSignature(p, q) && 
+					hasSameArguments(mb, p, q) && 
+					!isUpdated(mb, i) && 
+					!hasCommonResults(p, q) && 
+					!hasSideEffects(p, TRUE) &&
+					allArgumentsVisible(mb,j,i)
+					) {
 #ifdef DEBUG_MAL_OPTIMIZER
 					if (getClient()->debugOptimizer) {
 						stream_printf(GDKout, "Found a common expression " "%d <-> %d\n", j, i);

@@ -191,9 +191,6 @@ optimizer.prelude();
 
 #include "mal_optimizer.h"
 
-#endif /* _OPTIMIZER_H */
-@c
-#include "optimizer.h"
 #include "mal_interpreter.h"
 #include "mal_commonExpressions.h"
 #include "mal_garbageCollector.h"
@@ -228,6 +225,9 @@ opt_export size_t QOTjoinEstimate(BAT *l, BAT *r);
 opt_export str QOTjoinPath(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+#endif /* _OPTIMIZER_H */
+@c
+#include "optimizer.h"
 @
 Upon loading the module it should inspect the scenario table
 for any unresolved references to the MALoptimizer and set the 

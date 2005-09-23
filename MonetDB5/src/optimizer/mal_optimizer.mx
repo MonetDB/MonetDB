@@ -486,6 +486,7 @@ opt_export int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q);
 opt_export int isUpdated(MalBlkPtr mb, int pc);
 opt_export int hasCommonResults(InstrPtr p, InstrPtr q);
 opt_export int hasSideEffects(InstrPtr p, int strict);
+opt_export int allArgumentsVisible(MalBlkPtr mb, int pc,int qc);
 
 @}
 @-
@@ -615,12 +616,10 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 	}
     return TRUE;
 }
-@}
 @-
 If two instructions have elements in common in their target list,
 it means a variable is re-initialized and should not be considered
 an alias.
-@{
 @c
 int
 hasCommonResults(InstrPtr p, InstrPtr q)
@@ -633,7 +632,23 @@ hasCommonResults(InstrPtr p, InstrPtr q)
 				return TRUE;
 	return FALSE;
 }
+@-
+See is all arguments mentioned in the instruction at point pc
+are still visible at instruction qc.
+@c
+int
+allArgumentsVisible(MalBlkPtr mb, int pc,int qc){
+	int i;
+	InstrPtr p;
 
+	p= getInstrPtr(mb,pc);
+	for(i=p->retc; i< p->argc; i++){
+		VarPtr v = getVar(mb, getArg(p,i));
+		if( ! (v->beginLifespan <= qc && qc<=v->endLifespan))
+			return FALSE;
+	}
+	return TRUE;
+}
 @}
 @-
 For each function it should be relatively easy to determine its
