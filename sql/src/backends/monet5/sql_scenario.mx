@@ -861,10 +861,11 @@ cached routine, which may be hidden . For now we take a shortcut.
 The code below is copied from MALengine, which handles execution
 in the context of a user global environment. We have a private
 environment.
-	/* msg = MALengine(c);*/
 @c
 
-	msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+	if( c->curprg->def->stop == 1 || MALcommentsOnly(c->curprg->def))
+		msg= MAL_SUCCEED;
+	else msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
     if (msg) {
         GDKerror(msg);
         if (!c->listing)

@@ -333,6 +333,7 @@ dump_multiplex(MalBlkPtr mb, char *name /* should be eaten */, int o1, int o2, i
 {
 	InstrPtr q;
 	int match=0;
+	int rtype= type;
 
 	switch (*name){
 	case '+': case '-': case '*': case '/': case '%':
@@ -341,7 +342,7 @@ dump_multiplex(MalBlkPtr mb, char *name /* should be eaten */, int o1, int o2, i
 	case '<': case '>': case '=': case '!':
 		if( *(name+1) && *(name+1)=='=') match++; else
 		if( *(name+1) == 0) match++;
-		type= TYPE_bit;
+		rtype= TYPE_bit;
 		match= 1;
 	}
 	if( match ){
@@ -349,6 +350,7 @@ dump_multiplex(MalBlkPtr mb, char *name /* should be eaten */, int o1, int o2, i
 			q = newStmt(mb, "batstr", name);
 		else
 			q = newStmt(mb, "batcalc", name);
+		setVarType(mb,getArg(q,0), newBatType(TYPE_void,rtype));
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
 	} else {
@@ -637,7 +639,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			} else {
 				switch (s->flag) {
 				case cmp_like:{
-					q = newStmt(mb, "algebra", "likeselect");
+					q = newStmt(mb, "batstr", "like");
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
 					break;
@@ -645,7 +647,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				case cmp_notlike:{
 					int k;
 
-					q = newStmt(mb, "algebra", "likeselect");
+					q = newStmt(mb, "batstr", "like");
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
 					k = getDestVar(q);
