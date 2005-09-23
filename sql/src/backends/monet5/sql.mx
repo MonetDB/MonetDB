@@ -239,9 +239,13 @@ command @1( v:@2, digits:int, scale:int ) :@1
 address @2_num2dec_@1
 comment "cast number to decimal(@1) and check for overflow";
 @mal
+@:mal_cast_2dec(sht,oid)@
 @:mal_cast_2dec(sht,sht)@
 @:mal_cast_2dec(int,sht)@
+@:mal_cast_2dec(int,oid)@
 @:mal_cast_2dec(lng,sht)@
+@:mal_cast_2dec(lng,oid)@
+@:mal_cast_2dec(lng,int)@
 @:mal_cast_2dec(sht,flt)@
 @:mal_cast_2dec(int,flt)@
 @:mal_cast_2dec(lng,flt)@
@@ -1134,7 +1138,8 @@ str @2_2_@1( @1 *res, @2 *v )
 str @2_dec2_@1( @1 *res, int *s1, @2 *v )
 {
 	int scale = *s1;
-	@1 r, h = (*v<0)?-5:5; 
+	lng vdummy= *v;
+	@1 r, h = (vdummy <0)?-5:5; 
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -1156,7 +1161,8 @@ str @2_dec2dec_@1( @1 *res, int *S1, @2 *v, int *d2, int *S2 )
 	int p = *d2, inlen = 1;
 	@2 cpyval = *v;
 	int s1 = *S1, s2 = *S2;
-	@1 r, h = (*v<0)?-5:5; 
+	lng vdummy= *v;
+	@1 r, h = ( vdummy<0)?-5:5; 
 
 	/* shortcut nil */
 	if (*v == @2_nil) {
@@ -1194,10 +1200,13 @@ str @2_num2dec_@1( @1 *res, @2 *v, int *d2, int *s2 )
 
 @c
 @:numcastup(sht,sht)@
+@:numcastup(sht,oid)@
 @:numcastup(int,sht)@
 @:numcastup(int,int)@
+@:numcastup(int,oid)@
 @:numcastup(lng,sht)@
 @:numcastup(lng,int)@
+@:numcastup(lng,oid)@
 @:numcastup(lng,lng)@
 
 @= fnumcastdown
