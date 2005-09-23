@@ -6430,7 +6430,8 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 "fst_iter := fst_iter.leftjoin(mapping);\n"
                 "}\n"
                 "snd_iter := fst_iter.mark(0@0).reverse().leftfetchjoin(snd_iter);\n"
-                "fst_iter := fst_iter.reverse().mark(0@0).reverse();\n");
+                "fst_iter := fst_iter.reverse().mark(0@0).reverse();\n"
+                "ipik := fst_iter;\n");
 
         /* pushdown stuff */
         if (strcmp(lx,"nil")) {
@@ -6451,7 +6452,8 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
                 "# if necessary, we (try to) push leftfetchjoin's below the theta-join\n"
                 "var join_result := htordered_unique_thetajoin(%s, join_item1, %s, join_item2.reverse(), %s);\n"
                 "var snd_iter := join_result.reverse().mark(0@0).reverse();\n"
-                "var fst_iter := join_result.mark(0@0).reverse();\n",
+                "var fst_iter := join_result.mark(0@0).reverse();\n"
+                "ipik := fst_iter;\n",
                 lx, comp, rx);
     }
     /* pushdown stuff */
@@ -6468,7 +6470,6 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
             milprintf(f,
                     "# could also be pushed below theta-join, if order_snd wasn't needed for kind (below) ...\n"
                     "item := order_snd.leftfetchjoin(item%03u);\n"
-                    "ipik := item;\n"
                     "iter := fst_iter;\n"
                     "pos := ipik.NO_project(1@0);\n"
                     "# could also be pushed below theta-join, if order_snd wasn't needed for item (above) ...\n"
@@ -6503,7 +6504,6 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
         milprintf(f,
                 "# could also be pushed below theta-join, if order_snd wasn't needed for kind (below) ...\n"
                 "item := order_snd.leftfetchjoin(item%03u);\n"
-                "ipik := item;\n"
                 "iter := ipik.mark(1@0);\n"
                 "pos := ipik.NO_project(1@0);\n"
                 "# could also be pushed below theta-join, if order_snd wasn't needed for item (above) ...\n"
@@ -6515,7 +6515,6 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     {
         addValues (f, int_container(), "snd_iter.[int]()", "item");
         milprintf(f,
-                "ipik := item;\n"
                 "iter := ipik.mark(1@0);\n"
                 "pos := ipik.NO_project(1@0);\n"
                 "kind := ipik.NO_project(INT);\n");
