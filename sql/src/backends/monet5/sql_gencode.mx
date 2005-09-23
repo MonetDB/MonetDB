@@ -626,17 +626,21 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			} else {
 				switch (s->flag) {
 				case cmp_like:{
+					int e = _dumpstmt(sql, mb, s->op3.stval);
 					q = newStmt(mb, "batstr", "like");
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
+					q = pushArgument(mb, q, e);
 					break;
 				}
 				case cmp_notlike:{
+					int e = _dumpstmt(sql, mb, s->op3.stval);
 					int k;
 
 					q = newStmt(mb, "batstr", "like");
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, r);
+					q = pushArgument(mb, q, e);
 					k = getDestVar(q);
 					q = newStmt(mb, "algebra", " kdifference");
 					q = pushArgument(mb, q, l);

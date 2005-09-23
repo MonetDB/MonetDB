@@ -979,17 +979,23 @@ passed to the environment.
 static void
 pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 {
+/*
 	InstrPtr p;
+*/
 
 /*	int i;*/
+	(void) mb;
 	(void) nme;
+	(void) autocommit;
 
+/*
 	if (autocommit) {
 		p = newInstruction(ASSIGNsymbol);
 		moduleId(p) = putName("sql",3);
 		functionId(p) = putName("commit",6);
 		pushInstruction(mb, p);
 	}
+*/
 /* no catch
 	p= newInstruction(CATCHsymbol);
 	i= findVariable(mb,nme);
@@ -1006,12 +1012,14 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 	pushInstruction(mb,p);
 */
 
+/*
 	if (autocommit) {
 		p = newInstruction(ASSIGNsymbol);
 		moduleId(p) = putName("sql",3);
 		functionId(p) = putName("rollback",8);
 		pushInstruction(mb, p);
 	}
+*/
 /*       else {
 		p= newInstruction(RAISEsymbol);
 		p->barrier= RAISEsymbol;
