@@ -36,6 +36,11 @@ command init():void
 address SQLinitEnvironment
 comment "Initialize the environment for MAL";
 
+command commit():void
+address SQLcommit_wrap;
+command rollback():void
+address SQLrollback_wrap;
+
 command compile(cmd:str):str 
 address SQLcompile0;
 
@@ -524,6 +529,24 @@ Failure to find the state descriptor aborts the session.
 }
 @c
 
+str
+SQLcommit_wrap(int *ret){
+	mvc *m;
+
+	(void) ret;
+	@:getContext(m)@
+	mvc_commit(m, 0, NULL); /* keep the changes */
+	return MAL_SUCCEED;
+}
+str
+SQLrollback_wrap(int *ret){
+	mvc *m;
+
+	(void) ret;
+	@:getContext(m)@
+	mvc_rollback(m, 0, NULL); /* keep the changes */
+	return MAL_SUCCEED;
+}
 str
 mvc_update_var_wrap(int *ret, str *varname)
 {
