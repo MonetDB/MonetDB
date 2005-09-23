@@ -195,7 +195,6 @@ resolving addresses.
 		c->listing = oldlisting;
 		@:restoreClient2()@
 		return;
-		/*runScenario(c); */
 	}
 
 	if (c->fdin) {

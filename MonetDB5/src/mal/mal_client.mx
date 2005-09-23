@@ -277,7 +277,6 @@ actions to obtain client records.
  * For now, we move the prototype here, as it it only used here.
  * Maybe, we should concider also moving the implementation here...
  */
-mal_export void mal_exit(Client cntxt); /* used in src/mal/mal_client.c */
 
 int streamClient(Client c, str prompt);
 int bstreamClient(Client c, str prompt);
@@ -620,8 +619,7 @@ void closeClient(Client c) {
 			GDKerror("closeClient:client '%s' is still active\n", k->user);
 			killClient(k);
 		}
-	mal_exit(c);
-	/* MT_global_exit(0); not needed ?*/
+	mal_exit();
 }
 
 @-

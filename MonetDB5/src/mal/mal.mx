@@ -278,14 +278,13 @@ mal_export int             mal_debug;
 mal_export MT_Lock  mal_contextLock;
 
 mal_export int mal_init();
+mal_export void mal_exit();
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,
  * the only place where it is currently used. Maybe, we should concider
  * also moving the implementation there...
  */
-/* mal_export void mal_exit(Client cntxt); */   
-/* used in src/mal/mal_client.c */
 
 #define MALprofiler 1       /* activate the profiler */
 /* #undef MALprofiler*/

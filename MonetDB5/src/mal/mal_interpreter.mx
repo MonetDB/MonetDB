@@ -992,6 +992,8 @@ void waitForChildren(MalStkPtr stk){
 #endif
         MT_sleep_ms(1000); 
     }
+	if( stk->stklock) 
+		MT_destroy_lock(stk->stklock);
 }
 @-
 Joining a process thread is controlled with a lock part of the stack frame

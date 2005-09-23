@@ -185,7 +185,7 @@ mal_export void updateScenario(str nme, MALfcn fcn);
 struct SCENARIO scenarioRec[MAXSCEN] = {
 	{"mal", "mal",
 	 0, 0,			/* hardwired MALinit*/
-	 0, 0,			/* no MALexit */
+	 0, 0,			/* no MALexit, this is implicit */
 	 0, 0,			/* no MALinitClient */
 	 "MALexitClient", (MALfcn) & MALexitClient,
 	 "MALreader", (MALfcn) &MALreader, 0,

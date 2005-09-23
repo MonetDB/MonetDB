@@ -359,6 +359,8 @@ closeBox(str name, int flag)
 	(void) flag;		/* fool the compiler */
 	if ((box = findBox(name))) {
 		saveBox(box, flag);
+		if( GDKprotected && box->lock)
+			MT_destroy_lock(box->lock);
 		return 0;
 	}
 	return -1;
@@ -379,6 +381,8 @@ destroyBox(str name)
 			boxfile = boxFileName(box[i], 0);
 			unlink(boxfile);
 			GDKfree(boxfile);
+			if( GDKprotected && box[i]->lock)
+				MT_destroy_lock(box[i]->lock);
 		} else
 			box[i] = box[j++];
 	}
@@ -736,7 +740,7 @@ spaces.
 void
 printBox(stream *fd, Box obj)
 {
-	printStack(fd, obj->sym, obj->val);
+	printStack(fd, obj->sym, obj->val,0);
 }
 
 void

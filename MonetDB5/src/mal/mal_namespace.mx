@@ -132,6 +132,9 @@ void initNamespace() {
 #endif
 }
 void finishNamespace() {
+	int i;
+	for(i=0;i<namespace.nmetop; i++)
+		if( namespace.nme[i]) GDKfree(namespace.nme[i]);
     GDKfree(namespace.nme);
     GDKfree(namespace.link);
     GDKfree(namespace.hit);

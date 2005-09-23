@@ -42,6 +42,7 @@ mal_export void scheduleClient(str command, bstream *fin, stream *fout);
 
 mal_export str MALreader(Client c);
 mal_export str MALexitClient(Client c);
+mal_export void MALexit(Client c);
 mal_export str MALparser(Client c);
 mal_export str MALengine(Client c);
 mal_export void resetInstructions(MalBlkPtr mb, int start);
@@ -79,6 +80,11 @@ malBootstrap()
 	return 1;
 }
 
+void
+MALexit(Client c){
+	stream_printf(c->fdout,"End of MAL session\n");
+	mal_exit();
+}
 @+ Client main routine
 Every client has a 'main' function to collect the statements.
 Once the END instruction has been found, it is added to the
