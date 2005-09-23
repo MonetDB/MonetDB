@@ -410,6 +410,8 @@ bat[any::1,oid]
 @= bat_oid_any3
 bat[oid,any::3]
 @mil
+var samp256 := bat(void,lng,256LL);
+{ var i := 0LL; while(i < 256LL) { samp256.insert(nil,i); i :+= 1LL; } samp256.seqbase(0@0); }
 
 @:htordered_unique_thetajoin( void           , void           , oid   , oid   ,                              ,                            ,                                               )@
 
@@ -445,7 +447,6 @@ bat[oid,any::3]
         rx := nil;
     }
 @mil
-
 @= htordered_unique_thetajoin
 proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
                                  int mode,
@@ -473,14 +474,14 @@ proc htordered_unique_thetajoin( @1 lx, bat[oid,any::2] l,
             l := {min}(l);
             r := {max}(r.reverse()).reverse();
         }
-        # now warm up r with a nice sequential scan.. investigating what is to come
-        var cnt := nlthetajoin(r.reverse(), l.sample(16).reverse(), mode, int(l).count());
-        cnt := int(cnt).count();
-        if (cnt > (int(r).count() / 16LL)) {
+        var samp := [oid]([*](samp256, int(l).count()/256LL)).leftfetchjoin(l.reverse().mark(0@0).reverse());
+        var res := nlthetajoin(samp, r, mode, int(r).count() * 64LL);
+        if (((2LL * batsize(res) * int(l).count()) / (1LL + int(samp).count())) > mem_maxsize()) {
+            var cnt := int(res).count(); res := nil;
             # if not done, yet, join with lx/rx
             @6
             # a large intermediate result is better handled with nested loop
-            return nlthetajoin(l, r, mode, (cnt / 16LL)*int(l).count()); # no reordering necessary!!
+            return nlthetajoin(l, r, mode, ((cnt+cnt) / int(samp).count())*int(r).count()); # no reordering necessary!!
         }
     }
     var join_order := leftthetajoin(l, r, mode);
