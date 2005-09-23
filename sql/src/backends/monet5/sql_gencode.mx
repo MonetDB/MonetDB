@@ -1279,6 +1279,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			q = newStmt(mb, "sql", "columnBind");
+			setVarType(mb,getArg(q,0), 
+				newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
 			q = pushArgument(mb, q, o1);
 			q = pushArgument(mb, q, o2);
 			s->nr = getDestVar(q);
