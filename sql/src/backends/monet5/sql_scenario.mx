@@ -125,8 +125,10 @@ SQLexit(Client c)
 		return throwMessage("SQLexit",
 			"Catalogue not available\n");
 	}
+	/* the SQL scenario support may never be finished
 	mvc_exit();
 	SQLinitialized= FALSE;
+	*/
 	return MAL_SUCCEED;
 }
 
