@@ -1379,7 +1379,7 @@ GDKvmtrim(void *limit)
 	do {
 		stream *fp = NULL;
 
-		sleep(wait ? 5 : 1);
+		if (wait) MT_sleep_ms(5000);
 		MEMDEBUG {
 			fp = GDKerr;
 			THRprintf(fp, "GDKvmtrim(" LLFMT ")\n", (long long) *(size_t *) limit);
@@ -1428,7 +1428,7 @@ GDKinit(char *dbname, char *dbfarm, int alloc_map)
 		GDKprotected = 0;
 
 	/* Mserver intends to rob 95% of all memory as a default */
-	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.95);
+	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 
 	GDKmemchk(TRUE, TRUE);
 	GDKremovedir(DELDIR);
