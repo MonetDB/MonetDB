@@ -69,10 +69,10 @@ command rtrim( s:bat[:void,:str] ) :bat[:void,:str]
 address STRbatRtrim
 comment "Strip whitespaces from end of a string.";
 
-command startsWith(s:bat[:void,:str],prefix:bat[:void,:str]):bat[:void,:str]
+command startsWith(s:bat[:void,:str],prefix:bat[:void,:str]):bat[:void,:bit]
 address STRbatPrefix
 comment "Prefix check.";
-command startsWith(s:bat[:void,:str],prefix:str):bat[:void,:str]
+command startsWith(s:bat[:void,:str],prefix:str):bat[:void,:bit]
 address STRbatPrefixcst
 comment "Prefix check.";
 
@@ -139,6 +139,12 @@ comment "Substitute first occurrence of 'src' by
 	size, repeating is only done iff src is
 	not a substring of dst.";
 
+command like(s:bat[:any_1,:str],pat:str,esc:str):bat[:any_1,:void]
+address STRbatlike
+comment "Perform SQL like operation against a string bat";
+command like(s:bat[:any_1,:str],pat:str):bat[:any_1,:void]
+address STRbatlike2
+comment "Perform SQL like operation against a string bat";
 @+ Implementation
 @c
 #include <gdk.h>
@@ -578,8 +584,9 @@ STRbatmatchCst(int *ret, int *bid, str *pat)
 			bunfastins(bn, h, &match);
 		}
 	}
-      bunins_failed:
+bunins_failed:
 	BBPincref(*ret = bn->batCacheid, TRUE);
+	BBPunfix(bn->batCacheid);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 #else
@@ -588,6 +595,40 @@ STRbatmatchCst(int *ret, int *bid, str *pat)
 	(void) pat;
 	return throwMessage("str.match", "No implementation available");
 #endif
+}
+@-
+The pattern matching routine is optimized for SQL pattern structures.
+@c
+#define percent "\001"
+#define underscore "\002"
+str
+STRbatlike(int *ret, int *bid, str *pat, str *esc){
+	BAT *b,*bn;
+	BUN p, q;
+	int xx;
+	oid o= oid_nil;
+	if( (b= BATdescriptor(*bid)) == NULL)
+		return throwMessage("batstr.like","Can not find BAT");
+	bn= BATnew(BAThtype(b),TYPE_void, BATcount(b)/10+5);
+	BATseqbase(BATmirror(b),o);
+
+	BATloopFast(b, p, q, xx) {
+		ptr h = BUNhead(b, p);
+		ptr t = BUNtail(b, p);
+
+		if ( STRlike((str) t, *pat, *esc) )
+			bunfastins(bn, h,&o);
+	}
+bunins_failed:
+	BBPincref(*ret = bn->batCacheid, TRUE);
+	BBPunfix(bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+str
+STRbatlike2(int *ret, int *bid, str *pat){
+	str esc="";
+	return STRbatlike(ret,bid,pat,&esc);
 }
 
 @}
