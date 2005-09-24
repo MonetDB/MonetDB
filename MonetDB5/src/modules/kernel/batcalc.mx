@@ -358,6 +358,10 @@ to theVersion 4.3 implementation.
 	@:coerceList(flt)@
 	@:coerceList(dbl)@
 
+	@:coercion(bit,lng)@
+	@:coercion(bit,sht)@
+	@:coercion(bit,int)@
+
 command int(b:bat[:any_1,:str]):bat[:any_1,:int] 
 address CMDconvertstr_int
 comment "Coerce an str tail to a bat with a int tail.";
@@ -771,10 +775,10 @@ str CMD@1init_sht(int *ret, sht *size, @1 *cst){
 @:arithmeticImpl(@1,@2,dbl,dbl,dbl)@
 @:arithmeticImpl(@1,@2,oid,oid,oid)@
 
-@:arithmeticImpl(@1,@2,sht,sht,sht)@
 @:arithmeticImpl(@1,@2,int,int,sht)@
 @:arithmeticImpl(@1,@2,int,sht,int)@
 @:arithmeticImpl(@1,@2,int,sht,sht)@
+@:arithmeticImpl(@1,@2,sht,sht,sht)@
 
 @:arithmeticImpl(@1,@2,lng,lng,lng)@
 @:arithmeticImpl(@1,@2,lng,sht,lng)@
@@ -784,6 +788,7 @@ str CMD@1init_sht(int *ret, sht *size, @1 *cst){
 @:arithmeticImpl(@1,@2,lng,int,sht)@
 @:arithmeticImpl(@1,@2,lng,int,lng)@
 @:arithmeticImpl(@1,@2,lng,lng,int)@
+
 @:arithmeticImpl(@1,@2,lng,int,int)@
 @:arithmeticImpl(@1,@2,int,int,int)@
 
@@ -1458,6 +1463,11 @@ The lengthly list of coercions options could have been generated.
 @:General(oid,sht)@
 @:General(oid,int)@
 @:General(oid,lng)@
+
+
+@:General(bit,sht)@
+@:General(bit,int)@
+@:General(bit,lng)@
 
 @:General(lng,sht)@
 @:General(lng,int)@
