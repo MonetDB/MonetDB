@@ -190,8 +190,12 @@ address MTIMEdate_GE;
 
 command calc.date_sub_sec_interval(t:date,s:int):date
 address MTIMEdate_sub_sec_interval_wrap;
+command calc.date_sub_sec_interval(t:date,s:lng):date
+address MTIMEdate_sub_sec_interval_lng_wrap;
 command calc.date_add_sec_interval(t:date,s:int):date
 address MTIMEdate_add_sec_interval_wrap;
+command calc.date_add_sec_interval(t:date,s:lng):date
+address MTIMEdate_add_sec_interval_lng_wrap;
 command calc.date_add_month_interval(t:date,s:int):date
 address MTIMEdate_add_month_interval_wrap;
 
@@ -242,26 +246,45 @@ command calc.date(t:timestamp,v:tzone) :date
 address MTIMEtimestamp_extract_date;
 
 # tzone
-command calc.timezone(name:str):tzone
-address MTIMEtimezone;
+command calc.timezone(name:str):tzone address MTIMEtimezone;
 
 
-command calc.start_dst(t:tzone) :rule
-address MTIMEtzone_extract_start;
-command calc.end_dst(t:tzone) :rule
-address MTIMEtzone_extract_end;
-command calc.minutes(t:tzone) :int
-address MTIMEtzone_extract_minutes;
+command calc.start_dst(t:tzone) :rule address MTIMEtzone_extract_start;
+command calc.end_dst(t:tzone) :rule address MTIMEtzone_extract_end;
+command calc.minutes(t:tzone) :int address MTIMEtzone_extract_minutes;
 
 # rule
-command calc.month(t:rule) :int
-address MTIMErule_extract_month;
-command calc.day(t:rule) :int
-address MTIMErule_extract_day;
-command calc.weekday(t:rule) :int
-address MTIMErule_extract_weekday;
-command calc.minutes(t:rule) :int
-address MTIMErule_extract_minutes;
+command calc.month(t:rule) :int address MTIMErule_extract_month;
+command calc.day(t:rule) :int	address MTIMErule_extract_day;
+command calc.weekday(t:rule) :int address MTIMErule_extract_weekday;
+command calc.minutes(t:rule) :int address MTIMErule_extract_minutes;
+
+command calc.trim( s:str ) :str address STRStrip;
+command calc.ltrim( s:str ) :str address STRLtrim;
+command calc.rtrim( s:str ) :str address STRRtrim;
+command calc.substitute(s:str,src:str,dst:str,rep:bit):str
+address STRSubstitute;
+
+#SQL specific time support functions
+command calc.current_timestamp() :timestamp address MTIMEcurrent_timestamp;
+command calc.current_date() :date address MTIMEcurrent_date;
+command calc.current_time() :daytime address MTIMEcurrent_time;
+
+# utility functions (for SQL) for direct extraction of fields from timestamps
+command calc.year(t:timestamp) :int address MTIMEtimestamp_year;
+command calc.month(t:timestamp) :int address MTIMEtimestamp_month;
+command calc.day(t:timestamp) :int address MTIMEtimestamp_day;
+command calc.hours(t:timestamp) :int address MTIMEtimestamp_hours;
+command calc.minutes(t:timestamp) :int address MTIMEtimestamp_minutes;
+command calc.seconds(t:timestamp) :int address MTIMEtimestamp_seconds;
+command calc.milliseconds(t:timestamp) :int address MTIMEtimestamp_milliseconds;
+
+command calc.year(months:int) :int address MTIMEsql_year;
+command calc.month(months:int) :int address MTIMEsql_month;
+command calc.day(secs:lng) :int address MTIMEsql_day;
+command calc.hours(secs:lng) :int address MTIMEsql_hours;
+command calc.minutes(secs:lng) :int address MTIMEsql_minutes;
+command calc.seconds(secs:lng) :int address MTIMEsql_seconds;
 
 
 @- SQL functions
