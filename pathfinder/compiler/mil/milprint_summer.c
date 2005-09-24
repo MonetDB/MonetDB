@@ -9985,7 +9985,17 @@ static void recognize_join(PFcnode_t *c,
             {
                 break;
             }
+            else
             */
+            {
+                /* in the current translation all if-then-else expressions
+                   introduce a new scope. The join recognition should also 
+                   know about them */ 
+                recognize_join (L(c), active_vlist, active_vdefs, cur_level);
+                cur_level++;
+                recognize_join (R(c), active_vlist, active_vdefs, cur_level);
+            }
+            break;
         default:
             for (i = 0; i < PFCNODE_MAXCHILD && c->child[i]; i++) {
                 recognize_join (c->child[i], active_vlist, active_vdefs, cur_level);
