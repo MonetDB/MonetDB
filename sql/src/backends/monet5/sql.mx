@@ -161,6 +161,32 @@ comment "calculate a hash value and shift left";
 #address hash_wrap 
 #comment "calculate a hash value and shift left";
 
+@- SQL function aliases
+The code generate should identify the precise module
+target for all functions. This creates quite some
+administration overhead and analysis at many places.
+The alternative is to extend modules with an alias.
+
+The routine below are added to the calc module to
+ease code generation.
+@mal
+command calc.current_date():date
+address MTIMEcurrent_date;
+
+command calc.date(s:str):date
+address MTIMEdate_fromstr;
+command calc.==(a:date,b:date):bit
+address MTIMEdate_EQ;
+command calc.!=(a:date,b:date):bit
+address MTIMEdate_NEQ;
+command calc.<(a:date,b:date):bit
+address MTIMEdate_LT;
+command calc.<=(a:date,b:date):bit
+address MTIMEdate_LE;
+command calc.>(a:date,b:date):bit
+address MTIMEdate_GT;
+command calc.>=(a:date,b:date):bit
+address MTIMEdate_GE;
 @- SQL functions
 The SQL functions are all recognized by their module name.
 For some we need to provide a new implementation, others
