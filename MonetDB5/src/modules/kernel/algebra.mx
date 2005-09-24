@@ -160,6 +160,10 @@ command topN( b:bat[:any_1,:any_2], top:lng ) :bat[:any_1,:any_2]
 address ALGtopN
 comment "Trim all but the top N tuples.";
 
+command groupby(b:bat[:any_1,:int]) :bat[:any_1,:void] 
+address ALGgroupby
+comment "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.";
+
 command uselect(b:bat[:any_1,:any_2], low:any_2, high:any_2, 
         li:bit, hi:bit) :bat[:any_1,:any_2] 
 address ALGuselectInclusive
@@ -349,6 +353,12 @@ comment "Returns the union of two BATs; looking at both columns of both BATs.
 	or: 'sunion(left,right).sunique'.";
 @- Union on head
 @mal
+command kunion ( left:bat[:oid,:any_2], right:bat[:void,:any_2])
+		:bat[:oid,:any_2] 
+address ALGkunion;
+command kunion ( left:bat[:void,:any_2], right:bat[:oid,:any_2])
+		:bat[:oid,:any_2] 
+address ALGkunion;
 command kunion ( left:bat[:any_1,:any_2], right:bat[:any_1,:any_2])
 		:bat[:any_1,:any_2] 
 address ALGkunion
@@ -1729,6 +1739,27 @@ ALGtopN(int *res, int *bid, lng *top)
 	}
 	(void) BATtopN(b, (size_t) *top);
 	BBPincref(*res = b->batCacheid, TRUE);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+mal_export str ALGgroupby(int *res, int *bid);
+str
+ALGgroupby(int *res, int *bid)
+{
+	BAT *b,*bn;
+
+	b = BATdescriptor(*bid);
+	if (b == NULL) {
+		return throwMessage("algebra.groupby", "Cannot access descriptor");
+	}
+	if( CMDgen_group(&bn,b) == GDK_FAIL){
+		BBPunfix(b->batCacheid);
+		return throwMessage("algebra.groupby","unknown error");
+	}
+	if( bn){
+		BBPincref(*res = bn->batCacheid, TRUE);
+		BBPunfix(bn->batCacheid);
+	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
