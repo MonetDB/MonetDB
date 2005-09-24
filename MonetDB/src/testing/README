@@ -276,7 +276,7 @@ have changed since my proposal.
 - Mtest.py stores the output of test "$TSTSRCDIR/TST" in
   $TSTTRGDIR/TST.test.{out,err} and checks it against
   $TSTSRCDIR/TST.stable.{out,err}. If system specific stable output files
-  ($TSTSRCDIR/TST.stable.{out,err}[.($OS|$OSVER[.(64|32)bit])][.STATIC])
+  ($TSTSRCDIR/TST.stable.{out,err}[.($OS|$OSVER)][.(64|32)bit][.oid(32|64)][.Five][.STATIC])
   exist, the most specific stable output is used. Mtest.py stores the
   respective Mdiff results in $TSTTRGDIR/TST.{out,err}.diff.html.
   For each test directory, a common entry point to the test results is
