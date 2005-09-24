@@ -162,7 +162,9 @@ function user.main():int;	# 0  (main:int)
     io.print(z);	# 69 IOprint_val (_96:int)<-(z:bat[:int,:void])
     z := batstr.like(b,".%",".");	# 70 STRbatlike (z:bat[:int,:void])<-(b:bat[:int,:str])(_97:str)(_98:str)
     io.print(z);	# 71 IOprint_val (_99:int)<-(z:bat[:int,:void])
-end main;	# 72  
+    z := batstr.like(b,"tt","t");	# 72 STRbatlike (z:bat[:int,:void])<-(b:bat[:int,:str])(_100:str)(_101:str)
+    io.print(z);	# 73 IOprint_val (_102:int)<-(z:bat[:int,:void])
+end main;	# 74  
 #---------------------------------#
 # h	t			  # name
 # int	str			  # type
@@ -314,6 +316,11 @@ end main;	# 72
 # h	t	  # name
 # int	void	  # type
 #-----------------#
+#-----------------#
+# h	t	  # name
+# int	void	  # type
+#-----------------#
+[ 2,	  nil	  ]
 
 # 09:04:59 >  
 # 09:04:59 >  Done.
