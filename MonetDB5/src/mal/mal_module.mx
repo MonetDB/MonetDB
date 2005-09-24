@@ -286,6 +286,7 @@ void deleteSymbol(Module scope, Symbol prg){
 			if( nxt->peer == prg){
 			    Symbol old = nxt->peer;
 			    nxt->peer = old->peer;
+			    nxt->skip = NULL;
 			    freeSymbol(old);
 			    return;
 			}
