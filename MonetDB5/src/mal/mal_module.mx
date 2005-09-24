@@ -284,10 +284,9 @@ void deleteSymbol(Module scope, Symbol prg){
 		Symbol nxt = scope->subscope[t];
 		while( nxt->peer != NULL){
 			if( nxt->peer == prg){
-			    Symbol old = nxt->peer;
-			    nxt->peer = old->peer;
-			    nxt->skip = NULL;
-			    freeSymbol(old);
+			    nxt->peer = prg->peer;
+			    nxt->skip = prg->peer;
+			    freeSymbol(prg);
 			    return;
 			}
 			nxt = nxt->peer;
