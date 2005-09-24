@@ -197,7 +197,6 @@ address MTIMEdate_add_month_interval_wrap;
 
 command calc.year(d:date) :int
 address MTIMEdate_extract_year;
-    value between -5867411 and +5867411).";
 command calc.year(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_year_bulk;;
 
@@ -234,17 +233,13 @@ address MTIMEdaytime_extract_milliseconds_bulk;;
 # timestamp
 command calc.daytime(t:timestamp) :daytime
 address MTIMEtimestamp_extract_daytime_default;
-    in the local timezone.";
 command calc.daytime(t:timestamp, v:tzone) :daytime
 address MTIMEtimestamp_extract_daytime;
-    in a specific tzone.";
 
 command calc.date(t:timestamp) :date
 address MTIMEtimestamp_extract_date_default;
-    in the local timezone.";
 command calc.date(t:timestamp,v:tzone) :date
 address MTIMEtimestamp_extract_date;
-    specific timezone.";
 
 # tzone
 command calc.timezone(name:str):tzone
@@ -253,13 +248,10 @@ address MTIMEtimezone;
 
 command calc.start_dst(t:tzone) :rule
 address MTIMEtzone_extract_start;
-    start of DST from tzone.";
 command calc.end_dst(t:tzone) :rule
 address MTIMEtzone_extract_end;
-    end of DST from tzone.";
 command calc.minutes(t:tzone) :int
 address MTIMEtzone_extract_minutes;
-    time zone is offset wrt GMT.";
 
 # rule
 command calc.month(t:rule) :int
@@ -270,7 +262,6 @@ command calc.weekday(t:rule) :int
 address MTIMErule_extract_weekday;
 command calc.minutes(t:rule) :int
 address MTIMErule_extract_minutes;
-comment "extract minutes from rule.";
 
 
 @- SQL functions
