@@ -517,7 +517,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_gen_group:{
-			dump_1(sql, mb, s, "algebra", "gen_group");
+			dump_1(sql, mb, s, "algebra", "groupby");
 		}
 			break;
 		case st_reverse:{
