@@ -187,6 +187,92 @@ command calc.>(a:date,b:date):bit
 address MTIMEdate_GT;
 command calc.>=(a:date,b:date):bit
 address MTIMEdate_GE;
+
+command calc.date_sub_sec_interval(t:date,s:int):date
+address MTIMEdate_sub_sec_interval_wrap;
+command calc.date_add_sec_interval(t:date,s:int):date
+address MTIMEdate_add_sec_interval_wrap;
+command calc.date_add_month_interval(t:date,s:int):date
+address MTIMEdate_add_month_interval_wrap;
+
+command calc.year(d:date) :int
+address MTIMEdate_extract_year;
+    value between -5867411 and +5867411).";
+command calc.year(d:bat[:any_1,:date]):bat[:any_1,:int]
+address MTIMEdate_extract_year_bulk;;
+
+command calc.month(d:date) :int
+address MTIMEdate_extract_month;
+command calc.month(d:bat[:any_1,:date]):bat[:any_1,:int]
+address MTIMEdate_extract_month_bulk;;
+
+command calc.day(d:date) :int
+address MTIMEdate_extract_day;
+command calc.day(d:bat[:any_1,:date]):bat[:any_1,:int]
+address MTIMEdate_extract_day_bulk;;
+
+# daytime
+command calc.hours(h:daytime) :int
+address MTIMEdaytime_extract_hours;
+command calc.hours(d:bat[:any_1,:date]):bat[:any_1,:int]
+address MTIMEdaytime_extract_hours_bulk;;
+
+command calc.minutes(d:daytime) :int
+address MTIMEdaytime_extract_minutes;
+command calc.minutes(d:bat[:any_1,:date]):bat[:any_1,:int]
+address MTIMEdaytime_extract_minutes_bulk;;
+command calc.seconds(d:daytime) :int
+address MTIMEdaytime_extract_seconds;
+command calc.seconds(d:bat[:any_1,:date]):bat[:any_1,:int]
+address MTIMEdaytime_extract_seconds_bulk;;
+
+command calc.milliseconds(d:daytime) :int
+address MTIMEdaytime_extract_milliseconds;
+command calc.milliseconds(d:bat[:any_1,:date]):bat[:any_1,:int]
+address MTIMEdaytime_extract_milliseconds_bulk;;
+
+# timestamp
+command calc.daytime(t:timestamp) :daytime
+address MTIMEtimestamp_extract_daytime_default;
+    in the local timezone.";
+command calc.daytime(t:timestamp, v:tzone) :daytime
+address MTIMEtimestamp_extract_daytime;
+    in a specific tzone.";
+
+command calc.date(t:timestamp) :date
+address MTIMEtimestamp_extract_date_default;
+    in the local timezone.";
+command calc.date(t:timestamp,v:tzone) :date
+address MTIMEtimestamp_extract_date;
+    specific timezone.";
+
+# tzone
+command calc.timezone(name:str):tzone
+address MTIMEtimezone;
+
+
+command calc.start_dst(t:tzone) :rule
+address MTIMEtzone_extract_start;
+    start of DST from tzone.";
+command calc.end_dst(t:tzone) :rule
+address MTIMEtzone_extract_end;
+    end of DST from tzone.";
+command calc.minutes(t:tzone) :int
+address MTIMEtzone_extract_minutes;
+    time zone is offset wrt GMT.";
+
+# rule
+command calc.month(t:rule) :int
+address MTIMErule_extract_month;
+command calc.day(t:rule) :int
+address MTIMErule_extract_day;
+command calc.weekday(t:rule) :int
+address MTIMErule_extract_weekday;
+command calc.minutes(t:rule) :int
+address MTIMErule_extract_minutes;
+comment "extract minutes from rule.";
+
+
 @- SQL functions
 The SQL functions are all recognized by their module name.
 For some we need to provide a new implementation, others
