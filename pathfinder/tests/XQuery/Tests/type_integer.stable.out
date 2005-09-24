@@ -1,0 +1,32 @@
+stdout of test 'type_integer` in directory 'tests/XQuery` itself:
+
+
+# 23:33:13 >  
+# 23:33:13 >  ( pf -M typing1.xq | Mtimeout -timeout 60 Mserver "--config=/local_tmp/rittinge/MonetDB/Linux/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/local_tmp/rittinge/pathfinder/Linux/lib/MonetDB:/local_tmp/rittinge/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/local_tmp/rittinge/MonetDB/Linux/var/MonetDB/dbfarm" --set "sql_logdir=/local_tmp/rittinge/MonetDB/Linux/var/MonetDB/log" --set mapi_port=43754 --set sql_port=56337 --set monet_prompt= --dbname=mTests_tests_XQuery   --dbinit='module(pathfinder,pf_support,ascii_io);' )
+# 23:33:13 >  
+
+# Monet Database Server V4.5.0
+# Copyright (c) 1993-2004, CWI. All rights reserved.
+# Compiled for i686-suse-linux/32bit; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 18:02:55 >  
+# 18:02:55 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=59075 q01.xq
+# 18:02:55 >  
+
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+123456789012345678
+</XQueryResult>
+
+# 23:33:14 >  
+# 23:33:14 >  Done.
+# 23:33:14 >  
+
