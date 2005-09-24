@@ -1135,11 +1135,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			char *aggrfunc = _strdup(s->op4.aggrval->aggr->imp);
 			char *c;
 			int restype = s->op4.aggrval->aggr->res->type->localtype;
+			sql_subtype *tpe = tail_type(s->op1.stval);
 			int output_type_needed = 0;
 			
 			/* some aggr functions require bigger outputs types */
-			if (s->op4.aggrval->aggr->res->type->localtype > 
-			    tail_type(s->op1.stval)->type->localtype ) {
+			if (tpe &&
+			    s->op4.aggrval->aggr->res->type->localtype > 
+			    tpe->type->localtype ) {
 				/* Cut off the type information.
 			   	It should be handled by the type resolver
 			 	*/
