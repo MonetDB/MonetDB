@@ -671,6 +671,34 @@ address MTIMEcurrent_date;
 command current_time():daytime
 address MTIMEcurrent_time;
 
+command year(t:timestamp):int 
+address MTIMEtimestamp_year;
+command month(t:timestamp):int
+address MTIMEtimestamp_month;
+command day(t:timestamp):int
+address MTIMEtimestamp_day;
+command hours(t:timestamp):int
+address MTIMEtimestamp_hours;
+command minutes(t:timestamp):int
+address MTIMEtimestamp_minutes;
+command seconds(t:timestamp):int
+address MTIMEtimestamp_seconds;
+command milliseconds(t:timestamp):int
+address MTIMEtimestamp_milliseconds;
+
+command year(months:int):int
+address MTIMEsql_year;
+command month(months:int):int
+address MTIMEsql_month;
+command day(secs:lng):int
+address MTIMEsql_day;
+command hours(secs:lng):int
+address MTIMEsql_hours;
+command minutes(secs:lng):int
+address MTIMEsql_minutes;
+command seconds(secs:lng):int
+address MTIMEsql_seconds;
+
 @{
 @+ Prelude section
 Upon intialization of the time module, we have to
@@ -3345,6 +3373,115 @@ MTIMEcurrent_time(daytime *t)
 	MTIMEtimestamp_extract_daytime_default(t, &stamp);
 	return MAL_SUCCEED;
 }
+/* more SQL extraction utilities */
+mal_export str MTIMEtimestamp_year(int *ret, timestamp *t);
+str
+MTIMEtimestamp_year(int *ret, timestamp *t)
+{
+	date d;
+	timestamp_extract_date(&d, t, &tzone_local);
+    date_extract_year(ret, &d);
+	return MAL_SUCCEED;
+}
+mal_export str MTIMEtimestamp_month(int *ret, timestamp *t);
+str
+MTIMEtimestamp_month(int *ret, timestamp *t)
+{
+	date d;
+	timestamp_extract_date(&d, t, &tzone_local);
+    date_extract_month(ret, &d);
+	return MAL_SUCCEED;
+}
+mal_export str MTIMEtimestamp_day(int *ret, timestamp *t);
+str
+MTIMEtimestamp_day(int *ret, timestamp *t)
+{
+	date d;
+	timestamp_extract_date(&d, t, &tzone_local);
+    date_extract_day(ret, &d);
+	return MAL_SUCCEED;
+}
+mal_export str MTIMEtimestamp_hours(int *ret, timestamp *t);
+str
+MTIMEtimestamp_hours(int *ret, timestamp *t)
+{
+	daytime d;
+	timestamp_extract_daytime(&d, t, &tzone_local);
+    daytime_extract_hours(ret, &d);
+	return MAL_SUCCEED;
+}
+mal_export str MTIMEtimestamp_minutes(int *ret, timestamp *t);
+str
+MTIMEtimestamp_minutes(int *ret, timestamp *t)
+{
+	daytime d;
+	timestamp_extract_daytime(&d, t, &tzone_local);
+    daytime_extract_minutes(ret, &d);
+	return MAL_SUCCEED;
+}
+mal_export str MTIMEtimestamp_seconds(int *ret, timestamp *t);
+str
+MTIMEtimestamp_seconds(int *ret, timestamp *t)
+{
+	daytime d;
+	timestamp_extract_daytime(&d, t, &tzone_local);
+    daytime_extract_seconds(ret, &d);
+	return MAL_SUCCEED;
+}
+mal_export str MTIMEtimestamp_milliseconds(int *ret, timestamp *t);
+str
+MTIMEtimestamp_milliseconds(int *ret, timestamp *t)
+{
+	daytime d;
+	timestamp_extract_daytime(&d, t, &tzone_local);
+    daytime_extract_milliseconds(ret, &d);
+	return MAL_SUCCEED;
+}
+
+mal_export str MTIMEsql_year(int *ret, int *t);
+str
+MTIMEsql_year(int *ret, int *t)
+{
+	*ret= *t/12;
+	return MAL_SUCCEED;
+}
+mal_export str MTIMEsql_month(int *ret, int *t);
+str
+MTIMEsql_month(int *ret, int *t)
+{
+	*ret= *t%12;
+	return MAL_SUCCEED;
+}
+mal_export str MTIMEsql_day(int *ret, lng *t);
+str
+MTIMEsql_day(int *ret, lng *t)
+{
+	*ret= *t/86400;
+	return MAL_SUCCEED;
+}
+mal_export str MTIMEsql_hours(int *ret, lng *t);
+str
+MTIMEsql_hours(int *ret, lng *t)
+{
+	*ret= (*t % 86400)/3600;
+	return MAL_SUCCEED;
+}
+mal_export str MTIMEsql_minutes(int *ret, lng *t);
+str
+MTIMEsql_minutes(int *ret, lng *t)
+{
+	*ret= (*t %3600)/60;
+	return MAL_SUCCEED;
+}
+mal_export str MTIMEsql_seconds(int *ret, lng *t);
+str
+MTIMEsql_seconds(int *ret, lng *t)
+{
+	*ret= *t %60;
+	return MAL_SUCCEED;
+}
+
+
 
 @-
 The BAT equivalents for these functions provide
