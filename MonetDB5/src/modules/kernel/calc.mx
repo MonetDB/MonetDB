@@ -284,6 +284,8 @@ The unary operators include coercion routines for built-in types
         command -(x:@1) :@1 
         address CALCunary@1NEG 
         comment "negative value";
+		command length(x:@1):int
+		address CALClength@1;
 @{
 @-
 @mal
@@ -293,6 +295,8 @@ The unary operators include coercion routines for built-in types
 	@:mal_unary_ops(sht)@
 	@:mal_unary_ops(int)@
 	@:mal_unary_ops(lng)@
+	command length(x:str):int
+	address CALClengthstr;
 @}
 @-
 Coercion functions are typical used in multiplex calls.
@@ -718,7 +722,27 @@ the string representations.
 @:calc_unop(NEG,calc_neg,flt)@
 @:calc_unop(NEG,calc_neg,dbl)@
 @:calc_unop(NEG,calc_neg,lng)@
+@-
+@= calc_length
+mal_export str CALClength@1(int *res , @1 *a );
+str CALClength@1(int *res , @1 *a ) {
+   *res = sizeof(*a);
+   return(MAL_SUCCEED);
+}
+@c
 
+@:calc_length(chr)@
+@:calc_length(sht)@
+@:calc_length(int)@
+@:calc_length(flt)@
+@:calc_length(dbl)@
+@:calc_length(lng)@
+
+mal_export str CALClengthstr(int *res , str *a );
+str CALClengthstr(int *res , str *a ) {
+   *res = strlen(*a);
+   return(MAL_SUCCEED);
+}
 @:any_binary_minmax(MIN,<=)@
 @:any_binary_minmax(MAX,>)@
 
