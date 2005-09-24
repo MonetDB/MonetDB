@@ -165,6 +165,10 @@ command count_no_nil(b:bat[:void,:any_1],e:bat[:void,:any_1]):bat[:oid,:int]
 address AX3count_no_nil2;
 
 #The MIL procs 3 arguments
+command count(b:bat[:oid,:any_1],g:bat[:oid,:oid], e:bat[:oid,:any_2])
+	:bat[:oid,:int] 
+address AX3aggrX3_count3Nils
+comment "Grouped count";
 command count(b:bat[:void,:any_1],g:bat[:oid,:oid], e:bat[:oid,:any_2])
 	:bat[:void,:int] 
 address AX3aggrX3_count3Nils
