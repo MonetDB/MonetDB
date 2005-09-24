@@ -1161,7 +1161,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					buflen += BUFSIZ;
 					buf = RENEW_ARRAY(char, buf, buflen);
 				}
-				len = snprintf(buf, buflen, "var s%d := mvc_result_table(myc, %d, s%d);\n", -s->nr, cnt, order->nr);
+				len = snprintf(buf, buflen, "var s%d := mvc_result_table(myc, %d, %d, s%d);\n", -s->nr, cnt, sql->mvc->type, order->nr);
 				assert(len <= buflen);
 				write_command(sql, buf);
 				write_part(sql, buf, len);
@@ -1193,9 +1193,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				}
 				len = snprintf(buf, buflen, "mvc_export_result(myc, Output, s%d);\n", -s->nr);
 				assert(len <= buflen);
-				/* send first part (or all) 
-				len += snprintf(buf + len, buflen - len, "mvc_export_table(myc, Output, s%d, 0, %d);\n", -s->nr, sql->mvc->reply_size);
-*/
 
 				assert(len <= buflen);
 				write_command(sql, buf);
@@ -1516,7 +1513,7 @@ backend_explain(backend *be, stmt *s, stream *out)
  	 * libbat i.e. it cannot use gdkmalloc */
 	free(cmd);
 	BATseqbase(b, 0);
-	t_id = mvc_result_table(c, 1, b);
+	t_id = mvc_result_table(c, 1, c->type, b);
 	mvc_result_column(c, "", "statement", "varchar", -1, -1, b);
 	BBPunfix(b->batCacheid);
 	return(mvc_export_result(c, out, t_id));

@@ -115,15 +115,15 @@ comment "Bind the column bat into the focus ";
 The Monet 5 code generator uses several SQL specific wrapper functions.
 They are not present in V4
 @mal
-command resultSet( nr_cols:int, order:bat[:void,:any_1] ) :int 
+command resultSet( nr_cols:int, qtype:int, order:bat[:void,:any_1] ) :int 
 address mvc_result_table_wrap
 comment "Prepare a table result set"; 
 
-command resultSet( nr_cols:int, order:bat[:oid,:any_1] ) :int 
+command resultSet( nr_cols:int, qtype:int, order:bat[:oid,:any_1] ) :int 
 address mvc_result_table_wrap
 comment "Prepare a table result set"; 
 
-command resultSet( nr_cols:int, order:any_1 ) :int 
+command resultSet( nr_cols:int, qtype:int, order:any_1 ) :int 
 address mvc_result_row_wrap
 comment "Prepare a row result set"; 
 
@@ -858,27 +858,27 @@ mvc_clear_table_wrap(lng *res, str *sname, str *tname)
 }
 
 static int
-mvc_result_row(mvc *m, int nr_cols)
+mvc_result_row(mvc *m, int nr_cols, int qtype)
 {
-	m->results = res_table_create(m->trans, m->result_id++, nr_cols, m->type, m->results);
+	m->results = res_table_create(m->trans, m->result_id++, nr_cols, qtype, m->results);
 	return m->results->id;
 }
 
 str
-mvc_result_row_wrap(int *res_id, int *nr_cols, int *o)
+mvc_result_row_wrap(int *res_id, int *nr_cols, int *qtype, int *o)
 {
 	mvc *c;
 
 	(void)o; /* dummy order */
 	@:getContext(c)@
-	*res_id = mvc_result_row(c, *nr_cols); 
+	*res_id = mvc_result_row(c, *nr_cols, *qtype); 
 	if (*res_id < 0)
 		return throwMessage("sql.resultSet", "failed");
 	return MAL_SUCCEED;
 }
 
 str
-mvc_result_table_wrap(int *res_id, int *nr_cols, bat *order_bid)
+mvc_result_table_wrap(int *res_id, int *nr_cols, int *qtype, bat *order_bid)
 {
 	str res = MAL_SUCCEED;
 	mvc *c;
@@ -889,7 +889,7 @@ mvc_result_table_wrap(int *res_id, int *nr_cols, bat *order_bid)
         }
 
 	@:getContext(c)@
-	*res_id = mvc_result_table(c, *nr_cols, order);
+	*res_id = mvc_result_table(c, *nr_cols, *qtype, order);
 	if (*res_id < 0)
 		res= throwMessage("sql.resultSet", "failed");
 	BBPunfix(order->batCacheid);

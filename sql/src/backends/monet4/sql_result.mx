@@ -30,7 +30,7 @@ extern int mvc_export_default(mvc *m, stream *s);
 extern int mvc_export_result(mvc *c, stream *s, int res_id);
 extern int mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr);
 extern BAT *mvc_import_table(mvc *c, bstream *s, char *tname, char *sep, char *rsep, int nr);
-extern int mvc_result_table(mvc *m, int nr_cols, BAT *order);
+extern int mvc_result_table(mvc *m, int nr_cols, int type, BAT *order);
 
 extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
 extern int mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype);
@@ -599,7 +599,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	int i, ok = 1, count;
 	res_table *t = res_tables_find(m->results, res_id);
 
-	if (!s)
+	if (!s || !t)
 		return 0;
 	/* indicate to client that a new SQL command starts here */
 	ok = (stream_write(s, "#-\n", 3, 1) == 1);
@@ -767,9 +767,9 @@ mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned in
 
 
 int
-mvc_result_table(mvc *m, int nr_cols, BAT *order)
+mvc_result_table(mvc *m, int nr_cols, int type, BAT *order)
 {
-	res_table *t = res_table_create(m->trans, m->result_id++, nr_cols, m->type, m->results);
+	res_table *t = res_table_create(m->trans, m->result_id++, nr_cols, type, m->results);
 
 	t->order = order->batCacheid;
 	bat_incref(t->order, TRUE, "mvc_result_table");

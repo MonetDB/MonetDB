@@ -1364,6 +1364,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				k = newStmt(mb, "sql", "resultSet");
 				s->nr = getDestVar(k);
 				k = pushInt(mb, k, cnt);
+				k = pushInt(mb, k, sql->mvc->type);
 				k = pushArgument(mb, k, order->nr);
 				dump_header(mb, s, l);
 				

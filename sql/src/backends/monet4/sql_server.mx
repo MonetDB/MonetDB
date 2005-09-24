@@ -107,9 +107,9 @@ The results of the SQL queries are assembled in result sets, which
 can be shipped to the front-end for display or exported over a
 stream.
 @m
-	.COMMAND mvc_result_table( mvc m, int nr_cols, any order ) : int = mvc_result_row_wrap; "Create structure to cache a row query result" 
+	.COMMAND mvc_result_table( mvc m, int nr_cols, int type, any order ) : int = mvc_result_row_wrap; "Create structure to cache a row query result" 
 
-	.COMMAND mvc_result_table( mvc m, int nr_cols, BAT[oid,any] order ) : int = mvc_result_table_wrap; "Create structure to cache a table query result" 
+	.COMMAND mvc_result_table( mvc m, int nr_cols, int type, BAT[oid,any] order ) : int = mvc_result_table_wrap; "Create structure to cache a table query result" 
 
 	.COMMAND mvc_result_column( mvc m, str tname, str name, str typename, int digits, int scale, any val) = mvc_result_value_wrap; "Add the value to the row query result"
 	.COMMAND mvc_result_column( mvc m, str tname, str name, str typename, int digits, int scale, BAT[oid,any] col) = mvc_result_column_wrap; "Add the colunm to the table query result"
@@ -515,29 +515,29 @@ mvc_clear_table_wrap(lng *res, mvc *c, str sname, str tname)
 }
 
 static int
-mvc_result_row(mvc *m, int nr_cols)
+mvc_result_row(mvc *m, int nr_cols, int qtype)
 {
-	m->results = res_table_create(m->trans, m->result_id++, nr_cols, m->type, m->results);
+	m->results = res_table_create(m->trans, m->result_id++, nr_cols, qtype, m->results);
 	return m->results->id;
 }
 
 
 int
-mvc_result_table_wrap(int *res_id, mvc *M, int *nr_cols, BAT *order)
+mvc_result_table_wrap(int *res_id, mvc *M, int *nr_cols, int *qtype, BAT *order)
 {
-	*res_id = mvc_result_table(*(mvc **) M, *nr_cols, order);
+	*res_id = mvc_result_table(*(mvc **) M, *nr_cols, *qtype, order);
 	if (*res_id < 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 
 int
-mvc_result_row_wrap(int *res_id, mvc *M, int *nr_cols, ptr p, int p_type)
+mvc_result_row_wrap(int *res_id, mvc *M, int *nr_cols, int *qtype, ptr p, int p_type)
 {
 	(void) p;
 	(void) p_type;		/* Stefan: unused!? */
 
-	*res_id = mvc_result_row(*(mvc **) M, *nr_cols);
+	*res_id = mvc_result_row(*(mvc **) M, *nr_cols, *qtype);
 	if (*res_id < 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
