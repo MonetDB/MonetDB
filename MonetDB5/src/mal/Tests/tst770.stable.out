@@ -28,7 +28,7 @@ end test;	# 2
 #        reduce := batcalc./(b,1); 
 #end test;
 function user.test(b:bat[:any_1,:any_2]):void;	# 0  (test:void)<-(b:bat[:any_1,:any_2])
-    reduce := batcalc./(b,1);	# 1 CMDbatADDcst_int_sht_int (reduce:bat[:any,:int])<-(b:bat[:any_1,:any_2])(_3:int)
+    reduce := batcalc./(b,1);	# 1 CMDbatDIVcst_int_int_int (reduce:bat[:any,:int])<-(b:bat[:any_1,:any_2])(_3:int)
 end test;	# 2  
 #
 

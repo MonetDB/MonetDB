@@ -29,17 +29,19 @@ function user.main():int;	# 0  (main:int)
     bat.insert(t,nil,"sleep well");	# 5 BKCinsert_bun (_11:void)<-(t:bat[:void,:str])(_9:void)(_12:str)
     io.print(t);	# 6 IOprint_val (_13:int)<-(t:bat[:void,:str])
     _19 := bat.new(:void,:bit);	# 7 CMDBATnew (_19:bat[:void,:bit])<-(_4:void)(_20:bit)
-barrier (_22,_23,_24):= chop.newIterator(t);	# 8 CHPbunIterator (_22:lng)(_23:void)(_24:str)<-(t:bat[:void,:str]) jump 14
-    _26 := str.startsWith(_24,"");	# 9 STRPrefix (_26:bit)<-(_24:str)(_16:str)
-    bat.insert(_19,_23,_26);	# 10 BKCinsert_bun (_27:void)<-(_19:bat[:void,:bit])(_23:void)(_26:bit)
-catch MALexception;	# 11  (MALexception:str) jump 12
-exit MALexception;	# 12  (MALexception:str)
-    redo (_22,_23,_24):= chop.hasMoreElements(t);	# 13 CHPbunHasMoreElements (_22:lng)(_23:void)(_24:str)<-(t:bat[:void,:str]) jump 9
-exit (_22,_23,_24);	# 14  (_22:lng)(_23:void)(_24:str)
-    b:bat[:void,:bit]  := _19;	# 15  (b:bat[:void,:bit])<-(_19:bat[:void,:bit])
-    bat.setSequenceBase(b,0@0);	# 16 BKCsetSequenceBase (_17:bat[:void,:bit])<-(b:bat[:void,:bit])(_7:oid)
-    io.print(b);	# 17 IOprint_val (_18:int)<-(b:bat[:void,:bit])
-end main;	# 18  
+    _22 := bat.getSequenceBase(t);	# 8 BKCgetSequenceBase (_22:oid)<-(t:bat[:void,:str])
+    bat.setSequenceBase(_19,_22);	# 9 BKCsetSequenceBase (_23:bat[:void,:bit])<-(_19:bat[:void,:bit])(_22:oid)
+barrier (_25,_26,_27):= chop.newIterator(t);	# 10 CHPbunIterator (_25:lng)(_26:void)(_27:str)<-(t:bat[:void,:str]) jump 16
+    _29 := str.startsWith(_27,"");	# 11 STRPrefix (_29:bit)<-(_27:str)(_16:str)
+    bat.insert(_19,_26,_29);	# 12 BKCinsert_bun (_30:void)<-(_19:bat[:void,:bit])(_26:void)(_29:bit)
+catch MALexception;	# 13  (MALexception:str) jump 14
+exit MALexception;	# 14  (MALexception:str)
+    redo (_25,_26,_27):= chop.hasMoreElements(t);	# 15 CHPbunHasMoreElements (_25:lng)(_26:void)(_27:str)<-(t:bat[:void,:str]) jump 11
+exit (_25,_26,_27);	# 16  (_25:lng)(_26:void)(_27:str)
+    b:bat[:void,:bit]  := _19;	# 17  (b:bat[:void,:bit])<-(_19:bat[:void,:bit])
+    bat.setSequenceBase(b,0@0);	# 18 BKCsetSequenceBase (_17:bat[:void,:bit])<-(b:bat[:void,:bit])(_7:oid)
+    io.print(b);	# 19 IOprint_val (_18:int)<-(b:bat[:void,:bit])
+end main;	# 20  
 #-------------------------#
 # h	tmp_13		  # name
 # void	str		  # type
@@ -51,7 +53,7 @@ end main;	# 18
 # int	bit	  # type
 #-----------------#
 [ 0@0,	  true	  ]
-[ 1@0,	  true	  ]
+[ 0@0,	  true	  ]
 
 # 14:43:54 >  
 # 14:43:54 >  Done.

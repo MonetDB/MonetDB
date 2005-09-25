@@ -238,38 +238,40 @@ exit (go,i);	# 9  (go:bit)(i:lng)
     cnt := aggr.count(z9);	# 107 ALGcount_bat (cnt:int)<-(z9:bat[:void,:lng])
     t0 := alarm.usec();	# 108 ALARMusec (t0:lng)
     _90 := bat.new(:void,:lng);	# 109 CMDBATnew (_90:bat[:void,:lng])<-(_5:void)(_6:lng)
-barrier (_92,_93,_94):= chop.newIterator(b);	# 110 CHPbunIterator (_92:lng)(_93:void)(_94:lng)<-(b:bat[:void,:lng]) jump 117
-    _96 := algebra.find(c,_93);	# 111 ALGfind (_96:lng)<-(c:bat[:void,:lng])(_93:void)
-    _98 := calc.+(_94,_96);	# 112 CALCbinaryADDlnglng (_98:lng)<-(_94:lng)(_96:lng)
-    bat.insert(_90,_93,_98);	# 113 BKCinsert_bun (_99:void)<-(_90:bat[:void,:lng])(_93:void)(_98:lng)
-catch MALexception;	# 114  (MALexception:str) jump 115
-exit MALexception;	# 115  (MALexception:str)
-    redo (_92,_93,_94):= chop.hasMoreElements(b);	# 116 CHPbunHasMoreElements (_92:lng)(_93:void)(_94:lng)<-(b:bat[:void,:lng]) jump 111
-exit (_92,_93,_94);	# 117  (_92:lng)(_93:void)(_94:lng)
-    x:bat[:void,:lng]  := _90;	# 118  (x:bat[:void,:lng])<-(_90:bat[:void,:lng])
-    t1 := alarm.usec();	# 119 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 120 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#optimizer.multiplex(+) %d\n",d0);	# 121 IOprint_formatted_lng (_86:int)<-(_87:str)(d0:lng)
-    t0 := alarm.usec();	# 122 ALARMusec (t0:lng)
-    x:bat[:void,:lng]  := batcalc.+(b,c);	# 123 CMDbatADD_lng_lng_lng (x:bat[:void,:lng])<-(b:bat[:void,:lng])(c:bat[:void,:lng])
-    t1 := alarm.usec();	# 124 ALARMusec (t1:lng)
-    d0 := calc.-(t1,t0);	# 125 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
-    io.printf("#batcalc.+() %d\n",d0);	# 126 IOprint_formatted_lng (_88:int)<-(_89:str)(d0:lng)
-end main;	# 127  
-#loop 1055125
-#copy 39694#count 1000000
-#select none 205990 count 0
-#select all 49099 count 1000000
-#select 0.05 25404 count 50004
-#select 0.1 26795 count 100016
-#select 0.2 31061 count 199929
-#select 0.4 38221 count 399791
-#select 0.6 43742 count 600237
-#select 0.8 47798 count 799837
-#select 1.0 47408 count 999999
-#tail sortH 530319 count 1000000
-#optimizer.multiplex(+) 24822574
-#batcalc.+() 77567
+    _92 := bat.getSequenceBase(b);	# 110 BKCgetSequenceBase (_92:oid)<-(b:bat[:void,:lng])
+    bat.setSequenceBase(_90,_92);	# 111 BKCsetSequenceBase (_93:bat[:void,:lng])<-(_90:bat[:void,:lng])(_92:oid)
+barrier (_95,_96,_97):= chop.newIterator(b);	# 112 CHPbunIterator (_95:lng)(_96:void)(_97:lng)<-(b:bat[:void,:lng]) jump 119
+    _99 := algebra.find(c,_96);	# 113 ALGfind (_99:lng)<-(c:bat[:void,:lng])(_96:void)
+    _101 := calc.+(_97,_99);	# 114 CALCbinaryADDlnglng (_101:lng)<-(_97:lng)(_99:lng)
+    bat.insert(_90,_96,_101);	# 115 BKCinsert_bun (_102:void)<-(_90:bat[:void,:lng])(_96:void)(_101:lng)
+catch MALexception;	# 116  (MALexception:str) jump 117
+exit MALexception;	# 117  (MALexception:str)
+    redo (_95,_96,_97):= chop.hasMoreElements(b);	# 118 CHPbunHasMoreElements (_95:lng)(_96:void)(_97:lng)<-(b:bat[:void,:lng]) jump 113
+exit (_95,_96,_97);	# 119  (_95:lng)(_96:void)(_97:lng)
+    x:bat[:void,:lng]  := _90;	# 120  (x:bat[:void,:lng])<-(_90:bat[:void,:lng])
+    t1 := alarm.usec();	# 121 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 122 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#optimizer.multiplex(+) %d\n",d0);	# 123 IOprint_formatted_lng (_86:int)<-(_87:str)(d0:lng)
+    t0 := alarm.usec();	# 124 ALARMusec (t0:lng)
+    x:bat[:void,:lng]  := batcalc.+(b,c);	# 125 CMDbatADD_lng_lng_lng (x:bat[:void,:lng])<-(b:bat[:void,:lng])(c:bat[:void,:lng])
+    t1 := alarm.usec();	# 126 ALARMusec (t1:lng)
+    d0 := calc.-(t1,t0);	# 127 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)
+    io.printf("#batcalc.+() %d\n",d0);	# 128 IOprint_formatted_lng (_88:int)<-(_89:str)(d0:lng)
+end main;	# 129  
+#loop 345476
+#copy 11816#count 1000000
+#select none 91268 count 0
+#select all 13354 count 1000000
+#select 0.05 8757 count 50004
+#select 0.1 9811 count 100016
+#select 0.2 12162 count 199929
+#select 0.4 17057 count 399791
+#select 0.6 20079 count 600237
+#select 0.8 20558 count 799837
+#select 1.0 13871 count 999999
+#tail sort 175170 count 1000000
+#optimizer.multiplex(+) 6279459
+#batcalc.+() 23410
 
 # 08:19:33 >  
 # 08:19:33 >  Done.
