@@ -591,6 +591,7 @@ call2str(MalBlkPtr mb, MalStkPtr stk, int pc)
 			GDKfree(w);
 			if (k < p->argc - 1)
 				strcat(msg,", ");
+			len= strlen(msg);
 		}
 		strcat(msg,")");
 	} 
