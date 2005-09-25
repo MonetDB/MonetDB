@@ -1,1 +1,2 @@
-$RELSRCDIR/../c.sql-dec-primary-foreign
+$RELSRCDIR/../c.sql-dec
+#$RELSRCDIR/../c.sql-dec-primary-foreign
