@@ -159,7 +159,18 @@ find the actual arguments at the proper place of the callee.
 	pushArgument(mb, q, newTypeVariable(mb, getTailType(getArgType(mb, pci, 0))));
 	setVarUsed(mb, resB, TRUE);
 	setVarInitialized(mb, resB);
-
+	/* set the sequence base if the original had it */
+	if( getHeadType(getArgType(mb, pci, 0)) == TYPE_void){
+		int base;
+		q= newFcnCall(mb,"bat","getSequenceBase");
+		base= getArg(q,0)= newTmpVariable(mb,TYPE_oid);
+		pushArgument(mb,q,iter);
+		setVarUsed(mb, base, TRUE);
+		setVarInitialized(mb, base);
+		q= newFcnCall(mb,"bat","setSequenceBase");
+		pushArgument(mb,q,resB);
+		pushArgument(mb,q,base);
+	}
 	/* barrier (mloop,h,r):= newIterator(refBat); */
 	q = newFcnCall(mb, "chop", "newIterator");
 	q->barrier = BARRIERsymbol;
