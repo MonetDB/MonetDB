@@ -266,6 +266,14 @@ The command signatures are similar to those above, producing a bit result.
 
 	@:comparison(and,bit,AND)@
 	@:comparison(or,bit,OR)@
+
+command ==( left:bat[:void,:any_1], right:bat[:any_1,:void]) :bat[:void,:oid]
+address ALGjoin;
+command ==( left:bat[:any_1,:void], right:bat[:oid,:any_3]) :bat[:any_1,:any_3]
+address ALGjoin;
+command ==( left:bat[:any_1,:oid], right:bat[:void,:any_3]) :bat[:any_1,:any_3]
+address ALGjoin;
+
 @}
 @+ Boolean operations
 The command signature can mostly be borrowed from the arithmetic.
