@@ -1,0 +1,8 @@
+function qry():void;
+	a:= array.grid(1,2,4,1);
+	b:= batcalc.+(a,1);
+	c:= batcalc.*(b,4);
+end qry;
+
+optimizer.expressionAccumulation("user","qry");
+mdb.List("user","qry");

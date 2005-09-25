@@ -15,13 +15,11 @@ tst4610
 tst4611
 tst4620
 tst4631
-tst4640
 tst4700
 tst4701
 tst4730
 tst4800
 tst4801
-tst4810
 tst4820
 tst4900
 
@@ -38,6 +36,7 @@ qep02
 roberto1
 CXerror1
 #the remainder are snippets used in the reference manual
+AEexample
 ARexample
 DCexample
 ESexample

@@ -72,7 +72,7 @@ exit ifb;	# 11  (ifb:bit)
     transaction.commit();	# 13 TRNglobal_commit (_18:void)
 end f1;	# 14  
 !ERROR: 'a' may not be used before being set in f1[12]
-Optimizer commonExpressionRemoval optimizer failed
+Optimizer commonExpressionRemoval failed
 function user.f1():void;	# 0  (f1:void)
     xxx := bat.new(:void,:dbl);	# 1 CMDBATnew (xxx:bat[:void,:dbl])<-(_2:void)(_3:dbl)
     bat.setName(xxx,"xxx");	# 2 BKCsetName (_4:void)<-(xxx:bat[:void,:dbl])(_5:str)
