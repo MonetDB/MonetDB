@@ -26,12 +26,12 @@ function user.main():int;	# 0  (main:int)
     x := bat.new(:oid,:chr);	# 1 CMDBATnew (x:bat[:oid,:chr])<-(_2:oid)(_3:chr)
     de_a := bat.insert(x,1@0,'a');	# 2 BKCinsert_bun_oid_any (de_a:void)<-(x:bat[:oid,:chr])(_5:oid)(_6:chr)
     ee_a := bat.insert(x,2@0,'a');	# 3 BKCinsert_bun_oid_any (ee_a:void)<-(x:bat[:oid,:chr])(_8:oid)(_6:chr)
-    y := bat.new(:chr,:oid);	# 4 CMDBATnew (y:bat[:chr,:oid])<-(_10:chr)(_11:oid)
+    y := bat.new(:chr,:oid);	# 4 CMDBATnew (y:bat[:chr,:oid])<-(_3:chr)(_2:oid)
     xr := bat.reverse(x);	# 5 BKCreverse (xr:bat[:chr,:oid])<-(x:bat[:oid,:chr])
-    io.print(xr);	# 6 IOprint_val (_13:int)<-(xr:bat[:chr,:oid])
-    bat.insert(y,xr);	# 7 BKCinsert_bat (_14:void)<-(y:bat[:chr,:oid])(xr:bat[:chr,:oid])
-    io.print("result?");	# 8 IOprint_val (_15:int)<-(_16:str)
-    io.print(y);	# 9 IOprint_val (_17:int)<-(y:bat[:chr,:oid])
+    io.print(xr);	# 6 IOprint_val (_11:int)<-(xr:bat[:chr,:oid])
+    bat.insert(y,xr);	# 7 BKCinsert_bat (_12:void)<-(y:bat[:chr,:oid])(xr:bat[:chr,:oid])
+    io.print("result?");	# 8 IOprint_val (_13:int)<-(_14:str)
+    io.print(y);	# 9 IOprint_val (_15:int)<-(y:bat[:chr,:oid])
 end main;	# 10  
 #-----------------#
 # t	tmp_4	  # name

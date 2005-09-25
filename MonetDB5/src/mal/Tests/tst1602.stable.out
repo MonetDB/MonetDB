@@ -152,7 +152,7 @@ exit sj_a;	# 12  (sj_a:bit)
     x := alarm.time();	# 42 ALARMtime (x:int)
     yg_a := calc.-(x,t);	# 43 CALCbinarySUBintint (yg_a:int)<-(x:int)(t:int)
     ah_a := io.printf("%d ms\n",yg_a);	# 44 IOprint_formatted_int (ah_a:int)<-(_27:str)(yg_a:int)
-    M2 := bat.new(:lng,:lng,1000000);	# 45 CMDBATnewint (M2:bat[:lng,:lng])<-(_29:lng)(_29:lng)(_4:int)
+    M2 := bat.new(:lng,:lng,1000000);	# 45 CMDBATnewint (M2:bat[:lng,:lng])<-(_3:lng)(_3:lng)(_4:int)
     i := 1000000:lng;	# 46  (i:lng)<-(_8:lng)
 barrier sj_b := true;	# 47  (sj_b:bit)<-(_10:bit) jump 55
     i := calc.-(i,1);	# 48 CALCbinarySUBlngint (i:lng)<-(i:lng)(_11:int)

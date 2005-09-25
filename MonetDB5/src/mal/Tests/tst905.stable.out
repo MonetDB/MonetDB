@@ -32,15 +32,15 @@ barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_7:lng
     redo (v,i):= mal.nextElement(1:lng,10:lng);	# 5 RNGnextElement_lng (v:bit)(i:lng)<-(_9:lng)(_10:lng) jump 4
 exit (v,i);	# 6  (v:bit)(i:lng)
     c := algebra.copy(b);	# 7 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
-    _15 := bat.new(:lng,:lng);	# 8 CMDBATnew (_15:bat[:lng,:lng])<-(_16:lng)(_16:lng)
-barrier (_18,_19,_20):= chop.newIterator(b);	# 9 CHPbunIterator (_18:lng)(_19:lng)(_20:lng)<-(b:bat[:lng,:lng]) jump 16
-    _22 := algebra.find(c,_19);	# 10 ALGfind (_22:lng)<-(c:bat[:lng,:lng])(_19:lng)
-    _24 := calc.+(_20,_22);	# 11 CALCbinaryADDlnglng (_24:lng)<-(_20:lng)(_22:lng)
-    bat.insert(_15,_19,_24);	# 12 BKCinsert_bun (_25:void)<-(_15:bat[:lng,:lng])(_19:lng)(_24:lng)
+    _15 := bat.new(:lng,:lng);	# 8 CMDBATnew (_15:bat[:lng,:lng])<-(_4:lng)(_4:lng)
+barrier (_17,_18,_19):= chop.newIterator(b);	# 9 CHPbunIterator (_17:lng)(_18:lng)(_19:lng)<-(b:bat[:lng,:lng]) jump 16
+    _21 := algebra.find(c,_18);	# 10 ALGfind (_21:lng)<-(c:bat[:lng,:lng])(_18:lng)
+    _23 := calc.+(_19,_21);	# 11 CALCbinaryADDlnglng (_23:lng)<-(_19:lng)(_21:lng)
+    bat.insert(_15,_18,_23);	# 12 BKCinsert_bun (_24:void)<-(_15:bat[:lng,:lng])(_18:lng)(_23:lng)
 catch MALexception;	# 13  (MALexception:str) jump 14
 exit MALexception;	# 14  (MALexception:str)
-    redo (_18,_19,_20):= chop.hasMoreElements(b);	# 15 CHPbunHasMoreElements (_18:lng)(_19:lng)(_20:lng)<-(b:bat[:lng,:lng]) jump 10
-exit (_18,_19,_20);	# 16  (_18:lng)(_19:lng)(_20:lng)
+    redo (_17,_18,_19):= chop.hasMoreElements(b);	# 15 CHPbunHasMoreElements (_17:lng)(_18:lng)(_19:lng)<-(b:bat[:lng,:lng]) jump 10
+exit (_17,_18,_19);	# 16  (_17:lng)(_18:lng)(_19:lng)
     x:bat[:lng,:lng]  := _15;	# 17  (x:bat[:lng,:lng])<-(_15:bat[:lng,:lng])
     io.print(x);	# 18 IOprint_val (_14:int)<-(x:bat[:lng,:lng])
 end main;	# 19  

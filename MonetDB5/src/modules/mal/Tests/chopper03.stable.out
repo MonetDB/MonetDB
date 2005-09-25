@@ -58,13 +58,13 @@ function user.main():int;	# 0  (main:int)
     pb_a := bat.insert(t,7,ob_a);	# 15 BKCinsert_bun (pb_a:void)<-(t:bat[:int,:url])(_31:int)(ob_a:url)
     qb_a := io.print("build a table finished");	# 16 IOprint_val (qb_a:int)<-(_33:str)
     io.print(t);	# 17 IOprint_val (_34:int)<-(t:bat[:int,:url])
-    rb := bat.new(:int,:url);	# 18 CMDBATnew (rb:bat[:int,:url])<-(_36:int)(_3:url)
-    io.print("start loop");	# 19 IOprint_val (_37:int)<-(_38:str)
-    c := 3:lng;	# 20  (c:lng)<-(_40:lng)
+    rb := bat.new(:int,:url);	# 18 CMDBATnew (rb:bat[:int,:url])<-(_2:int)(_3:url)
+    io.print("start loop");	# 19 IOprint_val (_36:int)<-(_37:str)
+    c := 3:lng;	# 20  (c:lng)<-(_39:lng)
 barrier (mloop,chunk):= chop.newIterator(t,c);	# 21 CHPnewChunkIterator (mloop:lng)(chunk:bat[:int,:url])<-(t:bat[:int,:url])(c:lng) jump 25
-    io.print("next chunk");	# 22 IOprint_val (_43:int)<-(_44:str)
-    io.print(chunk);	# 23 IOprint_val (_45:int)<-(chunk:bat[:int,:url])
-    redo (mloop,chunk):= chop.hasMoreElements(t,3:lng);	# 24 CHPhasMoreChunks (mloop:lng)(chunk:bat[:int,:url])<-(t:bat[:int,:url])(_40:lng) jump 22
+    io.print("next chunk");	# 22 IOprint_val (_42:int)<-(_43:str)
+    io.print(chunk);	# 23 IOprint_val (_44:int)<-(chunk:bat[:int,:url])
+    redo (mloop,chunk):= chop.hasMoreElements(t,3:lng);	# 24 CHPhasMoreChunks (mloop:lng)(chunk:bat[:int,:url])<-(t:bat[:int,:url])(_39:lng) jump 22
 exit mloop;	# 25  (mloop:lng)
 end main;	# 26  
 [ "build a table finished" ]

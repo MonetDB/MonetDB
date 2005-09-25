@@ -44,17 +44,17 @@ barrier (k,v):= mal.newRange(0:lng);	# 4 RNGnewRange_lng (k:bit)(v:lng)<-(_9:lng
     redo (k,v):= mal.nextElement(1:lng,10:lng);	# 6 RNGnextElement_lng (k:bit)(v:lng)<-(_11:lng)(_12:lng) jump 5
 exit (k,v);	# 7  (k:bit)(v:lng)
     c := algebra.copy(b);	# 8 ALGcopy (c:bat[:lng,:lng])<-(b:bat[:lng,:lng])
-    d := bat.new(:lng,:lng);	# 9 CMDBATnew (d:bat[:lng,:lng])<-(_15:lng)(_15:lng)
+    d := bat.new(:lng,:lng);	# 9 CMDBATnew (d:bat[:lng,:lng])<-(_6:lng)(_6:lng)
 barrier (w,h,t):= chop.newIterator(b);	# 10 CHPbunIterator (w:lng)(h:lng)(t:lng)<-(b:bat[:lng,:lng]) jump 18
     B1 := algebra.find(b,h);	# 11 ALGfind (B1:lng)<-(b:bat[:lng,:lng])(h:lng)
     B2 := algebra.find(c,h);	# 12 ALGfind (B2:lng)<-(c:bat[:lng,:lng])(h:lng)
     t := calc.+(B1,B2);	# 13 CALCbinaryADDlnglng (t:lng)<-(B1:lng)(B2:lng)
-    bat.insert(d,h,t);	# 14 BKCinsert_bun (_21:void)<-(d:bat[:lng,:lng])(h:lng)(t:lng)
+    bat.insert(d,h,t);	# 14 BKCinsert_bun (_20:void)<-(d:bat[:lng,:lng])(h:lng)(t:lng)
     redo (w,h,t):= chop.hasMoreElements(b);	# 15 CHPbunHasMoreElements (w:lng)(h:lng)(t:lng)<-(b:bat[:lng,:lng]) jump 11
 catch GDKerror;	# 16  (GDKerror:any) jump 17
 exit GDKerror;	# 17  (GDKerror:any)
 exit w;	# 18  (w:lng)
-    io.print(d);	# 19 IOprint_val (_23:int)<-(d:bat[:lng,:lng])
+    io.print(d);	# 19 IOprint_val (_22:int)<-(d:bat[:lng,:lng])
 end main;	# 20  
 #-----------------#
 # h	tmp_6	  # name

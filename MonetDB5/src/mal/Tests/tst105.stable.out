@@ -30,8 +30,8 @@ function user.main():int;	# 0  (main:int)
 # check propagation of type variables over bats 	# 1  (_2:str)
 # can be checked after bat module has been added 	# 2  (_4:str)
     a := bat2.new(:str,:int);	# 3  unknown (a:bat[:str,:int])<-(_6:str)(_7:int)
-    b := bat2.new(:str,:int);	# 4  unknown (b:bat[:str,:int])<-(_6:str)(_7:int)
-    c := bat.new(:str,:int);	# 5 CMDBATnew (c:bat[:str,:int])<-(_6:str)(_7:int)
+    b := bat2.new(:str,:int);	# 4  unknown (b:bat[:str,:int])<-(_9:str)(_7:int)
+    c := bat.new(:str,:int);	# 5 CMDBATnew (c:bat[:str,:int])<-(_11:str)(_7:int)
 end main;	# 6  
 
 # 07:58:56 >  

@@ -62,39 +62,39 @@ function user.main():int;	# 0  (main:int)
     k := user.one(1);	# 1  (k:int)<-(_2:int)
     l := user.three(1,2,3);	# 2  (l:int)<-(_2:int)(_4:int)(_5:int)
     p := user.pow(1,2);	# 3  (p:int)<-(_2:int)(_4:int)
-    b := bat.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-(_8:int)(_8:int)
-    bat.insert(b,1,1);	# 5 BKCinsert_bun_int_int (_9:void)<-(b:bat[:int,:int])(_2:int)(_2:int)
-    io.print("do multiplex three test");	# 6 IOprint_val (_10:int)<-(_11:str)
-    _21 := bat.new(:int,:int);	# 7 CMDBATnew (_21:bat[:int,:int])<-(_22:int)(_22:int)
-barrier (_24,_25,_26):= chop.newIterator(b);	# 8 CHPbunIterator (_24:lng)(_25:int)(_26:int)<-(b:bat[:int,:int]) jump 14
-    _28 := user.three(_26,2,3);	# 9  (_28:int)<-(_26:int)(_4:int)(_5:int)
-    bat.insert(_21,_25,_28);	# 10 BKCinsert_bun_int_int (_29:void)<-(_21:bat[:int,:int])(_25:int)(_28:int)
+    b := bat.new(:int,:int);	# 4 CMDBATnew (b:bat[:int,:int])<-(_8:int)(_9:int)
+    bat.insert(b,1,1);	# 5 BKCinsert_bun_int_int (_10:void)<-(b:bat[:int,:int])(_2:int)(_2:int)
+    io.print("do multiplex three test");	# 6 IOprint_val (_11:int)<-(_12:str)
+    _22 := bat.new(:int,:int);	# 7 CMDBATnew (_22:bat[:int,:int])<-(_23:int)(_24:int)
+barrier (_26,_27,_28):= chop.newIterator(b);	# 8 CHPbunIterator (_26:lng)(_27:int)(_28:int)<-(b:bat[:int,:int]) jump 14
+    _30 := user.three(_28,2,3);	# 9  (_30:int)<-(_28:int)(_4:int)(_5:int)
+    bat.insert(_22,_27,_30);	# 10 BKCinsert_bun_int_int (_31:void)<-(_22:bat[:int,:int])(_27:int)(_30:int)
 catch MALexception;	# 11  (MALexception:str) jump 12
 exit MALexception;	# 12  (MALexception:str)
-    redo (_24,_25,_26):= chop.hasMoreElements(b);	# 13 CHPbunHasMoreElements (_24:lng)(_25:int)(_26:int)<-(b:bat[:int,:int]) jump 9
-exit (_24,_25,_26);	# 14  (_24:lng)(_25:int)(_26:int)
-    z:bat[:int,:int]  := _21;	# 15  (z:bat[:int,:int])<-(_21:bat[:int,:int])
-    io.print("do multiplex one test");	# 16 IOprint_val (_14:int)<-(_15:str)
-    _34 := bat.new(:int,:int);	# 17 CMDBATnew (_34:bat[:int,:int])<-(_22:int)(_22:int)
-barrier (_36,_37,_38):= chop.newIterator(b);	# 18 CHPbunIterator (_36:lng)(_37:int)(_38:int)<-(b:bat[:int,:int]) jump 24
-    _40 := user.one(_38);	# 19  (_40:int)<-(_38:int)
-    bat.insert(_34,_37,_40);	# 20 BKCinsert_bun_int_int (_41:void)<-(_34:bat[:int,:int])(_37:int)(_40:int)
+    redo (_26,_27,_28):= chop.hasMoreElements(b);	# 13 CHPbunHasMoreElements (_26:lng)(_27:int)(_28:int)<-(b:bat[:int,:int]) jump 9
+exit (_26,_27,_28);	# 14  (_26:lng)(_27:int)(_28:int)
+    z:bat[:int,:int]  := _22;	# 15  (z:bat[:int,:int])<-(_22:bat[:int,:int])
+    io.print("do multiplex one test");	# 16 IOprint_val (_15:int)<-(_16:str)
+    _36 := bat.new(:int,:int);	# 17 CMDBATnew (_36:bat[:int,:int])<-(_37:int)(_38:int)
+barrier (_40,_41,_42):= chop.newIterator(b);	# 18 CHPbunIterator (_40:lng)(_41:int)(_42:int)<-(b:bat[:int,:int]) jump 24
+    _44 := user.one(_42);	# 19  (_44:int)<-(_42:int)
+    bat.insert(_36,_41,_44);	# 20 BKCinsert_bun_int_int (_45:void)<-(_36:bat[:int,:int])(_41:int)(_44:int)
 catch MALexception;	# 21  (MALexception:str) jump 22
 exit MALexception;	# 22  (MALexception:str)
-    redo (_36,_37,_38):= chop.hasMoreElements(b);	# 23 CHPbunHasMoreElements (_36:lng)(_37:int)(_38:int)<-(b:bat[:int,:int]) jump 19
-exit (_36,_37,_38);	# 24  (_36:lng)(_37:int)(_38:int)
-    z:bat[:int,:int]  := _34;	# 25  (z:bat[:int,:int])<-(_34:bat[:int,:int])
-    io.print("do multiplex pow test");	# 26 IOprint_val (_17:int)<-(_18:str)
-    _46 := bat.new(:int,:int);	# 27 CMDBATnew (_46:bat[:int,:int])<-(_22:int)(_22:int)
-barrier (_48,_49,_50):= chop.newIterator(b);	# 28 CHPbunIterator (_48:lng)(_49:int)(_50:int)<-(b:bat[:int,:int]) jump 34
-    _52 := user.pow(_50,2);	# 29  (_52:int)<-(_50:int)(_4:int)
-    bat.insert(_46,_49,_52);	# 30 BKCinsert_bun_int_int (_53:void)<-(_46:bat[:int,:int])(_49:int)(_52:int)
+    redo (_40,_41,_42):= chop.hasMoreElements(b);	# 23 CHPbunHasMoreElements (_40:lng)(_41:int)(_42:int)<-(b:bat[:int,:int]) jump 19
+exit (_40,_41,_42);	# 24  (_40:lng)(_41:int)(_42:int)
+    z:bat[:int,:int]  := _36;	# 25  (z:bat[:int,:int])<-(_36:bat[:int,:int])
+    io.print("do multiplex pow test");	# 26 IOprint_val (_18:int)<-(_19:str)
+    _50 := bat.new(:int,:int);	# 27 CMDBATnew (_50:bat[:int,:int])<-(_51:int)(_52:int)
+barrier (_54,_55,_56):= chop.newIterator(b);	# 28 CHPbunIterator (_54:lng)(_55:int)(_56:int)<-(b:bat[:int,:int]) jump 34
+    _58 := user.pow(_56,2);	# 29  (_58:int)<-(_56:int)(_4:int)
+    bat.insert(_50,_55,_58);	# 30 BKCinsert_bun_int_int (_59:void)<-(_50:bat[:int,:int])(_55:int)(_58:int)
 catch MALexception;	# 31  (MALexception:str) jump 32
 exit MALexception;	# 32  (MALexception:str)
-    redo (_48,_49,_50):= chop.hasMoreElements(b);	# 33 CHPbunHasMoreElements (_48:lng)(_49:int)(_50:int)<-(b:bat[:int,:int]) jump 29
-exit (_48,_49,_50);	# 34  (_48:lng)(_49:int)(_50:int)
-    z:bat[:int,:int]  := _46;	# 35  (z:bat[:int,:int])<-(_46:bat[:int,:int])
-    io.print(z);	# 36 IOprint_val (_20:int)<-(z:bat[:int,:int])
+    redo (_54,_55,_56):= chop.hasMoreElements(b);	# 33 CHPbunHasMoreElements (_54:lng)(_55:int)(_56:int)<-(b:bat[:int,:int]) jump 29
+exit (_54,_55,_56);	# 34  (_54:lng)(_55:int)(_56:int)
+    z:bat[:int,:int]  := _50;	# 35  (z:bat[:int,:int])<-(_50:bat[:int,:int])
+    io.print(z);	# 36 IOprint_val (_21:int)<-(z:bat[:int,:int])
 end main;	# 37  
 [ 1 ]
 [ 1 ]

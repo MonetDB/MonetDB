@@ -24,8 +24,8 @@ function user.main():int;	# 0  (main:int)
 # how does an SQL schema become accessible. 	# 1  (_2:str)
     person_key_name := bat.new(:oid,:str);	# 2 CMDBATnew (person_key_name:bat[:oid,:str])<-(_4:oid)(_5:str)
     person_key_age := bat.new(:oid,:int);	# 3 CMDBATnew (person_key_age:bat[:oid,:int])<-(_4:oid)(_7:int)
-    address_str := bat.new(:oid,:str);	# 4 CMDBATnew (address_str:bat[:oid,:str])<-(_4:oid)(_5:str)
-    address_city := bat.new(:oid,:str);	# 5 CMDBATnew (address_city:bat[:oid,:str])<-(_4:oid)(_5:str)
+    address_str := bat.new(:oid,:str);	# 4 CMDBATnew (address_str:bat[:oid,:str])<-(_4:oid)(_9:str)
+    address_city := bat.new(:oid,:str);	# 5 CMDBATnew (address_city:bat[:oid,:str])<-(_4:oid)(_11:str)
 end main;	# 6  
 
 # 08:01:31 >  

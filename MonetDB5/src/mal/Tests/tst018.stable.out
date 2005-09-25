@@ -29,14 +29,14 @@ stdout of test 'tst018` in directory 'src/mal` itself:
 function user.main():int;	# 0  (main:int)
 # handling assignments of 'nil'; 	# 1  (_2:str)
     i := 23;	# 2  (i:int)<-(_4:int)
-    i := nil;	# 3  (i:int)<-(_13:int)
+    i := nil;	# 3  (i:int)<-(_14:int)
     io.print(i);	# 4 IOprint_val (_6:int)<-(i:int)
-    b := bat.new(:int,:int);	# 5 CMDBATnew (b:bat[:int,:int])<-(_8:int)(_8:int)
-    b := nil;	# 6  (b:bat[:int,:int])<-(_14:BAT)
-    io.print(b);	# 7 IOprint_val (_9:int)<-(b:bat[:int,:int])
-    s := "hello";	# 8  (s:str)<-(_11:str)
-    s := nil;	# 9  (s:str)<-(_15:str)
-    io.print(s);	# 10 IOprint_val (_12:int)<-(s:str)
+    b := bat.new(:int,:int);	# 5 CMDBATnew (b:bat[:int,:int])<-(_8:int)(_9:int)
+    b := nil;	# 6  (b:bat[:int,:int])<-(_15:BAT)
+    io.print(b);	# 7 IOprint_val (_10:int)<-(b:bat[:int,:int])
+    s := "hello";	# 8  (s:str)<-(_12:str)
+    s := nil;	# 9  (s:str)<-(_16:str)
+    io.print(s);	# 10 IOprint_val (_13:int)<-(s:str)
 end main;	# 11  
 [ 0 ]
 [ "nil" ]
