@@ -397,6 +397,8 @@ comment "Subtract months from a timestamp";
 command timestamp_add_month_interval(t:timestamp,s:int):timestamp 
 address MTIMEtimestamp_add_month_interval_wrap
 comment "Add months to a timestamp";
+command timestamp(t:timestamp):timestamp
+address MTIMEtimestamp2timestamp;
 
 command time_sub_sec_interval(t:daytime,s:lng):daytime 
 address MTIMEtime_sub_sec_interval_wrap
@@ -444,6 +446,8 @@ comment "creates a date from (year,month,day).";
 command daytime(s:str):daytime
 address MTIMEdaytime_fromstr
 comment "convert the string to a daytime value.";
+command daytime(:daytime):daytime
+address MTIMEdaytime2daytime;
 
 command daytime(h:int,m:int,s:int,mi:int)
 		:daytime 
@@ -847,6 +851,8 @@ mal_export int timestamp_tostr(str *buf, int *len, timestamp *val);
 mal_export int timestamp_diff(lng *ret, timestamp *v1, timestamp *v2);
 mal_export str MTIMEnil2date(date *ret, int *src);
 mal_export str MTIMEdate2date(date *ret, date *src);
+mal_export str MTIMEdaytime2daytime(daytime *ret, daytime *src);
+mal_export str MTIMEtimestamp2timestamp(timestamp *ret, timestamp *src);
 mal_export str MTIMErule_fromstr(rule *ret, str *s);
 mal_export str MTIMEprelude();
 mal_export str time_epilogue(void);
@@ -2658,7 +2664,18 @@ MTIMEnil2date(date *ret, int *src)
 str
 MTIMEdate2date(date *ret, date *src)
 {
-	(void) src;
+	*ret = *src;
+	return MAL_SUCCEED;
+}
+str
+MTIMEdaytime2daytime(daytime *ret, daytime *src)
+{
+	*ret = *src;
+	return MAL_SUCCEED;
+}
+str
+MTIMEtimestamp2timestamp(timestamp *ret, timestamp *src)
+{
 	*ret = *src;
 	return MAL_SUCCEED;
 }
