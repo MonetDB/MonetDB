@@ -61,6 +61,8 @@ features to assemble a command before it is being interpreted.
 
 #include "mal_client.h"
 mal_export int readConsole(Client cntxt);
+mal_export void showCommands(void);
+mal_export char * getConsoleInput(const char *prompt, int linemode, int exit_on_error);
 
 #endif /* READLINETOOLS_H_INCLUDED */
 @c
@@ -106,7 +108,7 @@ static const char *mal_commands[] = {
 	"REDO",
 	0
 };
-static const char *mdb_commands[] = {
+const char *mdb_commands[] = {
 	"atoms",
 	"break",
 	"breakpoints",
@@ -248,7 +250,7 @@ deinit_readline(void)
 #include <termios.h>
 #endif
 
-static void
+void
 showCommands(void)
 {
     printf("?\t - show this message\n");
@@ -262,7 +264,7 @@ showCommands(void)
 
 static int initReadline;
 
-static char *
+char *
 getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 {
 	char *line = NULL;

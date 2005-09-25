@@ -67,7 +67,7 @@ malBootstrap()
 	str bootfile = "mal_init", bf;
 
 	c = initClient(GDKstrdup("user"), NULL, 0, 0);
-	c->nspace = newModule(NULL, putName("user", 5));
+	c->nspace = newModule(NULL, putName("user", 4));
 	initLibraries();
 	if (defaultScenario(c))
 		return 0;

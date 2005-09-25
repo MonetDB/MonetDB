@@ -62,6 +62,7 @@ typedef struct NAMESPACE{
     str  *nme;
     int  *link;
     int  *hit;
+	int	 *length;
 	int	 totalhit;
 } Namespace;
 
@@ -73,7 +74,7 @@ static Namespace backup;
 
 static void expandNamespace(int incr){
     str *nme;
-    int *link, *hit;
+    int *length, *link, *hit;
 
     if(incr < 0){
         GDKwarning("expandNamespace:illegal increment\n");
@@ -86,29 +87,37 @@ static void expandNamespace(int incr){
     nme= (str *) GDKmalloc(sizeof(str *) * namespace.nmetop+incr);
     link= (int *) GDKmalloc(sizeof(int) * namespace.nmetop+incr);
     hit = (int *) GDKmalloc(sizeof(int) * namespace.nmetop+incr);
+    length = (int *) GDKmalloc(sizeof(int) * namespace.nmetop+incr);
     memcpy(nme, namespace.nme, sizeof(str *) * namespace.nmetop);
     memcpy(link, namespace.link, sizeof(int) * namespace.nmetop);
     memcpy(hit, namespace.hit, sizeof(int) * namespace.nmetop);
+    memcpy(length, namespace.length, sizeof(int) * namespace.nmetop);
 
     namespace.size += incr;
     namespace.nmetop+= incr;
 	namespace.totalhit= 0;
     GDKfree(namespace.nme); namespace.nme= nme;
     GDKfree(namespace.link); namespace.link= link;
+    GDKfree(namespace.hit); namespace.hit= hit;
+    GDKfree(namespace.length); namespace.length= length;
 
 #ifdef _BACKUP_
     nme= (str *) GDKmalloc(sizeof(str *) * backup.nmetop+incr);
     link= (int *) GDKmalloc(sizeof(int) * backup.nmetop+incr);
     hit = (int *) GDKmalloc(sizeof(int) * backup.nmetop+incr);
+    length = (int *) GDKmalloc(sizeof(int) * backup.nmetop+incr);
     memcpy(nme, backup.nme, sizeof(str *) * backup.nmetop);
     memcpy(link, backup.link, sizeof(int) * backup.nmetop);
     memcpy(hit, backup.hit, sizeof(int) * backup.nmetop);
+    memcpy(length, backup.hit, sizeof(int) * backup.nmetop);
 
     backup.size += incr;
     backup.nmetop+= incr;
 	backup.totalhit= 0;
     GDKfree(backup.nme); backup.nme= nme;
     GDKfree(backup.link); backup.link= link;
+    GDKfree(backup.hit); backup.hit= hit;
+    GDKfree(backup.length); backup.length= length;
 #endif
 
 }
@@ -118,6 +127,9 @@ void initNamespace() {
     namespace.link= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
     memset((char*) namespace.link, 0, sizeof(int) * MAXIDENTIFIERS);
     namespace.hit= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
+    memset((char*) namespace.hit, 0, sizeof(int) * MAXIDENTIFIERS);
+    namespace.length= (int *) GDKmalloc(sizeof(int) * MAXIDENTIFIERS);
+    memset((char*) namespace.length, 0, sizeof(int) * MAXIDENTIFIERS);
     namespace.size = MAXIDENTIFIERS;
     namespace.nmetop= 256; /* hash overflow */
 
@@ -138,10 +150,12 @@ void finishNamespace() {
     GDKfree(namespace.nme);
     GDKfree(namespace.link);
     GDKfree(namespace.hit);
+    GDKfree(namespace.length);
 #ifdef _BACKUP_
     GDKfree(backup.nme);
     GDKfree(backup.link);
     GDKfree(backup.hit);
+    GDKfree(backup.length);
 #endif
 }
 
@@ -164,17 +178,14 @@ The administration is initialized incrementally.
 str getName(str nme, int len)
 {
     int l;
-	char buf[1024];
-
-	if( len >= 1022 || nme== NULL || *nme==0) return 0;
-	memcpy(buf, nme, (size_t) len);
-	buf[len]=0;
+	if(len == 0 || nme== NULL || *nme==0) return 0;
     
     for(l= nme[0]; l && namespace.nme[l]; l= namespace.link[l]){
 #ifdef _BACKUP_
 		chkName(l);
 #endif
-        if(strcmp(buf,namespace.nme[l])==0) {
+        if( namespace.length[l] == len  &&
+			strncmp(nme,namespace.nme[l],len)==0) {
             namespace.hit[l]++;
 			namespace.totalhit++;
 			return namespace.nme[l];
@@ -201,9 +212,8 @@ str putName(str nme, int len)
 #ifdef _BACKUP_
 		chkName(l);
 #endif
-        if( strlen(namespace.nme[l]) == len &&
-			strncmp(nme,namespace.nme[l],len) == 0 &&
-			namespace.nme[l][len] == 0) {
+        if( namespace.length[l] == len  &&
+			strncmp(nme,namespace.nme[l],len) == 0 ) {
             namespace.hit[l]++;
 			namespace.totalhit++;
 			/* aggressive test for reorganization needs */
@@ -213,12 +223,16 @@ str putName(str nme, int len)
 				namespace.nme[k]=s;
 				i= namespace.hit[l]; namespace.hit[l]=namespace.hit[k];
 				namespace.hit[k]= i;
+				i= namespace.length[l]; namespace.length[l]=namespace.length[k];
+				namespace.length[k]= i;
 
 #ifdef _BACKUP_
 				s= backup.nme[l]; backup.nme[l]= backup.nme[k];
 				backup.nme[k]=s;
 				i= backup.hit[l]; backup.hit[l]=backup.hit[k];
 				backup.hit[k]= i;
+				i= backup.length[l]; backup.length[l]=backup.length[k];
+				backup.length[k]= i;
 #endif
 				mal_unset_lock(mal_contextLock,"putName");
 				l=k;
@@ -242,6 +256,7 @@ str putName(str nme, int len)
 	if( top == namespace.nmetop)
 		namespace.link[l]= top;
     namespace.hit[top]= 0;
+	namespace.length[top]= len;
     namespace.nmetop++;
 
 #ifdef _BACKUP_
@@ -253,6 +268,7 @@ str putName(str nme, int len)
     backup.nmetop++;
 #endif
 	mal_unset_lock(mal_contextLock,"putName");
+	nme= namespace.nme[top];
 	return namespace.nme[top];
 }
 @-

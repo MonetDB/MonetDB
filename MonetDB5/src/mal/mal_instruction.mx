@@ -970,8 +970,7 @@ int findVariable(MalBlkPtr mb, str name){
 }
 int findTmpVariable(MalBlkPtr mb, int type){
     int i;
-    if( type == TYPE_any) return -1;
-    for(i=mb->vtop-1; i>=0; i--)
+    for(i=0; i<mb->vtop; i++)
     if(isTmpVar(mb,i) && getVarType(mb,i) == type )
         return i;
     return -1;
@@ -986,11 +985,13 @@ int findVariableLength(MalBlkPtr mb, str name, int len){
     int i;
     int j;
     for(i= mb->vtop-1; i>=0; i--) 
-    if( !isTmpVar(mb,i)){
-        str s = getVarName(mb,i);
+    if(mb->var[i]->name && !isTmpVar(mb,i)){
+        str s = mb->var[i]->name;
+		j= 0;
+		if( s)
         for(j=0;j<len;j++)
         if( name[j]!=s[j]) break;
-        if(j==len && s[j]==0) return i;
+        if(j==len && s && s[j]==0) return i;
     }
 	/* most variables are not temporary */
     @:chkTemporary@
@@ -1163,14 +1164,14 @@ int newTmpVariable(MalBlkPtr mb, malType type){
 int newTmpSink(MalBlkPtr mb, malType type){
         int n;
         
-    n= findTmpVariable(mb,type);
+    n= type== TYPE_any? -1: findTmpVariable(mb,type);
     if( n >= 0 )
         return n;
     return newTmpVariable(mb,type);
 }
 int newTypeVariable(MalBlkPtr mb, malType type){
     int n;
-	n= findTmpVariable(mb, type);
+    n= type== TYPE_any? -1: findTmpVariable(mb,type);
 	if( n > 0  && isTypeVar(mb,n)) return n;
     n= newTmpVariable(mb,type);
     isTypeVar(mb,n)= TRUE;

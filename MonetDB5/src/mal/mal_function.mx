@@ -73,7 +73,7 @@ mal_export void printFunction(stream *fd, MalBlkPtr mb, int listing);
 
 #include "mal_exception.h"
 
-#define MAXDEPTH 128
+#define MAXDEPTH 32
 #endif /*  _MAL_FCN_H*/
 @-
 The MAL function blocks are constructed incrementally while parsing the source.
@@ -496,7 +496,6 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	short s, blks[MAXDEPTH], top= 0, blkId=1;
 	str nme;
 
-    for(i=0;i<MAXDEPTH; i++) blks[i]= -1;
 	blks[top] = 1;
 	blks[++top]= 0;
 	if( reset) 
@@ -517,15 +516,9 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 		return;
 	}
 	nme= functionName(p);
-	k= findVariable(mb,nme);
-	if (k < 0) {
-		GDKerror("Variable '%s' unknown\n", nme);
-		mb->errors++;
-		return;
-	}
 		
-	getVarScope(mb,k) = 1;
-	getVarDepth(mb,k) = 1;
+	getVarScope(mb,getArg(p,0)) = 1;
+	getVarDepth(mb,getArg(p,0)) = 1;
 	/* printFunction(GDKout,mb, LIST_MAL_ALL);*/
 
 	for(pc=0;pc<mb->stop; pc++){
