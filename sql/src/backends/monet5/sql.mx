@@ -218,6 +218,8 @@ command calc.day(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdate_extract_day_bulk;;
 
 # daytime
+command calc.daytime(d:daytime):daytime
+address MTIMEdaytime2daytime;
 command calc.hours(h:daytime) :int
 address MTIMEdaytime_extract_hours;
 command calc.hours(d:bat[:any_1,:date]):bat[:any_1,:int]
@@ -238,6 +240,8 @@ command calc.milliseconds(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdaytime_extract_milliseconds_bulk;;
 
 # timestamp
+command calc.timestamp(t:timestamp):timestamp
+address MTIMEtimestamp2timestamp;
 command calc.daytime(t:timestamp) :daytime
 address MTIMEtimestamp_extract_daytime_default;
 command calc.daytime(t:timestamp, v:tzone) :daytime
