@@ -639,7 +639,7 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 	if( '@1'== '/') {
 		@:accumCstDIV(@3,@1,@4,@5)@ 
 	} else {
-		@:accumCst(@3,@1,@4,@5)@ 
+		@:accumCstLeft(@3,@1,@4,@5)@ 
 	}
 	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(dst->batCacheid);
