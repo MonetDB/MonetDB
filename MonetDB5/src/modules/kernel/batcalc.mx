@@ -128,11 +128,9 @@ C qualifier and the operands
 	@:calcGrp(xor,sht,XOR,sht,sht)@
 	@:calcGrp(xor,int,XOR,int,int)@
 	@:calcGrp(xor,lng,XOR,lng,lng)@
-	@:calcGrp(/,sht,DIV,sht,sht)@
-	@:calcGrp(*,sht,MUL,sht,sht)@
-	@:calcGrp(-,sht,SUB,sht,sht)@
-	@:calcGrp(+,sht,ADD,sht,sht)@
 
+	@:calcGrp(/,dbl,DIV,dbl,dbl)@
+	@:calcGrp(/,flt,DIV,flt,flt)@
 	@:calcGrp(/,lng,DIV,int,sht)@
 	@:calcGrp(/,lng,DIV,sht,int)@
 	@:calcGrp(/,lng,DIV,lng,sht)@
@@ -141,9 +139,15 @@ C qualifier and the operands
 	@:calcGrp(/,lng,DIV,lng,int)@
 	@:calcGrp(/,lng,DIV,int,lng)@
 	@:calcGrp(/,lng,DIV,int,int)@
+	@:calcGrp(/,int,DIV,sht,sht)@
+	@:calcGrp(/,int,DIV,int,sht)@
+	@:calcGrp(/,int,DIV,sht,int)@
+	@:calcGrp(/,sht,DIV,sht,sht)@
 	@:calcGrp(/,lng,DIV,lng,lng)@
 	@:calcGrp(/,int,DIV,int,int)@
 
+	@:calcGrp(*,dbl,MUL,dbl,dbl)@
+	@:calcGrp(*,flt,MUL,flt,flt)@
 	@:calcGrp(*,lng,MUL,int,sht)@
 	@:calcGrp(*,lng,MUL,sht,int)@
 	@:calcGrp(*,lng,MUL,lng,sht)@
@@ -152,20 +156,31 @@ C qualifier and the operands
 	@:calcGrp(*,lng,MUL,lng,int)@
 	@:calcGrp(*,lng,MUL,int,lng)@
 	@:calcGrp(*,lng,MUL,int,int)@
+	@:calcGrp(*,int,MUL,sht,sht)@
+	@:calcGrp(*,int,MUL,int,sht)@
+	@:calcGrp(*,int,MUL,sht,int)@
+	@:calcGrp(*,sht,MUL,sht,sht)@
 	@:calcGrp(*,lng,MUL,lng,lng)@
 	@:calcGrp(*,int,MUL,int,int)@
 
+	@:calcGrp(-,dbl,SUB,dbl,dbl)@
+	@:calcGrp(-,flt,SUB,flt,flt)@
 	@:calcGrp(-,lng,SUB,int,sht)@
 	@:calcGrp(-,lng,SUB,sht,int)@
 	@:calcGrp(-,lng,SUB,lng,sht)@
 	@:calcGrp(-,lng,SUB,sht,lng)@
 	@:calcGrp(-,lng,SUB,lng,lng)@
-	@:calcGrp(-,lng,SUB,lng,int)@
 	@:calcGrp(-,lng,SUB,int,lng)@
 	@:calcGrp(-,lng,SUB,int,int)@
-	@:calcGrp(-,lng,SUB,lng,lng)@
+	@:calcGrp(-,int,SUB,sht,sht)@
+	@:calcGrp(-,int,SUB,int,sht)@
+	@:calcGrp(-,int,SUB,sht,int)@
+	@:calcGrp(-,sht,SUB,sht,sht)@
+	@:calcGrp(-,lng,SUB,lng,int)@
 	@:calcGrp(-,int,SUB,int,int)@
 
+	@:calcGrp(+,dbl,ADD,dbl,dbl)@
+	@:calcGrp(+,flt,ADD,flt,flt)@
 	@:calcGrp(+,lng,ADD,int,sht)@
 	@:calcGrp(+,lng,ADD,sht,int)@
 	@:calcGrp(+,lng,ADD,lng,sht)@
@@ -173,34 +188,14 @@ C qualifier and the operands
 	@:calcGrp(+,lng,ADD,lng,int)@
 	@:calcGrp(+,lng,ADD,int,lng)@
 	@:calcGrp(+,lng,ADD,int,int)@
-	@:calcGrp(+,lng,ADD,lng,lng)@
 	@:calcGrp(+,int,ADD,int,int)@
-
-	@:calcGrp(/,int,ADD,sht,sht)@
-	@:calcGrp(/,int,ADD,int,sht)@
-	@:calcGrp(/,int,ADD,sht,int)@
-
-	@:calcGrp(*,int,ADD,sht,sht)@
-	@:calcGrp(*,int,ADD,int,sht)@
-	@:calcGrp(*,int,ADD,sht,int)@
-
-	@:calcGrp(-,int,ADD,sht,sht)@
-	@:calcGrp(-,int,ADD,int,sht)@
-	@:calcGrp(-,int,ADD,sht,int)@
-
 	@:calcGrp(+,int,ADD,sht,sht)@
 	@:calcGrp(+,int,ADD,int,sht)@
+	@:calcGrp(+,sht,ADD,sht,sht)@
+	@:calcGrp(+,lng,ADD,lng,lng)@
 	@:calcGrp(+,int,ADD,sht,int)@
 
-	@:calcGrp(+,flt,ADD,flt,flt)@
-	@:calcGrp(/,flt,DIV,flt,flt)@
-	@:calcGrp(*,flt,MUL,flt,flt)@
-	@:calcGrp(-,flt,SUB,flt,flt)@
 
-	@:calcGrp(+,dbl,ADD,dbl,dbl)@
-	@:calcGrp(/,dbl,DIV,dbl,dbl)@
-	@:calcGrp(*,dbl,MUL,dbl,dbl)@
-	@:calcGrp(-,dbl,SUB,dbl,dbl)@
 @-
 @}
 @= unary

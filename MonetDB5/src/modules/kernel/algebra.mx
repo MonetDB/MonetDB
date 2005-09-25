@@ -373,7 +373,7 @@ The core of every relational engine.
 The join collection provided by the GDK kernel.
 Note that joins over void columns are handled as if they are oids.
 @mal
-command outercrossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
+command crossproduct(left:bat[:any_1,:any_2], right:bat[:any_3,:any_4])
 	:bat[:any_1,:any_4]
 address ALGcross
 comment "Returns the cross product";
