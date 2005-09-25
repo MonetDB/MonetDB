@@ -614,8 +614,8 @@ void typeMismatch(MalBlkPtr mb, InstrPtr p, int lhs, int rhs, int silent){
 		snprintf(buf+i,1024-i,"%s\n",n2);
 		showException(mb, getPC(mb,p),"MALresolve",buf);
 		GDKfree(n1); GDKfree(n2);
+		mb->errors++;
 	}
-    mb->errors++;
     p->typechk= TYPE_UNKNOWN;
 }
 @-
