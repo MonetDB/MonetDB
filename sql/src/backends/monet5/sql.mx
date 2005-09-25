@@ -1581,7 +1581,8 @@ second_interval_str( lng *res, str *s, int *ek, int *sk ){
 }
 
 @= c_interval
-int month_interval_@1( int *ret, @1 *s, int *ek, int *sk ){
+str
+month_interval_@1( int *ret, @1 *s, int *ek, int *sk ){
 	int r = (int)*s;
 
 	(void)ek;
@@ -1591,12 +1592,13 @@ int month_interval_@1( int *ret, @1 *s, int *ek, int *sk ){
 	case imonth:
 		break;
 	default:
-		return GDK_FAIL;
+		return throwMessage("calc.month_interval","illegal argument");
 	}
 	*ret = r;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
-int second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
+str
+second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 	lng r = *s;
 
 	(void)ek;
@@ -1610,10 +1612,10 @@ int second_interval_@1( lng *res, @1 *s, int *ek, int *sk ){
 	case isec:
 		break;
 	default:
-		return GDK_FAIL;
+		return throwMessage("calc.month_interval","illegal argument");
 	}
 	*res = r;
-	return GDK_SUCCEED;
+	return MAL_SUCCEED;
 }
 @c
 @:c_interval(sht)@
