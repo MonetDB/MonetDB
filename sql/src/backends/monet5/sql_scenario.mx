@@ -538,12 +538,14 @@ The former comes with readlin functionality.
 		/* The rules of auto_commit require us to finish 
 		   and start a transaction on the start of a new statement */
 /* Niels, final adjustments are needed to synchronize with the scanner
+This is not going to work, because the scanner performs its own
+IO to obtain missing data.
 		go = SQLautocommit(c,m);
 		if( go ) {
 			c->fdin->pos=0;
 			c->yycur = 0;
+			c->fdin->eof=0;
 			go= SQLreadConsole(c);
-			printf("got input:%d\n",go);
 		}
 		if( go < 0) go = TRUE;
 		if( !go ){
