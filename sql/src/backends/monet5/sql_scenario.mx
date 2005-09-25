@@ -55,6 +55,7 @@ we update its context descriptor to denote an SQL scenario.
 #include "sql_optimizer.h"
 #include "sql_cache.h"
 #include "sql_env.h"
+#include "sql_readline.h"
 #include "print.h"
 #include "mal_parser.h"
 #include <bat/res_table.h>
@@ -479,6 +480,24 @@ second only during exection.
 This means we can safely change the language setting for
 the duration of these calls.
 @c
+int SQLautocommit(Client c, mvc *m){
+	if (m->auto_commit && m->trans) {
+		if (m->cache && (m->type == Q_TRANS || 
+			m->type == Q_SCHEMA || 
+			m->qc->id >100)) {
+			if (m->qc) 
+				qc_destroy(m->qc);
+			m->qc = qc_create();
+		}
+		if (mvc_status(m) < 0) {
+			mvc_rollback(m, 0, NULL);
+		} else if (mvc_commit(m, 0, NULL) < 0) {
+				 	return handle_error(m, c->fdout, 0);
+				}
+			}
+	return TRUE;
+}
+
 str
 SQLreader(Client c)
 {
@@ -511,8 +530,34 @@ Continue processing any left-over input from the previous round.
 	/* skip whitespace */
 	while (in->pos < in->len && (isspace((int) (in->buf[in->pos])) || in->buf[in->pos] == ';'))
 		in->pos++;
+@-
+Distinguish between console reading and MapiClient connections.
+The former comes with readlin functionality.
+@c
+    if( c == mal_clients){
+		/* The rules of auto_commit require us to finish 
+		   and start a transaction on the start of a new statement */
+/* Niels, final adjustments are needed to synchronize with the scanner
+		go = SQLautocommit(c,m);
+		if( go ) {
+			c->fdin->pos=0;
+			c->yycur = 0;
+			go= SQLreadConsole(c);
+			printf("got input:%d\n",go);
+		}
+		if( go < 0) go = TRUE;
+		if( !go ){
+			in->pos = in->len;	
+			c->mode = FINISHING;
+			return throwMessage("SQLreader", "end of SQL input\n");
+		}
+		if (be)
+			be->Tread = GDKusec() - T0;
+		return MAL_SUCCEED;
+*/
+    }
 
-	if (in->pos >= in->len) {
+	if (go && in->pos >= in->len) {
 		ssize_t rd;
 
 		if (c->bak) {
@@ -525,21 +570,9 @@ Continue processing any left-over input from the previous round.
 		if (in->eof || !isa_block_stream(in->s)) {
 			language = (be->console) ? 'S' : 0;
 
-			/* The rulls of auto_commit require us to finish 
-			   and start a transaction on the start of a new 
-			   statement */
-			if (m->auto_commit && m->trans) {
-				if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id >100)) {
-					if (m->qc) 
-						qc_destroy(m->qc);
-					m->qc = qc_create();
-				}
-				if (mvc_status(m) < 0) {
-					mvc_rollback(m, 0, NULL);
-				} else if (mvc_commit(m, 0, NULL) < 0) {
-				 	go = handle_error(m, c->fdout, 0);
-				}
-			}
+			/* The rules of auto_commit require us to finish 
+			   and start a transaction on the start of a new statement */
+			go = SQLautocommit(c,m);
 
 			if (go && (stream_write(c->fdout, c->prompt, c->promptlength, 1) != 1 || stream_flush(c->fdout))) {
 				go = FALSE;
@@ -564,10 +597,10 @@ Continue processing any left-over input from the previous round.
 		} else if (go && !be->console && language == 0) {
 			be->language = in->buf[in->pos++];
 		}
-	}
 #ifdef _SQL_READER_DEBUG
-	stream_printf(GDKout, "#SQL blk:%s\n", in->buf + in->pos);
+		stream_printf(GDKout, "#SQL blk:%s\n", in->buf + in->pos);
 #endif
+	}
 	if (!go || (strncmp(CURRENT(c), "quit", 4) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHING;
