@@ -73,6 +73,7 @@ comment "Product over grouped on @1";
 @:sumprod_signatures(sht,int)@
 @:sumprod_signatures(sht,lng)@
 @:sumprod_signatures(int,int)@
+@:sumprod_signatures(oid,int)@
 @:sumprod_signatures(int,lng)@
 @:sumprod_signatures(lng,lng)@
 @:sumprod_signatures(flt,flt)@
@@ -605,6 +606,7 @@ CMDaggrX3_prod_@1_@3(BAT **ret, BAT *b, BAT *e)
 @:arithsumprod(sht,loc,int)@
 @:arithsumprod(sht,loc,lng)@
 @:arithsumprod(int,loc,int)@
+@:arithsumprod(oid,loc,int)@
 @:arithsumprod(int,loc,lng)@
 @:arithsumprod(lng,loc,lng)@
 @:arithsumprod(flt,loc,flt)@
@@ -1572,6 +1574,7 @@ CMDaggrX3_prod3_@1_@2(BAT **ret, BAT *b, BAT *g, BAT *e)
 @:arithsumprod3(sht,int)@
 @:arithsumprod3(sht,lng)@
 @:arithsumprod3(int,int)@
+@:arithsumprod3(oid,int)@
 @:arithsumprod3(int,lng)@
 @:arithsumprod3(lng,lng)@
 @:arithsumprod3(flt,flt)@
@@ -2152,6 +2155,7 @@ str AX3aggrX3_prod_@1_@3(int *retid, int *bid, int *eid){
 @:AX3sumprod(sht,tloc,int)@
 @:AX3sumprod(sht,tloc,lng)@
 @:AX3sumprod(int,tloc,int)@
+@:AX3sumprod(oid,tloc,int)@
 @:AX3sumprod(int,tloc,lng)@
 @:AX3sumprod(lng,tloc,lng)@
 @:AX3sumprod(flt,tloc,flt)@
@@ -2346,6 +2350,7 @@ str AX3aggrX3_prod3_@1_@2(int *retid,int *bid, int *gid, int *eid){
 @:AX3sumprod3(sht,int)@
 @:AX3sumprod3(sht,lng)@
 @:AX3sumprod3(int,int)@
+@:AX3sumprod3(oid,int)@
 @:AX3sumprod3(int,lng)@
 @:AX3sumprod3(lng,lng)@
 @:AX3sumprod3(flt,flt)@

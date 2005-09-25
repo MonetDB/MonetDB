@@ -77,7 +77,7 @@ can be used as well; note for instance that histogram == @{count@}(b.reverse()).
 
 The Monet interface module specification is shown below.
 Ideally we should defined stronger type constraints, e.g.
-command group(attr:bat[@{void,oid@},:any_1]
+command group.new(attr:bat[@{void,oid@},:any_1]
 
 @mal
 module group;
@@ -1136,12 +1136,26 @@ GRPderive(int *hid, int *mid, int *ctid, int *bid)
 		return throwMessage("group.derive", "Cannot access descriptor");
 	}
 	@:chkHeader(b,GRPderive)@
-	CTderive(&bn, &histo, ct, b);
+	if (tailtype(ct, TRUE) != TYPE_int) {
+		if (!CTgroup(&bn, &histo, ct)){
+			BBPunfix(b->batCacheid);
+			BBPunfix(ct->batCacheid);
+			return throwMessage("group.derive","Could not group");
+		}
+		ct = bn;
+		BBPunfix(histo->batCacheid);
+	}
+	if( derive(&bn, &histo, ct, b, tailtype(b, TRUE), NULL) == GDK_FAIL){
+		BBPunfix(b->batCacheid);
+		BBPunfix(ct->batCacheid);
+		return throwMessage("group.derive","Could not derive group");
+	}
+
 	*mid = bn->batCacheid;
 	*hid = histo->batCacheid;
 	if( *hid){
 		BBPincref(*hid,TRUE);
-		BBPunfix(*hid);
+		/* BBPunfix(*hid);*/
 	}
 	BBPincref(*mid,TRUE);
 	BBPunfix(b->batCacheid);

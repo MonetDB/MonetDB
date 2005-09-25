@@ -448,6 +448,17 @@ This has been left out.
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 	}
+@= accumCstLeft
+	while( p1 < hend ){
+#ifdef NULLTST
+		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
+			*(@1*)p1= @1_nil;
+		else 
+#endif
+			*(@1*)p1 = *(@1*) cst @2 *(@1 *) p2;
+		p1= (ptr)( ((char *)p1) + s1);
+		p2= (ptr)( ((char *)p2) + s2);
+	}
 @= accumCstDIV
 	while( p1 < hend ){
 #ifdef NULLTST
@@ -924,10 +935,10 @@ str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 	hend = (str) BUNlast(dst);
 
 	switch(BATttype(left)){
-	case TYPE_oid: @:accumCst(oid,@2,oid,oid)@ break;
-	case TYPE_sht: @:accumCst(sht,@2,sht,sht)@ break;
-	case TYPE_int: @:accumCst(int,@2,int,int)@ break;
-	case TYPE_lng: @:accumCst(lng,@2,lng,lng)@ break;
+	case TYPE_oid: @:accumCstLeft(oid,@2,oid,oid)@ break;
+	case TYPE_sht: @:accumCstLeft(sht,@2,sht,sht)@ break;
+	case TYPE_int: @:accumCstLeft(int,@2,int,int)@ break;
+	case TYPE_lng: @:accumCstLeft(lng,@2,lng,lng)@ break;
 	default : return throwMessage("batcalc.@1", "unexpected type");
 	}
 	BBPunfix(dst->batCacheid);
