@@ -1167,13 +1167,14 @@ sqltypeinit()
 		sql_create_aggr("avg", "avg", *t, DBL);
 	}
 	for (t = numerical+1; t < floats; t += 3) {
-		char buf[50];
+		char nm1[50];
+		char nm2[50];
 
-		snprintf(buf, 50, "sum_%s", (*(t + 1))->base.name);
-		snprintf(buf, 50, "sum_%s", (*(t + 2))->base.name);
-		sql_create_aggr("sum", buf, *(t), *(t + 1));
-		sql_create_aggr("sum", buf, *(t + 1), *(t + 2));
-		sql_create_aggr("sum", buf, *(t + 2), *(t + 2));
+		snprintf(nm1, 50, "sum_%s", (*(t + 1))->base.name);
+		snprintf(nm2, 50, "sum_%s", (*(t + 2))->base.name);
+		sql_create_aggr("sum", nm1, *(t), *(t + 1));
+		sql_create_aggr("sum", nm2, *(t + 1), *(t + 2));
+		sql_create_aggr("sum", nm2, *(t + 2), *(t + 2));
 	}
 	for (t = numerical+1; t < floats; t++) 
 		sql_create_aggr("avg", "avg", *(t), DBL);
