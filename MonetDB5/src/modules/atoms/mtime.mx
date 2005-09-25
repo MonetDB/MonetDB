@@ -219,6 +219,9 @@ that extract year, month and day from a date as integers and formats those
 in a string.
 @mal
 atom date :int;
+command date(s:date):date
+address MTIMEdate_date
+comment "Noop routine.";
 command fromstr() :date 
 address date_fromstr;
 command tostr() :str 
@@ -857,6 +860,7 @@ mal_export str MTIMEmonth_from_str(int *ret, str *month);
 mal_export str MTIMEmonth_to_str(str *ret, int *month);
 mal_export str MTIMEday_from_str(int *ret, str *day);
 mal_export str MTIMEday_to_str(str *ret, int *day);
+mal_export str MTIMEdate_date(date *d, date *s);
 mal_export str MTIMEdate_tostr(str *ret, date *d);
 mal_export str MTIMEdate_fromstr(date *ret, str *s);
 mal_export str MTIMEdate_create(date *ret, int *year, int *month, int *day);
@@ -2830,6 +2834,13 @@ str
 MTIMEday_to_str(str *ret, int *day)
 {
 	day_to_str(ret, day);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_date(date *d, date *s)
+{
+	*d = *s;
 	return MAL_SUCCEED;
 }
 
