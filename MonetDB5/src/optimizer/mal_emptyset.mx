@@ -122,6 +122,8 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 	int i, j, limit, doAR = 0;
 	InstrPtr p;
 
+	if( mb->errors) 
+		return MAL_SUCCEED;
 #ifdef DEBUG_MAL_EMPTYSET
 	stream_printf(GDKout, "START emptyset optimizer %d:", cnt);
 	for (i = 0; i < cnt; i++)

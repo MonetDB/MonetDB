@@ -97,6 +97,12 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng clk = GDKusec();
 
 	(void) stk;
+	if( mb->errors) {
+		/* remove the CXoptimizer request */
+		if (pci)
+			removeInstruction(mb, pci);
+		return MAL_SUCCEED;
+	}
 	setLifespan(mb);
 	for (i = 1; i < mb->stop - 1; i++) {
 		p = getInstrPtr(mb, i);

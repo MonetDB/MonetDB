@@ -514,6 +514,7 @@ that a designated function is selected for optimization (e.g.
 CXoptimizer(user,qry)) the pc is assumed 0. The first instruction always
 denotes the signature and can not be removed.
 @{
+If one of the optimizers fails, we should not attempt others.
 @c
 #include "mal_optimizer.h"
 #include "mal_interpreter.h"
@@ -1232,6 +1233,11 @@ ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng clk = GDKusec();
 
 	(void) stk;
+	if( mb->errors) {
+		if (pci)
+			removeInstruction(mb, pci);
+		return MAL_SUCCEED;
+	}
 #ifdef DEBUG_MAL_OPTIMIZER
 	if (getClient()->debugOptimizer) {
 		stream_printf(GDKout, "start alias removal\n");
@@ -1329,6 +1335,8 @@ DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
+	if( mb->errors) 
+		return MAL_SUCCEED;
 
 	varused = GDKmalloc(mb->vtop * sizeof(int));
 	for (i = 0; i < mb->vtop; i++)
@@ -1539,6 +1547,9 @@ AEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
+	if( mb->errors) 
+		return MAL_SUCCEED;
+	setLifespan(mb);
 @-
 Safe the errors encountered sofar. They have to be reset
 at the end of the optimization attempt.
@@ -1582,7 +1593,8 @@ at the end of the optimization attempt.
 					pushArgument(mb, p, a);
 					for (j = p->argc - 1; j > p->retc; j--)
 						p->argv[j] = p->argv[j - 1];
-					p->argv[p->retc] = p->argv[0] = a;
+					p->argv[p->retc] = a;
+					p->argv[0]= newTmpVariable(mb,TYPE_any);
 					typeChecker(scope, mb, p, TRUE);
 
 					if (a != b)
@@ -1602,7 +1614,8 @@ at the end of the optimization attempt.
 					pushArgument(mb, p, a);
 					for (j = p->argc - 1; j > p->retc; j--)
 						p->argv[j] = p->argv[j - 1];
-					p->argv[0] = p->argv[p->retc] = a;
+					p->argv[p->retc] = a;
+					p->argv[0]= newTmpVariable(mb,TYPE_any);
 					typeChecker(scope, mb, p, TRUE);
 
 					if (a != b)
@@ -1741,6 +1754,11 @@ HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng clk = GDKusec();
 
 	(void) stk;		/* fool compilers */
+	if( mb->errors) {
+		if (pci)
+			removeInstruction(mb, pci);
+		return MAL_SUCCEED;
+	}
 
 	/* process the combinators */
 	for (i = 0; i < mb->stop - 1; i++) {

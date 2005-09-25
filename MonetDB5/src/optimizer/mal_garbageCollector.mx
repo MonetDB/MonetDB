@@ -115,6 +115,11 @@ GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
+	if( mb->errors) {
+		if (pci)
+			removeInstruction(mb, pci);
+		return MAL_SUCCEED;
+	}
 	stmt = (InstrPtr *) GDKmalloc(mb->ssize * sizeof(InstrPtr));
 	memcpy(stmt, mb->stmt, mb->ssize * sizeof(InstrPtr));
 

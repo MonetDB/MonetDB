@@ -91,6 +91,8 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, limit, doit, aropt = 0;
 	lng clk = GDKusec();
 
+	if( mb->errors) 
+		return MAL_SUCCEED;
 #ifdef DEBUG_MAL_PEEPHOLE
 	stream_printf(GDKout, "Peephole optimizer started\n");
 #endif

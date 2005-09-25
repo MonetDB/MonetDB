@@ -229,6 +229,8 @@ BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid)
 	int pcf, pcl;
 	lng clk = GDKusec();
 
+	if( mb->errors) 
+		return MAL_SUCCEED;
 	setLifespan(mb);
 	old = mb->stmt;
 

@@ -121,6 +121,8 @@ FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 	(void) stk;		/* to fool compilers */
 
+	if( mb->errors) 
+		return MAL_SUCCEED;
 	setLifespan(mb);
 	varused = GDKmalloc(mb->vtop * sizeof(int));
 	for (i = 0; i < mb->vtop; i++)

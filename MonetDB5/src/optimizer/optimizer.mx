@@ -296,11 +296,11 @@ str QOT@1optimizerCALL(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	}
 	
 	if(debugOpt) { cmd= c->itrace; c->itrace='n';}
-	@1optimizer(s->def,0,0);
-	optimizerCheck(s->def,@2 " optimizer",1,GDKusec()-clk);
-	if(debugOpt) { c->itrace= cmd;}
-	/* if(c->listing) printFunction(GDKout,s->def,c->listing);*/
-
+	if( s->def->errors == 0){
+		@1optimizer(s->def,0,0);
+		optimizerCheck(s->def,@2 "",1,GDKusec()-clk);
+		if(debugOpt) { c->itrace= cmd;}
+	}
 	removeInstruction(mb, p);
 	return MAL_SUCCEED;
 }
@@ -603,6 +603,8 @@ OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 	(void) pci;
+	if( mb->errors) 
+		return MAL_SUCCEED;
 	old = mb->stmt;
 
 	limit = mb->stop;

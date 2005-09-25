@@ -192,6 +192,8 @@ RMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) stk;
 	if (p)
 		removeInstruction(mb, p);
+	if( mb->errors) 
+		return MAL_SUCCEED;
 	RMcalculator(mb);
 	optimizerCheck(mb, "mal.costEstimation", 1, GDKusec() - clk);
 	return MAL_SUCCEED;

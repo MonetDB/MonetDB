@@ -168,6 +168,8 @@ STevaluate(MalBlkPtr mb, int cnt, int *vars)
 	STtuple *tuples;
 	int top = 0;
 
+	if( mb->errors) 
+		return MAL_SUCCEED;
 	tuples = alloca(mb->stop * sizeof(STtuple));
 	limit = mb->stop;
 	old = mb->stmt;

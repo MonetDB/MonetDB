@@ -123,6 +123,11 @@ SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
+	if( mb->errors) {
+		if (pci)
+			removeInstruction(mb, pci);
+		return MAL_SUCCEED;
+	}
 
 	before = (InstrPtr *) alloca((mb->ssize + 1) * sizeof(InstrPtr));
 	within = (InstrPtr *) alloca((mb->ssize + 1) * sizeof(InstrPtr));
