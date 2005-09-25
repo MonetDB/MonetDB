@@ -1033,7 +1033,44 @@ public class MonetResultSet implements ResultSet {
 				return(ret);
 			}
 
-			public String getSchemaName(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+			/**
+			 * Get the designated column's table's schema.  This method
+			 * is currently very expensive as it needs to retrieve the
+			 * information from the database using an SQL query.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return schema name or "" if not applicable
+			 * @throws SQLException if a database access error occurs
+			 */
+			public String getSchemaName(int column) throws SQLException {
+				if (getTableName(column) != "") {
+					// we have to get a new Statement here in order not
+					// to close the ResultSet that is being in use to
+					// call this method
+					Statement stmt = getStatement().getConnection().createStatement();
+					// note, we cannot even see if we have the right
+					// one, so this is extremely fuzzy...
+					ResultSet rs = stmt.executeQuery(
+							"select schemas.name from tables, schemas where schemas.id = tables.schema_id and tables.name like '" + getTableName(column) + "'");
+					// if there are no results, this is the default
+					String ret = "";
+					for (int i = 0; rs.next(); i++) {
+						if (i == 0) {
+							ret = rs.getString(1);
+						} else {
+							// in case of multiple matches we pretent as
+							// if the schema name is not applicable
+							ret = "";
+						}
+					}
+					rs.close();
+					stmt.close();
+					return(ret);
+				} else {
+					return("");
+				}
+			}
+
 			public int getPrecision(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 			public int getScale(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
