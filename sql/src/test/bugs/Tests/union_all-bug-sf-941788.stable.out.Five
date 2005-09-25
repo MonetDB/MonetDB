@@ -9,9 +9,11 @@ stdout of test 'union_all-bug-sf-941788` in directory 'src/test/bugs` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-#Ready to accept connections on koala.ins.cwi.nl:45697
+
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 

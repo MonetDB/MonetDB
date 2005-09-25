@@ -57,19 +57,18 @@ stderr of test 'decimal` in directory 'src/test` itself:
 # 09:34:12 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=spin --port=58772  < decimal.sql
 # 09:34:12 >  
 
-MAPI  = monetdb@localhost:41182
+MAPI  = monetdb@localhost:41693
 QUERY = -- these should fail
-ERROR = !ERROR: MALexception:convert:too many digits (6 > 5)
-MAPI  = monetdb@localhost:41182
+ERROR = !ERROR: convert:too many digits (6 > 5)
+MAPI  = monetdb@localhost:41693
 QUERY = -- a '.00' decimal part is assumed for the next value 
-ERROR = !ERROR: MALexception:convert:too many digits (6 > 5)
-MAPI  = monetdb@localhost:41182
+ERROR = !ERROR: convert:too many digits (6 > 5)
+MAPI  = monetdb@localhost:41693
 QUERY = -- a '.00' decimal part is assumed for the next value 
-ERROR = !ERROR: MALexception:convert:too many digits (6 > 5)
-MAPI  = monetdb@localhost:41182
+ERROR = !ERROR: convert:too many digits (6 > 5)
+MAPI  = monetdb@localhost:41693
 QUERY = insert into test values (-1234.1);
-ERROR = !ERROR: MALexception:convert:too many digits (6 > 5)
-
+ERROR = !ERROR: convert:too many digits (6 > 5)
 
 # 09:34:12 >  
 # 09:34:12 >  Done.
