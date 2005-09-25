@@ -261,22 +261,12 @@ convertCalcOperator(str op)
 {
 	char buf[128];
 
-	if (strcmp(op, "hash") == 0)
-		return _strdup("sql.hash");
 	if (strcmp(op, "=") == 0)
 		return _strdup("calc.==");
 	buf[0] = 0;
 	strcat(buf,"calc.");
 	strcat(buf,op);
 	return _strdup(buf);
-}
-
-str
-find_unop_module(str op)
-{
-	if (strcmp(op, "hash") == 0)
-		return "sql";
-	return "calc";
 }
 
 str
@@ -330,7 +320,7 @@ dump_multiplex(MalBlkPtr mb, char *name /* should be eaten */, int o1, int o2, i
 		if( *(name+1) == 0) match++;
 		match= 1;
 	}
-	if( match ){
+	if( match && type <= TYPE_str){
 		if (type == TYPE_str)
 			q = newStmt(mb, "batstr", name);
 		else
@@ -996,7 +986,8 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			} else if (s->nrcols > 0 && 
 				(s->op3.typeval->type->eclass == EC_DEC ||
 				 s->op4.typeval->type->eclass == EC_DEC ||
-				 s->op4.typeval->type->eclass == EC_INTERVAL) ){
+				 s->op4.typeval->type->eclass == EC_INTERVAL ||
+				 EC_TEMP(s->op4.typeval->type->eclass)) ){
 				int type = s->op4.typeval->type->localtype;
 
 				q = newStmt(mb, "optimizer","multiplex");
@@ -1036,25 +1027,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->op1.stval->nrcols) {
-				sql_subtype *v, *a;
-
-				a = tail_type(s);
-				v = tail_type(s->op1.stval);
-				if (a->type->localtype == v->type->localtype && strcmp(s->op4.funcval->func->base.name, "convert") == 0) {
-					q = newAssignment(mb);
-					s->nr = getDestVar(q);
-					q = pushArgument(mb, q, l);
-				} else {
-					q = newStmt(mb, "optimizer","multiplex");
-					setVarType(mb,getArg(q,0), newBatType(TYPE_void,a->type->localtype));
-					s->nr = getDestVar(q);
-					q = pushStrVal(mb, q, convertCalcOperator(s->op4.funcval->func->imp));
-					q = pushArgument(mb, q, l);
-				}
+				sql_subtype *a = tail_type(s);
+				q = newStmt(mb, "optimizer","multiplex");
+				setVarType(mb,getArg(q,0), newBatType(TYPE_void,a->type->localtype));
+				s->nr = getDestVar(q);
+				q = pushStrVal(mb, q, convertCalcOperator(s->op4.funcval->func->imp));
+				q = pushArgument(mb, q, l);
 			} else {
-				char *mod;
-				mod = find_unop_module(s->op4.funcval->func->imp);
-				q = newStmt(mb, mod, s->op4.funcval->func->imp);
+				q = newStmt(mb, "calc", s->op4.funcval->func->imp);
 				q = pushArgument(mb, q, l);
 			}
 			s->nr = getDestVar(q);
@@ -1070,9 +1050,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q= dump_multiplex(mb,convertOperator(s->op4.funcval->func->imp),l,r,tail_type(s->op2.stval)->type->localtype, s->op4.funcval->func->res->type->localtype);
 				s->nr = getDestVar(q);
 			} else {
-				char *mod;
-				mod = find_unop_module(s->op4.funcval->func->imp);
-				q = newStmt(mb, mod, convertOperator(s->op4.funcval->func->imp));
+				q = newStmt(mb, "calc", convertOperator(s->op4.funcval->func->imp));
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 			}
@@ -1081,8 +1059,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_Nop:{
-			int opslen = 0, i;
-			int ops[MAXARG];
 			node *n;
 
 			/* dump operands */
@@ -1090,42 +1066,17 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->nrcols) {
-				stmt *h;
-
-				for (n = s->op1.stval->op1.lval->h, h = n->data; n; n = n->next) {
-					stmt *op = n->data;
-
-					if (op->nrcols > h->nrcols)
-						h = op;
-				}
-
-				for (n = s->op1.stval->op1.lval->h; n; n = n->next) {
-					stmt *op = n->data;
-					int n = op->nr;
-
-					if (!op->nrcols) {
-						q = newStmt(mb, "batcalc", "project");
-						q = pushArgument(mb, q, h->nr);
-						q = pushArgument(mb, q, n);
-						ops[opslen++] = getDestVar(q);
-					}
-				}
-
 				q = newStmt(mb, "optimizer","multiplex");
 				setVarType(mb,getArg(q,0), 
 					newBatType(TYPE_void,tail_type(s->op1.stval)->type->localtype));
 				q = pushStrVal(mb, q, convertCalcOperator(s->op4.funcval->func->imp));
-				for (i = 0; i < opslen; i++) {
-					q = pushArgument(mb, q, ops[i]);
-				}
 			} else {
 				q = newStmt(mb, "calc", s->op4.funcval->func->imp);
-				for (n = s->op1.stval->op1.lval->h; n; n = n->next) {
-					stmt *op = n->data;
-					int n = op->nr;
+			}
+			for (n = s->op1.stval->op1.lval->h; n; n = n->next) {
+				stmt *op = n->data;
 
-					q = pushArgument(mb, q, n);
-				}
+				q = pushArgument(mb, q, op->nr);
 			}
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
@@ -1140,8 +1091,11 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			
 			/* some aggr functions require bigger outputs types */
 			if (tpe &&
-			    s->op4.aggrval->aggr->res->type->localtype > 
-			    tpe->type->localtype ) {
+			    (s->op4.aggrval->aggr->res->type->localtype > 
+			    tpe->type->localtype || 
+			    (s->op4.aggrval->aggr->res->type->localtype == 
+			     tpe->type->localtype && 
+			     tpe->type->localtype == TYPE_lng)) ) {
 				/* Cut off the type information.
 			   	It should be handled by the type resolver
 			 	*/
