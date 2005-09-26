@@ -1,0 +1,41 @@
+stdout of test 'AEexample` in directory 'src/optimizer` itself:
+
+
+# 21:35:55 >  
+# 21:35:55 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=37705 --set sql_port=45487 --set xquery_port=52878 --set monet_prompt= --trace --dbname=mTests_src_optimizer  AEexample.mal < /dev/null
+# 21:35:55 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information.
+#function qry():void;
+#	a:= array.grid(1,2,4,1);
+#	b:= batcalc.+(a,1);
+#	c:= batcalc.*(b,4);
+#end qry;
+function user.qry():void;	# 0  (qry:void)
+    a := array.grid(1,2,4,1);	# 1 ARRAYgrid_int (a:bat[:void,:int])<-(_2:int)(_3:int)(_4:int)(_2:int)
+    b := batcalc.+(a,1);	# 2 CMDbatADDcst_int_int_int (b:bat[:void,:int])<-(a:bat[:void,:int])(_2:int)
+    c := batcalc.*(b,4);	# 3 CMDbatMULcst_int_int_int (c:bat[:void,:int])<-(b:bat[:void,:int])(_4:int)
+end qry;	# 4  
+#
+#optimizer.expressionAccumulation("user","qry");
+#mdb.List("user","qry");
+#
+function user.main():int;	# 0  (main:int)
+    mdb.List("user","qry");	# 1 MDBlist3Detail (_4:void)<-(_2:str)(_3:str)
+end main;	# 2  
+function user.qry():void;	# 0  (qry:void)
+    a := array.grid(1,2,4,1);	# 1 ARRAYgrid_int (a:bat[:void,:int])<-(_2:int)(_3:int)(_4:int)(_2:int)
+    batcalc.+(a,a,1);	# 2 CMDbataccumADDcst_int_int_int (_7:void)<-(a:bat[:void,:int])(a:bat[:void,:int])(_2:int)
+    batcalc.*(a,a,4);	# 3 CMDbataccumMULcst_int_int_int (_8:void)<-(a:bat[:void,:int])(a:bat[:void,:int])(_4:int)
+end qry;	# 4  
+
+# 21:35:55 >  
+# 21:35:55 >  Done.
+# 21:35:55 >  
+
