@@ -630,7 +630,7 @@ proc date_add_sec_interval( date d, lng s ) : date {
 	return date_add_sec_interval( d, int(s) );
 }
 proc timestamp_sub_sec_interval( timestamp ts, lng s ) : timestamp {
-	return add( ts, s*lng(1000) );
+	return add( ts, s*lng(-1000) );
 }
 proc timestamp_add_sec_interval( timestamp ts, lng s ) : timestamp {
 	return add( ts, s*lng(1000) );
@@ -648,7 +648,7 @@ proc addmonths( timestamp ts, int m ) : timestamp {
 	return timestamp(d,t);
 }
 proc time_sub_sec_interval( daytime t, lng s ) : daytime {
-	return add( t, s*lng(1000) );
+	return add( t, s*lng(-1000) );
 }
 proc time_add_sec_interval( daytime t, lng s ) : daytime {
 	return add( t, s*lng(1000) );

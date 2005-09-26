@@ -1154,6 +1154,7 @@ int
 init_ascii_io(int *debug)
 {
 	ascii_io_debug = *debug;
+
 	return GDK_SUCCEED;
 }
 
@@ -1187,6 +1188,7 @@ ascii_io_input(BAT **bats, BAT *names, BAT *seps, BAT *types, Stream *s, int *N)
 		return GDK_FAIL;
 	}
 }
+
 int
 ascii_io_dump(BAT *names, BAT *seps, BAT *bats, str datafile, int *nr)
 {
