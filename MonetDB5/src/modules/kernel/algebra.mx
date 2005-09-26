@@ -640,6 +640,17 @@ comment "Gives the product of all tail values";
 @:sum_definition(flt,flt)@
 @:sum_definition(flt,dbl)@
 @:sum_definition(dbl,dbl)@
+
+@= avg_definition
+command avg (b:bat[:any_1,:@1] ) :dbl 
+address CMDavg_@1
+comment "Gives the avg of all tail values";
+@mal
+@:avg_definition(sht)@
+@:avg_definition(int)@
+@:avg_definition(lng)@
+@:avg_definition(flt)@
+@:avg_definition(dbl)@
 @-
 @= aggregate_definition
 command @1 ( b:bat[:any_1,:@2] ) :@2 
@@ -856,6 +867,22 @@ CMDprod_@1_@2(@2* res, BAT *b)
 	*res = result;
 	return GDK_SUCCEED;
 }
+
+@+ BAT avg operation
+The avg aggregate only works for int and float fields.
+
+@= avg_implementation
+int
+CMDavg_@1(dbl* res, BAT *b)
+{
+	int cnt = BATcount(b);
+	dbl result=0.0;
+
+	CMDsum_@1_dbl(&result, b);
+	*res = result/cnt;
+	return GDK_SUCCEED;
+}
+
 @+ Minimum and Maximum
 The routines @`BATmin@5(b) and @`BATmax@5(b) compute the minimum and
 maximum value of the tail column of a BAT.
@@ -916,9 +943,12 @@ CMDmax_@1(@1* result, BAT *b)
 @:sum_implementation(sht,sht,0)@
 @:sum_implementation(sht,int,0)@
 @:sum_implementation(sht,lng,0)@
+@:sum_implementation(sht,dbl,0)@
 @:sum_implementation(int,int,0)@
 @:sum_implementation(int,lng,0)@
+@:sum_implementation(int,dbl,0)@
 @:sum_implementation(lng,lng,0)@
+@:sum_implementation(lng,dbl,0)@
 @:sum_implementation(flt,flt,0.0)@
 @:sum_implementation(flt,dbl,0.0)@
 @:sum_implementation(dbl,dbl,0.0)@
@@ -932,6 +962,12 @@ CMDmax_@1(@1* result, BAT *b)
 @:prod_implementation(flt,flt,1.0)@
 @:prod_implementation(flt,dbl,1.0)@
 @:prod_implementation(dbl,dbl,1.0)@
+
+@:avg_implementation(sht)@
+@:avg_implementation(int)@
+@:avg_implementation(lng)@
+@:avg_implementation(flt)@
+@:avg_implementation(dbl)@
 
 @:aggregate_implementation(sht)@
 @:aggregate_implementation(int)@

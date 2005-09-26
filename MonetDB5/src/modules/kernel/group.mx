@@ -119,6 +119,11 @@ comment "refine the ordering of a tail-ordered BAT by sub-ordering on the
         distinction that the group ids respect the ordering of the group 
         values.";
 
+command refine(b:bat[:oid,:any_3], a:bat[:void,:any_1]) :bat[:oid,:oid] 
+address GRPrefine;
+command refine(b:bat[:void,:any_3], a:bat[:oid,:any_1]) :bat[:oid,:oid] 
+address GRPrefine;
+
 command refine_reverse(b:bat[:any_2,:any_3], a:bat[:any_2,:any_1]) :bat[:any_2,:oid] 
 address GRPrefine_rev
 comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
