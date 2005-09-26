@@ -214,7 +214,7 @@ aclocal -I . -I conf $LT_M4_DIR $PKG_M4_DIR $CONFDIR
 perl -i -p -e 's|(LD-ld. )|$1-IPA |g' aclocal.m4
 
 # patch aclocal.m4 for cygpath on CYGWIN
-grep -q '"$CYGPATH_W"' aclocal.m4 && cat << "EOF" | patch aclocal.m4
+grep '"$CYGPATH_W"' aclocal.m4 >/dev/null && cat << "EOF" | patch aclocal.m4
 --- aclocal.m4.ORG      2004-09-07 18:32:18.593750000 +0200
 +++ aclocal.m4  2004-09-07 18:34:05.453125000 +0200
 @@ -6386,11 +6386,14 @@
