@@ -639,7 +639,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 					q = pushArgument(mb, q, r);
 					q = pushArgument(mb, q, e);
 					k = getDestVar(q);
-					q = newStmt(mb, "algebra", " kdifference");
+					q = newStmt(mb, "algebra", "kdifference");
 					q = pushArgument(mb, q, l);
 					q = pushArgument(mb, q, k);
 					break;
@@ -736,9 +736,6 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_diff:{
-			/* use sql.kdiff only when you intend to its optimizer
-			dump_2(sql, mb, s, "sql", "kdifference");
-			*/
 			dump_2(sql, mb, s, "algebra", "kdifference");
 		}
 			break;
