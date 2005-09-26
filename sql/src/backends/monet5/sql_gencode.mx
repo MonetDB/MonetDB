@@ -525,9 +525,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 
+			/* TODO if (s->flag)
+				generate pqueue_topn 
+			*/
+
 			/* since both arguments of algebra.slice are inclusive
 			   correct the LIMIT value by substracting 1 */
-			q = newStmt(mb, "calc", "=");
+			q = newStmt(mb, "calc", "+");
 			q = pushArgument(mb, q, k);
 			q = pushArgument(mb, q, m);
 			m = getDestVar(q);
