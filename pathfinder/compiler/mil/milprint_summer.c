@@ -7954,56 +7954,75 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "# fn:delete\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
+                  "var replacements := new(bat, bat);\n"
                   "var frags := kind.get_fragment();\n"
-                  /* reverse sort item so that we delete the last node
-                     first, so that holes can be merged */
-                  "item.sort_rev()@batloop() {\n"
+                  "# reverse sort item so that we delete the last node\n"
+                  "# first, so that holes can be merged\n"
+                  "var loopvar;\n"
+                  "if (type(item) = bat) {\n"
+                  "  loopvar := item.reverse().sort_rev().reverse();\n"
+                  "} else {\n"
+                  "  loopvar := ipik;\n"
+                  "}\n"
+                  "loopvar@batloop() {\n"
                   "  var frag := frags.fetch($h);\n"
+                  "  var itemval;\n"
+                  "  if (type(item) = bat) {\n"
+                  "    itemval := $t;\n"
+                  "  } else {\n"
+                  "    itemval := item;\n"
+                  "  }\n"
                   "  var pre_size := ws.fetch(PRE_SIZE).fetch(frag);\n"
-                  "  var size := pre_size.fetch($t);\n"
+                  "  var new_pre_size := emptybat_oid_int;\n"
+                  "  if (replacements.exist(pre_size)) {\n"
+                  "    new_pre_size := replacements.fetch(pre_size);\n"
+                  "  }\n"
+                  "  var size := replacedvalue(pre_size, new_pre_size, itemval);\n"
                   "  if (not(isnil(size)) and size >= 0) {\n"
-                  "    var nsize := pre_size.fetch(int($t) + size + 1);\n"
+                  "    var nsize := replacedvalue(pre_size, new_pre_size, oid(int(itemval) + size + 1));\n"
                   "    if (isnil(nsize)) {\n"
                   "      nsize := 1;\n"
                   "    } else if (nsize < 0) {\n"
-                  /*     nsize = (nsize & ~(1 << 31)) + 1 */
+                  "#     nsize = (nsize & ~(1 << 31)) + 1\n"
                   "      nsize := (nsize + INT_MAX) + 2;\n"
                   "    } else {\n"
                   "      nsize := 0;\n"
                   "    }\n"
-                  "    var start := int($t) + int(pre_size.seqbase());\n"
-                  /*                   ((size + nsize) | 1 << 31) */
+                  "    var start := int(itemval) + int(pre_size.seqbase());\n"
+                  "#                   ((size + nsize) | 1 << 31)\n"
                   "    var new_size := (((size+nsize)-1)-INT_MAX).[-](pre_size.slice(start, start + size).number());\n"
-                  "    pre_size.replace(new_size, true);\n"
+                  "    replace(ws, replacements, PRE_SIZE, frag, new_size);\n"
                   "    var oidlist := new_size.mark(nil);\n"
+                  "    new_size := nil;\n"
                   "    var chrlist := oidlist.[chr]();\n"
-                  "    ws.fetch(PRE_PROP).fetch(frag).replace(oidlist, true);\n"
-                  /*"    var start := int($t) + int(ws.fetch(PRE_NID).fetch(frag).seqbase());\n"*/
+                  "    replace(ws, replacements, PRE_PROP, frag, oidlist);\n"
+                  "#     var start := int(itemval) + int(ws.fetch(PRE_NID).fetch(frag).seqbase());\n"
                   "    var nidlist := ws.fetch(PRE_NID).fetch(frag).slice(start, start + size).reverse().mark(nil);\n"
-                  "    var knd_nid_0 := ws.fetch(KND_NID_0).fetch(frag);\n"
-                  "    var kndlist := knd_nid_0.join(nidlist);\n"
-                  "    knd_nid_0.replace(kndlist, true);\n"
-                  "    ws.fetch(KND_PROP_0).fetch(frag).replace(kndlist, true);\n"
-                  "    kndlist := nil_oid_oid; knd_nid_0 := nil_oid_oid;\n"
-                  "    var knd_nid_1 := ws.fetch(KND_NID_1).fetch(frag);\n"
-                  "    knd_nid_1.replace(knd_nid_1.join(nidlist), true);\n"
-                  "    knd_nid_1 := nil_oid_oid;\n"
-                  "    var knd_nid_2 := ws.fetch(KND_NID_2).fetch(frag);\n"
-                  "    knd_nid_2.replace(knd_nid_2.join(nidlist), true);\n"
-                  "    knd_nid_2 := nil_oid_oid;\n"
-                  "    var knd_nid_3 := ws.fetch(KND_NID_3).fetch(frag);\n"
-                  "    var kndlist := knd_nid_3.join(nidlist);\n"
-                  "    knd_nid_3.replace(kndlist, true);\n"
-                  "    ws.fetch(KND_PROP_3).fetch(frag).replace(kndlist, true);\n"
-                  "    kndlist := nil_oid_oid; knd_nid_3 := nil_oid_oid;\n"
-                  "    ws.fetch(NID_PRE).fetch(frag).replace(nidlist, true);\n"
-                  "    nidlist := nil_oid_oid;\n"
-                  "    ws.fetch(PRE_NID).fetch(frag).replace(oidlist, true);\n"
-                  "    oidlist := nil_oid_oid;\n"
-                  "    ws.fetch(PRE_KIND).fetch(frag).replace(chrlist, true);\n"
-                  "    ws.fetch(PRE_LEVEL).fetch(frag).replace(chrlist, true);\n"
-                  "    chrlist := nil_oid_chr;\n"
+                  "    var kndnid0list := ws.fetch(KND_NID_0).fetch(frag).join(nidlist);\n"
+                  "    replace(ws, replacements, KND_NID_0, frag, kndnid0list);\n"
+                  "    replace(ws, replacements, KND_PROP_0, frag, kndnid0list);\n"
+                  "    kndnid0list := nil;\n"
+                  "    replace(ws, replacements, KND_NID_1, frag, ws.fetch(KND_NID_1).fetch(frag).join(nidlist));\n"
+                  "    replace(ws, replacements, KND_NID_2, frag, ws.fetch(KND_NID_2).fetch(frag).join(nidlist));\n"
+                  "    var kndnid3list := ws.fetch(KND_NID_3).fetch(frag).join(nidlist);\n"
+                  "    replace(ws, replacements, KND_NID_3, frag, kndnid3list);\n"
+                  "    replace(ws, replacements, KND_PROP_3, frag, kndnid3list);\n"
+                  "    kndnid3list := nil;\n"
+                  "    replace(ws, replacements, NID_PRE, frag, nidlist);\n"
+                  "    nidlist := nil;\n"
+                  "    replace(ws, replacements, PRE_NID, frag, oidlist);\n"
+                  "    oidlist := nil;\n"
+                  "    replace(ws, replacements, PRE_KIND, frag, chrlist);\n"
+                  "    replace(ws, replacements, PRE_LEVEL, frag, chrlist);\n"
+                  "    chrlist := nil;\n"
                   "  }\n"
+                  "}\n"
+                  "replacements@batloop() {\n"
+                  "  var a := $h.access();\n"
+                  "  $h.access(BAT_WRITE);\n"
+                  "  $h.replace($t, true);\n"
+                  "  $h.insert(kdiff($t,$h));\n"/* was: $h.insert($t); */
+                  "  $h.access(a);\n"
                   "}\n");
         return NORMAL;
     }        
@@ -8014,16 +8033,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        milprintf(f, "print(iter%03u.col_name(\"iter\"),pos%03u.col_name(\"pos\"),item%03u.col_name(\"item\"),kind%03u.col_name(\"kind\"));\n", counter, counter, counter, counter);
-        milprintf(f, "print(iter.col_name(\"iter\"),pos.col_name(\"pos\"),item.col_name(\"item\"),kind.col_name(\"kind\"));\n");
-        milprintf(f, "printf(\"int values\\n\");\n");
-        milprintf(f, "print(int_values);\n");
-        milprintf(f, "printf(\"dbl values\\n\");\n");
-        milprintf(f, "print(dbl_values);\n");
-        milprintf(f, "printf(\"dec values\\n\");\n");
-        milprintf(f, "print(dec_values);\n");
-        milprintf(f, "printf(\"str values\\n\");\n");
-        milprintf(f, "print(str_values);\n");
+        /* do the work */
         deleteResult (f, counter);
         return NORMAL;
     }        
@@ -8034,16 +8044,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        milprintf(f, "print(iter%03u.col_name(\"iter\"),pos%03u.col_name(\"pos\"),item%03u.col_name(\"item\"),kind%03u.col_name(\"kind\"));\n", counter, counter, counter, counter);
-        milprintf(f, "print(iter.col_name(\"iter\"),pos.col_name(\"pos\"),item.col_name(\"item\"),kind.col_name(\"kind\"));\n");
-        milprintf(f, "printf(\"int values\\n\");\n");
-        milprintf(f, "print(int_values);\n");
-        milprintf(f, "printf(\"dbl values\\n\");\n");
-        milprintf(f, "print(dbl_values);\n");
-        milprintf(f, "printf(\"dec values\\n\");\n");
-        milprintf(f, "print(dec_values);\n");
-        milprintf(f, "printf(\"str values\\n\");\n");
-        milprintf(f, "print(str_values);\n");
+        /* do the work */
         deleteResult (f, counter);
         return NORMAL;
     }        
@@ -8054,16 +8055,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        milprintf(f, "print(iter%03u.col_name(\"iter\"),pos%03u.col_name(\"pos\"),item%03u.col_name(\"item\"),kind%03u.col_name(\"kind\"));\n", counter, counter, counter, counter);
-        milprintf(f, "print(iter.col_name(\"iter\"),pos.col_name(\"pos\"),item.col_name(\"item\"),kind.col_name(\"kind\"));\n");
-        milprintf(f, "printf(\"int values\\n\");\n");
-        milprintf(f, "print(int_values);\n");
-        milprintf(f, "printf(\"dbl values\\n\");\n");
-        milprintf(f, "print(dbl_values);\n");
-        milprintf(f, "printf(\"dec values\\n\");\n");
-        milprintf(f, "print(dec_values);\n");
-        milprintf(f, "printf(\"str values\\n\");\n");
-        milprintf(f, "print(str_values);\n");
+        /* do the work */
         deleteResult (f, counter);
         return NORMAL;
     }        
@@ -8074,16 +8066,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        milprintf(f, "print(iter%03u.col_name(\"iter\"),pos%03u.col_name(\"pos\"),item%03u.col_name(\"item\"),kind%03u.col_name(\"kind\"));\n", counter, counter, counter, counter);
-        milprintf(f, "print(iter.col_name(\"iter\"),pos.col_name(\"pos\"),item.col_name(\"item\"),kind.col_name(\"kind\"));\n");
-        milprintf(f, "printf(\"int values\\n\");\n");
-        milprintf(f, "print(int_values);\n");
-        milprintf(f, "printf(\"dbl values\\n\");\n");
-        milprintf(f, "print(dbl_values);\n");
-        milprintf(f, "printf(\"dec values\\n\");\n");
-        milprintf(f, "print(dec_values);\n");
-        milprintf(f, "printf(\"str values\\n\");\n");
-        milprintf(f, "print(str_values);\n");
+        /* do the work */
         deleteResult (f, counter);
         return NORMAL;
     }        
@@ -8112,7 +8095,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
         milprintf(f,
                   "var frags := kind%03u.get_fragment();\n"
-                  "item%03u@batloop() {\n"
+                  "ipik%03u@batloop() {\n"
                   "  var frag := frags.fetch($h);\n"
                   "  var node := item%03u.fetch($h);\n"
                   "  if (ws.fetch(PRE_KIND).fetch(frag).fetch(node) != ELEMENT) { ERROR (\"function fn:set-attr expects a element node.\"); }\n"
@@ -8196,6 +8179,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         if (fun->arity == 2) {
             counter += 2;
             milprintf(f,
+                      "var replacements := new(bat, bat);\n"
                       "var prefix := \"\";\n"
                       "var uri := \"\";\n");
         } else {
@@ -8208,11 +8192,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
         milprintf(f,
                   "var frags := kind%03u.get_fragment();\n"
-                  "item%03u@batloop() {\n"
+                  "ipik%03u@batloop() {\n"
                   "  var frag := frags.fetch($h);\n"
                   "  var node := item%03u.fetch($h);\n"
-                  "  if (ws.fetch(PRE_KIND).fetch(frag).fetch(node) != ELEMENT) { ERROR (\"function fn:set-attr expects a element node.\"); }\n"
-                  "  var nid := ws.fetch(PRE_NID).fetch(frag).fetch(node);\n",
+                  "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != ELEMENT) {\n"
+                  "    ERROR(\"function fn:set-attr expects a element node.\");\n"
+                  "  }\n"
+                  "  var nid := replacementvalue(replacements, ws.fetch(PRE_NID).fetch(frag), node);\n",
                   counter - 2, counter - 2, counter - 2);
         if (fun->arity == 2) {
             milprintf(f,
@@ -8229,12 +8215,37 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                   "  var loc_uri := loc + \"\\001\" + uri;\n"
                   "  # [oid,nil] list of prefixes used by loc_uri\n"
-                  "  var loc_uri_list := ws.fetch(QN_LOC_URI).fetch(frag).ord_uselect(loc_uri);\n"
+                  "  var loc_uri_list;\n"
+                  "  var qn_loc_uri := ws.fetch(QN_LOC_URI).fetch(frag);\n"
+                  "  if (replacements.exist(qn_loc_uri)) {\n"
+                  "    loc_uri_list := kunion(replacements.fetch(qn_loc_uri), qn_loc_uri).ord_uselect(loc_uri);\n"
+                  "  } else {\n"
+                  "    loc_uri_list := qn_loc_uri.ord_uselect(loc_uri);\n"
+                  "  }\n"
                   "  # [oid,nil] list of QN names with correct prefix as well (should be 0 or 1)\n"
-                  "  var qn_list := loc_uri_list.mirror().fetchjoin(ws.fetch(QN_PREFIX).fetch(frag)).uselect(prefix);\n"
+                  "  var qn_list;\n"
+                  "  var qn_prefix := ws.fetch(QN_PREFIX).fetch(frag);\n"
+                  "  if (replacements.exist(qn_prefix)) {\n"
+                  "    qn_list := loc_uri_list.mirror().fetchjoin(kunion(replacements.fetch(qn_prefix), qn_prefix)).uselect(prefix);\n"
+                  "  } else {\n"
+                  "    qn_list := loc_uri_list.mirror().fetchjoin(qn_prefix).uselect(prefix);\n"
+                  "  }\n"
                   "  # [oid,nil] list of ATTR indexes for current node\n"
-                  "  var attr_list := ws.fetch(ATTR_OWN).fetch(frag).uselect(nid);\n"
-                  "  var tmp := attr_list.mirror().fetchjoin(ws.fetch(ATTR_QN).fetch(frag));\n"
+                  "  var attr_list;\n"
+                  "  var attr_own := ws.fetch(ATTR_OWN).fetch(frag);\n"
+                  "  if (replacements.exist(attr_own)) {\n"
+                  "    attr_list := kunion(replacements.fetch(attr_own), attr_own).uselect(nid);\n"
+                  "  } else {\n"
+                  "    attr_list := attr_own.uselect(nid);\n"
+                  "  }\n"
+                  "  var attr_qn := ws.fetch(ATTR_QN).fetch(frag);\n"
+                  "  var tmp;\n"
+                  "  if (replacements.exist(attr_qn)) {\n"
+                  "    tmp1 := kunion(replacements.fetch(attr_qn), attr_qn);\n"
+                  "  } else {\n"
+                  "    tmp1 := attr_qn;\n"
+                  "  }\n"
+                  "  var tmp := attr_list.mirror().fetchjoin(tmp1);\n"
                   "  # [oid,nil] list of attributes for current node with correct FQ name\n"
                   "  var attr_node_list := tmp.join(qn_list);\n"
                   "  # check that there aren't already attributes with the same local name\n"
@@ -8245,11 +8256,52 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "  # if name isn't known yet, create an entry for it\n"
                   "  if (qn_list.count() > 0) {\n"
                   "    if (attr_node_list.count() = 1) {\n"
-                  "      ws.fetch(ATTR_PROP).fetch(frag).replace(attr_node_list.mirror().fetch(0), oid(nil), true);\n"
-                  "      ws.fetch(ATTR_OWN).fetch(frag).replace(attr_node_list.mirror().fetch(0), oid(nil), true);\n"
-                  "      ws.fetch(ATTR_QN).fetch(frag).replace(attr_node_list.mirror().fetch(0), oid(nil), true);\n"
+                  "      var new_keys := attr_node_list.mirror().fetch(0);\n"
+                  "      var attr_prop := ws.fetch(ATTR_PROP).fetch(frag);\n"
+                  "      var new_attr_prop;\n"
+                  "      if (replacements.exist(attr_prop)) {\n"
+                  "        new_attr_prop := replacements.fetch(attr_prop);\n"
+                  "      } else {\n"
+                  "        new_attr_prop := new(void, oid);\n"
+                  "	new_attr_prop.seqbase(0@0);\n"
+                  "	new_attr_prop.key(true);\n"
+                  "	replacements.insert(attr_prop, new_attr_prop);\n"
+                  "      }\n"
+                  "      new_attr_prop.replace(new_keys, oid(nil));\n"
+                  "      new_attr_prop.insert(new_keys, oid(nil));\n"
+                  "      var attr_own := ws.fetch(ATTR_OWN).fetch(frag);\n"
+                  "      var new_attr_own;\n"
+                  "      if (replacements.exist(attr_own)) {\n"
+                  "        new_attr_own := replacements.fetch(attr_own);\n"
+                  "      } else {\n"
+                  "        new_attr_own := new(void, oid);\n"
+                  "	new_attr_own.seqbase(0@0);\n"
+                  "	new_attr_own.key(true);\n"
+                  "	replacements.insert(attr_own, new_attr_own);\n"
+                  "      }\n"
+                  "      new_attr_own.replace(new_keys, oid(nil));\n"
+                  "      new_attr_own.insert(new_keys, oid(nil));\n"
+                  "      var attr_qn := ws.fetch(ATTR_QN).fetch(frag);\n"
+                  "      var new_attr_qn;\n"
+                  "      if (replacements.exist(attr_qn)) {\n"
+                  "        new_attr_qn := replacements.fetch(attr_qn);\n"
+                  "      } else {\n"
+                  "        new_attr_qn := new(void, oid);\n"
+                  "	new_attr_qn.seqbase(0@0);\n"
+                  "	new_attr_qn.key(true);\n"
+                  "	replacements.insert(attr_qn, new_attr_qn);\n"
+                  "      }\n"
+                  "      new_attr_qn.replace(new_keys, oid(nil));\n"
+                  "      new_attr_qn.insert(new_keys, oid(nil));\n"
                   "    }\n"
                   "  }\n"
+                  "}\n"
+                  "replacements@batloop() {\n"
+                  "  var a := $h.access();\n"
+                  "  $h.access(BAT_WRITE);\n"
+                  "  $h.replace($t, true);\n"
+                  "  $h.insert(kdiff($t,$h));\n"
+                  "  $h.access(a);\n"
                   "}\n");
         if (fun->arity == 4) {
             deleteResult (f, counter);
@@ -8266,21 +8318,47 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
         milprintf(f,
+                  "var replacements := new(bat, bat);\n"
                   "var frags := kind%03u.get_fragment();\n"
-                  "item@batloop() {\n"
+                  "ipik@batloop() {\n"
                   "  var frag := frags.fetch($h);\n"
                   "  var node := item%03u.fetch($h);\n"
-                  "  if (ws.fetch(PRE_KIND).fetch(frag).fetch(node) != TEXT) { ERROR (\"function fn:set-text expects a text node.\"); }\n"
+                  "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != TEXT) {\n"
+                  "    ERROR(\"function fn:set-text expects a text node.\");\n"
+                  "  }\n"
                   "  var prop_text := ws.fetch(PROP_TEXT).fetch(frag);\n"
-                  "  var text := str_values.fetch($t);\n"
-                  "  var textID := prop_text.uselect(text);\n"
+                  "  var text := str_values.fetch(item.fetch($h));\n"
+                  "  var new_prop_text;\n"
+                  "  var textID;\n"
+                  "  if (replacements.exist(prop_text)) {\n"
+                  "    new_prop_text := relacements.fetch(prop_text);\n"
+                  "    textID := new_prop_text.uselect(text);\n"
+                  "    if (textID.count() = 0) {\n"
+                  "      textID := prop_text.uselect(text);\n"
+                  "    }\n"
+                  "  } else {\n"
+                  "    textID := prop_text.uselect(text);\n"
+                  "    if (textID.count() = 0) {\n"
+                  "      new_prop_text := new(void, str);\n"
+                  "      new_prop_text.seqbase(oid(int(prop_text.seqbase()) + prop_text.count()));\n"
+                  "      new_prop_text.key(true);\n"
+                  "      replacements.insert(prop_text, new_prop_text);\n"
+                  "    }\n"
+                  "  }\n"
                   "  if (textID.count() = 0) {\n"
                   "    textID := nil;\n"
-                  "    prop_text.access(BAT_APPEND).insert(nil, text).access(BAT_READ);\n"
-                  "    textID := prop_text.uselect(text);\n"
+                  "    new_prop_text.insert(nil, text);\n"
+                  "    textID := new_prop_text.uselect(text);\n"
                   "  }\n"
                   "  textID := textID.reverse().fetch(0);\n"
-                  "  ws.fetch(PRE_PROP).fetch(frag).replace(node, textID, true);\n"
+                  "  replace(ws, replacements, PRE_PROP, node, textID);\n"
+                  "}\n"
+                  "replacements@batloop() {\n"
+                  "  var a := $h.access();\n"
+                  "  $h.access(BAT_WRITE);\n"
+                  "  $h.replace($t, true);\n"
+                  "  $h.insert(kdiff($t,$h));\n"
+                  "  $h.access(a);\n"
                   "}\n",
                   counter, counter);
         deleteResult (f, counter);
@@ -8294,23 +8372,47 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
         milprintf(f,
+                  "var replacements := new(bat, bat);\n"
                   "var frags := kind%03u.get_fragment();\n"
-                  "item@batloop() {\n"
+                  "ipik@batloop() {\n"
                   "  var frag := frags.fetch($h);\n"
                   "  var node := item%03u.fetch($h);\n"
-                  "  if (ws.fetch(PRE_KIND).fetch(frag).fetch(node) != COMMENT) { ERROR (\"function fn:set-comment expects a comment node.\"); }\n"
+                  "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != COMMENT) {\n"
+                  "    ERROR(\"function fn:set-comment expects a comment node.\");\n"
+                  "  }\n"
                   "  var prop_com := ws.fetch(PROP_COM).fetch(frag);\n"
-                  "  var comment := str_values.fetch($t);\n"
-                  "  var commentID := prop_com.uselect(comment);\n"
+                  "  var comment := str_values.fetch(item.fetch($h));\n"
+                  "  var new_prop_com;\n"
+                  "  var commentID;\n"
+                  "  if (replacements.exist(prop_com)) {\n"
+                  "    new_prop_com := relacements.fetch(prop_com);\n"
+                  "    commentID := new_prop_com.uselect(comment);\n"
+                  "    if (commentID.count() = 0) {\n"
+                  "      commentID := prop_com.uselect(comment);\n"
+                  "    }\n"
+                  "  } else {\n"
+                  "    commentID := prop_com.uselect(comment);\n"
+                  "    if (commentID.count() = 0) {\n"
+                  "      new_prop_com := new(void, str);\n"
+                  "      new_prop_com.seqbase(oid(int(prop_com.seqbase()) + prop_com.count()));\n"
+                  "      new_prop_com.key(true);\n"
+                  "      replacements.insert(prop_com, new_prop_com);\n"
+                  "    }\n"
+                  "  }\n"
                   "  if (commentID.count() = 0) {\n"
                   "    commentID := nil;\n"
-                  "    prop_com.access(BAT_APPEND);\n"
-                  "    prop_com.insert(nil, comment);\n"
-                  "    prop_com.access(BAT_READ);\n"
-                  "    commentID := prop_com.uselect(comment);\n"
+                  "    new_prop_com.insert(nil, comment);\n"
+                  "    commentID := new_prop_com.uselect(comment);\n"
                   "  }\n"
                   "  commentID := commentID.reverse().fetch(0);\n"
-                  "  ws.fetch(PRE_PROP).fetch(frag).replace(node, commentID, true);\n"
+                  "  replace(ws, replacements, PRE_PROP, node, commentID);\n"
+                  "}\n"
+                  "replacements@batloop() {\n"
+                  "  var a := $h.access();\n"
+                  "  $h.access(BAT_WRITE);\n"
+                  "  $h.replace($t, true);\n"
+                  "  $h.insert(kdiff($t,$h));\n"
+                  "  $h.access(a);\n"
                   "}\n",
                   counter, counter);
         deleteResult (f, counter);
@@ -8327,20 +8429,45 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
         milprintf(f,
+                  "var replacements := new(bat, bat);\n"
                   "var frags := kind%03u.get_fragment();\n"
-                  "item@batloop() {\n"
+                  "ipik@batloop() {\n"
                   "  var frag := frags.fetch($h);\n"
                   "  var node := item%03u.fetch($h);\n"
-                  "  if (ws.fetch(PRE_KIND).fetch(frag).fetch(node) != PI) { ERROR (\"function fn:set-pi expects a processing instruction node.\"); }\n"
+                  "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != PI) {\n"
+                  "    ERROR(\"function fn:set-pi expects a processing instruction node.\");\n"
+                  "  }\n"
                   "  var prop_ins := ws.fetch(PROP_INS).fetch(frag);\n"
                   "  var prop_tgt := ws.fetch(PROP_TGT).fetch(frag);\n"
-                  "  var ins := str_values.fetch($t);\n"
+                  "  var ins := str_values.fetch(item.fetch($h));\n"
                   "  var tgt := str_values.fetch(item%03u.fetch($h));\n"
+                  "  var new_prop_ins;\n"
+                  "  var new_prop_tgt;\n"
+                  "  if (replacements.exist(prop_ins)) {\n"
+                  "    new_prop_ins := replacements.fetch(prop_ins);\n"
+                  "    new_prop_tgt := replacements.fetch(prop_tgt);\n"
+                  "  } else {\n"
+                  "    new_prop_ins := new(void, str);\n"
+                  "    new_prop_ins.seqbase(oid(int(prop_ins.seqbase()) + prop_ins.count()));\n"
+                  "    new_prop_ins.key(true);\n"
+                  "    replacements.insert(prop_ins, new_prop_ins);\n"
+                  "    new_prop_tgt := new(void, str);\n"
+                  "    new_prop_tgt.seqbase(oid(int(prop_tgt.seqbase()) + prop_tgt.count()));\n"
+                  "    new_prop_tgt.key(true);\n"
+                  "    replacements.insert(prop_tgt, new_prop_tgt);\n"
+                  "  }\n"
                   /* always insert since bats must stay synchronized */
-                  "  prop_ins.access(BAT_APPEND).insert(nil, ins).access(BAT_READ);\n"
-                  "  var insID := prop_ins.uselect(ins).reverse().fetch(0);\n"
-                  "  prop_tgt.access(BAT_APPEND).insert(nil, tgt).access(BAT_READ);\n"
-                  "  ws.fetch(PRE_PROP).fetch(frag).replace(node, insID, true);\n"
+                  "  new_prop_ins.insert(nil, ins);\n"
+                  "  new_prop_tgt.insert(nil, tgt);\n"
+                  "  var insID := new_prop_ins.uselect(ins).reverse().fetch(0);\n"
+                  "  replace(ws, replacements, PRE_PROP, node, insID);\n"
+                  "}\n"
+                  "replacements@batloop() {\n"
+                  "  var a := $h.access();\n"
+                  "  $h.access(BAT_WRITE);\n"
+                  "  $h.replace($t, true);\n"
+                  "  $h.insert(kdiff($t,$h));\n"
+                  "  $h.access(a);\n"
                   "}\n",
                   counter-1, counter-1, counter);
         deleteResult (f, counter);

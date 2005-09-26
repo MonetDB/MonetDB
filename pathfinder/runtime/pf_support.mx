@@ -540,11 +540,6 @@ PROC [lng] (int i) : lng
 	return lng(i);
 }
 
-PROC fetch(dbl b, int p) : dbl
-{
-	return b;
-}
-
 PROC slice(oid b, int l, int h) : oid
 {
 	return b;
@@ -743,6 +738,11 @@ PROC fake_fetch (bat[void,@1] b, @2 p) : @1
 	} else {
 		return b.fetch(p);
 	}
+}
+
+PROC fetch(@1 v, @2 i) : @1
+{
+	return v;
 }
 
 @mil
@@ -1647,6 +1647,52 @@ DESCRIPITON:\n\
  (We don't care about iters, here.)",
 "pf_support");
 
+proc replacedvalue(BAT[any::1, any::2] oldbat, BAT[any::1, any::2] newbat, any::1 key): any::2 {
+  if (not(isnil(newbat)) and newbat.exist(key)) {
+    return newbat.fetch(key);
+  } else {
+    return oldbat.fetch(key);
+  }
+}
+proc replacementvalue(BAT[bat,bat] replacements, BAT[any::1,any::2] oldbat, any::1 key): any::2 {
+  if (replacements.exist(oldbat)) {
+    return replacedvalue(oldbat, replacements.fetch(oldbat), key);
+  } else {
+    return oldbat.fetch(key);
+  }
+}
+proc replace(BAT[void,bat] ws, BAT[bat,bat] replacements, int prop, oid frag, BAT[any,any] newval) : void {
+  if (newval.count() != 0) {
+    var propbat := ws.fetch(prop).fetch(frag);
+    var new_propbat;
+    if (replacements.exist(propbat)) {
+      new_propbat := replacements.fetch(propbat);
+      new_propbat.replace(newval);
+    } else {
+      new_propbat := new(newval.htype(),newval.ttype());
+      if (new_propbat.htype() = void) {
+        new_propbat.seqbase(0@0);
+      }
+      new_propbat.key(true);
+      replacements.insert(propbat, new_propbat);
+    }
+    new_propbat.insert(newval);
+  }
+}
+proc replace(BAT[void,bat] ws, BAT[bat,bat] replacements, int prop, oid frag, oid newkey, any newval) : void {
+  var propbat := ws.fetch(prop).fetch(frag);
+  var new_propbat;
+  if (replacements.exist(propbat)) {
+    new_propbat := replacements.fetch(propbat);
+  } else {
+    new_propbat := new(void,newval.type());
+    new_propbat.seqbase(newkey);
+    new_propbat.key(true);
+    replacements.insert(propbat, new_propbat);
+  }
+  new_propbat.insert(newkey, newval);
+}
+var emptybat_oid_int := new(oid,int,0);
 
 @* Module Implementation
 @h
