@@ -192,18 +192,23 @@ address ALGcopy
 comment "Returns physical copy of a BAT.";
 @- Sorted copy
 @mal
-command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+command sortHead( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGhsort
 comment "Returns a BAT copy sorted on the head column.";
-command sortT( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
+command sort( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGtsort
 comment "Returns a BAT copy sorted on the tail column.";
+
 command sortHT( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGhtsort
-comment "Returns a lexicographically sorted copy.";
+comment "Returns a lexicographically sorted copy on head,tail.";
 command sortTH( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2] 
 address ALGthsort
-comment "Returns a reverse lexicographically sorted copy.";
+comment "Returns a lexicographically sorted copy on tail,head.";
+
+command revert( b:bat[:any_1,:any_2]) :bat[:any_1,:any_2]
+address ALGrevert
+comment "Returns a BAT copy with buns in reverse order";
 
 @+ Set operations
 Sets in Monet can be viewed in two ways:
@@ -2363,6 +2368,23 @@ ALGthsort(int *result, int *lid)
 		return MAL_SUCCEED;
 	}
 	return throwMessage("algebra.htsort", "GDKerror");
+}
+
+mal_export str ALGrevert(int *result, int *bid);
+str
+ALGrevert(int *result, int *bid)
+{
+	BAT *b, *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("algebra.tsort", "Cannot access descriptor");
+	}
+	bn= BATcopy(b);
+	BATrevert(bn);
+	BBPincref(*result= bn->batCacheid,TRUE);
+	BBPunfix(bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
 }
 
 mal_export str ALGcount_bat(int *result, int *bid);
