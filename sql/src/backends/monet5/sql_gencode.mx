@@ -548,9 +548,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 
 			@:SQLprelude@
-			q = newStmt(mb, "algebra", (s->flag ? "sortT" : "sort_reverseT"));
+			q = newStmt(mb, "algebra", "sort" );
 			q = pushArgument(mb, q, l);
 			s->nr = getDestVar(q);
+			if( s->flag == 0){
+				q = newStmt(mb, "algebra","revert");
+				q= pushArgument(mb,q,s->nr);
+				s->nr = getDestVar(q);
+			}
 			@:SQLpostlude@
 		} break;
 		case st_reorder:{
