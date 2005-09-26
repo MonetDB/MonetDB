@@ -64,6 +64,8 @@ address ALGfind
 comment "Returns the tail value 't' for which some [h,t] BUN 
         exists in b.  If no such BUN exists, an error occurs." ;
 
+command find(b:bat[:oid,:any_2], h:void):any_2 address ALGfind;
+
 command position(b:bat[:any_1,:any_2], v:any_1):int
 address ALGposition
 comment "Returns BAT position [0.. b.count] of 'v' in the head 
@@ -814,7 +816,7 @@ CMDsum_@1_@2(@2* res, BAT *b)
 	int xx;
 	@2 result=@3;
 
-	BATcheck(b,"BATsumInt");
+	BATcheck(b,"BATsum_@1_@2");
 	BATloopFast(b, p, q, xx) {
 		@1 *value = (@1*) BUNtloc(b, p);
 		if (*value == @1_nil) {

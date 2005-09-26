@@ -118,6 +118,14 @@ comment "refine the ordering of a tail-ordered BAT by sub-ordering on the
         The effect of this is similar to (hash-based) GRPderive, with the 
         distinction that the group ids respect the ordering of the group 
         values.";
+
+command refine_reverse(b:bat[:any_2,:any_3], a:bat[:any_2,:any_1]) :bat[:any_2,:oid] 
+address GRPrefine_rev
+comment "refine the ordering of a tail-ordered BAT by sub-ordering on the 
+        values of a second bat 'a' (where the heads of a and b match 1-1).
+        The effect of this is similar to (hash-based) GRPderive, with the 
+        distinction that the group ids respect the ordering of the group 
+        values.";
 @-
 @+ Group Aggregate operations
 
@@ -203,9 +211,6 @@ static int TYPE_idxentry;
 int
 grp_new(BAT *b, BAT *h)
 {
-	BBPincref(b->batCacheid, TRUE);
-	BBPunfix(b->batCacheid);
-
 	if (h) {
 		BATkey(h, TRUE);
 		h->tsorted = 0;
@@ -217,8 +222,6 @@ grp_new(BAT *b, BAT *h)
 			BBPreclaim(h);
 			return GDK_FAIL;
 		}
-		BBPincref(h->batCacheid, TRUE);
-		BBPunfix(h->batCacheid);
 	} else {
 		assert(h);
 	}
@@ -1143,7 +1146,8 @@ GRPderive(int *hid, int *mid, int *ctid, int *bid)
 			return throwMessage("group.derive","Could not group");
 		}
 		ct = bn;
-		BBPunfix(histo->batCacheid);
+		if (histo)
+			BBPunfix(histo->batCacheid);
 	}
 	if( derive(&bn, &histo, ct, b, tailtype(b, TRUE), NULL) == GDK_FAIL){
 		BBPunfix(b->batCacheid);
@@ -1213,6 +1217,30 @@ GRPrefine(int *retid, int *bid, int *aid)
 	@:chkHeader(a,GRPrefine)@
 
 	CTrefine(&bn, b, a);
+	BBPincref(*retid = bn->batCacheid, TRUE);
+	BBPunfix(*retid);
+	BBPunfix(b->batCacheid);
+	BBPunfix(a->batCacheid);
+	return MAL_SUCCEED;
+}
+
+mal_export str GRPrefine_rev(int *retid, int *bid, int *aid);
+str
+GRPrefine_rev(int *retid, int *bid, int *aid)
+{
+	BAT *b, *a;
+	BAT *bn;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		return throwMessage("group.refine", "Cannot access descriptor");
+	}
+	@:chkHeader(b,GRPrefine_rev)@
+	if ((a = BATdescriptor(*aid)) == NULL) {
+		return throwMessage("group.refine", "Cannot access descriptor");
+	}
+	@:chkHeader(a,GRPrefine_rev)@
+
+	CTrefine_rev(&bn, b, a);
 	BBPincref(*retid = bn->batCacheid, TRUE);
 	BBPunfix(*retid);
 	BBPunfix(b->batCacheid);
