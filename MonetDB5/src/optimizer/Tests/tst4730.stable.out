@@ -132,7 +132,7 @@ barrier always := true;	# 9  (always:bit)<-(_25:bit) jump 61
     V36 := algebra.tunique(V35);	# 23 ALGtunique (V36:bat[:void,:oid])<-(V35:bat[:void,:oid])
     V37 := bat.mirror(V36);	# 24 BKCmirror (V37:bat[:void,:void])<-(V36:bat[:void,:oid])
     V42 := algebra.join(V37,V27);	# 25 ALGjoin (V42:bat[:void,:bit])<-(V37:bat[:void,:void])(V27:bat[:void,:bit])
-    V43 := algebra.sortT(V42);	# 26 ALGtsort (V43:bat[:void,:bit])<-(V42:bat[:void,:bit])
+    V43 := algebra.sort(V42);	# 26 ALGtsort (V43:bat[:void,:bit])<-(V42:bat[:void,:bit])
     V51 := algebra.join(V37,V34);	# 27 ALGjoin (V51:bat[:void,:bit])<-(V37:bat[:void,:void])(V34:bat[:void,:bit])
     V52 := group.refine(V43,V51);	# 28 GRPrefine (V52:bat[:void,:oid])<-(V43:bat[:void,:bit])(V51:bat[:void,:bit])
     V57 := algebra.kdifference(V53{count=1000},V12);	# 29 ALGkdiff (V57:bat[:oid,:int])<-(V53:bat[:void,:int])(V12:bat[:oid,:void])
@@ -216,7 +216,7 @@ barrier always := true;
     V36 := algebra.tunique(V35);
     V37 := bat.mirror(V36);
     V42 := algebra.join(V37,V27);
-    V43 := algebra.sortT(V42);
+    V43 := algebra.sort(V42);
     V51 := algebra.join(V37,V34);
     V52 := group.refine(V43,V51);
     V57{RMcost=0} := algebra.kdifference(V53{RMcost=1000,count=1000},V12{RMcost=1000});

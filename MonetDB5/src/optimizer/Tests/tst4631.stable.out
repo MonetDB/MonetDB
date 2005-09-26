@@ -158,7 +158,7 @@ function user.qry1():void;	# 0  (qry1:void)
     V37 := algebra.kdifference(V19,V36);	# 25 ALGkdiff (V37:bat[:oid,:bit])<-(V19:bat[:void,:bit])(V36:bat[:oid,:void])
     V38 := algebra.join(V18,V37);	# 26 ALGjoin (V38:bat[:void,:bit])<-(V18:bat[:void,:oid])(V37:bat[:oid,:bit])
     V39 := algebra.join(V34,V38);	# 27 ALGjoin (V39:bat[:void,:bit])<-(V34:bat[:void,:void])(V38:bat[:void,:bit])
-    V40 := algebra.sortT(V39);	# 28 ALGtsort (V40:bat[:void,:bit])<-(V39:bat[:void,:bit])
+    V40 := algebra.sort(V39);	# 28 ALGtsort (V40:bat[:void,:bit])<-(V39:bat[:void,:bit])
     V41:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);	# 29  (V41:bat[:void,:oid])<-(_40:str)(_41:str)(_42:int)
     V45 := bat.reverse(V41);	# 30 BKCreverse (V45:bat[:oid,:void])<-(V41:bat[:void,:oid])
     V46 := algebra.kdifference(V26,V45);	# 31 ALGkdiff (V46:bat[:oid,:bit])<-(V26:bat[:void,:bit])(V45:bat[:oid,:void])
@@ -263,7 +263,7 @@ function user.qry1():void;
     V33 := algebra.tunique(V32);
     V34 := bat.mirror(V33);
     V39 := algebra.join(V34,V24);
-    V40 := algebra.sortT(V39);
+    V40 := algebra.sort(V39);
     V41:bat[:void,:oid]  := user.bind_dbat("sys","lineitem",0);
     V45 := bat.reverse(V41);
     V46 := algebra.kdifference(V26,V45);

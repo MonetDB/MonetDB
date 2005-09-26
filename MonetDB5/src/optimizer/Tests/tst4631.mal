@@ -36,7 +36,7 @@ function qry1();
     V37 := algebra.kdifference(V19,V36);
     V38 := algebra.join(V18,V37);
     V39 := algebra.join(V34,V38);
-    V40 := algebra.sortT(V39);
+    V40 := algebra.sort(V39);
     V41:bat[:void,:oid] := user.bind_dbat("sys","lineitem",0);
     V45 := bat.reverse(V41);
     V46 := algebra.kdifference(V26,V45);
