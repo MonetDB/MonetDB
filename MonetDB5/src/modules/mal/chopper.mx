@@ -57,13 +57,15 @@ command hasMoreElements(b:bat[:any_1,:any_2], size:lng)
 address CHPhasMoreChunks
 comment "Produce the next chunk for processing.";
 
-pattern newIterator(b:bat[:any_1,:any_2])
-	(:lng, h:any_1, t:any_2)
+pattern newIterator(b:bat[:any_1,:any_2]) (:lng, h:any_1, t:any_2)
+address CHPbunIterator;
+pattern newIterator(b:bat[:void,:any_2]) (:lng, h:oid, t:any_2)
 address CHPbunIterator
-comment "Process the buns one by one.";
+comment "Process the buns one by one extracted from a void table.";
 
-pattern hasMoreElements(b:bat[:any_1,:any_2])
-	(:lng, h:any_1, t:any_2)
+pattern hasMoreElements(b:bat[:any_1,:any_2]) (:lng, h:any_1, t:any_2)
+address CHPbunHasMoreElements;
+pattern hasMoreElements(b:bat[:void,:any_2]) (:lng, h:oid, t:any_2)
 address CHPbunHasMoreElements
 comment "Produce the next bun for processing.";
 
@@ -188,6 +190,7 @@ CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng yy;
 	BUN p;
 	ValPtr head, tail;
+	oid o;
 
 	cursor = (lng *) getArgReference(stk, pci, 0);
 	head = &stk->stk[pci->argv[1]];
@@ -208,7 +211,11 @@ CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* get head = ... tail = ... */
 	yy = *cursor;
 	p = BUNptr(b, yy);
-	VALinit(head, getArgType(mb, pci, 1), BUNhead(b, p));
+	if( getHeadType(getArgType(mb,pci,1)) == TYPE_void){
+		o= BUNindex(b,p)+  b->hseqbase;
+		VALinit(head, TYPE_oid, &o);
+	} else
+		VALinit(head, getArgType(mb, pci, 1), BUNhead(b, p));
 	VALinit(tail, getArgType(mb, pci, 2), BUNtail(b, p));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -223,6 +230,7 @@ CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *bid;
 	BUN p;
 	ValPtr head, tail;
+	oid o;
 
 	cursor = (lng *) getArgReference(stk, pci, 0);
 	head = &stk->stk[pci->argv[1]];
@@ -243,7 +251,11 @@ CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	VALinit(head, getArgType(mb, pci, 1), BUNhead(b, p));
+	if( getHeadType(getArgType(mb,pci,1)) == TYPE_void){
+		o= BUNindex(b,p)+  b->hseqbase;
+		VALinit(head, TYPE_oid, &o);
+	} else
+		VALinit(head, getArgType(mb, pci, 1), BUNhead(b, p));
 	VALinit(tail, getArgType(mb, pci, 2), BUNtail(b, p));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -266,6 +278,7 @@ CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int limit;
 	BUN p;
 	ValPtr head;
+	oid o;
 
 	cursor = (lng *) getArgReference(stk, pci, 2);
 	bid = (int *) getArgReference(stk, pci, 1);
@@ -282,7 +295,11 @@ CHPgetHead(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* get head = ... */
 	p = BUNptr(b, *cursor);
-	VALinit(head, getArgType(mb, pci, 3), BUNhead(b, p));
+	if( getArgType(mb,pci,3) == TYPE_void){
+		o= BUNindex(b,p)+  b->hseqbase;
+		VALinit(head, TYPE_oid, &o);
+	} else
+		VALinit(head, getArgType(mb, pci, 3), BUNhead(b, p));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
