@@ -293,6 +293,15 @@ command calc.hours(secs:lng) :int address MTIMEsql_hours;
 command calc.minutes(secs:lng) :int address MTIMEsql_minutes;
 command calc.seconds(secs:lng) :int address MTIMEsql_seconds;
 
+command calc.addyears(value:date, years:int) :date address MTIMEdate_addyears;
+command calc.addmonths(value:date, months:int) :date address MTIMEdate_addmonths;
+command calc.adddays(value:date, days:int) :date address MTIMEdate_adddays;
+command calc.diff(val1:date, val2:date) :int address MTIMEdate_diff; 
+command calc.dayofyear(d:date) :int address MTIMEdate_extract_dayofyear;
+command calc.weekofyear(d:date) :int address MTIMEdate_extract_weekofyear;
+command calc.dayofweek(d:date) :int address MTIMEdate_extract_dayofweek;
+command calc.add(v:timestamp, msecs:lng) :timestamp address MTIMEtimestamp_add; 
+command calc.diff(val1:timestamp, val2:timestamp) :lng address MTIMEtimestamp_diff;
 
 @- SQL functions
 The SQL functions are all recognized by their module name.
