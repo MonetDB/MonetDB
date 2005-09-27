@@ -3238,8 +3238,8 @@ CNTRScounter2str(str *ret, int *idx){
 	diff = c->count0 - c->count1;
 	sprintf(buf,1024,"%10lld us %10lld cy %10lld e%02d %10lld e%02d %10lld eX",
 			c->usec, c->clocks,
-			c->count0,events[c->event0].native,
-			c->count1,events[c->event1].native, diff);
+			c->count0,event[c->event0].native,
+			c->count1,event[c->event1].native, diff);
 #else
 	snprintf(buf,1024,"%10lld us %10lld cy", c->usec, c->clocks);
 #endif
