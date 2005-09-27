@@ -26,9 +26,7 @@ end newsemijoin;	# 1
 #io.print(1);
 #y:int{sorted=true}:= algebra.sort(w);
 #
-!ERROR: MALresolve:user.main[6]:type mismatch int := bat[:int,:int]
 !ERROR: 'algebra.sort' undefined in user.main[6]
-!ERROR: MALresolve:user.main[8]:type mismatch int := bat[:int,:int]
 !ERROR: 'algebra.sort' undefined in user.main[8]
 function user.main():int;	# 0  (main:int)
 #Parsing properties and keeping them around 	# 1  (_2:str)

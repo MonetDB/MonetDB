@@ -240,14 +240,14 @@ exit (go,i);	# 9  (go:bit)(i:lng)
     _90 := bat.new(:void,:lng);	# 109 CMDBATnew (_90:bat[:void,:lng])<-(_5:void)(_6:lng)
     _92 := bat.getSequenceBase(b);	# 110 BKCgetSequenceBase (_92:oid)<-(b:bat[:void,:lng])
     bat.setSequenceBase(_90,_92);	# 111 BKCsetSequenceBase (_93:bat[:void,:lng])<-(_90:bat[:void,:lng])(_92:oid)
-barrier (_95,_96,_97):= chop.newIterator(b);	# 112 CHPbunIterator (_95:lng)(_96:void)(_97:lng)<-(b:bat[:void,:lng]) jump 119
-    _99 := algebra.find(c,_96);	# 113 ALGfind (_99:lng)<-(c:bat[:void,:lng])(_96:void)
+barrier (_95,_96,_97):= chop.newIterator(b);	# 112 CHPbunIterator (_95:lng)(_96:oid)(_97:lng)<-(b:bat[:void,:lng]) jump 119
+    _99 := algebra.find(c,_96);	# 113 ALGfind (_99:lng)<-(c:bat[:void,:lng])(_96:oid)
     _101 := calc.+(_97,_99);	# 114 CALCbinaryADDlnglng (_101:lng)<-(_97:lng)(_99:lng)
-    bat.insert(_90,_96,_101);	# 115 BKCinsert_bun (_102:void)<-(_90:bat[:void,:lng])(_96:void)(_101:lng)
+    bat.insert(_90,_96,_101);	# 115 BKCinsert_bun_oid_any (_102:void)<-(_90:bat[:void,:lng])(_96:oid)(_101:lng)
 catch MALexception;	# 116  (MALexception:str) jump 117
 exit MALexception;	# 117  (MALexception:str)
-    redo (_95,_96,_97):= chop.hasMoreElements(b);	# 118 CHPbunHasMoreElements (_95:lng)(_96:void)(_97:lng)<-(b:bat[:void,:lng]) jump 113
-exit (_95,_96,_97);	# 119  (_95:lng)(_96:void)(_97:lng)
+    redo (_95,_96,_97):= chop.hasMoreElements(b);	# 118 CHPbunHasMoreElements (_95:lng)(_96:oid)(_97:lng)<-(b:bat[:void,:lng]) jump 113
+exit (_95,_96,_97);	# 119  (_95:lng)(_96:oid)(_97:lng)
     x:bat[:void,:lng]  := _90;	# 120  (x:bat[:void,:lng])<-(_90:bat[:void,:lng])
     t1 := alarm.usec();	# 121 ALARMusec (t1:lng)
     d0 := calc.-(t1,t0);	# 122 CALCbinarySUBlnglng (d0:lng)<-(t1:lng)(t0:lng)

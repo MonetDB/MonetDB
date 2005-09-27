@@ -29,7 +29,6 @@ stdout of test 'tst050` in directory 'src/mal` itself:
 #
 !ERROR: MALresolve:user.main[9]:type mismatch sht := lng
 !ERROR: MALresolve:user.main[10]:type mismatch lng := sht
-!ERROR: MALresolve:user.main[11]:type mismatch bat[:str,:int] := bat[:int,:int]
 !ERROR: 'bat.new' undefined in user.main[11]
 !ERROR: MALresolve:user.main[12]:type mismatch flt := str
 function user.main():int;	# 0  (main:int)
