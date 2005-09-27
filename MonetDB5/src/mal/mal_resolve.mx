@@ -329,30 +329,8 @@ the resulting type can not be determined.
 
         returntype[i]= resolveType(actual,s1);
         if( returntype[i]== -1 ){
-            returntype[i]= actual; /* TYPE_any;*/
-			if( !isPolyType(actual)) {
-				typeMismatch(mb, p, actual, s1,silent);
-#ifdef DEBUG_MAL_RESOLVE
-         stream_printf(GDKout,"%s.%s unmatched=%d polymorphic=%d %d type %s\n",
-            moduleName(sig), functionName(sig), unmatched, 
-				sig->polymorphic,p==sig, getTypeName(s1));
-        if( sig->polymorphic){
-            int l;
-            for(l=0;l<2*p->argc;l++) 
-            stream_printf(GDKout,"poly %d %s\n",l,getTypeName(polytype[l]));
-        }
-		stream_printf(GDKout,"-->resolving\n");
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-		stream_printf(GDKout,"++> test against %s signature\n",
-			(sig->polymorphic?"polymorphic":""));
-		printInstruction(GDKout,s->def,getSignature(s),LIST_MAL_ALL);
-        stream_printf(GDKout,"\nmismatch test %s poly %s\n",
-            getTypeName(getArgType(mb,p,unmatched)),
-            getTypeName(getArgType(s->def,sig,unmatched)));
-#endif
-				s1= -1;
-				break;
-			}
+			s1= -1;
+			break;
         }
 	} else 
 	/* check for non-polymorphic return */
@@ -362,19 +340,6 @@ the resulting type can not be determined.
 
         returntype[i]= resolveType(actual,formal);
         if( returntype[i]== -1 ){
-#ifdef DEBUG_MAL_RESOLVE
-         stream_printf(GDKout,"%s.%s unmatched=%d polymorphic=%d %d type %s\n",
-            moduleName(sig), functionName(sig), unmatched, 
-				sig->polymorphic,p==sig, getTypeName(s1));
-		stream_printf(GDKout,"-->resolving\n");
-		printInstruction(GDKout,mb,p,LIST_MAL_ALL);
-		stream_printf(GDKout,"++> test against %s signature\n",
-			(sig->polymorphic?"polymorphic":""));
-		printInstruction(GDKout,s->def,getSignature(s),LIST_MAL_ALL);
-        stream_printf(GDKout,"\nmismatch test %s poly %s\n",
-            getTypeName(getArgType(mb,p,unmatched)),
-            getTypeName(getArgType(s->def,sig,unmatched)));
-#endif
 			s1= -1;
 			break;
         }
