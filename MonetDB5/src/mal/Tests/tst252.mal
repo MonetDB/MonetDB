@@ -5,8 +5,9 @@ bat.insert(b,"one","red");
 bat.insert(b,"two","green");
 io.print(b);
 barrier (v,h,t):= chop.newIterator(b);
-	io.printf("[ %s,",h);
-	io.printf("%s]\n",t);
+	io.print(v);
+	io.print(h);
+	io.print(t);
 	redo (v,h,t):= chop.hasMoreElements(b);
 exit v;
 

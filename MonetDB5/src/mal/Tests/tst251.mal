@@ -12,6 +12,7 @@ bat.insert(c,5,x);
 bat.insert(c,6,"!");
 io.print(c);
 barrier (v,h,ts):= chop.newIterator(c);
+	io.print(v);
 	io.printf("[%d,",h);
 	io.printf("%s]\n",ts);
 	redo (v,h,ts):= chop.hasMoreElements(c);

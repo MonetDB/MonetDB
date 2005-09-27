@@ -44,12 +44,13 @@ function user.main():int;	# 0  (main:int)
     bat.insert(c,5,x);	# 10 BKCinsert_bun (_24:void)<-(c:bat[:int,:str])(_25:int)(x:str)
     bat.insert(c,6,"!");	# 11 BKCinsert_bun (_26:void)<-(c:bat[:int,:str])(_27:int)(_28:str)
     io.print(c);	# 12 IOprint_val (_29:int)<-(c:bat[:int,:str])
-barrier (v,h,ts):= chop.newIterator(c);	# 13 CHPbunIterator (v:lng)(h:int)(ts:str)<-(c:bat[:int,:str]) jump 17
-    io.printf("[%d,",h);	# 14 IOprint_formatted_int (_33:int)<-(_34:str)(h:int)
-    io.printf("%s]\n",ts);	# 15 IOprint_formatted_str (_35:int)<-(_36:str)(ts:str)
-    redo (v,h,ts):= chop.hasMoreElements(c);	# 16 CHPbunHasMoreElements (v:lng)(h:int)(ts:str)<-(c:bat[:int,:str]) jump 14
-exit v;	# 17  (v:lng)
-end main;	# 18  
+barrier (v,h,ts):= chop.newIterator(c);	# 13 CHPbunIterator (v:lng)(h:int)(ts:str)<-(c:bat[:int,:str]) jump 18
+    io.print(v);	# 14 IOprint_val (_33:int)<-(v:lng)
+    io.printf("[%d,",h);	# 15 IOprint_formatted_int (_34:int)<-(_35:str)(h:int)
+    io.printf("%s]\n",ts);	# 16 IOprint_formatted_str (_36:int)<-(_37:str)(ts:str)
+    redo (v,h,ts):= chop.hasMoreElements(c);	# 17 CHPbunHasMoreElements (v:lng)(h:int)(ts:str)<-(c:bat[:int,:str]) jump 14
+exit v;	# 18  (v:lng)
+end main;	# 19  
 #-------------------------#
 # h	tmp_4		  # name
 # int	str		  # type
@@ -60,11 +61,17 @@ end main;	# 18
 [ 4,	  ""		  ]
 [ 5,	  nil		  ]
 [ 6,	  "!"		  ]
+[ 0 ]
 [1,hello]
+[ 1 ]
 [2,brave]
+[ 2 ]
 [3,world]
+[ 3 ]
 [4,]
+[ 4 ]
 [5,nil]
+[ 5 ]
 [6,!]
 
 # 08:01:07 >  
