@@ -211,8 +211,8 @@ CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* get head = ... tail = ... */
 	yy = *cursor;
 	p = BUNptr(b, yy);
-	if( getHeadType(getArgType(mb,pci,1)) == TYPE_void){
-		o= BUNindex(b,p)+  b->hseqbase;
+	if( getArgType(mb,pci,1) == TYPE_void){
+		o= b->hseqbase;
 		VALinit(head, TYPE_oid, &o);
 	} else
 		VALinit(head, getArgType(mb, pci, 1), BUNhead(b, p));
@@ -241,18 +241,18 @@ CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return throwMessage("chop.newChunkMoreElements", "Cannot access 'bid' descriptor");
 	}
 
+	/* get head = ... tail = ... */
 	yy = *cursor + 1;
 	*cursor = yy;
 
-	/* get head = ... tail = ... */
 	p = BUNptr(b, yy);
 	if (p >= BUNlast(b)) {
 		*cursor = -1;
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	if( getHeadType(getArgType(mb,pci,1)) == TYPE_void){
-		o= BUNindex(b,p)+  b->hseqbase;
+	if( getArgType(mb,pci,1) == TYPE_void){
+		o= yy - BUNindex(b,BUNfirst(b))+  b->hseqbase;
 		VALinit(head, TYPE_oid, &o);
 	} else
 		VALinit(head, getArgType(mb, pci, 1), BUNhead(b, p));
