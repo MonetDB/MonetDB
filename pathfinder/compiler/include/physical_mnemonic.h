@@ -85,6 +85,7 @@
 /** StaircaseJoin */
 #define llscj_anc(a,b,c,d,e) PFpa_llscj_anc ((a), (b), (c), (d), (e))
 #define llscj_anc_self(a,b,c,d,e) PFpa_llscj_anc_self ((a), (b), (c), (d), (e))
+#define llscj_attr(a,b,c,d,e) PFpa_llscj_attr ((a), (b), (c), (d), (e))
 #define llscj_child(a,b,c,d,e) PFpa_llscj_child ((a), (b), (c), (d), (e))
 #define llscj_desc(a,b,c,d,e) PFpa_llscj_desc ((a), (b), (c), (d), (e))
 #define llscj_desc_self(a,b,c,d,e) PFpa_llscj_desc_self ((a),(b), (c), (d), (e))
@@ -104,6 +105,9 @@
 
 #define fragment(a)       PFpa_fragment (a)
 #define frag_union(a,b)   PFpa_frag_union ((a), (b))
+
+#define doc_access(a,b,c,d) PFpa_doc_access ((a), (b), (c), (d))
+#define string_join(a,b)  PFpa_string_join ((a), (b))
 
 #define serialize(a,b)    PFpa_serialize ((a), (b))
 

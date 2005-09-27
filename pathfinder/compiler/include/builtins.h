@@ -193,6 +193,10 @@ struct PFla_pair_t PFbui_fn_doc (const PFla_op_t *loop,
 struct PFla_pair_t PFbui_fn_empty (const PFla_op_t *loop,
                                    struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_pf_string_value_attr (const PFla_op_t *loop,
+                                               struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_string_value_text (const PFla_op_t *loop,
+                                               struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_string_value (const PFla_op_t *loop,
                                           struct PFla_pair_t *args);
 

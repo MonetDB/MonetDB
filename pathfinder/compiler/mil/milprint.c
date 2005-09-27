@@ -7,89 +7,92 @@
  *
  * @verbatim
  
-   statements       : statements statements                    <m_seq>
-                    | 'if (' Expr ') {' stmts '} else {' stmts '}' <m_if>
-                    | <nothing>                                <m_nop>
-                    | statement ';'                            <otherwise>
+   statements    : statements statements                    <m_seq>
+                 | 'if (' Expr ') {' stmts '} else {' stmts '}' <m_if>
+                 | <nothing>                                <m_nop>
+                 | statement ';'                            <otherwise>
 
-   statement        : Variable ':=' expression                 <m_assgn>
-                    | expr '.insert (' expr ',' expr ')'       <m_insert>
-                    | expression '.append (' expression ')'    <m_bappend>
-                    | expression '.access (' restriction ')'   <m_access>
-                    | 'serialize (...)'                        <m_serialize>
-                    | 'var' Variable                           <m_declare>
-                    | 'print (' args ')'                       <m_print>
-                    | 'col_name (' expr ',' expr ')'           <m_col_name>
+   statement     : Variable ':=' expression                 <m_assgn>
+                 | expr '.insert (' expr ',' expr ')'       <m_insert>
+                 | expression '.append (' expression ')'    <m_bappend>
+                 | expression '.access (' restriction ')'   <m_access>
+                 | 'serialize (...)'                        <m_serialize>
+                 | 'var' Variable                           <m_declare>
+                 | 'print (' args ')'                       <m_print>
+                 | 'col_name (' expr ',' expr ')'           <m_col_name>
 
-   expression       : Variable                                 <m_var>
-                    | literal                                  <m_lit_*, m_nil>
-                    | 'new (' Type ',' Type ')'                <m_new>
-                    | expression '.seqbase (' expression ')'   <m_seqbase>
-                    | expression '.select (' expression ')'    <m_select>
-                    | expression '.project (' expression ')'   <m_project>
-                    | expression '.mark (' expression ')'      <m_mark>
-                    | expression '.mark_grp (' expression ')'  <m_mark_grp>
-                    | expression '.cross (' expression ')'     <m_cross>
-                    | expression '.join (' expression ')'      <m_join>
-                    | expression '.leftjoin (' expression ')'  <m_leftjoin>
-                    | expression '.kunion (' expression ')'    <m_kunion>
-                    | expression '.kdiff (' expression ')'     <m_kdiff>
-                    | expression '.CTrefine (' expression ')'  <m_ctrefine>
-                    | expression '.CTderive (' expression ')'  <m_ctderive>
-                    | expression '.insert (' expression ')'    <m_binsert>
-                    | expression '.append (' expression ')'    <m_bappend>
-                    | expression '.fetch (' expression ')'     <m_fetch>
-                    | expression '.set_kind (' expression ')'  <m_set_kind>
-                    | expression '.kunique ()'                 <m_kunique>
-                    | expression '.reverse ()'                 <m_reverse>
-                    | expression '.mirror ()'                  <m_mirror>
-                    | expression '.copy ()'                    <m_copy>
-                    | expression '.sort ()'                    <m_sort>
-                    | expression '.max ()'                     <m_max>
-                    | expression '.count ()'                   <m_count>
-                    | expression '.bat ()'                     <m_bat>
-                    | expression '.CTgroup ()'                 <m_ctgroup>
-                    | expression '.CTmap ()'                   <m_ctmap>
-                    | expression '.CTextend ()'                <m_ctextend>
-                    | expression '.get_fragment ()'            <m_get_fragment>
-                    | expression '.is_fake_project ()'         <m_is_fake_pr..>
-                    | expression '.chk_order ()'               <m_chk_order>
-                    | expression '.access (' restriction ')'   <m_access>
-                    | expression '.key (' bool ')'             <m_key>
-                    | expr '.insert (' expr ',' expr ')'       <m_insert>
-                    | expr '.select (' expr ',' expr ')'       <m_select2>
-                    | Type '(' expression ')'                  <m_cast>
-                    | '[' Type '](' expression ')'             <m_mcast>
-                    | '+(' expression ',' expression ')'       <m_add>
-                    | '[+](' expression ',' expression ')'     <m_madd>
-                    | '[-](' expression ',' expression ')'     <m_msub>
-                    | '[*](' expression ',' expression ')'     <m_mmult>
-                    | '[/](' expression ',' expression ')'     <m_mdiv>
-                    | '[%](' expression ',' expression ')'     <m_mmod>
-                    | '[>](' expression ',' expression ')'     <m_mgt>
-                    | '[=](' expression ',' expression ')'     <m_meq>
-                    | '[not](' expression ')'                  <m_mnot>
-                    | '[-](' expression ')'                    <m_mneg>
-                    | '[isnil](' expression ')'                <m_misnil>
-                    | '[and](' expression ',' expression ')'   <m_mand>
-                    | '[or](' expression ',' expression ')'    <m_mor>
-                    | '[ifthenelse](' exp ',' exp ',' exp ')'  <m_ifthenelse>
-                    | '{count}(' expression ')'                <m_gcount>
-                    | 'new_ws ()'                              <m_new_ws>
-                    | 'doc_tbl (' expr ',' expr ')'            <m_doc_tbl>
-                    | 'sc_desc (' ex ',' ex ',' ex ',' ex ')'  <m_sc_desc>
-                    | 'merged_union (' args ')'                <m_merged_union>
+   expression    : Variable                                 <m_var>
+                 | literal                                  <m_lit_*, m_nil>
+                 | 'new (' Type ',' Type ')'                <m_new>
+                 | expression '.seqbase (' expression ')'   <m_seqbase>
+                 | expression '.select (' expression ')'    <m_select>
+                 | expression '.project (' expression ')'   <m_project>
+                 | expression '.mark (' expression ')'      <m_mark>
+                 | expression '.mark_grp (' expression ')'  <m_mark_grp>
+                 | expression '.cross (' expression ')'     <m_cross>
+                 | expression '.join (' expression ')'      <m_join>
+                 | expression '.leftjoin (' expression ')'  <m_leftjoin>
+                 | expression '.kunion (' expression ')'    <m_kunion>
+                 | expression '.kdiff (' expression ')'     <m_kdiff>
+                 | expression '.CTrefine (' expression ')'  <m_ctrefine>
+                 | expression '.CTderive (' expression ')'  <m_ctderive>
+                 | expression '.insert (' expression ')'    <m_binsert>
+                 | expression '.append (' expression ')'    <m_bappend>
+                 | expression '.fetch (' expression ')'     <m_fetch>
+                 | expression '.set_kind (' expression ')'  <m_set_kind>
+                 | expression '.kunique ()'                 <m_kunique>
+                 | expression '.reverse ()'                 <m_reverse>
+                 | expression '.mirror ()'                  <m_mirror>
+                 | expression '.copy ()'                    <m_copy>
+                 | expression '.sort ()'                    <m_sort>
+                 | expression '.max ()'                     <m_max>
+                 | expression '.count ()'                   <m_count>
+                 | expression '.bat ()'                     <m_bat>
+                 | expression '.CTgroup ()'                 <m_ctgroup>
+                 | expression '.CTmap ()'                   <m_ctmap>
+                 | expression '.CTextend ()'                <m_ctextend>
+                 | expression '.get_fragment ()'            <m_get_fragment>
+                 | expression '.is_fake_project ()'         <m_is_fake_pr..>
+                 | expression '.chk_order ()'               <m_chk_order>
+                 | expression '.access (' restriction ')'   <m_access>
+                 | expression '.key (' bool ')'             <m_key>
+                 | expr '.insert (' expr ',' expr ')'       <m_insert>
+                 | expr '.select (' expr ',' expr ')'       <m_select2>
+                 | Type '(' expression ')'                  <m_cast>
+                 | '[' Type '](' expression ')'             <m_mcast>
+                 | '+(' expression ',' expression ')'       <m_add>
+                 | '[+](' expression ',' expression ')'     <m_madd>
+                 | '[-](' expression ',' expression ')'     <m_msub>
+                 | '[*](' expression ',' expression ')'     <m_mmult>
+                 | '[/](' expression ',' expression ')'     <m_mdiv>
+                 | '[%](' expression ',' expression ')'     <m_mmod>
+                 | '[>](' expression ',' expression ')'     <m_mgt>
+                 | '[=](' expression ',' expression ')'     <m_meq>
+                 | '[not](' expression ')'                  <m_mnot>
+                 | '[-](' expression ')'                    <m_mneg>
+                 | '[isnil](' expression ')'                <m_misnil>
+                 | '[and](' expression ',' expression ')'   <m_mand>
+                 | '[or](' expression ',' expression ')'    <m_mor>
+                 | '[ifthenelse](' exp ',' exp ',' exp ')'  <m_ifthenelse>
+                 | '{count}(' expression ')'                <m_gcount>
+                 | 'new_ws ()'                              <m_new_ws>
+                 | 'mposjoin (' exp ',' exp ',' exp ')'     <m_mposjoin>
+                 | 'mvaljoin (' exp ',' exp ',' exp ')'     <m_mvaljoin>
+                 | 'doc_tbl (' expr ',' expr ')'            <m_doc_tbl>
+                 | 'sc_desc (' ex ',' ex ',' ex ',' ex ')'  <m_sc_desc>
+                 | 'string_join (' expr ',' expr ')'        <m_string_join>
+                 | 'merged_union (' args ')'                <m_merged_union>
 
-                    | 'llscj_child (' a ',' b ',' c ',' d ')'  <m_llscj_child>
-                    | ... more staircase join variants ...
+                 | 'llscj_child (' a ',' b ',' c ',' d ')'  <m_llscj_child>
+                 | ... more staircase join variants ...
 
-   args             : args ',' args                            <m_arg>
-                    | expression                               <otherwise>
+   args          : args ',' args                            <m_arg>
+                 | expression                               <otherwise>
 
-   literal          : IntegerLiteral                           <m_lit_int>
-                    | StringLiteral                            <m_lit_str>
-                    | OidLiteral                               <m_lit_oid>
-                    | 'nil'                                    <m_nil>
+   literal       : IntegerLiteral                           <m_lit_int>
+                 | StringLiteral                            <m_lit_str>
+                 | OidLiteral                               <m_lit_oid>
+                 | 'nil'                                    <m_nil>
 @endverbatim
  *
  * Grammar rules are reflected by @c print_* functions in this file.
@@ -136,6 +139,7 @@ static char *ID[] = {
     , [m_key]          = "key"
     , [m_order]        = "order"
     , [m_select]       = "select"
+    , [m_uselect]      = "ord_uselect"
     , [m_select2]      = "select"
     , [m_insert]       = "insert"
     , [m_binsert]      = "insert"
@@ -179,6 +183,8 @@ static char *ID[] = {
     , [m_mifthenelse]  = "[ifthenelse]"
     , [m_misnil]       = "[isnil]"
     , [m_new_ws]       = "create_ws"
+    , [m_mposjoin]     = "mposjoin"
+    , [m_mvaljoin]     = "mvaljoin"
     , [m_doc_tbl]      = "doc_tbl"
 
     , [m_llscj_anc]              = "loop_lifted_ancestor_step"
@@ -316,6 +322,8 @@ static char *ID[] = {
         = "loop_lifted_preceding_sibling_step_with_ns_test"
     , [m_llscj_prec_sibl_pi_targ]
         = "loop_lifted_preceding_sibling_step_with_target_test"
+
+    , [m_string_join]      = "string_join"
 
     , [m_get_fragment]    = "get_fragment"
     , [m_set_kind]        = "set_kind"
@@ -490,7 +498,7 @@ print_statement (PFmil_t * n)
             PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
 #endif
             PFoops (OOPS_FATAL,
-                    "Illegal MIL tree. MIL printer skrewed up (kind: %u).",
+                    "Illegal MIL tree. MIL printer screwed up (kind: %u).",
                     n->kind);
     }
 }
@@ -538,6 +546,8 @@ print_expression (PFmil_t * n)
         case m_seqbase:
         /* expression : expression '.select (' expression ')' */
         case m_select:
+        /* expression : expression '.ord_uselect (' expression ')' */
+        case m_uselect:
         /* expression : expression '.project (' expression ')' */
         case m_project:
         /* expression : expression '.mark (' expression ')' */
@@ -636,6 +646,8 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* expression : 'string_join(' exp ',' exp)' */
+        case m_string_join:
         /* expression : '+(' expression ',' expression ')' */
         case m_add:
         /* expression : '[+](' expression ',' expression ')' */
@@ -705,6 +717,19 @@ print_expression (PFmil_t * n)
         /* expression : 'new_ws ()' */
         case m_new_ws:
             milprintf ("%s ()", ID[n->kind]);
+            break;
+
+        /* expression : 'mposjoin (' exp ',' exp ',' exp ')' */
+        case m_mposjoin:
+        /* expression : 'mvaljoin (' exp ',' exp ',' exp ')' */
+        case m_mvaljoin:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (")");
             break;
 
         /* expression : 'doc_tbl (' expr ',' expr ')' */
@@ -979,7 +1004,7 @@ print_expression (PFmil_t * n)
 #ifndef NDEBUG
             PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
 #endif
-            PFoops (OOPS_FATAL, "Illegal MIL tree. MIL printer skrewed up.");
+            PFoops (OOPS_FATAL, "Illegal MIL tree. MIL printer screwed up.");
     }
 }
 
@@ -1044,7 +1069,7 @@ print_literal (PFmil_t * n)
             PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
 #endif
             PFoops (OOPS_FATAL, "Illegal MIL tree, literal expected. "
-                                "MIL printer skrewed up.");
+                                "MIL printer screwed up.");
     }
 }
 
@@ -1067,7 +1092,7 @@ print_type (PFmil_t *n)
         PFinfo (OOPS_NOTICE, "node: %s", ID[n->kind]);
 #endif
         PFoops (OOPS_FATAL, "Illegal MIL tree, type expected. "
-                            "MIL printer skrewed up.");
+                            "MIL printer screwed up.");
     }
 
     milprintf (types[n->sem.t]);

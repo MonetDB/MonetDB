@@ -38,8 +38,6 @@
 #include "subtyping.h"
 
 #include <assert.h>
-/* strcmp() */
-#include <string.h>
 
 /**
  * Subexpressions that we already saw.
@@ -84,7 +82,7 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
                 break;
             /* if type is str, compare str member of union */
             case aat_str:
-                if (strcmp(a.atoms[i].val.str, b.atoms[i].val.str))
+                if (a.atoms[i].val.str != b.atoms[i].val.str)
                     mismatch = true;
                 break;
             /* if type is float, compare float member of union */
@@ -155,7 +153,7 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                 return false;
 
             for (unsigned int i = 0; i < a->schema.count; i++)
-                if (strcmp (a->schema.items[i].name, b->schema.items[i].name))
+                if (a->schema.items[i].name != b->schema.items[i].name)
                     return false;
 
             if (a->sem.lit_tbl.count != b->sem.lit_tbl.count)
@@ -170,8 +168,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_eqjoin:
-            return (!strcmp (a->sem.eqjoin.att1, b->sem.eqjoin.att1)
-                    && !strcmp (a->sem.eqjoin.att2, b->sem.eqjoin.att2));
+            return (a->sem.eqjoin.att1 == b->sem.eqjoin.att1
+                    && a->sem.eqjoin.att2 == b->sem.eqjoin.att2);
             break;
 
         case la_scjoin:
@@ -181,17 +179,17 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             break;
 
         case la_select:
-            return !strcmp (a->sem.select.att, b->sem.select.att);
+            return a->sem.select.att == b->sem.select.att;
             break;
 
         case la_type:
-            return (!strcmp (a->sem.type.att, b->sem.type.att)
-                    && !strcmp (a->sem.type.res, b->sem.type.res)
+            return (a->sem.type.att == b->sem.type.att
+                    && a->sem.type.res == b->sem.type.res
                     && a->sem.type.ty == b->sem.type.ty);
             break;
 
         case la_cast:
-            return (!strcmp (a->sem.cast.att, b->sem.cast.att)
+            return (a->sem.cast.att == b->sem.cast.att
                     && a->sem.cast.ty == b->sem.cast.ty);
             break;
 
@@ -200,28 +198,21 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                 return false;
 
             for (unsigned int i = 0; i < a->sem.proj.count; i++)
-                if (strcmp (a->sem.proj.items[i].new,
-                            b->sem.proj.items[i].new)
-                    || strcmp (a->sem.proj.items[i].old,
-                               b->sem.proj.items[i].old))
+                if (a->sem.proj.items[i].new != b->sem.proj.items[i].new
+                    || a->sem.proj.items[i].old != b->sem.proj.items[i].old)
                     return false;
 
             return true;
             break;
 
         case la_rownum:
-            if (strcmp (a->sem.rownum.attname, b->sem.rownum.attname))
+            if (a->sem.rownum.attname != b->sem.rownum.attname)
                 return false;
 
-            /* either both rownums are partitioned or none */
-            if ((a->sem.rownum.part && !b->sem.rownum.part)
-                    || (!a->sem.rownum.part && b->sem.rownum.part))
-                return false;
-
+            /* either both rownums are partitioned or none */ 
             /* partitioning attribute must be equal (if available) */
-            if (a->sem.rownum.part)
-                if (strcmp (a->sem.rownum.part, b->sem.rownum.part))
-                    return false;
+            if (a->sem.rownum.part != b->sem.rownum.part)
+                return false;
 
             return true;
             break;
@@ -235,48 +226,38 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_num_gt:
         case la_bool_and:
         case la_bool_or:
-            return (!strcmp (a->sem.binary.att1, b->sem.binary.att1)
-                    && !strcmp (a->sem.binary.att2, b->sem.binary.att2)
-                    && !strcmp (a->sem.binary.res, b->sem.binary.res));
+            return (a->sem.binary.att1 == b->sem.binary.att1
+                    && a->sem.binary.att2 == b->sem.binary.att2
+                    && a->sem.binary.res == b->sem.binary.res);
             break;
 
         case la_num_neg:
         case la_bool_not:
-            return (!strcmp (a->sem.unary.att, b->sem.unary.att)
-                    && !strcmp (a->sem.unary.res, b->sem.unary.res));
+            return (a->sem.unary.att == b->sem.unary.att
+                    && a->sem.unary.res == b->sem.unary.res);
             break;
 
         case la_sum:
-            if (strcmp (a->sem.sum.att, b->sem.sum.att)
-                || strcmp (a->sem.sum.res, b->sem.sum.res))
+            if (a->sem.sum.att != b->sem.sum.att
+                || a->sem.sum.res != b->sem.sum.res)
                 return false;
 
             /* either both aggregates are partitioned or none */
-            if ((a->sem.sum.part && !b->sem.sum.part)
-                    || (!a->sem.sum.part && b->sem.sum.part))
-                return false;
-
             /* partitioning attribute must be equal (if available) */
-            if (a->sem.sum.part)
-                if (strcmp (a->sem.sum.part, b->sem.sum.part))
-                    return false;
+            if (a->sem.sum.part != b->sem.sum.part)
+                return false;
 
             return true;
             break;
 
         case la_count:
-            if (strcmp (a->sem.count.res, b->sem.count.res))
+            if (a->sem.count.res != b->sem.count.res)
                 return false;
 
             /* either both aggregates are partitioned or none */
-            if ((a->sem.count.part && !b->sem.count.part)
-                    || (!a->sem.count.part && b->sem.count.part))
-                return false;
-
             /* partitioning attribute must be equal (if available) */
-            if (a->sem.count.part)
-                if (strcmp (a->sem.count.part, b->sem.count.part))
-                    return false;
+            if (a->sem.count.part != b->sem.count.part)
+                return false;
 
             return true;
             break;
@@ -297,9 +278,9 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
 
         case la_seqty1:
         case la_all:
-            return (!strcmp (a->sem.blngroup.res, b->sem.blngroup.res)
-                    && !strcmp (a->sem.blngroup.att, b->sem.blngroup.att)
-                    && !strcmp (a->sem.blngroup.part, b->sem.blngroup.part));
+            return (a->sem.blngroup.res == b->sem.blngroup.res
+                    && a->sem.blngroup.att == b->sem.blngroup.att
+                    && a->sem.blngroup.part == b->sem.blngroup.part);
             break;
 
         case la_empty_tbl:
@@ -310,7 +291,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
         case la_distinct:
         case la_concat:
         case la_merge_adjacent:
-        case la_string_val:
+        case la_doc_access:
+        case la_string_join:
         case la_serialize:
         case la_roots:
         case la_fragment:

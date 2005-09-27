@@ -977,6 +977,16 @@
     .ret_ty = PFty_star (PFty_untypedAtomic ()),                         \
     /* FIXME: does this still fit or is it string-value? */              \
     .alg = PFbui_op_typed_value }                                        \
+, /* pf:string-value (attribute) as string */                            \
+  { .ns = PFns_pf, .loc = "string-value",                                \
+    .arity = 1, .par_ty = { PFty_xs_anyAttribute () },                   \
+    .ret_ty = PFty_string (),                                            \
+    .alg = PFbui_pf_string_value_attr }                                  \
+, /* pf:string-value (text) as string */                                 \
+  { .ns = PFns_pf, .loc = "string-value",                                \
+    .arity = 1, .par_ty = { PFty_text () },                              \
+    .ret_ty = PFty_string (),                                            \
+    .alg = PFbui_pf_string_value_text }                                  \
 , /* pf:string-value (node) as string */                                 \
   { .ns = PFns_pf, .loc = "string-value",                                \
     .arity = 1, .par_ty = { PFty_node () },                              \

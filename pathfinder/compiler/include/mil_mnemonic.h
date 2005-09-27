@@ -219,6 +219,12 @@
 /** create new (empty) working set */
 #define new_ws() PFmil_new_ws ()
 
+/** positional multijoin with a working set `mposjoin (a, b, c)' */
+#define mposjoin(a,b,c) PFmil_mposjoin ((a), (b), (c))
+
+/** multijoin with a working set `mvaljoin (a, b, c)' */
+#define mvaljoin(a,b,c) PFmil_mvaljoin ((a), (b), (c))
+
 /** MonetDB bat() function */
 #define bat(a) PFmil_bat (a)
 
@@ -423,6 +429,8 @@
     PFmil_llscj_prec_sibl_elem_ns ((a), (b), (c), (d), (e), (f))
 #define llscj_prec_sibl_pi_targ(a,b,c,d,e,f) \
     PFmil_llscj_prec_sibl_pi_targ ((a), (b), (c), (d), (e), (f))
+
+#define string_join(a,b) PFmil_string_join ((a), (b))
 
 #define get_fragment(a) PFmil_get_fragment (a)
 #define set_kind(a,b)   PFmil_set_kind ((a), (b))

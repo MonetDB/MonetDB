@@ -33,9 +33,6 @@
 #include "ordering.h"
 
 #include "array.h"
-#include "mem.h"     /* PFstrdup() */
-
-#include <string.h>  /* strcmp() */
 
 PFord_ordering_t
 PFordering (void)
@@ -60,7 +57,7 @@ PFord_refine (const PFord_ordering_t ordering, const PFalg_att_t attribute)
         *((PFalg_att_t *) PFarray_add (ret))
             = *((PFalg_att_t *) PFarray_at (ordering, i));
 
-    *((PFalg_att_t *) PFarray_add (ret)) = PFstrdup (attribute);
+    *((PFalg_att_t *) PFarray_add (ret)) = attribute;
 
     return ret;
 }
@@ -88,7 +85,7 @@ PFord_implies (const PFord_ordering_t a, const PFord_ordering_t b)
 
     /* Attribute list of b must be a prefix of attribute list of a. */
     for (unsigned int i = 0; i < PFord_count (b); i++)
-        if (strcmp (PFord_order_at (a, i), PFord_order_at (b, i)))
+        if (PFord_order_at (a, i) != PFord_order_at (b, i))
             return false;
 
     return true;
@@ -98,7 +95,7 @@ bool
 PFord_common_prefix (const PFord_ordering_t a, const PFord_ordering_t b)
 {
     return PFord_count (a) && PFord_count (b)
-        && !strcmp (PFord_order_at (a, 0), PFord_order_at (b, 0));
+        && PFord_order_at (a, 0) == PFord_order_at (b, 0);
 }
 
 char *
@@ -109,7 +106,8 @@ PFord_str (const PFord_ordering_t o)
     PFarray_printf (a, "<");
 
     for (unsigned int i = 0; i < PFord_count (o); i++)
-        PFarray_printf (a, "%s%s", i ? "," : "", PFord_order_at (o, i));
+        PFarray_printf (a, "%s%s", i ? "," : "", 
+                        PFatt_print (PFord_order_at (o, i)));
 
     PFarray_printf (a, ">");
 
@@ -158,7 +156,7 @@ PFord_intersect (const PFord_set_t a, const PFord_set_t b)
             /* compute the longest prefix of the current ordering in a and b */
             for (unsigned int k = 0;
                  k < PFord_count (ai) && k < PFord_count (bj)
-                    && !strcmp (PFord_order_at (ai, k), PFord_order_at (bj, k));
+                    && PFord_order_at (ai, k) == PFord_order_at (bj, k);
                  k++)
                 prefix = PFord_refine (prefix, PFord_order_at (ai, k));
 

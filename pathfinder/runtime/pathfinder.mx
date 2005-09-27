@@ -319,23 +319,18 @@ PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
     # The working set now contains all documents we need.
 
     # pick the according frag value for each document requested
-    var frag := item.leftjoin (ws.fetch (DOC_LOADED).reverse ())
-                    .reverse ()
-                    .mark (0@0)
-                    .reverse ();
-
-    # FIXME: `ELEM' is not actually a good name here. It specifies
-    #        that the node is to be found in the pre_... containers
-    #        (in contrast to the attribute containers).
-    var ret_kind := set_kind (frag, ELEM);
+    var ret_frag := item.leftjoin (ws.fetch (DOC_LOADED).reverse ())
+                        .reverse ()
+                        .mark (0@0)
+                        .reverse ();
 
     # pre values will all be zero
-    var ret_item := ret_kind.project (0@0);
+    var ret_item := ret_frag.project (0@0);
 
     # return result as a BAT of BATs
     return new (void, BAT).insert (nil, ws)
                           .insert (nil, ret_item)
-                          .insert (nil, ret_kind)
+                          .insert (nil, ret_frag)
                           .seqbase (0@0);
 }
 
@@ -356,7 +351,7 @@ ADDHELP("doc_tbl", "teubner", "Aug 2005",
 		(a) the modified working set,\n\
 		(b) an `item' column with the pre values of the\n\
 		document roots, and\n\
-		(c) a `kind' column that encodes node kind and document\n\
+		(c) a `kind' column that encodes document\n\
 		container (within the working set) according to our\n\
 		working set representation.",
 		"pathfinder");

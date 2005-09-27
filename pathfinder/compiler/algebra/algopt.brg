@@ -34,12 +34,11 @@
 #include "oops.h"         /* PFoops() */
 #include "algebra.h"
 #include "algopt.h"
-#include "mem.h"          /* PFstrdup() */
+#include "mem.h"          /* PFmalloc() */
 
 #include "properties.h"
 
 #include <assert.h>
-#include <string.h>
 #include <stdio.h>
 
 /*
@@ -106,14 +105,15 @@ typedef struct PFla_op_t *NODEPTR_TYPE;
 %term processi       = 35
 %term concat         = 36
 %term merge_adjacent = 37
-%term string_val     = 38
-%term seqty1         = 39
-%term all            = 40
-%term roots_         = 41
-%term fragment       = 42
-%term frag_union     = 43
-%term empty_frag     = 44
-%term doc_tbl        = 45
+%term doc_access     = 38
+%term string_join    = 39
+%term seqty1         = 40
+%term all            = 41
+%term roots_         = 42
+%term fragment       = 43
+%term frag_union     = 44
+%term empty_frag     = 45
+%term doc_tbl        = 46
 
 %%
 
@@ -130,98 +130,108 @@ Rel:    cross (Rel, Rel)                          =  9 (10);
 Rel:    eqjoin (Rel, Rel)                         = 10 (10);
 Rel:    scjoin (Frag, Rel)                        = 11 (10);
 Rel:    rownum (Rel)                              = 12 (10);
-Rel:    project (Rel)                             = 13 (10);
-Rel:    select_ (Rel)                             = 14 (10);
-Rel:    sum (Rel)                                 = 15 (10);
-Rel:    count (Rel)                               = 16 (10);
-Rel:    distinct (Rel)                            = 17 (10);
-Rel:    type (Rel)                                = 18 (10);
-Rel:    cast (Rel)                                = 19 (10);
-Rel:    num_add (Rel)                             = 20 (10);
-Rel:    num_subtract (Rel)                        = 21 (10);
-Rel:    num_multiply (Rel)                        = 22 (10);
-Rel:    num_divide (Rel)                          = 23 (10);
-Rel:    num_modulo (Rel)                          = 24 (10);
-Rel:    num_neg (Rel)                             = 25 (10);
-Rel:    num_gt (Rel)                              = 26 (10);
-Rel:    num_eq (Rel)                              = 27 (10);
-Rel:    bool_and (Rel)                            = 28 (10);
-Rel:    bool_or (Rel)                             = 29 (10);
-Rel:    bool_not (Rel)                            = 30 (10);
-Rel:    concat (Rel)                              = 31 (10);
-Rel:    seqty1 (Rel)                              = 32 (10);
-Rel:    all (Rel)                                 = 33 (10);
-Rel:    string_val (Frag, Rel)                    = 34 (10);
+Rel:    project (
+            rownum (
+                disjunion (
+                    cross (lit_tbl,
+                           cross (Rel,
+                                  lit_tbl)),
+                    cross (lit_tbl,
+                           cross(Rel,
+                                 lit_tbl)))))     = 13 (40);
+Rel:    project (Rel)                             = 14 (10);
+Rel:    select_ (Rel)                             = 15 (10);
+Rel:    sum (Rel)                                 = 16 (10);
+Rel:    count (Rel)                               = 17 (10);
+Rel:    distinct (Rel)                            = 18 (10);
+Rel:    type (Rel)                                = 19 (10);
+Rel:    cast (Rel)                                = 20 (10);
+Rel:    num_add (Rel)                             = 21 (10);
+Rel:    num_subtract (Rel)                        = 22 (10);
+Rel:    num_multiply (Rel)                        = 23 (10);
+Rel:    num_divide (Rel)                          = 24 (10);
+Rel:    num_modulo (Rel)                          = 25 (10);
+Rel:    num_neg (Rel)                             = 26 (10);
+Rel:    num_gt (Rel)                              = 27 (10);
+Rel:    num_eq (Rel)                              = 28 (10);
+Rel:    bool_and (Rel)                            = 29 (10);
+Rel:    bool_or (Rel)                             = 30 (10);
+Rel:    bool_not (Rel)                            = 31 (10);
+Rel:    concat (Rel)                              = 32 (10);
+Rel:    seqty1 (Rel)                              = 33 (10);
+Rel:    all (Rel)                                 = 34 (10);
+Rel:    doc_access (Frag, Rel)                    = 35 (10);
+Rel:    string_join (Rel, Rel)                    = 36 (10);
 
-Rel:    roots_ (FragRel)                          = 35 (10);
-Rel:    element_tag (Rel, Rel)                    = 36 (10);
-Rel:    element_tag (Rel, EmptyRel)               = 37 (5);
-
-
-FragRel:    element (Frag, Rel)                   = 38 (10);
-FragRel:    attribute (Rel, Rel)                  = 39 (10);
-FragRel:    textnode (Rel)                        = 40 (10);
-FragRel:    docnode (Frag, Rel)                   = 41 (10);
-FragRel:    comment (Rel)                         = 42 (10);
-FragRel:    processi (Rel)                        = 43 (10);
-FragRel:    merge_adjacent (Frag, Rel)            = 44 (10);
-FragRel:    doc_tbl (Rel)                         = 45 (10);
-
-
-Frag:    fragment (FragRel)                       = 46 (10);
-Frag:    frag_union (Frag, Frag)                  = 47 (10);
-Frag:    frag_union (empty_frag, empty_frag)      = 48 (10);
-Frag:    empty_frag                               = 49 (10);
+Rel:    roots_ (FragRel)                          = 37 (10);
+Rel:    element_tag (Rel, Rel)                    = 38 (10);
+Rel:    element_tag (Rel, EmptyRel)               = 39 (5);
 
 
-EmptyRel:    empty_tbl                            = 50 (0);
-
-EmptyRel:    disjunion (EmptyRel, EmptyRel)       = 51 (0);
-EmptyRel:    difference (EmptyRel, Rel)           = 52 (0);
-EmptyRel:    intersect (EmptyRel, Rel)            = 54 (0);
-EmptyRel:    intersect (Rel, EmptyRel)            = 55 (0);
-EmptyRel:    cross (EmptyRel, Rel)                = 56 (0);
-EmptyRel:    cross (Rel, EmptyRel)                = 57 (0);
-EmptyRel:    eqjoin (EmptyRel, Rel)               = 58 (0);
-EmptyRel:    eqjoin (Rel, EmptyRel)               = 59 (0);
-EmptyRel:    scjoin (Frag, EmptyRel)              = 60 (0);
-EmptyRel:    rownum (EmptyRel)                    = 61 (0);
-EmptyRel:    project (EmptyRel)                   = 62 (0);
-EmptyRel:    select_ (EmptyRel)                   = 63 (0);
-EmptyRel:    sum (EmptyRel)                       = 64 (0);
-EmptyRel:    count (EmptyRel)                     = 65 (0);
-EmptyRel:    distinct (EmptyRel)                  = 66 (0);
-EmptyRel:    type (EmptyRel)                      = 67 (0);
-EmptyRel:    cast (EmptyRel)                      = 68 (0);
-EmptyRel:    num_add (EmptyRel)                   = 69 (0);
-EmptyRel:    num_subtract (EmptyRel)              = 70 (0);
-EmptyRel:    num_multiply (EmptyRel)              = 71 (0);
-EmptyRel:    num_divide (EmptyRel)                = 72 (0);
-EmptyRel:    num_modulo (EmptyRel)                = 73 (0);
-EmptyRel:    num_neg (EmptyRel)                   = 74 (0);
-EmptyRel:    num_gt (EmptyRel)                    = 75 (0);
-EmptyRel:    num_eq (EmptyRel)                    = 76 (0);
-EmptyRel:    bool_and (EmptyRel)                  = 77 (0);
-EmptyRel:    bool_or (EmptyRel)                   = 78 (0);
-EmptyRel:    bool_not (EmptyRel)                  = 79 (0);
-EmptyRel:    concat (EmptyRel)                    = 80 (0);
-EmptyRel:    seqty1 (EmptyRel)                    = 81 (0);
-EmptyRel:    all (EmptyRel)                       = 82 (0);
-
-EmptyRel:    element_tag (EmptyRel, Rel)          = 83 (0);
+FragRel:    element (Frag, Rel)                   = 40 (10);
+FragRel:    attribute (Rel, Rel)                  = 41 (10);
+FragRel:    textnode (Rel)                        = 42 (10);
+FragRel:    docnode (Frag, Rel)                   = 43 (10);
+FragRel:    comment (Rel)                         = 44 (10);
+FragRel:    processi (Rel)                        = 45 (10);
+FragRel:    merge_adjacent (Frag, Rel)            = 46 (10);
+FragRel:    doc_tbl (Rel)                         = 47 (10);
 
 
-EmptyRel:    roots_ (element (Frag, EmptyRel))    = 84 (0);
-EmptyRel:    roots_ (attribute (EmptyRel, Rel))   = 85 (0);
-EmptyRel:    roots_ (attribute (Rel, EmptyRel))   = 86 (0);
-EmptyRel:    roots_ (textnode (EmptyRel))         = 87 (0);
-EmptyRel:    roots_ (comment (EmptyRel))          = 88 (0);
-EmptyRel:    roots_ (processi (EmptyRel))         = 89 (0);
-EmptyRel:    roots_ (merge_adjacent (Frag, EmptyRel)) = 90 (0);
+Frag:    fragment (FragRel)                       = 48 (10);
+Frag:    frag_union (Frag, Frag)                  = 49 (10);
+Frag:    frag_union (empty_frag, empty_frag)      = 50 (10);
+Frag:    empty_frag                               = 51 (10);
 
-Rel:    EmptyRel                                  = 91 (0);
 
-Rel:    project (project (Rel))                   = 92 (1);
+EmptyRel:    empty_tbl                            = 52 (0);
+
+EmptyRel:    disjunion (EmptyRel, EmptyRel)       = 53 (0);
+EmptyRel:    difference (EmptyRel, Rel)           = 54 (0);
+EmptyRel:    intersect (EmptyRel, Rel)            = 56 (0);
+EmptyRel:    intersect (Rel, EmptyRel)            = 57 (0);
+EmptyRel:    cross (EmptyRel, Rel)                = 58 (0);
+EmptyRel:    cross (Rel, EmptyRel)                = 59 (0);
+EmptyRel:    eqjoin (EmptyRel, Rel)               = 60 (0);
+EmptyRel:    eqjoin (Rel, EmptyRel)               = 61 (0);
+EmptyRel:    scjoin (Frag, EmptyRel)              = 62 (0);
+EmptyRel:    rownum (EmptyRel)                    = 63 (0);
+EmptyRel:    project (EmptyRel)                   = 64 (0);
+EmptyRel:    select_ (EmptyRel)                   = 65 (0);
+EmptyRel:    sum (EmptyRel)                       = 66 (0);
+EmptyRel:    count (EmptyRel)                     = 67 (0);
+EmptyRel:    distinct (EmptyRel)                  = 68 (0);
+EmptyRel:    type (EmptyRel)                      = 69 (0);
+EmptyRel:    cast (EmptyRel)                      = 70 (0);
+EmptyRel:    num_add (EmptyRel)                   = 71 (0);
+EmptyRel:    num_subtract (EmptyRel)              = 72 (0);
+EmptyRel:    num_multiply (EmptyRel)              = 73 (0);
+EmptyRel:    num_divide (EmptyRel)                = 74 (0);
+EmptyRel:    num_modulo (EmptyRel)                = 75 (0);
+EmptyRel:    num_neg (EmptyRel)                   = 76 (0);
+EmptyRel:    num_gt (EmptyRel)                    = 77 (0);
+EmptyRel:    num_eq (EmptyRel)                    = 78 (0);
+EmptyRel:    bool_and (EmptyRel)                  = 79 (0);
+EmptyRel:    bool_or (EmptyRel)                   = 80 (0);
+EmptyRel:    bool_not (EmptyRel)                  = 81 (0);
+EmptyRel:    concat (EmptyRel)                    = 82 (0);
+EmptyRel:    seqty1 (EmptyRel)                    = 83 (0);
+EmptyRel:    all (EmptyRel)                       = 84 (0);
+
+EmptyRel:    element_tag (EmptyRel, Rel)          = 85 (0);
+
+
+EmptyRel:    roots_ (element (Frag, EmptyRel))    = 86 (0);
+EmptyRel:    roots_ (attribute (EmptyRel, Rel))   = 87 (0);
+EmptyRel:    roots_ (attribute (Rel, EmptyRel))   = 88 (0);
+EmptyRel:    roots_ (textnode (EmptyRel))         = 89 (0);
+EmptyRel:    roots_ (comment (EmptyRel))          = 90 (0);
+EmptyRel:    roots_ (processi (EmptyRel))         = 91 (0);
+EmptyRel:    roots_ (merge_adjacent (Frag, EmptyRel)) = 92 (0);
+
+Rel:    EmptyRel                                  = 93 (0);
+
+Rel:    project (project (Rel))                   = 94 (1);
 
 %%
 
@@ -242,6 +252,10 @@ Rel:    project (project (Rel))                   = 92 (1);
 #define RL(p) L(R(p))
 /** starting from p, make two steps right */
 #define RR(p) R(R(p))
+#define LRL(p) L(R(L(p)))
+#define LRR(p) R(R(L(p)))
+#define RRL(p) L(R(R(p)))
+#define RRR(p) R(R(R(p)))
 
 #define MAX_KIDS 10
 
@@ -381,28 +395,122 @@ reduce (PFla_op_t *p, int goalnt)
 
         /* Rel:    rownum (Rel) */
         case 12:
+            break;
+
+        /* Rel:    project (
+                       rownum (
+                           disjunion (
+                               cross (lit_tbl,
+                                      cross (Rel,
+                                             lit_tbl)),
+                               cross (lit_tbl,
+                                      cross(Rel,
+                                            lit_tbl))))) */
+        case 13:
+            /* concatenate tuples of base relations instead
+               of applying a more expensive sequence construction */
+
+            if (/* project (iter,pos:pos1,item) */
+                p->schema.count == 3 &&
+                p->sem.proj.items[0].old == att_iter &&
+                p->sem.proj.items[0].new == att_iter &&
+                p->sem.proj.items[1].old == att_pos1 &&
+                p->sem.proj.items[1].new == att_pos &&
+                p->sem.proj.items[2].old == att_item &&
+                p->sem.proj.items[2].new == att_item &&
+                /* row_num (pos1:<ord,pos>/iter) */ 
+                L(p)->sem.rownum.attname == att_pos1 &&
+                L(p)->sem.rownum.part ==    att_iter &&
+                L(p)->sem.rownum.sortby.count == 2 &&
+                L(p)->sem.rownum.sortby.atts[0] == att_ord &&
+                L(p)->sem.rownum.sortby.atts[1] == att_pos &&
+                /*
+                                              ord
+                  compare with base relation: --- 
+                                               1
+                */ 
+                LL(LL(p))->sem.lit_tbl.count == 1 &&
+                LL(LL(p))->schema.count == 1 &&
+                LL(LL(p))->schema.items[0].name == att_ord &&
+                LL(LL(p))->sem.lit_tbl.tuples[0].count == 1 &&
+                LL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].type == aat_nat &&
+                LL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].val.nat == 1 &&
+                /*
+                                              ord
+                  compare with base relation: --- 
+                                               2
+                */ 
+                RL(LL(p))->sem.lit_tbl.count == 1 &&
+                RL(LL(p))->schema.count == 1 &&
+                RL(LL(p))->schema.items[0].name == att_ord &&
+                RL(LL(p))->sem.lit_tbl.tuples[0].count == 1 &&
+                RL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].type == aat_nat &&
+                RL(LL(p))->sem.lit_tbl.tuples[0].atoms[0].val.nat == 2 &&
+                /* compare loop relations */
+                LRL(LL(p)) == RRL(LL(p)) &&
+                /* ckeck schema of literal table */
+                LRR(LL(p))->schema.count == 2 &&
+                LRR(LL(p))->schema.items[0].name == att_pos &&
+                LRR(LL(p))->schema.items[1].name == att_item &&
+                /* ckeck schema of literal table */
+                RRR(LL(p))->schema.count == 2 &&
+                RRR(LL(p))->schema.items[0].name == att_pos &&
+                RRR(LL(p))->schema.items[1].name == att_item)
+            {
+                unsigned int i, j;
+                PFla_op_t *ret;
+                PFalg_tuple_t *tuples 
+                                = PFmalloc ((LRR(LL(p))->sem.lit_tbl.count +
+                                             RRR(LL(p))->sem.lit_tbl.count) *
+                                            sizeof (PFalg_tuple_t));
+                /* copy tuples of first literal table */
+                for (i = 0; i < LRR(LL(p))->sem.lit_tbl.count; i++)
+                {
+                    tuples[i] = LRR(LL(p))->sem.lit_tbl.tuples[i];
+                    /* set new position value (starting from 1) */
+                    tuples[i].atoms[0].val.nat = i + 1; 
+                }
+                /* copy tuples of second literal table */
+                for (j = 0; j < RRR(LL(p))->sem.lit_tbl.count; j++)
+                {
+                    tuples[i+j] = RRR(LL(p))->sem.lit_tbl.tuples[j];
+                    /* set new position value 
+                       (starting from next free position: i+1) */
+                    tuples[i+j].atoms[0].val.nat = i + j + 1;
+                }
+
+                /* cross (loop, lit_tbl (tuples) */
+                ret = PFla_cross (LRL(LL(p)), 
+                                  PFla_lit_tbl_ (PFalg_attlist (att_pos, att_item),
+                                                 i+j,
+                                                 tuples));
+                *p = *(ret);
+                rewritten = true;
+                relabel (p, kids);
+            }
+            break;
 
         /* Rel:    project (Rel) */
-        case 13:
-
-        /* Rel:    select_ (Rel) */
         case 14:
 
-        /* Rel:    sum (Rel) */
+        /* Rel:    select_ (Rel) */
         case 15:
 
-        /* Rel:    count (Rel) */
+        /* Rel:    sum (Rel) */
         case 16:
 
-        /* Rel:    distinct (Rel) */
+        /* Rel:    count (Rel) */
         case 17:
 
-        /* Rel:    type (Rel) */
+        /* Rel:    distinct (Rel) */
         case 18:
+
+        /* Rel:    type (Rel) */
+        case 19:
             break;
 
         /* Rel:    cast (Rel) */
-        case 19:
+        case 20:
         {
             /*
              * If an algebra expression already has the requested
@@ -411,7 +519,7 @@ reduce (PFla_op_t *p, int goalnt)
             unsigned int i;
 
             for (i = 0; i < L(p)->schema.count; i++)
-                if (!strcmp (p->sem.cast.att, L(p)->schema.items[i].name)) {
+                if (p->sem.cast.att == L(p)->schema.items[i].name) {
                     if (p->sem.cast.ty == L(p)->schema.items[i].type) {
                         *p = *(L(p));
                         rewritten = true;
@@ -421,226 +529,229 @@ reduce (PFla_op_t *p, int goalnt)
         } break;
 
         /* Rel:    num_add (Rel) */
-        case 20:
-
-        /* Rel:    num_subtract (Rel) */
         case 21:
 
-        /* Rel:    num_multiply (Rel) */
+        /* Rel:    num_subtract (Rel) */
         case 22:
 
-        /* Rel:    num_divide (Rel) */
+        /* Rel:    num_multiply (Rel) */
         case 23:
 
-        /* Rel:    num_modulo (Rel) */
+        /* Rel:    num_divide (Rel) */
         case 24:
 
-        /* Rel:    num_neg (Rel) */
+        /* Rel:    num_modulo (Rel) */
         case 25:
 
-        /* Rel:    num_gt (Rel) */
+        /* Rel:    num_neg (Rel) */
         case 26:
 
-        /* Rel:    num_eq (Rel) */
+        /* Rel:    num_gt (Rel) */
         case 27:
 
-        /* Rel:    bool_and (Rel) */
+        /* Rel:    num_eq (Rel) */
         case 28:
 
-        /* Rel:    bool_or (Rel) */
+        /* Rel:    bool_and (Rel) */
         case 29:
 
-        /* Rel:    bool_not (Rel) */
+        /* Rel:    bool_or (Rel) */
         case 30:
 
-        /* Rel:    concat (Rel) */
+        /* Rel:    bool_not (Rel) */
         case 31:
 
-        /* Rel:    seqty1 (Rel) */
+        /* Rel:    concat (Rel) */
         case 32:
 
-        /* Rel:    all (Rel) */
+        /* Rel:    seqty1 (Rel) */
         case 33:
 
-        /* Rel:    string_val (Rel) */
+        /* Rel:    all (Rel) */
         case 34:
 
-        /* Rel:    roots_ (FragRel) */
+        /* Rel:    doc_access (FragRel, Rel) */
         case 35:
 
-        /* Rel:    element_tag (Rel, Rel) */
+        /* Rel:    string_join (Rel, Rel) */
         case 36:
 
-        /* Rel:    element_tag (Rel, EmptyRel) */
+        /* Rel:    roots_ (FragRel) */
         case 37:
 
-        /* FragRel:    element (Frag, Rel) */
+        /* Rel:    element_tag (Rel, Rel) */
         case 38:
 
-        /* FragRel:    attribute (Rel, Rel  */
+        /* Rel:    element_tag (Rel, EmptyRel) */
         case 39:
 
-        /* FragRel:    textnode (Rel) */
+        /* FragRel:    element (Frag, Rel) */
         case 40:
 
-        /* FragRel:    docnode (Frag, Rel) */
+        /* FragRel:    attribute (Rel, Rel  */
         case 41:
 
-        /* FragRel:    comment (Rel) */
+        /* FragRel:    textnode (Rel) */
         case 42:
 
-        /* FragRel:    processi (Rel) */
+        /* FragRel:    docnode (Frag, Rel) */
         case 43:
 
-        /* FragRel:    merge_adjacent (Frag, Rel) */
+        /* FragRel:    comment (Rel) */
         case 44:
 
-        /* FragRel:    doc_tbl (Rel) */
+        /* FragRel:    processi (Rel) */
         case 45:
 
-        /* Frag:    fragment (FragRel) */
+        /* FragRel:    merge_adjacent (Frag, Rel) */
         case 46:
 
-        /* Frag:    frag_union (Frag, Frag) */
+        /* FragRel:    doc_tbl (Rel) */
         case 47:
+
+        /* Frag:    fragment (FragRel) */
+        case 48:
+
+        /* Frag:    frag_union (Frag, Frag) */
+        case 49:
             break;
 
         /* Frag:    frag_union (empty_frag, empty_frag) */
-        case 48:
+        case 50:
             *p = *(L(p));
             rewritten = true;
             break;
 
         /* Frag:    empty_frag */
-        case 49:
+        case 51:
             break;
 
         /* EmptyRel:    empty_tbl */
-        case 50:
-
-        /* EmptyRel:    disjunion (EmptyRel, EmptyRel) */
-        case 51:
-
-        /* EmptyRel:    difference (EmptyRel, Rel) */
         case 52:
 
-        /* EmptyRel:    difference (EmptyRel, EmptyRel) */
+        /* EmptyRel:    disjunion (EmptyRel, EmptyRel) */
         case 53:
 
-        /* EmptyRel:    intersect (EmptyRel, Rel) */
+        /* EmptyRel:    difference (EmptyRel, Rel) */
         case 54:
 
-        /* EmptyRel:    intersect (Rel, EmptyRel) */
+        /* EmptyRel:    difference (EmptyRel, EmptyRel) */
         case 55:
 
-        /* EmptyRel:    cross (EmptyRel, Rel) */
+        /* EmptyRel:    intersect (EmptyRel, Rel) */
         case 56:
 
-        /* EmptyRel:    cross (Rel, EmptyRel) */
+        /* EmptyRel:    intersect (Rel, EmptyRel) */
         case 57:
 
-        /* EmptyRel:    eqjoin (EmptyRel, Rel) */
+        /* EmptyRel:    cross (EmptyRel, Rel) */
         case 58:
 
-        /* EmptyRel:    eqjoin (Rel, EmptyRel) */
+        /* EmptyRel:    cross (Rel, EmptyRel) */
         case 59:
 
-        /* EmptyRel:    scjoin (Frag, EmptyRel) */
+        /* EmptyRel:    eqjoin (EmptyRel, Rel) */
         case 60:
 
-        /* EmptyRel:    rownum (EmptyRel) */
+        /* EmptyRel:    eqjoin (Rel, EmptyRel) */
         case 61:
 
-        /* EmptyRel:    project (EmptyRel) */
+        /* EmptyRel:    scjoin (Frag, EmptyRel) */
         case 62:
 
-        /* EmptyRel:    select_ (EmptyRel) */
+        /* EmptyRel:    rownum (EmptyRel) */
         case 63:
 
-        /* EmptyRel:    sum (EmptyRel) */
+        /* EmptyRel:    project (EmptyRel) */
         case 64:
 
-        /* EmptyRel:    count (EmptyRel) */
+        /* EmptyRel:    select_ (EmptyRel) */
         case 65:
 
-        /* EmptyRel:    distinct (EmptyRel) */
+        /* EmptyRel:    sum (EmptyRel) */
         case 66:
 
-        /* EmptyRel:    type (EmptyRel) */
+        /* EmptyRel:    count (EmptyRel) */
         case 67:
 
-        /* EmptyRel:    cast (EmptyRel) */
+        /* EmptyRel:    distinct (EmptyRel) */
         case 68:
 
-        /* EmptyRel:    num_add (EmptyRel) */
+        /* EmptyRel:    type (EmptyRel) */
         case 69:
 
-        /* EmptyRel:    num_subtract (EmptyRel) */
+        /* EmptyRel:    cast (EmptyRel) */
         case 70:
 
-        /* EmptyRel:    num_multiply (EmptyRel) */
+        /* EmptyRel:    num_add (EmptyRel) */
         case 71:
 
-        /* EmptyRel:    num_divide (EmptyRel) */
+        /* EmptyRel:    num_subtract (EmptyRel) */
         case 72:
 
-        /* EmptyRel:    num_modulo (EmptyRel) */
+        /* EmptyRel:    num_multiply (EmptyRel) */
         case 73:
 
-        /* EmptyRel:    num_neg (EmptyRel) */
+        /* EmptyRel:    num_divide (EmptyRel) */
         case 74:
 
-        /* EmptyRel:    num_gt (EmptyRel) */
+        /* EmptyRel:    num_modulo (EmptyRel) */
         case 75:
 
-        /* EmptyRel:    num_eq (EmptyRel) */
+        /* EmptyRel:    num_neg (EmptyRel) */
         case 76:
 
-        /* EmptyRel:    bool_and (EmptyRel) */
+        /* EmptyRel:    num_gt (EmptyRel) */
         case 77:
 
-        /* EmptyRel:    bool_or (EmptyRel) */
+        /* EmptyRel:    num_eq (EmptyRel) */
         case 78:
 
-        /* EmptyRel:    bool_not (EmptyRel) */
+        /* EmptyRel:    bool_and (EmptyRel) */
         case 79:
 
-        /* EmptyRel:    concat (EmptyRel) */
+        /* EmptyRel:    bool_or (EmptyRel) */
         case 80:
 
-        /* EmptyRel:    seqty1 (EmptyRel) */
+        /* EmptyRel:    bool_not (EmptyRel) */
         case 81:
 
-        /* EmptyRel:    all (EmptyRel) */
+        /* EmptyRel:    concat (EmptyRel) */
         case 82:
 
-        /* EmptyRel:    element_tag (EmptyRel, Rel) */
+        /* EmptyRel:    seqty1 (EmptyRel) */
         case 83:
 
-        /* EmptyRel:    roots_ (element (Frag, EmptyRel)) */
+        /* EmptyRel:    all (EmptyRel) */
         case 84:
 
-        /* EmptyRel:    roots_ (attribute (EmptyRel, Rel)) */
+        /* EmptyRel:    element_tag (EmptyRel, Rel) */
         case 85:
 
-        /* EmptyRel:    roots_ (attribute (Rel, EmptyRel)) */
+        /* EmptyRel:    roots_ (element (Frag, EmptyRel)) */
         case 86:
 
-        /* EmptyRel:    roots_ (textnode (EmptyRel)) */
+        /* EmptyRel:    roots_ (attribute (EmptyRel, Rel)) */
         case 87:
 
-        /* EmptyRel:    roots_ (comment (EmptyRel)) */
+        /* EmptyRel:    roots_ (attribute (Rel, EmptyRel)) */
         case 88:
 
-        /* EmptyRel:    roots_ (processi (EmptyRel)) */
+        /* EmptyRel:    roots_ (textnode (EmptyRel)) */
         case 89:
 
-        /* EmptyRel:    roots_ (merge_adjacent (Frag, EmptyRel)) */
+        /* EmptyRel:    roots_ (comment (EmptyRel)) */
         case 90:
+
+        /* EmptyRel:    roots_ (processi (EmptyRel)) */
+        case 91:
+
+        /* EmptyRel:    roots_ (merge_adjacent (Frag, EmptyRel)) */
+        case 92:
             break;
 
         /* Rel:    EmptyRel */
-        case 91:
+        case 93:
         {
             /*
              * Replace any sub-tree that we determined empty with these
@@ -660,8 +771,9 @@ reduce (PFla_op_t *p, int goalnt)
             break;
 
         /* Rel:    project (project (Rel)) */
-        case 92:
+        case 94:
         {
+            break;
             /* THIS IS ONLY A TEST! */
             PFalg_proj_t *projlist1 = p->sem.proj.items;
             PFalg_proj_t *projlist2 = L(p)->sem.proj.items;
@@ -705,10 +817,10 @@ contains_projlist (PFalg_proj_t *p1, int n1,
         item_contained = false;
 
         for (j = 0; j < n2; j++) {
-            if ((!strcmp (p1[i].old, p2[j].new) &&
-                !strcmp (p1[i].old, p2[j].old)) ||
-                (!strcmp (p1[i].new, p2[j].new) &&
-                !strcmp (p1[i].old, p2[j].old)))
+            if ((p1[i].old == p2[j].new &&
+                p1[i].old == p2[j].old) ||
+                (p1[i].new == p2[j].new &&
+                p1[i].old == p2[j].old))
                 item_contained = true;
         }
         if (!item_contained)
@@ -730,7 +842,10 @@ relabel (PFla_op_t *p,  PFla_op_t **kids)
     }
 
     /* Relabel p's children. */
-    if (L(p) && !R(p)) {
+    if (!L(p) && !R(p)) {
+        STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p), 0, 0);
+    }
+    else if (L(p) && !R(p)) {
         relabel (L(p), kids);
         STATE_LABEL(p) = PFalgopt_state (OP_LABEL(p),
                                          STATE_LABEL(L(p)),
@@ -749,7 +864,6 @@ relabel (PFla_op_t *p,  PFla_op_t **kids)
                                          STATE_LABEL(L(p)),
                                          STATE_LABEL(R(p)));
     }
-
 }
 
 
@@ -767,6 +881,7 @@ PFalgopt (PFla_op_t *root)
 
     /* Optimize algebra tree */
     reduce (root, 1);
+
     return root;
 }
 

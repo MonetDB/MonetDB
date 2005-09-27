@@ -32,7 +32,6 @@
 #include "pathfinder.h"
 
 #include <assert.h>
-#include <string.h>  /* strlen() */
 
 #include "oops.h"
 #include "mem.h"
@@ -109,20 +108,23 @@ typedef struct PFpa_op_t *NODEPTR_TYPE;
 %term hash_count     =  37
 %term llscj_anc      = 100
 %term llscj_anc_self = 101
-%term llscj_child    = 102
-%term llscj_desc     = 103
-%term llscj_desc_self= 104
-%term llscj_foll     = 105
-%term llscj_foll_sibl= 106
-%term llscj_parent   = 107
-%term llscj_prec     = 108
-%term llscj_prec_sibl= 109
-%term doc_tbl        = 110
-%term serialize      = 111
-%term roots          = 112
-%term fragment       = 113
-%term frag_union     = 114
-%term empty_frag     = 115
+%term llscj_attr     = 102
+%term llscj_child    = 103
+%term llscj_desc     = 104
+%term llscj_desc_self= 105
+%term llscj_foll     = 106
+%term llscj_foll_sibl= 107
+%term llscj_parent   = 108
+%term llscj_prec     = 109
+%term llscj_prec_sibl= 110
+%term doc_tbl        = 111
+%term doc_access     = 112
+%term string_join    = 113
+%term serialize      = 114
+%term roots          = 115
+%term fragment       = 116
+%term frag_union     = 117
+%term empty_frag     = 118
 
 %%
 
@@ -138,40 +140,44 @@ Rel:      roots (FragRel)                                          =   8 (10);
 Rel:      sort_distinct (Rel)                                      =   9 (10);
 Rel:      llscj_anc (FragList, Rel)                                =  10 (10);
 Rel:      llscj_anc_self (FragList, Rel)                           =  11 (10);
-Rel:      llscj_child (FragList, Rel)                              =  12 (10);
-Rel:      llscj_desc (FragList, Rel)                               =  13 (10);
-Rel:      llscj_desc_self (FragList, Rel)                          =  14 (10);
-Rel:      llscj_foll (FragList, Rel)                               =  15 (10);
-Rel:      llscj_foll_sibl (FragList, Rel)                          =  16 (10);
-Rel:      llscj_parent (FragList, Rel)                             =  17 (10);
-Rel:      llscj_prec (FragList, Rel)                               =  18 (10);
-Rel:      llscj_prec_sibl (FragList, Rel)                          =  19 (10);
-Rel:      nljoin (Rel, Rel)                                        =  20 (10);
-Rel:      merge_join (Rel, Rel)                                    =  21 (10);
-Rel:      refine_sort (Rel)                                        =  22 (10);
-Rel:      num_add (Rel)                                            =  23 (10);
-Rel:      num_sub (Rel)                                            =  24 (10);
-Rel:      num_mult (Rel)                                           =  25 (10);
-Rel:      num_div (Rel)                                            =  26 (10);
-Rel:      num_mod (Rel)                                            =  27 (10);
-Rel:      num_add_atom (Rel)                                       =  28 (10);
-Rel:      num_sub_atom (Rel)                                       =  29 (10);
-Rel:      num_mult_atom (Rel)                                      =  30 (10);
-Rel:      num_div_atom (Rel)                                       =  31 (10);
-Rel:      num_mod_atom (Rel)                                       =  32 (10);
-Rel:      eq (Rel)                                                 =  33 (10);
-Rel:      eq_atom (Rel)                                            =  34 (10);
-Rel:      gt (Rel)                                                 =  35 (10);
-Rel:      gt_atom (Rel)                                            =  36 (10);
-Rel:      num_neg (Rel)                                            =  37 (10);
-Rel:      bool_not (Rel)                                           =  38 (10);
-Rel:      bool_and (Rel)                                           =  39 (10);
-Rel:      bool_or (Rel)                                            =  40 (10);
-Rel:      cast (Rel)                                               =  41 (10);
-Rel:      select (Rel)                                             =  42 (10);
-Rel:      difference (Rel, Rel)                                    =  43 (10);
-Rel:      std_sort (Rel)                                           =  44 (10);
-Rel:      hash_count (Rel)                                         =  45 (10);
+Rel:      llscj_attr (FragList, Rel)                               =  12 (10);
+Rel:      llscj_child (FragList, Rel)                              =  13 (10);
+Rel:      llscj_desc (FragList, Rel)                               =  14 (10);
+Rel:      llscj_desc_self (FragList, Rel)                          =  15 (10);
+Rel:      llscj_foll (FragList, Rel)                               =  16 (10);
+Rel:      llscj_foll_sibl (FragList, Rel)                          =  17 (10);
+Rel:      llscj_parent (FragList, Rel)                             =  18 (10);
+Rel:      llscj_prec (FragList, Rel)                               =  19 (10);
+Rel:      llscj_prec_sibl (FragList, Rel)                          =  20 (10);
+Rel:      nljoin (Rel, Rel)                                        =  21 (10);
+Rel:      merge_join (Rel, Rel)                                    =  22 (10);
+Rel:      refine_sort (Rel)                                        =  23 (10);
+Rel:      num_add (Rel)                                            =  24 (10);
+Rel:      num_sub (Rel)                                            =  25 (10);
+Rel:      num_mult (Rel)                                           =  26 (10);
+Rel:      num_div (Rel)                                            =  27 (10);
+Rel:      num_mod (Rel)                                            =  28 (10);
+Rel:      num_add_atom (Rel)                                       =  29 (10);
+Rel:      num_sub_atom (Rel)                                       =  30 (10);
+Rel:      num_mult_atom (Rel)                                      =  31 (10);
+Rel:      num_div_atom (Rel)                                       =  32 (10);
+Rel:      num_mod_atom (Rel)                                       =  33 (10);
+Rel:      eq (Rel)                                                 =  34 (10);
+Rel:      eq_atom (Rel)                                            =  35 (10);
+Rel:      gt (Rel)                                                 =  36 (10);
+Rel:      gt_atom (Rel)                                            =  37 (10);
+Rel:      num_neg (Rel)                                            =  38 (10);
+Rel:      bool_not (Rel)                                           =  39 (10);
+Rel:      bool_and (Rel)                                           =  40 (10);
+Rel:      bool_or (Rel)                                            =  41 (10);
+Rel:      cast (Rel)                                               =  42 (10);
+Rel:      select (Rel)                                             =  43 (10);
+Rel:      difference (Rel, Rel)                                    =  44 (10);
+Rel:      std_sort (Rel)                                           =  45 (10);
+Rel:      hash_count (Rel)                                         =  46 (10);
+
+Rel:      doc_access (FragList, Rel)                               =  60 (10);
+Rel:      string_join (Rel, Rel)                                   =  61 (10);
 
 FragRel:  doc_tbl (Rel)                                            = 100 (10);
 
@@ -326,7 +332,8 @@ env_add (PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty, mvar_t *v)
 {
     assert (ty == aat_nat || ty == aat_int || ty == aat_str || ty == aat_dec
             || ty == aat_dbl || ty == aat_bln
-            || ty == aat_pre || ty == aat_kind);
+            || ty == aat_pre || ty == aat_attr
+            || ty == aat_pfrag || ty == aat_afrag);
 
     *(env_t *) PFarray_add (env)
         = (env_t) { .att = att, .ty = ty, .mvar = v };
@@ -363,18 +370,18 @@ env_mvar (const PFarray_t *env, PFalg_att_t att, PFalg_simple_type_t ty)
 
         env_t entry = *(env_t *) PFarray_at ((PFarray_t *) env, i);
 
-        if (!strcmp (entry.att, att) && entry.ty == ty)
+        if (entry.att == att && entry.ty == ty)
             return entry.mvar;
     }
 
     /* FIXME: DEBUGGING ONLY */
-    fprintf (stderr, "looking for att: %s, ty: %u", att, ty);
+    fprintf (stderr, "looking for att: %s, ty: %u", PFatt_print (att), ty);
     fprintf (stderr, "environment looks like:\n");
     for (unsigned int i = 0; i < PFarray_last (env); i++) {
         env_t entry = *(env_t *) PFarray_at ((PFarray_t *) env, i);
 
         fprintf (stderr, "  att: %s, type: %u, mvar->name: %s\n",
-                         entry.att, entry.ty, entry.mvar->name);
+                         PFatt_print (entry.att), entry.ty, entry.mvar->name);
     }
     /* */
 
@@ -461,7 +468,9 @@ static PFmil_type_t impl_types[] = {
     , [aat_dbl]   = m_dbl
     , [aat_bln]   = m_bit
     , [aat_pre]   = m_oid
-    , [aat_kind]  = m_int
+    , [aat_attr]  = m_oid
+    , [aat_pfrag] = m_oid
+    , [aat_afrag] = m_oid
 };
 
 /** implementation type for a given algebra type, as a MIL node */
@@ -493,7 +502,7 @@ reduce (PFpa_op_t * p, int goalnt)
     rule = PFmilgen_rule (STATE_LABEL (p), goalnt);
 
     /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
-
+assert(rule);
     /* initialize the kids[] vector */
     for (unsigned short i = 0; i < MAX_KIDS; i++)
         kids[i] = NULL;
@@ -590,30 +599,66 @@ reduce (PFpa_op_t * p, int goalnt)
                        seqbase (new (type (m_void), type (m_int)), lit_oid(0)))
                 );
 
-            ty = type_of (R(p), "item");
+            ty = type_of (R(p), att_item);
 
-            /* consider node results */
-            if (ty & aat_node) {
-                if (ty == aat_node) {
+            /* consider attribute results */
+            if (ty & aat_anode) {
+                if (ty == aat_anode) {
                     execute (
                         assgn (var (item->name),
-                               VAR (R(p)->env, "item", aat_pre)),
+                               VAR (R(p)->env, att_item, aat_attr)),
                         assgn (var (kind->name),
-                               VAR (R(p)->env, "item", aat_kind))
+                               set_kind (VAR (R(p)->env, att_item, aat_afrag),
+                                         var ("ATTR")))
                         );
                     sorted = true;
                 }
                 else {
-                    assert (ty & aat_pre && ty & aat_kind);
+                    assert (ty & aat_attr && ty & aat_afrag);
                     execute (
                         binsert (var (item->name),
                                  select2 (
-                                     VAR (R(p)->env, "item", aat_pre),
+                                     VAR (R(p)->env, att_item, aat_attr),
                                      nil (),
                                      nil ())),
                         binsert (var (kind->name),
                                  select2 (
-                                     VAR (R(p)->env, "item", aat_kind),
+                                     set_kind (VAR (R(p)->env, 
+                                                    att_item,
+                                                    aat_afrag),
+                                               var ("ATTR")),
+                                     cast (type (m_int), nil ()),
+                                     cast (type (m_int), nil ())))
+                        );
+                }
+            }
+
+            /* consider node results */
+            if (ty & aat_pnode) {
+                if (ty == aat_pnode) {
+                    execute (
+                        assgn (var (item->name),
+                               VAR (R(p)->env, att_item, aat_pre)),
+                        assgn (var (kind->name),
+                               set_kind (VAR (R(p)->env, att_item, aat_pfrag),
+                                         var ("ELEM")))
+                        );
+                    sorted = true;
+                }
+                else {
+                    assert (ty & aat_pre && ty & aat_pfrag);
+                    execute (
+                        binsert (var (item->name),
+                                 select2 (
+                                     VAR (R(p)->env, att_item, aat_pre),
+                                     nil (),
+                                     nil ())),
+                        binsert (var (kind->name),
+                                 select2 (
+                                     set_kind (VAR (R(p)->env, 
+                                                    att_item,
+                                                    aat_pfrag),
+                                               var ("ELEM")),
                                      cast (type (m_int), nil ()),
                                      cast (type (m_int), nil ())))
                         );
@@ -628,7 +673,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                  kunique (
                                      reverse (
                                          select2 (VAR (R(p)->env,
-                                                       "item",
+                                                       att_item,
                                                        aat_str),
                                                   cast (type (m_str), nil ()),
                                                   cast (type (m_str), nil ()))
@@ -637,11 +682,11 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (
                             var (item->name),
-                            leftjoin (VAR (R(p)->env, "item", aat_str),
+                            leftjoin (VAR (R(p)->env, att_item, aat_str),
                                       reverse (var (strVAL->name)))),
                         assgn (
                             var (kind->name),
-                            project (VAR (R(p)->env, "item", aat_str),
+                            project (VAR (R(p)->env, att_item, aat_str),
                                      var ("STR")))
                         );
                     sorted = true;
@@ -650,11 +695,11 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         binsert (
                             var (item->name),
-                            join (VAR (R(p)->env, "item", aat_str),
+                            join (VAR (R(p)->env, att_item, aat_str),
                                   reverse (var (strVAL->name)))),
                         binsert (
                             var (kind->name),
-                            project (select2 (VAR (R(p)->env, "item", aat_str),
+                            project (select2 (VAR (R(p)->env, att_item, aat_str),
                                               cast (type (m_str), nil ()),
                                               cast (type (m_str), nil ())),
                                      var ("STR")))
@@ -670,7 +715,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                  kunique (
                                      reverse (
                                          select2 (VAR (R(p)->env,
-                                                       "item",
+                                                       att_item,
                                                        aat_int),
                                                   cast (type (m_int), nil ()),
                                                   cast (type (m_int), nil ()))
@@ -679,11 +724,11 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (
                             var (item->name),
-                            leftjoin (VAR (R(p)->env, "item", aat_int),
+                            leftjoin (VAR (R(p)->env, att_item, aat_int),
                                       reverse (var (intVAL->name)))),
                         assgn (
                             var (kind->name),
-                            project (VAR (R(p)->env, "item", aat_int),
+                            project (VAR (R(p)->env, att_item, aat_int),
                                      var ("INT")))
                         );
                     sorted = true;
@@ -692,11 +737,11 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         binsert (
                             var (item->name),
-                            join (VAR (R(p)->env, "item", aat_int),
+                            join (VAR (R(p)->env, att_item, aat_int),
                                   reverse (var (intVAL->name)))),
                         binsert (
                             var (kind->name),
-                            project (select2 (VAR (R(p)->env, "item", aat_int),
+                            project (select2 (VAR (R(p)->env, att_item, aat_int),
                                               cast (type (m_int), nil ()),
                                               cast (type (m_int), nil ())),
                                      var ("INT")))
@@ -712,7 +757,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                  kunique (
                                      reverse (
                                          select2 (VAR (R(p)->env,
-                                                       "item",
+                                                       att_item,
                                                        aat_dbl),
                                                   cast (type (m_dbl), nil ()),
                                                   cast (type (m_dbl), nil ()))
@@ -721,11 +766,11 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (
                             var (item->name),
-                            leftjoin (VAR (R(p)->env, "item", aat_dbl),
+                            leftjoin (VAR (R(p)->env, att_item, aat_dbl),
                                       reverse (var (dblVAL->name)))),
                         assgn (
                             var (kind->name),
-                            project (VAR (R(p)->env, "item", aat_dbl),
+                            project (VAR (R(p)->env, att_item, aat_dbl),
                                      var ("DBL")))
                         );
                     sorted = true;
@@ -734,11 +779,11 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         binsert (
                             var (item->name),
-                            join (VAR (R(p)->env, "item", aat_dbl),
+                            join (VAR (R(p)->env, att_item, aat_dbl),
                                   reverse (var (dblVAL->name)))),
                         binsert (
                             var (kind->name),
-                            project (select2 (VAR (R(p)->env, "item", aat_dbl),
+                            project (select2 (VAR (R(p)->env, att_item, aat_dbl),
                                               cast (type (m_dbl), nil ()),
                                               cast (type (m_dbl), nil ())),
                                      var ("DBL")))
@@ -754,7 +799,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                  kunique (
                                      reverse (
                                          select2 (VAR (R(p)->env,
-                                                       "item",
+                                                       att_item,
                                                        aat_dec),
                                                   cast (type (m_dbl), nil ()),
                                                   cast (type (m_dbl), nil ()))
@@ -763,11 +808,11 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         assgn (
                             var (item->name),
-                            leftjoin (VAR (R(p)->env, "item", aat_dec),
+                            leftjoin (VAR (R(p)->env, att_item, aat_dec),
                                       reverse (var (decVAL->name)))),
                         assgn (
                             var (kind->name),
-                            project (VAR (R(p)->env, "item", aat_dec),
+                            project (VAR (R(p)->env, att_item, aat_dec),
                                      var ("DEC")))
                         );
                     sorted = true;
@@ -776,11 +821,11 @@ reduce (PFpa_op_t * p, int goalnt)
                     execute (
                         binsert (
                             var (item->name),
-                            join (VAR (R(p)->env, "item", aat_dec),
+                            join (VAR (R(p)->env, att_item, aat_dec),
                                   reverse (var (decVAL->name)))),
                         binsert (
                             var (kind->name),
-                            project (select2 (VAR (R(p)->env, "item", aat_dec),
+                            project (select2 (VAR (R(p)->env, att_item, aat_dec),
                                               cast (type (m_dbl), nil ()),
                                               cast (type (m_dbl), nil ())),
                                      var ("DEC")))
@@ -795,10 +840,10 @@ reduce (PFpa_op_t * p, int goalnt)
                         assgn (
                             var (item->name),
                             mcast (type (m_oid),
-                                   VAR (R(p)->env, "item", aat_bln))),
+                                   VAR (R(p)->env, att_item, aat_bln))),
                         assgn (
                             var (kind->name),
-                            project (VAR (R(p)->env, "item", aat_bln),
+                            project (VAR (R(p)->env, att_item, aat_bln),
                                      var ("BOOL")))
                         );
                     sorted = true;
@@ -808,10 +853,10 @@ reduce (PFpa_op_t * p, int goalnt)
                         binsert (
                             var (item->name),
                             mcast (type (m_oid),
-                                   VAR (R(p)->env, "item", aat_bln))),
+                                   VAR (R(p)->env, att_item, aat_bln))),
                         binsert (
                             var (kind->name),
-                            project (select2 (VAR (R(p)->env, "item", aat_bln),
+                            project (select2 (VAR (R(p)->env, att_item, aat_bln),
                                               cast (type (m_bit), nil ()),
                                               cast (type (m_bit), nil ())),
                                      var ("BOOL")))
@@ -886,7 +931,7 @@ reduce (PFpa_op_t * p, int goalnt)
                                                               .atoms[col].type
                                     ? literal (p->sem.lit_tbl.tuples[row]
                                                               .atoms[col])
-                                    : nil ()));
+                                    : cast (implty (t), nil ())));
 
                         execute (access (var (v->name), BAT_READ));
                     }
@@ -1069,8 +1114,8 @@ reduce (PFpa_op_t * p, int goalnt)
                  * to list the grouping attribute a second time.
                  */
                 if (!single_column_grouping
-                    || strcmp (p->schema.items[i].name,
-                               PFord_order_at (p->sem.merge_union.ord, 0))) {
+                    || p->schema.items[i].name !=
+                       PFord_order_at (p->sem.merge_union.ord, 0)) {
 
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & p->schema.items[i].type) {
@@ -1111,8 +1156,8 @@ reduce (PFpa_op_t * p, int goalnt)
                  * attribute is to be found as the first result BAT.
                  */
                 if (!single_column_grouping
-                    || strcmp (p->schema.items[i].name,
-                               PFord_order_at (p->sem.merge_union.ord, 0))) {
+                    || p->schema.items[i].name !=
+                       PFord_order_at (p->sem.merge_union.ord, 0)) {
 
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & p->schema.items[i].type) {
@@ -1183,7 +1228,7 @@ reduce (PFpa_op_t * p, int goalnt)
             }
 
             /* and add the newly numbered one */
-            if (p->sem.rownum.part)
+            if (p->sem.rownum.part != aat_NULL)
                 execute (
                     assgn (var (v->name),
                            mark_grp (
@@ -1315,48 +1360,243 @@ reduce (PFpa_op_t * p, int goalnt)
             llscj (ax_anc_self, p);
             break;
 
-        /* Rel:      llscj_child (FragList, Rel) */
+        /* Rel:      llscj_attr (FragList, Rel) */
         case 12:
+        {
+            /* abbreviations for input expressions */
+            PFty_t           ty  = p->sem.scjoin.ty;
+
+            /* MIL equivalents of input expression */
+            PFmil_t *iter;
+            PFmil_t *pre;
+            PFmil_t *frag;
+
+            mvar_t  *tmp;         /* helper variable */
+            mvar_t  *ret_iter;    /* variable to which we assign the `iter' result */
+            mvar_t  *ret_attr;     /* variable to which we assign the `pre' result */
+            mvar_t  *ret_frag;    /* variable to which we assign the `kind' result */
+            
+            /*
+             * Determine generic input arguments.
+             */
+            assert (p); assert (R(p)); assert (R(p)->env);
+            iter = VAR (R(p)->env, att_iter, aat_nat); assert (iter);
+            pre = VAR (R(p)->env, att_item, aat_pre); assert (pre);
+            frag = VAR (R(p)->env, att_item, aat_pfrag); assert (frag);
+
+            tmp      = new_var (1);
+            ret_iter = new_var (p->refctr);
+            ret_attr  = new_var (p->refctr);
+            ret_frag = new_var (p->refctr);
+
+            /* first get all attribute nodes... */
+            execute (
+                assgn (var (tmp->name), 
+                       mvaljoin (pre, frag, fetch (var("ws"),
+                                                    var("ATTR_OWN")))),
+                assgn (var (ret_attr->name),
+                       reverse (mark (reverse (var (tmp->name)), lit_oid (0)))),
+                assgn (var (ret_frag->name),
+                       leftjoin (reverse (mark (var (tmp->name), lit_oid (0))),
+                                 frag)),
+                assgn (var (ret_iter->name),
+                       leftjoin (reverse (mark (var (tmp->name), lit_oid (0))),
+                                 iter)));
+
+            /* ... then filter out all nodes, whose name test does not match */
+            if (PFty_subtype (ty, PFty_xs_anyAttribute ())) {
+
+                /* Is it just a generic attribute kind test? (e.g. .../attribute()) */
+                if (PFty_subtype (PFty_xs_anyAttribute (), ty))
+                    ;
+
+                /* Is it a test on attribute kind and local name only? */
+                else if (PFty_subtype (
+                            PFty_attr (PFqname (PFns_wild,
+                                                PFty_qname (PFty_defn (ty)).loc),
+                                       PFty_xs_anySimpleType ()),
+                            ty))
+                    execute (
+                        assgn (var (tmp->name),
+                               mposjoin (mposjoin (var (ret_attr->name),
+                                                   var (ret_frag->name),
+                                                   fetch (var("ws"),
+                                                          var("ATTR_QN"))),
+                                         mposjoin (var (ret_attr->name),
+                                                   var (ret_frag->name),
+                                                   fetch (var("ws"),
+                                                          var("ATTR_FRAG"))),
+                                         fetch (var("ws"), var("QN_LOC")))),
+                        assgn (var (tmp->name),
+                               uselect (var (tmp->name),
+                                        lit_str (
+                                            PFqname_loc (
+                                                PFty_qname (
+                                                    PFty_defn (ty)))))),
+                        assgn (var (tmp->name),
+                               reverse (mark (var (tmp->name), lit_oid (0)))),
+                        assgn (var (ret_attr->name),
+                               leftjoin (var (tmp->name), var (ret_attr->name))),
+                        assgn (var (ret_frag->name),
+                               leftjoin (var (tmp->name), var (ret_frag->name))),
+                        assgn (var (ret_iter->name),
+                               leftjoin (var (tmp->name), var (ret_iter->name))));
+
+                /* Or maybe a test on attribute kind and namespace only? */
+                else if (PFty_subtype (
+                            PFty_attr (PFqname (PFty_qname (PFty_defn (ty)).ns,
+                                                NULL),
+                                       PFty_xs_anySimpleType ()),
+                            ty))
+                    execute (
+                        assgn (var (tmp->name),
+                               mposjoin (mposjoin (var (ret_attr->name),
+                                                   var (ret_frag->name),
+                                                   fetch (var("ws"),
+                                                          var("ATTR_QN"))),
+                                         mposjoin (var (ret_attr->name),
+                                                   var (ret_frag->name),
+                                                   fetch (var("ws"),
+                                                          var("ATTR_FRAG"))),
+                                         fetch (var("ws"), var("QN_URI")))),
+                        assgn (var (tmp->name),
+                               uselect (var (tmp->name),
+                                        lit_str (
+                                            PFqname_uri (
+                                                PFty_qname (
+                                                    PFty_defn (ty)))))),
+                        assgn (var (tmp->name),
+                               reverse (mark (var (tmp->name), lit_oid (0)))),
+                        assgn (var (ret_attr->name),
+                               leftjoin (var (tmp->name), var (ret_attr->name))),
+                        assgn (var (ret_frag->name),
+                               leftjoin (var (tmp->name), var (ret_frag->name))),
+                        assgn (var (ret_iter->name),
+                               leftjoin (var (tmp->name), var (ret_iter->name))));
+
+                /* A test on attribute kind and full QName? */
+                else if (PFty_subtype (
+                            PFty_attr (PFty_qname (PFty_defn (ty)),
+                                       PFty_xs_anySimpleType ()),
+                            ty))
+                    execute (
+                        assgn (var (tmp->name),
+                               mposjoin (mposjoin (var (ret_attr->name),
+                                                   var (ret_frag->name),
+                                                   fetch (var("ws"),
+                                                          var("ATTR_QN"))),
+                                         mposjoin (var (ret_attr->name),
+                                                   var (ret_frag->name),
+                                                   fetch (var("ws"),
+                                                          var("ATTR_FRAG"))),
+                                         fetch (var("ws"), var("QN_LOC")))),
+                        assgn (var (tmp->name),
+                               uselect (var (tmp->name),
+                                        lit_str (
+                                            PFqname_loc (
+                                                PFty_qname (
+                                                    PFty_defn (ty)))))),
+                        assgn (var (tmp->name),
+                               reverse (mark (var (tmp->name), lit_oid (0)))),
+                        assgn (var (ret_attr->name),
+                               leftjoin (var (tmp->name), var (ret_attr->name))),
+                        assgn (var (ret_frag->name),
+                               leftjoin (var (tmp->name), var (ret_frag->name))),
+                        assgn (var (ret_iter->name),
+                               leftjoin (var (tmp->name), var (ret_iter->name))),
+                        assgn (var (tmp->name),
+                               mposjoin (mposjoin (var (ret_attr->name),
+                                                   var (ret_frag->name),
+                                                   fetch (var("ws"),
+                                                          var("ATTR_QN"))),
+                                         mposjoin (var (ret_attr->name),
+                                                   var (ret_frag->name),
+                                                   fetch (var("ws"),
+                                                          var("ATTR_FRAG"))),
+                                         fetch (var("ws"), var("QN_URI")))),
+                        assgn (var (tmp->name),
+                               uselect (var (tmp->name),
+                                        lit_str (
+                                            PFqname_uri (
+                                                PFty_qname (
+                                                    PFty_defn (ty)))))),
+                        assgn (var (tmp->name),
+                               reverse (mark (var (tmp->name), lit_oid (0)))),
+                        assgn (var (ret_attr->name),
+                               leftjoin (var (tmp->name), var (ret_attr->name))),
+                        assgn (var (ret_frag->name),
+                               leftjoin (var (tmp->name), var (ret_frag->name))),
+                        assgn (var (ret_iter->name),
+                               leftjoin (var (tmp->name), var (ret_iter->name))));
+
+                /*
+                 * If we couldn't figure out what attribute test we got, give up.
+                 *
+                 * NOTE: The surface language actually allows such tests. We
+                 *       just cannot implement them (yet):
+                 *
+                 *        doc("foo")/attribute::attribute(shoeSize, xs:integer)
+                 */
+                else
+                    PFoops (OOPS_FATAL,
+                            "Problem with an XPath step: cannot evaluate "
+                            "node test `%s'", PFty_str (ty));
+            }
+            else
+                PFoops (OOPS_FATAL,
+                        "Problem with an XPath step: cannot evaluate "
+                        "node test `%s'", PFty_str (ty));
+
+            env_add (p->env, att_iter, aat_nat, ret_iter);
+            env_add (p->env, att_item, aat_attr, ret_attr);
+            env_add (p->env, att_item, aat_afrag, ret_frag);
+
+            unpin (tmp, 1);
+        }
+            break;
+
+        /* Rel:      llscj_child (FragList, Rel) */
+        case 13:
             llscj (ax_child, p);
             break;
 
         /* Rel:      llscj_desc (FragList, Rel) */
-        case 13:
+        case 14:
             llscj (ax_desc, p);
             break;
 
         /* Rel:      llscj_desc_self (FragList, Rel) */
-        case 14:
+        case 15:
             llscj (ax_desc_self, p);
             break;
 
         /* Rel:      llscj_foll (FragList, Rel) */
-        case 15:
+        case 16:
             llscj (ax_foll, p);
             break;
 
         /* Rel:      llscj_foll_sibl (FragList, Rel) */
-        case 16:
+        case 17:
             llscj (ax_foll_sibl, p);
             break;
 
         /* Rel:      llscj_parent (FragList, Rel) */
-        case 17:
+        case 18:
             llscj (ax_parent, p);
             break;
 
         /* Rel:      llscj_prec (FragList, Rel) */
-        case 18:
+        case 19:
             llscj (ax_prec, p);
             break;
 
         /* Rel:      llscj_prec_sibl (FragList, Rel) */
-        case 19:
+        case 20:
             llscj (ax_prec_sibl, p);
             break;
 
         /* Rel:      nljoin (Rel, Rel) */
-        case 20:
+        case 21:
             /*
              * We don't really have sensible MIL equivalents for
              * NestedLoop or Merge joins.
@@ -1365,7 +1605,7 @@ reduce (PFpa_op_t * p, int goalnt)
              */
 
         /* Rel:      merge_join (Rel, Rel) */
-        case 21:
+        case 22:
         {
             /*
              * We actually cannot guarantee that MonetDB applies a
@@ -1428,7 +1668,7 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rel:      refine_sort (Rel) */
-        case 22:
+        case 23:
         {
             mvar_t  *v = new_var (1);
             bool     initialized = false;
@@ -1480,44 +1720,43 @@ reduce (PFpa_op_t * p, int goalnt)
              * Now do the remaining sorting
              */
             for (unsigned int i = PFord_count (p->sem.sortby.existing);
-                    i < PFord_count (p->sem.sortby.required); i++)
+                    i < PFord_count (p->sem.sortby.required); i++) {
+                /*
+                 * Be careful to implement document order on
+                 * nodes correctly:
+                 *
+                 *  - sort by fragment first, then by pre/attr
+                 *    (the aat_pfrag/aat_afrag bit is lower
+                 *     than the aat_pre/aat_attr bit)
+                 *  - document order of attributes and other nodes
+                 *    requires extra effort
+                 */
+                assert(!(aat_anode & 
+                         type_of (L(p),
+                                  PFord_order_at (p->sem.sortby.required,
+                                                  i)))
+                       ||
+                       !(aat_pnode &
+                         type_of (L(p),
+                                  PFord_order_at (p->sem.sortby.required,
+                                                  i))));
+
                 for (PFalg_simple_type_t t = 1; t; t <<= 1)
                     if (t & type_of (L(p),
                                      PFord_order_at (p->sem.sortby.required,
                                                      i))) {
-                        /*
-                         * Be careful to implement document order on
-                         * nodes correctly:
-                         *
-                         *  - sort by fragment first, then by pre
-                         *    (the aat_kind bit is lower than the aat_pre bit)
-                         *  - only consider the fragment part (but not the
-                         *    node kind) of aat_kind.
-                         */
-                        if (t == aat_kind)
-                            execute (
-                                assgn (var (v->name),
-                                       ctrefine (
-                                           var (v->name),
-                                           get_fragment (
-                                               VAR (L(p)->env,
-                                                    PFord_order_at (p->sem
-                                                                      .sortby
-                                                                      .required,
-                                                                    i),
-                                                    t)))));
-                        else
-                            execute (
-                                assgn (var (v->name),
-                                       ctrefine (
-                                           var (v->name),
-                                           VAR (L(p)->env,
-                                                PFord_order_at (p->sem
-                                                                  .sortby
-                                                                  .required,
-                                                                i),
-                                                t))));
+                         execute (
+                             assgn (var (v->name),
+                                    ctrefine (
+                                        var (v->name),
+                                        VAR (L(p)->env,
+                                             PFord_order_at (p->sem
+                                                               .sortby
+                                                               .required,
+                                                             i),
+                                             t))));
                     }
+            }
 
             execute (
                 assgn (var (v->name),
@@ -1545,99 +1784,99 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rel:      num_add (Rel) */
-        case 23:
+        case 24:
             bin_arith (PFmil_madd, p);
             break;
 
         /* Rel:      num_sub (Rel) */
-        case 24:
+        case 25:
             bin_arith (PFmil_msub, p);
             break;
 
         /* Rel:      num_mult (Rel) */
-        case 25:
+        case 26:
             bin_arith (PFmil_mmult, p);
             break;
 
         /* Rel:      num_div (Rel) */
-        case 26:
+        case 27:
             bin_arith (PFmil_mdiv, p);
             break;
 
         /* Rel:      num_mod (Rel) */
-        case 27:
+        case 28:
             bin_arith (PFmil_mmod, p);
             break;
 
         /* Rel:      num_add_atom (Rel) */
-        case 28:
+        case 29:
             bin_arith_atom (PFmil_madd, p);
             break;
 
         /* Rel:      num_sub_atom (Rel) */
-        case 29:
+        case 30:
             bin_arith_atom (PFmil_msub, p);
             break;
 
         /* Rel:      num_mult_atom (Rel) */
-        case 30:
+        case 31:
             bin_arith_atom (PFmil_mmult, p);
             break;
 
         /* Rel:      num_div_atom (Rel) */
-        case 31:
+        case 32:
             bin_arith_atom (PFmil_mdiv, p);
             break;
 
         /* Rel:      num_mod_atom (Rel) */
-        case 32:
+        case 33:
             bin_arith_atom (PFmil_mmod, p);
             break;
 
         /* Rel:      eq (Rel, Rel) */
-        case 33:
+        case 34:
             bin_comp (PFmil_meq, p);
             break;
 
         /* Rel:      eq_atom (Rel, Rel) */
-        case 34:
+        case 35:
             bin_comp_atom (PFmil_meq, p);
             break;
 
         /* Rel:      gt (Rel, Rel) */
-        case 35:
+        case 36:
             bin_comp (PFmil_mgt, p);
             break;
 
         /* Rel:      gt_atom (Rel, Rel) */
-        case 36:
+        case 37:
             bin_comp_atom (PFmil_mgt, p);
             break;
 
         /* Rel:      num_neg (Rel) */
-        case 37:
+        case 38:
             return unary_op (PFmil_mneg, p);
             break;
 
         /* Rel:      bool_not (Rel) */
-        case 38:
+        case 39:
             return unary_op (PFmil_mnot, p);
             break;
 
         /* Rel:      bool_and (Rel, Rel) */
-        case 39:
+        case 40:
             bin_bool (PFmil_mand, p);
             break;
 
         /* Rel:      bool_or (Rel, Rel) */
-        case 40:
+        case 41:
             bin_bool (PFmil_mor, p);
             break;
 
         /* Rel:      cast (Rel) */
-        case 41:
+        case 42:
             for (unsigned int i = 0; i < L(p)->schema.count; i++)
-                if (! strcmp (L(p)->schema.items[i].name, p->sem.cast.att)) {
+                if (L(p)->schema.items[i].name == p->sem.cast.att) {
 
                     mvar_t        *v = new_var (p->refctr);
                     unsigned int   parts = 0;
@@ -1685,7 +1924,7 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      select (Rel) */
-        case 42:
+        case 43:
         {
             mvar_t *v = new_var (1);
 
@@ -1727,7 +1966,7 @@ reduce (PFpa_op_t * p, int goalnt)
         } break;
 
         /* Rel:      difference (Rel, Rel) */
-        case 43:
+        case 44:
             
             if (env_count (L(p)->env) == 1) {
 
@@ -1759,7 +1998,7 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      std_sort (Rel) */
-        case 44:
+        case 45:
             {
                 unsigned int  count = 0;
                 mvar_t       *v     = new_var (1);
@@ -1771,52 +2010,27 @@ reduce (PFpa_op_t * p, int goalnt)
                                          PFord_order_at (p->sem.sortby.required,
                                                          i))) {
                             if (count) {
-                                if (t == aat_kind)
-                                    execute (
-                                        assgn (
+                                execute (
+                                    assgn (
+                                        var (v->name),
+                                        ctrefine (
                                             var (v->name),
-                                            ctrefine (
-                                                var (v->name),
-                                                get_fragment (
-                                                    VAR (L(p)->env,
-                                                         PFord_order_at (
-                                                             p->sem.sortby
-                                                                  .required, i),
-                                                         t)))));
-                                else
-                                    execute (
-                                        assgn (
-                                            var (v->name),
-                                            ctrefine (
-                                                var (v->name),
-                                                VAR (L(p)->env,
-                                                     PFord_order_at (
-                                                         p->sem.sortby.required,
-                                                         i),
-                                                     t))));
+                                            VAR (L(p)->env,
+                                                 PFord_order_at (
+                                                     p->sem.sortby.required,
+                                                     i),
+                                                 t))));
                             }
                             else {
-                                if (t == aat_kind)
-                                    execute (
-                                        assgn (
-                                            var (v->name),
-                                            reverse (sort (reverse (
-                                                    get_fragment (
-                                                        VAR (L(p)->env,
-                                                            PFord_order_at (
-                                                                p->sem.sortby
-                                                                .required, i),
-                                                            t)))))));
-                                else
-                                    execute (
-                                        assgn (
-                                            var (v->name),
-                                            reverse (sort (reverse (
-                                                VAR (L(p)->env,
-                                                     PFord_order_at (
-                                                         p->sem.sortby.required,
-                                                         i),
-                                                     t))))));
+                                execute (
+                                    assgn (
+                                        var (v->name),
+                                        reverse (sort (reverse (
+                                            VAR (L(p)->env,
+                                                 PFord_order_at (
+                                                     p->sem.sortby.required,
+                                                     i),
+                                                 t))))));
                             }
                             count++;
                         }
@@ -1846,8 +2060,8 @@ reduce (PFpa_op_t * p, int goalnt)
             break;
 
         /* Rel:      hash_count (Rel) */
-        case 45:
-            if (p->sem.count.part) {
+        case 46:
+            if (p->sem.count.part != aat_NULL) {
                 for (unsigned int i = 0; i < L(p)->schema.count; i++)
                     for (PFalg_simple_type_t t = 1; t; t <<= 1)
                         if (t & L(p)->schema.items[i].type) {
@@ -1897,6 +2111,102 @@ reduce (PFpa_op_t * p, int goalnt)
             }
             break;
 
+        /* Rel:      doc_access (FragList, Rel) */
+        case 60:
+        {
+            mvar_t *str   = new_var (p->refctr);
+
+            /* copy all the attributes */
+            for (unsigned int i = 0; i < env_count (R(p)->env); i++) {
+                pin (env_at (R(p)->env, i).mvar, p->refctr);
+                env_add (p->env,
+                         env_at (R(p)->env, i).att,
+                         env_at (R(p)->env, i).ty,
+                         env_at (R(p)->env, i).mvar);
+            }
+
+            switch (p->sem.doc_access.doc_col)
+            {
+                case (doc_atext):
+                    {
+                        PFmil_t *attr  = VAR (R(p)->env,
+                                              p->sem.doc_access.att,
+                                              aat_attr);
+                        PFmil_t *afrag = VAR (R(p)->env,
+                                              p->sem.doc_access.att,
+                                              aat_afrag);
+
+                        execute (
+                            assgn (var (str->name),
+                                   mposjoin (mposjoin (attr,
+                                                       afrag,
+                                                       fetch (var("ws"),
+                                                              var("ATTR_PROP"))),
+                                             mposjoin (attr,
+                                                       afrag,
+                                                       fetch (var("ws"),
+                                                              var("ATTR_FRAG"))),
+                                             fetch (var("ws"), var("PROP_VAL")))));
+                    }
+                    break;
+                case (doc_text):
+                    {
+                        PFmil_t *pre  = VAR (R(p)->env,
+                                             p->sem.doc_access.att,
+                                             aat_pre);
+                        PFmil_t *pfrag = VAR (R(p)->env,
+                                              p->sem.doc_access.att,
+                                              aat_pfrag);
+                        execute (
+                            assgn (var (str->name),
+                                   mposjoin (mposjoin (pre,
+                                                       pfrag,
+                                                       fetch (var("ws"),
+                                                              var("PRE_PROP"))),
+                                             mposjoin (pre,
+                                                       pfrag,
+                                                       fetch (var("ws"),
+                                                              var("PRE_FRAG"))),
+                                             fetch (var("ws"), var("PROP_TEXT")))));
+                    }
+                    break;
+                default:
+                    PFoops (OOPS_FATAL, 
+                            "unexpected document column in doc_access (%i)",
+                            p->sem.doc_access.doc_col);
+            }
+
+            env_add (p->env, att_res, aat_str, str);
+        }
+            break;
+
+        /* Rel:      string_join (Rel, Rel) */
+        case 61:
+        {
+            mvar_t *str  = new_var (p->refctr);
+            mvar_t *iter = new_var (p->refctr);
+            mvar_t *item = new_var (p->refctr);
+
+            execute (
+                assgn (var (str->name),
+                       string_join (
+                           leftjoin (
+                               reverse (VAR(L(p)->env, att_iter, aat_nat)),
+                               VAR(L(p)->env, att_item, aat_str)),
+                           leftjoin (
+                               reverse (VAR(R(p)->env, att_iter, aat_nat)),
+                               VAR(R(p)->env, att_item, aat_str)))),
+                assgn (var (iter->name), 
+                       reverse (mark (var (str->name), lit_oid (0)))),
+                assgn (var (item->name), 
+                       reverse (
+                           mark (reverse (var (str->name)), lit_oid (0)))));
+
+            env_add (p->env, att_iter, aat_nat, iter);
+            env_add (p->env, att_item, aat_str, item);
+        }
+            break;
+
         /* FragRel:  doc_tbl (Rel) */
         case 100:
         {
@@ -1904,23 +2214,23 @@ reduce (PFpa_op_t * p, int goalnt)
             mvar_t *v = new_var (1);
             /* result BATs */
             mvar_t *pre  = new_var (p->refctr);
-            mvar_t *kind = new_var (p->refctr);
-            mvar_t *iter = env_mvar (L(p)->env, "iter", aat_nat);
+            mvar_t *frag = new_var (p->refctr);
+            mvar_t *iter = env_mvar (L(p)->env, att_iter, aat_nat);
 
-            env_add (p->env, "item", aat_pre, pre);
-            env_add (p->env, "item", aat_kind, kind);
+            env_add (p->env, att_item, aat_pre, pre);
+            env_add (p->env, att_item, aat_pfrag, frag);
 
             execute (
                 assgn (var (v->name),
                        doc_tbl (var ("ws"),
-                                VAR (L(p)->env, "item", aat_str))),
+                                VAR (L(p)->env, att_item, aat_str))),
                 assgn (var ("ws"), fetch (var (v->name), lit_int (0))),
                 assgn (var (pre->name), fetch (var (v->name), lit_int (1))),
-                assgn (var (kind->name), fetch (var (v->name), lit_int (2)))
+                assgn (var (frag->name), fetch (var (v->name), lit_int (2)))
                 );
 
             /* copy the iter BAT */
-            env_add (p->env, "iter", aat_nat, iter);
+            env_add (p->env, att_iter, aat_nat, iter);
             pin (iter, p->refctr);
 
             /* release our temporary variable v */
@@ -1954,7 +2264,7 @@ reduce (PFpa_op_t * p, int goalnt)
     /* Debugging only: assign column names to BATs */
     for (unsigned int i = 0; i < env_count (p->env); i++)
         execute (col_name (var (env_at (p->env, i).mvar->name),
-                           lit_str (env_at (p->env, i).att)));
+                           lit_str (PFatt_print (env_at (p->env, i).att))));
 
 #endif
 
@@ -1966,7 +2276,7 @@ type_of (PFpa_op_t *n, PFalg_att_t att)
     assert (n);
 
     for (unsigned int i = 0; i < n->schema.count; i++)
-        if (!strcmp (n->schema.items[i].name, att))
+        if (n->schema.items[i].name == att)
             return n->schema.items[i].type;
 
     PFoops (OOPS_FATAL,
@@ -2334,37 +2644,37 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
     mvar_t  *tmp;         /* helper variable */
     mvar_t  *ret_iter;    /* variable to which we assign the `iter' result */
     mvar_t  *ret_pre;     /* variable to which we assign the `pre' result */
-    mvar_t  *ret_kind;    /* variable to which we assign the `kind' result */
+    mvar_t  *ret_frag;    /* variable to which we assign the `kind' result */
     
     /*
      * Determine generic input arguments.
      */
     assert (p); assert (R(p)); assert (R(p)->env);
-    iter = VAR (R(p)->env, "iter", aat_nat); assert (iter);
-    item = VAR (R(p)->env, "item", aat_pre); assert (item);
-    frag = get_fragment (VAR (R(p)->env, "item", aat_kind));
+    iter = VAR (R(p)->env, att_iter, aat_nat); assert (iter);
+    item = VAR (R(p)->env, att_item, aat_pre); assert (item);
+    frag = VAR (R(p)->env, att_item, aat_pfrag); assert (frag);
 
     /*
      * Determine in- and output orderings.
      * MIL functions expect this information encoded in an integer
      * value that we build up here.
      */
-    if (PFord_implies (in, PFord_refine (PFord_refine (PFordering (), "iter"),
-                                         "item")))
+    if (PFord_implies (in, PFord_refine (PFord_refine (PFordering (), att_iter),
+                                         att_item)))
         o = 0;
     else if (PFord_implies (in, PFord_refine (PFord_refine (PFordering (),
-                                                            "item"),
-                                              "iter")))
+                                                            att_item),
+                                              att_iter)))
         o = 1;
     else
         PFoops (OOPS_FATAL, "illegal argument for input ordering");
 
-    if (PFord_implies (out, PFord_refine (PFord_refine (PFordering (), "iter"),
-                                          "item")))
+    if (PFord_implies (out, PFord_refine (PFord_refine (PFordering (), att_iter),
+                                          att_item)))
         o |= 0;
     else if (PFord_implies (out, PFord_refine (PFord_refine (PFordering (),
-                                                             "item"),
-                                               "iter")))
+                                                             att_item),
+                                               att_iter)))
         o |= 2;
     else
         PFoops (OOPS_FATAL, "illegal argument for output ordering");
@@ -2387,7 +2697,8 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
                                PFty_xs_anyType ()),
                     ty))
             scj = llscj_elem_loc (axis, iter, item, frag, var ("ws"), order,
-                                  lit_str (PFty_qname (PFty_defn (ty)).loc));
+                                  lit_str (PFqname_loc (
+                                               PFty_qname (PFty_defn (ty)))));
 
         /* Or maybe a test on element kind and namespace only? */
         else if (PFty_subtype (
@@ -2396,7 +2707,8 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
                                PFty_xs_anyType ()),
                     ty))
             scj = llscj_elem_ns (axis, iter, item, frag, var ("ws"), order,
-                                 lit_str (PFty_qname (PFty_defn (ty)).ns.uri));
+                                 lit_str (PFqname_uri (
+                                              PFty_qname (PFty_defn (ty)))));
 
         /* A test on element kind and full QName? */
         else if (PFty_subtype (
@@ -2460,13 +2772,13 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
     tmp      = new_var (1);
     ret_iter = new_var (p->refctr);
     ret_pre  = new_var (p->refctr);
-    ret_kind = new_var (p->refctr);
+    ret_frag = new_var (p->refctr);
 
     execute (
         assgn (var (tmp->name), scj),
         assgn (var (ret_iter->name), fetch (var (tmp->name), lit_int (0))),
         assgn (var (ret_pre->name), fetch (var (tmp->name), lit_int (1))),
-        assgn (var (ret_kind->name), fetch (var (tmp->name), lit_int (2))));
+        assgn (var (ret_frag->name), fetch (var (tmp->name), lit_int (2))));
 
     /*
      * FIXME: fake_project is completely undocumented!
@@ -2485,19 +2797,15 @@ llscj (enum axis_t axis, const PFpa_op_t *p)
      */
     execute (
         if_ (
-            is_fake_project (var (ret_kind->name)),
-            assgn (var (ret_kind->name),
+            is_fake_project (var (ret_frag->name)),
+            assgn (var (ret_frag->name),
                    project (var (ret_iter->name),
-                            fetch (var (ret_kind->name), lit_int (0)))),
+                            fetch (var (ret_frag->name), lit_int (0)))),
             nop ()));
 
-    execute (
-        assgn (var (ret_kind->name),
-               set_kind (var (ret_kind->name), var ("ELEM"))));
-
-    env_add (p->env, "iter", aat_nat, ret_iter);
-    env_add (p->env, "item", aat_pre, ret_pre);
-    env_add (p->env, "item", aat_kind, ret_kind);
+    env_add (p->env, att_iter, aat_nat, ret_iter);
+    env_add (p->env, att_item, aat_pre, ret_pre);
+    env_add (p->env, att_item, aat_pfrag, ret_frag);
 
     unpin (tmp, 1);
 

@@ -16,7 +16,6 @@
 #include "pathfinder.h"
 
 #include <assert.h>
-#include <string.h>    /* strcmp() */
 
 #include "properties.h"
 
@@ -57,7 +56,7 @@ PFprop_const (const PFprop_t *prop, const PFalg_att_t attr)
     assert (prop);
 
     for (unsigned int i = 0; i < PFarray_last (prop->constants); i++)
-        if (!strcmp (attr, ((const_t *) PFarray_at (prop->constants, i))->attr))
+        if (attr == ((const_t *) PFarray_at (prop->constants, i))->attr)
             return true;
 
     return false;
@@ -73,13 +72,14 @@ PFprop_mark_const (PFprop_t *prop, const PFalg_att_t attr, PFalg_atom_t value)
 
 #ifndef NDEBUG
     for (unsigned int i = 0; i < PFarray_last (prop->constants); i++)
-        if (!strcmp (attr, ((const_t *) PFarray_at (prop->constants, i))->attr))
+        if (attr == ((const_t *) PFarray_at (prop->constants, i))->attr)
             PFoops (OOPS_FATAL,
-                    "attribute `%s' already declared constant", attr);
+                    "attribute `%s' already declared constant", 
+                    PFatt_print (attr));
 #endif
 
     *(const_t *) PFarray_add (prop->constants)
-        = (const_t) { .attr = PFstrdup (attr), .value = value };
+        = (const_t) { .attr = attr, .value = value };
 }
 
 /**
@@ -90,12 +90,12 @@ PFalg_atom_t
 PFprop_const_val (const PFprop_t *prop, const PFalg_att_t attr)
 {
     for (unsigned int i = 0; i < PFarray_last (prop->constants); i++)
-        if (!strcmp (attr, ((const_t *) PFarray_at (prop->constants, i))->attr))
+        if (attr == ((const_t *) PFarray_at (prop->constants, i))->attr)
             return ((const_t *) PFarray_at (prop->constants, i))->value;
 
     PFoops (OOPS_FATAL,
             "could not find attribute that is supposed to be constant: `%s'",
-            attr);
+            PFatt_print (attr));
 
     assert(0); /* never reached due to "exit" in PFoops */
     return PFalg_lit_int (0); /* pacify picky compilers */
@@ -268,8 +268,7 @@ infer_const (PFla_op_t *n)
              */
             for (unsigned int j = 0;
                     j < PFprop_const_count (n->child[0]->prop); j++)
-                if (strcmp (PFprop_const_at (n->child[0]->prop, j),
-                            n->sem.cast.att))
+                if (PFprop_const_at (n->child[0]->prop, j) != n->sem.cast.att)
                     PFprop_mark_const (
                             n->prop,
                             PFprop_const_at (n->child[0]->prop, j),
@@ -311,7 +310,8 @@ infer_const (PFla_op_t *n)
         case la_processi:
         case la_concat:
         case la_merge_adjacent:
-        case la_string_val:
+        case la_doc_access:
+        case la_string_join:
         case la_seqty1:
         case la_all:
         case la_roots:

@@ -90,19 +90,20 @@ enum PFla_op_kind_t {
                                   builtin function */
     , la_merge_adjacent = 37 /**< operator for pf:merge-adjacent-text-nodes
                                   builtin function */
-    , la_string_val     = 38
-    , la_seqty1         = 39 /**< test for exactly one type occurrence in one
+    , la_doc_access     = 38
+    , la_string_join    = 39
+    , la_seqty1         = 40 /**< test for exactly one type occurrence in one
                                   iteration (Pathfinder extension) */
-    , la_all            = 40 /**< test if all items in an iteration are true */
-    , la_roots          = 41 /**< algebraic repres. of the roots of newly
+    , la_all            = 41 /**< test if all items in an iteration are true */
+    , la_roots          = 42 /**< algebraic repres. of the roots of newly
                                   created xml nodes (e.g. element());
                                   schema: iter | pos | item */
     /* all operators below represent xml node fragments with no schema */
-    , la_fragment       = 42 /**< representation of a node fragment */
-    , la_frag_union     = 43 /**< special node type used to form an algebraic
+    , la_fragment       = 43 /**< representation of a node fragment */
+    , la_frag_union     = 44 /**< special node type used to form an algebraic
                                   union of fragments */
-    , la_empty_frag     = 44 /**< representation of an empty fragment */
-    , la_doc_tbl        = 45 /**< document relation (is also a fragment) */
+    , la_empty_frag     = 45 /**< representation of an empty fragment */
+    , la_doc_tbl        = 46 /**< document relation (is also a fragment) */
 
     , la_dummy               /**< dummy node during compilation */
 };
@@ -197,8 +198,14 @@ union PFla_op_sem_t {
 
     /* semantic content for dummy built-in function operator */
     struct {
-        PFarray_t      *args;     /**< arguments of a buit_in function */
+        PFarray_t      *args;     /**< arguments of a built_in function */
     } builtin;
+
+    /* reference columns for document access */
+    struct {
+        PFalg_att_t     att;      /**< name of the reference attribute */
+        PFalg_doc_t     doc_col;  /**< referenced column in the document */
+    } doc_access;
 };
 /** semantic content in algebra operators */
 typedef union PFla_op_sem_t PFla_op_sem_t;
@@ -502,7 +509,13 @@ PFla_op_t * PFla_strconcat (const PFla_op_t *n);
 PFla_op_t * PFla_pf_merge_adjacent_text_nodes (const PFla_op_t *doc,
                                                const PFla_op_t *n);
 
-PFla_op_t * PFla_string_value (const PFla_op_t *doc, const PFla_op_t *n);
+PFla_op_t * PFla_doc_access (const PFla_op_t *doc,
+                             const PFla_op_t *n,
+                             PFalg_att_t col,
+                             PFalg_doc_t doc_col);
+
+PFla_op_t * PFla_string_join (const PFla_op_t *text,
+                              const PFla_op_t *sep);
 
 /**
  * Access to (persistently stored) XML documents, the fn:doc()
