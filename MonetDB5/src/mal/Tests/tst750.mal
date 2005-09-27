@@ -1,9 +1,0 @@
-# Polymorphic function tests
-# Cloning two versions of a single function
-function test(b:bat[:any_1,:any_2],c:any_2);
-	k:= 1+c;
-	io.print(k);
-end test;
-
-b:= bat.new(:int,:int);
-user.test(b,2);

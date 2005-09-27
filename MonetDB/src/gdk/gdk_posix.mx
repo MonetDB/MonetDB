@@ -194,7 +194,6 @@ gdk_export char *MT_heapbase;
 gdk_export char *MT_heapcur(void);
 
 gdk_export void MT_init_posix(int alloc_map);
-gdk_export size_t MT_getrss();
 
 gdk_export void *MT_mmap(char *path, int mode, off_t off, size_t len, void *fixed);
 gdk_export int MT_munmap(void *p, size_t len);
@@ -316,148 +315,45 @@ setenv(const char *name, const char *value, int overwrite)
 
 char *MT_heapbase = NULL;
 
+#ifndef NATIVE_WIN32
 
 /* Crude VM buffer management that keep a list of all memory mapped regions.
  *
- * a.k.a. "helping stupid VM implementations that ignore VM advise"
- *
  * The main goal is to be able to tell the OS to please stop buffering all memory
- * mapped pages when under pressure. A major problem is materialization of large
- * results newly created memory mapped files. Operating systems tend to cache
- * all dirty pages, such that when memory is out, all pages are dirty and cannot
- * be unloaded quickly. The VM panic occurs and comatose OS states may be observed.
- * This is in spite of our use of madvise(MADV_SEQUENTIAL). That is; we would want 
- * that the OS drops pages after we've passed them. That does not happen; pages are 
- * retained and pollute the buffer cache.
+ * mapped pages when under pressure. Problem is that posix_madvise(POSIX_MADV_SEQUENTIAL) is often 
+ * not (properly) implemented; that is; we would want that the OS drops pages after we've 
+ * passed them. That does not happen; pages are retained and pollute the buffer cache.
  *
- * Regrettably, at this level, we don't know anything about how Monet is using the 
- * mmapped regions. Monet code is totally oblivious of any I/O; that's why it is 
- * so easy to create CPU efficient code in Monet.
+ * Regrettably, we don't know anything about how Monet is using the mmapped regions.
+ * Monet code is totally oblivious of any I/O; that's why it is so easy to create CPU
+ * efficient code in Monet.
  *
- * The current solution focuses on large writable maps. These often represent
- * newly created BATs, that are the result of some (running) operator. We 
- * assume two things here:
- * - the BAT is created in sequential fashion (always almost true)
- * - afterwards, this BAT is used in sequential fashion (often true)
+ * So our only option is that if we detect system swapping (exceeding a set limit 
+ * of memory usage) just to tell the OS to release everything it's got. That will
+ * unload also useful pages (but they will be brought back in -- at a cost). At least 
+ * then we're rid of the non-useful stuff polluting the OS cache.
  *
- * A VMtrim thread keeps an eye on the RSS (memory pressure) and large writable
- * memory maps. If RSS approaches mem_maxsize(), it starts to *worry*, and starts
- * to write dirty data from these writable maps to disk in 128MB tiles. So, if 
- * memory pressure rises further in the near future, the OS has some optiont to release 
- * memory pages cheaply (i.e. without needing I/O). This is also done explicitly by the 
- * VM-thread: when RSS exceeds mem_maxsize() is explicitly asks the OS to release pages.
- * The reason is that Linux is not smart enough to do even this. Anyway..
- *
- * The way to free pages explicitly in Linux is to call posix_fadvise(..,MADV_DONTNEED). 
- * Particularly, posix_madvise(..,POSIX_MADV_DONTNEED) which is supported and documented 
- * doesn't work on Linux. But we do both posix_madvise and posix_fadvise, so on other unix
+ * The way to free pages on linux is to call posix_fadvise(..,MADV_DONTNEED). 
+ * Particularly, posix_madvise(..,POSIX_MADV_DONTNEED) which is supported and documented doesn't 
+ * work on Linux. But we do both posix_madvise and posix_fadvise, so on other unix
  * systems that don't support posix_fadvise, posix_madvise still might work.
- * On Windows, to our knowledge, there is no way to tell it stop buffering
- * a memory mapped region. msync (FlushViewOfFile) does work, though. So let's
- * hope the VM paging algorithm behaves better than Linux which just runs off
- * the cliff and if MonetDB does not prevent RSS from being too high, enters coma.
  *
- * We will only eb able to sensibly test this on Windows64. On Windows32, mmap sizes
- * do not significantly exceed RAM sizes so MonetDB swapping actually will not happen
- * (of course, you've got this nasty problem of VM fragemntation and failing mmaps instead).
+ * Note that any design that selectively releases less-than-all memory does not know
+ * what it is doing; it may just select only the useful pages and then in no time
+ * the whole excercise must be repeated (thrashing).
  *
- * In principle, page tiles are saved sequentially, and behind it, but never overtaking
- * it, is an "unload-cursor" that frees the pages if that is needed to keep RSS down.
- * There is a tweak in the algorithm, that re-sets the unload-cursor if it seems
- * that all tiles to the end have been saved (whether a tile is actually saved is
- * determined by timing the sync action). This means that the producing operator
- * is ready creating the BAT, and we assume it is going to be used sequentially afterwards.
- * In that case, we should start unloading right after the 'read-cursor', that is, 
- * from the start.
+ * We allow Monet to declare some heaps 'sacred' by pinning them. In that case, they 
+ * won't be unloaded. This is useful for hash-table heaps (or anything that is accessed with
+ * a random access pattern). Note that this may be a teomporary property; and different
+ * for the various Monet threads that perform work; therefore the pin-count design
+ * (one thread declaring a heap 'sacred' is enough for it to be so).
  *
- * EXAMPLE
- * D = dirty tile
- * s = saved tile (i.e. clean)
- * u = unloaded tile
- * L = tile that is being loaded
+ * This can really make a big difference in system responsiveness. Linux for example
+ * stops prefetching any pages on loads when it feels it is under pressure. This means
+ * that mmap I/O bandwidth is down the drain as soon as you hit any memory pressure.
  *
- *           +--> operator produces  BAT 
- * (1) DDDDDD|......................................| end of reserved mmap
- *                      ____|RSS
- *                     |
- *                     | at 3/4 of RSS consumed we start to worry
- *                     +--> operator produces BAT 
- * (2) DDDDDDDDDDDDDDDD|............................|
- *                    s<----------------------------- VM backwards save thread 
- *                    |
- *                    + first tile of which saving costs anything
- *
- *                        +--> operator produces BAT 
- * (3) DDDDDDDDDDDDDDDss|D|.........................|
- *     VM-thread save ->| 
- *
- * When the RSS target is exceeded, we start unloading tiles..
- *
- *                     +-->  VM-thread unload starts at *second* 's'
- *                     |
- *                     |    +--> operator produces BAT 
- * (4) DDDDDDDDDDDDDDDsus|DD|........................|
- *     VM-thread save -->|  | RSS = Full!
- *                    
- *                                  +-- 0 => save costs nothing!!
- *     VM-thread save ------------->|        assume bat complete 
- * (5) DDDDDDDDDDDDDDDsuuuuuuuuussss0................|
- *                    |<-------- re-set unload cursor
- *                    +--- first tile was not unloaded. 
- *                     
- * later.. some other operator sequentially reads the bat
- * first part is 'D', that is, nicely cached.
- *
- *     ---read------->|
- * (6) DDDDDDDDDDDDDDDsuuuuuuuuussss0................|
- *
- * now we're hitting the unloaded region. the query becomes
- * I/O read bound here (typically 20% CPU utilization).
- *
- *     ---read-------->|
- * (7) DDDDDDDDDDDDDDDuLuuuuuuuussss0................|
- *                   /  \
- *      unload cursor    load cursor
- *
- *     ---read---------------->|
- * (8) DDDDDDDDDDDDDDDuuuuuuuuuLssss0................|
- *                           /  \
- *              unload cursor    load cursor
- *
- *     ---read--------------------->| done
- * (9) DDDDDDDDDDDDDDDuuuuuuuuuLssss0................|
- *                              ****
- *                              last part still cached 
- *
- * note: if we would not have re-setted the unload cursor (5)
- *       the last part would have been lost due to continuing
- *       RSS pressure from the 'L' read-cursor.
- *
- * If multiple write-mmaps exist, we do unload-tile and save-tile
- * selection on a round-robin basis among them.
- *
- * Of course, this is a simple solution for simple cases only.
- * (a) if the bat is produced is too fast, (or your disk is too slow)
- *     we will RSS will exceeds its limit and Linux will go into swapping. 
- * (b) if your data is not produced and read sequentially.
- *     Examples are sorting or clustering on huge datasets.
- * (c) if RSS pressure is due to large read-maps, rather than 
- *     intermediate results. 
- *
- * Two crude suggestions:
- * - If we are under RSS pressure without unloadable tiles and with 
- *   savable tiles, we should consider suspending *all* other threads 
- *   until we manage to unload a tile.
- * - if there are no savable tiles (or in case of read-only maps)
- *   we could resort to saving and unloading random tiles.
- * 
- * To do better, our BAT algorithms should provide even more detailed
- * advise on their access patterns, which may even consist of pointers
- * to the cursors (i.e. pointers to b->batBuns->free or the cursors
- * in radix-cluster), which an enhanced version of this thread might
- * take into account.
+ * (this is based on reading the 2.6.8 linux kernel code) and microbenchmarks. 
  */
-
 #ifdef HAVE_PTHREAD_H
 /* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
 #undef HAVE_CONFIG_H
@@ -471,10 +367,10 @@ typedef struct {
 	char path[128];		/* mapped file, retained for debugging */
 	char *base;		/* base address */
 	size_t len;		/* length of map */
-	size_t first_tile;	/* from here we started saving tiles */
-	size_t save_tile;	/* next tile to save */
-	size_t unload_tile;	/* next tile to unload */
-	int last_tile;			
+	size_t first_saved;	/* from here we already saved tiles */
+	size_t saved;		/* until here we already saved tiles */
+	size_t unloaded;	/* until here we already unloaded tiles */
+	int save_ready;			
 	int fd;			/* open fd (==-1 for anon vm), retained to give posix_fadvise */
 	int pincnt;		/* incremented while a MIL command uses heap with a random pattern */
 	int writable;
@@ -488,7 +384,7 @@ static int do_not_use_posix_fadvise = 0;
 #define MT_MMAP_TILE (1<<27)
 #define MT_MMAP_BUFSIZE 100
 MT_mmap_t MT_mmap_tab[MT_MMAP_BUFSIZE];
-int MT_mmap_cur = -1, MT_mmap_first = -1, MT_mmap_free = 0;
+int MT_mmap_first = -1, MT_mmap_free = 0;
 
 pthread_mutex_t MT_mmap_lock;
 
@@ -561,20 +457,18 @@ MT_mmap_new(char *path, void *base, size_t len, int fd, int writable)
 		MT_mmap_free = MT_mmap_tab[i].next;
 		MT_mmap_tab[i].next = MT_mmap_first;
 		MT_mmap_first = i;
-		if (MT_mmap_cur == -1) MT_mmap_cur = i;
 #ifdef MMAP_DEBUG
 		stream_printf(GDKerr, "MT_mmap_new: %s fd=%d\n", path, fd);
 #endif
 		strncpy(MT_mmap_tab[i].path, path, 128);
 		MT_mmap_tab[i].base = base;
 		MT_mmap_tab[i].len = len;
-		MT_mmap_tab[i].save_tile = 1;
-		MT_mmap_tab[i].last_tile = 0;
-		MT_mmap_tab[i].first_tile = 0;
-		MT_mmap_tab[i].unload_tile = 0;
+		MT_mmap_tab[i].saved = len;
+		MT_mmap_tab[i].unloaded = 0;
 		MT_mmap_tab[i].writable = writable;
 		MT_mmap_tab[i].fd = fd;
 		MT_mmap_tab[i].pincnt = 0;
+		MT_mmap_tab[i].save_ready = 0;
 		fd = -1;
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
@@ -598,9 +492,6 @@ MT_mmap_del(void *base, size_t len)
 			} else if (prev) {
 				victim = MT_mmap_tab[prev].next;
 				MT_mmap_tab[prev].next = MT_mmap_tab[victim].next;
-			}
-			if (MT_mmap_cur == victim) {
-				MT_mmap_cur = MT_mmap_first;
 			}
 #ifdef HAVE_POSIX_FADVISE
 			if (!do_not_use_posix_fadvise &&
@@ -655,6 +546,36 @@ MT_fadvise(void *base, size_t len, int advice)
 	return ret;
 }
 
+size_t
+MT_getrss()
+{
+	/* get RSS  -- linux only for the moment */
+	static char MT_mmap_procfile[128] = { 0 };
+	int fd;
+
+	if (MT_mmap_procfile[0] == 0) {
+		sprintf(MT_mmap_procfile, "/proc/%d/stat", getpid());
+	}
+	fd = open(MT_mmap_procfile, O_RDONLY);
+	if (fd >= 0) {
+		char buf[1024], *r = buf;
+		size_t i, sz = read(fd, buf, 1024);
+
+		close(fd);
+		if (sz > 0) {
+			for (i = 0; i < 23; i++) {
+				while (*r && (*r == ' ' || *r == '\t'))
+					r++;
+				while (*r && (*r != ' ' && *r != '\t'))
+					r++;
+			}
+			while (*r && (*r == ' ' || *r == '\t'))
+				r++;
+			return ((size_t) atol(r)) * MT_pagesize();
+		}
+	}
+	return 0;
+}
 
 static void
 MT_mmap_unload_tile(int i, size_t off, stream* err) {
@@ -686,7 +607,7 @@ MT_mmap_save_tile(int i, size_t tile, stream* err) {
 			MT_mmap_tab[i].path, (unsigned int) (tile>>20), (unsigned int) (MT_MMAP_TILE>>20));
 	}
  	t = GDKms();
-	ret = MT_msync(MT_mmap_tab[i].base+tile, MT_MMAP_TILE, MMAP_SYNC);
+	ret = msync(MT_mmap_tab[i].base+tile, MT_MMAP_TILE, MS_SYNC);
 	t = GDKms() - t;
 	if (err) {
 		stream_printf(err, "MT_mmap_save_tile: msync(%s,tile=%uM,%uM,SYNC) = %d (%dms)\n", 
@@ -694,80 +615,69 @@ MT_mmap_save_tile(int i, size_t tile, stream* err) {
 	}
 	if (t > 200) {
 		/* this took time; so we should report back on our actions and await new orders */
-		if (MT_mmap_tab[i].save_tile == 1) {
-			MT_mmap_tab[i].first_tile = tile;
-			/* leave first tile for later sequential use pass (start unloading after it) */
-			MT_mmap_tab[i].unload_tile = tile + MT_MMAP_TILE; 
-		} 
-		MT_mmap_tab[i].save_tile = tile + MT_MMAP_TILE; 
+		if (MT_mmap_tab[i].saved == MT_mmap_tab[i].len) {
+			/* report 4 tiles back as 'saved' to give the producing MIL operator some slack time */
+			MT_mmap_tab[i].first_saved = MT_mmap_tab[i].saved = MT_mmap_tab[i].unloaded = tile; 
+		} else {
+			MT_mmap_tab[i].saved = tile + MT_MMAP_TILE; 
+		}
 		(void) pthread_mutex_unlock(&MT_mmap_lock);
 		return 1; 
 	}
 	return 0;
 }
 
-/* round-robin next. this is to ensure some fairness if multiple large results are produced simultaneously */
-int MT_mmap_next(int i) {
-	if (i != -1) { 
-		i = MT_mmap_tab[i].next;
-		if (i == -1) i = MT_mmap_first;
-	}
-	return i;
-}
 
 int
 MT_mmap_trim(size_t target, void *fp)
 {
 	stream *err = (stream *) fp;
-	size_t off, rss = MT_getrss();
-	int i, worry = (rss*4 > target*3);
+	size_t off, delta = 0, rss = MT_getrss();
+	int i;
 
 	(void) pthread_mutex_lock(&MT_mmap_lock);
 	if (err) {
 		stream_printf(err, "MT_mmap_trim(%u MB): rss = %u MB\n", (unsigned int) ((target) >> 20), (unsigned int) (rss >> 20));
 	}
 	if (rss > target) {				
-		/* try to selectively unload pages from the writable regions */
-		size_t delta = ((rss - target) + 4*MT_MMAP_TILE - 1) & ~(MT_MMAP_TILE-1);
-		for(i = MT_mmap_next(MT_mmap_cur); delta && i != MT_mmap_cur; i = MT_mmap_next(i)) {
+		delta = ((rss - target) + 4*MT_MMAP_TILE - 1) & ~(MT_MMAP_TILE-1);
+		/* first try to selectively unload pages from the writable regions */
+		for (i = MT_mmap_first; delta && i >= 0; i = MT_mmap_tab[i].next) {
 			if (MT_mmap_tab[i].fd >= 0 && MT_mmap_tab[i].writable) {
-				if (MT_mmap_tab[i].unload_tile >= MT_mmap_tab[i].save_tile)
-					MT_mmap_tab[i].unload_tile = MT_mmap_tab[i].first_tile;
-				while(MT_mmap_tab[i].unload_tile < MT_mmap_tab[i].save_tile) {
-					MT_mmap_unload_tile(i, MT_mmap_tab[i].unload_tile, err);
-					MT_mmap_tab[i].unload_tile += MT_MMAP_TILE;
+				if (MT_mmap_tab[i].unloaded >= MT_mmap_tab[i].saved)
+					MT_mmap_tab[i].unloaded = MT_mmap_tab[i].first_saved;
+				while(MT_mmap_tab[i].unloaded < MT_mmap_tab[i].saved) {
+					MT_mmap_unload_tile(i, MT_mmap_tab[i].unloaded, err);
+					MT_mmap_tab[i].unloaded += MT_MMAP_TILE;
 					if ((delta -= MT_MMAP_TILE) == 0) break;
 				}
 			}
 		}
 	} 
-	if (worry) {
-		/* schedule background saves of tiles */
-		for(i = MT_mmap_next(MT_mmap_cur); i != MT_mmap_cur; i = MT_mmap_next(i)) {
-			if (MT_mmap_tab[i].fd >= 0 && MT_mmap_tab[i].writable && 
+	if (rss*4 > target*3) {
+		/* only if we're not yet in trouble we schedule background I/O */
+		for (i = MT_mmap_first; i >= 0; i = MT_mmap_tab[i].next) {
+			if (MT_mmap_tab[i].fd >= 0 && 
+			    MT_mmap_tab[i].writable && 
+			    !MT_mmap_tab[i].save_ready &&
 			   (MT_mmap_tab[i].pincnt == 0 || MT_mmap_tab[i].len > target)) 
 			{
-				if (MT_mmap_tab[i].save_tile == 1) {
+				if (MT_mmap_tab[i].saved == MT_mmap_tab[i].len) {
 					/* first run, walk backwards until we hit an unsaved tile */
-					for(off=MT_mmap_tab[i].len; off>=MT_MMAP_TILE; off-=MT_MMAP_TILE)
+					for(off=MT_mmap_tab[i].saved; off>=MT_MMAP_TILE; off-=MT_MMAP_TILE)
 						if (MT_mmap_save_tile(i, off, err)) return 1;
-				} else { 
-					/* save the next tile */
-					for(off=MT_mmap_tab[i].save_tile; off+MT_MMAP_TILE<MT_mmap_tab[i].len; off+=MT_MMAP_TILE) {
-						if (MT_mmap_save_tile(i, off, err)) return 1;
-					}
-					/* we seem to have run through all savable tiles */
-					if (!MT_mmap_tab[i].last_tile) {
-						MT_mmap_tab[i].last_tile = 1;
-						MT_mmap_tab[i].unload_tile = MT_mmap_tab[i].first_tile;
-					}
+				} 
+				/* save the next tile */
+				for(off=MT_mmap_tab[i].saved; off+MT_MMAP_TILE<MT_mmap_tab[i].len; off+=MT_MMAP_TILE) {
+					if (MT_mmap_save_tile(i, off, err)) return 1;
 				}
+				MT_mmap_tab[i].unloaded = MT_mmap_tab[i].first_saved;
+				MT_mmap_tab[i].save_ready = 1;
 			}
 		} 
-		MT_mmap_cur = i;
 	}
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
-	return (worry);
+	return (rss*4 > target*3);
 }
 
 void
@@ -797,7 +707,6 @@ MT_mmap_unpin(void *base, size_t len)
 	(void) pthread_mutex_unlock(&MT_mmap_lock);
 }
 
-#ifndef NATIVE_WIN32
 #ifdef HAVE_POSIX_FADVISE
 #ifdef HAVE_UNAME
 #include <sys/utsname.h>
@@ -830,38 +739,6 @@ MT_init_posix(int alloc_map)
 #endif
 	MT_mmap_init();
 }
-
-size_t
-MT_getrss()
-{
-	/* get RSS  -- linux only for the moment */
-	static char MT_mmap_procfile[128] = { 0 };
-	int fd;
-
-	if (MT_mmap_procfile[0] == 0) {
-		sprintf(MT_mmap_procfile, "/proc/%d/stat", getpid());
-	}
-	fd = open(MT_mmap_procfile, O_RDONLY);
-	if (fd >= 0) {
-		char buf[1024], *r = buf;
-		size_t i, sz = read(fd, buf, 1024);
-
-		close(fd);
-		if (sz > 0) {
-			for (i = 0; i < 23; i++) {
-				while (*r && (*r == ' ' || *r == '\t'))
-					r++;
-				while (*r && (*r != ' ' && *r != '\t'))
-					r++;
-			}
-			while (*r && (*r == ' ' || *r == '\t'))
-				r++;
-			return ((size_t) atol(r)) * MT_pagesize();
-		}
-	}
-	return 0;
-}
-
 
 char *
 MT_heapcur(void)
@@ -990,15 +867,6 @@ MT_init_posix(int alloc_map)
 #else
 	(void)alloc_map;
 #endif
-	MT_mmap_init();
-}
-
-size_t
-MT_getrss()
-{
-	MEMORYSTATUSEX statex;
-	GlobalMemoryStatusEx (&statex);
-	return statex.dwMemoryLoad;
 }
 
 char *
@@ -1095,6 +963,28 @@ MT_madvise(void *p, size_t len, int advise)
 	(void)len; 
 	(void)advise;
 	return 0;		/* would -1 be better? */
+}
+
+void
+MT_mmap_pin(void *base, size_t len)
+{
+	(void) base;
+	(void) len;
+}
+
+void
+MT_mmap_unpin(void *base, size_t len)
+{
+	(void) base;
+	(void) len;
+}
+
+int
+MT_mmap_trim(size_t lim, void *err)
+{
+	(void) lim;
+	(void) err;
+	return 0;
 }
 
 #ifndef _HEAPOK			/* MinGW */

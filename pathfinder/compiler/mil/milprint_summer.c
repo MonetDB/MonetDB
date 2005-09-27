@@ -6777,7 +6777,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "var attr_item := attr.leftfetchjoin(item);\n"
                 "var attr_iter := attr.leftfetchjoin(iter);\n"
                 "attr := nil;\n"
-                "var attr_pre := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_PRE));\n"
+                "var attr_pre := mposjoin(attr_item, attr_frag, ws.fetch(ATTR_OWN));\n"
                 "attr_item := nil;\n"
                 "attr_frag := nil;\n"
                 "var elem := kind.get_type(ELEM).mark(0@0).reverse();\n"

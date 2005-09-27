@@ -1,9 +1,0 @@
-# Polymorphic function tests
-# Catching a dynamic error
-function test(b:bat[:any,:any$2],c:any$2);
-	k:= 1+c;
-	io.print(k);
-end test;
-
-c:= bat.new(:int,:str);
-user.test(c,"hello");
