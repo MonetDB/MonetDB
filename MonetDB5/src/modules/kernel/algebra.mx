@@ -644,7 +644,7 @@ comment "Gives the product of all tail values";
 
 @= avg_definition
 command avg (b:bat[:any_1,:@1] ) :dbl 
-address CMDavg_@1
+address ALGavg_@1
 comment "Gives the avg of all tail values";
 @mal
 @:avg_definition(sht)@
@@ -1701,6 +1701,22 @@ str ALGprod_@1_@2(@2* res, int *bid) {
 @:ALGprod_implementation(flt,dbl,1.0)@
 @:ALGprod_implementation(dbl,dbl,1.0)@
 
+@= avg_impl
+str ALGavg_@1(dbl *res, int *bid) {
+	BAT *b;
+    if( (b= BATdescriptor(*bid)) == NULL ){
+         return throwMessage("algebra.prod", "Cannot access descriptor");
+    }
+	CMDavg_@1(res,b);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+@c
+@:avg_impl(sht)@
+@:avg_impl(int)@
+@:avg_impl(lng)@
+@:avg_impl(flt)@
+@:avg_impl(dbl)@
 @-
 @= ALGaggregate_implementation
 mal_export str ALGmin_@1(@1* res, int *bid) ;
