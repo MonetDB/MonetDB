@@ -1,8 +1,8 @@
-    V7 := bat.new(:void,:int);
-    V10 := bat.new(:int,:void);
+    V7 := bat.new(:void,:oid);
+    V10 := bat.new(:void,:int);
     V16 := algebra.markH(V7);
     V17 := algebra.join(V16,V7);
-    V19 := bat.new(:void,:int);
+    V19 := bat.new(:void,:oid);
     V22 := bat.new(:void,:int);
     V23 := algebra.join(V16,V22);
 	io.print("done");

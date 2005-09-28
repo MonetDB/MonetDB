@@ -25,7 +25,7 @@ stdout of test 'DCexample` in directory 'src/optimizer` itself:
 #mdb.list();
 #
 function user.main():int;	# 0  (main:int)
-    io.print("done");	# 1 IOprint_val (_10:int)<-(_11:str)
+    io.print("done");	# 1 IOprint_val (_11:int)<-(_12:str)
 end main;	# 2  
 [ "done" ]
 
