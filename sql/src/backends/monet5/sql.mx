@@ -167,8 +167,16 @@ pattern calc.hash( v:any_1, sh:int ) :int
 address hash_wrap 
 comment "calculate a hash value and shift left";
 
-#command calc.hash( b:bat[:void,:any_1], sh:int ) :bat[:void,:int]
-#address hash_wrap 
+command batcalc.hash( b:bat[:void,:any_1], sh:int ) :bat[:void,:int]
+address voidbathash_wrap 
+comment "calculate a hash value and shift left";
+
+command batcalc.hash( b:bat[:oid,:any_1], sh:int ) :bat[:oid,:int]
+address bathash_wrap 
+comment "calculate a hash value and shift left";
+
+#command batstr.hash( b:bat[:void,:str], sh:int ) :bat[:void,:int]
+#address bathash_wrap 
 #comment "calculate a hash value and shift left";
 
 command calc.current_date():date
@@ -999,7 +1007,7 @@ mvc_import_table_wrap(int *res, stream **s, str *tname, str *sep, str *rsep, int
 }
 
 str
-bathash_wrap(int *res, int *bid, int *shift)
+voidbathash_wrap(int *res, int *bid, int *shift)
 {
 	BAT *b, *dst;
 	int sh = *shift;
@@ -1038,7 +1046,7 @@ bathash_wrap(int *res, int *bid, int *shift)
 	}
 	dst->batBuns->free = ((r-f)*BUNsize(dst));
 	BATsetcount(dst, r-f);
-	BATkey(dst, 0);
+	BATkey(BATmirror(dst), 0);
 	dst->tsorted = 0;
 
 	BBPincref( *res = dst->batCacheid, TRUE);
@@ -1046,6 +1054,51 @@ bathash_wrap(int *res, int *bid, int *shift)
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
+
+str
+bathash_wrap(int *res, int *bid, int *shift)
+{
+	BAT *b, *dst;
+	int sh = *shift;
+	hash_t (*hash)(ptr v); 
+
+	if( (b = BATdescriptor(*bid)) == NULL ){
+		return throwMessage("bathash", "Cannot access descriptor");
+	}
+
+	dst= BATnew(TYPE_oid,TYPE_int, BATcount(b));
+	if (!dst) {
+		BBPunfix(b->batCacheid);
+		return throwMessage("bathash", "can not create bat");
+	}
+
+	hash = BATatoms[b->ttype].atomHash;
+	if (ATOMvarsized(b->ttype)) { /* ugh */
+		BUN p,q;
+		int xx;
+
+		BATloopFast(b,p,q,xx){
+			ptr v = BUNtail(b,p);
+			int h = (hash(v) << (sh)) & 0xEFFFFFFF;
+			BUNins(dst, BUNhead(b,p), &h);
+		}
+	} else {
+		BUN p,q;
+		int xx;
+
+		BATloopFast(b,p,q,xx){
+			ptr v = BUNtail(b,p);
+			int h = (hash(v) << (sh)) & 0xEFFFFFFF;
+			BUNins(dst, BUNhead(b,p), &h);
+		}
+	}
+
+	BBPincref( *res = dst->batCacheid, TRUE);
+	BBPunfix(*res);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
 
 str
 hash_wrap(MalBlkPtr m, MalStkPtr s, InstrPtr p)

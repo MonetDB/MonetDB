@@ -51,6 +51,7 @@ sql_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
 sql_export void backend_dumpproc(backend *be, Client c, int id, stmt *s);
 sql_export void backend_callinline(backend *be, Client c, stmt *s, list *args);
 sql_export void backend_call(backend *be, Client c, int id, list *args);
+sql_export int backend_exec_prepared_stmt( backend *be, cq *q );
 
 #define _SQL_GENCODE_DEBUG
 #endif /* _SQL2MAL_H */
@@ -320,12 +321,14 @@ dump_multiplex(MalBlkPtr mb, char *name /* should be eaten */, int o1, int o2, i
 		if( *(name+1) == 0) match++;
 		match= 1;
 	}
+	if (strcmp(name,"hash") == 0 || strcmp(name,"xor") == 0)
+		match = 1;
 	if( match && type <= TYPE_str){
 		if (type == TYPE_str)
 			q = newStmt(mb, "batstr", name);
 		else
 			q = newStmt(mb, "batcalc", name);
-		setVarType(mb,getArg(q,0), newBatType(TYPE_void,rtype));
+		/*setVarType(mb,getArg(q,0), newBatType(TYPE_void,rtype));*/
 		q = pushArgument(mb, q, o1);
 		q = pushArgument(mb, q, o2);
 	} else {
@@ -1426,6 +1429,9 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 	Symbol curPrg = 0;
 	InstrPtr curInstr = 0;
 	char fnme[BUFSIZ];
+	int argc = 0;
+	char arg[32];
+	node *n;
 
 	/* later we could use the id directly (as its unique) and
 	   just create a InstrPtr using newInstruction */
@@ -1441,13 +1447,22 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 	setModuleId(curInstr, putName("sql_cache",9));
 
 	if (be->mvc->args) {
-		int argc = 0;
-		char arg[32];
-		node *n;
 
 		for (n = be->mvc->args->h; n; n = n->next, argc++) {
 			atom *a = n->data;
 			int type = a->tpe->type->localtype;
+			int varid = 0;
+
+			snprintf(arg, 32, "A%d", argc);
+			varid = newVariable(curBlk, _strdup(arg), type);
+			curInstr = pushArgument(curBlk, curInstr, varid);
+			setVarType(curBlk, varid, type);
+		}
+	} else if (be->mvc->params) { /* needed for prepare statements */
+
+		for (n = be->mvc->params->h; n; n = n->next, argc++) {
+			var_ *v = n->data;
+			int type = tail_type(v->s)->type->localtype;
 			int varid = 0;
 
 			snprintf(arg, 32, "A%d", argc);
@@ -1495,4 +1510,34 @@ backend_call(backend *be, Client c, int id, list *args)
 			}
 		}
 	}
+}
+
+int
+backend_exec_prepared_stmt( backend *be, cq *q )
+{
+	mvc *c = be->mvc;
+	node *a, *p;
+	int argc, parc; 
+
+	argc = c->args?list_length(c->args):0;
+	parc = q->params?list_length(q->params):0;
+
+	if (argc != parc) {
+		sql_error(c, 0002, "wrong number of arguments for prepared statement\n");
+		return -1;
+	} else if (c->args) {
+		for (a = c->args->h, p = q->params->h; a && p; a = a->next, p = p->next) {
+			atom *arg = a->data;
+			sql_subtype *pt = p->data;
+
+			if (!atom_cast(arg, pt)) {
+				char buf[BUFSIZ];
+
+				snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
+				sql_error(c, 003, buf);
+				return -1;
+			}
+		}
+	}
+	return 0;
 }

@@ -657,6 +657,54 @@ SQLsetExplain(Client c)
 	c->listing = (c->listing & LIST_INPUT) | LIST_MAL_ALL;
 }
 
+static int
+output_prepare(stream *out, mvc *c, cq *q)
+{
+	node *n;
+
+	if (!out)
+		return 0;
+	/* indicate to client that a new SQL command starts here */
+	if (stream_printf(out,
+		"#-\n"
+		"# " SZFMT " # querytype\n"
+		"# prepare,	prepare,	prepare # table_name\n"
+		"# type,	digits,	scale # name\n"
+		"# varchar,	int,	int # type\n"
+		"# 0,	0,	0 # length\n"
+		"# %d # tuplecount\n"
+		"# %d # id\n",
+		Q_PREPARE,
+		c->params ? list_length(c->params) : 0,
+		q->id
+	) < 0) {
+		return -1;
+	}
+
+	if (c->params) {
+		for (n = c->params->h; n; n = n->next) {
+			var_ *v = n->data;
+			sql_subtype *t = tail_type(v->s);
+
+			if (t) {
+				if (stream_printf(out,
+					"[ \"%s\",	%d,	%d	]\n",
+					t->type->sqlname,
+					t->digits,
+					t->scale
+				) < 0) {
+					return -1;
+				}
+				/* add to the query cache param list */
+				list_append(q->params, sql_dup_subtype(t));
+			} else {
+				return -1;
+			}
+		}
+	}
+	return 0;
+}
+
 @-
 The core part of the SQL interface, parse the query and
 prepare the intermediate code.
@@ -757,7 +805,20 @@ to the next statement (if any).
 Now is the time to also perform the semantic analysis, optimize and produce code.
 @c
 	SQLsetDebugger(c, m, m->mode == m_debug);
-	if (err == 0 && (!(be->q = qc_match(m->qc, m->sym, m->args, m->scanner.key)))) {
+	be->q = NULL;
+	if (err == 0 && m->mode == m_execute) {
+		be->q = qc_find(m->qc, m->sym->data.lval->h->data.ival);
+		if (!be->q) {
+			err = -1;
+			sql_error(m, 2, "no prepared statement with the given id\n");
+		} else {
+			err = backend_exec_prepared_stmt( be, be->q );
+		}
+		if (err) {
+			sqlcleanup(m, err);
+			goto finalize;
+		}
+	} else if (err == 0 && !be->q && (!(be->q = qc_match(m->qc, m->sym, m->args, m->scanner.key)))) {
 		stmt *s = sql_symbol2stmt(m);
 
 		if (!s && (err = mvc_status(m))) {
@@ -770,11 +831,6 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		/* generate and call the MAL code */
 		if (!m->cache ){
 			backend_dumpstmt(be, c->curprg->def, s);
-/* Niels 
-		} else
-		if( (msg= sql_get_var(m,"optimizer"))== NULL || *msg == 0) {
-			backend_callinline(be, c, s, m->args);
-*/
 		} else {
 			/* generate a factory instantiation */
 			backend_dumpproc(be, c, m->qc->id, s);
@@ -795,8 +851,15 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 	else
 		stream_printf(GDKout, "#parse result %d\n", err);
 #endif
-	if (be->q)
+	if (be->q && c->mode == m_prepare) {
+		err = output_prepare(c->fdout, m, be->q);
+/* Niels (has to move into SQLengine) 
+	} else if(be->q && (msg= sql_get_var(m,"optimizer"))== NULL || *msg == 0) {
+		backend_callinline(be, c, be->q, m->args);
+*/
+	} else if (be->q) {
 		backend_call(be, c, be->q->id, m->args);
+	}
 
 @-
 In the final phase we add any debugging control
