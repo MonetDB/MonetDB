@@ -1241,7 +1241,7 @@ char equality[ty_types][ty_types] = {
  * An entry for @a promotable[t1][t2] of
  * - 0 indicates t1 cannot be promoted to t2
  * - 1 indicates t1 can be promoted to t2
- * - _ indicates promotoion must be decided using Antimirov's algorithm.
+ * - _ indicates promotion must be decided using Antimirov's algorithm.
  */
 static
 char promotable[ty_types][ty_types] = { 
@@ -1254,7 +1254,7 @@ char promotable[ty_types][ty_types] = {
                                               t   e
                                               y   d n i d     b 
                                               p a A u n e d s o 
-                          e n                 e t t m t c o t o 
+                            e n               e t t m t c o t o 
                           n m a             i d o o e e i u r l n e a   t   c
                           o p m             t A m m r g m b i e o l t d x   o
                           n t e             e n i i i e a l n a d e t o e p m
