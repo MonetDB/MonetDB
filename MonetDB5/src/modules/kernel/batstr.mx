@@ -45,11 +45,20 @@ command match(b:bat[:void,:str], pat:str):bat[:void,:bit]
 address STRbatmatchCst
 comment "POSIX pattern matching against a string BAT";
 
+comment "Equate a bat of strings against each other";
 command ==( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:bit]
 address STRbatEqual
 comment "Equate a bat of strings against each other";
 command ==( l:bat[:void,:str], r:str) :bat[:void,:bit]
 address STRbatEqualCst
+comment "Equate a bat of strings against a singleton";
+
+comment "Equate a bat of strings against each other";
+command !=( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:bit]
+address STRbatNotEqual
+comment "Equate a bat of strings against each other";
+command !=( l:bat[:void,:str], r:str) :bat[:void,:bit]
+address STRbatNotEqualCst
 comment "Equate a bat of strings against a singleton";
 
 command toLower( s:bat[:void,:str] ) :bat[:void,:str]
@@ -264,9 +273,10 @@ bunins_failed:
 
 @-
 @c
-mal_export str STRbatEqualCst(int *ret, int *l, str *cst);
+@= STRbatcstcmp
+mal_export str STRbat@2Cst(int *ret, int *l, str *cst);
 str
-STRbatEqualCst(int *ret, int *l, str *cst)
+STRbat@2Cst(int *ret, int *l, str *cst)
 {
 	BAT *bn, *b;
 	BUN p, q;
@@ -274,8 +284,8 @@ STRbatEqualCst(int *ret, int *l, str *cst)
 	str x;
 	bit y;
 
-	prepareOperand(b, l, "==");
-	prepareResult(bn, b, TYPE_bit, "==");
+	prepareOperand(b, l, "@1");
+	prepareResult(bn, b, TYPE_bit, "@1");
 	BATloopFast(b, p, q, xx) {
 		ptr h = BUNhead(b, p);
 
@@ -283,7 +293,7 @@ STRbatEqualCst(int *ret, int *l, str *cst)
 		if (x == 0 || *x == 0 || strcmp(x, str_nil) == 0)
 			y = bit_nil;
 		else
-			y = strcmp(x, *cst) == 0;
+			y = strcmp(x, *cst) @1 0;
 		bunfastins(bn, h, &y);
 	}
 	finalizeResult(ret, bn, b);
@@ -291,8 +301,11 @@ STRbatEqualCst(int *ret, int *l, str *cst)
       bunins_failed:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	return throwMessage("batstr.==", "bunins failed");
+	return throwMessage("batstr.@1", "bunins failed");
 }
+@c
+@:STRbatcstcmp(==,Equal)@
+@:STRbatcstcmp(!=,NotEqual)@
 
 @-
 A general assumption in all cases is the bats are synchronized on their
@@ -302,17 +315,18 @@ implementation for shifted window arithmetic as well.
 	if( BATcount(@1) != BATcount(@2) )
 	return throwMessage("batcalc.@3", "requires bats of identical size");
 @c
-mal_export str STRbatEqual(int *ret, int *l, int *r);
+@= STRbatcmp
+mal_export str STRbat@2(int *ret, int *l, int *r);
 str
-STRbatEqual(int *ret, int *l, int *r)
+STRbat@2(int *ret, int *l, int *r)
 {
 	BAT *bn, *left, *right;
 	BUN o, p, q;
 	int xx, yy;
 
-	prepareOperand2(left, l, right, r, "==");
+	prepareOperand2(left, l, right, r, "@1");
 	@:chkSize(left,right,CMDcompare@1)@
-	prepareResult2(bn, left, right, TYPE_bit, "==");
+	prepareResult2(bn, left, right, TYPE_bit, "@1");
 
 	o = BUNfirst(left);
 	p = BUNfirst(right);
@@ -325,7 +339,7 @@ STRbatEqual(int *ret, int *l, int *r)
 		ptr tl = BUNtail(left, o);
 		ptr tr = BUNtail(right, p);
 
-		if (tl == 0 || tr == 0 || strcmp(tl, tr) != 0)
+		if (tl == 0 || tr == 0 || !(strcmp(tl, tr) @1 0))
 			y = FALSE;
 		bunfastins(bn, h, &y);
 		o += xx;
@@ -339,8 +353,11 @@ STRbatEqual(int *ret, int *l, int *r)
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
-	return throwMessage("batstr.==", "bunins failed");
+	return throwMessage("batstr.@1", "bunins failed");
 }
+@c
+@:STRbatcmp(==,Equal)@
+@:STRbatcmp(!=,NotEqual)@
 
 @= binarySTR
 mal_export str STRbat@1(int *ret, int *l, int *r);
