@@ -8,9 +8,15 @@ io.print(b);
 #materialize header
 c:= bat.reverse(b);
 io.print(c);
+
+
 d:= algebra.markT(c);
 io.print(d);
+info:= bat.info(d);
+io.print(info);
 
 #perform header marking
 f:= algebra.markH(b);
 io.print(f);
+info:= bat.info(f);
+io.print(info);
