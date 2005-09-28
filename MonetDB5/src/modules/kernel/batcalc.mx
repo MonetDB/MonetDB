@@ -1151,6 +1151,7 @@ str CMDcmp@1(int *ret, int *l, int *r)
 	}
 bunins_failed:
 	dst->hsorted= BAThordered(left);
+	dst->tsorted= (BATtordered(left)&BATtordered(right))?GDK_SORTED_REV:0;
 	BBPincref(*ret = dst->batCacheid,TRUE);
 	BBPunfix(*ret);
 	msg= compareaccum@1(dst,left,right);

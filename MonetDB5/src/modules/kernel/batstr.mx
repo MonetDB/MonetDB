@@ -52,6 +52,9 @@ command ==( l:bat[:void,:str], r:str) :bat[:void,:bit]
 address STRbatEqualCst
 comment "Equate a bat of strings against a singleton";
 
+command !=( l:bat[:void,:str], r:bat[:oid,:str]) :bat[:void,:bit]
+address STRbatNotEqual
+comment "Equate a bat of strings against each other";
 command !=( l:bat[:void,:str], r:bat[:void,:str]) :bat[:void,:bit]
 address STRbatNotEqual
 comment "Equate a bat of strings against each other";
@@ -294,6 +297,7 @@ STRbat@2Cst(int *ret, int *l, str *cst)
 			y = strcmp(x, *cst) @1 0;
 		bunfastins(bn, h, &y);
 	}
+	bn->tsorted = (BATtordered(b))?@3:0;
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
       bunins_failed:
@@ -302,8 +306,8 @@ STRbat@2Cst(int *ret, int *l, str *cst)
 	return throwMessage("batstr.@1", "bunins failed");
 }
 @c
-@:STRbatcstcmp(==,Equal)@
-@:STRbatcstcmp(!=,NotEqual)@
+@:STRbatcstcmp(==,Equal,GDK_SORTED_REV)@
+@:STRbatcstcmp(!=,NotEqual,GDK_SORTED)@
 
 @-
 A general assumption in all cases is the bats are synchronized on their
@@ -344,6 +348,7 @@ STRbat@2(int *ret, int *l, int *r)
 		p += yy;
 	}
 	BBPunfix(right->batCacheid);
+	bn->tsorted = (BATtordered(left)&BATtordered(right))?@3:0;
 	finalizeResult(ret, bn, left);
 	return MAL_SUCCEED;
 
@@ -354,8 +359,8 @@ STRbat@2(int *ret, int *l, int *r)
 	return throwMessage("batstr.@1", "bunins failed");
 }
 @c
-@:STRbatcmp(==,Equal)@
-@:STRbatcmp(!=,NotEqual)@
+@:STRbatcmp(==,Equal,GDK_SORTED_REV)@
+@:STRbatcmp(!=,NotEqual,GDK_SORTED)@
 
 @= binarySTR
 mal_export str STRbat@1(int *ret, int *l, int *r);
