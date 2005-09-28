@@ -2541,15 +2541,6 @@ ALGmarkHead_default(int *result, int *bid)
 	return ALGmarkHead(result, bid, &o);
 }
 
-mal_export str ALGmarkHead_default1(int *result, int *bid);
-str
-ALGmarkHead_default1(int *result, int *bid)
-{
-	oid o = 0;
-
-	return ALGmarkHead(result, bid, &o);
-}
-
 mal_export str ALGhashsplit(int *result, int *bid, int *nfrag);
 str
 ALGhashsplit(int *result, int *bid, int *nfrag)
