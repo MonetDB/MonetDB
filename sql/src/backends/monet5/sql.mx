@@ -957,6 +957,8 @@ mvc_result_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)ret;
 	(void)rs;
 	@:getContext(c)@
+	if (ATOMvarsized(mtype)) 
+		p = *(ptr*)p;
 	if (mvc_result_value(c, *tn, *cn, *type, *digits, *scale, p, mtype))
 		return throwMessage("sql.rsColumn", "failed");
 	return MAL_SUCCEED;
