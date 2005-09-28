@@ -513,15 +513,11 @@ address ALGtmark_default
 comment "Produces a BAT with fresh unique OIDs in the tail starting at 0@0.";
 
 
-command markH( b:bat[:any_1,:any_2] ) :bat[:void,:any_1] 
+command markH( b:bat[:any_1,:any_2] ) :bat[:void,:any_2] 
 address ALGmarkHead_default
 comment "Produces a BAT with fresh OIDs in the head starting at 0@0.";
 
-command markH( b:bat[:void,:any_2] ) :bat[:void,:oid] 
-address ALGmarkHead_default1
-comment "Produces a BAT with fresh OIDs in the head starting at 0@0.";
-
-command markH( b:bat[:any_1,:any_2], base:oid ) :bat[:void,:any_1] 
+command markH( b:bat[:any_1,:any_2], base:oid ) :bat[:void,:any_2] 
 address ALGmarkHead
 comment "Produces a new BAT with fresh unique dense sequense of OIDs in 
         the head that starts at base (i.e. [base,..base+b.count()-1] ).";
@@ -981,8 +977,6 @@ CMDminany(ptr result, BAT *b)
 {
 	if (!ATOMlinear(b->ttype))
 		return GDKerror("CMDminANY: atom '%s' cannot be ordered linearly\n", ATOMname(b->ttype));
-	if (ATOMvarsized(b->ttype))
-		return (*(ptr *) result = BATmin(b, NULL)) ? GDK_SUCCEED : GDK_FAIL;
 	if (BATmin(b, result)) {
 		if (b->ttype == TYPE_bat)
 			*(BAT **) result = BATdescriptor(*(bat *) result);
@@ -2521,23 +2515,15 @@ ALGmarkHead(int *result, int *bid, oid *base)
 {
 	BAT *b, *bn = NULL;
 	ptr p, q;
-	oid o = oid_nil, on = 0;
+	oid o = oid_nil;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.markH", "Cannot access descriptor");
 	}
-	if (b->htype == TYPE_void) {
-		bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
-		BATloop(b, p, q) {
-			BUNins(bn, &o, &on);
-			on++;
-		}
-	} else {
-		bn = BATnew(TYPE_void, b->htype, BATcount(b));
-		BATseqbase(bn, *base);
-		BATloop(b, p, q) {
-			BUNins(bn, &o, BUNhead(b, p));
-		}
+	bn = BATnew(TYPE_void, b->ttype, BATcount(b));
+	BATseqbase(bn, *base);
+	BATloop(b, p, q) {
+		BUNins(bn, &o, BUNtail(b, p));
 	}
 
 	BBPincref(*result = bn->batCacheid, TRUE);
