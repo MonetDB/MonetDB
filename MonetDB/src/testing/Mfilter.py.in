@@ -211,11 +211,13 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
                 r'^(ERROR = !|)(syntax|parse)( error, )(unexpected \$.* on line )?(.*\n)',
                 r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*\n)',
                 r'^(ERROR = !ERROR: )(SQLerror:assert:|MALexception:)?(.*\n)',
+		r'^(Connection warning:.*\()(mserver_mal|mserver_sql)(\).*\n)',
            ])+')',  re.MULTILINE)
 norm_out = (
                 None, 'syntax/parse', None, 'unexpected $... on line ', None,
                 None, '(0,0-0,0)', None,
-                None, '', None
+                None, '', None,
+		None, 'mserver_sql', None
            )
 
 
