@@ -2257,7 +2257,12 @@ str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 		BBPunfix(left->batCacheid);
         return throwMessage("algebra.@1", "Cannot access descriptor");
     }
-	CMD@1(&bn,left, right, estimate);
+	if( CMD@1(&bn,left, right, estimate) == GDK_FAIL){
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
+		if( bn) BBPunfix(bn->batCacheid);
+		return throwMessage("algebra.@1", "GDKerror");
+	}
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if( bn ) {
@@ -2270,7 +2275,8 @@ str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 }
 mal_export str ALG@1(int *result, int* bid, int *param);
 str ALG@1(int *result, int* bid, int *param) {
-	return ALG@1estimate(result,bid,param,&lng_nil);
+	lng estimate= lng_nil;
+	return ALG@1estimate(result,bid,param,&estimate);
 }
 @c
 @:ALGunary(histogram)@
