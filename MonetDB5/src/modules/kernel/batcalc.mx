@@ -267,11 +267,11 @@ The command signatures are similar to those above, producing a bit result.
 	@:comparison(and,bit,AND)@
 	@:comparison(or,bit,OR)@
 
-command ==( left:bat[:void,:any_1], right:bat[:oid,:any_1]) :bat[:void,:any_1]
+command ==( left:bat[:void,:any_1], right:bat[:oid,:any_1]) :bat[:void,:bit]
 address CMDcmpEQ;
-command ==( left:bat[:oid,:any_1], right:bat[:void,:any_1]) :bat[:void,:any_1]
+command ==( left:bat[:oid,:any_1], right:bat[:void,:any_1]) :bat[:void,:bit]
 address CMDcmpEQ;
-command ==( left:bat[:void,:any_1], right:bat[:void,:any_1]) :bat[:void,:any_1]
+command ==( left:bat[:void,:any_1], right:bat[:void,:any_1]) :bat[:void,:bit]
 address CMDcmpEQ;
 
 @}
