@@ -1764,6 +1764,8 @@ CMDgen_group(BAT **result, BAT *b )
 		    }
 		}
 	}
+	r -> hsorted = BAThordered(b);
+	r -> tsorted = BATtordered(b);
 	*result = r;
 	return GDK_SUCCEED;
 }
