@@ -851,7 +851,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 	else
 		stream_printf(GDKout, "#parse result %d\n", err);
 #endif
-	if (be->q && c->mode == m_prepare) {
+	if (be->q && m->mode == m_prepare) {
 		err = output_prepare(c->fdout, m, be->q);
 /* Niels (has to move into SQLengine) 
 	} else if(be->q && (msg= sql_get_var(m,"optimizer"))== NULL || *msg == 0) {
@@ -939,7 +939,9 @@ SQLengine(Client c)
 	stream_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
 
-	if( m->mode == m_explain){
+	if( m->mode == m_prepare){
+		goto cleanup_engine;
+	} else if( m->mode == m_explain){
 		printFunction(c->fdout, c->curprg->def, c->listing);
 @-
 If you want to see the detailed code, we have to pick it up from
@@ -974,6 +976,7 @@ environment.
 	if (msg) 
 		m->status = -10;
     }
+cleanup_engine:
     resetInstructions(c->curprg->def, 1);
     resetVariables(c->curprg->def, 0, 0);
 	be->language= oldlang;
