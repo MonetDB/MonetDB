@@ -173,7 +173,7 @@ command prefix(s:str,l:int):str
 address STRprefix
 comment "Extract the prefix of a given length";
 command postfix(s:str,l:int):str
-address STRprefix
+address STRpostfix
 comment "Extract the postfix of a given length";
 
 command locate(s1:str,s2:str):int
@@ -186,7 +186,7 @@ comment "Locate the start position of a string";
 command insert(s:str,start:int,l:int,s2:str):str
 address STRinsert
 comment "Insert a string into another";
-command replace(s:str,start:int,l:int,s2:str):str
+command replace(s:str,pat:str,s2:str):str
 address STRreplace
 comment "Insert a string into another";
 
@@ -1754,8 +1754,8 @@ int
 strSubstitute(str *res, str s, str src, str dst, bit *g)
 {
 	int repeat = *g;
-	size_t lsrc = strlen(src), ldst = strlen(dst);
-	size_t l = strLen(s), n = l + ldst;
+	size_t lsrc = (src?strlen(src):0), ldst = (dst?strlen(dst):0);
+	size_t l = (s?strLen(s):0), n = l + ldst;
 	str buf, fnd, end;
 
 	if (repeat && ldst > lsrc && lsrc) {
@@ -2202,6 +2202,7 @@ STRlocate2(int *ret, str *s1, str *s2, int *start){
 
 str
 STRinsert(str *ret, str *s, int *start, int *l, str *s2){
+	str v;
 	if(strcmp(*s,str_nil)==0){
 		if(strcmp(*s2,str_nil) ==0 )
 			*ret= str_nil;
@@ -2209,11 +2210,12 @@ STRinsert(str *ret, str *s, int *start, int *l, str *s2){
 			*ret= GDKstrdup(*s2);
 	} else {
 		if( *start <0) *start =1;
-		*ret = GDKmalloc(strlen(*s)+strlen(*s2)+1 - *start);
-		strncpy(*ret, *s + *start, *l);
-		*ret[*start+ *l]=0;
-		strcat(*ret,*s2);
-		strcat(*ret,*s + *start+ *l);
+		v= *ret = GDKmalloc(strlen(*s)+strlen(*s2)+1 );
+		strncpy(v, *s,*start);
+		v[*start]=0;
+		strcat(v,*s2);
+		if( *start + *l < strlen(*s)) 
+			strcat(v,*s + *start + *l);
 	}
 	return MAL_SUCCEED;
 }
@@ -2235,8 +2237,9 @@ STRrepeat(str *ret, str *s, int *c){
 	else {
 		l= strlen(*s);
 		t= *ret = GDKmalloc( *c * l +1);
+		*t = 0;
 		
-		for(i= *c; i>0; i++,t+= l) 
+		for(i= *c; i>0; i--,t+= l) 
 			strcat(t, *s);
 	}
 	return MAL_SUCCEED;
