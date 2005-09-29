@@ -162,6 +162,43 @@ command like(s:str,pat:str,esc:str):bit
 address STRlikewrap
 comment "SQL pattern match function";
 
+command ascii(s:str):int
+address STRascii
+comment "Return unicode of head of string;
+
+command substring(s:str, start:int,l:int):str
+address STRsubstring
+comment "Extract the substring of a given length";
+command substring(s:str, start:int):str
+address STRsubstringTail
+comment "Extract the tail of a string";
+
+command prefix(s:int,l:int)
+address STRprefix
+comment "Extract the prefix of a given length;
+command postfix(s:int,l:int)
+address STRprefix
+comment "Extract the postfix of a given length;
+
+command locate(s1:str,s2:str):int
+address STRlocate
+comment "Locate the start position of a string";
+command locate(s1:str,s2:str,start:int)
+address STRlocate2
+command "Locate the start position of a string";
+
+command insert(s:str,start:int,l:int,s2:str):str
+address STRinsert
+comment "Insert a string into another";
+command replace(s:str,start:int,l:int,s2:str):str
+address STRinsert
+comment "Insert a string into another";
+
+command repeat(s1:str,s2:str,c:cnt):str
+address STRrepeat;
+command space(l:int):str
+address STRspace;
+
 command STRprelude()
 address strPrelude;
 
@@ -2123,4 +2160,77 @@ STRSubstitute(str *res, str *arg1, str *arg2, str *arg3, bit *g)
 	return MAL_SUCCEED;
 }
 
+@-
+A few old MIL procs implementations
+@c
+str 
+STRascii(int *ret, str *s){
+	int offset=0;
+	return STRWChrAt(ret,s,&offset);
+}
+
+str
+STRsubstring(str *ret, str *s, int *start, int *l)
+{
+	int offset= *l;
+	if( offset <1) offset =1;
+	return STRSubString(ret, s, start, &offset);
+}
+str
+STRsubstringTail(str *ret, str *s, int *start)
+{
+	int offset= *start;
+	if( offset <1) offset =1;
+	return STRTail(ret, s, &offset);
+}
+str
+STRprefix(str *ret, str *s, int *l){
+	int start =0;
+	return STRSubString(ret,s,&start,l);
+}
+str
+STRpostfix(str *ret, str *s, int *l){
+	int start = strlen(*s)- *l;
+	return STRSubString(ret,s,&start,l);
+}
+str
+STRlocate(int *ret, str *s1, str *s2){
+	int p;
+	strStrSearch(&p, *s1, *s2);
+	*ret=  p>=0? p+1:0;
+	return MAL_SUCCEED;
+}
+str
+STRlocate2(int *ret, str *s1, str *s2, int *start){
+	int p;
+	str dummy;
+	strTail(&dummy, *s1, start);
+	strStrSearch(&p,  dummy, *s2);
+	if( dummy) GDKfree(dummy);
+	*ret=  p>=0? p+1:0;
+	return MAL_SUCCEED;
+}
+
+str
+STRrepeat(str *ret, str *s, int *c){
+	str t;
+	int i;
+	size_t l;
+
+	if( *c < 0 || strcmp(*s,str_nil)==0 )
+		*ret= str_nil;
+	else {
+		l= strlen(*s);
+		t= *ret = GDKmalloc( *c * l +1);
+		
+		for(i= *c; i>0; i++,t+= l) 
+			strcat(t, *s);
+	}
+	return MAL_SUCCEED;
+}
+str
+STRspace(str *ret, int *l){
+	char buf[]= " ", *s= buf;
+	return STRrepeat(ret,&s,l);
+}
 @}
