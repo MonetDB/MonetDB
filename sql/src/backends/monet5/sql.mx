@@ -279,6 +279,8 @@ command calc.ltrim( s:str ) :str address STRLtrim;
 command calc.rtrim( s:str ) :str address STRRtrim;
 command calc.substitute(s:str,src:str,dst:str,rep:bit):str
 address STRSubstitute;
+command calc.substring(s:str,offset:int,count:int):str
+address STRSubString;
 
 #SQL specific time support functions
 command calc.current_timestamp() :timestamp address MTIMEcurrent_timestamp;
