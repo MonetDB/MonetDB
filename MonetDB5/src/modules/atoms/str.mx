@@ -163,21 +163,18 @@ comment "SQL pattern match function";
 
 command ascii(s:str):int
 address STRascii
-comment "Return unicode of head of string;
+comment "Return unicode of head of string";
 
-command substring(s:str, start:int,l:int):str
-address STRsubstring
-comment "Extract the substring of a given length";
 command substring(s:str, start:int):str
 address STRsubstringTail
 comment "Extract the tail of a string";
 
-command prefix(s:int,l:int)
+command prefix(s:str,l:int):str
 address STRprefix
-comment "Extract the prefix of a given length;
-command postfix(s:int,l:int)
+comment "Extract the prefix of a given length";
+command postfix(s:str,l:int):str
 address STRprefix
-comment "Extract the postfix of a given length;
+comment "Extract the postfix of a given length";
 
 command locate(s1:str,s2:str):int
 address STRlocate
@@ -193,7 +190,7 @@ command replace(s:str,start:int,l:int,s2:str):str
 address STRreplace
 comment "Insert a string into another";
 
-command repeat(s1:str,s2:str,c:int):str
+command repeat(s2:str,c:int):str
 address STRrepeat;
 command space(l:int):str
 address STRspace;
@@ -2169,13 +2166,6 @@ STRascii(int *ret, str *s){
 }
 
 str
-STRsubstring(str *ret, str *s, int *start, int *l)
-{
-	int offset= *l;
-	if( offset <1) offset =1;
-	return STRSubString(ret, s, start, &offset);
-}
-str
 STRsubstringTail(str *ret, str *s, int *start)
 {
 	int offset= *start;
@@ -2256,4 +2246,5 @@ STRspace(str *ret, int *l){
 	char buf[]= " ", *s= buf;
 	return STRrepeat(ret,&s,l);
 }
+
 @}
