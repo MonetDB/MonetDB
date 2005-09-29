@@ -73,10 +73,9 @@ command string(s:str,offset:int) :str
 address STRTail
 comment "Return the tail s[offset..n] 
 	 of a string s[0..n].";
-command string(s:str,offset:int,count:int):str 
+command substring(s:str,offset:int,count:int):str 
 address STRSubString
-comment "Return substring s[offset..offset+count] 
-	of a string s[0..n]";
+comment "Return substring s[offset..offset+count] of a string s[0..n]";
 command +( l:str, r:str) :str 
 address STRConcat
 comment "Concatenate two strings.";
