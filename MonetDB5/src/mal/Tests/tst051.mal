@@ -18,4 +18,15 @@ i:= str.locate(nil:str,"xyz"); io.print(i);
 i:= str.locate(nil:str,nil:str); io.print(i);
 
 t:= str.repeat("abc",3);	io.print(t);
+t:= str.repeat(nil:str,3);	io.print(t);
+
+t:= str.insert("hello world",5,1,"brave new "); io.print(t);
+t:= str.insert("",5,1,"brave new "); io.print(t);
+t:= str.insert(nil:str,5,1,"brave new "); io.print(t);
+t:= str.insert("",5,1,"brave new "); io.print(t);
+t:= str.insert("",0,1,"brave new "); io.print(t);
+t:= str.insert("hello world",5,1,""); io.print(t);
+t:= str.insert("hello world",5,1,nil:str); io.print(t);
+
+t:= str.replace("hello world","world","brave new world"); io.print(t);
 
