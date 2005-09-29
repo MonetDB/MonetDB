@@ -102,7 +102,7 @@ tuple_eq (PFalg_tuple_t a, PFalg_tuple_t b)
                     mismatch = true;
                 break;
             case aat_qname:
-                if (!PFqname_eq (a.atoms[i].val.qname, b.atoms[i].val.qname))
+                if (PFqname_eq (a.atoms[i].val.qname, b.atoms[i].val.qname))
                     mismatch = true;
                 break;
 
