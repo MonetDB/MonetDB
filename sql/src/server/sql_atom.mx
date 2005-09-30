@@ -59,7 +59,6 @@ extern void atom_dump(atom *a, stream *s);
 #include "sql_atom.h"
 #include <sql_string.h>
 #include <sql_decimal.h>
-#include <monettime.h>
 
 static int atom_debug = 0;
 

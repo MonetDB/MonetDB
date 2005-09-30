@@ -2085,6 +2085,10 @@ sql_compare_exp(mvc *sql, scope *scp, group *grp, stmt *subset, symbol *lo, symb
 					ls = stmt_join(p, ls, cmp_equal);
 				}
 			}
+			/* it can happen that the subquery reduces the outer
+			   refs, so we need to semijoin here 
+			 */
+			ls = stmt_semijoin(ls, stmt_dup(cmp));
 			cmp = sql_compare(sql, ls, cmp, compare_op, f);
 			/* incase of sub queries no need too filter */
 			if (f == sql_search)
