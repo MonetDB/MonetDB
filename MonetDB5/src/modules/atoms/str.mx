@@ -176,9 +176,9 @@ comment "Extract a substring from str starting at start, for length len";
 command prefix(s:str,l:int):str
 address STRprefix
 comment "Extract the prefix of a given length";
-command postfix(s:str,l:int):str
-address STRpostfix
-comment "Extract the postfix of a given length";
+command suffix(s:str,l:int):str
+address STRsuffix
+comment "Extract the suffix of a given length";
 
 command locate(s1:str,s2:str):int
 address STRlocate
@@ -2192,7 +2192,7 @@ STRprefix(str *ret, str *s, int *l){
 	return STRSubString(ret,s,&start,l);
 }
 str
-STRpostfix(str *ret, str *s, int *l){
+STRsuffix(str *ret, str *s, int *l){
 	int start = strlen(*s)- *l;
 	return STRSubString(ret,s,&start,l);
 }

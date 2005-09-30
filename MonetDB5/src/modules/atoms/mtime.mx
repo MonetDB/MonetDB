@@ -1280,6 +1280,7 @@ date_fromstr(str buf, int *len, date **d)
 		if (*d)
 			GDKfree(*d);
 		*d = (date *) GDKmalloc(*len = sizeof(date));
+		memset((char*) *d, 0, *len);
 	}
 	**d = date_nil;
 	if (yearneg == 0 && !GDKisdigit(buf[0])) {
