@@ -70,7 +70,7 @@ exit MALexception;	# 16  (MALexception:any)
 end main;	# 27  
 [ "MALexception:user.main[7]:bbp.bind:failed to locate object in box\n" ]
 [ "v" ]
-[ "nil" ]
+[ nil ]
 [ "getObjects" ]
 #-------------------------#
 # bbp	objects		  # name

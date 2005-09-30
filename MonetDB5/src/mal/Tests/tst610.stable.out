@@ -149,7 +149,7 @@ end main;	# 42
 [ 10,	  "stat_id_min_lng",	  1,	  1		  ]
 [ 11,	  "stat_id_max_lng",	  1,	  1		  ]
 [ 12,	  "stat_id_histogram",	  1,	  1		  ]
-[ "nil" ]
+[ nil ]
 [ "BAT was destroyed" ]
 [ "BAT was removed from the box" ]
 

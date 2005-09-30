@@ -38,10 +38,9 @@ function user.main():int;	# 0  (main:int)
     s := nil;	# 9  (s:str)<-(_16:str)
     io.print(s);	# 10 IOprint_val (_13:int)<-(s:str)
 end main;	# 11  
-[ 0 ]
-[ "nil" ]
 [ nil ]
-#
+[ nil ]
+[ nil ]
 
 # 15:40:15 >  
 # 15:40:15 >  Done.
