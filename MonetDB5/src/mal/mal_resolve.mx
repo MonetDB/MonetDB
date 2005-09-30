@@ -686,11 +686,7 @@ using the target type.
 		if( lhs != TYPE_void && lhs != TYPE_any){
 			p->argv[i]= newConstant(mb,
 				(isaBatType(lhs)?TYPE_bat:lhs), GDKstrdup("nil"),TRUE);
-		} else 
-		if( lhs != TYPE_void && lhs != TYPE_any) {
-
-			typeMismatch(mb,p,lhs,rhs,silent);
-			return;
+			setVarUsed(mb,p->argv[i],TRUE);
 		} 
 
         if( !isFixed(mb,getArg(p,k))) {

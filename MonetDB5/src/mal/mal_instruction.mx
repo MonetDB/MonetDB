@@ -1375,11 +1375,12 @@ retryConstant:
             }
             break; }
     case TYPE_int: {long long int l;
-            vr->vtype = type;
             if( tonil){ 
+				vr->vtype = type;
                 vr->val.ival = int_nil;
                 break;
             } 
+			vr->vtype = type;
             l= strtoll(val,NULL,0);
             if( l> INT_MAX || l < INT_MIN){
                 if(type==TYPE_int)
@@ -1424,7 +1425,7 @@ retryConstant:
 	case TYPE_bat:
 			/* BAT variables can only be set to nil */
             vr->vtype= type;
-			vr->val.bval = bat_nil;
+			vr->val.bval = 0;
 			break;
     case TYPE_str: 
             vr->vtype= type;
