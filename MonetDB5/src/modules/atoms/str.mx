@@ -73,7 +73,7 @@ command string(s:str,offset:int) :str
 address STRTail
 comment "Return the tail s[offset..n] 
 	 of a string s[0..n].";
-command substring(s:str,offset:int,count:int):str 
+command string(s:str,offset:int,count:int):str 
 address STRSubString
 comment "Return substring s[offset..offset+count] of a string s[0..n]";
 command +( l:str, r:str) :str 
@@ -168,6 +168,10 @@ comment "Return unicode of head of string";
 command substring(s:str, start:int):str
 address STRsubstringTail
 comment "Extract the tail of a string";
+
+command substring(s:str, start:int, len:int):str
+address STRsubstring
+comment "Extract a substring from str starting at start, for length len";
 
 command prefix(s:str,l:int):str
 address STRprefix
@@ -2170,7 +2174,17 @@ STRsubstringTail(str *ret, str *s, int *start)
 {
 	int offset= *start;
 	if( offset <1) offset =1;
+	offset--;
 	return STRTail(ret, s, &offset);
+}
+
+str
+STRsubstring(str *ret, str *s, int *start, int *l)
+{
+	int offset= *start;
+	if( offset <1) offset =1;
+	offset--;
+	return STRSubString(ret, s, &offset, l);
 }
 str
 STRprefix(str *ret, str *s, int *l){
