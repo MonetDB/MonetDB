@@ -1,15 +1,14 @@
-@' The contents of this file are subject to the MonetDB Public
-@' License Version 1.0 (the "License"); you may not use this file
-@' except in compliance with the License. You may obtain a copy of
-@' the License at
-@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@' The contents of this file are subject to the MonetDB Public License
+@' Version 1.1 (the "License"); you may not use this file except in
+@' compliance with the License. You may obtain a copy of the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.1.html
 @'
-@' Software distributed under the License is distributed on an "AS
-@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
-@' implied. See the License for the specific language governing
-@' rights and limitations under the License.
+@' Software distributed under the License is distributed on an "AS IS"
+@' basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+@' License for the specific language governing rights and limitations
+@' under the License.
 @'
-@' The Original Code is the Monet Database System.
+@' The Original Code is the MonetDB Database System.
 @'
 @' The Initial Developer of the Original Code is CWI.
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
@@ -25,7 +24,7 @@ The goal of this module is to provide adequate functionality for storing
 and manipulated time-related data. The minimum requirement is that data
 can easily be imported from all common commercial RDBMS products.
 
-This module supersedes the 'temporal' module that has a number of 
+This module supersedes the 'temporal' module that has a number of
 conceptual problems and hard-to-solve bugs that stem from these problems.
 
 The starting point of this module are SQL 92 and the ODBC time-related data types.
@@ -34,15 +33,15 @@ standard library.
 @T
 This module introduces four basic types and operations on them:
 \begin{description}
-\item[date] a date in the gregorian calendar, e.g. 1999-JAN-31
+\item[date] a date in the Gregorian calendar, e.g. 1999-JAN-31
 
 \item[daytime] a time of day to the detail of milliseconds, e.g. 23:59:59:000
 
-\item[timestamp] a combination of date and time, indicating an exact point in 
-time (GMT). GMT is the time at the greenwich meridian without a daylight savings 
-time (DST) regime. Absence of DST means that hours are consecutive (no jumps) which 
+\item[timestamp] a combination of date and time, indicating an exact point in
+time (GMT). GMT is the time at the Greenwich meridian without a daylight savings
+time (DST) regime. Absence of DST means that hours are consecutive (no jumps) which
 makes it easy to perform time difference calculations.
-\item[timezone] the local time is often different from GMT (even at greenwich in
+\item[timezone] the local time is often different from GMT (even at Greenwich in
 summer, as the UK also has DST). Therefore, whenever a timestamp is composed
 from a local daytime and date, a timezone should be specified in order to
 translate the local daytime to GMT (and vice versa if a timestamp is to
@@ -50,10 +49,10 @@ be decomposed in a local date and daytime).
 
 There is an additional atom {\bf rule} that is used to define when daylight
 savings time in a timezone starts and ends. We provide predefined timezone
-objects for a number of timezones below (see the LOAD section of the module).
+objects for a number of timezones below (see the init script of this module).
 Also, there is one timezone called the {\bf local timezone}, which can be set
-to one global value in a running Monet server, that is used if the timezone 
-parameter is omitted from a command that needs it (if not set, the default value 
+to one global value in a running Monet server, that is used if the timezone
+parameter is omitted from a command that needs it (if not set, the default value
 of the local timezone is plain GMT).
 \end{description}
 
@@ -62,94 +61,94 @@ of the local timezone is plain GMT).
 The valid ranges of the various data types are as follows:
 \begin{description}
 \item[min and max year]
-The maximum and minimum dates and timestamps that can be stored are in the years 5,867,411 and 
--5,867,411, respectively. Interestingly, the year 0 is not a valid year. The year before 1 is 
-called -1. 
+The maximum and minimum dates and timestamps that can be stored are in the years 5,867,411 and
+-5,867,411, respectively. Interestingly, the year 0 is not a valid year. The year before 1 is
+called -1.
 \item[valid dates]
 Fall in a valid year, and have a month and day that is valid in that year. The first day in the year
-is january 1, the last december 31. Months with 31 days are january, march, may, juli, august,
-october, and december, while april, june, september and november have 30 days. February has 28
-days, expect in a leapyear, when it has 29. A leapyear is a year that is an exact multiple of
-4. Years that are a multiple of 100 but not of 1000 are an execption; they are no leapyears.
+is January 1, the last December 31. Months with 31 days are January, March, May, July, August,
+October, and December, while April, June, September and November have 30 days. February has 28
+days, expect in a leap year, when it has 29. A leap year is a year that is an exact multiple of
+4. Years that are a multiple of 100 but not of 400 are an exception; they are no leap years.
 \item[valid daytime]
 The smallest daytime is 00:00:00:000 and the largest 23:59:59:999 (the hours in a daytime
 range between [0,23], minutes and seconds between [0,59] and milliseconds between [0:999]).
 Daytime identifies a valid time-of-day, not an amount of time (for denoting amounts of time, or
-time differences, we use here concepts like "number of days" or "number of milliseconds" denoted 
+time differences, we use here concepts like "number of days" or "number of milliseconds" denoted
 by some value of a standard integer type).
 \item[valid timestamp]
 is formed by a combination of a valid date and valid daytime.
 \item[difference in days]
-For difference calculations between dates (in numbers of days) we use signed integers (the {\tt int} 
-Monet type), hence the valid range for difference calculations is between -2147483648 and 
-2147483647 days (which corresponds to roughly -5,867,411 and 5,867,411 years). 
+For difference calculations between dates (in numbers of days) we use signed integers (the {\tt int}
+Monet type), hence the valid range for difference calculations is between -2147483648 and
+2147483647 days (which corresponds to roughly -5,867,411 and 5,867,411 years).
 \item[difference in msecs]
 For difference between timestamps (in numbers of milliseconds) we use 64-bit longs (the {\tt lng} Monet type).
-These are large integers of maximally 19 digits, which therefore impose a limit of about 106,000,000,000 years 
-on the maximum time difference used in computations. 
+These are large integers of maximally 19 digits, which therefore impose a limit of about 106,000,000,000 years
+on the maximum time difference used in computations.
 \end{description}
 
 There are also conceptual limitations that are inherent to the time system itself:
 \begin{description}
-\item[gregorian calendar]
-The basics of the Gregorian calendar stem from the time of Julius Ceasar,
-when the concept of a solar year as consisting of 365.25 days (365 days plus once 
-in 4 years one extra day) was introduced. However, this Julian Calendar, made a year 11  
-minutes long, which subsequently accumulated over the ages, causing a shift in 
-seasons. In medieval times this was noticed, and in 1582 Pope Gregory XIII issued a 
-decree, skipped 11 days. This measure was not adopted in the whole of Europe inmediately, 
-however.  For this reason, there were many regions in Europe that upheld different dates. 
+\item[Gregorian calendar]
+The basics of the Gregorian calendar stem from the time of Julius Caesar,
+when the concept of a solar year as consisting of 365.25 days (365 days plus once
+in 4 years one extra day) was introduced. However, this Julian Calendar, made a year 11
+minutes long, which subsequently accumulated over the ages, causing a shift in
+seasons. In medieval times this was noticed, and in 1582 Pope Gregory XIII issued a
+decree, skipped 11 days. This measure was not adopted in the whole of Europe immediately,
+however.  For this reason, there were many regions in Europe that upheld different dates.
 
-It was only on {\bf september 14, 1752} that some concensus was reached and more countries 
-joined the Gregorian Calendar, which also was last modified at that time. The modifications 
-were twofold:first, 12 more days were skipped. Second, it was determined that the
-year starts on january 1 (in England, for instance, it had been starting on march 25).
+It was only on {\bf September 14, 1752} that some consensus was reached and more countries
+joined the Gregorian Calendar, which also was last modified at that time. The modifications
+were twofold: first, 12 more days were skipped. Second, it was determined that the
+year starts on January 1 (in England, for instance, it had been starting on March 25).
 
 Other parts of the world have adopted the Gregorian Calendar even later.
 
 This module implements the Gregorian Calendar in all its regularity. This means
 that values before the year 1752 probably do not correspond with the dates that
 people really used in times before that (what they did use, however, was very vague
-anyway, as explained above). In solar terms, however, this calendar is reasonably 
+anyway, as explained above). In solar terms, however, this calendar is reasonably
 accurate (see the "correction seconds" note below).
 
 \item[timezones]
-The basic timezone regime was established on {\bf november 1, 1884} in the {\em International 
-Meridian Conference} held in Greenwich (UK). Before that, a different time held in almost 
+The basic timezone regime was established on {\bf November 1, 1884} in the {\em International
+Meridian Conference} held in Greenwich (UK). Before that, a different time held in almost
 any city. The conference established 24 different time zones defined by regular longitude intervals
-that all differed by one hour.  Not for long it was that national and political interest started 
-to erode this nicely regular system.  Timezones now often follow country borders, and some regions 
-(like the Guinea areas in Latin America) have times that differ with a 15 minute grain from GMT 
+that all differed by one hour.	Not for long it was that national and political interest started
+to erode this nicely regular system.  Timezones now often follow country borders, and some regions
+(like the Guinea areas in Latin America) have times that differ with a 15 minute grain from GMT
 rather than an hour or even half-an-hour grain.
 
-An extra complication became the introduction of daylight saving time (DST), which 
-causes a time jump in spring, when the clock is skips one hour and in autumn, when the 
-clock is set back one hour (so in a one hour span, the same times occur twice). 
+An extra complication became the introduction of daylight saving time (DST), which
+causes a time jump in spring, when the clock is skips one hour and in autumn, when the
+clock is set back one hour (so in a one hour span, the same times occur twice).
 The DST regime is a purely political decision made on a country-by-country basis. Countries
-in the same timezone can have differnt DST regimes. Even worse, some countries have DST in 
-some years, and not in other years. 
+in the same timezone can have different DST regimes. Even worse, some countries have DST in
+some years, and not in other years.
 
 To avoid confusion, this module stores absolute points of time in GMT only (GMT does not
 have a DST regime). When storing local times in the database, or retrieving local times
 from absolute timestamps, a correct timezone object should be used for the conversion.
 
-Applications that do not make correct use of timezones, will produce irregular results 
+Applications that do not make correct use of timezones, will produce irregular results
 on e.g. time difference calculations.
 
 \item[correction seconds]
 Once every such hundred years, a correction second is added on new year's night.
 As I do not know the rule, and this rule would seriously complicate this module
-(as then the duration of a day, which is now the fixed number of 24*60*60*1000 
-milliseconds, becomes parametrized by the date), it is not implemented. Hence 
-these seconds are lost, so time difference calculations in milliseconds (rather than 
+(as then the duration of a day, which is now the fixed number of 24*60*60*1000
+milliseconds, becomes parametrized by the date), it is not implemented. Hence
+these seconds are lost, so time difference calculations in milliseconds (rather than
 in days) have a small error if the time difference spans many hundreds of years.
 \end{description}
 
-TODO:we cannot handle well changes in the tzone rules (e.g., DST only exists since 
+TODO: we cannot handle well changes in the tzone rules (e.g., DST only exists since
 40 years, and some countries make frequent changes to the DST policy). To accommodate
-this we should make tzone\_local a function with a year parameter. The tool should 
-maintain and access the tzone database stored in two bats [str,tzone],[str,year]. 
-Lookup of the correct tzone would be dynamic in this structure. The tzone\_setlocal 
+this we should make tzone\_local a function with a year parameter. The tool should
+maintain and access the tzone database stored in two bats [str,tzone],[str,year].
+Lookup of the correct tzone would be dynamic in this structure. The tzone\_setlocal
 would just set the string name of the tzone.
 
 @+ Time/date comparison 
@@ -185,37 +184,31 @@ Monet atoms can have multiple {\em parse formats}. One of these formats is
 chosen as the {\em print format}.
 
 To facilitate date descriptions, many formats are supported when parsing
-date atoms from a string, as described by the below grammar. 
+date atoms from a string, as described by the below grammar.
 {\small
 \begin{verbatim}
 print format: INT_YEAR '-' INT_MONTH '-' INT_DAY
-parse format: 
-	INT_YEAR SEP1 INT_MONTH SEP1 INT_DAY
-  or: INT_YEAR SEP2 STR_MONTH SEP2 INT_DAY
-  or: STR_MONTH ' '+ INT_DAY ',' ' '* INT_YEAR
+parse format: INT_YEAR SEP1 INT_MONTH SEP1 INT_DAY
+	  or: INT_YEAR SEP2 STR_MONTH SEP2 INT_DAY
+	  or: STR_MONTH ' '+ INT_DAY ',' ' '* INT_YEAR
 
-with:   
-	INT_YEAR = between -5867411 and 5867411
-        INT_DAY = integer between 1 and 31
+with:	INT_YEAR = integer between -5867411 and 5867411
+	INT_DAY = integer between 1 and 31
 	INT_MONTH = integer between 1 and 12
-	STR_MONTH = 'JANUARI' or 'FEBRUARI' or 
-		   'MARCH' or 'APRIL' or 'MAY'  or 
-		   'JUNE' or 'JULI' or 'AUGUST' or 
-		   'SEPTEMBER' or 'OCTOBER' 
-                   or 'NOVEMBER' or 'DECEMBER' 
-                   (lowercase characters, and/or 
-                   only the first three characters 
-                   are also allowed)
+	STR_MONTH = 'JANUARI' or 'FEBRUARI' or 'MARCH' or 'APRIL' or 'MAY'
+		    or 'JUNE' or 'JULI' or 'AUGUST' or 'SEPTEMBER' or 'OCTOBER' 
+                    or 'NOVEMBER' or 'DECEMBER' (lowercase characters, and/or 
+                    only the first three characters are also allowed)
             SEP1 = '-' or '/' or '\' or (' ')+
             SEP2 = SEP1 or ''
 \end{verbatim}
 }
-Printing a date uses the 1999-01-31 format, as this is both language neutral 
-and the lexicografical string ordering of this representation respects the 
+Printing a date uses the 1999-01-31 format, as this is both language neutral
+and the lexicografical string ordering of this representation respects the
 actual date ordering.
 
-Other print formats can be achieved by writing a customized MIL procedure 
-that extract year, month and day from a date as integers and formats those 
+Other print formats can be achieved by writing a customized MIL procedure
+that extract year, month and day from a date as integers and formats those
 in a string.
 @mal
 atom date :int;
@@ -234,20 +227,20 @@ A valid time of day to the detail of milliseconds, like 23:59:59:000
 \begin{verbatim}
 print format: HOUR ':' MIN ':' SEC '.' MSEC
 parse format: HOUR ':' MIN ':' SEC SEP MSEC
-          or: HOUR ':' MIN ':' SEC 
-          or: HOUR ':' MIN 
+	  or: HOUR ':' MIN ':' SEC
+	  or: HOUR ':' MIN
 
-with: HOUR = integer between 0 and 23 
-       MIN = integer between 0 and 59 
-       SEC = integer between 0 and 59 (default 0)
-      MSEC = integer between 0 and 999 (default 0)
+with: HOUR = integer between 0 and 23
+       MIN = integer between 0 and 59
+       SEC = integer between 0 and 59 (default = 0)
+      MSEC = integer between 0 and 999 (default = 0)
        SEP = '.' or ':'
 \end{verbatim}
 }
 @mal
 atom daytime :int;
 command fromstr():daytime 
-address daytime_fromstr;
+address daytime_tz_fromstr;
 command tostr():str 
 address daytime_tostr;
 @:compareGrp(daytime)@
@@ -255,27 +248,25 @@ address daytime_tostr;
 @+ Timestamp
 @T
 An absolute point of time, as formed by the combination of a date a daytime in GMT
-e.g. 1999-01-31@23:59:59:000. GMT is the universal time at the greenwhich meridian, 
+e.g. 1999-01-31@23:59:59:000. GMT is the universal time at the Greenwich meridian,
 without any daylight savings time (DST). As such GMT times are 'absolute' (continuous,
 without hour jumps as in DST), so accurate time difference computations can be performed.
 {\small
 \begin{verbatim}
-print format: DATE ' ' DAYTIME 
+print format: DATE ' ' DAYTIME
 parse format: DATE ' ' DAYTIME  ['GMT' ZONE ]
 
-with:    DATE = a valid parse format of the 
-	 	date atom (as decribed earlier)
-      DAYTIME = a valid parse format of the 
-		daytime atom (as decribed earlier)
+with:    DATE = a valid parse format of the date atom (as decribed earlier)
+      DAYTIME = a valid parse format of the daytime atom (as decribed earlier)
          ZONE = ('+'|'-') HOUR ':' MIN [ 'DST' ]
 \end{verbatim}
 }
-Though internally timestamps are stored in GMT, the printing and parsing of 
-timestamps is relative to the local timezone. That is, timestamps are 
-printed without GMT part, meaning that the time is relative to the local 
+Though internally timestamps are stored in GMT, the printing and parsing of
+timestamps is relative to the local timezone. That is, timestamps are
+printed without GMT part, meaning that the time is relative to the local
 timezone.   Also, if a timestamp is parsed from a string that does not have
-an explicit GMT specifier, it is taken to be a timestamp in the local 
-timezone. The default local timzone is just GMT+00, but iit can be set 
+an explicit GMT specifier, it is taken to be a timestamp in the local
+timezone. The default local timezone is just GMT+00, but it can be set
 arbitrarily.
 @mal
 atom timestamp :lng;# not stored as a lng !
@@ -298,23 +289,23 @@ comment "unix-time (epoch) support: seconds since epoch";
 
 @T
 When creating a timestamp from a date and daytime, a timezone should be specified
-(if timezone is omitted, the local timezone is assumed). If a timezone is specified, 
-it is used to convert the date and time in that timezone to GMT, which is the internal 
+(if timezone is omitted, the local timezone is assumed). If a timezone is specified,
+it is used to convert the date and time in that timezone to GMT, which is the internal
 timestamp representation. One problem here is that the first hour after DST
-has ended (some sunday night in autumn, generally), the time is set back one hour, so
+has ended (some Sunday night in autumn, generally), the time is set back one hour, so
 the same times occur twice. Hence two translations to a timestamp are possible for
-such date and time combinations. In those case, we act as if it was the first 
-occurence (still within DST). 
+such date and time combinations. In those case, we act as if it was the first
+occurrence (still within DST).
 
 @+ Tzone
 @T
-A timezone determines a {\em time offset} from GMT with format 
+A timezone determines a {\em time offset} from GMT with format
 [-] HOUR ':' MINUTES, with HOUR between [0:23] and MINUTES between [0:59].
 
 Possibly, {\em Daylight Savings Time} (DST) is in force in a timezone, which means that
-between a start and an end date, the clock is set back {\bf one hour}. The start and 
+between a start and an end date, the clock is set back {\bf one hour}. The start and
 end date of DST are determined by a {\em rule}. These rules (similar to the
-Java Timezone class) are made up of 4 parameters:a month {\bf M}, a day number in the 
+Java Timezone class) are made up of 4 parameters: a month {\bf M}, a day number in the
 month {\bf D}, a day-of-week (monday,..,sunday) denoted {\bf W}, and a daytime {\bf T}
 (only to the minute detail).
 
@@ -322,25 +313,25 @@ Depending of the values of these parameters, five kinds of rules can be made
 (similar to the Java TimeZone class):
 \begin{itemize}
 \item first {\bf D}th weekday {\bf W} from start of month {\bf M}.\\
-iff {\bf D} in [1,..,5], {\bf W} in [1,..,7] 
+iff {\bf D} in [1,..,5], {\bf W} in [1,..,7]
 
 \item last {\bf D}th weekday {\bf W} from end of month {\bf M}.\\
-iff {\bf D} in [-5,..,-1], {\bf W} in [1,..,7] 
+iff {\bf D} in [-5,..,-1], {\bf W} in [1,..,7]
 
 \item first weekday {\bf W} in month {\bf M} after exact {\bf D}th day of month.\\
-iff {\bf D} in [1,..,31], {\bf W} in [-7,..,-1] 
+iff {\bf D} in [1,..,31], {\bf W} in [-7,..,-1]
 
 \item last weekday {\bf W} in month {\bf M} before exact {\bf D}th day of month.\\
-iff {\bf D} in [-31,..,-1], {\bf W} in [-7,..,-1] 
+iff {\bf D} in [-31,..,-1], {\bf W} in [-7,..,-1]
 
 \item exact {\bf D}th day of month {\bf M}.\\
 iff {\bf D} in [1,..,31], {\bf W}=0;
 
 \end{itemize}
-The parameters {\bf M} is a month number between 1 and 12, and {\bf T} is a time 
+The parameters {\bf M} is a month number between 1 and 12, and {\bf T} is a time
 to the minute detail just like the time offset of the timezone.
 
-Other values of the rule parameters on creating a timezone will produce a 
+Other values of the rule parameters on creating a timezone will produce a
 nil-timezone.
 
 @mal
@@ -424,6 +415,10 @@ command date(:void):date
 address MTIMEnil2date
 comment "generate the nil date";
 
+command local_timezone():lng 
+address MTIMElocal_timezone 
+comment "get the local tzone in seconds";
+
 command tzone_local(t:tzone):void 
 address MTIMEtzone_set_local 
 comment "set the local tzone; which is used for printing timestamps";
@@ -485,7 +480,7 @@ comment "create a tzone as an hour difference
 @- Time/date decomposition
 @T
 There are routines that decompose a date and routines that decompose a daytime.
-For decomposing a timestamp, there are routines that decompose it in a date 
+For decomposing a timestamp, there are routines that decompose it in a date
 and daytime. The bulk variants are also provided to simplify code
 generation for SQL and to improve speed.
 @mal
@@ -589,12 +584,12 @@ comment "extract minutes from rule.";
 @T
 We choose to represent intervals of time as numbers of days (as int, a 32-bits integer)
 and numbers of milliseconds (as lng, a 64-bits integer). Using standard integer types
-facilitates computation with these amounts of time (you can use all normal integer 
+facilitates computation with these amounts of time (you can use all normal integer
 arithmetic operators).
 
-Arithmetic overflow returns the nil atom (no error messages). For all commands in 
-this modules it holds that if one of the parameters is nil, the result is also nil 
-(nil has the don't know semantics in MIL). 
+Arithmetic overflow returns the nil atom (no error messages). For all commands in
+this modules it holds that if one of the parameters is nil, the result is also nil
+(nil has the don't know semantics in MIL).
 @mal
 command addyears(value:date, years:int) :date 
 address MTIMEdate_addyears 
@@ -840,7 +835,6 @@ tzone tzone_local;
 @h
 mal_export tzone tzone_local;
 
-
 mal_export void fromdate(int n, int *d, int *m, int *y);
 mal_export void fromtime(int n, int *hour, int *min, int *sec, int *msec);
 mal_export int daytime_tz_fromstr(str buf, int *len, daytime **ret);
@@ -860,6 +854,7 @@ mal_export str MTIMEsynonyms(bit *allow);
 mal_export str MTIMEoldduration(int *ndays, str *s);
 mal_export str MTIMEolddate(date *d, str *buf);
 mal_export str MTIMEtimezone(tzone *z, str *name);
+mal_export str MTIMElocal_timezone(lng *res);
 mal_export str MTIMEtzone_set_local(int res, tzone *z);
 mal_export str MTIMEtzone_get_local(tzone *z);
 mal_export str MTIMEmonth_from_str(int *ret, str *month);
@@ -899,6 +894,22 @@ mal_export str MTIMEtimestamp_inside_dst(bit *ret, timestamp *p, tzone *z);
 mal_export str MTIMEtimestamp_isnil(bit *retval, timestamp *val);
 mal_export str MTIMEtimestamp_EQ(bit *retval, timestamp *val1, timestamp *val2);
 mal_export str MTIMEtimestamp_NEQ(bit *retval, timestamp *val1, timestamp *val2);
+
+mal_export str MTIMEtimestamp_year(int *ret, timestamp *t);
+mal_export str MTIMEtimestamp_month(int *ret, timestamp *t);
+mal_export str MTIMEtimestamp_day(int *ret, timestamp *t);
+mal_export str MTIMEtimestamp_hours(int *ret, timestamp *t);
+mal_export str MTIMEtimestamp_minutes(int *ret, timestamp *t);
+mal_export str MTIMEtimestamp_seconds(int *ret, timestamp *t);
+mal_export str MTIMEtimestamp_milliseconds(int *ret, timestamp *t);
+mal_export str MTIMEsql_year(int *ret, int *t);
+mal_export str MTIMEsql_month(int *ret, int *t);
+mal_export str MTIMEsql_day(int *ret, lng *t);
+mal_export str MTIMEsql_hours(int *ret, lng *t);
+mal_export str MTIMEsql_minutes(int *ret, lng *t);
+mal_export str MTIMEsql_seconds(int *ret, lng *t);
+
+
 mal_export str MTIMEtimestamp_LT(bit *retval, timestamp *val1, timestamp *val2);
 mal_export str MTIMEtimestamp_LE(bit *retval, timestamp *val1, timestamp *val2);
 mal_export str MTIMEtimestamp_GT(bit *retval, timestamp *val1, timestamp *val2);
@@ -2630,12 +2641,12 @@ timestamp_comp_GE(bit *retval, timestamp *val1, timestamp *val2)
 The Monet V5 API interface is defined here
 @= TIMEZONES
         ticks= @2;
-        tzone_create((tzone*) &vr.val.ival, &ticks);
-        tz= BUNins(tz,@1,&vr.val.ival);
+        tzone_create((tzone*) &vr.val.lval, &ticks);
+        tz= BUNins(tz,@1,&vr.val.lval);
 @= TIMEZONES2
         ticks =@2;
-        tzone_create_dst((tzone*) &vr.val.ival, &ticks,&@3,&@4);
-        tz= BUNins(tz,@1,&vr.val.ival);
+        tzone_create_dst((tzone*) &vr.val.lval, &ticks,&@3,&@4);
+        tz= BUNins(tz,@1,&vr.val.lval);
 @-
 Include BAT macros
 @c
@@ -2644,7 +2655,6 @@ Include BAT macros
 #include <mal_box.h>
 @-
 @= coerce
-mal_export str MTIME@1_2@2(@2 *ret,@1 *src);
 str MTIME@1_2@2(@2 *ret,@1 *src){
 	*ret= *src;
 	return MAL_SUCCEED;
@@ -2683,7 +2693,6 @@ MTIMEtimestamp2timestamp(timestamp *ret, timestamp *src)
 @-
 The comparison implementations are relatively straightforward.
 @= compareImpl
-mal_export str MTIME@3_@1(int *ret, @3 *v, @3 *w);
 str MTIME@3_@1(int *ret, @3 *v, @3 *w){
         if( *v== @3_nil || *w== @3_nil)
                 *ret= bit_nil;
@@ -2691,7 +2700,6 @@ str MTIME@3_@1(int *ret, @3 *v, @3 *w){
 	return MAL_SUCCEED;
 }
 @= compareAll
-mal_export str MTIME@1_isnil(int *ret, @1 *v);
 str MTIME@1_isnil(int *ret, @1 *v){
 	*ret= *v == @1_nil;
 	return MAL_SUCCEED;
@@ -2712,12 +2720,14 @@ static BAT *timezones = NULL;
 str
 MTIMEprelude()
 {
+	char *msg = NULL;
 	Box box;
 	ValRecord vr;
 	int ticks;
 	rule RULE_MAR, RULE_OCT;
 	str s1 = "first sunday from end of march@02:00";
 	str s2 = "first sunday from end of october@02:00";
+	tzone tz;
 
 	monettime_prelude();
 
@@ -2765,6 +2775,10 @@ MTIMEprelude()
 		@:TIMEZONES2("Mountain/USA", -7 * 60, RULE_MAR, RULE_OCT)@
 		@:TIMEZONES2("Alaska/USA", -9 * 60, RULE_MAR, RULE_OCT)@
 	}
+	msg = "West/Europe";
+	if ((msg = MTIMEtimezone(&tz, &msg)) != MAL_SUCCEED)
+		return msg;
+	tzone_set_local(&tz);
 	return MAL_SUCCEED;
 }
 
@@ -2800,14 +2814,15 @@ MTIMEolddate(date *d, str *buf)
 str
 MTIMEtimezone(tzone *z, str *name)
 {
+	BUN p;
 	str s = *name;
 
-	(void) z;		/* fool compiler */
 	if (BUNfnd(timezones, s) == 0)
 		s = "GMT";
-	if (BUNfnd(timezones, s))
-		printf("MTIMEtimezone NYI\n");
-	;
+	if ((p = BUNfnd(timezones, s)) != NULL){
+		z = (tzone*)BUNtail(timezones,p);
+		tzone_set_local(z);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -2823,6 +2838,16 @@ str
 MTIMEtzone_get_local(tzone *z)
 {
 	tzone_get_local(z);
+	return MAL_SUCCEED;
+}
+
+str 
+MTIMElocal_timezone(lng *res)
+{
+	tzone z;
+
+	tzone_get_local(&z);
+	*res = get_offset((&z));
 	return MAL_SUCCEED;
 }
 
@@ -3522,7 +3547,6 @@ MTIMEcurrent_time(daytime *t)
 	return MAL_SUCCEED;
 }
 /* more SQL extraction utilities */
-mal_export str MTIMEtimestamp_year(int *ret, timestamp *t);
 str
 MTIMEtimestamp_year(int *ret, timestamp *t)
 {
@@ -3531,7 +3555,6 @@ MTIMEtimestamp_year(int *ret, timestamp *t)
     date_extract_year(ret, &d);
 	return MAL_SUCCEED;
 }
-mal_export str MTIMEtimestamp_month(int *ret, timestamp *t);
 str
 MTIMEtimestamp_month(int *ret, timestamp *t)
 {
@@ -3540,7 +3563,6 @@ MTIMEtimestamp_month(int *ret, timestamp *t)
     date_extract_month(ret, &d);
 	return MAL_SUCCEED;
 }
-mal_export str MTIMEtimestamp_day(int *ret, timestamp *t);
 str
 MTIMEtimestamp_day(int *ret, timestamp *t)
 {
@@ -3549,7 +3571,6 @@ MTIMEtimestamp_day(int *ret, timestamp *t)
     date_extract_day(ret, &d);
 	return MAL_SUCCEED;
 }
-mal_export str MTIMEtimestamp_hours(int *ret, timestamp *t);
 str
 MTIMEtimestamp_hours(int *ret, timestamp *t)
 {
@@ -3558,7 +3579,6 @@ MTIMEtimestamp_hours(int *ret, timestamp *t)
     daytime_extract_hours(ret, &d);
 	return MAL_SUCCEED;
 }
-mal_export str MTIMEtimestamp_minutes(int *ret, timestamp *t);
 str
 MTIMEtimestamp_minutes(int *ret, timestamp *t)
 {
@@ -3567,7 +3587,6 @@ MTIMEtimestamp_minutes(int *ret, timestamp *t)
     daytime_extract_minutes(ret, &d);
 	return MAL_SUCCEED;
 }
-mal_export str MTIMEtimestamp_seconds(int *ret, timestamp *t);
 str
 MTIMEtimestamp_seconds(int *ret, timestamp *t)
 {
@@ -3576,7 +3595,6 @@ MTIMEtimestamp_seconds(int *ret, timestamp *t)
     daytime_extract_seconds(ret, &d);
 	return MAL_SUCCEED;
 }
-mal_export str MTIMEtimestamp_milliseconds(int *ret, timestamp *t);
 str
 MTIMEtimestamp_milliseconds(int *ret, timestamp *t)
 {
@@ -3586,42 +3604,36 @@ MTIMEtimestamp_milliseconds(int *ret, timestamp *t)
 	return MAL_SUCCEED;
 }
 
-mal_export str MTIMEsql_year(int *ret, int *t);
 str
 MTIMEsql_year(int *ret, int *t)
 {
 	*ret= *t/12;
 	return MAL_SUCCEED;
 }
-mal_export str MTIMEsql_month(int *ret, int *t);
 str
 MTIMEsql_month(int *ret, int *t)
 {
 	*ret= *t%12;
 	return MAL_SUCCEED;
 }
-mal_export str MTIMEsql_day(int *ret, lng *t);
 str
 MTIMEsql_day(int *ret, lng *t)
 {
 	*ret= *t/86400;
 	return MAL_SUCCEED;
 }
-mal_export str MTIMEsql_hours(int *ret, lng *t);
 str
 MTIMEsql_hours(int *ret, lng *t)
 {
 	*ret= (*t % 86400)/3600;
 	return MAL_SUCCEED;
 }
-mal_export str MTIMEsql_minutes(int *ret, lng *t);
 str
 MTIMEsql_minutes(int *ret, lng *t)
 {
 	*ret= (*t %3600)/60;
 	return MAL_SUCCEED;
 }
-mal_export str MTIMEsql_seconds(int *ret, lng *t);
 str
 MTIMEsql_seconds(int *ret, lng *t)
 {
@@ -3635,7 +3647,6 @@ MTIMEsql_seconds(int *ret, lng *t)
 The BAT equivalents for these functions provide
 speed.
 @= Extract
-mal_export str MTIME@1_extract_@2_bulk(int *ret, int *bid);
 str MTIME@1_extract_@2_bulk(int *ret, int *bid)
 {       BAT *b,*bn;
 	int s1,xx;
