@@ -342,6 +342,7 @@ mal_export void printStackElm(stream *f, MalBlkPtr mb, VarPtr n, ValPtr v, int i
 mal_export void printBATelm(stream *f, int i, size_t cnt, size_t first);
 mal_export void printStack(stream *f, MalBlkPtr mb, MalStkPtr s, int lifespan);
 mal_export void printBatInfo(stream *f, VarPtr n, ValPtr v);
+mal_export void printBatProperties(stream *f, VarPtr n, ValPtr v, str props);
 mal_export void printTraceCall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export str call2str(MalBlkPtr mb, MalStkPtr stk, int pc);
 
@@ -882,6 +883,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				mdbClrBreakpoint(cntxt, pc);
 			}
 			continue;
+		case 'I':
 		case 'i':
 		{
 			int i;
@@ -895,6 +897,13 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				stream_printf(out, "#maxrss %d ixrss=%d idrss=%d isrss=%d" " minflt=%d majflt=%d nswap=%d inblock=%d oublock=%d\n", cntxt->resource.ru_maxrss, cntxt->resource.ru_ixrss, cntxt->resource.ru_idrss, cntxt->resource.ru_isrss,
 					      cntxt->resource.ru_minflt, cntxt->resource.ru_majflt, cntxt->resource.ru_nswap, cntxt->resource.ru_inblock, cntxt->resource.ru_oublock);
 #endif
+				continue;
+			}
+			/* the user wants information about variables */
+			if( *b == 'I'){
+				skipWord(cntxt, b);
+				for(i=0; i< mb->vtop; i++)
+					printBatProperties(out, getVar(mb, i), stk->stk + i, b);
 				continue;
 			}
 			skipWord(cntxt, b);
@@ -1255,13 +1264,42 @@ printBatInfo(stream *f, VarPtr n, ValPtr v)
 			bid = v->val.ival;
 			stream_printf(f, "Show info for %d\n", bid);
 			(*fcn) (&ret, &bid);
-			stream_printf(f, "got the info bat from %d\n", bid);
 			b = BATdescriptor(ret);
 			if (b == NULL) {
 				stream_printf(f, "Could not access descriptor\n");
 				return;
 			}
 			BATmultiprintf(f, 2, &b, TRUE, 0, TRUE);
+			BBPunfix(b->batCacheid);
+		}
+	}
+}
+
+void
+printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
+{
+	if (isaBatType(n->type) && v->val.ival) {
+		int bid;
+		int ret;
+		MALfcn fcn;
+		BUN p;
+
+		fcn = getAddress("bat","BKCinfo", 0);
+		if (fcn) {
+			BAT *b;
+
+			bid = v->val.ival;
+			stream_printf(f, "BAT %d %s= ", bid,props);
+			(*fcn) (&ret, &bid);
+			b = BATdescriptor(ret);
+			if (b == NULL) {
+				stream_printf(f, "Could not access descriptor\n");
+				return;
+			}
+			p= BUNfnd(b,props);
+			if( p) {
+				stream_printf(f," %s\n", (str) BUNtail(b,p));
+			} else stream_printf(f," not found\n");
 			BBPunfix(b->batCacheid);
 		}
 	}
