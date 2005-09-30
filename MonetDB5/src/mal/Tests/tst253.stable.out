@@ -5,11 +5,13 @@ stdout of test 'tst253` in directory 'src/mal` itself:
 # 11:28:42 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=43122 --set sql_port=57578 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst253.mal </dev/null
 # 11:28:42 >  
 
-# Monet Database Server V4.5.0
-# Copyright (c) 1993-2004, CWI. All rights reserved.
-# Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
-# config:/ufs/mk/monet5/src/mal/Tests/All.conf
-# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# config:/ufs/niels/scratch/Linux-x86_64/build-m5/etc/MonetDB5.conf
+# dbfarm:/ufs/niels/scratch/Linux-x86_64/build-m5/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
 ## testing void bats
@@ -35,8 +37,8 @@ function user.main():int;	# 0  (main:int)
     d := algebra.markT(c);	# 9 ALGtmark_default (d:bat[:str,:void])<-(c:bat[:str,:void])
     io.print(d);	# 10 IOprint_val (_17:int)<-(d:bat[:str,:void])
 #perform header marking 	# 11  (_19:str)
-    f := algebra.markH(b);	# 12 ALGmarkHead_default1 (f:bat[:void,:oid])<-(b:bat[:void,:str])
-    io.print(f);	# 13 IOprint_val (_21:int)<-(f:bat[:void,:oid])
+    f := algebra.markH(b);	# 12 ALGmarkHead_default (f:bat[:void,:str])<-(b:bat[:void,:str])
+    io.print(f);	# 13 IOprint_val (_21:int)<-(f:bat[:void,:str])
 end main;	# 14  
 #-------------------------#
 # h	tmp_4		  # name
@@ -58,10 +60,10 @@ end main;	# 14
 [ "world",	  nil	  ]
 #-----------------#
 # h	t	  # name
-# void	oid	  # type
-#-----------------#
-[ nil,	  0@0	  ]
-[ nil,	  1@0	  ]
+# void	str		  # type
+#-------------------------#
+[ nil,	  "hello"	  ]
+[ nil,	  "world"	  ]
 
 # 11:28:42 >  
 # 11:28:42 >  Done.
