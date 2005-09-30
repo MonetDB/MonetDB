@@ -12,12 +12,14 @@ stdout of test 'select_group` in directory 'src/benchmarks/ATIS` itself:
 # dbfarm:/ufs/niels/scratch/Linux-x86_64/build-m5/var/MonetDB5/dbfarm
 # dbname:mTests_src_benchmarks_ATIS
 # Visit http://monetdb.cwi.nl/ for further information.
-#Ready to accept connections on koala.ins.cwi.nl:43527
+
+printf("\nReady.\n");
 
 Ready.
 
 
 
+quit();
 
 Over..
 
