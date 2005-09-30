@@ -40,7 +40,7 @@ extern int mvc_result_value(mvc *m, char *tn, char *name, char *typename, int di
 
 #include "sql_result.h"
 #include <tablet.h>
-#include <monettime.h>
+#include <mtime.h>
 #include <bat/res_table.h>
 #include <bat/bat_bm.h>
 
@@ -175,7 +175,7 @@ sql_timestamp_tostr(void *M, char **buf, int *len, int type, ptr A)
 		return 4;
 	}
 
-	timestamp_add(&tmp, a, &timezone);
+	MTIMEtimestamp_add(&tmp, a, &timezone);
 	len1 = date_tostr(&s1, &big, &tmp.days);
 	len2 = daytime_tostr(&s2, &big, &tmp.msecs);
 

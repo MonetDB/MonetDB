@@ -261,8 +261,8 @@ command calc.date(t:timestamp,v:tzone) :date
 address MTIMEtimestamp_extract_date;
 
 # tzone
+command calc.local_timezone() :lng address MTIMElocal_timezone;
 command calc.timezone(name:str):tzone address MTIMEtimezone;
-
 
 command calc.start_dst(t:tzone) :rule address MTIMEtzone_extract_start;
 command calc.end_dst(t:tzone) :rule address MTIMEtzone_extract_end;
@@ -273,6 +273,9 @@ command calc.month(t:rule) :int address MTIMErule_extract_month;
 command calc.day(t:rule) :int	address MTIMErule_extract_day;
 command calc.weekday(t:rule) :int address MTIMErule_extract_weekday;
 command calc.minutes(t:rule) :int address MTIMErule_extract_minutes;
+
+command calc.toLower( s:str ) :str address STRLower;
+command calc.toUpper( s:str ) :str address STRUpper;
 
 command calc.trim( s:str ) :str address STRStrip;
 command calc.ltrim( s:str ) :str address STRLtrim;
