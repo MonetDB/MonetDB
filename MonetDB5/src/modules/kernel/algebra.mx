@@ -2550,7 +2550,7 @@ mal_export str ALGmarkHead_default(int *result, int *bid);
 str
 ALGmarkHead_default(int *result, int *bid)
 {
-	oid o = 0;
+	oid o = oid_nil;
 
 	return ALGmarkHead(result, bid, &o);
 }
