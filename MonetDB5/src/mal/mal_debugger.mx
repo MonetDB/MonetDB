@@ -919,11 +919,13 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 			}
 			continue;
 		}
+		case 'P':
 		case 'p':
 		{
 			size_t size = 0, first = 0;
 			int i;
 			char *t;
+			char upper= *b;
 
 			skipWord(cntxt, b);
 			t = b;
@@ -937,6 +939,12 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int pc)
 				skipWord(cntxt, t);
 				if (isdigit((int) *t))
 					first = atol(t);
+			}
+			if( upper == 'P'){
+				for( i= 0; i<mb->vtop; i++)
+				if (isaBatType(getVarType(mb,i)) )
+					printBATelm(out, i, size, first);
+				continue;
 			}
 			/* search the symbol */
 			i = findVariable(mb, b);
@@ -1136,27 +1144,30 @@ void
 printBATelm(stream *f, int i, size_t cnt, size_t first)
 {
 	BAT *b, *bs;
-	str tpe /*,nme */ ;
+	str tpe ,nme;
 
 	b = BATdescriptor(i);
 	if (b) {
-		/* nme= BATgetId(b); */
+		nme= BATgetId(b); 
 		tpe = getTypeName(newBatType(b->htype, b->ttype));
 		/* ignore ref count of this call */
-		stream_printf(f, "type=%s count=%d lrefs=%d refs=%d \n", tpe, 
+		stream_printf(f, "[%d] %s %s count=%d lrefs=%d refs=%d \n", 
+				i, nme, tpe, 
 				BATcount(b), BBP_lrefs(ABS(b->batCacheid)), 
 				BBP_refs(ABS(b->batCacheid)) - 1);
-		if (cnt < BATcount(b)) {
-			stream_printf(f, "Sample %d out of %d\n", cnt, BATcount(b));
-		}
-		/* cut out a portion of the BAT for display */
-		bs = BATslice(b, first, first + cnt);
+		if( cnt){
+			if (cnt < BATcount(b)) {
+				stream_printf(f, "Sample %d out of %d\n", cnt, BATcount(b));
+			}
+			/* cut out a portion of the BAT for display */
+			bs = BATslice(b, first, first + cnt);
 
-		if (bs == NULL)
-			stream_printf(f, "Failed to take chunk\n");
-		else
-			BATmultiprintf(f, 2, &bs, TRUE, 0, TRUE);
-		BBPunfix(bs->batCacheid);
+			if (bs == NULL)
+				stream_printf(f, "Failed to take chunk\n");
+			else
+				BATmultiprintf(f, 2, &bs, TRUE, 0, TRUE);
+			BBPunfix(bs->batCacheid);
+		}
 
 		BBPunfix(b->batCacheid);
 		GDKfree(tpe);
