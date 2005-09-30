@@ -333,8 +333,8 @@ findGDKtype(int type)
 {
 	if (isaBatType(type))
 		return TYPE_bat;
-	if (type == TYPE_any)
-		return TYPE_int;
+	if (type == TYPE_any || type== TYPE_void)
+		return TYPE_void;
 	if (type == TYPE_col)
 		return TYPE_int;
 	return ATOMtype(type);

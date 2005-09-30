@@ -1072,7 +1072,7 @@ cheap to perform a linear search to a variable or constant.
         GDKfree((str)mb->var);
         mb->vsize= s;
         mb->var= new;
-        mb->var[mb->vtop-1]->gdktype= -1;
+        mb->var[mb->vtop-1]->gdktype= TYPE_void;
     } else if (mb->vtop >mb->vsize)
         GDKfatal("newVariable:variable administration\n");
 @c
@@ -1421,6 +1421,11 @@ retryConstant:
             else vr->val.lval= (lng) l;
             vr->vtype= type;
             break; }
+	case TYPE_bat:
+			/* BAT variables can only be set to nil */
+            vr->vtype= type;
+			vr->val.bval = bat_nil;
+			break;
     case TYPE_str: 
             vr->vtype= type;
             if( type != TYPE_str){

@@ -280,10 +280,8 @@ pattern operators to deal with it.
         rhs = &getVarConstant(mb,i);
         VALcopy2(lhs,rhs);
     } else {
-        int tpe= getVarType(mb,i);
         lhs = &stk->stk[i];
-        if( tpe != TYPE_any)
-            lhs->vtype = getVarGDKType(mb,i);
+		lhs->vtype = getVarGDKType(mb,i);
     }
 #ifdef STACKTRACE
     stream_printf(GDKout,"Stack before loop\n");
