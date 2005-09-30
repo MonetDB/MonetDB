@@ -2082,7 +2082,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		"\"pktable\".\"name\" AS \"PKTABLE_NAME\", \"pkkeycol\".\"column\" AS \"PKCOLUMN_NAME\", " +
 		"\"fkschema\".\"name\" AS \"FKTABLE_SCHEM\", " +
 		"\"fktable\".\"name\" AS \"FKTABLE_NAME\", \"fkkeycol\".\"column\" AS \"FKCOLUMN_NAME\", " +
-		"\"fkkey\".\"type\" AS \"KEY_SEQ\", " + DatabaseMetaData.importedKeyNoAction + " AS \"UPDATE_RULE\", " +
+		"\"fkkeycol\".\"nr\" AS \"KEY_SEQ\", " + DatabaseMetaData.importedKeyNoAction + " AS \"UPDATE_RULE\", " +
 		"" + DatabaseMetaData.importedKeyNoAction + " AS \"DELETE_RULE\", " +
 		"\"fkkey\".\"name\" AS \"FK_NAME\", \"pkkey\".\"name\" AS \"PK_NAME\", " +
 		"" + DatabaseMetaData.importedKeyNotDeferrable + " AS \"DEFERRABILITY\" " +
