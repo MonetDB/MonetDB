@@ -9,11 +9,9 @@ stdout of test 'select_constant_from_where_1=1-bug-sf-1019529` in directory 'src
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+#Ready to accept connections on koala.ins.cwi.nl:44894
 
 Ready.
-quit();
 
 Over..
 
@@ -153,6 +151,7 @@ Over..
 # 6,	10 # length
 # 0,	 # tuplecount
 # 10,	 # id
+[ 1,	0	]
 # 7 # querytype
 
 # 13:31:39 >  
