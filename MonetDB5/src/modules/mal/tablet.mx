@@ -542,7 +542,7 @@ TABformatPrepare(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Client c = getClient();
 	int rnr = c - mal_clients;
 	Tablet *t;
-	int anr = 0, i, tpe, k;
+	int anr = 0, i, tpe, k=0;
 	ptr val;
 
 	makeTableSpace(rnr, pci->argc - pci->retc);
@@ -909,6 +909,7 @@ sep_dup(char *sep)
 	char *res = GDKmalloc(len + 1), *result = res;
 	char *end = sep + len;
 
+	memset(res,0,len+1);
 	while (sep < end) {
 		if (*sep == '\\') {
 			++sep;
@@ -936,6 +937,7 @@ TABLETstrFrStr(char *s, char *e)
 {
 	ptr res = GDKmalloc(e - s + 1);
 
+	memset(res,0,e-s+1);
 	if (s == e) {
 		*(char *) res = 0;
 	} else if (GDKstrFromStr(res, (unsigned char *) s, e - s) == 0) {
@@ -978,6 +980,7 @@ TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a)
 			GDKfree(buf);
 			*len = 2 * l + 3;
 			*buf = GDKmalloc(*len);
+			memset(*buf,0,*len);
 		}
 		dst = *buf;
 		dst[0] = '"';
@@ -998,6 +1001,7 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 	size_t nr_attrs = BATcount(names);
 	Column *fmt = as->format = (Column *) GDKmalloc(sizeof(Column) * (nr_attrs + 1));
 
+	memset((char*)fmt,0, sizeof(Column) * (nr_attrs + 1));
 	as->offset = 0;
 	as->nr_attrs = nr_attrs;
 	/* assert(as->nr_attrs == nr_attrs); *//* i.e. it fits */
@@ -1024,6 +1028,7 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 	size_t nr_attrs = BATcount(bats);
 	Column *fmt = as->format = (Column *) GDKmalloc(sizeof(Column) * (nr_attrs + 1));
 
+	memset((char*)fmt,0, sizeof(Column) * (nr_attrs + 1));
 	as->offset = 0;
 	as->nr_attrs = nr_attrs;
 	/* assert(as->nr_attrs == nr_attrs); *//* i.e. it fits */
@@ -1997,9 +2002,10 @@ makeTableSpace(int rnr, unsigned int acnt)
 		int len = sizeof(Tablet) + acnt * sizeof(Column);
 
 		tn = tableReports[rnr] = (Tablet *) GDKmalloc(len);
+		memset((char *) tn, 0, len);
 		memcpy((char *) tn, (char *) t, sizeof(Tablet) + t->max_attrs * sizeof(Column));
 		GDKfree(t);
-		t->max_attrs = acnt;
+		tn->max_attrs = acnt;
 	}
 }
 
@@ -2054,6 +2060,7 @@ bindVariable(Tablet * t, unsigned int anr, str nme, int tpe, ptr val, int *k)
 	if (anr >= t->nr_attrs)
 		t->nr_attrs = anr + 1;
 	buf = (char *) GDKmalloc(BUFSIZ);
+	memset(buf,0,BUFSIZ);
 
 	if (tpe == TYPE_bat) {
 		BAT *b;
