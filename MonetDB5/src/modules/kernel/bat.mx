@@ -2222,7 +2222,10 @@ BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid)
 		return throwMessage("bat.append", "Cannot access descriptor");
 	}
 	i = BATsetaccess(i, 0);
-	void_append_bat(i, u);
+	if (u->htype == TYPE_void)
+		void_append_bat(i, u);
+	else
+		void_insert_bat(i, u);
 /*	BBPincref(i->batCacheid, TRUE); */
 	BBPunfix(i->batCacheid);
 	BBPunfix(u->batCacheid);
