@@ -939,6 +939,8 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 				return sql_error(sql, 02, "aggregate: cannot find subset for column %s\n", cv->cname);
 			}
 			s = stmt_join(foundsubset, stmt_dup(cv->s), cmp_equal);
+		} else if (!cv) { /* count(*) without from */
+			return stmt_atom_int(1);
 		}
 	} else {
 		/* use cnt as nils shouldn't be counted */
@@ -1872,7 +1874,7 @@ columns_exp(mvc *sql, scope *scp, symbol *column_e, group *grp, stmt *subset, in
 
 
 static stmt *
-column_exp(mvc *sql, scope *scp, symbol *column_e, group *grp, stmt *subset, int f)
+_column_exp(mvc *sql, scope *scp, symbol *column_e, group *grp, stmt *subset, int f)
 {
 	dlist *l = column_e->data.lval;
 	stmt *s = sql_value_exp(sql, scp, l->h->data.sym, grp, subset, f);
@@ -1896,7 +1898,7 @@ sql_column_exp(mvc *sql, scope *scp, symbol *column_e, group *grp, stmt *subset,
 	if (column_e->token == SQL_TABLE) {
 		res = columns_exp(sql, scp, column_e, grp, subset, f);
 	} else if (column_e->token == SQL_COLUMN) {
-		res = column_exp(sql, scp, column_e, grp, subset, f);
+		res = _column_exp(sql, scp, column_e, grp, subset, f);
 	}
 	if (!res) {
 		return sql_error(sql, 02, "column expression symbol(%d)->token = %s no output", (int) column_e->token, token2string(column_e->token));
