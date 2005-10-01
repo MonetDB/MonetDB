@@ -650,7 +650,10 @@ PQtopn_void@1@2(int *ret, int *bid, int *N){
 	BAT *b,*bn;
 	if( (b= BATdescriptor(*bid)) == NULL)
 		return throwMessage("pqueue.topN","Could not access BAT");
-	pqueue_topn_void@1@2(&bn,b,N);
+	if (b->ttype == TYPE_void)
+		pqueue_topn_void@1@2(&bn,b,N);
+	else
+		pqueue_topn_@1@2(&bn,b,N);
 	if( bn){
 		BBPincref(*ret= bn->batCacheid,TRUE);
 		BBPunfix(*ret);
