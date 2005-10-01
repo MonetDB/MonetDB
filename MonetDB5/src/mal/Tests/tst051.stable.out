@@ -1,0 +1,125 @@
+stdout of test 'tst051` in directory 'src/mal` itself:
+
+
+# 22:29:41 >  
+# 22:29:41 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34113 --set sql_port=49714 --set xquery_port=50869 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst051.mal < /dev/null
+# 22:29:41 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_mal
+# Visit http://monetdb.cwi.nl/ for further information.
+## testing string stuff
+#s:= "hello world";
+#
+#t:= str.string(s,0,2);	io.print(t);
+#t:= str.string(s,-4,2);	io.print(t);
+#t:= str.string(s,0,15);	io.print(t);
+#t:= str.string(nil:str,0,15);	io.print(t);
+#
+#t:= str.string(s,5);	io.print(t);
+#t:= str.prefix(s,4);	io.print(t);
+#t:= str.suffix(s,4);	io.print(t);
+#
+#i:= str.locate(s,"hello"); io.print(i);
+#i:= str.locate(s,"xyz"); io.print(i);
+#i:= str.locate(s,nil:str); io.print(i);
+#i:= str.locate(nil:str,"hello"); io.print(i);
+#i:= str.locate(nil:str,"xyz"); io.print(i);
+#i:= str.locate(nil:str,nil:str); io.print(i);
+#
+#t:= str.repeat("abc",3);	io.print(t);
+#t:= str.repeat(nil:str,3);	io.print(t);
+#
+#t:= str.insert("hello world",5,1,"brave new "); io.print(t);
+#t:= str.insert("",5,1,"brave new "); io.print(t);
+#t:= str.insert(nil:str,5,1,"brave new "); io.print(t);
+#t:= str.insert("",5,1,"brave new "); io.print(t);
+#t:= str.insert("",0,1,"brave new "); io.print(t);
+#t:= str.insert("hello world",5,1,""); io.print(t);
+#t:= str.insert("hello world",5,1,nil:str); io.print(t);
+#
+#t:= str.replace("hello world","world","brave new world"); io.print(t);
+#
+#
+function user.main():int;	# 0  (main:int)
+# testing string stuff 	# 1  (_2:str)
+    s := "hello world";	# 2  (s:str)<-(_4:str)
+    t := str.string(s,0,2);	# 3 STRSubString (t:str)<-(s:str)(_6:int)(_7:int)
+    io.print(t);	# 4 IOprint_val (_8:int)<-(t:str)
+    t := str.string(s,-4,2);	# 5 STRSubString (t:str)<-(s:str)(_9:int)(_7:int)
+    io.print(t);	# 6 IOprint_val (_10:int)<-(t:str)
+    t := str.string(s,0,15);	# 7 STRSubString (t:str)<-(s:str)(_6:int)(_11:int)
+    io.print(t);	# 8 IOprint_val (_12:int)<-(t:str)
+    t := str.string(nil:str,0,15);	# 9 STRSubString (t:str)<-(_13:str)(_6:int)(_11:int)
+    io.print(t);	# 10 IOprint_val (_14:int)<-(t:str)
+    t := str.string(s,5);	# 11 STRTail (t:str)<-(s:str)(_15:int)
+    io.print(t);	# 12 IOprint_val (_16:int)<-(t:str)
+    t := str.prefix(s,4);	# 13 STRprefix (t:str)<-(s:str)(_17:int)
+    io.print(t);	# 14 IOprint_val (_18:int)<-(t:str)
+    t := str.suffix(s,4);	# 15 STRsuffix (t:str)<-(s:str)(_17:int)
+    io.print(t);	# 16 IOprint_val (_19:int)<-(t:str)
+    i := str.locate(s,"hello");	# 17 STRlocate (i:int)<-(s:str)(_21:str)
+    io.print(i);	# 18 IOprint_val (_22:int)<-(i:int)
+    i := str.locate(s,"xyz");	# 19 STRlocate (i:int)<-(s:str)(_23:str)
+    io.print(i);	# 20 IOprint_val (_24:int)<-(i:int)
+    i := str.locate(s,nil:str);	# 21 STRlocate (i:int)<-(s:str)(_25:str)
+    io.print(i);	# 22 IOprint_val (_26:int)<-(i:int)
+    i := str.locate(nil:str,"hello");	# 23 STRlocate (i:int)<-(_27:str)(_21:str)
+    io.print(i);	# 24 IOprint_val (_28:int)<-(i:int)
+    i := str.locate(nil:str,"xyz");	# 25 STRlocate (i:int)<-(_29:str)(_23:str)
+    io.print(i);	# 26 IOprint_val (_30:int)<-(i:int)
+    i := str.locate(nil:str,nil:str);	# 27 STRlocate (i:int)<-(_31:str)(_32:str)
+    io.print(i);	# 28 IOprint_val (_33:int)<-(i:int)
+    t := str.repeat("abc",3);	# 29 STRrepeat (t:str)<-(_34:str)(_35:int)
+    io.print(t);	# 30 IOprint_val (_36:int)<-(t:str)
+    t := str.repeat(nil:str,3);	# 31 STRrepeat (t:str)<-(_37:str)(_35:int)
+    io.print(t);	# 32 IOprint_val (_38:int)<-(t:str)
+    t := str.insert("hello world",5,1,"brave new ");	# 33 STRinsert (t:str)<-(_39:str)(_15:int)(_40:int)(_41:str)
+    io.print(t);	# 34 IOprint_val (_42:int)<-(t:str)
+    t := str.insert("",5,1,"brave new ");	# 35 STRinsert (t:str)<-(_43:str)(_15:int)(_40:int)(_41:str)
+    io.print(t);	# 36 IOprint_val (_44:int)<-(t:str)
+    t := str.insert(nil:str,5,1,"brave new ");	# 37 STRinsert (t:str)<-(_45:str)(_15:int)(_40:int)(_41:str)
+    io.print(t);	# 38 IOprint_val (_46:int)<-(t:str)
+    t := str.insert("",5,1,"brave new ");	# 39 STRinsert (t:str)<-(_43:str)(_15:int)(_40:int)(_41:str)
+    io.print(t);	# 40 IOprint_val (_47:int)<-(t:str)
+    t := str.insert("",0,1,"brave new ");	# 41 STRinsert (t:str)<-(_43:str)(_48:int)(_40:int)(_41:str)
+    io.print(t);	# 42 IOprint_val (_49:int)<-(t:str)
+    t := str.insert("hello world",5,1,"");	# 43 STRinsert (t:str)<-(_39:str)(_50:int)(_40:int)(_43:str)
+    io.print(t);	# 44 IOprint_val (_51:int)<-(t:str)
+    t := str.insert("hello world",5,1,nil:str);	# 45 STRinsert (t:str)<-(_39:str)(_50:int)(_40:int)(_52:str)
+    io.print(t);	# 46 IOprint_val (_53:int)<-(t:str)
+    t := str.replace("hello world","world","brave new world");	# 47 STRreplace (t:str)<-(_39:str)(_54:str)(_55:str)
+    io.print(t);	# 48 IOprint_val (_56:int)<-(t:str)
+end main;	# 49  
+[ "he" ]
+[ "or" ]
+[ "hello world" ]
+[ nil ]
+[ " world" ]
+[ "hell" ]
+[ "orld" ]
+[ 1 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ 0 ]
+[ "abcabcabc" ]
+[ nil ]
+[ "hellobrave new world" ]
+[ "brave new " ]
+[ "brave new " ]
+[ "brave new " ]
+[ "brave new " ]
+[ "helloworld" ]
+[ "hello€world" ]
+[ "hello brave new world" ]
+
+# 22:29:41 >  
+# 22:29:41 >  Done.
+# 22:29:41 >  
+
