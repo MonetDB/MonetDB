@@ -60,6 +60,7 @@ include group;
 include aggrX3;
 include array;
 include mapi;
+include pqueue;
 
 # the hardwired multiplex extensions
 include batmath;
