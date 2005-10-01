@@ -70,7 +70,12 @@ end main;	# 17
 [ 11,	  "stat_id_max_lng",	  1,	  1		  ]
 [ 12,	  "stat_id_histogram",	  1,	  1		  ]
 [ 13,	  "b",			  0,	  1	  ]
-[ 14,	  "tmp_16",		  0,	  1	  ]
+[ 14,	  "trace_id_time",	  0,	  1		  ]
+[ 15,	  "trace_id_ticks",	  0,	  1		  ]
+[ 16,	  "trace_id_pc",	  0,	  1		  ]
+[ 17,	  "trace_id_modfcn",	  0,	  1		  ]
+[ 18,	  "trace_id_statement",	  0,	  1		  ]
+[ 19,	  "tmp_23",		  0,	  1		  ]
 
 # 08:01:32 >  
 # 08:01:32 >  Done.

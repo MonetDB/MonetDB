@@ -128,6 +128,11 @@ end main;	# 42
 [ 11,	  "stat_id_max_lng",	  1,	  1		  ]
 [ 12,	  "stat_id_histogram",	  1,	  1		  ]
 [ 13,	  "tasks",		  0,	  2		  ]
+[ 14,	  "trace_id_time",	  0,	  1		  ]
+[ 15,	  "trace_id_ticks",	  0,	  1		  ]
+[ 16,	  "trace_id_pc",	  0,	  1		  ]
+[ 17,	  "trace_id_modfcn",	  0,	  1		  ]
+[ 18,	  "trace_id_statement",	  0,	  1		  ]
 #-----------------#
 # h	t	  # name
 # int	int	  # type
@@ -149,6 +154,11 @@ end main;	# 42
 [ 10,	  "stat_id_min_lng",	  1,	  1		  ]
 [ 11,	  "stat_id_max_lng",	  1,	  1		  ]
 [ 12,	  "stat_id_histogram",	  1,	  1		  ]
+[ 14,	  "trace_id_time",	  0,	  1		  ]
+[ 15,	  "trace_id_ticks",	  0,	  1		  ]
+[ 16,	  "trace_id_pc",	  0,	  1		  ]
+[ 17,	  "trace_id_modfcn",	  0,	  1		  ]
+[ 18,	  "trace_id_statement",	  0,	  1		  ]
 [ nil ]
 [ "BAT was destroyed" ]
 [ "BAT was removed from the box" ]
