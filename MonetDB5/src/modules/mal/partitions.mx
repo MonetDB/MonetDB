@@ -238,6 +238,7 @@ BPTresize(int size)
 {
 	Partition *p;
 
+	if( size <= plimit) return;
 	p = GDKmalloc(size * sizeof(Partition));
 	if (partitions) {
 		if (ptop > size)
@@ -621,7 +622,8 @@ BPThasMoreElements(int *res, int *pid, int *bid)
 {
 	if (partitions[*res].next != 0 && partitions[*res].bid == *bid) {
 		*res = partitions[*res].next;
-		*pid = partitions[*res].pid;
+		if( *res >=0)
+			*pid = partitions[*res].pid;
 		BBPincref(*pid, TRUE);
 		return MAL_SUCCEED;
 	}
