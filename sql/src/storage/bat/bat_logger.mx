@@ -196,6 +196,7 @@ log_write_string(logger *l, char *n)
 {
 	int len = strlen(n) + 1;	/* log including EOS */
 
+	assert(len > 1);
 	if (!stream_writeInt(l->log, len) || stream_write(l->log, n, 1, len) != (ssize_t) len)
 		return SQL_ERR;
 	return SQL_OK;
@@ -730,7 +731,7 @@ log_bat_persists(logger *logger, BAT *b, oid lbid, char *name)
 		 return SQL_ERR;
 
 	if (logger->debug & 1)
-		fprintf(stderr, "Logged new bat %s htype %s ttype %s\n", name, ha, ta);
+		fprintf(stderr, "Logged new bat [%s,%s] %s\n", ha, ta, name);
 	return log_bat(logger, lbid, b);
 }
 
