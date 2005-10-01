@@ -619,6 +619,7 @@ void closeClient(Client c) {
 			GDKerror("closeClient:client '%s' is still active\n", k->user);
 			killClient(k);
 		}
+	killClient(CONSOLE);
 	mal_exit();
 }
 

@@ -211,7 +211,6 @@ void freeModule(Module s){
 	if(s==NULL) return;
 	freeSubScope(s);
 	clrModuleJump(s->name, s);
-	if( s->name) { GDKfree(s->name); s->name = NULL;}
 	GDKfree(s);
 }
 void freeModuleList(Module s){

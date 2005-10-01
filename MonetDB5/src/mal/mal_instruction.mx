@@ -581,16 +581,6 @@ Symbol newSymbol(str nme, int kind){
     return cur;
 }
 void freeSymbol(Symbol s){
-	/* The name is a pointer into the namespace and may not be freed
-	str nme;
-	if( s->name) { 
-		if( (nme=getName(s->name,strlen(s->name))) && nme== s->name ){
-			printf("illegal free of symbol name %s\n", s->name);
-			assert(0);
-		} else
-			GDKfree(s->name); s->name = NULL;
-	}
-	*/
 	if(s==NULL) return;
 	if( s->def) { freeMalBlk(s->def);s->def = NULL;}
 	GDKfree(s);

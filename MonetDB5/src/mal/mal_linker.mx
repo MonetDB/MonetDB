@@ -320,12 +320,16 @@ unloadModuleLibraries()
 	int i;
 
 	mal_set_lock(mal_contextLock, "loadModule");
-	for (i = 0; i < maxmodules; i++)
+	for (i = 0; i < lastmodule; i++)
 		if (moduleHandle[i]) {
 			dlclose(moduleHandle[i]);
 			GDKfree(moduleLoaded[i]);
+			GDKfree(moduleFiles[i]);
 		}
 	lastmodule = 0;
+	GDKfree(moduleLoaded); moduleLoaded=0;
+	GDKfree(moduleHandle); moduleHandle=0;
+	GDKfree(moduleFiles); moduleFiles=0;
 	mal_unset_lock(mal_contextLock, "loadModule");
 }
 

@@ -186,6 +186,7 @@ resolving addresses.
 			(void) stream_close(c->fdin->s);
 			(void) stream_destroy(c->fdin->s);
 			(void) bstream_destroy(c->fdin);
+			if( c->prompt) GDKfree(c->prompt);
 		}
 		@:restoreClient1()@
 		c->listing = listing;
@@ -202,6 +203,7 @@ resolving addresses.
 		(void) stream_destroy(c->fdin->s);
 		(void) bstream_destroy(c->fdin);
 	}
+	if( c->prompt) GDKfree(c->prompt);
 
 	@:restoreClient()@
 }

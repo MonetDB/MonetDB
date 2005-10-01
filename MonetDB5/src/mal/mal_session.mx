@@ -83,7 +83,7 @@ malBootstrap()
 void
 MALexit(Client c){
 	stream_printf(c->fdout,"End of MAL session\n");
-	mal_exit();
+	mal_exit(c);
 }
 @+ Client main routine
 Every client has a 'main' function to collect the statements.
