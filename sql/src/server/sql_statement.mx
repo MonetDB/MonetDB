@@ -1277,6 +1277,7 @@ stmt_find(stmt *b, stmt *v, sql_column *c)
 {
 	stmt *s = stmt_create(st_find);
 
+	assert(c);
 	s->op1.stval = b;
 	s->op2.stval = v;
 	s->op4.cval = c;
@@ -1655,7 +1656,6 @@ tail_type(stmt *st)
 	case st_const:
 	case st_join:
 	case st_outerjoin:
-	case st_find:
 		return tail_type(st->op2.stval);
 	case st_reljoin:
 		/* The tail type of a reljoin is the head of the second list!,
@@ -1704,8 +1704,6 @@ tail_type(stmt *st)
 
 	case st_aggr:
 		return st->op4.aggrval->res;
-	case st_convert:
-		return st->op4.typeval;
 	case st_op:
 	case st_unop:
 	case st_binop:
@@ -1713,8 +1711,11 @@ tail_type(stmt *st)
 		return st->op4.funcval->res;
 	case st_atom:
 		return atom_type(st->op1.aval);
+	case st_convert:
 	case st_temp:
 		return st->op4.typeval;
+	case st_find:
+		return st->op4.cval->type;
 	case st_var:
 		return st->op2.typeval;
 	case st_relselect:

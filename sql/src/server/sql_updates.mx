@@ -291,8 +291,8 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 		}
 		sql_subfunc_destroy(or);
 
-		s = stmt_mark(stmt_reverse(s), 0);
 		/* add missing nulls (and NULLs only (SIMPLE MATCH)) */
+		s = stmt_mark(stmt_reverse(s), 0);
 		if (nulls) {
 			stmt *t = stmt_temp(sql_dup_subtype(bt));
 			stmt *isnull = stmt_temp(sql_dup_subtype(tail_type(s)));
@@ -342,7 +342,6 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 			s = stmt_union(s, stmt_const(cur, stmt_atom(atom_general(sql_dup_subtype(sql_bind_localtype("oid")), NULL, 0))));
 		}
 		s = stmt_reverse(stmt_order(stmt_reverse(s), 1));
-
 	}
 	stmt_destroy(rts);
 	return s;

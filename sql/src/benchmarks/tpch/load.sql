@@ -5,6 +5,5 @@ COPY 1500 RECORDS INTO customer from 'PWD/customer.tbl' USING DELIMITERS '|', '|
 COPY 2000 RECORDS INTO part from 'PWD/part.tbl' USING DELIMITERS '|', '|\n';
 COPY 8000 RECORDS INTO partsupp from 'PWD/partsupp.tbl' USING DELIMITERS '|', '|\n';
 COPY 15000 RECORDS INTO orders from 'PWD/orders.tbl' USING DELIMITERS '|', '|\n';
---set DEBUG = 3072;
 COPY 70000 RECORDS INTO lineitem from 'PWD/lineitem.tbl' USING DELIMITERS '|', '|\n';
 COMMIT;
