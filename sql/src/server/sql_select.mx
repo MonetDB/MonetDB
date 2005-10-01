@@ -940,7 +940,9 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 			}
 			s = stmt_join(foundsubset, stmt_dup(cv->s), cmp_equal);
 		} else if (!cv) { /* count(*) without from */
-			return stmt_atom_int(1);
+			/* if we have a where (boolean only) */
+			if (!(s = scope_bind(scp, NULL, "row"))) 
+				return stmt_atom_int(1);
 		}
 	} else {
 		/* use cnt as nils shouldn't be counted */
@@ -2652,7 +2654,7 @@ sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int 
 			return NULL;
 		s = stmt_select(t, s, cmp_equal);
 		if (!found)
-			scope_add_alias(scp, stmt_dup(t), "row");
+			scope_add_alias(scp, stmt_dup(s), "row");
 
 	} else if (s && s->nrcols == 0 && f == sql_search && subset) {
 		stmt *t = first_subset(subset);
@@ -2841,13 +2843,27 @@ query_orderby(mvc *sql, symbol *orderby, stmt *s)
 	return cur;
 }
 
+/* find the special 'row' column */
+static stmt *
+find_base_row( stmt *subset, int aggr )
+{
+	stmt *s = subset->op1.lval->h->data;
+	/* if its an aggregation we need the real base */
+	if (aggr)
+		while(s->type != st_append && s->op1.stval) 
+			s = s->op1.stval;
+	return stmt_dup(s);
+}
+
 static stmt *
 sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 {
 	stmt *subset = NULL;
 	stmt *s = NULL;
-	list *rl;
+	list *rl, *sl;
 	dnode *n = NULL;
+	node *m;
+	int aggr = 0;
 
 	if (!selection) 
 		return sql_error(sql, 02, "A query without a 'from' part cannot have a '*' selection");
@@ -2861,40 +2877,47 @@ sql_simple_select(mvc *sql, scope *scp, symbol *where, dlist *selection)
 		}
 		subset = s;
 	}
-	rl = create_stmt_list();
+	sl = create_stmt_list();
 	for ( n = selection->h; n; n = n->next) {
 		stmt *cs = sql_column_exp(sql, scp, n->data.sym, NULL, NULL, sql_sel);
 
 		if (!cs || !tail_type(cs)) {
-			if (subset) stmt_destroy(subset);
-			list_destroy(rl);
-			return NULL;
+			if (cs) stmt_destroy(cs);
+			list_destroy(sl);
+			sql_select_cleanup(sql, s, subset, NULL);
+			return sql_error(sql, 02, "subquery result missing");
 		}
+		list_append(sl, cs);
+		aggr |= cs->aggr;
+	}
+	rl = create_stmt_list();
+	for (m = sl->h, n = selection->h; m && n; m = m->next, n = n->next) {
+		stmt *cs = m->data;
 
 		/* t1.* */
 		if (cs->type == st_list && n->data.sym->token == SQL_TABLE) {
 			list_merge(rl, cs->op1.lval, (fdup) &stmt_dup);
-			stmt_destroy(cs);
 		} else if (cs->type == st_list) {	/* subquery */
 			if (list_length(cs->op1.lval) == 1) {
 				list_append(rl, stmt_dup(cs->op1.lval->h->data));
 			} else {
 				if (subset) stmt_destroy(subset);
 				list_destroy(rl);
-				stmt_destroy(cs);
+				list_destroy(sl);
 				return sql_error(sql, 02, "subquery should return a single value");
 			}
-		} else if (!cs->aggr && subset) {
-			stmt *ss = stmt_dup(subset->op1.lval->h->data);
+		} else if (subset) {
+			stmt *ss = find_base_row(subset, aggr);
 
 			cs = stmt_const(ss, stmt_dup(cs));
 			list_append(rl, cs);
 		} else {
-			list_append(rl, cs);
+			list_append(rl, stmt_dup(cs));
 		}
 	}
 	if (subset)
 		stmt_destroy(subset);
+	list_destroy(sl);
 
 	s = stmt_list(rl);
 
