@@ -523,31 +523,46 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			break;
 		case st_limit:{
 			int l = _dumpstmt(sql, mb, s->op1.stval);
-			int k = _dumpstmt(sql, mb, s->op2.stval);
-			int m = _dumpstmt(sql, mb, s->op3.stval);
+			int offset = _dumpstmt(sql, mb, s->op2.stval);
+			int len = _dumpstmt(sql, mb, s->op3.stval);
 
 			@:SQLprelude@
 
-			/* TODO if (s->flag)
-				generate pqueue_topn 
-			*/
+			if (s->flag) {
+				int topn = 0;
+				char *name = "topn_min";
+				if ((s->flag-1) > 0)
+					name = "topn_max"; 
+
+				q = newStmt(mb, "calc", "+");
+				q = pushArgument(mb,q, offset);
+				q = pushArgument(mb,q, len);
+				topn = getDestVar(q);
+				 
+				q = newStmt(mb, "pqueue", name);
+				q = pushArgument(mb,q, l);
+				q = pushArgument(mb, q, topn);
+				l = getDestVar(q);
+
+				/* the result of the topn is still sliced,
+				 * to remove the offset part */
+			}
+			q = newStmt(mb, "calc", "+");
+			q = pushArgument(mb, q, offset);
+			q = pushArgument(mb, q, len);
+			len = getDestVar(q);
 
 			/* since both arguments of algebra.slice are inclusive
 			   correct the LIMIT value by substracting 1 */
-			q = newStmt(mb, "calc", "+");
-			q = pushArgument(mb, q, k);
-			q = pushArgument(mb, q, m);
-			m = getDestVar(q);
-
 			q = newStmt(mb, "calc", "-");
-			q = pushArgument(mb, q, m);
+			q = pushArgument(mb, q, len);
 			q = pushInt(mb, q, 1);
-			m = getDestVar(q);
+			len = getDestVar(q);
 
 			q = newStmt(mb, "algebra", "slice");
 			q = pushArgument(mb, q, l);
-			q = pushArgument(mb, q, k);
-			q = pushArgument(mb, q, m);
+			q = pushArgument(mb, q, offset);
+			q = pushArgument(mb, q, len);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 		} break;
