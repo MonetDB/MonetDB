@@ -1953,6 +1953,8 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
         case REMsymbol:
             sprintf(t,"#%s ",getVarLiteral(mb,getArg(p,0))); 
 			break;
+		case COMMENTsymbol:
+			return s;
         default:
             sprintf(t," ?%d? ",p->token); 
     }
