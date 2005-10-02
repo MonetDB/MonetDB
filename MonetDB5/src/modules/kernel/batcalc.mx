@@ -63,8 +63,11 @@ The first group of functions provide abstractions over the
 binary operators +,/,-,*, and %. Both on (BAT,BAT) and (BAT,CST)
 operands. We also support the type enlargement and auto coercions,
 because they avoid expensive BAT copying.
-BAT initialization takes a reference void bat,
-or the required size.
+BAT initialization takes a reference void bat, or the required size.
+@{
+Actullay, the initialization group should belong to the BAT module,
+because it is a contraction of a BATnew and a series of inserts.
+@}
 @= initGrp
 	command init(bsize:sht,v:@1):bat[:void,:@1]
 	address CMD@1init_sht
