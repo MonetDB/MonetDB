@@ -646,8 +646,11 @@ sql_schema *
 mvc_bind_schema(mvc *m, char *sname)
 {
 	sql_trans *tr = m->trans;
-	sql_schema *s = find_sql_schema(tr, sname);
+	sql_schema *s;
 
+	if (!tr)
+		return NULL;
+ 	s = find_sql_schema(tr, sname);
 	if (!s)
 		return NULL;
 	/*

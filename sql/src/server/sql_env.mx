@@ -106,11 +106,18 @@ char *
 sql_get_var(mvc *m, char *name)
 {
 	sql_trans *tr = m->trans;
-	sql_schema *sys = mvc_bind_schema(m, "sys");
-	sql_table *sessions = mvc_bind_table(m, sys, "sessions");
-	sql_column *s_name = mvc_bind_column(m, sessions, "name");
-	ssize_t rid = column_find_row(tr, s_name, name, NULL);
+	sql_schema *sys;
+	sql_table *sessions;
+	sql_column *s_name;
+	ssize_t rid;
 	char *val = NULL;
+
+	if (!tr)
+		return NULL;
+	sys = mvc_bind_schema(m, "sys");
+	sessions = mvc_bind_table(m, sys, "sessions");
+	s_name = mvc_bind_column(m, sessions, "name");
+	rid = column_find_row(tr, s_name, name, NULL);
 
 	if (rid >= 0) {
 		sql_column *s_value = mvc_bind_column(m, sessions, "value");
