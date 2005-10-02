@@ -435,8 +435,7 @@ Time to execute the script files. Start with the init command[todo]
 
 	GDKfree(monet_script);
 	serveClient(mal_clients);
-
-	/* MT_global_exit(0);  */
+	mal_exit(mal_clients);
 	return 0;
 }
 @}
