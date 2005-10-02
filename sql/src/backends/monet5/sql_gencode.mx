@@ -1397,45 +1397,42 @@ int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 	}
 	return nr;
 }
-/* Niels, how to get the proper arguments in place?
+
 void
 backend_callinline(backend *be, Client c, stmt *s, list *args)
 {
-	MalBlkPtr curBlk = 0;
-	Symbol curPrg = 0;
 	InstrPtr curInstr = 0;
-	int varid,argc=0;
-	char arg[32];
+	MalBlkPtr curBlk = c->curprg->def;
 
-	curPrg = c->curprg;
-	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk, 0);
 
-	if (args) {
+	if (args) { /* we shouldn't come here as we aren't caching statements */
+		int argc=0;
+		char arg[32];
 		node *n;
-		curInstr = newAssignment(curBlk);
 
-		for (n = args->h; n; n = n->next) {
+		for (n = args->h; n; n = n->next, argc++) {
 			atom *a = n->data;
 			int type = a->tpe->type->localtype;
+			int varid = 0;
+
+			curInstr = newAssignment(curBlk);
 			snprintf(arg, 32, "A%d", argc);
 			varid = newVariable(curBlk, _strdup(arg), type);
 			setReturnArgument(curInstr,varid);
 			setVarType(curBlk, varid, type);
 
 			if (atom_null(a)) {
-				sql_subtype *t = a->data;
+				sql_subtype *t = a->tpe;
 				curInstr = pushNilType(curBlk, curInstr, t->type->localtype);
 			} else {
 				int _t = constantAtom(be, curBlk, a);
 				curInstr = pushArgument(curBlk, curInstr, _t);
 			}
-			pushInstruction(curBlk,curInstr);
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
 }
-*/
 
 void
 backend_dumpproc(backend *be, Client c, int id, stmt *s)

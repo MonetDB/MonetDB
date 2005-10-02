@@ -538,12 +538,12 @@ Continue processing any left-over input from the previous round.
 		in->pos++;
 @-
 Distinguish between console reading and MapiClient connections.
-The former comes with readlin functionality.
+The former comes with readline functionality.
 @c
     if( c == mal_clients){
 		/* The rules of auto_commit require us to finish 
 		   and start a transaction on the start of a new statement */
-/* Niels, final adjustments are needed to synchronize with the scanner
+/* TODO, final adjustments are needed to synchronize with the scanner
 This is not going to work, because the scanner performs its own
 IO to obtain missing data.
 		go = SQLautocommit(c,m);
@@ -835,8 +835,12 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		}
 		assert(s);
 		/* generate and call the MAL code */
+		if ((msg = sql_get_var(m,"optimizer"))== NULL || *msg == 0) {
+			backend_callinline(be, c, s, m->args);
+/*
 		if (!m->cache ){
 			backend_dumpstmt(be, c->curprg->def, s);
+*/
 		} else {
 			/* generate a factory instantiation */
 			backend_dumpproc(be, c, m->qc->id, s);
@@ -859,11 +863,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 #endif
 	if (be->q && m->mode == m_prepare) {
 		err = output_prepare(c->fdout, m, be->q);
-/* Niels (has to move into SQLengine) 
-	} else if(be->q && (msg= sql_get_var(m,"optimizer"))== NULL || *msg == 0) {
-		backend_callinline(be, c, be->q, m->args);
-*/
-	} else if (be->q) {
+	} else if (be->q) {  /* call procedure (only in cache mode) */
 		backend_call(be, c, be->q->id, m->args);
 	}
 
