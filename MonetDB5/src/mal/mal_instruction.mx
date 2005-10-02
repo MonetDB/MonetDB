@@ -342,7 +342,7 @@ typedef struct VARRECORD{
 	short   isudftype;/* type defined in program */
 	short	inout;  /* in-out argument to function */
     short   cleanup;/* remove upon function return */
-    short   beginLifespan, endLifespan, updLifespan; /* for optimizers */
+    short   beginLifespan, endLifespan, lastUpdate; /* for optimizers */
 	size_t	length; /* of the literal string */
     str     literal;/* initial value string */
     PropertySet props; /* private list of (name,value) pairs */
@@ -463,6 +463,10 @@ for separate name space management.
 #define getVarGDKType(M,I)      ((M)->var[I]->gdktype)
 #define copyVar(M,I,J)  freeVariable(M,I);(M)->var[I] = (M)->var[J];\
         (M)->var[J]= NULL;
+
+#define getLastUpdate(M,I)	((M)->var[I]->lastUpdate)
+#define getEndLifespan(M,I)	((M)->var[I]->endLifespan)
+#define getBeginLifespan(M,I)	((M)->var[I]->beginLifespan)
 
 #define getDestVar(P)   (P)->argv[0]
 #define setDestVar(P,X)   (P)->argv[0]  =X
