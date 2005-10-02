@@ -3049,7 +3049,6 @@ BKCsetSequenceBase(int *r, int *bid, oid *o)
 {
 	BAT *b;
 
-	(void) r;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("bat.setSequenceBase", "Cannot access descriptor");
 	}
