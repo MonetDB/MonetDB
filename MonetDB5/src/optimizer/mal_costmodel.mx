@@ -171,7 +171,7 @@ RMcalculator(MalBlkPtr mb)
 					@:newCost(2, *c1)@
 				}
 			}
-		} else if (moduleId(p) && idcmp(moduleName(p), "aggrX3") == 0) {
+		} else if (moduleId(p) && idcmp(moduleName(p), "aggr") == 0) {
 			if (functionId(p) && (idcmp(functionName(p), "sum") == 0 || idcmp(functionName(p), "min") == 0 || idcmp(functionName(p), "max") == 0 || idcmp(functionName(p), "avg") == 0)) {
 				@:newCost(2, *c1)@
 			}

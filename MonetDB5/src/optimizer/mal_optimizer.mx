@@ -847,7 +847,7 @@ setLifespan(MalBlkPtr mb)
 	for (k = 0; k < mb->vtop; k++) {
 		VarPtr v = getVar(mb, k);
 
-		v->updLifespan = v->beginLifespan = v->endLifespan = 0;
+		v->lastUpdate = v->beginLifespan = v->endLifespan = 0;
 	}
 	for (pc = 0; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);
@@ -857,7 +857,7 @@ setLifespan(MalBlkPtr mb)
 			if (v->beginLifespan == 0)
 				v->beginLifespan = pc;
 			if (k < p->retc)
-				v->updLifespan++;
+				v->lastUpdate= pc;
 			if (pc > v->endLifespan) {
 				/* end only if the beginLifspan falls in the same blk */
 				/* otherwise it is the corresponding exit. */
@@ -1445,44 +1445,14 @@ was produced by an operator from the @code{algebra, algebra2, group, aggrX3}
 modules.
 @{
 @c
-int
-AEvalidSource(MalBlkPtr mb, int v, int pc, int stop)
-{
-	InstrPtr p;
-	int i, j;
-
-	for (i = pc - 1; i >= stop; i--) {
-		p = getInstrPtr(mb, i);
-		if (p->barrier)
-			return 0;
-		switch (p->token) {
-		case FUNCTIONsymbol:
-		case FACTORYsymbol:
-		case COMMANDsymbol:
-		case THREADsymbol:
-		case EXITsymbol:
-		case CATCHsymbol:
-		case RAISEsymbol:
-		case RETURNsymbol:
-		case YIELDsymbol:
-		case ENDsymbol:
-			return 0;
-		}
-		for (j = 0; j < p->retc; j++)
-			if (getArg(p, j) == v) {
-				if (moduleId(p) && strcmp(moduleId(p), "batcalc") == 0)
-					return 1;
-				if (moduleId(p) && strcmp(moduleId(p), "algebra") == 0)
-					return 1;
-				if (moduleId(p) && strcmp(moduleId(p), "aggrX3") == 0)
-					return 1;
-				if (moduleId(p) && strcmp(moduleId(p), "group") == 0)
-					return 1;
-				if (moduleId(p) && strcmp(moduleId(p), "array") == 0)
-					return 1;
-			}
-	}
-	return 1;
+int AEvalidInstruction(InstrPtr p){
+	if (moduleId(p) && strcmp(moduleId(p), "batcalc") == 0)
+		return strcmp(functionId(p),"init") != 0;
+	if (moduleId(p) && strcmp(moduleId(p), "array") == 0)
+			return strcmp(functionId(p),"grid") != 0;
+	if (moduleId(p) && strcmp(moduleId(p), "batcalc"))
+		return 0;
+	return 0;
 }
 
 void
@@ -1496,57 +1466,68 @@ AEcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
 	if (strcmp(functionName(p), "int") == 0 && t == TYPE_int) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
+		setLifespan(mb);
 		return;
 	}
 	if (strcmp(functionName(p), "str") == 0 && t == TYPE_str) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
+		setLifespan(mb);
 		return;
 	}
 	if (strcmp(functionName(p), "oid") == 0 && t == TYPE_oid) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
+		setLifespan(mb);
 		return;
 	}
 	if (strcmp(functionName(p), "lng") == 0 && t == TYPE_lng) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
+		setLifespan(mb);
 		return;
 	}
 	if (strcmp(functionName(p), "sht") == 0 && t == TYPE_sht) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
+		setLifespan(mb);
 		return;
 	}
 	if (strcmp(functionName(p), "bit") == 0 && t == TYPE_bit) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
+		setLifespan(mb);
 		return;
 	}
 	if (strcmp(functionName(p), "dbl") == 0 && t == TYPE_dbl) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
+		setLifespan(mb);
 		return;
 	}
 	if (strcmp(functionName(p), "flt") == 0 && t == TYPE_flt) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
+		setLifespan(mb);
 		return;
 	}
 }
 str
 AEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, a, b, depth;
+	int i, a, b, valid;
 	InstrPtr p;
 	Client cntxt = getClient();
 	Module scope = cntxt->nspace;
 	char *olderr;
 	int errlen, actions = 0;
 	lng clk = GDKusec();
+	int olderrnr = mb->errors;
 
 	(void) pci;
 	(void) stk;		/* to fool compilers */
+	if (pci)
+		removeInstruction(mb, pci);
 	if( mb->errors) 
 		return MAL_SUCCEED;
 	setLifespan(mb);
@@ -1571,88 +1552,104 @@ at the end of the optimization attempt.
 			AEcoercionOptimizer(mb, i, p);
 			continue;
 		}
-		if (strcmp(moduleId(p), "batcalc"))
-			continue;
+		if( !AEvalidInstruction(p) ) continue;
 
-		depth = getVarDepth(mb, getArg(p, 0));
 		if (p->argc == 3) {
 			/* binary/unary operation, check first argument */
 			v = getVar(mb, a = getArg(p, 1));
 			b = getArg(p, 0);
+			if( getLastUpdate(mb,b) != i) continue;
+			valid= getEndLifespan(mb,a) <= i;
 
 #ifdef DEBUG_MAL_OPTIMIZER
-			stream_printf(GDKout, "Found binary OR candidate \n");
-			stream_printf(GDKout, "pc=%d valid=%d \n", i, AEvalidSource(mb, a, i, v->beginLifespan));
-			stream_printf(GDKout, "target %d %d-%d\n", b, getVar(mb, b)->beginLifespan, getVar(mb, b)->endLifespan);
-			stream_printf(GDKout, "arg 1 %d %d-%d\n", a, v->beginLifespan, v->endLifespan);
-			stream_printf(GDKout, "arg 2 %d %d-%d\n", getArg(p, 2), getVar(mb, getArg(p, 2))->beginLifespan, getVar(mb, getArg(p, 2))->endLifespan);
+			stream_printf(GDKout, "Found AE candidate ");
+			stream_printf(GDKout, "%d: %d(%d,%d) valid=%d isaBat=%d \n", 
+				i, b,a,getArg(p,2), valid, isaBatType(v->type));
 			printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
-			if (isaBatType(v->type) && (v->endLifespan == i || a == b) && v->depth <= depth) {
-				if (AEvalidSource(mb, a, i, v->beginLifespan) || a == b) {
-					pushArgument(mb, p, a);
-					for (j = p->argc - 1; j > p->retc; j--)
-						p->argv[j] = p->argv[j - 1];
-					p->argv[p->retc] = a;
-					p->argv[0]= newTmpVariable(mb,TYPE_any);
-					typeChecker(scope, mb, p, TRUE);
+			if (isaBatType(v->type) && valid){
+				pushArgument(mb, p, getArg(p,2));
+				getArg(p,2)= getArg(p,1);
+				getArg(p,1)= a;
+				getArg(p,0)= newTmpVariable(mb,TYPE_any);
 
-					if (a != b)
-						ARreplaceAlias(mb, i + 1, mb->stop, b, a);
+				mb->errors = 0;
+				typeChecker(scope, mb, p, TRUE);
+				if (p->typechk == TYPE_UNKNOWN) {
+					/* reset instruction */
+					mb->errors= olderrnr;
+					getArg(p,0)= getArg(p,1);
+					getArg(p,1)= getArg(p,2);
+					getArg(p,2)= a;
+					p->argc--;
+					typeChecker(scope, mb, p, TRUE);
+				} else if (a != b)
+					ARreplaceAlias(mb, i + 1, mb->stop, b, a);
 #ifdef DEBUG_MAL_OPTIMIZER
-					stream_printf(GDKout, "FIRST\n");
-					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
-					actions++;
-					continue;
-				}
+				actions++;
+				continue;
 			}
 			/* continue with binary version */
 			v = getVar(mb, a = getArg(p, 2));
-			if (isaBatType(v->type) && (v->endLifespan == i || a == b) && v->depth <= depth) {
-				if (AEvalidSource(mb, a, i, v->beginLifespan) || a == b) {
-					pushArgument(mb, p, a);
-					for (j = p->argc - 1; j > p->retc; j--)
-						p->argv[j] = p->argv[j - 1];
-					p->argv[p->retc] = a;
-					p->argv[0]= newTmpVariable(mb,TYPE_any);
-					typeChecker(scope, mb, p, TRUE);
-
-					if (a != b)
-						ARreplaceAlias(mb, i + 1, mb->stop, b, a);
+			valid= getEndLifespan(mb,a) <= i;
 #ifdef DEBUG_MAL_OPTIMIZER
-					stream_printf(GDKout, "SECOND\n");
-					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+			stream_printf(GDKout, "%d: %d(%d,%d) valid=%d isaBat=%d \n", 
+				i, b,getArg(p,1),a, valid, isaBatType(v->type));
 #endif
-					actions++;
-					continue;
-				}
+			if (isaBatType(v->type) && valid){
+				pushArgument(mb, p, getArg(p,2));
+				getArg(p,2)= getArg(p,1);
+				getArg(p,1)= a;
+				getArg(p,0)= newTmpVariable(mb,TYPE_any);
+
+				mb->errors = 0;
+				typeChecker(scope, mb, p, TRUE);
+				if (p->typechk == TYPE_UNKNOWN) {
+					/* reset instruction */
+					mb->errors = olderrnr;
+					getArg(p,0)= getArg(p,1);
+					getArg(p,1)= getArg(p,2);
+					getArg(p,2)= a;
+					p->argc--;
+					typeChecker(scope, mb, p, TRUE);
+				} else if (a != b)
+					ARreplaceAlias(mb, i + 1, mb->stop, b, a);
+#ifdef DEBUG_MAL_OPTIMIZER
+				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+#endif
+				actions++;
+				continue;
 			}
 		} else if (p->argc == 2) {
 			/* binary/unary operation, check first argument  and return type */
-			int olderr = mb->errors;
-
 			v = getVar(mb, a = getArg(p, 1));
 			b = getArg(p, 0);
+			if( getLastUpdate(mb,b) != i) continue;
+			valid= getEndLifespan(mb,a) <= i;
 
-			if (isaBatType(v->type) && (v->endLifespan == i || a == b) && v->depth <= depth) {
-				if (AEvalidSource(mb, a, i, v->beginLifespan) || a == b) {
+			if (isaBatType(v->type)  && valid){
 #ifdef DEBUG_MAL_OPTIMIZER
-					stream_printf(GDKout, "Found unary OR candidate\n");
-					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
+				stream_printf(GDKout, "Found unary AE candidate\n");
+				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 #endif
-					mb->errors = 0;
-					p->argv[0] = a;
-					typeChecker(scope, mb, p, TRUE);
+				pushArgument(mb, p, a);
+				getArg(p,1)= getArg(p,0);
+				getArg(p,0)= newTmpVariable(mb,TYPE_any);
 
-					if (p->typechk == TYPE_UNKNOWN) {
-						mb->errors = olderr;
-						p->argv[0] = b;
-						typeChecker(scope, mb, p, TRUE);
-					} else if (a != b)
-						ARreplaceAlias(mb, i + 1, mb->stop, b, a);
-					actions++;
-				}
+				mb->errors = 0;
+				typeChecker(scope, mb, p, TRUE);
+				if (p->typechk == TYPE_UNKNOWN) {
+					/* reset instruction */
+					mb->errors = olderrnr;
+					getArg(p,0)= getArg(p,1);
+					getArg(p,1)= getArg(p,2);
+					p->argc--;
+					typeChecker(scope, mb, p, TRUE);
+				} else if (a != b)
+					ARreplaceAlias(mb, i + 1, mb->stop, b, a);
+				actions++;
 			}
 		}
 	}

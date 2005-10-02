@@ -141,7 +141,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		for (j = 0; j < p->retc; j++)
-			if (empty[getArg(p, j)] && getVar(mb, getArg(p, j))->updLifespan > 1) {
+			if (empty[getArg(p, j)] && getVar(mb, getArg(p, j))->lastUpdate > i) {
 #ifdef DEBUG_MAL_EMPTYSET
 				stream_printf(GDKout, "reject emptyset %d\n", getArg(p, j));
 #endif
@@ -155,7 +155,9 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 			if (empty[getArg(p, j)]) {
 				/* decode operations */
 				if (getName("bat", 3) == moduleId(p)) {
-					if (getName("insert", 6) == functionId(p) || getName("delete", 6) == functionId(p) || getName("append", 6) == functionId(p)) {
+					if (getName("insert", 6) == functionId(p) || 
+						getName("delete", 6) == functionId(p) || 
+						getName("append", 6) == functionId(p)) {
 						if (j == 2) {
 							/* you don;t add anything */
 							setModuleId(p, NULL);
@@ -165,7 +167,8 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 							doAR++;
 							break;
 						}
-					} else if (getName("reverse", 7) == functionId(p) && getVar(mb, getArg(p, 0))->updLifespan == 1) {
+					} else if ( getName("reverse", 7) == functionId(p) && 
+								getVar(mb, getArg(p, 0))->lastUpdate == i) {
 						empty[getArg(p, 0)] = 1;
 						break;
 					}
@@ -187,15 +190,28 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 						pushBit(mb, p, "false");
 						doAR++;
 						break;
-					} else if (getName("select", 6) == functionId(p) || getName("uselect", 7) == functionId(p) || getName("like", 4) == functionId(p) || getName("sortH", 5) == functionId(p) || getName("sortT", 5) == functionId(p) ||
-						   getName("sortHT", 6) == functionId(p) || getName("sortTH", 6) == functionId(p) || getName("unique", 6) == functionId(p) || getName("sunique", 7) == functionId(p) || getName("kunique", 7) == functionId(p)
-						   || getName("tunique", 7) == functionId(p) || getName("intersect", 9) == functionId(p) || getName("sintersect", 10) == functionId(p) || getName("kintersect", 10) == functionId(p) ||
-						   getName("fragment", 8) == functionId(p)) {
+					} else if (getName("select", 6) == functionId(p) || 
+								getName("uselect", 7) == functionId(p) || 
+								getName("like", 4) == functionId(p) || 
+								getName("sortH", 5) == functionId(p) || 
+								getName("sortT", 5) == functionId(p) ||
+								getName("sortHT", 6) == functionId(p) || 
+								getName("sortTH", 6) == functionId(p) || 
+								getName("unique", 6) == functionId(p) || 
+								getName("sunique", 7) == functionId(p) || 
+								getName("kunique", 7) == functionId(p) ||
+								getName("tunique", 7) == functionId(p) || 
+								getName("intersect", 9) == functionId(p) || 
+								getName("sintersect", 10) == functionId(p) || 
+								getName("kintersect", 10) == functionId(p) ||
+								getName("fragment", 8) == functionId(p)) {
 						/* result is empty */
-						if (getVar(mb, getArg(p, 0))->updLifespan == 1)
+						if (getVar(mb, getArg(p, 0))->lastUpdate == i)
 							empty[getArg(p, 0)] = 1;
-					} else if (getName("diff", 4) == functionId(p) || getName("kdifference", 11) == functionId(p) || getName("semijoin", 8) == functionId(p)) {
-						if (getVar(mb, getArg(p, 0))->updLifespan == 1) {
+					} else if (getName("diff", 4) == functionId(p) || 
+								getName("kdifference", 11) == functionId(p) || 
+								getName("semijoin", 8) == functionId(p)) {
+						if (getVar(mb, getArg(p, 0))->lastUpdate == i) {
 							/* always empty */
 							setModuleId(p, NULL);
 							setFunctionId(p, NULL);
@@ -207,9 +223,15 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 							doAR++;
 						}
 						break;
-					} else if (getName("sunion", 6) == functionId(p) || getName("kunion", 6) == functionId(p) || getName("join", 4) == functionId(p) || getName("fetchjoin", 9) == functionId(p) ||
-						   getName("mergejoin", 9) == functionId(p) || getName("indexjoin", 9) == functionId(p) || getName("hashjoin", 8) == functionId(p) || getName("cartesianproduct", 16) == functionId(p) ||
-						   getName("union", 5) == functionId(p)) {
+					} else if (getName("sunion", 6) == functionId(p) || 
+								getName("kunion", 6) == functionId(p) || 
+								getName("join", 4) == functionId(p) || 
+								getName("fetchjoin", 9) == functionId(p) ||
+								getName("mergejoin", 9) == functionId(p) || 
+								getName("indexjoin", 9) == functionId(p) || 
+								getName("hashjoin", 8) == functionId(p) || 
+								getName("cartesianproduct", 16) == functionId(p) ||
+								getName("union", 5) == functionId(p)) {
 						/* always identity */
 						setModuleId(p, NULL);
 						setFunctionId(p, NULL);
