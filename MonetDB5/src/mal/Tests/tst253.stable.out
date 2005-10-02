@@ -37,8 +37,8 @@ function user.main():int;	# 0  (main:int)
     d := algebra.markT(c);	# 9 ALGtmark_default (d:bat[:str,:void])<-(c:bat[:str,:void])
     io.print(d);	# 10 IOprint_val (_17:int)<-(d:bat[:str,:void])
 #perform header marking 	# 11  (_19:str)
-    f := algebra.markH(b);	# 12 ALGmarkHead_default (f:bat[:void,:str])<-(b:bat[:void,:str])
-    io.print(f);	# 13 IOprint_val (_21:int)<-(f:bat[:void,:str])
+    f := algebra.markH(b);	# 12 ALGmarkHead_default (f:bat[:void,:oid])<-(b:bat[:void,:str])
+    io.print(f);	# 13 IOprint_val (_21:int)<-(f:bat[:void,:oid])
 end main;	# 14  
 #-------------------------#
 # h	tmp_4		  # name
