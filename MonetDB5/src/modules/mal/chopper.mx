@@ -115,14 +115,6 @@ CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("chop.newChunkIterator", "Cannot access descriptor");
 	}
-	if (*vid) {
-		if ((view = BATdescriptor(*vid)) == NULL) {
-			BBPunfix(b->batCacheid);
-			return throwMessage("chop.newChunkIterator", "Cannot access 'vid' descriptor");
-		}
-		/* it has the correct type, but does it also
-		   refer to the same BAT */
-	}
 	cnt = BATcount(b);
 	first = BUNindex(b, BUNfirst(b));
 	view = VIEWcreate_(b, TRUE);
@@ -133,7 +125,7 @@ CHPnewChunkIterator(lng *res, int *vid, int *bid, lng *granule)
 	 *granule, first, MIN(cnt,(size_t) *granule)); */
 	VIEWbounds(view, (size_t) first, first + MIN(cnt, (size_t) * granule) - 1);
 	BATseqbase(view, first - 1);
-	/* BBPunfix(view->batCacheid); */
+	BBPunfix(view->batCacheid); 
 	*res = first;
 	return MAL_SUCCEED;
 }
@@ -168,6 +160,7 @@ CHPhasMoreChunks(lng *res, int *vid, int *bid, lng *granule)
 	VIEWbounds(view, i, i + (size_t) * granule - 1);
 	BATseqbase(view, i - 1);
 	BBPunfix(b->batCacheid);
+	BBPincref(*vid, TRUE);
 	BBPunfix(view->batCacheid);
 	*res = i;
 	return MAL_SUCCEED;
@@ -211,7 +204,7 @@ CHPbunIterator(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* get head = ... tail = ... */
 	yy = *cursor;
 	p = BUNptr(b, yy);
-	if( getArgType(mb,pci,1) == TYPE_void){
+	if( b->htype == TYPE_void){
 		o= b->hseqbase;
 		VALinit(head, TYPE_oid, &o);
 	} else
@@ -251,11 +244,14 @@ CHPbunHasMoreElements(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	if( getArgType(mb,pci,1) == TYPE_void){
+	if( b->htype == TYPE_void){
 		o= yy - BUNindex(b,BUNfirst(b))+  b->hseqbase;
 		VALinit(head, TYPE_oid, &o);
-	} else
+	} else {
+		assert(b->htype == getArgType(mb,pci,1));
 		VALinit(head, getArgType(mb, pci, 1), BUNhead(b, p));
+	}
+	assert(b->ttype == getArgType(mb,pci,2));
 	VALinit(tail, getArgType(mb, pci, 2), BUNtail(b, p));
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
