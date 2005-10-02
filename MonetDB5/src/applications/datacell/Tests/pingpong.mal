@@ -2,6 +2,7 @@
 # of a single receptor, a identify transformation,
 # and a single emitter.
 
+include sql;
 include datacell;
 
 datacell.open();
@@ -41,11 +42,11 @@ io.print(t);
 datacell.startPump("ping");
 datacell.startPump("bat");
 datacell.startPump("pong");
-datacell.startScheduler(100); # 100 microseconds delay
+#datacell.startScheduler(100); # 100 microseconds delay
 
 #(publ,priv) := datacell.bindEmitter("pong","event");
 #io.print(publ);
 #io.print(priv);
 
-mapi.listen();
+#mapi.listen();
 #datacell.close();
