@@ -38,6 +38,7 @@ sql_export str SQLinitClient(Client c);
 sql_export str SQLexit(Client c);
 sql_export str SQLinit(Client c);
 sql_export str SQLinitEnvironment(int *ret);
+sql_export str SQLcompile(str *ret, str *expr, int *flag);
 
 sql_export str SQLparser(Client c);
 sql_export str SQLengine(Client c);
