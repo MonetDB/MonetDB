@@ -451,33 +451,33 @@ This has been left out.
 @= accumCst
 	while( p1 < hend ){
 #ifdef NULLTST
-		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
+		if(*(@3 *)p2 == @3_nil || *(@4*)cst == @4_nil)
 			*(@1*)p1= @1_nil;
 		else 
 #endif
-			*(@1*)p1 = *(@1*) p2 @2 *(@1 *) cst;
+			*(@1*)p1 = *(@3*) p2 @2 *(@4 *) cst;
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 	}
 @= accumCstLeft
 	while( p1 < hend ){
 #ifdef NULLTST
-		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil)
+		if(*(@3 *)p2 == @3_nil || *(@4*)cst == @4_nil)
 			*(@1*)p1= @1_nil;
 		else 
 #endif
-			*(@1*)p1 = *(@1*) cst @2 *(@1 *) p2;
+			*(@1*)p1 = *(@3*) cst @2 *(@4 *) p2;
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 	}
 @= accumCstDIV
 	while( p1 < hend ){
 #ifdef NULLTST
-		if(*(@1 *)p2 == @1_nil || *(@1*)cst == @1_nil || *(@1*)cst ==0)
+		if(*(@3 *)p2 == @3_nil || *(@4*)cst == @4_nil || *(@4*)cst ==0)
 			*(@1*)p1= @1_nil;
 		else 
 #endif
-			*(@1*)p1 = *(@1*) p2 @2 *(@1 *) cst;
+			*(@1*)p1 = *(@3*) p2 @2 *(@4 *) cst;
 		p1= (ptr)( ((char *)p1) + s1);
 		p2= (ptr)( ((char *)p2) + s2);
 	}
