@@ -56,16 +56,16 @@ address DCgetEmitterStatus
 comment "Display the actual state of a emitter.";
 
 command datacell.bindEmitter(sname:str,pname:str) 
-		(public:bat[:void,:any$1],private:bat[:void,:any$1])
+		(public:bat[:void,:any_1],private:bat[:void,:any_1])
 address DCbindEmitter
 comment "Provide private access to a column.";
 
 command datacell.bindEmitterTuple(sname:str,pname:str) 
-		(head:any$1,tail:any$2)
+		(head:any_1,tail:any_2)
 address DCbindEmitterTuple
 comment "Extract a single tuple from the public bats.";
 
-command datacell.bindEmitter(sname:str,pname:str) :bat[:void,:any$1]
+command datacell.bindEmitter(sname:str,pname:str) :bat[:void,:any_1]
 address DCbindEmitterPublic
 comment "Provide private access to a public version of a column.";
 

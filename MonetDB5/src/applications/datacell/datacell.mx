@@ -55,9 +55,9 @@ Furthermore, the remote access facility of MonetDB should be used
 to move the completed event containers to an archive store or
 backend server with sufficient capabilities for post-processing.
 
+Notice, the @code{sql} module should be loaded before you can load
+the datacell functionality.
 @mal
-include sql;
-
 module pumps; # will contain the pump queries
 module datacell;
 
@@ -102,13 +102,11 @@ command take(name:str,cname:str):bat[:void,:any]
 address DCtake
 comment "Return the BAT with collected sensor input";
 
-command keep(nme:str, dst:bat[:any$1,:any$2],src:bat[:any$1,:any$2])
-		:bat[:any$1,:any$2]
+command keep(nme:str, dst:bat[:any_1,:any_2],src:bat[:any_1,:any_2]):void
 address DCkeep
 comment "Overload append to synchronize with emitter semantics";
 
-command keep(nme:str, dst:bat[:any$1,:any$2],src:any$2)
-		:bat[:any$1,:any$2]
+command keep(nme:str, dst:bat[:any_1,:any_2],src:any_2):void
 address DCkeepTuple
 comment "Overload append to synchronize with emitter semantics";
 @-
@@ -1355,5 +1353,4 @@ DCkeepTuple(int *ret, str *name, int *dst, void *src)
 	/* mal_unset_lock(p->lock,"datacell.append"); */
 	return msg;
 }
-
 @}

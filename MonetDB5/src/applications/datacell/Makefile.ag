@@ -14,7 +14,9 @@ lib_datacell = {
 
 	HEADERS = h 
 	#SCRIPTS = mal mil ""
-	LIBS = ../../optimizer/lib_optimizer ../../mal/libmal ../../modules/atoms/lib_mtime ../../modules/kernel/lib_bat ../../modules/mal/lib_tablet \
+	LIBS = ../../optimizer/lib_optimizer ../../mal/libmal \
+		../../modules/atoms/lib_mtime ../../modules/kernel/lib_bat \
+		../../modules/mal/lib_tablet \
 		$(MONETDB_LIBS) -lbat -lstream $(SOCKET_LIBS)
 }
 bin_dcsource = {

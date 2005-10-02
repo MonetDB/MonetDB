@@ -107,6 +107,7 @@ MAL2SQLtype(int tpe)
 	return getTypeName(tpe);
 }
 
+/*
 str
 SQLcompile(str *ret, str *expr, int *flag)
 {
@@ -115,6 +116,7 @@ SQLcompile(str *ret, str *expr, int *flag)
 	(void) flag;
 	return MAL_SUCCEED;
 }
+*/
 
 str
 DCcompileQuery(str *ret, str *expr, str *name)
@@ -317,7 +319,7 @@ some peephole optimization.
 	ESevaluate(mb, z, emptyset);
 	PHoptimizer(mb, 0, 0);
 	DCsqlReshuffle(mb, newname);
-	optimizerCheck(mb, "datacell.reduce", actions, GDKusec() - clk);
+	optimizerCheck(mb, "datacell.reduction", actions, GDKusec() - clk);
 	printFunction(GDKout, mb, LIST_MAL_ALL);
 	return MAL_SUCCEED;
 }
@@ -333,6 +335,10 @@ DCmakePlans(int *ret, str *nme, str *newname)
 	int i, idx, *es;
 
 	(void) ret;
+	if ( *nme == 0)
+		return throwMessage("datacell.makePlans", "Source routine missing");
+	if ( *newname == 0)
+		return throwMessage("datacell.makePlans", "Target routine missing");
 	s = findMALSymbol(putName("user", 4), putName(*nme, strlen(*nme)));
 	if (s == 0)
 		return throwMessage("datacell.makePlans", "symbol not found");
@@ -402,13 +408,19 @@ with the empty set and singleton set.
 	}
 	DCplan(pump->malblk[0], *newname);
 
-	printf("OPTIMIZE EMPTYSET TO ARGUMENT %d\n", es[0]);
+#ifdef _DC_COMPILE_DEBUG
+	printf("\n\nPLAN[1] OPTIMIZE EMPTYSET ON ARGUMENT %d\n", es[0]);
+	printFunction(GDKout, s->def, LIST_MAL_ALL);
+#endif
 	ESevaluate(pump->malblk[1], idx, es);
 	DCplan(pump->malblk[1], *newname);
 
 	if (idx > 0) {
 		DCplan(pump->malblk[2], *newname);
-		printf("OPTIMIZE SINGLETONSET ON ARGUMENT %d\n", es[0]);
+#ifdef _DC_COMPILE_DEBUG
+		printf("\n\nPLAN[2] OPTIMIZE SINGLETONSET ON ARGUMENT %d\n", es[0]);
+		printFunction(GDKout, s->def, LIST_MAL_ALL);
+#endif
 		STevaluate(pump->malblk[2], idx, es);
 		DCoptimizer(pump->malblk[2], 0, 0);
 	}
@@ -461,7 +473,8 @@ DCsqlReshuffle(MalBlkPtr mb, str newname)
 First step is to collect the receptor/emitter bindings.
 @c
 	for (i = 1; i < limit - 1; i++)
-		if (strncmp(functionId(old[i]), "bind", 4) == 0 && strcmp(moduleId(old[i]), "datacell") == 0) {
+		if (functionId(old[i]) && strncmp(functionId(old[i]), "bind", 4) == 0 && 
+			moduleId(old[i]) && strcmp(moduleId(old[i]), "datacell") == 0) {
 			pushInstruction(mb, old[i]);
 			unit = getVarLiteral(mb, getArg(old[i], 1));
 			for (j = 0; j < u; j++)
@@ -469,10 +482,12 @@ First step is to collect the receptor/emitter bindings.
 					break;
 			if (j == u)
 				points[u++] = unit;
-		} else if (match(old[i], "bat", "append") && (unit = isEmitterDestination(mb, getArg(old[i], 1)))) {
+		} else if (match(old[i], "bat", "append") && 
+				(unit = isEmitterDestination(mb, getArg(old[i], 1)))) {
 			setFunctionId(old[i], putName("keep", 4));
 			setModuleId(old[i], putName("datacell", 8));
-			old[i] = setArgument(mb, old[i], 1, newConstant(mb, TYPE_str, GDKstrdup(unit), TRUE));
+			old[i] = setArgument(mb, old[i], 1, 
+				newConstant(mb, TYPE_str, GDKstrdup(unit), TRUE));
 			pushInstruction(mb, old[i]);
 		} else
 			pushInstruction(mb, old[i]);

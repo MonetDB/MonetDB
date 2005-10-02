@@ -62,16 +62,16 @@ address DCgetReceptorStatus
 comment "Display the actual state of a receptor.";
 
 command datacell.bindReceptor(sname:str,pname:str) 
-		(public:bat[:void,:any$1],private:bat[:void,:any$1])
+		(public:bat[:void,:any_1],private:bat[:void,:any_1])
 address DCbindReceptor
 comment "Provide private access to a column.";
 
 command datacell.bindReceptorTuple(sname:str,pname:str) 
-		(head:any$1,tail:any$2)
+		(head:any_1,tail:any_2)
 address DCbindReceptorTuple
 comment "Extract a single tuple from the public bats.";
 
-command datacell.bindReceptor(sname:str,pname:str) :bat[:void,:any$1]
+command datacell.bindReceptor(sname:str,pname:str) :bat[:void,:any_1]
 address DCbindReceptorPublic
 comment "Provide private access to a public version of a column.";
 
