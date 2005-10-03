@@ -1418,8 +1418,8 @@ backend_callinline(backend *be, Client c, stmt *s, list *args)
 
 			curInstr = newAssignment(curBlk);
 			snprintf(arg, 32, "A%d", argc);
-			varid = newVariable(curBlk, _strdup(arg), type);
-			setReturnArgument(curInstr,varid);
+			varid = getDestVar(curInstr);
+			renameVariable(curBlk, varid, _strdup(arg));
 			setVarType(curBlk, varid, type);
 
 			if (atom_null(a)) {
@@ -1432,6 +1432,7 @@ backend_callinline(backend *be, Client c, stmt *s, list *args)
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
+	c->curprg->def = curBlk;
 }
 
 void

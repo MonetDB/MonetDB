@@ -31,7 +31,7 @@ phase of the scenario.
 
 /* #define _SQL_SCENARIO_DEBUG */
 /* #define _SQL_READER_DEBUG */
-/* #define _SQL_PARSER_DEBUG  */
+/* #define _SQL_PARSER_DEBUG */
 
 sql_export str SQLexitClient(Client c);
 sql_export str SQLinitClient(Client c);
@@ -857,6 +857,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 			m->sa = NULL;
 			m->sym = NULL;
 		} 
+		stmt_destroy(s);
 	}
 #ifdef _SQL_PARSER_DEBUG
 	else
@@ -890,7 +891,13 @@ query block.
 		pushCatchDefault(c->curprg->def, "sqlerror", m->auto_commit);
 		pushEndInstruction(c->curprg->def);
 
-		chkProgram(c->nspace, c->curprg->def);
+extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+		chkProgram(c->nspace, c->curprg->def); /* make all types known */
+		if (!c->curprg->def->errors) {
+			OPTmultiplex(c->curprg->def,0,0);
+			chkProgram(c->nspace, c->curprg->def);
+		}
 		if (c->curprg->def->errors) {
 			if( m->mode == m_debug){
 				/* switch to differnt language mode */
@@ -985,7 +992,7 @@ environment.
     }
 cleanup_engine:
     resetInstructions(c->curprg->def, 1);
-    resetVariables(c->curprg->def, 0, 0);
+    resetVariables(c->curprg->def, c->glb, 0);
 	be->language= oldlang;
 @-
 Any error encountered during execution should block further processing
