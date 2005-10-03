@@ -44,15 +44,16 @@ v.print();
 [ "http://www.cwi.nl/~monet" ]
 v.getRobotURL().print();
 [ "http://www.cwi.nl/robots.txt" ]
-var w := url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium");
+var w := url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium&nr=10");
 w.getQuery().print();
-[ "name=Planetarium" ]
+[ "name=Planetarium&nr=10" ]
 w.getQueryArg().print();
 #-------------------------#
 # BAT:	  dir_name	  #
 # (str)	  (str)		  #
 #-------------------------#
 [ "name", "Planetarium"	  ]
+[ "nr",	  "10"		  ]
 
 var t := new(int, url);
 t.insert(1, url("http://www.cwi.nl"));
@@ -171,6 +172,90 @@ t.print();
 [ 5,	  nil		  ]
 [ 6,	  nil		  ]
 [ 7,	  nil		  ]
+
+var a := "- -$-%-&-+-,-/-:-;-=-?-@-";
+u.print();
+[ "http://www.cwi.nl/~mk/Acoi/index.html" ]
+escape(str(u)).print();
+[ "http%3a%2f%2fwww.cwi.nl%2f~mk%2fAcoi%2findex.html" ]
+w.print();
+[ "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium&nr=10" ]
+escape(str(w)).print();
+[ "http%3a%2f%2fwww.nedstat.nl%2fcgi-bin%2fviewstat%3fname%3dPlanetarium%26nr%3d10" ]
+a.print();
+[ "- -$-%-&-+-,-/-:-;-=-?-@-" ]
+escape(a).print();
+[ "-+-%24-%25-%26-%2b-%2c-%2f-%3a-%3b-%3d-%3f-%40-" ]
+
+var b := escape(a);
+escape(str(u)).print();
+[ "http%3a%2f%2fwww.cwi.nl%2f~mk%2fAcoi%2findex.html" ]
+unescape(escape(str(u))).print();
+[ "http://www.cwi.nl/~mk/Acoi/index.html" ]
+escape(str(w)).print();
+[ "http%3a%2f%2fwww.nedstat.nl%2fcgi-bin%2fviewstat%3fname%3dPlanetarium%26nr%3d10" ]
+unescape(escape(str(w))).print();
+[ "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium&nr=10" ]
+b.print();
+[ "-+-%24-%25-%26-%2b-%2c-%2f-%3a-%3b-%3d-%3f-%40-" ]
+unescape(b).print();
+[ "-+-$-%-&-+-,-/-:-;-=-?-@-" ]
+
+var s := new(int, str);
+s.insert(1, "http://www.cwi.nl");
+s.insert(2, "http://www.cwi.nl/~monet");
+s.insert(3, "http://www.cwi.nl/~mk/Acoi/doc/features.html");
+s.insert(4, "http://www.educ.uva.nl/schoolweb/rocloka.htm");
+s.insert(5, "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium");
+s.insert(6, "http://www.edgeonline.com/");
+s.insert(7, "http://robotics.stanford.edu/icons/");
+s.insert(8, "http://www.example.com/00/Weather/CA/Los%20Angeles#ocean");
+s.insert(9, a);
+
+s.print();
+#-------------------------------------------------------------------------#
+# h	t								  # name
+# int	str								  # type
+#-------------------------------------------------------------------------#
+[ 1,	  "http://www.cwi.nl"						  ]
+[ 2,	  "http://www.cwi.nl/~monet"					  ]
+[ 3,	  "http://www.cwi.nl/~mk/Acoi/doc/features.html"		  ]
+[ 4,	  "http://www.educ.uva.nl/schoolweb/rocloka.htm"		  ]
+[ 5,	  "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"	  ]
+[ 6,	  "http://www.edgeonline.com/"					  ]
+[ 7,	  "http://robotics.stanford.edu/icons/"				  ]
+[ 8,	  "http://www.example.com/00/Weather/CA/Los%20Angeles#ocean"	  ]
+[ 9,	  "- -$-%-&-+-,-/-:-;-=-?-@-"					  ]
+s := [escape](s);
+s.print();
+#-----------------------------------------------------------------------------------------#
+# h	t										  # name
+# int	str										  # type
+#-----------------------------------------------------------------------------------------#
+[ 1,	  "http%3a%2f%2fwww.cwi.nl"							  ]
+[ 2,	  "http%3a%2f%2fwww.cwi.nl%2f~monet"						  ]
+[ 3,	  "http%3a%2f%2fwww.cwi.nl%2f~mk%2fAcoi%2fdoc%2ffeatures.html"			  ]
+[ 4,	  "http%3a%2f%2fwww.educ.uva.nl%2fschoolweb%2frocloka.htm"			  ]
+[ 5,	  "http%3a%2f%2fwww.nedstat.nl%2fcgi-bin%2fviewstat%3fname%3dPlanetarium"	  ]
+[ 6,	  "http%3a%2f%2fwww.edgeonline.com%2f"						  ]
+[ 7,	  "http%3a%2f%2frobotics.stanford.edu%2ficons%2f"				  ]
+[ 8,	  "http%3a%2f%2fwww.example.com%2f00%2fWeather%2fCA%2fLos%2520Angeles#ocean"	  ]
+[ 9,	  "-+-%24-%25-%26-%2b-%2c-%2f-%3a-%3b-%3d-%3f-%40-"				  ]
+s := [unescape](s);
+s.print();
+#-------------------------------------------------------------------------#
+# h	t								  # name
+# int	str								  # type
+#-------------------------------------------------------------------------#
+[ 1,	  "http://www.cwi.nl"						  ]
+[ 2,	  "http://www.cwi.nl/~monet"					  ]
+[ 3,	  "http://www.cwi.nl/~mk/Acoi/doc/features.html"		  ]
+[ 4,	  "http://www.educ.uva.nl/schoolweb/rocloka.htm"		  ]
+[ 5,	  "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"	  ]
+[ 6,	  "http://www.edgeonline.com/"					  ]
+[ 7,	  "http://robotics.stanford.edu/icons/"				  ]
+[ 8,	  "http://www.example.com/00/Weather/CA/Los%20Angeles#ocean"	  ]
+[ 9,	  "-+-$-%-&-+-,-/-:-;-=-?-@-"					  ]
 
 quit();
 
