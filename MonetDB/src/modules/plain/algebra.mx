@@ -1591,25 +1591,43 @@ operations are part of the GDK kernel.
 int
 CMDselect1(BAT **result, BAT *b, ptr value)
 {
-	return (*result = BATselect(b, value, 0)) ? GDK_SUCCEED : GDK_FAIL;
+	ptr v = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) value)->batCacheid : value;
+
+	return (*result = BATselect(b, v, 0)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
 CMDuselect1(BAT **result, BAT *b, ptr value)
 {
-	return (*result = BATuselect(b, value, 0)) ? GDK_SUCCEED : GDK_FAIL;
+	ptr v = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) value)->batCacheid : value;
+
+	return (*result = BATuselect(b, v, 0)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
 CMDselect(BAT **result, BAT *b, ptr low, ptr high)
 {
-	return (*result = BATselect(b, low, high)) ? GDK_SUCCEED : GDK_FAIL;
+	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
+	ptr h = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) high)->batCacheid : high;
+
+	if (b->ttype == TYPE_bat && l != h ) {
+		GDKerror("CMDselect: range-selects on type BAT are not supported\n");
+		return GDK_FAIL;
+	}
+	return (*result = BATselect(b, l, h)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
 CMDuselect(BAT **result, BAT *b, ptr low, ptr high)
 {
-	return (*result = BATuselect(b, low, high)) ? GDK_SUCCEED : GDK_FAIL;
+	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
+	ptr h = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) high)->batCacheid : high;
+
+	if (b->ttype == TYPE_bat && l != h ) {
+		GDKerror("CMDuselect: range-selects on type BAT are not supported\n");
+		return GDK_FAIL;
+	}
+	return (*result = BATuselect(b, l, h)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -1617,16 +1635,22 @@ CMDselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 {
 	int tt = b->ttype;
 	ptr nil = ATOMnilptr(tt);
+	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
+	ptr h = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) high)->batCacheid : high;
 
-	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
+	if (b->ttype == TYPE_bat && l != h ) {
+		GDKerror("CMDselect: range-selects on type BAT are not supported\n");
+		return GDK_FAIL;
+	}
+	if (*l_in == bit_nil && ATOMcmp(tt, l, nil)) {
 		GDKerror("CMDselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
 		return GDK_FAIL;
 	}
-	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
+	if (*h_in == bit_nil && ATOMcmp(tt, h, nil)) {
 		GDKerror("CMDselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 		return GDK_FAIL;
 	}
-	return (*result = BATselect_(b, low, high, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATselect_(b, l, h, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -1634,16 +1658,22 @@ CMDuselect_(BAT **result, BAT *b, ptr low, ptr high, bit *l_in, bit *h_in)
 {
 	int tt = b->ttype;
 	ptr nil = ATOMnilptr(tt);
+	ptr l = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) low )->batCacheid : low ;
+	ptr h = (b->ttype == TYPE_bat) ? (ptr) &((BAT *) high)->batCacheid : high;
 
-	if (*l_in == bit_nil && ATOMcmp(tt, low, nil)) {
+	if (b->ttype == TYPE_bat && l != h ) {
+		GDKerror("CMDuselect: range-selects on type BAT are not supported\n");
+		return GDK_FAIL;
+	}
+	if (*l_in == bit_nil && ATOMcmp(tt, l, nil)) {
 		GDKerror("CMDuselect: flag 'l_in' must not be NIL, unless boundary 'low' is NIL\n");
 		return GDK_FAIL;
 	}
-	if (*h_in == bit_nil && ATOMcmp(tt, high, nil)) {
+	if (*h_in == bit_nil && ATOMcmp(tt, h, nil)) {
 		GDKerror("CMDuselect: flag 'h_in' must not be NIL, unless boundary 'high' is NIL\n");
 		return GDK_FAIL;
 	}
-	return (*result = BATuselect_(b, low, high, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*result = BATuselect_(b, l, h, *l_in, *h_in)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
