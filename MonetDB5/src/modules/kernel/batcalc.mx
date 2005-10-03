@@ -548,7 +548,10 @@ str CMDbat@2_@3_@4_@5(int *ret, int *l, int *r)
     }
 	@:chkSize(left,right,CMDbat@2)@
 
-	dst= BATcopy(left);
+	if (left->ttype == TYPE_@3)
+		dst= BATcopy(left);
+	else
+		dst= BATcopy(right);
 	if( dst == NULL){
 		BBPunfix(left->batCacheid);
 		BBPunfix(right->batCacheid);
@@ -655,49 +658,74 @@ str CMDbataccum@2cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 mal_export str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst);
 str CMDbat@2cst_@3_@4_@5(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
-	int d;
-	str msg;
+	int s1,s2;
+	ptr p1,p2, hend;
 
     if( (left= BATdescriptor(*l)) == NULL ){
         return throwMessage("batcalc.@1", "Cannot access descriptor");
     }
-	dst= BATcopy(left);
+	dst= newBATresult(left, TYPE_@3);
 	if( dst == NULL){
 		BBPunfix(left->batCacheid);
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
-	d= dst->batCacheid;
-	msg= CMDbataccum@2cst_@3_@4_@5(ret, &d,l,cst);
-	BBPunfix(left->batCacheid);
-	if( msg){
-		BBPdecref(d,TRUE);
-		return msg;
+	BBPincref(*ret = dst->batCacheid,TRUE);
+	copyHead(dst,left);
+
+	@:batinit(1,dst)@
+	@:batinit(2,left)@
+
+	hend = ((str) BUNlast(dst)) + (s1*BATcount(left));
+
+	if( '@1'== '/') {
+		@:accumCstDIV(@3,@1,@4,@5)@ 
+	} else {
+		@:accumCst(@3,@1,@4,@5)@ 
 	}
-	BBPunfix(d);
+	dst->batBuns->free = BATcount(left) * s1;
+	BATsetcount(dst, BATcount(left));
+	dst->hsorted = BAThordered(left);
+	dst->tsorted = 0;
+	BBPunfix(dst->batCacheid);
+	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
 }
 mal_export str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l);
 str CMDcst@2bat_@3_@4_@5(int *ret, void *cst, int *l)
 {	BAT *dst, *left;
-	int d;
-	str msg;
+	int s1,s2;
+	ptr p1,p2, hend;
 
     if( (left= BATdescriptor(*l)) == NULL ){
         return throwMessage("batcalc.@1", "Cannot access descriptor");
     }
-	dst= BATcopy(left);
+	dst= newBATresult(left, TYPE_@3);
 	if( dst == NULL){
 		BBPunfix(left->batCacheid);
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
-	d= dst->batCacheid;
-	msg= CMDbataccum@2cst2_@3_@4_@5(ret, &d,cst,l);
-	BBPunfix(left->batCacheid);
-	if( msg){
-		BBPdecref(d,TRUE);
-		return msg;
+	BBPincref(*ret = dst->batCacheid,TRUE);
+	copyHead(dst,left);
+
+	@:batinit(1,dst)@
+	@:batinit(2,left)@
+
+	hend = ((str) BUNlast(dst)) + (s1*BATcount(left));
+
+	if( '@1'== '/') {
+		if( *(@4*)cst != 0) {
+			@:accumCstLeft(@3,@1,@4,@5)@ 
+		}
+		/* TODO error */
+	} else {
+		@:accumCstLeft(@3,@1,@4,@5)@ 
 	}
-	BBPunfix(d);
+	dst->batBuns->free = BATcount(left) * s1;
+	BATsetcount(dst, BATcount(left));
+	dst->hsorted = BAThordered(left);
+	dst->tsorted = 0;
+	BBPunfix(dst->batCacheid);
+	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
 }
 @= initImpl
@@ -728,11 +756,12 @@ str CMDbat@1init(int *ret, int *l, @1 *cst) {
     if( (left= BATdescriptor(*l)) == NULL ){
         return throwMessage("batcalc.@1", "Cannot access descriptor");
     }
-	dst= BATnew(TYPE_void, TYPE_@1, BATcount(left));
+	dst= newBATresult(left, TYPE_@1);
 	if( dst == NULL){
 		BBPunfix(left->batCacheid);
 		return throwMessage("batcalc.@1", "no space available ");
 	}
+	copyHead(dst,left);
 	BATseqbase(dst,0);
 	bat@1filler(dst,*cst, (size_t) BATcount(left));
 	BBPunfix(left->batCacheid);
@@ -780,6 +809,70 @@ str CMD@1init_sht(int *ret, sht *size, @1 *cst){
 }
 @c
 #include "batcalc.h"
+
+BAT *
+newBATresult(BAT *b, int tpe)
+{
+	BAT *bn;
+
+	if (BAThvoid(b)) {
+		bn = BATnew(TYPE_void, tpe, BATcount(b));
+		BATseqbase(bn, b->hseqbase);
+	} else
+		bn = BATnew(b->htype, tpe, BATcount(b));
+	return bn;
+}
+
+void
+copyHead(BAT *dst, BAT *org)
+{
+	if (BAThvoid(org)) {
+		BATseqbase(dst, org->hseqbase);
+	} else { /* works for fixed size only now, need to use a VIEW of the
+		    original in case of varsized atoms */
+		int s1,s2;
+		ptr p1,p2,hend;
+		int atomsize = ATOMsize(dst->htype);
+
+		s1 = BUNsize(dst);
+		p1 = (str) (BUNfirst(dst)+dst->hloc);
+		s2 = BUNsize(org);
+		p2 = (str) (BUNfirst(org)+org->hloc);
+		hend = (str) BUNlast(org);
+		switch(atomsize){
+		case 1:
+			while( p2<hend) {
+				*(chr*)p1 = *(chr*)p2;
+				p1= (ptr)( ((char*)p1) + s1);
+				p2= (ptr)( ((char*)p2) + s2);
+			}
+		case 2:
+			while( p2<hend) {
+				*(sht*)p1 = *(sht*)p2;
+				p1= (ptr)( ((char*)p1) + s1);
+				p2= (ptr)( ((char*)p2) + s2);
+			}
+		case 4:
+			while( p2<hend) {
+				*(int*)p1 = *(int*)p2;
+				p1= (ptr)( ((char*)p1) + s1);
+				p2= (ptr)( ((char*)p2) + s2);
+			}
+		case 8:
+			while( p2<hend) {
+				*(lng*)p1 = *(lng*)p2;
+				p1= (ptr)( ((char*)p1) + s1);
+				p2= (ptr)( ((char*)p2) + s2);
+			}
+		default:
+			while( p2<hend) {
+				memcpy(p1,p2,atomsize);
+				p1= (ptr)( ((char*)p1) + s1);
+				p2= (ptr)( ((char*)p2) + s2);
+			}
+		}
+	}
+}
 
 @:initImpl(oid)@
 @:initImpl(int)@
@@ -857,7 +950,10 @@ str CMDbat@1_@3_@4_@5(int *ret, int *l, int *r)
 
 	@:chkSize(left,right,CMDbat@1)@
 
-	dst= BATcopy(left);
+	if (left->ttype == TYPE_@3)
+		dst= BATcopy(left);
+	else
+		dst= BATcopy(right);
 	if( dst == NULL){
 		return throwMessage("batcalc.@1", "no copy available ");
 	}
@@ -963,40 +1059,73 @@ str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 mal_export str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst);
 str CMDbat@1cst_@3_@4_@5(int *ret, int *l, void *cst)
 {	BAT *dst, *left;
-	str msg;
+	int s1,s2;
+	ptr p1,p2, hend;
 
     if( (left= BATdescriptor(*l)) == NULL ){
         return throwMessage("batcalc.@1", "Cannot access descriptor");
     }
-	dst= BATcopy(left);
+	dst= newBATresult(left, TYPE_@3);
 	if( dst == 0){
 		BBPunfix(left->batCacheid);
 		return throwMessage("batcalc.@1", "no copy available");
 	}
 	BBPincref(*ret = dst->batCacheid,TRUE);
-	msg= CMDbataccum@1cst_@3_@4_@5(ret, &dst->batCacheid,l,cst);
+	copyHead(dst,left);
+
+	@:batinit(1,dst)@
+	@:batinit(2,left)@
+	hend = ((str) BUNlast(dst)) + (s1*BATcount(left));
+
+	if( '@2'== '/') {
+		@:accumCstDIV(@3,@2,@4,@5)@ 
+	} else {
+		@:accumCst(@3,@2,@4,@5)@ 
+	}
+	dst->batBuns->free = BATcount(left) * s1;
+	BATsetcount(dst, BATcount(left));
+	dst->hsorted = BAThordered(left);
+	dst->tsorted = 0;
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
-	return msg;
+	return MAL_SUCCEED;
 }
 mal_export str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l);
 str CMDcst@1bat_@3_@4_@5(int *ret,void *cst, int *l)
 {	BAT *dst, *left;
-	str msg;
+	int s1,s2;
+	ptr p1,p2, hend;
 
     if( (left= BATdescriptor(*l)) == NULL ){
         return throwMessage("batcalc.@1", "Cannot access descriptor");
     }
-	dst= BATcopy(left);
+	dst= newBATresult(left, TYPE_@3);
 	if( dst == 0){
 		BBPunfix(left->batCacheid);
 		return throwMessage("batcalc.@1", "no copy available");
 	}
 	BBPincref(*ret = dst->batCacheid,TRUE);
-	msg= CMDbataccum@1cst2_@3_@4_@5(ret, &dst->batCacheid,cst,l);
+	copyHead(dst,left);
+
+	@:batinit(1,dst)@
+	@:batinit(2,left)@
+	hend = ((str) BUNlast(dst)) + (s1*BATcount(left));
+
+	if( '@2'== '/') {
+		if( *(@4*)cst != 0) {
+			@:accumCstLeft(@3,@2,@4,@5)@ 
+		}
+		/* TODO error */
+	} else {
+		@:accumCstLeft(@3,@2,@4,@5)@ 
+	}
+	dst->batBuns->free = BATcount(left) * s1;
+	BATsetcount(dst, BATcount(left));
+	dst->hsorted = BAThordered(left);
+	dst->tsorted = 0;
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
-	return msg;
+	return MAL_SUCCEED;
 }
 @c
 @:numeric_funcs(MOD,%,oid,oid,oid)@
@@ -1146,7 +1275,7 @@ str CMDcmp@1(int *ret, int *l, int *r)
 
 	@:chkSize(left,right,CMDcompare@1)@
 
-	dst= BATnew(BAThtype(left),TYPE_bit, BATcount(left));
+	dst= newBATresult(left, TYPE_bit);
 
 	s1= BUNsize(dst);
 	p1= BUNfirst(dst);
@@ -1243,7 +1372,7 @@ str CMDcmp@1cst(int *ret, int *l, void *cst)
         return throwMessage("batcalc.@1", "Cannot access descriptor");
     }
 
-	dst= BATnew(BAThtype(left),TYPE_bit, BATcount(left));
+	dst= newBATresult(left, TYPE_bit);
 
 	s1= BUNsize(dst);
 	p1= BUNfirst(dst);
@@ -1334,7 +1463,7 @@ CMDbitbatNOT(int *ret, int *l)
 		return throwMessage("batcalc.@1", "Cannot access descriptor");
 	}
 
-	dst = BATnew(BAThtype(left), TYPE_bit, BATcount(left));
+	dst= newBATresult(left, TYPE_bit);
 
 	s1 = BUNsize(dst);
 	p1 = BUNfirst(dst);
@@ -1357,19 +1486,6 @@ The coercion code can not be improved much, because we do not have
 the space to re-use. Therefore, the code block is actually a hardwired
 version of a bunstream() operation. It runs, however, about 5-times
 faster then [lng](b) in Version 4.
-@c
-BAT *
-newBATresult(BAT *b, int tpe)
-{
-	BAT *bn;
-
-	if (BAThvoid(b)) {
-		bn = BATnew(TYPE_void, tpe, BATcount(b));
-		BATseqbase(bn, b->hseqbase);
-	} else
-		bn = BATnew(b->htype, tpe, BATcount(b));
-	return bn;
-}
 
 @-
 The different coercion implementations exploit the fact
@@ -1769,6 +1885,7 @@ bunins_failed:
 	return MAL_SUCCEED;
 }
 @-
+
 @c
 @:ifthencstImpl(int)@
 @:ifthencstImpl(sht)@
