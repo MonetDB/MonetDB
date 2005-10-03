@@ -836,12 +836,11 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		}
 		assert(s);
 		/* generate and call the MAL code */
-		if ((msg = sql_get_var(m,"optimizer"))== NULL || *msg == 0) {
-			backend_callinline(be, c, s, m->args);
 /*
-		if (!m->cache ){
-			backend_dumpstmt(be, c->curprg->def, s);
+		if ((msg = sql_get_var(m,"optimizer"))== NULL || *msg == 0) {
 */
+		if (!m->cache ){
+			backend_callinline(be, c, s, m->args);
 		} else {
 			/* generate a factory instantiation */
 			backend_dumpproc(be, c, m->qc->id, s);
@@ -894,7 +893,7 @@ query block.
 extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 		chkProgram(c->nspace, c->curprg->def); /* make all types known */
-		if (!c->curprg->def->errors) {
+		if (!c->curprg->def->errors && !m->cache) {
 			OPTmultiplex(c->curprg->def,0,0);
 			chkProgram(c->nspace, c->curprg->def);
 		}
