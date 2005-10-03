@@ -83,6 +83,7 @@ a valid program.
 #include "mal_multiplex.h"
 #include "mal_interpreter.h"
 #include "mal_optimizer.h"
+#include "mal_instruction.h"
 
 @-
 The generic solution to the multiplex operators is to translate
@@ -105,15 +106,11 @@ end mloop;
 The algorithm consists of two phases: phase one deals with
 collecting the relevant information, phase two is the actual
 code construction.
-@= malInstr
-	q= newInstruction(EXITsymbol);
-	pushReturn(mb,q,@2);
-	pushInstruction(mb,q);
 @c
 str
 OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i = 2, k, mloop, resB, iter, cr;
+	int i = 2, k, mloop, resB, iter = 0, cr;
 	int hvar, tvar;
 	str newFcn = (str) getVarLiteral(mb, getArg(pci, 1));
 	str mod = newFcn, fcn;
@@ -230,8 +227,9 @@ find the actual arguments at the proper place of the callee.
 	setVarUsed(mb, k, TRUE);
 	setVarInitialized(mb, k);
 	pushInstruction(mb, q);
-	@:malInstr(EXIT, k)@
-
+	q= newInstruction(EXITsymbol);
+	pushReturn(mb,q,k);
+	pushInstruction(mb,q);
 
 /* redo (mloop,h,r):= hasMoreElements(refBat); */
 	q = newFcnCall(mb, "chop", "hasMoreElements");
