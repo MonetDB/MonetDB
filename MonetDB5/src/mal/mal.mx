@@ -375,7 +375,7 @@ void mal_exit(Client cntxt){
     cntxt->nspace = 0;
     freeBoxes();
     mal_scope = 0;
-    unloadModuleLibraries();
+/*    unloadModuleLibraries(); Switched of as the code may still be inuse by a thread/client */
     TMcommit();
     finishNamespace();
     GDKexit(0);
