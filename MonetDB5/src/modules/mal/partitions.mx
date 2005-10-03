@@ -229,7 +229,7 @@ typedef struct {
 	int cap;		/* maximum capacity */
 } Partition;
 
-static Partition *partitions;
+static Partition *partitions = NULL;
 static int ptop, plimit;
 
 #define INCREMENT 1024
