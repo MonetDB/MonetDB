@@ -116,3 +116,5 @@ pcre_replace(mybat, "(^a)", "*", "mi").print();
 # strings unchanged
 # pcre_replace(mybat, "aaaa", "", "")
 pcre_replace(mybat, "aaaa", "", "").print();
+
+quit();
