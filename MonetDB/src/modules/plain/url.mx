@@ -79,6 +79,10 @@ possible to redefine hashing.
 	"Extract the location of the robot control file"
 .COMMAND isaURL(url)   : bit        = url_isaURL;
 	"Check conformity of the URL syntax"
+.COMMAND escape(str) : str = escape_str;
+    "Convert characters in the given STR which have special meanings in a URL to their hexadecimal values"
+.COMMAND unescape(str) : str = unescape_str;
+    "Convert the hexadecimal values in the given STR to ASCI chracters"
 .COMMAND newurl(str,str,int,str)   : url        = url_new4;
 	"Construct a URL from protocol, host,port,and file"
 .COMMAND newurl(str,str,str)   : url        = url_new3;
@@ -101,6 +105,7 @@ Parsing is done for each individual request, because this way we
 secure concurrent use from different threads.
 @c
 #include <gdk.h>
+#include <ctype.h>
 
 typedef str url;
 
@@ -108,7 +113,7 @@ typedef str url;
 
 void getword(char *word, char *line, char stop);
 char x2c(char *what);
-void unescape_url(char *url);
+int unescape_str(str *retval, str s);
 void plustospace(char *str);
 
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL
@@ -500,11 +505,16 @@ url_getQueryArg(BAT **retval, url t)
 	char query[1024];
 	char val[1024];
 	char name[1024];
+    char **unescapedval;
 	BAT *b;
 
+    
 	if (t == 0)
 		return GDK_FAIL;
-	t = strchr(t, '?');
+    if (unescape_str(unescapedval, t) == GDK_FAIL)
+        return GDK_FAIL;
+
+	t = strchr(*unescapedval, '?');
 	if (t == 0)
 		return GDK_FAIL;
 	t++;
@@ -519,7 +529,6 @@ url_getQueryArg(BAT **retval, url t)
 	for (; query[0] != '\0';) {
 		getword(val, query, '&');
 		plustospace(val);
-		unescape_url(val);
 		getword(name, val, '=');
 		BUNins(b, name, val);
 	}
@@ -636,8 +645,90 @@ url_isaURL(bit *retval,		/* put return atom here. */
 	return GDK_SUCCEED;
 }
 
-/* COMMAND "url": Construct a URL from protocol, host,and file
- * SIGNATURE: url(str, str, str) : str; */
+int needEscape(char c){
+    if( isalnum((int)c) )
+        return 0;
+    if( c == '#' || c == '-' || c == '_' || c == '.' || c == '!' || 
+        c == '~' || c == '*' || c == '\'' || c == '(' || c == ')' )
+        return 0;
+    return 1;
+}
+
+/* COMMAND "escape": this function applies the URI escaping rules defined in
+ * section 2 of [RFC 3986] to the string supplied as 's'.
+ * The effect of the function is to escape a set of identified characters in
+ * the string. Each such character is replaced in the string by an escape
+ * sequence, which is formed by encoding the character as a sequence of octets
+ * in UTF-8, and then reprensenting each of these octets in the form %HH.
+ * 
+ * All characters are escaped other than:
+ * [a-z], [A-Z], [0-9], "#", "-", "_", ".", "!", "~", "*", "'", "(", ")"
+ *
+ * This function must always generate hexadecimal values using the upper-case
+ * letters A-F.
+ *
+ * SIGNATURE: escape(str) : str; */
+int
+escape_str(str *retval, str s)
+{
+	int x, y;
+	str res;
+
+	if (!s)
+		return GDK_FAIL;
+
+	if (!( res = GDKmalloc( strlen(s) * 3 ) ))
+        return GDK_FAIL;
+	for (x = 0, y = 0; s[x]; ++x, ++y) {
+        if (needEscape(s[x])){
+            if (s[x] == ' '){
+                res[y] = '+';
+            } else {
+                sprintf(res+y, "%%%2x", s[x]);
+                y += 2;
+            }
+        } else {
+            res[y] = s[x];
+        }
+	}
+	res[y] = '\0';
+
+    *retval = GDKrealloc(res, strlen(res)+1);
+    return GDK_SUCCEED;
+}
+
+/* COMMAND "unescape": Convert hexadecimal representations to ASCII characters.
+ *                        All sequences of the form "% HEX HEX" are unescaped.
+ * SIGNATURE: unescape(str) : str; */
+int
+unescape_str(str *retval, str s)
+{
+	int x, y;
+    str res;
+
+    if (!s)
+        return GDK_FAIL;
+
+    res = GDKmalloc(strlen(s));
+    if (!res)
+        return GDK_FAIL;
+
+	for (x = 0, y = 0; s[x]; ++x, ++y) {
+		if (s[x] == '%') {
+			res[y] = x2c(&s[x + 1]);
+			x += 2;
+		} else {
+            res[y] = s[x];
+        }
+	}
+	res[y] = '\0';
+    
+    *retval = GDKrealloc(res, strlen(res)+1);
+    return GDK_SUCCEED;
+}
+
+/* COMMAND "newurl": Construct a URL from protocol, host,and file
+ * SIGNATURE: newurl(str, str, str) : str; */
 int
 url_new3(str *retval,		/* put string: pointer to char here. */
 	 str Protocol,		/* string: pointer to char. */
@@ -659,8 +750,8 @@ url_new3(str *retval,		/* put string: pointer to char here. */
 	return GDK_SUCCEED;
 }
 
-/* COMMAND "url": Construct a URL from protocol, host,port,and file
- * SIGNATURE: url(str, str, int, str) : str; */
+/* COMMAND "newurl": Construct a URL from protocol, host,port,and file
+ * SIGNATURE: newurl(str, str, int, str) : str; */
 int
 url_new4(str *retval,		/* put string: pointer to char here. */
 	 str Protocol,		/* string: pointer to char. */
@@ -734,40 +825,6 @@ x2c(char *what)
 	digit *= 16;
 	digit += (what[1] >= 'A' ? ((what[1] & 0xdf) - 'A') + 10 : (what[1] - '0'));
 	return (digit);
-}
-
-char *
-escape_url(char *url)
-{
-	int x, y;
-	char *res;
-
-	if (!url)
-		return NULL;
-
-	res = (char *) malloc(200);
-	for (x = 0, y = 0; url[x]; ++x, ++y) {
-		sprintf(&res[y], "%%%2x", url[x]);
-
-		y += 2;
-	}
-	res[y] = '\0';
-	return res;
-}
-
-void
-unescape_url(char *url)
-{
-	int x, y;
-
-	for (x = 0, y = 0; url[y]; ++x, ++y) {
-		if ((url[x] = url[y]) == '%') {
-			url[x] = x2c(&url[y + 1]);
-
-			y += 2;
-		}
-	}
-	url[x] = '\0';
 }
 
 void
