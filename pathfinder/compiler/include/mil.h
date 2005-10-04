@@ -131,6 +131,8 @@ enum PFmil_kind_t {
                           argument functions (e.g., merged_union) */
 
     , m_new_ws       /**< Create a new (empty) working set */
+    , m_mposjoin     /**< Positional multijoin with a working set */
+    , m_mvaljoin     /**< Multijoin with a working set */
     , m_bat          /**< MonetDB bat() function */
 
     , m_misnil       /**< Multiplexed isnil() operator `[isnil]()' */
@@ -235,6 +237,8 @@ enum PFmil_kind_t {
     , m_llscj_prec_sibl_elem_loc
     , m_llscj_prec_sibl_elem_ns
     , m_llscj_prec_sibl_pi_targ
+
+    , m_string_join
 
     , m_get_fragment
     , m_set_kind
@@ -513,6 +517,8 @@ PFmil_t * PFmil_misnil (const PFmil_t *);
 PFmil_t * PFmil_mifthenelse (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_new_ws (void);
+PFmil_t * PFmil_mposjoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
+PFmil_t * PFmil_mvaljoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_bat (const PFmil_t *);
 
@@ -983,6 +989,7 @@ PFmil_t * PFmil_llscj_prec_sibl_pi_targ (const PFmil_t *iter, const PFmil_t *ite
                                      const PFmil_t *ord, const PFmil_t *target);
 
 
+PFmil_t * PFmil_string_join (const PFmil_t *, const PFmil_t *); 
 
 PFmil_t * PFmil_get_fragment (const PFmil_t *);
 PFmil_t * PFmil_set_kind (const PFmil_t *, const PFmil_t *);

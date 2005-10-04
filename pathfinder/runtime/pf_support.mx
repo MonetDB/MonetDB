@@ -298,6 +298,7 @@ DESCRIPTION:
 @mil
 module(alarm);
 module(aggrX3);
+module(bat_arith);
 module(malalgebra);
 module(mmath);
 module(xtables);
@@ -530,6 +531,16 @@ PROC max (int i) : int
 	return i;
 }
 
+PROC [max] (int i, int j) : int
+{
+	return max(i, j);
+}
+
+PROC [+] (int l, int r) : int
+{
+	return l + r;
+}
+
 PROC [-] (int l, int r) : int
 {
 	return l - r;
@@ -582,16 +593,6 @@ PROC de_fake_project (bat[void,@1] b, bat[void,oid] x) : @1	#bat[void,@1]
 		ERROR("de_fake_project: second argument must not be a 'fake_project'!\n");
 	}
 	return b.fetch(0);	#x.project(b.fetch(0));
-}
-
-PROC NO_project (bat[void,any] b, @1 c) : @1	#bat[void,@1]
-{
-	return c;	#b.project(c);
-}
-
-PROC NO_project (@1 z, @1 c) : @1
-{
-	return c;
 }
 
 PROC de_NO_project (bat[oid,@1] b, bat[void,oid] x) : bat[void,@1]

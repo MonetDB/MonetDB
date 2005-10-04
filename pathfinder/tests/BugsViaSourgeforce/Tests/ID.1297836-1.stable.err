@@ -1,4 +1,4 @@
-stderr of test 'ns8` in directory 'tests/XQuery` itself:
+stderr of test 'ID.1297836-1` in directory 'tests/BugsViaSourgeforce` itself:
 
 
 # 10:04:26 >  
@@ -64,7 +64,7 @@ stderr of test 'ns8` in directory 'tests/XQuery` itself:
 # cmdline opt 	gdk_dbname = mTests_tests_XQuery
 
 # 10:04:27 >  
-# 10:04:27 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=57224 ns8.xq
+# 10:04:27 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=57224 ID.1297836-1.xq
 # 10:04:27 >  
 
 

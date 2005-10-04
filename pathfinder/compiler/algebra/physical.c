@@ -32,7 +32,6 @@
 #include "pathfinder.h"
 
 #include <assert.h>
-#include <string.h>    /* e.g., memcpy() */
 /* FIXME: only for debugging */
 #include <stdio.h>
 
@@ -265,7 +264,7 @@ PFpa_append_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
     /* see if we find each attribute of n1 also in n2 */
     for (i = 0; i < n1->schema.count; i++) {
         for (j = 0; j < n2->schema.count; j++)
-            if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name)) {
+            if (n1->schema.items[i].name == n2->schema.items[j].name) {
                 /* The two attributes match, so include their name
                  * and type information into the result. This allows
                  * for the order of schema items in n1 and n2 to be
@@ -293,8 +292,7 @@ PFpa_append_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
     for (unsigned int a1 = 0; a1 < PFprop_const_count (n1->prop); a1++) {
 
         for (unsigned int a2 = 0; a2 < PFprop_const_count (n2->prop); a2++)
-            if (!strcmp (PFprop_const_at (n1->prop, a1),
-                         PFprop_const_at (n2->prop, a2))
+            if (PFprop_const_at (n1->prop, a1) == PFprop_const_at (n2->prop, a2)
                 && PFalg_atom_comparable (PFprop_const_val_at (n1->prop, a1),
                                           PFprop_const_val_at (n2->prop, a2))
                 && PFalg_atom_cmp (PFprop_const_val_at (n1->prop, a1),
@@ -365,7 +363,7 @@ PFpa_merge_union (const PFpa_op_t *n1, const PFpa_op_t *n2,
     /* see if we find each attribute of n1 also in n2 */
     for (i = 0; i < n1->schema.count; i++) {
         for (j = 0; j < n2->schema.count; j++)
-            if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name)) {
+            if (n1->schema.items[i].name == n2->schema.items[j].name) {
                 /* The two attributes match, so include their name
                  * and type information into the result. This allows
                  * for the order of schema items in n1 and n2 to be
@@ -428,8 +426,7 @@ PFpa_merge_union (const PFpa_op_t *n1, const PFpa_op_t *n2,
     for (unsigned int a1 = 0; a1 < PFprop_const_count (n1->prop); a1++) {
 
         for (unsigned int a2 = 0; a2 < PFprop_const_count (n2->prop); a2++)
-            if (!strcmp (PFprop_const_at (n1->prop, a1),
-                         PFprop_const_at (n2->prop, a2))
+            if (PFprop_const_at (n1->prop, a1) == PFprop_const_at (n2->prop, a2)
                 && PFalg_atom_comparable (PFprop_const_val_at (n1->prop, a1),
                                           PFprop_const_val_at (n2->prop, a2))
                 && PFalg_atom_cmp (PFprop_const_val_at (n1->prop, a1),
@@ -497,7 +494,7 @@ PFpa_intersect (const PFpa_op_t *n1, const PFpa_op_t *n2)
     /* see if we find each attribute of n1 also in n2 */
     for (i = 0; i < n1->schema.count; i++) {
         for (j = 0; j < n2->schema.count; j++)
-            if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name)) {
+            if (n1->schema.items[i].name == n2->schema.items[j].name) {
                 /* The two attributes match, so include their name
                  * and type information into the result. This allows
                  * for the order of schema items in n1 and n2 to be
@@ -540,7 +537,7 @@ PFpa_difference (const PFpa_op_t *n1, const PFpa_op_t *n2)
     /* see if we find each attribute of n1 also in n2 */
     for (i = 0; i < n1->schema.count; i++) {
         for (j = 0; j < n2->schema.count; j++)
-            if (!strcmp (n1->schema.items[i].name, n2->schema.items[j].name)) {
+            if (n1->schema.items[i].name == n2->schema.items[j].name) {
                 /* The two attributes match, so include their name
                  * and type information into the result. This allows
                  * for the order of schema items in n1 and n2 to be
@@ -821,8 +818,7 @@ PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
         /* lookup old name in n's schema
          * and use its type for the result schema */
         for (j = 0; j < n->schema.count; j++)
-            if (!strcmp (ret->sem.proj.items[i].old,
-                         n->schema.items[j].name)) {
+            if (ret->sem.proj.items[i].old == n->schema.items[j].name) {
                 /* set name and type for this attribute in the result schema */
                 ret->schema.items[i].name = ret->sem.proj.items[i].new;
                 ret->schema.items[i].type = n->schema.items[j].type;
@@ -834,7 +830,7 @@ PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
         if (j >= n->schema.count)
             PFoops (OOPS_FATAL,
                     "attribute `%s' referenced in projection not found",
-                    ret->sem.proj.items[i].old);
+                    PFatt_print (ret->sem.proj.items[i].old));
     }
 
     /* ---- Project: orderings ---- */
@@ -852,8 +848,7 @@ PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
 
             unsigned int k;
             for (k = 0; k < ret->sem.proj.count; k++)
-                if (!strcmp (ret->sem.proj.items[k].old,
-                             PFord_order_at (ni, j)))
+                if (ret->sem.proj.items[k].old == PFord_order_at (ni, j))
                     break;
 
             if (k < ret->sem.proj.count)
@@ -886,7 +881,7 @@ static bool
 contains_att (PFalg_schema_t s, PFalg_att_t att)
 {
     for (unsigned int i = 0; i < s.count; i++)
-        if (! strcmp (s.items[i].name, att))
+        if (s.items[i].name == att)
             return true;
 
     return false;
@@ -957,8 +952,7 @@ PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
 
         for (unsigned int j = 0; j < PFord_count (left_ordering); j++) {
 
-            if (! strcmp (PFord_order_at (left_ordering, j), 
-                          ret->sem.eqjoin.att1))
+            if (PFord_order_at (left_ordering, j) == ret->sem.eqjoin.att1)
                 /* Hey, we found the left join attribute. */
                 found = true;
 
@@ -1243,7 +1237,7 @@ PFpa_op_t *PFpa_hash_count (const PFpa_op_t *n,
         unsigned int i;
         for (i = 0; i < n->schema.count; i++)
 
-            if (! strcmp (n->schema.items[i].name, part)) {
+            if (n->schema.items[i].name == part) {
                 ret->schema.items[0] = n->schema.items[i];
                 break;
             }
@@ -1252,7 +1246,7 @@ PFpa_op_t *PFpa_hash_count (const PFpa_op_t *n,
         if (i == n->schema.count)
             PFoops (OOPS_FATAL,
                     "HashCount: unable to find partitioning attribute `%s'",
-                    part);
+                    PFatt_print (part));
 #endif
     }
 
@@ -1279,16 +1273,16 @@ llscj_worker (PFpa_op_kind_t axis,
 {
     PFpa_op_t *ret = wire2 (axis, frag, ctx);
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), "iter"), "item");
+        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
     PFord_ordering_t item_iter
-        = PFord_refine (PFord_refine (PFordering (), "item"), "iter");
+        = PFord_refine (PFord_refine (PFordering (), att_item), att_iter);
 
 #ifndef NDEBUG
     unsigned short found = 0;
 
     for (unsigned int i = 0; i < ctx->schema.count; i++)
-        if (!strcmp (ctx->schema.items[i].name, "iter")
-            || !strcmp (ctx->schema.items[i].name, "item"))
+        if (ctx->schema.items[i].name == att_iter
+            || ctx->schema.items[i].name == att_item)
             found++;
 
     if (found != 2)
@@ -1301,9 +1295,14 @@ llscj_worker (PFpa_op_kind_t axis,
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = PFstrdup ("iter"), .type = aat_nat };
-    ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = PFstrdup ("item"), .type = aat_node };
+        = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+    /* the result of an attribute axis is also of type attribute */
+    if (axis == pa_llscj_attr)
+        ret->schema.items[1]
+            = (PFalg_schm_item_t) { .name = att_item, .type = aat_anode };
+    else
+        ret->schema.items[1]
+            = (PFalg_schm_item_t) { .name = att_item, .type = aat_pnode };
 
     /* store semantic content in node */
     ret->sem.scjoin.ty = test;
@@ -1359,9 +1358,9 @@ bin_arith (PFpa_op_kind_t op, const PFpa_op_t *n, const PFalg_att_t res,
 
         ret->schema.items[i] = n->schema.items[i];
 
-        if (!strcmp (n->schema.items[i].name, att1))
+        if (n->schema.items[i].name == att1)
             t1 = n->schema.items[i].type;
-        if (!strcmp (n->schema.items[i].name, att2))
+        if (n->schema.items[i].name == att2)
             t2 = n->schema.items[i].type;
     }
 
@@ -1420,7 +1419,7 @@ bin_arith_atom (PFpa_op_kind_t op, const PFpa_op_t *n, const PFalg_att_t res,
 
         ret->schema.items[i] = n->schema.items[i];
 
-        if (!strcmp (n->schema.items[i].name, att1))
+        if (n->schema.items[i].name == att1)
             t1 = n->schema.items[i].type;
     }
 
@@ -1458,7 +1457,7 @@ bin_arith_atom (PFpa_op_kind_t op, const PFpa_op_t *n, const PFalg_att_t res,
 }
 
 /**
- * Helper function for binary arithmetics (with both arguments to be
+ * Helper function for binary comparisons (with both arguments to be
  * table columns).
  */
 static PFpa_op_t *
@@ -1484,9 +1483,9 @@ bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, const PFalg_att_t res,
         ret->schema.items[i] = n->schema.items[i];
 
 #ifndef NDEBUG
-        if (!strcmp (n->schema.items[i].name, att1))
+        if (n->schema.items[i].name == att1)
             t1 = n->schema.items[i].type;
-        if (!strcmp (n->schema.items[i].name, att2))
+        if (n->schema.items[i].name == att2)
             t2 = n->schema.items[i].type;
 #endif
     }
@@ -1526,7 +1525,7 @@ bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, const PFalg_att_t res,
 }
 
 /**
- * Helper function for binary arithmetics (where second argument is
+ * Helper function for binary comparisons (where second argument is
  * an atom).
  */
 static PFpa_op_t *
@@ -1551,7 +1550,7 @@ bin_comp_atom (PFpa_op_kind_t op, const PFpa_op_t *n, const PFalg_att_t res,
         ret->schema.items[i] = n->schema.items[i];
 
 #ifndef NDEBUG
-        if (!strcmp (n->schema.items[i].name, att1))
+        if (n->schema.items[i].name == att1)
             t1 = n->schema.items[i].type;
 #endif
     }
@@ -1712,7 +1711,7 @@ unary_arith (PFpa_op_kind_t op,
 
         ret->schema.items[i] = n->schema.items[i];
 
-        if (!strcmp (n->schema.items[i].name, att))
+        if (n->schema.items[i].name == att)
             t1 = n->schema.items[i].type;
     }
 
@@ -1770,7 +1769,7 @@ PFpa_cast (const PFpa_op_t *n, const PFalg_att_t att, PFalg_simple_type_t ty)
     ret->sem.cast.ty  = ty;
 
     for (unsigned int i = 0; i < n->schema.count; i++)
-        if (! strcmp (n->schema.items[i].name, att)) {
+        if (n->schema.items[i].name == att) {
             ret->schema.items[i]
                 = (PFalg_schm_item_t) { .name = att, .type = ty };
             found = true;
@@ -1780,7 +1779,8 @@ PFpa_cast (const PFpa_op_t *n, const PFalg_att_t att, PFalg_simple_type_t ty)
 
     if (!found)
         PFoops (OOPS_FATAL,
-                "attribute `%s' not found in physical algebra cast", att);
+                "attribute `%s' not found in physical algebra cast",
+                PFatt_print (att));
 
     /* ---- Cast: orderings ---- */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
@@ -1807,7 +1807,7 @@ PFpa_llscj_anc (const PFpa_op_t *frag,
     PFpa_op_t *ret = llscj_worker (pa_llscj_anc, frag, ctx, test, in, out);
 
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), "iter"), "item");
+        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
 
     /* ---- LLSCJchild: costs ---- */
 
@@ -1816,11 +1816,11 @@ PFpa_llscj_anc (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 5 * ctx->cost;
+            ret->cost = 3 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
-            ret->cost = 4 * ctx->cost;
+            ret->cost = 2 * ctx->cost;
         }
 
     }
@@ -1829,13 +1829,13 @@ PFpa_llscj_anc (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
+            ret->cost = 1 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            ret->cost = 2 * ctx->cost;
+            ret->cost = 0 * ctx->cost;
         }
     }
 
@@ -1859,7 +1859,7 @@ PFpa_llscj_anc_self (const PFpa_op_t *frag,
     PFpa_op_t *ret = llscj_worker (pa_llscj_anc_self, frag, ctx, test, in, out);
 
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), "iter"), "item");
+        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
 
     /* ---- LLSCJchild: costs ---- */
 
@@ -1868,11 +1868,11 @@ PFpa_llscj_anc_self (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 5 * ctx->cost;
+            ret->cost = 3 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
-            ret->cost = 4 * ctx->cost;
+            ret->cost = 2 * ctx->cost;
         }
 
     }
@@ -1881,17 +1881,37 @@ PFpa_llscj_anc_self (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
+            ret->cost = 1 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            ret->cost = 2 * ctx->cost;
+            ret->cost = 0 * ctx->cost;
         }
     }
 
     ret->cost += ctx->cost;
+
+    return ret;
+}
+
+/**
+ * StaircaseJoin operator.
+ *
+ * Input must have iter|item schema, and be sorted on iter.
+ */
+PFpa_op_t *
+PFpa_llscj_attr (const PFpa_op_t *frag,
+                 const PFpa_op_t *ctx,
+                 const PFty_t test,
+                 const PFord_ordering_t in,
+                 const PFord_ordering_t out)
+{
+    PFpa_op_t *ret = llscj_worker (pa_llscj_attr, frag, ctx, test, in, out);
+
+    /* there is only one implementation */
+    ret->cost = 1 + ctx->cost;
 
     return ret;
 }
@@ -1911,7 +1931,7 @@ PFpa_llscj_child (const PFpa_op_t *frag,
     PFpa_op_t *ret = llscj_worker (pa_llscj_child, frag, ctx, test, in, out);
 
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), "iter"), "item");
+        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
 
     /* ---- LLSCJchild: costs ---- */
 
@@ -1920,11 +1940,11 @@ PFpa_llscj_child (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 5 * ctx->cost;
+            ret->cost = 3 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
-            ret->cost = 4 * ctx->cost;
+            ret->cost = 2 * ctx->cost;
         }
 
     }
@@ -1933,13 +1953,13 @@ PFpa_llscj_child (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
+            ret->cost = 1 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            ret->cost = 2 * ctx->cost;
+            ret->cost = 0 * ctx->cost;
         }
     }
 
@@ -1963,7 +1983,7 @@ PFpa_llscj_desc (const PFpa_op_t *frag,
     PFpa_op_t *ret = llscj_worker (pa_llscj_desc, frag, ctx, test, in, out);
 
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), "iter"), "item");
+        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
 
     /* ---- LLSCJchild: costs ---- */
 
@@ -1972,11 +1992,11 @@ PFpa_llscj_desc (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 5 * ctx->cost;
+            ret->cost = 3 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
-            ret->cost = 4 * ctx->cost;
+            ret->cost = 2 * ctx->cost;
         }
 
     }
@@ -1985,13 +2005,13 @@ PFpa_llscj_desc (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
+            ret->cost = 1 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            ret->cost = 2 * ctx->cost;
+            ret->cost = 0 * ctx->cost;
         }
     }
 
@@ -2015,7 +2035,7 @@ PFpa_llscj_desc_self (const PFpa_op_t *frag,
     PFpa_op_t *ret = llscj_worker (pa_llscj_desc_self,frag, ctx, test, in, out);
 
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), "iter"), "item");
+        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
 
     /* ---- LLSCJchild: costs ---- */
 
@@ -2024,11 +2044,11 @@ PFpa_llscj_desc_self (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 5 * ctx->cost;
+            ret->cost = 3 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
-            ret->cost = 4 * ctx->cost;
+            ret->cost = 2 * ctx->cost;
         }
 
     }
@@ -2037,13 +2057,13 @@ PFpa_llscj_desc_self (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
+            ret->cost = 1 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            ret->cost = 2 * ctx->cost;
+            ret->cost = 0 * ctx->cost;
         }
     }
 
@@ -2067,7 +2087,7 @@ PFpa_llscj_foll (const PFpa_op_t *frag,
     PFpa_op_t *ret = llscj_worker (pa_llscj_foll, frag, ctx, test, in, out);
 
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), "iter"), "item");
+        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
 
     /* ---- LLSCJchild: costs ---- */
 
@@ -2076,11 +2096,11 @@ PFpa_llscj_foll (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 5 * ctx->cost;
+            ret->cost = 3 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
-            ret->cost = 4 * ctx->cost;
+            ret->cost = 2 * ctx->cost;
         }
 
     }
@@ -2089,13 +2109,13 @@ PFpa_llscj_foll (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
+            ret->cost = 1 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            ret->cost = 2 * ctx->cost;
+            ret->cost = 0 * ctx->cost;
         }
     }
 
@@ -2119,7 +2139,7 @@ PFpa_llscj_foll_sibl (const PFpa_op_t *frag,
     PFpa_op_t *ret = llscj_worker (pa_llscj_foll_sibl,frag, ctx, test, in, out);
 
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), "iter"), "item");
+        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
 
     /* ---- LLSCJchild: costs ---- */
 
@@ -2128,11 +2148,11 @@ PFpa_llscj_foll_sibl (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 5 * ctx->cost;
+            ret->cost = 3 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
-            ret->cost = 4 * ctx->cost;
+            ret->cost = 2 * ctx->cost;
         }
 
     }
@@ -2141,13 +2161,13 @@ PFpa_llscj_foll_sibl (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
+            ret->cost = 1 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            ret->cost = 2 * ctx->cost;
+            ret->cost = 0 * ctx->cost;
         }
     }
 
@@ -2171,7 +2191,7 @@ PFpa_llscj_parent (const PFpa_op_t *frag,
     PFpa_op_t *ret = llscj_worker (pa_llscj_parent, frag, ctx, test, in, out);
 
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), "iter"), "item");
+        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
 
     /* ---- LLSCJchild: costs ---- */
 
@@ -2180,11 +2200,11 @@ PFpa_llscj_parent (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 5 * ctx->cost;
+            ret->cost = 3 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
-            ret->cost = 4 * ctx->cost;
+            ret->cost = 2 * ctx->cost;
         }
 
     }
@@ -2193,13 +2213,13 @@ PFpa_llscj_parent (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
+            ret->cost = 1 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            ret->cost = 2 * ctx->cost;
+            ret->cost = 0 * ctx->cost;
         }
     }
 
@@ -2223,7 +2243,7 @@ PFpa_llscj_prec (const PFpa_op_t *frag,
     PFpa_op_t *ret = llscj_worker (pa_llscj_prec, frag, ctx, test, in, out);
 
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), "iter"), "item");
+        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
 
     /* ---- LLSCJchild: costs ---- */
 
@@ -2232,11 +2252,11 @@ PFpa_llscj_prec (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 5 * ctx->cost;
+            ret->cost = 3 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
-            ret->cost = 4 * ctx->cost;
+            ret->cost = 2 * ctx->cost;
         }
 
     }
@@ -2245,13 +2265,13 @@ PFpa_llscj_prec (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
+            ret->cost = 1 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            ret->cost = 2 * ctx->cost;
+            ret->cost = 0 * ctx->cost;
         }
     }
 
@@ -2275,7 +2295,7 @@ PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
     PFpa_op_t *ret = llscj_worker (pa_llscj_prec_sibl,frag, ctx, test, in, out);
 
     PFord_ordering_t iter_item
-        = PFord_refine (PFord_refine (PFordering (), "iter"), "item");
+        = PFord_refine (PFord_refine (PFordering (), att_iter), att_item);
 
     /* ---- LLSCJchild: costs ---- */
 
@@ -2284,11 +2304,11 @@ PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 5 * ctx->cost;
+            ret->cost = 3 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
-            ret->cost = 4 * ctx->cost;
+            ret->cost = 2 * ctx->cost;
         }
 
     }
@@ -2297,13 +2317,13 @@ PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
 
         if (PFord_implies (ret->sem.scjoin.out, iter_item)) {
             /* output has iter|item ordering */
-            ret->cost = 3 * ctx->cost;
+            ret->cost = 1 * ctx->cost;
         }
         else {
             /* output has item|iter ordering */
 
             /* should be cheapest */
-            ret->cost = 2 * ctx->cost;
+            ret->cost = 0 * ctx->cost;
         }
     }
 
@@ -2326,8 +2346,8 @@ PFpa_doc_tbl (const PFpa_op_t *rel)
     unsigned short found = 0;
 
     for (unsigned int i = 0; i < rel->schema.count; i++)
-        if (!strcmp (rel->schema.items[i].name, "iter")
-            || !strcmp (rel->schema.items[i].name, "item"))
+        if (rel->schema.items[i].name == att_iter
+            || rel->schema.items[i].name == att_item)
             found++;
 
     if (found != 2)
@@ -2342,9 +2362,11 @@ PFpa_doc_tbl (const PFpa_op_t *rel)
         = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
 
     ret->schema.items[0]
-        = (PFalg_schm_item_t) { .name = PFstrdup ("iter"), .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = att_iter,
+                                .type = aat_nat };
     ret->schema.items[1]
-        = (PFalg_schm_item_t) { .name = PFstrdup ("item"), .type = aat_node };
+        = (PFalg_schm_item_t) { .name = att_item,
+                                .type = aat_pnode };
 
     /* ---- doc_tbl: orderings ---- */
 
@@ -2353,19 +2375,20 @@ PFpa_doc_tbl (const PFpa_op_t *rel)
 
     for (unsigned int i = 0; i < PFord_set_count (rel->orderings); i++)
         if (PFord_implies (PFord_set_at (rel->orderings, i),
-                           PFord_refine (PFordering (), "iter"))) {
+                           PFord_refine (PFordering (), att_iter))) {
             sorted_by_iter = true;
             break;
         }
 
     if (sorted_by_iter) {
-        if (PFprop_const (rel->prop, "item"))
+        if (PFprop_const (rel->prop, att_item))
             PFord_set_add (ret->orderings,
-                           PFord_refine (PFord_refine (PFordering (), "iter"),
-                                         "item"));
+                           PFord_refine (PFord_refine (PFordering (),
+                                                       att_iter),
+                                         att_item));
         else
             PFord_set_add (ret->orderings,
-                           PFord_refine (PFordering (), "iter"));
+                           PFord_refine (PFordering (), att_iter));
     }
 
     /* ---- doc_tbl: costs ---- */
@@ -2455,6 +2478,73 @@ PFpa_frag_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
     return ret;
 }
 
+/**
+ * Construct algebra node that will allow the access to the string 
+ * content of loaded documents nodes
+ *
+ * @a doc is the current document (live nodes) and @a alg is the overall
+ * algebra expression.
+ */
+PFpa_op_t *
+PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
+                 PFalg_att_t att, PFalg_doc_t doc_col)
+{
+    unsigned int i;
+    PFpa_op_t *ret = wire2 (pa_doc_access, doc, alg);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = alg->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from alg and change type of column  */
+    for (i = 0; i < alg->schema.count; i++)
+        ret->schema.items[i] = alg->schema.items[i];
+
+    ret->schema.items[i] 
+        = (struct PFalg_schm_item_t) { .type = aat_str, .name = att_res };
+
+    ret->sem.doc_access.att = att;
+    ret->sem.doc_access.doc_col = doc_col;
+
+    /* ordering stays the same */
+    for (unsigned int i = 0; i < PFord_set_count (alg->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (alg->orderings, i));
+    /* costs */
+    ret->cost = doc->cost + alg->cost + 1;
+
+    return ret;
+}
+
+/**
+ * Construct concatenation of multiple strings
+ *
+ * @a n1 contains the sets of strings @a n2 stores the separator for each set
+ */
+PFpa_op_t *
+PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2)
+{
+    PFpa_op_t *ret = wire2 (pa_string_join, n1, n2);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = 2;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    ret->schema.items[0]
+        = (PFalg_schm_item_t) { .name = att_iter, .type = aat_nat };
+    ret->schema.items[1]
+        = (PFalg_schm_item_t) { .name = att_item, .type = aat_str };
+
+    /* result is in iter|item order */
+    PFord_set_add (ret->orderings,
+                   PFord_refine (PFord_refine (PFordering (), att_iter),
+                                 att_item));
+    /* costs */
+    ret->cost = n1->cost + n2->cost + 1;
+
+    return ret;
+}
 
 /**
  * Construct algebra node that will serialize the argument when executed.

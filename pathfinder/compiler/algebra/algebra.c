@@ -154,10 +154,12 @@
  * handled by the constructor functions).
  *
  * The simple type @c node plays a special role: Lateron, we will
- * implement XML tree nodes with help of @em two columns: @em pre and
- * @em kind. Enum value @c aat_node thus sets @em two bits; the two
- * sub-parts are available as @c aat_pre and @c aat_kind. (See also
- * @ref table_representation below.)
+ * distinct attribute nodes and other nodes. In both cases we will 
+ * implement XML tree nodes with help of @em two columns: @em pre / @em attr
+ * and @em pfrag / @em afrag. Enum value @c aat_pnode thus sets @em two bits;
+ * the two sub-parts are available as @c aat_pre and @c aat_pfrag. Accordingly
+ * the enum value @c aat_anode sets the bits for the sub-parts @c aat_attr
+ * and @c aat_afrag. (See also @ref table_representation below.)
  *
  * @subsection algopt Optimizing Logical Algebra Trees
  *
@@ -553,8 +555,7 @@ schema_eq (PFalg_schema_t a, PFalg_schema_t b)
 PFalg_proj_t
 PFalg_proj (PFalg_att_t new, PFalg_att_t old)
 {
-    return (PFalg_proj_t) { .new = strcpy (PFmalloc (strlen (new) + 1), new),
-                            .old = strcpy (PFmalloc (strlen (old) + 1), old) };
+    return (PFalg_proj_t) { .new = new, .old = old };
 }
 
 
@@ -589,7 +590,7 @@ PFalg_attlist_ (unsigned int count, PFalg_att_t *atts)
     ret.atts  = PFmalloc (count * sizeof (*(ret.atts)));
 
     for (i = 0; i < count; i++)
-        ret.atts[i] = strcpy (PFmalloc (strlen (atts[i]) + 1), atts[i]);
+        ret.atts[i] = atts[i];
 
     return ret;
 }
@@ -620,8 +621,12 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
         case aat_bln:   return a.val.bln - b.val.bln;
         case aat_qname: return PFqname_eq (a.val.qname, b.val.qname);
         case aat_node: 
+        case aat_pnode: 
+        case aat_anode: 
         case aat_pre:
-        case aat_kind:
+        case aat_attr:
+        case aat_pfrag: 
+        case aat_afrag: 
                         break; /* error */
     }
     
@@ -629,6 +634,33 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b)
 
     assert(0); /* never reached due to "exit" in PFoops */
     return 0; /* pacify picky compilers */
+}
+
+static char *name[] = {
+      [att_iter]        = "iter"
+    , [att_item]        = "item" 
+    , [att_pos]         = "pos"  
+    , [att_res]         = "res"
+    , [att_ord]         = "ord"
+    , [att_inner]       = "inner"
+    , [att_outer]       = "outer"
+    , [att_iter1]       = "iter1"
+    , [att_pos1]        = "pos1"
+    , [att_item1]       = "item1"
+    , [att_res1]        = "res1"
+    , [att_subty]       = "subty"
+    , [att_itemty]      = "itemty"
+    , [att_notsub]      = "notsub"
+    , [att_isint]       = "isint"
+    , [att_isdec]       = "isdec"
+    , [aat_NULL]        = "(NULL)"
+};
+/**
+ * Print attribute name
+ */
+char *
+PFatt_print (PFalg_att_t att) {
+    return name[att];
 }
 
 /* vim:set shiftwidth=4 expandtab: */

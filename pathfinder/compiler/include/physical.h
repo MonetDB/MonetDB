@@ -85,20 +85,23 @@ enum PFpa_op_kind_t {
     , pa_hash_count     =  37 /**< Hash-based count operator */
     , pa_llscj_anc      = 100 /**< Loop-Lifted StaircaseJoin Ancestor */
     , pa_llscj_anc_self = 101 /**< Loop-Lifted StaircaseJoin AncestorOrSelf */
-    , pa_llscj_child    = 102 /**< Loop-Lifted StaircaseJoin Child */
-    , pa_llscj_desc     = 103 /**< Loop-Lifted StaircaseJoin Descendant */
-    , pa_llscj_desc_self= 104 /**< Loop-Lifted StaircaseJoin DescendantOrSelf */
-    , pa_llscj_foll     = 105 /**< Loop-Lifted StaircaseJoin Following */
-    , pa_llscj_foll_sibl= 106 /**< Loop-Lifted StaircaseJoin FollowingSibling */
-    , pa_llscj_parent   = 107 /**< Loop-Lifted StaircaseJoin Parent */
-    , pa_llscj_prec     = 108 /**< Loop-Lifted StaircaseJoin Preceding */
-    , pa_llscj_prec_sibl= 109 /**< Loop-Lifted StaircaseJoin PrecedingSibling */
-    , pa_doc_tbl        = 110 /**< Access to persistent document relation */
-    , pa_serialize      = 111
-    , pa_roots          = 112
-    , pa_fragment       = 113
-    , pa_frag_union     = 114
-    , pa_empty_frag     = 115
+    , pa_llscj_attr     = 102 /**< Loop-Lifted StaircaseJoin AncestorOrSelf */
+    , pa_llscj_child    = 103 /**< Loop-Lifted StaircaseJoin Child */
+    , pa_llscj_desc     = 104 /**< Loop-Lifted StaircaseJoin Descendant */
+    , pa_llscj_desc_self= 105 /**< Loop-Lifted StaircaseJoin DescendantOrSelf */
+    , pa_llscj_foll     = 106 /**< Loop-Lifted StaircaseJoin Following */
+    , pa_llscj_foll_sibl= 107 /**< Loop-Lifted StaircaseJoin FollowingSibling */
+    , pa_llscj_parent   = 108 /**< Loop-Lifted StaircaseJoin Parent */
+    , pa_llscj_prec     = 109 /**< Loop-Lifted StaircaseJoin Preceding */
+    , pa_llscj_prec_sibl= 110 /**< Loop-Lifted StaircaseJoin PrecedingSibling */
+    , pa_doc_tbl        = 111 /**< Access to persistent document relation */
+    , pa_doc_access     = 112 /**< Access to string content of loaded docs */
+    , pa_string_join    = 113 /**< Concatenation of multiple strings */
+    , pa_serialize      = 114
+    , pa_roots          = 115
+    , pa_fragment       = 116
+    , pa_frag_union     = 117
+    , pa_empty_frag     = 118
 };
 /** algebra operator kinds */
 typedef enum PFpa_op_kind_t PFpa_op_kind_t;
@@ -205,6 +208,11 @@ union PFpa_op_sem_t {
                                       elimination */
     } sort_distinct;
 
+    /* reference columns for document access */
+    struct {
+        PFalg_att_t     att;      /**< name of the reference attribute */
+        PFalg_doc_t     doc_col;  /**< referenced column in the document */
+    } doc_access;
 };
 /** semantic content in physical algebra operators */
 typedef union PFpa_op_sem_t PFpa_op_sem_t;
@@ -383,6 +391,11 @@ PFpa_op_t *PFpa_llscj_anc_self (const PFpa_op_t *frag,
                                 const PFty_t test,
                                 const PFord_ordering_t in,
                                 const PFord_ordering_t out);
+PFpa_op_t *PFpa_llscj_attr (const PFpa_op_t *frag,
+                            const PFpa_op_t *ctx,
+                            const PFty_t test,
+                            const PFord_ordering_t in,
+                            const PFord_ordering_t out);
 PFpa_op_t *PFpa_llscj_child (const PFpa_op_t *frag,
                              const PFpa_op_t *ctx,
                              const PFty_t test,
@@ -574,6 +587,23 @@ PFpa_op_t *PFpa_fragment (const PFpa_op_t *n);
  */
 PFpa_op_t *PFpa_frag_union (const PFpa_op_t *n1, const PFpa_op_t *n2);
 
+
+/****************************************************************/
+/* operators introduced by built-in functions */
+
+/**
+ * Access to the string content of loaded documents
+ */
+PFpa_op_t * PFpa_doc_access (const PFpa_op_t *doc, 
+                             const PFpa_op_t *alg,
+                             PFalg_att_t att,
+                             PFalg_doc_t doc_col);
+
+/**
+ * Concatenation of multiple strings (using seperators)
+ */
+PFpa_op_t * PFpa_string_join (const PFpa_op_t *n1, 
+                              const PFpa_op_t *n2);
 
 /****************************************************************/
 

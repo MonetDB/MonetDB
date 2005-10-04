@@ -550,24 +550,21 @@ MainModule                : Prolog QueryBody
                           ;
 
 /* [4] */
-LibraryModule             : ModuleDecl Prolog
-                            { $$ = wire2 (p_lib_mod, @$, $1, $2); }
+LibraryModule             : ModuleDecl Prolog 
+                            { $$ = wire2 (p_main_mod, @$, $2, leaf (p_empty_seq, @$)); }
                           ;
 
 /* [5] */
 ModuleDecl                : "module namespace" NCName
                               "=" StringLiteral Separator
                             {
-                              PFinfo_loc (OOPS_NOTSUPPORTED, @$,
-                                          "Pathfinder does currently not "
-                                          "support XQuery modules.");
-                              YYERROR;
-
+/* Peter: for MIL generation we ignore module name/uri, and execute module decl as an empty sequence
                               ($$ = wire1 (p_mod_ns,
                                            @$,
                                            (c = leaf (p_lit_str, @4),
                                             c->sem.str = $4,
                                             c)))->sem.str = $2;
+*/
                             }
                           ;
 
@@ -916,7 +913,6 @@ EnclosedExpr              : "{" Expr "}" { $$ = $2; }
 
 /* [27] */
 QueryBody                 : Expr { $$ = $1; }
-                          | /* empty */ { $$ = leaf (p_empty_seq, @$); }
                           ;
 
 /* [28] */

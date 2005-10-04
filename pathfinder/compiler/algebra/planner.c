@@ -70,7 +70,6 @@
 #include "oops.h"
 
 #include <assert.h>
-#include <string.h>
 #include <stdio.h>
 
 #include "planner.h"
@@ -298,21 +297,21 @@ join_worker (PFplanlist_t *ret,
 
     /* test which of the two attributes is in which argument */
     for (unsigned int i = 0; i < a->schema.count; i++)
-        if (!strcmp (a->schema.items[i].name, att1)) {
+        if (a->schema.items[i].name == att1) {
             att_a = att1;
             break;
         }
-        else if (!strcmp (a->schema.items[i].name, att2)) {
+        else if (a->schema.items[i].name == att2) {
             att_a = att2;
             break;
         }
 
     for (unsigned int i = 0; i < b->schema.count; i++)
-        if (!strcmp (b->schema.items[i].name, att1)) {
+        if (b->schema.items[i].name == att1) {
             att_b = att1;
             break;
         }
-        else if (!strcmp (b->schema.items[i].name, att2)) {
+        else if (b->schema.items[i].name == att2) {
             att_b = att2;
             break;
         }
@@ -370,10 +369,11 @@ static PFalg_simple_type_t
 type_of (PFalg_schema_t schema, PFalg_att_t att)
 {
     for (unsigned int i = 0; i < schema.count; i++)
-        if (! strcmp (schema.items[i].name, att))
+        if (schema.items[i].name == att)
             return schema.items[i].type;
 
-    PFoops (OOPS_FATAL, "unable to find attribute %s in schema", att);
+    PFoops (OOPS_FATAL, "unable to find attribute %s in schema",
+            PFatt_print (att));
 
     return 0;  /* pacify compilers */
 }
@@ -499,8 +499,7 @@ ensure_ordering (const plan_t *unordered, PFord_ordering_t required)
         /* collect the common prefix of required and existing ordering */
         for (unsigned int k = 0;
              k < PFord_count (required) && k < PFord_count (existing)
-             && !strcmp (PFord_order_at (required, k),
-                         PFord_order_at (existing, k));
+             && PFord_order_at (required, k) == PFord_order_at (existing, k);
              k++)
             prefix = PFord_refine (prefix, PFord_order_at (existing, k));
 
@@ -659,6 +658,75 @@ plan_distinct (const PFla_op_t *n)
 }
 
 /**
+ * Create physical operator that allows the access to the
+ * string content of the loaded documents
+ */ 
+static PFplanlist_t *
+plan_doc_access (const PFla_op_t *n)
+{
+    PFplanlist_t *ret    = new_planlist ();
+
+    assert (n); assert (n->kind == la_doc_access);
+    assert (n->child[0]); assert (n->child[0]->plans);
+    assert (n->child[1]); assert (n->child[1]->plans);
+
+    /* for each plan, generate a doc_access operator */
+    for (unsigned int i = 0; i < PFarray_last (n->child[1]->plans); i++)
+        for (unsigned int j = 0; j < PFarray_last (n->child[0]->plans); j++)
+            add_plan (ret,
+                      doc_access (
+                          *(plan_t **) PFarray_at (n->child[0]->plans, j),
+                          *(plan_t **) PFarray_at (n->child[1]->plans, i),
+                          n->sem.doc_access.att,
+                          n->sem.doc_access.doc_col));
+
+    return ret;
+}
+
+/**
+ * Create physical equivalent for the string_join operator
+ * (concatenates sets of strings using a seperator for each set)
+ *
+ * The string_join operator expects its first argument (strings)
+ * sorted by iter|pos and its second argument (seperators) sorted
+ * by iter. The output is sorted by iter|item.
+ */
+static PFplanlist_t *
+plan_string_join (const PFla_op_t *n)
+{
+    PFplanlist_t *ret       = new_planlist ();
+    PFplanlist_t *sorted_n1 = new_planlist ();
+    PFplanlist_t *sorted_n2 = new_planlist ();
+
+    assert (n); assert (n->kind == la_string_join);
+    assert (n->child[0]); assert (n->child[0]->plans);
+    assert (n->child[1]); assert (n->child[1]->plans);
+
+    /* The string_join operator requires its inputs to be properly sorted. */
+    for (unsigned int i = 0; i < PFarray_last (n->child[0]->plans); i++)
+        add_plans (sorted_n1,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (n->child[0]->plans, i),
+                       PFord_refine (PFord_refine (PFordering (), att_iter),
+                                     att_pos)));
+
+    for (unsigned int i = 0; i < PFarray_last (n->child[1]->plans); i++)
+        add_plans (sorted_n2,
+                   ensure_ordering (
+                       *(plan_t **) PFarray_at (n->child[1]->plans, i),
+                       PFord_refine (PFordering (), att_iter)));
+
+    /* for each remaining plan, generate a string_join operator */
+    for (unsigned int i = 0; i < PFarray_last (sorted_n1); i++)
+        for (unsigned int j = 0; j < PFarray_last (sorted_n2); j++)
+            add_plan (ret,
+                      serialize (
+                          *(plan_t **) PFarray_at (sorted_n1, i),
+                          *(plan_t **) PFarray_at (sorted_n2, j)));
+    return ret;
+}
+
+/**
  * Create physical equivalent of our `serialize' operator.
  *
  * The physical Serialize operator expects its input to be sorted
@@ -679,8 +747,8 @@ plan_serialize (const PFla_op_t *n)
         add_plans (sorted,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (n->child[1]->plans, i),
-                       PFord_refine (PFord_refine (PFordering (), "iter"),
-                                     "pos")));
+                       PFord_refine (PFord_refine (PFordering (), att_iter),
+                                     att_pos)));
 
     /* throw out those plans that are too expensive */
     sorted = prune_plans (sorted);
@@ -726,7 +794,7 @@ plan_doc_tbl (const PFla_op_t *n)
         add_plans (ordered,
                    ensure_ordering (
                        *(plan_t **) PFarray_at (n->child[0]->plans, i),
-                       PFord_refine (PFordering (), "iter")));
+                       PFord_refine (PFordering (), att_iter)));
 
     for (unsigned int i = 0; i < PFarray_last (ordered); i++)
         if (!cheapest_ordered
@@ -995,7 +1063,7 @@ plan_scjoin (const PFla_op_t *n)
     switch (n->sem.scjoin.axis) {
         case alg_anc:       llscj = PFpa_llscj_anc;         break;
         case alg_anc_s:     llscj = PFpa_llscj_anc_self;    break;
-        case alg_attr:      assert (0);
+        case alg_attr:      llscj = PFpa_llscj_attr;        break;
         case alg_chld:      llscj = PFpa_llscj_child;       break;
         case alg_desc:      llscj = PFpa_llscj_desc;        break;
         case alg_desc_s:    llscj = PFpa_llscj_desc_self;   break;
@@ -1022,11 +1090,15 @@ plan_scjoin (const PFla_op_t *n)
      * encoded in a single integer value.
      */
     const PFord_ordering_t in[2]
-            = { PFord_refine (PFord_refine (PFordering (), "iter"), "item"),
-                PFord_refine (PFord_refine (PFordering (), "item"), "iter") };
+            = { PFord_refine (PFord_refine (PFordering (), att_iter),
+                              att_item),
+                PFord_refine (PFord_refine (PFordering (), att_item),
+                              att_iter) };
     const PFord_ordering_t out[2]
-            = { PFord_refine (PFord_refine (PFordering (), "iter"), "item"),
-                PFord_refine (PFord_refine (PFordering (), "item"), "iter") };
+            = { PFord_refine (PFord_refine (PFordering (), att_iter),
+                              att_item),
+                PFord_refine (PFord_refine (PFordering (), att_item),
+                              att_iter) };
 
     /* consider the two possible input orderings */
     for (unsigned short i = 0; i < 2; i++) {
@@ -1045,14 +1117,25 @@ plan_scjoin (const PFla_op_t *n)
 
         for (unsigned int k = 0; k < PFarray_last (ordered); k++)
             for (unsigned int l = 0; l < PFarray_last (n->child[0]->plans); l++)
-                for (unsigned short o = 0; o < 2; o++)
+                /* the evaluation of the attribute axis keeps the input order */
+                if (n->sem.scjoin.axis == alg_attr)
                     add_plan (
                         ret,
                         llscj (*(plan_t **) PFarray_at (n->child[0]->plans, l),
                                *(plan_t **) PFarray_at (ordered, k),
                                n->sem.scjoin.ty,
                                in[i],
-                               out[o]));
+                               out[i]));
+                else
+                    for (unsigned short o = 0; o < 2; o++)
+                        add_plan (
+                            ret,
+                            llscj (*(plan_t **) PFarray_at (n->child[0]->plans,
+                                                            l),
+                                   *(plan_t **) PFarray_at (ordered, k),
+                                   n->sem.scjoin.ty,
+                                   in[i],
+                                   out[o]));
     }
 
     return ret;
@@ -1264,41 +1347,44 @@ plan_subexpression (PFla_op_t *n)
 
     /* Compute possible plans. */
     switch (n->kind) {
-        case la_lit_tbl:      plans = plan_lit_tbl (n);    break;
-        case la_project:      plans = plan_project (n);    break;
-        case la_cross:        plans = plan_cross (n);      break;
-        case la_eqjoin:       plans = plan_eqjoin (n);     break;
-        case la_disjunion:    plans = plan_disjunion (n);  break;
-        case la_rownum:       plans = plan_rownum (n);     break;
-        case la_distinct:     plans = plan_distinct (n);   break;
-
-        case la_num_add:
-        case la_num_subtract:
-        case la_num_multiply:
-        case la_num_divide:
-        case la_num_modulo:
-        case la_num_eq:
-        case la_num_gt:
-                              plans = plan_binop (n);      break;
-
-        case la_num_neg:
-        case la_bool_not:
-                              plans = plan_unary (n);      break;
-
-        case la_cast:         plans = plan_cast (n);       break;
-        case la_select:       plans = plan_select (n);     break;
-        case la_difference:   plans = plan_difference (n); break;
-        case la_count:        plans = plan_count (n);      break;
-
-        case la_scjoin:       plans = plan_scjoin (n);     break;
-        case la_doc_tbl:      plans = plan_doc_tbl (n);    break;
-
-        case la_fragment:     plans = plan_fragment (n);   break;
-        case la_roots:        plans = plan_roots (n);      break;
-        case la_frag_union:   plans = plan_frag_union (n); break;
-        case la_empty_frag:   plans = plan_empty_frag (n); break;
-
-        case la_serialize:    plans = plan_serialize (n);  break;
+        case la_lit_tbl:      plans = plan_lit_tbl (n);     break;
+        case la_project:      plans = plan_project (n);     break;
+        case la_cross:        plans = plan_cross (n);       break;
+        case la_eqjoin:       plans = plan_eqjoin (n);      break;
+        case la_disjunion:    plans = plan_disjunion (n);   break;
+        case la_rownum:       plans = plan_rownum (n);      break;
+        case la_distinct:     plans = plan_distinct (n);    break;
+                                                            
+        case la_num_add:                                    
+        case la_num_subtract:                               
+        case la_num_multiply:                               
+        case la_num_divide:                                 
+        case la_num_modulo:                                 
+        case la_num_eq:                                     
+        case la_num_gt:                                     
+                              plans = plan_binop (n);       break;
+                                                            
+        case la_num_neg:                                    
+        case la_bool_not:                                   
+                              plans = plan_unary (n);       break;
+                                                            
+        case la_cast:         plans = plan_cast (n);        break;
+        case la_select:       plans = plan_select (n);      break;
+        case la_difference:   plans = plan_difference (n);  break;
+        case la_count:        plans = plan_count (n);       break;
+                                                            
+        case la_scjoin:       plans = plan_scjoin (n);      break;
+        case la_doc_tbl:      plans = plan_doc_tbl (n);     break;
+                                                            
+        case la_fragment:     plans = plan_fragment (n);    break;
+        case la_roots:        plans = plan_roots (n);       break;
+        case la_frag_union:   plans = plan_frag_union (n);  break;
+        case la_empty_frag:   plans = plan_empty_frag (n);  break;
+                                                            
+        case la_doc_access:   plans = plan_doc_access (n);  break;
+        case la_string_join:  plans = plan_string_join (n); break;
+                                                            
+        case la_serialize:    plans = plan_serialize (n);   break;
 
         default:
             PFoops (OOPS_FATAL,

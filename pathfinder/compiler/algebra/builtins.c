@@ -31,6 +31,8 @@
 /* always include "pathfinder.h", first! */
 #include "pathfinder.h"
 
+#include <assert.h>
+
 #include "builtins.h"
 
 #include "logical.h"
@@ -78,17 +80,17 @@ bin_arith (PFalg_simple_type_t t,
            struct PFla_pair_t *args)
 {
     return (struct PFla_pair_t) {
-	.rel = project (OP (eqjoin (cast (args[0].rel, "item", t),
+	.rel = project (OP (eqjoin (cast (args[0].rel, att_item, t),
 				    project (cast (args[1].rel,
-						   "item", t),
-					     proj ("iter1", "iter"),
-					     proj ("item1", "item")),
-				    "iter",
-				    "iter1"),
-			    "res", "item", "item1"),
-			proj ("iter", "iter"),
-			proj ("pos", "pos"),
-			proj ("item", "res")),
+						   att_item, t),
+					     proj (att_iter1, att_iter),
+					     proj (att_item1, att_item)),
+				    att_iter,
+				    att_iter1),
+			    att_res, att_item, att_item1),
+			proj (att_iter, att_iter),
+			proj (att_pos, att_pos),
+			proj (att_item, att_res)),
 	.frag = PFla_empty_set () };
 }
 
@@ -128,11 +130,11 @@ un_func (PFalg_simple_type_t t,
 	 struct PFla_pair_t *args)
 {
     return (struct PFla_pair_t) {
-	.rel = project (OP (cast (args[0].rel, "item", t),
-			    "res", "item"),
-			proj ("iter", "iter"),
-			proj ("pos", "pos"),
-			proj ("item", "res")),
+	.rel = project (OP (cast (args[0].rel, att_item, t),
+			    att_res, att_item),
+			proj (att_iter, att_iter),
+			proj (att_pos, att_pos),
+			proj (att_item, att_res)),
 	.frag = PFla_empty_set () };
 }
 
@@ -303,7 +305,7 @@ PFbui_op_numeric_idivide_int (const PFla_op_t *loop __attribute__((unused)),
                     "__attribute__((unused))" */
     return (struct PFla_pair_t) {
 	.rel = cast (bin_arith (aat_int, PFla_divide, args).rel,
-		     "item", aat_int),
+		     att_item, aat_int),
 	.frag = PFla_empty_set () };
 }
 
@@ -319,7 +321,7 @@ PFbui_op_numeric_idivide_dec (const PFla_op_t *loop __attribute__((unused)),
                     "__attribute__((unused))" */
     return (struct PFla_pair_t) {
 	.rel = cast (bin_arith (aat_dec, PFla_divide, args).rel,
-		     "item", aat_int),
+		     att_item, aat_int),
 	.frag = PFla_empty_set () };
 }
 
@@ -335,7 +337,7 @@ PFbui_op_numeric_idivide_dbl (const PFla_op_t *loop __attribute__((unused)),
                     "__attribute__((unused))" */
     return (struct PFla_pair_t) {
 	.rel = cast (bin_arith (aat_dbl, PFla_divide, args).rel,
-		     "item", aat_int),
+		     att_item, aat_int),
 	.frag = PFla_empty_set () };
 }
 
@@ -883,6 +885,7 @@ PFbui_op_is_same_node (const PFla_op_t *loop __attribute__((unused)),
 {
     (void) loop; /* pacify picky compilers that do not understand
                     "__attribute__((unused))" */
+    assert (!"FIXME: correct algebra translation is missing");
     return bin_arith (aat_node, PFla_eq, args);
 }
 
@@ -896,7 +899,7 @@ PFbui_op_node_before (const PFla_op_t *loop __attribute__((unused)),
 {
     (void) loop; /* pacify picky compilers that do not understand
                     "__attribute__((unused))" */
-
+    assert (!"FIXME: correct algebra translation is missing");
     return bin_arith (aat_node, PFla_gt,
 		      (struct PFla_pair_t []) { args[1], args[0] });
 }
@@ -911,6 +914,7 @@ PFbui_op_node_after (const PFla_op_t *loop __attribute__((unused)),
 {
     (void) loop; /* pacify picky compilers that do not understand
                     "__attribute__((unused))" */
+    assert (!"FIXME: correct algebra translation is missing");
     return bin_arith (aat_node, PFla_gt, args);
 }
 
@@ -935,12 +939,12 @@ PFbui_op_union (const PFla_op_t *loop __attribute__((unused)),
 	           distinct (
 		       disjunion (
 			   project (args[0].rel,
-				    proj ("iter", "iter"),
-				    proj ("item", "item")),
+				    proj (att_iter, att_iter),
+				    proj (att_item, att_item)),
 			   project (args[1].rel,
-				    proj ("iter", "iter"),
-				    proj ("item", "item")))),
-		   "pos", sortby ("item"), NULL),
+				    proj (att_iter, att_iter),
+				    proj (att_item, att_item)))),
+		   att_pos, sortby (att_item), aat_NULL),
         .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -965,12 +969,12 @@ PFbui_op_intersect (const PFla_op_t *loop __attribute__((unused)),
 	           distinct (
 		       intersect (
 			   project (args[0].rel,
-				    proj ("iter", "iter"),
-				    proj ("item", "item")),
+				    proj (att_iter, att_iter),
+				    proj (att_item, att_item)),
 			   project (args[1].rel,
-				    proj ("iter", "iter"),
-				    proj ("item", "item")))),
-		   "pos", sortby ("item"), NULL),
+				    proj (att_iter, att_iter),
+				    proj (att_item, att_item)))),
+		   att_pos, sortby (att_item), aat_NULL),
         .frag = PFla_set_union (args[0].frag, args[1].frag) };
 }
 
@@ -997,12 +1001,12 @@ PFbui_op_except (const PFla_op_t *loop __attribute__((unused)),
 	           distinct (
 		       difference (
 			   project (args[0].rel,
-				    proj ("iter", "iter"),
-				    proj ("item", "item")),
+				    proj (att_iter, att_iter),
+				    proj (att_item, att_item)),
 			   project (args[1].rel,
-				    proj ("iter", "iter"),
-				    proj ("item", "item")))),
-		   "pos", sortby ("item"), NULL),
+				    proj (att_iter, att_iter),
+				    proj (att_item, att_item)))),
+		   att_pos, sortby (att_item), aat_NULL),
 	/* result nodes can only originate from first argument TODO */
         .frag = args[0].frag };
 }
@@ -1021,7 +1025,7 @@ PFbui_op_except (const PFla_op_t *loop __attribute__((unused)),
  *               |     | <foo/>
  *               |     | 1.2
  *
- * - insert new, consecutive row numbering of "pos" column
+ * - insert new, consecutive row numbering of att_pos column
  * - select those rows that have type "node" (part1)
  * - select the remaining rows (part2)
  * - convert all items in part2 into strings
@@ -1029,13 +1033,13 @@ PFbui_op_except (const PFla_op_t *loop __attribute__((unused)),
  *   (e.g. "a" . " " . "42"); we must introduce a new operator for
  *   this step
  * - create text nodes from the (concatenated) strings; IMPORTANT:
- *   textnode() function was generalized to retain "pos" numbering
+ *   textnode() function was generalized to retain att_pos numbering
  * - add the new fragment of text nodes (frag) to the .frag field
  *   together with those nodes we had in the very beginning (those
  *   in part1, e.g. <foo/>)
- * - project frag on "iter", "pos", "item"
+ * - project frag on att_iter, att_pos, att_item
  * - form union of projection result and part1
- * - sort result on "pos" column to restore original sort order
+ * - sort result on att_pos column to restore original sort order
  */
 struct PFla_pair_t
 PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop __attribute__((unused)),
@@ -1045,24 +1049,25 @@ PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop __attribute__((unused)),
                     "__attribute__((unused))" */
 
     /*
-     * insert new, consecutive row numbering of "pos" column and
+     * insert new, consecutive row numbering of att_pos column and
      * carry out type test on "node" type
      */
-    PFla_op_t *sort = type (rownum (args[0].rel, "pos1",
-				     sortby ("pos"), "iter"),
-			     "res", "item", aat_node);
+    PFla_op_t *sort = type (rownum (args[0].rel, att_pos1,
+				     sortby (att_pos), att_iter),
+			     att_res, att_item, aat_node);
 
     /* select those rows that have type "node" (part1) */
-    PFla_op_t *part1 = project (select_ (sort, "res"),
-				 proj ("iter", "iter"),
-				 proj ("pos", "pos1"),
-				 proj ("item", "item"));
+    PFla_op_t *part1 = project (select_ (sort, att_res),
+				 proj (att_iter, att_iter),
+				 proj (att_pos, att_pos1),
+				 proj (att_item, att_item));
 
     /* select the remaining rows (part2) */
-    PFla_op_t *part2 = project (select_ (not (sort, "res1", "res"), "res1"),
-				 proj ("iter", "iter"),
-				 proj ("pos", "pos1"),
-				 proj ("item", "item"));
+    PFla_op_t *part2 = project (select_ (not (sort, att_res1, att_res),
+                                         att_res1),
+				 proj (att_iter, att_iter),
+				 proj (att_pos, att_pos1),
+				 proj (att_item, att_item));
 
     /*
      * convert all items in part2 into strings and concatenate
@@ -1072,10 +1077,10 @@ PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop __attribute__((unused)),
      */
     PFla_op_t *t_nodes = textnode (
                               strconcat (
-				  cast (part2, "item", aat_str)));
+				  cast (part2, att_item, aat_str)));
 
     /* get the roots of the new text nodes, form union of roots and
-     * part1, and sort result on "pos" column
+     * part1, and sort result on att_pos column
      */
     return (struct  PFla_pair_t) {
                  .rel = project (
@@ -1083,10 +1088,10 @@ PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop __attribute__((unused)),
 				disjunion (
 				    roots (t_nodes),
 				    part1),
-				"pos1", sortby ("pos"), "iter"),
-			    proj ("iter", "iter"),
-			    proj ("pos", "pos1"),
-			    proj ("item", "item")),
+				att_pos1, sortby (att_pos), att_iter),
+			    proj (att_iter, att_iter),
+			    proj (att_pos, att_pos1),
+			    proj (att_item, att_item)),
 		 /* union of those nodes we had in the very beginning
 		  * (those in part1) and those produced by text node
 		  * creation
@@ -1103,7 +1108,7 @@ PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop __attribute__((unused)),
  * Input: iter | pos | item table where all items are of type node.
  * Introduce new algebra operator which takes the current document and
  * the current algebra representation. It merges consecutive text nodes
- * (with same "iter" and consecutive "pos" values). If a text node
+ * (with same att_iter and consecutive att_pos values). If a text node
  * is empty, it is discarded.
  * The output are an algebra representation of all nodes (old and new,
  * i.e. unmerged and merged) and a fragment representation of the newly
@@ -1143,9 +1148,9 @@ PFbui_pf_distinct_doc_order (const PFla_op_t *loop __attribute__((unused)),
                  .rel = rownum (
                             distinct (
 				project (args[0].rel,
-					 proj ("iter", "iter"),
-					 proj ("item", "item"))),
-			    "pos", sortby ("item"), "iter"),
+					 proj (att_iter, att_iter),
+					 proj (att_item, att_item))),
+			    att_pos, sortby (att_item), att_iter),
                  .frag = args[0].frag };
 }
 
@@ -1182,11 +1187,11 @@ PFbui_fn_boolean_optbln (const PFla_op_t *loop __attribute__((unused)),
 					  project (eqjoin (
 						       args[0].rel,
 						       project (loop,
-								proj ("iter1",
-								      "iter")),
-						       "iter", "iter1"),
-						   proj ("iter", "iter"))),
-			      lit_tbl (attlist ("pos", "item"),
+								proj (att_iter1,
+								      att_iter)),
+						       att_iter, att_iter1),
+						   proj (att_iter, att_iter))),
+			      lit_tbl (attlist (att_pos, att_item),
 				       tuple (lit_nat (1), lit_bln (false))))),
 	.frag = PFla_empty_set () };
 }
@@ -1207,17 +1212,17 @@ PFbui_fn_boolean_item (const PFla_op_t *loop __attribute__((unused)),
                    disjunion (
 		       cross (
 			   distinct (project (args[0].rel,
-					      proj ("iter", "iter"))),
-			   lit_tbl (attlist ("item"),
+					      proj (att_iter, att_iter))),
+			   lit_tbl (attlist (att_item),
 				    tuple (lit_bln (true)))),
 		       cross (
 			   difference (
 			       loop,
-			       project (args[0].rel, proj ("iter",
-							   "iter"))),
-			   lit_tbl (attlist ("item"),
+			       project (args[0].rel, proj (att_iter,
+							   att_iter))),
+			   lit_tbl (attlist (att_item),
 				    tuple (lit_bln (false))))),
-		   lit_tbl (attlist ("pos"), tuple (lit_nat (1)))),
+		   lit_tbl (attlist (att_pos), tuple (lit_nat (1)))),
 	.frag = PFla_empty_set ()};
 }
 
@@ -1247,17 +1252,17 @@ PFbui_fn_empty (const PFla_op_t *loop __attribute__((unused)),
                    disjunion (
 		       cross (
 			   distinct (project (args[0].rel,
-					      proj ("iter", "iter"))),
-			   lit_tbl (attlist ("item"),
+					      proj (att_iter, att_iter))),
+			   lit_tbl (attlist (att_item),
 				    tuple (lit_bln (false)))),
 		       cross (
 			   difference (
 			       loop,
 			       project (args[0].rel,
-					proj ("iter", "iter"))),
-			   lit_tbl (attlist ("item"),
+					proj (att_iter, att_iter))),
+			   lit_tbl (attlist (att_item),
 				    tuple (lit_bln (true))))),
-		   lit_tbl (attlist ("pos"), tuple (lit_nat (1)))),
+		   lit_tbl (attlist (att_pos), tuple (lit_nat (1)))),
 	.frag = PFla_empty_set ()};
 }
 
@@ -1277,27 +1282,129 @@ PFbui_fn_doc (const PFla_op_t *loop __attribute__((unused)),
                     "__attribute__((unused))" */
 
     PFla_op_t *doc = doc_tbl (project (args[0].rel,
-                                       proj ("iter", "iter"),
-                                       proj ("item", "item")));
+                                       proj (att_iter, att_iter),
+                                       proj (att_item, att_item)));
 
     return (struct PFla_pair_t) {
-        .rel  = cross (lit_tbl (attlist ("pos"), tuple (lit_nat (1))),
+        .rel  = cross (lit_tbl (attlist (att_pos), tuple (lit_nat (1))),
                        roots (doc)),
         .frag = PFla_set (fragment (doc)) };
 }
 
 /**
- * Built-in functin <code>pf:typed-value</code>.
+ * Built-in functin pf:typed-value(attr="text").
  */
 struct PFla_pair_t
-PFbui_pf_string_value (const PFla_op_t *loop __attribute__((unused)),
-                       struct PFla_pair_t *args)
+PFbui_pf_string_value_attr (const PFla_op_t *loop __attribute__((unused)),
+                            struct PFla_pair_t *args)
 {
     (void) loop; /* pacify picky compilers that do not understand
                     "__attribute__((unused))" */
 
     return (struct PFla_pair_t) {
-        .rel  = string_value (PFla_set_to_la (args[0].frag), args[0].rel),
+        .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
+                                     args[0].rel, att_item, doc_atext),
+                         proj (att_iter, att_iter),
+                         proj (att_pos,  att_pos),
+                         proj (att_item, att_res)),
+        .frag = PFla_empty_set () };
+}
+
+/**
+ * Built-in functin pf:typed-value(text {"text"}).
+ */
+struct PFla_pair_t
+PFbui_pf_string_value_text (const PFla_op_t *loop __attribute__((unused)),
+                            struct PFla_pair_t *args)
+{
+    (void) loop; /* pacify picky compilers that do not understand
+                    "__attribute__((unused))" */
+
+    return (struct PFla_pair_t) {
+        .rel  = project (doc_access (PFla_set_to_la (args[0].frag),
+                                     args[0].rel, att_item, doc_text),
+                         proj (att_iter, att_iter),
+                         proj (att_pos,  att_pos),
+                         proj (att_item, att_res)),
+        .frag = PFla_empty_set () };
+}
+
+/**
+ * Built-in functin pf:typed-value(<code>text</code>).
+ */
+struct PFla_pair_t
+PFbui_pf_string_value (const PFla_op_t *loop __attribute__((unused)),
+                       struct PFla_pair_t *args)
+{
+    PFla_op_t *sel_attr, *sel_node, *attributes, 
+              *axis, *node_scj, *nodes, *res;
+    sel_attr = project (
+                   select_ (
+                       type (args[0].rel, att_subty, 
+                             att_item, aat_anode),
+                       att_subty),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_item));
+
+    sel_node = project (
+                   select_ (
+                       not (type (args[0].rel, att_subty, 
+                                  att_item, aat_anode),
+                            att_notsub, att_subty),
+                       att_notsub),
+                   proj (att_iter, att_iter),
+                   proj (att_pos, att_pos),
+                   proj (att_item, att_item));
+
+    attributes = project (doc_access (PFla_set_to_la (args[0].frag),
+                          sel_attr, att_item, doc_atext),
+                          proj (att_iter, att_iter),
+                          proj (att_item, att_res));
+
+    axis = dummy ();
+    axis->sem.scjoin.axis = alg_desc_s;
+    axis->sem.scjoin.ty   = PFty_text ();
+
+    node_scj = rownum (
+                   scjoin (PFla_set_to_la (args[0].frag),
+                           project (sel_node,
+                                    proj (att_iter, att_iter),
+                                    proj (att_item, att_item)),
+                           axis),
+                   att_pos, sortby (att_item), att_iter);
+
+    nodes = string_join (
+                project (
+                    doc_access (
+                        PFla_set_to_la (args[0].frag),
+                        node_scj,
+                        att_item, doc_text),
+                    proj (att_iter, att_iter),
+                    proj (att_pos,  att_pos),
+                    proj (att_item, att_res)),
+                project (
+                    cross (loop,
+                           lit_tbl( attlist (att_pos, att_item),
+                                    tuple (lit_nat (1),
+                                           lit_str ("")))),
+                    proj (att_iter1, att_iter),
+                    proj (att_item1, att_item)));
+
+    res = cross (
+              disjunion (
+                  disjunion (attributes, nodes),
+                  cross (
+                      difference (
+                          loop,
+                          project (disjunion (attributes, nodes),
+                                   proj (att_iter, att_iter))),
+                      lit_tbl (attlist (att_item), 
+                               tuple (lit_str (""))))),
+              lit_tbl (attlist (att_pos), tuple (lit_nat (1))));
+
+    return (struct PFla_pair_t) {
+        .rel  = res,
         .frag = PFla_empty_set () };
 }
 
@@ -1332,14 +1439,14 @@ PFbui_fn_count (const PFla_op_t *loop __attribute__((unused)),
     return (struct PFla_pair_t) {
         .rel = cross (
                 disjunion (
-                    count (project (args[0].rel, proj ("iter", "iter")),
-                           "item", "iter"),
+                    count (project (args[0].rel, proj (att_iter, att_iter)),
+                           att_item, att_iter),
                     cross (
                         difference (
                             loop,
-                            project (args[0].rel, proj ("iter", "iter"))),
-                        lit_tbl (attlist ("item"), tuple (lit_int (0))))),
-                lit_tbl (attlist ("pos"), tuple (lit_nat (1)))),
+                            project (args[0].rel, proj (att_iter, att_iter))),
+                        lit_tbl (attlist (att_item), tuple (lit_int (0))))),
+                lit_tbl (attlist (att_pos), tuple (lit_nat (1)))),
         .frag = PFla_empty_set () };
 }
 

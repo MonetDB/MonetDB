@@ -436,6 +436,7 @@ subexelim:
                 if (status->debug != 0)
                     printf ("Algebra tree %s:\n", phases[status->stop_after]);
                 /* PFalg_pretty (pfout, aroot); */
+                 PFla_pretty (pfout, laroot);
             }
             if (status->print_dot)
                 PFla_dot (pfout, laroot);

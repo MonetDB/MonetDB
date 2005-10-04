@@ -822,6 +822,24 @@ PFmil_new_ws (void)
     return leaf (m_new_ws);
 }
 
+/**
+ * Positional multijoin with a working set
+ */
+PFmil_t *
+PFmil_mposjoin (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_mposjoin, a, b, c);
+}
+
+/**
+ * Multijoin with a working set
+ */
+PFmil_t *
+PFmil_mvaljoin (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_mvaljoin, a, b, c);
+}
+
 /* ---------- staircase join variants ---------- */
 
 /* ---- ancestor axis ---- */
@@ -1626,7 +1644,10 @@ PFmil_t * PFmil_llscj_prec_sibl_pi_targ (const PFmil_t *iter, const PFmil_t *ite
 
 
 
-
+PFmil_t * PFmil_string_join (const PFmil_t *strs, const PFmil_t *sep)
+{
+    return wire2 (m_string_join, strs, sep);
+}
 
 PFmil_t *
 PFmil_chk_order (const PFmil_t *v)

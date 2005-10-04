@@ -82,6 +82,7 @@ static char *a_id[]  = {
     , [pa_hash_count]      = "HashCount"
     , [pa_llscj_anc]       = "//| ancestor"
     , [pa_llscj_anc_self]  = "//| anc-self"
+    , [pa_llscj_attr]      = "//| attr"
     , [pa_llscj_child]     = "//| child"
     , [pa_llscj_desc]      = "//| descendant"
     , [pa_llscj_desc_self] = "//| desc-self"
@@ -91,6 +92,8 @@ static char *a_id[]  = {
     , [pa_llscj_prec]      = "//| preceding"
     , [pa_llscj_prec_sibl] = "//| prec-sibl"
     , [pa_doc_tbl]         = "doc_tbl"
+    , [pa_doc_access]      = "doc_access"
+    , [pa_string_join]     = "string_join"
     , [pa_serialize]       = "serialize"
     , [pa_roots]           = "roots"
     , [pa_fragment]        = "fragment"
@@ -103,6 +106,8 @@ static char *atomtype[] = {
       [aat_int]   = "int"
     , [aat_str]   = "str"
     , [aat_node]  = "node"
+    , [aat_anode] = "attr"
+    , [aat_pnode] = "pnode"
     , [aat_dec]   = "dec"
     , [aat_dbl]   = "dbl"
     , [aat_bln]   = "bool"
@@ -170,6 +175,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         , [pa_hash_count]      = "\"#C0C0C0\""
         , [pa_llscj_anc]       = "\"#C0C0C0\""
         , [pa_llscj_anc_self]  = "\"#C0C0C0\""
+        , [pa_llscj_attr]      = "\"#C0C0C0\""
         , [pa_llscj_child]     = "\"#C0C0C0\""
         , [pa_llscj_desc]      = "\"#C0C0C0\""
         , [pa_llscj_desc_self] = "\"#C0C0C0\""
@@ -179,6 +185,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         , [pa_llscj_prec]      = "\"#C0C0C0\""
         , [pa_llscj_prec_sibl] = "\"#C0C0C0\""
         , [pa_doc_tbl]         = "\"#C0C0C0\""
+        , [pa_doc_access]      = "\"#C0C0C0\""
+        , [pa_string_join]     = "\"#C0C0C0\""
         , [pa_serialize]       = "\"#C0C0C0\""
         , [pa_roots]           = "\"#C0C0C0\""
         , [pa_fragment]        = "\"#C0C0C0\""
@@ -198,10 +206,11 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_lit_tbl:
             /* list the attributes of this table */
             PFarray_printf (dot, "%s: <%s", a_id[n->kind],
-                            n->schema.items[0].name);
+                            PFatt_print (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
-                PFarray_printf (dot, " | %s", n->schema.items[c].name);
+                PFarray_printf (dot, " | %s", 
+                                PFatt_print (n->schema.items[c].name));
 
             PFarray_printf (dot, ">");
 
@@ -229,10 +238,11 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_empty_tbl:
             /* list the attributes of this table */
             PFarray_printf (dot, "%s: <%s", a_id[n->kind],
-                            n->schema.items[0].name);
+                            PFatt_print (n->schema.items[0].name));
 
             for (c = 1; c < n->schema.count;c++)
-                PFarray_printf (dot, " | %s", n->schema.items[c].name);
+                PFarray_printf (dot, " | %s", 
+                                PFatt_print (n->schema.items[c].name));
 
             PFarray_printf (dot, ">");
             break;
@@ -244,7 +254,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
 
         case pa_attach:
             PFarray_printf (dot, "%s: <%s,%s>", a_id[n->kind],
-                            n->sem.attach.attname,
+                            PFatt_print (n->sem.attach.attname),
                             literal (n->sem.attach.value));
             break;
 
@@ -256,8 +266,9 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_eq:
         case pa_gt:
             PFarray_printf (dot, "%s\\n%s:(%s,%s)", a_id[n->kind],
-                            n->sem.binary.res, n->sem.binary.att1,
-                            n->sem.binary.att2);
+                            PFatt_print (n->sem.binary.res),
+                            PFatt_print (n->sem.binary.att1),
+                            PFatt_print (n->sem.binary.att2));
             break;
 
         case pa_num_add_atom:
@@ -270,29 +281,32 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_bool_and:
         case pa_bool_or:
             PFarray_printf (dot, "%s\\n%s:(%s,%s)", a_id[n->kind],
-                            n->sem.bin_atom.res,
-                            n->sem.bin_atom.att1,
+                            PFatt_print (n->sem.bin_atom.res),
+                            PFatt_print (n->sem.bin_atom.att1),
                             literal (n->sem.bin_atom.att2));
             break;
 
         case pa_num_neg:
         case pa_bool_not:
             PFarray_printf (dot, "%s\\n%s:%s", a_id[n->kind],
-                            n->sem.unary.res, n->sem.unary.att);
+                            PFatt_print (n->sem.unary.res),
+                            PFatt_print (n->sem.unary.att));
             break;
 
         case pa_cast:
             PFarray_printf (dot, "%s\\n%s -> %s", a_id[n->kind],
-                            n->sem.cast.att, atomtype[n->sem.cast.ty]);
+                            PFatt_print (n->sem.cast.att),
+                            atomtype[n->sem.cast.ty]);
             break;
 
         case pa_hash_count:
-            if (n->sem.count.part)
+            if (n->sem.count.part != aat_NULL)
                 PFarray_printf (dot, "%s\\n%s/%s", a_id[n->kind],
-                                n->sem.count.res, n->sem.count.part);
+                                PFatt_print (n->sem.count.res),
+                                PFatt_print (n->sem.count.part));
             else
                 PFarray_printf (dot, "%s\\n%s", a_id[n->kind],
-                                n->sem.count.res);
+                                PFatt_print (n->sem.count.res));
             break;
 
         case pa_append_union:
@@ -309,6 +323,7 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_merge_rownum:
         case pa_llscj_anc:
         case pa_llscj_anc_self:
+        case pa_llscj_attr:
         case pa_llscj_child:
         case pa_llscj_desc:
         case pa_llscj_desc_self:
@@ -318,6 +333,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
         case pa_llscj_prec:
         case pa_llscj_prec_sibl:
         case pa_doc_tbl:
+        case pa_doc_access:
+        case pa_string_join:
         case pa_serialize:
         case pa_roots:
         case pa_fragment:
@@ -346,7 +363,8 @@ pa_dot (PFarray_t *dot, PFpa_op_t *n, char *node)
                         for (unsigned int i = 0;
                                 i < PFprop_const_count (n->prop); i++)
                             PFarray_printf (dot, i ? ", %s" : "\\nconst: %s",
-                                                 PFprop_const_at (n->prop, i));
+                                            PFatt_print (
+                                                PFprop_const_at (n->prop, i)));
                     break;
 
                 /* list orderings if requested */
@@ -488,8 +506,12 @@ print_tuple (PFalg_tuple_t t)
                                             PFqname_str (t.atoms[i].val.qname));
                             break;
             case aat_node:
+            case aat_pnode:
+            case aat_anode:
             case aat_pre:
-            case aat_kind:
+            case aat_attr:
+            case aat_pfrag:
+            case aat_afrag:
                             PFprettyprintf ("<NODE>");
                             break;
         }

@@ -126,7 +126,8 @@
 /* constructor for pf:merge-adjacent-text-nodes() functionality */
 #define merge_adjacent(a,b) PFla_pf_merge_adjacent_text_nodes ((a),(b))
 
-#define string_value(a,b) PFla_string_value ((a), (b))
+#define doc_access(a,b,c,d) PFla_doc_access ((a), (b), (c), (d))
+#define string_join(a,b)  PFla_string_join ((a), (b))
 
 #define cast_item(o)      PFla_cast_item ((o))
 
