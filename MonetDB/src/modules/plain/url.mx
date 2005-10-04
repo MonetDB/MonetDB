@@ -516,7 +516,7 @@ url_getQueryArg(BAT **retval, url t)
 	char query[1024];
 	char val[1024];
 	char name[1024];
-    char **unescapedval;
+    char **unescapedval = GDKmalloc(sizeof(char*));
 	BAT *b;
 
     
