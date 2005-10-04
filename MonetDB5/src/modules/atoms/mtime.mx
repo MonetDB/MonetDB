@@ -737,6 +737,9 @@ parsing of the signatures.
 command prelude()
 address MTIMEprelude;
 
+command epilogue()
+address MTIMEepilogue;
+
 mtime.prelude();
 
 @* Implementation
@@ -849,7 +852,7 @@ mal_export str MTIMEdaytime2daytime(daytime *ret, daytime *src);
 mal_export str MTIMEtimestamp2timestamp(timestamp *ret, timestamp *src);
 mal_export str MTIMErule_fromstr(rule *ret, str *s);
 mal_export str MTIMEprelude();
-mal_export str time_epilogue(void);
+mal_export str MTIMEepilogue();
 mal_export str MTIMEsynonyms(bit *allow);
 mal_export str MTIMEoldduration(int *ndays, str *s);
 mal_export str MTIMEolddate(date *d, str *buf);
@@ -2783,11 +2786,12 @@ MTIMEprelude()
 	return MAL_SUCCEED;
 }
 
+
 str
-time_epilogue(void)
+MTIMEepilogue(int *ret)
 {
-	GDKfree(ts_nilptr);
-	GDKfree(tz_nilptr);
+	(void)ret;
+	closeBox("time", 0);
 	return MAL_SUCCEED;
 }
 
