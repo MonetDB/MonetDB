@@ -516,16 +516,16 @@ url_getQueryArg(BAT **retval, url t)
 	char query[1024];
 	char val[1024];
 	char name[1024];
-    char **unescapedval = GDKmalloc(sizeof(char*));
+	char *unescapedval;
 	BAT *b;
 
     
 	if (t == 0)
 		return GDK_FAIL;
-    if (unescape_str(unescapedval, t) == GDK_FAIL)
-        return GDK_FAIL;
+	if (unescape_str(&unescapedval, t) == GDK_FAIL)
+		return GDK_FAIL;
 
-	t = strchr(*unescapedval, '?');
+	t = strchr(unescapedval, '?');
 	if (t == 0)
 		return GDK_FAIL;
 	t++;
