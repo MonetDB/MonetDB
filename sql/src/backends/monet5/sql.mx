@@ -457,6 +457,10 @@ comment "cast @1 to a month_interval and check for overflow";
 @-
 Include the sql_cache functionality
 @mal
+
+command epilogue()
+address SQLepilogue;
+
 include sql_cache;
 #include mil_algebra_procs;
 
@@ -1005,13 +1009,18 @@ mvc_import_table_wrap(int *res, stream **s, str *tname, str *sep, str *rsep, int
 {
 	mvc *m;
 	BAT *b;
+	bstream *bs;
 
 	@:getContext(m)@
 
-	b = mvc_import_table(m, bstream_create(*s, 1024 * 1024), *tname, *sep, *rsep, *sz);
+	b = mvc_import_table(m, bs=bstream_create(*s, 1024 * 1024), *tname, *sep, *rsep, *sz);
+	if (bs)
+		bstream_destroy(bs);
 	if (b == 0)
 		return throwMessage("sql.importTable", "failed");
 	*res = b->batCacheid;
+	BBPincref( *res, TRUE);
+	BBPunfix(*res);
 	return MAL_SUCCEED;
 }
 

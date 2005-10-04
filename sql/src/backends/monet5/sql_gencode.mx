@@ -239,16 +239,19 @@ dump_header(MalBlkPtr mb, stmt *s, list *l)
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		char *tname = table_name(c);
-		char *tn = (tname) ? tname : "";
+		char *_tn = "";
+		char *tn = (tname) ? tname : _tn;
 		char *cn = column_name(c);
 
 		q = newStmt(mb, "sql", "rsColumn");
 		q = pushArgument(mb, q, s->nr);
 		q = pushStr(mb, q, tn);
-		q = pushStr(mb, q, cn);
+		q = pushStrVal(mb, q, cn);
 		q = pushStr(mb, q, tail_type(c)->type->sqlname);
 		q = pushInt(mb, q, tail_type(c)->digits);
 		q = pushInt(mb, q, tail_type(c)->scale);
+		if (tn != _tn)
+			_DELETE(tn);
 		q = pushArgument(mb, q, c->nr);
 	}
 }

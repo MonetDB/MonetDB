@@ -387,10 +387,10 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 			sql_column *col = n->data;
 
-			fmt[i].name = _strdup(col->base.name);
+			fmt[i].name = col->base.name;
 			fmt[i].sep = (n->next) ? _strdup(sep) : _strdup(rsep);
 			fmt[i].seplen = (int) strlen(fmt[i].sep);
-			fmt[i].type = _strdup(col->type->type->base.name);
+			fmt[i].type = col->type->type->base.name;
 			fmt[i].adt = ATOMindex(fmt[i].type);
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;

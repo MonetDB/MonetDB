@@ -892,8 +892,10 @@ sql_aggr *
 sql_create_aggr(char *name, char *imp, sql_type *tpe, sql_type *res)
 {
 	sql_aggr *t = NEW(sql_aggr);
+	char *n = NULL;
 
-	base_init(&t->base, OIDnew(1), TR_OLD, toLower(name));
+	base_init(&t->base, OIDnew(1), TR_OLD, n=toLower(name));
+	_DELETE(n);
 	t->imp = _strdup(imp);
 	if (tpe) {
 		t->tpe = sql_create_subtype(tpe, 0, 0);
@@ -979,9 +981,11 @@ sql_func *
 sql_create_func_(char *name, char *imp, list *ops, sql_subtype *res)
 {
 	sql_func *t = NEW(sql_func);
+	char *n = NULL;
 
 	assert(res && ops);
-	base_init(&t->base, OIDnew(1), TR_OLD, toLower(name));
+	base_init(&t->base, OIDnew(1), TR_OLD, n=toLower(name));
+	_DELETE(n);
 	t->imp = _strdup(imp);
 	t->ops = ops;
 	t->res = res;
@@ -995,9 +999,11 @@ sql_func *
 sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res)
 {
 	sql_func *t = NEW(sql_func);
+	char *n = NULL;
 
 	assert(res && ops);
-	base_init(&t->base, OIDnew(1), TR_OLD, toLower(name));
+	base_init(&t->base, OIDnew(1), TR_OLD, n=toLower(name));
+	_DELETE(n);
 	t->imp = _strdup(imp);
 	t->ops = ops;
 	t->res = res;

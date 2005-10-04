@@ -95,6 +95,7 @@ void sequences_exit(void)
 		sql_trans_commit(ntr);
 	}
 	list_destroy(sql_seqs);
+	sql_trans_destroy(ntr);
 }
 
 static void 
