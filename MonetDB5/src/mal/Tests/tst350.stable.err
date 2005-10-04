@@ -1,15 +1,15 @@
 stderr of test 'tst350` in directory 'src/mal` itself:
 
 
-# 08:19:56 >  
-# 08:19:56 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39930 --set sql_port=41392 --set xquery_port=55880 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst350.mal < /dev/null
-# 08:19:56 >  
+# 22:07:20 >  
+# 22:07:20 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39624 --set sql_port=43520 --set xquery_port=59650 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst350.mal < /dev/null
+# 22:07:20 >  
 
 #warning: trace option not yet supported
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.9.3
-# builtin opt 	monet_pid = 17878
+# builtin opt 	monet_pid = 15202
 # builtin opt 	prefix = /ufs/mk/opensource/MonetDB/Linux
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -56,14 +56,14 @@ stderr of test 'tst350` in directory 'src/mal` itself:
 # cmdline opt 	monet_mod_path = /ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB
 # cmdline opt 	gdk_dbfarm = /ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # cmdline opt 	sql_logdir = /ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log
-# cmdline opt 	mapi_port = 39930
-# cmdline opt 	sql_port = 41392
-# cmdline opt 	xquery_port = 55880
+# cmdline opt 	mapi_port = 39624
+# cmdline opt 	sql_port = 43520
+# cmdline opt 	xquery_port = 59650
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	config = /ufs/mk/monet5/src/mal/Tests/All.conf
 # cmdline opt 	gdk_dbname = mTests_src_mal
 
-# 08:19:56 >  
-# 08:19:56 >  Done.
-# 08:19:56 >  
+# 22:07:20 >  
+# 22:07:20 >  Done.
+# 22:07:20 >  
 
