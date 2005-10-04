@@ -14,7 +14,7 @@ u.getDirectory().print();
 var v := newurl("http","www.cwi.nl","~monet");
 v.print();
 v.getRobotURL().print();
-var w := url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium");
+var w := url("http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium&nr=10");
 w.getQuery().print();
 w.getQueryArg().print();
 
@@ -36,5 +36,38 @@ t.print();
 [getBasename](t).print();
 [getProtocol](t).print();
 [getUser](t).print();
+
+var a := "- -$-%-&-+-,-/-:-;-=-?-@-";
+u.print();
+escape(str(u)).print();
+w.print();
+escape(str(w)).print();
+a.print();
+escape(a).print();
+
+var b := escape(a);
+escape(str(u)).print();
+unescape(escape(str(u))).print();
+escape(str(w)).print();
+unescape(escape(str(w))).print();
+b.print();
+unescape(b).print();
+
+var s := new(int, str);
+s.insert(1, "http://www.cwi.nl");
+s.insert(2, "http://www.cwi.nl/~monet");
+s.insert(3, "http://www.cwi.nl/~mk/Acoi/doc/features.html");
+s.insert(4, "http://www.educ.uva.nl/schoolweb/rocloka.htm");
+s.insert(5, "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium");
+s.insert(6, "http://www.edgeonline.com/");
+s.insert(7, "http://robotics.stanford.edu/icons/");
+s.insert(8, "http://www.example.com/00/Weather/CA/Los%20Angeles#ocean");
+s.insert(9, a);
+
+s.print();
+s := [escape](s);
+s.print();
+s := [unescape](s);
+s.print();
 
 quit();

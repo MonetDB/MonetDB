@@ -1289,12 +1289,13 @@ Module: "upgrade"
 
 Module: "url"
 
-[ 18 ]
-[ 18 ]
+[ 20 ]
+[ 20 ]
 #---------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature				help							  # name
 # str		str		str					str							  # type
 #---------------------------------------------------------------------------------------------------------------------------------#
+[ "escape",	  "COMMAND:   ",  "escape(str) : str",			  "Convert characters in the given STR which have special meanings in a URL to their hexadecimal values"  ]
 [ "getAnchor",	  "COMMAND:   ",  "getAnchor(url) : str",		  "Extract the anchor (reference) from the URL"		  ]
 [ "getBasename",  "COMMAND:   ",  "getBasename(url) : str",		  "Extract the base file name of the URL"		  ]
 [ "getContent",	  "COMMAND:   ",  "getContent(url) : str",		  "Get the URL resource in a local file"		  ]
@@ -1313,6 +1314,7 @@ Module: "url"
 [ "isaURL",	  "COMMAND:   ",  "isaURL(url) : bit",			  "Check conformity of the URL syntax"			  ]
 [ "newurl",	  "COMMAND:   ",  "newurl(str, str, int, str) : url",	  "Construct a URL from protocol, host,port,and file"	  ]
 [ "newurl",	  "COMMAND:   ",  "newurl(str, str, str) : url",	  "Construct a URL from protocol, host,and file"	  ]
+[ "unescape",	  "COMMAND:   ",  "unescape(str) : str",		  "Convert the hexadecimal values in the given STR to ASCI chracters"					  ]
 
 Module: "xtables"
 
