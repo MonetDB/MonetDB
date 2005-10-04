@@ -103,7 +103,11 @@ invest energy.
 The key action is to break an url into its constituents.
 Parsing is done for each individual request, because this way we
 secure concurrent use from different threads.
-@c
+
+@h
+#ifndef URL_H
+#define URL_H
+
 #include <gdk.h>
 #include <ctype.h>
 
@@ -111,9 +115,16 @@ typedef str url;
 
 #include "url.proto.h"
 
+url_export int escape_str(str *retval, str s);
+url_export int unescape_str(str *retval, str s);
+
+#endif /* URL_H */
+
+@c
+#include "url.h"
+
 void getword(char *word, char *line, char stop);
 char x2c(char *what);
-int unescape_str(str *retval, str s);
 void plustospace(char *str);
 
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL
