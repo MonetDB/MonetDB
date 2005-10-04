@@ -1,9 +1,9 @@
 stdout of test 'ESexample` in directory 'src/optimizer` itself:
 
 
-# 23:53:03 >  
-# 23:53:03 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39352 --set sql_port=45171 --set xquery_port=52900 --set monet_prompt= --trace --dbname=mTests_src_optimizer  ESexample.mal </dev/null
-# 23:53:03 >  
+# 22:08:09 >  
+# 22:08:09 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39624 --set sql_port=43520 --set xquery_port=59650 --set monet_prompt= --trace --dbname=mTests_src_optimizer  ESexample.mal < /dev/null
+# 22:08:09 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
@@ -13,16 +13,16 @@ stdout of test 'ESexample` in directory 'src/optimizer` itself:
 # dbname:mTests_src_optimizer
 # Visit http://monetdb.cwi.nl/ for further information.
 #function test():void;
-#	V1 := bbp.new(:void,:int);
-#	V7 := bbp.new(:void,:int);
-#	V10{empty} := bbp.new(:int,:void);
+#	V1 := bat.new(:void,:oid);
+#	V7 := bat.new(:void,:oid);
+#	V10{empty} := bat.new(:int,:void);
 #	V11 := bat.reverse(V10);    
-#	V12 := algebra.kdiff(V7,V11);       
+#	V12 := algebra.kdifference(V7,V11);       
 #	V16 := algebra.markH(V12);  
 #	V17 := algebra.join(V16,V7);        
 #	bat.append(V1,V17); 
-#	V19 := bbp.new(:void,:int);
-#	V22 := bbp.new(:void,:int);
+#	V19 := bat.new(:void,:oid);
+#	V22 := bat.new(:void,:oid);
 #	V23 := algebra.join(V16,V22);       
 #	bat.append(V19,V23);        
 #	V25 := aggr.count(V17);  
@@ -55,7 +55,7 @@ function user.test():void;	# 0  (test:void)
     V1 := bat.new(:void,:oid);	# 1 CMDBATnew (V1:bat[:void,:oid])<-(_2:void)(_3:oid)
     V7 := bat.new(:void,:oid);	# 2 CMDBATnew (V7:bat[:void,:oid])<-(_2:void)(_3:oid)
     V10{empty} := bat.new(:int,:void);	# 3 CMDBATnew (V10:bat[:int,:void])<-(_6:int)(_2:void)
-    
+
     V12 := V7;	# 5 ALGkdiff (V12:bat[:void,:oid])<-(V7:bat[:void,:oid])
     V16 := algebra.markH(V12);	# 6 ALGmarkHead_default (V16:bat[:void,:oid])<-(V12:bat[:void,:oid])
     V17 := algebra.join(V16,V7);	# 7 ALGjoin (V17:bat[:void,:oid])<-(V16:bat[:void,:oid])(V7:bat[:void,:oid])
@@ -94,7 +94,7 @@ function user.test():void;
     bat.append(V19,V23);
 end test;
 
-# 23:53:03 >  
-# 23:53:03 >  Done.
-# 23:53:03 >  
+# 22:08:09 >  
+# 22:08:09 >  Done.
+# 22:08:09 >  
 
