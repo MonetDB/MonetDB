@@ -1955,7 +1955,8 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
         case REMsymbol:
             sprintf(t,"#%s ",getVarLiteral(mb,getArg(p,0))); 
 			break;
-		case COMMENTsymbol:
+		case IGNOREsymbol:
+			*s =0;
 			return s;
         default:
             sprintf(t," ?%d? ",p->token); 
