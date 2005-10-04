@@ -7109,7 +7109,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "{ # concat (string, string)\n "
                 "var fst_iter_str := iter%03u.reverse().de_fake_leftfetchjoin(item%s%03u);\n"
                 "var snd_iter_str := iter.reverse().de_fake_leftfetchjoin(item%s);\n"
-                "fst_iter_str := fst_iter_str[+](snd_iter_str);\n"
+                "fst_iter_str := fst_iter_str.[+](snd_iter_str);\n"
                 "snd_iter_str := nil;\n"
                 "iter := fst_iter_str.mark(0@0).reverse();\n"
                 "fst_iter_str := fst_iter_str.reverse().mark(0@0).reverse();\n",
@@ -7377,12 +7377,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* because all values have to be there we can compare the voids
                    instead of the iter values */
                 "var length := item%s.[-](item%s%03u).[+](1).[max](0);\n"
-                "var res := enumerate(item%s%03u, length);\n"
+                "var res := enumerate(item%s%03u.de_NO_project(ipik%03u), length.de_NO_project(ipik%03u));\n"
                 "length := nil;\n"
                 "iter := res.mark(0@0).reverse().leftfetchjoin(iter);\n"
                 "res := res.reverse().mark(0@0).reverse();\n",
                 item_int, item_int, counter,
-                item_int, counter);
+                item_int, counter,
+                counter, counter);
         if (code)
         {
             milprintf(f,"item%s := res;\n", item_ext);

@@ -514,6 +514,16 @@ PROC max (int i) : int
 	return i;
 }
 
+PROC [max] (int i, int j) : int
+{
+	return max(i, j);
+}
+
+PROC [+] (int l, int r) : int
+{
+	return l + r;
+}
+
 PROC [-] (int l, int r) : int
 {
 	return l - r;
