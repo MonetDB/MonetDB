@@ -109,8 +109,12 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i = 0; i < limit; i++) {
 			p = old[i];
 			q = i < limit - 1 ? old[i + 1] : 0;
-			if (getVar(mb, getArg(p, 0))->endLifespan == i + 1 && match(p, "calc", "oid") && isConstant(mb, getArg(p, 1)) && strcmp(getVarLiteral(mb, getArg(p, 1)), "0@0") == 0) {
-				if (match(q, "algebra", "markT") || match(q, "algebra", "markH")) {
+			if (getVar(mb, getArg(p, 0))->endLifespan == i + 1 && 
+				match(p, "calc", "oid") && 
+				isConstant(mb, getArg(p, 1)) && 
+				strcmp(getVarLiteral(mb, getArg(p, 1)), "0@0") == 0) {
+				if (match(q, "algebra", "markT") || 
+					match(q, "algebra", "markH")) {
 #ifdef DEBUG_MAL_PEEPHOLE
 					printf("PEEPHOLE 0\n");
 					printInstruction(GDKout, mb, p, LIST_MAL_ALL);
@@ -122,7 +126,10 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					i++;
 					doit++;
 				}
-			} else if (getVar(mb, getArg(p, 0))->endLifespan == i + 1 && match(p, "algebra", "markT") && match(q, "bat", "reverse")
+/* INVALID FOR THE TIME
+			} else if (getVar(mb, getArg(p, 0))->endLifespan == i + 1 && 
+						match(p, "algebra", "markT") && 
+						match(q, "bat", "reverse")
 			    ) {
 #ifdef DEBUG_MAL_PEEPHOLE
 				printf("PEEPHOLE 1\n");
@@ -156,6 +163,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					aropt++;
 				} else
 					pushInstruction(mb, p);
+*/
 			} else if (q && match(p, "bat", "reverse") && match(q, "bat", "reverse") && getArg(p, 0) == getArg(q, 1) && getVar(mb, getArg(p, 0))->endLifespan == i + 1) {
 #ifdef DEBUG_MAL_PEEPHOLE
 				printf("PEEPHOLE reverse-reverse\n");
