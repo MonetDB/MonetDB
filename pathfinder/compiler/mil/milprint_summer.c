@@ -10379,6 +10379,7 @@ PFprintMILtemp (PFcnode_t *c, PFstate_t *status, long tm, char** prologue, char*
             "module(\"pathfinder\");\n"
             "module(\"pf_support\");\n"
             "module(\"aggrX3\");\n"
+            "module(\"bat_arith\");\n"
             "module(\"xtables\");\n"
             "module(\"malalgebra\");\n"
             "module(\"pcre\");\n"

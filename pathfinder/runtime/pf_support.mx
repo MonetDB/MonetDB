@@ -281,6 +281,7 @@ axis step evaluation on the @2 axis from the given context."
 @mil
 module(alarm);
 module(aggrX3);
+module(bat_arith);
 module(malalgebra);
 module(mmath);
 module(xtables);
