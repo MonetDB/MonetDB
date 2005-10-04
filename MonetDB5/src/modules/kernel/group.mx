@@ -225,11 +225,16 @@ grp_new(BAT *b, BAT *h)
 			}
 		} else if (BATorder(h) == NULL) {
 			BBPreclaim(h);
+			if (b) BBPreclaim(b);
 			return GDK_FAIL;
 		}
+		BBPincref(h->batCacheid, TRUE);
+		BBPunfix(h->batCacheid);
 	} else {
 		assert(h);
 	}
+	BBPincref(b->batCacheid, TRUE);
+	BBPunfix(b->batCacheid);
 	return GDK_SUCCEED;
 }
 
@@ -1150,9 +1155,13 @@ GRPderive(int *hid, int *mid, int *ctid, int *bid)
 			BBPunfix(ct->batCacheid);
 			return throwMessage("group.derive","Could not group");
 		}
+		BBPunfix(ct->batCacheid);
+		BBPfix(bn->batCacheid);
 		ct = bn;
+		BBPdecref(bn->batCacheid, TRUE);
 		if (histo)
-			BBPunfix(histo->batCacheid);
+			BBPdecref(histo->batCacheid, TRUE);
+		
 	}
 	if( derive(&bn, &histo, ct, b, tailtype(b, TRUE), NULL) == GDK_FAIL){
 		BBPunfix(b->batCacheid);
@@ -1162,11 +1171,6 @@ GRPderive(int *hid, int *mid, int *ctid, int *bid)
 
 	*mid = bn->batCacheid;
 	*hid = histo->batCacheid;
-	if( *hid){
-		BBPincref(*hid,TRUE);
-		/* BBPunfix(*hid);*/
-	}
-	BBPincref(*mid,TRUE);
 	BBPunfix(b->batCacheid);
 	BBPunfix(ct->batCacheid);
 	return MAL_SUCCEED;
