@@ -248,10 +248,9 @@ monet_options.mx.in
 		GDKembedded = 1;
 	}
 
-	/* you don;t need the commandline arguments anymore */
-	/* mo_free_options(set,setlen); GDK library can not deal with this */
-	/* keep them around until goodbye */
 	monet_hello(set, setlen);
+	/* you don;t need the commandline arguments anymore */
+	mo_free_options(set, setlen);
 }
 
 int
