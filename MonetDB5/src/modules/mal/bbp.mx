@@ -808,6 +808,7 @@ CMDBBPproject(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		BBPincref(*result = bn->batCacheid, TRUE);
+		BBPunfix(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("mal.project", "GDKerror");
@@ -826,6 +827,7 @@ CMDBBPprojectNil(int *ret, int *bid)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		BBPincref(*ret = bn->batCacheid, TRUE);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("mal.project", "GDKerror");

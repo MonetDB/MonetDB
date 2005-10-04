@@ -158,6 +158,9 @@ address BPTdump;
 command prelude()
 address BPTprelude;
 
+command epilogue()
+address BPTepilogue;
+
 partitions.prelude();
 @-
 @{
@@ -188,6 +191,7 @@ mal_export int BPTfindGrp(int bid);
 mal_export void BPTresize(int size);
 mal_export str BPTdump();
 mal_export str BPTprelude(int *ret);
+mal_export str BPTepilogue(int *ret);
 mal_export str BPTopen();
 mal_export str BPTclose();
 mal_export str BPTdestroy();
@@ -254,6 +258,15 @@ BPTresize(int size)
 	plimit = size;
 }
 
+static void
+BPTfree()
+{
+	if (partitions) {
+		GDKfree(partitions);
+		partitions = NULL;	
+	}
+}
+
 str
 BPTdump()
 {
@@ -283,6 +296,17 @@ BPTprelude(int *ret)
 	BPTresize(INCREMENT);
 	return MAL_SUCCEED;
 }
+
+str
+BPTepilogue(int *ret)
+{
+	*ret = closeBox("partitions", 0);
+	BPTfree();
+	if (*ret != 0)
+		return throwMessage("partitions.prelude", "failed to open box");
+	return MAL_SUCCEED;
+}
+
 
 str
 BPTopen()

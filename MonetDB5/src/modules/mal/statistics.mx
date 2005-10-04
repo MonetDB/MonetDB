@@ -118,6 +118,10 @@ command prelude()
 address STATprelude
 comment "Initialize the statistics package";
 
+command epilogue()
+address STATepilogue
+comment "Release the resources of the statistics package";
+
 @-
 Although it is mostly used internally, the key operators
 for inspection are provided, such that it is possible to bake
@@ -191,7 +195,6 @@ this interface.
 #include "statistics.h"
 #include "algebra.h"
 mal_export str STATforceUpdateAll(int *ret);
-mal_export void STATinit();
 mal_export str STATdrop(str nme);
 mal_export str STATforceUpdateAll(int *ret);
 mal_export str STATenroll(int *ret, str *nme);
@@ -202,6 +205,7 @@ mal_export str STATupdate(int *ret);
 mal_export str STATforceUpdate(int *ret, str *nme);
 mal_export str STATdump(int *ret);
 mal_export str STATprelude(int *ret);
+mal_export str STATepilogue(int *ret);
 mal_export str STATopen(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str STATclose(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str STATdestroy(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -257,7 +261,7 @@ STAT_create(str hnme, str tnme, int ht, int tt)
 	return b;
 }
 
-void
+static void
 STATinit()
 {
 	mal_set_lock(mal_contextLock, "statistics");
@@ -270,6 +274,22 @@ STATinit()
 	STAT_id_min_lng = STAT_create("id", "min_lng", TYPE_int, TYPE_lng);
 	STAT_id_max_lng = STAT_create("id", "max_lng", TYPE_int, TYPE_lng);
 	STAT_id_histogram = STAT_create("id", "histogram", TYPE_int, TYPE_str);
+	mal_unset_lock(mal_contextLock, "statistics");
+}
+
+static void
+STATexit()
+{
+	mal_set_lock(mal_contextLock, "statistics");
+	BBPreclaim(STAT_id_inuse );
+	BBPreclaim(STAT_id_nme );
+	BBPreclaim(STAT_id_expire );
+	BBPreclaim(STAT_id_stamp );
+	BBPreclaim(STAT_id_count );
+	BBPreclaim(STAT_id_size );
+	BBPreclaim(STAT_id_min_lng );
+	BBPreclaim(STAT_id_max_lng );
+	BBPreclaim(STAT_id_histogram );
 	mal_unset_lock(mal_contextLock, "statistics");
 }
 
@@ -520,6 +540,15 @@ STATprelude(int *ret)
 		return throwMessage("statistics.prelude", "failed to open box");
 	STATinit();
 	STATupdate(ret);
+	return MAL_SUCCEED;
+}
+
+str
+STATepilogue(int *ret)
+{
+	(void)ret;
+	closeBox("statistics", 0);
+	STATexit();
 	return MAL_SUCCEED;
 }
 

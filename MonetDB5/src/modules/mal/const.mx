@@ -90,6 +90,10 @@ pattern prelude():void
 address CSTprelude
 comment "Initialize the const box";
 
+command epiloque():void 
+address CSTepilogue
+comment "Cleanup the const box";
+
 const.prelude();
 @-
 @+ Implementation
@@ -159,6 +163,14 @@ CSTprelude(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		insertToBox(box, "config", GDKgetenv("gdk_config"));
 		/* old bat.mx and algebra.mx constants */
 	}
+	return MAL_SUCCEED;
+}
+
+str
+CSTepilogue(int *ret)
+{
+	(void)ret;
+	closeBox("const", 0);
 	return MAL_SUCCEED;
 }
 
