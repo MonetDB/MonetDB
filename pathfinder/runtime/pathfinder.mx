@@ -490,7 +490,7 @@ PROC shred_doc_impl(str location, str name, bit doCommit, str opt, timestamp ts,
 
     docBAT := docBAT.access(BAT_READ);
     if (doCommit) {
-        [mmap](docBAT, STORE_MMAP);
+        [mmap](docBAT, [ifthenelse]([<]([count](docBAT), 65536), STORE_MEM, STORE_MMAP));
         [save](docBAT);
 
         # add doc to the database locked
