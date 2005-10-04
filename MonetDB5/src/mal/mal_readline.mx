@@ -346,7 +346,7 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 
 				c = getClient();
 				if (c->fdout != GDKout && c->fdout != GDKerr)
-					stream_close(c->fdout);
+					close_stream(c->fdout);
 				if (length == 0 || strcmp(line, "stdout") == 0)
 					c->fdout = GDKout;
 				else if (strcmp(line, "stderr") == 0)

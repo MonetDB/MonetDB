@@ -118,10 +118,10 @@ It should be reset before continuing.
     c->listing = oldlisting;
     c->mode = oldmode;
     c->blkmode = oldblkmode;
-	c->bak = oldbak;
-	/* if(c->prompt) GDKfree(c->prompt); careful, avoid double */
+    c->bak = oldbak;
+    if(c->prompt) GDKfree(c->prompt);
     c->prompt = oldprompt;
-	c->promptlength= strlen(c->prompt);
+    c->promptlength= strlen(c->prompt);
 @= restoreClient2
     c->glb = oldglb;
     c->nspace = oldnspace;
@@ -186,7 +186,6 @@ resolving addresses.
 			(void) stream_close(c->fdin->s);
 			(void) stream_destroy(c->fdin->s);
 			(void) bstream_destroy(c->fdin);
-			if( c->prompt) GDKfree(c->prompt);
 		}
 		@:restoreClient1()@
 		c->listing = listing;
@@ -203,8 +202,6 @@ resolving addresses.
 		(void) stream_destroy(c->fdin->s);
 		(void) bstream_destroy(c->fdin);
 	}
-	if( c->prompt) GDKfree(c->prompt);
-
 	@:restoreClient()@
 }
 

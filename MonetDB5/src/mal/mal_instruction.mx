@@ -1441,7 +1441,7 @@ for the new value. This should be garbage collected at the
 end.
 @c
     default:{ 
-		int ll=0; ptr d=0;
+		int ll=0; ptr d=NULL;
 
         if( BATatoms[type].atomFromStr== 0) {
             s= getTypeName(type);
@@ -1451,7 +1451,9 @@ end.
         }
 #ifdef STRUCT_ALIGNED
 		(*BATatoms[type].atomFromStr)(val, &ll, &d);
-		VALinit(vr,type,d);
+		VALset(vr,type,d);
+		if (ATOMextern(type)==0 && d)
+			GDKfree(d);
 #else
         GDKerror("newConstants:missing implementation\n");
 #endif

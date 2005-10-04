@@ -356,7 +356,6 @@ closeBox(str name, int flag)
 {
 	Box box;
 
-	(void) flag;		/* fool the compiler */
 	if ((box = findBox(name))) {
 		saveBox(box, flag);
 		if( GDKprotected && box->lock)
@@ -599,11 +598,11 @@ boxFileName(Box box, str backup)
 
 	snprintf(boxfile, PATHLENGTH, "%s/%s/box", GDKgetenv("gdk_dbfarm"), GDKgetenv("gdk_dbname"));
 	if( (f= open_wstream(boxfile)) )
-		stream_close(f);
+		close_stream(f);
 	else {
 		mkdir(boxfile,0755);
 		if( (f= open_wstream(boxfile)) )
-			stream_close(f);
+			close_stream(f);
 		else {
             GDKerror("boxFileName:can not create box directory\n");
             return NULL;
@@ -613,11 +612,11 @@ boxFileName(Box box, str backup)
 	if (backup) {
 		snprintf(boxfile + i, PATHLENGTH - i, "/%s/", backup);
 		if( (f= open_wstream(boxfile)) )
-			stream_close(f);
+			close_stream(f);
 		else {
 			mkdir(boxfile,0755);
 			if( (f= open_wstream(boxfile)) )
-				stream_close(f);
+				close_stream(f);
 			else {
 				GDKerror("boxFileName:can not create box directory\n");
 				return NULL;
@@ -660,8 +659,10 @@ prepareSaveBox(Box box, str *boxfile, str *boxfilebak)
 		chmod(*boxfile, (S_IRUSR | S_IWUSR));
 	else
 		GDKerror("saveBox:can not create box file\n");
-	GDKfree(*boxfile);
-	GDKfree(*boxfilebak);
+	if (f == NULL) {
+		GDKfree(*boxfile);
+		GDKfree(*boxfilebak);
+	}
 	return f;
 }
 
@@ -673,7 +674,7 @@ saveBox(Box box, int flag)
 	ValPtr v;
 	str boxfile, boxfilebak;
 
-	(void) flag;
+	(void) flag;		/* fool the compiler */
 
 	f = prepareSaveBox(box, &boxfile, &boxfilebak);
 	if (f == NULL)
@@ -695,7 +696,7 @@ saveBox(Box box, int flag)
 			stream_printf(f, "%s.deposit(\"%s\",%s);\n", box->name, getVarName(box->sym, i), getVarName(box->sym, i));
 		}
 	}
-	stream_close(f);
+	close_stream(f);
 	if (rename(boxfilebak, boxfile)) {
 		GDKfree(boxfile);
 		GDKfree(boxfilebak);

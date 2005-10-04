@@ -369,7 +369,9 @@ Unfortunately the GDK layer is does not clean-up upon exit.
 @c
 void mal_exit(Client cntxt){
 #ifdef MALprofiler
-    profileReport( cntxt->nspace,1, open_wastream("/tmp/Monet.prof"));
+    stream *f;
+    profileReport( cntxt->nspace,1, f= open_wastream("/tmp/Monet.prof"));
+    close_stream(f);
 #endif
     freeModuleList(cntxt->nspace);
     cntxt->nspace = 0;
@@ -378,6 +380,7 @@ void mal_exit(Client cntxt){
 /*    unloadModuleLibraries(); Switched of as the code may still be inuse by a thread/client */
     TMcommit();
     finishNamespace();
-    GDKexit(0);
+    /* GDKexit(0); */
+    MT_global_exit(0);
 }
 @}

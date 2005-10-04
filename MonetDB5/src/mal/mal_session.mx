@@ -292,7 +292,6 @@ resetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 			i++;
 			j++;
 		}
-
 	}
 	mb->vtop = j;
 }

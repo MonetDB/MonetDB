@@ -120,6 +120,8 @@ point for the modules to be added later.
 #include "mal_module.h"
 #include "mal_function.h"   /* for printFunction() */
 #include "mal_namespace.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
 
 Module mal_scope;    /* the root of the tree */
 Module scopeJump[256][256];  /* to speedup access to correct scope */
@@ -207,11 +209,22 @@ void freeSubScope(Module scope){
 	GDKfree(scope->subscope);
 	scope->subscope = 0;
 }
-void freeModule(Module s){
-	if(s==NULL) return;
-	freeSubScope(s);
-	clrModuleJump(s->name, s);
-	GDKfree(s);
+void freeModule(Module m){
+	Symbol s;
+
+	if (m==NULL) return;
+	if ((s=findSymbolInModule(m, "epilogue")) != NULL) {
+		InstrPtr pci = getInstrPtr(s->def,0);
+		if (pci && pci->token == COMMANDsymbol && pci->argc == 1) {
+			int ret = 0;
+
+			(*pci->fcn)(&ret);
+			(void)ret;
+		}
+	}
+	freeSubScope(m);
+	clrModuleJump(m->name, m);
+	GDKfree(m);
 }
 void freeModuleList(Module s){
 	Module t=s;
