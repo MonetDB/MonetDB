@@ -728,6 +728,28 @@ The core part of the SQL interface, parse the query and
 prepare the intermediate code.
 @c
 
+void
+freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
+{
+	int i;
+
+	for (i = start; i < mb->vtop;) {
+		freeVariable(mb, i);
+		mb->var[i] = 0;
+
+		if (glb) {
+			garbageElement(&glb->stk[i]);
+			/* clean stack entry */
+			glb->stk[i].vtype = TYPE_int;
+			glb->stk[i].val.ival = 0;
+			glb->stk[i].len = 0;
+		}
+		i++;
+	}
+	mb->vtop = start;
+}
+
+
 str
 SQLparser(Client c)
 {
@@ -742,12 +764,13 @@ SQLparser(Client c)
 	int pstatus = 0;
 	prot oldmode;
 
-	oldstate = *c->curprg->def;
 	be = ((backend *) c->state[PARSER]);
 	if (be == 0) {
 		GDKerror("SQL state descriptor missing\n");
 		return throwMessage("SQLparser", "State decriptor missing\n");
 	}
+	oldstate = *c->curprg->def;
+	be->vtop = oldstate.vtop;
 #ifdef _SQL_PARSER_DEBUG
 	stream_printf(GDKout, "#SQL compilation \n");
 	printf("debugger? %d %d\n", debugPlan(), be->mvc->mode);
@@ -847,9 +870,10 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		}
 		assert(s);
 		/* generate and call the MAL code */
-		if ((msg = sql_get_var(m,"optimizer"))== NULL || *msg == 0) {
+		if (m->mode != m_prepare &&
+		   (msg = sql_get_var(m,"optimizer")) == NULL) {
 /*
-		if (!m->cache ){
+		if (m->mode != m_prepare && !m->cache){
 */
 			backend_callinline(be, c, s, m->args);
 		} else {
@@ -904,9 +928,10 @@ query block.
 extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 		chkProgram(c->nspace, c->curprg->def); /* make all types known */
-		if (!c->curprg->def->errors && ((msg = sql_get_var(m,"optimizer"))== NULL || *msg == 0)) {
+		if (!c->curprg->def->errors && m->mode != m_prepare &&
+		    (msg = sql_get_var(m,"optimizer")) == NULL) {
 /*
-		if (!c->curprg->def->errors && !m->cache) {
+		    !m->cache) {
 */
 			OPTmultiplex(c->curprg->def,0,0);
 			chkProgram(c->nspace, c->curprg->def);
@@ -924,7 +949,7 @@ extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 			if (c->listing || explainPlan())
 				printFunction(c->fdout, c->curprg->def, c->listing);
 			resetInstructions(c->curprg->def, oldstate.stop);
-			resetVariables(c->curprg->def, c->glb, oldstate.vtop);
+			freeVariables(c->curprg->def, c->glb, oldstate.vtop);
 			c->curprg->def->errors = 0;
 			msg = throwMessage("SQLparser", "Semantic errors\n");
 		}
@@ -1004,9 +1029,9 @@ environment.
 		m->status = -10;
     }
 cleanup_engine:
-    resetInstructions(c->curprg->def, 1);
-    resetVariables(c->curprg->def, c->glb, 0);
-	be->language= oldlang;
+	resetInstructions(c->curprg->def, 1);
+	freeVariables(c->curprg->def, c->glb, be->vtop);
+	be->language = oldlang;
 @-
 Any error encountered during execution should block further processing
 unless auto_commit has been set.
