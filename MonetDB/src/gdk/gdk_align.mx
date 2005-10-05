@@ -663,6 +663,7 @@ VIEWbounds(BAT *view, size_t l, size_t h)
 	if (BATtdense(b)) {
 		BATseqbase(BATmirror(view), b->tseqbase + l);
 	}
+	BBPunfix(b->batCacheid);
 }
 
 @-
