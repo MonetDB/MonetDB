@@ -2566,8 +2566,17 @@ bstream_next(bstream *s)
 {
 	if (s->mode) {
 		return bstream_read(s, s->mode);
-	} else {
+	} else if (s->s->read == file_read) {
 		return bstream_readline(s);
+	} else {
+		int sz = 0, rd;
+
+		while ((rd = bstream_read(s, 1)) == 1 && s->buf[s->pos + sz] != '\n') {
+			sz += rd;
+		}
+		if (rd < 0)
+			return rd;
+		return sz;
 	}
 }
 
