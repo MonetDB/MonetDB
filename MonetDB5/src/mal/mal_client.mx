@@ -371,7 +371,7 @@ Client getClient()
 		if( c->mythread == tid) return c;
 
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
-		if( c->mythread) stream_printf(GDKout,"client %d\n",c->mythread);
+		if( c->mythread) stream_printf(c->fdout,"client %d\n",c->mythread);
 	GDKerror("unexpected call to getClient %d\n" , tid);
 	return NULL;
 }
@@ -403,7 +403,7 @@ Client initClient(str nme, str passwd, bstream *fin, stream *fout){
 	c->bak = NULL;
 
 	c->listing = 0;
-	c->fdout = fout?fout: GDKout;
+	c->fdout = fout?fout: GDKstdout;
 	c->sysmon = mal_clients[0].sysmon?mal_clients[0].fdout:0;
 	c->journal = NULL;
 	c->history = 0;
@@ -468,7 +468,7 @@ the proper IO descriptors.
 			(void) stream_destroy(c->fdin->s);
 			(void) bstream_destroy(c->fdin);
 		}
-		if( c->fdout && c->fdout != GDKout) {
+		if( c->fdout && c->fdout != GDKstdout) {
 			(void) stream_flush(c->fdout); 
 			(void) stream_close(c->fdout);
 			(void) stream_destroy(c->fdout);
@@ -528,7 +528,7 @@ void freeClient(Client c)
 
 	/* epilogue actions have been done already */
 	if (c->father == NULL) { /* normal client */
-		if( c->fdout && c->fdout != GDKout){
+		if( c->fdout && c->fdout != GDKstdout){
 			resetProfiler(c->fdout);
 			(void) stream_flush(c->fdout); 
 			(void) stream_close(c->fdout);
@@ -549,9 +549,11 @@ void freeClient(Client c)
 	/* scope list and curprg can not be removed, 
 	   because the client may recide in a
 	   quit() command. Therefore the scopelist is re-used.
-	if( c->curprg ) freeSymbol(c->curprg); 
+	if( c->curprg ) {
+		freeSymbol(c->curprg); 
 		c->curprg=0;
-		if( c->nspace) {
+	}
+	if( c->nspace) {
 		freeModule(c->nspace);
 		c->nspace=0;
 	}
@@ -704,7 +706,7 @@ void cleanupClients(){
 			(void) bstream_destroy(c->fdin);
 			c->fdin= NULL;
 		}
-		if( c->fdout && c->fdout != GDKout){
+		if( c->fdout && c->fdout != GDKstdout){
 			resetProfiler(c->fdout);
 			(void) stream_destroy(c->fdout); 
 			c->fdout= NULL;
