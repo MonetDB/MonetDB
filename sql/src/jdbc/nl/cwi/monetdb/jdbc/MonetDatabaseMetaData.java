@@ -2055,7 +2055,7 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 			"\"schemas\".\"name\" AS \"TABLE_SCHEM\", " +
 			"\"tables\".\"name\" AS \"TABLE_NAME\", " +
 			"\"keycolumns\".\"column\" AS \"COLUMN_NAME\", " +
-			"\"keys\".\"type\" AS \"KEY_SEQ\", \"keys\".\"name\" AS \"PK_NAME\" " +
+			"\"keycolumns\".\"nr\" AS \"KEY_SEQ\", \"keys\".\"name\" AS \"PK_NAME\" " +
 		"FROM \"sys\".\"keys\" AS \"keys\", " +
 			"\"sys\".\"keycolumns\" AS \"keycolumns\", " +
 			"\"sys\".\"tables\" AS \"tables\", " +
@@ -2082,7 +2082,8 @@ public class MonetDatabaseMetaData implements DatabaseMetaData {
 		"\"pktable\".\"name\" AS \"PKTABLE_NAME\", \"pkkeycol\".\"column\" AS \"PKCOLUMN_NAME\", " +
 		"\"fkschema\".\"name\" AS \"FKTABLE_SCHEM\", " +
 		"\"fktable\".\"name\" AS \"FKTABLE_NAME\", \"fkkeycol\".\"column\" AS \"FKCOLUMN_NAME\", " +
-		"\"fkkeycol\".\"nr\" AS \"KEY_SEQ\", " + DatabaseMetaData.importedKeyNoAction + " AS \"UPDATE_RULE\", " +
+		"((\"fkkeycol\".\"nr\" * 121) + \"pkkeycol\".\"nr\") AS \"KEY_SEQ\", " +
+		DatabaseMetaData.importedKeyNoAction + " AS \"UPDATE_RULE\", " +
 		"" + DatabaseMetaData.importedKeyNoAction + " AS \"DELETE_RULE\", " +
 		"\"fkkey\".\"name\" AS \"FK_NAME\", \"pkkey\".\"name\" AS \"PK_NAME\", " +
 		"" + DatabaseMetaData.importedKeyNotDeferrable + " AS \"DEFERRABILITY\" " +
