@@ -547,7 +547,7 @@ public class MonetStatement implements Statement {
 
 	/**
 	 * Retrieves the current result as an update count; if the result is a
-	 * ResultSet object or there are no more results, -1 is returned. This
+	 * ResultSet object or there are no more results, -1 is returned.  This
 	 * method should be called only once per result.
 	 *
 	 * @return the current result as an update count; -1 if the current result
@@ -564,7 +564,7 @@ public class MonetStatement implements Statement {
 				if (tmpLine == null) throw new NumberFormatException("");
 				ret = Integer.parseInt(tmpLine.substring(1, tmpLine.length() - 1).trim());
 			} catch (NumberFormatException e) {
-				throw new SQLException("Server sent unparsable update count: " + tmpLine);
+				throw new SQLException("Server sent unparsable update count: " + tmpLine + " (" + e.getMessage() + ")");
 			}
 			// close the header, we got all it's information by now
 			header.close();
