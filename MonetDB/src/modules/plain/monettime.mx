@@ -246,6 +246,7 @@ with:	 DATE = a valid parse format of the date atom (as decribed earlier)
       DAYTIME = a valid parse format of the daytime atom (as decribed earlier)
 	 ZONE = ('+'|'-') HOUR ':' MIN [ 'DST' ]
 \end{verbatim}
+
 Though internally timestamps are stored in GMT, the printing and parsing of
 timestamps is relative to the local timezone. That is, timestamps are
 printed without GMT part, meaning that the time is relative to the local
@@ -354,7 +355,8 @@ Out-of range result values are represented by the nil.
 @T
 There are routines that decompose a date and routines that decompose a daytime.
 For decomposing a timestamp, there are routines that decompose it in a date
-and daytime.
+and daytime. The bulk variants are also provided to simplify code
+generation for SQL and to improve speed.
 @m
 # date
 .COMMAND year(date) : int = date_extract_year;
