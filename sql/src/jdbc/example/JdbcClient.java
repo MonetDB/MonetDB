@@ -1006,18 +1006,37 @@ public class JdbcClient {
 		cols.close();
 
 		// the primary key constraint
-		cols = dbmd.getPrimaryKeys(table.getCat(), table.getSchem(), table.getName());
-		for (i = 0; cols.next(); i++) {
-			if (i == 0) {
-				// terminate the previous line
-				out.println(",");
-				out.print("\tCONSTRAINT " + dq(cols.getString("PK_NAME")) +
-					" PRIMARY KEY (");
-			}
-			if (i > 0) out.print(", ");
-			out.print(dq(cols.getString("COLUMN_NAME")));
+		// unfortunately some idiot defined that getPrimaryKeys()
+		// returns the primary key columns sorted by column name, not
+		// key sequence order.  So we have to sort ourself :(
+		cols = dbmd.getPrimaryKeys(
+				table.getCat(),
+				table.getSchem(),
+				table.getName());
+		// first make an 'index' of the KEY_SEQ column
+		SortedMap seqIndex = new TreeMap();
+		for (i = 1; cols.next(); i++) {
+			seqIndex.put(
+					new Integer(cols.getInt("KEY_SEQ")),
+					new Integer(i));
 		}
-		if (i != 0) out.print(")");
+		if (seqIndex.size() > 0) {
+			// terminate the previous line
+			out.println(",");
+			cols.absolute(1);
+			out.print("\tCONSTRAINT " + dq(cols.getString("PK_NAME")) +
+				" PRIMARY KEY (");
+			i = 0;
+			for (Iterator it = seqIndex.entrySet().iterator();
+					it.hasNext(); i++)
+			{
+				Map.Entry e = (Map.Entry)(it.next());
+				cols.absolute(((Integer)(e.getValue())).intValue());
+				if (i > 0) out.print(", ");
+				out.print(dq(cols.getString("COLUMN_NAME")));
+			}
+			out.print(")");
+		}
 		cols.close();
 
 		// unique constraints
