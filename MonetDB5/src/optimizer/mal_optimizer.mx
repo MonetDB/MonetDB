@@ -534,7 +534,9 @@ optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec)
 		stream_printf(GDKout, "Optimizer %s failed\n", name);
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 	}
-	optimizerDebug(mb, name, actions, usec);
+	(void)actions;
+	(void)usec;
+	/*optimizerDebug(mb, name, actions, usec);*/
 	return mb->errors;
 }
 
