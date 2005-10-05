@@ -748,10 +748,12 @@ size_t
 void_append_bat(BAT *b, BAT *u)
 {
 	size_t sz = BUNsize(u);
+	size_t old = u->hseqbase;
 	size_t sbase = b->hseqbase + BATcount(b);
 
 	BATseqbase(u, sbase);
 	BATins(b, u);
+	BATseqbase(u, old);
 	return sz;
 }
 
