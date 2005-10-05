@@ -26,10 +26,11 @@ stdout of test 'PHexample` in directory 'src/optimizer` itself:
 function user.main():int;	# 0  (main:int)
 # testing repeatative reverse optimalisation 	# 1  (_2:str)
     r:bat[:int,:int]  := bat.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-(_4:int)(_4:int)
-    rr := algebra.markH(r);	# 3 ALGmarkHead_default (rr:bat[:void,:int])<-(r:bat[:int,:int])
-    io.print(r);	# 4 IOprint_val (_11:int)<-(r:bat[:int,:int])
-    mdb.list();	# 5 MDBlist (_13:void)
-end main;	# 6  
+    z := algebra.markT(r);	# 3 ALGtmark_default (z:bat[:int,:void])<-(r:bat[:int,:int])
+    rr := bat.reverse(z);	# 4 BKCreverse (rr:bat[:void,:int])<-(z:bat[:int,:void])
+    io.print(r);	# 5 IOprint_val (_11:int)<-(r:bat[:int,:int])
+    mdb.list();	# 6 MDBlist (_13:void)
+end main;	# 7  
 #-----------------#
 # h	t	  # name
 # int	int	  # type
@@ -37,7 +38,8 @@ end main;	# 6
 function user.main():int;
 # testing repeatative reverse optimalisation 
     r:bat[:int,:int]  := bat.new(:int,:int);
-    rr := algebra.markH(r);
+    z := algebra.markT(r);
+    rr := bat.reverse(z);
     io.print(r);
     mdb.list();
 end main;
