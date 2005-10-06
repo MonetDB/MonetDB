@@ -1,0 +1,41 @@
+stdout of test 'custom_function_in_where.SF-937859` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 18:03:29 >  
+# 18:03:29 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB:/ufs/roberto/servers/MonetDB/lib/bin" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=39799 --set sql_port=41104 --set xquery_port=57330 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 18:03:29 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 18:03:29 >  
+# 18:03:29 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41104  < custom_function_in_where.SF-937859.sql
+# 18:03:29 >  
+
+# 6 # querytype
+# 4 # querytype
+[ 4	]
+# 3 # querytype
+#  # table_name
+# sql_sub_char_length_s # name
+# int # type
+# 10 # length
+# 3 # tuplecount
+# 2 # id
+[ 0	]
+[ 0	]
+[ 0	]
+
+# 18:03:29 >  
+# 18:03:29 >  Done.
+# 18:03:29 >  
+
