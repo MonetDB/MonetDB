@@ -1,0 +1,39 @@
+stdout of test 'set_types.SF-932360` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 14:30:11 >  
+# 14:30:11 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB:/ufs/roberto/servers/MonetDB/lib/bin" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=37813 --set sql_port=46462 --set xquery_port=57536 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 14:30:11 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 14:30:11 >  
+# 14:30:11 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46462  < set_types.SF-932360.sql
+# 14:30:11 >  
+
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 1	]
+# 7 # querytype
+# 7 # querytype
+# 4 # querytype
+[ 1	]
+# 7 # querytype
+
+# 14:30:12 >  
+# 14:30:12 >  Done.
+# 14:30:12 >  
+
