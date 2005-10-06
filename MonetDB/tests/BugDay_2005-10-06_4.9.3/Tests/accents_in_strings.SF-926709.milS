@@ -1,0 +1,2 @@
+var t := str("André");
+t.print();
