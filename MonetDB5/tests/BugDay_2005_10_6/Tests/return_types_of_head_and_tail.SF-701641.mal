@@ -1,0 +1,4 @@
+x := bat.new(:oid,:int);
+z:= inspect.getType(x); io.print(z);
+z:= inspect.getHead(x); io.print(z);
+z:= inspect.getTail(x); io.print(z);

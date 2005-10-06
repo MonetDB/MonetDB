@@ -1,0 +1,20 @@
+b := bat.new(:void,:str);
+bat.setSequenceBase(b,nil);
+bat.insert(b,nil,"zero");
+io.print(b);
+z:= algebra.find(b,0:oid);
+zs:=str.str(z);
+io.printf("oid(0) -> %s\n",zs);
+z:= algebra.find(b,nil:oid);
+zs:= str.str(z);
+io.printf("oid(nil) -> %s\n",zs);
+
+bat.setSequenceBase(b,0@0);
+bat.insert(b,nil,"zero");
+io.print(b);
+z:= algebra.find(b,0:oid);
+zs:=str.str(z);
+io.printf("oid(0) -> %s\n",zs);
+z:= algebra.find(b,nil:oid);
+zs:= str.str(z);
+io.printf("oid(nil) -> %s\n",zs);
