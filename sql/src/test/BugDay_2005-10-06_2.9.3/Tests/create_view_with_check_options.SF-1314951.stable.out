@@ -1,0 +1,42 @@
+stdout of test 'create_view_with_check_options.SF-1314951` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 15:51:44 >  
+# 15:51:44 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB:/ufs/roberto/servers/MonetDB/lib/bin" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=30437 --set sql_port=42973 --set xquery_port=58391 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:51:44 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+
+Over..
+
+# 15:51:44 >  
+# 15:51:44 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42973  < create_view_with_check_options.SF-1314951.sql
+# 15:51:44 >  
+
+# 6 # querytype
+# 4 # querytype
+[ 4     ]
+# 6 # querytype
+# 3 # querytype
+# m # table_name
+# v # name
+# int # type
+# 10 # length
+# 4 # tuplecount
+# 2 # id
+[ 1     ]
+[ 2     ]
+[ 3     ]
+[ 4     ]
+
+# 15:51:44 >  
+# 15:51:44 >  Done.
+# 15:51:44 >  
+
