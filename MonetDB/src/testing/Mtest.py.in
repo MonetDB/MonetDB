@@ -1061,6 +1061,9 @@ def ApproveOutput (env, TST) :
                 STDERR.write('  simply apply the patch in  %s  to them.\n\n' % patch)
                 STDERR.flush()
         else:
+            i = TST.rfind('.')
+            if i > 0:
+                return ApproveOutput(env, TST[:i])
             Warn("Output file missing: '"+testOUTPUT+"`; skipping test!")
     return sem
 ### ApproveOutput (env, TST) #
