@@ -1,0 +1,28 @@
+stdout of test 'cross_join-SF.919524` in directory 'src/test/BugDay_2005-10-06_2.8` itself:
+
+
+# 14:50:14 >  
+# 14:50:14 >  Mtimeout -timeout 180 Mserver "--config=/home/sjoerd/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/sjoerd/lib/MonetDB:/home/sjoerd/lib/bin" --set "gdk_dbfarm=/home/sjoerd/var/MonetDB/dbfarm" --set "sql_logdir=/home/sjoerd/var/MonetDB/log" --set mapi_port=33764 --set sql_port=45654 --set xquery_port=54182 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 14:50:14 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 14:50:14 >  
+# 14:50:14 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45654  < cross_join-SF.919524.sql
+# 14:50:14 >  
+
+
+# 14:50:14 >  
+# 14:50:14 >  Done.
+# 14:50:14 >  
+

@@ -1,3 +1,5 @@
+START TRANSACTION;
+
 INSERT INTO allnewtriples VALUES(1, 1, 1, 1, false);
 INSERT INTO allnewtriples VALUES(2, 1, 1, 2, false);
 INSERT INTO allnewtriples VALUES(3, 1, 2, 1, false);
@@ -17,3 +19,5 @@ INSERT INTO "foreign" VALUES(7, 1, 1, 2);
 SELECT * FROM allnewtriples;
 
 SELECT * FROM "foreign";
+
+COMMIT;

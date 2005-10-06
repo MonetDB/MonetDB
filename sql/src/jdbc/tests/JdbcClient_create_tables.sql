@@ -1,3 +1,5 @@
+START TRANSACTION;
+
 CREATE TABLE allnewtriples (
 	id integer NOT NULL,
 	subject integer NOT NULL,
@@ -34,3 +36,5 @@ CREATE INDEX "triples_predicate_object_idx" ON "triples" ("predicate", "object")
 CREATE INDEX "triples_subject_idx" ON "triples" ("subject");
 CREATE INDEX "triples_subject_object_idx" ON "triples" ("subject", "object");
 CREATE INDEX "triples_subject_predicate_idx" ON "triples" ("subject", "predicate");
+
+COMMIT;
