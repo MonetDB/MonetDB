@@ -48,3 +48,4 @@ interval_parse_bug-sf-1263967
 extract_interval_bug-sf-1274088
 subselect_single_value-bug-sf-941791
 subselect_union-bug-sf-941826
+groupby_having_charlength-bug-sf-943566
