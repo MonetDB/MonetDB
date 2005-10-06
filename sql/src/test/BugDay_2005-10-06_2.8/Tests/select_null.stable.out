@@ -1,0 +1,55 @@
+stdout of test 'select_null` in directory 'src/test/BugDay_2005-10-06_2.8` itself:
+
+
+# 15:31:54 >  
+# 15:31:54 >  Mtimeout -timeout 180 Mserver "--config=/home/sjoerd/src/stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/sjoerd/src/stable/lib/MonetDB:/home/sjoerd/src/stable/lib/bin" --set "gdk_dbfarm=/home/sjoerd/src/stable/var/MonetDB/dbfarm" --set "sql_logdir=/home/sjoerd/src/stable/var/MonetDB/log" --set mapi_port=34716 --set sql_port=44245 --set xquery_port=58582 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:31:54 >  
+
+# Monet Database Server V4.8.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:31:54 >  
+# 15:31:54 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=44245  < select_null.sql
+# 15:31:54 >  
+
+# 3 # querytype
+#  # table_name
+# NULL # name
+# char # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
+[ NULL	]
+# 3 # querytype
+#  # table_name
+# v # name
+# char # type
+# 0 # length
+# 1 # tuplecount
+# 2 # id
+[ NULL	]
+# 6 # querytype
+# 4 # querytype
+[ 1	]
+# 3 # querytype
+# t # table_name
+# i # name
+# int # type
+# 10 # length
+# 1 # tuplecount
+# 4 # id
+[ NULL	]
+
+# 15:31:54 >  
+# 15:31:54 >  Done.
+# 15:31:54 >  
+
