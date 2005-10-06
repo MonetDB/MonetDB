@@ -1,0 +1,52 @@
+stdout of test 'bool_boolean.SF-935601` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 16:59:52 >  
+# 16:59:52 >  Mtimeout -timeout 180 Mserver "--config=/ufs/roberto/servers/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/roberto/servers/MonetDB/lib/MonetDB:/ufs/roberto/servers/MonetDB/lib/bin" --set "gdk_dbfarm=/ufs/roberto/servers/MonetDB/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/roberto/servers/MonetDB/var/MonetDB/log" --set mapi_port=35669 --set sql_port=44408 --set xquery_port=55341 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 16:59:52 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 16:59:52 >  
+# 16:59:52 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=44408  < bool_boolean.SF-935601.sql
+# 16:59:52 >  
+
+# 3 # querytype
+#  # table_name
+# isnull_single_value # name
+# boolean # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
+[ false	]
+# 3 # querytype
+#  # table_name
+# isnull_single_value # name
+# boolean # type
+# 0 # length
+# 1 # tuplecount
+# 2 # id
+[ true	]
+# 3 # querytype
+#  # table_name
+# =_=_single_value # name
+# boolean # type
+# 0 # length
+# 1 # tuplecount
+# 3 # id
+[ true	]
+
+# 16:59:53 >  
+# 16:59:53 >  Done.
+# 16:59:53 >  
+
