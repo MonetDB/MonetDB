@@ -1,4 +1,4 @@
-stderr of test 'div_by_zero` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
+stderr of test 'div_by_zero.SF-987304` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
 
 
 # 15:14:18 >  
@@ -68,12 +68,17 @@ stderr of test 'div_by_zero` in directory 'src/test/BugDay_2005-10-06_2.9.3` its
 # 15:14:18 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=43299  < div_by_zero.sql
 # 15:14:18 >  
 
-MAPI  = monetdb@localhost:43299
+MAPI  = monetdb@localhost:44043
 QUERY = select 1/0;
 ERROR = !ERROR: Division by zero
         !ERROR: shtsht_checkbinary_DIV: operation failed.
+MAPI  = monetdb@localhost:44043
+QUERY = select x/y from a;
+ERROR = !ERROR: [/] (batbat_int_div): Division by Zero!
+        !ERROR: batbat_int_div: operation failed.
 
-# 15:14:18 >  
-# 15:14:18 >  Done.
-# 15:14:18 >  
+
+# 19:04:14 >  
+# 19:04:14 >  Done.
+# 19:04:14 >  
 
