@@ -1193,13 +1193,15 @@ view_def:
     CREATE VIEW qname opt_column_commalist
     AS			{ mvc *m = (mvc*)parm;
 			  m->scanner.as = m->scanner.yycur; }
-    view_as opt_with_check_option
-	{ dlist *l = _dlist_create();
+    view_as
+    opt_with_check_option
+	{  dlist *l = _dlist_create();
 	  _dlist_append_list(l, $3);
 	  _dlist_append_list(l, $4);
 	  _dlist_append_symbol(l, $7);
 	  _dlist_append_int(l, $8);
-	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); }
+	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
+	}
   ;
 
 view_as:
@@ -1531,6 +1533,7 @@ atom_commalist:
 
 insert_atom:
     scalar_exp
+ |  select_no_parens
  |  NULLX
 	 { 
 	   mvc *m = (mvc*)parm;
@@ -2547,6 +2550,22 @@ literal:
 		  	$$ = _newAtomNode(a);
 		} }
  |  interval_expression
+ |  blob string
+		{ sql_subtype *t = sql_bind_subtype("blob", 0, 0);
+		  atom *a = atom_general(t, $2, 0);
+		  $$ = NULL;
+	          if (a)
+			$$ = _newAtomNode(a);
+		  if (!$$) {
+			char buf[BUFSIZ];
+
+			snprintf(buf, BUFSIZ, "incorrect blob %s", $2);
+			yyerror(buf);
+			if (a)
+				atom_destroy(a);
+			YYABORT;
+		  }
+		}
  |  aTYPE string
 		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
 		  atom *a = atom_general(t, $2, 0);

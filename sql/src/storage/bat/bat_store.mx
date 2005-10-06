@@ -2703,7 +2703,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 		deleted = BATcount(db);
 		tt->cnt = 0;
-		if (BUNlast(db) > db->batInserted) {
+		if (BUNlast(db) > db->batInserted || ft->cleared) {
 			bm_new_bat(ttr->bm, tt->dbid, db);
 
 			BATsetaccess(db, BAT_READ);
@@ -2724,6 +2724,12 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				n = n->next;
 				m = m->next;
 				continue;
+			}
+
+			if (ft->cleared && ttr == gtrans) {
+				ok = log_bat_clear(logger, oc->bat.bid);
+				if (ok == SQL_OK)
+					ok =log_bat_clear(logger, oc->bat.ubid);
 			}
 
 			ins = cc->bat.ibid ? temp_descriptor(cc->bat.ibid) : bm_lbid2bat(tr->bm, cc->bat.bid);
@@ -2796,6 +2802,12 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			for (n = tt->idxs.set->h, m = tt->idxs.set->h; ok == SQL_OK && n && m; n = n->next, m = m->next) {
 				sql_idx *ci = n->data;
 				sql_idx *oi = m->data;
+
+				if (ft->cleared && ttr == gtrans) {
+					ok = log_bat_clear(logger, ci->bat.bid);
+					if (ok == SQL_OK)
+						ok = log_bat_clear(logger, ci->bat.ubid);
+				}
 
 				if (ci->bat.bid && ci->bat.ubid) {
 					BAT *ins = ci->bat.ibid ? temp_descriptor(ci->bat.ibid) : bm_lbid2bat(tr->bm, ci->bat.bid);

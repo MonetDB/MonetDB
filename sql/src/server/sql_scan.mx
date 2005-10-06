@@ -40,6 +40,7 @@ struct scanner {
 	int yycur;		/* next char in the queue */
 	char yybak;		/* sometimes its needed to write an EOS marker */
 	int as;			/* start of query part of view's etc */
+	int view_end;		/* end of query part of view */
 	int key;
 	prot mode;		/* which mode (line (1,N), blocked) */
 };
@@ -318,6 +319,7 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 	s->yycur = 0;
 
 	s->key = 0;		/* keep a hash key of the query */
+	s->as = s->view_end = 0;
 
 	s->mode = LINE_N;
 }
@@ -342,6 +344,7 @@ scanner_query_processed(struct scanner *s)
 	assert(s->rs->pos <= s->rs->len);
 	s->yycur = 0;
 	s->key = 0;		/* keep a hash key of the query */
+	s->as = s->view_end = 0;
 }
 
 static int
@@ -741,6 +744,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 	int token;
 	mvc *c = (mvc *) parm;
 	struct scanner *lc = &c->scanner;
+	int pos;
 
 	if (lc->yynext) {
 		int next = lc->yynext;
@@ -753,6 +757,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 		lc->rs->buf[lc->rs->pos + lc->yycur] = lc->yybak;
 		lc->yybak = 0;
 	}
+	pos = lc->rs->pos + lc->yycur;
 
 	lc->yysval = lc->yycur;
 	token = tokenize(c, scanner_getc(lc));
@@ -788,6 +793,8 @@ sqllex(YYSTYPE * yylval, void *parm)
 		else
 			lc->yynext = next;
 	}
+	if (token == WITH) 
+		lc->view_end = pos;
 
 	/* Don't include literals in the calculation of the key */
 	if (token != STRING && token != sqlINT && token != INTNUM && token != APPROXNUM && token != NULLX)

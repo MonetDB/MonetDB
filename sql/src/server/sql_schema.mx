@@ -598,7 +598,11 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		sq = scope_subquery(sql, NULL, query);
 		if (!sq)
 			return NULL;
-		subquery = QUERY(sql->scanner) + sql->scanner.as;
+		subquery = _strdup(QUERY(sql->scanner) + sql->scanner.as);
+		if (sql->scanner.view_end) {
+			subquery[sql->scanner.view_end - sql->scanner.as] = ';';
+			subquery[sql->scanner.view_end - sql->scanner.as+1] = 0;
+		}
 
 		if (column_spec) {
 			sql_table *t = mvc_create_view(sql, ss, name, subquery, 0, 1);
@@ -624,6 +628,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 				mvc_create_column(sql, t, cname, tp);
 			}
 		}
+		_DELETE(subquery);
 		stmt_destroy(sq);
 		return stmt_none();
 		/* only db admin can create views on bats */
@@ -810,8 +815,15 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	case SQL_UNIQUE:
 	case SQL_PRIMARY_KEY:
 	{
-		key_type kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
-		sql_key *k = mvc_create_key(sql, t, name, kt, NULL);
+		key_type kt;
+		sql_key *k;
+
+		if (s->token == SQL_PRIMARY_KEY && !alter && t->pkey) {
+			(void) sql_error(sql, 02, "A table can only have one primary key\n");
+			return res;
+		}
+		kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
+		k = mvc_create_key(sql, t, name, kt, NULL);
 
 		mvc_create_kc(sql, k, cs);
 		res = SQL_OK;
