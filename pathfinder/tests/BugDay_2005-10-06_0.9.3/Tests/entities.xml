@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!DOCTYPE test [
+<!ENTITY copy "kopie">
+<!ENTITY hyphen "-">
+<!ENTITY ldquo "a">
+<!ENTITY rdquo "b">
+<!ENTITY rsquo "c">
+<!ENTITY mdash "d">
+]>
+<article>
+<fno>A1003</fno>
+<doi>10.1041/A1003s-1995</doi>
+<fm><hdr><hdr1><ti>IEEE Annals of the History of Computing</ti>
+<crt><issn>1058-6180</issn>/95/$4.00 <cci><onm>&copy; 1995 IEEE</onm></cci></crt></hdr1>
+<hdr2><obi><volno>Vol. 17</volno>, <issno>No. 1</issno></obi>
+<pdt><mo>Spring</mo><yr>1995</yr></pdt>
+<pp>pp. 3-3</pp></hdr2></hdr>
+<tig>
+<atl>About this Issue</atl><pn>pp. 3-3</pn></tig>
+<au sequence="first"><fnm>J.A.N.</fnm><snm>Lee</snm><role>Editor&hyphen;in&hyphen;Chief</role></au>
+</fm>
+<bdy>
+<p>The first issue of our 17th volume is as diverse in topics as any nontheme issue that we have tried to present over the past many years. However, it still represents the work of the English&hyphen;speaking world of the North Atlantic rather than a broader picture of computing in the whole world. The Editorial Board and the article editors of the <it>Annals</it>
+are doing their best to bring the history of the whole world of computing to our readers, but it does require authors in other countries to offer their manuscripts for our consideration. Please take this as an open invitation to authors in other parts of the world to submit papers to the <it>Annals</it>
+for review and help us to follow the lead of our parent organization in being the &ldquo;The World&rsquo;s Computer Society.&rdquo;</p>
+<p>The five major articles in this issue represent several manuscripts that have been in our files for some time, and we are grateful to the authors for having &ldquo;stuck with us&rdquo; while we reviewed, re&hyphen;reviewed, and reworked their papers. Articles in the field of history do not always present the work of the authors themselves (though we welcome pioneers to give us their own stories, as in the case of the 1935 article by John McPherson in this issue); thus, answering the question &ldquo;is it accurate?&rdquo; is not always easy. In fact, we ask our referees to answer the following questions about each manuscript, and their responses determine whether we accept the manuscript &ldquo;as is&rdquo; or whether we ask the author(s) to revise the material:</p>
+<l2>
+<li>
+<p>Are the issues addressed in the paper stated clearly enough?</p></li>
+<li>
+<p>What is right or wrong?</p></li>
+<li>
+<p>Are the facts correct?</p></li>
+<li>
+<p>Is documentation for facts and even opinions appropriate and sufficient? Are statements substantiated?</p></li>
+<li>
+<p>Are modern concepts being used inappropriately to interpret and/or evaluate earlier developments, i.e., is it a Whiggish approach?</p></li>
+<li>
+<p>Does the paper add to the public knowledge and/or literature of the subject?</p></li>
+<li>
+<p>Does the paper provide a balanced presentation regarding the environment in which the reported activity was initiated, the activity itself, and the resulting impact on the world?</p></li>
+<li>
+<p>Does the paper merely rehash well&hyphen;known or previously published materials (especially in the <it>Annals</it>)? Is there a good foundation to help readers understand the background, or are there sufficient references?</p></li>
+<li>
+<p>Is the paper interesting? Is it well written?</p></li>
+<li>
+<p>Is the set of references appropriate and complete? Should the paper be accompanied by a bibliography also?</p></li>
+<li>
+<p>Are the figures appropriate? Should other figures be added? Are there figures in the public domain (or readily accessible) that would enhance this presentation?</p></li></l2>
+<p>I hope these questions will provide prospective authors with some guidance towards developing new manuscripts.</p>
+<p>The question of &ldquo;balance&rdquo; is very much in the news as we go to press with this issue, with the new Speaker of the US House of Representatives having &ldquo;fired&rdquo; the House Historian for having, in 1986, asked for a two&hyphen;sided view of the Holocaust. This editor finds that in education today students often do not choose to look at both sides of an issue, accepting too quickly that any opposing view is not worth the effort of review and consideration. To look at the other side of an issue often helps one justify a well&hyphen;accepted position, but in the technological field this can also reveal ideas that were rejected because they were not capable of being supported by the then&hyphen;current technology. Developments in technology may make Toynbee&rsquo;s statement &ldquo;Those who forget the lessons of history are doomed to repeat them&rdquo;<fn id="FN-1"><p><super>*</super>Copy editor&rsquo;s note: Other wordings of this idea have been attributed to George Santayana and the early Greek philosophers.</p></fn>
+to be an antithesis! The <it>Annals</it>
+has tried to provide differing points of view on certain issues such as the origin of the term &ldquo;bug&rdquo; and the &ldquo;stored&hyphen;program concept.&rdquo; The latter is visited once again in this issue by Henry Tropp. The paper by David Luebke and Sybil Milton on Vol. 16, No. 3 entitled &ldquo;Locating the Victim&rdquo; has been criticized for perhaps taking a one&hyphen;sided view of the use of tabulating equipment in the &ldquo;final solution,&rdquo; and we are working with another author to provide a complementary view on the workings (or nonworkings) of the German data processing community during World War II. We had hoped to publish it in this issue, but additional work on the manuscript has delayed this. </p>
+<p>The <it>Annals</it>
+itself has been subjected to one&hyphen;sided criticism in two other magazines in recent times. In fact, we have been accused of plagiarism for not having acknowledged the locating of a significant document by one of our readers after his reading that one of our authors was unaware of the location of the original of a document that was crucial to the subject of his paper. What the other magazines ignored was that we had, in fact, undertaken a great deal of effort to ensure that the finder did have the opportunity to announce the find! Our intention is to balance this view of our own history in a future issue.</p>
+<p>Finally, let me welcome a number of new article editors to our Editorial Board &mdash; Michael Marcotty, Keith Smillie, James Cortada, and Tim Bergin have joined our long&hyphen;timers Bob Rosin, Brian Randell, Arthur Burks, Bernard Galler, and Martin Campbell&hyphen;Kelly to assist in selecting articles for your reading pleasure. All four have been prior contributors to our pages, and we find it highly gratifying that they would accept our invitation to work more closely with the editorial activities of the <it>Annals</it>. We also welcome aboard a new Production Manager &mdash; Bob Carlson. Tom Culviner has performed this task as a freelance editor for the three years since the <it>Annals</it>
+moved to the IEEE Computer Society, and we greatly appreciate his work on our behalf in those years. Bob is taking over as the production work for the journal is moved to Los Alamitos, Calif., the home of the IEEE Computer Society Press.</p></bdy></article>
