@@ -1324,18 +1324,18 @@ static int  seqEmitBool(XqueryCtx* ctx, int bv) {
 /**
  * Emit a Integer element of an XQUERY/Pathfinder result sequence
  */
-static int  seqEmitInt(XqueryCtx* ctx, int iv) {
+static int  seqEmitInt(XqueryCtx* ctx, lng iv) {
     if ( ctx->saxMode ) {
         char buff[32];
 
-        sprintf(buff,"%d",iv);
+        sprintf(buff,"%lld",iv);
         return handle_characters(ctx,buff,0);
     } else if ( ctx->dmMode ) {
         ctx->nAttrOnLine++;
-        stream_printf(GDKout,"%d",iv);
+        stream_printf(GDKout,"%lld",iv);
     } else {
         ctx->nAttrOnLine++;
-        stream_printf(GDKout,"%d ",iv);
+        stream_printf(GDKout,"%lld ",iv);
     }
     return 1;
 }
@@ -1505,7 +1505,7 @@ int xquery_print_result_main(
             case INT:
                 {
                     CHKVP(vp = idxTV(ctx,"intVAL",intVAL,valoid));
-                    int iv = *(int*)vp;
+                    lng iv = *(lng*)vp;
                     if ( !seqEmitInt(ctx,iv) )
                         return GDK_FAIL;
                     break;

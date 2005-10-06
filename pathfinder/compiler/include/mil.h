@@ -288,7 +288,7 @@ typedef enum PFmil_access_t PFmil_access_t;
 
 /** semantic content for MIL tree nodes */
 union PFmil_sem_t {
-    int           i;       /**< literal integer */
+    long long int i;       /**< literal integer */
     oid           o;       /**< literal oid */
     char         *s;       /**< literal string */
     double        d;       /**< literal double */
@@ -326,7 +326,7 @@ struct PFmil_t {
 typedef struct PFmil_t PFmil_t;
 
 /** a literal integer */
-PFmil_t * PFmil_lit_int (int i);
+PFmil_t * PFmil_lit_int (long long int i);
 
 /** a literal string */
 PFmil_t * PFmil_lit_str (const char *s);

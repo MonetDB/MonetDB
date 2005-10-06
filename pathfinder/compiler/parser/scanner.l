@@ -505,7 +505,7 @@ _                                ({S}|{ExprComment})+
 {QName}{_}?"("/[^:]                { pflval.qname = extract_qname (yytext, 0);
                                      yield (QName_LParen);
                                    }
-{IntegerLiteral}                   { pflval.num = atoi (yytext);
+{IntegerLiteral}                   { pflval.num = atoll (yytext);
                                      gotoState (OPERATOR);
                                      yield (IntegerLiteral);
                                    }

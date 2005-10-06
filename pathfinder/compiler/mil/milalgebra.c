@@ -221,7 +221,7 @@ PFma_lit_oid (oid o)
 }
 
 PFma_op_t *
-PFma_lit_int (int i)
+PFma_lit_int (long long int i)
 {
     return lit_val ((PFma_val_t) { .type = m_int, .val.i = i });
 }

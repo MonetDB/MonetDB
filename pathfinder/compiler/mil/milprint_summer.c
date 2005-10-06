@@ -206,7 +206,7 @@ kind_str (int i)
     if (i == NORMAL)
         return "";
     else if (i == INT)
-        return "_int_";
+        return "_lng_";
     else if (i == DEC)
         return "_dec_";
     else if (i == DBL)
@@ -296,7 +296,7 @@ int_container ()
     type_co new_co;
     new_co.kind = INT;
     new_co.table = "int_values";
-    new_co.mil_type = "int";
+    new_co.mil_type = "lng";
     new_co.mil_cast = "INT";
     new_co.name = "integer";
 
@@ -428,7 +428,7 @@ init (opt_t *f)
             "var v_kind000 := bat(void,int).access(BAT_APPEND).seqbase(0@0);\n"
 
              /* value containers for literal values */
-            "var int_values := bat(int,void).key(true).reverse().seqbase(0@0);\n"
+            "var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);\n"
             "var dbl_values := bat(dbl,void).key(true).reverse().seqbase(0@0);\n"
             "var dec_values := bat(dbl,void).key(true).reverse().seqbase(0@0);\n"
 
@@ -461,7 +461,7 @@ init (opt_t *f)
             "var empty%s_bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);\n"
             "var empty%s_bat := empty%s_bat;\n"
             "var empty%s_bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);\n"
-            "var empty%s_bat := empty_kind_bat;\n",
+            "var empty%s_bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);\n",
             kind_str(DBL), 
             kind_str(DEC), kind_str(DBL),
             kind_str(STR),
@@ -1292,7 +1292,7 @@ createEnumeration (opt_t *f, int cur_level)
     milprintf(f,
             "{ # createEnumeration ()\n"
             /* the head of item has to be void */
-            "var ints_cE := outer%03u.mark_grp(outer%03u.tunique().mark(nil), 1@0).[int]();\n",
+            "var ints_cE := outer%03u.mark_grp(outer%03u.tunique().mark(nil), 1@0).[lng]();\n",
             cur_level, cur_level);
     addValues (f, int_container(), "ints_cE", "item");
     milprintf(f,
@@ -3259,7 +3259,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
     if (rc != NORMAL)
     {
         milprintf(f,
-             /* because tunique() is to slow on strings we do stupid things */
+             /* because tunique() is too slow on strings we do stupid things */
              /* "var unq_str := item%s.tunique().mark(0@0).reverse();\n" */
                 "var unq_str := bat(str,void).key(true)"
                                             ".insert(fake_project(item%s).reverse().mark(nil))"
@@ -3504,14 +3504,14 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
         }
     }
     else if (TY_EQ (input_type, PFty_decimal ()))
-        evaluateCast (f, rcode, rc, dec_container(), int_container(), "[int]()");
+        evaluateCast (f, rcode, rc, dec_container(), int_container(), "[lng]()");
     else if (TY_EQ (input_type, PFty_double ()))
-        evaluateCast (f, rcode, rc, dbl_container(), int_container(), "[int]()");
+        evaluateCast (f, rcode, rc, dbl_container(), int_container(), "[lng]()");
     else if (TY_EQ (input_type, PFty_string ()) ||
              TY_EQ (input_type, PFty_untypedAtomic ()))
-        evaluateCast (f, rcode, rc, str_container(), int_container(), "[int]()");
+        evaluateCast (f, rcode, rc, str_container(), int_container(), "[lng]()");
     else if (TY_EQ (input_type, PFty_boolean ()))
-        evaluateCast (f, rcode, rc, bool_container(), int_container(), "[int]()");
+        evaluateCast (f, rcode, rc, bool_container(), int_container(), "[lng]()");
     else /* handles the choice type */
     {
         if (rc != NORMAL) 
@@ -3525,14 +3525,14 @@ translateCast2INT (opt_t *f, int rcode, int rc, PFty_t input_type)
                 "var _val := part_item.leftfetchjoin(int_values);\n"
                 "part_item := nil;\n");
  
-        evaluateCastBlock (f, bool_container(), "[int]()", "int");
-        evaluateCastBlock (f, dec_container(), "[int]()", "int");
-        evaluateCastBlock (f, dbl_container(), "[int]()", "int");
-        evaluateCastBlock (f, str_container(), "[int]()", "int");
-        evaluateCastBlock (f, u_A_container(), "[int]()", "int");
+        evaluateCastBlock (f, bool_container(), "[lng]()", "int");
+        evaluateCastBlock (f, dec_container(), "[lng]()", "int");
+        evaluateCastBlock (f, dbl_container(), "[lng]()", "int");
+        evaluateCastBlock (f, str_container(), "[lng]()", "int");
+        evaluateCastBlock (f, u_A_container(), "[lng]()", "int");
 
         milprintf(f,
-                "if (_val.reverse().exist(int(nil)))\n"
+                "if (_val.reverse().exist(lng(nil)))\n"
                 "{    ERROR (\"err:FORG0001: could not cast value to integer.\"); }\n");
  
         if (rcode != NORMAL)
@@ -4086,7 +4086,7 @@ translateOperation (opt_t *f, int code, int cur_level, int counter,
     {
         rcode = (code)?INT:NORMAL;
         evaluateOp (f, rcode, rc1, rc2, counter, operator,
-                    int_container(), (div)?"0":NULL);
+                    int_container(), (div)?"0LL":NULL);
     }
     else if (TY_EQ(expected, PFty_double()))
     {
@@ -4104,7 +4104,7 @@ translateOperation (opt_t *f, int code, int cur_level, int counter,
     {
         rcode = (code)?INT:NORMAL;
         evaluateOpOpt (f, rcode, rc1, rc2, counter, operator,
-                       int_container(), "INT", (div)?"0":NULL);
+                       int_container(), "INT", (div)?"0LL":NULL);
     }
     else if (TY_EQ(expected, PFty_opt(PFty_double())))
     {
@@ -4353,7 +4353,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "test := nil;\n"
                 "var test_int := test_item%s;\n"
                 "test_item := nil;\n"
-                "var test_falses := test_int.ord_uselect(0);\n"
+                "var test_falses := test_int.ord_uselect(0LL);\n"
                 "test_int := nil;\n"
                 "var falses := test_falses.project(false);\n"
                 "trues := trues.replace(falses);\n"
@@ -4479,7 +4479,7 @@ fn_boolean (opt_t *f, int rc, int cur_level, PFty_t input_type)
                 "bool_test := bool_test.ord_uselect(0@0);\n"
                 "str_test := test_str_.ord_uselect(\"\");\n"
                 "u_A_test := test_u_A_.ord_uselect(\"\");\n"
-                "int_test := test_int.ord_uselect(0);\n"
+                "int_test := test_int.ord_uselect(0LL);\n"
                 "dec_test := test_dec.ord_uselect(dbl(0));\n"
                 "dbl_test := test_dbl.ord_uselect(dbl(0));\n"
                 "test_str_ := nil;\n"
@@ -5197,7 +5197,7 @@ fn_abs (opt_t *f, int code, int rc, char *op)
     /* because functions are only allowed for dbl
        we need to cast integers */
     char *cast_dbl = (rc == INT)?".[dbl]()":"";
-    char *cast_int = (rc == INT)?".[int]()":"";
+    char *cast_int = (rc == INT)?".[lng]()":"";
     type_co t_co = kind_container(rc);
 
     milprintf(f,
@@ -6382,7 +6382,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     if ((LLR(snd)->kind == c_var && var_is_used (LLR(snd)->sem.var, res))
         && !(res->kind == c_var && res->sem.var == LLL(snd)->sem.var)) /* see query11 hack below */
     {
-        /* cannot be pushed below theta-join, as 'snd_iter.[int]()' is needed for 'addValues' (below) */
+        /* cannot be pushed below theta-join, as 'snd_iter.[lng]()' is needed for 'addValues' (below) */
         snprintf(rx,32,"nil");
         snprintf(order_snd,128,
                 "var order_snd := snd_iter.leftfetchjoin(iter%03u.reverse());\n",
@@ -6513,7 +6513,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
     }
     if (LLR(snd)->kind == c_var && var_is_used (LLR(snd)->sem.var, res))
     {
-        addValues (f, int_container(), "snd_iter.[int]()", "item");
+        addValues (f, int_container(), "snd_iter.[lng]()", "item");
         milprintf(f,
                 "iter := ipik.mark(1@0);\n"
                 "pos := 1@0;\n"
@@ -7274,7 +7274,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         add_empty_strings (f, STR, cur_level);
         milprintf(f,
                 "{ # fn:string-length\n"
-                "item%s := item%s.[length]();\n"
+                "item%s := item%s.[length]().[lng]();\n"
                 "var res := item%s;\n", 
                 item_ext_int, item_ext,
                 item_ext_int);
@@ -7377,7 +7377,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* because all values have to be there we can compare the voids
                    instead of the iter values */
                 "var length := item%s.[-](item%s%03u).[+](1).[max](0);\n"
-                "var res := enumerate(item%s%03u.de_NO_project(ipik%03u), length.de_NO_project(ipik%03u));\n"
+                "var res := enumerate(item%s%03u.de_NO_project(ipik%03u).[lng](), length.[lng]().de_NO_project(ipik%03u));\n"
                 "length := nil;\n"
                 "iter := res.mark(0@0).reverse().leftfetchjoin(iter);\n"
                 "res := res.reverse().mark(0@0).reverse();\n",
@@ -7415,7 +7415,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 /* uses the actual loop, to collect the iters, which are translated 
                    into empty sequences */
                 "iter := iter.de_NO_project(ipik);\n"
-                "var iter_count := {count}(iter.reverse(),loop%03u.reverse());\n"
+                "var iter_count := [lng]({count}(iter.reverse(),loop%03u.reverse()));\n"
                 "iter_count := iter_count.reverse().mark(0@0).reverse();\n",
                 cur_level);
 
@@ -8064,7 +8064,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
                         "ipik := iter;\n"
                         "pos := 1@0;\n"
-                        "item%s := %u;\n"
+                        "item%s := %lldLL;\n"
                         "kind := INT;\n",
                         cur_level, kind_str(rc), 
                         c->sem.num);
@@ -8075,8 +8075,8 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 milprintf(f,
                         "{\n"
                         "int_values := int_values.seqbase(nil)"
-                                                ".insert(nil,%u).seqbase(0@0);\n"
-                        "var itemID := int_values.ord_uselect(%u);\n"
+                                                ".insert(nil,%lldLL).seqbase(0@0);\n"
+                        "var itemID := int_values.ord_uselect(%lldLL);\n"
                         "itemID := itemID.reverse().fetch(0);\n",
                         c->sem.num, c->sem.num);
                 /* translateConst needs a bound variable itemID */

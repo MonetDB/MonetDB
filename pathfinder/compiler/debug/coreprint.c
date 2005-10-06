@@ -155,7 +155,7 @@ core_dot (FILE *f, PFcnode_t *n, char *node)
         L2 (c_id[n->kind], s);
         break;
     case c_lit_int:   
-        snprintf (s, sizeof (s), "%u", n->sem.num);
+        snprintf (s, sizeof (s), "%lld", n->sem.num);
         L2 (c_id[n->kind], s);                  
         break;
     case c_lit_dec:   
@@ -241,7 +241,7 @@ core_pretty (PFcnode_t *n)
         PFprettyprintf ("%s", n->sem.str);
         break;
     case c_lit_int:     
-        PFprettyprintf ("%i", n->sem.num);
+        PFprettyprintf ("%lld", n->sem.num);
         break;
     case c_lit_dec:     
         PFprettyprintf ("%.5g", n->sem.dec);

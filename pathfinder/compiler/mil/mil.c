@@ -164,7 +164,7 @@ wire7 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
  * @param i The integer value to represent in MIL
  */
 PFmil_t *
-PFmil_lit_int (int i)
+PFmil_lit_int (long long int i)
 {
     PFmil_t *ret = leaf (m_lit_int);
     ret->sem.i = i;

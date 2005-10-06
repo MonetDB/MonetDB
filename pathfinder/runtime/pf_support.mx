@@ -45,7 +45,7 @@ C implementation of the document shredder"
 @m
 .COMMAND print_doc(str,BAT[void,bat], str) : void = xquery_print_doc_main;
  "C interface to Workset print routine"
-.COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,int],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
+.COMMAND print_result(str,BAT[void,bat],BAT[void,oid],BAT[void,int],BAT[void,lng],BAT[void,dbl],BAT[void,dbl],BAT[void,str]) : void = xquery_print_result_main;
  "C interface to Workset result print routine"
 
 @- Multi Join
@@ -162,7 +162,7 @@ DESCRIPITON:
 string_join constructs for each iter one strings by appending the strings
 with the separator for this iter in between."
 
-.COMMAND enumerate( BAT[void,int] startval, BAT[void,int] length) : BAT[oid,int] = CMDenumerate;
+.COMMAND enumerate( BAT[void,lng] startval, BAT[void,lng] length) : BAT[oid,lng] = CMDenumerate;
 "PARAMETERS:
 BAT[void,oid] - list of start values
 BAT[void,oid] - list of length values
@@ -552,6 +552,7 @@ PROC slice(int b, int l, int h) : int
 @:fake(oid)@
 @:fake(chr)@
 @:fake(int)@
+@:fake(lng)@
 @:fake(dbl)@
 @:fake(str)@
 
@@ -2512,7 +2513,7 @@ int CMDenumerate ( BAT** res, BAT *startval, BAT *length )
 {
         BAT *bn;
         BUN cur_bun, length_bun, bun_last;
-        int bs_startval, bs_length, number, counter, result_size;
+        lng bs_startval, bs_length, number, counter, result_size;
         size_t cnt;
         oid base, head_oid;
         bit triv_prop;
@@ -2530,14 +2531,14 @@ int CMDenumerate ( BAT** res, BAT *startval, BAT *length )
                 "enumerate: input BATs (startval, length) must be head-aligned.\n");
 
         /* create result BAT */
-        if (CMDsum_int_int(&result_size, length) == GDK_FAIL) {
+        if (CMDsum_lng_lng(&result_size, length) == GDK_FAIL) {
                 GDKerror("enumerate: summing up 'length' failed.\n");
                 return GDK_FAIL;
         }
 
-        bn = BATnew(TYPE_oid, TYPE_int, result_size);
+        bn = BATnew(TYPE_oid, TYPE_lng, result_size);
         if (bn == NULL) {
-                GDKerror("enumerate: BATnew(TYPE_oid, TYPE_int, %d) failed.\n", result_size);
+                GDKerror("enumerate: BATnew(TYPE_oid, TYPE_lng, %d) failed.\n", result_size);
                 return GDK_FAIL;
         }
 
@@ -2550,8 +2551,8 @@ int CMDenumerate ( BAT** res, BAT *startval, BAT *length )
              cur_bun += bs_startval, length_bun += bs_length)
         {
 	        head_oid = *(oid*)BUNhead(startval,cur_bun); /* FIXME: "hvar" (void) vs. "hloc" (oid) */
-                number = *(int*) BUNtloc (startval, cur_bun);
-                counter = *(int*) BUNtloc (length, length_bun);
+                number = *(lng*) BUNtloc (startval, cur_bun);
+                counter = *(lng*) BUNtloc (length, length_bun);
                 while (counter)
                 {
 		        bunfastins(bn, &head_oid, &number);

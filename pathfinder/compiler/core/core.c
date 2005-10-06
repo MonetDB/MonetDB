@@ -215,7 +215,7 @@ PFcore_var (PFvar_t *v)
  * @return a new core tree node
  */
 PFcnode_t *
-PFcore_num (int i)
+PFcore_num (long long int i)
 {
     PFcnode_t *core;
   

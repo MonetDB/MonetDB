@@ -1034,7 +1034,7 @@ print_literal (PFmil_t * n)
 
         /* literal : IntegerLiteral */
         case m_lit_int:
-            milprintf ("%i", n->sem.i);
+            milprintf ("%lldLL", n->sem.i);
             break;
 
         /* literal : StringLiteral */

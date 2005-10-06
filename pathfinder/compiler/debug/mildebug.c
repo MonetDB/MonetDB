@@ -106,7 +106,7 @@ mil_dot (FILE *f, PFmnode_t *n, char *node)
     {
         case m_var:       L2 (m_id[n->kind], PFqname_str (n->sem.var->qname));
                           break;
-        case m_lit_int:   snprintf (s, sizeof (s), "%u", n->sem.num);
+        case m_lit_int:   snprintf (s, sizeof (s), "%lld", n->sem.num);
                           L2 (m_id[n->kind], s);
                           break;
         case m_lit_str:   snprintf (s, sizeof (s), "%s", n->sem.str);
@@ -179,7 +179,7 @@ mil_pretty (PFmnode_t *n)
     {
         case m_var:      PFprettyprintf ("%s", PFqname_str (n->sem.var->qname));
                          break;
-        case m_lit_int:  PFprettyprintf ("%i", n->sem.num);
+        case m_lit_int:  PFprettyprintf ("%lld", n->sem.num);
                          break;
         case m_lit_bit:  PFprettyprintf ("%s", n->sem.tru ? "true" : "false");
                          break;

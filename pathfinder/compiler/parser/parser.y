@@ -236,7 +236,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
  * (cf. field sem of PFpnode_t)
  */
 %union {
-    int             num;
+    long long int   num;
     dec             dec;
     double          dbl;
     char           *str;
