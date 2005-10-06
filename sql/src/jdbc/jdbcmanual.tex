@@ -99,7 +99,7 @@ public class MJDBCTest {
         public static void main(String[] args) throws Exception {
                 // make sure the driver is loaded
                 Class.forName("nl.cwi.monetdb.jdbc.MonetDriver");
-                Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/database?debug=true", "monetdb", "monetdb");
+                Connection con = DriverManager.getConnection("jdbc:monetdb://localhost/database", "monetdb", "monetdb");
                 Statement st = con.createStatement();
                 ResultSet rs;
 
