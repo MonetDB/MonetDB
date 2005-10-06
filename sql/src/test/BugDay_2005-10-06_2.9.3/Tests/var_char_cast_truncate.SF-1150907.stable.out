@@ -1,0 +1,63 @@
+stdout of test 'var_char_cast_truncate.SF-1150907` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 17:52:56 >  
+# 17:52:56 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/log" --set mapi_port=32243 --set sql_port=43756 --set xquery_port=52509 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 17:52:56 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 17:52:56 >  
+# 17:52:56 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=43756  < var_char_cast_truncate.SF-1150907.sql
+# 17:52:56 >  
+
+# 6 # querytype
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 1	]
+# 3 # querytype
+# ,	 # table_name
+# str,	length_str # name
+# varchar,	int # type
+# 19,	10 # length
+# 5,	 # tuplecount
+# 6,	 # id
+[ "bla",	3	]
+[ "blab",	4	]
+[ "5",	1	]
+[ "bla ",	4	]
+[ "blad",	4	]
+# 3 # querytype
+# ,	 # table_name
+# str,	length_str # name
+# char,	int # type
+# 4,	10 # length
+# 5,	 # tuplecount
+# 7,	 # id
+[ "bla ",	4	]
+[ "blab",	4	]
+[ "5   ",	4	]
+[ "bla ",	4	]
+[ "blad",	4	]
+
+# 17:52:56 >  
+# 17:52:56 >  Done.
+# 17:52:56 >  
+
