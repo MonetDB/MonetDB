@@ -56,7 +56,7 @@ PFscope_t *PFscope (void);
 void PFscope_into (PFscope_t *, PFqname_t, void *);
 
 /** overall number of entries in scope data structure */ 
-unsigned int PFscope_count (PFscope_t *);
+unsigned int PFscope_count (const PFscope_t *);
 
 /** open a new scope */
 void PFscope_open (PFscope_t *);
@@ -66,6 +66,12 @@ void PFscope_close (PFscope_t *);
 
 /** is key currently in scope? (returns 0 if key is not in scope) */
 void *PFscope_lookup (PFscope_t *, PFqname_t);
+
+/**
+ * Append all variables in scope @a s2 to scope @a s1.
+ * (Destructively updates @a s1, but leaves @a s2 alone.)
+ */
+void PFscope_append (PFscope_t *s1, const PFscope_t *s2, bool allow_override);
 
 #endif /* SCOPE_H */
 

@@ -27,7 +27,11 @@
 #ifndef SCANNER_H
 #define SCANNER_H
 
-void lexical_init();
+/**
+ * Initialize lexical scanner before parsing the in-memory string
+ * pointed to by @a buf.
+ */
+void PFscanner_init (char *buf);
 
 #endif  /* SCANNER_H */
 

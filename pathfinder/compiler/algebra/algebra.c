@@ -436,7 +436,7 @@ PFalg_lit_nat (nat value)
 
 /** construct literal integer (atom) */
 PFalg_atom_t
-PFalg_lit_int (int value)
+PFalg_lit_int (long long int value)
 {
     return (PFalg_atom_t) { .type = aat_int, .val = { .int_ = value } };
 }

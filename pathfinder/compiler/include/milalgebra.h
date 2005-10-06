@@ -129,7 +129,7 @@ struct PFma_op_t {
 typedef struct PFma_op_t PFma_op_t;
 
 PFma_op_t *PFma_lit_oid (oid);
-PFma_op_t *PFma_lit_int (int);
+PFma_op_t *PFma_lit_int (long long int);
 PFma_op_t *PFma_lit_str (char *);
 PFma_op_t *PFma_lit_bit (bool);
 PFma_op_t *PFma_lit_dbl (double);

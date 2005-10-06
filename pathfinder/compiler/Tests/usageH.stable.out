@@ -31,23 +31,24 @@ Usage: pf [OPTION] [FILE]
 = -t, --typing: print static types (in {...}) for Core
 = -s, --stop-after: stop processing after certain phase:
          1  right after input parsing
-         2  after parse/abstract syntax tree has been normalized
-         3  after namespaces have been checked and resolved
-         4  after variable scoping has been checked
-         5  after XQuery built-in functions have been loaded
-         6  after valid function usage has been checked
-         7  after XML Schema predefined types have been loaded
-         8  after XML Schema document has been imported (if any)
-         9  after the abstract syntax tree has been mapped to Core
-        10  after the Core tree has been simplified/normalized
-        11  after type inference and checking
-        12  after XQuery Core optimization
-        13  after the Core tree has been translated to the logical algebra
-        14  after the logical algebra tree has been rewritten/optimized
-        15  after the CSE on the logical algebra tree
-        16  after compiling logical into the physical algebra
-        17  after compiling the physical algebra into MIL code
-        18  after the MIL program has been serialized
+         2  after loading XQuery modules
+         3  after parse/abstract syntax tree has been normalized
+         4  after namespaces have been checked and resolved
+         5  after variable scoping has been checked
+         6  after XQuery built-in functions have been loaded
+         7  after valid function usage has been checked
+         8  after XML Schema predefined types have been loaded
+         9  after XML Schema document has been imported (if any)
+        10  after the abstract syntax tree has been mapped to Core
+        11  after the Core tree has been simplified/normalized
+        12  after type inference and checking
+        13  after XQuery Core optimization
+        14  after the Core tree has been translated to the logical algebra
+        15  after the logical algebra tree has been rewritten/optimized
+        16  after the CSE on the logical algebra tree
+        17  after compiling logical into the physical algebra
+        18  after compiling the physical algebra into MIL code
+        19  after the MIL program has been serialized
 = -a, --print-abstract-syntax-tree: print abstract syntax tree
 = -c, --print-core-tree: print internal Core language
 = -l, --print-logical-algebra: print logical algebra tree

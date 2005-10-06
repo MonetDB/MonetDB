@@ -40,7 +40,6 @@
 #include "compile.h"
 #include "compile_interface.h"
 #include "parser.h"       /* parsing XQuery syntax */
-#include "scanner.h"
 #include "abssyn.h"
 #include "varscope.h"     /* variable scoping */
 #include "normalize.h"    /* parse tree normalization */
@@ -136,18 +135,24 @@ void segfault_handler (int sig);
 /**
  * helper function: read input file into a buffer 
  */
-static char* 
-pf_read(FILE *pfin) {
-    size_t off = 0, len = 2048, n;
-    char* buf = (char*) malloc(len);
-    while((n = fread(buf+off, 1, len-off-1, pfin)) > 0) {
+static char *
+read_file (FILE *pfin)
+{
+    size_t  off = 0;
+    size_t  len = 2048;
+    size_t  n;
+    char   *buf = (char*) PFmalloc (len);
+
+    while ((n = fread (buf + off, 1, len - off - 1, pfin)) > 0) {
 	off += n;
         if (off >= len - 1) {
             len *= 2;
-            buf = (char*) realloc(buf, len);
+            buf = (char*) PFrealloc(len, buf);
         }
     }
+
     buf[off] = 0;
+
     return buf;
 }
    
@@ -158,7 +163,7 @@ pf_read(FILE *pfin) {
  * (starting with the parser).
  */
 int
-pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
+PFcompile (FILE *pfin, FILE *pfout, PFstate_t *status)
 {
     PFpnode_t  *proot  = NULL;
     PFcnode_t  *croot  = NULL;
@@ -170,8 +175,6 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
 
     /* elapsed time for compiler phase */
     long tm, tm_first;
-
-    lexical_init();
 
 #if HAVE_SIGNAL_H
     /* setup sementation fault signal handler */
@@ -192,16 +195,24 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
   
     /* Invoke parser on stdin (or whatever stdin has been dup'ed to)
      */
-    xquery = pf_read(pfin);
+    xquery = read_file (pfin);
     tm_first = tm = PFtimer_start ();
     PFparse (xquery, &proot);
     tm = PFtimer_stop (tm);
-    free(xquery);
 
     if (status->timing)
         PFlog ("parsing:\t\t %s", PFtimer_str (tm));
 
     STOP_POINT(1);
+    
+    tm_first = tm = PFtimer_start ();
+    PFparse_modules (proot);
+    tm = PFtimer_stop (tm);
+
+    if (status->timing)
+        PFlog ("module import:\t\t %s", PFtimer_str (tm));
+
+    STOP_POINT(2);
     
     tm = PFtimer_start ();
 
@@ -213,24 +224,24 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("normalization:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(2);
+    STOP_POINT(3);
     
     tm = PFtimer_start ();
 
     /* Resolve NS usage */
     PFns_resolve (proot);
 
-    STOP_POINT(3);
+    STOP_POINT(4);
     
     /* Check variable scoping and replace QNames by PFvar_t pointers */
     PFvarscope (proot);
   
-    STOP_POINT(4);
+    STOP_POINT(5);
 
     /* Load built-in XQuery F&O into function environment */
     PFfun_xquery_fo ();
 
-    STOP_POINT(5);
+    STOP_POINT(6);
 
     /* Resolve function usage 
      */
@@ -240,14 +251,14 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("semantical analysis:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(6);
+    STOP_POINT(7);
 
     tm = PFtimer_start ();
 
     /* Load XML Schema/XQuery predefined types into the type environment */
     PFty_predefined ();
     
-    STOP_POINT(7);
+    STOP_POINT(8);
 
     /* XML Schema import */
     PFschema_import (proot);
@@ -256,7 +267,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("XML Schema import:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(8);
+    STOP_POINT(9);
 
     tm = PFtimer_start ();
 
@@ -268,7 +279,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("core mapping:\t\t %s", PFtimer_str (tm));
 
-    STOP_POINT(9);
+    STOP_POINT(10);
 
     /* Core simplification */
     tm = PFtimer_start ();
@@ -279,7 +290,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("core simplification:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(10);
+    STOP_POINT(11);
 
     /* Type inference and check */
     tm = PFtimer_start ();
@@ -290,7 +301,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("type checking:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(11);
+    STOP_POINT(12);
 
 
     /* Core tree optimization */
@@ -302,7 +313,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("core tree optimization:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(12);
+    STOP_POINT(13);
 
     /*
      * generate temporary MIL Code (summer branch version)
@@ -333,7 +344,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->timing)
         PFlog ("logical algebra tree generation:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(13);
+    STOP_POINT(14);
 
     /* Rewrite/optimize algebra tree */
     tm = PFtimer_start ();
@@ -346,7 +357,7 @@ pf_compile (FILE *pfin, FILE *pfout, PFstate_t *status)
         PFlog ("logical algebra tree rewrite/optimization:\t %s",
                PFtimer_str (tm));
 
-    STOP_POINT(14);
+    STOP_POINT(15);
 
     tm = PFtimer_start ();
 
@@ -363,7 +374,7 @@ subexelim:
         PFlog ("common subexpression elimination in logical algebra tree:\t %s",
                PFtimer_str (tm));
 
-    STOP_POINT(15);
+    STOP_POINT(16);
 
     /* Compile algebra into physical algebra */
     tm = PFtimer_start ();
@@ -373,7 +384,7 @@ subexelim:
     if (status->timing)
         PFlog ("compilation to physical algebra:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(16);
+    STOP_POINT(17);
 
     /* Map physical algebra to MIL */
     tm = PFtimer_start ();
@@ -383,14 +394,14 @@ subexelim:
     if (status->timing)
         PFlog ("MIL code generation:\t %s", PFtimer_str (tm));
 
-    STOP_POINT(17);
+    STOP_POINT(18);
 
     /* Render MIL program in Monet MIL syntax 
      */
     if (!(mil_program = PFmil_serialize (mroot)))
         goto failure;
 
-    STOP_POINT(18);
+    STOP_POINT(19);
 
     /* Print MIL program to pfout */
     if (mil_program)
@@ -495,7 +506,6 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         *epilogue = NULL;
 
         pf_alloc = pa_create();
-        lexical_init();
 
         PFstate.invocation = invoke_monetdb;
         PFstate.summer_branch = true;
@@ -514,7 +524,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         if (setjmp(PFexitPoint) != 0 ) {
                 return PFerrbuf;
         }
-	/* repeat pf_compile, which we can't reuse as we don't want to deal with files here */
+	/* repeat PFcompile, which we can't reuse as we don't want to deal with files here */
         PFparse (xquery, &proot);
         proot = PFnormalize_abssyn (proot);
         PFns_resolve (proot);

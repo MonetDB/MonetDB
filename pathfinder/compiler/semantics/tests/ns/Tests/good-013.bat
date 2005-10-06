@@ -3,5 +3,5 @@
 
 @set NAME=%1
 
-pf -s3 < %NAME%.xq
+pf -s4 < %NAME%.xq
 @echo %ERRORLEVEL%

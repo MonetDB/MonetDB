@@ -218,7 +218,7 @@ typedef struct PFpnode_t PFpnode_t;
 typedef union PFpsem_t PFpsem_t;
 
 union PFpsem_t {
-  int        num;        /**< integer value */
+  long long int  num;        /**< integer value */
   double     dec;        /**< decimal value */
   double     dbl;        /**< double value */
   bool       tru;        /**< truth value (boolean) */

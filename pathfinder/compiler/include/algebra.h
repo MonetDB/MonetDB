@@ -242,12 +242,13 @@ typedef enum PFalg_doc_t PFalg_doc_t;
 PFalg_atom_t PFalg_lit_nat (nat value);
 
 /** construct literal integer (atom) */
-PFalg_atom_t PFalg_lit_int (int value);
+PFalg_atom_t PFalg_lit_int (long long int value);
 
 /** construct literal string (atom) */
 PFalg_atom_t PFalg_lit_str (char *value);
 
 /** construct literal float (atom) */
+/* FIXME: Wouter: should be double? */
 PFalg_atom_t PFalg_lit_dec (float value);
 
 /** construct literal double (atom) */
