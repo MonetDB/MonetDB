@@ -101,9 +101,13 @@ hash (PFqname_t key)
     unsigned int i;
     char *k;
 
-    k = PFqname_str (key);
+    i = 0;
 
-    for (i = 0; *k; k++)
+    if (key.ns.uri)
+        for (k = key.ns.uri; *k; k++)
+            i = 131 * i + *k;
+
+    for (k = key.loc; *k; k++)
         i = 131 * i + *k;
 
     return i % SCOPE_HASH_SZ;
@@ -141,7 +145,7 @@ PFscope_into (PFscope_t *s, PFqname_t key, void *value)
  * @return overall number of entries in scope
  */
 unsigned int
-PFscope_count (PFscope_t *s)
+PFscope_count (const PFscope_t *s)
 {
     assert (s);
 
@@ -234,5 +238,34 @@ PFscope_lookup (PFscope_t *s, PFqname_t key)
     return 0;
 }
 
+/**
+ * Append all variables in scope @a s2 to scope @a s1.
+ * (Destructively updates @a s1, but leaves @a s2 alone.)
+ *
+ * If you do not want to allow that variables in scope @a s2
+ * override variables in scope @a s1, set @a allow_override
+ * to false. Overriding will then lead to a PFoops(). See also
+ * varscope.c:scope_lib_mod().
+ */
+void
+PFscope_append (PFscope_t *s1, const PFscope_t *s2, bool allow_override)
+{
+    for (unsigned int h = 0; h < SCOPE_HASH_SZ; h++)
+
+        for (unsigned int i = 0; i < PFarray_last (s2->hash[h]); i++) {
+
+            if (!allow_override
+                && PFscope_lookup (
+                    s1, (*((entry_t *) PFarray_at (s2->hash[h], i))).key))
+                PFoops (OOPS_VARREDEFINED,
+                        "redefinition of $%s",
+                        PFqname_str ((*((entry_t *) PFarray_at (s2->hash[h],
+                                                                i))).key));
+            PFscope_into (
+                    s1,
+                    (*((entry_t *) PFarray_at (s2->hash[h], i))).key,
+                    (*((entry_t *) PFarray_at (s2->hash[h], i))).value);
+        }
+}
 
 /* vim:set shiftwidth=4 expandtab: */

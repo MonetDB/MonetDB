@@ -177,8 +177,20 @@ gotoState (int s)
     BEGIN (s);
 }
 
+/**
+ * Initialize lexical scanner before parsing the in-memory string
+ * pointed to by @a buf.
+ */
 void
-pfStart( char* buf) {
+PFscanner_init (char *buf)
+{
+    /* initialize lexical stack */
+    lexical_sp = 0; 
+    lexical_stack = PFarray (sizeof (int));
+
+    /*
+     * FIXME: Whoever wrote this code: Please comment what is going on here.
+     */
     if (!pfin) {
 #ifdef NATIVE_WIN32
         pfin = fopen("C:nul","r");
@@ -190,6 +202,7 @@ pfStart( char* buf) {
         YY_FLUSH_BUFFER;
         gotoState(0);
     }
+
     *PFerrbuf = 0;
     pfinput = buf;
     pflineno = 1;
@@ -527,12 +540,12 @@ _                                ({S}|{ExprComment})+
 ")"{_}?"as"                        { gotoState (ITEMTYPE); yield (rparen_as); }
 "as"                               { gotoState (ITEMTYPE); yield (as); }
 ":="                               { gotoState (DEFAULT); yield (colon_equals);}
-"external"                         { gotoState (DEFAULT); yield (external); }
+"external"                         { gotoState (DEFAULT); yield (external_); }
 
 "at"{_}"$"                         { gotoState (VARNAME); yield (at_dollar); }
 "for"{_}"$"                        { gotoState (VARNAME); yield (for_dollar); }
 "let"{_}"$"                        { gotoState (VARNAME); yield (let_dollar); }
-"in"                               { gotoState (DEFAULT); yield (in); }
+"in"                               { gotoState (DEFAULT); yield (in_); }
 
 "{"                                { pushState (OPERATOR);
                                      gotoState (DEFAULT);
@@ -562,7 +575,7 @@ _                                ({S}|{ExprComment})+
 "else"                             { gotoState (DEFAULT); yield (else_); }
 "or"                               { gotoState (DEFAULT); yield (or); }
 "and"                              { gotoState (DEFAULT); yield (and); }
-"to"                               { gotoState (DEFAULT); yield (to); }
+"to"                               { gotoState (DEFAULT); yield (to_); }
 "union"                            { gotoState (DEFAULT); yield (union_); }
 "|"                                { gotoState (DEFAULT); yield (pipe_); }
 "intersect"                        { gotoState (DEFAULT); yield (intersect); }

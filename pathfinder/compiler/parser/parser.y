@@ -44,11 +44,21 @@
 /* strcmp */
 #include <string.h>
 
+#include "scanner.h"
+
+/* PFstrdup() */
+#include "mem.h"
+
+/* include libxml2 library to parse module definitions from an URI */
+#include "libxml/xmlIO.h"
+
 /** root node of the parse tree */
 static PFpnode_t *root;
 
 /* temporay node memory */
 static PFpnode_t *c, *c1;
+
+static void add_to_module_wl (char *ns, char *uri);
 
 /* avoid `implicit declaration of yylex' warning */
 extern int pflex (void);
@@ -84,6 +94,44 @@ void pferror (const char *s);
 /* scanner information to provide better error messages */
 extern char *pftext;
 extern int pflineno;
+
+/**
+ * True if we have been invoked via parse_module().
+ *
+ * For queries that contain "import module" instructions, we
+ * re-invoke the parser for each imported module.  In that case
+ * we _only_ allow modules to be read and refuse query scripts.
+ */
+static bool module_only = false;
+
+/**
+ * Module namespace we accept during parsing.
+ *
+ * If a module is imported, its associated namespace must match the
+ * namespace given in the "import module" statement.  If this variable
+ * is != NULL, we only accept modules with the given namespace.
+ */
+static char *req_module_ns = NULL;
+
+/**
+ * Work list of modules that we have to load.
+ *
+ * Whenever we encounter an "import module" statement, we add an
+ * URI to the list (if it is not in there already).  We process
+ * the work list after parsing the main query file.
+ */
+static PFarray_t *modules = NULL;
+
+/**
+ * Each item in the work list is a namespace/URI pair.  The URI
+ * denotes the URI to load the module from; the namespace is the
+ * namespace that the module should be defined for (abort parsing
+ * otherwise).
+ */
+typedef struct module_t {
+    char *ns;
+    char *uri;
+} module_t;
 
 /**
  * remember if boundary whitespace is to be stripped or preserved;
@@ -265,7 +313,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token every_dollar                    "every $"
 %token except                          "except"
 %token excl_equals                     "!="
-%token external                        "external"
+%token external_                       "external"
 %token following_colon_colon           "following::"
 %token following_sibling_colon_colon   "following-sibling::"
 %token for_dollar                      "for $"
@@ -278,7 +326,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token if_lparen                       "if ("
 %token import_module                   "import module"
 %token import_schema                   "import schema"
-%token in                              "in"
+%token in_                             "in"
 %token instance_of                     "instance of"
 %token intersect                       "intersect"
 %token is                              "is"
@@ -334,7 +382,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 %token text_lbrace                     "text {"
 %token text_lparen                     "text ("
 %token then                            "then"
-%token to                              "to"
+%token to_                             "to"
 %token treat_as                        "treat as"
 %token typeswitch_lparen               "typeswitch ("
 %token union_                          "union"
@@ -462,7 +510,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
                PrimaryExpr Prolog QuantifiedExpr QueryBody RangeExpr
                RelativePathExpr ReverseStep SchemaAttributeTest
                SchemaElementTest SequenceType Setter SingleType StepExpr
-               StringLiterals_ TextTest TreatExpr TypeDeclaration
+               TextTest TreatExpr TypeDeclaration
                TypeswitchExpr UnaryExpr UnionExpr UnorderedExpr
                ValidateExpr ValueExpr VarBindings_ VarDecl VarName
                VarPosBindings_ VarRef WhereClause Wildcard XMLSpaceDecl
@@ -471,7 +519,7 @@ max_loc (PFloc_t loc1, PFloc_t loc2)
 
 %type <phole>  CaseClauses_ DirAttributeList ForLetClauses_ Import
                ImportAndNSDecls_ ModuleImport ModuleNS_ PredicateList
-               SchemaImport SchemaSrc_ Setters_ VarFunDecls_
+               SchemaImport SchemaSrc_ Setters_ StringLiterals_ VarFunDecls_
 
 /*
  * We expect 16 shift/reduce conflicts:
@@ -546,25 +594,36 @@ OptEncoding_              : /* empty */
 
 /* [3] */
 MainModule                : Prolog QueryBody
-                            { $$ = wire2 (p_main_mod, @$, $1, $2); }
+                            {
+                              if (module_only)
+                                  PFoops (OOPS_MODULEIMPORT,
+                                          "\"import module\" references a "
+                                          "query, not a module");
+                              $$ = wire2 (p_main_mod, @$, $1, $2); }
                           ;
 
 /* [4] */
 LibraryModule             : ModuleDecl Prolog 
-                            { $$ = wire2 (p_main_mod, @$, $2, leaf (p_empty_seq, @$)); }
+                            { $$ = wire2 (p_lib_mod, @$, $1, $2); 
+                              /* $$ = wire2 (p_main_mod, @$, $2, leaf (p_empty_seq, @$)); */ }
                           ;
 
 /* [5] */
 ModuleDecl                : "module namespace" NCName
                               "=" StringLiteral Separator
                             {
-/* Peter: for MIL generation we ignore module name/uri, and execute module decl as an empty sequence
+                              if (req_module_ns
+                                  && strcmp (req_module_ns, $4))
+                                  PFoops (OOPS_MODULEIMPORT,
+                                          "module namespace does not match "
+                                          "import statement (`%s' vs. `%s')",
+                                          $4, req_module_ns);
+
                               ($$ = wire1 (p_mod_ns,
                                            @$,
                                            (c = leaf (p_lit_str, @4),
                                             c->sem.str = $4,
                                             c)))->sem.str = $2;
-*/
                             }
                           ;
 
@@ -777,30 +836,67 @@ OptAtStringLiterals_      : /* empty */
                                           (c = leaf (p_lit_str, @1),
                                            c->sem.str = $1,
                                            c),
-                                          $2);
+                                          $2.root ? $2.root : nil (@$));
                             }
                           ;
 
 StringLiterals_           : /* empty */
-                            { $$ = nil (@$); }
-                          | StringLiteral "," StringLiterals_
-                            { $$ = wire2 (p_schm_ats, @$,
+                            { $$.root = $$.hole = NULL; }
+                          | StringLiterals_ "," StringLiteral
+                            {
+                              if ($1.root) {
+                                  $$.root = $1.root;
+                                  FIXUP (1, $1,
+                                         wire2 (p_schm_ats, @$,
+                                                (c = leaf (p_lit_str, @3),
+                                                 c->sem.str = $3,
+                                                 c),
+                                                nil (@3)));
+                              }
+                              else {
+                                  $$.root = $$.hole
+                                          = wire2 (p_schm_ats, @$,
+                                                   (c = leaf (p_lit_str, @3),
+                                                    c->sem.str = $3,
+                                                    c),
+                                                   nil (@$));
+                              }
+                              /*
+                              $$ = wire2 (p_schm_ats, @$,
                                           (c = leaf (p_lit_str, @1),
                                            c->sem.str = $1,
                                            c),
                                           $3);
+                              */
                             }
                           ;
 
 /* [20] */
 ModuleImport              : "import module" ModuleNS_ OptAtStringLiterals_
-                            {
-                              PFinfo_loc (OOPS_NOTSUPPORTED, @$,
-                                          "Pathfinder does currently not "
-                                          "support XQuery modules.");
-                              YYERROR;
+                            { /* XQuery allows to merge a module import
+                               * and an associated namespace declaration:
+                               *
+                               * import module namespace ns = "ns" [at "url"]
+                               *
+                               * which is equivalent to
+                               *
+                               * import module "ns" [at "url"]
+                               * namespace ns = "ns" 
+                               *
+                               * We thus return the module import in $$.root
+                               * and the namespace declaration in $$.hole
+                               * ($2.root == NULL if no namespace decl given)
+                               */
+                              c = $3;
 
-                              $$.root = wire2 (p_mod_imp, @$, $2.root, $3);
+                              while (c->kind == p_schm_ats) {
+                                  add_to_module_wl (
+                                      $2.hole->sem.str,       /* NS */
+                                      c->child[0]->sem.str);  /* URI */
+                                  c = c->child[1];
+                              }
+
+                              $$.root = wire2 (p_mod_imp, @$, $2.hole, $3);
                               $$.hole = $2.root;
                             }
                           ;
@@ -2199,6 +2295,26 @@ flatten_locpath (PFpnode_t *p, PFpnode_t *r)
 }
 
 /**
+ * Add an item to the work list of modules to import.  If it is
+ * already in there, do nothing.
+ *
+ * @param ns   namespace associated with this module
+ * @param uri  URI where we will find the module definition.
+ *
+ *  import module [prefix =] ns at uri, uri, uri...
+ */
+static void
+add_to_module_wl (char *ns, char *uri)
+{
+    for (unsigned int i = 0; i < PFarray_last (modules); i++)
+        if ( !strcmp (((module_t *) PFarray_at (modules, i))->uri, uri) )
+            return;
+
+    *(module_t *) PFarray_add (modules)
+        = (module_t) { .ns = PFstrdup (ns), .uri = PFstrdup (uri) };
+}
+
+/**
  * Invoked by bison whenever a parsing error occurs.
  */
 void pferror (const char *s)
@@ -2214,19 +2330,25 @@ void pferror (const char *s)
 
 char* pfinput = NULL; /* standard input of scanner, used by flex */
 YYLTYPE pflloc; /* why ? */
-extern void pfStart(char*);
 
 /**
- * Parse an XQuery coming in on stdin (or whatever stdin might have
- * been dup'ed to)
+ * Parse an XQuery from the main-memory buffer pointed to by @a input.
  */
 void
-PFparse (char* input, PFpnode_t **r)
+PFparse (char *input, PFpnode_t **r)
 {
-    pfStart(input);
 #if YYDEBUG
     pfdebug = 1;
 #endif
+
+    /* initialize lexical scanner */
+    PFscanner_init (input);
+
+    /* initialize work list of modules to load */
+    modules = PFarray (sizeof (module_t));
+
+    /* we don't explicitly ask for modules */
+    module_only = false;
 
     /* initialisation of yylloc */
     pflloc.first_row = pflloc.last_row = 1;
@@ -2236,6 +2358,87 @@ PFparse (char* input, PFpnode_t **r)
         PFoops (OOPS_PARSE, "XQuery parsing failed");
 
     *r = root;
+}
+
+/**
+ * Load and parse the module located at @a uri (has to be associated
+ * with namespace @a ns).
+ */
+static PFpnode_t *
+parse_module (char *ns, char *uri)
+{
+    xmlParserInputBufferPtr buf = NULL;
+    int   num_read;
+
+    /*
+     * open file via parser from the libxml2 library
+     * (capable of loading URIs also via HTTP or FTP)
+     */
+    buf = xmlParserInputBufferCreateFilename (uri, XML_CHAR_ENCODING_NONE);
+
+    if (!buf)
+        PFoops (OOPS_MODULEIMPORT, "error loading module from %s", uri);
+
+    /*
+     * Load in chunks of 2048 chars.  libxml2 does not really
+     * stick to these 2048 chars, but we don't care anyway...
+     */
+    while ((num_read = xmlParserInputBufferGrow (buf, 2048)))
+        /* empty */;
+
+    if (num_read < 0)
+        PFoops (OOPS_MODULEIMPORT, "error loading module from %s", uri);
+
+    /* file is now loaded into main-memory */
+    PFscanner_init (buf->buffer->content);
+
+    /* initialisation of yylloc */
+    pflloc.first_row = pflloc.last_row = 1;
+    pflloc.first_col = pflloc.last_col = 0;
+
+    req_module_ns = ns;
+
+    if (pfparse ())
+        PFoops (OOPS_PARSE, "error parsing module from %s", uri);
+
+    /* free resource allocated by libxml2 file reader */
+    xmlFreeParserInputBuffer (buf);
+
+    return root;
+}
+
+/**
+ * Load and parse modules listed in working list and put them into
+ * the parse tree @a r.
+ */
+void
+PFparse_modules (PFpnode_t *r)
+{
+    PFpnode_t *module;
+    PFloc_t    noloc = (PFloc_t) { .first_row = 0, .first_col = 0,
+                                   .last_row  = 0, .last_col  = 0};
+
+    /* only accept module from now on */
+    module_only = true;
+
+    for (unsigned int i = 0; i < PFarray_last (modules); i++) {
+
+        module = parse_module (((module_t *) PFarray_at (modules, i))->ns,
+                               ((module_t *) PFarray_at (modules, i))->uri);
+
+        /*
+         * declarations are the left child of the root for queries,
+         * right child otherwise.
+         */
+        if (r->kind == p_main_mod)
+            r->child[0]
+                = wire2 (p_decl_imps, noloc, module, r->child[0]);
+        else
+            r->child[1]
+                = wire2 (p_decl_imps, noloc, module, r->child[1]);
+    }
+
+    return;
 }
 
 /* vim:set shiftwidth=4 expandtab: */

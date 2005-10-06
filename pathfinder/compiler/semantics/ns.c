@@ -147,6 +147,15 @@ static PFns_t ens;
 static PFns_t fns;
 
 /**
+ * Target namespace for an XQuery module definition.
+ *
+ * Each function and variable declared by the module must be within
+ * this namespace.  When processing a query, we set this to the
+ * wildcard namespace.
+ */
+static PFns_t target_ns;
+
+/**
  * Does QName @a qn actually have a NS prefix?
  */
 #define NS_QUAL(qn) ((qn).ns.ns)
@@ -419,9 +428,71 @@ ns_resolve (PFpnode_t *n)
 
         /* handle query prolog */
 
-    case p_mod_ns:
-        PFoops (OOPS_NOTSUPPORTED,
-                "Pathfinder does currently not support XQuery modules.");
+    case p_lib_mod:
+    {   /*
+         * Isolate namespaces in module definitions from main query
+         * (and between modules).
+         *
+         * Thus,
+         *
+         *  -- clear the namespace environment (after saving the old one)
+         *
+         *  -- bring default namespaces into scope
+         *
+         *  -- process module body
+         *
+         *  -- restore old environment
+         *
+         * Parse tree situation:
+         *
+         *          lib_mod           module namespace foo = "http://foo.bar/";
+         *         /       \
+         *  mod_ns(foo)     e
+         *    |
+         * lit_str(http://...)
+         */
+        PFarray_t     *old_namespace = namespace;
+        unsigned int   old_ns_num    = ns_num;
+        PFns_t         old_ens       = ens;
+        PFns_t         old_fns       = fns;
+        PFns_t         old_target_ns = target_ns;
+
+        namespace = PFarray (sizeof (PFns_t));
+        ns_num = 0;
+
+        /* bring the default NS into scope */
+        ns_add (PFns_xml);
+        ns_add (PFns_xs);
+        ns_add (PFns_xsi);
+        ns_add (PFns_pf);
+        ns_add (PFns_xdt);
+        ns_add (PFns_local);
+        ns_add (PFns_wild);
+        ns_add (PFns_fn);
+
+        fns = PFns_fn;
+
+        /* ``undefine'' the default element NS */
+        ens = (PFns_t) { .ns = 0, .uri = 0 };
+
+        /* set the target namespace as given in the module declaration */
+        target_ns = (PFns_t) { .ns = n->child[0]->sem.str,
+                               .uri = n->child[0]->child[0]->sem.str };
+
+        ns_add (target_ns);
+
+        /* perform NS resolution in module */
+        ns_resolve (n->child[1]);
+
+        /* restore anything */
+        target_ns = old_target_ns;
+        fns       = old_fns;
+        ens       = old_ens;
+        ns_num    = old_ns_num;
+        namespace = old_namespace;
+
+    } break;
+
 
     case p_fns_decl:
         /* default function namespace = "foo" 
@@ -489,6 +560,18 @@ ns_resolve (PFpnode_t *n)
                             "unknown namespace in qualified function name %s", 
                             PFqname_str (n->sem.qname));
 
+        /*
+         * If we are within a module, the function declaration must be
+         * within the module's target namespace.
+         */
+        if (PFns_eq (target_ns, PFns_wild)
+            && PFns_eq (n->sem.qname.ns, target_ns))
+            PFoops_loc (OOPS_BADNS, n->loc,
+                        "function %s must be declared within the module's "
+                        "target namespace (%s = \"%s\")",
+                        PFqname_str (n->sem.qname),
+                        target_ns.ns, target_ns.uri);
+
         /* NS resolution in function parameters, return type, and body */
         assert (n->child[0] && n->child[0]->child[0]);
         ns_resolve (n->child[0]->child[0]);
@@ -500,6 +583,7 @@ ns_resolve (PFpnode_t *n)
         ns_resolve (n->child[1]);
 
         break;
+
 
         /* handle named types and schema references */
 
@@ -544,6 +628,34 @@ ns_resolve (PFpnode_t *n)
                             PFqname_str (n->sem.qname));
         }
         break;
+
+    case p_var_decl:
+        /*
+         * parse tree situation:
+         *
+         *          var_decl
+         *         /        \
+         *      var_type     expr
+         *     /       \
+         *  varref    type
+         */
+        ns_resolve (n->child[0]);
+        ns_resolve (n->child[1]);
+
+        /*
+         * If we are within a module, the function declaration must be
+         * within the module's target namespace.
+         */
+        if (PFns_eq (target_ns, PFns_wild)
+            && PFns_eq (n->child[0]->child[0]->sem.qname.ns, target_ns))
+            PFoops_loc (OOPS_BADNS, n->loc,
+                        "variable %s must be declared within the module's "
+                        "target namespace (%s = \"%s\")",
+                        PFqname_str (n->child[0]->child[0]->sem.qname),
+                        target_ns.ns, target_ns.uri);
+
+        break;
+
 
         /* handle query body */
 
@@ -708,6 +820,9 @@ PFns_resolve (PFpnode_t *root)
 
     /* ``undefine'' the default element NS */
     ens = (PFns_t) { .ns = 0, .uri = 0 };
+
+    /* allow any namespace for declarations in queries */
+    target_ns = PFns_wild;
 
     /* initiate the actual NS resolution */
     ns_resolve (root); 

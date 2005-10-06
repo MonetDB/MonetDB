@@ -7,6 +7,7 @@
  *
  * The abstract syntax tree is traversed recursively. With the help of
  * a stack-type environment, variable scoping is checked. On any occurence of
+ *
  *  - a @c flwr, @c some or @c every node, or a function declaration
  *    node, the current variable environment is saved and restored 
  *    after the node has been processed.  The variables are bound only within 
@@ -38,6 +39,12 @@
  *    phase. The scope checking, however, is continued to possibly find
  *    more scoping rule violations and report them to the user.
  *    A typical rule violation is variable reuse.
+ *
+ *  - a library module declaration, we back up the current variable
+ *    environment and scope the declaration body with an initially
+ *    empty environment.  When we come back from scoping the body,
+ *    only variables exported by the module are on the stack, and we
+ *    add them to the "outer" stack that we restore as well.
  *
  * Within this scoping phase, for all variables that occur in the user
  * query, the pointer to a QName (see #PFpnode_t, #PFsem_t) is replaced
@@ -95,6 +102,8 @@ static PFvar_t *find_var (PFqname_t);
  * global (TODO: remove)
  */
 static bool scoping_failed = false;
+
+static void scope_var_decls (PFpnode_t *n);
 
 /**
  * Push a new variable onto the variable environment stack.
@@ -391,6 +400,21 @@ scope (PFpnode_t *n)
         /* already done, so skip on */
         break;
 
+    case p_main_mod:
+        /* scope global variable declarations first */
+        scope_var_decls (n->child[0]);
+
+        /* then everything else */
+        scope (n->child[0]);
+        scope (n->child[1]);
+        break;
+
+    case p_lib_mod:
+        /*
+         * stop when we encounter a library module; already did that
+         */
+        break;
+
     default:
         /*
          * For all other cases just traverse the whole tree recursively.
@@ -415,14 +439,10 @@ scope_var_decls (PFpnode_t *n)
     assert (n);
 
     switch (n->kind) {
-        case p_main_mod:
-            /* only traverse the prolog, this is enough */
-            scope_var_decls (n->child[0]);
-            break;
 
+        case p_main_mod:
         case p_lib_mod:
-            /* only traverse the prolog, this is enough */
-            scope_var_decls (n->child[1]);
+            /* stop traversing */
             break;
 
         case p_var_decl:
@@ -442,6 +462,14 @@ scope_var_decls (PFpnode_t *n)
             assert (n->child[0] && n->child[0]->child[0]
                     && n->child[0]->child[0]->kind == p_varref);
 
+            /*
+             * It is illegal to re-define globally declared variables
+             */
+            if (PFscope_lookup (var_env, n->child[0]->child[0]->sem.qname))
+                PFoops_loc (OOPS_VARREDEFINED, n->child[0]->child[0]->loc,
+                            "redefinition of variable $%s",
+                            PFqname_str (n->child[0]->child[0]->sem.qname));
+
             push (n->child[0]->child[0]);
 
             scope (n->child[1]);
@@ -456,6 +484,61 @@ scope_var_decls (PFpnode_t *n)
                  child < PFPNODE_MAXCHILD && n->child[child];
                  child++)
                 scope_var_decls (n->child[child]);
+
+            break;
+
+    }
+}
+
+static void
+scope_lib_mod (PFpnode_t *n)
+{
+    switch (n->kind) {
+
+        case p_lib_mod:
+        {  
+            /* back up variable environment */
+            PFscope_t *old_var_env = var_env;
+
+            /* and library module with an empty environment */
+            var_env = PFscope ();
+
+            /* scope variable declarations first */
+            scope_var_decls (n->child[1]);
+
+            /* then the rest (function declarations) */
+            scope (n->child[1]);
+
+            /*
+             * When we're back variables exported by the module are
+             * available on the stack. We add them to the surrounding
+             * environment.
+             *
+             * `false' means we do not allow variable overriding, and
+             * PFscope_append() will bail out if a variable in var_env
+             * already exists in old_var_env.
+             *
+             * This essentially implements that we do not allow the
+             * same variable to be declared in different library
+             * modules. We cannot do that check here, because we
+             * cannot look into the (hash based) environments. So we
+             * have to hand that problem over to PFscope_append().
+             */
+            PFscope_append (old_var_env, var_env, false);
+
+            /* and set the surrounding stack as the current one */
+            var_env = old_var_env;
+
+        } break;
+
+        default:
+            /*
+             * For all other cases just traverse the whole tree recursively.
+             */
+            for (int child = 0;
+                 child < PFPNODE_MAXCHILD && n->child[child];
+                 child++)
+                scope_lib_mod (n->child[child]);
 
             break;
 
@@ -481,8 +564,8 @@ PFvarscope (PFpnode_t * root)
     /* initialize global */
     scoping_failed = false;
 
-    /* first process variable declarations in the prolog */
-    scope_var_decls (root);
+    /* scope library modules first */
+    scope_lib_mod (root);
 
     /* then all the rest */
     scope (root);

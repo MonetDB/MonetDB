@@ -35,10 +35,15 @@
 #include "abssyn.h"
 
 /**
- * Parse an XQuery coming in on stdin (or whatever stdin might have
- * been dup'ed to)
+ * Parse an XQuery from the main-memory buffer pointed to by @a input.
  */
 void PFparse (char* pfin, PFpnode_t **);
+
+/**
+ * Load and parse modules listed in working list and put them into
+ * the parse tree @a r.
+ */
+void PFparse_modules (PFpnode_t *r);
 
 #endif   /* PARSER_H */
 

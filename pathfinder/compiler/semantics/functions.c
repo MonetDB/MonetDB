@@ -229,22 +229,17 @@ static void
 add_ufuns (PFpnode_t *n)
 {
     switch (n->kind) {
-        case p_nil:
-            /* stop recursion */
-            return;
 
-        case p_decl_imps:
-            assert (n->child[0]);
-            if (n->child[0]->kind == p_fun_decl)
-                /* add this function */
-                add_ufun (n->child[0]);
-
-            /* and recurse */
-            add_ufuns (n->child[1]);
+        case p_fun_decl:
+            /* add this function */
+            add_ufun (n);
             return;
 
         default:
-            PFoops_loc (OOPS_FATAL, n->loc, "illegal parse tree node kind");
+            /* recurse */
+            for (unsigned int i = 0;
+                    (i < PFPNODE_MAXCHILD) && (n->child[i]); i++)
+                add_ufuns (n->child[i]);
     }
 }
 

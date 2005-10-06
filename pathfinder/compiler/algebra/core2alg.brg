@@ -1131,7 +1131,8 @@ reduce (PFcnode_t * p, int goalnt)
                                         A(L(p)).rel, A(R(p)).rel);
 
             A(p) = (struct  PFla_pair_t) {
-                     .rel = roots (elem),
+                     .rel = cross (roots (elem), lit_tbl (attlist (att_pos),
+                                                          tuple (lit_nat (1)))),
                      .frag = PFla_set (fragment (elem))};
         } break;
 
@@ -1164,6 +1165,7 @@ reduce (PFcnode_t * p, int goalnt)
                      .rel = roots (attr),
                      .frag = PFla_set (fragment (attr))};
         }
+        break;
 
         /* TagName:            tag */
         case 35:

@@ -71,6 +71,8 @@ typedef enum {
     , OOPS_SCHEMAIMPORT = -20       /**< XML Schema import */
     , OOPS_BURG = -21               /**< Error during burg tree matching */
     , OOPS_NOTSUPPORTED = -22       /**< Unsupported XQuery feature */
+    , OOPS_MODULEIMPORT = -23       /**< module import */
+    , OOPS_VARREDEFINED = -24       /**< global variable redefined */
     , OOPS_WARNING = -100           /**< only warnings below */
     , OOPS_WARN_NOTSUPPORTED = -101 /**< unsupported feature */
     , OOPS_WARN_VARREUSE = -102     /**< variable reuse */

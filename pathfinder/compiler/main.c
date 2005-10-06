@@ -58,6 +58,16 @@
  * helper functions to access and modify the tree are to be found in
  * parser/abssyn.h.
  *
+ * @subsection modules XQuery Module Support
+ *
+ * During parsing, we keep a work list of modules that have been
+ * referenced via "import module" (array @c modules in parser.y).
+ * In PFparse_modules() (ran after query parsing) we process this work
+ * list and load any modules referenced in the query. We might encounter
+ * new "import module" statements as we do that, and we simply add them
+ * to the work list. Keeping the work list unique avoids endless loops
+ * in case of cyclic imports.
+ *
  * @subsection abssyn_norm Normalization of the Abstract Syntax Tree
  *
  * Semantically equivalent queries can result in different abstract
@@ -305,7 +315,7 @@
  * wide ASCII terminal. Prettyprinted output can be selected with the
  * command line option <code>-P</code>:
  @verbatim
- $ echo 'doc("foo.xml")/foo/bar' | ./pf -Pcs12
+ $ echo 'doc("foo.xml")/foo/bar' | ./pf -Pcs13
  @endverbatim
  *
  * @subsection what_to_print Data Structures that may be Printed
@@ -336,7 +346,7 @@
  * Example:
  *
  * @verbatim
-      echo 'for $i in (1,2) return $i + 1' | ./pf -ADps16 -f Co | dot -Tps
+      echo 'for $i in (1,2) return $i + 1' | ./pf -ADps17 -f Co | dot -Tps
 @endverbatim
  * will print the physical algebra tree in dot format, annotated with
  * information on cost values and on orderings provided by each
@@ -353,7 +363,7 @@
  * after mapping the abstract syntax tree to Core and prints the
  * resulting Core tree:
  * @verbatim
- $ echo 'doc("foo.xml")/foo/bar' | ./pf -Pcs9
+ $ echo 'doc("foo.xml")/foo/bar' | ./pf -Pcs10
 @endverbatim
  *
  * @subsection types Static typing for the core language
@@ -364,7 +374,7 @@
  * with core program output.
  *
  * @verbatim
- $ echo 'doc("foo.xml")/foo/bar' | ./pf -Pcts12
+ $ echo 'doc("foo.xml")/foo/bar' | ./pf -Pcts13
 @endverbatim
  *
  *
@@ -505,23 +515,24 @@ static const char
 
 static char *phases[] = {
     [ 1]  = "right after input parsing",
-    [ 2]  = "after parse/abstract syntax tree has been normalized",
-    [ 3]  = "after namespaces have been checked and resolved",
-    [ 4]  = "after variable scoping has been checked",
-    [ 5]  = "after XQuery built-in functions have been loaded",
-    [ 6]  = "after valid function usage has been checked",
-    [ 7]  = "after XML Schema predefined types have been loaded",
-    [ 8]  = "after XML Schema document has been imported (if any)",
-    [ 9]  = "after the abstract syntax tree has been mapped to Core",
-    [10]  = "after the Core tree has been simplified/normalized",
-    [11]  = "after type inference and checking",
-    [12]  = "after XQuery Core optimization",
-    [13]  = "after the Core tree has been translated to the logical algebra",
-    [14]  = "after the logical algebra tree has been rewritten/optimized",
-    [15]  = "after the CSE on the logical algebra tree",
-    [16]  = "after compiling logical into the physical algebra",
-    [17]  = "after compiling the physical algebra into MIL code",
-    [18]  = "after the MIL program has been serialized"
+    [ 2]  = "after loading XQuery modules",
+    [ 3]  = "after parse/abstract syntax tree has been normalized",
+    [ 4]  = "after namespaces have been checked and resolved",
+    [ 5]  = "after variable scoping has been checked",
+    [ 6]  = "after XQuery built-in functions have been loaded",
+    [ 7]  = "after valid function usage has been checked",
+    [ 8]  = "after XML Schema predefined types have been loaded",
+    [ 9]  = "after XML Schema document has been imported (if any)",
+    [10]  = "after the abstract syntax tree has been mapped to Core",
+    [11]  = "after the Core tree has been simplified/normalized",
+    [12]  = "after type inference and checking",
+    [13]  = "after XQuery Core optimization",
+    [14]  = "after the Core tree has been translated to the logical algebra",
+    [15]  = "after the logical algebra tree has been rewritten/optimized",
+    [16]  = "after the CSE on the logical algebra tree",
+    [17]  = "after compiling logical into the physical algebra",
+    [18]  = "after compiling the physical algebra into MIL code",
+    [19]  = "after the MIL program has been serialized"
 };
 
 /**
@@ -534,10 +545,11 @@ static char *progname = 0;
 #define MAIN_EXIT(rtrn)	\
 	fputs (PFerrbuf, stderr);\
 	exit (rtrn);
+
 /**
  * Entry point to the Pathfinder compiler,
  * parses the command line (switches), then invokes the compiler driver
- * function pf_compile();
+ * function PFcompile();
  */
 int
 main (int argc, char *argv[])
@@ -764,7 +776,7 @@ main (int argc, char *argv[])
     }
 
     /* Now call the main compiler driver */
-    if ( pf_compile(pfin, stdout, status) < 0 )
+    if ( PFcompile(pfin, stdout, status) < 0 )
         goto failure;
 
     if ( pfin != stdin )

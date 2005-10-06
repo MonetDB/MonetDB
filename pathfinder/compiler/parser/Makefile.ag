@@ -30,7 +30,7 @@ LFLAGS = -Ppf -olex.yy.c
 ## since flex/bison produce code that does not pass "-Wall -Werror"
 X_CFLAGS = 
 
-INCLUDES = ../include $(MONETDB_INCS)
+INCLUDES = ../include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 
 lib_parser = {
 	NOINST
