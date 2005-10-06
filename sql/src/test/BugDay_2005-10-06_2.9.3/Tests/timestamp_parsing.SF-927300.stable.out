@@ -1,0 +1,36 @@
+stdout of test 'timestamp_parsing.SF-927300` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 22:18:31 >  
+# 22:18:31 >  Mtimeout -timeout 180 Mserver "--config=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./lib/MonetDB:/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/home/manegold/Monet/Testing/Current/.GNU.32.32.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=39636 --set sql_port=45984 --set xquery_port=59088 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 22:18:31 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 22:19:29 >  
+# 22:19:29 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46457  < timestamp_parsing.SF-927300.sql
+# 22:19:29 >  
+
+# 3 # querytype
+#  # table_name
+# single_value # name
+# timestamp # type
+# 19 # length
+# 1 # tuplecount
+# 1 # id
+[ 2004-04-01 08:57:00.000	]
+
+# 22:19:29 >  
+# 22:19:29 >  Done.
+# 22:19:29 >  
+
