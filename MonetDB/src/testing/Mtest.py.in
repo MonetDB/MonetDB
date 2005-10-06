@@ -1373,6 +1373,9 @@ def RunTest(env, TST, BusyPorts, COND) :
         #elif [ -f "${TST}_p00.java" ] ; then  EXT="java" ; CALL="JavaXp "+TST+" "+EXT
         #elif [ -f "$TST.odmg"       ] ; then  EXT="odmg" ; CALL="odmg   "+TST+" "+EXT
     else:
+        i = TST.rfind('.')
+        if i > 0:
+            return RunTest(env, TST[:i], BusyPorts, COND)
         EXT = CALL = SERVER = ""
         if os.name == "nt":
             ErrMsg("test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|mal|milM|milS|milC|sql|xq|x100)`")
