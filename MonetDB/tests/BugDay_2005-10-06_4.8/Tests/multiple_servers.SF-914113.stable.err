@@ -1,0 +1,14 @@
+stderr of test 'multiple_servers.SF-914113` in directory 'tests/BugDay_2005-10-06_4.8` itself:
+
+
+# 13:22:03 >  
+# 13:22:03 >  Mtimeout -timeout 60 ./multiple_servers.SF-914113 multiple_servers.SF-914113 
+# 13:22:03 >  
+
+!FATAL: GDKlockHome: Database lock '.gdk_lock' denied
+
+
+# 13:22:08 >  
+# 13:22:08 >  Done.
+# 13:22:08 >  
+
