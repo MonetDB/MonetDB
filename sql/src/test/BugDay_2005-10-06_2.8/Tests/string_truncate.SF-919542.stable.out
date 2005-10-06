@@ -1,0 +1,30 @@
+stdout of test 'string_truncate.SF-919542` in directory 'src/test/BugDay_2005-10-06_2.8` itself:
+
+
+# 15:19:47 >  
+# 15:19:47 >  Mtimeout -timeout 180 Mserver "--config=/home/sjoerd/src/stable/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/sjoerd/src/stable/lib/MonetDB:/home/sjoerd/src/stable/lib/bin" --set "gdk_dbfarm=/home/sjoerd/src/stable/var/MonetDB/dbfarm" --set "sql_logdir=/home/sjoerd/src/stable/var/MonetDB/log" --set mapi_port=32826 --set sql_port=41431 --set xquery_port=55579 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 15:19:47 >  
+
+# Monet Database Server V4.8.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for i686-redhat-linux-gnu/32bit with 32bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:19:48 >  
+# 15:19:48 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41431  < string_truncate.SF-919542.sql
+# 15:19:48 >  
+
+# 7 # querytype
+# 6 # querytype
+
+# 15:19:48 >  
+# 15:19:48 >  Done.
+# 15:19:48 >  
+
