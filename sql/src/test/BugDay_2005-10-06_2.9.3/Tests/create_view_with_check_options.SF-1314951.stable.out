@@ -13,6 +13,7 @@ stdout of test 'create_view_with_check_options.SF-1314951` in directory 'src/tes
 printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 

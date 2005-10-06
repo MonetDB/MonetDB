@@ -66,16 +66,7 @@ stderr of test 'create_view_with_check_options.SF-1314951` in directory 'src/tes
 
 
 
-# 15:51:44 >  
-# 15:51:44 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42973  < create_view_with_check_options.SF-1314951.sql
-# 15:51:44 >  
-
-MAPI  = monetdb@localhost:42973
-ACTION= read_line
-QUERY = select * from m;
-ERROR = Connection terminated
-
-# 15:51:44 >  
-# 15:51:44 >  Done.
-# 15:51:44 >  
+# 22:57:42 >  
+# 22:57:42 >  Done.
+# 22:57:42 >  
 
