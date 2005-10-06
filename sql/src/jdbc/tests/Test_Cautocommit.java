@@ -32,6 +32,10 @@ public class Test_Cautocommit {
 		System.out.println("0. true\t" + con1.getAutoCommit());
 		System.out.println("0. true\t" + con2.getAutoCommit());
 
+		stmt1.setFetchSize(1);
+		stmt2.setFetchSize(1);
+		System.out.println("0. 1\t" + stmt1.getFetchSize());
+		System.out.println("0. 1\t" + stmt2.getFetchSize());
 		// test commit by checking if a change is visible in another connection
 		try {
 			System.out.print("1. create...");
