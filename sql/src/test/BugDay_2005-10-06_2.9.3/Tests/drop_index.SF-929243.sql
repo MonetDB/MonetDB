@@ -1,3 +1,3 @@
-create table t(i int);
-create index myindex on t(i);
-drop index myindex;
+create table t_dropindex(i int);
+create index idx_dropindex on t_dropindex(i);
+drop index idx_dropindex;
