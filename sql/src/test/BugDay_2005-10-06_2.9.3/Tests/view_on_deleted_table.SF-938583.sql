@@ -1,4 +1,4 @@
-create table t (i int);
-create view t2 as select * from t;
-drop table t;
-select * from t2;
+create table t_vdt (i int);
+create view v_vdt as select * from t_vdt;
+drop table t_vdt;
+select * from v_vdt;

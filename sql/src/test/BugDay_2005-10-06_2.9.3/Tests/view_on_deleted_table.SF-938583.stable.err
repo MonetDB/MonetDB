@@ -68,11 +68,11 @@ stderr of test 'view_on_deleted_table.SF-938583` in directory 'src/test/BugDay_2
 # 18:20:04 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47415  < view_on_deleted_table.SF-938583.sql
 # 18:20:04 >  
 
-MAPI  = monetdb@localhost:47415
-QUERY = drop table t;
-ERROR = !Cannot drop Table t, views depend on it
-MAPI  = monetdb@localhost:47415
-QUERY = select * from t2;
+MAPI  = monetdb@localhost:48630
+QUERY = drop table t_vdt;
+ERROR = !Cannot drop Table t_vdt, views depend on it
+MAPI  = monetdb@localhost:48630
+QUERY = select * from v_vdt;
 ERROR = !current transaction is aborted (please ROLLBACK)
 
 # 18:20:04 >  
