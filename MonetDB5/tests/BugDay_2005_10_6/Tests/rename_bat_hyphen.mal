@@ -1,5 +1,5 @@
 a:= bat.new(:int, :int);
 bat.setName(a,"x-");
-a.print();
+io.print(a);
 
 #bat("x-").print();

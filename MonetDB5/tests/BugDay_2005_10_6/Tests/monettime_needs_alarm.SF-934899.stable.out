@@ -1,0 +1,27 @@
+stdout of test 'monettime_needs_alarm.SF-934899` in directory 'tests/BugDay_2005_10_6` itself:
+
+
+# 07:27:34 >  
+# 07:27:34 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=30487 --set sql_port=45340 --set xquery_port=59509 --set monet_prompt= --trace --dbname=mTests_tests_BugDay_2005_10_6  monettime_needs_alarm.SF-934899.mal < /dev/null
+# 07:27:34 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_BugDay_2005_10_6
+# Visit http://monetdb.cwi.nl/ for further information.
+#t:= mtime.current_timestamp();
+#io.print(t);
+#
+function user.main():int;	# 0  (main:int)
+    t := mtime.current_timestamp();	# 1 MTIMEcurrent_timestamp (t:timestamp)
+    io.print(t);	# 2 IOprint_val (_2:int)<-(t:timestamp)
+end main;	# 3  
+[ 2005-10-04 09:11:34.000 ]
+
+# 07:27:34 >  
+# 07:27:34 >  Done.
+# 07:27:34 >  
+

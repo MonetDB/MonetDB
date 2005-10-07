@@ -1,0 +1,54 @@
+stdout of test 'BATpropcheck_after_outerjoin.SF-936469` in directory 'tests/BugDay_2005_10_6` itself:
+
+
+# 07:27:33 >  
+# 07:27:33 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=30487 --set sql_port=45340 --set xquery_port=59509 --set monet_prompt= --trace --dbname=mTests_tests_BugDay_2005_10_6  BATpropcheck_after_outerjoin.SF-936469.mal < /dev/null
+# 07:27:33 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_tests_BugDay_2005_10_6
+# Visit http://monetdb.cwi.nl/ for further information.
+#x:=bat.new(:void,:int);
+#bat.insert(x,nil,1);
+#bat.insert(x,nil,2);
+#bat.insert(x,nil,3);
+#bat.seqbase(x,1@0);
+#
+#y:=bat.new(:oid,:int);
+#bat.insert(y,1@0,14);
+#bat.insert(y,3@0,34);
+#
+##error here
+#x1:= bat.mirror(x);
+#x2:= algebra.outerjoin(x1,y);
+#
+##and here as well
+#x3:= bat.reverse(x);
+#x4:= algebra.outerjoin(x3,y);
+#
+!ERROR: 'bat.seqbase' undefined in user.main[5]
+function user.main():int;	# 0  (main:int)
+    x := bat.new(:void,:int);	# 1 CMDBATnew (x:bat[:void,:int])<-(_2:void)(_3:int)
+    bat.insert(x,nil,1);	# 2 BKCinsert_bun (_4:void)<-(x:bat[:void,:int])(_5:void)(_6:int)
+    bat.insert(x,nil,2);	# 3 BKCinsert_bun (_7:void)<-(x:bat[:void,:int])(_5:void)(_8:int)
+    bat.insert(x,nil,3);	# 4 BKCinsert_bun (_9:void)<-(x:bat[:void,:int])(_5:void)(_10:int)
+    bat.seqbase(x,1@0);	# 5  unknown (_11:any)<-(x:bat[:void,:int])(_12:oid)
+    y := bat.new(:oid,:int);	# 6 CMDBATnew (y:bat[:oid,:int])<-(_14:oid)(_3:int)
+    bat.insert(y,1@0,14);	# 7 BKCinsert_bun_oid_any (_15:void)<-(y:bat[:oid,:int])(_12:oid)(_16:int)
+    bat.insert(y,3@0,34);	# 8 BKCinsert_bun_oid_any (_17:void)<-(y:bat[:oid,:int])(_18:oid)(_19:int)
+#error here 	# 9  (_21:str)
+    x1 := bat.mirror(x);	# 10 BKCmirror (x1:bat[:void,:void])<-(x:bat[:void,:int])
+    x2 := algebra.outerjoin(x1,y);	# 11 ALGouterjoin (x2:bat[:void,:int])<-(x1:bat[:void,:void])(y:bat[:oid,:int])
+#and here as well 	# 12  (_25:str)
+    x3 := bat.reverse(x);	# 13 BKCreverse (x3:bat[:int,:void])<-(x:bat[:void,:int])
+    x4 := algebra.outerjoin(x3,y);	# 14 ALGouterjoin (x4:bat[:int,:int])<-(x3:bat[:int,:void])(y:bat[:oid,:int])
+end main;	# 15  
+
+# 07:27:33 >  
+# 07:27:33 >  Done.
+# 07:27:33 >  
+
