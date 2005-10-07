@@ -1709,22 +1709,28 @@ CMDset_seqbase(BAT **r, BAT *b, oid *o)
 #define REMAP_PAGE_SIZE (1<<REMAP_PAGE_BITS)
 #define REMAP_PAGE_MASK (REMAP_PAGE_SIZE-1)
 
-static void mem_segment(BAT *bn, BAT *b, size_t src_off, size_t dst_off, size_t cnt, lng* const_val) {
+static void
+mem_segment(BAT *bn, BAT *b, size_t src_off, size_t dst_off, size_t cnt, lng* const_val)
+{
 	if (const_val) { 
 		lng c = *const_val, *l = (lng*) (bn->batBuns->base + dst_off);
 		size_t k;
-		for(k=0; k<cnt/8; k++) l[k] = c; /* fill pages with constant value */
+
+		for (k = 0; k < cnt / 8; k++)
+			l[k] = c;	       /* fill pages with constant value */
 	} else {
 		/* copy segment from master bat */
 		memcpy(bn->batBuns->base + dst_off, b->batBuns->base + src_off, cnt);
 	}
 }
 
-int CMDremap(BAT **res, BAT *b, BAT *map, ptr val) {
+int
+CMDremap(BAT **res, BAT *b, BAT *map, ptr val)
+{
 	size_t pgsz = REMAP_PAGE_SIZE*BUNsize(b), yy = 0, xx, cnt = BATcount(map);
-	ssize_t zz = 0, prev = 0, max = (((ssize_t)BATcount(b))-1) / REMAP_PAGE_SIZE;
+	ssize_t zz = 0, prev = 0, max = (((ssize_t)BATcount(b)) - 1) / REMAP_PAGE_SIZE;
 	lng lng_val[8];
-	BUN p=(BUN)lng_val, q;
+	BUN p = (BUN) lng_val, q;
 	BAT *bn;
 
 	if (BUNsize(b) != ATOMsize(b->ttype)) {
@@ -1740,17 +1746,19 @@ int CMDremap(BAT **res, BAT *b, BAT *map, ptr val) {
 				BBP_logical(b->batCacheid), (lng) BATcount(b), REMAP_PAGE_SIZE);
 		return GDK_FAIL;
 	}
-	if (cnt) prev = (*(oid*) BUNtail(map, BUNfirst(map))) - 1;
+	if (cnt)
+		prev = (*(oid *) BUNtail(map, BUNfirst(map))) - 1;
 
 	/* fill lng_val with 8 times the constant after each other */
-	for(xx=0; xx<8; xx++) {
+	for (xx = 0; xx < 8; xx++) {
 		memcpy(p, val, ATOMsize(b->ttype));
 		p += ATOMsize(b->ttype);
 	}
 
 	/* create result bat */
 	*res = bn = BATcreatedesc(b->htype, b->ttype, TRUE); 
-	if (!bn) return GDK_FAIL;
+	if (!bn)
+		return GDK_FAIL;
 	bn->dims = b->dims;
 
 	/*
@@ -1765,8 +1773,10 @@ int CMDremap(BAT **res, BAT *b, BAT *map, ptr val) {
 		if (ATOMvarsized(bn->ttype)) {
 			bn->theap = GDKmalloc(sizeof(Heap)); 
 			if (bn->theap == NULL || HEAPalloc(bn->theap, bn->theap->free*BATMARGIN, 1) < 0) {
-				if (bn->theap) HEAPfree(bn->theap);
-				else GDKfree(bn->theap);
+				if (bn->theap)
+					HEAPfree(bn->theap);
+				else
+					GDKfree(bn->theap);
 				HEAPfree(bn->batBuns);
 				BBPclear(bn->batCacheid);
 				return GDK_FAIL;
@@ -1774,15 +1784,17 @@ int CMDremap(BAT **res, BAT *b, BAT *map, ptr val) {
 			memcpy(bn->theap->base, b->theap->base, bn->theap->free = b->theap->free);
 		}
 		BATloopFast(map, p, q, xx) {
-			ssize_t j = *(oid*) BUNtail(map,p);
-			if (j == oid_nil) continue;
-			if (j-1 != prev || (prev <= max && j > max)) {
-				mem_segment(bn, b, pgsz*yy, pgsz*(prev-zz), pgsz*zz, (prev-zz > max)?lng_val:NULL);
-				yy += zz; zz = 0;
+			ssize_t j = (ssize_t) *(oid *) BUNtail(map,p);
+			if (j == (ssize_t) oid_nil)
+				continue;
+			if (j - 1 != prev || (prev <= max && j > max)) {
+				mem_segment(bn, b, pgsz * yy, pgsz * (prev - zz), pgsz * zz, (prev - zz > max) ? lng_val : NULL);
+				yy += zz;
+				zz = 0;
 			}
 			zz++; prev = j;
 		}
-		mem_segment(bn, b, pgsz*yy, pgsz*(prev-zz), pgsz*zz, (prev-zz > max)?lng_val:NULL);
+		mem_segment(bn, b, pgsz * yy, pgsz * (prev - zz), pgsz * zz, (prev - zz > max) ? lng_val : NULL);
 		bn->batBuns->free += yy*pgsz;
 	}
 	bn->tsorted = 0;
@@ -1812,24 +1824,29 @@ int CMDremap(BAT **res, BAT *b, BAT *map, ptr val) {
 #endif
 #endif
 
-static int swizzle(oid*__r dst, oid*__r src, oid*__r map, size_t lo, size_t n, size_t m, size_t delta, size_t shift) {
+static int
+swizzle(oid *__r dst, oid *__r src, oid *__r map, size_t lo, size_t n, size_t m, size_t delta, size_t shift)
+{
 	size_t i, j, k;
+
 	if (delta == 0 && n) {
 		size_t p = (n+=lo) >> REMAP_PAGE_BITS;
-		if (p >= m) return 0;
-		for(j=lo&REMAP_PAGE_MASK, i=lo>>REMAP_PAGE_BITS; j<REMAP_PAGE_SIZE; j++) 
-			dst[j] = (map[i<<shift] << REMAP_PAGE_BITS) + j;
+
+		if (p >= m)
+			return 0;
+		for (j = lo & REMAP_PAGE_MASK, i = lo >> REMAP_PAGE_BITS; j < REMAP_PAGE_SIZE; j++) 
+			dst[j] = (map[i << shift] << REMAP_PAGE_BITS) + j;
 		if ((shift = REMAP_PAGE_BITS-shift) == 0) {
-			for(i++; i<p; i++)
-				for(k=i<<REMAP_PAGE_BITS, j=0; j<REMAP_PAGE_SIZE; j++) 
-					dst[k+j] = (map[i] << REMAP_PAGE_BITS) + j;
+			for (i++; i < p; i++)
+				for (k = i << REMAP_PAGE_BITS, j = 0; j < REMAP_PAGE_SIZE; j++) 
+					dst[k + j] = (map[i] << REMAP_PAGE_BITS) + j;
 		} else {
-			for(i++; i<p; i++)
-				for(k=i<<REMAP_PAGE_BITS, j=0; j<REMAP_PAGE_SIZE; j++) 
-					dst[k+j] = (map[i<<shift] << REMAP_PAGE_BITS) + j;
+			for (i++; i < p; i++)
+				for (k = i << REMAP_PAGE_BITS, j = 0; j < REMAP_PAGE_SIZE; j++) 
+					dst[k + j] = (map[i << shift] << REMAP_PAGE_BITS) + j;
 		}
-		for(k=p<<REMAP_PAGE_BITS, j=0; j<n-k; j++) 
-			dst[k+j] = (map[p<<shift] << REMAP_PAGE_BITS) + j;
+		for (k = p << REMAP_PAGE_BITS, j = 0; j < n - k; j++) 
+			dst[k + j] = (map[p << shift] << REMAP_PAGE_BITS) + j;
 	} else if (delta == 1 && shift == REMAP_PAGE_BITS) {
 		@:swizzle(1,REMAP_PAGE_BITS)@ /* help register poor ISAs */
 	} else if (delta == 2 && shift == REMAP_PAGE_BITS) {
@@ -1844,8 +1861,11 @@ static int swizzle(oid*__r dst, oid*__r src, oid*__r map, size_t lo, size_t n, s
 	return 1;
 }
 
-int CMDremap_oid(BAT **res, BAT *b, BAT *map) {
+int
+CMDremap_oid(BAT **res, BAT *b, BAT *map)
+{
 	BAT *bn = b;
+
 	if (map->hseqbase) {
 		GDKerror("[remap_oid]: map %s should be a void column starting at 0@0.\n", 
 			BBP_logical(map->batCacheid));
@@ -1860,17 +1880,17 @@ int CMDremap_oid(BAT **res, BAT *b, BAT *map) {
 		BBPfix(b->batCacheid);
 		return GDK_SUCCEED;
 	} 
-	*res = bn = BATnew(TYPE_void,TYPE_oid,BATcount(b));
+	*res = bn = BATnew(TYPE_void, TYPE_oid, BATcount(b));
 	if (bn) {
 	    	if (swizzle(
-			(oid*) BUNfirst(bn), 
-			(oid*) BUNtloc(b,BUNfirst(b)), 
-			(oid*) BUNtloc(map,BUNfirst(map)), 
+			(oid *) BUNfirst(bn), 
+			(oid *) BUNtloc(b, BUNfirst(b)), 
+			(oid *) BUNtloc(map, BUNfirst(map)), 
 			b->hseqbase,
 			BATcount(b),
 			BATcount(map),
-			BATtdense(b)?0:BUNsize(b)/sizeof(oid),
-			17 - BUNsize(map)/sizeof(oid)))
+			BATtdense(b) ? 0 : BUNsize(b) / sizeof(oid),
+			17 - BUNsize(map) / sizeof(oid)))
 		{
 			bn->batBuns->free = sizeof(oid) * BATcount(b);
 			bn->tsorted = 0;
@@ -1885,7 +1905,9 @@ int CMDremap_oid(BAT **res, BAT *b, BAT *map) {
 	return GDK_FAIL;
 }
 
-int CMDremap_summary(BAT **res, BAT *delta, BAT *map, BAT *master) {
+int
+CMDremap_summary(BAT **res, BAT *delta, BAT *map, BAT *master)
+{
 	oid *oidmap, i, xx, n = BATcount(master), m = (n+REMAP_PAGE_MASK) >> REMAP_PAGE_BITS;
 	BUN p, q, r;
 	BAT *bn = NULL;
@@ -1896,15 +1918,18 @@ int CMDremap_summary(BAT **res, BAT *delta, BAT *map, BAT *master) {
 		return GDK_FAIL;
 	}
 	/* create temporary map */
-	oidmap = (oid*) GDKmalloc(m*sizeof(oid));
-	if (oidmap == NULL) return GDK_FAIL;
-	for(i=0; i<m; i++) oidmap[i] = oid_nil; 
+	oidmap = (oid *) GDKmalloc(m*sizeof(oid));
+	if (oidmap == NULL)
+		return GDK_FAIL;
+	for (i = 0; i < m; i++)
+		oidmap[i] = oid_nil; 
 
 	/* fill map */
 	n = 0;
 	BATloopFast(delta,p,q,xx) {
-		oid o = *(oid*) BUNtail(delta,p);
+		oid o = *(oid *) BUNtail(delta,p);
 		oid p = o >> REMAP_PAGE_BITS;
+
 		if (p < m) {  
 			n += (oidmap[p] == oid_nil);
 			oidmap[p] = o;
@@ -1919,22 +1944,23 @@ int CMDremap_summary(BAT **res, BAT *delta, BAT *map, BAT *master) {
 	}
 
 	/* fetch values from master*/
-	for(i=0; n && i<m; i++) {
+	for (i = 0; n && i < m; i++) {
 		if (oidmap[i] != oid_nil) {
 			/* get page id */
-			oid p = oidmap[i] >> REMAP_PAGE_BITS; 
-			BUNfndVOID(r,map,&p); 
+			oid p = oidmap[i] >> REMAP_PAGE_BITS;
+
+			BUNfndVOID(r, map, &p); 
 			if (r == NULL) {
 				GDKerror("remap_summary: %s contains illegal offset %lld.\n", 
 					BBP_logical(delta->batCacheid), (lng) p); 
 				goto bunins_failed;
 			}
 			/* translate oid back to that in master */
-			xx = *(oid*) BUNtail(map,r);
+			xx = *(oid *) BUNtail(map,r);
 			xx = (xx << REMAP_PAGE_BITS) | (oidmap[i] & REMAP_PAGE_MASK);
 
 			/* look up the BUN in the master */
-			BUNfndVOID(r,master,&xx);
+			BUNfndVOID(r, master, &xx);
 			if (r == NULL) {
 				GDKerror("remap_summary: map %s contains illegal offsets.\n", 
 					BBP_logical(map->batCacheid)); 
@@ -1942,7 +1968,7 @@ int CMDremap_summary(BAT **res, BAT *delta, BAT *map, BAT *master) {
 			}
 
 			/* put [xx,t] BUN that is already in master in result bat */
-			BUNfastins(bn, &xx, BUNtail(master,r)); 
+			BUNfastins(bn, &xx, BUNtail(master, r)); 
 			n--;
 		}
 	}
