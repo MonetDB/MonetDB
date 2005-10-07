@@ -2297,8 +2297,8 @@ class SendThread extends Thread {
 	 * @throws SQLException in case an (IO) error occurred while sending the
 	 *         query to the server.
 	 */
-	public void throwErrors() throws SQLException {
-		if (query != null) throw new AssertionError("Aaaiiiiiiii!!! SendThread not finished :(");
+	public synchronized void throwErrors() throws SQLException {
 		if (error != null) throw new SQLException(error);
+		if (query != null) throw new AssertionError("Aaaiiiiiiii!!! SendThread not finished :(");
 	}
 }
