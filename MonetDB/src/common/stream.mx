@@ -51,6 +51,7 @@ the various underlying storage types.
 #include <malloc.h>
 #endif
 #include <signal.h>
+#include <limits.h>
 
 #ifdef NATIVE_WIN32
 #ifndef LIBSTREAM
@@ -2519,10 +2520,16 @@ bstream_read(bstream *s, size_t size)
 	return rd;
 }
 
+#ifdef _POSIX2_LINE_MAX
+#define STREAM_LINE_MAX _POSIX2_LINE_MAX
+#else
+#define STREAM_LINE_MAX 2048
+#endif
+
 ssize_t
 bstream_readline(bstream *s)
 {
-	size_t size = LINE_MAX;
+	size_t size = STREAM_LINE_MAX;
 	ssize_t rd;
 
 	if (s->eof)
