@@ -3,7 +3,7 @@ ADT_not_available.SF-850137
 BATpropcheck_after_outerjoin.SF-936469
 character_string_constants.SF-1120297
 Confusing_error.SF-852659
-crash_destroy_commit
+crash_destroy_commit.SF-1154552
 CTrefine_not_sorted.981374
 error.998332
 find_nil_in_void.SF-921814
