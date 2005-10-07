@@ -1,14 +1,14 @@
-stderr of test 'crash_destroy_commit` in directory 'tests/BugDay_2005-10-06_4.9.3` itself:
+stderr of test 'crash_destroy_commit.SF-1154552` in directory 'tests/BugDay_2005-10-06_4.9.3` itself:
 
 
-# 18:55:56 >  
-# 18:55:56 >  Mtimeout -timeout 180 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/log" --set mapi_port=36849 --set sql_port=49001 --set xquery_port=51603 --set monet_prompt= --trace "--dbname=mTests_tests_BugDay_2005-10-06_4.9.3" --dbinit="module(mapi); mapi_start();" ; echo ; echo Over..
-# 18:55:56 >  
+# 13:11:38 >  
+# 13:11:38 >  Mtimeout -timeout 300 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/log" --set mapi_port=34569 --set sql_port=43973 --set xquery_port=56315 --set monet_prompt= --trace "--dbname=mTests_tests_BugDay_2005-10-06_4.9.3" --dbinit="module(mapi); mapi_start();" ; echo ; echo Over..
+# 13:11:38 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.9.3
-# builtin opt 	monet_pid = 25123
+# builtin opt 	monet_pid = 14630
 # builtin opt 	prefix = /ufs/fabian/scratch/monetdb/current/program
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -58,33 +58,28 @@ stderr of test 'crash_destroy_commit` in directory 'tests/BugDay_2005-10-06_4.9.
 # cmdline opt 	monet_mod_path = /ufs/fabian/scratch/monetdb/current/program/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program/lib/bin
 # cmdline opt 	gdk_dbfarm = /ufs/fabian/scratch/monetdb/current/program/var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /ufs/fabian/scratch/monetdb/current/program/var/MonetDB/log
-# cmdline opt 	mapi_port = 36849
-# cmdline opt 	sql_port = 49001
-# cmdline opt 	xquery_port = 51603
+# cmdline opt 	mapi_port = 34569
+# cmdline opt 	sql_port = 43973
+# cmdline opt 	xquery_port = 56315
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_BugDay_2005-10-06_4.9.3
 
-# 18:55:57 >  
-# 18:55:57 >  Mtimeout -timeout 60 ./crash_destroy_commit.MAPI crash_destroy_commit 
-# 18:55:57 >  
+# 13:11:39 >  
+# 13:11:39 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --host=localhost --port=34569 < crash_destroy_commit.SF-1154552_s00.milC
+# 13:11:39 >  
 
 
-# 18:55:57 >  
-# 18:55:57 >  initial script
-# 18:55:57 >  
+# 13:11:39 >  
+# 13:11:39 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --host=localhost --port=34569 < crash_destroy_commit.SF-1154552_s01.milC
+# 13:11:39 >  
 
 
-# 18:55:57 >  
-# 18:55:57 >  run 1
-# 18:55:57 >  
+# 13:11:39 >  
+# 13:11:39 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --host=localhost --port=34569 < crash_destroy_commit.SF-1154552_s02.milC
+# 13:11:39 >  
 
 
-# 18:55:57 >  
-# 18:55:57 >  run 2
-# 18:55:57 >  
-
-
-# 18:55:57 >  
-# 18:55:57 >  Done.
-# 18:55:57 >  
+# 13:11:39 >  
+# 13:11:39 >  Done.
+# 13:11:39 >  
 
