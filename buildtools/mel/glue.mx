@@ -513,7 +513,7 @@ gen_default_atomops(ostream &o, int op, const Atom &d)
 		o << "         *buf++ = '0'+c%8;\n\n";
 		o << "      }\n";
 		o << "   }\n";
-		o << "   *buf++ = 0;\n";
+		o << "   *buf = 0;\n";
 		o << "   return buf-(*dst);\n";
 		o << "}\n\n";
 		break;
