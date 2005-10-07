@@ -61,19 +61,20 @@ PROC pfstart(bit open) : void {
     mapi_listen(int(monet_environment.find("xquery_port")), 5, "xquery_server", open).fork();
 }
 ADDHELP("pfstart", "boncz", "April 2005",
-        "PARAMETERS:\n\
-        bit whether the listener should listen to outside requests \
-        (default false: only local connections).\n\
-        DESCRIPTION:\n\
-        start the xquery server.",
-        "pathfinder");
+"PARAMETERS:\n\
+bit whether the listener should listen to outside requests \
+(default false: only local connections).\n\
+DESCRIPTION:\n\
+start the xquery server.",
+"pathfinder");
+
 PROC pfstart() : void {
     pfstart(false);
 }
 ADDHELP("pfstart", "boncz", "April 2005",
-        "DESCRIPTION:\n\
-        start the xquery server.",
-        "pathfinder");
+"DESCRIPTION:\n\
+start the xquery server.",
+"pathfinder");
 
 PROC xquery_server_start(bit global) : void {
     fork(mapi_listen(
@@ -93,8 +94,8 @@ PROC xquery(str query) : str {
     return xquery("xml", query);
 }
 ADDHELP("xquery", "boncz", "Juli 2005",
-        "shortcut for 'xquery(\"xml\", str query) : str'",
-        "pathfinder");
+"shortcut for 'xquery(\"xml\", str query) : str'",
+"pathfinder");
 
 #############################################
 # User-level document management functions:
@@ -298,7 +299,10 @@ PROC create_ws () : BAT[void,bat]
     ws.fetch(HEIGHT).seqbase(0@0).insert(nil,0);
     return ws.access(BAT_READ);
 }
-
+ADDHELP("create_ws", "tsheyar", "July 2004",
+"DESCRIPITON:\n\
+creates a new working set and gives back the reference",
+"pathfinder");
 
 PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
 {
@@ -333,29 +337,22 @@ PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
                           .insert (nil, ret_frag)
                           .seqbase (0@0);
 }
-
-ADDHELP("create_ws", "tsheyar", "July 2004",
-		"DESCRIPITON:\n\
-		creates a new working set and gives back the reference",
-		"pathfinder");
-
 ADDHELP("doc_tbl", "teubner", "Aug 2005",
-		"PARAMETERS:\n\
-		ws    current working set; will be modified\n\
-		item  list of documents to add to the working set\n\
-		DESCRIPTION:\n\
-		Implementation of the algebra operator `doc_tbl' that\n\
-		loads persistent documents into the working set.\n\
-		Input is a list of document names. Output is a BAT of\n\
-		BATs with the components\n\
-		(a) the modified working set,\n\
-		(b) an `item' column with the pre values of the\n\
-		document roots, and\n\
-		(c) a `kind' column that encodes document\n\
-		container (within the working set) according to our\n\
-		working set representation.",
-		"pathfinder");
-
+"PARAMETERS:\n\
+ws    current working set; will be modified\n\
+item  list of documents to add to the working set\n\
+DESCRIPTION:\n\
+Implementation of the algebra operator `doc_tbl' that\n\
+loads persistent documents into the working set.\n\
+Input is a list of document names. Output is a BAT of\n\
+BATs with the components\n\
+(a) the modified working set,\n\
+(b) an `item' column with the pre values of the\n\
+document roots, and\n\
+(c) a `kind' column that encodes node kind and document\n\
+container (within the working set) according to our\n\
+working set representation.",
+"pathfinder");
 
 PROC destroy_ws_locked(BAT[void,bat] ws) : void
 {
@@ -523,12 +520,12 @@ PROC shred_doc(str location, str name) : void
     shred_doc_base(location, name, true, "");
 }
 ADDHELP("shred_doc", "flokstra", "Dec 2004",
-        "PARAMETERS:\n\
-        - str URI containing the xml document to be shredded)\n\
-        - str document name ('alias') in database\n\
-        DESCRIPTION:\n\
-        Shred xml document to the internal Pathfinder format, (analog to import_doc()).",
-        "pathfinder");
+"PARAMETERS:\n\
+- str URI containing the xml document to be shredded)\n\
+- str document name ('alias') in database\n\
+DESCRIPTION:\n\
+Shred xml document to the internal Pathfinder format, (analog to import_doc()).",
+"pathfinder");
 
 PROC delete_doc_locked(oid doc_oid) : bit
 {
@@ -609,11 +606,11 @@ PROC delete_doc(str name) : void
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("delete_doc", "tsheyar", "July 2004",
-        "PARAMETERS:\n\
-        str document name\n\
-        DESCRIPTION:\n\
-        delete the persistent BATS that store the document.",
-        "pathfinder");
+"PARAMETERS:\n\
+str document name\n\
+DESCRIPTION:\n\
+delete the persistent BATS that store the document.",
+"pathfinder");
 
 PROC delete_all_docs_locked(bit cachedOnly) : void
 {
@@ -636,9 +633,9 @@ PROC delete_all_docs(bit cachedOnly) : void
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("delete_all_docs", "tsheyar", "July 2004",
-        "DESCRIPTION:\n\
-        deletes all persistent document BATs that store xml documents.",
-        "pathfinder");
+"DESCRIPTION:\n\
+deletes all persistent document BATs that store xml documents.",
+"pathfinder");
 
 
 PROC pin_doc(oid doc_oid, int ws) : void 
@@ -707,10 +704,42 @@ PROC add_doc_locked(str name, int ws) : oid
 
 # if docid != "", it holds the str(id) of the persistent doc
 # if not, the temporary document is in tmp_doc (by name without id)
-PROC add_doc_bat(BAT[str,bat] tmp_doc, str name, str docid) : bat[any,any]
+PROC lookup_bat(BAT[str,bat] tmp_doc, str name, str docid) : bat[any,any]
 {
     if (docid != "") return bat(name + docid);
     return tmp_doc.find(name);
+}
+
+PROC add_docbat(BAT[void,bat] ws, BAT[str,bat] docBAT, str name, str docid, int height) : oid
+{
+    # add it to the working set
+    var frag := ws.fetch(DOC_LOADED).uselect(name);
+
+    if (frag.count() = 0) {
+        ws.fetch(DOC_LOADED).insert(nil,name);
+        frag := oid(ws.fetch(DOC_LOADED).count());
+
+        # use the ws macro to instantiate all non-(view or constant) bats
+@= add_doc_bat_ws
+        if (@3 = bat)
+            ws.fetch(@1).insert(nil,docBAT.lookup_bat(toLower("@1"), docid));
+@mil
+        @:ws(add_doc_bat)@
+
+        # create views
+        ws.fetch(PRE_FRAG).insert(nil,fake_project(frag));
+        ws.fetch(ATTR_FRAG).insert(nil,fake_project(frag));
+
+        # adapt constants
+        ws.fetch(FRAG).replace(0@0,frag);
+
+        if (isnil(height))
+          height := ws.fetch(PRE_LEVEL).max().int() + 1;
+        ws.fetch(HEIGHT).insert(nil,height);
+     } else { 
+        ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); 
+     }
+     return frag;
 }
 
 var time_shred := 0; # dummy declarartion to avoid errors when timing is not activated in the script
@@ -747,31 +776,8 @@ PROC add_doc(BAT[void,bat] ws, str name) : BAT[void,bat]
         docid := str(int(bat("doc_name").reverse().find(name)));
         height := bat("doc_height").find(oid(int(docid)));
     }
-
-    # add it to the working set
-    var frag := ws.fetch(DOC_LOADED).uselect(name);
-    if (frag.count() = 0) {
-        ws.fetch(DOC_LOADED).insert(nil,name);
-        frag := oid(ws.fetch(DOC_LOADED).count());
-
-        # use the ws macro to instantiate all non-(view or constant) bats
-@= add_doc_bat_ws
-        if (@3 = bat)
-            ws.fetch(@1).insert(nil,docBAT.add_doc_bat(toLower("@1"), docid));
-@mil
-        @:ws(add_doc_bat)@
-
-        # create views
-        ws.fetch(PRE_FRAG).insert(nil,fake_project(frag));
-        ws.fetch(ATTR_FRAG).insert(nil,fake_project(frag));
-
-        # adapt constants
-        ws.fetch(FRAG).replace(0@0,frag);
-        ws.fetch(HEIGHT).insert(nil,height);
-     } else { 
-        ws.fetch(FRAG).replace(0@0,frag.reverse().fetch(0)); 
-     }
-     return ws;
+    add_docbat(ws, docBAT, name, docid, height);  
+    return ws;
 }
 
 
@@ -812,7 +818,7 @@ PROC xmlcache_add_rule(str uri, lng lifetime) : void {
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_add_rule", "boncz", "May 2005",
-        "DESCRIPTION:\nadd a new URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
+"DESCRIPTION:\nadd a new URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
 
 PROC xmlcache_del_rule(str uri) : void {
     lock_set(pf_lock);
@@ -821,7 +827,7 @@ PROC xmlcache_del_rule(str uri) : void {
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_del_rule", "boncz", "May 2005",
-        "DESCRIPTION:\ndeletes an existing URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
+"DESCRIPTION:\ndeletes an existing URI lifetime rule.\n\n" + xmlcache_help,  "pathfinder");
 
 PROC xmlcache_print_rules() : void {
     lock_set(pf_lock);
@@ -830,7 +836,7 @@ PROC xmlcache_print_rules() : void {
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmlcache_print_rules", "boncz", "May 2005",
-        "DESCRIPTION:\nshows all URI lifetime rules.\n\n" + xmlcache_help,  "pathfinder");
+"DESCRIPTION:\nshows all URI lifetime rules.\n\n" + xmlcache_help,  "pathfinder");
 
 PROC xmlcache_print() : void {
     lock_set(pf_lock);
@@ -848,7 +854,7 @@ PROC xmldb_print() : void {
     if (not(isnil(err))) ERROR(err);
 }
 ADDHELP("xmldb_print", "boncz", "May 2005",
-        "DESCRIPTION:\nshows the actual content of the persistent XML document database (not the XML document cache).\n\nThis consists of all documents explicitly shredded with shred_doc(URI, alias).",  "pathfinder");
+"DESCRIPTION:\nshows the actual content of the persistent XML document database (not the XML document cache).\n\nThis consists of all documents explicitly shredded with shred_doc(URI, alias).",  "pathfinder");
 
 
 @h
@@ -1043,6 +1049,8 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
     char *xquery, *user, *buf = GDKmalloc(maxlen + 1); /* one extra for terminator */
     int i, ret = GDK_FAIL;
 
+    if (buf == NULL)
+        return GDK_FAIL;
     if (lt->cnt != 2)
         return handle_argerror(res, lt->cnt, 2);
 
