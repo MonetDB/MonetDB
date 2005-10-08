@@ -50,3 +50,4 @@ subselect_single_value-bug-sf-941791
 subselect_union-bug-sf-941826
 groupby_having_charlength-bug-sf-943566
 innerjoin_multiple-bug-sf-943661
+profile_bug-SF.1314649.sql
