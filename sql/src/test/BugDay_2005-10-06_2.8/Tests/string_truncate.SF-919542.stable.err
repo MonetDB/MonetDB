@@ -67,14 +67,15 @@ stderr of test 'string_truncate.SF-919542` in directory 'src/test/BugDay_2005-10
 # 15:19:48 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41431  < string_truncate.SF-919542.sql
 # 15:19:48 >  
 
-MAPI  = monetdb@localhost:41431
+MAPI  = monetdb@localhost:49813
 QUERY = create table z(w varchar(0));
 ERROR = !Positive value greater than 0 expected in: "create table z(w varchar(0"
-        !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@localhost:41431
+        !syntax error, unexpected ')' in: ")"
+MAPI  = monetdb@localhost:49813
 QUERY = insert into z values('wrong');
-ERROR = !dynamic types varchar(0,0) (str) and varchar(1,0) (str) are not equal
-MAPI  = monetdb@localhost:41431
+ERROR = !ERROR: str_cast: value too long for type (var)char(1)
+        !ERROR: str_cast: operation failed.
+MAPI  = monetdb@localhost:49813
 QUERY = select * from z;
 ERROR = !current transaction is aborted (please ROLLBACK)
 
