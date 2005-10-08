@@ -270,22 +270,25 @@ void backend_profile( backend *be, char *query, lng parse, lng optimize, lng exe
 {
 	mvc *c = be->mvc;
 	int mode = c->mode;
-	char *e = c->explain;
+	int explain = c->explain;
+	char *q = query;
 
 	char buf[BUFSIZ];
 
+	while(isspace(*q)) 
+		q++; 
 	/* TODO use sql_prepare/execute */
-	snprintf(buf, BUFSIZ, "insert into sys.history "
+	snprintf(buf, BUFSIZ, "insert into sys.profile "
 		 "values(now,'%s',%lld,%lld,%lld,%lld,USER);\n",
-		 query, parse, optimize, exec, total);
+		 q, parse, optimize, exec, total);
 	_DELETE(query);
 
 	/* switch of explain to prevent recursion */
 	c->mode = m_normal;
-	c->explain = NULL;
+	c->explain = m_normal;
 	(void) mvc_sql(c, buf);
 	c->mode = mode;
-	c->explain = e;
+	c->explain = explain;
 }
 
 int
@@ -354,7 +357,7 @@ sqlexecute(backend *be, stream *out)
 	}
 
 	if (c->mode == m_profile) {
-		query = sql_escape(QUERY(c->scanner));
+		query = sql_escape(QUERY(c->scanner) + c->scanner.as);
 		Tmil = GDKusec();
 	}
 
@@ -545,7 +548,7 @@ query string with "M".
 		if (m->trans)
 			pstatus = m->status;
 
-		m->mode = m_normal;
+		m->mode = m->explain;
 		err = sqlexecute(sql, out);
 		m->scanner.mode = oldmode;
 		if (err) /* output error */

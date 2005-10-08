@@ -42,7 +42,7 @@ Over..
 [ "bla",	3	]
 [ "blab",	4	]
 [ "5",	1	]
-[ "bla ",	4	]
+[ "bla ",	3	]
 [ "blad",	4	]
 # 3 # querytype
 # ,	 # table_name
@@ -51,10 +51,10 @@ Over..
 # 4,	10 # length
 # 5,	 # tuplecount
 # 7,	 # id
-[ "bla ",	4	]
+[ "bla",	3	]
 [ "blab",	4	]
-[ "5   ",	4	]
-[ "bla ",	4	]
+[ "5",	1	]
+[ "bla ",	3	]
 [ "blad",	4	]
 
 # 17:52:56 >  

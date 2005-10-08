@@ -643,6 +643,15 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 
 	stmt *l = sql_value_exp(sql, scp, s, grp, subset, f);
 
+	/* strings may need too be truncated */
+	if (tpe ->type ->localtype == TYPE_str) { 
+		if (tpe->digits > 0) {
+			sql_subtype *st = tail_type(l);
+			sql_subtype *it = sql_bind_localtype("int");
+			sql_subfunc *c = sql_bind_func(sql->trans->module, "truncate", st, it);
+			l = stmt_binop(l, stmt_atom_int(tpe->digits), c);
+		}
+	}
 	if (l)
 		return check_types(sql, tpe, l, type_cast);
 	return NULL;
@@ -2621,7 +2630,19 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		return res;
 	}
 		break;
-	case SQL_ATOM:{
+	case SQL_NOT: {
+		symbol *lo = sc->data.sym;
+		stmt *ls = sql_logical_exp(sql, scp, lo, grp, subset, f);
+		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subfunc *not = sql_bind_func_result(sql->trans->module, "not", bt, NULL, bt);
+		
+		if (!ls)
+			return NULL;
+
+		return stmt_unop(ls, not);
+	}
+		break;
+	case SQL_ATOM: {
 		AtomNode *an = (AtomNode *) sc;
 
 		/* TRUE or FALSE */

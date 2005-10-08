@@ -72,10 +72,10 @@ typedef struct mvc {
 	int factory;		/* enable/disable the factory */
 
 	modes_t mode;
+	modes_t explain; 
 	int auto_commit;
 	int reply_size;
 	int debug;
-	char *explain;
 
 	sql_trans *trans;
 
@@ -247,7 +247,7 @@ mvc_init(int debug, backend_stack stk)
 		mvc_create_column_(m, t, "null", "boolean", 0);
 		mvc_create_column_(m, t, "number", "int", 9);
 
-		sql_create_history(m, s);
+		sql_create_profile(m, s);
 		sql_create_sessions(m, s);
 		sql_create_sequences(m, s);
 		sql_create_privileges(m, s);
@@ -524,11 +524,11 @@ mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->cache = cache;
 	m->factory = cache;
 
-	m->mode = 0;
+	m->mode = m_normal;
+	m->explain = m_normal;
 	m->auto_commit = 0;
 	m->reply_size = -1;
 	m->debug = 0;
-	m->explain = NULL;
 
 	m->trans = NULL;
 	m->status = 0;

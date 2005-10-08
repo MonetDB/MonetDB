@@ -816,6 +816,10 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			if (s->op4.typeval->type->eclass == EC_DEC ||
 			    s->op4.typeval->type->eclass == EC_INTERVAL)
 				len += snprintf(buf+len, buflen-len, ", %d, %d", s->op4.typeval->digits, s->op4.typeval->scale);
+			/* convert to string, give error on to large strings */
+			if (s->op4.typeval->type->eclass == EC_STRING &&
+			    s->op4.typeval->digits > 0) 
+				len += snprintf(buf+len, buflen-len, ", %d", s->op4.typeval->digits);
 			len += snprintf(buf+len, buflen-len, ");\n");
 			assert(len <= buflen);
 			dump(sql, buf, len, -s->nr);

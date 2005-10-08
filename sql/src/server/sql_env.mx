@@ -29,11 +29,11 @@ to control its behavior.
 The 'debug' variable takes an integer and sets the Mserver global
 debug flag. (See MonetDB documentation.)
 The 'explain' variable currently takes the values 'plan' or
-'performance'. The 'plan' qualifier produces a relational table with
+'profile'. The 'plan' qualifier produces a relational table with
 the plan derived for execution using the applicable back end and
-optimizer schemes. The 'performance' qualifier produces a performance
+optimizer schemes. The 'profile' qualifier produces a performance
 trace of the SQL queries for post analysis. It is available in
-the system table called history. Omission of either qualifier merely
+the system table called 'profile'. Omission of either qualifier merely
 results in a straight execution of the query.
 
 The 'auto_commit' flag takes a boolean and controls automatic commit
@@ -42,8 +42,9 @@ after a successful SQL execution, or conversely an automatic rollback.
 The 'reply_size' limits the number of tuples sent to the front end.
 [It is unclear how the remainder can be obtained within the SQL language
 framework. The reply_size should be replaced by 'limit']
-The 'history' variable is a boolean flag which captures execution information
-of any SQL query in a table for post-analysis.
+The 'explain' variable is a string which can be set to 'plan' or 'profile' and
+captures execution information of any SQL query in a table 'profile' for 
+post-analysis.
 
 By default all remaining variables are stored as strings and 
 any type analysis is up to the user. The can be freely used by the
@@ -77,7 +78,7 @@ extern char *sql_get_var(mvc *sql, char *name);
 extern char *sql_get_type(mvc *sql, char *name);
 
 extern int sql_create_sessions(mvc *sql, sql_schema *s);
-extern int sql_create_history(mvc *sql, sql_schema *s);
+extern int sql_create_profile(mvc *sql, sql_schema *s);
 extern int sql_session(mvc *sql);
 
 #endif /* _SQL_ENV_H_ */
@@ -316,22 +317,17 @@ sql_update_var(mvc *m, char *name)
 	} else if (strcmp(name, "explain") == 0) {
 		char *explain = sql_get_str_var(m, "explain");
 
-		if (m->explain)
-			_DELETE(m->explain);
 		if (!explain || strcmp(explain, "") == 0)
-			m->explain = NULL;
-		else if (strcmp(explain, "plan") == 0 || strcmp(explain, "performance") == 0)
-			m->explain = _strdup(explain);
+			m->explain = m_normal;
+		else if (strcmp(explain, "plan") == 0)
+			m->explain = m_explain;
+		else if (strcmp(explain, "profile") == 0)
+			m->explain = m_profile;
 		else {
-			GDKwarning("Session variable explain can only be set to 'plan', 'performance' or to the empty string\n");
+			GDKwarning("Session variable explain can only be set to 'plan', 'profile' or to the empty string\n");
 			return GDK_FAIL;
 		}
-		if (m->explain) {
-			if (strcmp(m->explain, "plan") == 0)
-				m->mode = m_explain;
-			else if (strcmp(m->explain, "performance") == 0)
-				m->mode = m_profile;
-		}
+		m->mode = m_explain;
 	} else if (strcmp(name, "cache") == 0) {
 		m->cache = sql_get_bit_var(m, "cache");
 	} else if (strcmp(name, "factory") == 0) {
@@ -387,9 +383,12 @@ sql_session(mvc *m)
 	table_insert(tr, s, "reply_size", buf, "int", &rw, NULL);
 
 	buf[0] = 0;
-	if (m->explain)
-		snprintf(buf, BUFSIZ, "%s", m->explain);
-	table_insert(tr, s, "explain", buf, "varchar", &rw, NULL);
+	if (m->explain == m_normal)
+		table_insert(tr, s, "explain", "", "varchar", &rw, NULL);
+	else if (m->explain == m_explain)
+		table_insert(tr, s, "explain", "plan", "varchar", &rw, NULL);
+	else if (m->explain == m_profile)
+		table_insert(tr, s, "explain", "profile", "varchar", &rw, NULL);
 
 	if (m->auto_commit)
 		table_insert(tr, s, "auto_commit", "true", "boolean", &rw, NULL);
@@ -454,15 +453,15 @@ sql_create_sessions(mvc *m, sql_schema *s)
 }
 
 @-
-The history table contains information on the parsing, optimization,
+The 'profile' table contains information on the parsing, optimization,
 and execution time. More detailed information should be obtained using
 the MonetDB kernel profiler, e.g. using Mknife
 @c
 
 int
-sql_create_history(mvc *m, sql_schema *s)
+sql_create_profile(mvc *m, sql_schema *s)
 {
-	sql_table *t = mvc_create_table(m, s, "history", 1, 1, 0, -1);
+	sql_table *t = mvc_create_table(m, s, "profile", 1, 1, 0, -1);
 
 	mvc_create_column_(m, t, "start", "timestamp", 0);
 	mvc_create_column_(m, t, "query", "varchar", 2048);

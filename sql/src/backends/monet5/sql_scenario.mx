@@ -993,7 +993,7 @@ SQLengine(Client c)
 
 	if( m->mode == m_prepare){
 		goto cleanup_engine;
-	} else if( m->mode == m_explain){
+	} else if(explainPlan()){
 		printFunction(c->fdout, c->curprg->def, c->listing);
 @-
 If you want to see the detailed code, we have to pick it up from
@@ -1039,22 +1039,24 @@ unless auto_commit has been set.
 	c->glb = oldglb;
 	if (explainPerformance()) {
 		str ret;
+		int mode = m->mode;
+		int explain = m->explain;
 		lng tot = be->Tparse;
 		char buf[BUFSIZ], *qs, *stmt = buf;
 
 		tot += be->Texec = GDKusec() - T0;
 		qs = sql_escape(be->qry);
-		snprintf(buf, BUFSIZ, "set explain = 'none';"
-			 "insert into sys.history "
-			 "values(now,'%s'," LLFMT ",0," LLFMT "," LLFMT" ,USER);\n"
-			 "set explain = 'performance';",
-			 qs, be->Tparse, be->Texec, tot);
+		m->mode = m_normal;
+		m->explain = m_normal;
+		snprintf(buf, BUFSIZ, "insert into sys.profile "
+		 "values(now,'%s'," LLFMT ",0," LLFMT "," LLFMT" ,USER);\n",
+		 qs, be->Tparse, be->Texec, tot);
 		_DELETE(qs);
 @-
 This code causes a recursion, because the reset of the explain
-triggers the history action. A better approach is to directly
-update the history tables, without SQL intervention.
-Then the SQL history table is just a view over a few basic bats.
+triggers the profile action. A better approach is to directly
+update the profile tables, without SQL intervention.
+Then the SQL profile table is just a view over a few basic bats.
 @c
 		stream_printf(GDKout, "#%s [parse %d]", be->qry, be->Tparse);
 		stream_printf(GDKout, "[engine %d]", be->Texec);
@@ -1064,6 +1066,8 @@ Then the SQL history table is just a view over a few basic bats.
 		be->qry = NULL;
 
 		SQLstatement(&ret, &stmt);
+		m->mode = mode;
+		m->explain = explain;
 	}
 
 	/*

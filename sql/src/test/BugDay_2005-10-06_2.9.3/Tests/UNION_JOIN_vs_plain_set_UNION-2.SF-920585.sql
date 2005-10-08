@@ -1,4 +1,4 @@
-select * from (select * from tables union select * from tables) as a;
+select * from (select * from tables where tables.system = 1 union select * from tables where tables.system = 1) as a;
 
 SELECT 'null' AS TABLE_CAT,
 	schemas.name AS TABLE_SCHEM,

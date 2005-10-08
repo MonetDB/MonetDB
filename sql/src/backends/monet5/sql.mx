@@ -501,10 +501,8 @@ include sql_cache;
 #include "sql_env.h"
 
 #define debugPlan() (be->mvc->debug || (be->mvc->mode == m_debug ))
-#define explainPlan() (be->mvc->explain && \
-		strcmp(be->mvc->explain, "plan") == 0)
-#define explainPerformance() (be->mvc->explain && \
-		strcmp(be->mvc->explain, "performance") == 0)
+#define explainPlan() (be->mvc->mode == m_explain)
+#define explainPerformance() (be->mvc->mode == m_profile)
 
 @-
 The back end structure collects the information needed to support
