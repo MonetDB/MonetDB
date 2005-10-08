@@ -44,4 +44,4 @@ SELECT 'null' AS TABLE_CAT,
 FROM tables, schemas
 WHERE tables.schema_id = schemas.id
 	AND tables.istable = 0
-	AND (tables.name = 'ttables' or tables.name == 'tcolumns' or tables.name = 'users');
+	AND (tables.name = 'ttables' or tables.name = 'tcolumns' or tables.name = 'users');
