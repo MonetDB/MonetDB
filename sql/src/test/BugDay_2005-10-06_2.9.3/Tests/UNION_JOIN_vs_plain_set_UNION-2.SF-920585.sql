@@ -29,6 +29,7 @@ FROM tables, schemas
 WHERE tables.schema_id = schemas.id
 	AND tables.system = 0
 	AND tables.istable = 0
+	AND tables.name = 'test'
 UNION ALL
 SELECT 'null' AS TABLE_CAT,
 	schemas.name AS TABLE_SCHEM,
@@ -42,4 +43,5 @@ SELECT 'null' AS TABLE_CAT,
 	'SYSTEM' AS REF_GENERATION
 FROM tables, schemas
 WHERE tables.schema_id = schemas.id
-	AND tables.istable = 0;
+	AND tables.istable = 0
+	AND (tables.name = 'ttables' or tables.name == 'tcolumns' or tables.name = 'users');

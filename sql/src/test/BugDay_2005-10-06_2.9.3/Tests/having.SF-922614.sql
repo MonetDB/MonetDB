@@ -1,5 +1,5 @@
-create table t(i int);
-insert into t values(1);
-insert into t values(2);
-select * from t where i= (select max(i) from t);
-select * from t having i= max(i);
+create table t10(i int);
+insert into t10 values(1);
+insert into t10 values(2);
+select * from t10 where i= (select max(i) from t10);
+select * from t10 having i= max(i);

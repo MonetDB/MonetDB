@@ -19,4 +19,6 @@ SELECT	null AS TABLE_CAT,
 	null AS SCOPE_TABLE
 FROM schemas, tables, columns
 WHERE columns.table_id = tables.id
-  AND tables.schema_id = schemas.id;
+  AND tables.schema_id = schemas.id
+  AND tables.system = true 
+ORDER BY TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION;
