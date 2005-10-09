@@ -13,7 +13,8 @@ AS "TYPE_SCHEM", null AS "TYPE_NAME", 'id' AS
 AS "TYPE_SCHEM", null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS
 "REF_GENERATION" FROM "ttables", "schemas" WHERE
-"ttables"."schema_id" = "schemas"."id"  and "ttables"."system" = true ) AS "ttables" WHERE 1 = 1 ;
+"ttables"."schema_id" = "schemas"."id"  and "ttables"."system" = true ) AS "ttables" WHERE 1 = 1 
+ORDER BY "TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME";
 
 SELECT * FROM (
 SELECT null AS "TABLE_CAT", "schemas"."name" AS
