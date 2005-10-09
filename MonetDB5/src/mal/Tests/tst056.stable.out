@@ -26,10 +26,10 @@ function user.main():int;	# 0  (main:int)
     io.print(zxx);	# 2 IOprint_val (_3:int)<-(zxx:oid)
     o1x := 1@0;	# 3  (o1x:oid)<-(_5:oid)
     io.print(o1x);	# 4 IOprint_val (_6:int)<-(o1x:oid)
-    o11 := 1@1;	# 5  (o11:oid)<-(_8:oid)
-    io.print(o11);	# 6 IOprint_val (_9:int)<-(o11:oid)
-    ox1 := 0@1;	# 7  (ox1:oid)<-(_11:oid)
-    io.print(ox1);	# 8 IOprint_val (_12:int)<-(ox1:oid)
+    o11 := 1@0;	# 5  (o11:oid)<-(_5:oid)
+    io.print(o11);	# 6 IOprint_val (_8:int)<-(o11:oid)
+    ox1 := 0@0;	# 7  (ox1:oid)<-(_2:oid)
+    io.print(ox1);	# 8 IOprint_val (_10:int)<-(ox1:oid)
 end main;	# 9  
 [ 0@0 ]
 [ 1@0 ]

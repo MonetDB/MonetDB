@@ -112,7 +112,7 @@ OPTexpandMultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i = 2, k, mloop, resB, iter = 0, cr;
 	int hvar, tvar;
-	str newFcn = (str) getVarLiteral(mb, getArg(pci, 1));
+	str newFcn = GDKstrdup(VALget(&getVar(mb, getArg(pci, 1))->value));
 	str mod = newFcn, fcn;
 	str msg = MAL_SUCCEED;
 	int alias[MAXARG];
@@ -221,13 +221,13 @@ find the actual arguments at the proper place of the callee.
 	pushArgument(mb, q, cr);
 
 /* catch   MALexception and ignore them  and replace value with nil*/
-	q = newInstruction(CATCHsymbol);
+	q = newInstruction(mb,CATCHsymbol);
 	k = newVariable(mb, GDKstrdup("MALexception"), TYPE_str);
 	pushReturn(mb, q, k);
 	setVarUsed(mb, k, TRUE);
 	setVarInitialized(mb, k);
 	pushInstruction(mb, q);
-	q= newInstruction(EXITsymbol);
+	q= newInstruction(mb,EXITsymbol);
 	pushReturn(mb,q,k);
 	pushInstruction(mb,q);
 

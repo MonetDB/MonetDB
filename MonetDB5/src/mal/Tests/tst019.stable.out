@@ -21,7 +21,8 @@ function user.welcome(lim:int):void;	# 0  (welcome:void)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_3:int)
     w := "hello";	# 2  (w:str)<-(_5:str)
     return w;	# 3  (w:str)
-end welcome;	# 4  
+# should produce a type error 	# 4  (_7:str)
+end welcome;	# 5  
 !ERROR: RETURN type mismatch at type 11
 #
 #function welcome0(lim:int):str;
@@ -34,7 +35,8 @@ function user.welcome0(lim:int):str;	# 0  (welcome0:str)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_3:int)
     w := "hello";	# 2  (w:str)<-(_5:str)
     return (w,i);	# 3  (w:str)(i:int)
-end welcome0;	# 4  
+# should produce a type error 	# 4  (_7:str)
+end welcome0;	# 5  
 !ERROR: invalid return target
 !
 #
@@ -65,7 +67,8 @@ end welcome2;	# 4
 function user.welcome3(lim:int) (w:str,i:int);	# 0  (w:str)(i:int)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_4:int)
     return w := "hello";	# 2  (w:str)<-(_5:str)
-end welcome3;	# 3  
+#illegal return statement 	# 3  (_7:str)
+end welcome3;	# 4  
 !ERROR: invalid return target
 !
 #
@@ -76,7 +79,8 @@ end welcome3;	# 3
 function user.welcome4(lim:int) (w:str,i:int);	# 0  (w:str)(i:int)<-(lim:int)
     i := 2;	# 1  (i:int)<-(_4:int)
     return (w,i):= "hello";	# 2  unknown (w:str)(i:int)<-(_5:str)
-end welcome4;	# 3  
+#illegal return statement 	# 3  (_7:str)
+end welcome4;	# 4  
 !ERROR: Multiple assignment mismatch
 #
 #function welcome5(lim:int)(:str,:int);
@@ -95,18 +99,14 @@ end welcome5;	# 3
 #
 #(x,y):= user.welcome2(1);
 #
-!ERROR: 'user.welcome2' undefined in user.main[9]
+!ERROR: 'user.welcome2' undefined in user.main[5]
 function user.main():int;	# 0  (main:int)
-# should produce a type error 	# 1  (_2:str)
-# should produce a type error 	# 2  (_2:str)
-#illegal return statement 	# 3  (_5:str)
-#illegal return statement 	# 4  (_5:str)
-    y := user.welcome1(1);	# 5  (y:str)<-(_8:int)
-    io.print(y);	# 6 IOprint_val (_9:int)<-(y:str)
-    y := user.welcome2(1);	# 7  (y:str)<-(_8:int)
-    io.print(y);	# 8 IOprint_val (_10:int)<-(y:str)
-    (x,y):= user.welcome2(1);	# 9  unknown (x:any)(y:str)<-(_8:int)
-end main;	# 10  
+    y := user.welcome1(1);	# 1  (y:str)<-(_2:int)
+    io.print(y);	# 2 IOprint_val (_3:int)<-(y:str)
+    y := user.welcome2(1);	# 3  (y:str)<-(_2:int)
+    io.print(y);	# 4 IOprint_val (_4:int)<-(y:str)
+    (x,y):= user.welcome2(1);	# 5  unknown (x:any)(y:str)<-(_2:int)
+end main;	# 6  
 
 # 07:58:38 >  
 # 07:58:38 >  Done.

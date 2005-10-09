@@ -23,7 +23,7 @@ function user.main():int;	# 0  (main:int)
 # ADT management  	# 1  (_2:str)
     d1 := mtime.date("1998-12-01");	# 2 MTIMEdate_fromstr (d1:date)<-(_4:str)
     io.print(d1);	# 3 IOprint_val (_5:int)<-(d1:date)
-    d2 := 1998-12-01;	# 4  (d2:date)<-(_7:date)
+    d2 := 1998-12-01:date;	# 4  (d2:date)<-(_7:date)
     io.print(d2);	# 5 IOprint_val (_8:int)<-(d2:date)
 end main;	# 6  
 [ 1998-12-01 ]

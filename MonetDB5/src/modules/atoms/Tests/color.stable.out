@@ -63,52 +63,51 @@ function user.testcolor():void;	# 0  (testcolor:void)
     io.print(V41);	# 6 IOprint_val (_9:int)<-(V41:int)
     V44 := color.blue(c);	# 7 CLRblue (V44:int)<-(c:color)
     io.print(V44);	# 8 IOprint_val (_11:int)<-(V44:int)
-    V47 := color.hsv(90.0,0.5,1.0);	# 9 CLRhsv (V47:color)<-(_13:flt)(_14:flt)(_15:flt)
+    V47 := color.hsv(90,0.5,1);	# 9 CLRhsv (V47:color)<-(_13:flt)(_14:flt)(_15:flt)
     c := V47;	# 10  (c:color)<-(V47:color)
     color.print(c);	# 11 CLRprintf (_16:void)<-(c:color)
-    V62 := color.hue(c);	# 12 CLRhue (V62:flt)<-(c:color)
-    V63 := color.saturation(c);	# 13 CLRsaturation (V63:flt)<-(c:color)
-    V64 := color.value(c);	# 14 CLRvalue (V64:flt)<-(c:color)
-    V61 := color.hsv(V62,V63,V64);	# 15 CLRhsv (V61:color)<-(V62:flt)(V63:flt)(V64:flt)
-    color.print(V61);	# 16 CLRprintf (_21:void)<-(V61:color)
-    V66 := color.ycc(200,100,50);	# 17 CLRycc (V66:color)<-(_23:int)(_2:int)(_24:int)
-    c := V66;	# 18  (c:color)<-(V66:color)
-    color.print(c);	# 19 CLRprintf (_25:void)<-(c:color)
-    V73 := color.luminance(c);	# 20 CLRluminance (V73:int)<-(c:color)
-    io.print(V73);	# 21 IOprint_val (_27:int)<-(V73:int)
-    V76 := color.cr(c);	# 22 CLRcr (V76:int)<-(c:color)
-    io.print(V76);	# 23 IOprint_val (_29:int)<-(V76:int)
-    V79 := color.cb(c);	# 24 CLRcb (V79:int)<-(c:color)
-    io.print(V79);	# 25 IOprint_val (_31:int)<-(V79:int)
-    V82 := color.color("0x0012ABcd");	# 26 CLRcolor (V82:color)<-(_33:str)
-    c := V82;	# 27  (c:color)<-(V82:color)
-    color.print(c);	# 28 CLRprintf (_34:void)<-(c:color)
-    V88 := color.red(c);	# 29 CLRred (V88:int)<-(c:color)
-    io.print(V88);	# 30 IOprint_val (_36:int)<-(V88:int)
-    V91 := color.green(c);	# 31 CLRgreen (V91:int)<-(c:color)
-    io.print(V91);	# 32 IOprint_val (_38:int)<-(V91:int)
-    V94 := color.blue(c);	# 33 CLRblue (V94:int)<-(c:color)
-    io.print(V94);	# 34 IOprint_val (_40:int)<-(V94:int)
-    bc := bat.new(:void,:color);	# 35 CMDBATnew (bc:bat[:void,:color])<-(_42:void)(_43:color)
-    bat.insert(bc,nil,0x00000000:color);	# 36 BKCinsert_bun (_44:void)<-(bc:bat[:void,:color])(_45:void)(_46:color)
-    bat.insert(bc,nil,0x0033ff44:color);	# 37 BKCinsert_bun (_47:void)<-(bc:bat[:void,:color])(_45:void)(_48:color)
-    bat.insert(bc,nil,0x03f44:color);	# 38 BKCinsert_bun (_49:void)<-(bc:bat[:void,:color])(_45:void)(_50:color)
-    io.print(bc);	# 39 IOprint_val (_51:int)<-(bc:bat[:void,:color])
-    z := batcolor.red(bc);	# 40 CLRbatRed (z:bat[:void,:int])<-(bc:bat[:void,:color])
-    io.print(z);	# 41 IOprint_val (_53:int)<-(z:bat[:void,:int])
-end testcolor;	# 42  
-!WARNING: Invalid color string representation '0x03f44'
+# don't print hue, saturation, and value: architectural differences can 	 	# 12  (_18:str)
+# cause differences in the output produced.  instead, use them to produce 	 	# 13  (_20:str)
+# a new color which should be the same as the original color 	 	# 14  (_22:str)
+#    print(hue(c)); 	 	# 15  (_24:str)
+#    print(saturation(c)); 	 	# 16  (_26:str)
+#    print(value(c)); 	 	# 17  (_28:str)
+    V62 := color.hue(c);	# 18 CLRhue (V62:flt)<-(c:color)
+    V63 := color.saturation(c);	# 19 CLRsaturation (V63:flt)<-(c:color)
+    V64 := color.value(c);	# 20 CLRvalue (V64:flt)<-(c:color)
+    V61 := color.hsv(V62,V63,V64);	# 21 CLRhsv (V61:color)<-(V62:flt)(V63:flt)(V64:flt)
+    color.print(V61);	# 22 CLRprintf (_33:void)<-(V61:color)
+    V66 := color.ycc(200,100,50);	# 23 CLRycc (V66:color)<-(_35:int)(_36:int)(_37:int)
+    c := V66;	# 24  (c:color)<-(V66:color)
+    color.print(c);	# 25 CLRprintf (_38:void)<-(c:color)
+    V73 := color.luminance(c);	# 26 CLRluminance (V73:int)<-(c:color)
+    io.print(V73);	# 27 IOprint_val (_40:int)<-(V73:int)
+    V76 := color.cr(c);	# 28 CLRcr (V76:int)<-(c:color)
+    io.print(V76);	# 29 IOprint_val (_42:int)<-(V76:int)
+    V79 := color.cb(c);	# 30 CLRcb (V79:int)<-(c:color)
+    io.print(V79);	# 31 IOprint_val (_44:int)<-(V79:int)
+    V82 := color.color("0x0012ABcd");	# 32 CLRcolor (V82:color)<-(_46:str)
+    c := V82;	# 33  (c:color)<-(V82:color)
+    color.print(c);	# 34 CLRprintf (_47:void)<-(c:color)
+    V88 := color.red(c);	# 35 CLRred (V88:int)<-(c:color)
+    io.print(V88);	# 36 IOprint_val (_49:int)<-(V88:int)
+    V91 := color.green(c);	# 37 CLRgreen (V91:int)<-(c:color)
+    io.print(V91);	# 38 IOprint_val (_51:int)<-(V91:int)
+    V94 := color.blue(c);	# 39 CLRblue (V94:int)<-(c:color)
+    io.print(V94);	# 40 IOprint_val (_53:int)<-(V94:int)
+    bc := bat.new(:void,:color);	# 41 CMDBATnew (bc:bat[:void,:color])<-(_55:void)(_56:color)
+    bat.insert(bc,nil,0x00000000:color);	# 42 BKCinsert_bun (_57:void)<-(bc:bat[:void,:color])(_58:void)(_59:color)
+    bat.insert(bc,nil,0x0033FF44:color);	# 43 BKCinsert_bun (_60:void)<-(bc:bat[:void,:color])(_58:void)(_61:color)
+    bat.insert(bc,nil,0x00003F44:color);	# 44 BKCinsert_bun (_62:void)<-(bc:bat[:void,:color])(_58:void)(_63:color)
+    io.print(bc);	# 45 IOprint_val (_64:int)<-(bc:bat[:void,:color])
+    z := batcolor.red(bc);	# 46 CLRbatRed (z:bat[:void,:int])<-(bc:bat[:void,:color])
+    io.print(z);	# 47 IOprint_val (_66:int)<-(z:bat[:void,:int])
+end testcolor;	# 48  
 #user.testcolor();
 #
 function user.main():int;	# 0  (main:int)
-# don't print hue, saturation, and value: architectural differences can 	 	# 1  (_2:str)
-# cause differences in the output produced.  instead, use them to produce 	 	# 2  (_4:str)
-# a new color which should be the same as the original color 	 	# 3  (_6:str)
-#    print(hue(c)); 	 	# 4  (_8:str)
-#    print(saturation(c)); 	 	# 5  (_10:str)
-#    print(value(c)); 	 	# 6  (_12:str)
-    user.testcolor();	# 7  (_13:void)
-end main;	# 8  
+    user.testcolor();	# 1  (_1:void)
+end main;	# 2  
 [ 0x00646566 ]
 [ 100 ]
 [ 101 ]
@@ -129,14 +128,14 @@ end main;	# 8
 #-------------------------#
 [ nil,	  0x00000000	  ]
 [ nil,	  0x0033FF44	  ]
-[ nil,	  nil		  ]
+[ nil,	  0x00003F44	  ]
 #-----------------#
 # h	t	  # name
 # void	int	  # type
 #-----------------#
 [ nil,	  0	  ]
 [ nil,	  51	  ]
-[ nil,	  nil	  ]
+[ nil,	  0	  ]
 
 # 23:57:21 >  
 # 23:57:21 >  Done.

@@ -266,8 +266,7 @@ resetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 
 	for (i = j = start; i < mb->vtop;) {
 		if (isTmpVar(mb, i)) {
-			freeVariable(mb, i);
-			mb->var[i] = 0;
+			clearVariable(mb, i);
 
 			if (glb) {
 				garbageElement(&glb->stk[i]);
@@ -279,7 +278,9 @@ resetVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 			i++;
 		} else {
 			if (i != j) {
-				copyVar(mb, j, i);
+				VarPtr v= getVar(mb,j);
+				mb->var[j]= mb->var[i];
+				getVar(mb,i)= v;
 				if (glb) {
 					/* save stack state */
 					glb->stk[j] = glb->stk[i];

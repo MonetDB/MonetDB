@@ -23,12 +23,13 @@ stdout of test 'tst2035` in directory 'src/mal` itself:
 #exit	b;
 #end clkticks;
 function user.clkticks(n:int):void;	# 0  (clkticks:void)<-(n:int)
-barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)(_3:int) jump 5
-    alarm.sleep(2);	# 2 ALARMsleep (_4:void)<-(_5:int)
-    n := calc.-(n,1);	# 3 CALCbinarySUBintint (n:int)<-(n:int)(_6:int)
-    redo b := calc.>(n,0);	# 4 CALCcompGTintint (b:bit)<-(n:int)(_3:int) jump 2
-exit b;	# 5  (b:bit)
-end clkticks;	# 6  
+barrier b := calc.>(n,0);	# 1 CALCcompGTintint (b:bit)<-(n:int)(_3:int) jump 6
+#printf("#clock tick %d\n",n); 	# 2  (_5:str)
+    alarm.sleep(2);	# 3 ALARMsleep (_6:void)<-(_7:int)
+    n := calc.-(n,1);	# 4 CALCbinarySUBintint (n:int)<-(n:int)(_8:int)
+    redo b := calc.>(n,0);	# 5 CALCcompGTintint (b:bit)<-(n:int)(_3:int) jump 2
+exit b;	# 6  (b:bit)
+end clkticks;	# 7  
 #
 #counter:=0;
 #thread 	hdl:=0;	# synchronize through a counter
@@ -58,37 +59,36 @@ end clkticks;	# 6
 #
 function user.main():int;	# 0  (main:int)
 #The 2000 serie  is focussed on parallelism 	# 1  (_2:str)
-#printf("#clock tick %d\n",n); 	# 2  (_4:str)
-    counter := 0;	# 3  (counter:int)<-(_6:int)
-thread hdl := 0;	# 4  (hdl:int)<-(_6:int) jump 19
-# synchronize through a counter 	# 5  (_9:str)
-    io.printf("#handle %d\n",hdl);	# 6 IOprint_formatted_int (_10:int)<-(_11:str)(hdl:int)
-    io.print("#start the child");	# 7 IOprint_val (_12:int)<-(_13:str)
-barrier go := true;	# 8  (go:bit)<-(_15:bit) jump 17
-    user.clkticks(1);	# 9  (_16:void)<-(_17:int)
-    counter := calc.+(counter,1);	# 10 CALCbinaryADDintint (counter:int)<-(counter:int)(_17:int)
-#printf("#counter %d\n",counter); 	# 11  (_19:str)
-barrier t := calc.==(counter,2);	# 12 CALCcompEQintint (t:bit)<-(counter:int)(_21:int) jump 14
-    leave go;	# 13  (go:bit) jump 17
-exit t;	# 14  (t:bit)
-#printf("#Redo thread\n"); 	# 15  ($23:str)
-    redo go;	# 16  (go:bit) jump 9
-exit go;	# 17  (go:bit)
-#printf("#exit thread\n"); 	# 18  ($25:str)
-exit hdl;	# 19  (hdl:int)
-    io.printf("#Main thread\n");	# 20 IOprint_str (_26:int)<-(_27:str)
-# loop to wait for the child to exit 	# 21  (_29:str)
-barrier wl := true;	# 22  (wl:bit)<-(_15:bit) jump 31
-    alarm.sleep(5);	# 23 ALARMsleep (_31:void)<-(_32:int)
-#printf("#Wait for child to exit %d\n",hdl); 	# 24  (_34:str)
-barrier t0 := calc.==(counter,2);	# 25 CALCcompEQintint (t0:bit)<-(counter:int)(_21:int) jump 28
-    io.printf("#Child died \n");	# 26 IOprint_str (_36:int)<-(_37:str)
-    leave wl;	# 27  (wl:bit) jump 31
-exit t0;	# 28  (t0:bit)
-    alarm.sleep(5);	# 29 ALARMsleep (_38:void)<-(_32:int)
-    redo wl;	# 30  (wl:bit) jump 23
-exit wl;	# 31  (wl:bit)
-end main;	# 32  
+    counter := 0;	# 2  (counter:int)<-(_4:int)
+thread hdl := 0;	# 3  (hdl:int)<-(_4:int) jump 18
+# synchronize through a counter 	# 4  (_7:str)
+    io.printf("#handle %d\n",hdl);	# 5 IOprint_formatted_int (_8:int)<-(_9:str)(hdl:int)
+    io.print("#start the child");	# 6 IOprint_val (_10:int)<-(_11:str)
+barrier go := true;	# 7  (go:bit)<-(_13:bit) jump 16
+    user.clkticks(1);	# 8  (_14:void)<-(_15:int)
+    counter := calc.+(counter,1);	# 9 CALCbinaryADDintint (counter:int)<-(counter:int)(_15:int)
+#printf("#counter %d\n",counter); 	# 10  (_17:str)
+barrier t := calc.==(counter,2);	# 11 CALCcompEQintint (t:bit)<-(counter:int)(_19:int) jump 13
+    leave go;	# 12  (go:bit) jump 16
+exit t;	# 13  (t:bit)
+#printf("#Redo thread\n"); 	# 14  (_21:str)
+    redo go;	# 15  (go:bit) jump 8
+exit go;	# 16  (go:bit)
+#printf("#exit thread\n"); 	# 17  (_23:str)
+exit hdl;	# 18  (hdl:int)
+    io.printf("#Main thread\n");	# 19 IOprint_str (_24:int)<-(_25:str)
+# loop to wait for the child to exit 	# 20  (_27:str)
+barrier wl := true;	# 21  (wl:bit)<-(_13:bit) jump 30
+    alarm.sleep(5);	# 22 ALARMsleep (_29:void)<-(_30:int)
+#printf("#Wait for child to exit %d\n",hdl); 	# 23  (_32:str)
+barrier t0 := calc.==(counter,2);	# 24 CALCcompEQintint (t0:bit)<-(counter:int)(_19:int) jump 27
+    io.printf("#Child died \n");	# 25 IOprint_str (_34:int)<-(_35:str)
+    leave wl;	# 26  (wl:bit) jump 30
+exit t0;	# 27  (t0:bit)
+    alarm.sleep(5);	# 28 ALARMsleep (_36:void)<-(_30:int)
+    redo wl;	# 29  (wl:bit) jump 22
+exit wl;	# 30  (wl:bit)
+end main;	# 31  
 #Main thread
 [ "#start the child" ]
 

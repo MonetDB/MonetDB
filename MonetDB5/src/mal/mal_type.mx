@@ -331,10 +331,10 @@ getTypeIndex(str nme, int len, int deftype)
 INLINE int
 findGDKtype(int type)
 {
-	if (isaBatType(type))
-		return TYPE_bat;
 	if (type == TYPE_any || type== TYPE_void)
 		return TYPE_void;
+	if (isaBatType(type))
+		return TYPE_bat;
 	if (type == TYPE_col)
 		return TYPE_int;
 	return ATOMtype(type);

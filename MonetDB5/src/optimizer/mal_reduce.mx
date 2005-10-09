@@ -65,7 +65,7 @@ MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (!mb->var[i]->isused && !mb->var[i]->isudftype && !isConstant(mb, i) && getVarType(mb, i) != TYPE_any) {
 			for (j = i - 1; j >= 0; j--)
 				if (mb->var[j] && !mb->var[j]->isused && getVarType(mb, i) == getVarType(mb, j)) {
-					freeVariable(mb, i);
+					clearVariable(mb, i);
 					vars[i] = j;
 					goto nxtReduce;
 				}
@@ -86,8 +86,9 @@ MRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			getArg(p, j) = vars[getArg(p, j)];
 	}
 	for (i = j = 0; i < mb->vtop; i++)
-		if (mb->var[i])
-			mb->var[j++] = mb->var[i];
+		if( vars[i]!= i){
+			/* Redo thinking */
+		}
 
 	mb->vtop = j;
 	(void) stk;

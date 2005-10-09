@@ -41,7 +41,6 @@ end welcome;	# 8
 #
 !ERROR: MALexception:optimizer.MACROvalidate:RETURN statement is not the last one
 #
-!ERROR: SYNTAX ERROR: instructions after END end main;
 function user.main():int;	# 0  (main:int)
 # the first test for macro expansions and inversions 	# 1  (_2:str)
 # error handling 	# 2  (_4:str)
@@ -50,6 +49,17 @@ function user.main():int;	# 0  (main:int)
     mdb.list();	# 5 MDBlist (_12:void)
 end main;	# 6  
 end main;	# 7  
+[ "test expansion" ]
+[ "Welcome" ]
+[ "Welcome" ]
+function user.main():int;
+# the first test for macro expansions and inversions 
+# error handling 
+    io.print("test expansion");
+    a := user.welcome(2);
+    mdb.list();
+end main;
+end main;
 
 # 23:52:53 >  
 # 23:52:53 >  Done.

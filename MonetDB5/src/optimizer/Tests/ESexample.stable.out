@@ -48,9 +48,8 @@ end test;	# 14
 #mdb.list("user","test");
 #
 ESoptimizer called, collect empty sets and process them
-found 5  V10
 START emptyset optimizer 1:,5 
-MID STAGE doAR=1
+MID STAGE doAR=2
 function user.test():void;	# 0  (test:void)
     V1 := bat.new(:void,:oid);	# 1 CMDBATnew (V1:bat[:void,:oid])<-(_2:void)(_3:oid)
     V7 := bat.new(:void,:oid);	# 2 CMDBATnew (V7:bat[:void,:oid])<-(_2:void)(_3:oid)

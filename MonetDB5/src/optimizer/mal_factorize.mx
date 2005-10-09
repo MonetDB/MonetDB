@@ -89,6 +89,7 @@ opt_export str FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 @c
 #include "mal_factorize.h"
 #include "mal_interpreter.h"	/* for showErrors() */
+#include "mal_builder.h"
 
 @+ Factorize Implementation
 Factorize of the code is defensive. An intruction group is
@@ -111,7 +112,7 @@ FTallowed(InstrPtr p)
 str
 FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, k, t, v, noop = 0, se;
+	int i, k,  v, noop = 0, se;
 	InstrPtr p;
 	int fk = 0, sk = 0, blk = 0, blkstart = 0;
 	int *varused, returnseen = 0;
@@ -208,11 +209,10 @@ FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mb->stmt[k++] = first[i];
 
 	/* added control block */
-	t = newConstant(mb, TYPE_bit, GDKstrdup("true"), 0);
 	v = newVariable(mb, GDKstrdup("always"), TYPE_bit);
-	p = newInstruction(BARRIERsymbol);
+	p = newInstruction(NULL,BARRIERsymbol);
 	pushReturn(mb, p, v);
-	pushArgument(mb, p, t);
+	pushBit(mb,p,TRUE);
 	mb->stmt[k++] = p;
 
 	for (i = 0; i < sk - 1; i++)
@@ -220,15 +220,15 @@ FToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* finalize the factory */
 	if (returnseen == 0) {
-		p = newInstruction(YIELDsymbol);
+		p = newInstruction(NULL,YIELDsymbol);
 		pushReturn(mb, p, findVariable(mb, getFcnName(mb)));
 		mb->stmt[k++] = p;
 	}
-	p = newInstruction(REDOsymbol);
+	p = newInstruction(NULL,REDOsymbol);
 	pushReturn(mb, p, v);
 	mb->stmt[k++] = p;
 
-	p = newInstruction(EXITsymbol);
+	p = newInstruction(NULL,EXITsymbol);
 	pushReturn(mb, p, v);
 	mb->stmt[k++] = p;
 

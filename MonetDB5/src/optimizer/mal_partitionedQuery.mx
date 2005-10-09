@@ -247,7 +247,7 @@ BPTreplacement(MalBlkPtr mb, int *first, int *last, int varid)
 
 	actions++;
 	/* barrier (idx,bid):= partitions.newIterator(var); */
-	p = newInstruction(ASSIGNsymbol);
+	p = newInstruction(mb,ASSIGNsymbol);
 	setModuleId(p, putName("partitions", 10));
 	setFunctionId(p, putName("newIterator", 11));
 	p->barrier = BARRIERsymbol;
@@ -269,7 +269,7 @@ accumulated version.
 @c
 	/* finalize the loop */
 	/* redo (idx,bid):= partitions.hasMoreElements(var); */
-	p = newInstruction(REDOsymbol);
+	p = newInstruction(mb,REDOsymbol);
 	setModuleId(p, putName("partitions", 10));
 	setFunctionId(p, putName("hasMoreElements", 15));
 	pushReturn(mb, p, idx);
@@ -277,7 +277,7 @@ accumulated version.
 	pushArgument(mb, p, varid);
 	pushInstruction(mb, p);
 	/* exit (idx,bid) */
-	p = newInstruction(EXITsymbol);
+	p = newInstruction(mb,EXITsymbol);
 	pushReturn(mb, p, idx);
 	pushReturn(mb, p, bid);
 	pushInstruction(mb, p);

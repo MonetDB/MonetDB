@@ -35,16 +35,20 @@ The strings being passed as arguments are copied in the process.
 #include "mal_namespace.h"
 
 mal_export InstrPtr newStmt(MalBlkPtr mb, char *module, char *name);
+mal_export InstrPtr newStmt1(MalBlkPtr mb, str module, char *name);
 mal_export InstrPtr newStmtId(MalBlkPtr mb, char *id, char *module, char *name);
 mal_export InstrPtr newAssignment(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);
+mal_export InstrPtr pushChr(MalBlkPtr mb, InstrPtr q, char val);
 mal_export InstrPtr pushOid(MalBlkPtr mb, InstrPtr q, oid val);
 mal_export InstrPtr pushVoid(MalBlkPtr mb, InstrPtr q);
 mal_export InstrPtr pushLng(MalBlkPtr mb, InstrPtr q, long val);
 mal_export InstrPtr pushDbl(MalBlkPtr mb, InstrPtr q, double val);
+mal_export InstrPtr pushFlt(MalBlkPtr mb, InstrPtr q, float val);
 mal_export InstrPtr pushStr(MalBlkPtr mb, InstrPtr q, const char *val);
-mal_export InstrPtr pushBit(MalBlkPtr mb, InstrPtr q, const char *val);
+mal_export InstrPtr pushBit(MalBlkPtr mb, InstrPtr q, int val);
+mal_export InstrPtr pushNil(MalBlkPtr mb, InstrPtr q, int tpe);
 mal_export InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 
 #endif /* _MAL_BUILDER_ */
@@ -54,7 +58,7 @@ mal_export InstrPtr pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe);
 InstrPtr
 newAssignment(MalBlkPtr mb)
 {
-	InstrPtr q = newInstruction(ASSIGNsymbol);
+	InstrPtr q = newInstruction(mb,ASSIGNsymbol);
 
 	pushInstruction(mb, q);
 	return q;
@@ -71,7 +75,17 @@ newStmt(MalBlkPtr mb, char *module, char *name)
 	setVarInitialized(mb, getDestVar(q));
 	return q;
 }
+InstrPtr
+newStmt1(MalBlkPtr mb, str module, char *name)
+{
+	InstrPtr q = newAssignment(mb);
 
+	moduleId(q) = module;
+	functionId(q) = (name) ? putName(name, strlen(name)) : 0;
+	setDestVar(q, newTmpVariable(mb, TYPE_any));
+	setVarInitialized(mb, getDestVar(q));
+	return q;
+}
 InstrPtr
 newStmtId(MalBlkPtr mb, char *id, char *module, char *name)
 {
@@ -99,10 +113,26 @@ InstrPtr
 pushInt(MalBlkPtr mb, InstrPtr q, int val)
 {
 	int _t;
-	char bufi[BUFSIZ];
+	ValRecord cst;
 
-	snprintf(bufi, BUFSIZ, "%d", val);
-	_t = newConstant(mb, TYPE_int, GDKstrdup(bufi), TRUE);
+	cst.vtype= TYPE_int;
+	cst.val.ival= val;
+	_t = defConstant(mb, TYPE_int,&cst);
+	return pushArgument(mb, q, _t);
+}
+
+InstrPtr
+pushChr(MalBlkPtr mb, InstrPtr q, char val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_chr;
+	cst.val.cval[0]= val;
+	cst.val.cval[1]= 0;
+	cst.val.cval[2]= 0;
+	cst.val.cval[3]= 0;
+	_t = defConstant(mb, TYPE_chr,&cst);
 	return pushArgument(mb, q, _t);
 }
 
@@ -110,10 +140,11 @@ InstrPtr
 pushOid(MalBlkPtr mb, InstrPtr q, oid val)
 {
 	int _t;
-	char bufi[BUFSIZ];
+	ValRecord cst;
 
-	snprintf(bufi, BUFSIZ, "%d@0", (int) val);
-	_t = newConstant(mb, TYPE_oid, GDKstrdup(bufi), TRUE);
+	cst.vtype= TYPE_oid;
+	cst.val.oval= val;
+	_t = defConstant(mb,TYPE_oid,&cst);
 	return pushArgument(mb, q, _t);
 }
 
@@ -121,10 +152,11 @@ InstrPtr
 pushVoid(MalBlkPtr mb, InstrPtr q)
 {
 	int _t;
-	char bufi[BUFSIZ];
+	ValRecord cst;
 
-	snprintf(bufi, BUFSIZ, "nil");
-	_t = newConstant(mb, TYPE_void, GDKstrdup(bufi), TRUE);
+	cst.vtype= TYPE_void;
+	cst.val.oval= oid_nil;
+	_t = defConstant(mb,TYPE_void,&cst);
 	return pushArgument(mb, q, _t);
 }
 
@@ -132,10 +164,11 @@ InstrPtr
 pushLng(MalBlkPtr mb, InstrPtr q, long val)
 {
 	int _t;
-	char bufi[BUFSIZ];
+	ValRecord cst;
 
-	snprintf(bufi, BUFSIZ, "%ld", val);
-	_t = newConstant(mb, TYPE_lng, GDKstrdup(bufi), TRUE);
+	cst.vtype= TYPE_lng;
+	cst.val.oval= val;
+	_t = defConstant(mb,TYPE_lng,&cst);
 	return pushArgument(mb, q, _t);
 }
 
@@ -143,25 +176,66 @@ InstrPtr
 pushDbl(MalBlkPtr mb, InstrPtr q, double val)
 {
 	int _t;
-	char bufi[BUFSIZ];
+	ValRecord cst;
 
-	snprintf(bufi, BUFSIZ, "%f", val);
-	_t = newConstant(mb, TYPE_dbl, GDKstrdup(bufi), TRUE);
+	cst.vtype= TYPE_dbl;
+	cst.val.dval= val;
+	_t = defConstant(mb,TYPE_dbl,&cst);
+	return pushArgument(mb, q, _t);
+}
+
+InstrPtr
+pushFlt(MalBlkPtr mb, InstrPtr q, float val)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_flt;
+	cst.val.fval= val;
+	_t = defConstant(mb,TYPE_flt,&cst);
 	return pushArgument(mb, q, _t);
 }
 
 InstrPtr
 pushStr(MalBlkPtr mb, InstrPtr q, const char *val)
 {
-	int _t = newConstant(mb, TYPE_str, GDKstrdup(val), TRUE);
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_str;
+	cst.val.sval= GDKstrdup(val);
+	cst.len= strlen(cst.val.sval);
+	_t = defConstant(mb,TYPE_str,&cst);
 
 	return pushArgument(mb, q, _t);
 }
 
 InstrPtr
-pushBit(MalBlkPtr mb, InstrPtr q, const char *val)
+pushBit(MalBlkPtr mb, InstrPtr q, int val)
 {
-	int _t = newConstant(mb, TYPE_bit, GDKstrdup(val), TRUE);
+	int _t;
+	ValRecord cst;
+
+	cst.vtype= TYPE_bit;
+	cst.val.cval[0]= val;
+	cst.val.cval[1]= 0;
+	cst.val.cval[2]= 0;
+	cst.val.cval[3]= 0;
+	_t = defConstant(mb,TYPE_bit,&cst);
+
+	return pushArgument(mb, q, _t);
+}
+
+InstrPtr
+pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
+{
+	int _t;
+	ValRecord cst;
+
+	cst.vtype=TYPE_void;
+	cst.val.oval= oid_nil;
+	convertConstant(tpe, &cst);
+	_t = defConstant(mb,tpe,&cst);
 
 	return pushArgument(mb, q, _t);
 }
@@ -169,8 +243,14 @@ pushBit(MalBlkPtr mb, InstrPtr q, const char *val)
 InstrPtr
 pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 {
-	int _t = newConstant(mb,
-			     getTypeIndex(tpe, strlen(tpe), TYPE_any), GDKstrdup("nil"), TRUE);
+	int _t,idx;
+	ValRecord cst;
+
+	idx= getTypeIndex(tpe, strlen(tpe), TYPE_any);
+	cst.vtype=TYPE_void;
+	cst.val.oval= oid_nil;
+	convertConstant(idx, &cst);
+	_t = defConstant(mb,idx,&cst);
 
 	return pushArgument(mb, q, _t);
 }

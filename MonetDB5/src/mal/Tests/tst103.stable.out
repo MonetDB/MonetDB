@@ -30,7 +30,7 @@ function user.main():int;	# 0  (main:int)
 # check propagation of type variables over bats 	# 1  (_2:str)
     a := user.f(1,"hello");	# 2  (a:bat[:str,:int])<-(_4:int)(_5:str)
     b := user.f(1,"world");	# 3  (b:bat[:str,:int])<-(_4:int)(_7:str)
-    c := user.f(1.0,-3);	# 4  (c:bat[:int,:flt])<-(_9:flt)(_10:int)
+    c := user.f(1,-3);	# 4  (c:bat[:int,:flt])<-(_9:flt)(_10:int)
     d := user.f(true,false);	# 5  (d:bat[:bit,:bit])<-(_12:bit)(_13:bit)
 end main;	# 6  
 

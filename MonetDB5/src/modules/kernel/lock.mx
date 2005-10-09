@@ -31,12 +31,10 @@ address LCKcreate
 comment "Create an unset lock";
 command set(l:lock) 
 address LCKset
-comment "Try to set a lock; if set, 
-	block till it is freed";
+comment "Try to set a lock. If set, block till it is freed";
 command try(l:lock) :int 
 address LCKtry
-comment "Try a lock, if free set it, 
-	if not return EBUSY";
+comment "Try a lock. If free set it, if not return EBUSY";
 command unset(l:lock) 
 address LCKunset
 comment "Unset a lock";

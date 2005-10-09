@@ -112,7 +112,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (getVar(mb, getArg(p, 0))->endLifespan == i + 1 && 
 				match(p, "calc", "oid") && 
 				isConstant(mb, getArg(p, 1)) && 
-				strcmp(getVarLiteral(mb, getArg(p, 1)), "0@0") == 0) {
+				getVar(mb,getArg(p,1))->value.val.oval == 0){
 				if (match(q, "algebra", "markT") || 
 					match(q, "algebra", "markH")) {
 #ifdef DEBUG_MAL_PEEPHOLE
@@ -152,7 +152,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				printInstruction(GDKout, mb, q, LIST_MAL_ALL);
 #endif
 				if (getArg(p, 1) == getArg(q, 2)) {
-					r = newInstruction(ASSIGNsymbol);
+					r = newInstruction(mb,ASSIGNsymbol);
 					getArg(r, 0) = getArg(q, 0);
 					pushArgument(mb, r, getArg(q, 2));
 					freeInstruction(q);
@@ -170,7 +170,7 @@ PHoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				printInstruction(GDKout, mb, p, LIST_MAL_ALL);
 				printInstruction(GDKout, mb, q, LIST_MAL_ALL);
 #endif
-				r = newInstruction(ASSIGNsymbol);
+				r = newInstruction(mb,ASSIGNsymbol);
 				getArg(r, 0) = getArg(q, 0);
 				pushArgument(mb, r, getArg(p, 1));
 				freeInstruction(p);

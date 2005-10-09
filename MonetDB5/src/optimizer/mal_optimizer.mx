@@ -474,8 +474,6 @@ opt_export str HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str RXemptyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str RXalignedBATs(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-opt_export void setLifespan(MalBlkPtr mb);
-opt_export void debugLifespan(MalBlkPtr mb);
 opt_export void showFlowGraph(MalBlkPtr mb, MalStkPtr stk, str fname);
 opt_export int isUnsafeInstruction(InstrPtr q);
 opt_export int isUnsafeFunction(MalBlkPtr mb, InstrPtr q);
@@ -524,17 +522,18 @@ If one of the optimizers fails, we should not attempt others.
 int
 optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec)
 {
-	chkFlow(mb);
-	chkTypes(getClient()->nspace, mb);
-	chkDeclarations(mb, TRUE);
-	setLifespan(mb);
+	if( actions){
+		chkFlow(mb);
+		chkTypes(getClient()->nspace, mb);
+		chkDeclarations(mb, TRUE);
+		setLifespan(mb);
+	}
 	/* debugLifespan(mb); */
 	if (mb->errors) {
 		showErrors();
 		stream_printf(GDKout, "Optimizer %s failed\n", name);
 		printFunction(GDKout, mb, LIST_MAL_ALL);
 	}
-	(void)actions;
 	(void)usec;
 	/*optimizerDebug(mb, name, actions, usec);*/
 	return mb->errors;
@@ -613,7 +612,9 @@ int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
     for(k=p->retc; k<p->argc;k++)
     if( q->argv[k]!= p->argv[k] ) {
 		if( isConstant(mb,p->argv[k]) && isConstant(mb,q->argv[k]) &&
-			strcmp(getVarLiteral(mb,p->argv[k]), getVarLiteral(mb,q->argv[k])) == 0)
+			getVar(mb,getArg(p,k))->type == getVar(mb,getArg(q,k))->type &&
+			getVar(mb,getArg(p,k))->value.val.lval == getVar(mb,getArg(q,k))->value.val.lval )
+			/* TODO, be more precise in test */
 			continue;
 		return FALSE;
 	}
@@ -802,74 +803,6 @@ isUpdated(MalBlkPtr mb, int pc)
 }
 
 @}
-@- Lifespan analysis
-The variables have a lifespan in the code blocks, denoted by properties
-beginLifespan,endLifespan. The beginLifespan denotes the intruction where
-it receives its first value, the endLifespan the last instruction in which 
-it was used as operand or target.
-
-If, however, the last use lies within a BARRIER block, we can not be sure
-about its end of life status, because a block redo may implictly
-revive it. For these situations we associate the endLifespan with
-the block exit.
-
-In many cases, we have to determine if the lifespan interferes with 
-a optimization decision being prepared.
-The lifespan is calculated once at the beginning of the optimizer sequence.
-It should either be maintained to reflect the most accurate situation while
-optimizing the code base. In particular it means that any move/remove/addition
-of an instruction calls for either a recalculation or delta propagation.
-Unclear what will be the best strategy. For the time being we just recalc.
-
-@{
-Also take care of the nested block structure. Because the span should
-fall within a single block. This is handled by the chkflow already.
-@c
-void
-debugLifespan(MalBlkPtr mb)
-{
-	int i;
-
-	for (i = 0; i < mb->vtop; i++) {
-		VarPtr v = getVar(mb, i);
-
-		if (isTmpVar(mb, i))
-			printf("%c%d %d - %d scope=%d,%d\n", TMPMARKER, v->tmpindex, v->beginLifespan, v->endLifespan, v->scope, v->depth);
-
-		else
-			printf("%s %d - %d scope= %d,%d\n", v->name, v->beginLifespan, v->endLifespan, v->scope, v->depth);
-	}
-}
-void
-setLifespan(MalBlkPtr mb)
-{
-	int pc, k;
-	InstrPtr p;
-
-	for (k = 0; k < mb->vtop; k++) {
-		VarPtr v = getVar(mb, k);
-
-		v->lastUpdate = v->beginLifespan = v->endLifespan = 0;
-	}
-	for (pc = 0; pc < mb->stop; pc++) {
-		p = getInstrPtr(mb, pc);
-		for (k = 0; k < p->argc; k++) {
-			VarPtr v = getVar(mb, p->argv[k]);
-
-			if (v->beginLifespan == 0)
-				v->beginLifespan = pc;
-			if (k < p->retc)
-				v->lastUpdate= pc;
-			if (pc > v->endLifespan) {
-				/* end only if the beginLifspan falls in the same blk */
-				/* otherwise it is the corresponding exit. */
-				v->endLifespan = pc;
-			}
-		}
-	}
-	/* debugLifespan(mb); */
-}
-
 @-
 In many cases we should be assured that a variable is not used in
 the instruction range identified. For, we may exchange some instructions that

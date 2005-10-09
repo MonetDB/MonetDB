@@ -26,29 +26,29 @@ stdout of test 'tst044` in directory 'src/mal` itself:
 #
 function user.main():int;	# 0  (main:int)
 #testing floating point numbers; 	# 1  (_2:str)
-    a := 3.145:flt;	# 2  (a:flt)<-(_4:flt)
+    a := 3.14499998:flt;	# 2  (a:flt)<-(_4:flt)
     io.print(a);	# 3 IOprint_val (_5:int)<-(a:flt)
-    a := -3.145:flt;	# 4  (a:flt)<-(_6:flt)
+    a := -3.14499998:flt;	# 4  (a:flt)<-(_6:flt)
     io.print(a);	# 5 IOprint_val (_7:int)<-(a:flt)
-    a := 0.345e1:flt;	# 6  (a:flt)<-(_8:flt)
+    a := 3.45000005:flt;	# 6  (a:flt)<-(_8:flt)
     io.print(a);	# 7 IOprint_val (_9:int)<-(a:flt)
-    a := 3.415e-1:flt;	# 8  (a:flt)<-(_10:flt)
+    a := 0.341500014:flt;	# 8  (a:flt)<-(_10:flt)
     io.print(a);	# 9 IOprint_val (_11:int)<-(a:flt)
-    b := 3.145:dbl;	# 10  (b:dbl)<-(_13:dbl)
+    b := 3.1449999809265137:dbl;	# 10  (b:dbl)<-(_13:dbl)
     io.print(b);	# 11 IOprint_val (_14:int)<-(b:dbl)
-    b := -3.145:dbl;	# 12  (b:dbl)<-(_15:dbl)
+    b := -3.1449999809265137:dbl;	# 12  (b:dbl)<-(_15:dbl)
     io.print(b);	# 13 IOprint_val (_16:int)<-(b:dbl)
-    b := 0.345e1:dbl;	# 14  (b:dbl)<-(_17:dbl)
+    b := 3.4500000000000002:dbl;	# 14  (b:dbl)<-(_17:dbl)
     io.print(b);	# 15 IOprint_val (_18:int)<-(b:dbl)
-    b := 3.415e-1:dbl;	# 16  (b:dbl)<-(_19:dbl)
+    b := 0.34150000000000003:dbl;	# 16  (b:dbl)<-(_19:dbl)
     io.print(b);	# 17 IOprint_val (_20:int)<-(b:dbl)
 end main;	# 18  
 [ 3.14499998 ]
 [ -3.14499998 ]
 [ 3.45000005 ]
 [ 0.341500014 ]
-[ 3.145 ]
-[ -3.145 ]
+[ 3.1449999809265137 ]
+[ -3.1449999809265137 ]
 [ 3.4500000000000002 ]
 [ 0.34150000000000003 ]
 

@@ -295,7 +295,7 @@ variables on the stack.
 				setFunctionId(p, NULL);
 				p->argc = 1;
 				p->token = ASSIGNsymbol;
-				pushArgument(mb, p, newConstant(mb, TYPE_lng, GDKstrdup("1"), FALSE));
+				pushLng(mb,p,1);
 			} else {
 			      STrepack:
 				/* pack everything you need */

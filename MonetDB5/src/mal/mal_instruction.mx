@@ -344,7 +344,6 @@ typedef struct VARRECORD{
     short   cleanup;/* remove upon function return */
     short   beginLifespan, endLifespan, lastUpdate; /* for optimizers */
 	size_t	length; /* of the literal string */
-    str     literal;/* initial value string */
     PropertySet props; /* private list of (name,value) pairs */
     ValRecord value;
 } *VarPtr, VarRecord;
@@ -441,7 +440,6 @@ for separate name space management.
 #define getPrgSize(M)       (M)->stop
 
 #define getVar(M,I)     (M)->var[I]
-#define getVarLiteral(M,I)  (M)->var[I]->literal
 #define getVarTmp(M,I)      (M)->var[I]->tmpindex
 #define isConstant(M,I) ((M)->var[I]->isaconstant)
 #define isTypeVar(M,I)  ((M)->var[I]->isatypevar)
@@ -461,8 +459,6 @@ for separate name space management.
 #define getVarConstant(M,I)     ((M)->var[I]->value)
 #define getVarType(M,I)     ((M)->var[I]->type)
 #define getVarGDKType(M,I)      ((M)->var[I]->gdktype)
-#define copyVar(M,I,J)  freeVariable(M,I);(M)->var[I] = (M)->var[J];\
-        (M)->var[J]= NULL;
 
 #define getLastUpdate(M,I)	((M)->var[I]->lastUpdate)
 #define getEndLifespan(M,I)	((M)->var[I]->endLifespan)
@@ -475,9 +471,8 @@ for separate name space management.
 #define getArg(P,I) (P)->argv[I]
 #define getArgName(M,P,I)   getVarName((M),(P)->argv[I])
 #define getArgType(M,P,I)   getVarType((M),(P)->argv[I])
-#define getArgDefault(M,P,I)    getVarLiteral((M),(P)->argv[I])
 
-mal_export InstrPtr newInstruction(int kind);
+mal_export InstrPtr newInstruction(MalBlkPtr mb, int kind);
 mal_export InstrPtr     copyInstruction(InstrPtr p);
 mal_export void     oldmoveInstruction(InstrPtr dst, InstrPtr src);
 mal_export void     clrInstruction(InstrPtr p);
@@ -489,6 +484,7 @@ mal_export void     freeSymbolList(Symbol s);
 mal_export void     printSignature(stream *fd, Symbol s, int flg);
 
 mal_export MalBlkPtr    newMalBlk(int maxvars, int maxstmts);
+mal_export void 	resetMalBlk(MalBlkPtr mb);
 mal_export void 	newMalBlkStmt(MalBlkPtr mb, int maxstmts);
 mal_export void     prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void     freeMalBlk(MalBlkPtr mb);
@@ -505,6 +501,7 @@ mal_export int      findVariable(MalBlkPtr mb, str name);
 mal_export int      findTmpVariable(MalBlkPtr mb, int type);
 mal_export int      findVariableLength(MalBlkPtr mb, str name,int len);
 mal_export malType  getType(MalBlkPtr mb, str nme);
+mal_export str		getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 mal_export str      getVarName(MalBlkPtr mb, int i);
 mal_export int      newVariable(MalBlkPtr mb, str name,malType type);
 mal_export void     renameVariable(MalBlkPtr mb, int i, str name);
@@ -515,9 +512,11 @@ mal_export int      newTmpSink(MalBlkPtr mb, malType type);
 mal_export int      newTypeVariable(MalBlkPtr mb, malType type);
 mal_export void     delVariable(MalBlkPtr mb, int varid);
 mal_export void     freeVariable(MalBlkPtr mb, int varid);
-mal_export int      newConstant(MalBlkPtr mb, malType type, str val, int f);
-mal_export int      fndConstant(MalBlkPtr mb, str val, int len);
-/* mal_export int       isaSignature(InstrPtr p);*/
+mal_export void 	clearVariable(MalBlkPtr mb, int varid);
+mal_export int		cpyConstant(MalBlkPtr mb, VarPtr vr);
+mal_export int 		defConstant(MalBlkPtr mb, int type, ValPtr cst);
+mal_export int      fndConstant(MalBlkPtr mb, ValPtr cst);
+mal_export int 		convertConstant(malType type, ValPtr vr);
 
 mal_export void     pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);
@@ -531,7 +530,7 @@ mal_export void     setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
 mal_export void     setReturnArgument(InstrPtr p, int varid);
 mal_export malType  destinationType(MalBlkPtr mb, InstrPtr p);
 mal_export void		setPolymorphic(InstrPtr p, int tpe, int force);
-mal_export void 	setVarProperty(MalBlkPtr mb, int i, str name, str op, int tpe, ptr val);
+mal_export void 	setVarProperty(MalBlkPtr mb, int i, str name,str op, ValPtr cst);
 mal_export str      fcnClass(InstrPtr p);
 mal_export str      fcnDefinition(MalBlkPtr mb,InstrPtr p, str s,int flg );
 mal_export void     printInstruction(stream *fd, MalBlkPtr mb,InstrPtr p,int flg);
@@ -547,9 +546,9 @@ mal_export void     pushEndInstruction(MalBlkPtr mb);   /* used in src/mal/mal_p
               (X)->token == FACTORYsymbol )
 #define functionExit(X)  ((X)->token == ENDsymbol)
 
-#define blockStart(X)   ((X)->barrier == BARRIERsymbol || \
+#define blockStart(X)   ((X)->barrier && (((X)->barrier == BARRIERsymbol || \
              (X)->barrier == CATCHsymbol || \
-             (X)->barrier == THREADsymbol)
+             (X)->barrier == THREADsymbol)))
 #define blockExit(X) (X)->barrier == EXITsymbol
 #define blockCntrl(X) ( (X)->barrier== LEAVEsymbol ||  \
              (X)->barrier== REDOsymbol  )
@@ -628,6 +627,21 @@ MalBlkPtr newMalBlk(int maxvars, int maxstmts){
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
     return mb;
+}
+@-
+The resetMalBlk code removes everything, but without freeing
+the space. This way the structure is prepared for re-use
+[currently only the variable stack ]
+@c
+void 
+resetMalBlk(MalBlkPtr mb){
+	int i;
+	InstrPtr p;
+	
+	p= getInstrPtr(mb,0);
+	for(i=p->argc; i<mb->vtop; i++)
+		clearVariable(mb,i);
+	mb->vtop = p->argc;
 }
 @-
 The freeMalBlk code is quite defensive. It is used to localize an
@@ -761,10 +775,11 @@ void prepareMalBlk(MalBlkPtr mb, str s){
     expandMalBlk(mb,cnt);
 }
 
-InstrPtr newInstruction(int kind){
+InstrPtr newInstruction(MalBlkPtr mb, int kind){
     InstrPtr p;
     int space;
 
+	(void) mb; /* ignore for a while */
     space = (MAXARG-1) * sizeof(int)+ sizeof(InstrRecord);
     p = GDKmalloc(space);
     p->typechk = TYPE_UNKNOWN;
@@ -1002,6 +1017,13 @@ malType getType(MalBlkPtr mb, str nme){
     if( i>=0) return getVarType(mb,i);
     return TYPE_any;
 }
+str
+getArgDefault(MalBlkPtr mb, InstrPtr p, int idx){
+	ValPtr v= &getVarConstant(mb,getArg(p,idx));
+	if( v->vtype== TYPE_str)
+		return v->val.sval;
+	return NULL;
+}
 @-
 All variables are implicitly declared upon their first assignment. 
 COMMANDS and FUNCTIONS should pass the types as strings and
@@ -1051,9 +1073,13 @@ Beware, the symbol table structure assumes that it is relatively
 cheap to perform a linear search to a variable or constant.
 
 @= makeVarSpace
-        if( mb->vtop == mb->vsize){
-            VarPtr *new;
+	if( mb->vtop >= mb->vsize){
+		VarPtr *new;
         int s= mb->vtop + MAXVARS;
+
+		if (mb->vtop >mb->vsize)
+			GDKfatal("newVariable:variable administration\n");
+
         new= (VarPtr *) GDKmalloc(s * sizeof(VarPtr));
         /*printf("generate new variable block %d\n",s);*/
         if( new== NULL ){
@@ -1067,8 +1093,7 @@ cheap to perform a linear search to a variable or constant.
         mb->vsize= s;
         mb->var= new;
         mb->var[mb->vtop-1]->gdktype= TYPE_void;
-    } else if (mb->vtop >mb->vsize)
-        GDKfatal("newVariable:variable administration\n");
+    } 
 @c
 int newVariable(MalBlkPtr mb, str name, malType type){
         int n;
@@ -1097,7 +1122,6 @@ int newVariable(MalBlkPtr mb, str name, malType type){
     mb->var[n]->name = name;
     mb->var[n]->props = NULL;
     setVarType(mb,n,type);
-    getVarLiteral(mb,n)= NULL;
     isConstant(mb,n) = FALSE;
     setVarCleanup(mb,n) = FALSE;
     setVarUsed(mb,n,FALSE);
@@ -1138,20 +1162,22 @@ int newTmpVariable(MalBlkPtr mb, malType type){
         
     @:makeVarSpace@
     n = mb->vtop;
-    if( getVar(mb,n)== NULL)
+    if( getVar(mb,n)== NULL) {
         getVar(mb,n) = (VarPtr) GDKmalloc(sizeof(VarRecord));
-    memset( (str) getVar(mb,n), 0, sizeof(VarRecord));
+		memset( (str) getVar(mb,n), 0, sizeof(VarRecord));
+	}
+/* already captured by memset
     mb->var[n]->name = 0;
     mb->var[n]->props = NULL;
-    getVarTmp(mb,n) = n;
-    setVarType(mb,n,type);
-    getVarLiteral(mb,n)= NULL;
     isConstant(mb,n) = FALSE;
     setVarCleanup(mb,n) = FALSE;
     setVarUsed(mb,n,FALSE);
     isVarInitialized(mb,n) = FALSE;
 	getVar(mb,n)->isudftype= 0;
 	getVar(mb,n)->inout= 0;
+*/
+    getVarTmp(mb,n) = n;
+	setVarType(mb,n,type);
     mb->vtop++;
     return n;
 } 
@@ -1190,7 +1216,6 @@ void    copyVariable(MalBlkPtr dst, MalBlkPtr src, VarPtr v){
 	w->fixtype = v->fixtype;
 	w->isudftype = v->isudftype;
 	w->inout = v->inout;
-	w->literal= v->literal? GDKstrdup(v->literal):NULL;
 	w->isaconstant = v->isaconstant;
 	w->isatypevar = v->isatypevar;
 	w->tmpindex = v->tmpindex;
@@ -1221,22 +1246,21 @@ void removeVariable(MalBlkPtr mb, int varid){
         mb->var[i] = mb->var[i+1]; 
     mb->vtop--;
 }
-void freeVariable(MalBlkPtr mb, int varid){
+void clearVariable(MalBlkPtr mb, int varid){
     VarPtr v;
 
     v= getVar(mb,varid);
 	if( v== 0 ) return;
-	/* code for hunting illegal frees
-	if(v->name && (nme=getName(v->name,strlen(v->name))) && nme == v->name ) {
-		printf("illegal free variable  of %s\n", v->name);
-		assert(0);
-	}
-	*/
-    if( v->name) GDKfree(v->name); v->name = 0;
-    if( v->literal) GDKfree(v->literal); v->literal= 0;
+    if( v->name) GDKfree(v->name); 
     if( v->isaconstant) VALclear(&v->value);
     if( v->props) freePropertySet(v->props);
-    v->props=0;
+	memset((char*)v, 0, sizeof(VarRecord));
+}
+void freeVariable(MalBlkPtr mb, int varid){
+    VarPtr v;
+
+    v= getVar(mb,varid);
+	clearVariable(mb,varid);
     GDKfree(v);
     getVar(mb,varid) = NULL;
 }
@@ -1270,169 +1294,179 @@ MAL interpretation.
 The constant values are linked together to improve searching them.
 This start of the constant list is kept in the MalBlk.
 @c
-#define MAL_VAR_WINDOW  2*MAXARG
-int fndConstant(MalBlkPtr mb, str val, int len){
-	int i,k;
-    k= mb->vtop - MAL_VAR_WINDOW;
-    if( k<0) k=0;
-    for(i= mb->vtop-1; i>=k;i--){
-        VarPtr v= getVar(mb,i);
-        if( v->literal && 
-			v->length == len &&
-            strncmp(v->literal,val,len)==0 )
-				return i;
-    }
-	return -1;
-}
-int newConstant(MalBlkPtr mb, malType type, str val, int niltst){
-    int i,k,idx,parsetype=type;
-    str s;
-    ValPtr vr;
-    int tonil= FALSE;
-    int len = strlen(val);
+int
+convertConstant(malType type, ValPtr vr){
 
-    k= mb->vtop - MAL_VAR_WINDOW;
-    if( k<0) k=0;
-    for(i= mb->vtop-1; i>=k;i--){
-        VarPtr v= getVar(mb,i);
-        if( v->literal && v->type == type && v->length == len &&
-            idcmp(v->literal,val)==0 ) {
-            GDKfree(val);
-            return i;
-        }
-    }
-    idx= k = newTmpVariable(mb,type);
-    getVarLiteral(mb,k)= val;
-    getVar(mb,k)->length = len;
-    isConstant(mb,k) = 1;
-    setFixed(mb,k);
-    setVarUsed(mb,k,FALSE);
-    isVarInitialized(mb,k) = FALSE;
-    vr = &getVarConstant(mb,k);
-    tonil= niltst && strncmp(val,"nil",3)==0;
-
-    if( type == TYPE_str && strncmp(val,"nil",3)==0 && niltst){
-		getVarLiteral(mb,k)= GDKstrdup(str_nil);
-        tonil= TRUE;
-    }
-@-
-@}
-The current GDK layer does not perform a value range check.
-Since constants are dealt with only once, it is performed here
-as part of the parsing overhead.
-Note that we support automatic coercion to a 
-coerced type even in the case that a specific type specifier
-has been given at the language level. A Warning is issued
-to make the user aware of this situation.
-@{
-@c
-retryConstant:
-    switch( parsetype){ 
-    case TYPE_bit: { bit x = (val[0]=='t' || val[0]=='T')?TRUE:FALSE;
-             vr->vtype= TYPE_bit;
-             vr->val.cval[0]= (tonil)?bit_nil:x; 
-             vr->val.cval[1]= 0;
-             vr->val.cval[2]= 0;
-             vr->val.cval[3]= 0;
-             break;
-            }
+    switch( type){ 
+    case TYPE_bit: 
+            if( vr->vtype== TYPE_void){
+				vr->vtype= type;
+				vr->val.cval[0]= bit_nil;
+				 vr->val.cval[1]= 0;
+				 vr->val.cval[2]= 0;
+				 vr->val.cval[3]= 0;
+			}
+            return vr->vtype != TYPE_bit;
     case TYPE_chr: 
-            vr->vtype= TYPE_chr;
-            vr->val.cval[0]= val[0];
-            vr->val.cval[1]= 0;
-            vr->val.cval[2]= 0;
-            vr->val.cval[3]= 0;
-            if( tonil) vr->val.cval[0] = chr_nil; 
-            break;
-    case TYPE_sht: {lng l;
-            vr->vtype = type;
-            if( tonil){ 
+            if( vr->vtype== TYPE_void){
+				vr->val.cval[0] = chr_nil; 
+				vr->val.cval[1] = 0; 
+				vr->val.cval[2] = 0; 
+				vr->val.cval[3] = 0; 
+				vr->vtype= TYPE_chr;
+			}
+            return vr->vtype != TYPE_chr;
+    case TYPE_sht: 
+            if( vr->vtype== TYPE_void){ 
                 vr->val.shval = sht_nil;
-                break;
+				vr->vtype = TYPE_sht;
+                return 0;
             } 
-            l = strtol(val,NULL,0);
-            if( l>= (1<<16) || l< -(1<<16)) {
-                if( l< INT_MIN || l> INT_MAX ){ 
-                    if(type== TYPE_sht)
-                        setVarType(mb, idx, TYPE_int);
-                    vr->vtype= TYPE_int;
-                    vr->val.ival = (int)l;
-                } else {
-                    if(type== TYPE_sht)
-                        setVarType(mb, idx, TYPE_lng);
-                    vr->vtype= TYPE_lng;
-                    vr->val.lval = l;
-                }
-            } else {
-                vr->vtype= TYPE_sht;
-                vr->val.shval= (int) l;
-            }
-            break; }
-    case TYPE_int: {long long int l;
-            if( tonil){ 
+			if( vr->vtype== TYPE_int  &&
+				vr->val.ival> -(1<<16) && vr->val.ival< (1<<16)) {
+				vr->vtype= TYPE_sht;
+				vr->val.shval= vr->val.ival;
+			}
+			if( vr->vtype== TYPE_lng  &&
+				vr->val.lval> -(1<<16) && vr->val.lval< (1<<16)) {
+				vr->vtype= TYPE_sht;
+				vr->val.shval= vr->val.lval;
+			}
+            return type!= vr->vtype;
+    case TYPE_int: 
+            if( vr->vtype== TYPE_void){ 
 				vr->vtype = type;
                 vr->val.ival = int_nil;
+				vr->len= sizeof(int);
                 break;
             } 
-			vr->vtype = type;
-            l= strtoll(val,NULL,0);
-            if( l> INT_MAX || l < INT_MIN){
-                if(type==TYPE_int)
-                    setVarType(mb,idx, TYPE_lng);
-                vr->vtype= TYPE_lng;
-                vr->val.lval= (lng) l;
-            } else {
-                vr->val.ival= (int)l;
-            }
-            break;}
+			if( vr->vtype== TYPE_lng  &&
+				vr->val.lval>= INT_MIN && vr->val.lval< INT_MAX) {
+				vr->vtype= TYPE_int;
+				vr->val.ival= vr->val.lval;
+				vr->len= sizeof(int);
+			}
+            return type != vr->vtype;
     case TYPE_void: 
-            vr->vtype= type;
-			vr->val.oval = oid_nil;
-            break; 
-    case TYPE_oid: { long long int l;
-            vr->vtype= type;
-            if( tonil) {
+				vr->vtype= type;
+				vr->val.oval = void_nil;
+				return vr->vtype!= type; 
+    case TYPE_oid: 
+            if( vr->vtype== TYPE_void) {
+				vr->vtype = type;
                 vr->val.oval = oid_nil;
-                break;
+				vr->len= sizeof(oid);
+				return 0;
             }
-            l= strtoll(val,NULL,0);
-            if( l> GDK_oid_max || l< 0){
-				vr->val.oval = oid_nil;
-            } else 
-                vr->val.oval= (oid)l;
-            break; }
-    case TYPE_flt: {double d= strtod(val,NULL); 
-            if( tonil) vr->val.fval = flt_nil; 
-            else vr->val.fval= (float) d;
-            vr->vtype= type;
-            break; }
-    case TYPE_dbl: {double d= strtod(val,NULL);
-            if( tonil) vr->val.dval = dbl_nil; 
-            else vr->val.dval= d;
-            vr->vtype= type;
-            break;}
-    case TYPE_lng: {long long int l= strtoll(val,NULL,0);
-            if( tonil) vr->val.lval = lng_nil; 
-            else vr->val.lval= (lng) l;
-            vr->vtype= type;
-            break; }
+			if( vr->vtype== TYPE_int &&
+				vr->val.ival >=0 && vr->val.ival <= GDK_oid_max){
+				vr->vtype= type;
+				vr->val.oval= vr->val.ival;
+				vr->len= sizeof(oid);
+			}
+			if( vr->vtype== TYPE_lng &&
+				vr->val.lval >=0 && vr->val.lval <= GDK_oid_max){
+				vr->vtype= type;
+				vr->val.oval= vr->val.ival;
+				vr->len= sizeof(oid);
+			}
+            return vr->vtype != type;
+    case TYPE_flt: 
+            if( vr->vtype== TYPE_void) {
+				vr->vtype= type;
+				vr->val.fval = flt_nil; 
+				vr->len = sizeof(flt);
+				return 0;
+			}
+			if( vr->vtype == TYPE_dbl){
+				vr->val.fval= (float) vr->val.dval;
+				vr->vtype= type;
+			}
+			if( vr->vtype == TYPE_sht){
+				vr->val.fval= vr->val.shval;
+				vr->vtype= type;
+			}
+			if( vr->vtype == TYPE_int){
+				vr->val.fval= vr->val.ival;
+				vr->vtype= type;
+			}
+			if( vr->vtype == TYPE_lng){
+				vr->val.fval= vr->val.lval;
+				vr->vtype= type;
+			}
+            return vr->vtype != type;
+    case TYPE_dbl: 
+            if( vr->vtype== TYPE_void) {
+				vr->val.dval = dbl_nil; 
+				vr->vtype = TYPE_dbl;
+				vr->len= sizeof(dbl);
+				return 0;
+			}
+			if( vr->vtype == TYPE_flt){
+				vr->val.dval= vr->val.fval;
+				vr->vtype= type;
+			}
+			if( vr->vtype == TYPE_sht){
+				vr->val.dval= vr->val.shval;
+				vr->vtype= type;
+			}
+			if( vr->vtype == TYPE_int){
+				vr->val.dval= vr->val.ival;
+				vr->vtype= type;
+			}
+			if( vr->vtype == TYPE_lng){
+				vr->val.dval= vr->val.lval;
+				vr->vtype= type;
+			}
+            return vr->vtype== type;
+    case TYPE_lng: 
+            if( vr->vtype==TYPE_void) {
+				vr->val.lval = lng_nil; 
+				vr->vtype= type;
+				vr->len= sizeof(lng);
+				return 0;
+			}
+			if( vr->vtype == TYPE_int){
+				vr->vtype= TYPE_lng;
+				vr->val.lval= vr->val.ival;
+				vr->len= sizeof(lng);
+			}
+            return vr->vtype== type;
 	case TYPE_bat:
 			/* BAT variables can only be set to nil */
             vr->vtype= type;
 			vr->val.bval = 0;
-			break;
+			return 0;
+	case TYPE_ptr:
+			if( vr->vtype == TYPE_void){
+				vr->vtype= type;
+				vr->val.pval= 0;
+				return 0;
+			}
+			if( vr->vtype == TYPE_int){
+				char buf[BUFSIZ];
+				int ll=0; ptr d= NULL;
+
+				snprintf(buf,BUFSIZ,"%d",vr->val.ival);
+				(*BATatoms[type].atomFromStr)(buf, &ll, &d);
+				VALset(vr,type,d);
+				if (ATOMextern(type)==0 && d)
+					GDKfree(d);
+			}
+			return vr->vtype != type;
     case TYPE_str: 
-            vr->vtype= type;
-            if( type != TYPE_str){
-                /* an extern type */
-                ptr *p = (ptr *) &vr->val.ival;
-                (*BATatoms[type].atomFromStr)(val, &vr->len, p);
-                break;
-            }
-            if( tonil) vr->val.sval = GDKstrdup(str_nil);
-            else vr->val.sval= (str) GDKstrdup(val);
-            vr->len= strlen((str) val);
-            break;
+			if( vr->vtype == TYPE_void){
+				vr->vtype= type;
+				vr->val.sval= GDKstrdup(str_nil);
+				return 0;
+			}
+            if( vr->vtype== TYPE_str ){
+				vr->val.sval = GDKstrdup(str_nil);
+				vr->vtype= type;
+				vr->len= strlen(vr->val.sval);
+				return 0;
+			}
+            return vr->vtype != type;
 @-
 Extended types are always represented as string literals
 and converted to the internal storage structure.
@@ -1442,6 +1476,7 @@ end.
 @c
     default:{ 
 		int ll=0; ptr d=NULL;
+		str s;
 
         if( BATatoms[type].atomFromStr== 0) {
             s= getTypeName(type);
@@ -1449,31 +1484,79 @@ end.
             GDKfree(s);
             break;
         }
+		if( vr->vtype != TYPE_str){
+			/* an extern type */
+			str w =0;
+			ATOMformat(vr->vtype, VALptr(vr),&w);
+			(*BATatoms[type].atomFromStr)(w, &ll, &d);
+			VALset(vr,type,d);
+			if (ATOMextern(type)==0 && d)
+				GDKfree(d);
+			GDKfree(w);
+		} else {
 #ifdef STRUCT_ALIGNED
-		(*BATatoms[type].atomFromStr)(val, &ll, &d);
+		(*BATatoms[type].atomFromStr)(vr->val.sval, &ll, &d);
 		VALset(vr,type,d);
 		if (ATOMextern(type)==0 && d)
 			GDKfree(d);
 #else
         GDKerror("newConstants:missing implementation\n");
 #endif
-        }
+		}
+	}
     }
-    return idx;
+	return vr->vtype == type;
 }
 
-/*
-int isaSignature(InstrPtr p){
-    switch(p->token){
-    case FUNCTIONsymbol:
-    case FACTORYsymbol:
-    case COMMANDsymbol:
-    case PATTERNsymbol:
-        return TRUE;
+#define MAL_VAR_WINDOW  2*MAXARG
+int fndConstant(MalBlkPtr mb, ValPtr cst){
+	int i,k;
+	ptr p = VALget(cst);
+    k= mb->vtop - MAL_VAR_WINDOW;
+    if( k<0) k=0;
+    for(i= mb->vtop-1; i>=k;i--){
+        VarPtr v= getVar(mb,i);
+        if( v->isaconstant && v->type == cst->vtype && 
+			ATOMcmp(cst->vtype, VALget(&v->value), p)== 0)
+				return i;
     }
-    return FALSE;
+	return -1;
 }
-*/
+
+int
+cpyConstant(MalBlkPtr mb, VarPtr vr){
+	int i;
+	ValRecord cst;
+	VALcopy(&cst,&vr->value);
+
+	i= defConstant(mb,vr->type, &cst);
+	return i;
+}
+int
+defConstant(MalBlkPtr mb, int type, ValPtr cst){
+	int i,k;
+	ValPtr vr;
+
+	if( cst->vtype != type)
+		convertConstant(type, cst);
+    k= mb->vtop - MAL_VAR_WINDOW;
+    if( k<0) k=0;
+/* see how much gain it produces, about 5% */
+    for(i= mb->vtop-1; i>=k;i--){
+        VarPtr v= getVar(mb,i);
+        if( v->isaconstant && v->type == type && 
+			ATOMcmp(cst->vtype, VALget(&v->value), VALget(cst))== 0)
+				return i;
+    }
+    k=  newTmpVariable(mb,type);
+    isConstant(mb,k) = 1;
+    setFixed(mb,k);
+    setVarUsed(mb,k,FALSE);
+    isVarInitialized(mb,k) = FALSE;
+    vr = &getVarConstant(mb,k);
+	memcpy((char*) vr, cst, sizeof(ValRecord));
+	return k;
+}
 @- Argument handling
 The number of arguments for procedures is currently limited.
 Furthermore, we should assure that no variable is referenced
@@ -1551,7 +1634,7 @@ void setVarType(MalBlkPtr mb, int i, int tpe)
 {
     if(i<0) return;
     mb->var[i]->type= tpe;
-    mb->var[i]->gdktype= findGDKtype(tpe);
+	mb->var[i]->gdktype= tpe<= TYPE_str? tpe:findGDKtype(tpe);
 }
 void setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe)
 {
@@ -1628,7 +1711,7 @@ void pushEndInstruction(MalBlkPtr mb){
     InstrPtr p;
 	int varid;
 
-    p= newInstruction(ENDsymbol);
+    p= newInstruction(mb,ENDsymbol);
     setDestVar(p, varid= findVariable(mb,functionName(getInstrPtr(mb,0))) );
 	if(varid >= 0) setVarInitialized(mb,getDestVar(p));
     p->argc =0;
@@ -1638,10 +1721,14 @@ void pushEndInstruction(MalBlkPtr mb){
 @-
 Property value setting.
 @c
-void setVarProperty(MalBlkPtr mb, int i, str name,str op,  int tpe, ptr val){
+void setVarProperty(MalBlkPtr mb, int i, str name,str op, ValPtr cst){
+	bit t= TRUE;
 	if( mb->var[i]->props == NULL)
 		mb->var[i]->props = newPropertySet();
-	setProperty(mb->var[i]->props,name,op,tpe,val);
+	if( cst == NULL)
+		setProperty(mb->var[i]->props, name, "", TYPE_bit,&t);
+	else 
+		setProperty(mb->var[i]->props, name, op, cst->vtype, VALget(cst));
 }
 @+ Reverse programming
 Since MAL programs can be created on the fly by linked-in query
@@ -1854,7 +1941,7 @@ char *fillTarget(MalBlkPtr mb, InstrPtr p, char *t){
 }
 str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
     int i,len=0,tab=4;
-    str def,s,t,nme;
+    str s,t,nme;
     int low,high;
     char nmebuf[PATHLENGTH];
     PropertySet ps=0;
@@ -1953,7 +2040,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
         case PATTERNsymbol:
             return fcnDefinition(mb,p,s,flg); 
         case REMsymbol:
-            sprintf(t,"#%s ",getVarLiteral(mb,getArg(p,0))); 
+            sprintf(t,"#%s ",getVar(mb,getArg(p,0))->value.val.sval); 
 			break;
 		case IGNOREsymbol:
 			*s =0;
@@ -1975,24 +2062,17 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
         pstring= propertySet2str(ps);
         advance(t);
         if( i+1==high && p->varargs ) {sprintf(t,"...");break;}
-        if( (def=getArgDefault(mb,p,i)) != NULL){
-            if( getArgType(mb,p,i)== TYPE_str)
-                if( strcmp(def,str_nil)==0)
-                     sprintf(t,"nil" );
-                else{
-					char *def2;
-					def2= mal_quote(def,strlen(def));
-					sprintf(t,"\"%s\"", def2);
-					GDKfree(def2);
-				}
-            else
-            if( getArgType(mb,p,i)== TYPE_chr){
-                if( strcmp(def,"nil")== 0)
-                     sprintf(t,"nil");
-                else sprintf(t,"'%s'", def);
-            } else 
-				sprintf(t,"%s", def);
-        } else {
+		if( isConstant(mb,getArg(p,i)) ) {
+			str cv= NULL;
+			if( getVar(mb,getArg(p,i))->type == TYPE_void){
+				strcat(t,"nil");
+			} else {
+				VALformat(&cv, &getVar(mb,getArg(p,i))->value);
+				strcat(t,cv);
+				GDKfree(cv);
+			}
+			advance(t);
+		} else{
             if( isTmpVar(mb, getArg(p,i)) ) {
                 if( isVarInitialized(mb,getArg(p,i)) )
                 sprintf(t,"%c%d", TMPMARKER, getVarTmp(mb,getArg(p,i)));

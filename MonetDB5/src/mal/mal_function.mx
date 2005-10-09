@@ -68,6 +68,8 @@ mal_export int getBarrierEnvelop(MalBlkPtr mb);
 mal_export int isLoopBarrier(MalBlkPtr mb, int pc);
 mal_export int getBlockExit(MalBlkPtr mb,int pc);
 mal_export int getBlockBegin(MalBlkPtr mb,int pc);
+mal_export void setLifespan(MalBlkPtr mb);
+mal_export void debugLifespan(MalBlkPtr mb);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, int listing);
 
@@ -90,7 +92,7 @@ Symbol newFunction(str nme,int kind){
 	InstrPtr p;
 
 	s = newSymbol(nme,kind);
-	p = newInstruction(kind);
+	p = newInstruction(NULL,kind);
 	setFunctionId(p, nme);  /* name already in namespace */
 	setDestVar(p, newVariable(s->def,GDKstrdup(nme),TYPE_any));
 	pushInstruction(s->def,p);
@@ -98,7 +100,7 @@ Symbol newFunction(str nme,int kind){
 }
 InstrPtr newCall(Module scope, str fcnname, int kind){
 	InstrPtr p;
-	p= newInstruction(kind);
+	p= newInstruction(NULL,kind);
 	setModuleScope(p, scope);
 	setFunctionId(p, putName(fcnname,strlen(fcnname)));
 	return p;
@@ -201,7 +203,7 @@ we avoid doing this check any further.
 #define DEPTH 128
 
 void chkFlow(MalBlkPtr mb)
-{   int i,j,k, v;
+{   int i,j,k, v,lastInstruction;
 	int  pc[DEPTH];
 	int  var[DEPTH];
 	InstrPtr stmt[DEPTH];
@@ -210,6 +212,7 @@ void chkFlow(MalBlkPtr mb)
 	int fixed=1;    
 	InstrPtr p;
 
+	lastInstruction = mb->stop-1;
 	for(i= 0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		switch( p->barrier){
@@ -322,6 +325,9 @@ void chkFlow(MalBlkPtr mb)
 			}
 			retseen = 1;
 			break;
+        case ENDsymbol:
+			lastInstruction = lastInstruction < mb->stop?i:lastInstruction;
+			break;
         case RAISEsymbol:
             {   int i;
 			    for(i=0;i<p->retc; i++)
@@ -329,29 +335,24 @@ void chkFlow(MalBlkPtr mb)
             }
             break;
 		default:
-            if( p->token == REMsymbol){
-                /* do nothing */
-            } else
-			if( isaSignature(p) && i ){
-			    str msg=instruction2str(mb,p,TRUE);
-			    GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
-			    GDKfree(msg);
-			    mb->errors++;
-			} else
-			if( functionExit(p) && i != mb->stop-1 ){
-			    str msg;
-			    p= getInstrPtr(mb,i+1);
-			    if( p== NULL  )
-			        p= getInstrPtr(mb,0);
-			    msg = instruction2str(mb,p,TRUE);
-			    GDKerror("SYNTAX ERROR: instructions after END %s\n",msg);
-#ifdef DEBUG_MAL_FCN
-                printFunction(GDKout, mb, LIST_MAL_ALL);
-#endif
-			    GDKfree(msg);
-			    mb->errors++;
-			}
+			if( isaSignature(p) ){
+				if( p->token == REMsymbol){
+					/* do nothing */
+				} else if( i) {
+					str msg=instruction2str(mb,p,TRUE);
+					GDKerror("SYNTAX ERROR: signature misplaced\n!%s\n",msg);
+					GDKfree(msg);
+					mb->errors++;
+				}
+			} 
 		}
+	}
+	if( lastInstruction < mb->stop-1 ){
+		GDKerror("SYNTAX ERROR: instructions after END \n");
+#ifdef DEBUG_MAL_FCN
+		printFunction(GDKout, mb, LIST_MAL_ALL);
+#endif
+		mb->errors++;
 	}
 	for(btop--; btop>=0;btop--){
 		GDKerror("begin '%s' without exit in %s[%d]\n",
@@ -412,9 +413,76 @@ int getBarrierEnvelop(MalBlkPtr mb){
 	return newTmpVariable(mb,TYPE_any);
 }
 
-@-
+@- Lifespan analysis
 Optimizers may be interested in the characteristic of the
 barrier blocks for making a decision.
+The variables have a lifespan in the code blocks, denoted by properties
+beginLifespan,endLifespan. The beginLifespan denotes the intruction where
+it receives its first value, the endLifespan the last instruction in which 
+it was used as operand or target.
+
+If, however, the last use lies within a BARRIER block, we can not be sure
+about its end of life status, because a block redo may implictly
+revive it. For these situations we associate the endLifespan with
+the block exit.
+
+In many cases, we have to determine if the lifespan interferes with 
+a optimization decision being prepared.
+The lifespan is calculated once at the beginning of the optimizer sequence.
+It should either be maintained to reflect the most accurate situation while
+optimizing the code base. In particular it means that any move/remove/addition
+of an instruction calls for either a recalculation or delta propagation.
+Unclear what will be the best strategy. For the time being we just recalc.
+
+@{
+Also take care of the nested block structure. Because the span should
+fall within a single block. This is handled by the chkflow already.
+@c
+void
+debugLifespan(MalBlkPtr mb)
+{
+	int i;
+
+	for (i = 0; i < mb->vtop; i++) {
+		VarPtr v = getVar(mb, i);
+
+		if (isTmpVar(mb, i))
+			printf("%c%d %d - %d scope=%d,%d\n", TMPMARKER, v->tmpindex, v->beginLifespan, v->endLifespan, v->scope, v->depth);
+
+		else
+			printf("%s %d - %d scope= %d,%d\n", v->name, v->beginLifespan, v->endLifespan, v->scope, v->depth);
+	}
+}
+void
+setLifespan(MalBlkPtr mb)
+{
+	int pc, k;
+	InstrPtr p;
+
+	for (k = 0; k < mb->vtop; k++) {
+		VarPtr v = getVar(mb, k);
+
+		v->lastUpdate = v->beginLifespan = v->endLifespan = 0;
+	}
+	for (pc = 0; pc < mb->stop; pc++) {
+		p = getInstrPtr(mb, pc);
+		for (k = 0; k < p->argc; k++) {
+			VarPtr v = getVar(mb, p->argv[k]);
+
+			if (v->beginLifespan == 0)
+				v->beginLifespan = pc;
+			if (k < p->retc)
+				v->lastUpdate= pc;
+			if (pc > v->endLifespan) {
+				/* end only if the beginLifspan falls in the same blk */
+				/* otherwise it is the corresponding exit. */
+				v->endLifespan = pc;
+			}
+		}
+	}
+	/* debugLifespan(mb); */
+}
+
 @c
 int
 isLoopBarrier(MalBlkPtr mb, int pc){

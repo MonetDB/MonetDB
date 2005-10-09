@@ -95,11 +95,11 @@ comment "Extract the location of the robot
 command isaURL(u:url)   :bit        
 address URLisaURL 
 comment "Check conformity of the URL syntax";
-command newurl(p:str,h:str,prt:int,f:str):url        
+command new(p:str,h:str,prt:int,f:str):url        
 address URLnew4 
 comment "Construct URL from protocol, host,
 	port,and file";
-command newurl(prot:str,host:str,fnme:str):url
+command new(prot:str,host:str,fnme:str):url
 address URLnew3 
 comment "Construct URL from protocol, host,and file";
 

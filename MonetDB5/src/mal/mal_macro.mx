@@ -200,6 +200,7 @@ A global is used to protect at (direct) recursive expansions
 @c
 #define MAXEXPANSION 256
 
+
 int
 inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 {
@@ -214,9 +215,9 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	k = 0;
 
 	for (n = 0; n < mc->vtop; n++) {
-		if (mc->var[n]->isaconstant)
-			nv[n] = newConstant(mb, getVarType(mc, n), GDKstrdup(getVarLiteral(mc, n)), 1);
-		else
+		if (mc->var[n]->isaconstant ){
+			nv[n] = cpyConstant(mb,getVar(mc,n));
+		} else
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
 		isVarUsed(mb, nv[n]) = isVarUsed(mc, n);
 		isVarInitialized(mb, nv[n]) = isVarInitialized(mc, n);

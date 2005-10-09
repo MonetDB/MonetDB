@@ -242,10 +242,10 @@ IOprintBoth(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, str hd, str tl,
 
 	if (tpe == TYPE_any)
 		tpe = stk->stk[pci->argv[indx]].vtype;
-	if (val == NULL) {
+	if (val == NULL || tpe == TYPE_void) {
 		if (hd)
 			stream_printf(fp, "%s", hd);
-		ATOMprint(TYPE_str, "nil", GDKout);
+		stream_printf(fp, "nil");
 		if (tl)
 			stream_printf(fp, "%s", tl);
 		return MAL_SUCCEED;

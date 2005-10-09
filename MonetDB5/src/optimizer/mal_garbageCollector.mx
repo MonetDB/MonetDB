@@ -94,7 +94,7 @@ opt_export str GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #include "mal_namespace.h"
 
 @= releaseBAT
-	q= newInstruction(ASSIGNsymbol);
+	q= newInstruction(NULL,ASSIGNsymbol);
 	setModuleId(q,putName("bat",3));
 	setFunctionId(q,putName("setGarbage",10));
 	pushArgument(mb,q,getArg(p,j));

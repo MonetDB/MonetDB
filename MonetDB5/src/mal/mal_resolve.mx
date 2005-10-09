@@ -685,8 +685,11 @@ The language permits assignment of 'nil' to any variable,
 using the target type.
 @c
 		if( lhs != TYPE_void && lhs != TYPE_any){
-			p->argv[i]= newConstant(mb,
-				(isaBatType(lhs)?TYPE_bat:lhs), GDKstrdup("nil"),TRUE);
+			ValRecord cst;
+			cst.vtype= TYPE_void;
+			cst.val.oval= void_nil;
+			
+			p->argv[i]= defConstant(mb, (isaBatType(lhs)?TYPE_bat:lhs), &cst);
 			setVarUsed(mb,p->argv[i],TRUE);
 		} 
 

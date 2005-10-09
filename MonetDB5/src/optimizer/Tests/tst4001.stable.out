@@ -24,9 +24,9 @@ stdout of test 'tst4001` in directory 'src/optimizer` itself:
 #   return z;
 #end qry;
 function user.qry(i:dbl):dbl;	# 0  (qry:dbl)<-(i:dbl)
-    i := 1.0:dbl;	# 1  (i:dbl)<-(_2:dbl)
+    i := 1:dbl;	# 1  (i:dbl)<-(_2:dbl)
     z := mmath.sin(i);	# 2 MATHunary_SINdbl (z:dbl)<-(i:dbl)
-    j := 1.0:dbl;	# 3  (j:dbl)<-(_2:dbl)
+    j := 1:dbl;	# 3  (j:dbl)<-(_2:dbl)
     k := mmath.sin(j);	# 4 MATHunary_SINdbl (k:dbl)<-(j:dbl)
     l := calc.+(k,i);	# 5 CALCbinaryADDdbldbl (l:dbl)<-(k:dbl)(i:dbl)
     return z;	# 6  (z:dbl)
@@ -50,7 +50,7 @@ function user.main():int;	# 0  (main:int)
     t1 := alarm.usec();	# 4 ALARMusec (t1:lng)
     t2 := calc.-(t1,t0);	# 5 CALCbinarySUBlnglng (t2:lng)<-(t1:lng)(t0:lng)
     io.print("execute");	# 6 IOprint_val (_12:int)<-(_13:str)
-    z := user.qry(0.0:dbl);	# 7  (z:dbl)<-(_15:dbl)
+    z := user.qry(0:dbl);	# 7  (z:dbl)<-(_15:dbl)
     io.print(z);	# 8 IOprint_val (_16:int)<-(z:dbl)
     io.print("done");	# 9 IOprint_val (_17:int)<-(_18:str)
     mdb.list("user","qry");	# 10 MDBlist3 (_19:void)<-(_7:str)(_8:str)
@@ -60,8 +60,8 @@ end main;	# 12
 [ 0.8414709848078965 ]
 [ "done" ]
 function user.qry(i:dbl):dbl;
-    z := mmath.sin(1.0:dbl);
-    l := calc.+(z,1.0:dbl);
+    z := mmath.sin(1:dbl);
+    l := calc.+(z,1:dbl);
     return z;
 end qry;
 function user.main():int;
@@ -71,7 +71,7 @@ function user.main():int;
     t1 := alarm.usec();
     t2 := calc.-(t1,t0);
     io.print("execute");
-    z := user.qry(0.0:dbl);
+    z := user.qry(0:dbl);
     io.print(z);
     io.print("done");
     mdb.list("user","qry");

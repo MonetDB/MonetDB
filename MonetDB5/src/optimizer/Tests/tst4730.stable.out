@@ -115,7 +115,7 @@ factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):bit;	# 0  (qry1:bit)<-(A0
     V60:bat[:void,:flt]{count=1000}  := user.bind("sys","lineitem","l_extendedprice",0);	# 6  (V60:bat[:void,:flt])<-(_7:str)(_8:str)(_19:str)(_10:int)
     V75:bat[:void,:flt]{count=1000}  := user.bind("sys","lineitem","l_discount",0);	# 7  (V75:bat[:void,:flt])<-(_7:str)(_8:str)(_21:str)(_10:int)
     V105:bat[:void,:flt]{count=1000}  := user.bind("sys","lineitem","l_tax",0);	# 8  (V105:bat[:void,:flt])<-(_7:str)(_8:str)(_23:str)(_10:int)
-barrier always := true;	# 9  (always:bit)<-(_25:bit) jump 61
+barrier always := true;	# 9  (always:bit)<-(_25:bit) jump 72
     V12 := bat.reverse(V11{count=1000});	# 10 BKCreverse (V12:bat[:oid,:void])<-(V11:bat[:void,:oid])
     V13 := algebra.kdifference(V6{count=1000},V12);	# 11 ALGkdiff (V13:bat[:oid,:date])<-(V6:bat[:void,:date])(V12:bat[:oid,:void])
     V16 := mtime.date_sub_sec_interval(A3,A4);	# 12 MTIMEdate_sub_sec_interval_wrap (V16:date)<-(A3:date)(A4:int)
@@ -165,10 +165,21 @@ barrier always := true;	# 9  (always:bit)<-(_25:bit) jump 61
     V135 := aggr.avg(V83,V35,V37);	# 56 AX3aggrX3_avg3_flt (V135:bat[:oid,:dbl])<-(V83:bat[:void,:flt])(V35:bat[:void,:oid])(V37:bat[:void,:void])
     V136 := optimizer.multiplex("calc.round",V135,100);	# 57 OPTmultiplex (V136:any)<-(_79:str)(V135:bat[:oid,:dbl])(_57:int)
     V137 := aggr.count(V35,V35,V37);	# 58 AX3aggrX3_count3Nils (V137:bat[:void,:int])<-(V35:bat[:void,:oid])(V35:bat[:void,:oid])(V37:bat[:void,:void])
-    yield always;	# 59  (always:bit)
-    redo always;	# 60  (always:bit) jump 10
-exit always;	# 61  (always:bit)
-end qry1;	# 62  
+#sql.column(V42,"l_returnflag","varchar",1,0); 	# 59  (_84:str)
+#sql.column(V51,"l_linestatus","varchar",1,0); 	# 60  (_86:str)
+#sql.column(V59,"sum_qty","bigint",0,0); 	# 61  (_88:str)
+#sql.column(V66,"sum_base_price","decimal",19,2); 	# 62  (_90:str)
+#sql.column(V88,"sum_disc_price","decimal",19,4); 	# 63  (_92:str)
+#sql.column(V114,"sum_charge","decimal",19,6); 	# 64  (_94:str)
+#sql.column(V122,"avg_qty","double",53,0); 	# 65  (_96:str)
+#sql.column(V129,"avg_price","double",53,0); 	# 66  (_98:str)
+#sql.column(V136,"avg_disc","double",53,0); 	# 67  (_100:str)
+#sql.column(V137,"count_order","int",0,0); 	# 68  (_102:str)
+#sql.output(V52,V42,V51,V59,V66,V88,V114,V122,V129,V136,V137); 	# 69  (_104:str)
+    yield always;	# 70  (always:bit)
+    redo always;	# 71  (always:bit) jump 10
+exit always;	# 72  (always:bit)
+end qry1;	# 73  
 #
 #optimizer.costEstimation("user","qry1");
 #mdb.list("user","qry1");
@@ -177,19 +188,8 @@ function user.main():int;	# 0  (main:int)
 #TPCH query 1 	# 1  (_2:str)
 # the basis for further optimizer tests 	# 2  (_4:str)
 #don;t depend on SQL library 	# 3  (_6:str)
-#sql.column(V42,"l_returnflag","varchar",1,0); 	# 4  (_8:str)
-#sql.column(V51,"l_linestatus","varchar",1,0); 	# 5  (_10:str)
-#sql.column(V59,"sum_qty","bigint",0,0); 	# 6  (_12:str)
-#sql.column(V66,"sum_base_price","decimal",19,2); 	# 7  (_14:str)
-#sql.column(V88,"sum_disc_price","decimal",19,4); 	# 8  (_16:str)
-#sql.column(V114,"sum_charge","decimal",19,6); 	# 9  (_18:str)
-#sql.column(V122,"avg_qty","double",53,0); 	# 10  (_20:str)
-#sql.column(V129,"avg_price","double",53,0); 	# 11  (_22:str)
-#sql.column(V136,"avg_disc","double",53,0); 	# 12  (_24:str)
-#sql.column(V137,"count_order","int",0,0); 	# 13  (_26:str)
-#sql.output(V52,V42,V51,V59,V66,V88,V114,V122,V129,V136,V137); 	# 14  (_28:str)
-    mdb.list("user","qry1");	# 15 MDBlist3 (_32:void)<-(_30:str)(_31:str)
-end main;	# 16  
+    mdb.list("user","qry1");	# 4 MDBlist3 (_10:void)<-(_8:str)(_9:str)
+end main;	# 5  
 factory user.qry1(A0:sht,A1:sht,A2:sht,A3:date,A4:int):bit;
     V6:bat[:void,:date]{RMcost=1000,count=1000}  := user.bind("sys","lineitem","l_shipdate",0);
     V11:bat[:void,:oid]{RMcost=1000,count=1000}  := user.bind_dbat("sys","lineitem",0);

@@ -69,15 +69,15 @@ function user.f3():void;	# 0  (f3:void)
     bat_0 := array.grid(64,64,1,0);	# 24 ARRAYgrid_int (bat_0:bat[:void,:int])<-(_5:int)(_5:int)(_6:int)(_7:int)
     bat_1 := array.grid(1,64,64,0);	# 25 ARRAYgrid_int (bat_1:bat[:void,:int])<-(_6:int)(_5:int)(_5:int)(_7:int)
     io.table(bat_0,bat_1,top);	# 26 IOttable (_32:int)<-(bat_0:bat[:void,:int])(bat_1:bat[:void,:int])(top:bat[:void,:lng])
-end f3;	# 27  
+#       io.table(bat_0,bat_1,top); 	# 27  (_34:str)
+end f3;	# 28  
 #	optimizer.expressionAccumulation("user","f3");
 #	mdb.list("user","f3");
 #
 function user.main():int;	# 0  (main:int)
 # testing the optimization of the pocket calculator 	# 1  (_2:str)
-#       io.table(bat_0,bat_1,top); 	# 2  (_4:str)
-    mdb.list("user","f3");	# 3 MDBlist3 (_8:void)<-(_6:str)(_7:str)
-end main;	# 4  
+    mdb.list("user","f3");	# 2 MDBlist3 (_6:void)<-(_4:str)(_5:str)
+end main;	# 3  
 function user.f3():void;
     t1:bat[:void,:int]  := bbp.bind("A_bat");
     t3 := array.grid(4096,64,1,0);

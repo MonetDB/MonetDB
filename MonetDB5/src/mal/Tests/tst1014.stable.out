@@ -42,7 +42,9 @@ function user.test():void;	# 0  (test:void)
     c := bbp.take("myfirstbat");	# 9 CMDbbptake (c:bat[:any,:any])<-(_13:str)
     io.print(c);	# 10 IOprint_val (_15:int)<-(c:bat[:any,:any])
     bbp.close();	# 11 CMDbbpclose (_16:void)
-end test;	# 12  
+# at the end of the call, the BBP should have discarded 	# 12  (_18:str)
+# the temporary bats of the user 	# 13  (_20:str)
+end test;	# 14  
 #
 #test();
 #print("continue");
@@ -56,17 +58,15 @@ end test;	# 12
 function user.main():int;	# 0  (main:int)
 # now within a function to assure that reference counting 	# 1  (_2:str)
 # takes care of releasing the variables. 	# 2  (_4:str)
-# at the end of the call, the BBP should have discarded 	# 3  (_6:str)
-# the temporary bats of the user 	# 4  (_8:str)
-    user.test();	# 5  (_9:void)
-    io.print("continue");	# 6 IOprint_val (_10:int)<-(_11:str)
-    bbp.open();	# 7 CMDbbpopen (_12:void)
-    x := bbp.getObjects();	# 8 CMDbbpGetObjects (x:bat[:int,:str])
-    io.print(x);	# 9 IOprint_val (_14:int)<-(x:bat[:int,:str])
-    v := bbp.take("myfirstbat");	# 10 CMDbbptake (v:bat[:any,:any])<-(_16:str)
-    io.print(v);	# 11 IOprint_val (_17:int)<-(v:bat[:any,:any])
-    bbp.close();	# 12 CMDbbpclose (_18:void)
-end main;	# 13  
+    user.test();	# 3  (_5:void)
+    io.print("continue");	# 4 IOprint_val (_6:int)<-(_7:str)
+    bbp.open();	# 5 CMDbbpopen (_8:void)
+    x := bbp.getObjects();	# 6 CMDbbpGetObjects (x:bat[:int,:str])
+    io.print(x);	# 7 IOprint_val (_10:int)<-(x:bat[:int,:str])
+    v := bbp.take("myfirstbat");	# 8 CMDbbptake (v:bat[:any,:any])<-(_12:str)
+    io.print(v);	# 9 IOprint_val (_13:int)<-(v:bat[:any,:any])
+    bbp.close();	# 10 CMDbbpclose (_14:void)
+end main;	# 11  
 [ "test" ]
 #-------------------------#
 # bbp	objects		  # name

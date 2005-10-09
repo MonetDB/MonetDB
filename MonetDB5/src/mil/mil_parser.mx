@@ -408,8 +408,9 @@ parseMILinput(Client cntxt, MalBlkPtr currBlk)
 	InstrPtr currInstr;
 	int len = 0;
 	char *c = CURRENT(cntxt);
+	ValRecord cst;
 
-	currInstr = newInstruction(REMsymbol);
+	currInstr = newInstruction(currBlk,REMsymbol);
 	while (*c && !NL(*c)) {
 		c++;
 		len++;
@@ -417,7 +418,10 @@ parseMILinput(Client cntxt, MalBlkPtr currBlk)
 	c = GDKmalloc(len + 1);
 	strncpy(c, CURRENT(cntxt), len);
 	c[len] = 0;
-	getArg(currInstr, 0) = newConstant(currBlk, TYPE_str, c, FALSE);
+	cst.vtype= TYPE_str;
+	cst.val.sval= c;
+	cst.len= strlen(c);
+	getArg(currInstr, 0) = defConstant(currBlk, TYPE_str, &cst);
 	pushInstruction(currBlk, currInstr);
 }
 
@@ -551,7 +555,7 @@ parseMILassignment(Client cntxt, MalBlkPtr currBlk, str nme)
 		if (BE(cntxt)->constantdeclaration)
 			isConstant(currBlk, varid) = 1;
 	}
-	currInstr = newInstruction(ASSIGNsymbol);
+	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setDestVar(currInstr, varid);
 	setVarInitialized(currBlk, varid);
 	i = parseMILexpr(cntxt, currBlk);
@@ -573,7 +577,7 @@ parseMILfunctioncall(Client cntxt, MalBlkPtr currBlk, str nme)
 	advanceMore(cntxt, 1);
 	skipMILspace(cntxt, currBlk);
 
-	currInstr = newInstruction(ASSIGNsymbol);
+	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	/* detect multiplex and group operators */
 	if (*nme == '[' || *nme == '{') {
 		nme[strlen(nme) - 1] = 0;
@@ -682,22 +686,15 @@ parseMILpathexpr(Client cntxt, MalBlkPtr currBlk, int varid)
 int
 parseMILfactor(Client cntxt, MalBlkPtr currBlk)
 {
-	int varid = 0, len, tpe;
+	int varid = 0, len;
 	char bracket;
 	char newname[1024];
 	str nme;
+	ValRecord cst;
 
-	if ((len = stringLength(cntxt))) {
-		advance(cntxt, 1);
-		nme = idCopy(cntxt, len - 2);
-		advance(cntxt, 1);
-		varid = newConstant(currBlk, TYPE_str, nme, FALSE);
-	} else if ((nme = charCst(cntxt))) {
-		varid = newConstant(currBlk, TYPE_chr, nme, FALSE);
-	} else if ((len = cstLength(cntxt, &tpe)) > 0) {
+	if ((len = cstToken(cntxt, &cst)) > 0) {
 		/* factor */
-		nme = idCopy(cntxt, len);
-		varid = newConstant(currBlk, tpe, nme, TRUE);
+		varid = defConstant(currBlk, cst.vtype, &cst);
 	} else if ((len = idLength(cntxt)) > 0) {
 		nme = idCopy(cntxt, len);
 		skipMILspace(cntxt, currBlk);
@@ -754,7 +751,7 @@ with lower priority
 	for(i= @1; i>0; i--){
 		str f,m;
 		if(@2 && priority[i] >= priority[i-1]) break;
-		currInstr= newInstruction(ASSIGNsymbol);
+		currInstr= newInstruction(currBlk,ASSIGNsymbol);
 		f= mapfcn(ostk[i-1]);
 		m= mapmod(ostk[i-1]);
 		setModuleId(currInstr, putName(m,strlen(m)));
@@ -870,7 +867,7 @@ parseMILbatstmt(Client cntxt, MalBlkPtr currBlk)
 	}
 	nextChar(cntxt);
 	arg = parseMILexpr(cntxt, currBlk);
-	currInstr = newInstruction(ASSIGNsymbol);
+	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setModuleId(currInstr, putName("bbp", 3));
 	setFunctionId(currInstr, putName("new", 3));
 	setDestVar(currInstr, varid);
@@ -912,7 +909,7 @@ parseMILifstmt(Client cntxt, MalBlkPtr currBlk)
 
 	cvar = newTmpVariable(currBlk, TYPE_bit);
 
-	currInstr = newInstruction(ASSIGNsymbol);
+	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setDestVar(currInstr, cvar);
 
 	setVarInitialized(currBlk, getDestVar(currInstr));
@@ -924,7 +921,7 @@ parseMILifstmt(Client cntxt, MalBlkPtr currBlk)
 
 	parseMILstmt(cntxt, currBlk);
 
-	currInstr = newInstruction(EXITsymbol);
+	currInstr = newInstruction(currBlk,EXITsymbol);
 	setDestVar(currInstr, cvar);
 
 	setVarInitialized(currBlk, getDestVar(currInstr));
@@ -936,7 +933,7 @@ parseMILifstmt(Client cntxt, MalBlkPtr currBlk)
 		cvar = newTmpVariable(currBlk, TYPE_bit);
 		setVarUsed(currBlk, cvar, TRUE);
 
-		currInstr = newInstruction(ASSIGNsymbol);
+		currInstr = newInstruction(currBlk,ASSIGNsymbol);
 		setDestVar(currInstr, cvar);
 		setVarInitialized(currBlk, cvar);
 
@@ -947,7 +944,7 @@ parseMILifstmt(Client cntxt, MalBlkPtr currBlk)
 
 		parseMILstmtAll(cntxt, currBlk);
 
-		currInstr = newInstruction(EXITsymbol);
+		currInstr = newInstruction(currBlk,EXITsymbol);
 		setDestVar(currInstr, cvar);
 
 		currInstr->barrier = EXITsymbol;
@@ -983,7 +980,7 @@ parseMILbatloop(Client cntxt, MalBlkPtr currBlk, int lhs)
 	hvar = newTmpVariable(currBlk, TYPE_any);
 	tvar = newTmpVariable(currBlk, TYPE_any);
 
-	currInstr = newInstruction(ASSIGNsymbol);
+	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setModuleId(currInstr, putName("chopper", 7));
 	setFunctionId(currInstr, putName("newIterator", 11));
 	setDestVar(currInstr, cvar);
@@ -1015,7 +1012,7 @@ parseMILbatloop(Client cntxt, MalBlkPtr currBlk, int lhs)
 
 	parseMILstmt(cntxt, currBlk);
 
-	currInstr = newInstruction(ASSIGNsymbol);
+	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setModuleId(currInstr, putName("chopper", 7));
 	setFunctionId(currInstr, putName("hasMoreElements", 15));
 	setDestVar(currInstr, cvar);
@@ -1028,7 +1025,7 @@ parseMILbatloop(Client cntxt, MalBlkPtr currBlk, int lhs)
 	pushArgument(currBlk, currInstr, lhs);
 	pushInstruction(currBlk, currInstr);
 
-	currInstr = newInstruction(EXITsymbol);
+	currInstr = newInstruction(currBlk,EXITsymbol);
 	setDestVar(currInstr, cvar);
 
 	pushArgument(currBlk, currInstr, hvar);
@@ -1057,12 +1054,13 @@ parseMILwhilestmt(Client cntxt, MalBlkPtr currBlk)
 
 	cvar = newTmpVariable(currBlk, TYPE_bit);
 
-	currInstr = newInstruction(ASSIGNsymbol);
+	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setDestVar(currInstr, cvar);
 	setVarUsed(currBlk, cvar, TRUE);
 
 	setVarInitialized(currBlk, getDestVar(currInstr));
-	pushArgument(currBlk, currInstr, tvar = newConstant(currBlk, TYPE_bit, GDKstrdup("TRUE"), FALSE));
+	pushBit(currBlk,currInstr,FALSE);
+	tvar= currInstr->argv[1];
 
 	currInstr->barrier = BARRIERsymbol;
 	pushInstruction(currBlk, currInstr);
@@ -1076,7 +1074,7 @@ parseMILwhilestmt(Client cntxt, MalBlkPtr currBlk)
 		advanceMore(cntxt, 1);
 	}
 
-	currInstr = newInstruction(ASSIGNsymbol);
+	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setDestVar(currInstr, cvar);
 
 	setFunctionId(currInstr, putName("not", 3));
@@ -1086,14 +1084,14 @@ parseMILwhilestmt(Client cntxt, MalBlkPtr currBlk)
 
 	parseMILstmt(cntxt, currBlk);
 
-	currInstr = newInstruction(ASSIGNsymbol);
+	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setDestVar(currInstr, cvar);
 	pushArgument(currBlk, currInstr, tvar);
 
 	currInstr->barrier = REDOsymbol;
 	pushInstruction(currBlk, currInstr);
 
-	currInstr = newInstruction(EXITsymbol);
+	currInstr = newInstruction(currBlk,EXITsymbol);
 	setDestVar(currInstr, cvar);
 
 	currInstr->barrier = EXITsymbol;
@@ -1121,7 +1119,7 @@ parseMILvarstmt(Client cntxt, MalBlkPtr currBlk)
 		if (keyphrase2(cntxt, ":=")) {
 			skipMILspace(cntxt, currBlk);
 			lhs = parseMILexpr(cntxt, currBlk);
-			currInstr = newInstruction(ASSIGNsymbol);
+			currInstr = newInstruction(currBlk,ASSIGNsymbol);
 			setDestVar(currInstr, varid);
 			setVarInitialized(currBlk, getDestVar(currInstr));
 			pushArgument(currBlk, currInstr, lhs);
@@ -1156,7 +1154,7 @@ parseMILreturnstmt(Client cntxt, MalBlkPtr currBlk)
 
 	skipMILspace(cntxt, currBlk);
 	lhs = parseMILexpr(cntxt, currBlk);
-	currInstr = newInstruction(ASSIGNsymbol);
+	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	setDestVar(currInstr, getArg(getInstrPtr(currBlk, 0), 0));
 	setVarInitialized(currBlk, getDestVar(currInstr));
 	pushArgument(currBlk, currInstr, lhs);
@@ -1323,11 +1321,11 @@ parseMILbreakstmt(Client cntxt, MalBlkPtr currBlk)
 {
 	InstrPtr currInstr;
 
-	currInstr = newInstruction(ASSIGNsymbol);
+	currInstr = newInstruction(currBlk,ASSIGNsymbol);
 	currInstr->barrier = LEAVEsymbol;
 	setDestVar(currInstr, getLastBlock(BE(cntxt)));
 	setVarInitialized(currBlk, getDestVar(currInstr));
-	pushArgument(currBlk, currInstr, newConstant(currBlk, TYPE_bit, GDKstrdup("true"), FALSE));
+	pushBit(currBlk,currInstr,FALSE);
 	pushInstruction(currBlk, currInstr);
 }
 

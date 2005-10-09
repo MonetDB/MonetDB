@@ -593,14 +593,20 @@ str QOT@1optimizer( MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 @:macroOptimizer(ME, MACRO)@
 @:macroOptimizer(MC, ORCAM)@
 
+static str optimizerRef;
+static str multiplexRef;
 str
 OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 
 	InstrPtr *old, p;
-	int i, limit;
+	int i,j, limit,doit= 0, init=0;
 	lng clk = GDKusec();
 
+	if( optimizerRef == 0) 
+		optimizerRef = putName("optimizer", 9);
+	if( multiplexRef == 0) 
+		multiplexRef = putName("multiplex", 9);
 	(void) stk;
 	(void) pci;
 	if( mb->errors) 
@@ -608,16 +614,25 @@ OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	old = mb->stmt;
 
 	limit = mb->stop;
-	newMalBlkStmt(mb, mb->stop);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (moduleId(p) == putName("optimizer", 9) && functionId(p) == putName("multiplex", 9)) {
+		if (moduleId(p) == optimizerRef && functionId(p) == multiplexRef) {
+			if(init==0){
+				newMalBlkStmt(mb, mb->stop);
+				for(j= 0; j<i; j++)
+					pushInstruction(mb,old[j]);
+				init++;
+			}
 			OPTexpandMultiplex(mb, stk, p);
-			//freeInstruction(p);
+			/* freeInstruction(p);*/
+			doit++;
 		} else
+		if( init )
 			pushInstruction(mb, p);
 	}
-	GDKfree(old);
-	optimizerCheck(mb, "optimizer.multiplex", 1, GDKusec() - clk);
+	if( init){
+		GDKfree(old);
+		optimizerCheck(mb, "optimizer.multiplex", doit, GDKusec() - clk);
+	}
 	return MAL_SUCCEED;
 }

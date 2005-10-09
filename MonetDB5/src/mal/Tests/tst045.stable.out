@@ -25,7 +25,7 @@ end dummy;	# 2
 #
 function user.main():int;	# 0  (main:int)
 # test variable scope resolution 	# 1  (_2:str)
-    pi := 3.147:flt;	# 2  (pi:flt)<-(_4:flt)
+    pi := 3.14700007:flt;	# 2  (pi:flt)<-(_4:flt)
 end main;	# 3  
 
 # 07:58:45 >  

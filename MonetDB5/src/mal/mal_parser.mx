@@ -61,9 +61,9 @@ mal_export void skipSpace(Client cntxt);
 mal_export void skipToEnd(Client cntxt);
 mal_export int idLength(Client cntxt);
 mal_export str idCopy(Client cntxt, int len);
-mal_export int cstLength(Client cntxt, int *type);
+mal_export int cstToken(Client cntxt, ValPtr val);
 mal_export int stringLength(Client cntxt);
-mal_export str charCst(Client cntxt);
+mal_export int charCst(Client cntxt, ValPtr val);
 mal_export int operatorLength(Client cntxt);
 mal_export str operatorCopy(Client cntxt, int length);
 mal_export int keyphrase1(Client cntxt, str kw);
@@ -304,7 +304,6 @@ str strCopy(Client cntxt, int length){
 		GDKfatal("FATAL:strCopy:");
 	memcpy(s, CURRENT(cntxt) + 1, (size_t) (length - 2) );
 	mal_unquote(s);
-	advance(cntxt,length);
 	return s;
 }
 @-
@@ -368,19 +367,27 @@ skipToEnd(Client cntxt)
 	if(c) nextChar(cntxt);
 }
 @-
-The lexical analyser for numeric constants is a little more complex.
+The lexical analyser for constants is a little more complex.
 Aside from getting its length, we need an indication of its type.
-We could also rebuild the constant directly, but that is already
-handled by newConstant. So be lazy for the time being.
+The constant structure is initialized for later use.
 @c
-int cstLength(Client cntxt, int *type)
+int cstToken(Client cntxt, ValPtr cst)
 {   
 	int i = 0;
+	long long l;
 	int hex=0;
 	str s = CURRENT(cntxt);
 
-	*type = TYPE_int;
+	cst->vtype = TYPE_int;
 	switch(*s){
+	case '"':
+		cst->vtype= TYPE_str;
+		i= stringLength(cntxt);
+		cst->val.sval =strCopy(cntxt, i);
+		cst->len= strlen(cst->val.sval);
+		return i;
+	case '\'':
+		return charCst(cntxt,cst);
 	case '-':
 		i++;
 		s++;
@@ -395,8 +402,9 @@ int cstLength(Client cntxt, int *type)
 	case '6': case '7': case '8': case '9':
 	if( hex)
 		while (isdigit((int)*s) || isalpha((int)*s) ) {
-			if( !((tolower(*s) >= 'a' && tolower(*s) <= 'f') 
-				|| isdigit(*s)) ) return i;
+			if( !((tolower(*s) >= 'a' && tolower(*s) <= 'f')
+				|| isdigit((int)*s) )  )
+				break;
 			i++;
 			s++;
 		}
@@ -405,7 +413,7 @@ int cstLength(Client cntxt, int *type)
 			i++;
 			s++;
 		}
-	if( hex) return i;
+	if( hex) goto handleInts;
 	case '.':
 	if (*s == '.' && isdigit(*(s+1)) ) {
 		i++;
@@ -414,7 +422,7 @@ int cstLength(Client cntxt, int *type)
 			i++;
 			s++;
 		}
-		*type = TYPE_flt;
+		cst->vtype = TYPE_flt;
 	}
 	if (*s == 'e' || *s == 'E') {
 		i++;
@@ -423,54 +431,86 @@ int cstLength(Client cntxt, int *type)
 			i++;
 			s++;
 		}
-		*type = TYPE_dbl;
+		cst->vtype = TYPE_dbl;
 		while (isdigit(*s)) {
 			i++;
 			s++;
 		}
+	}
+	if( cst->vtype == TYPE_flt) {
+		cst->val.fval = (flt) strtod(CURRENT(cntxt),NULL);
+	}
+	if( cst->vtype == TYPE_dbl){
+		cst->val.dval = (dbl) strtod(CURRENT(cntxt),NULL);
 	}
 	if (*s == '@') {
 		i++;
 		s++;
-		*type = TYPE_oid;
+		cst->vtype = TYPE_oid;
 		while (isdigit(*s)) {
 			i++;
 			s++;
 		}
+		cst->val.oval = (oid) strtoll(CURRENT(cntxt),NULL,0);
 	}
 	if (*s == 'L') {
-		if (*type == TYPE_int)
-			*type = TYPE_lng;
-		if (*type == TYPE_flt)
-			*type = TYPE_dbl;
+		if (cst->vtype == TYPE_int)
+			cst->vtype = TYPE_lng;
+		if (cst->vtype == TYPE_flt)
+			cst->vtype = TYPE_dbl;
 		i++;
 		s++;
+		if (*s == 'L') {
+			if (cst->vtype == TYPE_int)
+				cst->vtype = TYPE_lng;
+			i++;
+			s++;
+		}
+		if( cst->vtype == TYPE_lng)
+			cst->val.lval= strtoll(CURRENT(cntxt),NULL,0);
+		if( cst->vtype == TYPE_dbl)
+			cst->val.dval= strtod(CURRENT(cntxt),NULL);
+		return i;
 	}
-	if (*s == 'L') {
-		i++;
-		if (*type == TYPE_int)
-			*type = TYPE_lng;
-		s++;
+handleInts:
+	if( cst->vtype == TYPE_int || cst->vtype == TYPE_lng){
+		l = strtoll(CURRENT(cntxt),NULL,0);
+		if( l> INT_MIN && l< INT_MAX ){
+			cst->vtype= TYPE_int;
+			cst->val.ival = (int)l;
+		} else {
+			cst->vtype= TYPE_lng;
+			cst->val.lval = l;
+		}
+	}
+	if( cst->vtype == TYPE_lng){
+		cst->val.lval = strtoll(CURRENT(cntxt),NULL,0);
 	}
 	return i;
+
 	case 'f':
 	if( strncmp(s,"false",5)==0 && !isalnum((int)*(s+5)) &&
 			*(s+5)!= '_'){
-		*type = TYPE_bit;
+		cst->vtype = TYPE_bit;
+		cst->val.bval = 0;
+		cst->len = 1;
 		return 5;
 	}
 	return 0;
 	case 't':
 	if( strncmp(s,"true",4)==0 && !isalnum((int)*(s+4)) &&
 			*(s+4)!= '_'){
-		*type = TYPE_bit;
+		cst->vtype = TYPE_bit;
+		cst->val.bval = 1;
+		cst->len = 1;
 		return 4;
 	}
 	return 0;
 	case 'n':
 	if( strncmp(s,"nil",3)==0 && !isalnum((int)*(s+3)) &&
 			*(s+3)!= '_'){
-		*type = TYPE_void;
+		cst->vtype = TYPE_void;
+		cst->val.oval = oid_nil;
 		return 3;
 	}
 	}
@@ -639,37 +679,54 @@ INLINE int typeElm(Client cntxt, int def)
 @-
 Character constants may be escaped.
 @c
-str charCst(Client cntxt) 
+int
+charCst(Client cntxt, ValPtr cst) 
 {
 	int i;
 	str v = CURRENT(cntxt);
 
 	if (*v != '\'')
 		return 0;
+	cst->vtype = TYPE_chr;
+	cst->val.cval[1]= 0;
+	cst->val.cval[2]= 0;
+	cst->val.cval[3]= 0;
 	v++;
 	i = 1;
 	if (*v == '\\') {
-		v++;
-		i++;
-		if (isdigit(*v)) {
-			i++;
-			v++;
-		}
-		if (isdigit(*v)) {
-			i++;
-			v++;
-		}
-		if (isdigit(*v)) {
-			i++;
-			v++;
+		v++; i++;
+		switch(*v){
+		case 'n':
+			cst->val.cval[0]= '\n';
+			break;
+		case 'r':
+			cst->val.cval[0]= '\r';
+		case 't':
+			cst->val.cval[0]= '\t';
+			break;
+		case '\\':
+			v++;i++;
+			cst->val.cval[0]= *v;
+			break;
+		default:
+			if (isdigit(*v)) {
+				i++; v++;
+			}
+			if (isdigit(*v)) {
+				i++; v++;
+			}
+			if (isdigit(*v)) {
+				i++; v++;
+			}
+			cst->val.cval[0]= strtol(v,NULL,0);
 		}
 	} else {
+		cst->val.cval[0]= *v;
 		v++;
 	}
 	if (*v != '\'')
-		return (str) parseError(cntxt, "'\'' expected\n");
-	v = strCopy(cntxt, i + 2);
-	return v;
+		return i+1;
+	return i+2;
 }
 @+ The Parser
 The client is responsible to collect the
@@ -1006,7 +1063,8 @@ optimizers to make decisions. (See the section on properties).
 	if( keyphrase1(cntxt,"{")) {
 		do {
 			str pname,opname;
-			int i,lt,lo;
+			int i,lo;
+			ValRecord cst;
 
 			l = idLength(cntxt);
 			if(l==0) 
@@ -1019,54 +1077,11 @@ optimizers to make decisions. (See the section on properties).
 			if( lo > 0) 
 				opname= operatorCopy(cntxt,lo);
 			else opname= GDKstrdup("");
-			if((i= cstLength(cntxt,&lt))){
-				char *nxt= CURRENT(cntxt);
-				switch(lt){
-				case TYPE_sht:
-				case TYPE_int:{
-					int l= strtol(nxt, NULL,10);
-					int ival= (int)l;
-					setVarProperty(curBlk,@1,pname, opname, lt, &ival);
-					break;
-					}
-				case TYPE_lng:{
-					lng l= strtol(nxt, NULL,10);
-					setVarProperty(curBlk,@1,pname,  opname,lt, &l);
-					break;
-					}
-				case TYPE_dbl:
-				case TYPE_flt:{
-					double l= strtod(nxt,NULL);
-					setVarProperty(curBlk,@1,pname, opname, lt, &l);
-					break;
-					}
-				case TYPE_bit:{
-					bit bval;
-					if( strncmp(nxt,"true",4)==0 && i==4)
-						bval= TRUE;
-					else
-					if( strncmp(nxt,"false",5)==0 && i==4)
-						bval= FALSE;
-					else
-					if( strncmp(nxt,"TRUE",4)==0 && i==4)
-						bval= TRUE;
-					else
-					if( strncmp(nxt,"FALSE",4)==0 && i==4)
-						bval= FALSE;
-					setVarProperty(curBlk,@1,pname, opname, lt, &bval);
-					break;
-					}
-				}
+			if((i= cstToken(cntxt,&cst))){
+				setVarProperty(curBlk,@1, pname, opname, &cst);
 				advance(cntxt,i);
-			} else if( currChar(cntxt)=='\'' ){
-				str val = charCst(cntxt);
-				setVarProperty(curBlk,@1,pname, opname, TYPE_chr, val);
-			} else if( (i= stringLength(cntxt)) > 0){
-				str val= strCopy(cntxt,i);
-				setVarProperty(curBlk,@1,pname, opname, TYPE_str, val);
-			} else{ bit t= TRUE;
-				setVarProperty(curBlk,@1,pname, opname, TYPE_bit, &t);
-			}
+			} else 
+				setVarProperty(curBlk,@1, pname, NULL, NULL);
 			GDKfree(pname); 
 			GDKfree(opname); 
 			skipSpace(cntxt);
@@ -1093,6 +1108,7 @@ help information.
 	if( MALkeyword(cntxt,"comment",7)){
 		if( (l= stringLength(cntxt))){
 			@1 = strCopy(cntxt,l);
+			advance(cntxt,l);
 		} else {
 			parseError(cntxt,"<string> expected\n");
 		}
@@ -1279,13 +1295,14 @@ parseAssign(Client cntxt, int cntrl)
 	InstrPtr curInstr;
 	MalBlkPtr curBlk;
 	Symbol curPrg;
-	int i=0, lt,l,type=TYPE_any, varid= -1;
+	int i=0, l,type=TYPE_any, varid= -1;
 	int idx;
 	str arg=0; 
+	ValRecord cst;
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
-	curInstr = newInstruction(cntrl?cntrl:ASSIGNsymbol);
+	curInstr = newInstruction(curBlk, cntrl?cntrl:ASSIGNsymbol);
 
 	/* start the parsing by recognition of the lhs of an assignment */
 	if( currChar(cntxt) == '('){
@@ -1380,10 +1397,10 @@ This code is used in both positions of the expression
 @= term
 	str v = NULL;
 
-	if( (i= cstLength(cntxt,&lt))){
+	if( (i= cstToken(cntxt,&cst))){
 		int cstidx = -1,csttpe= TYPE_any;
 
-		cstidx = fndConstant(curBlk,((char*)CURRENT(cntxt)),i);
+		cstidx = fndConstant(curBlk,&cst);
 		if( cstidx >= 0){
 			advance(cntxt,i);
             if( currChar(cntxt)==':') {
@@ -1391,44 +1408,29 @@ This code is used in both positions of the expression
                 if(csttpe == getVarType(curBlk,cstidx) ){
                     getVar(curBlk,cstidx)->isudftype = TRUE;
                 } else {
-                    cstidx = newConstant(curBlk,csttpe,
-                        GDKstrdup(getVarLiteral(curBlk,cstidx)),TRUE);
+					cstidx = defConstant(curBlk,csttpe,&cst);
                     setPolymorphic(curInstr,csttpe, FALSE);
                     getVar(curBlk,cstidx)->isudftype = TRUE;
                 }
             } else
-            if( lt != getVarType(curBlk,cstidx)){
-                    cstidx = newConstant(curBlk,lt,
-                        GDKstrdup(getVarLiteral(curBlk,cstidx)),TRUE);
-                    setPolymorphic(curInstr,lt, FALSE);
+            if( cst.vtype != getVarType(curBlk,cstidx)){
+					cstidx = defConstant(curBlk,cst.vtype,&cst);
+                    setPolymorphic(curInstr,cst.vtype, FALSE);
             } 
             curInstr = pushArgument(curBlk,curInstr,cstidx);
             @1;
 		} else { 
             /* add a new constant */
             int flag;
-            v= cstCopy(cntxt,i);
+			advance(cntxt,i);
             flag= currChar(cntxt)==':';
-            csttpe = typeElm(cntxt,lt);
-            cstidx = newConstant(curBlk,csttpe,v,TRUE);
+            csttpe = typeElm(cntxt,cst.vtype);
+			cstidx = defConstant(curBlk,csttpe,&cst);
             setPolymorphic(curInstr,csttpe, FALSE);
             getVar(curBlk,cstidx)->isudftype = flag;
             curInstr = pushArgument(curBlk,curInstr,cstidx);
             @1;
         }
-	} else if ( currChar(cntxt)=='\'' && (v = charCst(cntxt)) ){
-		lt = typeElm(cntxt,TYPE_chr);
-		setPolymorphic(curInstr,lt, FALSE);
-		i = newConstant(curBlk,lt,v,TRUE);
-		curInstr = pushArgument(curBlk,curInstr,i);
-		@1;
-	} else if( currChar(cntxt)=='"' &&  (i = stringLength(cntxt)) ){
-		v = strCopy(cntxt,i);
-		lt = typeElm(cntxt,TYPE_str);
-		setPolymorphic(curInstr,lt, FALSE);
-		i = newConstant(curBlk,lt,v,FALSE);
-		curInstr = pushArgument(curBlk,curInstr,i);
-		@1;
 	} else if( (i= idLength(cntxt))){
 		if( (idx=findVariableLength(curBlk,CURRENT(cntxt),i)) == -1){
 			v= idCopy(cntxt,i);
@@ -1558,7 +1560,7 @@ int parseMAL(Client cntxt, Symbol curPrg){
 		case '#': 
 		{ /* keep the full line comments */
 			char start[256], *e=start, c; 
-			MalBlkPtr curBlk= curPrg->def;
+			MalBlkPtr curBlk= cntxt->curprg->def;
 			InstrPtr curInstr;
 
 			*e=0;
@@ -1575,15 +1577,18 @@ int parseMAL(Client cntxt, Symbol curPrg){
 			}
 			if( e> start) *e=0;
 			if( e>start && curBlk->stop > 0){
+				ValRecord cst;
 @-
 Keep the comment lines as un-used constants.
 This implies that a deadcode optimizer will remove
 the information.
 @c
-				curInstr= newInstruction(REMsymbol);
+				curInstr= newInstruction(curBlk, REMsymbol);
 				pushInstruction(curBlk,curInstr);
-				getArg(curInstr,0)= newConstant(curBlk,
-					TYPE_str,GDKstrdup(start),FALSE);
+				cst.vtype= TYPE_str;
+				cst.len = strlen(start);
+				cst.val.sval= GDKstrdup(start);
+				getArg(curInstr,0)= defConstant(curBlk, TYPE_str,&cst);
 				setVarUsed(curBlk,getArg(curInstr,0),FALSE);
 			}
 			echoInput(cntxt);
