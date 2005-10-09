@@ -248,6 +248,7 @@ The code should comply with the optimizer policies, such
 as performing double checks before the function returns
 the new code block.
 @c
+#define GETDCNAME(M,X) getVar(M,X)->value.val.sval
 str
 DCplan(MalBlkPtr mb, str newname)
 {
@@ -276,11 +277,11 @@ DCplan(MalBlkPtr mb, str newname)
 			continue;
 		}
 		if (@:tstName(p,"sql","bind_dbat")@) {
-			if (isReceptor(getVarLiteral(mb, getArg(p, 2)))) {
+			if (isReceptor(GETDCNAME(mb, getArg(p, 2)))) {
 				emptyset[z++] = getArg(p, 0);
 				freeInstruction(p);
 				continue;
-			} else if (isEmitter(getVarLiteral(mb, getArg(p, 2)))) {
+			} else if (isEmitter(GETDCNAME(mb, getArg(p, 2)))) {
 				emptyset[z++] = getArg(p, 0);
 				freeInstruction(p);
 				continue;
@@ -291,12 +292,12 @@ The dbat can only be dropped for connection points.[todo]
 		}
 		if (@:tstName(p,"sql","bind")@) {
 			/* tst name to determine its kind */
-			if (isReceptor(getVarLiteral(mb, getArg(p, 2)))) {
+			if (isReceptor(GETDCNAME(mb, getArg(p, 2)))) {
 				delArgument(p, 4);
 				delArgument(p, 1);
 				setFunctionId(p, putName("bindReceptor", 12));
 			}
-			if (isEmitter(getVarLiteral(mb, getArg(p, 2)))) {
+			if (isEmitter(GETDCNAME(mb, getArg(p, 2)))) {
 				delArgument(p, 4);
 				delArgument(p, 1);
 				setFunctionId(p, putName("bindEmitter", 11));
@@ -401,7 +402,7 @@ with the empty set and singleton set.
 	idx = 0;
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (@:tstName(p,"sql","bind")@ &&isReceptor(getVarLiteral(mb, getArg(p, 2)))) {
+		if (@:tstName(p,"sql","bind")@ &&isReceptor(GETDCNAME(mb, getArg(p, 2)))) {
 			es[idx] = getArg(p, 0);
 			idx++;
 		}
@@ -444,7 +445,7 @@ isEmitterDestination(MalBlkPtr mb, int varid)
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (getArg(p, 0) == varid && strcmp(functionId(p), "bindEmitter") == 0) {
-			return getVarLiteral(mb, getArg(p, 1));
+			return GETDCNAME(mb, getArg(p, 1));
 		}
 	}
 	return 0;
@@ -457,6 +458,7 @@ DCsqlReshuffle(MalBlkPtr mb, str newname)
 	InstrPtr p, *old;
 	str *points, unit;
 	int u = 0;
+	ValRecord cst;
 
 #ifdef _DC_COMPILE_DEBUG
 	stream_printf(GDKout, "start reshuffle :\n");
@@ -476,7 +478,7 @@ First step is to collect the receptor/emitter bindings.
 		if (functionId(old[i]) && strncmp(functionId(old[i]), "bind", 4) == 0 && 
 			moduleId(old[i]) && strcmp(moduleId(old[i]), "datacell") == 0) {
 			pushInstruction(mb, old[i]);
-			unit = getVarLiteral(mb, getArg(old[i], 1));
+			unit = GETDCNAME(mb, getArg(old[i], 1));
 			for (j = 0; j < u; j++)
 				if (strcmp(points[j], unit) == 0)
 					break;
@@ -486,8 +488,10 @@ First step is to collect the receptor/emitter bindings.
 				(unit = isEmitterDestination(mb, getArg(old[i], 1)))) {
 			setFunctionId(old[i], putName("keep", 4));
 			setModuleId(old[i], putName("datacell", 8));
-			old[i] = setArgument(mb, old[i], 1, 
-				newConstant(mb, TYPE_str, GDKstrdup(unit), TRUE));
+			cst.vtype= TYPE_str;
+			cst.val.sval= GDKstrdup(unit);
+			cst.len= strlen(unit);
+			old[i] = setArgument(mb, old[i], 1, defConstant(mb, TYPE_str, &cst));
 			pushInstruction(mb, old[i]);
 		} else
 			pushInstruction(mb, old[i]);
@@ -537,7 +541,7 @@ DCflowDependencies(DCpump p)
 		for (j = 1; j < mb->stop; j++) {
 			q = getInstrPtr(mb, j);
 			if (match(q, "datacell", "bindReceptorPublic")) {
-				nme = getVarLiteral(mb, getArg(q, 2));
+				nme = GETDCNAME(mb, getArg(q, 2));
 				for (k = 0; k < in; k++)
 					if (strcmp(p->source[k], nme))
 						p->source[in++] = GDKstrdup(nme);
@@ -547,7 +551,7 @@ DCflowDependencies(DCpump p)
 				stream_printf(GDKout, "add source :%s\n", nme);
 #endif
 			} else if (match(q, "datacell", "bindEmitter")) {
-				nme = getVarLiteral(mb, getArg(q, 2));
+				nme = GETDCNAME(mb, getArg(q, 2));
 				for (k = 0; k < out; k++)
 					if (strcmp(p->sink[k], nme))
 						p->sink[out++] = GDKstrdup(nme);
