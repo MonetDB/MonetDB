@@ -250,6 +250,7 @@ SQLinitClient(Client c)
 
 	c->yycur = 0;		/* make sure we don't reuse the used input */
 	c->fdin->eof = 1;	/* force prompt on first iteration */
+	initSQLreferences();
 	return msg;
 }
 
@@ -652,7 +653,7 @@ SQLsetDebugger(Client c, mvc *m, int onoff)
 	if (m == 0 || m->mode != m_debug)
 		return;
 	c->itrace='n';
-	q = newInstruction(ASSIGNsymbol);
+	q = newInstruction(NULL,ASSIGNsymbol);
 	moduleId(q) = putName("mdb",3);
 	if( onoff)
 		functionId(q) = putName("start",5);
@@ -734,8 +735,7 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 	int i;
 
 	for (i = start; i < mb->vtop;) {
-		freeVariable(mb, i);
-		mb->var[i] = 0;
+		clearVariable(mb, i);
 
 		if (glb) {
 			garbageElement(&glb->stk[i]);
@@ -815,6 +815,7 @@ SQLparser(Client c)
 			if (t)
 				m->results = res_tables_remove(m->results, t);
 			in->pos = in->len;	/* HACK: should use parsed lenght */
+			/* printf("Hack\n"); */
 			return NULL;
 		}
 		return throwMessage("SQLparser", "Unrecognized X command\n");
@@ -983,7 +984,7 @@ SQLengine(Client c)
 	backend *be = ((backend *) c->state[PARSER]);
 	char oldlang= be->language;
 	mvc *m = be->mvc;
-	lng T0 = GDKusec();
+	lng T0;
 
 	if (c->curprg->def->errors)
 		return throwMessage("SQLengine", "Program contains errors\n");
@@ -991,6 +992,9 @@ SQLengine(Client c)
 	stream_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
 
+	if( c->curprg->def->stop == 1 )
+		return MAL_SUCCEED;
+	T0 = GDKusec();
 	if( m->mode == m_prepare){
 		goto cleanup_engine;
 	} else if(explainPlan()){
@@ -1017,7 +1021,7 @@ in the context of a user global environment. We have a private
 environment.
 @c
 
-	if( c->curprg->def->stop == 1 || MALcommentsOnly(c->curprg->def))
+	if( MALcommentsOnly(c->curprg->def))
 		msg= MAL_SUCCEED;
 	else msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
     if (msg) {
@@ -1045,13 +1049,15 @@ unless auto_commit has been set.
 		char buf[BUFSIZ], *qs, *stmt = buf;
 
 		tot += be->Texec = GDKusec() - T0;
-		qs = sql_escape(be->qry);
-		m->mode = m_normal;
-		m->explain = m_normal;
-		snprintf(buf, BUFSIZ, "insert into sys.profile "
-		 "values(now,'%s'," LLFMT ",0," LLFMT "," LLFMT" ,USER);\n",
-		 qs, be->Tparse, be->Texec, tot);
-		_DELETE(qs);
+		if( be->qry){
+			qs = sql_escape(be->qry);
+			m->mode = m_normal;
+			m->explain = m_normal;
+			snprintf(buf, BUFSIZ, "insert into sys.profile "
+			 "values(now,'%s'," LLFMT ",0," LLFMT "," LLFMT" ,USER);\n",
+			 qs, be->Tparse, be->Texec, tot);
+			_DELETE(qs);
+		}
 @-
 This code causes a recursion, because the reset of the explain
 triggers the profile action. A better approach is to directly
@@ -1147,14 +1153,14 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 
 /*
 	if (autocommit) {
-		p = newInstruction(ASSIGNsymbol);
+		p = newInstruction(NULL,ASSIGNsymbol);
 		moduleId(p) = putName("sql",3);
 		functionId(p) = putName("commit",6);
 		pushInstruction(mb, p);
 	}
 */
 /* no catch
-	p= newInstruction(CATCHsymbol);
+	p= newInstruction(NULL,CATCHsymbol);
 	i= findVariable(mb,nme);
 	if( i< 0) i= newVariable(mb,GDKstrdup(nme),TYPE_str);
 	getDestVar(p) = i;
@@ -1162,7 +1168,7 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 	p->retc = 1;
 	pushInstruction(mb,p);
 
-	p= newInstruction(ASSIGNsymbol);
+	p= newInstruction(NULL,ASSIGNsymbol);
 	moduleId(p)= putName("io",2);
 	functionId(p)= putName("print",5);
 	pushArgumentId(mb, p, GDKstrdup(nme));
@@ -1171,22 +1177,21 @@ pushCatchDefault(MalBlkPtr mb, str nme, int autocommit)
 
 /*
 	if (autocommit) {
-		p = newInstruction(ASSIGNsymbol);
+		p = newInstruction(NULL,ASSIGNsymbol);
 		moduleId(p) = putName("sql",3);
 		functionId(p) = putName("rollback",8);
 		pushInstruction(mb, p);
 	}
 */
 /*       else {
-		p= newInstruction(RAISEsymbol);
+		p= newInstruction(NULL,RAISEsymbol);
 		p->barrier= RAISEsymbol;
 		p->argv[0] = findVariable(mb,GDKstrdup("sqlerror"));
-		i= newConstant(mb,TYPE_str,GDKstrdup("Transaction abort"),0);
-		p= pushArgument(mb,p,i);
+		pushStr(mb,p,"Transaction abort");
 		pushInstruction(mb,p);
 	}
 
-	p= newInstruction(EXITsymbol);
+	p= newInstruction(NULL,EXITsymbol);
 	p->argv[0] = findVariable(mb,GDKstrdup(nme));
 	p->barrier= EXITsymbol;
 	pushInstruction(mb,p);

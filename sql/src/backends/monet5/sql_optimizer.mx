@@ -194,7 +194,7 @@ optimizeQueryInCache(Client c)
 {
 	MalBlkPtr mb;
 	InstrPtr *ns, p;
-	int t, v;
+	int v;
 	int i, j, k, klim;/*, argseen=0;*/
 	MALfcn setWriteMode = 0;
 	Symbol s;
@@ -249,7 +249,6 @@ We use knowledge on generation of bind() instructions.
 @c
 			if (strcmp(functionName(p), "bind_dbat") == 0 || 
 			   (strcmp(functionName(p), "bind") == 0)) {
-				int l = 0;
 				InstrPtr qc;
 				BAT *b = NULL;
 
@@ -260,18 +259,18 @@ Watch out bind_dbat needs different binding. [costed me a day]
 
 				if (strcmp(functionName(p), "bind_dbat") == 0)
 					b = mvc_bind_dbat(be->mvc, 
-							getVarLiteral(mb, p->argv[1]), 
-							getVarLiteral(mb, p->argv[2]), 0);
+							getVar(mb,p->argv[1])->value.val.sval,
+							getVar(mb,p->argv[2])->value.val.sval,0);
 				else
 					b = mvc_bind(be->mvc, 
-							getVarLiteral(mb, p->argv[1]), 
-							getVarLiteral(mb, p->argv[2]), 
-							getVarLiteral(mb, p->argv[3]), 0);
+							getVar(mb,p->argv[1])->value.val.sval,
+							getVar(mb,p->argv[2])->value.val.sval,
+							getVar(mb,p->argv[3])->value.val.sval,0);
 @-
 Empty BATs can be symbolically optimized. Disabled for a while.
 @c
 				if ( FALSE /* b == NULL || (l= BATcount(b)) == 0 */ ) {
-					qc = newInstruction(ASSIGNsymbol);
+					qc = newInstruction(NULL,ASSIGNsymbol);
 					setModuleId(qc, putName("optimizer",9));
 					setFunctionId(qc, putName("RXemptyBAT",10));
 					qc->argv[0] = newTmpVariable(mb, TYPE_void);
@@ -281,19 +280,6 @@ Empty BATs can be symbolically optimized. Disabled for a while.
 					continue;
 				}
 				BBPunfix(b->batCacheid);
-@-
-Play around with setting a property. It should be extended
-with setting the historgram property for the tail.
-Such a histogram is nothing more then a BAT whose head is
-an inclusive boundary value and the tail the corresponding
-number of elements.
-The kernel should provide some supportive routines for this
-or the SQL catalogue manager could keep histograms
-around for each column.
-@c
-				setVarProperty(mb, p->argv[0], "count", "=", TYPE_int, &l);
-				/* setVarProperty(mb,p->argv[0],"histogram", 
-				   TYPE_str, "r_c_histogram"); */
 			}
 		}
 @-
@@ -331,12 +317,11 @@ for consider a block that depends on the size of a BAT.
 The prelude code has been generated, now we can inject the remaining
 instructions, producing a syntactic correct MAL program again.
 @c
-	t = newConstant(mb, TYPE_bit, GDKstrdup("true"), 0);
 	v = newVariable(mb, GDKstrdup("always"), TYPE_bit);
-	p = newInstruction(ASSIGNsymbol);
+	p = newInstruction(NULL,ASSIGNsymbol);
 	p->barrier = BARRIERsymbol;
 	p->argv[0] = v;
-	pushArgument(mb, p, t);
+	pushBit(mb,p,TRUE);
 	ns[k++] = p;
 
 	for (i = 1; i < mb->stop - 1; i++) {
@@ -360,15 +345,15 @@ Skip it if the writeMode relates to a base table
 @-
 Finalize the factory loop
 @c
-	p = newInstruction(ASSIGNsymbol);
+	p = newInstruction(NULL,ASSIGNsymbol);
 	p->barrier = YIELDsymbol;
 	p->argv[0] = v;
 	ns[k++] = p;
-	p = newInstruction(ASSIGNsymbol);
+	p = newInstruction(NULL,ASSIGNsymbol);
 	p->barrier = REDOsymbol;
 	p->argv[0] = v;
 	ns[k++] = p;
-	p = newInstruction(ASSIGNsymbol);
+	p = newInstruction(NULL,ASSIGNsymbol);
 	p->barrier = EXITsymbol;
 	p->argv[0] = v;
 	ns[k++] = p;
@@ -438,7 +423,7 @@ barrier doit:= c>0;
 exit	doit;
 	..rest of code
 @c
-				q= newInstruction(ASSIGNsymbol);
+				q= newInstruction(NULL,ASSIGNsymbol);
 				cnt= newTmpVariable(mb,TYPE_lng);
 				setVarUsed(mb,cnt,TRUE);
 				q->argv[0]=cnt;
@@ -448,26 +433,26 @@ exit	doit;
 				setFunctionId(q,putName("count",5));
 				pushInstruction(mb,q);
 
-				q= newInstruction(ASSIGNsymbol);
+				q= newInstruction(NULL,ASSIGNsymbol);
 				q->barrier= BARRIERsymbol;
 				lab= newTmpVariable(mb,TYPE_bit);
 				setVarUsed(mb,lab,TRUE);
-				zero= newConstant(mb,TYPE_lng,GDKstrdup("0:lng"),FALSE);
 				setVarUsed(mb,cnt,TRUE);
 				setVarInitialized(mb,cnt);
-				setVarUsed(mb,zero,TRUE);
 				setModuleId(q,putName("calc",4));
 				setFunctionId(q,putName(">",1));
 				q->argv[0]=lab;
 				q->argv[1]=cnt;
-				q->argv[2]=zero;
 				q->retc=1;
-				q->argc=3;
+				q->argc=2;
+				pushLng(mb,q,0);
+				zero= q->argv[2];
+				setVarUsed(mb,q->argv[2],TRUE);
 				pushInstruction(mb,q);
 @-
 We have to perform the expensive kdifference anyway
 @c
-				q= newInstruction(ASSIGNsymbol);
+				q= newInstruction(NULL,ASSIGNsymbol);
 				setModuleId(q,putName("algebra",7));
 				setFunctionId(q,putName("kdifference",5));
 				q->argv[0]= p->argv[0];
@@ -489,7 +474,7 @@ We have to perform the expensive kdifference anyway
 				}
 				i--;
 
-				q= newInstruction(EXITsymbol);
+				q= newInstruction(NULL,EXITsymbol);
 				q->barrier= EXITsymbol;
 				q->argv[0]= lab;
 				pushInstruction(mb,q);
@@ -500,7 +485,7 @@ now we have to remap the variables. In this process the
 variable types may change, which means we have to keep
 track of them.
 @c
-				q= newInstruction(ASSIGNsymbol);
+				q= newInstruction(NULL,ASSIGNsymbol);
 				q->barrier= BARRIERsymbol;
 				setModuleId(q,putName("calc",4));
 				setFunctionId(q,putName("==",2)); 
@@ -537,7 +522,7 @@ Now we don;t have to perform the expensive kdifference
 				}
 				i--;
 
-				q= newInstruction(EXITsymbol);
+				q= newInstruction(NULL,EXITsymbol);
 				q->barrier= EXITsymbol;
 				q->argv[0]= lab;
 				pushInstruction(mb,q);
