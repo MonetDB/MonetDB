@@ -317,10 +317,6 @@ public class MonetStatement implements Statement {
 		}
 
 		// let the cache thread do it's work
-		// use lowercase 's' in order to tell the server we don't want a
-		// continuation prompt if it needs more to complete the query
-		// always add ; since that doesn't hurt in any case and completes
-		// queries that haven't got one
 		lastHeaderList = connection.addQuery(
 			sql,
 			fetchSize,
