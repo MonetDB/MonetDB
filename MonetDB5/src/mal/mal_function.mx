@@ -559,7 +559,7 @@ Since in interactive mode each statement is handled separately,
 we have to remember the scope assigned to a variable.
 @c
 void chkDeclarations(MalBlkPtr mb,int reset){
-	int pc,i, k;
+	int pc,i, k,l;
 	InstrPtr p;
 	short s, blks[MAXDEPTH], top= 0, blkId=1;
 	str nme;
@@ -592,33 +592,35 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 	for(pc=0;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);
 		if( p->token == IGNOREsymbol) continue;
-		for(k=p->retc;k<p->argc; k++) 
-        if( isConstant(mb, getArg(p,k)) ||
-            isTypeVar(mb, getArg(p,k)) ) {
-            /* ok defined */
-        } else 
-        if( (s = getVarScope(mb,getArg(p,k)) ) ==0 ) {
-                GDKerror("'%s' may not be used before being set in %s[%d]\n",
-                    getVarName(mb,getArg(p,k)), nme,pc);
-			        mb->errors++;
-        } else 
-        if( getVarDepth(mb,getArg(p,k)) >= top){
-			        GDKerror("'%s' may not be used before being set in %s[%d]\n",
-			            getVarName(mb,getArg(p,k)), nme,pc);
-			        mb->errors++;
+		for(k=p->retc;k<p->argc; k++) {
+			l=getArg(p,k);
+			if( isConstant(mb, l) ){
+				/* ok defined */
+			} else 
+			if( (s = getVarScope(mb,l) ) ==0 ) {
+					GDKerror("'%s' may not be used before being set in %s[%d]\n",
+						getVarName(mb,l), nme,pc);
+						mb->errors++;
+			} else 
+			if( getVarDepth(mb,l) >= top){
+						GDKerror("'%s' may not be used before being set in %s[%d]\n",
+							getVarName(mb,l), nme,pc);
+						mb->errors++;
+			}
 		}
 		for(k=0; k<p->retc; k++){
-			if( getVarScope(mb, getArg(p,k)) == 0){
-			    getVarScope(mb, getArg(p,k)) = blks[top-1];
-			    getVarDepth(mb, getArg(p,k)) = top-1;
+			l= getArg(p,k);
+			if( getVarScope(mb, l) == 0){
+			    getVarScope(mb, l) = blks[top-1];
+			    getVarDepth(mb, l) = top-1;
 			} else {
 			    /* is the block still active ? */
-			    s = getVarScope(mb,getArg(p,k));
+			    s = getVarScope(mb,l);
 			    for( i=0; i< top; i++)
 			    if( blks[i] == s ) break;
-			    if( i< top && blks[i]!= s && !isTmpVar(mb, getArg(p,k))){
+			    if( i< top && blks[i]!= s && !isTmpVar(mb, l)){
 			            GDKerror("'%s' used outside declaration scope in %s[%d]\n",
-			            getVarName(mb,getArg(p,k)), nme,pc);
+			            getVarName(mb,l), nme,pc);
 			        mb->errors++;
 			    }
 			}

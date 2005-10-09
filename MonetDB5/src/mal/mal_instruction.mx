@@ -784,8 +784,10 @@ InstrPtr newInstruction(MalBlkPtr mb, int kind){
 		}
 		mb->stmt[mb->stop]= NULL;
 	}
-    space = (MAXARG-1) * sizeof(int)+ sizeof(InstrRecord);
-    p = GDKmalloc(space);
+	if( p == NULL){
+		space = (MAXARG-1) * sizeof(int)+ sizeof(InstrRecord);
+		p = GDKmalloc(space);
+	}
     p->typechk = TYPE_UNKNOWN;
     setModuleId(p, NULL);
     setFunctionId(p, NULL);
@@ -1258,7 +1260,21 @@ void clearVariable(MalBlkPtr mb, int varid){
     if( v->name) GDKfree(v->name); 
     if( v->isaconstant) VALclear(&v->value);
     if( v->props) freePropertySet(v->props);
-	memset((char*)v, 0, sizeof(VarRecord));
+	v->name=0;
+	v->type=0;
+	v->gdktype=0;
+	v->cleanup=0;
+	v->fixtype=0;
+	v->isudftype=0;
+	v->inout=0;
+	v->isaconstant=0;
+	v->isatypevar=0;
+	v->tmpindex=0;
+	v->isused=0;
+	v->issetonce=0;
+	v->depth=0;
+	v->scope=0;
+	/* the above version is faster memset((char*)v, 0, sizeof(VarRecord));*/
 }
 void freeVariable(MalBlkPtr mb, int varid){
     VarPtr v;
