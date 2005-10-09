@@ -9,6 +9,7 @@ AGENDA FOR MonetDB Version 5.02 release Jan 2006
 - GDK should switch to private-bats unless stated otherwise.
   ATOMcmp should not walk the storage field, this should be
   made explicit if needed.
+- look at memory leaks in connections
 
 AGENDA FOR MonetDB Version 5.04 release Apr 2006
 - Target: benefit from compression and scale out
@@ -41,6 +42,7 @@ facilitate flow analysis
 MIL 5
 - reduce the symbol table during chkFlow as well to save
 on stack initialization and garbage collection cost
+- make sure the sorted bit is set in batcalc routines where appropriate
 
 MIL 4 'loss' in M5
 - M2mal is only meant to enable transition between systems.
@@ -73,6 +75,9 @@ Documentation issues
 - README file, document which portions are local/ opensource V4
 - Monet quick reference manual update
 
+20051008 major overhaul to reduce maintenance of small structures.
+	the MAL program can now not be recovered literally anymore
+	due to limitations in the GDK
 20050917 Rollforward of M4 finished. counters module added.
 20050910 Added appendix generators and cleaned up naming
 20050902 stricter type analysis
