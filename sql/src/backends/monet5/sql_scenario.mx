@@ -789,6 +789,7 @@ SQLparser(Client c)
 	if (!m->sa)
 		m->sa = sa_create();
 
+	m->mode = m->explain;
 	oldmode = m->scanner.mode;
 	if (be->language == 's') {
 		be->language = 'S';
@@ -822,7 +823,6 @@ SQLparser(Client c)
 	if (explainPerformance())
 		T0 = GDKusec();
 
-	m->mode = m_normal;
 	if ((err = sqlparse(m)) && m->debug){
 		/* switch to different language mode */
 		char oldlang= be->language;

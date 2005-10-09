@@ -1035,6 +1035,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushInt(mb, q, s->op4.typeval->digits);
 				q = pushInt(mb, q, s->op4.typeval->scale);
 			}
+			if (s->op4.typeval->type->eclass == EC_STRING &&
+			    s->op4.typeval->digits > 0) 
+				q = pushInt(mb, q, s->op4.typeval->digits);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 			break;

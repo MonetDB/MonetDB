@@ -287,6 +287,11 @@ address STRsubstringTail;
 command calc.substring(s:str,offset:int,count:int):str
 address STRsubstring;
 
+command calc.stringleft(s:str,l:int):str
+address STRprefix;
+command calc.stringright(s:str,l:int):str
+address STRsuffix;
+
 #SQL specific time support functions
 command calc.current_timestamp() :timestamp address MTIMEcurrent_timestamp;
 command calc.current_date() :date address MTIMEcurrent_date;
@@ -390,8 +395,9 @@ comment "Cast bit to int ";
 command lng( v:bit) :lng 
 address CALCbit2lng
 comment "Cast bit to lng ";
-@+ todo
-command str( v:any_1, digits:int ) :str 
+
+#command str( v:any_1, digits:int ) :str 
+pattern str( v:any_1, digits:int ) :str 
 address SQLstr_cast
 comment "cast to string and check for overflow";
 
@@ -1292,15 +1298,22 @@ SQLstr_2_str( str *res, str *val )
 		*res =  GDKstrdup(*val);
 	return MAL_SUCCEED;
 }
+
 str
-SQLstr_cast(str *res, ptr v, int tpe, int *len)
+/*SQLstr_cast(str *res, ptr v, int tpe, int *len) */
+SQLstr_cast(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str *res  = (str *) getArgReference(stk, pci, 0);
+	ptr p   = (ptr) getArgReference(stk, pci, 1);
+	int tpe = getArgType(mb, pci, 1);
+	int *len   = (int *) getArgReference(stk, pci, 2);
 	int sz = *len + 1;
 	char *r = GDKmalloc(sz);
 
 	if (tpe != TYPE_str) {
-		sz = BATatoms[tpe].atomToStr(&r, &sz, v);
+		sz = BATatoms[tpe].atomToStr(&r, &sz, p);
 	} else {
+		str v = *(str*)p; 
 		sz = strlen(v);
 		if (sz <= *len) {
 			strncpy(r, v, sz);
@@ -1309,7 +1322,7 @@ SQLstr_cast(str *res, ptr v, int tpe, int *len)
 	}
 	if (sz > *len) {
 		GDKfree(r);
-		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) {
+		if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), p) != 0) {
 			return throwException(MALEXCEPTION, "str_cast", "value too long for type (var)char(%d)\n", *len);
 		} else {
 			*res = GDKstrdup(str_nil);
