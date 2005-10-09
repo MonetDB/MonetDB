@@ -985,6 +985,9 @@ SQLengine(Client c)
 	mvc *m = be->mvc;
 	lng T0;
 
+	if (be->language == 'X') 	/* return directly from X-commands */
+		return MAL_SUCCEED;
+
 	if (c->curprg->def->errors)
 		return throwMessage("SQLengine", "Program contains errors\n");
 #ifdef SQL_SCENARIO_DEBUG
