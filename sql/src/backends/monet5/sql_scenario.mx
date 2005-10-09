@@ -808,7 +808,9 @@ SQLparser(Client c)
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
-		if (sscanf(in->buf + in->pos, "close %d", &id) == 1) {
+		/* if ( sscanf(in->buf + in->pos, "close %d", &id) == 1) {*/
+		id= (int) strtol(in->buf+in->pos+6,NULL,0);
+		if( strncmp(in->buf+in->pos,"close ",6)==0 ){
 			res_table *t = res_tables_find(m->results, id);
 
 			if (t)
@@ -948,7 +950,8 @@ extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 			/* restore the state */
 			if (c->listing || explainPlan())
 				printFunction(c->fdout, c->curprg->def, c->listing);
-			resetInstructions(c->curprg->def, oldstate.stop);
+			resetMalBlk(c->curprg->def, oldstate.stop);
+			/* resetInstructions(c->curprg->def, oldstate.stop);*/
 			freeVariables(c->curprg->def, c->glb, oldstate.vtop);
 			c->curprg->def->errors = 0;
 			msg = throwMessage("SQLparser", "Semantic errors\n");
@@ -1035,7 +1038,8 @@ environment.
 		m->status = -10;
     }
 cleanup_engine:
-	resetInstructions(c->curprg->def, 1);
+	resetMalBlk( c->curprg->def, 1);
+	/* resetInstructions(c->curprg->def, 1);*/
 	freeVariables(c->curprg->def, c->glb, be->vtop);
 	be->language = oldlang;
 @-
