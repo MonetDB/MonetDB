@@ -110,7 +110,7 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 	lng clk = GDKusec();
 	char *empty;
 	int i, j, limit, doAR = 0;
-	InstrPtr p;
+	InstrPtr p, *old;
 
 	if( mb->errors) 
 		return MAL_SUCCEED;
@@ -127,9 +127,15 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 	for (i = 0; i < cnt; i++)
 		empty[vars[i]] = 1;
 
+	old = alloca(mb->ssize * sizeof(InstrPtr));
+	memcpy((char*) old, mb->stmt, mb->ssize * sizeof(InstrPtr));
+
 	setLifespan(mb);
-	for (i = 0; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
+	limit= mb->stop;
+	/* memset((char*)mb->stmt,0,mb->ssize * sizeof(InstrPtr));
+	mb->stop =0; */
+	for (i = 0; i < limit; i++) {
+		p = old[i];
 		for (j = 0; j < p->retc; j++)
 			if (empty[getArg(p, j)] && getLastUpdate(mb, getArg(p, j)) > i) {
 #ifdef DEBUG_MAL_EMPTYSET
@@ -138,9 +144,8 @@ ESevaluate(MalBlkPtr mb, int cnt, int *vars)
 				empty[getArg(p, j)] = 0;
 			}
 	}
-	limit = mb->stop;
 	for (i = 0; i < limit; i++) {
-		p = getInstrPtr(mb, i);
+		p = old[i];
 		for (j = p->retc; j < p->argc; j++)
 			if (empty[getArg(p, j)]) {
 				/* decode operations */

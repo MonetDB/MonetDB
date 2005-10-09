@@ -117,8 +117,10 @@ initClientPrg(Client cntxt, str nme)
 		if (mb->stop <= cnt + 1) {	/* complete comments */
 			mb->typefixed = 0;
 			mb->flowfixed = 0;
+/* use instruction pools
 			for (i--; i > 1; i--)
 				freeInstruction(mb->stmt[i]);
+*/
 
 			mb->stop = 1;
 			cntxt->glb = 0;
@@ -361,7 +363,10 @@ table may have grown in size.
 @= restoreState
 	if( c->listing) 
 		printFunction(c->fdout,c->curprg->def, c->listing);
+	resetMalBlk(c->curprg->def,oldstate.stop);
+/*
 	resetInstructions(c->curprg->def, oldstate.stop);
+*/
 	resetVariables(c->curprg->def, 0, oldstate.vtop);
 @c
 str
@@ -500,7 +505,10 @@ MALengine(Client c)
 			printFunction(c->fdout, c->curprg->def, c->listing);
 		showErrors();
 	}
+	resetMalBlk(prg->def,1);
+/*
 	resetInstructions(prg->def, 1);
+*/
 	resetVariables(prg->def, c->glb, 0);
 	prg->def->errors = 0;
 	return msg;

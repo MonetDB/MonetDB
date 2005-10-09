@@ -484,7 +484,7 @@ mal_export void     freeSymbolList(Symbol s);
 mal_export void     printSignature(stream *fd, Symbol s, int flg);
 
 mal_export MalBlkPtr    newMalBlk(int maxvars, int maxstmts);
-mal_export void 	resetMalBlk(MalBlkPtr mb);
+mal_export void 	resetMalBlk(MalBlkPtr mb, int stop);
 mal_export void 	newMalBlkStmt(MalBlkPtr mb, int maxstmts);
 mal_export void     prepareMalBlk(MalBlkPtr mb, str s);
 mal_export void     freeMalBlk(MalBlkPtr mb);
@@ -629,19 +629,12 @@ MalBlkPtr newMalBlk(int maxvars, int maxstmts){
     return mb;
 }
 @-
-The resetMalBlk code removes everything, but without freeing
+The resetMalBlk code removes instructions, but without freeing
 the space. This way the structure is prepared for re-use
-[currently only the variable stack ]
 @c
 void 
-resetMalBlk(MalBlkPtr mb){
-	int i;
-	InstrPtr p;
-	
-	p= getInstrPtr(mb,0);
-	for(i=p->argc; i<mb->vtop; i++)
-		clearVariable(mb,i);
-	mb->vtop = p->argc;
+resetMalBlk(MalBlkPtr mb, int stop){
+	mb->stop = stop;
 }
 @-
 The freeMalBlk code is quite defensive. It is used to localize an
@@ -766,6 +759,9 @@ resources.
 The average MAL string length could been derived from the
 test cases. An error in the estimate is more expensive than
 just counting the lines.
+
+The MAL blocks act as instruction pools.
+Using a resetMALblock makes the instructions available.
 @c
 
 void prepareMalBlk(MalBlkPtr mb, str s){
@@ -776,10 +772,18 @@ void prepareMalBlk(MalBlkPtr mb, str s){
 }
 
 InstrPtr newInstruction(MalBlkPtr mb, int kind){
-    InstrPtr p;
+    InstrPtr p = NULL;
     int space;
 
-	(void) mb; /* ignore for a while */
+	if( mb){
+		p= mb->stmt[mb->stop];
+		if( p){
+			/* printf(" candidate for re-use %s.%s\n",moduleId(p),functionId(p));*/
+			/* printInstruction(GDKout,mb,p,LIST_MAL_ALL);*/
+			if( p->maxarg < MAXARG) p = NULL;
+		}
+		mb->stmt[mb->stop]= NULL;
+	}
     space = (MAXARG-1) * sizeof(int)+ sizeof(InstrRecord);
     p = GDKmalloc(space);
     p->typechk = TYPE_UNKNOWN;
@@ -1687,7 +1691,6 @@ void pushInstruction(MalBlkPtr mb, InstrPtr p){
     if( i+1 >= mb->ssize){
         int space= (mb->ssize + MAXSTMTS) * sizeof(InstrPtr);
         InstrPtr *newblk= (InstrPtr *) GDKmalloc( space);
-/*printf("resize instruction block to %d\n",  space);*/
         if( newblk== NULL){
             mb->errors++;
             GDKerror("pushInstruction:no storage left\n");
@@ -1704,6 +1707,12 @@ If the destination variable has not been set, introduce a temporary
 variable to hold the result instead.
 @c
     if( p->argv[0]<0) p->argv[0]= newTmpVariable(mb,TYPE_any);
+	if(mb->stmt[i]){
+		/* if( moduleId(mb->stmt[i] ) )
+		printf("Garbage collect statement %s.%s\n", 
+			moduleId(mb->stmt[i]), functionId(mb->stmt[i])); */
+		freeInstruction(mb->stmt[i]);
+	}
     mb->stmt[i]= p;
     mb->stop++;
 }

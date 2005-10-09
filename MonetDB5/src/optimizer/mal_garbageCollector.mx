@@ -122,6 +122,7 @@ GCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	stmt = (InstrPtr *) GDKmalloc(mb->ssize * sizeof(InstrPtr));
 	memcpy(stmt, mb->stmt, mb->ssize * sizeof(InstrPtr));
+	memset((char*) mb->stmt,0, mb->ssize * sizeof(InstrPtr));
 
 	limit = mb->stop;
 

@@ -50,48 +50,6 @@ end test;	# 14
 ESoptimizer called, collect empty sets and process them
 START emptyset optimizer 1:,5 
 MID STAGE doAR=2
-function user.test():void;	# 0  (test:void)
-    V1 := bat.new(:void,:oid);	# 1 CMDBATnew (V1:bat[:void,:oid])<-(_2:void)(_3:oid)
-    V7 := bat.new(:void,:oid);	# 2 CMDBATnew (V7:bat[:void,:oid])<-(_2:void)(_3:oid)
-    V10{empty} := bat.new(:int,:void);	# 3 CMDBATnew (V10:bat[:int,:void])<-(_6:int)(_2:void)
-
-    V12 := V7;	# 5 ALGkdiff (V12:bat[:void,:oid])<-(V7:bat[:void,:oid])
-    V16 := algebra.markH(V12);	# 6 ALGmarkHead_default (V16:bat[:void,:oid])<-(V12:bat[:void,:oid])
-    V17 := algebra.join(V16,V7);	# 7 ALGjoin (V17:bat[:void,:oid])<-(V16:bat[:void,:oid])(V7:bat[:void,:oid])
-    bat.append(V1,V17);	# 8 BKCbat_append_void_bat_wrap (_11:void)<-(V1:bat[:void,:oid])(V17:bat[:void,:oid])
-    V19 := bat.new(:void,:oid);	# 9 CMDBATnew (V19:bat[:void,:oid])<-(_2:void)(_3:oid)
-    V22 := bat.new(:void,:oid);	# 10 CMDBATnew (V22:bat[:void,:oid])<-(_2:void)(_3:oid)
-    V23 := algebra.join(V16,V22);	# 11 ALGjoin (V23:bat[:void,:oid])<-(V16:bat[:void,:oid])(V22:bat[:void,:oid])
-    bat.append(V19,V23);	# 12 BKCbat_append_void_bat_wrap (_15:void)<-(V19:bat[:void,:oid])(V23:bat[:void,:oid])
-    V25 := aggr.count(V17);	# 13 ALGcount_bat (V25:int)<-(V17:bat[:void,:oid])
-end test;	# 14  
-FINAL STAGE errors=0
-function user.test():void;	# 0  (test:void)
-    V1 := bat.new(:void,:oid);	# 1 CMDBATnew (V1:bat[:void,:oid])<-(_2:void)(_3:oid)
-    V7 := bat.new(:void,:oid);	# 2 CMDBATnew (V7:bat[:void,:oid])<-(_2:void)(_3:oid)
-    V16 := algebra.markH(V7);	# 3 ALGmarkHead_default (V16:bat[:void,:oid])<-(V7:bat[:void,:oid])
-    V17 := algebra.join(V16,V7);	# 4 ALGjoin (V17:bat[:void,:oid])<-(V16:bat[:void,:oid])(V7:bat[:void,:oid])
-    bat.append(V1,V17);	# 5 BKCbat_append_void_bat_wrap (_11:void)<-(V1:bat[:void,:oid])(V17:bat[:void,:oid])
-    V19 := bat.new(:void,:oid);	# 6 CMDBATnew (V19:bat[:void,:oid])<-(_2:void)(_3:oid)
-    V22 := bat.new(:void,:oid);	# 7 CMDBATnew (V22:bat[:void,:oid])<-(_2:void)(_3:oid)
-    V23 := algebra.join(V16,V22);	# 8 ALGjoin (V23:bat[:void,:oid])<-(V16:bat[:void,:oid])(V22:bat[:void,:oid])
-    bat.append(V19,V23);	# 9 BKCbat_append_void_bat_wrap (_15:void)<-(V19:bat[:void,:oid])(V23:bat[:void,:oid])
-end test;	# 10  
-function user.main():int;	# 0  (main:int)
-#optimizer.setProperty("user","test","V10","empty",1); 	# 1  (_2:str)
-    mdb.list("user","test");	# 2 MDBlist3 (_6:void)<-(_4:str)(_5:str)
-end main;	# 3  
-function user.test():void;
-    V1 := bat.new(:void,:oid);
-    V7 := bat.new(:void,:oid);
-    V16 := algebra.markH(V7);
-    V17 := algebra.join(V16,V7);
-    bat.append(V1,V17);
-    V19 := bat.new(:void,:oid);
-    V22 := bat.new(:void,:oid);
-    V23 := algebra.join(V16,V22);
-    bat.append(V19,V23);
-end test;
 
 # 22:08:09 >  
 # 22:08:09 >  Done.

@@ -1583,7 +1583,7 @@ Keep the comment lines as un-used constants.
 This implies that a deadcode optimizer will remove
 the information.
 @c
-				curInstr= newInstruction(curBlk, REMsymbol);
+				curInstr= newInstruction(NULL, REMsymbol);
 				pushInstruction(curBlk,curInstr);
 				cst.vtype= TYPE_str;
 				cst.len = strlen(start);
