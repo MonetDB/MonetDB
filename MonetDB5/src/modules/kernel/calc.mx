@@ -149,6 +149,7 @@ the least interesting one is pushed onto the symbol table stack first.
         @:cmp_ops(chr,int)@
         @:cmp_ops(chr,lng)@
 
+        @:eq_ops(bit,bit)@
         @:eq_ops(bit,chr)@
         @:eq_ops(bit,sht)@
         @:eq_ops(bit,int)@
@@ -958,6 +959,7 @@ str CALCcomp@4@2@3(bit *retval, @2 *v1, @3 *v2){
         @:c_comp_op(@1,chr,int,@2)@
         @:c_comp_op(@1,chr,lng,@2)@
 
+        @:c_comp_op(@1,bit,bit,@2)@
         @:c_comp_op(@1,bit,chr,@2)@
         @:c_comp_op(@1,bit,sht,@2)@
         @:c_comp_op(@1,bit,int,@2)@
