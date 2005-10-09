@@ -6,7 +6,8 @@ AS "TYPE_SCHEM", null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS
 "REF_GENERATION" FROM "ptables", "schemas" WHERE
 "ptables"."schema_id" = "schemas"."id" AND
-"ptables"."istable" = true UNION ALL SELECT null AS
+"ptables"."istable" = true AND "ptables"."system" = true
+UNION ALL SELECT null AS
 "TABLE_CAT", "schemas"."name" AS "TABLE_SCHEM",
 "ttables"."name" AS "TABLE_NAME", 'TABLE' AS
 "TABLE_TYPE", '' AS "REMARKS", null AS "TYPE_CAT", null
@@ -24,7 +25,7 @@ AS "TYPE_CAT", null AS "TYPE_SCHEM",
 null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS "REF_GENERATION"
 FROM "ptables", "schemas" WHERE "ptables"."schema_id" =
-"schemas"."id" AND "ptables"."istable" = true
+"schemas"."id" AND "ptables"."istable" = true AND "ptables"."system" = true
 UNION ALL
 SELECT null AS "TABLE_CAT", "schemas"."name" AS
 "TABLE_SCHEM", "ttables"."name" AS "TABLE_NAME",
@@ -42,6 +43,6 @@ null AS "TYPE_CAT", null AS "TYPE_SCHEM",
 null AS "TYPE_NAME", 'id' AS
 "SELF_REFERENCING_COL_NAME", 'SYSTEM' AS "REF_GENERATION"
 FROM "ttables", "schemas" WHERE "ttables"."schema_id" =
-"schemas"."id" AND "ttables"."clear" = true
+"schemas"."id" AND "ttables"."clear" = true 
 ) AS "ttables" WHERE 1 = 1
 ORDER BY "TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME";
