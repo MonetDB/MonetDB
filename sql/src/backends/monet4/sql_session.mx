@@ -639,7 +639,6 @@ mvc_sql(mvc *m, char *cmd)
 	v->binding.val.pval = NULL;
 
 	m->qc = NULL;
-
 	m->cache = 0;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));

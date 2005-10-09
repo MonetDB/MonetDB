@@ -301,25 +301,56 @@ It expects a string and returns the name of the
 corresponding MAL block as it is known in the
 SQL_cache, where it can be picked up.
 @c
-#define _SQL_COMPILE 
+
+void
+freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
+{
+	int i;
+
+	for (i = start; i < mb->vtop;) {
+		clearVariable(mb, i);
+
+		if (glb) {
+			garbageElement(&glb->stk[i]);
+			/* clean stack entry */
+			glb->stk[i].vtype = TYPE_int;
+			glb->stk[i].val.ival = 0;
+			glb->stk[i].len = 0;
+		}
+		i++;
+	}
+	mb->vtop = start;
+}
+
+
+/* #define _SQL_COMPILE */
 str
 SQLcompile(str *ret, str *expr, int *flag)
 {
 	int err = 0;
-	mvc *m;
-	backend *sql;
-	bstream *rs;
+	mvc o, *m;
 	buffer *b;
 	char *n;
 	str msg= MAL_SUCCEED;
 	Client c= getClient();
+	backend *sql = ((backend *) c->state[PARSER]);
 	int len = strlen(*expr);
+	int vtop = 0;
 
 	(void) ret;
-	SQLinit(c);
+	(void) flag;
 #ifdef _SQL_COMPILE
 	stream_printf(c->fdout, "#SQLstatement:flag=%d:%s\n", *flag, *expr);
 #endif
+	if (!sql)
+		return throwMessage("SQLcompile", "Catalogue not available\n");
+
+	m = sql->mvc;
+	o = *m;
+	vtop = sql->vtop;
+	sql = backend_create(0, m, c);
+	m->qc = NULL;
+	m->cache = 0;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
@@ -329,28 +360,25 @@ SQLcompile(str *ret, str *expr, int *flag)
 	len++;
 
 	buffer_init(b, n, len);
-	rs = bstream_create(buffer_rastream(b, "sqlstatement"), b->len);
-	m = mvc_create(0, 0, rs, GDKout);
-	mvc_trans(m);		/* start transaction */
-	m->user_id = m->role_id = USER_MONETDB;
-	m->user = _strdup("monetdb");
-	m->trans->schema = mvc_bind_schema(m, "sys");
+	scanner_init( &m->scanner, 
+		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
+		NULL);
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
-	sql = backend_create(0 /* debug */, m, c);
+
+	m->params = NULL;
+	m->args = NULL;
+	m->sym = NULL;
+	m->auto_commit = 0;
 
 @-
 System has been prepared to parse it and generate code
 @c
-	if ((err = sqlparse(m)) ){
-		if( m->mode == m_debug){
-			/* switch to differnt language mode */
-			char oldlang= sql->language;
-			sql->language= 'D';
-			runMALDebugger(c->curprg);
-			sql->language= oldlang;
-		}
-		err = mvc_status(m);
+	if ( (err = sqlparse(m)) ||
+	    /* Only forget old errors on transaction boundaries */
+	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
+		if (!err)
+			err = mvc_status(m);
 		sqlcleanup(m, err);
 		*m->errstr = 0;
 		msg = throwMessage("SQLparser", "Parser errors\n");
@@ -364,9 +392,6 @@ optimize and produce code.
 We don;t search the cache for a previous incarnation.
 @c
 	{	stmt *s = sql_symbol2stmt(m);
-		char buffer[128];
-		Symbol prg;
-		MalBlkPtr blk;
 
 		if (!s && (err = mvc_status(m))) {
 			stream_printf(c->fdout, "#%s\n", m->errstr);
@@ -376,18 +401,22 @@ We don;t search the cache for a previous incarnation.
 			goto endofcompile;
 		}
 		assert(s);
-		/* generate MAL procedure code */
-		snprintf(buffer,128,"sql_%d",m->qc->id);
-		*ret= GDKstrdup(buffer);
-		prg= newFunction(putName(buffer,strlen(buffer)), FUNCTIONsymbol);
-		blk= prg->def;
-		backend_dumpstmt(sql, blk, s);
-		pushEndInstruction(blk);
+		/* generate MAL code */
+		backend_callinline(sql, c, s, m->args);
+		pushEndInstruction(c->curprg->def);
+		chkProgram(c->nspace, c->curprg->def); /* make all types known */
+		if (!c->curprg->def->errors) {
+			backend *be = c->state[PARSER];
+			sql->out = NULL; /* no output */
+			c->state[PARSER] = sql;
+			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+			c->state[PARSER] = be;
+		}
+		resetInstructions(c->curprg->def, 1);
+		freeVariables(c->curprg->def, c->glb, vtop);
 #ifdef _SQL_COMPILE
-		chkProgram(c->nspace, blk);
-		printFunction(c->fdout, blk, c->listing);
+		printFunction(c->fdout, c->curprg->def, c->listing);
 #endif
-		insertSymbol(c->nspace, prg);
 	}
 #ifdef _SQL_COMPILE
 	stream_printf(c->fdout, "#parse result %d\n", err);
@@ -399,17 +428,8 @@ endofcompile:
 	backend_destroy(sql);
 	GDKfree(n);
 	GDKfree(b);
-
-	if( *flag==0) {
-#ifdef _SQL_COMPILE
-		stream_printf(GDKout,"commit the catalogue\n");
-#endif
-		mvc_commit(m, 0, NULL); /* keep the changes */
-	} else mvc_rollback(m, 0, NULL);
-	res_tables_destroy(m->results);
-	mvc_destroy(m);
-
-	SQLexit(c);
+	bstream_destroy(m->scanner.rs);
+	*m = o;
 	return msg;
 }
 str
@@ -729,27 +749,6 @@ The core part of the SQL interface, parse the query and
 prepare the intermediate code.
 @c
 
-void
-freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
-{
-	int i;
-
-	for (i = start; i < mb->vtop;) {
-		clearVariable(mb, i);
-
-		if (glb) {
-			garbageElement(&glb->stk[i]);
-			/* clean stack entry */
-			glb->stk[i].vtype = TYPE_int;
-			glb->stk[i].val.ival = 0;
-			glb->stk[i].len = 0;
-		}
-		i++;
-	}
-	mb->vtop = start;
-}
-
-
 str
 SQLparser(Client c)
 {
@@ -1049,15 +1048,15 @@ unless auto_commit has been set.
 		char buf[BUFSIZ], *qs, *stmt = buf;
 
 		tot += be->Texec = GDKusec() - T0;
-		if( be->qry){
-			qs = sql_escape(be->qry);
-			m->mode = m_normal;
-			m->explain = m_normal;
-			snprintf(buf, BUFSIZ, "insert into sys.profile "
-			 "values(now,'%s'," LLFMT ",0," LLFMT "," LLFMT" ,USER);\n",
-			 qs, be->Tparse, be->Texec, tot);
-			_DELETE(qs);
-		}
+		qs = be->qry;
+		while(isspace(*qs)) 
+			qs++; 
+		m->mode = m_normal;
+		m->explain = m_normal;
+		/* TODO use sql_prepare/execute */
+		snprintf(buf, BUFSIZ, "insert into sys.profile "
+		 "values(now,'%s'," LLFMT ",0," LLFMT "," LLFMT" ,USER);\n",
+		 qs, be->Tparse, be->Texec, tot);
 @-
 This code causes a recursion, because the reset of the explain
 triggers the profile action. A better approach is to directly
