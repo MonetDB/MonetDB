@@ -68,8 +68,8 @@ public class MonetStatement implements Statement {
 	/** The concurrency of the ResultSet to produce */
 	private int resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
 
-	/** A StringBuffer to hold all queries of a batch */
-	private StringBuffer batch;
+	/** A List to hold all queries of a batch */
+	private List batch;
 
 	/** Query types (copied from sql_query.mx) */
 	final static int Q_END = 0;
@@ -135,19 +135,17 @@ public class MonetStatement implements Statement {
 	 * @throws SQLException so the PreparedStatement can throw this exception
 	 */
 	public void addBatch(String sql) throws SQLException {
-		// we assume a batch is big; average chars per q = 60; average q = 1000
-		if (batch == null) batch = new StringBuffer(60000);
+		// we assume a batch is big; average q = 1000
+		if (batch == null) batch = new ArrayList(1000);
 
-		// save compiler some work :) `sql + ";"' will be converted to:
-		// new StringBuffer(sql).append(";")
-		batch.append(sql).append(';').append('\n');
+		batch.add(sql);
 	}
 
 	/**
 	 * Empties this Statement object's current list of SQL commands.
 	 */
 	public void clearBatch() {
-		// we simply feed the `old' StringBuffer to the garbage collector
+		// we simply feed the `old' List to the garbage collector
 		batch = null;
 	}
 
@@ -197,13 +195,21 @@ public class MonetStatement implements Statement {
 
 		if (batch != null) {
 			try {
-				boolean type = internalExecute(batch.toString());
+				// assume average query length is 100 chars
+				StringBuffer tmp = new StringBuffer(batch.size() * 100);
+				for (Iterator it = batch.iterator(); it.hasNext(); ) {
+					tmp.append(it.next().toString());
+					tmp.append(';');
+					tmp.append('\n');
+				}
+				boolean type = internalExecute(tmp.toString());
 				int count = -1;
 				if (!type) count = getUpdateCount();
 				do {
 					if (type) {
-						addWarning("Batch query produced a ResultSet!  Ignoring, " +
-								"setting update count to value " + SUCCESS_NO_INFO);
+						addWarning("Batch query produced a ResultSet! " +
+								"Ignoring and setting update count to " +
+								"value " + SUCCESS_NO_INFO);
 						counts.add(new Integer(SUCCESS_NO_INFO));
 					} else if (count >= 0) {
 						counts.add(new Integer(count));

@@ -888,7 +888,7 @@ public class MonetConnection extends Thread implements Connection {
 	void sendIndependantCommand(String command) throws SQLException {
 		HeaderList hdrl =
 			addQuery(command, 0, 0, 0, 0);
-		
+
 		while (hdrl.getNextHeader() != null);
 	}
 
@@ -923,11 +923,13 @@ public class MonetConnection extends Thread implements Connection {
 	/** A queue of queries that need to be executed by this Statement */
 	private List queryQueue = new LinkedList();
 
-	/** The state WAIT represents this thread to be waiting for something to do */
+	/** The state WAIT represents this thread to be waiting for
+	 *  something to do */
 	private final static int WAIT = 0;
 	/** The state QUERY represents this thread to be executing a query */
 	private final static int QUERY = 1;
-	/** The state DEAD represents this thread to be dead and unable to do anything */
+	/** The state DEAD represents this thread to be dead and unable to
+	 *  do anything */
 	private final static int DEAD = 2;
 	/** the default number of rows that are (attempted to) read at once */
 	private final static int DEF_FETCHSIZE = 250;
@@ -935,7 +937,7 @@ public class MonetConnection extends Thread implements Connection {
 	private static int seqCounter = 0;
 
 	/** An optional thread that is used for sending large queries */
-	SendThread sendThread = null;
+	private SendThread sendThread = null;
 	/** Whether this CacheThread is still running, executing or waiting */
 	private int state = WAIT;
 
@@ -1097,10 +1099,10 @@ public class MonetConnection extends Thread implements Connection {
 		boolean sendThreadInUse = false;
 		
 		try {
-			// make sure we're ready to send query; read data till we have the
-			// prompt it is possible (and most likely) that we already have
-			// the prompt and do not have to skip any lines.  Ignore errors from
-			// previous result sets.
+			// make sure we're ready to send query; read data till we
+			// have the prompt it is possible (and most likely) that we
+			// already have the prompt and do not have to skip any
+			// lines.  Ignore errors from previous result sets.
 			monet.waitForPrompt();
 
 			int size;
@@ -2237,9 +2239,16 @@ public class MonetConnection extends Thread implements Connection {
  * thread, so costly locking mechanisms can be avoided.
  */
 class SendThread extends Thread {
+	/** The state WAIT represents this thread to be waiting for
+	 *  something to do */
+	private final static int WAIT = 0;
+	/** The state QUERY represents this thread to be executing a query */
+	private final static int QUERY = 1;
+
 	private String query;
 	private MonetSocket conn;
 	private String error;
+	private int state = WAIT;
 
 	/**
 	 * Constructor which immediately starts this thread and sets it into
@@ -2253,22 +2262,30 @@ class SendThread extends Thread {
 
 	public synchronized void run() {
 		while (true) {
-			while (query == null) {
+			while (state == WAIT) {
 				try {
+					// wait requires the object to be exclusive
+					// (synchronized)
 					this.wait();
 				} catch (InterruptedException e) {
 					// woken up, eh?
 				}
 			}
 
+			// state is QUERY here
 			try {
+				// we issue notify here, so incase we get blocked on IO
+				// the thread that waits on us in runQuery can continue
+				this.notify();
 				conn.writeln(query);
 			} catch (IOException e) {
 				error = e.getMessage();
 			}
-			
-			conn = null;
-			query = null;
+
+			// update our state, and notify, maybe someone is waiting
+			// for us in throwErrors
+			state = WAIT;
+			this.notify();
 		}
 	}
 
@@ -2279,12 +2296,32 @@ class SendThread extends Thread {
 	 *
 	 * @param query a String containing the query to send
 	 * @param monet the socket to write to
+	 * @throws SQLException if this SendThread is already in use
 	 */
-	public synchronized void runQuery(String query, MonetSocket monet) {
+	public synchronized void runQuery(String query, MonetSocket monet) 
+			throws SQLException
+	{
+		if (state != WAIT) throw
+			new SQLException("SendThread already in use!");
+
 		this.query = query;
-		conn = monet;
+		this.conn = monet;
 	
+		// let the thread know there is some work to do
+		state = QUERY;
 		this.notify();
+
+		// implement the following behaviour:
+		// - let the SendThread first try to send whatever it can over
+		//   the socket
+		// - return as soon as the SendThread gets blocked
+		// the effect is a relatively high chance of data waiting to be
+		// read when returning from this method.
+		try {
+			this.wait();
+		} catch (InterruptedException e) {
+			// Woken up, eh?  Let's hope it's all good
+		}
 	}
 
 	/**
@@ -2293,12 +2330,20 @@ class SendThread extends Thread {
 	 *
 	 * @throws AssertionError (note: Error) if this thread is not finished
 	 *         at the time of calling this method (should theoretically never
-	 *         happen)
+	 *         happen, since this method should never be called before a
+	 *         prompt is seen (and hence the full query was sent))
 	 * @throws SQLException in case an (IO) error occurred while sending the
 	 *         query to the server.
 	 */
 	public synchronized void throwErrors() throws SQLException {
+		// make sure the thread is in WAIT state, not QUERY
+		while (state != WAIT) {
+			try {
+				this.wait();
+			} catch (InterruptedException e) {
+				// just try again
+			}
+		}
 		if (error != null) throw new SQLException(error);
-		if (query != null) throw new AssertionError("Aaaiiiiiiii!!! SendThread not finished :(");
 	}
 }
