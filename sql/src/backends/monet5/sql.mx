@@ -147,10 +147,10 @@ command exportResult() :void
 address mvc_export_default_wrap
 comment "Export result of schema queries"; 
 
-command importTable( s:stream, tname:str, 
+command importTable( s:bstream, tname:str, 
 	sep:str, rsep:str, nr:int) :bat[:str,:bat] 
 address mvc_import_table_wrap
-comment "Import a table from stream s with the 
+comment "Import a table from bstream s with the 
 	given tuple and seperators (sep/rsep)";
 
 @- SQL function aliases
@@ -1015,17 +1015,14 @@ mvc_export_result_wrap(int *ret, int *res_id)
 }
 
 str
-mvc_import_table_wrap(int *res, stream **s, str *tname, str *sep, str *rsep, int *sz)
+mvc_import_table_wrap(int *res, bstream **s, str *tname, str *sep, str *rsep, int *sz)
 {
 	mvc *m;
 	BAT *b;
-	bstream *bs;
 
 	@:getContext(m)@
 
-	b = mvc_import_table(m, bs=bstream_create(*s, 1024 * 1024), *tname, *sep, *rsep, *sz);
-	if (bs)
-		bstream_destroy(bs);
+	b = mvc_import_table(m, *s, *tname, *sep, *rsep, *sz);
 	if (b == 0)
 		return throwMessage("sql.importTable", "failed");
 	*res = b->batCacheid;
