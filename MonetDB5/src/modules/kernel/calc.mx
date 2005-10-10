@@ -1210,7 +1210,9 @@ str CALCbinarycheck@1@3@4(@5 *res, @3 *a, @4 *b ) {
 #ifdef DEBUG
 	printf( "CALCbinarycheck@1@3@4\n");
 #endif
-   if (*a == @3_nil || *b == 0 || *b == @4_nil) {
+   if (*b == 0) {
+	return throwMessage("calc./:", "Division by zero");
+   } else if (*a == @3_nil || *b == @4_nil) {
 	*res = @5_nil;
    } else {
    	*res = ((@5)(*a)) @2 ((@5)(*b));
