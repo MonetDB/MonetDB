@@ -36,7 +36,7 @@ Watch out, the order of definitions is crucial, because the most
 specific should be introduced last.
 @mal
 module io;
-command stdin():stream
+command stdin():bstream
 address io_stdin
 comment "return the input stream to the database client";
 command stderr():stream
@@ -190,7 +190,7 @@ mal_export str IOprint_oid(int *ret, ptr fmt, oid *s);
 mal_export str IOprint_formatted_bit(int *ret, ptr fmt, bit *s);
 mal_export str IOexport(int *ret, int *bid, str *fnme);
 mal_export str IOimport(int *ret, int *bid, str *fnme);
-mal_export str io_stdin(stream **ret);
+mal_export str io_stdin(bstream **ret);
 mal_export str io_stdout(stream **ret);
 mal_export str io_stderr(stream **ret);
 
@@ -211,9 +211,9 @@ allow for any type to be assigned.
 #include "print.h"
 
 str
-io_stdin(stream **ret)
+io_stdin(bstream **ret)
 {
-	*ret = GDKin;
+	*ret = (bstream*)GDKin;
 	return MAL_SUCCEED;
 }
 
