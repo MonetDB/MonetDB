@@ -1015,22 +1015,13 @@ CMDxquery(char** res, char *mode, char* xquery) {
     }
 }
 @c
-int
-connect_error(stream *in, stream *out)
+
+inline int
+xquery_shutdown(Client* client, char** buf, int ret)
 {
-    /* Make sure that the write- (out-) stream is closed first,
-     * as the related read- (in-) stream closes the shared
-     * socket; see also MonetDB/src/common/stream.mx:socket_close .
-     */
-    if (out) {
-        stream_close(out);
-        stream_destroy(out);
-    }
-    if (in) {
-        stream_close(in);
-        stream_destroy(in);
-    }
-    return GDK_FAIL;
+    GDKfree(*buf);
+    closeClient(*client, 0);
+    return(ret);
 }
 
 #define XQUERY_CHALLENGE "::mserver_xquery:4\n"
@@ -1046,15 +1037,17 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
     Thread XQthread = THRget(THRgettid());
     Client client;
     size_t curlen = 0, maxlen = BUFSIZ;
-    char *xquery, *user, *buf = GDKmalloc(maxlen + 1); /* one extra for terminator */
-    int i, ret = GDK_FAIL;
+    /* one extra for terminator */
+    char *xquery, *user, *buf = GDKmalloc(maxlen + 1);
+    int i;
 
     if (buf == NULL)
         return GDK_FAIL;
     if (lt->cnt != 2)
         return handle_argerror(res, lt->cnt, 2);
 
-    /* this is a BUILTIN because we must obtain the client context (and thus the streams) */
+    /* this is a BUILTIN because we must obtain the client context (and
+     * thus the streams) */
     CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
     @:builtin_operand(0,TYPE_Stream,In)@
     in = *In;
@@ -1065,17 +1058,17 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
     /* send challenge */
     snprintf(buf, 100, "%2u%s", (unsigned int)strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
     if (stream_write(out, buf, strlen(buf), 1) < 0) 
-        return connect_error(in, out);
+        return(xquery_shutdown(&client, &buf, GDK_FAIL));
 
     /* get user name (ignored later), and mapiclient mode */
     memset(buf, 0, BUFSIZ);
     user = buf;
     if (stream_read(in, user, 1, 1) < 0)
-        return connect_error(in, out);
+        return(xquery_shutdown(&client, &buf, GDK_FAIL));
     for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
         user++;
         if (stream_read(in, user, 1, 1) < 0)
-            return connect_error(in, out);
+            return(xquery_shutdown(&client, &buf, GDK_FAIL));
     }
     *user = 0;
 
@@ -1089,15 +1082,15 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
     /* use the MAPI protocol to read as much xquery buffer as possible */
     while (1) {
         if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
-            return connect_error(in, out);
+            return(xquery_shutdown(&client, &buf, GDK_FAIL));
         if (stream_flush(out))
-            return connect_error(in, out);
+            return(xquery_shutdown(&client, &buf, GDK_FAIL));
 
         curlen = 0;
-        for (;buf;) {
+        for ( ; buf; ) {
             ssize_t n = stream_read(in, buf + curlen, 1, maxlen - curlen);
             if (n < 0)
-                return connect_error(in, out);
+                return(xquery_shutdown(&client, &buf, GDK_FAIL));
             if (n == 0) {
                 break;
             }
@@ -1119,16 +1112,16 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
                     break;
                 }
 
-            ret = exec_xquery(buf, xquery); /* execute, see above */
+            /* we ignore the return value, since it doesn't make any
+             * sense in a multi-query environment */
+            exec_xquery(buf, xquery); /* execute, see above */
         }
     }
-    GDKfree(buf);
 
     /* end of session */
     stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
     stream_flush(out);
-    closeClient(client, 0); 	
-    return ret;
+    return(xquery_shutdown(&client, &buf, GDK_SUCCEED));
 }
 
 bat *
