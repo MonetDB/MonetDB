@@ -371,8 +371,7 @@ Module findModule(Module scope, str name){
 	Module def=scope;
 	if( scope->name==NULL) return NULL;
 	if( name==NULL) return scope;
-	if( scopeJump[(int)(*name)][(int)(*(name+1))]) 
-		scope= scopeJump[(int)(*name)][(int)(*(name+1))];
+	scope= scopeJump[(int)(*name)][(int)(*(name+1))];
 	while(scope != NULL){
 			if( name == scope->name )
 					return scope;

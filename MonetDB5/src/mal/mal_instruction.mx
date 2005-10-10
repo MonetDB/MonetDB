@@ -1274,7 +1274,7 @@ void clearVariable(MalBlkPtr mb, int varid){
 	v->issetonce=0;
 	v->depth=0;
 	v->scope=0;
-	/* the above version is faster memset((char*)v, 0, sizeof(VarRecord));*/
+	/* the above version is faster memset((char*)v, 0, sizeof(VarRecord)); */
 }
 void freeVariable(MalBlkPtr mb, int varid){
     VarPtr v;

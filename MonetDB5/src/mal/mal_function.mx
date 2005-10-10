@@ -594,7 +594,7 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 		if( p->token == IGNOREsymbol) continue;
 		for(k=p->retc;k<p->argc; k++) {
 			l=getArg(p,k);
-			if( isConstant(mb, l) ){
+			if( isConstant(mb, l) || isTypeVar(mb,l) ){
 				/* ok defined */
 			} else 
 			if( (s = getVarScope(mb,l) ) ==0 ) {
