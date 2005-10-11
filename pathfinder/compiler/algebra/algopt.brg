@@ -775,20 +775,24 @@ reduce (PFla_op_t *p, int goalnt)
         {
             break;
             /* THIS IS ONLY A TEST! */
+/* StM: commented out "test-code", as Intel's icc otherwise complains about *
+ *      "dynamic initialization in unreachable code"                        */
+/*
             PFalg_proj_t *projlist1 = p->sem.proj.items;
             PFalg_proj_t *projlist2 = L(p)->sem.proj.items;
             int n1 = p->sem.proj.count;
             int n2 = L(p)->sem.proj.count;
 
-            /* If projlist2 is contained in projlist1, the second
+            / * If projlist2 is contained in projlist1, the second
              * projection is redundant.
-             */
+             * /
             if (contains_projlist (projlist1, n1, projlist2, n2)) {
                 L(p) = L(L(p));
                 rewritten = true;
             }
 
             break;
+*/
         }
 
         default:
