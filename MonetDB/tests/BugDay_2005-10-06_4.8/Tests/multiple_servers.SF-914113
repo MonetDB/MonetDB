@@ -1,5 +1,0 @@
-Mserver --set monet_daemon=yes --dbinit='module(mapi); mapi_start();' &
-pid=$!
-sleep 5
-Mserver
-kill $pid
