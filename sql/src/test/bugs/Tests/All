@@ -8,6 +8,10 @@ union_all_where_1=1-bug-sf-936386
 view_selfjoin-bug-sf-937835
 bug-sf-938733
 union_all-bug-sf-941788
+subselect_single_value-bug-sf-941791
+subselect_union-bug-sf-941826
+groupby_having_charlength-bug-sf-943566
+innerjoin_multiple-bug-sf-943661
 groupby_having-bug-sf-947600
 subselect_ambigious_columns-bug-sf-949071
 insert_into_groupby-bug-sf-949135
@@ -42,12 +46,8 @@ unique-bug-sf-1043512
 # like-bug-sf-1043521  # covered by like_tests
 HAVE_JAVA?except-union-intersect-bug-sf-1146079
 selectlist_subquery-sf-1208599
-interval_convert_bugs-sf-1274077-1274085
 interval_data_commutative_add_bug-sf-1263928
 interval_parse_bug-sf-1263967
+interval_convert_bugs-sf-1274077-1274085
 extract_interval_bug-sf-1274088
-subselect_single_value-bug-sf-941791
-subselect_union-bug-sf-941826
-groupby_having_charlength-bug-sf-943566
-innerjoin_multiple-bug-sf-943661
 profile_bug-SF.1314649.sql
