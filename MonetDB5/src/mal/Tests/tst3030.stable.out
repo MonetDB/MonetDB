@@ -17,11 +17,11 @@ stdout of test 'tst3030` in directory 'src/mal` itself:
 #function newsemijoin(A:bat[:int,:any_1], 
 #end newsemijoin;
 function user.newsemijoin(A:bat[:int,:any_1],B:bat[:int,:any_2]):bat[:int,:any_1];	# 0  dynamic (newsemijoin:bat[:int,:any_1])<-(A:bat[:int,:any_1])(B:bat[:int,:any_2])
-end newsemijoin;	# 1  
-!ERROR: return missing
-#z:= bbp.new(:int{sorted=true},:int);
-#w:= bbp.new(:int{sequence=true},:int);
-#w:bat[:int,:int]:= bbp.new(:int,:int);
+    return newsemijoin;	# 1  (newsemijoin:bat[:int,:any_1])
+end newsemijoin;	# 2  
+#z:= bat.new(:int{sorted=true},:int);
+#w:= bat.new(:int{sequence=true},:int);
+#w:bat[:int,:int]:= bat.new(:int,:int);
 #y:= algebra.sort(w:bat[:int,:int]{sorted=true,dense=true});
 #io.print(1);
 #y:int{sorted=true}:= algebra.sort(w);
