@@ -3238,7 +3238,7 @@ loop_liftedAttrConstr (opt_t *f, int rcode, int rc, int cur_level, int i)
                 "kind := ATTR;\n"
                 "ipik := ipik%03u;\n"
                 "} # end of loop_liftedAttrConstr (int i)\n",
-                i, i, i, i, i, i, i, i, i);
+                i, i, i, i, i, i, i, i);
     }
 }
 
