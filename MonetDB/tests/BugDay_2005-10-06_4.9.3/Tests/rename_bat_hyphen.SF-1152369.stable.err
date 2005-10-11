@@ -1,22 +1,22 @@
-stderr of test 'MapiClient_hang_on_rename.SF-852148` in directory 'tests/BugDay_2005-10-06_4.9.3` itself:
+stderr of test 'rename_bat_hyphen.SF-1152369` in directory 'tests/BugDay_2005-10-06_4.9.3` itself:
 
 
-# 14:57:00 >  
-# 14:57:00 >  Mtimeout -timeout 60 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=38737 --set sql_port=45235 --set xquery_port=57116 --set monet_prompt= --trace --dbname=mTests_tests_BugDay_2005-10-06_4.9.3  < MapiClient_hang_on_rename.SF-852148.milM
-# 14:57:00 >  
+# 18:43:39 >  
+# 18:43:39 >  Mtimeout -timeout 60 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program/var/MonetDB/log" --set mapi_port=35404 --set sql_port=42535 --set xquery_port=56092 --set monet_prompt= --trace --dbname=mTests_tests_BugDay_2005-10-06_4.9.3  < rename_bat_hyphen.milS
+# 18:43:39 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.9.3
-# builtin opt 	monet_pid = 6937
-# builtin opt 	prefix = /ufs/niels/scratch/Linux-x86_64
+# builtin opt 	monet_pid = 24848
+# builtin opt 	prefix = /ufs/fabian/scratch/monetdb/current/program
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
 # builtin opt 	gdk_dbfarm = ${prefix}/var/MonetDB
 # builtin opt 	gdk_debug = 8
 # builtin opt 	gdk_mem_bigsize = 137438953472
 # builtin opt 	gdk_vm_minsize = 137438953472
-# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_alloc_map = yes
 # builtin opt 	monet_admin = adm
 # builtin opt 	monet_prompt = >
 # builtin opt 	monet_welcome = yes
@@ -32,7 +32,7 @@ stderr of test 'MapiClient_hang_on_rename.SF-852148` in directory 'tests/BugDay_
 # builtin opt 	sql_user = monetdb
 # builtin opt 	sql_schema = sys
 # builtin opt 	sql_logdir = ${prefix}/var/MonetDB/log
-# config opt 	prefix = /ufs/niels/scratch/Linux-x86_64
+# config opt 	prefix = /ufs/fabian/scratch/monetdb/current/program
 # config opt 	exec_prefix = ${prefix}
 # config opt 	gdk_dbfarm = ${prefix}/var/MonetDB/dbfarm
 # config opt 	gdk_dbname = demo
@@ -53,26 +53,18 @@ stderr of test 'MapiClient_hang_on_rename.SF-852148` in directory 'tests/BugDay_
 # config opt 	pf_httpd_port = 8080
 # config opt 	xquery_output = dm
 # config opt 	xquery_cacheMB = 100
-# cmdline opt 	config = /ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf
+# cmdline opt 	config = /ufs/fabian/scratch/monetdb/current/program/etc/MonetDB.conf
 # cmdline opt 	gdk_debug = 10
-# cmdline opt 	monet_mod_path = /ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin
-# cmdline opt 	gdk_dbfarm = /ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm
-# cmdline opt 	sql_logdir = /ufs/niels/scratch/Linux-x86_64/var/MonetDB/log
-# cmdline opt 	mapi_port = 38737
-# cmdline opt 	sql_port = 45235
-# cmdline opt 	xquery_port = 57116
+# cmdline opt 	monet_mod_path = /ufs/fabian/scratch/monetdb/current/program/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program/lib/bin
+# cmdline opt 	gdk_dbfarm = /ufs/fabian/scratch/monetdb/current/program/var/MonetDB/dbfarm
+# cmdline opt 	sql_logdir = /ufs/fabian/scratch/monetdb/current/program/var/MonetDB/log
+# cmdline opt 	mapi_port = 35404
+# cmdline opt 	sql_port = 42535
+# cmdline opt 	xquery_port = 56092
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_BugDay_2005-10-06_4.9.3
 
-# 14:59:36 >  
-# 14:59:36 >  Mtimeout -timeout 60 MapiClient -lmil -u monetdb -P monetdb "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --host=localhost --port=30816 < MapiClient_hang_on_rename.SF-852148.milC
-# 14:59:36 >  
-
-MAPI  = monetdb@localhost:31859
-QUERY = var b:= new(int,int).rename("a");
-ERROR = !ERROR: rename(<tmp_42>,a): operation failed
-
-# 14:59:36 >  
-# 14:59:36 >  Done.
-# 14:59:36 >  
+# 18:43:39 >  
+# 18:43:39 >  Done.
+# 18:43:39 >  
 
