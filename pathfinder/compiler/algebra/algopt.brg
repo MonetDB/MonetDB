@@ -774,10 +774,8 @@ reduce (PFla_op_t *p, int goalnt)
         case 94:
         {
             break;
+#if 0
             /* THIS IS ONLY A TEST! */
-/* StM: commented out "test-code", as Intel's icc otherwise complains about *
- *      "dynamic initialization in unreachable code"                        */
-/*
             PFalg_proj_t *projlist1 = p->sem.proj.items;
             PFalg_proj_t *projlist2 = L(p)->sem.proj.items;
             int n1 = p->sem.proj.count;
@@ -792,7 +790,7 @@ reduce (PFla_op_t *p, int goalnt)
             }
 
             break;
-*/
+#endif
         }
 
         default:
