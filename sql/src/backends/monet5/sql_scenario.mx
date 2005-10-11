@@ -809,14 +809,13 @@ SQLparser(Client c)
 			return NULL;
 		}
 		/* if ( sscanf(in->buf + in->pos, "close %d", &id) == 1) {*/
-		id= (int) strtol(in->buf+in->pos+6,NULL,0);
 		if( strncmp(in->buf+in->pos,"close ",6)==0 ){
 			res_table *t = res_tables_find(m->results, id);
 
+			id= (int) strtol(in->buf+in->pos+6,NULL,0);
 			if (t)
 				m->results = res_tables_remove(m->results, t);
 			in->pos = in->len;	/* HACK: should use parsed lenght */
-			/* printf("Hack\n"); */
 			return NULL;
 		}
 		return throwMessage("SQLparser", "Unrecognized X command\n");
@@ -936,7 +935,6 @@ extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 		    !m->cache) {
 */
 			OPTmultiplex(c->curprg->def,0,0);
-			chkProgram(c->nspace, c->curprg->def);
 		}
 		if (c->curprg->def->errors) {
 			if( m->mode == m_debug){
