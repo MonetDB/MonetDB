@@ -800,7 +800,9 @@ SQLparser(Client c)
 	if (be->language == 'X') {
 		int n, id, off, len;
 
-		n = sscanf(in->buf + in->pos, "export %d %d %d", &id, &off, &len);
+		if( strncmp(in->buf + in->pos,"export ",7)==0 )
+			n = sscanf(in->buf + in->pos+7, "%d %d %d", &id, &off, &len);
+		else n = 0;
 
 		if (n == 2 || n == 3) {
 			mvc_export_chunk(m, out, id, off, n == 3 ? len : m->reply_size);
