@@ -419,7 +419,8 @@ insertToBox(Box box, str nme, str val)
 	ValRecord vr;
 
 	vr.vtype = TYPE_str;
-	vr.val.pval = val;
+	vr.val.sval = val? val: str_nil;
+	vr.len = strlen(vr.val.sval);
 	depositBox(box, nme, &vr);
 }
 
