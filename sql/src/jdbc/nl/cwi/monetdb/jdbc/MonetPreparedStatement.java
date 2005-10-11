@@ -47,7 +47,7 @@ import java.math.*;	// BigDecimal, etc.
  * </pre>
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.1
+ * @version 0.2
  */
 public class MonetPreparedStatement
 	extends MonetStatement
@@ -61,6 +61,7 @@ public class MonetPreparedStatement
 	private final int size;
 
 	private final String[] values;
+	private final StringBuffer buf;
 
 	/**
 	 * MonetPreparedStatement constructor which checks the arguments for
@@ -100,6 +101,7 @@ public class MonetPreparedStatement
 		digits = new int[size];
 		scale = new int[size];
 		values = new String[size];
+		buf = new StringBuffer(6 + 12 * size);
 
 		// fill the arrays
 		ResultSet rs = super.getResultSet();
@@ -1229,8 +1231,6 @@ public class MonetPreparedStatement
 	}
 
 	/**
-	 * Deprecated.
-	 * <br /><br />
 	 * Sets the designated parameter to the given input stream, which will have
 	 * the specified number of bytes. A Unicode character has two bytes, with
 	 * the first byte being the high byte, and the second being the low byte.
@@ -1243,6 +1243,7 @@ public class MonetPreparedStatement
 	 * Note: This stream object can either be a standard Java stream object or
 	 * your own subclass that implements the standard interface.
 	 *
+	 * @deprecated
 	 * @param parameterIndex the first parameter is 1, the second is 2, ...
 	 * @param x a java.io.InputStream object that contains the Unicode
 	 *          parameter value as two-byte Unicode characters
@@ -1296,19 +1297,20 @@ public class MonetPreparedStatement
 	 * @throws SQLException if not all columns are set
 	 */
 	private String transform() throws SQLException {
-		StringBuffer ret = new StringBuffer("exec ");
-		ret.append(id);
-		ret.append("(");
+		buf.delete(0, buf.length());
+		buf.append("exec ");
+		buf.append(id);
+		buf.append("(");
 		// check if all columns are set and do a replace
 		for (int i = 0; i < size; i++) {
-			if (i > 0) ret.append(", ");
+			if (i > 0) buf.append(", ");
 			if (values[i] == null) throw
 				new SQLException("Cannot execute, parameter " +  (i + 1) + " is missing.");
 
-			ret.append(values[i]);
+			buf.append(values[i]);
 		}
-		ret.append(")");
+		buf.append(")");
 		
-		return(ret.toString());
+		return(buf.toString());
 	}
 }
