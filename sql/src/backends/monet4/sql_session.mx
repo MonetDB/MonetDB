@@ -275,7 +275,7 @@ void backend_profile( backend *be, char *query, lng parse, lng optimize, lng exe
 
 	char buf[BUFSIZ];
 
-	while(isspace(*q)) 
+	while(isspace((int)(*q))) 
 		q++; 
 	/* TODO use sql_prepare/execute */
 	snprintf(buf, BUFSIZ, "insert into sys.profile "
