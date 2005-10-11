@@ -270,8 +270,8 @@ mal_export Plant newPlant(MalBlkPtr mb);
 str
 callFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci)
 {
-	Plant u = 0, pl, plim, lastone = 0;
-	int i, k;
+	Plant pl=0;
+	int firstcall= TRUE, i, k;
 	InstrPtr psig = getInstrPtr(mb, 0);
 	ValPtr lhs, rhs;
 	char cmd;
@@ -280,26 +280,32 @@ callFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, Instr
 #ifdef DEBUG_MAL_FACTORY
 	stream_printf(GDKout, "factoryMgr called\n");
 #endif
-	plim = plants + lastPlant;
 	/* the lookup can be largely avoided by handing out the index
 	   upon factory definition. todo
+		Alternative is to move them to the front
 	 */
-	for (pl = plants; pl < plim; pl++)
-		if (pl->factory == mb) {
-			lastone = pl;
-			if (!pl->inuse) {
-				u = pl;
-				break;
-			} else if (pl->next)
-				pl = plants + pl->next - 1;
-		}
-	if (u == 0) {
+	for(i=0; i< lastPlant; i++)
+	if( plants[i].factory == mb){
+		if(i > 0 && i< lastPlant ){
+			PlantRecord prec= plants[i-1];
+			plants[i-1] = plants[i];
+			plants[i]= prec; 
+			i--;
+		} 
+		pl= plants+i;
+		firstcall= FALSE;
+		break;
+	}
+	if (pl == 0) {
+		/* compress the plant table*/
+		for(k=i=0;i<lastPlant; i++)
+		if( plants[i].inuse)
+			plants[k++]= plants[i];
+		lastPlant = k;
 		/* initialize a new plant using the owner policy */
 		pl = newPlant(mb);
 		if (pl == NULL)
 			return throwMessage("factoryMgr", "No factory space left\n");
-		if (lastone)
-			lastone->next = plants - pl;
 	}
 	if (pl->location)
 		return throwMessage("factoryMgr", "No remote access allowed\n");
@@ -331,7 +337,7 @@ Let's call it as a synchronous action, without concern on parallelism.
 	}
 	if (mb->errors)
 		return throwMessage("factory.call", "Factory contains errors");
-	if (u == 0)
+	if (firstcall )
 		msg = runMAL(cntxt, mb, 1, 0, pl->stk, 0);
 	else
 		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);

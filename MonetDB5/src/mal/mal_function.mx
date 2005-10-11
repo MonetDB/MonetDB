@@ -202,6 +202,8 @@ we avoid doing this check any further.
 @c
 #define DEPTH 128
 
+static str mainRef;
+
 void chkFlow(MalBlkPtr mb)
 {   int i,j,k, v,lastInstruction;
 	int  pc[DEPTH];
@@ -364,11 +366,16 @@ void chkFlow(MalBlkPtr mb)
 		GDKerror("SYNTAX ERROR: signature missing\n");
 		mb->errors++;
 	}
-	if( retseen == 0 && idcmp(functionName(p),"main") &&
-		getArgType(mb,p,0)!= TYPE_void && getArgType(mb,p,0)!= TYPE_any &&
-		(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol)){
-		GDKerror("%s missing\n", p->token== FUNCTIONsymbol?"return":"yield");
-		mb->errors++;
+	if( retseen == 0){
+		if( mainRef == 0) mainRef= putName("main",4);
+		if( mainRef != functionId(p) &&
+			getArgType(mb,p,0)!= TYPE_void &&
+			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol)){
+			GDKerror("%s missing in %s.%s\n", 
+				(p->token== FUNCTIONsymbol?"return":"yield"),
+				moduleId(p), functionId(p));
+			mb->errors++;
+		}
 	}
 @-
 In interactive mode we should avoid early garbage collection of values.
