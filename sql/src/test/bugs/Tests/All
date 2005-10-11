@@ -22,10 +22,13 @@ cast_bool2int-bug-sf-951800
 start_transaction-bug-sf-952755
 numeric-bug-sf-952758
 autocommit_illegal_statements-bug-sf-953545
+savepoint_rollback-bug-sf-953553
 savepoint_release-bug-sf-953560
 date_parsing-bug-sf-960166
 innerjoin_between-bug-sf-960672
+subselect_single_value-bug-sf-962099
 cast_varchar2int-bug-sf-964165
+floor-bug-sf-967066
 primary_key-bug-sf-975308
 update_where-bug-sf-976963
 insert_into_select-bug-sf-978043
@@ -33,18 +36,22 @@ union-bug-sf-978045
 object_name-bug-sf-985242
 view_join-bug-sf-990096
 cast_bool2int-bug-sf-1000576
+subselect_multiple_unionall_where_1=1-bug-sf-1005596
 escape_quote-bug-sf-1006469
 case_cast-bug-sf-1019506
 select_constant_from_where_1=1-bug-sf-1019529
 case_parenthesis-bug-sf-1023056
 view_case-bug-sf-1023058
 trimtest-bug-sf-1023588
+savepoint_rollback-bug-sf-1023652
 select_orderby_alias-bug-sf-1024615
+like-bug-sf-1031435.sql
 unicode_varchar-bug-sf-1041324_MapiClient
 HAVE_JAVA?unicode_varchar-bug-sf-1041324_JdbcClient
 unique-bug-sf-1043512
 # like-bug-sf-1043521  # covered by like_tests
 HAVE_JAVA?except-union-intersect-bug-sf-1146079
+timestamp_comparison-bug-sf-1158581
 selectlist_subquery-sf-1208599
 interval_data_commutative_add_bug-sf-1263928
 interval_parse_bug-sf-1263967
