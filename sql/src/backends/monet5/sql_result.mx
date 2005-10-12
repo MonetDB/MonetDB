@@ -608,18 +608,24 @@ mvc_export_table(mvc *m, stream *s, res_table *t, unsigned int offset, unsigned 
 int
 mvc_export_result(mvc *m, stream *s, int res_id)
 {
+	str mvcDefaultMsg= "#-\n# 0 # querytype\n";
 	int i, ok = 1, count;
 	res_table *t = res_tables_find(m->results, res_id);
 
 	if (!s)
 		return 0;
-	/* indicate to client that a new SQL command starts here */
-	ok = (stream_write(s, "#-\n", 3, 1) == 1);
+	if( t->query_type>=0 && t->query_type<10){
+			mvcDefaultMsg[5]='0'+t->query_type;
+			ok = (stream_write(s, mvcDefaultMsg, strlen(mvcDefaultMsg), 1) == 1);
+	} else {
+		/* indicate to client that a new SQL command starts here */
+		ok = (stream_write(s, "#-\n", 3, 1) == 1);
 
-	if (ok)
-		ok = (stream_printf(s, "# " SZFMT, t->query_type) >= 0);
-	if (ok)
-		ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
+		if (ok)
+			ok = (stream_printf(s, "# " SZFMT, t->query_type) >= 0);
+		if (ok)
+			ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
+	}
 
 	/* skip headers for affected row counts */
 	if (ok && (t->query_type == Q_UPDATE || t->query_type == Q_TRANS))
