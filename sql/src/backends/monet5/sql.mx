@@ -181,6 +181,8 @@ comment "calculate a hash value and shift left";
 
 command calc.current_date():date
 address MTIMEcurrent_date;
+command calc.timestamp(s:str):timestamp
+address MTIMEtimestamp_fromstr;
 
 command calc.date(s:str):date
 address MTIMEdate_fromstr;

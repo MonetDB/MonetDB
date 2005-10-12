@@ -106,6 +106,11 @@ static str calcRef;
 static str algebraRef;
 static str sqlRef;
 static str aggrRef;
+static str resultSetRef;
+static str exportResultRef;
+static str insertRef;
+static str joinRef;
+static str reverseRef;
 
 void initSQLreferences(){
 	batcalcRef= putName("batcalc",7);
@@ -115,10 +120,18 @@ void initSQLreferences(){
 	algebraRef= putName("algebra",7);
 	sqlRef= putName("sql",3);
 	aggrRef= putName("aggr",4);
-	if( batcalcRef == NULL || batstrRef== NULL || batRef==NULL || calcRef==NULL || algebraRef==NULL ||sqlRef==NULL || aggrRef==NULL)
-		GDKfatal("error initSQLreferences");
+	joinRef= putName("join",4);
+	insertRef= putName("insert",6);
+	reverseRef= putName("reverse",7);
+	resultSetRef= putName("resultSet",9);
+	exportResultRef= putName("exportResult",12);
+	if( batcalcRef == NULL || batstrRef== NULL || 
+		batRef==NULL || calcRef==NULL || algebraRef==NULL ||
+		sqlRef==NULL || aggrRef==NULL || resultSetRef==NULL || 
+		exportResultRef==NULL || insertRef==NULL || joinRef==NULL ||
+		reverseRef==NULL)
+			GDKfatal("error initSQLreferences");
 }
-
 @-
 Instructions are encapsulated with time code.
 @= SQLprelude
@@ -438,7 +451,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 		}
 			break;
 		case st_reverse:{
-			dump_1(sql, mb, s, batRef, "reverse");
+			dump_1(sql, mb, s, batRef, reverseRef);
 		}
 			break;
 		case st_mirror:{
@@ -694,10 +707,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				int r = _dumpstmt(sql, mb, s->op2.lval->h->data);
 				int k;
 
-				q = newStmt1(mb, batRef, "reverse");
+				q = newStmt2(mb, batRef, reverseRef);
 				q = pushArgument(mb, q, r);
 				k = getDestVar(q);
-				q = newStmt1(mb, algebraRef, "join");
+				q = newStmt2(mb, algebraRef, joinRef);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, k);
 			} else {
@@ -774,7 +787,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			{
 				int z;
 
-				q = newStmt1(mb, batRef, "reverse");
+				q = newStmt2(mb, batRef, reverseRef);
 				q = pushArgument(mb, q, r);
 				r = getDestVar(q);
 
@@ -787,7 +800,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, z);
 				r = getDestVar(q);
 
-				q = newStmt1(mb, batRef, "reverse");
+				q = newStmt2(mb, batRef, reverseRef);
 				q = pushArgument(mb, q, r);
 				r = getDestVar(q);
 
@@ -796,7 +809,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushArgument(mb, q, z);
 				l = getDestVar(q);
 
-				q = newStmt1(mb, algebraRef, "join");
+				q = newStmt2(mb, algebraRef, joinRef);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				@:SQLpostlude@
@@ -899,13 +912,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			} else {
 				int k;
 
-				q = newStmt1(mb, batRef, "reverse");
+				q = newStmt2(mb, batRef, reverseRef);
 				q = pushArgument(mb, q, l);
 				k = getDestVar(q);
 				q = newStmt1(mb, algebraRef, "kunique");
 				q = pushArgument(mb, q, k);
 				k = getDestVar(q);
-				q = newStmt1(mb, batRef, "reverse");
+				q = newStmt2(mb, batRef, reverseRef);
 				q = pushArgument(mb, q, k);
 			}
 			s->nr = getDestVar(q);
@@ -1109,12 +1122,12 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 
 			@:SQLprelude@
 			if (s->op2.stval->nrcols) {
-				q = newStmt1(mb, batRef, "insert");
+				q = newStmt1(mb, batRef, insertRef);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				s->nr = l;
 			} else {
-				q = newStmt1(mb, batRef, "insert");
+				q = newStmt1(mb, batRef, insertRef);
 				q = pushArgument(mb, q, l);
 				q = pushArgument(mb, q, r);
 				s->nr = l;
@@ -1299,14 +1312,14 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 						order = n->data;
 					}
 				}
-				k = newStmt1(mb, sqlRef, "resultSet");
+				k = newStmt2(mb, sqlRef, resultSetRef);
 				s->nr = getDestVar(k);
 				k = pushInt(mb, k, cnt);
 				k = pushInt(mb, k, sql->mvc->type);
 				k = pushArgument(mb, k, order->nr);
 				dump_header(mb, s, l);
 				
-				q = newStmt1(mb, sqlRef, "exportResult");
+				q = newStmt2(mb, sqlRef, exportResultRef);
 				q = pushArgument(mb, q, s->nr);
 			} else {
 				q = newStmt1(mb, sqlRef, "print");
@@ -1341,7 +1354,7 @@ int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 	mvc *c = be->mvc;
 
 	if (c->cache && c->type != Q_RESULT && c->type != Q_UPDATE) {
-		InstrPtr q = newStmt1(mb, sqlRef, "exportResult");
+		InstrPtr q = newStmt2(mb, sqlRef, exportResultRef);
 		return getDestVar(q);
 	}
 	return nr;
