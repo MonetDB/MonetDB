@@ -199,8 +199,7 @@ sqlcleanup(mvc *c, int err)
 	/* some statements dynamically disable caching */
 	c->sym = NULL;
 	if (c->sa) 
-		sa_destroy(c->sa);
-	c->sa = sa_create();
+		c->sa = sa_reset(c->sa);
 	c->status = err;
 	scanner_query_processed(&(c->scanner));
 

@@ -274,24 +274,6 @@ command calc.day(t:rule) :int	address MTIMErule_extract_day;
 command calc.weekday(t:rule) :int address MTIMErule_extract_weekday;
 command calc.minutes(t:rule) :int address MTIMErule_extract_minutes;
 
-command calc.toLower( s:str ) :str address STRLower;
-command calc.toUpper( s:str ) :str address STRUpper;
-
-command calc.trim( s:str ) :str address STRStrip;
-command calc.ltrim( s:str ) :str address STRLtrim;
-command calc.rtrim( s:str ) :str address STRRtrim;
-command calc.substitute(s:str,src:str,dst:str,rep:bit):str
-address STRSubstitute;
-command calc.substring(s:str,offset:int):str
-address STRsubstringTail;
-command calc.substring(s:str,offset:int,count:int):str
-address STRsubstring;
-
-command calc.stringleft(s:str,l:int):str
-address STRprefix;
-command calc.stringright(s:str,l:int):str
-address STRsuffix;
-
 #SQL specific time support functions
 command calc.current_timestamp() :timestamp address MTIMEcurrent_timestamp;
 command calc.current_date() :date address MTIMEcurrent_date;
@@ -322,6 +304,54 @@ command calc.weekofyear(d:date) :int address MTIMEdate_extract_weekofyear;
 command calc.dayofweek(d:date) :int address MTIMEdate_extract_dayofweek;
 command calc.add(v:timestamp, msecs:lng) :timestamp address MTIMEtimestamp_add; 
 command calc.diff(val1:timestamp, val2:timestamp) :lng address MTIMEtimestamp_diff;
+
+# string 
+command calc.toLower( s:str ) :str address STRLower;
+command calc.toUpper( s:str ) :str address STRUpper;
+
+command calc.trim( s:str ) :str address STRStrip;
+command calc.ltrim( s:str ) :str address STRLtrim;
+command calc.rtrim( s:str ) :str address STRRtrim;
+command calc.substitute(s:str,src:str,dst:str,rep:bit):str
+address STRSubstitute;
+command calc.substring(s:str,offset:int):str
+address STRsubstringTail;
+command calc.substring(s:str,offset:int,count:int):str
+address STRsubstring;
+
+command calc.stringleft(s:str,l:int):str
+address STRprefix;
+command calc.stringright(s:str,l:int):str
+address STRsuffix;
+
+# math 
+command acos(x:flt):flt address MATHunary_ACOSflt;
+command acos(x:dbl):dbl address MATHunary_ACOSdbl;
+command asin(x:flt):flt address MATHunary_ASINflt;
+command asin(x:dbl):dbl address MATHunary_ASINdbl;
+command atan(x:flt):flt address MATHunary_ATANflt;
+command atan(x:dbl):dbl address MATHunary_ATANdbl;
+command atan2(x:flt,y:flt):flt address MATHbinary_ATAN2flt;
+command atan2(x:dbl,y:dbl):dbl address MATHbinary_ATAN2dbl;
+command cos(x:flt):flt address MATHunary_COSflt;
+command cos(x:dbl):dbl address MATHunary_COSdbl;
+command sin(x:flt):flt address MATHunary_SINflt;
+command sin(x:dbl):dbl address MATHunary_SINdbl;
+command tan(x:flt):flt address MATHunary_TANflt;
+command tan(x:dbl):dbl address MATHunary_TANdbl;
+command cosh(x:flt):flt address MATHunary_COSHflt;
+command cosh(x:dbl):dbl address MATHunary_COSHdbl;
+command sinh(x:flt):flt address MATHunary_SINHflt;
+command sinh(x:dbl):dbl address MATHunary_SINHdbl;
+command tanh(x:flt):flt address MATHunary_TANHflt;
+command tanh(x:dbl):dbl address MATHunary_TANHdbl;
+command exp(x:flt):flt address MATHunary_EXPflt;
+command exp(x:dbl):dbl address MATHunary_EXPdbl;
+command log(x:dbl):dbl address MATHunary_LOGdbl;
+command log10(x:dbl):dbl address MATHunary_LOG10dbl;
+#/* TODO */
+command floor(y:flt):flt address MATHunary_FLOORflt;
+command floor(y:dbl):dbl address MATHunary_FLOORdbl;
 
 @- SQL functions
 The SQL functions are all recognized by their module name.
@@ -358,11 +388,12 @@ comment "round off the value v to nearests multiple of r";
 
 @= mal_cast
 command @1( v:str ) :@1 
-address CALCstr2@1
+address str_2_@1
 comment "Cast to @1";
-command str( v:@1 ) :str
-address CALC@12str
-comment "Cast @1 to str";
+#address CALCstr2@1
+#command str( v:@1 ) :str
+#address CALC@12str
+#comment "Cast @1 to str";
 command @1( v:str, digits:int ) :@1 
 address str_2num_@1
 comment "cast to @1 and check for overflow";
@@ -375,8 +406,9 @@ comment "cast to dec(@1) and check for overflow";
 @:mal_cast(lng)@
 
 @= mal_fcast
+#address CALCstr2@1
 command @1( v:str ) :@1 
-address CALCstr2@1
+address str_2_@1
 comment "cast to @1";
 @mal
 @:mal_fcast(flt)@
@@ -406,8 +438,9 @@ address SQLstr_cast
 comment "cast to string and check for overflow";
 
 @= mal_cast_2dec
+#address CALC@22@1
 command @1( v:@2) :@1 
-address CALC@22@1
+address @2_2_@1
 comment "cast @2 to @1";
 command @1( v:@2, digits:int, scale:int ) :@1 
 address @2_num2dec_@1
@@ -641,8 +674,7 @@ sqlcleanup(mvc *c, int err)
 	/* some statements dynamically disable caching */
 	c->sym = NULL;
 	if (c->sa) 
-		sa_destroy(c->sa);
-	c->sa = sa_create();
+		c->sa = sa_reset(c->sa);
 	scanner_query_processed(&(c->scanner));
 	return err;
 }

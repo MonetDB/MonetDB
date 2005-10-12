@@ -125,10 +125,6 @@ stream.
 		BAT[str,BAT] = mvc_import_table_wrap; 
 		"import a table from stream s with the given tuple and record seperators (sep/rsep)"
 
-	.COMMAND sql_mark( BAT[any::1,any] b , oid base) :
-				BAT[any::1,OID] = sql_mark;
-		"Produces a new BAT with fresh unique dense sequence of OIDs in the tail that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
-
 	.COMMAND hash( any::1 v, int sh ) : int = hash_wrap; "calculate a hash value and shift left"
 
 @= mel_round
@@ -584,14 +580,6 @@ mvc_export_default_wrap(mvc *M, Stream *S)
 		return GDK_FAIL;
 
 	return GDK_SUCCEED;
-}
-
-int
-sql_mark(BAT **res, BAT *b, oid *base)
-{
-	BAT *bn = VIEWhead(b);
-	BATseqbase(BATmirror(bn), *base);
-	return (*res = bn) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int

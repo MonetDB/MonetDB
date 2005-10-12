@@ -346,6 +346,8 @@ SQLcompile(str *ret, str *expr, int *flag)
 		return throwMessage("SQLcompile", "Catalogue not available\n");
 
 	m = sql->mvc;
+	if (!m->sa)
+		m->sa = sa_create();
 	o = *m;
 	vtop = sql->vtop;
 	sql = backend_create(0, m, c);
@@ -541,6 +543,7 @@ str
 SQLreader(Client c)
 {
 	int go = TRUE;
+	int more = TRUE;
 	lng T0;
 	backend *be = ((backend *) c->state[PARSER]);
 	bstream *in = c->fdin;
@@ -598,7 +601,9 @@ IO to obtain missing data.
 */
     }
 
-	if (go && in->pos >= in->len) {
+	while(more) {
+	    more = FALSE;
+	    if (go && in->pos >= in->len) {
 		ssize_t rd;
 
 		if (c->bak) {
@@ -631,7 +636,7 @@ IO to obtain missing data.
 			if (rd == 0 && language != 0 && in->eof && !be->console) {
 				/* we hadn't seen the EOF before, so just try again
 				   (this time with prompt) */
-				SQLreader(c);
+				more = TRUE;
 			} else {
 				go = FALSE;
 			}
@@ -641,6 +646,7 @@ IO to obtain missing data.
 #ifdef _SQL_READER_DEBUG
 		stream_printf(GDKout, "#SQL blk:%s\n", in->buf + in->pos);
 #endif
+	    }
 	}
 	if (!go || (strncmp(CURRENT(c), "quit", 4) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
@@ -798,11 +804,10 @@ SQLparser(Client c)
 		return throwMessage("SQLparser", "Unrecognized language prefix\n");
 	}
 	if (be->language == 'X') {
-		int n, id, off, len;
+		int n = 0, id, off, len;
 
 		if( strncmp(in->buf + in->pos,"export ",7)==0 )
 			n = sscanf(in->buf + in->pos+7, "%d %d %d", &id, &off, &len);
-		else n = 0;
 
 		if (n == 2 || n == 3) {
 			mvc_export_chunk(m, out, id, off, n == 3 ? len : m->reply_size);
@@ -810,7 +815,6 @@ SQLparser(Client c)
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
-		/* if ( sscanf(in->buf + in->pos, "close %d", &id) == 1) {*/
 		if( strncmp(in->buf+in->pos,"close ",6)==0 ){
 			res_table *t = res_tables_find(m->results, id);
 
@@ -873,11 +877,11 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		}
 		assert(s);
 		/* generate and call the MAL code */
+/*
 		if (m->mode != m_prepare &&
 		   (msg = sql_get_var(m,"optimizer")) == NULL) {
-/*
-		if (m->mode != m_prepare && !m->cache){
 */
+		if (m->mode != m_prepare && !m->cache){
 			backend_callinline(be, c, s, m->args);
 		} else {
 			/* generate a factory instantiation */
@@ -932,10 +936,10 @@ extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 		chkProgram(c->nspace, c->curprg->def); /* make all types known */
 		if (!c->curprg->def->errors && m->mode != m_prepare &&
-		    (msg = sql_get_var(m,"optimizer")) == NULL) {
 /*
-		    !m->cache) {
+		    (msg = sql_get_var(m,"optimizer")) == NULL) {
 */
+		    !m->cache) {
 			OPTmultiplex(c->curprg->def,0,0);
 		}
 		if (c->curprg->def->errors) {

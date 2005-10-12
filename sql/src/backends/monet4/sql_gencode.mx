@@ -451,7 +451,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			dump_2(sql, s, "project", nr);
 			break;
 		case st_mark:
-			dump_2(sql, s, "sql_mark", nr);
+			dump_2(sql, s, "mark", nr);
 			break;
 		case st_gen_group:
 			dump_1(sql, s, "group", nr);

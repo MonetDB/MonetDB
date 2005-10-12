@@ -153,8 +153,8 @@ to allow inspection.
 		stream_printf(c->fdout,"optimizer=%s\n",optimizers);
 	if( strcmp(optimizers,"sql.optimizer();")==0 )
 		optimizeQueryInCache(c);
-	but we need multiplex expansion */
 	optimizerCheck(c->curprg->def,"sql.baseline",0,0);
+	but we need multiplex expansion */
 	OPTmultiplex(c->curprg->def,0,0);
 }
 

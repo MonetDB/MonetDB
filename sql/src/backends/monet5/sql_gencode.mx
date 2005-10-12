@@ -935,7 +935,9 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				(s->op3.typeval->type->eclass == EC_DEC ||
 				 s->op4.typeval->type->eclass == EC_DEC ||
 				 s->op4.typeval->type->eclass == EC_INTERVAL ||
-				 EC_TEMP(s->op4.typeval->type->eclass)) ){
+				 EC_TEMP(s->op4.typeval->type->eclass) ||
+				(s->op4.typeval->type->eclass == EC_STRING &&
+			    	s->op4.typeval->digits > 0)) ){
 				int type = s->op4.typeval->type->localtype;
 
 				q = newStmt(mb, "optimizer","multiplex");
@@ -956,6 +958,10 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 				q = pushInt(mb, q, s->op4.typeval->digits);
 				q = pushInt(mb, q, s->op4.typeval->scale);
 			}
+			/* convert to string, give error on to large strings */
+			if (s->op4.typeval->type->eclass == EC_STRING &&
+			    s->op4.typeval->digits > 0) 
+				q = pushInt(mb, q, s->op4.typeval->digits);
 			s->nr = getDestVar(q);
 			@:SQLpostlude@
 			break;
@@ -1400,6 +1406,8 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 	curPrg = c->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk, 0);
+	/* we do not return anything */
+	setVarType(curBlk, 0, TYPE_void);
 	setModuleId(curInstr, putName("sql_cache",9));
 
 	if (be->mvc->args) {

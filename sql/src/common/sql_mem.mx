@@ -65,6 +65,18 @@ sql_allocator *sa_create()
 	return sa;
 }
 
+sql_allocator *sa_reset( sql_allocator *sa )
+{
+	int i ;
+
+	for (i = 1; i<sa->nr; i++) {
+		GDKfree(sa->blks[i]);
+	}
+	sa->nr = 1;
+	sa->used = 0;
+	return sa;
+}
+
 #define round16(sz) ((sz+15)&~15)
 char *sa_alloc( sql_allocator *sa, size_t sz )
 {
