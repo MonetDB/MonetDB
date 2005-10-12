@@ -424,16 +424,22 @@ enable mapi to work with it.
 int
 mvc_export_default(mvc *m, stream *s)
 {
+	str mvcDefaultMsg= "#-\n# 0 # querytype\n";
 	int ok = 1;
 
 	if (s) {
-		/* indicate to client that a new SQL command starts here */
-		ok = (stream_write(s, "#-\n", 3, 1) == 1);
+		if(m->type>=0 && m->type < 10 ){
+			mvcDefaultMsg[5]='0'+m->type;
+			ok = (stream_write(s, mvcDefaultMsg, strlen(mvcDefaultMsg), 1) == 1);
+		} else {
+			/* indicate to client that a new SQL command starts here */
+			ok = (stream_write(s, "#-\n", 3, 1) == 1);
 
-		if (ok)
-			ok = (stream_printf(s, "# " SZFMT, m->type) >= 0);
-		if (ok)
-			ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
+			if (ok)
+				ok = (stream_printf(s, "# " SZFMT, m->type) >= 0);
+			if (ok)
+				ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
+		}
 	}
 	return (ok) ? 0 : -1;
 }
@@ -489,8 +495,8 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 		} else if (!c->p || ATOMcmp(c->mtype, ATOMnilptr(c->mtype), c->p) == 0) {
 			ok = (stream_write(s, "NULL", sizeof("NULL") - 1, 1) == 1);
 		} else {
-			char *buf = NULL;
-			int len = 0;
+			char *buf= NULL;
+			int len =0;
 			int l = (*BATatoms[c->mtype].atomToStr) (&buf, &len, c->p);
 
 			ok = (stream_write(s, buf, l, 1) == 1);
