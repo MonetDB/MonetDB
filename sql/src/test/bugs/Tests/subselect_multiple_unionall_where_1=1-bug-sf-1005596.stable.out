@@ -1,1 +1,80 @@
-to be added/approved
+stdout of test 'subselect_multiple_unionall_where_1=1-bug-sf-1005596` in directory 'src/test/bugs` itself:
+
+
+# 16:04:18 >  
+# 16:04:18 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB:/ufs/niels/scratch/Linux-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/var/MonetDB/log" --set mapi_port=31799 --set sql_port=47644 --set xquery_port=57552 --set monet_prompt= --trace "--dbname=mTests_src_test_bugs" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 16:04:18 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 16:04:18 >  
+# 16:04:18 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47644  < subselect_multiple_unionall_where_1=1-bug-sf-1005596.sql
+# 16:04:18 >  
+
+# 3 # querytype
+#  # table_name
+# number # name
+# smallint # type
+# 6 # length
+# 1 # tuplecount
+# 1 # id
+[ 1	]
+# 3 # querytype
+# tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
+# TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
+# char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
+# 4,	0,	0,	12,	0,	0,	0,	0,	5,	6 # length
+# 0,	,	,	,	,	,	,	,	,	 # tuplecount
+# 2,	,	,	,	,	,	,	,	,	 # id
+# 3 # querytype
+#  # table_name
+# number # name
+# smallint # type
+# 6 # length
+# 1 # tuplecount
+# 3 # id
+[ 2	]
+# 3 # querytype
+# tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
+# TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
+# char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
+# 4,	3,	5,	20,	0,	0,	0,	0,	5,	6 # length
+# 1,	,	,	,	,	,	,	,	,	 # tuplecount
+# 4,	,	,	,	,	,	,	,	,	 # id
+[ "demo",	"sys",	"test2",	"VIEW",	"",	NULL,	NULL,	NULL,	"rowid",	"SYSTEM"	]
+# 3 # querytype
+#  # table_name
+# number # name
+# smallint # type
+# 6 # length
+# 1 # tuplecount
+# 5 # id
+[ 3	]
+# 3 # querytype
+# tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables,	tables # table_name
+# TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
+# char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
+# 4,	3,	5,	20,	0,	0,	0,	0,	5,	6 # length
+# 6,	,	,	,	,	,	,	,	,	 # tuplecount
+# 6,	,	,	,	,	,	,	,	,	 # id
+[ "demo",	"sys",	"ff",	"TABLE",	"",	NULL,	NULL,	NULL,	"rowid",	"SYSTEM"	]
+[ "demo",	"sys",	"foo",	"TABLE",	"",	NULL,	NULL,	NULL,	"rowid",	"SYSTEM"	]
+[ "demo",	"sys",	"r",	"TABLE",	"",	NULL,	NULL,	NULL,	"rowid",	"SYSTEM"	]
+[ "demo",	"sys",	"s4",	"TABLE",	"",	NULL,	NULL,	NULL,	"rowid",	"SYSTEM"	]
+[ "demo",	"sys",	"test",	"TABLE",	"",	NULL,	NULL,	NULL,	"rowid",	"SYSTEM"	]
+[ "demo",	"sys",	"test2",	"VIEW",	"",	NULL,	NULL,	NULL,	"rowid",	"SYSTEM"	]
+
+# 16:04:19 >  
+# 16:04:19 >  Done.
+# 16:04:19 >  
+

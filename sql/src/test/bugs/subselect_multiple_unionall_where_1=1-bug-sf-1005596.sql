@@ -109,7 +109,7 @@ SELECT * FROM (
 		null AS "TYPE_NAME",
 		'rowid' AS "SELF_REFERENCING_COL_NAME",
 		'SYSTEM' AS "REF_GENERATION"
-	FROM "tmp_tables" AS "tables", "schemas"
+	FROM "ttables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
 		AND "tables"."istable" = true
@@ -126,7 +126,7 @@ SELECT * FROM (
 		null AS "TYPE_NAME",
 		'rowid' AS "SELF_REFERENCING_COL_NAME",
 		'SYSTEM' AS "REF_GENERATION"
-	FROM "tmp_tables" AS "tables", "schemas"
+	FROM "ttables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = false
 		AND "tables"."istable" = true
@@ -143,7 +143,7 @@ SELECT * FROM (
 		null AS "TYPE_NAME",
 		'rowid' AS "SELF_REFERENCING_COL_NAME",
 		'SYSTEM' AS "REF_GENERATION"
-	FROM "tmp_tables" AS "tables", "schemas"
+	FROM "ttables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
 		AND "tables"."istable" = false
@@ -160,7 +160,7 @@ SELECT * FROM (
 		null AS "TYPE_NAME",
 		'rowid' AS "SELF_REFERENCING_COL_NAME",
 		'SYSTEM' AS "REF_GENERATION"
-	FROM "tmp_tables" AS "tables", "schemas"
+	FROM "ttables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = false
 		AND "tables"."istable" = false
@@ -252,7 +252,7 @@ SELECT * FROM (
 		null AS "TYPE_NAME",
 		'rowid' AS "SELF_REFERENCING_COL_NAME",
 		'SYSTEM' AS "REF_GENERATION"
-	FROM "tmp_tables" AS "tables", "schemas"
+	FROM "ttables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
 		AND "tables"."istable" = true
@@ -269,7 +269,7 @@ SELECT * FROM (
 		null AS "TYPE_NAME",
 		'rowid' AS "SELF_REFERENCING_COL_NAME",
 		'SYSTEM' AS "REF_GENERATION"
-	FROM "tmp_tables" AS "tables", "schemas"
+	FROM "ttables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = false
 		AND "tables"."istable" = true
@@ -286,7 +286,7 @@ SELECT * FROM (
 		null AS "TYPE_NAME",
 		'rowid' AS "SELF_REFERENCING_COL_NAME",
 		'SYSTEM' AS "REF_GENERATION"
-	FROM "tmp_tables" AS "tables", "schemas"
+	FROM "ttables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = true
 		AND "tables"."istable" = false
@@ -303,7 +303,7 @@ SELECT * FROM (
 		null AS "TYPE_NAME",
 		'rowid' AS "SELF_REFERENCING_COL_NAME",
 		'SYSTEM' AS "REF_GENERATION"
-	FROM "tmp_tables" AS "tables", "schemas"
+	FROM "ttables" AS "tables", "schemas"
 	WHERE "tables"."schema_id" = "schemas"."id"
 		AND "tables"."system" = false
 		AND "tables"."istable" = false
