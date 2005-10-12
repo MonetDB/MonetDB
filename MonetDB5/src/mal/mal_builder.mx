@@ -36,6 +36,7 @@ The strings being passed as arguments are copied in the process.
 
 mal_export InstrPtr newStmt(MalBlkPtr mb, char *module, char *name);
 mal_export InstrPtr newStmt1(MalBlkPtr mb, str module, char *name);
+mal_export InstrPtr newStmt2(MalBlkPtr mb, str module, char *name);
 mal_export InstrPtr newStmtId(MalBlkPtr mb, char *id, char *module, char *name);
 mal_export InstrPtr newAssignment(MalBlkPtr mb);
 mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
@@ -82,6 +83,17 @@ newStmt1(MalBlkPtr mb, str module, char *name)
 
 	moduleId(q) = module;
 	functionId(q) = (name) ? putName(name, strlen(name)) : 0;
+	setDestVar(q, newTmpVariable(mb, TYPE_any));
+	setVarInitialized(mb, getDestVar(q));
+	return q;
+}
+InstrPtr
+newStmt2(MalBlkPtr mb, str module, char *name)
+{
+	InstrPtr q = newAssignment(mb);
+
+	moduleId(q) = module;
+	functionId(q) = name;
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
 	setVarInitialized(mb, getDestVar(q));
 	return q;
