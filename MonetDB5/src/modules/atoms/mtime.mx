@@ -272,6 +272,7 @@ arbitrarily.
 atom timestamp :lng;# not stored as a lng !
 command fromstr():timestamp 
 address timestamp_fromstr;
+
 command tostr():str 
 address timestamp_tostr;
 #.NULL	 address timestamp_null;
@@ -343,6 +344,8 @@ address tzone_tostr;
 command str():str   
 address MTIMEtzone_tostr;
 #.NULL	 address tzone_null;
+command timestamp(s:str):timestamp
+address MTIMEtimestamp_fromstr;
 command timestamp(secs:int):timestamp
 address MTIMEtimestamp
 comment "Utility function to create a timestamp from a number of seconds since the Unix epoch";
