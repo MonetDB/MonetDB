@@ -48,6 +48,8 @@ command put()     address BLOBput;
 command del()     address BLOBdel;
 command length()  address BLOBlength;
 command heap()    address BLOBheap;
+command read()    address BLOBread;
+command write()   address BLOBwrite;
 
 @+ string functions
 Manipulation functions to extract strings from blobs and vice versa.
@@ -125,7 +127,7 @@ atoms_export size_t blobsize(size_t nitems);
 #define blob_export extern
 #endif
 
-blob_export int BLOBtostr(str *tostr, int *l, blob **pin);
+blob_export int BLOBtostr(str *tostr, int *l, blob *pin);
 blob_export int BLOBfromstr(char *instr, int *l, blob **val);
 blob_export int BLOBnequal(blob *l, blob *r);
 blob_export hash_t BLOBhash(blob *b);
@@ -136,7 +138,7 @@ blob_export void BLOBdel(Heap *h, var_t *index);
 blob_export int BLOBlength(blob *p);
 blob_export void BLOBheap(Heap *heap, size_t capacity);
 blob_export int SQLBLOBfromstr(char *instr, int *l, blob **val);
-blob_export int SQLBLOBtostr(str *tostr, int *l, blob **pin);
+blob_export int SQLBLOBtostr(str *tostr, int *l, blob *pin);
 blob_export str BLOBtoblob(blob **retval, str *s);
 blob_export str BLOBfromblob(str *retval, blob **b);
 blob_export str BLOBfromidx(str *retval, blob **binp, int *index);
@@ -757,6 +759,18 @@ BLOBnull()
 	return blob_null();
 }
 
+blob *
+BLOBread(blob *a, stream *s, size_t cnt)
+{
+	return blob_read(a,s,cnt);
+}
+
+void
+BLOBwrite(blob *a, stream *s, size_t cnt)
+{
+	return blob_write(a,s,cnt);
+}
+
 void
 BLOBconvert(blob *b, int direction)
 {
@@ -797,9 +811,9 @@ BLOBnitems(int *ret, blob *b)
 
 #ifndef OLDSTYLE
 int
-BLOBtostr(str *tostr, int *l, blob **pin)
+BLOBtostr(str *tostr, int *l, blob *pin)
 {
-	return blob_tostr(tostr, l, *pin);
+	return blob_tostr(tostr, l, pin);
 }
 
 int
@@ -809,9 +823,9 @@ BLOBfromstr(char *instr, int *l, blob **val)
 }
 #else
 int
-BLOBtostr(str *dst, int *size, blob **srcin)
+BLOBtostr(str *dst, int *size, blob *srcin)
 {
-	return blob_tostr(dst, size, *srcin);
+	return blob_tostr(dst, size, srcin);
 }
 
 str
@@ -848,9 +862,9 @@ BLOBtoblob(blob **retval, str *s)
 }
 
 int
-SQLBLOBtostr(str *retval, int *l, blob **b)
+SQLBLOBtostr(str *retval, int *l, blob *b)
 {
-	return sqlblob_tostr(retval, l, *b);
+	return sqlblob_tostr(retval, l, b);
 }
 
 int
