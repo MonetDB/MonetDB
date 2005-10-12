@@ -109,8 +109,10 @@ static str aggrRef;
 static str resultSetRef;
 static str exportResultRef;
 static str insertRef;
+static str appendRef;
 static str joinRef;
 static str reverseRef;
+static str sql_cacheRef;
 
 void initSQLreferences(){
 	batcalcRef= putName("batcalc",7);
@@ -122,14 +124,16 @@ void initSQLreferences(){
 	aggrRef= putName("aggr",4);
 	joinRef= putName("join",4);
 	insertRef= putName("insert",6);
+	appendRef= putName("append",6);
 	reverseRef= putName("reverse",7);
 	resultSetRef= putName("resultSet",9);
 	exportResultRef= putName("exportResult",12);
+	sql_cacheRef= putName("sql_cache",9);
 	if( batcalcRef == NULL || batstrRef== NULL || 
 		batRef==NULL || calcRef==NULL || algebraRef==NULL ||
 		sqlRef==NULL || aggrRef==NULL || resultSetRef==NULL || 
 		exportResultRef==NULL || insertRef==NULL || joinRef==NULL ||
-		reverseRef==NULL)
+		reverseRef==NULL || appendRef==NULL || sql_cacheRef== NULL)
 			GDKfatal("error initSQLreferences");
 }
 @-
@@ -1139,7 +1143,7 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			int r = _dumpstmt(sql, mb, s->op2.stval);
 
-			q = newStmt1(mb, batRef, "append");
+			q = newStmt2(mb, batRef, appendRef);
 			q = pushArgument(mb, q, l);
 			q = pushArgument(mb, q, r);
 			s->nr = l;
@@ -1421,7 +1425,7 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 	curInstr = getInstrPtr(curBlk, 0);
 	/* we do not return anything */
 	setVarType(curBlk, 0, TYPE_void);
-	setModuleId(curInstr, putName("sql_cache",9));
+	setModuleId(curInstr, sql_cacheRef);
 
 	if (be->mvc->args) {
 
@@ -1461,14 +1465,19 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 void
 backend_call(backend *be, Client c, int id, list *args)
 {
-
+static int previd = -1;
+static str prevnme = 0;
 	InstrPtr q;
 	MalBlkPtr mb = c->curprg->def;
 	char name[BUFSIZ];
 
-	(void) snprintf(name, BUFSIZ, "sql%d", id);
+	if( previd != id){
+		(void) snprintf(name, BUFSIZ, "sql%d", id);
+		prevnme= putName(name,strlen(name));
+		previd= id;
+	}
 
-	q = newStmt(mb, "sql_cache", name);
+	q = newStmt2(mb, sql_cacheRef, prevnme);
 	setVarType(mb, getArg(q, 0), TYPE_void);
 	if (args) {
 		node *n, *p;
