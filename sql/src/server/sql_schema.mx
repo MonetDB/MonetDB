@@ -349,7 +349,7 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	stmt *pts = stmt_basetable(pt, pt->base.name);
 	stmt *s = stmt_relselect_init();
 	scope *scp = scope_open(NULL);
-	tvar *ptv = scope_add_table_columns(sql, scp, pt, pt->base.name);
+	tvar *ptv = scope_add_table_columns(sql, scp, pt, pt->base.name, UPD);
 
 	(void) grantor;
 	(void) grantable;

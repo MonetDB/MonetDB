@@ -145,6 +145,10 @@ col_bind(sql_trans *tr, oid lbid, sql_column *c, int access)
 
 			b->batDirty |= 2;
 		}
+		if (access == UPD) {
+			BATsetaccess(b, BAT_WRITE);
+			b->batDirty |= 2;
+		}
 	}
 	return b;
 }

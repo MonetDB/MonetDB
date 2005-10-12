@@ -214,7 +214,7 @@ set_var(mvc *sql, char *name, symbol *val, char *typename)
 	scope *scp = scope_open(NULL);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	sql_table *sessions = mvc_bind_table(sql, sys, "sessions");
-	tvar *tv = scope_add_table_columns(sql, scp, sessions, sessions->base.name);
+	tvar *tv = scope_add_table_columns(sql, scp, sessions, sessions->base.name, UPD);
 	stmt *st, *v = sql_value_exp(sql, scp, val, NULL, NULL, sql_sel);
 	sql_column *c = mvc_bind_column(sql, sessions, "value");
 	list *l;

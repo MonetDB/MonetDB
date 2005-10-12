@@ -273,7 +273,7 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 			sql_kc *c = m->data;
 			sql_kc *rc = o->data;
 
-			stmt_relselect_fill(s, stmt_uselect(stmt_cbat(rc->c, stmt_dup(rts), 0, st_bat), stmt_dup(inserts[c->c->colnr]->op2.stval), cmp_equal));
+			stmt_relselect_fill(s, stmt_uselect(stmt_cbat(rc->c, stmt_dup(rts), RDONLY, st_bat), stmt_dup(inserts[c->c->colnr]->op2.stval), cmp_equal));
 
 			if (c->c->null) {
 				sql_subfunc *isnil = sql_bind_func(sql->trans->module, "isnull", c->c->type, NULL);
@@ -312,7 +312,7 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 			sql_kc *c = m->data;
 			sql_kc *rc = o->data;
 
-			stmt_reljoin_fill(s, stmt_dup(inserts[c->c->colnr]->op2.stval), stmt_cbat(rc->c, stmt_dup(rts), 0, st_bat));
+			stmt_reljoin_fill(s, stmt_dup(inserts[c->c->colnr]->op2.stval), stmt_cbat(rc->c, stmt_dup(rts), RDONLY, st_bat));
 			if (c->c->null)
 				nulls = 1;
 		}
@@ -654,7 +654,7 @@ join_idx_update(sql_idx * i, stmt **updates, int updcol)
 				null = nn;
 			nulls = 1;
 		}
-		stmt_reljoin_fill(s, upd, stmt_dup(stmt_cbat(rc->c, stmt_dup(rts), 0, st_bat)));
+		stmt_reljoin_fill(s, upd, stmt_dup(stmt_cbat(rc->c, stmt_dup(rts), RDONLY, st_bat)));
 
 	}
 	/* add missing nulls */
@@ -806,7 +806,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		inserts[i] = NULL;
 
 	scp = scope_open(NULL);
-	tv = scope_add_table_columns(sql, scp, t, t->base.name);
+	tv = scope_add_table_columns(sql, scp, t, t->base.name, INS);
 
 	if (val_or_q->token == SQL_VALUES) {
 		dlist *rowlist = val_or_q->data.lval;
@@ -948,7 +948,7 @@ sql_bulkinsert(mvc *sql, sql_table *t, char *tsep, char *rsep, char *filename, i
 	stmt **inserts, *res = NULL;
 
 	scope *scp = scope_open(NULL);
-	tvar *tv = scope_add_table_columns(sql, scp, t, t->base.name);
+	tvar *tv = scope_add_table_columns(sql, scp, t, t->base.name, INS);
 
 	bats = stmt_bulkinsert(stmt_basetable(t, t->base.name), _strdup(tsep), _strdup(rsep), fname, nr);
 	len = list_length(t->columns.set);
@@ -1049,7 +1049,7 @@ sql_update_table(mvc *sql, sql_schema *schema, char *tname, dlist *assignmentlis
 		stmt **updates;
 
 		scp = scope_open(NULL);
-		tv = scope_add_table_columns(sql, scp, t, t->base.name);
+		tv = scope_add_table_columns(sql, scp, t, t->base.name, UPD);
 
 		if (opt_where) {
 			s = sql_logical_exp(sql, scp, opt_where, NULL, NULL, sql_where);
@@ -1232,7 +1232,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 		stmt *s = NULL;
 		scope *scp = scope_open(NULL);
 
-		tv = scope_add_table_columns(sql, scp, t, t->base.name);
+		tv = scope_add_table_columns(sql, scp, t, t->base.name, UPD);
 
 		if (opt_where) {
 			stmt *subset = NULL;

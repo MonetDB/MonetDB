@@ -111,7 +111,7 @@ table_ref(mvc *sql, scope *scp, symbol *tableref)
 		if (tableref->data.lval->h->next->data.sym) {	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
 		}
-		return scope_add_table_columns(sql, scp, t, tname);
+		return scope_add_table_columns(sql, scp, t, tname, RDONLY);
 	} else if (tableref->token == SQL_TABLE) {
 		stmt *s = sql_value_exp(sql, scp, tableref->data.lval->h->data.sym, NULL, NULL, sql_from);
 		char *tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;

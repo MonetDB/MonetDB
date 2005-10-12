@@ -36,7 +36,7 @@ extern stmt *semantic(mvc *sql, symbol *sym);
 extern sql_schema *cur_schema(mvc *sql);
 extern sql_schema *qname_schema(mvc *sql, dlist *qname);
 extern char *qname_table(dlist *qname);
-extern tvar *scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname);
+extern tvar *scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int access);
 
 extern sql_subtype *supertype(sql_subtype *r, sql_subtype *i);
 extern int convert_types(mvc *sql, stmt **L, stmt **R, int scale_fixing);
@@ -342,7 +342,7 @@ sqlparse_intern(mvc *m, char *query)
 }
 
 tvar *
-scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname)
+scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int access)
 {
 	node *n, *m;
 	tvar *tv = NULL;
@@ -368,7 +368,7 @@ scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname)
 		tv = scope_add_table(scp, ts = stmt_basetable(t, tname), tname, t);
 		for (n = t->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data;
-			stmt *sc = stmt_cbat(c, stmt_dup(ts), RDONLY, st_bat);
+			stmt *sc = stmt_cbat(c, stmt_dup(ts), access, st_bat);
 
 			table_add_column(tv, sc, NULL, c->base.name);
 		}
