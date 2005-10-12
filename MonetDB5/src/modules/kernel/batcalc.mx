@@ -1559,6 +1559,8 @@ str CMDconvert@1_@2Enlarge(int *ret, int *bid){
 		(bn)->batBuns->free += s1;
 		(bn)->batCount ++;
 	}
+	bn->hsorted = BAThordered(b);
+	bn->tsorted = BATtordered(b);
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
 	BBPunfix(b->batCacheid);
@@ -1587,6 +1589,8 @@ str CMDconvert@1_@2(int *ret, int *bid){
 		bunfastins(bn, h, &y);
 	}
 bunins_failed:
+	bn->hsorted = BAThordered(b);
+	bn->tsorted = 0;
 	BBPincref( *ret= bn->batCacheid,TRUE);
 	BBPunfix(*ret);
 	BBPunfix(b->batCacheid);
