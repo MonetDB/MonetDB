@@ -279,6 +279,9 @@ void malAtomDefinition(str name, int tpe){
         (char*)(BATatoms+tpe), sizeof(BATatoms[tpe]));
     strncpy(BATatoms[i].name, name, IDLENGTH);
     BATatoms[i].storage= BATatoms[tpe].storage;
+    /* cannot overload void atoms */ 
+    if (tpe == 0)
+	BATatoms[i].storage = i;
 }
 @-
 User defined modules may introduce fixed sized types

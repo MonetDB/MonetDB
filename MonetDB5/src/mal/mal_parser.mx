@@ -778,7 +778,7 @@ parseAtom(Client cntxt)
 	modnme = putName(nxt, l);
 	advance(cntxt,l);
 	if (currChar(cntxt) != ':')
-		tpe= TYPE_int;	/* no type qualifier */
+		tpe= TYPE_void;	/* no type qualifier */
 	else tpe = parseTypeId(cntxt, TYPE_int);
 	malAtomDefinition(modnme, tpe);
 	cntxt->nspace = fixModule(cntxt->nspace, modnme);
