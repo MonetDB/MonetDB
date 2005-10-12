@@ -139,7 +139,6 @@ module 'sql_server'
 [ "sht(str) : sht"							  ]
 [ "sht(str, int) : sht"							  ]
 [ "sht(str, int, int) : sht"						  ]
-[ "sql_mark(BAT[any::1,any], oid) : BAT[any::1,oid]"			  ]
 [ "sqlclient( Stream s_in, Stream s_out ) "				  ]
 [ "sqlconsole( ) "							  ]
 [ "sqllogmanager() : void"						  ]

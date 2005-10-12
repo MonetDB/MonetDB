@@ -43,7 +43,8 @@ Over..
 [ "  string2"	]
 [ "string3  "	]
 [ "  string4  "	]
-#
+# 4 # querytype
+[ 4	]
 # 3 # querytype
 # trimtest # table_name
 # str # name
