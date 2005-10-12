@@ -1,5 +1,5 @@
-create table test (m interval month);
+create table t1019122 (m interval month);
 commit;
-select * from test;
-drop table test;
+select * from t1019122;
+drop table t1019122;
 commit;

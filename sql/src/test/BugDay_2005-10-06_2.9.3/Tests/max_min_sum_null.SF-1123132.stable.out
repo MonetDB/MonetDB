@@ -25,7 +25,7 @@ Over..
 # 4 # querytype
 [ 3	]
 # 3 # querytype
-# test,	test,	test # table_name
+# t1123132,	t1123132,	t1123132 # table_name
 # min_aap,	max_aap,	sum_aap # name
 # int,	int,	bigint # type
 # 10,	10,	20 # length
