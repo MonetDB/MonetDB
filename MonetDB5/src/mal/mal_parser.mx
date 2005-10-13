@@ -943,7 +943,7 @@ We simply keep track of the number of arguments added and
 during the final phase reshuffle the return values to the beginning (?)
 */
 	if (currChar(cntxt)== ':'){
-		type = typeElm(cntxt, TYPE_any);
+		type = typeElm(cntxt, TYPE_void);
 		setPolymorphic(curInstr,type,TRUE);
 		setVarType(curBlk,curInstr->argv[0],type);
 		@:propList(curInstr->argv[0])@
@@ -1125,7 +1125,7 @@ MalBlkPtr parseCommandPattern(Client cntxt, int kind){
 	char ch;
 
 	int varid=0;
-	int type= TYPE_any;
+	int type= TYPE_void;
 
 	@:fcnHeader@
 	getInstrPtr(curBlk,0)->token= kind;

@@ -204,6 +204,7 @@ activities. Each client runs in its own process thread. Its identity
 is retained here for access by others (=father).
 @h
 	Thread      mythread;
+	size_t		mypid;
 	str     	errbuf;     /* location of GDK exceptions */
 	struct CLIENT   *father;    
 @-
@@ -365,8 +366,13 @@ allocation and lookup scheme.
 Client getClient()
 {
 	Client c;
-	Thread tid= THRget(THRgettid());
+	size_t pid= MT_getpid();
+	Thread tid;
 
+	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
+		if( c->mypid == pid) return c;
+
+	tid= THRget(THRgettid());
 	for(c = mal_clients; c < mal_clients+MAL_MAXCLIENTS; c++) 
 		if( c->mythread == tid) return c;
 
@@ -449,7 +455,7 @@ it starts serviceing statements
 void initClientThread(Client c)
 {
 	Thread t;
-	c->mythread = t=  THRnew(MT_getpid(),c->user);
+	c->mythread = t=  THRnew(c->mypid=MT_getpid(),c->user);
 	GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
 	c->errbuf = GDKerrbuf;
 	c->errbuf[0]=0;
@@ -572,6 +578,7 @@ void freeClient(Client c)
 	c->login = c->delay = c->logout = 0;
 	THRdel(c->mythread);
 	c->mythread= 0;
+	c->mypid= 0;
 	if (c->user) {
 		GDKfree(c->user); 
 		c->user = NULL;

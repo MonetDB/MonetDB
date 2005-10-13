@@ -131,7 +131,7 @@ initClientPrg(Client cntxt, str nme)
 	mb = cntxt->curprg->def;
 	p = getSignature(cntxt->curprg);
 	setModuleScope(p, cntxt->nspace);
-	setVarType(mb, findVariable(mb, nme), TYPE_int);
+	setVarType(mb, findVariable(mb, nme), TYPE_void);
 	insertSymbol(cntxt->nspace, cntxt->curprg);
 	cntxt->glb = 0;
 	assert(cntxt->curprg->def != NULL);
