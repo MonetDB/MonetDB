@@ -603,6 +603,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 {
 	int i, ok = 1, count;
 	res_table *t = res_tables_find(m->results, res_id);
+	char *buf,*b;
 
 	if (!s)
 		return 0;
@@ -628,10 +629,8 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 	}
 	if (ok)
-		ok = (stream_write(s, " # table_name\n", 14, 1) == 1);
+		ok = (stream_write(s, " # table_name\n# ", 16, 1) == 1);
 
-	if (ok)
-		ok = (stream_write(s, "# ", 2, 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
 
@@ -640,10 +639,8 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 	}
 	if (ok)
-		ok = (stream_write(s, " # name\n", 8, 1) == 1);
+		ok = (stream_write(s, " # name\n# ", 10, 1) == 1);
 
-	if (ok)
-		ok = (stream_write(s, "# ", 2, 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
 
@@ -652,10 +649,8 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 	}
 	if (ok)
-		ok = (stream_write(s, " # type\n", 8, 1) == 1);
+		ok = (stream_write(s, " # type\n# ", 10, 1) == 1);
 
-	if (ok)
-		ok = (stream_write(s, "# ", 2, 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
 
@@ -744,14 +739,23 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		if (ok)
 			ok = (stream_write(s, " # tuplecount\n", 14, 1) == 1);
 	}
+	buf = alloca(t->nr_cols*2+100);
+	sprintf(buf,"# %d",t->id);
 
-	if (ok)
-		ok = (stream_printf(s, "# %d", t->id) >= 0);
+	/* if (ok)
+		ok = (stream_printf(s, "# %d", t->id) >= 0); */
 
+	b= buf+strlen(buf);
 	for (i = 1; i < t->nr_cols && ok; i++)
-		ok = (stream_write(s, ",\t", 2, 1) == 1);
+	{
+		*b++ =','; *b++ = '\t'; 
+	}
+		/* ok = (stream_write(s, ",\t", 2, 1) == 1);
 	if (ok)
-		ok = (stream_write(s, " # id\n", 6, 1) == 1);
+		ok = (stream_write(s, " # id\n", 6, 1) == 1); */
+	strcat(b, " # id\n");
+	while(*b) b++;
+	ok = (stream_write(s, buf, b-buf, 1) == 1); 
 
 	if (ok)
 		return mvc_export_table(m, s, t, 0, m->reply_size);
