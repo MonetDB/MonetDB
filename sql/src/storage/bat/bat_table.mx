@@ -183,3 +183,44 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 	/* if rid in updates remove */
 	return 0;
 }
+
+
+int
+table_dump(sql_trans *tr, sql_table *t)
+{
+	node *n = cs_first_node(&t->columns);
+	int i, l = cs_size(&t->columns);
+	BAT **b = (BAT**)GDKmalloc(sizeof(BAT*) * l);
+	
+	for (i = 0; n; n = n->next, i++) {
+		sql_column *c = n->data;
+
+		b[i] = bind_bat(tr, c, RDONLY);
+	}
+	BATmultiprintf(GDKstdout, l +1, b, TRUE, 0, 1);
+	for (i = 0; i < l; i++)
+		bat_destroy(b[i]);
+	return 0;
+}
+
+int
+table_check(sql_trans *tr, sql_table *t)
+{
+	node *n = cs_first_node(&t->columns);
+	int cnt = -1;
+	
+	for (; n; n = n->next) {
+		sql_column *c = n->data;
+		BAT *b;
+
+		b = bind_bat(tr, c, RDONLY);
+		if (cnt == -1) {
+			cnt = BATcount(b);
+		} else if (cnt != BATcount(b)) {
+			assert(0);
+			return (cnt - BATcount(b));
+		}
+		bat_destroy(b);
+	}
+	return 0;
+}

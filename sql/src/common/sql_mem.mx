@@ -51,7 +51,7 @@ sql_ref_dec(sql_ref *r)
 }
 
 
-#define SA_BLOCK (4*1024*1024)
+#define SA_BLOCK (64*1024)
 
 sql_allocator *sa_create()
 {
@@ -61,6 +61,10 @@ sql_allocator *sa_create()
 	sa->nr = 1;
 	sa->blks = NEW_ARRAY(char*,sa->size);
 	sa->blks[0] = NEW_ARRAY(char,SA_BLOCK);
+	if (!sa->blks[0]) {
+		_DELETE(sa);
+		return NULL;
+	}
 	sa->used = 0;
 	return sa;
 }
@@ -70,7 +74,7 @@ sql_allocator *sa_reset( sql_allocator *sa )
 	int i ;
 
 	for (i = 1; i<sa->nr; i++) {
-		GDKfree(sa->blks[i]);
+		_DELETE(sa->blks[i]);
 	}
 	sa->nr = 1;
 	sa->used = 0;
