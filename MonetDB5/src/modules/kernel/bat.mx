@@ -2221,7 +2221,6 @@ BKCbat_append_void_bat_wrap(int *r, int *bid, int *uid)
 		BBPunfix(i->batCacheid);
 		return throwMessage("bat.append", "Cannot access descriptor");
 	}
-	i = BATsetaccess(i, 0);
 	if (u->htype == TYPE_void)
 		void_append_bat(i, u);
 	else
