@@ -742,19 +742,14 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	buf = alloca(t->nr_cols*2+100);
 	sprintf(buf,"# %d",t->id);
 
-	/* if (ok)
-		ok = (stream_printf(s, "# %d", t->id) >= 0); */
+	for(b=buf; *b; b++) ;
 
-	b= buf+strlen(buf);
 	for (i = 1; i < t->nr_cols && ok; i++)
 	{
 		*b++ =','; *b++ = '\t'; 
 	}
-		/* ok = (stream_write(s, ",\t", 2, 1) == 1);
-	if (ok)
-		ok = (stream_write(s, " # id\n", 6, 1) == 1); */
-	strcat(b, " # id\n");
-	while(*b) b++;
+	*b++ = ' '; *b++= '#'; *b++= ' ';
+	*b++ = 'i'; *b++= 'd'; *b++= '\n'; *b=0;
 	ok = (stream_write(s, buf, b-buf, 1) == 1); 
 
 	if (ok)

@@ -156,6 +156,7 @@ to allow inspection.
 	optimizerCheck(c->curprg->def,"sql.baseline",0,0);
 	but we need multiplex expansion */
 	OPTmultiplex(c->curprg->def,0,0);
+	ARoptimizer(c->curprg->def, 0, 0);
 }
 
 @-
