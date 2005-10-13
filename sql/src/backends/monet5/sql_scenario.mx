@@ -934,7 +934,9 @@ query block.
 
 extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-		chkProgram(c->nspace, c->curprg->def); /* make all types known */
+		chkTypes(c->nspace, c->curprg->def); /* resolve types */
+		/* we know more in this case then
+			chkProgram(c->nspace, c->curprg->def); */
 		if (!c->curprg->def->errors && m->mode != m_prepare &&
 /*
 		    (msg = sql_get_var(m,"optimizer")) == NULL) {

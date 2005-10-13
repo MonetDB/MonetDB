@@ -454,6 +454,8 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 	int rseplen= 3;
 
 	int i, ok = 1;
+	char *buf = NULL;
+	int len = 0;
 
 	m->type = Q_RESULT;
 	if (!s)
@@ -470,40 +472,30 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 		}
 
 		if (c->type->type->eclass == EC_DEC) {
-			char *buf = NULL;
-			int len = 0;
 			int l = dec_tostr((void *) (ptrdiff_t) c->type->scale, &buf, &len,
 					  c->mtype, c->p);
 
 			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
 		} else if (c->type->type->eclass == EC_TIME && strcmp(c->type->type->sqlname, "timetz") == 0) {
-			char *buf = NULL;
-			int len = 0;
 			int l = sql_time_tostr((void *) m, &buf, &len,
 					       c->mtype, c->p);
 
 			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
 		} else if (c->type->type->eclass == EC_TIMESTAMP && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
-			char *buf = NULL;
-			int len = 0;
 			int l = sql_timestamp_tostr((void *) m, &buf, &len,
 						    c->mtype, c->p);
 
 			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
 		} else if (!c->p || ATOMcmp(c->mtype, ATOMnilptr(c->mtype), c->p) == 0) {
 			ok = (stream_write(s, "NULL", sizeof("NULL") - 1, 1) == 1);
 		} else {
-			char *buf= NULL;
-			int len =0;
 			int l = (*BATatoms[c->mtype].atomToStr) (&buf, &len, c->p);
 
 			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
 		}
 	}
+	if( len)
+		_DELETE(buf);
 	m->results = res_tables_remove(m->results, t);
 	if (ok)
 		ok = (stream_write(s, rsep, rseplen, 1) == 1);
