@@ -1384,7 +1384,8 @@ int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s)
 	int nr = _dumpstmt(be, mb, s);
 	mvc *c = be->mvc;
 
-	if (c->cache && c->type != Q_RESULT && c->type != Q_UPDATE) {
+	if (c->cache && 
+	    c->type != Q_RESULT && c->type != Q_TABLE && c->type != Q_UPDATE) {
 		InstrPtr q = newStmt2(mb, sqlRef, exportResultRef);
 		return getDestVar(q);
 	}

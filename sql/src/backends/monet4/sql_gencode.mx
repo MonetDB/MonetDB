@@ -1258,7 +1258,8 @@ backend_dumpstmt(stmt *s, int *nr, backend *sql)
 		stream_write(sql->out, dbg, 1, l);
 	}
 
-	if (c->cache && c->type != Q_RESULT && c->type != Q_UPDATE) {
+	if (c->cache && 
+	    c->type != Q_RESULT && c->type != Q_TABLE && c->type != Q_UPDATE) {
 		char *msg = "mvc_export_default(myc, Output);\n";
 		stream_write(sql->out, msg, strlen(msg), 1);
 	}
