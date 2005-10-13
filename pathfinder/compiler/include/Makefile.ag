@@ -45,8 +45,6 @@ EXTRA_DIST = \
 	logical.h \
 	logical_mnemonic.h \
 	mem.h \
-	milalgebra.h \
-	milalgebra_mnemonic.h \
 	mildebug.h \
 	milgen.h \
 	mil.h \
