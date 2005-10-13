@@ -3,7 +3,7 @@ package DBD::monetdb;
 use strict;
 use sigtrap;
 use DBI();
-use MapiLib();
+use MonetDB::CLI();
 
 our $VERSION = '0.06';
 our $drh = undef;
@@ -57,16 +57,14 @@ sub connect {
     $user     ||= 'monetdb';
     $password ||= 'monetdb';
 
-    my $mapi = MapiLib::mapi_connect($host, $port, $user, $password, $lang);
-    return $drh->set_err(-1,'Undefined Mapi handle') unless $mapi;
-    my $err = MapiLib::mapi_error($mapi);
-    return $drh->set_err($err, MapiLib::mapi_error_str($mapi)) if $err;
+    my $cxn = eval { MonetDB::CLI->connect($host, $port, $user, $password, $lang) };
+    return $drh->set_err(-1, $@) if $@;
 
     my ($outer, $dbh) = DBI::_new_dbh($drh, { Name => $dsn });
 
     $dbh->STORE('Active', 1 );
 
-    $dbh->{monetdb_connection} = $mapi;
+    $dbh->{monetdb_connection} = $cxn;
     $dbh->{monetdb_language} = $lang;
 
     return $outer;
@@ -145,10 +143,9 @@ sub _count_param {
 sub prepare {
     my ($dbh, $statement, $attr) = @_;
 
-    my $mapi = $dbh->{monetdb_connection};
-    my $hdl = MapiLib::mapi_new_handle($mapi);
-    my $err = MapiLib::mapi_error($mapi);
-    return $dbh->set_err($err, MapiLib::mapi_error_str($mapi)) if $err;
+    my $cxn = $dbh->{monetdb_connection};
+    my $hdl = eval { $cxn->new_handle };
+    return $dbh->set_err(-1, $@) if $@;
 
     my ($outer, $sth) = DBI::_new_sth($dbh, { Statement => $statement });
 
@@ -472,8 +469,7 @@ sub tables {
 sub disconnect {
     my ($dbh) = @_;
 
-    my $mapi = $dbh->{monetdb_connection};
-    MapiLib::mapi_disconnect($mapi) if $mapi;
+    delete $dbh->{monetdb_connection};
     $dbh->STORE('Active', 0 );
     return 1;
 }
@@ -510,8 +506,6 @@ sub DESTROY {
     my ($dbh) = @_;
 
     $dbh->disconnect if $dbh->FETCH('Active');
-    my $mapi = $dbh->{monetdb_connection};
-    MapiLib::mapi_destroy($mapi) if $mapi;
 }
 
 
@@ -551,28 +545,22 @@ sub execute {
     }
     $sth->trace_msg("    -- Statement: $statement\n", 5);
 
-    my $mapi = $dbh->{monetdb_connection};
     my $hdl = $sth->{monetdb_hdl};
-    MapiLib::mapi_query_handle($hdl, $statement);
-    my $error = MapiLib::mapi_error($mapi) || 0;
-    my $error_str = MapiLib::mapi_error_str($mapi) || '';
-    my $result_error = MapiLib::mapi_result_error($hdl) || '';
-    $error ||= -1 if $result_error;
-    $result_error ||= $error_str;
-    return $sth->set_err($error, $result_error) if $error;
+    eval{ $hdl->query($statement) };
+    return $sth->set_err(-1, $@) if $@;
 
-    my $rows = MapiLib::mapi_rows_affected($hdl);
+    my $rows = $hdl->rows_affected;
 
-    if ( MapiLib::mapi_get_querytype($hdl) != 3 && $dbh->{monetdb_language} eq 'sql') {
+    if ( $hdl->querytype != 3 && $dbh->{monetdb_language} eq 'sql') {
         $sth->{monetdb_rows} = $rows;
         return $rows || '0E0';
     }
     my ( @names, @types, @precisions, @nullables );
-    my $field_count = MapiLib::mapi_get_field_count($hdl);
+    my $field_count = $hdl->columncount;
     for ( 0 .. $field_count-1 ) {
-        push @names     , MapiLib::mapi_get_name($hdl, $_);
-        push @types     , MapiLib::mapi_get_type($hdl, $_);
-        push @precisions, MapiLib::mapi_get_len ($hdl, $_);
+        push @names     , $hdl->name  ($_);
+        push @types     , $hdl->type  ($_);
+        push @precisions, $hdl->length($_);
         push @nullables , 2;  # TODO
     }
     $sth->STORE('NUM_OF_FIELDS', $field_count) unless $sth->FETCH('NUM_OF_FIELDS');
@@ -595,15 +583,13 @@ sub fetch {
     return $sth->set_err(-900,'Statement handle not marked as Active')
         unless $sth->FETCH('Active');
     my $hdl = $sth->{monetdb_hdl};
-    my $field_count = MapiLib::mapi_fetch_row($hdl);
+    my $field_count = eval{ $hdl->fetch };
     unless ( $field_count ) {
         $sth->STORE('Active', 0 );
-        my $mapi = $sth->{Database}{monetdb_connection};
-        my $err = MapiLib::mapi_error($mapi);
-        $sth->set_err($err, MapiLib::mapi_error_str($mapi)) if $err;
+        $sth->set_err(-1, $@) if $@;
         return;
     }
-    my @row = map MapiLib::mapi_fetch_field($hdl, $_), 0 .. $field_count-1;
+    my @row = map $hdl->field($_), 0 .. $field_count-1;
     map { s/\s+$// } @row if $sth->FETCH('ChopBlanks');
 
     $sth->{monetdb_rows}++;
@@ -624,11 +610,9 @@ sub finish {
     my ($sth) = @_;
     my $hdl = $sth->{monetdb_hdl};
 
-    if ( MapiLib::mapi_finish($hdl) ) {
-        my $mapi = $sth->{Database}{monetdb_connection};
-        my $err = MapiLib::mapi_error($mapi) || -1;
-        return $sth->set_err($err, MapiLib::mapi_error_str($mapi));
-    }
+    eval{ $hdl->finish };
+    return $sth->set_err(-1, $@) if $@;
+
     return $sth->SUPER::finish;  # sets Active off
 }
 
@@ -661,9 +645,7 @@ sub STORE {
 sub DESTROY {
     my ($sth) = @_;
 
-    $sth->STORE('Active', 0 );  # we don't need to call $sth->finish because
-                                # mapi_close_handle() calls finish_handle()
-    MapiLib::mapi_close_handle($sth->{monetdb_hdl}) if $sth->{monetdb_hdl};
+    $sth->STORE('Active', 0 );
 }
 
 
@@ -686,8 +668,7 @@ DBD::monetdb - MonetDB Driver for DBI
 =head1 DESCRIPTION
 
 DBD::monetdb is a Pure Perl client interface for the MonetDB Database Server.
-However, it requires the SWIG generated MapiLib - a wrapper module for
-libMapi.
+It requires MonetDB::CLI (and one of its implementations).
 
 =head2 Outline Usage
 
@@ -879,6 +860,6 @@ Contributor(s): Steffen Goeldner.
 
 =head2 Perl modules
 
-L<DBI>, L<MapiLib>, L<DBD::monetdbPP>
+L<DBI>, L<MonetDB::CLI>
 
 =cut
