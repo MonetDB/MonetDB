@@ -753,7 +753,16 @@ reduce (PFcnode_t * p, int goalnt)
 
         /* CoreExpr:           text (CoreExpr) */
         case 39:
-            TY(p) = PFty_text ();
+            /*
+             * XQuery Draft, 3.7.3.4 (Sep 15, 2005 version):
+             *
+             * "If the result of atomization is an empty sequence,
+             *  no text node is constructed."
+             */
+            if (PFty_subtype (PFty_empty (), TY(L(p))))
+                TY(p) = PFty_opt (PFty_text ());
+            else
+                TY(p) = PFty_text ();
             break;
 
         /* CoreExpr:           doc (CoreExpr) */

@@ -917,6 +917,9 @@
     .arity = 1, .par_ty = { PFty_star (PFty_item ())},                   \
     .ret_ty = PFty_star (PFty_node ()),                                  \
     .alg = PFbui_pf_item_seq_to_node_seq }                               \
+  /* FIXME:                                                     */       \
+  /*   The W3C specs describe variants of is2uA for each node   */       \
+  /*   (with differences in the empty sequence handling).       */       \
 , /* pf:item-sequence-to-untypedAtomic (item*) as untypedAtomic */       \
   { .ns = PFns_pf, .loc = "item-sequence-to-untypedAtomic",              \
     .arity = 1, .par_ty = { PFty_star (PFty_item ())},                   \

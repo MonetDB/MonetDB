@@ -52,3 +52,8 @@
 
     [For developers: We'd only need a proper way to do this with MonetDB.]
 
+
+ -- Pathfinder implements a single fs:item-sequence-to-untypedAtomic()
+    function, while the W3C drafts since June 2005 describes variants
+    for each node kind.  This affects the handling of empty sequence
+    arguments (particularly for text node construction).
