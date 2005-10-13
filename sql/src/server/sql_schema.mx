@@ -810,7 +810,6 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 		(void) sql_error(sql, 02, "alter add column with key constraint not implemented\n");
 		return res;
 	}
-	(void) ss;
 	switch (s->token) {
 	case SQL_UNIQUE:
 	case SQL_PRIMARY_KEY:
@@ -820,6 +819,10 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 
 		if (s->token == SQL_PRIMARY_KEY && !alter && t->pkey) {
 			(void) sql_error(sql, 02, "A table can only have one primary key\n");
+			return res;
+		}
+		if (name && mvc_bind_key(sql, ss, name)) {
+			(void) sql_error(sql, 02, "Create Key failed, key %s allready exists", name);
 			return res;
 		}
 		kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
@@ -839,6 +842,10 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 
 		if (!rt) {
 			(void) sql_error(sql, 02, "table %s unknown\n", rtname);
+			return res;
+		}
+		if (name && mvc_bind_key(sql, ss, name)) {
+			(void) sql_error(sql, 02, "Create Key failed, key %s allready exists", name);
 			return res;
 		}
 
@@ -1079,6 +1086,9 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 		dnode *nms = n->next->data.lval->h;
 		node *fnms;
 
+		if (name && mvc_bind_key(sql, ss, name)) {
+			return sql_error(sql, 02, "Create Key failed, key %s allready exists", name);
+		}
 		if (n->next->next->data.lval) {	/* find unique referenced key */
 			dnode *rnms = n->next->next->data.lval->h;
 			list *cols = list_create(NULL);

@@ -151,6 +151,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		cnt++;
 		c = n->data;
 		b = bind_bat(tr, c, UPD);
+		assert(rid == BATcount(b));
 		BUNins(b, (ptr) &rid, val);
 		bat_destroy(b);
 	}

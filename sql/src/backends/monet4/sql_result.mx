@@ -417,29 +417,40 @@ mvc_export_result dumps the sql header information and the
 first part (reply_size) of the result set. It should be produced in Monet format to 
 enable mapi to work with it.
 @c
+static str mvcDefaultMsg[] = {
+	"#-\n# 2 # querytype\n",
+	"#-\n# 3 # querytype\n",
+	"#-\n# 4 # querytype\n",
+	"#-\n# 5 # querytype\n",
+	"#-\n# 6 # querytype\n",
+	"#-\n# 7 # querytype\n",
+	"#-\n# 8 # querytype\n",
+	"#-\n# 9 # querytype\n"
+};
+
+static int mvcDefaultMsg_len = 19; /*strlen("#-\n# 9 # querytype\n");*/
+
 int
 mvc_export_default(mvc *m, stream *s)
 {
-    str mvcDefaultMsg= "#-\n# 0 # querytype\n";
-    int ok = 1;
+	int ok = 1;
 
-    if (s) {
-        if(m->type>=0 && m->type < 10 ){
-            mvcDefaultMsg[5]='0'+m->type;
-            ok = (stream_write(s, mvcDefaultMsg, strlen(mvcDefaultMsg), 1) == 1);
-        } else {
-            /* indicate to client that a new SQL command starts here */
-            ok = (stream_write(s, "#-\n", 3, 1) == 1);
+	assert(m->type > 1);
+   	if (s) {
+		if(m->type>1 && m->type < 10 ){
+			ok = (stream_write(s, mvcDefaultMsg[m->type-2], mvcDefaultMsg_len, 1) == 1);
+		} else {
+			/* indicate to client that a new SQL command starts here */
+			ok = (stream_write(s, "#-\n", 3, 1) == 1);
 
-            if (ok)
-                ok = (stream_printf(s, "# " SZFMT, m->type) >= 0);
-            if (ok)
-                ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
-        }
-    }
-    return (ok) ? 0 : -1;
+			if (ok)
+				ok = (stream_printf(s, "# " SZFMT, m->type) >= 0);
+			if (ok)
+				ok = (stream_write(s, " # querytype\n", 13, 1) == 1);
+		}
+	}
+	return (ok) ? 0 : -1;
 }
-
 
 static int
 mvc_export_row(mvc *m, stream *s, res_table *t)

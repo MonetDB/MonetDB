@@ -326,34 +326,37 @@ address STRprefix;
 command calc.stringright(s:str,l:int):str
 address STRsuffix;
 
+command calc.stringlength( s:str ) :int 
+address stringLength;
+
 # math 
-command acos(x:flt):flt address MATHunary_ACOSflt;
-command acos(x:dbl):dbl address MATHunary_ACOSdbl;
-command asin(x:flt):flt address MATHunary_ASINflt;
-command asin(x:dbl):dbl address MATHunary_ASINdbl;
-command atan(x:flt):flt address MATHunary_ATANflt;
-command atan(x:dbl):dbl address MATHunary_ATANdbl;
-command atan2(x:flt,y:flt):flt address MATHbinary_ATAN2flt;
-command atan2(x:dbl,y:dbl):dbl address MATHbinary_ATAN2dbl;
-command cos(x:flt):flt address MATHunary_COSflt;
-command cos(x:dbl):dbl address MATHunary_COSdbl;
-command sin(x:flt):flt address MATHunary_SINflt;
-command sin(x:dbl):dbl address MATHunary_SINdbl;
-command tan(x:flt):flt address MATHunary_TANflt;
-command tan(x:dbl):dbl address MATHunary_TANdbl;
-command cosh(x:flt):flt address MATHunary_COSHflt;
-command cosh(x:dbl):dbl address MATHunary_COSHdbl;
-command sinh(x:flt):flt address MATHunary_SINHflt;
-command sinh(x:dbl):dbl address MATHunary_SINHdbl;
-command tanh(x:flt):flt address MATHunary_TANHflt;
-command tanh(x:dbl):dbl address MATHunary_TANHdbl;
-command exp(x:flt):flt address MATHunary_EXPflt;
-command exp(x:dbl):dbl address MATHunary_EXPdbl;
-command log(x:dbl):dbl address MATHunary_LOGdbl;
-command log10(x:dbl):dbl address MATHunary_LOG10dbl;
+command calc.acos(x:flt):flt address MATHunary_ACOSflt;
+command calc.acos(x:dbl):dbl address MATHunary_ACOSdbl;
+command calc.asin(x:flt):flt address MATHunary_ASINflt;
+command calc.asin(x:dbl):dbl address MATHunary_ASINdbl;
+command calc.atan(x:flt):flt address MATHunary_ATANflt;
+command calc.atan(x:dbl):dbl address MATHunary_ATANdbl;
+command calc.atan2(x:flt,y:flt):flt address MATHbinary_ATAN2flt;
+command calc.atan2(x:dbl,y:dbl):dbl address MATHbinary_ATAN2dbl;
+command calc.cos(x:flt):flt address MATHunary_COSflt;
+command calc.cos(x:dbl):dbl address MATHunary_COSdbl;
+command calc.sin(x:flt):flt address MATHunary_SINflt;
+command calc.sin(x:dbl):dbl address MATHunary_SINdbl;
+command calc.tan(x:flt):flt address MATHunary_TANflt;
+command calc.tan(x:dbl):dbl address MATHunary_TANdbl;
+command calc.cosh(x:flt):flt address MATHunary_COSHflt;
+command calc.cosh(x:dbl):dbl address MATHunary_COSHdbl;
+command calc.sinh(x:flt):flt address MATHunary_SINHflt;
+command calc.sinh(x:dbl):dbl address MATHunary_SINHdbl;
+command calc.tanh(x:flt):flt address MATHunary_TANHflt;
+command calc.tanh(x:dbl):dbl address MATHunary_TANHdbl;
+command calc.exp(x:flt):flt address MATHunary_EXPflt;
+command calc.exp(x:dbl):dbl address MATHunary_EXPdbl;
+command calc.log(x:dbl):dbl address MATHunary_LOGdbl;
+command calc.log10(x:dbl):dbl address MATHunary_LOG10dbl;
 #/* TODO */
-command floor(y:flt):flt address MATHunary_FLOORflt;
-command floor(y:dbl):dbl address MATHunary_FLOORdbl;
+command calc.floor(y:flt):flt address MATHunary_FLOORflt;
+command calc.floor(y:dbl):dbl address MATHunary_FLOORdbl;
 
 @- SQL functions
 The SQL functions are all recognized by their module name.
