@@ -42,7 +42,7 @@ class server:
         except (IOError, error), e:
             raise MapiError, e.args
 
-        self.cmd_intern(user+':'+password+'\n')
+        self.cmd_intern(user+':'+password+':'+language+'\n')
         self.result()
 
         if trace:

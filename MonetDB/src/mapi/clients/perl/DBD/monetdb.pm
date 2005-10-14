@@ -551,7 +551,7 @@ sub execute {
 
     my $rows = $hdl->rows_affected;
 
-    if ( $hdl->querytype != 3 && $dbh->{monetdb_language} eq 'sql') {
+    if ( $dbh->{monetdb_language} eq 'sql' && $hdl->querytype != 3 ) {
         $sth->{monetdb_rows} = $rows;
         return $rows || '0E0';
     }

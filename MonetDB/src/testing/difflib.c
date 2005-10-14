@@ -698,7 +698,7 @@ lwc_diff2html(char *old_fn, char *new_fn, char *lwc_diff_fn, char *html_fn, char
 		while ((ok = fgets(line, BUFLEN, lwc_diff_fp)) && strchr(" -+", line[0]))
 			if (line[1] != '\3') {
 				if (newline_ || newline)
-					Minor |= (minor = (strchr("#=\n", line[1]) ? 1 : 0));
+					Minor |= (minor = (strchr("#=\n\2", line[1]) ? 1 : 0));
 				line[strlen(line) - 1] = '\0';
 				if (line[1] == '\2')
 					sprintf(line + 1, " ");
