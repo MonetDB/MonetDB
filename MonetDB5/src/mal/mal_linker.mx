@@ -139,7 +139,16 @@ getAddress(str modnme, str fcnname, int silent)
 	stream_printf(GDKout, "addres of %s.%s ?\n",modnme,fcnname);
 #endif
 @-
-First try the program at large.
+Search module for occurrence of the function
+@c
+	for(idx =0; idx < maxmodules && moduleLoaded[idx]; idx++)
+	if( strcmp(modnme, moduleLoaded[idx])==0) {
+		adr = (MALfcn) dlsym(moduleHandle[idx], fcnname);
+		errmsg= dlerror();
+		if( adr != NULL) return adr;
+	}
+@-
+Try the program at large.
 @c
 	dl = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
 	errmsg= dlerror();
@@ -147,14 +156,6 @@ First try the program at large.
 		adr = (MALfcn) dlsym(dl, fcnname);
 		errmsg= dlerror();
 		if( errmsg== NULL && adr != NULL) return adr;
-	}
-@-
-Try all modules for occurrence of the function
-@c
-	for(idx =0; idx < maxmodules && moduleLoaded[idx]; idx++){
-		adr = (MALfcn) dlsym(moduleHandle[idx], fcnname);
-		errmsg= dlerror();
-		if( adr != NULL) return adr;
 	}
 @-
 Try to load it as a separate object

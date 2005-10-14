@@ -284,6 +284,15 @@ int bstreamClient(Client c, str prompt);
 
 ClientRec   mal_clients[MAL_MAXCLIENTS+1];
 
+void THRsuspend(Thread h){
+	(void) h;
+	/* printf("suspend Thread %d %d\n", h->tid, (int) h->pid);*/
+}
+void THRawake(Thread h){
+	(void) h;
+	/* printf("awake Thread %d %d\n", h->tid, (int) h->pid);*/
+}
+
 bstream *getConsole(Client c){
 	ClientInput *x;
 	if( c->bak == 0) return c->fdin;
@@ -455,7 +464,11 @@ it starts serviceing statements
 void initClientThread(Client c)
 {
 	Thread t;
-	c->mythread = t=  THRnew(c->mypid=MT_getpid(),c->user);
+	if( c->mythread){
+		printf("Re-initialize thread in initClientThread\n");
+		t= c->mythread;
+	} else
+		c->mythread = t=  THRnew(c->mypid=MT_getpid(),c->user);
 	GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
 	c->errbuf = GDKerrbuf;
 	c->errbuf[0]=0;
@@ -576,9 +589,13 @@ void freeClient(Client c)
 	}
 	c->father = 0;
 	c->login = c->delay = c->logout = 0;
+@-
+The threads may not be removed, but should become dormant
 	THRdel(c->mythread);
 	c->mythread= 0;
 	c->mypid= 0;
+@c
+	THRsuspend(c->mythread);
 	if (c->user) {
 		GDKfree(c->user); 
 		c->user = NULL;
