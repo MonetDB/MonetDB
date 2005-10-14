@@ -656,6 +656,7 @@ BBPinit(void)
 	if (BBPoid == 0) {
 		OIDseed(OIDrand());	/* if not yet done, init oid */
 	}
+	OIDbase(BBPoid);
 
 	/* will call BBPrecover if needed */
 	if (prepare_backup()) {

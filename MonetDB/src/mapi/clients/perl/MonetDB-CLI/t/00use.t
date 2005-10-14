@@ -14,12 +14,9 @@
 # Portions created by CWI are Copyright (C) 1997-2005 CWI.
 # All Rights Reserved.
 
-MTSAFE
+use Test::More tests => 2;
 
-SUBDIRS = HAVE_PERL_DEVEL?MonetDB-CLI-MapiLib HAVE_PERL_DEVEL?MonetDB-CLI HAVE_PERL_DEVEL?DBD HAVE_PERL_SWIG?Cimpl
-
-scripts_perl = {
-	EXT = pl pm
-	DIR = pkgdatadir/perl
-	SOURCES = Mapi.pm 
+BEGIN {
+    use_ok( MonetDB::CLI );
 }
+require_ok( MonetDB::CLI );

@@ -60,8 +60,8 @@ test = (
 ##                    r"^Mcreatedb: using default dbdir ",
 ##                    r"^Mcreatedb: calling .Mserver .*-db .* for the first time..$",
 ##                    r"^Mcreatedb: database .* has been initialized succesfully!$",
-                    r"^[Uu]sage: (?:/.*/)?(?:lt-)?(?:Mserver|MapiClient)(?: \[ options \])?(?: \[ script\+ \])? *$",
-##                    r"^!WARNING: GDKlockHome: created directory .*$",
+                      r"^[Uu]sage: (?:/.*/)?(?:lt-)?(?:Mserver|MapiClient)(?: \[ options \])?(?: \[ script\+ \])? *$",
+                      r"^!WARNING: GDKlockHome: created directory .*$",
                       r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.$",
                       r"^!WARNING: BBPdir: initializing BBP.$",
 ##                    r"^connection= .*:[0-9]*$",
@@ -78,6 +78,8 @@ test = (
                     r'^\[ "TOK_[A-Z]+",\t* +"int",\t* +"frozen",\t* +"constant",\t* +"[0-9]+"\t* +\]',
                 # remove wine errors:
 		    r"^fixme:.*$",
+		# ignore big- vs. little-endian byte-orders in test tests/BugDay_2005-10-06_4.8/Tests/print_CTgroup.SF-1315791.*:
+		    r"^\[  ?\\000\\000\\000[ !]\\000\\000\\000!? \]$",
                  ])+')',  re.MULTILINE),
         # differing error messages when loading non-existing modules in dynamic and static Mserver
         re.compile('(?:'+')|(?:'.join([
@@ -208,13 +210,13 @@ test = (
         # matched groups from "norm_in" are replaced by the respective element of "norm_out",
         # unless the latter is "None" (then, the respective match is kept as-is).
 norm_in  = re.compile('(?:'+')|(?:'.join([
-                r'^(ERROR = !|)(syntax|parse)( error, )(unexpected \$.* on line )?(.*\n)',
+                r'^(ERROR = !| *!|)(syntax|parse)( error, )(unexpected \$.* on line |unexpected .* in: )?(.*\n)',
                 r'^(.*: at )(\([0-9]+,[0-9]+\-[0-9]+,[0-9]+\))(: .*\n)',
                 r'^(ERROR = !ERROR: )(SQLerror:assert:|MALexception:)?(.*\n)',
 		r'^(Connection warning:.*\()(mserver_mal|mserver_sql)(\).*\n)',
            ])+')',  re.MULTILINE)
 norm_out = (
-                None, 'syntax/parse', None, 'unexpected $... on line ', None,
+                None, 'syntax/parse', None, 'unexpected ... on line/in: ', None,
                 None, '(0,0-0,0)', None,
                 None, '', None,
 		None, 'mserver_sql', None

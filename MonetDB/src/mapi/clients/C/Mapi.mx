@@ -1376,7 +1376,7 @@ close_result(MapiHdl hdl)
 		if (mid->active && !mid->active->needmore && read_into_cache(mid->active, 0) != MOK)
 			return MERROR;
 		assert(hdl->npending_close == 0 || (hdl->npending_close > 0 && hdl->pending_close != NULL));
-		if (mid->active) {
+		if (mid->active && result->cache.tuplecount < result->row_count) {
 			/* can't write "X" commands now, so save for later */
 			REALLOC(hdl->pending_close, hdl->npending_close + 1);
 			hdl->pending_close[hdl->npending_close] = result->tableid;
@@ -1396,7 +1396,7 @@ close_result(MapiHdl hdl)
 			if (hdl->pending_close)
 				free(hdl->pending_close);
 			hdl->pending_close = NULL;
-			if (mid->to != NULL) {
+			if (mid->to != NULL && result->cache.tuplecount < result->row_count) {
 				mid->active = hdl;
 				if (stream_printf(mid->to, "X" "close %d\n", result->tableid) < 0 || stream_flush(mid->to)) {
 					close_connection(mid);
