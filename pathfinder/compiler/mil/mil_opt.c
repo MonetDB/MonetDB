@@ -659,7 +659,7 @@ static int opt_mil(opt_t *o, char* milbuf) {
 	name.prefix[0] = assign.prefix[0] = 0;
 	curstmt = stmt = o->curstmt;
 
-	if (o->optimize == 0) {
+	if (!(o->mode&1)) {
 		opt_printmil(o, milbuf, o->sec, -1); /* just echo it */
 	} else while((p = opt_skip(p, 0))[0]) {
 		if (new_statement) {
@@ -825,11 +825,11 @@ static int opt_mil(opt_t *o, char* milbuf) {
 
 /* opt_open(): set up our administration.
  */
-opt_t *opt_open(int optimize) {
+opt_t *opt_open(int mode) {
 	opt_t *o = (opt_t*) EXTERN_MALLOC(sizeof(opt_t));
 	if (o) {
 		memset(o, 0, sizeof(opt_t));
-		o->optimize = optimize;
+		o->mode = mode;
 		opt_setname("if", &name_if);
 		opt_setname("else", &name_else);
 		o->buf[OPT_SEC_PROLOGUE] = (char*) EXTERN_MALLOC(o->len[OPT_SEC_PROLOGUE] = 1024);

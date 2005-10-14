@@ -35,7 +35,14 @@
 
 #include "core.h"
 
-int PFprintMILtemp (PFcnode_t *, PFstate_t *, long tm, char** prologue, char** query, char** epilogue);
+static char* PFloadMIL();  /* MIL pattern for loading modules (and global variable init) */
+static char* PFstartMIL(); /* MIL pattern for starting query execution */
+static char* PFudfMIL();   /* MIL pattern for calling a UDF */
+static char* PFstopMIL();  /* MIL pattern for stopping query execution (and print) */
+static char* PFclearMIL(); /* MIL pattern for clearing re-usable variables */
+static char* PFdropMIL();  /* MIL pattern for dropping modules */
+
+int PFprintMILtemp (PFcnode_t *, int mode, char* genType, long tm, char** prologue, char** query, char** epilogue);
 
 #endif    /* MILPRINT_H */
 

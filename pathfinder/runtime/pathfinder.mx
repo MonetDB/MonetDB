@@ -882,41 +882,8 @@ MT_Lock pf_compiler_lock;
 /*
  * translate xquery to MIL and execute
  */
-static int
-exec_xquery(char *mode, char* xquery) {
-    char *prologue = NULL, *query = NULL, *epilogue = NULL, *err = NULL;
-    int len = 0, ret = GDK_FAIL, debug = strstr(mode,"debug") != NULL;
-    char *mapi = strstr(mode, "mapi")?"=":"";
-
-    if (debug) {
-        stream_printf(GDKout,
-                "%s#xquery######################################################\n",
-                mapi);
-        stream_write(GDKout, xquery, strlen(xquery), 1);
-    }
-    MT_set_lock(pf_compiler_lock, "CMDxquery");
-    err = pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
-    if (err) {
-        len = strlen(err);
-        if (*mapi) {
-            /* put ! before error lines */
-            char *p = err, *q = err;
-            while(*p) { if (*p++ == '\n') len++; }
-            err = (char*) alloca(len+3);
-            *err = '!'; 
-            for(p=err+1; *q; q++) {
-                *p++ = *q;
-                if (*q == '\n') *p++ = '!'; 
-            }
-            /* guard against errors that do not terminate in a newline */
-            if (*q && *q != '\n') *p++ = '\n';
-            else if (p[-1] == '!') p--;  
-            p[1] = 0;
-            len = p - err;
-        }
-    }
-    MT_unset_lock(pf_compiler_lock, "CMDxquery");
-
+int exec_xquery_mil(int debug, char *prologue, char *query, char *epilogue, char *err, char* mapi) {
+    int ret = GDK_FAIL;
     if (debug) {
         stream_printf(GDKout,
                 "%s#mil#########################################################\n",
@@ -934,7 +901,7 @@ exec_xquery(char *mode, char* xquery) {
                     "%s#err#########################################################\n",
                     mapi);
         }
-        stream_write(GDKout, err, len, 1);
+        stream_write(GDKout, err, strlen(err), 1);
     }
     if (prologue && query && epilogue) {
         if (debug) {
@@ -977,6 +944,42 @@ exec_xquery(char *mode, char* xquery) {
     return ret;
 }
 
+static int
+exec_xquery(char *mode, char* xquery) {
+    char *prologue = NULL, *query = NULL, *epilogue = NULL, *err;
+    int debug = strstr(mode,"debug") != NULL;
+    char *mapi = strstr(mode, "mapi")?"=":"";
+
+    if (debug) {
+        stream_printf(GDKout,
+                "%s#xquery######################################################\n",
+                mapi);
+        stream_write(GDKout, xquery, strlen(xquery), 1);
+    }
+    MT_set_lock(pf_compiler_lock, "CMDxquery");
+    err = pf_compile_MonetDB(xquery, mode, &prologue, &query, &epilogue);
+    if (err) {
+        int len = strlen(err);
+        if (*mapi) {
+            /* put ! before error lines */
+            char *p = err, *q = err;
+            while(*p) { if (*p++ == '\n') len++; }
+            err = (char*) alloca(len+3);
+            *err = '!'; 
+            for(p=err+1; *q; q++) {
+                *p++ = *q;
+                if (*q == '\n') *p++ = '!'; 
+            }
+            /* guard against errors that do not terminate in a newline */
+            if (*q && *q != '\n') *p++ = '\n';
+            else if (p[-1] == '!') p--;  
+            p[1] = 0;
+            len = p - err;
+        }
+    }
+    MT_unset_lock(pf_compiler_lock, "CMDxquery");
+    return exec_xquery_mil(debug, prologue, query, epilogue, err, mapi);
+}
 
 int
 CMDxquery(char** res, char *mode, char* xquery) {

@@ -172,6 +172,7 @@ PFcompile (FILE *pfin, FILE *pfout, PFstate_t *status)
     PFmil_t    *mroot  = NULL;
     PFarray_t  *mil_program = NULL;
     char       *xquery = NULL;
+    int        module_base;
 
     /* elapsed time for compiler phase */
     long tm, tm_first;
@@ -206,7 +207,7 @@ PFcompile (FILE *pfin, FILE *pfout, PFstate_t *status)
     STOP_POINT(1);
     
     tm_first = tm = PFtimer_start ();
-    PFparse_modules (proot);
+    module_base = PFparse_modules (proot);
     tm = PFtimer_stop (tm);
 
     if (status->timing)
@@ -322,7 +323,8 @@ PFcompile (FILE *pfin, FILE *pfout, PFstate_t *status)
     if (status->summer_branch) {
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
-        if (PFprintMILtemp (croot, status, tm_first, &prologue, &query, &epilogue))
+        if (PFprintMILtemp (croot, module_base+status->optimize, status->genType, status->timing?(tm_first|1):0, 
+                            &prologue, &query, &epilogue))
             goto failure;
         fputs(prologue, pfout);
         fputs(query, pfout);
@@ -499,7 +501,8 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
 {
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
-        long tm = PFtimer_start ();
+        long timing = PFtimer_start ();
+        int module_base;
 
         *prologue = NULL;
         *query = NULL;
@@ -511,13 +514,12 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         PFstate.summer_branch = true;
 
         if (strncmp(mode,"timing",6) == 0 ) {
-                PFstate.timing = 1;
+                if (!timing) timing = 1;
                 mode += 7;
         } else {
-                PFstate.timing = 0;
+                timing = 0;
         }
         if (strncmp(mode,"debug",5) == 0 ) {
-                PFstate.debug = 1;
                 mode += 6;
         }
         PFstate.genType = mode;
@@ -526,6 +528,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         }
 	/* repeat PFcompile, which we can't reuse as we don't want to deal with files here */
         PFparse (xquery, &proot);
+        module_base = PFparse_modules (proot);
         proot = PFnormalize_abssyn (proot);
         PFns_resolve (proot);
         PFvarscope (proot);
@@ -537,7 +540,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
-        (void)  PFprintMILtemp (croot, &PFstate, tm, prologue, query, epilogue);
+        (void)  PFprintMILtemp (croot, module_base+1, mode, timing, prologue, query, epilogue);
         pa_destroy(pf_alloc);
         return (*PFerrbuf) ? PFerrbuf : NULL;
 }

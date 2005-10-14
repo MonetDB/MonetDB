@@ -773,6 +773,9 @@ reduce (PFla_op_t *p, int goalnt)
         /* Rel:    project (project (Rel)) */
         case 94:
         {
+            /* If projlist2 is contained in projlist1, the second
+             * projection is redundant.
+             */
             break;
 #if 0
             /* THIS IS ONLY A TEST! */
@@ -781,14 +784,10 @@ reduce (PFla_op_t *p, int goalnt)
             int n1 = p->sem.proj.count;
             int n2 = L(p)->sem.proj.count;
 
-            /* If projlist2 is contained in projlist1, the second
-             * projection is redundant.
-             */
             if (contains_projlist (projlist1, n1, projlist2, n2)) {
                 L(p) = L(L(p));
                 rewritten = true;
             }
-
             break;
 #endif
         }

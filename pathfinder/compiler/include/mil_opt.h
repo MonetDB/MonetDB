@@ -109,7 +109,7 @@ typedef struct {
 #define OPT_COND(o)         OPT_COND_LEVEL(o,(o)->condlevel)
 
 typedef struct {
-    unsigned int optimize; /* if zero, don't optimize at all */ 
+    unsigned int mode;     /* 1-bit off => don't optimize */
 
     unsigned int curstmt;  /* number of detected MIL statements so far */
     unsigned int scope;    /* current scope depth */
