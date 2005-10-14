@@ -597,7 +597,20 @@ mvc_export_table(mvc *m, stream *s, res_table *t, unsigned int offset, unsigned 
 		return -1;
 	return 0;
 }
-
+@-
+improved formatting of positive integers
+@c
+int
+mvc_send_int(stream *s, int cnt){
+	char buf[50], *b;
+	b= buf+49;
+	do{
+		*b--= '0'+ (cnt %10);
+		cnt /=10;
+	} while(cnt>0);
+	b++;
+	return stream_write(s, b, 50- (b-buf),1)==1;
+}
 int
 mvc_export_result(mvc *m, stream *s, int res_id)
 {
@@ -732,19 +745,19 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 			BBPunfix(order->batCacheid);
 		} else
 			count = 1;
-		if (ok)
-			ok = (stream_printf(s, "# " SZFMT, count) >= 0);
+		ok = (stream_write(s, "# " , 2,1) >= 0);
+		ok= mvc_send_int(s,count);
 		for (i = 1; i < t->nr_cols && ok; i++)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 		if (ok)
 			ok = (stream_write(s, " # tuplecount\n", 14, 1) == 1);
 	}
 	buf = alloca(t->nr_cols*2+100);
-	sprintf(buf,"# %d",t->id);
+	ok = (stream_write(s, "# " , 2,1) >= 0);
+	mvc_send_int(s,t->id);
 
-	for(b=buf; *b; b++) ;
 
-	for (i = 1; i < t->nr_cols && ok; i++)
+	for (b=buf, i = 1; i < t->nr_cols && ok; i++)
 	{
 		*b++ =','; *b++ = '\t'; 
 	}
