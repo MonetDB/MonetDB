@@ -72,8 +72,6 @@ CONDITIONALS = {
     'CROSS_COMPILING'  : "@CROSS_COMPILING_FALSE@",
     'DOCTOOLS'         : "@DOCTOOLS_FALSE@",
     'HAVE_JAVA'        : "@HAVE_JAVA_FALSE@",
-    'HAVE_MONET5'      : "@HAVE_MONET5_FALSE@",
-    'HAVE_MONET'       : "@HAVE_MONET_FALSE@",
     'HAVE_PCRE'        : "@HAVE_PCRE_FALSE@",
     'HAVE_PERL'        : "@HAVE_PERL_FALSE@",
     'HAVE_PERL_DEVEL'  : "@HAVE_PERL_DEVEL_FALSE@",
@@ -88,9 +86,13 @@ CONDITIONALS = {
     'NOT_WIN32'        : "@NOT_WIN32_FALSE@",
     'PROFILING'        : "@PROFILING_FALSE@",
     # SQL:
+    'NATIVE_WIN32'     : "@NATIVE_WIN32_FALSE@",
+    # unknown at compile time, as Mtest.py is compiled with MonetDB(4);
+    # hence, we set them at runtime in main() below
+    'HAVE_MONET5'      : "@HAVE_MONET5_FALSE@",
+    'HAVE_MONET'       : "@HAVE_MONET_FALSE@",
     'MONET4'           : "@MONET4_FALSE@",
     'MONET5'           : "@MONET5_FALSE@",
-    'NATIVE_WIN32'     : "@NATIVE_WIN32_FALSE@",
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -2525,6 +2527,21 @@ def main(argv) :
 
     env = {}
     env['VERSION'] = MonetDBVersion()
+
+    # unknown at compile time, as Mtest.py is compiled with MonetDB(4);
+    # hence, we set then at runtime.
+    # X == true   =>  @X_TRUE@='',  @X_FALSE@='#'
+    # X == false  =>  @X_TRUE@='#', @X_FALSE@=''
+    if env['VERSION'] >= 49900:
+        CONDITIONALS['HAVE_MONET5'] = '#'
+        CONDITIONALS['HAVE_MONET'] = ''
+        CONDITIONALS['MONET4'] = ''
+        CONDITIONALS['MONET5'] = '#'
+    else:
+        CONDITIONALS['HAVE_MONET5'] = ''
+        CONDITIONALS['HAVE_MONET'] = '#'
+        CONDITIONALS['MONET4'] = '#'
+        CONDITIONALS['MONET5'] = ''
 
     # most intuitive (?) default settings
     dft['MONETDB_SOURCE']   = "GetMonetConfig('--source')"
