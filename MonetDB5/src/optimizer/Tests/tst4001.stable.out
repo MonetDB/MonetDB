@@ -43,7 +43,7 @@ end qry;	# 7
 #mdb.list("user","qry");
 #mdb.list("user","main");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #tesing the optimizers 	# 1  (_2:str)
 #setDebug(); 	# 2  (_4:str)
     t0 := alarm.usec();	# 3 ALARMusec (t0:lng)
@@ -64,7 +64,7 @@ function user.qry(i:dbl):dbl;
     l := calc.+(z,1:dbl);
     return z;
 end qry;
-function user.main():int;
+function user.main():void;
 #tesing the optimizers 
 #setDebug(); 
     t0 := alarm.usec();

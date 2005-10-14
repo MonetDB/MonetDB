@@ -74,8 +74,8 @@ stdout of test 'tst007` in directory 'src/mal` itself:
 !ERROR: 'entry_or_exittest' may not be used before being set in main[17]
 !ERROR: 'booleanexpr' may not be used before being set in main[30]
 !ERROR: 'booleanexpr' may not be used before being set in main[33]
-function user.main():int;	# 0  (main:int)
-# A collection of forloops, which should not execute 	# 1  ($2:str)
+function user.main():void;	# 0  (main:void)
+# A collection of forloops, which should not execute 	# 1  (_2:str)
 barrier H := batoperatie;	# 2  (H:any)<-(batoperatie:any) jump 6
     Tail := algebra.fetch(b,H);	# 3  unknown (Tail:any)<-(b:any)(H:any)
 #body 	# 4  (_8:str)

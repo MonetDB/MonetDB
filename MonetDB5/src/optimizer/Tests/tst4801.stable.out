@@ -30,7 +30,7 @@ end f3;	# 6
 #	optimizer.strengthReduction("user","f3");
 #	mdb.list("user","f3");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #optimizer.expressionAccumulation("user","f3"); 	# 1  (_2:str)
     mdb.list("user","f3");	# 2 MDBlist3 (_6:void)<-(_4:str)(_5:str)
 end main;	# 3  

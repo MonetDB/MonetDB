@@ -36,7 +36,7 @@ end perftst;	# 5
 #        redo (v,i):= nextElement(1:lng,10:lng);
 #exit (v,i);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # the multiplex code blocks. 	# 1  (_2:str)
     b := bat.new(:lng,:lng);	# 2 CMDBATnew (b:bat[:lng,:lng])<-(_4:lng)(_4:lng)
 barrier (v,i):= mal.newRange(0:lng);	# 3 RNGnewRange_lng (v:bit)(i:lng)<-(_7:lng) jump 6

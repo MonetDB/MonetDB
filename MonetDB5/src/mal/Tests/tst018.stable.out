@@ -26,7 +26,7 @@ stdout of test 'tst018` in directory 'src/mal` itself:
 #s:= nil;
 #print(s);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # handling assignments of 'nil'; 	# 1  (_2:str)
     i := 23;	# 2  (i:int)<-(_4:int)
     i := nil;	# 3  (i:int)<-(_14:int)

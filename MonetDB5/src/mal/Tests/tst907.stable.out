@@ -58,7 +58,7 @@ end pow;	# 6
 #z:=multiplex.tactics("pow",b,2);
 #print(z);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     k := user.one(1);	# 1  (k:int)<-(_2:int)
     l := user.three(1,2,3);	# 2  (l:int)<-(_2:int)(_4:int)(_5:int)
     p := user.pow(1,2);	# 3  (p:int)<-(_2:int)(_4:int)

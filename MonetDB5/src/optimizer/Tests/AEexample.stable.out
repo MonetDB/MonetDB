@@ -26,7 +26,7 @@ end qry;	# 4
 #optimizer.expressionAccumulation("user","qry");
 #mdb.List("user","qry");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     mdb.List("user","qry");	# 1 MDBlist3Detail (_4:void)<-(_2:str)(_3:str)
 end main;	# 2  
 function user.qry():void;	# 0  (qry:void)

@@ -31,7 +31,7 @@ stdout of test 'tst605` in directory 'src/mal` itself:
 #	redo (b,nme):= const.hasMoreElements();
 #exit b;
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # Testing global consts defined for all users 	# 1  (_2:str)
 # It should travers the nested spaces looking for the correct variable 	# 2  (_4:str)
 # take a local copy 	# 3  (_6:str)

@@ -38,7 +38,7 @@ end tryme;	# 9
 !ERROR: 'b' may not be used before being set in tryme[1]
 #tryme();    # shouldn;t hang when you forget the exception
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # A exception in a factory should terminate it  	# 1  (_2:str)
     user.tryme();	# 2  (_3:void)
 # shouldn;t hang when you forget the exception 	# 3  (_5:str)

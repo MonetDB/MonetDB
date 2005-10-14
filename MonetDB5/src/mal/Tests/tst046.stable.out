@@ -29,7 +29,7 @@ stdout of test 'tst046` in directory 'src/mal` itself:
 #i:= int(f);
 #print(i);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #testing flt/lng/int coercions 	# 1  (_2:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
     bat.insert(b,1,1);	# 3 BKCinsert_bun_int_int (_5:void)<-(b:bat[:int,:int])(_6:int)(_6:int)

@@ -31,7 +31,7 @@ end swap;	# 4
 #print(a);
 #
 !ERROR: 'user.swap' undefined in user.main[5]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # parsing operations with multi-assignments 	# 1  (_2:str)
     (x,y):= user.swap(1,2);	# 2  (x:int)(y:int)<-(_5:int)(_6:int)
     io.print(x);	# 3 IOprint_val (_7:int)<-(x:int)

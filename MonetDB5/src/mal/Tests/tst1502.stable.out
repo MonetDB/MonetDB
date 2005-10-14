@@ -58,7 +58,7 @@ stdout of test 'tst1502` in directory 'src/mal` itself:
 #	print(xsrev);
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     x := bat.new(:oid,:chr);	# 1 CMDBATnew (x:bat[:oid,:chr])<-(_2:oid)(_3:chr)
     bat.insert(x,1@0,'a');	# 2 BKCinsert_bun_oid_any (_4:void)<-(x:bat[:oid,:chr])(_5:oid)(_6:chr)
     bat.insert(x,2@0,'a');	# 3 BKCinsert_bun_oid_any (_7:void)<-(x:bat[:oid,:chr])(_8:oid)(_6:chr)

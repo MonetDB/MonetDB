@@ -25,7 +25,11 @@ stdout of test 'tst253` in directory 'src/mal` itself:
 #d:= mark(c);
 #print(d);
 #
-function user.main():int;	# 0  (main:int)
+##perform header marking
+#f:= algebra.markH(b);
+#io.print(f);
+#
+function user.main():void;	# 0  (main:void)
 # testing void bats 	# 1  (_2:str)
     b := bat.new(:void,:str);	# 2 CMDBATnew (b:bat[:void,:str])<-(_4:void)(_5:str)
     bat.insert(b,nil,"hello");	# 3 BKCinsert_bun (_6:void)<-(b:bat[:void,:str])(_7:void)(_8:str)

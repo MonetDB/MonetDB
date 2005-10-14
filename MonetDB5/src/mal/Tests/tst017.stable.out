@@ -21,7 +21,7 @@ stdout of test 'tst017` in directory 'src/mal` itself:
 #	b := join(b,b);
 #	print(b);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # reference setting tables 	# 1  (_2:str)
     b := bat.new(nil:int,nil:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
     aa_a := bat.insert(b,1,2);	# 3 BKCinsert_bun_int_int (aa_a:void)<-(b:bat[:int,:int])(_6:int)(_7:int)

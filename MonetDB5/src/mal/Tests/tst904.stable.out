@@ -26,7 +26,7 @@ stdout of test 'tst904` in directory 'src/mal` itself:
 #xz:= multiplex.script("+",b,c);
 #print(xz);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # the multiplex code blocks using CONSTANTS. 	# 1  (_2:str)
     clients.setListing(15);	# 2 CLTsetListing (_3:int)<-(_4:int)
     b := bat.new(:lng,:lng);	# 3 CMDBATnew (b:bat[:lng,:lng])<-(_6:lng)(_6:lng)

@@ -21,7 +21,7 @@ stdout of test 'tst901` in directory 'src/mal` itself:
 #	redo (v,i):= nextElement(1:lng,10:lng);
 #exit (v,i);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # the multiplex code blocks. 	# 1  (_2:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
 barrier (v,i):= mal.newRange(0:int);	# 3 RNGnewRange_int (v:bit)(i:int)<-(_7:int) jump 6

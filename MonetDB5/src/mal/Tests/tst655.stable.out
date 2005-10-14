@@ -27,7 +27,7 @@ stdout of test 'tst655` in directory 'src/mal` itself:
 #tablet.setProperties("name,type,dense,sorted,key,min,max");
 #tablet.display(b1,b2);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # An extensive test for the new tablet layout 	# 1  (_2:str)
 #sent the output of a table to a file 	# 2  (_4:str)
     b1 := bat.new(:void,:int);	# 3 CMDBATnew (b1:bat[:void,:int])<-(_6:void)(_7:int)

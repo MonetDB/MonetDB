@@ -238,7 +238,7 @@ end qry1;	# 101
 #optimizer.commonExpressionRemoval("user","qry1");
 #mdb.list("user","qry1");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # TPCH Q1 non-optimized 	# 1  (_2:str)
 #don;t depend on SQL library 	# 2  (_4:str)
     mdb.list("user","qry1");	# 3 MDBlist3 (_10:void)<-(_7:str)(_8:str)

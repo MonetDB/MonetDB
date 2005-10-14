@@ -21,7 +21,7 @@ stdout of test 'tst307` in directory 'src/mal` itself:
 #	print("catched the exception");
 #exit MALexception;
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #testing exceptions raised in the kernel 	# 1  (_2:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
     z := algebra.find(b,0);	# 3 ALGfind (z:int)<-(b:bat[:int,:int])(_6:int)

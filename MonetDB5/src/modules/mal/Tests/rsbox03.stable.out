@@ -54,7 +54,7 @@ stdout of test 'rsbox03` in directory 'src/modules/mal` itself:
 #rsbox.release(rs);
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     rs := rsbox.create(1,'t');	# 1 RSBcreate (rs:resultset)<-(_2:int)(_3:chr)
     resultset.setProperty(rs,1,"name","the_column");	# 2 RSsetPropertyStr (_4:resultset)<-(rs:resultset)(_2:int)(_5:str)(_6:str)
     resultset.setProperty(rs,1,"table","the_table");	# 3 RSsetPropertyStr (_7:resultset)<-(rs:resultset)(_2:int)(_8:str)(_9:str)

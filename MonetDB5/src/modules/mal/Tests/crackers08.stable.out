@@ -131,7 +131,7 @@ stdout of test 'crackers08` in directory 'src/modules/mal` itself:
 #d0:= t1-t0;
 #io.printf("#select %d\n",d0);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # determine basic costs for cracking a larger table. 	# 1  (_2:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
     l := 0:int;	# 3  (l:int)<-(_6:int)

@@ -22,7 +22,7 @@ stdout of test 'GCexample` in directory 'src/optimizer` itself:
 #	optimizer.garbageCollector();
 #	mdb.list();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     t1 := bat.new(:void,:int);	# 1 CMDBATnew (t1:bat[:void,:int])<-(_2:void)(_3:int)
     t2 := array.grid(132000,8,1,0);	# 2 ARRAYgrid_int (t2:bat[:void,:int])<-(_5:int)(_6:int)(_7:int)(_8:int)
     t3 := array.grid(1,100,10560,0);	# 3 ARRAYgrid_int (t3:bat[:void,:int])<-(_7:int)(_10:int)(_11:int)(_8:int)
@@ -37,7 +37,7 @@ function user.main():int;	# 0  (main:int)
     bat.setGarbage(t1);	# 12 CMDbbpgarbage (_22:void)<-(t1:bat[:void,:int])
     mdb.list();	# 13 MDBlist (_17:void)
 end main;	# 14  
-function user.main():int;
+function user.main():void;
     t1 := bat.new(:void,:int);
     t2 := array.grid(132000,8,1,0);
     t3 := array.grid(1,100,10560,0);

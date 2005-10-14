@@ -28,7 +28,7 @@ end myException;	# 3
 #	myException();
 #	print("should not come here");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # Exceptions can be explicitly raised in a function 	# 1  (_2:str)
 # which requires the exception identifier to be defined. 	# 2  (_4:str)
     user.myException();	# 3  (_5:void)

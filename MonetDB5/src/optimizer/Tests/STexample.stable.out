@@ -21,7 +21,7 @@ stdout of test 'STexample` in directory 'src/optimizer` itself:
 #optimizer.singleton();
 #mdb.list();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     b := bat.new(:int,:int);	# 1 CMDBATnew (b:bat[:int,:int])<-(_2:int)(_2:int)
     bat.insert(b,1,2);	# 2 BKCinsert_bun_int_int (_3:void)<-(b:bat[:int,:int])(_4:int)(_5:int)
 #many more inserts 	# 3  (_7:str)
@@ -36,7 +36,7 @@ end main;	# 9
 # void	int	  # type
 #-----------------#
 [ nil,	  1	  ]
-function user.main():int;
+function user.main():void;
     b := bat.new(:int,:int);
     bat.insert(b,1,2);
 #many more inserts 

@@ -30,7 +30,7 @@ barrier b;
         c := algebra.select(T3,0,5);
             T3 := bat.new(:int,:int);
 exit b;
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     b := true;	# 1  (b:bit)<-(_2:bit)
     T1 := bat.new(:int,:int);	# 2 CMDBATnew (T1:bat[:int,:int])<-(_4:int)(_4:int)
     T3 := bat.new(:int,:int);	# 3 CMDBATnew (T3:bat[:int,:int])<-(_4:int)(_4:int)

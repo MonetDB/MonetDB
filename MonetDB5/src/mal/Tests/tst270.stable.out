@@ -53,7 +53,7 @@ stdout of test 'tst270` in directory 'src/mal` itself:
 #profiler.stop();
 #profiler.closeStream();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #Same as tst200, but includes testing of the profiler 	# 1  (_2:str)
 #profiler.setAll(); 	# 2  (_4:str)
     profiler.activate("ticks");	# 3 CMDactivateProfiler (_5:void)<-(_6:str)
@@ -141,9 +141,9 @@ end main;	# 37
 [ "batDeleted",			  "0"		  ]
 [ "batFirst",		  "0"		  ]
 [ "top",		  "0"		  ]
-[ "batStamp",			  "13"		  ]
-[ "lastUsed",			  "163"		  ]
-[ "curStamp",			  "14"		  ]
+[ "batStamp",		  "4"		  ]
+[ "lastUsed",		  "190"		  ]
+[ "curStamp",		  "5"		  ]
 [ "batCopiedtodisk",		  "0"		  ]
 [ "batDirtydesc",		  "clean"	  ]
 [ "batDirtybuns",		  "clean"	  ]

@@ -36,7 +36,7 @@ end dummy;	# 5
 #mdb.showFunction("user","dummy");
 #
 !ERROR: 'mdb.showFunction' undefined in user.main[6]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #self inspection of the code base 	# 1  (_2:str)
     user.dummy(1);	# 2  (_3:void)<-(_4:int)
     io.printf("get function properties\n");	# 3 IOprint_str (_5:int)<-(_6:str)

@@ -41,7 +41,7 @@ end tst;	# 11
 #
 #user.tst();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # test analysis of stack frames 	# 1  (_2:str)
     user.tst();	# 2  (_3:void)
 end main;	# 3  

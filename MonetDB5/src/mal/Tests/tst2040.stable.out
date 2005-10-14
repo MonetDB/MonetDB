@@ -62,7 +62,7 @@ stdout of test 'tst2040` in directory 'src/mal` itself:
 #	pWait:= false;
 #	printf("await dead of producer/consumer\n");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #The 2000 serie  is focussed on parallelism 	# 1  (_2:str)
 # Example of a simple producer/consumer pair 	# 2  (_4:str)
     cWait := true;	# 3  (cWait:bit)<-(_6:bit)

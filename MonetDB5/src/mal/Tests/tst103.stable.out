@@ -26,7 +26,7 @@ end f;	# 2
 #c:= f(1.0, -3);
 #d:= f(true,false);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # check propagation of type variables over bats 	# 1  (_2:str)
     a := user.f(1,"hello");	# 2  (a:bat[:str,:int])<-(_4:int)(_5:str)
     b := user.f(1,"world");	# 3  (b:bat[:str,:int])<-(_4:int)(_7:str)

@@ -38,7 +38,7 @@ end random;	# 8
 #r2:= random(1);
 #print(r2);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # The prototypical factory construct 	# 1  (_2:str)
     r1 := user.random(1);	# 2  (r1:int)<-(_4:int)
     io.print(r1);	# 3 IOprint_val (_5:int)<-(r1:int)

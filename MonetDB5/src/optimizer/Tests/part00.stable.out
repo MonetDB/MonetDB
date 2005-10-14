@@ -51,7 +51,7 @@ replace first=2 last=2
 variable replacement 'a' instructions 2-2  lifespan 2-2
 first=6 last=6 
 first=7 last=6 
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #testing the partition optimizer 	# 1  (_2:str)
     a1 := bat.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(a1,0@0);	# 3 BKCsetSequenceBase (_6:bat[:void,:int])<-(a1:bat[:void,:int])(_7:oid)

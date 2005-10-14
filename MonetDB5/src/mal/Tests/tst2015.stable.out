@@ -23,8 +23,8 @@ stdout of test 'tst2015` in directory 'src/mal` itself:
 #exit b1;
 #exit xx;
 #
-function user.main():int;	# 0  (main:int)
-# parallel syntax checks 	# 1  ($2:str)
+function user.main():void;	# 0  (main:void)
+# parallel syntax checks 	# 1  (_2:str)
 barrier xx;	# 2  (xx:any) jump 9
 thread b1;	# 3  (b1:any) jump 8
     io.printf("#Entered thread\n");	# 4 IOprint_str (_5:int)<-(_6:str)

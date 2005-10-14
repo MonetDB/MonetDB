@@ -22,7 +22,7 @@ stdout of test 'tst303` in directory 'src/mal` itself:
 #exit	IllegalAccess;
 #	print("should not be done");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # recursively raise an exception passed upward 	# 1  (_2:str)
     raise IllegalAccess := "an exception";	# 2  (IllegalAccess:str)<-(_4:str)
     io.print("should not come here\n");	# 3 IOprint_val (_5:int)<-(_6:str)

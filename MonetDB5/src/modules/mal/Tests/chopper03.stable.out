@@ -40,7 +40,7 @@ stdout of test 'chopper03` in directory 'src/modules/mal` itself:
 #exit mloop;
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     t := bat.new(:int,:url);	# 1 CMDBATnew (t:bat[:int,:url])<-(_2:int)(_3:url)
     cb_a := url.url("http://www.cwi.nl");	# 2 URLnew (cb_a:url)<-(_5:str)
     db_a := bat.insert(t,1,cb_a);	# 3 BKCinsert_bun (db_a:void)<-(t:bat[:int,:url])(_7:int)(cb_a:url)

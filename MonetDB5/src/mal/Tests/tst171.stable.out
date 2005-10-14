@@ -48,7 +48,7 @@ stdout of test 'tst171` in directory 'src/mal` itself:
 #    x:= calc.isnotnil(g);
 #    print(x);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # Testing for nil values. 	# 1  (_2:str)
     tv := true;	# 2  (tv:bit)<-(_4:bit)
     io.print(tv);	# 3 IOprint_val (_5:int)<-(tv:bit)

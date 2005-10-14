@@ -21,7 +21,7 @@ stdout of test 'tst850` in directory 'src/mal` itself:
 #	b:= multiplex.script("startsWith",t,"");
 #	print(b);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # The likeselect operation 	# 1  (_2:str)
     t := bat.new(:void,:str);	# 2 CMDBATnew (t:bat[:void,:str])<-(_4:void)(_5:str)
     bat.setSequenceBase(t,0@0);	# 3 BKCsetSequenceBase (_6:bat[:void,:str])<-(t:bat[:void,:str])(_7:oid)

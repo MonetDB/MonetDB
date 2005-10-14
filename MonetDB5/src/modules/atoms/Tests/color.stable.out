@@ -105,7 +105,7 @@ function user.testcolor():void;	# 0  (testcolor:void)
 end testcolor;	# 48  
 #user.testcolor();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     user.testcolor();	# 1  (_1:void)
 end main;	# 2  
 [ 0x00646566 ]

@@ -40,7 +40,7 @@ stdout of test 'tst1005` in directory 'src/mal` itself:
 ##exit MALexception;
 ##print("done");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # the first of a series of BBP test cases 	# 1  (_2:str)
 # make sure you can bind to a BAT through the box 	# 2  (_4:str)
     bbp.open();	# 3 CMDbbpopen (_5:void)

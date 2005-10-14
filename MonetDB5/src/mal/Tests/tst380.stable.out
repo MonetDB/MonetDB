@@ -121,7 +121,7 @@ end dir;	# 5
 #user.dir("simple");
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #inspection of the runtime setting 	# 1  (_2:str)
 #it uses the dynamic type analysis scheme 	# 2  (_4:str)
 # type error when the type variable numbers are ignored 	# 3  (_6:str)

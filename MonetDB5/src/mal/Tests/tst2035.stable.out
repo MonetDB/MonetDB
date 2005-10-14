@@ -57,7 +57,7 @@ end clkticks;	# 7
 #	redo wl;
 #exit	wl;
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #The 2000 serie  is focussed on parallelism 	# 1  (_2:str)
     counter := 0;	# 2  (counter:int)<-(_4:int)
 thread hdl := 0;	# 3  (hdl:int)<-(_4:int) jump 18

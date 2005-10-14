@@ -37,7 +37,7 @@ end clkticks;	# 7
 #printf("#Main thread\n");
 #printf("#Wait for child to exit\n");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #The 2000 serie  is focussed on parallelism 	# 1  (_2:str)
 thread hdl := 0;	# 2  (hdl:int)<-(_4:int) jump 5
 # synchronize through a boolean 	# 3  (_6:str)

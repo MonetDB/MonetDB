@@ -28,7 +28,7 @@ end newsemijoin;	# 2
 #
 !ERROR: 'algebra.sort' undefined in user.main[6]
 !ERROR: 'algebra.sort' undefined in user.main[8]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #Parsing properties and keeping them around 	# 1  (_2:str)
 # note the use of the first parameter to obtain property set 	# 2  (_4:str)
     z := bat.new(:int{sequence=true,sorted=true},:int{sequence=true,sorted=true});	# 3 CMDBATnew (z:bat[:int,:int])<-(_6:int)(_6:int)

@@ -68,7 +68,7 @@ stdout of test 'rsbox00` in directory 'src/modules/mal` itself:
 ## we did not open, it so why close it?
 ##rsbox.close();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     rs := rsbox.create(1:int,'u':chr);	# 1 RSBcreate (rs:resultset)<-(_2:int)(_3:chr)
     rs := rsbox.create(2:int,'t':chr);	# 2 RSBcreate (rs:resultset)<-(_4:int)(_5:chr)
     resultset.setProperty(rs,1:int,"table","table1");	# 3 RSsetPropertyStr (_6:resultset)<-(rs:resultset)(_2:int)(_7:str)(_8:str)

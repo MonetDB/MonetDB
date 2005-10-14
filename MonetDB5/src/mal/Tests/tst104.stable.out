@@ -23,7 +23,7 @@ command user.f(a:any_1,b:bat[:any_2,:any_1],c:any_2):any_3 address dummy;	# 0  d
 #a:= f(1,b,"hello");
 #
 !ERROR: 'user.f' undefined in user.main[4]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # check propagation of type variables over bats 	# 1  (_2:str)
 # can be checked after bat module has been added 	# 2  (_4:str)
     b := bat.new(:str,:int);	# 3 CMDBATnew (b:bat[:str,:int])<-(_6:str)(_7:int)

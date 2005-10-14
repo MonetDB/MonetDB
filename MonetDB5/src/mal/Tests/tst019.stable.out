@@ -100,7 +100,7 @@ end welcome5;	# 3
 #(x,y):= user.welcome2(1);
 #
 !ERROR: 'user.welcome2' undefined in user.main[5]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     y := user.welcome1(1);	# 1  (y:str)<-(_2:int)
     io.print(y);	# 2 IOprint_val (_3:int)<-(y:str)
     y := user.welcome2(1);	# 3  (y:str)<-(_2:int)

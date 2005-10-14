@@ -52,7 +52,7 @@ end f;	# 15
 #optimizer.strengthReduction("user", "f");
 #mdb.list("user", "f");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #bug from Roberto to check carefull strength reduction 	# 1  (_2:str)
     mdb.list("user","f");	# 2 MDBlist3 (_6:void)<-(_4:str)(_5:str)
 end main;	# 3  

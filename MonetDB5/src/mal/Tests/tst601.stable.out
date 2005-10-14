@@ -25,7 +25,7 @@ stdout of test 'tst601` in directory 'src/mal` itself:
 #const.close();	# save the content on persistent store
 #print(p2);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # Testing the box interfaces 	# 1  (_2:str)
 # open de const box and store a constant  	# 2  (_4:str)
 # This operation should actually be limited to the system administrator 	# 3  (_6:str)

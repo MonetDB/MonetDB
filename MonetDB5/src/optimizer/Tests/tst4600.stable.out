@@ -36,7 +36,7 @@ end welcome;	# 7
 #user.welcome(2);
 #mdb.list();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # the first test for macro expansions and inversions 	# 1  (_2:str)
     io.print("test expansion");	# 2 IOprint_val (_6:int)<-(_7:str)
     _13 := 0;	# 3  (_13:int)<-(_14:int)
@@ -50,7 +50,7 @@ end main;	# 10
 [ "test expansion" ]
 [ "Welcome" ]
 [ "Welcome" ]
-function user.main():int;
+function user.main():void;
 # the first test for macro expansions and inversions 
     io.print("test expansion");
     _13 := 0;

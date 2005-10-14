@@ -24,9 +24,9 @@ end l;	# 2
 #z:= l();
 #print(z);
 #
-function user.main():int;	# 0  (main:int)
-# testing definition of new atom type based on ptr 	# 1  ($2:str)
-# this definition caused an error 	# 2  ($4:str)
+function user.main():void;	# 0  (main:void)
+# testing definition of new atom type based on ptr 	# 1  (_2:str)
+# this definition caused an error 	# 2  (_4:str)
     z := strtype.l();	# 3  (z:strtype)
     io.print(z);	# 4 IOprint_val (_6:int)<-(z:strtype)
 end main;	# 5  

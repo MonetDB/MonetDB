@@ -45,7 +45,7 @@ stdout of test 'tst051` in directory 'src/mal` itself:
 #t:= str.replace("hello world","world","brave new world"); io.print(t);
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # testing string stuff 	# 1  (_2:str)
     s := "hello world";	# 2  (s:str)<-(_4:str)
     t := str.string(s,0,2);	# 3 STRSubString (t:str)<-(s:str)(_6:int)(_7:int)

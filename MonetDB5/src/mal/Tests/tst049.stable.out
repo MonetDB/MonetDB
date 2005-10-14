@@ -90,7 +90,10 @@ stdout of test 'tst049` in directory 'src/mal` itself:
 #z:= batstr.like(b,".%",".");
 #io.print(z);
 #
-function user.main():int;	# 0  (main:int)
+#z:= batstr.like(b,"tt","t");
+#io.print(z);
+#
+function user.main():void;	# 0  (main:void)
     b := bat.new(:int,:str);	# 1 CMDBATnew (b:bat[:int,:str])<-(_2:int)(_3:str)
     bat.insert(b,1,"");	# 2 BKCinsert_bun (_4:void)<-(b:bat[:int,:str])(_5:int)(_6:str)
     bat.insert(b,2,"t");	# 3 BKCinsert_bun (_7:void)<-(b:bat[:int,:str])(_8:int)(_9:str)

@@ -49,7 +49,7 @@ end doitTwice;	# 5
 #d:= doitTwice("wrong");
 #
 !ERROR: 'user.doitTwice' undefined in user.main[7]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # the next step is to trace the call of a mal function call 	# 1  (_2:str)
     a := 1;	# 2  (a:int)<-(_4:int)
     b := user.doitOnce();	# 3  (b:int)

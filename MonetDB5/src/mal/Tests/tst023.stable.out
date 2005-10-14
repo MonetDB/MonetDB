@@ -25,7 +25,7 @@ function transaction.help():void;	# 0  (help:void)
 end help;	# 4  
 #transaction.help();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #test addition of a function to a known module 	# 1  (_2:str)
     transaction.help();	# 2  (_3:void)
 end main;	# 3  

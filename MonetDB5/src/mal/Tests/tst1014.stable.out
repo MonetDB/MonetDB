@@ -55,7 +55,7 @@ end test;	# 14
 #print(v);
 #bbp.close();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # now within a function to assure that reference counting 	# 1  (_2:str)
 # takes care of releasing the variables. 	# 2  (_4:str)
     user.test();	# 3  (_5:void)

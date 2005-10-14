@@ -17,7 +17,7 @@ stdout of test 'register00` in directory 'src/modules/mal` itself:
 #mal.register("user","mytest","io.print(\"hello world\");","first test");
 #mdb.list("user","mytest");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #see if we can register functions 	# 1  (_2:str)
     mal.register("user","mytest","io.print(\"hello world\");","first test");	# 2 CMDregisterFunction (_3:void)<-(_4:str)(_5:str)(_6:str)(_7:str)
     mdb.list("user","mytest");	# 3 MDBlist3 (_8:void)<-(_4:str)(_5:str)

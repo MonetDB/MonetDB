@@ -78,7 +78,7 @@ first=8 last=8
 first=9 last=8 
 start first=1 last=7 
 first=9 last=8 
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #testing the partition optimizer 	# 1  (_2:str)
     a1 := bat.new(:void,:int);	# 2 CMDBATnew (a1:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(a1,0@0);	# 3 BKCsetSequenceBase (_6:bat[:void,:int])<-(a1:bat[:void,:int])(_7:oid)

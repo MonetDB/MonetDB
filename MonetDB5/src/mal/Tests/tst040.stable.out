@@ -21,7 +21,7 @@ stdout of test 'tst040` in directory 'src/mal` itself:
 #i   := true;
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # Variables names may be identical to type names, but 	# 1  (_2:str)
 # then they also have to bear the same value  	# 2  (_4:str)
     str := "hello";	# 3  (str:str)<-(_6:str)

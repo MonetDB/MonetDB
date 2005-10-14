@@ -231,7 +231,7 @@ end tst903;	# 104
 #Mcc.compile("user","tst903");
 #
 !ERROR: 'Mcc.compile' undefined in user.main[4]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # The first MAL compiler test 	# 1  (_2:str)
 # the result is retained in MCCtst903.c 	# 2  (_4:str)
 # which can be compiled and linked with the system. 	# 3  (_6:str)

@@ -21,7 +21,7 @@ stdout of test 'tst024` in directory 'src/mal` itself:
 #print($5);
 #
 !ERROR: '_3' overwrites i
-function user.main():int;	# 0  unknown (main:int)
+function user.main():void;	# 0  unknown (main:void)
 #detect illegal use of temporary variables 	# 1  unknown (_2:str)
     i := 12;	# 2  unknown (i:any)<-(_4:int)
 # internal location of i is 3 	# 3  unknown (_6:str)

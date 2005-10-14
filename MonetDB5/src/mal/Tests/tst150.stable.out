@@ -37,7 +37,7 @@ end sample;	# 8
 #
 !ERROR: 'user.sample' undefined in user.main[1]
 !ERROR: 'user.sample' undefined in user.main[2]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     user.sample("hello","world");	# 1  unknown (_1:bit)<-(_2:str)(_3:str)
     user.sample("hello",1);	# 2  unknown (_4:bit)<-(_2:str)(_5:int)
 end main;	# 3  

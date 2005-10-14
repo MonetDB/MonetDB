@@ -27,7 +27,7 @@ stdout of test 'tst607` in directory 'src/mal` itself:
 #io.print("attempt twice to release");
 #const.release("roomnumber"); # failure? done twice or implicit take?
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # using spaces 	# 1  (_2:str)
     u:str  := const.take("user");	# 2 CSTtake (u:str)<-(_4:str)
     io.printf("User bound to %s\n",u);	# 3 IOprint_formatted_str (_5:int)<-(_6:str)(u:str)

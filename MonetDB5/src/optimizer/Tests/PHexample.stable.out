@@ -23,7 +23,7 @@ stdout of test 'PHexample` in directory 'src/optimizer` itself:
 #optimizer.peephole();
 #mdb.list();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # testing repeatative reverse optimalisation 	# 1  (_2:str)
     r:bat[:int,:int]  := bat.new(:int,:int);	# 2 CMDBATnew (r:bat[:int,:int])<-(_4:int)(_4:int)
     z := algebra.markT(r);	# 3 ALGtmark_default (z:bat[:int,:void])<-(r:bat[:int,:int])
@@ -35,7 +35,7 @@ end main;	# 7
 # h	t	  # name
 # int	int	  # type
 #-----------------#
-function user.main():int;
+function user.main():void;
 # testing repeatative reverse optimalisation 
     r:bat[:int,:int]  := bat.new(:int,:int);
     z := algebra.markT(r);

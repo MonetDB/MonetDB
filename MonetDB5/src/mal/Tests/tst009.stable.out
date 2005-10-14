@@ -16,20 +16,20 @@ stdout of test 'tst009` in directory 'src/mal` itself:
 #call("print(\"hello\");");
 #call("s:=\"goodbye\";print(s);");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     mal.call("io.print(1);");	# 1 CMDcallString (_1:void)<-(_2:str)
     mal.call("io.print(\"hello\");");	# 2 CMDcallString (_3:void)<-(_4:str)
     mal.call("s:=\"goodbye\";io.print(s);");	# 3 CMDcallString (_5:void)<-(_6:str)
 end main;	# 4  
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     io.print(1);	# 1 IOprint_val (_1:int)<-(_2:int)
 end main;	# 2  
 [ 1 ]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     io.print("hello");	# 1 IOprint_val (_1:int)<-(_2:str)
 end main;	# 2  
 [ "hello" ]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     s := "goodbye";	# 1  (s:str)<-(_2:str)
     io.print(s);	# 2 IOprint_val (_3:int)<-(s:str)
 end main;	# 3  

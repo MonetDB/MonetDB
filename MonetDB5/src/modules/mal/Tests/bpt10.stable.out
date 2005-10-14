@@ -35,7 +35,7 @@ stdout of test 'bpt10` in directory 'src/modules/mal` itself:
 #partitions.dump();
 #partitions.close();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #testing the BAT partition table 	# 1  (_2:str)
 # nothing is saved because the bats are not persistent 	# 2  (_4:str)
     a1 := bat.new(:void,:int);	# 3 CMDBATnew (a1:bat[:void,:int])<-(_6:void)(_7:int)

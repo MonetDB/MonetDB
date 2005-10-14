@@ -59,7 +59,7 @@ stdout of test 'tst654` in directory 'src/mal` itself:
 ##someone(1,2);
 ##b:= new(void,int);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # An extensive test for the new tablet layout 	# 1  (_2:str)
     tablet.display(2,"strong");	# 2 TABdisplayRow (_3:int)<-(_4:int)(_5:str)
     tablet.display(2,"strong",true);	# 3 TABdisplayRow (_6:int)<-(_4:int)(_5:str)(_7:bit)

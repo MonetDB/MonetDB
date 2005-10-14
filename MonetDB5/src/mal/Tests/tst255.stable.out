@@ -22,7 +22,7 @@ stdout of test 'tst255` in directory 'src/mal` itself:
 #o:= oid(z1);
 #print(o);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # testing void to oid coercion 	# 1  (_2:str)
     z1 := bat.new(:void,:int);	# 2 CMDBATnew (z1:bat[:void,:int])<-(_4:void)(_5:int)
     bat.setSequenceBase(z1,0@0);	# 3 BKCsetSequenceBase (_6:bat[:void,:int])<-(z1:bat[:void,:int])(_7:oid)

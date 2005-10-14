@@ -45,7 +45,7 @@ end clkticks;	# 8
 #	#wait hdl;
 #	#printf("child has finished\n");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #The 2000 serie  is focussed on parallelism 	# 1  (_2:str)
 #we start with a non-parallel version 	# 2  (_4:str)
 thread hdl := 0;	# 3  (hdl:int)<-(_6:int) jump 7

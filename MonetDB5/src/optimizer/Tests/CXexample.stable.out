@@ -27,7 +27,7 @@ stdout of test 'CXexample` in directory 'src/optimizer` itself:
 #mdb.list();
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # The 4000 series deals with strategic optimizer constructs 	# 1  (_2:str)
 # common subexpression evaluation 	# 2  (_4:str)
     b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_7:int)(_7:int)
@@ -40,7 +40,7 @@ function user.main():int;	# 0  (main:int)
     l3 := calc.+(l,k1);	# 10 CALCbinaryADDintint (l3:int)<-(l:int)(k1:int)
     mdb.list();	# 11 MDBlist (_20:void)
 end main;	# 12  
-function user.main():int;
+function user.main():void;
 # The 4000 series deals with strategic optimizer constructs 
 # common subexpression evaluation 
     b := bat.new(:int,:int);

@@ -48,7 +48,7 @@ stdout of test 'tst272` in directory 'src/mal` itself:
 #print(s);
 #print(t,s);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #Same as tst270, but includes testing of the profiler trace 	# 1  (_2:str)
     profiler.activate("ticks");	# 2 CMDactivateProfiler (_3:void)<-(_4:str)
 #profiler.activate("pc"); 	# 3  (_6:str)

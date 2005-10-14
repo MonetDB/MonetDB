@@ -18,7 +18,7 @@ stdout of test 'tst4002` in directory 'src/optimizer` itself:
 #z:= "nil";
 #d:= mtime.date(z);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #testing some optimizer constructions 	# 1  (_2:str)
     d := mtime.date("nil");	# 2 MTIMEdate_fromstr (d:date)<-(_5:str)
 end main;	# 3  

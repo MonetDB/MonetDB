@@ -106,7 +106,7 @@ exit ifb;	# 14  (ifb:bit)
 ## but a might be not defined 	# 18  (_29:str)
     transaction.commit();	# 19 TRNglobal_commit (_30:void)
 end f1;	# 20  
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #provided by roberto 	# 1  (_2:str)
 end main;	# 2  
 

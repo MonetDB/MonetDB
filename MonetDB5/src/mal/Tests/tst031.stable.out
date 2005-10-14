@@ -25,7 +25,7 @@ stdout of test 'tst031` in directory 'src/mal` itself:
 #print(b);
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     b := bat.new(:void,:int);	# 1 CMDBATnew (b:bat[:void,:int])<-(_2:void)(_3:int)
     bat.setSequenceBase(b,0@0);	# 2 BKCsetSequenceBase (_4:bat[:void,:int])<-(b:bat[:void,:int])(_5:oid)
     bat.insert(b,nil,0);	# 3 BKCinsert_bun (_6:void)<-(b:bat[:void,:int])(_7:void)(_8:int)

@@ -34,7 +34,7 @@ stdout of test 'tst230` in directory 'src/mal` itself:
 #	printf("lrefcount =%d\n",j);
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # a test checking BAT reference counting under various situations 	# 1  (_2:str)
     b := bat.new(:int,:str);	# 2 CMDBATnew (b:bat[:int,:str])<-(_4:int)(_5:str)
     i := bbp.getRefCount(b);	# 3 CMDgetBATrefcnt (i:int)<-(b:bat[:int,:str])

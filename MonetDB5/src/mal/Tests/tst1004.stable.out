@@ -42,7 +42,7 @@ stdout of test 'tst1004` in directory 'src/mal` itself:
 #print(x);
 #bbp.close();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # the first of a series of BBP test cases 	# 1  (_2:str)
     io.print("Start test");	# 2 IOprint_val (_3:int)<-(_4:str)
     bbp.open();	# 3 CMDbbpopen (_5:void)

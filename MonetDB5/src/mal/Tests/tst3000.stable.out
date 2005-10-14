@@ -28,7 +28,7 @@ stdout of test 'tst3000` in directory 'src/mal` itself:
 ## k:= "whatever"; {k.blah:=true;k.freeze:=true;}
 ## n:= new(int,int);{n.cost:=12;}
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # testing simple property assignments 	# 1  (_2:str)
     i{constant=true} := 1;	# 2  (i:int)<-(_4:int)
     j{blah=3} := "kk";	# 3  (j:str)<-(_6:str)

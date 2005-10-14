@@ -20,7 +20,7 @@ stdout of test 'tst710` in directory 'src/mal` itself:
 #	printf("GDKerror, do something\n");
 #exit	GDKerror;
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # testing ommission of target variable 	# 1  (_2:str)
     i := 1;	# 2  (i:int)<-(_4:int)
     io.print(i);	# 3 IOprint_val (_5:int)<-(i:int)

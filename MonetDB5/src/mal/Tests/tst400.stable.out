@@ -24,7 +24,7 @@ stdout of test 'tst400` in directory 'src/mal` itself:
 #	redo (v2,i):= nextElement(2,5);
 #exit	(v2,i);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 barrier (v1,i):= mal.newRange(0);	# 1 RNGnewRange_int (v1:bit)(i:int)<-(_3:int) jump 4
     io.print("do something");	# 2 IOprint_val (_4:int)<-(_5:str)
     redo (v1,i):= mal.nextElement(1,2);	# 3 RNGnextElement_int (v1:bit)(i:int)<-(_6:int)(_7:int) jump 2

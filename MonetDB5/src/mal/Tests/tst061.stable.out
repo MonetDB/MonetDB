@@ -28,7 +28,7 @@ stdout of test 'tst061` in directory 'src/mal` itself:
 #z:= <(d1,2.0:dbl);
 #print(z);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # type coercion and creation 	# 1  (_2:str)
     o := calc.oid("999@0");	# 2 CALCstr2oid (o:oid)<-(_4:str)
     os := calc.str(o);	# 3 CALCoid2str (os:str)<-(o:oid)

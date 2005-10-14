@@ -142,7 +142,7 @@ stdout of test 'rsbox04` in directory 'src/modules/mal` itself:
 #rsbox.releaseAll();
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     rs := rsbox.create(9,'t');	# 1 RSBcreate (rs:resultset)<-(_2:int)(_3:chr)
     b1 := bat.new(:void,:bit);	# 2 CMDBATnew (b1:bat[:void,:bit])<-(_5:void)(_6:bit)
     bat.insert(b1,nil,1:bit);	# 3 BKCinsert_bun (_7:void)<-(b1:bat[:void,:bit])(_8:void)(_9:bit)

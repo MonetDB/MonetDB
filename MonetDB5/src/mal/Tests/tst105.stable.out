@@ -26,7 +26,7 @@ command bat2.new(h:any_1,t:any_2):bat[:any_1,:any_2] address GDKbatnew;	# 0  dyn
 #
 !ERROR: 'bat2.new' undefined in bat2.main[3]
 !ERROR: 'bat2.new' undefined in bat2.main[4]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # check propagation of type variables over bats 	# 1  (_2:str)
 # can be checked after bat module has been added 	# 2  (_4:str)
     a := bat2.new(:str,:int);	# 3  unknown (a:bat[:str,:int])<-(_6:str)(_7:int)

@@ -23,7 +23,7 @@ stdout of test 'SRexample` in directory 'src/optimizer` itself:
 #optimizer.strengthReduction();
 #mdb.list();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     i := 23;	# 1  (i:int)<-(_8:int)
 # simple strength reduction 	# 2  (_2:str)
     j := "hello world";	# 3  (j:str)<-(_4:str)
@@ -47,7 +47,7 @@ exit go;	# 18  (go:bit)
 end main;	# 21  
 [ 23 ]
 [ 23 ]
-function user.main():int;
+function user.main():void;
     i := 23;
 # simple strength reduction 
     j := "hello world";

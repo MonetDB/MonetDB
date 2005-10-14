@@ -23,8 +23,8 @@ end l;	# 2
 #z:= l();
 #print(z);
 #
-function user.main():int;	# 0  (main:int)
-#defining a ptr returning function 	# 1  ($2:str)
+function user.main():void;	# 0  (main:void)
+#defining a ptr returning function 	# 1  (_2:str)
     z := user.l();	# 2  (z:ptr)
     io.print(z);	# 3 IOprint_val (_4:int)<-(z:ptr)
 end main;	# 4  

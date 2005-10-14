@@ -48,7 +48,7 @@ stdout of test 'crackers07` in directory 'src/modules/mal` itself:
 #
 #crackers.drop(b);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # Testing the cracker implementation 	# 1  (_2:str)
 # perform ordinary selection 	# 2  (_4:str)
     b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_6:int)(_6:int)

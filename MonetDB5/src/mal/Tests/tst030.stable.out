@@ -19,7 +19,7 @@ stdout of test 'tst030` in directory 'src/mal` itself:
 #	print(w);
 #exit	w;
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # check testing for illegal assigments to control variables 	# 1  (_2:str)
 barrier w := calc.>(1,0);	# 2 CALCcompGTintint (w:bit)<-(_4:int)(_5:int) jump 5
     w := false;	# 3  (w:bit)<-(_6:bit)

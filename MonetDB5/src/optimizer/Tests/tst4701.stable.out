@@ -20,7 +20,7 @@ command user.tst903():void address MCCAdmin_tst903;	# 0  (tst903:void)
 #user.tst903();
 #
 !ERROR: 'user.tst903' undefined in user.main[2]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # after the routine tst903 is it can be linked 	# 1  (_2:str)
     user.tst903();	# 2  unknown (_3:void)
 end main;	# 3  

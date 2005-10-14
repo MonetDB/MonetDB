@@ -30,7 +30,7 @@ stdout of test 'tst890` in directory 'src/mal` itself:
 #print(dn,d,dl);
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #test reference counting of batcalc 	# 1  (_2:str)
     b := bat.new(:int,:int);	# 2 CMDBATnew (b:bat[:int,:int])<-(_4:int)(_4:int)
     bat.setName(b,"b");	# 3 BKCsetName (_5:void)<-(b:bat[:int,:int])(_6:str)

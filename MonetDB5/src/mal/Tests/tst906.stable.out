@@ -38,7 +38,7 @@ stdout of test 'tst906` in directory 'src/mal` itself:
 #io.print(z);
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # the multiplex code blocks. 	# 1  (_2:str)
 # check detection of the underlying fast implementations 	# 2  (_4:str)
     b := bat.new(:lng,:lng);	# 3 CMDBATnew (b:bat[:lng,:lng])<-(_6:lng)(_6:lng)

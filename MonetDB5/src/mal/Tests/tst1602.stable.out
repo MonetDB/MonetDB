@@ -107,7 +107,7 @@ stdout of test 'tst1602` in directory 'src/mal` itself:
 #        yg_b := -(x,t);                                                                ah_b := printf("%d ms\n",yg_b);
 #
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     int_1M := bat.new(:void,:lng,1000000);	# 1 CMDBATnew (int_1M:bat[:void,:lng])<-(_2:void)(_3:lng)(_4:int)
     bat.setSequenceBase(int_1M,0@0);	# 2 BKCsetSequenceBase (_5:bat[:void,:lng])<-(int_1M:bat[:void,:lng])(_6:oid)
     i := 1000000:lng;	# 3  (i:lng)<-(_8:lng)

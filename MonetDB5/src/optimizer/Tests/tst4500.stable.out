@@ -162,7 +162,7 @@ end bind;	# 2
 !ERROR: 'batcalc.-' undefined in user.main[89]
 !ERROR: 'batcalc.-' undefined in user.main[106]
 !ERROR: 'batcalc.+' undefined in user.main[121]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # Beware this is not the correct TPC-1, but a merely a test 	# 1  (_2:str)
     optimizer.setDebug();	# 2 QOTdebugOptimizers (_3:void)
     optimizer.commonExpressionRemoval();	# 3 QOTCXoptimizer (_4:str)

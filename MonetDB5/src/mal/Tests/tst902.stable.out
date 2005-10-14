@@ -35,7 +35,7 @@ stdout of test 'tst902` in directory 'src/mal` itself:
 #exit w;
 #print(d);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # what is the overhead of MAL in multiplex situations 	# 1  (_2:str)
 # using a BATloop !! This is 40x slower as the V4.3 multiplex implementation 	# 2  (_4:str)
     b := bat.new(:lng,:lng);	# 3 CMDBATnew (b:bat[:lng,:lng])<-(_6:lng)(_6:lng)

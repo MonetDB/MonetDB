@@ -23,7 +23,7 @@ stdout of test 'tst1002` in directory 'src/mal` itself:
 #	print(MALexception);
 #exit MALexception;
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # the first of a series of BBP test cases 	# 1  (_2:str)
 # the temporary bat produced in tst1000 should not exist anymore 	# 2  (_4:str)
     bbp.open();	# 3 CMDbbpopen (_5:void)

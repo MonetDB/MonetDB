@@ -39,7 +39,7 @@ MALexception:malInclude:could not open file: tst120a
 !ERROR: 'top.first' undefined in user.main[6]
 !ERROR: 'bottom.first' undefined in user.main[7]
 !ERROR: 'top.first' undefined in user.main[8]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 #define 2 modules and check location of routines 	# 1  (_2:str)
 # lookup DBHOME/mal/tst120a.mal 	# 2  (_4:str)
 # does not do anything 	# 3  (_6:str)

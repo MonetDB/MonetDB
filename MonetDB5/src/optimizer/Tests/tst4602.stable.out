@@ -41,7 +41,7 @@ end welcome;	# 8
 #
 !ERROR: MALexception:optimizer.MACROvalidate:RETURN statement is not the last one
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # the first test for macro expansions and inversions 	# 1  (_2:str)
 # error handling 	# 2  (_4:str)
     io.print("test expansion");	# 3 IOprint_val (_8:int)<-(_9:str)
@@ -52,7 +52,7 @@ end main;	# 7
 [ "test expansion" ]
 [ "Welcome" ]
 [ "Welcome" ]
-function user.main():int;
+function user.main():void;
 # the first test for macro expansions and inversions 
 # error handling 
     io.print("test expansion");

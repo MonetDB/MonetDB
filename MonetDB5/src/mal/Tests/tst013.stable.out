@@ -28,7 +28,7 @@ stdout of test 'tst013` in directory 'src/mal` itself:
 #	redo;
 #exit;
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # incomplete barrier blocks. Resolve them when unambigous 	# 1  (_2:str)
 barrier z := true;	# 2  (z:bit)<-(_4:bit) jump 4
     leave z;	# 3  (z:bit) jump 4

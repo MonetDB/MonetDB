@@ -46,7 +46,7 @@ stdout of test 'tst041` in directory 'src/mal` itself:
 #p:= 0:ptr;  io.print(p);
 #p:= 1:ptr;  io.print(p);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # this sequence tests nil type management  	# 1  (_2:str)
     b := nil;	# 2  (b:void)<-(_4:void)
     io.print(b);	# 3 IOprint_val (_5:int)<-(b:void)

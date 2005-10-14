@@ -39,7 +39,7 @@ stdout of test 'tst1012` in directory 'src/mal` itself:
 #print(v);
 #bbp.close();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # the first of a series of BBP test cases 	# 1  (_2:str)
     bbp.open();	# 2 CMDbbpopen (_3:void)
     b := bat.new(:int,:int);	# 3 CMDBATnew (b:bat[:int,:int])<-(_5:int)(_5:int)

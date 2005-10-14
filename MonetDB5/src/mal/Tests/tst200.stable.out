@@ -42,7 +42,7 @@ stdout of test 'tst200` in directory 'src/mal` itself:
 #print(b);
 #print(b,b,b);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # The series tst2?? is a patched version of suite_00 	# 1  (_2:str)
 # The first and foremost BAT operations 	# 2  (_4:str)
     o := calc.oid(20000000);	# 3 CALCint2oid (o:oid)<-(_6:int)
