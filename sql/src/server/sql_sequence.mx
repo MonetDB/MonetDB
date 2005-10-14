@@ -29,6 +29,8 @@ extern int sql_create_sequences(mvc *sql, sql_schema *s);
 extern int sql_find_seq(mvc *m, str seq);
 
 extern stmt *sequences(mvc *sql, symbol *s);
+extern stmt *sql_create_seq(mvc *sql, sql_schema *ss, dlist *qname, sql_subtype *tpe, int start, int inc, int min, int max, int cycle);
+extern char* sql_next_seq_name(mvc *sql);
 
 #endif /*_SQL_SEQUENCE_H_*/
 @c
@@ -43,8 +45,8 @@ sql_create_sequences(mvc *m, sql_schema *s)
 	sql_table *t;
 
 	t = mvc_create_table(m, s, "sequences", 1, 1, 0, -1);
-	mvc_create_column_(m, t, "name", "varchar", 0);
-	mvc_create_column_(m, t, "schema", "varchar", 256);
+	mvc_create_column_(m, t, "name", "varchar", 1024);
+	mvc_create_column_(m, t, "schema", "varchar", 1024);
 	mvc_create_column_(m, t, "start", "bigint", 19);
 	mvc_create_column_(m, t, "cached", "bigint", 19);
 	mvc_create_column_(m, t, "increment", "bigint", 19);
@@ -69,24 +71,36 @@ sql_find_seq(mvc *m, str seq)
 	return res;
 }
 
-static stmt *
-sql_create_seq(mvc *sql, sql_schema *ss, dlist *qname, sql_subtype *tpe, int start, int inc, int min, int max, int cycle)
+stmt *
+sql_create_seq(
+		mvc *sql,
+		sql_schema *ss,
+		dlist *qname,
+		sql_subtype *tpe,
+		int start,
+		int inc,
+		int min,
+		int max,
+		int cycle)
 {
 	char buf[BUFSIZ];
-	char *name = qname_table(qname);
-
+	char* name = qname_table(qname);
 	(void) tpe;
+
 	if (sql_find_seq(sql, name)) {
 		return sql_error(sql, 02,
-				 "CREATE SEQUENCE failed: "
-				 "name %s already in use", name);
+				 "CREATE SEQUENCE: "
+				 "name '%s' already in use", name);
 	} else if (!schema_privs(sql->role_id, ss)) {
-		return sql_error(sql, 02, "User/Role is not allowed to create sequences in schema %s", ss->base.name);
+		return sql_error(sql, 02,
+				"CREATE SEQUENCE: insufficient privileges "
+				"for '%s' in schema '%s'", sql->user, ss->base.name);
 	}
 	snprintf(buf, BUFSIZ,
 		 "insert into sys.sequences values "
-		 "('%s', '%s', %d, %d, %d, %d, %d, %s);",
-		 name, ss->base.name, start, start, inc, min, max, cycle ? "true" : "false");
+		 "('%s',        '%s',    %d,        %d,  %d,  %d,  %d,    %s);",
+		 /*name,      schema, start,    cached, inc, min, max, cycle */
+		 name, ss->base.name, start, start - 1, inc, min, max, cycle ? "true" : "false");
 	return stmt_sql(_strdup(buf));
 }
 
@@ -97,12 +111,27 @@ sql_drop_seq(mvc *sql, sql_schema *ss, dlist *qname)
 	char *name = qname_table(qname);
 
 	if (!sql_find_seq(sql, name)) {
-		return sql_error(sql, 02, "DROP SEQUENCE failed: no such sequence %s", name);
+		return sql_error(sql, 02, "DROP SEQUENCE: no such sequence '%s'", name);
 	} else if (!schema_privs(sql->role_id, ss)) {
-		return sql_error(sql, 02, "User/Role is not allowed to drop sequences in schema %s", ss->base.name);
+		return sql_error(sql, 02, "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", sql->user,  ss->base.name);
 	}
 	snprintf(buf, BUFSIZ, "delete from sys.sequences where name = '%s';", name);
 	return stmt_sql(_strdup(buf));
+}
+
+char*
+sql_next_seq_name(mvc *m)
+{
+	char buf[BUFSIZ + 1];
+
+	sql_schema *sys = find_sql_schema(m->trans, "sys");
+	sql_table *seqs = find_sql_table(sys, "sequences");
+	
+	snprintf(buf, BUFSIZ, "seq_%lld\"\"\"", seqs->cnt++);
+	buf[BUFSIZ] = '\0';
+
+	/* waring: using sa_strdup here */
+	return(sa_strdup(m->sa, buf));
 }
 
 stmt *
@@ -111,26 +140,43 @@ sequences(mvc *sql, symbol *s)
 	stmt *res = NULL;
 
 	switch (s->token) {
-	case SQL_CREATE_SEQ:{
-		dlist *l = s->data.lval;
+		case SQL_CREATE_SEQ:
+		{
+			dlist *l = s->data.lval;
 
-		res = sql_create_seq(sql, cur_schema(sql), 
-				l->h->data.lval, 
-				l->h->next->data.typeval, 
-				l->h->next->next->data.ival, 
-				l->h->next->next->next->data.ival, 
-				l->h->next->next->next->next->data.ival, 
-				l->h->next->next->next->next->next->data.ival,
-				l->h->next->next->next->next->next->next->data.ival);
-	} break;
-	/* TODO SQL_ALTER_SEQ */
-	case SQL_DROP_SEQ:{
-		dlist *l = s->data.lval;
+			/*
+			   mvc *sql,
+			   sql_schema *ss,
+			   dlist *qname,
+			   sql_subtype *tpe,
+			   int start,
+			   int inc,
+			   int min,
+			   int max,
+			   int cycle
+			 */
+			res = sql_create_seq(
+					sql,
+					cur_schema(sql), 
+					l->h->data.lval, 
+					l->h->next->data.typeval, 
+					l->h->next->next->data.lval->h->data.ival, 
+					l->h->next->next->data.lval->h->next->data.ival, 
+					l->h->next->next->data.lval->h->next->data.ival, 
+					l->h->next->next->data.lval->h->next->next->data.ival,
+					l->h->next->next->data.lval->h->next->next->next->data.ival);
+		}
+		break;
+		/* TODO SQL_ALTER_SEQ */
+		case SQL_DROP_SEQ:
+		{
+			dlist *l = s->data.lval;
 
-		res = sql_drop_seq(sql, cur_schema(sql), l->h->data.lval);
-	} break;
-	default:
-		return sql_error(sql, 01, "sql_stmt Symbol(%ld)->token = %s", (long) s, token2string(s->token));
+			res = sql_drop_seq(sql, cur_schema(sql), l->h->data.lval);
+		}
+		break;
+		default:
+			return sql_error(sql, 01, "sql_stmt Symbol(%ld)->token = %s", (long) s, token2string(s->token));
 	}
 	return res;
 }

@@ -68,9 +68,10 @@ stderr of test 'limit_in_create_view.SF-924448` in directory 'src/test/BugDay_20
 # 17:24:16 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=44039  < limit_in_create_view.SF-924448.sql
 # 17:24:16 >  
 
-MAPI  = monetdb@localhost:44039
+MAPI  = monetdb@localhost:40453
 QUERY = create view top as select * from tables limit 10;
-ERROR = !Limit not supported for views
+ERROR = !CREATE VIEW: LIMIT not supported
+
 
 # 17:24:16 >  
 # 17:24:16 >  Done.

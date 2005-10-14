@@ -58,42 +58,42 @@ stderr of test 'primary_key-bug-sf-975308` in directory 'src/test/bugs` itself:
 # 16:06:04 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=50118  < primary_key-bug-sf-975308.sql
 # 16:06:04 >  
 
-MAPI  = monetdb@pictor:56479
+MAPI  = monetdb@localhost:48242
 QUERY = CREATE TABLE test (
-ERROR = !CREATE TABLE: name test already in use
-MAPI  = monetdb@pictor:56479
+ERROR = !CREATE TABLE: name 'test' already in use
+MAPI  = monetdb@localhost:48242
 QUERY = INSERT INTO test values( 2,3 );
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@pictor:56479
+MAPI  = monetdb@localhost:48242
 QUERY = INSERT INTO test values( 2,4 );
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@pictor:56479
+MAPI  = monetdb@localhost:48242
 QUERY = SELECT * from test;
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@pictor:56479
+MAPI  = monetdb@localhost:48242
 QUERY = COMMIT;
 ERROR = !transaction commit failed
         !ERROR: COMMIT: transaction is aborted, will ROLLBACK instead
-MAPI  = monetdb@pictor:56479
+MAPI  = monetdb@localhost:48242
 QUERY = UPDATE test SET y = 1;
-ERROR = !Updating non existing column test.y
-MAPI  = monetdb@pictor:56479
+ERROR = !UPDATE: no such column 'test.y'
+MAPI  = monetdb@localhost:48242
 QUERY = SELECT * from test;
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@pictor:56479
+MAPI  = monetdb@localhost:48242
 QUERY = COMMIT;
 ERROR = !transaction commit failed
         !ERROR: COMMIT: transaction is aborted, will ROLLBACK instead
-MAPI  = monetdb@pictor:56479
+MAPI  = monetdb@localhost:48242
 QUERY = UPDATE test SET x = 1;
-ERROR = !Updating non existing column test.x
-MAPI  = monetdb@pictor:56479
+ERROR = !UPDATE: no such column 'test.x'
+MAPI  = monetdb@localhost:48242
 QUERY = SELECT * from test;
 ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = monetdb@pictor:56479
+MAPI  = monetdb@localhost:48242
 QUERY = DROP table test;
-ERROR = !Cannot drop Table test, views depend on it
-MAPI  = monetdb@pictor:56479
+ERROR = !DROP TABLE: unable to drop table 'test', views depend on it
+MAPI  = monetdb@localhost:48242
 QUERY = COMMIT;
 ERROR = !transaction commit failed
         !ERROR: COMMIT: transaction is aborted, will ROLLBACK instead

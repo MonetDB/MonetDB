@@ -1017,7 +1017,7 @@ sql_column_value(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int
 
 				stmt_destroy(s);
 				if (name)
-					return sql_error(sql, 02, "cannot use non GROUP BY column (%s) in query results without an aggregate function", name);
+					return sql_error(sql, 02, "cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 				else
 					return sql_error(sql, 02, "cannot use non GROUP BY column in query results without an aggregate function");
 			}
@@ -1074,7 +1074,8 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		AtomNode *an = (AtomNode *) se;
 
 		if (!an || !an->a) {
-			return stmt_atom(atom_general(sql_dup_subtype(sql_bind_localtype("str")), NULL, 0));
+			return stmt_atom(atom_general(sql_dup_subtype(
+					sql_bind_localtype("str")), NULL, 0));
 		} else {
 			return stmt_atom(atom_dup(an->a));
 		}
@@ -1082,8 +1083,21 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		break;
 	case SQL_NEXT:{
 		char *seq = se->data.sval;
-		if (!sql_find_seq(sql, seq))
-			return sql_error(sql, 02, "NEXT VALUE FOR SEQUENCE failed: no such sequence %s", seq);
+		int len = strlen(seq);
+		/* NOTE: this is a dirty hack to disable the existence check on
+		 *       inline generated sequences, as they don't exist yet,
+		 *       but eventually will be.  We recognise this situation if
+		 *       the sequence name ends with triple double quotes (").
+		 */
+		if (
+			seq[len - 3] != '"' &&
+			seq[len - 2] != '"' &&
+			seq[len - 1] != '"' &&
+			!sql_find_seq(sql, seq))
+		{
+			return sql_error(sql, 02, "NEXT VALUE FOR: "
+			                 "no such sequence '%s'", seq);
+		}
 		return stmt_seq_next( _strdup(seq) );
 	}
 		break;

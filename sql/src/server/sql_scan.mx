@@ -30,11 +30,16 @@
 
 typedef enum { LINE_1, LINE_N, BLOCKED } prot;
 
+typedef struct _chain {
+	struct _chain* yynext;	/* next link in the chain */
+	int yyval;				/* the token */
+} chain;
+
 struct scanner {
 	bstream *rs;
 	stream *ws;
 
-	int yynext;		/* next token, lr(1) isn't powerfull enough for sql */
+	chain* yynext;	/* next tokens, lr(1) isn't powerfull enough for sql */
 	int yysval;		/* start of current token */
 	int yyval;		/* current token */
 	int yycur;		/* next char in the queue */
@@ -303,6 +308,8 @@ scanner_init_keywords()
 	keywords_insert("VALUE", VALUE);
 	keywords_insert("GENERATED", GENERATED);
 	keywords_insert("IDENTITY", IDENTITY);
+	keywords_insert("SERIAL", SERIAL);
+	keywords_insert("AUTO_INCREMENT", AUTO_INCREMENT);
 }
 
 #define find_keyword_bs(lc, s) find_keyword(lc->rs->buf+lc->rs->pos+s)
@@ -313,7 +320,7 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 	s->rs = rs;
 	s->ws = ws;
 
-	s->yynext = 0;
+	s->yynext = NULL;
 	s->yyval = 0;
 	s->yybak = 0;		/* keep backup of char replaced by EOS */
 	s->yycur = 0;
@@ -352,10 +359,10 @@ scanner_error(mvc *lc, int cur)
 {
 	switch (cur) {
 	case EOF:
-		(void) sql_error(lc, 1, "Unexpected end of input");
+		(void) sql_error(lc, 1, "unexpected end of input");
 		return -1;	/* EOF needs -1 result */
 	default:
-		(void) sql_error(lc, 1, "Unexpected control character");
+		(void) sql_error(lc, 1, "unexpected control character");
 	}
 	return LEX_ERROR;
 }
@@ -625,7 +632,7 @@ number(mvc * c, int cur)
 			utf8_putchar(lc, cur);
 		return scanner_token(lc, token);
 	} else {
-		(void)sql_error( c, 2, "Unexpected symbol %c", cur);
+		(void)sql_error( c, 2, "unexpected symbol %c", cur);
 		return LEX_ERROR;
 	}
 }
@@ -700,7 +707,7 @@ int scanner_symbol(mvc * c, int cur)
 			return scanner_token(lc, CONCATSTRING);
 		}
 	}
-	(void)sql_error( c, 3, "Unexpected symbol (%c)", cur);
+	(void)sql_error( c, 3, "unexpected symbol (%c)", cur);
 	return LEX_ERROR;
 }
 
@@ -747,10 +754,10 @@ sqllex(YYSTYPE * yylval, void *parm)
 	int pos;
 
 	if (lc->yynext) {
-		int next = lc->yynext;
+		int next = lc->yynext->yyval;
 
-		lc->yynext = 0;
-		return next;
+		lc->yynext = lc->yynext->yynext;
+		return(next);
 	}
 
 	if (lc->yybak) {
@@ -788,10 +795,27 @@ sqllex(YYSTYPE * yylval, void *parm)
 	if (token == UNION) {
 		int next = sqllex(yylval, parm);
 
-		if (token == JOIN)
+		if (token == JOIN) {
 			token = UNIONJOIN;
-		else
-			lc->yynext = next;
+		} else {
+			lc->yynext = malloc(sizeof(chain));
+			lc->yynext->yynext = NULL;
+			lc->yynext->yyval = next;
+		}
+/* example code
+	} else if (token == SERIAL) {
+		// expansion of SERIAL into "INTEGER GENERATED ALWAYS AS IDENTITY"
+		token = sqlINTEGER;
+		chain* c = lc->yynext = malloc(sizeof(chain));
+		c->yyval = GENERATED;
+		c = c->yynext = malloc(sizeof(chain));
+		c->yyval = ALWAYS;
+		c = c->yynext = malloc(sizeof(chain));
+		c->yyval = AS;
+		c = c->yynext = malloc(sizeof(chain));
+		c->yyval = IDENTITY;
+		c->yynext = NULL;
+*/
 	}
 	if (token == WITH) 
 		lc->view_end = pos;

@@ -582,18 +582,18 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 	(void) check;		/* Stefan: unused!? */
 
 	if (mvc_bind_table(sql, cur_schema(sql), name)) {
-		return sql_error(sql, 02, "Create View name %s already in use", name);
+		return sql_error(sql, 02, "CREATE VIEW: name '%s' already in use", name);
 	} else if (!schema_privs(sql->role_id, ss)) {
-		return sql_error(sql, 02, "User/Role is not allowed to create views in schema %s", ss->base.name);
+		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema %s", sql->user, ss->base.name);
 	} else if (query) {
 		stmt *sq = NULL;
 		SelectNode *sn = (SelectNode *) query;
 		char *subquery = NULL;
 
 		if (sn->limit >= 0)
-			return sql_error(sql, 01, "Limit not supported for views");
+			return sql_error(sql, 01, "CREATE VIEW: LIMIT not supported");
 		if (sn->orderby)
-			return sql_error(sql, 01, "Order by not supported for views");
+			return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
 
 		sq = scope_subquery(sql, NULL, query);
 		if (!sq)
@@ -633,7 +633,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		return stmt_none();
 		/* only db admin can create views on bats */
 	} else if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-		return sql_error(sql, 02, "Current user %s doesn't have CREATE VIEW AS BATS privileges", sql->user);
+		return sql_error(sql, 02, "CREATE VIEW AS BATS: insufficient privileges for user %s", sql->user);
 	} else {
 		char *err = NULL;
 		sql_table *t = mvc_create_view(sql, ss, name, NULL, 0, 1);
@@ -666,12 +666,12 @@ drop_view(mvc *sql, dlist *qname)
 	sql_table *t = mvc_bind_table(sql, ss, tname);
 
 	if (!t) {
-		return sql_error(sql, 02, "Drop View, view %s unknown", tname);
+		return sql_error(sql, 02, "DROP VIEW: unknown view '%s'", tname);
 	} else if (!t->table) {
 		mvc_drop_table(sql, ss, t->base.name, 0);
 		return stmt_none();
 	} else {
-		return sql_error(sql, 02, "Drop View, cannot drop view %s", tname);
+		return sql_error(sql, 02, "DROP VIEW: unable to drop view '%s'", tname);
 	}
 }
 
@@ -685,22 +685,24 @@ create_index(mvc *sql, sql_schema *ss, char *iname, int itype, dlist *qname, dli
 	sql_table *t = mvc_bind_table(sql, ss, name);
 
 	if (i) {
-		return sql_error(sql, 02, "Index name %s allready used", iname);
+		return sql_error(sql, 02, "CREATE INDEX: name '%s' already in use", iname);
 	} else if (!t) {
-		return sql_error(sql, 02, "Create Index could not find table name %s", name);
+		return sql_error(sql, 02, "CREATE INDEX: no such table '%s'", name);
 	} else {
 		dnode *n = column_list->h;
 		sql_idx *i = mvc_create_idx(sql, t, iname, (idx_type) itype);
 
 		if (!i) {
-			return sql_error(sql, 02, "Create Index failed, index %s allready exists", iname);
+			/* Fabian: I doubt whether this error can be triggered since
+			 * the more generic case is already checked above. */
+			return sql_error(sql, 02, "CREATE INDEX: index '%s' already exists", iname);
 		}
 		for (; n; n = n->next) {
 			char *cname = n->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, cname);
 
 			if (!c) {
-				return sql_error(sql, 02, "Create Index unknown column %s", cname);
+				return sql_error(sql, 02, "CREATE INDEX: no such column '%s'", cname);
 			} else {
 				mvc_create_ic(sql, i, c);
 			}
@@ -720,7 +722,7 @@ drop_index(mvc *sql, dlist *qname)
 	sql_idx *i = mvc_bind_idx(sql, ss, iname);
 
 	if (!i) {
-		return sql_error(sql, 02, "Drop Index, index %s unknown", iname);
+		return sql_error(sql, 02, "DROP INDEX: no such index '%s'", iname);
 	} else {
 		mvc_drop_idx(sql, ss, i->base.name);
 		res = stmt_none();
@@ -736,10 +738,10 @@ create_user(mvc *sql, char *user, char *passwd, char *fullname, char *schema)
 	char buf[BUFSIZ];
 
 	if (sql_find_auth(sql, user) >= 0) {
-		return sql_error(sql, 02, "User %s already exists", user);
+		return sql_error(sql, 02, "CREATE USER: user %s already exists", user);
 	}
 	if ((schema_id = sql_find_schema(sql, schema)) < 0) {
-		return sql_error(sql, 02, "Schema %s doesn't exist", schema);
+		return sql_error(sql, 02, "CREATE USER: no such schema '%s'", schema);
 	}
 	l = create_stmt_list();
 	snprintf(buf, BUFSIZ, "insert into sys.db_users values('%s','%s','%s',%d);", user, passwd, fullname, schema_id);
@@ -753,7 +755,7 @@ static stmt *
 drop_user(mvc *sql, char *user)
 {
 	if (sql_find_auth(sql, user) < 0)
-		return sql_error(sql, 02, "User %s doesn't exist", user);
+		return sql_error(sql, 02, "DROP USER: no such user '%s'", user);
 
 	sql_drop_user(sql, user);
 	return stmt_none();
@@ -765,12 +767,12 @@ alter_user(mvc *sql, char *user, char *passwd, char *schema)
 	int schema_id = 0;
 
 	if (sql_find_auth(sql, user) < 0)
-		return sql_error(sql, 02, "User %s doesn't exist", user);
+		return sql_error(sql, 02, "ALTER USER: no such user '%s'", user);
 
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN && strcmp(user, sql->user) != 0)
-		return sql_error(sql, 02, "Current user/role is not allowed to change password for user %s", user);
+		return sql_error(sql, 02, "ALTER USER: insufficient privileges to change password for user '%s'", user);
 	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0) {
-		return sql_error(sql, 02, "Schema %s doesn't exist", schema);
+		return sql_error(sql, 02, "ALTER USER: no such schema '%s'", schema);
 	}
 	sql_alter_user(sql, user, passwd, schema_id);
 	return stmt_none();
@@ -783,7 +785,7 @@ create_role(mvc *sql, dlist *qname, int grantor)
 	char *role_name = qname->t->data.sval;
 
 	if (dlist_length(qname) > 2) {
-		return sql_error(sql, 02, "qualified role can only have a schema and a role\n");
+		return sql_error(sql, 02, "CREATE ROLE: qualified role can only have a schema and a role\n");
 	}
 	sql_create_role(sql, role_name, grantor);
 	return stmt_none();
@@ -795,7 +797,7 @@ drop_role(mvc *sql, dlist *qname)
 	char *role_name = qname->t->data.sval;
 
 	if (dlist_length(qname) > 2) {
-		return sql_error(sql, 02, "qualified role can only have a schema and a role\n");
+		return sql_error(sql, 02, "DROP ROLE: qualified role can only have a schema and a role\n");
 	}
 	sql_drop_role(sql, role_name);
 	return stmt_none();
@@ -807,71 +809,74 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	int res = SQL_ERR;
 
 	if (alter && (s->token == SQL_UNIQUE || s->token == SQL_PRIMARY_KEY || s->token == SQL_FOREIGN_KEY)) {
-		(void) sql_error(sql, 02, "alter add column with key constraint not implemented\n");
+		(void) sql_error(sql, 02, "ALTER TABLE ADD COLUMN: adding column with key constraint not implemented\n");
 		return res;
 	}
 	switch (s->token) {
-	case SQL_UNIQUE:
-	case SQL_PRIMARY_KEY:
-	{
-		key_type kt;
-		sql_key *k;
+		case SQL_UNIQUE:
+		case SQL_PRIMARY_KEY:
+			{
+				key_type kt;
+				sql_key *k;
 
-		if (s->token == SQL_PRIMARY_KEY && !alter && t->pkey) {
-			(void) sql_error(sql, 02, "A table can only have one primary key\n");
-			return res;
-		}
-		if (name && mvc_bind_key(sql, ss, name)) {
-			(void) sql_error(sql, 02, "Create Key failed, key %s allready exists", name);
-			return res;
-		}
-		kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
-		k = mvc_create_key(sql, t, name, kt, NULL);
+				if (s->token == SQL_PRIMARY_KEY && !alter && t->pkey) {
+					(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+					return res;
+				}
+				if (name && mvc_bind_key(sql, ss, name)) {
+					(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
+					return res;
+				}
+				kt = (s->token == SQL_UNIQUE) ? ukey : pkey;
+				k = mvc_create_key(sql, t, name, kt, NULL);
 
-		mvc_create_kc(sql, k, cs);
-		res = SQL_OK;
-	} break;
-	case SQL_FOREIGN_KEY:
-	{
-		dnode *n = s->data.lval->h;
-		char *rtname = qname_table(n->data.lval);
-		char *rcname = n->next->data.lval->h->data.sval;
-		list *cols;
-		sql_table *rt = mvc_bind_table(sql, cur_schema(sql), rtname);
-		sql_key *k, *rk;
+				mvc_create_kc(sql, k, cs);
+				res = SQL_OK;
+			}
+			break;
+		case SQL_FOREIGN_KEY:
+			{
+				dnode *n = s->data.lval->h;
+				char *rtname = qname_table(n->data.lval);
+				char *rcname = n->next->data.lval->h->data.sval;
+				list *cols;
+				sql_table *rt = mvc_bind_table(sql, cur_schema(sql), rtname);
+				sql_key *k, *rk;
 
-		if (!rt) {
-			(void) sql_error(sql, 02, "table %s unknown\n", rtname);
-			return res;
-		}
-		if (name && mvc_bind_key(sql, ss, name)) {
-			(void) sql_error(sql, 02, "Create Key failed, key %s allready exists", name);
-			return res;
-		}
+				if (!rt) {
+					(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table table '%s'\n", rtname);
+					return res;
+				}
+				if (name && mvc_bind_key(sql, ss, name)) {
+					(void) sql_error(sql, 02, "CONSTRAINT PRIMARY KEY: key %s already exists", name);
+					return res;
+				}
 
-		cols = list_append(list_create(NULL), rcname);
-		rk = mvc_bind_ukey(rt, cols);
-		list_destroy(cols);
-		if (!rk) {
-			(void) sql_error(sql, 02, "Could not find referenced primary key in table %s.%s\n", rtname, rcname);
-			return res;
-		}
-		k = mvc_create_key(sql, t, name, fkey, rk);
-		mvc_create_kc(sql, k, cs);
-		res = SQL_OK;
-	}
-		break;
-	case SQL_NOT_NULL:
-	case SQL_NULL:{
-		int null = (s->token == SQL_NOT_NULL) ? 0 : 1;
+				cols = list_append(list_create(NULL), rcname);
+				rk = mvc_bind_ukey(rt, cols);
+				list_destroy(cols);
+				if (!rk) {
+					(void) sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s.%s\n", rtname, rcname);
+					return res;
+				}
+				k = mvc_create_key(sql, t, name, fkey, rk);
+				mvc_create_kc(sql, k, cs);
+				res = SQL_OK;
+			}
+			break;
+		case SQL_NOT_NULL:
+		case SQL_NULL:
+			{
+				int null = (s->token == SQL_NOT_NULL) ? 0 : 1;
 
-		mvc_null(sql, cs, null);
-		res = SQL_OK;
-	} break;
+				mvc_null(sql, cs, null);
+				res = SQL_OK;
+			}
+			break;
 	}
 
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, "Unknown constraint (%ld)->token = %s\n", (long) s, token2string(s->token));
+		(void) sql_error(sql, 02, "unknown constraint (%ld)->token = %s\n", (long) s, token2string(s->token));
 	}
 	return res;
 }
@@ -889,21 +894,21 @@ table_constraint_name(symbol *s, sql_table *t)
 	static char buf[BUFSIZ];
 
 	switch (s->token) {
-	case SQL_UNIQUE:
-		suffix = "_unique";
-		nms = s->data.lval->h;	/* list of columns */
-		break;
-	case SQL_PRIMARY_KEY:
-		suffix = "_pkey";
-		nms = s->data.lval->h;	/* list of columns */
-		break;
-	case SQL_FOREIGN_KEY:
-		suffix = "_fkey";
-		nms = s->data.lval->h->next->data.lval->h;	/* list of colums */
-		break;
-	default:
-		suffix = "_?";
-		nms = NULL;
+		case SQL_UNIQUE:
+			suffix = "_unique";
+			nms = s->data.lval->h;	/* list of columns */
+			break;
+		case SQL_PRIMARY_KEY:
+			suffix = "_pkey";
+			nms = s->data.lval->h;	/* list of columns */
+			break;
+		case SQL_FOREIGN_KEY:
+			suffix = "_fkey";
+			nms = s->data.lval->h->next->data.lval->h;	/* list of colums */
+			break;
+		default:
+			suffix = "_?";
+			nms = NULL;
 	}
 
 	/* copy table name */
@@ -929,17 +934,17 @@ column_constraint_name(symbol *s, sql_column *sc, sql_table *t)
 	static char buf[BUFSIZ];
 
 	switch (s->token) {
-	case SQL_UNIQUE:
-		suffix = "unique";
-		break;
-	case SQL_PRIMARY_KEY:
-		suffix = "pkey";
-		break;
-	case SQL_FOREIGN_KEY:
-		suffix = "fkey";
-		break;
-	default:
-		suffix = "?";
+		case SQL_UNIQUE:
+			suffix = "unique";
+			break;
+		case SQL_PRIMARY_KEY:
+			suffix = "pkey";
+			break;
+		case SQL_FOREIGN_KEY:
+			suffix = "fkey";
+			break;
+		default:
+			suffix = "?";
 	}
 
 	snprintf(buf, BUFSIZ, "%s_%s_%s", t->base.name, sc->base.name, suffix);
@@ -949,60 +954,69 @@ column_constraint_name(symbol *s, sql_column *sc, sql_table *t)
 
 
 static int
-column_option(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, int alter)
+column_option(
+		mvc *sql,
+		symbol *s,
+		sql_schema *ss,
+		sql_table *t,
+		sql_column *cs,
+		int alter)
 {
 	int res = SQL_ERR;
 
 	assert(cs);
 	switch (s->token) {
-	case SQL_CONSTRAINT:
-	{
-		dlist *l = s->data.lval;
-		char *opt_name = l->h->data.sval;
-		symbol *sym = l->h->next->data.sym;
+		case SQL_CONSTRAINT:
+		{
+			dlist *l = s->data.lval;
+			char *opt_name = l->h->data.sval;
+			symbol *sym = l->h->next->data.sym;
 
-		if (!opt_name)
-			opt_name = column_constraint_name(sym, cs, t);
-		res = column_constraint_type(sql, opt_name, sym, ss, t, cs, alter);
-	}
-		break;
-	case SQL_DEFAULT:{
-		char *r;
-		stmt *tmp = sql_value_exp(sql, NULL, s->data.sym, NULL, NULL, sql_sel);
-		
-		if (!tmp ||
-		   (tmp = check_types(sql, cs->type, tmp, type_equal)) == NULL) 
-			return SQL_ERR;
-		stmt_destroy(tmp);
-
- 		r = symbol2string(sql, s->data.sym);
-		mvc_default(sql, cs, r);
-		_DELETE(r);
-		res = SQL_OK;
-	}
-		break;
-	case SQL_ATOM:{
-		AtomNode *an = (AtomNode *) s;
-
-		if (!an || !an->a) {
-			mvc_default(sql, cs, NULL);
-		} else {
-			atom *a = an->a;
-
-			if (a->data.vtype == TYPE_str) {
-				mvc_default(sql, cs, a->data.val.sval);
-			} else {
-				char *r = atom2string(a);
-
-				mvc_default(sql, cs, r);
-				_DELETE(r);
-			}
+			if (!opt_name)
+				opt_name = column_constraint_name(sym, cs, t);
+			res = column_constraint_type(sql, opt_name, sym, ss, t, cs, alter);
 		}
-		res = SQL_OK;
-	} break;
+		break;
+		case SQL_DEFAULT:
+		{
+			char *r;
+			stmt *tmp = sql_value_exp(sql, NULL, s->data.sym, NULL, NULL, sql_sel);
+
+			if (!tmp ||
+					(tmp = check_types(sql, cs->type, tmp, type_equal)) == NULL) 
+				return SQL_ERR;
+			stmt_destroy(tmp);
+
+			r = symbol2string(sql, s->data.sym);
+			mvc_default(sql, cs, r);
+			_DELETE(r);
+			res = SQL_OK;
+		}
+		break;
+		case SQL_ATOM:
+		{
+			AtomNode *an = (AtomNode *) s;
+
+			if (!an || !an->a) {
+				mvc_default(sql, cs, NULL);
+			} else {
+				atom *a = an->a;
+
+				if (a->data.vtype == TYPE_str) {
+					mvc_default(sql, cs, a->data.val.sval);
+				} else {
+					char *r = atom2string(a);
+
+					mvc_default(sql, cs, r);
+					_DELETE(r);
+				}
+			}
+			res = SQL_OK;
+		}
+		break;
 	}
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, "Unknown column option (%ld)->token = %s\n", (long) s, token2string(s->token));
+		(void) sql_error(sql, 02, "unknown column option (%ld)->token = %s\n", (long) s, token2string(s->token));
 	}
 	return res;
 }
@@ -1050,7 +1064,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			atom *a = NULL;
 
 			if (!cs->null && !cs->def) {
-				return sql_error(sql, 02, "Default value is NULL, but column has NOT NULL constraint\n");
+				return sql_error(sql, 02, "CREATE TABLE: column default value is NULL, but column has NOT NULL constraint\n");
 			}
 			if (cs->null && !cs->def) {
 				a = atom_general(sql_dup_subtype(cs->type), NULL, 0);
@@ -1058,7 +1072,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				a = atom_general(sql_dup_subtype(cs->type), _strdup(cs->def), 1);
 			}
 			if (!a) {
-				return sql_error(sql, 02, "Failed to create default value for alter table add (%s)\n", cs->def ? cs->def : "NULL");
+				return sql_error(sql, 02, "ALTER TABLE: failed to create default value '%s'\n", cs->def ? cs->def : "NULL");
 			}
 			res = stmt_append(stmt_cbat(cs, stmt_basetable(t, t->base.name), 1, st_bat), stmt_const(stmt_cbat(mvc_first_column(sql, t), stmt_basetable(t, t->base.name), 0, st_bat), stmt_atom(a)));
 		}
@@ -1067,7 +1081,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	}
 
 	if (!res)
-		return sql_error(sql, 02, "Create Column: type or name");
+		return sql_error(sql, 02, "CREATE: column type or name");
 	return res;
 }
 
@@ -1080,7 +1094,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 	sql_table *ft = mvc_bind_table(sql, ss, rtname);
 
 	if (!ft) {
-		return sql_error(sql, 02, "Table %s unknown\n", rtname);
+		return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 	} else {
 		sql_key *k, *rk = NULL;
 		dnode *nms = n->next->data.lval->h;
@@ -1104,7 +1118,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 			rk = &ft->pkey->k;
 		}
 		if (!rk) {
-			return sql_error(sql, 02, "Could not find referenced primary key in table %s\n", ft->base.name);
+			return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'\n", ft->base.name);
 		}
 		k = mvc_create_key(sql, t, name, fkey, rk);
 
@@ -1113,12 +1127,12 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t,
 			sql_column *c = mvc_bind_column(sql, t, nm);
 
 			if (!c) {
-				return sql_error(sql, 02, "Table %s has no column %s\n", t->base.name, nm);
+				return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'\n", nm, t->base.name);
 			}
 			mvc_create_kc(sql, k, c);
 		}
 		if (nms || fnms) {
-			return sql_error(sql, 02, "Not all columns are handled in the foreign key\n");
+			return sql_error(sql, 02, "CONSTRAINT FOREIGN KEY: not all columns are handled\n");
 		}
 		if (alter) {
 			list *l = create_stmt_list();
@@ -1137,37 +1151,37 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 	stmt *res = NULL;
 
 	switch (s->token) {
-	case SQL_UNIQUE:
-	case SQL_PRIMARY_KEY:
-	{
-		key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
-		sql_key *k = mvc_create_key(sql, t, name, kt, NULL);
-		dnode *nms = s->data.lval->h;
+		case SQL_UNIQUE:
+		case SQL_PRIMARY_KEY:
+		{
+			key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : ukey);
+			sql_key *k = mvc_create_key(sql, t, name, kt, NULL);
+			dnode *nms = s->data.lval->h;
 
-		for (; nms; nms = nms->next) {
-			char *nm = nms->data.sval;
-			sql_column *c = mvc_bind_column(sql, t, nm);
+			for (; nms; nms = nms->next) {
+				char *nm = nms->data.sval;
+				sql_column *c = mvc_bind_column(sql, t, nm);
 
-			if (!c) {
-				return sql_error(sql, 02, "Table %s has no column %s\n", t->base.name, nm);
+				if (!c) {
+					return sql_error(sql, 02, "no such column '%s' for table '%s'\n", nm, t->base.name);
+				}
+				(void) mvc_create_kc(sql, k, c);
 			}
-			(void) mvc_create_kc(sql, k, c);
-		}
-		if (alter) {
-			list *l = create_stmt_list();
+			if (alter) {
+				list *l = create_stmt_list();
 
-			res = sql_insert_add_idx(sql, t, k->idx, l);
-		} else {
-			res = stmt_none();
+				res = sql_insert_add_idx(sql, t, k->idx, l);
+			} else {
+				res = stmt_none();
+			}
 		}
-	}
 		break;
-	case SQL_FOREIGN_KEY:
-		res = table_foreign_key(sql, name, s, ss, t, alter);
-		break;
+		case SQL_FOREIGN_KEY:
+			res = table_foreign_key(sql, name, s, ss, t, alter);
+			break;
 	}
 	if (!res) {
-		return sql_error(sql, 02, "Table Constraint Type: wrong token (%ld) = %s\n", (long) s, token2string(s->token));
+		return sql_error(sql, 02, "table constraint type: wrong token (%ld) = %s\n", (long) s, token2string(s->token));
 	}
 	return res;
 }
@@ -1188,7 +1202,7 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	}
 
 	if (!res) {
-		return sql_error(sql, 02, "Table Constraint: wrong token (%ld) = %s\n", (long) s, token2string(s->token));
+		return sql_error(sql, 02, "table constraint: wrong token (%ld) = %s\n", (long) s, token2string(s->token));
 	}
 	return res;
 }
@@ -1213,7 +1227,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		dlist *olist = n->next->data.lval;
 
 		if (!c) {
-			return sql_error(sql, 02, "Column %s not found\n", cname);
+			return sql_error(sql, 02, "column %s not found\n", cname);
 		} else {
 			if (column_options(sql, olist, ss, t, c, alter) == SQL_ERR)
 				return NULL;
@@ -1243,7 +1257,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		(void)action;
 		if (mvc_bind_column(sql, t, cname) == NULL)
-			return sql_error(sql, 02, "Cannot drop unknown column %s\n", cname);
+			return sql_error(sql, 02, "cannot drop unknown column %s\n", cname);
 		mvc_drop_column(sql, t, cname);
 		res = stmt_none();
 	} break;
@@ -1255,13 +1269,13 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		(void)action;
 		if (mvc_bind_key(sql, ss, kname ) == NULL)
-			return sql_error(sql, 02, "Cannot drop unknown constraint %s\n", kname);
+			return sql_error(sql, 02, "cannot drop unknown constraint %s\n", kname);
 		mvc_drop_key(sql, ss, kname);
 		res = stmt_none();
 	} break;
 	}
 	if (!res) {
-		return sql_error(sql, 02, "Unknown table element (%ld)->token = %s\n", (long) s, token2string(s->token));
+		return sql_error(sql, 02, "unknown table element (%ld)->token = %s\n", (long) s, token2string(s->token));
 	}
 	return res;
 }
@@ -1272,9 +1286,9 @@ create_table(mvc *sql, sql_schema *ss, int temp, dlist *qname, dlist *columns, i
 	char *name = qname_table(qname);
 
 	if (mvc_bind_table(sql, ss, name)) {
-		return sql_error(sql, 02, "CREATE TABLE: name %s already in use", name);
+		return sql_error(sql, 02, "CREATE TABLE: name '%s' already in use", name);
 	} else if (!schema_privs(sql->role_id, ss)) {
-		return sql_error(sql, 02, "User/Role is not allowed to create tables in schema %s", ss->base.name);
+		return sql_error(sql, 02, "CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", sql->user, ss->base.name);
 	} else {
 		sql_table *t = mvc_create_table(sql, ss, name, 0, !temp, 0, size);
 		list *new_columns = create_stmt_list();
@@ -1302,7 +1316,7 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 	sql_table *t = mvc_bind_table(sql, ss, tname);
 
 	if (!t) {
-		return sql_error(sql, 02, "DROP TABLE: unknown table: %s", tname);
+		return sql_error(sql, 02, "DROP TABLE: no such table '%s'", tname);
 	} else if (t->keys.set) {
 		node *n;
 
@@ -1343,7 +1357,7 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 					sql_table *ut = m->data;
 
 					if (ut == t) {
-						return sql_error(sql, 02, "Cannot drop Table %s, views depend on it", tname);
+						return sql_error(sql, 02, "DROP TABLE: unable to drop table '%s', views depend on it", tname);
 					}
 				}
 				stmt_destroy(s);
@@ -1353,7 +1367,7 @@ drop_table(mvc *sql, dlist *qname, int drop_action)
 		mvc_drop_table(sql, ss, t->base.name, drop_action);
 		return stmt_none();
 	} else {
-		return sql_error(sql, 02, "Drop Table, cannot drop view %s ", tname);
+		return sql_error(sql, 02, "DROP TABLE: cannot drop VIEW '%s'", tname);
 	}
 }
 
@@ -1364,7 +1378,7 @@ alter_table(mvc *sql, sql_schema *ss, dlist *qname, symbol *te)
 	sql_table *t = NULL;
 
 	if ((t = mvc_bind_table(sql, ss, name)) == NULL) {
-		return sql_error(sql, 02, "Alter Table name %s doesn't exist", name);
+		return sql_error(sql, 02, "ALTER TABLE: no such table '%s'", name);
 	} else {
 		return table_element(sql, te, ss, t, 1);
 	}
@@ -1394,13 +1408,13 @@ create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements)
 	int auth_id = sql->role_id;
 
 	if (auth && (auth_id = sql_find_auth(sql, auth)) < 0) {
-		return sql_error(sql, 02, "Authorization %s doesn't exist", auth);
+		return sql_error(sql, 02, "CREATE SCHEMA: no such authorization '%s'", auth);
 	}
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-		return sql_error(sql, 02, "Current user %s doesn't have CREATE SCHEMA privileges", sql->user);
+		return sql_error(sql, 02, "CREATE SCHEMA: insufficient privileges for user '%s'", sql->user);
 	}
 	if (mvc_bind_schema(sql, name)) {
-		return sql_error(sql, 02, "Create Schema name %s already in use", name);
+		return sql_error(sql, 02, "CREATE SCHEMA: name '%s' already in use", name);
 	} else {
 		list *table_elements = create_stmt_list();
 		sql_schema *ss = mvc_create_schema(sql, name, auth_id);
@@ -1642,7 +1656,7 @@ schemas(mvc *sql, symbol *s)
 		break;
 
 	default:
-		return sql_error(sql, 01, "Schema statement unknown Symbol(%ld)->token = %s", (long) s, token2string(s->token));
+		return sql_error(sql, 01, "schema statement unknown symbol(%ld)->token = %s", (long) s, token2string(s->token));
 	}
 	return ret;
 }

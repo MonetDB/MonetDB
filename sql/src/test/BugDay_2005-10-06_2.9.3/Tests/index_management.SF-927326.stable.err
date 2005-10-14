@@ -68,12 +68,13 @@ stderr of test 'index_management.SF-927326` in directory 'src/test/BugDay_2005-1
 # 23:01:40 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41591  < index_management.SF-927326.sql
 # 23:01:40 >  
 
-MAPI  = monetdb@localhost:41591
+MAPI  = monetdb@localhost:40453
 QUERY = CREATE INDEX my_index ON my_table(my_column);
-ERROR = !Index name my_index allready used
-MAPI  = monetdb@localhost:41591
+ERROR = !CREATE INDEX: name 'my_index' already in use
+MAPI  = monetdb@localhost:40453
 QUERY = CREATE UNIQUE INDEX my_index ON my_table(my_column);
-ERROR = !Index name my_index allready used
+ERROR = !CREATE INDEX: name 'my_index' already in use
+
 
 # 23:01:40 >  
 # 23:01:40 >  Done.

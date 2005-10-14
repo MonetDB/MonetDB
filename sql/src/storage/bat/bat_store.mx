@@ -1869,7 +1869,7 @@ store_init(int debug, char *logdir, char *dbname, backend_stack stk)
 		bootstrap_create_column(tr, t, "number", "int", 9);
 
 		if (sql_trans_commit(tr) != SQL_OK)
-			fprintf(stderr, "Cannot commit initial transaction\n");
+			fprintf(stderr, "cannot commit initial transaction\n");
 		sql_trans_destroy(tr);
 	}
 	return first;

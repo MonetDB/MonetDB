@@ -226,7 +226,7 @@ qname_table(dlist *qname)
 	} else if (dlist_length(qname) == 2) {
 		return qname->h->next->data.sval;
 	}
-	return "Unknown";
+	return "unknown";
 }
 
 stmt *
@@ -895,6 +895,7 @@ semantic(mvc *sql, symbol *s)
 		return selects(sql, s);
 
 	case SQL_PREP:
+	case SQL_MULSTMT:
 	{
 		dnode *d;
 		list *l = create_stmt_list();

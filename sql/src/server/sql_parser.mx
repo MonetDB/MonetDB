@@ -141,7 +141,8 @@ typedef enum tokens {
 	SQL_COPYFROM,
 	SQL_COPYTO,
 	SQL_EXPORT,
-	SQL_NEXT
+	SQL_NEXT,
+	SQL_MULSTMT
 } tokens;
 
 typedef enum jt {
@@ -168,6 +169,7 @@ extern int sqlparse(void *);
 #include "sql_decimal.h"	/* for decimal_from_str() */
 #include "sql_semantic.h"	/* for sql_add_param() & sql_add_arg() */
 #include "sql_env.h"
+#include "sql_sequence.h"	/* for sql_next_seq_name() */
 
 #include <unistd.h>
 #include <string.h>
@@ -294,6 +296,7 @@ int yydebug=1;
 	column_option
 	column_constraint
 	column_constraint_type
+	generated_column
 	like_table
 	domain_constraint_type
 	opt_order_by_clause
@@ -399,6 +402,8 @@ int yydebug=1;
 	paramlist
 	opt_paramlist
 	opt_ref_action
+	opt_seq_params
+	serial_opt_params
 
 %type <ival>
 	drop_action
@@ -483,7 +488,8 @@ int yydebug=1;
 /* sequence operations */
 %token SEQUENCE INCREMENT MAXVALUE MINVALUE CYCLE
 %token NEXT VALUE
-%token GENERATED IDENTITY
+%token GENERATED ALWAYS IDENTITY
+%token SERIAL AUTO_INCREMENT /* PostgreSQL and MySQL immitators */
 
 	/* operators */
 %left UNION EXCEPT INTERSECT CORRESPONDING UNIONJOIN
@@ -530,9 +536,21 @@ SQLCODE SQLERROR UNDER WHENEVER
 %%
 
 sqlstmt:
-   sql ';'		{ mvc *m = (mvc*)parm;
-			  m->sym = $$ = $1; YYACCEPT; }
- | PREPARE 		{ mvc *m = (mvc*)parm;
+   sql ';'
+	{
+		mvc *m = (mvc*)parm;
+		/* handle multi-statements by wrapping them in a list */
+		if (m->sym) {
+			dlist* l = _dlist_create();
+			_dlist_append_symbol(l, m->sym);
+			_dlist_append_symbol(l, $$);
+			m->sym = $$ = _symbol_create_list(SQL_MULSTMT , l);
+		} else {
+			m->sym = $$ = $1;
+		}
+		YYACCEPT;
+	}
+| PREPARE 		{ mvc *m = (mvc*)parm;
 		  	  m->mode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; }
    sql ';' 		{ mvc *m = (mvc*)parm;
@@ -586,14 +604,14 @@ declare:
 	;
 
 set:
-        SET ident '=' scalar_exp	
+	SET ident '=' scalar_exp
 		{ dlist *l = _dlist_create();
 		_dlist_append_string(l, $2 );
 		_dlist_append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	SET sqlSESSION AUTHORIZATION ident
 		{ dlist *l = _dlist_create();
-	        sql_subtype *t = sql_bind_subtype("char", strlen($4), 0 );
+			sql_subtype *t = sql_bind_subtype("char", strlen($4), 0 );
 		_dlist_append_string(l, sa_strdup(SA, "current_user"));
 		_dlist_append_symbol(l,
 			_newAtomNode( _atom_string(t,sql2str($4))) );
@@ -634,21 +652,19 @@ set:
   ;
 
 schema:
-    CREATE SCHEMA schema_name opt_schema_default_char_set
-	opt_schema_path	opt_schema_element_list
-
-	{ dlist *l = _dlist_create();
-	  _dlist_append_list(l, $3);
-	  _dlist_append_symbol(l, $4);
-	  _dlist_append_symbol(l, $5);
-	  _dlist_append_list(l, $6);
-	  $$ = _symbol_create_list( SQL_CREATE_SCHEMA, l); }
- |  DROP SCHEMA qname drop_action
-
-	{ dlist *l = _dlist_create();
-	  _dlist_append_list(l, $3);
-	  _dlist_append_int(l, $4);
-	  $$ = _symbol_create_list( SQL_DROP_SCHEMA, l); }
+	CREATE SCHEMA schema_name opt_schema_default_char_set
+			opt_schema_path	opt_schema_element_list
+		{ dlist *l = _dlist_create();
+		_dlist_append_list(l, $3);
+		_dlist_append_symbol(l, $4);
+		_dlist_append_symbol(l, $5);
+		_dlist_append_list(l, $6);
+		$$ = _symbol_create_list( SQL_CREATE_SCHEMA, l); }
+  |	DROP SCHEMA qname drop_action
+		{ dlist *l = _dlist_create();
+		_dlist_append_list(l, $3);
+		_dlist_append_int(l, $4);
+		$$ = _symbol_create_list( SQL_DROP_SCHEMA, l); }
  ;
 
 schema_name:
@@ -898,47 +914,62 @@ create:	role_def | table_def | view_def | module_def | type_def | func_def | ind
 seq_def:
     CREATE SEQUENCE qname
     AS data_type
-    opt_start
-    opt_increment
-    opt_min
-    opt_max
-    opt_cycle
-	{ dlist *l = _dlist_create();
-	  _dlist_append_list(l, $3 );
-	  _dlist_append_type(l, $5 );
-	  _dlist_append_int(l, $6 );
-	  _dlist_append_int(l, $7 );
-	  _dlist_append_int(l, $8 );
-	  _dlist_append_int(l, $9 );
-	  _dlist_append_int(l, $10 );
-	  $$ = _symbol_create_list( SQL_CREATE_SEQ, l ); }
+    opt_seq_params
+	{
+		dlist *l = _dlist_create();
+		_dlist_append_list(l, $3);
+		_dlist_append_type(l, $5);
+		_dlist_append_list(l, $6);
+		$$ = _symbol_create_list(SQL_CREATE_SEQ, l);
+	}
   | DROP SEQUENCE qname
-	{ $$ = _symbol_create_list( SQL_DROP_SEQ, $3 ); }
-  ;
+	{
+		dlist *l = _dlist_create();
+		_dlist_append_list(l, $3);
+		$$ = _symbol_create_list(SQL_DROP_SEQ, l);
+	}
+ ;
+
+opt_seq_params:
+	opt_start
+	opt_increment
+	opt_min
+	opt_max
+	opt_cycle
+	{ dlist *l = _dlist_create();
+	  _dlist_append_int(l, $1 );
+	  _dlist_append_int(l, $2 );
+	  _dlist_append_int(l, $3 );
+	  _dlist_append_int(l, $4 );
+	  _dlist_append_int(l, $5 );
+	  $$ = l;
+	}
+;
 
 opt_start:
-     /* empty */		{ $$ = 1; }
-  |  START WITH intval		{ $$ = $3; }
+	/* empty */				{ $$ = 1; }
+  |	START WITH nonzero		{ $$ = $3; }
   ;
 
 opt_increment:
-     /* empty */		{ $$ = 1; }
-  |  INCREMENT BY intval	{ $$ = $3; }
+	/* empty */				{ $$ = 1; }
+  |	INCREMENT BY nonzero	{ $$ = $3; }
   ;
 
 opt_min:
-     /* empty */ { $$ = 1; }
-  |  NO MINVALUE { $$ = 0; }
+	/* empty */ 			{ $$ = 1; }
+  |	MINVALUE nonzero		{ $$ = $2; }
   ;
 
 opt_max:
-     /* empty */ { $$ = 1; }
-  |  NO MAXVALUE { $$ = 0; }
+	/* empty */				{ $$ = 0; }
+  |	MAXVALUE nonzero		{ $$ = $2; }
   ;
 
 opt_cycle:
-     /* empty */ { $$ = 1; }
-  |  NO CYCLE	 { $$ = 0; }
+	/* empty */				{ $$ = 0; }
+  |	CYCLE					{ $$ = 1; }
+  |	NO CYCLE				{ $$ = 0; }
   ;
 
 index_def:
@@ -1025,12 +1056,42 @@ add_table_element: column_def | table_constraint ;
 table_element: add_table_element | column_options | like_table ;
 
 column_def:
-    column data_type opt_column_def_opt_list
-	{ dlist *l = _dlist_create();
-	  _dlist_append_string(l, $1 );
-	  _dlist_append_type(l, $2 );
-	  _dlist_append_list(l, $3 );
-	  $$ = _symbol_create_list( SQL_COLUMN, l ); }
+	column data_type opt_column_def_opt_list
+		{
+			dlist *l = _dlist_create();
+			_dlist_append_string(l, $1);
+			_dlist_append_type(l, $2);
+			_dlist_append_list(l, $3);
+			$$ = _symbol_create_list(SQL_COLUMN, l);
+		}
+ |  column SERIAL
+		{ /* SERIAL = INTEGER GENERATED ALWAYS AS IDENTITY */
+			mvc *m = (mvc*)parm;
+			/* note: sql_next_seq_name uses sa_alloc */
+			str sn = sql_next_seq_name(m);
+			/* sequence generation code */
+			dlist *l = _dlist_create();
+			/* the name of the sequence */
+			_dlist_append_list(l, _dlist_append_string(_dlist_create(), sn));
+			/* ultra dirty: inline 'integer' type generation */
+			_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
+			/* finally all the options */
+			dlist *o = _dlist_create();
+			_dlist_append_int(o, 1); /* start */
+			_dlist_append_int(o, 1); /* increment */
+			_dlist_append_int(o, 1); /* min */
+			_dlist_append_int(o, 0); /* max */
+			_dlist_append_int(o, 0); /* cycle */
+			_dlist_append_list(l, o);
+			m->sym = _symbol_create_list(SQL_CREATE_SEQ, l);
+			l = _dlist_create();
+			_dlist_append_string(l, $1);
+			_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
+			o = _dlist_create();
+			_dlist_append_symbol(o, _symbol_create_symbol(SQL_DEFAULT, _symbol_create(SQL_NEXT, sn)));
+			_dlist_append_list(l, o);
+			$$ = _symbol_create_list(SQL_COLUMN, l);
+		}
  ;
 
 opt_column_def_opt_list:
@@ -1061,7 +1122,7 @@ column_option_list:
 			{ $$ = _dlist_append_symbol($1, $3 ); }
  ;
 
-column_option: default | column_constraint ;
+column_option: default | column_constraint | generated_column;
 
 default:
     DEFAULT default_value { $$ = _symbol_create_symbol(SQL_DEFAULT, $2); }
@@ -1080,6 +1141,61 @@ column_constraint:
 	  _dlist_append_symbol(l, $2 );
 	  $$ = _symbol_create_list( SQL_CONSTRAINT, l ); }
  ;
+
+generated_column:
+	GENERATED ALWAYS AS IDENTITY serial_opt_params
+	{
+		mvc *m = (mvc*)parm;
+		/* note: sql_next_seq_name uses sa_alloc */
+		str sn = sql_next_seq_name(m);
+		/* sequence generation code */
+		dlist *l = _dlist_create();
+		/* the name of the sequence */
+		_dlist_append_list(l, _dlist_append_string(_dlist_create(), sn));
+		/* ultra dirty: inline 'integer' type generation */
+		_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
+		/* finally all the options */
+		_dlist_append_list(l, $5);
+		m->sym = _symbol_create_list(SQL_CREATE_SEQ, l);
+		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create(SQL_NEXT, sn));
+	}
+ |	AUTO_INCREMENT
+	{
+		mvc *m = (mvc*)parm;
+		/* note: sql_next_seq_name uses sa_alloc */
+		str sn = sql_next_seq_name(m);
+		/* sequence generation code */
+		dlist *l = _dlist_create();
+		/* the name of the sequence (not known here) */
+		_dlist_append_list(l, _dlist_append_string(_dlist_create(), NULL));
+		/* ultra dirty: inline 'integer' type generation */
+		_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
+		/* finally all the options */
+		dlist *o = _dlist_create();
+		_dlist_append_int(o, 1); /* start */
+		_dlist_append_int(o, 1); /* increment */
+		_dlist_append_int(o, 1); /* min */
+		_dlist_append_int(o, 0); /* max */
+		_dlist_append_int(o, 0); /* cycle */
+		_dlist_append_list(l, o);
+		m->sym = _symbol_create_list(SQL_CREATE_SEQ, l);
+		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create(SQL_NEXT, sn));
+	}
+ ;
+
+serial_opt_params:
+	/* empty: return the defaults */
+	{ dlist *l = _dlist_create();
+	  _dlist_append_int(l, 1); /* start */
+	  _dlist_append_int(l, 1); /* increment */
+	  _dlist_append_int(l, 1); /* min */
+	  _dlist_append_int(l, 0); /* max */
+	  _dlist_append_int(l, 0); /* cycle */
+	  $$ = l;
+	}
+  |	'(' opt_seq_params ')'	{ $$ = $2; }
+ ;
+
 
 table_constraint:
     opt_constraint_name table_constraint_type  /*opt_constraint_attributes*/
