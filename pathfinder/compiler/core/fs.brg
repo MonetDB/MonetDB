@@ -3109,6 +3109,14 @@ reduce (PFpnode_t * p, int goalnt)
         /* TextConstructor:        text (Expr) */
         case 193:
         {
+            /*
+             * FIXME:
+             *   Since June 2005 the W3C specs describe different variants
+             *   for fs:item-sequence-to-untypedAtomic() for each node
+             *   kind. fs:item-sequence-to-untypedAtomic-text() handles
+             *   the empty sequence differently. For now, we leave everything
+             *   as it is and wait until the W3C guys know what they want.
+             */
             PFfun_t *is2uA =
                 function (PFqname (PFns_pf, "item-sequence-to-untypedAtomic"));
 
