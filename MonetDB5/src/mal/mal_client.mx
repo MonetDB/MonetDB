@@ -464,10 +464,11 @@ it starts serviceing statements
 void initClientThread(Client c)
 {
 	Thread t;
+/*	still unsafe, race conditions, garbage left over??
 	if( c->mythread){
-		printf("Re-initialize thread in initClientThread\n");
 		t= c->mythread;
 	} else
+*/
 		c->mythread = t=  THRnew(c->mypid=MT_getpid(),c->user);
 	GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
 	c->errbuf = GDKerrbuf;
@@ -591,11 +592,11 @@ void freeClient(Client c)
 	c->login = c->delay = c->logout = 0;
 @-
 The threads may not be removed, but should become dormant
+@c
 	THRdel(c->mythread);
 	c->mythread= 0;
 	c->mypid= 0;
-@c
-	THRsuspend(c->mythread);
+	/* THRsuspend(c->mythread); still unsafe */
 	if (c->user) {
 		GDKfree(c->user); 
 		c->user = NULL;
