@@ -335,6 +335,11 @@ The scenarios are run until we finally close the last one.
 				break;
 			resetScenario(c);
 		} while (c->scenario);
+@-
+At this stage we should clean out the MAL block
+@c
+	freeMalBlk(c->curprg->def);
+	c->curprg->def= 0;
 
 	if (c->mode > FINISHING) {
 		if (isAdministrator(c)) {
