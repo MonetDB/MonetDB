@@ -43,6 +43,8 @@ extern int mvc_result_value(mvc *m, char *tn, char *name, char *typename, int di
 #include <mtime.h>
 #include <bat/res_table.h>
 #include <bat/bat_bm.h>
+extern int mvc_send_int(stream *s, int cnt);
+extern int mvc_send_sht(stream *s, sht cnt);
 
 @= dec_tostr
 	char buf[32];
@@ -489,9 +491,20 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 		} else if (!c->p || ATOMcmp(c->mtype, ATOMnilptr(c->mtype), c->p) == 0) {
 			ok = (stream_write(s, "NULL", sizeof("NULL") - 1, 1) == 1);
 		} else {
-			int l = (*BATatoms[c->mtype].atomToStr) (&buf, &len, c->p);
-
-			ok = (stream_write(s, buf, l, 1) == 1);
+/* this example illustrates we have to do something about atom printing */
+/* it saves a lot of GDKmalloc/GDKfree */
+			int l;
+			switch(c->mtype){
+			case TYPE_sht:
+				l= mvc_send_sht(s, *(sht*) c->p);
+				break;
+			case TYPE_int:
+				l= mvc_send_int(s, *(int*) c->p);
+				break;
+			default:
+				l = (*BATatoms[c->mtype].atomToStr) (&buf, &len, c->p);
+				ok = (stream_write(s, buf, l, 1) == 1);
+			}
 		}
 	}
 	if( len)
@@ -599,18 +612,25 @@ mvc_export_table(mvc *m, stream *s, res_table *t, unsigned int offset, unsigned 
 }
 @-
 improved formatting of positive integers
-@c
+@= mvc_send
 int
-mvc_send_int(stream *s, int cnt){
+mvc_send_@1(stream *s, @1 cnt){
 	char buf[50], *b;
+	int neg = cnt <0;
+	if(neg) cnt = -cnt;
 	b= buf+49;
 	do{
 		*b--= '0'+ (cnt %10);
 		cnt /=10;
 	} while(cnt>0);
-	b++;
+	if( neg) 
+		*b = '-'; 
+	else b++;
 	return stream_write(s, b, 50- (b-buf),1)==1;
 }
+@c
+@:mvc_send(sht)@
+@:mvc_send(int)@
 int
 mvc_export_result(mvc *m, stream *s, int res_id)
 {
@@ -669,7 +689,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 
 		if (c->type->type->localtype == TYPE_str) {
 			if (c->type->type->eclass == EC_CHAR) {
-				ok = (stream_printf(s, SZFMT, c->type->digits) >= 0);
+				ok = mvc_send_int(s,c->type->digits);
 			} else {
 				count = 0;
 				if (c->b) {
@@ -680,7 +700,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 				} else {
 					count = strlen((char *) c->p);
 				}
-				ok = (stream_printf(s, SZFMT, count) >= 0);
+				ok = mvc_send_int(s,count);
 			}
 			/* the following three could be done once by taking the
 			   max value and calculating the number of digits from that
@@ -688,44 +708,41 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 			   include the optional sign */
 		} else if (c->type->type->eclass == EC_NUM) {
 			if (c->type->type->localtype == TYPE_sht) {
-				count = 6;
-				ok = (stream_printf(s, SZFMT, count) >= 0);
+				ok= stream_write(s,"6",1,1)==1;
 			} else if (c->type->type->localtype == TYPE_int) {
-				count = 10;
-				ok = (stream_printf(s, SZFMT, count) >= 0);
+				ok= stream_write(s,"10",2,1)==1;
 			} else { /* TYPE_lng */
-				count = 20;
-				ok = (stream_printf(s, SZFMT, count) >= 0);
+				ok= stream_write(s,"20",2,1)==1;
 			}
 		} else if (c->type->type->eclass == EC_FLT) {
 		/* [sign]+digit+period+[max 6 digits]+E+[sign]+[max 2 digits] */
 			if (c->type->type->localtype == TYPE_flt) {
-				ok = (stream_printf(s, SZFMT, 13) >= 0);
+				ok= stream_write(s,"13",2,1)==1;
 		/* [sign]+digit+period+[max 14 digits]+E+[sign]+[max 3 digits] */
 			} else { /* TYPE_dbl */
-				ok = (stream_printf(s, SZFMT, 22) >= 0);
+				ok= stream_write(s,"22",2,1)==1;
 			}
 		} else if (c->type->type->eclass == EC_DEC) {
 			count = 1 + c->type->digits;
 			if (c->type->scale > 0)
 				count += 1;
-			ok = (stream_printf(s, SZFMT, count) >= 0);
+			ok = mvc_send_int(s,count);
 		} else if (c->type->type->eclass == EC_DATE) {
-			ok = (stream_write(s, "10", 2, 1) == 1);
+			ok= stream_write(s,"10",2,1)==1;
 		} else if (c->type->type->eclass == EC_TIME) {
 			count = 8;
 			if (c->type->scale)	/* time zone */
 				count += 6;	/* +03:30 */
 			if (c->type->digits)	/* fractional seconds precision */
 				count += 1 + c->type->digits;
-			ok = (stream_printf(s, SZFMT, count) >= 0);
+			ok = mvc_send_int(s,count);
 		} else if (c->type->type->eclass == EC_TIMESTAMP) {
 			count = 10 + 1 + 8;
 			if (c->type->type->scale)	/* time zone */
 				count += 6;		/* +03:30 */
 			if (c->type->digits)	/* fractional seconds precision */
 				count += 1 + c->type->digits;
-			ok = (stream_printf(s, SZFMT, count) >= 0);
+			ok = mvc_send_int(s,count);
 		} else {
 			ok = (stream_write(s, "0", 1, 1) == 1);
 		}
