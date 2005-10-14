@@ -29,7 +29,7 @@ stdout of test 'ID.905495s` in directory 'tests/BugsViaSourgeforce` itself:
 ##print("hello");
 #	aa_a := print("hello");
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
 # Predefined code segment 	# 2  (_34:str)
 #The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)

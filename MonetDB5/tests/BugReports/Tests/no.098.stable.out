@@ -36,7 +36,7 @@ stdout of test 'no.098` in directory 'tests/BugReports` itself:
 !	                     ^module name missing
 !ERROR: 	mil.line("var b:=new(oid,oid);");
 !	                                  	  ^<identifier> expected
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  unknown (_32:str)
 #Predefined code segment 	# 2  unknown (_34:str)
 #The compiler can not guarantee an accurate compilation, 	# 3  unknown (_36:str)

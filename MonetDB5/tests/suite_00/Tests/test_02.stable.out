@@ -76,7 +76,7 @@ stdout of test 'test_02` in directory 'tests/suite_00` itself:
 #	mil.line("quit();");
 #	ab_a := clients.quit();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
 #Predefined code segment 	# 2  (_34:str)
 #The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)
@@ -201,9 +201,9 @@ end main;	# 61
 [ "batDeleted",		  "0"		  ]
 [ "batFirst",		  "0"		  ]
 [ "top",		  "8"		  ]
-[ "batStamp",		  "13"		  ]
-[ "lastUsed",		  "163"		  ]
-[ "curStamp",		  "14"		  ]
+[ "batStamp",		  "4"		  ]
+[ "lastUsed",		  "190"		  ]
+[ "curStamp",		  "5"		  ]
 [ "batCopiedtodisk",	  "0"		  ]
 [ "batDirtydesc",	  "clean"	  ]
 [ "batDirtybuns",	  "clean"	  ]

@@ -63,7 +63,7 @@ stdout of test 'test_15` in directory 'tests/suite_01` itself:
 #	mil.line("quit();");
 #	gb_a := clients.quit();
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
 # Copyright (c) 2001-2004, CWI. All rights reserved. 	# 1  (_32:str)
 #Predefined code segment 	# 2  (_34:str)
 #The compiler can not guarantee an accurate compilation, 	# 3  (_36:str)
@@ -120,13 +120,13 @@ end main;	# 48
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1607	  ]
+[ "minflt",	  1995	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  30	  ]
+[ "nvcsw",	  2	  ]
+[ "ninvcsw",	  6	  ]
 #~EndVariableOutput~#
 #commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
 #transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
@@ -138,13 +138,13 @@ end main;	# 48
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1610	  ]
+[ "minflt",	  2000	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  1	  ]
-[ "ninvcsw",	  30	  ]
+[ "nvcsw",	  2	  ]
+[ "ninvcsw",	  6	  ]
 #~EndVariableOutput~#
 #quit();
 
