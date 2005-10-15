@@ -86,6 +86,11 @@ public class MonetConnection extends Thread implements Connection {
 	/** The number of results we receive from the server at once */
 	private int curReplySize = -1;	// the server by default uses -1 (all)
 
+	/** A template to apply to each query (like pre and post fixes) */
+	private String[] queryTempl;
+	/** A template to apply to each command (like pre and post fixes) */
+	private String[] commandTempl;
+
 	/* only parse the date patterns once, use multiple times */
 	/** Format of a timestamp */
 	final static SimpleDateFormat mTimestamp =
@@ -172,16 +177,13 @@ public class MonetConnection extends Thread implements Connection {
 			addWarning("No language given, defaulting to 'sql'");
 		}
 
+		// initialise query template (filled later, but needed below)
+		queryTempl = new String[3]; // pre, post, sep
+
 		try {
 			// make connection to MonetDB
 			if (blockMode) {
-				int blocksize;
-				try {
-					blocksize = Integer.parseInt(props.getProperty("blockmode_blocksize"));
-				} catch (NumberFormatException e) {
-					blocksize = 0;
-				}
-				monet = new MonetSocketBlockMode(hostname, port, blocksize);
+				monet = new MonetSocketBlockMode(hostname, port);
 			} else {
 				monet = new MonetSocket(hostname, port);
 			}
@@ -266,7 +268,7 @@ public class MonetConnection extends Thread implements Connection {
 					blkmon.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 				}
 			} else {
-				monet.writeln(getChallengeResponse(
+				monet.writeln(queryTempl, getChallengeResponse(
 					monet.readLine(),
 					username,
 					password,
@@ -305,6 +307,33 @@ public class MonetConnection extends Thread implements Connection {
 		// quit the VM if it's waiting for this thread to end
 		setDaemon(true);
 		start();
+		
+		// fill the query template
+		if (lang == LANG_SQL) {
+			queryTempl[0] = "s";		// pre
+			queryTempl[1] = ";";		// post
+			queryTempl[2] = ";\n";		// separator
+
+			commandTempl[0] = "X";		// pre
+			commandTempl[1] = null;		// post
+			commandTempl[2] = "\nX";	// separator
+		} else if (lang == LANG_XQUERY) {
+			queryTempl[0] = "xml-seq-mapi\n";
+			queryTempl[1] = null;
+			queryTempl[2] = ",";
+
+			commandTempl[0] = null;		// pre
+			commandTempl[1] = null;		// post
+			commandTempl[2] = null;		// separator
+		} else if (lang == LANG_MIL) {
+			queryTempl[0] = null;
+			queryTempl[1] = ";";
+			queryTempl[2] = ";\n";
+
+			commandTempl[0] = null;		// pre
+			commandTempl[1] = null;		// post
+			commandTempl[2] = null;		// separator
+		}
 
 		// the following initialisers are only valid when the language
 		// is SQL...
@@ -993,11 +1022,12 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 	/**
-	 * Adds a new query to the queue of queries that can and should be
-	 * executed.  A HeaderList object is returned which is notified when a
-	 * new Header is added to it.
+	 * Adds a new query or query list to the queue of queries that can
+	 * and should be executed.  A HeaderList object is returned which is
+	 * notified when a new Header is added to it.
 	 *
-	 * @param query the query to execute
+	 * @param query the query or queries to execute, can be a String or
+	 *              List
 	 * @param cacheSize the size of the cache to use for this query
 	 * @param maxRows the maximum number of results for this query
 	 * @param rsType the type of the ResultSets to produce
@@ -1006,21 +1036,14 @@ public class MonetConnection extends Thread implements Connection {
 	 * @throws IllegalStateException if this thread is not alive
 	 * @see MonetConnection.HeaderList
 	 */
-	HeaderList addQuery(String query, int cacheSize, int maxRows, int rsType, int rsConcur)
-		throws IllegalStateException
+	HeaderList addQuery(Object query, int cacheSize, int maxRows, int rsType, int rsConcur)
+		throws IllegalStateException, SQLException
 	{
 		if (state == DEAD) throw
 			new IllegalStateException("CacheThread shutting down or not running");
 
 		HeaderList hdrl;
 		synchronized(queryQueue) {
-			if (lang == LANG_SQL) {
-				query = "s" + query + ";";
-			} else if (lang == LANG_XQUERY) {
-				query = "xml-seq-mapi\n" + query;
-			} else if (lang == LANG_MIL) {
-				query = query + ";";
-			}
 			hdrl = new HeaderList(query, cacheSize, maxRows, rsType, rsConcur);
 			queryQueue.add(hdrl);
 			queryQueue.notify();
@@ -1055,7 +1078,7 @@ public class MonetConnection extends Thread implements Connection {
 				new IllegalStateException("Should not fetch empty block!");
 
 			rawr = new RawResults(size,
-				"Xexport " + hdr.getID() + " " + ((block * cacheSize) + hdr.getBlockOffset()) + " " + size,
+				"export " + hdr.getID() + " " + ((block * cacheSize) + hdr.getBlockOffset()) + " " + size,
 				hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
 
 			queryQueue.add(rawr);
@@ -1079,7 +1102,7 @@ public class MonetConnection extends Thread implements Connection {
 			new IllegalStateException("CacheThread shutting down or not running");
 
 		synchronized(queryQueue) {
-			queryQueue.add(0, new RawResults(0, "Xclose " + id, true));
+			queryQueue.add(0, new RawResults(0, "close " + id, true));
 			queryQueue.notify();
 		}
 	}
@@ -1117,7 +1140,7 @@ public class MonetConnection extends Thread implements Connection {
 				size = hdrl.maxrows != 0 ? Math.min(hdrl.maxrows, size) : size;
 				// don't do work if it's not needed
 				if (lang == LANG_SQL && size != 0 && size != curReplySize) {
-					monet.writeln("SSET reply_size = " + size + ";");
+					monet.writeln(queryTempl, "SET reply_size = " + size);
 
 					String error = monet.waitForPrompt();
 					if (error != null) throw new SQLException(error);
@@ -1131,24 +1154,26 @@ public class MonetConnection extends Thread implements Connection {
 				return;
 			}
 
-			// send the query
-			// If the query is larger than the TCP buffer size, use a special
-			// send thread to avoid deadlock with the server due to blocking
-			// behaviour when the buffer is full.  Because the server will be
-			// writing back results to us, it will eventually block as well
-			// when its TCP buffer gets full, as we are blocking an not
-			// consuming from it.  The result is a state where both client and
-			// server want to write, but block.
-			if (hdrl.query.length() > monet.writecapacity) {
+			// send the query, if we have a list, always use a
+			// SendThread.
+			// If the query is larger than the TCP buffer size, use a
+			// special send thread to avoid deadlock with the server due
+			// to blocking behaviour when the buffer is full.  Because
+			// the server will be writing back results to us, it will
+			// eventually block as well when its TCP buffer gets full,
+			// as we are blocking an not consuming from it.  The result
+			// is a state where both client and server want to write,
+			// but block.
+			if (hdrl.isList() || hdrl.query().length() > monet.writecapacity) {
 				// get a reference to the send thread
-				if (sendThread == null) sendThread = new SendThread();
+				if (sendThread == null) sendThread = new SendThread(monet);
 				// tell it to do some work!
-				sendThread.runQuery(hdrl.query, monet);
+				sendThread.runQuery(hdrl);
 				sendThreadInUse = true;
 			} else {
 				// this is a simple call, which is a lot cheaper and will
 				// always succeed for small queries
-				monet.writeln(hdrl.query);
+				monet.writeln(queryTempl, hdrl.query());
 			}
 
 			// go for new results
@@ -1241,16 +1266,18 @@ public class MonetConnection extends Thread implements Connection {
 	private void fetchBlock(RawResults rawr) {
 		synchronized (monet) {
 			try {
-				// make sure we're ready to send query; read data till we have the
-				// prompt it is possible (and most likely) that we already have
-				// the prompt and do not have to skip any lines. Ignore errors from
-				// previous result sets.
+				// make sure we're ready to send query; read data till
+				// we have the prompt it is possible (and most likely)
+				// that we already have the prompt and do not have to
+				// skip any lines. Ignore errors from previous result
+				// sets.
 				monet.waitForPrompt();
 
 				// send the query
-				monet.writeln(rawr.getXexport());
+				monet.writeln(commandTempl, rawr.getXexport());
 
-				// go for new results, everything should be result (or error :( )
+				// go for new results, everything should be result (or
+				// error :( )
 				String tmpLine;
 				do {
 					tmpLine = monet.readLine();
@@ -2062,8 +2089,10 @@ public class MonetConnection extends Thread implements Connection {
 	 * to wait on when figuring out whether a new Header is available.
 	 */
 	class HeaderList {
-		/** The query that resulted in this HeaderList */
-		final String query;
+		/** The type of the query, either TYPE_STRING or TYPE_LIST */
+		final int type;
+		/** The query or query list that resulted in this HeaderList */
+		final Object query;
 		/** The cache size (number of rows in a RawResults object) */
 		final int cachesize;
 		/** The maximum number of results for this query */
@@ -2085,8 +2114,13 @@ public class MonetConnection extends Thread implements Connection {
 		/** The errors produced by the query */
 		private String error;
 
+		private final static int TYPE_STRING	= 1;
+		private final static int TYPE_LIST		= 2;
+
 		/**
-		 * Main constructor.
+		 * Main constructor.  The query argument can either be a String
+		 * or List.  An SQLException is thrown if another object
+		 * instance is supplied.
 		 *
 		 * @param query the query that is the 'cause' of this HeaderList
 		 * @param cachesize overall cachesize to use
@@ -2094,7 +2128,23 @@ public class MonetConnection extends Thread implements Connection {
 		 * @param rstype the type of result sets to produce
 		 * @param rsconcur the concurrency of result sets to produce
 		 */
-		HeaderList(String query, int cachesize, int maxrows, int rstype, int rsconcur) {
+		HeaderList(
+				Object query,
+				int cachesize,
+				int maxrows,
+				int rstype,
+				int rsconcur)
+			throws SQLException
+		{
+			// check object type
+			if (query instanceof String) {
+				this.type = TYPE_STRING;
+			} else if (query instanceof List) {
+				this.type = TYPE_LIST;
+			} else {
+				throw new SQLException("Unsupported object type");
+			}
+			
 			this.query = query;
 			this.cachesize = cachesize;
 			this.maxrows = maxrows;
@@ -2136,6 +2186,36 @@ public class MonetConnection extends Thread implements Connection {
 		 */
 		synchronized boolean isCompleted() {
 			return(complete);
+		}
+
+		/**
+		 * Returns true if the query object of this HeaderList is a
+		 * List, false if it is a String.
+		 *
+		 * @return true or false
+		 */
+		boolean isList() {
+			return(type == TYPE_LIST);
+		}
+
+		/**
+		 * Returns the query as String.  This method might not result in
+		 * the disired output when executed on a List query.
+		 *
+		 * @return the query as String
+		 */
+		String query() {
+			return(query.toString());
+		}
+
+		/**
+		 * Returns the query as List.  This method might throw a
+		 * ClassCastException if executed on a String query type.
+		 *
+		 * @return a List of queries
+		 */
+		List list() {
+			return((List)query);
 		}
 
 		/**
@@ -2223,127 +2303,136 @@ public class MonetConnection extends Thread implements Connection {
 			super.finalize();
 		}
 	}
-}
-
-/**
- * A thread to send a query to the server.  When sending large amounts of data
- * to a server, the output buffer of the underlying communication socket may
- * overflow.  In such case the sending process blocks.  In order to prevent
- * deadlock, it might be desirable that the driver as a whole does not block.
- * This thread facilitates the prevention of such 'full block', because this
- * separate thread only will block.<br />
- * This thread is designed for reuse, as thread creation costs are high.<br />
- * <br />
- * NOTE: This thread is neither thread safe nor synchronised.  The reason for
- * this is that program wise only one thread (the CacheThread) will use this
- * thread, so costly locking mechanisms can be avoided.
- */
-class SendThread extends Thread {
-	/** The state WAIT represents this thread to be waiting for
-	 *  something to do */
-	private final static int WAIT = 0;
-	/** The state QUERY represents this thread to be executing a query */
-	private final static int QUERY = 1;
-
-	private String query;
-	private MonetSocket conn;
-	private String error;
-	private int state = WAIT;
 
 	/**
-	 * Constructor which immediately starts this thread and sets it into
-	 * daemon mode.
+	 * A thread to send a query to the server.  When sending large
+	 * amounts of data to a server, the output buffer of the underlying
+	 * communication socket may overflow.  In such case the sending
+	 * process blocks.  In order to prevent deadlock, it might be
+	 * desirable that the driver as a whole does not block.  This thread
+	 * facilitates the prevention of such 'full block', because this
+	 * separate thread only will block.<br />
+	 * This thread is designed for reuse, as thread creation costs are
+	 * high.<br />
+	 * <br />
+	 * NOTE: This thread is neither thread safe nor synchronised.  The
+	 * reason for this is that program wise only one thread (the
+	 * CacheThread) will use this thread, so costly locking mechanisms
+	 * can be avoided.
 	 */
-	public SendThread() {
-		super("SendThread");
-		setDaemon(true);
-		start();
-	}
+	class SendThread extends Thread {
+		/** The state WAIT represents this thread to be waiting for
+		 *  something to do */
+		private final static int WAIT = 0;
+		/** The state QUERY represents this thread to be executing a query */
+		private final static int QUERY = 1;
 
-	public synchronized void run() {
-		while (true) {
-			while (state == WAIT) {
-				try {
-					// wait requires the object to be exclusive
-					// (synchronized)
-					this.wait();
-				} catch (InterruptedException e) {
-					// woken up, eh?
+		private HeaderList hdrl;
+		private MonetSocket conn;
+		private String error;
+		private int state = WAIT;
+
+		/**
+		 * Constructor which immediately starts this thread and sets it into
+		 * daemon mode.
+		 *
+		 * @param monet the socket to write to
+		 */
+		public SendThread(MonetSocket conn) {
+			super("SendThread");
+			setDaemon(true);
+			this.conn = conn;
+			start();
+		}
+
+		public synchronized void run() {
+			while (true) {
+				while (state == WAIT) {
+					try {
+						// wait requires the object to be exclusive
+						// (synchronized)
+						this.wait();
+					} catch (InterruptedException e) {
+						// woken up, eh?
+					}
 				}
-			}
 
-			// state is QUERY here
-			try {
-				// we issue notify here, so incase we get blocked on IO
-				// the thread that waits on us in runQuery can continue
+				// state is QUERY here
+				try {
+					// we issue notify here, so incase we get blocked on IO
+					// the thread that waits on us in runQuery can continue
+					this.notify();
+					if (hdrl.isList()) {
+						conn.writeln(queryTempl, hdrl.list());
+					} else {
+						conn.writeln(queryTempl, hdrl.query());
+					}
+				} catch (IOException e) {
+					error = e.getMessage();
+				}
+
+				// update our state, and notify, maybe someone is waiting
+				// for us in throwErrors
+				state = WAIT;
 				this.notify();
-				conn.writeln(query);
-			} catch (IOException e) {
-				error = e.getMessage();
 			}
-
-			// update our state, and notify, maybe someone is waiting
-			// for us in throwErrors
-			state = WAIT;
-			this.notify();
 		}
-	}
 
-	/**
-	 * Starts sending the given query over the given socket.  Beware that
-	 * the thread should be finished (assured by calling throwErrors()) before
-	 * this method is called!
-	 *
-	 * @param query a String containing the query to send
-	 * @param monet the socket to write to
-	 * @throws SQLException if this SendThread is already in use
-	 */
-	public synchronized void runQuery(String query, MonetSocket monet) 
+		/**
+		 * Starts sending the given query over the given socket.  Beware
+		 * that the thread should be finished (assured by calling
+		 * throwErrors()) before this method is called!
+		 *
+		 * @param hdrl a HeaderList containing the query to send
+		 * @throws SQLException if this SendThread is already in use
+		 */
+		public synchronized void runQuery(HeaderList hdrl) 
 			throws SQLException
-	{
-		if (state != WAIT) throw
-			new SQLException("SendThread already in use!");
+		{
+			if (state != WAIT) throw
+				new SQLException("SendThread already in use!");
 
-		this.query = query;
-		this.conn = monet;
-	
-		// let the thread know there is some work to do
-		state = QUERY;
-		this.notify();
+			this.hdrl = hdrl;
 
-		// implement the following behaviour:
-		// - let the SendThread first try to send whatever it can over
-		//   the socket
-		// - return as soon as the SendThread gets blocked
-		// the effect is a relatively high chance of data waiting to be
-		// read when returning from this method.
-		try {
-			this.wait();
-		} catch (InterruptedException e) {
-			// Woken up, eh?  Let's hope it's all good
-		}
-	}
+			// let the thread know there is some work to do
+			state = QUERY;
+			this.notify();
 
-	/**
-	 * Throws errors encountered during the sending process or about the
-	 * current state of the thread.
-	 *
-	 * @throws AssertionError (note: Error) if this thread is not finished
-	 *         at the time of calling this method (should theoretically never
-	 *         happen, since this method should never be called before a
-	 *         prompt is seen (and hence the full query was sent))
-	 * @throws SQLException in case an (IO) error occurred while sending the
-	 *         query to the server.
-	 */
-	public synchronized void throwErrors() throws SQLException {
-		// make sure the thread is in WAIT state, not QUERY
-		while (state != WAIT) {
+			// implement the following behaviour:
+			// - let the SendThread first try to send whatever it can over
+			//   the socket
+			// - return as soon as the SendThread gets blocked
+			// the effect is a relatively high chance of data waiting to be
+			// read when returning from this method.
 			try {
 				this.wait();
 			} catch (InterruptedException e) {
-				// just try again
+				// Woken up, eh?  Let's hope it's all good
 			}
 		}
-		if (error != null) throw new SQLException(error);
+
+		/**
+		 * Throws errors encountered during the sending process or about
+		 * the current state of the thread.
+		 *
+		 * @throws AssertionError (note: Error) if this thread is not
+		 *         finished at the time of calling this method (should
+		 *         theoretically never happen, since this method should
+		 *         never be called before a prompt is seen (and hence
+		 *         the full query was sent))
+		 * @throws SQLException in case an (IO) error occurred while
+		 *         sending the query to the server.
+		 */
+		public synchronized void throwErrors() throws SQLException {
+			// make sure the thread is in WAIT state, not QUERY
+			while (state != WAIT) {
+				try {
+					this.wait();
+				} catch (InterruptedException e) {
+					// just try again
+				}
+			}
+			if (error != null) throw new SQLException(error);
+		}
 	}
 }

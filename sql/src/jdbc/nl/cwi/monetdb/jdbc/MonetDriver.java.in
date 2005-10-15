@@ -232,11 +232,6 @@ public class MonetDriver implements Driver {
 		prop.description = "What language to use for MonetDB conversations (sql/xquery)";
 		props.add(prop);
 
-		prop = new DriverPropertyInfo("blockmode_blocksize", "2048");
-		prop.required = false;
-		prop.description = "The maximum size of blocks read from the socket when using blockmode protocol";
-		props.add(prop);
-
 		prop = new DriverPropertyInfo("native_prepared_statements", "true");
 		prop.required = false;
 		prop.description = "Whether server side prepared statements (true) or a Java implementation (false) should be used";

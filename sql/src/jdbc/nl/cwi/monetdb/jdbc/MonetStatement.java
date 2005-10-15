@@ -195,14 +195,7 @@ public class MonetStatement implements Statement {
 
 		if (batch != null) {
 			try {
-				// assume average query length is 100 chars
-				StringBuffer tmp = new StringBuffer(batch.size() * 100);
-				for (Iterator it = batch.iterator(); it.hasNext(); ) {
-					tmp.append(it.next().toString());
-					tmp.append(';');
-					tmp.append('\n');
-				}
-				boolean type = internalExecute(tmp.toString());
+				boolean type = internalExecute(batch);
 				int count = -1;
 				if (!type) count = getUpdateCount();
 				do {
@@ -310,6 +303,40 @@ public class MonetStatement implements Statement {
 	 * @throws SQLException if a database access error occurs
 	 */
 	private boolean internalExecute(String sql) throws SQLException {
+		// close previous query, if not closed already
+		if (lastHeaderList != null) {
+			lastHeaderList.close();
+			lastHeaderList = null;
+		}
+
+		// let the cache thread do it's work
+		lastHeaderList = connection.addQuery(
+			sql,
+			fetchSize,
+			maxRows,
+			resultSetType,
+			resultSetConcurrency
+		);
+		// give the cache thread a chance to run before we continue blocking
+		// for it...
+		Thread.yield();
+
+		return(getMoreResults());
+	}
+
+	/**
+	 * Performs the steps to execute the given SQL batch.  This method
+	 * differs from the previous one in that it accepts a List instead
+	 * of a String, and maintains the list when calling the underlying
+	 * engine functions which are optimised for handling a (large)
+	 * batch of statements.
+	 *
+	 * @param sql a list of SQL statements
+	 * @return true if the first result is a ResultSet object; false if it is an
+	 *         update count or there are no results
+	 * @throws SQLException if a database access error occurs
+	 */
+	private boolean internalExecute(List sql) throws SQLException {
 		// close previous query, if not closed already
 		if (lastHeaderList != null) {
 			lastHeaderList.close();

@@ -20,25 +20,26 @@ package nl.cwi.monetdb.jdbc;
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 /**
  * A Socket for communicating with the MonetDB database.
  * <br /><br />
- * This MonetSocket performs basic operations like sending the server a message
- * and/or receiving a line from it. A small interpretation of all what is read
- * is done, to supply some basic tools for the using classes.<br />
- * For each read line, it is determined what type of line it is according to the
- * MonetDB MAPI protocol. This results in a line to be PROMPT, HEADER, RESULT,
- * ERROR or UNKNOWN. Use the getLineType() function to retrieve the type of the
- * last line read.
+ * This MonetSocket performs basic operations like sending the server a
+ * message and/or receiving a line from it. A small interpretation of
+ * all what is read is done, to supply some basic tools for the using
+ * classes.<br /> For each read line, it is determined what type of line
+ * it is according to the MonetDB MAPI protocol. This results in a line
+ * to be PROMPT, HEADER, RESULT, ERROR or UNKNOWN. Use the getLineType()
+ * function to retrieve the type of the last line read.
  * <br /><br />
- * For debugging purposes a socket level debugging is implemented where each and
- * every interaction to and from the MonetDB server is logged to a file on disk.
- * Incoming messages are prefixed by "RX", outgoing messages by
- * "TX".
+ * For debugging purposes a socket level debugging is implemented where
+ * each and every interaction to and from the MonetDB server is logged
+ * to a file on disk.  Incoming messages are prefixed by "RX", outgoing
+ * messages by "TX".
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 1.6
+ * @version 1.7
  */
 class MonetSocket {
 	/** Reader from the Socket */
@@ -158,14 +159,40 @@ class MonetSocket {
 	}
 
 	/**
-	 * writeln puts the given string plus a new line character on the stream
-	 * and flushes the stream afterwards so the data will actually be sent
+	 * writeln puts the given string plus a new line character on the
+	 * stream and flushes the stream afterwards so the data will
+	 * actually be sent.  The given data String is wrapped within the
+	 * query template.
 	 *
+	 * @param templ the query template to apply
 	 * @param data the data to write to the stream
 	 * @throws IOException if writing to the stream failed
 	 */
-	public void writeln(String data) throws IOException {
+	public void writeln(String[] templ, String data) throws IOException {
+		if (templ[0] != null) write(templ[0]);
 		write(data);
+		if (templ[1] != null) write(templ[1]);
+		write("\n");
+		flush();
+	}
+
+	/**
+	 * writeln puts a concatenation of the given strings plus a new line
+	 * character on the stream and flushes the stream afterwards so the
+	 * data will actually be sent.  The given data Strings are wrapped
+	 * within and separated by the query template.
+	 *
+	 * @param templ the query template to apply
+	 * @param data the data to write to the stream
+	 * @throws IOException if writing to the stream failed
+	 */
+	public void writeln(String[] templ, List data) throws IOException {
+		if (templ[0] != null) write(templ[0]);
+		for (int i = 0; i < data.size(); i++) {
+			write(data.get(i).toString());
+			if (i < data.size() - 1 && templ[2] != null) write(templ[2]);
+		}
+		if (templ[1] != null) write(templ[1]);
 		write("\n");
 		flush();
 	}
