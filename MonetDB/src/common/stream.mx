@@ -189,6 +189,8 @@ stream_export stream *buffer_rastream(buffer *b, const char *name);
 stream_export stream *buffer_wastream(buffer *b, const char *name);
 stream_export buffer *stream_get_buffer(stream *s);
 
+/* note, the size if fixed to 8K, you cannot simply change it to any
+   value */
 #define BLOCK (8*1024)
 /*
    Block stream is a stream which sends data in blocks of a known
@@ -467,7 +469,7 @@ char *
 stream_name(stream *s)
 {
 	if (s == 0)
-		return "Connection terminated";
+		return "connection terminated";
 	return s->name;
 }
 
@@ -551,13 +553,13 @@ error(stream *s)
 
 	switch (s->errnr) {
 	case OPEN_ERROR:
-		snprintf(buf, BUFSIZ, "Error could not open file %s\n", s->name);
+		snprintf(buf, BUFSIZ, "error could not open file %s\n", s->name);
 		return strdup(buf);
 	case READ_ERROR:
-		snprintf(buf, BUFSIZ, "Error reading file %s\n", s->name);
+		snprintf(buf, BUFSIZ, "error reading file %s\n", s->name);
 		return strdup(buf);
 	case WRITE_ERROR:
-		snprintf(buf, BUFSIZ, "Error writing file %s\n", s->name);
+		snprintf(buf, BUFSIZ, "error writing file %s\n", s->name);
 		return strdup(buf);
 	}
 	return strdup("Unknown error");
@@ -2024,7 +2026,8 @@ typedef struct bs {
 	stream *s;		/* underlying stream */
 	unsigned nr;		/* how far we got in buf */
 	unsigned itotal;	/* amount available in current read block */
-	char buf[BLOCK];	/* the buffered data */
+	char buf[BLOCK - 2];	/* the buffered data (minus the size of
+	                           size-short */
 } bs;
 
 static bs *
@@ -2056,6 +2059,7 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 {
 	bs *s = (bs *) ss->stream_data.p;
 	size_t todo = cnt * elmsize;
+	short blksize;
 
 	assert(ss->access == ST_WRITE);
 	assert(s->nr < sizeof(s->buf));
@@ -2069,6 +2073,7 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 		todo -= n;
 		buf = (void *) ((char *) buf + n);
 		if (s->nr == sizeof(s->buf)) {
+			/* block is full, write it to the stream */
 #ifdef BSTREAM_DEBUG
 			{
 				unsigned i;
@@ -2082,7 +2087,13 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 				printf("\"\n");
 			}
 #endif
-			if (!stream_writeInt(s->s, s->nr) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
+			/* since the block is at max BLOCK (8K) - 2 size we can
+			   store it in a two byte integer */
+			blksize = (short)s->nr;
+			/* the last bit tells whether a flush is in there, it's not
+			 * at this moment, so shift it to the left */
+			blksize <<= 1;
+			if (!stream_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr) {
 				ss->errnr = WRITE_ERROR;
 				return -1;
 			}
@@ -2100,15 +2111,14 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 static int
 bs_flush(stream *ss)
 {
+	short blksize;
 	bs *s = (bs *) ss->stream_data.p;
 
 	assert(ss->access == ST_WRITE);
 	assert(s->nr < sizeof(s->buf));
 	if (ss->access == ST_WRITE) {
-		/* first flush rest of buffer (if s->nr > 0), then
-		   write an extra empty buffer (second
-		   stream_writeInt) to indicate user-instigated
-		   flush */
+		/* flush the rest of buffer (if s->nr > 0), then set the
+		 * last bit to 1 to to indicate user-instigated flush */
 #ifdef BSTREAM_DEBUG
 		if (s->nr > 0) {
 			unsigned i;
@@ -2123,8 +2133,9 @@ bs_flush(stream *ss)
 			printf("W %s 0\n", ss->name);
 		}
 #endif
-		if ((s->nr > 0 && (!stream_writeInt(s->s, s->nr) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr)) || !stream_writeInt(s->s, 0)
-		    ) {
+		blksize = s->nr << 1;
+		blksize |= (short)1;	/* make last bit 1 */
+		if ((s->nr > 0 && (!stream_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
 			ss->errnr = WRITE_ERROR;
 			return -1;
 		}
@@ -2154,15 +2165,13 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 	assert(s->nr <= 1);
 
 	if (s->itotal == 0) {
-		/* There is nothing more to read in the current block,
-		   so read the count for the next block */
-		int nr = 0;
+		short blksize = 0;
 
 		if (s->nr) {
-			/* We read the 0 count of the closing block
-			   but hadn't returned that yet.  Return it
-			   now, and note that we did by setting s->nr
-			   to 0. */
+			/* We read the closing block but hadn't returned that yet.
+			   Return it now, and note that we did by setting s->nr to
+			   0.
+			*/
 			assert(s->nr == 1);
 			s->nr = 0;
 			return 0;
@@ -2170,26 +2179,18 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 
 		assert(s->nr == 0);
 
-		if (!stream_readInt(s->s, &nr) || nr < 0) {
+		/* There is nothing more to read in the current block,
+		   so read the count for the next block */
+		if (!stream_readSht(s->s, &blksize) || blksize < 0) {
 			ss->errnr = READ_ERROR;
 			return -1;
 		}
 #ifdef BSTREAM_DEBUG
 		printf("RC %s %d\n", ss->name, nr);
 #endif
-		s->itotal = (unsigned) nr;	/* amount readable */
-		if (nr == 0) {
-			/* We read the count for the closing empty
-			   block.  This means that the other side did
-			   a flush after writing no data since the
-			   previous flush, but that's ok.  Note that
-			   s->nr is still 0.  That is important so
-			   that the next call to this function doesn't
-			   return 0 again.. */
-			return 0;
-		}
-		/* indicate that we need to start reading data */
-		s->nr = 1;
+		s->itotal = (unsigned)(blksize >> 1);	/* amount readable */
+		/* store whether this was the last block or not */
+		s->nr = blksize & (short)1;
 	}
 
 	/* Fill the caller's buffer. */
@@ -2229,27 +2230,23 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		}
 
 		if (s->itotal == 0) {
-			/* The current block has been completely read,
-			   so read the count for the next block */
-			int nr;
+			short blksize = 0;
 
-			if (!stream_readInt(s->s, &nr) || nr < 0) {
+			/* The current block has been completely read,
+			   so read the count for the next block, only if the
+			   previous was not the last one */
+			if (s->nr) {
+				break;
+			} else if (!stream_readSht(s->s, &blksize) || blksize < 0) {
 				ss->errnr = READ_ERROR;
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG
 			printf("RC %s %d\n", ss->name, nr);
 #endif
-			s->itotal = (unsigned) nr;
-			s->nr = 1;
-			if (nr == 0) {
-				/* We read the count for the closing
-				   empty block.  Stop reading and
-				   return what we have.  Note that
-				   s->nr == 1.  That is important for
-				   the next call to this function. */
-				break;
-			}
+			s->itotal = (unsigned)(blksize >> 1);	/* amount readable */
+			/* store whether this was the last block or not */
+			s->nr = blksize & (short)1;
 		}
 	}
 	return cnt / elmsize;
