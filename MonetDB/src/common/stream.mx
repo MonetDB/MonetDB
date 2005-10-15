@@ -356,7 +356,7 @@ stream_init(void)
 	return 0;
 }
 
-/* #define STREAM_DEBUG 1 */
+/* #define STREAM_DEBUG 1  */
 /* #define BSTREAM_DEBUG 1 */
 
 #ifdef STREAM_DEBUG
@@ -2187,7 +2187,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		}
 #ifdef BSTREAM_DEBUG
 		printf("RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
-		printf("RC %s %d\n", ss->name, nr);
+		printf("RC %s %d\n", ss->name, blksize);
 #endif
 		s->itotal = (unsigned)(blksize >> 1);	/* amount readable */
 		/* store whether this was the last block or not */
@@ -2245,6 +2245,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 #ifdef BSTREAM_DEBUG
 			printf("RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
 			printf("RC %s %d\n", ss->name, nr);
+			printf("RC %s %d\n", ss->name, blksize);
 #endif
 			s->itotal = (unsigned)(blksize >> 1);	/* amount readable */
 			/* store whether this was the last block or not */

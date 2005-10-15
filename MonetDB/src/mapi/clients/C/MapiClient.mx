@@ -733,7 +733,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 	char *buf = NULL;
 	size_t length;
 	MapiHdl hdl = NULL;
-	MapiMsg rc;
+	MapiMsg rc = MOK;
 	int bufsize = 0;
 
 	if (file == NULL)
@@ -767,7 +767,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 				fclose(fp);
 				file = NULL;
 			}
-			if (hdl == NULL) {
+			if (hdl == NULL || rc == MMORE) {
 				/* nothing more to do */
 				timerEnd();
 				free(buf);
@@ -853,7 +853,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 	char *buf = NULL;
 	size_t length;
 	MapiHdl hdl = NULL;
-	MapiMsg rc;
+	MapiMsg rc = MOK;
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -895,7 +895,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 		}
 		if (line == NULL) {
 			/* end of file */
-			if (hdl == NULL) {
+			if (hdl == NULL || rc == MMORE) {
 				/* nothing more to do */
 				return 0;
 			}
@@ -1024,7 +1024,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			   happen accordint to the protocol) we break
 			   out of the loop (via the continue).  The
 			   assertion at the end will then go off. */
-			if (mapi_query_done(hdl) == MMORE && (line != NULL || mapi_query_done(hdl) == MMORE))
+			if ((rc = mapi_query_done(hdl)) == MMORE && (line != NULL || mapi_query_done(hdl) == MMORE))
 				continue;	/* get more data */
 
 			CHECK_RESULT(mid, hdl, buf, continue);
@@ -1050,6 +1050,9 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			timerEnd();
 			mapi_close_handle(hdl);
 			hdl = NULL;
+		} else {
+			/* lines should end with a newline, so we need more input */
+			rc = MMORE;
 		}
 	} while (line != NULL);
 	/* reached on end of file */
