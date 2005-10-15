@@ -557,7 +557,7 @@ SQLreader(Client c)
 {
 	int go = TRUE;
 	int more = TRUE;
-	lng T0;
+	/* lng T0; */
 	backend *be = ((backend *) c->state[PARSER]);
 	bstream *in = c->fdin;
 	int language = be->language;	/* 'S' for SQL, 'D' from debugger */
@@ -573,7 +573,7 @@ SQLreader(Client c)
 @- 
 Continue processing any left-over input from the previous round.
 @c
-	T0 = GDKusec();
+	/* T0 = GDKusec();*/
 	while (in->pos < in->len &&
 		(isspace((int) (in->buf[in->pos])) || in->buf[in->pos] == ';'))
 		in->pos++;
@@ -666,8 +666,10 @@ IO to obtain missing data.
 		c->mode = FINISHING;
 		return throwMessage("SQLreader", "end of SQL input\n");
 	}
+/* nobody is using it
 	if (be)
 		be->Tread = GDKusec() - T0;
+*/
 	return 0;
 }
 
