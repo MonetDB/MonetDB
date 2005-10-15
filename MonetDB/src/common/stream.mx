@@ -191,7 +191,7 @@ stream_export buffer *stream_get_buffer(stream *s);
 
 /* note, the size if fixed to 8K, you cannot simply change it to any
    value */
-#define BLOCK (8*1024)
+#define BLOCK (8 * 1024 - 2)
 /*
    Block stream is a stream which sends data in blocks of a known
    size (BLOCK size or dynamically changed using CHANGE_BLOCK_SIZE msg).
@@ -2026,7 +2026,7 @@ typedef struct bs {
 	stream *s;		/* underlying stream */
 	unsigned nr;		/* how far we got in buf */
 	unsigned itotal;	/* amount available in current read block */
-	char buf[BLOCK - 2];	/* the buffered data (minus the size of
+	char buf[BLOCK];	/* the buffered data (minus the size of
 	                           size-short */
 } bs;
 
@@ -2186,6 +2186,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			return -1;
 		}
 #ifdef BSTREAM_DEBUG
+		printf("RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
 		printf("RC %s %d\n", ss->name, nr);
 #endif
 		s->itotal = (unsigned)(blksize >> 1);	/* amount readable */
@@ -2242,6 +2243,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 				return -1;
 			}
 #ifdef BSTREAM_DEBUG
+			printf("RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
 			printf("RC %s %d\n", ss->name, nr);
 #endif
 			s->itotal = (unsigned)(blksize >> 1);	/* amount readable */
