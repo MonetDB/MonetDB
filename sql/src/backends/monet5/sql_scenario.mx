@@ -257,6 +257,7 @@ SQLinitClient(Client c)
 str
 SQLexitClient(Client c)
 {
+	mvc *m;
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#SQLexitClient\n");
 #endif
@@ -264,6 +265,18 @@ SQLexitClient(Client c)
 		return throwMessage("SQLinitClient", "Catalogue not available\n");
 	}
 	if ((backend *) c->state[PARSER] && (mvc *) c->state[OPTIMIZE]) {
+		m= (mvc *) c->state[OPTIMIZE];
+		if (m->qc) {
+			oid id;
+			int ret = 0;
+
+			for (id = 0; id <m->qc->id; id ++) {
+				char buf[BUFSIZ], *nme ;
+				snprintf(buf, BUFSIZ, "sql%d", (int) id);
+				nme= putName(buf,strlen(buf));
+				SQLCacheRemove(&ret, &nme);
+			}
+		}
 		mvc_destroy((mvc *) c->state[OPTIMIZE]);
 		backend_destroy((backend *) c->state[PARSER]);
 		/* files are already closed */
@@ -764,7 +777,7 @@ SQLparser(Client c)
 	int err = 0;
 	backend *be;
 	mvc *m;
-	MalBlkRecord oldstate;
+	int oldvtop,oldstop;
 	lng T0 = 0;
 	int pstatus = 0;
 	prot oldmode;
@@ -774,8 +787,9 @@ SQLparser(Client c)
 		GDKerror("SQL state descriptor missing\n");
 		return throwMessage("SQLparser", "State decriptor missing\n");
 	}
-	oldstate = *c->curprg->def;
-	be->vtop = oldstate.vtop;
+	oldvtop = c->curprg->def->vtop;
+	oldstop = c->curprg->def->stop;
+	be->vtop = oldvtop;
 #ifdef _SQL_PARSER_DEBUG
 	stream_printf(GDKout, "#SQL compilation \n");
 	printf("debugger? %d %d\n", debugPlan(), be->mvc->mode);
@@ -852,7 +866,8 @@ We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
 Now is the time to also perform the semantic analysis, optimize and produce code.
 @c
-	SQLsetDebugger(c, m, m->mode == m_debug);
+	if( m->mode == m_debug)
+		SQLsetDebugger(c, m, m->mode == m_debug);
 	be->q = NULL;
 	if (err == 0 && m->mode == m_execute) {
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.ival);
@@ -956,9 +971,8 @@ extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 			/* restore the state */
 			if (c->listing || explainPlan())
 				printFunction(c->fdout, c->curprg->def, c->listing);
-			resetMalBlk(c->curprg->def, oldstate.stop);
-			/* resetInstructions(c->curprg->def, oldstate.stop);*/
-			freeVariables(c->curprg->def, c->glb, oldstate.vtop);
+			resetMalBlk(c->curprg->def, oldstop);
+			freeVariables(c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
 			msg = throwMessage("SQLparser", "Semantic errors\n");
 		}
@@ -1098,9 +1112,9 @@ Then the SQL profile table is just a view over a few basic bats.
 			int ret = 0;
 
 			for (id = 0; id <m->qc->id; id ++) {
-				char buf[BUFSIZ], *nme = buf;
+				char buf[BUFSIZ], *nme ;
 				snprintf(buf, BUFSIZ, "sql%d", (int) id);
-
+				nme= putName(buf,strlen(buf));
 				SQLCacheRemove(&ret, &nme);
 			}
 			(void) ret;
