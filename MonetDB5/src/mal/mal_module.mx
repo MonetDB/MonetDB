@@ -292,6 +292,7 @@ void deleteSymbol(Module scope, Symbol prg){
 	t = getSubScope(functionName(sig));
 	if( scope->subscope[t] == prg){
 		scope->subscope[t] = scope->subscope[t]->peer;
+		freeSymbol(prg);
 	} else {
 		Symbol nxt = scope->subscope[t];
 		while( nxt->peer != NULL){
