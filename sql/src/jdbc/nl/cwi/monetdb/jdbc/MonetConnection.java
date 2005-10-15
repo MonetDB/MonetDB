@@ -177,8 +177,9 @@ public class MonetConnection extends Thread implements Connection {
 			addWarning("No language given, defaulting to 'sql'");
 		}
 
-		// initialise query template (filled later, but needed below)
+		// initialise query templates (filled later, but needed below)
 		queryTempl = new String[3]; // pre, post, sep
+		commandTempl = new String[3]; // pre, post, sep
 
 		try {
 			// make connection to MonetDB
