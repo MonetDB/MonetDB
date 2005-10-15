@@ -15,11 +15,11 @@ stdout of test 'monettime_needs_alarm.SF-934899` in directory 'tests/BugDay_2005
 #t:= mtime.current_timestamp();
 #io.print(t);
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     t := mtime.current_timestamp();	# 1 MTIMEcurrent_timestamp (t:timestamp)
     io.print(t);	# 2 IOprint_val (_2:int)<-(t:timestamp)
 end main;	# 3  
-[ 2005-10-04 09:11:34.000 ]
+[ 2005-10-12 22:23:43.000 ]
 
 # 07:27:34 >  
 # 07:27:34 >  Done.

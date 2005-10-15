@@ -17,7 +17,7 @@ stdout of test 'character_string_constants.SF-1120297` in directory 'tests/BugDa
 ##print(type("s")); not supported
 ##print(type('c')); not supported
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     io.print('c');	# 1 IOprint_val (_1:int)<-(_2:chr)
     io.print("s");	# 2 IOprint_val (_3:int)<-(_4:str)
 #print(type("s")); not supported 	# 3  (_6:str)

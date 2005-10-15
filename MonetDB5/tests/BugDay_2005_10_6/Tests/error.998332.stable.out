@@ -14,7 +14,7 @@ stdout of test 'error.998332` in directory 'tests/BugDay_2005_10_6` itself:
 # Visit http://monetdb.cwi.nl/ for further information.
 #  raise SQLerror:= "this is an error ";
 #
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     raise SQLerror := "this is an error ";	# 1  (SQLerror:str)<-(_2:str)
 end main;	# 2  
 !ERROR: SQLerror:user.main[1]:this is an error 

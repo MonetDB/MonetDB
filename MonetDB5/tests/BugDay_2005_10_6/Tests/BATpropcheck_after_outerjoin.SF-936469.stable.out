@@ -31,7 +31,7 @@ stdout of test 'BATpropcheck_after_outerjoin.SF-936469` in directory 'tests/BugD
 #x4:= algebra.outerjoin(x3,y);
 #
 !ERROR: 'bat.seqbase' undefined in user.main[5]
-function user.main():int;	# 0  (main:int)
+function user.main():void;	# 0  (main:void)
     x := bat.new(:void,:int);	# 1 CMDBATnew (x:bat[:void,:int])<-(_2:void)(_3:int)
     bat.insert(x,nil,1);	# 2 BKCinsert_bun (_4:void)<-(x:bat[:void,:int])(_5:void)(_6:int)
     bat.insert(x,nil,2);	# 3 BKCinsert_bun (_7:void)<-(x:bat[:void,:int])(_5:void)(_8:int)
