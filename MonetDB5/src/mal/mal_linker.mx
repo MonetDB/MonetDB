@@ -61,6 +61,7 @@ For the time being we assume that all commands are statically linked.
 /* #define DEBUG_MAL_LINKER*/
 #define MONET64 1
 mal_export MALfcn getAddress(str modnme, str fcnname, int silent);
+mal_export MALfcn getAddressFromLib(Module m,  str fcnname);
 mal_export char *MSP_locate_script(const char *mod_name);
 mal_export char *MSP_locate_module(const char *mod_name);
 mal_export str loadModuleLibrary(str modulename);
@@ -168,6 +169,47 @@ Try to load it as a separate object
 		stream_printf(GDKout, "addres of %s %d %s\n", fcnname, (int) adr, errmsg);
 #endif
 	return adr;
+}
+MALfcn
+getAddressFromLib(Module m, str fcnname)
+{
+	MALfcn adr;
+	int idx;
+	char *errmsg= NULL;
+	void *dl=0;
+
+	if(m->dll){
+		adr = (MALfcn) dlsym(m->dll, fcnname);
+		errmsg= dlerror();
+		if( adr != NULL) return adr;
+	}
+@-
+Try to locate the module
+@c
+	for(idx =0; idx < maxmodules && moduleLoaded[idx]; idx++)
+	if( strcmp(m->name, moduleLoaded[idx])==0) {
+		adr = (MALfcn) dlsym(moduleHandle[idx], fcnname);
+		errmsg= dlerror();
+		if( adr != NULL) {
+			m->dll= moduleHandle[idx];
+			return adr;
+		}
+	}
+
+@-
+Try the program at large.
+@c
+	dl = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
+	errmsg= dlerror();
+	if( dl != NULL && errmsg == NULL){
+		adr = (MALfcn) dlsym(dl, fcnname);
+		errmsg= dlerror();
+		if( errmsg== NULL && adr != NULL) {
+			m->dll= moduleHandle[idx];
+			return adr;
+		}
+	}
+	return NULL;
 }
 
 @}

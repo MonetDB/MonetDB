@@ -298,6 +298,8 @@ getConsoleInput(const char *prompt, int linemode, int exit_on_error)
 		
 		if (line == NULL) {
 			/* end of file */
+			if (buf)
+				free(buf);
 			return 0;
 		} else
 			length = strlen(line);

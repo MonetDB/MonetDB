@@ -455,9 +455,10 @@ MALparser(Client c)
 int
 MALcommentsOnly(MalBlkPtr mb)
 {
-	int i;
+	int i,limit;
 
-	for (i = 1; i < mb->stop; i++)
+	limit = mb->stop -1;
+	for (i = 1; i < limit; i++)
 		if (mb->stmt[i]->token != REMsymbol)
 			return 0;
 	return 1;

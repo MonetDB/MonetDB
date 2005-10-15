@@ -202,8 +202,6 @@ we avoid doing this check any further.
 @c
 #define DEPTH 128
 
-static str mainRef;
-
 void chkFlow(MalBlkPtr mb)
 {   int i,j,k, v,lastInstruction;
 	int  pc[DEPTH];
@@ -367,9 +365,7 @@ void chkFlow(MalBlkPtr mb)
 		mb->errors++;
 	}
 	if( retseen == 0){
-		if( mainRef == 0) mainRef= putName("main",4);
-		if( mainRef != functionId(p) &&
-			getArgType(mb,p,0)!= TYPE_void &&
+		if( getArgType(mb,p,0)!= TYPE_void &&
 			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol)){
 			GDKerror("%s missing in %s.%s\n", 
 				(p->token== FUNCTIONsymbol?"return":"yield"),
@@ -387,9 +383,10 @@ and marking all non-temporary variables as being (potentially) used.
         for(i=0;i<3; i++){
             needsCleanup(getInstrPtr(mb,i))= FALSE;
         }
-        for(i=0; i<mb->vtop; i++)
-        if( !isTmpVar(mb,i))
-            setVarUsed(mb,i, TRUE);
+		for(i=0; i<mb->vtop; i++)
+		if( !isTmpVar(mb,i))
+			setVarUsed(mb,i, TRUE);
+
     }
 	if( mb->errors == 0 )
 		mb->flowfixed = fixed; /* we might not have to come back here */

@@ -374,12 +374,13 @@ void mal_exit(Client cntxt){
     close_stream(f);
 #endif
     freeModuleList(cntxt->nspace);
-    cntxt->nspace = 0;
     freeBoxes();
     mal_scope = 0;
-/*    unloadModuleLibraries(); Switched of as the code may still be inuse by a thread/client */
+    unloadModuleLibraries(); 
     TMcommit();
-    finishNamespace();
+    /*freeModuleList(cntxt->nspace);*/
+	/* freeMalBlk(cntxt->curprg->def);*/
+    /* finishNamespace();*/
     /* GDKexit(0); */
     MT_global_exit(0);
 }

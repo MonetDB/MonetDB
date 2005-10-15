@@ -290,14 +290,6 @@ know how many arguments may be needed upfront.
 [TODO, rather then breaking the original input into pieces,
 it would be worthwhile to keep track of location of the
 instruction in the source.]
-@+ Before-after calls
-The instruction records contain two optional pointers to functions:
-beforeCall and afterCall. They are passed the runtime context. 
-The beforeCall is activated just before you enter a routine and 
-can be used to initialize the stack frame, perform debugging, etc.etc.
-The afterCall is activated after a successful return and can be
-used to finalize the administration.
-[Not used anymore]
 @h
 #ifndef _MAL_INSTR_H
 #define _MAL_INSTR_H
@@ -381,8 +373,6 @@ and the total time spent while executing the instruction.
     long    ticks;      /* micro seconds spent */
 #endif
     MALfcn  fcn;        /* resolved function address */
-    MALfcn  beforeCall; /* do something with the target object */
-    MALfcn  afterCall;  /* do something with the result object */
     struct MALBLK *blk; /* resolved MAL function address */
     short quickcleanup;    /* instruction needs garbage control */
 	short garbagecollect;	/* function needs garbage collector */
@@ -777,29 +767,24 @@ InstrPtr newInstruction(MalBlkPtr mb, int kind){
 
 	if( mb){
 		p= mb->stmt[mb->stop];
-		if( p){
-			/* printf(" candidate for re-use %s.%s\n",moduleId(p),functionId(p));*/
-			/* printInstruction(GDKout,mb,p,LIST_MAL_ALL);*/
-			if( p->maxarg < MAXARG) p = NULL;
-		}
+		if( p && p->maxarg<MAXARG) p = NULL;
 		mb->stmt[mb->stop]= NULL;
 	}
 	if( p == NULL){
 		space = (MAXARG-1) * sizeof(int)+ sizeof(InstrRecord);
 		p = GDKmalloc(space);
+		p->maxarg= MAXARG;
 	}
     p->typechk = TYPE_UNKNOWN;
     setModuleId(p, NULL);
     setFunctionId(p, NULL);
     p->props= NULL;
-    p->beforeCall = p->afterCall = 0;
     p->fcn= NULL;
     p->blk= NULL;
     p->polymorphic = 0;
     p->varargs = 0;
     p->argc= 1;
     p->retc= 1;
-    p->maxarg= MAXARG;
     p->argv[0] = -1;    /* watch out for direct use in variable table*/
 @-
 Flow of control instructions are always marked as an assignment
@@ -1569,7 +1554,7 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst){
 				return i;
     }
     k=  newTmpVariable(mb,type);
-    isConstant(mb,k) = 1;
+    isConstant(mb,k) = TRUE;
     setFixed(mb,k);
     setVarUsed(mb,k,FALSE);
     isVarInitialized(mb,k) = FALSE;
@@ -1652,9 +1637,11 @@ void delArgument(InstrPtr p, int idx){
 
 void setVarType(MalBlkPtr mb, int i, int tpe) 
 {
-    if(i<0) return;
-	mb->var[i]->type= tpe;
-	mb->var[i]->gdktype= tpe<= TYPE_str? tpe:findGDKtype(tpe);
+	VarPtr v;
+	v= mb->var[i];
+	v->type= tpe;
+	v->gdktype= tpe<= TYPE_str? tpe:
+			(tpe== TYPE_any?TYPE_void:findGDKtype(tpe));
 }
 void setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe)
 {
@@ -1732,15 +1719,22 @@ variable to hold the result instead.
     mb->stmt[i]= p;
     mb->stop++;
 }
+@-
+The END instruction has an optional name, which is only checked
+during parsing;
+@c
 void pushEndInstruction(MalBlkPtr mb){
     InstrPtr p;
-	int varid;
+/*	int varid;*/
 
     p= newInstruction(mb,ENDsymbol);
+/*
     setDestVar(p, varid= findVariable(mb,functionName(getInstrPtr(mb,0))) );
 	if(varid >= 0) setVarInitialized(mb,getDestVar(p));
+*/
     p->argc =0;
     p->retc = 0;
+	p->argv[0]=0;
     pushInstruction(mb,p);
 }
 @-
@@ -2054,10 +2048,7 @@ str instruction2str(MalBlkPtr mb,InstrPtr p,int flg){
             }
             break;
         case ENDsymbol:
-            if( isTmpVar(mb,getDestVar(p)) )
-                sprintf(t,"end %c%d", TMPMARKER,
-                    getVarTmp(mb,getDestVar(p)) );
-            else sprintf(t,"end %s",mb->var[getDestVar(p)]->name);
+            sprintf(t,"end %s", functionId(getInstrPtr(mb,0)) );
             break;
         case COMMANDsymbol:
         case FUNCTIONsymbol:
