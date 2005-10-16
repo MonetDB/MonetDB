@@ -2135,7 +2135,8 @@ bs_flush(stream *ss)
 #endif
 		blksize = s->nr << 1;
 		blksize |= (short)1;	/* make last bit 1 */
-		if ((s->nr > 0 && (!stream_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr))) {
+		/* allways flush (even empty blocks) needed for the protocol) */
+		if ((!stream_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr)) {
 			ss->errnr = WRITE_ERROR;
 			return -1;
 		}
@@ -2197,7 +2198,6 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 	/* Fill the caller's buffer. */
 	cnt = 0;		/* count how much we put into the buffer */
 	while (todo > 0) {
-		assert(s->itotal > 0);
 		/* there is more data waiting in the current block,
 		   so read it */
 		n = todo < s->itotal ? todo : s->itotal;
