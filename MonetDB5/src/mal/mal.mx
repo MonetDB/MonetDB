@@ -376,10 +376,10 @@ void mal_exit(Client cntxt){
     freeModuleList(cntxt->nspace);
     freeBoxes();
     mal_scope = 0;
-    unloadModuleLibraries(); 
+    /* we cannot unloadModules as threads may still use the functions in them.
+	unloadModuleLibraries(); */
     TMcommit();
-    /*freeModuleList(cntxt->nspace);*/
-	/* freeMalBlk(cntxt->curprg->def);*/
+    /* freeMalBlk(cntxt->curprg->def);*/
     /* finishNamespace();*/
     /* GDKexit(0); */
     MT_global_exit(0);

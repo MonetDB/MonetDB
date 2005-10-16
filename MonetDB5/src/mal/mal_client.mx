@@ -470,8 +470,11 @@ void initClientThread(Client c)
 	} else
 */
 		c->mythread = t=  THRnew(c->mypid=MT_getpid(),c->user);
-	GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
 	c->errbuf = GDKerrbuf;
+	if (c->errbuf == NULL) {
+		GDKsetbuf( GDKmalloc(GDKMAXERRLEN));
+		c->errbuf = GDKerrbuf;
+	}
 	c->errbuf[0]=0;
 @-
 The GDK thread administration should be set to reflect use of
