@@ -6405,7 +6405,7 @@ evaluate_join (opt_t *f, int code, int cur_level, int counter, PFcnode_t *args)
  */
 static void
 translateUDF (opt_t *f, int cur_level, int counter, 
-              PFfun_t *fun, PFcnode_t *args)
+        PFfun_t *fun, PFcnode_t *args)
 {
     char procname[128];
     int i;
@@ -6443,11 +6443,11 @@ translateUDF (opt_t *f, int cur_level, int counter,
     /* map needed global variables into the function */
     milprintf(f, "var expOid;\n");
     getExpanded (f,
-                 /* we don't want to get the variables from
-                    the surrounding scope like for
-                    but from the current */
-                 cur_level+1, 
-                 fun->fid);
+            /* we don't want to get the variables from
+               the surrounding scope like for
+               but from the current */
+            cur_level+1, 
+            fun->fid);
     milprintf(f,
             "var vid := expOid.leftfetchjoin(v_vid%03u);\n"
             "iter    := expOid.leftfetchjoin(v_iter%03u);\n"
@@ -6479,11 +6479,11 @@ translateUDF (opt_t *f, int cur_level, int counter,
     /* call the proc */
     snprintf(procname, 128, "fn_%x_%i", (unsigned int) ((unsigned long long) fun), fun->arity);
     milprintf(f, PFudfMIL(), 
-                        procname,
-                        cur_level, cur_level, cur_level, cur_level, 
-                        counter, counter, counter, counter, 
-                        fun->qname.loc, fun->qname.loc,
-                        counter, counter, counter, counter);
+            procname,
+            cur_level, cur_level, cur_level, cur_level, 
+            counter, counter, counter, counter, 
+            fun->qname.loc, fun->qname.loc,
+            counter, counter, counter, counter);
     milprintf(f, "} # end of UDF - function call\n");
 }
 
@@ -10185,157 +10185,157 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 }
 
 static char* PFloadMIL() {
-        return  "# MODULE DECLARATIONS\n"
-                "module(\"pathfinder\");\n"
-		"module(\"pf_support\");\n"
-		"module(\"aggrX3\");\n"
-		"module(\"bat_arith\");\n"
-		"module(\"xtables\");\n"
-		"module(\"malalgebra\");\n"
-		"module(\"pcre\");\n"
-		"module(\"mmath\");\n"
-		"module(\"alarm\");\n"
-		"\n"
-                "var loop000 := bat(void,oid,1).seqbase(0@0).insert(0@0, 1@0).access(BAT_READ);\n"
-		"\n"
-		"# variable environment vars\n"
-		"var vu_fid;\n"
-		"var vu_vid;\n"
-		"var inner000 := loop000;\n"
-		"var outer000 := loop000;\n"
-		"var order_000 := loop000;\n"
-		"var v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-		"var v_iter000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-		"var v_pos000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-		"var v_item000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-		"var v_kind000 := bat(void,int).access(BAT_APPEND).seqbase(0@0);\n"
-		"\n"
-		"# value containers for literal values\n"
-		"var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);\n"
-		"var dbl_values := bat(dbl,void).key(true).reverse().seqbase(0@0);\n"
-		"var dec_values := dbl_values;\n"
-		"var str_values := bat(str,void).key(true).reverse().seqbase(0@0).insert(0@0,\"\");\n"
-                "\n"
-                "var fun_vid000 := bat(void,oid).seqbase(0@0);\n"
-                "var fun_iter000 := bat(void,oid).seqbase(0@0);\n"
-                "var fun_item000 := bat(void,oid).seqbase(0@0);\n"
-                "var fun_kind000 := bat(void,int).seqbase(0@0);\n"
-		"\n"
-		"# variable binding for loop-lifting of the empty sequence\n"
-		"var empty_bat := bat(void,oid,0).seqbase(0@0).access(BAT_READ);\n"
-		"var empty_kind_bat := bat(void,int,0).seqbase(0@0).access(BAT_READ);\n"
-                "var EMPTY_STRING := 0@0;\n"
-		"\n"
- 		"# boolean mapping\n"
-		"var bool_not := bat(oid,oid,2).insert(0@0,1@0).insert(1@0,0@0).access(BAT_READ);\n"
-		"\n"
-		"# variables for (intermediate) results\n"
-		"var ipik;\n"
-		"var iter;\n"
-		"var pos;\n"
-		"var item;\n"
-		"var kind;\n"
-		"\n"
-		"# variables for results containing `real' values\n"
-		"var item_int_;\n"
-		"var item_dec_;\n"
-		"var item_dbl_;\n"
-		"var item_str_;\n"
-		"var empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);\n"
-		"var empty_dec__bat := empty_dbl_bat;\n"
-		"var empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);\n"
-		"var empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);\n"
-		"\n"
-		"# variables for results containing `real' xml subtrees\n"
-		"var _elem_iter;  # oid|oid\n"
-		"var _elem_size;  # oid|int\n"
-		"var _elem_level; # oid|chr\n"
-		"var _elem_kind;  # oid|chr\n"
-		"var _elem_prop;  # oid|oid\n"
-		"var _elem_frag;  # oid|oid\n"
-		"\n"
-		"var _attr_iter; # oid|oid\n"
-		"var _attr_qn;   # oid|oid\n"
-		"var _attr_prop; # oid|oid\n"
-		"var _attr_frag; # oid|oid\n"
-		"var _attr_own;  # oid|oid\n"
-		"\n"
-		"var _r_attr_iter; # oid|oid\n"
-		"var _r_attr_qn;   # oid|oid\n"
-		"var _r_attr_prop; # oid|oid\n"
-		"var _r_attr_frag; # oid|oid\n"
-		"\n"
-                "var fun_vid000;\n"
-                "var fun_iter000;\n"
-                "var fun_item000;\n"
-                "var fun_kind000;\n"
-		"\n"
-		"var var_usage := bat(oid,oid);\n"
-		"var proc_vid := bat(str,oid);\n"
-		"var proc_sig := bat(str,str);\n"
-		"# MIL-PROCS GENERATED FROM XQUERY FUNCTIONS\n";
+    return  "# MODULE DECLARATIONS\n"
+        "module(\"pathfinder\");\n"
+        "module(\"pf_support\");\n"
+        "module(\"aggrX3\");\n"
+        "module(\"bat_arith\");\n"
+        "module(\"xtables\");\n"
+        "module(\"malalgebra\");\n"
+        "module(\"pcre\");\n"
+        "module(\"mmath\");\n"
+        "module(\"alarm\");\n"
+        "\n"
+        "var loop000 := bat(void,oid,1).seqbase(0@0).insert(0@0, 1@0).access(BAT_READ);\n"
+        "\n"
+        "# variable environment vars\n"
+        "var vu_fid;\n"
+        "var vu_vid;\n"
+        "var inner000 := loop000;\n"
+        "var outer000 := loop000;\n"
+        "var order_000 := loop000;\n"
+        "var v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+        "var v_iter000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+        "var v_pos000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+        "var v_item000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+        "var v_kind000 := bat(void,int).access(BAT_APPEND).seqbase(0@0);\n"
+        "\n"
+        "# value containers for literal values\n"
+        "var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);\n"
+        "var dbl_values := bat(dbl,void).key(true).reverse().seqbase(0@0);\n"
+        "var dec_values := dbl_values;\n"
+        "var str_values := bat(str,void).key(true).reverse().seqbase(0@0).insert(0@0,\"\");\n"
+        "\n"
+        "var fun_vid000 := bat(void,oid).seqbase(0@0);\n"
+        "var fun_iter000 := bat(void,oid).seqbase(0@0);\n"
+        "var fun_item000 := bat(void,oid).seqbase(0@0);\n"
+        "var fun_kind000 := bat(void,int).seqbase(0@0);\n"
+        "\n"
+        "# variable binding for loop-lifting of the empty sequence\n"
+        "var empty_bat := bat(void,oid,0).seqbase(0@0).access(BAT_READ);\n"
+        "var empty_kind_bat := bat(void,int,0).seqbase(0@0).access(BAT_READ);\n"
+        "var EMPTY_STRING := 0@0;\n"
+        "\n"
+        "# boolean mapping\n"
+        "var bool_not := bat(oid,oid,2).insert(0@0,1@0).insert(1@0,0@0).access(BAT_READ);\n"
+        "\n"
+        "# variables for (intermediate) results\n"
+        "var ipik;\n"
+        "var iter;\n"
+        "var pos;\n"
+        "var item;\n"
+        "var kind;\n"
+        "\n"
+        "# variables for results containing `real' values\n"
+        "var item_int_;\n"
+        "var item_dec_;\n"
+        "var item_dbl_;\n"
+        "var item_str_;\n"
+        "var empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);\n"
+        "var empty_dec__bat := empty_dbl_bat;\n"
+        "var empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);\n"
+        "var empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);\n"
+        "\n"
+        "# variables for results containing `real' xml subtrees\n"
+        "var _elem_iter;  # oid|oid\n"
+        "var _elem_size;  # oid|int\n"
+        "var _elem_level; # oid|chr\n"
+        "var _elem_kind;  # oid|chr\n"
+        "var _elem_prop;  # oid|oid\n"
+        "var _elem_frag;  # oid|oid\n"
+        "\n"
+        "var _attr_iter; # oid|oid\n"
+        "var _attr_qn;   # oid|oid\n"
+        "var _attr_prop; # oid|oid\n"
+        "var _attr_frag; # oid|oid\n"
+        "var _attr_own;  # oid|oid\n"
+        "\n"
+        "var _r_attr_iter; # oid|oid\n"
+        "var _r_attr_qn;   # oid|oid\n"
+        "var _r_attr_prop; # oid|oid\n"
+        "var _r_attr_frag; # oid|oid\n"
+        "\n"
+        "var fun_vid000;\n"
+        "var fun_iter000;\n"
+        "var fun_item000;\n"
+        "var fun_kind000;\n"
+        "\n"
+        "var var_usage := bat(oid,oid);\n"
+        "var proc_vid := bat(str,oid);\n"
+        "var proc_sig := bat(str,str);\n"
+        "# MIL-PROCS GENERATED FROM XQUERY FUNCTIONS\n";
 }
 
 static char* PFstartMIL() {
-        return  "var ws := int(nil);\n"
-                "var err := CATCH({\n"
-                "  ws := create_ws();\n"
-		"\n"
-                "  # get full picture on var_usage (and sort it)\n"
-		"  var_usage := var_usage.unique().reverse().access(BAT_READ);\n"
-		"  vu_fid := var_usage.mark(1000@0).reverse();\n"
-		"  vu_vid := var_usage.reverse().mark(1000@0).reverse();\n"
-		"  var_usage := vu_fid.reverse().sort().reverse();\n"
-		"  var_usage := var_usage.CTrefine(vu_vid);\n"
-		"  var_usage := var_usage.mark(1000@0).reverse();\n"
-		"  vu_vid := var_usage.leftfetchjoin(vu_vid);\n"
-		"  vu_fid := var_usage.leftfetchjoin(vu_fid);\n"
-		"  var_usage := nil;\n";
+    return  "var ws := int(nil);\n"
+        "var err := CATCH({\n"
+        "  ws := create_ws();\n"
+        "\n"
+        "  # get full picture on var_usage (and sort it)\n"
+        "  var_usage := var_usage.unique().reverse().access(BAT_READ);\n"
+        "  vu_fid := var_usage.mark(1000@0).reverse();\n"
+        "  vu_vid := var_usage.reverse().mark(1000@0).reverse();\n"
+        "  var_usage := vu_fid.reverse().sort().reverse();\n"
+        "  var_usage := var_usage.CTrefine(vu_vid);\n"
+        "  var_usage := var_usage.mark(1000@0).reverse();\n"
+        "  vu_vid := var_usage.leftfetchjoin(vu_vid);\n"
+        "  vu_fid := var_usage.leftfetchjoin(vu_fid);\n"
+        "  var_usage := nil;\n";
 }
 
 static char* PFstopMIL() {
-       return   "  item := item.de_NO_project(ipik);\n"
-                "  print_result(\"%s\",ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n";
-                "});\n"
-                "destroy_ws(ws);\n"
-                "if (not(isnil(err))) ERROR(err);\n";
+    return   "  item := item.de_NO_project(ipik);\n"
+        "  print_result(\"%s\",ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n"
+        "});\n"
+        "destroy_ws(ws);\n"
+        "if (not(isnil(err))) ERROR(err);\n";
 }
 
 static char* PFclearMIL() {
-        return  "# clear our state\n"
-		"int_values := delete(int_values);\n"
-		"dbl_values := delete(dbl_values);\n"
-		"str_values := delete(str_values).insert(0@0,\"\");\n"
-                "\n"
-                "fun_vid000 := delete(fun_vid000);\n"
-                "fun_iter000 := delete(fun_iter000);\n"
-                "fun_item000 := delete(fun_item000);\n"
-                "fun_kind000 := delete(fun_kind000);\n";
+    return  "# clear our state\n"
+        "int_values := delete(int_values);\n"
+        "dbl_values := delete(dbl_values);\n"
+        "str_values := delete(str_values).insert(0@0,\"\");\n"
+        "\n"
+        "fun_vid000 := delete(fun_vid000);\n"
+        "fun_iter000 := delete(fun_iter000);\n"
+        "fun_item000 := delete(fun_item000);\n"
+        "fun_kind000 := delete(fun_kind000);\n";
 }
 
 static char* PFudfMIL() {
-        return  "var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n" 
-                "iter := proc_res.fetch(0);\n"
-                "item := proc_res.fetch(1);\n"
-                "kind := proc_res.fetch(2);\n"
-                "if (not(is_fake_project(iter))) {\n"
-                " ipik := iter;\n"
-                "} else {\n"
-                "  if (not(is_fake_project(item))) {\n"
-                "    ipik := item;\n"
-                "  } else {\n"
-                "    ipik := kind;\n"
-                "    if (is_fake_project(kind)) ERROR(\"translateUDF: %s: not all of iter|item|kind must be 'fake_projects'!\\n\");\n"
-                "  }\n"
-                "}\n"
-                "proc_res := nil;\n"
-                "fun_vid%03u := nil;\n"
-                "fun_iter%03u := nil;\n"
-                "fun_item%03u := nil;\n"
-                "fun_kind%03u := nil;\n"
-                "iter := de_fake_project(iter, ipik);\n"
-                "item := de_fake_project(item, ipik);\n"
-                "kind := de_fake_project(kind, ipik);\n";
+    return  "var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n" 
+        "iter := proc_res.fetch(0);\n"
+        "item := proc_res.fetch(1);\n"
+        "kind := proc_res.fetch(2);\n"
+        "if (not(is_fake_project(iter))) {\n"
+        " ipik := iter;\n"
+        "} else {\n"
+        "  if (not(is_fake_project(item))) {\n"
+        "    ipik := item;\n"
+        "  } else {\n"
+        "    ipik := kind;\n"
+        "    if (is_fake_project(kind)) ERROR(\"translateUDF: %s: not all of iter|item|kind must be 'fake_projects'!\\n\");\n"
+        "  }\n"
+        "}\n"
+        "proc_res := nil;\n"
+        "fun_vid%03u := nil;\n"
+        "fun_iter%03u := nil;\n"
+        "fun_item%03u := nil;\n"
+        "fun_kind%03u := nil;\n"
+        "iter := de_fake_project(iter, ipik);\n"
+        "item := de_fake_project(item, ipik);\n"
+        "kind := de_fake_project(kind, ipik);\n";
 }
 
 static char* PFdropMIL() {
