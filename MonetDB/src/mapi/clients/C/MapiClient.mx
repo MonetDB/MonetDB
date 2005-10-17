@@ -1015,7 +1015,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			mapi_query_part(hdl, line, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
-		if ((line == NULL || (length > 0 && line[length - 1] != '\n')) && linemode) {
+		if (linemode) {
 			assert(hdl != NULL);
 			/* If the server wants more but we're at the
 			   end of file (line == NULL), notify the
