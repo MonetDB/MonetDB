@@ -154,6 +154,18 @@ command exportResult() :void
 address mvc_export_default_wrap
 comment "Export result of schema queries"; 
 
+command affectedRows( nr:int ) :void
+address mvc_affected_rows_int
+comment "export the number of affected rows by the current query";
+
+command affectedRows( nr:lng ) :void
+address mvc_affected_rows_wrap
+comment "export the number of affected rows by the current query";
+
+pattern exportValue( qtype:int, tname:str, name:str, typename:str, digits:int, scale:int, eclass:int, val:any_1 )
+address mvc_export_value_wrap 
+comment "export a single value onto the stream s";
+
 command importTable( s:bstream, tname:str, 
 	sep:str, rsep:str, nr:int) :bat[:str,:bat] 
 address mvc_import_table_wrap
@@ -590,7 +602,7 @@ Some statistics are gathered during the execution of a query
 and added to the SQL history table for post analysis when the
 query has been successfully executed.
 @h
-	lng Tread, Tparse, Toptimize, Tschedule, Texec;
+	lng Tparse, Toptimize, Tschedule, Texec;
 	str qry;
 } backend;
 
@@ -639,7 +651,7 @@ backend_create(int trace, mvc *m, Client c)
 	b->currIndex = NULL;
 	b->code = NULL;
 	b->vtop = 0;
-	b->Tread = b->Tparse = b->Toptimize = b->Tschedule = b->Texec = 0;
+	b->Tparse = b->Toptimize = b->Tschedule = b->Texec = 0;
 	b->qry = NULL;
 	b->q = NULL;
 	return b;
@@ -1063,6 +1075,30 @@ mvc_export_default_wrap()
 }
 
 str
+mvc_affected_rows_wrap( int *r, lng *nr)
+{
+	mvc *c;
+	backend *b;
+
+	(void)r;
+	@:getContext(c)@
+	@:getBackend(b)@
+	c->type = Q_UPDATE;
+	if (mvc_export_default(c, b->out)) {
+		return throwMessage("sql.affectedRows", "failed");
+	}
+	stream_printf(b->out, "[ " LLFMT " ]\n", *nr);
+	return NULL;
+}
+
+str
+mvc_affected_rows_int( int *r, int *nr)
+{
+	lng N = *nr;
+	return mvc_affected_rows_wrap(r, &N);
+}
+
+str
 mvc_export_result_wrap(int *ret, int *res_id)
 {
 	mvc *c;
@@ -1075,6 +1111,31 @@ mvc_export_result_wrap(int *ret, int *res_id)
 		return throwMessage("sql.exportResult", "failed");
 	}
 	return NULL;
+}
+
+str
+/*mvc_export_value_wrap(int *ret, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype)*/
+mvc_export_value_wrap(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *qtype= (int *) getArgReference(stk, pci, 1);
+	str *tn   = (str *) getArgReference(stk, pci, 2);
+	str *cn   = (str *) getArgReference(stk, pci, 3);
+	str *type = (str *) getArgReference(stk, pci, 4);
+	int *digits = (int *) getArgReference(stk, pci, 5);
+	int *scale = (int *) getArgReference(stk, pci, 6);
+	int *eclass = (int *) getArgReference(stk, pci, 7);
+	ptr p =  (ptr) getArgReference(stk, pci, 8);
+	int mtype = getArgType(mb, pci, 8);
+	mvc *c;
+	backend *b;
+
+	@:getContext(c)@
+	@:getBackend(b)@
+	if (ATOMvarsized(mtype)) 
+		p = *(ptr*)p;
+	if (mvc_export_value(c, b->out, *qtype, *tn, *cn, *type, *digits, *scale, *eclass, p, mtype) != SQL_OK)
+		return throwMessage("sql.exportValue", "failed");
+	return MAL_SUCCEED;
 }
 
 str

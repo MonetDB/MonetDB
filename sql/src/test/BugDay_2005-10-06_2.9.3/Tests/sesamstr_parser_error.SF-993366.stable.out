@@ -9,11 +9,9 @@ stdout of test 'sesamstr_parser_error.SF-993366` in directory 'src/test/BugDay_2
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+#Ready to accept connections on koala.ins.cwi.nl:41342
 
 Ready.
-quit();
 
 Over..
 
@@ -1074,7 +1072,7 @@ Over..
 # 7 # querytype
 # 7 # querytype
 # 4 # querytype
-[ 0	]
+[ 0 ]
 # 7 # querytype
 
 # 22:17:52 >  

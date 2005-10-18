@@ -208,8 +208,8 @@ SQLinitAdmin(Client c)
 	str msg;
 	mvc *m;
 	str schema;
-	msg = SQLinit(c);
-	if (msg != MAL_SUCCEED)
+
+	if (!SQLinitialized && (msg = SQLinit(c)) != MAL_SUCCEED)
 		return msg;
 	
 	if ((backend *) c->state[PARSER] == 0) {
@@ -220,16 +220,19 @@ SQLinitAdmin(Client c)
 			return throwMessage("SQLparser", "No schema defined\n");
 		} else {
 			if (!sendProperty(c->fdout, "version", "5") ||
-				!sendProperty(c->fdout, "language", "sql") ||
-				!sendProperty(c->fdout, "schema", schema) ||
+			    !sendProperty(c->fdout, "language", "sql") ||
+			    !sendProperty(c->fdout, "schema", schema) || 
+			    !sendProperty(c->fdout, "auto_commit", "false") || 
+			    !sendProperty(c->fdout, "reply_size", "1000") || 
 				stream_flush(c->fdout) < 0)
 			{
+				res_tables_destroy(m->results);
 				mvc_destroy(m);
 				return throwMessage("SQLparser", "Disconnected\n");
 			}
 		}
 		c->state[PARSER] = (void *) backend_create(0 /*debug */ , m, c);
-	((backend*)c->state[PARSER])->language = 's';	/*expect SQL text first */
+		((backend*)c->state[PARSER])->language = 'S';	/*expect SQL text first */
 		c->state[OPTIMIZE] = m;
 	} else {
 		m = c->state[OPTIMIZE];
@@ -382,7 +385,7 @@ SQLcompile(str *ret, str *expr, int *flag)
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	m->args = NULL;
+	m->argc = 0;
 	m->sym = NULL;
 	m->auto_commit = 0;
 
@@ -417,7 +420,7 @@ We don;t search the cache for a previous incarnation.
 		}
 		assert(s);
 		/* generate MAL code */
-		backend_callinline(sql, c, s, m->args);
+		backend_callinline(sql, c, s);
 		pushEndInstruction(c->curprg->def);
 		chkProgram(c->nspace, c->curprg->def); /* make all types known */
 		if (!c->curprg->def->errors) {
@@ -492,6 +495,8 @@ error(stream *out, char *str)
 		if (stream_write(out, str, strlen(str), 1) != 1 || stream_write(out, "\n", 1, 1) != 1)
 			 return -1;
 	}
+	if (stream_flush(out))
+		return -1;
 	return 0;
 }
 
@@ -546,9 +551,9 @@ int SQLautocommit(Client c, mvc *m){
 		if (mvc_status(m) < 0) {
 			mvc_rollback(m, 0, NULL);
 		} else if (mvc_commit(m, 0, NULL) < 0) {
-				 	return handle_error(m, c->fdout, 0);
-				}
-			}
+		 	return handle_error(m, c->fdout, 0);
+		}
+	}
 	return TRUE;
 }
 
@@ -608,8 +613,6 @@ IO to obtain missing data.
 			c->mode = FINISHING;
 			return throwMessage("SQLreader", "end of SQL input\n");
 		}
-		if (be)
-			be->Tread = GDKusec() - T0;
 		return MAL_SUCCEED;
 */
     }
@@ -635,6 +638,7 @@ IO to obtain missing data.
 
 			if (go && (stream_write(c->fdout, c->prompt, c->promptlength, 1) != 1 || stream_flush(c->fdout))) {
 				go = FALSE;
+				break;
 			}
 			in->eof = 0;
 		}
@@ -650,9 +654,10 @@ IO to obtain missing data.
 				/* we hadn't seen the EOF before, so just try again
 				   (this time with prompt) */
 				more = TRUE;
-			} else {
-				go = FALSE;
+				continue;
 			}
+			go = FALSE;
+			break;
 		} else if (go && !be->console && language == 0) {
 			be->language = in->buf[in->pos++];
 		}
@@ -666,10 +671,6 @@ IO to obtain missing data.
 		c->mode = FINISHING;
 		return throwMessage("SQLreader", "end of SQL input\n");
 	}
-/* nobody is using it
-	if (be)
-		be->Tread = GDKusec() - T0;
-*/
 	return 0;
 }
 
@@ -883,7 +884,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 			sqlcleanup(m, err);
 			goto finalize;
 		}
-	} else if (err == 0 && !be->q && (!(be->q = qc_match(m->qc, m->sym, m->args, m->scanner.key)))) {
+	} else if (err == 0 && !be->q && (!(be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key)))) {
 		stmt *s = sql_symbol2stmt(m);
 
 		if (!s && (err = mvc_status(m))) {
@@ -899,7 +900,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		   (msg = sql_get_var(m,"optimizer")) == NULL) {
 */
 		if (m->mode != m_prepare && !m->cache){
-			backend_callinline(be, c, s, m->args);
+			backend_callinline(be, c, s );
 		} else {
 			/* generate a factory instantiation */
 			backend_dumpproc(be, c, m->qc->id, s);
@@ -907,6 +908,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 					  m->sa,      /* the allocator */
 					  m->sym,     /* the sql symbol tree */
 					  m->args,    /* the argument list */
+					  m->argc,
 					  m->scanner.key,	/* the statement hash key */
 					  m->type,	/* the type of the statement */
 					  _strdup("the mal block?"));
@@ -924,7 +926,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 	if (be->q && m->mode == m_prepare) {
 		err = output_prepare(c->fdout, m, be->q);
 	} else if (be->q) {  /* call procedure (only in cache mode) */
-		backend_call(be, c, be->q->id, m->args);
+		backend_call(be, c, be->q);
 	}
 
 @-

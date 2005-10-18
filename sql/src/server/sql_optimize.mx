@@ -1333,6 +1333,7 @@ optimize(mvc *c, stmt *s)
 	case st_column:
 	case st_alias:
 	case st_output:
+	case st_affected_rows:
 	case st_append:
 	case st_insert:
 	case st_replace:

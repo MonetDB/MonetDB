@@ -32,7 +32,7 @@ typedef struct keyword {
 	struct keyword *next;
 } keyword;
 
-#define HASH_SIZE 512
+#define HASH_SIZE 32768
 #define HASH_MASK (HASH_SIZE-1)
 
 extern int keywords_init_done;

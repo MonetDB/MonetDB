@@ -32,8 +32,8 @@
 
 sql_server_export int backend_dumpstmt(stmt *s, int *nr, backend *sql);
 sql_server_export void backend_dumpproc(backend *be, int id, stmt *s);
-sql_server_export int backend_call(backend *be, cq *q, list *args);
-sql_server_export int backend_fastpath(backend *be, cq *q, list *args);
+sql_server_export int backend_call(backend *be, mvc *c, cq *q);
+sql_server_export int backend_fastpath(backend *be, mvc *c, cq *q);
 sql_server_export int backend_dump(backend *be, stmt *s);
 sql_server_export int backend_explain(backend *be, stmt *s, stream *out);
 sql_server_export int backend_exec_prepared_stmt( backend *be, cq *q );
@@ -308,6 +308,7 @@ dump_3(backend *sql, stmt *s, char *name, int *nr)
 	backend_dump_nil(sql, s->op3.stval);
 }
 
+#define SMALLBUFSIZ 64
 int
 backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 {
@@ -329,7 +330,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 
 		switch (s->type) {
 		case st_none:{
-			int buflen = 64;
+			int buflen = SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			strcpy(buf, "var none := \"none\";\n");
@@ -370,7 +371,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			break;
 		}
 		case st_temp:{
-			size_t buflen = strlen(s->op4.typeval->type->base.name) + 64;
+			size_t buflen = strlen(s->op4.typeval->type->base.name) + SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			len = snprintf(buf, buflen, "var s%d := new(void,%s).seqbase(oid(0));\n", -s->nr, s->op4.typeval->type->base.name);
@@ -791,7 +792,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			char *convert = s->op4.typeval->type->base.name;
 			/* convert types and make sure they are rounded up correctly */
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
-			size_t buflen = strlen(s->op4.funcval->func->imp) + 64;
+			size_t buflen = strlen(s->op4.funcval->func->imp) + SMALLBUFSIZ;
 
 			buf = NEW_ARRAY(char, buflen + 1);
 
@@ -842,13 +843,13 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			size_t buflen;
 
 			if (s->op1.stval->nrcols) {
-				buflen = strlen(s->op4.funcval->func->imp) + 64;
+				buflen = strlen(s->op4.funcval->func->imp) + SMALLBUFSIZ;
 				buf = NEW_ARRAY(char, buflen + 1);
 
 				len = snprintf(buf, buflen, "var s%d := [%s](s%d);\n", -s->nr, s->op4.funcval->func->imp, l);
 				assert(len <= buflen);
 			} else {
-				buflen = strlen(s->op4.funcval->func->imp) + 64;
+				buflen = strlen(s->op4.funcval->func->imp) + SMALLBUFSIZ;
 				buf = NEW_ARRAY(char, buflen + 1);
 
 				len = snprintf(buf, buflen, "var s%d := %s(s%d);\n", -s->nr, s->op4.funcval->func->imp, l);
@@ -862,7 +863,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_binop:{
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
 			int r = backend_dumpstmt_(s->op2.stval, nr, sql);
-			size_t buflen = strlen(s->op4.funcval->func->imp) + 64;
+			size_t buflen = strlen(s->op4.funcval->func->imp) + SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			if (s->op1.stval->nrcols || s->op2.stval->nrcols) {
@@ -912,7 +913,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 						opslen += snprintf(ops + opslen, buflen - opslen, "%cs%d", (opslen) ? ',' : ' ', n);
 					}
 				}
-				buflen = strlen(s->op4.funcval->func->imp) + opslen + 64;
+				buflen = strlen(s->op4.funcval->func->imp) + opslen + SMALLBUFSIZ;
 				buf = NEW_ARRAY(char, buflen + 1);
 
 				len = snprintf(buf, buflen, "var s%d := [%s](%s);\n", -s->nr, s->op4.funcval->func->imp, ops);
@@ -934,7 +935,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 						opslen += snprintf(ops + opslen, buflen - opslen, "%cs%d", (opslen) ? ',' : ' ', n);
 					}
 				}
-				buflen = strlen(s->op4.funcval->func->imp) + opslen + 64;
+				buflen = strlen(s->op4.funcval->func->imp) + opslen + SMALLBUFSIZ;
 				buf = NEW_ARRAY(char, buflen + 1);
 
 				len = snprintf(buf, BUFSIZ, "var s%d := %s(%s);\n", -s->nr, s->op4.funcval->func->imp, ops);
@@ -951,7 +952,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		}
 		case st_aggr:{
 			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
-			size_t buflen = strlen(s->op4.aggrval->aggr->imp) + 64;
+			size_t buflen = strlen(s->op4.aggrval->aggr->imp) + SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			if (s->flag) {
@@ -1041,7 +1042,7 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		}
 		case st_table_clear:{
 			sql_table *t = s->op1.tval;
-			size_t buflen = strlen(t->base.name) + strlen(t->s->base.name) + 64;
+			size_t buflen = strlen(t->base.name) + strlen(t->s->base.name) + SMALLBUFSIZ;
 			buf = NEW_ARRAY(char, buflen + 1);
 
 			len = snprintf(buf, buflen, "var s%d := mvc_clear_table(myc, \"%s\", \"%s\");\n", -s->nr, t->s->base.name, t->base.name);
@@ -1135,6 +1136,17 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			backend_dec_nr2(s->op2.stval);
 			break;
 		}
+		case st_affected_rows: {
+			int l = backend_dumpstmt_(s->op1.stval, nr, sql);
+			char *buf = NEW_ARRAY(char, SMALLBUFSIZ);
+			size_t len = snprintf(buf, SMALLBUFSIZ,
+			    "var s%d := mvc_affected_rows(myc, Output, s%d);\n",
+			    	-s->nr, l);
+			dump(sql, buf, len, -s->nr);
+			_DELETE(buf);
+			backend_dump_nil(sql, s->op1.stval);
+			break;
+		}
 		case st_output:{
 			stmt *order = NULL;
 			stmt *lst = s->op1.stval;
@@ -1154,8 +1166,30 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 			if (lst->type == st_list) {
 				list *l = lst->op1.lval;
 				int cnt = list_length(l);
+				stmt *f;
 
 				n = l->h;
+				f = n->data;
+
+				/* single value result, has a fast exit */
+				if (cnt == 1 && !order && f->nrcols <= 0){
+					stmt *c = n->data;
+					char *tname = table_name(c);
+					char *tn = (tname) ? tname : "";
+					char *cn = column_name(c);
+					sql_subtype *t = tail_type(c);
+
+					len = snprintf(buf, buflen, "var s%d := mvc_export_value(myc, Output, %d, ", -s->nr, sql->mvc->type );
+	
+					len += snprintf(buf+len, buflen-len, "\"%s\", \"%s\", \"%s\", %d, %d, %d, s%d);\n", tn, cn, t->type->sqlname, t->digits, t->scale, t->type->eclass, c->nr);
+					write_command(sql, buf);
+					write_part(sql, buf, len);
+					len = 0;
+					write_tail(sql, -s->nr);
+					_DELETE(buf);
+					backend_dec_nr2(s->op1.stval);
+					break;
+				}
 				if (n) {
 					if (!order) {
 						order = n->data;
@@ -1277,13 +1311,13 @@ backend_dumpproc(backend *be, int id, stmt *s)
 
 	i = snprintf(buf, BUFSIZ, "proc sql%d (", id);
 
-	if (be->mvc->args) {
+	if (be->mvc->argc) {
 		int argc = 0;
 
-		for (n = be->mvc->args->h; n; n = n->next, argc++) {
-			atom *a = n->data;
+		for (; argc < be->mvc->argc; argc++) {
+			atom *a = be->mvc->args[argc];
 
-			i += snprintf(buf + i, BUFSIZ - i, "%s A%d%c", a->tpe->type->base.name, argc, (n->next) ? ',' : ' ');
+			i += snprintf(buf + i, BUFSIZ - i, "%s A%d%c", a->tpe->type->base.name, argc, (argc < (be->mvc->argc-1)) ? ',' : ' ');
 		}
 	} else if (be->mvc->params) {
 		int argc = 0;
@@ -1332,7 +1366,7 @@ milnode2(int tok, ValPtr valp)
 }
 
 static YYSTREE
-monet4_interpret(Cntxt procstk, char *name, list *args, int *err)
+monet4_interpret(Cntxt procstk, mvc *c, char *name, int *err)
 {
 	YYSTREE callnode;
 	YYSTREE argtree;
@@ -1341,11 +1375,10 @@ monet4_interpret(Cntxt procstk, char *name, list *args, int *err)
 	v.vtype = TYPE_void;
 	callnode = milnode(TOK_FUNCTION, TYPE_str, _strdup(name));
 	argtree = Myynode(0, 0);
-	if (args) {
-		node *n;
-
-		for (n = args->h; n; n = n->next) {
-			atom *a = n->data;
+	if (c->argc) {
+		int i;
+		for (i = 0; i < c->argc; i++){
+			atom *a = c->args[i];
 			YYSTREE arg;
 
 			if (atom_null(a)) {
@@ -1365,7 +1398,7 @@ monet4_interpret(Cntxt procstk, char *name, list *args, int *err)
 }
 
 
-int backend_call( backend *be, cq *q, list *args) 
+int backend_call( backend *be, mvc *c, cq *q ) 
 {
 	int err = 0;
 	char buf[BUFSIZ];
@@ -1375,7 +1408,7 @@ int backend_call( backend *be, cq *q, list *args)
 	snprintf(buf, BUFSIZ, "sql%d", q->id);
 
 	be->mvc->type = q->type;
-	callnode = monet4_interpret(procstk, buf, args, &err);
+	callnode = monet4_interpret(procstk, c, buf, &err);
 
 	if (!err) {
 		q->code = (backend_code) callnode;
@@ -1391,22 +1424,21 @@ int backend_call( backend *be, cq *q, list *args)
 }
 
 int
-backend_fastpath(backend *be, cq *q, list *args)
+backend_fastpath(backend *be, mvc *c, cq *q)
 {
 	Cntxt procstk = (Cntxt) ((ptrdiff_t)q->stk);
 	YYSTREE callnode = (YYSTREE)q->code;
 	ValRecord v;
-	node *n;
 
 	be->mvc->type = q->type;
 	v.vtype = TYPE_void;
-	if (args) {
+	if (c->argc) {
 		int i;
 
 		ValPtr argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
 
-		for (i = 1, n = args->h; n; i++, n = n->next) {
-			atom *a = n->data;
+		for (i = 1; i <= c->argc; i++) {
+			atom *a = c->args[i-1];
 
 			if (atom_null(a)) {
 				int t = argv[i].vtype;
@@ -1488,11 +1520,10 @@ backend_explain(backend *be, stmt *s, stream *out)
 	/* insert mil statements into a bat */
 	if (c->args) {
 		int i = 0;
-		node *n;
 
-		for (n = c->args->h; n; n = n->next, i++) {
+		for (; i < c->argc; i++) {
 			int len;
-			atom *a = n->data;
+			atom *a = c->args[i];
 			char buf[BUFSIZ];
 
 			stream_write(be->out, "var ", 4, 1);
@@ -1528,18 +1559,19 @@ int
 backend_exec_prepared_stmt( backend *be, cq *q )
 {
 	mvc *c = be->mvc;
-	node *a, *p;
+	node *p;
 	int argc, parc; 
 
-	argc = c->args?list_length(c->args):0;
+	argc = c->argc;
 	parc = q->params?list_length(q->params):0;
 
 	if (argc != parc) {
 		sql_error(c, 0002, "wrong number of arguments for prepared statement\n");
 		return -1;
-	} else if (c->args) {
-		for (a = c->args->h, p = q->params->h; a && p; a = a->next, p = p->next) {
-			atom *arg = a->data;
+	} else if (c->argc) {
+		int i;
+		for (i = 0, p = q->params->h; i<argc && p; i++, p = p->next) {
+			atom *arg = c->args[i];
 			sql_subtype *pt = p->data;
 
 			if (!atom_cast(arg, pt)) {

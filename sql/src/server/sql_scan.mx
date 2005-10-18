@@ -754,9 +754,11 @@ sqllex(YYSTYPE * yylval, void *parm)
 	int pos;
 
 	if (lc->yynext) {
+		chain *yynext = lc->yynext;
 		int next = lc->yynext->yyval;
 
 		lc->yynext = lc->yynext->yynext;
+		free(yynext);
 		return(next);
 	}
 

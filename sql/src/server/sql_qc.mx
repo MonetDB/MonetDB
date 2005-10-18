@@ -71,8 +71,8 @@ typedef struct qc {
 extern qc *qc_create();
 extern void qc_destroy(qc *cache);
 extern cq *qc_find(qc *cache, int id);
-extern cq *qc_match(qc *cache, symbol *s, list *params, int key);
-extern cq *qc_insert(qc *cache, sql_allocator *sa, symbol *s, list *params, int key, int type, char *codedstr);
+extern cq *qc_match(qc *cache, symbol *s, atom **params, int plen, int key);
+extern cq *qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr);
 extern void qc_delete(qc *cache, cq *q);
 extern int qc_size(qc *cache);
 
@@ -161,17 +161,18 @@ param_cmp(sql_subtype *t1, sql_subtype *t2)
 }
 
 int
-param_list_cmp(list *typelist, list *atomlist)
+param_list_cmp(list *typelist, atom **atoms, int plen)
 {
-	node *n1, *n2;
+	node *n1;
+	int i;
 
-	if (typelist == atomlist || (list_length(typelist) == 0 && !atomlist))
+	if (list_length(typelist) == 0 && !atoms)
 		return 0;
-	if (!typelist || !atomlist || list_length(typelist) != list_length(atomlist))
+	if (!typelist || !atoms || list_length(typelist) != plen)
 		return -1;
-	for (n1 = typelist->h, n2 = atomlist->h; n1; n1 = n1->next, n2 = n2->next) {
+	for (n1 = typelist->h, i=0; n1; n1 = n1->next, i++) {
 		sql_subtype *t1 = n1->data;
-		atom *a2 = n2->data;
+		atom *a2 = atoms[i];
 
 		/* NULL values match any type */
 		if (!atom_null(a2) && param_cmp(t1, a2->tpe) != 0)
@@ -193,13 +194,13 @@ qc_find(qc *cache, int id)
 }
 
 cq *
-qc_match(qc *cache, symbol *s, list *params, int key)
+qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 {
 	cq *q;
 
 	for (q = cache->q; q; q = q->next) {
 		if (q->key == key) {
-			if (param_list_cmp(q->params, params) == 0 && symbol_cmp(q->s, s) == 0) {
+			if (param_list_cmp(q->params, params, plen) == 0 && symbol_cmp(q->s, s) == 0) {
 				return q;
 			}
 		}
@@ -208,9 +209,9 @@ qc_match(qc *cache, symbol *s, list *params, int key)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, symbol *s, list *params, int key, int type, char *cmd)
+qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
 {
-	node *m;
+	int i;
 	cq *n = NEW(cq);
 	n->id = cache->id ++;
 
@@ -218,9 +219,9 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, list *params, int key, int ty
 	n->s = s;
 
 	n->params = list_create((fdestroy) &sql_subtype_destroy);
-	if (params)
-		for (m = params->h; m; m = m->next) {
-			atom *a = m->data;
+	if (paramlen)
+		for (i = 0; i < paramlen; i++) {
+			atom *a = params[i];
 
 			list_append(n->params, sql_dup_subtype(a->tpe));
 		}

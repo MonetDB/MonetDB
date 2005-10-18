@@ -36,7 +36,6 @@ extern stmt *sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int out
 extern stmt *sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l);
 extern stmt *sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output);
 extern stmt *sql_update(mvc *sql, sql_table *t, stmt **updates, list *l);
-extern stmt *output_value(stmt *s);
 
 #endif /*_SQL_UPDATES_H_*/
 @c
@@ -48,12 +47,6 @@ extern stmt *output_value(stmt *s);
 #include "sql_semantic.h"
 #include "sql_select.h"
 #include "sql_privileges.h"
-
-stmt *
-output_value(stmt *s)
-{
-	return stmt_output(stmt_list(list_append(create_stmt_list(), stmt_alias(s, _strdup("affected"), _strdup("rows")))));
-}
 
 static stmt *
 insert_value(mvc *sql, scope *scp, sql_column *c, symbol *s)
@@ -755,7 +748,7 @@ sql_insert(mvc *sql, sql_table *t, stmt **inserts, int len, int output)
 		} else {
 			s = stmt_aggr(stmt_dup(inserts[0]->op2.stval), NULL, sql_bind_aggr(sql->trans->module, "count", NULL));
 		}
-		list_append(l, output_value(s));
+		list_append(l, stmt_affected_rows(s));
 	}
 	return stmt_list(l);
 }
@@ -1126,7 +1119,7 @@ sql_update_table(mvc *sql, sql_schema *schema, char *tname, dlist *assignmentlis
 				list_append(l, stmt_insert(stmt_cbat(c, stmt_dup(tv->s), UPD, st_ubat), stmt_dup(v)));
 			}
 		}
-		list_append(l, output_value(stmt_aggr(first_subset(s), NULL, sql_bind_aggr(sql->trans->module, "count", NULL))));
+		list_append(l, stmt_affected_rows(stmt_aggr(first_subset(s), NULL, sql_bind_aggr(sql->trans->module, "count", NULL))));
 		stmt_destroy(s);
 
 		if ((s = sql_update(sql, t, updates, l)) == NULL) {
@@ -1204,7 +1197,7 @@ sql_delete(mvc *sql, tvar *tv, sql_table *t, stmt *s, int output)
 		stmt *t = stmt_aggr(first_subset(s), NULL,
 				    sql_bind_aggr(sql->trans->module, "count", NULL));
 
-		list_append(l, output_value(t));
+		list_append(l, stmt_affected_rows(t));
 	}
 
 	if (t->idxs.set && !sql_delete_idxs(sql, t, s, l)) {
@@ -1260,7 +1253,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 			stmt_destroy(subset);
 		} else {	/* delete all */
 			s = stmt_table_clear(t);
-			s = output_value(s);
+			s = stmt_affected_rows(s);
 		}
 
 		assert(isbasetable(tv->s));

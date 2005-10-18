@@ -1640,16 +1640,15 @@ insert_atom:
  |  NULLX
 	 { 
 	   mvc *m = (mvc*)parm;
-	   int len = (m->args)?list_length(m->args):0;
 
-	   if (m -> mode != m_prepare && len < MAXPARAMS-2 && m->cache){
+	   if (m -> mode != m_prepare && m->argc < MAXPARAMS-2 && m->cache){
 		/* replace by argument */
 		atom *a = atom_general( sql_dup_subtype(
 				sql_bind_localtype("str")), NULL, 0);
 
 		sql_add_arg( m, a);
 		$$ = _symbol_create_list( SQL_COLUMN,
-			_dlist_append_int(_dlist_create(), len));
+			_dlist_append_int(_dlist_create(), m->argc-1));
 	   } else {
 		$$ = _symbol_create(SQL_NULL, NULL );
 	   }
@@ -2401,9 +2400,8 @@ atom:
     literal
 	{ 
 	  mvc *m = (mvc*)parm;
-	  int len = (m->args)?list_length(m->args):0;
 	
-	  if (m -> mode != m_prepare && len < MAXPARAMS-2 && m->cache){
+	  if (m -> mode != m_prepare && m->argc < MAXPARAMS-2 && m->cache){
 	  	/* replace by argument */
 	  	AtomNode *an = (AtomNode*)$1;
 	
@@ -2412,7 +2410,7 @@ atom:
 	  	/* we miss use SQL_COLUMN also for param's, maybe
 	     		change SQL_COLUMN to SQL_IDENT */
  	  	$$ = _symbol_create_list( SQL_COLUMN,
-			_dlist_append_int(_dlist_create(), len));
+			_dlist_append_int(_dlist_create(), m->argc-1));
 	   } else {
 		$$ = $1;
 	   }

@@ -335,7 +335,7 @@ sqlexecute(backend *be, stream *out)
 		if (err)
 			return sqlcleanup(c, err);
 	} else if (c->mode == m_explain || !c->cache || 
-	           !(q = qc_match(c->qc, c->sym, c->args, c->scanner.key))) {
+	           !(q = qc_match(c->qc, c->sym, c->args, c->argc, c->scanner.key))) {
 		stmt *s = sql_symbol2stmt(c);
 
 		if (!s && (err = mvc_status(c))) /* semantic errors */
@@ -346,7 +346,7 @@ sqlexecute(backend *be, stream *out)
 		} else {
 			err = backend_dump(be, s);
 			if (!err && c->cache) {
-				q = qc_insert(c->qc, c->sa, c->sym, c->args, c->scanner.key, c->type, NULL);
+				q = qc_insert(c->qc, c->sa, c->sym, c->args, c->argc, c->scanner.key, c->type, NULL);
 
 				c->sa = NULL;
 				c->sym = NULL;
@@ -367,9 +367,9 @@ sqlexecute(backend *be, stream *out)
 	if (q && c->mode == m_prepare) {
 		err = output_prepare(out, c, q);
 	} else if (q && !q->code) {
-		err = backend_call(be, q, c->args); 
+		err = backend_call(be, c, q); 
 	} else if (q) {
-		err = backend_fastpath(be, q, c->args);
+		err = backend_fastpath(be, c, q);
 	}
 	if (!err && c->mode == m_profile) {
 		lng T = GDKusec();
@@ -657,7 +657,7 @@ mvc_sql(mvc *m, char *cmd)
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	m->args = NULL;
+	m->argc = 0;
 	m->sym = NULL;
 	m->auto_commit = 0;
 
@@ -871,7 +871,13 @@ These lines should be eaten away into the prompt is encountered.
 		return GDK_FAIL;
 	}
 	/* Send the profile to the client for inspection */
-	if (!sendProperty(out, "version", "4") || !sendProperty(out, "language", "sql") || !sendProperty(out, "schema", schema) || stream_flush(out) < 0) {
+	if (!sendProperty(out, "version", "4") ||
+	    !sendProperty(out, "language", "sql") ||
+	    !sendProperty(out, "schema", schema) || 
+	    !sendProperty(out, "auto_commit", "false") || 
+	    !sendProperty(out, "reply_size", "1000") || 
+	     	stream_flush(out) < 0) 
+	{
 		res_tables_destroy(m->results);
 		mvc_destroy(m);
 		closeClient(client, 0); 	

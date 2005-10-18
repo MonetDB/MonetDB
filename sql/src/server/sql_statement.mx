@@ -55,6 +55,7 @@ typedef enum stmt_type {
 
 	st_ordered,
 	st_output,
+	st_affected_rows,
 
 	st_atom,
 	st_filter,
@@ -248,6 +249,7 @@ extern stmt *stmt_alias(stmt *op1, char *tname, char *name);
 
 extern stmt *stmt_ordered(stmt *order, stmt *res);
 extern stmt *stmt_output(stmt *l);
+extern stmt *stmt_affected_rows(stmt *l);
 
 extern sql_subtype *head_type(stmt *st);
 extern sql_subtype *tail_type(stmt *st);
@@ -659,6 +661,7 @@ stmt_destroy(stmt *s)
 		case st_reorder:
 		case st_ordered:
 		case st_output:
+		case st_affected_rows:
 
 		case st_column:
 		case st_group:
@@ -1346,6 +1349,16 @@ stmt_output(stmt *l)
 	s->op1.stval = l;
 	return s;
 }
+
+stmt *
+stmt_affected_rows(stmt *l)
+{
+	stmt *s = stmt_create(st_affected_rows);
+
+	s->op1.stval = l;
+	return s;
+}
+
 
 stmt *
 stmt_set(stmt *s1)
@@ -2195,7 +2208,7 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 		case st_const: case st_mark: case st_gen_group:
 		case st_reverse: case st_mirror:
 		case st_limit: case st_order: case st_reorder:
-		case st_ordered: case st_output:
+		case st_ordered: case st_output: case st_affected_rows:
 
 		case st_group: case st_group_ext:
 

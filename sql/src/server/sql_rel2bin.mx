@@ -206,6 +206,7 @@ head_column(stmt *st)
 
 	case st_ordered:
 	case st_output:
+	case st_affected_rows:
 
 	case st_find:
 	case st_bulkinsert:
@@ -1125,6 +1126,8 @@ rel2bin(mvc *c, stmt *s)
 	case st_binop:
 	case st_Nop:
 	case st_convert:
+
+	case st_affected_rows:
 
 		if (s->op1.stval) {
 			stmt *os = s->op1.stval;

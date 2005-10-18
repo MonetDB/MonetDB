@@ -92,6 +92,7 @@ module 'sql_server'
 [ "month_interval(lng, int, int) : int"					  ]
 [ "month_interval(sht, int, int) : int"					  ]
 [ "month_interval(str, int, int) : int"					  ]
+[ "mvc_affected_rows(mvc, Stream, int) : void"				  ]
 [ "mvc_bind(mvc, str, str, str, int) : BAT[any::1,any::2]"		  ]
 [ "mvc_bind_dbat(mvc, str, str, int) : BAT[any::1,any::2]"		  ]
 [ "mvc_bind_idxbat(mvc, str, str, str, int) : BAT[any::1,any::2]"	  ]

@@ -35,6 +35,7 @@
 #include <sql_storage.h>
 #include <stream.h>
 #include <sql_keyword.h>
+#include <sql_atom.h>
 
 #define ERRSIZE 1024
 
@@ -57,7 +58,8 @@ typedef struct mvc {
 	struct scanner scanner;
 
 	list *params;
-	list *args;
+	atom *args[MAXPARAMS];
+	int argc;
 	struct symbol *sym;
 
 	int user_id;
@@ -499,11 +501,76 @@ mvc_release(mvc *m, char *name)
 	return res;
 }
 
+mvc *mvc_spare = NULL;
+
+mvc *
+mvc_reset(mvc *m, int cache, backend_stack stk, bstream *rs, stream *ws)
+{
+	if (mvc_debug)
+		fprintf(stderr, "mvc_reset\n");
+
+	m->errstr[0] = '\0';
+
+	if (!m->qc)
+		m->qc = qc_create();
+	if (!m->sa)
+		m->sa = sa_create();
+
+	m->stk = stk;
+
+	m->params = NULL;
+	m->argc = 0;
+	m->sym = NULL;
+
+	m->role_id = m->user_id = -1;
+
+	/* TODO should be removed from the mvc structure */
+	if (m->schema)
+		_DELETE(m->schema);
+	if (m->user)
+		_DELETE(m->user);
+	if (m->role)
+		_DELETE(m->role);
+	m->schema = m->role = m->user = NULL;
+
+	m->timezone = 0;
+	m->cache = cache;
+	m->factory = cache;
+
+	m->mode = m_normal;
+	m->explain = m_normal;
+	m->auto_commit = 0;
+	m->reply_size = 1000;
+	m->debug = 0;
+
+	m->status = 0;
+	m->type = Q_PARSE;
+	/* reuse if possible, m->trans = NULL; 
+
+	m->result_id = 0;
+	m->results = NULL;
+	*/
+
+	scanner_init(&m->scanner, rs, ws);
+	return m;
+}
+
 mvc *
 mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 {
-	mvc *m = NEW(mvc);
+	mvc *m;
 
+/*
+	store_lock();
+	if (mvc_spare) {
+		m = mvc_spare;
+		mvc_spare = NULL;
+		store_unlock();
+		return mvc_reset(m, cache, stk, rs, ws);
+	}
+	store_unlock();
+*/
+ 	m = NEW(mvc);
 	if (mvc_debug)
 		fprintf(stderr, "mvc_create\n");
 
@@ -515,7 +582,7 @@ mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->stk = stk;
 
 	m->params = NULL;
-	m->args = NULL;
+	m->argc = 0;
 	m->sym = NULL;
 
 	m->role_id = m->user_id = -1;
@@ -527,7 +594,7 @@ mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->mode = m_normal;
 	m->explain = m_normal;
 	m->auto_commit = 0;
-	m->reply_size = -1;
+	m->reply_size = 1000;
 	m->debug = 0;
 
 	m->trans = NULL;
@@ -552,6 +619,18 @@ mvc_destroy(mvc *m)
 	if (tr)
 		while (tr->parent)
 			tr = sql_trans_destroy(tr);
+
+	m->trans = NULL;
+/*
+	store_lock();
+	if (!mvc_spare) {
+		mvc_spare = m;
+		store_unlock();
+		return;
+	}
+	store_unlock();
+*/
+
 	if (m->schema)
 		_DELETE(m->schema);
 	if (m->user)

@@ -31,10 +31,13 @@ keyword_key(char *k, int *l)
 	int h = 1;
 
 	while (*k) {
-		h *= (*k - 'a');
+		h <<= 5;
+		h += (*k - 'a');
 		k++;
 	}
 	*l = k - s;
+	h <<= 4;
+	h += *l;
 	return (h < 0) ? -h : h;
 }
 

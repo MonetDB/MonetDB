@@ -107,9 +107,7 @@ extern char *symbol2string(mvc *sql, symbol *s);
 void
 sql_add_arg(mvc *sql, atom *v)
 {
-	if (!sql->args)
-		sql->args = list_create((fdestroy) &atom_destroy);
-	list_append(sql->args, v);
+	sql->args[sql->argc++] = v;
 }
 
 void
@@ -146,14 +144,8 @@ sql_bind_param(mvc *sql, char *name)
 atom *
 sql_bind_arg(mvc *sql, int nr)
 {
-	node *n;
-
-	if (sql->args) {
-		for (n = sql->args->h; n && nr; nr--)
-			n = n->next;
-		if (n)
-			return n->data;
-	}
+	if (nr < sql->argc)
+		return sql->args[nr];
 	return NULL;
 }
 
@@ -189,9 +181,12 @@ sql_destroy_params(mvc *sql)
 void
 sql_destroy_args(mvc *sql)
 {
-	if (sql->args)
-		list_destroy(sql->args);
-	sql->args = NULL;
+	int i;
+
+	for (i=0; i < sql->argc; i++){
+		atom_destroy(sql->args[i]);
+	}
+	sql->argc = 0;
 }
 
 
@@ -257,7 +252,7 @@ scope_sqlparse(mvc *m, scope *scp, char *query)
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	m->args = NULL;
+	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	m->status = 0;
@@ -312,7 +307,7 @@ sqlparse_intern(mvc *m, char *query)
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	m->args = NULL;
+	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	m->status = 0;

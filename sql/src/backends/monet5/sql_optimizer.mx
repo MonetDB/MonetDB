@@ -109,6 +109,147 @@ type checked and optimized.
 #include "sql_gencode.h"
 #include "optimizer.h"
 
+#define TOSMALL 3
+
+str 
+FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	InstrPtr *ns, p;
+	int v;
+	int i, j, k, klim;/*, argseen=0;*/
+	MALfcn setWriteMode = 0;
+	Symbol s;
+	lng clk = GDKusec();
+
+#ifdef _SQL_OPTIMIZER_DEBUG
+#endif
+	stream_printf(GDKout, "First call to FXoptimizer\n");
+	printFunction(GDKout, mb, LIST_MAL_ALL);
+	(void)stk;
+	if( mb->errors) {
+		/* remove the CXoptimizer request */
+		if (pci)
+			removeInstruction(mb, pci);
+		return MAL_SUCCEED;
+	}
+
+	if (mb->stop <= TOSMALL)
+		return MAL_SUCCEED;
+
+	s = findMALSymbol(getName("bat",3), getName("setWriteMode",12));
+	if (s)
+		setWriteMode = getSignature(s)->fcn;
+
+@-
+The first step is to collect all the sql bind operations and
+to extract some compiler relevant properties from the catalogue.
+@c
+	ns = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * (mb->stop * 2));
+	k = 1;
+	ns[0] = getInstrPtr(mb, 0);	/* its signature */
+	ns[0]->token = FACTORYsymbol;
+	for (i = 0; i < mb->stop; i++) {
+		p = getInstrPtr(mb, i);
+		if (functionName(p) && moduleName(p) && 
+			strncmp(functionName(p), "bind", 4) == 0 && 
+			strcmp(moduleName(p), "sql") == 0) {
+			ns[k++] = p;
+		}
+@-
+Check if the relation is already made write-enabled in the plan.
+It uses the knowledge that at this stage the plan is still a linear
+sequence of instructions.
+@c
+		if (setWriteMode && p->fcn == setWriteMode) {
+			for (j = 0; j < k; j++)
+				if (ns[j]->fcn == setWriteMode && ns[j]->argv[1] == p->argv[1])
+					break;
+				else if (ns[j]->argv[0] == p->argv[1]) {
+					ns[k++] = p;
+					break;
+				}
+		}
+@-
+Finally, move all instructions out of the loop until you find a
+reference an argument. This pre-supposes that the instructions
+are invariant to multiple calls. In general this is not the case,
+for consider a block that depends on the size of a BAT.
+		if( argseen == 0){
+			for(j=p->retc; j<p->argc; j++){
+				for( k=0; k<sig->retc; k++)
+				if( getArg(p,k)== getArg(sig,k)
+					argseen=1;
+			}
+			if( argseen==0)
+				ns[k++]= p;
+		}
+@c
+	}
+	klim = k;		/* remember the head */
+@-
+The prelude code has been generated, now we can inject the remaining
+instructions, producing a syntactic correct MAL program again.
+@c
+	v = newVariable(mb, GDKstrdup("always"), TYPE_bit);
+	p = newInstruction(NULL,ASSIGNsymbol);
+	p->barrier = BARRIERsymbol;
+	p->argv[0] = v;
+	pushBit(mb,p,TRUE);
+	ns[k++] = p;
+
+	for (i = 1; i < mb->stop - 1; i++) {
+		int doit = 0;
+
+		p = getInstrPtr(mb, i);
+		if (!(functionName(p) && moduleName(p) && 
+			  strncmp(functionName(p), "bind", 4) == 0 && 
+			  strcmp(moduleName(p), "sql") == 0))
+			doit = 1;
+@-
+Skip it if the writeMode relates to a base table
+@c
+		if (setWriteMode)
+			for (j = 0; j < klim; j++)
+				if (ns[j] == p)
+					doit = 0;
+		if (doit)
+			ns[k++] = p;
+	}
+@-
+Finalize the factory loop
+@c
+	p = newInstruction(NULL,ASSIGNsymbol);
+	p->barrier = YIELDsymbol;
+	p->argv[0] = v;
+	ns[k++] = p;
+	p = newInstruction(NULL,ASSIGNsymbol);
+	p->barrier = REDOsymbol;
+	p->argv[0] = v;
+	ns[k++] = p;
+	p = newInstruction(NULL,ASSIGNsymbol);
+	p->barrier = EXITsymbol;
+	p->argv[0] = v;
+	ns[k++] = p;
+	ns[k++] = getInstrPtr(mb, i);
+
+	mb->stop = k;
+	GDKfree(mb->stmt);
+	mb->stmt = ns;
+
+	optimizerCheck(mb,"sql.factorize",1,GDKusec()-clk);
+@-
+At this stage we can once call upon the optimizers to do their work.
+Static known information is known and stored in constant variables,
+which can be used by the rewrite rules.
+This all works under the assumption that the SQL layer properly invalidates
+the cache when the underlying table is changed.
+@c
+#ifdef _SQL_OPTIMIZER_DEBUG
+#endif
+	printFunction(GDKout, mb, LIST_MAL_INSTR);
+	return MAL_SUCCEED;
+}
+
 void
 addQueryToCache(Client c)
 {
@@ -155,8 +296,10 @@ to allow inspection.
 		optimizeQueryInCache(c);
 	optimizerCheck(c->curprg->def,"sql.baseline",0,0);
 	but we need multiplex expansion */
+
 	OPTmultiplex(c->curprg->def,0,0);
 	ARoptimizer(c->curprg->def, 0, 0);
+	//FXoptimizer(c->curprg->def, 0, 0);
 }
 
 @-
@@ -176,7 +319,6 @@ We also apply the Alias Removal optimizer to trim the instruction list
 by removing simple assignments.
 
 @c
-#define TOSMALL 3
 
 str
 SQLoptimizer(Client c)

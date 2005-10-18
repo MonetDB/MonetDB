@@ -27,6 +27,7 @@
 #include <sql_catalog.h>
 
 extern int mvc_export_default(mvc *m, stream *s);
+extern int mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype);
 extern int mvc_export_result(mvc *c, stream *s, int res_id);
 extern int mvc_export_chunk(mvc *m, stream *s, int res_id, unsigned int offset, unsigned int nr);
 extern BAT *mvc_import_table(mvc *c, bstream *s, char *tname, char *sep, char *rsep, int nr);
@@ -441,11 +442,71 @@ mvc_export_default(mvc *m, stream *s)
 	return (ok) ? 0 : -1;
 }
 
+@-
+improved formatting of positive integers
+@= mvc_send
+int
+mvc_send_@1(stream *s, @1 cnt){
+	char buf[50], *b;
+	int neg = cnt <0;
+	if(neg) cnt = -cnt;
+	b= buf+49;
+	do{
+		*b--= '0'+ (cnt %10);
+		cnt /=10;
+	} while(cnt>0);
+	if( neg) 
+		*b = '-'; 
+	else b++;
+	return stream_write(s, b, 50- (b-buf),1)==1;
+}
+@c
+@:mvc_send(sht)@
+@:mvc_send(int)@
+
+int
+export_value( mvc *m, stream *s, int eclass, char *sqlname, int sc, ptr p, int mtype, char **buf, int *len)
+{
+	int ok = 0;
+
+	if (eclass == EC_DEC) {
+		int l = dec_tostr((void *) (ptrdiff_t) sc, buf, len,
+				  mtype, p);
+		ok = (stream_write(s, *buf, l, 1) == 1);
+	} else if (eclass == EC_TIME && strcmp(sqlname, "timetz") == 0) {
+		int l = sql_time_tostr( (void *) m, buf, len, mtype, p);
+
+		ok = (stream_write(s, *buf, l, 1) == 1);
+	} else if (eclass == EC_TIMESTAMP && strcmp(sqlname, "timestamptz") == 0) {
+		int l = sql_timestamp_tostr((void *) m, buf, len, mtype, p);
+
+		ok = (stream_write(s, *buf, l, 1) == 1);
+	} else if (!p || ATOMcmp(mtype, ATOMnilptr(mtype), p) == 0) {
+		ok = (stream_write(s, "NULL", sizeof("NULL") - 1, 1) == 1);
+	} else {
+		switch(mtype) {
+		case TYPE_sht:
+			ok = mvc_send_sht(s, *(sht*)p);
+			break;
+		case TYPE_int:
+			ok = mvc_send_int(s, *(int*)p);
+			break;
+		default: {
+			int l = (*BATatoms[mtype].atomToStr) (buf, len, p);
+			ok = (stream_write(s, *buf, l, 1) == 1);
+		}
+		}
+	}
+	return ok;
+}
+
 static int
 mvc_export_row(mvc *m, stream *s, res_table *t)
 {
 	char *sep = ",\t";
 	char *rsep = "\t]\n";
+	char *buf = NULL;
+	int len = 0;
 
 	int i, ok = 1;
 
@@ -462,42 +523,12 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 			if (!ok)
 				break;
 		}
-
-		if (c->type->type->eclass == EC_DEC) {
-			char *buf = NULL;
-			int len = 0;
-			int l = dec_tostr((void *) (ptrdiff_t) c->type->scale, &buf, &len,
-					  c->mtype, c->p);
-
-			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
-		} else if (c->type->type->eclass == EC_TIME && strcmp(c->type->type->sqlname, "timetz") == 0) {
-			char *buf = NULL;
-			int len = 0;
-			int l = sql_time_tostr((void *) m, &buf, &len,
-					       c->mtype, c->p);
-
-			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
-		} else if (c->type->type->eclass == EC_TIMESTAMP && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
-			char *buf = NULL;
-			int len = 0;
-			int l = sql_timestamp_tostr((void *) m, &buf, &len,
-						    c->mtype, c->p);
-
-			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
-		} else if (!c->p || ATOMcmp(c->mtype, ATOMnilptr(c->mtype), c->p) == 0) {
-			ok = (stream_write(s, "NULL", sizeof("NULL") - 1, 1) == 1);
-		} else {
-			char *buf = NULL;
-			int len = 0;
-			int l = (*BATatoms[c->mtype].atomToStr) (&buf, &len, c->p);
-
-			ok = (stream_write(s, buf, l, 1) == 1);
-			_DELETE(buf);
-		}
+		ok = export_value(m, s, c->type->type->eclass, 
+			c->type->type->sqlname, c->type->scale, 
+			c->p, c->mtype, &buf, &len);
 	}
+	if (buf)
+		_DELETE(buf);
 	m->results = res_tables_remove(m->results, t);
 	if (ok)
 		ok = (stream_write(s, rsep, strlen(rsep), 1) == 1);
@@ -600,10 +631,112 @@ mvc_export_table(mvc *m, stream *s, res_table *t, unsigned int offset, unsigned 
 	return 0;
 }
 
+int 
+export_length( stream *s, int mtype, int eclass, int digits, int scale, bat bid, ptr p) 
+{
+	int ok = 1;
+	size_t count = 0;
+
+	if (mtype == TYPE_str) {
+		if (eclass == EC_CHAR) {
+			ok = mvc_send_int(s, digits);
+		} else {
+			count = 0;
+			if (bid) {
+				BAT *b = BATdescriptor(bid);
+
+				count = bat_max_length(b);
+				BBPunfix(b->batCacheid);
+			} else {
+				count = strlen((char *) p);
+			}
+			ok = mvc_send_int(s, count);
+		}
+		/* the following three could be done once by taking the
+		   max value and calculating the number of digits from that
+		   value, instead of the maximum values taken now, which
+		   include the optional sign */
+	} else if (eclass == EC_NUM) {
+		if (mtype == TYPE_sht) {
+			count = 6;
+		} else if (mtype == TYPE_int) {
+			count = 10;
+		} else { /* TYPE_lng */
+			count = 20;
+		}
+		ok = mvc_send_int(s, count);
+	} else if (eclass == EC_FLT) {
+	/* [sign]+digit+period+[max 6 digits]+E+[sign]+[max 2 digits] */
+		if (mtype == TYPE_flt) {
+			ok = mvc_send_int(s, 13);
+	/* [sign]+digit+period+[max 14 digits]+E+[sign]+[max 3 digits] */
+		} else { /* TYPE_dbl */
+			ok = mvc_send_int(s, 22);
+		}
+	} else if (eclass == EC_DEC) {
+		count = 1 + digits;
+		if (scale > 0)
+			count += 1;
+		ok = mvc_send_int(s, count);
+	} else if (eclass == EC_DATE) {
+		ok = mvc_send_int(s, 10);
+	} else if (eclass == EC_TIME) {
+		count = 8;
+		if (scale)	/* time zone */
+			count += 6;	/* +03:30 */
+		if (digits)	/* fractional seconds precision */
+			count += 1 + digits;
+		ok = mvc_send_int(s, count);
+	} else if (eclass == EC_TIMESTAMP) {
+		count = 10 + 1 + 8;
+		if (scale)	/* time zone */
+			count += 6;		/* +03:30 */
+		if (digits)	/* fractional seconds precision */
+			count += 1 + digits;
+		ok = mvc_send_int(s, count);
+	} else {
+		ok = mvc_send_int(s, 0);
+	}
+	return ok;
+}
+
+
+int
+mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d, int sc, int eclass, ptr p, int mtype) 
+{
+	char *buf = NULL;
+	int len = 0;
+	int ok = 1;
+	char *rsep = "\t]\n";
+
+	if (stream_write(s, mvcDefaultMsg[qtype-2], mvcDefaultMsg_len, 1) == 1&&
+	    stream_write(s, "# ", 2, 1) == 1 &&
+	    stream_write(s, tn, strlen(tn), 1) == 1 &&
+	    stream_write(s, " # table_name\n", 14, 1) == 1 &&
+	    stream_write(s, "# ", 2, 1) == 1 &&
+	    stream_write(s, cn, strlen(cn), 1) == 1 &&
+	    stream_write(s, " # name\n", 8, 1) == 1 &&
+	    stream_write(s, "# ", 2, 1) == 1 &&
+	    stream_write(s, type, strlen(type), 1) == 1 &&
+	    stream_write(s, " # type\n", 8, 1) == 1 &&
+	    stream_write(s, "# ", 2, 1) == 1 &&
+	    export_length(s, mtype, eclass, d, sc, 0, p) &&
+	    stream_write(s, " # length\n", 10, 1) == 1 &&
+	    stream_write(s, "# 1 # tuplecount\n", 17, 1) == 1 &&
+	    stream_write(s, "# 0 # id\n", 9, 1) == 1 &&
+	    stream_write(s, "[ ", strlen("[ "), 1) == 1 &&
+	    export_value( m, s, eclass, type, sc, p, mtype, &buf, &len)) 
+		ok = (stream_write(s, rsep, strlen(rsep), 1) == 1);
+	    
+	if (buf)
+		_DELETE(buf);
+	return ok;
+}
+
 int
 mvc_export_result(mvc *m, stream *s, int res_id)
 {
-	int i, ok = 1, count;
+	int i, ok = 1;
 	res_table *t = res_tables_find(m->results, res_id);
 
 	if (!s || !t)
@@ -612,6 +745,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	ok = (stream_write(s, mvcDefaultMsg[t->query_type-2], mvcDefaultMsg_len, 1) == 1);
 
 	/* skip headers for affected row counts */
+	assert(t->query_type != Q_UPDATE); /* handled by optimized code */
 	if (ok && (t->query_type == Q_UPDATE || t->query_type == Q_TRANS))
 		return mvc_export_table(m, s, t, 0, m->reply_size);
 
@@ -660,69 +794,10 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 		ok = (stream_write(s, "# ", 2, 1) == 1);
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
+		int mtype = c->type->type->localtype;
+		int eclass = c->type->type->eclass;
 
-		if (c->type->type->localtype == TYPE_str) {
-			if (c->type->type->eclass == EC_CHAR) {
-				ok = (stream_printf(s, SZFMT, c->type->digits) >= 0);
-			} else {
-				count = 0;
-				if (c->b) {
-					BAT *b = BATdescriptor(c->b);
-
-					count = bat_max_length(b);
-					BBPunfix(b->batCacheid);
-				} else {
-					count = strlen((char *) c->p);
-				}
-				ok = (stream_printf(s, SZFMT, count) >= 0);
-			}
-			/* the following three could be done once by taking the
-			   max value and calculating the number of digits from that
-			   value, instead of the maximum values taken now, which
-			   include the optional sign */
-		} else if (c->type->type->eclass == EC_NUM) {
-			if (c->type->type->localtype == TYPE_sht) {
-				count = 6;
-				ok = (stream_printf(s, SZFMT, count) >= 0);
-			} else if (c->type->type->localtype == TYPE_int) {
-				count = 10;
-				ok = (stream_printf(s, SZFMT, count) >= 0);
-			} else { /* TYPE_lng */
-				count = 20;
-				ok = (stream_printf(s, SZFMT, count) >= 0);
-			}
-		} else if (c->type->type->eclass == EC_FLT) {
-		/* [sign]+digit+period+[max 6 digits]+E+[sign]+[max 2 digits] */
-			if (c->type->type->localtype == TYPE_flt) {
-				ok = (stream_printf(s, SZFMT, 13) >= 0);
-		/* [sign]+digit+period+[max 14 digits]+E+[sign]+[max 3 digits] */
-			} else { /* TYPE_dbl */
-				ok = (stream_printf(s, SZFMT, 22) >= 0);
-			}
-		} else if (c->type->type->eclass == EC_DEC) {
-			count = 1 + c->type->digits;
-			if (c->type->scale > 0)
-				count += 1;
-			ok = (stream_printf(s, SZFMT, count) >= 0);
-		} else if (c->type->type->eclass == EC_DATE) {
-			ok = (stream_write(s, "10", 2, 1) == 1);
-		} else if (c->type->type->eclass == EC_TIME) {
-			count = 8;
-			if (c->type->scale)	/* time zone */
-				count += 6;	/* +03:30 */
-			if (c->type->digits)	/* fractional seconds precision */
-				count += 1 + c->type->digits;
-			ok = (stream_printf(s, SZFMT, count) >= 0);
-		} else if (c->type->type->eclass == EC_TIMESTAMP) {
-			count = 10 + 1 + 8;
-			if (c->type->type->scale)	/* time zone */
-				count += 6;		/* +03:30 */
-			if (c->type->digits)	/* fractional seconds precision */
-				count += 1 + c->type->digits;
-			ok = (stream_printf(s, SZFMT, count) >= 0);
-		} else {
-			ok = (stream_write(s, "0", 1, 1) == 1);
-		}
+		ok = export_length(s, mtype, eclass, c->type->digits, c->type->scale, c->b, c->p);
 		if (i + 1 < t->nr_cols && ok)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 	}

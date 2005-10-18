@@ -120,6 +120,15 @@ stream.
 	.COMMAND mvc_export_default(mvc m, Stream s) =
 		mvc_export_default_wrap; "export a default result to stream s"
 
+	.COMMAND mvc_affected_rows(mvc m, Stream s, int cnt) =
+		mvc_affected_rows_int; "export the number of affected rows by the current query to stream s"
+
+	.COMMAND mvc_affected_rows(mvc m, Stream s, lng cnt) =
+		mvc_affected_rows_wrap; "export the number of affected rows by the current query to stream s"
+
+	.COMMAND mvc_export_value(mvc m, Stream s, int qtype, str tname, str name, str typename, int digits, int scale, int eclass, any val ) =
+		mvc_export_value_wrap; "export a single value onto the stream s"
+
 	.COMMAND mvc_import_table( mvc c, Bstream s, str tname, 
 					str sep, str rsep, int nr) : 
 		BAT[str,BAT] = mvc_import_table_wrap; 
@@ -581,6 +590,36 @@ mvc_export_default_wrap(mvc *M, Stream *S)
 
 	return GDK_SUCCEED;
 }
+
+int
+mvc_affected_rows_wrap(mvc *M, Stream *S, lng *nr)
+{
+	stream *s = *(stream**)S;
+	mvc *m = *(mvc**)M;
+
+	m->type = Q_UPDATE;
+	if (mvc_export_default(m, s))
+		return GDK_FAIL;
+
+	stream_printf(s, "[ " LLFMT " ]\n", *nr);
+	return GDK_SUCCEED;
+}
+
+int
+mvc_affected_rows_int(mvc *M, Stream *S, int *nr)
+{
+	lng N = *nr;
+	return mvc_affected_rows_wrap(M, S, &N);
+}
+
+int
+mvc_export_value_wrap(mvc *M, Stream *S, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype)
+{
+	if (mvc_export_value(*(mvc **) M, *(stream **)S, *qtype, tn, name, type, *digits, *scale, *eclass, p, mtype) != SQL_OK)
+		return GDK_FAIL;
+	return GDK_SUCCEED;
+}
+
 
 int
 hash_wrap(int *res, ptr v, int tpe, int *sh)

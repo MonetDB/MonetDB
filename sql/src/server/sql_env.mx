@@ -239,7 +239,7 @@ set_var(mvc *sql, char *name, symbol *val, char *typename)
 	l = create_stmt_list();
 	list_append(l, st);
 	list_append(l, stmt_update_var(_strdup(name)));
-	list_append(l, output_value(stmt_atom_int(1)));
+	list_append(l, stmt_affected_rows(stmt_atom_int(1)));
 	return stmt_list(l);
 }
 

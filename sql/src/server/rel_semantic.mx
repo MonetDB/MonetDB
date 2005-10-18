@@ -73,7 +73,8 @@ rel_parse(mvc *m, char *query)
 	bstream_next(m->scanner.rs);
 
 	m->params = NULL;
-	m->args = NULL;
+	/*m->args = NULL;*/
+	m->argc = 0;
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	m->status = 0;

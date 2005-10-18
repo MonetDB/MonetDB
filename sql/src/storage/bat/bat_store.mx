@@ -356,7 +356,6 @@ module_destroy(sql_module * s)
 	_DELETE(s);
 }
 
-
 sql_trans *
 sql_trans_destroy(sql_trans *t)
 {
