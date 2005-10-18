@@ -806,7 +806,7 @@ sqllex(YYSTYPE * yylval, void *parm)
 		}
 /* example code
 	} else if (token == SERIAL) {
-		// expansion of SERIAL into "INTEGER GENERATED ALWAYS AS IDENTITY"
+		/* expansion of SERIAL into "INTEGER GENERATED ALWAYS AS IDENTITY" */
 		token = sqlINTEGER;
 		chain* c = lc->yynext = malloc(sizeof(chain));
 		c->yyval = GENERATED;

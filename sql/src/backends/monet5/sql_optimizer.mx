@@ -299,7 +299,6 @@ to allow inspection.
 
 	OPTmultiplex(c->curprg->def,0,0);
 	ARoptimizer(c->curprg->def, 0, 0);
-	//FXoptimizer(c->curprg->def, 0, 0);
 }
 
 @-
