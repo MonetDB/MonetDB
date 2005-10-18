@@ -15,7 +15,7 @@
 # All Rights Reserved.
 
 MTSAFE
-INCLUDES = ../common ../gdk ../monet ../modules/plain ../mapi/clients/C
+INCLUDES = ../common ../gdk ../monet ../modules/plain ../mapi/clients/C $(PTHREAD_INCS)
 
 GDK_LIBS = $(PTHREAD_LIBS) $(MALLOC_LIBS) 
 MONETDB_LIBS = $(SOCKET_LIBS) $(DL_LIBS) $(GDK_LIBS) 
@@ -97,6 +97,8 @@ bin_Mserver = {
 
 lib_embeddedmil = {
 	SOURCES = embeddedclient.mx
+	LIBS = libinitmodules ../mapi/clients/C/libMapi ../monet/libmonet STATIC_MODS @SHARED_LIBS@ ../gdk/libbat $(MONETDB_LIBS) \
+		../common/libmutils ../common/libstream
 }
 
 bin_Mbeddedmil = {
