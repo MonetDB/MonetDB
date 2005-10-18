@@ -6484,7 +6484,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
             counter, counter, counter, counter,
             counter, counter, counter, counter);
     /* call the proc */
-    { int tmp = (ssize_t) fun; snprintf(procname, 128, "fn_%x_%i", tmp, fun->arity); }
+    { int tmp = (long) fun; snprintf(procname, 128, "fn_%x_%i", tmp, fun->arity); }
     milprintf(f, PFudfMIL(), 
             procname,
             cur_level, cur_level, cur_level, cur_level, 
