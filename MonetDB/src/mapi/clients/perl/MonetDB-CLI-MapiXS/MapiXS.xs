@@ -61,6 +61,7 @@ MonetDB::CLI::MapiXS::Req
 query( self, statement )
     MonetDB::CLI::MapiXS::Cxn self
     const char* statement
+    SV* cxn = ST(0);
   CODE:
     RETVAL = mapi_query( self, statement );
     if ( RETVAL == NULL ) {
@@ -72,13 +73,17 @@ query( self, statement )
     if ( self->error ) {
       croak( self->errorstr );
     }
-    SvREFCNT_inc( ST(0) );  /* TODO: leak */
   OUTPUT:
     RETVAL
+  CLEANUP:
+    SvPVX   ( SvRV( ST(0) ) ) = (char*)cxn;
+    SvROK_on( SvRV( ST(0) ) );
+    SvREFCNT_inc( cxn );
 
 MonetDB::CLI::MapiXS::Req
 new_handle( self )
     MonetDB::CLI::MapiXS::Cxn self
+    SV* cxn = ST(0);
   CODE:
     RETVAL = mapi_new_handle( self );
     if ( RETVAL == NULL ) {
@@ -90,9 +95,12 @@ new_handle( self )
     if ( self->error ) {
       croak( self->errorstr );
     }
-    SvREFCNT_inc( ST(0) );  /* TODO: leak */
   OUTPUT:
     RETVAL
+  CLEANUP:
+    SvPVX   ( SvRV( ST(0) ) ) = (char*)cxn;
+    SvROK_on( SvRV( ST(0) ) );
+    SvREFCNT_inc( cxn );
 
 void
 DESTROY( self )
