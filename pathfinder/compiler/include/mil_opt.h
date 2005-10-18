@@ -125,6 +125,7 @@ typedef struct {
                                               block starts */
     unsigned char condifelse[OPT_CONDS];   /* 0=if,  1==else */
 
+#ifdef OPT_COND
     /* movable statement administration */
     unsigned int movstmt_nr[OPT_STMTS]; 
     unsigned short movstmt[OPT_STMTS]; 
@@ -132,7 +133,7 @@ typedef struct {
     unsigned short movnr[OPT_CONDS+OPT_CONDS];
     unsigned short movlo[OPT_CONDS+OPT_CONDS];
     unsigned short movhi[OPT_CONDS+OPT_CONDS];
-
+#endif
     opt_stmt_t stmts[OPT_STMTS];   /* circular MIL statement buffer */
     opt_var_t vars[OPT_VARS];      /* variable stack */
     char *buf[3]; /* 3 output sections (prologue,query,epilogue) */
@@ -143,6 +144,7 @@ typedef struct {
 #define opt_output(o,x) ((o)->sec = x)
 
 opt_t *opt_open(int optimize);
+void opt_flush(opt_t *o, int force);
 int opt_close(opt_t *o, char** prologue, char** query, char** epilogue);
 int milprintf(opt_t *o, const char *format, ...);
 

@@ -39,6 +39,13 @@
 #include "subtyping.h"
 #include "mil_opt.h"
 
+/* format to print a long long */
+#if defined(HAVE___INT64) | defined(__MINGW32__)
+#define LLFMT "%I64d"           
+#else
+#define LLFMT "%lld"            
+#endif
+
 #define MODULE_BASE(f) (f->mode & ~1)
 
 /* accessors to left and right child node */
@@ -6477,7 +6484,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
             counter, counter, counter, counter,
             counter, counter, counter, counter);
     /* call the proc */
-    snprintf(procname, 128, "fn_%x_%i", (unsigned int) ((unsigned long long) fun), fun->arity);
+    { int tmp = (ssize_t) fun; snprintf(procname, 128, "fn_%x_%i", tmp, fun->arity); }
     milprintf(f, PFudfMIL(), 
             procname,
             cur_level, cur_level, cur_level, cur_level, 
@@ -7890,7 +7897,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                         "iter := loop%03u.reverse().mark(0@0).reverse();\n"
                         "ipik := iter;\n"
                         "pos := 1@0;\n"
-                        "item%s := %lldLL;\n"
+                        "item%s := " LLFMT "LL;\n"
                         "kind := INT;\n",
                         cur_level, kind_str(rc), 
                         c->sem.num);
@@ -7901,8 +7908,8 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 milprintf(f,
                         "{\n"
                         "int_values := int_values.seqbase(nil)"
-                                                ".insert(nil,%lldLL).seqbase(0@0);\n"
-                        "var itemID := int_values.reverse().find(%lldLL);\n",
+                                                ".insert(nil," LLFMT "LL).seqbase(0@0);\n"
+                        "var itemID := int_values.reverse().find(" LLFMT "LL);\n",
                         c->sem.num, c->sem.num);
                 /* translateConst needs a bound variable itemID */
                 translateConst(f, cur_level, "INT");
@@ -8309,6 +8316,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             milprintf(f,
                     "UNDEF fn_%x_%i; # fn:%s\n",
                     c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
+            opt_flush(f, 0);
   	    opt_output(f, OPT_SEC_QUERY);
             rc = NORMAL; /* dummy */
             break;
@@ -10185,7 +10193,8 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
 }
 
 static char* PFloadMIL() {
-    return  "# MODULE DECLARATIONS\n"
+    return  
+        "# MODULE DECLARATIONS\n"
         "module(\"pathfinder\");\n"
         "module(\"pf_support\");\n"
         "module(\"aggrX3\");\n"
@@ -10242,7 +10251,7 @@ static char* PFloadMIL() {
         "var item_dbl_;\n"
         "var item_str_;\n"
         "var empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);\n"
-        "var empty_dec__bat := empty_dbl_bat;\n"
+        "var empty_dec__bat := empty_dbl__bat;\n"
         "var empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);\n"
         "var empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);\n"
         "\n"
@@ -10277,7 +10286,8 @@ static char* PFloadMIL() {
 }
 
 static char* PFstartMIL() {
-    return  "var ws := int(nil);\n"
+    return  
+        "var ws := int(nil);\n"
         "var err := CATCH({\n"
         "  ws := create_ws();\n"
         "\n"
@@ -10294,7 +10304,8 @@ static char* PFstartMIL() {
 }
 
 static char* PFstopMIL() {
-    return   "  item := item.de_NO_project(ipik);\n"
+    return   
+        "  item := item.de_NO_project(ipik);\n"
         "  print_result(\"%s\",ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n"
         "});\n"
         "destroy_ws(ws);\n"
@@ -10302,7 +10313,8 @@ static char* PFstopMIL() {
 }
 
 static char* PFclearMIL() {
-    return  "# clear our state\n"
+    return  
+        "# clear our state\n"
         "int_values := delete(int_values);\n"
         "dbl_values := delete(dbl_values);\n"
         "str_values := delete(str_values).insert(0@0,\"\");\n"
@@ -10314,7 +10326,8 @@ static char* PFclearMIL() {
 }
 
 static char* PFudfMIL() {
-    return  "var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n" 
+    return  
+        "var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n" 
         "iter := proc_res.fetch(0);\n"
         "item := proc_res.fetch(1);\n"
         "kind := proc_res.fetch(2);\n"
@@ -10339,16 +10352,17 @@ static char* PFudfMIL() {
 }
 
 static char* PFdropMIL() {
-        return  "# MIL EPILOGUE\n"
-		"drop(\"alarm\");\n"
-		"drop(\"mmath\");\n"
-		"drop(\"pcre\");\n"
-		"drop(\"malalgebra\");\n"
-		"drop(\"xtables\");\n"
-		"drop(\"bat_arith\");\n"
-		"drop(\"aggrX3\");\n"
-		"drop(\"pf_support\");\n"
-		"drop(\"pathfinder\");\n";
+    return  
+        "# MIL EPILOGUE\n"
+        "drop(\"alarm\");\n"
+        "drop(\"mmath\");\n"
+        "drop(\"pcre\");\n"
+        "drop(\"malalgebra\");\n"
+        "drop(\"xtables\");\n"
+        "drop(\"bat_arith\");\n"
+        "drop(\"aggrX3\");\n"
+        "drop(\"pf_support\");\n"
+        "drop(\"pathfinder\");\n";
 }
 		
 

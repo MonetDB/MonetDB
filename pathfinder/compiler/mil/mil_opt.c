@@ -119,6 +119,7 @@ char* opt_skip(char* p, int skip_comment) {
 
 
 
+#ifdef OPT_COND
 /* ----------------------------------------------------------------------------
  * code motion: move statements into if- and else-blocks to eliminate more
  *
@@ -266,6 +267,7 @@ static int opt_move_useful(opt_t *o, unsigned int stmt) {
 	opt_move_undo(o, stmt);
 	return o->stmts[stmt].deleted = 0;
 } 
+#endif
 
 
 /* ----------------------------------------------------------------------------
@@ -278,7 +280,7 @@ static int opt_move_useful(opt_t *o, unsigned int stmt) {
 #define APPEND_INIT(o,sec,dst,end)						\
 	{ if (o->buf[sec] == NULL) return;					\
 	  dst = o->buf[sec] + o->off[sec]; 					\
-	  end = o->buf[sec] + o->len[sec] - 2; }
+	  end = o->buf[sec] + o->len[sec] - 3; }
 #define APPEND_PUTC(o,sec,c,dst,end)						\
         if (((scope<0) | (c!='\n')) || (dst > o->buf[sec] && dst[-1]!='\n')) {	\
 	  if (dst >= end) { 							\
@@ -321,7 +323,7 @@ static void opt_printmil(opt_t* o, char* src, int sec, int scope) {
 			}
 		}
 	}
-	o->off[sec] = dst - o->buf[sec]; *dst = 0;
+	o->off[sec] = dst - o->buf[sec]; dst[0] = '\n'; dst[1] = 0;
 }
 
 
@@ -337,11 +339,11 @@ static void opt_printmil(opt_t* o, char* src, int sec, int scope) {
 /* opt_emit_check_vardecl(): after dead-code elimination, remove useless vardefs
  */
 static int opt_emit_check_vardecl(opt_t *o, unsigned int stmt) {
-	/* usage check: kill vardefs that were never used (and their nil-assigns) */
+	/* usage check: deleted statements and useless nilassigns (including those for which we don't have the vardecl anymore) */
 	unsigned int assigns_to = o->stmts[stmt].assigns_to&32767;
-	if ((o->stmts[stmt].assigns_nr > 0) &
-	    (o->stmts[assigns_to].stmt_nr == o->stmts[stmt].assigns_nr) &
-             (o->stmts[assigns_to].used == 0)) 
+	if (o->stmts[stmt].nilassign && (o->stmts[stmt].assigns_nr <= 0 ||
+	    o->stmts[assigns_to].stmt_nr != o->stmts[stmt].assigns_nr ||
+            o->stmts[assigns_to].used == 0)) 
 	{
 		return 1;
 	}
@@ -388,9 +390,11 @@ static void opt_emit(opt_t* o, unsigned int stmt) {
 	char *p = o->stmts[stmt].mil;
 	if (	/* statements cut off from variable declarations were already printed */
 		((p != NULL) && ((*p != ':') & (*p != ';'))) 
+#ifdef OPT_COND
 	&&
 		/* if stmt was moved, check whether that was actually useful; if not, undo move */
 	        ((o->stmts[stmt].moved[0] | o->stmts[stmt].moved[1]) == 0 || !opt_move_useful(o, stmt)) 
+#endif
 	&&
 		/* kill variable declarations that are now unused (and their nilassigns) */
 	        (!opt_emit_check_vardecl(o, stmt))
@@ -410,6 +414,8 @@ static void opt_emit(opt_t* o, unsigned int stmt) {
 		INTERN_FREE(o->stmts[stmt].ptr);
 		o->stmts[stmt].ptr = NULL;
 	}
+	o->stmts[stmt].mil = NULL;
+	o->stmts[stmt].stmt_nr = 0;
 }
 
 
@@ -506,30 +512,38 @@ static void opt_elimvar(opt_t *o, unsigned int varnr, int kill_nilassign) {
 static void opt_endscope(opt_t* o, unsigned int scope) {
 	unsigned int i = o->curvar;
 	while(i-- > 0 && o->vars[i].scope >= scope) {
+		int stmt = o->vars[i].def_stmt;
+#ifdef OPT_COND
 		unsigned int j, cond=OPT_COND(o);
 		for(j=o->vars[i].setlo[cond]; j<o->vars[i].sethi[cond]; j++) {
 			opt_move_kill(o, o->vars[i].lastset[j]);
 			opt_move_killref(o, o->vars[i].lastset[j]);
 		}
+#endif
 		opt_elimvar(o, o->curvar = i, 0);
+		if (o->stmts[stmt].stmt_nr == o->vars[i].def_stmt_nr && o->stmts[stmt].used == 0) {
+			o->stmts[stmt].deleted = 1;
+		}
 	}
 }
 
 /* opt_assign(): record an assigment statement into variable 'name'. 
  */
 static void opt_assign(opt_t *o, opt_name_t *name, unsigned int stmt) {
-	int j,i = opt_findvar(o, name);
+	int i = opt_findvar(o, name);
 	/* we may only prune if the variable being overwritten comes from a unconditional scope */
 	if (i >= 0) {
 		unsigned int def_stmt = o->vars[i].def_stmt;
 		unsigned int cond = OPT_COND(o);
-
+#ifdef OPT_COND
+		int j;
 		if (o->vars[i].sethi[cond] > o->vars[i].setlo[cond]) {
 			/* all statements that depend on lastassign cannot be moveable */
 			for(j=o->vars[i].setlo[cond]; j<o->vars[i].sethi[cond]; j++) 
 				if (o->vars[i].lastset[j] < OPT_STMTS)
 					opt_move_killref(o, o->vars[i].lastset[j]);
 		}
+#endif
 		/* variable is overwritten; try to eliminate previous assignment */
 		opt_elimvar(o, i, 1); 
 
@@ -553,7 +567,9 @@ static void opt_assign(opt_t *o, opt_name_t *name, unsigned int stmt) {
 			o->stmts[stmt].assigns_to = def_stmt;
 			o->stmts[stmt].assigns_nr = o->stmts[def_stmt].stmt_nr;
 			o->stmts[def_stmt].used++;
+#ifdef OPT_COND
 			opt_move_add(o, stmt); /* register this statement as moveable */
+#endif
 		}
 	} else {
 		/* delete this statement */
@@ -581,7 +597,9 @@ static void opt_usevar(opt_t *o, unsigned int var_nr, unsigned int stmt_nr) {
 					o->stmts[stmt_nr].refs++;
 				}
 				o->stmts[o->vars[var_nr].lastset[i]].used++;
+#ifdef OPT_COND
 				opt_move_kill(o, o->vars[var_nr].lastset[i]);
+#endif
 			}
 		}
 	/* descent to parent cond; unless we know that current cond overwrites it always */
@@ -613,7 +631,9 @@ static void opt_end_if(opt_t *o) {
 			o->vars[i].sethi[cond] = o->vars[i].sethi[cond_if];
 		}
 	}
+#ifdef OPT_COND
 	opt_move_clear(o); /* deactivate the list of moveable statements for the parent context */ 
+#endif
 }
 
 /* opt_end_else(): close an if-then-else-block (do conditional variable assignment bookkeeping)
@@ -645,19 +665,25 @@ static void opt_end_else(opt_t *o) {
 					o->vars[i].sethi[cond_else]:o->vars[i].sethi[cond_if];
 		}
 	}
+#ifdef OPT_COND
 	opt_move_clear(o); /* deactivate the list of moveable statements for the parent context */ 
+#endif
 }
 	
 /* opt_mil(): accept a chunk of unoptimized MIL.
  */
 static int opt_mil(opt_t *o, char* milbuf) {
-	unsigned int curstmt, stmt, inject_cond=1, var_statement=0, new_statement=1;
+	unsigned int curstmt, stmt, var_statement=0, new_statement=1;
 	opt_name_t name, assign;
 	char *p = milbuf;
+#ifdef OPT_COND
+	unsigned int inject_cond=1;
+#endif
 
 	if ((o == NULL) | (milbuf == NULL)) return -1;
 	name.prefix[0] = assign.prefix[0] = 0;
-	curstmt = stmt = o->curstmt;
+	curstmt = o->curstmt;
+	stmt = curstmt % OPT_STMTS;
 
 	if (!(o->mode&1)) {
 		opt_printmil(o, milbuf, o->sec, -1); /* just echo it */
@@ -670,7 +696,9 @@ static int opt_mil(opt_t *o, char* milbuf) {
 			o->stmts[stmt].stmt_nr = ++(o->curstmt);
 			o->stmts[stmt].scope = o->scope;
 			o->stmts[stmt].sec = o->sec;
+#ifdef OPT_COND
 			inject_cond = 1;  /* impossible cond level */
+#endif
 			new_statement = var_statement = 0;
 		}
 		o->stmts[stmt].mil = p;
@@ -707,7 +735,9 @@ static int opt_mil(opt_t *o, char* milbuf) {
 				}
 				o->scope++;
 				if ((o->if_statement | o->else_statement) & (o->condlevel+1 < OPT_CONDS)) {
+#ifdef OPT_COND
 					inject_cond = OPT_COND(o);
+#endif
 					o->condscopes[o->condlevel++] = o->scope;
 					o->condifelse[o->condlevel] = o->else_statement;
 					opt_start_cond(o, OPT_COND(o));
@@ -719,7 +749,7 @@ static int opt_mil(opt_t *o, char* milbuf) {
 				int end_cond = (o->condlevel > 0 && o->condscopes[o->condlevel-1] == o->scope);
 				int end_else = (end_cond && o->condifelse[o->condlevel]);
 				int else_next = opt_match_else(q);
-
+#ifdef OPT_COND
 				if ((end_cond & (end_else == 0) & (else_next == 0)) && 
                                     o->movnr[OPT_COND_LEVEL(o,o->condlevel-1)]) 
 				{
@@ -727,6 +757,7 @@ static int opt_mil(opt_t *o, char* milbuf) {
 					*p = ' '; inject_cond = OPT_CONDS+OPT_CONDS; 
 					break;
 				}
+#endif
 				opt_endscope(o, o->scope); /* destroy local variables */
 				o->scope--;
 				if (end_cond) {
@@ -779,12 +810,14 @@ static int opt_mil(opt_t *o, char* milbuf) {
 		if (*p && *p != ':') {
 			o->stmts[stmt - (o->stmts[stmt].mil[0] == ':')].delchar = *p;
 			*p++ = 0; 
+#ifdef OPT_COND
 			/* inject the moveable statements */
 			if (inject_cond == OPT_CONDS+OPT_CONDS) {
 				milprintf(o, "}else{}"); /* inject an artificial else */
 			} else if (inject_cond != 1) {
 				opt_move_inject(o, inject_cond);
 			}
+#endif
 		}
 		/* check if we actually got some statement now */
 		new_statement = o->stmts[stmt].delchar | (o->stmts[stmt].mil && o->stmts[stmt].mil[0]);
@@ -807,6 +840,7 @@ static int opt_mil(opt_t *o, char* milbuf) {
  * dead MIL code eliminator API (hack by Peter Boncz)
  * - opt_open():  set up our administration.
  * - milprintf(): print mil in a streaming fashion (call as often as you want)
+ * - opt_flush(): flush all stmts
  * - opt_close(): flush all output stmts; and clean up
  *
  * Depending how o->sec is set during the milprintf() call, optimized MIL is echoed 
@@ -872,23 +906,27 @@ int milprintf(opt_t *o, const char *format, ...)
         return opt_mil(o, milbuf);
 }
 
-/* opt_close(): flush all output stmts; and clean up
- */
-int opt_close(opt_t *o, char** prologue, char** query, char** epilogue) {
-	unsigned int i = 0; 
-	if (o == NULL) return -1;
-	opt_endscope(o, 0); /* destroy all variables (and elim dead code) */
 
-	/* push all stmts out of the buffer */
-	if (o->stmts[OPT_STMTS-1].stmt_nr) {
+/* opt_flush(): flush all stmts
+ */
+void opt_flush(opt_t *o, int force) {
+	if (force || (o->curstmt+o->curstmt > OPT_STMTS || o->curvar+o->curvar > OPT_VARS)) {
+		unsigned int i = 0; 
 		for(i=0; i<OPT_STMTS; i++) { /* buffer full: round-robin */
 			opt_emit(o, (i + o->curstmt) % OPT_STMTS);
 		}
-	} else {
-		for(i=0; i<o->curstmt; i++) {
-			opt_emit(o, i);
-		}
 	}
+}
+
+
+/* opt_close(): flush all output stmts; and clean up
+ */
+int opt_close(opt_t *o, char** prologue, char** query, char** epilogue) {
+	if (o == NULL) return -1;
+	o->sec = -1;
+	opt_endscope(o, 0); /* destroy all variables (and elim dead code) */
+	opt_flush(o, 1); /* push all stmts out of the buffer */
+
 	/* return the three buffers */
 	*prologue = o->buf[OPT_SEC_PROLOGUE];
 	*query    = o->buf[OPT_SEC_QUERY];

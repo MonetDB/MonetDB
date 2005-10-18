@@ -501,7 +501,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
 {
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
-        long timing = PFtimer_start ();
+        long timing;
         int module_base;
 
         *prologue = NULL;
@@ -526,6 +526,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         if (setjmp(PFexitPoint) != 0 ) {
                 return PFerrbuf;
         }
+	timing = PFtimer_start ();
 	/* repeat PFcompile, which we can't reuse as we don't want to deal with files here */
         PFparse (xquery, &proot);
         module_base = PFparse_modules (proot);
@@ -540,7 +541,7 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
-        (void)  PFprintMILtemp (croot, module_base+1, mode, timing, prologue, query, epilogue);
+        (void)  PFprintMILtemp (croot, module_base+1, PFstate.genType, timing, prologue, query, epilogue);
         pa_destroy(pf_alloc);
         return (*PFerrbuf) ? PFerrbuf : NULL;
 }
