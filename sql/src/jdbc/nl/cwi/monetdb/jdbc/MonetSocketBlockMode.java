@@ -63,28 +63,21 @@ class MonetSocketBlockMode extends MonetSocket {
 	/** A ByteBuffer for performing a possible swab on an integer for sending */
 	private ByteBuffer outputBuffer;
 
-	/** The maximum size of the chunks when we fetch data from the stream
-	 *  (overridden!) */
-	final int readcapacity;
-	/** The maximum size of the chunks when we push data to the stream
-	 *  (overridden!) */
-	final int writecapacity;
-
-	/** The blocksize (hardcoded in compliance with stream.mx) */
-	final static int BLOCK = 8 * 1024;
-
 	MonetSocketBlockMode(String host, int port)
 		throws IOException
 	{
-		super(new Socket(host, port));
+		con = new Socket(host, port);
+		// set nodelay, as it greatly speeds up small message (like we
+		// often do)
+		con.setTcpNoDelay(true);
 
 		// note: Always use buffered streams, as they perform better,
 		// even though you know exactly which blocks you have to fetch
 		// from the stream.  They are probably able to prefetch so the
 		// IO is blocking while the program is still doing something
 		// else.
-		fromMonetRaw = new BufferedInputStream(con.getInputStream());
-		toMonetRaw = new BufferedOutputStream(con.getOutputStream());
+		fromMonetRaw = new BufferedInputStream(con.getInputStream(), BLOCK + 2);
+		toMonetRaw = new BufferedOutputStream(con.getOutputStream(), BLOCK + 2);
 
 		outputBuffer = ByteBuffer.allocateDirect(2);
 		inputBuffer = ByteBuffer.allocateDirect(2);
@@ -92,9 +85,6 @@ class MonetSocketBlockMode extends MonetSocket {
 		// by using setByteOrder()
 
 		readBuffer = new StringBuffer();
-
-		readcapacity = BLOCK - 2;
-		writecapacity = BLOCK - 2;
 	}
 
 	/**
@@ -183,14 +173,14 @@ class MonetSocketBlockMode extends MonetSocket {
 			while (todo > 0) {
 				// write the length of this block
 				outputBuffer.rewind();
-				if (todo <= writecapacity) {
-					// always fits, because of writecapacity's size
+				if (todo <= BLOCK) {
+					// always fits, because of BLOCK's size
 					blocksize = (short)todo;
 					// this is the last block
 					outputBuffer.putShort((short)((blocksize << 1) | 1));
 				} else {
-					// always fits, because of writecapacity's size
-					blocksize = (short)writecapacity;
+					// always fits, because of BLOCK's size
+					blocksize = (short)BLOCK;
 					// another block will follow
 					outputBuffer.putShort((short)(blocksize << 1));
 				}
@@ -204,7 +194,7 @@ class MonetSocketBlockMode extends MonetSocket {
 				toMonetRaw.write(bytes, len - todo, blocksize);
 				
 				if (debug) {
-					if (todo <= writecapacity) {
+					if (todo <= BLOCK) {
 						logTx("write final block: " + blocksize + " bytes");
 					} else {
 						logTx("write block: " + blocksize + " bytes");
@@ -227,116 +217,11 @@ class MonetSocketBlockMode extends MonetSocket {
 	}
 
 	/**
-	 * writeln puts a concatenation of the given strings on the stream
-	 * and flushes the stream afterwards so the data will actually be
-	 * sent.  The given data Strings are wrapped within and separated by
-	 * the query template.
+	 * Reads up to count bytes from the stream, and returns them in a
+	 * byte array
 	 *
-	 * @param templ the query template to apply
-	 * @param data the data to write to the stream
-	 * @throws IOException if writing to the stream failed
-	 */
-	public void writeln(String[] templ, List data) throws IOException {
-		synchronized (toMonetRaw) {
-			byte[] sep =
-				(templ[2] != null ? templ[2].getBytes("UTF-8") : new byte[0]);
-			ByteBuffer buf = ByteBuffer.allocate(writecapacity);
-
-			// initiate blklen to writecapacity which we probably can
-			// reuse a lot below (marked as not the last block)
-			outputBuffer.rewind();
-			outputBuffer.putShort((short)(writecapacity << 1));
-
-			outputBuffer.rewind();
-			outputBuffer.get(blklen);
-
-			// write template prefix
-			if (templ[0] != null) buf.put(templ[0].getBytes("UTF-8"));
-
-			// now process and send the 'data'
-			int done, fits;
-			for (int i = 0; i < data.size(); i++) {
-				byte[] tmpb = data.get(i).toString().getBytes("UTF-8");
-
-				done = 0;
-				while (tmpb.length - done > (fits = writecapacity - buf.position())) {
-					buf.put(tmpb, done, fits);
-					done += fits;
-
-					// write buffer contents
-					toMonetRaw.write(blklen);
-					if (debug) logTx("max block: " + writecapacity + " bytes");
-					toMonetRaw.write(buf.array());
-					if (debug) logTx(new String(buf.array(), "UTF-8"));
-					buf.clear();
-				}
-				buf.put(tmpb, done, tmpb.length - done);
-
-				done = 0;
-				while (sep.length - done > (fits = writecapacity - buf.position())) {
-					buf.put(sep, done, fits);
-					done += fits;
-
-					// write buffer contents
-					toMonetRaw.write(blklen);
-					if (debug) logTx("max block: " + writecapacity + " bytes");
-					toMonetRaw.write(buf.array());
-					if (debug) logTx(new String(buf.array(), "UTF-8"));
-					buf.clear();
-				}
-				buf.put(sep, done, sep.length - done);
-
-				data.set(i, null);
-			}
-
-			// write template postfix
-			if (templ[1] != null) {
-				byte[] post = templ[1].getBytes("UTF-8");
-				done = 0;
-				while (post.length - done > (fits = writecapacity - buf.position())) {
-					buf.put(post, done, fits);
-					done += fits;
-
-					// write buffer contents
-					toMonetRaw.write(blklen);
-					if (debug) logTx("max block: " + writecapacity + " bytes");
-					toMonetRaw.write(buf.array());
-					if (debug) logTx(new String(buf.array(), "UTF-8"));
-					buf.clear();
-				}
-				buf.put(post, done, post.length - done);
-			}
-
-			// write leftover to the stream
-			outputBuffer.rewind();
-			outputBuffer.putShort((short)((buf.position() << 1) | 1));
-
-			outputBuffer.rewind();
-			outputBuffer.get(blklen);
-
-			toMonetRaw.write(blklen);
-			if (debug) logTx("write block: " + buf.position() + " bytes");
-			toMonetRaw.write(buf.array(), 0, buf.position());
-			if (debug) logTx(new String(buf.array(), 0, buf.position(), "UTF-8"));
-
-			// flush the stream
-			flush();
-
-			if (debug) log.flush();
-
-			// reset the lineType variable, since we've sent data now and
-			String line;
-			int nl;
-
-			// the last line isn't valid anymore
-			lineType = UNKNOWN;
-		}
-	}
-
-	/**
-	 * Reads up to count bytes from the stream, and returns them in a byte array
-	 *
-	 * @param data a byte array, which should be filled with data from the stream
+	 * @param data a byte array, which should be filled with data from
+	 *             the stream
 	 * @return the number of bytes actually read, never less than zero
 	 * @throws IOException if some IO error occurs
 	 */
@@ -414,7 +299,7 @@ class MonetSocketBlockMode extends MonetSocket {
 					}
 				}
 				// 'continue' fetching current block
-				byte[] data = new byte[readcapacity < readState ? readcapacity : readState];
+				byte[] data = new byte[BLOCK < readState ? BLOCK : readState];
 				int size = fromMonetRaw.read(data);
 				if (size == -1) throw
 					new IOException("End of stream reached");

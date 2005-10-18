@@ -27,30 +27,28 @@ import java.text.SimpleDateFormat;
 /**
  * A Connection suitable for the MonetDB database.
  * <br /><br />
- * This connection represents a connection (session) to a MonetDB database. SQL
- * statements are executed and results are returned within the context of a
- * connection. This Connection object holds a physical connection to the MonetDB
- * database.
+ * This connection represents a connection (session) to a MonetDB
+ * database. SQL statements are executed and results are returned within
+ * the context of a connection. This Connection object holds a physical
+ * connection to the MonetDB database.
  * <br /><br />
- * A Connection object's database should able to provide information describing
- * its tables, its supported SQL grammar, its stored procedures, the
- * capabilities of this connection, and so on. This information is obtained with
- * the getMetaData method.<br />
- * Note: By default a Connection object is in auto-commit mode, which means that
- * it automatically commits changes after executing each statement. If
- * auto-commit mode has been disabled, the method commit must be called
- * explicitly in order to commit changes; otherwise, database changes will not
- * be saved.
+ * A Connection object's database should able to provide information
+ * describing its tables, its supported SQL grammar, its stored
+ * procedures, the capabilities of this connection, and so on. This
+ * information is obtained with the getMetaData method.<br />
+ * Note: By default a Connection object is in auto-commit mode, which
+ * means that it automatically commits changes after executing each
+ * statement. If auto-commit mode has been disabled, the method commit
+ * must be called explicitly in order to commit changes; otherwise,
+ * database changes will not be saved.
  * <br /><br />
  * The current state of this connection is that it nearly implements the
  * whole Connection interface.<br />
- * Be aware that this Connection is a thread that reads from the socket
- * independent from what the client requests (pre-fetching strategy).
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 0.9
+ * @version 0.9.2
  */
-public class MonetConnection extends Thread implements Connection {
+public class MonetConnection implements Connection {
 	/** The hostname to connect to */
 	private final String hostname;
 	/** The port to connect on the host to */
@@ -87,9 +85,9 @@ public class MonetConnection extends Thread implements Connection {
 	private int curReplySize = -1;	// the server by default uses -1 (all)
 
 	/** A template to apply to each query (like pre and post fixes) */
-	private String[] queryTempl;
+	String[] queryTempl;
 	/** A template to apply to each command (like pre and post fixes) */
-	private String[] commandTempl;
+	String[] commandTempl;
 
 	/* only parse the date patterns once, use multiple times */
 	/** Format of a timestamp */
@@ -121,10 +119,11 @@ public class MonetConnection extends Thread implements Connection {
 	private static int sequence = 0;
 
 	/**
-	 * Constructor of a Connection for MonetDB. At this moment the current
-	 * implementation limits itself to storing the given host, database,
-	 * username and password for later use by the createStatement() call.
-	 * This constructor is only accessible to classes from the jdbc package.
+	 * Constructor of a Connection for MonetDB. At this moment the
+	 * current implementation limits itself to storing the given host,
+	 * database, username and password for later use by the
+	 * createStatement() call.  This constructor is only accessible to
+	 * classes from the jdbc package.
 	 *
 	 * @param props a Property hashtable holding the properties needed for
 	 *              connecting
@@ -135,9 +134,6 @@ public class MonetConnection extends Thread implements Connection {
 		Properties props)
 		throws SQLException, IllegalArgumentException
 	{
-		// set the name for this `thread' (mainly for debugging purposes)
-		super("MonetConnection-CachingThread-" + sequence++);
-
 		this.hostname = props.getProperty("host");
 		int port;
 		try {
@@ -303,13 +299,7 @@ public class MonetConnection extends Thread implements Connection {
 			throw new SQLException("Unable to connect (" + hostname + ":" + port + "): " + e.getMessage());
 		}
 
-		// make ourselves a little more important
-		setPriority(getPriority() + 1);
-		// quit the VM if it's waiting for this thread to end
-		setDaemon(true);
-		start();
-		
-		// fill the query template
+		// fill the query templates
 		if (lang == LANG_SQL) {
 			queryTempl[0] = "s";		// pre
 			queryTempl[1] = ";";		// post
@@ -357,8 +347,8 @@ public class MonetConnection extends Thread implements Connection {
 
 	/**
 	 * A little helper function that processes a challenge string, and
-	 * returns a response string for the server.  If the challenge string
-	 * is null, a challengeless response is returned.
+	 * returns a response string for the server.  If the challenge
+	 * string is null, a challengeless response is returned.
 	 *
 	 * @param chalstr the challenge string
 	 * @param username the username to use
@@ -414,21 +404,22 @@ public class MonetConnection extends Thread implements Connection {
 	//== methods of interface Connection
 
 	/**
-	 * Clears all warnings reported for this Connection object. After a call to
-	 * this method, the method getWarnings returns null until a new warning is
-	 * reported for this Connection object.
+	 * Clears all warnings reported for this Connection object. After a
+	 * call to this method, the method getWarnings returns null until a
+	 * new warning is reported for this Connection object.
 	 */
 	public void clearWarnings() {
 		warnings = null;
 	}
 
 	/**
-	 * Releases this Connection object's database and JDBC resources immediately
-	 * instead of waiting for them to be automatically released. All Statements
-	 * created from this Connection will be closed when this method is called.
+	 * Releases this Connection object's database and JDBC resources
+	 * immediately instead of waiting for them to be automatically
+	 * released. All Statements created from this Connection will be
+	 * closed when this method is called.
 	 * <br /><br />
-	 * Calling the method close on a Connection object that is already closed is
-	 * a no-op.
+	 * Calling the method close on a Connection object that is already
+	 * closed is a no-op.
 	 */
 	public void close() {
 		Iterator it = statements.keySet().iterator();
@@ -439,8 +430,6 @@ public class MonetConnection extends Thread implements Connection {
 				// better luck next time!
 			}
 		}
-		// terminate the thread
-		shutdown();
 		// close the socket
 		monet.disconnect();
 		// report ourselves as closed
@@ -448,27 +437,29 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 	/**
-	 * Makes all changes made since the previous commit/rollback permanent and
-	 * releases any database locks currently held by this Connection object.
-	 * This method should be used only when auto-commit mode has been disabled.
+	 * Makes all changes made since the previous commit/rollback
+	 * permanent and releases any database locks currently held by this
+	 * Connection object.  This method should be used only when
+	 * auto-commit mode has been disabled.
 	 *
-	 * @throws SQLException if a database access error occurs or this Connection
-	 *         object is in auto-commit mode
+	 * @throws SQLException if a database access error occurs or this
+	 *         Connection object is in auto-commit mode
 	 * @see #setAutoCommit(boolean)
 	 */
 	public void commit() throws SQLException {
-		// send commit to the server (note the s in front is a protocol issue)
+		// send commit to the server
 		sendIndependantCommand("COMMIT");
 	}
 
 	/**
-	 * Creates a Statement object for sending SQL statements to the database.
-	 * SQL statements without parameters are normally executed using Statement
-	 * objects. If the same SQL statement is executed many times, it may be more
-	 * efficient to use a PreparedStatement object.<br />
+	 * Creates a Statement object for sending SQL statements to the
+	 * database.  SQL statements without parameters are normally
+	 * executed using Statement objects. If the same SQL statement is
+	 * executed many times, it may be more efficient to use a
+	 * PreparedStatement object.
 	 * <br /><br />
-	 * Result sets created using the returned Statement object will by default
-	 * be type TYPE_FORWARD_ONLY and have a concurrency level of
+	 * Result sets created using the returned Statement object will by
+	 * default be type TYPE_FORWARD_ONLY and have a concurrency level of
 	 * CONCUR_READ_ONLY.
 	 *
 	 * @return a new default Statement object
@@ -481,10 +472,10 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 	/**
-	 * Creates a Statement object that will generate ResultSet objects with
-	 * the given type and concurrency. This method is the same as the
-	 * createStatement method above, but it allows the default result set type
-	 * and concurrency to be overridden.
+	 * Creates a Statement object that will generate ResultSet objects
+	 * with the given type and concurrency. This method is the same as
+	 * the createStatement method above, but it allows the default
+	 * result set type and concurrency to be overridden.
 	 *
 	 * @param resultSetType a result set type; one of
 	 *        ResultSet.TYPE_FORWARD_ONLY, ResultSet.TYPE_SCROLL_INSENSITIVE,
@@ -518,9 +509,11 @@ public class MonetConnection extends Thread implements Connection {
 	public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability) {return(null);}
 
 	/**
-	 * Retrieves the current auto-commit mode for this Connection object.
+	 * Retrieves the current auto-commit mode for this Connection
+	 * object.
 	 *
-	 * @return the current state of this Connection object's auto-commit mode
+	 * @return the current state of this Connection object's auto-commit
+	 *         mode
 	 * @see #setAutoCommit(boolean)
 	 */
 	public boolean getAutoCommit() throws SQLException {
@@ -568,11 +561,11 @@ public class MonetConnection extends Thread implements Connection {
 	public int getHoldability() {return(-1);}
 
 	/**
-	 * Retrieves a DatabaseMetaData object that contains metadata about the
-	 * database to which this Connection object represents a connection. The
-	 * metadata includes information about the database's tables, its supported
-	 * SQL grammar, its stored procedures, the capabilities of this connection,
-	 * and so on.
+	 * Retrieves a DatabaseMetaData object that contains metadata about
+	 * the database to which this Connection object represents a
+	 * connection. The metadata includes information about the
+	 * database's tables, its supported SQL grammar, its stored
+	 * procedures, the capabilities of this connection, and so on.
 	 *
 	 * @throws SQLException if the current language is not SQL
 	 * @return a DatabaseMetaData object for this Connection object
@@ -585,7 +578,8 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 	/**
-	 * Retrieves this Connection object's current transaction isolation level.
+	 * Retrieves this Connection object's current transaction isolation
+	 * level.
 	 *
 	 * @return the current transaction isolation level, which will be
 	 *         Connection.TRANSACTION_SERIALIZABLE
@@ -595,23 +589,26 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 	/**
-	 * Retrieves the Map object associated with this Connection object. Unless
-	 * the application has added an entry, the type map returned will be empty.
+	 * Retrieves the Map object associated with this Connection object.
+	 * Unless the application has added an entry, the type map returned
+	 * will be empty.
 	 *
-	 * @return the java.util.Map object associated with this Connection object
+	 * @return the java.util.Map object associated with this Connection
+	 *         object
 	 */
 	public Map getTypeMap() {
 		return(typeMap);
 	}
 
 	/**
-	 * Retrieves the first warning reported by calls on this Connection object.
-	 * If there is more than one warning, subsequent warnings will be chained to
-	 * the first one and can be retrieved by calling the method
-	 * SQLWarning.getNextWarning on the warning that was retrieved previously.
+	 * Retrieves the first warning reported by calls on this Connection
+	 * object.  If there is more than one warning, subsequent warnings
+	 * will be chained to the first one and can be retrieved by calling
+	 * the method SQLWarning.getNextWarning on the warning that was
+	 * retrieved previously.
 	 * <br /><br />
-	 * This method may not be called on a closed connection; doing so will cause
-	 * an SQLException to be thrown.
+	 * This method may not be called on a closed connection; doing so
+	 * will cause an SQLException to be thrown.
 	 * <br /><br />
 	 * Note: Subsequent warnings will be chained to this SQLWarning.
 	 *
@@ -628,26 +625,27 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 	/**
-	 * Retrieves whether this Connection object has been closed. A connection is
-	 * closed if the method close has been called on it or if certain fatal
-	 * errors have occurred. This method is guaranteed to return true only when
-	 * it is called after the method Connection.close has been called.
+	 * Retrieves whether this Connection object has been closed.  A
+	 * connection is closed if the method close has been called on it or
+	 * if certain fatal errors have occurred.  This method is guaranteed
+	 * to return true only when it is called after the method
+	 * Connection.close has been called.
 	 * <br /><br />
-	 * This method generally cannot be called to determine whether a connection
-	 * to a database is valid or invalid. A typical client can determine that a
-	 * connection is invalid by catching any exceptions that might be thrown
-	 * when an operation is attempted.
+	 * This method generally cannot be called to determine whether a
+	 * connection to a database is valid or invalid.  A typical client
+	 * can determine that a connection is invalid by catching any
+	 * exceptions that might be thrown when an operation is attempted.
 	 *
-	 * @return true if this Connection object is closed; false if it is still
-	 *         open
+	 * @return true if this Connection object is closed; false if it is
+	 *         still open
 	 */
 	public boolean isClosed() {
 		return(closed);
 	}
 
 	/**
-	 * Retrieves whether this Connection object is in read-only mode.  MonetDB
-	 * currently doesn't support updateable result sets.
+	 * Retrieves whether this Connection object is in read-only mode.
+	 * MonetDB currently doesn't support updateable result sets.
 	 *
 	 * @return true if this Connection object is read-only; false otherwise
 	 */
@@ -655,7 +653,7 @@ public class MonetConnection extends Thread implements Connection {
 		return(true);
 	}
 
-	public String nativeSQL(String sql) {return(null);}
+	public String nativeSQL(String sql) {return(sql);}
 	public CallableStatement prepareCall(String sql) {return(null);}
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) {return(null);}
 	public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability) {return(null);}
@@ -664,27 +662,27 @@ public class MonetConnection extends Thread implements Connection {
 	 * Creates a PreparedStatement object for sending parameterized SQL
 	 * statements to the database.
 	 * <br /><br />
-	 * A SQL statement with or without IN parameters can be pre-compiled and
-	 * stored in a PreparedStatement object. This object can then be used to
-	 * efficiently execute this statement multiple times.
+	 * A SQL statement with or without IN parameters can be pre-compiled
+	 * and stored in a PreparedStatement object. This object can then be
+	 * used to efficiently execute this statement multiple times.
 	 * <br /><br />
-	 * Note: This method is optimized for handling parametric SQL statements
-	 * that benefit from precompilation. If the driver supports precompilation,
-	 * the method prepareStatement will send the statement to the database for
-	 * precompilation. Some drivers may not support precompilation. In this
-	 * case, the statement may not be sent to the database until the
-	 * PreparedStatement object is executed. This has no direct effect on
-	 * users; however, it does affect which methods throw certain SQLException
-	 * objects.
+	 * Note: This method is optimized for handling parametric SQL
+	 * statements that benefit from precompilation. If the driver
+	 * supports precompilation, the method prepareStatement will send
+	 * the statement to the database for precompilation. Some drivers
+	 * may not support precompilation. In this case, the statement may
+	 * not be sent to the database until the PreparedStatement object is
+	 * executed. This has no direct effect on users; however, it does
+	 * affect which methods throw certain SQLException objects.
 	 * <br /><br />
-	 * Result sets created using the returned PreparedStatement object will by
-	 * default be type TYPE_FORWARD_ONLY and have a concurrency level of
-	 * CONCUR_READ_ONLY.
+	 * Result sets created using the returned PreparedStatement object
+	 * will by default be type TYPE_FORWARD_ONLY and have a concurrency
+	 * level of CONCUR_READ_ONLY.
 	 *
-	 * @param sql an SQL statement that may contain one or more '?' IN parameter
-	 *            placeholders
-	 * @return a new default PreparedStatement object containing the pre-compiled
-	 *         SQL statement
+	 * @param sql an SQL statement that may contain one or more '?' IN
+	 *        parameter placeholders
+	 * @return a new default PreparedStatement object containing the
+	 *         pre-compiled SQL statement
 	 * @throws SQLException if a database access error occurs
 	 */
 	public PreparedStatement prepareStatement(String sql) throws SQLException {
@@ -698,10 +696,10 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 	/**
-	 * Creates a PreparedStatement object that will generate ResultSet objects
-	 * with the given type and concurrency. This method is the same as the
-	 * prepareStatement method above, but it allows the default result set type
-	 * and concurrency to be overridden.
+	 * Creates a PreparedStatement object that will generate ResultSet
+	 * objects with the given type and concurrency.  This method is the
+	 * same as the prepareStatement method above, but it allows the
+	 * default result set type and concurrency to be overridden.
 	 *
 	 * @param sql a String object that is the SQL statement to be sent to the
 	 *            database; may contain one or more ? IN parameters
@@ -752,9 +750,9 @@ public class MonetConnection extends Thread implements Connection {
 	public PreparedStatement prepareStatement(String sql, String[] columnNames) {return(null);}
 
 	/**
-	 * Removes the given Savepoint object from the current transaction. Any
-	 * reference to the savepoint after it have been removed will cause an
-	 * SQLException to be thrown.
+	 * Removes the given Savepoint object from the current transaction.
+	 * Any reference to the savepoint after it have been removed will
+	 * cause an SQLException to be thrown.
 	 *
 	 * @param savepoint the Savepoint object to be removed
 	 * @throws SQLException if a database access error occurs or the given
@@ -772,28 +770,30 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 	/**
-	 * Undoes all changes made in the current transaction and releases any
-	 * database locks currently held by this Connection object. This method
-	 * should be used only when auto-commit mode has been disabled.
+	 * Undoes all changes made in the current transaction and releases
+	 * any database locks currently held by this Connection object. This
+	 * method should be used only when auto-commit mode has been
+	 * disabled.
 	 *
 	 * @throws SQLException if a database access error occurs or this
 	 *         Connection object is in auto-commit mode
 	 * @see #setAutoCommit(boolean)
 	 */
 	public void rollback() throws SQLException {
-		// send commit to the server (note the s in front is a protocol issue)
+		// send rollback to the server
 		sendIndependantCommand("ROLLBACK");
 	}
 
 	/**
 	 * Undoes all changes made after the given Savepoint object was set.
 	 * <br /><br />
-	 * This method should be used only when auto-commit has been disabled.
+	 * This method should be used only when auto-commit has been
+	 * disabled.
 	 *
 	 * @param savepoint the Savepoint object to roll back to
-	 * @throws SQLException if a database access error occurs, the Savepoint
-	 *         object is no longer valid, or this Connection object is currently
-	 *         in auto-commit mode
+	 * @throws SQLException if a database access error occurs, the
+	 *         Savepoint object is no longer valid, or this Connection
+	 *         object is currently in auto-commit mode
 	 */
 	public void rollback(Savepoint savepoint) throws SQLException {
 		if (!(savepoint instanceof MonetSavepoint)) throw
@@ -807,22 +807,24 @@ public class MonetConnection extends Thread implements Connection {
 
 	/**
 	 * Sets this connection's auto-commit mode to the given state. If a
-	 * connection is in auto-commit mode, then all its SQL statements will be
-	 * executed and committed as individual transactions. Otherwise, its SQL
-	 * statements are grouped into transactions that are terminated by a call
-	 * to either the method commit or the method rollback. By default, new
-	 * connections are in auto-commit mode.
+	 * connection is in auto-commit mode, then all its SQL statements
+	 * will be executed and committed as individual transactions.
+	 * Otherwise, its SQL statements are grouped into transactions that
+	 * are terminated by a call to either the method commit or the
+	 * method rollback. By default, new connections are in auto-commit
+	 * mode.
 	 * <br /><br />
-	 * The commit occurs when the statement completes or the next execute
-	 * occurs, whichever comes first. In the case of statements returning a
-	 * ResultSet object, the statement completes when the last row of the
-	 * ResultSet object has been retrieved or the ResultSet object has been
-	 * closed. In advanced cases, a single statement may return multiple
-	 * results as well as output parameter values. In these cases, the commit
-	 * occurs when all results and output parameter values have been retrieved.
+	 * The commit occurs when the statement completes or the next
+	 * execute occurs, whichever comes first. In the case of statements
+	 * returning a ResultSet object, the statement completes when the
+	 * last row of the ResultSet object has been retrieved or the
+	 * ResultSet object has been closed. In advanced cases, a single
+	 * statement may return multiple results as well as output parameter
+	 * values. In these cases, the commit occurs when all results and
+	 * output parameter values have been retrieved.
 	 * <br /><br />
-	 * NOTE: If this method is called during a transaction, the transaction is
-	 * committed.
+	 * NOTE: If this method is called during a transaction, the
+	 * transaction is committed.
 	 *
  	 * @param autoCommit true to enable auto-commit mode; false to disable it
 	 * @throws SQLException if a database access error occurs
@@ -837,8 +839,8 @@ public class MonetConnection extends Thread implements Connection {
 	public void setReadOnly(boolean readOnly) {}
 
 	/**
-	 * Creates an unnamed savepoint in the current transaction and returns the
-	 * new Savepoint object that represents it.
+	 * Creates an unnamed savepoint in the current transaction and
+	 * returns the new Savepoint object that represents it.
 	 *
 	 * @return the new Savepoint object
 	 * @throws SQLException if a database access error occurs or this Connection
@@ -854,8 +856,9 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 	/**
-	 * Creates a savepoint with the given name in the current transaction and
-	 * returns the new Savepoint object that represents it.
+	 * Creates a savepoint with the given name in the current
+	 * transaction and returns the new Savepoint object that represents
+	 * it.
 	 *
 	 * @param name a String containing the name of the savepoint
 	 * @return the new Savepoint object
@@ -877,9 +880,10 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 	/**
-	 * Attempts to change the transaction isolation level for this Connection
-	 * object to the one given. The constants defined in the interface
-	 * Connection are the possible transaction isolation levels.
+	 * Attempts to change the transaction isolation level for this
+	 * Connection object to the one given. The constants defined in the
+	 * interface Connection are the possible transaction isolation
+	 * levels.
 	 *
 	 * @param level one of the following Connection constants:
 	 *        Connection.TRANSACTION_READ_UNCOMMITTED,
@@ -894,9 +898,9 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 	/**
-	 * Installs the given TypeMap object as the type map for this Connection
-	 * object. The type map will be used for the custom mapping of SQL
-	 * structured types and distinct types.
+	 * Installs the given TypeMap object as the type map for this
+	 * Connection object. The type map will be used for the custom
+	 * mapping of SQL structured types and distinct types.
 	 *
 	 * @param map the java.util.Map object to install as the replacement for
 	 *        this Connection  object's default type map
@@ -908,25 +912,26 @@ public class MonetConnection extends Thread implements Connection {
 	//== end methods of interface Connection
 
 	/**
-	 * Sends the given string to MonetDB, making sure there is a prompt before
-	 * and after the command has sent. All possible returned information is
-	 * discarded.
+	 * Sends the given string to MonetDB, making sure there is a prompt
+	 * before and after the command has sent. All possible returned
+	 * information is discarded.
 	 *
 	 * @param command the exact string to send to MonetDB
 	 * @throws SQLException if an IO exception or a database error occurs
 	 */
 	void sendIndependantCommand(String command) throws SQLException {
 		HeaderList hdrl =
-			addQuery(command, 0, 0, 0, 0);
+			new HeaderList(command, 0, 0, 0, 0);
+		processQuery(hdrl);
 
 		while (hdrl.getNextHeader() != null);
 	}
 
 	/**
-	 * Adds a warning to the pile of warnings this Connection object has. If
-	 * there were no warnings (or clearWarnings was called) this warning will
-	 * be the first, otherwise this warning will get appended to the current
-	 * warning.
+	 * Adds a warning to the pile of warnings this Connection object
+	 * has.  If there were no warnings (or clearWarnings was called)
+	 * this warning will be the first, otherwise this warning will get
+	 * appended to the current warning.
 	 *
 	 * @param reason the warning message
 	 */
@@ -939,28 +944,6 @@ public class MonetConnection extends Thread implements Connection {
 	}
 
 
-
-	//=== CacheThread methods
-
-
-	/**
-	 * The CacheThread represents a pseudo array holding all results.  For real
-	 * only a part of the complete result set is cached, but upon request for
-	 * a result outside the actual cache, the cache is shuffled so the result
-	 * comes available.
-	 */
-
-	/** A queue of queries that need to be executed by this Statement */
-	private List queryQueue = new LinkedList();
-
-	/** The state WAIT represents this thread to be waiting for
-	 *  something to do */
-	private final static int WAIT = 0;
-	/** The state QUERY represents this thread to be executing a query */
-	private final static int QUERY = 1;
-	/** The state DEAD represents this thread to be dead and unable to
-	 *  do anything */
-	private final static int DEAD = 2;
 	/** the default number of rows that are (attempted to) read at once */
 	private final static int DEF_FETCHSIZE = 250;
 	/** The sequence counter */
@@ -968,90 +951,6 @@ public class MonetConnection extends Thread implements Connection {
 
 	/** An optional thread that is used for sending large queries */
 	private SendThread sendThread = null;
-	/** Whether this CacheThread is still running, executing or waiting */
-	private int state = WAIT;
-
-	public void run() {
-		try {
-			while(state != DEAD) {
-				Object cur;
-				synchronized(queryQueue) {
-					cur = null;
-					if (queryQueue.size() == 0) {
-						try {
-							state = WAIT;
-							queryQueue.wait();
-						} catch (InterruptedException e) {
-							// possible shutdown of this thread?
-							// next condition check will act appropriately
-						}
-						continue;
-					} else {
-						cur = queryQueue.remove(0);
-					}
-				}
-
-				// at this point we have a valid cur, since the wait continues
-				// and skips this part
-				if (cur instanceof HeaderList) {
-					processQuery((HeaderList)cur);
-				} else if (cur instanceof RawResults) {
-					fetchBlock((RawResults)cur);
-				}
-			}
-		} catch (Throwable t) {	// we catch EVERYTHING!
-			// this thread will die, so before doing so,
-			// set it's state appropriately
-			state = DEAD;
-			// because we cannot tell this to the user in any normal
-			// way, the best we can do is dump the stack trace to
-			// standard err.
-			t.printStackTrace(System.err);
-		}
-	}
-
-	/**
-	 * Lets this thread terminate (die) so it turns into a normal object and
-	 * can be garbage collected.
-	 */
-	void shutdown() {
-		state = DEAD;
-		// if the thread is blocking on a wait, break it out
-		synchronized(queryQueue) {
-			queryQueue.notify();
-		}
-	}
-
-	/**
-	 * Adds a new query or query list to the queue of queries that can
-	 * and should be executed.  A HeaderList object is returned which is
-	 * notified when a new Header is added to it.
-	 *
-	 * @param query the query or queries to execute, can be a String or
-	 *              List
-	 * @param cacheSize the size of the cache to use for this query
-	 * @param maxRows the maximum number of results for this query
-	 * @param rsType the type of the ResultSets to produce
-	 * @param rsConcur the concurrency of the ResultSets to produce
-	 * @return a HeaderList object which will get filled with Headers
-	 * @throws IllegalStateException if this thread is not alive
-	 * @see MonetConnection.HeaderList
-	 */
-	HeaderList addQuery(Object query, int cacheSize, int maxRows, int rsType, int rsConcur)
-		throws IllegalStateException, SQLException
-	{
-		if (state == DEAD) throw
-			new IllegalStateException("CacheThread shutting down or not running");
-
-		HeaderList hdrl;
-		synchronized(queryQueue) {
-			hdrl = new HeaderList(query, cacheSize, maxRows, rsType, rsConcur);
-			queryQueue.add(hdrl);
-			queryQueue.notify();
-		}
-
-		return(hdrl);
-	}
 
 	/**
 	 * Adds a new query result block request to the queue of queries that
@@ -1066,25 +965,20 @@ public class MonetConnection extends Thread implements Connection {
 	 * @see RawResults
 	 */
 	RawResults addBlock(Header hdr, int block) throws IllegalStateException {
-		if (state == DEAD) throw
-			new IllegalStateException("CacheThread shutting down or not running");
-
 		RawResults rawr;
-		synchronized(queryQueue) {
-			int cacheSize = hdr.getCacheSize();
-			// get number of results to fetch
-			int size = Math.min(cacheSize, hdr.getTupleCount() - ((block * cacheSize) + hdr.getBlockOffset()));
+		int cacheSize = hdr.getCacheSize();
+		// get number of results to fetch
+		int size = Math.min(cacheSize, hdr.getTupleCount() - ((block * cacheSize) + hdr.getBlockOffset()));
 
-			if (size == 0) throw
-				new IllegalStateException("Should not fetch empty block!");
+		if (size == 0) throw
+			new IllegalStateException("Should not fetch empty block!");
 
-			rawr = new RawResults(size,
-				"export " + hdr.getID() + " " + ((block * cacheSize) + hdr.getBlockOffset()) + " " + size,
-				hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
+		rawr = new RawResults(size,
+				"export " + hdr.getID() + " " +
+				((block * cacheSize) + hdr.getBlockOffset()) + " " +
+				size, hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
 
-			queryQueue.add(rawr);
-			queryQueue.notify();
-		}
+		fetchBlock(rawr);
 
 		return(rawr);
 	}
@@ -1099,13 +993,7 @@ public class MonetConnection extends Thread implements Connection {
 	 * @throws IllegalStateException if this thread is not alive
 	 */
 	void closeResult(int id) throws IllegalStateException {
-		if (state == DEAD) throw
-			new IllegalStateException("CacheThread shutting down or not running");
-
-		synchronized(queryQueue) {
-			queryQueue.add(0, new RawResults(0, "close " + id, true));
-			queryQueue.notify();
-		}
+		fetchBlock(new RawResults(0, "close " + id, true));
 	}
 
 	/**
@@ -1119,7 +1007,7 @@ public class MonetConnection extends Thread implements Connection {
 	 *
 	 * @param hdrl a HeaderList which contains the query to execute
 	 */
-	private void processQuery(HeaderList hdrl) {
+	void processQuery(HeaderList hdrl) {
 		boolean sendThreadInUse = false;
 		
 		try {
@@ -1155,8 +1043,6 @@ public class MonetConnection extends Thread implements Connection {
 				return;
 			}
 
-			// send the query, if we have a list, always use a
-			// SendThread.
 			// If the query is larger than the TCP buffer size, use a
 			// special send thread to avoid deadlock with the server due
 			// to blocking behaviour when the buffer is full.  Because
@@ -1165,7 +1051,7 @@ public class MonetConnection extends Thread implements Connection {
 			// as we are blocking an not consuming from it.  The result
 			// is a state where both client and server want to write,
 			// but block.
-			if (hdrl.isList() || hdrl.query().length() > monet.writecapacity) {
+			if (hdrl.query().length() > MonetSocket.BLOCK) {
 				// get a reference to the send thread
 				if (sendThread == null) sendThread = new SendThread(monet);
 				// tell it to do some work!
@@ -1173,7 +1059,7 @@ public class MonetConnection extends Thread implements Connection {
 				sendThreadInUse = true;
 			} else {
 				// this is a simple call, which is a lot cheaper and will
-				// always succeed for small queries
+				// always succeed for small queries.
 				monet.writeln(queryTempl, hdrl.query());
 			}
 
@@ -1357,12 +1243,6 @@ public class MonetConnection extends Thread implements Connection {
 		 */
 		synchronized void addRow(String line) {
 			data[++pos] = line;
-			if (pos >= watch) {
-				// reset the watch
-				watch = data.length;
-				// notify listener for our lock object; we got it!
-				this.notify();
-			}
 		}
 
 		/**
@@ -1372,7 +1252,7 @@ public class MonetConnection extends Thread implements Connection {
 		 */
 		void finish() {
 			if ((pos + 1) != data.length) {
-				addError("Inconsistent state detected!  Current block capacity: " + data.length + ", block usage: " + (pos + 1) + ".  Did MonetDB sent what it promised to send?");
+				addError("Inconsistent state detected!  Current block capacity: " + data.length + ", block usage: " + (pos + 1) + ".  Did MonetDB send what it promised to?");
 			}
 		}
 
@@ -1393,15 +1273,6 @@ public class MonetConnection extends Thread implements Connection {
 			if (line >= data.length || line < 0)
 				throw new IllegalArgumentException("Row index out of bounds: " + line);
 
-			while (setWatch(line)) {
-				try {
-					this.wait();
-				} catch (InterruptedException e) {
-					// re-check if we got the desired row
-				}
-				// re-check for errors
-				if (error != "") throw new SQLException(error);
-			}
 			if (forwardOnly) {
 				String ret = data[line];
 				data[line] = null;
@@ -1430,38 +1301,6 @@ public class MonetConnection extends Thread implements Connection {
 			// notify listener for our lock object; maybe this is bad news
 			// that must be heard...
 			this.notify();
-		}
-
-
-		/**
-		 * Sets a watch for a certain row. When the row gets added, a notify
-		 * will be performed on this object itself. The behaviour of this method
-		 * is that it returns whether the row is already in the cache or not, so
-		 * it can for example be used as:
-		 * <pre>
-		 *   while (rawr.setWatch(row)) {
-		 *     try {
-		 *       rawr.wait();
-		 *     } catch (InterruptedException e) {
-		 *       // recheck if we got the desired row
-		 *     }
-		 *   }
-		 *   rawr.getLine(row);
-		 * </pre>
-		 *
-		 * @param line the row to set the watch for
-		 * @return true when the watch was set, false when the row is already
-		 *         fetched and no need for wait/notify is there
-		 */
-		private synchronized boolean setWatch(int line) {
-			boolean ret;
-			if (line <= pos) {
-				ret = false;
-			} else {
-				watch = line;
-				ret = true;
-			}
-			return(ret);
 		}
 	}
 
@@ -1504,7 +1343,7 @@ public class MonetConnection extends Thread implements Connection {
 		private boolean closed;
 
 		/** The Connection that we should use when requesting a new block */
-		private MonetConnection cachethread;
+		private MonetConnection connection;
 		/** A local copy of fetchSize, so its protected from changes made by
 		 *  the Statement parent */
 		private int cacheSize;
@@ -1547,7 +1386,7 @@ public class MonetConnection extends Thread implements Connection {
 		{
 			isSet = new boolean[7];
 			resultBlocks = new HashMap();
-			cachethread = parent;
+			connection = parent;
 			if (cs == 0) {
 				cacheSize = MonetConnection.DEF_FETCHSIZE;
 				cacheSizeSetExplicitly = false;
@@ -2031,7 +1870,7 @@ public class MonetConnection extends Thread implements Connection {
 					}
 					
 					// ok, need to fetch cache block first
-					rawr = cachethread.addBlock(this, block);
+					rawr = connection.addBlock(this, block);
 					resultBlocks.put("" + block, rawr);
 				}
 			}
@@ -2058,7 +1897,7 @@ public class MonetConnection extends Thread implements Connection {
 					// executed, we put it on the CacheThread's queue. If we
 					// would want to do it ourselves here, a deadlock situation
 					// may occur if the HeaderList calls us.
-					cachethread.closeResult(id);
+					connection.closeResult(id);
 				}
 			} catch (IllegalStateException e) {
 				// too late, cache thread is gone or shutting down
@@ -2090,10 +1929,8 @@ public class MonetConnection extends Thread implements Connection {
 	 * to wait on when figuring out whether a new Header is available.
 	 */
 	class HeaderList {
-		/** The type of the query, either TYPE_STRING or TYPE_LIST */
-		final int type;
 		/** The query or query list that resulted in this HeaderList */
-		final Object query;
+		final String query;
 		/** The cache size (number of rows in a RawResults object) */
 		final int cachesize;
 		/** The maximum number of results for this query */
@@ -2115,9 +1952,6 @@ public class MonetConnection extends Thread implements Connection {
 		/** The errors produced by the query */
 		private String error;
 
-		private final static int TYPE_STRING	= 1;
-		private final static int TYPE_LIST		= 2;
-
 		/**
 		 * Main constructor.  The query argument can either be a String
 		 * or List.  An SQLException is thrown if another object
@@ -2130,22 +1964,13 @@ public class MonetConnection extends Thread implements Connection {
 		 * @param rsconcur the concurrency of result sets to produce
 		 */
 		HeaderList(
-				Object query,
+				String query,
 				int cachesize,
 				int maxrows,
 				int rstype,
 				int rsconcur)
 			throws SQLException
 		{
-			// check object type
-			if (query instanceof String) {
-				this.type = TYPE_STRING;
-			} else if (query instanceof List) {
-				this.type = TYPE_LIST;
-			} else {
-				throw new SQLException("Unsupported object type");
-			}
-			
 			this.query = query;
 			this.cachesize = cachesize;
 			this.maxrows = maxrows;
@@ -2190,33 +2015,12 @@ public class MonetConnection extends Thread implements Connection {
 		}
 
 		/**
-		 * Returns true if the query object of this HeaderList is a
-		 * List, false if it is a String.
-		 *
-		 * @return true or false
-		 */
-		boolean isList() {
-			return(type == TYPE_LIST);
-		}
-
-		/**
-		 * Returns the query as String.  This method might not result in
-		 * the disired output when executed on a List query.
-		 *
-		 * @return the query as String
+		 * Returns the query.
+		 * 
+		 * @return the query
 		 */
 		String query() {
-			return(query.toString());
-		}
-
-		/**
-		 * Returns the query as List.  This method might throw a
-		 * ClassCastException if executed on a String query type.
-		 *
-		 * @return a List of queries
-		 */
-		List list() {
-			return((List)query);
+			return(query);
 		}
 
 		/**
@@ -2363,11 +2167,7 @@ public class MonetConnection extends Thread implements Connection {
 					// we issue notify here, so incase we get blocked on IO
 					// the thread that waits on us in runQuery can continue
 					this.notify();
-					if (hdrl.isList()) {
-						conn.writeln(queryTempl, hdrl.list());
-					} else {
-						conn.writeln(queryTempl, hdrl.query());
-					}
+					conn.writeln(queryTempl, hdrl.query());
 				} catch (IOException e) {
 					error = e.getMessage();
 				}

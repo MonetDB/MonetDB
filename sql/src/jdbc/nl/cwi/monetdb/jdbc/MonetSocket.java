@@ -72,11 +72,8 @@ class MonetSocket {
 	final static int PROMPT2 = 5;
 	/** a line starting with #- indicates the start of a header block */
 	final static int SOHEADER = 6;
-
-	/** The maximum size of the chunks when we fetch data from the stream */
-	final int readcapacity;
-	/** The maximum size of the chunks when we push data to the stream */
-	final int writecapacity;
+	/** The blocksize (hardcoded in compliance with stream.mx) */
+	final static int BLOCK = 8 * 1024 - 2;
 
 
 	// MonetDB prompts
@@ -94,17 +91,11 @@ class MonetSocket {
 			new InputStreamReader(con.getInputStream(), "UTF-8"));
 		toMonet = new BufferedWriter(
 			new OutputStreamWriter(con.getOutputStream(), "UTF-8"));
-		
-		// set the blocksize, use socket default
-		readcapacity = con.getReceiveBufferSize();
-		writecapacity = con.getSendBufferSize();
 	}
 
-	protected MonetSocket(Socket con) throws IOException {
-		this.con = con;
-		// set the blocksize, use socket default
-		readcapacity = con.getReceiveBufferSize();
-		writecapacity = con.getSendBufferSize();
+	protected MonetSocket() {
+		// empty constructor to make Java happy when classes extend this
+		// one and don't want to call the other constructor
 	}
 
 	/**
@@ -171,27 +162,6 @@ class MonetSocket {
 	public void writeln(String[] templ, String data) throws IOException {
 		if (templ[0] != null) write(templ[0]);
 		write(data);
-		if (templ[1] != null) write(templ[1]);
-		write("\n");
-		flush();
-	}
-
-	/**
-	 * writeln puts a concatenation of the given strings plus a new line
-	 * character on the stream and flushes the stream afterwards so the
-	 * data will actually be sent.  The given data Strings are wrapped
-	 * within and separated by the query template.
-	 *
-	 * @param templ the query template to apply
-	 * @param data the data to write to the stream
-	 * @throws IOException if writing to the stream failed
-	 */
-	public void writeln(String[] templ, List data) throws IOException {
-		if (templ[0] != null) write(templ[0]);
-		for (int i = 0; i < data.size(); i++) {
-			write(data.get(i).toString());
-			if (i < data.size() - 1 && templ[2] != null) write(templ[2]);
-		}
 		if (templ[1] != null) write(templ[1]);
 		write("\n");
 		flush();
