@@ -513,20 +513,21 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         PFstate.invocation = invoke_monetdb;
         PFstate.summer_branch = true;
 
-        if (strncmp(mode,"timing",6) == 0 ) {
-                if (!timing) timing = 1;
-                mode += 7;
-        } else {
-                timing = 0;
-        }
-        if (strncmp(mode,"debug",5) == 0 ) {
-                mode += 6;
-        }
         PFstate.genType = mode;
         if (setjmp(PFexitPoint) != 0 ) {
                 return PFerrbuf;
         }
 	timing = PFtimer_start ();
+        if (strncmp(PFstate.genType,"timing",6) == 0 ) {
+                if (!timing) timing = 1;
+                PFstate.genType += 7;
+        } else {
+                timing = 0;
+        }
+        if (strncmp(PFstate.genType,"debug",5) == 0 ) {
+                PFstate.genType += 6;
+        }
+
 	/* repeat PFcompile, which we can't reuse as we don't want to deal with files here */
         PFparse (xquery, &proot);
         module_base = PFparse_modules (proot);
