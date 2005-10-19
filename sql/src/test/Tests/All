@@ -57,3 +57,6 @@ like_tests
 
 news
 timezone
+
+identifiers
+seq-default
