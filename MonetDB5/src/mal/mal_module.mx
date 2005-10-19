@@ -370,7 +370,6 @@ to the current user.
 @c
 Module findModule(Module scope, str name){
 	Module def=scope;
-	if( scope->name==NULL) return NULL;
 	if( name==NULL) return scope;
 	scope= scopeJump[(int)(*name)][(int)(*(name+1))];
 	while(scope != NULL){
@@ -379,6 +378,7 @@ Module findModule(Module scope, str name){
 			scope= scope->sibling;
 	}
 	/* default is always matched with current */
+	if( def->name==NULL) return NULL;
 	return def;
 }
 @-

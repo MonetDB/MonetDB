@@ -64,6 +64,7 @@ mal_export str runMAL(Client c, MalBlkPtr mb, int startpc,
         MalBlkPtr mbcaller, MalStkPtr env, InstrPtr pcicaller);
 mal_export str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc,
 	int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller);
+mal_export str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[], char debug);
 mal_export str runMALsequence( malTask *task);
 mal_export void runMALtask(malTask *task);
 mal_export void waitForChildren(MalStkPtr stk);
@@ -355,6 +356,89 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
         else garbageCollector(mb,stk);
 	}
 	return ret;
+}
+@-
+Front ends may benefit from a more direct call to any of the MAL
+procedural abstractions. The argument list points to the arguments
+for the block to be executed.
+@c
+str 
+callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
+    malTask task;
+	MalStkPtr stk;
+    str ret;
+	int i;
+	ValPtr lhs,rhs;
+	InstrPtr p= getInstrPtr(mb,0);
+
+#ifdef DEBUG_CALLMAL
+	stream_printf(GDKout,"callMAL\n");
+	printInstruction(GDKout,mb,p,LIST_MAL_ALL);
+#endif
+	switch( p->token){
+	case FUNCTIONsymbol:
+	case FCNcall:
+		task.cntxt= cntxt;
+		task.mb= mb;
+		task.startpc=1;
+		task.stoppc= 0;
+		task.env=0;
+		task.pcicaller=0;
+		task.pci= 0;
+@-
+Prepare the stack frame for this operation. Copy all the arguments
+in place. We assume that the caller has supplied pointers for
+all arguments and return values.
+@c
+		if( *env==NULL){
+			newStack(stk,mb->vsize);
+			memset((char *) stk, 0, stackSize(mb->vtop));
+			stk->stktop= mb->vtop; 
+			stk->stksize= mb->vsize;
+			stk->blk= mb;
+			stk->up = 0;
+			/* initialize the stack */
+			for(i= p->argc; i< mb->vtop; i++)
+			if( isConstant(mb,i) && isVarUsed(mb,i) ){
+				lhs = &stk->stk[i];
+				rhs = &getVarConstant(mb,i);
+				VALcopy2(lhs,rhs);
+			} else {
+				lhs = &stk->stk[i];
+				lhs->vtype = getVarGDKType(mb,i);
+			}
+			*env= stk;
+		} else stk = *env;
+		for(i=p->retc; i<p->argc; i++){
+			lhs= &stk->stk[p->argv[i]];
+			VALcopy2(lhs, argv[i]);
+			if( lhs->vtype == TYPE_bat)
+				BBPincref(lhs->val.br.id,TRUE);
+		}
+		stk->cmd = debug;
+		task.stk=stk;
+
+#ifdef DEBUG_CALLMAL
+	stream_printf(GDKout,"start evaluation\n");
+#endif
+		ret= runMALsequence(&task);
+
+		@:waitForChildren@
+#ifdef STACKTRACE
+		stream_printf(GDKout,"Stack after loop\n");
+		printStack(GDKout,mb,stk); fflush(GDKout);
+#endif
+		/* if( garbageControl(p))
+			garbageCollectAll(mb,stk);*/
+		return ret;
+	case PATcall:
+	case CMDcall:
+	case FACcall:
+	default:
+		return throwMessage("mal.interpreter",
+				"Non-supported call the MAL interpreter");
+	}
+	return MAL_SUCCEED;
 }
 @-
 The core of the interpreter is presented next. It takes the context information
@@ -832,7 +916,7 @@ Factory calls should deal with the reference counting.
         ret= raiseException(mb,stkpc,MALexception,
             "reference to MAL function missing\n");
     else
-        ret= callFactory(cntxt,pci->blk,mb,stk,pci);
+        ret= runFactory(cntxt,pci->blk,mb,stk,pci);
     @:resultParameter@
 @-
 The type dispatching table in getArgValue can be removed if we 

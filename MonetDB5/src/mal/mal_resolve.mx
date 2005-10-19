@@ -838,7 +838,7 @@ to type check the function upon each call.
 @c
 int typeKind(MalBlkPtr mb, InstrPtr p, int i){
     malType t= getArgType(mb,p,i);
-    if( isAnyExpression(t) || t == TYPE_any) {
+    if(t == TYPE_any || isAnyExpression(t) ) {
         return TYPE_DYNAMIC;
     }
     return TYPE_RESOLVED;

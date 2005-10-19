@@ -189,7 +189,6 @@ Try to locate the module
 	for(idx =0; idx < maxmodules && moduleLoaded[idx]; idx++)
 	if( strcmp(m->name, moduleLoaded[idx])==0) {
 		adr = (MALfcn) dlsym(moduleHandle[idx], fcnname);
-		errmsg= dlerror();
 		if( adr != NULL) {
 			m->dll= moduleHandle[idx];
 			return adr;
@@ -200,11 +199,9 @@ Try to locate the module
 Try the program at large.
 @c
 	dl = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
-	errmsg= dlerror();
-	if( dl != NULL && errmsg == NULL){
+	if( dl != NULL ){
 		adr = (MALfcn) dlsym(dl, fcnname);
-		errmsg= dlerror();
-		if( errmsg== NULL && adr != NULL) {
+		if( adr != NULL) {
 			m->dll= moduleHandle[idx];
 			return adr;
 		}

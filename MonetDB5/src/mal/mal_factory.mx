@@ -228,7 +228,7 @@ exception to a Factory?
 #define POLICYimmediate 1	/* let user wait for reply */
 #define POLICYprivate   2	/* each client its own plants */
 
-mal_export str callFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci);
+mal_export str runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci);
 mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
@@ -268,7 +268,7 @@ static int plantId = 1;
 mal_export Plant newPlant(MalBlkPtr mb);
 
 str
-callFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci)
+runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci)
 {
 	Plant pl=0;
 	int firstcall= TRUE, i, k;
