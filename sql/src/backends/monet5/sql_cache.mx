@@ -66,6 +66,7 @@ sql_export str SQLCacheRemove(int *ret, str *nme);
 #include "mal_interpreter.h"
 #include "inspect.h"
 #include "mal_namespace.h"
+#include "sql.h"
 
 str
 SQLCacheExists(bit *res, str *nme)
@@ -138,4 +139,5 @@ SQLCacheRemove(int *ret, str *nme)
 	deleteSymbol(scope, s);
 	return MAL_SUCCEED;
 }
+
 @}

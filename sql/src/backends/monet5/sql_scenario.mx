@@ -562,7 +562,6 @@ SQLreader(Client c)
 {
 	int go = TRUE;
 	int more = TRUE;
-	/* lng T0; */
 	backend *be = ((backend *) c->state[PARSER]);
 	bstream *in = c->fdin;
 	int language = be->language;	/* 'S' for SQL, 'D' from debugger */
@@ -578,7 +577,6 @@ SQLreader(Client c)
 @- 
 Continue processing any left-over input from the previous round.
 @c
-	/* T0 = GDKusec();*/
 	while (in->pos < in->len &&
 		(isspace((int) (in->buf[in->pos])) || in->buf[in->pos] == ';'))
 		in->pos++;
@@ -844,7 +842,7 @@ SQLparser(Client c)
 		return throwMessage("SQLparser", "Unrecognized X command\n");
 	}
 
-	if (explainPerformance())
+	if( explainPerformance())
 		T0 = GDKusec();
 
 	if ((err = sqlparse(m)) && m->debug){
@@ -867,12 +865,11 @@ SQLparser(Client c)
 @-
 We have dealt with the first parsing step and advanced the input reader
 to the next statement (if any).
-Now is the time to also perform the semantic analysis, optimize and produce code.
+Now is the time to also perform the semantic analysis, optimize and 
+produce code.
 @c
-	if( m->mode == m_debug)
-		SQLsetDebugger(c, m, m->mode == m_debug);
 	be->q = NULL;
-	if (err == 0 && m->mode == m_execute) {
+	if (m->mode == m_execute) {
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.ival);
 		if (!be->q) {
 			err = -1;
@@ -884,8 +881,15 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 			sqlcleanup(m, err);
 			goto finalize;
 		}
-	} else if (err == 0 && !be->q && (!(be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key)))) {
-		stmt *s = sql_symbol2stmt(m);
+	} else 
+	if( (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key)) ){
+		/* not sure if this is allowed, because subsequent cleanup may
+			depend on it */
+		m->mode= m_execute;
+	} else {
+		stmt *s;
+
+		s = sql_symbol2stmt(m);
 
 		if (!s && (err = mvc_status(m))) {
 			msg = throwMessage("SQLparser", m->errstr);
@@ -899,6 +903,8 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 		if (m->mode != m_prepare &&
 		   (msg = sql_get_var(m,"optimizer")) == NULL) {
 */
+		if( m->mode == m_debug)
+			SQLsetDebugger(c, m, m->mode == m_debug);
 		if (m->mode != m_prepare && !m->cache){
 			backend_callinline(be, c, s );
 		} else {
@@ -925,7 +931,9 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 #endif
 	if (be->q && m->mode == m_prepare) {
 		err = output_prepare(c->fdout, m, be->q);
-	} else if (be->q) {  /* call procedure (only in cache mode) */
+	} else if(m->mode == m_execute && be->q){
+		/* everything ready for a fast call */
+	} else if (be->q) {  /* call procedure generation (only in cache mode) */
 		backend_call(be, c, be->q);
 	}
 
@@ -933,7 +941,7 @@ Now is the time to also perform the semantic analysis, optimize and produce code
 In the final phase we add any debugging control
 @c
 	/* turn off debugger */
-	if( debugPlan())
+	if( debugPlan() && m->mode != m_execute)
 		SQLsetDebugger(c, m, FALSE);
 
 	if (explainPerformance()) {
@@ -941,7 +949,6 @@ In the final phase we add any debugging control
 		be->Tparse = GDKusec() - T0;
 	}
 
-	sqlcleanup(m, err);
 @-
 During the execution of the query exceptions can be raised.
 The default action is to print them out at the end of the
@@ -958,7 +965,7 @@ extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 			chkProgram(c->nspace, c->curprg->def); */
 		if (!c->curprg->def->errors && m->mode != m_prepare &&
 /*
-		    (msg = sql_get_var(m,"optimizer")) == NULL) {
+		    (msg = sql_get_var(m,"optimizer")) == NULL) 
 */
 		    !m->cache) {
 			OPTmultiplex(c->curprg->def,0,0);
@@ -983,7 +990,7 @@ extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 	}
 finalize:
 	m->scanner.mode = oldmode;
-	if (explainPlan()) {
+	if (explainPlan() && m->mode != m_execute) {
 		printFunction(c->fdout, c->curprg->def, c->listing);
 	}
 #ifdef _SQL_PARSER_DEBUG
@@ -1001,7 +1008,93 @@ be stored in an SQL table
 
 @-
 Execution of the SQL program is delegated to the MALengine.
+Different cases should be distinguished. The default is to
+hand over the MAL block derived by the parser for execution.
+However, when we received an Execute call, we make a shortcut
+and prepare the stack for immediate execution
 @c
+static str sql_cacheRef=0;
+static Module sql_moduleRef=0;
+str
+SQLexecutePrepared(Client cntxt, backend *be, cq *q )
+{
+	mvc *c = be->mvc;
+	node *p;
+	int argc, parc; 
+	ValPtr *argv, argvbuffer[MAXARG];
+	ValRecord *argrec, argrecbuffer[MAXARG];
+	MalBlkPtr mb;
+	MalStkPtr glb;
+	InstrPtr pci;
+	int i;
+	str ret;
+	Symbol sym;
+
+#ifdef DEBUG_CALLMAL
+	stream_printf(GDKout,"SQLexecute\n");
+	printFunction(GDKout,((Symbol)q->code)->def,LIST_MAL_ALL);
+#endif
+	if( sql_cacheRef== NULL)
+		sql_cacheRef= putName("sql_cache",9);
+	if( sql_moduleRef== NULL)
+		sql_moduleRef= findModule(0,sql_cacheRef);
+	sym= findSymbolInModule(sql_moduleRef, backend_name(q));
+	assert(sym != NULL);
+	mb= sym->def;
+	pci= getInstrPtr(mb,0);
+	if( pci->argc >= MAXARG)
+		argv= (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
+	else argv= argvbuffer;
+
+	if( pci->retc >= MAXARG)
+		argrec= (ValRecord *)GDKmalloc(sizeof(ValRecord) * pci->retc);
+	else argrec= argrecbuffer;
+
+	/* prepare the target variables */
+	for(i=0;i<pci->retc; i++){
+		argv[i]= argrec+i;
+		argv[i]->vtype= getVarGDKType(mb,i);
+	}
+
+	argc = c->argc;
+	parc = q->params?list_length(q->params):0;
+	(void)p;
+
+	if (argc != parc) {
+		sql_error(c, 0002, "wrong number of arguments for prepared statement\n");
+		if( pci->argc >= MAXARG)
+			GDKfree(argv);
+		if( pci->retc >= MAXARG)
+			GDKfree(argrec);
+		return MAL_SUCCEED;
+	} else {
+		for (i = 0, p = q->params->h; i<c->argc && p; i++, p = p->next){
+			atom *arg = c->args[i];
+			sql_subtype *pt = p->data;
+
+			if (!atom_cast(arg, pt)) {
+				char buf[BUFSIZ];
+
+				snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
+				sql_error(c, 003, buf);
+				if( pci->argc >= MAXARG)
+					GDKfree(argv);
+				if( pci->retc >= MAXARG)
+						GDKfree(argrec);
+				return MAL_SUCCEED;
+			}
+			argv[pci->retc+i]= &arg->data;
+		}
+	}
+	glb= (MalStkPtr) (size_t)(q->stk);
+	ret= callMAL(cntxt,mb, &glb, argv, (c->mode == m_debug?'n':0));
+	q->stk = (size_t) glb;
+	if( pci->argc >= MAXARG)
+		GDKfree(argv);
+	if( pci->retc >= MAXARG)
+			GDKfree(argrec);
+	return ret;
+}
 str
 SQLengine(Client c)
 {
@@ -1010,20 +1103,31 @@ SQLengine(Client c)
 	backend *be = ((backend *) c->state[PARSER]);
 	char oldlang= be->language;
 	mvc *m = be->mvc;
-	lng T0;
+	lng T0=0;
 
-	if (be->language == 'X') 	/* return directly from X-commands */
+	if (be->language == 'X'){ 	/* return directly from X-commands */
+		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
+	}
 
-	if (c->curprg->def->errors)
+	if (c->curprg->def->errors){
+		sqlcleanup(be->mvc, 0);
 		return throwMessage("SQLengine", "Program contains errors\n");
+	}
 #ifdef SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#Ready to execute SQL statement\n");
 #endif
 
-	if( c->curprg->def->stop == 1 )
+	if( c->curprg->def->stop == 1 ){
+		sqlcleanup(be->mvc, 0);
 		return MAL_SUCCEED;
-	T0 = GDKusec();
+	}
+	if( explainPerformance())
+		T0 = GDKusec();
+	if (m->mode == m_execute) {
+		msg= SQLexecutePrepared(c,be, be->q );
+		goto cleanup_engine;
+	}
 	if( m->mode == m_prepare){
 		goto cleanup_engine;
 	} else if(explainPlan()){
@@ -1049,19 +1153,19 @@ The code below is copied from MALengine, which handles execution
 in the context of a user global environment. We have a private
 environment.
 @c
-
 	if( MALcommentsOnly(c->curprg->def))
 		msg= MAL_SUCCEED;
 	else msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+
+cleanup_engine:
     if (msg) {
         GDKerror(msg);
         if (!c->listing)
             printFunction(c->fdout, c->curprg->def, c->listing);
         showErrors();
-	if (msg) 
 		m->status = -10;
     }
-cleanup_engine:
+	sqlcleanup(be->mvc, 0);
 	resetMalBlk( c->curprg->def, 1);
 	/* resetInstructions(c->curprg->def, 1);*/
 	freeVariables(c->curprg->def, c->glb, be->vtop);
