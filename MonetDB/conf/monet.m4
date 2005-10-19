@@ -236,6 +236,8 @@ yes-*-*)
 	dnl  defines that enable the features beyond C89 in the various
 	dnl  platforms.  Here's what we found working so far...
 	case "$gcc_ver-$host_os" in
+	*-freebsd*)
+		;;
 	*-cygwin*)
 		dnl  MonetDB/src/testing/Mtimeout.c fails to compile with
 		dnl  "--std=c99" as the compiler then refuses to recognize
