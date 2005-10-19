@@ -431,9 +431,11 @@ all arguments and return values.
 		/* if( garbageControl(p))
 			garbageCollectAll(mb,stk);*/
 		return ret;
+	case FACTORYsymbol:
+	case FACcall:
+		return callFactory(cntxt, mb, argv);
 	case PATcall:
 	case CMDcall:
-	case FACcall:
 	default:
 		return throwMessage("mal.interpreter",
 				"Non-supported call the MAL interpreter");

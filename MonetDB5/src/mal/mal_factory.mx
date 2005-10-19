@@ -233,6 +233,7 @@ mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str shutdownFactory(MalBlkPtr mb);
+mal_export str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[]);
 #endif /*  _MAL_FACTORY_H */
 @-
 The initial implementation is geared at a central
@@ -267,6 +268,14 @@ static int plantId = 1;
 
 mal_export Plant newPlant(MalBlkPtr mb);
 
+int
+findPlant(MalBlkPtr mb){
+	int i;
+	for(i=0; i<lastPlant; i++)
+	if( plants[i].factory == mb)
+		return i;
+	return -1;
+}
 str
 runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci)
 {
@@ -347,7 +356,58 @@ Let's call it as a synchronous action, without concern on parallelism.
 			stk->cmd = pl->stk->cmd;
 	return msg;
 }
+@-
+The shortcut operatie.
+@c
+#define VALcopy2(lhs,rhs) if( rhs->vtype < TYPE_str) *lhs = *rhs; else VALcopy(lhs,rhs);
+str
+callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[]){
+	Plant pl;
+	InstrPtr psig = getInstrPtr(mb, 0);
+	int i;
+	ValPtr lhs,rhs;
+	MalStkPtr stk;
 
+	i= findPlant(mb);
+	if( i< 0) {
+		/* first call? prepare the factory */
+		pl = newPlant(mb);
+		if (pl == NULL)
+			return throwMessage("factoryMgr", "No factory space left\n");
+		/* remember context, which does not exist. */
+		pl->client = cntxt;
+		pl->caller = 0;
+		pl->env = 0;
+		pl->pci = 0;
+		pl->inuse = 1;
+		/* initialize the stack */
+		newStack(stk,mb->vsize);
+		memset((char *) stk, 0, stackSize(mb->vtop));
+		stk->stktop= mb->vtop; 
+		stk->stksize= mb->vsize;
+		stk->blk= mb;
+		stk->up = 0;
+		/* initialize the stack */
+		for(i= psig->argc; i< mb->vtop; i++)
+		if( isConstant(mb,i) && isVarUsed(mb,i) ){
+			lhs = &stk->stk[i];
+			rhs = &getVarConstant(mb,i);
+			VALcopy2(lhs,rhs);
+		} else {
+			lhs = &stk->stk[i];
+			lhs->vtype = getVarGDKType(mb,i);
+		}
+		pl->stk= stk;
+	} else 
+		pl= plants+i;
+	/* copy the calling arguments onto the stack of the factory */
+	i = psig->retc;
+	for (i = psig->retc; i < psig->argc; i++) {
+		lhs = &pl->stk->stk[getArg(psig, i)];
+		VALcopy(lhs, argv[i-psig->retc]);
+	}
+	return  reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
+}
 @-
 A new plant is constructed. The properties of the factory
 should be known upon compile time. They are retrieved from
