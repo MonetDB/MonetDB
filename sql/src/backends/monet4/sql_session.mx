@@ -358,7 +358,7 @@ sqlexecute(backend *be, stream *out)
 	}
 
 	if (c->mode == m_profile) {
-		query = sql_escape(QUERY(c->scanner) + c->scanner.as);
+		query = sql_escape_str(QUERY(c->scanner) + c->scanner.as);
 		Tmil = GDKusec();
 	}
 

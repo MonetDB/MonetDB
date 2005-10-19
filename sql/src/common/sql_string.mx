@@ -34,7 +34,8 @@ extern char *strconcat(const char *s1, const char *s2);
 extern char *strip_extra_zeros(char *v);
 extern char *sql2str(char *s);
 extern char *sql_strdup(char *s);
-extern char *sql_escape(char *s);
+extern char *sql_escape_str(char *s);
+extern char *sql_escape_ident(char *s);
 
 #endif /*_SQL_STRING_H_*/
 
@@ -147,7 +148,7 @@ sql_strdup(char *s)
 }
 
 char *
-sql_escape(char *s)
+sql_escape_str(char *s)
 {
 	int l = strlen(s);
 	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
@@ -155,6 +156,23 @@ sql_escape(char *s)
 	res = r;
 	while (*s) {
 		if (*s == '\'' || *s == '\\') {
+			*r++ = '\\';
+		}
+		*r++ = *s++;
+	}
+	*r = '\0';
+	return res;
+}
+
+char *
+sql_escape_ident(char *s)
+{
+	int l = strlen(s);
+	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
+
+	res = r;
+	while (*s) {
+		if (*s == '"' || *s == '\\') {
 			*r++ = '\\';
 		}
 		*r++ = *s++;
