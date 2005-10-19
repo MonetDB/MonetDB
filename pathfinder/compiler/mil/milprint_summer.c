@@ -1634,7 +1634,6 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter,
             "  skip := 1 + int(item%03u); # handle constants efficiently\n"
             "}\n",
             bool_res, bool_res, 
-            bool_res, bool_res, bool_res,
             bool_res, bool_res);
     /* if at compile time one argument is already known to
        be empty don't do the other */
