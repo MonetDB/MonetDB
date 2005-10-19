@@ -189,7 +189,7 @@ stream_export stream *buffer_rastream(buffer *b, const char *name);
 stream_export stream *buffer_wastream(buffer *b, const char *name);
 stream_export buffer *stream_get_buffer(stream *s);
 
-/* note, the size if fixed to 8K, you cannot simply change it to any
+/* note, the size is fixed to 8K, you cannot simply change it to any
    value */
 #define BLOCK (8 * 1024 - 2)
 /*
