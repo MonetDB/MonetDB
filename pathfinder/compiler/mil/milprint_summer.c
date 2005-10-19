@@ -6413,32 +6413,30 @@ static void
 translateUDF (opt_t *f, int cur_level, int counter, 
         PFfun_t *fun, PFcnode_t *args)
 {
-    char procname[128];
-    int i;
+    int i = 0;
 
     counter++;
     milprintf(f,
             "{ # UDF - function call\n"
+            "var fun_base%03u := proc_vid.find(\"fn_%s\");\n"
             "var fun_vid%03u := bat(void,oid).seqbase(nil);\n"
             "var fun_iter%03u := bat(void,oid).seqbase(nil);\n"
             "var fun_item%03u := bat(void,oid).seqbase(nil);\n"
             "var fun_kind%03u := bat(void,int).seqbase(nil);\n",
-            counter, counter, counter, counter);
+            counter, fun->sig, counter, counter, counter, counter);
 
-    i = 0;
     while ((args->kind != c_nil) && (fun->params[i]))
     {
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
-                "# add arg in UDF function call\n"
                 "item := item.de_NO_project(ipik);\n"
-                "fun_vid%03u := fun_vid%03u.insert(iter.project(%i@0));\n"
+                "fun_vid%03u := fun_vid%03u.insert(iter.project(oid(fun_base%03u + %iLL)));\n"
                 "fun_iter%03u := fun_iter%03u.insert(iter.reverse().mark(nil).reverse());\n"
                 "fun_item%03u := fun_item%03u.insert(item.reverse().mark(nil).reverse());\n"
                 "kind := kind.de_NO_project(ipik);\n"
                 "fun_kind%03u := fun_kind%03u.insert(kind.reverse().mark(nil).reverse());\n"
                 "# end of add arg in UDF function call\n",
-                counter, counter, fun->params[i]->vid, 
+                counter, counter, counter, i, 
                 counter, counter, 
                 counter, counter,
                 counter, counter);
@@ -6483,9 +6481,7 @@ translateUDF (opt_t *f, int cur_level, int counter,
             counter, counter, counter, counter,
             counter, counter, counter, counter);
     /* call the proc */
-    { int tmp = (long) fun; snprintf(procname, 128, "fn_%x_%i", tmp, fun->arity); }
-    milprintf(f, PFudfMIL(), 
-            procname,
+    milprintf(f, PFudfMIL(), fun->sig,
             cur_level, cur_level, cur_level, cur_level, 
             counter, counter, counter, counter, 
             fun->qname.loc, fun->qname.loc,
@@ -8289,7 +8285,7 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
         case c_fun_decl:
   	    opt_output(f, OPT_SEC_PROLOGUE);
             milprintf(f,
-                    "PROC fn_%x_%i (bat[void,oid] loop000, "
+                    "PROC fn_%s (bat[void,oid] loop000, "
                                "bat[void,oid] outer000, "
                                "bat[void,oid] order_000, "
                                "bat[void,oid] inner000, "
@@ -8297,24 +8293,22 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                                "bat[void,oid] v_iter000, "
                                "bat[void,oid] v_item000, "
                                "bat[void,int] v_kind000) : bat[void,bat] { # fn:%s\n"
-                    "var iter;\nvar pos;\nvar item;\nvar ipik;\n"
+                    "var iter;\nvar pos;\nvar item;\nvar kind\n;var ipik;\n"
                     "var v_pos000 := v_iter000.mark_grp(v_iter000.tunique().mark(nil), 1@0);\n"
                     "v_pos000 := v_pos000.access(BAT_WRITE);\n"
                     "v_vid000 := v_vid000.access(BAT_WRITE);\n"
                     "v_iter000 := v_iter000.access(BAT_WRITE);\n"
                     "v_item000 := v_item000.access(BAT_WRITE);\n"
                     "v_kind000 := v_kind000.access(BAT_WRITE);\n",
-                    c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
+                    c->sem.fun->sig, c->sem.fun->qname.loc);
             /* we could have multiple different calls */
             translate2MIL (f, NORMAL, 0, counter, R(c));
             milprintf(f,
                     "return bat(void,bat,4).insert(nil,fake_project(iter)).insert(nil,fake_project(item)).insert(nil,fake_project(kind)).access(BAT_READ);\n"
-                    "} # end of PROC fn_%x_%i (fn:%s)\n",
-                    c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
+                    "} # end of PROC fn_%s\n",
+                    c->sem.fun->sig);
   	    opt_output(f, OPT_SEC_EPILOGUE);
-            milprintf(f,
-                    "UNDEF fn_%x_%i; # fn:%s\n",
-                    c->sem.fun, c->sem.fun->arity, c->sem.fun->qname.loc);
+            milprintf(f, "UNDEF fn_%s;\n", c->sem.fun->sig);
             opt_flush(f, 0);
   	    opt_output(f, OPT_SEC_QUERY);
             rc = NORMAL; /* dummy */
@@ -10123,12 +10117,11 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     else if (c->kind == c_fun_decl)
     {
         char sig[1024];
-        int first = 0;
-        strncpy(sig, c->sem.fun->qname.loc, 1024);
-        strncat(sig, "(", 1024);
+        int i = 0, j, first = 0;
 
         args = L(c);
 
+	sig[0] = 0; /* we append all parameter types here */
         while (args->kind != c_nil)
         {
             assert (L(args) && L(args)->kind == c_param);
@@ -10142,16 +10135,24 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             LR(args)->sem.var->used = 0;
 
             if (first == 0) first = vid;
-            else strncat(sig, ",", 1024);
+	    strncat(sig, ",", 1024);
             strncat(sig, PFty_str(LR(args)->type), 1024);
 
             args = R(args);
         }
-        strncat(sig, ")", 1024);
-        milprintf(f, "%sproc_sig.insert(\"fn_%x_%d\", \"%s\");\n",
-                      MODULE_BASE(f)?"":"proc_sig := ", c->sem.fun, c->sem.fun->arity, sig);
-        milprintf(f, "%sproc_vid.insert(\"fn_%x_%d\", %d@0);\n",
-                      MODULE_BASE(f)?"":"proc_vid := ", c->sem.fun, c->sem.fun->arity, MODULE_BASE(f)+first);
+	/* create the full signature that also is a valid MIL identifier */
+	j = strlen(c->sem.fun->qname.loc);
+	c->sem.fun->sig = PFmalloc(strlen(sig)+j+1);
+        strcpy(c->sem.fun->sig, c->sem.fun->qname.loc);
+	while(sig[i++] == ',') {
+		while (sig[i++] != ':');
+		c->sem.fun->sig[j++] = '_';
+		while (sig[i] && sig[i] != ',') { 
+			int ch = sig[i++];
+			c->sem.fun->sig[j++] = (ch=='?')?'0':(ch=='*')?'1':(ch=='+')?'2':ch; 
+		}
+	}
+        milprintf(f, "proc_vid.insert(\"fn_%s\", %dLL);\n", c->sem.fun->sig, MODULE_BASE(f)+first);
         counter = get_var_usage (f, R(c), PFarray (sizeof (int)), counter);
     }
     /* apply mapping correctly for user defined functions */    
@@ -10279,8 +10280,7 @@ static char* PFloadMIL() {
         "var fun_kind000;\n"
         "\n"
         "var var_usage := bat(oid,oid);\n"
-        "var proc_vid := bat(str,oid);\n"
-        "var proc_sig := bat(str,str);\n"
+        "var proc_vid := bat(str,lng);\n"
         "# MIL-PROCS GENERATED FROM XQUERY FUNCTIONS\n";
 }
 
@@ -10326,7 +10326,7 @@ static char* PFclearMIL() {
 
 static char* PFudfMIL() {
     return  
-        "var proc_res := %s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n" 
+        "var proc_res := fn_%s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n" 
         "iter := proc_res.fetch(0);\n"
         "item := proc_res.fetch(1);\n"
         "kind := proc_res.fetch(2);\n"

@@ -74,6 +74,7 @@ struct PFfun_t {
     PFvar_t      **params;     /**< list of parameter variables */
     PFcnode_t     *core;
     int            fid;        /**< id for variable environment mapping (summer_branch) */
+    char          *sig;        /**< milprint_summer: full signature converted to single identifier */	
 };
 
 /**
