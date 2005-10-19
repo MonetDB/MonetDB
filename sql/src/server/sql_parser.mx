@@ -1065,7 +1065,7 @@ column_def:
 			$$ = _symbol_create_list(SQL_COLUMN, l);
 		}
  |  column SERIAL
-		{ /* SERIAL = INTEGER GENERATED ALWAYS AS IDENTITY */
+		{ /* SERIAL = INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY */
 			mvc *m = (mvc*)parm;
 			/* note: sql_next_seq_name uses sa_alloc */
 			str sn = sql_next_seq_name(m);
@@ -1073,6 +1073,7 @@ column_def:
 			dlist *l = _dlist_create();
 			/* finally all the options */
 			dlist *o = _dlist_create();
+			dlist *p;
 			/* the name of the sequence */
 			_dlist_append_list(l, _dlist_append_string(_dlist_create(), sn));
 			/* ultra dirty: inline 'integer' type generation */
@@ -1090,6 +1091,10 @@ column_def:
 			_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
 			o = _dlist_create();
 			_dlist_append_symbol(o, _symbol_create_symbol(SQL_DEFAULT, _symbol_create(SQL_NEXT, sn)));
+			p = _dlist_create();
+			_dlist_append_string(p, NULL);
+			_dlist_append_symbol(p, _symbol_create(SQL_PRIMARY_KEY, NULL));
+			_dlist_append_symbol(o, _symbol_create_list(SQL_CONSTRAINT, p));
 			_dlist_append_list(l, o);
 			$$ = _symbol_create_list(SQL_COLUMN, l);
 		}
