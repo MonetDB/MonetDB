@@ -897,7 +897,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 
 						snprintf(buf, BUFSIZ, "select %s;", c->def);
 						sq = sqlparse_intern(sql, buf);
-						if (sq->type != st_list || list_length(sq->op1.lval) != 1)
+						if (!sq || sq->type != st_list || list_length(sq->op1.lval) != 1)
 							return NULL;
 						s = stmt_dup(sq->op1.lval->h->data);
 						s = check_types(sql, c->type, s, type_equal);

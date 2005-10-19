@@ -283,7 +283,7 @@ stmt *
 sqlparse_intern(mvc *m, char *query)
 {
 	mvc o = *m;
-	stmt *sq;
+	stmt *sq = NULL;
 	buffer *b;
 	char *n;
 	int len = strlen(query);
@@ -314,8 +314,13 @@ sqlparse_intern(mvc *m, char *query)
 	/* via views we give access to protected objects */
 	m->user_id = USER_MONETDB;
 
-	(void) sqlparse(m);	/* blindly ignore errors */
-	sq = scope_subquery(m, NULL, m->sym);
+	if (sqlparse(m) || !m->sym) {
+		/* oops an error */
+		snprintf(m->errstr, ERRSIZE, "An error occurred when executing "
+				"internal query: %s", query);
+	} else {
+		sq = scope_subquery(m, NULL, m->sym);
+	}
 
 	GDKfree(query);
 	GDKfree(b);
@@ -801,7 +806,8 @@ char *symbol2string(mvc *sql, symbol *se)
 	}
 	case SQL_NEXT:{
 		char *seq = se->data.sval;
-		len = snprintf( buf+len, BUFSIZ-len, "next value for %s", seq); 
+		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\"",
+				sql_escape_ident(seq)); 
 	}	break;
 	case SQL_COLUMN: {
 		/* can only be variables */ 
