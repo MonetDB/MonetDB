@@ -609,7 +609,8 @@ public class JdbcClient {
 				doProcess = true;
 				if (wasComplete) {
 					doProcess = false;
-					// check for commands only when the previous row was complete
+					// check for commands only when the previous row was
+					// complete
 					if (qp.getQuery().equals("\\q")) {
 						// quit
 						break;
