@@ -57,15 +57,15 @@ lib_initmodules = {
 bin_Mserver = {
 	COND = LINK_STATIC
 	SOURCES = Mserver.mx
-	LIBS = -L$(MONETDB_PREFIX)/lib -linitmodules -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
+	LIBS = -L$(MONETDB_PREFIX)/lib libinitmodules -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
 }
 
 lib_embeddedxq = {
 	SOURCES = embeddedclient.mx
-	LIBS = -L$(MONETDB_PREFIX)/lib -linitmodules -lMapi -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
+	LIBS = -L$(MONETDB_PREFIX)/lib libinitmodules -lMapi -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
 }
 
 bin_Mbeddedxq = {
 	SOURCES = prog.c
-	LIBS = -L$(MONETDB_PREFIX)/lib -lembeddedxq -linitmodules -lMapi -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
+	LIBS = -L$(MONETDB_PREFIX)/lib -lembeddedxq -lMapi -lmonet STATIC_MODS @SHARED_LIBS@ -lbat $(MONETDB_LIBS) -lmutils -lstream
 }
