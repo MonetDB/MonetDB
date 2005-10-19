@@ -1514,7 +1514,6 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 		}
 	}
 	backend_dumpstmt(be, curBlk, s);
-	be->q->stk=0;
 
 	pushEndInstruction(curBlk);
 	addQueryToCache(c);
