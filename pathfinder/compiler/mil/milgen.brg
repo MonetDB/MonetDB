@@ -2255,9 +2255,9 @@ assert(rule);
             break;
     }
 
-    for (unsigned int c = 0; c < PFPA_OP_MAXCHILD && p->child[c]; c++)
-        for (unsigned int i = 0; i < PFarray_last (p->child[c]->env); i++)
-            unpin (((env_t *) PFarray_at (p->child[c]->env, i))->mvar,
+    for (unsigned short c = 0; nts[c]; c++)
+        for (unsigned int i = 0; i < PFarray_last (kids[c]->env); i++)
+            unpin (((env_t *) PFarray_at (kids[c]->env, i))->mvar,
                    p->refctr);
 
 #ifndef NDEBUG
