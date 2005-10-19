@@ -732,16 +732,39 @@ tokenize(mvc * c, int cur)
 }
 
 int
-valid_ident(const char *s)
+valid_ident(char *s)
 {
+	int escaped = 0;
+	char ident[1025];
+	int p = 0;
+	char* src = s;
+	
 	if (*s != '_' && !isalpha((int) *s) && *s != ' ')
 		return 0;
-	s++;
-	while (*s != '"') {
-		if (*s != '_' && !isalnum((int) *s) && *s != ' ')
+	ident[p++] = *s++;
+	/* do unescaping in the loop */
+	while (*s != '"' || escaped) {
+		if (*s == '\\') {
+			escaped = !escaped;
+			if (!escaped) {
+				ident[p++] = *s;
+			}
+		} else if (*s == '"' && escaped) {
+			escaped = 0;
+			ident[p++] = *s;
+		} else if (*s != '_' && !isalnum((int) *s) && *s != ' ') {
 			return 0;
+		} else {
+			escaped = 0;
+			ident[p++] = *s;
+		}
 		s++;
+		if (p >= 1024)
+			return 0;
 	}
+	ident[p] = '\0';
+	if (p < s - src)
+		memcpy(src, ident, p + 1);
 	return 1;
 }
 
@@ -786,8 +809,9 @@ sqllex(YYSTYPE * yylval, void *parm)
 	if (token == STRING) {
 		char quote = *yylval->sval;
 		assert(quote == '"' || quote == '\'');
-		if (quote == '"' && valid_ident(yylval->sval + 1))
+		if (quote == '"' && valid_ident(yylval->sval + 1)) {
 			token = IDENT;
+		}
 		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = 0; 
 		yylval->sval = sa_strndup(c->sa, yylval->sval+1, lc->yycur-lc->yysval - 2);
 		/* reset original */
