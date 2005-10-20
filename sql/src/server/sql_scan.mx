@@ -307,6 +307,7 @@ scanner_init_keywords()
 	keywords_insert("NEXT", NEXT);
 	keywords_insert("VALUE", VALUE);
 	keywords_insert("GENERATED", GENERATED);
+	keywords_insert("ALWAYS", ALWAYS);
 	keywords_insert("IDENTITY", IDENTITY);
 	keywords_insert("SERIAL", SERIAL);
 	keywords_insert("AUTO_INCREMENT", AUTO_INCREMENT);
