@@ -19,7 +19,7 @@ SUBDIRS = schema debug mem parser semantics core algebra mil include
 
 EXTRA_DIST_DIR = Tests
 
-INCLUDES = include $(MONETDB_INCS) 
+INCLUDES = include $(MONETDB_INCS) $(LIBXML2_CFLAGS)
 
 lib_compiler1 = {
 	NOINST

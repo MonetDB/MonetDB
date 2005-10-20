@@ -31,7 +31,7 @@
 #define COMPILE_H
 
 /** The main compiler driver function in compiler/compiler.c */
-int PFcompile (FILE* pfin, FILE* pfout, PFstate_t *status);
+int PFcompile (char *url, FILE* pfout, PFstate_t *status);
 
 #endif
 
