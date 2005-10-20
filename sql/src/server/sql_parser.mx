@@ -539,12 +539,9 @@ sqlstmt:
    sql ';'
 	{
 		mvc *m = (mvc*)parm;
-		/* handle multi-statements by wrapping them in a list */
 		if (m->sym) {
-			dlist* l = _dlist_create();
-			_dlist_append_symbol(l, m->sym);
-			_dlist_append_symbol(l, $$);
-			m->sym = $$ = _symbol_create_list(SQL_MULSTMT , l);
+			_dlist_append_symbol(m->sym->data.lval, $$);
+			$$ = m->sym;
 		} else {
 			m->sym = $$ = $1;
 		}
@@ -1066,6 +1063,8 @@ column_def:
 		}
  |  column SERIAL
 		{ /* SERIAL = INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY */
+			/* handle multi-statements by wrapping them in a list */
+			dlist* stmts;
 			mvc *m = (mvc*)parm;
 			/* note: sql_next_seq_name uses sa_alloc */
 			str sn = sql_next_seq_name(m);
@@ -1085,7 +1084,15 @@ column_def:
 			_dlist_append_int(o, 0); /* max */
 			_dlist_append_int(o, 0); /* cycle */
 			_dlist_append_list(l, o);
-			m->sym = _symbol_create_list(SQL_CREATE_SEQ, l);
+
+			if (m->sym) {
+				stmts = m->sym->data.lval;
+			} else {
+				stmts = _dlist_create();
+				m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
+			}	
+			_dlist_append_symbol(stmts, _symbol_create_list(SQL_CREATE_SEQ, l));
+
 			l = _dlist_create();
 			_dlist_append_string(l, $1);
 			_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
@@ -1151,6 +1158,8 @@ column_constraint:
 generated_column:
 	GENERATED ALWAYS AS IDENTITY serial_opt_params
 	{
+		/* handle multi-statements by wrapping them in a list */
+		dlist* stmts;
 		mvc *m = (mvc*)parm;
 		/* note: sql_next_seq_name uses sa_alloc */
 		str sn = sql_next_seq_name(m);
@@ -1162,11 +1171,20 @@ generated_column:
 		_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
 		/* finally all the options */
 		_dlist_append_list(l, $5);
-		m->sym = _symbol_create_list(SQL_CREATE_SEQ, l);
 		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create(SQL_NEXT, sn));
+
+		if (m->sym) {
+			stmts = m->sym->data.lval;
+		} else {
+			stmts = _dlist_create();
+			m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
+		}	
+		_dlist_append_symbol(stmts, _symbol_create_list(SQL_CREATE_SEQ, l));
 	}
  |	AUTO_INCREMENT
 	{
+		/* handle multi-statements by wrapping them in a list */
+		dlist* stmts;
 		mvc *m = (mvc*)parm;
 		/* note: sql_next_seq_name uses sa_alloc */
 		str sn = sql_next_seq_name(m);
@@ -1185,8 +1203,15 @@ generated_column:
 		_dlist_append_int(o, 0); /* max */
 		_dlist_append_int(o, 0); /* cycle */
 		_dlist_append_list(l, o);
-		m->sym = _symbol_create_list(SQL_CREATE_SEQ, l);
 		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create(SQL_NEXT, sn));
+
+		if (m->sym) {
+			stmts = m->sym->data.lval;
+		} else {
+			stmts = _dlist_create();
+			m->sym = _symbol_create_list(SQL_MULSTMT, stmts);
+		}	
+		_dlist_append_symbol(stmts, _symbol_create_list(SQL_CREATE_SEQ, l));
 	}
  ;
 
