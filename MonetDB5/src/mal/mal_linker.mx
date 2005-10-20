@@ -175,12 +175,11 @@ getAddressFromLib(Module m, str fcnname)
 {
 	MALfcn adr;
 	int idx;
-	char *errmsg= NULL;
 	void *dl=0;
 
 	if(m->dll){
 		adr = (MALfcn) dlsym(m->dll, fcnname);
-		errmsg= dlerror();
+		dlerror();
 		if( adr != NULL) return adr;
 	}
 @-

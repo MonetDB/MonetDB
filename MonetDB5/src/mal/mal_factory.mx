@@ -357,7 +357,8 @@ Let's call it as a synchronous action, without concern on parallelism.
 	return msg;
 }
 @-
-The shortcut operatie.
+The shortcut operator for factory calls assumes that the user is
+not interested in the results produced. 
 @c
 #define VALcopy2(lhs,rhs) if( rhs->vtype < TYPE_str) *lhs = *rhs; else VALcopy(lhs,rhs);
 str

@@ -360,7 +360,10 @@ str reenterMAL(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 @-
 Front ends may benefit from a more direct call to any of the MAL
 procedural abstractions. The argument list points to the arguments
-for the block to be executed.
+for the block to be executed. An old stack frame may be re-used,
+but it is then up to the caller to ensure it is properly
+initialized. 
+The call does not return values, they are ignored.
 @c
 str 
 callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug){
@@ -428,8 +431,6 @@ all arguments and return values.
 		stream_printf(GDKout,"Stack after loop\n");
 		printStack(GDKout,mb,stk); fflush(GDKout);
 #endif
-		/* if( garbageControl(p))
-			garbageCollectAll(mb,stk);*/
 		return ret;
 	case FACTORYsymbol:
 	case FACcall:
