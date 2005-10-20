@@ -54,6 +54,7 @@ typedef enum tokens {
 	SQL_DROP_FUNC,
 	SQL_DROP_SEQ,
 	SQL_ALTER_TABLE,
+	SQL_ALTER_SEQ,
 	SQL_ALTER_USER,
 	SQL_DROP_COLUMN,
 	SQL_DROP_CONSTRAINT,
@@ -925,6 +926,15 @@ seq_def:
 		_dlist_append_list(l, $3);
 		$$ = _symbol_create_list(SQL_DROP_SEQ, l);
 	}
+  |	ALTER SEQUENCE qname opt_seq_params
+	{
+		dlist *l = _dlist_create();
+		_dlist_append_list(l, $3);
+		_dlist_append_type(l, NULL);
+		_dlist_append_list(l, $4);
+		$$ = _symbol_create_list(SQL_ALTER_SEQ, l);
+	}
+		
  ;
 
 opt_seq_params:
@@ -944,22 +954,22 @@ opt_seq_params:
 ;
 
 opt_start:
-	/* empty */				{ $$ = 1; }
+	/* empty */				{ $$ = -1; }
   |	START WITH nonzero		{ $$ = $3; }
   ;
 
 opt_increment:
-	/* empty */				{ $$ = 1; }
+	/* empty */				{ $$ = -1; }
   |	INCREMENT BY nonzero	{ $$ = $3; }
   ;
 
 opt_min:
-	/* empty */ 			{ $$ = 1; }
+	/* empty */ 			{ $$ = -1; }
   |	MINVALUE nonzero		{ $$ = $2; }
   ;
 
 opt_max:
-	/* empty */				{ $$ = 0; }
+	/* empty */				{ $$ = -1; }
   |	MAXVALUE nonzero		{ $$ = $2; }
   ;
 
@@ -1077,7 +1087,7 @@ column_def:
 			_dlist_append_list(l, _dlist_append_string(_dlist_create(), sn));
 			/* ultra dirty: inline 'integer' type generation */
 			_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
-			/* finally all the options */
+			/* finally all the options (no defaults here) */
 			_dlist_append_int(o, 1); /* start */
 			_dlist_append_int(o, 1); /* increment */
 			_dlist_append_int(o, 1); /* min */
@@ -1196,7 +1206,7 @@ generated_column:
 		_dlist_append_list(l, _dlist_append_string(_dlist_create(), sn));
 		/* ultra dirty: inline 'integer' type generation */
 		_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
-		/* finally all the options */
+		/* finally all the options (no defaults here) */
 		_dlist_append_int(o, 1); /* start */
 		_dlist_append_int(o, 1); /* increment */
 		_dlist_append_int(o, 1); /* min */
@@ -1218,10 +1228,10 @@ generated_column:
 serial_opt_params:
 	/* empty: return the defaults */
 	{ dlist *l = _dlist_create();
-	  _dlist_append_int(l, 1); /* start */
-	  _dlist_append_int(l, 1); /* increment */
-	  _dlist_append_int(l, 1); /* min */
-	  _dlist_append_int(l, 0); /* max */
+	  _dlist_append_int(l, -1); /* start */
+	  _dlist_append_int(l, -1); /* increment */
+	  _dlist_append_int(l, -1); /* min */
+	  _dlist_append_int(l, -1); /* max */
 	  _dlist_append_int(l, 0); /* cycle */
 	  $$ = l;
 	}
@@ -3257,7 +3267,9 @@ char *token2string(int token)
 	case SQL_DROP_INDEX:
 		return "Drop INDEX";
 	case SQL_ALTER_TABLE:
-		return "Alter Table";
+		return "Alter TABLE";
+	case SQL_ALTER_SEQ:
+		return "Alter SEQUENCE";
 	case SQL_GRANT_ROLES:
 		return "Grant ROLE";
 	case SQL_NAME:

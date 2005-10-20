@@ -874,6 +874,7 @@ semantic(mvc *sql, symbol *s)
 		return schemas(sql, s);
 
 	case SQL_CREATE_SEQ:
+	case SQL_ALTER_SEQ:
 	case SQL_DROP_SEQ:
 		return sequences(sql, s);
 
