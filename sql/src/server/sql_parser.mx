@@ -1175,7 +1175,7 @@ generated_column:
 		/* finally all the options */
 		dlist *o = _dlist_create();
 		/* the name of the sequence (not known here) */
-		_dlist_append_list(l, _dlist_append_string(_dlist_create(), NULL));
+		_dlist_append_list(l, _dlist_append_string(_dlist_create(), sn));
 		/* ultra dirty: inline 'integer' type generation */
 		_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
 		/* finally all the options */
