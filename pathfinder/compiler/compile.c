@@ -164,7 +164,7 @@ read_url (char *url)
     if (num_read < 0)
         return NULL;
 
-    ret = PFstrdup (buf->buffer->content);
+    ret = PFstrdup ((char *) buf->buffer->content);
 
     /* free resource allocated by libxml2 file reader */
     xmlFreeParserInputBuffer (buf);
