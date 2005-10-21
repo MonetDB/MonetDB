@@ -2800,6 +2800,9 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
     if (BATcount(pre) > BATcount(bn)) {
 		GDKerror("mposjoin: missing matches. The result requires the "
                  "same number of tuples as the first two input arguments.");
+		@:mpos_free_batlist@
+		return GDK_FAIL;
+	}
     if (BATcount(pre) < BATcount(bn)) {
 		GDKerror("mposjoin: more than one match per input tuple. "
                  "seqbase does not match anymore.");
