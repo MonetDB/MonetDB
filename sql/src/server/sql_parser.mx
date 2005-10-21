@@ -2728,7 +2728,7 @@ literal:
  |  interval_expression
  |  blob string
 		{ sql_subtype t;
-		  atom *a;
+		  atom *a= 0;
 		  int r;
 
 		  $$ = NULL;
@@ -2747,7 +2747,7 @@ literal:
 		}
  |  aTYPE string
 		{ sql_subtype t;
-		  atom *a;
+		  atom *a= 0;
 		  int r;
 
 		  $$ = NULL;
@@ -2766,7 +2766,7 @@ literal:
 		}
  | type_alias string
 		{ sql_subtype t; 
-		  atom *a;
+		  atom *a = 0;
 		  int r;
 
 		  $$ = NULL;
