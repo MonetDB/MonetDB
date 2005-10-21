@@ -197,6 +197,11 @@ backend_dec_nr2(stmt *s)
 #endif
 		}
 		s->nr2--;
+		if (s->type == st_list || s->type == st_set) {
+			node *n;
+			for (n = s->op1.lval->h; n; n = n->next) 
+				backend_dec_nr2(n->data);
+		}
 	}
 }
 
@@ -1071,7 +1076,6 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 		case st_list:{
 			for (n = s->op1.lval->h; n; n = n->next) {
 				(void) backend_dumpstmt_(n->data, nr, sql);
-				backend_dec_nr2(n->data);
 			}
 			break;
 		}
@@ -1317,7 +1321,7 @@ backend_dumpproc(backend *be, int id, stmt *s)
 		for (; argc < be->mvc->argc; argc++) {
 			atom *a = be->mvc->args[argc];
 
-			i += snprintf(buf + i, BUFSIZ - i, "%s A%d%c", a->tpe->type->base.name, argc, (argc < (be->mvc->argc-1)) ? ',' : ' ');
+			i += snprintf(buf + i, BUFSIZ - i, "%s A%d%c", atom_type(a)->type->base.name, argc, (argc < (be->mvc->argc-1)) ? ',' : ' ');
 		}
 	} else if (be->mvc->params) {
 		int argc = 0;
@@ -1559,25 +1563,24 @@ int
 backend_exec_prepared_stmt( backend *be, cq *q )
 {
 	mvc *c = be->mvc;
-	node *p;
 	int argc, parc; 
 
 	argc = c->argc;
-	parc = q->params?list_length(q->params):0;
+	parc = q->paramlen;
 
 	if (argc != parc) {
 		sql_error(c, 0002, "wrong number of arguments for prepared statement\n");
 		return -1;
 	} else if (c->argc) {
 		int i;
-		for (i = 0, p = q->params->h; i<argc && p; i++, p = p->next) {
+		for (i = 0; i<argc; i++) {
 			atom *arg = c->args[i];
-			sql_subtype *pt = p->data;
+			sql_subtype *pt = q->params+i;
 
 			if (!atom_cast(arg, pt)) {
 					char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
+				snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, atom_type(arg)->type->sqlname);
 				sql_error(c, 003, buf);
 				return -1;
 			}

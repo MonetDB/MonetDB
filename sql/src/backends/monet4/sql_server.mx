@@ -601,7 +601,7 @@ mvc_affected_rows_wrap(mvc *M, Stream *S, lng *nr)
 	if (mvc_export_default(m, s))
 		return GDK_FAIL;
 
-	stream_printf(s, "[ " LLFMT " ]\n", *nr);
+	stream_printf(s, "[ " LLFMT "\t]\n", *nr);
 	return GDK_SUCCEED;
 }
 

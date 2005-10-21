@@ -55,7 +55,8 @@ typedef struct cq {
 	int type;		/* sql_query_t: Q_PARSE,Q_SCHEMA,.. */
 	sql_allocator *sa;	/* the symbols are allocated from this sa */
 	symbol *s;		/* the SQL parse tree */
-	list *params;		/* list of parameter types */
+	sql_subtype *params;	/* parameter types */
+	int paramlen;		/* number of parameters */
 	backend_stack stk;	/* V4 state information */
 	backend_code code;	/* V4 state information */
 	int id;			/* cache identity */
@@ -100,14 +101,15 @@ cq_delete(cq *q)
 		sa_destroy(q->sa);
 
 	if (q->params)
-		list_destroy(q->params);
+		_DELETE(q->params);
 
 	if (q->code)
 		backend_freecode(q->code, q->stk, q->id);
 
 	if (q->stk)
 		backend_freestack(q->stk);
-	_DELETE(q->codestring);
+	if (q->codestring && q->codestring != (char*)1)
+		_DELETE(q->codestring);
 	_DELETE(q);
 }
 
@@ -161,21 +163,18 @@ param_cmp(sql_subtype *t1, sql_subtype *t2)
 }
 
 int
-param_list_cmp(list *typelist, atom **atoms, int plen)
+param_list_cmp(sql_subtype *typelist, atom **atoms, int plen)
 {
-	node *n1;
 	int i;
 
-	if (list_length(typelist) == 0 && !atoms)
-		return 0;
-	if (!typelist || !atoms || list_length(typelist) != plen)
+	if (!typelist || !atoms)
 		return -1;
-	for (n1 = typelist->h, i=0; n1; n1 = n1->next, i++) {
-		sql_subtype *t1 = n1->data;
+	for (i=0; i < plen; i++) {
+		sql_subtype *t1 = typelist + i;
 		atom *a2 = atoms[i];
 
 		/* NULL values match any type */
-		if (!atom_null(a2) && param_cmp(t1, a2->tpe) != 0)
+		if (!atom_null(a2) && param_cmp(t1, atom_type(a2)) != 0)
 			return -1;
 	}
 	return 0;
@@ -200,7 +199,7 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 
 	for (q = cache->q; q; q = q->next) {
 		if (q->key == key) {
-			if (param_list_cmp(q->params, params, plen) == 0 && symbol_cmp(q->s, s) == 0) {
+			if (q->paramlen == plen && param_list_cmp(q->params, params, plen) == 0 && symbol_cmp(q->s, s) == 0) {
 				return q;
 			}
 		}
@@ -218,12 +217,14 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, 
 	n->sa = sa;
 	n->s = s;
 
-	n->params = list_create((fdestroy) &sql_subtype_destroy);
+	n->params = NULL;
+	n->paramlen = paramlen;
 	if (paramlen)
+		n->params = NEW_ARRAY(sql_subtype,paramlen);
 		for (i = 0; i < paramlen; i++) {
 			atom *a = params[i];
 
-			list_append(n->params, sql_dup_subtype(a->tpe));
+			n->params[i] = *(atom_type(a));
 		}
 	n->next = cache->q;
 	n->stk = 0;

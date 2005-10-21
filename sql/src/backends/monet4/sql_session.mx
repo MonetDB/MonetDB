@@ -244,7 +244,11 @@ output_prepare(stream *out, mvc *c, cq *q)
 	}
 
 	if (c->params) {
-		for (n = c->params->h; n; n = n->next) {
+		int i, len = list_length(c->params);
+
+		q->paramlen = len;
+		q->params = NEW_ARRAY(sql_subtype,len);
+		for (n = c->params->h, i=0; n; n = n->next, i++) {
 			var_ *v = n->data;
 			sql_subtype *t = tail_type(v->s);
 
@@ -257,8 +261,8 @@ output_prepare(stream *out, mvc *c, cq *q)
 				) < 0) {
 					return -1;
 				}
-				/* add to the query cache param list */
-				list_append(q->params, sql_dup_subtype(t));
+				/* add to the query cache parameters */
+				q->params[i] = *t;
 			} else {
 				return -1;
 			}
@@ -870,7 +874,7 @@ These lines should be eaten away into the prompt is encountered.
 		closeClient(client, 0); 	
 		return GDK_FAIL;
 	}
-	/* Send the profile to the client for inspection */
+	/* Send the profile to the client for inspection 
 	if (!sendProperty(out, "version", "4") ||
 	    !sendProperty(out, "language", "sql") ||
 	    !sendProperty(out, "schema", schema) || 
@@ -883,6 +887,7 @@ These lines should be eaten away into the prompt is encountered.
 		closeClient(client, 0); 	
 		return GDK_FAIL;
 	}
+	*/
 
 	ret = sqlclient2(m, stk, rs, out, trace, 0);
 	res_tables_destroy(m->results);

@@ -180,7 +180,7 @@ bind_bat(sql_trans *tr, sql_column *c, int access)
 		return i;
 	} else {
 		if (access == INS && c->base.wtime == 0 && c->t->persists && !c->t->clear && c->base.flag != TR_NEW) {
-			int type = ATOMindex(c->type->type->base.name);
+			int type = ATOMindex(c->type.type->base.name);
 			BAT *b = bat_new(TYPE_void, type, c->t->sz, "bind_bat");
 
 			c->bat.ibid = temp_create(b);
@@ -315,7 +315,6 @@ column_destroy(sql_column *c)
 		temp_destroy(c->bat.ibid);
 
 	base_destroy(&c->base);
-	sql_subtype_destroy(c->type);
 	if (c->def)
 		_DELETE(c->def);
 	_DELETE(c);
@@ -632,9 +631,8 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 	tpe = (char *) bun_find(column_type, lid);
 	sz = *(int *) bun_find(column_type_digits, lid);
 	d = *(int *) bun_find(column_type_scale, lid);
-	c->type = sql_bind_subtype(tpe, sz, d);
-	if (!c->type)
-		c->type = sql_create_subtype(sql_trans_bind_type(tr, tpe), sz, d);
+	if (!sql_find_subtype(&c->type, tpe, sz, d))
+		sql_init_subtype(&c->type, sql_trans_bind_type(tr, tpe), sz, d);
 	def = (char *) bun_find(column_default, lid);
 	c->def = NULL;
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
@@ -652,7 +650,7 @@ load_column(sql_trans *tr, sql_table *t, BAT *columns, BUN j)
 		snprintf(name, BUFSIZ, "U_%s_%s", t->base.name, c->base.name);
 		c->bat.ubid = bm_find_bat(tr->bm, name);
 	} else if (t->table && t->clear) {
-		int type = ATOMindex(c->type->type->base.name);
+		int type = ATOMindex(c->type.type->base.name);
 		BAT *b = bat_new(TYPE_void, type, t->sz, "load_column");
 		BAT *u = bat_new(TYPE_oid, type, t->sz, "load_column");
 
@@ -1575,7 +1573,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	oid rid;
 
 	base_init(&col->base, OIDnew(1), TR_NEW, name);
-	col->type = sql_bind_subtype(sqltype, digits, 0);
+	sql_find_subtype(&col->type, sqltype, digits, 0);
 	col->def = NULL;
 	col->null = 1;
 	col->colnr = cs_size(&t->columns);
@@ -1606,15 +1604,15 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, 
 	bat_destroy(b);
 	b = sys_bat(tr->bm, "pcolumns_type");
 
-	BUNins(b, (ptr) &rid, (ptr) col->type->type->sqlname);
+	BUNins(b, (ptr) &rid, (ptr) col->type.type->sqlname);
 	bat_destroy(b);
 	b = sys_bat(tr->bm, "pcolumns_type_digits");
 
-	BUNins(b, (ptr) &rid, (ptr) &col->type->digits);
+	BUNins(b, (ptr) &rid, (ptr) &col->type.digits);
 	bat_destroy(b);
 	b = sys_bat(tr->bm, "pcolumns_type_scale");
 
-	BUNins(b, (ptr) &rid, (ptr) &col->type->scale);
+	BUNins(b, (ptr) &rid, (ptr) &col->type.scale);
 	bat_destroy(b);
 	b = sys_bat(tr->bm, "pcolumns_default");
 
@@ -2084,8 +2082,8 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 
 	base_init(&c->base, oc->base.id, tr_flag(&oc->base, flag), oc->base.name);
 
-	if (oc->type) 
-		c->type = subtype_dup(tr, flag, oc->type);
+	/* possibly LEAKING */
+	c->type = *subtype_dup(tr, flag, &oc->type);
 
 	c->def = NULL;
 	if (oc->def)
@@ -3367,7 +3365,7 @@ create_column_bat(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe, BAT
 	sql_table *syscolumn = find_sql_table(syss, t->persists ? "pcolumns" : "tcolumns");
 
 	base_init(&col->base, OIDnew(1), TR_NEW, name);
-	col->type = tpe;
+	col->type = *tpe;
 	col->def = NULL;
 	col->null = 1;
 	col->colnr = cs_size(&t->columns);
@@ -3396,7 +3394,7 @@ create_column_bat(sql_trans *tr, sql_table *t, char *name, sql_subtype *tpe, BAT
 			col->bat.ubid = temp_create(u);
 	}
 
-	table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type->type->sqlname, &col->type->digits, &col->type->scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr);
+	table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname, &col->type.digits, &col->type.scale, &t->base.id, (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr);
 
 	syscolumn->base.wtime = syscolumn->s->base.wtime = tr->stime;
 	return col;

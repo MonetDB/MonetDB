@@ -119,15 +119,15 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, j, k, klim;/*, argseen=0;*/
 	MALfcn setWriteMode = 0;
 	Symbol s;
-	lng clk = GDKusec();
+	//lng clk = GDKusec();
 
 #ifdef _SQL_OPTIMIZER_DEBUG
-#endif
 	stream_printf(GDKout, "First call to FXoptimizer\n");
 	printFunction(GDKout, mb, LIST_MAL_ALL);
+#endif
 	(void)stk;
 	if( mb->errors) {
-		/* remove the CXoptimizer request */
+		/* remove the FXoptimizer request */
 		if (pci)
 			removeInstruction(mb, pci);
 		return MAL_SUCCEED;
@@ -148,6 +148,7 @@ to extract some compiler relevant properties from the catalogue.
 	k = 1;
 	ns[0] = getInstrPtr(mb, 0);	/* its signature */
 	ns[0]->token = FACTORYsymbol;
+ 	setVarType(mb, getArg(ns[0],0), TYPE_bit);
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (functionName(p) && moduleName(p) && 
@@ -236,7 +237,7 @@ Finalize the factory loop
 	GDKfree(mb->stmt);
 	mb->stmt = ns;
 
-	optimizerCheck(mb,"sql.factorize",1,GDKusec()-clk);
+	//optimizerCheck(mb,"sql.factorize",1,GDKusec()-clk);
 @-
 At this stage we can once call upon the optimizers to do their work.
 Static known information is known and stored in constant variables,
@@ -245,8 +246,8 @@ This all works under the assumption that the SQL layer properly invalidates
 the cache when the underlying table is changed.
 @c
 #ifdef _SQL_OPTIMIZER_DEBUG
-#endif
 	printFunction(GDKout, mb, LIST_MAL_INSTR);
+#endif
 	return MAL_SUCCEED;
 }
 
@@ -299,6 +300,7 @@ to allow inspection.
 
 	OPTmultiplex(c->curprg->def,0,0);
 	ARoptimizer(c->curprg->def, 0, 0);
+	FXoptimizer(c->curprg->def, 0, 0);
 }
 
 @-

@@ -1087,7 +1087,7 @@ mvc_affected_rows_wrap( int *r, lng *nr)
 	if (mvc_export_default(c, b->out)) {
 		return throwMessage("sql.affectedRows", "failed");
 	}
-	stream_printf(b->out, "[ " LLFMT " ]\n", *nr);
+	stream_printf(b->out, "[ " LLFMT "\t]\n", *nr);
 	return NULL;
 }
 

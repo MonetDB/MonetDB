@@ -59,14 +59,12 @@ res_table_create(sql_trans *tr, int res_id, int nr_cols, int type, res_table *ne
 res_col *
 res_col_create(sql_trans *tr, res_table *t, char *tn, char *name, char *typename, int digits, int scale)
 {
-	sql_subtype *tpe = sql_bind_subtype(typename, digits, scale);
 	res_col *c = t->cols + t->cur_col;
-
-	if (!tpe)
-		tpe = sql_create_subtype(sql_trans_bind_type(tr, typename), digits, scale);
+	
+	if (!sql_find_subtype(&c->type, typename, digits, scale)) 
+		sql_init_subtype(&c->type, sql_trans_bind_type(tr, typename), digits, scale);
 	c->tn = _strdup(tn);
 	c->name = _strdup(name);
-	c->type = tpe;
 	c->b = 0;
 	c->p = NULL;
 	c->mtype = TYPE_bat;
@@ -84,7 +82,6 @@ res_col_destroy(res_col *c)
 	}
 	_DELETE(c->name);
 	_DELETE(c->tn);
-	sql_subtype_destroy(c->type);
 }
 
 

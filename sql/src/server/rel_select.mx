@@ -140,7 +140,7 @@ exp_subtype( sql_exp *e )
 	case e_atom: {
 		if (e->l) {
 			atom *a = e->l;
-			return a->tpe;
+			return atom_type(a);
 		} else { /* atom reference */
 			return e->f;
 		}
@@ -446,7 +446,7 @@ rel_bind_column( sql_rel *rel, char *cname )
 		for (cn = t->columns.set->h; cn; cn = cn->next) {
 			sql_column *c = cn->data;
 			if (strcmp(c->base.name, cname) == 0)
-				return exp_column(rel->name, cname, c->type );
+				return exp_column(rel->name, cname, &c->type );
 		}
 	}
 	return NULL;
@@ -468,7 +468,7 @@ rel_bind_column2( sql_rel *rel, char *tname, char *cname )
 		for (cn = t->columns.set->h; cn; cn = cn->next) {
 			sql_column *c = cn->data;
 			if (strcmp(c->base.name, cname) == 0)
-				return exp_column(rel->name, cname, c->type );
+				return exp_column(rel->name, cname, &c->type );
 		}
 	}
 	return NULL;
@@ -568,7 +568,7 @@ rel_projections( sql_rel *rel, char *tname )
 		exps = new_exp_list();
 		for (cn = t->columns.set->h; cn; cn = cn->next) {
 			sql_column *c = cn->data;
-			list_append(exps, exp_column(tname, c->base.name, c->type ));
+			list_append(exps, exp_column(tname, c->base.name, &c->type ));
 		}
 		return exps;
 	} 
@@ -936,7 +936,7 @@ rel_column_ref(mvc *sql, sql_rel *rel, symbol *column_r)
 		int nr = l->h->data.ival;
 		atom *a;
 		if ((a = sql_bind_arg(sql, nr)) != NULL)
-			return exp_atom_ref(nr, a->tpe);
+			return exp_atom_ref(nr, atom_type(a));
 		return NULL;
 	} else if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;

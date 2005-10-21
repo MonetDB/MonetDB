@@ -212,7 +212,7 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
 
 	if (dlist_length(l) == 1 && l->h->type == type_int) {
-		return stmt_varnr(l->h->data.ival, sql_dup_subtype(sql_bind_arg(sql, l->h->data.ival)->tpe));
+		return stmt_varnr(l->h->data.ival, sql_dup_subtype(atom_type(sql_bind_arg(sql, l->h->data.ival))));
 	} else if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
 

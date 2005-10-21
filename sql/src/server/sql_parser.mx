@@ -2615,18 +2615,21 @@ literal:
     string
 		{ char *s = sql2str($1);
 		  int len = strlen(s);
-		  sql_subtype *t = sql_bind_subtype("char", len, 0 );
-		  $$ = _newAtomNode( _atom_string(t, s)); }
+		  sql_subtype t;
+		  sql_find_subtype(&t, "char", len, 0 );
+		  $$ = _newAtomNode( _atom_string(&t, s)); }
  |  user
 		{ mvc *m = (mvc*)parm;
-		  sql_subtype *t = sql_bind_subtype("char", strlen(m->user),0);
+		  sql_subtype t;
+
+		  sql_find_subtype(&t, "char", strlen(m->user),0);
 		  $$ = _newAtomNode( 
-			_atom_string(t,sql2str(sa_strdup(SA, m->user))));
+			_atom_string(&t,sql2str(sa_strdup(SA, m->user))));
 		}
  |  sqlINT
 		{ int digits = strlen($1), err = 0, len = sizeof(lng);
 		  lng value, *p = &value;
-		  sql_subtype *t = NULL;
+		  sql_subtype t;
 
 		  lngFromStr($1, &len, &p);
 		  if (value == lng_nil)
@@ -2636,11 +2639,11 @@ literal:
 		  if (!err) {
 		    int bits = digits2bits(digits);
 		    if (value >= GDK_sht_min && value <= GDK_sht_max)
-		  	  t = sql_bind_subtype("smallint", bits, 0 );
+		  	  sql_find_subtype(&t, "smallint", bits, 0 );
 		    else if (value >= GDK_int_min && value <= GDK_int_max)
-		  	  t = sql_bind_subtype("int", bits, 0 );
+		  	  sql_find_subtype(&t, "int", bits, 0 );
 		    else if ((value >= GDK_lng_min && value <= GDK_lng_max))
-		  	  t = sql_bind_subtype("bigint", bits, 0 );
+		  	  sql_find_subtype(&t, "bigint", bits, 0 );
 		    else
 			  err = 1;
 		  }
@@ -2653,7 +2656,7 @@ literal:
 			$$ = NULL;
 			YYABORT;
 		  } else {
-		  	$$ = _newAtomNode( atom_int(t, value));
+		  	$$ = _newAtomNode( atom_int(&t, value));
 		  }
 		}
  |  INTNUM
@@ -2662,20 +2665,25 @@ literal:
 		  int digits = strlen(s) - 1;
 		  int scale = digits - (dot-s);
 		  lng value = decimal_from_str(s);
-		  sql_subtype *t = NULL;
+		  sql_subtype t;
 
 		  if (*s == '+' || *s == '-')
 			digits --;
-		  t = sql_bind_subtype("decimal", digits, scale );
-		  $$ = _newAtomNode( atom_int(t, value)); }
+		  sql_find_subtype(&t, "decimal", digits, scale );
+		  $$ = _newAtomNode( atom_int(&t, value)); }
  |  APPROXNUM
-		{ sql_subtype *t = sql_bind_subtype("double", 51, 0 );
+		{ sql_subtype t;
 		  double val = strtod($1,NULL);
-		  $$ = _newAtomNode( atom_float(t, val)); }
+
+		  sql_find_subtype(&t, "double", 51, 0 );
+		  $$ = _newAtomNode(atom_float(&t, val)); }
  |  sqlDATE string
-		{ sql_subtype *t = sql_bind_subtype("date", 0, 0 );
-		  atom *a = atom_general(t, $2, 0);
-		  if (!a) {
+		{ sql_subtype t;
+		  atom *a;
+		  int r;
+
+ 		  r = sql_find_subtype(&t, "date", 0, 0 );
+		  if (!r || (a = atom_general(&t, $2, 0)) == NULL) {
 			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "incorrect date value (%s)", $2);
@@ -2686,9 +2694,12 @@ literal:
 		  	$$ = _newAtomNode(a);
 		} }
  |  TIME tz string
-		{ sql_subtype *t = sql_bind_subtype(($2)?"timetz":"time", 0, 0);
-		  atom *a = atom_general(t, $3, 0);
-		  if (!a) {
+		{ sql_subtype t;
+		  atom *a;
+		  int r;
+
+	          r = sql_find_subtype(&t, ($2)?"timetz":"time", 0, 0);
+		  if (!r || (a = atom_general(&t, $3, 0)) == NULL) {
 			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "incorrect time value (%s)", $3);
@@ -2699,10 +2710,12 @@ literal:
 		  	$$ = _newAtomNode(a);
 		} }
  |  TIMESTAMP tz string
-		{ sql_subtype *t = 
-			sql_bind_subtype(($2)?"timestamptz":"timestamp", 0, 0 );
-		  atom *a = atom_general(t, $3, 0);
-		  if (!a) {
+		{ sql_subtype t;
+		  atom *a;
+		  int r;
+
+ 		  r = sql_find_subtype(&t, ($2)?"timestamptz":"timestamp", 0,0);
+		  if (!r || (a = atom_general(&t, $3, 0)) == NULL) {
 			char buf[BUFSIZ];
 
 			snprintf(buf, BUFSIZ, "incorrect timestamp value (%s)", $3);
@@ -2714,10 +2727,13 @@ literal:
 		} }
  |  interval_expression
  |  blob string
-		{ sql_subtype *t = sql_bind_subtype("blob", 0, 0);
-		  atom *a = atom_general(t, $2, 0);
+		{ sql_subtype t;
+		  atom *a;
+		  int r;
+
 		  $$ = NULL;
-	          if (a)
+ 		  r = sql_find_subtype(&t, "blob", 0, 0);
+	          if (r && (a = atom_general(&t, $2, 0)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
 			char buf[BUFSIZ];
@@ -2730,10 +2746,13 @@ literal:
 		  }
 		}
  |  aTYPE string
-		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
-		  atom *a = atom_general(t, $2, 0);
+		{ sql_subtype t;
+		  atom *a;
+		  int r;
+
 		  $$ = NULL;
-	          if (a)
+		  r = sql_find_subtype(&t, $1, 0, 0);
+	          if (r && (a = atom_general(&t, $2, 0)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
 			char buf[BUFSIZ];
@@ -2746,10 +2765,13 @@ literal:
 		  }
 		}
  | type_alias string
-		{ sql_subtype *t = sql_bind_subtype($1, 0, 0);
-		  atom *a = atom_general(t, $2, 0);
+		{ sql_subtype t; 
+		  atom *a;
+		  int r;
+
 		  $$ = NULL;
-	          if (a)
+		  r = sql_find_subtype(&t, $1, 0, 0);
+	          if (r && (a = atom_general(&t, $2, 0)) != NULL)
 			$$ = _newAtomNode(a);
 		  if (!$$) {
 			char buf[BUFSIZ];
@@ -2784,10 +2806,11 @@ literal:
 
 interval_expression:
    INTERVAL opt_sign string interval_qualifier { 
-		sql_subtype *t;
+		sql_subtype t;
 		int sk, ek, tpe;
 		mvc *m = (mvc*)parm;
 	  	lng i = 0;
+		int r = 0;
 
 		$$ = NULL;
 	  	if ( (tpe = parse_interval_qualifier( m, $4, &sk, &ek )) < 0){
@@ -2795,17 +2818,17 @@ interval_expression:
 			YYABORT;
 	  	} else {
 			if (tpe == 0){
-				t = sql_bind_subtype("month_interval", ek, sk);
+				r=sql_find_subtype(&t, "month_interval", ek, sk);
 			} else {
-				t = sql_bind_subtype("sec_interval", ek, sk);
+				r=sql_find_subtype(&t, "sec_interval", ek, sk);
 			}
 	  	}
-	  	if ( (tpe = parse_interval( m, $2, $3, sk, ek, &i)) < 0 ){
+	  	if (!r || (tpe = parse_interval( m, $2, $3, sk, ek, &i)) < 0 ){
 			yyerror("incorrect interval");
 			$$ = NULL;
 			YYABORT;
 	  	} else {
-	  		$$ = _newAtomNode( atom_int(t, i));
+	  		$$ = _newAtomNode( atom_int(&t, i));
 	  	}
 	}
 

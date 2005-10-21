@@ -228,7 +228,7 @@ set_var(mvc *sql, char *name, symbol *val, char *typename)
 	ctype = sql_bind_subtype(typename, 0, 0);
 	v = check_types(sql, ctype, v, type_equal);
 	sql_subtype_destroy(ctype);
-	if (!v || (v = check_types(sql, c->type, v, type_equal)) == NULL) {
+	if (!v || (v = check_types(sql, &c->type, v, type_equal)) == NULL) {
 		return NULL;
 	}
 	st = sql_compare(sql, scope_bind(scp, NULL, "name"), stmt_atom_string(_strdup(name)), "=", sql_where);

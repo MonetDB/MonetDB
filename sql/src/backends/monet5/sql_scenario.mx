@@ -219,6 +219,7 @@ SQLinitAdmin(Client c)
 		if (!schema) {
 			return throwMessage("SQLparser", "No schema defined\n");
 		} else {
+			/*
 			if (!sendProperty(c->fdout, "version", "5") ||
 			    !sendProperty(c->fdout, "language", "sql") ||
 			    !sendProperty(c->fdout, "schema", schema) || 
@@ -230,6 +231,7 @@ SQLinitAdmin(Client c)
 				mvc_destroy(m);
 				return throwMessage("SQLparser", "Disconnected\n");
 			}
+			*/
 		}
 		c->state[PARSER] = (void *) backend_create(0 /*debug */ , m, c);
 		((backend*)c->state[PARSER])->language = 'S';	/*expect SQL text first */
@@ -571,15 +573,14 @@ SQLreader(Client c)
 	stream_printf(GDKout, "#SQLparser: start reading SQL block\n");
 	stream_flush(GDKout);
 #endif
-	if (!be || c->mode <= FINISHING)
-		return throwMessage("SQLreader", "end of SQL input\n");
+	if (!be || c->mode <= FINISHING) {
+		c->mode = FINISHING;
+		return NULL;
+	}
 
 @- 
 Continue processing any left-over input from the previous round.
 @c
-	while (in->pos < in->len &&
-		(isspace((int) (in->buf[in->pos])) || in->buf[in->pos] == ';'))
-		in->pos++;
 
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout, "#pos %d len %d\n", in->pos, in->len);
@@ -592,29 +593,6 @@ Continue processing any left-over input from the previous round.
 Distinguish between console reading and MapiClient connections.
 The former comes with readline functionality.
 @c
-    if( c == mal_clients){
-		/* The rules of auto_commit require us to finish 
-		   and start a transaction on the start of a new statement */
-/* TODO, final adjustments are needed to synchronize with the scanner
-This is not going to work, because the scanner performs its own
-IO to obtain missing data.
-		go = SQLautocommit(c,m);
-		if( go ) {
-			c->fdin->pos=0;
-			c->yycur = 0;
-			c->fdin->eof=0;
-			go= SQLreadConsole(c);
-		}
-		if( go < 0) go = TRUE;
-		if( !go ){
-			in->pos = in->len;	
-			c->mode = FINISHING;
-			return throwMessage("SQLreader", "end of SQL input\n");
-		}
-		return MAL_SUCCEED;
-*/
-    }
-
 	while(more) {
 	    more = FALSE;
 	    if (go && in->pos >= in->len) {
@@ -667,7 +645,7 @@ IO to obtain missing data.
 	if (!go || (strncmp(CURRENT(c), "quit", 4) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		c->mode = FINISHING;
-		return throwMessage("SQLreader", "end of SQL input\n");
+		return NULL;
 	}
 	return 0;
 }
@@ -741,7 +719,11 @@ output_prepare(stream *out, mvc *c, cq *q)
 	}
 
 	if (c->params) {
-		for (n = c->params->h; n; n = n->next) {
+		int i, len = list_length(c->params);
+
+		q->paramlen = len;
+		q->params = NEW_ARRAY(sql_subtype,len);
+		for (n = c->params->h, i=0; n; n = n->next, i++) {
 			var_ *v = n->data;
 			sql_subtype *t = tail_type(v->s);
 
@@ -754,8 +736,8 @@ output_prepare(stream *out, mvc *c, cq *q)
 				) < 0) {
 					return -1;
 				}
-				/* add to the query cache param list */
-				list_append(q->params, sql_dup_subtype(t));
+				/* add to the query cache parameters */
+				q->params[i] = *t;
 			} else {
 				return -1;
 			}
@@ -839,6 +821,10 @@ SQLparser(Client c)
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
+		if( strncmp(in->buf + in->pos,"quit",4)==0 ) {
+			c->mode = FINISHING;
+			return NULL;
+		}
 		return throwMessage("SQLparser", "Unrecognized X command\n");
 	}
 
@@ -885,7 +871,7 @@ produce code.
 	if( (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key)) ){
 		/* not sure if this is allowed, because subsequent cleanup may
 			depend on it */
-		m->mode= m_execute;
+		//m->mode= m_execute;
 	} else {
 		stmt *s;
 
@@ -909,7 +895,7 @@ produce code.
 			backend_callinline(be, c, s );
 		} else {
 			/* generate a factory instantiation */
-			backend_dumpproc(be, c, m->qc->id, s);
+			size_t factorized = backend_dumpproc(be, c, m->qc->id, s);
 			be->q = qc_insert(m->qc, 
 					  m->sa,      /* the allocator */
 					  m->sym,     /* the sql symbol tree */
@@ -917,9 +903,10 @@ produce code.
 					  m->argc,
 					  m->scanner.key,	/* the statement hash key */
 					  m->type,	/* the type of the statement */
-					  _strdup("the mal block?"));
+					  (char*)factorized/*_strdup("the mal block?")*/);
 
 			be->q->code = (backend_code) c->curprg;
+			be->q->stk = 0;
 			m->sa = NULL;
 			m->sym = NULL;
 		} 
@@ -1020,7 +1007,6 @@ str
 SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 {
 	mvc *c = be->mvc;
-	node *p;
 	int argc, parc; 
 	ValPtr *argv, argvbuffer[MAXARG];
 	ValRecord *argrec, argrecbuffer[MAXARG];
@@ -1058,8 +1044,7 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 	}
 
 	argc = c->argc;
-	parc = q->params?list_length(q->params):0;
-	(void)p;
+	parc = q->paramlen;
 
 	if (argc != parc) {
 		sql_error(c, 0002, "wrong number of arguments for prepared statement\n");
@@ -1069,14 +1054,14 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 			GDKfree(argrec);
 		return MAL_SUCCEED;
 	} else {
-		for (i = 0, p = q->params->h; i<c->argc && p; i++, p = p->next){
+		for (i = 0; i<c->argc; i++){
 			atom *arg = c->args[i];
-			sql_subtype *pt = p->data;
+			sql_subtype *pt = q->params+i;
 
 			if (!atom_cast(arg, pt)) {
 				char buf[BUFSIZ];
 
-				snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, arg->tpe->type->sqlname);
+				snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, atom_type(arg)->type->sqlname);
 				sql_error(c, 003, buf);
 				if( pci->argc >= MAXARG)
 					GDKfree(argv);
@@ -1087,9 +1072,9 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 			argv[pci->retc+i]= &arg->data;
 		}
 	}
-	glb= (MalStkPtr) (size_t)(q->stk);
+	glb = (MalStkPtr)(q->stk);
 	ret= callMAL(cntxt,mb, &glb, argv, (c->mode == m_debug?'n':0));
-	q->stk = (size_t) glb;
+	q->stk = (backend_stack)glb;
 	if( pci->argc >= MAXARG)
 		GDKfree(argv);
 	if( pci->retc >= MAXARG)
@@ -1154,9 +1139,11 @@ The code below is copied from MALengine, which handles execution
 in the context of a user global environment. We have a private
 environment.
 @c
-	if( MALcommentsOnly(c->curprg->def))
+	if( MALcommentsOnly(c->curprg->def)) {
 		msg= MAL_SUCCEED;
-	else msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+	} else {
+		msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+	}
 
 cleanup_engine:
     if (msg) {

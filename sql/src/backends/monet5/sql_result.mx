@@ -396,15 +396,15 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 			fmt[i].name = col->base.name;
 			fmt[i].sep = (n->next) ? _strdup(sep) : _strdup(rsep);
 			fmt[i].seplen = (int) strlen(fmt[i].sep);
-			fmt[i].type = col->type->type->base.name;
+			fmt[i].type = col->type.type->base.name;
 			fmt[i].adt = ATOMindex(fmt[i].type);
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = NULL;
-			if (col->type->type->eclass == EC_DEC) {
+			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
-				fmt[i].extra = col->type;
+				fmt[i].extra = &col->type;
 			}
 		}
 		if (TABLETcreate_bats(&as) >= 0) {
@@ -533,8 +533,8 @@ mvc_export_row(mvc *m, stream *s, res_table *t)
 			if (!ok)
 				break;
 		}
-		export_value(m, s, c->type->type->eclass, 
-			c->type->type->sqlname, c->type->scale, 
+		export_value(m, s, c->type.type->eclass, 
+			c->type.type->sqlname, c->type.scale, 
 			c->p, c->mtype, &buf, &len);
 	}
 	if( len)
@@ -615,15 +615,15 @@ mvc_export_table(mvc *m, stream *s, res_table *t, unsigned int offset, unsigned 
 		fmt[i].tostr = &_ASCIIadt_toStr;
 		fmt[i].frstr = &_ASCIIadt_frStr;
 		fmt[i].extra = NULL;
-		if (c->type->type->eclass == EC_DEC) {
+		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
-			fmt[i].extra = (void *) (ptrdiff_t) c->type->scale;
-		} else if (c->type->type->eclass == EC_TIMESTAMP && strcmp(c->type->type->sqlname, "timestamptz") == 0) {
+			fmt[i].extra = (void *) (ptrdiff_t) c->type.scale;
+		} else if (c->type.type->eclass == EC_TIMESTAMP && strcmp(c->type.type->sqlname, "timestamptz") == 0) {
 			fmt[i].tostr = &sql_timestamp_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = m;
-		} else if (c->type->type->eclass == EC_TIME && strcmp(c->type->type->sqlname, "timetz") == 0) {
+		} else if (c->type.type->eclass == EC_TIME && strcmp(c->type.type->sqlname, "timetz") == 0) {
 			fmt[i].tostr = &sql_time_tostr;
 			fmt[i].frstr = NULL;
 			fmt[i].extra = m;
@@ -782,7 +782,7 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
 
-		ok = (stream_write(s, c->type->type->sqlname, strlen(c->type->type->sqlname), 1) == 1);
+		ok = (stream_write(s, c->type.type->sqlname, strlen(c->type.type->sqlname), 1) == 1);
 		if (i + 1 < t->nr_cols && ok)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 	}
@@ -791,10 +791,10 @@ mvc_export_result(mvc *m, stream *s, int res_id)
 
 	for (i = 0; i < t->nr_cols && ok; i++) {
 		res_col *c = t->cols + i;
-		int mtype = c->type->type->localtype;
-		int eclass = c->type->type->eclass;
+		int mtype = c->type.type->localtype;
+		int eclass = c->type.type->eclass;
 
-		ok = export_length(s, mtype, eclass, c->type->digits, c->type->scale, c->b, c->p);
+		ok = export_length(s, mtype, eclass, c->type.digits, c->type.scale, c->b, c->p);
 		if (i + 1 < t->nr_cols && ok)
 			ok = (stream_write(s, ",\t", 2, 1) == 1);
 	}

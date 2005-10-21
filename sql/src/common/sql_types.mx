@@ -69,10 +69,17 @@ extern int sql_type_convert(int form, int to); /* return 1, convert possible but
 extern int is_commutative(char *fnm); 	/* return 1, if commutative */
 
 extern char *sql_bind_alias(char *alias);
+
+extern int sql_find_subtype(sql_subtype *res, char *name, unsigned int digits, unsigned int scale);
+/*extern int *sql_find_numeric(int localtype, unsigned int digits);
+extern int *sql_find_localtype(char *name);
+*/
+
 extern sql_subtype *sql_bind_subtype(char *name, unsigned int digits, unsigned int scale);
 extern sql_subtype *sql_bind_numeric(int localtype, unsigned int digits);
 extern sql_subtype *sql_bind_localtype(char *name);
 extern sql_subtype *sql_create_subtype(sql_type *t, unsigned int s, unsigned int d);
+extern void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned int scale);
 extern sql_subtype *sql_dup_subtype(sql_subtype *t);
 extern void sql_subtype_destroy(sql_subtype *t);
 
@@ -244,11 +251,9 @@ base_destroy(sql_base * b)
 		_DELETE(b->name);
 }
 
-sql_subtype *
-sql_create_subtype(sql_type *t, unsigned int digits, unsigned int scale)
+void
+sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned int scale)
 {
-	sql_subtype *res = NEW(sql_subtype);
-
 	sql_ref_init(&(res->ref));
 	res->type = t;
 	res->digits = digits ? digits : t->digits;
@@ -256,6 +261,14 @@ sql_create_subtype(sql_type *t, unsigned int digits, unsigned int scale)
 		res->digits = t->digits;
 	res->scale = scale;
 	res->fixed = EC_FIXED(t->eclass);
+}
+
+sql_subtype *
+sql_create_subtype(sql_type *t, unsigned int digits, unsigned int scale)
+{
+	sql_subtype *res = NEW(sql_subtype);
+
+	sql_init_subtype(res, t, digits, scale);
 	if (sql_debug) {
 		sql_ref_inc(&(res->ref));
 		list_append(subtypes, res);
@@ -325,8 +338,9 @@ sql_bind_numeric(int localtype, unsigned int digits)
 	return NULL;
 }
 
-sql_subtype *
-sql_bind_subtype(char *name, unsigned int digits, unsigned int scale)
+int 
+sql_find_subtype(sql_subtype *res, char *name, unsigned int digits, unsigned int scale)
+{
 	/* todo add approximate info
 	 * if digits/scale == 0 and no approximate with digits/scale == 0
 	 * exists we could return the type with largest digits
@@ -334,7 +348,6 @@ sql_bind_subtype(char *name, unsigned int digits, unsigned int scale)
 	 * returning the largest when no exact match is found is now the
 	 * (wrong?) default
 	 */
-{
 	/* assumes the types are ordered on name,digits,scale where is always
 	 * 0 > n
 	 */
@@ -345,7 +358,8 @@ sql_bind_subtype(char *name, unsigned int digits, unsigned int scale)
 
 		if (t->sqlname[0] == name[0] && strcmp(t->sqlname, name) == 0) {
 			if ((digits && t->digits >= digits) || (digits == t->digits)) {
-				return sql_create_subtype(t, digits, scale);
+				sql_init_subtype(res, t, digits, scale);
+				return 1;
 			}
 			for (m = n->next; m; m = m->next) {
 				t = m->data;
@@ -354,14 +368,28 @@ sql_bind_subtype(char *name, unsigned int digits, unsigned int scale)
 				}
 				n = m;
 				if ((digits && t->digits >= digits) || (digits == t->digits)) {
-					return sql_create_subtype(t, digits, scale);
+					sql_init_subtype(res, t, digits, scale);
+					return 1;
 				}
 			}
 			t = n->data;
-			return sql_create_subtype(t, digits, scale);
+			sql_init_subtype(res, t, digits, scale);
+			return 1;
 		}
 	}
-	return NULL;
+	return 0;
+}
+
+sql_subtype *
+sql_bind_subtype(char *name, unsigned int digits, unsigned int scale)
+{
+	sql_subtype *res = NEW(sql_subtype);
+	
+	if (!sql_find_subtype(res, name, digits, scale)) {
+		_DELETE(res);
+		return NULL;
+	}
+	return res;
 }
 
 #ifndef NDEBUG

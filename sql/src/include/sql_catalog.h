@@ -274,7 +274,7 @@ struct sql_histo   *histogram;    /* the underlying base histogram; must NOT be 
 
 typedef struct sql_column {
 	sql_base base;
-	sql_subtype *type;
+	sql_subtype type;
 	int colnr;
 	bit null;
 	char *def;
@@ -318,7 +318,7 @@ typedef struct sql_schema {
 typedef struct res_col {
 	char *tn;
 	char *name;
-	sql_subtype *type;
+	sql_subtype type;
 	bat b;
 	int mtype;
 	ptr *p;
@@ -335,7 +335,7 @@ typedef struct res_table {
 } res_table;
 
 typedef void *backend_code;
-typedef int backend_stack;
+typedef size_t backend_stack;
 
 typedef struct sql_trans {
 	char *name;

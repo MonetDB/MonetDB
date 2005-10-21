@@ -166,8 +166,7 @@ sql_convert_arg(mvc *sql, int nr, sql_subtype *rt)
 			}
 		}
 	}
-	sql_subtype_destroy(a->tpe);
-	a->tpe = sql_dup_subtype(rt);
+	a->tpe = *rt;
 }
 
 void

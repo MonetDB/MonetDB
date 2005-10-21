@@ -89,7 +89,7 @@ exp_print(mvc *sql, sql_exp *e, int depth, int comma, int alias)
 		if (e->l) {
 			atom *a = e->l;
 			char *s = atom2string(a);
-			if (a->tpe->type->localtype == TYPE_str)
+			if (atom_type(a)->type->localtype == TYPE_str)
 				printf("'%s'", s);
 			else
 				printf("%s", s);

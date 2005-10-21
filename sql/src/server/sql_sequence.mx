@@ -209,6 +209,7 @@ sequences(mvc *sql, symbol *s)
 {
 	stmt *res = NULL;
 
+	sql->type = Q_SCHEMA; 
 	switch (s->token) {
 		case SQL_CREATE_SEQ:
 		{
@@ -255,7 +256,6 @@ sequences(mvc *sql, symbol *s)
 		case SQL_DROP_SEQ:
 		{
 			dlist *l = s->data.lval;
-
 			res = sql_drop_seq(sql, cur_schema(sql), l->h->data.lval);
 		}
 		break;
