@@ -1,0 +1,34 @@
+stdout of test 'ID.1333969` in directory 'tests/BugsViaSourgeforce` itself:
+
+
+# 15:57:05 >  
+# 15:57:05 >  Mtimeout -timeout 180 Mserver "--config=/ufs/sjoerd/Monet/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/sjoerd/src/MonetDB/devel/pathfinder/Linux/runtime/.libs:/ufs/sjoerd/Monet/lib/MonetDB" --set "gdk_dbfarm=/ufs/sjoerd/src/MonetDB/devel/pathfinder/Linux/dbfarm" --set "sql_logdir=/ufs/sjoerd/src/MonetDB/devel/pathfinder/Linux/log" --set mapi_port=39030 --set sql_port=49907 --set xquery_port=56244 --set monet_prompt= --trace "--dbname=mTests_tests_BugsViaSourgeforce" --dbinit="module(pathfinder); pfstart();" ; echo ; echo Over..
+# 15:57:05 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 15:57:06 >  
+# 15:57:06 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=56244 ID.1333969.xq
+# 15:57:06 >  
+
+socket_readable: FIONREAD 0
+socket_readable: FIONREAD 0
+<?xml version="1.0" encoding="utf-8"?>
+<XQueryResult>
+<b><c id="1"><d id="2"/></c><c/></b>
+</XQueryResult>
+
+# 15:57:06 >  
+# 15:57:06 >  Done.
+# 15:57:06 >  
+
