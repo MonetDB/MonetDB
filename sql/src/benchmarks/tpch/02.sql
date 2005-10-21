@@ -41,5 +41,4 @@ order by
 	n_name,
 	s_name,
 	p_partkey
-;
---limit 100;
+limit 100;
