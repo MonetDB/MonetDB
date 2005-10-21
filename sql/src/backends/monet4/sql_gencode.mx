@@ -1182,15 +1182,20 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					char *tn = (tname) ? tname : "";
 					char *cn = column_name(c);
 					sql_subtype *t = tail_type(c);
+					
+					char *ntn = sql_escape_ident(tn);
+					char *ncn = sql_escape_ident(cn);
 
 					len = snprintf(buf, buflen, "var s%d := mvc_export_value(myc, Output, %d, ", -s->nr, sql->mvc->type );
 	
-					len += snprintf(buf+len, buflen-len, "\"%s\", \"%s\", \"%s\", %d, %d, %d, s%d);\n", tn, cn, t->type->sqlname, t->digits, t->scale, t->type->eclass, c->nr);
+					len += snprintf(buf+len, buflen-len, "\"%s\", \"%s\", \"%s\", %d, %d, %d, s%d);\n", ntn, ncn, t->type->sqlname, t->digits, t->scale, t->type->eclass, c->nr);
 					write_command(sql, buf);
 					write_part(sql, buf, len);
 					len = 0;
 					write_tail(sql, -s->nr);
 					_DELETE(buf);
+					_DELETE(ntn);
+					_DELETE(ncn);
 					backend_dec_nr2(s->op1.stval);
 					break;
 				}
@@ -1215,14 +1220,19 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					char *cn = column_name(c);
 					size_t sl;
 
+					char *ntn = sql_escape_ident(tn);
+					char *ncn = sql_escape_ident(cn);
+
 					sl = strlen(tn) + strlen(cn) + strlen(tail_type(c)->type->sqlname);
 					if (buflen - len < 128 + sl) {
 						buflen += BUFSIZ + sl;
 						buf = RENEW_ARRAY(char, buf, buflen);
 					}
-					len = snprintf(buf, buflen, "mvc_result_column(myc, \"%s\", \"%s\", \"%s\", %d, %d, s%d);\n", tn, cn, tail_type(c)->type->sqlname, tail_type(c)->digits, tail_type(c)->scale, c->nr);
+					len = snprintf(buf, buflen, "mvc_result_column(myc, \"%s\", \"%s\", \"%s\", %d, %d, s%d);\n", ntn, ncn, tail_type(c)->type->sqlname, tail_type(c)->digits, tail_type(c)->scale, c->nr);
 					assert(len <= buflen);
 					_DELETE(cn);
+					_DELETE(ntn);
+					_DELETE(ncn);
 					if (tname)
 						_DELETE(tname);
 					write_command(sql, buf);
