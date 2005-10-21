@@ -144,7 +144,7 @@ normSpace normalizes the whitespaces to a single space."
 		: BAT[oid,str] = CMDcombine_text_string;
 "PARAMETERS:
 BAT[void,oid] - iter values which have to be ordered
-BAT[void,oid] - one of three different kinds (strings '3@0'; text-nodes '2@0' and other nodes '1@0')
+BAT[void,oid] - one of three different kinds (strings '2@0'; text-nodes '1@0' and other nodes '0@0')
 BAT[void,str] - string values of the strings and text-nodes; an empty string for each other node
 DESCRIPITON:
 very specialized helper function for the translation of the item-sequence-to-node-sequence function in XQuery.
@@ -2115,7 +2115,7 @@ CMDnormSpace(str *res, str string)
 
         pointer = GDKstrdup(string);
         if (pointer == NULL) {
-                GDKerror("combine_text_string: GDKmalloc(" SZFMT ") failed.\n",
+                GDKerror("normSpace: GDKmalloc(" SZFMT ") failed.\n",
                          strlen (string) + 1);
                 return GDK_FAIL;
         }
@@ -2174,9 +2174,9 @@ math_unary_up_ROUND(dbl *res, dbl *x)
 
 
 
-#define KIND_NODE (oid)1
-#define KIND_TEXT (oid)2
-#define KIND_STR  (oid)3
+#define KIND_NODE (oid)0
+#define KIND_TEXT (oid)1
+#define KIND_STR  (oid)2
 
 int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int *result_size )
 {
@@ -2266,8 +2266,11 @@ int CMDcombine_text_string( BAT** res, BAT *iter, BAT *kind, BAT *str_value, int
 			actual_str[len++] = ' ';
 			actual_str[len] = '\0';
 		}
-		strcpy(actual_str + len, s); /* we know it fits */
-		len += l - 1;	/* compensate for +1 earlier on */
+        if (k != KIND_NODE)
+        {
+		    strcpy(actual_str + len, s); /* we know it fits */
+		    len += l - 1;	/* compensate for +1 earlier on */
+        }
 		i0 = i;
 		k0 = k;
 		base0 = base++;
@@ -2793,6 +2796,17 @@ int CMDmposjoin ( BAT** res, BAT* pre, BAT* frag, BAT* ws_item )
 	BATsetcount(bn, bn->batBuns->free/BUNsize(bn));
 
 @= mpos_res_prop
+    /* check result size */
+    if (BATcount(pre) > BATcount(bn)) {
+		GDKerror("mposjoin: missing matches. The result requires the "
+                 "same number of tuples as the first two input arguments.");
+    if (BATcount(pre) < BATcount(bn)) {
+		GDKerror("mposjoin: more than one match per input tuple. "
+                 "seqbase does not match anymore.");
+		@:mpos_free_batlist@
+		return GDK_FAIL;
+	}
+
 	/* set result properties */
 
 	if (!bn->batDirty) bn->batDirty = TRUE;
