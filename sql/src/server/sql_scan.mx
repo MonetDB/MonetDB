@@ -47,6 +47,7 @@ struct scanner {
 	int as;			/* start of query part of view's etc */
 	int view_end;		/* end of query part of view */
 	int key;
+	int started;		/* found at least one token */
 	prot mode;		/* which mode (line (1,N), blocked) */
 };
 
@@ -327,6 +328,7 @@ scanner_init(struct scanner *s, bstream *rs, stream *ws)
 	s->yycur = 0;
 
 	s->key = 0;		/* keep a hash key of the query */
+	s->started = 0;
 	s->as = s->view_end = 0;
 
 	s->mode = LINE_N;
@@ -352,6 +354,7 @@ scanner_query_processed(struct scanner *s)
 	assert(s->rs->pos <= s->rs->len);
 	s->yycur = 0;
 	s->key = 0;		/* keep a hash key of the query */
+	s->started = 0;
 	s->as = s->view_end = 0;
 }
 
@@ -416,7 +419,7 @@ scanner_read_more(struct scanner *lc, int n)
 
 	while (b->len < b->pos + lc->yycur + n) {
 
-		if (lc->mode == LINE_1)
+		if (lc->mode == LINE_1 || !lc->started)
 			return EOF;
 
 		/* query is not finished ask for more */
@@ -727,45 +730,45 @@ tokenize(mvc * c, int cur)
 		} else if (ispunct(cur)) {
 			return scanner_symbol(c, cur);
 		}
-		if (cur == EOF || iscntrl(cur))
+		if (cur == EOF) {
+			if (lc->mode == LINE_1 || !lc->started )
+				return cur;
+			return scanner_error(c, cur);
+		}
+		if (iscntrl(cur))
 			return scanner_error(c, cur);
 	}
 }
 
 int
-valid_ident(char *s)
+valid_ident(char *s, char *dst)
 {
 	int escaped = 0;
-	char ident[1025];
 	int p = 0;
-	char* src = s;
 	
 	if (*s != '_' && !isalpha((int) *s) && *s != ' ')
 		return 0;
-	ident[p++] = *s++;
 	/* do unescaping in the loop */
-	while (*s != '"' || escaped) {
+	while (*s && (*s != '"' || escaped)) {
 		if (*s == '\\') {
 			escaped = !escaped;
 			if (!escaped) {
-				ident[p++] = *s;
+				dst[p++] = *s;
 			}
 		} else if (*s == '"' && escaped) {
 			escaped = 0;
-			ident[p++] = *s;
+			dst[p++] = *s;
 		} else if (*s != '_' && !isalnum((int) *s) && *s != ' ') {
 			return 0;
 		} else {
 			escaped = 0;
-			ident[p++] = *s;
+			dst[p++] = *s;
 		}
 		s++;
 		if (p >= 1024)
 			return 0;
 	}
-	ident[p] = '\0';
-	if (p < s - src)
-		memcpy(src, ident, p + 1);
+	dst[p] = '\0';
 	return 1;
 }
 
@@ -809,14 +812,20 @@ sqllex(YYSTYPE * yylval, void *parm)
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 	if (token == STRING) {
 		char quote = *yylval->sval;
+		char *str = sa_alloc( c->sa, (lc->yycur-lc->yysval-2)*2 +1 );
 		assert(quote == '"' || quote == '\'');
-		if (quote == '"' && valid_ident(yylval->sval + 1)) {
-			token = IDENT;
-		}
+
 		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = 0; 
-		yylval->sval = sa_strndup(c->sa, yylval->sval+1, lc->yycur-lc->yysval - 2);
+		if (quote == '"' && valid_ident(yylval->sval+1,str)) {
+			token = IDENT;
+		} else {
+			memcpy(str, yylval->sval+1, lc->yycur-lc->yysval - 1);
+		}
+		yylval->sval = str;
+
 		/* reset original */
 		lc->rs->buf[lc->rs->pos+lc->yycur- 1] = quote; 
+
 	}
 
 	if (token == UNION) {
@@ -849,6 +858,6 @@ sqllex(YYSTYPE * yylval, void *parm)
 	/* Don't include literals in the calculation of the key */
 	if (token != STRING && token != sqlINT && token != INTNUM && token != APPROXNUM && token != NULLX)
 		lc->key ^= token;
-
+	lc -> started += (token != EOF);
 	return token;
 }

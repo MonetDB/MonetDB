@@ -317,7 +317,7 @@ sqlexecute(backend *be, stream *out)
 	if ((err = sqlparse(c)) ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(c) && c->type != Q_TRANS) || !c->sym) {
-		if (!err) /* old or parse errors */
+		if (!err && c->scanner.started) /* repeat old errors, with a parsed query */
 			err = mvc_status(c);
 		return sqlcleanup(c, err);
 	}
@@ -455,9 +455,6 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console)
 	in->eof = 1;		/* force prompt on first iteration */
 	while (go) {
 		int pstatus = 0;
-
-		while (in->pos < in->len && (isspace((int) (in->buf[in->pos])) || in->buf[in->pos] == ';'))
-			in->pos++;
 
 		if (in->pos >= in->len) {
 			ssize_t rd;

@@ -601,9 +601,6 @@ Continue processing any left-over input from the previous round.
 	stream_printf(GDKout, "#pos %d len %d\n", in->pos, in->len);
 	stream_flush(GDKout);
 #endif
-	/* skip whitespace */
-	while (in->pos < in->len && (isspace((int) (in->buf[in->pos])) || in->buf[in->pos] == ';'))
-		in->pos++;
 @-
 Distinguish between console reading and MapiClient connections.
 The former comes with readline functionality.
@@ -856,10 +853,12 @@ SQLparser(Client c)
 	if( err ||
 	    /* Only forget old errors on transaction boundaries */
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
-		if (!err)
+		if (!err && m->scanner.started) /* repeat old errors, with a parsed query */
 			err = mvc_status(m);
-		msg = throwMessage("SQLparser", m->errstr);
-		handle_error(m, c->fdout, pstatus);
+		if (err) {
+			msg = throwMessage("SQLparser", m->errstr);
+			handle_error(m, c->fdout, pstatus);
+		}
 		sqlcleanup(m, err);
 		goto finalize;
 	}
