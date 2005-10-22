@@ -439,6 +439,7 @@ int yydebug=1;
 	opt_min
 	opt_max
 	opt_cycle
+	opt_seq_value
 
 %type <bval>
 	opt_brackets
@@ -926,16 +927,22 @@ seq_def:
 		_dlist_append_list(l, $3);
 		$$ = _symbol_create_list(SQL_DROP_SEQ, l);
 	}
-  |	ALTER SEQUENCE qname opt_seq_params
+  |	ALTER SEQUENCE qname opt_seq_params opt_seq_value
 	{
 		dlist *l = _dlist_create();
 		_dlist_append_list(l, $3);
 		_dlist_append_type(l, NULL);
 		_dlist_append_list(l, $4);
+		_dlist_append_int(l, $5);
 		$$ = _symbol_create_list(SQL_ALTER_SEQ, l);
 	}
 		
  ;
+
+opt_seq_value:
+	/* empty */		{ $$ = -1; }
+  |	VALUE nonzero	{ $$ = $2; }
+  ;
 
 opt_seq_params:
 	opt_start

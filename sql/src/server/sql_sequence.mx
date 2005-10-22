@@ -122,7 +122,8 @@ sql_alter_seq(
 		lng inc,
 		lng min,
 		lng max,
-		int cycle)
+		int cycle,
+		lng cur)
 {
 	char buf[BUFSIZ];
 	char* name = qname_table(qname);
@@ -159,6 +160,9 @@ sql_alter_seq(
 	col = find_sql_column(seqs, "maxvalue");
 	assert(col);
 	if (max < 0) max = *(lng*)column_find_value(sql->trans, col, rid);
+	col = find_sql_column(seqs, "cached");
+	assert(col);
+	if (cur < 0) cur = *(lng*)column_find_value(sql->trans, col, rid);
 
 	snprintf(buf, BUFSIZ,
 		"update sys.sequences set "
@@ -168,8 +172,9 @@ sql_alter_seq(
 		"min = %lld "
 		"max = %lld "
 		"cycle = %s "
+		"cache = %lld "
 		"where name = '%s' and schema = '%s';",
-		start, start - 1, inc, min, max, cycle ? "true" : "false",
+		start, start - 1, inc, min, max, cycle ? "true" : "false", cur,
 		name, ss->base.name);
 	return stmt_sql(_strdup(buf));
 }
@@ -251,7 +256,8 @@ sequences(mvc *sql, symbol *s)
 					l->h->next->next->data.lval->h->next->data.ival, 
 					l->h->next->next->data.lval->h->next->data.ival, 
 					l->h->next->next->data.lval->h->next->next->data.ival,
-					l->h->next->next->data.lval->h->next->next->next->data.ival);
+					l->h->next->next->data.lval->h->next->next->next->data.ival,
+					l->h->next->next->next->data.ival);
 		}
 		case SQL_DROP_SEQ:
 		{
