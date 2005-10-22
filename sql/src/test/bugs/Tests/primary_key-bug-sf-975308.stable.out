@@ -29,17 +29,40 @@ Over..
 # 1 # tuplecount
 # 1 # id
 [ 1	]
+# 4 # querytype
+[ 1	]
+# 3 # querytype
+# test_pk,	test_pk # table_name
+# y,	x # name
+# int,	int # type
+# 10,	10 # length
+# 2,	 # tuplecount
+# 0,	 # id
+[ 2,	3	]
+[ 2,	4	]
+# 7 # querytype
 # 7 # querytype
 # 3 # querytype
-# test,	test # table_name
-# id,	s # name
-# int,	varchar # type
-# 11,	1 # length
-# 3,	 # tuplecount
+# test_pk,	test_pk # table_name
+# y,	x # name
+# int,	int # type
+# 10,	10 # length
+# 2,	 # tuplecount
+# 1,	 # id
+[ 2,	3	]
+[ 2,	4	]
+# 4 # querytype
+[ 2	]
+# 3 # querytype
+# test_pk,	test_pk # table_name
+# y,	x # name
+# int,	int # type
+# 10,	10 # length
+# 2,	 # tuplecount
 # 2,	 # id
-[ 1,	"a"	]
-[ 2,	"b"	]
-[ 3,	"c"	]
+[ 1,	3	]
+[ 1,	4	]
+# 7 # querytype
 # 7 # querytype
 # 3 # querytype
 # test,	test # table_name
@@ -48,11 +71,12 @@ Over..
 # 11,	1 # length
 # 3,	 # tuplecount
 # 3,	 # id
-[ 1,	"a"	]
-[ 2,	"b"	]
-[ 3,	"c"	]
+[ 1,	3	]
+[ 1,	4	]
+# 6 # querytype
+# 7 # querytype
 
-# 13:21:26 >  
-# 13:21:26 >  Done.
-# 13:21:26 >  
+# 23:28:59 >  
+# 23:28:59 >  Done.
+# 23:28:59 >  
 

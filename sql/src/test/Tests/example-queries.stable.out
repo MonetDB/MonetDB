@@ -9,11 +9,9 @@ stdout of test 'example-queries` in directory 'src/test` itself:
 # Copyright (c) 1993-2004, CWI. All rights reserved.
 # Compiled for i686-redhat-linux-gnu/32bit; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+#Ready to accept connections on koala.ins.cwi.nl:42613
 
 Ready.
-quit();
 
 Over..
 

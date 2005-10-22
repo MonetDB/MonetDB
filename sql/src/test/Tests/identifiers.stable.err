@@ -68,12 +68,9 @@ stderr of test 'identifiers` in directory 'src/test` itself:
 # 22:26:32 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45449  < identifiers.sql
 # 22:26:32 >  
 
-MAPI  = monetdb@localhost:45449
+MAPI  = monetdb@localhost:42613
 QUERY = SELECT 1 AS "\"Bla\""; -- should fail
 ERROR = !syntax error, unexpected STRING in: "select 1 as "\"Bla\"""
-MAPI  = monetdb@localhost:45449
-QUERY = SELECT 1 AS "\"Bla\""; -- should fail
-ERROR = !current transaction is aborted (please ROLLBACK)
 
 # 22:26:32 >  
 # 22:26:32 >  Done.

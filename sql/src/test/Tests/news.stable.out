@@ -9,11 +9,9 @@ stdout of test 'news` in directory 'src/test` itself:
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+#Ready to accept connections on koala.ins.cwi.nl:42613
 
 Ready.
-quit();
 
 Over..
 

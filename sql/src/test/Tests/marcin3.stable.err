@@ -51,18 +51,17 @@ stderr of test 'marcin3` in directory 'src/test` itself:
 # 20:07:35 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < marcin3.sql
 # 20:07:35 >  
 
-MAPI  = monetdb@localhost:40376
+MAPI  = monetdb@localhost:42613
 QUERY = select id, sum(val) AS valsum from nutki group by id having val>1;
 ERROR = !cannot use non GROUP BY column 'val' in query results without an aggregate function
-MAPI  = monetdb@localhost:40376
+MAPI  = monetdb@localhost:42613
 QUERY = select id, sum(val) AS valsum from nutki group by id having val>2;
 ERROR = !cannot use non GROUP BY column 'val' in query results without an aggregate function
-MAPI  = monetdb@localhost:40376
+MAPI  = monetdb@localhost:42613
 QUERY = select id, sum(val) AS valsum from nutki group by id having valsum>3;
 ERROR = !identifier valsum unknown or ambigious
 
-
-# 20:07:35 >  
-# 20:07:35 >  Done.
-# 20:07:35 >  
+# 21:15:41 >  
+# 21:15:41 >  Done.
+# 21:15:41 >  
 

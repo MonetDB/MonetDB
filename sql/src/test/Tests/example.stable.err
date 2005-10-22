@@ -47,9 +47,11 @@ stderr of test 'example` in directory 'src/test` itself:
 # cmdline opt 	sql_port = 50445
 # server listening on port 50445
 
-# 20:07:26 >  
-# 20:07:26 >  Mtimeout -timeout 60 Msql -u monetdb -P monetdb --host=stem --port=50445 < example.sql
-# 20:07:26 >  
+
+
+# 23:41:30 >  
+# 23:41:30 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42613  < example.sql
+# 23:41:30 >  
 
 
 # 20:07:26 >  
