@@ -64,14 +64,15 @@ stderr of test 'huge_expression_and_column_name.SF-921173` in directory 'src/tes
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_BugDay_2005-10-06_2.9.3
 
+# 18:37:34 >  
+# 18:37:34 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49484  < huge_expression_and_column_name.SF-921173.sql
+# 18:37:34 >  
 
+MAPI  = monetdb@localhost:49484
+QUERY = select 1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1
+ERROR = !Too many nested operators
 
-# 11:32:13 >  
-# 11:32:13 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=44392  < huge_expression_and_column_name.SF-921173.sql
-# 11:32:13 >  
-
-
-# 11:32:13 >  
-# 11:32:13 >  Done.
-# 11:32:13 >  
+# 18:37:34 >  
+# 18:37:34 >  Done.
+# 18:37:34 >  
 

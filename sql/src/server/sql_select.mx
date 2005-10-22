@@ -811,12 +811,21 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 	return res;
 }
 
+#define MAXDEPTH 512
+
 static stmt *
 sql_binop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 {
 	dnode *l = se->data.lval->h;
-	stmt *ls = sql_value_exp(sql, scp, l->next->data.sym, grp, subset, f);
-	stmt *rs = sql_value_exp(sql, scp, l->next->next->data.sym, grp, subset, f);
+	stmt *ls, *rs;
+
+	sql->depth++;
+	if (sql->depth > MAXDEPTH)
+		return sql_error(sql, 02, "Too many nested operators");
+
+ 	ls = sql_value_exp(sql, scp, l->next->data.sym, grp, subset, f);
+	rs = sql_value_exp(sql, scp, l->next->next->data.sym, grp, subset, f);
+	sql->depth --;
 
 	if (!ls || !rs) {
 		if (ls)

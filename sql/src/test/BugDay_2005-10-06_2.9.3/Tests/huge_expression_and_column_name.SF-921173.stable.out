@@ -1,0 +1,29 @@
+stdout of test 'huge_expression_and_column_name.SF-921173` in directory 'src/test/BugDay_2005-10-06_2.9.3` itself:
+
+
+# 18:37:34 >  
+# 18:37:34 >  Mtimeout -timeout 180 Mserver "--config=/ufs/niels/scratch/Linux-x86_64/build-m5/etc/MonetDB5.conf" --debug=10 --set "monet_mod_path=/ufs/niels/scratch/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/Linux-x86_64/build-m5/lib/MonetDB5" --set "gdk_dbfarm=/ufs/niels/scratch/Linux-x86_64/build-m5/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/niels/scratch/Linux-x86_64/build-m5/var/MonetDB5/log" --set mapi_port=39312 --set sql_port=49484 --set xquery_port=53962 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="include sql; mapi.listen(49484:int);" ; echo ; echo Over..
+# 18:37:34 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# config:/ufs/niels/scratch/Linux-x86_64/build-m5/etc/MonetDB5.conf
+# dbfarm:/ufs/niels/scratch/Linux-x86_64/build-m5/var/MonetDB5/dbfarm
+# dbname:mTests_src_test_BugDay_2005-10-06_2.9.3
+# Visit http://monetdb.cwi.nl/ for further information.
+#Ready to accept connections on koala.ins.cwi.nl:49484
+
+Ready.
+
+Over..
+
+# 18:37:34 >  
+# 18:37:34 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=49484  < huge_expression_and_column_name.SF-921173.sql
+# 18:37:34 >  
+
+
+# 18:37:34 >  
+# 18:37:34 >  Done.
+# 18:37:34 >  
+

@@ -951,6 +951,7 @@ In the final phase we add any debugging control
 		be->qry = sql_escape_str(QUERY(m->scanner));
 		be->Tparse = GDKusec() - T0;
 	}
+	scanner_query_processed(&(m->scanner));
 
 @-
 During the execution of the query exceptions can be raised.
