@@ -1226,7 +1226,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		dlist *olist = n->next->data.lval;
 
 		if (!c) {
-			return sql_error(sql, 02, "column %s not found\n", cname);
+			return sql_error(sql, 02, "column '%s' not found\n", cname);
 		} else {
 			if (column_options(sql, olist, ss, t, c, alter) == SQL_ERR)
 				return NULL;
