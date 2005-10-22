@@ -1178,11 +1178,11 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				/* single value result, has a fast exit */
 				if (cnt == 1 && !order && f->nrcols <= 0){
 					stmt *c = n->data;
-					char *tname = table_name(c);
-					char *tn = (tname) ? tname : "";
-					char *cn = column_name(c);
 					sql_subtype *t = tail_type(c);
-					
+					char *tname = table_name(c);
+					char *_tn = "";
+					char *tn = (tname) ? tname : _tn;
+					char *cn = column_name(c);
 					char *ntn = sql_escape_ident(tn);
 					char *ncn = sql_escape_ident(cn);
 
@@ -1194,6 +1194,9 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 					len = 0;
 					write_tail(sql, -s->nr);
 					_DELETE(buf);
+					if (tn != _tn)
+						_DELETE(tn);
+					_DELETE(cn);
 					_DELETE(ntn);
 					_DELETE(ncn);
 					backend_dec_nr2(s->op1.stval);
@@ -1214,12 +1217,12 @@ backend_dumpstmt_(stmt *s, int *nr, backend *sql)
 				write_part(sql, buf, len);
 				len = 0;
 				for (; n; n = n->next) {
+					size_t sl;
 					stmt *c = n->data;
 					char *tname = table_name(c);
-					char *tn = (tname) ? tname : "";
+					char *_tn = "";
+					char *tn = (tname) ? tname : _tn;
 					char *cn = column_name(c);
-					size_t sl;
-
 					char *ntn = sql_escape_ident(tn);
 					char *ncn = sql_escape_ident(cn);
 

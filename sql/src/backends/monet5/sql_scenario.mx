@@ -353,7 +353,6 @@ SQLcompile(str *ret, str *expr, int *flag)
 	Client c= getClient();
 	backend *sql = ((backend *) c->state[PARSER]);
 	int len = strlen(*expr);
-	int vtop = 0;
 
 	(void) ret;
 	(void) flag;
@@ -367,7 +366,6 @@ SQLcompile(str *ret, str *expr, int *flag)
 	if (!m->sa)
 		m->sa = sa_create();
 	o = *m;
-	vtop = sql->vtop;
 	sql = backend_create(0, m, c);
 	m->qc = NULL;
 	m->cache = 0;
@@ -411,7 +409,12 @@ Now is the time to also perform the semantic analysis,
 optimize and produce code.
 We don;t search the cache for a previous incarnation.
 @c
-	{	stmt *s = sql_symbol2stmt(m);
+	{	
+		Symbol curPrg = c->curprg;
+		int vtop = c->curprg->def->vtop;
+		stmt *s = sql_symbol2stmt(m);
+
+		c->curprg = NULL;
 
 		if (!s && (err = mvc_status(m))) {
 			stream_printf(c->fdout, "#%s\n", m->errstr);
@@ -422,9 +425,20 @@ We don;t search the cache for a previous incarnation.
 		}
 		assert(s);
 		/* generate MAL code */
-		backend_callinline(sql, c, s);
-		pushEndInstruction(c->curprg->def);
-		chkProgram(c->nspace, c->curprg->def); /* make all types known */
+		backend_dumpproc(sql, c, 0, s);
+
+		chkTypes(c->nspace, c->curprg->def); /* resolve types */
+
+		extern str OPTmultiplex(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+		/* we know more in this case then
+			chkProgram(c->nspace, c->curprg->def); */
+		if (!c->curprg->def->errors && m->mode != m_prepare &&
+/*
+		    (msg = sql_get_var(m,"optimizer")) == NULL) 
+*/
+		    !m->cache) {
+			OPTmultiplex(c->curprg->def,0,0);
+		}
 		if (!c->curprg->def->errors) {
 			backend *be = c->state[PARSER];
 			sql->out = NULL; /* no output */
@@ -434,6 +448,7 @@ We don;t search the cache for a previous incarnation.
 		}
 		resetInstructions(c->curprg->def, 1);
 		freeVariables(c->curprg->def, c->glb, vtop);
+		c->curprg = curPrg;
 #ifdef _SQL_COMPILE
 		printFunction(c->fdout, c->curprg->def, c->listing);
 #endif

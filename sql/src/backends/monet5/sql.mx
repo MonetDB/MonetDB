@@ -84,6 +84,10 @@ command setVariable( varname:str ):void
 address mvc_update_var_wrap
 comment "Update a session variable";
 
+command nextValue( sequence:str ):lng
+address mvc_next_value
+comment "return the next value of the sequence";
+
 command bind_ubat(sname:str, tname:str, cname:str, access:int ) :bat[:any_1,:any_2]
 address mvc_bind_ubat_wrap
 comment "Bind bat with the updates to tname.cname 
@@ -627,8 +631,9 @@ First introduce the routines to be called by the front-end.
 #include "sql.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
-#include "bat/bat_store.h"
-#include "bat/res_table.h"
+#include <bat/bat_store.h>
+#include <bat/res_table.h>
+#include <bat/bat_sequence.h>
 #include <sql_datetime.h>
 
 backend *
@@ -781,8 +786,19 @@ mvc_update_var_wrap(int *ret, str *varname)
 	(void) ret;
 	@:getContext(m)@
 	if (sql_update_var(m, *varname) != GDK_SUCCEED)
-		return throwException(MALEXCEPTION, "mvc_update_var", "error");
+		return throwException(MALEXCEPTION, "sql.setVariable", "error");
 	return MAL_SUCCEED;
+}
+
+str
+mvc_next_value(lng *res, str *seq)
+{
+	mvc *m;
+
+	@:getContext(m)@
+	if (sql_next_value(m->trans, *seq, res))
+		return MAL_SUCCEED;
+	return throwException(MALEXCEPTION, "sql.nextValue", "error");
 }
 
 
