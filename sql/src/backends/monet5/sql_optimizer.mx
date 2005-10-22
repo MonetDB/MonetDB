@@ -119,7 +119,7 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, j, k, klim;/*, argseen=0;*/
 	MALfcn setWriteMode = 0;
 	Symbol s;
-	//lng clk = GDKusec();
+	/*lng clk = GDKusec();*/
 
 #ifdef _SQL_OPTIMIZER_DEBUG
 	stream_printf(GDKout, "First call to FXoptimizer\n");
@@ -237,7 +237,7 @@ Finalize the factory loop
 	GDKfree(mb->stmt);
 	mb->stmt = ns;
 
-	//optimizerCheck(mb,"sql.factorize",1,GDKusec()-clk);
+	/*optimizerCheck(mb,"sql.factorize",1,GDKusec()-clk);*/
 @-
 At this stage we can once call upon the optimizers to do their work.
 Static known information is known and stored in constant variables,
