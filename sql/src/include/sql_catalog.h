@@ -116,20 +116,17 @@ typedef struct sql_alias {
 } sql_alias;
 
 typedef struct sql_subtype {
-	sql_ref ref;
-
 	sql_type *type;
 	unsigned int digits;
 	unsigned int scale;
-	//unsigned char fixed;
 } sql_subtype;
 
 typedef struct sql_aggr {
 	sql_base base;
 
 	char *imp;
-	sql_subtype *tpe;
-	sql_subtype *res;
+	sql_subtype tpe;
+	sql_subtype res;
 	int nr;
 	sql_module *m;
 } sql_aggr;
@@ -138,7 +135,7 @@ typedef struct sql_subaggr {
 	sql_ref ref;
 
 	sql_aggr *aggr;
-	sql_subtype *res;
+	sql_subtype res;
 } sql_subaggr;
 
 /* sql_func need type transform rules

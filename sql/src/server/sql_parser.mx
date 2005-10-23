@@ -221,7 +221,7 @@ extern int sqlparse(void *);
 	char *		sval;
 	symbol*		sym;
 	dlist*		l;
-	sql_subtype*	type;
+	sql_subtype	type;
 }
 %{
 extern int sqllex( YYSTYPE *yylval, void *m );
@@ -598,7 +598,7 @@ declare:
 	DECLARE ident data_type
 			{ dlist *l = _dlist_create();
 			_dlist_append_string(l, $2 );
-			_dlist_append_type(l, $3 );
+			_dlist_append_type(l, &$3 );
 			$$ = _symbol_create_list( SQL_DECLARE, l); }
 	;
 
@@ -610,31 +610,35 @@ set:
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	SET sqlSESSION AUTHORIZATION ident
 		{ dlist *l = _dlist_create();
-			sql_subtype *t = sql_bind_subtype("char", strlen($4), 0 );
+		  sql_subtype t;
+	        sql_find_subtype(&t, "char", strlen($4), 0 );
 		_dlist_append_string(l, sa_strdup(SA, "current_user"));
 		_dlist_append_symbol(l,
-			_newAtomNode( _atom_string(t,sql2str($4))) );
+			_newAtomNode( _atom_string(&t, sql2str($4))) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	SET SCHEMA ident
 		{ dlist *l = _dlist_create();
-		sql_subtype *t = sql_bind_subtype("char", strlen($3), 0 );
+		  sql_subtype t;
+		sql_find_subtype(&t, "char", strlen($3), 0 );
 		_dlist_append_string(l, sa_strdup(SA, "current_schema"));
 		_dlist_append_symbol(l,
-			_newAtomNode( _atom_string(t,sql2str($3))) );
+			_newAtomNode( _atom_string(&t, sql2str($3))) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	SET user '=' ident
 		{ dlist *l = _dlist_create();
-		sql_subtype *t = sql_bind_subtype("char", strlen($4), 0 );
+		  sql_subtype t;
+		sql_find_subtype(&t, "char", strlen($4), 0 );
 		_dlist_append_string(l, sa_strdup(SA, "current_user"));
 		_dlist_append_symbol(l,
-			_newAtomNode( _atom_string(t,sql2str($4))) );
+			_newAtomNode( _atom_string(&t, sql2str($4))) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	SET ROLE ident
 		{ dlist *l = _dlist_create();
-		sql_subtype *t = sql_bind_subtype("char", strlen($3), 0);
+		  sql_subtype t;
+		sql_find_subtype(&t, "char", strlen($3), 0);
 		_dlist_append_string(l, sa_strdup(SA, "current_role"));
 		_dlist_append_symbol(l,
-			_newAtomNode( _atom_string(t,sql2str($3))) );
+			_newAtomNode( _atom_string(&t, sql2str($3))) );
 		$$ = _symbol_create_list( SQL_SET, l); }
   |	SET TIME ZONE LOCAL
 		{ dlist *l = _dlist_create();
@@ -917,7 +921,7 @@ seq_def:
 	{
 		dlist *l = _dlist_create();
 		_dlist_append_list(l, $3);
-		_dlist_append_type(l, $5);
+		_dlist_append_type(l, &$5);
 		_dlist_append_list(l, $6);
 		$$ = _symbol_create_list(SQL_CREATE_SEQ, l);
 	}
@@ -1074,13 +1078,14 @@ column_def:
 		{
 			dlist *l = _dlist_create();
 			_dlist_append_string(l, $1);
-			_dlist_append_type(l, $2);
+			_dlist_append_type(l, &$2);
 			_dlist_append_list(l, $3);
 			$$ = _symbol_create_list(SQL_COLUMN, l);
 		}
  |  column SERIAL
 		{ /* SERIAL = INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY */
 			/* handle multi-statements by wrapping them in a list */
+			sql_subtype it;
 			dlist* stmts;
 			mvc *m = (mvc*)parm;
 			/* note: sql_next_seq_name uses sa_alloc */
@@ -1093,7 +1098,8 @@ column_def:
 			/* the name of the sequence */
 			_dlist_append_list(l, _dlist_append_string(_dlist_create(), sn));
 			/* ultra dirty: inline 'integer' type generation */
-			_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
+			sql_find_subtype(&it, "int", 32, 0);
+			_dlist_append_type(l, &it);
 			/* finally all the options (no defaults here) */
 			_dlist_append_int(o, 1); /* start */
 			_dlist_append_int(o, 1); /* increment */
@@ -1112,7 +1118,7 @@ column_def:
 
 			l = _dlist_create();
 			_dlist_append_string(l, $1);
-			_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
+			_dlist_append_type(l, &it);
 			o = _dlist_create();
 			_dlist_append_symbol(o, _symbol_create_symbol(SQL_DEFAULT, _symbol_create(SQL_NEXT, sn)));
 			p = _dlist_create();
@@ -1176,6 +1182,7 @@ generated_column:
 	GENERATED ALWAYS AS IDENTITY serial_opt_params
 	{
 		/* handle multi-statements by wrapping them in a list */
+		sql_subtype it;
 		dlist* stmts;
 		mvc *m = (mvc*)parm;
 		/* note: sql_next_seq_name uses sa_alloc */
@@ -1185,7 +1192,8 @@ generated_column:
 		/* the name of the sequence */
 		_dlist_append_list(l, _dlist_append_string(_dlist_create(), sn));
 		/* ultra dirty: inline 'integer' type generation */
-		_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
+		sql_find_subtype(&it, "int", 32, 0);
+		_dlist_append_type(l, &it);
 		/* finally all the options */
 		_dlist_append_list(l, $5);
 		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create(SQL_NEXT, sn));
@@ -1201,6 +1209,7 @@ generated_column:
  |	AUTO_INCREMENT
 	{
 		/* handle multi-statements by wrapping them in a list */
+		sql_subtype it;
 		dlist* stmts;
 		mvc *m = (mvc*)parm;
 		/* note: sql_next_seq_name uses sa_alloc */
@@ -1212,7 +1221,8 @@ generated_column:
 		/* the name of the sequence (not known here) */
 		_dlist_append_list(l, _dlist_append_string(_dlist_create(), sn));
 		/* ultra dirty: inline 'integer' type generation */
-		_dlist_append_type(l, sql_bind_subtype("int", 32, 0));
+		sql_find_subtype(&it, "int", 32, 0);
+		_dlist_append_type(l, &it);
 		/* finally all the options (no defaults here) */
 		_dlist_append_int(o, 1); /* start */
 		_dlist_append_int(o, 1); /* increment */
@@ -1411,7 +1421,7 @@ func_def:
 			{ dlist *f = _dlist_create();
 				_dlist_append_list(f, $3);
 				_dlist_append_list(f, $5);
-				_dlist_append_type(f, $8);
+				_dlist_append_type(f, &$8);
 				_dlist_append_string(f, $11);
 				_dlist_append_symbol(f, NULL);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
@@ -1427,7 +1437,7 @@ func_def:
 
 _dlist_append_list(f, $3);
 				_dlist_append_list(f, $5);
-				_dlist_append_type(f, $8);
+				_dlist_append_type(f, &$8);
 				_dlist_append_string(f, NULL);
 				_dlist_append_symbol(f, $11);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
@@ -1447,7 +1457,7 @@ _dlist_append_list(f, $3);
  ;
 
 func_data_type:
-    TABLE		{ $$ = sql_bind_subtype("table", 0, 0); }
+    TABLE		{ sql_find_subtype(&$$, "table", 0, 0); }
  |  data_type
  ;
 
@@ -1460,13 +1470,13 @@ paramlist:
     paramlist ',' ident data_type
 			{ dlist *p = _dlist_create();
 			  _dlist_append_string(p, $3);
-			  _dlist_append_type(p, $4);
+			  _dlist_append_type(p, &$4);
 			  $$ = _dlist_append_list($1, p); }
  |  ident data_type
 			{ dlist *l = _dlist_create();
 			  dlist *p = _dlist_create();
 			  _dlist_append_string(p, $1);
-			  _dlist_append_type(p, $2);
+			  _dlist_append_type(p, &$2);
 			  $$ = _dlist_append_list(l, p); }
  ;
 
@@ -2040,11 +2050,13 @@ search_condition:
 	
  |  predicate
  |  BOOL_FALSE
-		{ sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
-		  $$ = _newAtomNode( atom_bool(t, FALSE)); }
+		{ sql_subtype t;
+		  sql_find_subtype(&t, "boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(&t, FALSE)); }
  |  BOOL_TRUE
-		{ sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
-		  $$ = _newAtomNode( atom_bool(t, TRUE)); }
+		{ sql_subtype t;
+		  sql_find_subtype(&t, "boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(&t, TRUE)); }
  ;
 
  
@@ -2296,11 +2308,13 @@ value_exp:
  |  cast_exp
  |  '?'			{ $$ = _symbol_create( SQL_PARAMETER, NULL ); }
  |  BOOL_FALSE
-		{ sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
-		  $$ = _newAtomNode( atom_bool(t, FALSE)); }
+		{ sql_subtype t;
+		  sql_find_subtype(&t, "boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(&t, FALSE)); }
  |  BOOL_TRUE
-		{ sql_subtype *t = sql_bind_subtype("boolean", 0, 0 );
-		  $$ = _newAtomNode( atom_bool(t, TRUE)); }
+		{ sql_subtype t;
+		  sql_find_subtype(&t, "boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(&t, TRUE)); }
  ;
 
 func_ref:
@@ -2531,18 +2545,18 @@ timestamp_precision:
  ;
 
 datetime_type:
-    sqlDATE			{ $$ = sql_bind_subtype("date", 0, 0); }
+    sqlDATE		{ sql_find_subtype(&$$, "date", 0, 0); }
  |  TIME time_precision tz 	
 			{ if ($3)
-				$$ = sql_bind_subtype("timetz", $2, 0); 
+				sql_find_subtype(&$$, "timetz", $2, 0); 
 			  else
-				$$ = sql_bind_subtype("time", $2, 0); 
+				sql_find_subtype(&$$, "time", $2, 0); 
 			}
  |  TIMESTAMP timestamp_precision tz 
 			{ if ($3)
-				$$ = sql_bind_subtype("timestamptz", $2, 0); 
+				sql_find_subtype(&$$, "timestamptz", $2, 0); 
 			  else
-				$$ = sql_bind_subtype("timestamp", $2, 0); 
+				sql_find_subtype(&$$, "timestamp", $2, 0); 
 			}
  ;
 
@@ -2597,15 +2611,15 @@ interval_type:
 		mvc *m = (mvc*)parm;
 	  	int tpe;
 
-		$$ = NULL;
+		$$.type = NULL;
 	  	if ( (tpe = parse_interval_qualifier( m, $2, &sk, &ek )) < 0){
 			yyerror("incorrect interval");
 			YYABORT;
 	  	} else {
 			if (tpe == 0){
-				$$ = sql_bind_subtype("month_interval", ek, sk);
+				sql_find_subtype(&$$, "month_interval", ek, sk);
 			} else {
-				$$ = sql_bind_subtype("sec_interval", ek, sk);
+				sql_find_subtype(&$$, "sec_interval", ek, sk);
 			}
 	  	}
 	}
@@ -2796,7 +2810,9 @@ literal:
 
 		  $$ = NULL;
 		  if (t) {
-			a = atom_general( sql_create_subtype(t, 0, 0), $2, 0);
+		  	sql_subtype tpe;
+			sql_init_subtype(&tpe, t, 0, 0);
+			a = atom_general(&tpe, $2, 0);
 			if (a)
 				$$ = _newAtomNode(a);
 		  }
@@ -2866,13 +2882,13 @@ cast_exp:
      CAST '(' cast_value AS data_type ')'
  	{ dlist *l = _dlist_create();
 	  _dlist_append_symbol(l, $3);
-	  _dlist_append_type(l, $5);
+	  _dlist_append_type(l, &$5);
 	  $$ = _symbol_create_list( SQL_CAST, l ); }
  |
      CONVERT '(' cast_value ',' data_type ')'
  	{ dlist *l = _dlist_create();
 	  _dlist_append_symbol(l, $3);
-	  _dlist_append_type(l, $5);
+	  _dlist_append_type(l, &$5);
 	  $$ = _symbol_create_list( SQL_CAST, l ); }
  ;
 
@@ -2979,19 +2995,19 @@ posint:
 
 data_type:
     CHARACTER
-			{ $$ = sql_bind_subtype("char", 1, 0); }
+			{ sql_find_subtype(&$$, "char", 1, 0); }
  |  varchar
-			{ $$ = NULL;
+			{ $$.type = NULL;
 			  yyerror("CHARACTER VARYING needs a mandatory length specification");
 			  YYABORT;
 			}
- |  clob	{ $$ = sql_bind_subtype("clob", 0, 0); }
+ |  clob		{ sql_find_subtype(&$$, "clob", 0, 0); }
  |  CHARACTER '(' nonzero ')'
-			{ $$ = sql_bind_subtype("char", $3, 0); }
+			{ sql_find_subtype(&$$, "char", $3, 0); }
  |  varchar '(' nonzero ')'
-			{ $$ = sql_bind_subtype("varchar", $3, 0); }
+			{ sql_find_subtype(&$$, "varchar", $3, 0); }
  |  clob '(' nonzero ')'
-			{ $$ = sql_bind_subtype("clob", $3, 0);
+			{ sql_find_subtype(&$$, "clob", $3, 0);
 			  /* NOTE: CLOB may be called as CLOB(2K) which is equivalent
 			   *       to CLOB(2048).  Due to 'nonzero' it is not possible
 			   *       to enter this as the parser rejects it.  However it
@@ -2999,9 +3015,9 @@ data_type:
 			   *       See p. 125 SQL-99
 			   */
 			}
- |  blob	{ $$ = sql_bind_subtype("blob", 0, 0); }
+ |  blob		{ sql_find_subtype(&$$, "blob", 0, 0); }
  |  blob '(' nonzero ')'
-			{ $$ = sql_bind_subtype("blob", $3, 0);
+			{ sql_find_subtype(&$$, "blob", $3, 0);
 			  /* NOTE: BLOB may be called as BLOB(2K) which is equivalent
 			   *       to BLOB(2048).  Due to 'nonzero' it is not possible
 			   *       to enter this as the parser rejects it.  However it
@@ -3009,36 +3025,36 @@ data_type:
 			   *       See p. 85 SQL-99
 			   */
 			}
- |  SMALLINT	{ $$ = sql_bind_subtype("smallint", 0, 0); }
- |  sqlINTEGER	{ $$ = sql_bind_subtype("int", 0, 0); }
- |  BIGINT		{ $$ = sql_bind_subtype("bigint", 0, 0); }
+ |  SMALLINT		{ sql_find_subtype(&$$, "smallint", 0, 0); }
+ |  sqlINTEGER		{ sql_find_subtype(&$$, "int", 0, 0); }
+ |  BIGINT		{ sql_find_subtype(&$$, "bigint", 0, 0); }
 
- |  sqlDECIMAL	{ $$ = sql_bind_subtype("decimal", 1, 0); }
+ |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 1, 0); }
  |  sqlDECIMAL '(' nonzero ')'
-				{ $$ = sql_bind_subtype("decimal", $3, 0); }
+			{ sql_find_subtype(&$$, "decimal", $3, 0); }
  |  sqlDECIMAL '(' nonzero ',' posint ')'
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
 				snprintf(buf, BUFSIZ, "scale (%d) should be less than precision (%d)", $5, $3);
 				yyerror(buf);
-				$$ = NULL;
+				$$.type = NULL;
 				YYABORT;
 			  } else {
-				$$ = sql_bind_subtype("decimal", $3, $5);
+				sql_find_subtype(&$$, "decimal", $3, $5);
 			  }
 			}
- |  sqlFLOAT		{ $$ = sql_bind_subtype("double", 0, 0); }
+ |  sqlFLOAT		{ sql_find_subtype(&$$, "double", 0, 0); }
  |  sqlFLOAT '(' nonzero ')'
 			{ if ($3 > 0 && $3 <= 24) {
-				$$ = sql_bind_subtype("real", $3, 0);
+				sql_find_subtype(&$$, "real", $3, 0);
 			  } else if ($3 > 24 && $3 <= 53) {
-				$$ = sql_bind_subtype("double", $3, 0);
+				sql_find_subtype(&$$, "double", $3, 0);
 			  } else {
 				char buf[BUFSIZ];
 				snprintf(buf, BUFSIZ, "number of digits for FLOAT values should be between 1 and 53");
 				yyerror(buf);
-				$$ = NULL;
+				$$.type = NULL;
 				YYABORT;
 			  }
 			}
@@ -3048,41 +3064,41 @@ data_type:
 
 				snprintf(buf, BUFSIZ, "precision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
-				$$ = NULL;
+				$$.type = NULL;
 				YYABORT;
 			  } else if ($3 > 0 && $3 <= 24) {
-				$$ = sql_bind_subtype("real", $3, $5);
+				sql_find_subtype(&$$, "real", $3, $5);
 			  } else if ($3 > 24 && $3 <= 53) {
-				$$ = sql_bind_subtype("double", $3, $5);
+				sql_find_subtype(&$$, "double", $3, $5);
 			  } else {
 				char buf[BUFSIZ];
 				snprintf(buf, BUFSIZ, "number of digits for FLOAT values should be between 1 and 53");
 				yyerror(buf);
-				$$ = NULL;
+				$$.type = NULL;
 				YYABORT;
 			  }
 			}
- | sqlDOUBLE 		{ $$ = sql_bind_subtype("double", 0, 0); }
- | sqlDOUBLE PRECISION	{ $$ = sql_bind_subtype("double", 0, 0); }
- | sqlREAL 			{ $$ = sql_bind_subtype("real", 0, 0); }
+ | sqlDOUBLE 		{ sql_find_subtype(&$$, "double", 0, 0); }
+ | sqlDOUBLE PRECISION	{ sql_find_subtype(&$$, "double", 0, 0); }
+ | sqlREAL 		{ sql_find_subtype(&$$, "real", 0, 0); }
  | datetime_type
  | interval_type
- | aTYPE		{ $$ = sql_bind_subtype($1, 0, 0); }
+ | aTYPE		{ sql_find_subtype(&$$, $1, 0, 0); }
  | aTYPE '(' nonzero ')'
-				{ $$ = sql_bind_subtype($1, $3, 0); }
- | type_alias { $$ = sql_bind_subtype($1, 0, 0); }
+			{ sql_find_subtype(&$$, $1, $3, 0); }
+ | type_alias 		{ sql_find_subtype(&$$, $1, 0, 0); }
  | type_alias '(' nonzero ')'
-			{ $$ = sql_bind_subtype($1, $3, 0); }
+			{ sql_find_subtype(&$$, $1, $3, 0); }
  | type_alias '(' intval ',' intval ')'
 			{ if ($5 >= $3) {
 				char buf[BUFSIZ];
 
 				snprintf(buf, BUFSIZ, "precision(%d) should be less than number of digits(%d)", $5, $3);
 				yyerror(buf);
-				$$ = NULL;
+				$$.type = NULL;
 				YYABORT;
 			  } else {
-			 	$$ = sql_bind_subtype($1, $3, $5);
+			 	sql_find_subtype(&$$, $1, $3, $5);
 			  }
 			}
  | IDENT	{ mvc *m = (mvc*)parm;
@@ -3092,10 +3108,10 @@ data_type:
 
 				snprintf(buf, BUFSIZ, "type (%s) unknown", $1);
 				yyerror(buf);
-				$$ = NULL;
+				$$.type = NULL;
 				YYABORT;
 			  } else {
-				$$ = sql_create_subtype(t, 0, 0);
+				sql_init_subtype(&$$, t, 0, 0);
 			  }
 			}
 
@@ -3107,10 +3123,10 @@ data_type:
 
 				snprintf(buf, BUFSIZ, "type (%s) unknown", $1);
 				yyerror(buf);
-				$$ = NULL;
+				$$.type = NULL;
 				YYABORT;
 			  } else {
-				$$ = sql_create_subtype(t, $3, 0);
+				sql_init_subtype(&$$, t, $3, 0);
 			  }
 			}
 
@@ -3199,7 +3215,7 @@ intval:
  |	IDENT	{ mvc *m = (mvc*)parm;
 		  char *name = $1;
 		  char *v, *t;
-		  sql_subtype *tpe;
+		  sql_subtype tpe;
 
 		  if (!(v = sql_get_var(m, name))) {
 			char buf[BUFSIZ];
@@ -3210,10 +3226,10 @@ intval:
 			YYABORT;
 		  }
 		  t = sql_get_type(m, name);
-		  tpe = sql_bind_subtype(t, 0, 0);
-		  if (tpe->type->localtype == TYPE_lng ||
-		      tpe->type->localtype == TYPE_int ||
-		      tpe->type->localtype == TYPE_sht ) {
+		  sql_find_subtype(&tpe, t, 0, 0);
+		  if (tpe.type->localtype == TYPE_lng ||
+		      tpe.type->localtype == TYPE_int ||
+		      tpe.type->localtype == TYPE_sht ) {
 			$$ = strtol(v,&v,10);
 		  } else {
 			char buf[BUFSIZ];
@@ -3223,7 +3239,6 @@ intval:
 			$$ = 0;
 			YYABORT;
 		  }
-		  sql_subtype_destroy(tpe);
 		}
  ;
 

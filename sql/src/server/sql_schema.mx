@@ -541,7 +541,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 	for (n = params->h; n; n = n->next) {
 		dnode *an = n->data.lval->h;
 
-		list_append(l, sql_create_arg(_strdup(an->data.sval), an->next->data.typeval));
+		list_append(l, sql_create_arg(_strdup(an->data.sval), &an->next->data.typeval));
 	}
 	if (body) {		/* sql func */
 		char *subquery = QUERY(sql->scanner) + sql->scanner.as;
@@ -550,7 +550,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 		for (n = params->h; n; n = n->next) {
 			dnode *m = n->data.lval->h;
 			char *name = _strdup(m->data.sval);
-			sql_subtype *t = m->next->data.typeval;
+			sql_subtype *t = &m->next->data.typeval;
 
 			sql_add_param(sql, name, stmt_var(_strdup(name), t));
 		}
@@ -1043,7 +1043,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 {
 	dlist *l = s->data.lval;
 	char *cname = l->h->data.sval;
-	sql_subtype *ctype = l->h->next->data.typeval;
+	sql_subtype *ctype = &l->h->next->data.typeval;
 	dlist *opt_list = NULL;
 	stmt *res = NULL;
 
@@ -1647,7 +1647,7 @@ schemas(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.typeval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.sym);
+		ret = create_func(sql, l->h->data.lval, l->h->next->data.lval, &l->h->next->next->data.typeval, l->h->next->next->next->data.sval, l->h->next->next->next->next->data.sym);
 		sql->type = Q_SCHEMA;
 	}
 		break;

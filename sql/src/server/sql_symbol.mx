@@ -30,7 +30,7 @@ typedef union symbdata {
 	char *sval;
 	struct dlist *lval;
 	struct symbol *sym;
-	struct sql_subtype *typeval;
+	struct sql_subtype typeval;
 } symbdata;
 
 typedef struct dnode {
@@ -233,7 +233,10 @@ dnode_create_type(sql_allocator *sa, sql_subtype *data)
 	dnode *n = dnode_create(sa);
 
 	if (n) {
-		n->data.typeval = data;
+		if (data)
+			n->data.typeval = *data;
+		else
+			n->data.typeval.type = NULL;
 		n->type = type_type;
 	}
 	return n;
@@ -382,7 +385,7 @@ dnode_cmp(dnode *d1, dnode *d2)
 		case type_symbol:
 			return symbol_cmp(d1->data.sym, d2->data.sym);
 		case type_type:
-			return subtype_cmp(d1->data.typeval, d2->data.typeval);
+			return subtype_cmp(&d1->data.typeval, &d2->data.typeval);
 		default:
 			assert(0);
 		}
@@ -457,7 +460,7 @@ symbol_cmp(symbol *s1, symbol *s2)
 	case type_list:
 		return dlist_cmp(s1->data.lval, s2->data.lval);
 	case type_type:
-		return subtype_cmp(s1->data.typeval, s2->data.typeval);
+		return subtype_cmp(&s1->data.typeval, &s2->data.typeval);
 	case type_symbol:
 		if (s1->token == SQL_SELECT) {
 			return SelectNodeCmp((SelectNode *) s1, (SelectNode *) s2);

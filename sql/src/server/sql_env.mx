@@ -210,7 +210,7 @@ inttype(sql_subtype *itype, sql_subtype *rtype)
 static stmt *
 set_var(mvc *sql, char *name, symbol *val, char *typename)
 {
-	sql_subtype *ctype;
+	sql_subtype ctype;
 	scope *scp = scope_open(NULL);
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	sql_table *sessions = mvc_bind_table(sql, sys, "sessions");
@@ -225,9 +225,8 @@ set_var(mvc *sql, char *name, symbol *val, char *typename)
 	}
 
 	/* find variable */
-	ctype = sql_bind_subtype(typename, 0, 0);
-	v = check_types(sql, ctype, v, type_equal);
-	sql_subtype_destroy(ctype);
+	sql_find_subtype(&ctype, typename, 0, 0);
+	v = check_types(sql, &ctype, v, type_equal);
 	if (!v || (v = check_types(sql, &c->type, v, type_equal)) == NULL) {
 		return NULL;
 	}
@@ -348,7 +347,7 @@ sql_declare_var(mvc *m, symbol *s)
 		sql_column *s_name = mvc_bind_column(m, sessions, "name");
 		dlist *l = s->data.lval;
 		char *name = l->h->data.sval;
-		sql_subtype *ctype = l->h->next->data.typeval;
+		sql_subtype *ctype = &l->h->next->data.typeval;
 
 		if (column_find_row(tr, s_name, name, NULL) >= 0) {
 @-

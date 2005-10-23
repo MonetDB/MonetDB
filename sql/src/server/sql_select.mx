@@ -638,7 +638,7 @@ sql_cast(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 
 	dlist *dl = se->data.lval;
 	symbol *s = dl->h->data.sym;
-	sql_subtype *tpe = dl->h->next->data.typeval;
+	sql_subtype *tpe = &dl->h->next->data.typeval;
 
 	stmt *l = sql_value_exp(sql, scp, s, grp, subset, f);
 

@@ -1078,15 +1078,15 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			int l = _dumpstmt(sql, mb, s->op1.stval);
 			char *aggrfunc = _strdup(s->op4.aggrval->aggr->imp);
 			char *c;
-			int restype = s->op4.aggrval->aggr->res->type->localtype;
+			int restype = s->op4.aggrval->aggr->res.type->localtype;
 			sql_subtype *tpe = tail_type(s->op1.stval);
 			int output_type_needed = 0;
 			
 			/* some aggr functions require bigger outputs types */
 			if (tpe &&
-			    (s->op4.aggrval->aggr->res->type->localtype > 
+			    (s->op4.aggrval->aggr->res.type->localtype > 
 			    tpe->type->localtype || 
-			    (s->op4.aggrval->aggr->res->type->localtype == 
+			    (s->op4.aggrval->aggr->res.type->localtype == 
 			     tpe->type->localtype && 
 			     tpe->type->localtype == TYPE_lng)) ) {
 				/* Cut off the type information.

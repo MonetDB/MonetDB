@@ -41,10 +41,8 @@ extern sql_rel *rel_selects(mvc *sql, symbol *sym);
 #include "sql_privileges.h"
 #include "sql_env.h"
 
-/* TODO fix exp_convert, should use full struct not pointer to subtypes */
-
 #define new_exp_list() list_create((fdestroy)&exp_destroy)
-#define new_subtype_list() list_create((fdestroy)&sql_subtype_destroy)
+#define new_subtype_list() list_create((fdestroy)NULL)
 
 static void rel_destroy(sql_rel *rel);
 
@@ -153,7 +151,7 @@ exp_subtype( sql_exp *e )
 		return e->f;
 	case e_aggr: {
 		sql_subaggr *a = e->f;
-		return a->res;
+		return &a->res;
 	}
 	case e_func: {
 		sql_subfunc *f = e->f;
@@ -1034,14 +1032,12 @@ rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int typecheck)
 		return NULL;
 
 	if (fromtype && subtype_cmp(t, fromtype) != 0) {
-		sql_subtype *nt;
 		int c = sql_type_convert(fromtype->type->eclass, t->type->eclass);
 		if (!c) { 
 			exp_destroy(exp);
 			exp = NULL;
 		} else {
-			nt = sql_dup_subtype(t);
-			exp = exp_convert(exp, sql_dup_subtype(fromtype), nt);
+			exp = exp_convert(exp, fromtype, t);
 		}
 	}
 	(void)typecheck;
@@ -1853,7 +1849,7 @@ rel_cast(mvc *sql, sql_rel *rel, symbol *se, int f)
 
 	dlist *dl = se->data.lval;
 	symbol *s = dl->h->data.sym;
-	sql_subtype *tpe = dl->h->next->data.typeval;
+	sql_subtype *tpe = &dl->h->next->data.typeval;
 
 	sql_exp *e = rel_value_exp(sql, rel, s, f);
 

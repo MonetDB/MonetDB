@@ -1511,20 +1511,20 @@ bs_init_func(struct bm *bm)
 			BUNins(arg_id, &nil, &id);
 			BUNins(arg_func_id, &nil, &aggr->base.id);
 			BUNins(arg_name, &nil, name1);
-			BUNins(arg_type, &nil, aggr->res->type->sqlname);
-			BUNins(arg_type_digits, &nil, &aggr->res->scale);
-			BUNins(arg_type_scale, &nil, &aggr->res->scale);
+			BUNins(arg_type, &nil, aggr->res.type->sqlname);
+			BUNins(arg_type_digits, &nil, &aggr->res.scale);
+			BUNins(arg_type_scale, &nil, &aggr->res.scale);
 			BUNins(arg_number, &nil, &nr);
 			nr++;
 
-			if (aggr->tpe) {
+			if (aggr->tpe.type) {
 				id = OIDnew(1);
 				BUNins(arg_id, &nil, &id);
 				BUNins(arg_func_id, &nil, &aggr->base.id);
 				BUNins(arg_name, &nil, name2);
-				BUNins(arg_type, &nil, aggr->tpe->type->sqlname);
-				BUNins(arg_type_digits, &nil, &aggr->tpe->scale);
-				BUNins(arg_type_scale, &nil, &aggr->tpe->scale);
+				BUNins(arg_type, &nil, aggr->tpe.type->sqlname);
+				BUNins(arg_type_digits, &nil, &aggr->tpe.scale);
+				BUNins(arg_type_scale, &nil, &aggr->tpe.scale);
 				BUNins(arg_number, &nil, &nr);
 			}
 		}
@@ -2051,28 +2051,6 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 	}
 	list_append(t->s->idxs, ni);
 	return ni;
-}
-
-/* TODO keep all new (subtypes) in a list per module */
-static sql_subtype *
-subtype_dup(sql_trans *tr, int flag, sql_subtype *ot ) 
-{
-	/* here we need to take care that the types come from
-	   the global types list or from our own modules types */
-
-	sql_subtype *t = 
-		sql_bind_subtype(ot->type->sqlname, ot->digits, ot->scale);
-
-	if (!t) {
-		sql_trans *trans = tr;
-
-		if (flag == TR_NEW) /* commiting changes */
-			trans = tr->parent;
-		t = sql_create_subtype(
-	    		sql_trans_bind_type(trans, ot->type->sqlname), 
-	    		ot->digits, ot->scale);
-	}
-	return t;
 }
 
 static sql_column *
@@ -3415,7 +3393,6 @@ sql_view_on_bats(sql_trans *tr, sql_table *t, char **names, int nr)
 			return _strdup(err);
 		}
 		tp = sql_bind_localtype(ATOMname(b->ttype));
-		tp = sql_dup_subtype(tp);
 		create_column_bat(tr, t, names[i], tp, b, NULL );  
 		bat_destroy(b);
 	}
@@ -3586,7 +3563,6 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, char *name, sql_subtype *tp
 				BBPreclaim(b);
 			if (u)
 				BBPreclaim(u);
-			sql_subtype_destroy(tpe);
 			return NULL;
 		}
 

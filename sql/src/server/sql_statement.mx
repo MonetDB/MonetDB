@@ -1721,7 +1721,7 @@ tail_type(stmt *st)
 		return head_type(st->op1.stval);
 
 	case st_aggr:
-		return st->op4.aggrval->res;
+		return &st->op4.aggrval->res;
 	case st_op:
 	case st_unop:
 	case st_binop:
