@@ -287,11 +287,11 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 		/* add missing nulls (and NULLs only (SIMPLE MATCH)) */
 		s = stmt_mark(stmt_reverse(s), 0);
 		if (nulls) {
-			stmt *t = stmt_temp(sql_dup_subtype(bt));
-			stmt *isnull = stmt_temp(sql_dup_subtype(tail_type(s)));
+			stmt *t = stmt_temp(bt);
+			stmt *isnull = stmt_temp(tail_type(s));
 			stmt *notnull = s;
 
-			isnull = stmt_append(isnull, stmt_atom(atom_general(sql_dup_subtype(tail_type(s)), NULL, 0)));
+			isnull = stmt_append(isnull, stmt_atom(atom_general(tail_type(s), NULL, 0)));
 			t = stmt_append(t, cond);
 			isnull = stmt_join(t, stmt_reverse(stmt_const(stmt_reverse(isnull), stmt_bool(1))), cmp_equal);
 			notnull = stmt_join(stmt_dup(t), stmt_reverse(stmt_const(stmt_reverse(notnull), stmt_bool(0))), cmp_equal);
@@ -332,7 +332,7 @@ join_idx_insert(mvc *sql, sql_idx * i, stmt **inserts)
 					cur = n;
 			}
 			stmt_destroy(missing);
-			s = stmt_union(s, stmt_const(cur, stmt_atom(atom_general(sql_dup_subtype(sql_bind_localtype("oid")), NULL, 0))));
+			s = stmt_union(s, stmt_const(cur, stmt_atom(atom_general(sql_bind_localtype("oid"), NULL, 0))));
 		}
 		s = stmt_reverse(stmt_order(stmt_reverse(s), 1));
 	}
@@ -390,7 +390,7 @@ sql_insert_add_idx(mvc *sql, sql_table *t, sql_idx * idx, list *l)
 	for (m = t->columns.set->h, i = 0; m; m = m->next, i++) {
 		sql_column *c = m->data;
 		stmt *b = stmt_cbat(c, stmt_dup(ts), UPD, st_bat);
-		sql_subtype *tp = sql_dup_subtype(tail_type(b));
+		sql_subtype *tp = tail_type(b);
 
 		inserts[i] = stmt_append(stmt_temp(tp), b);
 	}
@@ -652,7 +652,7 @@ join_idx_update(sql_idx * i, stmt **updates, int updcol)
 	}
 	/* add missing nulls */
 	if (nulls)
-		s = stmt_union(s, stmt_const(null, stmt_atom(atom_general(sql_dup_subtype(sql_bind_localtype("oid")), NULL, 0))));
+		s = stmt_union(s, stmt_const(null, stmt_atom(atom_general(sql_bind_localtype("oid"), NULL, 0))));
 
 	stmt_destroy(ts);
 	stmt_destroy(rts);
@@ -829,7 +829,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 					} else {
 						stmt *t = NULL;
 						if (inserts[c->colnr]->op2.stval->type != st_temp) {
-							t = stmt_temp(sql_dup_subtype(tail_type(ins)));
+							t = stmt_temp(tail_type(ins));
 							t = stmt_append(t,stmt_dup(inserts[c->colnr]->op2.stval));
 							t = stmt_append( stmt_dup(inserts[c->colnr]->op1.stval), t);
 							stmt_destroy(inserts[c->colnr]);
@@ -1167,7 +1167,7 @@ sql_delete_idxs(mvc *sql, sql_table *t, stmt *vals, list *l)
 		}
 
 		assert(it);
-		v = stmt_const(stmt_reverse(first_subset(vals)), stmt_atom(atom_general(sql_dup_subtype(it), NULL, 0)));
+		v = stmt_const(stmt_reverse(first_subset(vals)), stmt_atom(atom_general(it, NULL, 0)));
 		list_append(l, stmt_replace(stmt_idxbat(i, 1), v));
 	}
 	return res;

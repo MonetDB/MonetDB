@@ -71,12 +71,9 @@ extern int is_commutative(char *fnm); 	/* return 1, if commutative */
 extern char *sql_bind_alias(char *alias);
 
 extern int sql_find_subtype(sql_subtype *res, char *name, unsigned int digits, unsigned int scale);
-/*extern int *sql_find_numeric(int localtype, unsigned int digits);
-extern int *sql_find_localtype(char *name);
-*/
+extern sql_subtype *sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits);
 
 extern sql_subtype *sql_bind_subtype(char *name, unsigned int digits, unsigned int scale);
-extern sql_subtype *sql_bind_numeric(int localtype, unsigned int digits);
 extern sql_subtype *sql_bind_localtype(char *name);
 extern sql_subtype *sql_create_subtype(sql_type *t, unsigned int s, unsigned int d);
 extern void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned int scale);
@@ -141,9 +138,6 @@ list *aggrs = NULL;
 list *funcs = NULL;
 
 static list *localtypes = NULL;
-static list *subtypes = NULL;
-static list *subaggrs = NULL;
-static list *subfuncs = NULL;
 
 static void sqltypeinit();
 
@@ -260,7 +254,6 @@ sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned in
 	if (t->digits && res->digits > t->digits)
 		res->digits = t->digits;
 	res->scale = scale;
-	res->fixed = EC_FIXED(t->eclass);
 }
 
 sql_subtype *
@@ -269,10 +262,6 @@ sql_create_subtype(sql_type *t, unsigned int digits, unsigned int scale)
 	sql_subtype *res = NEW(sql_subtype);
 
 	sql_init_subtype(res, t, digits, scale);
-	if (sql_debug) {
-		sql_ref_inc(&(res->ref));
-		list_append(subtypes, res);
-	}
 	return res;
 }
 
@@ -304,7 +293,7 @@ localtypes_cmp(int nlt, int olt)
 }
 
 sql_subtype *
-sql_bind_numeric(int localtype, unsigned int digits)
+sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits)
 {
 	node *m, *n;
 
@@ -319,7 +308,8 @@ sql_bind_numeric(int localtype, unsigned int digits)
 
 		if (localtypes_cmp(t->localtype, localtype)) {
 			if ((digits && t->digits >= digits) || (digits == t->digits)) {
-				return sql_create_subtype(t, digits, 0);
+				sql_init_subtype(r, t, digits, 0);
+				return r;
 			}
 			for (m = n->next; m; m = m->next) {
 				t = m->data;
@@ -328,11 +318,13 @@ sql_bind_numeric(int localtype, unsigned int digits)
 				}
 				n = m;
 				if ((digits && t->digits >= digits) || (digits == t->digits)) {
-					return sql_create_subtype(t, digits, 0);
+					sql_init_subtype(r, t, digits, 0);
+					return r;
 				}
 			}
 			t = n->data;
-			return sql_create_subtype(t, digits, 0);
+			sql_init_subtype(r, t, digits, 0);
+			return r;
 		}
 	}
 	return NULL;
@@ -523,10 +515,6 @@ sql_bind_aggr(sql_module *m, char *sqlaname, sql_subtype *type)
 			if (type)
 				scale = type->scale;
 			ares->res = sql_create_subtype(a->res->type, a->res->digits, scale);
-			if (sql_debug) {
-				sql_ref_inc(&(ares->ref));
-				list_append(subaggrs, ares);
-			}
 			return ares;
 		}
 		n = n->next;
@@ -583,11 +571,7 @@ func_cmp(sql_func *f, char *name, int nrargs)
 			_DELETE(name);
 			sql_ref_init(&(fres->ref));
 			fres->func = f;
-			fres->res = sql_create_subtype(f->res->type, f->res->digits, scale);
-			if (sql_debug) {
-				sql_ref_inc(&(fres->ref));
-				list_append(subfuncs, fres);
-			}
+			sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
 			return fres;
 		}
 	}
@@ -605,7 +589,7 @@ sql_find_func(sql_module *m, char *sqlfname, int nrargs)
 	for (; n; n = n->next) {
 		sql_func *f = n->data;
 
-		if (!f->res)
+		if (!f->res.type)
 			continue;
 		if ((fres = func_cmp(f, name, nrargs )) != NULL) 
 			return fres;
@@ -639,16 +623,16 @@ sql_bind_member(sql_module *m, char *sqlfname, sql_subtype *tp, int nrargs)
 	for (n = funcs->h; n; n = n->next) {
 		sql_func *f = n->data;
 
-		if (!f->res)
+		if (!f->res.type)
 			continue;
 		if (strcmp(f->base.name, name) == 0) {
-			if (list_length(f->ops) == nrargs && is_subtype(tp, ((sql_arg *) f->ops->h->data)->type)) {
+			if (list_length(f->ops) == nrargs && is_subtype(tp, &((sql_arg *) f->ops->h->data)->type)) {
 
 				int scale = 0;
 				sql_subfunc *fres;
 
 				/* member functions should not match binary operators */
-				if (nrargs == 2 && subtype_cmp(((sql_arg *) f->ops->h->data)->type, ((sql_arg *) f->ops->h->next->data)->type) == 0)
+				if (nrargs == 2 && subtype_cmp( &((sql_arg *) f->ops->h->data)->type, &((sql_arg *) f->ops->h->next->data)->type) == 0)
 					continue;
 				fres = NEW(sql_subfunc);
 
@@ -658,11 +642,7 @@ sql_bind_member(sql_module *m, char *sqlfname, sql_subtype *tp, int nrargs)
 				/* same scale as the input */
 				if (tp && tp->scale > scale)
 					scale = tp->scale;
-				fres->res = sql_create_subtype(f->res->type, f->res->digits, scale);
-				if (sql_debug) {
-					sql_ref_inc(&(fres->ref));
-					list_append(subfuncs, fres);
-				}
+				sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
 				return fres;
 			}
 		}
@@ -690,7 +670,7 @@ sql_bind_func(sql_module *m, char *sqlfname, sql_subtype *tp1, sql_subtype *tp2)
 int
 arg_subtype_cmp(sql_arg *a, sql_subtype *t)
 {
-	return (is_subtype(t, a->type )?0:-1);
+	return (is_subtype(t, &a->type )?0:-1);
 }
 
 sql_subfunc *
@@ -703,7 +683,7 @@ sql_bind_func_(sql_module *m, char *sqlfname, list *ops)
 	while (n) {
 		sql_func *f = n->data;
 
-		if (!f->res)
+		if (!f->res.type)
 			continue;
 		if (strcmp(f->base.name, name) == 0) {
 			if (list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
@@ -720,11 +700,7 @@ sql_bind_func_(sql_module *m, char *sqlfname, list *ops)
 					if (a && a->scale > scale)
 						scale = a->scale;
 				}
-				fres->res = sql_create_subtype(f->res->type, f->res->digits, scale);
-				if (sql_debug) {
-					sql_ref_inc(&(fres->ref));
-					list_append(subfuncs, fres);
-				}
+				sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
 				return fres;
 			}
 		}
@@ -760,9 +736,9 @@ sql_bind_func_result_(sql_module *m, char *sqlfname, list *ops, sql_subtype *res
 	while (n) {
 		sql_func *f = n->data;
 
-		if (!f->res)
+		if (!f->res.type)
 			continue;
-		if (strcmp(f->base.name, name) == 0 && is_subtype(f->res, res) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
+		if (strcmp(f->base.name, name) == 0 && is_subtype(&f->res, res) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 			unsigned int scale = 0;
 			sql_subfunc *fres = NEW(sql_subfunc);
 
@@ -776,11 +752,7 @@ sql_bind_func_result_(sql_module *m, char *sqlfname, list *ops, sql_subtype *res
 				if (a && a->scale > scale)
 					scale = a->scale;
 			}
-			fres->res = sql_create_subtype(f->res->type, f->res->digits, scale);
-			if (sql_debug) {
-				sql_ref_inc(&(fres->ref));
-				list_append(subfuncs, fres);
-			}
+			sql_init_subtype(&fres->res, f->res.type, f->res.digits, scale);
 			return fres;
 		}
 		n = n->next;
@@ -799,7 +771,7 @@ sql_bind_proc(sql_module *m, char *sqlfname, list *ops)
 	while (n) {
 		sql_func *f = n->data;
 
-		if (f->res)
+		if (f->res.type)
 			continue;
 		if (strcmp(f->base.name, name) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) {
 			sql_subfunc *fres = NEW(sql_subfunc);
@@ -807,11 +779,7 @@ sql_bind_proc(sql_module *m, char *sqlfname, list *ops)
 			_DELETE(name);
 			sql_ref_init(&(fres->ref));
 			fres->func = f;
-			fres->res = NULL;
-			if (sql_debug) {
-				sql_ref_inc(&(fres->ref));
-				list_append(subfuncs, fres);
-			}
+			fres->res.type = NULL;
 			return fres;
 		}
 		n = n->next;
@@ -828,8 +796,6 @@ func_destroy(sql_func *t)
 		_DELETE(t->imp);
 	if (t->ops)
 		list_destroy(t->ops);
-	if (t->res)
-		sql_subtype_destroy(t->res);
 	_DELETE(t);
 }
 
@@ -846,8 +812,6 @@ sql_subfunc_destroy(sql_subfunc *f)
 	int ref = 0;
 
 	if ((ref = sql_ref_dec(&(f->ref))) == 0) {
-		if (f->res)
-			sql_subtype_destroy(f->res);
 		_DELETE(f);
 #ifndef NDEBUG
 	} else if (sql_end == END_SUBAGGR) {
@@ -943,7 +907,7 @@ sql_create_arg(char *name, sql_subtype *t)
 	sql_arg *a = NEW(sql_arg);
 
 	a->name = name;
-	a->type = t;
+	a->type = *t;
 	return a;
 }
 
@@ -953,7 +917,7 @@ arg_dup(sql_arg *oa)
 	sql_arg *a = NEW(sql_arg);
 
 	a->name = _strdup(oa->name);
-	a->type = sql_dup_subtype(oa->type);
+	a->type = oa->type;
 	return a;
 }
 
@@ -962,7 +926,6 @@ arg_destroy(sql_arg *a)
 {
 	if (a->name)
 		_DELETE(a->name);
-	sql_subtype_destroy(a->type);
 	_DELETE(a);
 }
 
@@ -1016,7 +979,10 @@ sql_create_func_(char *name, char *imp, list *ops, sql_subtype *res)
 	_DELETE(n);
 	t->imp = _strdup(imp);
 	t->ops = ops;
-	t->res = res;
+	if (res)	
+		t->res = *res;
+	else
+		t->res.type = NULL;
 	t->nr = list_length(funcs);
 	t->sql = 0;
 	list_append(funcs, t);
@@ -1034,7 +1000,10 @@ sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res)
 	_DELETE(n);
 	t->imp = _strdup(imp);
 	t->ops = ops;
-	t->res = res;
+	if (res)	
+		t->res = *res;
+	else
+		t->res.type = NULL;
 	t->nr = list_length(funcs);
 	t->sql = 1;
 	list_append(funcs, t);
@@ -1045,12 +1014,6 @@ void
 types_init(int debug)
 {
 	sql_debug = debug;
-
-	if (sql_debug) {
-		subtypes = list_create((fdestroy) &sql_subtype_destroy);
-		subaggrs = list_create((fdestroy) &sql_subaggr_destroy);
-		subfuncs = list_create((fdestroy) &sql_subfunc_destroy);
-	}
 
 	aliases = list_create((fdestroy) &alias_destroy);
 	types = list_create((fdestroy) &type_destroy);
@@ -1416,10 +1379,6 @@ types_exit()
 	sql_end = END_SUBAGGR;
 #endif
 
-	if (sql_debug) {
-		list_destroy(subaggrs);
-		list_destroy(subfuncs);
-	}
 #ifndef NDEBUG
 	sql_end = END_AGGR;
 #endif
@@ -1432,8 +1391,6 @@ types_exit()
 #ifndef NDEBUG
 	sql_end = END_SUBTYPE;
 #endif
-	if (sql_debug)
-		list_destroy(subtypes);
 
 #ifndef NDEBUG
 	sql_end = END_TYPE;

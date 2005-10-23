@@ -38,7 +38,7 @@ extern sql_schema *qname_schema(mvc *sql, dlist *qname);
 extern char *qname_table(dlist *qname);
 extern tvar *scope_add_table_columns(mvc *sql, scope *scp, sql_table *t, char *tname, int access);
 
-extern sql_subtype *supertype(sql_subtype *r, sql_subtype *i);
+extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
 extern int convert_types(mvc *sql, stmt **L, stmt **R, int scale_fixing);
 
 typedef enum {
@@ -392,40 +392,39 @@ stmt *
 sum_scales(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs)
 {
 	if (strcmp(f->func->imp, "*") == 0 && 
-	    f->func->res->type->scale == SCALE_FIX) {
-		sql_subtype *t = NULL;
+	    f->func->res.type->scale == SCALE_FIX) {
+		sql_subtype t;
 		sql_subtype *lt = tail_type(ls);
 		sql_subtype *rt = tail_type(rs);
 
-		f->res->scale = lt->scale + rt->scale;
-		f->res->digits = lt->digits + rt->digits;
+		f->res.scale = lt->scale + rt->scale;
+		f->res.digits = lt->digits + rt->digits;
 		/* HACK alert: digits should be less then max */
-		if (f->res->type->radix == 10 && f->res->digits > 19)
-			f->res->digits = 19;
-		if (f->res->type->radix == 2 && f->res->digits > 53)
-			f->res->digits = 53;
+		if (f->res.type->radix == 10 && f->res.digits > 19)
+			f->res.digits = 19;
+		if (f->res.type->radix == 2 && f->res.digits > 53)
+			f->res.digits = 53;
 		/* sum of digits may mean we need a bigger result type 
 		 * as the function don't support this we need to
 		 * make bigger input types!
 		 */
 
 		/* numeric types are fixed length */
-		if (f->res->type->eclass == EC_NUM) {
-			t = sql_bind_numeric(f->res->type->localtype, f->res->digits);
+		if (f->res.type->eclass == EC_NUM) {
+			sql_find_numeric(&t, f->res.type->localtype, f->res.digits);
 		} else {
-			t = sql_bind_subtype(f->res->type->sqlname, f->res->digits, f->res->scale);
+			sql_find_subtype(&t, f->res.type->sqlname, f->res.digits, f->res.scale);
 		}
-		if (type_cmp(t->type, f->res->type) != 0) { 
+		if (type_cmp(t.type, f->res.type) != 0) { 
 			/* do we need to convert to the a larger localtype 
 			   int * int may not fit in an int, so we need to 
 			   convert to lng * int.
 			 */
-			sql_subtype *nlt = sql_create_subtype(t->type, 
-				f->res->digits, lt->scale);
-			ls = check_types( sql, nlt, ls, type_equal);
-			sql_subtype_destroy(nlt);
+			sql_subtype nlt;
+
+			sql_init_subtype(&nlt, t.type, f->res.digits, lt->scale);
+			ls = check_types( sql, &nlt, ls, type_equal);
 		}
-		sql_subtype_destroy(f->res);
 		f->res = t;
 	}
 	return ls;
@@ -453,21 +452,20 @@ scale_algebra(mvc *sql, sql_subfunc *f, stmt *ls, stmt *rs)
 	if (lt->type->scale == SCALE_FIX && rt->scale && 
 		strcmp(f->func->imp, "/") == 0) {
 		int digits = rt->scale + lt->digits;
-		sql_subtype *nlt;
+		sql_subtype nlt;
 
 		/* HACK alert: digits should be less then max */
-		if (f->res->type->radix == 10 && digits > 19)
+		if (f->res.type->radix == 10 && digits > 19)
 			digits = 19;
-		if (f->res->type->radix == 2 && digits > 53)
+		if (f->res.type->radix == 2 && digits > 53)
 			digits = 53;
 
 		/* scale fixing may require a larger type ! */
-		nlt = sql_bind_subtype(lt->type->sqlname, digits, lt->scale+rt->scale);
-		f->res->digits = digits;
-		f->res->scale = lt->scale;
+		sql_find_subtype(&nlt, lt->type->sqlname, digits, lt->scale+rt->scale);
+		f->res.digits = digits;
+		f->res.scale = lt->scale;
 		
-		ls = check_types( sql, nlt, ls, type_equal );
-		sql_subtype_destroy(nlt);
+		ls = check_types( sql, &nlt, ls, type_equal );
 	}
 	return ls;
 }
@@ -495,9 +493,9 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 			}
 			if (c) {
 				lng val = scale2value(scale_diff);
-				atom *a = atom_int(sql_dup_subtype(it), val);
+				atom *a = atom_int(it, val);
 
-				c->res->scale = (st->scale + scale_diff);
+				c->res.scale = (st->scale + scale_diff);
 				return stmt_binop(s, stmt_atom(a), c);
 			}
 		}
@@ -508,9 +506,9 @@ fix_scale(mvc *sql, sql_subtype *ct, stmt *s, int both, int always)
 
 		if (c) {
 			lng val = scale2value(scale_diff);
-			atom *a = atom_int(sql_dup_subtype(it), val);
+			atom *a = atom_int(it, val);
 
-			c->res->scale = 0;
+			c->res.scale = 0;
 			return stmt_binop(s, stmt_atom(a), c);
 		} else {
 			printf("scale_down mising (%s)\n", st->type->base.name);
@@ -539,19 +537,20 @@ inplace_convert(mvc *sql, sql_subtype *ct, stmt *s)
 
 		if (ct->type->localtype == st->type->localtype) {
 			if (ct->type->localtype == TYPE_lng || ct->type->localtype == TYPE_int || ct->type->localtype == TYPE_sht) {
-				r = stmt_varnr(s->flag, sql_dup_subtype(ct));
+				r = stmt_varnr(s->flag, ct);
 				sql_convert_arg(sql, s->flag, ct);
 			} else if (ct->type->localtype == TYPE_str) {
-				sql_subtype *nt = sql_create_subtype(st->type, ct->digits, ct->scale);
+				sql_subtype nt;
 
-				r = stmt_varnr(s->flag, nt);
-				sql_convert_arg(sql, s->flag, nt);
+				sql_init_subtype(&nt, st->type, ct->digits, ct->scale);
+				r = stmt_varnr(s->flag, &nt);
+				sql_convert_arg(sql, s->flag, &nt);
 			}
 		} else if (st->type->localtype == TYPE_str) {
 			atom *a = sql_bind_arg(sql, s->flag);
 
 			if (atom_null(a)) {
-				r = stmt_varnr(s->flag, sql_dup_subtype(ct));
+				r = stmt_varnr(s->flag, ct);
 				sql_convert_arg(sql, s->flag, ct);
 			}
 		}
@@ -589,14 +588,12 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 	}
 
 	if (!t) {	/* try to convert if needed */
-		sql_subtype *nt;
 		c = sql_type_convert(st->type->eclass, ct->type->eclass);
 		if (!c) { 
 			stmt_destroy(s);
 			s = NULL;
 		} else {
-			nt = sql_dup_subtype(ct);
-			s = stmt_convert(s, sql_dup_subtype(st), nt);
+			s = stmt_convert(s, st, ct);
 		}
 	} 
 	if (!s) {
@@ -618,7 +615,7 @@ check_types(mvc *sql, sql_subtype *ct, stmt *s, check_type tpe)
 }
 
 sql_subtype *
-supertype(sql_subtype *r, sql_subtype *i)
+supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 {
 	/* first find super type */
 	char *tpe = r->type->sqlname;
@@ -668,7 +665,8 @@ supertype(sql_subtype *r, sql_subtype *i)
 		}
 	}
 
-	return sql_bind_subtype(tpe, digits, scale);
+	sql_find_subtype(super, tpe, digits, scale);
+	return super;
 }
 
 int
@@ -677,7 +675,7 @@ set_type_param(sql_subtype *type, stmt *param)
 	if (!type || !param || param->type != st_var)
 		return -1;
 
-	param->op2.typeval = sql_dup_subtype(type);
+	param->op2.typeval = *type;
 	return 0;
 }
 
@@ -708,22 +706,22 @@ convert_types(mvc *sql, stmt **L, stmt **R, int scale_fixing)
 		sql_subtype *r = rt;
 
 		if (subtype_cmp(lt, rt) != 0) {
-			sql_subtype *super = supertype(r, i);
+			sql_subtype super;
 
+			supertype(&super, r, i);
 			if (scale_fixing) {
 				/* convert ls to super type */
-				ls = check_types(sql, super, ls, type_equal);
+				ls = check_types(sql, &super, ls, type_equal);
 				/* convert rs to super type */
-				rs = check_types(sql, super, rs, type_equal);
+				rs = check_types(sql, &super, rs, type_equal);
 			} else {
 				/* convert ls to super type */
-				super->scale = lt->scale;
-				ls = check_types(sql, super, ls, type_equal);
+				super.scale = lt->scale;
+				ls = check_types(sql, &super, ls, type_equal);
 				/* convert rs to super type */
-				super->scale = rt->scale;
-				rs = check_types(sql, super, rs, type_equal);
+				super.scale = rt->scale;
+				rs = check_types(sql, &super, rs, type_equal);
 			}
-			sql_subtype_destroy(super);
 		/*
 		} else if (scale_fixing) {
 			ls = fix_scale(sql, r, ls, 0, 0);

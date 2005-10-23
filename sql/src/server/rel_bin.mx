@@ -81,7 +81,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 			atom *a = e->l;
 			s = stmt_atom(atom_dup(a));
 		} else {
-			s = stmt_varnr(e->flag, sql_dup_subtype(e->f));
+			s = stmt_varnr(e->flag, e->f);
 		}
 	}	break;
 	case e_convert: {
@@ -91,7 +91,7 @@ exp_bin(mvc *sql, sql_exp *e, stmt *left, stmt *right, group *grp)
 		sql_subtype *to = tps->h->next->data;
 		if (!l) 
 			return NULL;
-		s = stmt_convert(l, sql_dup_subtype(from), sql_dup_subtype(to));
+		s = stmt_convert(l, from, to);
 	} 	break;
 	case e_func: {
 		node *en;
@@ -463,7 +463,7 @@ rel2bin_predicate(void)
 {
 	stmt *t = NULL;
 	sql_subtype *bt = sql_bind_localtype("bit");
-	t = stmt_temp(sql_dup_subtype(bt));
+	t = stmt_temp(bt);
 	t = stmt_append(t, stmt_bool(1));
 	return t;
 }

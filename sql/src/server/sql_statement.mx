@@ -597,10 +597,6 @@ stmt_destroy(stmt *s)
 		case st_var:
 			if (s->op1.sval)
 				_DELETE(s->op1.sval);
-			/*
-			if (s->op2.typeval)
-				sql_subtype_destroy(s->op2.typeval);
-			*/
 			break;
 
 			/* reference only independently managed resources */
@@ -623,7 +619,6 @@ stmt_destroy(stmt *s)
 				stmt_destroy(s->op2.stval);
 			if (s->op3.stval)
 				stmt_destroy(s->op3.stval);
-			sql_subtype_destroy(s->op4.typeval);
 			break;
 		case st_aggr:
 			if (s->op1.stval)
@@ -637,8 +632,6 @@ stmt_destroy(stmt *s)
 		case st_convert:
 			if (s->op1.stval)
 				stmt_destroy(s->op1.stval);
-			sql_subtype_destroy(s->op3.typeval);
-			sql_subtype_destroy(s->op4.typeval);
 			break;
 		case st_op:
 		case st_unop:
@@ -748,7 +741,10 @@ stmt_var(char *varname, sql_subtype *t)
 	stmt *s = stmt_create(st_var);
 
 	s->op1.sval = varname;
-	s->op2.typeval = t;
+	if (t)
+		s->op2.typeval = *t;
+	else
+		s->op2.typeval.type = NULL;
 	s->key = 1;
 	return s;
 }
@@ -759,7 +755,10 @@ stmt_varnr(int nr, sql_subtype *t)
 	stmt *s = stmt_create(st_var);
 
 	s->op1.sval = NULL;
-	s->op2.typeval = t;
+	if (t)
+		s->op2.typeval = *t;
+	else
+		s->op2.typeval.type = NULL;
 	s->key = 1;
 	s->flag = nr;
 	return s;
@@ -801,7 +800,7 @@ stmt_temp(sql_subtype *t)
 {
 	stmt *s = stmt_create(st_temp);
 
-	s->op4.typeval = t;
+	s->op4.typeval = *t;
 	s->nrcols = 1;
 	return s;
 }
@@ -1511,8 +1510,8 @@ stmt_convert(stmt *v, sql_subtype *from, sql_subtype *to)
 	stmt *s = stmt_create(st_convert);
 
 	s->op1.stval = v;
-	s->op3.typeval = from;
-	s->op4.typeval = to;
+	s->op3.typeval = *from;
+	s->op4.typeval = *to;
 	s->nrcols = 0;		/* function without arguments returns single value */
 	s->h = stmt_dup(v->h);
 	s->key = v->key;
@@ -1727,16 +1726,16 @@ tail_type(stmt *st)
 	case st_unop:
 	case st_binop:
 	case st_Nop:
-		return st->op4.funcval->res;
+		return &st->op4.funcval->res;
 	case st_atom:
 		return atom_type(st->op1.aval);
 	case st_convert:
 	case st_temp:
-		return st->op4.typeval;
+		return &st->op4.typeval;
 	case st_find:
 		return &st->op4.cval->type;
 	case st_var:
-		return st->op2.typeval;
+		return &st->op2.typeval;
 	case st_relselect:
 	default:
 		fprintf(stderr, "missing tail type %d: %s\n", st->type, st_type2string(st->type));
@@ -2102,9 +2101,6 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 				fprintf(fp, "var_%s -> id%d [headlabel=\"1\"];\n",
 					s->op1.sval, -(s->optimized));
 			}
-	/*
-			sql_subtype_destroy(s->op2.typeval);
-	*/
 			break;
 
 		/* reference only independently managed resources */
@@ -2144,9 +2140,6 @@ int stmt_stmt2dot(stmt *s, int l, int *i, FILE *fp)
 			if (s->op3.stval) 
 				fprintf(fp, "id%d -> id%d [headlabel=\"3\"];\n",
 					stmt_stmt2dot(s->op3.stval, l, i, fp), -(s->optimized));
-	/*
-			sql_subtype_destroy(s->op4.typeval);
-	*/
 			break;
 
 		case st_aggr:

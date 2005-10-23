@@ -212,7 +212,7 @@ sql_column_ref(mvc *sql, scope *scp, symbol *column_r)
 	assert(column_r->token == SQL_COLUMN && column_r->type == type_list);
 
 	if (dlist_length(l) == 1 && l->h->type == type_int) {
-		return stmt_varnr(l->h->data.ival, sql_dup_subtype(atom_type(sql_bind_arg(sql, l->h->data.ival))));
+		return stmt_varnr(l->h->data.ival, atom_type(sql_bind_arg(sql, l->h->data.ival)));
 	} else if (dlist_length(l) == 1) {
 		char *name = l->h->data.sval;
 
@@ -341,7 +341,7 @@ sql_subquery_optname(mvc *sql, scope *scp, symbol *query)
 		for (n = sq->op1.lval->h; n; n = n->next) {
 			stmt *nsq = stmt_dup(n->data);
 			char *cname = column_name(nsq);
-			stmt *temp = stmt_temp(sql_dup_subtype(tail_type(nsq)));
+			stmt *temp = stmt_temp(tail_type(nsq));
 
 			nsq = stmt_append(temp, nsq);
 			if (tname)
@@ -415,7 +415,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 	list *conds = create_stmt_list();
 	list *results = create_stmt_list();
 	dnode *dn = when_search_list->h;
-	sql_subtype *restype = NULL;
+	sql_subtype *restype = NULL, rtype;
 	stmt *res = NULL, *else_stmt = NULL;
 	node *n, *m;
 
@@ -432,7 +432,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 				e1 = stmt_const(first_subset(subset), e1);
 			if (e1 && e2) {
 				cond = sql_compare(sql, stmt_dup(e1), e2, "=", sql_search);
-				result = stmt_atom(atom_general(sql_dup_subtype(tail_type(e1)), NULL, 0));
+				result = stmt_atom(atom_general(tail_type(e1), NULL, 0));
 				else_stmt = e1;	/* ELSE case */
 			} else {
 				if (e1)
@@ -449,7 +449,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 				cond = stmt_const(first_subset(subset), cond);
 			if (cond) {
 				result = stmt_dup(cond);
-				cond = sql_compare(sql, cond, stmt_atom(atom_general(sql_dup_subtype(tail_type(cond)), NULL, 0)), "<>", sql_search);
+				cond = sql_compare(sql, cond, stmt_atom(atom_general(tail_type(cond), NULL, 0)), "<>", sql_search);
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
@@ -469,7 +469,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 		list_prepend(conds, cond);
 		list_prepend(results, result);
 
-		restype = sql_dup_subtype(tail_type(result));
+		restype = tail_type(result);
 
 		if (token == SQL_NULLIF)
 			dn = NULL;
@@ -491,7 +491,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 				cond = stmt_const(first_subset(subset), cond);
 			if (cond) {
 				result = stmt_dup(cond);
-				cond = sql_compare(sql, cond, stmt_atom(atom_general(sql_dup_subtype(tail_type(cond)), NULL, 0)), "<>", sql_search);
+				cond = sql_compare(sql, cond, stmt_atom(atom_general(tail_type(cond), NULL, 0)), "<>", sql_search);
 			}
 		} else {
 			dlist *when = dn->data.sym->data.lval;
@@ -517,14 +517,13 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 			list_destroy(results);
 			return sql_error(sql, 02, "result type missing");
 		}
-		tpe = supertype(restype, tpe);
-		sql_subtype_destroy(restype);
+		supertype(&rtype, restype, tpe);
 		if (!tpe) {
 			list_destroy(conds);
 			list_destroy(results);
 			return sql_error(sql, 02, "result types %s,%s of case are not compatible", restype->type->sqlname, tpe->type->sqlname);
 		}
-		restype = tpe;
+		restype = &rtype;
 	}
 	if (subset) {
 		res = first_subset(subset);
@@ -544,8 +543,8 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 
 		tpe = tail_type(result);
 		if (tpe && restype) {
-			tpe = supertype(restype, tpe);
-			sql_subtype_destroy(restype);
+			supertype(&rtype, restype, tpe);
+			tpe = &rtype;
 		}
 		restype = tpe;
 
@@ -569,7 +568,7 @@ sql_case(mvc *sql, scope *scp, int token, symbol *opt_cond, dlist *when_search_l
 			return NULL;
 		}
 	} else {
-		stmt *a = stmt_atom(atom_general(sql_dup_subtype(restype), NULL, 0));
+		stmt *a = stmt_atom(atom_general(restype, NULL, 0));
 
 		if (res) {
 			res = stmt_const(res, a);
@@ -713,7 +712,7 @@ sql_Nop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 				sql_arg *a = m->data;
 				stmt *op = stmt_dup(n->data);
 
-				op = check_types(sql, a->type, op, type_equal);
+				op = check_types(sql, &a->type, op, type_equal);
 				if (!op) {
 					list_destroy(nsl);
 					nsl = NULL;
@@ -760,15 +759,15 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 		}
 	}
 	if (f) {
-		if (f->func->res->scale == SCALE_FIX) {
+		if (f->func->res.scale == SCALE_FIX) {
 			ls = fix_scale(sql, t2, ls, 0, 0);
 			rs = fix_scale(sql, t1, rs, 0, 0);
-		} else if (f->func->res->scale == SCALE_SUB) {
+		} else if (f->func->res.scale == SCALE_SUB) {
 			ls = scale_algebra(sql, f, ls, rs);
-		} else if (f->func->res->scale == SCALE_ADD) {
+		} else if (f->func->res.scale == SCALE_ADD) {
 			ls = sum_scales(sql, f, ls, rs);
-		} else if (f->func->res->scale == DIGITS_ADD) {
-			f->res->digits = t1->digits + t2->digits;
+		} else if (f->func->res.scale == DIGITS_ADD) {
+			f->res.digits = t1->digits + t2->digits;
 		}
 		return stmt_binop(ls, rs, f);
 	} else {
@@ -779,24 +778,24 @@ sql_binop_(mvc *sql, scope *scp, char *fname, stmt *ls, stmt *rs)
 			node *m = f->func->ops->h;
 			sql_arg *a = m->next->data;
 
-			rs = check_types(sql, a->type, rs, type_equal);
+			rs = check_types(sql, &a->type, rs, type_equal);
 			if (rs)
 				return stmt_binop(ls, rs, f);
-		} else if (convert_types(sql, &ls, &rs, 0) >= 0) {
+		} else if (convert_types(sql, &ls, &rs, 1) >= 0) {
 			/* try operators */
 			t1 = tail_type(ls);
 			t2 = tail_type(rs);
 			f = sql_bind_func(sql->trans->module, fname, t1, t2);
 			if (f) {
-				if (f->func->res->scale == SCALE_FIX) {
+				if (f->func->res.scale == SCALE_FIX) {
 					ls = fix_scale(sql, t2, ls, 0, 0);
 					rs = fix_scale(sql, t1, rs, 0, 0);
-				} else if (f->func->res->scale == SCALE_SUB) {
+				} else if (f->func->res.scale == SCALE_SUB) {
 					ls = scale_algebra(sql, f, ls, rs);
-				} else if (f->func->res->scale == SCALE_ADD) {
+				} else if (f->func->res.scale == SCALE_ADD) {
 					ls = sum_scales(sql, f, ls, rs);
-				} else if (f->func->res->scale == DIGITS_ADD) {
-					f->res->digits = digits;
+				} else if (f->func->res.scale == DIGITS_ADD) {
+					f->res.digits = digits;
 				}
 				return stmt_binop(ls, rs, f);
 			}
@@ -892,7 +891,7 @@ sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 	if (!f && (f = sql_find_func(sql->trans->module, fname, 1)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
-		rs = check_types(sql, a->type, rs, type_equal);
+		rs = check_types(sql, &a->type, rs, type_equal);
 		if (!rs) {
 			sql_subfunc_destroy(f);
 			f = NULL;
@@ -900,9 +899,9 @@ sql_unop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int fs)
 	}
 	if (f) {
 		if (f->func->imp) {
-			if (f->func->res->scale == INOUT) {
-				f->res->digits = rt->digits;
-				f->res->scale = rt->scale;
+			if (f->func->res.scale == INOUT) {
+				f->res.digits = rt->digits;
+				f->res.scale = rt->scale;
 			}
 			return stmt_unop(rs, f);
 		} else {
@@ -992,7 +991,7 @@ sql_aggrop(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		 */
 		if (remove_nils && stmt_has_null(s)) {
 			sql_subtype *t = tail_type(s);
-			stmt *n = stmt_atom(atom_general(sql_dup_subtype(t), NULL, 0));
+			stmt *n = stmt_atom(atom_general(t, NULL, 0));
 			s = stmt_select2(s, n, stmt_dup(n), 0);
 		}
 		return fix_scale(sql, t, stmt_aggr(s, grp_dup(grp), a), 1, (t->type->scale == SCALE_FIX));
@@ -1078,13 +1077,12 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		return stmt_dup(s);
 	}
 	case SQL_NULL:
-		return stmt_atom(atom_general(sql_dup_subtype(sql_bind_localtype("str")), NULL, 0));
+		return stmt_atom(atom_general(sql_bind_localtype("str"), NULL, 0));
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 
 		if (!an || !an->a) {
-			return stmt_atom(atom_general(sql_dup_subtype(
-					sql_bind_localtype("str")), NULL, 0));
+			return stmt_atom(atom_general(sql_bind_localtype("str"), NULL, 0));
 		} else {
 			return stmt_atom(atom_dup(an->a));
 		}
@@ -1339,7 +1337,7 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 			for (n = t->columns->h; n; n = n->next, m = m->next) {
 				cvar *cs = n->data;
 
-				list_append(l2, stmt_append(stmt_dup(m->data), stmt_const(stmt_dup(ld), stmt_atom(atom_general(sql_dup_subtype(tail_type(cs->s)), NULL, 0)))));
+				list_append(l2, stmt_append(stmt_dup(m->data), stmt_const(stmt_dup(ld), stmt_atom(atom_general(tail_type(cs->s), NULL, 0)))));
 			}
 			list_destroy(l1);
 			l1 = l2;
@@ -1352,7 +1350,7 @@ sql_join_(mvc *sql, scope *scp, symbol *tab1, int natural, jt jointype, symbol *
 			for (n = t->columns->h; n; n = n->next, m = m->next) {
 				cvar *cs = n->data;
 
-				list_append(l2, stmt_append(stmt_dup(m->data), stmt_const(stmt_dup(rd), stmt_atom(atom_general(sql_dup_subtype(tail_type(cs->s)), NULL, 0)))));
+				list_append(l2, stmt_append(stmt_dup(m->data), stmt_const(stmt_dup(rd), stmt_atom(atom_general(tail_type(cs->s), NULL, 0)))));
 			}
 			t = tv2;
 			for (n = t->columns->h; n; n = n->next, m = m->next) {
@@ -1438,7 +1436,7 @@ sql_union(mvc *sql, tvar *tv1, tvar *tv2, dlist *cols )
 
 			/* insert single value into table */
 			if (lc->s->key) {
-				stmt *temp = stmt_temp(sql_dup_subtype(tail_type(ls)));
+				stmt *temp = stmt_temp(tail_type(ls));
 
 				ls = stmt_append(temp, ls);
 			}
@@ -2424,7 +2422,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 		if (l->h->next->type == type_list) {
 			dnode *n = l->h->next->data.lval->h;
 			sql_subtype *ct = tail_type(ls);
-			stmt *temp = stmt_temp(sql_dup_subtype(ct));
+			stmt *temp = stmt_temp(ct);
 
 			for (; n; n = n->next) {
 				symbol *sval = n->data.sym;
@@ -2641,7 +2639,7 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 
 		/* TODO predicate!! */
 		if (res) {
-			sql_subtype *tpe = sql_dup_subtype(tail_type(res));
+			sql_subtype *tpe = tail_type(res);
 			stmt *a = stmt_atom(atom_general(tpe, NULL, 0));
 
 			if (sc->token == SQL_NULL) {
@@ -2690,7 +2688,7 @@ sql_logical_exp(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int 
 		int found = 1;
 
 		if (!(t = scope_bind(scp, NULL, "row"))) {
-			t = stmt_temp(sql_dup_subtype(bt));
+			t = stmt_temp(bt);
 			t = stmt_append(t, stmt_bool(1));
 			found = 0;
 		}

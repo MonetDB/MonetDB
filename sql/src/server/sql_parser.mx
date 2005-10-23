@@ -1690,8 +1690,7 @@ insert_atom:
 
 	   if (m -> mode != m_prepare && m->argc < MAXPARAMS-2 && m->cache){
 		/* replace by argument */
-		atom *a = atom_general( sql_dup_subtype(
-				sql_bind_localtype("str")), NULL, 0);
+		atom *a = atom_general( sql_bind_localtype("str"), NULL, 0);
 
 		sql_add_arg( m, a);
 		$$ = _symbol_create_list( SQL_COLUMN,

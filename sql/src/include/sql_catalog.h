@@ -121,7 +121,7 @@ typedef struct sql_subtype {
 	sql_type *type;
 	unsigned int digits;
 	unsigned int scale;
-	unsigned char fixed;
+	//unsigned char fixed;
 } sql_subtype;
 
 typedef struct sql_aggr {
@@ -152,7 +152,7 @@ typedef struct sql_subaggr {
 
 typedef struct sql_arg {
 	char *name;
-	sql_subtype *type;
+	sql_subtype type;
 } sql_arg;
 
 typedef struct sql_func {
@@ -160,8 +160,8 @@ typedef struct sql_func {
 
 	char *imp;
 	list *ops;		/* param list */
-	sql_subtype *res;
-	/* res->scale
+	sql_subtype res;
+	/* res.scale
 	   SCALE_NOFIX/SCALE_NONE => nothing
 	   SCALE_FIX => input scale fixing,
 	   SCALE_ADD => leave inputs as is and do add scales
@@ -182,7 +182,7 @@ typedef struct sql_subfunc {
 	sql_ref ref;
 
 	sql_func *func;
-	sql_subtype *res;
+	sql_subtype res;
 } sql_subfunc;
 
 typedef struct sql_bat {

@@ -541,7 +541,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 	for (n = params->h; n; n = n->next) {
 		dnode *an = n->data.lval->h;
 
-		list_append(l, sql_create_arg(_strdup(an->data.sval), sql_dup_subtype(an->next->data.typeval)));
+		list_append(l, sql_create_arg(_strdup(an->data.sval), an->next->data.typeval));
 	}
 	if (body) {		/* sql func */
 		char *subquery = QUERY(sql->scanner) + sql->scanner.as;
@@ -550,7 +550,7 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 		for (n = params->h; n; n = n->next) {
 			dnode *m = n->data.lval->h;
 			char *name = _strdup(m->data.sval);
-			sql_subtype *t = sql_dup_subtype(m->next->data.typeval);
+			sql_subtype *t = m->next->data.typeval;
 
 			sql_add_param(sql, name, stmt_var(_strdup(name), t));
 		}
@@ -561,12 +561,12 @@ create_func(mvc *sql, dlist *qname, dlist *params, sql_subtype *res, char *impl,
 		sql_destroy_params(sql);
 		stmt_destroy(b);
 
-		sql_create_sqlfunc(fname, subquery, l, sql_dup_subtype(res));
+		sql_create_sqlfunc(fname, subquery, l, res);
 	} else {
 		sql_arg *r = NEW(sql_arg);
 
 		r->name = _strdup("result");
-		r->type = sql_dup_subtype(res);
+		r->type = *res;
 		list_prepend(l, r);
 		mvc_create_func(sql, sql->trans->module, fname, l, FALSE, FALSE, impl);
 	}
@@ -612,7 +612,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 			for (; n; n = n->next, m = m->next) {
 				char *cname = n->data.sval;
 				stmt *st = m->data;
-				sql_subtype *tp = sql_dup_subtype(tail_type(st));
+				sql_subtype *tp = tail_type(st);
 
 				mvc_create_column(sql, t, cname, tp);
 			}
@@ -623,7 +623,7 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 			for (m = sq->op1.lval->h; m; m = m->next) {
 				stmt *st = m->data;
 				char *cname = column_name(st);
-				sql_subtype *tp = sql_dup_subtype(tail_type(st));
+				sql_subtype *tp = tail_type(st);
 
 				mvc_create_column(sql, t, cname, tp);
 			}
@@ -1053,7 +1053,6 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	if (cname && ctype) {
 		sql_column *cs = NULL;
 
-		ctype = sql_dup_subtype(ctype);
 		cs = mvc_create_column(sql, t, cname, ctype);
 
 		if (column_options(sql, opt_list, ss, t, cs, alter) == SQL_ERR) {

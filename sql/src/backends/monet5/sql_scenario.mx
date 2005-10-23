@@ -930,7 +930,7 @@ produce code.
 	else
 		stream_printf(GDKout, "#parse result %d\n", err);
 #endif
-	if( be->q) be->q->stk= 0;
+	//if( be->q) be->q->stk = 0;
 	if (be->q && m->mode == m_prepare) {
 		err = output_prepare(c->fdout, m, be->q);
 	} else if(m->mode == m_execute && be->q){

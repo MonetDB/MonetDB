@@ -852,9 +852,8 @@ load_arg(sql_trans *tr, sql_func * f, BAT *args, BUN j)
 	tpe = (char *) bun_find(arg_type, lid);
 	sz = *(int *) bun_find(arg_type_digits, lid);
 	d = *(int *) bun_find(arg_type_scale, lid);
-	a->type = sql_bind_subtype(tpe, sz, d);
-	if (!a->type)
-		a->type = sql_create_subtype(sql_trans_bind_type(tr, tpe), sz, d);
+	if (!sql_find_subtype(&a->type, tpe, sz, d))
+		sql_init_subtype(&a->type, sql_trans_bind_type(tr, tpe), sz, d);
 
 	bat_destroy(arg_name);
 	bat_destroy(arg_type);
@@ -883,7 +882,7 @@ load_func(sql_trans *tr, sql_module * m, BAT *funcs, BUN j)
 	t->imp = _strdup((char *) bun_find(func_func, lid));
 	t->sql = *(bit *) bun_find(func_sql, lid);
 	t->aggr = *(bit *) bun_find(func_aggr, lid);
-	t->res = NULL;
+	t->res.type = NULL;
 	t->m = m;
 
 	args = BATselect(arg_func_id, (ptr) &t->base.id, (ptr) &t->base.id);
@@ -904,7 +903,7 @@ load_func(sql_trans *tr, sql_module * m, BAT *funcs, BUN j)
 		if (first) {
 			first = 0;
 			if (strcmp(a->name, "result") == 0) {
-				t -> res = sql_dup_subtype(a->type);
+				t -> res = a->type;
 				arg_destroy(a);
 			} else {
 				list_append(t->ops, a);
@@ -1463,16 +1462,16 @@ bs_init_func(struct bm *bm)
 			BUNins(func_aggr, &nil, &F);
 			BUNins(func_module_id, &nil, &zero);
 		
-			if (f->res) {
+			if (f->res.type) {
 				char *name = "result";
 
 				id = OIDnew(1);
 				BUNins(arg_id, &nil, &id);
 				BUNins(arg_func_id, &nil, &f->base.id);
 				BUNins(arg_name, &nil, name);
-				BUNins(arg_type, &nil, f->res->type->sqlname);
-				BUNins(arg_type_digits, &nil, &f->res->scale);
-				BUNins(arg_type_scale, &nil, &f->res->scale);
+				BUNins(arg_type, &nil, f->res.type->sqlname);
+				BUNins(arg_type_digits, &nil, &f->res.scale);
+				BUNins(arg_type_scale, &nil, &f->res.scale);
 				BUNins(arg_number, &nil, &nr);
 				nr++;
 			}
@@ -1488,9 +1487,9 @@ bs_init_func(struct bm *bm)
 					arg_nme[4] = '0' + nr;
 					BUNins(arg_name, &nil, arg_nme);
 				}
-				BUNins(arg_type, &nil, a->type->type->sqlname);
-				BUNins(arg_type_digits, &nil, &a->type->scale);
-				BUNins(arg_type_scale, &nil, &a->type->scale);
+				BUNins(arg_type, &nil, a->type.type->sqlname);
+				BUNins(arg_type_digits, &nil, &a->type.scale);
+				BUNins(arg_type_scale, &nil, &a->type.scale);
 				BUNins(arg_number, &nil, &nr);
 			}
 		}
@@ -2054,6 +2053,7 @@ idx_dup(sql_trans *tr, int flag, sql_idx * i, sql_table *t)
 	return ni;
 }
 
+/* TODO keep all new (subtypes) in a list per module */
 static sql_subtype *
 subtype_dup(sql_trans *tr, int flag, sql_subtype *ot ) 
 {
@@ -2082,8 +2082,7 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 
 	base_init(&c->base, oc->base.id, tr_flag(&oc->base, flag), oc->base.name);
 
-	/* possibly LEAKING */
-	c->type = *subtype_dup(tr, flag, &oc->type);
+	c->type = oc->type;
 
 	c->def = NULL;
 	if (oc->def)
@@ -2209,22 +2208,13 @@ type_dup(sql_trans *tr, int flag, sql_type *ot, sql_module * m)
 	return t;
 }
 
-static sql_arg *
-arg_dup2(sql_trans *tr, int flag, sql_arg *oa ) 
-{
-	sql_arg *a = NEW(sql_arg);
-
-	a->name = _strdup(oa->name);
-	a->type = subtype_dup(tr, flag, oa->type );
-	return a;
-}
-
 static sql_func *
 func_dup(sql_trans *tr, int flag, sql_func *of, sql_module * m)
 {
 	node *n;
 	sql_func *f = NEW(sql_func);
 
+	(void)tr;
 	base_init(&f->base, of->base.id, tr_flag(&of->base, flag), of->base.name);
 
 	f->imp = _strdup(of->imp);
@@ -2232,10 +2222,10 @@ func_dup(sql_trans *tr, int flag, sql_func *of, sql_module * m)
 	f->aggr = of->aggr;
 	f->ops = list_create(of->ops->destroy);
 	for(n=of->ops->h; n; n = n->next) 
-		list_append(f->ops, arg_dup2(tr, flag, n->data));
-	f->res = NULL;
-	if (of->res) 
-		f->res = subtype_dup(tr, flag, of->res);
+		list_append(f->ops, arg_dup(n->data));
+	f->res.type = NULL;
+	if (of->res.type) 
+		f->res = of->res;
 
 	f->m = m;
 	return f;
@@ -3238,7 +3228,7 @@ sql_trans_create_func(sql_trans *tr, sql_module * m, char *func, list *args, bit
 	t->sql = sql;
 	t->aggr = aggr;
 	t->ops = list_dup(args, (fdup)&arg_dup);
-	t->res = NULL;
+	t->res.type = NULL;
 	t->m = m;
 
 	cs_add(&m->funcs, t, TR_NEW);
@@ -3248,12 +3238,12 @@ sql_trans_create_func(sql_trans *tr, sql_module * m, char *func, list *args, bit
 		sql_arg *a = n->data;
 		oid id = OIDnew(1);
 
-		table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type->type->sqlname, &a->type->type->digits, &a->type->type->scale, &number);
+		table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type.type->sqlname, &a->type.type->digits, &a->type.type->scale, &number);
 	}
 	if (!aggr && list_length(args) > 0) {
 		node *n = t->ops->h;
 		sql_arg *a = n->data;
-		t->res = sql_dup_subtype(a->type);
+		t->res = a->type;
 		list_remove_node(t->ops, n);
 	}
 

@@ -41,6 +41,8 @@ extern sql_rel *rel_selects(mvc *sql, symbol *sym);
 #include "sql_privileges.h"
 #include "sql_env.h"
 
+/* TODO fix exp_convert, should use full struct not pointer to subtypes */
+
 #define new_exp_list() list_create((fdestroy)&exp_destroy)
 #define new_subtype_list() list_create((fdestroy)&sql_subtype_destroy)
 
@@ -155,7 +157,7 @@ exp_subtype( sql_exp *e )
 	}
 	case e_func: {
 		sql_subfunc *f = e->f;
-		return f->res;
+		return &f->res;
 	}
 	case e_cmp:
 		/* return bit */
@@ -202,7 +204,7 @@ static sql_exp *
 exp_atom_int(int i) {
 	sql_subtype *it = sql_bind_subtype("int", 9, 0);
 
-	return exp_atom(atom_int(sql_dup_subtype(it), i ));
+	return exp_atom(atom_int(it, i ));
 }
 
 static sql_exp * exp_relation( sql_rel *r) 
@@ -999,9 +1001,9 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 			}
 			if (c) {
 				lng val = scale2value(scale_diff);
-				atom *a = atom_int(sql_dup_subtype(it), val);
+				atom *a = atom_int(it, val);
 
-				c->res->scale = (et->scale + scale_diff);
+				c->res.scale = (et->scale + scale_diff);
 				return exp_binop(e, exp_atom(a), c);
 			}
 		}
@@ -1012,9 +1014,9 @@ exp_fix_scale(mvc *sql, sql_subtype *ct, sql_exp *e, int both, int always)
 
 		if (c) {
 			lng val = scale2value(scale_diff);
-			atom *a = atom_int(sql_dup_subtype(it), val);
+			atom *a = atom_int(it, val);
 
-			c->res->scale = 0;
+			c->res.scale = 0;
 			return exp_binop(e, exp_atom(a), c);
 		} else {
 			printf("scale_down mising (%s)\n", et->type->base.name);
@@ -1065,40 +1067,39 @@ static sql_exp *
 exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 {
 	if (strcmp(f->func->imp, "*") == 0 && 
-	    f->func->res->type->scale == SCALE_FIX) {
-		sql_subtype *t = NULL;
+	    f->func->res.type->scale == SCALE_FIX) {
+		sql_subtype t;
 		sql_subtype *lt = exp_subtype(l);
 		sql_subtype *rt = exp_subtype(r);
 
-		f->res->scale = lt->scale + rt->scale;
-		f->res->digits = lt->digits + rt->digits;
+		f->res.scale = lt->scale + rt->scale;
+		f->res.digits = lt->digits + rt->digits;
 		/* HACK alert: digits should be less then max */
-		if (f->res->type->radix == 10 && f->res->digits > 19)
-			f->res->digits = 19;
-		if (f->res->type->radix == 2 && f->res->digits > 53)
-			f->res->digits = 53;
+		if (f->res.type->radix == 10 && f->res.digits > 19)
+			f->res.digits = 19;
+		if (f->res.type->radix == 2 && f->res.digits > 53)
+			f->res.digits = 53;
 		/* sum of digits may mean we need a bigger result type 
 		 * as the function don't support this we need to
 		 * make bigger input types!
 		 */
 
 		/* numeric types are fixed length */
-		if (f->res->type->eclass == EC_NUM) {
-			t = sql_bind_numeric(f->res->type->localtype, f->res->digits);
+		if (f->res.type->eclass == EC_NUM) {
+			sql_find_numeric(&t, f->res.type->localtype, f->res.digits);
 		} else {
-			t = sql_bind_subtype(f->res->type->sqlname, f->res->digits, f->res->scale);
+			sql_find_subtype(&t, f->res.type->sqlname, f->res.digits, f->res.scale);
 		}
-		if (type_cmp(t->type, f->res->type) != 0) { 
+		if (type_cmp(t.type, f->res.type) != 0) { 
 			/* do we need to convert to the a larger localtype 
 			   int * int may not fit in an int, so we need to 
 			   convert to lng * int.
 			 */
-			sql_subtype *nlt = sql_create_subtype(t->type, 
-				f->res->digits, lt->scale);
-			l = rel_check_type( sql, nlt, l, type_equal );
-			sql_subtype_destroy(nlt);
+			sql_subtype nlt;
+
+			sql_init_subtype(&nlt, t.type, f->res.digits, lt->scale);
+			l = rel_check_type( sql, &nlt, l, type_equal );
 		}
-		sql_subtype_destroy(f->res);
 		f->res = t;
 	}
 	return l;
@@ -1126,21 +1127,20 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 	if (lt->type->scale == SCALE_FIX && rt->scale && 
 		strcmp(f->func->imp, "/") == 0) {
 		int digits = rt->scale + lt->digits;
-		sql_subtype *nlt;
+		sql_subtype nlt;
 
 		/* HACK alert: digits should be less then max */
-		if (f->res->type->radix == 10 && digits > 19)
+		if (f->res.type->radix == 10 && digits > 19)
 			digits = 19;
-		if (f->res->type->radix == 2 && digits > 53)
+		if (f->res.type->radix == 2 && digits > 53)
 			digits = 53;
 
 		/* scale fixing may require a larger type ! */
-		nlt = sql_bind_subtype(lt->type->sqlname, digits, lt->scale+rt->scale);
-		f->res->digits = digits;
-		f->res->scale = lt->scale;
+		sql_find_subtype(&nlt, lt->type->sqlname, digits, lt->scale+rt->scale);
+		f->res.digits = digits;
+		f->res.scale = lt->scale;
 		
-		l = rel_check_type( sql, nlt, l, type_equal );
-		sql_subtype_destroy(nlt);
+		l = rel_check_type( sql, &nlt, l, type_equal );
 	}
 	return l;
 }
@@ -1163,22 +1163,22 @@ rel_convert_types(mvc *sql, sql_exp **L, sql_exp **R, int scale_fixing)
 		sql_subtype *r = rt;
 
 		if (subtype_cmp(lt, rt) != 0) {
-			sql_subtype *super = supertype(r, i);
+			sql_subtype super;
 
+			supertype(&super, r, i);
 			if (scale_fixing) {
 				/* convert ls to super type */
-				ls = rel_check_type(sql, super, ls, type_equal);
+				ls = rel_check_type(sql, &super, ls, type_equal);
 				/* convert rs to super type */
-				rs = rel_check_type(sql, super, rs, type_equal);
+				rs = rel_check_type(sql, &super, rs, type_equal);
 			} else {
 				/* convert ls to super type */
-				super->scale = lt->scale;
-				ls = rel_check_type(sql, super, ls, type_equal);
+				super.scale = lt->scale;
+				ls = rel_check_type(sql, &super, ls, type_equal);
 				/* convert rs to super type */
-				super->scale = rt->scale;
-				rs = rel_check_type(sql, super, rs, type_equal);
+				super.scale = rt->scale;
+				rs = rel_check_type(sql, &super, rs, type_equal);
 			}
-			sql_subtype_destroy(super);
 		}
 		*L = ls;
 		*R = rs;
@@ -1457,7 +1457,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		/* Do we need to escape ? */
 		if (dlist_length(ro->data.lval) == 2) {
 			char *escape = ro->data.lval->h->next->data.sval;
-			ee = exp_atom(atom_string(sql_dup_subtype(st), _strdup(escape), 1));
+			ee = exp_atom(atom_string(st, _strdup(escape), 1));
 		}
 		ro = ro->data.lval->h->data.sym;
 		re = rel_value_exp(sql, rel, ro, f);
@@ -1529,7 +1529,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 		if (!le)
 			return NULL;
-		re = exp_atom(atom_general(sql_dup_subtype(sql_bind_localtype("str")), NULL, 0));
+		re = exp_atom(atom_general(sql_bind_localtype("str"), NULL, 0));
 		if (sc->token == SQL_NULL) 
 			return rel_compare_exp(sql, rel, le, re, "=", NULL, f);
 		else
@@ -1583,7 +1583,7 @@ rel_unop(mvc *sql, sql_rel *rel, symbol *se, int fs)
 	if (!f && (f = sql_find_func(sql->trans->module, fname, 1)) != NULL) {
 		sql_arg *a = f->func->ops->h->data;
 
-		e = rel_check_type(sql, a->type, e, type_equal);
+		e = rel_check_type(sql, &a->type, e, type_equal);
 		if (!e) {
 			sql_subfunc_destroy(f);
 			f = NULL;
@@ -1591,9 +1591,9 @@ rel_unop(mvc *sql, sql_rel *rel, symbol *se, int fs)
 	}
 	if (f) {
 		if (f->func->imp) {
-			if (f->func->res->scale == INOUT) {
-				f->res->digits = t->digits;
-				f->res->scale = t->scale;
+			if (f->func->res.scale == INOUT) {
+				f->res.digits = t->digits;
+				f->res.scale = t->scale;
 			}
 			return exp_unop(e, f);
 		/*
@@ -1641,15 +1641,15 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 		}
 	}
 	if (f) {
-		if (f->func->res->scale == SCALE_FIX) {
+		if (f->func->res.scale == SCALE_FIX) {
 			l = exp_fix_scale(sql, t2, l, 0, 0);
 			r = exp_fix_scale(sql, t1, r, 0, 0);
-		} else if (f->func->res->scale == SCALE_SUB) {
+		} else if (f->func->res.scale == SCALE_SUB) {
 			l = exp_scale_algebra(sql, f, l, r);
-		} else if (f->func->res->scale == SCALE_ADD) {
+		} else if (f->func->res.scale == SCALE_ADD) {
 			l = exp_sum_scales(sql, f, l, r);
-		} else if (f->func->res->scale == DIGITS_ADD) {
-			f->res->digits = t1->digits + t2->digits;
+		} else if (f->func->res.scale == DIGITS_ADD) {
+			f->res.digits = t1->digits + t2->digits;
 		}
 		return exp_binop(l, r, f);
 	} else {
@@ -1660,7 +1660,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 			node *m = f->func->ops->h;
 			sql_arg *a = m->next->data;
 
-			r = rel_check_type(sql, a->type, r, type_equal);
+			r = rel_check_type(sql, &a->type, r, type_equal);
 			if (r)
 				return exp_binop(l, r, f);
 		} else if (rel_convert_types(sql, &l, &r, 0) >= 0) {
@@ -1669,15 +1669,15 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, char *fname)
 			t2 = exp_subtype(r);
 			f = sql_bind_func(sql->trans->module, fname, t1, t2);
 			if (f) {
-				if (f->func->res->scale == SCALE_FIX) {
+				if (f->func->res.scale == SCALE_FIX) {
 					l = exp_fix_scale(sql, t2, l, 0, 0);
 					r = exp_fix_scale(sql, t1, r, 0, 0);
-				} else if (f->func->res->scale == SCALE_SUB) {
+				} else if (f->func->res.scale == SCALE_SUB) {
 					l = exp_scale_algebra(sql, f, l, r);
-				} else if (f->func->res->scale == SCALE_ADD) {
+				} else if (f->func->res.scale == SCALE_ADD) {
 					l = exp_sum_scales(sql, f, l, r);
-				} else if (f->func->res->scale == DIGITS_ADD) {
-					f->res->digits = digits;
+				} else if (f->func->res.scale == DIGITS_ADD) {
+					f->res.digits = digits;
 				}
 				return exp_binop(l, r, f);
 			}
@@ -1744,7 +1744,7 @@ rel_nop(mvc *sql, sql_rel *rel, symbol *se, int fs)
 			sql_arg *a = m->data;
 			sql_exp *e = exp_dup(n->data);
 
-			e = rel_check_type(sql, a->type, e, type_equal);
+			e = rel_check_type(sql, &a->type, e, type_equal);
 			if (!e) {
 				list_destroy(nexps);
 				nexps = NULL;
@@ -1902,13 +1902,13 @@ rel_value_exp(mvc *sql, sql_rel *rel, symbol *se, int f)
 		return stmt_dup(s);
 	}
 	case SQL_NULL:
-		return stmt_atom(atom_general(sql_dup_subtype(sql_bind_localtype("str")), NULL, 0));
+		return stmt_atom(atom_general(sql_bind_localtype("str"), NULL, 0));
 	*/
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 
 		if (!an || !an->a) {
-			return exp_atom(atom_general(sql_dup_subtype(sql_bind_localtype("str")), NULL, 0));
+			return exp_atom(atom_general(sql_bind_localtype("str"), NULL, 0));
 		} else {
 			return exp_atom(atom_dup(an->a));
 		}

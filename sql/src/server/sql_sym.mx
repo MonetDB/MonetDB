@@ -23,6 +23,7 @@
 #define SQL_SYM_H
 
 #include <sql_mem.h>
+#include <sql_types.h>
 
 typedef enum symtype {
 	type_int,
@@ -51,7 +52,7 @@ typedef union symdata {
 	struct sql_idx *idxval;
 	struct sql_table *tval;
 	struct sql_schema *schema;
-	struct sql_subtype *typeval;
+	sql_subtype typeval;
 	struct sql_subaggr *aggrval;
 	struct sql_subfunc *funcval;
 } symdata;
