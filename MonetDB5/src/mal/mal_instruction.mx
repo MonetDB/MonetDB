@@ -681,6 +681,7 @@ MalBlkPtr copyMalBlk(MalBlkPtr old){
     memset((char*) mb->stmt, 0, sizeof(InstrPtr) * old->ssize);
     mb->stop = old->stop;
     mb->ssize = old->ssize;
+	assert(old->stop < old->ssize);
     for(i=0; i<old->stop;i++)
         mb->stmt[i] = copyInstruction(old->stmt[i]);
 
