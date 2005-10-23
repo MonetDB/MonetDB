@@ -204,8 +204,23 @@ comment "calculate a hash value and shift left";
 
 command calc.current_date():date
 address MTIMEcurrent_date;
+
 command calc.timestamp(s:str):timestamp
 address MTIMEtimestamp_fromstr;
+command calc.timestamp(d:timestamp):timestamp
+address MTIMEtimestamp_timestamp;
+command calc.==(a:timestamp,b:timestamp):bit
+address MTIMEtimestamp_EQ;
+command calc.!=(a:timestamp,b:timestamp):bit
+address MTIMEtimestamp_NEQ;
+command calc.<(a:timestamp,b:timestamp):bit
+address MTIMEtimestamp_LT;
+command calc.<=(a:timestamp,b:timestamp):bit
+address MTIMEtimestamp_LE;
+command calc.>(a:timestamp,b:timestamp):bit
+address MTIMEtimestamp_GT;
+command calc.>=(a:timestamp,b:timestamp):bit
+address MTIMEtimestamp_GE;
 
 command calc.date(s:str):date
 address MTIMEdate_fromstr;
