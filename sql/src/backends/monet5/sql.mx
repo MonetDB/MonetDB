@@ -970,6 +970,10 @@ mvc_clear_table_wrap(lng *res, str *sname, str *tname)
 	s = mvc_bind_schema(m, *sname);
 	t = mvc_bind_table(m, s, *tname);
 	*res = mvc_clear_table(m, t);
+	/* because the clear tables maybe factorized we need to clear the
+	   query cache, we miss use q->id for a delayed cleanup */
+	if (m->qc)
+		m->qc->id = 101;
 	return MAL_SUCCEED;
 }
 

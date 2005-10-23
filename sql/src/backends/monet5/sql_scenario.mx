@@ -556,14 +556,32 @@ second only during exection.
 This means we can safely change the language setting for
 the duration of these calls.
 @c
+
+static
+void clear_cache(mvc *m ) 
+{
+	if (m->qc) {
+		oid id;
+		int ret = 0;
+
+		for (id = 0; id <m->qc->id; id ++) {
+			char buf[BUFSIZ], *nme ;
+			snprintf(buf, BUFSIZ, "sql%d", (int) id);
+			nme= putName(buf,strlen(buf));
+			SQLCacheRemove(&ret, &nme);
+		}
+		(void) ret;
+		qc_destroy(m->qc);
+	}
+	m->qc = qc_create();
+}
+
 int SQLautocommit(Client c, mvc *m){
 	if (m->auto_commit && m->trans) {
 		if (m->cache && (m->type == Q_TRANS || 
 			m->type == Q_SCHEMA || 
 			m->qc->id >100)) {
-			if (m->qc) 
-				qc_destroy(m->qc);
-			m->qc = qc_create();
+			clear_cache(m);
 		}
 		if (mvc_status(m) < 0) {
 			mvc_rollback(m, 0, NULL);
@@ -1218,20 +1236,7 @@ Then the SQL profile table is just a view over a few basic bats.
 	 * and on schema changes
 	 */
 	if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id >100)) {
-		if (m->qc) {
-			oid id;
-			int ret = 0;
-
-			for (id = 0; id <m->qc->id; id ++) {
-				char buf[BUFSIZ], *nme ;
-				snprintf(buf, BUFSIZ, "sql%d", (int) id);
-				nme= putName(buf,strlen(buf));
-				SQLCacheRemove(&ret, &nme);
-			}
-			(void) ret;
-			qc_destroy(m->qc);
-		}
-		m->qc = qc_create();
+		clear_cache(m);
 	}
 
 	return msg;
