@@ -97,6 +97,11 @@ sql_export void SQLsetAccessMode(Client c);
 @-
 The queries are stored in a cache after they have been
 type checked and optimized.
+The Factory optimizer encapsulates the query with a re-entrance
+structure. However, this structure is only effective if
+quite some (expensive) instructions can be safed.
+The current heuristic is geared at avoiding trivial
+factory structures.
 @c
 #include "mal_macro.h"
 #include "mal_optimizer.h"
@@ -109,14 +114,14 @@ type checked and optimized.
 #include "sql_gencode.h"
 #include "optimizer.h"
 
-#define TOSMALL 3
+#define TOSMALL 12
 
 str 
 FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *ns, p;
 	int v;
-	int i, j, k, klim;/*, argseen=0;*/
+	int i, j, k, klim,newssize;/*, argseen=0;*/
 	MALfcn setWriteMode = 0;
 	Symbol s;
 	lng clk = GDKusec();
@@ -144,7 +149,8 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 The first step is to collect all the sql bind operations and
 to extract some compiler relevant properties from the catalogue.
 @c
-	ns = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * (mb->stop * 2));
+	newssize = mb->ssize * 2;
+	ns = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * newssize);
 	k = 1;
 	ns[0] = getInstrPtr(mb, 0);	/* its signature */
 	ns[0]->token = FACTORYsymbol;
@@ -234,6 +240,7 @@ Finalize the factory loop
 	ns[k++] = getInstrPtr(mb, i);
 
 	mb->stop = k;
+	mb->ssize = newssize;
 	GDKfree(mb->stmt);
 	mb->stmt = ns;
 
