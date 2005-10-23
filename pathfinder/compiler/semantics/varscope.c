@@ -564,11 +564,41 @@ PFvarscope (PFpnode_t * root)
     /* initialize global */
     scoping_failed = false;
 
-    /* scope library modules first */
-    scope_lib_mod (root);
+    switch (root->kind) {
 
-    /* then all the rest */
-    scope (root);
+        case p_lib_mod:
+            /* scope modules that the input module has imported */
+            scope_lib_mod (root->child[1]);
+
+            /* look out for `declare variable' statements in the
+             * module definition
+             */
+            scope_var_decls (root->child[1]);
+
+            /* scope the input module */
+            scope (root->child[1]);
+
+            break;
+
+        case p_main_mod:
+            /* scope modules that the input module has imported */
+            scope_lib_mod (root->child[0]);
+
+            /* handle `declare variable's in the prolog */
+            scope_var_decls (root->child[0]);
+
+            /* scope our own prolog */
+            scope (root->child[0]);
+
+            /* scope the query body */
+            scope (root->child[1]);
+
+            break;
+
+        default:
+            PFoops (OOPS_FATAL, "illegal parse tree in PFvarscope()");
+            break;
+    }
 
     if (scoping_failed)
         PFoops (OOPS_UNKNOWNVAR,

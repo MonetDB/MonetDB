@@ -59,9 +59,13 @@ static void fun_add_user (PFqname_t qname, unsigned int arity,
  */
 PFenv_t *PFfun_env = NULL;
 
+/* activate debugging code */
+/* #define DEBUG_FUNCTIONS */
 
 /* Print out all registered functions for debugging purposes */
 #ifdef DEBUG_FUNCTIONS
+#include <stdio.h>
+
 static void print_functions (void);
 #endif
 
@@ -215,6 +219,11 @@ add_ufun (PFpnode_t *n)
 
     params = PFmalloc (arity * sizeof (*params));
     fill_paramlist (params, n->child[0]->child[0]);
+
+#ifdef DEBUG_FUNCTIONS
+    fprintf (stderr, "registering %s (%i)\n",
+             PFqname_str (n->sem.qname), arity);
+#endif
 
     fun_add_user (n->sem.qname, arity, params);
 }
