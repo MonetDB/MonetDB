@@ -455,7 +455,8 @@ yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
 	(void) p;
 	(void) pc;
 	for (pl = plants; pl < plim; pl++)
-		if (pl->factory == mb) {
+		if (pl->factory == mb ) {
+			if( pl->env == NULL) return pl;
 			for (i = 0; i < p->retc; i++) {
 #ifdef DEBUG_MAL_FACTORY
 				printf("lhs %d rhs %d\n", getArg(pl->pci, i), getArg(p, i));
