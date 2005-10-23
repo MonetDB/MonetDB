@@ -46,7 +46,8 @@ typedef enum modes_t {
 	m_explain = 3,
 	m_profile = 4,
 	m_debug = 5,
-	m_trace = 6
+	m_trace = 6,
+	m_inplace = 7
 } modes_t;
 
 typedef struct mvc {

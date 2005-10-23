@@ -900,10 +900,8 @@ produce code.
 			goto finalize;
 		}
 	} else 
-	if( (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key)) ){
-		/* not sure if this is allowed, because subsequent cleanup may
-			depend on it */
-		//m->mode= m_execute;
+	if((be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
+		//m->mode = m_inplace;
 	} else {
 		stmt *s;
 
@@ -948,10 +946,9 @@ produce code.
 	else
 		stream_printf(GDKout, "#parse result %d\n", err);
 #endif
-	//if( be->q) be->q->stk = 0;
 	if (be->q && m->mode == m_prepare) {
 		err = output_prepare(c->fdout, m, be->q);
-	} else if(m->mode == m_execute && be->q){
+	} else if (m->mode == m_inplace && be->q){
 		/* everything ready for a fast call */
 	} else if (be->q) {  /* call procedure generation (only in cache mode) */
 		backend_call(be, c, be->q);
@@ -1143,7 +1140,7 @@ SQLengine(Client c)
 	}
 	if( explainPerformance())
 		T0 = GDKusec();
-	if (m->mode == m_execute) {
+	if (m->mode == m_inplace) {
 		msg= SQLexecutePrepared(c,be, be->q );
 		goto cleanup_engine;
 	}
