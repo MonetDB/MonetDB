@@ -874,6 +874,7 @@ mal_export str MTIMEdate_create(date *ret, int *year, int *month, int *day);
 mal_export str MTIMEdaytime_tostr(str *ret, daytime *d);
 mal_export str MTIMEdaytime_create(daytime *ret, int *hour, int *min, int *sec, int *msec);
 mal_export str MTIMEtimestamp_fromstr(timestamp *ret, str *d);
+mal_export str MTIMEtimestamp_timestamp(timestamp *d, timestamp *s);
 mal_export str MTIMEtimestamp_create(timestamp *ret, date *d, daytime *t, tzone *z);
 mal_export str MTIMEtimestamp_create_default(timestamp *ret, date *d, daytime *t);
 mal_export str MTIMEdate_extract_year(int *ret, date *v);
@@ -2961,6 +2962,13 @@ MTIMEtimestamp_fromstr(timestamp *ret, str *d)
 	int len = strlen(*d);
 
 	timestamp_fromstr(*d, &len, &ret);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEtimestamp_timestamp(timestamp *d, timestamp *s)
+{
+	*d = *s;
 	return MAL_SUCCEED;
 }
 
