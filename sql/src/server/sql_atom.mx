@@ -354,7 +354,7 @@ atom_cast(atom *a, sql_subtype *tp)
 	}
 	/* need to do a cast, start simple is atom type a subtype of tp */
 	if (at->type->localtype == tp->type->localtype &&
-		(!tp->type->digits || at->type->digits <= tp->type->scale) &&
+		(!tp->type->digits || at->type->digits <= tp->type->digits) &&
 		(!tp->type->scale || at->type->scale == tp->type->scale))
 		return 1;
 	if (at->type->eclass == EC_NUM && 

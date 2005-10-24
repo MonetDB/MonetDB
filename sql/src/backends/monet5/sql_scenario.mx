@@ -1084,12 +1084,13 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 				char buf[BUFSIZ];
 
 				snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, atom_type(arg)->type->sqlname);
-				sql_error(c, 003, buf);
+				//sql_error(c, 003, buf);
 				if( pci->argc >= MAXARG)
 					GDKfree(argv);
 				if( pci->retc >= MAXARG)
 						GDKfree(argrec);
-				return MAL_SUCCEED;
+				printf("%s\n", buf);
+				return _strdup(buf);
 			}
 			argv[pci->retc+i]= &arg->data;
 		}
