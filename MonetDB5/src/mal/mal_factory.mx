@@ -405,7 +405,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[]){
 	i = psig->retc;
 	for (i = psig->retc; i < psig->argc; i++) {
 		lhs = &pl->stk->stk[getArg(psig, i)];
-		VALcopy(lhs, argv[i-psig->retc]);
+		VALcopy(lhs, argv[i]);
 	}
 	return  reenterMAL(cntxt, mb, pl->pc, -1, pl->stk, 0, 0);
 }
