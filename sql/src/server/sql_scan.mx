@@ -509,6 +509,7 @@ scanner_string(mvc *c, int quote)
 	int cur = quote;
 	int escape = 0;
 
+	lc->started = 1;
 	while (cur != EOF) {
 		unsigned int pos = rs->pos + lc->yycur;
 
@@ -547,6 +548,7 @@ keyword_or_ident(struct scanner * lc, int cur)
 	keyword *k = NULL;
 	int s;
 
+	lc->started = 1;
 	utf8_putchar(lc, cur);
 	s = lc->yycur;
 	lc->yyval = IDENT;
@@ -614,6 +616,7 @@ number(mvc * c, int cur)
 	struct scanner *lc = &c->scanner;
 	int token = sqlINT;
 
+	lc->started = 1;
 	/* TODO start with . */
 	while ((cur = scanner_getc(lc)) != EOF && isdigit(cur)) 
 		;
@@ -647,6 +650,7 @@ int scanner_symbol(mvc * c, int cur)
 	struct scanner *lc = &c->scanner;
 	int next = 0;
 
+	lc->started = 1;
 	if (cur == '/') {
 		next = scanner_getc(lc);
 		if (next == '*') {
