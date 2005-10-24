@@ -129,8 +129,6 @@ extern void types_exit();
 #define END_SUBTYPE	3
 #define END_TYPE	4
 
-static int sql_debug = 0;
-
 list *aliases = NULL;
 list *types = NULL;
 list *aggrs = NULL;
@@ -980,8 +978,7 @@ sql_create_sqlfunc(char *name, char *imp, list *ops, sql_subtype *res)
 void
 types_init(int debug)
 {
-	sql_debug = debug;
-
+	(void)debug;
 	aliases = list_create((fdestroy) &alias_destroy);
 	types = list_create((fdestroy) &type_destroy);
 	localtypes = list_create((fdestroy) &sql_subtype_destroy);
