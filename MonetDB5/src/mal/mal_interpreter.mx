@@ -242,11 +242,6 @@ of the return statement.
         /* set return type */
         lhs = &stk->stk[0];
         lhs->vtype =getVarGDKType(mb,0);
-        if(lhs->vtype <0)
-            GDKerror("unexpected type error\n");
-        /* stream_printf(GDKout,"recursive MAL "
-                "function call %s[%d]\n",
-            functionName(pci),pcicaller); */
         i= pci->retc;
         for(k=pp->retc; i<pci->argc; i++,k++){
             lhs = &stk->stk[pp->argv[k]];
@@ -394,7 +389,7 @@ in place. We assume that the caller has supplied pointers for
 all arguments and return values.
 @c
 		if( *env==NULL){
-			newStack(stk,mb->vsize);
+			stk=newGlobalStack(mb->vsize);
 			memset((char *) stk, 0, stackSize(mb->vtop));
 			stk->stktop= mb->vtop; 
 			stk->stksize= mb->vsize;
@@ -410,14 +405,21 @@ all arguments and return values.
 				lhs = &stk->stk[i];
 				lhs->vtype = getVarGDKType(mb,i);
 			}
+			stk->keepAlive = TRUE;
 			*env= stk;
 		} else stk = *env;
+		assert(stk);
 		for(i=p->retc; i<p->argc; i++){
 			lhs= &stk->stk[p->argv[i]];
 			VALcopy2(lhs, argv[i]);
 			if( lhs->vtype == TYPE_bat)
 				BBPincref(lhs->val.br.id,TRUE);
 		}
+#ifdef STACKTRACE
+	stream_printf(GDKout,"before execution\n");
+	printStack(GDKout,mb,stk,0); 
+	printFunction(GDKout,mb,LIST_MAL_ALL);
+#endif
 		stk->cmd = debug;
 		task.stk=stk;
 
@@ -429,7 +431,7 @@ all arguments and return values.
 		@:waitForChildren@
 #ifdef STACKTRACE
 		stream_printf(GDKout,"Stack after loop\n");
-		printStack(GDKout,mb,stk); fflush(GDKout);
+		printStack(GDKout,mb,stk,0); 
 #endif
 		return ret;
 	case FACTORYsymbol:
@@ -1401,9 +1403,8 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
 	ValPtr v;
 
 #ifdef STACKTRACE
-    stream_printf(GDKout,"--->stack before garbage collector,"
-            " forceall %d\n",forceall);
-    printStack(GDKout,mb,stk);
+    stream_printf(GDKout,"--->stack before garbage collector\n");
+    printStack(GDKout,mb,stk,0);
 #endif
     for(k=0;k<mb->vtop; k++) {
         if(isVarGarbage(mb,k) && isTmpVar(mb,k)){
@@ -1413,9 +1414,8 @@ void garbageCollector(MalBlkPtr mb, MalStkPtr stk)
         }
     }
 #ifdef STACKTRACE
-    stream_printf(GDKout,"--->stack after garbage collector,"
-            " forceall %d\n",forceall);
-    printStack(GDKout,mb,stk);
+    stream_printf(GDKout,"--->stack after garbage collector\n");
+    printStack(GDKout,mb,stk,0);
 #endif
 }
 void garbageCollectAll(MalBlkPtr mb, MalStkPtr stk)
@@ -1440,7 +1440,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 
 #ifdef STACKTRACE
     stream_printf(GDKout,"--->release BAT %d \n", bid);
-    printStack(GDKout,mb,stk);
+    printStack(GDKout,mb,stk,0);
 #endif
    do{
 		for(k=0;k<mb->vtop; k++) 
@@ -1450,7 +1450,7 @@ void releaseBAT(MalBlkPtr mb, MalStkPtr stk, int bid)
 		}
 #ifdef STACKTRACE
 		stream_printf(GDKout,"--->stack after release BAT %d\n", bid);
-		printStack(GDKout,mb,stk);
+		printStack(GDKout,mb,stk,0);
 #endif
 		if(stk->up){
 			stk= stk->up;
