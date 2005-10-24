@@ -48,7 +48,7 @@ A dummy module is needed to load properly.
 #include <mal_function.h>
 
 sql_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
-sql_export int backend_dumpproc(backend *be, Client c, int id, stmt *s);
+sql_export Symbol backend_dumpproc(backend *be, Client c, int id, stmt *s);
 sql_export void backend_callinline(backend *be, Client c, stmt *s);
 sql_export void backend_call(backend *be, Client c, cq *q);
 sql_export int backend_exec_prepared_stmt( backend *be, cq *q );
@@ -1472,10 +1472,9 @@ backend_callinline(backend *be, Client c, stmt *s )
 	c->curprg->def = curBlk;
 }
 
-int
+Symbol
 backend_dumpproc(backend *be, Client c, int id, stmt *s)
 {
-	int res = 0;
 	mvc *m = be->mvc;
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
@@ -1528,15 +1527,12 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 
 	pushEndInstruction(curBlk);
 	addQueryToCache(c);
-	/* register if the code has been factorized */
-        curInstr = getInstrPtr(c->curprg->def, 0);
-        if (curInstr->token == FACTORYsymbol)
-		res = 1;
+	curPrg = c->curprg;
 	if (c->backup) {
 		c->curprg = c->backup;
 		c->backup = 0;
 	}
-	return res;
+	return curPrg;
 }
 
 static int previd = -1;
@@ -1569,8 +1565,7 @@ backend_call(backend *be, Client c, cq *cq)
 
 	q = newStmt2(mb, sql_cacheRef, prevnme);
 	/* cached (factorized queries return bit??) */
-	/* dirty HACK (codestring indicates factorized) */
-	if (cq->codestring)
+	if (getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol )
 		setVarType(mb, getArg(q, 0), TYPE_bit);
 	else
 		setVarType(mb, getArg(q, 0), TYPE_void);

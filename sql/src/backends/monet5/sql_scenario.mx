@@ -901,7 +901,7 @@ produce code.
 		}
 	} else 
 	if((be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key))){
-		//m->mode = m_inplace;
+		m->mode = m_inplace;
 	} else {
 		stmt *s;
 
@@ -925,7 +925,8 @@ produce code.
 			backend_callinline(be, c, s );
 		} else {
 			/* generate a factory instantiation */
-			size_t factorized = backend_dumpproc(be, c, m->qc->id, s);
+			Symbol code = backend_dumpproc(be, c, m->qc->id, s);
+
 			be->q = qc_insert(m->qc, 
 					  m->sa,      /* the allocator */
 					  m->sym,     /* the sql symbol tree */
@@ -933,9 +934,9 @@ produce code.
 					  m->argc,
 					  m->scanner.key,	/* the statement hash key */
 					  m->type,	/* the type of the statement */
-					  (char*)factorized/*_strdup("the mal block?")*/);
+					  NULL /*_strdup("the mal block?")*/);
 
-			be->q->code = (backend_code) c->curprg;
+			be->q->code = (backend_code) code;
 			be->q->stk = 0;
 			m->sa = NULL;
 			m->sym = NULL;
@@ -1031,8 +1032,6 @@ hand over the MAL block derived by the parser for execution.
 However, when we received an Execute call, we make a shortcut
 and prepare the stack for immediate execution
 @c
-static str sql_cacheRef=0;
-static Module sql_moduleRef=0;
 str
 SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 {
@@ -1045,19 +1044,12 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 	InstrPtr pci;
 	int i;
 	str ret;
-	Symbol sym;
 
 #ifdef DEBUG_CALLMAL
 	stream_printf(GDKout,"SQLexecute\n");
 	printFunction(GDKout,((Symbol)q->code)->def,LIST_MAL_ALL);
 #endif
-	if( sql_cacheRef== NULL)
-		sql_cacheRef= putName("sql_cache",9);
-	if( sql_moduleRef== NULL)
-		sql_moduleRef= findModule(0,sql_cacheRef);
-	sym= findSymbolInModule(sql_moduleRef, backend_name(q));
-	assert(sym != NULL);
-	mb= sym->def;
+	mb = ((Symbol)q->code)->def;
 	pci= getInstrPtr(mb,0);
 	if( pci->argc >= MAXARG)
 		argv= (ValPtr *) GDKmalloc(sizeof(ValPtr) * pci->argc);
