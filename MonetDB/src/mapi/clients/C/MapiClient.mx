@@ -1021,7 +1021,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			   end of file (line == NULL), notify the
 			   server that we don't have anything more.
 			   If the server still wants more (shouldn't
-			   happen accordint to the protocol) we break
+			   happen according to the protocol) we break
 			   out of the loop (via the continue).  The
 			   assertion at the end will then go off. */
 			if (mapi_query_done(hdl) == MMORE && (line != NULL || mapi_query_done(hdl) == MMORE))
