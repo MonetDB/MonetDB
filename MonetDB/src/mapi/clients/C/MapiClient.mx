@@ -743,7 +743,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 		return 1;
 	}
 
-	bufsize = BUFSIZ * 64;
+	bufsize = BUFSIZ;
 	buf = malloc(bufsize);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
@@ -825,6 +825,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 
 	free(buf);
 	if (file != NULL) fclose(fp);
+	fflush(stdout);
 	return 0;
 }
 

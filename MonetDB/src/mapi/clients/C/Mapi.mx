@@ -1684,7 +1684,7 @@ mapi_new(void)
 	mid->username = strdup("anonymous");
 	mid->password = strdup("unknown");
 
-	mid->cachelimit = 1000;
+	mid->cachelimit = 100;
 	mid->tracelog = NULL;
 	mid->blk.eos = 0;
 	mid->blk.buf = malloc(BLOCK + 1);
@@ -2916,7 +2916,7 @@ mapi_extend_cache(struct MapiResultSet *result)
 
 	/* extend row cache */
 	if (oldsize == 0)
-		incr = 1000;
+		incr = 100;
 	else
 		incr = oldsize * 2;
 	if (incr > 200000)
