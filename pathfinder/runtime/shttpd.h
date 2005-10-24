@@ -46,7 +46,7 @@
 #ifndef SHTTPD_HEADER_INCLUDED
 #define	SHTTPD_HEADER_INCLUDED
 
-#define	SHTTPD_VERSION	"1.26"
+#define	SHTTPD_VERSION	"1.27"
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,22 +85,25 @@ typedef int (*shttpd_callback_t)(struct shttpd_callback_arg *);
  *      should be called once, before using any other function.
  *      Configuration file name must be passed.
  *      If NULL is passed, default values will be used.
- *
  * shttpd_fini
  *      dealocate all resources allocated by shttpd.
  *      should be used once, usually before program termination.
- *
+ * shttpd_setopt	
+ *      set option by option name.
  * shttpd_open_port
  *      return opened socket to specified local port. This
  *      socket should be then passed to shttpd_poll().
  *      Multiple listened sockets may be opened.
- *
+ *      If specified local port is 0, default one is used.
  * shttpd_register_url
  *      Setup the user-defined function for specified URL.
- *
+ * shttpd_register_mountpoint
+ *      Make an alias: specified url will be pointing to some
+ *      directory outside webroot.
  * shttpd_protect_url
  *      Associate authorization file with an URL.
- *
+ * shttpd_addmimetype    
+ *      Add mime type
  * shtppd_merge_fds
  *      If the external application wants to multiplex IO with
  *      the shttpd, this function
@@ -109,13 +112,11 @@ typedef int (*shttpd_callback_t)(struct shttpd_callback_arg *);
  *      Then the application may block in select(), avoiding
  *      cpu-intensive polling. On return from select(),
  *      shttpd_poll() may be used with 0 wait time.
- *
  * shttpd_poll
  *      Verify all connections. If there are requests made to
  *      registered URLs, call appropriate callback function.
  *      This function may wait for data given number of
  *      milliseconds.
- *
  * shttpd_template
  *      This is for generating pages from template files.
  *      The variable argument list is a NULL-terminated
@@ -125,14 +126,12 @@ typedef int (*shttpd_callback_t)(struct shttpd_callback_arg *);
  *      return the number of bytes. The resulted text size
  *      is less than IO_MAX, otherwise it is truncated.
  *      The template must be a text file.
- *
  * shttpd_get_var
  *      Return variable value for given variable name.
  *      This can be used if the request is like
  *      http://my_host/url?var1=value1&var2=value2
  *      Then, shttpd_get_var(arg->connection, "var1") should
  *      return value "value1".
- *
  * shttpd_printf
  *      XXX Available only in multi-threaded configuration.
  *      Do not use this function unless you want to return
@@ -145,20 +144,19 @@ typedef int (*shttpd_callback_t)(struct shttpd_callback_arg *);
 
 extern void shttpd_init(const char *config_file);
 extern void shttpd_fini(void);
+extern void shttpd_setopt(const char *variable, const char *value);
+extern void shttpd_addmimetype(const char *ext, const char *mime);
+extern void shttpd_register_mountpoint(const char *uri, const char *system_path);
 extern int shttpd_open_port(int port);
 extern void shttpd_register_url(const char *url, 
                                 shttpd_callback_t callback, void *callback_data);
 extern void shttpd_protect_url(const char *url, const char *file);
 extern void shttpd_merge_fds(fd_set *rset, fd_set *wset,int *maxfd);
 extern void shttpd_poll(int sock, unsigned milliseconds);
-extern char *shttpd_get_msg(struct conn *);
 extern const char *shttpd_get_var(struct conn *, const char *varname);
 extern int shttpd_template(struct conn *, const char *headers, const char *file, ...);
-
-#ifdef IO_MAX
-#undef IO_MAX
-#endif
-#define IO_MAX (1024 * 1024) /* Max request size */
+extern char *shttpd_get_msg(struct shttpd_callback_arg *arg);
+extern int shttpd_get_socket(struct shttpd_callback_arg *arg);
 
 #ifdef MT
 extern int shttpd_printf(struct conn *, const char *fmt, ...);

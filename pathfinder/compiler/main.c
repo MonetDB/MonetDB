@@ -569,8 +569,8 @@ main (int argc, char *argv[])
 
     PFstate.invocation = invoke_cmdline;
 
-    /* fp of query file (if present) */
-    FILE* pfin = stdin;
+    /* URL of query file (if present) */
+    char *url = "-";
 
     pf_alloc = pa_create();
     /*
@@ -765,22 +765,12 @@ main (int argc, char *argv[])
         }           /* end of switch */
     }           /* end of while */
 
-    if ( optind < argc) {
-        if ( !(pfin = fopen (argv[optind], "r")) ) {
-            PFoops (OOPS_FATAL, 
-                    "cannot read query from file `%s': %s",
-                    argv[optind],
-                    strerror (errno));
-            goto failure;
-        }
-    }
+    if (optind < argc)
+        url = argv[optind];
 
     /* Now call the main compiler driver */
-    if ( PFcompile(pfin, stdout, status) < 0 )
+    if ( PFcompile(url, stdout, status) < 0 )
         goto failure;
-
-    if ( pfin != stdin )
-        fclose(pfin);
 
     pa_destroy(pf_alloc);
 

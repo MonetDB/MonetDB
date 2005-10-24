@@ -127,7 +127,7 @@ PFcore_wire2 (PFctype_t kind, const PFcnode_t *n1, const PFcnode_t *n2)
 
 
 /** 
- * Create a core @c nil node to terminate lists or denote optionsl subtrees.
+ * Create a core @c nil node to terminate lists or denote optional subtrees.
  */
 PFcnode_t *
 PFcore_nil (void)
@@ -1071,7 +1071,7 @@ PFcore_function_conversion (const PFcnode_t *e, PFty_t expected)
          * Built-in functions allow the expected type to be `numeric'.
          * In that case, we shall convert to xs:double.
          */
-        if (PFty_eq (exp_prime), PFty_numeric ())
+        if (PFty_eq (exp_prime, PFty_numeric ()))
             exp_prime = PFty_double ();
 
         /* Steps 1 and 2:

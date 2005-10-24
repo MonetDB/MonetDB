@@ -43,7 +43,7 @@ void PFparse (char* pfin, PFpnode_t **);
  * Load and parse modules listed in working list and put them into
  * the parse tree @a r.
  */
-void PFparse_modules (PFpnode_t *r);
+int PFparse_modules (PFpnode_t *r);
 
 #endif   /* PARSER_H */
 

@@ -104,6 +104,12 @@ extern int pflineno;
  */
 static bool module_only = false;
 
+/* quasi-random number determined by moudle; used as base for scope 
+ * numbers in milprint_summer (so scope numbers of different modules
+ * that are compiled separately don't collide)
+ */
+static unsigned int module_base = 0;
+
 /**
  * Module namespace we accept during parsing.
  *
@@ -612,8 +618,9 @@ LibraryModule             : ModuleDecl Prolog
 ModuleDecl                : "module namespace" NCName
                               "=" StringLiteral Separator
                             {
-                              if (req_module_ns
-                                  && strcmp (req_module_ns, $4))
+                              if (req_module_ns == NULL) {
+                                  module_base = 1;
+                              } else if  (strcmp (req_module_ns, $4))
                                   PFoops (OOPS_MODULEIMPORT,
                                           "module namespace does not match "
                                           "import statement (`%s' vs. `%s')",
@@ -949,6 +956,7 @@ FunctionDecl              : "declare function" QName_LParen
                                            wire2 (p_fun_sig, loc_rng (@2, @4),
                                                   $3, $4),
                                            $5))->sem.qname = $2;
+                              if (module_base) module_base = 1 | (module_base ^ (unsigned long) $$);
                             }
                           | "declare function" QName_LParen
                             OptParamList_ OptAsSequenceType_ "external"
@@ -957,6 +965,7 @@ FunctionDecl              : "declare function" QName_LParen
                                                   $3, $4),
                                            leaf (p_external, @5)))
                                    ->sem.qname = $2;
+                              if (module_base) module_base = 1 | (module_base ^ (unsigned long) $$);
                             }
                           ;
 
@@ -2411,7 +2420,7 @@ parse_module (char *ns, char *uri)
  * Load and parse modules listed in working list and put them into
  * the parse tree @a r.
  */
-void
+int
 PFparse_modules (PFpnode_t *r)
 {
     PFpnode_t *module;
@@ -2438,7 +2447,7 @@ PFparse_modules (PFpnode_t *r)
                 = wire2 (p_decl_imps, noloc, module, r->child[1]);
     }
 
-    return;
+    return (module_base%2000000)*1000;
 }
 
 /* vim:set shiftwidth=4 expandtab: */
