@@ -729,7 +729,6 @@ is administered by a state descriptor accessible in each phase.
 Failure to find the state descriptor aborts the session.
 
 @= getContext
-{	
 	Client _client = getClient();
 
 	if (_client == NULL ) {
@@ -753,7 +752,6 @@ Failure to find the state descriptor aborts the session.
 			_DELETE(schema);
 	}
 	@1= ((mvc *) _client ->state[OPTIMIZE]);
-}
 @= setContext
 {
 	Client _client = getClient();
@@ -763,16 +761,7 @@ Failure to find the state descriptor aborts the session.
 	_client ->state[OPTIMIZE]= @1;
 }
 @= getBackend
-{
-	Client _client= getClient();
-	if (_client == NULL ) {
-		return throwMessage("be","Can not access client record");
-	} 
-	if ( _client->state[PARSER] == NULL) {
-		return throwMessage("be","PARSER not initialized\n");
-	}
 	@1= ((backend*) _client->state[PARSER]);
-}
 @c
 
 str
@@ -1115,7 +1104,6 @@ mvc_affected_rows_wrap( int *r, lng *nr)
 	mvc *c;
 	backend *b;
 
-	(void)r;
 	@:getContext(c)@
 	@:getBackend(b)@
 	c->type = Q_UPDATE;
@@ -1123,6 +1111,7 @@ mvc_affected_rows_wrap( int *r, lng *nr)
 		return throwMessage("sql.affectedRows", "failed");
 	}
 	stream_printf(b->out, "[ " LLFMT "\t]\n", *nr);
+	(void)r;
 	return NULL;
 }
 
@@ -1139,12 +1128,12 @@ mvc_export_result_wrap(int *ret, int *res_id)
 	mvc *c;
 	backend *b;
 
-	(void)ret;
 	@:getContext(c)@
 	@:getBackend(b)@
 	if (mvc_export_result(c, b->out, *res_id)) {
 		return throwMessage("sql.exportResult", "failed");
 	}
+	(void)ret;
 	return NULL;
 }
 
