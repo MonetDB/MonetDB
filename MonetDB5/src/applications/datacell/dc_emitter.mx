@@ -322,6 +322,7 @@ Get the new information for the server socket and start listening.
 			return throwMessage("datacell.listen", "Failed getting socket name\n");
 		listen(sock, MAXemitters);
 	}
+	(void)usock;
 #ifdef HAVE_SYS_UN_H
 	if (usockfile) {
 		usock = socket(AF_UNIX, SOCK_STREAM, 0);
