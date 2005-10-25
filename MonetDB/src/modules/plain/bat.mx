@@ -853,7 +853,7 @@ bat_append_oidvoid_bat_wrap(BAT **res, BAT *i, BAT *u)
 static oid
 oid_max(BAT *i)
 {
-	oid o = 0;
+	oid o = i->hseqbase-1;
 
 	if (BATcount(i))
 		o = *(oid *) BUNhead(i, BUNlast(i) - BUNsize(i));
