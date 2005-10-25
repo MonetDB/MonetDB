@@ -168,6 +168,7 @@ as well as in user defined module implementations.
 #ifndef _MAL_H
 #define _MAL_H
 
+#include <mal_config.h>
 #include <gdk.h>
 #include <gdk_utils.h>
 #include <stream.h>
