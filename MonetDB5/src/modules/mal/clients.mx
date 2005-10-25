@@ -206,9 +206,10 @@ CLTLogin(int *ret)
 
 	if (b == 0)
 		return throwMessage("catalog.clientLogin", "failed to create BAT");
-	for (i = 0; i < MAL_MAXCLIENTS; i++)
-		if (mal_clients[i].mode >= CLAIMED && mal_clients[i].user) {
-			time_t logintime = (time_t) mal_clients[i].login;
+	for (i = 0; i < MAL_MAXCLIENTS; i++) {
+		Client c = mal_clients+i;
+		if (c->mode >= CLAIMED && c->user) {
+			time_t logintime = (time_t) c->login;
 			struct tm localt;
 
 #ifdef HAVE_LOCALTIME_R
@@ -236,7 +237,7 @@ CLTLogin(int *ret)
 			s[24] = 0;
 			BUNins(b, &i, s);
 		}
-
+	}
 	@:Pseudo(client,login,)@
 	return MAL_SUCCEED;
 }
@@ -252,9 +253,11 @@ CLTusers(int *ret)
 
 	if (b == 0)
 		return throwMessage("clients.users", "failed to create BAT");
-	for (i = 0; i < MAL_MAXCLIENTS; i++)
-		if (mal_clients[i].mode >= CLAIMED && mal_clients[i].user)
-			b = BUNins(b, &i, mal_clients[i].user);
+	for (i = 0; i < MAL_MAXCLIENTS; i++) {
+		Client c = mal_clients+i;
+		if (c->mode >= CLAIMED && c->user)
+			b = BUNins(b, &i, c->user);
+	}
 	@:Pseudo(client,users,)@
 	return MAL_SUCCEED;
 }
