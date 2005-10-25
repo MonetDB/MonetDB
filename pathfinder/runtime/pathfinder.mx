@@ -963,17 +963,23 @@ exec_xquery(char *mode, char* xquery) {
         if (*mapi) {
             /* put ! before error lines */
             char *p = err, *q = err;
-            while(*p) { if (*p++ == '\n') len++; }
+            while (*p) {
+		if (*p++ == '\n')
+		    len++;
+	    }
             err = (char*) alloca(len+3);
             *err = '!'; 
-            for(p=err+1; *q; q++) {
+            for (p = err + 1; *q; q++) {
                 *p++ = *q;
-                if (*q == '\n') *p++ = '!'; 
+                if (*q == '\n')
+		    *p++ = '!'; 
             }
             /* guard against errors that do not terminate in a newline */
-            if (*q && *q != '\n') *p++ = '\n';
-            else if (p[-1] == '!') p--;  
-            p[1] = 0;
+            if (q > err && q[-1] != '\n')
+		*p++ = '\n';
+            else if (p[-1] == '!')
+		p--;
+            *p = 0;
             len = p - err;
         }
     }
