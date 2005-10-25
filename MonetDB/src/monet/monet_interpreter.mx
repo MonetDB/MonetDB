@@ -318,7 +318,7 @@ were appropiate. The below macro is called after execution and
 cleans up the created views.
 @c
 BAT *
-interpret_pin(batrec *r, str s)
+interpret_pin(batrec *r, int force, str s)
 {
 	BAT *b;
 	BATDEBUG THRprintf(GDKerr, "interpret_pin(%s) on bat(%d) refcnt = %d\n", s, (int) r->id, BBPrefs(r->id) + 1);
@@ -326,12 +326,12 @@ interpret_pin(batrec *r, str s)
 
 	if (b == NULL) {
 		return NULL;
-	} else if (b->htype == TYPE_void || b->ttype == TYPE_void) {
+	} else if ((b->htype == TYPE_void) | (b->ttype == TYPE_void)) {
 		BAT *_b = BBP_cache(ABS(r->id));
 		int tid = THRgettid();
 
 		monet_set_lock(monet_voidLock, "pin");
-		if (_b->void_cnt && _b->void_tid != tid) {
+		if (_b->void_cnt & (force | (_b->void_tid != tid))) {
 			BAT *v = VIEWcreate(b);
 			BBPunfix(r->id);
 
@@ -457,15 +457,26 @@ interpret_params_unpin(int argc, ValPtr argv, str op_name)
 int
 interpret_params_pin(int argc, ValPtr argv, str op_name)
 {
-	int ret = 1, i = 0;
+	int i, j;
 
-	while (++i < argc)
+	for (i=1; i < argc; i++)
 		if (argv[i].vtype == TYPE_bat) {
-			ret &= (interpret_pin(&argv[i].val.br, op_name) != NULL);
+			bat bi = ABS(argv[i].val.bval);
+			for (j=1; j < i; j++) {
+				bat bj = ABS(argv[j].val.bval);
+				if ((argv[j].vtype == TYPE_bat) & (bi == bj)) {
+					BAT *b = BBP_cache(argv[i].val.bval);
+					if ((b->htype == TYPE_void) | (b->ttype == TYPE_void)) 
+						break; /* danger: same void bat passed twice! */ 
+				}
+			}
+			if (interpret_pin(&argv[i].val.br, j<i, op_name) == NULL) break;
 		}
-	if (!ret)
-		interpret_params_unpin(argc, argv, op_name);
-	return ret;
+	if (i < argc) {
+		interpret_params_unpin(i, argv, op_name);
+		return 0;
+        }
+	return 1;
 }
 
 @-
