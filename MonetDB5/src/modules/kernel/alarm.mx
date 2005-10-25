@@ -248,6 +248,7 @@ CMDalarm(int *secs, str action)
 		return GDK_FAIL;
 	} else {
 #ifndef SIGALRM
+		(void)action;
 		GDKerror("CMDalarm: not implemented\n");
 		return GDK_FAIL;
 #else

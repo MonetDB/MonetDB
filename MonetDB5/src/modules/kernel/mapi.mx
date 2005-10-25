@@ -181,6 +181,7 @@ MAPIlistenThread(int *Sock)
 	char *msg = 0;
 	char *cmd = threadcommand;
 
+	(void)usock;
 	do {
 		int retval;
 		struct timeval tv;
