@@ -650,13 +650,13 @@ int scanner_symbol(mvc * c, int cur)
 	struct scanner *lc = &c->scanner;
 	int next = 0;
 
-	lc->started = 1;
 	if (cur == '/') {
 		next = scanner_getc(lc);
 		if (next == '*') {
 			cur = skip_c_comment(lc);
 			return tokenize(c, cur);
 		} else {
+			lc->started = 1;
 			utf8_putchar(lc, next); 
 			return scanner_token(lc, cur);
 		}
@@ -677,6 +677,7 @@ int scanner_symbol(mvc * c, int cur)
 				return cur;
 			return tokenize(c, cur);
 		}
+		lc->started = 1;
 		utf8_putchar(lc, next); 
 		return scanner_token(lc, cur);
 	case '?':
@@ -690,8 +691,10 @@ int scanner_symbol(mvc * c, int cur)
 	case '.':
 	case ';':
 	case '=':
+		lc->started = 1;
 		return scanner_token(lc, cur);
 	case '<':
+		lc->started = 1;
 		cur = scanner_getc(lc);
 		if (cur == '=') {
 			return scanner_token( lc, COMPARISON);
@@ -702,6 +705,7 @@ int scanner_symbol(mvc * c, int cur)
 			return scanner_token( lc, COMPARISON);
 		}
 	case '>':
+		lc->started = 1;
 		cur = scanner_getc(lc);
 		if (cur != '=') {
 			utf8_putchar(lc, cur); 
@@ -710,6 +714,7 @@ int scanner_symbol(mvc * c, int cur)
 			return scanner_token( lc, COMPARISON);
 		}
 	case '|':
+		lc->started = 1;
 		cur = scanner_getc(lc);
 		if (cur == '|') {
 			return scanner_token(lc, CONCATSTRING);

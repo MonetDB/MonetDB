@@ -81,7 +81,7 @@ main(int argc, char **argv)
 {
 	SQLHANDLE env;
 	SQLHANDLE dbc;
-	SQLHANDLE stmt, stmt2;
+	SQLHANDLE stmt, stmt2, stmt3;
 	char *dsn = "MonetDB";
 	char *user = "monetdb";
 	char *pass = "monetdb";
@@ -203,6 +203,15 @@ main(int argc, char **argv)
 	   to read the even table entries and the other for the odd
 	   table entries. */
 
+	/* set a larger reply size */
+	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt3);
+
+	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle 3");
+
+	ret = SQLExecDirect(stmt3, (SQLCHAR *)
+			    "SET REPLY_SIZE=1000\n", SQL_NTS);
+	check(ret, SQL_HANDLE_STMT, stmt3, "SQLExecDirect 2");
+
 	/* first the handle for the even entries */
 
 	/* bind the columns before preparing the statement */
@@ -274,7 +283,7 @@ main(int argc, char **argv)
 
 	/* drop the test table */
 	ret = SQLExecDirect(stmt, (SQLCHAR *) "DROP TABLE test", SQL_NTS);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect 2");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect 3");
 
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLFreeHandle 2");

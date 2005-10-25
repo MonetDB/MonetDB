@@ -9,9 +9,11 @@ stdout of test 'timezone` in directory 'src/test` itself:
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-#Ready to accept connections on koala.ins.cwi.nl:42613
+
+printf("\nReady.\n");
 
 Ready.
+quit();
 
 Over..
 
@@ -48,7 +50,7 @@ Over..
 # 10,	,	,	 # tuplecount
 # 7,	,	,	 # id
 [ "debug",	"0",	"int",	0	]
-[ "reply_size",	"1000",	"int",	0	]
+[ "reply_size",	"100",	"int",	0	]
 [ "explain",	"",	"varchar",	0	]
 [ "auto_commit",	"false",	"boolean",	0	]
 [ "current_schema",	"sys",	"varchar",	1	]
