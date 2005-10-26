@@ -392,6 +392,8 @@ typedef struct Column_t {
 	toStr tostr;
 	frStr frstr;
 	void *extra;
+	void *data;
+	int len;
 } Column;
 
 @-
@@ -443,7 +445,7 @@ tablet_export BAT *TABLETcollect_bats(Tablet * as);
 tablet_export void TABLETdestroy_format(Tablet * as);
 tablet_export int TABLEToutput_file(Tablet * as, BAT *order, stream *s);
 
-tablet_export ptr *TABLETstrFrStr(char *s, char *e);
+tablet_export ptr *TABLETstrFrStr(Column *c, char *s, char *e);
 tablet_export ptr *TABLETadt_frStr(void *extra, int type, char *s, char *e, char quote);
 tablet_export int TABLETadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
 
@@ -933,33 +935,36 @@ sep_dup(char *sep)
 }
 
 ptr *
-TABLETstrFrStr(char *s, char *e)
+TABLETstrFrStr(Column *c, char *s, char *e)
 {
-	ptr res = GDKmalloc(e - s + 1);
+	int len = e-s+1;
+	 
+	if (c->len < len){
+		c->len = len;
+		c->data = GDKrealloc(c->data,len); 
+	}
 
-	memset(res,0,e-s+1);
 	if (s == e) {
-		*(char *) res = 0;
-	} else if (GDKstrFromStr(res, (unsigned char *) s, e - s) == 0) {
-		GDKfree(res);
+		*(char *) c->data = 0;
+	} else if (GDKstrFromStr(c->data, (unsigned char *) s, e - s) == 0) {
 		return NULL;
 	}
-	return res;
+	return c->data;
 }
 
 ptr *
 TABLETadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
 	ptr *res = NULL;
+	Column *c = extra;
 
-	(void) extra;		/* fool compiler */
 	if (s == NULL || (!(type == TYPE_str && quote) && strcmp(s, "nil") == 0)) {
 		res = (ptr *) ATOMnil(type);
 	} else if (type == TYPE_str) {
-		return TABLETstrFrStr(s, e);
+		return TABLETstrFrStr(c, s, e);
 	} else {
-		int l = 0;
-		(void) (*BATatoms[type].atomFromStr) (s, &l, (ptr) &res);
+		(void) (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
+		res = c->data;
 	}
 	return res;
 }
@@ -1013,7 +1018,9 @@ create_loadformat(Tablet * as, BAT *names, BAT *seps, BAT *types)
 		fmt[p].adt = ATOMindex(fmt[p].type);
 		fmt[p].tostr = &TABLETadt_toStr;
 		fmt[p].frstr = &TABLETadt_frStr;
-		fmt[p].extra = NULL;
+		fmt[p].extra = fmt+p;
+		fmt[p].data = NULL;
+		fmt[p].len = 0;
 		if (tablet_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
 	}
@@ -1046,7 +1053,9 @@ create_dumpformat(Tablet * as, BAT *names, BAT *seps, BAT *bats)
 		fmt[p].adt = (b)->ttype;
 		fmt[p].tostr = &TABLETadt_toStr;
 		fmt[p].frstr = &TABLETadt_frStr;
-		fmt[p].extra = NULL;
+		fmt[p].extra = fmt+p;
+		fmt[p].data = NULL;
+		fmt[p].len = 0;
 	}
 	return as->nr_attrs;
 }
@@ -1061,6 +1070,8 @@ TABLETdestroy_format(Tablet * as)
 		if (fmt[p].bval)
 			BBPunfix(fmt[p].bval->batCacheid);
 		GDKfree(fmt[p].sep);
+		if (fmt[p].data)
+			GDKfree(fmt[p].data);
 	}
 	GDKfree(fmt);
 }
@@ -1234,7 +1245,8 @@ insert_val(Column * fmt, char *s, char *e, char quote)
 	}
 
 	BUNins(fmt->bval, &on, adt);
-	GDKfree(adt);
+	if (adt != fmt->data)
+		GDKfree(adt);
 	return 0;
 }
 
