@@ -112,7 +112,7 @@ sql_create_seq(
 	return stmt_sql(_strdup(buf));
 }
 
-stmt *
+static stmt *
 sql_alter_seq(
 		mvc *sql,
 		sql_schema *ss,
@@ -165,16 +165,15 @@ sql_alter_seq(
 	if (cur < 0) cur = *(lng*)column_find_value(sql->trans, col, rid);
 
 	snprintf(buf, BUFSIZ,
-		"update sys.sequences set "
-		"start = %lld "
-		"cached = %lld "
-		"inc = %lld "
-		"min = %lld "
-		"max = %lld "
-		"cycle = %s "
-		"cache = %lld "
-		"where name = '%s' and schema = '%s';",
-		start, start - 1, inc, min, max, cycle ? "true" : "false", cur,
+		"update \"sys\".\"sequences\" set "
+		"\"start\" = %lld, "
+		"\"cached\" = %lld, "
+		"\"increment\" = %lld, "
+		"\"minvalue\" = %lld, "
+		"\"maxvalue\" = %lld, "
+		"\"cycle\" = %s "
+		"where name = '%s' and \"schema\" = '%s';",
+		start, cur, inc, min, max, cycle ? "true" : "false", 
 		name, ss->base.name);
 	return stmt_sql(_strdup(buf));
 }
@@ -238,9 +237,9 @@ sequences(mvc *sql, symbol *s)
 					&l->h->next->data.typeval, 
 					l->h->next->next->data.lval->h->data.ival, 
 					l->h->next->next->data.lval->h->next->data.ival, 
-					l->h->next->next->data.lval->h->next->data.ival, 
-					l->h->next->next->data.lval->h->next->next->data.ival,
-					l->h->next->next->data.lval->h->next->next->next->data.ival);
+					l->h->next->next->data.lval->h->next->next->data.ival, 
+					l->h->next->next->data.lval->h->next->next->next->data.ival,
+					l->h->next->next->data.lval->h->next->next->next->next->data.ival);
 		}
 		break;
 		case SQL_ALTER_SEQ:
@@ -254,11 +253,12 @@ sequences(mvc *sql, symbol *s)
 					&l->h->next->data.typeval, 
 					l->h->next->next->data.lval->h->data.ival, 
 					l->h->next->next->data.lval->h->next->data.ival, 
-					l->h->next->next->data.lval->h->next->data.ival, 
-					l->h->next->next->data.lval->h->next->next->data.ival,
+					l->h->next->next->data.lval->h->next->next->data.ival, 
 					l->h->next->next->data.lval->h->next->next->next->data.ival,
+					l->h->next->next->data.lval->h->next->next->next->next->data.ival,
 					l->h->next->next->next->data.ival);
 		}
+		break;
 		case SQL_DROP_SEQ:
 		{
 			dlist *l = s->data.lval;

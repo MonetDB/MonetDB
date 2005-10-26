@@ -931,7 +931,7 @@ seq_def:
 		_dlist_append_list(l, $3);
 		$$ = _symbol_create_list(SQL_DROP_SEQ, l);
 	}
-  |	ALTER SEQUENCE qname opt_seq_params opt_seq_value
+  | ALTER SEQUENCE qname opt_seq_params opt_seq_value
 	{
 		dlist *l = _dlist_create();
 		_dlist_append_list(l, $3);
