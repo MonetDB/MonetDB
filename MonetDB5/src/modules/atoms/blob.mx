@@ -768,7 +768,7 @@ BLOBread(blob *a, stream *s, size_t cnt)
 void
 BLOBwrite(blob *a, stream *s, size_t cnt)
 {
-	return blob_write(a,s,cnt);
+	blob_write(a,s,cnt);
 }
 
 void
