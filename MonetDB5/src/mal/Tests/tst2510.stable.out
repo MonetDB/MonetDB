@@ -24,7 +24,7 @@ stdout of test 'tst2510` in directory 'src/mal` itself:
 #    #print("exception");
 ##exit MALexception;
 #end tryme;
-factory user.tryme():void;	# 0  (tryme:void)
+factory user.tryme():bit;	# 0  (tryme:bit)
     bat.setWriteMode(b);	# 1 BKCsetWriteMode (_1:bat[:any,:any])<-(b:bat[:any_1,:any_2])
 barrier always := true;	# 2  (always:bit)<-(_4:bit) jump 5
     yield always;	# 3  (always:bit)
@@ -34,13 +34,12 @@ exit always;	# 5  (always:bit)
 #print("exception"); 	# 7  (_8:str)
 #exit MALexception; 	# 8  (_10:str)
 end tryme;	# 9  
-!ERROR: YIELD type mismatch at type 1
 !ERROR: 'b' may not be used before being set in tryme[1]
 #tryme();    # shouldn;t hang when you forget the exception
 #
 function user.main():void;	# 0  (main:void)
 # A exception in a factory should terminate it  	# 1  (_2:str)
-    user.tryme();	# 2  (_3:void)
+    user.tryme();	# 2  (_3:bit)
 # shouldn;t hang when you forget the exception 	# 3  (_5:str)
 end main;	# 4  
 !ERROR: MALexception:factory.call:Factory contains errors

@@ -40,26 +40,6 @@ end welcome;	# 8
 #mdb.list();
 #
 !ERROR: MALexception:optimizer.MACROvalidate:RETURN statement is not the last one
-#
-function user.main():void;	# 0  (main:void)
-# the first test for macro expansions and inversions 	# 1  (_2:str)
-# error handling 	# 2  (_4:str)
-    io.print("test expansion");	# 3 IOprint_val (_8:int)<-(_9:str)
-    a := user.welcome(2);	# 4  (a:int)<-(_11:int)
-    mdb.list();	# 5 MDBlist (_12:void)
-end main;	# 6  
-end main;	# 7  
-[ "test expansion" ]
-[ "Welcome" ]
-[ "Welcome" ]
-function user.main():void;
-# the first test for macro expansions and inversions 
-# error handling 
-    io.print("test expansion");
-    a := user.welcome(2);
-    mdb.list();
-end main;
-end main;
 
 # 23:52:53 >  
 # 23:52:53 >  Done.
