@@ -262,6 +262,8 @@ typedef struct ascii_io_t {
 	toStr tostr;
 	frStr frstr;
 	void *extra;
+	void *data;
+	int len;
 } ascii_io;
 
 typedef struct ascii_load_t {
@@ -287,7 +289,7 @@ ascii_io_export int ASCIIoutput_file(ascii *as, BAT *order, stream *s);
 
 @+ Default from and to string functions
 @h
-ascii_io_export ptr *ASCIIstrFrStr(char *s, char *e);
+ascii_io_export ptr *ASCIIstrFrStr(ascii_io* fmt, char *s, char *e);
 ascii_io_export ptr *ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote);
 ascii_io_export int ASCIIadt_toStr(void *extra, char **buf, int *len, int type, ptr a);
 
@@ -355,33 +357,36 @@ sep_dup(char *sep)
 
 
 ptr *
-ASCIIstrFrStr(char *s, char *e)
+ASCIIstrFrStr(ascii_io *fmt, char *s, char *e)
 {
-	ptr res = GDKmalloc(e - s + 1);
+	int len = e-s+1;
+
+	if (fmt->len < len){
+		fmt->len = len;
+		fmt->data = GDKrealloc(fmt->data,len); 
+	}
 
 	if (s == e) {
-		*(char *) res = 0;
-	} else if (GDKstrFromStr(res, (unsigned char *) s, e - s) == 0) {
-		GDKfree(res);
+		*(char *) fmt->data = 0;
+	} else if (GDKstrFromStr(fmt->data, (unsigned char *) s, e - s) == 0) {
 		return NULL;
 	}
-	return res;
+	return fmt->data;
 }
 
 ptr *
 ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
 	ptr *res = NULL;
+	ascii_io *fmt = extra;
 
-	(void) extra;
 	if (s == NULL || (!(type == TYPE_str && quote) && strcmp(s, "nil") == 0)) {
 		res = (ptr *) ATOMnil(type);
 	} else if (type == TYPE_str) {
-		return ASCIIstrFrStr(s, e);
+		return ASCIIstrFrStr(fmt, s, e);
 	} else {
-		int l = 0;
-
-		(void) (*BATatoms[type].atomFromStr) (s, &l, (ptr) &res);
+		(void) (*BATatoms[type].atomFromStr) (s, &fmt->len, (ptr) &fmt->data);
+		res = fmt->data;
 	}
 	return res;
 }
@@ -416,7 +421,9 @@ create_loadformat(ascii *as, BAT *names, BAT *seps, BAT *types)
 		}
 		fmt[p].tostr = &ASCIIadt_toStr;
 		fmt[p].frstr = &ASCIIadt_frStr;
-		fmt[p].extra = NULL;
+		fmt[p].extra = fmt+p;
+		fmt[p].data = NULL;
+		fmt[p].len = 0;
 		if (ascii_io_debug)
 			stream_printf(GDKerr, "%s\n", fmt[p].name);
 	}
@@ -448,7 +455,9 @@ create_dumpformat(ascii *as, BAT *names, BAT *seps, BAT *bats)
 		fmt[p].adt = (b)->ttype;
 		fmt[p].tostr = &ASCIIadt_toStr;
 		fmt[p].frstr = &ASCIIadt_frStr;
-		fmt[p].extra = NULL;
+		fmt[p].extra = fmt+p;
+		fmt[p].data = NULL;
+		fmt[p].len = 0;
 	}
 	return as->nr_attrs;
 }
@@ -463,6 +472,8 @@ ASCIIdestroy_format(ascii *as)
 		if (fmt[p].c)
 			BBPunfix(fmt[p].c->batCacheid);
 		GDKfree(fmt[p].sep);
+		if (fmt[p].data)
+			GDKfree(fmt[p].data);
 	}
 	GDKfree(fmt);
 }
@@ -638,7 +649,8 @@ insert_val(ascii_io *fmt, char *s, char *e, char quote)
 	}
 
 	BUNins(fmt->c, &on, adt);
-	GDKfree(adt);
+	if (fmt->data != adt)
+		GDKfree(adt);
 	return 0;
 }
 
