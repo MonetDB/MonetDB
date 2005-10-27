@@ -1176,6 +1176,7 @@ cleanup_engine:
         showErrors();
 		m->status = -10;
     }
+	be->q = NULL;
 	sqlcleanup(be->mvc, 0);
 	resetMalBlk( c->curprg->def, 1);
 	/* resetInstructions(c->curprg->def, 1);*/

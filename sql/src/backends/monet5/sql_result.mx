@@ -315,16 +315,16 @@ coerce(char *s)
 ptr *
 _ASCIIadt_frStr(void *extra, int type, char *s, char *e, char quote)
 {
-	int l = 0;
 	ptr *res = NULL;
+	Column *c = extra;
 
-	(void) extra;
 	if (!(type == TYPE_str && quote) && strcasecmp(s, "NULL") == 0) {
 		res = (ptr *) ATOMnil(type);
 	} else if (type == TYPE_str) {
-		return TABLETstrFrStr(s, e);
+		return TABLETstrFrStr(c, s, e);
 	} else {
-		(void) (*BATatoms[type].atomFromStr) (s, &l, (ptr) &res);
+		(void) (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
+		res = c->data;
 	}
 	return res;
 }
@@ -400,7 +400,9 @@ mvc_import_table(mvc *m, bstream *bs, char *tname, char *sep, char *rsep, int sz
 			fmt[i].adt = ATOMindex(fmt[i].type);
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
-			fmt[i].extra = NULL;
+			fmt[i].extra = fmt+i;
+			fmt[i].data = NULL;
+			fmt[i].len = 0;
 			if (col->type.type->eclass == EC_DEC) {
 				fmt[i].tostr = &dec_tostr;
 				fmt[i].frstr = &dec_frstr;
@@ -614,7 +616,9 @@ mvc_export_table(mvc *m, stream *s, res_table *t, unsigned int offset, unsigned 
 		fmt[i].adt = fmt[i].bval->ttype;
 		fmt[i].tostr = &_ASCIIadt_toStr;
 		fmt[i].frstr = &_ASCIIadt_frStr;
-		fmt[i].extra = NULL;
+		fmt[i].extra = fmt+i;
+		fmt[i].data = NULL;
+		fmt[i].len = 0;
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
 			fmt[i].frstr = &dec_frstr;
