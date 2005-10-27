@@ -8,8 +8,16 @@ autogen - A tool to create Makefiles from Makefile.ag.
 Mx is needed by many other packages and doesn't itself depend on
 anything else, so build Mx first.
 
-To build the various tools (except for autogen), change into the
-tool's directory, and execute the command
+To build the various tools in one go (not on Windows, see below), simply
+first run the script
+	./bootstrap
+then do the usual sequence,
+	./configure [--prefix=<install-dir-prefix>]
+	make
+	make install
+
+To build the various tools individually (except for autogen), change into
+the tool's directory, and execute the command
 	./bootstrap
 This command will call the various autoconf/automake etc. tools in the
 correct order to build a configure script.  Then decide where you want
@@ -18,4 +26,4 @@ other directory), change to that location and call configure from the
 source directory.  Finally, run "make" and "make install".
 
 The tool directories all have a file README with instructions for that
-tool.
+tool, including how to compile on Windows.

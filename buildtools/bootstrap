@@ -1,0 +1,13 @@
+#!/bin/sh
+# "Meta-bootstrap" for buildtools
+
+set -x
+
+# Create "Meta-configure" ...
+rm -f configure && cp configure.ac configure && chmod +x configure || exit 1
+
+# ... and run individual "bootstrap"s
+( cd Mx && ./bootstrap ) || exit 1
+( cd mel && ./bootstrap ) || exit 1
+( cd burg && ./bootstrap ) || exit 1
+
