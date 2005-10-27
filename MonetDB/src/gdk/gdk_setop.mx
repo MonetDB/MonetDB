@@ -757,10 +757,14 @@ BAT@1union(BAT *l, BAT *r)
 	HASHdestroy(bn);
 
 	/* set alignment info */
-	if (!bnhdense)
+	if (!bnhdense) {
 		bn->hseqbase = oid_nil;
-	if (!bntdense)
+		bn->hdense = 0;
+	}
+	if (!bntdense) {
 		bn->tseqbase = oid_nil;
+		bn->tdense = 0;
+	}
 	bn->hsorted = hdisjunct?GDK_SORTED:FALSE;
 	bn->tsorted = tdisjunct?GDK_SORTED:FALSE;
 	bn->talign = bn->halign = 0;
