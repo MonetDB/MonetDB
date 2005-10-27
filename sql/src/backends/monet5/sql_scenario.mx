@@ -354,12 +354,16 @@ SQLcompile(str *ret, str *expr, int *flag)
 	backend *sql = ((backend *) c->state[PARSER]);
 	int len = strlen(*expr);
 
-	(void) ret;
 	(void) flag;
 #ifdef _SQL_COMPILE
 	stream_printf(c->fdout, "#SQLstatement:flag=%d:%s\n", *flag, *expr);
 #endif
-	if (!sql)
+	*ret= 0;
+	if (!sql) {
+		*ret= SQLinitEnvironment(&err);
+		sql= ((backend *) c->state[PARSER]);
+	}
+	if(*ret)
 		return throwMessage("SQLcompile", "Catalogue not available\n");
 
 	m = sql->mvc;
