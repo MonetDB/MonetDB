@@ -1,6 +1,46 @@
 #!/bin/sh
 
+# if we have an older automake, patch our files a bit
+case `automake --version | egrep -o "[0-9]\.[0-9](\.[0-9])?.*"` in
+	1.[56]*)
+	mv configure.ac configure.ac.orig_bootstrap
+	cp configure.ac.orig_bootstrap configure.ac
+	patch << EOF
+Index: configure.ac
+===================================================================
+RCS file: /cvsroot/monetdb/buildtools/mel/configure.ac,v
+retrieving revision 1.4
+diff -u -r1.4 configure.ac
+--- configure.ac	13 Aug 2005 15:46:27 -0000	1.4
++++ configure.ac	27 Oct 2005 16:19:55 -0000
+@@ -5,7 +5,7 @@
+ AC_INIT([mel], [1.0], [monet@cwi.nl])
+ AM_INIT_AUTOMAKE
+ AC_CONFIG_SRCDIR([mel.mx])
+-AC_CONFIG_HEADER([mel_config.h])
++AM_CONFIG_HEADER([mel_config.h])
+ 
+ # Checks for programs.
+ AC_PROG_CXX
+@@ -31,7 +31,6 @@
+ fi
+ AC_SUBST(MX)
+ AC_CHECK_PROG(LOCKFILE,lockfile,lockfile -r 2,echo)
+-AC_PROG_LEX
+ AM_PROG_LEX()
+ AC_PROG_YACC()
+ AC_PROG_LN_S()
+EOF
+	;;
+esac
+
 aclocal
 autoheader
 autoconf
 automake --add-missing
+
+if [ -e configure.ac.orig_bootstrap ];
+then
+	mv configure.ac.orig_bootstrap configure.ac
+fi
+
