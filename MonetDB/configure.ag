@@ -385,9 +385,13 @@ AM_CONDITIONAL(CROSS_COMPILING, test x$cross_compiling = xyes)
 
 case "$host_os" in
 *mingw*)
-AM_CONDITIONAL(NOT_WIN32, false);;
+AM_CONDITIONAL(NOT_WIN32, false)
+AM_CONDITIONAL(NATIVE_WIN32, true)
+;;
 *)
-AM_CONDITIONAL(NOT_WIN32, true);;
+AM_CONDITIONAL(NOT_WIN32, true)
+AM_CONDITIONAL(NATIVE_WIN32, false)
+;;
 esac
 
 dnl  C[XX]FLAGS for our code are stricter than what autoconf can cope with.
