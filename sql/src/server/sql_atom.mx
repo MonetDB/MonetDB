@@ -349,49 +349,49 @@ atom_cast(atom *a, sql_subtype *tp)
 {
 	sql_subtype *at = &a->tpe;
 
-	if (subtype_cmp(at, tp) == 0) {
-		return 1;
-	}
-	/* need to do a cast, start simple is atom type a subtype of tp */
-	if (at->type->localtype == tp->type->localtype &&
-		(!tp->type->digits || at->type->digits <= tp->type->digits) &&
-		(!tp->type->scale || at->type->scale == tp->type->scale))
-		return 1;
-	if (at->type->eclass == EC_NUM && 
-	    at->type->localtype < tp->type->localtype) {
-		/* cast numerics */
-		switch( tp->type->localtype) {
-		case TYPE_int:
-			if (at->type->localtype == TYPE_sht) 
-				a->data.val.ival = a->data.val.shval;
-			else
+	if (!a->isnull) {
+		if (subtype_cmp(at, tp) == 0) 
+			return 1;
+		/* need to do a cast, start simple is atom type a subtype of tp */
+		if (at->type->localtype == tp->type->localtype &&
+		   (!tp->type->digits|| at->type->digits <= tp->type->digits) &&
+		   (!tp->type->scale || at->type->scale == tp->type->scale))
+			return 1;
+		if (at->type->eclass == EC_NUM && 
+	    	    at->type->localtype < tp->type->localtype) {
+			/* cast numerics */
+			switch( tp->type->localtype) {
+			case TYPE_int:
+				if (at->type->localtype == TYPE_sht) 
+					a->data.val.ival = a->data.val.shval;
+				else
+					return 0;
+				break;
+			case TYPE_lng:
+				if (at->type->localtype == TYPE_sht) 
+					a->data.val.lval = a->data.val.shval;
+				else if (at->type->localtype == TYPE_int) 
+					a->data.val.lval = a->data.val.ival;
+				else
+					return 0;
+				break;
+			default:
 				return 0;
-			break;
-		case TYPE_lng:
-			if (at->type->localtype == TYPE_sht) 
-				a->data.val.lval = a->data.val.shval;
-			else if (at->type->localtype == TYPE_int) 
-				a->data.val.lval = a->data.val.ival;
-			else
-				return 0;
-			break;
-		default:
-			return 0;
+			}
+			a->tpe = *tp;
+			a->data.vtype = tp->type->localtype;
+			return 1;
 		}
-		a->tpe = *tp;
-		a->data.vtype = tp->type->localtype;
-		return 1;
-	}
-	if (a->isnull) {
+	} else {
 		ptr p = NULL;
 
 		a->tpe = *tp;
 		a->data.vtype = tp->type->localtype;
 	
 		if (ATOMextern(a->data.vtype) && !a->data.val.pval) {
-			p = ATOMnilptr(a->data.vtype);
+			p = ATOMnil(a->data.vtype);
 			VALset(&a->data, a->data.vtype, p);
-		} else {
+		} else if (!ATOMextern(a->data.vtype)) {
 			p = ATOMnilptr(a->data.vtype);
 			VALset(&a->data, a->data.vtype, p);
 		}
