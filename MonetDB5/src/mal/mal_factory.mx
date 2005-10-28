@@ -381,9 +381,8 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[]){
 		pl->env = 0;
 		pl->pci = 0;
 		pl->inuse = 1;
+		stk = pl->stk;
 		/* initialize the stack */
-		newStack(stk,mb->vsize);
-		memset((char *) stk, 0, stackSize(mb->vtop));
 		stk->stktop= mb->vtop; 
 		stk->stksize= mb->vsize;
 		stk->blk= mb;
@@ -399,8 +398,9 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[]){
 			lhs->vtype = getVarGDKType(mb,i);
 		}
 		pl->stk= stk;
-	} else 
+	} else  {
 		pl= plants+i;
+	}
 	/* copy the calling arguments onto the stack of the factory */
 	i = psig->retc;
 	for (i = psig->retc; i < psig->argc; i++) {
