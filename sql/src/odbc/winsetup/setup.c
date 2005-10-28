@@ -54,6 +54,7 @@ ODBCLOG(const char *fmt, ...)
 BOOL
 ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg, WORD msgmax, WORD * msgout)
 {
+	(void)hwnd;
 	ODBCLOG("ConfigDriver %d %s %s\n", request, driver ? driver : "(null)", args ? args : "(null)");
 
 	if (msgout)
@@ -80,6 +81,7 @@ ConfigDriver(HWND hwnd, WORD request, LPCSTR driver, LPCSTR args, LPSTR msg, WOR
 BOOL
 ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 {
+	(void)parent;
 	ODBCLOG("ConfigDSN %d %s %s\n", request, driver ? driver : "(null)", attributes ? attributes : "(null)");
 
 	if (strcmp(driver, DriverName) != 0) {
@@ -106,6 +108,8 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 BOOL WINAPI
 DllMain(HINSTANCE hinstDLL, DWORD reason, LPVOID reserved)
 {
+	(void)hinstDLL;
+	(void)reserved;
 	ODBCLOG("DllMain %d\n", reason);
 
 	return TRUE;

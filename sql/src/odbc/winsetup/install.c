@@ -75,6 +75,7 @@ ProcessSysErrorMessage(DWORD err, const char *func)
 	LocalFree(lpMsgBuf);
 }
 
+int 
 CheckIfFileExists(const char *filepath, const char *filename)
 {
 	char buf[300];
