@@ -33,6 +33,7 @@
 #include "pathfinder.h"
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "oops.h"
 #include "core.h"
@@ -215,43 +216,44 @@ TagName:            CoreExpr                                    =  45 (10);
 
 CoreExpr:           apply (FunctionArgs)                        =  46 (10);
 CoreExpr:           apply (arg (Atom, nil))                     =  47 (10);
+CoreExpr:           apply (arg (Atom, arg (Atom, nil)))         =  48 (10);
 
-FunctionArgs:       arg (Atom, FunctionArgs)                    =  48 (10);
-FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =  49 (10);
-FunctionArgs:       nil                                         =  50 (10);
+FunctionArgs:       arg (Atom, FunctionArgs)                    =  49 (10);
+FunctionArgs:       arg (SequenceTypeCast, FunctionArgs)        =  50 (10);
+FunctionArgs:       nil                                         =  51 (10);
 
-CoreExpr:           ordered (CoreExpr)                          =  51 (10);
-CoreExpr:           unordered (CoreExpr)                        =  52 (10);
+CoreExpr:           ordered (CoreExpr)                          =  52 (10);
+CoreExpr:           unordered (CoreExpr)                        =  53 (10);
 
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  53 (10);
+CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  54 (10);
 
-OrderSpecs:         orderspecs (CoreExpr, nil)                  =  54 (10);
-OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  55 (10);
+OrderSpecs:         orderspecs (CoreExpr, nil)                  =  55 (10);
+OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  56 (10);
 
-CoreExpr:           cast (SequenceType, CoreExpr)               =  56 (10);
+CoreExpr:           cast (SequenceType, CoreExpr)               =  57 (10);
 
-Atom:               var                                         =  57 (10);
-Atom:               empty                                       =  58 (10);
-Atom:               LiteralValue                                =  59 (10);
+Atom:               var                                         =  58 (10);
+Atom:               empty                                       =  59 (10);
+Atom:               LiteralValue                                =  60 (10);
 
-LiteralValue:       lit_str                                     =  60 (10);
-LiteralValue:       lit_int                                     =  61 (10);
-LiteralValue:       lit_dec                                     =  62 (10);
-LiteralValue:       lit_dbl                                     =  63 (10);
-LiteralValue:       true_                                       =  64 (10);
-LiteralValue:       false_                                      =  65 (10);
+LiteralValue:       lit_str                                     =  61 (10);
+LiteralValue:       lit_int                                     =  62 (10);
+LiteralValue:       lit_dec                                     =  63 (10);
+LiteralValue:       lit_dbl                                     =  64 (10);
+LiteralValue:       true_                                       =  65 (10);
+LiteralValue:       false_                                      =  66 (10);
 
-FunctionDecls:      nil                                         =  66 (10);
-FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  67 (10);
+FunctionDecls:      nil                                         =  67 (10);
+FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  68 (10);
 
-FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  68 (10);
+FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  69 (10);
 
-ParamList:          nil                                         =  69 (10);
-ParamList:          params (FunParam, ParamList)                =  70 (10);
+ParamList:          nil                                         =  70 (10);
+ParamList:          params (FunParam, ParamList)                =  71 (10);
 
-FunctionBody:       CoreExpr                                    =  71 (10);
+FunctionBody:       CoreExpr                                    =  72 (10);
 
-FunParam:           param (SequenceType, var)                   =  72 (10);
+FunParam:           param (SequenceType, var)                   =  73 (10);
 
 %%
 
@@ -271,6 +273,7 @@ FunParam:           param (SequenceType, var)                   =  72 (10);
 /** starting from p, make two steps right */
 #define RR(p) R(R(p))
 /* ... and so on ... */
+#define LRL(p) L(R(L(p)))
 #define RRL(p) L(R(R(p)))
 #define RRRL(p) L(R(R(R(p))))
 #define RRRRL(p) L(R(R(R(R(p)))))
@@ -558,7 +561,17 @@ reduce (PFcnode_t * p, int goalnt)
                                   PFty_star (PFty_choice (PFty_comm (),
                                                           PFty_pi (NULL))))) {
                     p->sem.fun = function (PFqname (PFns_pf, "string-value"));
+                    /* type-check what we just created */
+                    PFty_check (p);
+
                     rewritten = true;
+
+                    /*
+                     * Re-label entire subtree. Type-checking may have
+                     * modified all the state labels in the subtree, so
+                     * we have to restore them.
+                     */
+                    PFcoreopt_label (p);
                     break;
                 }
                 /*
@@ -640,6 +653,32 @@ reduce (PFcnode_t * p, int goalnt)
             }
 
             /*
+             * fn:zero-or-one() applied to something that is of
+             * type empty returns the argument itself.
+             */
+            if (! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_fn, "zero-or-one"))) {
+                if (PFty_subtype (TY(LL(p)), PFty_empty ())) {
+                    *p = *LL(p);
+                    rewritten = true;
+                    break;
+                }
+            }
+            
+            /*
+             * fn:exactly-one() applied to something that is of
+             * type empty returns an error.
+             */
+            if (! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_fn, "exactly-one"))) {
+                if (PFty_subtype (TY(LL(p)), PFty_empty ()))
+                    PFoops (OOPS_FATAL,
+                            "err:FORG0005, fn:exactly-one called with "
+                            "a sequence containing zero or more than one item.");
+                break;
+            }
+            
+            /*
              * fn:boolean() applied to something that is already of
              * type xs:boolean returns the argument itself.
              */
@@ -652,6 +691,195 @@ reduce (PFcnode_t * p, int goalnt)
                 }
             }
 
+            if (! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_fn, "string"))) {
+                /*
+                 * If the argument is a subtype of xs:string,
+                 * fn:string returns the argument itself.
+                 */
+                if (PFty_subtype (TY(LL(p)), PFty_string ())) {
+                    *p = *LL(p);
+                    rewritten = true;
+                    break;
+                }
+                /*
+                 * If the argument is a subtype of atomic, fn:string()
+                 * is just a cast.
+                 */
+                else if (PFty_subtype (TY(LL(p)), PFty_atomic ())) {
+                    PFcnode_t *c = PFmalloc (sizeof (PFcnode_t));
+                    PFvar_t   *v = new_var (NULL);
+                    
+                    c = let (letbind (var (v), LL(p)),
+                             cast (seqtype (PFty_string ()), var (v)));
+
+                    *p = *c;
+                    
+                    /* type-check what we just created */
+                    PFty_check (p);
+                    
+                    rewritten = true;
+                    /*
+                     * Re-label entire subtree. Type-checking may have
+                     * modified all the state labels in the subtree, so
+                     * we have to restore them.
+                     */
+                    PFcoreopt_label (p);
+                    break;
+                }
+                /*
+                 * If the argument is a subtype of node,
+                 * fn:string() returns the string-value
+                 * of the argument.
+                 */
+                else if (PFty_subtype (TY(LL(p)), PFty_xs_anyNode ())) {
+                    p->sem.fun = function (PFqname (PFns_pf, "string-value"));
+                    /* type-check what we just created */
+                    PFty_check (p);
+
+                    rewritten = true;
+
+                    /*
+                     * Re-label entire subtree. Type-checking may have
+                     * modified all the state labels in the subtree, so
+                     * we have to restore them.
+                     */
+                    PFcoreopt_label (p);
+                    break;
+                }
+            }
+
+            /*
+             * pf:item-sequence-to-untypedAtomic () is translated into
+             * fn:string for each node followed by a fn:string-join ()
+             * with the seperator " "
+             */
+            if (! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_pf,
+                                       "item-sequence-to-untypedAtomic"))) {
+                
+                PFcnode_t *c  = PFmalloc (sizeof (PFcnode_t));
+                PFvar_t   *v1 = new_var (NULL);
+                PFvar_t   *v2 = new_var (NULL);
+                PFfun_t   *fn_string
+                    = function (PFqname (PFns_fn, "string"));
+                PFfun_t   *fn_string_join
+                    = function (PFqname (PFns_fn, "string-join"));
+
+                c = LL(p);
+                *p = *let (letbind (var (v1),
+                                    for_ (forbind (forvars (var (v2), nil ()),
+                                                   LL(p)),
+                                          apply (fn_string, arg (var (v2), nil ())))),
+                            apply (fn_string_join, 
+                                   arg (var (v1),
+                                        arg (str (" "),
+                                             nil ()))));
+                PFty_check (p);
+
+                rewritten = true;
+
+                /*
+                 * Re-label entire subtree. Type-checking may have
+                 * modified all the state labels in the subtree, so
+                 * we have to restore them.
+                 */
+                PFcoreopt_label (p);
+
+                break;
+            }
+
+            /*
+             * The application of pf:item-sequence-to-node-sequence ()
+             * to something that contains only nodes can be discarded.
+             */
+            if (! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_pf,
+                                       "item-sequence-to-node-sequence"))) {
+                if (PFty_subtype (TY(LL(p)),
+                                  PFty_star (PFty_xs_anyNode ()))) {
+                    *p = *LL(p);
+                    rewritten = true;
+                    break;
+                }
+            }
+
+            /*
+             * The application of pf:merge-adjacent-text-nodes () 
+             * to something that contains at most one text node
+             * can be discarded.
+             */
+            if (! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_pf, "merge-adjacent-text-nodes"))) {
+                    /* is empty */
+                if (LL(p)->kind == c_empty ||
+                    /* contains exactly one text node */
+                    PFty_subtype (TY(LL(p)), PFty_text()) ||
+                    /* contains exactly one text node and some attributes*/
+                    PFty_subtype (TY(LL(p)), PFty_seq (
+                                                 PFty_star (
+                                                     PFty_xs_anyAttribute ()),
+                                                 PFty_text())) ||
+                    /* contains no text nodes */
+                    PFty_subtype (TY(LL(p)),
+                                  PFty_star (
+                                      PFty_choice (
+                                          PFty_xs_anyElement (),
+                                          PFty_choice (
+                                              PFty_xs_anyAttribute (),
+                                              PFty_choice (
+                                                  PFty_doc (PFty_xs_anyType ()),
+                                                  PFty_choice (
+                                                      PFty_comm (),
+                                                      PFty_pi (NULL)))))))) {
+                    *p = *LL(p);
+                    rewritten = true;
+                    break;
+                }
+            }
+            break;
+
+        /* CoreExpr:           apply (arg (Atom, arg (Atom, nil))) */
+        case 48:
+            /*
+             * fn:concat does not need to append an empty string
+             */
+            if (! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_fn, "concat"))) {
+                if (!strcmp (LRL(p)->sem.str,"")) {
+                    *p = *LL(p);
+                    rewritten = true;
+                    break;
+                }
+            }
+
+            /*
+             * fn:string-join() applied to an empty sequence
+             * returns an empty string and applied to a singleton
+             * sequence returns the singleton
+             */
+            if (! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_fn, "string-join"))) {
+                if (PFty_subtype (TY(LL(p)), PFty_empty ())) {
+                    *p = *str ("");
+                    PFty_check (p);
+
+                    rewritten = true;
+
+                    /*
+                     * Re-label entire subtree. Type-checking may have
+                     * modified all the state labels in the subtree, so
+                     * we have to restore them.
+                     */
+                    PFcoreopt_label (p);
+                    break;
+                }
+                else if (PFty_subtype (TY(LL(p)), PFty_string ())) {
+                    *p = *LL(p);
+                    rewritten = true;
+                    break;
+                }
+            }
             break;
 
         default:
