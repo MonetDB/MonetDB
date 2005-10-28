@@ -31,10 +31,9 @@
 #include "sql_qc.h"
 
 sql_server_export int backend_dumpstmt(stmt *s, int *nr, backend *sql);
-sql_server_export void backend_dumpproc(backend *be, int id, stmt *s);
 sql_server_export int backend_call(backend *be, mvc *c, cq *q);
 sql_server_export int backend_fastpath(backend *be, mvc *c, cq *q);
-sql_server_export int backend_dump(backend *be, stmt *s);
+sql_server_export int backend_dump(backend *be, cq *q, stmt *s);
 sql_server_export int backend_explain(backend *be, stmt *s, stream *out);
 sql_server_export int backend_exec_prepared_stmt( backend *be, cq *q );
 
@@ -1319,14 +1318,14 @@ backend_dumpstmt(stmt *s, int *nr, backend *sql)
 }
 
 void
-backend_dumpproc(backend *be, int id, stmt *s)
+backend_dumpproc(backend *be, cq *q, stmt *s)
 {
 	int nr = 1;
 	int i = 0;
 	char buf[BUFSIZ];
 	node *n;
 
-	i = snprintf(buf, BUFSIZ, "proc sql%d (", id);
+	i = snprintf(buf, BUFSIZ, "proc %s (", q->name);
 
 	if (be->mvc->argc) {
 		int argc = 0;
@@ -1418,14 +1417,11 @@ monet4_interpret(Cntxt procstk, mvc *c, char *name, int *err)
 int backend_call( backend *be, mvc *c, cq *q ) 
 {
 	int err = 0;
-	char buf[BUFSIZ];
 	Cntxt procstk = backend_newstack(be->mvc->stk);
 	YYSTREE callnode;
 
-	snprintf(buf, BUFSIZ, "sql%d", q->id);
-
 	be->mvc->type = q->type;
-	callnode = monet4_interpret(procstk, c, buf, &err);
+	callnode = monet4_interpret(procstk, c, q->name, &err);
 
 	if (!err) {
 		q->code = (backend_code) callnode;
@@ -1499,7 +1495,7 @@ monet4_parse(backend_stack stack, char *cmd)
 }
 
 
-int backend_dump(backend *be, stmt *s)
+int backend_dump(backend *be, cq *q, stmt *s)
 {
 	int err = 0;
 	mvc *c = be->mvc;
@@ -1510,7 +1506,7 @@ int backend_dump(backend *be, stmt *s)
 
 		backend_dumpstmt(s, &nr, be);
 	} else {
-		backend_dumpproc(be, c->qc->id, s);
+		backend_dumpproc(be, q, s);
 	}
 	cmd = buffer_get_buf(be->outbuf);
 	stream_flush(be->out);

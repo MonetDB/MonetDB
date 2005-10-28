@@ -349,13 +349,13 @@ sqlexecute(backend *be, stream *out)
 		if (c->mode == m_explain) {
 			err = backend_explain(be, s, out);
 		} else {
-			err = backend_dump(be, s);
-			if (!err && c->cache) {
+			if (c->cache) {
 				q = qc_insert(c->qc, c->sa, c->sym, c->args, c->argc, c->scanner.key, c->type, NULL);
-
 				c->sa = NULL;
 				c->sym = NULL;
 			}
+			if ((err = backend_dump(be, q, s)) != 0  && q)
+				qc_delete(c->qc, q);
 		}
 		stmt_destroy(s);
 		if (err)

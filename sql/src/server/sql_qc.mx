@@ -62,9 +62,11 @@ typedef struct cq {
 	int id;			/* cache identity */
 	int key;		/* the hash key for the query text */
 	char *codestring;	/* keep code in string form to aid debugging */
+	char *name;		/* name of cache query */
 } cq;
 
 typedef struct qc {
+	int client;
 	int id;
 	cq *q;
 } qc;
@@ -84,10 +86,13 @@ extern int qc_size(qc *cache);
 #include "sql_qc.h"
 #include "sql_scope.h"
 
+static int qc_id = 0;
+
 qc *
 qc_create()
 {
 	qc *r = NEW(qc);
+	r->client = qc_id++;
 	r->id = 0;
 
 	r->q = NULL;
@@ -99,16 +104,13 @@ cq_delete(cq *q)
 {
 	if (q->sa) 
 		sa_destroy(q->sa);
-
-	if (q->params)
-		_DELETE(q->params);
+	/* params and name are allocated using sa */
 
 	if (q->code)
 		backend_freecode(q->code, q->stk, q->id);
-
 	if (q->stk)
 		backend_freestack(q->stk);
-	if (q->codestring && q->codestring != (char*)1)
+	if (q->codestring)
 		_DELETE(q->codestring);
 	_DELETE(q);
 }
@@ -210,8 +212,10 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 cq *
 qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
 {
+	char name[BUFSIZ];
 	int i;
 	cq *n = NEW(cq);
+
 	n->id = cache->id ++;
 
 	n->sa = sa;
@@ -220,7 +224,7 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, 
 	n->params = NULL;
 	n->paramlen = paramlen;
 	if (paramlen)
-		n->params = NEW_ARRAY(sql_subtype,paramlen);
+		n->params = SA_NEW_ARRAY(sql_subtype,paramlen);
 		for (i = 0; i < paramlen; i++) {
 			atom *a = params[i];
 
@@ -232,6 +236,8 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, 
 	n->type = type;
 	n->key = key;
 	n->codestring = cmd;
+	(void) snprintf(name, BUFSIZ, "s%d_%d", n->id, cache->client);
+	n->name = sa_strdup(sa, name);
 	cache->q = n;
 	return n;
 }

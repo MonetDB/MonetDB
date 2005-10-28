@@ -216,23 +216,8 @@ SQLinitAdmin(Client c)
 		m = mvc_create(1, 0, c->fdin, c->fdout);
 		/* replace user name with client record setting later on */
 		schema = mvc_login(m, "monetdb", "monetdb");
-		if (!schema) {
+		if (!schema) 
 			return throwMessage("SQLparser", "No schema defined\n");
-		} else {
-			/*
-			if (!sendProperty(c->fdout, "version", "5") ||
-			    !sendProperty(c->fdout, "language", "sql") ||
-			    !sendProperty(c->fdout, "schema", schema) || 
-			    !sendProperty(c->fdout, "auto_commit", "false") || 
-			    !sendProperty(c->fdout, "reply_size", "1000") || 
-				stream_flush(c->fdout) < 0)
-			{
-				res_tables_destroy(m->results);
-				mvc_destroy(m);
-				return throwMessage("SQLparser", "Disconnected\n");
-			}
-			*/
-		}
 		c->state[PARSER] = (void *) backend_create(0 /*debug */ , m, c);
 		((backend*)c->state[PARSER])->language = 'S';	/*expect SQL text first */
 		c->state[OPTIMIZE] = m;
@@ -259,6 +244,25 @@ SQLinitClient(Client c)
 	return msg;
 }
 
+static
+void clear_cache(mvc *m ) 
+{
+	if (m->qc) {
+		oid id;
+		int ret = 0;
+
+		for (id = 0; id < m->qc->id; id ++) {
+			char buf[BUFSIZ], *nme ;
+			snprintf(buf, BUFSIZ, "sql%d", (int) id);
+			nme= putName(buf,strlen(buf));
+			SQLCacheRemove(&ret, &nme);
+		}
+		(void) ret;
+		qc_destroy(m->qc);
+	}
+	m->qc = qc_create();
+}
+
 str
 SQLexitClient(Client c)
 {
@@ -271,17 +275,7 @@ SQLexitClient(Client c)
 	}
 	if ((backend *) c->state[PARSER] && (mvc *) c->state[OPTIMIZE]) {
 		m= (mvc *) c->state[OPTIMIZE];
-		if (m->qc) {
-			oid id;
-			int ret = 0;
-
-			for (id = 0; id <m->qc->id; id ++) {
-				char buf[BUFSIZ], *nme ;
-				snprintf(buf, BUFSIZ, "sql%d", (int) id);
-				nme= putName(buf,strlen(buf));
-				SQLCacheRemove(&ret, &nme);
-			}
-		}
+		clear_cache(m);
 		mvc_destroy((mvc *) c->state[OPTIMIZE]);
 		backend_destroy((backend *) c->state[PARSER]);
 		/* files are already closed */
@@ -429,7 +423,7 @@ We don;t search the cache for a previous incarnation.
 		}
 		assert(s);
 		/* generate MAL code */
-		backend_dumpproc(sql, c, 0, s);
+		backend_dumpproc(sql, c, NULL, s);
 
 		chkTypes(c->nspace, c->curprg->def); /* resolve types */
 
@@ -560,25 +554,6 @@ second only during exection.
 This means we can safely change the language setting for
 the duration of these calls.
 @c
-
-static
-void clear_cache(mvc *m ) 
-{
-	if (m->qc) {
-		oid id;
-		int ret = 0;
-
-		for (id = 0; id <m->qc->id; id ++) {
-			char buf[BUFSIZ], *nme ;
-			snprintf(buf, BUFSIZ, "sql%d", (int) id);
-			nme= putName(buf,strlen(buf));
-			SQLCacheRemove(&ret, &nme);
-		}
-		(void) ret;
-		qc_destroy(m->qc);
-	}
-	m->qc = qc_create();
-}
 
 int SQLautocommit(Client c, mvc *m){
 	if (m->auto_commit && m->trans) {
@@ -929,19 +904,20 @@ produce code.
 			backend_callinline(be, c, s );
 		} else {
 			/* generate a factory instantiation */
-			Symbol code = backend_dumpproc(be, c, m->qc->id, s);
-
 			be->q = qc_insert(m->qc, 
 					  m->sa,      /* the allocator */
 					  m->sym,     /* the sql symbol tree */
 					  m->args,    /* the argument list */
 					  m->argc,
-					  m->scanner.key,	/* the statement hash key */
-					  m->type,	/* the type of the statement */
-					  NULL /*_strdup("the mal block?")*/);
+					  m->scanner.key,/* the statement hash key */
+					  m->type,/* the type of the statement */
+					  NULL);
 
-			be->q->code = (backend_code) code;
+			be->q->code = 
+				(backend_code)backend_dumpproc(be, c, be->q, s);
 			be->q->stk = 0;
+			/* register name in the namespace */
+			be->q->name = putName(be->q->name, strlen(be->q->name));
 			m->sa = NULL;
 			m->sym = NULL;
 		} 
@@ -1026,6 +1002,8 @@ finalize:
 Gather the statistics for post analysis. It should preferably
 be stored in an SQL table
 @c
+	if (msg)
+		sqlcleanup(m, 0);
 	return msg;
 }
 

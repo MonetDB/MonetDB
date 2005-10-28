@@ -48,7 +48,7 @@ A dummy module is needed to load properly.
 #include <mal_function.h>
 
 sql_export int backend_dumpstmt(backend *be, MalBlkPtr mb, stmt *s);
-sql_export Symbol backend_dumpproc(backend *be, Client c, int id, stmt *s);
+sql_export Symbol backend_dumpproc(backend *be, Client c, cq *q, stmt *s);
 sql_export void backend_callinline(backend *be, Client c, stmt *s);
 sql_export void backend_call(backend *be, Client c, cq *q);
 sql_export int backend_exec_prepared_stmt( backend *be, cq *q );
@@ -1473,25 +1473,24 @@ backend_callinline(backend *be, Client c, stmt *s )
 }
 
 Symbol
-backend_dumpproc(backend *be, Client c, int id, stmt *s)
+backend_dumpproc(backend *be, Client c, cq *cq, stmt *s)
 {
 	mvc *m = be->mvc;
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	InstrPtr curInstr = 0;
-	char fnme[BUFSIZ];
 	int argc = 0;
 	char arg[32];
 	node *n;
 
-	/* later we could use the id directly (as its unique) and
-	   just create a InstrPtr using newInstruction */
-	snprintf(fnme, BUFSIZ, "sql%d", id);
-
 	c->backup = c->curprg;
 
 	/* later we change this to a factory ? */
-	c->curprg = newFunction(putName(fnme,strlen(fnme)), FUNCTIONsymbol);
+	if (cq) 
+		c->curprg = newFunction(putName(cq->name,strlen(cq->name)), FUNCTIONsymbol);
+	else 
+		c->curprg = newFunction("tmp", FUNCTIONsymbol);
+
 	curPrg = c->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -1535,20 +1534,6 @@ backend_dumpproc(backend *be, Client c, int id, stmt *s)
 	return curPrg;
 }
 
-static int previd = -1;
-static str prevnme = 0;
-
-str
-backend_name(cq *cq){
-	char name[BUFSIZ];
-	if( previd != cq->id){
-		(void) snprintf(name, BUFSIZ, "sql%d", cq->id);
-		previd= cq->id;
-		prevnme= putName(name,strlen(name));
-	}
-	return prevnme;
-}
-
 void
 backend_call(backend *be, Client c, cq *cq)
 {
@@ -1557,13 +1542,7 @@ backend_call(backend *be, Client c, cq *cq)
 	MalBlkPtr mb = c->curprg->def;
 	char name[BUFSIZ];
 
-	if( previd != cq->id){
-		(void) snprintf(name, BUFSIZ, "sql%d", cq->id);
-		prevnme= putName(name,strlen(name));
-		previd= cq->id;
-	}
-
-	q = newStmt2(mb, sql_cacheRef, prevnme);
+	q = newStmt2(mb, sql_cacheRef, cq->name);
 	/* cached (factorized queries return bit??) */
 	if (getInstrPtr(((Symbol)cq->code)->def, 0)->token == FACTORYsymbol )
 		setVarType(mb, getArg(q, 0), TYPE_bit);
