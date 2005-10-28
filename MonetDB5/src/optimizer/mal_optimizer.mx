@@ -469,6 +469,7 @@ opt_export str AMoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str SRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+opt_export str COoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str AEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 opt_export str RXemptyBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -1164,7 +1165,7 @@ ARoptimizerStep(MalBlkPtr mb, int pc)
 str
 ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i;
+	int i, oldstop;
 	lng clk = GDKusec();
 
 	(void) stk;
@@ -1180,12 +1181,13 @@ ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 #endif
 	setLifespan(mb);
+	oldstop= mb->stop;
 	for (i = 1; i < mb->stop; i++)
 		i = ARoptimizerStep(mb, i);
 	/* remove the ARoptimizer request */
 	if (pci)
 		removeInstruction(mb, pci);
-	optimizerCheck(mb, "aliasRemoval", 1, GDKusec() - clk);
+	optimizerCheck(mb, "aliasRemoval", oldstop-mb->stop-1, GDKusec() - clk);
 	return NULL;
 }
 
@@ -1390,8 +1392,8 @@ int AEvalidInstruction(InstrPtr p){
 	return 0;
 }
 
-void
-AEcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
+int
+coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
 {
 	int t, a, b;
 
@@ -1401,51 +1403,78 @@ AEcoercionOptimizer(MalBlkPtr mb, int i, InstrPtr p)
 	if (strcmp(functionName(p), "int") == 0 && t == TYPE_int) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
-		setLifespan(mb);
-		return;
+		return 1;
 	}
 	if (strcmp(functionName(p), "str") == 0 && t == TYPE_str) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
-		setLifespan(mb);
-		return;
+		return 1;
 	}
 	if (strcmp(functionName(p), "oid") == 0 && t == TYPE_oid) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
-		setLifespan(mb);
-		return;
+		return 1;
 	}
 	if (strcmp(functionName(p), "lng") == 0 && t == TYPE_lng) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
-		setLifespan(mb);
-		return;
+		return 1;
 	}
 	if (strcmp(functionName(p), "sht") == 0 && t == TYPE_sht) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
-		setLifespan(mb);
-		return;
+		return 1;
 	}
 	if (strcmp(functionName(p), "bit") == 0 && t == TYPE_bit) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
-		setLifespan(mb);
-		return;
+		return 1;
 	}
 	if (strcmp(functionName(p), "dbl") == 0 && t == TYPE_dbl) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
-		setLifespan(mb);
-		return;
+		return 1;
 	}
 	if (strcmp(functionName(p), "flt") == 0 && t == TYPE_flt) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
-		setLifespan(mb);
-		return;
+		return 1;
 	}
+	return 0;
+}
+str
+COoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i, k;
+	InstrPtr p;
+	int actions = 0;
+	lng clk = GDKusec();
+	str calcRef= putName("calc",4);
+
+	(void) pci;
+	(void) stk;		/* to fool compilers */
+	if (pci)
+		removeInstruction(mb, pci);
+	if( mb->errors) 
+		return MAL_SUCCEED;
+
+	for (i = 1; i < mb->stop; i++) {
+		p = getInstrPtr(mb, i);
+		if (moduleId(p) == NULL)
+			continue;
+		if (moduleId(p)==calcRef) {
+			k= coercionOptimizerStep(mb, i, p);
+			actions += k;
+			if( k) i--;
+		}
+	}
+	/* remove the COcoercion request */
+	optimizerCheck(mb, "coercionOptimizer", actions, GDKusec() - clk);
+	if (mb->errors) {
+		showErrors();
+		return throwMessage("COoptimizer", "Optimization raised errors");
+	}
+	return MAL_SUCCEED;
 }
 str
 AEoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1483,10 +1512,6 @@ at the end of the optimization attempt.
 		p = getInstrPtr(mb, i);
 		if (moduleId(p) == NULL)
 			continue;
-		if (strcmp(moduleId(p), "calc") == 0) {
-			AEcoercionOptimizer(mb, i, p);
-			continue;
-		}
 		if( !AEvalidInstruction(p) ) continue;
 
 		if (p->argc == 3) {

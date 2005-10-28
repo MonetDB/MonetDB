@@ -108,6 +108,12 @@ pattern partitionedQuery(mod:str, fcn:str):str
 address QOTBPToptimizerCALL
 comment "Experiment with partitioned databases";
 
+pattern coercions():str 
+address QOTCOoptimizer;
+pattern coercions(mod:str, fcn:str):str 
+address QOTCOoptimizerCALL
+comment "Experiment with partitioned databases";
+
 pattern costEstimation():str 
 address QOTRMoptimizer;
 pattern costEstimation(mod:str, fcn:str):str 
@@ -325,6 +331,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @:QOTC(PH, "peephole")@
 @:QOTC(RM, "costEstimation")@
 @:QOTC(MR, "reduce")@
+@:QOTC(CO, "coercions")@
 
 str
 QOToptimize(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
