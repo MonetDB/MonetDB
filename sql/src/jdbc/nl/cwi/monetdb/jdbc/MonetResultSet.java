@@ -874,6 +874,11 @@ public class MonetResultSet implements ResultSet {
 	public ResultSetMetaData getMetaData() {
 		// return inner class which implements the ResultSetMetaData interface
 		return(new ResultSetMetaData() {
+			// some variables which provide a simple cache
+			private String schema = null;
+			private int precision = -1;
+			private int scale = -1;
+
 			/**
 			 * Returns the number of columns in this ResultSet object.
 			 *
@@ -1036,13 +1041,19 @@ public class MonetResultSet implements ResultSet {
 			/**
 			 * Get the designated column's table's schema.  This method
 			 * is currently very expensive as it needs to retrieve the
-			 * information from the database using an SQL query.
+			 * information from the database using an SQL query.  Due to
+			 * a protocol limitation, this method might not always
+			 * return the schema name even when the column does have
+			 * one.
 			 *
 			 * @param column the first column is 1, the second is 2, ...
 			 * @return schema name or "" if not applicable
 			 * @throws SQLException if a database access error occurs
 			 */
 			public String getSchemaName(int column) throws SQLException {
+				// use cache if there
+				if (schema != null) return(schema);
+				// figure the name out
 				if (getTableName(column) != "") {
 					// we have to get a new Statement here in order not
 					// to close the ResultSet that is being in use to
@@ -1053,25 +1064,68 @@ public class MonetResultSet implements ResultSet {
 					ResultSet rs = stmt.executeQuery(
 							"select schemas.name from tables, schemas where schemas.id = tables.schema_id and tables.name like '" + getTableName(column) + "'");
 					// if there are no results, this is the default
-					String ret = "";
 					for (int i = 0; rs.next(); i++) {
 						if (i == 0) {
-							ret = rs.getString(1);
+							schema = rs.getString(1);
 						} else {
 							// in case of multiple matches we pretent as
 							// if the schema name is not applicable
-							ret = "";
+							schema = "";
 						}
 					}
 					rs.close();
 					stmt.close();
-					return(ret);
 				} else {
-					return("");
+					schema = "";
 				}
+
+				return(schema);
 			}
 
-			public int getPrecision(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
+			/**
+			 * Get the designated column's number of decimal digits.
+			 * This method is currently very expensive as it needs to
+			 * retrieve the information from the database using an SQL
+			 * query.  Due to a protocol limitation, this method might
+			 * not always return the precision even when the column does
+			 * have one.
+			 *
+			 * @param column the first column is 1, the second is 2, ...
+			 * @return precision
+			 * @throws SQLException if a database access error occurs
+			 */
+			public int getPrecision(int column) throws SQLException {
+				// use cache if there
+				if (precision != -1) return(precision);
+				// figure the name out
+				if (getTableName(column) != "") {
+					// we have to get a new Statement here in order not
+					// to close the ResultSet that is being in use to
+					// call this method
+					Statement stmt = getStatement().getConnection().createStatement();
+					// note, we cannot even see if we have the right
+					// one, so this is extremely fuzzy...
+					ResultSet rs = stmt.executeQuery(
+							"select columns.digits from tables, columns where columns.table_id = tables.id and tables.name like '" + getTableName(column) + "'");
+					// if there are no results, this is the default
+					for (int i = 0; rs.next(); i++) {
+						if (i == 0) {
+							precision = rs.getInt(1);
+						} else {
+							// in case of multiple matches we pretent as
+							// if the schema name is not applicable
+							precision = 0;
+						}
+					}
+					rs.close();
+					stmt.close();
+				} else {
+					precision = 0;
+				}
+
+				return(precision);
+			}
+
 			public int getScale(int column) throws SQLException { throw new SQLException("Method not implemented yet, sorry!"); }
 
 			/**

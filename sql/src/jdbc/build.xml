@@ -1,6 +1,4 @@
-<?xml version="1.0"?>
-<!-- vim:ts=2:sw=2:expandtab
--->
+<?xml version="1.0"?><!-- vim:set ts=2 sw=2 expandtab: -->
 
 <!--
 The contents of this file are subject to the MonetDB Public License
@@ -23,24 +21,26 @@ All Rights Reserved.
 <!--
 
   Build file to allow ant (http://jakarta.apache.org/ant/) to be used
-  to build the MonetDB JDBC and XML:DB Drivers.
+  to build the MonetDB Java libraries, such as the JDBC and XML:DB
+  drivers.
 
 -->
 
-<project name="MonetDB_Java_Drivers" default="jar_jdbc" basedir=".">
+<project name="MonetDB_Java_Drivers" default="jar_jdbc+client" basedir=".">
 
   <!-- set global properties for this build -->
-  <property name="srcdir"   value="." />
-  <property name="libdir"   value="lib" />
-  <property name="jardir"   value="jars" />
-  <property name="builddir" value="build" />
-  <property name="docdir"   value="doc" />
-  <property name="jdbc-package"  value="nl/cwi/monetdb/jdbc" />
-  <property name="xmldb-package" value="nl/cwi/monetdb/xmldb" />
-  <property name="mcl-package"   value="nl/cwi/monetdb/mcl" />
+  <property name="srcdir"             value="." /> <!-- todo: make src -->
+  <property name="libdir"             value="lib" />
+  <property name="jardir"             value="jars" />
+  <property name="builddir"           value="build" />
+  <property name="docdir"             value="doc" />
+  <property name="jdbc-package"       value="nl/cwi/monetdb/jdbc" />
+  <property name="xmldb-package"      value="nl/cwi/monetdb/xmldb" />
+  <property name="mcl-package"        value="nl/cwi/monetdb/mcl" />
+  <property name="client-package"     value="nl/cwi/monetdb/client" />
 
-  <property file="build.local.properties"/>
-  <property file="build.properties"/>
+  <property file="build.local.properties" />
+  <property file="build.properties" />
 
 
   <!-- full target -->
@@ -48,17 +48,18 @@ All Rights Reserved.
     <antcall target="jar_jdbc" />
     <antcall target="jar_xmldb" />
     <antcall target="jar_mcl" />
+    <antcall target="jar_client" />
 
     <antcall target="doc_jdbc" />
     <antcall target="doc_xmldb" />
     <antcall target="doc_mcl" />
+    <antcall target="doc_client" />
   </target>
 
+  <!-- jar targets -->
   <target name="jar_jdbc" depends="compile_jdbc">
-    <!-- the JDBC driver + JdbcClient -->
     <jar jarfile="${jardir}/MonetDB_JDBC.jar" manifest="${srcdir}/manifest">
       <fileset dir="${builddir}">
-        <include name="*.class" />
         <include name="${jdbc-package}/**/*.class" />
       </fileset>
     </jar>
@@ -80,8 +81,16 @@ All Rights Reserved.
     </jar>
   </target>
 
+  <target name="jar_client" depends="compile_client">
+    <jar jarfile="${jardir}/MonetDB_clients.jar">
+      <fileset dir="${builddir}">
+        <include name="${client-package}/**/*.class" />
+      </fileset>
+    </jar>
+  </target>
+
+  <!-- compile targets -->
   <target name="compile_jdbc" depends="prepare,driver">
-    <echo message="Debug is ${debug}, optimize is ${optimize}" />
     <echo message="Compiling JDBC driver" />
     <javac
       classpath="${srcdir}"
@@ -92,33 +101,9 @@ All Rights Reserved.
       >
       <include name="${jdbc-package}/**/*.java" />
     </javac>
-    <echo message="Compiling JdbcClient" />
-    <javac
-      classpath="${builddir}"
-      srcdir="${srcdir}/example"
-      destdir="${builddir}"
-      debug="${debug}"
-      optimize="${optimize}"
-      >
-      <include name="JdbcClient.java" />
-    </javac>
-    <!--
-    <echo message="Compiling examples" />
-    <javac
-      classpath="${builddir}"
-      srcdir="${srcdir}/example"
-      destdir="${builddir}/example"
-      debug="${debug}"
-      optimize="${optimize}"
-      >
-      <include name="*.java" />
-      <exclude name="JdbcClient.java" />
-    </javac>
-    -->
   </target>
 
   <target name="compile_xmldb" depends="prepare,driver">
-    <echo message="Debug is ${debug}, optimize is ${optimize}" />
     <echo message="Compiling XML:DB driver" />
     <javac
       classpath="${srcdir}:${libdir}/xmldb.jar"
@@ -132,7 +117,6 @@ All Rights Reserved.
   </target>
 
   <target name="compile_mcl" depends="prepare">
-    <echo message="Debug is ${debug}, optimize is ${optimize}" />
     <echo message="Compiling MCL" />
     <javac
       classpath="${srcdir}"
@@ -145,10 +129,38 @@ All Rights Reserved.
     </javac>
   </target>
 
-  <!-- create a distribution jar file -->
+  <target name="compile_client" depends="prepare">
+    <echo message="Compiling Clients" />
+    <javac
+      classpath="${srcdir}"
+      srcdir="${srcdir}"
+      destdir="${builddir}"
+      debug="${debug}"
+      optimize="${optimize}"
+      >
+      <include name="${client-package}/**/*.java" />
+    </javac>
+  </target>
+
+  <!-- a convenience jar of JDBC plus the JdbcClient utililty -->
+  <target name="jar_jdbc+client" depends="compile_jdbc,compile_client">
+    <echo message="Building JDBC + JdbcClient convenience jar" />
+    <jar jarfile="${jardir}/MonetDB_JDBCClient.jar">
+      <fileset dir="${builddir}">
+        <include name="${jdbc-package}/**/*.class" />
+        <include name="${client-package}/**/*.class" />
+      </fileset>
+      <manifest>
+        <attribute name="Built-By" value="${user.name}" />
+        <attribute name="Main-Class" value="nl.cwi.monetdb.client.JdbcClient" />
+      </manifest>
+    </jar>
+  </target>
+
+  <!-- distribution jar file -->
   <target name="dist" depends="clean,prepare,driver">
-    <echo message="Building distribution jar (debug=off, optimize=on)" />
-    <echo message="Compiling JDBC and XML:DB drivers" />
+    <echo message="Building distribution jar (debug=off, optimise=on)" />
+    <echo message="Compiling JDBC, MCL and XML:DB drivers" />
     <javac
       classpath="${srcdir}:${libdir}/xmldb.jar"
       srcdir="${srcdir}"
@@ -159,40 +171,31 @@ All Rights Reserved.
       <include name="${jdbc-package}/**/*.java" />
       <include name="${xmldb-package}/**/*.java" />
       <include name="${mcl-package}/**/*.java" />
-    </javac>
-    <echo message="Compiling JdbcClient" />
-    <javac
-      classpath="${builddir}"
-      srcdir="${srcdir}/example"
-      destdir="${builddir}"
-      debug="false"
-      optimize="true"
-      >
-      <include name="JdbcClient.java" />
+      <include name="${client-package}/**/*.java" />
     </javac>
 
-    <jar jarfile="${jardir}/MonetDB_JDBC.jar" manifest="${srcdir}/manifest">
+    <jar jarfile="${jardir}/MonetDB.jar" manifest="${srcdir}/manifest">
       <fileset dir="${builddir}">
         <include name="*.class" />
         <include name="${jdbc-package}/**/*.class" />
-      </fileset>
-    </jar>
-    <jar jarfile="${jardir}/MonetDB_XMLDB.jar">
-      <fileset dir="${builddir}">
         <include name="${xmldb-package}/**/*.class" />
-      </fileset>
-    </jar>
-    <jar jarfile="${jardir}/MonetDB_MCL.jar">
-      <fileset dir="${builddir}">
         <include name="${mcl-package}/**/*.class" />
+        <include name="${client-package}/**/*.class" />
       </fileset>
     </jar>
   </target>
 
+  <!-- checks whether regeneration of files is necessary -->
   <target name="check_driver">
     <uptodate targetfile="${jdbc-package}/MonetDriver.java" property="driver.uptodate">
-      <srcfiles dir=".">
+      <srcfiles dir="${srcdir}">
         <include name="${jdbc-package}/MonetDriver.java.in"/>
+        <include name="build.properties"/>
+        <include name="build.local.properties" />
+      </srcfiles>
+    </uptodate>
+    <uptodate targetfile="${xmldb-package}/base/MonetDBDatabase.java" property="driver.uptodate">
+      <srcfiles dir="${srcdir}">
         <include name="${xmldb-package}/base/MonetDBDatabase.java.in"/>
         <include name="build.properties"/>
         <include name="build.local.properties" />
@@ -205,13 +208,20 @@ All Rights Reserved.
   ".java.in" equivalents.  It's required for importing the driver
   version properties.
   -->
-  <target name="driver" depends="prepare,check_driver" unless="driver.uptodate">
+  <target name="driver" depends="prepare,check_driver">
+    <!-- always generate the files that change version,
+    i.e no unless="driver.uptodate"> to have the date included always
+    when one calls 'ant' -->
+    <tstamp>
+      <format property="TODAY" pattern="yyyyMMdd" />
+    </tstamp>
+
     <!-- Some defaults -->
     <filter token="JDBC_MAJOR" value="${JDBC_MAJOR}" />
     <filter token="JDBC_MINOR" value="${JDBC_MINOR}" />
     <filter token="JDBC_DEF_PORT" value="${JDBC_DEF_PORT}" />
     <filter token="JDBC_DEF_PORT_XQUERY" value="${JDBC_DEF_PORT_XQUERY}" />
-    <filter token="JDBC_VER_SUFFIX" value="${JDBC_VER_SUFFIX}" />
+    <filter token="JDBC_VER_SUFFIX" value="${JDBC_VER_SUFFIX} ${TODAY}" />
     <filter token="JDBC_DEF_BLOCKMODE" value="${JDBC_DEF_BLOCKMODE}" />
 
     <fail unless="JDBC_MAJOR" message="'JDBC_MAJOR' undefined. Please follow the directions in build.properties."/>
@@ -220,8 +230,6 @@ All Rights Reserved.
     <fail unless="JDBC_DEF_PORT_XQUERY" message="'JDBC_DEF_PORT_XQUERY' undefined. Please follow the directions in build.properties."/>
     <fail unless="JDBC_VER_SUFFIX" message="'JDBC_VER_SUFFIX' undefined. Please follow the directions in build.properties."/>
     <fail unless="JDBC_DEF_BLOCKMODE" message="'JDBC_DEF_BLOCKMODE' undefined. Please follow the directions in build.properties."/>
-
-    <!-- Put a check for the current version here -->
 
     <!-- now copy and filter the file -->
     <copy file="${jdbc-package}/MonetDriver.java.in"
@@ -236,7 +244,6 @@ All Rights Reserved.
 
     <echo message="Configured build for the ${JDBC_MAJOR}.${JDBC_MINOR} (${JDBC_VER_SUFFIX}) edition driver" />
   </target>
-
 
   <!-- Prepares the build directory -->
   <target name="prepare">
@@ -265,9 +272,11 @@ All Rights Reserved.
     <mkdir dir="${builddir}" />
     <mkdir dir="${builddir}/example" />
     <mkdir dir="${jardir}" />
+    <echo message="Debug is ${debug}, optimise is ${optimize}" />
   </target>
 
-  <!-- This target removes the build and jar directory plus the generated MonetDriver.java -->
+  <!-- This target removes the build and jar directory plus the
+  generated MonetDriver.java and MonetDBDatabase.java -->
   <target name="clean">
     <delete quiet="true" dir="${builddir}" />
     <delete quiet="true" dir="${jardir}" />
@@ -277,7 +286,7 @@ All Rights Reserved.
   </target>
 
 
-  <!-- Build the documentation -->
+  <!-- documentation targets -->
   <target name="doc_jdbc" depends="compile_jdbc">
     <javadoc
       destdir="${docdir}/jdbc"
@@ -321,4 +330,17 @@ All Rights Reserved.
     </javadoc>
   </target>
 
+  <target name="doc_client" depends="compile_client">
+    <javadoc
+      destdir="${docdir}/client"
+      author="true"
+      version="true"
+      use="true"
+      windowtitle="MonetDB Clients">
+
+      <fileset dir="${srcdir}" defaultexcludes="yes">
+        <include name="${client-package}/**/*.java" />
+      </fileset>
+    </javadoc>
+  </target>
 </project>
