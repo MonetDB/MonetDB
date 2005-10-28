@@ -315,6 +315,7 @@ int yydebug=1;
 	column_exp
 	atom
 	insert_atom
+	simple_atom
 	literal
 	interval_expression
 	ordering_spec
@@ -374,6 +375,7 @@ int yydebug=1;
 	name_commalist
 	column_ref
 	atom_commalist
+	simple_atom_commalist
 	row_commalist
 	qname
 	ordering_spec_commalist
@@ -1690,10 +1692,14 @@ atom_commalist:
 			{ $$ = _dlist_append_symbol($1, $3); }
  ;
 
-insert_atom:
+simple_atom_commalist:
+    simple_atom		{ $$ = _dlist_append_symbol(_dlist_create(), $1); }
+ |  simple_atom_commalist ',' simple_atom
+			{ $$ = _dlist_append_symbol($1, $3); }
+ ;
+
+simple_atom:
     scalar_exp
- |  search_condition
- |  select_no_parens 
  |  NULLX
 	 { 
 	   mvc *m = (mvc*)parm;
@@ -1709,6 +1715,11 @@ insert_atom:
 		$$ = _symbol_create(SQL_NULL, NULL );
 	   }
 	}
+
+insert_atom:
+    simple_atom
+ |  search_condition
+ |  select_no_parens 
  ;
 
 opt_distinct:
@@ -2200,22 +2211,22 @@ test_for_null:
  ;
 
 in_predicate:
-    pred_exp NOT sqlIN subquery
+    pred_exp NOT sqlIN select_with_parens
 		{ dlist *l = _dlist_create();
 		  _dlist_append_symbol(l, $1);
 		  _dlist_append_symbol(l, $4);
 		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
- |  pred_exp sqlIN subquery
+ |  pred_exp sqlIN select_with_parens
 		{ dlist *l = _dlist_create();
 		  _dlist_append_symbol(l, $1);
 		  _dlist_append_symbol(l, $3);
 		  $$ = _symbol_create_list(SQL_IN, l ); }
- |  pred_exp NOT sqlIN '(' atom_commalist ')'
+ |  pred_exp NOT sqlIN '(' simple_atom_commalist ')'
 		{ dlist *l = _dlist_create();
 		  _dlist_append_symbol(l, $1);
 		  _dlist_append_list(l, $5);
 		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
- |  pred_exp sqlIN '(' atom_commalist ')'
+ |  pred_exp sqlIN '(' simple_atom_commalist ')'
 		{ dlist *l = _dlist_create();
 		  _dlist_append_symbol(l, $1);
 		  _dlist_append_list(l, $4);

@@ -131,6 +131,23 @@ sql_subquery(mvc *sql, scope *scp, symbol *sq, int toplevel)
 {
 	SelectNode *sn = (SelectNode *) sq;
 
+	if (sq->token != SQL_SELECT) {
+		tvar *tv = table_ref(sql, scp, sq);
+		list *l;
+		node *n;
+
+		if (!tv)
+			return NULL;
+
+		l = create_stmt_list();
+		for (n = tv->columns->h; n; n = n->next) {
+			cvar *lc = n->data;
+			stmt *ls = stmt_dup(lc->s);
+
+			list_append(l, ls);
+		}
+		return stmt_list(l);
+	}
 	assert(sn->s.token == SQL_SELECT);
 
 	if (!toplevel && sn->limit >= 0)
@@ -2428,6 +2445,11 @@ sql_logical_exp_(mvc *sql, scope *scp, symbol *sc, group *grp, stmt *subset, int
 				symbol *sval = n->data.sym;
 				stmt *v = sql_value_exp(sql, scp, sval, NULL, NULL, f);
 
+				if (!v) {
+					stmt_destroy(ls);
+					stmt_destroy(temp);
+					return NULL;
+				}
 				temp = stmt_append(temp, check_types(sql, ct, v, type_equal));
 			}
 			if (sc->token == SQL_IN) {
