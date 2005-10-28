@@ -661,6 +661,139 @@ static PFty_t *parameter_types (PFpnode_t *paramlist);
 
 static PFcnode_t *function_conversion (const PFcnode_t *e, PFty_t expected);
 
+static void reduce (PFpnode_t * p, int goalnt);
+
+/**
+ * Watch out for function declarations in the abstract syntax tree
+ * and call reduce() for them.
+ *
+ * Compilation of expressions into Core requires the full signatures
+ * of all functions to be readily available.  Function checking
+ * (functions.c) has only set the number of function arguments, but
+ * not their types (and neither the function return type).
+ *
+ * reduce() contains logic to derive #PFty_t types from abstract
+ * syntax tree fragments.  We thus call reduce() for the function
+ * signature whenever we find a function declaration.  Otherwise
+ * we follow all those children that might contain further function
+ * declarations.  (Note that we only handle the function signature
+ * here, not its body.)
+ */
+static void
+process_fun_sigs (PFpnode_t *p, int goalnt)
+{
+    int           rule;           /* rule number that matches for this node */
+    short        *nts;            /* target non-terminals for the leaf nodes of
+                                     the current rule */
+    PFpnode_t    *kids[MAX_KIDS]; /* leaf nodes of this rule */
+
+    /* determine rule that matches for this non-terminal */
+    rule = PFfs_rule (STATE_LABEL (p), goalnt);
+
+    /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
+    assert (rule);
+
+    /* initialize the kids[] vector */
+    for (unsigned short i = 0; i < MAX_KIDS; i++)
+        kids[i] = NULL;
+
+    /*
+     * prepare recursive traversal: get information on leaf nodes of
+     * this rule
+     */
+    nts = PFfs_nts[rule];
+    PFfs_kids (p, rule, kids);
+
+    switch (rule) {
+
+        /* Query:                  lib_mod (ModuleDecl, Prolog) */
+        case 2:
+        /* LibraryModule:          lib_mod (ModuleDecl, Prolog) */
+        case 4:
+
+            /* we are heading for function signatures in the prolog only */
+            process_fun_sigs (kids[1], nts[1]);
+            break;
+
+        /* MainModule:             main_mod (Prolog, QueryBody) */
+        case 3:
+
+            /* we are heading for function signatures in the prolog only */
+            process_fun_sigs (kids[0], nts[0]);
+            break;
+
+        /* DeclsImports:           decl_imps (fun (fun_sig (OptParamList_,
+                                                            SequenceType),
+                                                   Expr),
+                                              DeclsImports) */
+        case 9:
+            /* fall through */
+
+        /* DeclsImports:           decls_imps (fun (fun_sig (OptParamList_,
+                                                             SequenceType),
+                                                    external),
+                                               DeclsImports) */
+        case 10:
+            /*
+             * Parse tree situation for function declarations:
+             *
+             *                   decls_imps
+             *                  /          \
+             *               fun        (other decls)
+             *              /   \
+             *        fun_sig    BODY
+             *        /     \
+             *  ParamList  ReturnType
+             */
+
+            /* debugging only
+            PFinfo (OOPS_NOTICE, "processing `%s'",
+                    PFqname_str (L(p)->sem.fun->qname));
+            */
+
+            /*
+             * This is the situation that process_fun_sigs() actually
+             * looks out for.  We call reduce() for function signatures.
+             * reduce() contains code to build up the Core equivalent
+             * of the function signature and---most importantly---code
+             * to derive #PFty_t types from parse tree fragments.  We
+             * use the latter to fill in the missing parts into the
+             * #PFfun_t struct.
+             */
+            reduce (kids[0], nts[0]);
+            reduce (kids[1], nts[1]);
+
+            L(p)->sem.fun->par_ty = parameter_types (LLL(p));
+            L(p)->sem.fun->ret_ty = C(LLR(p))->sem.type;
+
+            /* Look out for more function declarations */
+            process_fun_sigs (kids[3], nts[3]);
+
+            break;
+
+
+        /* Query:                  MainModule */
+        case 1:
+
+        /* Prolog:                 DeclsImports */
+        case 6:
+
+        /* DeclsImports:           decl_imps (DeclImport, DeclsImports) */
+        case 7:
+
+        /* DeclImport:             LibraryModule */
+        case 23:
+
+            /* These are the interesting paths to follow */
+            for (unsigned short i = 0; nts[i]; i++)
+                process_fun_sigs (kids[i], nts[i]);
+            break;
+
+        default:
+            break;
+    }
+}
+
 /**
  * Reducer function. This is the heart of this source file. It
  * contains all the action code for the above burg patterns.
@@ -679,6 +812,7 @@ reduce (PFpnode_t * p, int goalnt)
     rule = PFfs_rule (STATE_LABEL (p), goalnt);
 
     /* PFinfo (OOPS_NOTICE, "match for rule %i", rule); */
+    assert (rule);
 
     /* initialize the kids[] vector */
     for (unsigned short i = 0; i < MAX_KIDS; i++)
@@ -826,21 +960,17 @@ reduce (PFpnode_t * p, int goalnt)
              *     list (PFvar_t pointers).
              *     This has already happened during function checking.
              *
-             * (2) Set function signature (particularly the type information).
+             * (2) Set function signatures
+             *     This has been done already during process_fun_sigs().
              * 
-             * (3) Process other function declarations.
-             *     (We require this to have function signatures available
-             *     if functions call each other. We will thus top-down
-             *     process this rule.)
+             * (3) Translate function body.
              *
-             * (4) Translate function body.
-             *
-             * (5) Store the Core equivalent of the function body in
+             * (4) Store the Core equivalent of the function body in
              *     the PFfun_t data structure. Parameter variables will
              *     appear free in this Core expression.
              *     Step (3) is what we do here.
              *
-             * [(6) Before executing the Core code for this function,
+             * [(5) Before executing the Core code for this function,
              *      the back-end (e.g., algebra translation) needs to
              *      fill the variable environment with bindings for all
              *      the function parameters.
@@ -859,19 +989,14 @@ reduce (PFpnode_t * p, int goalnt)
 
             PFvar_t *v = new_var (NULL);
 
-            /* compile function signature */
-            reduce (kids[0], nts[0]);
-            reduce (kids[1], nts[1]);
+            /*
+             * No need to compile function signature.  This has been
+             * done already in process_fun_sigs().
+             */
 
-            L(p)->sem.fun->par_ty = parameter_types (LLL(p));
-            L(p)->sem.fun->ret_ty = C(LLR(p))->sem.type;
-
-            /* Compile other functions (means we will compile all
-             * function signatures before we compile any function body. */
-            reduce (kids[3], nts[3]);
-
-            /* compile function body */
+            /* recurse */
             reduce (kids[2], nts[2]);
+            reduce (kids[3], nts[3]);
 
             /*
              * Apply function conversion to the function result
@@ -896,20 +1021,6 @@ reduce (PFpnode_t * p, int goalnt)
         {   /* TOPDOWN */
 
             /*
-             * External functions:
-             *
-             * (1) Create a unique PFfun_t data structure, containing
-             *     type information, number of arguments, and an argument
-             *     list (PFvar_t pointers).
-             *     This has already happened during function checking.
-             *
-             * (2) Set function signature (particularly the type information).
-             * 
-             * (3) Process other function declarations.
-             *     (We require this to have function signatures available
-             *     if functions call each other. We will thus top-down
-             *     process this rule.)
-             *
              * Parse tree situation for function declarations:
              *
              *                   decls_imps
@@ -921,15 +1032,12 @@ reduce (PFpnode_t * p, int goalnt)
              *  ParamList  ReturnType
              */
 
-            /* compile function signature */
-            reduce (kids[0], nts[0]);
-            reduce (kids[1], nts[1]);
-
-            L(p)->sem.fun->par_ty = parameter_types (LLL(p));
-            L(p)->sem.fun->ret_ty = C(LLR(p))->sem.type;
-
-            /* Compile other functions (means we will compile all
-             * function signatures before we compile any function body. */
+            /*
+             * We have already handled the function signature, so
+             * nothing left to do for external functions.
+             *
+             * just recurse and handle other declarations
+             */
             reduce (kids[2], nts[2]);
 
         } break;
@@ -982,7 +1090,7 @@ reduce (PFpnode_t * p, int goalnt)
         case 22:
             break;
 
-        /* DeclImport:             ModuleDecl */
+        /* DeclImport:             LibraryModule */
         case 23:
             break;
 
@@ -3426,7 +3534,8 @@ PFfs (PFpnode_t *r)
     PFfs_label (r);
 
     /* invoke compilation */
-    reduce (r, 1);
+    process_fun_sigs (r, 1);    /* compile function signatures first */
+    reduce (r, 1);              /* then all the rest */
 
     /* sanity: current function/argument list stacks need to be empty */
     assert (PFarray_empty (funs));
