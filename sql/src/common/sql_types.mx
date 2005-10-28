@@ -82,6 +82,7 @@ extern void sql_subtype_destroy(sql_subtype *t);
 extern int type_cmp(sql_type *t1, sql_type *t2);
 extern int subtype_cmp(sql_subtype *t1, sql_subtype *t2);
 extern int is_subtype(sql_subtype *t1, sql_subtype *t2);
+extern char *subtype2string(sql_subtype *t);
 
 extern sql_type *sql_create_type(char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char eclass, char *name);
 extern void type_destroy(sql_type *t);
@@ -461,6 +462,24 @@ is_subtype(sql_subtype *t1, sql_subtype *t2)
 	/* subtypes are only equal iff
 	   they map onto the same systemtype */
 	return (type_cmp(t1->type, t2->type) == 0);
+}
+
+char *
+subtype2string(sql_subtype *t)
+{
+	char buf[BUFSIZ]; 
+
+	if (t->digits > 0) {
+		if (t->scale > 0)
+			snprintf(buf, BUFSIZ, "%s(%d,%d)", 
+				t->type->sqlname, t->digits, t->scale);
+		else
+			snprintf(buf, BUFSIZ, "%s(%d)", 
+				t->type->sqlname, t->digits);
+	} else {
+			snprintf(buf, BUFSIZ, "%s", t->type->sqlname);
+	}
+	return _strdup(buf);
 }
 
 sql_subaggr *

@@ -815,13 +815,23 @@ char *symbol2string(mvc *sql, symbol *se)
 		}
 		return NULL;
 	} 	
+	case SQL_CAST: {
+		dlist *dl = se->data.lval;
+		char *val = symbol2string(sql, dl->h->data.sym);
+		char *tpe = subtype2string(&dl->h->next->data.typeval);
+	
+		len = snprintf( buf+len, BUFSIZ-len, "cast ( %s as %s )",
+				val, tpe);
+		_DELETE(val);
+		_DELETE(tpe);
+		break;
+	}
 	case SQL_AGGR:
 	case SQL_SELECT:
 	case SQL_PARAMETER:
 	case SQL_CASE:
 	case SQL_COALESCE:
 	case SQL_NULLIF:
-	case SQL_CAST:
 	default:
 		return NULL;
 	}
