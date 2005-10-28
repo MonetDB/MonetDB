@@ -111,15 +111,15 @@ int pqueue_enqueue_@1@2(BAT *h,
 		 @3 *el)
 {
   BUN hbase;
-  BUN tmp,ins,cur;
+  BUN ins,cur;
   int hBUNsize;
 
   int p, posel;
+  char ch;
+  int i;
 
   hbase = BUNfirst(h);
   hBUNsize = BUNsize(h);
-
-  tmp = (BUN)GDKmalloc(hBUNsize);
 
   posel = BATcount(h); /*last position*/
   BUNins(h, (ptr)idx, (ptr)el);
@@ -130,9 +130,9 @@ int pqueue_enqueue_@1@2(BAT *h,
     cur = hbase+p*hBUNsize;
     if (*(@3 *)BUNtloc(h,ins) @4 *(@3 *)BUNtloc(h,cur)) {
       /* swap element with its parent */
-      memcpy(tmp, cur, hBUNsize); 
-      memcpy(cur, ins, hBUNsize);
-      memcpy(ins, tmp, hBUNsize);
+	  for(i=0; i<hBUNsize; i++){
+		ch= cur[i]; cur[i]= ins[i]; ins[i]= ch;
+	  }
       
       ins = cur;
       posel = parent(posel);
@@ -140,7 +140,6 @@ int pqueue_enqueue_@1@2(BAT *h,
     else break;
   }
   
-  GDKfree(tmp);
   return GDK_SUCCEED;
 }
 
@@ -149,17 +148,19 @@ int pqueue_enqueue_@1@2(BAT *h,
 int pqueue_movedowntop_@1@2(BAT *h)
 {
   BUN hbase;
-  BUN tmp,swp,cur;
+  BUN swp,cur;
   int hBUNsize;
 
   int swap, num_elems;
 
   int posel;
 
+  char ch;
+  int i;
+
   hbase = BUNfirst(h);
   hBUNsize = BUNsize(h);
 
-  tmp = (BUN)GDKmalloc(hBUNsize);
   cur = hbase;
   num_elems = BATcount(h);
   posel = 0;
@@ -183,17 +184,15 @@ int pqueue_movedowntop_@1@2(BAT *h)
       if (*(@3 *)BUNtloc(h,swp) @4 *(@3 *)BUNtloc(h,cur))
         {
 	  /*swap elements*/
-	  memcpy(tmp, cur, hBUNsize); 
-          memcpy(cur, swp, hBUNsize);
-          memcpy(swp, tmp, hBUNsize);
-
+	  for(i=0; i<hBUNsize; i++){
+		ch= cur[i]; cur[i]= swp[i]; swp[i]= ch;
+	  }
 	  cur = swp;
 	  posel = swap;
         }
       else break;
     }
 
-  GDKfree(tmp);
   return GDK_SUCCEED;
 }
 
@@ -306,15 +305,15 @@ int pqueue_topn_@1@2(BAT **H, BAT *t, int *N)
 int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
 {
   BUN hbase;
-  BUN tmp,ins,cur;
+  BUN ins,cur;
   int hBUNsize;
 
   int p, posel;
+  char ch;
+  int i;
 
   hbase = BUNfirst(h);
   hBUNsize = BUNsize(h);
-
-  tmp = (BUN)GDKmalloc(hBUNsize);
 
   posel = BATcount(h); /*last position*/
   BUNins(h, (ptr)idx, (ptr)el);
@@ -325,17 +324,15 @@ int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
     cur = hbase+p*hBUNsize;
     if (atom_CMP(BUNtail(h,ins), BUNtail(h,cur), tpe) @2 0 ) {
       /* swap element with its parent */
-      memcpy(tmp, cur, hBUNsize); 
-      memcpy(cur, ins, hBUNsize);
-      memcpy(ins, tmp, hBUNsize);
-      
+	  for(i=0; i<hBUNsize; i++){
+		ch= cur[i]; cur[i]=ins[i]; ins[i]=ch;
+	  }
       ins = cur;
       posel = parent(posel);
     }
     else break;
   }
   
-  GDKfree(tmp);
   return GDK_SUCCEED;
 }
 
@@ -344,18 +341,19 @@ int pqueue_enqueue_any@1(BAT *h, oid *idx, ptr el, int tpe)
 int pqueue_movedowntop_any@1(BAT *h)
 {
   BUN hbase;
-  BUN tmp,swp,cur;
+  BUN swp,cur;
   int hBUNsize;
 
   int tpe = BATttype(h);
   int swap, num_elems;
 
   int posel;
+  char ch;
+  int i;
 
   hbase = BUNfirst(h);
   hBUNsize = BUNsize(h);
 
-  tmp = (BUN)GDKmalloc(hBUNsize);
   cur = hbase;
   num_elems = BATcount(h);
   posel = 0;
@@ -381,9 +379,9 @@ int pqueue_movedowntop_any@1(BAT *h)
       if (atom_CMP( BUNtail(h,swp), BUNtail(h,cur), tpe) @2 0 )
         {
 	  /*swap elements*/
-	  memcpy(tmp, cur, hBUNsize); 
-          memcpy(cur, swp, hBUNsize);
-          memcpy(swp, tmp, hBUNsize);
+		for(i=0;i<hBUNsize; i++){
+			ch= cur[i]; cur[i]=swp[i]; swp[i]=ch;
+		}
 
 	  cur = swp;
 	  posel = swap;
@@ -391,7 +389,6 @@ int pqueue_movedowntop_any@1(BAT *h)
       else break;
     }
 
-  GDKfree(tmp);
   return GDK_SUCCEED;
 }
 
