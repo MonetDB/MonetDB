@@ -2241,6 +2241,8 @@ AX3aggrX3_count(int *retid, int *bid, int *eid, bit *ignore_nils)
 	if (CMDaggrX3_count(&bn, b, e, ignore_nils) == GDK_SUCCEED) {
 		BBPincref(*retid = bn->batCacheid, TRUE);
 		BBPunfix(*retid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(e->batCacheid);
 		return MAL_SUCCEED;
 	}
 	BBPunfix(b->batCacheid);

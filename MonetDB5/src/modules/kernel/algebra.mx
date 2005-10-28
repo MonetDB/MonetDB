@@ -1803,6 +1803,7 @@ ALGtopN(int *res, int *bid, lng *top)
 	if (b == NULL) {
 		return throwMessage("algebra.top", "Cannot access descriptor");
 	}
+	/* TOP N works inplace, ie deletes ... */
 	(void) BATtopN(b, (size_t) *top);
 	BBPincref(*res = b->batCacheid, TRUE);
 	BBPunfix(b->batCacheid);
@@ -2000,14 +2001,13 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 	@:derefStr(b,t,low);@
 	@:derefStr(b,t,high);@
 	CMDuselect(&bn, b, low, high);
+	BBPunfix(b->batCacheid);
 	if (bn) {
 		bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
-		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
 	return throwMessage("algebra.uselect", "GDKerror");
 }
 
@@ -2376,7 +2376,7 @@ mal_export str ALGhtsort(int *result, int *lid);
 str
 ALGhtsort(int *result, int *lid)
 {
-	BAT *b, *bc, *bk, *bn = NULL;
+	BAT *b, *bc, *bk, *bn = NULL, *bku;
 	size_t cnt;
 	ptr p, q;
 
@@ -2387,15 +2387,18 @@ ALGhtsort(int *result, int *lid)
 	bn = BATnew(b->htype, b->ttype, cnt);
 	if (bn == 0)
 		return throwMessage("algebra.htsort", "GDKerror");
-	bk = BATsort(BATkunique(b));
+	bk = BATsort(bku = BATkunique(b));
+	BBPunfix(bku->batCacheid);
 	BATloop(bk, p, q) {
 		b = (((b)->batCacheid < 0) ? (b) : BATmirror(b));
 		bc = BATselect(b, p, p);
 		bc = BATsort(bc);
 		bc = (((bc)->batCacheid < 0) ? (bc) : BATmirror(bc));
 		BATins(bn, bc);
+		BBPunfix(bc->batCacheid);
 	}
 	BBPunfix(b->batCacheid);
+	BBPunfix(bk->batCacheid);
 	if (bn) {
 		bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
@@ -2409,7 +2412,7 @@ mal_export str ALGthsort(int *result, int *lid);
 str
 ALGthsort(int *result, int *lid)
 {
-	BAT *b, *bc, *bk, *bn = NULL;
+	BAT *b, *bc, *bk, *bn = NULL, *bku;
 	size_t cnt;
 	ptr p, q;
 
@@ -2421,12 +2424,14 @@ ALGthsort(int *result, int *lid)
 	if (bn == 0)
 		return throwMessage("algebra.thsort", "GDKerror");
 	b = (((b)->batCacheid < 0) ? (b) : BATmirror(b));
-	bk = BATsort(BATkunique(b));
+	bk = BATsort(bku = BATkunique(b));
+	BBPunfix(bku->batCacheid);
 	BATloop(bk, p, q) {
 		bc = BATselect(b, p, p);
 		bc = BATsort(bc);
 		BATins(bn, bc);
 	}
+	BBPunfix(bk->batCacheid);
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		bn = BATsetaccess(bn, 1);
@@ -2446,11 +2451,11 @@ ALGrevert(int *result, int *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		return throwMessage("algebra.tsort", "Cannot access descriptor");
 	}
-	bn= BATcopy(b);
+	bn = BATcopy(b);
+	BBPunfix(b->batCacheid);
 	BATrevert(bn);
 	BBPincref(*result= bn->batCacheid,TRUE);
 	BBPunfix(bn->batCacheid);
-	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2545,8 +2550,8 @@ ALGmarkHead(int *result, int *bid, oid *base)
 	}
 
 	BBPincref(*result = bn->batCacheid, TRUE);
-	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2569,14 +2574,13 @@ ALGhashsplit(int *result, int *bid, int *nfrag)
 		return throwMessage("algebra.hashsplit", "Cannot access descriptor");
 	}
 	CMDhashsplit(&bn, b, nfrag);
+	BBPunfix(b->batCacheid);
 	if (bn) {
-		BBPunfix(b->batCacheid);
 		bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
 	return throwMessage("algebra.hashsplit", "GDKerror");
 }
 
@@ -2590,14 +2594,13 @@ ALGuhashsplit(int *result, int *bid, int *nfrag)
 		return throwMessage("algebra.uhashsplit", "Cannot access descriptor");
 	}
 	CMDuhashsplit(&bn, b, nfrag);
+	BBPunfix(b->batCacheid);
 	if (bn) {
-		BBPunfix(b->batCacheid);
 		bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
 	}
-	BBPunfix(b->batCacheid);
 	return throwMessage("algebra.uhashsplit", "GDKerror");
 }
 
@@ -2674,7 +2677,6 @@ ALGlike(int *ret, int *bid, str *k)
 	CMDlike(&bn, b, *k);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		BBPunfix(b->batCacheid);
 		bn = BATsetaccess(bn, 1);
 		BBPincref(*ret = bn->batCacheid, TRUE);
 		BBPunfix(*ret);

@@ -740,8 +740,8 @@ CMDBATnewDerived(MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		cap = *(int *) getArgReference(s, p, 2);
 	else
 		cap = BATcount(b);
-	BBPunfix(b->batCacheid);
 	o = b->hseqbase;
+	BBPunfix(b->batCacheid);
 
 	res = (int *) getArgReference(s, p, 0);
 	msg = (str) BKCnewBATint(res, &ht, &tt, &cap);

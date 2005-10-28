@@ -786,7 +786,7 @@ str CMDbat@1init(int *ret, int *l, @1 *cst) {
 	BATseqbase(dst,0);
 	bat@1filler(dst,*cst, (size_t) BATcount(left));
 	BBPunfix(left->batCacheid);
-	*ret= dst->batCacheid;
+	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
 mal_export str CMD@1init_int(int *ret, int *size, @1 *cst);
@@ -799,7 +799,7 @@ str CMD@1init_int(int *ret, int *size, @1 *cst) {
 	}
 	BATseqbase(dst,0);
 	bat@1filler(dst,*cst,s);
-	*ret= dst->batCacheid;
+	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
 mal_export str CMD@1init_lng(int *ret, lng *size, @1 *cst);
@@ -812,7 +812,7 @@ str CMD@1init_lng(int *ret, lng *size, @1 *cst) {
 	}
 	BATseqbase(dst,0);
 	bat@1filler(dst,*cst,s);
-	*ret= dst->batCacheid;
+	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
 mal_export str CMD@1init_sht(int *ret, sht *size, @1 *cst);
@@ -825,7 +825,7 @@ str CMD@1init_sht(int *ret, sht *size, @1 *cst){
 	}
 	BATseqbase(dst,0);
 	bat@1filler(dst,*cst,s);
-	*ret= dst->batCacheid;
+	*ret = dst->batCacheid;
 	return MAL_SUCCEED;
 }
 @c
@@ -992,23 +992,23 @@ str CMDbataccum@1_@3_@4_@5(int *ret, int *d, int *l, int *r)
 {	BAT *dst, *left, *right;
 	str msg;
 
-    if( (dst= BATdescriptor(*d)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
-    if( (left= BATdescriptor(*l)) == NULL ){
+	if( (dst= BATdescriptor(*d)) == NULL ){
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
+	if( (left= BATdescriptor(*l)) == NULL ){
 		BBPunfix(dst->batCacheid);
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
-    if( (right= BATdescriptor(*r)) == NULL ){
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
+	if( (right= BATdescriptor(*r)) == NULL ){
 		BBPunfix(dst->batCacheid);
 		BBPunfix(left->batCacheid);
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
 
 	@:chkSize(dst,left,CMDbataccum@1)@
 	@:chkSize(dst,right,CMDbataccum@1)@
 
-	*ret = dst->batCacheid;
+	BBPincref(*ret = dst->batCacheid,TRUE);
 	msg= bataccum@1_@3_@4_@5(dst,left,right);
 	dst->tsorted = 0;
 	BBPunfix(dst->batCacheid);
@@ -1022,15 +1022,15 @@ str CMDbataccum@1cst_@3_@4_@5(int *ret, int *r, int *l, void *cst)
 	int s1,s2;
 	ptr p1,p2, hend;
 
-    if( (dst= BATdescriptor(*r)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
-    if( (left= BATdescriptor(*l)) == NULL ){
+	if( (dst= BATdescriptor(*r)) == NULL ){
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
+	if( (left= BATdescriptor(*l)) == NULL ){
 		BBPunfix(dst->batCacheid);
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
 	@:chkSize(dst,left,CMDbataccum@1)@
-	*ret = dst->batCacheid;
+	BBPincref(*ret = dst->batCacheid,TRUE);
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
 	hend = (str) BUNlast(dst);
@@ -1053,15 +1053,15 @@ str CMDbataccum@1cst2_@3_@4_@5(int *ret, int *r, void *cst, int *l)
 	int s1,s2;
 	ptr p1,p2, hend;
 
-    if( (dst= BATdescriptor(*r)) == NULL ){
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
-    if( (left= BATdescriptor(*l)) == NULL ){
+	if( (dst= BATdescriptor(*r)) == NULL ){
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
+	if( (left= BATdescriptor(*l)) == NULL ){
 		BBPunfix(dst->batCacheid);
-        return throwMessage("batcalc.@1", "Cannot access descriptor");
-    }
+		return throwMessage("batcalc.@1", "Cannot access descriptor");
+	}
 	@:chkSize(dst,left,CMDbataccum@1)@
-	*ret = dst->batCacheid;
+	BBPincref(*ret = dst->batCacheid,TRUE);
 	@:batinit(1,dst)@
 	@:batinit(2,left)@
 	hend = (str) BUNlast(dst);
@@ -1222,6 +1222,7 @@ str CMDunary@1(int *ret, int *bid){
 		return throwMessage("batcalc.unary", "no copy available ");
 	}
 	msg= CMDunaryAccum@1(ret,&dst->batCacheid,bid);
+	BBPunfix(dst->batCacheid);
 	BBPunfix(b->batCacheid);
 	return msg;
 }
@@ -1312,9 +1313,9 @@ str CMDcmp@1(int *ret, int *l, int *r)
 bunins_failed:
 	dst->hsorted= BAThordered(left);
 	dst->tsorted= (BATtordered(left)&BATtordered(right))?GDK_SORTED_REV:0;
-	BBPincref(*ret = dst->batCacheid,TRUE);
+	BBPincref(*ret = dst->batCacheid, TRUE);
+	msg = compareaccum@1(dst,left,right);
 	BBPunfix(*ret);
-	msg= compareaccum@1(dst,left,right);
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	return msg;
@@ -1343,6 +1344,7 @@ str CMDcmpaccum@1(int *ret, int *d, int *l, int *r)
 
 	*ret = dst->batCacheid;
 	msg= compareaccum@1(dst,left,right);
+	BBPincref(*ret,TRUE);
 	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
@@ -1409,6 +1411,7 @@ str CMDcmp@1cst(int *ret, int *l, void *cst)
 bunins_failed:
 	dst->hsorted= BAThordered(left);
 	msg= CMDcmpaccum@1cst(ret,&dst->batCacheid,l,cst);
+	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	return msg;
 }
@@ -1469,6 +1472,8 @@ CMDbitbataccumNOT(int *ret, int *d, int *l)
 	}
 
 	*ret = dst->batCacheid;
+	BBPincref(*ret= dst->batCacheid,TRUE);
+	BBPunfix(dst->batCacheid);
 	BBPunfix(left->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1477,6 +1482,7 @@ mal_export str CMDbitbatNOT(int *ret, int *l);
 str
 CMDbitbatNOT(int *ret, int *l)
 {
+	str res;
 	BAT *dst, *left;
 	int s1, xx, d;
 	ptr p1;
@@ -1502,7 +1508,9 @@ CMDbitbatNOT(int *ret, int *l)
 	dst->hsorted = BAThordered(left);
 	d = dst->batCacheid;
 	BBPunfix(left->batCacheid);
-	return CMDbitbataccumNOT(ret, &d, l);
+	res = CMDbitbataccumNOT(ret, &d, l);
+	BBPunfix(d);
+	return res;
 }
 
 @- Implementation of coercions
@@ -1836,6 +1844,7 @@ str CMDifThenCst_@1(int *ret, int *iid, ptr *eid){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(bn->batCacheid);
 	BBPunfix(ib->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1867,6 +1876,7 @@ str CMDifThenElseCst_@1(int *ret, int *iid, ptr *tid, ptr *eid){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(bn->batCacheid);
 	BBPunfix(ib->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1888,6 +1898,7 @@ str CMDprojecthead_@1(int *ret,ptr *val, int *iid){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(bn->batCacheid);
 	BBPunfix(ib->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1909,6 +1920,7 @@ str CMDprojecttail_@1(int *ret,int *iid, ptr *val){
 	}
 bunins_failed:
 	BBPincref( *ret= bn->batCacheid,TRUE);
+	BBPunfix(bn->batCacheid);
 	BBPunfix(ib->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1968,6 +1980,7 @@ CMDifThenElse(int *ret, int *iid, int *tid, int *eid)
 	}
       bunins_failed:
 	BBPincref(*ret = bn->batCacheid, TRUE);
+	BBPunfix(bn->batCacheid);
 	BBPunfix(ib->batCacheid);
 	BBPunfix(tb->batCacheid);
 	BBPunfix(eb->batCacheid);
@@ -2013,6 +2026,7 @@ CMDifThenElseCst1(int *ret, int *iid, ptr *val, int *eid)
 	}
       bunins_failed:
 	BBPincref(*ret = bn->batCacheid, TRUE);
+	BBPunfix(bn->batCacheid);
 	BBPunfix(ib->batCacheid);
 	BBPunfix(eb->batCacheid);
 	return MAL_SUCCEED;
@@ -2057,6 +2071,7 @@ CMDifThenElseCst2(int *ret, int *iid, int *tid, ptr *val)
 	}
       bunins_failed:
 	BBPincref(*ret = bn->batCacheid, TRUE);
+	BBPunfix(bn->batCacheid);
 	BBPunfix(ib->batCacheid);
 	BBPunfix(tb->batCacheid);
 	return MAL_SUCCEED;
