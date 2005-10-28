@@ -69,7 +69,9 @@ module 'pathfinder'
 #-------------------------------------------------#
 # signature					  # name
 # str						  # type
-#-------------------------------------------------#
+#-------------------------------------------------------------------------------------------------#
+[ "add_qname(str, str, str, BAT[void,BAT]) : oid"						  ]
+[ "add_qnames(BAT[void,str], BAT[void,str], BAT[void,str], BAT[void,BAT]) : BAT[void,oid]"	  ]
 [ "create_ws() : BAT[void,BAT]"                                   ]
 [ "delete_all_docs(bit) : void"			  ]
 [ "delete_doc(str) : void"			  ]
@@ -77,6 +79,7 @@ module 'pathfinder'
 [ "pfstart() : void"				  ]
 [ "pfstart(bit) : void"				  ]
 [ "shred_doc(str, str) : void"														  ]
+[ "text_constr(BAT[void,str], BAT[void,BAT]) : BAT[void,BAT]"					  ]
 [ "xmlcache_add_rule(str, any) : void"		  ]
 [ "xmlcache_del_rule(str) : void"		  ]
 [ "xmlcache_print() : void"			  ]
