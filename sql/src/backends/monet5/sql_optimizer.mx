@@ -125,6 +125,9 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MALfcn setWriteMode = 0;
 	Symbol s;
 	lng clk = GDKusec();
+	str bindRef= putName("bind",4);
+	str sqlRef= putName("sql",3);
+	str modeRef= putName("setWriteMode",12);
 
 #ifdef _SQL_OPTIMIZER_DEBUG
 	stream_printf(GDKout, "First call to FXoptimizer\n");
@@ -141,7 +144,7 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (mb->stop <= TOSMALL)
 		return MAL_SUCCEED;
 
-	s = findMALSymbol(getName("bat",3), getName("setWriteMode",12));
+	s = findMALSymbol(getName("bat",3), modeRef);
 	if (s)
 		setWriteMode = getSignature(s)->fcn;
 
@@ -157,9 +160,8 @@ to extract some compiler relevant properties from the catalogue.
  	setVarType(mb, getArg(ns[0],0), TYPE_bit);
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (functionName(p) && moduleName(p) && 
-			strncmp(functionName(p), "bind", 4) == 0 && 
-			strcmp(moduleName(p), "sql") == 0) {
+		if (functionName(p)== bindRef && 
+			moduleName(p)== sqlRef) {
 			ns[k++] = p;
 		}
 @-
@@ -197,7 +199,7 @@ for consider a block that depends on the size of a BAT.
 The prelude code has been generated, now we can inject the remaining
 instructions, producing a syntactic correct MAL program again.
 @c
-	v = newVariable(mb, GDKstrdup("always"), TYPE_bit);
+	v = newTmpVariable(mb, TYPE_bit);
 	p = newInstruction(NULL,ASSIGNsymbol);
 	p->barrier = BARRIERsymbol;
 	p->argv[0] = v;
@@ -208,9 +210,8 @@ instructions, producing a syntactic correct MAL program again.
 		int doit = 0;
 
 		p = getInstrPtr(mb, i);
-		if (!(functionName(p) && moduleName(p) && 
-			  strncmp(functionName(p), "bind", 4) == 0 && 
-			  strcmp(moduleName(p), "sql") == 0))
+		if (!( functionName(p)== bindRef && 
+			  moduleName(p)== sqlRef))
 			doit = 1;
 @-
 Skip it if the writeMode relates to a base table

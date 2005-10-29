@@ -118,6 +118,7 @@ static str reverseRef;
 static str sql_cacheRef;
 
 void initSQLreferences(){
+	if( batcalcRef != 0) return;
 	batcalcRef= putName("batcalc",7);
 	batstrRef= putName("batstr",6);
 	batRef= putName("bat",3);
@@ -1540,7 +1541,6 @@ backend_call(backend *be, Client c, cq *cq)
 	mvc *m = be->mvc;
 	InstrPtr q;
 	MalBlkPtr mb = c->curprg->def;
-	char name[BUFSIZ];
 
 	q = newStmt2(mb, sql_cacheRef, cq->name);
 	/* cached (factorized queries return bit??) */

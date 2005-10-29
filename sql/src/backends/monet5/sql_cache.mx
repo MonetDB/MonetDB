@@ -137,6 +137,7 @@ SQLCacheRemove(int *ret, str *nme)
 		return throwMessage("sql_cache.remove", "internal error, sql_cache entry missing\n");
 	shutdownFactory(s->def);
 	deleteSymbol(scope, s);
+	/*delName(*nme,strlen(*nme));	reduce namespace once implemented */
 	return MAL_SUCCEED;
 }
 
