@@ -74,7 +74,7 @@ static Namespace backup;
 
 static void expandNamespace(int incr){
     str *nme;
-    int *length, *link, *hit;
+    int *length, *link, *hit, newsize;
 
     if(incr < 0){
         GDKwarning("expandNamespace:illegal increment\n");
@@ -84,10 +84,11 @@ static void expandNamespace(int incr){
         GDKwarning("Namespace becomes too large\n");
     }
 
-    nme= (str *) GDKmalloc(sizeof(str *) * namespace.size+incr);
-    link= (int *) GDKmalloc(sizeof(int) * namespace.size+incr);
-    hit = (int *) GDKmalloc(sizeof(int) * namespace.size+incr);
-    length = (int *) GDKmalloc(sizeof(int) * namespace.size+incr);
+	newsize= namespace.size+incr;
+    nme= (str *) GDKmalloc(sizeof(str *) * newsize);
+    link= (int *) GDKmalloc(sizeof(int) * newsize);
+    hit = (int *) GDKmalloc(sizeof(int) * newsize);
+    length = (int *) GDKmalloc(sizeof(int) * newsize);
     memcpy(nme, namespace.nme, sizeof(str *) * namespace.nmetop);
     memcpy(link, namespace.link, sizeof(int) * namespace.nmetop);
     memcpy(hit, namespace.hit, sizeof(int) * namespace.nmetop);
@@ -101,10 +102,10 @@ static void expandNamespace(int incr){
     GDKfree(namespace.length); namespace.length= length;
 
 #ifdef _BACKUP_
-    nme= (str *) GDKmalloc(sizeof(str *) * backup.nmetop+incr);
-    link= (int *) GDKmalloc(sizeof(int) * backup.nmetop+incr);
-    hit = (int *) GDKmalloc(sizeof(int) * backup.nmetop+incr);
-    length = (int *) GDKmalloc(sizeof(int) * backup.nmetop+incr);
+    nme= (str *) GDKmalloc(sizeof(str *) * (backup.nmetop+incr));
+    link= (int *) GDKmalloc(sizeof(int) * (backup.nmetop+incr));
+    hit = (int *) GDKmalloc(sizeof(int) * (backup.nmetop+incr));
+    length = (int *) GDKmalloc(sizeof(int) * (backup.nmetop+incr));
     memcpy(nme, backup.nme, sizeof(str *) * backup.nmetop);
     memcpy(link, backup.link, sizeof(int) * backup.nmetop);
     memcpy(hit, backup.hit, sizeof(int) * backup.nmetop);
@@ -242,7 +243,7 @@ str putName(str nme, int len)
 		k=l;
     }
 
-	if( len >= 1022) return 0;
+	if(len>=1024) GDKfatal("Identifier too long");
 	memcpy(buf, nme, (size_t) len); 
 	buf[len]=0;
 

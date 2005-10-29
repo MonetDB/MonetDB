@@ -195,7 +195,9 @@ Try to locate the module
 	}
 
 @-
-Try the program at large.
+Try the program at large. This is necessary to find
+functions who are stored in a file named differently
+from the module name.
 @c
 	dl = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
 	if( dl != NULL ){
