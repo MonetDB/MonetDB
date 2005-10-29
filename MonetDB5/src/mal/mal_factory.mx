@@ -233,6 +233,7 @@ mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str shutdownFactory(MalBlkPtr mb);
+mal_export str shutdownFactoryByName(str nme);
 mal_export str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[]);
 #endif /*  _MAL_FACTORY_H */
 @-
@@ -530,6 +531,31 @@ shutdownFactory(MalBlkPtr mb)
 	return MAL_SUCCEED;
 }
 
+str
+shutdownFactoryByName(str nme){
+	Plant pl, plim;
+	InstrPtr p;
+
+#ifdef DEBUG_MAL_FACTORY
+	stream_printf(GDKout, "shutdownFactory called\n");
+#endif
+	plim = plants + lastPlant;
+	for (pl = plants; pl < plim; pl++)
+		if (pl->factory ) {
+			p= getInstrPtr(pl->factory,0);
+printf("compare %s agains:%s\n",nme,functionId(p));
+			if( strcmp(nme, functionId(p)) ) continue;
+			if( pl->stk) GDKfree(pl->stk);
+			pl->stk= 0;
+			pl->factory = 0;
+			pl->inuse = 0;
+			pl->client = NULL;
+			pl->caller = NULL;
+			pl->pci = NULL;
+			pl->env = NULL;
+		}
+	return MAL_SUCCEED;
+}
 str
 finishFactory(MalBlkPtr mb, InstrPtr pp, int pc)
 {
