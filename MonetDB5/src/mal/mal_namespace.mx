@@ -194,13 +194,22 @@ str getName(str nme, int len)
     }
 	return 0;
 }
+@-
+Name deletion from the namespace is tricky, because there may
+be multiple threads active on the structure. Moreover, the
+symbol may be picked up by a concurrent thread and stored
+somewhere.
+To avoid all these problems, the namespace should become
+private to each Client, but this would mean expensive look ups
+deep into the kernel to access the context.
+@c
 void delName(str nme, int len){
 	str n;
 	n= getName(nme,len);
 	if( nme[0]==0 || n == 0) return ;
 	
 	mal_set_lock(mal_contextLock,"putName");
-	GDKwarning("Namespace garbage collection not yet implemented");
+	GDKwarning("Namespace garbage collection not available");
 	mal_unset_lock(mal_contextLock,"putName");
 }
 str putName(str nme, int len)
