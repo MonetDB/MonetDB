@@ -39,12 +39,12 @@ for the duration of a session.
 #include "sql_catalog.h"
 
 typedef void (*freestack_fptr) (backend_stack stk);
-typedef void (*freecode_fptr) (backend_code code, backend_stack stk, int nr);
+typedef void (*freecode_fptr) (backend_code code, backend_stack stk, int nr, char *name);
 typedef void (*interpret_fptr) (backend_stack stk, char *code);
 
 extern void backend_init(freestack_fptr fstack, freecode_fptr fcode, interpret_fptr finterpret);
 extern void backend_freestack(backend_stack stk);
-extern void backend_freecode(backend_code code, backend_stack stk, int nr);
+extern void backend_freecode(backend_code code, backend_stack stk, int nr, char *name);
 extern void backend_interpret(backend_stack stk, char *code);
 
 #endif /* _SQL_BACKEND_H_ */
@@ -72,10 +72,10 @@ backend_freestack(backend_stack stk)
 }
 
 void
-backend_freecode(backend_code code, backend_stack stk, int nr)
+backend_freecode(backend_code code, backend_stack stk, int nr, char *name)
 {
 	if (_fcode)
-		_fcode(code, stk, nr);
+		_fcode(code, stk, nr, name);
 }
 
 void

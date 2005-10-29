@@ -301,13 +301,13 @@ reset_arg_tree(YYSTREE args)
 }
 
 void
-monet4_freecode(backend_code code, backend_stack stk, int nr)
+monet4_freecode(backend_code code, backend_stack stk, int nr, char *name)
 {
 	YYSTREE callnode = (YYSTREE) code;
 
+	(void)nr;
 	if (code) {
 		Client client;
-		char name[BUFSIZ];
 		int i;
 		int l = callnode->yysons[1]->cnt;
 		ValPtr argv;
@@ -327,7 +327,6 @@ monet4_freecode(backend_code code, backend_stack stk, int nr)
 		/* cleanup proc */
 		Myyfree(callnode);
 
-		snprintf(name, BUFSIZ, "sql%d", nr);
 		CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
 		TBL_delproc(client, name);
 	}

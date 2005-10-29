@@ -90,11 +90,16 @@ monet5_parse(backend_stack stk, char *cmd)
 }
 
 static void
-monet5_freecode(backend_code code, backend_stack stk, int nr)
+monet5_freecode(backend_code code, backend_stack stk, int nr, char *name)
 {
+	int ret = 0;
+
 	(void) code;
 	(void) stk;
 	(void) nr;
+	SQLCacheRemove(&ret, &name);
+	(void) ret;
+
 #ifdef _SQL_SCENARIO_DEBUG
 	stream_printf(GDKout, "#monet5_free:%d\n", nr);
 #endif
@@ -244,25 +249,6 @@ SQLinitClient(Client c)
 	return msg;
 }
 
-static
-void clear_cache(mvc *m ) 
-{
-	if (m->qc) {
-		oid id;
-		int ret = 0;
-
-		for (id = 0; id < m->qc->id; id ++) {
-			char buf[BUFSIZ], *nme ;
-			snprintf(buf, BUFSIZ, "sql%d", (int) id);
-			nme= putName(buf,strlen(buf));
-			SQLCacheRemove(&ret, &nme);
-		}
-		(void) ret;
-		qc_destroy(m->qc);
-	}
-	m->qc = qc_create();
-}
-
 str
 SQLexitClient(Client c)
 {
@@ -275,7 +261,9 @@ SQLexitClient(Client c)
 	}
 	if ((backend *) c->state[PARSER] && (mvc *) c->state[OPTIMIZE]) {
 		m= (mvc *) c->state[OPTIMIZE];
-		clear_cache(m);
+		if (m->qc) 
+			qc_destroy(m->qc);
+		m->qc = qc_create();
 		mvc_destroy((mvc *) c->state[OPTIMIZE]);
 		backend_destroy((backend *) c->state[PARSER]);
 		/* files are already closed */
@@ -557,10 +545,11 @@ the duration of these calls.
 
 int SQLautocommit(Client c, mvc *m){
 	if (m->auto_commit && m->trans) {
-		if (m->cache && (m->type == Q_TRANS || 
-			m->type == Q_SCHEMA || 
+		if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || 
 			m->qc->id >100)) {
-			clear_cache(m);
+			if (m->qc) 
+				qc_destroy(m->qc);
+			m->qc = qc_create();
 		}
 		if (mvc_status(m) < 0) {
 			mvc_rollback(m, 0, NULL);
@@ -1209,7 +1198,9 @@ Then the SQL profile table is just a view over a few basic bats.
 	 * and on schema changes
 	 */
 	if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id >100)) {
-		clear_cache(m);
+		if (m->qc) 
+			qc_destroy(m->qc);
+		m->qc = qc_create();
 	}
 
 	return msg;

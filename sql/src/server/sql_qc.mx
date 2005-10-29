@@ -107,7 +107,7 @@ cq_delete(cq *q)
 	/* params and name are allocated using sa */
 
 	if (q->code)
-		backend_freecode(q->code, q->stk, q->id);
+		backend_freecode(q->code, q->stk, q->id, q->name);
 	if (q->stk)
 		backend_freestack(q->stk);
 	if (q->codestring)
