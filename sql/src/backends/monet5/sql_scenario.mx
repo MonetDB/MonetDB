@@ -908,6 +908,8 @@ produce code.
 			be->q->stk = 0;
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name, strlen(be->q->name));
+			if( m->mode != m_debug)
+				m->mode = m_inplace;
 			m->sa = NULL;
 			m->sym = NULL;
 		} 
@@ -929,7 +931,7 @@ produce code.
 In the final phase we add any debugging control
 @c
 	/* turn off debugger */
-	if( debugPlan() && m->mode != m_execute)
+	if( debugPlan() && (m->mode != m_execute && m->mode != m_inplace))
 		SQLsetDebugger(c, m, FALSE);
 
 	if (explainPerformance()) {

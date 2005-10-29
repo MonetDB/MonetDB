@@ -121,7 +121,6 @@ str
 SQLCacheRemove(int *ret, str *nme)
 {
 	Module scope;
-	Symbol s;
 	Client c = getClient();
 
 	(void) ret;
@@ -132,12 +131,7 @@ SQLCacheRemove(int *ret, str *nme)
 
 	if (scope == NULL)
 		return throwMessage("sql_cache.remove", "internal error, sql_cache missing\n");
-	s = findSymbolInModule(scope, *nme);
-	if (s == NULL)
-		return throwMessage("sql_cache.remove", "internal error, sql_cache entry missing\n");
-	shutdownFactory(s->def);
-	deleteSymbol(scope, s);
-	/*delName(*nme,strlen(*nme));	reduce namespace once implemented */
+	shutdownFactoryByName(scope, *nme);
 	return MAL_SUCCEED;
 }
 
