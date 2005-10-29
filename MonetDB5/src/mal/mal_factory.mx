@@ -233,7 +233,7 @@ mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str shutdownFactory(MalBlkPtr mb);
-mal_export str shutdownFactoryByName(str nme);
+mal_export str shutdownFactoryByName(Module m,str nme);
 mal_export str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[]);
 #endif /*  _MAL_FACTORY_H */
 @-
@@ -532,9 +532,10 @@ shutdownFactory(MalBlkPtr mb)
 }
 
 str
-shutdownFactoryByName(str nme){
+shutdownFactoryByName(Module m, str nme){
 	Plant pl, plim;
 	InstrPtr p;
+	Symbol s;
 
 #ifdef DEBUG_MAL_FACTORY
 	stream_printf(GDKout, "shutdownFactory called\n");
@@ -543,8 +544,16 @@ shutdownFactoryByName(str nme){
 	for (pl = plants; pl < plim; pl++)
 		if (pl->factory ) {
 			p= getInstrPtr(pl->factory,0);
-printf("compare %s agains:%s\n",nme,functionId(p));
-			if( strcmp(nme, functionId(p)) ) continue;
+			if( strcmp(nme, functionId(p)) != 0) continue;
+			s = findSymbolInModule(m, getName(nme,strlen(nme)) );
+			if (s == NULL){
+				return throwMessage("sql_cache.remove", 
+					"internal error, sql_cache entry missing\n");
+			}
+
+			deleteSymbol(m,s);
+			pl->factory = 0;
+
 			if( pl->stk) GDKfree(pl->stk);
 			pl->stk= 0;
 			pl->factory = 0;
@@ -553,6 +562,7 @@ printf("compare %s agains:%s\n",nme,functionId(p));
 			pl->caller = NULL;
 			pl->pci = NULL;
 			pl->env = NULL;
+			return MAL_SUCCEED;
 		}
 	return MAL_SUCCEED;
 }
