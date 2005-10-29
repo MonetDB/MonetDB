@@ -70,9 +70,9 @@ typedef struct mvc {
 	char *schema;
 	char *user;
 	char *role;
+	int clientid;		/* id of the owner */
 	int timezone;		/* minutes west of UTC */
 	int cache;		/* some queries should not be cached ! */
-	int factory;		/* enable/disable the factory */
 
 	modes_t mode;
 	modes_t explain; 
@@ -94,7 +94,7 @@ extern int mvc_init(int debug, backend_stack stk);
 extern void mvc_exit();
 extern void mvc_logmanager();
 
-extern mvc *mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws);
+extern mvc *mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws);
 extern void mvc_destroy(mvc *c);
 
 extern ssize_t mvc_status(mvc *c);
@@ -506,7 +506,7 @@ mvc_release(mvc *m, char *name)
 mvc *mvc_spare = NULL;
 
 mvc *
-mvc_reset(mvc *m, int cache, backend_stack stk, bstream *rs, stream *ws)
+mvc_reset(mvc *m, int clientid, backend_stack stk, bstream *rs, stream *ws)
 {
 	if (mvc_debug)
 		fprintf(stderr, "mvc_reset\n");
@@ -514,7 +514,7 @@ mvc_reset(mvc *m, int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->errstr[0] = '\0';
 
 	if (!m->qc)
-		m->qc = qc_create();
+		m->qc = qc_create(clientid);
 	if (!m->sa)
 		m->sa = sa_create();
 
@@ -536,8 +536,8 @@ mvc_reset(mvc *m, int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->schema = m->role = m->user = NULL;
 
 	m->timezone = 0;
-	m->cache = cache;
-	m->factory = cache;
+	m->clientid = clientid;
+	m->cache = 0;
 
 	m->mode = m_normal;
 	m->explain = m_normal;
@@ -559,7 +559,7 @@ mvc_reset(mvc *m, int cache, backend_stack stk, bstream *rs, stream *ws)
 }
 
 mvc *
-mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
+mvc_create(int clientid, backend_stack stk, bstream *rs, stream *ws)
 {
 	mvc *m;
 
@@ -569,7 +569,7 @@ mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 		m = mvc_spare;
 		mvc_spare = NULL;
 		store_unlock();
-		return mvc_reset(m, cache, stk, rs, ws);
+		return mvc_reset(m, clientid, stk, rs, ws);
 	}
 	store_unlock();
 */
@@ -579,7 +579,7 @@ mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 
 	m->errstr[0] = '\0';
 
-	m->qc = qc_create();
+	m->qc = qc_create(clientid);
 	m->sa = sa_create();
 
 	m->stk = stk;
@@ -591,8 +591,8 @@ mvc_create(int cache, backend_stack stk, bstream *rs, stream *ws)
 	m->role_id = m->user_id = -1;
 	m->schema = m->role = m->user = NULL;
 	m->timezone = 0;
-	m->cache = cache;
-	m->factory = cache;
+	m->clientid = clientid;
+	m->cache = 0;
 
 	m->mode = m_normal;
 	m->explain = m_normal;

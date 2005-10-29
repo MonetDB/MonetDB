@@ -329,8 +329,6 @@ sql_update_var(mvc *m, char *name)
 		m->mode = m_explain;
 	} else if (strcmp(name, "cache") == 0) {
 		m->cache = sql_get_bit_var(m, "cache");
-	} else if (strcmp(name, "factory") == 0) {
-		m->factory = sql_get_bit_var(m, "factory");
 	}
 	return GDK_SUCCEED;
 }
@@ -410,10 +408,6 @@ sql_session(mvc *m)
 	else
 		table_insert(tr, s, "cache", "true", "boolean", &rw, NULL);
 
-	if (m->factory)
-		table_insert(tr, s, "factory", "true", "boolean", &rw, NULL);
-	else
-		table_insert(tr, s, "factory", "false", "boolean", &rw, NULL);
 /* Actually 'factory' and 'cache' are optimizer decisions too
 	table_insert(tr, s, "optimizer", "sql.optimizer();", "varchar", &rw, NULL);
 */

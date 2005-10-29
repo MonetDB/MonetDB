@@ -66,12 +66,12 @@ typedef struct cq {
 } cq;
 
 typedef struct qc {
-	int client;
+	int clientid;
 	int id;
 	cq *q;
 } qc;
 
-extern qc *qc_create();
+extern qc *qc_create(int clientid);
 extern void qc_destroy(qc *cache);
 extern cq *qc_find(qc *cache, int id);
 extern cq *qc_match(qc *cache, symbol *s, atom **params, int plen, int key);
@@ -86,13 +86,11 @@ extern int qc_size(qc *cache);
 #include "sql_qc.h"
 #include "sql_scope.h"
 
-static int qc_id = 0;
-
 qc *
-qc_create()
+qc_create(int clientid)
 {
 	qc *r = NEW(qc);
-	r->client = qc_id++;
+	r->clientid = clientid;
 	r->id = 0;
 
 	r->q = NULL;
@@ -102,16 +100,16 @@ qc_create()
 static void
 cq_delete(cq *q)
 {
-	if (q->sa) 
-		sa_destroy(q->sa);
-	/* params and name are allocated using sa */
-
 	if (q->code)
 		backend_freecode(q->code, q->stk, q->id, q->name);
 	if (q->stk)
 		backend_freestack(q->stk);
 	if (q->codestring)
 		_DELETE(q->codestring);
+
+	/* params and name are allocated using sa, ie need to be delete last */
+	if (q->sa) 
+		sa_destroy(q->sa);
 	_DELETE(q);
 }
 
@@ -236,7 +234,7 @@ qc_insert(qc *cache, sql_allocator *sa, symbol *s, atom **params, int paramlen, 
 	n->type = type;
 	n->key = key;
 	n->codestring = cmd;
-	(void) snprintf(name, BUFSIZ, "s%d_%d", n->id, cache->client);
+	(void) snprintf(name, BUFSIZ, "s%d_%d", n->id, cache->clientid);
 	n->name = sa_strdup(sa, name);
 	cache->q = n;
 	return n;

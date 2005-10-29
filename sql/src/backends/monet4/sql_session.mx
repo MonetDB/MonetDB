@@ -214,7 +214,7 @@ sqlcleanup(mvc *c, int err)
 	   (c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id >100)) {
 		if (c->qc)
 			qc_destroy(c->qc);
-		c->qc = qc_create();
+		c->qc = qc_create(c->clientid);
 	}
 
 	return err;
@@ -470,7 +470,7 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console)
 					if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id >100)) {
 						if (m->qc)
 							qc_destroy(m->qc);
-						m->qc = qc_create();
+						m->qc = qc_create(m->clientid);
 					}
 					if (mvc_status(m) < 0) {
 						mvc_rollback(m, 0, NULL);
@@ -856,7 +856,8 @@ These lines should be eaten away into the prompt is encountered.
 @c
 
 	rs = bstream_create(in, isa_block_stream(in) ? (128 * BLOCK) : 0);
-	m = mvc_create(1, (backend_stack) stk, rs, out);
+	m = mvc_create(stk, (backend_stack) stk, rs, out);
+	m->cache = 1;
 	if (blocked)
 		m->scanner.mode = BLOCKED;
 	schema = mvc_login(m, user, passwd);
@@ -913,7 +914,8 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 		return handle_argerror(res, lt->cnt, 0);
 
 	rs = bstream_create(in, 0);
-	m = mvc_create(1, (backend_stack) stk, rs, out);
+	m = mvc_create(0, (backend_stack) stk, rs, out);
+	m->cache = 1;
 	if (!m) {
 		GDKerror("Couldn't start sqlconsole");
 		return GDK_FAIL;
@@ -950,7 +952,8 @@ mvc_new(Cntxt stk, YYSTREE lt, ValPtr res)
 		return handle_argerror(res, lt->cnt, 0);
 
 	rs = bstream_create(in, 0);
-	m = mvc_create(1, (backend_stack) stk, rs, out);
+	m = mvc_create(0, (backend_stack) stk, rs, out);
+	m->cache = 1;
 
 	mvc_trans(m);		/* start transaction */
 	m->user_id = m->role_id = USER_MONETDB;

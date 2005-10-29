@@ -9,11 +9,9 @@ stdout of test 'timezone` in directory 'src/test` itself:
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
-
-printf("\nReady.\n");
+#Ready to accept connections on koala.ins.cwi.nl:47407
 
 Ready.
-quit();
 
 Over..
 
@@ -58,7 +56,6 @@ Over..
 [ "current_role",	"monetdb",	"varchar",	0	]
 [ "current_timezone",	"0",	"sec_interval",	0	]
 [ "cache",	"true",	"boolean",	0	]
-[ "factory",	"true",	"boolean",	0	]
 
 # 20:57:28 >  
 # 20:57:28 >  Done.

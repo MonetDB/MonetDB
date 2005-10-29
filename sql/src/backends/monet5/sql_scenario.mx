@@ -218,7 +218,8 @@ SQLinitAdmin(Client c)
 		return msg;
 	
 	if ((backend *) c->state[PARSER] == 0) {
-		m = mvc_create(1, 0, c->fdin, c->fdout);
+		m = mvc_create((c-mal_clients), 0, c->fdin, c->fdout);
+		m->cache = 1;
 		/* replace user name with client record setting later on */
 		schema = mvc_login(m, "monetdb", "monetdb");
 		if (!schema) 
@@ -263,7 +264,7 @@ SQLexitClient(Client c)
 		m= (mvc *) c->state[OPTIMIZE];
 		if (m->qc) 
 			qc_destroy(m->qc);
-		m->qc = qc_create();
+		m->qc = qc_create(m->clientid);
 		mvc_destroy((mvc *) c->state[OPTIMIZE]);
 		backend_destroy((backend *) c->state[PARSER]);
 		/* files are already closed */
@@ -549,7 +550,7 @@ int SQLautocommit(Client c, mvc *m){
 			m->qc->id >100)) {
 			if (m->qc) 
 				qc_destroy(m->qc);
-			m->qc = qc_create();
+			m->qc = qc_create(m->clientid);
 		}
 		if (mvc_status(m) < 0) {
 			mvc_rollback(m, 0, NULL);
@@ -1200,7 +1201,7 @@ Then the SQL profile table is just a view over a few basic bats.
 	if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id >100)) {
 		if (m->qc) 
 			qc_destroy(m->qc);
-		m->qc = qc_create();
+		m->qc = qc_create(m->clientid);
 	}
 
 	return msg;
