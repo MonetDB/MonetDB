@@ -82,6 +82,7 @@ decimal_to_str(lng v, sql_subtype *t)
 		buf[cur--] = '0';
 	if (neg)
 		buf[cur--] = '-';
-	return _strdup(buf);
+	assert(cur >= -1);
+	return _strdup(buf+cur+1);
 }
 
