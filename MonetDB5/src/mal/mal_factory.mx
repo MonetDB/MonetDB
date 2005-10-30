@@ -512,27 +512,6 @@ This code should also prepare for handling factories
 that are still running threads in parallel.
 @c
 
-static void
-freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
-{
-	int i;
-
-	for (i = start; i < mb->vtop;) {
-		clearVariable(mb, i);
-
-		if (glb) {
-			garbageElement(&glb->stk[i]);
-			/* clean stack entry */
-			glb->stk[i].vtype = TYPE_int;
-			glb->stk[i].val.ival = 0;
-			glb->stk[i].len = 0;
-		}
-		i++;
-	}
-	mb->vtop = start;
-}
-
-
 str
 shutdownFactory(MalBlkPtr mb)
 {
@@ -544,14 +523,14 @@ shutdownFactory(MalBlkPtr mb)
 	plim = plants + lastPlant;
 	for (pl = plants; pl < plim; pl++)
 		if (pl->factory == mb) {
-			freeVariables(mb, pl->stk, 0);
+			resetVariables(mb, pl->stk, 0);
+			freeStack(pl->stk);
 			pl->factory = 0;
 			pl->inuse = 0;
 			pl->client = NULL;
 			pl->caller = NULL;
 			pl->pci = NULL;
 			pl->env = NULL;
-			freeStack(pl->stk);
 		}
 	return MAL_SUCCEED;
 }
@@ -575,7 +554,7 @@ shutdownFactoryByName(Module m, str nme){
 				return throwMessage("sql_cache.remove", 
 					"internal error, sql_cache entry missing\n");
 			}
-			freeVariables(pl->factory, pl->stk, 0);
+			resetVariables(pl->factory, pl->stk, 0);
 			freeStack(pl->stk);
 
 			deleteSymbol(m,s);
