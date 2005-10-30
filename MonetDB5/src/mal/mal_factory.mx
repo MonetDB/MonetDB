@@ -234,7 +234,7 @@ mal_export str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str shutdownFactory(MalBlkPtr mb);
 mal_export str shutdownFactoryByName(Module m,str nme);
-mal_export str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[]);
+mal_export str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag);
 #endif /*  _MAL_FACTORY_H */
 @-
 The initial implementation is geared at a central
@@ -363,7 +363,7 @@ not interested in the results produced.
 @c
 #define VALcopy2(lhs,rhs) if( rhs->vtype < TYPE_str) *lhs = *rhs; else VALcopy(lhs,rhs);
 str
-callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[]){
+callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[], char flag){
 	Plant pl;
 	InstrPtr psig = getInstrPtr(mb, 0);
 	int i;
@@ -388,6 +388,7 @@ callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[]){
 		stk->stksize= mb->vsize;
 		stk->blk= mb;
 		stk->up = 0;
+		stk->cmd= flag;
 		/* initialize the stack */
 		for(i= psig->argc; i< mb->vtop; i++)
 		if( isConstant(mb,i) && isVarUsed(mb,i) ){

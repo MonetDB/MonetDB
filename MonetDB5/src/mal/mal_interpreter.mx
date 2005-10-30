@@ -436,7 +436,7 @@ all arguments and return values.
 		return ret;
 	case FACTORYsymbol:
 	case FACcall:
-		return callFactory(cntxt, mb, argv);
+		return callFactory(cntxt, mb, argv,debug);
 	case PATcall:
 	case CMDcall:
 	default:
