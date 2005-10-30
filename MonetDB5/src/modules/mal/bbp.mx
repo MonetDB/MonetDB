@@ -827,7 +827,7 @@ CMDBBPprojectNil(int *ret, int *bid)
 	BBPunfix(b->batCacheid);
 	if (bn) {
 		BBPincref(*ret = bn->batCacheid, TRUE);
-		BBPunfix(b->batCacheid);
+		BBPunfix(bn->batCacheid);
 		return MAL_SUCCEED;
 	}
 	return throwMessage("mal.project", "GDKerror");
