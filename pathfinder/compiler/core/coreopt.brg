@@ -758,7 +758,6 @@ reduce (PFcnode_t * p, int goalnt)
                               PFqname (PFns_pf,
                                        "item-sequence-to-untypedAtomic"))) {
                 
-                PFcnode_t *c  = PFmalloc (sizeof (PFcnode_t));
                 PFvar_t   *v1 = new_var (NULL);
                 PFvar_t   *v2 = new_var (NULL);
                 PFfun_t   *fn_string
@@ -766,7 +765,6 @@ reduce (PFcnode_t * p, int goalnt)
                 PFfun_t   *fn_string_join
                     = function (PFqname (PFns_fn, "string-join"));
 
-                c = LL(p);
                 *p = *let (letbind (var (v1),
                                     for_ (forbind (forvars (var (v2), nil ()),
                                                    LL(p)),
