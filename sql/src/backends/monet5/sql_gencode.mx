@@ -404,12 +404,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, s->op1.cval->base.name);
 			q = pushInt(mb, q, s->flag);
 			k = getDestVar(q);
-			s->nr = k;
 
 			if (s->flag > RDONLY) {
 				q = newStmt1(mb, batRef, "setWriteMode");
 				q = pushArgument(mb, q, k);
+				k = getDestVar(q);
 			}
+			s->nr = k;
 			@:SQLpostlude@
 		}
 			break;
@@ -425,12 +426,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, s->op1.tval->base.name);
 			q = pushInt(mb, q, s->flag);
 			k = getDestVar(q);
-			s->nr = k;
 
 			if (s->flag > RDONLY) {
 				q = newStmt1(mb, batRef, "setWriteMode");
 				q = pushArgument(mb, q, k);
+				k = getDestVar(q);
 			}
+			s->nr = k;
 			@:SQLpostlude@
 		}
 			break;
@@ -446,12 +448,13 @@ _dumpstmt(backend *sql, MalBlkPtr mb, stmt *s)
 			q = pushStr(mb, q, s->op1.idxval->base.name);
 			q = pushInt(mb, q, s->flag);
 			k = getDestVar(q);
-			s->nr = k;
 
 			if (s->flag > RDONLY) {
 				q = newStmt1(mb, batRef, "setWriteMode");
 				q = pushArgument(mb, q, k);
+				k = getDestVar(q);
 			}
+			s->nr = k;
 			@:SQLpostlude@
 		}
 			break;

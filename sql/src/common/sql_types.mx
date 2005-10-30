@@ -895,6 +895,16 @@ sql_create_arg(char *name, sql_subtype *t)
 	return a;
 }
 
+static sql_arg *
+create_arg(char *name, sql_subtype *t)
+{
+	sql_arg *a = sql_create_arg(name, t);
+
+	sql_subtype_destroy(t);
+	return a;
+}
+
+
 sql_arg *
 arg_dup(sql_arg *oa)
 {
@@ -917,38 +927,44 @@ sql_func *
 sql_create_func(char *name, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int scale_fixing)
 {
 	list *l = list_create((fdestroy) &arg_destroy);
+	sql_subtype sres;
 
 	if (tpe1)
-		list_append(l, sql_create_arg(NULL, sql_create_subtype(tpe1, 0, 0)));
+		list_append(l,create_arg(NULL, sql_create_subtype(tpe1, 0, 0)));
 	if (tpe2)
-		list_append(l, sql_create_arg(NULL, sql_create_subtype(tpe2, 0, 0)));
+		list_append(l,create_arg(NULL, sql_create_subtype(tpe2, 0, 0)));
 
-	return sql_create_func_(name, imp, l, sql_create_subtype(res, 0, scale_fixing));
+	sql_init_subtype(&sres, res, 0, scale_fixing);
+	return sql_create_func_(name, imp, l, &sres);
 }
 
 sql_func *
 sql_create_func3(char *name, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int scale_fixing)
 {
 	list *l = list_create((fdestroy) &arg_destroy);
+	sql_subtype sres;
 
-	list_append(l, sql_create_arg(NULL, sql_create_subtype(tpe1, 0, 0)));
-	list_append(l, sql_create_arg(NULL, sql_create_subtype(tpe2, 0, 0)));
-	list_append(l, sql_create_arg(NULL, sql_create_subtype(tpe3, 0, 0)));
+	list_append(l, create_arg(NULL, sql_create_subtype(tpe1, 0, 0)));
+	list_append(l, create_arg(NULL, sql_create_subtype(tpe2, 0, 0)));
+	list_append(l, create_arg(NULL, sql_create_subtype(tpe3, 0, 0)));
 
-	return sql_create_func_(name, imp, l, sql_create_subtype(res, 0, scale_fixing));
+	sql_init_subtype(&sres, res, 0, scale_fixing);
+	return sql_create_func_(name, imp, l, &sres);
 }
 
 sql_func *
 sql_create_func4(char *name, char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int scale_fixing)
 {
 	list *l = list_create((fdestroy) &arg_destroy);
+	sql_subtype sres;
 
-	list_append(l, sql_create_arg(NULL, sql_create_subtype(tpe1, 0, 0)));
-	list_append(l, sql_create_arg(NULL, sql_create_subtype(tpe2, 0, 0)));
-	list_append(l, sql_create_arg(NULL, sql_create_subtype(tpe3, 0, 0)));
-	list_append(l, sql_create_arg(NULL, sql_create_subtype(tpe4, 0, 0)));
+	list_append(l, create_arg(NULL, sql_create_subtype(tpe1, 0, 0)));
+	list_append(l, create_arg(NULL, sql_create_subtype(tpe2, 0, 0)));
+	list_append(l, create_arg(NULL, sql_create_subtype(tpe3, 0, 0)));
+	list_append(l, create_arg(NULL, sql_create_subtype(tpe4, 0, 0)));
 
-	return sql_create_func_(name, imp, l, sql_create_subtype(res, 0, scale_fixing));
+	sql_init_subtype(&sres, res, 0, scale_fixing);
+	return sql_create_func_(name, imp, l, &sres);
 }
 
 
@@ -1345,11 +1361,11 @@ sqltypeinit()
 		sql_create_func("qgramnormalize", "qgramnormalize", *t, NULL, *t, SCALE_NONE);
 
 		sql_create_func("levenshtein", "levenshtein", *t, *t, INT, SCALE_FIX);
+		{ sql_subtype sres;
+		sql_init_subtype(&sres, *t, 0, 0);
 		sql_create_func_("levenshtein", "levenshtein",
-				 list_append(list_append
-					     (list_append
-					      (list_append(list_append(list_create((fdestroy) &arg_destroy), sql_create_arg(NULL, sql_create_subtype(*t, 0, 0))), sql_create_arg(NULL, sql_create_subtype(*t, 0, 0))),
-					       sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))), sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))), sql_create_arg(NULL, sql_create_subtype(INT, 0, 0))), sql_create_subtype(*t, 0, 0));
+				 list_append(list_append (list_append (list_append(list_append(list_create((fdestroy) &arg_destroy), create_arg(NULL, sql_create_subtype(*t, 0, 0))), create_arg(NULL, sql_create_subtype(*t, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), create_arg(NULL, sql_create_subtype(INT, 0, 0))), &sres);
+		}
 	}
 }
 

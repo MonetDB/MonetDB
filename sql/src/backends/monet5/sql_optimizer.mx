@@ -288,7 +288,6 @@ to allow inspection.
 		m = ((mvc *) c->state[OPTIMIZE]);
 		showErrors();
 
-
 		if (c->listing)
 			printFunction(c->fdout, c->curprg->def, c->listing);
 		stream_flush(c->fdout);

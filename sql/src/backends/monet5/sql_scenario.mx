@@ -139,10 +139,6 @@ SQLexit(Client c)
 		return throwMessage("SQLexit",
 			"Catalogue not available\n");
 	}
-	/* the SQL scenario support may never be finished
-	mvc_exit();
-	SQLinitialized= FALSE;
-	*/
 	return MAL_SUCCEED;
 }
 
@@ -265,7 +261,8 @@ SQLexitClient(Client c)
 		if (m->qc) 
 			qc_destroy(m->qc);
 		m->qc = qc_create(m->clientid);
-		mvc_destroy((mvc *) c->state[OPTIMIZE]);
+		res_tables_destroy(m->results);
+		mvc_destroy(m);
 		backend_destroy((backend *) c->state[PARSER]);
 		/* files are already closed */
 		c->state[OPTIMIZE] = NULL;
@@ -303,7 +300,7 @@ corresponding MAL block as it is known in the
 SQL_cache, where it can be picked up.
 @c
 
-void
+static void
 freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i;
@@ -1021,7 +1018,7 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 
 #ifdef DEBUG_CALLMAL
 	stream_printf(GDKout,"SQLexecute\n");
-	printFunction(GDKout,((Symbol)q->code)->def,LIST_MAL_ALL);
+	printFunction(GDKout, ((Symbol)q->code)->def, LIST_MAL_ALL);
 #endif
 	mb = ((Symbol)q->code)->def;
 	pci= getInstrPtr(mb,0);
@@ -1108,7 +1105,7 @@ SQLengine(Client c)
 	if( explainPerformance())
 		T0 = GDKusec();
 	if (m->mode == m_inplace) {
-		msg= SQLexecutePrepared(c,be, be->q );
+		msg= SQLexecutePrepared(c, be, be->q );
 		goto cleanup_engine;
 	}
 	if( m->mode == m_prepare){
