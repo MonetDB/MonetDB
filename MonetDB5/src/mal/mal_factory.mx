@@ -224,6 +224,7 @@ exception to a Factory?
 #include "mal_interpreter.h"
 #include "mal_function.h"
 #include "mal_exception.h"
+#include "mal_session.h"
 
 #define POLICYimmediate 1	/* let user wait for reply */
 #define POLICYprivate   2	/* each client its own plants */
