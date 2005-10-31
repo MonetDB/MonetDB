@@ -1187,7 +1187,8 @@ ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* remove the ARoptimizer request */
 	if (pci)
 		removeInstruction(mb, pci);
-	optimizerCheck(mb, "aliasRemoval", oldstop-mb->stop-1, GDKusec() - clk);
+	optimizerCheck(mb, "aliasRemoval", oldstop-mb->stop-(pci?1:0), 
+			GDKusec() - clk);
 	return NULL;
 }
 
@@ -1462,18 +1463,22 @@ COoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = getInstrPtr(mb, i);
 		if (moduleId(p) == NULL)
 			continue;
-		if (moduleId(p)==calcRef) {
+		if (moduleId(p)==calcRef && p->argc == 2) {
 			k= coercionOptimizerStep(mb, i, p);
 			actions += k;
 			if( k) i--;
 		}
 	}
 	/* remove the COcoercion request */
+	if (pci)
+		removeInstruction(mb, pci);
 	optimizerCheck(mb, "coercionOptimizer", actions, GDKusec() - clk);
 	if (mb->errors) {
 		showErrors();
 		return throwMessage("COoptimizer", "Optimization raised errors");
 	}
+	if( actions) 
+		return ARoptimizer(mb,stk,0);
 	return MAL_SUCCEED;
 }
 str
