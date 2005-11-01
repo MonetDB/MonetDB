@@ -141,8 +141,19 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 
-	if (mb->stop <= TOSMALL)
-		return MAL_SUCCEED;
+@-
+The factor code is generated as soon as you have encountered a bind
+operation.
+@c
+	if (mb->stop <= TOSMALL){
+		for(i=0; i< mb->stop; i++){
+			p= getInstrPtr(mb,0);
+			if (functionName(p)== bindRef && 
+				moduleName(p)== sqlRef)  break;
+		}
+		if(i == mb->stop)
+			return MAL_SUCCEED;
+	}
 
 	s = findMALSymbol(getName("bat",3), modeRef);
 	if (s)
