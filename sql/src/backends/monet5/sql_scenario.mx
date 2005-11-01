@@ -347,6 +347,9 @@ SQLcompile(str *ret, str *expr, int *flag)
 		return throwMessage("SQLcompile", "Catalogue not available\n");
 
 	m = sql->mvc;
+	m->type= Q_PARSE;
+	if( !m->trans)
+		mvc_trans(m);
 	if (!m->sa)
 		m->sa = sa_create();
 	o = *m;
@@ -357,9 +360,8 @@ SQLcompile(str *ret, str *expr, int *flag)
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
 	strncpy(n, *expr, len);
-	n[len] = '\n';
-	n[len+1] = 0;
-	len++;
+	if(n[len] != '\n') n[len++] = '\n';
+	n[len] = 0;
 
 	buffer_init(b, n, len);
 	scanner_init( &m->scanner, 
