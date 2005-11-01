@@ -157,6 +157,18 @@
     .arity = 1, .par_ty = { PFty_boolean () },                           \
     .ret_ty = PFty_boolean (),                                           \
     .alg = PFbui_fn_not_bln }                                            \
+, /* fn:not (item*) as boolean  (F&O 7.3.1) */                           \
+  /* Note: After type checking, fn:not(item*) should actually no      */ \
+  /*       longer appear in Core trees.  The implicit semantics for   */ \
+  /*       fn:not() in fs.brg wraps the argument of fn:not() into an  */ \
+  /*       fn:boolean() call.  We need the signature fn:not(item*)    */ \
+  /*       here nevertheless to determine the correct expected type   */ \
+  /*       for fn:not() in fs.brg.                                    */ \
+  /*       (see Rule FuncArgList: args(Expr, FuncArgList)             */ \
+  { .ns = PFns_fn, .loc = "not",                                         \
+    .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
+    .ret_ty = PFty_boolean (),                                           \
+    .alg = NULL }                                                        \
 , /* fn:true () as boolean */                                            \
   { .ns = PFns_fn, .loc = "true",                                        \
     .arity = 0,                                                          \

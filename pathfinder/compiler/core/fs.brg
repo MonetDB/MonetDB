@@ -2516,10 +2516,43 @@ reduce (PFpnode_t * p, int goalnt)
         {
             PFfun_t *_root = function (PFqname (PFns_fn, "root"));
 
-            if (fs_dot)     
+            if (fs_dot)
                 C(p) = APPLY (_root, var (fs_dot));
             else
                 PFoops_loc (OOPS_NOCONTEXT, p->loc, "``.'' is unbound");
+
+#if 0
+    FIXME:
+        The code below is actually closer to the standard that
+        demands to not only translate the '/' operator into a
+        call to fn:root(.), but into
+
+          fn:root(.) treat as document .
+
+        However, milprint_summer cannot evaluate the typeswitch
+        involved, making '/' fail in any case.  We don't want to
+        break too much, but rather be slightly off the standard
+        for the time being.
+                                                 Jens (26.10.05)
+
+            PFvar_t *v1 = new_var (NULL);
+            PFfun_t *_root = function (PFqname (PFns_fn, "root"));
+            PFfun_t *fn_error = function (PFqname (PFns_fn, "error"));
+
+            if (fs_dot)
+                C(p) = let (letbind (var (v1), APPLY (_root, var (fs_dot))),
+                            typeswitch (
+                                var (v1),
+                                cases (
+                                    case_ (
+                                        seqtype (PFty_doc (
+                                            PFty_plus (PFty_xs_anyNode ()))),
+                                        var (v1)),
+                                    default_ (
+                                        APPLY (fn_error, str("err:XP0050"))))));
+            else
+                PFoops_loc (OOPS_NOCONTEXT, p->loc, "``.'' is unbound");
+#endif
         } break;
 
         /* LocationPath:           locpath (StepExpr, StepExpr) */
