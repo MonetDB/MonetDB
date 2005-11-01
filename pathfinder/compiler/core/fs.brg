@@ -2374,13 +2374,13 @@ reduce (PFpnode_t * p, int goalnt)
 #if 0
     FIXME:
         The code below is actually closer to the standard that
-        demands to not only translate the `/' operator into a
+        demands to not only translate the '/' operator into a
         call to fn:root(.), but into
 
           fn:root(.) treat as document .
 
         However, milprint_summer cannot evaluate the typeswitch
-        involved, making `/' fail in any case.  We don't want to
+        involved, making '/' fail in any case.  We don't want to
         break too much, but rather be slightly off the standard
         for the time being.
                                                  Jens (26.10.05)
