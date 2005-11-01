@@ -461,6 +461,7 @@ char *MT_heapbase = NULL;
 #ifdef HAVE_PTHREAD_H
 /* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
 #undef HAVE_CONFIG_H
+#include <sched.h>
 #include <pthread.h>
 #endif
 #ifdef HAVE_SEMAPHORE_H
@@ -996,9 +997,16 @@ MT_init_posix(int alloc_map)
 size_t
 MT_getrss()
 {
-	MEMORYSTATUSEX statex;
-	GlobalMemoryStatusEx (&statex);
-	return statex.dwMemoryLoad;
+#if (_WIN32_WINNT >= 0x0500)
+	MEMORYSTATUSEX state;
+	state.dwLength = sizeof(state);
+	GlobalMemoryStatusEx (&state);
+	return state.ullTotalPhys - state.ullAvailPhys;
+#else
+	MEMORYSTATUS state;
+	GlobalMemoryStatus (&state);
+	return state.dwTotalPhys - state.dwAvailPhys;
+#endif
 }
 
 char *

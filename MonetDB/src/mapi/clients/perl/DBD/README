@@ -15,13 +15,12 @@ SYNOPSIS
 DESCRIPTION
 
   DBD::monetdb is a Pure Perl client interface for the MonetDB Database Server.
-  However, it requires the SWIG generated MapiLib - a wrapper module for
-  libMapi.
+  It requires MonetDB::CLI (and one of its implementations).
 
 PREREQUISITES
 
   DBI
-  MapiLib
+  MonetDB::CLI
 
   MonetDB (http://monetdb.cwi.nl)
 
@@ -54,7 +53,8 @@ TESTING
     set DBI_USER=test
     set DBI_PASS=secret
 
-  Make sure libmapi is in your library search path.
+  Make sure libMapi is in your library search path (depending on the
+  MonetDB::CLI implementations in use).
 
   The tests will create tables with the name (or prefix) 'perl_dbd_test'
   in the current schema.

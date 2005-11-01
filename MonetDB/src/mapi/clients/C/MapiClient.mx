@@ -733,7 +733,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 	char *buf = NULL;
 	size_t length;
 	MapiHdl hdl = NULL;
-	MapiMsg rc;
+	MapiMsg rc = MOK;
 	int bufsize = 0;
 
 	if (file == NULL)
@@ -743,7 +743,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 		return 1;
 	}
 
-	bufsize = BUFSIZ * 64;
+	bufsize = BUFSIZ;
 	buf = malloc(bufsize);
 	if (!buf) {
 		fprintf(stderr, "cannot allocate memory for send buffer\n");
@@ -825,6 +825,7 @@ doFile(Mapi mid, const char *file, int skipequals)
 
 	free(buf);
 	if (file != NULL) fclose(fp);
+	fflush(stdout);
 	return 0;
 }
 
@@ -853,7 +854,7 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 	char *buf = NULL;
 	size_t length;
 	MapiHdl hdl = NULL;
-	MapiMsg rc;
+	MapiMsg rc = MOK;
 
 #ifdef HAVE_LIBREADLINE
 	if (prompt == NULL)
@@ -1015,13 +1016,13 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 			mapi_query_part(hdl, line, length);
 			CHECK_RESULT(mid, hdl, buf, continue);
 		}
-		if ((line == NULL || (length > 0 && line[length - 1] == '\n')) && linemode) {
+		if (linemode) {
 			assert(hdl != NULL);
 			/* If the server wants more but we're at the
 			   end of file (line == NULL), notify the
 			   server that we don't have anything more.
 			   If the server still wants more (shouldn't
-			   happen accordint to the protocol) we break
+			   happen according to the protocol) we break
 			   out of the loop (via the continue).  The
 			   assertion at the end will then go off. */
 			if (mapi_query_done(hdl) == MMORE && (line != NULL || mapi_query_done(hdl) == MMORE))

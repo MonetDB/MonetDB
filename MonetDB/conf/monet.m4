@@ -254,7 +254,7 @@ yes-*-*)
 		X_CFLAGS="$X_CFLAGS -Wno-format"
 		LDFLAGS="$LDFLAGS -no-undefined -L/usr/lib/w32api"
 		;;
-	*-irix*|*-darwin*)
+	*-freebsd*|*-irix*|*-darwin*)
 		CFLAGS="$CFLAGS -std=c99"
 		;;
 	*-solaris*)

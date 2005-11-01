@@ -35,6 +35,17 @@ between 25-50%.
 #ifndef _EMBEDDEDCLIENT_H_
 #define _EMBEDDEDCLIENT_H_
 
+#include "gdk.h"
+#ifdef HAVE_PTHREAD_H
+/* pthread.h on Windows includes config.h if HAVE_CONFIG_H is set */
+#undef HAVE_CONFIG_H
+#ifdef pid_t
+#undef pid_t
+#endif
+#include <sched.h>
+#include <pthread.h>
+#endif
+
 #include "monet_options.h"
 
 #ifdef _MSC_VER
@@ -54,11 +65,12 @@ embeddedclient_export Mapi embedded_mil(opt *set, int len);
 
 #endif /* _EMBEDDEDCLIENT_H_ */
 @c
+#include "embeddedclient.h"
 #include "monet.h"
 #include "monet_options.h"
 #include "initmodules.h"
 #include "Mapi.h"
-#include <pthread.h>
+
 
 static Client
 Monet_init(opt *set, int setlen)
