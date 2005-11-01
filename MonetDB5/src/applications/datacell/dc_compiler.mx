@@ -92,7 +92,7 @@ MAL2SQLtype(int tpe)
 {
 	switch (tpe) {
 	case TYPE_str:
-		return GDKstrdup("varchar");
+		return GDKstrdup("varchar(255)");
 	case TYPE_chr:
 		return GDKstrdup("char");
 	case TYPE_lng:
