@@ -21,8 +21,6 @@ Over..
 # 15:57:06 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=56244 ID.1333969.xq
 # 15:57:06 >  
 
-socket_readable: FIONREAD 0
-socket_readable: FIONREAD 0
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
 <b><c id="1"><d id="2"/></c><c/></b>

@@ -1,13 +1,13 @@
 stdout of test 'Q14` in directory 'tests/XPathMark` itself:
 
 
-# 19:14:00 >  
-# 19:14:00 >  ( pf -M -O3 Q14.xq | Mtimeout -timeout 60 Mserver "--config=/var/tmp/_Stable_PREFIX_MONETDB_GNU_32_d__/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/var/tmp/_Stable_PREFIX_PATHFINDER_GNU_32_d__/lib/MonetDB:/var/tmp/_Stable_PREFIX_MONETDB_GNU_32_d__/lib/MonetDB" --set "gdk_dbfarm=/var/tmp/_Stable_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/dbfarm" --set "sql_logdir=/var/tmp/_Stable_PREFIX_MONETDB_GNU_32_d__/var/MonetDB/log" --set mapi_port=40231 --set sql_port=58305 --set monet_prompt= --dbname=mTests_tests_XPathMark   --dbinit='module(pathfinder,pf_support,ascii_io);' )
-# 19:14:00 >  
+# 18:38:43 >  
+# 18:38:43 >  Mtimeout -timeout 180 Mserver "--config=/opt/MonetDB/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/home/teubner/pf/devel/runtime/.libs:/opt/MonetDB/lib/MonetDB" --set "gdk_dbfarm=/home/teubner/pf/devel/dbfarm" --set "sql_logdir=/home/teubner/pf/devel/log" --set mapi_port=30065 --set sql_port=45123 --set xquery_port=50144 --set monet_prompt= --trace "--dbname=mTests_tests_XPathMark" --dbinit="module(pathfinder); pfstart();" ; echo ; echo Over..
+# 18:38:43 >  
 
-# Monet Database Server V4.6.0_rc3
+# Monet Database Server V4.9.3
 # Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for i686-pc-linux-gnu/32bit; dynamically linked.
+# Compiled for i686-pc-linux-gnu/32bit with 32bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
 printf("\nReady.\n");
@@ -17,171 +17,12 @@ quit();
 
 Over..
 
-# 18:02:55 >  
-# 18:02:55 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=sn-1 --port=59075 q01.xq
-# 18:02:55 >  
+# 18:38:43 >  
+# 18:38:43 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=50144 Q14.xq
+# 18:38:43 >  
 
-<?xml version="1.0" encoding="utf-8"?>
-<XQueryResult>
-<person id="person0">
-<name>Edwige Rotger</name>
-<emailaddress>mailto:Rotger@unical.it</emailaddress>
-<phone>+0 (563) 40749141</phone>
-<creditcard>3555 7127 6716 8072</creditcard>
-</person>
-<person id="person1">
-<name>Bingning Tweedie</name>
-<emailaddress>mailto:Tweedie@temple.edu</emailaddress>
-<homepage>http://www.temple.edu/~Tweedie</homepage>
-<watches>
-<watch open_auction="open_auction2"/>
-<watch open_auction="open_auction0"/>
-<watch open_auction="open_auction4"/>
-</watches>
-</person>
-<person id="person2">
-<name>Rutger Merel</name>
-<emailaddress>mailto:Merel@msn.com</emailaddress>
-<phone>+0 (903) 40326671</phone>
-<address>
-<street>83 Keeffe St</street>
-<city>Long</city>
-<country>United States</country>
-<zipcode>20</zipcode>
-</address>
-<profile income="69682.40">
-<interest category="category0"/>
-<education>College</education>
-<gender>female</gender>
-<business>Yes</business>
-</profile>
-</person>
-<person id="person3">
-<name>Baldomir Melton</name>
-<emailaddress>mailto:Melton@versata.com</emailaddress>
-<creditcard>4396 8149 5210 4179</creditcard>
-<watches>
-<watch open_auction="open_auction3"/>
-</watches>
-</person>
-<person id="person4">
-<name>Mitch Koyama</name>
-<emailaddress>mailto:Koyama@imag.fr</emailaddress>
-<homepage>http://www.imag.fr/~Koyama</homepage>
-<creditcard>2742 7237 7761 6914</creditcard>
-</person>
-<person id="person5">
-<name>Alassane Hogan</name>
-<emailaddress>mailto:Hogan@unl.edu</emailaddress>
-<phone>+0 (762) 44078852</phone>
-<homepage>http://www.unl.edu/~Hogan</homepage>
-<watches>
-<watch open_auction="open_auction4"/>
-</watches>
-</person>
-<person id="person6">
-<name>Dietrich Maquelin</name>
-<emailaddress>mailto:Maquelin@cas.cz</emailaddress>
-<phone>+0 (416) 69304967</phone>
-<address>
-<street>76 Tasistro St</street>
-<city>Tokyo</city>
-<country>United States</country>
-<province>Utah</province>
-<zipcode>5</zipcode>
-</address>
-<creditcard>2684 4857 8392 9585</creditcard>
-<profile income="59534.23">
-<interest category="category0"/>
-<interest category="category0"/>
-<interest category="category0"/>
-<interest category="category0"/>
-<interest category="category0"/>
-<gender>female</gender>
-<business>No</business>
-</profile>
-</person>
-<person id="person7">
-<name>Vasanth Gaudioso</name>
-<emailaddress>mailto:Gaudioso@newpaltz.edu</emailaddress>
-<phone>+0 (756) 51213177</phone>
-<address>
-<street>11 Roccetti St</street>
-<city>Vancouver</city>
-<country>United States</country>
-<zipcode>7</zipcode>
-</address>
-<homepage>http://www.newpaltz.edu/~Gaudioso</homepage>
-<profile income="21300.50">
-<interest category="category0"/>
-<interest category="category0"/>
-<interest category="category0"/>
-<business>No</business>
-</profile>
-</person>
-<person id="person8">
-<name>Yeshayahu Soriano</name>
-<emailaddress>mailto:Soriano@att.com</emailaddress>
-<phone>+0 (724) 84384015</phone>
-<address>
-<street>58 Salveter St</street>
-<city>Las</city>
-<country>United States</country>
-<province>New Hampshire</province>
-<zipcode>19</zipcode>
-</address>
-<homepage>http://www.att.com/~Soriano</homepage>
-<profile income="24520.94">
-<interest category="category0"/>
-<business>Yes</business>
-</profile>
-</person>
-<person id="person9">
-<name>Svatopluk Quinlan</name>
-<emailaddress>mailto:Quinlan@smu.edu</emailaddress>
-<phone>+0 (532) 3727767</phone>
-<address>
-<street>2 Simaioforidis St</street>
-<city>Stockholm</city>
-<country>United States</country>
-<zipcode>32</zipcode>
-</address>
-<creditcard>5862 5383 6967 8859</creditcard>
-<profile income="83400.71">
-<interest category="category0"/>
-<interest category="category0"/>
-<education>Graduate School</education>
-<gender>female</gender>
-<business>Yes</business>
-</profile>
-</person>
-<person id="person10">
-<name>Jacinto Hacken</name>
-<emailaddress>mailto:Hacken@forwiss.de</emailaddress>
-<phone>+0 (533) 13164950</phone>
-<creditcard>5087 4652 1604 1420</creditcard>
-<profile income="68022.05">
-<interest category="category0"/>
-<interest category="category0"/>
-<interest category="category0"/>
-<interest category="category0"/>
-<education>Other</education>
-<gender>male</gender>
-<business>No</business>
-<age>18</age>
-</profile>
-</person>
-<person id="person11">
-<name>Leo Zamperoni</name>
-<emailaddress>mailto:Zamperoni@stanford.edu</emailaddress>
-<homepage>http://www.stanford.edu/~Zamperoni</homepage>
-<profile income="16398.88">
-<interest category="category0"/>
-<interest category="category0"/>
-<interest category="category0"/>
-<education>High School</education>
-<gender>female</gender>
-<business>No</business>
-</profile>
-</person>
-</XQueryResult>
+
+# 18:38:44 >  
+# 18:38:44 >  Done.
+# 18:38:44 >  
+

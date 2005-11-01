@@ -1970,6 +1970,12 @@ PFty_data_on (PFty_t t)
 
 /**
  * Replaces all atomic types by text()
+ * 
+ * This special typing rule avoids loosing exact node information.
+ * This helps the following operations to distinct between elements,
+ * attributes and textnodes
+ *
+ *  - is2ns (t)       = text()         if t <: atomic*
  *  - is2ns (t1 , t2) = is2ns (t1) , is2ns (t2)
  *  - is2ns (t1 | t2) = is2ns (t1) | is2ns (t2)
  *  - is2ns (t1 & t2) = is2ns (t1) | is2ns (t2)
@@ -1977,7 +1983,6 @@ PFty_data_on (PFty_t t)
  *  - is2ns (t1*)     = is2ns (t1)*
  *  - is2ns (t1+)     = is2ns (t1)+
  *  - is2ns (named n) = none
- *  - is2ns (t)       = text()         if t <: atomic
  *  - is2ns (t)       = t              if t <: node
  *  - is2ns (t)       = node           otherwise
  *  - is2ns (stmt)    = stmt
@@ -1985,6 +1990,11 @@ PFty_data_on (PFty_t t)
 PFty_t
 PFty_is2ns (PFty_t t)
 {
+    /* ensure that every comination of atomic values
+       returns only a single text node */
+    if (PFty_subtype (t, PFty_star (PFty_atomic ())))
+        return PFty_text();
+
     switch (t.type) {
 
         case ty_seq:
