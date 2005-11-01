@@ -1761,10 +1761,10 @@ CMDxquery(char** res, char *mode, char* xquery) {
 @c
 
 inline int
-xquery_shutdown(Client* client, char** buf, int ret)
+xquery_shutdown(Client client, char* buf, int ret)
 {
-    GDKfree(*buf);
-    closeClient(*client, 0);
+    GDKfree(buf);
+    closeClient(client, 0);
     return(ret);
 }
 
@@ -1797,22 +1797,21 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
     in = *In;
     @:builtin_operand(1,TYPE_Stream,Out)@
     out = *Out;
-    monetSetChannel(XQthread, in, out);
 
     /* send challenge */
     snprintf(buf, 100, "%2u%s", (unsigned int)strlen(XQUERY_CHALLENGE), XQUERY_CHALLENGE);
     if (stream_write(out, buf, strlen(buf), 1) < 0) 
-        return(xquery_shutdown(&client, &buf, GDK_FAIL));
+        return(xquery_shutdown(client, buf, GDK_FAIL));
 
     /* get user name (ignored later), and mapiclient mode */
     memset(buf, 0, BUFSIZ);
     user = buf;
     if (stream_read(in, user, 1, 1) < 0)
-        return(xquery_shutdown(&client, &buf, GDK_FAIL));
+        return(xquery_shutdown(client, buf, GDK_FAIL));
     for (i = 0; i < BUFSIZ && *user != '\n'; i++) {
         user++;
         if (stream_read(in, user, 1, 1) < 0)
-            return(xquery_shutdown(&client, &buf, GDK_FAIL));
+            return(xquery_shutdown(client, buf, GDK_FAIL));
     }
     *user = 0;
 
@@ -1826,15 +1825,15 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
     /* use the MAPI protocol to read as much xquery buffer as possible */
     while (1) {
         if (stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1) < 0)
-            return(xquery_shutdown(&client, &buf, GDK_FAIL));
+            return(xquery_shutdown(client, buf, GDK_FAIL));
         if (stream_flush(out))
-            return(xquery_shutdown(&client, &buf, GDK_FAIL));
+            return(xquery_shutdown(client, buf, GDK_FAIL));
 
         curlen = 0;
         for ( ; buf; ) {
             ssize_t n = stream_read(in, buf + curlen, 1, maxlen - curlen);
             if (n < 0)
-                return(xquery_shutdown(&client, &buf, GDK_FAIL));
+                return(xquery_shutdown(client, buf, GDK_FAIL));
             if (n == 0) {
                 break;
             }
@@ -1861,11 +1860,7 @@ CMDxquery_server(Cntxt stk, YYSTREE lt, ValPtr res)
             exec_xquery(buf, xquery); /* execute, see above */
         }
     }
-
-    /* end of session */
-    stream_write(out, PROMPT1, sizeof(PROMPT1) - 1, 1);
-    stream_flush(out);
-    return(xquery_shutdown(&client, &buf, GDK_SUCCEED));
+    return(xquery_shutdown(client, buf, GDK_SUCCEED));
 }
 
 bat *
