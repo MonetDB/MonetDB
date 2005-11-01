@@ -1,11 +1,12 @@
 #! /usr/bin/python
 
-# Copyright (c) 2002, 2003, Barry Warsaw, Fred Drake, and contributors
+# Copyright (c) 2002, 2003, 2004 Barry Warsaw, Fred Drake, and contributors
 # All rights reserved.
 # See the accompanying LICENSE file for details.
 
 # NOTE: SourceForge currently runs Python 2.2.3, so we need to remain
-# compatible with the Python 2.2 line.
+# compatible with at least that version.  Python 2.2.2 or newer is
+# currently required.
 
 """Complicated notification for CVS checkins.
 
@@ -88,18 +89,19 @@ The rest of the command line arguments are:
     email-addrs
         At least one email address.
 """
-__version__ = '1.3'
+__version__ = '2.3'
 
 import os
-import sys
 import re
+import pwd
+import sys
 import time
 import getopt
-import smtplib
-import pwd
 import socket
+import smtplib
 
 from cStringIO import StringIO
+from email.Utils import formataddr
 
 # Which SMTP server to do we connect to?
 MAILHOST = 'localhost'
@@ -208,6 +210,70 @@ def quotename(name):
     else:
         return name
 
+# The below two functions were copied and slightly modified from mimity.py.
+# The main difference with the standard mimify.py is the recognition of UTF-8.
+
+mime_char = re.compile('[=\177-\377]') # quote these chars in body
+mime_header_char = re.compile('[=?\177-\377]') # quote these in header
+mime_header = re.compile('([ \t(]|^)([-a-zA-Z0-9_+]*[\177-\377][-a-zA-Z0-9_+\177-\377]*)(?=[ \t)]|\n)')
+utf8 = re.compile('^([\x00-\x7f]|[\xc0-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf][\x80-\xbf]|[\xf0-\xf7][\x80-\xbf][\x80-\xbf][\x80-\xbf]|[\xf8-\xfb][\x80-\xbf][\x80-\xbf][\x80-\xbf][\x80-\xbf]|[\xfc-\xfd][\x80-\xbf][\x80-\xbf][\x80-\xbf][\x80-\xbf][\x80-\xbf])*$')
+
+def mime_encode(line, header):
+    """Code a single line as quoted-printable.
+    If header is set, quote some extra characters."""
+    if header:
+        reg = mime_header_char
+    else:
+        reg = mime_char
+    newline = []
+    pos = 0
+    if not header and len(line) >= 5 and line[:5] == 'From ':
+        # quote 'From ' at the start of a line for stupid mailers
+        newline.append(('=%02x' % ord('F')).upper())
+        pos = 1
+    while 1:
+        res = reg.search(line, pos)
+        if res is None:
+            break
+        newline.append(line[pos:res.start(0)] +
+                       ('=%02x' % ord(res.group(0))).upper())
+        pos = res.end(0)
+    newline.append(line[pos:])
+    line = ''.join(newline)
+
+    if not header:
+        newline = []
+        while len(line) >= 75:
+            i = 73
+            while line[i] == '=' or line[i-1] == '=':
+                i = i - 1
+            i = i + 1
+            newline.append(line[:i] + '=\n')
+            line = line[i:]
+        newline.append(line)
+        line = ''.join(newline)
+
+    return line
+
+def mime_encode_header(line):
+    """Maybe code a single header line as quoted-printable."""
+    newline = []
+    if utf8.match(line):
+        # line compatible with UTF-8, so encode as such
+        charset = 'utf-8'
+    else:
+        # else use default charset
+        charset = 'iso-8859-1'
+    pos = 0
+    while 1:
+        res = mime_header.search(line, pos)
+        if res is None:
+            break
+        newline.append('%s%s%s=?%s?Q?%s?=' %
+                       (newline, line[pos:res.start(0)], res.group(1),
+                        charset, mime_encode(res.group(2), True)))
+        pos = res.end(0)
+    return ''.join(newline) + line[pos:]
 
 
 def blast_mail(subject, people, entries, contextlines, fromhost, replyto):
@@ -226,34 +292,30 @@ def blast_mail(subject, people, entries, contextlines, fromhost, replyto):
         domain = fromhost or socket.getfqdn()
         address = '%s@%s' % (user, domain)
         s = StringIO()
-        sys.stdout = s
         datestamp = time.strftime('%a, %d %b %Y %H:%M:%S +0000',
                                   time.gmtime(time.time()))
-        try:
-            vars = {'address' : address,
-                    'name'    : quotename(name),
-                    'people'  : COMMASPACE.join(people),
-                    'subject' : subject,
-                    'version' : __version__,
-                    'date'    : datestamp,
-                    }
-            print '''\
-From: %(name)s <%(address)s>
+        vars = {'author'  : mime_encode_header(formataddr((name, address))),
+                'people'  : COMMASPACE.join(map(mime_encode_header, people)),
+                'subject' : mime_encode_header(subject),
+                'version' : __version__,
+                'date'    : datestamp,
+                }
+        print >> s, '''\
+From: %(author)s
 To: %(people)s''' % vars
-            if replyto:
-                print 'Reply-To: %s' % replyto
-            print '''\
+        if replyto:
+            print >> s, 'Reply-To: %s' % mime_encode_header(replyto)
+        print >>s, '''\
 Subject: %(subject)s
 Date: %(date)s
 X-Mailer: Python syncmail %(version)s <http://sf.net/projects/cvs-syncmail>
+Precedence: list
 ''' % vars
-            s.write(sys.stdin.read())
-            # append the diffs if available
-            print
-            for entry in entries:
-                print calculate_diff(entry, contextlines)
-        finally:
-            sys.stdout = sys.__stdout__
+        s.write(sys.stdin.read())
+        # append the diffs if available
+        print >> s
+        for entry in entries:
+            print >> s, calculate_diff(entry, contextlines)
         resp = conn.sendmail(address, people, s.getvalue())
         conn.close()
         os._exit(0)
@@ -342,7 +404,10 @@ def load_change_info(prefix=None):
         f.close()
     for entry in mapping.values():
         if not hasattr(entry, "new_revision"):
-            print 'confused about file', entry.name, '-- ignoring'
+            # We're running as part of a commit from a local
+            # filesystem access to the repository, so we're looking at
+            # a working copy.  There may be lots of files we are
+            # supposed to ignore.
             del mapping[entry.name]
     return mapping
 
@@ -365,7 +430,7 @@ def main():
             sys.argv[1:], 'hC:cuS:R:qf:m:',
             ['fromhost=', 'context=', 'cvsroot=', 'mailhost=',
              'subject-prefix=', 'reply-to=',
-             'help', 'quiet'])
+             'help', 'quiet', 'command='])
     except getopt.error, msg:
         usage(1, msg)
 
@@ -375,6 +440,7 @@ def main():
     subject_prefix = ""
     replyto = None
     fromhost = None
+    command = ''
     for opt, arg in opts:
         if opt in ('-h', '--help'):
             usage(0)
@@ -398,6 +464,8 @@ def main():
         elif opt in ('-m', '--mailhost'):
             global MAILHOST
             MAILHOST = arg
+        elif opt == '--command':
+            command = arg
 
     # What follows is the specification containing the files that were
     # modified.  The argument actually must be split, with the first component
@@ -430,6 +498,13 @@ def main():
                contextlines, fromhost, replyto)
     if verbose:
         print 'Generating notification message... done.'
+
+    if command:
+        if verbose:
+            print 'Executing post-commit command...'
+        os.system(command)
+        if verbose:
+            print 'Executing post-commit command... done'
 
 
 
