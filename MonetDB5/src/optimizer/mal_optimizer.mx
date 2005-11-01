@@ -1401,6 +1401,7 @@ coercionOptimizerStep(MalBlkPtr mb, int i, InstrPtr p)
 	a = getArg(p, 0);
 	b = getArg(p, 1);
 	t = getVarType(mb, b);
+	if( getVarType(mb,a) != t) return 0;
 	if (strcmp(functionName(p), "int") == 0 && t == TYPE_int) {
 		removeInstruction(mb, p);
 		ARreplaceAlias(mb, i, mb->stop, a, b);
