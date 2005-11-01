@@ -1,9 +1,9 @@
 stdout of test 'tst380` in directory 'src/mal` itself:
 
 
-# 22:07:20 >  
-# 22:07:20 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=39624 --set sql_port=43520 --set xquery_port=59650 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst380.mal < /dev/null
-# 22:07:20 >  
+# 12:57:36 >  
+# 12:57:36 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=34525 --set sql_port=44689 --set xquery_port=55017 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst380.mal < /dev/null
+# 12:57:36 >  
 
 # Monet Database Server V4.99.19
 # Copyright (c) 1993-2005, CWI. All rights reserved.
@@ -139,7 +139,7 @@ end main;	# 12
 # bbp	t			htype	ttype		count	heat	dirty		status	kind		refCount		  # name
 # int	str			str	str		lng	int	str		str	str		int		  # type
 #---------------------------------------------------------------------------------------------------------------------------------#
-[ 1,	  "monet_environment",	  "str",  "str",	  37,	  171,	  "dirty",	  "load", "transient",	  1		  ]
+[ 1,	  "monet_environment",	  "str",  "str",	  34,	  171,	  "dirty",	  "load", "transient",	  1		  ]
 [ 2,	  "monet_unicode_case",	  "int",  "int",	  732,	  172,	  "dirty",	  "load", "transient",	  1		  ]
 [ 3,	  "timezones",		  "str",  "tzone",	  24,	  173,	  "dirty",	  "load", "transient",	  1		  ]
 [ 4,	  "stat_id_inuse",	  "int",  "int",	  0,	  130,	  "clean",	  "load", "persistent",	  1		  ]
@@ -167,9 +167,9 @@ end main;	# 12
 # h	t		htype	ttype	count	heat	dirty		status	kind		refCount		  # name
 # int	str		str	str	lng	int	str		str	str		int		  # type
 #-----------------------------------------------------------------------------------------------------------------#
-[ 13,	  "simplemind",	  "int",  "int",  0,	  302,	  "dirty",	  "load", "transient",	  0		  ]
+[ 13,	  "simplemind",	  "int",  "int",  0,	  301,	  "dirty",	  "load", "transient",	  0		  ]
 
-# 22:07:20 >  
-# 22:07:20 >  Done.
-# 22:07:20 >  
+# 12:57:36 >  
+# 12:57:36 >  Done.
+# 12:57:36 >  
 
