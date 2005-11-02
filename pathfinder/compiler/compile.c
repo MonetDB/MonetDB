@@ -135,41 +135,72 @@ unsigned int last_stage = 0;
 
 void segfault_handler (int sig);
 
+typedef struct _urlcache_t {
+    struct _urlcache_t *next;
+    xmlParserInputBufferPtr  buf;
+    char url[1];
+} urlcache_t; 
+
+urlcache_t *urlcache = NULL;
+
 /**
- * helper function: read input file into a buffer 
+ * read input file into the url cache
  */
-static char *
-read_url (char *url)
+char *PFurlcache (char *url)
 {
-    xmlParserInputBufferPtr  buf = NULL;
-    int                      num_read;
-    char                    *ret = NULL;
+    int        num_read = -1;
+    urlcache_t *cache = urlcache;
+
+    /*
+     * first try the cache
+     */
+    while(cache) {
+        if (strcmp(cache->url, url) == 0) 
+    	    return cache->buf->buffer->content;
+        cache = cache->next;
+    }
+
+    cache = (urlcache_t*) malloc(sizeof(urlcache_t)+strlen(url));
+    if (cache == NULL) return NULL;
+    strcpy(cache->url, url);
 
     /*
      * open file via parser from the libxml2 library
      * (capable of loading URIs also via HTTP or FTP)
      */
-    buf = xmlParserInputBufferCreateFilename (url, XML_CHAR_ENCODING_NONE);
-
-    if (!buf)
+    cache->buf = xmlParserInputBufferCreateFilename (url, XML_CHAR_ENCODING_NONE);
+    if (cache->buf) {
+        /*
+         * Load in chunks of 2048 chars.  libxml2 does not really
+         * stick to these 2048 chars, but we don't care anyway...
+         */
+        while ((num_read = xmlParserInputBufferGrow (cache->buf, 2048)))
+            /* empty */;
+    }
+    if (num_read < 0) {
+	if (cache->buf) free(cache->buf);
         return NULL;
+    }
+    /* cache the new url */
+    cache->next = urlcache;
+    urlcache = cache;
+    return cache->buf->buffer->content;
+}
 
-    /*
-     * Load in chunks of 2048 chars.  libxml2 does not really
-     * stick to these 2048 chars, but we don't care anyway...
-     */
-    while ((num_read = xmlParserInputBufferGrow (buf, 2048)))
-        /* empty */;
+/**
+ * flush url cache
+ */
+void PFurlcache_flush() {
+    urlcache_t *cache = urlcache;
+    while(cache) {
+	urlcache_t *del = cache;
+        cache = cache->next;
 
-    if (num_read < 0)
-        return NULL;
-
-    ret = PFstrdup ((char *) buf->buffer->content);
-
-    /* free resource allocated by libxml2 file reader */
-    xmlFreeParserInputBuffer (buf);
-
-    return ret;
+    	/* free resource allocated by libxml2 file reader */
+    	xmlFreeParserInputBuffer (del->buf);
+	free(del);
+    }
+    urlcache = NULL;
 }
    
 
@@ -189,7 +220,7 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     PFarray_t  *mil_program = NULL;
     char       *xquery = NULL;
     int        module_base;
-
+    
     /* elapsed time for compiler phase */
     long tm, tm_first;
 
@@ -210,15 +241,16 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     /* compiler chain below 
      */
   
-    xquery = read_url (url);
+    xquery = PFurlcache (url);
 
     if (!xquery)
         PFoops (OOPS_FATAL, "unable to load URL `%s'", url);
 
     tm_first = tm = PFtimer_start ();
-    PFparse (xquery, &proot);
+    (void) PFparse (xquery, &proot);
     tm = PFtimer_stop (tm);
 
+    
     if (status->timing)
         PFlog ("parsing:\t\t %s", PFtimer_str (tm));
 
@@ -341,12 +373,12 @@ PFcompile (char *url, FILE *pfout, PFstate_t *status)
     if (status->summer_branch) {
         char *prologue = NULL, *query = NULL, *epilogue = NULL;
         tm = PFtimer_start ();
-        if (PFprintMILtemp (croot, module_base+status->optimize, status->genType, status->timing?(tm_first|1):0, 
+        if (PFprintMILtemp (croot, status->optimize, module_base, -1, status->genType, status->timing?(tm_first|1):0, 
                             &prologue, &query, &epilogue))
             goto failure;
         fputs(prologue, pfout);
         fputs(query, pfout);
-        /* epilogue is not necessary for standalone scripts */ 
+        /* epilogue is not needed for standalone MIL scripts */
         tm = PFtimer_stop (tm);
         if (status->timing)
             PFlog ("MIL code output:\t %s", PFtimer_str (tm));
@@ -515,10 +547,11 @@ subexelim:
  * Runtime environment uses a lock to stay stable under concurrent requests. 
  */
 char*
-pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue)
+PFcompile_MonetDB (char *xquery, char* mode, char** prologue, char** query, char** epilogue)
 {
 	PFpnode_t  *proot  = NULL;
 	PFcnode_t  *croot  = NULL;
+        int num_fun;
         long timing;
         int module_base;
 
@@ -536,18 +569,9 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
                 return PFerrbuf;
         }
 	timing = PFtimer_start ();
-        if (strncmp(PFstate.genType,"timing",6) == 0 ) {
-                if (!timing) timing = 1;
-                PFstate.genType += 7;
-        } else {
-                timing = 0;
-        }
-        if (strncmp(PFstate.genType,"debug",5) == 0 ) {
-                PFstate.genType += 6;
-        }
 
 	/* repeat PFcompile, which we can't reuse as we don't want to deal with files here */
-        PFparse (xquery, &proot);
+        num_fun = PFparse (xquery, &proot);
         module_base = PFparse_modules (proot);
         proot = PFnormalize_abssyn (proot);
         PFns_resolve (proot);
@@ -560,31 +584,9 @@ pf_compile_MonetDB (char *xquery, char* mode, char** prologue, char** query, cha
         croot = PFsimplify (croot);
         croot = PFty_check (croot);
     	croot = PFcoreopt (croot);
-        (void)  PFprintMILtemp (croot, module_base+1, PFstate.genType, timing, prologue, query, epilogue);
+        (void)  PFprintMILtemp (croot, 1, module_base, num_fun, PFstate.genType, timing, prologue, query, epilogue);
         pa_destroy(pf_alloc);
         return (*PFerrbuf) ? PFerrbuf : NULL;
-}
-
-/**
- * Compile an XQuery expression or an XQuery module given an URL.
- *
- * Loads @a url with help of nanoHttp from the libxml2 library and then
- * calls pf_compile_MonetDB() to process the query.
- */
-char *
-pf_compile_url_MonetDB (char *url, char* mode, char** prologue,
-                        char** query, char** epilogue)
-{
-    char *xquery;
-
-    xquery = read_url (url);
-
-    if (!xquery) {
-        PFoops (OOPS_FATAL, "unable to load URL `%s'", url);
-        return PFerrbuf;
-    }
-
-    return pf_compile_MonetDB (xquery, mode, prologue, query, epilogue);
 }
 
 #if HAVE_SIGNAL_H

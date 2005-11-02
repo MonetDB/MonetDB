@@ -28,8 +28,8 @@ implementation on top of MonetDB within the "Pathfinder" project.
 @m
 .MODULE pf_support;
 
-.USE monettime;
 .USE lock;
+.USE monettime;
 
 @- XML shredder (shredder.mx)
 @m
@@ -285,6 +285,17 @@ module(bat_arith);
 module(malalgebra);
 module(mmath);
 module(xtables);
+module(pcre);
+
+# global constants using in the MIL mapping
+const empty_bat := bat(void,oid,0).seqbase(0@0).access(BAT_READ);
+const empty_kind_bat := bat(void,int,0).seqbase(0@0).access(BAT_READ);
+const EMPTY_STRING := 0@0;
+const empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);
+const empty_dec__bat := empty_dbl__bat;
+const empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);
+const empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);
+const bool_not := bat(oid,oid,2).insert(0@0,1@0).insert(1@0,0@0).access(BAT_READ);
 
 PROC shred2bats(str location, str opt) : bat[oid, bat]
 {

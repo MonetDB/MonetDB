@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "milprint_summer.h"
+#include "compile_interface.h"
 
 #include "mem.h"
 #include "array.h"
@@ -45,8 +46,6 @@
 #else
 #define LLFMT "%lld"            
 #endif
-
-#define MODULE_BASE(f) (f->mode & ~1)
 
 /* accessors to left and right child node */
 #define LEFT_CHILD(p)  ((p)->child[0])
@@ -1136,7 +1135,7 @@ translateVar (opt_t *f, int cur_level, PFvar_t *v)
 {
     milprintf(f, "{ # translateVar (%s)\n", PFqname_str(v->qname));
     milprintf(f, "var vid := v_vid%03u.ord_uselect(%i@0);\n", 
-            cur_level, MODULE_BASE(f) + v->vid);
+            cur_level, f->module_base + v->vid);
     milprintf(f, "vid := vid.mark(0@0).reverse();\n");
     milprintf(f, "iter := vid.leftfetchjoin(v_iter%03u);\n", cur_level);
     milprintf(f, "pos := vid.leftfetchjoin(v_pos%03u);\n", cur_level);
@@ -1183,7 +1182,7 @@ insertVar (opt_t *f, int cur_level, int vid)
     milprintf(f,
             "{ # insertVar (vid)\n"
             "var vid := ipik.project(%i@0);\n",
-            MODULE_BASE(f) + vid);
+            f->module_base + vid);
 
     append (f, "vid", cur_level);
     append (f, "iter", cur_level);
@@ -1275,7 +1274,7 @@ getExpanded (opt_t *f, int cur_level, int fid)
     milprintf(f, 
             "{ # getExpanded (fid)\n"
             "var vu_nil := vu_fid.ord_uselect(%i@0);\n",
-            MODULE_BASE(f) + fid);
+            f->module_base + fid);
     milprintf(f,
             "var vid_vu := vu_vid.reverse();\n"
             "var oid_nil := vid_vu.leftjoin(vu_nil);\n"
@@ -1623,13 +1622,14 @@ translateIfThenElse (opt_t *f, int code, int cur_level, int counter,
     */
     milprintf(f,
             "var selected;\n"
-            "var skip := 0;\n"
+            "var skip;\n"
             "if (type(item%03u) = bat) {"
             "  selected := item%03u.ord_uselect(1@0);\n"
-            "  if (selected.count() = item%03u.count()) {\n"
+            "  var cnt := selected.count();\n"
+            "  if (item%03u.count() = cnt) {\n"
             "   skip := 2;\n"
-            "  } else if (selected.count() = 0) {\n"
-            "   skip := 1;\n"
+            "  } else { \n"
+            "   skip := int(cnt = 0);\n"
             "  }\n"
             "} else {\n"
             "  skip := 1 + int(item%03u); # handle constants efficiently\n"
@@ -3163,7 +3163,7 @@ loop_liftedTextConstr (opt_t *f, int rcode, int rc)
             "var newPre_prop := X_item.reverse().leftjoin(X_prop);\n"
             "X_item := nil;\n"
             "X_prop := nil;\n",
-            (rc)?item_ext:val_join(STR), (rc)?item_ext:val_join(STR),
+            item_ext, (rc)?item_ext:val_join(STR),
             (rc)?item_ext:val_join(STR), (rc)?item_ext:val_join(STR));
 
     if (rcode != NORMAL)
@@ -7834,7 +7834,7 @@ static int
 translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
 {
     char *descending;
-    int rc, rcode;
+    int rc=NORMAL, rcode;
 
     assert(c);
     switch (c->kind)
@@ -8284,7 +8284,15 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
             rc = NORMAL; /* dummy */
             break;
         case c_fun_decl:
-  	    opt_output(f, OPT_SEC_PROLOGUE);
+	    if (f->module_base == 0 && f->num_fun == 0) {
+		/* ignore module functions */ 
+  	        opt_output(f, OPT_SEC_IGNORE);
+            } else { 
+	        f->num_fun--;
+  	        opt_output(f, OPT_SEC_EPILOGUE);
+                milprintf(f, "UNDEF fn_%s;\n", c->sem.fun->sig);
+  	        opt_output(f, OPT_SEC_PROLOGUE);
+            }
             milprintf(f,
                     "PROC fn_%s (bat[void,oid] loop000, "
                                "bat[void,oid] outer000, "
@@ -8308,8 +8316,6 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                     "return bat(void,bat,4).insert(nil,fake_project(iter)).insert(nil,fake_project(item)).insert(nil,fake_project(kind)).access(BAT_READ);\n"
                     "} # end of PROC fn_%s\n",
                     c->sem.fun->sig);
-  	    opt_output(f, OPT_SEC_EPILOGUE);
-            milprintf(f, "UNDEF fn_%s;\n", c->sem.fun->sig);
             opt_flush(f, 0);
   	    opt_output(f, OPT_SEC_QUERY);
             rc = NORMAL; /* dummy */
@@ -9866,10 +9872,9 @@ update_expansion (opt_t *f, PFcnode_t *c,  PFarray_t *way)
          && *(int *) PFarray_at (way, m) > var->base; m--)
     {
         milprintf(f,
-                "%svar_usage.insert(%i@0,%i@0);\n",
-                MODULE_BASE(f)?"":"var_usage := ",
-                MODULE_BASE(f) + var->vid,
-                MODULE_BASE(f) + *(int *) PFarray_at (way, m));
+                "var_usage.insert(%i@0,%i@0);\n",
+                f->module_base + var->vid,
+                f->module_base + *(int *) PFarray_at (way, m));
     }
 }
 
@@ -10123,7 +10128,7 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     }
     else if (c->kind == c_fun_decl)
     {
-        char sig[1024];
+        char sig[1024], *p = c->sem.fun->qname.loc; 
         int i = 0, j, first = 0;
 
         args = L(c);
@@ -10148,18 +10153,44 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
             args = R(args);
         }
 	/* create the full signature that also is a valid MIL identifier */
-	j = strlen(c->sem.fun->qname.loc);
-	c->sem.fun->sig = PFmalloc(strlen(sig)+j+1);
-        strcpy(c->sem.fun->sig, c->sem.fun->qname.loc);
+	c->sem.fun->sig = PFmalloc(2*(strlen(sig)+strlen(p)));
+	for(j=0; *p; p++) {
+		c->sem.fun->sig[j++] = *p; 
+		if (*p == '_') c->sem.fun->sig[j++] = '_';
+	}
 	while(sig[i++] == ',') {
-		while (sig[i++] != ':');
+		int ch = 0;
 		c->sem.fun->sig[j++] = '_';
 		while (sig[i] && sig[i] != ',') { 
-			int ch = sig[i++];
-			c->sem.fun->sig[j++] = (ch=='?')?'0':(ch=='*')?'1':(ch=='+')?'2':ch; 
+			ch = sig[i++];
+			if (ch == '_' || ch == '{' || ch == '}' || ch == '(' || ch == ')')  { 
+				c->sem.fun->sig[j++] = '_';
+				c->sem.fun->sig[j++] = '_';
+			} else if (ch == ':') {
+				c->sem.fun->sig[j++] = '_';
+			} else if (ch == '?') {
+				c->sem.fun->sig[j++] = '0';
+			} else if (ch == '*') {
+				c->sem.fun->sig[j++] = '2';
+			} else if (ch == '+') {
+				c->sem.fun->sig[j++] = '3';
+			} else if (ch != ' ') {
+				c->sem.fun->sig[j++] = ch;
+			}
+                }
+		if (c->sem.fun->sig[j-1] != '0' && 
+		    c->sem.fun->sig[j-1] != '2' && 
+		    c->sem.fun->sig[j-1] != '3') 
+		{
+			c->sem.fun->sig[j++] = '1';
 		}
 	}
-        milprintf(f, "proc_vid.insert(\"fn_%s\", %dLL);\n", c->sem.fun->sig, MODULE_BASE(f)+first);
+	c->sem.fun->sig[j] = 0;
+
+	if (f->module_base || f->num_fun) {
+             milprintf(f, "proc_vid.insert(\"fn_%s\", %dLL);\n", c->sem.fun->sig, f->module_base+first);
+             f->num_fun--;
+	}
         counter = get_var_usage (f, R(c), PFarray (sizeof (int)), counter);
     }
     /* apply mapping correctly for user defined functions */    
@@ -10199,32 +10230,12 @@ get_var_usage (opt_t *f, PFcnode_t *c,  PFarray_t *way, PFarray_t *counter)
     return counter;
 }
 
-static char* PFloadMIL() {
-    return  
-        "# MODULE DECLARATIONS\n"
+const char* PFinitMIL() {
+    return 
         "module(\"pathfinder\");\n"
-        "module(\"pf_support\");\n"
-        "module(\"aggrX3\");\n"
-        "module(\"bat_arith\");\n"
-        "module(\"xtables\");\n"
-        "module(\"malalgebra\");\n"
-        "module(\"pcre\");\n"
-        "module(\"mmath\");\n"
-        "module(\"alarm\");\n"
-        "\n"
-        "var loop000 := bat(void,oid,1).seqbase(0@0).insert(0@0, 1@0).access(BAT_READ);\n"
-        "\n"
-        "# variable environment vars\n"
+        "# variable environment\n"
         "var vu_fid;\n"
         "var vu_vid;\n"
-        "var inner000 := loop000;\n"
-        "var outer000 := loop000;\n"
-        "var order_000 := loop000;\n"
-        "var v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-        "var v_iter000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-        "var v_pos000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-        "var v_item000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-        "var v_kind000 := bat(void,int).access(BAT_APPEND).seqbase(0@0);\n"
         "\n"
         "# value containers for literal values\n"
         "var int_values := bat(lng,void).key(true).reverse().seqbase(0@0);\n"
@@ -10236,14 +10247,6 @@ static char* PFloadMIL() {
         "var fun_iter000 := bat(void,oid).seqbase(0@0);\n"
         "var fun_item000 := bat(void,oid).seqbase(0@0);\n"
         "var fun_kind000 := bat(void,int).seqbase(0@0);\n"
-        "\n"
-        "# variable binding for loop-lifting of the empty sequence\n"
-        "var empty_bat := bat(void,oid,0).seqbase(0@0).access(BAT_READ);\n"
-        "var empty_kind_bat := bat(void,int,0).seqbase(0@0).access(BAT_READ);\n"
-        "var EMPTY_STRING := 0@0;\n"
-        "\n"
-        "# boolean mapping\n"
-        "var bool_not := bat(oid,oid,2).insert(0@0,1@0).insert(1@0,0@0).access(BAT_READ);\n"
         "\n"
         "# variables for (intermediate) results\n"
         "var ipik;\n"
@@ -10257,10 +10260,9 @@ static char* PFloadMIL() {
         "var item_dec_;\n"
         "var item_dbl_;\n"
         "var item_str_;\n"
-        "var empty_dbl__bat := bat(void,dbl,0).seqbase(0@0).access(BAT_READ);\n"
-        "var empty_dec__bat := empty_dbl__bat;\n"
-        "var empty_str__bat := bat(void,str,0).seqbase(0@0).access(BAT_READ);\n"
-        "var empty_int__bat := bat(void,lng,0).seqbase(0@0).access(BAT_READ);\n"
+        "\n"
+        "# variable that holds bat-id (int) of a shredded document that may be added to the ws\n"
+        "var docBAT;\n"
         "\n"
         "# variables for results containing `real' xml subtrees\n"
         "var _elem_iter;  # oid|oid\n"
@@ -10281,57 +10283,76 @@ static char* PFloadMIL() {
         "var _r_attr_prop; # oid|oid\n"
         "var _r_attr_frag; # oid|oid\n"
         "\n"
-        "var fun_vid000;\n"
-        "var fun_iter000;\n"
-        "var fun_item000;\n"
-        "var fun_kind000;\n"
+        "var fun_vid000 := bat(void,oid);\n"
+        "var fun_iter000 := bat(void,oid);\n"
+        "var fun_item000 := bat(void,oid);\n"
+        "var fun_kind000 := bat(void,int);\n"
         "\n"
         "var var_usage := bat(oid,oid);\n"
         "var proc_vid := bat(str,lng);\n"
-        "# MIL-PROCS GENERATED FROM XQUERY FUNCTIONS\n";
+        "\n"
+        "var genType := \"xml\";"
+        "var time_compile;\n";
 }
 
-static char* PFstartMIL() {
+const char* PFstartMIL() {
     return  
+        "{\n"
+        "var time_read := 0;\n"
+        "var time_shred := 0;\n"
+        "var time_print := 0;\n"
+        "var time_exec := time();\n"
+        "\n"
         "var ws := int(nil);\n"
         "var err := CATCH({\n"
         "  ws := create_ws();\n"
         "\n"
         "  # get full picture on var_usage (and sort it)\n"
-        "  var_usage := var_usage.unique().reverse().access(BAT_READ);\n"
-        "  vu_fid := var_usage.mark(1000@0).reverse();\n"
-        "  vu_vid := var_usage.reverse().mark(1000@0).reverse();\n"
-        "  var_usage := vu_fid.reverse().sort().reverse();\n"
-        "  var_usage := var_usage.CTrefine(vu_vid);\n"
-        "  var_usage := var_usage.mark(1000@0).reverse();\n"
-        "  vu_vid := var_usage.leftfetchjoin(vu_vid);\n"
-        "  vu_fid := var_usage.leftfetchjoin(vu_fid);\n"
-        "  var_usage := nil;\n";
+        "  var usage := var_usage.unique().reverse().access(BAT_READ);\n"
+        "  vu_fid := usage.mark(1000@0).reverse();\n"
+        "  vu_vid := usage.reverse().mark(1000@0).reverse();\n"
+        "  usage := vu_fid.reverse().sort().reverse();\n"
+        "  usage := usage.CTrefine(vu_vid);\n"
+        "  usage := usage.mark(1000@0).reverse();\n"
+        "  vu_vid := usage.leftfetchjoin(vu_vid);\n"
+        "  vu_fid := usage.leftfetchjoin(vu_fid);\n"
+        "\n"
+        "  # environment that represents start of any query\n"
+        "  var loop000 := bat(void,oid,1).seqbase(0@0).insert(0@0, 1@0).access(BAT_READ);\n"
+        "  var inner000 := loop000;\n"
+        "  var outer000 := loop000;\n"
+        "  var order_000 := loop000;\n"
+        "  var v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+        "  var v_iter000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+        "  var v_pos000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+        "  var v_item000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+        "  var v_kind000 := bat(void,int).access(BAT_APPEND).seqbase(0@0);\n";
 }
 
-static char* PFstopMIL() {
+const char* PFdocbatMIL() {
+    return  
+        " var height := bat(docBAT).fetch(PRE_LEVEL).max().int() + 1;\n"
+        " add_docbat(ws, bat(docBAT), \"soap\", \"soap\", height);\n";
+}
+
+const char* PFstopMIL() {
     return   
+        "  time_print := time();\n"
+        "  time_exec := time_print - time_exec;\n"
+        "  \n"
         "  item := item.de_NO_project(ipik);\n"
-        "  print_result(\"%s\",ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n"
+        "  print_result(genType,ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n"
         "});\n"
         "destroy_ws(ws);\n"
-        "if (not(isnil(err))) ERROR(err);\n";
+        "if (not(isnil(err))) ERROR(err);\n"
+        "time_print := time() - time_print;\n"
+        "if (genType.search(\"timing\") >= 0)\n"
+        "   printf(\"\\nTrans %% 7d.000 msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
+        "       time_compile, time_shred, time_exec - time_shred, time_print);\n"
+        "}\n";
 }
 
-static char* PFclearMIL() {
-    return  
-        "# clear our state\n"
-        "int_values := delete(int_values);\n"
-        "dbl_values := delete(dbl_values);\n"
-        "str_values := delete(str_values).insert(0@0,\"\");\n"
-        "\n"
-        "fun_vid000 := delete(fun_vid000);\n"
-        "fun_iter000 := delete(fun_iter000);\n"
-        "fun_item000 := delete(fun_item000);\n"
-        "fun_kind000 := delete(fun_kind000);\n";
-}
-
-static char* PFudfMIL() {
+const char* PFudfMIL() {
     return  
         "var proc_res := fn_%s(loop%03u, outer%03u, order_%03u, inner%03u, fun_vid%03u, fun_iter%03u, fun_item%03u, fun_kind%03u); #%s\n" 
         "iter := proc_res.fetch(0);\n"
@@ -10348,29 +10369,10 @@ static char* PFudfMIL() {
         "  }\n"
         "}\n"
         "proc_res := nil;\n"
-        "fun_vid%03u := nil;\n"
-        "fun_iter%03u := nil;\n"
-        "fun_item%03u := nil;\n"
-        "fun_kind%03u := nil;\n"
         "iter := de_fake_project(iter, ipik);\n"
         "item := de_fake_project(item, ipik);\n"
         "kind := de_fake_project(kind, ipik);\n";
 }
-
-static char* PFdropMIL() {
-    return  
-        "# MIL EPILOGUE\n"
-        "drop(\"alarm\");\n"
-        "drop(\"mmath\");\n"
-        "drop(\"pcre\");\n"
-        "drop(\"malalgebra\");\n"
-        "drop(\"xtables\");\n"
-        "drop(\"bat_arith\");\n"
-        "drop(\"aggrX3\");\n"
-        "drop(\"pf_support\");\n"
-        "drop(\"pathfinder\");\n";
-}
-		
 
 /**
  * first MIL generation from Pathfinder Core
@@ -10383,14 +10385,15 @@ static char* PFdropMIL() {
  * @param c the root of the core tree
  */
 int
-PFprintMILtemp (PFcnode_t *c, int mode, char *genType, long timing, 
+PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *genType, long timing, 
                 char** prologue, char** query, char** epilogue)
 {
     PFarray_t *way, *counter;
-    int optimize = mode % 1000;
-    int module_only = mode - optimize;
+    opt_t *f = opt_open(optimize);
 
-    opt_t *f = opt_open(module_only + (optimize != 0));
+    /* hack: milprint_summer state, not mil_opt state */
+    f->num_fun = num_fun;     /* for queries: the amount of functions in the query itself (if any); used to ignore module functions */
+    f->module_base = module_base; /* only generate mil module; no query */
 
     way = PFarray (sizeof (int));
     counter = PFarray (sizeof (int));
@@ -10407,48 +10410,32 @@ PFprintMILtemp (PFcnode_t *c, int mode, char *genType, long timing,
                     PFarray (sizeof (var_info *)),
                     0);
 
-    if (module_only == 0)
-        milprintf(f, PFloadMIL()); 
-
-    opt_output(f, OPT_SEC_QUERY);
+    if (module_base == 0 && num_fun == -1) {
+    	opt_output(f, OPT_SEC_PROLOGUE);
+    }
+    milprintf(f, PFinitMIL(), genType); 
 
     /* get_var_usage appends information to the core nodes and creates a 
      * var_usage table, which is later split in vu_fid and vu_vid */
+    opt_output(f, OPT_SEC_PROLOGUE);
     get_var_usage (f, c, way, counter);
+    f->num_fun = num_fun;     /* reassign */
+
+    opt_output(f, OPT_SEC_QUERY);
 
     /* define working set and all other MIL context (global vars for the query) */
-    if (module_only == 0) {
-        milprintf(f, "{");
-        if (timing) { 
-            milprintf(f, 
-                "var time_read := 0;\n"
-                "var time_shred := 0;\n"
-                "var time_print := 0;\n"
-                "var time_exec := time();\n\n");
-        }
+    if (module_base == 0) {
         milprintf(f, PFstartMIL());
+        milprintf(f, "genType := \"%s\";\n", genType);
     }
         
     /* recursive translation of the core tree */
     translate2MIL (f, 0, 0, 0, c);
 
-    if (module_only == 0) {
-        if (timing) { 
-            milprintf(f, 
-                "\ntime_print := time();\n"
-                "time_exec := time_print - time_exec;\n\n");
-        }
-        milprintf(f, PFstopMIL(), genType);
-        if (timing) {
-            timing = PFtimer_stop(timing);
-            milprintf(f, 
-                "\ntime_print := time() - time_print;\n"
-                "printf(\"\\nTrans % 7d.%03d msec\\nShred %% 7d.000 msec\\nQuery %% 7d.000 msec\\nPrint %% 7d.000 msec\\n\","
-                "       time_shred, time_exec - time_shred, time_print);\n\n", timing/1000, timing%1000);
-        }
-        milprintf(f, "}");
-        opt_output(f, OPT_SEC_EPILOGUE);
-        milprintf(f, PFdropMIL()); 
+    if (module_base == 0) {
+        timing = PFtimer_stop(timing);
+        milprintf(f, "time_compile := %d;\n" , (int) (timing/1000));
+        milprintf(f, PFstopMIL());
     }
 
     if (opt_close(f, prologue, query, epilogue)) {
@@ -10457,5 +10444,3 @@ PFprintMILtemp (PFcnode_t *c, int mode, char *genType, long timing,
     }
     return 0;
 }
-
-

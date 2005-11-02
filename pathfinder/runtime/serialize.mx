@@ -1211,25 +1211,6 @@ int xquery_print_doc_main(str mode, BAT* ws, str docName) {
 
 #define XQRESTAG        "XQueryResult"
 
-/*
- * BAT format definitions. These must be equal to the definitions
- * in pathfinder.mx
- */
-
-#define XTRACT_KIND(X)  (X & 63)
-#define XTRACT_FRAG(X)  (X >> 6)
-
-#define QNAME 2
-#define BOOL  3
-#define INT   4
-#define DEC   5
-#define DBL   6
-#define STR   7
-#define U_A   8
-#define NODE  32
-#define ELEM  33
-#define ATTR  34
-
 /**
  * Handle the start() of an XQUERY/Pathfinder result sequence.
  */

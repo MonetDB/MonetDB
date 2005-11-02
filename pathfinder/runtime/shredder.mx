@@ -1594,14 +1594,16 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
             GDKerror("shred:mainSHREDDER: xmlCreateMemoryParserCtxt() failed\n");
             return -1;
         }
+/*
     } else if ( !isURL(location) ) {
         if ( !(xmlCtx = xmlCreateFileParserCtxt (location)) ) {
             GDKerror("shred:mainSHREDDER: xmlCreateFileParserCtxt(\"%s\") failed\n",location);
             return -1;
         }
+*/
     } else {
 #if HAVE_SAX2
-        if ( !(xmlCtx = xmlCreateURLParserCtxt (location, 0)) ) {
+        if ( !(xmlCtx = xmlCreateURLParserCtxt (location, XML_PARSE_XINCLUDE|XML_PARSE_NOXINCNODE)) ) {
             GDKerror("shred:mainSHREDDER: xmlCreateURLParserCtxt(\"%s\") failed\n",location); 
             return -1;
         }
