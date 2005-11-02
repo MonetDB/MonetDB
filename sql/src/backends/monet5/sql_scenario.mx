@@ -38,7 +38,8 @@ sql_export str SQLinitClient(Client c);
 sql_export str SQLexit(Client c);
 sql_export str SQLinit(Client c);
 sql_export str SQLinitEnvironment(int *ret);
-sql_export str SQLcompile(str *ret, str *expr, int *flag);
+sql_export str SQLcompile(str *ret, str *expr);
+sql_export str SQLstatement(str *ret, str *expr);
 sql_export str SQLepilogue();
 
 sql_export str SQLparser(Client c);
@@ -323,7 +324,7 @@ freeVariables(MalBlkPtr mb, MalStkPtr glb, int start)
 
 /* #define _SQL_COMPILE */
 str
-SQLcompile(str *ret, str *expr, int *flag)
+SQLcompileInternal(str *ret, str *expr, int flag)
 {
 	int err = 0;
 	mvc o, *m;
@@ -334,9 +335,8 @@ SQLcompile(str *ret, str *expr, int *flag)
 	backend *sql = ((backend *) c->state[PARSER]);
 	int len = strlen(*expr);
 
-	(void) flag;
 #ifdef _SQL_COMPILE
-	stream_printf(c->fdout, "#SQLstatement:flag=%d:%s\n", *flag, *expr);
+	stream_printf(c->fdout, "#SQLstatement:%s\n", *expr);
 #endif
 	*ret= 0;
 	if (!sql) {
@@ -425,19 +425,24 @@ We don;t search the cache for a previous incarnation.
 		    !m->cache) {
 			OPTmultiplex(c->curprg->def,0,0);
 		}
-		if (!c->curprg->def->errors) {
-			backend *be = c->state[PARSER];
-			sql->out = NULL; /* no output */
-			c->state[PARSER] = sql;
-			msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
-			c->state[PARSER] = be;
-		}
-		resetInstructions(c->curprg->def, 1);
-		freeVariables(c->curprg->def, c->glb, vtop);
+		if( flag) { /* execute it as well */
+			if (!c->curprg->def->errors) {
+				backend *be = c->state[PARSER];
+				sql->out = NULL; /* no output */
+				c->state[PARSER] = sql;
+				msg = (str) runMAL(c, c->curprg->def, 1, 0, 0, 0);
+				c->state[PARSER] = be;
+			}
+			resetInstructions(c->curprg->def, 1);
+			freeVariables(c->curprg->def, c->glb, vtop);
+		} else
+			*ret= GDKstrdup(functionId(getInstrPtr(c->curprg->def,0)));
 		c->curprg = curPrg;
+
 #ifdef _SQL_COMPILE
 		printFunction(c->fdout, c->curprg->def, c->listing);
 #endif
+		c->curprg = curPrg;
 	}
 #ifdef _SQL_COMPILE
 	stream_printf(c->fdout, "#parse result %d\n", err);
@@ -446,31 +451,28 @@ We don;t search the cache for a previous incarnation.
 We are done; a MAL procedure recides in the cache.
 @c
 endofcompile:
-	backend_destroy(sql);
+	/* backend_destroy(sql);*/
 	GDKfree(n);
 	GDKfree(b);
 	bstream_destroy(m->scanner.rs);
 	*m = o;
 	return msg;
 }
-str
-SQLcompile0(str *ret, str *expr)
-{
-	int flag= -1;
-	return SQLcompile(ret,expr,&flag);
-}
 @-
 Implementation of the execution of a single SQL statement is postponed.
 @c
 str
+SQLcompile(str *ret, str *expr){
+	SQLcompileInternal(ret,expr,0);
+	return MAL_SUCCEED;
+}
+str
 SQLstatement(str *ret, str *cmd)
 {
-	int flag=0;
-
 #ifdef _SQL_READER_DEBUG
 	stream_printf(GDKout, "#SQLstatement:%s\n", *cmd);
 #endif
-	SQLcompile(ret,cmd,&flag);
+	SQLcompileInternal(ret,cmd,1);
 	return MAL_SUCCEED;
 }
 
