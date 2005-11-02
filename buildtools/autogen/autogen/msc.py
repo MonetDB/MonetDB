@@ -25,12 +25,6 @@ MAKEFILE_HEAD = '''
 # Nothing much configurable below
 
 # cl -help describes the options
-!IFDEF USE_MINGW
-CC = gcc -mwin32 -mno-cygwin -mthreads -std=gnu99 -g
-CXX = g++ -mwin32 -mno-cygwin -g
-ARCHIVER = ar cr
-GENDLL = -mdll
-!ELSE
 !IFDEF DEBUG
 CC = cl -GF -W3 -wd4273 -wd4102 -MDd -nologo -Zi -G6 -Od -D_DEBUG -RTC1 -ZI
 !ELSE
@@ -39,7 +33,6 @@ CC = cl -GF -W3 -wd4273 -wd4102 -MD -nologo -Zi -G6
 CXX = $(CC)
 ARCHIVER = lib
 GENDLL =
-!ENDIF
 # optimize use -Ox
 RC = rc
 
@@ -49,23 +42,7 @@ JAR = jar
 CFLAGS = -I. -I$(TOPDIR) $(LIBC_INCS) $(INCLUDES)
 
 # No general LDFLAGS needed
-!IFDEF USE_MINGW
-LDFLAGS =
-OUTPUTEXE = -o 
-OUTPUTOBJ = -o 
-OUTPUTLIB =
-LDFLAGS2 =
-O = o
-CXXFLAGS = $(CFLAGS)
-!ELSE
-LDFLAGS = /link
-OUTPUTEXE = -Fe
-OUTPUTOBJ = -Fo
-OUTPUTLIB = /out:
-LDFLAGS2 = /subsystem:console /NODEFAULTLIB:LIBC
-O = obj
 CXXFLAGS = $(CFLAGS) -EHsc
-!ENDIF
 INSTALL = copy
 # TODO
 # replace this hack by something like configure ...
@@ -281,20 +258,20 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref = 'lib', dll
         add = pref+sep+name.replace('-','_')+"_LIBS ="
     else:
         add = name.replace('-','_') + " ="
-    add2 = add
     for l in list:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
-            add2 = add2 + " $(LIBOBJS)"
+        # special case (hack) for system libraries
+        elif l in ('-lodbc32', '-lodbccp32', '-lversion', '-lshlwapi', '-luser32'):
+            add = add + ' ' + l[2:] + '.lib'
         elif l[:2] == "-l":
             add = add + " lib"+l[2:]+".lib"
-            add2 = add2 + ' "%s"' % l
+        elif l[:2] == "-L":
+            add = add + ' "/LIBPATH:%s"' % l[2:].replace('/', '\\')
         elif l[0] == "-":
             add = add + ' "%s"' % l
-            add2 = add2 + ' "%s"' % l
         elif l[0] == '$':
             add = add + ' %s' % l
-            add2 = add2 + ' %s' % l
         elif l[0] != "@":
             lib = msc_translate_dir(l, msc) + '.lib'
             # add quotes if space in name
@@ -304,35 +281,24 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref = 'lib', dll
             if ' ' in lib:
                 lib = '"%s"' % lib
             add = add + ' %s' % lib
-            add2 = add2 + ' %s' % lib
             deps = deps + ' %s' % lib
     # this can probably be removed...
     for l in dlibs:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
-            add2 = add2 + " $(LIBOBJS)"
         elif l[:2] == "-l":
             add = add + " lib"+l[2:]+".lib"
-            add2 = add2 + " " + l
         elif l[0] in  ("-", "$"):
             add = add + " " + l
-            add2 = add2 + " " + l
         elif l[0] not in  ("@"):
             add = add + " " + msc_translate_dir(l, msc) + ".lib"
-            add2 = add2 + " " + msc_translate_dir(l, msc) + ".lib"
             deps = deps + ' "' + msc_translate_dir(l, msc) + '.lib"'
-    fd.write('!IFDEF USE_MINGW\n')
-    if type != "MOD":
-        fd.write(deps + "\n")
-    fd.write(add2 + "\n")
-    fd.write('!ELSE\n')
     if type != "MOD":
         fd.write(deps + "\n")
     fd.write(add + "\n")
-    fd.write('!ENDIF\n')
 
 def msc_translate_ext(f):
-    n = string.replace(f, '.o', '.$O')
+    n = string.replace(f, '.o', '.obj')
     return string.replace(n, '.cc', '.cxx')
 
 def msc_find_target(target, msc):
@@ -432,7 +398,7 @@ def msc_deps(fd, deps, objext, msc):
                     fd.write('\ttype "%s.tmpmil" >> "$@"\n' % (b))
                     fd.write('\tif not exist .libs $(MKDIR) .libs\n')
                     fd.write('\t$(INSTALL) "%s.mil" ".libs\\%s.mil"\n' % (b, b))
-            if ext in ("$O", "glue.$O", "tab.$O", "yy.$O"):
+            if ext in ("obj", "glue.obj", "tab.obj", "yy.obj"):
                 target, name = msc_find_target(tar, msc)
                 if name[0] == '_':
                     name = name[1:]
@@ -440,10 +406,10 @@ def msc_deps(fd, deps, objext, msc):
                     d, dext = split_filename(deplist[0])
                     if dext in ("c", "glue.c", "yy.c", "tab.c"):
                         # -DCOMPILE_DL_%s is for PHP extensions
-                        fd.write('\t$(CC) $(CFLAGS) $(GENDLL) -DLIB%s -DCOMPILE_DL_%s $(OUTPUTOBJ)"%s" -c "%s"\n' %
+                        fd.write('\t$(CC) $(CFLAGS) $(GENDLL) -DLIB%s -DCOMPILE_DL_%s -Fo"%s" -c "%s"\n' %
                                  (name, name, t, src))
                     elif dext == "cc":
-                        fd.write('\t$(CXX) $(CXXFLAGS) $(GENDLL) -DLIB%s $(OUTPUTOBJ)"%s" -c "%s"\n' %
+                        fd.write('\t$(CXX) $(CXXFLAGS) $(GENDLL) -DLIB%s -Fo"%s" -c "%s"\n' %
                                  (name, t, src))
             if ext == 'res':
                 fd.write("\t$(RC) -fo%s %s\n" % (t, src))
@@ -586,13 +552,13 @@ def msc_binary(fd, var, binmap, msc):
     for target in binmap['TARGETS']:
         t, ext = split_filename(target)
         if ext == "o":
-            srcs = srcs + " " + t + ".$O"
+            srcs = srcs + " " + t + ".obj"
         elif ext == "glue.o":
-            srcs = srcs + " " + t + ".glue.$O"
+            srcs = srcs + " " + t + ".glue.obj"
         elif ext == "tab.o":
-            srcs = srcs + " " + t + ".tab.$O"
+            srcs = srcs + " " + t + ".tab.obj"
         elif ext == "yy.o":
-            srcs = srcs + " " + t + ".yy.$O"
+            srcs = srcs + " " + t + ".yy.obj"
         elif ext in hdrs_ext:
             HDRS.append(target)
         elif ext in scripts_ext:
@@ -611,7 +577,7 @@ def msc_binary(fd, var, binmap, msc):
         fd.write('\t$(CXX) $(CXXFLAGS)')
     else:
         fd.write('\t$(CC) $(CFLAGS)')
-    fd.write(" $(OUTPUTEXE)%s.exe $(%s_OBJS) $(LDFLAGS) $(%s_LIBS) $(LDFLAGS2)\n\n" % (binname, binname.replace('-','_'), binname.replace('-','_')))
+    fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (binname, binname.replace('-','_'), binname.replace('-','_')))
 
     if SCRIPTS:
         fd.write(binname.replace('-','_')+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -621,7 +587,7 @@ def msc_binary(fd, var, binmap, msc):
         for h in HDRS:
             msc['HDRS'].append(h)
 
-    msc_deps(fd, binmap['DEPS'], ".$O", msc)
+    msc_deps(fd, binmap['DEPS'], ".obj", msc)
 
 def msc_bins(fd, var, binsmap, msc):
 
@@ -673,13 +639,13 @@ def msc_bins(fd, var, binsmap, msc):
             if t == bin:
                 t, ext = split_filename(target)
                 if ext == "o":
-                    srcs = srcs + " " + t + ".$O"
+                    srcs = srcs + " " + t + ".obj"
                 elif ext == "glue.o":
-                    srcs = srcs + " " + t + ".glue.$O"
+                    srcs = srcs + " " + t + ".glue.obj"
                 elif ext == "tab.o":
-                    srcs = srcs + " " + t + ".tab.$O"
+                    srcs = srcs + " " + t + ".tab.obj"
                 elif ext == "yy.o":
-                    srcs = srcs + " " + t + ".yy.$O"
+                    srcs = srcs + " " + t + ".yy.obj"
                 elif ext == 'res':
                     srcs = srcs + " " + t + ".res"
                 elif ext in hdrs_ext:
@@ -693,7 +659,7 @@ def msc_bins(fd, var, binsmap, msc):
             fd.write('\t$(CXX) $(CXXFLAGS)')
         else:
             fd.write('\t$(CC) $(CFLAGS)')
-        fd.write(" $(OUTPUTEXE)%s.exe $(%s_OBJS) $(LDFLAGS) $(%s_LIBS) $(LDFLAGS2)\n\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
+        fd.write(" -Fe%s.exe $(%s_OBJS) /link $(%s_LIBS) /subsystem:console /NODEFAULTLIB:LIBC\n\n" % (bin, bin.replace('-','_'), bin.replace('-','_')))
 
     if SCRIPTS:
         fd.write(name.replace('-','_')+"_SCRIPTS =" + msc_space_sep_list(SCRIPTS))
@@ -703,7 +669,7 @@ def msc_bins(fd, var, binsmap, msc):
         for h in HDRS:
             msc['HDRS'].append(h)
 
-    msc_deps(fd, binsmap['DEPS'], ".$O", msc)
+    msc_deps(fd, binsmap['DEPS'], ".obj", msc)
 
 def msc_mods_to_libs(fd, var, modmap, msc):
     modname = var[:-4]+"LIBS"
@@ -802,21 +768,20 @@ def msc_library(fd, var, libmap, msc):
             msc['EXTRA_DIST'].append(src)
 
     srcs = pref + sep + libname + "_OBJS ="
-    deffile1 = ''
-    deffile2 = ''
+    deffile = ''
     for target in libmap['TARGETS']:
         if target == "@LIBOBJS@":
             srcs = srcs + " $(LIBOBJS)"
         else:
             t, ext = split_filename(target)
             if ext == "o":
-                srcs = srcs + " " + t + ".$O"
+                srcs = srcs + " " + t + ".obj"
             elif ext == "glue.o":
-                srcs = srcs + " " + t + ".glue.$O"
+                srcs = srcs + " " + t + ".glue.obj"
             elif ext == "tab.o":
-                srcs = srcs + " " + t + ".tab.$O"
+                srcs = srcs + " " + t + ".tab.obj"
             elif ext == "yy.o":
-                srcs = srcs + " " + t + ".yy.$O"
+                srcs = srcs + " " + t + ".yy.obj"
             elif ext == 'res':
                 srcs = srcs + " " + t + ".res"
             elif ext in hdrs_ext:
@@ -825,22 +790,16 @@ def msc_library(fd, var, libmap, msc):
                 if target not in SCRIPTS:
                     SCRIPTS.append(target)
             elif ext == 'def':
-                deffile1 = ' "-DEF:$(SRCDIR)\\%s"' % target
-                deffile2 = ' --def "$(SRCDIR)\\%s"' % target
+                deffile = ' "-DEF:$(SRCDIR)\\%s"' % target
     fd.write(srcs + "\n")
     ln = pref + sep + libname
     if libmap.has_key('NOINST'):
         fd.write("%s.lib: $(%s_OBJS)\n" % (ln, ln.replace('-','_')))
-        fd.write('\t$(ARCHIVER) $(OUTPUTLIB)"%s.lib" $(%s_OBJS)\n' % (ln, ln.replace('-','_')))
+        fd.write('\t$(ARCHIVER) /out:"%s.lib" $(%s_OBJS)\n' % (ln, ln.replace('-','_')))
     else:
         fd.write("%s.lib: %s%s\n" % (ln, ln, dll))
-        fd.write("!IFDEF USE_MINGW\n")
         fd.write("%s%s: $(%s_OBJS) \n" % (ln, dll, ln.replace('-','_')))
-        fd.write("\tdllwrap --driver-name=gcc --mno-cygwin --dllname=%s%s --output-lib=%s.lib $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, dll, ln, ln.replace('-','_'), ln.replace('-','_'), deffile2))
-        fd.write("!ELSE\n")
-        fd.write("%s%s: $(%s_OBJS) \n" % (ln, dll, ln.replace('-','_')))
-        fd.write("\t$(CC) $(CFLAGS) -LD $(OUTPUTEXE)%s%s $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile1))
-        fd.write("!ENDIF\n")
+        fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s%s $(%s_OBJS) /link $(%s_LIBS)%s\n" % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
         if sep == '_':
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
             fd.write('\t$(INSTALL) "%s%s" ".libs\\%s%s"\n' % (ln, dll, ln, dll))
@@ -854,13 +813,13 @@ def msc_library(fd, var, libmap, msc):
         for h in HDRS:
             msc['HDRS'].append(h)
 
-    msc_deps(fd, libmap['DEPS'], ".$O", msc)
+    msc_deps(fd, libmap['DEPS'], ".obj", msc)
 
 def msc_libs(fd, var, libsmap, msc):
 
     lib = "lib"
     ld = "LIBDIR"
-    if (libsmap.has_key("DIR")):
+    if libsmap.has_key("DIR"):
         lib = "libs"
         ld = libsmap["DIR"][0] # use first name given
     ld = msc_translate_dir(ld,msc)
@@ -901,38 +860,31 @@ def msc_libs(fd, var, libsmap, msc):
                 msc_additional_libs(fd, libname, sep, "LIB", libslist, dlib, msc)
 
         srcs = "lib"+sep+libname+"_OBJS ="
-        deffile1 = ''
-        deffile2 = ''
+        deffile = ''
         for target in libsmap['TARGETS']:
             t, ext = split_filename(target)
             if t == libname:
                 t, ext = split_filename(target)
                 if ext == "o":
-                    srcs = srcs + " " + t + ".$O"
+                    srcs = srcs + " " + t + ".obj"
                 elif ext == "glue.o":
-                    srcs = srcs + " " + t + ".glue.$O"
+                    srcs = srcs + " " + t + ".glue.obj"
                 elif ext == "tab.o":
-                    srcs = srcs + " " + t + ".tab.$O"
+                    srcs = srcs + " " + t + ".tab.obj"
                 elif ext == "yy.o":
-                    srcs = srcs + " " + t + ".yy.$O"
+                    srcs = srcs + " " + t + ".yy.obj"
                 elif ext == 'res':
                     srcs = srcs + " " + t + ".res"
                 elif ext in scripts_ext:
                     if target not in SCRIPTS:
                         SCRIPTS.append(target)
                 elif ext == 'def':
-                    deffile1 = ' "-DEF:$(SRCDIR)\\%s"' % target
-                    deffile2 = ' --def "$(SRCDIR)\\%s"' % target
+                    deffile = ' "-DEF:$(SRCDIR)\\%s"' % target
         fd.write(srcs + "\n")
         ln = "lib" + sep + libname
         fd.write(ln + ".lib: " + ln + ".dll\n")
-        fd.write("!IFDEF USE_MINGW\n")
         fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_OBJS)\n")
-        fd.write("\tdllwrap --driver-name=gcc --mno-cygwin --dllname=%s.dll --output-lib=%s.lib $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, ln, ln.replace('-','_'), ln.replace('-','_'), deffile2))
-        fd.write("!ELSE\n")
-        fd.write(ln + ".dll: $(" + ln.replace('-','_') + "_OBJS)\n")
-        fd.write("\t$(CC) $(CFLAGS) -LD $(OUTPUTEXE)%s.dll $(%s_OBJS) $(LDFLAGS) $(%s_LIBS)%s\n" % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile1))
-        fd.write("!ENDIF\n")
+        fd.write("\t$(CC) $(CFLAGS) -LD -Fe%s.dll $(%s_OBJS) /link $(%s_LIBS)%s\n" % (ln, ln.replace('-','_'), ln.replace('-','_'), deffile))
         if sep == '_':
             fd.write('\tif not exist .libs $(MKDIR) .libs\n')
             fd.write('\t$(INSTALL) "%s.dll" ".libs\\%s.dll"\n' % (ln, ln))
@@ -954,7 +906,7 @@ def msc_libs(fd, var, libsmap, msc):
     if ld != 'LIBDIR':
         fd.write("%sdir = %s\n" % (lib.replace('-','_'), ld))
 
-    msc_deps(fd, libsmap['DEPS'], ".$O", msc)
+    msc_deps(fd, libsmap['DEPS'], ".obj", msc)
 
 def msc_includes(fd, var, values, msc):
     incs = "-I$(SRCDIR)"
