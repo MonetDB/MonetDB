@@ -25,10 +25,10 @@ ODBCLIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32
 
 lib_MonetODBCs = {
 	SOURCES = setup.c setup.rc
-	LIBS = $(ODBCLIBS)
+	LIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32
 }
 
 bin_odbcinstall = {
 	SOURCES = install.c
-	LIBS = $(ODBCLIBS)
+	LIBS = -lodbc32 -lodbccp32 -lversion -lshlwapi -luser32
 }

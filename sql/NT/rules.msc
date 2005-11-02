@@ -22,7 +22,7 @@ LEX=flex
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
 PTHREAD = C:\Pthreads
-PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVCE.lib"
+PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2.lib"
 PTHREAD_INCS = "-I$(PTHREAD)\include"
 
 # not need to edit beyond here..
@@ -156,16 +156,16 @@ MONET4=yes
 .mx.ll:
 	$(MX) $(MXFLAGS) -x L $<
 
-{$(SRCDIR)}.c.$O:
+{$(SRCDIR)}.c.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-.c.$O:
+.c.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-{$(SRCDIR)}.cxx.$O:
+{$(SRCDIR)}.cxx.obj:
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
 
-.cxx.$O:
+.cxx.obj:
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
 
 # needed for yacc/lex output generated under unix 
