@@ -25,7 +25,7 @@ This module contains a simple interface for network connections.
 .MODULE mapi;
 	.USE streams;
 
-	.BUILTIN mapi_listen2(int port, str sockfile, int maxusers, str cmd, bit open) = MAPIlisten; 
+	.BUILTIN mapi_listen2(int port, str sockfile, int maxusers, str cmd, bit open, ptr handle) = MAPIlisten; 
 		"Start the Mapi listener on <port> and/or <sockfile> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n <sockfile> is the name of a Unix socket.\n If <open> is true, accept connections from everywhere, otherwise only from localhost."
 
 	.BUILTIN mapi_listen_ssl(int port, int maxusers, str keyfile, str certfile, str cmd) = MAPIlistenSSL;
@@ -46,12 +46,16 @@ This module contains a simple interface for network connections.
 	VAR mapi_params := bat(int,str);
 	mapi_params.rename("mapi_params");
 
-	PROC mapi_listen(int port, int maxusers, str cmd, bit open) : void {
-		mapi_listen2(port, str(nil), maxusers, cmd, open);
+	PROC mapi_listen(int port, int maxusers, str cmd, bit open, ptr handle) : void {
+		mapi_listen2(port, str(nil), maxusers, cmd, open, handle);
 	}
 	ADDHELP("mapi_listen", "sjoerd", "May 23 2005",
 		"Start the Mapi listener on <port> for <maxusers>.\n For a new client connection MIL procedure <cmd>(Stream s_in, Stream s_out) is called.\nIf no <cmd> is specified a new client thread is forked.\n If <open> is true, accept connections from everywhere, otherwise only from localhost.",
 		mod());
+
+	PROC mapi_listen(int port, int maxusers, str cmd, bit open) : void {
+		mapi_listen2(port, str(nil), maxusers, cmd, open, ptr(0LL));
+	}
 
 	PROC mapi_listen(int port, int maxusers, str cmd) : void {
 		mapi_listen(port, maxusers, cmd, false);
@@ -196,6 +200,8 @@ This module contains a simple interface for network connections.
 #define MAPISSLPORT		40000
 #define MAPIMAXUSERS 		5
 
+mapi_export int MAPIinitClient(Client c, str cmd, stream *fdin, stream *fdout);
+
 #endif /* MAPI_H */
 @c
 #include <monet.h>
@@ -234,6 +240,31 @@ This module contains a simple interface for network connections.
         }
 }
 @c
+int MAPIinitClient(Client c, str cmd, stream *fdin, stream *fdout) {
+	if (c->mil_accept == NULL) {				
+		int stream_tpe = ATOMindex("Stream");
+		ValRecord fds[3];
+		monet_sig_t sig;
+		YYSTREE t1, t2;
+	
+		fds[1].vtype = fds[2].vtype = stream_tpe;
+		Myyexpand(	
+			Myyexpand(
+				c->mil_accept = Myynode(TOK_BUILTIN, TYPE_int), 
+				t1 = Myynode(TOK_CONSTANT, stream_tpe)),
+		  	t2 = Myynode(TOK_CONSTANT, stream_tpe));
+		sig.token = TBL_normal_resolve(cmd, 3, fds, &sig, c->stk);
+		if (sig.token != TOK_BUILTIN) {
+			GDKerror("MAPIinitClient: builtin function %s(stream,stream) unknown\n", cmd);
+			closeClient(c, FALSE);
+			return -1;
+		}
+		c->mil_accept->yyval.val.pval = sig.fast_fcn;
+	}
+	c->mil_accept->yysons[0]->yyval.val.pval = fdin;
+	c->mil_accept->yysons[1]->yyval.val.pval = fdout;
+	return 0;
+}
 
 int
 MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
@@ -255,9 +286,11 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	char *cmd;
 	Client father;
 	int accept_any, *Accept_any;
+	Client (*get_client)(stream*, stream*) = NULL; 
+	ptr *Get_client;
 
 	CNTXTclient(stk, &father);
-	if (lt->cnt != 5) {
+	if (lt->cnt > 6) {
 		return handle_argerror(res, lt->cnt, 5);
 	}
 	@:builtin_operand(0,TYPE_int,Port)@
@@ -280,6 +313,10 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	@:builtin_operand(4,TYPE_bit,Accept_any);
 	accept_any = *Accept_any;
 	res->vtype = TYPE_void;
+	if (lt->cnt == 6) {
+		@:builtin_operand(5,TYPE_ptr,Get_client);
+		get_client = *Get_client;
+	}
 
 	port = (port ? port : MAPIPORT);
 	maxusers = (maxusers ? maxusers : MAPIMAXUSERS);
@@ -413,7 +450,7 @@ Get the new information for the server socket and start listening.
 			stream *fdout = socket_wastream(msgsock, "Mserver mapi write");
 			char *mp = GDKgetenv("monet_prompt");
 			char *name = father->user;
-			Client c;
+			Client c = NULL;
 
 			/* in embedded mode we allow just one client */
 			if (GDKembedded && monet_forks > 0) {
@@ -474,56 +511,43 @@ Get the new information for the server socket and start listening.
 					continue;
 				}
 			}
-			c = initClient(name, mp, FALSE);
+			if (get_client) {
+				/* try to get a cached client session */
+				c = (*get_client)(fdin, fdout);
+			} 
 			if (c == 0) {
-				stream_printf(fdout, "MAPIlisten:Failed to init client for user %s\n", name);
-				GDKfree(name);
+				c = initClient(name, mp, FALSE);
+				if (c == 0) {
+					stream_printf(fdout, "MAPIlisten:Failed to init client for user %s\n", name);
+					GDKfree(name);
 				
-				/* Make sure that the write- (from-) stream is closed first,
-				 * as the related read- (in-) stream closes the shared
-				 * socket; see also src/common/stream.mx:socket_close .
-				 */
-				stream_close(fdout);
-				stream_destroy(fdout);
-				stream_close(fdin);
-				stream_destroy(fdin);
-				continue;
-			}
-			c->login = time(0);
-			c->listing = 0;
-			c->fdin = fdin;
-			c->fdout = fdout;
-			c->mode = BLOCKMODE;
-			CNTXTcopy(stk, c);
-			TBL_initclient(c, father);
-			
-			if (STREQ(cmd, "")) { 
-				monet_hello(fdout);
-				(void) monetFork();
-			} else {
-				int stream_tpe = ATOMindex("Stream");
-				ValRecord fds[3];
-				monet_sig_t sig;
-				YYSTREE t1, t2;
-				
-				fds[1].vtype = fds[2].vtype = stream_tpe;
-				fds[1].val.pval = fdin;
-				fds[2].val.pval = fdout;
-
-				Myyexpand(Myyexpand(
-					  c->mil_accept = Myynode(TOK_BUILTIN, TYPE_int), 
-					  t1 = Myynode(TOK_CONSTANT, stream_tpe)),
-					  t2 = Myynode(TOK_CONSTANT, stream_tpe));
-				/* why twice ? */
-				t1->yyval.val.pval = fdin;
-				t2->yyval.val.pval = fdout;
-				sig.token = TBL_normal_resolve(cmd, 3, fds, &sig, father-monet_clients);
-				if (sig.token != TOK_BUILTIN) {
-					GDKerror("Client builtin function %s(stream,stream) unknown\n", cmd);
-					closeClient(c, FALSE);
+					/* Make sure that the write- (from-) stream is closed first,
+					 * as the related read- (in-) stream closes the shared
+					 * socket; see also src/common/stream.mx:socket_close .
+					 */
+					stream_close(fdout);
+					stream_destroy(fdout);
+					stream_close(fdin);
+					stream_destroy(fdin);
 					continue;
 				}
-				c->mil_accept->yyval.val.pval = sig.fast_fcn;
+				c->mode = BLOCKMODE;
+				c->listing = 0;
+				c->login = time(0);
+				c->fdin = fdin;
+				c->fdout = fdout;
+				CNTXTcopy(stk, c);
+				TBL_initclient(c, father);
+			
+				if (STREQ(cmd, "")) { 
+					monet_hello(fdout);
+					(void) monetFork();
+				} else {
+					if (MAPIinitClient(c, cmd, fdin, fdout) < 0) {
+						closeClient(c, 0);
+						continue;
+					}
+				}
 			}
 			scheduleClient(c);
 			PARDEBUG THRprintf(GDKerr, "MAPIlisten:client accepted %d\n", msgsock);
