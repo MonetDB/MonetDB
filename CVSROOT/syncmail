@@ -269,8 +269,8 @@ def mime_encode_header(line):
         res = mime_header.search(line, pos)
         if res is None:
             break
-        newline.append('%s%s%s=?%s?Q?%s?=' %
-                       (newline, line[pos:res.start(0)], res.group(1),
+        newline.append('%s%s=?%s?Q?%s?=' %
+                       (line[pos:res.start(0)], res.group(1),
                         charset, mime_encode(res.group(2), True)))
         pos = res.end(0)
     return ''.join(newline) + line[pos:]
