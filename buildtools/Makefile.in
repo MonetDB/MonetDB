@@ -10,19 +10,19 @@ default: all
 
 all:
 	cd $(SRC)/autogen && python setup.py build
-	cd MX && $(MAKE) $@
-	cd MEL && $(MAKE) $@
-	cd BURG && $(MAKE) $@
+	cd _MX && $(MAKE) $@
+	cd _MEL && $(MAKE) $@
+	cd _BURG && $(MAKE) $@
 
 # ... run individual "make install"s ...
 install:
 	cd $(SRC)/autogen && python setup.py install --prefix=$(PREFIX)
-	cd MX && $(MAKE) $@
-	cd MEL && $(MAKE) $@
-	cd BURG && $(MAKE) $@
+	cd _MX && $(MAKE) $@
+	cd _MEL && $(MAKE) $@
+	cd _BURG && $(MAKE) $@
 
 # ... and individual "make *"s
 %:
-	cd MX && $(MAKE) $@
-	cd MEL && $(MAKE) $@
-	cd BURG && $(MAKE) $@
+	cd _MX && $(MAKE) $@
+	cd _MEL && $(MAKE) $@
+	cd _BURG && $(MAKE) $@

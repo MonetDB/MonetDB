@@ -5,8 +5,10 @@ THIS="$0"
 ARGS="$*"
 
 SRC="$PWD"
-if [ "${THIS%/*}" != "$THIS" ] ; then
+if [ "${THIS#/}" != "$THIS" ] ; then
 	SRC="${THIS%/*}"
+elif [ "${THIS%/*}" != "$THIS" ] ; then
+	SRC="$PWD/${THIS%/*}"
 fi
 BUILD="$PWD"
 PREFIX="/usr"
@@ -29,7 +31,7 @@ cat $SRC/Makefile.in \
  > Makefile || exit 1
 
 # ... and run individual "configure"s
-mkdir MX && ( cd MX && $SRC/Mx/configure $ARGS ) || exit 1
-mkdir MEL && ( cd MEL && $SRC/mel/configure $ARGS --with-mx=$BUILD/MX/Mx ) || exit 1
-mkdir BURG && ( cd BURG && $SRC/burg/configure $ARGS ) || exit 1
+( test -d _MX || mkdir _MX ) && ( cd _MX && $SRC/Mx/configure $ARGS ) || exit 1
+( test -d _MEL || mkdir _MEL ) && ( cd _MEL && $SRC/mel/configure $ARGS --with-mx=$BUILD/_MX/Mx ) || exit 1
+( test -d _BURG || mkdir _BURG ) && ( cd _BURG && $SRC/burg/configure $ARGS ) || exit 1
 
