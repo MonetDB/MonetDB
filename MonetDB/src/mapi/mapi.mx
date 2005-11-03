@@ -245,14 +245,13 @@ int MAPIinitClient(Client c, str cmd, stream *fdin, stream *fdout) {
 		int stream_tpe = ATOMindex("Stream");
 		ValRecord fds[3];
 		monet_sig_t sig;
-		YYSTREE t1, t2;
 	
 		fds[1].vtype = fds[2].vtype = stream_tpe;
 		Myyexpand(	
 			Myyexpand(
 				c->mil_accept = Myynode(TOK_BUILTIN, TYPE_int), 
-				t1 = Myynode(TOK_CONSTANT, stream_tpe)),
-		  	t2 = Myynode(TOK_CONSTANT, stream_tpe));
+				Myynode(TOK_CONSTANT, stream_tpe)),
+			Myynode(TOK_CONSTANT, stream_tpe));
 		sig.token = TBL_normal_resolve(cmd, 3, fds, &sig, c->stk);
 		if (sig.token != TOK_BUILTIN) {
 			GDKerror("MAPIinitClient: builtin function %s(stream,stream) unknown\n", cmd);
@@ -315,7 +314,7 @@ MAPIlisten(Cntxt stk, YYSTREE lt, ValPtr res)
 	res->vtype = TYPE_void;
 	if (lt->cnt == 6) {
 		@:builtin_operand(5,TYPE_ptr,Get_client);
-		get_client = *Get_client;
+		get_client = (Client (*)(stream *, stream *))*Get_client;
 	}
 
 	port = (port ? port : MAPIPORT);
