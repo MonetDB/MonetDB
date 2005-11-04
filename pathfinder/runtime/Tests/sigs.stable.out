@@ -72,10 +72,14 @@ module 'pathfinder'
 #-------------------------------------------------------------------------------------------------#
 [ "add_qname(str, str, str, BAT[void,BAT]) : oid"						  ]
 [ "add_qnames(BAT[void,str], BAT[void,str], BAT[void,str], BAT[void,BAT]) : BAT[void,oid]"	  ]
+[ "attr_constr(BAT[void,oid], BAT[void,str], BAT[void,BAT]) : BAT[void,BAT]"										  ]
 [ "create_ws() : BAT[void,BAT]"                                   ]
 [ "delete_all_docs(bit) : void"			  ]
 [ "delete_doc(str) : void"			  ]
 [ "doc_tbl(BAT[void,BAT], BAT[void,str]) : BAT[void,BAT]"         ]
+[ "elem_constr(BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[oid,oid], BAT[oid,oid], BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[void,BAT]"	  ]
+[ "elem_constr_empty(BAT[void,oid], BAT[void,BAT]) : BAT[void,BAT]"											  ]
+[ "merge_adjacent_text_nodes(BAT[void,oid], BAT[void,oid], BAT[void,oid], BAT[void,BAT]) : BAT[void,oid]"						  ]
 [ "pfstart() : void"				  ]
 [ "pfstart(bit) : void"				  ]
 [ "shred_doc(str, str) : void"														  ]
@@ -85,9 +89,9 @@ module 'pathfinder'
 [ "xmlcache_print() : void"			  ]
 [ "xmlcache_print_rules() : void"		  ]
 [ "xmldb_print() : void"			  ]
-[ "xquery(str) : str"				  ]
-[ "xquery(str, str) : str"														  ]
+[ "xquery(mode str, xquery str, is_url bit) : str "													  ]
 [ "xquery_server(Stream in, Stream out) : void "											  ]
+[ "xquery_start_query_cache() : ptr"															  ]
 
 quit();
 
