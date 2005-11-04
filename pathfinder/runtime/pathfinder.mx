@@ -2798,7 +2798,7 @@ xquery_prepare(Cntxt stk, int msec, char* mode, char* query)
                 p = xquery_parse_space(p+6);
                 if (strncmp(p, "namespace", 9) == 0 && ISSPACE(p[9])) {
                     ns = xquery_parse_space(p+9);
-                    nsend = xquery_parse_ident(ns);
+                    nsend = xquery_parse_ident((unsigned char*)ns);
                     p = xquery_parse_space(nsend);
                     if (*p == '=') {
                         p = xquery_parse_space(p+1);
@@ -2837,12 +2837,12 @@ xquery_prepare(Cntxt stk, int msec, char* mode, char* query)
         /* detect queries that consist of a single method call only */
         nsend = ns = (char*) &nsbuf; 
         loc = p; 
-        locend = xquery_parse_ident(loc);
+        locend = xquery_parse_ident((unsigned char*)loc);
         p = xquery_parse_space(locend);
         if (*p == ':') {
             ns = loc; nsend = locend; 
             loc = ++p; 
-            locend = xquery_parse_ident(p);
+            locend = xquery_parse_ident((unsigned char*)p);
             p = xquery_parse_space(locend);
         }
         if (*p != '(' || ((locend-loc) == 2 && loc[0] == 'i' && loc[1] == 'f')) {
