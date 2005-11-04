@@ -58,16 +58,17 @@ class MonetSocketBlockMode extends MonetSocket {
 	/** The number of available bytes to read */
 	private short readState = 0;
 
-	/** A ByteBuffer for performing a possible swab on an integer for reading */
-	private ByteBuffer inputBuffer;
-	/** A ByteBuffer for performing a possible swab on an integer for sending */
-	private ByteBuffer outputBuffer;
+	/** A short in two bytes for holding the block size in bytes */
+	private byte[] blklen = new byte[2];
+	/** A boolean indicating whether the server sends us big-endian
+	 * multi-byte sequences */
+	private boolean bigEndian = true;	// we default to yes
 
 	MonetSocketBlockMode(String host, int port)
 		throws IOException
 	{
 		con = new Socket(host, port);
-		// set nodelay, as it greatly speeds up small message (like we
+		// set nodelay, as it greatly speeds up small messages (like we
 		// often do)
 		con.setTcpNoDelay(true);
 
@@ -78,11 +79,6 @@ class MonetSocketBlockMode extends MonetSocket {
 		// else.
 		fromMonetRaw = new BufferedInputStream(con.getInputStream(), BLOCK + 2);
 		toMonetRaw = new BufferedOutputStream(con.getOutputStream(), BLOCK + 2);
-
-		outputBuffer = ByteBuffer.allocate(2);
-		inputBuffer = ByteBuffer.allocate(2);
-		// leave the buffer byte-order as is, it can be modified later
-		// by using setByteOrder()
 
 		readBuffer = new StringBuffer();
 	}
@@ -147,7 +143,6 @@ class MonetSocketBlockMode extends MonetSocket {
 		}
 	}
 
-	private byte[] blklen = new byte[2];
 	/**
 	 * writeln puts the given string on the stream and flushes the
 	 * stream afterwards so the data will actually be sent.  The given
@@ -171,22 +166,21 @@ class MonetSocketBlockMode extends MonetSocket {
 			int todo = len;
 			short blocksize;
 			while (todo > 0) {
-				// write the length of this block
-				outputBuffer.rewind();
 				if (todo <= BLOCK) {
 					// always fits, because of BLOCK's size
 					blocksize = (short)todo;
-					// this is the last block
-					outputBuffer.putShort((short)((blocksize << 1) | 1));
+					// this is the last block, so encode least
+					// significant bit in the last byte (big-endian)
+					blklen[0] = (byte)(blocksize >> 7);
+					blklen[1] = (byte)(blocksize << 1 & 0xFF | 1);
 				} else {
 					// always fits, because of BLOCK's size
 					blocksize = (short)BLOCK;
-					// another block will follow
-					outputBuffer.putShort((short)(blocksize << 1));
+					// another block will follow, encode least
+					// significant bit in the last byte (big-endian)
+					blklen[0] = (byte)(blocksize >> 7);
+					blklen[1] = (byte)(blocksize << 1 & 0xFF);
 				}
-
-				outputBuffer.rewind();
-				outputBuffer.get(blklen);
 
 				toMonetRaw.write(blklen);
 
@@ -271,27 +265,30 @@ class MonetSocketBlockMode extends MonetSocket {
 				// start reading a new block of data if appropriate
 				if (readState == 0) {
 					// read next two bytes (short)
-					byte[] data = new byte[2];
-					int size = fromMonetRaw.read(data);
+					int size = fromMonetRaw.read(blklen);
 					if (size == -1) throw
 						new IOException("End of stream reached");
 					if (size < 2) throw
 						new AssertionError("Illegal start of block");
 
-					// start with a new block
-					inputBuffer.rewind();
-					inputBuffer.put(data);
-
-					// get the int-value and store it in the state
-					inputBuffer.rewind();
-					// we don't care about having the last block or not,
+					// Get the int-value and store it in the readState.
+					// We don't care about having the last block or not,
 					// the MAPI protocol knows when we should stop
 					// reading
-					readState = (short)(inputBuffer.getShort() >> 1);
+					if (bigEndian) {
+						readState = (short)(
+								(blklen[0] & 0xFF) << 7 |
+								(blklen[1] & 0xFF) >> 1
+							);
+					} else {
+						readState = (short)(
+								(blklen[0] & 0xFF) >> 1 |
+								(blklen[1] & 0xFF) << 7
+							);
+					}
 
 					if (debug) {
-						inputBuffer.rewind();
-						if ((inputBuffer.getShort() & 1) == 1) {
+						if ((blklen[bigEndian ? 1 : 0] & 1) == 1) {
 							logRx("final block: " + readState + " bytes");
 						} else {
 							logRx("new block: " + readState + " bytes");
@@ -333,13 +330,13 @@ class MonetSocketBlockMode extends MonetSocket {
 	}
 
 	/**
-	 * Sets the byte-order to reading data from the server. By default the
-	 * byte order is big-endian or network order.
+	 * Sets the byte-order to reading data from the server.  By default
+	 * the byte order is big-endian or network order.
 	 *
 	 * @param order either ByteOrder.BIG_ENDIAN or ByteOrder.LITTLE_ENDIAN
 	 */
 	public synchronized void setByteOrder(ByteOrder order) {
-		inputBuffer.order(order);
+		bigEndian = order == ByteOrder.BIG_ENDIAN;
 	}
 
 	/**
