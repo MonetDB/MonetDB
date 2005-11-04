@@ -811,7 +811,8 @@ static int opt_mil(opt_t *o, char* milbuf) {
 
 		/* separate MIL statements by replacing last char with 0 */
 		if (*p && *p != ':') {
-			o->stmts[stmt - (o->stmts[stmt].mil[0] == ':')].delchar = *p;
+                        int prev = (o->stmts[stmt].mil[0] != ':')?stmt:stmt?stmt-1:OPT_STMTS-1;
+			o->stmts[prev].delchar = *p;
 			*p++ = 0; 
 #ifdef OPT_CODEMOTION
 			if (o->optimize > 1) {

@@ -7648,44 +7648,65 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, 
                 "{ # translate fn:subsequence\n"
                 "if (loop%03u.count() = 1) {\n"
-                "    var lo := item_dbl_%03d.fetch(0) - dbl(1);\n"
-                "    var hi := INT_MAX;\n", cur_level, counter-1);
+                "    var lo := item_dbl_%03d;\n"
+                "    if (type(lo) = bat) lo := lo.fetch(0) - dbl(1);\n", cur_level, counter-1);
         if (fun->arity == 3)
-                milprintf(f, "    hi := int(lo + item_dbl_%03d.fetch(0)) - 1;\n", counter);
+                milprintf(f, "    var hi := item_dbl_%03d;\n"
+                             "    if (type(hi) = bat) hi := int(lo + hi.fetch(0)) - 1;\n", counter);
+        else 
+                milprintf(f, "    var hi := INT_MAX;\n");
 
         milprintf(f, "\n" 
                 "    # select a slice\n"
-                "    iter := iter.slice(int(lo),hi);\n"
-                "    kind := kind.slice(int(lo),hi);\n"
-                "    item%s := item%s.slice(int(lo), hi);\n"
+                "    ipik := nil;\n"
                 "    if (type(iter) = bat) {\n"
+                "        iter := iter.slice(int(lo),hi);\n"
                 "        ipik := iter;\n"
-                "    } else { if (type(kind) = bat) {\n"
+                "    }\n"
+                "    if (type(kind) = bat) {\n"
+                "        kind := kind.slice(int(lo),hi);\n"
                 "        ipik := kind;\n"
-                "    } else { if (type(item%s) = bat) {\n"
+                "    }\n"
+                "    if (type(item%s) = bat) {\n"
+                "        item%s := item%s.slice(int(lo), hi);\n"
                 "        ipik := item%s;\n"
-                "    } else {\n"
+                "    }\n"
+                "    if (isnil(ipik))\n"
                 "        ERROR(\"translateFunction: subsequence: not all of iter|item|kind must be constants!\\n\");\n"
-                "    }}}\n"
                 "    pos := ipik.mark(1@0);\n"
                 "} else {\n"
-                "    var offset := item_dbl_%03d.reverse().mark(1@0).reverse();\n"
-                "    var sel := [>=](pos, iter.leftfetchjoin([oid](offset)));\n",
+                "    var offset_dbl := item_dbl_%03d;\n"
+                "    var offset_oid;\n"
+                "    pos := pos.de_NO_project(ipik);\n"
+                "    if (type(offset_dbl) = bat) {\n"
+		"        offset_dbl := offset_dbl.reverse().mark(1@0).reverse();\n"
+		"        offset_oid := iter.leftfetchjoin([oid](offset_dbl));\n"
+		"    } else {\n"
+		"        offset_oid := oid(offset_dbl);\n"
+		"    }\n"
+                "    var sel := [>=](pos, offset_oid);\n",
                         kind_str(code), kind_str(code), 
                         kind_str(code), kind_str(code), counter-1);
         if (fun->arity == 3)
                 milprintf(f,
-                        "    offset := [+](offset, item_dbl_%03d.reverse().mark(1@0).reverse());\n"
-                        "    sel := [and](sel, [<](pos, iter.leftfetchjoin([oid](offset))));\n", counter);
+                        "    var limit_dbl := item_dbl_%03d;\n"
+                        "    if (type(limit_dbl) = bat) {\n"
+			"        offset_oid := iter.leftfetchjoin([oid]([+](offset_dbl, limit_dbl.reverse().mark(1@0).reverse())));\n"
+                        "    } else { if (type(offset) = bat) {\n"
+			"        offset_oid := iter.leftfetchjoin([oid]([+](offset_dbl, limit_dbl)));\n"
+                        "    } else {\n"
+			"        offset_oid := oid(+(offset_dbl, limit_dbl));\n"
+                        "    }}\n"
+                        "    sel := [and](sel, [<](pos, offset_oid));\n", counter);
 
         milprintf(f, "\n" 
                 "    # carry through the selection on the table\n"
                 "    ipik := sel.ord_uselect(true).mark(0@0).reverse();\n"
                 "    iter := ipik.leftfetchjoin(iter);\n"
-                "    kind := ipik.leftfetchjoin(kind);\n"
-                "    item%s := ipik.leftfetchjoin(item%s);\n" 
+                "    if (type(kind) = bat) kind := ipik.leftfetchjoin(kind);\n"
+                "    if (type(item%s) = bat) item%s := ipik.leftfetchjoin(item%s);\n" 
                 "    pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
-                "}\n", kind_str(code), kind_str(code));
+                "}\n", kind_str(code), kind_str(code), kind_str(code));
 
         if (fun->arity == 3)
                 deleteResult_ (f, counter, DBL);
@@ -8293,6 +8314,9 @@ translate2MIL (opt_t *f, int code, int cur_level, int counter, PFcnode_t *c)
                 milprintf(f, "UNDEF fn_%s;\n", c->sem.fun->sig);
   	        opt_output(f, OPT_SEC_PROLOGUE);
             }
+/* debug statement to print actual UDF parameters
+"if (genType.search(\"debug\") >= 0) print(v_vid000.col_name(\"vid\"), v_iter000.col_name(\"iter\"), v_item000.col_name(\"item\"), v_kind000.col_name(\"kind\"));\n"
+*/
             milprintf(f,
                     "PROC fn_%s (bat[void,oid] loop000, "
                                "bat[void,oid] outer000, "
@@ -10243,11 +10267,6 @@ const char* PFinitMIL() {
         "var dec_values := dbl_values;\n"
         "var str_values := bat(str,void).key(true).reverse().seqbase(0@0).insert(0@0,\"\");\n"
         "\n"
-        "var fun_vid000 := bat(void,oid).seqbase(0@0);\n"
-        "var fun_iter000 := bat(void,oid).seqbase(0@0);\n"
-        "var fun_item000 := bat(void,oid).seqbase(0@0);\n"
-        "var fun_kind000 := bat(void,int).seqbase(0@0);\n"
-        "\n"
         "# variables for (intermediate) results\n"
         "var ipik;\n"
         "var iter;\n"
@@ -10291,6 +10310,16 @@ const char* PFinitMIL() {
         "var var_usage := bat(oid,oid);\n"
         "var proc_vid := bat(str,lng);\n"
         "\n"
+        "# environment that represents start of any query\n"
+        "var loop000 := bat(void,oid,1).seqbase(0@0).insert(0@0, 1@0).access(BAT_READ);\n"
+        "var inner000 := loop000;\n"
+        "var outer000 := loop000;\n"
+        "var order_000 := loop000;\n"
+        "var v_vid000;\n"
+        "var v_iter000;\n"
+        "var v_item000;\n"
+        "var v_kind000;\n"
+        "\n"
         "var genType := \"xml\";"
         "var time_compile;\n";
 }
@@ -10315,18 +10344,7 @@ const char* PFstartMIL() {
         "  usage := usage.CTrefine(vu_vid);\n"
         "  usage := usage.mark(1000@0).reverse();\n"
         "  vu_vid := usage.leftfetchjoin(vu_vid);\n"
-        "  vu_fid := usage.leftfetchjoin(vu_fid);\n"
-        "\n"
-        "  # environment that represents start of any query\n"
-        "  var loop000 := bat(void,oid,1).seqbase(0@0).insert(0@0, 1@0).access(BAT_READ);\n"
-        "  var inner000 := loop000;\n"
-        "  var outer000 := loop000;\n"
-        "  var order_000 := loop000;\n"
-        "  var v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-        "  var v_iter000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-        "  var v_pos000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-        "  var v_item000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
-        "  var v_kind000 := bat(void,int).access(BAT_APPEND).seqbase(0@0);\n";
+        "  vu_fid := usage.leftfetchjoin(vu_fid);\n";
 }
 
 const char* PFdocbatMIL() {
@@ -10335,13 +10353,18 @@ const char* PFdocbatMIL() {
         " add_docbat(ws, bat(docBAT), \"soap\", \"soap\", height);\n";
 }
 
+/* debug statement for PFstopMIL to print result set 
+"if (genType.search(\"debug\") >= 0) print(item.slice(0,10).col_name(\"tot_items_\"+str(item.count())));\n" 
+*/
+
 const char* PFstopMIL() {
     return   
         "  time_print := time();\n"
         "  time_exec := time_print - time_exec;\n"
         "  \n"
         "  item := item.de_NO_project(ipik);\n"
-        "  print_result(genType,ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n"
+        "  if (genType.search(\"none\") = -1)\n"
+        "    print_result(genType,ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n"
         "});\n"
         "destroy_ws(ws);\n"
         "if (not(isnil(err))) ERROR(err);\n"
@@ -10426,7 +10449,12 @@ PFprintMILtemp (PFcnode_t *c, int optimize, int module_base, int num_fun, char *
     /* define working set and all other MIL context (global vars for the query) */
     if (module_base == 0) {
         milprintf(f, PFstartMIL());
-        milprintf(f, "genType := \"%s\";\n", genType);
+        milprintf(f, "  genType := \"%s\";\n"
+                     "  var v_vid000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+                     "  var v_iter000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+                     "  var v_pos000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+                     "  var v_item000 := bat(void,oid).access(BAT_APPEND).seqbase(0@0);\n"
+                     "  var v_kind000 := bat(void,int).access(BAT_APPEND).seqbase(0@0);\n", genType);
     }
         
     /* recursive translation of the core tree */

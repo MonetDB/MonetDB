@@ -3241,3 +3241,782 @@ bat* pf_support_prelude() {
 void pf_support_epilogue() {
     MT_destroy_lock(pf_runtime_lock);
 }
+
+@- PROCs required by the algebraic translation ###
+@mil
+PROC doc_tbl (BAT[void, BAT] ws, BAT[void, str] item) : BAT[void,BAT]
+{
+    # consider each document only once
+    var docs := item.tuniqueALT ().mark (0@0).reverse ();
+
+    # throw out documents we already have in the working set
+    docs := docs.reverse ()
+                .kdiff (ws.fetch (DOC_LOADED).reverse ())
+                .mark (0@0)
+                .reverse ();
+
+    # load all remaining documents into the working set
+    docs@batloop () {
+        ws := add_doc (ws, $t);
+    }
+
+    # The working set now contains all documents we need.
+
+    # pick the according frag value for each document requested
+    var ret_frag := item.leftjoin (ws.fetch (DOC_LOADED).reverse ())
+                        .reverse ()
+                        .mark (0@0)
+                        .reverse ();
+
+    # pre values will all be zero
+    var ret_item := ret_frag.project (0@0);
+
+    # return result as a BAT of BATs
+    return new (void, BAT).insert (nil, ws)
+                          .insert (nil, ret_item)
+                          .insert (nil, ret_frag)
+                          .seqbase (0@0);
+}
+
+ADDHELP("doc_tbl", "teubner", "Aug 2005",
+                "PARAMETERS:\n\
+ws    current working set; will be modified\n\
+item  list of documents to add to the working set\n\
+DESCRIPTION:\n\
+Implementation of the algebra operator `doc_tbl' that\n\
+loads persistent documents into the working set.\n\
+Input is a list of document names. Output is a BAT of\n\
+BATs with the components\n\
+(a) the modified working set,\n\
+(b) an `item' column with the pre values of the\n\
+document roots, and\n\
+(c) a `frag' column that encodes document\n\
+container (within the working set) according to our\n\
+working set representation.",
+                "pf_support");
+
+# primitive for supporting highly specific XQuery functionality
+PROC merge_adjacent_text_nodes (BAT[void,oid] iter,
+                                BAT[void,oid] pre,
+                                BAT[void,oid] pfrag,
+                                BAT[void,BAT] ws) : BAT[void,oid]
+{
+    var map := pre.ord_uselect(nil,nil).mark(0@0).reverse();
+    iter := map.leftfetchjoin(iter);
+    pre := map.leftfetchjoin(pre);
+    pfrag := map.leftfetchjoin(pfrag);
+
+    var kind := mposjoin (pre, pfrag, ws.fetch(PRE_KIND));
+    var text := kind.[=](TEXT);
+    var text_sel := text.select(true).mark(0@0).reverse();
+    var text_pre := text_sel.leftfetchjoin(pre)
+                            .reverse().mark(0@0).reverse();
+    var text_frag := text_sel.leftfetchjoin(pfrag)
+                             .reverse().mark(0@0).reverse();
+
+    var text_prop := mposjoin (mposjoin (text_pre, text_frag, ws.fetch(PRE_PROP)),
+                               mposjoin (text_pre, text_frag, ws.fetch(PRE_FRAG)),
+                               ws.fetch(PROP_TEXT));
+    text_pre := nil;
+    text_frag := nil;
+
+    var pre_prop := pre.mirror()
+                       .outerjoin(text_prop.reverse()
+                                           .leftfetchjoin(text_sel)
+                                           .reverse());
+    var pre_enum := [oid](text);
+    var res_size := (iter.tunique().count() 
+                  + text.count() + 1)
+                  - text_sel.count();
+
+    var res_strs := combine_text_string (iter.chk_order(),
+                                         pre_enum,
+                                         pre_prop,
+                                         res_size);
+    iter := nil;
+    pre_enum := nil;
+    pre_prop := nil;
+    res_size := nil;
+    var res_texts := text_constr (res_strs.reverse().mark(0@0).reverse(), ws);
+    ws := res_texts.fetch(0);
+    var textnodes := res_texts.fetch(1);
+    res_texts := nil;
+    
+    text_pre := pre.mirror()
+                   .outerjoin(res_strs.mark(0@0)
+                                      .leftfetchjoin(textnodes));
+    text_frag := pre.mirror()
+                    .outerjoin(res_strs.project(WS));
+    res_strs := nil;
+    textnodes := nil;
+    pre := map.reverse()
+              .leftfetchjoin([ifthenelse](text,text_pre,pre));
+    pfrag := map.reverse()
+                .leftfetchjoin([ifthenelse](text,text_frag,pfrag));
+
+    # return result as a BAT of BATs
+    return new (void, BAT).insert (nil, ws)
+                          .insert (nil, pre)
+                          .insert (nil, pfrag)
+                          .seqbase (0@0);
+}
+ADDHELP("merge_adjacent_text_nodes", "tsheyar", "Oct 2005",
+        "PARAMETERS:\n\
+BAT[void,str] iter : prefix of qname\n\
+BAT[void,str] pre  : URI of the qname\n\
+BAT[void,str] frag : local part of the qname\n\
+BAT[void,BAT] ws   : working set that stores the qname\n\
+DESCRIPTION:\n\
+merge_adjacent_text_nodes takes an iter|pre|frag schema and\n\
+combines within each iteration all adjacent text nodes.\n\
+(Note that the order is given by the input order.)\n\
+New textnodes are added into the working set ws and the result is\n\
+a bat of bats (ws, modified_pres, modified_frags). The heads of the\n\
+pre and frag are aligned to the input relations.",
+        "pf_support");
+                                
+# add_qnames changes the working set as side effect
+# without a 'prefix\1uri\1local' index this could be quite expensive
+#
+# it basically does:
+# [ifthenelse]([isnil](local),local.project(nil),[add_qname](prefix,uri,local,local.project(ws)));
+PROC add_qnames (BAT[void,str] prefix,
+                 BAT[void,str] uri,
+                 BAT[void,str] local,
+                 BAT[void,BAT] ws) : BAT[void,oid]
+{
+    # lookup already stored qnames
+    var prefix_uri := prefix.[+](str('\1')).[+](uri);
+    var propIDs := ws.fetch(QN_PREFIX_URI)
+                     .fetch(WS)
+                     .leftjoin(prefix_uri.reverse()).mirror();
+    var prop_str := propIDs.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));
+    propIDs := prop_str.leftjoin(local.reverse());
+
+    # add missing qnames, that are not the ``nil'' string, to the storage
+    var missing := local.select(str(nil),str(nil)).kdiff(propIDs.reverse()).mark(0@0).reverse();
+    var seqb := oid (ws.fetch(QN_LOC).fetch(WS).count() +
+                     int (ws.fetch(QN_LOC).fetch(WS).seqbase()));
+    var new_names := missing.leftfetchjoin(prefix).[+](str('\1')).[+](
+                     missing.leftfetchjoin(uri).[+](str('\1')).[+](
+                     missing.leftfetchjoin(local)));
+        # only search unique values
+        new_names := new_names.kunique();
+        # create new key with references to the original ones
+        new_names := new_names.mark(seqb).reverse().leftfetchjoin(missing);
+
+    var new_prefix := new_names.leftfetchjoin(prefix);
+    var new_uri := new_names.leftfetchjoin(uri);
+    var new_local := new_names.leftfetchjoin(local);
+    ws.fetch(QN_URI).fetch(WS).insert(new_uri);
+    ws.fetch(QN_PREFIX).fetch(WS).insert(new_prefix);
+    ws.fetch(QN_LOC).fetch(WS).insert(new_local);
+    ws.fetch(QN_PREFIX_URI).fetch(WS).insert(new_prefix.[+](str('\1')).[+](new_uri));
+    ws.fetch(QN_LOC_URI).fetch(WS).insert(new_local.[+](str('\1')).[+](new_uri));
+
+    # lookup IDs of the qnames
+    var ns := ws.fetch(QN_PREFIX_URI)
+                .fetch(WS)
+                .leftjoin(prefix_uri.reverse());
+    var loc := ws.fetch(QN_LOC).fetch(WS)
+                 .leftjoin(local.reverse());
+    propIDs := ns.intersect(loc);
+    # add missing nil values again
+    return local.mirror()
+                .outerjoin(propIDs.reverse())
+                # the result head is aligned with the heads from the input
+                .reverse().mark(seqbase(local)).reverse();
+}
+ADDHELP("add_qnames", "tsheyar", "Oct 2005",
+        "PARAMETERS:\n\
+BAT[void,str] prefix : prefix of qname\n\
+BAT[void,str] uri    : URI of the qname\n\
+BAT[void,str] local  : local part of the qname\n\
+BAT[void,BAT] ws     : working set that stores the qname\n\
+DESCRIPTION:\n\
+add_qnames adds qnames consisting of the three strings prefix,\n\
+uri, and local to the working set (ws). The return value is the\n\
+identifier that corresponds to the qname in the qname container\n\
+of the transient nodes.\n\
+NOTE: the working set 'ws' is changed as side effect!",
+        "pf_support");
+
+# add_qname changes the working set as side effect
+PROC add_qname (str prefix, str uri, str local, BAT[void,BAT] ws) : oid
+{
+    var propID := ws.fetch(QN_PREFIX_URI)
+                    .fetch(WS)
+                    .ord_uselect(prefix + str('\1') + uri).mirror();
+    var prop_str := propID.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS));
+    propID := prop_str.ord_uselect(local);
+    prop_str := nil;
+    var itemID;
+    if (propID.count() = 0)
+    {
+        itemID := oid(ws.fetch(QN_LOC).fetch(WS).count());
+        ws.fetch(QN_URI).fetch(WS).insert(itemID, uri);
+        ws.fetch(QN_PREFIX).fetch(WS).insert(itemID, prefix);
+        ws.fetch(QN_LOC).fetch(WS).insert(itemID, local);
+        ws.fetch(QN_PREFIX_URI).fetch(WS).insert(itemID, prefix + str('\1') + uri);
+        ws.fetch(QN_LOC_URI).fetch(WS).insert(itemID, local + str('\1') + uri);
+    } else { 
+        itemID := propID.reverse().fetch(0);
+    }
+    return itemID;
+}
+ADDHELP("add_qname", "tsheyar", "Oct 2005",
+        "PARAMETERS:\n\
+str           prefix : prefix of qname\n\
+str           uri    : URI of the qname\n\
+str           local  : local part of the qname\n\
+BAT[void,BAT] ws     : working set that stores the qname\n\
+DESCRIPTION:\n\
+add_qname adds a qname consisting of the three strings prefix,\n\
+uri, and local to the working set ws. The return value is the\n\
+identifier that corresponds to the qname in the qname container\n\
+of the transient nodes.\n\
+NOTE: the working set 'ws' is changed as side effect!",
+        "pf_support");
+
+PROC text_constr (BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
+{
+    # find all strings that are not already in the working set ...
+    var ws_prop_text := ws.fetch(PROP_TEXT).fetch(WS);
+    var unq_str := item.tunique().mark(0@0).reverse();
+    var str_unq := unq_str.reverse().kdiff(ws_prop_text.reverse());
+    unq_str := nil;
+    # ... and add them to the PROP_TEXT container
+    var seqb := oid(int(ws_prop_text.seqbase()) + ws_prop_text.count());
+    unq_str := str_unq.mark(seqb).reverse();
+    str_unq := nil;
+    ws_prop_text := ws_prop_text.insert(unq_str);
+    unq_str := nil;
+
+    # get the property values of the strings;
+    # we invest in sorting ws_prop_text &  X_strings/item on the TYPE_str 
+    # join columns as the mergejoin proved to be faster and more robust with
+    # large BATs than a hashjoin
+    var ws_text_prop := ws_prop_text.reverse().sort();
+    var X_item := item.mark(0@0);
+    var X_strings := item.reverse().mark(0@0).sort().reverse();
+    var X_prop := X_strings.leftjoin(ws_text_prop);
+    X_strings := nil;
+    ws_text_prop := nil;
+    var newProp := X_item.leftjoin(X_prop);
+    X_item := nil;
+    X_prop := nil;
+
+    # add new text nodes to the working set
+    var seqb := oid(count(ws.fetch(PRE_KIND).fetch(WS)) +
+                    int(ws.fetch(PRE_KIND).fetch(WS).seqbase()));
+    var newPre_prop := newProp.reverse().mark(seqb).reverse();
+    newProp := nil;
+    ws.fetch(PRE_PROP).fetch(WS).insert(newPre_prop);
+    ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));
+    ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));
+    ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(TEXT));
+    ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));
+
+    { # add index entries for optimized scj
+        var kind_pre_ := newPre_prop.mark(nil).reverse().chk_order();
+        ws.fetch(KIND_PRE + int(TEXT)).fetch(WS).insert(kind_pre_);
+    }
+    newPre_prop := nil;
+    item := item.mark(seqb);
+    seqb := nil;
+
+    # return result as a BAT of BATs
+    var res := new (void, BAT).insert (nil, ws)
+                              .insert (nil, item)
+                              .insert (nil, item.project(WS))
+                              .seqbase (0@0);
+
+    { # adding new fragments to the WS_FRAG bat
+        var seqb := ws.fetch(WS_FRAG).count();
+        seqb := oid(seqb);
+        var new_pres := item.reverse().mark(seqb).reverse();
+        seqb := nil;
+        ws.fetch(WS_FRAG).insert(new_pres);
+        new_pres := nil;
+        ws.fetch(HEIGHT).replace(WS, max(ws.fetch(HEIGHT).fetch(WS), 1));
+    }
+
+    return res;
+}
+ADDHELP("text_constr", "tsheyar", "Oct 2005",
+        "PARAMETERS:\n\
+BAT[void,str] item : content of the text nodes\n\
+BAT[void,BAT] ws   : working set that stores the document representations\n\
+DESCRIPTION:\n\
+text_constr is a generic text constructor that creates for each\n\
+item a new textnode. These textnodes are added to the working\n\
+set ws. Output is a BAT of BATs with the following components:\n\
+(a) the modified working set,\n\
+(b) the pre values of the textnodes, and\n\
+(c) the frag values of the textnodes",
+        "pf_support");
+
+PROC attr_constr (BAT[void, oid] qn, BAT[void, str] item, BAT[void, BAT] ws) : BAT[void,BAT]
+{
+    # find all strings that are not already in the working set ...
+    var ws_prop_val := ws.fetch(PROP_VAL).fetch(WS);
+    var unq_str := item.tunique().mark(0@0).reverse();
+    var str_unq := unq_str.reverse().kdiff(ws_prop_val.reverse());
+    unq_str := nil;
+    # ... and add them to the PROP_VAL container
+    var seqb := oid(int(ws_prop_val.seqbase()) + ws_prop_val.count());
+    unq_str := str_unq.mark(seqb).reverse();
+    str_unq := nil;
+    ws_prop_val := ws_prop_val.insert(unq_str);
+    unq_str := nil;
+
+    # get the property values of the strings;
+    # we invest in sorting ws_prop_val &  X_strings/item on the TYPE_str 
+    # join columns as the mergejoin proved to be faster and more robust with
+    # large BATs than a hashjoin
+    var ws_val_prop := ws_prop_val.reverse().sort();
+    var X_item := item.mark(0@0);
+    var X_strings := item.reverse().mark(0@0).sort().reverse();
+    var X_prop := X_strings.leftjoin(ws_val_prop);
+    X_strings := nil;
+    ws_val_prop := nil;
+    var newProp := X_item.leftjoin(X_prop);
+    X_item := nil;
+    X_prop := nil;
+
+    # add new text nodes to the working set
+    var seqb := oid(count(ws.fetch(ATTR_OWN).fetch(WS)) +
+                    int(ws.fetch(ATTR_OWN).fetch(WS).seqbase()));
+    var newAttr_prop := newProp.reverse().mark(seqb).reverse();
+    newProp := nil;
+    ws.fetch(ATTR_PROP).fetch(WS).insert(newAttr_prop);
+    ws.fetch(ATTR_OWN).fetch(WS).insert(newAttr_prop.mark(nil));
+    ws.fetch(ATTR_QN).fetch(WS).insert(qn.reverse().mark(seqb).reverse());
+    ws.fetch(ATTR_FRAG).fetch(WS).insert(newAttr_prop.project(WS));
+
+    newAttr_prop := nil;
+    item := item.mark(seqb);
+    seqb := nil;
+
+    # return result as a BAT of BATs
+    var res := new (void, BAT).insert (nil, ws)
+                              .insert (nil, item)
+                              .insert (nil, item.project(WS))
+                              .seqbase (0@0);
+
+    return res;
+}
+ADDHELP("attr_constr", "tsheyar", "Oct 2005",
+        "PARAMETERS:\n\
+BAT[void,oid] qn   : names of the attributes\n\
+BAT[void,str] item : values of the attributes\n\
+BAT[void,BAT] ws   : working set that stores the document representations\n\
+DESCRIPTION:\n\
+attr_constr is a generic attribute constructor that creates for\n\
+each aligned qn|item pair a new attribute. These attributes are\n\
+added to the working set ws. Output is a BAT of BATs with the\n\
+following components:\n\
+(a) the modified working set,\n\
+(b) the attribute ids, and\n\
+(c) the frag values of the attributes",
+        "pf_support");
+
+PROC elem_constr_empty (BAT[void, oid] qn, BAT[void, BAT] ws) : BAT[void,BAT]
+{
+    # add new element nodes to the working set
+    var seqb := oid(count(ws.fetch(PRE_KIND).fetch(WS)) +
+                    int(ws.fetch(PRE_KIND).fetch(WS).seqbase()));
+    var newPre_prop := qn.reverse().mark(seqb).reverse();
+    ws.fetch(PRE_PROP).fetch(WS).insert(newPre_prop);
+    ws.fetch(PRE_SIZE).fetch(WS).insert(newPre_prop.project(0));
+    ws.fetch(PRE_LEVEL).fetch(WS).insert(newPre_prop.project(chr(0)));
+    ws.fetch(PRE_KIND).fetch(WS).insert(newPre_prop.project(ELEMENT));
+    ws.fetch(PRE_FRAG).fetch(WS).insert(newPre_prop.project(WS));
+
+    { # add index entries for optimized scj
+        var kind_pre_ := newPre_prop.mark(nil).reverse().chk_order();
+        ws.fetch(KIND_PRE + int(ELEMENT)).fetch(WS).insert(kind_pre_);
+    }
+    newPre_prop := nil;
+    qn := qn.mark(seqb);
+    seqb := nil;
+
+    # return result as a BAT of BATs
+    var res := new (void, BAT).insert (nil, ws)
+                              .insert (nil, qn)
+                              .insert (nil, qn.project(WS))
+                              .seqbase (0@0);
+
+    { # adding new fragments to the WS_FRAG bat
+        var seqb := ws.fetch(WS_FRAG).count();
+        seqb := oid(seqb);
+        var new_pres := qn.reverse().mark(seqb).reverse();
+        seqb := nil;
+        ws.fetch(WS_FRAG).insert(new_pres);
+        new_pres := nil;
+        ws.fetch(HEIGHT).replace(WS, max(ws.fetch(HEIGHT).fetch(WS), 1));
+    }
+
+    return res;
+}
+ADDHELP("elem_constr_empty", "tsheyar", "Oct 2005",
+        "PARAMETERS:\n\
+BAT[void,oid] qn   : names of the elements\n\
+BAT[void,BAT] ws   : working set that stores the document representations\n\
+DESCRIPTION:\n\
+elem_constr_empty is a generic element constructor for empty\n\
+elements that creates for each qname qn a new element. These\n\
+elements are added to the working set ws. Output is a BAT of\n\
+BATs with the following components:\n\
+(a) the modified working set,\n\
+(b) the pre values, and\n\
+(c) the frag values of the elements",
+        "pf_support");
+
+PROC elem_constr (BAT[void, oid] qn_iter,
+                  BAT[void, oid] qn_item,
+                  BAT[void, oid] iter,
+                  BAT[oid, oid] pre,
+                  BAT[oid, oid] pfrag,
+                  BAT[void, oid] attr,
+                  BAT[void, oid] afrag,
+                  BAT[void, BAT] ws) : BAT[void,BAT]
+{
+    var root_iter;
+    var root_size;
+    var root_prop;
+    var root_kind;
+    var root_frag;
+    var root_level;
+    # attr
+        var root_pre;
+        var root_pre_frag;
+        
+    # throw out nil values and generate iter|item|frag representation
+    # for attributes
+    var selected := pre.select(nil,nil);
+    var piter := selected.mark(0@0).reverse()
+                         .leftfetchjoin(iter)
+                         # make it void
+                         .reverse().mark(0@0).reverse();
+    pre := selected.reverse().mark(0@0).reverse();
+    pfrag := pfrag.select(nil,nil).reverse().mark(0@0).reverse();
+    selected := nil;
+
+    # throw out nil values and generate iter|item|frag representation
+    # for attributes
+    selected := attr.select(nil,nil);
+    var aiter := selected.mark(0@0).reverse()
+                         .leftfetchjoin(iter)
+                         # make it void
+                         .reverse().mark(0@0).reverse();
+    attr := selected.reverse().mark(0@0).reverse();
+    afrag := afrag.select(nil,nil).reverse().mark(0@0).reverse();
+    selected := nil;
+
+    if (pre.count() != 0) {
+
+        # use head to avoid elimination of duplicates
+        # (this is additionally used in the content level determination
+        var iter_unq := piter.mirror();
+        # get all subtree copies
+        var res_scj := loop_lifted_descendant_or_self_step 
+                           (iter_unq, pre, pfrag, ws, 0);
+        iter_unq := nil;
+
+        # variables for the result of the scj 
+        var res_iter := res_scj.fetch(0);
+        var res_item := res_scj.fetch(1);
+        # !be aware that res_frag is only a fake_project!
+        var res_frag := res_scj.fetch(2);
+        # !avoid being res_iter a fake_project!
+        res_iter := de_NO_project (res_iter, res_item);
+        res_scj := nil;
+            
+        # create content_iter as sorting argument for the merged union
+        var content_iter := res_iter.leftfetchjoin(piter).chk_order();
+        # create subtree copies for all bats
+        var content_size := mposjoin(res_item, res_frag, ws.fetch(PRE_SIZE));
+        var content_prop := mposjoin(res_item, res_frag, ws.fetch(PRE_PROP));
+        var content_kind := mposjoin(res_item, res_frag, ws.fetch(PRE_KIND));
+        var content_frag := mposjoin(res_item, res_frag, ws.fetch(PRE_FRAG));
+        var content_level := mposjoin(res_item, res_frag, ws.fetch(PRE_LEVEL));
+        # change the level of the subtree copies
+        content_level := content_level.[+](chr(1));
+        var contentRoot_level := mposjoin(pre, pfrag, ws.fetch(PRE_LEVEL));
+        # map Root_level to the result of the scj 
+        #using the faked iteration values
+        contentRoot_level := res_iter.leftfetchjoin(contentRoot_level);
+        content_level := content_level.[-](contentRoot_level);
+        content_level := content_level.reverse().mark(0@0).reverse();
+        contentRoot_level := nil;
+            
+        # attr
+            # content_pre is needed for attribute subtree copies
+            var content_pre := res_item;
+            # as well as content_pre_frag
+            var content_pre_frag := res_frag;
+            
+        # get the maximum level of the new constructed nodes
+        # and set the maximum of the working set
+        {
+            var height := int(content_level.max()) + 1;
+            ws.fetch(HEIGHT).replace(WS, 
+                                     max(ws.fetch(HEIGHT).fetch(WS),
+                                         height));
+            height := nil;
+        }
+            
+        root_iter := qn_iter.chk_order();
+        # calculate the sizes for the root nodes
+        root_size := {count}(content_iter.reverse(), qn_iter.reverse())
+                             .reverse().mark(seqbase(qn_iter)).reverse();
+        root_prop := qn_item;
+        root_kind := fake_project(ELEMENT);
+        root_frag := fake_project(WS);
+        root_level := fake_project(chr(0));
+
+        # attr
+            # root_pre is a dummy needed for merge union with content_pre 
+            root_pre := fake_project(oid(nil));
+            # as well as root_frag_pre
+            root_pre_frag := fake_project(oid(nil));
+
+        # merge union root and nodes
+        {
+        var merged_result := merged_union (
+                                 root_iter, content_iter,
+                                 root_size, content_size,
+                                 root_level, content_level,
+                                 root_kind, content_kind,
+                                 root_prop, content_prop,
+                                 root_frag, content_frag,
+        # attr
+                                 root_pre, content_pre,
+                                 root_pre_frag, content_pre_frag);
+        root_iter := nil;
+        content_iter := nil;
+        content_size := nil;
+        content_level := nil;
+        content_kind := nil;
+        content_prop := nil;
+        content_frag := nil;
+        # attr
+            content_pre := nil;
+            content_pre_frag := nil;
+        root_size := merged_result.fetch(1);
+        root_level := merged_result.fetch(2);
+        root_kind := merged_result.fetch(3);
+        root_prop := merged_result.fetch(4);
+        root_frag := merged_result.fetch(5);
+        # attr
+            root_pre := merged_result.fetch(6);
+            root_pre_frag := merged_result.fetch(7);
+
+        merged_result := nil;
+
+        # printing output for debugging purposes
+            # print("merged (root & content)");
+            # print(root_size, [int](root_level), [int](root_kind), root_prop);
+        }
+
+    } else { # end of ``if (pre.count() != 0)''
+
+        root_size := qn_iter.project(0);
+        root_prop := qn_item; # !the seqbase of qn_item is later modified
+        root_kind := qn_iter.project(ELEMENT);
+        root_frag := qn_iter.project(WS);
+        root_level := qn_iter.project(chr(0));
+        # attr
+            root_pre := qn_iter.project(oid(nil));
+            root_pre_frag := qn_iter.project(oid(nil));
+
+    }  # end of else in ``if (pre.count() != 0)''
+        
+    # set the offset for the new created trees
+    {
+        var seqb := oid(count(ws.fetch(PRE_SIZE).fetch(WS))
+                        + int(ws.fetch(PRE_SIZE).fetch(WS).seqbase()));
+        root_size := root_size.seqbase(seqb);
+        root_prop := root_prop.seqbase(seqb);
+        root_kind := root_kind.seqbase(seqb);
+        root_frag := root_frag.seqbase(seqb);
+        root_level := root_level.seqbase(seqb);
+        # attr
+            # get the new pre values
+            root_pre := root_pre.seqbase(seqb);
+            root_pre_frag := root_pre_frag.seqbase(seqb);
+        seqb := nil;
+    }
+
+    # insert the new trees into the working set
+    ws.fetch(PRE_SIZE).fetch(WS).insert(root_size);
+    ws.fetch(PRE_KIND).fetch(WS).insert(root_kind);
+    ws.fetch(PRE_PROP).fetch(WS).insert(root_prop);
+    ws.fetch(PRE_FRAG).fetch(WS).insert(root_frag);
+    ws.fetch(PRE_LEVEL).fetch(WS).insert(root_level);
+
+    # update indexes
+    {
+      var knd := ELEMENT;
+      while ( knd <= DOCUMENT ) {
+        var kind_root := root_kind.ord_uselect(knd).reverse().chk_order();
+        ws.fetch(KIND_PRE + int(knd)).fetch(WS).insert(kind_root);
+        if (knd = ELEMENT) {
+          var prop_root := kind_root.reverse().mirror()
+                                    .leftfetchjoin(root_prop)
+                                    .reverse().chk_order();
+          ws.fetch(PROP_PRE + int(knd)).fetch(WS).insert(prop_root);
+        }
+        if (knd = PI) {
+          var prop_root := kind_root.reverse().mirror()
+                                    .leftfetchjoin(root_prop)
+                                    .reverse().chk_order();
+          ws.fetch(PROP_PRE + 1).fetch(WS).insert(prop_root);
+        }
+        knd :+= chr(1);
+      }
+    }
+
+    # save the new roots for creation of the intermediate result
+    var roots := root_level.ord_uselect(chr(0));
+    # (note that all operations are order preserving and ``mark''
+    # aligns the key with the qn_iter input 
+    roots := roots.mark(0@0).reverse();
+
+    # resetting the temporary variables
+    root_size := nil;
+    root_prop := nil;
+    root_kind := nil;
+    root_frag := nil;
+    root_level := nil;
+        
+    # adding the new constructed roots to the WS_FRAG bat of the
+    # working set, that a following (preceding) step can check
+    # the fragment boundaries
+    {
+        var seqb := oid(count(ws.fetch(WS_FRAG)));
+        var new_pre_values := roots.reverse().mark(seqb).reverse();
+        seqb := nil;
+        ws.fetch(WS_FRAG).insert(new_pre_values);
+        new_pre_values := nil;
+    }
+
+    # ----------------------------------
+    # ----- ATTRIBUTE TRANSLATION ------
+    # ----------------------------------
+    # 1. step: add subtree copies of attributes
+    if (pre.count() != 0) { # but only if there are any subtree nodes
+        # lookup the affected attributes using the old pre values
+        var preNew_attr := mvaljoin(root_pre, 
+                                    root_pre_frag,
+                                    ws.fetch(ATTR_OWN));
+        # lookup the first free attr value
+        var seqb := oid(ws.fetch(ATTR_QN).fetch(WS).count());
+        # split up result of mvaljoin and mark them with the correct seqbase
+        var attrNew_preNew := preNew_attr.mark(seqb).reverse();
+        var attrNew_attrOld := preNew_attr.reverse().mark(seqb).reverse();
+        preNew_attr := nil;
+        var attrNew_pre_frag := attrNew_preNew.leftfetchjoin(root_pre_frag);
+        # help MIL to keep head void
+        attrNew_pre_frag := attrNew_pre_frag.reverse().mark(seqb).reverse();
+        seqb := nil;
+
+        # get the values of the QN/OID offsets for the reference to the
+        # string values
+        var attrNew_qn := mposjoin(attrNew_attrOld,
+                                   attrNew_pre_frag,
+                                   ws.fetch(ATTR_QN));
+        var attrNew_prop := mposjoin(attrNew_attrOld,
+                                     attrNew_pre_frag,
+                                     ws.fetch(ATTR_PROP));
+        # get fragment where values are stored (not where attribute is stored)
+        var attrNew_frag := mposjoin(attrNew_attrOld,
+                                     attrNew_pre_frag,
+                                     ws.fetch(ATTR_FRAG));
+        attrNew_attrOld := nil;
+        attrNew_pre_frag := nil;
+
+        ws.fetch(ATTR_QN).fetch(WS).insert(attrNew_qn);
+        ws.fetch(ATTR_PROP).fetch(WS).insert(attrNew_prop);
+        ws.fetch(ATTR_OWN).fetch(WS).insert(attrNew_preNew);
+        ws.fetch(ATTR_FRAG).fetch(WS).insert(attrNew_frag);
+        attrNew_qn := nil;
+        attrNew_prop := nil;
+        attrNew_preNew := nil;
+        attrNew_frag := nil;
+    }
+
+    # 2. step: add attribute binding for new elements
+    if (attr.count() != 0) { # but only if there are any top level attributes
+        
+        # use iter, qn and frag to find unique combinations
+        var attr_qn := mposjoin(attr, afrag, ws.fetch(ATTR_QN));
+        var attr_frag := mposjoin(attr, afrag, ws.fetch(ATTR_FRAG));
+        var sorting := aiter.reverse().sort().reverse();
+        sorting := sorting.CTrefine(mposjoin(attr_qn,
+                                             attr_frag,
+                                             ws.fetch(QN_LOC_URI)));
+        var unq_attrs := sorting.tunique();
+        sorting := nil;
+        # test uniqueness
+        if (unq_attrs.count() != aiter.count())
+        {
+           if (qn_item.count() > 0) {
+               ERROR ("err:XQDY0025: attribute names are not unique in constructed element '%s'.",
+                      qn_item.leftfetchjoin(ws.fetch(QN_LOC).fetch(WS))
+                             .fetch(0));
+           } else {
+               ERROR ("err:XQDY0025: attribute names are not unique in constructed element.");
+           }
+        }
+        unq_attrs := nil;
+
+        var seqb := oid(ws.fetch(ATTR_QN).fetch(WS).count());
+        attr_qn := attr_qn.seqbase(seqb);
+        var attr_own := aiter.leftjoin(qn_iter.reverse())
+                             .leftfetchjoin(roots)
+                             .reverse().mark(seqb).reverse();
+        var attr_prop := mposjoin(attr, afrag, ws.fetch(ATTR_PROP));
+        attr_prop := attr_prop.seqbase(seqb);
+        attr_frag := attr_frag.seqbase(seqb);
+        seqb := nil;
+
+        ws.fetch(ATTR_QN).fetch(WS).insert(attr_qn);
+        ws.fetch(ATTR_PROP).fetch(WS).insert(attr_prop);
+        ws.fetch(ATTR_OWN).fetch(WS).insert(attr_own);
+        ws.fetch(ATTR_FRAG).fetch(WS).insert(attr_frag);
+        attr_qn := nil;
+        attr_prop := nil;
+        attr_own := nil;
+        attr_frag := nil;
+    }
+
+    # create result as a BAT of BATs
+    var res := new (void, BAT).insert (nil, ws)
+                              .insert (nil, roots)
+                              .insert (nil, roots.project(WS))
+                              .seqbase (0@0);
+    roots := nil;
+
+    return res;
+}
+ADDHELP("elem_constr", "tsheyar", "Oct 2005",
+        "PARAMETERS:\n\
+BAT[void, oid] qn_iter : iteration values of the qnames\n\
+BAT[void, oid] qn_item : names of the elements\n\
+BAT[void, oid] iter    : iteration values of the content\n\
+BAT[oid, oid] pre      : pre values of the content (heads aligned with head of iter)\n\
+BAT[oid, oid] pfrag    : node frag values of the content (heads aligned with head of iter)\n\
+BAT[void, oid] attr    : attribute ids of the content (heads aligned with head of iter)\n\
+BAT[void, oid] afrag   : attribute fragments of the content (heads aligned with head of iter)\n\
+BAT[void, BAT] ws      : working set that stores the document representations\n\
+DESCRIPTION:\n\
+elem_constr is a full featured element constructor that requires\n\
+qn|iter pairs for the name part and iteration, attribute, and node\n\
+information for the content. These elements are added to the working\n\
+set ws. Output is a BAT of BATs with the following components:\n\
+(a) the modified working set,\n\
+(b) the pre values, and\n\
+(c) the frag values of the elements",
+        "pf_support");
