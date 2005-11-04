@@ -2089,7 +2089,7 @@ bs_write(stream *ss, const void *buf, size_t elmsize, size_t cnt)
 #endif
 			/* since the block is at max BLOCK (8K) - 2 size we can
 			   store it in a two byte integer */
-			blksize = (short)s->nr;
+			blksize = (short) s->nr;
 			/* the last bit tells whether a flush is in there, it's not
 			 * at this moment, so shift it to the left */
 			blksize <<= 1;
@@ -2134,7 +2134,9 @@ bs_flush(stream *ss)
 		}
 #endif
 		blksize = s->nr << 1;
-		blksize |= (short)1;	/* make last bit 1 */
+		/* indicate that this is the last buffer of a block by
+		   setting the low-order bit */
+		blksize |= (short) 1;
 		/* allways flush (even empty blocks) needed for the protocol) */
 		if ((!stream_writeSht(s->s, blksize) || s->s->write(s->s, s->buf, 1, s->nr) != (ssize_t) s->nr)) {
 			ss->errnr = WRITE_ERROR;
@@ -2190,9 +2192,9 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 		printf("RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
 		printf("RC %s %d\n", ss->name, blksize);
 #endif
-		s->itotal = (unsigned)(blksize >> 1);	/* amount readable */
+		s->itotal = (unsigned) (blksize >> 1); /* amount readable */
 		/* store whether this was the last block or not */
-		s->nr = blksize & (short)1;
+		s->nr = blksize & 1;
 	}
 
 	/* Fill the caller's buffer. */
@@ -2244,14 +2246,20 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			}
 #ifdef BSTREAM_DEBUG
 			printf("RC size: %d, final: %s\n", blksize >> 1, blksize & 1 ? "true" : "false");
-			printf("RC %s %d\n", ss->name, nr);
+			printf("RC %s %d\n", ss->name, s->nr);
 			printf("RC %s %d\n", ss->name, blksize);
 #endif
-			s->itotal = (unsigned)(blksize >> 1);	/* amount readable */
+			s->itotal = (unsigned) (blksize >> 1); /* amount readable */
 			/* store whether this was the last block or not */
-			s->nr = blksize & (short)1;
+			s->nr = blksize & 1;
 		}
 	}
+	/* if we got an empty block with the end-of-sequence marker
+	   set (low-order bit) we must only return an empty read once, so
+	   we must squash the flag that we still have to return an empty
+	   read */
+	if (todo > 0 && cnt == 0)
+		s->nr = 0;
 	return cnt / elmsize;
 }
 
