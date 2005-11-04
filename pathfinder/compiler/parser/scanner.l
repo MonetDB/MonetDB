@@ -189,10 +189,15 @@ PFscanner_init (char *buf)
     lexical_stack = PFarray (sizeof (int));
 
     /*
-     * FIXME: Whoever wrote this code: Please comment what is going on here.
+     * In case yyin/pfin is not set, initialize it to /dev/null (Unix)
+     * resp. C:nul (Windows); otherwise it gets initialized to stdin,
+     * which might conflict with Mserver's console:
+     * The lexer eventually calls fileno() for yyin/pfin, which in
+     * case of yyin/pfin=stdin might be blocked as there is a waiting
+     * select/read on the console(=stdin)...
      */
     if (!pfin) {
-#ifdef NATIVE_WIN32
+#ifdef __MINGW32__              /* or any kind of native Windows */
         pfin = fopen("C:nul","r");
 #else
         pfin = fopen("/dev/null","r");
