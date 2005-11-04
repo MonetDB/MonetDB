@@ -240,8 +240,8 @@ public class MonetConnection implements Connection {
 					database
 				) + "\n");
 
-				// We need to send the server our byte order.  Java by itself
-				// uses network order.
+				// We need to send the server our byte order.  Java by
+				// itself uses network order.
 				// A short with value 1234 will be sent to indicate our
 				// byte-order.
 				/*

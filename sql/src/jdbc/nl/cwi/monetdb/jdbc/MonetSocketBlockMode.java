@@ -79,8 +79,8 @@ class MonetSocketBlockMode extends MonetSocket {
 		fromMonetRaw = new BufferedInputStream(con.getInputStream(), BLOCK + 2);
 		toMonetRaw = new BufferedOutputStream(con.getOutputStream(), BLOCK + 2);
 
-		outputBuffer = ByteBuffer.allocateDirect(2);
-		inputBuffer = ByteBuffer.allocateDirect(2);
+		outputBuffer = ByteBuffer.allocate(2);
+		inputBuffer = ByteBuffer.allocate(2);
 		// leave the buffer byte-order as is, it can be modified later
 		// by using setByteOrder()
 
