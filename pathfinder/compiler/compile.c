@@ -184,7 +184,7 @@ char *PFurlcache (char *url)
     /* cache the new url */
     cache->next = urlcache;
     urlcache = cache;
-    return cache->buf->buffer->content;
+    return (char*) cache->buf->buffer->content;
 }
 
 /**
