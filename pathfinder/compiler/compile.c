@@ -156,7 +156,7 @@ char *PFurlcache (char *url)
      */
     while(cache) {
         if (strcmp(cache->url, url) == 0) 
-    	    return cache->buf->buffer->content;
+    	    return (char*) cache->buf->buffer->content;
         cache = cache->next;
     }
 
