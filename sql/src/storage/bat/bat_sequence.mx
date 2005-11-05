@@ -122,6 +122,7 @@ sql_update_sequence(sql_trans *tr, char *seq, lng cached )
 		column_update_value(ntr, seq_cached, id, &cached);
 		sql_trans_commit(ntr);
 	}
+	sql_trans_destroy(ntr);
 }
 
 static sql_sequence *
@@ -184,15 +185,15 @@ sql_next_value(sql_trans *tr, char *seq, lng *val)
 			/* TODO handle min/max and cycle */
 			s->cur += s->increment;
 			nr = s->cur;
+			*val = nr;
 			if (nr == s->cached) {
 				/* update value in a single transaction */
 				s->cached += 1024;
 				store_unlock(); 
 				sql_update_sequence(tr, seq, s->cached);
-				return nr;
+				return 1;
 			}
 			store_unlock(); 
-			*val = nr;
 			return 1;
 		}
 	}
