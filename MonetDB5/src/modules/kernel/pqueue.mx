@@ -154,7 +154,6 @@ int pqueue_movedowntop_@1@2(BAT *h)
   int swap, num_elems;
 
   int posel;
-
   char ch;
   int i;
 
@@ -382,7 +381,6 @@ int pqueue_movedowntop_any@1(BAT *h)
 		for(i=0;i<hBUNsize; i++){
 			ch= cur[i]; cur[i]=swp[i]; swp[i]=ch;
 		}
-
 	  cur = swp;
 	  posel = swap;
         }

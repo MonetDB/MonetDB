@@ -1891,7 +1891,7 @@ ALGselect1(int *result, int *bid, ptr value)
 	CMDselect1(&bn, b, value);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -1914,7 +1914,7 @@ ALGselect1Head(int *result, int *bid, ptr value)
 	bn = BATmirror(bn);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -1935,7 +1935,7 @@ ALGuselect1(int *result, int *bid, ptr value)
 	CMDuselect1(&bn, b, value);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -1957,7 +1957,7 @@ ALGselect(int *result, int *bid, ptr low, ptr high)
 	CMDselect(&bn, b, low, high);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -1981,7 +1981,7 @@ ALGselectHead(int *result, int *bid, ptr low, ptr high)
 	bn = BATmirror(bn);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2003,7 +2003,7 @@ ALGuselect(int *result, int *bid, ptr low, ptr high)
 	CMDuselect(&bn, b, low, high);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2025,7 +2025,7 @@ ALGselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin)
 	CMDselect_(&bn, b, low, high, lin, rin);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2049,7 +2049,7 @@ ALGselectInclusiveHead(int *result, int *bid, ptr low, ptr high, bit *lin, bit *
 	bn = BATmirror(bn);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2071,7 +2071,7 @@ ALGuselectInclusive(int *result, int *bid, ptr low, ptr high, bit *lin, bit *rin
 	CMDuselect_(&bn, b, low, high, lin, rin);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2095,7 +2095,7 @@ ALGfragment(int *result, int *bid, ptr hlow, ptr hhigh, ptr tlow, ptr thigh)
 	CMDfragment(&bn, b, hlow, hhigh, tlow, thigh);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2143,7 +2143,7 @@ ALGthetajoinEstimate(int *result, int *lid, int *rid, int *opc, lng *estimate)
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2175,7 +2175,7 @@ ALGbandjoin(int *result, int *lid, int *rid, ptr *minus, ptr *plus)
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2195,7 +2195,7 @@ str ALG@1(int *result, int *bid) {
 	CMD@1(&bn,b);
 	BBPunfix(b->batCacheid);
 	if( bn ) {
-		bn= BATsetaccess(bn,1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid,TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2212,7 +2212,7 @@ str ALG@1(int *result, int *bid) {
 	CMD@1(&bn,b);
 	BBPunfix(b->batCacheid);
 	if( bn ) {
-		bn= BATsetaccess(bn,1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid,TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2234,7 +2234,7 @@ str ALG@1(int *result, int *lid, int *rid) {
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if( bn ) {
-		bn= BATsetaccess(bn,1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid,TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2251,7 +2251,7 @@ str ALG@1(int *result, int* bid, int *param) {
 	CMD@1(&bn,b, param);
 	BBPunfix(b->batCacheid);
 	if( bn ) {
-		bn= BATsetaccess(bn,1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid,TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2278,7 +2278,7 @@ str ALG@1estimate(int *result, int *lid, int *rid, lng *estimate) {
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if( bn ) {
-		bn= BATsetaccess(bn,1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid,TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2324,7 +2324,8 @@ ALGtunique(int *result, int *bid)
 	CMDkunique(&bn, BATmirror(b));
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(BATmirror(bn), 1);
+		bn = BATmirror(bn);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2344,7 +2345,8 @@ ALGtsort(int *result, int *bid)
 	CMDsort(&bn, BATmirror(b));
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(BATmirror(bn), 1);
+		bn = BATmirror(bn);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2364,7 +2366,7 @@ ALGhsort(int *result, int *bid)
 	CMDsort(&bn, b);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2400,7 +2402,7 @@ ALGhtsort(int *result, int *lid)
 	BBPunfix(b->batCacheid);
 	BBPunfix(bk->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2434,7 +2436,7 @@ ALGthsort(int *result, int *lid)
 	BBPunfix(bk->batCacheid);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2514,7 +2516,7 @@ ALGtmark(int *result, int *bid, oid *base)
 	}
 	if (CMDmark(&bn, b, base) == GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2576,7 +2578,7 @@ ALGhashsplit(int *result, int *bid, int *nfrag)
 	CMDhashsplit(&bn, b, nfrag);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2596,7 +2598,7 @@ ALGuhashsplit(int *result, int *bid, int *nfrag)
 	CMDuhashsplit(&bn, b, nfrag);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2616,7 +2618,7 @@ ALGrangesplit(int *result, int *bid, int *nfrag)
 	CMDrangesplit(&bn, b, nfrag);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2636,7 +2638,7 @@ ALGurangesplit(int *result, int *bid, int *nfrag)
 	CMDurangesplit(&bn, b, nfrag);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2656,7 +2658,7 @@ ALGhistogram_rev(int *result, int *bid)
 	CMDhistogram(&bn, b);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2677,7 +2679,7 @@ ALGlike(int *ret, int *bid, str *k)
 	CMDlike(&bn, b, *k);
 	BBPunfix(b->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*ret = bn->batCacheid, TRUE);
 		BBPunfix(*ret);
 		return MAL_SUCCEED;
@@ -2697,7 +2699,7 @@ ALGslice(int *ret, bat *bid, int *start, int *end)
 	CMDslice(&bn, b, start, end);
 	BBPunfix(b->batCacheid);
 	if (bn != NULL) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*ret = bn->batCacheid, TRUE);
 		BBPunfix(*ret);
 		return MAL_SUCCEED;
@@ -2831,7 +2833,7 @@ ALGfetchbat(int *ret, int *bid, int *sid)
 	BBPunfix(b->batCacheid);
 	BBPunfix(s->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*ret = bn->batCacheid, TRUE);
 		BBPunfix(*ret);
 		return MAL_SUCCEED;
@@ -2914,7 +2916,7 @@ ALGfetchjoin(int *result, int *lid, int *rid)
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2948,7 +2950,7 @@ ALGhashjoin(int *result, int *lid, int *rid)
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -2978,7 +2980,7 @@ ALGmergejoin(int *result, int *lid, int *rid)
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
@@ -3004,7 +3006,7 @@ ALGindexjoin(int *result, int *lid, int *rid)
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	if (bn) {
-		bn = BATsetaccess(bn, 1);
+		if (!(bn->batDirty&2)) bn = BATsetaccess(bn, 1);
 		BBPincref(*result = bn->batCacheid, TRUE);
 		BBPunfix(*result);
 		return MAL_SUCCEED;
