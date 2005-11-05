@@ -1603,7 +1603,12 @@ mainSHREDDER(shredCtxStruct* shredCtx, char* location, char* buffer)
 */
     } else {
 #if HAVE_SAX2
-        if ( !(xmlCtx = xmlCreateURLParserCtxt (location, XML_PARSE_XINCLUDE|XML_PARSE_NOXINCNODE)) ) {
+        if ( !(xmlCtx = xmlCreateURLParserCtxt (location, XML_PARSE_XINCLUDE
+#ifdef XML_PARSE_NOXINCNODE
+                                                         |XML_PARSE_NOXINCNODE
+#endif
+               ))) 
+        {
             GDKerror("shred:mainSHREDDER: xmlCreateURLParserCtxt(\"%s\") failed\n",location); 
             return -1;
         }

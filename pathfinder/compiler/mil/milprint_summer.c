@@ -7647,12 +7647,21 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                
         milprintf(f, 
                 "{ # translate fn:subsequence\n"
+                "kind := de_fake_project(kind,ipik);\n"
+                "item := de_fake_project(item,ipik);\n"
+                "iter := de_fake_project(iter,ipik);\n"
                 "if (loop%03u.count() = 1) {\n"
                 "    var lo := item_dbl_%03d;\n"
-                "    if (type(lo) = bat) lo := lo.fetch(0) - dbl(1);\n", cur_level, counter-1);
+                "    if (type(lo) = bat) {\n"
+                "        lo := lo.fetch(0);\n"
+                "    }\n", cur_level, counter-1);
         if (fun->arity == 3)
                 milprintf(f, "    var hi := item_dbl_%03d;\n"
-                             "    if (type(hi) = bat) hi := int(lo + hi.fetch(0)) - 1;\n", counter);
+                             "    if (type(hi) = bat) {\n"
+                             "        hi := int(lo + hi.fetch(0)) - 1;\n"
+                             "    } else {\n"
+                             "        hi := int(lo + hi) - 1;\n"
+                             "    }\n", counter);
         else 
                 milprintf(f, "    var hi := INT_MAX;\n");
 
