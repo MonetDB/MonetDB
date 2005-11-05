@@ -138,7 +138,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	va_list va;
 	node *n = cs_first_node(&t->columns);
 	sql_column *c = n->data;
-	BAT *b = bind_bat(tr, c, UPD);
+	BAT *b = bind_bat(tr, c, INS);
 	void *val = NULL;
 	oid rid = BATcount(b);
 	int cnt = 0;
@@ -150,11 +150,12 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 
 		cnt++;
 		c = n->data;
-		b = bind_bat(tr, c, UPD);
+		b = bind_bat(tr, c, INS);
 		assert(rid == BATcount(b));
 		BUNins(b, (ptr) &rid, val);
 		bat_destroy(b);
 	}
+	t->cnt += cnt;
 	if (n) {
 		fprintf(stderr, "called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
 		return -1;

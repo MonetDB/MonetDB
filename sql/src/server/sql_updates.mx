@@ -156,18 +156,24 @@ insert_check_ukey(mvc *sql, stmt **inserts, sql_key *k, stmt *idx_inserts)
 		stmt *h = stmt_dup(inserts[c->c->colnr]->op2.stval);
 		stmt *s = stmt_dup(inserts[c->c->colnr]->op1.stval);
 
-		if (h->nrcols) {
-			s = stmt_join(s, stmt_reverse(h), cmp_equal);
-		} else {
-			s = stmt_uselect(s, h, cmp_equal);
-		}
-		/* s should be empty */
 		if (k->type == pkey) {
 			snprintf(buf, BUFSIZ, "INSERT INTO: PRIMARY KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
 		} else {
 			snprintf(buf, BUFSIZ, "INSERT INTO: UNIQUE constraint '%s.%s' violated", k->t->base.name, k->base.name);
 		}
-		res = stmt_exception(stmt_aggr(s, NULL, cnt), _strdup(buf), 00001);
+		if (h->nrcols) {
+			s = stmt_join(s, stmt_reverse(h), cmp_equal);
+			/* s should be empty */
+			s = stmt_aggr(s, NULL, cnt);
+		} else {
+			sql_subaggr *exist;
+			sql_subtype *tp = tail_type(s);
+
+			sql_subaggr_destroy(cnt);
+			exist = sql_bind_aggr(sql->trans->module, "exist", tp);
+			s = stmt_aggr2(stmt_reverse(s), h, exist);
+		}
+		res = stmt_exception(s, _strdup(buf), 00001);
 	}
 	return res;
 }

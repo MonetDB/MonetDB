@@ -153,51 +153,6 @@ SQLepilogue()
 	return MAL_SUCCEED;
 }
 
-static int
-sendProperty(stream *out, char *name, char *value)
-{
-	if (stream_write(out, "[ \"", 1, 3) != 3)
-		return 0;
-	while (*name) {
-		switch (*name) {
-		case '"':
-			if (stream_write(out, "\\\"", 1, 2) != 2)
-				return 0;
-			break;
-		case '\\':
-			if (stream_write(out, "\\\\", 1, 2) != 2)
-				return 0;
-			break;
-		default:
-			if (stream_write(out, name, 1, 1) != 1)
-				return 0;
-			break;
-		}
-		name++;
-	}
-	if (stream_write(out, "\", \"", 1, 4) != 4)
-		return 0;
-	while (*value) {
-		switch (*value) {
-		case '"':
-			if (stream_write(out, "\\\"", 1, 2) != 2)
-				return 0;
-			break;
-		case '\\':
-			if (stream_write(out, "\\\\", 1, 2) != 2)
-				return 0;
-			break;
-		default:
-			if (stream_write(out, value, 1, 1) != 1)
-				return 0;
-			break;
-		}
-		value++;
-	}
-	if (stream_write(out, "\" ]\n", 1, 4) != 4)
-		return 0;
-	return 1;
-}
 @-
 It should become possible to initialize the SQL
 from a MAL program to setup an environment to
@@ -347,12 +302,12 @@ SQLcompileInternal(str *ret, str *expr, int flag)
 		return throwMessage("SQLcompile", "Catalogue not available\n");
 
 	m = sql->mvc;
-	m->type= Q_PARSE;
 	if( !m->trans)
 		mvc_trans(m);
 	if (!m->sa)
 		m->sa = sa_create();
 	o = *m;
+	m->type= Q_PARSE;
 	sql = backend_create(0, m, c);
 	m->qc = NULL;
 	m->cache = 0;
@@ -547,8 +502,7 @@ the duration of these calls.
 
 int SQLautocommit(Client c, mvc *m){
 	if (m->auto_commit && m->trans) {
-		if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || 
-			m->qc->id >100)) {
+		if (m->cache && (m->type == Q_SCHEMA || m->qc->id > 1000)) {
 			if (m->qc) 
 				qc_destroy(m->qc);
 			m->qc = qc_create(m->clientid);
@@ -909,8 +863,8 @@ produce code.
 			be->q->stk = 0;
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name, strlen(be->q->name));
-			if( m->mode != m_normal && m->mode != m_debug)
-				m->mode = m_inplace; 
+			//if( m->mode == m_normal)
+				//m->mode = m_inplace;
 			m->sa = NULL;
 			m->sym = NULL;
 		} 
@@ -924,7 +878,7 @@ produce code.
 		err = output_prepare(c->fdout, m, be->q);
 	} else if (m->mode == m_inplace && be->q){
 		/* everything ready for a fast call */
-	} else if (be->q) {  /* call procedure generation (only in cache mode) */
+	} else if (be->q) { /* call procedure generation (only in cache mode) */
 		backend_call(be, c, be->q);
 	}
 
@@ -1059,12 +1013,11 @@ SQLexecutePrepared(Client cntxt, backend *be, cq *q )
 				char buf[BUFSIZ];
 
 				snprintf(buf, BUFSIZ, "wrong argument for prepared statement (expected %s instead of %s)\n", pt->type->sqlname, atom_type(arg)->type->sqlname);
-				//sql_error(c, 003, buf);
+				/*sql_error(c, 003, buf); */
 				if( pci->argc >= MAXARG)
 					GDKfree(argv);
 				if( pci->retc >= MAXARG)
 						GDKfree(argrec);
-				printf("%s\n", buf);
 				return _strdup(buf);
 			}
 			argv[pci->retc+i]= &arg->data;
@@ -1201,7 +1154,7 @@ Then the SQL profile table is just a view over a few basic bats.
 	 * clear query cache after Transaction boundaries (commit/rollback)
 	 * and on schema changes
 	 */
-	if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id >100)) {
+	if (m->cache && (m->type == Q_SCHEMA || m->qc->id > 1000)) {
 		if (m->qc) 
 			qc_destroy(m->qc);
 		m->qc = qc_create(m->clientid);

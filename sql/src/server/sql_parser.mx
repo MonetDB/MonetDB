@@ -2318,14 +2318,6 @@ value_exp:
  |  case_exp
  |  cast_exp
  |  '?'			{ $$ = _symbol_create( SQL_PARAMETER, NULL ); }
- |  BOOL_FALSE
-		{ sql_subtype t;
-		  sql_find_subtype(&t, "boolean", 0, 0 );
-		  $$ = _newAtomNode( atom_bool(&t, FALSE)); }
- |  BOOL_TRUE
-		{ sql_subtype t;
-		  sql_find_subtype(&t, "boolean", 0, 0 );
-		  $$ = _newAtomNode( atom_bool(&t, TRUE)); }
  ;
 
 func_ref:
@@ -2835,6 +2827,14 @@ literal:
 			YYABORT;
 		  }
 		}
+ |  BOOL_FALSE
+		{ sql_subtype t;
+		  sql_find_subtype(&t, "boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(&t, FALSE)); }
+ |  BOOL_TRUE
+		{ sql_subtype t;
+		  sql_find_subtype(&t, "boolean", 0, 0 );
+		  $$ = _newAtomNode( atom_bool(&t, TRUE)); }
  ;
 
 interval_expression:

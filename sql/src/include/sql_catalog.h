@@ -184,7 +184,6 @@ typedef struct sql_subfunc {
 
 typedef struct sql_bat {
 	oid bid;
-	oid ibid;		/* insert bat ! */
 	oid ubid;		/* bat with updates */
 } sql_bat;
 
@@ -339,6 +338,8 @@ typedef struct sql_trans {
 	int stime;		/* transaction time stamp (aka start time) */
 	int rtime;
 	int wtime;
+	int schema_updates;	/* set on schema changes */
+	int status;		/* status of the last query */
 	int level;
 
 	sql_schema *schema;

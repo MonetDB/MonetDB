@@ -907,7 +907,8 @@ rel2bin(mvc *c, stmt *s)
 			os->optimized = ns->optimized = 2;
 			return ns;
 		} else
-		if (s->flag != 0 /* topn, ie limit and orderby */ &&
+		if (0 &&
+		    s->flag != 0 /* topn, ie limit and orderby */ &&
 		    j->type == st_join && 
 		  ((j->flag == cmp_equal && 
 		    j->op1.stval->t && j->op1.stval->t == j->op2.stval->h) || 

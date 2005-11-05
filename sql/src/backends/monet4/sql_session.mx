@@ -210,8 +210,7 @@ sqlcleanup(mvc *c, int err)
 	 * clear query cache after Transaction boundaries (commit/rollback)
 	 * and on schema changes
 	 */
-	if (c->cache && 
-	   (c->type == Q_TRANS || c->type == Q_SCHEMA || c->qc->id >100)) {
+	if (c->cache && (c->type == Q_SCHEMA || c->qc->id > 1000)) {
 		if (c->qc)
 			qc_destroy(c->qc);
 		c->qc = qc_create(c->clientid);
@@ -467,7 +466,8 @@ sqlclient2(mvc *m, Cntxt stk, bstream *in, stream *out, int trace, int console)
 
 				/* auto_commit on end of statement */
 				if (m->auto_commit && m->trans) {
-					if (m->cache && (m->type == Q_TRANS || m->type == Q_SCHEMA || m->qc->id >100)) {
+					if (m->cache && (m->type == Q_SCHEMA || 
+							 m->qc->id > 1000)) {
 						if (m->qc)
 							qc_destroy(m->qc);
 						m->qc = qc_create(m->clientid);
@@ -691,64 +691,6 @@ We assume that a new user-context has been set using a proper fork()
 command. This means that the SQL client runs under the authentication of
 the DBA.
 @c
-static int
-sendProperty(stream *out, char *name, char *value)
-{
-	int i, start = 0;
-	if (stream_write(out, "[ \"", 1, 3) != 3)
-		return 0;
-	for (i = 0; name[i]; i++) {
-		switch (name[i]) {
-		case '"':
-			if (i > start &&
-				stream_write(out, name + start, 1, i - start) != i - start)
-				return 0;
-			if (stream_write(out, "\\\"", 1, 2) != 2)
-				return 0;
-			start = i + 1;
-			break;
-		case '\\':
-			if (i > start &&
-				stream_write(out, name + start, 1, i - start) != i - start)
-				return 0;
-			if (stream_write(out, "\\\\", 1, 2) != 2)
-				return 0;
-			start = i + 1;
-			break;
-		}
-	}
-	if (i > start &&
-		stream_write(out, name + start, 1, i - start) != i - start)
-		return 0;
-	if (stream_write(out, "\", \"", 1, 4) != 4)
-		return 0;
-	for (i = 0; value[i]; i++) {
-		switch (value[i]) {
-		case '"':
-			if (i > start &&
-				stream_write(out, value + start, 1, i - start) != i - start)
-				return 0;
-			if (stream_write(out, "\\\"", 1, 2) != 2)
-				return 0;
-			start = i + 1;
-			break;
-		case '\\':
-			if (i - 1 > start &&
-				stream_write(out, value + start, 1, i - start) != i - start)
-				return 0;
-			if (stream_write(out, "\\\\", 1, 2) != 2)
-				return 0;
-			start = i + 1;
-			break;
-		}
-	}
-	if (i > start &&
-		stream_write(out, value + start, 1, i - start) != i - start)
-		return 0;
-	if (stream_write(out, "\" ]\n", 1, 4) != 4)
-		return 0;
-	return 1;
-}
 
 int
 sqlclient(Cntxt stk, YYSTREE lt, ValPtr res)
@@ -873,20 +815,6 @@ These lines should be eaten away into the prompt is encountered.
 		closeClient(client, 0); 	
 		return GDK_FAIL;
 	}
-	/* Send the profile to the client for inspection 
-	if (!sendProperty(out, "version", "4") ||
-	    !sendProperty(out, "language", "sql") ||
-	    !sendProperty(out, "schema", schema) || 
-	    !sendProperty(out, "auto_commit", "false") || 
-	    !sendProperty(out, "reply_size", "1000") || 
-	     	stream_flush(out) < 0) 
-	{
-		res_tables_destroy(m->results);
-		mvc_destroy(m);
-		closeClient(client, 0); 	
-		return GDK_FAIL;
-	}
-	*/
 
 	ret = sqlclient2(m, stk, rs, out, trace, 0);
 	res_tables_destroy(m->results);
@@ -929,9 +857,6 @@ sqlconsole(Cntxt stk, YYSTREE lt, ValPtr res)
 		mvc_destroy(m);
 		return GDK_FAIL;
 	}
-	sendProperty(out, "version", "4");
-	sendProperty(out, "language", "sql");
-	sendProperty(out, "schema", schema);
 	stream_flush(out);
 
 	ret = sqlclient2(m, stk, rs, out, 0, 1);

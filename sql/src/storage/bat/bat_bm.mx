@@ -43,6 +43,7 @@ extern ptr bun_find(BAT *b, ptr v);
 extern struct bm *bm_create(int debug);
 extern void bm_destroy(struct bm *bm);
 extern struct bm *bm_dup(struct bm *bm);
+extern struct bm *bm_reset(struct bm *bm, struct bm *p);
 
 /* The current state of the bat manager can be saved using
  * the bm_save function. It makes the managed bats persistent. 
@@ -287,6 +288,53 @@ bm_dup(bm *obm)
 	BATfakeCommit(nbm->bat_mode);
 	return nbm;
 }
+
+bm *
+bm_reset(bm *nbm, bm *pbm)
+{
+	BUN p, q;
+	BAT *b = pbm->bat_version;
+
+	nbm->version = pbm->version;
+	nbm->lbid = pbm->lbid;
+	BATloop(b, p, q) {
+		int pversion = *(int *) BUNtail(b, p);
+		oid id = *(oid *) BUNhead(b, p);
+		oid lbid = *(oid *) BUNtail(pbm->bat_lbid,
+					    BUNfnd(pbm->bat_lbid, &id));
+
+		bat pbid = *(oid *) BUNtail(pbm->bat_bid,
+					   BUNfnd(pbm->bat_bid, &id));
+
+		oid vid = *(oid *) BUNhead(nbm->bat_lbid,
+				BUNfnd(BATmirror(nbm->bat_lbid), &lbid));
+		int version = *(int *) BUNtail(nbm->bat_version,
+					   BUNfnd(nbm->bat_version, &vid));
+		bat bid = *(oid *) BUNtail(nbm->bat_bid,
+					   BUNfnd(nbm->bat_bid, &vid));
+		int mode = *(int *) BUNtail(nbm->bat_mode,
+					   BUNfnd(nbm->bat_mode, &vid));
+
+		if (pbid != bid) {
+			bat_decref(bid, TRUE);
+			bat_incref(pbid, TRUE, "bm_reset");
+			BUNreplace(nbm->bat_bid, (ptr) &vid, &pbid);
+		}
+		if (pversion != version) 
+			BUNreplace(nbm->bat_version, (ptr) &vid, &pversion);
+		if (mode != BM_READ) {
+			mode = BM_READ;
+			BUNreplace(nbm->bat_mode, (ptr) &vid, &mode);
+		}
+	}
+	BATfakeCommit(nbm->bat_version);
+	BATfakeCommit(nbm->bat_name);
+	BATfakeCommit(nbm->bat_bid);
+	BATfakeCommit(nbm->bat_lbid);
+	BATfakeCommit(nbm->bat_mode);
+	return nbm;
+}
+
 
 int
 bm_save(bm *bm, FILE *fp)
@@ -667,6 +715,7 @@ bm_lbid2bat(bm *bm, oid lbid)
 	bid = *(oid *) BUNtail(bm->bat_bid, BUNfnd(bm->bat_bid, &vid));
 
 	b = bat_descriptor(bid, "bm_lbid2bat");
+	assert(b);
 	return b;
 }
 
