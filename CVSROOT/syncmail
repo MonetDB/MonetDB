@@ -215,7 +215,7 @@ def quotename(name):
 
 mime_char = re.compile('[=\177-\377]') # quote these chars in body
 mime_header_char = re.compile('[=?\177-\377]') # quote these in header
-mime_header = re.compile('([ \t(]|^)([-a-zA-Z0-9_+]*[\177-\377][-a-zA-Z0-9_+\177-\377]*)(?=[ \t)]|\n)')
+mime_header = re.compile('([-a-zA-Z0-9_+]*[\177-\377][-a-zA-Z0-9_+\177-\377]*)')
 utf8 = re.compile('^([\x00-\x7f]|[\xc0-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf][\x80-\xbf]|[\xf0-\xf7][\x80-\xbf][\x80-\xbf][\x80-\xbf]|[\xf8-\xfb][\x80-\xbf][\x80-\xbf][\x80-\xbf][\x80-\xbf]|[\xfc-\xfd][\x80-\xbf][\x80-\xbf][\x80-\xbf][\x80-\xbf][\x80-\xbf])*$')
 
 def mime_encode(line, header):
@@ -264,14 +264,17 @@ def mime_encode_header(line):
     else:
         # else use default charset
         charset = 'iso-8859-1'
+    if mime_header_char.search(line) is None:
+        return line
+    line = line.replace(' ', '_')
     pos = 0
     while 1:
         res = mime_header.search(line, pos)
         if res is None:
             break
-        newline.append('%s%s=?%s?Q?%s?=' %
-                       (line[pos:res.start(0)], res.group(1),
-                        charset, mime_encode(res.group(2), True)))
+        newline.append('%s=?%s?Q?%s?=' %
+                       (line[pos:res.start(0)],
+                        charset, mime_encode(res.group(1), True)))
         pos = res.end(0)
     return ''.join(newline) + line[pos:]
 
@@ -294,8 +297,8 @@ def blast_mail(subject, people, entries, contextlines, fromhost, replyto):
         s = StringIO()
         datestamp = time.strftime('%a, %d %b %Y %H:%M:%S +0000',
                                   time.gmtime(time.time()))
-        vars = {'author'  : mime_encode_header(formataddr((name, address))),
-                'people'  : COMMASPACE.join(map(mime_encode_header, people)),
+        vars = {'author'  : formataddr((mime_encode_header(name), address)),
+                'people'  : COMMASPACE.join(people),
                 'subject' : mime_encode_header(subject),
                 'version' : __version__,
                 'date'    : datestamp,
@@ -304,7 +307,7 @@ def blast_mail(subject, people, entries, contextlines, fromhost, replyto):
 From: %(author)s
 To: %(people)s''' % vars
         if replyto:
-            print >> s, 'Reply-To: %s' % mime_encode_header(replyto)
+            print >> s, 'Reply-To: %s' % replyto
         print >>s, '''\
 Subject: %(subject)s
 Date: %(date)s
