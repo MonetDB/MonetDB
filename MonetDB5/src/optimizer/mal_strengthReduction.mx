@@ -249,7 +249,7 @@ after the loop, because then you may not simple move an expression.
 		pushInstruction(mb, before[i]);
 	if (pci)
 		removeInstruction(mb, pci);
-	optimizerCheck(mb, "strengthReduction", actions, GDKusec() - clk);
+	optimizerCheck(mb, "mal.strengthReduction", actions, GDKusec() - clk);
 	/* remove the SRoptimizer request */
 	return NULL;
 }

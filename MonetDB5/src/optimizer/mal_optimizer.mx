@@ -523,14 +523,14 @@ If one of the optimizers fails, we should not attempt others.
 int
 optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec)
 {
-	if( actions){
+	if( actions > 0){
 		chkFlow(mb);
 		chkTypes(getClient()->nspace, mb);
 		chkDeclarations(mb, TRUE);
 		setLifespan(mb);
-		optimizerDebug(mb, name, actions, usec);
 	}
-	/* debugLifespan(mb); */
+	if( actions )
+		optimizerDebug(mb, name, actions, usec);
 	if (mb->errors) {
 		showErrors();
 		stream_printf(GDKout, "Optimizer %s failed\n", name);
@@ -1187,7 +1187,7 @@ ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* remove the ARoptimizer request */
 	if (pci)
 		removeInstruction(mb, pci);
-	optimizerCheck(mb, "aliasRemoval", oldstop-mb->stop-(pci?1:0), 
+	optimizerCheck(mb, "mal.aliasRemoval", oldstop-mb->stop-(pci?1:0), 
 			GDKusec() - clk);
 	return NULL;
 }
@@ -1346,7 +1346,7 @@ DCoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mb->stop = j;
 	GDKfree(varused);
 	GDKfree(pcused);
-	optimizerCheck(mb, "deadCodeRemoval", actions, GDKusec() - clk);
+	optimizerCheck(mb, "mal.deadCodeRemoval", actions, GDKusec() - clk);
 	/* remove the DCoptimizer request */
 	return NULL;
 }
@@ -1473,7 +1473,7 @@ COoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* remove the COcoercion request */
 	if (pci)
 		removeInstruction(mb, pci);
-	optimizerCheck(mb, "coercionOptimizer", actions, GDKusec() - clk);
+	optimizerCheck(mb, "mal.coercionOptimizer", actions, GDKusec() - clk);
 	if (mb->errors) {
 		showErrors();
 		return throwMessage("COoptimizer", "Optimization raised errors");
@@ -1622,7 +1622,7 @@ at the end of the optimization attempt.
 	if (errlen)
 		strncpy(cntxt->errbuf, olderr, errlen);
 	/* remove the AEoptimizer request */
-	optimizerCheck(mb, "expressionAccumulation", actions, GDKusec() - clk);
+	optimizerCheck(mb, "mal.expressionAccumulation", actions, GDKusec() - clk);
 	if (mb->errors) {
 		showErrors();
 		return throwMessage("AEoptimizer", "Optimization raised errors");
@@ -1758,7 +1758,7 @@ HRoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* remove the HRoptimizer request */
 	if (pci)
 		removeInstruction(mb, pci);
-	optimizerCheck(mb, "selectPushDown", squeeze, GDKusec() - clk);
+	optimizerCheck(mb, "mal.selectPushDown", squeeze, GDKusec() - clk);
 	return NULL;
 }
 
@@ -1813,7 +1813,7 @@ AMoptimizerStep(MalBlkPtr mb, int pc)
 			return pc - 1;
 		}
 	}
-	optimizerCheck(mb, "accessMode", actions, GDKusec() - clk);
+	optimizerCheck(mb, "mal.accessMode", actions, GDKusec() - clk);
 	return pc;
 }
 

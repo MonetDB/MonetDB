@@ -150,7 +150,7 @@ CXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* remove the CXoptimizer request */
 	if (pci)
 		removeInstruction(mb, pci);
-	optimizerCheck(mb, "commonExpressions", actions, GDKusec() - clk);
+	optimizerCheck(mb, "mal.commonExpressions", actions, GDKusec() - clk);
 	return MAL_SUCCEED;
 }
 

@@ -292,7 +292,7 @@ accumulated version.
 	/* now replace variable with the alias bid */
 	if (bid != -1)
 		ARreplaceAlias(mb, pcf, pcl, varid, bid);
-	optimizerCheck(mb, "BPTreplacement", actions, GDKusec() - clk);
+	optimizerCheck(mb, "mal.partitioned", actions, GDKusec() - clk);
 	return MAL_SUCCEED;
 }
 
