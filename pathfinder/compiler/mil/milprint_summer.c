@@ -7647,49 +7647,30 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                
         milprintf(f, 
                 "{ # translate fn:subsequence\n"
-                "kind := de_fake_project(kind,ipik);\n"
-                "item := de_fake_project(item,ipik);\n"
-                "iter := de_fake_project(iter,ipik);\n"
+		"iter := de_fake_project(iter, ipik);\n"
+		"item := de_fake_project(item, ipik);\n"
+		"kind := de_fake_project(kind, ipik);\n"
                 "if (loop%03u.count() = 1) {\n"
-                "    var lo := item_dbl_%03d;\n"
-                "    if (type(lo) = bat) {\n"
-                "        lo := lo.fetch(0);\n"
-                "    }\n", cur_level, counter-1);
+                "    var lo := de_fake_project(item_dbl_%03d,ipik).fetch(0);\n", cur_level, counter-1);
         if (fun->arity == 3)
-                milprintf(f, "    var hi := item_dbl_%03d;\n"
-                             "    if (type(hi) = bat) {\n"
-                             "        hi := int(lo + hi.fetch(0)) - 1;\n"
-                             "    } else {\n"
-                             "        hi := int(lo + hi) - 1;\n"
-                             "    }\n", counter);
+                milprintf(f, "    var hi := int(lo + de_fake_project(item_dbl_%03d,ipik).fetch(0)) - 1;\n", counter);
         else 
                 milprintf(f, "    var hi := INT_MAX;\n");
 
         milprintf(f, "\n" 
                 "    # select a slice\n"
-                "    ipik := nil;\n"
-                "    if (type(iter) = bat) {\n"
-                "        iter := iter.slice(int(lo),hi);\n"
-                "        ipik := iter;\n"
-                "    }\n"
-                "    if (type(kind) = bat) {\n"
-                "        kind := kind.slice(int(lo),hi);\n"
-                "        ipik := kind;\n"
-                "    }\n"
-                "    if (type(item%s) = bat) {\n"
-                "        item%s := item%s.slice(int(lo), hi);\n"
-                "        ipik := item%s;\n"
-                "    }\n"
-                "    if (isnil(ipik))\n"
-                "        ERROR(\"translateFunction: subsequence: not all of iter|item|kind must be constants!\\n\");\n"
+                "    ipik := ipik.slice(int(lo),hi);\n"
+                "    iter := iter.slice(int(lo),hi);\n"
+                "    kind := kind.slice(int(lo),hi);\n"
+                "    item%s := item%s.slice(int(lo), hi);\n"
                 "    pos := ipik.mark(1@0);\n"
                 "} else {\n"
-                "    var offset_dbl := item_dbl_%03d;\n"
+                "    var offset_dbl := de_fake_project(item_dbl_%03d,ipik);\n"
                 "    var offset_oid;\n"
                 "    pos := pos.de_NO_project(ipik);\n"
                 "    if (type(offset_dbl) = bat) {\n"
 		"        offset_dbl := offset_dbl.reverse().mark(1@0).reverse();\n"
-		"        offset_oid := iter.leftfetchjoin([oid](offset_dbl));\n"
+		"        offset_oid := fake_leftfetchjoin(iter, [oid](offset_dbl));\n"
 		"    } else {\n"
 		"        offset_oid := oid(offset_dbl);\n"
 		"    }\n"
@@ -7698,11 +7679,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                         kind_str(code), kind_str(code), counter-1);
         if (fun->arity == 3)
                 milprintf(f,
-                        "    var limit_dbl := item_dbl_%03d;\n"
+                        "    var limit_dbl := de_fake_project(item_dbl_%03d, ipik);\n"
                         "    if (type(limit_dbl) = bat) {\n"
-			"        offset_oid := iter.leftfetchjoin([oid]([+](offset_dbl, limit_dbl.reverse().mark(1@0).reverse())));\n"
-                        "    } else { if (type(offset) = bat) {\n"
-			"        offset_oid := iter.leftfetchjoin([oid]([+](offset_dbl, limit_dbl)));\n"
+			"        offset_oid := iter.fake_leftfetchjoin([oid]([+](offset_dbl, limit_dbl.reverse().mark(1@0).reverse())));\n"
+                        "    } else { if (type(offset_dbl) = bat) {\n"
+			"        offset_oid := iter.fake_leftfetchjoin([oid]([+](offset_dbl, limit_dbl)));\n"
                         "    } else {\n"
 			"        offset_oid := oid(+(offset_dbl, limit_dbl));\n"
                         "    }}\n"
@@ -7711,9 +7692,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "\n" 
                 "    # carry through the selection on the table\n"
                 "    ipik := sel.ord_uselect(true).mark(0@0).reverse();\n"
-                "    iter := ipik.leftfetchjoin(iter);\n"
-                "    if (type(kind) = bat) kind := ipik.leftfetchjoin(kind);\n"
-                "    if (type(item%s) = bat) item%s := ipik.leftfetchjoin(item%s);\n" 
+                "    iter := ipik.fake_leftfetchjoin(iter);\n"
+                "    kind := ipik.fake_leftfetchjoin(kind);\n"
+                "    item%s := ipik.fake_leftfetchjoin(item%s);\n" 
                 "    pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
                 "}\n", kind_str(code), kind_str(code), kind_str(code));
 
