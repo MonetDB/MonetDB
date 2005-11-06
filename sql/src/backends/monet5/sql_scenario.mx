@@ -301,6 +301,7 @@ SQLcompileInternal(str *ret, str *expr, int flag)
 	if(*ret)
 		return throwMessage("SQLcompile", "Catalogue not available\n");
 
+	initSQLreferences();
 	m = sql->mvc;
 	if( !m->trans)
 		mvc_trans(m);
@@ -863,8 +864,8 @@ produce code.
 			be->q->stk = 0;
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name, strlen(be->q->name));
-			//if( m->mode == m_normal)
-				//m->mode = m_inplace;
+			if( m->mode != m_normal && m->mode != m_debug && m->mode != m_explain)
+				m->mode = m_inplace; 
 			m->sa = NULL;
 			m->sym = NULL;
 		} 
@@ -1047,6 +1048,10 @@ SQLengine(Client c)
 		return MAL_SUCCEED;
 	}
 
+	if (m->mode == m_explain) {
+		sqlcleanup(be->mvc, 0);
+		return MAL_SUCCEED;
+	}
 	if (c->curprg->def->errors){
 		sqlcleanup(be->mvc, 0);
 		return throwMessage("SQLengine", "Program contains errors\n");

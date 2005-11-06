@@ -88,7 +88,6 @@ str.iconv
 /* #define _SQL_OPTIMIZER_DEBUG  */
 
 sql_export void addQueryToCache(Client c);
-sql_export void optimizeQueryInCache(Client c);
 sql_export str SQLoptimizer(Client c);
 sql_export void SQLsetAccessMode(Client c);
 
@@ -275,7 +274,7 @@ addQueryToCache(Client c)
 {
 	Module cache;
 	backend *be = ((backend *) c->state[PARSER]);
-/*	str optimizers;*/
+	str optimizer;
 
 	cache = findModule(c->nspace, putName("sql_cache",9));
 	if (cache == 0) {
@@ -307,19 +306,22 @@ to allow inspection.
 		return;
 	}
 	(void)be;
-/* TURN OFF OPTIMIZATION UNTIL IT WORKS WITHOUT
-	optimizers = sql_get_var(be->mvc,"optimizer");
-	if( optimizers)
-		stream_printf(c->fdout,"optimizer=%s\n",optimizers);
-	if( strcmp(optimizers,"sql.optimizer();")==0 )
-		optimizeQueryInCache(c);
-	optimizerCheck(c->curprg->def,"sql.baseline",0,0);
-	but we need multiplex expansion */
+	optimizer = sql_get_var(be->mvc,"optimizer");
+#ifdef _SQL_OPTIMIZER_DEBUG
+	if( optimizer)
+		stream_printf(c->fdout,"optimizer=%s\n",optimizer);
+#endif
 
-	/*COoptimizer(c->curprg->def,0,0);*/
-	ARoptimizer(c->curprg->def, 0, 0);
-	FXoptimizer(c->curprg->def, 0, 0);
-	OPTmultiplex(c->curprg->def, 0, 0);
+	if( optimizer == 0 || strcmp(optimizer,"yes")==0){
+		if( c->debug)
+			optimizerCheck(c->curprg->def,"sql.baseline",-1,0);
+		COoptimizer(c->curprg->def,0,0);
+		ARoptimizer(c->curprg->def, 0, 0);
+		FXoptimizer(c->curprg->def, 0, 0);
+		OPTmultiplex(c->curprg->def, 0, 0);
+	} else if( optimizer ){
+		/* interpret the optimizer control statement */
+	}
 }
 
 @-
@@ -351,195 +353,6 @@ SQLoptimizer(Client c)
 #endif
 	return MAL_SUCCEED;
 }
-
-void
-optimizeQueryInCache(Client c)
-{
-	MalBlkPtr mb;
-	InstrPtr *ns, p;
-	int v;
-	int i, j, k, klim;/*, argseen=0;*/
-	MALfcn setWriteMode = 0;
-	Symbol s;
-	long clk;
-
-#ifdef _SQL_OPTIMIZER_DEBUG
-	stream_printf(GDKout, "First call to SQL optimizer\n");
-	printf("ABOUT TO CHANGE\n");
-	printFunction(GDKout,c->curprg->def,LIST_MAL_ALL);
-#endif
-	resetOptimizerDebugger();
-	optimizerDebug(c->curprg->def,"Parser output",1,0);
-@-
-Reduce the program before other optimizations take place
-The number of optimizer calls is reduced to get things work first
-@c
-	ARoptimizer(c->curprg->def, 0, 0);
-	CXoptimizer(c->curprg->def, 0, 0);
-	AEoptimizer(c->curprg->def, 0, 0);
-
-	mb = c->curprg->def;
-	if (mb->stop <= TOSMALL)
-		return;
-
-	s = findMALSymbol(getName("bat",3), getName("setWriteMode",12));
-	if (s)
-		setWriteMode = getSignature(s)->fcn;
-
-@-
-The first step is to collect all the sql bind operations and
-to extract some compiler relevant properties from the catalogue.
-@c
-	clk= GDKusec();
-	ns = (InstrPtr *) GDKmalloc(sizeof(InstrPtr) * (mb->stop * 2));
-	k = 1;
-	ns[0] = getInstrPtr(mb, 0);	/* its signature */
-	ns[0]->token = FACTORYsymbol;
-	for (i = 0; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
-		if (functionName(p) && moduleName(p) && 
-			strncmp(functionName(p), "bind", 4) == 0 && 
-			strcmp(moduleName(p), "sql") == 0) {
-			ns[k++] = p;
-@-
-At this stage of the implementation we experiment with collecting
-information for a MAL specific optimizer. Aside from the size
-of BATs, it is helpful to detect empty bats as early as possible.
-The information is left behind as an ordinary call to an operator
-supported by the cost model or optimizer.
-
-We use knowledge on generation of bind() instructions.
-@c
-			if (strcmp(functionName(p), "bind_dbat") == 0 || 
-			   (strcmp(functionName(p), "bind") == 0)) {
-				InstrPtr qc;
-				BAT *b = NULL;
-
-@-
-Watch out bind_dbat needs different binding. [costed me a day]
-@c
-				backend *be = ((backend *) c->state[PARSER]);
-
-				if (strcmp(functionName(p), "bind_dbat") == 0)
-					b = mvc_bind_dbat(be->mvc, 
-							getVar(mb,p->argv[1])->value.val.sval,
-							getVar(mb,p->argv[2])->value.val.sval,0);
-				else
-					b = mvc_bind(be->mvc, 
-							getVar(mb,p->argv[1])->value.val.sval,
-							getVar(mb,p->argv[2])->value.val.sval,
-							getVar(mb,p->argv[3])->value.val.sval,0);
-@-
-Empty BATs can be symbolically optimized. Disabled for a while.
-@c
-				if ( FALSE /* b == NULL || (l= BATcount(b)) == 0 */ ) {
-					qc = newInstruction(NULL,ASSIGNsymbol);
-					setModuleId(qc, putName("optimizer",9));
-					setFunctionId(qc, putName("RXemptyBAT",10));
-					qc->argv[0] = newTmpVariable(mb, TYPE_void);
-					qc->argv[1] = p->argv[0];
-					qc->argc = 2;
-					ns[k++] = qc;
-					continue;
-				}
-				BBPunfix(b->batCacheid);
-			}
-		}
-@-
-Check if the relation is already made write-enabled in the plan.
-It uses the knowledge that at this stage the plan is still a linear
-sequence of instructions.
-@c
-		if (setWriteMode && p->fcn == setWriteMode) {
-			for (j = 0; j < k; j++)
-				if (ns[j]->fcn == setWriteMode && ns[j]->argv[1] == p->argv[1])
-					break;
-				else if (ns[j]->argv[0] == p->argv[1]) {
-					ns[k++] = p;
-					break;
-				}
-		}
-@-
-Finally, move all instructions out of the loop until you find a
-reference an argument. This pre-supposes that the instructions
-are invariant to multiple calls. In general this is not the case,
-for consider a block that depends on the size of a BAT.
-		if( argseen == 0){
-			for(j=p->retc; j<p->argc; j++){
-				for( k=0; k<sig->retc; k++)
-				if( getArg(p,k)== getArg(sig,k)
-					argseen=1;
-			}
-			if( argseen==0)
-				ns[k++]= p;
-		}
-@c
-	}
-	klim = k;		/* remember the head */
-@-
-The prelude code has been generated, now we can inject the remaining
-instructions, producing a syntactic correct MAL program again.
-@c
-	v = newVariable(mb, GDKstrdup("always"), TYPE_bit);
-	p = newInstruction(NULL,ASSIGNsymbol);
-	p->barrier = BARRIERsymbol;
-	p->argv[0] = v;
-	pushBit(mb,p,TRUE);
-	ns[k++] = p;
-
-	for (i = 1; i < mb->stop - 1; i++) {
-		int doit = 0;
-
-		p = getInstrPtr(mb, i);
-		if (!(functionName(p) && moduleName(p) && 
-			  strncmp(functionName(p), "bind", 4) == 0 && 
-			  strcmp(moduleName(p), "sql") == 0))
-			doit = 1;
-@-
-Skip it if the writeMode relates to a base table
-@c
-		if (setWriteMode)
-			for (j = 0; j < klim; j++)
-				if (ns[j] == p)
-					doit = 0;
-		if (doit)
-			ns[k++] = p;
-	}
-@-
-Finalize the factory loop
-@c
-	p = newInstruction(NULL,ASSIGNsymbol);
-	p->barrier = YIELDsymbol;
-	p->argv[0] = v;
-	ns[k++] = p;
-	p = newInstruction(NULL,ASSIGNsymbol);
-	p->barrier = REDOsymbol;
-	p->argv[0] = v;
-	ns[k++] = p;
-	p = newInstruction(NULL,ASSIGNsymbol);
-	p->barrier = EXITsymbol;
-	p->argv[0] = v;
-	ns[k++] = p;
-	ns[k++] = getInstrPtr(mb, i);
-
-	mb->stop = k;
-	GDKfree(mb->stmt);
-	mb->stmt = ns;
-
-	optimizerCheck(mb,"sql.factorize",1,GDKusec()-clk);
-@-
-At this stage we can once call upon the optimizers to do their work.
-Static known information is known and stored in constant variables,
-which can be used by the rewrite rules.
-This all works under the assumption that the SQL layer properly invalidates
-the cache when the underlying table is changed.
-@c
-#ifdef _SQL_OPTIMIZER_DEBUG
-	printf("DONE CHANGES\n");
-	printFunction(c->fdout, c->curprg->def, LIST_MAL_INSTR);
-#endif
-}
-
 @-
 The SQLkdiffSplitter searches this important operator and splits
 the dataflow graph into two sections with a switch on the size of

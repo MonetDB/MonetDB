@@ -199,8 +199,6 @@ comment "calculate a hash value and shift left";
 #address bathash_wrap 
 #comment "calculate a hash value and shift left";
 
-command calc.current_date():date
-address MTIMEcurrent_date;
 
 command calc.timestamp(s:str):timestamp
 address MTIMEtimestamp_fromstr;
@@ -218,6 +216,10 @@ command calc.>(a:timestamp,b:timestamp):bit
 address MTIMEtimestamp_GT;
 command calc.>=(a:timestamp,b:timestamp):bit
 address MTIMEtimestamp_GE;
+command calc.isnil(v:timestamp):bit
+address MTIMEtimestamp_isnil
+        comment "Nil test for timestamp value";
+
 
 command calc.date(s:str):date
 address MTIMEdate_fromstr;
@@ -235,6 +237,11 @@ command calc.>(a:date,b:date):bit
 address MTIMEdate_GT;
 command calc.>=(a:date,b:date):bit
 address MTIMEdate_GE;
+command calc.isnil(v:date):bit
+address MTIMEdate_isnil
+        comment "Nil test for date1 value";
+command calc.current_date():date
+address MTIMEcurrent_date;
 
 command calc.date_sub_sec_interval(t:date,s:int):date
 address MTIMEdate_sub_sec_interval_wrap;
@@ -283,6 +290,9 @@ command calc.milliseconds(d:daytime) :int
 address MTIMEdaytime_extract_milliseconds;
 command calc.milliseconds(d:bat[:any_1,:date]):bat[:any_1,:int]
 address MTIMEdaytime_extract_milliseconds_bulk;;
+command calc.isnil(v:daytime):bit
+address MTIMEdaytime_isnil
+        comment "Nil test for daytime value";
 
 # timestamp
 command calc.timestamp(t:timestamp):timestamp
