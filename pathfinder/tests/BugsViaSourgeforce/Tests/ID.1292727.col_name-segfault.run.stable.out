@@ -60,7 +60,7 @@ a0000 := unused;
 a0002.col_name ("iter");
 a0004.col_name ("item");
 a0003.col_name ("item");
-a0000 := loop_lifted_child_step_with_nsloc_test (a0002, a0003, a0004.get_fragment (), ws, 0, "", "site");
+a0000 := loop_lifted_child_step_with_nsloc_test (a0002, a0003, a0004.[int]().get_fragment (), ws, 0, "", "site");
 a0001 := a0000.fetch (0);
 a0005 := a0000.fetch (1);
 a0006 := a0000.fetch (2);
@@ -114,7 +114,7 @@ a0008 := a0004;
 a0009 := a0003;
 a0008 := a0008.reverse ().mark (0@0).reverse ();
 a0009 := a0009.reverse ().mark (0@0).reverse ();
-print_result ("xml", ws, a0008, a0009, a0001, a0005, a0006, a0007);
+print_result ("xml", ws, a0008, a0009, a0001.[lng](), a0005, a0006, a0007);
 <?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
 <site>
