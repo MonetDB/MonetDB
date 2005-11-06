@@ -72,6 +72,7 @@ mal_export str DCcompileQuery(str *ret, str *expr, str *name);
 mal_export str DCsqlCompiler(str *ret, str *name, str *expr);
 mal_export str DCpumpDefinition(int *ret, str *name, str *lang, str *qry);
 mal_export str DCplan(MalBlkPtr mb, str newname);
+mal_export str DCplan2(MalBlkPtr mb);
 mal_export str DCmakePlans(int *ret, str *nme, str *newname);
 mal_export str isEmitterDestination(MalBlkPtr mb, int varid);
 mal_export str DCsqlReshuffle(MalBlkPtr mb, str newname);
@@ -121,6 +122,11 @@ DCcompileQuery(str *ret, str *expr, str *name)
 
 	len = pumpindex * 1024;
 	buf = alloca(len);
+
+	strcpy(buf,"declare optimizer varchar(255);");
+	SQLstatement(ret,&buf);
+	strcpy(buf,"set optimizer ='no';");
+	SQLstatement(ret,&buf);
 
 	for (p = pumps; p < pumps + pumpindex; p++)
 		if (p->name) {
@@ -254,7 +260,9 @@ DCplan(MalBlkPtr mb, str newname)
 	emptyset = alloca(mb->stop * sizeof(int *));
 	for (j = i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (@:tstName(p,"sql","output")@ || @:tstName(p,"sql","column")@) {
+		if (@:tstName(p,"sql","exportResult")@ || 
+			@:tstName(p,"sql","rsColumn")@ ||
+			@:tstName(p,"sql","affectedRows")@ ) {
 			/* skip it */
 			freeInstruction(p);
 			continue;
@@ -262,12 +270,19 @@ DCplan(MalBlkPtr mb, str newname)
 		if (@:tstName(p,"bat","setWriteMode")@) {
 			for (k = j - 1; k >= 0; k--) {
 				q = getInstrPtr(mb, k);
-				if (getArg(p, 1) == getArg(q, 0) && @:tstName(q,"datacell","bind")@) {
-					/* no duplicate mode setting */ ;
-					freeInstruction(p);
+				if (getArg(p, 1) == getArg(q, 0) && 
+					(@:tstName(q,"datacell","bindReceptor")@ || 
+					 @:tstName(q,"datacell","bindEmitter")@) ){
+					/* no duplicate mode setting, use alias removal */ ;
+					p->token= ASSIGNsymbol;
+					setModuleId(p,NULL);
+					setFunctionId(p,NULL);
+					p->fcn = NULL;
 					break;
 				}
 			}
+			getInstrPtr(mb, j) = p;
+			j++;
 			continue;
 		}
 		if (@:tstName(p,"sql","bind_dbat")@) {
@@ -312,10 +327,46 @@ We now can propagate knowledge about empty sets and perform
 some peephole optimization.
 @c
 	ESevaluate(mb, z, emptyset);
+	ARoptimizer(mb, 0, 0);
 	PHoptimizer(mb, 0, 0);
 	DCsqlReshuffle(mb, newname);
 	optimizerCheck(mb, "datacell.reduction", actions, GDKusec() - clk);
 	printFunction(GDKout, mb, LIST_MAL_ALL);
+	return MAL_SUCCEED;
+}
+@-
+The superflous setAccess instructions should be removed as well.
+@c
+str
+DCplan2(MalBlkPtr mb)
+{
+	int i, j, k, actions = 0;
+	InstrPtr p,q;
+
+	for (j = i = 1; i < mb->stop; i++) {
+		p = getInstrPtr(mb, i);
+		if (@:tstName(p,"bat","setAccess")@) {
+			for (k = j - 1; k >= 0; k--) {
+				q = getInstrPtr(mb, k);
+				if (getArg(p, 1) == getArg(q, 0) && 
+					(@:tstName(q,"datacell","bindReceptor")@ || 
+					 @:tstName(q,"datacell","bindEmitter")@) ){
+					/* no duplicate mode setting, use alias removal */ ;
+					p->token= ASSIGNsymbol;
+					setModuleId(p,NULL);
+					setFunctionId(p,NULL);
+					p->fcn = NULL;
+					actions++;
+					break;
+				}
+			}
+		}
+		getInstrPtr(mb, j) = p;
+		j++;
+	}
+	mb->stop = j;
+	if(actions)
+		ARoptimizer(mb,0,0);
 	return MAL_SUCCEED;
 }
 
@@ -343,6 +394,7 @@ DCmakePlans(int *ret, str *nme, str *newname)
 	mb = s->def;
 
 	es = alloca(mb->vtop);
+	optimizerCheck(mb,"Datapump start",1,0);
 	PHoptimizer(mb, 0, 0);
 @-
 We are using three different plans based on the cardinality of the
@@ -358,36 +410,10 @@ first receptor argument.
 	setModuleId(p, putName("pumps", 5));
 	setFunctionId(p, putName(*newname, strlen(*newname)));
 	s->def->var[i]->name = GDKstrdup(*newname);
-
-	insertSymbol(getClient()->nspace, s);
-
-	snprintf(buf, 128, "%s0", *newname);
-	pump->mal[1] = GDKstrdup(buf);
-	s = newSymbol(putName(buf, strlen(buf)), FUNCTIONsymbol);
-	GDKfree(s->def);
-	s->def = pump->malblk[1] = copyMalBlk(mb);
-	p = getInstrPtr(s->def, 0);
-	setModuleId(p, putName("pumps", 5));
-	setFunctionId(p, putName(buf, strlen(buf)));
-	s->def->var[i]->name = GDKstrdup(buf);
-
-	insertSymbol(getClient()->nspace, s);
-
-	snprintf(buf, 128, "%s1", *newname);
-	pump->mal[2] = GDKstrdup(buf);
-	s = newSymbol(putName(buf, strlen(buf)), FUNCTIONsymbol);
-	GDKfree(s->def);
-	s->def = pump->malblk[2] = copyMalBlk(mb);
-	p = getInstrPtr(s->def, 0);
-	setModuleId(p, putName("pumps", 5));
-	setFunctionId(p, putName(buf, strlen(buf)));
-	s->def->var[i]->name = GDKstrdup(buf);
-
 	insertSymbol(getClient()->nspace, s);
 
 #ifdef _DC_COMPILE_DEBUG
 	stream_printf(GDKout, "start reduction %s:\n", (mb->errors ? "errors" : ""));
-	printFunction(GDKout, s->def, LIST_MAL_ALL);
 #endif
 @-
 The raw MAL programs are first refined to deal also
@@ -402,12 +428,37 @@ with the empty set and singleton set.
 		}
 	}
 	DCplan(pump->malblk[0], *newname);
+	DCplan2(pump->malblk[0]);
+
+
+	snprintf(buf, 128, "%s0", *newname);
+	pump->mal[1] = GDKstrdup(buf);
+	s = newSymbol(putName(buf, strlen(buf)), FUNCTIONsymbol);
+	GDKfree(s->def);
+	s->def = pump->malblk[1] = copyMalBlk(pump->malblk[0]);
+	p = getInstrPtr(s->def, 0);
+	setModuleId(p, putName("pumps", 5));
+	setFunctionId(p, putName(buf, strlen(buf)));
+	s->def->var[i]->name = GDKstrdup(buf);
+	insertSymbol(getClient()->nspace, s);
+
+	snprintf(buf, 128, "%s1", *newname);
+	pump->mal[2] = GDKstrdup(buf);
+	s = newSymbol(putName(buf, strlen(buf)), FUNCTIONsymbol);
+	GDKfree(s->def);
+	s->def = pump->malblk[2] = copyMalBlk(pump->malblk[0]);
+	p = getInstrPtr(s->def, 0);
+	setModuleId(p, putName("pumps", 5));
+	setFunctionId(p, putName(buf, strlen(buf)));
+	s->def->var[i]->name = GDKstrdup(buf);
+	insertSymbol(getClient()->nspace, s);
 
 #ifdef _DC_COMPILE_DEBUG
 	printf("\n\nPLAN[1] OPTIMIZE EMPTYSET ON ARGUMENT %d\n", es[0]);
 	printFunction(GDKout, s->def, LIST_MAL_ALL);
 #endif
 	ESevaluate(pump->malblk[1], idx, es);
+	ARoptimizer(pump->malblk[1], 0, 0);
 	DCplan(pump->malblk[1], *newname);
 
 	if (idx > 0) {
@@ -493,6 +544,7 @@ First step is to collect the receptor/emitter bindings.
 The receptor can be released, because we have consumed all
 relevant information.
 @c
+	if( functionId(getInstrPtr(mb,i-1)) != getName("release",7))
 	for (j = u - 1; j >= 0; j--) {
 		p = newFcnCall(mb, getName("datacell", 8), getName("release", 7));
 		pushStr(mb, p, points[j]);
