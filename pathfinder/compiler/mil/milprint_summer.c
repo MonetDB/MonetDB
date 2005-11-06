@@ -2604,6 +2604,9 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
      /* attr */ "var preNew_preOld := merged_result.fetch(6);\n"
                 "merged_result := nil_oid_bat;\n"
      /* attr */ "_attr_own := _attr_own.Xleftjoin(preNew_preOld.reverse());\n"
+                /* we need to help MonetDB, since we know that the order
+                   preserving join (above) creates and deletes no rows */
+                "_attr_own := _attr_own.reverse().mark(0@0).reverse();\n"
      /* attr */ "preNew_preOld := nil_oid_oid;\n"
                 "}\n"
                 /* create attribute root entries */
@@ -3051,7 +3054,6 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "sorting := sorting.CTrefine(mposjoin(attr_qn_,attr_qn_frag,ws.fetch(QN_LOC_URI)));\n"
                 "var unq_attrs := sorting.tunique();\n"
                 "attr_qn_ := nil_oid_oid;\n"
-                "attr_qn_frag := nil_oid_oid;\n"
                 "sorting := nil_oid_oid;\n"
                 /* 
                 "var unq_attrs := CTgroup(attr_iter).CTmap()"
@@ -3101,7 +3103,8 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
                 "attr_oid := nil_oid_oid;\n"
                 "ws.fetch(ATTR_OWN).fetch(WS).insert(attr_own);\n"
                 "attr_own := nil_oid_oid;\n"
-                "ws.fetch(ATTR_FRAG).fetch(WS).insert(attr_frag);\n"
+                "ws.fetch(ATTR_FRAG).fetch(WS).insert(attr_qn_frag);\n"
+                "attr_qn_frag := nil_oid_oid;\n"
                 "attr_frag := nil_oid_oid;\n"
       
                 "} # end of create attribute root entries\n"
@@ -3977,8 +3980,8 @@ translateCast (opt_t *f,
         default:
             PFoops (OOPS_TYPECHECK,
                     "can't cast type '%s' to type '%s'",
-                    PFty_str(L(c)->sem.type),
-                    PFty_str(R(c)->type));
+                    PFty_str(R(c)->type),
+                    PFty_str(L(c)->sem.type));
             break;
     }
 
@@ -3987,8 +3990,8 @@ translateCast (opt_t *f,
 
     milprintf(f,
             "} # end of cast from %s to %s\n", 
-            PFty_str(PFty_defn (L(c)->sem.type)),
-            PFty_str(PFty_defn (R(c)->type)));
+            PFty_str(PFty_defn (R(c)->type)),
+            PFty_str(PFty_defn (L(c)->sem.type)));
 
     return rcode;
 }
@@ -4932,8 +4935,8 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "str_text := nil_str_oid;\n"
             "var texts_order := texts.mark(0@0).reverse();\n"
             "texts := texts.reverse().mark(0@0).reverse();\n"
-            /* 2@0 is text node constant for combine_text_string */
-            "var texts_const := fake_project(2@0);\n"
+            /* 1@0 is text node constant for combine_text_string */
+            "var texts_const := fake_project(1@0);\n"
 
             /* get all other nodes and create empty strings for them */
             "var nodes := kind_node.[!=](TEXT).Xord_uselect(true).project(\"\");\n"
@@ -4942,8 +4945,8 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
             "elem := nil_oid_oid;\n"
             "nodes_order := nodes.mark(0@0).reverse();\n"
             "nodes := nodes.reverse().mark(0@0).reverse();\n"
-            /* 1@0 is node constant for combine_text_string */
-            "var nodes_const := fake_project(1@0);\n"
+            /* 0@0 is node constant for combine_text_string */
+            "var nodes_const := fake_project(0@0);\n"
 
             "var res_mu_is2ns := Xmerged_union (nodes_order, texts_order, "
                                               "nodes, texts, "
@@ -4970,8 +4973,8 @@ is2ns (opt_t *f, int counter, PFty_t input_type)
     milprintf(f,
             "res_mu_is2ns := Xmerged_union (input_order, atomic, "
                                           "input_str, item%s, "
-                                          /* 3@0 is string constant for combine_text_string */
-                                          "input_const, fake_project(3@0));\n"
+                                          /* 2@0 is string constant for combine_text_string */
+                                          "input_const, fake_project(2@0));\n"
             "atomic := nil_oid_oid;\n"
             "input_order := res_mu_is2ns.fetch(0);\n"
             "input_str := res_mu_is2ns.fetch(1);\n"
@@ -5071,7 +5074,7 @@ is2ns_node (opt_t *f, int counter)
 
             "var res_mu_is2ns := Xmerged_union (elem_nodes, textnodes, "
                                               "fake_project(\"\"), text_str, "
-                                              "fake_project(1@0), fake_project(2@0));\n"
+                                              "fake_project(0@0), fake_project(1@0));\n"
 
             "textnodes := nil_oid_oid;\n"
             "text_str := nil_oid_str;\n"
@@ -8749,7 +8752,7 @@ simplifyCoreTree (PFcnode_t *c)
             }
             else if (!PFqname_eq(fun->qname,PFqname (PFns_pf,"distinct-doc-order")) &&
                      DL(c)->kind == c_apply &&
-                     !PFqname_eq((DL(c))->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order")))
+                     !PFqname_eq((DL(c))->sem.fun->qname,PFqname (PFns_pf,"distinct-doc-order"))) 
             {
                 *c = *(DL(c));
             }
