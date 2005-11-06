@@ -2421,6 +2421,9 @@ loop_liftedElemConstr (opt_t *f, int rcode, int rc, int i)
      /* attr */ "var preNew_preOld := merged_result.fetch(6);\n"
                 "merged_result := nil;\n"
      /* attr */ "_attr_own := _attr_own.leftjoin(preNew_preOld.reverse());\n"
+                /* we need to help MonetDB, since we know that the order
+                   preserving join (above) creates and deletes no rows */
+                "_attr_own := _attr_own.reverse().mark(0@0).reverse();\n"
      /* attr */ "preNew_preOld := nil;\n"
                 "}\n"
                 /* create attribute root entries */
