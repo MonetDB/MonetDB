@@ -7660,7 +7660,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         else 
                 milprintf(f, "    var hi := INT_MAX;\n");
 
-        milprintf(f, "\n" 
+        milprintf(f, "\n"
                 "    # select a slice\n"
                 "    ipik := ipik.slice(int(lo),hi);\n"
                 "    iter := iter.slice(int(lo),hi);\n"
@@ -7678,7 +7678,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
 		"        offset_oid := oid(offset_dbl);\n"
 		"    }\n"
                 "    var sel := [>=](pos, offset_oid);\n",
-                        kind_str(code), kind_str(code), 
                         kind_str(code), kind_str(code), counter-1);
         if (fun->arity == 3)
                 milprintf(f,
@@ -7699,7 +7698,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                 "    kind := ipik.fake_leftfetchjoin(kind);\n"
                 "    item%s := ipik.fake_leftfetchjoin(item%s);\n" 
                 "    pos := iter.mark_grp(iter.tunique().mark(nil), 1@0);\n"
-                "}\n", kind_str(code), kind_str(code), kind_str(code));
+                "}\n", kind_str(code), kind_str(code));
 
         if (fun->arity == 3)
                 deleteResult_ (f, counter, DBL);

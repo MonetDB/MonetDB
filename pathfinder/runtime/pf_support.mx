@@ -595,6 +595,11 @@ PROC de_fake_project (bat[void,@1] b, bat[void,oid] x) : @1	#bat[void,@1]
 	return b.fetch(0);	#x.project(b.fetch(0));
 }
 
+PROC de_fake_project (@1 b, bat[void,oid] x) : @1	
+{
+	return b;
+}
+
 PROC de_NO_project (bat[oid,@1] b, bat[void,oid] x) : bat[void,@1]
 {
 	if (not(is_fake_project(b))) {
