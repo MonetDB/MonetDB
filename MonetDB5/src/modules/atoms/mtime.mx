@@ -176,6 +176,9 @@ comment "Equality of two @1s";
 command isnil(v:@1):bit 
 address MTIME@1_isnil
         comment "Nil test for @1 value";
+command calc.isnil(v:@1):bit 
+address MTIME@1_isnil
+        comment "Nil test for @1 value";
 @mal
 
 @+ Date atom
@@ -3704,5 +3707,4 @@ bunins_failed:
 @:Extract(daytime,minutes,int)@
 @:Extract(daytime,seconds,int)@
 @:Extract(daytime,milliseconds,int)@
-
 @}

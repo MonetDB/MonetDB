@@ -160,7 +160,13 @@ They can be packed/unpacked easily.
 pattern bat.unpack(b:bat[:any_1,:any_2])(h:any_1,t:any_2)
 address CMDbatunpack
 comment "Extract the first tuple from a bat";
+pattern bat.unpack(b:bat[:void,:any_2])(h:oid,t:any_2)
+address CMDbatunpack
+comment "Extract the first tuple from a bat";
 pattern bat.pack(h:any_1,t:any_2):bat[:any_1,:any_2]
+address CMDbatpack
+comment "Pack a pair into a BAT";
+pattern bat.pack(h:oid,t:any_2):bat[:void,:any_2]
 address CMDbatpack
 comment "Pack a pair into a BAT";
 
@@ -523,6 +529,8 @@ CMDbbpreleaseBAT(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 A BAT designated as garbage can be removed, provided we
 do not keep additional references in the stack frame
 Be careful here not to remove persistent BATs.
+Note that we clear the dirty bit to ensure that
+the BAT is not written back to store before being freed.
 @c
 str
 CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -538,6 +546,7 @@ CMDbbpgarbage(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return throwMessage("bbp.garbage", "Cannot access descriptor");
 	}
 
+	b->batDirty= FALSE;
 	if (BBP_lrefs(*bid) == 0) {
 		BBPunfix(b->batCacheid);
 		return throwMessage("bbp.garbage", "Bat already gone");
