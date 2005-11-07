@@ -615,9 +615,9 @@ SORTfndfirst_@2(BAT *b, ptr v)
 	size_t lo = BUNindex(b,end), hi = BUNindex(b,BUNlast(b));
 	int cmp = 1, bunsize = BUNsize(b);
 
-        if (@3_CMP(BUNt@1(b, cur), v, @4)>=0) {
-		/* shortcut: if first and hence all tail values are >= v,
-		 * we're done. */
+        if (lo >= hi || @3_CMP(BUNt@1(b, cur), v, @4)>=0) {
+		/* shortcut: if BAT is empty or first (and hence all) tail
+		 * value is >= v, we're done. */
 		return cur;
 	}
 	while (lo < hi) {
@@ -651,9 +651,9 @@ SORTfndlast_@2(BAT *b, ptr v)
 	size_t lo = BUNindex(b,BUNfirst(b)), hi = BUNindex(b,end);
 	int cmp = 1, bunsize = BUNsize(b);
 
-        if (@3_CMP(BUNt@1(b, cur-bunsize), v, @4)<=0) {
-		/* shortcut: if last and hence all tail values are <= v,
-		 * we're done. */
+        if (lo >= hi || @3_CMP(BUNt@1(b, cur-bunsize), v, @4)<=0) {
+		/* shortcut: if BAT is empty or last (and hence all) tail
+		 * value is <= v, we're done. */
 		return cur;
 	}
 	while (lo < hi) {
