@@ -18,6 +18,8 @@ DESCRIPTION
   MonetDB::CLI::MapiLib is an implementation of the MonetDB call level interface
   MonetDB::CLI.
   It uses the SWIG generated MapiLib - a wrapper module for libMapi.
+  Normally, you don't use this module directly, but let MonetDB::CLI
+  choose an implementation module.
 
 PREREQUISITES
 
