@@ -776,6 +776,14 @@ SQLparser(Client c)
 			in->pos = in->len;	/* HACK: should use parsed lenght */
 			return NULL;
 		}
+		if( strncmp(in->buf+in->pos,"auto_commit ", 12)==0 ){
+			id= (int) strtol(in->buf+in->pos+12,NULL,0);
+			m->auto_commit = (id)?1:0;
+			if (mvc_rollback(m, 0, NULL) < 0)
+				return throwMessage("SQLparser", "set auto_commit failed\n");
+			in->pos = in->len;	/* HACK: should use parsed lenght */
+			return NULL;
+		}
 		if( strncmp(in->buf + in->pos,"quit",4)==0 ) {
 			c->mode = FINISHING;
 			return NULL;

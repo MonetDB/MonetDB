@@ -815,7 +815,7 @@ log_bat(logger *logger, oid lbid, BAT *b)
 			fprintf(stderr, "Logged %s %d deletes\n", name, l.nr);
 	}
 	bm_new_version(logger->bm, lbid, logger->tid);
-	BATfakeCommit(b);
+	BATcommit(b);
 
 	return (ok == GDK_SUCCEED) ? SQL_OK : SQL_ERR;
 }

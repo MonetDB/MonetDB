@@ -430,12 +430,18 @@ mvc_rollback(mvc *m, int chain, char *name)
 {
 	char *schema = NULL;
 	int res = 0;
-	int level = (chain) ? m->trans->level : ISO_SERIALIZABLE;
+	int level;
 	sql_trans *tr = m->trans;
 
 	if (mvc_debug)
 		fprintf(stderr, "mvc_rollback %s\n", (name) ? name : "");
 
+	if (!tr) {
+		m->status = 0;
+		return res;
+	}
+
+ 	level = (chain) ? tr->level : ISO_SERIALIZABLE;
 	schema = _strdup(tr->schema->base.name);
 	assert(schema);
 	if (name && name[0] != '\0') {

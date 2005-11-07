@@ -70,6 +70,9 @@ public class MonetConnection implements Connection {
 	/** Whether this Connection is closed (and cannot be used anymore) */
 	private boolean closed;
 
+	/** Whether this Connection is in autocommit mode */
+	private boolean auto_commit = false;
+
 	/** The stack of warnings for this Connection object */
 	private SQLWarning warnings = null;
 	/** The Connection specific mapping of user defined types to Java
@@ -518,6 +521,8 @@ public class MonetConnection implements Connection {
 	 */
 	public boolean getAutoCommit() throws SQLException {
 		// get it from the database
+		return auto_commit;
+/*
 		Statement stmt;
 
 		stmt = createStatement();
@@ -533,6 +538,7 @@ public class MonetConnection implements Connection {
 			stmt.close();
 			throw new SQLException("Driver Panic!!! MonetDB doesn't want to tell us what we need! BAAAAAAAAAAAD MONET!");
 		}
+*/
 	}
 
 	/**
@@ -831,7 +837,17 @@ public class MonetConnection implements Connection {
 	 * @see #getAutoCommit()
 	 */
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		sendIndependantCommand("SET auto_commit = " + autoCommit);
+		if (auto_commit != autoCommit) {
+			RawResults r;
+
+			if (autoCommit)
+				r = new RawResults(0, "auto_commit 1", true);
+			else
+				r = new RawResults(0, "auto_commit 0", true);
+			fetchBlock(r);
+			auto_commit = autoCommit;
+		}
+		//sendIndependantCommand("SET auto_commit = " + autoCommit);
 	}
 
 	public void setCatalog(String catalog) {}
@@ -1068,12 +1084,14 @@ public class MonetConnection implements Connection {
 			Header hdr = null;
 			RawResults rawr = null;
 			int lastState = MonetSocket.UNKNOWN;
+			int linetype = 0;
 			do {
 				tmpLine = monet.readLine();
-				if (monet.getLineType() == MonetSocket.ERROR) {
+				linetype = monet.getLineType();
+				if (linetype == MonetSocket.ERROR) {
 					// store the error message in the Header object
 					hdrl.addError(tmpLine.substring(1));
-				} else if (monet.getLineType() == MonetSocket.SOHEADER) {
+				} else if (linetype == MonetSocket.SOHEADER) {
 					// close previous if set
 					if (hdr != null) {
 						hdr.complete();
@@ -1091,11 +1109,11 @@ public class MonetConnection implements Connection {
 					);
 					if (rawr != null) rawr.finish();
 					rawr = null;
-				} else if (monet.getLineType() == MonetSocket.HEADER) {
+				} else if (linetype == MonetSocket.HEADER) {
 					if (hdr == null) throw
 						new SQLException("Protocol violation: header sent before start of header was issued!");
 					hdr.addHeader(tmpLine);
-				} else if (monet.getLineType() == MonetSocket.RESULT) {
+				} else if (linetype == MonetSocket.RESULT) {
 					// complete the header info and add to list
 					if (lastState == MonetSocket.HEADER) {
 						hdr.complete();
@@ -1108,11 +1126,11 @@ public class MonetConnection implements Connection {
 					if (rawr == null) throw
 						new SQLException("Protocol violation: result sent before header!");
 					rawr.addRow(tmpLine);
-				} else if (monet.getLineType() == MonetSocket.UNKNOWN) {
+				} else if (linetype == MonetSocket.UNKNOWN) {
 					// unknown, will mean a protocol violation
 					addWarning("Protocol violation: unknown linetype.  Ignoring line: " + tmpLine);
 				}
-			} while ((lastState = monet.getLineType()) != MonetSocket.PROMPT1);
+			} while ((lastState = linetype) != MonetSocket.PROMPT1);
 			// Tell the RawResults object there is nothing going to be
 			// added right now.  We need to do this because MonetDB
 			// sometimes plays games with us and just doesn't send what
@@ -1166,18 +1184,20 @@ public class MonetConnection implements Connection {
 				// go for new results, everything should be result (or
 				// error :( )
 				String tmpLine;
+				int linetype = 0;
 				do {
 					tmpLine = monet.readLine();
-					if (monet.getLineType() == MonetSocket.RESULT) {
+					linetype = monet.getLineType();
+					if (linetype == MonetSocket.RESULT) {
 						rawr.addRow(tmpLine);
-					} else if (monet.getLineType() == MonetSocket.ERROR) {
+					} else if (linetype == MonetSocket.ERROR) {
 						rawr.addError(tmpLine.substring(1));
-					} else if (monet.getLineType() == MonetSocket.HEADER) {
+					} else if (linetype == MonetSocket.HEADER) {
 						rawr.addError("Unexpected header found");
-					} else if (monet.getLineType() == MonetSocket.UNKNOWN) {
+					} else if (linetype == MonetSocket.UNKNOWN) {
 						addWarning("Protocol violation, unknown line type for line: " + tmpLine);
 					}
-				} while (monet.getLineType() != MonetSocket.PROMPT1);
+				} while (linetype != MonetSocket.PROMPT1);
 				// Tell the RawResults object there is nothing going to be
 				// added right now.  We need to do this because MonetDB
 				// sometimes plays games with us and just doesn't send what
@@ -1603,6 +1623,9 @@ public class MonetConnection implements Connection {
 			} catch (NumberFormatException e) {
 				throw new SQLException("QueryType " + queryType + " is not a number!");
 			}
+			/* transaction statements invalidated auto_commit */
+			if (this.queryType == MonetStatement.Q_TRANS) 
+				this.connection.auto_commit = false;
 			isSet[4] = true;
 		}
 

@@ -281,11 +281,11 @@ bm_dup(bm *obm)
 			nbm->lbid = lbid + 1;
 		(void) bm_add_bat_intern(nbm, lbid, bid, name, version, BM_READ);
 	}
-	BATfakeCommit(nbm->bat_version);
-	BATfakeCommit(nbm->bat_name);
-	BATfakeCommit(nbm->bat_bid);
-	BATfakeCommit(nbm->bat_lbid);
-	BATfakeCommit(nbm->bat_mode);
+	BATcommit(nbm->bat_version);
+	BATcommit(nbm->bat_name);
+	BATcommit(nbm->bat_bid);
+	BATcommit(nbm->bat_lbid);
+	BATcommit(nbm->bat_mode);
 	return nbm;
 }
 
@@ -327,11 +327,11 @@ bm_reset(bm *nbm, bm *pbm)
 			BUNreplace(nbm->bat_mode, (ptr) &vid, &mode);
 		}
 	}
-	BATfakeCommit(nbm->bat_version);
-	BATfakeCommit(nbm->bat_name);
-	BATfakeCommit(nbm->bat_bid);
-	BATfakeCommit(nbm->bat_lbid);
-	BATfakeCommit(nbm->bat_mode);
+	BATcommit(nbm->bat_version);
+	BATcommit(nbm->bat_name);
+	BATcommit(nbm->bat_bid);
+	BATcommit(nbm->bat_lbid);
+	BATcommit(nbm->bat_mode);
 	return nbm;
 }
 
@@ -477,11 +477,11 @@ bm_load(bm *bm, FILE *fp)
 	}
 	if (!bm->bat_oversion)
 		bm->bat_oversion = bat_copy(bm->bat_version, "bm_load");
-	BATfakeCommit(bm->bat_version);
-	BATfakeCommit(bm->bat_name);
-	BATfakeCommit(bm->bat_bid);
-	BATfakeCommit(bm->bat_lbid);
-	BATfakeCommit(bm->bat_mode);
+	BATcommit(bm->bat_version);
+	BATcommit(bm->bat_name);
+	BATcommit(bm->bat_bid);
+	BATcommit(bm->bat_lbid);
+	BATcommit(bm->bat_mode);
 	bm->bat_pbid = pbid;
 	return 0;
 }
@@ -505,7 +505,7 @@ bm_commit(bm *bm, int tid)
 						   BUNfnd(bm->bat_bid, &id));
 			BAT *b = bat_descriptor(bid, "bm_commit");
 
-			BATfakeCommit(b);
+			BATcommit(b);
 			bat_destroy(b);
 		}
 	}
@@ -517,14 +517,14 @@ bm_commit(bm *bm, int tid)
 
 		bat_decref(bid, TRUE);
 	}
-	BATfakeCommit(bm->bat_version);
-	BATfakeCommit(bm->bat_name);
-	BATfakeCommit(bm->bat_bid);
-	BATfakeCommit(bm->bat_lbid);
+	BATcommit(bm->bat_version);
+	BATcommit(bm->bat_name);
+	BATcommit(bm->bat_bid);
+	BATcommit(bm->bat_lbid);
 	bat_decref(bm->bat_mode->batCacheid, TRUE);
 	bat_destroy(bm->bat_mode);
 
-	BATfakeCommit(bat_mode);
+	BATcommit(bat_mode);
 	bm->bat_mode = bat_mode;
 }
 
@@ -554,7 +554,7 @@ bm_abort(bm *bm, int tid)
 			BAT *b = bat_descriptor(bid, "bm_abort");
 
 			BATundo(b);
-			BATfakeCommit(b);
+			BATcommit(b);
 			bat_destroy(b);
 		}
 	}

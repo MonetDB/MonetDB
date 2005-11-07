@@ -118,7 +118,7 @@ bat_lcopy(BAT *b, char *func)
 	BATkey(BATmirror(nb), b->tkey);
 
 	bat_destroy(b);
-	BATfakeCommit(nb);
+	BATcommit(nb);
 	return nb;
 }
 
@@ -2746,7 +2746,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				if (bs_debug)
 					fprintf(stderr, "append inserts %d to %d (%s)\n", (int)ins->batCacheid, (int)cur->batCacheid, (ttr==gtrans)?"G":"S");
 				void_append_inserted(cur, ins);
-				BATfakeCommit(ins);
+				BATcommit(ins);
 				if (ok == SQL_OK && ttr == gtrans)
 					ok = log_bat(logger, oc->bat.bid, cur);
 			}
@@ -2770,7 +2770,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 				if (ok == SQL_OK && ttr == gtrans)
 					ok = log_bat(logger, oc->bat.ubid, b);
-				BATfakeCommit(ups);
+				BATcommit(ups);
 				bat_destroy(b);
 			}
 			bat_destroy(ups);
@@ -2821,7 +2821,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					void_append_inserted(cur, ins);
 					if (ttr == gtrans)
 						ok = log_bat(logger, oi->bat.bid, cur);
-					BATfakeCommit(ins);
+					BATcommit(ins);
 				} 
 				bat_destroy(ins);
 				ups = bm_lbid2bat(tr->bm, ci->bat.ubid);
@@ -2832,7 +2832,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 					if (ttr == gtrans)
 						ok = log_bat(logger, oi->bat.ubid, oups);
-					BATfakeCommit(ups);
+					BATcommit(ups);
 					bat_destroy(oups);
 				}
 				bat_destroy(ups);
@@ -2842,7 +2842,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 		}
 		if (db) {
-			BATfakeCommit(db);
+			BATcommit(db);
 			bat_destroy(db);
 		}
 
@@ -3510,19 +3510,19 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 		b = bind_bat(tr, c, INS);
 		sz += BATcount(b);
 		BATclear(b);
-		BATfakeCommit(b);
+		BATcommit(b);
 		bat_destroy(b);
 		if (c->bat.ubid) {
 			b = bind_ubat(tr, c, UPD);
 			BATclear(b);
-			BATfakeCommit(b);
+			BATcommit(b);
 			bat_destroy(b);
 		}
 		if (t->dbid) {
 			b = bind_dbat(tr, t, DEL);
 			sz -= BATcount(b);
 			BATclear(b);
-			BATfakeCommit(b);
+			BATcommit(b);
 			bat_destroy(b);
 		}
 
@@ -3531,12 +3531,12 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 			c->base.wtime = tr->stime;
 			b = bind_bat(tr, c, INS);
 			BATclear(b);
-			BATfakeCommit(b);
+			BATcommit(b);
 			bat_destroy(b);
 			if (c->bat.ubid) {
 				b = bind_ubat(tr, c, UPD);
 				BATclear(b);
-				BATfakeCommit(b);
+				BATcommit(b);
 				bat_destroy(b);
 			}
 		}
@@ -3548,12 +3548,12 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 				if (ci->bat.bid && ci->bat.ubid) {
 					b = bind_idx(tr, ci, INS);
 					BATclear(b);
-					BATfakeCommit(b);
+					BATcommit(b);
 					bat_destroy(b);
 					if (ci->bat.ubid) {
 						b = bind_uidx(tr, ci, INS);
 						BATclear(b);
-						BATfakeCommit(b);
+						BATcommit(b);
 						bat_destroy(b);
 					}
 				}

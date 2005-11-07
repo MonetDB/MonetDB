@@ -544,6 +544,13 @@ query string with "M".
 				in->pos = in->len;	/* HACK: should use parsed lenght */
 				continue;
 			}
+			if (sscanf(in->buf + in->pos, "auto_commit %d", &id) == 1) {
+				m->auto_commit = (id)?1:0;
+				if (mvc_rollback(m, 0, NULL) < 0)
+					break;
+				in->pos = in->len;	/* HACK: should use parsed lenght */
+				continue;
+			}
 			error(out, "!ERROR: Unrecognized X command");
 			break;
 		}
