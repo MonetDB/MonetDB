@@ -769,6 +769,7 @@ struct MapiStruct {
 
 	int trace;		/* Trace Mapi interaction */
 	int blocked;		/* blocked mode */
+	int auto_commit;	
 	char* noexplain;	/* on error, don't explain, only print result */
 	MapiMsg error;		/* Error occurred */
 	char *errorstr;		/* pointer to constant string */
@@ -1287,29 +1288,6 @@ mapi_ping(Mapi mid)
 	return mapi_error(mid);
 }
 
-/* set or unset the autocommit flag in the server */
-MapiMsg
-mapi_setAutocommit(Mapi mid, int autocommit)
-{
-	MapiHdl hdl;
-
-	mapi_check(mid, "mapi_setAutocommit");
-	if (mid->languageId != LANG_SQL) {
-		mapi_setError(mid, "autocommit only supported in SQL", "mapi_setAutocommit", MERROR);
-		return MERROR;
-	}
-	if (autocommit)
-		hdl = mapi_query(mid, "set auto_commit = true");
-	else
-		hdl = mapi_query(mid, "set auto_commit = false");
-	if (hdl == NULL || mapi_error(mid)) {
-		if (hdl)
-			mapi_close_handle(hdl);
-		return MERROR;
-	}
-	return mapi_close_handle(hdl);
-}
-
 /* allocate a new structure to represent a result set */
 static struct MapiResultSet *
 new_result(MapiHdl hdl)
@@ -1672,6 +1650,7 @@ mapi_new(void)
 
 	/* then fill in some details */
 	mid->blocked = blocked;
+	mid->auto_commit = 0;
 	mid->error = MOK;
 	mid->hostname = strdup("localhost");
 	mid->server = NULL;
@@ -2724,6 +2703,32 @@ read_line(Mapi mid)
 	return reply;
 }
 
+/* set or unset the autocommit flag in the server */
+MapiMsg
+mapi_setAutocommit(Mapi mid, int autocommit)
+{
+	MapiHdl hdl;
+
+	mapi_check(mid, "mapi_setAutocommit");
+	if (mid->auto_commit == autocommit)
+		return MOK;
+	if (mid->languageId != LANG_SQL) {
+		mapi_setError(mid, "autocommit only supported in SQL", "mapi_setAutocommit", MERROR);
+		return MERROR;
+	}
+	if (stream_printf(mid->to, "X" "auto_commit %d\n", autocommit) < 0 || stream_flush(mid->to)) {
+		close_connection(mid);
+		mapi_setError(mid, stream_error(mid->to), "mapi_setAutocommit", MTIMEOUT);
+		return MERROR;
+	}
+	mid->auto_commit = autocommit;
+	hdl = prepareQuery(mapi_new_handle(mid), "autocommit");
+	mid->active = hdl;
+	read_into_cache(hdl, 0);
+	mapi_close_handle(hdl);	/* reads away any output */
+	return MOK;
+}
+
 static int
 slice_row(char *reply, char *null, char ***anchorsp, int length)
 {
@@ -2839,6 +2844,8 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			    result->querytype == Q_TRANS) {
 				result->fieldcnt = 1;
 				result->row_count = 1;
+				if (result->querytype == Q_TRANS) 
+					hdl->mid->auto_commit = 0;
 			}
 		}
 	}

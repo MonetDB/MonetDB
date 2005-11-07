@@ -844,6 +844,8 @@ showCommands(void)
 	fprintf(toConsole, "\\T\t- toggle timer\n");
 	fprintf(toConsole, "\\D\t- dump database\n");
 	fprintf(toConsole, "\\Dtable\t- dump table\n");
+	fprintf(toConsole, "\\A\t- enable auto commit\n");
+	fprintf(toConsole, "\\a\t- disable auto commit\n");
 	fprintf(toConsole, "\\t\t- toggle interaction trace\n");
 }
 
@@ -941,6 +943,12 @@ doFileByLines(Mapi mid, FILE *fp, const char *prompt, int linemode, int exit_on_
 					continue;
 				case 'b':
 					linemode = 0;
+					continue;
+				case 'A':
+					mapi_setAutocommit(mid, 1);
+					continue;
+				case 'a':
+					mapi_setAutocommit(mid, 0);
 					continue;
 				case 'D':
 					if (line[length - 1] == '\n')
