@@ -1416,9 +1416,9 @@ public class MonetConnection implements Connection {
 			char[] chrLine = new char[len];
 			tmpLine.getChars(0, len, chrLine, 0);
 
-			String name = null;
 			int pos = 0;
 			boolean foundChar = false;
+			boolean nameFound = false;
 			// find header name
 			for (int i = len - 1; i >= 0; i--) {
 				switch (chrLine[i]) {
@@ -1434,9 +1434,8 @@ public class MonetConnection implements Connection {
 					break;
 					case '#':
 						// found!
+						nameFound = true;
 						if (pos == 0) pos = i + 1;
-						name = new String(chrLine, pos, len - pos);
-						len = i - 1;	// " #"
 						i = 0;	// force the loop to terminate
 					break;
 					default:
@@ -1445,26 +1444,72 @@ public class MonetConnection implements Connection {
 					break;
 				}
 			}
-			if (name == null)
+			if (!nameFound)
 				throw new SQLException("Illegal header: " + tmpLine);
 
 			// depending on the name of the header, we continue
-			if (name.equals("name")) {
-				setNames(getValues(chrLine, 2, len));
-			} else if (name.equals("type")) {
-				setTypes(getValues(chrLine, 2, len));
-			} else if (name.equals("table_name")) {
-				setTableNames(getValues(chrLine, 2, len));
-			} else if (name.equals("length")) {
-				setColumnLengths(getValues(chrLine, 2, len));
-			} else if (name.equals("tuplecount")) {
-				setTupleCount(getValue(chrLine, 2, len));
-			} else if (name.equals("id")) {
-				setID(getValue(chrLine, 2, len));
-			} else if (name.equals("querytype")) {
-				setQueryType(getValue(chrLine, 2, len));
-			} else {
-				throw new SQLException("Unknown header: " + name);
+			switch (chrLine[pos]) {
+				default:
+					throw new SQLException("Unknown header: " +
+							(new String(chrLine, pos, len - pos)));
+				case 'n':
+					if (len - pos == 4 &&
+							tmpLine.regionMatches(pos + 1, "name", 1, 3))
+					{
+						setNames(getValues(chrLine, 2, pos - 3));
+					} else {
+						throw new SQLException("Unknown header: " +
+								(new String(chrLine, pos, len - pos)));
+					}
+				break;
+				case 'i':
+					if (len - pos == 2 &&
+							chrLine[pos + 1] == 'd')
+					{
+						setID(getValue(chrLine, 2, pos - 3));
+					} else {
+						throw new SQLException("Unknown header: " +
+								(new String(chrLine, pos, len - pos)));
+					}
+				break;
+				case 'l':
+					if (len - pos == 6 &&
+							tmpLine.regionMatches(pos + 1, "length", 1, 5))
+					{
+						setColumnLengths(getValues(chrLine, 2, pos - 3));
+					} else {
+						throw new SQLException("Unknown header: " +
+								(new String(chrLine, pos, len - pos)));
+					}
+				break;
+				case 'q':
+					if (len - pos == 9 &&
+							tmpLine.regionMatches(pos + 1, "querytype", 1, 8))
+					{
+						setQueryType(getValue(chrLine, 2, pos - 3));
+					} else {
+						throw new SQLException("Unknown header: " +
+								(new String(chrLine, pos, len - pos)));
+					}
+				break;
+				case 't':
+					if (len - pos == 4 &&
+							tmpLine.regionMatches(pos + 1, "type", 1, 3))
+					{
+						setTypes(getValues(chrLine, 2, pos - 3));
+					} else if (len - pos == 10 &&
+							tmpLine.regionMatches(pos + 1, "table_name", 1, 9))
+					{
+						setTableNames(getValues(chrLine, 2, pos - 3));
+					} else if (len - pos == 10 &&
+							tmpLine.regionMatches(pos + 1, "tuplecount", 1, 9))
+					{
+						setTupleCount(getValue(chrLine, 2, pos - 3));
+					} else {
+						throw new SQLException("Unknown header: " +
+								(new String(chrLine, pos, len - pos)));
+					}
+				break;
 			}
 		}
 
