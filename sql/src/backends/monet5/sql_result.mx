@@ -428,7 +428,6 @@ first part (reply_size) of the result set. It should be produced in Monet format
 enable mapi to work with it.
 @c
 static str mvcDefaultMsg[] = {
-	"#-\n# 1 # querytype\n",
 	"#-\n# 2 # querytype\n",
 	"#-\n# 3 # querytype\n",
 	"#-\n# 4 # querytype\n",
@@ -448,7 +447,7 @@ mvc_export_default(mvc *m, stream *s)
 
 	assert(m->type > 0 && m->type < 10);
 	if (s) 
-		ok = (stream_write(s, mvcDefaultMsg[m->type-1], mvcDefaultMsg_len, 1) == 1);
+		ok = (stream_write(s, mvcDefaultMsg[m->type-2], mvcDefaultMsg_len, 1) == 1);
 	return (ok) ? 0 : -1;
 }
 

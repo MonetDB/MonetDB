@@ -872,7 +872,7 @@ produce code.
 			be->q->stk = 0;
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name, strlen(be->q->name));
-			if( m->mode != m_normal && m->mode != m_debug && m->mode != m_explain)
+			if( m->mode == m_normal)
 				m->mode = m_inplace; 
 			m->sa = NULL;
 			m->sym = NULL;
