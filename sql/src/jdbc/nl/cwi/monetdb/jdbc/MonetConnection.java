@@ -71,7 +71,7 @@ public class MonetConnection implements Connection {
 	private boolean closed;
 
 	/** Whether this Connection is in autocommit mode */
-	private boolean auto_commit = false;
+	private boolean autoCommit = false;
 
 	/** The stack of warnings for this Connection object */
 	private SQLWarning warnings = null;
@@ -520,25 +520,7 @@ public class MonetConnection implements Connection {
 	 * @see #setAutoCommit(boolean)
 	 */
 	public boolean getAutoCommit() throws SQLException {
-		// get it from the database
-		return auto_commit;
-/*
-		Statement stmt;
-
-		stmt = createStatement();
-		ResultSet rs =
-			stmt.executeQuery("SELECT \"value\" FROM \"sessions\" WHERE \"name\"='auto_commit'");
-		if (rs.next()) {
-			boolean ret = rs.getBoolean(1);
-			rs.close();
-			stmt.close();
-			return(ret);
-		} else {
-			rs.close();
-			stmt.close();
-			throw new SQLException("Driver Panic!!! MonetDB doesn't want to tell us what we need! BAAAAAAAAAAAD MONET!");
-		}
-*/
+		return(autoCommit);
 	}
 
 	/**
@@ -837,17 +819,15 @@ public class MonetConnection implements Connection {
 	 * @see #getAutoCommit()
 	 */
 	public void setAutoCommit(boolean autoCommit) throws SQLException {
-		if (auto_commit != autoCommit) {
-			RawResults r;
-
-			if (autoCommit)
-				r = new RawResults(0, "auto_commit 1", true);
-			else
-				r = new RawResults(0, "auto_commit 0", true);
-			fetchBlock(r);
-			auto_commit = autoCommit;
+		if (this.autoCommit != autoCommit) {
+			fetchBlock(new RawResults(
+					0,
+					"auto_commit " + (autoCommit ? "1" : "0"),
+					true
+				)
+			);
+			this.autoCommit = autoCommit;
 		}
-		//sendIndependantCommand("SET auto_commit = " + autoCommit);
 	}
 
 	public void setCatalog(String catalog) {}
@@ -909,7 +889,9 @@ public class MonetConnection implements Connection {
 	 */
 	public void setTransactionIsolation(int level) {
 		if (level != TRANSACTION_SERIALIZABLE) {
-			addWarning("MonetDB only supports fully serializable transactions, continuing with transaction level raised to TRANSACTION_SERIALIZABLE");
+			addWarning("MonetDB only supports fully serializable " +
+					"transactions, continuing with transaction level " +
+					"raised to TRANSACTION_SERIALIZABLE");
 		}
 	}
 
@@ -1084,7 +1066,7 @@ public class MonetConnection implements Connection {
 			Header hdr = null;
 			RawResults rawr = null;
 			int lastState = MonetSocket.UNKNOWN;
-			int linetype = 0;
+			int linetype;
 			do {
 				tmpLine = monet.readLine();
 				linetype = monet.getLineType();
@@ -1184,7 +1166,7 @@ public class MonetConnection implements Connection {
 				// go for new results, everything should be result (or
 				// error :( )
 				String tmpLine;
-				int linetype = 0;
+				int linetype;
 				do {
 					tmpLine = monet.readLine();
 					linetype = monet.getLineType();
@@ -1623,9 +1605,13 @@ public class MonetConnection implements Connection {
 			} catch (NumberFormatException e) {
 				throw new SQLException("QueryType " + queryType + " is not a number!");
 			}
-			/* transaction statements invalidated auto_commit */
-			if (this.queryType == MonetStatement.Q_TRANS) 
-				this.connection.auto_commit = false;
+			/* transaction statements invalidate auto_commit state */
+			if (this.queryType == MonetStatement.Q_TRANS) {
+				autoCommit = false;
+				addWarning("Encountered transaction statement (COMMIT " +
+						"or ROLLBACK?) during auto_commit mode.  " +
+						"Setting auto_commit to false.");
+			}
 			isSet[4] = true;
 		}
 
