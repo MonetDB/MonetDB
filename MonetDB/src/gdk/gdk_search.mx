@@ -538,10 +538,13 @@ HASHdestroy(BAT *b)
 
 @+ Binary Search on a Sorted BAT
 We have two main routines, @`SORTfndfirst@5(b,v) and @`SORTfndlast@5(b,v), that
-search for a TAIL value 'v' in a sorted BAT. If the value is present, it
-returns a pointer to its first occurrence; else it returns @%BUNfirst(b)@.
-The latter routine returns a pointer to the BUN just after the last
-occurrence of 'v', else it returns @%BUNlast(b)@.
+search for a TAIL value 'v' in a sorted BAT. If the value is present, 
+the first routine returns a pointer to its first occurrence, while the second
+routine returns a pointer to the BUN just after the last occurrence of 'v'.
+In case value 'v' does not occur in the tail of BAT b, both routines return
+a pointer to the first BUN with a tail value larger than 'v' 
+(i.e., @%BUNfirst(b)@, in case all tail values are larger than 'v'); 
+or @%BUNlast(b)@, in case all tail values are smaller than 'v'.
 @
 @
 From the above routines we now also defined the @`SORTfnd@5 and @%SORTfnd_tpe@
@@ -612,6 +615,11 @@ SORTfndfirst_@2(BAT *b, ptr v)
 	size_t lo = BUNindex(b,end), hi = BUNindex(b,BUNlast(b));
 	int cmp = 1, bunsize = BUNsize(b);
 
+        if (@3_CMP(BUNt@1(b, cur), v, @4)>=0) {
+		/* shortcut: if first and hence all tail values are >= v,
+		 * we're done. */
+		return cur;
+	}
 	while (lo < hi) {
 		size_t mid = (lo+hi)>>1;
 
@@ -643,6 +651,11 @@ SORTfndlast_@2(BAT *b, ptr v)
 	size_t lo = BUNindex(b,BUNfirst(b)), hi = BUNindex(b,end);
 	int cmp = 1, bunsize = BUNsize(b);
 
+        if (@3_CMP(BUNt@1(b, cur-bunsize), v, @4)<=0) {
+		/* shortcut: if last and hence all tail values are <= v,
+		 * we're done. */
+		return cur;
+	}
 	while (lo < hi) {
 		size_t mid = (lo+hi)>>1;
 		cur = BUNptr(b, mid);
