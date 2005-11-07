@@ -629,22 +629,23 @@ void chkDeclarations(MalBlkPtr mb,int reset){
 			    }
 			}
 		}
-		if( blockStart(p)){
-			blkId++;
-			if( top <MAXDEPTH-2){
-			    blks[top]= blkId;
-			    blks[++top]= 0;
-			} else {
-			    GDKerror("too deeply nested  MAL program\n");
-			    mb->errors++;
-			    return;
+		if( p->barrier){
+			if( blockStart(p)){
+				blkId++;
+				if( top <MAXDEPTH-2){
+					blks[top]= blkId;
+					blks[++top]= 0;
+				} else {
+					GDKerror("too deeply nested  MAL program\n");
+					mb->errors++;
+					return;
+				}
 			}
-		}
-		if( blockExit(p))
-			if( top > 0) {
+			if( blockExit(p) && top > 0) {
 			    top--;
 			    blks[top]= 0;
 			}
+		}
 	}
 }
 @}

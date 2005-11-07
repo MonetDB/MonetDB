@@ -149,7 +149,6 @@ Simplify polytype using a map into the concrete argument table.
     m= scope;
     s= m->subscope[(int)(getSubScope(functionName(p)))];
     if( s == 0) return -1;
-	if( functionName(p))
 	while(s != NULL){   /* single scope element check */
 	if( functionName(p) != s->name  ){
 		s= s->skip; continue;
@@ -171,10 +170,6 @@ and type(Ai)=type(Yi). Furthermore, the variables Xi obtain their type
 from Bi (or type(Bi)==type(Xi)).
 @c
     sig = getSignature(s); 
-    if( sig->retc != p->retc) {
-		s= s->peer;
-		continue;
-	}
     unmatched = 0;
 
 #ifdef DEBUG_MAL_RESOLVE
@@ -202,6 +197,10 @@ Note, each function returns at least one value.
 	if( ! (sig->argc== p->argc ||
 		(sig->argc<p->argc && sig->varargs)) ){
 		s= s->peer; continue;
+	}
+    if( sig->retc != p->retc) {
+		s= s->peer;
+		continue;
 	}
       /*  if(polyVector[0]==0) polyInit();
         memcpy(polytype,polyVector, 2*sig->argc*sizeof(int)); */
@@ -267,7 +266,8 @@ type administration.
 We have to check the argument types to determine a
 possible match for the non-polymorphic case.
 @c
-        if( sig->argc != p->argc){
+        if( sig->argc != p->argc ||
+			sig->retc != p->retc) {
             s= s->peer;
             continue;
         }
@@ -338,11 +338,15 @@ the resulting type can not be determined.
         int actual = getArgType(mb,p,i);
         int formal = getArgType(s->def,sig,i);
 
-        returntype[i]= resolveType(actual,formal);
-        if( returntype[i]== -1 ){
-			s1= -1;
-			break;
-        }
+		if( actual== formal)
+			returntype[i]= actual;
+		else {
+			returntype[i]= resolveType(actual,formal);
+			if( returntype[i]== -1 ){
+				s1= -1;
+				break;
+			}
+		}
     }
     if(s1<0 ){
         /* if(getSignature(s)->token !=PATTERNsymbol) foundbutwrong++;*/
@@ -620,7 +624,7 @@ void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p,int silent){
         tracefcn= idcmp(functionName(p),traceFcnName)==0;
 #endif
         m= findModule(scope,moduleId(p));
-        s1= findFunctionType(m,mb,p,silent);
+		s1= findFunctionType(m,mb,p,silent);
         if( s1>= 0) return;
 @-
 Could not find a function that statisfies the constraints.

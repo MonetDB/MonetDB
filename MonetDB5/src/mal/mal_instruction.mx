@@ -934,10 +934,10 @@ It also means that input which does not comply with the intended
 location of a temporary variable should be flagged as an error.
 @= chkTemporary
     if( isTmpName(name)){
-        i= atol(name+1);
+		int idx= atoi(name+1);
         /* test validity*/
-        if( i< mb->vtop-1 && isTmpVar(mb,i) && getVarTmp(mb,i) == i)
-            return i;
+		for(i=mb->vtop-1; i>=0; i--)
+			if( getVarTmp(mb,i)==idx) return idx;
         return -1;
     } 
 @-
