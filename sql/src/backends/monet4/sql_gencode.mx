@@ -37,7 +37,7 @@ sql_server_export int backend_dump(backend *be, cq *q, stmt *s);
 sql_server_export int backend_explain(backend *be, stmt *s, stream *out);
 sql_server_export int backend_exec_prepared_stmt( backend *be, cq *q );
 
-sql_server_export void monet4_freecode(backend_code code, backend_stack stk, int nr);
+sql_server_export void monet4_freecode(backend_code code, backend_stack stk, int nr, char *name);
 
 #endif /*_SQL_GENCODE_H_*/
 
@@ -1428,7 +1428,7 @@ int backend_call( backend *be, mvc *c, cq *q )
 		q->stk = (backend_stack) (ptrdiff_t) procstk;
 	} else {
 		be->mvc->status = err;
-		monet4_freecode(callnode, (backend_stack) (ptrdiff_t) procstk, q->id);
+		monet4_freecode(callnode, (backend_stack) (ptrdiff_t) procstk, q->id, q->name);
 
 		backend_freestack((backend_stack) (ptrdiff_t) procstk);
 		qc_delete(be->mvc->qc, q);
