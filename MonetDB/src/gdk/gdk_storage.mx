@@ -345,7 +345,7 @@ GDKload(str nme, str ext, size_t size, size_t chunk, int mode)
 		if ((fp = GDKfilelocate(nme, "mrb+", ext)) != NULL) {
 			char path[MAXPATHLEN];
 			int tpe = 0;
-			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL;
+			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
 
 			fseek(fp, (ssize_t) chunk, SEEK_SET);
 			fputc('\n', fp);
