@@ -51,35 +51,31 @@ transactions(mvc *sql, symbol *s)
 
 	switch (s->token) {
 	case TR_RELEASE:
-		ret = mvc_release(sql, s->data.sval);
-		if (sql->auto_commit == 1) {
+		if (sql->auto_commit == 1) 
 			return sql_error(sql, 01, "transaction release not allowed in auto commit mode");
-		}
+		ret = mvc_release(sql, s->data.sval);
 		if (ret < 0)
 			return sql_error(sql, 01, "release savepoint %s failed", s->data.sval);
 		break;
 	case TR_COMMIT:
-		ret = mvc_commit(sql, s->data.ival, NULL);
-		if (sql->auto_commit == 1) {
+		if (sql->auto_commit == 1) 
 			return sql_error(sql, 01, "transaction commit not allowed in auto commit mode");
-		}
+		ret = mvc_commit(sql, s->data.ival, NULL);
 		if (ret < 0)
 			return sql_error(sql, 01, "transaction commit failed");
 		break;
 	case TR_SAVEPOINT:
-		ret = mvc_commit(sql, 0, s->data.sval);
-		if (sql->auto_commit == 1) {
+		if (sql->auto_commit == 1) 
 			return sql_error(sql, 01, "transaction savepoint not allowed in auto commit mode");
-		}
+		ret = mvc_commit(sql, 0, s->data.sval);
 		if (ret < 0)
 			return sql_error(sql, 01, "transaction savepoint (%s) failed", s->data.sval);
 		break;
 	case TR_ROLLBACK:{
 		dlist *l = s->data.lval;
 
-		if (sql->auto_commit == 1) {
+		if (sql->auto_commit == 1) 
 			return sql_error(sql, 01, "transaction rollback not allowed in auto commit mode");
-		}
 		ret = mvc_rollback(sql, l->h->data.ival, l->h->next->data.sval);
 		if (ret < 0 && l->h->next->data.sval)
 			return sql_error(sql, 01, "transaction rollback to savepoint (%s) failed", l->h->next->data.sval);
@@ -87,6 +83,8 @@ transactions(mvc *sql, symbol *s)
 		break;
 	case TR_START:{
 	case TR_MODE:
+		if (sql->auto_commit == 1)
+			sql->auto_commit = 0;
 		if (sql->trans)
 			mvc_rollback(sql, 0, NULL);
 		(void) mvc_trans(sql);
