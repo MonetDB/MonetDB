@@ -1977,9 +1977,10 @@ CMDfetchbat(BAT **ret, BAT *b, BAT *s)
 	return (*ret = BATfetch(b, s)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-static int
-doCMDfetch(ptr ret, BAT *b, size_t i)
+int
+CMDfetch(ptr ret, BAT *b, lng *pos)
 {
+        size_t i = *pos;
 	if (i >= BATcount(b)) {
 		GDKerror("CMDfetch: idx out of range\n");
 		return GDK_FAIL;
@@ -2014,12 +2015,6 @@ doCMDfetch(ptr ret, BAT *b, size_t i)
 	}
 @c
 	return GDK_SUCCEED;
-}
-
-int
-CMDfetch(ptr ret, BAT *b, lng *pos)
-{
-	return doCMDfetch(ret, b, (size_t) (*pos - b->hseqbase));
 }
 
 int
