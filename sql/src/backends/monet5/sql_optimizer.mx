@@ -139,6 +139,8 @@ FXoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			removeInstruction(mb, pci);
 		return MAL_SUCCEED;
 	}
+	if( !factoryHasFreeSpace())
+		return MAL_SUCCEED;
 
 @-
 The factor code is generated as soon as you have encountered a bind
@@ -319,7 +321,7 @@ to allow inspection.
 		ARoptimizer(c->curprg->def, 0, 0);
 		FXoptimizer(c->curprg->def, 0, 0);
 		OPTmultiplex(c->curprg->def, 0, 0);
-		MRoptimizer(c->curprg->def,0,0);
+		/* MRoptimizer(c->curprg->def,0,0);*/
 	} else if( optimizer ){
 		/* interpret the optimizer control statement */
 	}
