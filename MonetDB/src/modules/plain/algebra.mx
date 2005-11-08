@@ -52,11 +52,9 @@ that return a BAT.
 "Returns the BAT position e [0.. b.count> of a 'val' in the head column of b.
  It gives an error if 'val' does not occur in b. "
 
-.COMMAND fetch(BAT[any,any::1] b, int x) : any::1 = CMDfetch;
+.COMMAND fetch(BAT[any,any::1] b, lng x) : any::1 = CMDfetch;
 "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"
 
-.COMMAND fetch(BAT[any,any::1] b, oid x) : any::1 = CMDfetchoid;
-"Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"
 @+ BAT Selections
 @- positional select
 @m
@@ -140,7 +138,7 @@ NOTE 2: as the 'nil' element has no clear place in the ordered domain
 as substring in the tail."
 @- positional select
 @m
-.COMMAND slice(BAT[any::1,any::2], int x, int y) :
+.COMMAND slice(BAT[any::1,any::2], lng x, lng y) :
 				BAT[any::1,any::2] =CMDslice;
 "Return the slice with the BUNs at position x till y."
 @+ BAT copying
@@ -1077,6 +1075,19 @@ that for the moment are defined as procs.
     ADDHELP("rev_select", "boncz", "Aug  6 1998",
 	    "(value OP column) select rather than (column OP value)","algebra");
 
+    PROC slice(BAT[any::1,any::2] b, int x, int y) : BAT[any::1,any::2]
+    {
+        return b.slice(lng(x),lng(y));
+    }
+    PROC fetch(BAT[any,any::1] b, int x) : any::1
+    {
+        return b.fetch(lng(x));
+    }
+    PROC fetch(BAT[oid,any::1] b, oid x) : any::1
+    {
+        return b.find(x);
+    }
+
     PROC tunique (bat[any,any::1] b) : bat[any::1,void] {
 	return b.reverse().mark(nil).kunique();
    }
@@ -1918,7 +1929,7 @@ CMDlike(BAT **ret, BAT *b, str s)
 @- BAT slice
 @c
 int
-CMDslice(BAT **retval, BAT *b, int *start, int *end)
+CMDslice(BAT **retval, BAT *b, lng *start, lng *end)
 {
 	/* the internal BATslice requires exclusive end */
 	if (*start < 0) {
@@ -2006,18 +2017,8 @@ doCMDfetch(ptr ret, BAT *b, size_t i)
 }
 
 int
-CMDfetch(ptr ret, BAT *b, int *pos)
+CMDfetch(ptr ret, BAT *b, lng *pos)
 {
-	return doCMDfetch(ret, b, (size_t) * pos);
-}
-
-int
-CMDfetchoid(ptr ret, BAT *b, oid *pos)
-{
-	if (b->hseqbase == oid_nil) {
-		GDKerror("CMDfetchoid: void lookup on uninitialized column.\n");
-		return GDK_FAIL;
-	}
 	return doCMDfetch(ret, b, (size_t) (*pos - b->hseqbase));
 }
 
