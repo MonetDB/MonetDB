@@ -722,6 +722,7 @@ mvc_export_value( mvc *m, stream *s, int qtype, str tn, str cn, str type, int d,
 	int ok = 1;
 	char *rsep = "\t]\n";
 
+	assert(qtype > 1 && qtype < 10);
 	if (stream_write(s, mvcDefaultMsg[qtype-2], mvcDefaultMsg_len, 1) == 1&&
 	    stream_write(s, "# ", 2, 1) == 1 &&
 	    stream_write(s, tn, strlen(tn), 1) == 1 &&
