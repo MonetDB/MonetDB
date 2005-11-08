@@ -1651,7 +1651,7 @@ public class MonetConnection implements Connection {
 				throw new SQLException("QueryType " + queryType + " is not a number!");
 			}
 			/* transaction statements invalidate auto_commit state */
-			if (this.queryType == MonetStatement.Q_TRANS) {
+			if (autoCommit == true && this.queryType == MonetStatement.Q_TRANS) {
 				autoCommit = false;
 				addWarning("Encountered transaction statement (COMMIT " +
 						"or ROLLBACK?) during auto_commit mode.  " +
