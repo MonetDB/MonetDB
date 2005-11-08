@@ -56,19 +56,18 @@ stderr of test 'autocommit_illegal_statements-bug-sf-953545` in directory 'src/t
 # 15:22:34 >  Mtimeout -timeout 60 MapiClient --language=sql -u monetdb -P monetdb --host=stem --port=53599  < autocommit_illegal_statements-bug-sf-953545.sql
 # 15:22:34 >  
 
-MAPI  = monetdb@localhost:40965
+MAPI  = monetdb@localhost:43286
 QUERY = ROLLBACK;
 ERROR = !transaction rollback not allowed in auto commit mode
-MAPI  = monetdb@localhost:40965
+MAPI  = monetdb@localhost:43286
 QUERY = COMMIT;
 ERROR = !transaction commit not allowed in auto commit mode
-MAPI  = monetdb@localhost:40965
+MAPI  = monetdb@localhost:43286
 QUERY = SAVEPOINT failingsavepoint;
 ERROR = !transaction savepoint not allowed in auto commit mode
-MAPI  = monetdb@localhost:40965
+MAPI  = monetdb@localhost:43286
 QUERY = RELEASE SAVEPOINT failingsavepoint;
 ERROR = !transaction release not allowed in auto commit mode
-        !ERROR: release savepoint failingsavepoint doesn't exists
 
 # 15:22:34 >  
 # 15:22:34 >  Done.
