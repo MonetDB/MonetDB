@@ -1301,8 +1301,8 @@ bs_init_idx(struct bm *bm)
 	BAT *idx_name = mvc_bat(bm, "idxs_name", TYPE_str);
 	BAT *U_idx_id = mvc_bat(bm, "U_idxs_id", TYPE_int);
 	BAT *U_idx_table = mvc_bat(bm, "U_idxs_table_id", TYPE_int);
-	BAT *U_idx_tpe = mvc_bat(bm, "U_idxs_type", TYPE_str);
-	BAT *U_idx_name = mvc_bat(bm, "U_idxs_name", TYPE_int);
+	BAT *U_idx_tpe = mvc_bat(bm, "U_idxs_type", TYPE_int);
+	BAT *U_idx_name = mvc_bat(bm, "U_idxs_name", TYPE_str);
 	BAT *D_idx = mvc_bat(bm, "D_idxs", TYPE_oid);
 
 	BAT *kc_id = mvc_bat(bm, "keycolumns_id", TYPE_int);
