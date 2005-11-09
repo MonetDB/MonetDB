@@ -955,7 +955,7 @@ that for the moment are defined as procs.
     PROC like(str s, str pat, str esc) : bit  {
 		var ppat := sql2pcre(pat, esc);
 		if (isnil(ppat)) {
-			return(b = pat);
+			return(s = pat);
 		} else {
 			return(pcre_match(pcre_compile(ppat), s));
 		}
@@ -966,7 +966,7 @@ that for the moment are defined as procs.
     PROC like(str s, str pat) : bit  {
 		var ppat := sql2pcre(pat, "\\");
 		if (isnil(ppat)) {
-			return(b = pat);
+			return(s = pat);
 		} else {
 			return(pcre_match(pcre_compile(ppat), s));
 		}
