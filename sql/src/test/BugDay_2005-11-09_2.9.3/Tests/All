@@ -2,3 +2,4 @@
 schema_change_grant_crash.SF-963620
 date_functions.SF-967145
 alter_table.SF-1040057
+hang_on_copy_into.SF-1100504
