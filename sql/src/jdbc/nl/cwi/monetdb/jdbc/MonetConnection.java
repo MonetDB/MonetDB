@@ -1654,7 +1654,8 @@ public class MonetConnection implements Connection {
 			if (autoCommit == true && this.queryType == MonetStatement.Q_TRANS) {
 				autoCommit = false;
 				addWarning("Encountered transaction statement (COMMIT " +
-						"or ROLLBACK?) during auto_commit mode.  " +
+						"ROLLBACK, or START TRANSACTION?) during " +
+						"auto_commit mode.  " +
 						"Setting auto_commit to false.");
 			}
 			isSet[4] = true;
