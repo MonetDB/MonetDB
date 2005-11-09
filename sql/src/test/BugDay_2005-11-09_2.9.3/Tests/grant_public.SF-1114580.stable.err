@@ -1,14 +1,14 @@
-stderr of test 'schema_change.SF-1026845` in directory 'src/test/BugDay_2005-11-09_2.9.3` itself:
+stderr of test 'grant_public.SF-1114580` in directory 'src/test/BugDay_2005-11-09_2.9.3` itself:
 
 
-# 19:58:10 >  
-# 19:58:10 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=32553 --set sql_port=46797 --set xquery_port=55001 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 19:58:10 >  
+# 19:58:17 >  
+# 19:58:17 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=32553 --set sql_port=46797 --set xquery_port=55001 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 19:58:17 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.9.3
-# builtin opt 	monet_pid = 13743
+# builtin opt 	monet_pid = 14116
 # builtin opt 	prefix = /ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX.
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -64,12 +64,12 @@ stderr of test 'schema_change.SF-1026845` in directory 'src/test/BugDay_2005-11-
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_src_test_BugDay_2005-11-09_2.9.3
 
-# 19:58:10 >  
-# 19:58:10 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46797  < schema_change.SF-1026845.sql
-# 19:58:10 >  
+# 19:58:17 >  
+# 19:58:17 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46797  < grant_public.SF-1114580.sql
+# 19:58:17 >  
 
 
-# 19:58:10 >  
-# 19:58:10 >  Done.
-# 19:58:10 >  
+# 19:58:17 >  
+# 19:58:17 >  Done.
+# 19:58:17 >  
 
