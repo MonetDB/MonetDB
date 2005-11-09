@@ -1,0 +1,7 @@
+updating_views.SF-1023645
+ORDER_BY_evaluation_error.SF-1023658
+insert_from_no-existing_tables.SF-1037020
+overflow_checking.SF-1089334
+delete_with_auto_commit.SF-1096337
+crash_in_case.SF-1097749
+crash_with_wrong_nesting.SF-1097883
