@@ -29,4 +29,4 @@ SELECT * FROM aap;
 UPDATE aap SET id=7 WHERE id=8;
 SELECT * FROM aap;
 COMMIT;
-
+DROP TABLE aap;
