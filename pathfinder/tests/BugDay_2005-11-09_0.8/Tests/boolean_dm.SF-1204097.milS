@@ -1,0 +1,4 @@
+module(pathfinder);
+xquery("dm","boolean(0)");
+xquery("dm","boolean(1)");
+quit();
