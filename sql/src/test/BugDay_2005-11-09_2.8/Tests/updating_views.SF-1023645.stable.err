@@ -67,9 +67,10 @@ stderr of test 'updating_views.SF-1023645` in directory 'src/test/BugDay_2005-11
 # 10:01:12 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=47297  < updating_views.SF-1023645.sql
 # 10:01:12 >  
 
-MAPI  = monetdb@localhost:47297
+MAPI  = monetdb@localhost:49313
 QUERY = insert into v1023645 values (1);
-ERROR = !Cannot insert into the view v1023645
+ERROR = !INSERT INTO: cannot insert into view 'v1023645'
+
 
 # 10:01:13 >  
 # 10:01:13 >  Done.
