@@ -77,14 +77,6 @@ Over..
 # 1 # tuplecount
 # 0 # id
 [ 0	]
-# 3 # querytype
-#  # table_name
-# sql_add_single_value # name
-# sec_interval # type
-# 0 # length
-# 1 # tuplecount
-# 0 # id
-[ 11640	]
 
 # 14:16:17 >  
 # 14:16:17 >  Done.
