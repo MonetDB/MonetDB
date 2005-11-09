@@ -68,10 +68,6 @@ stderr of test 'like_doesnot_like_strings.SF-1076605` in directory 'src/test/Bug
 # 12:57:24 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41765  < like_doesnot_like_strings.SF-1076605.sql
 # 12:57:24 >  
 
-MAPI  = monetdb@localhost:41478
-QUERY = select 'test' like 'test';
-ERROR = !ERROR: interpret: unknown variable 'b'.
-        !ERROR: interpret_params: =(param 1): evaluation error.
 
 # 12:57:24 >  
 # 12:57:24 >  Done.

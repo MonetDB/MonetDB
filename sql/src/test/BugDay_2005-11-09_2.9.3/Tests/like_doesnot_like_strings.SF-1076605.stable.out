@@ -21,6 +21,14 @@ Over..
 # 12:50:56 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=45907  < like_doesnot_like_strings.SF-1076605.sql
 # 12:50:56 >  
 
+# 3 # querytype
+#  # table_name
+# like_single_value # name
+# boolean # type
+# 0 # length
+# 1 # tuplecount
+# 0 # id
+[ true	]
 # 7 # querytype
 # 6 # querytype
 # 7 # querytype
