@@ -22,8 +22,29 @@ Over..
 # 12:50:56 >  
 
 # 7 # querytype
+# 6 # querytype
+# 7 # querytype
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 1	]
+# 7 # querytype
+# 3 # querytype
+# sfbug_1076605 # table_name
+# str1 # name
+# varchar # type
+# 4 # length
+# 1 # tuplecount
+# 0 # id
+[ "test"	]
 
-# 12:50:56 >  
-# 12:50:56 >  Done.
-# 12:50:56 >  
+# 14:05:31 >  
+# 14:05:31 >  Done.
+# 14:05:31 >  
 
