@@ -1,0 +1,13 @@
+module(tcpip,radix);
+
+PROC g(): bat[void, dbl] {
+	var a := uniform(100000).[dbl]().copy();
+	printf("done...\n");
+	RETURN a;
+} 
+
+fork(listen());
+
+var cid := open("localhost");
+var res := rpc(cid, "g();"); # caused crash
+print(slice(res, 0, 10));
