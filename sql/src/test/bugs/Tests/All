@@ -60,3 +60,4 @@ extract_interval_bug-sf-1274088
 profile_bug-SF.1314649.sql
 view_limit.SF-1345861
 order_disjunctive_bug.SF-1338309
+default_with_cast.SF-1334486
