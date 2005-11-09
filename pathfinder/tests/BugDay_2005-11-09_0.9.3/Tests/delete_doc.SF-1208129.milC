@@ -1,0 +1,2 @@
+module(pathfinder);
+delete_doc("non-existing-document");
