@@ -1,4 +1,4 @@
 module(pathfinder);
-xquery("dm","boolean(0)");
-xquery("dm","boolean(1)");
+xquery("dm","boolean(0)").printf();
+xquery("dm","boolean(1)").printf();
 quit();

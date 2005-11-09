@@ -10,9 +10,9 @@ stdout of test 'boolean_dm.SF-1204097` in directory 'tests/BugDay_2005-11-09_0.8
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 module(pathfinder);
-xquery("dm","boolean(0)");
+xquery("dm","boolean(0)").printf();
 false 
-xquery("dm","boolean(1)");
+xquery("dm","boolean(1)").printf();
 true 
 quit();
 
