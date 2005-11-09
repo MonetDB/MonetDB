@@ -587,13 +587,16 @@ create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *
 		return sql_error(sql, 02, "CREATE VIEW: access denied for %s to schema %s", sql->user, ss->base.name);
 	} else if (query) {
 		stmt *sq = NULL;
-		SelectNode *sn = (SelectNode *) query;
 		char *subquery = NULL;
 
-		if (sn->limit >= 0)
-			return sql_error(sql, 01, "CREATE VIEW: LIMIT not supported");
-		if (sn->orderby)
-			return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
+		if (query->token == SQL_SELECT) {
+			SelectNode *sn = (SelectNode *) query;
+
+			if (sn->limit >= 0)
+				return sql_error(sql, 01, "CREATE VIEW: LIMIT not supported");
+			if (sn->orderby)
+				return sql_error(sql, 01, "CREATE VIEW: ORDER BY not supported");
+		}
 
 		sq = scope_subquery(sql, NULL, query);
 		if (!sq)
