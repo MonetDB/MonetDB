@@ -1,0 +1,36 @@
+stdout of test 'crash_in_case.SF-1097749` in directory 'src/test/BugDay_2005-11-09_2.8` itself:
+
+
+# 13:22:29 >  
+# 13:22:29 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=35403 --set sql_port=41609 --set xquery_port=56271 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.8" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 13:22:29 >  
+
+# Monet Database Server V4.8.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 13:22:29 >  
+# 13:22:29 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=41609  < crash_in_case.SF-1097749.sql
+# 13:22:29 >  
+
+# 3 # querytype
+#  # table_name
+# ifthenelse_>_single_value # name
+# char # type
+# 0 # length
+# 1 # tuplecount
+# 1 # id
+[ "true"	]
+
+# 13:22:29 >  
+# 13:22:29 >  Done.
+# 13:22:29 >  
+
