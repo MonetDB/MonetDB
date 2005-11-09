@@ -360,6 +360,7 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	n = n->next;
 	stmt_relselect_fill(s, stmt_uselect(stmt_cbat(n->data, stmt_dup(pts), RDONLY, st_bat), stmt_atom_int(obj_id), cmp_equal));
 
+	s = stmt_mark(stmt_reverse(s), 0);
 	s = sql_delete(sql, ptv, pt, s, 0);
 	scope_close(scp);
 	return s;
