@@ -1,0 +1,88 @@
+stdout of test 'having_clause_quirks.SF-947601` in directory 'src/test/BugDay_2005-11-09_2.9.3` itself:
+
+
+# 11:56:59 >  
+# 11:56:59 >  Mtimeout -timeout 180 Mserver "--config=/ufs/zhang/scratch/monet-stable/program/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/zhang/scratch/monet-stable/program/MonetDB:/ufs/zhang/scratch/monet-stable/program/lib/MonetDB:/ufs/zhang/scratch/monet-stable/sql/build/lib/MonetDB" --set "gdk_dbfarm=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/zhang/scratch/monet-stable/program/var/MonetDB/log" --set mapi_port=38410 --set sql_port=42620 --set xquery_port=54393 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 11:56:59 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+
+printf("\nReady.\n");
+
+Ready.
+quit();
+
+Over..
+
+# 11:56:59 >  
+# 11:56:59 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=42620  < having_clause_quirks.SF-947601.sql
+# 11:56:59 >  
+
+# 3 # querytype
+# tables # table_name
+# name # name
+# varchar # type
+# 10 # length
+# 23 # tuplecount
+# 0 # id
+[ "modules"	]
+[ "schemas"	]
+[ "ptables"	]
+[ "pcolumns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "types"	]
+[ "functions"	]
+[ "args"	]
+[ "ttables"	]
+[ "tcolumns"	]
+[ "tables"	]
+[ "columns"	]
+[ "profile"	]
+[ "sessions"	]
+[ "env"	]
+[ "sequences"	]
+[ "db_users"	]
+[ "user_role"	]
+[ "auths"	]
+[ "privileges"	]
+[ "users"	]
+# 3 # querytype
+# tables # table_name
+# name # name
+# varchar # type
+# 10 # length
+# 23 # tuplecount
+# 1 # id
+[ "modules"	]
+[ "schemas"	]
+[ "ptables"	]
+[ "pcolumns"	]
+[ "keys"	]
+[ "idxs"	]
+[ "keycolumns"	]
+[ "types"	]
+[ "functions"	]
+[ "args"	]
+[ "ttables"	]
+[ "tcolumns"	]
+[ "tables"	]
+[ "columns"	]
+[ "profile"	]
+[ "sessions"	]
+[ "env"	]
+[ "sequences"	]
+[ "db_users"	]
+[ "user_role"	]
+[ "auths"	]
+[ "privileges"	]
+[ "users"	]
+
+# 11:57:00 >  
+# 11:57:00 >  Done.
+# 11:57:00 >  
+
