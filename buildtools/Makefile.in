@@ -3,6 +3,7 @@
 SRC="@SRC@"
 BUILD="@BUILD@"
 PREFIX="@PREFIX@"
+DESTDIR=
 
 # Run individual "make [all]"s ...
 default: all
@@ -16,7 +17,7 @@ all:
 
 # ... run individual "make install"s ...
 install:
-	cd "$(SRC)/autogen" && python setup.py install --prefix="$(PREFIX)"
+	cd "$(SRC)/autogen" && python setup.py install --prefix="$(DESTDIR)$(PREFIX)"
 	cd _MX && $(MAKE) $@
 	cd _MEL && $(MAKE) $@
 	cd _BURG && $(MAKE) $@
