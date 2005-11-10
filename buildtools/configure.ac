@@ -2,7 +2,6 @@
 # "Meta-configure[.ac]" for buildtools
 
 THIS="$0"
-ARGS="$*"
 
 SRC="$PWD"
 if [ "${THIS#/}" != "$THIS" ] ; then
@@ -12,13 +11,13 @@ elif [ "${THIS%/*}" != "$THIS" ] ; then
 fi
 BUILD="$PWD"
 PREFIX="/usr"
-while [ "$1" ] ; do
-	a="$1"
-	p="${a#--prefix=}"
-	if [ "$p" != "$a" ] ; then
-		PREFIX="$p"
-	fi
-	shift
+for i; do
+    case "$i" in
+    --prefix=*)
+	PREFIX="${i#--prefix=}"
+	break
+	;;
+    esac
 done
 
 set -x
@@ -31,7 +30,6 @@ cat $SRC/Makefile.in \
  > Makefile || exit 1
 
 # ... and run individual "configure"s
-( test -d _MX || mkdir _MX ) && ( cd _MX && $SRC/Mx/configure $ARGS ) || exit 1
-( test -d _MEL || mkdir _MEL ) && ( cd _MEL && $SRC/mel/configure $ARGS --with-mx=$BUILD/_MX/Mx ) || exit 1
-( test -d _BURG || mkdir _BURG ) && ( cd _BURG && $SRC/burg/configure $ARGS ) || exit 1
-
+( test -d _MX || mkdir _MX ) && ( cd _MX && $SRC/Mx/configure "$@" ) || exit 1
+( test -d _MEL || mkdir _MEL ) && ( cd _MEL && $SRC/mel/configure "$@" --with-mx=$BUILD/_MX/Mx ) || exit 1
+( test -d _BURG || mkdir _BURG ) && ( cd _BURG && $SRC/burg/configure "$@" ) || exit 1
