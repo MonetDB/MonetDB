@@ -27,14 +27,20 @@
 #include <stdio.h>
 #include <malloc.h>
 
+#ifdef __MINGW32__
+#define DLL "-0.dll"
+#else 
+#define DLL ".dll"
+#endif
+
 static char *DriverName = "MonetDB ODBC Driver";
 static char *DataSourceName = "MonetDB";
 static char *InstallDLLs[] = {
-	"libMonetODBC.dll",
-	"libMonetODBCs.dll",
-	"libMapi.dll",
-	"libstream.dll",
-	"libmutils.dll",
+	"libMonetODBC" DLL,
+	"libMonetODBCs" DLL,
+	"libMapi" DLL,
+	"libstream" DLL,
+	"libmutils" DLL,
 	NULL
 };
 
