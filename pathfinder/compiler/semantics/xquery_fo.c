@@ -117,11 +117,13 @@
 , /* fn:exactly-one (node *) as node */                                  \
   { .ns = PFns_fn, .loc = "exactly-one",                                 \
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_node () }                                             \
+    .ret_ty = PFty_node (),                                              \
+    .alg = PFbui_fn_exactly_one }                                        \
 , /* fn:zero-or-one (node *) as node */                                  \
   { .ns = PFns_fn, .loc = "zero-or-one",                                 \
     .arity = 1, .par_ty = { PFty_star (PFty_node ()) },                  \
-    .ret_ty = PFty_opt (PFty_node ()) }                                  \
+    .ret_ty = PFty_opt (PFty_node ()),                                   \
+    .alg = PFbui_fn_zero_or_one }                                        \
 , /* fn:unordered (item *) as item */                                    \
   { .ns = PFns_fn, .loc = "unordered",                                   \
     .arity = 1, .par_ty = { PFty_star (PFty_item ()) },                  \
@@ -924,6 +926,50 @@
     .alg = PFbui_op_numeric_modulo_dbl }                                 \
                                                                          \
                                                                          \
+  /* the return type of pf:item-sequence-to-node-sequence is          */ \
+  /* generated using a special typing rule during typechecking        */ \
+                                                                         \
+, /* pf:item-sequence-to-node-sequence (atomic) as text */               \
+  { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",              \
+    .arity = 1, .par_ty = { PFty_atomic ()},                             \
+    .ret_ty = PFty_text (),                                              \
+    .alg = PFbui_pf_item_seq_to_node_seq_single_atomic }                 \
+, /* pf:item-sequence-to-node-sequence (atomic*) as text */              \
+  { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",              \
+    .arity = 1, .par_ty = { PFty_star (PFty_atomic ())},                 \
+    .ret_ty = PFty_text (),                                              \
+    .alg = PFbui_pf_item_seq_to_node_seq_atomic }                        \
+, /* pf:item-sequence-to-node-sequence (attr*, atomic) as node* */       \
+  { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",              \
+    .arity = 1, .par_ty = { PFty_seq (                                   \
+                                    PFty_star (PFty_xs_anyAttribute ()), \
+                                    PFty_atomic ())},                    \
+    .ret_ty = PFty_star (PFty_node ()),                                  \
+    .alg = PFbui_pf_item_seq_to_node_seq_attr_single }                   \
+, /* pf:item-sequence-to-node-sequence (attr*, atomic*) as node* */      \
+  { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",              \
+    .arity = 1, .par_ty = { PFty_star (                                  \
+                                PFty_choice (                            \
+                                    PFty_atomic (),                      \
+                                    PFty_xs_anyAttribute ()))},          \
+    .ret_ty = PFty_star (PFty_node ()),                                  \
+    .alg = PFbui_pf_item_seq_to_node_seq_attr }                          \
+, /* pf:item-sequence-to-node-sequence (item*) as node* */               \
+  { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",              \
+    .arity = 1, .par_ty = { PFty_star (                                  \
+                                PFty_choice (                            \
+                                    PFty_xs_anyElement (),               \
+                                    PFty_choice (                        \
+                                        PFty_doc (PFty_xs_anyType ()),   \
+                                        PFty_choice (                    \
+                                            PFty_text (),                \
+                                            PFty_choice (                \
+                                                PFty_pi (NULL),          \
+                                                PFty_choice (            \
+                                                    PFty_atomic (),      \
+                                                    PFty_comm ()))))))}, \
+    .ret_ty = PFty_star (PFty_node ()),                                  \
+    .alg = PFbui_pf_item_seq_to_node_seq_wo_attr }                       \
 , /* pf:item-sequence-to-node-sequence (item*) as node* */               \
   { .ns = PFns_pf, .loc = "item-sequence-to-node-sequence",              \
     .arity = 1, .par_ty = { PFty_star (PFty_item ())},                   \
@@ -944,8 +990,9 @@
   /* FIXME: distinct-values should be changed to anyAtomicType* */       \
 , /* fn:distinct-values (atomic*) as atomic* */                          \
   { .ns = PFns_fn, .loc = "distinct-values",                             \
-    .arity = 1, .par_ty = { PFty_star (PFty_string ())},                 \
-    .ret_ty = PFty_star (PFty_untypedAtomic ()) }                        \
+    .arity = 1, .par_ty = { PFty_star (PFty_atomic ())},                 \
+    .ret_ty = PFty_star (PFty_untypedAtomic ()),                         \
+    .alg = PFbui_fn_distinct_values }                                    \
 , /* op:is-same-node (node, node) as boolean */                          \
   { .ns = PFns_op, .loc = "is-same-node",                                \
     .arity = 2, .par_ty = { PFty_node (),                                \
@@ -991,7 +1038,7 @@
     .arity = 1, .par_ty = { PFty_node () },                              \
     .ret_ty = PFty_star (PFty_untypedAtomic ()),                         \
     /* FIXME: does this still fit or is it string-value? */              \
-    .alg = PFbui_op_typed_value }                                        \
+    .alg = PFbui_pf_typed_value }                                        \
 , /* pf:string-value (attribute) as string */                            \
   { .ns = PFns_pf, .loc = "string-value",                                \
     .arity = 1, .par_ty = { PFty_xs_anyAttribute () },                   \
@@ -1002,6 +1049,36 @@
     .arity = 1, .par_ty = { PFty_text () },                              \
     .ret_ty = PFty_string (),                                            \
     .alg = PFbui_pf_string_value_text }                                  \
+, /* pf:string-value (processing-instruction) as string */               \
+  { .ns = PFns_pf, .loc = "string-value",                                \
+    .arity = 1, .par_ty = { PFty_pi (NULL) },                            \
+    .ret_ty = PFty_string (),                                            \
+    .alg = PFbui_pf_string_value_pi }                                    \
+, /* pf:string-value (comment) as string */                              \
+  { .ns = PFns_pf, .loc = "string-value",                                \
+    .arity = 1, .par_ty = { PFty_comm () },                              \
+    .ret_ty = PFty_string (),                                            \
+    .alg = PFbui_pf_string_value_comm }                                  \
+, /* pf:string-value (elem) as string */                                 \
+  { .ns = PFns_pf, .loc = "string-value",                                \
+    .arity = 1, .par_ty = { PFty_choice (                                \
+                                PFty_xs_anyElement (),                   \
+                                PFty_choice (                            \
+                                    PFty_text (),                        \
+                                    PFty_doc (PFty_xs_anyType ()))) },   \
+    .ret_ty = PFty_string (),                                            \
+    .alg = PFbui_pf_string_value_elem }                                  \
+, /* pf:string-value (elem, attr) as string */                           \
+  { .ns = PFns_pf, .loc = "string-value",                                \
+    .arity = 1, .par_ty = { PFty_choice (                                \
+                                PFty_xs_anyElement (),                   \
+                                PFty_choice (                            \
+                                    PFty_doc (PFty_xs_anyType ()),       \
+                                    PFty_choice (                        \
+                                        PFty_text (),                    \
+                                        PFty_xs_anyAttribute ()))) },    \
+    .ret_ty = PFty_string (),                                            \
+    .alg = PFbui_pf_string_value_elem_attr }                             \
 , /* pf:string-value (node) as string */                                 \
   { .ns = PFns_pf, .loc = "string-value",                                \
     .arity = 1, .par_ty = { PFty_node () },                              \
@@ -1034,22 +1111,26 @@
 , /* fn:string () as string */                                           \
   { .ns = PFns_fn, .loc = "string",                                      \
     .arity = 0, .par_ty = { PFty_none () },                              \
-    .ret_ty = PFty_string () }                                           \
+    .ret_ty = PFty_string (),                                            \
+    .alg = PFbui_fn_string}                                              \
 , /* fn:string (item?) as string */                                      \
   { .ns = PFns_fn, .loc = "string",                                      \
     .arity = 1, .par_ty = { PFty_opt (PFty_item ()) },                   \
-    .ret_ty = PFty_string () }                                           \
+    .ret_ty = PFty_string (),                                            \
+    .alg = PFbui_fn_string}                                              \
 , /* fn:string-join (string*, string) as string */                       \
   { .ns = PFns_fn, .loc = "string-join",                                 \
     .arity = 2, .par_ty = { PFty_star (PFty_string ()),                  \
                             PFty_string () },                            \
-    .ret_ty = PFty_string () }                                           \
+    .ret_ty = PFty_string (),                                            \
+    .alg = PFbui_fn_string_join}                                         \
 , /* fn:concat (string, string) as string */                             \
   /* This is more strict that the W3C variant. Maybe we can do with */   \
   /* that strict variant. */                                             \
   { .ns = PFns_fn, .loc = "concat",                                      \
     .arity = 2, .par_ty = { PFty_string(), PFty_string() },              \
-    .ret_ty = PFty_string () }                                           \
+    .ret_ty = PFty_string (),                                            \
+    .alg = PFbui_fn_concat}                                              \
 , /* fn:starts-with (string?, string?) as boolean */                     \
   { .ns = PFns_fn, .loc = "starts-with",                                 \
     .arity = 2, .par_ty = { PFty_opt (PFty_string ()),                   \

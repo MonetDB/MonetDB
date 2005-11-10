@@ -89,171 +89,155 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term forbind            = 13 /**< binding part of a for expression */
 %term forvars            = 14 /**< variable pair (var + pos. var) of a for */
 
-%term orderby            = 15 /**< orderby clause */
-%term orderspecs         = 16 /**< list of order specs */
+%term orderscope         = 15 /**< start of the orderby scope */
+%term orderby            = 16 /**< orderby clause */
+%term orderspecs         = 17 /**< list of order specs */
 
-%term apply              = 17 /**< function application */
-%term arg                = 18 /**< function argument (list) */
+%term apply              = 18 /**< function application */
+%term arg                = 19 /**< function argument (list) */
 
-%term typesw             = 19 /**< typeswitch clause */
-%term cases              = 20 /**< case concatenation for typeswitch */
-%term case_              = 21 /**< single case for typeswitch */
-%term default_           = 22 /**< default branch in typeswitch */
-%term seqtype            = 23 /**< a SequenceType */
-%term seqcast            = 24 /**< cast along <: */
-/* %term proof           = 25      typechecker only: prove <: relationship */
-/* %term subty           = 26      subtype condition for proof() */
-/* %term stattype        = 27      static type of expression. Required for
+%term typesw             = 20 /**< typeswitch clause */
+%term cases              = 21 /**< case concatenation for typeswitch */
+%term case_              = 22 /**< single case for typeswitch */
+%term default_           = 23 /**< default branch in typeswitch */
+%term seqtype            = 24 /**< a SequenceType */
+%term seqcast            = 25 /**< cast along <: */
+/* %term proof           = 26      typechecker only: prove <: relationship */
+/* %term subty           = 27      subtype condition for proof() */
+/* %term stattype        = 28      static type of expression. Required for
                                    fs:convert-operand. Will be removed during
                                    typechecking and replaced by seqtype, as
                                    soon as types are known. */
 
-%term if_                = 28 /**< if-then-else conditional */
-%term then_else          = 29 /**< then- and else-branches of an
+%term if_                = 29 /**< if-then-else conditional */
+%term then_else          = 30 /**< then- and else-branches of an
                                    if-then-else conditional */
 
-%term locsteps           = 30 /**< path of location steps only */
-%term ancestor           = 31 /**< the parent, the parent's parent,... */
-%term ancestor_or_self   = 32 /**< the parent, the parent's parent,... + self */
-%term attribute          = 33 /**< attributes of the context node */
-%term child              = 34 /**< children of the context node */
-%term descendant         = 35 /**< children, children's children,... + self */
-%term descendant_or_self = 36 /**< children, children's children,... */
-%term following          = 37 /**< nodes after current node (document order) */
-%term following_sibling  = 38 /**< all following nodes with same parent */
-%term parent             = 39 /**< parent node (exactly one or none) */
-%term preceding          = 40 /**< nodes before context node (document order) */
-%term preceding_sibling  = 41 /**< all preceding nodes with same parent */
-%term self               = 42 /**< the context node itself */
+%term locsteps           = 31 /**< path of location steps only */
+%term ancestor           = 32 /**< the parent, the parent's parent,... */
+%term ancestor_or_self   = 33 /**< the parent, the parent's parent,... + self */
+%term attribute          = 34 /**< attributes of the context node */
+%term child              = 35 /**< children of the context node */
+%term descendant         = 36 /**< children, children's children,... + self */
+%term descendant_or_self = 37 /**< children, children's children,... */
+%term following          = 38 /**< nodes after current node (document order) */
+%term following_sibling  = 39 /**< all following nodes with same parent */
+%term parent             = 40 /**< parent node (exactly one or none) */
+%term preceding          = 41 /**< nodes before context node (document order) */
+%term preceding_sibling  = 42 /**< all preceding nodes with same parent */
+%term self               = 43 /**< the context node itself */
 
-%term elem               = 43 /**< the element constructor */
-%term attr               = 44 /**< the attribute constructor */
-%term text               = 45 /**< the text constructor */
-%term doc                = 46 /**< the document constructor */
-%term comment            = 47 /**< the comment constructor */
-%term pi                 = 48 /**< the processing-instruction constructor */
-%term tag                = 49 /**< the tagname for elem. and attr. constr. */
+%term elem               = 44 /**< the element constructor */
+%term attr               = 45 /**< the attribute constructor */
+%term text               = 46 /**< the text constructor */
+%term doc                = 47 /**< the document constructor */
+%term comment            = 48 /**< the comment constructor */
+%term pi                 = 49 /**< the processing-instruction constructor */
+%term tag                = 50 /**< the tagname for elem. and attr. constr. */
 
-%term true_              = 50 /**< built-in function `fn:true ()' */
-%term false_             = 51 /**< built-in function `fn:false ()' */
-%term empty              = 52 /**< built-in function `empty' */
-%term main               = 53 /**< tree root
+%term true_              = 51 /**< built-in function `fn:true ()' */
+%term false_             = 52 /**< built-in function `fn:false ()' */
+%term empty              = 53 /**< built-in function `empty' */
+%term main               = 54 /**< tree root
                                    Separates function declarations from
                                    the query body. */
-%term fun_decls          = 54 /**< list of function declarations */
-%term fun_decl           = 55 /**< function declaration */
-%term params             = 56 /**< function declaration parameter list */
-%term param              = 57 /**< function declaration parameter */
-%term cast               = 58 /**< XQuery `cast as' operation */
+%term fun_decls          = 55 /**< list of function declarations */
+%term fun_decl           = 56 /**< function declaration */
+%term params             = 57 /**< function declaration parameter list */
+%term param              = 58 /**< function declaration parameter */
+%term cast               = 59 /**< XQuery `cast as' operation */
 
 %%
 
 Query:              main (FunctionDecls, CoreExpr)              =   1 (10);
 Query:              CoreExpr                                    =   2 (10);
-
+                                                                     
 CoreExpr:           Atom                                        =   3 (10);
-CoreExpr:           SequenceTypeCast                            =   4 (10);
+                                                                     
+Atom:               var                                         = 100 (10);
+Atom:               LiteralValue                                = 101 (10);
+                                                                     
+LiteralValue:       lit_str                                     = 102 (10);
+LiteralValue:       lit_int                                     = 103 (10);
+LiteralValue:       lit_dec                                     = 104 (10);
+LiteralValue:       lit_dbl                                     = 105 (10);
+LiteralValue:       true_                                       = 106 (10);
+LiteralValue:       false_                                      = 107 (10);
+LiteralValue:       empty                                       = 108 (10);
+                                                                     
+CoreExpr:           for_ (forbind (forvars (var, OptVar),            
+                                   Atom),                            
+                          CoreExpr)                             =   4 (10);
+                                                                     
+OptVar:             var                                         = 200 (10);
+OptVar:             nil                                         = 201 (10);
+                                                                     
+CoreExpr:           let (letbind (var, CoreExpr), CoreExpr)     =   5 (10);
+                                                                     
+CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =   6 (10);
+                                                                     
+CoreExpr:           seq (Atom, Atom)                            =   7 (10);
+                                                                     
+CoreExpr:           orderscope (CoreExpr)                       =  10 (10);
+CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  11 (10);
+                                                                     
+OrderSpecs:         orderspecs (CoreExpr, nil)                  = 300 (10);
+OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           = 301 (10);
+                                                                     
+CoreExpr:           ordered (CoreExpr)                          =  12 (10);
+CoreExpr:           unordered (CoreExpr)                        =  13 (10);
+                                                                     
+CoreExpr:           typesw (Atom,                                    
+                            cases (case_ (seqtype,                   
+                                          CoreExpr),                 
+                                   default_ (CoreExpr)))        =  20 (10);
+                                                                     
+CoreExpr:           cast (seqtype, CoreExpr)                    =  21 (10);
+CoreExpr:           seqcast (seqtype, CoreExpr)                 =  22 (10);
+                                                                     
+CoreExpr:     locsteps (ancestor (seqtype), CoreExpr)           =  30 (10);
+CoreExpr:     locsteps (ancestor_or_self (seqtype), CoreExpr)   =  31 (10);
+CoreExpr:     locsteps (attribute (seqtype), CoreExpr)          =  32 (10);
+CoreExpr:     locsteps (child (seqtype), CoreExpr)              =  33 (10);
+CoreExpr:     locsteps (descendant (seqtype), CoreExpr)         =  34 (10);
+CoreExpr:     locsteps (descendant_or_self (seqtype), CoreExpr) =  35 (10);
+CoreExpr:     locsteps (following (seqtype), CoreExpr)          =  36 (10);
+CoreExpr:     locsteps (following_sibling (seqtype), CoreExpr)  =  37 (10);
+CoreExpr:     locsteps (parent (seqtype), CoreExpr)             =  38 (10);
+CoreExpr:     locsteps (preceding (seqtype), CoreExpr)          =  39 (10);
+CoreExpr:     locsteps (preceding_sibling (seqtype), CoreExpr)  =  40 (10);
+CoreExpr:     locsteps (self (seqtype), CoreExpr)               =  41 (10);
 
-CoreExpr:           for_ (forbind (forvars (var, OptVar),
-                                   Atom),
-                          CoreExpr)                             =   5 (10);
-
-OptVar:             var                                         =   6 (10);
-OptVar:             nil                                         =   7 (10);
-
-CoreExpr:           let (letbind (var, CoreExpr), CoreExpr)     =   8 (10);
-
-CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr))  =   9 (10);
-
-CoreExpr:           seq (Atom, Atom)                            =   10 (10);
-
-CoreExpr:           typesw (Atom,
-                            cases (case_ (seqtype,
-                                          CoreExpr),
-                                   default_ (CoreExpr)))        =  11 (10);
-
-SequenceTypeCast:   seqcast (seqtype, CoreExpr)                 =  12 (10);
-
-/* `proof' nodes should no longer be in the Core tree.
- * They are resolved by the type checker.
-CoreExpr:           proof (subty (CoreExpr, seqtype),
-                           CoreExpr)                            =  13 (10);
- */
-
-/* type checker only
-SequenceType:       stattype (Atom)                             =  13 (10);
- */
-
-CoreExpr:           locsteps (LocationStep, CoreExpr)           =  14 (10);
-
-/* Hmm... What does this mean, actually?
-CoreExpr:           LocationStep                                =  15 (10);
- */
-
-LocationStep:       ancestor (seqtype)                          =  15 (10);
-LocationStep:       ancestor_or_self (seqtype)                  =  16 (10);
-LocationStep:       attribute (seqtype)                         =  17 (10);
-LocationStep:       child (seqtype)                             =  18 (10);
-LocationStep:       descendant (seqtype)                        =  19 (10);
-LocationStep:       descendant_or_self (seqtype)                =  20 (10);
-LocationStep:       following (seqtype)                         =  21 (10);
-LocationStep:       following_sibling (seqtype)                 =  22 (10);
-LocationStep:       parent (seqtype)                            =  23 (10);
-LocationStep:       preceding (seqtype)                         =  24 (10);
-LocationStep:       preceding_sibling (seqtype)                 =  25 (10);
-LocationStep:       self (seqtype)                              =  26 (10);
-
-CoreExpr:           apply (FunctionArgs)                        =  29 (10);
-
-FunctionArgs:       nil                                         =  30 (10);
-FunctionArgs:       arg (FunctionArg, FunctionArgs)             =  31 (10);
-
-FunctionArg:        Atom                                        =  32 (10);
-
-CoreExpr:           elem (TagName, CoreExpr)                    =  33 (10);
-
-CoreExpr:           attr (TagName, CoreExpr)                    =  34 (10);
-
-TagName:            tag                                         =  35 (10);
-TagName:            CoreExpr                                    =  36 (10);
-
-CoreExpr:           text (CoreExpr)                             =  37 (10);
-CoreExpr:           doc (CoreExpr)                              =  38 (10);
-CoreExpr:           comment (CoreExpr)                          =  39 (10);
-CoreExpr:           pi (CoreExpr)                               =  40 (10);
-
-CoreExpr:           ordered (CoreExpr)                          =  41 (10);
-CoreExpr:           unordered (CoreExpr)                        =  42 (10);
-
-CoreExpr:           orderby (OrderSpecs, CoreExpr)              =  43 (10);
-
-OrderSpecs:         orderspecs (CoreExpr, nil)                  =  44 (10);
-OrderSpecs:         orderspecs (CoreExpr, OrderSpecs)           =  45 (10);
-
-CoreExpr:           cast (seqtype, CoreExpr)                    =  46 (10);
-
-Atom:               var                                         =  47 (10);
-Atom:               LiteralValue                                =  48 (10);
-
-LiteralValue:       lit_str                                     =  49 (10);
-LiteralValue:       lit_int                                     =  50 (10);
-LiteralValue:       lit_dec                                     =  51 (10);
-LiteralValue:       lit_dbl                                     =  52 (10);
-LiteralValue:       true_                                       =  53 (10);
-LiteralValue:       false_                                      =  54 (10);
-LiteralValue:       empty                                       =  55 (10);
-
-FunctionDecls:      nil                                         =  62 (10);
-FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  63 (10);
-
-FunctionDecl:       fun_decl (ParamList, FunctionBody)          =  64 (10);
-
-ParamList:          nil                                         =  65 (10);
-ParamList:          params (FunParam, ParamList)                =  66 (10);
-
-FunctionBody:       CoreExpr                                    =  67 (10);
-
-FunParam:           param (seqtype, var)                        =  68 (10);
+CoreExpr:           elem (TagName, CoreExpr)                    =  50 (10);
+CoreExpr:           attr (TagName, CoreExpr)                    =  51 (10);
+                                                                     
+TagName:            tag                                         = 400 (10);
+TagName:            CoreExpr                                    = 401 (10);
+                                                                     
+CoreExpr:           text (CoreExpr)                             =  52 (10);
+CoreExpr:           doc (CoreExpr)                              =  53 (10);
+CoreExpr:           comment (CoreExpr)                          =  54 (10);
+CoreExpr:           pi (CoreExpr)                               =  55 (10);
+                                                                     
+CoreExpr:           apply (FunctionArgs)                        =  60 (10);
+                                                                     
+FunctionArgs:       nil                                         = 500 (10);
+FunctionArgs:       arg (FunctionArg, FunctionArgs)             = 501 (10);
+                                                                     
+FunctionArg:        Atom                                        = 502 (10);
+                                                                     
+                                                                     
+FunctionDecls:      nil                                         =  70 (10);
+FunctionDecls:      fun_decls (FunctionDecl, FunctionDecls)     =  71 (10);
+                                                                     
+FunctionDecl:       fun_decl (ParamList, FunctionBody)          = 600 (10);
+                                                                     
+ParamList:          nil                                         = 601 (10);
+ParamList:          params (FunParam, ParamList)                = 602 (10);
+                                                                     
+FunctionBody:       CoreExpr                                    = 603 (10);
+                                                                     
+FunParam:           param (seqtype, var)                        = 604 (10);
 
 %%
 
@@ -311,13 +295,20 @@ static PFarray_t  *env = NULL;
  */
 static PFla_op_t *loop = NULL;
 
+/**
+ * Current orderscope relation
+ */
+static PFla_op_t *orderscope = NULL;
+
+/* Constructor for staircase join */
+static struct PFla_pair_t locstep (PFalg_axis_t axis, PFty_t seqty, 
+                                   struct PFla_pair_t p);
+
 /* Constructor for environment entry */
 static PFla_env_t enventry (PFvar_t *var, PFla_op_t *result, PFarray_t *doc);
 
 /* worker to implement type tests */
 static PFla_op_t *type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop);
-
-static PFla_op_t *locstep_dummy (PFalg_axis_t axis, PFty_t seqty);
 
 /**
  * Function parameter variable names (from PFfun_t).
@@ -364,21 +355,27 @@ reduce (PFcnode_t * p, int goalnt)
         /* CoreExpr:           for_ (forbind (forvars (var, nil),
                                               Atom),
                                      CoreExpr) */
-        case 5:
+        case 4:
 
         /* CoreExpr:           let (letbind (var, CoreExpr), CoreExpr) */
-        case 8:
+        case 5:
+
+        /* CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr)) */
+        case 6:
+
+        /* CoreExpr:           orderscope (CoreExpr) */
+        case 10:
 
         /* CoreExpr:           typesw (Atom,
                                        cases (case_ (seqtype,
                                                      CoreExpr),
                                               default_ (CoreExpr))) */
-        case 11:
+        case 20:
 
         /* CoreExpr:           apply (FunctionArgs) */
-        case 29:
+        case 60:
         /* FunctionArgs:       arg (FunctionArg, FunctionArgs) */
-        case 31:
+        case 501:
             topdown = true;
             break;
 
@@ -424,14 +421,166 @@ reduce (PFcnode_t * p, int goalnt)
         case 3:
             break;
             
-        /* CoreExpr:           SequenceTypeCast */
-        case 4:
+        /* Atom:               var */
+        case 100:
+        {
+            /*
+             * Reference to variable, so look it up in the environment. It
+             * was inserted into the environment by a let or for expression.
+             *
+             * ---------------------------------------------------------------
+             * env, (v -> q(v)) e env, loop: v => (q(v), 0)
+             */
+            unsigned int i;
+        
+            /* 
+             * look up the variable in the environment;
+             * since it has already been ensured beforehand, that
+             * each variable was declared before being used, we are
+             * guarenteed to find the required binding in the
+             * environment
+             */
+            for (i = 0; i < PFarray_last (env); i++) {
+                PFla_env_t e = *((PFla_env_t *) PFarray_at (env, i));
+            
+                if (p->sem.var == e.var) {
+                    A(p) = (struct  PFla_pair_t) {
+                             .rel = e.rel,
+                             .frag = e.frag };
+                    break;
+                }
+            }
+
+            assert (A(p).rel); assert (A(p).frag);
+
+        } break;
+
+        /* Atom:               LiteralValue */
+        case 101:
             break;
+
+        /* LiteralValue:       lit_str */
+        case 102:
+        {
+            /* 
+             *  -------------------------------------------------------------
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
+             */
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = cross (loop,
+                                   lit_tbl (attlist (att_pos, att_item),
+                                            tuple (lit_nat (1),
+                                                   lit_str (p->sem.str)))),
+                     .frag = PFla_empty_set () };
+        } break;
+
+        /* LiteralValue:       lit_int */
+        case 103:
+        {
+            /*
+             *  -------------------------------------------------------------
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
+             */
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = cross (loop,
+                                   lit_tbl (attlist (att_pos, att_item),
+                                            tuple (lit_nat (1),
+                                                   lit_int (p->sem.num)))),
+                     .frag = PFla_empty_set () };
+        } break;
+
+        /* LiteralValue:       lit_dec */
+        case 104:
+        {
+            /*
+             *  -------------------------------------------------------------
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
+             */
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = cross (loop,
+                                   lit_tbl (attlist (att_pos, att_item),
+                                            tuple (lit_nat (1),
+                                                   lit_dec (p->sem.dec)))),
+                     .frag = PFla_empty_set () };
+        } break;
+
+        /* LiteralValue:       lit_dbl */
+        case 105:
+        {
+            /*
+             *  -------------------------------------------------------------
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
+             */
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = cross (loop,
+                                   lit_tbl (attlist (att_pos, att_item),
+                                            tuple (lit_nat (1),
+                                                   lit_dbl (p->sem.dbl)))),
+                     .frag = PFla_empty_set () };
+        } break;
+
+
+        /* LiteralValue:       true_ */
+        case 106:
+        {
+            /*
+             *  -------------------------------------------------------------
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
+             */
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = cross (loop,
+                                   lit_tbl (attlist (att_pos, att_item),
+                                            tuple (lit_nat (1),
+                                                   lit_bln (true)))),
+                     .frag = PFla_empty_set () };
+        } break;
+
+        /* LiteralValue:       false_ */
+        case 107:
+        {
+            /*
+             *  -------------------------------------------------------------
+             *                   /        / pos | item \     \
+             *  env, loop: c => | loop X | -----+------ | , 0 |
+             *                   \        \   1 |   c  /     /
+             */
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = cross (loop,
+                                   lit_tbl (attlist (att_pos, att_item),
+                                            tuple (lit_nat (1),
+                                                   lit_bln (false)))),
+                     .frag = PFla_empty_set () };
+        } break;
+
+        /* LiteralValue:       empty */
+        case 108:
+        {
+            /*
+             *  -------------------------------------------------------------
+             *                       iter | pos | item
+             *  env, loop: empty => ------+-----+------ , 0
+             * 
+             */
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = PFla_empty_tbl (
+                                attlist (att_iter, att_pos, att_item)),
+                     .frag = PFla_empty_set () };
+        } break;
 
         /* CoreExpr:           for_ (forbind (forvars (var, nil),
                                               Atom),
                                      CoreExpr) */
-        case 5:
+        case 4:
         {   /* TOPDOWN */
 
             /*
@@ -522,12 +671,12 @@ reduce (PFcnode_t * p, int goalnt)
                 assert (LLR(p)->sem.var);
                 opt_var = cross (lit_tbl (attlist (att_pos),
                                           tuple (lit_nat (1))),
-                                 cast (project (rownum (map, att_item,
+                                 project (cast (rownum (map, att_item,
                                                         sortby (att_inner),
                                                         att_outer),
-                                                proj (att_iter, att_inner),
-                                                proj (att_item, att_item)),
-                                       att_item, aat_int));
+                                                att_cast, att_item, aat_int),
+                                          proj (att_iter, att_inner),
+                                          proj (att_item, att_cast)));
 
                 /* insert $p into NEW environment */
                 *((PFla_env_t *) PFarray_add (env)) =
@@ -539,9 +688,9 @@ reduce (PFcnode_t * p, int goalnt)
             for (i = 0; i < PFarray_last (old_env); i++) {
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
                 new_bind = project (eqjoin (e.rel, map, att_iter, att_outer),
-                                   proj (att_iter, att_inner),
-                                   proj (att_pos, att_pos),
-                                   proj (att_item, att_item));
+                                    proj (att_iter, att_inner),
+                                    proj (att_pos, att_pos),
+                                    proj (att_item, att_item));
                 *((PFla_env_t *) PFarray_add (env)) =
                     enventry (e.var, new_bind, e.frag);
             }
@@ -571,17 +720,17 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* OptVar:             var */
-        case 6:
+        case 200:
             /* (will never be called anyway, Rule 4 is top-down) */
             break;
 
         /* OptVar:             nil */
-        case 7:
+        case 201:
             /* (will never be called anyway, Rule 4 is top-down) */
             break;
 
         /* CoreExpr:           let (letbind (var, CoreExpr), CoreExpr) */
-        case 8:
+        case 5:
         {   /* TOPDOWN */
 
             /*
@@ -623,7 +772,7 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* CoreExpr:           if_ (Atom, then_else (CoreExpr, CoreExpr)) */
-        case 9:
+        case 6:
         {   /* TOPDOWN */
 
             /*
@@ -671,7 +820,8 @@ reduce (PFcnode_t * p, int goalnt)
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
                 new_bind = project (eqjoin (e.rel,
                                             project (loop,
-                                                     proj (att_iter1, att_iter)),
+                                                     proj (att_iter1, 
+                                                           att_iter)),
                                             att_iter,
                                             att_iter1),
                                     proj (att_iter, att_iter),
@@ -698,7 +848,8 @@ reduce (PFcnode_t * p, int goalnt)
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
                 new_bind = project (eqjoin (e.rel,
                                             project (loop,
-                                                     proj (att_iter1, att_iter)),
+                                                     proj (att_iter1,
+                                                           att_iter)),
                                             att_iter,
                                             att_iter1),
                                     proj (att_iter, att_iter),
@@ -722,7 +873,7 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* CoreExpr:           seq (Atom, Atom) */
-        case 10:
+        case 7:
         {
             /*
              *     env,loop: e1 => q1,delta1      env,loop: e2 => q2,delta2
@@ -736,25 +887,87 @@ reduce (PFcnode_t * p, int goalnt)
              *
              */
             A(p) = (struct  PFla_pair_t) {
-                     .rel = project (rownum (
-                             disjunion (cross (lit_tbl (attlist (att_ord),
-                                                        tuple (lit_nat (1))),
-                                               A(L(p)).rel),
-                                        cross (lit_tbl (attlist (att_ord),
-                                                        tuple (lit_nat (2))),
-                                               A(R(p)).rel)),
-                             att_pos1, sortby (att_ord, att_pos), att_iter),
-                         proj (att_iter, att_iter),
-                         proj (att_pos, att_pos1),
-                         proj (att_item, att_item)),
+                     .rel = project (
+                                rownum (
+                                    disjunion (
+                                        cross (
+                                            lit_tbl (attlist (att_ord),
+                                                     tuple (lit_nat (1))),
+                                            A(L(p)).rel),
+                                        cross (
+                                            lit_tbl (attlist (att_ord),
+                                                     tuple (lit_nat (2))),
+                                            A(R(p)).rel)),
+                                    att_pos1,
+                                    sortby (att_ord, att_pos),
+                                    att_iter),
+                                proj (att_iter, att_iter),
+                                proj (att_pos, att_pos1),
+                                proj (att_item, att_item)),
                      .frag = PFla_set_union (A(L(p)).frag, A(R(p)).frag) };
         } break;
+
+        /* CoreExpr:           orderscope (CoreExpr) */
+        case 10:
+        {   /* TOPDOWN */
+
+            /* FIXME: to do */
+            /* changes for mapping is required */
+            PFoops (OOPS_FATAL, "orderscope not implemented");
+
+            PFla_op_t *old_orderscope;
+
+            /* backup orderscope */
+            old_orderscope = orderscope; 
+
+            /* create new orderscope */
+            orderscope = project (loop,
+                                  proj (att_iter, att_iter),
+                                  proj (att_item, att_iter));
+
+            /* initiate translation of CoreExpr */
+            reduce (kids[0], nts[0]);
+
+            /* reset orderscope relation */
+            orderscope = old_orderscope;
+
+        }   break;
+
+        /* CoreExpr:           orderby (OrderSpecs, CoreExpr) */
+        case 11:
+            /* FIXME: to do */
+            PFoops (OOPS_FATAL, "orderby not implemented");
+            break;
+
+        /* OrderSpecs:         orderspecs (CoreExpr, nil) */
+        case 300:
+            /* FIXME: to do */
+            PFoops (OOPS_FATAL, "orderby not implemented");
+            break;
+
+        /* OrderSpecs:         orderspecs (CoreExpr, OrderSpecs) */
+        case 301:
+            /* FIXME: to do */
+            PFoops (OOPS_FATAL, "orderby not implemented");
+            break;
+
+        /* CoreExpr:           ordered (CoreExpr) */
+        case 12:
+            /* FIXME: Actually use `ordered' information */
+            A(p) = A(L(p));
+            break;
+
+        /* CoreExpr:           unordered (CoreExpr) */
+        case 13:
+            /* FIXME: Actually use `ordered' information */
+            A(p) = A(L(p));
+            break;
 
         /* CoreExpr:           typesw (Atom,
                                        cases (case_ (seqtype,
                                                      CoreExpr),
                                               default_ (CoreExpr))) */
-        case 11:
+        case 20:
         {   /* TOPDOWN */
 
             /*
@@ -823,7 +1036,8 @@ reduce (PFcnode_t * p, int goalnt)
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
                 new_bind =
                     project (eqjoin (e.rel,
-                                     project (loop, proj (att_iter1, att_iter)),
+                                     project (loop,
+                                              proj (att_iter1, att_iter)),
                                      att_iter, att_iter1),
                              proj (att_iter, att_iter),
                              proj (att_pos, att_pos),
@@ -848,7 +1062,8 @@ reduce (PFcnode_t * p, int goalnt)
                 e = *((PFla_env_t *) PFarray_at (old_env, i));
                 new_bind =
                     project (eqjoin (e.rel,
-                                     project (loop, proj (att_iter1, att_iter)),
+                                     project (loop,
+                                              proj (att_iter1, att_iter)),
                                      att_iter, att_iter1),
                              proj (att_iter, att_iter),
                              proj (att_pos, att_pos),
@@ -871,8 +1086,45 @@ reduce (PFcnode_t * p, int goalnt)
 
         } break;
 
-        /* SequenceTypeCast:   seqcast (seqtype, CoreExpr) */
-        case 12:
+        /* CoreExpr:           cast (seqtype, CoreExpr) */
+        case 21:
+        {
+            PFty_t              t;
+            PFalg_simple_type_t algty;
+
+            t = PFty_prime (PFty_defn (L(p)->sem.type));
+
+            /*
+             * Unfortunately, we only know how to cast atomic types
+             * into (exactly) one of our builtin atomic types. We
+             * cannot sensibly cast, e.g., into subtypes thereof.
+             */
+            if (PFty_equality (t, PFty_xs_string ()))
+                algty = aat_str;
+            else if (PFty_equality (t, PFty_xs_integer ()))
+                algty = aat_int;
+            else if (PFty_equality (t, PFty_xs_decimal ()))
+                algty = aat_dec;
+            else if (PFty_equality (t, PFty_xs_double ()))
+                algty = aat_dbl;
+            else if (PFty_equality (t, PFty_xs_boolean ()))
+                algty = aat_bln;
+            else
+                PFoops (OOPS_FATAL,
+                        "don't know the algebra equivalent of type %s",
+                        PFty_str (L(p)->sem.type));
+
+            A(p) = (struct PFla_pair_t) {
+                .rel  = project (cast (A(R(p)).rel, att_cast, att_item, algty),
+                                 proj (att_iter, att_iter),
+                                 proj (att_pos, att_pos),
+                                 proj (att_item, att_cast)),
+                .frag = A(R(p)).frag };
+
+        } break;
+
+        /* CoreExpr:           seqcast (seqtype, CoreExpr) */
+        case 22:
             /*
              * `seqcast' nodes are only introduced for static typing.
              * They are not meant to be executed.
@@ -880,126 +1132,279 @@ reduce (PFcnode_t * p, int goalnt)
             A(p) = A(R(p));
             break;
 
-        /* CoreExpr:           locsteps (LocationStep, CoreExpr) */
-        case 14:
-            /*
-             *                  env, loop: e => (q(e), delta)
-             * ------------------------------------------------------------
-             *                       env, loop: e/a::n =>
-             * (row_pos<item>/iter (SCJ (proj_iter,item (q(e)), delta)), delta)
-             *
-             * A(L(p)).rel contains a dummy node with information on the
-             * location step. Will be read out in PFla_scjoin().
-             */
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = rownum (scjoin (PFla_set_to_la (A(R(p)).frag),
-                                            project (A(R(p)).rel,
-                                                     proj (att_iter, att_iter),
-                                                     proj (att_item, att_item)),
-                                            A(L(p)).rel),
-                                    att_pos, sortby (att_item), att_iter),
-                     .frag = A(R(p)).frag };
-
+        /* CoreExpr:     locsteps (ancestor (seqtype), CoreExpr) */
+        case 30:
+            A(p) = locstep (alg_anc, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* LocationStep:       ancestor (seqtype) */
-        case 15:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_anc, L(p)->sem.type),
-                       .frag = NULL };
+        /* CoreExpr:     locsteps (ancestor_or_self (seqtype), CoreExpr) */
+        case 31:
+            A(p) = locstep (alg_anc_s, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* LocationStep:       ancestor_or_self (seqtype) */
-        case 16:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_anc_s, L(p)->sem.type),
-                       .frag = NULL };
+        /* CoreExpr:     locsteps (attribute (seqtype), CoreExpr) */
+        case 32:
+            A(p) = locstep (alg_attr, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* LocationStep:       attribute (seqtype) */
-        case 17:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_attr, L(p)->sem.type),
-                       .frag = NULL };
+        /* CoreExpr:     locsteps (child (seqtype), CoreExpr) */
+        case 33:
+            A(p) = locstep (alg_chld, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* LocationStep:       child (seqtype) */
-        case 18:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_chld, L(p)->sem.type),
-                       .frag = NULL };
+        /* CoreExpr:     locsteps (descendant (seqtype), CoreExpr) */
+        case 34:
+            A(p) = locstep (alg_desc, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* LocationStep:       descendant (seqtype) */
-        case 19:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_desc, L(p)->sem.type),
-                       .frag = NULL };
-            break;
-
+        /* CoreExpr:     locsteps (descendant_or_self (seqtype), CoreExpr) */
         /* LocationStep:       descendant_or_self (seqtype) */
-        case 20:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_desc_s, L(p)->sem.type),
-                       .frag = NULL };
+        case 35:
+            A(p) = locstep (alg_desc_s, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* LocationStep:       following (seqtype) */
-        case 21:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_fol, L(p)->sem.type),
-                       .frag = NULL };
+        /* CoreExpr:     locsteps (following (seqtype), CoreExpr) */
+        case 36:
+            A(p) = locstep (alg_fol, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* LocationStep:       following_sibling (seqtype) */
-        case 22:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_fol_s, L(p)->sem.type),
-                       .frag = NULL };
+        /* CoreExpr:     locsteps (following_sibling (seqtype), CoreExpr) */
+        case 37:
+            A(p) = locstep (alg_fol_s, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* LocationStep:       parent (seqtype) */
-        case 23:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_par, L(p)->sem.type),
-                       .frag = NULL };
+        /* CoreExpr:     locsteps (parent (seqtype), CoreExpr) */
+        case 38:
+            A(p) = locstep (alg_par, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* LocationStep:       preceding (seqtype) */
-        case 24:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_prec, L(p)->sem.type),
-                       .frag = NULL };
+        /* CoreExpr:     locsteps (preceding (seqtype), CoreExpr) */
+        case 39:
+            A(p) = locstep (alg_prec, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* LocationStep:       preceding_sibling (seqtype) */
-        case 25:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_prec_s, L(p)->sem.type),
-                       .frag = NULL };
+        /* CoreExpr:     locsteps (preceding_sibling (seqtype), CoreExpr) */
+        case 40:
+            A(p) = locstep (alg_prec_s, LL(p)->sem.type, A(R(p)));
             break;
 
-        /* LocationStep:       self (seqtype) */
-        case 26:
-            /* Set up dummy node to be used in rule 14 */
-            A(p) = (PFla_pair_t)
-                     { .rel  = locstep_dummy (alg_self, L(p)->sem.type),
-                       .frag = NULL };
+        /* CoreExpr:     locsteps (self (seqtype), CoreExpr) */
+        case 41:
+            A(p) = locstep (alg_self, LL(p)->sem.type, A(R(p)));
+            break;
+
+        /* CoreExpr:           elem (TagName, CoreExpr) */
+        case 50:
+        {
+            /*
+             * CoreExpr (q2) evaluates to a sequence of nodes. TagName (q1)
+             * is the name of a new node which becomes the common root of
+             * the constructed nodes.
+             *
+             * env, loop: e1 => q1, doc (q1)
+             * env, loop: e2 => q2, doc (q2)
+             *
+             * n = element (doc (q2), q1, q2)
+             * -----------------------------------------------------------------
+             * env, loop: element e1 {e2} =>
+             *                                               pos
+             * result:    (proj_iter,item:pre (roots (n))) x -----
+             *                                                1
+             *                                                          zero
+             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
+             *                                                            0
+             *
+             * frag:       proj_pre,size,level,kind,prop,frag (n)
+             */
+
+            unsigned int i; 
+            PFla_op_t *tagname = NULL;
+
+            for (i = 0; i < A(L(p)).rel->schema.count; i++)
+            {
+                if (A(L(p)).rel->schema.items[i].name == att_item &&
+                    A(L(p)).rel->schema.items[i].type == aat_str)
+                {
+                    tagname = project (cast (A(L(p)).rel,
+                                             att_cast, att_item, aat_qname),
+                                       proj (att_iter, att_iter),
+                                       proj (att_pos, att_pos),
+                                       proj (att_item, att_cast));
+                    break;
+                }
+                else if (A(L(p)).rel->schema.items[i].name == att_item &&
+                         A(L(p)).rel->schema.items[i].type == aat_qname)
+                {
+                    tagname = A(L(p)).rel;
+                    break;
+                }
+            }
+            if (i == A(L(p)).rel->schema.count)
+                PFoops (OOPS_FATAL, 
+                        "attribute 'item' with type 'string' or type "
+                        "'QName' in tagname of element construction expected.");
+
+            PFla_op_t *elem = element (PFla_set_to_la (A(R(p)).frag),
+                                       tagname, A(R(p)).rel);
+
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = cross (lit_tbl (attlist (att_pos), 
+                                            tuple (lit_nat (1))),
+                                   roots (elem)),
+                     .frag = PFla_set (fragment (elem))};
+        } break;
+
+        /* CoreExpr:           attr (TagName, CoreExpr) */
+        case 51:
+        {
+            /*
+             * CoreExpr (q2) evaluates to a sequence of attributes. TagName
+             * (q1) is the name of a new node which becomes the common root
+             * of the constructed attributes.
+             *
+             * env, loop: e1 => q1, doc (q1)
+             * env, loop: e2 => q2, doc (q2)
+             *
+             * n = attribute (doc (q2), q1, q2)
+             * ----------------------------------------------------------------
+             * env, loop: attribute e1 {e2} =>
+             *                                               pos
+             * result:    (proj_iter,item:pre (roots (n))) x -----
+             *                                                1
+             *                                                          zero
+             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
+             *                                                            0
+             *
+             * frag:       proj_pre,size,level,kind,prop,frag (n)
+             */
+
+            unsigned int i; 
+            PFla_op_t *tagname = NULL;
+
+            for (i = 0; i < A(L(p)).rel->schema.count; i++)
+            {
+                if (A(L(p)).rel->schema.items[i].name == att_item &&
+                    A(L(p)).rel->schema.items[i].type == aat_str)
+                {
+                    tagname = project (cast (A(L(p)).rel,
+                                             att_cast, att_item, aat_qname),
+                                       proj (att_iter, att_iter),
+                                       proj (att_pos, att_pos),
+                                       proj (att_item, att_cast));
+                    break;
+                }
+                else if (A(L(p)).rel->schema.items[i].name == att_item &&
+                         A(L(p)).rel->schema.items[i].type == aat_qname)
+                {
+                    tagname = A(L(p)).rel;
+                    break;
+                }
+            }
+            if (i == A(L(p)).rel->schema.count)
+                PFoops (OOPS_FATAL, 
+                        "attribute 'item' with type 'string' or type "
+                        "'QName' in tagname of attribute "
+                        "construction expected.");
+
+            PFla_op_t *attr = attribute (tagname, 
+                                         project (A(R(p)).rel,
+                                                  proj (att_iter1, att_iter),
+                                                  proj (att_pos1, att_pos),
+                                                  proj (att_item1, att_item)),
+                                         att_res,
+                                         att_item,
+                                         att_item1);
+
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = project(roots (attr),
+                                    proj (att_iter, att_iter),
+                                    proj (att_pos, att_pos),
+                                    proj (att_item, att_res)),
+                     .frag = PFla_set (fragment (attr))};
+        } break;
+
+        /* TagName:            tag */
+        case 400:
+            A(p) = (struct PFla_pair_t) {
+                .rel = cross (loop,
+                              lit_tbl (attlist (att_pos, att_item),
+                                       tuple (lit_nat (1),
+                                              lit_qname (p->sem.qname)))),
+                .frag = PFla_empty_set () };
+            break;
+
+        /* TagName:            CoreExpr */
+        case 401:
+            break;
+
+        /* CoreExpr:           text (CoreExpr) */
+        case 52:
+        {
+            /*
+             * env, loop: e => q, doc (q)
+             *
+             * n = textnode (doc (q), q)
+             * ----------------------------------------------------------------
+             * env, loop: textnode e =>
+             *                                               pos
+             * result:    (proj_iter,item:pre (roots (n))) x -----
+             *                                                1
+             *                                                          zero
+             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
+             *                                                            0
+             *
+             * frag:       proj_pre,size,level,kind,prop,frag (n)
+             */
+            PFla_op_t *textnode = textnode (A(L(p)).rel, att_res, att_item);
+
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = project(roots (textnode),
+                                    proj (att_iter, att_iter),
+                                    proj (att_pos, att_pos),
+                                    proj (att_item, att_res)),
+                     .frag = PFla_set (fragment (textnode))};
+        } break;
+
+        /* CoreExpr:           doc (CoreExpr) */
+        case 53:
+        {
+            /*
+             * env, loop: e => q, doc (q)
+             *
+             * n = docnode (doc (q), q)
+             * ----------------------------------------------------------------
+             * env, loop: docnode e =>
+             *                                               pos
+             * result:    (proj_iter,item:pre (roots (n))) x -----
+             *                                                1
+             *                                                          zero
+             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
+             *                                                            0
+             *
+             * frag:       proj_pre,size,level,kind,prop,frag (n)
+             */
+            PFla_op_t *docnode = docnode (PFla_set_to_la (A(L(p)).frag),
+                                           A(L(p)).rel);
+
+            A(p) = (struct  PFla_pair_t) {
+                     .rel = roots (docnode),
+                     .frag = PFla_set (fragment (docnode))};
+        } break;
+
+        /* CoreExpr:           comment (CoreExpr) */
+        case 54:
+            /* FIXME: to do */
+            PFoops (OOPS_FATAL, "Comment not implemented");
+            break;
+
+        /* CoreExpr:           pi (CoreExpr) */
+        case 55:
+            /* FIXME: to do */
+            PFoops (OOPS_FATAL, "Processing Instruction not implemented");
             break;
 
         /* CoreExpr:           apply (FunctionArgs) */
-        case 29:
+        case 60:
         {   /* TOPDOWN*/
 
             /*
@@ -1082,11 +1487,11 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* FunctionArgs:       nil */
-        case 30:
+        case 500:
             break;
 
         /* FunctionArgs:       arg (FunctionArg, FunctionArgs) */
-        case 31:
+        case 501:
         {   /* TOPDOWN */
 
             /* translate the argument itself */
@@ -1101,354 +1506,41 @@ reduce (PFcnode_t * p, int goalnt)
         } break;
 
         /* FunctionArg:        Atom */
-        case 32:
+        case 502:
             break;
 
-        /* CoreExpr:           elem (TagName, CoreExpr) */
-        case 33:
-        {
-            /*
-             * CoreExpr (q2) evaluates to a sequence of nodes. TagName (q1)
-             * is the name of a new node which becomes the common root of
-             * the constructed nodes.
-             *
-             * env, loop: e1 => q1, doc (q1)
-             * env, loop: e2 => q2, doc (q2)
-             *
-             * n = element (doc (q2), q1, q2)
-             * -----------------------------------------------------------------
-             * env, loop: element e1 {e2} =>
-             *                                               pos
-             * result:    (proj_iter,item:pre (roots (n))) x -----
-             *                                                1
-             *                                                          zero
-             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
-             *                                                            0
-             *
-             * frag:       proj_pre,size,level,kind,prop,frag (n)
-             */
-            PFla_op_t *elem = element (PFla_set_to_la (A(R(p)).frag),
-                                        A(L(p)).rel, A(R(p)).rel);
-
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (roots (elem), lit_tbl (attlist (att_pos),
-                                                          tuple (lit_nat (1)))),
-                     .frag = PFla_set (fragment (elem))};
-        } break;
-
-        /* CoreExpr:           attr (TagName, CoreExpr) */
-        case 34:
-        {
-            /*
-             * CoreExpr (q2) evaluates to a sequence of attributes. TagName
-             * (q1) is the name of a new node which becomes the common root
-             * of the constructed attributes.
-             *
-             * env, loop: e1 => q1, doc (q1)
-             * env, loop: e2 => q2, doc (q2)
-             *
-             * n = attribute (doc (q2), q1, q2)
-             * ----------------------------------------------------------------
-             * env, loop: attribute e1 {e2} =>
-             *                                               pos
-             * result:    (proj_iter,item:pre (roots (n))) x -----
-             *                                                1
-             *                                                          zero
-             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
-             *                                                            0
-             *
-             * frag:       proj_pre,size,level,kind,prop,frag (n)
-             */
-            PFla_op_t *attr = attribute (A(L(p)).rel, A(R(p)).rel);
-
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = roots (attr),
-                     .frag = PFla_set (fragment (attr))};
-        }
-        break;
-
-        /* TagName:            tag */
-        case 35:
-            A(p) = (struct PFla_pair_t) {
-                .rel = cross (loop,
-                              lit_tbl (attlist (att_pos, att_item),
-                                       tuple (lit_nat (1),
-                                              lit_qname (p->sem.qname)))),
-                .frag = PFla_empty_set () };
-            break;
-
-        /* TagName:            CoreExpr */
-        case 36:
-            break;
-
-        /* CoreExpr:           text (CoreExpr) */
-        case 37:
-        {
-            /*
-             * env, loop: e => q, doc (q)
-             *
-             * n = textnode (doc (q), q)
-             * ----------------------------------------------------------------
-             * env, loop: textnode e =>
-             *                                               pos
-             * result:    (proj_iter,item:pre (roots (n))) x -----
-             *                                                1
-             *                                                          zero
-             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
-             *                                                            0
-             *
-             * frag:       proj_pre,size,level,kind,prop,frag (n)
-             */
-            PFla_op_t *textnode = textnode (A(L(p)).rel);
-
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = roots (textnode),
-                     .frag = PFla_set (fragment (textnode))};
-        } break;
-
-        /* CoreExpr:           doc (CoreExpr) */
-        case 38:
-        {
-            /*
-             * env, loop: e => q, doc (q)
-             *
-             * n = docnode (doc (q), q)
-             * ----------------------------------------------------------------
-             * env, loop: docnode e =>
-             *                                               pos
-             * result:    (proj_iter,item:pre (roots (n))) x -----
-             *                                                1
-             *                                                          zero
-             *    where roots (n) = sel (res)(= res:(level, zero) (n x ------))
-             *                                                            0
-             *
-             * frag:       proj_pre,size,level,kind,prop,frag (n)
-             */
-            PFla_op_t *docnode = docnode (PFla_set_to_la (A(L(p)).frag),
-                                           A(L(p)).rel);
-
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = roots (docnode),
-                     .frag = PFla_set (fragment (docnode))};
-        } break;
-
-        /* CoreExpr:           comment (CoreExpr) */
-        case 39:
-            /* FIXME: to do */
-            PFoops (OOPS_FATAL, "not implemented");
-            break;
-
-        /* CoreExpr:           pi (CoreExpr) */
-        case 40:
-            /* FIXME: to do */
-            PFoops (OOPS_FATAL, "not implemented");
-            break;
-
-        /* CoreExpr:           ordered (CoreExpr) */
-        case 41:
-            /* FIXME: Actually use `ordered' information */
-            A(p) = A(L(p));
-            break;
-
-        /* CoreExpr:           unordered (CoreExpr) */
-        case 42:
-            /* FIXME: Actually use `ordered' information */
-            A(p) = A(L(p));
-            break;
-
-        /* CoreExpr:           cast (seqtype, CoreExpr) */
-        case 46:
-        {
-            PFty_t              t;
-            PFalg_simple_type_t algty;
-
-            t = PFty_prime (PFty_defn (L(p)->sem.type));
-
-            /*
-             * Unfortunately, we only know how to cast atomic types
-             * into (exactly) one of our builtin atomic types. We
-             * cannot sensibly cast, e.g., into subtypes thereof.
-             */
-            if (PFty_equality (t, PFty_xs_string ()))
-                algty = aat_str;
-            else if (PFty_equality (t, PFty_xs_integer ()))
-                algty = aat_int;
-            else if (PFty_equality (t, PFty_xs_decimal ()))
-                algty = aat_dec;
-            else if (PFty_equality (t, PFty_xs_double ()))
-                algty = aat_dbl;
-            else if (PFty_equality (t, PFty_xs_boolean ()))
-                algty = aat_bln;
-            else
-                PFoops (OOPS_FATAL,
-                        "don't know the algebra equivalent of type %s",
-                        PFty_str (L(p)->sem.type));
-
-            A(p) = (struct PFla_pair_t) {
-                .rel  = cast (A(R(p)).rel, att_item, algty),
-                .frag = A(R(p)).frag };
-
-        } break;
-
-        /* Atom:               var */
-        case 47:
-        {
-            /*
-             * Reference to variable, so look it up in the environment. It
-             * was inserted into the environment by a let or for expression.
-             *
-             * ---------------------------------------------------------------
-             * env, (v -> q(v)) e env, loop: v => (q(v), 0)
-             */
-            unsigned int i;
-        
-            /* 
-             * look up the variable in the environment;
-             * since it has already been ensured beforehand, that
-             * each variable was declared before being used, we are
-             * guarenteed to find the required binding in the
-             * environment
-             */
-            for (i = 0; i < PFarray_last (env); i++) {
-                PFla_env_t e = *((PFla_env_t *) PFarray_at (env, i));
-            
-                if (p->sem.var == e.var) {
-                    A(p) = (struct  PFla_pair_t) {
-                             .rel = e.rel,
-                             .frag = e.frag };
-                    break;
-                }
-            }
-
-            assert (A(p).rel); assert (A(p).frag);
-
-        } break;
-
-        /* Atom:               LiteralValue */
-        case 48:
-            break;
-
-        /* LiteralValue:       lit_str */
-        case 49:
-        {
-            /* 
-             *  -------------------------------------------------------------
-             *                   /        / pos | item \     \
-             *  env, loop: c => | loop X | -----+------ | , 0 |
-             *                   \        \   1 |   c  /     /
-             */
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl( attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_str (p->sem.str)))),
-                     .frag = PFla_empty_set () };
-        } break;
-
-        /* LiteralValue:       lit_int */
-        case 50:
-        {
-            /*
-             *  -------------------------------------------------------------
-             *                   /        / pos | item \     \
-             *  env, loop: c => | loop X | -----+------ | , 0 |
-             *                   \        \   1 |   c  /     /
-             */
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl( attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_int (p->sem.num)))),
-                     .frag = PFla_empty_set () };
-        } break;
-
-        /* LiteralValue:       lit_dec */
-        case 51:
-        {
-            /*
-             *  -------------------------------------------------------------
-             *                   /        / pos | item \     \
-             *  env, loop: c => | loop X | -----+------ | , 0 |
-             *                   \        \   1 |   c  /     /
-             */
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl( attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_dec (p->sem.dec)))),
-                     .frag = PFla_empty_set () };
-        } break;
-
-        /* LiteralValue:       lit_dbl */
-        case 52:
-        {
-            /*
-             *  -------------------------------------------------------------
-             *                   /        / pos | item \     \
-             *  env, loop: c => | loop X | -----+------ | , 0 |
-             *                   \        \   1 |   c  /     /
-             */
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl( attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_dbl (p->sem.dbl)))),
-                     .frag = PFla_empty_set () };
-        } break;
-
-
-        /* LiteralValue:       true_ */
-        case 53:
-        {
-            /*
-             *  -------------------------------------------------------------
-             *                   /        / pos | item \     \
-             *  env, loop: c => | loop X | -----+------ | , 0 |
-             *                   \        \   1 |   c  /     /
-             */
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl( attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_bln (true)))),
-                     .frag = PFla_empty_set () };
-        } break;
-
-        /* LiteralValue:       false_ */
-        case 54:
-        {
-            /*
-             *  -------------------------------------------------------------
-             *                   /        / pos | item \     \
-             *  env, loop: c => | loop X | -----+------ | , 0 |
-             *                   \        \   1 |   c  /     /
-             */
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = cross (loop,
-                                   lit_tbl( attlist (att_pos, att_item),
-                                            tuple (lit_nat (1),
-                                                   lit_bln (false)))),
-                     .frag = PFla_empty_set () };
-        } break;
-
-        /* LiteralValue:       empty */
-        case 55:
-        {
-            /*
-             *  -------------------------------------------------------------
-             *                       iter | pos | item
-             *  env, loop: empty => ------+-----+------ , 0
-             * 
-             */
-            A(p) = (struct  PFla_pair_t) {
-                     .rel = PFla_empty_tbl (attlist (att_iter, att_pos, att_item)),
-                     .frag = PFla_empty_set () };
-        } break;
 
         default:
-            PFoops (OOPS_FATAL, "untranslated expression");
+            PFoops (OOPS_FATAL, "untranslated expression (rule %i)", rule);
             break;
     }
+}
+
+/**
+ * Construct a relational expression for a staircase join
+ */
+static struct PFla_pair_t
+locstep (PFalg_axis_t axis, PFty_t seqty, struct PFla_pair_t p)
+{
+    /*
+     *                  env, loop: e => (q(e), delta)
+     * ------------------------------------------------------------
+     *                       env, loop: e/a::n =>
+     * (row_pos<item>/iter (SCJ (proj_iter,item (q(e)), delta)), delta)
+     *
+     * A(L(p)).rel contains a axis node with information on the
+     * location step. Will be read out in PFla_scjoin().
+     */
+    return (struct  PFla_pair_t) {
+               .rel = rownum (
+                          scjoin (PFla_set_to_la (p.frag),
+                                  project (p.rel,
+                                           proj (att_iter, att_iter),
+                                           proj (att_item, att_item)),
+                                  axis,
+                                  seqty),
+                          att_pos, sortby (att_item), att_iter),
+               .frag = p.frag };
 }
 
 /**
@@ -1634,7 +1726,8 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
         return
             disjunion (
                 all (project (itemty,
-                              proj (att_iter, att_iter), proj (att_item, att_itemty)),
+                              proj (att_iter, att_iter),
+                              proj (att_item, att_itemty)),
                      att_subty, att_item, att_iter),
                 cross (
                     difference (
@@ -1657,7 +1750,8 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
         return
             disjunion (
                 all (project (itemty,
-                              proj (att_iter, att_iter), proj (att_item, att_itemty)),
+                              proj (att_iter, att_iter),
+                              proj (att_item, att_itemty)),
                      att_subty, att_item, att_iter),
                 cross (
                     difference (
@@ -1671,21 +1765,6 @@ type_test (PFty_t ty, PFla_pair_t e, PFla_op_t *loop)
     PFoops (OOPS_FATAL, "Error in type_test().");
     assert(0); /* we should never come here! */
     return NULL; /* pacify picky compilers */
-}
-
-/**
- * Set up a dummy node that contains parameters for staircase join
- * invocations. Simplifies translation of location steps (see rule 14).
- */
-static PFla_op_t *
-locstep_dummy (PFalg_axis_t axis, PFty_t seqty)
-{
-    PFla_op_t *ret = dummy ();
-
-    ret->sem.scjoin.axis = axis;
-    ret->sem.scjoin.ty   = seqty;
-
-    return ret;
 }
 
 

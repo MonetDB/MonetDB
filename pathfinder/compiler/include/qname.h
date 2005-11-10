@@ -71,6 +71,10 @@ PFqname_str (PFqname_t);
 char *
 PFqname_uri_str (PFqname_t);
 
+/** Return the prefix part of a QName */
+char *
+PFqname_ns (PFqname_t qn);
+
 /** Return the URI part of a QName */
 char *
 PFqname_uri (PFqname_t qn);

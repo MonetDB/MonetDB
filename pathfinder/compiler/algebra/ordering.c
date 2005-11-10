@@ -107,7 +107,7 @@ PFord_str (const PFord_ordering_t o)
 
     for (unsigned int i = 0; i < PFord_count (o); i++)
         PFarray_printf (a, "%s%s", i ? "," : "", 
-                        PFatt_print (PFord_order_at (o, i)));
+                        PFatt_str (PFord_order_at (o, i)));
 
     PFarray_printf (a, ">");
 

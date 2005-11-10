@@ -34,6 +34,7 @@
 #include <assert.h>
 /* FIXME: only for debugging */
 #include <stdio.h>
+#include <math.h>
 
 #include "physical.h"
 #include "mem.h"
@@ -104,51 +105,25 @@ wire2 (enum PFpa_op_kind_t kind, const PFpa_op_t *n1, const PFpa_op_t *n2)
 }
 
 
-#if 0
 
 /**
- * Empty tables may be generated for the logical algebra.  Logical
- * optimization, however, should be able to eliminate *all* these
- * (literal) empty tables.  So none of them should occur in the
- * physical plan.
- * 
- * FIXME: There's only a single exception: If a query returns the
- *        (statically) empty sequence (i.e., the query `()'), we
- *        will end up with an empty relation as the top-level
- *        expression.  We could catch this case separately, though.
- * 
- * Constructor for an empty table.  Use this constructor (in
- * preference over a literal table with no tuples) to trigger
- * optimization rules concerning empty relations.
+ * Construct algebra node that will serialize the argument when executed.
+ * A serialization node will be placed on the very top of the algebra
+ * expression tree. Its main use is to have an explicit match for
+ * the expression root.
  *
- * @param attlist Attribute list, similar to the literal table
- *                constructor PFpa_lit_tbl(), see also
- *                PFalg_attlist().
+ * @a doc is the current document (live nodes) and @a alg is the overall
+ * algebra expression.
  */
 PFpa_op_t *
-PFpa_empty_tbl (PFalg_attlist_t attlist)
+PFpa_serialize (const PFpa_op_t *doc, const PFpa_op_t *alg)
 {
-    PFpa_op_t   *ret;      /* return value we are building */
+    PFpa_op_t *ret = wire2 (pa_serialize, doc, alg);
 
-    /* instantiate the new algebra operator node */
-    ret = leaf (pa_empty_tbl);
-
-    /* set its schema */
-    ret->schema.items
-        = PFmalloc (attlist.count * sizeof (*(ret->schema.items)));
-    for (unsigned int i = 0; i < attlist.count; i++) {
-        ret->schema.items[i].name = attlist.atts[i];
-        ret->schema.items[i].type = 0;
-    }
-    ret->schema.count = attlist.count;
-
-    /* play safe: set these fields */
-    ret->sem.lit_tbl.count  = 0;
-    ret->sem.lit_tbl.tuples = NULL;
+    ret->cost = doc->cost + alg->cost;
 
     return ret;
 }
-#endif
 
 /**
  * Construct an algebra node representing a literal table, given
@@ -237,6 +212,535 @@ PFpa_lit_tbl (PFalg_attlist_t attlist,
 
     /* ---- literal table costs ---- */
     ret->cost = 1;
+
+    return ret;
+}
+
+/**
+ * Empty tables may be generated for the logical algebra.  Logical
+ * optimization, however, should be able to eliminate *all* these
+ * (literal) empty tables.  So none of them should occur in the
+ * physical plan.
+ * 
+ * FIXME: There's only a single exception: If a query returns the
+ *        (statically) empty sequence (i.e., the query `()'), we
+ *        will end up with an empty relation as the top-level
+ *        expression.  We could catch this case separately, though.
+ * 
+ * Constructor for an empty table.  Use this constructor (in
+ * preference over a literal table with no tuples) to trigger
+ * optimization rules concerning empty relations.
+ *
+ * @param attlist Attribute list, similar to the literal table
+ *                constructor PFpa_lit_tbl(), see also
+ *                PFalg_attlist().
+ */
+PFpa_op_t *
+PFpa_empty_tbl (PFalg_attlist_t attlist)
+{
+    PFpa_op_t   *ret;      /* return value we are building */
+
+    /* instantiate the new algebra operator node */
+    ret = leaf (pa_empty_tbl);
+
+    /* set its schema */
+    ret->schema.items
+        = PFmalloc (attlist.count * sizeof (*(ret->schema.items)));
+    for (unsigned int i = 0; i < attlist.count; i++) {
+        ret->schema.items[i].name = attlist.atts[i];
+        ret->schema.items[i].type = 0;
+    }
+    ret->schema.count = attlist.count;
+
+    /* play safe: set these fields */
+    ret->sem.lit_tbl.count  = 0;
+    ret->sem.lit_tbl.tuples = NULL;
+
+    PFord_ordering_t ord = PFordering ();
+    for (unsigned int i = 0; i < attlist.count; i++)
+        ord = PFord_refine (ord, attlist.atts[i]);
+    ret->orderings = PFord_permutations (ord);
+
+    ret->cost = 1;
+
+    return ret;
+}
+
+/**
+ * ColumnAttach: Attach a column to a table.
+ *
+ * In the logical algebra we express this in terms of a cross
+ * product with a (one tuple) literal table.  On the physical
+ * side, we can of course do this much more efficiently, e.g.,
+ * with MonetDB's @c project operator.
+ *
+ * If you want to attach more than one column, apply ColumnAttach
+ * multiple times.
+ *
+ * @b Orderings
+ *
+ * Column attachment will retain all orderings of the input
+ * relation.  As the new column is a constant, we may interleave
+ * the input ordering with the new column everywhere.  So with
+ * the input ordering @f$ [ O_1, O_2, \dots, O_n ] @f$ and the
+ * new column @f$ C @f$, we get
+ * @f[
+ *     { [ C, O_1, O_2, \dots, O_n ],
+ *       [ O_1, C, O_2, \dots, O_n ],
+ *       [ O_1, O_2, C, \dots, O_n ],
+ *       \dots
+ *       [ O_1, O_2, \dots, O_n, C ] }
+ * @f]
+ *
+ * @b Costs
+ *
+ * Column attachment is cheap: Costs for the input relation plus 1.
+ *
+ * @param n       Input relation
+ * @param attname Name of the new column.
+ * @parma value   Value for the new column.
+ */
+PFpa_op_t *
+PFpa_attach (const PFpa_op_t *n,
+             PFalg_att_t attname, PFalg_atom_t value)
+{
+    PFpa_op_t   *ret = wire1 (pa_attach, n);
+
+    /* result schema is input schema plus new columns */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* add new column */
+    ret->schema.items[n->schema.count]
+        = (PFalg_schm_item_t) { .name = attname, .type = value.type };
+
+    /* FIXME: Should we copy values here? */
+    ret->sem.attach.attname = attname;
+    ret->sem.attach.value   = value;
+
+    /* ---- ColumnAttach: orderings ---- */
+
+    /* all the input orderings we consider */
+    PFord_set_t in  = n->orderings;
+
+    /*
+     * If the input has no defined ordering, we create a new
+     * set that contains one empty ordering.  Our new column
+     * will then be the only result ordering
+     */
+    if (PFord_set_count (in) == 0)
+        in = PFord_set_add (PFord_set (), PFordering ());
+
+    /* Iterate over all the input orderings... */
+    for (unsigned int i = 0; i < PFord_set_count (in); i++) {
+
+        PFord_ordering_t current_in = PFord_set_at (in, i);
+        PFord_ordering_t prefix     = PFordering ();
+
+        /* interleave the new column everywhere possible */
+        for (unsigned int j = 0; j <= PFord_count (current_in); j++) {
+
+            PFord_ordering_t ord = PFord_refine (prefix, attname);
+
+            for (unsigned int k = j; k < PFord_count (current_in); k++)
+                ord = PFord_refine (ord, PFord_order_at (current_in, k));
+
+            PFord_set_add (ret->orderings, ord);
+
+            if (j < PFord_count (current_in))
+                prefix = PFord_refine (prefix, PFord_order_at (current_in, j));
+        }
+    }
+
+    /* ---- ColumnAttach: costs ---- */
+    ret->cost = 1 + n->cost;
+
+    return ret;
+}
+
+/** 
+ * Cross product (Cartesian product) between two algebra expressions.
+ * Arguments @a a and @a b must not have any equally named attribute.
+ *
+ * @b Orderings
+ *
+ * For the input `R x S', we assume the cross product operator
+ * to produce the same result as
+ *
+ * @verbatim
+     foreach r in R
+       foreach s in S
+         return <r, s> .
+@endverbatim
+ *
+ * This means that the orderings of R will be a primary ordering
+ * for the result, refined by the orderings of S.
+ *
+ * @b Costs
+ *
+ * @f[
+ *    cost (R \times S) = cost (R) \cdot cost (S) + cost (R) + cost (S)
+ * @f]
+ *
+ * @bug
+ *   Our current logical algebra trees do not produce cross products
+ *   in the physical plan.  This code is thus not really tested.
+ */ 
+PFpa_op_t *
+PFpa_cross (const PFpa_op_t *a, const PFpa_op_t *b)
+{
+    PFpa_op_t        *ret = wire2 (pa_cross, a, b);
+    unsigned int      i;
+    unsigned int      j;
+    PFord_ordering_t  ord;
+
+    assert (a); assert (b);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = a->schema.count + b->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from argument 1 */
+    for (i = 0; i < a->schema.count; i++)
+        ret->schema.items[i] = a->schema.items[i];
+
+    /* copy schema from argument 2, check for duplicate attribute names */
+    for (j = 0; j < b->schema.count; j++)
+        ret->schema.items[a->schema.count + j] = b->schema.items[j];
+
+    /* ---- cross product orderings ---- */
+
+    /* consider all orderings of a */
+    for (unsigned int i = 0; i < PFord_set_count (a->orderings); i++) {
+
+        /* refine by all the orderings in b */
+        for (unsigned int j = 0; j < PFord_set_count (b->orderings); j++) {
+
+            /* Ordering of a is the major ordering */
+            ord = PFord_set_at (a->orderings, i);
+
+            /* refine attribute by attribute with current ordering of b */
+            for (unsigned int k = 0;
+                 k < PFord_count (PFord_set_at (b->orderings, j));
+                 k++)
+                ord = PFord_refine (
+                        ord,
+                        PFord_order_at ( PFord_set_at (b->orderings, j), k));
+
+            /* add it to the orderings of the result */
+            PFord_set_add (ret->orderings, ord);
+        }
+    }
+
+    /* ---- cross product costs ---- */
+    ret->cost = a->cost * b->cost + a->cost + b->cost;
+
+    return ret;
+}
+
+/** Helper: Is attribute @a att contained in schema @a s? */
+static bool
+contains_att (PFalg_schema_t s, PFalg_att_t att)
+{
+    for (unsigned int i = 0; i < s.count; i++)
+        if (s.items[i].name == att)
+            return true;
+
+    return false;
+}
+
+/**
+ * LeftJoin: Equi-Join of two relations. Preserves the ordering
+ *           of the left operand.
+ */
+PFpa_op_t *
+PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
+               const PFpa_op_t *n1, const PFpa_op_t *n2)
+{
+    PFpa_op_t  *ret = wire2 (pa_leftjoin, n1, n2);
+
+    /* see if we can find attribute att1 in n1 */
+    if (contains_att (n1->schema, att1) && contains_att (n2->schema, att2)) {
+        ret->sem.eqjoin.att1 = att1;
+        ret->sem.eqjoin.att2 = att2;
+    }
+    else if (contains_att (n2->schema, att1)
+             && contains_att (n1->schema, att2)) {
+        ret->sem.eqjoin.att2 = att1;
+        ret->sem.eqjoin.att1 = att2;
+    }
+    else
+        PFoops (OOPS_FATAL, "problem with attributes in LeftJoin");
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n1->schema.count + n2->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n1 */
+    for (unsigned int i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+
+    /* copy schema from n2 */
+    for (unsigned int i = 0; i < n2->schema.count; i++)
+        ret->schema.items[n1->schema.count + i] = n2->schema.items[i];
+
+    /* ---- LeftJoin: orderings ---- */
+
+    /*
+     * We preserve any ordering of the left operand.
+     *
+     * We may interleave this ordering with any attribute marked
+     * constant in the right operand.
+     *
+     * If the (left) join attribute is among the orderings in the
+     * left relation, we may add the corresponding right join
+     * attribute anywhere after the left join attribute.
+     */
+
+    ret->orderings = PFord_set ();
+
+    for (unsigned int i = 0; i < PFord_set_count (n1->orderings); i++) {
+
+        PFord_ordering_t left_ordering = PFord_set_at (n1->orderings, i);
+
+        PFord_ordering_t ord = PFordering ();
+
+        /*
+         * Walk over left ordering, and keep an eye for the left join
+         * attribute.
+         */
+        bool found = false;
+
+        for (unsigned int j = 0; j < PFord_count (left_ordering); j++) {
+
+            if (PFord_order_at (left_ordering, j) == ret->sem.eqjoin.att1)
+                /* Hey, we found the left join attribute. */
+                found = true;
+
+            if (found) {
+
+                /*
+                 * We already found the left join attribute. So we may
+                 * include the right attribute into the result ordering.
+                 * (We may include the right attribute anywhere after
+                 * or immediately before the left attribute.)
+                 */
+
+                /* Insert the left join attribute */
+                PFord_ordering_t ord2
+                    = PFord_refine (ord, ret->sem.eqjoin.att2);
+
+                /* Fill up with the remaining ordering of left relation */
+                for (unsigned int k = j; k < PFord_count (left_ordering); k++)
+                    ord2 = PFord_refine (ord2,
+                                         PFord_order_at (left_ordering, j));
+
+                /* and append to result */
+                PFord_set_add (ret->orderings, ord2);
+            }
+
+            ord = PFord_refine (ord, PFord_order_at (left_ordering, j));
+        }
+
+        if (found)
+            ord = PFord_refine (ord, ret->sem.eqjoin.att2);
+
+        PFord_set_add (ret->orderings, ord);
+
+    }
+
+    /* Kick out those many duplicates we collected */
+    ret->orderings = PFord_unique (ret->orderings);
+
+    /* ---- LeftJoin: costs ---- */
+    ret->cost = (n1->cost / 10 * n2->cost / 10) + n1->cost + n2->cost;
+
+    return ret;
+}
+
+/**
+ * EqJoin: Equi-Join of two relations.
+ */
+PFpa_op_t *
+PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
+             const PFpa_op_t *n1, const PFpa_op_t *n2)
+{
+    PFpa_op_t  *ret = wire2 (pa_eqjoin, n1, n2);
+
+    /* see if we can find attribute att1 in n1 */
+    if (contains_att (n1->schema, att1) && contains_att (n2->schema, att2)) {
+        ret->sem.eqjoin.att1 = att1;
+        ret->sem.eqjoin.att2 = att2;
+    }
+    else if (contains_att (n2->schema, att1)
+             && contains_att (n1->schema, att2)) {
+        ret->sem.eqjoin.att2 = att1;
+        ret->sem.eqjoin.att1 = att2;
+    }
+    else
+        PFoops (OOPS_FATAL, "problem with attributes in EqJoin");
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n1->schema.count + n2->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n1 */
+    for (unsigned int i = 0; i < n1->schema.count; i++)
+        ret->schema.items[i] = n1->schema.items[i];
+
+    /* copy schema from n2 */
+    for (unsigned int i = 0; i < n2->schema.count; i++)
+        ret->schema.items[n1->schema.count + i] = n2->schema.items[i];
+
+    /* ---- EqJoin: orderings ---- */
+    ret->orderings = PFord_set ();
+
+    /* ---- EqJoin: costs ---- */
+    ret->cost = (n1->cost / 10 * n2->cost / 10) / 2 + n1->cost + n2->cost;
+
+    return ret;
+}
+
+/**
+ * Project: Column selection and renaming.
+ *
+ * Note that projection does @b not eliminate duplicates. If you
+ * need duplicate elimination, explictly use PFpa_distinct().
+ *
+ * @b Orderings
+ *
+ * Projection does not modify the order of incoming tuples, but
+ * only throws away (or duplicates) columns.  Based on all the
+ * input orderings, we pick all those prefixes that are still
+ * present in the projection result (of course, we rename the
+ * column accordingly).
+ *
+ * @b Costs
+ *
+ * Projection is a no-cost operator.  It just involves some
+ * shuffling in the compiler, but does not require any work
+ * in the resulting MIL code.  We thus simply use the costs of
+ * the input relation.
+ *
+ * Still, it might make sense to apply costs to this operator,
+ * as it may remove unneccessary column attachments that (a)
+ * make our plans large and unreadable, and (b) may impact other
+ * operator's work if they have to deal with lots of columns.
+ */
+PFpa_op_t *
+PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
+{
+    PFpa_op_t *ret = wire1 (pa_project, n);
+
+    ret->sem.proj.count = count;
+
+    ret->sem.proj.items
+        = PFmalloc (ret->sem.proj.count * sizeof (*ret->sem.proj.items));
+
+    for (unsigned int i = 0 ; i < ret->sem.proj.count; i++)
+        ret->sem.proj.items[i] = proj[i];
+
+    /* allocate space for result schema */
+    ret->schema.count = count;
+    ret->schema.items = PFmalloc (count * sizeof (*(ret->schema.items)));
+
+    /* check for sanity and set result schema */
+    for (unsigned int i = 0; i < ret->sem.proj.count; i++) {
+
+        unsigned int j;
+
+        /* lookup old name in n's schema
+         * and use its type for the result schema */
+        for (j = 0; j < n->schema.count; j++)
+            if (ret->sem.proj.items[i].old == n->schema.items[j].name) {
+                /* set name and type for this attribute in the result schema */
+                ret->schema.items[i].name = ret->sem.proj.items[i].new;
+                ret->schema.items[i].type = n->schema.items[j].type;
+
+                break;
+            }
+
+        /* did we find the attribute? */
+        if (j >= n->schema.count)
+            PFoops (OOPS_FATAL,
+                    "attribute `%s' referenced in projection not found",
+                    PFatt_str (ret->sem.proj.items[i].old));
+    }
+
+    /* ---- Project: orderings ---- */
+
+    /*
+     * From our argument pass all those ordering prefixes that
+     * are still in the schema
+     */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
+
+        PFord_ordering_t ni     = PFord_set_at (n->orderings, i);
+        PFord_ordering_t prefix = PFordering ();
+
+        for (unsigned int j = 0; j < PFord_count (ni); j++) {
+
+            unsigned int k;
+            for (k = 0; k < ret->sem.proj.count; k++)
+                if (ret->sem.proj.items[k].old == PFord_order_at (ni, j))
+                    break;
+
+            if (k < ret->sem.proj.count)
+                prefix = PFord_refine (prefix, ret->sem.proj.items[k].new);
+            else
+                break;
+        }
+
+        if (PFord_count (prefix) > 0)
+            PFord_set_add (ret->orderings, prefix);
+    }
+    
+    /* prune away duplicate orderings */
+    ret->orderings = PFord_unique (ret->orderings);
+
+    /* ---- Project: costs ---- */
+
+    /*
+     * Projection is for free, as it does not affect MIL programs.
+     * Any work involved in projections is done at compile time in
+     * mil/milgen.brg.
+     */
+    ret->cost = n->cost;
+
+    return ret;
+}
+
+PFpa_op_t *
+PFpa_select (const PFpa_op_t *n, PFalg_att_t att)
+{
+    PFpa_op_t *ret = wire1 (pa_select, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* keep the ordering we got in the `ord' argument */
+    ret->sem.select.att = att;
+
+    /* ---- Select: orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /* ---- Select: costs ---- */
+    ret->cost = n->cost + 1;
 
     return ret;
 }
@@ -561,184 +1065,6 @@ PFpa_difference (const PFpa_op_t *n1, const PFpa_op_t *n2)
     return ret;
 }
 
-/** 
- * Cross product (Cartesian product) between two algebra expressions.
- * Arguments @a a and @a b must not have any equally named attribute.
- *
- * @b Orderings
- *
- * For the input `R x S', we assume the cross product operator
- * to produce the same result as
- *
- * @verbatim
-     foreach r in R
-       foreach s in S
-         return <r, s> .
-@endverbatim
- *
- * This means that the orderings of R will be a primary ordering
- * for the result, refined by the orderings of S.
- *
- * @b Costs
- *
- * @f[
- *    cost (R \times S) = cost (R) \cdot cost (S) + cost (R) + cost (S)
- * @f]
- *
- * @bug
- *   Our current logical algebra trees do not produce cross products
- *   in the physical plan.  This code is thus not really tested.
- */ 
-PFpa_op_t *
-PFpa_cross (const PFpa_op_t *a, const PFpa_op_t *b)
-{
-    PFpa_op_t        *ret = wire2 (pa_cross, a, b);
-    unsigned int      i;
-    unsigned int      j;
-    PFord_ordering_t  ord;
-
-    assert (a); assert (b);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = a->schema.count + b->schema.count;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from argument 1 */
-    for (i = 0; i < a->schema.count; i++)
-        ret->schema.items[i] = a->schema.items[i];
-
-    /* copy schema from argument 2, check for duplicate attribute names */
-    for (j = 0; j < b->schema.count; j++)
-        ret->schema.items[a->schema.count + j] = b->schema.items[j];
-
-    /* ---- cross product orderings ---- */
-
-    /* consider all orderings of a */
-    for (unsigned int i = 0; i < PFord_set_count (a->orderings); i++) {
-
-        /* refine by all the orderings in b */
-        for (unsigned int j = 0; j < PFord_set_count (b->orderings); j++) {
-
-            /* Ordering of a is the major ordering */
-            ord = PFord_set_at (a->orderings, i);
-
-            /* refine attribute by attribute with current ordering of b */
-            for (unsigned int k = 0;
-                 k < PFord_count (PFord_set_at (b->orderings, j));
-                 k++)
-                ord = PFord_refine (
-                        ord,
-                        PFord_order_at ( PFord_set_at (b->orderings, j), k));
-
-            /* add it to the orderings of the result */
-            PFord_set_add (ret->orderings, ord);
-        }
-    }
-
-    /* ---- cross product costs ---- */
-    ret->cost = a->cost * b->cost + a->cost + b->cost;
-
-    return ret;
-}
-
-/**
- * ColumnAttach: Attach a column to a table.
- *
- * In the logical algebra we express this in terms of a cross
- * product with a (one tuple) literal table.  On the physical
- * side, we can of course do this much more efficiently, e.g.,
- * with MonetDB's @c project operator.
- *
- * If you want to attach more than one column, apply ColumnAttach
- * multiple times.
- *
- * @b Orderings
- *
- * Column attachment will retain all orderings of the input
- * relation.  As the new column is a constant, we may interleave
- * the input ordering with the new column everywhere.  So with
- * the input ordering @f$ [ O_1, O_2, \dots, O_n ] @f$ and the
- * new column @f$ C @f$, we get
- * @f[
- *     { [ C, O_1, O_2, \dots, O_n ],
- *       [ O_1, C, O_2, \dots, O_n ],
- *       [ O_1, O_2, C, \dots, O_n ],
- *       \dots
- *       [ O_1, O_2, \dots, O_n, C ] }
- * @f]
- *
- * @b Costs
- *
- * Column attachment is cheap: Costs for the input relation plus 1.
- *
- * @param n       Input relation
- * @param attname Name of the new column.
- * @parma value   Value for the new column.
- */
-PFpa_op_t *
-PFpa_attach (const PFpa_op_t *n,
-             PFalg_att_t attname, PFalg_atom_t value)
-{
-    PFpa_op_t   *ret = wire1 (pa_attach, n);
-
-    /* result schema is input schema plus new columns */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
-
-    /* copy schema from n */
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        ret->schema.items[i] = n->schema.items[i];
-
-    /* add new column */
-    ret->schema.items[n->schema.count]
-        = (PFalg_schm_item_t) { .name = attname, .type = value.type };
-
-    /* FIXME: Should we copy values here? */
-    ret->sem.attach.attname = attname;
-    ret->sem.attach.value   = value;
-
-    /* ---- ColumnAttach: orderings ---- */
-
-    /* all the input orderings we consider */
-    PFord_set_t in  = n->orderings;
-
-    /*
-     * If the input has no defined ordering, we create a new
-     * set that contains one empty ordering.  Our new column
-     * will then be the only result ordering
-     */
-    if (PFord_set_count (in) == 0)
-        in = PFord_set_add (PFord_set (), PFordering ());
-
-    /* Iterate over all the input orderings... */
-    for (unsigned int i = 0; i < PFord_set_count (in); i++) {
-
-        PFord_ordering_t current_in = PFord_set_at (in, i);
-        PFord_ordering_t prefix     = PFordering ();
-
-        /* interleave the new column everywhere possible */
-        for (unsigned int j = 0; j <= PFord_count (current_in); j++) {
-
-            PFord_ordering_t ord = PFord_refine (prefix, attname);
-
-            for (unsigned int k = j; k < PFord_count (current_in); k++)
-                ord = PFord_refine (ord, PFord_order_at (current_in, k));
-
-            PFord_set_add (ret->orderings, ord);
-
-            if (j < PFord_count (current_in))
-                prefix = PFord_refine (prefix, PFord_order_at (current_in, j));
-        }
-    }
-
-    /* ---- ColumnAttach: costs ---- */
-    ret->cost = 1 + n->cost;
-
-    return ret;
-}
-
 PFpa_op_t *
 PFpa_sort_distinct (const PFpa_op_t *n, PFord_ordering_t ord)
 {
@@ -765,283 +1091,6 @@ PFpa_sort_distinct (const PFpa_op_t *n, PFord_ordering_t ord)
 
     return ret;
 }
-
-
-/**
- * Project: Column selection and renaming.
- *
- * Note that projection does @b not eliminate duplicates. If you
- * need duplicate elimination, explictly use PFpa_distinct().
- *
- * @b Orderings
- *
- * Projection does not modify the order of incoming tuples, but
- * only throws away (or duplicates) columns.  Based on all the
- * input orderings, we pick all those prefixes that are still
- * present in the projection result (of course, we rename the
- * column accordingly).
- *
- * @b Costs
- *
- * Projection is a no-cost operator.  It just involves some
- * shuffling in the compiler, but does not require any work
- * in the resulting MIL code.  We thus simply use the costs of
- * the input relation.
- *
- * Still, it might make sense to apply costs to this operator,
- * as it may remove unneccessary column attachments that (a)
- * make our plans large and unreadable, and (b) may impact other
- * operator's work if they have to deal with lots of columns.
- */
-PFpa_op_t *
-PFpa_project (const PFpa_op_t *n, unsigned int count, PFalg_proj_t *proj)
-{
-    PFpa_op_t *ret = wire1 (pa_project, n);
-
-    ret->sem.proj.count = count;
-
-    ret->sem.proj.items
-        = PFmalloc (ret->sem.proj.count * sizeof (*ret->sem.proj.items));
-
-    for (unsigned int i = 0 ; i < ret->sem.proj.count; i++)
-        ret->sem.proj.items[i] = proj[i];
-
-    /* allocate space for result schema */
-    ret->schema.count = count;
-    ret->schema.items = PFmalloc (count * sizeof (*(ret->schema.items)));
-
-    /* check for sanity and set result schema */
-    for (unsigned int i = 0; i < ret->sem.proj.count; i++) {
-
-        unsigned int j;
-
-        /* lookup old name in n's schema
-         * and use its type for the result schema */
-        for (j = 0; j < n->schema.count; j++)
-            if (ret->sem.proj.items[i].old == n->schema.items[j].name) {
-                /* set name and type for this attribute in the result schema */
-                ret->schema.items[i].name = ret->sem.proj.items[i].new;
-                ret->schema.items[i].type = n->schema.items[j].type;
-
-                break;
-            }
-
-        /* did we find the attribute? */
-        if (j >= n->schema.count)
-            PFoops (OOPS_FATAL,
-                    "attribute `%s' referenced in projection not found",
-                    PFatt_print (ret->sem.proj.items[i].old));
-    }
-
-    /* ---- Project: orderings ---- */
-
-    /*
-     * From our argument pass all those ordering prefixes that
-     * are still in the schema
-     */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++) {
-
-        PFord_ordering_t ni     = PFord_set_at (n->orderings, i);
-        PFord_ordering_t prefix = PFordering ();
-
-        for (unsigned int j = 0; j < PFord_count (ni); j++) {
-
-            unsigned int k;
-            for (k = 0; k < ret->sem.proj.count; k++)
-                if (ret->sem.proj.items[k].old == PFord_order_at (ni, j))
-                    break;
-
-            if (k < ret->sem.proj.count)
-                prefix = PFord_refine (prefix, ret->sem.proj.items[k].new);
-            else
-                break;
-        }
-
-        if (PFord_count (prefix) > 0)
-            PFord_set_add (ret->orderings, prefix);
-    }
-    
-    /* prune away duplicate orderings */
-    ret->orderings = PFord_unique (ret->orderings);
-
-    /* ---- Project: costs ---- */
-
-    /*
-     * Projection is for free, as it does not affect MIL programs.
-     * Any work involved in projections is done at compile time in
-     * mil/milgen.brg.
-     */
-    ret->cost = n->cost;
-
-    return ret;
-}
-
-/** Helper: Is attribute @a att contained in schema @a s? */
-static bool
-contains_att (PFalg_schema_t s, PFalg_att_t att)
-{
-    for (unsigned int i = 0; i < s.count; i++)
-        if (s.items[i].name == att)
-            return true;
-
-    return false;
-}
-
-/**
- * LeftJoin: Equi-Join of two relations. Preserves the ordering
- *           of the left operand.
- */
-PFpa_op_t *
-PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
-               const PFpa_op_t *n1, const PFpa_op_t *n2)
-{
-    PFpa_op_t  *ret = wire2 (pa_leftjoin, n1, n2);
-
-    /* see if we can find attribute att1 in n1 */
-    if (contains_att (n1->schema, att1) && contains_att (n2->schema, att2)) {
-        ret->sem.eqjoin.att1 = att1;
-        ret->sem.eqjoin.att2 = att2;
-    }
-    else if (contains_att (n2->schema, att1)
-             && contains_att (n1->schema, att2)) {
-        ret->sem.eqjoin.att2 = att1;
-        ret->sem.eqjoin.att1 = att2;
-    }
-    else
-        PFoops (OOPS_FATAL, "problem with attributes in LeftJoin");
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n1->schema.count + n2->schema.count;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n1 */
-    for (unsigned int i = 0; i < n1->schema.count; i++)
-        ret->schema.items[i] = n1->schema.items[i];
-
-    /* copy schema from n2 */
-    for (unsigned int i = 0; i < n2->schema.count; i++)
-        ret->schema.items[n1->schema.count + i] = n2->schema.items[i];
-
-    /* ---- LeftJoin: orderings ---- */
-
-    /*
-     * We preserve any ordering of the left operand.
-     *
-     * We may interleave this ordering with any attribute marked
-     * constant in the right operand.
-     *
-     * If the (left) join attribute is among the orderings in the
-     * left relation, we may add the corresponding right join
-     * attribute anywhere after the left join attribute.
-     */
-
-    ret->orderings = PFord_set ();
-
-    for (unsigned int i = 0; i < PFord_set_count (n1->orderings); i++) {
-
-        PFord_ordering_t left_ordering = PFord_set_at (n1->orderings, i);
-
-        PFord_ordering_t ord = PFordering ();
-
-        /*
-         * Walk over left ordering, and keep an eye for the left join
-         * attribute.
-         */
-        bool found = false;
-
-        for (unsigned int j = 0; j < PFord_count (left_ordering); j++) {
-
-            if (PFord_order_at (left_ordering, j) == ret->sem.eqjoin.att1)
-                /* Hey, we found the left join attribute. */
-                found = true;
-
-            if (found) {
-
-                /*
-                 * We already found the left join attribute. So we may
-                 * include the right attribute into the result ordering.
-                 * (We may include the right attribute anywhere after
-                 * or immediately before the left attribute.)
-                 */
-
-                /* Insert the left join attribute */
-                PFord_ordering_t ord2
-                    = PFord_refine (ord, ret->sem.eqjoin.att2);
-
-                /* Fill up with the remaining ordering of left relation */
-                for (unsigned int k = j; k < PFord_count (left_ordering); k++)
-                    ord2 = PFord_refine (ord2,
-                                         PFord_order_at (left_ordering, j));
-
-                /* and append to result */
-                PFord_set_add (ret->orderings, ord2);
-            }
-
-            ord = PFord_refine (ord, PFord_order_at (left_ordering, j));
-        }
-
-        if (found)
-            ord = PFord_refine (ord, ret->sem.eqjoin.att2);
-
-        PFord_set_add (ret->orderings, ord);
-
-    }
-
-    /* Kick out those many duplicates we collected */
-    ret->orderings = PFord_unique (ret->orderings);
-
-    /* ---- LeftJoin: costs ---- */
-    ret->cost = (n1->cost * n2->cost) + n1->cost + n2->cost;
-
-    return ret;
-}
-
-/**
- * EqJoin: Equi-Join of two relations.
- */
-PFpa_op_t *
-PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
-             const PFpa_op_t *n1, const PFpa_op_t *n2)
-{
-    PFpa_op_t  *ret = wire2 (pa_eqjoin, n1, n2);
-
-    /* see if we can find attribute att1 in n1 */
-    if (contains_att (n1->schema, att1) && contains_att (n2->schema, att2)) {
-        ret->sem.eqjoin.att1 = att1;
-        ret->sem.eqjoin.att2 = att2;
-    }
-    else if (contains_att (n2->schema, att1)
-             && contains_att (n1->schema, att2)) {
-        ret->sem.eqjoin.att2 = att1;
-        ret->sem.eqjoin.att1 = att2;
-    }
-    else
-        PFoops (OOPS_FATAL, "problem with attributes in EqJoin");
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n1->schema.count + n2->schema.count;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n1 */
-    for (unsigned int i = 0; i < n1->schema.count; i++)
-        ret->schema.items[i] = n1->schema.items[i];
-
-    /* copy schema from n2 */
-    for (unsigned int i = 0; i < n2->schema.count; i++)
-        ret->schema.items[n1->schema.count + i] = n2->schema.items[i];
-
-    /* ---- EqJoin: orderings ---- */
-    ret->orderings = PFord_set ();
-
-    /* ---- EqJoin: costs ---- */
-    ret->cost = (n1->cost * n2->cost) / 2 + n1->cost + n2->cost;
-
-    return ret;
-}
-
-
 
 /**
  * StandardSort: Introduce given sort order as the only new order.
@@ -1071,7 +1120,8 @@ PFpa_std_sort (const PFpa_op_t *n, PFord_ordering_t required)
     PFord_set_add (ret->orderings, required);
 
     /* ---- StandardSort: costs ---- */
-    ret->cost = (n->cost * n->cost) + n->cost;
+    ret->cost = (log (n->cost) * n->cost / log (2));
+    ret->cost = ret->cost > n->cost ? ret->cost : 2 * n->cost;
 
     return ret;
 }
@@ -1109,29 +1159,19 @@ PFpa_refine_sort (const PFpa_op_t *n,
     return ret;
 }
 
-
 /**
- * HashRowNumber: Introduce new row numbers.
- *
- * HashRowNumber uses a hash table to implement partitioning. Hence,
- * it does not require any specific input ordering.
- *
- * @param n        Argument relation.
- * @param new_att  Name of newly introduced attribute.
- * @param part     Partitioning attribute. @c NULL if partitioning
- *                 is not requested.
+ * Helper function for binary arithmetics (with both arguments to be
+ * table columns).
  */
-PFpa_op_t *
-PFpa_hash_rownum (const PFpa_op_t *n,
-                  PFalg_att_t new_att,
-                  PFalg_att_t part)
+static PFpa_op_t *
+bin_arith (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
+           PFalg_att_t att1, PFalg_att_t att2)
 {
-    PFpa_op_t *ret = wire1 (pa_hash_rownum, n);
+    PFpa_op_t           *ret = wire1 (op, n);
+    PFalg_simple_type_t  t1 = 0;
+    PFalg_simple_type_t  t2 = 0;
 
-    assert (!"FIXME: hash_rownum: orderings not implemented yet!");
-
-    ret->sem.rownum.attname = new_att;
-    ret->sem.rownum.part = part;
+    assert (n);
 
     /* allocate memory for the result schema */
     ret->schema.count = n->schema.count + 1;
@@ -1139,11 +1179,449 @@ PFpa_hash_rownum (const PFpa_op_t *n,
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
     /* copy schema from n */
-    for (unsigned int i = 0; i < n->schema.count; i++)
+    for (unsigned int i = 0; i < n->schema.count; i++) {
+
         ret->schema.items[i] = n->schema.items[i];
 
+        if (n->schema.items[i].name == att1)
+            t1 = n->schema.items[i].type;
+        if (n->schema.items[i].name == att2)
+            t2 = n->schema.items[i].type;
+    }
+
+    assert (t1); assert (t2);
+
+    if (t1 != t2)
+        PFoops (OOPS_FATAL,
+                "illegal types in arithmetic operation: %u vs. %u", t1, t2);
+
+    /* finally add schema item for new attribute */
+    ret->schema.items[n->schema.count]
+        = (PFalg_schm_item_t) { .name = res, .type = t1 };
+
+    /* store information about attributes for arithmetics */
+    /* FIXME: Copy strings here? */
+    ret->sem.binary.res = res;
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+
+    /* ---- NumAdd: orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /*
+     * Hmm... From the ordering contributed by the arithmetic operands
+     * we could actually infer some more order information. But it's
+     * probably not worth to fiddle with that...
+     */
+
+    /* ---- NumAdd: costs ---- */
+    ret->cost = n->cost + 2;    /* 2 as we want NumAddConst to be cheaper */
+
+    return ret;
+}
+
+/**
+ * Helper function for binary arithmetics (where second argument is
+ * an atom).
+ */
+static PFpa_op_t *
+bin_arith_atom (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
+                PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    PFpa_op_t           *ret = wire1 (op, n);
+    PFalg_simple_type_t  t1 = 0;
+
+    assert (n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++) {
+
+        ret->schema.items[i] = n->schema.items[i];
+
+        if (n->schema.items[i].name == att1)
+            t1 = n->schema.items[i].type;
+    }
+
+    assert (t1);
+
+    if (t1 != att2.type)
+        PFoops (OOPS_FATAL,
+                "illegal types in arithmetic operation: %u vs. %u",
+                t1, att2.type);
+
+    /* finally add schema item for new attribute */
+    ret->schema.items[n->schema.count]
+        = (PFalg_schm_item_t) { .name = res, .type = t1 };
+
+    /* store information about attributes for arithmetics */
+    /* FIXME: Copy strings here? */
+    ret->sem.bin_atom.res = res;
+    ret->sem.bin_atom.att1 = att1;
+    ret->sem.bin_atom.att2 = att2;
+
+    /* ---- NumAdd: orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /*
+     * Hmm... From the ordering contributed by the arithmetic operands
+     * we could actually infer some more order information. But it's
+     * probably not worth to fiddle with that...
+     */
+
+    /* ---- NumAdd: costs ---- */
+    ret->cost = n->cost + 1;    /* cheaper than NumAdd */
+
+    return ret;
+}
+
+/**
+ * Helper function for binary comparisons (with both arguments to be
+ * table columns).
+ */
+static PFpa_op_t *
+bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
+          PFalg_att_t att1, PFalg_att_t att2)
+{
+    PFpa_op_t           *ret = wire1 (op, n);
+#ifndef NDEBUG
+    PFalg_simple_type_t  t1 = 0;
+    PFalg_simple_type_t  t2 = 0;
+#endif
+
+    assert (n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++) {
+
+        ret->schema.items[i] = n->schema.items[i];
+
+#ifndef NDEBUG
+        if (n->schema.items[i].name == att1)
+            t1 = n->schema.items[i].type;
+        if (n->schema.items[i].name == att2)
+            t2 = n->schema.items[i].type;
+#endif
+    }
+
+#ifndef NDEBUG
+    assert (t1); assert (t2);
+
+    if (t1 != t2)
+        PFoops (OOPS_FATAL,
+                "illegal types in arithmetic operation: %u vs. %u", t1, t2);
+#endif
+
+    /* finally add schema item for new attribute */
+    ret->schema.items[n->schema.count]
+        = (PFalg_schm_item_t) { .name = res, .type = aat_bln };
+
+    /* store information about attributes for arithmetics */
+    /* FIXME: Copy strings here? */
+    ret->sem.binary.res = res;
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+
+    /* ---- NumAdd: orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /*
+     * Hmm... From the ordering contributed by the arithmetic operands
+     * we could actually infer some more order information. But it's
+     * probably not worth to fiddle with that...
+     */
+
+    /* ---- NumAdd: costs ---- */
+    ret->cost = n->cost + 2;    /* 2 as we want NumAddConst to be cheaper */
+
+    return ret;
+}
+
+/**
+ * Helper function for binary comparisons (where second argument is
+ * an atom).
+ */
+static PFpa_op_t *
+bin_comp_atom (PFpa_op_kind_t op, const PFpa_op_t *n, PFalg_att_t res,
+               PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    PFpa_op_t           *ret = wire1 (op, n);
+#ifndef NDEBUG
+    PFalg_simple_type_t  t1 = 0;
+#endif
+
+    assert (n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++) {
+
+        ret->schema.items[i] = n->schema.items[i];
+
+#ifndef NDEBUG
+        if (n->schema.items[i].name == att1)
+            t1 = n->schema.items[i].type;
+#endif
+    }
+
+#ifndef NDEBUG
+    assert (t1);
+
+    if (t1 != att2.type)
+        PFoops (OOPS_FATAL,
+                "illegal types in arithmetic operation: %u vs. %u",
+                t1, att2.type);
+#endif
+
+    /* finally add schema item for new attribute */
+    ret->schema.items[n->schema.count]
+        = (PFalg_schm_item_t) { .name = res, .type = aat_bln };
+
+    /* store information about attributes for arithmetics */
+    /* FIXME: Copy strings here? */
+    ret->sem.bin_atom.res = res;
+    ret->sem.bin_atom.att1 = att1;
+    ret->sem.bin_atom.att2 = att2;
+
+    /* ---- NumAdd: orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /*
+     * Hmm... From the ordering contributed by the arithmetic operands
+     * we could actually infer some more order information. But it's
+     * probably not worth to fiddle with that...
+     */
+
+    /* ---- NumAdd: costs ---- */
+    ret->cost = n->cost + 1;    /* cheaper than NumAdd */
+
+    return ret;
+}
+
+PFpa_op_t *
+PFpa_num_add (const PFpa_op_t *n, PFalg_att_t res,
+              PFalg_att_t att1, PFalg_att_t att2)
+{
+    return bin_arith (pa_num_add, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_num_sub (const PFpa_op_t *n, PFalg_att_t res,
+              PFalg_att_t att1, PFalg_att_t att2)
+{
+    return bin_arith (pa_num_sub, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_num_mult (const PFpa_op_t *n, PFalg_att_t res,
+               PFalg_att_t att1, PFalg_att_t att2)
+{
+    return bin_arith (pa_num_mult, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_num_div (const PFpa_op_t *n, PFalg_att_t res,
+              PFalg_att_t att1, PFalg_att_t att2)
+{
+    return bin_arith (pa_num_div, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_num_mod (const PFpa_op_t *n, PFalg_att_t res,
+              PFalg_att_t att1, PFalg_att_t att2)
+{
+    return bin_arith (pa_num_mod, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_num_add_atom (const PFpa_op_t *n, PFalg_att_t res,
+                   PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    return bin_arith_atom (pa_num_add_atom, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_num_sub_atom (const PFpa_op_t *n, PFalg_att_t res,
+                   PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    return bin_arith_atom (pa_num_sub_atom, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_num_mult_atom (const PFpa_op_t *n, PFalg_att_t res,
+                    PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    return bin_arith_atom (pa_num_mult_atom, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_num_div_atom (const PFpa_op_t *n, PFalg_att_t res,
+                   PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    return bin_arith_atom (pa_num_div_atom, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_num_mod_atom (const PFpa_op_t *n, PFalg_att_t res,
+                   PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    return bin_arith_atom (pa_num_mod_atom, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_eq (const PFpa_op_t *n, PFalg_att_t res,
+         PFalg_att_t att1, PFalg_att_t att2)
+{
+    return bin_comp (pa_eq, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_gt (const PFpa_op_t *n, PFalg_att_t res,
+         PFalg_att_t att1, PFalg_att_t att2)
+{
+    return bin_comp (pa_gt, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_eq_atom (const PFpa_op_t *n, PFalg_att_t res,
+              PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    return bin_comp_atom (pa_eq_atom, n, res, att1, att2);
+}
+
+PFpa_op_t *
+PFpa_gt_atom (const PFpa_op_t *n, PFalg_att_t res,
+              PFalg_att_t att1, const PFalg_atom_t att2)
+{
+    return bin_comp_atom (pa_gt_atom, n, res, att1, att2);
+}
+
+
+/**
+ * Helper function for unary arithmetics (numeric and Boolean negation).
+ */
+static PFpa_op_t *
+unary_arith (PFpa_op_kind_t op,
+             const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
+{
+    PFpa_op_t           *ret = wire1 (op, n);
+    PFalg_simple_type_t  t1 = 0;
+
+    assert (n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n */
+    for (unsigned int i = 0; i < n->schema.count; i++) {
+
+        ret->schema.items[i] = n->schema.items[i];
+
+        if (n->schema.items[i].name == att)
+            t1 = n->schema.items[i].type;
+    }
+
+    assert (t1);
+
+    /* finally add schema item for new attribute */
+    ret->schema.items[n->schema.count]
+        = (PFalg_schm_item_t) { .name = res, .type = t1 };
+
+    /* store information about attributes for arithmetics */
+    /* FIXME: Copy strings here? */
+    ret->sem.unary.res = res;
+    ret->sem.unary.att = att;
+
+    /* ---- UnaryArith: orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /*
+     * Hmm... From the ordering contributed by the arithmetic operands
+     * we could actually infer some more order information. But it's
+     * probably not worth to fiddle with that...
+     */
+
+    /* ---- NumAdd: costs ---- */
+    ret->cost = n->cost + 1;
+
+    return ret;
+}
+
+PFpa_op_t *
+PFpa_num_neg (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
+{
+    return unary_arith (pa_num_neg, n, res, att);
+}
+
+PFpa_op_t *
+PFpa_bool_not (const PFpa_op_t *n, PFalg_att_t res, PFalg_att_t att)
+{
+    return unary_arith (pa_bool_not, n, res, att);
+}
+
+/**
+ * HashCount: Hash-based Count operator. Does neither benefit from
+ * any existing ordering, nor does it provide/preserve any input
+ * ordering.
+ */
+PFpa_op_t *PFpa_hash_count (const PFpa_op_t *n,
+                            PFalg_att_t res, PFalg_att_t part)
+{
+    PFpa_op_t *ret = wire1 (pa_hash_count, n);
+
+    ret->sem.count.res  = res;
+    ret->sem.count.part = part;
+
+    /* allocate memory for the result schema */
+    ret->schema.count = part ? 2 : 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    if (part) {
+        unsigned int i;
+        for (i = 0; i < n->schema.count; i++)
+
+            if (n->schema.items[i].name == part) {
+                ret->schema.items[0] = n->schema.items[i];
+                break;
+            }
+
+#ifndef NDEBUG
+        if (i == n->schema.count)
+            PFoops (OOPS_FATAL,
+                    "HashCount: unable to find partitioning attribute `%s'",
+                    PFatt_str (part));
+#endif
+    }
+
     ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
+        = (PFalg_schm_item_t) { .name = res, .type = aat_int };
+
+    /* ---- HashCount: orderings ---- */
+    /* HashCount does not provide any orderings. */
+
+    /* ---- HashCount: costs ---- */
+    ret->cost = n->cost * 3 / 2;
 
     return ret;
 }
@@ -1187,13 +1665,31 @@ PFpa_merge_rownum (const PFpa_op_t *n,
     return ret;
 }
 
+/**
+ * HashRowNumber: Introduce new row numbers.
+ *
+ * HashRowNumber uses a hash table to implement partitioning. Hence,
+ * it does not require any specific input ordering.
+ *
+ * @param n        Argument relation.
+ * @param new_att  Name of newly introduced attribute.
+ * @param part     Partitioning attribute. @c NULL if partitioning
+ *                 is not requested.
+ */
 PFpa_op_t *
-PFpa_select (const PFpa_op_t *n, PFalg_att_t att)
+PFpa_hash_rownum (const PFpa_op_t *n,
+                  PFalg_att_t new_att,
+                  PFalg_att_t part)
 {
-    PFpa_op_t *ret = wire1 (pa_select, n);
+    PFpa_op_t *ret = wire1 (pa_hash_rownum, n);
+
+    assert (!"FIXME: hash_rownum: orderings not implemented yet!");
+
+    ret->sem.rownum.attname = new_att;
+    ret->sem.rownum.part = part;
 
     /* allocate memory for the result schema */
-    ret->schema.count = n->schema.count;
+    ret->schema.count = n->schema.count + 1;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
@@ -1201,67 +1697,120 @@ PFpa_select (const PFpa_op_t *n, PFalg_att_t att)
     for (unsigned int i = 0; i < n->schema.count; i++)
         ret->schema.items[i] = n->schema.items[i];
 
-    /* keep the ordering we got in the `ord' argument */
-    ret->sem.select.att = att;
+    ret->schema.items[ret->schema.count - 1]
+        = (PFalg_schm_item_t) { .name = new_att, .type = aat_nat };
 
-    /* ---- Select: orderings ---- */
+    return ret;
+}
+
+/**
+ * Constructor for type test on column values. The result is
+ * stored in newly created column @a res.
+ */
+PFpa_op_t *
+PFpa_type (const PFpa_op_t *n, 
+           PFalg_att_t att,
+           PFalg_simple_type_t ty,
+           PFalg_att_t res)
+{
+    unsigned int i;
+    PFpa_op_t *ret = wire1 (pa_type, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n and change type of column  */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[i] 
+        = (struct PFalg_schm_item_t) { .type = aat_bln, .name = res };
+
+    ret->sem.type.att = att;
+    ret->sem.type.ty  = ty;
+    ret->sem.type.res = res;
+
+    /* ordering stays the same */
     for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
         PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-
-    /* ---- Select: costs ---- */
+    /* costs */
     ret->cost = n->cost + 1;
 
     return ret;
 }
 
-
 /**
- * HashCount: Hash-based Count operator. Does neither benefit from
- * any existing ordering, nor does it provide/preserve any input
- * ordering.
+ * Constructor for type test on column values. The result is
+ * stored in newly created column @a res.
  */
-PFpa_op_t *PFpa_hash_count (const PFpa_op_t *n,
-                            const PFalg_att_t res, const PFalg_att_t part)
+PFpa_op_t *
+PFpa_type_assert (const PFpa_op_t *n, 
+                  PFalg_att_t att,
+                  PFalg_simple_type_t ty)
 {
-    PFpa_op_t *ret = wire1 (pa_hash_count, n);
+    PFpa_op_t *ret = wire1 (pa_type_assert, n);
 
-    ret->sem.count.res  = res;
-    ret->sem.count.part = part;
+    assert (n);
 
     /* allocate memory for the result schema */
-    ret->schema.count = part ? 2 : 1;
+    ret->schema.count = n->schema.count;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    if (part) {
-        unsigned int i;
-        for (i = 0; i < n->schema.count; i++)
-
-            if (n->schema.items[i].name == part) {
-                ret->schema.items[0] = n->schema.items[i];
-                break;
-            }
-
-#ifndef NDEBUG
-        if (i == n->schema.count)
-            PFoops (OOPS_FATAL,
-                    "HashCount: unable to find partitioning attribute `%s'",
-                    PFatt_print (part));
-#endif
+    /* copy schema from n and change type of column  */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+    {
+        if (att == n->schema.items[i].name)
+        {
+            ret->schema.items[i].name = att;
+            ret->schema.items[i].type = ty;
+        }
+        else
+            ret->schema.items[i] = n->schema.items[i];
     }
 
-    ret->schema.items[ret->schema.count - 1]
-        = (PFalg_schm_item_t) { .name = res, .type = aat_int };
+    ret->sem.type.att = att;
+    ret->sem.type.ty  = ty;
 
-    /* ---- HashCount: orderings ---- */
-    /* HashCount does not provide any orderings. */
-
-    /* ---- HashCount: costs ---- */
-    ret->cost = n->cost * 3 / 2;
+    /* ordering stays the same */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+    /* costs */
+    ret->cost = n->cost + 1;
 
     return ret;
 }
 
+PFpa_op_t *
+PFpa_cast (const PFpa_op_t *n, PFalg_att_t res,
+           PFalg_att_t att, PFalg_simple_type_t ty)
+{
+    PFpa_op_t  *ret = wire1 (pa_cast, n);
+
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    ret->sem.cast.att = att;
+    ret->sem.cast.ty  = ty;
+    ret->sem.cast.res = res;
+
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+    ret->schema.items[ret->schema.count - 1]
+        = (PFalg_schm_item_t) { .name = res, .type = ty };
+
+    /* ---- Cast: orderings ---- */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /* ---- Cast: costs ---- */
+    ret->cost = n->cost + 1;
+
+    return ret;
+}
 
 static PFpa_op_t *
 llscj_worker (PFpa_op_kind_t axis,
@@ -1330,464 +1879,6 @@ llscj_worker (PFpa_op_kind_t axis,
      * Costs depend on actual axis, and we do that in the
      * PFpa_llscj_XXX functions
      */
-
-    return ret;
-}
-
-/**
- * Helper function for binary arithmetics (with both arguments to be
- * table columns).
- */
-static PFpa_op_t *
-bin_arith (PFpa_op_kind_t op, const PFpa_op_t *n, const PFalg_att_t res,
-           const PFalg_att_t att1, const PFalg_att_t att2)
-{
-    PFpa_op_t           *ret = wire1 (op, n);
-    PFalg_simple_type_t  t1 = 0;
-    PFalg_simple_type_t  t2 = 0;
-
-    assert (n);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n */
-    for (unsigned int i = 0; i < n->schema.count; i++) {
-
-        ret->schema.items[i] = n->schema.items[i];
-
-        if (n->schema.items[i].name == att1)
-            t1 = n->schema.items[i].type;
-        if (n->schema.items[i].name == att2)
-            t2 = n->schema.items[i].type;
-    }
-
-    assert (t1); assert (t2);
-
-    if (t1 != t2)
-        PFoops (OOPS_FATAL,
-                "illegal types in arithmetic operation: %u vs. %u", t1, t2);
-
-    /* finally add schema item for new attribute */
-    ret->schema.items[n->schema.count]
-        = (PFalg_schm_item_t) { .name = res, .type = t1 };
-
-    /* store information about attributes for arithmetics */
-    /* FIXME: Copy strings here? */
-    ret->sem.binary.res = res;
-    ret->sem.binary.att1 = att1;
-    ret->sem.binary.att2 = att2;
-
-    /* ---- NumAdd: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-
-    /*
-     * Hmm... From the ordering contributed by the arithmetic operands
-     * we could actually infer some more order information. But it's
-     * probably not worth to fiddle with that...
-     */
-
-    /* ---- NumAdd: costs ---- */
-    ret->cost = n->cost + 2;    /* 2 as we want NumAddConst to be cheaper */
-
-    return ret;
-}
-
-/**
- * Helper function for binary arithmetics (where second argument is
- * an atom).
- */
-static PFpa_op_t *
-bin_arith_atom (PFpa_op_kind_t op, const PFpa_op_t *n, const PFalg_att_t res,
-                const PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    PFpa_op_t           *ret = wire1 (op, n);
-    PFalg_simple_type_t  t1 = 0;
-
-    assert (n);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n */
-    for (unsigned int i = 0; i < n->schema.count; i++) {
-
-        ret->schema.items[i] = n->schema.items[i];
-
-        if (n->schema.items[i].name == att1)
-            t1 = n->schema.items[i].type;
-    }
-
-    assert (t1);
-
-    if (t1 != att2.type)
-        PFoops (OOPS_FATAL,
-                "illegal types in arithmetic operation: %u vs. %u",
-                t1, att2.type);
-
-    /* finally add schema item for new attribute */
-    ret->schema.items[n->schema.count]
-        = (PFalg_schm_item_t) { .name = res, .type = t1 };
-
-    /* store information about attributes for arithmetics */
-    /* FIXME: Copy strings here? */
-    ret->sem.bin_atom.res = res;
-    ret->sem.bin_atom.att1 = att1;
-    ret->sem.bin_atom.att2 = att2;
-
-    /* ---- NumAdd: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-
-    /*
-     * Hmm... From the ordering contributed by the arithmetic operands
-     * we could actually infer some more order information. But it's
-     * probably not worth to fiddle with that...
-     */
-
-    /* ---- NumAdd: costs ---- */
-    ret->cost = n->cost + 1;    /* cheaper than NumAdd */
-
-    return ret;
-}
-
-/**
- * Helper function for binary comparisons (with both arguments to be
- * table columns).
- */
-static PFpa_op_t *
-bin_comp (PFpa_op_kind_t op, const PFpa_op_t *n, const PFalg_att_t res,
-          const PFalg_att_t att1, const PFalg_att_t att2)
-{
-    PFpa_op_t           *ret = wire1 (op, n);
-#ifndef NDEBUG
-    PFalg_simple_type_t  t1 = 0;
-    PFalg_simple_type_t  t2 = 0;
-#endif
-
-    assert (n);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n */
-    for (unsigned int i = 0; i < n->schema.count; i++) {
-
-        ret->schema.items[i] = n->schema.items[i];
-
-#ifndef NDEBUG
-        if (n->schema.items[i].name == att1)
-            t1 = n->schema.items[i].type;
-        if (n->schema.items[i].name == att2)
-            t2 = n->schema.items[i].type;
-#endif
-    }
-
-#ifndef NDEBUG
-    assert (t1); assert (t2);
-
-    if (t1 != t2)
-        PFoops (OOPS_FATAL,
-                "illegal types in arithmetic operation: %u vs. %u", t1, t2);
-#endif
-
-    /* finally add schema item for new attribute */
-    ret->schema.items[n->schema.count]
-        = (PFalg_schm_item_t) { .name = res, .type = aat_bln };
-
-    /* store information about attributes for arithmetics */
-    /* FIXME: Copy strings here? */
-    ret->sem.binary.res = res;
-    ret->sem.binary.att1 = att1;
-    ret->sem.binary.att2 = att2;
-
-    /* ---- NumAdd: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-
-    /*
-     * Hmm... From the ordering contributed by the arithmetic operands
-     * we could actually infer some more order information. But it's
-     * probably not worth to fiddle with that...
-     */
-
-    /* ---- NumAdd: costs ---- */
-    ret->cost = n->cost + 2;    /* 2 as we want NumAddConst to be cheaper */
-
-    return ret;
-}
-
-/**
- * Helper function for binary comparisons (where second argument is
- * an atom).
- */
-static PFpa_op_t *
-bin_comp_atom (PFpa_op_kind_t op, const PFpa_op_t *n, const PFalg_att_t res,
-               const PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    PFpa_op_t           *ret = wire1 (op, n);
-#ifndef NDEBUG
-    PFalg_simple_type_t  t1 = 0;
-#endif
-
-    assert (n);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n */
-    for (unsigned int i = 0; i < n->schema.count; i++) {
-
-        ret->schema.items[i] = n->schema.items[i];
-
-#ifndef NDEBUG
-        if (n->schema.items[i].name == att1)
-            t1 = n->schema.items[i].type;
-#endif
-    }
-
-#ifndef NDEBUG
-    assert (t1);
-
-    if (t1 != att2.type)
-        PFoops (OOPS_FATAL,
-                "illegal types in arithmetic operation: %u vs. %u",
-                t1, att2.type);
-#endif
-
-    /* finally add schema item for new attribute */
-    ret->schema.items[n->schema.count]
-        = (PFalg_schm_item_t) { .name = res, .type = aat_bln };
-
-    /* store information about attributes for arithmetics */
-    /* FIXME: Copy strings here? */
-    ret->sem.bin_atom.res = res;
-    ret->sem.bin_atom.att1 = att1;
-    ret->sem.bin_atom.att2 = att2;
-
-    /* ---- NumAdd: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-
-    /*
-     * Hmm... From the ordering contributed by the arithmetic operands
-     * we could actually infer some more order information. But it's
-     * probably not worth to fiddle with that...
-     */
-
-    /* ---- NumAdd: costs ---- */
-    ret->cost = n->cost + 1;    /* cheaper than NumAdd */
-
-    return ret;
-}
-
-PFpa_op_t *
-PFpa_num_add (const PFpa_op_t *n, const PFalg_att_t res,
-              const PFalg_att_t att1, const PFalg_att_t att2)
-{
-    return bin_arith (pa_num_add, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_num_sub (const PFpa_op_t *n, const PFalg_att_t res,
-              const PFalg_att_t att1, const PFalg_att_t att2)
-{
-    return bin_arith (pa_num_sub, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_num_mult (const PFpa_op_t *n, const PFalg_att_t res,
-               const PFalg_att_t att1, const PFalg_att_t att2)
-{
-    return bin_arith (pa_num_mult, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_num_div (const PFpa_op_t *n, const PFalg_att_t res,
-              const PFalg_att_t att1, const PFalg_att_t att2)
-{
-    return bin_arith (pa_num_div, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_num_mod (const PFpa_op_t *n, const PFalg_att_t res,
-              const PFalg_att_t att1, const PFalg_att_t att2)
-{
-    return bin_arith (pa_num_mod, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_num_add_atom (const PFpa_op_t *n, const PFalg_att_t res,
-                   const PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    return bin_arith_atom (pa_num_add_atom, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_num_sub_atom (const PFpa_op_t *n, const PFalg_att_t res,
-                   const PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    return bin_arith_atom (pa_num_sub_atom, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_num_mult_atom (const PFpa_op_t *n, const PFalg_att_t res,
-                    const PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    return bin_arith_atom (pa_num_mult_atom, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_num_div_atom (const PFpa_op_t *n, const PFalg_att_t res,
-                   const PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    return bin_arith_atom (pa_num_div_atom, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_num_mod_atom (const PFpa_op_t *n, const PFalg_att_t res,
-                   const PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    return bin_arith_atom (pa_num_mod_atom, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_eq (const PFpa_op_t *n, const PFalg_att_t res,
-         const PFalg_att_t att1, const PFalg_att_t att2)
-{
-    return bin_comp (pa_eq, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_gt (const PFpa_op_t *n, const PFalg_att_t res,
-         const PFalg_att_t att1, const PFalg_att_t att2)
-{
-    return bin_comp (pa_gt, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_eq_atom (const PFpa_op_t *n, const PFalg_att_t res,
-              const PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    return bin_comp_atom (pa_eq_atom, n, res, att1, att2);
-}
-
-PFpa_op_t *
-PFpa_gt_atom (const PFpa_op_t *n, const PFalg_att_t res,
-              const PFalg_att_t att1, const PFalg_atom_t att2)
-{
-    return bin_comp_atom (pa_gt_atom, n, res, att1, att2);
-}
-
-
-/**
- * Helper function for unary arithmetics (numeric and Boolean negation).
- */
-static PFpa_op_t *
-unary_arith (PFpa_op_kind_t op,
-             const PFpa_op_t *n, const PFalg_att_t res, const PFalg_att_t att)
-{
-    PFpa_op_t           *ret = wire1 (op, n);
-    PFalg_simple_type_t  t1 = 0;
-
-    assert (n);
-
-    /* allocate memory for the result schema */
-    ret->schema.count = n->schema.count + 1;
-    ret->schema.items
-        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
-
-    /* copy schema from n */
-    for (unsigned int i = 0; i < n->schema.count; i++) {
-
-        ret->schema.items[i] = n->schema.items[i];
-
-        if (n->schema.items[i].name == att)
-            t1 = n->schema.items[i].type;
-    }
-
-    assert (t1);
-
-    /* finally add schema item for new attribute */
-    ret->schema.items[n->schema.count]
-        = (PFalg_schm_item_t) { .name = res, .type = t1 };
-
-    /* store information about attributes for arithmetics */
-    /* FIXME: Copy strings here? */
-    ret->sem.unary.res = res;
-    ret->sem.unary.att = att;
-
-    /* ---- UnaryArith: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-
-    /*
-     * Hmm... From the ordering contributed by the arithmetic operands
-     * we could actually infer some more order information. But it's
-     * probably not worth to fiddle with that...
-     */
-
-    /* ---- NumAdd: costs ---- */
-    ret->cost = n->cost + 1;
-
-    return ret;
-}
-
-PFpa_op_t *
-PFpa_num_neg (const PFpa_op_t *n, const PFalg_att_t res, const PFalg_att_t att)
-{
-    return unary_arith (pa_num_neg, n, res, att);
-}
-
-PFpa_op_t *
-PFpa_bool_not (const PFpa_op_t *n, const PFalg_att_t res, const PFalg_att_t att)
-{
-    return unary_arith (pa_bool_not, n, res, att);
-}
-
-
-PFpa_op_t *
-PFpa_cast (const PFpa_op_t *n, const PFalg_att_t att, PFalg_simple_type_t ty)
-{
-    PFpa_op_t  *ret = wire1 (pa_cast, n);
-    bool        found = false;
-
-    ret->schema.count = n->schema.count;
-    ret->schema.items
-        = PFmalloc (n->schema.count * sizeof (*(ret->schema.items)));
-
-    ret->sem.cast.att = att;
-    ret->sem.cast.ty  = ty;
-
-    for (unsigned int i = 0; i < n->schema.count; i++)
-        if (n->schema.items[i].name == att) {
-            ret->schema.items[i]
-                = (PFalg_schm_item_t) { .name = att, .type = ty };
-            found = true;
-        }
-        else
-            ret->schema.items[i] = n->schema.items[i];
-
-    if (!found)
-        PFoops (OOPS_FATAL,
-                "attribute `%s' not found in physical algebra cast",
-                PFatt_print (att));
-
-    /* ---- Cast: orderings ---- */
-    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
-
-    /* ---- Cast: costs ---- */
-    ret->cost = n->cost + 1;
 
     return ret;
 }
@@ -2332,7 +2423,6 @@ PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
     return ret;
 }
 
-
 /**
  * Access to (persistently stored) XML documents, the fn:doc()
  * function.  Returns a (frag, result) pair.
@@ -2398,14 +2488,269 @@ PFpa_doc_tbl (const PFpa_op_t *rel)
 }
 
 /**
- * Empty fragment list
+ * Construct algebra node that will allow the access to the string 
+ * content of loaded documents nodes
+ *
+ * @a doc is the current document (live nodes) and @a alg is the overall
+ * algebra expression.
  */
 PFpa_op_t *
-PFpa_empty_frag (void)
+PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
+                 PFalg_att_t att, PFalg_doc_t doc_col)
 {
-    return leaf (pa_empty_frag);
+    unsigned int i;
+    PFpa_op_t *ret = wire2 (pa_doc_access, doc, alg);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = alg->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from alg and change type of column  */
+    for (i = 0; i < alg->schema.count; i++)
+        ret->schema.items[i] = alg->schema.items[i];
+
+    ret->schema.items[i] 
+        = (struct PFalg_schm_item_t) { .type = aat_str, .name = att_res };
+
+    ret->sem.doc_access.att = att;
+    ret->sem.doc_access.doc_col = doc_col;
+
+    /* ordering stays the same */
+    for (unsigned int i = 0; i < PFord_set_count (alg->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (alg->orderings, i));
+    /* costs */
+    ret->cost = doc->cost + alg->cost + 1;
+
+    return ret;
 }
 
+/**
+ * Generate physical plan for element constructor
+ * Returns a (frag, result) pair.
+ */
+PFpa_op_t *
+PFpa_element (const PFpa_op_t *fragment,
+              const PFpa_op_t *qname, 
+              const PFpa_op_t *content)
+{
+    PFpa_op_t         *ret;
+
+#ifndef NDEBUG
+    unsigned short found = 0;
+
+    for (unsigned int i = 0; i < qname->schema.count; i++)
+        if (qname->schema.items[i].name == att_iter
+            || qname->schema.items[i].name == att_item)
+            found++;
+
+    if (found != 2)
+        PFoops (OOPS_FATAL,
+                "Element constructor requires iter|item schema for qnames.");
+
+    found = 0;
+
+    for (unsigned int i = 0; i < content->schema.count; i++)
+        if (content->schema.items[i].name == att_iter
+            || content->schema.items[i].name == att_pos
+            || content->schema.items[i].name == att_item)
+            found++;
+
+    if (found != 3)
+        PFoops (OOPS_FATAL,
+                "Element constructor requires iter|pos|item schema "
+                "for the element content.");
+#endif
+
+    ret = wire2 (pa_element, fragment, 
+                             wire2(pa_element_tag, qname,
+                                                   content));
+
+    /* The schema of the result part is iter|item */
+    ret->schema.count = 2;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+
+    ret->schema.items[0]
+        = (PFalg_schm_item_t) { .name = att_iter,
+                                .type = aat_nat };
+    ret->schema.items[1]
+        = (PFalg_schm_item_t) { .name = att_item,
+                                .type = aat_pnode };
+
+    /* ---- attribute: orderings ---- */
+
+    /* the input is sorted by `iter', therefore the output will be as well. */
+    PFord_set_add (ret->orderings,
+                   PFord_refine (PFordering (), att_iter));
+    /* additionally as we return only one value per iteration the output
+       is refined by the item order */
+    PFord_set_add (ret->orderings,
+                   PFord_refine (PFord_refine (PFordering (),
+                                               att_iter),
+                                 att_item));
+
+    /* ---- attribute: costs ---- */
+    /* dummy costs as we have only this version */
+    ret->cost = 1 + fragment->cost + qname->cost + content->cost;
+
+    return ret;
+}
+
+/**
+ * Generate physical plan for attribute constructor
+ * Returns a (frag, result) pair.
+ */
+PFpa_op_t *
+PFpa_attribute (const PFpa_op_t *qn_rel, const PFpa_op_t *val_rel,
+                PFalg_att_t qn, PFalg_att_t val, PFalg_att_t res)
+{
+    PFpa_op_t         *ret;
+
+#ifndef NDEBUG
+    unsigned short found = 0;
+
+    for (unsigned int i = 0; i < qn_rel->schema.count; i++)
+        if (qn_rel->schema.items[i].name == att_iter
+            || qn_rel->schema.items[i].name == qn)
+            found++;
+
+    if (found != 2)
+        PFoops (OOPS_FATAL,
+                "Attribute constructor requires iter|%s schema for qnames.",
+                PFatt_str (qn));
+
+    found = 0;
+
+    for (unsigned int i = 0; i < val_rel->schema.count; i++)
+        if (val_rel->schema.items[i].name == att_iter1
+            || val_rel->schema.items[i].name == val)
+            found++;
+
+    if (found != 2)
+        PFoops (OOPS_FATAL,
+                "Attribute constructor requires iter1|%s schema for "
+                "attribute content.", PFatt_str (val));
+#endif
+
+    ret = wire2 (pa_attribute, qn_rel, val_rel);
+
+    /* allocate memory for the result schema; it's the qname schema
+       plus an additional column with the attribute references */
+    ret->schema.count = qn_rel->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from argument 'qn_rel' ... */
+    for (unsigned int i = 0; i < qn_rel->schema.count; i++)
+        ret->schema.items[i] = qn_rel->schema.items[i];
+
+    /* ... and add the result column */
+    ret->schema.items[ret->schema.count - 1]
+        = (PFalg_schm_item_t) { .name = res, .type = aat_anode };
+
+    ret->sem.attr.qn  = qn;
+    ret->sem.attr.val = val;
+    ret->sem.attr.res = res;
+
+    /* ---- attribute: orderings ---- */
+
+    /* the input is sorted by `iter', therefore the output will be as well. */
+    PFord_set_add (ret->orderings,
+                   PFord_refine (PFordering (), att_iter));
+    /* additionally as we return only one value per iteration the output
+       is refined by the item order */
+    PFord_set_add (ret->orderings,
+                   PFord_refine (PFord_refine (PFordering (),
+                                               att_iter),
+                                 res));
+
+    /* ---- attribute: costs ---- */
+    /* dummy costs as we have only this version */
+    ret->cost = 1 + qn_rel->cost + val_rel->cost;
+
+    return ret;
+}
+
+/**
+ * Generate physical plan for textnode constructor
+ * Returns a (frag, result) pair.
+ */
+PFpa_op_t *
+PFpa_textnode (const PFpa_op_t *rel, PFalg_att_t res, 
+               PFalg_att_t item)
+{
+    PFpa_op_t         *ret;
+
+    ret = wire1 (pa_textnode, rel);
+
+    /* The schema of the result part is iter|item */
+    ret->schema.count = rel->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*ret->schema.items));
+
+    for (unsigned int i = 0; i < rel->schema.count; i ++)
+        ret->schema.items[i] = rel->schema.items[i];
+
+    ret->schema.items[ret->schema.count - 1]
+        = (PFalg_schm_item_t) { .name = res, .type = aat_pnode };
+
+    ret->sem.textnode.item  = item;
+    ret->sem.textnode.res  = res;
+
+    /* ---- textnode: orderings ---- */
+
+    /* If the input is sorted by `iter', the output will be as well. */
+    bool sorted_by_iter = false;
+
+    for (unsigned int i = 0; i < PFord_set_count (rel->orderings); i++)
+        if (PFord_implies (PFord_set_at (rel->orderings, i),
+                           PFord_refine (PFordering (), att_iter))) {
+            sorted_by_iter = true;
+            break;
+        }
+
+    if (sorted_by_iter) {
+        if (PFprop_const (rel->prop, att_item))
+            PFord_set_add (ret->orderings,
+                           PFord_refine (PFord_refine (PFordering (),
+                                                       att_iter),
+                                         att_item));
+        else
+            PFord_set_add (ret->orderings,
+                           PFord_refine (PFordering (), att_iter));
+    }
+
+    /* ---- textnode: costs ---- */
+    /* dummy costs as we have only this version */
+    ret->cost = 1 + rel->cost;
+
+    return ret;
+}
+
+PFpa_op_t *
+PFpa_merge_adjacent (const PFpa_op_t *fragment, const PFpa_op_t *n)
+{
+    PFpa_op_t *ret = wire2 (pa_merge_adjacent, fragment, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n and change type of column  */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    /* result is in iter|pos order */
+    PFord_set_add (ret->orderings,
+                   PFord_refine (PFord_refine (PFordering (), att_iter),
+                                 att_pos));
+    /* costs */
+    ret->cost = fragment->cost + n->cost + 1;
+
+    return ret;
+}
 
 /**
  * Extract the expression result part from a (frag, result) pair.
@@ -2479,39 +2824,83 @@ PFpa_frag_union (const PFpa_op_t *n1, const PFpa_op_t *n2)
 }
 
 /**
- * Construct algebra node that will allow the access to the string 
- * content of loaded documents nodes
- *
- * @a doc is the current document (live nodes) and @a alg is the overall
- * algebra expression.
+ * Empty fragment list
  */
 PFpa_op_t *
-PFpa_doc_access (const PFpa_op_t *doc, const PFpa_op_t *alg,
-                 PFalg_att_t att, PFalg_doc_t doc_col)
+PFpa_empty_frag (void)
 {
-    unsigned int i;
-    PFpa_op_t *ret = wire2 (pa_doc_access, doc, alg);
+    return leaf (pa_empty_frag);
+}
+
+/**
+ * Constructor for conditional error
+ */
+PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
+                           PFalg_att_t att, char *err_string)
+{
+    PFpa_op_t *ret = wire2 (pa_cond_err, n, err);
+
+    assert (n);
+    assert (err);
+    assert (err_string);
 
     /* allocate memory for the result schema */
-    ret->schema.count = alg->schema.count + 1;
+    ret->schema.count = n->schema.count;
     ret->schema.items
         = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
 
-    /* copy schema from alg and change type of column  */
-    for (i = 0; i < alg->schema.count; i++)
-        ret->schema.items[i] = alg->schema.items[i];
+    /* copy schema from n  */
+    for (unsigned int i = 0; i < n->schema.count; i++)
+            ret->schema.items[i] = n->schema.items[i];
 
-    ret->schema.items[i] 
-        = (struct PFalg_schm_item_t) { .type = aat_str, .name = att_res };
-
-    ret->sem.doc_access.att = att;
-    ret->sem.doc_access.doc_col = doc_col;
+    ret->sem.err.att = att;
+    ret->sem.err.str = err_string;
 
     /* ordering stays the same */
-    for (unsigned int i = 0; i < PFord_set_count (alg->orderings); i++)
-        PFord_set_add (ret->orderings, PFord_set_at (alg->orderings, i));
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
     /* costs */
-    ret->cost = doc->cost + alg->cost + 1;
+    ret->cost = n->cost + err->cost + 1;
+
+    return ret;
+}
+
+/**
+  * Constructor for builtin function fn:concat
+  * (translation is similar to arithmetic operators)
+  */
+PFpa_op_t *
+PFpa_fn_concat (const PFpa_op_t *n, PFalg_att_t res,
+                PFalg_att_t att1, PFalg_att_t att2)
+{
+    unsigned int i;
+    PFpa_op_t *ret = wire1 (pa_concat, n);
+
+    /* allocate memory for the result schema */
+    ret->schema.count = n->schema.count + 1;
+    ret->schema.items
+        = PFmalloc (ret->schema.count * sizeof (*(ret->schema.items)));
+
+    /* copy schema from n and change type of column  */
+    for (i = 0; i < n->schema.count; i++)
+        ret->schema.items[i] = n->schema.items[i];
+
+    ret->schema.items[i] 
+        = (struct PFalg_schm_item_t) { .type = aat_str, .name = res };
+
+    /* insert semantic value (operand attributes and result attribute)
+     * into the result
+     */
+    ret->sem.binary.att1 = att1;
+    ret->sem.binary.att2 = att2;
+    ret->sem.binary.res = res;
+
+    /* ordering stays the same */
+    for (unsigned int i = 0; i < PFord_set_count (n->orderings); i++)
+        PFord_set_add (ret->orderings, PFord_set_at (n->orderings, i));
+
+    /* costs */
+    ret->cost = n->cost + 1;
 
     return ret;
 }
@@ -2536,7 +2925,10 @@ PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2)
     ret->schema.items[1]
         = (PFalg_schm_item_t) { .name = att_item, .type = aat_str };
 
-    /* result is in iter|item order */
+    /* result is in iter order */
+    PFord_set_add (ret->orderings,
+                   PFord_refine (PFordering (), att_iter));
+    /* ... and automatically also in iter|item order */
     PFord_set_add (ret->orderings,
                    PFord_refine (PFord_refine (PFordering (), att_iter),
                                  att_item));
@@ -2545,25 +2937,5 @@ PFpa_string_join (const PFpa_op_t *n1, const PFpa_op_t *n2)
 
     return ret;
 }
-
-/**
- * Construct algebra node that will serialize the argument when executed.
- * A serialization node will be placed on the very top of the algebra
- * expression tree. Its main use is to have an explicit match for
- * the expression root.
- *
- * @a doc is the current document (live nodes) and @a alg is the overall
- * algebra expression.
- */
-PFpa_op_t *
-PFpa_serialize (const PFpa_op_t *doc, const PFpa_op_t *alg)
-{
-    PFpa_op_t *ret = wire2 (pa_serialize, doc, alg);
-
-    ret->cost = doc->cost + alg->cost;
-
-    return ret;
-}
-
 
 /* vim:set shiftwidth=4 expandtab: */

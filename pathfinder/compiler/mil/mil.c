@@ -157,6 +157,19 @@ wire7 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
 }
 
 /**
+ * Construct a MIL tree node with given node kind.
+ */
+static PFmil_t *
+wire8 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
+       const PFmil_t *n4, const PFmil_t *n5, const PFmil_t *n6,
+       const PFmil_t *n7, const PFmil_t *n8)
+{
+    PFmil_t *ret = wire7 (k, n1, n2, n3, n4, n5, n6, n7);
+    ret->child[7] = (PFmil_t *) n8;
+    return ret;
+}
+
+/**
  * Create a MIL tree node representing a literal integer.
  * (The result will be a MIL leaf node, with kind #m_lit_int and
  * semantic value @a i.)
@@ -164,10 +177,25 @@ wire7 (PFmil_kind_t k, const PFmil_t *n1, const PFmil_t *n2, const PFmil_t *n3,
  * @param i The integer value to represent in MIL
  */
 PFmil_t *
-PFmil_lit_int (long long int i)
+PFmil_lit_int (int i)
 {
     PFmil_t *ret = leaf (m_lit_int);
     ret->sem.i = i;
+    return ret;
+}
+
+/**
+ * Create a MIL tree node representing a literal 64bit integer.
+ * (The result will be a MIL leaf node, with kind #m_lit_lng and
+ * semantic value @a i.)
+ *
+ * @param i The integer value to represent in MIL
+ */
+PFmil_t *
+PFmil_lit_lng (long long int l)
+{
+    PFmil_t *ret = leaf (m_lit_lng);
+    ret->sem.l = l;
     return ret;
 }
 
@@ -396,6 +424,15 @@ PFmil_t *
 PFmil_uselect (const PFmil_t *bat, const PFmil_t *value)
 {
     return wire2 (m_uselect, bat, value);
+}
+
+/**
+ * Monet exist() function.
+ */
+PFmil_t *
+PFmil_exist (const PFmil_t *bat, const PFmil_t *value)
+{
+    return wire2 (m_exist, bat, value);
 }
 
 /**
@@ -807,10 +844,37 @@ PFmil_mifthenelse (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
     return wire3 (m_mifthenelse, a, b, c);
 }
 
+/** Multiplexed search() function `[search](a,b)' */
+PFmil_t *
+PFmil_msearch (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_msearch, a, b);
+}
+
+/** Multiplexed string() function `[string](a,b)' */
+PFmil_t *
+PFmil_mstring (const PFmil_t *a, const PFmil_t *b)
+{
+    return wire2 (m_mstring, a, b);
+}
+
+/** Multiplexed string() function `[string](a,b,c)' */
+PFmil_t *
+PFmil_mstring2 (const PFmil_t *a, const PFmil_t *b, const PFmil_t *c)
+{
+    return wire3 (m_mstring2, a, b, c);
+}
+
 PFmil_t *
 PFmil_bat (const PFmil_t *a)
 {
     return wire1 (m_bat, a);
+}
+
+PFmil_t *
+PFmil_error (const PFmil_t *a)
+{
+    return wire1 (m_error, a);
 }
 
 /**
@@ -1643,6 +1707,11 @@ PFmil_t * PFmil_llscj_prec_sibl_pi_targ (const PFmil_t *iter, const PFmil_t *ite
 
 
 
+PFmil_t * PFmil_merge_adjacent (const PFmil_t *iter, const PFmil_t *pre,
+                                const PFmil_t *pfrag, const PFmil_t *ws)
+{
+    return wire4 (m_merge_adjacent, iter, pre, pfrag, ws);
+}
 
 PFmil_t * PFmil_string_join (const PFmil_t *strs, const PFmil_t *sep)
 {
@@ -1684,6 +1753,48 @@ PFmil_t *
 PFmil_doc_tbl (const PFmil_t *ws, const PFmil_t *item)
 {
     return wire2 (m_doc_tbl, ws, item);
+}
+
+PFmil_t *
+PFmil_attribute (const PFmil_t *qn, const PFmil_t *str, const PFmil_t *ws)
+{
+    return wire3 (m_attr_constr, qn, str, ws);
+}
+
+PFmil_t * PFmil_element (const PFmil_t *qn_iter, const PFmil_t *qn_item,
+                         const PFmil_t *iter, 
+                         const PFmil_t *pre, const PFmil_t *pfrag,
+                         const PFmil_t *attr, const PFmil_t *afrag,
+                         const PFmil_t *ws)
+{
+    return wire8 (m_elem_constr, qn_iter, qn_item,
+                  iter, pre, pfrag, attr, afrag, ws);
+}
+
+PFmil_t *
+PFmil_empty_element (const PFmil_t *qn, const PFmil_t *ws)
+{
+    return wire2 (m_elem_constr_e, qn, ws);
+}
+
+PFmil_t *
+PFmil_textnode (const PFmil_t *item, const PFmil_t *ws)
+{
+    return wire2 (m_text_constr, item, ws);
+}
+
+PFmil_t *
+PFmil_add_qname (const PFmil_t *prefix, const PFmil_t *uri,
+                 const PFmil_t *local, const PFmil_t *ws)
+{
+    return wire4 (m_add_qname, prefix, uri, local, ws);
+}
+
+PFmil_t *
+PFmil_add_qnames (const PFmil_t *prefix, const PFmil_t *uri,
+                  const PFmil_t *local, const PFmil_t *ws)
+{
+    return wire4 (m_add_qnames, prefix, uri, local, ws);
 }
 
 

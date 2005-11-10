@@ -18,6 +18,7 @@
                  | expression '.access (' restriction ')'   <m_access>
                  | 'serialize (...)'                        <m_serialize>
                  | 'var' Variable                           <m_declare>
+                 | 'ERROR (' expression ')'                 <m_error>
                  | 'print (' args ')'                       <m_print>
                  | 'col_name (' expr ',' expr ')'           <m_col_name>
 
@@ -26,6 +27,7 @@
                  | 'new (' Type ',' Type ')'                <m_new>
                  | expression '.seqbase (' expression ')'   <m_seqbase>
                  | expression '.select (' expression ')'    <m_select>
+                 | expression '.exist (' expression ')'     <m_exist>
                  | expression '.project (' expression ')'   <m_project>
                  | expression '.mark (' expression ')'      <m_mark>
                  | expression '.mark_grp (' expression ')'  <m_mark_grp>
@@ -47,7 +49,7 @@
                  | expression '.sort ()'                    <m_sort>
                  | expression '.max ()'                     <m_max>
                  | expression '.count ()'                   <m_count>
-                 | expression '.bat ()'                     <m_bat>
+                 | expression 'bat ()'                      <m_bat>
                  | expression '.CTgroup ()'                 <m_ctgroup>
                  | expression '.CTmap ()'                   <m_ctmap>
                  | expression '.CTextend ()'                <m_ctextend>
@@ -74,12 +76,24 @@
                  | '[and](' expression ',' expression ')'   <m_mand>
                  | '[or](' expression ',' expression ')'    <m_mor>
                  | '[ifthenelse](' exp ',' exp ',' exp ')'  <m_ifthenelse>
+                 | '[search](' expression ',' expression ')'<m_msearch>
+                 | '[string](' expression ',' expression ')'<m_mstring>
+                 | '[string](' exp ',' exp ',' exp ')'      <m_mstring2>
                  | '{count}(' expression ')'                <m_gcount>
                  | 'new_ws ()'                              <m_new_ws>
                  | 'mposjoin (' exp ',' exp ',' exp ')'     <m_mposjoin>
                  | 'mvaljoin (' exp ',' exp ',' exp ')'     <m_mvaljoin>
                  | 'doc_tbl (' expr ',' expr ')'            <m_doc_tbl>
+                 | 'attr_constr (' exp ',' exp ',' exp ')'  <m_attr_constr>
+                 | 'elem_constr (' e ',' e ',' e ',' e ','
+                                   e ',' e ',' e ',' e ')'  <m_elem_constr>
+                 | 'elem_constr_empty (' expr ',' expr ')'  <m_elem_constr_e>
+                 | 'text_constr (' expr ',' expr ')'        <m_text_constr>
+                 | 'add_qname (' ex ',' ex ',' ex ',' ex ')'<m_add_qname>
+                 | 'add_qnames(' ex ',' ex ',' ex ',' ex ')'<m_add_qnames>
                  | 'sc_desc (' ex ',' ex ',' ex ',' ex ')'  <m_sc_desc>
+                 | 'merged_adjacent_text_nodes
+                             (' ex ',' ex ',' ex ',' ex ')' <m_merge_adjacent>
                  | 'string_join (' expr ',' expr ')'        <m_string_join>
                  | 'merged_union (' args ')'                <m_merged_union>
 
@@ -90,6 +104,7 @@
                  | expression                               <otherwise>
 
    literal       : IntegerLiteral                           <m_lit_int>
+                 | LongIntegerLiteral                       <m_lit_lng>
                  | StringLiteral                            <m_lit_str>
                  | OidLiteral                               <m_lit_oid>
                  | 'nil'                                    <m_nil>
@@ -141,6 +156,7 @@ static char *ID[] = {
     , [m_select]       = "select"
     , [m_uselect]      = "ord_uselect"
     , [m_select2]      = "select"
+    , [m_exist]        = "exist"
     , [m_insert]       = "insert"
     , [m_binsert]      = "insert"
     , [m_bappend]      = "append"
@@ -181,11 +197,20 @@ static char *ID[] = {
     , [m_mand]         = "[and]"
     , [m_mor]          = "[or]"
     , [m_mifthenelse]  = "[ifthenelse]"
+    , [m_msearch]      = "[search]"
+    , [m_mstring]      = "[string]"
+    , [m_mstring2]     = "[string]"
     , [m_misnil]       = "[isnil]"
     , [m_new_ws]       = "create_ws"
     , [m_mposjoin]     = "mposjoin"
     , [m_mvaljoin]     = "mvaljoin"
     , [m_doc_tbl]      = "doc_tbl"
+    , [m_attr_constr]  = "attr_constr"
+    , [m_elem_constr]  = "elem_constr"
+    , [m_elem_constr_e]= "elem_constr_empty"
+    , [m_text_constr]  = "text_constr"
+    , [m_add_qname]    = "add_qname"
+    , [m_add_qnames]   = "add_qnames"
 
     , [m_llscj_anc]              = "loop_lifted_ancestor_step"
     , [m_llscj_anc_elem]         = "loop_lifted_ancestor_step_with_kind_test"
@@ -323,6 +348,7 @@ static char *ID[] = {
     , [m_llscj_prec_sibl_pi_targ]
         = "loop_lifted_preceding_sibling_step_with_target_test"
 
+    , [m_merge_adjacent]   = "merge_adjacent_text_nodes"
     , [m_string_join]      = "string_join"
 
     , [m_get_fragment]    = "get_fragment"
@@ -336,6 +362,7 @@ static char *ID[] = {
     , [m_count]    = "count"
     , [m_gcount]       = "{count}"
     , [m_bat]      = "bat"
+    , [m_error]    = "ERROR"
     , [m_col_name] = "col_name"
 
 };
@@ -473,6 +500,14 @@ print_statement (PFmil_t * n)
             break;
         */
 
+        /* statement: 'ERROR(' expression ')' */
+        case m_error:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (")");
+            break;
+
+        /* statement: 'print (' expression ')' */
         case m_print:
             milprintf ("print (");
             print_args (n->child[0]);
@@ -526,6 +561,7 @@ print_args (PFmil_t *n)
 static void
 print_expression (PFmil_t * n)
 {
+    assert(n);
     switch (n->kind) {
 
         /* expression : Variable */
@@ -548,6 +584,8 @@ print_expression (PFmil_t * n)
         case m_select:
         /* expression : expression '.ord_uselect (' expression ')' */
         case m_uselect:
+        /* expression : expression '.exist (' expression ')' */
+        case m_exist:
         /* expression : expression '.project (' expression ')' */
         case m_project:
         /* expression : expression '.mark (' expression ')' */
@@ -596,7 +634,7 @@ print_expression (PFmil_t * n)
         case m_max:
         /* expression : expression '.count' */
         case m_count:
-        /* expression : expression '.bat()' */
+        /* expression : expression 'bat()' */
         case m_bat:
         /* expression '.CTgroup ()' */
         case m_ctgroup:
@@ -648,6 +686,10 @@ print_expression (PFmil_t * n)
 
         /* expression : 'string_join(' exp ',' exp)' */
         case m_string_join:
+        /* expression : '[search](' exp ',' exp)' */
+        case m_msearch:
+        /* expression : '[string](' exp ',' exp)' */
+        case m_mstring:
         /* expression : '+(' expression ',' expression ')' */
         case m_add:
         /* expression : '[+](' expression ',' expression ')' */
@@ -675,6 +717,8 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* expression : '[string](' exp ',' exp ',' exp)' */
+        case m_mstring2:
         /* expression : '[ifthenelse](' expr ',' expr ',' expr ')' */
         case m_mifthenelse:
             milprintf ("%s(", ID[n->kind]);
@@ -719,6 +763,8 @@ print_expression (PFmil_t * n)
             milprintf ("%s ()", ID[n->kind]);
             break;
 
+        /* expression : 'attr_constr (' expr ',' expr ',' expr ')' */
+        case m_attr_constr:
         /* expression : 'mposjoin (' exp ',' exp ',' exp ')' */
         case m_mposjoin:
         /* expression : 'mvaljoin (' exp ',' exp ',' exp ')' */
@@ -734,6 +780,10 @@ print_expression (PFmil_t * n)
 
         /* expression : 'doc_tbl (' expr ',' expr ')' */
         case m_doc_tbl:
+        /* expression : 'elem_constr_empty (' expr ',' expr ')' */
+        case m_elem_constr_e:
+        /* expression : 'text_constr (' expr ',' expr ')' */
+        case m_text_constr:
             milprintf ("%s (", ID[n->kind]);
             print_expression (n->child[0]);
             milprintf (", ");
@@ -741,6 +791,14 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+
+        /* expression : 'merged_adjacent_text_nodes
+                             (' ex ',' ex ',' ex ',' ex ')' */
+        case m_merge_adjacent:
+        /* expression : 'add_qname (' expr ',' expr ',' expr ',' expr ')' */
+        case m_add_qname:
+        /* expression : 'add_qnames (' expr ',' expr ',' expr ',' expr ')' */
+        case m_add_qnames:
         /* expression : 'sc_desc (' expr ',' expr ',' expr ',' expr ')' */
         case m_sc_desc:
             milprintf ("%s (", ID[n->kind]);
@@ -754,6 +812,28 @@ print_expression (PFmil_t * n)
             milprintf (")");
             break;
 
+        /* expression : 'elem_constr (' e ',' e ',' e ',' e ','
+                                        e ',' e ',' e ',' e ')' */
+        case m_elem_constr:
+            milprintf ("%s (", ID[n->kind]);
+            print_expression (n->child[0]);
+            milprintf (", ");
+            print_expression (n->child[1]);
+            milprintf (", ");
+            print_expression (n->child[2]);
+            milprintf (", ");
+            print_expression (n->child[3]);
+            milprintf (", ");
+            print_expression (n->child[4]);
+            milprintf (", ");
+            print_expression (n->child[5]);
+            milprintf (", ");
+            print_expression (n->child[6]);
+            milprintf (", ");
+            print_expression (n->child[7]);
+            milprintf (")");
+            break;
+
         case m_merged_union:
             milprintf ("%s (", ID[n->kind]);
             print_args (n->child[0]);
@@ -762,6 +842,7 @@ print_expression (PFmil_t * n)
 
         /* expression : literal */
         case m_lit_int:
+        case m_lit_lng:
         case m_lit_str:
         case m_lit_oid:
         case m_lit_dbl:
@@ -1034,7 +1115,12 @@ print_literal (PFmil_t * n)
 
         /* literal : IntegerLiteral */
         case m_lit_int:
-            milprintf ("%lldLL", n->sem.i);
+            milprintf ("%i", n->sem.i);
+            break;
+
+        /* literal : LongIntegerLiteral */
+        case m_lit_lng:
+            milprintf ("%lldLL", n->sem.l);
             break;
 
         /* literal : StringLiteral */
@@ -1081,6 +1167,7 @@ print_type (PFmil_t *n)
         , [m_void]  = "void"
         , [m_int]   = "int"
         , [m_str]   = "str"
+        , [m_lng]   = "lng"
         , [m_dbl]   = "dbl"
         , [m_bit]   = "bit"
         , [m_chr]   = "chr"

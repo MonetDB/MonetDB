@@ -91,62 +91,62 @@ typedef struct PFcnode_t *NODEPTR_TYPE;
 %term forbind            = 13 /**< binding part of a for expression */
 %term forvars            = 14 /**< variable pair (var + pos. var) of a for */
 
-%term orderby            = 15 /**< orderby clause */
-%term orderspecs         = 16 /**< list of order specs */
+%term orderby            = 16 /**< orderby clause */
+%term orderspecs         = 17 /**< list of order specs */
 
-%term apply              = 17 /**< function application */
-%term arg                = 18 /**< function argument (list) */
+%term apply              = 18 /**< function application */
+%term arg                = 19 /**< function argument (list) */
 
-%term typesw             = 19 /**< typeswitch clause */
-%term cases              = 20 /**< case concatenation for typeswitch */
-%term case_              = 21 /**< single case for typeswitch */
-%term default_           = 22 /**< default branch in typeswitch */
-%term seqtype            = 23 /**< a SequenceType */
-%term seqcast            = 24 /**< cast along <: */
-%term proof              = 25 /**< typechecker only: prove <: relationship */
-%term subty              = 26 /**< subtype condition for proof() */
-%term stattype           = 27 /**< static type of expression. Required for
+%term typesw             = 20 /**< typeswitch clause */
+%term cases              = 21 /**< case concatenation for typeswitch */
+%term case_              = 22 /**< single case for typeswitch */
+%term default_           = 23 /**< default branch in typeswitch */
+%term seqtype            = 24 /**< a SequenceType */
+%term seqcast            = 25 /**< cast along <: */
+%term proof              = 26 /**< typechecker only: prove <: relationship */
+%term subty              = 27 /**< subtype condition for proof() */
+%term stattype           = 28 /**< static type of expression. Required for
                                    fs:convert-operand. Will be removed during
                                    typechecking and replaced by seqtype, as
                                    soon as types are known. */
 
-%term if_                = 28 /**< if-then-else conditional */
-%term then_else          = 29 /**< then- and else-branches of an
+%term if_                = 29 /**< if-then-else conditional */
+%term then_else          = 30 /**< then- and else-branches of an
                                    if-then-else conditional */
 
-%term locsteps           = 30 /**< path of location steps only */
-%term ancestor           = 31 /**< the parent, the parent's parent,... */
-%term ancestor_or_self   = 32 /**< the parent, the parent's parent,... + self */
-%term attribute          = 33 /**< attributes of the context node */
-%term child              = 34 /**< children of the context node */
-%term descendant         = 35 /**< children, children's children,... + self */
-%term descendant_or_self = 36 /**< children, children's children,... */
-%term following          = 37 /**< nodes after current node (document order) */
-%term following_sibling  = 38 /**< all following nodes with same parent */
-%term parent             = 39 /**< parent node (exactly one or none) */
-%term preceding          = 40 /**< nodes before context node (document order) */
-%term preceding_sibling  = 41 /**< all preceding nodes with same parent */
-%term self               = 42 /**< the context node itself */
+%term locsteps           = 31 /**< path of location steps only */
+%term ancestor           = 32 /**< the parent, the parent's parent,... */
+%term ancestor_or_self   = 33 /**< the parent, the parent's parent,... + self */
+%term attribute          = 34 /**< attributes of the context node */
+%term child              = 35 /**< children of the context node */
+%term descendant         = 36 /**< children, children's children,... + self */
+%term descendant_or_self = 37 /**< children, children's children,... */
+%term following          = 38 /**< nodes after current node (document order) */
+%term following_sibling  = 39 /**< all following nodes with same parent */
+%term parent             = 40 /**< parent node (exactly one or none) */
+%term preceding          = 41 /**< nodes before context node (document order) */
+%term preceding_sibling  = 42 /**< all preceding nodes with same parent */
+%term self               = 43 /**< the context node itself */
 
-%term elem               = 43 /**< the element constructor */
-%term attr               = 44 /**< the attribute constructor */
-%term text               = 45 /**< the text constructor */
-%term doc                = 46 /**< the document constructor */
-%term comment            = 47 /**< the comment constructor */
-%term pi                 = 48 /**< the processing-instruction constructor */
-%term tag                = 49 /**< the tagname for elem. and attr. constr. */
+%term elem               = 44 /**< the element constructor */
+%term attr               = 45 /**< the attribute constructor */
+%term text               = 46 /**< the text constructor */
+%term doc                = 47 /**< the document constructor */
+%term comment            = 48 /**< the comment constructor */
+%term pi                 = 49 /**< the processing-instruction constructor */
+%term tag                = 50 /**< the tagname for elem. and attr. constr. */
 
-%term true_              = 50 /**< built-in function `fn:true ()' */
-%term false_             = 51 /**< built-in function `fn:false ()' */
-%term empty              = 52 /**< built-in function `empty' */
-%term main               = 53 /**< tree root
+%term true_              = 51 /**< built-in function `fn:true ()' */
+%term false_             = 52 /**< built-in function `fn:false ()' */
+%term empty              = 53 /**< built-in function `empty' */
+%term main               = 54 /**< tree root
                                    Separates function declarations from
                                    the query body. */
-%term fun_decls          = 54 /**< list of function declarations */
-%term fun_decl           = 55 /**< function declaration */
-%term params             = 56 /**< function declaration parameter list */
-%term param              = 57 /**< function declaration parameter */
-%term cast               = 58 /**< XQuery `cast as' operation */
+%term fun_decls          = 55 /**< list of function declarations */
+%term fun_decl           = 56 /**< function declaration */
+%term params             = 57 /**< function declaration parameter list */
+%term param              = 58 /**< function declaration parameter */
+%term cast               = 59 /**< XQuery `cast as' operation */
 
 %%
 

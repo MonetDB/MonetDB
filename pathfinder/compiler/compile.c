@@ -496,14 +496,11 @@ subexelim:
     if (status->print_la_tree) {
         if (laroot) {
             if (status->print_pretty) {
-                if (status->debug != 0)
-                    printf ("Algebra tree %s:\n", phases[status->stop_after]);
-                /* PFalg_pretty (pfout, aroot); */
-                 PFla_pretty (pfout, laroot);
+                PFinfo (OOPS_WARNING,
+                        "Cannot prettyprint logical algebra tree. Sorry.");
             }
             if (status->print_dot)
                 PFla_dot (pfout, laroot);
-                /* PFalg_dot (pfout, laroot); */
         }
         else
             PFinfo (OOPS_NOTICE,

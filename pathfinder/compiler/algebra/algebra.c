@@ -648,6 +648,7 @@ static char *name[] = {
     , [att_pos1]        = "pos1"
     , [att_item1]       = "item1"
     , [att_res1]        = "res1"
+    , [att_cast]        = "cast"
     , [att_subty]       = "subty"
     , [att_itemty]      = "itemty"
     , [att_notsub]      = "notsub"
@@ -659,7 +660,7 @@ static char *name[] = {
  * Print attribute name
  */
 char *
-PFatt_print (PFalg_att_t att) {
+PFatt_str (PFalg_att_t att) {
     return name[att];
 }
 

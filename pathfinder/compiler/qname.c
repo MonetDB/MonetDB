@@ -139,6 +139,23 @@ PFqname_uri_str (PFqname_t qn)
 
 
 /**
+ * Return the prefix part of a QName
+ *
+ * @param qn QName whose prefix part is requested
+ */
+char *
+PFqname_ns (PFqname_t qn)
+{
+    /* is there an prefix attached to this QName? */
+    if (qn.ns.ns)                
+        return PFstrdup (qn.ns.ns);
+    
+    /* otherwise return the empty string */
+    return PFstrdup ("");
+}
+
+
+/**
  * Return the URI part of a QName
  *
  * @param qn QName whose URI part is requested
