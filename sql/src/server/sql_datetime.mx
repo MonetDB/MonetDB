@@ -91,7 +91,7 @@ parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek)
 }
 
 int
-parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, lng *i)
+parse_interval_(mvc *sql, lng sign, char *str, int sk, int ek, lng *i)
 {
 	char *n = NULL;
 	lng val = 0;
@@ -165,7 +165,62 @@ parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, lng *i)
 				snprintf(sql->errstr, ERRSIZE, _("Interval field seperator \'%c\' missing\n"), sep);
 			return -1;
 		}
-		return parse_interval(sql, sign, n + 1, sk + 1, ek, i);
+		return parse_interval_(sql, sign, n + 1, sk + 1, ek, i);
+	} else {
+		return type;
+	}
+}
+
+int
+parse_interval(mvc *sql, lng sign, char *str, int sk, int ek, lng *i)
+{
+	char *n = NULL;
+	lng val = 0;
+	char sep = ':';
+	int type;
+	lng mul;
+
+	if (*str == '-') {
+		sign *= -1; 
+		str++;
+	}
+	mul = sign;
+		
+	switch (sk) {
+	case iyear:
+		mul *= 12;
+	case imonth:
+		sep = '-';
+		type = 0;
+		break;
+
+	case iday:
+		mul *= 24;
+		sep = ' ';
+	case ihour:
+		mul *= 60;
+	case imin:
+		mul *= 60;
+	case isec:
+		type = 1;
+		break;
+
+	default:
+		if (sql)
+			snprintf(sql->errstr, ERRSIZE, _("Internal error: parse_interval: bad value for sk (%d)\n"), sk);
+		return -1;
+	}
+
+	val = strtol(str, &n, 10);
+	val *= mul;
+	*i += val;
+	if (ek != sk) {
+		if (*n != sep) {
+			if (sql)
+				snprintf(sql->errstr, ERRSIZE, _("Interval field seperator \'%c\' missing\n"), sep);
+			return -1;
+		}
+		return parse_interval_(sql, sign, n + 1, sk + 1, ek, i);
 	} else {
 		return type;
 	}
