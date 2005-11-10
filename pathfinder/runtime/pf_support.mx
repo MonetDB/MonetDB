@@ -794,14 +794,14 @@ PROC fetch(@1 v, @2 i) : @1
 	# 1 iter, n items
 	one_iter := TRUE;
 	@:chk_order(@1@2,0,item)@
-	# =>  we don't need to sort the input
+	# =>  we do not need to sort the input
 	order := or(order,1);
 @
 @= many_iters_one_item
 	# n iters, 1 item 
 	one_item := TRUE;
 	@:chk_order(@1@2,1,iter)@
-	# =>  we don't need to sort the input
+	# =>  we do not need to sort the input
 	order := or(order,1);
 @
 @= descs_per_item
@@ -877,7 +877,7 @@ PROC @1 (BAT[void,oid] iter, BAT[void,oid] item, oid frag, BAT[void,bat] ws, int
 			          .access(BAT_READ);
 			return result;
 		}
-		# =>  we don't need to sort neither input nor output
+		# =>  we do not need to sort neither input nor output
 		order := 3;
 		iter := iter.chk_order(); # just in case...
 		item := item.chk_order(); # just in case...
@@ -1562,7 +1562,7 @@ PROC delete_nodes_prepare (BAT[void,oid] item, BAT[void,int] kind, BAT[void,bat]
                 if (count(frags) > 0) {
                     var items    := frags.leftfetchjoin(item).reverse().sort().mark(0@0).reverse();
                         frags    := nil;
-                    var iters    := items.project(0@0); # we don't care about iters, here
+                    var iters    := items.project(0@0); # we don\'t care about iters, here
                     var cands    := pre_size.mark(nil).reverse().chk_order();
                     var descs    := descendant_or_self (iters, items, theFrag, ws, order, cands);
                         cands    := nil;
@@ -1649,53 +1649,857 @@ DESCRIPITON:\n\
  (We don't care about iters, here.)",
 "pf_support");
 
-proc replacedvalue(BAT[any::1, any::2] oldbat, BAT[any::1, any::2] newbat, any::1 key): any::2 {
-  if (not(isnil(newbat)) and newbat.exist(key)) {
-    return newbat.fetch(key);
-  } else {
-    return oldbat.fetch(key);
-  }
+proc myinsert(bat[any::1,any::2] oldbat, bat[any::1,any::2] newbat) : bat[any::1,any::2]
+{
+  var newvals := kdiff(newbat, oldbat).sort();
+  var replvals := kdiff(newbat, newvals).sort();
+  return oldbat.replace(replvals, true).insert(newvals);
 }
-proc replacementvalue(BAT[bat,bat] replacements, BAT[any::1,any::2] oldbat, any::1 key): any::2 {
-  if (replacements.exist(oldbat)) {
-    return replacedvalue(oldbat, replacements.fetch(oldbat), key);
-  } else {
-    return oldbat.fetch(key);
-  }
-}
-proc replace(BAT[void,bat] ws, BAT[bat,bat] replacements, int prop, oid frag, BAT[any,any] newval) : void {
-  if (newval.count() != 0) {
-    var propbat := ws.fetch(prop).fetch(frag);
-    var new_propbat;
-    if (replacements.exist(propbat)) {
-      new_propbat := replacements.fetch(propbat);
-      new_propbat.replace(newval);
-    } else {
-      new_propbat := new(newval.htype(),newval.ttype());
-      if (new_propbat.htype() = void) {
-        new_propbat.seqbase(0@0);
-      }
-      new_propbat.key(true);
-      replacements.insert(propbat, new_propbat);
-    }
-    new_propbat.insert(newval);
-  }
-}
-proc replace(BAT[void,bat] ws, BAT[bat,bat] replacements, int prop, oid frag, oid newkey, any newval) : void {
-  var propbat := ws.fetch(prop).fetch(frag);
-  var new_propbat;
-  if (replacements.exist(propbat)) {
-    new_propbat := replacements.fetch(propbat);
-  } else {
-    new_propbat := new(void,newval.type());
-    new_propbat.seqbase(newkey);
-    new_propbat.key(true);
-    replacements.insert(propbat, new_propbat);
-  }
-  new_propbat.insert(newkey, newval);
-}
-var emptybat_oid_int := new(oid,int,0);
 
+proc myinsert(bat[any::1,any::2] oldbat, any::1 key, any::2 val) : bat[any::1,any::2]
+{
+  if (oldbat.exist(key)) {
+    oldbat := oldbat.replace(key, val);
+  } else {
+    oldbat := oldbat.insert(key, val);
+  }
+  return oldbat;
+}
+
+# Move data starting at "from" of length "size" by "delta".  The
+# destination *must* be a hole (XXX check this).
+# Delta can be positive (move data down) or negative (move data up).
+# This function returns the modified replacements BAT (in
+# fact, the BATs that are in the tail of the replacements BAT may be
+# modified by this function).
+proc movedata(bat[bat,bat] replacements, bat[void,bat] ws, oid frag, oid from, int size, int delta): bat[bat,bat]
+{
+  if (delta = 0)
+    return replacements;        # not moving, so nothing to do
+
+  # some helpful values
+  var holefirst;                # ID of start of new hole
+  var holelast;                 # ID of end of new hole
+  var before;                   # ID of last node before area being moved and hole
+  var last;                     # ID of last node being moved
+  var after;                    # ID of first node after area being moved and hole
+  var newholefirst;             # ID if start of to-be-created hole
+  var newholelast;              # ID if end of to-be-created hole
+  last := oid((lng(from) + size) - 1);
+  if (delta < 0) {
+    holefirst := oid(lng(from) + delta);
+    holelast := oid(lng(from) - 1);
+    before := oid(lng(holefirst) - 1);
+    after := oid(lng(last) + 1);
+    newholefirst := oid(lng(holefirst) + size);
+    newholelast := oid(lng(holelast) + size);
+  } else {
+    holefirst := oid(lng(from) + size);
+    after := oid(lng(holefirst) + delta);
+    holelast := oid(lng(after) - 1);
+    before := oid(lng(from) - 1);
+    newholefirst := from;
+    newholelast := oid(lng(from) + delta - 1);
+  }
+
+  var pre_size := ws.fetch(PRE_SIZE).fetch(frag);
+  var pre_level := ws.fetch(PRE_LEVEL).fetch(frag);
+  var pre_prop := ws.fetch(PRE_PROP).fetch(frag);
+  var pre_kind := ws.fetch(PRE_KIND).fetch(frag);
+  var pre_nid := ws.fetch(PRE_NID).fetch(frag);
+  var nid_pre := ws.fetch(NID_PRE).fetch(frag);
+
+  var repl_pre_size := replacements.replacementsfetch(pre_size);
+  var repl_pre_level := replacements.replacementsfetch(pre_level);
+  var repl_pre_prop := replacements.replacementsfetch(pre_prop);
+  var repl_pre_kind := replacements.replacementsfetch(pre_kind);
+  var repl_pre_nid := replacements.replacementsfetch(pre_nid);
+  var repl_nid_pre := replacements.replacementsfetch(nid_pre);
+
+  var fix_pre_size := pre_size;
+  if (repl_pre_size.count() > 0) {
+    fix_pre_size := pre_size.copy().key(true).access(BAT_WRITE);
+    fix_pre_size := fix_pre_size.myinsert(repl_pre_size);
+  }
+  var fix_pre_level := pre_level;
+  if (repl_pre_level.count() > 0) {
+    fix_pre_level := pre_level.copy().key(true).access(BAT_WRITE);
+    fix_pre_level := fix_pre_level.myinsert(repl_pre_level);
+  }
+  var fix_pre_prop := pre_prop;
+  if (repl_pre_prop.count() > 0) {
+    fix_pre_prop := pre_prop.copy().key(true).access(BAT_WRITE);
+    fix_pre_prop := fix_pre_prop.myinsert(repl_pre_prop);
+  }
+  var fix_pre_kind := pre_kind;
+  if (repl_pre_kind.count() > 0) {
+    fix_pre_kind := pre_kind.copy().key(true).access(BAT_WRITE);
+    fix_pre_kind := fix_pre_kind.myinsert(repl_pre_kind);
+  }
+  var fix_pre_nid := pre_nid;
+  if (repl_pre_nid.count() > 0) {
+    fix_pre_nid := pre_nid.copy().key(true).access(BAT_WRITE);
+    fix_pre_nid := fix_pre_nid.myinsert(repl_pre_nid);
+  }
+  var fix_nid_pre := nid_pre;
+  if (repl_nid_pre.count() > 0) {
+    fix_nid_pre := nid_pre.copy().key(true).access(BAT_WRITE);
+    fix_nid_pre := fix_nid_pre.myinsert(repl_nid_pre);
+  }
+
+  var ishole := [niland](fix_pre_size, int(nil));
+  # list of pre-ids of nodes that start before and end inside the data
+  # being moved
+  # note that this is basically the ancestors of those nodes, except
+  # we include holes as well
+  # first get a list of nodes before the data being moved
+  var beforelist := fix_pre_size.reverse().select(nil, before).reverse();
+  # then figure out where these nodes end
+  beforelist := [+]([lng](beforelist.mirror()),
+                    ([lng]([niland](beforelist, INT_MAX))));
+  # select those that end inside the data being moved
+  var intodata := beforelist.uselect(lng(from), lng(last));
+  # calculate adjusted sizes
+  var newsizes := [nilplus](join(intodata.mirror(), fix_pre_size), delta);
+
+  # select nodes that end inside the hole
+  var intohole := beforelist.uselect(lng(holefirst), lng(holelast));
+  # newsizes1 refers to nodes that are not moved
+  var newsizes1;
+  if (delta < 0) {
+    newsizes1 := [int]([-](lng(before), [lng](intohole.mirror())));
+  } else {
+    newsizes1 := [int]([-](lng(last), [lng](intohole.mirror())));
+  }
+  # make sure holes stay holes
+  newsizes1 := [nilor](ishole, newsizes1);
+
+  # similarly, find the nodes inside the data being moved that extend
+  # beyond the end
+  var data := fix_pre_size.reverse().select(from, last).reverse();
+  data := [+]([lng](data.mirror()), [lng]([niland](data, INT_MAX)));
+  # find the nodes that end inside the hole that is to disappear
+  # newsizes2 refers to nodes that *are* moved
+  var newsizes2;
+  if (delta > 0) {
+    var holeend := data.uselect(lng(holefirst), lng(holelast));
+    newsizes2 := [int]([-](lng(last), [lng](holeend.mirror())));
+    newsizes2 := [nilor](ishole, newsizes2);
+  } else {
+    # if moving backward (delta < 0) no nodes that are to be moved end
+    # in the hole
+    newsizes2 := new(void, int, 0).seqbase(0@0);
+  }
+  # find the nodes that end past the hole
+  var pastend := data.uselect(lng(after), lng(nil));
+  # newsizes3 refers to nodes that *are* moved
+  var newsizes3 := [-](pastend.mirror().join(fix_pre_size), delta);
+  var replacesizes := fix_pre_size.reverse().select(from, last).reverse();
+  replacesizes.access(BAT_WRITE);
+  replacesizes := replacesizes.replace(newsizes2);
+  replacesizes := replacesizes.replace(newsizes3);
+  # fix up IDs of the nodes
+  replacesizes := [oid]([+]([lng](replacesizes.reverse()), delta)).reverse();
+  replacesizes.access(BAT_WRITE);
+  replacesizes := replacesizes.insert(newsizes);
+  replacesizes := replacesizes.insert(newsizes1);
+  # XXX adjust size according to whether there is a consecutive hole
+  var i := abs(delta);
+  var newhole := new(void, int, i);
+  var new_pre_level := new(void, pre_level.ttype(), i);
+  var new_pre_prop := new(void, pre_prop.ttype(), i);
+  var new_pre_kind := new(void, pre_kind.ttype(), i);
+  var new_pre_nid := new(void, pre_nid.ttype(), i);
+  var level_nil := cast(nil, pre_level.ttype());
+  var prop_nil := cast(nil, pre_prop.ttype());
+  var kind_nil := cast(nil, pre_kind.ttype());
+  var nid_nil := cast(nil, pre_nid.ttype());
+  while ((i :-= 1) >= 0) {
+    newhole := newhole.insert(nil, (-(INT_MAX) + i) - 1);
+    new_pre_level := new_pre_level.insert(nil, level_nil);
+    new_pre_prop := new_pre_prop.insert(nil, prop_nil);
+    new_pre_kind := new_pre_kind.insert(nil, kind_nil);
+    new_pre_nid := new_pre_nid.insert(nil, nid_nil);
+  }
+  newhole.seqbase(newholefirst);
+  new_pre_level.seqbase(newholefirst);
+  new_pre_prop.seqbase(newholefirst);
+  new_pre_kind.seqbase(newholefirst);
+  new_pre_nid.seqbase(newholefirst);
+
+  replacesizes.insert(newhole);
+  replacesizes := replacesizes.sort();
+  repl_pre_size := repl_pre_size.myinsert(replacesizes);
+
+  new_pre_level.insert([oid]([+]([lng](fix_pre_level.reverse().select(from,last)), delta)).reverse());
+  new_pre_level := new_pre_level.sort();
+  repl_pre_level := repl_pre_level.myinsert(new_pre_level);
+
+  new_pre_prop.insert([oid]([+]([lng](fix_pre_prop.reverse().select(from,last)), delta)).reverse());
+  new_pre_prop := new_pre_prop.sort();
+  repl_pre_prop := repl_pre_prop.myinsert(new_pre_prop);
+
+  new_pre_kind.insert([oid]([+]([lng](fix_pre_kind.reverse().select(from,last)), delta)).reverse());
+  new_pre_kind := new_pre_kind.sort();
+  repl_pre_kind := repl_pre_kind.myinsert(new_pre_kind);
+
+  var new_nid_pre := [oid]([+]([lng](fix_pre_nid.reverse().select(from,last)), delta));
+  new_pre_nid := new_pre_nid.insert(new_nid_pre.reverse());
+  new_pre_nid := new_pre_nid.sort();
+  repl_pre_nid := repl_pre_nid.myinsert(new_pre_nid);
+  new_nid_pre := new_nid_pre := new_nid_pre.sort();
+  repl_nid_pre := repl_nid_pre.myinsert(new_nid_pre);
+
+  replacements := replacements.replace(pre_size, repl_pre_size);
+  replacements := replacements.replace(pre_level, repl_pre_level);
+  replacements := replacements.replace(pre_prop, repl_pre_prop);
+  replacements := replacements.replace(pre_kind, repl_pre_kind);
+  replacements := replacements.replace(pre_nid, repl_pre_nid);
+  replacements := replacements.replace(nid_pre, repl_nid_pre);
+
+  return replacements;
+}
+
+# keep commented until this is put in a module and then adjust the
+# module name (last arg).
+
+# ADDHELP("movedata", "sjoerd", "Oct 4 2005",
+# 	"Move data starting in WS for document FRAG, starting at FROM of size SIZE by DELTA.\nDelta may be positive (move data down) or negative.\nData should only be moved over an existing hole (not currently checked).\nReturns a BAT detailing the changes made to the work space without actually making them.",
+# 	"delhole");
+
+# expensive way to AND two INTs, treating NIL as just another bit pattern
+proc niland(int v1, int v2) : int
+{
+  if (isnil(v1)) {
+    if (isnil(v2))
+      return int(nil);
+    else if (v2 < 0)
+      return int(nil);
+    else
+      return 0;
+  } else if (isnil(v2)) {
+    if (v1 < 0)
+      return int(nil);
+    else
+      return 0;
+  } else
+    return v1 and v2;
+}
+
+# expensive way to add two INTs, treating NIL as just another integer
+proc nilplus(int v1, int v2) : int
+{
+  if (isnil(v1)) {
+    if (isnil(v2))
+      return 0;
+    else
+      return (v2 + 1) + INT_MAX;
+  } else if (isnil(v2))
+    return (v1 + 1) + INT_MAX;
+  else
+    return v1 + v2;
+}
+
+# expensive way to OR two INTs, treating NIL as just another bit pattern
+proc nilor(int v1, int v2) : int
+{
+  if (isnil(v1)) {
+    if (isnil(v2))
+      return v1;
+    else if (v2 < 0)
+      return v2;
+    else
+      return (v2 - INT_MAX) - 1;
+  } else if (isnil(v2)) {
+    if (v1 < 0)
+      return v1;
+    else
+      return (v1 - INT_MAX) - 1;
+  } else
+    return v1 or v2;
+}
+
+proc add_qn(bat[bat,bat] replacements, bat[void,bat] ws, oid frag, oid nid, str loc, str prefix, str uri) : bat[void,oid]
+{
+  # shortcuts
+  var loc_uri := loc + "\001" + uri;
+  var qn_loc_uri := ws.fetch(QN_LOC_URI).fetch(frag);
+  var qn_prefix := ws.fetch(QN_PREFIX).fetch(frag);
+
+  # [oid,nil] list of prefixes used by loc_uri
+  var loc_uri_list := qn_loc_uri.ord_uselect(loc_uri);
+  # [oid,nil] list of QN names with correct prefix as well (should be 0 or 1)
+  var qn_list := loc_uri_list.mirror().fetchjoin(qn_prefix).uselect(prefix);
+  if (replacements.exist(qn_loc_uri)) {
+    # combine with values from replacements
+    # there are only ever additional values there, no overwrites
+    var loc_uri_list_update := replacements.find(qn_loc_uri).ord_uselect(loc_uri);
+    var qn_list_update := loc_uri_list_update.mirror().fetchjoin(replacements.find(qn_prefix)).uselect(prefix);
+    loc_uri_list := sunion(loc_uri_list, loc_uri_list_update);
+    qn_list := sunion(qn_list, qn_list_update);
+  }
+
+  var attr_node_list;
+  if (not(isnil(nid))) {
+    # check that the attribute/URI does not occur already with a
+    # different prefix
+    var attr_own := ws.fetch(ATTR_OWN).fetch(frag);
+    var attr_qn := ws.fetch(ATTR_QN).fetch(frag);
+    # [oid,nil] list of ATTR indexes for current node
+    var attr_list := attr_own.uselect(nid);
+    # [oid,oid] list of ATTR indexes/ATTR QN IDs for current node
+    var attr_qn_list := attr_list.mirror().fetchjoin(attr_qn);
+
+    if (replacements.exist(attr_own)) {
+      var attr_list_update := replacements.find(attr_own).uselect(nid);
+      var attr_qn_list_update := attr_list_update.mirror().fetchjoin(replacements.replacementsfetch(attr_qn));
+      attr_qn_list := sunion(attr_qn_list, attr_qn_list_update);
+    }
+
+    # [oid,nil] list of attributes for current node with correct FQ name
+    attr_node_list := attr_qn_list.join(qn_list);
+
+    # check that there are not already attributes with the same local name
+    # and same namespace but a different prefix on this node
+    if (attr_node_list.count() != attr_qn_list.join(loc_uri_list).count()) {
+      ERROR("duplicate attribute with differing prefixes.");
+    }
+  }
+
+  # if name is not known yet, create an entry for it
+  var qn_id;
+  if (qn_list.count() = 0) {
+    # attribute name does not exist
+    var qn_loc_bat := ws.fetch(QN_LOC).fetch(frag);
+    var qn_prefix_bat := qn_prefix;
+    var qn_uri_bat := ws.fetch(QN_URI).fetch(frag);
+    var qn_loc_uri_bat := qn_loc_uri;
+    var qn_prefix_uri_bat := ws.fetch(QN_PREFIX_URI).fetch(frag);
+
+    var qn_loc_new := replacements.replacementsfetch(qn_loc_bat);
+    var qn_prefix_new := replacements.replacementsfetch(qn_prefix_bat);
+    var qn_uri_new := replacements.replacementsfetch(qn_uri_bat);
+    var qn_loc_uri_new := replacements.replacementsfetch(qn_loc_uri_bat);
+    var qn_prefix_uri_new := replacements.replacementsfetch(qn_prefix_uri_bat);
+
+    # figure out new ID
+    if (qn_loc_uri_new.count() > 0)
+      qn_id := qn_loc_uri_new.reverse().max();
+    else if (qn_loc_uri.count() > 0)
+      qn_id := qn_loc_uri.reverse().max();
+    else
+    qn_id := oid(nil);
+    if (isnil(qn_id))
+      qn_id := 0@0;
+    else
+      qn_id := oid(lng(qn_id) + 1);
+
+    qn_loc_new := qn_loc_new.insert(qn_id, loc);
+    qn_prefix_new := qn_prefix_new.insert(qn_id, prefix);
+    qn_uri_new := qn_uri_new.insert(qn_id, uri);
+    qn_loc_uri_new := qn_loc_uri_new.insert(qn_id, loc_uri);
+    qn_prefix_uri_new := qn_prefix_uri_new.insert(qn_id, prefix + "\001" + uri);
+
+    replacements := replacements.replace(qn_loc_bat, qn_loc_new);
+    replacements := replacements.replace(qn_prefix_bat, qn_prefix_new);
+    replacements := replacements.replace(qn_uri_bat, qn_uri_new);
+    replacements := replacements.replace(qn_loc_uri_bat, qn_loc_uri_new);
+    replacements := replacements.replace(qn_prefix_uri_bat, qn_prefix_uri_new);
+  } else {
+    qn_id := qn_list.reverse().fetch(0);
+  }
+  var result := new(void,oid,2).seqbase(0@0);
+  result := result.insert(nil, qn_id);
+  if (not(isnil(nid))) {
+    if (attr_node_list.count() = 0)
+      result := result.insert(nil,nil);
+    else
+      result := result.insert(nil,attr_node_list.reverse().fetch(0));
+  }
+  return result;
+}
+
+proc add_qn(bat[bat,bat] replacements, bat[void,bat] ws, oid frag, str loc, str prefix, str uri) : oid
+{
+  return add_qn(replacements, ws, frag, oid(nil), loc, prefix, uri).fetch(0);
+}
+
+proc add_string_unique(bat[bat,bat] replacements, bat[void,bat] ws, oid frag, int tableid, str value) : oid
+{
+  # find value in table
+  var table := ws.fetch(tableid).fetch(frag);
+  var strid := nil;
+  var valuelist := table.uselect(value);
+  if (valuelist.count() = 0) {
+    # value not found, search in replacements bat
+    var table_new := replacements.replacementsfetch(table);
+    valuelist := table_new.uselect(value);
+    if (valuelist.count() = 0) {
+      # value still not found, insert it
+      if (table_new.count() > 0)
+        strid := table_new.reverse().max();
+      else if (table.count() > 0)
+        strid := table.reverse().max();
+      if (isnil(strid))
+	strid := 0@0;		# the first entry
+      else
+        strid := oid(lng(strid) + 1);
+      table_new := table_new.insert(strid, value);
+      replacements := replacements.replace(table, table_new);
+    } else
+      strid := valuelist.reverse().fetch(0);
+  } else
+    strid := valuelist.reverse().fetch(0);
+  # just the OID of the value
+  return strid;
+}
+
+proc add_pi(bat[bat,bat] replacements, bat[void,bat] ws, oid frag, str ins, str tgt) : oid
+{
+  # shortcuts
+  var prop_ins := ws.fetch(PROP_INS).fetch(frag);
+  var prop_tgt := ws.fetch(PROP_TGT).fetch(frag);
+
+  # [oid,nil] list of entries with ins
+  var ins_list := prop_ins.ord_uselect(ins);
+  # [oid,nil] list with correct tgt as well (should be 0 or 1)
+  var ins_tgt_list := ins_list.mirror().fetchjoin(prop_tgt).uselect(tgt);
+  if (ins_tgt_list.count() > 0) {
+    # found one, return it, nothing more to do
+    return ins_tgt_list.reverse().fetch(0);
+  }
+
+  # if name is not known yet, create an entry for it
+  var pi_id := nil;
+  if (ins_tgt_list.count() = 0) {
+    # attribute name does not exist, try replacements
+    var prop_tgt_new := replacements.replacementsfetch(prop_tgt);
+    var prop_ins_new := replacements.replacementsfetch(prop_ins);
+
+    ins_list := prop_ins_new.ord_uselect(ins);
+    ins_tgt_list := ins_list.mirror().fetchjoin(prop_tgt_new).uselect(tgt);
+
+    if (ins_tgt_list.count() = 0) {
+      # attribute name does not exist in replacements either
+
+      # figure out new ID
+      if (prop_ins_new.count() > 0)
+	pi_id := prop_ins_new.reverse().max();
+      else if (prop_ins.count() > 0)
+	pi_id := prop_ins.reverse().max();
+      if (isnil(pi_id))
+	pi_id := 0@0;
+      else
+	pi_id := oid(lng(pi_id) + 1);
+
+      prop_tgt_new := prop_tgt_new.insert(pi_id, tgt);
+      prop_ins_new := prop_ins_new.insert(pi_id, ins);
+      replacements := replacements.replace(prop_tgt, prop_tgt_new);
+      replacements := replacements.replace(prop_ins, prop_ins_new);
+    } else {
+      pi_id := ins_tgt_list.reverse().fetch(0);
+    }
+  } else {
+    pi_id := ins_tgt_list.reverse().fetch(0);
+  }
+
+  return pi_id;
+}
+
+proc replacedvalue(BAT[any::1, any::2] oldbat, BAT[any::1, any::2] newbat, any::1 key): any::2
+{
+  if (not(isnil(newbat)) and newbat.exist(key)) {
+    return newbat.find(key);
+  } else {
+    return oldbat.find(key);
+  }
+}
+proc replacementvalue(BAT[bat,bat] replacements, BAT[any::1,any::2] oldbat, any::1 key): any::2
+{
+  if (replacements.exist(oldbat)) {
+    return replacedvalue(oldbat, replacements.find(oldbat), key);
+  } else {
+    return oldbat.find(key);
+  }
+}
+proc replacementvalue(BAT[bat,bat] replacements, BAT[void,BAT] ws, int prop, oid frag, any::1 key) : any::2
+{
+  return replacementvalue(replacements, ws.fetch(prop).fetch(frag), key);
+}
+# do a "fetch" on replacements, except that the second arg, though a BAT, is actually the key to be fetched
+proc replacementsfetch(BAT[BAT,BAT] replacements, BAT[any::1,any::2] oldbat): BAT[any::1,any::2]
+{
+  if (replacements.exist(oldbat)) {
+    return replacements.find(oldbat);
+#     return [lng](replacements.reverse()).uselect(lng(oldbat)).reverse().fetch(0);
+  } else {
+    var htype := oldbat.htype();
+    if (htype = void)
+      htype := oid;
+    var newbat := bat(htype, oldbat.ttype());
+    newbat.key(true);
+    replacements := replacements.insert(oldbat, newbat);
+    return newbat;
+  }
+}
+
+proc replace(bat[bat,bat] replacements, bat[void,any::1] propbat, int frag, oid key, any::1 val): bat[bat,bat]
+{
+  var newpropbat := replacements.replacementsfetch(propbat);
+  if (newpropbat.exist(key))
+    newpropbat := newpropbat.replace(key, val);
+  else
+    newpropbat := newpropbat.insert(key, val);
+  return replacements.replace(propbat, newpropbat);
+}
+
+var PAGESHIFT := 16;
+var PAGESIZE := (1 << PAGESHIFT);
+
+proc mposjoin(bat[oid,oid] pre, oid frag, bat[oid, bat] ws_item) : bat[void,any]
+{
+  return fake_leftfetchjoin(pre, ws_item.fetch(frag));
+}
+
+proc nodeinsert(bat[bat,bat] replacements, bat[void,bat] ws, str function, any batdocnid, any batdockind, bat[void,oid] ipik, any item, any kind) : bat[bat,bat]
+{
+  # extract fragment ID from kind
+  var batdocfrag := batdockind.get_fragment();
+  var batfrag := kind.get_fragment();
+
+  # XXX need to do this while the "item" parameter contains PRE values instead of NID values
+  batdocnid := mposjoin(batdocnid, batdocfrag, ws.fetch(PRE_NID));
+
+  ipik@batloop() {
+#     if (debug) printf("\nstart of loop for argument %%d\n", int($h));
+    var insertfrag := batfrag.fetch($h);
+    var insertnid := item.fetch($h);
+    var insertitem := ws.fetch(NID_PRE).fetch(insertfrag).find(insertnid);
+    var insertsize := lng(replacementvalue(replacements, ws, PRE_SIZE, insertfrag, insertitem)) + 1;
+
+    var docfrag := batdocfrag.fetch($h);
+    var docitem := replacementvalue(replacements, ws, NID_PRE, docfrag, batdocnid.fetch($h));
+    var docheightbat := ws.fetch(HEIGHT);
+    var docheight := docheightbat.fetch(docfrag);
+    if (replacements.exist(docheightbat)) {
+      if (replacements.find(docheightbat).exist(docfrag)) {
+	docheight := replacements.find(docheightbat).fetch(docfrag);
+      }
+    }
+
+    # figure out where to insert the new element
+    # the position is identified using two values: the ID of the node
+    # *after* which the element is to be inserted, and the level at which
+    # it is to be inserted.
+    var docinsertafter;
+    var docinsertlevel;
+    var docsizebat := ws.fetch(PRE_SIZE).fetch(docfrag);
+    var doclevelbat := ws.fetch(PRE_LEVEL).fetch(docfrag);
+    var doclevel := replacementvalue(replacements, doclevelbat, docitem);
+    var dockind := replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(docfrag), docitem);
+    var docsize := doclevelbat.reverse().max(); # size of current document
+    if (function = "insert-first") {
+      if (dockind != ELEMENT) {
+	ERROR("can only insert into elements\n");
+      }
+      docinsertlevel := chr(doclevel + 1);
+      docinsertafter := docitem;
+    } else if (function = "insert-last") {
+      if (dockind != ELEMENT) {
+	ERROR("can only insert into elements\n");
+      }
+      docinsertlevel := chr(doclevel + 1);
+      docinsertafter := oid(lng(docitem) + replacementvalue(replacements, docsizebat, docitem));
+    } else if (function = "insert-before") {
+      docinsertlevel := doclevel;
+      docinsertafter := oid(lng(docitem) - 1);
+    } else if (function = "insert-after") {
+      docinsertlevel := doclevel;
+      docinsertafter := oid(lng(docitem) + replacementvalue(replacements, docsizebat, docitem));
+    }
+    # if insertafter points to a hole, make it point to the last element
+    # before the hole
+    while (isnil(replacementvalue(replacements, doclevelbat, docinsertafter)))
+      docinsertafter := oid(lng(docinsertafter) - 1);
+
+    # the start of the page on which the new element is to be inserted
+    # use "int" because we pass this value to slice which needs int
+    var docpage := ((int(docinsertafter) + 1) >> PAGESHIFT) << PAGESHIFT;
+
+    # figure out the number of holes on the page on which the new
+    # element is to be inserted (we use the PRE_LEVEL table for this,
+    # holes are indicated with NIL)
+    var docpagelevel := doclevelbat.slice(docpage, docpage + PAGESIZE - 1);
+    var doclevelupdatebat := replacements.replacementsfetch(doclevelbat);
+    # update with values from replacements (if any)
+    if (doclevelupdatebat.count() > 0) {
+      # replace updated values from replacements BAT
+      var doclevelupdatemax := doclevelupdatebat.reverse().max();
+      if (doclevelupdatemax > docsize) {
+	docsize := doclevelupdatemax;
+       }
+      var doclevelupdate := doclevelupdatebat.reverse().select(oid(docpage), oid(docpage + PAGESIZE - 1)).reverse();
+      docpagelevel := docpagelevel.copy().key(true).access(BAT_WRITE).myinsert(doclevelupdate);
+    }
+    var docpageholes := docpagelevel.uselect(chr(nil));
+    var docpagefreespace := (PAGESIZE - docpagelevel.count()) + docpageholes.count();
+
+    if (insertsize > lng(docpagefreespace)) {
+      # not enough space on the current page
+      # XXX insert a new page
+    } # else? XXX
+
+    var holesize;
+    {
+      var i := lng(docinsertafter) + 1;
+      var s := replacementvalue(replacements, docsizebat, oid(i));
+      while (isnil(niland(s, int(nil)))) {
+	i :+= niland(s, INT_MAX) + 1;
+	s := replacementvalue(replacements, docsizebat, oid(i));
+      }
+      holesize := (i - lng(docinsertafter)) - 1;
+    }
+    if (holesize < insertsize) {
+      # not enough space in the right place
+      var holeneeded := insertsize - holesize;
+      var i := 1;                 # slowly widen search
+      while (holeneeded > 0LL) {
+	# hole below?
+	var j := ((lng(docinsertafter) + holesize) + i) + 1;
+	# still on same page?
+	if (j < (lng(docpage) + PAGESIZE)) {
+	  # yes
+	  if (oid(j) > docsize) {
+	    # big gaping hole after the document
+	    var hs := int((lng(docpage) + PAGESIZE) - lng(docsize));
+	    if (lng(hs) > holeneeded) {
+	      hs := holeneeded;
+	    }
+#             if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), int(hs));
+	    movedata(replacements, ws, docfrag, oid(lng(docinsertafter) + holesize + 1), i, int(hs));
+	    holeneeded :-= hs;
+	    holesize :+= hs;
+	    docsize := oid(lng(docsize) + hs);
+	  } else {
+	    # looking at hole?
+	    var s := replacementvalue(replacements, docsizebat, oid(j));
+	    if (isnil(niland(s, int(nil)))) {
+	      var hs := niland(s, INT_MAX) + 1;
+	      if (lng(hs) > holeneeded) {
+		hs := holeneeded;
+	      }
+	      # move the hole to just below the hole already at docinsertafter
+#               if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) + holesize + 1), int(i), int(hs));
+	      movedata(replacements, ws, docfrag, oid(lng(docinsertafter) + holesize + 1), i, int(hs));
+	      holeneeded :-= hs;
+	      holesize :+= hs;
+	    }
+	  }
+	}
+	if ((lng(docinsertafter) - i) >= lng(docpage)) {
+	  # hole above?
+	  if (holeneeded > 0LL) {
+	    if (isnil(replacementvalue(replacements, doclevelbat, oid(lng(docinsertafter) - i)))) {
+	      # yes, find out how large, but stop when we have a hole
+	      # that is big enough (and stay on the page)
+	      var hs := 1;
+	      var cont := (((lng(docinsertafter) - i) - hs) >= lng(docpage));
+	      if (cont) {
+		cont := (lng(hs) < holeneeded);
+	      }
+	      if (cont) {
+		cont := isnil(replacementvalue(replacements, docsizebat, oid((lng(docinsertafter) - i) - hs)));
+	      }
+	      while (cont) {
+		hs :+= 1;
+		cont := (((lng(docinsertafter) - i) - hs) >= lng(docpage));
+		if (cont) {
+		  cont := (lng(hs) < holeneeded);
+		}
+		if (cont) {
+		  cont := isnil(replacementvalue(replacements, docsizebat, oid((lng(docinsertafter) - i) - hs)));
+		}
+	      }
+#               if (debug) printf("movedata %%d %%d %%d\n", int(lng(docinsertafter) - i), int(i), -(int(hs)));
+	      movedata(replacements, ws, docfrag, oid((lng(docinsertafter) - i) + 1), i, -(int(hs)));
+	      docinsertafter := oid(lng(docinsertafter) - hs);
+	      holeneeded :-= hs;
+	      holesize :+= hs;
+	    }
+	  }
+	}
+	i :+= 1;
+      }
+    }
+
+    # we now have a hole that is big enough below docinsertafter
+
+    var docsizeupdatebat := replacements.replacementsfetch(docsizebat);
+    # We must adjust the sizes of all ancestors of the new element;
+    # this means all elements that currently end at the newly created
+    # hole and whose level is less than the level of the new element
+    {
+      # first figure out the updated PRE_SIZE table
+      var docsizefixbat := docsizebat;
+      if (docsizeupdatebat.count() > 0) {
+	docsizefixbat := docsizefixbat.copy().key(true).access(BAT_WRITE).myinsert(docsizeupdatebat);
+      }
+      # "slice" the table to keep only up to docinsertafter
+      docsizefixbat := docsizefixbat.reverse().select(nil, docinsertafter).reverse();
+      # calculate end positions (we do not care about holes)
+      var docendsizebat := [+]([lng](docsizefixbat.mirror()), [lng](docsizefixbat));
+      # select those elements that end at docinsertafter
+      docendsizebat := docendsizebat.uselect(lng(docinsertafter)).mirror();
+
+      if (docendsizebat.count() > 0) {
+	# figure out updated PRE_LEVEL table
+	var doclevelfixbat := doclevelbat;
+	if (doclevelupdatebat.count() > 0) {
+	  doclevelfixbat := doclevelfixbat.copy().key(true).access(BAT_WRITE).myinsert(doclevelupdatebat);
+	}
+	# select those elements that we found in the previous step, and
+	# subselect those with level < docinsertlevel
+	# these are the elements whose size we have to adjust
+	docendsizebat := docendsizebat.join(doclevelfixbat).uselect(chr(nil), chr(docinsertlevel - 1)).mirror();
+	# caculate new size by adding insertsize
+	docendsizebat := [int]([+](docendsizebat.join(docsizefixbat), insertsize));
+	# and update the document
+	docsizeupdatebat.myinsert(docendsizebat);
+      }
+    }
+
+    # copy the new element to the hole and do all the other work
+    # assume that the to-be-inserted document is not being edited
+
+    # find NID value for new node (highest existing plus one)
+    var docnidbat := ws.fetch(NID_PRE).fetch(docfrag);
+    var docnidnew := nil;
+    if (docnidbat.count() > 0) {
+      docnidnew := docnidbat.reverse().max();
+    }
+    if (replacements.exist(docnidbat)) {
+      var docnidbat_update := replacements.replacementsfetch(docnidbat);
+      if (docnidbat_update.count() > 0) {
+	var tmp := docnidbat_update.reverse().max();
+	if (isnil(docnidnew)) {
+	  docnidnew := docnidbat_update;
+	} else if (docnidnew < tmp) {
+	  docnidnew := tmp;
+	}
+      }
+    }
+    if (isnil(docnidnew)) {
+      docnidnew := 0@0;           # should not happen: no NIDs used
+    } else {
+      docnidnew := oid(lng(docnidnew) + 1);
+    }
+
+    # retrieve (or create) the update BATs for all BATs that we need to update
+    var docpropupdatebat := replacements.replacementsfetch(ws.fetch(PRE_PROP).fetch(docfrag));
+    var dockindupdatebat := replacements.replacementsfetch(ws.fetch(PRE_KIND).fetch(docfrag));
+    var docprenidupdatebat := replacements.replacementsfetch(ws.fetch(PRE_NID).fetch(docfrag));
+    var docnidpreupdatebat := replacements.replacementsfetch(docnidbat);
+
+    var leveldiff := int(docinsertlevel) - int(ws.fetch(PRE_LEVEL).fetch(insertfrag).find(insertitem));
+#     if (debug) printf("leveldiff %%d\n", leveldiff);
+
+    while (insertsize > 0LL) {
+      # for each to-be-inserted element
+
+      var insertprop := ws.fetch(PRE_PROP).fetch(insertfrag).find(insertitem);
+      var insertkind := ws.fetch(PRE_KIND).fetch(insertfrag).find(insertitem);
+      insertnid := ws.fetch(PRE_NID).fetch(insertfrag).find(insertitem);
+      if (isnil(insertkind)) {
+      } else if (insertkind = ELEMENT) {
+	var insertfragbat := ws.fetch(PRE_FRAG).fetch(insertfrag);
+	var elemfrag;
+	if (is_fake_project(insertfragbat)) {
+	  elemfrag := insertfragbat.fetch(0);
+	} else {
+	  elemfrag := insertfragbat.find(insertitem);
+	}
+	var loc := ws.fetch(QN_LOC).fetch(elemfrag).find(insertprop);
+	var prefix := ws.fetch(QN_PREFIX).fetch(elemfrag).find(insertprop);
+	var uri := ws.fetch(QN_URI).fetch(elemfrag).find(insertprop);
+	insertprop := add_qn(replacements, ws, docfrag, loc, prefix, uri);
+#         if (debug) printf("add_qn \"%%s\" \"%%s\" \"%%s\" %%d\n", loc, prefix, uri, int(insertprop));
+
+	# deal with the attributes
+	# [void,oid] list of ATTR table IDs for current element
+	var insertattrbat := ws.fetch(ATTR_OWN).fetch(insertfrag).uselect(insertnid).reverse();
+	if (insertattrbat.count() > 0) { # do not bother if there are no attrs on inserted element
+	  # figure out next OID in ATTR table of doc, store in attr_id
+	  var docattrownbat := ws.fetch(ATTR_OWN).fetch(docfrag);
+	  var docattrownupdatebat := replacements.replacementsfetch(docattrownbat);
+	  var attr_id;
+	  if (docattrownupdatebat.count() > 0) {
+	    attr_id := oid(lng(docattrownupdatebat.reverse().max()) + 1);
+	  } else if (docattrownbat.count() > 0) {
+	    attr_id := oid(lng(docattrownbat.reverse().max()) + 1);
+	  } else {
+	    attr_id := 0@0;
+	  }
+	  insertattrbat.seqbase(attr_id);
+	  # [void,oid] list of QN table indices for "our" attributes
+	  var insertattrqnbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_QN).fetch(insertfrag));
+	  var insertattrfragbat := insertattrbat.fake_leftfetchjoin(ws.fetch(ATTR_FRAG).fetch(insertfrag));
+	  # in one fell swoop, add the qualified names of the attributes to the document
+	  var newinsertattrpropbat := [add_qn](const replacements, const ws, docfrag,
+					       mposjoin(insertattrqnbat, insertattrfragbat, ws.fetch(QN_LOC)),
+					       mposjoin(insertattrqnbat, insertattrfragbat, ws.fetch(QN_PREFIX)),
+					       mposjoin(insertattrqnbat, insertattrfragbat, ws.fetch(QN_URI)));
+	  # and the same for the attribute values
+	  var insertattrpropbat := insertattrbat.leftfetchjoin(ws.fetch(ATTR_PROP).fetch(insertfrag));
+	  var newinsertattrvalbat := [add_string_unique](const replacements, const ws, docfrag, PROP_VAL,
+							 mposjoin(insertattrpropbat, insertattrfragbat, ws.fetch(PROP_VAL)));
+	  # add to the ATTR table
+	  docattrownupdatebat := docattrownupdatebat.insert(insertattrbat.project(docnidnew));
+	  replacements.replacementsfetch(ws.fetch(ATTR_QN).fetch(docfrag)).insert(newinsertattrpropbat);
+	  replacements.replacementsfetch(ws.fetch(ATTR_PROP).fetch(docfrag)).insert(newinsertattrvalbat);
+	}
+      } else if (insertkind = TEXT) {
+	var text := ws.fetch(PROP_TEXT).fetch(insertfrag).find(insertprop);
+	insertprop := add_string_unique(replacements, ws, docfrag, PROP_TEXT, text);
+      } else if (insertkind = COMMENT) {
+	var text := ws.fetch(PROP_COM).fetch(insertfrag).find(insertprop);
+	insertprop := add_string_unique(replacements, ws, docfrag, PROP_COM, text);
+      } else if (insertkind = PI) {
+	var ins := ws.fetch(PROP_INS).fetch(insertfrag).find(insertprop);
+	var tgt := ws.fetch(PROP_TGT).fetch(insertfrag).find(insertprop);
+	insertprop := add_pi(replacements, ws, docfrag, ins, tgt);
+      } else if (insertkind = DOCUMENT) {
+	ERROR("attempt to insert a complete document foiled\n");
+      } else {
+	ERROR("unknown element type\n");
+      }
+
+      docinsertafter := oid(lng(docinsertafter) + 1);
+
+      docsizeupdatebat.myinsert(docinsertafter, ws.fetch(PRE_SIZE).fetch(insertfrag).find(insertitem));
+      docpropupdatebat.myinsert(docinsertafter, insertprop);
+      dockindupdatebat.myinsert(docinsertafter, insertkind);
+      if (isnil(insertkind)) {        # inserting a hole
+	doclevelupdatebat.myinsert(docinsertafter, chr(nil));
+	docprenidupdatebat.myinsert(docinsertafter, oid(nil));
+      } else {
+	docnidpreupdatebat.myinsert(docnidnew, docinsertafter);
+	var newlevel := int(ws.fetch(PRE_LEVEL).fetch(insertfrag).find(insertitem)) + leveldiff;
+	doclevelupdatebat.myinsert(docinsertafter, chr(newlevel));
+	if (newlevel >= docheight) {
+	  docheight := newlevel + 1;
+	  replacements.replacementsfetch(docheightbat).insert(docfrag, docheight);
+	}
+	docprenidupdatebat.myinsert(docinsertafter, docnidnew);
+	docnidnew := oid(lng(docnidnew) + 1);
+      }
+
+      insertsize :-= 1;
+      insertitem := oid(lng(insertitem) + 1);
+    }
+  }
+
+  return replacements;
+}
 @* Module Implementation
 @h
 #ifndef PF_SUPPORT_H

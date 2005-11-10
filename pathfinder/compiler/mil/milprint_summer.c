@@ -7780,12 +7780,13 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f, "# ignored fn:unordered\n");
         return translate2MIL (f, code, cur_level, counter, L(args));
     }
-    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"delete")))
+    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"delete")) == 0)
     {
-        milprintf(f, "# fn:delete\n");
+        milprintf(f,
+                  "# fn:delete\n"
+                  "var replacements := new(bat, bat);\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
-                  "var replacements := new(bat, bat);\n"
                   "var frags := kind.get_fragment();\n"
                   "# reverse sort item so that we delete the last node\n"
                   "# first, so that holes can be merged\n"
@@ -7851,59 +7852,55 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "replacements@batloop() {\n"
                   "  var a := $h.access();\n"
                   "  $h.access(BAT_WRITE);\n"
-                  "  $h.replace($t, true);\n"
-                  "  $h.insert(kdiff($t,$h));\n"/* was: $h.insert($t); */
+                  "  var hi := $h.reverse().max();\n"
+                  "  var hi1 := oid(lng(hi) + 1);\n"
+                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
+                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
+                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
+                  "  $h.replace(repl, true);\n"
+                  "  $h.insert(ins);\n"
                   "  $h.access(a);\n"
                   "}\n");
         return NORMAL;
     }        
-    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"insert-first")))
+    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"insert-first")) == 0 ||
+             PFqname_eq(fnQname, PFqname (PFns_fn,"insert-last")) == 0 ||
+             PFqname_eq(fnQname, PFqname (PFns_fn,"insert-before")) == 0 ||
+             PFqname_eq(fnQname, PFqname (PFns_fn,"insert-after")) == 0)
     {
-        milprintf(f, "# ignored fn:insert-first\n");
+        char *func = PFqname_loc(fnQname);
+        milprintf(f,
+                  "# ignored fn:%s\n"
+                  "var replacements := new(bat, bat);\n",
+                  func);
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        /* do the work */
+        milprintf(f,
+                  "replacements := nodeinsert(replacements, ws, \"%s\", item%03u, kind%03u, ipik, item, kind);\n",
+                  func, counter, counter);
         deleteResult (f, counter);
+        milprintf(f,
+                  "replacements@batloop() {\n"
+                  "  var a := $h.access();\n"
+                  "  $h.access(BAT_WRITE);\n"
+                  "  var hi := $h.reverse().max();\n"
+                  "  var hi1 := oid(lng(hi) + 1);\n"
+                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
+                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
+                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
+                  "  $h.replace(repl, true);\n"
+                  "  $h.insert(ins);\n"
+                  "  $h.access(a);\n"
+                  "}\n");
         return NORMAL;
     }        
-    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"insert-last")))
+    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-attr")) == 0)
     {
-        milprintf(f, "# ignored fn:insert-last\n");
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        /* do the work */
-        deleteResult (f, counter);
-        return NORMAL;
-    }        
-    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"insert-before")))
-    {
-        milprintf(f, "# ignored fn:insert-before\n");
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        /* do the work */
-        deleteResult (f, counter);
-        return NORMAL;
-    }        
-    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"insert-after")))
-    {
-        milprintf(f, "# ignored fn:insert-after\n");
-        translate2MIL (f, NORMAL, cur_level, counter, L(args));
-        counter++;
-        saveResult (f, counter);
-        translate2MIL (f, NORMAL, cur_level, counter, RL(args));
-        /* do the work */
-        deleteResult (f, counter);
-        return NORMAL;
-    }        
-    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"set-attr")))
-    {
-        milprintf(f, "# fn:set-attr\n");
+        milprintf(f,
+                  "# fn:set-attr\n"
+                  "var replacements := new(bat, bat);\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -7929,8 +7926,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "ipik%03u@batloop() {\n"
                   "  var frag := frags.fetch($h);\n"
                   "  var node := item%03u.fetch($h);\n"
-                  "  if (ws.fetch(PRE_KIND).fetch(frag).fetch(node) != ELEMENT) { ERROR (\"function fn:set-attr expects a element node.\"); }\n"
-                  "  var nid := ws.fetch(PRE_NID).fetch(frag).fetch(node);\n"
+                  "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != ELEMENT) { ERROR (\"function fn:set-attr expects a element node.\"); }\n"
+                  "  var nid := replacementvalue(replacements, ws.fetch(PRE_NID).fetch(frag), node);\n"
                   "  var loc := str_values.fetch(item%03u.fetch($h));\n",
                   counter - 3, counter - 3, counter - 3, counter - 2);
         if (fun->arity == 5) {
@@ -7942,55 +7939,39 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                       counter - 1, counter);
         }
         milprintf(f,
-                  "  var loc_uri := loc + \"\\001\" + uri;\n"
-                  "  var value := str_values.fetch(item.fetch($h));\n"
-                  "  # [oid,nil] list of prefixes used by loc_uri\n"
-                  "  var loc_uri_list := ws.fetch(QN_LOC_URI).fetch(frag).ord_uselect(loc_uri);\n"
-                  "  # [oid,nil] list of QN names with correct prefix as well (should be 0 or 1)\n"
-                  "  var qn_list := loc_uri_list.mirror().fetchjoin(ws.fetch(QN_PREFIX).fetch(frag)).uselect(prefix);\n"
-                  "  # [oid,nil] list of ATTR indexes for current node\n"
-                  "  var attr_list := ws.fetch(ATTR_OWN).fetch(frag).uselect(nid);\n"
-                  "  var tmp := attr_list.mirror().fetchjoin(ws.fetch(ATTR_QN).fetch(frag));\n"
-                  "  # [oid,nil] list of attributes for current node with correct FQ name\n"
-                  "  var attr_node_list := tmp.join(qn_list);\n"
-                  "  # check that there aren't already attributes with the same local name\n"
-                  "  # and same namespace but a different prefix on this node\n"
-                  "  if (attr_node_list.count() != tmp.join(loc_uri_list).count()) {\n"
-                  "    ERROR(\"duplicate attribute with differing prefixes.\");\n"
-                  "  }\n"
-                  "  # if name isn't known yet, create an entry for it\n"
-                  "  if (qn_list.count() = 0) {\n"
-                  "    # attribute name doesn't exist\n"
-                  "    loc_uri_list := nil;\n"
-                  "    qn_list := nil;\n"
-                  "    ws.fetch(QN_LOC).fetch(frag).access(BAT_APPEND).insert(nil, loc).access(BAT_READ);\n"
-                  "    ws.fetch(QN_PREFIX).fetch(frag).access(BAT_APPEND).insert(nil, prefix).access(BAT_READ);\n"
-                  "    ws.fetch(QN_URI).fetch(frag).access(BAT_APPEND).insert(nil, uri).access(BAT_READ);\n"
-                  "    ws.fetch(QN_LOC_URI).fetch(frag).access(BAT_APPEND).insert(nil, loc_uri).access(BAT_READ);\n"
-                  "    ws.fetch(QN_PREFIX_URI).fetch(frag).access(BAT_APPEND).insert(nil, prefix + \"\\001\" + uri).access(BAT_READ);\n"
-                  "    loc_uri_list := ws.fetch(QN_LOC_URI).fetch(frag).uselect(loc_uri).mirror().fetchjoin(ws.fetch(QN_PREFIX).fetch(frag));\n"
-                  "    qn_list := loc_uri_list.uselect(prefix);\n"
-                  "  }\n"
-                  "  # find value in property table\n"
-                  "  var prop_val := ws.fetch(PROP_VAL).fetch(frag);\n"
-                  "  var prop := prop_val.uselect(value);\n"
-                  "  if (prop.count() = 0) {\n"
-                  "    # value not found, insert it\n"
-                  "    prop := nil;\n"
-                  "    prop_val.access(BAT_APPEND).insert(nil, value).access(BAT_READ);\n"
-                  "    prop := prop_val.uselect(value);\n"
-                  "  }\n"
-                  "  # just the OID of the value\n"
-                  "  var propID := prop.reverse().fetch(0);\n"
-                  "  if (attr_node_list.count() = 1) {\n"
-                  "    # attribute already exists on node, just replace ATTR_PROP\n"
-                  "    ws.fetch(ATTR_PROP).fetch(frag).replace(attr_node_list.mirror().fetch(0), propID, true);\n"
+                  "  var ids := add_qn(replacements, ws, frag, nid, loc, prefix, uri);\n"
+                  "  var qnid := ids.fetch(0);\n"
+                  "  var atid := ids.fetch(1);\n"
+                  "  var propID := add_string_unique(replacements, ws, frag, PROP_VAL, value);\n"
+                  "  var attr_prop_bat := ws.fetch(ATTR_PROP).fetch(frag);\n"
+                  "  var new_attr_prop_bat := replacements.replacementsfetch(attr_prop_bat);\n"
+                  "  if (isnil(atid)) {\n"
+                  "    # add attribute to node\n"
+                  "    if (new_attr_prop_bat.count() > 0) {\n"
+                  "      atid := oid(lng(new_attr_prop_bat.reverse().max()) + 1);\n"
+                  "    } else if (attr_prop_bat.count() > 0) {\n"
+                  "      atid := oid(lng(attr_prop_bat.reverse().max()) + 1);\n"
+                  "    } else {\n"
+                  "      atid := 0@0;\n"
+                  "    }\n"
+                  "    new_attr_prop_bat := new_attr_prop_bat.insert(atid, propID);\n"
+                  "    var attr_own_bat := ws.fetch(ATTR_OWN).fetch(frag);\n"
+                  "    var new_attr_own_bat := replacements.replacementsfetch(attr_own_bat);\n"
+                  "    replacements := replacements.replace(attr_own_bat, new_attr_own_bat);\n"
+                  "    new_attr_own_bat := new_attr_own_bat.insert(atid, nid);\n"
+                  "    var attr_qn_bat := ws.fetch(ATTR_QN).fetch(frag);\n"
+                  "    var new_attr_qn_bat := replacements.replacementsfetch(attr_qn_bat);\n"
+                  "    new_attr_qn_bat := new_attr_qn_bat.insert(atid, qnid);\n"
+                  "    replacements := replacements.replace(attr_qn_bat, new_attr_qn_bat);\n"
                   "  } else {\n"
-                  "    # attribute name exists, but not on the node\n"
-                  "    ws.fetch(ATTR_OWN).fetch(frag).access(BAT_APPEND).insert(nil, nid).access(BAT_READ);\n"
-                  "    ws.fetch(ATTR_QN).fetch(frag).access(BAT_APPEND).insert(nil, qn_list.mirror().fetch(0)).access(BAT_READ);\n"
-                  "    ws.fetch(ATTR_PROP).fetch(frag).access(BAT_APPEND).insert(nil, propID).access(BAT_READ);\n"
+                  "    # replace attribute value\n"
+                  "    if (new_attr_prop_bat.exist(atid)) {\n"
+                  "      new_attr_prop_bat := new_attr_prop_bat.replace(atid, propID);\n"
+                  "    } else {\n"
+                  "      new_attr_prop_bat := new_attr_prop_bat.insert(atid, propID);\n"
+                  "    }\n"
                   "  }\n"
+                  "  replacements := replacements.replace(attr_prop_bat, new_attr_prop_bat);\n"
                   "}\n");
         if (fun->arity == 5) {
             deleteResult (f, counter);
@@ -8000,9 +7981,11 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult (f, counter - 3);
         return NORMAL;
     }        
-    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"unset-attr")))
+    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"unset-attr")) == 0)
     {
-        milprintf(f, "# fn:unset-attr\n");
+        milprintf(f,
+                  "# fn:unset-attr\n"
+                  "var replacements := new(bat, bat);\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -8010,7 +7993,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         if (fun->arity == 2) {
             counter += 2;
             milprintf(f,
-                      "var replacements := new(bat, bat);\n"
                       "var prefix := \"\";\n"
                       "var uri := \"\";\n");
         } else {
@@ -8029,6 +8011,9 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != ELEMENT) {\n"
                   "    ERROR(\"function fn:set-attr expects a element node.\");\n"
                   "  }\n"
+                  "  if (not(is_fake_project(ws.fetch(ATTR_FRAG).fetch(frag)))) {\n"
+                  "    ERROR(\"document operated on must have fake_project ATTR_FRAG table.\");\n"
+                  "  }\n"
                   "  var nid := replacementvalue(replacements, ws.fetch(PRE_NID).fetch(frag), node);\n",
                   counter - 2, counter - 2, counter - 2);
         if (fun->arity == 2) {
@@ -8046,110 +8031,87 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         milprintf(f,
                   "  var loc_uri := loc + \"\\001\" + uri;\n"
                   "  # [oid,nil] list of prefixes used by loc_uri\n"
-                  "  var loc_uri_list;\n"
-                  "  var qn_loc_uri := ws.fetch(QN_LOC_URI).fetch(frag);\n"
-                  "  if (replacements.exist(qn_loc_uri)) {\n"
-                  "    loc_uri_list := kunion(replacements.fetch(qn_loc_uri), qn_loc_uri).ord_uselect(loc_uri);\n"
-                  "  } else {\n"
-                  "    loc_uri_list := qn_loc_uri.ord_uselect(loc_uri);\n"
-                  "  }\n"
+                  "  var loc_uri_list := qn_loc_uri.ord_uselect(loc_uri);\n"
                   "  # [oid,nil] list of QN names with correct prefix as well (should be 0 or 1)\n"
-                  "  var qn_list;\n"
-                  "  var qn_prefix := ws.fetch(QN_PREFIX).fetch(frag);\n"
-                  "  if (replacements.exist(qn_prefix)) {\n"
-                  "    qn_list := loc_uri_list.mirror().fetchjoin(kunion(replacements.fetch(qn_prefix), qn_prefix)).uselect(prefix);\n"
-                  "  } else {\n"
-                  "    qn_list := loc_uri_list.mirror().fetchjoin(qn_prefix).uselect(prefix);\n"
+                  "  var qn_list := loc_uri_list.mirror().fetchjoin(qn_prefix).uselect(prefix);\n"
+                  "  if (replacements.exist(qn_loc_uri)) {\n"
+                  "    # combine with values from replacements\n"
+                  "    # there are only ever additional values there, no overwrites\n"
+                  "    var loc_uri_list_update := replacements.find(qn_loc_uri).ord_uselect(loc_uri);\n"
+                  "    var qn_list_update := loc_uri_list_update.mirror().fetchjoin(replacements.find(qn_prefix)).uselect(prefix);\n"
+                  "    loc_uri_list := sunion(loc_uri_list, loc_uri_list_update);\n"
+                  "    qn_list := sunion(qn_list, qn_list_update);\n"
                   "  }\n"
-                  "  # [oid,nil] list of ATTR indexes for current node\n"
-                  "  var attr_list;\n"
-                  "  var attr_own := ws.fetch(ATTR_OWN).fetch(frag);\n"
-                  "  if (replacements.exist(attr_own)) {\n"
-                  "    attr_list := kunion(replacements.fetch(attr_own), attr_own).uselect(nid);\n"
-                  "  } else {\n"
-                  "    attr_list := attr_own.uselect(nid);\n"
-                  "  }\n"
-                  "  var attr_qn := ws.fetch(ATTR_QN).fetch(frag);\n"
-                  "  var tmp;\n"
-                  "  if (replacements.exist(attr_qn)) {\n"
-                  "    tmp1 := kunion(replacements.fetch(attr_qn), attr_qn);\n"
-                  "  } else {\n"
-                  "    tmp1 := attr_qn;\n"
-                  "  }\n"
-                  "  var tmp := attr_list.mirror().fetchjoin(tmp1);\n"
-                  "  # [oid,nil] list of attributes for current node with correct FQ name\n"
-                  "  var attr_node_list := tmp.join(qn_list);\n"
-                  "  # check that there aren't already attributes with the same local name\n"
-                  "  # and same namespace but a different prefix on this node\n"
-                  "  if (attr_node_list.count() != tmp.join(loc_uri_list).count()) {\n"
-                  "    ERROR(\"duplicate attribute with differing prefixes.\");\n"
-                  "  }\n"
-                  "  # if name isn't known yet, create an entry for it\n"
+                  "  # if qn_list.count() = 0, the qualified name does not occur in the\n"
+                  "  # document, so the attribute certainly does not exist, i.e. we have\n"
+                  "  # nothing more to do\n"
                   "  if (qn_list.count() > 0) {\n"
+                  "    # find the OID in the ATTR table for the sought after attribute\n"
+                  "    # instance (store in attr_node_list)\n"
+                  "    var attr_own := ws.fetch(ATTR_OWN).fetch(frag);\n"
+                  "    var attr_qn := ws.fetch(ATTR_QN).fetch(frag);\n"
+                  "    # [oid,nil] list of ATTR indexes for current node\n"
+                  "    var attr_list := attr_own.uselect(nid);\n"
+                  "    # [oid,oid] list of ATTR indexes/ATTR QN IDs for current node\n"
+                  "    var attr_qn_list := attr_list.mirror().fetchjoin(attr_qn);\n"
+                  "    if (replacements.exist(attr_own)) {\n"
+                  "      var attr_list_update := replacements.find(attr_own).uselect(nid);\n"
+                  "      var attr_qn_list_update := attr_list_update.mirror().fetchjoin(replacements.replacementsfetch(attr_qn));\n"
+                  "      attr_qn_list := sunion(attr_qn_list, attr_qn_list_update);\n"
+                  "    }\n"
+                  "    # [oid,nil] list of attributes for current node with correct FQ name\n"
+                  "    var attr_node_list := attr_qn_list.join(qn_list);\n"
+                  "    if ((attr_node_list.count() != 0) and (attr_node_list.count() != 1)) {\n"
+                  "      ERROR(\"internal error, element with duplicate attribute.\");\n"
+                  "    }\n"
                   "    if (attr_node_list.count() = 1) {\n"
-                  "      var new_keys := attr_node_list.mirror().fetch(0);\n"
+                  "      var deleted_key := attr_node_list.mirror().fetch(0);\n"
                   "      var attr_prop := ws.fetch(ATTR_PROP).fetch(frag);\n"
-                  "      var new_attr_prop;\n"
-                  "      if (replacements.exist(attr_prop)) {\n"
-                  "        new_attr_prop := replacements.fetch(attr_prop);\n"
+                  "      var new_attr_prop := replacements.replacementsfetch(attr_prop);\n"
+                  "      var new_attr_own := replacements.replacementsfetch(attr_own);\n"
+                  "      var new_attr_qn := replacements.replacementsfetch(attr_qn);\n"
+                  "      if (new_attr_prop.exist(deleted_key)) {\n"
+                  "        new_attr_prop := new_attr_prop.replace(deleted_key, oid(nil));\n"
+                  "        new_attr_own := new_attr_own.replace(deleted_key, oid(nil));\n"
+                  "        new_attr_qn := new_attr_qn.replace(deleted_key, oid(nil));\n"
                   "      } else {\n"
-                  "        new_attr_prop := new(void, oid);\n"
-                  "	new_attr_prop.seqbase(0@0);\n"
-                  "	new_attr_prop.key(true);\n"
-                  "	replacements.insert(attr_prop, new_attr_prop);\n"
+                  "        new_attr_prop := new_attr_prop.insert(deleted_key, oid(nil));\n"
+                  "        new_attr_own := new_attr_own.insert(deleted_key, oid(nil));\n"
+                  "        new_attr_qn := new_attr_qn.insert(deleted_key, oid(nil));\n"
                   "      }\n"
-                  "      new_attr_prop.replace(new_keys, oid(nil));\n"
-                  "      new_attr_prop.insert(new_keys, oid(nil));\n"
-                  "      var attr_own := ws.fetch(ATTR_OWN).fetch(frag);\n"
-                  "      var new_attr_own;\n"
-                  "      if (replacements.exist(attr_own)) {\n"
-                  "        new_attr_own := replacements.fetch(attr_own);\n"
-                  "      } else {\n"
-                  "        new_attr_own := new(void, oid);\n"
-                  "	new_attr_own.seqbase(0@0);\n"
-                  "	new_attr_own.key(true);\n"
-                  "	replacements.insert(attr_own, new_attr_own);\n"
-                  "      }\n"
-                  "      new_attr_own.replace(new_keys, oid(nil));\n"
-                  "      new_attr_own.insert(new_keys, oid(nil));\n"
-                  "      var attr_qn := ws.fetch(ATTR_QN).fetch(frag);\n"
-                  "      var new_attr_qn;\n"
-                  "      if (replacements.exist(attr_qn)) {\n"
-                  "        new_attr_qn := replacements.fetch(attr_qn);\n"
-                  "      } else {\n"
-                  "        new_attr_qn := new(void, oid);\n"
-                  "	new_attr_qn.seqbase(0@0);\n"
-                  "	new_attr_qn.key(true);\n"
-                  "	replacements.insert(attr_qn, new_attr_qn);\n"
-                  "      }\n"
-                  "      new_attr_qn.replace(new_keys, oid(nil));\n"
-                  "      new_attr_qn.insert(new_keys, oid(nil));\n"
                   "    }\n"
                   "  }\n"
-                  "}\n"
-                  "replacements@batloop() {\n"
-                  "  var a := $h.access();\n"
-                  "  $h.access(BAT_WRITE);\n"
-                  "  $h.replace($t, true);\n"
-                  "  $h.insert(kdiff($t,$h));\n"
-                  "  $h.access(a);\n"
                   "}\n");
         if (fun->arity == 4) {
             deleteResult (f, counter);
             deleteResult (f, counter - 1);
         }
         deleteResult (f, counter - 2);
+        milprintf(f,
+                  "replacements@batloop() {\n"
+                  "  var a := $h.access();\n"
+                  "  $h.access(BAT_WRITE);\n"
+                  "  var hi := $h.reverse().max();\n"
+                  "  var hi1 := oid(lng(hi) + 1);\n"
+                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
+                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
+                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
+                  "  $h.replace(repl, true);\n"
+                  "  $h.insert(ins);\n"
+                  "  $h.access(a);\n"
+                  "}\n");
         return NORMAL;
     }        
-    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"set-text")))
+    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-text")) == 0)
     {
-        milprintf(f, "# fn:set-text\n");
+        milprintf(f,
+                  "# fn:set-text\n"
+                  "var replacements := new(bat, bat);\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
         milprintf(f,
-                  "var replacements := new(bat, bat);\n"
                   "var frags := kind%03u.get_fragment();\n"
                   "ipik@batloop() {\n"
                   "  var frag := frags.fetch($h);\n"
@@ -8157,53 +8119,37 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != TEXT) {\n"
                   "    ERROR(\"function fn:set-text expects a text node.\");\n"
                   "  }\n"
-                  "  var prop_text := ws.fetch(PROP_TEXT).fetch(frag);\n"
                   "  var text := str_values.fetch(item.fetch($h));\n"
-                  "  var new_prop_text;\n"
-                  "  var textID;\n"
-                  "  if (replacements.exist(prop_text)) {\n"
-                  "    new_prop_text := relacements.fetch(prop_text);\n"
-                  "    textID := new_prop_text.uselect(text);\n"
-                  "    if (textID.count() = 0) {\n"
-                  "      textID := prop_text.uselect(text);\n"
-                  "    }\n"
-                  "  } else {\n"
-                  "    textID := prop_text.uselect(text);\n"
-                  "    if (textID.count() = 0) {\n"
-                  "      new_prop_text := new(void, str);\n"
-                  "      new_prop_text.seqbase(oid(int(prop_text.seqbase()) + prop_text.count()));\n"
-                  "      new_prop_text.key(true);\n"
-                  "      replacements.insert(prop_text, new_prop_text);\n"
-                  "    }\n"
-                  "  }\n"
-                  "  if (textID.count() = 0) {\n"
-                  "    textID := nil;\n"
-                  "    new_prop_text.insert(nil, text);\n"
-                  "    textID := new_prop_text.uselect(text);\n"
-                  "  }\n"
-                  "  textID := textID.reverse().fetch(0);\n"
-                  "  replace(ws, replacements, PRE_PROP, node, textID);\n"
-                  "}\n"
-                  "replacements@batloop() {\n"
-                  "  var a := $h.access();\n"
-                  "  $h.access(BAT_WRITE);\n"
-                  "  $h.replace($t, true);\n"
-                  "  $h.insert(kdiff($t,$h));\n"
-                  "  $h.access(a);\n"
+                  "  var textID := add_string_unique(replacements, ws, frag, PROP_TEXT, text);\n"
+                  "  replacements := replace(replacements, ws.fetch(PRE_PROP).fetch(frag), node, textID);\n"
                   "}\n",
                   counter, counter);
         deleteResult (f, counter);
+        milprintf(f,
+                  "replacements@batloop() {\n"
+                  "  var a := $h.access();\n"
+                  "  $h.access(BAT_WRITE);\n"
+                  "  var hi := $h.reverse().max();\n"
+                  "  var hi1 := oid(lng(hi) + 1);\n"
+                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
+                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
+                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
+                  "  $h.replace(repl, true);\n"
+                  "  $h.insert(ins);\n"
+                  "  $h.access(a);\n"
+                  "}\n");
         return NORMAL;
     }        
-    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"set-comment")))
+    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-comment")) == 0)
     {
-        milprintf(f, "# fn:set-comment\n");
+        milprintf(f,
+                  "# fn:set-comment\n"
+                  "var replacements := new(bat, bat);\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RL(args));
         milprintf(f,
-                  "var replacements := new(bat, bat);\n"
                   "var frags := kind%03u.get_fragment();\n"
                   "ipik@batloop() {\n"
                   "  var frag := frags.fetch($h);\n"
@@ -8211,47 +8157,32 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != COMMENT) {\n"
                   "    ERROR(\"function fn:set-comment expects a comment node.\");\n"
                   "  }\n"
-                  "  var prop_com := ws.fetch(PROP_COM).fetch(frag);\n"
-                  "  var comment := str_values.fetch(item.fetch($h));\n"
-                  "  var new_prop_com;\n"
-                  "  var commentID;\n"
-                  "  if (replacements.exist(prop_com)) {\n"
-                  "    new_prop_com := relacements.fetch(prop_com);\n"
-                  "    commentID := new_prop_com.uselect(comment);\n"
-                  "    if (commentID.count() = 0) {\n"
-                  "      commentID := prop_com.uselect(comment);\n"
-                  "    }\n"
-                  "  } else {\n"
-                  "    commentID := prop_com.uselect(comment);\n"
-                  "    if (commentID.count() = 0) {\n"
-                  "      new_prop_com := new(void, str);\n"
-                  "      new_prop_com.seqbase(oid(int(prop_com.seqbase()) + prop_com.count()));\n"
-                  "      new_prop_com.key(true);\n"
-                  "      replacements.insert(prop_com, new_prop_com);\n"
-                  "    }\n"
-                  "  }\n"
-                  "  if (commentID.count() = 0) {\n"
-                  "    commentID := nil;\n"
-                  "    new_prop_com.insert(nil, comment);\n"
-                  "    commentID := new_prop_com.uselect(comment);\n"
-                  "  }\n"
-                  "  commentID := commentID.reverse().fetch(0);\n"
-                  "  replace(ws, replacements, PRE_PROP, node, commentID);\n"
-                  "}\n"
-                  "replacements@batloop() {\n"
-                  "  var a := $h.access();\n"
-                  "  $h.access(BAT_WRITE);\n"
-                  "  $h.replace($t, true);\n"
-                  "  $h.insert(kdiff($t,$h));\n"
-                  "  $h.access(a);\n"
+                  "  var com := str_values.fetch(item.fetch($h));\n"
+                  "  var comID := add_string_unique(replacements, ws, frag, PROP_COM, com);\n"
+                  "  replacements := replace(replacements, ws.fetch(PRE_PROP).fetch(frag), node, comID);\n"
                   "}\n",
                   counter, counter);
         deleteResult (f, counter);
+        milprintf(f,
+                  "replacements@batloop() {\n"
+                  "  var a := $h.access();\n"
+                  "  $h.access(BAT_WRITE);\n"
+                  "  var hi := $h.reverse().max();\n"
+                  "  var hi1 := oid(lng(hi) + 1);\n"
+                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
+                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
+                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
+                  "  $h.replace(repl, true);\n"
+                  "  $h.insert(ins);\n"
+                  "  $h.access(a);\n"
+                  "}\n");
         return NORMAL;
     }        
-    else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"set-pi")))
+    else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-pi")) == 0)
     {
-        milprintf(f, "# fn:set-pi\n");
+        milprintf(f,
+                  "# fn:set-pi\n"
+                  "var replacements := new(bat, bat);\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -8260,7 +8191,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         saveResult (f, counter);
         translate2MIL (f, NORMAL, cur_level, counter, RRL(args));
         milprintf(f,
-                  "var replacements := new(bat, bat);\n"
                   "var frags := kind%03u.get_fragment();\n"
                   "ipik@batloop() {\n"
                   "  var frag := frags.fetch($h);\n"
@@ -8268,41 +8198,27 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "  if (replacementvalue(replacements, ws.fetch(PRE_KIND).fetch(frag), node) != PI) {\n"
                   "    ERROR(\"function fn:set-pi expects a processing instruction node.\");\n"
                   "  }\n"
-                  "  var prop_ins := ws.fetch(PROP_INS).fetch(frag);\n"
-                  "  var prop_tgt := ws.fetch(PROP_TGT).fetch(frag);\n"
-                  "  var ins := str_values.fetch(item.fetch($h));\n"
-                  "  var tgt := str_values.fetch(item%03u.fetch($h));\n"
-                  "  var new_prop_ins;\n"
-                  "  var new_prop_tgt;\n"
-                  "  if (replacements.exist(prop_ins)) {\n"
-                  "    new_prop_ins := replacements.fetch(prop_ins);\n"
-                  "    new_prop_tgt := replacements.fetch(prop_tgt);\n"
-                  "  } else {\n"
-                  "    new_prop_ins := new(void, str);\n"
-                  "    new_prop_ins.seqbase(oid(int(prop_ins.seqbase()) + prop_ins.count()));\n"
-                  "    new_prop_ins.key(true);\n"
-                  "    replacements.insert(prop_ins, new_prop_ins);\n"
-                  "    new_prop_tgt := new(void, str);\n"
-                  "    new_prop_tgt.seqbase(oid(int(prop_tgt.seqbase()) + prop_tgt.count()));\n"
-                  "    new_prop_tgt.key(true);\n"
-                  "    replacements.insert(prop_tgt, new_prop_tgt);\n"
-                  "  }\n"
-                  /* always insert since bats must stay synchronized */
-                  "  new_prop_ins.insert(nil, ins);\n"
-                  "  new_prop_tgt.insert(nil, tgt);\n"
-                  "  var insID := new_prop_ins.uselect(ins).reverse().fetch(0);\n"
-                  "  replace(ws, replacements, PRE_PROP, node, insID);\n"
-                  "}\n"
-                  "replacements@batloop() {\n"
-                  "  var a := $h.access();\n"
-                  "  $h.access(BAT_WRITE);\n"
-                  "  $h.replace($t, true);\n"
-                  "  $h.insert(kdiff($t,$h));\n"
-                  "  $h.access(a);\n"
+                  "  var ins := str_values.fetch(item%03u.fetch($h));\n"
+                  "  var tgt := str_values.fetch(item.fetch($h));\n"
+                  "  var piID := add_pi(replacements, ws, frag, ins, tgt);\n"
+                  "  replacements := replace(replacements, ws.fetch(PRE_PROP).find(node), node, piID);\n"
                   "}\n",
                   counter-1, counter-1, counter);
         deleteResult (f, counter);
         deleteResult (f, counter - 1);
+        milprintf(f,
+                  "replacements@batloop() {\n"
+                  "  var a := $h.access();\n"
+                  "  $h.access(BAT_WRITE);\n"
+                  "  var hi := $h.reverse().max();\n"
+                  "  var hi1 := oid(lng(hi) + 1);\n"
+                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
+                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
+                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
+                  "  $h.replace(repl, true);\n"
+                  "  $h.insert(ins);\n"
+                  "  $h.access(a);\n"
+                  "}\n");
         return NORMAL;
     }        
     else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"error")))
