@@ -1296,6 +1296,9 @@ PFbui_fn_zero_or_one (const PFla_op_t *loop __attribute__((unused)),
     char *err_string = "err:FORG0003, fn:zero-or-one called with "
                        "a sequence containing more than one item.";
     
+    (void) loop; /* pacify picky compilers that do not understand
+                    "__attribute__((unused))" */
+
     return (struct  PFla_pair_t) {
                  .rel = cond_err (args[0].rel,
                                   count,
