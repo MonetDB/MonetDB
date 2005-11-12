@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 679 ]
+[ 681 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 679 ]
+[ 681 ]
 
 var All:=0;
 
@@ -77,8 +77,8 @@ Static_mods@batloop() {
 
 Module: ""
 
-[ 56 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 59 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																												  # name
 # str			str		str													str																																																															  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -90,6 +90,8 @@ Module: ""
 [ "dir",	  "PROC:      ",  "dir() : void",								  "not available"																																																													  ]
 [ "dir",	  "PROC:      ",  "dir(str) : void",								  "not available"																																																													  ]
 [ "dir_leaks",		  "PROC:      ",  "dir_leaks() : void",											  "not available"																																																													  ]
+[ "fetch",		  "PROC:      ",  "fetch(BAT[any,any::1], int) : any::1",						  "not available"																																																																																			  ]
+[ "fetch",		  "PROC:      ",  "fetch(BAT[oid,any::1], oid) : any::1",						  "not available"																																																																																			  ]
 [ "head",	  "PROC:      ",  "head(BAT[any,any]) : str",									  "not available"																																																													  ]
 [ "help",	  "PROC:      ",  "help(str) : void",								  "not available"																																																													  ]
 [ "help_sig",	  "PROC:      ",  "help_sig(oid) : void",							  "not available"																																																													  ]
@@ -119,6 +121,7 @@ Module: ""
 [ "project",	  "PROC:      ",  "project(BAT[any::1,any]) : BAT[any::1,void]",				  "not available"																																																													  ]
 [ "repeat",		  "PROC:      ",  "repeat(str, int) : str",										  "not available"																																																													  ]
 [ "save",	  "PROC:      ",  "save(BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "not available"																																																													  ]
+[ "slice",		  "PROC:      ",  "slice(BAT[any::1,any::2], int, int) : BAT[any::1,any::2]",				  "not available"																																																																																			  ]
 [ "space",		  "PROC:      ",  "space(int) : str",											  "not available"																																																													  ]
 [ "stringinsert",	  "PROC:      ",  "stringinsert(str, int, int, str) : str",								  "not available"																																																													  ]
 [ "stringleft",		  "PROC:      ",  "stringleft(str, int) : str",										  "not available"																																																													  ]
@@ -141,8 +144,8 @@ Module: ""
 
 Module: "algebra"
 
-[ 112 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 111 ]
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -163,8 +166,7 @@ Module: "algebra"
 [ "diff",	  "PROC:      ",  "diff(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "backward compatibility: use sdiff() explicitly."																															  ]
 [ "exist",	  "COMMAND:   ",  "exist(BAT[any::1,any::2], any::1, any::2) : bit",					  "Returns true when 'h,t' occurs as a bun in b."																															  ]
 [ "exist",	  "COMMAND:   ",  "exist(BAT[any::1,any], any::1) : bit",						  "Returns whether 'h' occurs as a head value in b."																															  ]
-[ "fetch",	  "COMMAND:   ",  "fetch(BAT[any,any::1], int) : any::1",						  "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"																											  ]
-[ "fetch",	  "COMMAND:   ",  "fetch(BAT[any,any::1], oid) : any::1",						  "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"																											  ]
+[ "fetch",			  "COMMAND:   ",  "fetch(BAT[any,any::1], lng) : any::1",						  "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"																																																										  ]
 [ "fetch",	  "COMMAND:   ",  "fetch(BAT[any::1,any::2], BAT[int,any]) : BAT[any::1,any::2]",			  "Returns a positional selection of b by the integer head values of s"																													  ]
 [ "fetch",	  "COMMAND:   ",  "fetch(BAT[any::1,any::2], BAT[oid,any]) : BAT[any::1,any::2]",			  "Returns a positional selection of b by the oid head values of s"																													  ]
 [ "find",	  "COMMAND:   ",  "find(BAT[any::1,any::2], any::1) : any::2",						  "Returns the tail value 't' for which some [h,t] BUN exists in b.\n If no such BUN exists, an error occurs."																								  ]
@@ -232,7 +234,7 @@ Module: "algebra"
 [ "select",			  "COMMAND:   ",  "select(BAT[any::1,any::2], any::2, any::2, bit, bit) : BAT[any::1,any::2]",				  "Select all BUNs of a BAT that have tail values: {v| low <[=] v <[=] high}.\nEither boundary value is included ('<=') if the respective bit (l_in / h_in)\nis TRUE, and excluded ('<') otherwise.\n\nNIL boundary values have a special meaning.\n+ low  == nil means: no lower bound\n+ high == nil means: no upper bound.\n\nNOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)\n        in order to cirumvent type clashes.\nNOTE 2: as the 'nil' element has no clear place in the ordered domain\n        of values, tuples with 'nil values are NEVER returned by the\n        range select."  ]
 [ "semijoin",	  "PROC:      ",  "semijoin(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]",			  "semijoin is a synonym of kintersect."																																  ]
 [ "sintersect",			  "COMMAND:   ",  "sintersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "Returns the intersection taken over *both* columns of two BATs.\n Results in all BUNs of 'left' that are also in 'right'. Does *not* do\n double-elimination over the 'left' BUNs, If you want this, use:\n 'sintersect(left.sunique,right.sunique)' or: 'sintersect(left,right).sunique'."																																	  ]
-[ "slice",	  "COMMAND:   ",  "slice(BAT[any::1,any::2], int, int) : BAT[any::1,any::2]",				  "Return the slice with the BUNs at position x till y."																														  ]
+[ "slice",			  "COMMAND:   ",  "slice(BAT[any::1,any::2], lng, lng) : BAT[any::1,any::2]",				  "Return the slice with the BUNs at position x till y."																																																													  ]
 [ "sort",	  "COMMAND:   ",  "sort(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns copy of a BAT with the BUNs sorted on ascending head values."																				  ]
 [ "sort_ht",			  "PROC:      ",  "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "sorts a BAT according to its head (primary) and tail values (secondary).(straight forward hack, not tuned for performance at all, just used for testing.)"																																																	  ]
 [ "sort_rev",	  "COMMAND:   ",  "sort_rev(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns copy of a BAT with the BUNs sorted on descending head values."																				  ]
@@ -815,7 +817,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 679 ]
+[ 681 ]
 
 quit();
 
