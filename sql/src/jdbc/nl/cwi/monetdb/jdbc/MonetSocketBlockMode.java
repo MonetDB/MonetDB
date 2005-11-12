@@ -60,15 +60,15 @@ final class MonetSocketBlockMode {
 	/** Stream from the Socket for writing */
 	private OutputStream toMonetRaw;
 	/** The TCP Socket to Mserver */
-	protected Socket con;
+	private Socket con;
 
 	/** Whether we are debugging or not */
-	protected boolean debug = false;
+	private boolean debug = false;
 	/** The Writer for the debug log-file */
-	protected FileWriter log;
+	private FileWriter log;
 
 	/** The type of the last line read */
-	protected int lineType;
+	private int lineType;
 
 	/** "there is currently no line", or the the type is unknown is
 	    represented by UNKNOWN */
