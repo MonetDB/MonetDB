@@ -1,2 +1,0 @@
-t:= mtime.current_timestamp();
-io.print(t);
