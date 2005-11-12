@@ -31,7 +31,6 @@ jar_MonetDB_JDBC = {
 	          nl/cwi/monetdb/jdbc/MonetDriver.java.in \
 	          nl/cwi/monetdb/jdbc/MonetResultSet.java \
 	          nl/cwi/monetdb/jdbc/MonetSavepoint.java \
-	          nl/cwi/monetdb/jdbc/MonetSocket.java \
 	          nl/cwi/monetdb/jdbc/MonetStatement.java \
 	          nl/cwi/monetdb/jdbc/MonetPreparedStatement.java \
 	          nl/cwi/monetdb/jdbc/MonetPreparedStatementJavaImpl.java \
