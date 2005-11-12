@@ -27,31 +27,66 @@ import java.util.*;
  * A Socket for communicating with the MonetDB database in block mode.
  * <br /><br />
  * This MonetSocket performs basic operations like sending the server a
- * message and/or receiving a line from it. A small interpretation of
+ * message and/or receiving a line from it.  A small interpretation of
  * all what is read is done, to supply some basic tools for the using
- * classes.<br /> For each read line, it is determined what type of line
- * it is according to the MonetDB MAPI protocol. This results in a line
- * to be PROMPT, HEADER, RESULT, ERROR or UNKNOWN. Use the getLineType()
+ * classes.<br />
+ * For each read line, it is determined what type of line it is
+ * according to the MonetDB MAPI protocol.i  This results in a line to
+ * be PROMPT, HEADER, RESULT, ERROR or UNKNOWN.i  Use the getLineType()
  * function to retrieve the type of the last line read.
  * <br /><br />
  * For debugging purposes a socket level debugging is implemented where
  * each and every interaction to and from the MonetDB server is logged
- * to a file on disk.  Incomming messages are prefixed by "&lt;&lt;",
- * outgoing messages by "&gt;&gt;".
+ * to a file on disk.<br />
+ * Incoming messages are prefixed by "RX" (received by the driver),
+ * outgoing messages by "TX" (transmitted by the driver).  Special
+ * decoded non-human readable messages are prefixed with "RD" and "TD"
+ * instead.  Following this two char prefix, a timestamp follows as
+ * the number of milliseconds since the UNIX epoch.  The rest of the
+ * line is a String representation of the data sent or received.
  * <br /><br />
  * This implementation of MonetSocket uses block mode on the mapi
- * protocol in order to circumvent the drawbacks of line mode. It allows
- * sending a multi line query, and should be less intensive for the
- * server.
+ * protocol.  It allows sending a multi line query as data is sent in
+ * 'blocks' that are prefixed with a two byte integer indicating its
+ * size.  The least significant bit of this integer represents the last
+ * block in a sequence.
  *
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
- * @version 2.6
+ * @version 2.7
  */
-class MonetSocketBlockMode extends MonetSocket {
+final class MonetSocketBlockMode {
 	/** Stream from the Socket for reading */
 	private InputStream fromMonetRaw;
 	/** Stream from the Socket for writing */
 	private OutputStream toMonetRaw;
+	/** The TCP Socket to Mserver */
+	protected Socket con;
+
+	/** Whether we are debugging or not */
+	protected boolean debug = false;
+	/** The Writer for the debug log-file */
+	protected FileWriter log;
+
+	/** The type of the last line read */
+	protected int lineType;
+
+	/** "there is currently no line", or the the type is unknown is
+	    represented by UNKNOWN */
+	final static int UNKNOWN = 0;
+	/** a line starting with ! indicates ERROR */
+	final static int ERROR = 1;
+	/** a line starting with # indicates HEADER */
+	final static int HEADER = 2;
+	/** a line starting with [ indicates RESULT */
+	final static int RESULT = 3;
+	/** a line which matches the pattern of prompt1 is a PROMPT1 */
+	final static int PROMPT1 = 4;
+	/** a line which matches the pattern of prompt2 is a PROMPT2 */
+	final static int PROMPT2 = 5;
+	/** a line starting with #- indicates the start of a header block */
+	final static int SOHEADER = 6;
+	/** The blocksize (hardcoded in compliance with stream.mx) */
+	final static int BLOCK = 8 * 1024 - 2;
 
 	/** A buffer which holds the blocks read */
 	private StringBuffer readBuffer;
@@ -84,14 +119,26 @@ class MonetSocketBlockMode extends MonetSocket {
 	}
 
 	/**
+	 * Enables logging to a file what is read and written from and to
+	 * MonetDB.
+	 *
+	 * @param filename the name of the file to write to
+	 * @throws IOException if the file could not be opened for writing
+	 */
+	public void debug(String filename) throws IOException {
+		log = new FileWriter(filename);
+		debug = true;
+	}
+
+	/**
 	 * write puts the given string on the stream as UTF-8 data.  The
 	 * stream will not be flushed after the write.  To flush the stream
-	 * use flush(), or use writeln().
+	 * use flush(), or use writeLine().
 	 *
 	 * @param data the data to write to the stream
 	 * @throws IOException if writing to the stream failed
 	 * @see #flush()
-	 * @see #writeln(String data)
+	 * @see #writeLine(String data)
 	 */
 	public void write(String data) throws IOException {
 		write(data.getBytes("UTF-8"));
@@ -144,7 +191,7 @@ class MonetSocketBlockMode extends MonetSocket {
 	}
 
 	/**
-	 * writeln puts the given string on the stream and flushes the
+	 * writeLine puts the given string on the stream and flushes the
 	 * stream afterwards so the data will actually be sent.  The given
 	 * data String is wrapped within the query template.
 	 *
@@ -152,7 +199,7 @@ class MonetSocketBlockMode extends MonetSocket {
 	 * @param data the data to write to the stream
 	 * @throws IOException if writing to the stream failed
 	 */
-	public void writeln(String[] templ, String data) throws IOException {
+	public void writeLine(String[] templ, String data) throws IOException {
 		synchronized (toMonetRaw) {
 			// In the same way as we read chunks from the socket, we
 			// write chunks to the socket, so the server can start
@@ -189,9 +236,9 @@ class MonetSocketBlockMode extends MonetSocket {
 				
 				if (debug) {
 					if (todo <= BLOCK) {
-						logTx("write final block: " + blocksize + " bytes");
+						logTd("write final block: " + blocksize + " bytes");
 					} else {
-						logTx("write block: " + blocksize + " bytes");
+						logTd("write block: " + blocksize + " bytes");
 					}
 					logTx(new String(bytes, len - todo, blocksize, "UTF-8"));
 				}
@@ -256,7 +303,7 @@ class MonetSocketBlockMode extends MonetSocket {
 			 * In this implementation we do not detect or use the user
 			 * flush as it is not needed to detect for us since the
 			 * higher level MAPI protocol defines a prompt which is used
-			 * for syncronisation.  We simply fetch blocks here as soon
+			 * for synchronisation.  We simply fetch blocks here as soon
 			 * as they are needed to process them line-based.
 			 */
 			int nl;
@@ -289,9 +336,9 @@ class MonetSocketBlockMode extends MonetSocket {
 
 					if (debug) {
 						if ((blklen[bigEndian ? 1 : 0] & 1) == 1) {
-							logRx("final block: " + readState + " bytes");
+							logRd("final block: " + readState + " bytes");
 						} else {
-							logRx("new block: " + readState + " bytes");
+							logRd("new block: " + readState + " bytes");
 						}
 					}
 				}
@@ -312,7 +359,7 @@ class MonetSocketBlockMode extends MonetSocket {
 				readBuffer.append(new String(data, 0, size, "UTF-8"));
 
 				if (debug) {
-					logRx("read chunk: " + size +
+					logRd("read chunk: " + size +
 						" bytes, left: " + readState + " bytes");
 					logRx(new String(data, "UTF-8"));
 				}
@@ -320,13 +367,85 @@ class MonetSocketBlockMode extends MonetSocket {
 			// fill line, excluding newline
 			String line = readBuffer.substring(readPos, nl);
 
+			setLineType(readBuffer.charAt(readPos), line);
+
 			// move the cursor position
 			readPos = nl + 1;
 
-			lineType = getLineType(line);
-
 			return(line);
 		}
+	}
+
+	/**
+	 * Returns the type of the string given.  This method assumes a
+	 * non-null string.
+	 *
+	 * @param first the first char from line
+	 * @param line the string to examine
+	 * @return the type of the given string
+	 */
+	private void setLineType(char first, String line) {
+		lineType = UNKNOWN;
+		switch (first) {
+			case '!':
+				lineType = ERROR;
+			break;
+			case '#':
+				/* MAPI start of header is coded as #- */
+				if (line.length() == 2 && line.charAt(1) == '-') {
+					lineType = SOHEADER;
+				} else {
+					lineType = HEADER;
+				}
+			break;
+			case '[':
+				lineType = RESULT;
+			break;
+			default:
+				if (first == (char)1 && line.length() == 2) {
+					if (line.charAt(1) == (char)1) {
+						/* MAPI PROMPT1 */
+						lineType = PROMPT1;
+					} else if (line.charAt(1) == (char)2) {
+						/* MAPI PROMPT2 (MORE) */
+						lineType = PROMPT2;
+					}
+				}
+			break;
+		}
+	}
+
+	/**
+	 * getLineType returns the type of the last line read.
+	 *
+	 * @return an integer representing the kind of line this is, one of the
+	 *         following constants: UNKNOWN, HEADER, ERROR, PROMPT, RESULT
+	 */
+	public int getLineType() {
+		return(lineType);
+	}
+
+	/**
+	 * Reads up till the MonetDB prompt, indicating the server is ready
+	 * for a new command.  All read data is discarded.  If the last line
+	 * read by readLine() was a prompt, this method will immediately
+	 * return.
+	 * <br /><br />
+	 * If there are errors present in the lines that are read, then they
+	 * are put in one string and returned <b>after</b> the prompt has
+	 * been found. If no errors are present, null will be returned.
+	 *
+	 * @return a string containing error messages, or null if there aren't any
+	 * @throws IOException if an IO exception occurs while talking to the server
+	 */
+	public synchronized String waitForPrompt() throws IOException {
+		String ret = "", tmp;
+		while (lineType != PROMPT1) {
+			if ((tmp = readLine()) == null)
+				throw new IOException("Connection to server lost!");
+			if (lineType == ERROR) ret += "\n" + tmp.substring(1);
+		}
+		return(ret == "" ? null : ret.trim());
 	}
 
 	/**
@@ -355,25 +474,72 @@ class MonetSocketBlockMode extends MonetSocket {
 	}
 
 	/**
-	 * Returns whether data can be read from the stream or not.
-	 */
-	public boolean hasData() {
-		synchronized (fromMonetRaw) {
-			try {
-				return(fromMonetRaw.available() > 0);
-			} catch (IOException e) {
-				return(false);
-			}
-		}
-	}
-
-	/**
-	 * destructor called by garbage collector before destroying this object
-	 * tries to disconnect the MonetDB connection if it has not been disconnected
-	 * already
+	 * Destructor called by garbage collector before destroying this
+	 * object tries to disconnect the MonetDB connection if it has not
+	 * been disconnected already.
 	 */
 	protected void finalize() throws Throwable {
 		disconnect();
 		super.finalize();
+	}
+
+
+	/**
+	 * Writes a logline tagged with a timestamp using the given string.
+	 * Used for debugging purposes only and represents a message that is
+	 * connected to writing to the socket.  A logline might look like:
+	 * TX 152545124: Hello MonetDB!
+	 *
+	 * @param message the message to log
+	 * @throws IOException if an IO error occurs while writing to the logfile
+	 */
+	void logTx(String message) throws IOException {
+		log.write("TX " + System.currentTimeMillis() +
+			": " + message + "\n");
+	}
+
+	/**
+	 * Writes a logline tagged with a timestamp using the given string.
+	 * Lines written using this log method are tagged as "added
+	 * metadata" which is not strictly part of the data sent.
+	 *
+	 * @param message the message to log
+	 * @throws IOException if an IO error occurs while writing to the logfile
+	 */
+	void logTd(String message) throws IOException {
+		log.write("TD " + System.currentTimeMillis() +
+			": " + message + "\n");
+	}
+
+	/**
+	 * Writes a logline tagged with a timestamp using the given string,
+	 * and flushes afterwards.  Used for debugging purposes only and
+	 * represents a message that is connected to reading from the
+	 * socket.  The log is flushed after writing the line.  A logline
+	 * might look like:
+	 * RX 152545124: Hi JDBC!
+	 *
+	 * @param message the message to log
+	 * @throws IOException if an IO error occurs while writing to the logfile
+	 */
+	void logRx(String message) throws IOException {
+		log.write("RX " + System.currentTimeMillis() +
+			": " + message + "\n");
+		log.flush();
+	}
+
+	/**
+	 * Writes a logline tagged with a timestamp using the given string,
+	 * and flushes afterwards.  Lines written using this log method are
+	 * tagged as "added metadata" which is not strictly part of the data
+	 * received.
+	 *
+	 * @param message the message to log
+	 * @throws IOException if an IO error occurs while writing to the logfile
+	 */
+	void logRd(String message) throws IOException {
+		log.write("RD " + System.currentTimeMillis() +
+			": " + message + "\n");
+		log.flush();
 	}
 }

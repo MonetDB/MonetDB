@@ -42,7 +42,7 @@ import java.net.*;
  * @author Fabian Groffen <Fabian.Groffen@cwi.nl>
  * @version @JDBC_MAJOR@.@JDBC_MINOR@ (@JDBC_VER_SUFFIX@)
  */
-public class MonetDriver implements Driver {
+final public class MonetDriver implements Driver {
 	// the url kind will be jdbc:monetdb://<host>[:<port>]/<database>
 	// Chapter 9.2.1 from Sun JDBC 3.0 specification
 	/** The prefix of a MonetDB url */
@@ -220,11 +220,6 @@ public class MonetDriver implements Driver {
 		prop = new DriverPropertyInfo("logfile", "");
 		prop.required = false;
 		prop.description = "The filename to write the debug log to.  Only takes effect if debug is set to true.  If the file exists, an incrementing number is added, till the filename is unique.";
-		props.add(prop);
-
-		prop = new DriverPropertyInfo("blockmode", "true");
-		prop.required = false;
-		prop.description = "Whether blockmode should be used, when false, linemode is used instead";
 		props.add(prop);
 
 		prop = new DriverPropertyInfo("language", "sql");

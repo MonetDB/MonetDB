@@ -65,7 +65,7 @@ public class MonetConnection implements Connection {
 	 * PreparedStatements */
 	private final boolean nativePreparedStatements;
 	/** A connection to Mserver using a TCP socket */
-	private final MonetSocket monet;
+	private final MonetSocketBlockMode monet;
 
 	/** Whether this Connection is closed (and cannot be used anymore) */
 	private boolean closed;
@@ -181,12 +181,7 @@ public class MonetConnection implements Connection {
 		commandTempl = new String[3]; // pre, post, sep
 
 		try {
-			// make connection to MonetDB
-			if (blockMode) {
-				monet = new MonetSocketBlockMode(hostname, port);
-			} else {
-				monet = new MonetSocket(hostname, port);
-			}
+			monet = new MonetSocketBlockMode(hostname, port);
 
 			/*
 			 * There is no need for a lock on the monet object here.
@@ -213,69 +208,57 @@ public class MonetConnection implements Connection {
 			}
 
 			// log in
-			if (blockMode) {
-				// convenience cast shortcut
-				MonetSocketBlockMode blkmon = (MonetSocketBlockMode)monet;
-				String challenge = null;
+			String challenge = null;
 
-				// read the challenge from the server
-				byte[] chal = new byte[2];
-				blkmon.read(chal);
-				int len = 0;
-				try {
-					len = Integer.parseInt(new String(chal, "UTF-8"));
-				} catch (NumberFormatException e) {
-					throw new SQLException("Server challenge length unparsable (" + new String(chal, "UTF-8") + ")");
-				}
-				// read the challenge string
-				chal = new byte[len];
-				blkmon.read(chal);
-				
-				challenge = new String(chal, "UTF-8");
+			// read the challenge from the server
+			byte[] chal = new byte[2];
+			monet.read(chal);
+			int len = 0;
+			try {
+				len = Integer.parseInt(new String(chal, "UTF-8"));
+			} catch (NumberFormatException e) {
+				throw new SQLException("Server challenge length unparsable " +
+						"(" + new String(chal, "UTF-8") + ")");
+			}
+			// read the challenge string
+			chal = new byte[len];
+			monet.read(chal);
 
-				// mind the newline at the end
-				blkmon.write(getChallengeResponse(
-					challenge,
-					username,
-					password,
-					language,
-					true,
-					database
-				) + "\n");
+			challenge = new String(chal, "UTF-8");
 
-				// We need to send the server our byte order.  Java by
-				// itself uses network order.
-				// A short with value 1234 will be sent to indicate our
-				// byte-order.
-				/*
-				short x = 1234;
-				byte high = (byte)(x >>> 8);	// = 0x04
-				byte low = (byte)x;				// = 0xD2
-				*/
-				final byte[] bigEndian = {(byte)0x04, (byte)0xD2};
-				blkmon.write(bigEndian);
-				blkmon.flush();
+			// mind the newline at the end
+			monet.write(getChallengeResponse(
+						challenge,
+						username,
+						password,
+						language,
+						true,
+						database
+						) + "\n");
 
-				// now read the byte-order of the server
-				byte[] byteorder = new byte[2];
-				if (blkmon.read(byteorder) != 2)
-					throw new SQLException("The server sent an incomplete byte-order sequence");
-				if (byteorder[0] == (byte)0x04) {
-					// set our connection to big-endian mode
-					blkmon.setByteOrder(ByteOrder.BIG_ENDIAN);
-				} else if (byteorder[0] == (byte)0xD2) {
-					// set our connection to litte-endian mode
-					blkmon.setByteOrder(ByteOrder.LITTLE_ENDIAN);
-				}
-			} else {
-				monet.writeln(queryTempl, getChallengeResponse(
-					monet.readLine(),
-					username,
-					password,
-					language,
-					false,
-					database
-				));
+			// We need to send the server our byte order.  Java by
+			// itself uses network order.
+			// A short with value 1234 will be sent to indicate our
+			// byte-order.
+			/*
+			short x = 1234;
+			byte high = (byte)(x >>> 8);	// = 0x04
+			byte low = (byte)x;				// = 0xD2
+			*/
+			final byte[] bigEndian = {(byte)0x04, (byte)0xD2};
+			monet.write(bigEndian);
+			monet.flush();
+
+			// now read the byte-order of the server
+			byte[] byteorder = new byte[2];
+			if (monet.read(byteorder) != 2)
+				throw new SQLException("The server sent an incomplete byte-order sequence");
+			if (byteorder[0] == (byte)0x04) {
+				// set our connection to big-endian mode
+				monet.setByteOrder(ByteOrder.BIG_ENDIAN);
+			} else if (byteorder[0] == (byte)0xD2) {
+				// set our connection to litte-endian mode
+				monet.setByteOrder(ByteOrder.LITTLE_ENDIAN);
 			}
 
 			// read monet response till prompt
@@ -1027,7 +1010,7 @@ public class MonetConnection implements Connection {
 				size = hdrl.maxrows != 0 ? Math.min(hdrl.maxrows, size) : size;
 				// don't do work if it's not needed
 				if (lang == LANG_SQL && size != 0 && size != curReplySize) {
-					monet.writeln(queryTempl, "SET reply_size = " + size);
+					monet.writeLine(queryTempl, "SET reply_size = " + size);
 
 					String error = monet.waitForPrompt();
 					if (error != null) throw new SQLException(error);
@@ -1049,7 +1032,7 @@ public class MonetConnection implements Connection {
 			// as we are blocking an not consuming from it.  The result
 			// is a state where both client and server want to write,
 			// but block.
-			if (hdrl.query().length() > MonetSocket.BLOCK) {
+			if (hdrl.query().length() > MonetSocketBlockMode.BLOCK) {
 				// get a reference to the send thread
 				if (sendThread == null) sendThread = new SendThread(monet);
 				// tell it to do some work!
@@ -1058,22 +1041,22 @@ public class MonetConnection implements Connection {
 			} else {
 				// this is a simple call, which is a lot cheaper and will
 				// always succeed for small queries.
-				monet.writeln(queryTempl, hdrl.query());
+				monet.writeLine(queryTempl, hdrl.query());
 			}
 
 			// go for new results
 			String tmpLine;
 			Header hdr = null;
 			RawResults rawr = null;
-			int lastState = MonetSocket.UNKNOWN;
+			int lastState = MonetSocketBlockMode.UNKNOWN;
 			int linetype;
 			do {
 				tmpLine = monet.readLine();
 				linetype = monet.getLineType();
-				if (linetype == MonetSocket.ERROR) {
+				if (linetype == MonetSocketBlockMode.ERROR) {
 					// store the error message in the Header object
 					hdrl.addError(tmpLine.substring(1));
-				} else if (linetype == MonetSocket.SOHEADER) {
+				} else if (linetype == MonetSocketBlockMode.SOHEADER) {
 					// close previous if set
 					if (hdr != null) {
 						hdr.complete();
@@ -1091,13 +1074,13 @@ public class MonetConnection implements Connection {
 					);
 					if (rawr != null) rawr.finish();
 					rawr = null;
-				} else if (linetype == MonetSocket.HEADER) {
+				} else if (linetype == MonetSocketBlockMode.HEADER) {
 					if (hdr == null) throw
 						new SQLException("Protocol violation: header sent before start of header was issued!");
 					hdr.addHeader(tmpLine);
-				} else if (linetype == MonetSocket.RESULT) {
+				} else if (linetype == MonetSocketBlockMode.RESULT) {
 					// complete the header info and add to list
-					if (lastState == MonetSocket.HEADER) {
+					if (lastState == MonetSocketBlockMode.HEADER) {
 						hdr.complete();
 						rawr = new RawResults(size != 0 ? Math.min(size, hdr.getTupleCount()) : hdr.getTupleCount(), null, hdr.getRSType() == ResultSet.TYPE_FORWARD_ONLY);
 						hdr.addRawResults(0, rawr);
@@ -1108,11 +1091,11 @@ public class MonetConnection implements Connection {
 					if (rawr == null) throw
 						new SQLException("Protocol violation: result sent before header!");
 					rawr.addRow(tmpLine);
-				} else if (linetype == MonetSocket.UNKNOWN) {
+				} else if (linetype == MonetSocketBlockMode.UNKNOWN) {
 					// unknown, will mean a protocol violation
 					addWarning("Protocol violation: unknown linetype.  Ignoring line: " + tmpLine);
 				}
-			} while ((lastState = linetype) != MonetSocket.PROMPT1);
+			} while ((lastState = linetype) != MonetSocketBlockMode.PROMPT1);
 			// Tell the RawResults object there is nothing going to be
 			// added right now.  We need to do this because MonetDB
 			// sometimes plays games with us and just doesn't send what
@@ -1161,7 +1144,7 @@ public class MonetConnection implements Connection {
 				monet.waitForPrompt();
 
 				// send the query
-				monet.writeln(commandTempl, rawr.getXexport());
+				monet.writeLine(commandTempl, rawr.getXexport());
 
 				// go for new results, everything should be result (or
 				// error :( )
@@ -1170,16 +1153,16 @@ public class MonetConnection implements Connection {
 				do {
 					tmpLine = monet.readLine();
 					linetype = monet.getLineType();
-					if (linetype == MonetSocket.RESULT) {
+					if (linetype == MonetSocketBlockMode.RESULT) {
 						rawr.addRow(tmpLine);
-					} else if (linetype == MonetSocket.ERROR) {
+					} else if (linetype == MonetSocketBlockMode.ERROR) {
 						rawr.addError(tmpLine.substring(1));
-					} else if (linetype == MonetSocket.HEADER) {
+					} else if (linetype == MonetSocketBlockMode.HEADER) {
 						rawr.addError("Unexpected header found");
-					} else if (linetype == MonetSocket.UNKNOWN) {
+					} else if (linetype == MonetSocketBlockMode.UNKNOWN) {
 						addWarning("Protocol violation, unknown line type for line: " + tmpLine);
 					}
-				} while (linetype != MonetSocket.PROMPT1);
+				} while (linetype != MonetSocketBlockMode.PROMPT1);
 				// Tell the RawResults object there is nothing going to be
 				// added right now.  We need to do this because MonetDB
 				// sometimes plays games with us and just doesn't send what
@@ -2188,7 +2171,7 @@ public class MonetConnection implements Connection {
 		private final static int QUERY = 1;
 
 		private HeaderList hdrl;
-		private MonetSocket conn;
+		private MonetSocketBlockMode conn;
 		private String error;
 		private int state = WAIT;
 
@@ -2198,7 +2181,7 @@ public class MonetConnection implements Connection {
 		 *
 		 * @param monet the socket to write to
 		 */
-		public SendThread(MonetSocket conn) {
+		public SendThread(MonetSocketBlockMode conn) {
 			super("SendThread");
 			setDaemon(true);
 			this.conn = conn;
@@ -2222,7 +2205,7 @@ public class MonetConnection implements Connection {
 					// we issue notify here, so incase we get blocked on IO
 					// the thread that waits on us in runQuery can continue
 					this.notify();
-					conn.writeln(queryTempl, hdrl.query());
+					conn.writeLine(queryTempl, hdrl.query());
 				} catch (IOException e) {
 					error = e.getMessage();
 				}

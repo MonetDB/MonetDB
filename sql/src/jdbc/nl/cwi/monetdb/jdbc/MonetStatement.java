@@ -203,11 +203,11 @@ public class MonetStatement implements Statement {
 		boolean error = false;
 
 		BatchUpdateException e = new BatchUpdateException("Error(s) occurred while executing the batch, see next SQLExceptions for details", counts);
-		StringBuffer tmpBatch = new StringBuffer(MonetSocket.BLOCK);
+		StringBuffer tmpBatch = new StringBuffer(MonetSocketBlockMode.BLOCK);
 		String sep = connection.queryTempl[2];
 		for (int i = 0; i < batch.size(); i++) {
 			String tmp = batch.get(i).toString();
-			if (sep.length() + tmp.length() > MonetSocket.BLOCK) {
+			if (sep.length() + tmp.length() > MonetSocketBlockMode.BLOCK) {
 				// The thing is too big.  Way too big.  Since it won't
 				// be optimal anyway, just add it to whatever we have
 				// and continue.
@@ -220,7 +220,7 @@ public class MonetStatement implements Statement {
 				first = true;
 				continue;
 			}
-			if (tmpBatch.length() + sep.length() + tmp.length() >= MonetSocket.BLOCK) {
+			if (tmpBatch.length() + sep.length() + tmp.length() >= MonetSocketBlockMode.BLOCK) {
 				// send and receive
 				error |= internalBatch(tmpBatch.toString(), counts, offset, i, e);
 				offset = i;

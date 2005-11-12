@@ -53,7 +53,6 @@ public class JdbcClient {
 		copts.addOption("u", "user", CmdLineOpts.CAR_ONE, System.getProperty("user.name"));
 		copts.addOption("b", "database", CmdLineOpts.CAR_ONE, "demo");
 		copts.addOption("l", "language", CmdLineOpts.CAR_ONE, "sql");
-		copts.addOption(null, "Xmode", CmdLineOpts.CAR_ONE, null);
 		copts.addOption(null, "Xblksize", CmdLineOpts.CAR_ONE, null);
 		copts.addOption(null, "Xoutput", CmdLineOpts.CAR_ONE, null);
 		copts.addOption(null, "Xprepare", CmdLineOpts.CAR_ONE, "native");
@@ -148,8 +147,6 @@ public class JdbcClient {
 "           file name is given, it is used, otherwise a file called\n" +
 "           monet<timestamp>.log is created.  A given file will never be\n" +
 "           overwritten; instead a unique variation of the file is used.\n" +
-"-Xmode     Specifies whether to use line or block mode when connecting.  Use\n" +
-"           block or line to specify which mode to use.\n" +
 "-Xblksize  Specifies the blocksize when using block mode, given in bytes.\n" +
 "-Xoutput   The output mode when dumping.  Default is sql, xml may be used for\n" +
 "           an experimental XML output.\n" +
@@ -198,15 +195,7 @@ public class JdbcClient {
 
 		// build the extra arguments of the JDBC connect string
 		String attr = "?";
-		CmdLineOpts.OptionContainer oc = copts.getOption("Xmode");
-		if (oc.isPresent()) {
-			if ("line".equals(oc.getArgument())) {
-				attr += "blockmode=false&";
-			} else {
-				attr += "blockmode=true&";
-			}
-		}
-		oc = copts.getOption("Xblksize");
+		CmdLineOpts.OptionContainer oc = copts.getOption("Xblksize");
 		if (oc.isPresent())
 			attr += "blockmode_blocksize=" + oc.getArgument() + "&";
 		oc = copts.getOption("Xprepare");

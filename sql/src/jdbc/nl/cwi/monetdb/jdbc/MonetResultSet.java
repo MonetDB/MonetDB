@@ -77,7 +77,7 @@ public class MonetResultSet implements ResultSet {
 	private SQLWarning warnings;
 
 	/**
-	 * Main constructor, sends query to MonetDB and reads header
+	 * Main constructor backed by the given Header.
 	 *
 	 * @param statement the statement which created this ResultSet
 	 * @param header a header containing the query, resultset type, etc.
