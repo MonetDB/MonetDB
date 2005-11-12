@@ -1,2 +1,0 @@
-b:= bat.new(:void,:int);
-r:= bat.reverse(b);

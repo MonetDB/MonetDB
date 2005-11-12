@@ -1,4 +1,0 @@
-#see if we can register functions
-
-mal.register("user","mytest","io.print(\"hello world\");","first test");
-mdb.list("user","mytest");
