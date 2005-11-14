@@ -1,14 +1,14 @@
-stderr of test 'MIL_cleanup.SF-1035451` in directory 'tests/BugDay_2005-11-09_4.8` itself:
+stderr of test 'division_by_zero-bat_arith.SF-1037591` in directory 'tests/BugDay_2005-11-09_4.8` itself:
 
 
-# 11:32:33 >  
-# 11:32:33 >  Mtimeout -timeout 60 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=32759 --set sql_port=40587 --set xquery_port=50596 --set monet_prompt= --trace --dbname=mTests_tests_BugDay_2005-11-09_4.8  < MIL_cleanup.SF-1035451.milS
-# 11:32:33 >  
+# 11:42:48 >  
+# 11:42:48 >  Mtimeout -timeout 60 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=36134 --set sql_port=48703 --set xquery_port=52486 --set monet_prompt= --trace --dbname=mTests_tests_BugDay_2005-11-09_4.8  < division_by_zero-bat_arith.SF-1037591.milS
+# 11:42:48 >  
 
 # builtin opt 	config = ${prefix}/etc/MonetDB.conf
 # builtin opt 	gdk_arch = 64bitx86_64-redhat-linux-gnu
 # builtin opt 	gdk_version = 4.8.3
-# builtin opt 	monet_pid = 6606
+# builtin opt 	monet_pid = 9496
 # builtin opt 	prefix = /ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX.
 # builtin opt 	exec_prefix = ${prefix}
 # builtin opt 	gdk_dbname = tst
@@ -57,13 +57,13 @@ stderr of test 'MIL_cleanup.SF-1035451` in directory 'tests/BugDay_2005-11-09_4.
 # cmdline opt 	monet_mod_path = /ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./lib/bin
 # cmdline opt 	gdk_dbfarm = /ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/dbfarm
 # cmdline opt 	sql_logdir = /ufs/manegold/_/scratch0/Monet/Testing/Stable/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/log
-# cmdline opt 	mapi_port = 32759
-# cmdline opt 	sql_port = 40587
-# cmdline opt 	xquery_port = 50596
+# cmdline opt 	mapi_port = 36134
+# cmdline opt 	sql_port = 48703
+# cmdline opt 	xquery_port = 52486
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbname = mTests_tests_BugDay_2005-11-09_4.8
 
-# 11:32:33 >  
-# 11:32:33 >  Done.
-# 11:32:33 >  
+# 11:42:48 >  
+# 11:42:48 >  Done.
+# 11:42:48 >  
 
