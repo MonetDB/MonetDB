@@ -34,8 +34,17 @@ Over..
 # name	tmp_52	tmp_54	tmp_56	heat	dirty		status	kind	refcnt	lrefcnt		  # name
 # str	str	str	lng	int	str		str	str	int	int		  # type
 #-------------------------------------------------------------------------------------------------#
+#---------------------------------------------------------------------------------------------------------#
+# name		htype	ttype	count	heat	dirty		status	kind	refcnt	lrefcnt		  # name
+# str		str	str	lng	int	str		str	str	int	int		  # type
+#---------------------------------------------------------------------------------------------------------#
+[ "address_name", "oid",  "str",  0,	  0,	  "dirty",	  "load", "pers", 0,	  2		  ]
+#-----------------#
+# h	t	  # name
+# oid	str	  # type
+#-----------------#
 
-# 18:14:59 >  
-# 18:14:59 >  Done.
-# 18:14:59 >  
+# 16:07:43 >  
+# 16:07:43 >  Done.
+# 16:07:43 >  
 
