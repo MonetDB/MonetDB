@@ -26,22 +26,30 @@ public class Test_Cmanycon {
 
 		try {
 			// spawn a lot of Connections, just for fun...
-			for (int i = 0; i < 100; i++) {
+			int i;
+			for (i = 0; i < 50; i++) {
+				System.out.print("Establishing Connection " + i + "...");
 				Connection con = DriverManager.getConnection(args[0]);
+				System.out.print(" done...");
 
 				// do something with the connection to test if it works
 				con.setAutoCommit(false);
+				System.out.println(" alive");
 
 				cons.add(con);
 			}
 
 			// now try to nicely close them
-			for (Iterator it = cons.iterator(); it.hasNext(); ) {
+			i = 0;
+			for (Iterator it = cons.iterator(); it.hasNext(); i++) {
 				Connection con = (Connection)(it.next());
 
 				// see if the connection still works
+				System.out.print("Closing Connection " + i + "...");
 				con.setAutoCommit(true);
+				System.out.print(" still alive...");
 				con.close();
+				System.out.println(" done");
 			}
 		} catch (SQLException e) {
 			System.out.println("FAILED! " + e.getMessage());
