@@ -21,8 +21,7 @@ Over..
 # 14:58:44 >  Mtimeout -timeout 60 MapiClient -lxquery -sxml -u monetdb -P monetdb --host=localhost --port=57716 xquery_crashtest.SF-1207048.xq
 # 14:58:44 >  
 
-<?xml version="1.0"
-encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <XQueryResult>
 "test"
 </XQueryResult>
