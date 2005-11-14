@@ -10,4 +10,5 @@ fork(listen());
 
 var cid := open("localhost");
 var res := rpc(cid, "g();"); # caused crash
-print(slice(res, 0, 10));
+print(count(res));
+print(mark(slice(res, 0, 10), 0@0)); # mark to avoid random output
