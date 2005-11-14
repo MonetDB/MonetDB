@@ -2143,13 +2143,14 @@ proc replacementsfetch(BAT[BAT,BAT] replacements, BAT[any::1,any::2] oldbat): BA
   }
 }
 
-proc replace(bat[bat,bat] replacements, bat[void,any::1] propbat, int frag, oid key, any::1 val): bat[bat,bat]
+proc replace(bat[bat,bat] replacements, bat[void,bat] ws, int prop, oid frag, bat[oid,any] newval): bat[bat,bat]
 {
+  var propbat := ws.fetch(prop).fetch(frag);
   var newpropbat := replacements.replacementsfetch(propbat);
-  if (newpropbat.exist(key))
-    newpropbat := newpropbat.replace(key, val);
-  else
-    newpropbat := newpropbat.insert(key, val);
+  var insval := kdiff(newval, newpropbat);
+  var replval := kdiff(newval, insval);
+  newpropbat := newpropbat.replace(replval);
+  newpropbat := newpropbat.insert(insval);
   return replacements.replace(propbat, newpropbat);
 }
 
@@ -2159,6 +2160,68 @@ var PAGESIZE := (1 << PAGESHIFT);
 proc mposjoin(bat[oid,oid] pre, oid frag, bat[oid, bat] ws_item) : bat[void,any]
 {
   return fake_leftfetchjoin(pre, ws_item.fetch(frag));
+}
+
+proc nodedelete(bat[bat,bat] replacements, bat[void,bat] ws, any item, any kind, bat[void,oid] ipik) : bat[bat,bat]
+{
+  var frags := kind.get_fragment();
+  # reverse sort item so that we delete the last node
+  # first, so that holes can be merged
+  var loopvar;
+  if (type(item) = bat) {
+    loopvar := item.reverse().sort_rev().reverse();
+  } else {
+    loopvar := ipik;
+  }
+  loopvar@batloop() {
+    var frag := frags.fetch($h);
+    var itemval;
+    if (type(item) = bat) {
+      itemval := $t;
+    } else {
+      itemval := item;
+    }
+    var pre_size := ws.fetch(PRE_SIZE).find(frag);
+    var size := replacementvalue(replacements, pre_size, itemval);
+    if (not(isnil(niland(size, int(nil))))) { # result of niland(size, int(nil)) is either 0 or int(nil)
+      # coalesce with potential consecutive hole
+      var nsize := replacementvalue(replacements, pre_size, oid(int(itemval) + size + 1));
+      if (isnil(niland(nsize, int(nil)))) { # result of niland(nsize, int(nil)) is either 0 or int(nil)
+	# there is a following hole
+	nsize := niland(nsize, INT_MAX) + 1;
+      } else {
+	# no following hole
+	nsize := 0;
+      }
+      var start := int(itemval) + int(pre_size.seqbase());
+      var new_size := [-](nilor(size + nsize, int(nil)), pre_size.slice(start, start + size).number());
+      replacements := replace(replacements, ws, PRE_SIZE, frag, new_size);
+      var oidlist := new_size.mark(nil);
+      new_size := nil;
+      var chrlist := oidlist.[chr]();
+      replacements := replace(replacements, ws, PRE_PROP, frag, oidlist);
+#       var start := int(itemval) + int(ws.fetch(PRE_NID).find(frag).seqbase());
+      var nidlist := ws.fetch(PRE_NID).find(frag).slice(start, start + size).reverse().mark(nil);
+      var kndnid0list := ws.fetch(KND_NID_0).find(frag).join(nidlist);
+      replacements := replace(replacements, ws, KND_NID_0, frag, kndnid0list);
+      replacements := replace(replacements, ws, KND_PROP_0, frag, kndnid0list);
+      kndnid0list := nil;
+      replacements := replace(replacements, ws, KND_NID_1, frag, ws.fetch(KND_NID_1).find(frag).join(nidlist));
+      replacements := replace(replacements, ws, KND_NID_2, frag, ws.fetch(KND_NID_2).find(frag).join(nidlist));
+      var kndnid3list := ws.fetch(KND_NID_3).find(frag).join(nidlist);
+      replacements := replace(replacements, ws, KND_NID_3, frag, kndnid3list);
+      replacements := replace(replacements, ws, KND_PROP_3, frag, kndnid3list);
+      kndnid3list := nil;
+      replacements := replace(replacements, ws, NID_PRE, frag, nidlist);
+      nidlist := nil;
+      replacements := replace(replacements, ws, PRE_NID, frag, oidlist);
+      oidlist := nil;
+      replacements := replace(replacements, ws, PRE_KIND, frag, chrlist);
+      replacements := replace(replacements, ws, PRE_LEVEL, frag, chrlist);
+      chrlist := nil;
+    }
+  }
+  return replacements;
 }
 
 proc nodeinsert(bat[bat,bat] replacements, bat[void,bat] ws, str function, any batdocnid, any batdockind, bat[void,oid] ipik, any item, any kind) : bat[bat,bat]

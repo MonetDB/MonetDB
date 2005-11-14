@@ -7787,68 +7787,8 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "var replacements := new(bat, bat);\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
-                  "var frags := kind.get_fragment();\n"
-                  "# reverse sort item so that we delete the last node\n"
-                  "# first, so that holes can be merged\n"
-                  "var loopvar;\n"
-                  "if (type(item) = bat) {\n"
-                  "  loopvar := item.reverse().sort_rev().reverse();\n"
-                  "} else {\n"
-                  "  loopvar := ipik;\n"
-                  "}\n"
-                  "loopvar@batloop() {\n"
-                  "  var frag := frags.fetch($h);\n"
-                  "  var itemval;\n"
-                  "  if (type(item) = bat) {\n"
-                  "    itemval := $t;\n"
-                  "  } else {\n"
-                  "    itemval := item;\n"
-                  "  }\n"
-                  "  var pre_size := ws.fetch(PRE_SIZE).fetch(frag);\n"
-                  "  var new_pre_size := emptybat_oid_int;\n"
-                  "  if (replacements.exist(pre_size)) {\n"
-                  "    new_pre_size := replacements.fetch(pre_size);\n"
-                  "  }\n"
-                  "  var size := replacedvalue(pre_size, new_pre_size, itemval);\n"
-                  "  if (not(isnil(size)) and size >= 0) {\n"
-                  "    var nsize := replacedvalue(pre_size, new_pre_size, oid(int(itemval) + size + 1));\n"
-                  "    if (isnil(nsize)) {\n"
-                  "      nsize := 1;\n"
-                  "    } else if (nsize < 0) {\n"
-                  "#     nsize = (nsize & ~(1 << 31)) + 1\n"
-                  "      nsize := (nsize + INT_MAX) + 2;\n"
-                  "    } else {\n"
-                  "      nsize := 0;\n"
-                  "    }\n"
-                  "    var start := int(itemval) + int(pre_size.seqbase());\n"
-                  "#                   ((size + nsize) | 1 << 31)\n"
-                  "    var new_size := (((size+nsize)-1)-INT_MAX).[-](pre_size.slice(start, start + size).number());\n"
-                  "    replace(ws, replacements, PRE_SIZE, frag, new_size);\n"
-                  "    var oidlist := new_size.mark(nil);\n"
-                  "    new_size := nil;\n"
-                  "    var chrlist := oidlist.[chr]();\n"
-                  "    replace(ws, replacements, PRE_PROP, frag, oidlist);\n"
-                  "#     var start := int(itemval) + int(ws.fetch(PRE_NID).fetch(frag).seqbase());\n"
-                  "    var nidlist := ws.fetch(PRE_NID).fetch(frag).slice(start, start + size).reverse().mark(nil);\n"
-                  "    var kndnid0list := ws.fetch(KND_NID_0).fetch(frag).join(nidlist);\n"
-                  "    replace(ws, replacements, KND_NID_0, frag, kndnid0list);\n"
-                  "    replace(ws, replacements, KND_PROP_0, frag, kndnid0list);\n"
-                  "    kndnid0list := nil;\n"
-                  "    replace(ws, replacements, KND_NID_1, frag, ws.fetch(KND_NID_1).fetch(frag).join(nidlist));\n"
-                  "    replace(ws, replacements, KND_NID_2, frag, ws.fetch(KND_NID_2).fetch(frag).join(nidlist));\n"
-                  "    var kndnid3list := ws.fetch(KND_NID_3).fetch(frag).join(nidlist);\n"
-                  "    replace(ws, replacements, KND_NID_3, frag, kndnid3list);\n"
-                  "    replace(ws, replacements, KND_PROP_3, frag, kndnid3list);\n"
-                  "    kndnid3list := nil;\n"
-                  "    replace(ws, replacements, NID_PRE, frag, nidlist);\n"
-                  "    nidlist := nil;\n"
-                  "    replace(ws, replacements, PRE_NID, frag, oidlist);\n"
-                  "    oidlist := nil;\n"
-                  "    replace(ws, replacements, PRE_KIND, frag, chrlist);\n"
-                  "    replace(ws, replacements, PRE_LEVEL, frag, chrlist);\n"
-                  "    chrlist := nil;\n"
-                  "  }\n"
-                  "}\n"
+                  "replacements := nodedelete(replacements, ws, item, kind, ipik);\n");
+        milprintf(f,
                   "replacements@batloop() {\n"
                   "  var a := $h.access();\n"
                   "  $h.access(BAT_WRITE);\n"
@@ -7861,6 +7801,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "  $h.insert(ins);\n"
                   "  $h.access(a);\n"
                   "}\n");
+        milprintf(f,
+                  "ipik := empty_bat;\n"
+                  "iter := empty_bat;\n"
+                  "pos := empty_bat;\n"
+                  "item := empty_bat;\n"
+                  "kind := empty_kind_bat;\n");
         return NORMAL;
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"insert-first")) == 0 ||
@@ -7894,6 +7840,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "  $h.insert(ins);\n"
                   "  $h.access(a);\n"
                   "}\n");
+        milprintf(f,
+                  "ipik := empty_bat;\n"
+                  "iter := empty_bat;\n"
+                  "pos := empty_bat;\n"
+                  "item := empty_bat;\n"
+                  "kind := empty_kind_bat;\n");
         return NORMAL;
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-attr")) == 0)
@@ -7979,6 +7931,25 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
         deleteResult (f, counter - 2);
         deleteResult (f, counter - 3);
+        milprintf(f,
+                  "replacements@batloop() {\n"
+                  "  var a := $h.access();\n"
+                  "  $h.access(BAT_WRITE);\n"
+                  "  var hi := $h.reverse().max();\n"
+                  "  var hi1 := oid(lng(hi) + 1);\n"
+                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
+                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
+                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
+                  "  $h.replace(repl, true);\n"
+                  "  $h.insert(ins);\n"
+                  "  $h.access(a);\n"
+                  "}\n");
+        milprintf(f,
+                  "ipik := empty_bat;\n"
+                  "iter := empty_bat;\n"
+                  "pos := empty_bat;\n"
+                  "item := empty_bat;\n"
+                  "kind := empty_kind_bat;\n");
         return NORMAL;
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"unset-attr")) == 0)
@@ -8100,6 +8071,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "  $h.insert(ins);\n"
                   "  $h.access(a);\n"
                   "}\n");
+        milprintf(f,
+                  "ipik := empty_bat;\n"
+                  "iter := empty_bat;\n"
+                  "pos := empty_bat;\n"
+                  "item := empty_bat;\n"
+                  "kind := empty_kind_bat;\n");
         return NORMAL;
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-text")) == 0)
@@ -8138,6 +8115,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "  $h.insert(ins);\n"
                   "  $h.access(a);\n"
                   "}\n");
+        milprintf(f,
+                  "ipik := empty_bat;\n"
+                  "iter := empty_bat;\n"
+                  "pos := empty_bat;\n"
+                  "item := empty_bat;\n"
+                  "kind := empty_kind_bat;\n");
         return NORMAL;
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-comment")) == 0)
@@ -8176,6 +8159,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "  $h.insert(ins);\n"
                   "  $h.access(a);\n"
                   "}\n");
+        milprintf(f,
+                  "ipik := empty_bat;\n"
+                  "iter := empty_bat;\n"
+                  "pos := empty_bat;\n"
+                  "item := empty_bat;\n"
+                  "kind := empty_kind_bat;\n");
         return NORMAL;
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-pi")) == 0)
@@ -8219,6 +8208,12 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "  $h.insert(ins);\n"
                   "  $h.access(a);\n"
                   "}\n");
+        milprintf(f,
+                  "ipik := empty_bat;\n"
+                  "iter := empty_bat;\n"
+                  "pos := empty_bat;\n"
+                  "item := empty_bat;\n"
+                  "kind := empty_kind_bat;\n");
         return NORMAL;
     }        
     else if (!PFqname_eq(fnQname, PFqname (PFns_fn,"error")))
