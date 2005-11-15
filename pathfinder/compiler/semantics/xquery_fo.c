@@ -1194,7 +1194,7 @@
     .arity = 2, .par_ty = { PFty_node (),                                \
                             PFty_string () },                            \
     .ret_ty = PFty_stmt () }                                             \
-,  /* fn:unset-attr (node, str) as stmt */                               \
+,  /* fn:unset-attr (node, str, str, str) as stmt */                     \
    /* args are: node, loc, prefix, URI */                                \
   { .ns = PFns_fn, .loc = "unset-attr",                                  \
     .arity = 4, .par_ty = { PFty_node (),                                \

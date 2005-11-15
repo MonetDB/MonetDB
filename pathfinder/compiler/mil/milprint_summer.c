@@ -7782,25 +7782,10 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"delete")) == 0)
     {
-        milprintf(f,
-                  "# fn:delete\n"
-                  "var replacements := new(bat, bat);\n");
+        milprintf(f, "# fn:delete (node) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         milprintf(f,
                   "replacements := nodedelete(replacements, ws, item, kind, ipik);\n");
-        milprintf(f,
-                  "replacements@batloop() {\n"
-                  "  var a := $h.access();\n"
-                  "  $h.access(BAT_WRITE);\n"
-                  "  var hi := $h.reverse().max();\n"
-                  "  var hi1 := oid(lng(hi) + 1);\n"
-                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
-                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
-                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
-                  "  $h.replace(repl, true);\n"
-                  "  $h.insert(ins);\n"
-                  "  $h.access(a);\n"
-                  "}\n");
         milprintf(f,
                   "ipik := empty_bat;\n"
                   "iter := empty_bat;\n"
@@ -7815,10 +7800,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
              PFqname_eq(fnQname, PFqname (PFns_fn,"insert-after")) == 0)
     {
         char *func = PFqname_loc(fnQname);
-        milprintf(f,
-                  "# ignored fn:%s\n"
-                  "var replacements := new(bat, bat);\n",
-                  func);
+        milprintf(f, "# fn:%s (node, node) as stmt\n", func);
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -7827,19 +7809,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   "replacements := nodeinsert(replacements, ws, \"%s\", item%03u, kind%03u, ipik, item, kind);\n",
                   func, counter, counter);
         deleteResult (f, counter);
-        milprintf(f,
-                  "replacements@batloop() {\n"
-                  "  var a := $h.access();\n"
-                  "  $h.access(BAT_WRITE);\n"
-                  "  var hi := $h.reverse().max();\n"
-                  "  var hi1 := oid(lng(hi) + 1);\n"
-                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
-                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
-                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
-                  "  $h.replace(repl, true);\n"
-                  "  $h.insert(ins);\n"
-                  "  $h.access(a);\n"
-                  "}\n");
         milprintf(f,
                   "ipik := empty_bat;\n"
                   "iter := empty_bat;\n"
@@ -7850,9 +7819,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-attr")) == 0)
     {
-        milprintf(f,
-                  "# fn:set-attr\n"
-                  "var replacements := new(bat, bat);\n");
+        milprintf(f, "# fn:set-attr (node, str, [str, str,] str) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -7932,19 +7899,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         deleteResult (f, counter - 2);
         deleteResult (f, counter - 3);
         milprintf(f,
-                  "replacements@batloop() {\n"
-                  "  var a := $h.access();\n"
-                  "  $h.access(BAT_WRITE);\n"
-                  "  var hi := $h.reverse().max();\n"
-                  "  var hi1 := oid(lng(hi) + 1);\n"
-                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
-                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
-                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
-                  "  $h.replace(repl, true);\n"
-                  "  $h.insert(ins);\n"
-                  "  $h.access(a);\n"
-                  "}\n");
-        milprintf(f,
                   "ipik := empty_bat;\n"
                   "iter := empty_bat;\n"
                   "pos := empty_bat;\n"
@@ -7954,9 +7908,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"unset-attr")) == 0)
     {
-        milprintf(f,
-                  "# fn:unset-attr\n"
-                  "var replacements := new(bat, bat);\n");
+        milprintf(f, "# fn:unset-attr (node, str [, str, str]) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -8059,19 +8011,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
         }
         deleteResult (f, counter - 2);
         milprintf(f,
-                  "replacements@batloop() {\n"
-                  "  var a := $h.access();\n"
-                  "  $h.access(BAT_WRITE);\n"
-                  "  var hi := $h.reverse().max();\n"
-                  "  var hi1 := oid(lng(hi) + 1);\n"
-                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
-                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
-                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
-                  "  $h.replace(repl, true);\n"
-                  "  $h.insert(ins);\n"
-                  "  $h.access(a);\n"
-                  "}\n");
-        milprintf(f,
                   "ipik := empty_bat;\n"
                   "iter := empty_bat;\n"
                   "pos := empty_bat;\n"
@@ -8081,9 +8020,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-text")) == 0)
     {
-        milprintf(f,
-                  "# fn:set-text\n"
-                  "var replacements := new(bat, bat);\n");
+        milprintf(f, "# fn:set-text (node, str) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -8103,19 +8040,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   counter, counter);
         deleteResult (f, counter);
         milprintf(f,
-                  "replacements@batloop() {\n"
-                  "  var a := $h.access();\n"
-                  "  $h.access(BAT_WRITE);\n"
-                  "  var hi := $h.reverse().max();\n"
-                  "  var hi1 := oid(lng(hi) + 1);\n"
-                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
-                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
-                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
-                  "  $h.replace(repl, true);\n"
-                  "  $h.insert(ins);\n"
-                  "  $h.access(a);\n"
-                  "}\n");
-        milprintf(f,
                   "ipik := empty_bat;\n"
                   "iter := empty_bat;\n"
                   "pos := empty_bat;\n"
@@ -8125,9 +8049,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-comment")) == 0)
     {
-        milprintf(f,
-                  "# fn:set-comment\n"
-                  "var replacements := new(bat, bat);\n");
+        milprintf(f, "# fn:set-comment (node, str) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -8147,19 +8069,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   counter, counter);
         deleteResult (f, counter);
         milprintf(f,
-                  "replacements@batloop() {\n"
-                  "  var a := $h.access();\n"
-                  "  $h.access(BAT_WRITE);\n"
-                  "  var hi := $h.reverse().max();\n"
-                  "  var hi1 := oid(lng(hi) + 1);\n"
-                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
-                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
-                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
-                  "  $h.replace(repl, true);\n"
-                  "  $h.insert(ins);\n"
-                  "  $h.access(a);\n"
-                  "}\n");
-        milprintf(f,
                   "ipik := empty_bat;\n"
                   "iter := empty_bat;\n"
                   "pos := empty_bat;\n"
@@ -8169,9 +8078,7 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
     }        
     else if (PFqname_eq(fnQname, PFqname (PFns_fn,"set-pi")) == 0)
     {
-        milprintf(f,
-                  "# fn:set-pi\n"
-                  "var replacements := new(bat, bat);\n");
+        milprintf(f, "# fn:set-pi (node, str, str) as stmt\n");
         translate2MIL (f, NORMAL, cur_level, counter, L(args));
         counter++;
         saveResult (f, counter);
@@ -8195,19 +8102,6 @@ translateFunction (opt_t *f, int code, int cur_level, int counter,
                   counter-1, counter-1, counter);
         deleteResult (f, counter);
         deleteResult (f, counter - 1);
-        milprintf(f,
-                  "replacements@batloop() {\n"
-                  "  var a := $h.access();\n"
-                  "  $h.access(BAT_WRITE);\n"
-                  "  var hi := $h.reverse().max();\n"
-                  "  var hi1 := oid(lng(hi) + 1);\n"
-                  "  var repl := $t.reverse().select(nil, hi).reverse();\n"
-                  "  var ins := $t.reverse().select(hi1, nil).reverse();\n"
-                  "  ins := ins.sort().reverse().mark(hi1).reverse();\n"
-                  "  $h.replace(repl, true);\n"
-                  "  $h.insert(ins);\n"
-                  "  $h.access(a);\n"
-                  "}\n");
         milprintf(f,
                   "ipik := empty_bat;\n"
                   "iter := empty_bat;\n"
@@ -10772,6 +10666,7 @@ static char* PFstartMIL() {
         "var err := CATCH({\n"
         "  ws := create_ws();\n"
         "\n"
+        "  var replacements := new(bat, bat);\n"
         "  # get full picture on var_usage (and sort it)\n"
         "  var_usage := var_usage.unique().reverse().access(BAT_READ);\n"
         "  vu_fid := var_usage.mark(1000@0).reverse();\n"
@@ -10786,8 +10681,23 @@ static char* PFstartMIL() {
 
 static char* PFstopMIL() {
     return   
-        "  item := item.de_NO_project(ipik);\n"
-        "  print_result(\"%s\",ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n"
+        "  if (replacements.count() > 0) { # we had an update\n"
+        "    replacements@batloop() {\n"
+        "      var a := $h.access();\n"
+        "      $h.access(BAT_WRITE);\n"
+        "      var hi := $h.reverse().max();\n"
+        "      var hi1 := oid(lng(hi) + 1);\n"
+        "      var repl := $t.reverse().select(nil, hi).reverse();\n"
+        "      var ins := $t.reverse().select(hi1, nil).reverse();\n"
+        "      ins := ins.sort().reverse().mark(hi1).reverse();\n"
+        "      $h.replace(repl, true);\n"
+        "      $h.insert(ins);\n"
+        "      $h.access(a);\n"
+        "    }\n"
+        "  } else {\n"
+        "    item := item.de_NO_project(ipik);\n"
+        "    print_result(\"%s\",ws,item,fake_project(kind),int_values,dbl_values,dec_values,str_values);\n"
+        "  }\n"
         "});\n"
         "destroy_ws(ws);\n"
         "if (not(isnil(err))) ERROR(err);\n";
