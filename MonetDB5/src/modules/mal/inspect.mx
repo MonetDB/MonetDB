@@ -66,7 +66,7 @@ command getSignature(mod:str,fcn:str)
 address INSPECTgetSignature
 comment "Returns the function signature(s)";
 
-command getSize():lng
+pattern getSize():lng
 address INSPECTgetSize
 comment "Return the storage size for the current function (in bytes)";
 command getSize(mod:str):bat[:str,:lng]
@@ -168,7 +168,7 @@ mal_export str INSPECTgetDefinition(int *ret, str *nme, str *fcn);
 mal_export str INSPECTgetSignature(int *ret, str *mod, str *fcn);
 mal_export str INSPECTgetModuleSize(int *ret, str *mod);
 mal_export str INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn);
-mal_export str INSPECTgetSize(lng *ret);
+mal_export str INSPECTgetSize(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 mal_export str INSPECTsymbolType(int *ret, str *mod, str *fcn);
 mal_export str INSPECTatom_names(int *ret);
 mal_export str INSPECTatom_sup_names(int *ret);
@@ -596,8 +596,9 @@ INSPECTcalcSize(MalBlkPtr mb){
 }
 
 str
-INSPECTgetSize(lng *ret){
-	*ret= INSPECTcalcSize(getClient()->curprg->def);
+INSPECTgetSize(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	lng *ret = (lng*) getArgReference(stk,p,0);
+	*ret= INSPECTcalcSize(mb);
 	return MAL_SUCCEED;
 }
 str
