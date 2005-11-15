@@ -1,0 +1,16 @@
+#check the storage size
+function tst():void;
+	z:= inspect.getSize();
+	io.print(z);
+end tst;
+
+user.tst();
+
+z:= inspect.getSize("algebra");
+io.print(z);
+
+z:= inspect.getSize("inspect");
+io.print(z);
+
+l:= inspect.getSize();
+io.print(l);
