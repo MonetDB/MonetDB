@@ -551,45 +551,13 @@ reduce (PFcnode_t * p, int goalnt)
                     rewritten = true;
                     break;
                 }
+
                 /*
-                 * If the argument is a subtype of
-                 * (comment | processing-instruction)*,
-                 * fn:data() returns the string-value
-                 * of the argument.
+                 * If the argument is a subtype of node*,
+                 * fn:data() returns the typed-value of the argument.
                  */
                 if (PFty_subtype (TY(LL(p)),
-                                  PFty_star (PFty_choice (PFty_comm (),
-                                                          PFty_pi (NULL))))) {
-                    p->sem.fun = function (PFqname (PFns_pf, "string-value"));
-                    /* type-check what we just created */
-                    PFty_check (p);
-
-                    rewritten = true;
-
-                    /*
-                     * Re-label entire subtree. Type-checking may have
-                     * modified all the state labels in the subtree, so
-                     * we have to restore them.
-                     */
-                    PFcoreopt_label (p);
-                    break;
-                }
-                /*
-                 * If the argument is a subtype of
-                 * (element | attribute | text | document)*,
-                 * fn:data() returns the typed-value
-                 * of the argument.
-                 */
-                if (PFty_subtype (TY(LL(p)),
-                                  PFty_star (
-                                      PFty_choice (
-                                          PFty_xs_anyElement (),
-                                          PFty_choice (
-                                              PFty_xs_anyAttribute (),
-                                              PFty_choice (
-                                                  PFty_text (),
-                                                  PFty_doc (PFty_xs_anyType ()))
-                                              ))))) {
+                                  PFty_star (PFty_node ()))) {
                     /*
                      *   fn:data(e)
                      * -->
@@ -619,8 +587,26 @@ reduce (PFcnode_t * p, int goalnt)
             }
 
             /*
-             * On non-validated nodes, typed-value() always returns
-             * the string-value of the node as xs:untypedAtomic.
+             * If the argument is a subtype of
+             * (comment | processing-instruction),
+             * fn:typed-value() returns the string-value
+             * of the argument.
+             */
+            if (! PFqname_eq (p->sem.fun->qname,
+                              PFqname (PFns_pf, "typed-value"))
+                && PFty_subtype (TY(LL(p)),
+                                 PFty_choice (PFty_comm (), PFty_pi (NULL)))) {
+                p->sem.fun = function (PFqname (PFns_pf, "string-value"));
+                rewritten = true;
+                break;
+            }
+
+            /*
+             * On non-validated nodes (for non-validated nodes,
+             * the return type of typed-value() has been inferred
+             * as untypedAtomic (via the judgement data_on)),
+             * typed-value() always returns the string-value of
+             * the node as xs:untypedAtomic.
              * (see also Data Model, 6.2.3)
              */
             if (! PFqname_eq (p->sem.fun->qname,
