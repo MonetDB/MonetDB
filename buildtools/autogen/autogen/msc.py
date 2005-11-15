@@ -258,6 +258,8 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref = 'lib', dll
         add = pref+sep+name.replace('-','_')+"_LIBS ="
     else:
         add = name.replace('-','_') + " ="
+    if dll == '.pyd':
+        add = add + " /LIBPATH:$(PYTHONLIB)"
     for l in list:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
@@ -411,6 +413,10 @@ def msc_deps(fd, deps, objext, msc):
                     elif dext == "cc":
                         fd.write('\t$(CXX) $(CXXFLAGS) $(GENDLL) -DLIB%s -Fo"%s" -c "%s"\n' %
                                  (name, t, src))
+            if ext == 'py' and deplist[0].endswith('.py.i'):
+                fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o dummy.c "%s"\n' % src)
+            if ext == 'py.c' and deplist[0].endswith('.py.i'):
+                fd.write('\t$(SWIG) -python $(SWIGFLAGS) -outdir . -o "$@" "%s"\n' % src)
             if ext == 'res':
                 fd.write("\t$(RC) -fo%s %s\n" % (t, src))
     msc['DEPS'].append("DONE")
@@ -471,7 +477,7 @@ def msc_headers(fd, var, headers, msc):
                     fd.write('%s: "%s"\n' % (header, inf))
                     fd.write('\t$(CONFIGURE) "%s" > "%s"\n' % (inf, header))
                     msc['_IN'].append(inf)
-            else:
+            elif os.path.isfile(os.path.join(msc['cwd'], header)):
                 fd.write('%s: "$(SRCDIR)\\%s"\n' % (header, header))
 ##                fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header))
 ##                fd.write('\tif not exist "%s" if exist "$(SRCDIR)\\%s" $(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (header, header, header, header))
@@ -495,7 +501,7 @@ def msc_binary(fd, var, binmap, msc):
                     # replace this hack by something like configure ...
                     fd.write('%s: "$(SRCDIR)\\%s.in"\n' % (i, i))
                     fd.write('\t$(CONFIGURE) "$(SRCDIR)\\%s.in" > "%s"\n' % (i, i))
-                else:
+                elif os.path.isfile(os.path.join(msc['cwd'], i)):
                     fd.write('%s: "$(SRCDIR)\\%s"\n' % (i, i))
                     fd.write('\t$(INSTALL) "$(SRCDIR)\\%s" "%s"\n' % (i, i))
                 msc['INSTALL'].append((i, i, '', '$(bindir)', 0))
@@ -782,6 +788,8 @@ def msc_library(fd, var, libmap, msc):
                 srcs = srcs + " " + t + ".tab.obj"
             elif ext == "yy.o":
                 srcs = srcs + " " + t + ".yy.obj"
+            elif ext == "py.o":
+                srcs = srcs + " " + t + ".py.obj"
             elif ext == 'res':
                 srcs = srcs + " " + t + ".res"
             elif ext in hdrs_ext:

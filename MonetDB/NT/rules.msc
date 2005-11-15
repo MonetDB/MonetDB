@@ -18,6 +18,7 @@
 PYTHON=python
 YACC=bison -b y -y
 LEX=flex 
+SWIG=swig
 
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
@@ -29,6 +30,11 @@ PHP_INSTDIR = C:\php-4.4.0-Win32
 # for these, also see configure.py
 PHP_PEARDIR = share\pear
 PHP_EXTENSIONDIR = lib\php4
+
+PYTHONBASE=C:\Python24
+PYTHONINC=$(PYTHONBASE)\include
+PYTHONLIB=$(PYTHONBASE)\libs
+PYTHON_LIBDIR=share\MonetDB\python
 
 # not need to edit beyond here..
 

@@ -39,6 +39,7 @@ static PyObject *ErrorObject;
 %include "sqltypes.h"
 
 %init %{
+{
 	PyObject *odbc;
 
 	/* create the error object */
@@ -70,6 +71,7 @@ static PyObject *ErrorObject;
 	PyModule_AddObject(odbc, "SQLSetStmtOptionA",
 			   PyObject_GetAttrString(m, "SQLSetStmtOption"));
 	Py_DECREF(odbc);
+}
 %}
 
 %{
