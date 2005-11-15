@@ -57,14 +57,24 @@ comment "Obtain the function name";
 command getFunction():bat[:void,:str]
 address INSPECTgetFunction
 comment "Obtain the function name";
+
 command getSignature():bat[:void,:str]
 address INSPECTgetsignature
 comment "Obtain the function name";
-
 command getSignature(mod:str,fcn:str)
 	:bat[:str,:str] 
 address INSPECTgetSignature
 comment "Returns the function signature(s)";
+
+command getSize():lng
+address INSPECTgetSize
+comment "Return the storage size for the current function (in bytes)";
+command getSize(mod:str):bat[:str,:lng]
+address INSPECTgetModuleSize
+comment "Return the storage size for a module (in bytes)";
+command getSize(mod:str,fcn:str):lng
+address INSPECTgetFunctionSize
+comment "Return the storage size for a function (in bytes)";
 
 pattern getType(v:bat[:any_1,:any_2]) :int 
 address INSPECTtype
@@ -156,6 +166,9 @@ mal_export str INSPECTgetaddress(int *ret);
 mal_export str INSPECTgetsignature(int *ret);
 mal_export str INSPECTgetDefinition(int *ret, str *nme, str *fcn);
 mal_export str INSPECTgetSignature(int *ret, str *mod, str *fcn);
+mal_export str INSPECTgetModuleSize(int *ret, str *mod);
+mal_export str INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn);
+mal_export str INSPECTgetSize(lng *ret);
 mal_export str INSPECTsymbolType(int *ret, str *mod, str *fcn);
 mal_export str INSPECTatom_names(int *ret);
 mal_export str INSPECTatom_sup_names(int *ret);
@@ -573,6 +586,63 @@ INSPECTatom_sizes(int *ret)
 	return MAL_SUCCEED;
 }
 
+/* calculate to trimmed storage space */
+lng
+INSPECTcalcSize(MalBlkPtr mb){
+	lng size;
+	size = (sizeof(InstrRecord) +sizeof(InstrPtr)) * mb->stop;
+	size += (sizeof(VarRecord)+ sizeof(InstrPtr)) * mb->vtop;
+	return size;
+}
+
+str
+INSPECTgetSize(lng *ret){
+	*ret= INSPECTcalcSize(getClient()->curprg->def);
+	return MAL_SUCCEED;
+}
+str
+INSPECTgetModuleSize(int *ret, str *mod)
+{
+	Symbol s;
+	Module m;
+	int i;
+	lng total=0;
+	BAT *b = BATnew(TYPE_str, TYPE_lng, 256);
+
+	if (b == 0)
+		return throwMessage("inspect.getSize", "failed to create BAT");
+
+	m = findModule(getClient()->nspace, putName(*mod, strlen(*mod)));
+	if (m == 0)
+		return throwMessage("inspect.getSize", 
+				"failed to find <module>.<function>");
+
+	for( i=0; i<MAXSCOPE; i++){
+		s= m->subscope[i];
+		while (s != NULL) {
+			lng size;
+			total+= (size = INSPECTcalcSize(s->def));
+			BUNins(b, s->name, &size);
+			s = s->peer;
+		}
+	}
+	BUNins(b, *mod, &total);
+
+	@:Pseudo(view,input,result)@
+	return MAL_SUCCEED;
+}
+str
+INSPECTgetFunctionSize(lng *ret, str *mod, str *fcn)
+{
+	Symbol s;
+
+	s = findMALSymbol(putName(*mod, strlen(*mod)), putName(*fcn, strlen(*fcn)));
+	if (s == 0)
+		return throwMessage("inspect.getSize", 
+			"failed to find <module>.<function>");
+	*ret= INSPECTcalcSize(s->def);
+	return MAL_SUCCEED;
+}
 @+ Display routines
 @c
 str
