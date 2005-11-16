@@ -234,7 +234,7 @@ generate information for the performance monitor.
 char *
 yydeparseCall(Client c, YYSTREE t, char *buf, char *end)
 {
-	int i, tk;
+	int i, tk = 0;
 	char *s = buf;		/*,*s1=s; */
 
 	*buf = 0;
