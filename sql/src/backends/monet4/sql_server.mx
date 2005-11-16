@@ -285,7 +285,7 @@ monet4_freestack(backend_stack stk)
 static void
 reset_arg_tree(YYSTREE args)
 {
-	while (args) {
+	if (args) {
 		unsigned i;
 
 		for (i = 0; i < args->cnt; i++) {
@@ -296,7 +296,8 @@ reset_arg_tree(YYSTREE args)
 		args->yyval.vtype = TYPE_void;
 		args->yyval.len = 0;
 
-		args = args->overflow;
+		if (args->extendable)
+			args = args->yysons[args->capacity];
 	}
 }
 
