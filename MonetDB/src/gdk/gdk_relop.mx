@@ -1354,8 +1354,9 @@ static int nlthetajoin_@2_@1(BAT *bn, BAT *l, BAT *r) {
  		o = *(oid*) BUNhead(l, ((BUN)(la+li))-l->tloc);
 		len -= cur - (dst_t*) bn->batBuns->base;
 		while(len < 0) cur[len++].l = o;
+
+		bn->batBuns->free = ((BUN) cur) - bn->batBuns->base;
 	}
-	bn->batBuns->free = ((BUN) cur) - bn->batBuns->base;
 	BATsetcount(bn,bn->batBuns->free/BUNsize(bn));
 	return 0;
 }
@@ -1791,14 +1792,16 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 	BATcheck(l, "BATfetchsemijoin: l");
 	BATcheck(r, "BATfetchsemijoin: r");
 
-	if (denselookup && !BAThdense(r)) {
-		GDKerror("BATfetchsemijoin: left column must be dense.\n");
-		return NULL;
-	} else if (ATOMstorage(l->htype) != ATOMstorage(TYPE_oid)) {
-		GDKerror("BATfetchsemijoin: illegal index type %s.\n", ATOMname(l->htype));
-		return NULL;
+	if (denselookup) {
+		if (!BAThdense(r)) {
+			GDKerror("BATfetchsemijoin: left column must be dense.\n");
+			return NULL;
+		} else if (ATOMstorage(l->htype) != ATOMstorage(TYPE_oid)) {
+			GDKerror("BATfetchsemijoin: illegal index type %s.\n", ATOMname(l->htype));
+			return NULL;
+		}
 	}
-	if (denselookup && BAThvoid(l)) {
+	if (BAThvoid(l)) {
 		/* redirect semijoin on two dense regions to a select (and hence to BATslice) */
 		oid min = oid_nil, max = oid_nil;
 		BAT *other = (cpy == l) ? r : l;
@@ -1807,7 +1810,11 @@ BATfetchsemijoin(BAT *l, BAT *r, BAT *cpy, int denselookup)
 			min = *(oid *) BUNhead(l, BUNfirst(other));
 			max = *(oid *) BUNhead(l, BUNlast(other) - BUNsize(other));
 		}
-		return BATmirror(BAT_select(BATmirror(cpy), &min, &max, TRUE));
+		if (denselookup) {
+			min -= r->hseqbase;
+			max -= r->hseqbase;
+		}
+		return BATslice(cpy, min, 1+max-min);
 	}
 	base = BUNindex(r, BUNfirst(r));
 	end = base + BATcount(r);

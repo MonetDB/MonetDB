@@ -726,8 +726,7 @@ typedef struct {
 		dbl dval;
 		lng lval;
 	} val;
-	int vtype;
-	int len;
+	int len, vtype;
 } *ValPtr, ValRecord;
 
 #define VALptr(v) (ATOMextern((v)->vtype)?(v)->val.pval:(ptr)&(v)->val.ival)

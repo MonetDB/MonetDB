@@ -62,10 +62,10 @@ lex_name(Client c, char *buf, char *end, YYSTREE t, ValPtr v)
 	case TOK_ITERATOR:
 		*(buf++) = '@';
 	case TOK_FUNCTION:
-		if (t->yysons[2]) {
+		if (t->cnt > 2) {
 			YYSTREE sigs = t->yysons[1];
 
-			if (sigs && sigs->yysons[0]) {
+			if (sigs && sigs->cnt > 0) {
 				monet_sig_t *s = (monet_sig_t *) sigs->yysons[0]->yyval.val.pval;
 
 				sprintf(buf, "(*%s)", s->fcn_nme);
@@ -140,7 +140,7 @@ yytoProlog(YYSTREE t, int cnt)
 char *
 yydeparse(Client c, YYSTREE t, char *buf, char *end)
 {
-	int i, tk;
+	int i, tk = 0;
 
 	if (t == NULL || buf > end) {
 		end[-1] = 0;
@@ -159,7 +159,7 @@ yydeparse(Client c, YYSTREE t, char *buf, char *end)
 			}
 		}
 		return buf;
-	} else {
+	} else if (!t->noyyval) {
 		tk = lex_name(c, buf, end, t, &t->yyval);
 	}
 	while (*buf) {
@@ -187,22 +187,21 @@ yydeparse(Client c, YYSTREE t, char *buf, char *end)
 		*buf++ = '[';
 		*buf = 0;
 	}
-	for (; t; t = t->overflow)
-		for (i = 0; (i < YYMAXSONS) && t->yysons[i];) {
+	for (; t; t = YYOVERFLOW(t))
+		for (i = 0; i < t->cnt; i++) {
 			yydeparse(c, t->yysons[i], buf, end);
 			while (*buf) {
 				buf++;
 			}
 			if (t->token == TOK_ITERATOR || t->token == TOK_ITCOMPILED)
 				break;
-			i++;
-			if (t->yysons[i]) {
+			if (i+1 < t->cnt) {
 				if (tk == TOK_SEQBLOCK || tk == TOK_PARBLOCK || tk == TOK_SEQ)
 					*buf++ = ';';
 				else
 					*buf++ = ',';
-				*buf = 0;
 			}
+			*buf = 0;
 		}
 	switch (tk) {
 	case TOK_COMMAND:
@@ -255,7 +254,7 @@ yydeparseCall(Client c, YYSTREE t, char *buf, char *end)
 			}
 		}
 		return buf;
-	} else {
+	} else if (!t->noyyval) {
 		tk = lex_name(c, buf, end, t, &t->yyval);
 	}
 	while (*buf) {
@@ -283,8 +282,8 @@ yydeparseCall(Client c, YYSTREE t, char *buf, char *end)
 		*buf++ = '[';
 		*buf = 0;
 	}
-	for (; t; t = t->overflow)
-		for (i = 0; (i < YYMAXSONS) && t->yysons[i];) {
+	for (; t; t = YYOVERFLOW(t))
+		for (i = 0; i < t->cnt;) if (!t->yysons[i]->noyyval) {
 			lex_name(c, buf, end, t->yysons[i], &t->yysons[i]->yyval);
 			while (*buf) {
 				buf++;
@@ -349,7 +348,7 @@ yydeparseFunction(Client c, YYSTREE t, char *buf, char *end)
 				*buf = 0;
 		}
 		return buf;
-	} else {
+	} else if (!t->noyyval) {
 		(void) lex_name(c, buf, end, t, &t->yyval);
 	}
 	for (; s < buf; s++)

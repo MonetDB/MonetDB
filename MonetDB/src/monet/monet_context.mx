@@ -62,7 +62,7 @@ typedef struct CNTXT {
 	Cntxt next;		/* for making chains. differs from 'outer' due to parallel execution */
 	bit shadow;		/* shadow stk; create new variables in outer */
 	bit used;		/* in use or not */
-	short reuse;		/* context record is reused (i.e. kept around) for speed among multiple loop iterations
+	int reuse;		/* context record is reused (i.e. kept around) for speed among multiple loop iterations
 				 * reuse==-1: not in a loop, reuse==stk: reused by (while/multiplex/bat)loop in 'stk'
 				 */
 } CntxtRec;

@@ -37,6 +37,9 @@ that return a BAT.
 .COMMAND exist(BAT[any::1,any] b, any::1 h) : bit = CMDexist;
 "Returns whether 'h' occurs as a head value in b."
 
+.COMMAND exist_rev(BAT[any,any::1] b, any::1 h) : bit = CMDexist_rev;
+"Returns whether 'h' occurs as a head value in b."
+
 .COMMAND exist(BAT[any::1,any::2] b, any::1 h, any::2 t) : bit = CMDexistBUN;
 "Returns true when 'h,t' occurs as a bun in b."
 
@@ -53,6 +56,12 @@ that return a BAT.
  It gives an error if 'val' does not occur in b. "
 
 .COMMAND fetch(BAT[any,any::1] b, lng x) : any::1 = CMDfetch;
+"Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"
+
+.COMMAND fetch(BAT[any,any::1] b, int x) : any::1 = CMDfetch_int;
+"Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"
+
+.COMMAND fetch(BAT[any,any::1] b, oid x) : any::1 = CMDfind_oid;
 "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"
 
 @+ BAT Selections
@@ -130,6 +139,7 @@ NOTE 2: as the 'nil' element has no clear place in the ordered domain
 .COMMAND sample ( BAT[any::1,any::2] b, int num) :
 				BAT[any::1,any::2] = CMDsample;
 "Produce a random selection of size 'num' from the input BAT."
+
 @- substring select
 @m
 .COMMAND like ( BAT[any::1, str] b, str substr ) :
@@ -141,26 +151,41 @@ as substring in the tail."
 .COMMAND slice(BAT[any::1,any::2], lng x, lng y) :
 				BAT[any::1,any::2] =CMDslice;
 "Return the slice with the BUNs at position x till y."
+
+.COMMAND slice(BAT[any::1,any::2], int x, int y) :
+				BAT[any::1,any::2] =CMDslice_int;
+"Return the slice with the BUNs at position x till y."
+
 @+ BAT copying
 @m
 .COMMAND copy ( BAT[any::1,any::2] b) :
 				BAT[any::1, any::2] = CMDcopy;
 "Returns physical copy of a BAT."
+
 @- sorted copy
 @m
 .COMMAND sort ( BAT[any::1,any::2] b) :
 				BAT[any::1, any::2] = CMDsort;
 "Returns copy of a BAT with the BUNs sorted on ascending head values."
 
+.COMMAND tsort ( BAT[any::1,any::2] b) :
+				BAT[any::1, any::2] = CMDtsort;
+"Returns copy of a BAT with the BUNs sorted on ascending tail values."
+
 .COMMAND sort_rev ( BAT[any::1,any::2] b) :
 				BAT[any::1, any::2] = CMDsort_rev;
 "Returns copy of a BAT with the BUNs sorted on descending head values."
+
+.COMMAND tsort_rev ( BAT[any::1,any::2] b) :
+				BAT[any::1, any::2] = CMDtsort_rev;
+"Returns copy of a BAT with the BUNs tsorted on descending head values."
 
 @- vertical projection
 @m
 .COMMAND project ( BAT[any::1,any] b, any::2 val) :
 				BAT[any::1, any::2] = CMDproject;
 "Fill the tail column with a constant value."
+
 @+ Sets
 @T
 Sets in Monet can be viewed in two ways:
@@ -222,6 +247,11 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 				BAT[any::1,any::2] = CMDkunique;
 "Select unique tuples from the input BAT. Double elimination is done
  only looking at the head column. Result is a BAT with hkeyed() == true."
+
+.COMMAND tunique ( BAT[any,any::1] b ) :
+				BAT[any::1,void] = CMDtunique;
+"Select unique tuples from the input BAT. Double elimination is done
+ only looking at the tail column. Result is a BAT with hkeyed() == true."
 @- bun-intersecting elements
 @m
 .COMMAND sintersect ( BAT[any::1,any::2] left, BAT[any::1,any::2] right) :
@@ -273,6 +303,7 @@ The {\tt kintersect(l,r)} is used also as implementation for the
 @+ Joins
 The core of every relational engine.
 Signature Changed: Output tail type incorrect because of soid to coid switch.
+
 @- semijoin
 .COMMAND semijoin ( BAT[any::1,any::2] left,
 		   BAT[any::1,any] right) :
@@ -334,9 +365,18 @@ initiated OID columns, for representing n-ary (intermediary) relations.
 				BAT[any::1,OID] = CMDmark_default;
 "Produces a new BAT with fresh unique OIDs in the tail."
 
+.COMMAND mark_rev( BAT[any,any::1] b ) :
+				BAT[OID,any::1] = CMDmark_rev_default;
+"Produces a new BAT with fresh unique OIDs in the head."
+
 .COMMAND mark( BAT[any::1,any] b , oid base) :
 				BAT[any::1,OID] = CMDmark;
 "Produces a new BAT with fresh unique dense sequense of OIDs in the tail
+ that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
+
+.COMMAND mark_rev( BAT[any,any::1] b, oid base) :
+				BAT[OID,any::1] = CMDmark_rev;
+"Produces a new BAT with fresh unique dense sequense of OIDs in the head
  that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
 
 @- number tail column
@@ -460,7 +500,7 @@ macro):
 @:aggregate_definition(@1,dbl,@2)@
 @:aggregate_definition(@1,lng,@2)@
 
-@-
+@- Running Min/Max Indidex Manipulation
 running min/max summaries for quickly reducing scan-select ranges on clustered bats.
 @m
 .COMMAND rmin_summary(BAT[void,any::1], int quantiles) : BAT[any::1,oid] = CMDrmin_summary;
@@ -1074,23 +1114,6 @@ that for the moment are defined as procs.
     }
     ADDHELP("rev_select", "boncz", "Aug  6 1998",
 	    "(value OP column) select rather than (column OP value)","algebra");
-
-    PROC slice(BAT[any::1,any::2] b, int x, int y) : BAT[any::1,any::2]
-    {
-        return b.slice(lng(x),lng(y));
-    }
-    PROC fetch(BAT[any,any::1] b, int x) : any::1
-    {
-        return b.fetch(lng(x));
-    }
-    PROC fetch(BAT[oid,any::1] b, oid x) : any::1
-    {
-        return b.find(x);
-    }
-
-    PROC tunique (bat[any,any::1] b) : bat[any::1,void] {
-	return b.reverse().mark(nil).kunique();
-   }
 
     PROC sort_ht (bat[any::1,any::2] B) : bat[any::1,any::2]
     {
@@ -1739,14 +1762,28 @@ CMD@1(BAT **result, BAT* b, int *param)
 	return (*result = @2(b, *param))?GDK_SUCCEED:GDK_FAIL;
 }
 @c
+#define BATtsort(b) BATmirror(BATsort(BATmirror(b)))
+#define BATtsort_rev(b) BATmirror(BATsort_rev(BATmirror(b)))
+#define BATtunique(b) BATkunique(BATmark(BATmirror(b),oid_nil))
+#define BATtunique(b) BATkunique(BATmark(BATmirror(b),oid_nil))
+#define BAThistogram_rev(b) BAThistogram(BATmirror(b))
+#define BATmark_default(b) BATmark(b,OIDnew(BATcount(b)))
+#define BATmark_rev_default(b) BATmirror(BATmark(BATmirror(b),OIDnew(BATcount(b))))
+
 @:unaryint(count,BATcount)@
 @:unary(histogram,BAThistogram)@
+@:unary(histogram_rev,BAThistogram_rev)@
 @:unary(sort,BATsort)@
 @:unary(sort_rev,BATsort_rev)@
+@:unary(tsort,BATtsort)@
+@:unary(tsort_rev,BATtsort_rev)@
 @:unary(number,BATnumber)@
 @:unary(copy,BATcopy)@
 @:unary(kunique,BATkunique)@
 @:unary(sunique,BATsunique)@
+@:unary(tunique,BATtunique)@
+@:unary(mark_default,BATmark_default)@
+@:unary(mark_rev_default,BATmark_rev_default)@
 @:binary(semijoin,BATsemijoin)@
 @:binary(cross,BATcross)@
 @:binary(antijoin,BATantijoin)@
@@ -1825,11 +1862,9 @@ CMDmark(BAT **res, BAT *b, oid *base)
 }
 
 int
-CMDmark_default(BAT **res, BAT *b)
+CMDmark_rev(BAT **res, BAT *b, oid *base)
 {
-	oid base = OIDnew(BATcount(b));
-
-	return CMDmark(res, b, &base);
+	return (*res = BATmirror(BATmark(BATmirror(b), *base))) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -1854,12 +1889,6 @@ int
 CMDurangesplit(BAT **res, BAT *b, int *nfrag)
 {
 	return (*res = BATrangesplit(b, *nfrag, TRUE)) ? GDK_SUCCEED : GDK_FAIL;
-}
-
-int
-CMDhistogram_rev(BAT **bn, BAT *b)
-{
-	return CMDhistogram(bn, BATmirror(b));
 }
 
 
@@ -1928,16 +1957,28 @@ CMDlike(BAT **ret, BAT *b, str s)
 
 @- BAT slice
 @c
-int
-CMDslice(BAT **retval, BAT *b, lng *start, lng *end)
+static int
+slice(BAT **retval, BAT *b, lng start, lng end)
 {
 	/* the internal BATslice requires exclusive end */
-	if (*start < 0) {
+	if (start < 0) {
 		GDKerror("CMDslice: start position of slice should >= 0\n");
 		return GDK_FAIL;
 	}
 
-	return (*retval = BATslice(b, (size_t) * start, (size_t) * end + 1)) ? GDK_SUCCEED : GDK_FAIL;
+	return (*retval = BATslice(b, start, end + 1)) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDslice(BAT **retval, BAT *b, lng *start, lng *end)
+{
+	return slice(retval, b, *start, *end);
+}
+
+int
+CMDslice_int(BAT **retval, BAT *b, int *start, int *end)
+{
+	return slice(retval, b, *start, *end);
 }
 
 @- BUN Get/Fetch
@@ -1977,16 +2018,15 @@ CMDfetchbat(BAT **ret, BAT *b, BAT *s)
 	return (*ret = BATfetch(b, s)) ? GDK_SUCCEED : GDK_FAIL;
 }
 
-int
-CMDfetch(ptr ret, BAT *b, lng *pos)
+static int
+fetch(ptr ret, BAT *b, lng i)
 {
-        size_t i = *pos;
-	if (i >= BATcount(b)) {
+	if (i < 0 || i >= (lng) BATcount(b)) {
 		GDKerror("CMDfetch: idx out of range\n");
 		return GDK_FAIL;
 	}
 	i += BUNindex(b, BUNfirst(b));
-	@:putTail(BUNptr(b,i))@
+	@:putTail(BUNptr(b,(size_t)i))@
 @= putTail
 	if (b->theap) {
 		ptr _src = BUNtvar(b,@1);/*b->theap->base + *(var_t*) BUNtloc(b,@1);*/
@@ -2018,6 +2058,16 @@ CMDfetch(ptr ret, BAT *b, lng *pos)
 }
 
 int
+CMDfetch(ptr ret, BAT *b, lng *pos) {
+	return fetch(ret, b, (size_t) *pos);
+}
+
+int
+CMDfetch_int(ptr ret, BAT *b, int *pos) {
+	return fetch(ret, b, (size_t) *pos);
+}
+
+int
 CMDexist(bit *ret, BAT *b, ptr val)
 {
 	ptr p = (b->htype == TYPE_bat) ? (ptr) &((BAT *) val)->batCacheid : val;
@@ -2025,6 +2075,11 @@ CMDexist(bit *ret, BAT *b, ptr val)
 
 	*ret = q ? 1 : 0;
 	return GDK_SUCCEED;
+}
+int
+CMDexist_rev(bit *ret, BAT *b, ptr val)
+{
+	return CMDexist(ret, BATmirror(b), val);
 }
 
 int
@@ -2050,6 +2105,12 @@ CMDfind(ptr ret, BAT *b, ptr val)
 	}
 	@:putTail(q)@
 	return GDK_SUCCEED;
+}
+
+int
+CMDfind_oid(ptr ret, BAT *b, oid* val)
+{
+	return CMDfind(ret, b, (ptr) val); 
 }
 
 @= find_bounds

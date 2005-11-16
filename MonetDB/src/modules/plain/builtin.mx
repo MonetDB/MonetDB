@@ -351,7 +351,7 @@ CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res)
 				GDKfree(initstr);
 			}
 		}
-		lt = lt->overflow;
+		lt = YYOVERFLOW(lt);
 	}
 	if (ret < 0)
 		return GDK_FAIL;
@@ -607,7 +607,7 @@ CMDfreeze(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	(void) res;
 
-	for (t = lt; t; t = t->overflow) {
+	for (t = lt; t; t = YYOVERFLOW(t)) {
 		for (i = 0; i < lt->cnt; i++) {
 			if ((int) arg(t, i)->token == monet_tokident) {
 				str nme = arg(t, i)->yyval.val.sval;
@@ -975,7 +975,7 @@ CMDprompt(Cntxt stk, YYSTREE lt, ValPtr res)
 	Client c;
 	ptr x;
 
-	if (arg(lt, 0)) {
+	if (lt->cnt == 1) {
 		@:builtin_operand(0,TYPE_str,x)@
 		for (; monet_cntxt[stk].outer > 0; stk = monet_cntxt[stk].outer)
 			;

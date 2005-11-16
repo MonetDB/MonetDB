@@ -39,10 +39,19 @@ can be found in this module.
 .COMMAND bat(int ht, int tt) : BAT[any,any] = CMDnew_default;
 "Creates a new empty transient BAT, with head- and tail-types as indicated."
 
+.COMMAND new(int ht, int tt) : BAT[any,any] = CMDnew_default;
+"Creates a new empty transient BAT, with head- and tail-types as indicated."
+
 .COMMAND bat(int ht, int tt, int size) : BAT[any,any] = CMDnew;
 "Creates a new empty BAT, directly allocating for 'size' elements."
 
+.COMMAND new(int ht, int tt, int size) : BAT[any,any] = CMDnew;
+"Creates a new empty BAT, directly allocating for 'size' elements."
+
 .COMMAND bat(int ht, int tt, lng size) : BAT[any,any] = CMDnew_lng;
+"Creates a new empty BAT, directly allocating for 'size' elements."
+
+.COMMAND new(int ht, int tt, lng size) : BAT[any,any] = CMDnew_lng;
 "Creates a new empty BAT, directly allocating for 'size' elements."
 
 .COMMAND reverse(BAT[any::1,any::2]) : BAT[any::2,any::1] = CMDreverse;
@@ -226,8 +235,26 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 .COMMAND head ( int bid ) : str = CMDhead;
 "Returns the type of the head column of a BAT, as a string."
 
+.COMMAND head ( BAT[any,any] b ) : str = CMDhead_bat;
+"Returns the type of the head column of a BAT, as a string."
+
+.COMMAND htype ( int bid ) : int = CMDhtype;
+"Returns the type of the head column of a BAT."
+
+.COMMAND htype ( BAT[any,any] b ) : int = CMDhtype_bat;
+"Returns the type of the head column of a BAT."
+
 .COMMAND tail ( int bid ) : str = CMDtail;
 "Returns the type of the tail column of a BAT, as a string."
+
+.COMMAND tail ( BAT[any,any] b ) : str = CMDtail_bat;
+"Returns the type of the tail column of a BAT, as a string."
+
+.COMMAND ttype ( int bid ) : int = CMDttype;
+"Returns the type of the tail column of a BAT."
+
+.COMMAND ttype ( BAT[any,any] b ) : int = CMDttype_bat;
+"Returns the type of the tail column of a BAT."
 
 .COMMAND key( BAT[any::1,any::2] b, bit mode)
 				: BAT[any::1,any::2] = CMDsetkey;
@@ -279,6 +306,8 @@ By default, both bits in the {\tt debugmask} are off, which gives fastest perfor
 .COMMAND ordered_rev(BAT[any,any]) : bit = CMDordered_rev;
 "Returns whether a BAT is ordered on head or not."
 
+.COMMAND chk_order(BAT[any::1,any::2]) : BAT[any::1,any::2] = CMDchk_order;
+"Infer the sortedness property (or not) of both head and tail."
 
 .COMMAND batsize(str batname) : lng = CMDbatsize_str;
 "A version of BATsize that does not require loading the BAT."
@@ -515,36 +544,6 @@ these 'sync' OIDs with their own propagation rules.
 
     PROC hot(bat[any::1,any::2] b) : void {
 	hot(b.bbpname());
-    }
-
-    PROC head(bat[any,any] b) : str {
-	return head(int(b));
-    }
-
-    PROC tail(bat[any,any] b) : str  {
-	return tail(int(b));
-	}
-
-    PROC ttype(any b) : int   {
-	 return monet_atomtbl.find(b.tail());
-    }
-#    ADDHELP("ttype","boncz","Apr 07 2004","Get tail-type as an integer","bat");
-
-    PROC htype(any b) : int   {
-	 return monet_atomtbl.find(b.head());
-    }
-#    ADDHELP("htype","boncz","Apr 07 2004","Get head-type as an integer","bat");
-
-    PROC new(int ht, int tt) : bat[any,any] {
-	return bat(ht,tt);
-    }
-
-    PROC new(int ht, int tt, int cnt) : bat[any,any] {
-	return bat(ht,tt,cnt);
-    }
-
-    PROC new(int ht, int tt, lng cnt) : bat[any,any] {
-	return bat(ht,tt,cnt);
     }
 @
 @{
@@ -1008,6 +1007,34 @@ CMDhead(str *res, int *bid)
 }
 
 int
+CMDhead_bat(str *res, BAT *b)
+{
+	return CMDhead(res, &b->batCacheid);
+}
+
+int
+CMDhtype(int *res, int *bid)
+{
+	int ret = int_nil;
+	if (BBPcheck((bat) *bid, "CMDhtype")) {
+		BAT *b = lock_desc((bat) *bid);
+		if (b) {
+			ret = *bid > 0 ? b->htype : b->ttype;
+		}
+		unlock_desc(*bid);
+	} *res = ret;
+	return GDK_SUCCEED;
+	
+}
+
+int
+CMDhtype_bat(int *res, BAT *b)
+{
+	*res = b->htype; 
+	return GDK_SUCCEED;
+}
+
+int
 CMDtail(str *res, int *bid)
 {
 	if (BBPcheck((bat) *bid, "CMDtail")) {
@@ -1024,6 +1051,35 @@ CMDtail(str *res, int *bid)
 	}
 	return GDK_SUCCEED;
 }
+
+int
+CMDtail_bat(str *res, BAT *b)
+{
+	return CMDtail(res, &b->batCacheid);
+}
+
+int
+CMDttype(int *res, int *bid)
+{
+	int ret = int_nil;
+	if (BBPcheck((bat) *bid, "CMDttype")) {
+		BAT *b = lock_desc((bat) *bid);
+		if (b) {
+			ret = *bid > 0 ? b->ttype : b->htype;
+		}
+		unlock_desc(*bid);
+	} *res = ret;
+	return GDK_SUCCEED;
+}
+
+int
+CMDttype_bat(int *res, BAT *b)
+{
+	*res = b->ttype; 
+	return GDK_SUCCEED;
+}
+
+
 
 int
 CMDsetkey(BAT **result, BAT *input, bit *param)
@@ -1045,6 +1101,16 @@ int
 CMDordered(bit *result, BAT *input)
 {
 	*result = BATordered(input) ? 1 : 0;
+	return GDK_SUCCEED;
+}
+
+int
+CMDchk_order(BAT **result, BAT *input)
+{
+	BATordered(input);
+	BATordered(BATmirror(input));
+	BBPfix(input->batCacheid);
+	*result = input;
 	return GDK_SUCCEED;
 }
 
