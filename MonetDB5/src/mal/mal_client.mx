@@ -119,7 +119,7 @@ description. A backup structure is provided
 to temporarily switch to another scenario. Propagation of the state
 information should be dealt with separately.[TODO]
 @h
-	str scenario, oldscenario;  /* scenario management */
+	str scenario, oldscenario;  /* scenario management references */
 	void    *state[7], *oldstate[7];
 	MALfcn  phase[7], oldphase[7];
 	char   itrace;     /* trace execution using interactive mdb */
@@ -522,7 +522,7 @@ Client forkClient(Client father){
 		son->bak= NULL;
 		son->yycur=0;
 		son->father = father;
-		son->scenario = GDKstrdup(father->scenario);
+		son->scenario = father->scenario;
 		son->prompt = GDKstrdup(father->prompt);
 		son->promptlength= strlen(father->prompt);
 		/* reuse the scopes wherever possible */
@@ -583,7 +583,7 @@ void freeClient(Client c)
 	}
 	   */
 	/* re-use output buffer */
-	if(c->scenario) GDKfree(c->scenario); c->scenario = NULL;
+	c->scenario = NULL;
 	if(c->prompt) GDKfree(c->prompt); c->prompt = NULL;
 	if(c->cwd) GDKfree(c->cwd); c->cwd = NULL;
 	c->promptlength=-1;

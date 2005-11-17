@@ -567,11 +567,11 @@ typeAlias(Client cntxt, int tpe)
 		return -1;
 	}
 	nextChar(cntxt);
-	if (!isdigit((int) currChar(cntxt))) {
+	t = currChar(cntxt) - '0';
+	if( t>9){
 		parseError(cntxt, "[1-9] expected\n");
 		return -1;
 	}
-	t = currChar(cntxt) - '0';
 	advance(cntxt,1);
 	return t;
 }

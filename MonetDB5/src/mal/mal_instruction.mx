@@ -877,8 +877,8 @@ void removeInstruction(MalBlkPtr mb, InstrPtr p){
     for(; i<mb->stop-1; i++)
         mb->stmt[i]= mb->stmt[i+1];
     mb->stop--;
-    mb->stmt[i]=0;
-    freeInstruction(p); 
+    mb->stmt[i]=p;
+    /* freeInstruction(p); */
 }
 
 void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt){
@@ -1103,10 +1103,12 @@ int newVariable(MalBlkPtr mb, str name, malType type){
             mb->errors++;
         } 
     } 
+/*
     if( isReserved(name)){
         GDKerror("'%s' is a reserved identifier\n",name);
         mb->errors++;
     } 
+*/
     n = mb->vtop;
     getVar(mb,n) = (VarPtr) GDKmalloc(sizeof(VarRecord));
     memset( (str) getVar(mb,n), 0, sizeof(VarRecord));

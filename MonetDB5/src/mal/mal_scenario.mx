@@ -424,7 +424,7 @@ scenario, i.e. the first described in the scenario table.
 void
 fillScenario(Client c, Scenario scen)
 {
-	c->scenario = GDKstrdup(scen->name);
+	c->scenario = scen->name;
 
 	c->phase[READER] = scen->readerCmd;
 	c->phase[PARSER] = scen->parserCmd;
@@ -449,7 +449,6 @@ clrScenario(Client c)
 {
 	if (c->scenario == 0)
 		return;
-	GDKfree(c->scenario);
 	c->scenario = 0;
 	c->phase[READER] = 0;
 	c->phase[PARSER] = 0;

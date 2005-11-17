@@ -217,6 +217,7 @@ typedef struct BOX {
 	str name;
 	MalBlkPtr sym;
 	MalStkPtr val;
+	int dirty;		/* don't save if it hasn't been changed */
 } *Box, BoxRecord;
 
 mal_export Box newBox(str name);
@@ -348,6 +349,7 @@ openBox(str name)
 		return box;
 	box = newBox(name);
 	loadBox(name);
+	box->dirty= FALSE;
 	return box;
 }
 
@@ -407,6 +409,7 @@ depositBox(Box box, str name, ValPtr val)
 	v = &box->val->stk[i];
 	box->val->stktop++;
 	VALcopy(v, val);
+	box->dirty= TRUE;
 #ifdef DEBUG_MAL_BOX
 	stream_printf(GDKout, "depositBox: entered '%s' at %d type %d\n", name, i, v->vtype);
 #endif
@@ -677,6 +680,8 @@ saveBox(Box box, int flag)
 
 	(void) flag;		/* fool the compiler */
 
+	if( box->dirty== FALSE)
+		return 0;
 	f = prepareSaveBox(box, &boxfile, &boxfilebak);
 	if (f == NULL)
 		return 1;
