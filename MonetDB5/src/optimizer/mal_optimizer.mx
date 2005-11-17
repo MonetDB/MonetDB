@@ -457,6 +457,7 @@ For example,
 
 opt_export str MALoptimizer(Client c);
 opt_export int optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec);
+opt_export int optimizerCheckFlow(MalBlkPtr mb, str name, int actions, lng usec);
 opt_export void resetOptimizerDebugger();
 opt_export str optimizeMALBlock(MalBlkPtr mb);
 opt_export void showOptimizerStep(int i, int flg);
@@ -523,14 +524,34 @@ If one of the optimizers fails, we should not attempt others.
 int
 optimizerCheck(MalBlkPtr mb, str name, int actions, lng usec)
 {
+	Client cntxt;
 	if( actions > 0){
+		cntxt= getClient();
 		chkFlow(mb);
-		chkTypes(getClient()->nspace, mb);
+		chkTypes(cntxt->nspace, mb);
 		chkDeclarations(mb, TRUE);
 		setLifespan(mb);
+		if( cntxt->debugOptimizer)
+			optimizerDebug(mb, name, actions, usec);
 	}
-	if( actions )
-		optimizerDebug(mb, name, actions, usec);
+	if (mb->errors) {
+		showErrors();
+		stream_printf(GDKout, "Optimizer %s failed\n", name);
+		printFunction(GDKout, mb, LIST_MAL_ALL);
+	}
+	(void)usec;
+	return mb->errors;
+}
+int
+optimizerCheckFlow(MalBlkPtr mb, str name, int actions, lng usec)
+{
+	Client cntxt;
+	if( actions > 0){
+		cntxt= getClient();
+		chkFlow(mb);
+		if( cntxt->debugOptimizer)
+			optimizerDebug(mb, name, actions, usec);
+	}
 	if (mb->errors) {
 		showErrors();
 		stream_printf(GDKout, "Optimizer %s failed\n", name);
@@ -1187,7 +1208,7 @@ ARoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* remove the ARoptimizer request */
 	if (pci)
 		removeInstruction(mb, pci);
-	optimizerCheck(mb, "mal.aliasRemoval", oldstop-mb->stop-(pci?1:0), 
+	optimizerCheckFlow(mb, "mal.aliasRemoval", oldstop-mb->stop-(pci?1:0), 
 			GDKusec() - clk);
 	return NULL;
 }
@@ -1475,7 +1496,11 @@ COoptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* remove the COcoercion request */
 	if (pci)
 		removeInstruction(mb, pci);
-	optimizerCheck(mb, "mal.coercionOptimizer", actions, GDKusec() - clk);
+@-
+This optimizer affects the flow, but not the type and declaration
+structure
+@c
+	optimizerCheckFlow(mb, "mal.coercionOptimizer", actions, GDKusec() - clk);
 	if (mb->errors) {
 		showErrors();
 		return throwMessage("COoptimizer", "Optimization raised errors");
