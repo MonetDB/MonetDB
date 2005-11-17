@@ -46,12 +46,12 @@ monet_fcntbl.sort()@batloop() {
 }
 
 Fnts.count().print();
-[ 681 ]
+[ 690 ]
 Fnts.reverse().sort().reverse()@batloop() {
 	FnameS.insert($h,Fname.find($h));
 }
 FnameS.count().print();
-[ 681 ]
+[ 690 ]
 
 var All:=0;
 
@@ -77,8 +77,8 @@ Static_mods@batloop() {
 
 Module: ""
 
-[ 59 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 48 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																												  # name
 # str			str		str													str																																																															  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -90,14 +90,10 @@ Module: ""
 [ "dir",	  "PROC:      ",  "dir() : void",								  "not available"																																																													  ]
 [ "dir",	  "PROC:      ",  "dir(str) : void",								  "not available"																																																													  ]
 [ "dir_leaks",		  "PROC:      ",  "dir_leaks() : void",											  "not available"																																																													  ]
-[ "fetch",		  "PROC:      ",  "fetch(BAT[any,any::1], int) : any::1",						  "not available"																																																																																			  ]
-[ "fetch",		  "PROC:      ",  "fetch(BAT[oid,any::1], oid) : any::1",						  "not available"																																																																																			  ]
-[ "head",	  "PROC:      ",  "head(BAT[any,any]) : str",									  "not available"																																																													  ]
 [ "help",	  "PROC:      ",  "help(str) : void",								  "not available"																																																													  ]
 [ "help_sig",	  "PROC:      ",  "help_sig(oid) : void",							  "not available"																																																													  ]
 [ "help_tpe",	  "PROC:      ",  "help_tpe(int) : str",							  "not available"																																																													  ]
 [ "hot",	  "PROC:      ",  "hot(BAT[any::1,any::2]) : void",						  "not available"																																																													  ]
-[ "htype",	  "PROC:      ",  "htype(any) : int",										  "not available"																																																													  ]
 [ "join",	  "PROC:      ",  "join(BAT[any::1,any::2], BAT[any::2,any::3], lng, str, ..any..) : BAT[any::1,any::3]", "not available"																																																													  ]
 [ "join",	  "PROC:      ",  "join(BAT[any::1,any::2], BAT[any::2,any::3], str, ..any..) : BAT[any::1,any::3]", "not available"																																																													  ]
 [ "load",	  "PROC:      ",  "load(str) : BAT[any,any]",							  "not available"																																																													  ]
@@ -109,9 +105,6 @@ Module: ""
 [ "mil_select",	  "PROC:      ",  "mil_select(BAT[any::1,any::2], str, any::2, any::2) : BAT[any::1,any::2]",	  "not available"																																																													  ]
 [ "mmap",	  "PROC:      ",  "mmap(BAT[any::1,any::2], int) : BAT[any::1,any::2]",				  "not available"																																																													  ]
 [ "new",	  "PROC:      ",  "new(BAT[any,any], BAT[any,any], int) : BAT[any,any]",				  "not available"																																																													  ]
-[ "new",	  "PROC:      ",  "new(int, int) : BAT[any,any]",						  "not available"																																																													  ]
-[ "new",	  "PROC:      ",  "new(int, int, int) : BAT[any,any]",						  "not available"																																																													  ]
-[ "new",	  "PROC:      ",  "new(int, int, lng) : BAT[any,any]",						  "not available"																																																													  ]
 [ "outerjoin",	  "PROC:      ",  "outerjoin(BAT[any::1,any::2], BAT[any::2,any::3]) : BAT[any::1,any::3]",	  "not available"																																																													  ]
 [ "prod",	  "PROC:      ",  "prod(BAT[any,dbl]) : dbl",							  "not available"																																																													  ]
 [ "prod",	  "PROC:      ",  "prod(BAT[any,flt]) : flt",							  "not available"																																																													  ]
@@ -121,7 +114,6 @@ Module: ""
 [ "project",	  "PROC:      ",  "project(BAT[any::1,any]) : BAT[any::1,void]",				  "not available"																																																													  ]
 [ "repeat",		  "PROC:      ",  "repeat(str, int) : str",										  "not available"																																																													  ]
 [ "save",	  "PROC:      ",  "save(BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "not available"																																																													  ]
-[ "slice",		  "PROC:      ",  "slice(BAT[any::1,any::2], int, int) : BAT[any::1,any::2]",				  "not available"																																																																																			  ]
 [ "space",		  "PROC:      ",  "space(int) : str",											  "not available"																																																													  ]
 [ "stringinsert",	  "PROC:      ",  "stringinsert(str, int, int, str) : str",								  "not available"																																																													  ]
 [ "stringleft",		  "PROC:      ",  "stringleft(str, int) : str",										  "not available"																																																													  ]
@@ -135,17 +127,14 @@ Module: ""
 [ "sum",	  "PROC:      ",  "sum(BAT[any,int]) : int",							  "not available"																																																													  ]
 [ "sum",	  "PROC:      ",  "sum(BAT[any,lng]) : lng",							  "not available"																																																													  ]
 [ "sum",	  "PROC:      ",  "sum(BAT[any,sht]) : sht",							  "not available"																																																													  ]
-[ "tail",	  "PROC:      ",  "tail(BAT[any,any]) : str",									  "not available"																																																													  ]
-[ "ttype",	  "PROC:      ",  "ttype(any) : int",										  "not available"																																																													  ]
-[ "tunique",	  "PROC:      ",  "tunique(BAT[any,any::1]) : BAT[any::1,void]",				  "not available"																																																													  ]
 [ "vars",		  "PROC:      ",  "vars(str) : void",									  "not available"																																			  ]
 [ "vm_usage",	  "PROC:      ",  "vm_usage() : BAT[str,lng]",							  "not available"																																																													  ]
 [ "vm_usage",	  "PROC:      ",  "vm_usage(int) : BAT[str,lng]",						  "not available"																																																													  ]
 
 Module: "algebra"
 
-[ 111 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 120 ]
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																													  # name
 # str		str		str											str																																													  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -166,7 +155,10 @@ Module: "algebra"
 [ "diff",	  "PROC:      ",  "diff(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "backward compatibility: use sdiff() explicitly."																															  ]
 [ "exist",	  "COMMAND:   ",  "exist(BAT[any::1,any::2], any::1, any::2) : bit",					  "Returns true when 'h,t' occurs as a bun in b."																															  ]
 [ "exist",	  "COMMAND:   ",  "exist(BAT[any::1,any], any::1) : bit",						  "Returns whether 'h' occurs as a head value in b."																															  ]
+[ "exist_rev",			  "COMMAND:   ",  "exist_rev(BAT[any,any::1], any::1) : bit",						  "Returns whether 'h' occurs as a head value in b."																																																									  ]
+[ "fetch",			  "COMMAND:   ",  "fetch(BAT[any,any::1], int) : any::1",						  "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"																																																					  ]
 [ "fetch",			  "COMMAND:   ",  "fetch(BAT[any,any::1], lng) : any::1",						  "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"																																																										  ]
+[ "fetch",			  "COMMAND:   ",  "fetch(BAT[any,any::1], oid) : any::1",						  "Returns the tail value of the BUN at the x-th position with 0 <= x < b.count"																																																					  ]
 [ "fetch",	  "COMMAND:   ",  "fetch(BAT[any::1,any::2], BAT[int,any]) : BAT[any::1,any::2]",			  "Returns a positional selection of b by the integer head values of s"																													  ]
 [ "fetch",	  "COMMAND:   ",  "fetch(BAT[any::1,any::2], BAT[oid,any]) : BAT[any::1,any::2]",			  "Returns a positional selection of b by the oid head values of s"																													  ]
 [ "find",	  "COMMAND:   ",  "find(BAT[any::1,any::2], any::1) : any::2",						  "Returns the tail value 't' for which some [h,t] BUN exists in b.\n If no such BUN exists, an error occurs."																								  ]
@@ -192,6 +184,8 @@ Module: "algebra"
 [ "like_uselect_pcre",		  "PROC:      ",  "like_uselect_pcre(BAT[any::1,str], str, str) : BAT[any::1,void]",					  "does SQL LIKE select with use of PCRE"																																																															  ]
 [ "mark",	  "COMMAND:   ",  "mark(BAT[any::1,any]) : BAT[any::1,oid]",						  "Produces a new BAT with fresh unique OIDs in the tail."																														  ]
 [ "mark",	  "COMMAND:   ",  "mark(BAT[any::1,any], oid) : BAT[any::1,oid]",					  "Produces a new BAT with fresh unique dense sequense of OIDs in the tail\n that starts at base (i.e. [base,base+1,..base+b.count()-1] )."																				  ]
+[ "mark_rev",			  "COMMAND:   ",  "mark_rev(BAT[any,any::1]) : BAT[oid,any::1]",					  "Produces a new BAT with fresh unique OIDs in the head."																																																								  ]
+[ "mark_rev",			  "COMMAND:   ",  "mark_rev(BAT[any,any::1], oid) : BAT[oid,any::1]",					  "Produces a new BAT with fresh unique dense sequense of OIDs in the head\n that starts at base (i.e. [base,base+1,..base+b.count()-1] )."																																														  ]
 [ "max",	  "COMMAND:   ",  "max(BAT[any,dbl]) : dbl",								  "Give the highest tail value. Error on empty BATs."																															  ]
 [ "max",	  "COMMAND:   ",  "max(BAT[any,flt]) : flt",								  "Give the highest tail value. Error on empty BATs."																															  ]
 [ "max",	  "COMMAND:   ",  "max(BAT[any,int]) : int",								  "Give the highest tail value. Error on empty BATs."																															  ]
@@ -234,6 +228,7 @@ Module: "algebra"
 [ "select",			  "COMMAND:   ",  "select(BAT[any::1,any::2], any::2, any::2, bit, bit) : BAT[any::1,any::2]",				  "Select all BUNs of a BAT that have tail values: {v| low <[=] v <[=] high}.\nEither boundary value is included ('<=') if the respective bit (l_in / h_in)\nis TRUE, and excluded ('<') otherwise.\n\nNIL boundary values have a special meaning.\n+ low  == nil means: no lower bound\n+ high == nil means: no upper bound.\n\nNOTE 1: you should cast the nil to the appropriate type, e.g. int(nil)\n        in order to cirumvent type clashes.\nNOTE 2: as the 'nil' element has no clear place in the ordered domain\n        of values, tuples with 'nil values are NEVER returned by the\n        range select."  ]
 [ "semijoin",	  "PROC:      ",  "semijoin(BAT[any::1,any::2], BAT[any::1,any]) : BAT[any::1,any::2]",			  "semijoin is a synonym of kintersect."																																  ]
 [ "sintersect",			  "COMMAND:   ",  "sintersect(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "Returns the intersection taken over *both* columns of two BATs.\n Results in all BUNs of 'left' that are also in 'right'. Does *not* do\n double-elimination over the 'left' BUNs, If you want this, use:\n 'sintersect(left.sunique,right.sunique)' or: 'sintersect(left,right).sunique'."																																	  ]
+[ "slice",			  "COMMAND:   ",  "slice(BAT[any::1,any::2], int, int) : BAT[any::1,any::2]",				  "Return the slice with the BUNs at position x till y."																																																								  ]
 [ "slice",			  "COMMAND:   ",  "slice(BAT[any::1,any::2], lng, lng) : BAT[any::1,any::2]",				  "Return the slice with the BUNs at position x till y."																																																													  ]
 [ "sort",	  "COMMAND:   ",  "sort(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Returns copy of a BAT with the BUNs sorted on ascending head values."																				  ]
 [ "sort_ht",			  "PROC:      ",  "sort_ht(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "sorts a BAT according to its head (primary) and tail values (secondary).(straight forward hack, not tuned for performance at all, just used for testing.)"																																																	  ]
@@ -252,6 +247,9 @@ Module: "algebra"
 [ "sunion",			  "COMMAND:   ",  "sunion(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",				  "Returns the union of two BATs; looking at both columns of both BATs.\n Results in all BUNs of 'left' that are not in 'right', plus all BUNs\n of 'right'. *no* double-elimination is done. If you want this, do:\n 'sunion(left.sunique,right.sunique)' or: 'sunion(left,right).sunique'."																																	  ]
 [ "sunique",			  "COMMAND:   ",  "sunique(BAT[any::1,any::2]) : BAT[any::1,any::2]",							  "Select unique tuples from the input BAT. Double elimination is done over\n BUNs as a whole (head and tail). Result is a BAT with real set() semantics."																																																	  ]
 [ "thetajoin",	  "COMMAND:   ",  "thetajoin(BAT[any::1,any::2], BAT[any::2,any::3], int, lng) : BAT[any::1,any::3]",	  "Theta join on for 'mode' in { LE, LT, EQ, GT, GE }.\n\nJOIN_EQ is just the same as join(). All other options do merge\nalgorithms; either using the fact that they are ordered()\nalready (left on tail, right on head), or by using/creating\nbinary search trees on the join columns. "		  ]
+[ "tsort",			  "COMMAND:   ",  "tsort(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Returns copy of a BAT with the BUNs sorted on ascending tail values."																																																						  ]
+[ "tsort_rev",			  "COMMAND:   ",  "tsort_rev(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Returns copy of a BAT with the BUNs tsorted on descending head values."																																																						  ]
+[ "tunique",			  "COMMAND:   ",  "tunique(BAT[any,any::1]) : BAT[any::1,void]",					  "Select unique tuples from the input BAT. Double elimination is done\n only looking at the tail column. Result is a BAT with hkeyed() == true."																																													  ]
 [ "uhashsplit",	  "COMMAND:   ",  "uhashsplit(BAT[any::1,any::2], int) : BAT[int,BAT]",					  "Same as hashsplit, but only collect the head values in the fragments"																												  ]
 [ "union",	  "PROC:      ",  "union(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",			  "backward compatibility: use sunion() explicitly."																															  ]
 [ "unique",	  "PROC:      ",  "unique(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "backward compatibility: use sunique() explicitly."																															  ]
@@ -571,8 +569,8 @@ Module: "arith"
 
 Module: "bat"
 
-[ 62 ]
-#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 72 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function		type		signature										help																																																																																					  # name
 # str		str		str													str																																					  # type
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -595,6 +593,7 @@ Module: "bat"
 [ "bbpname",	  "COMMAND:   ",  "bbpname(BAT[any,any]) : str",							  "Gives back the logical name of a BAT."																																																								  ]
 [ "bbpname",	  "COMMAND:   ",  "bbpname(BAT[any,any], str) : bit",							  "Give a logical name to a BAT. This can fail if a BAT with name 's' already\n exists. The command then returns FALSE, else TRUE."																																													  ]
 [ "capacity",	  "COMMAND:   ",  "capacity(int) : lng",								  "Returns the current allocation size (in max number of elements) of a BAT."																																																				  ]
+[ "chk_order",	  "COMMAND:   ",  "chk_order(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Infer the sortedness property (or not) of both head and tail."																																																							  ]
 [ "col_name",	  "COMMAND:   ",  "col_name(BAT[any,any], str) : BAT[any,any]",							  "Give a logical name to tail column of a BAT.\n Returns the BAT itself."																												  ]
 [ "cold",	  "COMMAND:   ",  "cold(str) : void",									  "Makes a BAT very cold for the BBP. The chance of being choses for swapout is\n big, afterwards."																												  ]
 [ "convert",	  "COMMAND:   ",  "convert(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Convert the contents of a BAT from little-endian to big-endian and vice versa.\n THIS COMMAND SHOULD NOT BE USED FROM MIL! DANGEROUS! DEBUGGING PURPOSES ONLY!"																																									  ]
@@ -607,9 +606,12 @@ Module: "bat"
 [ "deleteBuns",	  "COMMAND:   ",  "deleteBuns(BAT[any::1,any::2], BAT[any::1,any::2]) : BAT[any::1,any::2]",		  "Delete from the first BAT all BUNs with a corresponding BUN in the second.\n Returns the modified BAT."																																																  ]
 [ "destroy",	  "COMMAND:   ",  "destroy(str) : bit",									  "Destroys the BAT."																																											  ]
 [ "hashloop",	  "ITERATOR:  ",  "hashloop(BAT[any::1,any], ptr, any::1) : void",					  "Iterators are special MIL constructs:\n  <bat-expression> @ <iterator>(<parameters>) <MIL-statement>\n 'b@hashloop(v)..' iterates over all BUNs [$h,$t] of BAT b where ($h = val)."																																							  ]
+[ "head",	  "COMMAND:   ",  "head(BAT[any,any]) : str",								  "Returns the type of the head column of a BAT, as a string."																																																								  ]
 [ "head",	  "COMMAND:   ",  "head(int) : str",											  "Returns the type of the head column of a BAT, as a string."																														  ]
 [ "heat",	  "COMMAND:   ",  "heat(str) : int",									  "returns the current BBP heat (LRU stamp)"																																																								  ]
 [ "hot",	  "COMMAND:   ",  "hot(str) : void",									  "Makes a BAT very hot for the BBP. The chance of being chosen for swapout is\n small, afterwards."																												  ]
+[ "htype",	  "COMMAND:   ",  "htype(BAT[any,any]) : int",								  "Returns the type of the head column of a BAT."																																																									  ]
+[ "htype",	  "COMMAND:   ",  "htype(int) : int",									  "Returns the type of the head column of a BAT."																																																									  ]
 [ "info",	  "COMMAND:   ",  "info(BAT[any,any]) : BAT[str,str]",							  "Produce a BAT containing info about a BAT in \"attribute\",\"value\" format.\n It contains all properties of the BAT record. See the BAT documentation in\n GDK for more information."																																						  ]
 [ "inplace",	  "COMMAND:   ",  "inplace(BAT[void,any::1], BAT[oid,any::1]) : BAT[void,any::1]",			  "inplace replace values on the given locations"																																																						  ]
 [ "inplace",	  "COMMAND:   ",  "inplace(BAT[void,any::1], oid, any::1) : BAT[void,any::1]",				  "inplace replace values on the given locations"																																																																															  ]
@@ -620,6 +622,9 @@ Module: "bat"
 [ "madvise",	  "COMMAND:   ",  "madvise(BAT[any::1,any::2], int, int, int) : BAT[any::1,any::2]",			  "Modern Operating Systems allow users to influence the buffer management\n policy of virtual memory. This is a crucial feature for database systems,\n and eliminates the need to reimplement the OS in a database buffer manager.\n The supported flags are BUF_NORMAL (the normal adaptive kernel algorithm),\n BUF_RANDOM (no page prefetching), BUF_SEQUENTIAL (prefetch and swapout),\n BUF_WILLNEED (load everything with prefetch), BUF_DONTNEED (swapout).\n These buffer management modes are not persistent.\n Returns the BAT operated upon."	  ]
 [ "mirror",	  "COMMAND:   ",  "mirror(BAT[any::1,any]) : BAT[any::1,any::1]",					  "Returns the head-mirror image of a BAT (two head columns)."																																																						  ]
 [ "mmap",	  "COMMAND:   ",  "mmap(BAT[any::1,any::2], int, int, int) : BAT[any::1,any::2]",			  "For each individual heap, you can change the allocation mode to\n either STORE_MEM or STORE_MMAP. Passing an int(nil) means: no change.\n Changing a dirty STORE_MEM heap into STORE_MMAP, will cause a BAT save\n (this has to happen before the heap can be mapped into virtual memory).\n These modes are persistent. "																													  ]
+[ "new",	  "COMMAND:   ",  "new(int, int) : BAT[any,any]",							  "Creates a new empty transient BAT, with head- and tail-types as indicated."																																																						  ]
+[ "new",	  "COMMAND:   ",  "new(int, int, int) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																							  ]
+[ "new",	  "COMMAND:   ",  "new(int, int, lng) : BAT[any,any]",							  "Creates a new empty BAT, directly allocating for 'size' elements."																																																							  ]
 [ "order",	  "COMMAND:   ",  "order(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Sorts the BAT itself, in place, on ascending head values. Returns b."																																																				  ]
 [ "order_rev",	  "COMMAND:   ",  "order_rev(BAT[any::1,any::2]) : BAT[any::1,any::2]",					  "Sorts the BAT itself, in place, on descending head values. Returns b."																																																				  ]
 [ "ordered",	  "COMMAND:   ",  "ordered(BAT[any,any]) : bit",							  "Returns whether a BAT is ordered on head or not."																																																							  ]
@@ -636,7 +641,10 @@ Module: "bat"
 [ "seqbase",	  "COMMAND:   ",  "seqbase(BAT[void,any::1], oid) : BAT[void,any::1]",					  "Set the sequence base for the void vcolumn of a BAT.\n Returns the BAT itself."																																																			  ]
 [ "set",	  "COMMAND:   ",  "set(BAT[any::1,any::2], bit) : BAT[any::1,any::2]",						  "Sets the 'set' property on this BAT to 'mode'. In 'set' mode, the kernel\n will silently block insertions that cause a duplicate BUN [head,tail] entries\n in the BAT.\n KNOWN BUG: when 'set' is set to TRUE, this function does not automatically\n eliminate duplicates. Use b := b.sunique;\n Returns the BAT itself."  ]
 [ "synced",	  "COMMAND:   ",  "synced(BAT[any,any], BAT[any,any]) : bit",						  "Tests whether two BATs are synced or not. "																																																								  ]
+[ "tail",	  "COMMAND:   ",  "tail(BAT[any,any]) : str",								  "Returns the type of the tail column of a BAT, as a string."																																																								  ]
 [ "tail",	  "COMMAND:   ",  "tail(int) : str",											  "Returns the type of the tail column of a BAT, as a string."																														  ]
+[ "ttype",	  "COMMAND:   ",  "ttype(BAT[any,any]) : int",								  "Returns the type of the tail column of a BAT."																																																									  ]
+[ "ttype",	  "COMMAND:   ",  "ttype(int) : int",									  "Returns the type of the tail column of a BAT."																																																									  ]
 [ "unload",	  "COMMAND:   ",  "unload(str) : bit",									  "Swapout a BAT to disk. Transient BATs can also be swapped out.\n Returns whether the unload indeed happened. "																																															  ]
 
 Module: "builtin"
@@ -722,8 +730,8 @@ Module: "str"
 
 Module: "sys"
 
-[ 71 ]
-#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
+[ 72 ]
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 # function			type		signature											help																																																																												  # name
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 [ "bbp",		  "PROC:      ",  "bbp() : BAT[str,int]",								  "Global BBP usage info"																																																												  ]
@@ -775,6 +783,7 @@ Module: "sys"
 [ "view_bbp_ttype",	  "COMMAND:   ",  "view_bbp_ttype() : BAT[int,str]",							  "Pseudo bat to map a BAT id into its tail type"																																																																						  ]
 [ "view_client_login",	  "COMMAND:   ",  "view_client_login() : BAT[int,str]",							  "Pseudo bat to map client identifier to its login time"																																																								  ]
 [ "view_client_name",	  "COMMAND:   ",  "view_client_name() : BAT[int,str]",							  "Pseudo bat to map client identifier to its name"																																																									  ]
+[ "view_client_size",	  "COMMAND:   ",  "view_client_size(int) : BAT[str,lng]",							  "get an overview of client buffer use (contexts, variables, trees)."																																																																													  ]
 [ "view_client_tree",	  "COMMAND:   ",  "view_client_tree() : BAT[int,str]",							  "Pseudo bat to map client identifier to its current active tree"																																																							  ]
 [ "view_gdk_bbp",	  "COMMAND:   ",  "view_gdk_bbp() : BAT[str,int]",							  "Global BBP usage info"																																																												  ]
 [ "view_gdk_cpu",	  "COMMAND:   ",  "view_gdk_cpu() : BAT[str,int]",							  "Global cpu usage info"																																																												  ]
@@ -817,7 +826,7 @@ Module: "trans"
 [ "sync",	  "COMMAND:   ",  "sync() : bit",									  "save all persistent BATs"																																																												  ]
 
 All.print();
-[ 681 ]
+[ 690 ]
 
 quit();
 
