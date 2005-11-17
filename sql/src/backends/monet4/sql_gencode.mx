@@ -1372,12 +1372,12 @@ milnode(int tok, int tpe, ptr valp)
 }
 
 static YYSTREE
-milnode2(int tok, ValPtr valp)
+milnode2(ValPtr valp)
 {
-	YYSTREE res = Myynode(tok, valp->vtype);
+	YYSTREE res = Myynode(TOK_CONSTANT, valp->vtype);
 
 	res->yyval = *valp;
-	res->dealloc = 0;
+	res->iscopy = 1;
 	return res;
 }
 
@@ -1402,13 +1402,15 @@ monet4_interpret(Cntxt procstk, mvc *c, char *name, int *err)
 					a->data.val.sval = GDKstrdup(str_nil);
 				}
 			}
-			arg = milnode2(TOK_CONSTANT, &a->data);
+			arg = milnode2(&a->data);
 			argtree = Myyexpand(argtree, arg);
 		}
 	}
 	Myyexpand(callnode, argtree);
 	Myyexpand(callnode, Myynode(0, TYPE_int));
+	callnode->yysons[1]->yyval.val.ival = (c->argc+1)*sizeof(ValRecord);
 	*err = interpret(procstk, callnode, &v);
+	CLEANUP(callnode);
 
 	return callnode;
 }
@@ -1439,6 +1441,7 @@ int backend_call( backend *be, mvc *c, cq *q )
 int
 backend_fastpath(backend *be, mvc *c, cq *q)
 {
+	int res = 0;
 	Cntxt procstk = (Cntxt) ((ptrdiff_t)q->stk);
 	YYSTREE callnode = (YYSTREE)q->code;
 	ValRecord v;
@@ -1470,7 +1473,9 @@ backend_fastpath(backend *be, mvc *c, cq *q)
 			argv[i] = a->data;
 		}
 	}
-	return interpret(procstk, callnode->yysons[1]->yysons[0], &v);
+	res = interpret(procstk, callnode->yysons[1]->yysons[0], &v);
+	CLEANUP(callnode);
+	return res;
 }
 
 static int

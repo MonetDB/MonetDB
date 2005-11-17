@@ -282,25 +282,6 @@ monet4_freestack(backend_stack stk)
 	CNTXTdelete(procstk);
 }
 
-static void
-reset_arg_tree(YYSTREE args)
-{
-	if (args) {
-		unsigned i;
-
-		for (i = 0; i < args->cnt; i++) {
-			if (args->yysons[i])
-				reset_arg_tree(args->yysons[i]);
-
-		}
-		args->yyval.vtype = TYPE_void;
-		args->yyval.len = 0;
-
-		if (args->extendable)
-			args = args->yysons[args->capacity];
-	}
-}
-
 void
 monet4_freecode(backend_code code, backend_stack stk, int nr, char *name)
 {
@@ -309,25 +290,11 @@ monet4_freecode(backend_code code, backend_stack stk, int nr, char *name)
 	(void)nr;
 	if (code) {
 		Client client;
-		int i;
-		int l = callnode->yysons[1]->cnt;
-		ValPtr argv;
 
-		/* clear default arguments */
-		reset_arg_tree(callnode->yysons[0]);
-
-		/* clear fastpath arguments */
-		if (callnode->yysons[1]) {
-			argv = (ValPtr) callnode->yysons[1]->yyval.val.pval;
-			for (i = 1; i < l; i++) {
-				argv[i].vtype = TYPE_void;
-				argv[i].len = 0;
-			}
-		}
-
-		/* cleanup proc */
+		/* free proc */
 		Myyfree(callnode);
 
+		/* deregister proc */
 		CNTXTclient((Cntxt) (ptrdiff_t) stk, &client);
 		TBL_delproc(client, name);
 	}
@@ -1174,10 +1141,6 @@ module(mapi); # mapi_listen
 # low memory usage for testing unloading
 #mem_maxsize(0LL);
 #vm_maxsize(0LL);
-
-#proc SQLclient( Stream s_in, Stream s_out ) : void {
-#	sqlclient(s_in, s_out);
-#}
 
 proc sql_diff (bat[any::1,any::2] b1, bat[any::1,any::3] b2) : bat[any::1,any::2] {
 	if (count(b2) > 0)
