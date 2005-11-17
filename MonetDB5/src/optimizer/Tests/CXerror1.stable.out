@@ -61,7 +61,7 @@ end f1;	# 21
 #optimizer.commonExpressionRemoval("user", "f1");
 #
 !ERROR: 'a' may not be used before being set in f1[17]
-Optimizer commonExpressions failed
+Optimizer mal.commonExpressions failed
 function user.f1():void;	# 0  (f1:void)
 # create bat 	# 1  (_2:str)
     xxx := bat.new(:void,:dbl);	# 2 CMDBATnew (xxx:bat[:void,:dbl])<-(_4:void)(_5:dbl)
