@@ -6,6 +6,9 @@ CFLAGS = -I. -GF -W3 -MD -nologo -Zi -G6
 
 all: Mx.exe prefixMxFile.exe epsffit.exe idxmx.exe
 
+clean:
+	del *.exe *.obj mx_config.h
+
 MX_OBJS = Mx.obj Index.obj Def.obj Form.obj Tok.obj Code.obj Display.obj \
 	  Print.obj Io.obj Sys.obj disclaimer.obj Tex2Html.obj getopt.obj
 Mx.exe: $(MX_OBJS)
