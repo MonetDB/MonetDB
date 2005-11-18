@@ -2551,7 +2551,11 @@ If none of this is the case, we do hash-lookup using an on-the-fly hash-table.
 We optimize in the case that the head-columns are OID. Below
 macro's help to separate the two cases cleanly.
 @c
-#define OIDcmp(v1,v2)	simple_CMP(v1,v2,oid)
+#if (SIZEOF_OID == SIZEOF_INT)
+#define OIDcmp(v1,v2)	simple_CMP(v1,v2,int)
+#else
+#define OIDcmp(v1,v2)	simple_CMP(v1,v2,lng)
+#endif
 #define STDcmp(v1,v2)	(*cmp)(v1,v2)
 
 	if (ATOMstorage(lead_col->b->htype) == ATOMstorage(TYPE_oid)) {
