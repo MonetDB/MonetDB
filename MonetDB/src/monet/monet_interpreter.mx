@@ -966,20 +966,15 @@ phase 1: resolve 'nme' in (*nme)(), {*nme}(), and [*nme]()
 @-
 phase 2: interpret the actual params
 @c
+		/* PROCs attach the argv storage to the tree so they can keep pointing to it across iterations */
+		if (opcache->yyval.vtype == TYPE_str) {
+			argv = opcache->yyval.val.pval; 
+		}
 		argc = interpret_params(stk, lt->yysons[0], argv, fcn_nme);
 		if (argc < 0)
 			return -1;
 		res->vtype = TYPE_void;
 		res->val.oval = void_nil;
-
-		/* we may want to interpret_params with argv == opcache->yyval.val.pval to save a memcpy */
-		if (opcache->yyval.vtype == TYPE_str) {
-			/* it *should* fit the size predicted by Myypostprocess() */
-			assert((int) (argc*sizeof(ValRecord)) <= opcache->yyval.len);
-
-			memcpy(opcache->yyval.val.pval, argv, opcache->yyval.len);
-			argv = opcache->yyval.val.pval;
-		}
 @-
 phase 3: check if we have this already in expanded form
 @c
