@@ -1764,8 +1764,6 @@ CMD@1(BAT **result, BAT* b, int *param)
 @c
 #define BATtsort(b) BATmirror(BATsort(BATmirror(b)))
 #define BATtsort_rev(b) BATmirror(BATsort_rev(BATmirror(b)))
-#define BATtunique(b) BATkunique(BATmark(BATmirror(b),oid_nil))
-#define BATtunique(b) BATkunique(BATmark(BATmirror(b),oid_nil))
 #define BAThistogram_rev(b) BAThistogram(BATmirror(b))
 #define BATmark_default(b) BATmark(b,OIDnew(BATcount(b)))
 #define BATmark_rev_default(b) BATmirror(BATmark(BATmirror(b),OIDnew(BATcount(b))))
@@ -1781,7 +1779,6 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:unary(copy,BATcopy)@
 @:unary(kunique,BATkunique)@
 @:unary(sunique,BATsunique)@
-@:unary(tunique,BATtunique)@
 @:unary(mark_default,BATmark_default)@
 @:unary(mark_rev_default,BATmark_rev_default)@
 @:binary(semijoin,BATsemijoin)@
@@ -1796,6 +1793,15 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:binary(sdiff,BATsdiff)@
 @:binary(kdiff,BATkdiff)@
 @:binaryint(sample,BATsample)@
+
+int
+CMDtunique(BAT **result, BAT* b)
+{
+	BAT *v = BATmark(BATmirror(b),oid_nil);
+	*result = BATkunique(v);
+	BBPreclaim(v);
+	return *result?GDK_SUCCEED:GDK_FAIL;
+}
 
 int
 CMDcount_nil(int *result, BAT *b, bit *ignore_nils)
