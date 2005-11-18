@@ -20,6 +20,16 @@ for i; do
     esac
 done
 
+# check for python
+if [ !"`type -p python`" ] ; then
+	echo "'python' is required to compile 'autogen',"
+	echo "but no 'python' is found in your PATH ($PATH)."
+	echo
+	echo "Please make sure that 'python' is found in your PATH and re-try."
+	echo "Aborting $0."
+	exit 1
+fi
+
 set -x
 
 # Create "Meta-Makefile" ...
