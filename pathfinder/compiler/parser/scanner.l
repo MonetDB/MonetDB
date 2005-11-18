@@ -387,7 +387,9 @@ _                                ({S}|{ExprComment})+
 "declare function"                 { yield (declare_function); }
 "$"                                { gotoState (VARNAME); yield (dollar); }
 ")"                                { gotoState (OPERATOR); yield (rparen); }
-")"{_}?"as"                        { gotoState (ITEMTYPE); yield (rparen_as); }
+")"{_}?"as"{_}                     { /* trailing whitspace in pattern prevents
+                                        illegal parsing of `...) ascending' in
+                                        order by clauses here. (bug #1359816) */                                     gotoState (ITEMTYPE); yield (rparen_as); }
 "{"                                { yield (lbrace); }
 "}"                                { popState (); yield (rbrace); }
 ","                                { yield (comma); }
@@ -542,7 +544,10 @@ _                                ({S}|{ExprComment})+
                                      yield (encoding_StringLiteral);
                                    }
 
-")"{_}?"as"                        { gotoState (ITEMTYPE); yield (rparen_as); }
+")"{_}?"as"{_}                     { /* trailing whitspace in pattern prevents
+                                        illegal parsing of `...) ascending' in
+                                        order by clauses here. (bug #1359816) */
+                                     gotoState (ITEMTYPE); yield (rparen_as); }
 "as"                               { gotoState (ITEMTYPE); yield (as); }
 ":="                               { gotoState (DEFAULT); yield (colon_equals);}
 "external"                         { gotoState (DEFAULT); yield (external_); }
