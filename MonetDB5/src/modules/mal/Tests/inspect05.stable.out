@@ -201,7 +201,7 @@ end main;	# 7
 [ 167@0,  "pattern",	  "inspect",	  "getType",			  "(v:bat[:any_1,:any_2]):int address INSPECTtype;"									  ]
 [ 168@0,  "command",	  "inspect",	  "getSize",		  "(mod:str,fcn:str):lng address INSPECTgetFunctionSize;"							  ]
 [ 169@0,  "command",	  "inspect",	  "getSize",		  "(mod:str):bat[:str,:lng] address INSPECTgetModuleSize;"							  ]
-[ 170@0,  "command",	  "inspect",	  "getSize",		  "():lng address INSPECTgetSize;"										  ]
+[ 170@0,  "pattern",	  "inspect",	  "getSize",		  "():lng address INSPECTgetSize;"										  ]
 [ 171@0,  "command",	  "inspect",	  "getSignature",	  "(mod:str,fcn:str):bat[:str,:str] address INSPECTgetSignature;"						  ]
 [ 172@0,  "command",	  "inspect",	  "getSignature",	  "():bat[:void,:str] address INSPECTgetsignature;"								  ]
 [ 173@0,  "command",	  "inspect",	  "getFunction",	  "():bat[:void,:str] address INSPECTgetFunction;"								  ]
