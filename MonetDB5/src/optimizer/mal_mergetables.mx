@@ -199,6 +199,7 @@ opt_export str MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 static str matRef;
 static str newRef;
+static str batRef;
 static str selectRef;
 static str joinRef;
 static str aggrRef;
@@ -208,11 +209,13 @@ static str countRef;
 static str algebraRef;
 static str plusRef;
 static str calcRef;
+static str insertRef;
 
 static void MTinit(){
 	if(matRef == NULL){
 		matRef = putName("mat",3);
 		newRef = putName("new",3);
+		batRef = putName("bat",3);
 		selectRef = putName("select",6);
 		joinRef = putName("join",4);
 		aggrRef = putName("aggr",4);
@@ -222,6 +225,7 @@ static void MTinit(){
 		calcRef = putName("calc",4);
 		plusRef = putName("+",1);
 		algebraRef = putName("algebra",7);
+		insertRef = putName("insert",6);
 	}
 }
 
@@ -288,6 +292,21 @@ MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 				mat[mtop++]= r;
 				actions++;
 			}
+			continue;
+		} 
+@-
+The insertions are sent to the last component of the MAT.
+Selection of the proper componetn based on range descriptors will follow.
+@c
+		if(moduleId(p)== batRef && functionId(p)== insertRef){
+			for(j=0; j<mtop; j++)
+			if( mvar[j] == getArg(p,1)){
+				getArg(p,1) = getArg(mat[j],mat[j]->argc-1);
+				pushInstruction(mb,p);
+				break;
+			}
+			if( j == mtop)
+				pushInstruction(mb,p);
 			continue;
 		} 
 /*

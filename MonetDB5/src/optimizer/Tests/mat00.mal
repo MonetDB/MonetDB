@@ -15,6 +15,7 @@
     c1 := bat.new(:int,:int);
     bat.insert(c1,1,5);
     c := mat.new(c0,c1);
+	bat.insert(c,1,6);
     j := algebra.join(b,c);
     io.print(j);
 
