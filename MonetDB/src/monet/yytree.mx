@@ -24,8 +24,8 @@ within a YACC environment.
 #ifndef _YYTREE_H_
 #define _YYTREE_H_
 
-#define par_retval	free.batref.id
-#define old_cntxt	free.batref.stamp
+#define par_retval	yyval.len
+#define old_cntxt	yyval.len
 
 #define YYCHUNK 	256
 #define YYNODESIZE(cnt) (sizeof(yystree) - (1+YYMAXSONS-(cnt))*sizeof(yystree*))
@@ -34,7 +34,6 @@ within a YACC environment.
 m_export YYSTREE Myylognode(int tok, int tpe);
 m_export YYSTREE Myylogexpand(YYSTREE parent, YYSTREE child);
 m_export void    Myylogclean(void);
-m_export int     Myypostprocess(YYSTREE t);
 
 /* bulk obtaining executable (chunk-compressed) trees */
 m_export YYSTREE Myylogout(YYSTREE t);
@@ -74,7 +73,7 @@ discarding this entire space after each parse action. Thus we guarantee
 that no memory leaks occur (think of parsing being halted due to MIL 
 syntax errors, with many nodes already allocated).
 
-When parsing finishes, one should still call Myypostprocess() while in
+When parsing finishes, one should still call yypostprocess() while in
 parsing mode. This routine does some semantic analysis on the MIL parse
 tree and reshapes it into an executable MIL tree.
 
@@ -149,12 +148,6 @@ Myylognode(int tok, int tpe)
 	t = (YYSTREE) (yy_buf + yy_free);
         YYNODE(t, tok, tpe, 0, sizeof(yystree), YYMAXSONS, 1, 1);
 	yy_free += sizeof(yystree);
-	if (tpe == 0) {
-		t->noyyval = (tok == 0) | (tok == TOK_IF) | (tok == TOK_SEQ) | 
-		             (tok == TOK_BREAK) | (tok == TOK_SEQBLOCK) | 
-		             (tok == TOK_WHILE) | (tok == TOK_RETURN) | 
-		             (tok == TOK_CONST) | (tok == TOK_ASSIGNMENT);
-	}
 	return t;
 }
 
@@ -196,9 +189,14 @@ yycopy(YYSTREE t, int kill_orig, int func_parent, char** next, char** end)
 	func_parent = (t->token == TOK_FUNCTION || t->token == TOK_SETOP || t->token == TOK_SETAGGR); 
 
 	tn->cnt = t->cnt;
-	if (t->noyyval) {
-		assert(ATOMextern(t->yyval.vtype) == 0);
-	} else {
+	if (kill_orig && t->yyval.vtype == 0) {
+		int tok = t->token;
+		t->noyyval = (tok == 0) | (tok == TOK_IF) | (tok == TOK_SEQ) | 
+		             (tok == TOK_BREAK) | (tok == TOK_ELSE) |
+		             (tok == TOK_WHILE) | (tok == TOK_RETURN) |  
+		             (tok == TOK_CONST) | (tok == TOK_ASSIGNMENT);
+	}
+	if (!t->noyyval) {
 		tn->yyval = t->yyval;
 		if (kill_orig) {
 			/* steal the memory from the copied node */ 
@@ -213,20 +211,9 @@ yycopy(YYSTREE t, int kill_orig, int func_parent, char** next, char** end)
 		if (t->yysons[i])
 			tn->yysons[i] = yycopy(t->yysons[i], kill_orig, func_parent&(i==1), next, end);
 	t = YYOVERFLOW(t);
-	if (t) tn->yysons[tn->cnt] = yycopy(t, kill_orig, 0, next, end);
+	if (t) tn->yysons[tn->capacity] = yycopy(t, kill_orig, 0, next, end);
 	return tn;
 }
-
-YYSTREE
-Myylogout(YYSTREE t)
-{
-	/* make a memory-tight copy of the tree constructed by the parser, and steal the pointers */ 
-	char *t_next = NULL, *t_size = NULL;
-	t->noyyval = 0;
-	if (Myypostprocess(t) < 0) return NULL;
-	return yycopy(t, 1, 0, &t_next, &t_size);
-}
-
 
 YYSTREE
 Myynode(int tok, int tpe)
@@ -350,8 +337,8 @@ Also rewrite the FUNCTION tree to its modern syntax with
 yysons[0]=params, yysons[1]=expansion-cache, yysons[2]=deref/NULL
 We store the parameter evaluation space size in the ival of the exec node.
 @c
-int
-Myypostprocess(YYSTREE lt)
+static int
+yypostprocess(YYSTREE lt)
 {
 	int rtrn = 0;
 
@@ -359,11 +346,12 @@ Myypostprocess(YYSTREE lt)
 		if (lt->yyval.val.sval[0] != '[') {
 			if (lt->yysons[0]->token != TOK_IDENT) {
 				lt->token = 0;
-				GDKerror("Myypostprocess: must %s= to a variable\n", lt->yyval.val.sval);
+				GDKerror("yypostprocess: must %s= to a variable\n", lt->yyval.val.sval);
 				rtrn = -1;
 			} else {
 				YYSTREE var = Myylognode(0, 0);
 				YYSTREE op = Myylognode(0, 0);
+
 				*var = *lt->yysons[0];
 				var->yyval.val.sval = GDKstrdup(var->yyval.val.sval);
 				var->noyyval = 0;
@@ -378,6 +366,7 @@ Myypostprocess(YYSTREE lt)
 				lt->cnt = 2;
 				lt->yysons[0] = var;
 				lt->yysons[1] = op;
+				lt->yysons[lt->capacity] = NULL;
 				lt->noyyval = 0;
 			}
 
@@ -398,7 +387,7 @@ Myypostprocess(YYSTREE lt)
 		if (lt->yyval.vtype == TYPE_void) {
 			deref = lt->yysons[0];
 			params = lt->yysons[1];
-			if (Myypostprocess(deref) < 0) {
+			if (yypostprocess(deref) < 0) {
 				rtrn = -1;
 			}
 		} else {
@@ -413,7 +402,7 @@ Myypostprocess(YYSTREE lt)
                 /* find out how many actual parameters this function maximally may have */
 		opcache->noyyval = 0;
 		opcache->yyval.vtype = TYPE_int;
-		opcache->yyval.val.ival = Myypostprocess(params);
+		opcache->yyval.val.ival = yypostprocess(params);
 		if (opcache->yyval.val.ival < 0) {
 			rtrn = -1;
 			opcache->yyval.val.ival = 0;
@@ -421,10 +410,11 @@ Myypostprocess(YYSTREE lt)
 			opcache->yyval.val.ival *= (int) sizeof(ValRecord);
 		}
 		lt->cnt = 0;
-		Myyexpand(lt, params);
-		Myyexpand(lt, opcache);
+		lt->yysons[lt->capacity] = NULL;
+		Myylogexpand(lt, params);
+		Myylogexpand(lt, opcache);
 		if (deref)
-			Myyexpand(lt, deref);
+			Myylogexpand(lt, deref);
 	} else {
 		unsigned i;
 		int sons = 1, range_sons = 0;
@@ -434,7 +424,7 @@ Myypostprocess(YYSTREE lt)
 			for (i = 0; i < t->cnt; i++) {
 				if (t->yysons[i]) {
 					range_sons |= (t->yysons[i]->token == TOK_RANGETEMP);
-					if (Myypostprocess(t->yysons[i]) < 0) {
+					if (yypostprocess(t->yysons[i]) < 0) {
 						rtrn = -1;
 					}
 				}
@@ -445,6 +435,18 @@ Myypostprocess(YYSTREE lt)
 	}
 	return rtrn;
 }
+
+YYSTREE
+Myylogout(YYSTREE t)
+{
+	/* make a memory-tight copy of the tree constructed by the parser, and steal the pointers */ 
+	char *t_next = NULL, *t_size = NULL;
+	t->noyyval = 0;
+	if (yypostprocess(t) < 0) return NULL;
+	return yycopy(t, 1, 0, &t_next, &t_size);
+}
+
+
 
 @- Run-Time Proc Trees
 Procedures are parsed into template trees, forming their definition.

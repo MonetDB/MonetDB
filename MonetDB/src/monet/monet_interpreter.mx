@@ -2123,6 +2123,7 @@ interpret_iterator(Cntxt stk, YYSTREE lt, int parallel)
 			monet_sigerror("iterator", name ? name : "name unknown", name ? signatures : "", argc + 1, argv);
 			RETURN(-1);
 		}
+		body = Myyexpand(Myynode(TOK_SEQ, 0), body); /* TOK_SEQ ensures we can safely use par_retval */
 		if (!lt->iscopy) GDKfree(lt->yyval.val.sval);
 		lt->token = TOK_ITCOMPILED;
 		lt->yyval.val.pval = (ptr) cmd;

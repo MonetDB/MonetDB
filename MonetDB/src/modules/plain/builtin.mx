@@ -1135,6 +1135,9 @@ CMDcall(Cntxt stk, YYSTREE lt, ValPtr res)
 		return -1;
 	}
 	t = Myynode(TOK_FUNCTION, 0);
+	Myyexpand(t, Myynode(0, 0));
+	Myyexpand(t, Myynode(0, TYPE_int));
+	t->yysons[1]->yyval.val.ival = sizeof(ValRecord);
 	t->yyval = v;
 	BATloopFast(b, p, q, xx) {
 		child = Myynode(TOK_CONSTANT, 0);
@@ -1161,14 +1164,13 @@ CMDcall(Cntxt stk, YYSTREE lt, ValPtr res)
 			}
 		}
 		child->yyval = *res;
-		Myyexpand(t, child);
+		Myyexpand(t->yysons[0], child);
+		t->yysons[1]->yyval.val.ival += sizeof(ValRecord);
 	}
 	res->vtype = TYPE_void;
 	if (i == 0) {
-		if ((i = Myypostprocess(t)) >= 0) {
-			i = interpret(stk, t, res);
-			CATCHRET(stk, t, res, i);
-		}
+		i = interpret(stk, t, res);
+		CATCHRET(stk, t, res, i);
 	}
 	t->yyval.vtype = TYPE_void;
 	Myyfree(t);
