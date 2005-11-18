@@ -1,0 +1,122 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f mergetables
+@a Martin Kersten
+@v 1
+@* Merge Association Tables.
+This module introduces a series of commands that support operations
+over Merge Association Tables (MAT) which are virtual BATs
+defined over a series of building BATs.
+
+The module is supported by the mal_mergetables optimizer.
+
+The primitives below are chosen to accomodate the SQL
+front-end to produce reasonable efficient code.
+@mal
+module mat;
+
+pattern new(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATnew
+comment "Define a Merge Association Table (MAT) ";
+
+pattern pack(b:bat[:any_1,:any_2]...):bat[:any_1,:any_2]
+address MATpack
+comment "Materialize the MAT into a single BAT";
+
+command range(b:bat[:any_1,:any_2],hl:any_1,hh:any_1,tl:any_2,th:any_2):void
+address MATrange
+comment "Describes the boundaries of the merge table component");
+
+pattern print(b:bat[:any_1,:any_2]...):void
+address MATprint;
+
+@-
+@{
+@+ Implementation
+@include prelude.mx
+@h
+#ifdef _INSPECT_H
+#endif /* _INSPECT_H */
+@c
+#include <stdarg.h>
+#include "mal_resolve.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
+
+mal_export str MATnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+@- 
+Mal symbol table and environment analysis.
+@c
+
+str
+MATnew(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb; (void) stk; (void) p;
+	return MAL_SUCCEED;
+}
+@-
+The pack operation could be quite expensive, because it
+may create a really large BAT.
+@c
+str
+MATpack(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int i,*ret,tpe;
+	BAT *b, *bn;
+	tpe= getArgType(mb,p,0);
+
+	bn= BATnew(getHeadType(tpe),getTailType(tpe), 0);
+	if( bn == NULL)
+		return throwMessage("mat.pack","Could not allocate storage");
+	for(i=1; i<p->argc; i++){
+		b= BATdescriptor(stk->stk[getArg(p,i)].val.ival);
+		if( b == NULL)
+			return throwMessage("mat.pack","Could not access component");
+		BATins(bn,b);
+		BBPunfix(b->batCacheid);
+	}
+	(void) mb;
+	ret= (int*) getArgReference(stk,p,0);
+	BBPincref( (*ret= bn->batCacheid), TRUE);
+	BBPunfix(bn->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+MATprint(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	(void) mb; (void) stk; (void) p;
+	return MAL_SUCCEED;
+}
+
+@-
+The range operation is a no-op. It is primarilly meant for
+the front-end compiler to convei information relevant for
+symbolic optimition. Preferrable it consists of constant
+arguments.
+@c
+str
+MATrange(int *ret, int *bid, ptr *ll, ptr *lh, ptr *rl, ptr *rh){
+	(void) ret; (void) bid; 
+	(void) ll; (void) lh; 
+	(void) rl; (void) rh;
+	return throwMessage("mat.range","Optimizer pragma encountered");
+}
+
+@}

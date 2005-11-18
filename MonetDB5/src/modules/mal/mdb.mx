@@ -232,6 +232,7 @@ MDBstart(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	cntxt->timer = 0;
 	stk->cmd = 'n';
 	cntxt->itrace = 'n';
+	cntxt->debugOptimizer= TRUE;
 	(void) mb;
 	(void) p;
 	return MAL_SUCCEED;
@@ -245,6 +246,7 @@ MDBstop(MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	cntxt->timer = 0;
 	stk->cmd = 0;
 	cntxt->itrace = 0;
+	cntxt->debugOptimizer= FALSE;
 	(void) mb;
 	(void) p;
 	return MAL_SUCCEED;

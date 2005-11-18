@@ -80,8 +80,9 @@ include inspect;
 include language;
 
 include profiler;
-
 include statistics;
+
+include mergetables;
 include optimizer;
 include chopper;
 #include logger;
