@@ -1,0 +1,374 @@
+@' The contents of this file are subject to the MonetDB Public
+@' License Version 1.0 (the "License"); you may not use this file
+@' except in compliance with the License. You may obtain a copy of
+@' the License at
+@' http://monetdb.cwi.nl/Legal/MonetDBLicense-1.0.html
+@'
+@' Software distributed under the License is distributed on an "AS
+@' IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+@' implied. See the License for the specific language governing
+@' rights and limitations under the License.
+@'
+@' The Original Code is the Monet Database System.
+@'
+@' The Initial Developer of the Original Code is CWI.
+@' Portions created by CWI are Copyright (C) 1997-2005 CWI.
+@' All Rights Reserved.
+
+@f mal_mergetables
+@a M. Kersten
+@+ Merge Association Tables
+A Merge Association Table (MAT) is an ordered collection of BATs,
+whose union (append) represents a single virtual BAT.
+
+A front-end can produce code for the virtual BAT
+and leave it to the MAT optimizer to expand the plan to
+deal with the portions.
+
+In the first approach of the optimizer we assume that the 
+last BAT in the MAT sequence is used as an accumulator.
+Furthermore, no semantic knowledge is used to reduce the
+
+To illustrate, consider 
+@example
+    m0:= bat.new(:void,:int);
+	m1:= bat.new(:void,:int);
+	m2:= bat.new(:void,:int);
+	b := mat.new(m0,m1,m2);
+	s := algebra.select(b,1,3);
+	i := algebra.count(s);
+	io.print(s);
+	io.print(i);
+	c0 := bat.new(:int,:int);
+	c1 := bat.new(:int,:int);
+	c := mat.new(c0,c1);
+	j := algebra.join(b,s);
+	io.print(j);
+@end example
+
+The selection operation can simply be rewritten into a MAT.
+@example
+	s0 := algebra.select(m0,1,3);
+	s1 := algebra.select(m0,1,3);
+	s2 := algebra.select(m0,1,3);
+	s  := mat.new(s0,s1,s2);
+@end example
+
+The subsequent print operation causes a little problem,
+because the print operation generates a header and
+multiple prints are seen as different result sets.
+This can be circumented with an overloaded print version
+in the mat module.
+@example
+	mat.print(s);
+@end example
+The aggregation could be directly expanded in terms of
+known MAL operations.
+@example
+	i0 := algebra.count(s0);
+	i1 := algebra.count(s1);
+	i2 := algebra.count(s2);
+	 i := i0+i1;
+	 i := i + i2;
+@end example
+For the join we have to generate all possible combinations,
+not knowing anything about the properties of the components.
+@example
+	m0c0 := algebra.join(m0,c0);
+	m1c0 := algebra.join(m1,c0);
+	m2c0 := algebra.join(m2,c0);
+	m0c1 := algebra.join(m0,c0);
+	m1c1 := algebra.join(m1,c0);
+	m2c1 := algebra.join(m2,c0);
+    j := mat.new(m0c0,m1c0,m2c0,m0c1,m1c1,m1c2);
+@end example
+
+Now its time for a SQL example. 
+Consider, @emph{ select count(*) from tables;}
+The code produced by the SQL compiler for the Merge Association
+Table is shown below. It uses two components for the tables.
+
+We some how the mat_optimizer would change the code block
+given that we have two components for persistent tables.
+Assume that we have a single delete bat per MAT.
+The old statement is left in place as a reminder.
+
+Should be consider ttables fragmented?
+
+@example
+factory sql_cache.s0_0():bit;
+#   _2:bat[:void,:int]  := sql.bind("sys","ptables","id",0,2);
+# bind the two components separately
+    _2_0:bat[:void,:int]  := sql.bindComponent("sys","ptables","id",0,0);
+    _2_1:bat[:void,:int]  := sql.bindComponent("sys","ptables","id",0,1);
+	_2 := mat.new(_2_0,_2_1);
+    _23:bat[:void,:int]  := sql.bind("sys","ttables","id",0);
+barrier _72 := true;
+    _8:bat[:void,:oid]  := sql.bind_dbat("sys","ptables",0,2);
+    _10 := bat.reverse(_8);
+
+#   _12 := algebra.kdifference(_2,_10);
+    _12_0 := algebra.kdifference(_2_0,_10);
+    _12_1 := algebra.kdifference(_2_1,_10);
+	_12  := mat.new(_12_0, _12_1);
+
+#   _17 := algebra.markT(_12,0@0);
+    _17_0 := algebra.markT(_12,0@0);
+	x  := algebra.count(_17_0);
+	y  := 0@0 + x;
+    _17_1 := algebra.markT(_12,y);
+	_17 := mat.new(_17_0, _17_1);
+
+#   _19 := bat.reverse(_17);
+    _19_0 := bat.reverse(_17_0);
+    _19_1 := bat.reverse(_17_1);
+    _19 := mat.new(_19_0, _19_1);
+
+#   _21 := algebra.join(_19,_2);
+    _21_0_0 := algebra.join(_19_0,_2_0);
+    _21_0_1 := algebra.join(_19_0,_2_1);
+    _21_1_0:= algebra.join(_19_1,_2_0);
+    _21_1_1 := algebra.join(_19_1,_2_1);
+	_21 := mat.new(_21_0_0,_21_0_1,_21_1_0,_21_1_1);
+
+    _26:bat[:void,:oid]  := sql.bind_dbat("sys","ttables",0);
+    _28 := bat.reverse(_26);
+    _30 := algebra.kdifference(_23,_28);
+    _34 := algebra.markT(_30,0@0);
+    _36 := bat.reverse(_34);
+    _38 := algebra.join(_36,_23);
+
+#   _40 := bat.setAccess(_21,"w");
+    _40_0_0 := bat.setAccess(_21_0_0,"w");
+    _40_1_0 := bat.setAccess(_21_1_0,"w");
+    _40_0_1 := bat.setAccess(_21_0_1,"w");
+    _40_1_1 := bat.setAccess(_21_1_1,"w");
+	_40 := mat.new(_40_0_0, _40_1_0, _40_0_1, _40_1_1);
+
+#   bat.append(_40,_38);
+    bat.append(_40_1_1,_38);
+
+#   _47 := algebra.markT(_40,0@0);
+    _47_0_0 := algebra.markT(_40_0_0,0@0);
+	x := algebra.count(_47_0_0);
+	y := 0@0 + x;
+	_47_1_0 := algebra.markT(_40_1_0,y);
+	x := algebra.count(_47_1_0);
+	y := y + x;
+	_47_0_1 := algebra.markT(_40_0_1,y);
+	x := algebra.count(_47_0_1);
+	y := y + x;
+	_47_1_1 := algebra.markT(_40_1_1,y);
+	_47 := mat.new(_47_0_0, _47_1_0, _47_0_1, _47_1_1);
+
+#   _49 := bat.reverse(_47);
+    _49_0_0 := bat.reverse(_47_0_0);
+    _49_1_0 := bat.reverse(_47_1_0);
+    _49_0_1 := bat.reverse(_47_0_1);
+    _49_1_1 := bat.reverse(_47_1_1);
+	_49 := mat.new(_49_0_0, _49_1_0, _49_0_1, _49_1_1);
+
+
+#rest is straight forward, but explosion to 16 partial counts
+    _51 := algebra.join(_49,_40);
+    _56 := algebra.markT(_51,0@0);
+    _58 := bat.reverse(_56);
+    _60 := algebra.join(_58,_51);
+    _62 := aggr.count(_60);
+    sql.exportValue(3,"tables","count_id","int",32,0,6,_62);
+    yield _72;
+    redo _72;
+exit _72;
+@end example
+
+The code block can be re-ordered to minimize the amount of storage
+and swapping.
+@{
+@h
+#ifndef _MAL_MERGETABLE_
+#define _MAL_MERGETABLE_
+#include "mal_optimizer.h"
+#include "mal_builder.h"
+
+opt_export str MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+/* #define DEBUG_MAL_MERGETABLE     show partial result */
+
+#endif
+@c
+#include "mal_mergetables.h"
+
+static str matRef;
+static str newRef;
+static str selectRef;
+static str joinRef;
+static str aggrRef;
+static str packRef;
+static str printRef;
+static str countRef;
+static str algebraRef;
+static str plusRef;
+static str calcRef;
+
+static void MTinit(){
+	if(matRef == NULL){
+		matRef = putName("mat",3);
+		newRef = putName("new",3);
+		selectRef = putName("select",6);
+		joinRef = putName("join",4);
+		aggrRef = putName("aggr",4);
+		printRef = putName("print",5);
+		countRef = putName("count",5);
+		packRef = putName("pack",4);
+		calcRef = putName("calc",4);
+		plusRef = putName("+",1);
+		algebraRef = putName("algebra",7);
+	}
+}
+
+str
+MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
+	InstrPtr *old=0, q,r, mat[128];
+	int oldtop,i,j,k,l,mtop=0, mvar[128],tpe;
+	int actions=0;
+	lng clk = GDKusec();
+#ifdef DEBUG_MAL_MERGETABLE     
+	stream_printf(GDKout,"Start MAT optimizer\n");
+	printFunction(GDKout, mb, 0);
+#endif
+	MTinit();
+
+	if(p)
+		removeInstruction(mb,p);
+
+	old = mb->stmt;
+	oldtop= mb->stop;
+	
+	mb->stmt = (InstrPtr *) GDKmalloc(mb->ssize * 1.5 * sizeof(InstrPtr));
+	memset((char*)mb->stmt, 0, mb->ssize * 1.5 * sizeof(InstrPtr));
+	mb->ssize = mb->ssize *1.5;
+	mb->stop = 0;
+
+
+	for( i=0; i<oldtop; i++){
+		p= old[i];
+		if( moduleId(p)== matRef){
+			/* collect the MAT definitions */
+			if( functionId(p) == newRef){
+				if( mtop == 128) {
+#ifdef DEBUG_MAL_MERGETABLE     
+					stream_printf(GDKout,"out of space for mergetables\n");
+#endif
+					break;
+				}
+				mvar[mtop] = getArg(p,0);
+				mat[mtop++]= p;
+				pushInstruction(mb,p);
+			}
+			continue;
+		} 
+		if( moduleId(p)== algebraRef && functionId(p)== selectRef){
+			for(j=0; j<mtop; j++)
+			if( mvar[j] == getArg(p,1)){
+				r = newInstruction(mb, ASSIGNsymbol);
+				setModuleId(r,matRef);
+				setFunctionId(r,newRef);
+				getArg(r,0)= getArg(p,0);
+				tpe= getArgType(mb,p,0);
+				for(k=1; k< mat[j]->argc; k++){
+					q= copyInstruction(p);
+					getArg(q,1) = getArg(mat[j],k);
+					getArg(q,0) = newTmpVariable(mb, tpe);
+					pushInstruction(mb,q);
+					setVarUsed(mb,getArg(q,0),TRUE);
+					setVarInitialized(mb,getArg(q,0));
+					pushArgument(mb,r,getArg(q,0));
+				}
+				pushInstruction(mb,r);
+				mvar[mtop] = getArg(p,0);
+				mat[mtop++]= r;
+				actions++;
+			}
+			continue;
+		} 
+/*
+		if( functionId(p)== printRef){
+		} else
+		if( functionId(p)== joinRef){
+		} else
+*/
+@-
+Handle the rewrite v:=aggr.count(b)
+@c
+		if( moduleId(p)==aggrRef && functionId(p)== countRef){
+			for(j=0; j<mtop; j++)
+			if( mvar[j] == getArg(p,1)){
+				r = newInstruction(mb,ASSIGNsymbol);
+				getArg(r,0)= getArg(p,0);
+				pushInt(mb,r,0);
+				pushInstruction(mb,r);
+				for(k=1; k< mat[j]->argc; k++){
+					int v= newTmpVariable(mb,TYPE_int);
+					q= newInstruction(mb,ASSIGNsymbol);
+					setModuleId(q,aggrRef);
+					setFunctionId(q,countRef);
+					getArg(q,0)= v;
+					setVarUsed(mb,v,TRUE);
+					setVarInitialized(mb,v);
+					pushArgument(mb,q,getArg(mat[j],k));
+					pushInstruction(mb,q);
+
+					q= newInstruction(mb,ASSIGNsymbol);
+					setModuleId(q,calcRef);
+					setFunctionId(q,plusRef);
+					getArg(q,0)= getArg(r,0);
+					pushArgument(mb,q,getArg(r,0));
+					pushArgument(mb,q,v);
+					pushInstruction(mb,q);
+				}
+				break;
+			}
+			continue;
+		} 
+@-
+All other instructions should be checked for a MAT dependency.
+It require the MAT to be materialized. We drop the MAT
+afterwards for further consideration.
+@c
+		for( k= p->retc; k<p->argc; k++)
+		for( j=0; j< mtop; j++)
+		if( mvar[j] == getArg(p,k) ){
+#ifdef DEBUG_MAL_MERGETABLE     
+			stream_printf(GDKout,"Dependency resolution k=%d\n",k);
+			printInstruction(GDKout,mb,p,0);
+			printInstruction(GDKout,mb,mat[j],0);
+#endif
+			r = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(r,matRef);
+			setFunctionId(r,packRef);
+			getArg(r,0)= getArg(mat[j],0);
+			for(l=mat[j]->retc; l< mat[j]->argc; l++){
+				pushArgument(mb,r, getArg(mat[j],l));
+			}
+			pushInstruction(mb,r);
+
+			for(; j<mtop-1; j++){
+				mat[j]= mat[j+1];
+				mvar[j]= mvar[j+1];
+			}
+			mtop--;
+			break;
+		}
+
+		pushInstruction(mb,p);
+	}
+	GDKfree(old);
+	(void) stk; 
+	optimizerCheck(mb, "optimizer.mergetables", actions, GDKusec() - clk);
+#ifdef DEBUG_MAL_MERGETABLE     
+	stream_printf(GDKout,"Result of merge table optimizer\n");
+	printFunction(GDKout, mb, 0);
+#endif
+
+	return MAL_SUCCEED;
+}
+@}

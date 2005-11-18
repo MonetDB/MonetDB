@@ -126,6 +126,12 @@ pattern reduce(mod:str, fcn:str):str
 address QOTMRoptimizerCALL
 comment "Estimate the cost of a relational expression";
 
+pattern mergetables():str 
+address QOTMToptimizer;
+pattern mergetables(mod:str, fcn:str):str 
+address QOTMToptimizerCALL
+comment "Resolve the merge table definitions";
+
 pattern setDebug():void 
 address QOTdebugOptimizers;
 pattern clrDebug():void 
@@ -213,6 +219,7 @@ optimizer.prelude();
 #include "mal_costmodel.h"
 #include "mal_macro.h"
 #include "mal_reduce.h"
+#include "mal_mergetables.h"
 
 opt_export str QOTMEoptimizerSymbol(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 opt_export str QOTMEoptimizerModule(MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -330,6 +337,7 @@ str QOT@1optimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 @:QOTC(ST, "singleton")@
 @:QOTC(PH, "peephole")@
 @:QOTC(RM, "costEstimation")@
+@:QOTC(MT, "mergetables")@
 @:QOTC(MR, "reduce")@
 @:QOTC(CO, "coercions")@
 

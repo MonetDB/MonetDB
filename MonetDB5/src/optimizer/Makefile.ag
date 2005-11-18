@@ -12,7 +12,7 @@ lib_optimizer = {
 		mal_commonExpressions.mx mal_partitionedQuery.mx \
 		mal_emptyset.mx mal_peephole.mx mal_multiplex.mx \
 		mal_singleton.mx mal_costmodel.mx mal_reduce.mx \
-		mal_qep.mx
+		mal_qep.mx mal_mergetables.mx
 
 	HEADERS = h 
 	#SCRIPTS = mal
