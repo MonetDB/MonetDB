@@ -1,4 +1,5 @@
-# the Merge Assocation Tables
+# the Multi Assocation Tables
+	mdb.list();
     m0:= bat.new(:void,:int);
     bat.insert(m0,nil,0);
     m1:= bat.new(:void,:int);
@@ -15,8 +16,8 @@
     c1 := bat.new(:int,:int);
     bat.insert(c1,1,5);
     c := mat.new(c0,c1);
-	bat.insert(c,1,6);
+    bat.insert(c,1,6);
     j := algebra.join(b,c);
     io.print(j);
 
-optimizer.mergetables();
+optimizer.multitable();
