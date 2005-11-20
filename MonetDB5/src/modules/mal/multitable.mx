@@ -15,7 +15,7 @@
 @' Portions created by CWI are Copyright (C) 1997-2005 CWI.
 @' All Rights Reserved.
 
-@f mergetables
+@f multitable
 @a Martin Kersten
 @v 1
 @* Merge Association Tables.
@@ -23,7 +23,7 @@ This module introduces a series of commands that support operations
 over Merge Association Tables (MAT) which are virtual BATs
 defined over a series of building BATs.
 
-The module is supported by the mal_mergetables optimizer.
+The module is supported by the mal_multitable optimizer.
 
 The primitives below are chosen to accomodate the SQL
 front-end to produce reasonable efficient code.
@@ -40,7 +40,7 @@ comment "Materialize the MAT into a single BAT";
 
 command range(b:bat[:any_1,:any_2],hl:any_1,hh:any_1,tl:any_2,th:any_2):void
 address MATrange
-comment "Describes the boundaries of the merge table component");
+comment "Describes the boundaries of the multi-table component");
 
 pattern print(b:bat[:any_1,:any_2]...):void
 address MATprint;

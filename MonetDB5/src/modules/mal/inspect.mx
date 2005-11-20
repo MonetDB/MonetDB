@@ -76,14 +76,17 @@ command getSize(mod:str,fcn:str):lng
 address INSPECTgetFunctionSize
 comment "Return the storage size for a function (in bytes)";
 
-pattern getType(v:bat[:any_1,:any_2]) :int 
-address INSPECTtype
+pattern getType(v:bat[:any_1,:any_2]) (ht:str, tt:str)
+address INSPECTtypeName
+comment "Return the internal type of a variable (expression)";
+pattern getType(v:any_1) :str 
+address INSPECTtypeName
 comment "Return the type of a variable (expression)";
-pattern getType(v:any_1) :int 
-address INSPECTtype
-comment "Return the type of a variable (expression)";
+
 command getTypeName(v:int):str 
 address INSPECTtypename;
+command getTypeIndex(v:str):int 
+address INSPECTtypeIndex;
 
 
 command getAtomNames():bat[:int,:str] 
@@ -685,14 +688,25 @@ INSPECTtypename(str *ret, int *tpe)
 	*ret = getTypeName(*tpe);
 	return MAL_SUCCEED;
 }
+str
+INSPECTtypeIndex(int *ret, str *tpe)
+{
+	*ret = getTypeIndex(*tpe, strlen(*tpe), TYPE_any);
+	return MAL_SUCCEED;
+}
 
 str
-INSPECTtype(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+INSPECTtypeName(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *ret;
+	str *hn, *tn =0;
 
-	ret = (int *) getArgReference(stk, pci, 0);
-	*ret = getArgType(mb, pci, 1);
+	hn = (str *) getArgReference(stk, pci, 0);
+	if( pci->retc== 2){
+		tn = (str *) getArgReference(stk, pci, 1);
+		*hn = getTypeName(getHeadType(getArgType(mb, pci, 2)));
+		*tn = getTypeName(getTailType(getArgType(mb, pci, 2)));
+	} else
+		*hn = getTypeName(getArgType(mb, pci, 1));
 	return MAL_SUCCEED;
 }
 
