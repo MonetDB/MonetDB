@@ -82,7 +82,7 @@ include language;
 include profiler;
 include statistics;
 
-include mergetables;
+include mergetable;
 include optimizer;
 include chopper;
 #include logger;
