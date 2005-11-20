@@ -262,7 +262,7 @@ called 'sessions'. Its default content is shown below:
 [ "current_user",         "monetdb",          "varchar",      1       ]
 [ "current_role",         "monetdb",          "varchar",      0       ]
 [ "current_timezone",     "0",                "sec_interval", 0       ]
-[ "optimizer",            "sql.optimizer();", "varchar",      0       ]
+[ "optimizer",            "yes",              "varchar",      0       ]
 @end example
 
 @node EXPLAIN Statement, DEBUG Statement, SET Statement, SQL
