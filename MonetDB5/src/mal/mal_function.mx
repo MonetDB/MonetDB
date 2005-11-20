@@ -381,7 +381,7 @@ and marking all non-temporary variables as being (potentially) used.
     if( mb->stop == 3) /* interactive use */
     {   int i;
         for(i=0;i<3; i++){
-            needsCleanup(getInstrPtr(mb,i))= FALSE;
+			getInstrPtr(mb,i)->gc = 0;
         }
 		for(i=0; i<mb->vtop; i++)
 		if( !isTmpVar(mb,i))

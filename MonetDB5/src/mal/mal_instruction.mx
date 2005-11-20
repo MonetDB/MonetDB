@@ -307,7 +307,7 @@ instruction in the source.]
 #endif
 
 #define DEBUG_MAL_INSTR
-#define MAXARG 16
+#define MAXARG 8
 #define MAXSTMTS 32
 #define MAXVARS 32
 
@@ -325,17 +325,16 @@ typedef struct VARRECORD{
     int     gdktype; /* for backend */
     bit     isaconstant;    /* value cannot change */
     bit     isatypevar; /* denotes a type variable */
+    bit     issetonce; /* used once as destination */
+    bit     isused; /* for stack copying scope */
+    bit     fixtype;/* the type has been fixed */
+	bit     isudftype;/* type defined in program */
+    bit     cleanup;/* remove upon function return */
+	bit		inout;  /* in-out argument to function */
     int     tmpindex;   /* temporary variable */
-    short   issetonce; /* used once as destination */
 	short	scope;	/* block id where it is declared */
 	short	depth;	/* ... depth in nesting */
-    short   isused; /* for stack copying scope */
-    short   fixtype;/* the type has been fixed */
-	short   isudftype;/* type defined in program */
-	short	inout;  /* in-out argument to function */
-    short   cleanup;/* remove upon function return */
     short   beginLifespan, endLifespan, lastUpdate; /* for optimizers */
-	size_t	length; /* of the literal string */
     PropertySet props; /* private list of (name,value) pairs */
     ValRecord value;
 } *VarPtr, VarRecord;
@@ -347,23 +346,24 @@ typedef struct VARRECORD{
 #define TYPE_BIND           2
 #define TYPE_RESOLVED              4
 
+#define QUICKCLEANUP 1
+#define GARBAGECONTROL 2
 /* all functions return a string */
 typedef str (*MALfcn)();
 
 typedef struct {
-    short   token;      /* instruction type */
-    short   barrier;    /* flow of control modifier takes:
+    bit   token;      /* instruction type */
+    bit   barrier;    /* flow of control modifier takes:
                    BARRIER, LEAVE, REDO, EXIT
                    CATCH, RAISE, THREAD*/
-    short   typechk;    /* type check status */
-    PropertySet props; /* associated with function def */
+    bit   typechk;    /* type check status */
+	bit	  gc; /* garbage control flags */
 @-
 For performance analysis we keep track of the number of calls
 and the total time spent while executing the instruction.
 (See mal_profiler.mx)
 @h
 #ifdef MALprofiler
-    short   trace;      /* facilitate filter-based profiling */
 #ifdef HAVE_TIMES
     struct  tms timer;  /* timing information */
 #endif
@@ -371,20 +371,19 @@ and the total time spent while executing the instruction.
     lng clk;        /* microseconds clock */
     long    counter;
     long    ticks;      /* micro seconds spent */
+    bit   trace;      /* facilitate filter-based profiling */
 #endif
-    MALfcn  fcn;        /* resolved function address */
-    struct MALBLK *blk; /* resolved MAL function address */
-    short quickcleanup;    /* instruction needs garbage control */
-	short garbagecollect;	/* function needs garbage collector */
-    int jump;       /* controlflow program counter */
 @-
 The MAL instruction representation. The strings should be garbage collected
 upon destruction of the definition.
 @h
+    bit   polymorphic;    /* complex type analysis */
+    bit   varargs;    /* variable number of arguments */
+    MALfcn  fcn;        /* resolved function address */
+    struct MALBLK *blk; /* resolved MAL function address */
+    int jump;       /* controlflow program counter */
     str modname;    /* module context */
     str fcnname;    /* function name */
-    short   polymorphic;    /* complex type analysis */
-    short   varargs;    /* variable number of arguments */
     short   argc,retc,maxarg;/* total and result argument count */
     int argv[1];    /* at least one entry */
 } *InstrPtr, InstrRecord;
@@ -419,8 +418,8 @@ for separate name space management.
 #define functionId(P)       (P)->fcnname
 #define setFunctionId(P,S)  (P)->fcnname= S
 #define functionName(P)     (P)->fcnname
-#define garbageControl(P)   (P)->garbagecollect
-#define needsCleanup(P)   (P)->quickcleanup
+#define garbageControl(P)   ((P)->gc & GARBAGECONTROL)
+#define needsCleanup(P)   ((P)->gc & QUICKCLEANUP)
 
 #define getInstrPtr(M,I)    (M)->stmt[I]
 #define getSignature(S)     getInstrPtr((S)->def,0)
@@ -775,7 +774,6 @@ InstrPtr newInstruction(MalBlkPtr mb, int kind){
     p->typechk = TYPE_UNKNOWN;
     setModuleId(p, NULL);
     setFunctionId(p, NULL);
-    p->props= NULL;
     p->fcn= NULL;
     p->blk= NULL;
     p->polymorphic = 0;
@@ -815,8 +813,7 @@ with modifier
     p->clk = 0;
     p->ticks = 0;
     p->trace= 0;
-    p->quickcleanup=0;
-    p->garbagecollect=0;
+    p->gc=0;
     p->jump=0;
     p->counter= 0;
 #endif
@@ -1515,7 +1512,7 @@ end.
 	return vr->vtype == type;
 }
 
-#define MAL_VAR_WINDOW  2*MAXARG
+#define MAL_VAR_WINDOW  4*MAXARG
 int fndConstant(MalBlkPtr mb, ValPtr cst){
 	int i,k;
 	ptr p = VALget(cst);

@@ -592,9 +592,16 @@ INSPECTatom_sizes(int *ret)
 /* calculate to trimmed storage space */
 lng
 INSPECTcalcSize(MalBlkPtr mb){
-	lng size;
+	lng size,args=0,i;
+	InstrPtr p;
+
+	for(i=0;i<mb->stop; i++){
+		p= getInstrPtr(mb,i);
+		args += (p->argc-1)* sizeof(*p->argv);
+	}
 	size = (sizeof(InstrRecord) +sizeof(InstrPtr)) * mb->stop;
 	size += (sizeof(VarRecord)+ sizeof(InstrPtr)) * mb->vtop;
+	size += args;
 	return size;
 }
 

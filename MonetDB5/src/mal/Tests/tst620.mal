@@ -8,11 +8,13 @@ user.tst();
 
 f:= inspect.getSize("algebra");
 fs:= aggr.sum(f);
-io.printf("#algebra size %d\n",fs);
+fs2:= fs/2;
+io.printf("#algebra size %d\n",fs2);
 
 z:= inspect.getSize("inspect");
-zs:= aggr.sum(f);
-io.printf("#inspect size %d\n",zs);
+zs:= aggr.sum(z);
+zs2:= zs/2;
+io.printf("#inspect size %d\n",zs2);
 
 l:= inspect.getSize();
 io.printf("#size %d\n",l);

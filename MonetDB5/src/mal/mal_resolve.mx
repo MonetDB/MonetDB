@@ -447,14 +447,14 @@ set the garbagge collection flag.
 @= prepostProcess
     if(isaBatType(@1)){
         setVarCleanup(mb,getArg(p,@2)) = TRUE;
-        garbageControl(getInstrPtr(@3,0)) = TRUE;
-		needsCleanup(p)= TRUE;
+        getInstrPtr(@3,0)->gc |= GARBAGECONTROL;
+		p->gc= QUICKCLEANUP;
     }
     else if( !isPolyType(@1)  && @1< TYPE_any && 
             @1>=0 && ATOMstorage(@1)== TYPE_str){
-        garbageControl(getInstrPtr(@3,0)) = TRUE;
+        getInstrPtr(@3,0)->gc |= GARBAGECONTROL;
         setVarCleanup(mb,getArg(p,@2)) = TRUE;
-		needsCleanup(p)= TRUE;
+		p->gc= QUICKCLEANUP;
     } 
 @c
 #ifdef DEBUG_MAL_RESOLVE
