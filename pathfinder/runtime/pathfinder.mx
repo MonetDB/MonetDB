@@ -1031,12 +1031,15 @@ xquery_mil2tree(xquery_client *ctx, char* buf)
     Client c = monet_clients + ctx->stk;
     YYSTREE ret = NULL, treebak = c->tree;
     char* bufbak = c->input;
+    int listing_bak = c->listing;
+    c->listing = 0;
     c->input = buf;
     c->tree = NULL;
     if (parseClient(c, FALSE))
         ret = c->tree;
     c->tree = treebak;
     c->input = bufbak;
+    c->listing = listing_bak;
     return ret;
 }
 
