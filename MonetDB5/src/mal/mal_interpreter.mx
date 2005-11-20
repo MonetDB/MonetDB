@@ -226,7 +226,6 @@ being called.
             @:safeguardStack@
         }
     } 
-    if( stk->stktop>stk->stksize) GDKerror("Unexpected");
 
     if( env && mbcaller){
         InstrPtr pp;
@@ -293,12 +292,12 @@ pattern operators to deal with it.
     task.pcicaller=pcicaller;
     task.pci= 0;
 
-    if(env && stk->cmd!='f') stk->cmd = env->cmd ;
+    if(stk->cmd  && env && stk->cmd!='f') stk->cmd = env->cmd ;
     ret= runMALsequence(&task);
 
     @:waitForChildren@
     /* pass the debug mode */
-    if(env && stk->cmd!='f') env->cmd = stk->cmd; 
+    if(stk->cmd  && env && stk->cmd!='f') env->cmd = stk->cmd; 
 #ifdef STACKTRACE
     stream_printf(GDKout,"Stack after loop\n");
     printStack(GDKout,mb,stk); fflush(GDKout);
@@ -671,9 +670,13 @@ possible change in the control flow.
         /* Return from factory involves cleanup */
 
         if( getInstrPtr(mb,0)->token == FACTORYsymbol){
+/*
             ret= returnFactory(mb, pci, stkpc);
-            @:endProfile@
-            goto MALevalExit;
+            goto MALeve
+*/
+			yieldResult(mb,pci,stkpc);
+			shutdownFactory(mb);
+			goto MALevalExit;
         }
         /* a fake multi-assignment */
         if( env != NULL && pcicaller != NULL){
@@ -702,8 +705,9 @@ possible change in the control flow.
         @:endProfile@
         goto MALevalExit;
     default:
-        if( getDestVar(pci) == stkexception) 
-            stkexception = -1; 
+        /* why needed 
+if( getDestVar(pci) == stkexception) 
+            stkexception = -1; */
         stkpc++; 
     }
 

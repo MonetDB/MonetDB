@@ -230,8 +230,8 @@ exception to a Factory?
 #define POLICYprivate   2	/* each client its own plants */
 
 mal_export str runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci);
+mal_export int yieldResult(MalBlkPtr mb, InstrPtr p, int pc);
 mal_export str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc);
-mal_export str returnFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str finishFactory(MalBlkPtr mb, InstrPtr pp, int pc);
 mal_export str shutdownFactory(MalBlkPtr mb);
 mal_export str shutdownFactoryByName(Module m,str nme);
@@ -453,7 +453,7 @@ suspended until the next request arrives.
 The information in the target list should be delivered
 to the caller stack frame.
 @c
-Plant
+int
 yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
 {
 	Plant pl, plim = plants + lastPlant;
@@ -464,7 +464,7 @@ yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
 	(void) pc;
 	for (pl = plants; pl < plim; pl++)
 		if (pl->factory == mb ) {
-			if( pl->env == NULL) return pl;
+			if( pl->env == NULL) return pl-plants;
 			for (i = 0; i < p->retc; i++) {
 #ifdef DEBUG_MAL_FACTORY
 				printf("lhs %d rhs %d\n", getArg(pl->pci, i), getArg(p, i));
@@ -473,18 +473,21 @@ yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
 				lhs = &pl->env->stk[getArg(pl->pci, i)];
 				VALcopy(lhs, rhs);
 			}
-			return pl;
+			return pl-plants;
 		}
-	return NULL;
+	return -1;
 }
 
 str
 yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 {
 	Plant pl;
+	int i;
 
-	pl = yieldResult(mb, p, pc);
-	if (pl) {
+	i = yieldResult(mb, p, pc);
+	
+	if (i>=0) {
+		pl = plants+i;
 		pl->inuse = 0;
 		pl->pc = pc + 1;
 		pl->client = NULL;
@@ -493,21 +496,6 @@ yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 		pl->env = NULL;
 		return MAL_SUCCEED;
 	}
-	return throwMessage("yieldFactory", "No factory found\n");
-}
-
-@-
-A return from a factory implies a YIELD action followed
-by closing it.
-@c
-str
-returnFactory(MalBlkPtr mb, InstrPtr pp, int pc)
-{
-	Plant pl;
-
-	pl = yieldResult(mb, pp, pc);
-	if (pl)
-		return shutdownFactory(mb);
 	return throwMessage("yieldFactory", "No factory found\n");
 }
 
@@ -529,14 +517,22 @@ shutdownFactory(MalBlkPtr mb)
 	plim = plants + lastPlant;
 	for (pl = plants; pl < plim; pl++)
 		if (pl->factory == mb) {
-			resetVariables(mb, pl->stk, 0);
-			freeStack(pl->stk);
+			/* resetVariables(mb, pl->stk, 0);*/
+			/* freeStack(pl->stk); there may be a reference?*/
+			/* we are inside the body of the factory and about to return */
 			pl->factory = 0;
+			pl->stk->keepAlive = FALSE;
+			pl->stk=0;
+			pl->pc = 0;
 			pl->inuse = 0;
 			pl->client = NULL;
 			pl->caller = NULL;
 			pl->pci = NULL;
 			pl->env = NULL;
+			pl->client = NULL;
+			pl->caller = NULL;
+			pl->env= NULL;
+			pl->pci = NULL;
 		}
 	return MAL_SUCCEED;
 }
@@ -562,15 +558,8 @@ shutdownFactoryByName(Module m, str nme){
 			}
 			resetVariables(pl->factory, pl->stk, 0);
 			freeStack(pl->stk);
-
+			shutdownFactory(pl->factory);
 			deleteSymbol(m,s);
-			pl->stk= 0;
-			pl->factory = 0;
-			pl->inuse = 0;
-			pl->client = NULL;
-			pl->caller = NULL;
-			pl->pci = NULL;
-			pl->env = NULL;
 			return MAL_SUCCEED;
 		}
 	return MAL_SUCCEED;
