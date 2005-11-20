@@ -129,10 +129,10 @@ end main;	# 9
 [ 12,	  "stat_id_histogram",	  "int",  "str",	  0,	  505,	  "clean",	  "clean",	  "persistent",	  1	  ]
 [ 13,	  "simplemind",		  "int",  "int",	  0,	  559,	  "dirty",	  "dirty",	  "transient",	  0	  ]
 [ 14,	  "trace_id_time",	  "int",  "str",	  0,	  507,	  "clean",	  "clean",	  "persistent",	  0	  ]
-[ 15,	  "trace_id_ticks",	  "int",  "int",	  11,	  508,	  "clean",	  "clean",	  "persistent",	  0	  ]
+[ 15,	  "trace_id_ticks",	  "int",  "int",	  0,	  508,	  "clean",	  "clean",	  "persistent",	  0	  ]
 [ 16,	  "trace_id_pc",	  "int",  "str",	  0,	  509,	  "clean",	  "clean",	  "persistent",	  0	  ]
 [ 17,	  "trace_id_modfcn",	  "int",  "str",	  0,	  510,	  "clean",	  "clean",	  "persistent",	  0	  ]
-[ 18,	  "trace_id_statement",	  "int",  "str",	  11,	  511,	  "clean",	  "clean",	  "persistent",	  0	  ]
+[ 18,	  "trace_id_statement",	  "int",  "str",	  0,	  511,	  "clean",	  "clean",	  "persistent",	  0	  ]
 [ "Search directory by name" ]
 #-------------------------#
 # h	t		  # name

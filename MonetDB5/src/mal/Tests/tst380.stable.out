@@ -153,10 +153,10 @@ end main;	# 12
 [ 12,	  "stat_id_histogram",	  "int",  "str",	  0,	  138,	  "clean",	  "load", "persistent",	  1		  ]
 [ 13,	  "simplemind",		  "int",  "int",	  0,	  192,	  "dirty",	  "load", "transient",	  0		  ]
 [ 14,	  "trace_id_time",	  "int",  "str",	  0,	  140,	  "clean",	  "load", "persistent",	  0		  ]
-[ 15,	  "trace_id_ticks",	  "int",  "int",	  11,	  141,	  "clean",	  "load", "persistent",	  0		  ]
+[ 15,	  "trace_id_ticks",	  "int",  "int",	  0,	  141,	  "clean",	  "load", "persistent",	  0		  ]
 [ 16,	  "trace_id_pc",	  "int",  "str",	  0,	  142,	  "clean",	  "load", "persistent",	  0		  ]
 [ 17,	  "trace_id_modfcn",	  "int",  "str",	  0,	  143,	  "clean",	  "load", "persistent",	  0		  ]
-[ 18,	  "trace_id_statement",	  "int",  "str",	  11,	  144,	  "clean",	  "load", "persistent",	  0		  ]
+[ 18,	  "trace_id_statement",	  "int",  "str",	  0,	  144,	  "clean",	  "load", "persistent",	  0		  ]
 [ "Get second directory" ]
 #-------------------------#
 # h	t		  # name
