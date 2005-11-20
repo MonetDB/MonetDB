@@ -1,0 +1,150 @@
+stdout of test 'mat00` in directory 'src/optimizer` itself:
+
+
+# 08:54:20 >  
+# 08:54:20 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=36757 --set sql_port=42245 --set xquery_port=56755 --set monet_prompt= --trace --dbname=mTests_src_optimizer  mat00.mal < /dev/null
+# 08:54:20 >  
+
+# Monet Database Server V4.99.19
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
+# config:/ufs/mk/monet5/src/mal/Tests/All.conf
+# dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
+# dbname:mTests_src_optimizer
+# Visit http://monetdb.cwi.nl/ for further information.
+## the Multi Assocation Tables
+#	mdb.list();
+#    m0:= bat.new(:void,:int);
+#    bat.insert(m0,nil,0);
+#    m1:= bat.new(:void,:int);
+#    bat.insert(m1,nil,1);
+#    m2:= bat.new(:void,:int);
+#    bat.insert(m2,nil,2);
+#    b := mat.new(m0,m1,m2);
+#    s := algebra.select(b,0,2);
+#    i := aggr.count(s);
+#    io.print(s);
+#    io.print(i);
+#    c0 := bat.new(:int,:int);
+#    bat.insert(c0,0,4);
+#    c1 := bat.new(:int,:int);
+#    bat.insert(c1,1,5);
+#    c := mat.new(c0,c1);
+#    bat.insert(c,1,6);
+#    j := algebra.join(b,c);
+#    io.print(j);
+#
+#optimizer.multitable();
+#
+function user.main():void;	# 0  (main:void)
+# the Multi Assocation Tables 	# 1  (_2:str)
+    mdb.list();	# 2 MDBlist (_3:void)
+    m0 := bat.new(:void,:int);	# 3 CMDBATnew (m0:bat[:void,:int])<-(_5:void)(_6:int)
+    bat.insert(m0,nil,0);	# 4 BKCinsert_bun (_7:void)<-(m0:bat[:void,:int])(_8:void)(_9:int)
+    m1 := bat.new(:void,:int);	# 5 CMDBATnew (m1:bat[:void,:int])<-(_5:void)(_6:int)
+    bat.insert(m1,nil,1);	# 6 BKCinsert_bun (_11:void)<-(m1:bat[:void,:int])(_8:void)(_12:int)
+    m2 := bat.new(:void,:int);	# 7 CMDBATnew (m2:bat[:void,:int])<-(_5:void)(_6:int)
+    bat.insert(m2,nil,2);	# 8 BKCinsert_bun (_14:void)<-(m2:bat[:void,:int])(_8:void)(_15:int)
+    b := mat.new(m0,m1,m2);	# 9 MATnew (b:bat[:void,:int])<-(m0:bat[:void,:int])(m1:bat[:void,:int])(m2:bat[:void,:int])
+    _33 := algebra.select(m0,0,2);	# 10 ALGselect (_33:bat[:void,:int])<-(m0:bat[:void,:int])(_9:int)(_15:int)
+    _34 := algebra.select(m1,0,2);	# 11 ALGselect (_34:bat[:void,:int])<-(m1:bat[:void,:int])(_9:int)(_15:int)
+    _35 := algebra.select(m2,0,2);	# 12 ALGselect (_35:bat[:void,:int])<-(m2:bat[:void,:int])(_9:int)(_15:int)
+    s := mat.new(_33,_34,_35);	# 13 MATnew (s:bat[:void,:int])<-(_33:bat[:void,:int])(_34:bat[:void,:int])(_35:bat[:void,:int])
+    i := 0;	# 14  (i:int)<-(_45:int)
+    _46 := aggr.count(_33);	# 15 ALGcount_bat (_46:int)<-(_33:bat[:void,:int])
+    i := calc.+(i,_46);	# 16 CALCbinaryADDintint (i:int)<-(i:int)(_46:int)
+    _47 := aggr.count(_34);	# 17 ALGcount_bat (_47:int)<-(_34:bat[:void,:int])
+    i := calc.+(i,_47);	# 18 CALCbinaryADDintint (i:int)<-(i:int)(_47:int)
+    _48 := aggr.count(_35);	# 19 ALGcount_bat (_48:int)<-(_35:bat[:void,:int])
+    i := calc.+(i,_48);	# 20 CALCbinaryADDintint (i:int)<-(i:int)(_48:int)
+    s := mat.pack(_33,_34,_35);	# 21 MATpack (s:bat[:void,:int])<-(_33:bat[:void,:int])(_34:bat[:void,:int])(_35:bat[:void,:int])
+    io.print(s);	# 22 IOprint_val (_19:int)<-(s:bat[:void,:int])
+    io.print(i);	# 23 IOprint_val (_20:int)<-(i:int)
+    c0 := bat.new(:int,:int);	# 24 CMDBATnew (c0:bat[:int,:int])<-(_6:int)(_6:int)
+    bat.insert(c0,0,4);	# 25 BKCinsert_bun_int_int (_22:void)<-(c0:bat[:int,:int])(_9:int)(_23:int)
+    c1 := bat.new(:int,:int);	# 26 CMDBATnew (c1:bat[:int,:int])<-(_6:int)(_6:int)
+    bat.insert(c1,1,5);	# 27 BKCinsert_bun_int_int (_25:void)<-(c1:bat[:int,:int])(_12:int)(_26:int)
+    c := mat.new(c0,c1);	# 28 MATnew (c:bat[:int,:int])<-(c0:bat[:int,:int])(c1:bat[:int,:int])
+    bat.insert(c1,1,6);	# 29 BKCinsert_bun_int_int (_28:void)<-(c1:bat[:int,:int])(_12:int)(_29:int)
+    _39 := algebra.join(m0,c0);	# 30 ALGjoin (_39:bat[:void,:int])<-(m0:bat[:void,:int])(c0:bat[:int,:int])
+    _40 := algebra.join(m0,c1);	# 31 ALGjoin (_40:bat[:void,:int])<-(m0:bat[:void,:int])(c1:bat[:int,:int])
+    _36 := mat.new(_39,_40);	# 32 MATnew (_36:bat[:void,:int])<-(_39:bat[:void,:int])(_40:bat[:void,:int])
+    _41 := algebra.join(m1,c0);	# 33 ALGjoin (_41:bat[:void,:int])<-(m1:bat[:void,:int])(c0:bat[:int,:int])
+    _42 := algebra.join(m1,c1);	# 34 ALGjoin (_42:bat[:void,:int])<-(m1:bat[:void,:int])(c1:bat[:int,:int])
+    _37 := mat.new(_41,_42);	# 35 MATnew (_37:bat[:void,:int])<-(_41:bat[:void,:int])(_42:bat[:void,:int])
+    _43 := algebra.join(m2,c0);	# 36 ALGjoin (_43:bat[:void,:int])<-(m2:bat[:void,:int])(c0:bat[:int,:int])
+    _44 := algebra.join(m2,c1);	# 37 ALGjoin (_44:bat[:void,:int])<-(m2:bat[:void,:int])(c1:bat[:int,:int])
+    _38 := mat.new(_43,_44);	# 38 MATnew (_38:bat[:void,:int])<-(_43:bat[:void,:int])(_44:bat[:void,:int])
+    _36 := mat.pack(_39,_40);	# 39 MATpack (_36:bat[:void,:int])<-(_39:bat[:void,:int])(_40:bat[:void,:int])
+    _37 := mat.pack(_41,_42);	# 40 MATpack (_37:bat[:void,:int])<-(_41:bat[:void,:int])(_42:bat[:void,:int])
+    _38 := mat.pack(_43,_44);	# 41 MATpack (_38:bat[:void,:int])<-(_43:bat[:void,:int])(_44:bat[:void,:int])
+    j := mat.new(_36,_37,_38);	# 42 MATnew (j:bat[:void,:int])<-(_36:bat[:void,:int])(_37:bat[:void,:int])(_38:bat[:void,:int])
+    j := mat.pack(_36,_37,_38);	# 43 MATpack (j:bat[:void,:int])<-(_36:bat[:void,:int])(_37:bat[:void,:int])(_38:bat[:void,:int])
+    io.print(j);	# 44 IOprint_val (_31:int)<-(j:bat[:void,:int])
+end main;	# 45  
+function user.main():void;
+# the Multi Assocation Tables 
+    mdb.list();
+    m0 := bat.new(:void,:int);
+    bat.insert(m0,nil,0);
+    m1 := bat.new(:void,:int);
+    bat.insert(m1,nil,1);
+    m2 := bat.new(:void,:int);
+    bat.insert(m2,nil,2);
+    b := mat.new(m0,m1,m2);
+    _33 := algebra.select(m0,0,2);
+    _34 := algebra.select(m1,0,2);
+    _35 := algebra.select(m2,0,2);
+    s := mat.new(_33,_34,_35);
+    i := 0;
+    _46 := aggr.count(_33);
+    i := calc.+(i,_46);
+    _47 := aggr.count(_34);
+    i := calc.+(i,_47);
+    _48 := aggr.count(_35);
+    i := calc.+(i,_48);
+    s := mat.pack(_33,_34,_35);
+    io.print(s);
+    io.print(i);
+    c0 := bat.new(:int,:int);
+    bat.insert(c0,0,4);
+    c1 := bat.new(:int,:int);
+    bat.insert(c1,1,5);
+    c := mat.new(c0,c1);
+    bat.insert(c1,1,6);
+    _39 := algebra.join(m0,c0);
+    _40 := algebra.join(m0,c1);
+    _36 := mat.new(_39,_40);
+    _41 := algebra.join(m1,c0);
+    _42 := algebra.join(m1,c1);
+    _37 := mat.new(_41,_42);
+    _43 := algebra.join(m2,c0);
+    _44 := algebra.join(m2,c1);
+    _38 := mat.new(_43,_44);
+    _36 := mat.pack(_39,_40);
+    _37 := mat.pack(_41,_42);
+    _38 := mat.pack(_43,_44);
+    j := mat.new(_36,_37,_38);
+    j := mat.pack(_36,_37,_38);
+    io.print(j);
+end main;
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ nil,	  0	  ]
+[ nil,	  1	  ]
+[ nil,	  2	  ]
+[ 3 ]
+#-----------------#
+# h	t	  # name
+# void	int	  # type
+#-----------------#
+[ nil,	  4	  ]
+[ nil,	  5	  ]
+[ nil,	  6	  ]
+
+# 08:54:20 >  
+# 08:54:20 >  Done.
+# 08:54:20 >  
+
