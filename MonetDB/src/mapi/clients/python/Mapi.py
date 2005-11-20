@@ -94,7 +94,7 @@ class server:
         """disconnect()
         Disconnect from the MonetDB server.
         """
-        self.result = self.cmd_intern('quit;\n')
+        self.result = self.cmd_intern('quit();\n')
         try:
             self.socket.close()
         except (IOError, error), e:
