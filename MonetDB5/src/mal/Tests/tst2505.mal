@@ -17,5 +17,5 @@ r2:= user.random(34);
 io.print(r2);
 r2:= user.random(2);
 io.print(r2);
-r2:= user.random(2);
+r2:= user.random(24);
 io.print(r2);

@@ -52,8 +52,8 @@ function user.main():void;	# 0  (main:void)
     io.print(r2);	# 6 IOprint_val (_10:int)<-(r2:int)
     r2 := user.random(2);	# 7  (r2:int)<-(_11:int)
     io.print(r2);	# 8 IOprint_val (_12:int)<-(r2:int)
-    r2 := user.random(2);	# 9  (r2:int)<-(_11:int)
-    io.print(r2);	# 10 IOprint_val (_13:int)<-(r2:int)
+    r2 := user.random(24);	# 9  (r2:int)<-(_13:int)
+    io.print(r2);	# 10 IOprint_val (_14:int)<-(r2:int)
 end main;	# 11  
 [ 125 ]
 [ 15625 ]

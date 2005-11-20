@@ -43,7 +43,7 @@ function user.main():void;	# 0  (main:void)
     l := inspect.getSize();	# 7 INSPECTgetSize (l:lng)
     io.print(l);	# 8 IOprint_val (_10:int)<-(l:lng)
 end main;	# 9  
-[ 2488 ]
+[ 872 ]
 #-------------------------#
 # view		input	  # name
 # str		lng	  # type
@@ -150,9 +150,10 @@ end main;	# 9
 [ "getAtomSizes",	  240	  ]
 [ "getAtomSuperNames",	  240	  ]
 [ "getAtomNames",	  240	  ]
+[ "getTypeIndex",	  328	  ]
 [ "getTypeName",	  328	  ]
 [ "getType",		  328	  ]
-[ "getType",		  328	  ]
+[ "getType",		  504	  ]
 [ "getSize",		  416	  ]
 [ "getSize",		  328	  ]
 [ "getSize",		  240	  ]
@@ -162,7 +163,7 @@ end main;	# 9
 [ "getModule",		  240	  ]
 [ "getKind",		  240	  ]
 [ "getDefinition",	  416	  ]
-[ "inspect",		  4480	  ]
+[ "inspect",		  4984	  ]
 [ 2488 ]
 
 # 21:04:56 >  

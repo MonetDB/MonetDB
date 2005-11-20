@@ -8,6 +8,8 @@
 #
 #
 #
+lzone:= mtime.tzone("GMT+1");
+mtime.tzone_local(lzone);
 ##line 535 "/ufs/mk/monet_5-0/src/modules/atoms/monettime.mx"
 ## test the various ways to create rules
 	rule_jan:= mtime.rule("1st MON from start of JAN@01:15");
