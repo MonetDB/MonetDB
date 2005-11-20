@@ -1481,10 +1481,12 @@ we have to keep track of essential system counter information.
     if( malProfileMode == 0)
         /* mostly true */;
     else {
-        pci->clk= GDKusec();
-        time(&pci->clock);
+		if( mb->profiler== NULL)
+			initProfiler(mb);
+        mb->profiler[stkpc].clk= GDKusec();
+        time(&mb->profiler[stkpc].clock);
 #ifdef HAVE_TIMES
-        times(&pci->timer);
+        times(&mb->profiler[stkpc].timer);
 #endif
     }
 #endif
@@ -1493,11 +1495,13 @@ we have to keep track of essential system counter information.
     if( malProfileMode == 0)
         /* mostly true */;
     else{
+		if( mb->profiler== NULL)
+			initProfiler(mb);
         newclk= GDKusec();
-        pci->counter++;
-        pci->ticks += (long) (newclk - pci->clk);
-		if( pci->clk)
-			profilerEvent(cntxt->nspace,mb,stk,pci);
+        mb->profiler[stkpc].counter++;
+        mb->profiler[stkpc].ticks += (long) (newclk - mb->profiler[stkpc].clk);
+		if( mb->profiler[stkpc].clk)
+			profilerEvent(cntxt->nspace,mb,stk,stkpc);
     }
 #endif
 @}

@@ -358,35 +358,38 @@ typedef struct {
                    CATCH, RAISE, THREAD*/
     bit   typechk;    /* type check status */
 	bit	  gc; /* garbage control flags */
-@-
-For performance analysis we keep track of the number of calls
-and the total time spent while executing the instruction.
-(See mal_profiler.mx)
-@h
-#ifdef MALprofiler
-#ifdef HAVE_TIMES
-    struct  tms timer;  /* timing information */
-#endif
-	time_t	clock;	/* clock */
-    lng clk;        /* microseconds clock */
-    long    counter;
-    long    ticks;      /* micro seconds spent */
-    bit   trace;      /* facilitate filter-based profiling */
-#endif
-@-
-The MAL instruction representation. The strings should be garbage collected
-upon destruction of the definition.
-@h
     bit   polymorphic;    /* complex type analysis */
     bit   varargs;    /* variable number of arguments */
     MALfcn  fcn;        /* resolved function address */
     struct MALBLK *blk; /* resolved MAL function address */
     int jump;       /* controlflow program counter */
+@-
+The MAL instruction representation. The strings should not be garbage collected
+upon destruction of the definition. They are part of the global namespace.
+@h
     str modname;    /* module context */
     str fcnname;    /* function name */
     short   argc,retc,maxarg;/* total and result argument count */
     int argv[1];    /* at least one entry */
 } *InstrPtr, InstrRecord;
+
+@-
+For performance analysis we keep track of the number of calls
+and the total time spent while executing the instruction.
+(See mal_profiler.mx)
+The performance structures are separately administered, because
+they are only used in limited curcumstances.
+@h
+typedef struct PERF{
+#ifdef HAVE_TIMES
+    struct  tms timer;  /* timing information */
+#endif
+	time_t	clock;	/* clock */
+    lng 	clk;        /* microseconds clock */
+    long    counter;
+    long    ticks;      /* micro seconds spent */
+    bit		trace;      /* facilitate filter-based profiling */
+} *ProfPtr, ProfRecord;
 
 typedef struct MALBLK{
     str binding;/* related C-function */
@@ -402,6 +405,7 @@ typedef struct MALBLK{
     int errors; /* left over errors */
 	int typefixed;	/* no undtermined instruction */
 	int flowfixed;	/* all flow instructions are fixed */
+	ProfPtr profiler;
 } *MalBlkPtr, MalBlkRecord;
 
 @-
@@ -611,6 +615,7 @@ MalBlkPtr newMalBlk(int maxvars, int maxstmts){
     mb->alternative= NULL;
 	mb->typefixed = 0;
 	mb->flowfixed = 0;
+	mb->profiler = NULL;
     return mb;
 }
 @-
@@ -642,6 +647,9 @@ void freeMalBlk(MalBlkPtr mb){
     if( mb->help) GDKfree(mb->help); mb->help=0;
     if(mb->props) GDKfree(mb->props);
     mb->props= NULL;
+	if( mb->profiler)
+		GDKfree(mb->profiler);
+	mb->profiler= NULL;
     GDKfree(mb);
 }
 @-
@@ -688,6 +696,7 @@ MalBlkPtr copyMalBlk(MalBlkPtr old){
     /* copy the properties as well */
     if(mb->props)
         mb->props = cpyPropertySet(old->props);
+	mb->profiler= NULL;
     return mb;
 }
 @-
@@ -726,6 +735,10 @@ void trimexpand(MalBlkPtr mb, int varsize, int stmtsize){
     GDKfree(mb->stmt);
     mb->stmt= stmt;
     mb->ssize = mb->ssize + stmtsize;
+	if( mb->profiler){
+		GDKfree(mb->profiler);
+		mb->profiler = 0;
+	}
 }
 void expandMalBlk(MalBlkPtr mb, int lines){
     int newlines= (int) (lines *1.1);
@@ -802,21 +815,8 @@ with modifier
         p->token = kind;
         p->barrier= 0;
     }
-#ifdef MALprofiler
-#ifdef HAVE_TIMES
-    p->timer.tms_utime = 0;
-    p->timer.tms_stime = 0;
-    p->timer.tms_cutime = 0;
-    p->timer.tms_cstime = 0;
-#endif
-    p->clock = 0;
-    p->clk = 0;
-    p->ticks = 0;
-    p->trace= 0;
     p->gc=0;
     p->jump=0;
-    p->counter= 0;
-#endif
     return p;
 }
 
@@ -1810,9 +1810,10 @@ beginning of each line.
 
 @= performanceData
 #ifdef MALprofiler
-    if( p->counter ){
-        double avg= (p->ticks+0.0)/p->counter;
-        sprintf(t,"[%7ld, %5.2f] ",p->counter,avg);
+    if( mb->profiler ){
+		int pc= getPC(mb,p);
+        double avg= (mb->profiler[pc].ticks+0.0)/mb->profiler[pc].counter;
+        sprintf(t,"[%7ld, %5.2f] ",mb->profiler[pc].counter,avg);
     } 
     advance(t);
 #endif

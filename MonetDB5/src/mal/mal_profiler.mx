@@ -174,7 +174,8 @@ mal_export str deactivateCounter(str name);
 mal_export str openProfilerStream(void);
 mal_export str closeProfilerStream(void);
 
-mal_export void profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+mal_export void initProfiler(MalBlkPtr mb);
+mal_export void profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 mal_export str setLogFile(Module cntxt, str fname);
 mal_export str setStartPoint(Module cntxt, str mod, str fcn);
 mal_export str setEndPoint(Module cntxt, str mod, str fcn);
@@ -246,9 +247,9 @@ profilerAvailable(void)
 }
 #endif
 
-static void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-static void offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-static void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+static void onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
+static void offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
+static void cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc);
 
 int malProfileMode = 0;		/* global flag to indicate profiling mode */
 static int profileAll = 0;	/* all instructions should be profiled */
@@ -332,15 +333,16 @@ Online- and offline-profiling are disjoint options, because they
 currently share the same file descriptor in the client record.
 @c
 void
-profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+profilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 #ifdef MALprofiler
+	if( mb->profiler == NULL) return;
 	if (onlineProfiling)
-		onlineProfilerEvent(cntxt, mb, stk, pci);
+		onlineProfilerEvent(cntxt, mb, stk, pc);
 	if (offlineProfiling)
-		offlineProfilerEvent(cntxt, mb, stk, pci);
+		offlineProfilerEvent(cntxt, mb, stk, pc);
 	if (cachedProfiling)
-		cachedProfilerEvent(cntxt, mb, stk, pci);
+		cachedProfilerEvent(cntxt, mb, stk, pc);
 #endif
 }
 
@@ -408,9 +410,10 @@ onlineProfilerHeader(void)
 }
 
 void
-onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	static struct mallinfo prevMalloc;
+	InstrPtr pci = getInstrPtr(mb,pc);
 
 #ifdef HAVE_SYS_RESOURCE_H
 	static struct rusage prevUsage;
@@ -424,7 +427,6 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str stmt, c;
 
 	(void) cntxt;
-	(void) stk;		/* still unused */
 
 	if (delayswitch > 0) {
 		/* first call to profiled */
@@ -436,7 +438,7 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (delayswitch == 0) {
 		delayswitch = -1;
 	}
-	if (!profileAll && pci->trace == FALSE)
+	if (!profileAll && mb->profiler[pc].trace == FALSE)
 		return;
 #ifdef HAVE_TIMES
 	times(&newTms);
@@ -465,7 +467,7 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
 
-		tbuf= ctime(&pci->clock);
+		tbuf= ctime(&mb->profiler[pc].clock);
 		c = strchr(tbuf, '\n');
 		if (c) {
 			c[-5] = '"';
@@ -475,7 +477,7 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		log("%s,\t", tbuf + 10);
 	}
 	if (profileCounter[PROFlabel].status) {
-		log("%d,\t", pci->ticks);
+		log("%d,\t", mb->profiler[pc].ticks);
 	}
 	if (profileCounter[PROFstmt].status) {
 		/* generate actual call statement */
@@ -488,10 +490,10 @@ onlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 #ifdef HAVE_TIMES
 	if (profileCounter[PROFcpu].status) {
-		log("%d,\t", newTms.tms_utime - pci->timer.tms_utime);
-		log("%d,\t", newTms.tms_cutime - pci->timer.tms_cutime);
-		log("%d,\t", newTms.tms_stime - pci->timer.tms_stime);
-		log("%d,\t", newTms.tms_cstime - pci->timer.tms_cstime);
+		log("%d,\t", newTms.tms_utime - mb->profiler[pc].timer.tms_utime);
+		log("%d,\t", newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime);
+		log("%d,\t", newTms.tms_stime - mb->profiler[pc].timer.tms_stime);
+		log("%d,\t", newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime);
 	}
 #endif
 
@@ -585,7 +587,7 @@ HASHinfoProfile(Hash *h, str s)
 }
 
 void
-offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 #ifdef MALprofiler
 #ifdef HAVE_TIMES
@@ -599,10 +601,11 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	static struct mallinfo prevMalloc;
 	str stmt, c;
+	InstrPtr pci= getInstrPtr(mb,pc);
 
 	(void) cntxt;		/* still unused */
 
-	if (!profileAll && pci->trace == FALSE)
+	if (!profileAll && mb->profiler[pc].trace == FALSE)
 		return;
 	if (getDestVar(pci) <= 0)
 		return;
@@ -627,12 +630,16 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	log0("<event>\n");
 	if (profileCounter[PROFcpu].status) {
 #ifdef HAVE_TIMES
-		log("\t<tms utime=\"%d\" ", newTms.tms_utime - pci->timer.tms_utime);
-		log("cutime=\"%d\" ", newTms.tms_cutime - pci->timer.tms_cutime);
-		log("stime=\"%d\" ", newTms.tms_stime - pci->timer.tms_stime);
-		log("cstime=\"%d\" ", newTms.tms_cstime - pci->timer.tms_cstime);
+		log("\t<tms utime=\"%d\" ", 
+			newTms.tms_utime - mb->profiler[pc].timer.tms_utime);
+		log("cutime=\"%d\" ", 
+			newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime);
+		log("stime=\"%d\" ", 
+			newTms.tms_stime - mb->profiler[pc].timer.tms_stime);
+		log("cstime=\"%d\" ", 
+			newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime);
 #endif
-		log("ticks=\"%d\" ", GDKusec() - pci->clk);
+		log("ticks=\"%d\" ", GDKusec() - mb->profiler[pc].clk);
 		log0("/>\n");
 	}
 
@@ -668,10 +675,10 @@ offlineProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		log(" module=\"%s\"", (moduleId(pci) ? moduleName(pci) : "unknown"));
 		log(" function=\"%s\"", (functionId(pci) ? functionName(pci) : "unknown"));
-		log(" calls=\"%d\"", pci->counter);
+		log(" calls=\"%d\"", mb->profiler[pc].counter);
 
-		if (pci->counter) {
-			double avg = pci->ticks / (pci->counter +0.0);
+		if (mb->profiler[pc].counter) {
+			double avg = mb->profiler[pc].ticks / (mb->profiler[pc].counter +0.0);
 
 			log(" average=\"%5.2f\"", avg);
 		}
@@ -1018,6 +1025,7 @@ setFilter(Module cntxt, str mod, str fcn)
 #ifdef MALprofiler
 	int j, k, moduleOnly = 0;
 	Module s = cntxt;
+	MalBlkPtr mb;
 	Symbol t;
 	InstrPtr p;
 
@@ -1038,11 +1046,14 @@ setFilter(Module cntxt, str mod, str fcn)
 			for (j = 0; j < MAXSCOPE; j++)
 				if (s->subscope[j]) {
 					for (t = s->subscope[j]; t != NULL; t = t->peer) {
-						p = getInstrPtr(t->def, 0);
+						p = getInstrPtr(mb=t->def, 0);
 						moduleOnly = moduleId(p) && strcmp(moduleName(p), mod) == 0;
+						initProfiler(mb);
 						for (k = 0; k < t->def->stop; k++) {
 							p = getInstrPtr(t->def, k);
-							p->trace = p->trace || moduleOnly || instrFilter(p, mod, fcn);
+							mb->profiler[k].trace = mb->profiler[k].trace || 
+													moduleOnly || 
+													instrFilter(p, mod, fcn);
 						}
 					}
 				}
@@ -1067,6 +1078,7 @@ resetFilter(Module cntxt, str mod, str fcn)
 	Module s = cntxt;
 	Symbol t;
 	InstrPtr p;
+	MalBlkPtr mb;
 
 	(void) mod;
 	(void) fcn;		/* still unused */
@@ -1083,9 +1095,10 @@ resetFilter(Module cntxt, str mod, str fcn)
 			for (j = 0; j < MAXSCOPE; j++)
 				if (s->subscope[j]) {
 					for (t = s->subscope[j]; t != NULL; t = t->peer) {
+						if( (mb=t->def)->profiler)
 						for (k = 0; k < t->def->stop; k++) {
 							p = getInstrPtr(t->def, k);
-							p->trace = FALSE;
+							mb->profiler[k].trace = FALSE;
 						}
 					}
 				}
@@ -1216,7 +1229,7 @@ getTrace(str nme)
 }
 
 void
-cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 {
 	/* static struct mallinfo prevMalloc; */
 	/* static struct rusage   prevUsage; */
@@ -1231,9 +1244,9 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	str stmt, c;
 	int evnt;
+	InstrPtr pci= getInstrPtr(mb,pc);
 
 	(void) cntxt;
-	(void) stk;		/* still unused */
 
 	if (TRACE_init == 0)
 		return;
@@ -1245,7 +1258,7 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (delayswitch == 0) {
 		delayswitch = -1;
 	}
-	if (!profileAll && pci->trace == FALSE)
+	if (!profileAll && mb->profiler[pc].trace == FALSE)
 		return;
 #ifdef HAVE_TIMES
 	times(&newTms);
@@ -1273,7 +1286,7 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (profileCounter[PROFtime].status) {
 		char *tbuf, *c;
 
-		tbuf= ctime(&pci->clock);
+		tbuf= ctime(&mb->profiler[pc].clock);
 		c = strchr(tbuf, '\n');
 		if (c) {
 			c[-5] = '"';
@@ -1283,7 +1296,7 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNins(TRACE_id_time, &evnt, tbuf + 10);
 	}
 	if (profileCounter[PROFlabel].status) {
-		int ticks = (int) (GDKusec() - pci->clk);
+		int ticks = (int) (GDKusec() - mb->profiler[pc].clk);
 
 		BUNins(TRACE_id_ticks, &evnt, &ticks);
 	}
@@ -1300,10 +1313,10 @@ cachedProfilerEvent(Module cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* The remainder requires their own BATs
 #ifdef HAVE_TIMES
     if( profileCounter[PROFcpu].status ){
-        log("%d,\t", newTms.tms_utime - pci->timer.tms_utime);
-        log("%d,\t", newTms.tms_cutime - pci->timer.tms_cutime);
-        log("%d,\t", newTms.tms_stime - pci->timer.tms_stime);
-        log("%d,\t", newTms.tms_cstime - pci->timer.tms_cstime);
+        log("%d,\t", newTms.tms_utime - mb->profiler[pc].timer.tms_utime);
+        log("%d,\t", newTms.tms_cutime - mb->profiler[pc].timer.tms_cutime);
+        log("%d,\t", newTms.tms_stime - mb->profiler[pc].timer.tms_stime);
+        log("%d,\t", newTms.tms_cstime - mb->profiler[pc].timer.tms_cstime);
     }
 #endif
 
@@ -1368,7 +1381,8 @@ profileReport(Module cntxt, int outer, stream *out)
 					for (t = s->subscope[j]; t != NULL; t = t->peer) {
 						for (k = 0; k < t->def->stop; k++) {
 							p = getInstrPtr(t->def, k);
-							if (p->counter)
+							if( t->def->profiler &&
+								t->def->profiler[k].counter)
 								printInstruction(out, t->def, p, LIST_MAL_INSTR);
 						}
 					}
@@ -1379,4 +1393,13 @@ profileReport(Module cntxt, int outer, stream *out)
 #endif
 }
 
+@-
+The profile vector is added to the MAL block the first time we
+have to safe monitor information.
+@c
+void initProfiler(MalBlkPtr mb){
+	if( mb->profiler) return;
+	mb->profiler = (ProfPtr) GDKmalloc(mb->ssize*sizeof(ProfRecord));
+	memset((char*) mb->profiler, 0, mb->ssize*sizeof(ProfRecord));
+}
 @}
