@@ -2015,7 +2015,9 @@ STRlikewrap2(bit *ret, str *s, str *pat){
 str
 STRtostr(str *res, str *src)
 {
-	*res = GDKstrdup(*src);
+	if( *src == 0)
+		*res= GDKstrdup(str_nil);
+	else *res = GDKstrdup(*src);
 	return MAL_SUCCEED;
 }
 
