@@ -5,166 +5,19 @@ stdout of test 'tst620` in directory 'src/mal` itself:
 # 21:04:56 >  Mtimeout -timeout 60 Mserver "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --debug=10 --set "monet_mod_path=/ufs/mk/monet5/Linux/lib/MonetDB5:/ufs/mk/opensource/MonetDB/Linux/lib/MonetDB" --set "gdk_dbfarm=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm" --set "sql_logdir=/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/log" --set mapi_port=33678 --set sql_port=45734 --set xquery_port=51153 --set monet_prompt= --trace "--config=/ufs/mk/monet5/src/mal/Tests/All.conf" --dbname=mTests_src_mal  tst620.mal < /dev/null
 # 21:04:56 >  
 
-# Monet Database Server V4.99.19
+!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock.
+!WARNING: BBPdir: initializing BBP.
+# Monet Database Server V4.9.3
 # Copyright (c) 1993-2005, CWI. All rights reserved.
 # Compiled for x86_64-redhat-linux-gnu/64bit with 32bit OIDs; dynamically linked.
 # config:/ufs/mk/monet5/src/mal/Tests/All.conf
 # dbfarm:/ufs/mk/opensource/MonetDB/Linux/var/MonetDB5/dbfarm
 # dbname:mTests_src_mal
 # Visit http://monetdb.cwi.nl/ for further information.
-##check the storage size
-#function tst():void;
-#	z:= inspect.getSize();
-#	io.print(z);
-#end tst;
-function user.tst():void;	# 0  (tst:void)
-    z := inspect.getSize();	# 1 INSPECTgetSize (z:lng)
-    io.print(z);	# 2 IOprint_val (_2:int)<-(z:lng)
-end tst;	# 3  
-#
-#user.tst();
-#
-#z:= inspect.getSize("algebra");
-#io.print(z);
-#
-#z:= inspect.getSize("inspect");
-#io.print(z);
-#
-#l:= inspect.getSize();
-#io.print(l);
-#
-function user.main():void;	# 0  (main:void)
-#check the storage size 	# 1  (_2:str)
-    user.tst();	# 2  (_3:void)
-    z := inspect.getSize("algebra");	# 3 INSPECTgetModuleSize (z:bat[:str,:lng])<-(_5:str)
-    io.print(z);	# 4 IOprint_val (_6:int)<-(z:bat[:str,:lng])
-    z := inspect.getSize("inspect");	# 5 INSPECTgetModuleSize (z:bat[:str,:lng])<-(_7:str)
-    io.print(z);	# 6 IOprint_val (_8:int)<-(z:bat[:str,:lng])
-    l := inspect.getSize();	# 7 INSPECTgetSize (l:lng)
-    io.print(l);	# 8 IOprint_val (_10:int)<-(l:lng)
-end main;	# 9  
-[ 872 ]
-#-------------------------#
-# view		input	  # name
-# str		lng	  # type
-#-------------------------#
-[ "antijoin",	  416	  ]
-[ "betweenOO",	  1136	  ]
-[ "betweenOC",	  1224	  ]
-[ "betweenCO",	  1224	  ]
-[ "between",	  1048	  ]
-[ "bandjoin",	  592	  ]
-[ "crossproduct", 416	  ]
-[ "copy",	  328	  ]
-[ "difference",	  416	  ]
-[ "exist",	  504	  ]
-[ "exist",	  416	  ]
-[ "fetchjoin",	  416	  ]
-[ "fragment",	  680	  ]
-[ "fetch",	  416	  ]
-[ "fetch",	  416	  ]
-[ "fetch",	  416	  ]
-[ "fetch",	  416	  ]
-[ "fetch",	  416	  ]
-[ "fetch",	  416	  ]
-[ "find",	  416	  ]
-[ "find",	  416	  ]
-[ "find",	  416	  ]
-[ "groupby",	  328	  ]
-[ "hashsplit",	  416	  ]
-[ "hashjoin",	  416	  ]
-[ "indexjoin",	  416	  ]
-[ "intersect",	  416	  ]
-[ "joinPath",	  416	  ]
-[ "join",	  504	  ]
-[ "join",	  504	  ]
-[ "join",	  504	  ]
-[ "join",	  416	  ]
-[ "join",	  416	  ]
-[ "join",	  416	  ]
-[ "join",	  416	  ]
-[ "kunion",	  416	  ]
-[ "kunion",	  416	  ]
-[ "kunion",	  416	  ]
-[ "kdifference",  416	  ]
-[ "kdifference",  416	  ]
-[ "kintersect",	  416	  ]
-[ "kunique",	  328	  ]
-[ "like",	  416	  ]
-[ "merge",	  328	  ]
-[ "markH",	  416	  ]
-[ "markH",	  416	  ]
-[ "markH",	  328	  ]
-[ "markH",	  328	  ]
-[ "markT",	  328	  ]
-[ "markT",	  328	  ]
-[ "markT",	  416	  ]
-[ "markT",	  416	  ]
-[ "mergejoin",	  416	  ]
-[ "number",	  328	  ]
-[ "outerjoin",	  504	  ]
-[ "outerjoin",	  416	  ]
-[ "outerjoin",	  416	  ]
-[ "outerjoin",	  416	  ]
-[ "project",	  416	  ]
-[ "project",	  416	  ]
-[ "project",	  328	  ]
-[ "position",	  504	  ]
-[ "position",	  416	  ]
-[ "revert",	  328	  ]
-[ "split",	  328	  ]
-[ "sunion",	  416	  ]
-[ "sdifference",  416	  ]
-[ "semijoin",	  416	  ]
-[ "semijoin",	  416	  ]
-[ "semijoin",	  416	  ]
-[ "sintersect",	  416	  ]
-[ "sunique",	  328	  ]
-[ "sortTH",	  328	  ]
-[ "sortHT",	  328	  ]
-[ "sort",	  328	  ]
-[ "sortHead",	  328	  ]
-[ "sample",	  416	  ]
-[ "slice",	  504	  ]
-[ "selectH",	  416	  ]
-[ "selectH",	  680	  ]
-[ "selectH",	  504	  ]
-[ "select",	  416	  ]
-[ "select",	  680	  ]
-[ "select",	  504	  ]
-[ "thetajoin",	  592	  ]
-[ "thetajoin",	  504	  ]
-[ "tunique",	  328	  ]
-[ "topN",	  416	  ]
-[ "uhashsplit",	  416	  ]
-[ "union",	  416	  ]
-[ "unique",	  328	  ]
-[ "uselect",	  416	  ]
-[ "uselect",	  504	  ]
-[ "uselect",	  680	  ]
-[ "algebra",	  42776	  ]
-#---------------------------------#
-# view			input	  # name
-# str			lng	  # type
-#---------------------------------#
-[ "getAtomSizes",	  240	  ]
-[ "getAtomSuperNames",	  240	  ]
-[ "getAtomNames",	  240	  ]
-[ "getTypeIndex",	  328	  ]
-[ "getTypeName",	  328	  ]
-[ "getType",		  328	  ]
-[ "getType",		  504	  ]
-[ "getSize",		  416	  ]
-[ "getSize",		  328	  ]
-[ "getSize",		  240	  ]
-[ "getSignature",	  416	  ]
-[ "getSignature",	  240	  ]
-[ "getFunction",	  240	  ]
-[ "getModule",		  240	  ]
-[ "getKind",		  240	  ]
-[ "getDefinition",	  416	  ]
-[ "inspect",		  4984	  ]
-[ 2488 ]
+#size 960
+#algebra size 85552
+#inspect size 85552
+#size 3320
 
 # 21:04:56 >  
 # 21:04:56 >  Done.
