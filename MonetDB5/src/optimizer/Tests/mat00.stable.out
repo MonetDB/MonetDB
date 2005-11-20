@@ -50,13 +50,13 @@ function user.main():void;	# 0  (main:void)
     _34 := algebra.select(m1,0,2);	# 11 ALGselect (_34:bat[:void,:int])<-(m1:bat[:void,:int])(_9:int)(_15:int)
     _35 := algebra.select(m2,0,2);	# 12 ALGselect (_35:bat[:void,:int])<-(m2:bat[:void,:int])(_9:int)(_15:int)
     s := mat.new(_33,_34,_35);	# 13 MATnew (s:bat[:void,:int])<-(_33:bat[:void,:int])(_34:bat[:void,:int])(_35:bat[:void,:int])
-    i := 0;	# 14  (i:int)<-(_45:int)
-    _46 := aggr.count(_33);	# 15 ALGcount_bat (_46:int)<-(_33:bat[:void,:int])
-    i := calc.+(i,_46);	# 16 CALCbinaryADDintint (i:int)<-(i:int)(_46:int)
-    _47 := aggr.count(_34);	# 17 ALGcount_bat (_47:int)<-(_34:bat[:void,:int])
-    i := calc.+(i,_47);	# 18 CALCbinaryADDintint (i:int)<-(i:int)(_47:int)
-    _48 := aggr.count(_35);	# 19 ALGcount_bat (_48:int)<-(_35:bat[:void,:int])
-    i := calc.+(i,_48);	# 20 CALCbinaryADDintint (i:int)<-(i:int)(_48:int)
+    i := 0;	# 14  (i:int)<-(_9:int)
+    _45 := aggr.count(_33);	# 15 ALGcount_bat (_45:int)<-(_33:bat[:void,:int])
+    i := calc.+(i,_45);	# 16 CALCbinaryADDintint (i:int)<-(i:int)(_45:int)
+    _46 := aggr.count(_34);	# 17 ALGcount_bat (_46:int)<-(_34:bat[:void,:int])
+    i := calc.+(i,_46);	# 18 CALCbinaryADDintint (i:int)<-(i:int)(_46:int)
+    _47 := aggr.count(_35);	# 19 ALGcount_bat (_47:int)<-(_35:bat[:void,:int])
+    i := calc.+(i,_47);	# 20 CALCbinaryADDintint (i:int)<-(i:int)(_47:int)
     s := mat.pack(_33,_34,_35);	# 21 MATpack (s:bat[:void,:int])<-(_33:bat[:void,:int])(_34:bat[:void,:int])(_35:bat[:void,:int])
     io.print(s);	# 22 IOprint_val (_19:int)<-(s:bat[:void,:int])
     io.print(i);	# 23 IOprint_val (_20:int)<-(i:int)
@@ -97,12 +97,12 @@ function user.main():void;
     _35 := algebra.select(m2,0,2);
     s := mat.new(_33,_34,_35);
     i := 0;
-    _46 := aggr.count(_33);
+    _45 := aggr.count(_33);
+    i := calc.+(i,_45);
+    _46 := aggr.count(_34);
     i := calc.+(i,_46);
-    _47 := aggr.count(_34);
+    _47 := aggr.count(_35);
     i := calc.+(i,_47);
-    _48 := aggr.count(_35);
-    i := calc.+(i,_48);
     s := mat.pack(_33,_34,_35);
     io.print(s);
     io.print(i);

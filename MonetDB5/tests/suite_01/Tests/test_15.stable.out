@@ -105,11 +105,11 @@ function user.main():void;	# 0  (main:void)
     ab_a := transaction.commit();	# 39 TRNglobal_commit (ab_a:void)
     bb_a := transaction.commit();	# 40 TRNglobal_commit (bb_a:void)
     mil.line("printf(\"#~BeginVariableOutput~#\\n\"); ioStatistics().print(); printf(\"#~EndVariableOutput~#\\n\");");	# 41 MILline (_87:void)<-(_88:str)
-    cb_a := io.printf("#~BeginVariableOutput~#\n");	# 42 IOprint_str (cb_a:int)<-(_90:str)
+    cb_a := io.printf("#~BeginVariableOutput~#\n");	# 42 IOprint_str (cb_a:int)<-(_56:str)
     db_a := status.ioStatistics();	# 43 SYSioStatistics (db_a:bat[:str,:int])
     eb_a := io.print(db_a);	# 44 IOprint_val (eb_a:int)<-(db_a:bat[:str,:int])
-    fb_a := io.printf("#~EndVariableOutput~#\n");	# 45 IOprint_str (fb_a:int)<-(_94:str)
-    mil.line("quit();");	# 46 MILline (_95:void)<-(_96:str)
+    fb_a := io.printf("#~EndVariableOutput~#\n");	# 45 IOprint_str (fb_a:int)<-(_60:str)
+    mil.line("quit();");	# 46 MILline (_93:void)<-(_94:str)
     gb_a := clients.quit();	# 47 CLTquit (gb_a:void)
 end main;	# 48  
 #setoid(oid(20000000));
@@ -120,13 +120,13 @@ end main;	# 48
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  1995	  ]
+[ "minflt",	  1860	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  2	  ]
-[ "ninvcsw",	  6	  ]
+[ "nvcsw",	  1	  ]
+[ "ninvcsw",	  8	  ]
 #~EndVariableOutput~#
 #commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
 #transaction.commit(); commit(); commit(); commit(); commit(); commit(); commit(); commit();
@@ -138,13 +138,13 @@ end main;	# 48
 # str		int	  # type
 #-------------------------#
 [ "maxrss",	  0	  ]
-[ "minflt",	  2000	  ]
+[ "minflt",	  1864	  ]
 [ "majflt",	  0	  ]
 [ "nswap",	  0	  ]
 [ "inblock",	  0	  ]
 [ "oublock",	  0	  ]
-[ "nvcsw",	  2	  ]
-[ "ninvcsw",	  6	  ]
+[ "nvcsw",	  1	  ]
+[ "ninvcsw",	  9	  ]
 #~EndVariableOutput~#
 #quit();
 

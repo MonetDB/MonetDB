@@ -103,11 +103,11 @@ exit MALexception;	# 22  (MALexception:any)
 catch MALexception;	# 33  (MALexception:any) jump 35
     io.print("BAT was destroyed");	# 34 IOprint_val (_47:int)<-(_48:str)
 exit MALexception;	# 35  (MALexception:any)
-    z:bat[:any,:any]  := bbp.bind("tasks");	# 36 CMDbbpbind (z:bat[:any,:any])<-(_50:str)
-    io.print(z);	# 37 IOprint_val (_51:int)<-(z:bat[:any,:any])
-#it is not in the box anymore either 	# 38  (_53:str)
+    z:bat[:any,:any]  := bbp.bind("tasks");	# 36 CMDbbpbind (z:bat[:any,:any])<-(_14:str)
+    io.print(z);	# 37 IOprint_val (_50:int)<-(z:bat[:any,:any])
+#it is not in the box anymore either 	# 38  (_52:str)
 catch MALexception;	# 39  (MALexception:any) jump 41
-    io.print("BAT was removed from the box");	# 40 IOprint_val (_54:int)<-(_55:str)
+    io.print("BAT was removed from the box");	# 40 IOprint_val (_53:int)<-(_54:str)
 exit MALexception;	# 41  (MALexception:any)
 end main;	# 42  
 [ "open box" ]
