@@ -191,6 +191,8 @@ Some explanation of what mem\_usage() and vm\_usage() display:
 	"Pseudo bat to map client identifier to its login time"
 .COMMAND view_client_tree( ): BAT[int,str] = view_client_tree;
 	"Pseudo bat to map client identifier to its current active tree"
+.COMMAND view_client_size(int client) : BAT[str,lng] = view_client_size;
+ 	"get an overview of client buffer use (contexts, variables, trees)."
 
 @- Monet Variables
 @m
@@ -999,6 +1001,69 @@ view_client_tree(BAT **retval)
 			BUNins(b, &i, buf);
 		}
 	@:Pseudo(client,tree)@
+	return GDK_SUCCEED;
+}
+
+int
+view_client_size(BAT **retval, int *clientid)
+{
+	BAT *b, *fcntbl;
+	lng tot, vars = 0, nvars = 0;
+	lng cntxts = 0, ncntxts = 0;
+	lng procs = 0, procnodes = 0;
+	int xx, stk = *clientid;
+	BUN p, q, r;
+
+	if (stk < 0 || stk >= MAXCLIENTS || monet_clients[stk].mode == FINISHED)
+		return GDK_FAIL;
+        b = *retval = BATnew(TYPE_str, TYPE_lng, 100);
+	if (b == 0)
+		return GDK_FAIL;
+
+	/* look at the size of all procs */
+	fcntbl = monet_clients[stk].fcntbl;
+        BATloopFast(fcntbl, p, q, xx) {
+		oid pid = *(oid*) BUNtloc(fcntbl, p);
+		str nme = (str) BUNhead(fcntbl, p);
+		size_t cnt = 0;
+		r = BUNfnd(TBL_fcn_tpe, &pid);
+		if (r == NULL || *(int*) BUNtloc(TBL_fcn_tpe,r) != TOK_PROC) continue;
+		r = BUNfnd(TBL_fcn_imp, &pid);
+		if (r == NULL) continue;
+		tot = Myysize(*(YYSTREE*) BUNtloc(TBL_fcn_imp,r), &cnt);
+		procs += tot;
+		procnodes += cnt;
+		if (tot > 65536) BUNins(b, nme, &tot);  
+	}
+
+	/* look at all live contexts and their variables */
+	xx = monet_clients[stk].maxstk;
+	if (xx == 0) xx = stk;
+	do {
+		Variable v = monet_cntxt[xx].var;
+		while(v) {
+			nvars++;
+			vars += sizeof(VarRecord);
+			if (v->binding.val.pval && ATOMextern(v->binding.vtype))
+				vars += v->binding.len;
+			v = v->next;
+		}
+		cntxts += sizeof(CntxtRec);
+		ncntxts++;
+		xx = monet_cntxt[xx].outer;
+ 	} while(xx && xx != stk);
+
+	/* report */
+ 	tot = vars + procs + cntxts;
+	BUNins(b, "var", &vars);  
+	BUNins(b, "var_num", &nvars);  
+	BUNins(b, "cntxt", &cntxts);  
+	BUNins(b, "cntxt_num", &ncntxts);  
+	BUNins(b, "proc", &procs);  
+	BUNins(b, "proc_nodes", &procnodes);  
+	BUNins(b, "total", &tot);  
+
+	@:Pseudo(client,size)@
 	return GDK_SUCCEED;
 }
 

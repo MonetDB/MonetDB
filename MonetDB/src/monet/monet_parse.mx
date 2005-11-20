@@ -670,7 +670,7 @@ programming by considering the first argument the receiver of the method.
 YYSTREE
 yysugar(YYSTREE node)
 {
-	YYSTREE t = Myylognode(0, 0);
+	YYSTREE t = Myylognode(0, TYPE_ptr);
 
 	if (node) {
 		Myylogexpand(t, node);	/* put the sugar argument in front. */
@@ -739,8 +739,8 @@ extern YYSTREE yysugar(YYSTREE node);
 program:
 	monet_session
 	{
-		ll_client->tree = $1;
-		if (Myypostprocess(ll_client->tree) < 0) {
+		ll_client->tree = Myylogout($1);
+		if (ll_client->tree == NULL) {
 			ll_clrids();
 			yyerrok;
 			yyclearin;
@@ -816,7 +816,7 @@ session:
 				}
 			}
 			ll_reset();
-			lt = lt->overflow;
+			lt = YYOVERFLOW(lt);
 		}
 		$$ = 0;
 		yylogfree($4);
@@ -868,9 +868,9 @@ statement:
 					tt->yyval.val.sval = GDKstrdup(t->yysons[i]->yyval.val.sval);
 				}
 			n->cnt = t->cnt;
-			if ((t = t->overflow) != NULL) {
-				n->overflow = Myylognode(0, 0);
-				n = n->overflow;
+			if ((t = YYOVERFLOW(t)) != NULL) {
+				n->yysons[n->capacity] = Myylognode(0, 0);
+				n = YYOVERFLOW(n);
 			}
 		}
 	}
@@ -1037,7 +1037,7 @@ proc_definition:
 		$2->yyval.vtype = TYPE_void;
 
 		/* DIRECT: insert the new proc */
-		Myylogout($$);
+		$$ = Myylogout($$);
 		TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $$, sig, ret);
 		if (sig) {
 			yylogfree(sig);
@@ -1050,7 +1050,7 @@ proc_definition:
     |	TOK_PROCDEF proc_name ';'
 	{
 		$$ = NULL;
-		Myylogout($2);
+		$2 = Myylogout($2);
 		TBL_newproc(ll_client, $2->yyval.val.sval, ll_parent_module(), $2, $2, NULL);
 		$2->token = TOK_CONSTANT;
 		$2->yyval.vtype = TYPE_int;
@@ -1753,7 +1753,7 @@ CMDconstant(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	(void) res;
 
-	for (t = lt; t; t = t->overflow) {
+	for (t = lt; t; t = YYOVERFLOW(t)) {
 		for (i = 0; i < lt->cnt; i++)
 			if ((int) arg(t, i)->token == monet_tokident) {
 				str nme = arg(t, i)->yyval.val.sval;

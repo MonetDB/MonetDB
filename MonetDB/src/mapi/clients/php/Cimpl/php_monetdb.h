@@ -64,6 +64,7 @@ PHP_MINFO_FUNCTION(monetdb);
 
 PHP_FUNCTION(monetdb_connect);
 PHP_FUNCTION(monetdb_close);
+PHP_FUNCTION(monetdb_setAutocommit);
 PHP_FUNCTION(monetdb_query);
 PHP_FUNCTION(monetdb_num_rows);
 PHP_FUNCTION(monetdb_num_fields);

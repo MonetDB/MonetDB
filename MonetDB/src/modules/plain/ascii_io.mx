@@ -522,7 +522,7 @@ check_BATs(ascii *as)
 			continue;
 		offset = BUNindex(b, BUNfirst(b)) + as->offset;
 
-		if (BATcount(b) != cnt || b->hseqbase != base)
+		if (BATcount(b) != cnt || !BAThdense(b) || b->hseqbase != base)
 			return oid_nil;
 
 		fmt[i].p = BUNptr(b, offset);

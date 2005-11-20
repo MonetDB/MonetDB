@@ -662,7 +662,6 @@ lockparser(Client c)
 	ll_client = c;
 	c->cptr = c->input;
 	c->cline = c->input;
-	Myylogstart();		/* init node allocation logging */
 }
 
 void
@@ -797,7 +796,7 @@ dropClient(Client c, YYSTREE lt)
 				return 0;
 			}
 		}
-		lt = lt->overflow;
+		lt = YYOVERFLOW(lt);
 	}
 	return 1;
 }

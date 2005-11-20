@@ -86,6 +86,7 @@ static int le_plink; */
 function_entry monetdb_functions[] = {
 	PHP_FE(monetdb_connect, NULL)
 	PHP_FE(monetdb_close, NULL)
+	PHP_FE(monetdb_setAutocommit, NULL)
 	PHP_FE(monetdb_query, NULL)
 	PHP_FE(monetdb_num_rows, NULL)
 	PHP_FE(monetdb_num_fields, NULL)
@@ -448,6 +449,47 @@ PHP_FUNCTION(monetdb_close)
 }
 
 /* }}} */
+
+/* {{{ proto bool monetdb_setAutocommit(resource db, int val)
+   set the autocommit value */
+PHP_FUNCTION(monetdb_setAutocommit)
+{
+	zval **mapi_link = NULL, **val = NULL;
+	int id;
+	int autocommit;
+	phpMonetConn *conn;
+
+	switch (ZEND_NUM_ARGS()) {
+	case 2:
+		if (zend_get_parameters_ex(1, &mapi_link) == FAILURE) {
+			RETURN_FALSE;
+		}
+		if (zend_get_parameters_ex(1, &val) == FAILURE) {
+			RETURN_FALSE;
+		}
+		id = -1;
+
+		break;
+	default:
+		WRONG_PARAM_COUNT;
+		break;
+	}
+
+	ZEND_FETCH_RESOURCE(conn, phpMonetConn *, mapi_link, id, "MonetDB connection", le_link);
+	convert_to_long_ex(val);
+	autocommit = Z_LVAL_PP(val);
+
+	/*~ printf("MON: disconnecting %p\n", conn); */
+	mapi_setAutocommit(conn->mid, autocommit);
+
+	if (mapi_error(conn->mid) && mapi_error_str(conn->mid)) ;
+	RETURN_FALSE;
+
+	if (id == -1) {		/* explicit resource number */
+		zend_list_delete(Z_RESVAL_PP(mapi_link));
+	}
+	RETURN_TRUE;
+}
 
 
 /* {{{ proto resource monetdb_query(string query[, resource db])
@@ -1077,7 +1119,7 @@ PHP_FUNCTION(monetdb_ping)
 
 /* }}} */
 
-/* {{{ proto bool mysql_free_result(resource result)
+/* {{{ proto bool monetdb_free_result(resource result)
    Free result memory */
 PHP_FUNCTION(monetdb_free_result)
 {

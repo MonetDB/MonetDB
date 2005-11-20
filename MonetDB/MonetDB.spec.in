@@ -142,6 +142,8 @@ rm -rf $RPM_BUILD_ROOT
 %build
 
 ./configure \
+	--enable-assert=no \
+	--enable-optimize \
 	--enable-bits=%{bits} \
 	--with-gcc="%{comp_cc}" \
 	--with-gxx="%{comp_cxx}" \

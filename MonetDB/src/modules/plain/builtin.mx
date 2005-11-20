@@ -351,7 +351,7 @@ CMDmodule(Cntxt stk, YYSTREE lt, ValPtr res)
 				GDKfree(initstr);
 			}
 		}
-		lt = lt->overflow;
+		lt = YYOVERFLOW(lt);
 	}
 	if (ret < 0)
 		return GDK_FAIL;
@@ -607,7 +607,7 @@ CMDfreeze(Cntxt stk, YYSTREE lt, ValPtr res)
 
 	(void) res;
 
-	for (t = lt; t; t = t->overflow) {
+	for (t = lt; t; t = YYOVERFLOW(t)) {
 		for (i = 0; i < lt->cnt; i++) {
 			if ((int) arg(t, i)->token == monet_tokident) {
 				str nme = arg(t, i)->yyval.val.sval;
@@ -975,7 +975,7 @@ CMDprompt(Cntxt stk, YYSTREE lt, ValPtr res)
 	Client c;
 	ptr x;
 
-	if (arg(lt, 0)) {
+	if (lt->cnt == 1) {
 		@:builtin_operand(0,TYPE_str,x)@
 		for (; monet_cntxt[stk].outer > 0; stk = monet_cntxt[stk].outer)
 			;
@@ -1135,6 +1135,9 @@ CMDcall(Cntxt stk, YYSTREE lt, ValPtr res)
 		return -1;
 	}
 	t = Myynode(TOK_FUNCTION, 0);
+	Myyexpand(t, Myynode(0, 0));
+	Myyexpand(t, Myynode(0, TYPE_int));
+	t->yysons[1]->yyval.val.ival = sizeof(ValRecord);
 	t->yyval = v;
 	BATloopFast(b, p, q, xx) {
 		child = Myynode(TOK_CONSTANT, 0);
@@ -1161,14 +1164,13 @@ CMDcall(Cntxt stk, YYSTREE lt, ValPtr res)
 			}
 		}
 		child->yyval = *res;
-		Myyexpand(t, child);
+		Myyexpand(t->yysons[0], child);
+		t->yysons[1]->yyval.val.ival += sizeof(ValRecord);
 	}
 	res->vtype = TYPE_void;
 	if (i == 0) {
-		if ((i = Myypostprocess(t)) >= 0) {
-			i = interpret(stk, t, res);
-			CATCHRET(stk, t, res, i);
-		}
+		i = interpret(stk, t, res);
+		CATCHRET(stk, t, res, i);
 	}
 	t->yyval.vtype = TYPE_void;
 	Myyfree(t);

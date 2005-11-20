@@ -500,7 +500,7 @@ Update the event filters for speed.
 	}
 	lt->yyval.val.ival = cntxt;
 
-	for (t = TRGxpr(lt); t; t = t->overflow)
+	for (t = TRGxpr(lt); t; t = YYOVERFLOW(t))
 		for (i = 0; i < t->cnt; i++) {
 			ev = t->yysons[i];	/* event substructure */
 			if (ev->yysons[0]) {
@@ -646,7 +646,7 @@ TEMsatisfied(YYSTREE lt)
 	int etable[256], otable[256], top = 0;
 	ValRecord res;
 
-	for (t = lt; t; t = t->overflow)
+	for (t = lt; t; t = YYOVERFLOW(t))
 		for (i = 0; i < t->cnt; i++) {
 			ev = t->yysons[i];	/* event substructure */
 			if (ev->yysons[0]) {

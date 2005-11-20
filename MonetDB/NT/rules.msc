@@ -18,22 +18,23 @@
 PYTHON=python
 YACC=bison -b y -y
 LEX=flex 
+SWIG=swig
 
 # This is the location of pthreads for Win32, 
 # see http://sources.redhat.com/pthreads-win32/
 PTHREAD = C:\Pthreads
-!IFDEF USE_MINGW
-PTHREAD_INCS = "-I$(PTHREAD)\include" -D_DLL
-PTHREAD_LIBS = "$(PTHREAD)\lib\libpthreadGC2.a"
-!ELSE
 PTHREAD_INCS = "-I$(PTHREAD)\include"
 PTHREAD_LIBS = "$(PTHREAD)\lib\pthreadVC2.lib"
-!ENDIF
 PHP_SRCDIR = $(TOPDIR)\..\..\php-4.4.0
 PHP_INSTDIR = C:\php-4.4.0-Win32
 # for these, also see configure.py
 PHP_PEARDIR = share\pear
 PHP_EXTENSIONDIR = lib\php4
+
+PYTHONBASE=C:\Python24
+PYTHONINC=$(PYTHONBASE)\include
+PYTHONLIB=$(PYTHONBASE)\libs
+PYTHON_LIBDIR=share\MonetDB\python
 
 # not need to edit beyond here..
 
@@ -58,11 +59,7 @@ pkgincludedir = $(includedir)\$(pkg)
 
 #-FI$(TOPDIR)\config.h 
 LIBC_INCS = $(PTHREAD_INCS)
-!IFDEF USE_MINGW
-SOCKET_LIBS = -lwsock32
-!ELSE
 SOCKET_LIBS = wsock32.lib
-!ENDIF
 
 COMPILE_MEL=1
 COMPILE_MX=1
@@ -169,16 +166,16 @@ HAVE_PEAR = 1
 .mx.ll:
 	$(MX) $(MXFLAGS) -x L $<
 
-{$(SRCDIR)}.c.$O:
+{$(SRCDIR)}.c.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-.c.$O:
+.c.obj:
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
-{$(SRCDIR)}.cxx.$O:
+{$(SRCDIR)}.cxx.obj:
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
 
-.cxx.$O:
+.cxx.obj:
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $<
 
 # needed for yacc/lex output generated under unix 

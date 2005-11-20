@@ -101,7 +101,7 @@ Implementation is either merge- or hash-based.
 @= hashelim
 	zz = BUNindex(bn, BUNfirst(bn));
 	if (!bn->hhash){
-		if (BAThash(bn, 0) == NULL) {
+		if (BAThash(bn, BATcapacity(bn)/2) == NULL) {
 			BBPreclaim(bn);
 			return NULL;
 		}
@@ -444,7 +444,7 @@ TODO synced/key case..
 
 			if (rl >= ll && rl < lh) {
 				hit_start = BUNptr(l, off+(rl-ll));
-			} else if (rl < ll) {
+			} else if (rl < ll && rh > ll) {
 				hit_start = p1;
 				w += s2*(ll-rl);
 			}
