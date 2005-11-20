@@ -307,7 +307,7 @@ instruction in the source.]
 #endif
 
 #define DEBUG_MAL_INSTR
-#define MAXARG 8
+#define MAXARG 9
 #define MAXSTMTS 32
 #define MAXVARS 32
 
@@ -370,7 +370,7 @@ upon destruction of the definition. They are part of the global namespace.
     str modname;    /* module context */
     str fcnname;    /* function name */
     short   argc,retc,maxarg;/* total and result argument count */
-    int argv[1];    /* at least one entry */
+    short argv[1];    /* at least one entry */
 } *InstrPtr, InstrRecord;
 
 @-
