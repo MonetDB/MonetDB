@@ -1,0 +1,3 @@
+var b:=str("\nline1\n\
+line2\n");
+printf("%s",b);
