@@ -81,66 +81,67 @@ enum PFctype_t {
   , c_forbind            = 13 /**< binding part of a for expression */
   , c_forvars            = 14 /**< variable pair (var + pos. var) of a for */
 
-  , c_orderby            = 15 /**< orderby clause */
-  , c_orderspecs         = 16 /**< list of order specs */
+  , c_orderscope         = 15 /**< start of the orderby scope */
+  , c_orderby            = 16 /**< orderby clause */
+  , c_orderspecs         = 17 /**< list of order specs */
 
-  , c_apply              = 17 /**< function application */
-  , c_arg                = 18 /**< function argument (list) */
+  , c_apply              = 18 /**< function application */
+  , c_arg                = 19 /**< function argument (list) */
 
-  , c_typesw             = 19 /**< typeswitch clause */
-  , c_cases              = 20 /**< case concatenation for typeswitch */
-  , c_case               = 21 /**< single case for typeswitch */
-  , c_default            = 22 /**< default branch in typeswitch */
-  , c_seqtype            = 23 /**< a SequenceType */
-  , c_seqcast            = 24 /**< cast along <: */
-  , c_proof              = 25 /**< typechecker only: prove <: relationship */
-  , c_subty              = 26 /**< subtype condition for proof() */
-  , c_stattype           = 27 /**< static type of expression. Required for
+  , c_typesw             = 20 /**< typeswitch clause */
+  , c_cases              = 21 /**< case concatenation for typeswitch */
+  , c_case               = 22 /**< single case for typeswitch */
+  , c_default            = 23 /**< default branch in typeswitch */
+  , c_seqtype            = 24 /**< a SequenceType */
+  , c_seqcast            = 25 /**< cast along <: */
+  , c_proof              = 26 /**< typechecker only: prove <: relationship */
+  , c_subty              = 27 /**< subtype condition for proof() */
+  , c_stattype           = 28 /**< static type of expression. Required for
                                 fs:convert-operand. Will be removed during
                                 typechecking and replaced by seqtype, as
                                 soon as types are known. */
 
-  , c_if                 = 28 /**< if-then-else conditional */
-  , c_then_else          = 29 /**< then- and else-branches of an
+  , c_if                 = 29 /**< if-then-else conditional */
+  , c_then_else          = 30 /**< then- and else-branches of an
                                 if-then-else conditional */
 
-  , c_locsteps           = 30 /**< path of location steps only */
+  , c_locsteps           = 31 /**< path of location steps only */
 
   /* XPath axes */
-  , c_ancestor           = 31 /**< the parent, the parent's parent,... */
-  , c_ancestor_or_self   = 32 /**< the parent, the parent's parent,... + self */
-  , c_attribute          = 33 /**< attributes of the context node */
-  , c_child              = 34 /**< children of the context node */
-  , c_descendant         = 35 /**< children, children's children,... + self */
-  , c_descendant_or_self = 36 /**< children, children's children,... */
-  , c_following          = 37 /**< nodes after current node (document order) */
-  , c_following_sibling  = 38 /**< all following nodes with same parent */
-  , c_parent             = 39 /**< parent node (exactly one or none) */
-  , c_preceding          = 40 /**< nodes before context node (document order) */
-  , c_preceding_sibling  = 41 /**< all preceding nodes with same parent */
-  , c_self               = 42 /**< the context node itself */
+  , c_ancestor           = 32 /**< the parent, the parent's parent,... */
+  , c_ancestor_or_self   = 33 /**< the parent, the parent's parent,... + self */
+  , c_attribute          = 34 /**< attributes of the context node */
+  , c_child              = 35 /**< children of the context node */
+  , c_descendant         = 36 /**< children, children's children,... + self */
+  , c_descendant_or_self = 37 /**< children, children's children,... */
+  , c_following          = 38 /**< nodes after current node (document order) */
+  , c_following_sibling  = 39 /**< all following nodes with same parent */
+  , c_parent             = 40 /**< parent node (exactly one or none) */
+  , c_preceding          = 41 /**< nodes before context node (document order) */
+  , c_preceding_sibling  = 42 /**< all preceding nodes with same parent */
+  , c_self               = 43 /**< the context node itself */
 
   /* Constructor Nodes */
-  , c_elem               = 43 /**< the element constructor */
-  , c_attr               = 44 /**< the attribute constructor */
-  , c_text               = 45 /**< the text constructor */
-  , c_doc                = 46 /**< the document constructor */
-  , c_comment            = 47 /**< the comment constructor */
-  , c_pi                 = 48 /**< the processing-instruction constructor */
-  , c_tag                = 49 /**< the tagname for elem. and attr. constr. */
+  , c_elem               = 44 /**< the element constructor */
+  , c_attr               = 45 /**< the attribute constructor */
+  , c_text               = 46 /**< the text constructor */
+  , c_doc                = 47 /**< the document constructor */
+  , c_comment            = 48 /**< the comment constructor */
+  , c_pi                 = 49 /**< the processing-instruction constructor */
+  , c_tag                = 50 /**< the tagname for elem. and attr. constr. */
 
-  , c_true               = 50 /**< built-in function `fn:true ()' */
-  , c_false              = 51 /**< built-in function `fn:false ()' */
-  , c_empty              = 52 /**< built-in function `empty' */
+  , c_true               = 51 /**< built-in function `fn:true ()' */
+  , c_false              = 52 /**< built-in function `fn:false ()' */
+  , c_empty              = 53 /**< built-in function `empty' */
 
-  , c_main               = 53 /**< tree root.
+  , c_main               = 54 /**< tree root.
                                    Separates function declarations from
                                    the query body. */
-  , c_fun_decls          = 54 /**< list of function declarations */
-  , c_fun_decl           = 55 /**< function declaration */
-  , c_params             = 56 /**< function declaration parameter list */
-  , c_param              = 57 /**< function declaration parameter */
-  , c_cast               = 58 /**< function declaration parameter */
+  , c_fun_decls          = 55 /**< list of function declarations */
+  , c_fun_decl           = 56 /**< function declaration */
+  , c_params             = 57 /**< function declaration parameter list */
+  , c_param              = 58 /**< function declaration parameter */
+  , c_cast               = 59 /**< function declaration parameter */
 
 };
 

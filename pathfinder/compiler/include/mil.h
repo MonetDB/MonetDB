@@ -32,7 +32,7 @@
 #include "pathfinder.h"
 
 /** maximum number of children of a MIL tree node */
-#define MIL_MAXCHILD 7
+#define MIL_MAXCHILD 8
 
 /** MIL oid's are unsigned integers */
 typedef unsigned int oid;
@@ -43,6 +43,7 @@ typedef char * PFmil_ident_t;
 /** Node kinds for MIL tree representation */
 enum PFmil_kind_t {
       m_lit_int      /**< literal integer */
+    , m_lit_lng      /**< literal long integer */
     , m_lit_oid      /**< literal oid */
     , m_lit_str      /**< literal string */
     , m_lit_dbl      /**< literal double */
@@ -73,6 +74,7 @@ enum PFmil_kind_t {
     , m_select       /**< MIL select(a,b) function */
     , m_select2      /**< MIL select(a,b,c) function */
     , m_uselect      /**< MIL uselect(a,b) function */
+    , m_exist        /**< MIL exist(a,b) function */
 
     , m_project      /**< MIL project() function */
     , m_mark         /**< MIL mark() function */
@@ -134,9 +136,13 @@ enum PFmil_kind_t {
     , m_mposjoin     /**< Positional multijoin with a working set */
     , m_mvaljoin     /**< Multijoin with a working set */
     , m_bat          /**< MonetDB bat() function */
+    , m_error        /**< MonetDB ERROR() function */
 
     , m_misnil       /**< Multiplexed isnil() operator `[isnil]()' */
     , m_mifthenelse  /**< Multiplexed ifthenelse() operator `[ifthenelse]()' */
+    , m_msearch       /**< Multiplexed search() function `[search](a,b)' */
+    , m_mstring       /**< Multiplexed string() function `[string](a,b)' */
+    , m_mstring2      /**< Multiplexed string() function `[string](a,b,c)' */
 
     , m_llscj_anc
     , m_llscj_anc_elem
@@ -238,6 +244,7 @@ enum PFmil_kind_t {
     , m_llscj_prec_sibl_elem_ns
     , m_llscj_prec_sibl_pi_targ
 
+    , m_merge_adjacent
     , m_string_join
 
     , m_get_fragment
@@ -253,6 +260,19 @@ enum PFmil_kind_t {
     , m_sc_desc      /**< Staircase Join descendant axis */
 
     , m_doc_tbl      /**< doc_tbl() function (Pathfinder runtime) */
+
+    , m_attr_constr  /**< attr_constr() function (Pathfinder runtime) */
+
+    , m_elem_constr  /**< elem_constr() function (Pathfinder runtime) */
+
+    , m_elem_constr_e  /**< elem_constr_empty() function 
+                          (Pathfinder runtime) */
+
+    , m_text_constr  /**< text_constr() function (Pathfinder runtime) */
+
+    , m_add_qname    /**< add_qname() function (Pathfinder runtime) */
+
+    , m_add_qnames   /**< add_qnames() function (Pathfinder runtime) */
 
     , m_print        /**< MIL print() function */
     
@@ -272,9 +292,10 @@ enum PFmil_type_t {
     , m_void  = 2
     , m_int   = 3
     , m_str   = 4
-    , m_dbl   = 5
-    , m_bit   = 6
-    , m_chr   = 7
+    , m_lng   = 5
+    , m_dbl   = 6
+    , m_bit   = 7
+    , m_chr   = 8
 };
 typedef enum PFmil_type_t PFmil_type_t;
 
@@ -288,7 +309,8 @@ typedef enum PFmil_access_t PFmil_access_t;
 
 /** semantic content for MIL tree nodes */
 union PFmil_sem_t {
-    long long int i;       /**< literal integer */
+    int           i;       /**< literal integer */
+    long long int l;       /**< literal long integer */
     oid           o;       /**< literal oid */
     char         *s;       /**< literal string */
     double        d;       /**< literal double */
@@ -326,7 +348,10 @@ struct PFmil_t {
 typedef struct PFmil_t PFmil_t;
 
 /** a literal integer */
-PFmil_t * PFmil_lit_int (long long int i);
+PFmil_t * PFmil_lit_int (int i);
+
+/** a literal long integer */
+PFmil_t * PFmil_lit_lng (long long int l);
 
 /** a literal string */
 PFmil_t * PFmil_lit_str (const char *s);
@@ -383,6 +408,9 @@ PFmil_t * PFmil_select2 (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
 /** MIL uselect() function */
 PFmil_t * PFmil_uselect (const PFmil_t *, const PFmil_t *);
+
+/** MIL exist() function */
+PFmil_t * PFmil_exist (const PFmil_t *, const PFmil_t *);
 
 /** MIL insert() function to insert a single BUN (3 arguments) */
 PFmil_t * PFmil_insert (const PFmil_t *, const PFmil_t *, const PFmil_t *);
@@ -516,11 +544,21 @@ PFmil_t * PFmil_misnil (const PFmil_t *);
 /** Multiplexed ifthenelse operator `[ifthenelse]' */
 PFmil_t * PFmil_mifthenelse (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
+/** Multiplexed search() function `[search](a,b)' */
+PFmil_t * PFmil_msearch (const PFmil_t *, const PFmil_t *);
+
+/** Multiplexed string() function `[string](a,b)' */
+PFmil_t * PFmil_mstring (const PFmil_t *, const PFmil_t *);
+
+/** Multiplexed string() function `[string](a,b,c)' */
+PFmil_t * PFmil_mstring2 (const PFmil_t *, const PFmil_t *, const PFmil_t *);
+
 PFmil_t * PFmil_new_ws (void);
 PFmil_t * PFmil_mposjoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_mvaljoin (const PFmil_t *, const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_bat (const PFmil_t *);
+PFmil_t * PFmil_error (const PFmil_t *);
 
 /* ---------- staircase join variants ---------- */
 
@@ -989,6 +1027,8 @@ PFmil_t * PFmil_llscj_prec_sibl_pi_targ (const PFmil_t *iter, const PFmil_t *ite
                                      const PFmil_t *ord, const PFmil_t *target);
 
 
+PFmil_t * PFmil_merge_adjacent (const PFmil_t *, const PFmil_t *,
+                                const PFmil_t *, const PFmil_t *);
 PFmil_t * PFmil_string_join (const PFmil_t *, const PFmil_t *); 
 
 PFmil_t * PFmil_get_fragment (const PFmil_t *);
@@ -1002,6 +1042,17 @@ PFmil_t * PFmil_sc_desc (const PFmil_t *ws, const PFmil_t *iter,
                          const PFmil_t *item, const PFmil_t *live);
 
 PFmil_t * PFmil_doc_tbl (const PFmil_t *, const PFmil_t *);
+PFmil_t * PFmil_attribute (const PFmil_t *, const PFmil_t *, const PFmil_t *);
+PFmil_t * PFmil_element (const PFmil_t *, const PFmil_t *,
+                         const PFmil_t *, const PFmil_t *,
+                         const PFmil_t *, const PFmil_t *,
+                         const PFmil_t *, const PFmil_t *);
+PFmil_t * PFmil_empty_element (const PFmil_t *, const PFmil_t *);
+PFmil_t * PFmil_textnode (const PFmil_t *, const PFmil_t *);
+PFmil_t * PFmil_add_qname (const PFmil_t *, const PFmil_t *,
+                           const PFmil_t *, const PFmil_t *);
+PFmil_t * PFmil_add_qnames (const PFmil_t *, const PFmil_t *,
+                            const PFmil_t *, const PFmil_t *);
 
 PFmil_t * PFmil_declare (const PFmil_t *);
 

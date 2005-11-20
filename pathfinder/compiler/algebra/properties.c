@@ -75,7 +75,7 @@ PFprop_mark_const (PFprop_t *prop, const PFalg_att_t attr, PFalg_atom_t value)
         if (attr == ((const_t *) PFarray_at (prop->constants, i))->attr)
             PFoops (OOPS_FATAL,
                     "attribute `%s' already declared constant", 
-                    PFatt_print (attr));
+                    PFatt_str (attr));
 #endif
 
     *(const_t *) PFarray_add (prop->constants)
@@ -95,7 +95,7 @@ PFprop_const_val (const PFprop_t *prop, const PFalg_att_t attr)
 
     PFoops (OOPS_FATAL,
             "could not find attribute that is supposed to be constant: `%s'",
-            PFatt_print (attr));
+            PFatt_str (attr));
 
     assert(0); /* never reached due to "exit" in PFoops */
     return PFalg_lit_int (0); /* pacify picky compilers */
@@ -145,9 +145,8 @@ infer_const (PFla_op_t *n)
         case la_cross:
         case la_eqjoin:
         case la_select:
-        case la_type:
-        case la_rownum:
         case la_intersect:
+        case la_distinct:
         case la_num_add:
         case la_num_subtract:
         case la_num_multiply:
@@ -159,7 +158,9 @@ infer_const (PFla_op_t *n)
         case la_bool_and:
         case la_bool_or:
         case la_bool_not:
-        case la_distinct:
+        case la_rownum:
+        case la_type:
+        case la_type_assert:
 
             /* propagate information from both input operators */
             for (unsigned int i = 0; i < PFPA_OP_MAXCHILD && n->child[i]; i++)
@@ -268,7 +269,7 @@ infer_const (PFla_op_t *n)
              */
             for (unsigned int j = 0;
                     j < PFprop_const_count (n->child[0]->prop); j++)
-                if (PFprop_const_at (n->child[0]->prop, j) != n->sem.cast.att)
+                if (PFprop_const_at (n->child[0]->prop, j) != n->sem.cast.res)
                     PFprop_mark_const (
                             n->prop,
                             PFprop_const_at (n->child[0]->prop, j),
@@ -277,16 +278,14 @@ infer_const (PFla_op_t *n)
             break;
 
 
+        case la_serialize:
+        case la_empty_tbl:
         case la_cross:
         case la_eqjoin:
-        case la_type:
-        case la_rownum:
-        case la_empty_tbl:
-        case la_scjoin:
         case la_disjunion:
         case la_intersect:
         case la_difference:
-        case la_serialize:
+        case la_distinct:
         case la_num_add:
         case la_num_subtract:
         case la_num_multiply:
@@ -300,7 +299,14 @@ infer_const (PFla_op_t *n)
         case la_bool_not:
         case la_sum:
         case la_count:
-        case la_distinct:
+        case la_rownum:
+        case la_type:
+        case la_type_assert:
+        case la_seqty1:
+        case la_all:
+        case la_scjoin:
+        case la_doc_tbl:
+        case la_doc_access:
         case la_element:
         case la_element_tag:
         case la_attribute:
@@ -308,18 +314,14 @@ infer_const (PFla_op_t *n)
         case la_docnode:
         case la_comment:
         case la_processi:
-        case la_concat:
         case la_merge_adjacent:
-        case la_doc_access:
-        case la_string_join:
-        case la_seqty1:
-        case la_all:
         case la_roots:
         case la_fragment:
         case la_frag_union:
         case la_empty_frag:
-        case la_doc_tbl:
-        case la_dummy:
+        case la_cond_err:
+        case la_concat:
+        case la_string_join:
             break;
     }
 }

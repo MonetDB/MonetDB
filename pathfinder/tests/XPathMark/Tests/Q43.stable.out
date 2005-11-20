@@ -40,8 +40,7 @@ Over..
 <interest category="category0"/>
 <business>No</business>
 </profile>
-</person>
-<person id="person9">
+</person><person id="person9">
 <name>Svatopluk Quinlan</name>
 <emailaddress>mailto:Quinlan@smu.edu</emailaddress>
 <phone>+0 (532) 3727767</phone>

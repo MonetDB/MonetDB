@@ -46,66 +46,68 @@ typedef struct PFla_op_t PFla_op_t;
 
 /** algebra operator kinds */
 enum PFla_op_kind_t {
-      la_lit_tbl        =  1 /**< literal table */
-    , la_empty_tbl      =  2 /**< empty literal table */
-    , la_disjunion      =  3 /**< union two relations with same schema */
-    , la_intersect      =  4 /**< intersect two relations with same schema */
-    , la_difference     =  5 /**< difference of two relations w/ same schema */
-    , la_cross          =  6 /**< cross product (Cartesian product) */
-    , la_eqjoin         =  7 /**< equi-join */
-    , la_scjoin         =  8 /**< staircase join */
-    , la_select         =  9 /**< selection of rows where column value != 0 */
-    , la_type           = 10 /**< selection of rows where a column is of a
-                                  certain type */
-    , la_cast           = 11 /**< type cast of an attribute */
-    , la_project        = 12 /**< algebra projection and renaming operator */
-    , la_rownum         = 13 /**< consecutive number generation */
-    , la_serialize      = 14 /**< serialize algebra expression
+      la_serialize      =  1 /**< serialize algebra expression
                                   (Placed on the very top of the tree.) */
-    , la_num_add        = 15 /**< arithmetic plus operator */
-    , la_num_subtract   = 16 /**< arithmetic minus operator */
-    , la_num_multiply   = 17 /**< arithmetic times operator */
-    , la_num_divide     = 18 /**< arithmetic divide operator */
-    , la_num_modulo     = 19 /**< arithmetic modulo operator */
-    , la_num_eq         = 20 /**< numeric equal operator */
-    , la_num_gt         = 21 /**< numeric greater-than operator */
-    , la_num_neg        = 22 /**< numeric negation operator */
-    , la_bool_and       = 23 /**< boolean AND operator */
-    , la_bool_or        = 24 /**< boolean OR operator */
-    , la_bool_not       = 25 /**< boolean NOT operator */
-    , la_sum            = 26 /**< operator for (partitioned) sum of a column */
-    , la_count          = 27 /**< (partitioned) row counting operator */
-    , la_distinct       = 28 /**< duplicate elimination operator */
-    , la_element        = 29 /**< element-constructing operator */
-    , la_element_tag    = 30 /**< part of the element-constructing operator;
+    , la_lit_tbl        =  2 /**< literal table */
+    , la_empty_tbl      =  3 /**< empty literal table */
+    , la_cross          =  4 /**< cross product (Cartesian product) */
+    , la_eqjoin         =  5 /**< equi-join */
+    , la_project        =  6 /**< algebra projection and renaming operator */
+    , la_select         =  7 /**< selection of rows where column value != 0 */
+    , la_disjunion      =  8 /**< union two relations with same schema */
+    , la_intersect      =  9 /**< intersect two relations with same schema */
+    , la_difference     = 10 /**< difference of two relations w/ same schema */
+    , la_distinct       = 11 /**< duplicate elimination operator */
+    , la_num_add        = 20 /**< arithmetic plus operator */
+    , la_num_subtract   = 21 /**< arithmetic minus operator */
+    , la_num_multiply   = 22 /**< arithmetic times operator */
+    , la_num_divide     = 23 /**< arithmetic divide operator */
+    , la_num_modulo     = 24 /**< arithmetic modulo operator */
+    , la_num_eq         = 25 /**< numeric equal operator */
+    , la_num_gt         = 26 /**< numeric greater-than operator */
+    , la_num_neg        = 27 /**< numeric negation operator */
+    , la_bool_and       = 28 /**< boolean AND operator */
+    , la_bool_or        = 29 /**< boolean OR operator */
+    , la_bool_not       = 30 /**< boolean NOT operator */
+    , la_sum            = 31 /**< operator for (partitioned) sum of a column */
+    , la_count          = 32 /**< (partitioned) row counting operator */
+    , la_rownum         = 35 /**< consecutive number generation */
+    , la_type           = 40 /**< selection of rows where a column is of a
+                                  certain type */
+    , la_type_assert    = 41 /**< restricts the type of a relation */
+    , la_cast           = 42 /**< type cast of an attribute */
+    , la_seqty1         = 43 /**< test for exactly one type occurrence in one
+                                  iteration (Pathfinder extension) */
+    , la_all            = 44 /**< test if all items in an iteration are true */
+    , la_scjoin         = 50 /**< staircase join */
+    , la_doc_tbl        = 51 /**< document relation (is also a fragment) */
+    , la_doc_access     = 52 /**< document access necessary for pf:string-value */
+    , la_element        = 60 /**< element-constructing operator */
+    , la_element_tag    = 61 /**< part of the element-constructing operator;
                                   connecting element tag and content;
                                   due to Burg we use two "wire2" operators
                                   now instead of one "wire3 operator "*/
-    , la_attribute      = 31 /**< attribute-constructing operator */
-    , la_textnode       = 32 /**< text node-constructing operator */
-    , la_docnode        = 33 /**< document node-constructing operator */
-    , la_comment        = 34 /**< comment-constructing operator */
-    , la_processi       = 35 /**< processing instruction-constr. operator */
-    , la_concat         = 36 /**< req. for fs:item-sequence-to-node-sequence
+    , la_attribute      = 62 /**< attribute-constructing operator */
+    , la_textnode       = 63 /**< text node-constructing operator */
+    , la_docnode        = 64 /**< document node-constructing operator */
+    , la_comment        = 65 /**< comment-constructing operator */
+    , la_processi       = 66 /**< processing instruction-constr. operator */
+    , la_merge_adjacent = 67 /**< operator for pf:merge-adjacent-text-nodes
                                   builtin function */
-    , la_merge_adjacent = 37 /**< operator for pf:merge-adjacent-text-nodes
-                                  builtin function */
-    , la_doc_access     = 38
-    , la_string_join    = 39
-    , la_seqty1         = 40 /**< test for exactly one type occurrence in one
-                                  iteration (Pathfinder extension) */
-    , la_all            = 41 /**< test if all items in an iteration are true */
-    , la_roots          = 42 /**< algebraic repres. of the roots of newly
+    , la_roots          = 70 /**< algebraic repres. of the roots of newly
                                   created xml nodes (e.g. element());
                                   schema: iter | pos | item */
     /* all operators below represent xml node fragments with no schema */
-    , la_fragment       = 43 /**< representation of a node fragment */
-    , la_frag_union     = 44 /**< special node type used to form an algebraic
+    , la_fragment       = 71 /**< representation of a node fragment */
+    , la_frag_union     = 72 /**< special node type used to form an algebraic
                                   union of fragments */
-    , la_empty_frag     = 45 /**< representation of an empty fragment */
-    , la_doc_tbl        = 46 /**< document relation (is also a fragment) */
-
-    , la_dummy               /**< dummy node during compilation */
+    , la_empty_frag     = 73 /**< representation of an empty fragment */
+                            
+    , la_cond_err       = 80 /**< facility to trigger runtime errors */
+                            
+    /* builtin support for XQuery functions */
+    , la_concat         =100 /**< fn:concat */
+    , la_string_join    =101 /**< fn:string-join */
 };
 /** algebra operator kinds */
 typedef enum PFla_op_kind_t PFla_op_kind_t;
@@ -119,6 +121,11 @@ union PFla_op_sem_t {
         PFalg_tuple_t  *tuples;   /**< array holding the tuples */
     } lit_tbl;                    /**< semantic content for literal table
                                        constructor */
+    /* semantic content for equi-join operator */
+    struct {
+        PFalg_att_t     att1;     /**< name of attribute from "left" rel */
+        PFalg_att_t     att2;     /**< name of attribute from "right" rel */
+    } eqjoin;
 
     /* semantic content for projection operator */
     struct {
@@ -126,42 +133,10 @@ union PFla_op_sem_t {
         PFalg_proj_t   *items;    /**< projection list */
     } proj;
 
-    /* semantic content for rownum operator */
-    struct {
-        PFalg_att_t     attname;  /**< name of generated (integer) attribute */
-        PFalg_attlist_t sortby;   /**< sort crit. (list of attribute names */
-        PFalg_att_t     part;     /**< optional partitioning attribute,
-                                       otherwise NULL */
-    } rownum;
-
-    /* semantic content for equi-join operator */
-    struct {
-        PFalg_att_t     att1;     /**< name of attribute from "left" rel */
-        PFalg_att_t     att2;     /**< name of attribute from "right" rel */
-    } eqjoin;
-
-    struct {
-        PFalg_axis_t    axis;
-        PFty_t          ty;
-    } scjoin;
-
     /* semantic content for selection operator */
     struct {
         PFalg_att_t     att;     /**< name of selected attribute */
     } select;
-
-    /* semantic content for type test operator */
-    struct {
-        PFalg_att_t     att;     /**< name of type-tested attribute */
-        PFalg_simple_type_t ty;  /**< comparison type */
-        PFalg_att_t     res;     /**< column to store result of type test */
-    } type;
-
-    /* semantic content for type cast operator */
-    struct {
-        PFalg_att_t     att;     /**< name of casted attribute */
-        PFalg_simple_type_t ty;  /**< algebra type to cast to */
-    } cast;
 
     /* semantic content for binary (arithmetic and boolean) operators */
     struct {
@@ -189,6 +164,34 @@ union PFla_op_sem_t {
         PFalg_att_t     res;      /**< attribute to hold the result */
     } count;
 
+    /* semantic content for rownum operator */
+    struct {
+        PFalg_att_t     attname;  /**< name of generated (integer) attribute */
+        PFalg_attlist_t sortby;   /**< sort crit. (list of attribute names */
+        PFalg_att_t     part;     /**< optional partitioning attribute,
+                                       otherwise NULL */
+    } rownum;
+
+    /* semantic content for type test operator */
+    struct {
+        PFalg_att_t     att;     /**< name of type-tested attribute */
+        PFalg_simple_type_t ty;  /**< comparison type */
+        PFalg_att_t     res;     /**< column to store result of type test */
+    } type;
+
+    /* semantic content for type_assert operator */
+    struct {
+        PFalg_att_t     att;     /**< name of the asserted attribute */
+        PFalg_simple_type_t ty;  /**< restricted type */
+    } type_a;
+
+    /* semantic content for type cast operator */
+    struct {
+        PFalg_att_t     att;     /**< name of casted attribute */
+        PFalg_simple_type_t ty;  /**< algebra type to cast to */
+        PFalg_att_t     res;     /**< column to store result of the cast */
+    } cast;
+
     /* boolean grouping functions (seqty1, all,...) */
     struct {
         PFalg_att_t     res;      /**< result attribute */
@@ -196,16 +199,35 @@ union PFla_op_sem_t {
         PFalg_att_t     part;     /**< partitioning attribute */
     } blngroup;
 
-    /* semantic content for dummy built-in function operator */
     struct {
-        PFarray_t      *args;     /**< arguments of a built_in function */
-    } builtin;
+        PFalg_axis_t    axis;
+        PFty_t          ty;
+    } scjoin;
 
     /* reference columns for document access */
     struct {
         PFalg_att_t     att;      /**< name of the reference attribute */
         PFalg_doc_t     doc_col;  /**< referenced column in the document */
     } doc_access;
+
+    /* reference columns of attribute constructor */
+    struct {
+        PFalg_att_t     qn;       /**< name of the qname item column */
+        PFalg_att_t     val;      /**< name of the value item column */
+        PFalg_att_t     res;      /**< attribute to hold the result */
+    } attr;
+
+    /* reference columns of text constructor */
+    struct {
+        PFalg_att_t     item;     /**< name of the item column */
+        PFalg_att_t     res;      /**< attribute to hold the result */
+    } textnode;
+
+    /* semantic content for conditional error */
+    struct {
+        PFalg_att_t     att;     /**< name of the boolean attribute */
+        char *          str;     /**< error message */
+    } err;
 };
 /** semantic content in algebra operators */
 typedef union PFla_op_sem_t PFla_op_sem_t;
@@ -253,6 +275,11 @@ typedef struct PFla_pair_t PFla_pair_t;
 
 /* ***************** Constructors ******************* */
 
+/**
+ * A `serialize' node will be placed on the very top of the algebra
+ * expression tree.
+ */
+PFla_op_t * PFla_serialize (const PFla_op_t *doc, const PFla_op_t *alg);
 
 /**
  * Construct algebra node representing a literal table (actually just
@@ -298,38 +325,6 @@ PFla_op_t * PFla_eqjoin (const PFla_op_t *n1, const PFla_op_t *n2,
                          PFalg_att_t att1, PFalg_att_t att2);
 
 /**
- * Dummy node to pass various stuff around during algebra compilation.
- */
-PFla_op_t * PFla_dummy (void);
-
-/**
- * Staircase join between two relations. Each such join corresponds
- * to the evaluation of an XPath location step.
- */
-PFla_op_t * PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
-                         const PFla_op_t *dummy);
-
-/**
- * Disjoint union of two relations.
- * Both argument must have the same schema.
- */
-PFla_op_t * PFla_disjunion (const PFla_op_t *, const PFla_op_t *);
-
-
-/**
- * Intersection between two relations.
- * Both argument must have the same schema.
- */
-PFla_op_t * PFla_intersect (const PFla_op_t *, const PFla_op_t *);
-
-
-/**
- * Difference of two relations.
- * Both argument must have the same schema.
- */
-PFla_op_t * PFla_difference (const PFla_op_t *, const PFla_op_t *);
-
-/**
  * Construct projection operator
  * (actually just a wrapper for #PFla_project_()).
  *
@@ -355,26 +350,29 @@ PFla_op_t * PFla_difference (const PFla_op_t *, const PFla_op_t *);
 PFla_op_t *PFla_project_ (const PFla_op_t *n,
                           unsigned int count, PFalg_proj_t *p);
 
-
-PFla_op_t * PFla_rownum (const PFla_op_t *n, PFalg_att_t a,
-                         PFalg_attlist_t s, PFalg_att_t p);
-
-
 /** Constructor for selection of not-0 column values. */
 PFla_op_t * PFla_select (const PFla_op_t *n, PFalg_att_t att);
 
 /**
- * Constructor for type test of column values. The result is
- * stored in newly created column.
+ * Disjoint union of two relations.
+ * Both argument must have the same schema.
  */
-PFla_op_t * PFla_type (const PFla_op_t *n, PFalg_att_t res,
-                       PFalg_att_t att, PFalg_simple_type_t ty);
+PFla_op_t * PFla_disjunion (const PFla_op_t *, const PFla_op_t *);
 
 /**
- * Constructor for the type cast of a column.
+ * Intersection between two relations.
+ * Both argument must have the same schema.
  */
-PFla_op_t * PFla_cast (const PFla_op_t *n, PFalg_att_t att,
-                       PFalg_simple_type_t ty);
+PFla_op_t * PFla_intersect (const PFla_op_t *, const PFla_op_t *);
+
+/**
+ * Difference of two relations.
+ * Both argument must have the same schema.
+ */
+PFla_op_t * PFla_difference (const PFla_op_t *, const PFla_op_t *);
+
+/** Constructor for duplicate elimination operator. */
+PFla_op_t * PFla_distinct (const PFla_op_t *n);
 
 /** Constructor for arithmetic addition operators. */
 PFla_op_t * PFla_add (const PFla_op_t *n, PFalg_att_t res,
@@ -427,6 +425,31 @@ PFla_op_t * PFla_sum (const PFla_op_t *n, PFalg_att_t res,
 PFla_op_t * PFla_count (const PFla_op_t *n, PFalg_att_t res,
                         PFalg_att_t part);
 
+/** Constructor foo row numbering operator. */
+PFla_op_t * PFla_rownum (const PFla_op_t *n, PFalg_att_t a,
+                         PFalg_attlist_t s, PFalg_att_t p);
+
+/**
+ * Constructor for type test of column values. The result is
+ * stored in newly created column.
+ */
+PFla_op_t * PFla_type (const PFla_op_t *n, PFalg_att_t res,
+                       PFalg_att_t att, PFalg_simple_type_t ty);
+
+/**
+ * Constructor for type assertion check. The result is the
+ * input relation n where the type of attribute att is replaced
+ * by ty
+ */
+PFla_op_t * PFla_type_assert (const PFla_op_t *n, PFalg_att_t att,
+                              PFalg_simple_type_t ty, bool pos);
+
+/**
+ * Constructor for the type cast of a column.
+ */
+PFla_op_t * PFla_cast (const PFla_op_t *n, PFalg_att_t res, PFalg_att_t att,
+                       PFalg_simple_type_t ty);
+
 /** Constructor for sequence type matching operator for `1' occurrence */
 PFla_op_t * PFla_seqty1 (const PFla_op_t *n,
                          PFalg_att_t res, PFalg_att_t att, PFalg_att_t part);
@@ -439,9 +462,12 @@ PFla_op_t * PFla_seqty1 (const PFla_op_t *n,
 PFla_op_t * PFla_all (const PFla_op_t *n, PFalg_att_t res,
                       PFalg_att_t att, PFalg_att_t part);
 
-/** Constructor for duplicate elimination operator. */
-PFla_op_t * PFla_distinct (const PFla_op_t *n);
-
+/**
+ * Staircase join between two relations. Each such join corresponds
+ * to the evaluation of an XPath location step.
+ */
+PFla_op_t * PFla_scjoin (const PFla_op_t *doc, const PFla_op_t *n,
+                         PFalg_axis_t axis, PFty_t seqty);
 
 /*********** node construction functionality *************/
 
@@ -480,15 +506,34 @@ PFla_op_t * PFla_distinct (const PFla_op_t *n);
  * tree.
  */
 
+/**
+ * Access to (persistently stored) XML documents, the fn:doc()
+ * function.  Returns a (frag, result) pair.
+ */
+PFla_op_t * PFla_doc_tbl (const PFla_op_t *rel);
+
+/** Constructor for string access of loaded documents */
+PFla_op_t * PFla_doc_access (const PFla_op_t *doc,
+                             const PFla_op_t *n,
+                             PFalg_att_t col,
+                             PFalg_doc_t doc_col);
+
 /** Constructor for element operators. */
-PFla_op_t * PFla_element (const PFla_op_t *doc, const PFla_op_t *tags,
+PFla_op_t * PFla_element (const PFla_op_t *doc,
+                          const PFla_op_t *tags,
                           const PFla_op_t *cont);
 
 /** Constructor for attribute operators. */
-PFla_op_t * PFla_attribute (const PFla_op_t *tags, const PFla_op_t *cont);
+PFla_op_t * PFla_attribute (const PFla_op_t *qn_rel,
+                            const PFla_op_t *val_rel,
+                            PFalg_att_t res,
+                            PFalg_att_t qn,
+                            PFalg_att_t val);
 
 /** Constructor for text node operators. */
-PFla_op_t * PFla_textnode (const PFla_op_t *cont);
+PFla_op_t * PFla_textnode (const PFla_op_t *cont, 
+                           PFalg_att_t res,
+                           PFalg_att_t item);
 
 /** Constructor for document node operators. */
 PFla_op_t * PFla_docnode (const PFla_op_t *doc, const PFla_op_t *cont);
@@ -503,27 +548,11 @@ PFla_op_t * PFla_processi (const PFla_op_t *cont);
  * Constructor required for fs:item-sequence-to-node-sequence()
  * functionality
  */
-PFla_op_t * PFla_strconcat (const PFla_op_t *n);
+PFla_op_t * PFla_pos_merge_str (const PFla_op_t *n);
 
 /** Constructor for pf:merge-adjacent-text-nodes() functionality */
 PFla_op_t * PFla_pf_merge_adjacent_text_nodes (const PFla_op_t *doc,
                                                const PFla_op_t *n);
-
-PFla_op_t * PFla_doc_access (const PFla_op_t *doc,
-                             const PFla_op_t *n,
-                             PFalg_att_t col,
-                             PFalg_doc_t doc_col);
-
-PFla_op_t * PFla_string_join (const PFla_op_t *text,
-                              const PFla_op_t *sep);
-
-/**
- * Access to (persistently stored) XML documents, the fn:doc()
- * function.  Returns a (frag, result) pair.
- */
-PFla_op_t * PFla_doc_tbl (const PFla_op_t *rel);
-
-
 
 /**************** document fragment related stuff ******************/
 
@@ -589,13 +618,25 @@ PFla_op_t * PFla_empty_frag (void);
 
 /****************************************************************/
 
+/**
+ * Constructor for conditional error
+ */
+PFla_op_t * PFla_cond_err (const PFla_op_t *n, const PFla_op_t *err,
+                           PFalg_att_t att, char *err_string);
+
+/****************** built-in functions **************************/
 
 /**
- * A `serialize' node will be placed on the very top of the algebra
- * expression tree.
+ * Constructor for builtin function fn:concat
  */
-PFla_op_t * PFla_serialize (const PFla_op_t *doc, const PFla_op_t *alg);
+PFla_op_t * PFla_fn_concat (const PFla_op_t *n, PFalg_att_t res,
+                            PFalg_att_t att1, PFalg_att_t att2);
 
+/**
+ * Constructor for builtin function fn:string-join
+ */
+PFla_op_t * PFla_fn_string_join (const PFla_op_t *text,
+                                 const PFla_op_t *sep);
 
 #endif  /* LOGICAL_H */
 

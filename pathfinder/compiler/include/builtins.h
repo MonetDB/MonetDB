@@ -82,6 +82,16 @@ struct PFla_pair_t PFbui_op_numeric_modulo_dec (const PFla_op_t *loop,
 struct PFla_pair_t PFbui_op_numeric_modulo_dbl (const PFla_op_t *loop,
                                                 struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_fn_count (const PFla_op_t *loop,
+                                   struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_string (const PFla_op_t *loop,
+                                    struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_concat (const PFla_op_t *loop,
+                                    struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_string_join (const PFla_op_t *loop,
+                                         struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_op_gt_int (const PFla_op_t *loop,
                                     struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_gt_dec (const PFla_op_t *loop,
@@ -155,6 +165,16 @@ struct PFla_pair_t PFbui_op_or_bln (const PFla_op_t *loop,
 struct PFla_pair_t PFbui_op_and_bln (const PFla_op_t *loop,
                                      struct PFla_pair_t *args);
 
+struct PFla_pair_t PFbui_fn_boolean_optbln (const PFla_op_t *loop,
+                                            struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_boolean_item (const PFla_op_t *loop,
+                                          struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_boolean_bln (const PFla_op_t *loop,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_empty (const PFla_op_t *loop,
+                                   struct PFla_pair_t *args);
+
 struct PFla_pair_t PFbui_op_is_same_node (const PFla_op_t *loop,
                                           struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_op_node_before (const PFla_op_t *loop,
@@ -169,39 +189,50 @@ struct PFla_pair_t PFbui_op_intersect (const PFla_op_t *loop,
 struct PFla_pair_t PFbui_op_except (const PFla_op_t *loop,
                                     struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop,
-                                                  struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_pf_merge_adjacent_text_nodes (const PFla_op_t *loop,
-                                                   struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_exactly_one (const PFla_op_t *loop,
+                                         struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_fn_zero_or_one (const PFla_op_t *loop,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_fn_distinct_values (const PFla_op_t *loop,
+                                             struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_distinct_doc_order (const PFla_op_t *loop,
                                                 struct PFla_pair_t *args);
-
-struct PFla_pair_t PFbui_op_typed_value (const PFla_op_t *loop,
-                                         struct PFla_pair_t *args);
-
-struct PFla_pair_t PFbui_fn_boolean_bln (const PFla_op_t *loop,
-                                         struct PFla_pair_t *args);
-
-struct PFla_pair_t PFbui_fn_boolean_optbln (const PFla_op_t *loop,
-                                            struct PFla_pair_t *args);
-struct PFla_pair_t PFbui_fn_boolean_item (const PFla_op_t *loop,
-                                          struct PFla_pair_t *args);
-
 struct PFla_pair_t PFbui_fn_doc (const PFla_op_t *loop,
                                  struct PFla_pair_t *args);
-
-struct PFla_pair_t PFbui_fn_empty (const PFla_op_t *loop,
-                                   struct PFla_pair_t *args);
 
 struct PFla_pair_t PFbui_pf_string_value_attr (const PFla_op_t *loop,
                                                struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_string_value_text (const PFla_op_t *loop,
                                                struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_string_value_pi (const PFla_op_t *loop,
+                                             struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_string_value_comm (const PFla_op_t *loop,
+                                               struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_string_value_elem (const PFla_op_t *loop,
+                                               struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_string_value_elem_attr (const PFla_op_t *loop,
+                                                    struct PFla_pair_t *args);
 struct PFla_pair_t PFbui_pf_string_value (const PFla_op_t *loop,
                                           struct PFla_pair_t *args);
 
-struct PFla_pair_t PFbui_fn_count (const PFla_op_t *loop,
-                                   struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_typed_value (const PFla_op_t *loop,
+                                         struct PFla_pair_t *args);
+
+struct PFla_pair_t PFbui_pf_item_seq_to_node_seq_single_atomic
+                 (const PFla_op_t *loop, struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_item_seq_to_node_seq_atomic
+                 (const PFla_op_t *loop, struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_item_seq_to_node_seq_attr_single
+                 (const PFla_op_t *loop, struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_item_seq_to_node_seq_attr
+                 (const PFla_op_t *loop, struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_item_seq_to_node_seq_wo_attr
+                 (const PFla_op_t *loop, struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_item_seq_to_node_seq (const PFla_op_t *loop,
+                                                  struct PFla_pair_t *args);
+struct PFla_pair_t PFbui_pf_merge_adjacent_text_nodes (const PFla_op_t *loop,
+                                                   struct PFla_pair_t *args);
 
 #endif   /* BUITLINS_H */
 

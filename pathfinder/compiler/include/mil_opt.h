@@ -39,6 +39,7 @@
  * - for better pruning: use assignment notation for update statements "x := x.insert(y);"
  * ----------------------------------------------------------------------------
  */
+#define OPT_CODEMOTION 1
 
 #define OPT_STMTS 32767 /* <65535 if first-use further out than this amount of stamements, dead codes survises anyhow */
 #define OPT_VARS 1024 /* don't try dead code elimintation above this amount of live variables */
@@ -48,6 +49,7 @@
 #define OPT_SEC_PROLOGUE 0
 #define OPT_SEC_QUERY 1
 #define OPT_SEC_EPILOGUE 2
+#define OPT_SEC_IGNORE 3 
 
 /* the statatement buffer is circular and will be flushed if full, thus an entry (array index) 
  * does not correspond directly to the MIL line number (stmt_nr). As statements may have been 
@@ -109,7 +111,7 @@ typedef struct {
 #define OPT_COND(o)         OPT_COND_LEVEL(o,(o)->condlevel)
 
 typedef struct {
-    unsigned int mode;     /* 1-bit off => don't optimize */
+    unsigned int optimize; /* or not */
 
     unsigned int curstmt;  /* number of detected MIL statements so far */
     unsigned int scope;    /* current scope depth */
@@ -125,7 +127,7 @@ typedef struct {
                                               block starts */
     unsigned char condifelse[OPT_CONDS];   /* 0=if,  1==else */
 
-#ifdef OPT_COND
+#ifdef OPT_CODEMOTION
     /* movable statement administration */
     unsigned int movstmt_nr[OPT_STMTS]; 
     unsigned short movstmt[OPT_STMTS]; 
@@ -139,6 +141,10 @@ typedef struct {
     char *buf[3]; /* 3 output sections (prologue,query,epilogue) */
     size_t off[3], len[3]; /* current pointer and length of each section */
     int sec; /* active section (OPT_SEC_PROLOGUE, OPT_SEC_QUERY, OPT_SEC_EPILOGUE) */
+
+    /* these two fields don't belong here (just state for milprint_summer) */
+    int module_base;     
+    int num_fun;     
 } opt_t; /* should take ~1.5MB of RAM resources */
 
 #define opt_output(o,x) ((o)->sec = x)

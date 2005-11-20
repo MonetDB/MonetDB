@@ -34,6 +34,7 @@
 #include "pathfinder.h"
 
 #include "parser.h"
+#include "compile_interface.h"
 
 /* PFarray_t */
 #include "array.h"
@@ -104,11 +105,17 @@ extern int pflineno;
  */
 static bool module_only = false;
 
-/* quasi-random number determined by moudle; used as base for scope 
- * numbers in milprint_summer (so scope numbers of different modules
- * that are compiled separately don't collide)
+/* quasi-random number determined by module; used as base for scope 
+ * and variable numbers in milprint_summer (so scope numbers of 
+ * different modules that are compiled separately don't collide).
  */
 static unsigned int module_base = 0;
+
+/* the amount of functions declared in a query. Used in milprint_summer to
+ * be able to suppress code generation for all functions defined
+ * in modules;
+ */
+static void* num_fun = NULL;
 
 /**
  * Module namespace we accept during parsing.
@@ -618,13 +625,14 @@ LibraryModule             : ModuleDecl Prolog
 ModuleDecl                : "module namespace" NCName
                               "=" StringLiteral Separator
                             {
-                              if (req_module_ns == NULL) {
-                                  module_base = 1;
-                              } else if  (strcmp (req_module_ns, $4))
+                              if (req_module_ns && strcmp (req_module_ns, $4))
                                   PFoops (OOPS_MODULEIMPORT,
                                           "module namespace does not match "
                                           "import statement (`%s' vs. `%s')",
                                           $4, req_module_ns);
+
+			      if (!module_only)
+                                  module_base = 1;
 
                               ($$ = wire1 (p_mod_ns,
                                            @$,
@@ -956,6 +964,7 @@ FunctionDecl              : "declare function" QName_LParen
                                            wire2 (p_fun_sig, loc_rng (@2, @4),
                                                   $3, $4),
                                            $5))->sem.qname = $2;
+                              num_fun++;
                               if (module_base) module_base = 1 | (module_base ^ (unsigned long) $$);
                             }
                           | "declare function" QName_LParen
@@ -2343,7 +2352,7 @@ YYLTYPE pflloc; /* why ? */
 /**
  * Parse an XQuery from the main-memory buffer pointed to by @a input.
  */
-void
+int
 PFparse (char *input, PFpnode_t **r)
 {
 #if YYDEBUG
@@ -2358,6 +2367,8 @@ PFparse (char *input, PFpnode_t **r)
 
     /* we don't explicitly ask for modules */
     module_only = false;
+    module_base = 0;
+    num_fun = 0;
 
     /* initialisation of yylloc */
     pflloc.first_row = pflloc.last_row = 1;
@@ -2367,6 +2378,7 @@ PFparse (char *input, PFpnode_t **r)
         PFoops (OOPS_PARSE, "XQuery parsing failed");
 
     *r = root;
+    return num_fun;
 }
 
 /**
@@ -2376,30 +2388,12 @@ PFparse (char *input, PFpnode_t **r)
 static PFpnode_t *
 parse_module (char *ns, char *uri)
 {
-    xmlParserInputBufferPtr buf = NULL;
-    int   num_read;
-
-    /*
-     * open file via parser from the libxml2 library
-     * (capable of loading URIs also via HTTP or FTP)
-     */
-    buf = xmlParserInputBufferCreateFilename (uri, XML_CHAR_ENCODING_NONE);
-
-    if (!buf)
-        PFoops (OOPS_MODULEIMPORT, "error loading module from %s", uri);
-
-    /*
-     * Load in chunks of 2048 chars.  libxml2 does not really
-     * stick to these 2048 chars, but we don't care anyway...
-     */
-    while ((num_read = xmlParserInputBufferGrow (buf, 2048)))
-        /* empty */;
-
-    if (num_read < 0)
+    char *buf = PFurlcache(uri);
+    if (buf == NULL)
         PFoops (OOPS_MODULEIMPORT, "error loading module from %s", uri);
 
     /* file is now loaded into main-memory */
-    PFscanner_init (buf->buffer->content);
+    PFscanner_init (buf);
 
     /* initialisation of yylloc */
     pflloc.first_row = pflloc.last_row = 1;
@@ -2409,9 +2403,6 @@ parse_module (char *ns, char *uri)
 
     if (pfparse ())
         PFoops (OOPS_PARSE, "error parsing module from %s", uri);
-
-    /* free resource allocated by libxml2 file reader */
-    xmlFreeParserInputBuffer (buf);
 
     return root;
 }
@@ -2446,7 +2437,6 @@ PFparse_modules (PFpnode_t *r)
             r->child[1]
                 = wire2 (p_decl_imps, noloc, module, r->child[1]);
     }
-
     return (module_base%2000000)*1000;
 }
 

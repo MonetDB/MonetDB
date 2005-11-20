@@ -142,6 +142,7 @@ enum PFalg_att_t {
     , att_pos1        /**< pos1 column */
     , att_item1       /**< item1 column */
     , att_res1        /**< res1 column */
+    , att_cast        /**< cast column */
     , att_subty       /**< subty column */
     , att_itemty      /**< itemty column */
     , att_notsub      /**< notsub column */
@@ -229,7 +230,9 @@ typedef struct PFalg_scj_spec_t PFalg_scj_spec_t;
 
 enum PFalg_doc_t {
       doc_atext        /**< attribute content > */
-    , doc_text         /**< content of text node > */
+    , doc_text         /**< content of a text node > */
+    , doc_comm         /**< content of a comment node > */
+    , doc_pi_text      /**< content of a pi node > */
 /*    , doc_name   */      /**< name of element node > */
 /*    , doc_local  */      /**< local part of an element node name > */
 /*    , doc_uri    */      /**< uri part of an element node name > */
@@ -305,7 +308,7 @@ int PFalg_atom_cmp (PFalg_atom_t a, PFalg_atom_t b);
 /**
  * Print attribute name
  */
-char * PFatt_print (PFalg_att_t att);
+char * PFatt_str (PFalg_att_t att);
 
 #endif  /* ALGEBRA_H */
 

@@ -9,50 +9,38 @@
 /* Also import generic algebra stuff */
 #include "algebra_mnemonic.h"
 
+/** serialization */
+#define serialize(a,b)    PFla_serialize ((a),(b))
+
 /** literal table construction */
-#define lit_tbl(...)    PFla_lit_tbl (__VA_ARGS__)
+#define lit_tbl(...)      PFla_lit_tbl (__VA_ARGS__)
 
 /** empty table construction */
-#define empty_tbl(atts) PFla_empty_tbl (atts)
+#define empty_tbl(atts)   PFla_empty_tbl (atts)
 
 /** cartesian product */
-#define cross(a,b)      PFla_cross ((a),(b))
+#define cross(a,b)        PFla_cross ((a),(b))
 
 /** equi-join */
-#define eqjoin(a,b,c,d) PFla_eqjoin ((a),(b),(c),(d))
-
-/** dummy node creation */
-#define dummy()         PFla_dummy ()
-
-/** staircase join */
-#define scjoin(a,b,c)   PFla_scjoin ((a),(b),(c))
-
-/** document table */
-#define doc_tbl(a)      PFla_doc_tbl((a))
-
-/** disjoint union */
-#define disjunion(a,b)  PFla_disjunion ((a),(b))
-
-/** intersection */
-#define intersect(a,b)  PFla_intersect ((a),(b))
-
-/** difference */
-#define difference(a,b) PFla_difference ((a),(b))
+#define eqjoin(a,b,c,d)   PFla_eqjoin ((a),(b),(c),(d))
 
 /** projection operator */
-#define project(...)    PFla_project (__VA_ARGS__)
-
-/** rownum operator */
-#define rownum(a,b,c,d) PFla_rownum ((a),(b),(c),(d))
+#define project(...)      PFla_project (__VA_ARGS__)
 
 /* selection operator */
-#define select_(a,b)    PFla_select ((a),(b))
+#define select_(a,b)      PFla_select ((a),(b))
 
-/** type test operator */
-#define type(a,b,c,d)   PFla_type ((a),(b),(c),(d))
+/** disjoint union */
+#define disjunion(a,b)    PFla_disjunion ((a),(b))
 
-/* type cast operator */
-#define cast(a,b,c)     PFla_cast ((a),(b),(c))
+/** intersection */
+#define intersect(a,b)    PFla_intersect ((a),(b))
+
+/** difference */
+#define difference(a,b)   PFla_difference ((a),(b))
+
+/* duplicate elimination operator */
+#define distinct(a)       PFla_distinct ((a))
 
 /* addition operator */
 #define add(a,b,c,d)      PFla_add ((a),(b),(c),(d))
@@ -70,10 +58,10 @@
 #define modulo(a,b,c,d)   PFla_modulo ((a),(b),(c),(d))
 
 /* numeric equal operator */
-#define eq(a,b,c,d)    PFla_eq ((a),(b),(c),(d))
+#define eq(a,b,c,d)       PFla_eq ((a),(b),(c),(d))
 
 /* numeric greater-than operator */
-#define gt(a,b,c,d) PFla_gt ((a),(b),(c),(d))
+#define gt(a,b,c,d)       PFla_gt ((a),(b),(c),(d))
 
 /* numeric negation operator */
 #define neg(a,b,c)        PFla_neg ((a),(b),(c))
@@ -93,23 +81,42 @@
 /* (partitioned) row counting operator */
 #define count(a,b,c)      PFla_count ((a),(b),(c))
 
+/** rownum operator */
+#define rownum(a,b,c,d)   PFla_rownum ((a),(b),(c),(d))
+
+/** type test operator */
+#define type(a,b,c,d)     PFla_type ((a),(b),(c),(d))
+
+/** type restriction operators */
+#define type_assert_pos(a,b,c)   PFla_type_assert ((a),(b),(c),(true))
+#define type_assert_neg(a,b,c)   PFla_type_assert ((a),(b),(c),(false))
+
+/* type cast operator */
+#define cast(a,b,c,d)     PFla_cast ((a),(b),(c),(d))
+
 /* algebra seqty1 operator (see PFla_seqty1()) */
 #define seqty1(a,b,c,d)   PFla_seqty1((a), (b), (c), (d))
 
 /* all operator (see PFla_all()) */
 #define all(a,b,c,d)      PFla_all((a), (b), (c), (d))
 
-/* duplicate elimination operator */
-#define distinct(a)       PFla_distinct ((a))
+/** staircase join */
+#define scjoin(a,b,c,d)   PFla_scjoin ((a),(b),(c),(d))
+
+/** document table */
+#define doc_tbl(a)        PFla_doc_tbl((a))
+
+/** document content access */
+#define doc_access(a,b,c,d) PFla_doc_access ((a), (b), (c), (d))
 
 /* element-constructing operator */
 #define element(a,b,c)    PFla_element ((a),(b),(c))
 
 /* attribute-constructing operator */
-#define attribute(a,b)    PFla_attribute ((a),(b))
+#define attribute(a,b,c,d,e) PFla_attribute ((a),(b),(c),(d),(e))
 
 /* text node-constructing operator */
-#define textnode(a)       PFla_textnode ((a))
+#define textnode(a,b,c)   PFla_textnode ((a),(b),(c))
 
 /* document node-constructing operator */
 #define docnode(a,b)      PFla_docnode ((a),(b))
@@ -121,18 +128,10 @@
 #define processi(a)       PFla_processi ((a))
 
 /* constructor for fs:item-sequence-to-node-sequence() functionality */
-#define strconcat(a)      PFla_strconcat ((a))
+#define pos_merge_str(a)  PFla_pos_merge_str ((a))
 
 /* constructor for pf:merge-adjacent-text-nodes() functionality */
 #define merge_adjacent(a,b) PFla_pf_merge_adjacent_text_nodes ((a),(b))
-
-#define doc_access(a,b,c,d) PFla_doc_access ((a), (b), (c), (d))
-#define string_join(a,b)  PFla_string_join ((a), (b))
-
-#define cast_item(o)      PFla_cast_item ((o))
-
-/** serialization */
-#define serialize(a,b)    PFla_serialize ((a),(b))
 
 /** constructor for algebraic representation of newly ceated xml nodes */
 #define roots(a)          PFla_roots ((a))
@@ -142,5 +141,12 @@
 
 /** constructor for an empty fragment */
 #define empty_frag()      PFla_empty_frag ()
+
+/* conditional error operator */
+#define cond_err(a,b,c,d) PFla_cond_err ((a),(b),(c),(d))
+
+/* constructors for built-in functions */
+#define fn_concat(a,b,c,d)  PFla_fn_concat ((a), (b), (c), (d))
+#define fn_string_join(a,b) PFla_fn_string_join ((a), (b))
 
 /* vim:set shiftwidth=4 expandtab: */

@@ -189,10 +189,15 @@ PFscanner_init (char *buf)
     lexical_stack = PFarray (sizeof (int));
 
     /*
-     * FIXME: Whoever wrote this code: Please comment what is going on here.
+     * In case yyin/pfin is not set, initialize it to /dev/null (Unix)
+     * resp. C:nul (Windows); otherwise it gets initialized to stdin,
+     * which might conflict with Mserver's console:
+     * The lexer eventually calls fileno() for yyin/pfin, which in
+     * case of yyin/pfin=stdin might be blocked as there is a waiting
+     * select/read on the console(=stdin)...
      */
     if (!pfin) {
-#ifdef NATIVE_WIN32
+#ifdef __MINGW32__              /* or any kind of native Windows */
         pfin = fopen("C:nul","r");
 #else
         pfin = fopen("/dev/null","r");
@@ -382,7 +387,9 @@ _                                ({S}|{ExprComment})+
 "declare function"                 { yield (declare_function); }
 "$"                                { gotoState (VARNAME); yield (dollar); }
 ")"                                { gotoState (OPERATOR); yield (rparen); }
-")"{_}?"as"                        { gotoState (ITEMTYPE); yield (rparen_as); }
+")"{_}?"as"{_}                     { /* trailing whitspace in pattern prevents
+                                        illegal parsing of `...) ascending' in
+                                        order by clauses here. (bug #1359816) */                                     gotoState (ITEMTYPE); yield (rparen_as); }
 "{"                                { yield (lbrace); }
 "}"                                { popState (); yield (rbrace); }
 ","                                { yield (comma); }
@@ -537,7 +544,10 @@ _                                ({S}|{ExprComment})+
                                      yield (encoding_StringLiteral);
                                    }
 
-")"{_}?"as"                        { gotoState (ITEMTYPE); yield (rparen_as); }
+")"{_}?"as"{_}                     { /* trailing whitspace in pattern prevents
+                                        illegal parsing of `...) ascending' in
+                                        order by clauses here. (bug #1359816) */
+                                     gotoState (ITEMTYPE); yield (rparen_as); }
 "as"                               { gotoState (ITEMTYPE); yield (as); }
 ":="                               { gotoState (DEFAULT); yield (colon_equals);}
 "external"                         { gotoState (DEFAULT); yield (external_); }

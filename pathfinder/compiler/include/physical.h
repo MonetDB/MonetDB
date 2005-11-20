@@ -42,47 +42,51 @@
 
 /** algebra operator kinds */
 enum PFpa_op_kind_t {
-      pa_lit_tbl        =   1 /**< literal table */
-    , pa_empty_tbl      =   2 /**< empty literal table */
-    , pa_append_union   =   3 /**< AppendUnion */
-    , pa_merge_union    =   4 /**< MergeUnion */
-    , pa_intersect      =   5 /**< Intersect */
-    , pa_difference     =   6 /**< Difference */
-    , pa_cross          =   7 /**< Cross */
-    , pa_attach         =   8 /**< ColumnAttach */
-    , pa_project        =   9 /**< Project */
-    , pa_leftjoin       =  10 /**< LeftJoin */
-    , pa_eqjoin         =  11 /**< Generic join implementation */
-#if 0
-    , pa_nljoin         =  10 /**< NestedLoopJoin */
-    , pa_merge_join     =  11 /**< MergeJoin */
-#endif
-    , pa_sort_distinct  =  12 /**< SortDistinct */
-    , pa_std_sort       =  13 /**< StdSort */
-    , pa_refine_sort    =  14 /**< RefineSort */
-    , pa_merge_rownum   =  15 /**< MergeRowNumber */
-    , pa_hash_rownum    =  16 /**< HashRowNumber */
-    , pa_num_add        =  17 /**< Arithmetic + */
-    , pa_num_add_atom   =  18 /**< Arithmetic +, where one arg is an atom */
-    , pa_num_sub        =  19 /**< Arithmetic - */
-    , pa_num_sub_atom   =  20 /**< Arithmetic -, where one arg is an atom */
-    , pa_num_mult       =  21 /**< Arithmetic * */
-    , pa_num_mult_atom  =  22 /**< Arithmetic *, where one arg is an atom */
-    , pa_num_div        =  23 /**< Arithmetic / */
-    , pa_num_div_atom   =  24 /**< Arithmetic /, where one arg is an atom */
-    , pa_num_mod        =  25 /**< Arithmetic mod */
-    , pa_num_mod_atom   =  26 /**< Arithmetic mod, where one arg is an atom */
-    , pa_eq             =  27 /**< Numeric or String Equality */
-    , pa_eq_atom        =  28 /**< Numeric or String Equality */
-    , pa_gt             =  29 /**< Numeric or String GreaterThan */
-    , pa_gt_atom        =  30 /**< Numeric or String GreaterThan */
-    , pa_num_neg        =  31 /**< Numeric negation */
-    , pa_bool_not       =  32 /**< Boolean negation */
-    , pa_bool_and       =  33 /**< Boolean and */
-    , pa_bool_or        =  34 /**< Boolean or */
-    , pa_cast           =  35 /**< cast a table to a given type */
-    , pa_select         =  36 /**< Select: filter rows by value in given att */
-    , pa_hash_count     =  37 /**< Hash-based count operator */
+      pa_serialize      =   1
+    , pa_lit_tbl        =   2 /**< literal table */
+    , pa_empty_tbl      =   3 /**< empty literal table */
+    , pa_attach         =   4 /**< ColumnAttach */
+    , pa_cross          =  10 /**< Cross */
+    , pa_leftjoin       =  11 /**< LeftJoin */
+#if 0                        
+    , pa_nljoin         =  12 /**< NestedLoopJoin */
+    , pa_merge_join     =  13 /**< MergeJoin */
+#endif                       
+    , pa_eqjoin         =  14 /**< Generic join implementation */
+    , pa_project        =  15 /**< Project */
+    , pa_select         =  16 /**< Select: filter rows by value in given att */
+    , pa_append_union   =  20 /**< AppendUnion */
+    , pa_merge_union    =  21 /**< MergeUnion */
+    , pa_intersect      =  22 /**< Intersect */
+    , pa_difference     =  23 /**< Difference */
+    , pa_sort_distinct  =  24 /**< SortDistinct */
+    , pa_std_sort       =  25 /**< StdSort */
+    , pa_refine_sort    =  26 /**< RefineSort */
+    , pa_num_add        =  30 /**< Arithmetic + */
+    , pa_num_add_atom   =  31 /**< Arithmetic +, where one arg is an atom */
+    , pa_num_sub        =  32 /**< Arithmetic - */
+    , pa_num_sub_atom   =  33 /**< Arithmetic -, where one arg is an atom */
+    , pa_num_mult       =  34 /**< Arithmetic * */
+    , pa_num_mult_atom  =  35 /**< Arithmetic *, where one arg is an atom */
+    , pa_num_div        =  36 /**< Arithmetic / */
+    , pa_num_div_atom   =  37 /**< Arithmetic /, where one arg is an atom */
+    , pa_num_mod        =  38 /**< Arithmetic mod */
+    , pa_num_mod_atom   =  39 /**< Arithmetic mod, where one arg is an atom */
+    , pa_eq             =  40 /**< Numeric or String Equality */
+    , pa_eq_atom        =  41 /**< Numeric or String Equality */
+    , pa_gt             =  42 /**< Numeric or String GreaterThan */
+    , pa_gt_atom        =  43 /**< Numeric or String GreaterThan */
+    , pa_num_neg        =  44 /**< Numeric negation */
+    , pa_bool_not       =  45 /**< Boolean negation */
+    , pa_bool_and       =  46 /**< Boolean and */
+    , pa_bool_or        =  47 /**< Boolean or */
+    , pa_hash_count     =  48 /**< Hash-based count operator */
+    , pa_merge_rownum   =  50 /**< MergeRowNumber */
+    , pa_hash_rownum    =  51 /**< HashRowNumber */
+    , pa_type           =  60 /**< selection of rows where a column is of a
+                                   certain type */
+    , pa_type_assert    =  61 /**< restriction of the type of a given column */
+    , pa_cast           =  62 /**< cast a table to a given type */
     , pa_llscj_anc      = 100 /**< Loop-Lifted StaircaseJoin Ancestor */
     , pa_llscj_anc_self = 101 /**< Loop-Lifted StaircaseJoin AncestorOrSelf */
     , pa_llscj_attr     = 102 /**< Loop-Lifted StaircaseJoin AncestorOrSelf */
@@ -94,14 +98,26 @@ enum PFpa_op_kind_t {
     , pa_llscj_parent   = 108 /**< Loop-Lifted StaircaseJoin Parent */
     , pa_llscj_prec     = 109 /**< Loop-Lifted StaircaseJoin Preceding */
     , pa_llscj_prec_sibl= 110 /**< Loop-Lifted StaircaseJoin PrecedingSibling */
-    , pa_doc_tbl        = 111 /**< Access to persistent document relation */
-    , pa_doc_access     = 112 /**< Access to string content of loaded docs */
-    , pa_string_join    = 113 /**< Concatenation of multiple strings */
-    , pa_serialize      = 114
-    , pa_roots          = 115
-    , pa_fragment       = 116
-    , pa_frag_union     = 117
-    , pa_empty_frag     = 118
+    , pa_doc_tbl        = 120 /**< Access to persistent document relation */
+    , pa_doc_access     = 121 /**< Access to string content of loaded docs */
+    , pa_element        = 122 /**< element-constructing operator */
+    , pa_element_tag    = 123 /**< part of the element-constructing operator;
+                                  connecting element tag and content;
+                                  due to Burg we use two "wire2" operators
+                                  now instead of one "wire3 operator "*/
+    , pa_attribute      = 124 /**< attribute-constructing operator */
+    , pa_textnode       = 125 /**< text node-constructing operator */
+    , pa_docnode        = 126 /**< document node-constructing operator */
+    , pa_comment        = 127 /**< comment-constructing operator */
+    , pa_processi       = 128 /**< processing instruction-constr. operator */
+    , pa_merge_adjacent = 129
+    , pa_roots          = 130
+    , pa_fragment       = 131
+    , pa_frag_union     = 132
+    , pa_empty_frag     = 133
+    , pa_cond_err       = 140 /**< conditional error operator */
+    , pa_concat         = 150 /**< Concatenation of two strings (fn:concat) */
+    , pa_string_join    = 151 /**< Concatenation of multiple strings */
 };
 /** algebra operator kinds */
 typedef enum PFpa_op_kind_t PFpa_op_kind_t;
@@ -122,43 +138,39 @@ union PFpa_op_sem_t {
     } attach;                     /**< semantic content for column attachment
                                        operator (ColumnAttach) */
 
-    /* semantic content for projection operator */
-    struct {
-        unsigned int    count;    /**< length of projection list */
-        PFalg_proj_t   *items;    /**< projection list */
-    } proj;
-
-    /** semantic content for sort operators */
-    struct {
-        PFord_ordering_t required;
-        PFord_ordering_t existing;
-    } sortby;
-
-    /* semantic content for rownum operator */
-    struct {
-        PFalg_att_t     attname;  /**< name of generated (integer) attribute */
-        PFalg_att_t     part;     /**< optional partitioning attribute,
-                                       otherwise NULL */
-    } rownum;
-
-    struct {
-        PFord_ordering_t ord;     /**< ``grouping'' parameter for
-                                       MergeUnion */
-    } merge_union;
-
     /* semantic content for equi-join operator */
     struct {
         PFalg_att_t     att1;     /**< name of attribute from "left" rel */
         PFalg_att_t     att2;     /**< name of attribute from "right" rel */
     } eqjoin;
 
-    /** semantic content for staircase join operator */
+    /* semantic content for projection operator */
     struct {
-        PFty_t           ty;      /**< sequence type that describes the
-                                       node test */
-        PFord_ordering_t in;      /**< input ordering */
-        PFord_ordering_t out;     /**< output ordering */
-    } scjoin;
+        unsigned int    count;    /**< length of projection list */
+        PFalg_proj_t   *items;    /**< projection list */
+    } proj;
+
+    /** semantic content for selection operator */
+    struct {
+        PFalg_att_t     att;     /**< name of selected attribute */
+    } select;
+
+    struct {
+        PFord_ordering_t ord;     /**< ``grouping'' parameter for
+                                       MergeUnion */
+    } merge_union;
+
+    /** semantic content for SortDistinct operator */
+    struct {
+        PFord_ordering_t ord;    /**< ordering to consider for duplicate
+                                      elimination */
+    } sort_distinct;
+
+    /** semantic content for sort operators */
+    struct {
+        PFord_ordering_t required;
+        PFord_ordering_t existing;
+    } sortby;
 
     /* semantic content for binary (arithmetic and boolean) operators */
     struct {
@@ -185,34 +197,71 @@ union PFpa_op_sem_t {
         PFalg_att_t     res;      /**< attribute to hold the result */
     } unary;
 
-    /** semantic content for selection operator */
-    struct {
-        PFalg_att_t     att;     /**< name of selected attribute */
-    } select;
-
-    /** semantic content for Cast operator */
-    struct {
-        PFalg_att_t         att; /**< attribute to cast */
-        PFalg_simple_type_t ty;  /**< target type */
-    } cast;
-
     /** semantic content for Count operators */
     struct {
         PFalg_att_t         res;  /**< Name of result attribute */
         PFalg_att_t         part; /**< Partitioning attribute */
     } count;
 
-    /** semantic content for SortDistinct operator */
+    /* semantic content for rownum operator */
     struct {
-        PFord_ordering_t ord;    /**< ordering to consider for duplicate
-                                      elimination */
-    } sort_distinct;
+        PFalg_att_t     attname;  /**< name of generated (integer) attribute */
+        PFalg_att_t     part;     /**< optional partitioning attribute,
+                                       otherwise NULL */
+    } rownum;
+
+    /* semantic content for type test operator */
+    struct {
+        PFalg_att_t     att;     /**< name of type-tested attribute */
+        PFalg_simple_type_t ty;  /**< comparison type */
+        PFalg_att_t     res;     /**< column to store result of type test */
+    } type;
+
+    /* semantic content for type_assert operator */
+    struct {
+        PFalg_att_t     att;     /**< name of the asserted attribute */
+        PFalg_simple_type_t ty;  /**< restricted type */
+    } type_a;
+
+    /** semantic content for Cast operator */
+    struct {
+        PFalg_att_t         att; /**< attribute to cast */
+        PFalg_simple_type_t ty;  /**< target type */
+        PFalg_att_t         res; /**< column to store result of the cast */
+    } cast;
+
+    /** semantic content for staircase join operator */
+    struct {
+        PFty_t           ty;      /**< sequence type that describes the
+                                       node test */
+        PFord_ordering_t in;      /**< input ordering */
+        PFord_ordering_t out;     /**< output ordering */
+    } scjoin;
 
     /* reference columns for document access */
     struct {
         PFalg_att_t     att;      /**< name of the reference attribute */
         PFalg_doc_t     doc_col;  /**< referenced column in the document */
     } doc_access;
+
+    /* reference columns of attribute constructor */
+    struct {
+        PFalg_att_t     qn;       /**< name of the qname item column */
+        PFalg_att_t     val;      /**< name of the value item column */
+        PFalg_att_t     res;      /**< attribute to hold the result */
+    } attr;
+
+    /* reference columns of text constructor */
+    struct {
+        PFalg_att_t     item;     /**< name of the item column */
+        PFalg_att_t     res;      /**< attribute to hold the result */
+    } textnode;
+
+    /* semantic content for conditional error */
+    struct {
+        PFalg_att_t     att;     /**< name of the boolean attribute */
+        char *          str;     /**< error message */
+    } err;
 };
 /** semantic content in physical algebra operators */
 typedef union PFpa_op_sem_t PFpa_op_sem_t;
@@ -254,15 +303,69 @@ typedef struct PFpa_op_t PFpa_op_t;
 
 /* ***************** Constructors ******************* */
 
-PFpa_op_t *PFpa_lit_tbl (PFalg_attlist_t a,
-                         unsigned int count, PFalg_tuple_t *tpls);
+/**
+ * A `serialize' node will be placed on the very top of the algebra
+ * expression tree.
+ */
+PFpa_op_t * PFpa_serialize (const PFpa_op_t *doc, const PFpa_op_t *alg);
 
+/****************************************************************/
+
+PFpa_op_t *PFpa_lit_tbl (PFalg_attlist_t attlist,
+                         unsigned int count, PFalg_tuple_t *tuples);
 
 /**
  * Empty table constructor.  Use this instead of an empty table
  * without any tuples to facilitate optimization.
  */
-PFpa_op_t *PFpa_empty_tbl (PFalg_attlist_t a);
+PFpa_op_t *PFpa_empty_tbl (PFalg_attlist_t attlist);
+
+PFpa_op_t *PFpa_attach (const PFpa_op_t *n,
+                        PFalg_att_t attname, PFalg_atom_t value);
+
+/**
+ * Cross product (Cartesian product) of two relations.
+ *
+ * Cross product is defined as the result of
+ *  
+ *@verbatim
+    foreach $a in a
+      foreach $b in b
+        return ($a, $b) .
+@verbatim
+ *
+ * That is, the left operand is in the *outer* loop.
+ */
+PFpa_op_t * PFpa_cross (const PFpa_op_t *n1, const PFpa_op_t *n2);
+
+/**
+ * LeftJoin: Equi-Join on two relations, preserving the ordering
+ *           of the left operand.
+ */
+PFpa_op_t *
+PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
+               const PFpa_op_t *n1, const PFpa_op_t *n2);
+
+/**
+ * EqJoin: Equi-Join. Does not provide any ordering guarantees.
+ */
+PFpa_op_t *
+PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
+             const PFpa_op_t *n1, const PFpa_op_t *n2);
+
+/**
+ * Project.
+ *
+ * Note that projection does @b not eliminate duplicates. If you
+ * need duplicate elimination, explictly use a Distinct operator.
+ */
+PFpa_op_t *PFpa_project (const PFpa_op_t *n, unsigned int count,
+                         PFalg_proj_t *proj);
+
+/**
+ * Select: Filter rows by Boolean value in attribute @a att
+ */
+PFpa_op_t *PFpa_select (const PFpa_op_t *n, PFalg_att_t att);
 
 /**
  * Construct AppendUnion operator node.
@@ -286,26 +389,6 @@ PFpa_op_t *PFpa_intersect (const PFpa_op_t *, const PFpa_op_t *);
  */
 PFpa_op_t *PFpa_difference (const PFpa_op_t *, const PFpa_op_t *);
 
-
-/**
- * Cross product (Cartesian product) of two relations.
- *
- * Cross product is defined as the result of
- *  
- *@verbatim
-    foreach $a in a
-      foreach $b in b
-        return ($a, $b) .
-@verbatim
- *
- * That is, the left operand is in the *outer* loop.
- */
-PFpa_op_t * PFpa_cross (const PFpa_op_t *n1, const PFpa_op_t *n2);
-
-PFpa_op_t *PFpa_attach (const PFpa_op_t *n,
-                        PFalg_att_t attname, PFalg_atom_t value);
-
-
 /**
  * SortDistinct: Eliminate duplicate tuples.
  *
@@ -314,33 +397,6 @@ PFpa_op_t *PFpa_attach (const PFpa_op_t *n,
  * keep it anyway).
  */
 PFpa_op_t *PFpa_sort_distinct (const PFpa_op_t *, PFord_ordering_t);
-
-
-/**
- * Project.
- *
- * Note that projection does @b not eliminate duplicates. If you
- * need duplicate elimination, explictly use a Distinct operator.
- */
-PFpa_op_t *PFpa_project (const PFpa_op_t *n, unsigned int count,
-                         PFalg_proj_t *proj);
-
-
-/**
- * LeftJoin: Equi-Join on two relations, preserving the ordering
- *           of the left operand.
- */
-PFpa_op_t *
-PFpa_leftjoin (PFalg_att_t att1, PFalg_att_t att2,
-               const PFpa_op_t *n1, const PFpa_op_t *n2);
-
-/**
- * EqJoin: Equi-Join. Does not provide any ordering guarantees.
- */
-PFpa_op_t *
-PFpa_eqjoin (PFalg_att_t att1, PFalg_att_t att2,
-             const PFpa_op_t *n1, const PFpa_op_t *n2);
-
 
 /**
  * StandardSort: Introduce given sort order as the only new order.
@@ -357,6 +413,126 @@ PFpa_op_t *PFpa_std_sort (const PFpa_op_t *, PFord_ordering_t);
 PFpa_op_t *PFpa_refine_sort (const PFpa_op_t *,
                              PFord_ordering_t, PFord_ordering_t);
 
+/****************************************************************/
+
+/**
+ * Arithmetic operator +.
+ *
+ * This generic variant expects both operands to be available as
+ * columns in the argument relation. If know one of the operands
+ * to be actually a constant, we may prefer PFpa_num_add_const()
+ * and avoid materialization of the constant attribute.
+ */
+PFpa_op_t *PFpa_num_add (const PFpa_op_t *, PFalg_att_t res,
+                         PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Arithmetic operator -. See PFpa_num_add() for details.
+ */
+PFpa_op_t *PFpa_num_sub (const PFpa_op_t *, PFalg_att_t res,
+                         PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Arithmetic operator *. See PFpa_num_add() for details.
+ */
+PFpa_op_t *PFpa_num_mult (const PFpa_op_t *, PFalg_att_t res,
+                          PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Arithmetic operator /. See PFpa_num_add() for details.
+ */
+PFpa_op_t *PFpa_num_div (const PFpa_op_t *, PFalg_att_t res,
+                         PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Arithmetic operator mod. See PFpa_num_add() for details.
+ */
+PFpa_op_t *PFpa_num_mod (const PFpa_op_t *, PFalg_att_t res,
+                         PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Arithmetic operator +.
+ *
+ * This variant expects one operands to be an atomic value (which
+ * is helpful if we know one attribute/argument to be constant).
+ */
+PFpa_op_t *PFpa_num_add_atom (const PFpa_op_t *, PFalg_att_t res,
+                              PFalg_att_t att1, PFalg_atom_t att2);
+
+/**
+ * Arithmetic operator -. See PFpa_num_add_atom() for details.
+ */
+PFpa_op_t *PFpa_num_sub_atom (const PFpa_op_t *, PFalg_att_t res,
+                              PFalg_att_t att1, PFalg_atom_t att2);
+
+/**
+ * Arithmetic operator *. See PFpa_num_add_atom() for details.
+ */
+PFpa_op_t *PFpa_num_mult_atom (const PFpa_op_t *, PFalg_att_t res,
+                               PFalg_att_t att1, PFalg_atom_t att2);
+
+/**
+ * Arithmetic operator /. See PFpa_num_add_atom() for details.
+ */
+PFpa_op_t *PFpa_num_div_atom (const PFpa_op_t *, PFalg_att_t res,
+                              PFalg_att_t att1, PFalg_atom_t att2);
+
+/**
+ * Arithmetic operator mod. See PFpa_num_add_atom() for details.
+ */
+PFpa_op_t *PFpa_num_mod_atom (const PFpa_op_t *, PFalg_att_t res,
+                              PFalg_att_t att1, PFalg_atom_t att2);
+
+/**
+ * Comparison operator eq.
+ */
+PFpa_op_t *PFpa_eq (const PFpa_op_t *, PFalg_att_t res,
+                    PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Comparison operator gt.
+ */
+PFpa_op_t *PFpa_gt (const PFpa_op_t *, PFalg_att_t res,
+                    PFalg_att_t att1, PFalg_att_t att2);
+
+/**
+ * Comparison operator eq, where one column is an atom (constant).
+ */
+PFpa_op_t *PFpa_eq_atom (const PFpa_op_t *, PFalg_att_t res,
+                         PFalg_att_t att1, PFalg_atom_t att2);
+
+/**
+ * Comparison operator gt, where one column is an atom (constant).
+ */
+PFpa_op_t *PFpa_gt_atom (const PFpa_op_t *, PFalg_att_t res,
+                         PFalg_att_t att1, PFalg_atom_t att2);
+
+/**
+ * Numeric negation
+ */
+PFpa_op_t *PFpa_num_neg (const PFpa_op_t *,
+                         PFalg_att_t res, PFalg_att_t att);
+
+/**
+ * Boolean negation
+ */
+PFpa_op_t *PFpa_bool_not (const PFpa_op_t *,
+                          PFalg_att_t res, PFalg_att_t att);
+
+/**
+ * HashCount: Hash-based Count operator. Does neither benefit from
+ * any existing ordering, nor does it provide/preserve any input
+ * ordering.
+ */
+PFpa_op_t *PFpa_hash_count (const PFpa_op_t *,
+                            PFalg_att_t, PFalg_att_t);
+
+/****************************************************************/
+
+PFpa_op_t *PFpa_merge_rownum (const PFpa_op_t *n,
+                              PFalg_att_t new_att,
+                              PFalg_att_t part);
+
 /**
  * HashRowNumber: Introduce new row numbers.
  *
@@ -372,9 +548,29 @@ PFpa_op_t *PFpa_hash_rownum (const PFpa_op_t *n,
                              PFalg_att_t new_att,
                              PFalg_att_t part);
 
-PFpa_op_t *PFpa_merge_rownum (const PFpa_op_t *n,
-                              PFalg_att_t new_att,
-                              PFalg_att_t part);
+/**
+ * Type operator
+ */
+PFpa_op_t *PFpa_type (const PFpa_op_t *,
+                      PFalg_att_t,
+                      PFalg_simple_type_t, PFalg_att_t);
+
+/**
+ * Constructor for type assertion check. The result is the
+ * input relation n where the type of attribute att is replaced
+ * by ty
+ */
+PFpa_op_t * PFpa_type_assert (const PFpa_op_t *n, PFalg_att_t att,
+                              PFalg_simple_type_t ty);
+
+/**
+ * Cast operator
+ */
+PFpa_op_t *PFpa_cast (const PFpa_op_t *,
+                      PFalg_att_t, PFalg_att_t, 
+                      PFalg_simple_type_t);
+
+/****************************************************************/
 
 /**
  * StaircaseJoin operator.
@@ -438,129 +634,6 @@ PFpa_op_t *PFpa_llscj_prec_sibl (const PFpa_op_t *frag,
                                  const PFord_ordering_t out);
 
 /**
- * Arithmetic operator +.
- *
- * This generic variant expects both operands to be available as
- * columns in the argument relation. If know one of the operands
- * to be actually a constant, we may prefer PFpa_num_add_const()
- * and avoid materialization of the constant attribute.
- */
-PFpa_op_t *PFpa_num_add (const PFpa_op_t *, const PFalg_att_t res,
-                         const PFalg_att_t att1, const PFalg_att_t att2);
-
-/**
- * Arithmetic operator -. See PFpa_num_add() for details.
- */
-PFpa_op_t *PFpa_num_sub (const PFpa_op_t *, const PFalg_att_t res,
-                         const PFalg_att_t att1, const PFalg_att_t att2);
-
-/**
- * Arithmetic operator *. See PFpa_num_add() for details.
- */
-PFpa_op_t *PFpa_num_mult (const PFpa_op_t *, const PFalg_att_t res,
-                          const PFalg_att_t att1, const PFalg_att_t att2);
-
-/**
- * Arithmetic operator /. See PFpa_num_add() for details.
- */
-PFpa_op_t *PFpa_num_div (const PFpa_op_t *, const PFalg_att_t res,
-                         const PFalg_att_t att1, const PFalg_att_t att2);
-
-/**
- * Arithmetic operator mod. See PFpa_num_add() for details.
- */
-PFpa_op_t *PFpa_num_mod (const PFpa_op_t *, const PFalg_att_t res,
-                         const PFalg_att_t att1, const PFalg_att_t att2);
-
-/**
- * Arithmetic operator +.
- *
- * This variant expects one operands to be an atomic value (which
- * is helpful if we know one attribute/argument to be constant).
- */
-PFpa_op_t *PFpa_num_add_atom (const PFpa_op_t *, const PFalg_att_t res,
-                              const PFalg_att_t att1, const PFalg_atom_t att2);
-
-/**
- * Arithmetic operator -. See PFpa_num_add_atom() for details.
- */
-PFpa_op_t *PFpa_num_sub_atom (const PFpa_op_t *, const PFalg_att_t res,
-                              const PFalg_att_t att1, const PFalg_atom_t att2);
-
-/**
- * Arithmetic operator *. See PFpa_num_add_atom() for details.
- */
-PFpa_op_t *PFpa_num_mult_atom (const PFpa_op_t *, const PFalg_att_t res,
-                               const PFalg_att_t att1, const PFalg_atom_t att2);
-
-/**
- * Arithmetic operator /. See PFpa_num_add_atom() for details.
- */
-PFpa_op_t *PFpa_num_div_atom (const PFpa_op_t *, const PFalg_att_t res,
-                              const PFalg_att_t att1, const PFalg_atom_t att2);
-
-/**
- * Arithmetic operator mod. See PFpa_num_add_atom() for details.
- */
-PFpa_op_t *PFpa_num_mod_atom (const PFpa_op_t *, const PFalg_att_t res,
-                              const PFalg_att_t att1, const PFalg_atom_t att2);
-
-/**
- * Comparison operator eq.
- */
-PFpa_op_t *PFpa_eq (const PFpa_op_t *, const PFalg_att_t res,
-                    const PFalg_att_t att1, const PFalg_att_t att2);
-
-/**
- * Comparison operator gt.
- */
-PFpa_op_t *PFpa_gt (const PFpa_op_t *, const PFalg_att_t res,
-                    const PFalg_att_t att1, const PFalg_att_t att2);
-
-/**
- * Comparison operator eq, where one column is an atom (constant).
- */
-PFpa_op_t *PFpa_eq_atom (const PFpa_op_t *, const PFalg_att_t res,
-                         const PFalg_att_t att1, const PFalg_atom_t att2);
-
-/**
- * Comparison operator gt, where one column is an atom (constant).
- */
-PFpa_op_t *PFpa_gt_atom (const PFpa_op_t *, const PFalg_att_t res,
-                         const PFalg_att_t att1, const PFalg_atom_t att2);
-
-/**
- * Numeric negation
- */
-PFpa_op_t *PFpa_num_neg (const PFpa_op_t *,
-                         const PFalg_att_t res, const PFalg_att_t att);
-
-/**
- * Boolean negation
- */
-PFpa_op_t *PFpa_bool_not (const PFpa_op_t *,
-                          const PFalg_att_t res, const PFalg_att_t att);
-
-/**
- * Cast operator
- */
-PFpa_op_t *PFpa_cast (const PFpa_op_t *,
-                      const PFalg_att_t, PFalg_simple_type_t);
-
-/**
- * Select: Filter rows by Boolean value in attribute @a att
- */
-PFpa_op_t *PFpa_select (const PFpa_op_t *, const PFalg_att_t);
-
-/**
- * HashCount: Hash-based Count operator. Does neither benefit from
- * any existing ordering, nor does it provide/preserve any input
- * ordering.
- */
-PFpa_op_t *PFpa_hash_count (const PFpa_op_t *,
-                            const PFalg_att_t, const PFalg_att_t);
-
-/**
  * Access to persistently stored document table.
  *
  * Requires an iter | item schema as its input.
@@ -568,9 +641,44 @@ PFpa_op_t *PFpa_hash_count (const PFpa_op_t *,
 PFpa_op_t * PFpa_doc_tbl (const PFpa_op_t *);
 
 /**
- * Empty fragment list
+ * Access to the string content of loaded documents
  */
-PFpa_op_t *PFpa_empty_frag (void);
+PFpa_op_t * PFpa_doc_access (const PFpa_op_t *doc, 
+                             const PFpa_op_t *alg,
+                             PFalg_att_t att,
+                             PFalg_doc_t doc_col);
+
+/**
+ * element constructor
+ *
+ * Requires an iter | item schema as its qname input
+ * and a an iter | pos | item schema as its content input.
+ */
+PFpa_op_t * PFpa_element (const PFpa_op_t *, 
+                          const PFpa_op_t *,
+                          const PFpa_op_t *);
+
+/**
+ * Attribute constructor
+ *
+ * Requires iter | item schemas as its input.
+ */
+PFpa_op_t * PFpa_attribute (const PFpa_op_t *,
+                           const PFpa_op_t *,
+                           PFalg_att_t,
+                           PFalg_att_t,
+                           PFalg_att_t);
+
+/**
+ * Text constructor
+ *
+ * Requires an iter | item schema as its input.
+ */
+PFpa_op_t * PFpa_textnode (const PFpa_op_t *,
+                           PFalg_att_t, PFalg_att_t);
+
+PFpa_op_t * PFpa_merge_adjacent (const PFpa_op_t *fragment,
+                                 const PFpa_op_t *n);
 
 /**
  * Extract result part from a (frag, result) pair.
@@ -587,32 +695,31 @@ PFpa_op_t *PFpa_fragment (const PFpa_op_t *n);
  */
 PFpa_op_t *PFpa_frag_union (const PFpa_op_t *n1, const PFpa_op_t *n2);
 
+/**
+ * Empty fragment list
+ */
+PFpa_op_t *PFpa_empty_frag (void);
+
+/**
+ * Constructor for conditional error
+ */
+PFpa_op_t * PFpa_cond_err (const PFpa_op_t *n, const PFpa_op_t *err,
+                           PFalg_att_t att, char *err_string);
 
 /****************************************************************/
 /* operators introduced by built-in functions */
 
 /**
- * Access to the string content of loaded documents
+ * Constructor for builtin function fn:concat
  */
-PFpa_op_t * PFpa_doc_access (const PFpa_op_t *doc, 
-                             const PFpa_op_t *alg,
-                             PFalg_att_t att,
-                             PFalg_doc_t doc_col);
+PFpa_op_t * PFpa_fn_concat (const PFpa_op_t *n, PFalg_att_t res,
+                            PFalg_att_t att1, PFalg_att_t att2);
 
 /**
  * Concatenation of multiple strings (using seperators)
  */
 PFpa_op_t * PFpa_string_join (const PFpa_op_t *n1, 
                               const PFpa_op_t *n2);
-
-/****************************************************************/
-
-
-/**
- * A `serialize' node will be placed on the very top of the algebra
- * expression tree.
- */
-PFpa_op_t * PFpa_serialize (const PFpa_op_t *doc, const PFpa_op_t *alg);
 
 
 #endif  /* PHYSICAL_H */

@@ -33,6 +33,9 @@
 /** literal integers */
 #define lit_int(i) PFmil_lit_int (i)
 
+/** literal long integers */
+#define lit_lng(i) PFmil_lit_lng (i)
+
 /** literal strings */
 #define lit_str(i) PFmil_lit_str (i)
 
@@ -91,6 +94,9 @@
 
 /** uselect() operator */
 #define uselect(a,b) PFmil_uselect((a), (b))
+
+/** exist() operator */
+#define exist(a,b) PFmil_exist((a), (b))
 
 /** project() operator */
 #define project(a,b) PFmil_project((a), (b))
@@ -207,6 +213,9 @@
 /** multiplexed comparison (equality) */
 #define meq(a,b) PFmil_meq ((a), (b))
 
+/** multiplexed or */
+#define mor(a,b) PFmil_mor ((a), (b))
+
 /** multiplexed boolean negation */
 #define mnot(a) PFmil_mnot (a)
 
@@ -228,7 +237,26 @@
 /** MonetDB bat() function */
 #define bat(a) PFmil_bat (a)
 
+/** MonetDB ERROR() function */
+#define error(a) PFmil_error (a)
+
+/* procs in the pathfinder module */
 #define doc_tbl(a,b) PFmil_doc_tbl ((a), (b))
+#define attribute(a,b,c) PFmil_attribute ((a), (b), (c))
+#define element(a,b,c,d,e,f,g,h) PFmil_element ((a),(b),(c),(d),(e),(f),(g),(h))
+#define empty_element(a,b) PFmil_empty_element ((a), (b))
+#define textnode(a,b) PFmil_textnode ((a), (b))
+#define add_qname(a,b,c,d) PFmil_add_qname ((a), (b), (c), (d))
+#define add_qnames(a,b,c,d) PFmil_add_qnames ((a), (b), (c), (d))
+
+/** Multiplexed search() function `[search](a,b)' */
+#define msearch(a,b) PFmil_msearch ((a), (b))
+
+/** Multiplexed string() function `[string](a,b)' */
+#define mstring(a,b) PFmil_mstring ((a), (b))
+
+/** Multiplexed string() function `[string](a,b,c)' */
+#define mstring2(a,b,c) PFmil_mstring2 ((a), (b), (c))
 
 /* staircase join variants (ancestor axis) */
 #define llscj_anc(a,b,c,d,e) \
@@ -430,6 +458,7 @@
 #define llscj_prec_sibl_pi_targ(a,b,c,d,e,f) \
     PFmil_llscj_prec_sibl_pi_targ ((a), (b), (c), (d), (e), (f))
 
+#define merge_adjacent(a,b,c,d) PFmil_merge_adjacent ((a), (b), (c), (d))
 #define string_join(a,b) PFmil_string_join ((a), (b))
 
 #define get_fragment(a) PFmil_get_fragment (a)

@@ -39,6 +39,9 @@
 
 #include <assert.h>
 
+/* prune already checked nodes */
+#define SEEN(p) ((p)->state_label)
+
 /**
  * Subexpressions that we already saw.
  *
@@ -164,33 +167,21 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
                                b->sem.lit_tbl.tuples[i]))
                     return false;
 
+            /* split up pos(1) base tables */
+            if (a->schema.count == 1 &&
+                a->schema.items[0].name == att_pos &&
+                a->sem.lit_tbl.count == 1 &&
+                a->sem.lit_tbl.tuples[0].count == 1 &&
+                a->sem.lit_tbl.tuples[0].atoms[0].type == aat_nat &&
+                a->sem.lit_tbl.tuples[0].atoms[0].val.nat == 1)
+                return false;
+
             return true;
             break;
 
         case la_eqjoin:
             return (a->sem.eqjoin.att1 == b->sem.eqjoin.att1
                     && a->sem.eqjoin.att2 == b->sem.eqjoin.att2);
-            break;
-
-        case la_scjoin:
-            return (a->sem.scjoin.axis == b->sem.scjoin.axis
-                    && PFty_subtype (a->sem.scjoin.ty, b->sem.scjoin.ty)
-                    && PFty_subtype (b->sem.scjoin.ty, a->sem.scjoin.ty));
-            break;
-
-        case la_select:
-            return a->sem.select.att == b->sem.select.att;
-            break;
-
-        case la_type:
-            return (a->sem.type.att == b->sem.type.att
-                    && a->sem.type.res == b->sem.type.res
-                    && a->sem.type.ty == b->sem.type.ty);
-            break;
-
-        case la_cast:
-            return (a->sem.cast.att == b->sem.cast.att
-                    && a->sem.cast.ty == b->sem.cast.ty);
             break;
 
         case la_project:
@@ -205,16 +196,8 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
             break;
 
-        case la_rownum:
-            if (a->sem.rownum.attname != b->sem.rownum.attname)
-                return false;
-
-            /* either both rownums are partitioned or none */ 
-            /* partitioning attribute must be equal (if available) */
-            if (a->sem.rownum.part != b->sem.rownum.part)
-                return false;
-
-            return true;
+        case la_select:
+            return a->sem.select.att == b->sem.select.att;
             break;
 
         case la_num_add:
@@ -262,6 +245,81 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
             return true;
             break;
 
+        case la_rownum:
+            if (a->sem.rownum.attname != b->sem.rownum.attname)
+                return false;
+
+            for (unsigned int i = 0; i < a->sem.rownum.sortby.count; i++)
+                if (a->sem.rownum.sortby.atts[i] !=
+                    b->sem.rownum.sortby.atts[i])
+                    return false;
+
+            /* either both rownums are partitioned or none */ 
+            /* partitioning attribute must be equal (if available) */
+            if (a->sem.rownum.part != b->sem.rownum.part)
+                return false;
+
+            return true;
+            break;
+
+        case la_type:
+            return (a->sem.type.att == b->sem.type.att
+                    && a->sem.type.res == b->sem.type.res
+                    && a->sem.type.ty == b->sem.type.ty);
+            break;
+
+        case la_type_assert:
+            return (a->sem.type_a.att == b->sem.type_a.att
+                    && a->sem.type_a.ty == b->sem.type_a.ty);
+            break;
+
+        case la_cast:
+            return (a->sem.cast.att == b->sem.cast.att
+                    && a->sem.cast.ty == b->sem.cast.ty
+                    && a->sem.cast.res == b->sem.cast.res);
+            break;
+
+        case la_seqty1:
+        case la_all:
+            return (a->sem.blngroup.res == b->sem.blngroup.res
+                    && a->sem.blngroup.att == b->sem.blngroup.att
+                    && a->sem.blngroup.part == b->sem.blngroup.part);
+            break;
+
+        case la_scjoin:
+            return (a->sem.scjoin.axis == b->sem.scjoin.axis
+                    && PFty_subtype (a->sem.scjoin.ty, b->sem.scjoin.ty)
+                    && PFty_subtype (b->sem.scjoin.ty, a->sem.scjoin.ty));
+            break;
+
+        case la_doc_access:
+            return (a->sem.doc_access.att == b->sem.doc_access.att
+                    && a->sem.doc_access.doc_col == b->sem.doc_access.doc_col);
+            break;
+
+        case la_cond_err:
+            return (a->sem.err.att == b->sem.err.att
+                    && a->sem.err.str == b->sem.err.str);
+            break;
+
+        case la_serialize:
+        case la_empty_tbl:
+        case la_cross:
+        case la_disjunion:
+        case la_intersect:
+        case la_difference:
+        case la_distinct:
+        case la_doc_tbl:
+        case la_merge_adjacent:
+        case la_roots:
+        case la_fragment:
+        case la_frag_union:
+        case la_empty_frag:
+        case la_concat:
+        case la_string_join:
+            return true;
+            break;
+
         case la_element:
         case la_element_tag:
         case la_attribute:
@@ -275,36 +333,6 @@ subexp_eq (PFla_op_t *a, PFla_op_t *b)
              * two separate instances of the node(s).
              */
             return false;
-
-        case la_seqty1:
-        case la_all:
-            return (a->sem.blngroup.res == b->sem.blngroup.res
-                    && a->sem.blngroup.att == b->sem.blngroup.att
-                    && a->sem.blngroup.part == b->sem.blngroup.part);
-            break;
-
-        case la_empty_tbl:
-        case la_disjunion:
-        case la_intersect:
-        case la_difference:
-        case la_cross:
-        case la_distinct:
-        case la_concat:
-        case la_merge_adjacent:
-        case la_doc_access:
-        case la_string_join:
-        case la_serialize:
-        case la_roots:
-        case la_fragment:
-        case la_frag_union:
-        case la_empty_frag:
-        case la_doc_tbl:
-            return true;
-            break;
-
-        case la_dummy:
-            assert (!"should not encounter a `dummy' node here!");
-            return true;
             break;
     }
 
@@ -323,6 +351,10 @@ la_cse (PFla_op_t *n)
 
     for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
         n->child[i] = la_cse (n->child[i]);
+
+    /* fast check to avoid array lookup */
+    if (SEEN(n))
+        return n;
 
     /*
      * Fetch the subexpressions for this node kind that we
@@ -345,7 +377,18 @@ la_cse (PFla_op_t *n)
     /* if not, add it to the list */
     *(PFla_op_t **) PFarray_add (a) = n;
 
+    SEEN(n) = true;
+
     return n;
+}
+
+static void
+prepare_seen (PFla_op_t *n)
+{
+    for (unsigned int i = 0; i < PFLA_OP_MAXCHILD && n->child[i]; i++)
+        prepare_seen (n->child[i]);
+
+    SEEN(n) = false;
 }
 
 /**
@@ -363,6 +406,8 @@ PFla_op_t *
 PFla_cse (PFla_op_t *n)
 {
     subexps = PFarray (sizeof (PFarray_t *));
+
+    prepare_seen (n);
 
     return la_cse (n);
 }
