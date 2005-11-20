@@ -26,8 +26,23 @@ Over..
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 [  \000\000\000!\000\000\000 ]
+#-----------------#
+# h	t	  # name
+# void	oid	  # type
+#-----------------#
+[ 0@0,	  0@0	  ]
+#-----------------#
+# h	t	  # name
+# oid	void	  # type
+#-----------------#
+[ 0@0,	  nil	  ]
+#-----------------#
+# h	t	  # name
+# oid	int	  # type
+#-----------------#
+[ 0@0,	  1	  ]
 
-# 15:23:56 >  
-# 15:23:56 >  Done.
-# 15:23:56 >  
+# 12:53:21 >  
+# 12:53:21 >  Done.
+# 12:53:21 >  
 
