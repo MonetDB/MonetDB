@@ -1725,6 +1725,8 @@ HEAPsetpriv(Heap *hp, int committed, int *remap, int *reload)
 {
 	str p;
 
+	assert(hp);
+
 	if (hp->base == NULL || hp->storage == STORE_MEM || hp->filename == NULL || !committed) {
 		return hp->storage;
 	}
@@ -1747,6 +1749,8 @@ HEAPsetpriv(Heap *hp, int committed, int *remap, int *reload)
 static int
 HEAPsetmmap(Heap *hp, int committed, int *remap)
 {
+	assert(hp);
+
 	if (hp->base == NULL || hp->storage == STORE_MEM || hp->filename == NULL || !committed ) {
 		return hp->storage;
 	}
