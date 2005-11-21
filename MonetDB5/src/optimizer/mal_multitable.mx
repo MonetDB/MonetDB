@@ -158,11 +158,24 @@ isMATalias(int idx, int mvar[], int top){
 		if( mvar[i]== idx) return i;
 	return -1;
 }
-
+@-
+Packing the BATs into a single one is handled here
+@c
+InstrPtr MATpackAll(MalBlkPtr mb, InstrPtr  r, int m, InstrPtr *mat, int *mvar, int mtop){
+	int l,k;
+	for(l=mat[m]->retc; l< mat[m]->argc; l++){
+		k= isMATalias( getArg(mat[m],l),mvar,mtop);
+		if( k< 0)
+			r= pushArgument(mb,r, getArg(mat[m],l));
+		else
+			r= MATpackAll(mb,r, k, mat,mvar,mtop);
+	}
+	return r;
+}
 str
 MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	InstrPtr *old=0, q,r, mat[256];
-	int oldtop,i,j,k,l,m,mtop=0, mvar[256],tpe;
+	int oldtop,i,j,k,m,mtop=0, mvar[256],tpe;
 	int size,match,actions=0;
 	lng clk = GDKusec();
 #ifdef DEBUG_MAL_MERGETABLE     
@@ -404,10 +417,10 @@ MATdefault:
 				setModuleId(r,matRef);
 				setFunctionId(r,packRef);
 				getArg(r,0)= getArg(mat[m],0);
-				for(l=mat[m]->retc; l< mat[m]->argc; l++){
-					r= pushArgument(mb,r, getArg(mat[m],l));
-				}
-				pushInstruction(mb,r);
+				r= MATpackAll(mb, r, m, mat, mvar, mtop);
+				if(	!( moduleId(p) == matRef && functionId(p)== newRef) )
+					pushInstruction(mb,r);
+				else freeInstruction(r);
 
 				for(j=m; j<mtop-1; j++){
 					mat[j]= mat[j+1];
