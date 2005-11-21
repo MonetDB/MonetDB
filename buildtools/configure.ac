@@ -21,7 +21,7 @@ for i; do
 done
 
 # check for python
-if [ !"`type -p python`" ] ; then
+if [ ! "`type -p python`" ] ; then
 	echo "'python' is required to compile 'autogen',"
 	echo "but no 'python' is found in your PATH ($PATH)."
 	echo
