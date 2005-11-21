@@ -1077,7 +1077,6 @@ resetFilter(Module cntxt, str mod, str fcn)
 	int j, k;
 	Module s = cntxt;
 	Symbol t;
-	InstrPtr p;
 	MalBlkPtr mb;
 
 	(void) mod;
@@ -1097,7 +1096,6 @@ resetFilter(Module cntxt, str mod, str fcn)
 					for (t = s->subscope[j]; t != NULL; t = t->peer) {
 						if( (mb=t->def)->profiler)
 						for (k = 0; k < t->def->stop; k++) {
-							p = getInstrPtr(t->def, k);
 							mb->profiler[k].trace = FALSE;
 						}
 					}
