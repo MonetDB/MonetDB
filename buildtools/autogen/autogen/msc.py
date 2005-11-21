@@ -258,8 +258,6 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref = 'lib', dll
         add = pref+sep+name.replace('-','_')+"_LIBS ="
     else:
         add = name.replace('-','_') + " ="
-    if dll == '.pyd':
-        add = add + " /LIBPATH:$(PYTHONLIB)"
     for l in list:
         if l == "@LIBOBJS@":
             add = add + " $(LIBOBJS)"
