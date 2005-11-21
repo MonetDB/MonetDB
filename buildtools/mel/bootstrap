@@ -34,10 +34,10 @@ EOF
 	;;
 esac
 
-aclocal
-autoheader
-autoconf
-automake --add-missing
+aclocal || exit 1
+autoheader || exit 1
+autoconf || exit 1
+automake --add-missing || exit 1
 
 if [ -e configure.ac.orig_bootstrap ];
 then
