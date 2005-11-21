@@ -174,7 +174,7 @@ elif [ "$_PY_VERSION" -lt "$_REQ_PY_VERSION" ]; then
 fi
 
 
-$AUTOGEN `pwd` $_AM_VERSION
+$AUTOGEN `pwd` $_AM_VERSION || exit 1
 
 rm -f acconfig.h
 cp configure.ag configure.in
@@ -184,7 +184,7 @@ cat acout.in  >> configure.in
 echo ")" >> configure.in
 
 
-$LIBTOOLIZE -c -f
+$LIBTOOLIZE -c -f || exit 1
 
 # default deplibs_check_method (pass all libs)
 # needed since deplibs is switched off in libtool 1.3c (we cannot wait for 1.4)
@@ -207,7 +207,7 @@ if [ -d "$d" ] ; then
 	PKG_M4_DIR="-I $d"
 fi
 
-aclocal -I . -I conf $LT_M4_DIR $PKG_M4_DIR $CONFDIR
+aclocal -I . -I conf $LT_M4_DIR $PKG_M4_DIR $CONFDIR || exit 1
 
 # patch aclocal.m4 to call the linker with "-IPA" on IRIX (medusa)
 # (just adding -IPA to LDFLAGS somehow doesn't help ...)
@@ -312,11 +312,11 @@ EOF
 fi # [ "$_AM_VERSION" -lt "$_NEW_AM_VERSION" ]
 
 
-autoheader
-automake -a -c --foreign
+autoheader || exit 1
+automake -a -c --foreign || exit 1
 
-#autoupdate
-autoconf
+#autoupdate || exit 1
+autoconf || exit 1
 
 
 exit 0
