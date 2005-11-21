@@ -716,7 +716,7 @@ yes|auto)
 esac
 case "$SWIG" in
 no) ;;
-/*) AC_MSG_CHECKING(whether $SWIG does exist and is executable)
+/*) AC_MSG_CHECKING(whether $SWIG exists and is executable)
     if test -x "$SWIG"; then
       AC_MSG_RESULT(yes)
     else
@@ -750,66 +750,103 @@ AC_SUBST(SWIG)
 AM_CONDITIONAL(HAVE_SWIG, test x"$SWIG" != xno)
 
 
+have_python=auto
+PYTHON=python
+PYTHON_INCS=
+PYTHON_LIBS=
 AC_ARG_WITH(python,
 	AC_HELP_STRING([--with-python=FILE], [python is installed as FILE]),
-	PYTHON="$withval",
-	PYTHON=python)
-case "$PYTHON" in
-yes|auto)
-    PYTHON=python;;
+	have_python="$withval")
+case "$have_python" in
+yes|no|auto)
+	;;
+*)
+	PYTHON="$have_python"
+	have_python=yes
+	;;
 esac
-case "$PYTHON" in
-no) ;;
-/*) AC_MSG_CHECKING(whether $PYTHON does exist and is executable)
-    if test -x "$PYTHON"; then
-      AC_MSG_RESULT(yes)
-    else
-      AC_MSG_RESULT(no)
-      PYTHON=no
-    fi;;
-*)  AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH);;
-esac
-if test "x$PYTHON" != xno; then
-  AC_MSG_CHECKING(whether $PYTHON is >= 2.0)
-  python_ver="`"$PYTHON" -c 'import sys; print sys.version[[:3]]' 2>/dev/null`"
-  case "$python_ver" in
-  2.*)
-     AC_MSG_RESULT(yes: $python_ver);;
-  *) AC_MSG_ERROR(no: $python_ver)
-     PYTHON=no;;
-  esac
+if test "x$have_python" != xno; then
+	if test $cross_compiling != xyes; then
+		AC_PATH_PROG(PYTHON,$PYTHON,no,$PATH)
+		if test "x$PYTHON" = xno; then
+			if "x$have_python" != xauto; then
+				AC_MSG_ERROR([No Python executable found]);
+			fi
+			have_python=no
+		fi
+	fi
+fi
+if test "x$have_python" != xno; then
+	have_python_incdir=auto
+	AC_ARG_WITH(python-incdir,
+		AC_HELP_STRING([--with-python-incdir=DIR],
+			[Python include directory]),
+		have_python_incdir="$withval")
+	case "$have_python_incdir" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
+		fi
+		PYTHON_INCS=`"$PYTHON" -c 'from distutils.sysconfig import get_python_inc; print get_python_inc()' 2>/dev/null`
+		;;
+	no)	;;
+	*)	PYTHON_INCS="$have_python_incdir"
+		have_python_incdir=yes
+		;;
+	esac
+	if test "x$have_python_incdir" != no -a ! -f "$PYTHON_INCS/Python.h"; then
+		if test "x$have_python_incdir" = yes; then
+			AC_MSG_ERROR([No Python.h found, is Python installed properly?])
+		fi
+		have_python_incdir=no
+	fi
+	if test "x$have_python_incdir" != no; then
+		PYTHON_INCS="-I$PYTHON_INCS"
+	fi
+
+	have_python_library=auto
+	AC_ARG_WITH(python-library,
+		AC_HELP_STRING([--with-python-library=DIR],
+			[Python library directory (where -lpython can be found)]),
+		have_python_library="$withval")
+	case "$have_python_library" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
+		fi
+		PYTHON_LIBS=`"$PYTHON" -c 'import distutils.sysconfig, os, sys; print "-L%s -lpython%s" % (os.path.dirname(distutils.sysconfig.get_makefile_filename()), sys.version[[:3]])' 2>/dev/null`
+		;;
+	no)	;;
+	*)	PYTHON_LIBS="$have_python_library"
+		have_python_library=yes
+		;;
+	esac
+
+	have_python_libdir=auto
+	AC_ARG_WITH(python-libdir,
+		AC_HELP_STRING([--with-python-libdir=DIR],
+			[relative path for Python library directory (where Python modules should be installed)]),
+		have_python_libdir="$withval")
+	case "$have_python_libdir" in
+	yes|auto)
+		if test $cross_compiling = xyes; then
+			AC_MSG_ERROR([Must specify --with-python-incdir --with-python-libdir --with-python-library when cross compiling])
+		fi
+		PYTHON_LIBDIR=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")' 2>/dev/null`
+		;;
+	no)	;;
+	*)	PYTHON_LIBDIR="$have_python_libdir"
+		have_python_libdir=yes
+		;;
+	esac
 fi
 AC_SUBST(PYTHON)
-AM_CONDITIONAL(HAVE_PYTHON, test x"$PYTHON" != xno)
-
-PYTHONINC=''
-if test "x$PYTHON" != xno; then
-  AC_MSG_CHECKING(for $PYTHON's include directory)
-  PYTHONINC=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_inc()' 2>/dev/null`
-  if test ! "$PYTHONINC"; then
-    AC_MSG_RESULT(not found.  Is Python installed properly?)
-  elif test ! -f "$PYTHONINC/Python.h"; then
-    AC_MSG_RESULT($PYTHONINC/Python.h does not exist.  Is Python installed properly?)
-    PYTHONINC=''
-  else
-    AC_MSG_RESULT($PYTHONINC)
-  fi
-fi
-AC_SUBST(PYTHONINC)
-
-PYTHON_LIBDIR=''
-if test "x$PYTHONINC" != x; then
-  AC_MSG_CHECKING(for $PYTHON's library directory)
-  PYTHON_LIBDIR=`"$PYTHON" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(1,0,"")' 2>/dev/null`
-  if test ! "$PYTHON_LIBDIR"; then
-    AC_MSG_RESULT(not found.  Is Python installed properly?)
-  else
-    AC_MSG_RESULT(\$prefix/$PYTHON_LIBDIR)
-  fi
-fi
+AM_CONDITIONAL(HAVE_PYTHON, test x"$have_python" != xno)
+AC_SUBST(PYTHON_INCS)
+AC_SUBST(PYTHON_LIBS)
 AC_SUBST(PYTHON_LIBDIR)
-AM_CONDITIONAL(HAVE_PYTHON_DEVEL, test "x$PYTHON_LIBDIR" != x)
-AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$PYTHON_LIBDIR" != x -a x"$SWIG" != xno)
+AM_CONDITIONAL(HAVE_PYTHON_DEVEL, test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno)
+AM_CONDITIONAL(HAVE_PYTHON_SWIG,  test "x$have_python_incdir" != xno -a "x$have_python_libdir" != xno -a x"$SWIG" != xno)
 
 
 AC_ARG_WITH(perl,
@@ -822,7 +859,7 @@ yes|auto)
 esac
 case "$PERL" in
 no) ;;
-/*) AC_MSG_CHECKING(whether $PERL does exist and is executable)
+/*) AC_MSG_CHECKING(whether $PERL exists and is executable)
     if test -x "$PERL"; then
       AC_MSG_RESULT(yes)
     else

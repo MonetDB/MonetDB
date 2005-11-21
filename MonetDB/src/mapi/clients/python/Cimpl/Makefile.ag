@@ -17,7 +17,7 @@
 MTSAFE
 
 SWIGFLAGS = -I../../C
-INCLUDES = -I../../C -I../../../../common -I@PYTHONINC@
+INCLUDES = -I../../C -I../../../../common $(PYTHON_INCS)
 
 # we need this flag to allow for a name that does not start with "lib"
 _MapiLib_la_LDFLAGS = -module
@@ -33,7 +33,7 @@ lib_MapiLib = {
 	PREFIX =
 	NAME = _MapiLib
 	SOURCES = MapiLib.py.i
-	LIBS = ../../C/libMapi
+	LIBS = ../../C/libMapi $(PYTHON_LIBS)
 	DIR = $(prefix)/$(PYTHON_LIBDIR)
 }
 

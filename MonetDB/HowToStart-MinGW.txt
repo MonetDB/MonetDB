@@ -36,8 +36,11 @@ archive to C:\Pthreads (so that you end up with folders
 C:\Pthreads\lib and C:\Pthreads\include).  Don't use spaces in the
 name of the folder where you install the Pre-built files.
 
-For some information about compiling the optional PCRE library, see
-the file HowToStart-MinGW-pcre.txt.
+For information about compiling the optional PCRE library, see the
+file HowToStart-MinGW-pcre.txt.
+
+For information about using the optional SWIG tool, see the file
+HowToStart-MinGW-swig.txt.
 
 In order to compile and install MonetDB, I use the following commands:
 
@@ -50,7 +53,7 @@ cd MinGW
 	     --with-translatepath='cygpath -w' \
 	     --with-pthread=C:/Pthreads \
 	     --without-iconv \
-	     --with-pcre="$HOME/MinGW" \
+	     --without-pcre \
 	     --without-php \
 	     --without-swig \
 	     --prefix="$HOME/MinGW"
