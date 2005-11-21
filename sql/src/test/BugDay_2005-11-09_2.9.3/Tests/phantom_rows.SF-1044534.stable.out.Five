@@ -1,0 +1,49 @@
+stdout of test 'phantom_rows.SF-1044534` in directory 'src/test/BugDay_2005-11-09_2.9.3` itself:
+
+
+# 20:17:02 >  
+# 20:17:02 >  Mtimeout -timeout 180 Mserver "--config=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./lib/MonetDB:/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./lib/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/dbfarm" --set "sql_logdir=/ufs/manegold/_/scratch0/Monet/Testing/Current/.GNU.64.64.d.--enable-debug.PREFIX./var/MonetDB/log" --set mapi_port=36086 --set sql_port=46177 --set xquery_port=52463 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-11-09_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
+# 20:17:02 >  
+
+# Monet Database Server V4.9.3
+# Copyright (c) 1993-2005, CWI. All rights reserved.
+# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
+# Visit http://monetdb.cwi.nl/ for further information.
+#Ready to accept connections on gio.ins.cwi.nl:42405
+
+Ready.
+
+Over..
+
+# 20:17:02 >  
+# 20:17:02 >  Mtimeout -timeout 60 MapiClient -lsql -u monetdb -P monetdb --host=localhost --port=46177  < phantom_rows.SF-1044534.sql
+# 20:17:02 >  
+
+# 4 # querytype
+[ 1	]
+# 6 # querytype
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 1	]
+# 4 # querytype
+[ 2	]
+# 3 # querytype
+# test1044534 # table_name
+# id # name
+# int # type
+# 10 # length
+# 0 # tuplecount
+# 0 # id
+# 3 # querytype
+# test1044534 # table_name
+# id # name
+# int # type
+# 10 # length
+# 0 # tuplecount
+# 1 # id
+
+# 20:17:02 >  
+# 20:17:02 >  Done.
+# 20:17:02 >  
+
