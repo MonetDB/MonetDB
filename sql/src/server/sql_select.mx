@@ -1111,7 +1111,7 @@ sql_value_exp(mvc *sql, scope *scp, symbol *se, group *grp, stmt *subset, int f)
 		/* NOTE: this is a dirty hack to disable the existence check on
 		 *       inline generated sequences, as they don't exist yet,
 		 *       but eventually will be.  We recognise this situation if
-		 *       the sequence name ends with triple double quotes (").
+		 *       the sequence name ends with triple double quotes (""").
 		 */
 		if (
 			seq[len - 3] != '"' &&
