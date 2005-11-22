@@ -223,9 +223,16 @@ static int
 output_prepare(stream *out, mvc *c, cq *q)
 {
 	node *n;
+	int len = 0;
 
 	if (!out)
 		return 0;
+
+	if (c->params && (len = list_length(c->params)) > MAXPARAMS) {
+		sql_error(c, 2, "To many parameters in prepared statement (%d>%d)\n", len, MAXPARAMS);
+		return -1;
+	}
+
 	/* indicate to client that a new SQL command starts here */
 	if (stream_printf(out,
 		"#-\n"
@@ -244,7 +251,7 @@ output_prepare(stream *out, mvc *c, cq *q)
 	}
 
 	if (c->params) {
-		int i, len = list_length(c->params);
+		int i;
 
 		q->paramlen = len;
 		q->params = NEW_ARRAY(sql_subtype,len);
