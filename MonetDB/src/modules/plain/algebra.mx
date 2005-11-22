@@ -37,7 +37,7 @@ that return a BAT.
 .COMMAND exist(BAT[any::1,any] b, any::1 h) : bit = CMDexist;
 "Returns whether 'h' occurs as a head value in b."
 
-.COMMAND exist_rev(BAT[any,any::1] b, any::1 h) : bit = CMDexist_rev;
+.COMMAND texist(BAT[any,any::1] b, any::1 h) : bit = CMDtexist;
 "Returns whether 'h' occurs as a head value in b."
 
 .COMMAND exist(BAT[any::1,any::2] b, any::1 h, any::2 t) : bit = CMDexistBUN;
@@ -360,23 +360,29 @@ For relational processing, some operators are necessary to produce newly
 initiated OID columns, for representing n-ary (intermediary) relations.
 
 @- OID tail column
+
+tmark(b) = b.reverse().mark().reverse()
+hmark(b) = b.mark().reverse()
 @m
-.COMMAND mark( BAT[any::1,any] b ) :
-				BAT[any::1,OID] = CMDmark_default;
+.COMMAND mark( BAT[any::1,any] b ) : BAT[any::1,OID] = CMDmark_default;
 "Produces a new BAT with fresh unique OIDs in the tail."
 
-.COMMAND mark_rev( BAT[any,any::1] b ) :
-				BAT[OID,any::1] = CMDmark_rev_default;
+.COMMAND tmark( BAT[any,any::1] b ) : BAT[OID,any::1] = CMDtmark_default;
 "Produces a new BAT with fresh unique OIDs in the head."
 
-.COMMAND mark( BAT[any::1,any] b , oid base) :
-				BAT[any::1,OID] = CMDmark;
-"Produces a new BAT with fresh unique dense sequense of OIDs in the tail
+.COMMAND hmark( BAT[any::1,any] b ) : BAT[OID,any::1] = CMDhmark_default;
+"Produces a new BAT with fresh unique OIDs in the head, and old head column as tail."
+
+.COMMAND mark( BAT[any::1,any] b , oid base) : BAT[any::1,OID] = CMDmark;
+"Produces a new BAT with fresh unique dense sequence of OIDs in the tail
  that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
 
-.COMMAND mark_rev( BAT[any,any::1] b, oid base) :
-				BAT[OID,any::1] = CMDmark_rev;
-"Produces a new BAT with fresh unique dense sequense of OIDs in the head
+.COMMAND tmark( BAT[any,any::1] b, oid base) : BAT[OID,any::1] = CMDtmark;
+"Produces a new BAT with fresh unique dense sequence of OIDs in the head
+ that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
+
+.COMMAND hmark( BAT[any::1,any] b, oid base) : BAT[OID,any::1] = CMDhmark;
+"Produces a new BAT with fresh unique dense sequence of OIDs in the head, and old head as tail,
  that starts at base (i.e. [base,base+1,..base+b.count()-1] )."
 
 @- number tail column
@@ -1766,7 +1772,8 @@ CMD@1(BAT **result, BAT* b, int *param)
 #define BATtsort_rev(b) BATmirror(BATsort_rev(BATmirror(b)))
 #define BAThistogram_rev(b) BAThistogram(BATmirror(b))
 #define BATmark_default(b) BATmark(b,OIDnew(BATcount(b)))
-#define BATmark_rev_default(b) BATmirror(BATmark(BATmirror(b),OIDnew(BATcount(b))))
+#define BATtmark_default(b) BATmirror(BATmark(BATmirror(b),OIDnew(BATcount(b))))
+#define BAThmark_default(b) BATmirror(BATmark(b,OIDnew(BATcount(b))))
 
 @:unaryint(count,BATcount)@
 @:unary(histogram,BAThistogram)@
@@ -1780,7 +1787,8 @@ CMD@1(BAT **result, BAT* b, int *param)
 @:unary(kunique,BATkunique)@
 @:unary(sunique,BATsunique)@
 @:unary(mark_default,BATmark_default)@
-@:unary(mark_rev_default,BATmark_rev_default)@
+@:unary(tmark_default,BATtmark_default)@
+@:unary(hmark_default,BAThmark_default)@
 @:binary(semijoin,BATsemijoin)@
 @:binary(cross,BATcross)@
 @:binary(antijoin,BATantijoin)@
@@ -1868,9 +1876,15 @@ CMDmark(BAT **res, BAT *b, oid *base)
 }
 
 int
-CMDmark_rev(BAT **res, BAT *b, oid *base)
+CMDtmark(BAT **res, BAT *b, oid *base)
 {
 	return (*res = BATmirror(BATmark(BATmirror(b), *base))) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+int
+CMDhmark(BAT **res, BAT *b, oid *base)
+{
+	return (*res = BATmirror(BATmark(b, *base))) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int
@@ -2083,7 +2097,7 @@ CMDexist(bit *ret, BAT *b, ptr val)
 	return GDK_SUCCEED;
 }
 int
-CMDexist_rev(bit *ret, BAT *b, ptr val)
+CMDtexist(bit *ret, BAT *b, ptr val)
 {
 	return CMDexist(ret, BATmirror(b), val);
 }
