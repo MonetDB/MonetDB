@@ -172,6 +172,16 @@ InstrPtr MATpackAll(MalBlkPtr mb, InstrPtr  r, int m, InstrPtr *mat, int *mvar, 
 	}
 	return r;
 }
+void MATcollect(int m, InstrPtr *mat, int *mvar, int mtop, int *newvar, int *n){
+	int i,j,k;
+	for(i= mat[m]->retc; i<mat[m]->argc; i++)
+		if( (j= isMATalias( getArg(mat[m],i), mvar, mtop)) >= 0){
+			for(k=0; k<mtop; k++)
+			if( mvar[k]== j)
+				MATcollect(k,mat,mvar,mtop,newvar,n);
+		} else { newvar[*n]=  getArg(mat[m],i); *n = *n+1;}
+}
+
 str
 MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	InstrPtr *old=0, q,r, mat[256];
@@ -187,254 +197,228 @@ MToptimizer(MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if(p)
 		removeInstruction(mb,p);
 
-@-
-First phase, collect the known MAT definitions in a stack.
-@c
-	for( i=0; i<mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		if( moduleId(p)== matRef && functionId(p) == newRef){
-			if( mtop == 256) {
-				break;
-			}
+	old = mb->stmt;
+	oldtop= mb->stop;
+	size = (mb->stop *1.2 < mb->ssize)? mb->ssize: mb->stop *1.2;
+	mb->stmt = (InstrPtr *) GDKmalloc(size  * sizeof(InstrPtr));
+	memset((char*)mb->stmt, 0, size * sizeof(InstrPtr));
+	mb->ssize = size ;
+	mb->stop = 0;
+
+
+	for( i=0; i<oldtop; i++){
+		p= old[i];
+		if( (moduleId(p)== matRef && functionId(p)==newRef) ||
+			(moduleId(p)== matRef && functionId(p)==packRef) ){
+			mat[mtop]= p;
 			mvar[mtop] = getArg(p,0);
-			mat[mtop++]= p;
-		} 
-	}
+			mtop++;
+			pushInstruction(mb,p);
+			continue;
+		}
 @-
-Now repeatedly pick one of the MATs and replaces it occurrences
-with the exploded version.
-Beware that we assume for the time being that MAT is used at most
-once in an instruction.
+If the instruction does not contain MAT references it can be added.
+Otherwise we have to decide on either packing them or replacement.
 @c
-	for( m=0; m< mtop; m++){
-		old = mb->stmt;
-		oldtop= mb->stop;
-#ifdef DEBUG_MAL_MERGETABLE     
-	for(i=0;i<mtop;i++)
-		printInstruction(GDKout,mb,mat[i],LIST_MAL_INSTR);
-	stream_printf(GDKout,"MAT handles variable %d \n",m);
-	printFunction(GDKout,mb,LIST_MAL_INSTR);
-#endif
-		
-		size = (mb->stop *1.2 < mb->ssize)? mb->ssize: mb->stop *1.2;
-		mb->stmt = (InstrPtr *) GDKmalloc(size  * sizeof(InstrPtr));
-		memset((char*)mb->stmt, 0, size * sizeof(InstrPtr));
-		mb->ssize = size ;
-		mb->stop = 0;
-
-
-		for( i=0; i<oldtop; i++){
-			p= old[i];
+		match=0;
+		for(j=p->retc; j<p->argc; j++)
+		if(  isMATalias(getArg(p,j),mvar,mtop) >= 0) {
+			m=i; match++;
+		}
+		if( match== 0 ){
+			pushInstruction(mb,p);
+			continue;
+		}
 @-
-Beware that we assume for the time being that MAT is used at most
-once in an instruction.
+Pack all but one MAT argument together.
+Remove their definitions afterwards.
 @c
-			match=0;
-			for(j=p->retc; j<p->argc; j++)
-			if( getArg(p,j)== mvar[m]) match++;
-			if( match== 0 ){
-				pushInstruction(mb,p);
-				continue;
-			}
-			if( match>1 )
-				return throwMessage("mal.multitable","Too many MAT dependencies");
-
-@-
-Not all instructions can be replaced by the sequence. We have to
-group them and check for them individually.
-At first we look for the first argument. Others are dealt with
-through the default case.
-@c
-			if(( (moduleId(p)== algebraRef && functionId(p)== selectRef) ||
-				(moduleId(p)== batRef && functionId(p)==reverseRef) ||
-				(moduleId(p)== batRef && functionId(p)==reverseRef) ||
-				(moduleId(p)== algebraRef && functionId(p)==markTRef) ||
-				(moduleId(p)== algebraRef && functionId(p)==kdifferenceRef) ||
-			    (moduleId(p)== algebraRef && functionId(p)== joinRef) ||
-				(moduleId(p)== batRef && functionId(p)== setAccessRef) ||
-			    (moduleId(p)== batRef && functionId(p)== appendRef)  ||
-			    (moduleId(p)== batRef && functionId(p)== deleteRef) 
-			)  && mvar[m] == getArg(p,1)){
-				r = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(r,matRef);
-				setFunctionId(r,newRef);
-				getArg(r,0)= getArg(p,0);
-				tpe= getArgType(mb,p,0);
-				for(k=1; k< mat[m]->argc; k++){
-					if( k<mat[m]->argc-1 &&  (
-						functionId(p)== insertRef ||
-						functionId(p)== appendRef ))
-						continue;
-					q= copyInstruction(p);
-					getArg(q,1) = getArg(mat[m],k);
-					getArg(q,0) = newTmpVariable(mb, tpe);
-					pushInstruction(mb,q);
-					setVarInitialized(mb,getArg(q,0));
-					r= pushArgument(mb,r,getArg(q,0));
-					setVarUsed(mb,getArg(q,0),TRUE);
-				}
-				if( functionId(p)== insertRef ||
-					functionId(p)== appendRef ||
-					functionId(p)== deleteRef )
-						match=1;
-				else {
-					match =0;
-					for(j=0;j<mtop; j++)
-						if( mvar[j]== getArg(p,0)) match++;
-					if( match == 0){
-						mvar[mtop] = getArg(p,0);
-						mat[mtop++]= r;
-						pushInstruction(mb,r);
-					}
-				}
-				if( match)
-					freeInstruction(r);
-				actions++;
-				continue;
-			} 
-@-
-The insertions are sent to the last component of the MAT.
-Selection of the proper componetn based on range descriptors will follow.
-@c
-			if(moduleId(p)== batRef && functionId(p)== insertRef &&
-			   mvar[m] == getArg(p,1)){
-				getArg(p,1) = getArg(mat[m],mat[m]->argc-1);
-				pushInstruction(mb,p);
-				continue;
-			} 
-	/*
-			if( functionId(p)== printRef){
-			} else
-	*/
-@-
-You don't have to pack MATs into MATs. It suffice to change their
-definition
-@c
-/*
-			if( (moduleId(p)== matRef && functionId(p)==newRef) ||
-				(moduleId(p)== matRef && functionId(p)==packRef) 
-				){
-				match=0;
-				for(j=1; j<p->argc; j++)
-					if( isMATalias(getArg(p,j),mvar,mtop)>=0) match++;
-				if( match == 0)
-					continue;
-				r = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(r,matRef);
-				setFunctionId(r,functionId(p));
-				getArg(r,0)= getArg(p,0);
-				for( j=1; j<p->argc; j++)
-					if( isMATalias(getArg(p,j),mvar,mtop)<0) 
-						r= pushArgument(mb,r,getArg(p,j));
-					else {
-						for(k=0; k<mtop; k++)
-						if( mvar[k] == getArg(p,j))
-						for(l=1; l<mat[k]->argc; l++)
-							r= pushArgument(mb,r, getArg(mat[k],l));
-				}
-stream_printf(GDKout,"update def\n");
-printInstruction(GDKout,mb,p,LIST_MAL_INSTR);
-printInstruction(GDKout,mb,r,LIST_MAL_INSTR);
-				pushInstruction(mb,r);
-				continue;
-			}
-*/
-@-
-The MAT argument could also occur as the second one.
-@c
-			if( moduleId(p)==algebraRef && functionId(p)== joinRef &&
-				mvar[m]== getArg(p,2)){
-				r = newInstruction(mb, ASSIGNsymbol);
-				setModuleId(r,matRef);
-				setFunctionId(r,newRef);
-				getArg(r,0)= getArg(p,0);
-				tpe= getArgType(mb,p,0);
-
-				for(k=1; k< mat[m]->argc; k++){
-					q= copyInstruction(p);
-					getArg(q,2) = getArg(mat[m],k);
-					getArg(q,0) = newTmpVariable(mb, tpe);
-					pushInstruction(mb,q);
-					setVarInitialized(mb,getArg(q,0));
-					r= pushArgument(mb,r,getArg(q,0));
-					setVarUsed(mb,getArg(q,0),TRUE);
-				}
-				match =0;
-				for(j=0;j<mtop; j++)
-				if( mvar[j]== getArg(p,0)) match++;
-				if( match == 0){
-					mvar[mtop] = getArg(p,0);
-					mat[mtop++]= r;
-					pushInstruction(mb,r);
-				}
-				actions++;
-				continue;
-			} 
-@-
-Handle the rewrite v:=aggr.count(b)
-@c
-			if( moduleId(p)==aggrRef && functionId(p)== countRef &&
-				mvar[m] == getArg(p,1)){
-				r = newInstruction(mb,ASSIGNsymbol);
-				getArg(r,0)= getArg(p,0);
-				pushInt(mb,r,0);
-				pushInstruction(mb,r);
-				for(k=1; k< mat[m]->argc; k++){
-					int v= newTmpVariable(mb,TYPE_int);
-					q= newInstruction(mb,ASSIGNsymbol);
-					setModuleId(q,aggrRef);
-					setFunctionId(q,countRef);
-					getArg(q,0)= v;
-					setVarUsed(mb,v,TRUE);
-					setVarInitialized(mb,v);
-					q= pushArgument(mb,q,getArg(mat[m],k));
-					pushInstruction(mb,q);
-
-					q= newInstruction(mb,ASSIGNsymbol);
-					setModuleId(q,calcRef);
-					setFunctionId(q,plusRef);
-					getArg(q,0)= getArg(r,0);
-					q= pushArgument(mb,q,getArg(r,0));
-					q= pushArgument(mb,q,v);
-					pushInstruction(mb,q);
-				}
-				continue;
-			} 
-@-
-All other instructions should be checked for a MAT dependency.
-It require the MAT to be materialized. We drop the MAT
-afterwards for further consideration.
-@c
-MATdefault:
-			for( k= p->retc; k<p->argc; k++)
-			if( mvar[m] == getArg(p,k) ){
+		if( match>1 ){
+			for( k= p->retc; k<p->argc && match>1; k++, match--)
+			if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0){
 #ifdef DEBUG_MAL_MERGETABLE     
 				stream_printf(GDKout,"Dependency resolution k=%d\n",k);
 				printInstruction(GDKout,mb,p,0);
-				printInstruction(GDKout,mb,mat[j],0);
 #endif
 				r = newInstruction(mb, ASSIGNsymbol);
 				setModuleId(r,matRef);
 				setFunctionId(r,packRef);
 				getArg(r,0)= getArg(mat[m],0);
 				r= MATpackAll(mb, r, m, mat, mvar, mtop);
-				if(	!( moduleId(p) == matRef && functionId(p)== newRef) )
-					pushInstruction(mb,r);
-				else freeInstruction(r);
-
+				pushInstruction(mb,r);
+				getArg(p,k)= getArg(r,0);
 				for(j=m; j<mtop-1; j++){
 					mat[j]= mat[j+1];
 					mvar[j]= mvar[j+1];
 				}
-				mtop--; m--;
-				actions++;
-				break;
+				mtop--; 
 			}
-
-			pushInstruction(mb,p);
+			if( match== 0)
+				pushInstruction(mb,p);
 		}
-		GDKfree(old);
+@-
+Look at the depth of the MAT definition to limit the explosion.
+@-
+		if( MATdepth(m,mat,mvar,mtop)>1){
+		}
+Left with an instruction with at most one MAT we can replace it.
+Not all instructions can be replaced by the sequence. We have to
+group them and check for them individually.
+At first we look for the first argument. Others are dealt with
+through the default case.
+@c
+		if(( (moduleId(p)== algebraRef && functionId(p)== selectRef) ||
+			(moduleId(p)== batRef && functionId(p)==reverseRef) ||
+			(moduleId(p)== batRef && functionId(p)==reverseRef) ||
+			(moduleId(p)== algebraRef && functionId(p)==markTRef) ||
+			(moduleId(p)== algebraRef && functionId(p)==kdifferenceRef) ||
+			(moduleId(p)== algebraRef && functionId(p)== joinRef) ||
+			(moduleId(p)== batRef && functionId(p)== setAccessRef) ||
+			(moduleId(p)== batRef && functionId(p)== appendRef)  ||
+			(moduleId(p)== batRef && functionId(p)== deleteRef) 
+		)  && (m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
+			r = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(r,matRef);
+			setFunctionId(r,newRef);
+			getArg(r,0)= getArg(p,0);
+			tpe= getArgType(mb,p,0);
+
+			for(k=1; k< mat[m]->argc; k++){
+				if( k<mat[m]->argc-1 &&  (
+					functionId(p)== insertRef ||
+					functionId(p)== appendRef ))
+					continue;
+				q= copyInstruction(p);
+				getArg(q,1) = getArg(mat[m],k);
+				getArg(q,0) = newTmpVariable(mb, tpe);
+				pushInstruction(mb,q);
+				setVarInitialized(mb,getArg(q,0));
+				r= pushArgument(mb,r,getArg(q,0));
+				setVarUsed(mb,getArg(q,0),TRUE);
+			}
+			if( functionId(p)== insertRef ||
+				functionId(p)== appendRef ||
+				functionId(p)== deleteRef )
+					match=1;
+			else {
+				match =0;
+				for(j=0;j<mtop; j++)
+					if( mvar[j]== getArg(p,0)) match++;
+				if( match == 0){
+					mvar[mtop] = getArg(p,0);
+					mat[mtop++]= r;
+					pushInstruction(mb,r);
+				}
+			}
+			if( match)
+				freeInstruction(r);
+			actions++;
+			continue;
+		} 
+@-
+The insertions are sent to the last component of the MAT.
+Selection of the proper componetn based on range descriptors will follow.
+@c
+		if(moduleId(p)== batRef && functionId(p)== insertRef &&
+		(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
+			getArg(p,1) = getArg(mat[m],mat[m]->argc-1);
+			pushInstruction(mb,p);
+			continue;
+		} 
+@-
+The MAT argument could also occur as the second one.
+@c
+		if( moduleId(p)==algebraRef && functionId(p)== joinRef &&
+			(m=isMATalias(getArg(p,2),mvar,mtop)) >= 0){
+			r = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(r,matRef);
+			setFunctionId(r,newRef);
+			getArg(r,0)= getArg(p,0);
+			tpe= getArgType(mb,p,0);
+
+			for(k=1; k< mat[m]->argc; k++){
+				q= copyInstruction(p);
+				getArg(q,2) = getArg(mat[m],k);
+				getArg(q,0) = newTmpVariable(mb, tpe);
+				pushInstruction(mb,q);
+				setVarInitialized(mb,getArg(q,0));
+				r= pushArgument(mb,r,getArg(q,0));
+				setVarUsed(mb,getArg(q,0),TRUE);
+			}
+			match =0;
+			for(j=0;j<mtop; j++)
+			if( mvar[j]== getArg(p,0)) match++;
+			if( match == 0){
+				mvar[mtop] = getArg(p,0);
+				mat[mtop++]= r;
+				pushInstruction(mb,r);
+			}
+			actions++;
+			continue;
+		} 
+@-
+Handle the rewrite v:=aggr.count(b)
+@c
+		if( moduleId(p)==aggrRef && functionId(p)== countRef &&
+			(m=isMATalias(getArg(p,1),mvar,mtop)) >= 0){
+			r = newInstruction(mb,ASSIGNsymbol);
+			getArg(r,0)= getArg(p,0);
+			pushInt(mb,r,0);
+			pushInstruction(mb,r);
+			for(k=1; k< mat[m]->argc; k++){
+				int v= newTmpVariable(mb,TYPE_int);
+				q= newInstruction(mb,ASSIGNsymbol);
+				setModuleId(q,aggrRef);
+				setFunctionId(q,countRef);
+				getArg(q,0)= v;
+				setVarUsed(mb,v,TRUE);
+				setVarInitialized(mb,v);
+				q= pushArgument(mb,q,getArg(mat[m],k));
+				pushInstruction(mb,q);
+
+				q= newInstruction(mb,ASSIGNsymbol);
+				setModuleId(q,calcRef);
+				setFunctionId(q,plusRef);
+				getArg(q,0)= getArg(r,0);
+				q= pushArgument(mb,q,getArg(r,0));
+				q= pushArgument(mb,q,v);
+				pushInstruction(mb,q);
+			}
+			continue;
+		} 
+@-
+All other instructions should be checked for a MAT dependency.
+It require the MAT to be materialized. We drop the MAT
+afterwards for further consideration.
+@c
+MATdefault:
+		for( k= p->retc; k<p->argc; k++)
+		if(	(m=isMATalias(getArg(p,k),mvar,mtop)) >= 0){
+#ifdef DEBUG_MAL_MERGETABLE     
+			stream_printf(GDKout,"Dependency resolution k=%d\n",k);
+			printInstruction(GDKout,mb,p,0);
+#endif
+			r = newInstruction(mb, ASSIGNsymbol);
+			setModuleId(r,matRef);
+			setFunctionId(r,packRef);
+			getArg(r,0)= getArg(mat[m],0);
+			r= MATpackAll(mb, r, m, mat, mvar, mtop);
+			if(	!( moduleId(p) == matRef && functionId(p)== newRef) )
+				pushInstruction(mb,r);
+			else freeInstruction(r);
+
+			for(j=m; j<mtop-1; j++){
+				mat[j]= mat[j+1];
+				mvar[j]= mvar[j+1];
+			}
+			mtop--; 
+			actions++;
+			break;
+		}
+
+		pushInstruction(mb,p);
 	}
+	GDKfree(old);
 @-
 As a final optimization, we could remove the mal.new definitions,
 because they are not needed for the execution.
